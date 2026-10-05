@@ -64,24 +64,61 @@ const DATA = 'data';
 
 // ---------- fetch/image caches ----------
 const jsonCache = new Map(), imgCache = new Map();
+// A map/layout/tileset fetch must never hang a warp forever. 2026-10-05: a
+// Pokémon Center exit's request never answered, the warp sat at full black, and
+// the stuck-load watchdog cleared `loading` but left the screen black and every
+// step rejected as "fading". Every fetch now gives up on a silent server (no
+// response headers within FETCH_HEADER_MS) and retries network errors and 5xx
+// (a transient 500 that morning) with backoff, so a stall becomes an ordinary
+// failure the transition's load-guard already handles. A 404 fails at once —
+// optional files (palettes, strings) rely on that.
+export const FETCH_HEADER_MS = 5000, FETCH_BODY_MS = 30000, FETCH_RETRY_MS = [400, 1200];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function fetchJSONResilient(url) {
+	let lastErr = null;
+	for (let attempt = 0; attempt <= FETCH_RETRY_MS.length; attempt++) {
+		const ac = typeof AbortController === 'function' ? new AbortController() : null;
+		let timer = setTimeout(() => ac && ac.abort(), FETCH_HEADER_MS);
+		try {
+			const r = await fetch(url, ac ? { signal: ac.signal } : undefined);
+			clearTimeout(timer);
+			if (r.ok) {
+				timer = setTimeout(() => ac && ac.abort(), FETCH_BODY_MS);   // a big file may take a while; a dead stream may not
+				return await r.json();
+			}
+			const err = new Error(`${r.status} ${url}`);
+			if (r.status < 500 && r.status !== 408 && r.status !== 429) { err.fatal = true; throw err; }
+			lastErr = err;
+		} catch (e) {
+			if (e && e.fatal) throw e;
+			lastErr = e && e.name === 'AbortError' ? new Error(`timed out ${url}`) : e;
+		} finally { clearTimeout(timer); }
+		if (attempt < FETCH_RETRY_MS.length) await sleep(FETCH_RETRY_MS[attempt]);
+	}
+	throw lastErr;
+}
 export async function getJSON(url) {
 	if (!jsonCache.has(url)) {
-		jsonCache.set(url, fetch(url).then(r => {
-			if (!r.ok) throw new Error(`${r.status} ${url}`);
-			return r.json();
-		}).catch(e => { jsonCache.delete(url); throw e; }));
+		jsonCache.set(url, fetchJSONResilient(url).catch(e => { jsonCache.delete(url); throw e; }));
 	}
 	return jsonCache.get(url);
 }
+// images: same rule — an image that never answers is abandoned and retried once
+export const IMG_TIMEOUT_MS = 8000;
+function loadImageOnce(url) {
+	return new Promise((res, rej) => {
+		const img = new Image();
+		img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
+		const timer = setTimeout(() => { img.onload = img.onerror = null; img.src = ''; rej(new Error('img timed out ' + url)); }, IMG_TIMEOUT_MS);
+		img.onload = () => { clearTimeout(timer); res(img); };
+		img.onerror = () => { clearTimeout(timer); rej(new Error('img ' + url)); };
+		img.src = url;
+	});
+}
 export function getImage(url) {
 	if (!imgCache.has(url)) {
-		imgCache.set(url, new Promise((res, rej) => {
-			const img = new Image();
-			img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
-			img.onload = () => res(img);
-			img.onerror = () => { imgCache.delete(url); rej(new Error('img ' + url)); };
-			img.src = url;
-		}));
+		imgCache.set(url, loadImageOnce(url).catch(() => sleep(FETCH_RETRY_MS[0]).then(() => loadImageOnce(url)))
+			.catch(e => { imgCache.delete(url); throw e; }));
 	}
 	return imgCache.get(url);
 }
