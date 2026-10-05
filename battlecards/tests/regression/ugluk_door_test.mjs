@@ -117,7 +117,7 @@ const stats = c => `${c.attack}/${c.maxHealth}`;
 	ok("The Great Goblin's own Door still exists", !!gg);
 	ok('...and still reads board-wide, untouched',
 		!!gg && /your creatures/i.test(gg.description || ''), gg && gg.description);
-	ok('...and is the weaker +1/+0 version', !!gg && /\+1\/\+0/.test(gg.description || ''), gg && gg.description);
+	ok('...and is the weaker +1 Attack version', !!gg && /\+1 Attack/.test(gg.description || ''), gg && gg.description);
 }
 
 // ---------- it still plays without throwing, in a real game loop ----------
