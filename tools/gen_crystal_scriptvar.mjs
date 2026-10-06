@@ -110,6 +110,10 @@ for (const f of fs.readdirSync(path.join(CR, 'maps')).filter(f => f.endsWith('.a
 }
 const inCallback = (mapName, label) => { const set = CALLBACK_LABELS[mapName]; return !!set && [...set].some(l => label === l || label.startsWith(l + '.')); };
 const harvestBlock = makeHarvester(loadCrystalMaps(path.resolve('.'), CR));
+// blocks no converted map uses: computed from the decomp with the converter's own
+// code and validated against every harvested block (tools/gen_crystal_block_cells.mjs)
+const BLOCK_CELLS = (() => { try { return JSON.parse(fs.readFileSync(path.join('tools', 'data', 'crystal_block_cells.json'), 'utf8')); } catch (e) { return {}; } })();
+const blockCells = (mapName, ts, block) => harvestBlock(ts, block) || BLOCK_CELLS[mapName + ':' + block] || null;
 const changeblockSkipped = [];
 
 const trace = JSON.parse(execFileSync('python', [path.join('tools', 'crystal_trace.py'), path.join(MP66, 'tools'), path.join(MP66, 'Reference', 'pokecrystal', 'maps')], { maxBuffer: 1 << 28 }).toString());
@@ -160,7 +164,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			if (!conv.length && cmd === 'loadmenu') { menu = menuItems(asm, a[0], g); continue; }
 			if (!conv.length && cmd === 'changeblock' && inCallback(j.name, label)) {
 				const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
-				const cells = x != null && y != null && Number.isFinite(block) ? harvestBlock(j._crystal_tileset, block) : null;
+				const cells = x != null && y != null && Number.isFinite(block) ? blockCells(j.name, j._crystal_tileset, block) : null;
 				// changeblock x, y addresses the BLOCK containing that 16px cell
 				if (cells) { add({ op: 'changeblock', x: Math.floor(x / 2) * 2, y: Math.floor(y / 2) * 2, cells }); n++; tally('changeblock'); }
 				else changeblockSkipped.push(`${stem}:${label} changeblock ${a.join(',')}`);
