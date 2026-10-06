@@ -46,21 +46,38 @@ const DENY = {
 };
 const ORDER = { NEWMAP: 0, TILES: 1, OBJECTS: 2, CMDQUEUE: 3, SPRITES: 4 };
 // DIRECTIONAL bg_events (`bg_event x, y, BGEVENT_UP, Label` — read only while facing
-// that way) never made it into the converted maps, which kept BGEVENT_READ only.
-// The ones listed here are added back (crystal_callbacks.json `signs`): the Dept.
-// Store 6F vending machines, whose purchase is restored by gen_crystal_scriptvar.mjs.
-// The other directional ones (slot/card-flip machines, link consoles, Rocket
-// security cameras, the Ruins puzzles) lead to mechanisms the port doesn't run.
-const SIGN_ALLOW = new Set(['GoldenrodVendingMachine', 'CeladonDeptStore6FVendingMachine']);
-const signsByName = {};   // crystal map name -> [{x, y, script, facing}]
+// that way) and CONDITIONAL ones (`BGEVENT_IFSET/IFNOTSET, Label` where Label is a
+// `conditional_event FLAG, .Script` — readable only while FLAG is set / clear)
+// never made it into the converted maps, which kept BGEVENT_READ only. All of them
+// come back through crystal_callbacks.json `signs` (2026-10-05: vending machines,
+// slot and card-flip machines, Rocket security cameras and locked doors, the
+// Ruins of Alph puzzles, the Radio Tower card-key slot, ...). A sign whose script
+// we don't have still reads its sign text, as BGEVENT_READ signs always have.
+// Denied (with why): signs that lead to a mechanism the port doesn't run.
+const SIGN_DENY = {
+	PlayersHousePosterScript: 'describedecoration (the decoration system) is not implemented; PlayersHouse2F\'s callback is denied for the same reason',
+};
+const signsByName = {};   // crystal map name -> [{x, y, script, facing?, flag?, flagSet?}]
+const signsDenied = [];
 
 const byName = {};   // crystal map name -> [[kind, label]]
 for (const f of fs.readdirSync(path.join(CR, 'maps')).filter(f => f.endsWith('.asm'))) {
 	const name = f.replace('.asm', '');
 	for (const m of fs.readFileSync(path.join(CR, 'maps', f), 'utf8').matchAll(/callback MAPCALLBACK_(\w+),\s*(\w+)/g))
 		(byName[name] = byName[name] || []).push([m[1], m[2]]);
-	for (const m of fs.readFileSync(path.join(CR, 'maps', f), 'utf8').matchAll(/bg_event\s+(\d+),\s*(\d+),\s*BGEVENT_(UP|DOWN|LEFT|RIGHT),\s*(\w+)/g))
-		if (SIGN_ALLOW.has(m[4])) (signsByName[name] = signsByName[name] || []).push({ type: 'sign', x: +m[1], y: +m[2], script: m[4], facing: m[3].toLowerCase() });
+	const asmText = fs.readFileSync(path.join(CR, 'maps', f), 'utf8');
+	for (const m of asmText.matchAll(/bg_event\s+(\d+),\s*(\d+),\s*BGEVENT_(UP|DOWN|LEFT|RIGHT|IFSET|IFNOTSET),\s*(\w+)/g)) {
+		const [, x, y, kind, label] = m;
+		if (SIGN_DENY[label]) { signsDenied.push(`${name}:${label} — ${SIGN_DENY[label]}`); continue; }
+		const ev = { type: 'sign', x: +x, y: +y, script: label };
+		if (kind === 'IFSET' || kind === 'IFNOTSET') {
+			// Label: conditional_event FLAG, .Script  -> the sign runs Label.Script while FLAG is (not) set
+			const c = asmText.match(new RegExp('^' + label + ':\\s*\\n\\s*conditional_event\\s+(\\w+),\\s*\\.?(\\w+)', 'm'));
+			if (!c) { signsDenied.push(`${name}:${label} — conditional_event not found`); continue; }
+			ev.script = label + '.' + c[2]; ev.flag = c[1]; ev.flagSet = kind === 'IFSET';
+		} else ev.facing = kind.toLowerCase();
+		(signsByName[name] = signsByName[name] || []).push(ev);
+	}
 }
 
 const callbacks = {}, denied = {}, missing = [], signs = {};
@@ -87,5 +104,6 @@ const total = Object.values(byName).reduce((n, l) => n + l.length, 0);
 console.log(`${total} callbacks in pokecrystal; running ${run} on ${Object.keys(callbacks).length} maps; denied ${Object.keys(denied).length}; label missing in our scripts ${missing.length}`);
 for (const [k, why] of Object.entries(denied)) console.log('  deny ' + k + ' — ' + why);
 if (missing.length) console.log('  missing: ' + missing.join(' '));
-console.log('directional signs added: ' + Object.entries(signs).map(([k, l]) => k + ' ' + l.length).join(', '));
+console.log(`signs added back: ${Object.values(signs).reduce((n, l) => n + l.length, 0)} on ${Object.keys(signs).filter(k => signs[k].length).length} maps; denied ${signsDenied.length}`);
+for (const d of signsDenied) console.log('  sign deny ' + d);
 console.log('wrote ' + OUT);
