@@ -17,7 +17,7 @@ import { saveParty } from './party.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { blendKey, blendMenu, contestKey, contestMenu, slideKey, slideMenu, unownDex, unownDexKey } from './ow_venues.js';
+import { blendKey, blendMenu, contestKey, contestMenu, unownDex, unownDexKey } from './ow_venues.js';
 import { slotsKey, slotsMenu } from './ow_minigames.js';
 import { crystalSlots, crystalSlotsKey } from './ow_crystalslots.js';
 import { beginNewGame, finishStarterPick } from './ow_story.js';
@@ -752,7 +752,6 @@ export function pressKey(k) {
 	if (gcMenu.open) { gcKey(k); return; }
 	if (contestMenu.open) { contestKey(k); return; }
 	if (blendMenu.open) { blendKey(k); return; }
-	if (slideMenu.open) { slideKey(k); return; }
 	if (decoMenu.open) { decoKey(k); return; }
 	if (socialMenu.open) { socialKey(k); return; }
 	if (slotsMenu.open) { slotsKey(k); return; }
@@ -839,7 +838,7 @@ export function pressKey(k) {
 export const canvasMenuOpen = () => choiceMenu.open || phoneMenu.open || starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open || cardFlip.open || crystalSlots.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open || cardFlip.open || crystalSlots.open;
 export const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 

@@ -16,7 +16,7 @@ import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, edi
 import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, friendsMenu, mailMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
 import { checkIntroTrigger } from './ow_story.js';
-import { blendMenu, contestMenu, drawBlend, drawContest, drawSlide, drawUnownDex, slideMenu, unownDex } from './ow_venues.js';
+import { blendMenu, contestMenu, drawBlend, drawContest, drawUnownDex, unownDex } from './ow_venues.js';
 import { safeSaveStr } from './safestore.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -357,7 +357,6 @@ export function tick(now) {
 		else if (gcMenu.open) drawGcMenu(SW, MH);
 		else if (contestMenu.open) drawContest(SW, MH);
 		else if (blendMenu.open) drawBlend(SW, MH);
-		else if (slideMenu.open) drawSlide(SW, MH);
 		else if (unownPuzzle.open) drawUnownPuzzle(SW, MH);
 		else if (decoMenu.open) drawDecoMenu(SW, MH);
 		else if (socialMenu.open) drawSocial(SW, MH);

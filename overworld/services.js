@@ -100,16 +100,6 @@ const TRICK_HOUSE = {
 	MAP_ROUTE110_TRICK_HOUSE_END: { trickend: [[4, 5], [4, 6], [3, 5], [5, 5]] },
 };
 
-// RUINS OF ALPH: the ancient replica wall in each chamber is the sliding-tile
-// puzzle; solving it opens the floor to that chamber's item room. All four
-// chambers share the same layout (replica at (2,3)/(5,3)).
-const RUINS_CHAMBERS = {
-	MAP_RUINS_OF_ALPH_KABUTO_CHAMBER: 'kabuto',
-	MAP_RUINS_OF_ALPH_OMANYTE_CHAMBER: 'omanyte',
-	MAP_RUINS_OF_ALPH_AERODACTYL_CHAMBER: 'aerodactyl',
-	MAP_RUINS_OF_ALPH_HO_OH_CHAMBER: 'hooh',
-};
-
 // SHOAL CAVE: the salt/shell dig spots (the decomp's mute ShoalSalt/ShoalShell
 // bg events) and the SHELL BELL hermit at the entrance. KURT in Azalea turns
 // apricorns into his handmade balls.
@@ -185,9 +175,6 @@ function specFor(mapId) {
 	if (TRICK_HOUSE[mapId]) {
 		const zones = Object.entries(TRICK_HOUSE[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
 		return { sprites: [], zones, solid: [] };
-	}
-	if (RUINS_CHAMBERS[mapId]) {
-		return { sprites: [], zones: [{ kind: 'ruinspuzzle', tiles: [[2, 3], [2, 4], [5, 3], [5, 4]] }], solid: [] };
 	}
 	if (GAME_CORNERS[mapId]) {
 		return { sprites: [], zones: [{ kind: 'gamecorner', tiles: GAME_CORNERS[mapId] }], solid: [] };

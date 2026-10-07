@@ -17,7 +17,7 @@ import { maybePortalTutorial } from './ow_menukeys.js';
 import { hillWarp } from './ow_minigames.js';
 import { spawnStepFx } from './ow_render.js';
 import { S } from './ow_state.js';
-import { checkCoordTrigger, checkOnFrame } from './ow_story.js';
+import { checkCoordTrigger, checkOnFrame, runChamberWallScene } from './ow_story.js';
 import { bugContest, bugContestRoll, endBugContest, trickWarp } from './ow_venues.js';
 import { saveParty } from './party.js';
 import * as Quest from './quest.js';
@@ -30,7 +30,7 @@ import { playerRegion } from './ow_progression.js';
 import { checkLegendaryTrigger } from './ow_follower.js';
 import { openTownMap } from './ow_music.js';
 import { partyMenu } from './ow_menustate.js';
-import { ruinsFloorClosed } from './unown_puzzle.js';
+import { ruinsFloorClosed, ruinsWallClosed } from './unown_puzzle.js';
 import { afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo } from './ow_transitions.js';
 
 
@@ -307,6 +307,13 @@ export const HM_FIELD = {
 		dialog.open("You can't DIVE here — the water isn't deep enough.");
 	} },
 	flash: { name: 'FLASH', use() {
+		// SpecialAerodactylChamber: FLASH in the Aerodactyl chamber opens its hidden
+		// wall (CheckUseFlash asks it before the darkness check)
+		if (world.current.map.id === 'MAP_RUINS_OF_ALPH_AERODACTYL_CHAMBER') {
+			Story.setFlag('EVENT_WALL_OPENED_IN_AERODACTYL_CHAMBER');
+			dialog.open('FLASH lit up the surroundings!', () => runChamberWallScene());
+			return;
+		}
 		if (world.current.map.requires_flash) { Story.setFlag('flash_' + world.current.map.id); dialog.open('FLASH lit up the surroundings!'); return; }
 		dialog.open("It's not dark enough to need FLASH.");
 	} },
@@ -377,6 +384,8 @@ player.onArrive = () => {
 	let w = world.warpAt(player.tx, player.ty);
 	// a Ruins of Alph chamber's floor is solid until its UNOWN PUZZLE is solved
 	if (ruinsFloorClosed(world.current.name, w)) w = null;
+	// ...and its item-room wall stays a wall until it opens
+	if (ruinsWallClosed(world.current.name, w)) w = null;
 	if (!w) savePos();
 	if (w) {
 		const dest = parseInt(w.dest_warp_id, 10);

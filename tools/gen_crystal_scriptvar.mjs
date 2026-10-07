@@ -63,7 +63,10 @@ const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 	...['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle`)];
 // labels whose plain-script changeblocks / warpcheck are restored too (elsewhere
 // only MAP CALLBACK changeblocks are)
-const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`);
+// — and each chamber's WallOpenScript, the wall at (4,0) opening onto its item
+// room (HoOh/OmanyteChamber specials, FLASH, an ESCAPE ROPE; ow_story.js)
+const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].flatMap(c => [
+	`RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`, `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberWallOpenScript`]);
 // specials whose result the engine actually computes (ow_story.js runSpecial)
 const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle']);
 // commands that leave hScriptVar alone (display / movement); anything else between

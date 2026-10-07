@@ -241,3 +241,18 @@ export function ruinsFloorClosed(mapName, w) {
 	return !!f && !!w && w.dest_map === 'MAP_RUINS_OF_ALPH_INNER_CHAMBER' && !Story.getFlag(f);
 }
 export const ruinsPuzzleFlags = () => Object.values(CHAMBER_FLAG);
+// ---- the chamber walls: the item room behind (4,0) stays sealed ----
+// The closed-wall block ($2e, HiddenDoorsCallback) is solid in Crystal, but the
+// port lets you walk into any warp tile. Until the wall's event is set (the
+// unown_walls.asm triggers, ow_story.js runChamberWallScene) the item-room warp
+// is a wall.
+const WALL_FLAG = {
+	RuinsOfAlphKabutoChamber: 'EVENT_WALL_OPENED_IN_KABUTO_CHAMBER',
+	RuinsOfAlphOmanyteChamber: 'EVENT_WALL_OPENED_IN_OMANYTE_CHAMBER',
+	RuinsOfAlphAerodactylChamber: 'EVENT_WALL_OPENED_IN_AERODACTYL_CHAMBER',
+	RuinsOfAlphHoOhChamber: 'EVENT_WALL_OPENED_IN_HO_OH_CHAMBER',
+};
+export function ruinsWallClosed(mapName, w) {
+	const f = WALL_FLAG[mapName];
+	return !!f && !!w && /_ITEM_ROOM$/.test(w.dest_map) && !Story.getFlag(f);
+}
