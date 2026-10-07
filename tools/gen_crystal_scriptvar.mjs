@@ -31,6 +31,9 @@ import { loadCrystalMaps, makeHarvester } from './crystal_blocks.mjs';
 
 const D = path.join('overworld', 'data');
 const OUT = path.join('overworld', 'crystal_scriptvar_data.json');
+// labels the phone overlay rebuilds whole (see the colon-less split below)
+const PHONE_OVERRIDDEN = new Set(Object.entries(JSON.parse(fs.readFileSync(path.join('overworld', 'phone_data.json'), 'utf8')).scriptOverrides || {})
+	.flatMap(([stem, labels]) => Object.keys(labels).map(l => `${stem}:${l}`)));
 const MP66 = (() => {
 	for (let d = path.resolve('.'); ; d = path.dirname(d)) {
 		const p = path.join(d, 'Magepunk66');
@@ -239,8 +242,12 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		// every label's colon-less local labels are split out (2026-10-07: 29 branch
 		// targets on 17 maps dangled — Mr. POKeMON's `.refused`, the Dept. Store 5F
 		// clerk's TM menu, Burned Tower's rival); not only the restore-listed ones
-		const subAt = colonlessSplits(asm, label, rows.length);
-		if (!subAt && hasColonless(asm, label)) skipped.colonlessUnaligned.push(`${stem}:${label}`);
+		// ...except a label the phone overlay (phone_data.json scriptOverrides, laid
+		// over this one at load) already rebuilds whole: its `.Script` body lives
+		// under the parent there, so a split-out `.Script` here would shadow the phone
+		// version for the trainer's post-battle pointer (Route 38 Dana, Chad; Joey)
+		const subAt = PHONE_OVERRIDDEN.has(`${stem}:${label}`) ? null : colonlessSplits(asm, label, rows.length);
+		if (!subAt && !PHONE_OVERRIDDEN.has(`${stem}:${label}`) && hasColonless(asm, label)) skipped.colonlessUnaligned.push(`${stem}:${label}`);
 		for (const [ri, [cmd, a, conv]] of rows.entries()) {
 			// a colon-less local label starts here: mark it (split below), and nothing
 			// before it answers a branch after it — control can arrive by a jump
