@@ -5,6 +5,7 @@ import * as Bag from './bag.js';
 import { Contest } from './contest.js';
 import { crystalTrainerHeader } from './crystal_trainers.js';
 import * as Story from './events.js';
+import * as PB from './pokeblock.js';
 import * as Frontier from './frontier.js';
 import { arcade, battle, blockers, cutscene, dialog, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
 import { baseDecoInteract, kurtTalk, secretSpotInteract, shoalDig, shoalHermitTalk } from './ow_features.js';
@@ -14,12 +15,12 @@ import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopM
 import { hillGuardAt, hillPrizeTalk, hillReceptionTalk, startHillBattle } from './ow_minigames.js';
 import { S } from './ow_state.js';
 import { runScriptLabel } from './ow_story.js';
-import { blendMenu, bugOfficerTalk, contestMenu, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
+import { bugOfficerTalk, contestMenu, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
 import { healParty, saveParty } from './party.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk } from './ow_places.js';
+import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk, safariZoneOf } from './ow_places.js';
 import { gcMenu } from './ow_gamecorner.js';
 import { legendaryHere, startLegendaryBattle } from './ow_follower.js';
 import { openDaycare, openMoveShop, openNameRater, openTownMap } from './ow_music.js';
@@ -34,6 +35,7 @@ import {
 import { oskOpen } from '../site/osk.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
+const MB_POKEBLOCK_FEEDER = 0x87;   // Emerald's Safari Zone feeders
 
 // ---------- input ----------
 // INPUT DIAGNOSTICS (temporary instrumentation): `?owlog=1` traces every
@@ -306,16 +308,23 @@ export function interact() {
 	if (svc === 'trickscroll') { trickScrollFind(); return; }
 	if (svc === 'trickend') { trickEndTalk(); return; }
 	if (svc === 'contest') {
+		// contest_hall.inc: the receptionist hands over a POKeBLOCK CASE first
+		// (LilycoveCity_ContestLobby_EventScript_GivePokeblockCase)
+		if (!Story.getFlag('FLAG_RECEIVED_POKEBLOCK_CASE') && !Bag.count('pokeblockcase')) {
+			const t = l => Story.normalizeText(PB.dataString(l) || '...', cutsceneCtx());
+			const who = (localStorage.getItem('magepunk_name') || 'PLAYER').toUpperCase();
+			dialog.open(t('LilycoveCity_ContestLobby_Text_ReceptionDontHavePokeblockCase'), () => {
+				Bag.addItem('pokeblockcase');
+				Story.setFlag('FLAG_RECEIVED_POKEBLOCK_CASE');
+				sfx('item_get');
+				dialog.open(`${who} received the POKeBLOCK CASE!`, () => dialog.open(t('LilycoveCity_ContestLobby_Text_NowThatWeveClearedThatUp')));
+			});
+			return;
+		}
 		if (!S.party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
 		if (!(Contest.data?.opponents || []).length) { dialog.open('The hall is still being prepared for the next Contest...'); return; }
 		sfx('ui_select');
 		contestMenu.open = true; contestMenu.mode = 'category'; contestMenu.idx = 0; contestMenu.flash = null;
-		return;
-	}
-	if (svc === 'berryblend') {
-		if (!S.party.length) { dialog.open('The BLEND MASTER: Bring a POKeMON and some berries, friend!'); return; }
-		sfx('ui_select');
-		blendMenu.open = true; blendMenu.mode = 'pickmon'; blendMenu.idx = 0; blendMenu.flash = null;
 		return;
 	}
 	if (svc === 'gamecorner') {
@@ -450,6 +459,10 @@ export function interact() {
 		// must always acknowledge that something is there.
 		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
 	}
+	// a Safari Zone POKeBLOCK FEEDER (MB_POKEBLOCK_FEEDER, field_control_avatar.c):
+	// EventScript_PokeBlockFeeder (pokeblock_data.json) places or reports the block
+	if (world.behaviorAt(fx, fy) === MB_POKEBLOCK_FEEDER && safariZoneOf(world.current.map.id)
+		&& runScriptLabel('EventScript_PokeBlockFeeder')) return;
 	// face-to-face NPC: have them turn toward the player
 	// ACROSS A COUNTER: with nobody on the faced tile and that tile a counter
 	// (MB_COUNTER, 0x80 in both FRLG and Emerald), the GBA talks to whoever stands

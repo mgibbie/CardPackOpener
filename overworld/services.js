@@ -66,14 +66,12 @@ const GAME_CORNERS = {
 	MAP_JOHKANTO_CELADON_GAME_CORNER_PRIZE_ROOM: [[0, 2], [0, 3], [4, 4], [4, 5]],
 };
 
-// CONTEST HALL (Lilycove): the two reception counters run the contests, the
-// Berry Blender corner (the Blend Master + the two group blenders) feeds
-// berries into condition. All existing decomp NPCs — the zones shadow their
-// mute scripts, no new sprites.
+// CONTEST HALL (Lilycove): the two reception counters run the contests. The
+// BERRY BLENDER corner is the decomp's own (its machines + the Blend Master run
+// berry_blender.inc from pokeblock_data.json -> special DoBerryBlending).
 const CONTEST_LOBBIES = {
 	MAP_LILYCOVE_CITY_CONTEST_LOBBY: {
 		contest: [[14, 2], [14, 3], [15, 2], [15, 3]],
-		blend: [[26, 5], [26, 6], [26, 9], [26, 10], [22, 9], [22, 10]],
 	},
 };
 
@@ -185,7 +183,6 @@ function specFor(mapId) {
 			sprites: [],
 			zones: [
 				{ kind: 'contest', tiles: c.contest },
-				{ kind: 'berryblend', tiles: c.blend },
 			],
 			solid: [],
 		};

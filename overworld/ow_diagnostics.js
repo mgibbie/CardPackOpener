@@ -13,7 +13,9 @@ import { daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_mus
 import { editView } from './ow_render.js';
 import { friendsMenu, mailMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
-import { blendMenu, contestMenu, unownDex } from './ow_venues.js';
+import { contestMenu, unownDex } from './ow_venues.js';
+import { blender } from './minigames/blender/blender.js';
+import { pbCase } from './pokeblock_case.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import {
 	dpadDir, rejectedMoves, starterMenu,
@@ -30,7 +32,7 @@ export function openCanvasMenus() {
 	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
 		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, friendsMenu,
 		dexMenu, trainerCard, townMap, daycareMenu, nameRater, halfParty, moveShop, optionsMenu, questMenu, mailMenu,
-		tradeMenu, gcMenu, vfMenu, contestMenu, blendMenu, decoMenu, socialMenu, slotsMenu, phoneMenu, choiceMenu };
+		tradeMenu, gcMenu, vfMenu, contestMenu, blender, pbCase, decoMenu, socialMenu, slotsMenu, phoneMenu, choiceMenu };
 	return Object.keys(m).filter(k => m[k] && m[k].open);
 }
 // why the last movement input was accepted or ignored, plus every gate's live value

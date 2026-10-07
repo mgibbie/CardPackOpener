@@ -46,6 +46,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_bp', 'magepunk_frontier_best', 'magepunk_frontier_symbols',
 	// Contest rank progress (ribbons + condition live on the mons themselves)
 	'magepunk_contest_v1',
+	// the POKeBLOCK CASE's 40 slots and the BERRY BLENDER's max-RPM records
+	'magepunk_pokeblocks_v1', 'magepunk_blender_records_v1',
 	// the minigame venues: a running Bug-Catching Contest, Trick House stage,
 	// and which Ruins of Alph puzzles are solved
 	'magepunk_bugcontest_v1', 'magepunk_trickhouse_v1', 'magepunk_ruins_v1',

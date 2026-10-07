@@ -46,6 +46,9 @@ import { unownPuzzleSpecial } from './unown_puzzle.js';
 import { startCrystalSlots } from './ow_crystalslots.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
 import { startCardFlip } from './minigames/cardflip/cardflip.js';
+import { recordText, startBerryBlender } from './minigames/blender/blender.js';
+import * as PB from './pokeblock.js';
+import { openPokeblockCase, pbCase } from './pokeblock_case.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
 } from './main.js';
@@ -867,6 +870,13 @@ function openCardFlip() {
 	return 'wait';
 }
 
+// the tile the player faces (GetXYCoordsOneStepInFrontOfPlayer)
+function facingTile() {
+	const d = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
+	return [player.tx + d[0], player.ty + d[1]];
+}
+function openPokeblockCaseLastPlaced() { return pbCase.placed || null; }
+
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -933,6 +943,39 @@ export function runSpecial(name, store, op) {
 		// Crystal's slot machine (Goldenrod + Celadon Game Corners): CheckCoinsAndCoinCase,
 		// then the minigame (ow_crystalslots.js); the sign script resumes when you quit
 		case 'SlotMachine': return startCrystalSlots();
+		// --- POKeBLOCKS (pokeemerald; pokeblock.js, minigames/blender, pokeblock_case.js) ---
+		// the Lilycove Contest Lobby's BERRY BLENDERS: VAR_0x8004 = how many NPCs
+		// (the script copies NUM_OPPONENTS there); one NPC is the BLEND MASTER while
+		// he's in (FLAG_HIDE_LILYCOVE_CONTEST_HALL_BLEND_MASTER clear)
+		case 'DoBerryBlending': {
+			const opponents = Story.getVar('VAR_0x8004') | 0;
+			const blendMaster = opponents === 1 && !Story.getFlag('FLAG_HIDE_LILYCOVE_CONTEST_HALL_BLEND_MASTER');
+			startBerryBlender({ opponents, blendMaster, playerName: (localStorage.getItem('magepunk_name') || 'PLAYER').toUpperCase() }, () => cutscene.resume())
+				.catch(e => { console.warn('[blender] failed to open', e); cutscene.resume(); });
+			return 'wait';
+		}
+		case 'GetFirstFreePokeblockSlot': { const i = PB.firstFreeSlot(); return set(i < 0 ? 0xffff : i); }
+		// IsBagPocketNonEmpty(POCKET_BERRIES): a berry the blender can take
+		case 'PlayerHasBerries': return set(PB.berries().some(b => Bag.count(b.id) > 0) ? 1 : 0);
+		case 'ShowBerryBlenderRecordWindow': dialog.open(recordText(), () => cutscene.resume()); return 'wait';
+		case 'RemoveRecordsWindow': return;
+		// the Safari Zone's POKeBLOCK FEEDERS (safari_zone.c)
+		case 'GetPokeblockFeederInFront': {
+			const [fx, fy] = facingTile();
+			const i = PB.feederAt(world.current.map.id, fx, fy);
+			if (i >= 0) Story.setStrVarText(1, PB.pokeblockName(PB.feederBlock(i).color));
+			return set(i >= 0 ? i : 0xffff);
+		}
+		case 'OpenPokeblockCaseOnFeeder': {
+			const [fx, fy] = facingTile();
+			openPokeblockCase('feeder', slot => {
+				const placed = slot !== 0xffff ? openPokeblockCaseLastPlaced() : null;
+				if (placed) { PB.placeFeeder(world.current.map.id, fx, fy, placed); Story.setStrVarText(1, PB.pokeblockName(placed.color)); }
+				set(placed ? slot : 0xffff);
+				cutscene.resume();
+			});
+			return 'wait';
+		}
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
 		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`

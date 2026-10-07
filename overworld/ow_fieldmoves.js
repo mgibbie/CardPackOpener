@@ -1,5 +1,6 @@
 // ow_fieldmoves.js — field systems: the Mach Bike, Silph Co locked doors, the Route 113 glass workshop, Dive, and the HM field moves.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import * as PB from './pokeblock.js';
 import { phoneStep } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
@@ -462,6 +463,7 @@ player.onArrive = () => {
 	if (safari.on && safariZoneOf(world.current.map.id)) {
 		safari.steps--;
 		saveSafari();
+		PB.feederStep();   // DecrementFeederStepCounters
 		if (safari.steps <= 0) { endSafari('PA: Ding-dong! Your SAFARI GAME is over!'); return; }
 		if (safari.steps === 50) hud.textContent = 'PA: Only 50 steps left in your SAFARI GAME!';
 	}

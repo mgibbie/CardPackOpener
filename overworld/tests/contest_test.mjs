@@ -116,8 +116,8 @@ function mkState(moves, category = 'cool', rank = 0) {
 // ---------- source wiring ----------
 {
 	const sv = fs.readFileSync(path.join(ROOT, 'overworld/services.js'), 'utf8');
-	A(/MAP_LILYCOVE_CITY_CONTEST_LOBBY/.test(sv) && /'contest'/.test(sv) && /'berryblend'/.test(sv),
-		'the Lilycove lobby counters carry contest + blender zones');
+	A(/MAP_LILYCOVE_CITY_CONTEST_LOBBY/.test(sv) && /'contest'/.test(sv) && !/'berryblend'/.test(sv),
+		'the Lilycove lobby counter carries the contest zone (the blenders run the decomp scripts: pokeblock tests)');
 	const mn = overworldSource();
 	A(/emerald_MUS_CONTEST'/.test(mn), 'the stage theme takes over during the appeal round');
 	A(/'magepunk_contest_v1'/.test(fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8')),
@@ -235,28 +235,7 @@ function mkState(moves, category = 'cool', rank = 0) {
 		A(/Contest/.test(run.journal), 'the journal remembers the win', run.journal);
 		A(run.closed && run.saved === 'cool-normal', 'the ribbon persists on the saved party', run.saved);
 
-		// the Berry Blender feeds a real bag berry into condition
-		const blend = await page.evaluate(() => {
-			const ow = window.__ow, b = ow.blendMenu;
-			ow.Bag.addItem('cheriberry', 2);
-			ow.party[0].contest = { cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0, sheen: 0 };
-			const p = ow.player;
-			p.tx = 26; p.ty = 6; p.px = 26 * 16; p.py = 6 * 16; p.facing = 'up';
-			ow.interact();
-			const o = { opened: b.open };
-			b.idx = 0; ow.blendKey('z');            // pick the mon
-			o.feedMode = b.mode === 'feed';
-			b.idx = 0; ow.blendKey('z');            // feed the CHERI
-			o.cool = ow.party[0].contest.cool;
-			o.left = ow.Bag.count('cheriberry');
-			o.flash = b.flash;
-			ow.drawBlend(480, 320);                  // the bars render
-			b.open = false;
-			return o;
-		});
-		A(blend.opened, 'the Blend Master corner opens the blender');
-		A(blend.feedMode && blend.cool === 10 && blend.left === 1, 'feeding a CHERI raises COOL and spends the berry', JSON.stringify(blend));
-		A(/COOL \+10/.test(blend.flash || ''), 'the flash narrates the gains', blend.flash);
+		// (berry feeding moved to POKeBLOCKS: pokeblock_test / berry_blender_test)
 
 		// every screen draws; the summary shows the ribbon case
 		const draw = await page.evaluate(() => {
