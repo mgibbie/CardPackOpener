@@ -330,24 +330,40 @@ function pushActiveRun(withSnapshot, keepalive) {
 // fight, which the seeded RNG replays identically, forever (Remy's Final Fantasy
 // run frozen at 2W/2L). The pending result rides the run (snapshot dropped) and
 // the boot settles it through the same victory/defeat path. Modes that resume a
-// post-game checkpoint (beginPostGame) only; beginPostGame clears the marker.
-const RESULT_RUN_KEYS = new Set([DUELS_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]);
+// post-game checkpoint clear the marker in beginPostGame; Dungeon, Heist and Tombs
+// (no checkpoint) roll their reward offers from its seed, record the stage a pick
+// leads to (rewardStage) and clear it when the run advances; Arena clears it when
+// the result is banked. A finished run clears the whole run.
+const RESULT_RUN_KEYS = new Set([RUN_KEY, HEIST_KEY, TOMBS_KEY, ARENA_KEY, DUELS_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]);
 function recordRunResult() {
 	if (!state || !state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
 	const io = activeRunIO();
 	if (!io || !RESULT_RUN_KEYS.has(io.key)) return;
 	const run = io.load();
 	if (!run || !run.active || run.postGame || run.pendingResult) return;
-	run.pendingResult = { won: state.winner === HUMAN, at: Date.now() };
+	run.pendingResult = { won: state.winner === HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
 	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
 	io.save(run);
 	pushActiveRun(true);
 }
-function settlePendingResult(run, victory, defeat) {
+function settlePendingResult(run, victory, defeat, stages) {
 	const won = !!run.pendingResult.won;
 	delete run.snapshot; delete run.snapshotAt;
-	(won ? victory : defeat)(run);   // -> after*Game -> beginPostGame clears pendingResult
+	// a reward left part-way resumes at the stage its last pick led to
+	const resume = won && stages && stages[run.pendingResult.stage];
+	(resume || (won ? victory : defeat))(run);
 }
+// the card defs for a result settled at boot, before any game state exists
+let runBootCardsById = null;
+const runDefs = () => (state && state.cardsById) || runBootCardsById || {};
+// a reward screen's offers roll from the pending result's seed: a reload shows the same choices
+function rewardRng(run, salt) {
+	const seed = run && run.pendingResult && run.pendingResult.seed;
+	return seed != null ? E.seededRng((seed + salt * 7919) >>> 0) : Math.random;
+}
+// a pick made mid-reward is saved with the stage it leads to, so a reload resumes there
+// instead of offering (and granting) the earlier pick again
+function rewardStage(run, stage, save) { if (run.pendingResult) { run.pendingResult.stage = stage; save(run); } }
 function serverClearRun(key) { if (MP_ON) MPX.call('run-clear', { key }).catch(() => {}); }
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
 async function hydrateRunsFromServer() {
@@ -6690,7 +6706,9 @@ async function start() {
 			};
 			saveRun(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, dungeonVictory, dungeonDefeat, { 2: r => afterBucket(r, r.level + 1) });
+		else if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
 		else bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level, run.anomaly);
 	} else if (heistRunMode) {
 		heistCardsById = cardsById; // pre-state overlays need the card defs
@@ -6712,7 +6730,9 @@ async function start() {
 			};
 			saveHeist(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Heist fight.'); else bootHeistEncounter(cardsById, run);
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, heistVictory, heistDefeat, { 2: r => afterHeistBucket(r, r.level + 1), 3: r => heistTavern(r, r.level + 1) });
+		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Heist fight.'); else bootHeistEncounter(cardsById, run);
 	} else if (tombsRunMode) {
 		tombsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadTombs();
@@ -6733,7 +6753,9 @@ async function start() {
 			};
 			saveTombs(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Tombs fight.'); else bootTombsEncounter(cardsById, run);
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, tombsVictory, tombsDefeat, { 2: r => afterTombsBucket(r, r.level + 1) });
+		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Tombs fight.'); else bootTombsEncounter(cardsById, run);
 	} else if (duelsRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadDuels();
@@ -6831,7 +6853,9 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly: await pickWeeklyAnomalyOverlay(), deck, wins: 0, losses: 0, enemy: genArenaEnemy(cardsById) };
 			saveArena(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
+		runBootCardsById = cardsById;
+		if (run.pendingResult) settlePendingResult(run, arenaVictory, arenaDefeat);
+		else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
 	} else if (dungeonBossId) {
 		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
 		const wanted = new URLSearchParams(location.search).get('class');
@@ -7315,6 +7339,7 @@ function pickClassOverlay() {
 }
 
 function dungeonVictory(run) {
+	const rwRnd = rewardRng(run, 1); // same offers after a reload
 	const nextLevel = run.level + 1;
 	if (run.level >= 8) {
 		const el = dungeonOverlay('RUN COMPLETE!', `${Dungeon.BOSSES[run.bossId].name} falls — the treasure hoard is yours. Cleared as ${run.classId} with ${run.deck.length} cards.`);
@@ -7330,13 +7355,13 @@ function dungeonVictory(run) {
 	const buckets = [...(Dungeon.BUCKETS[run.classId] || [])];
 	const offered = [];
 	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+		offered.push(buckets.splice(Math.floor(rwRnd() * buckets.length), 1)[0]);
 	}
 	const cardsOf = bucket => {
 		// the Unique pack draws from the class's whole card pool
 		let ids = bucket.cards;
 		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
+			ids = Object.values(runDefs()).filter(d =>
 				d.cardClass === run.classId && !d.token && !d.companion && !d.commander
 				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
 				.map(d => d.id);
@@ -7344,9 +7369,9 @@ function dungeonVictory(run) {
 		const picks = [];
 		const pool = [...ids];
 		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+			picks.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 		}
-		return picks.map(id => state.cardsById[id]);
+		return picks.map(id => runDefs()[id]);
 	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7359,6 +7384,7 @@ function dungeonVictory(run) {
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
 			run.deck.push(...picks.map(d => d.id));
+			rewardStage(run, 2, saveRun);
 			afterBucket(run, nextLevel);
 		}));
 		row.appendChild(box);
@@ -7367,6 +7393,7 @@ function dungeonVictory(run) {
 }
 
 function afterBucket(run, nextLevel) {
+	const rwRnd = rewardRng(run, 2); // same offers after a reload
 	// a treasure after every odd level, HS-style
 	if (run.level % 2 === 1) {
 		const el = dungeonOverlay('TREASURE!', 'Choose a boon for the rest of the run.');
@@ -7374,7 +7401,7 @@ function afterBucket(run, nextLevel) {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:16px;max-width:190px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${Dungeon.TREASURES[t].name}</div>`
@@ -7394,6 +7421,7 @@ function afterBucket(run, nextLevel) {
 function advanceRun(run, nextLevel) {
 	run.level = nextLevel;
 	run.bossId = Dungeon.randomBoss(nextLevel);
+	delete run.pendingResult; // the reward is taken: the result is settled
 	saveRun(run);
 	const boss = Dungeon.BOSSES[run.bossId];
 	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${boss.health} HP) — "${boss.flavor}"`);
@@ -7555,6 +7583,7 @@ function bootHeistEncounter(cardsById, run) {
 }
 
 function heistVictory(run) {
+	const rwRnd = rewardRng(run, 1); // same offers after a reload
 	const hero = Heist.HEROES.find(h => h.id === run.heroId);
 	const nextLevel = run.level + 1;
 	if (run.level >= 8) {
@@ -7572,12 +7601,12 @@ function heistVictory(run) {
 	const buckets = [...(Dungeon.BUCKETS[hero.heroClass] || [])];
 	const offered = [];
 	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+		offered.push(buckets.splice(Math.floor(rwRnd() * buckets.length), 1)[0]);
 	}
 	const cardsOf = bucket => {
 		let ids = bucket.cards;
 		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
+			ids = Object.values(runDefs()).filter(d =>
 				d.cardClass === hero.heroClass && !d.token && !d.companion && !d.commander
 				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
 				.map(d => d.id);
@@ -7585,9 +7614,9 @@ function heistVictory(run) {
 		const picks = [];
 		const pool = [...ids];
 		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+			picks.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 		}
-		return picks.map(id => state.cardsById[id]);
+		return picks.map(id => runDefs()[id]);
 	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7600,6 +7629,7 @@ function heistVictory(run) {
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
 			run.deck.push(...picks.map(d => d.id));
+			rewardStage(run, 2, saveHeist);
 			afterHeistBucket(run, nextLevel);
 		}));
 		row.appendChild(box);
@@ -7610,14 +7640,15 @@ function heistVictory(run) {
 // odd fights alternate the run's boons: passives after 1 & 5, an active
 // treasure card into the deck after 3 & 7
 function afterHeistBucket(run, nextLevel) {
+	const rwRnd = rewardRng(run, 2); // same offers after a reload
 	if (run.level === 1 || run.level === 5) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the heist.');
 		const options = Object.keys(Heist.PASSIVES).filter(t => !run.passives.includes(t));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
-			const def = state.cardsById['dala_' + t];
+			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
+			const def = runDefs()['dala_' + t];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
 			if (def) box.appendChild(miniFace(def));
@@ -7631,11 +7662,11 @@ function afterHeistBucket(run, nextLevel) {
 		el.appendChild(row);
 	} else if (run.level === 3 || run.level === 7) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => d.treasure && !run.deck.includes(d.id));
+		const options = Object.values(runDefs()).filter(d => d.treasure && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7648,6 +7679,7 @@ function afterHeistBucket(run, nextLevel) {
 		}
 		el.appendChild(row);
 	} else {
+		rewardStage(run, 3, saveHeist);
 		heistTavern(run, nextLevel); // fights 2, 4, 6: stop by the Bar
 	}
 }
@@ -7655,11 +7687,12 @@ function afterHeistBucket(run, nextLevel) {
 // the Bar: 3 random tavern actions (or leave). Actions that target a card
 // open a picker; the rest apply and advance.
 function heistTavern(run, nextLevel) {
+	const rwRnd = rewardRng(run, 3); // same offers after a reload
 	const el = dungeonOverlay('THE BAR', 'The bartender slides you a few options. Take one, or move on.');
 	const keys = Object.keys(Heist.TAVERN);
 	const offered = [];
 	while (offered.length < 3 && keys.length) {
-		offered.push(keys.splice(Math.floor(Math.random() * keys.length), 1)[0]);
+		offered.push(keys.splice(Math.floor(rwRnd() * keys.length), 1)[0]);
 	}
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7682,17 +7715,18 @@ function heistTavern(run, nextLevel) {
 
 // the card-picker for a tavern action that targets a minion
 function heistTavernPick(run, key, nextLevel) {
+	const rwRnd = rewardRng(run, 4); // same offers after a reload
 	const act = Heist.TAVERN[key];
 	let defs;
 	if (act.pick === 'legendary') {
-		const pool = Object.values(state.cardsById).filter(d => d.type === 'creature'
+		const pool = Object.values(runDefs()).filter(d => d.type === 'creature'
 			&& d.rarity === 'legendary' && !d.token && d.collectible !== false
 			&& !d.companion && !d.commander && !(d.colors && d.colors.length));
 		defs = [];
-		while (defs.length < 3 && pool.length) defs.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+		while (defs.length < 3 && pool.length) defs.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 	} else { // deck-creature: the distinct minions already in the run deck
 		const seen = new Set();
-		defs = run.deck.map(id => state.cardsById[id])
+		defs = run.deck.map(id => runDefs()[id])
 			.filter(d => d && d.type === 'creature' && !seen.has(d.id) && seen.add(d.id));
 	}
 	if (!defs.length) { act.apply(run, null); saveHeist(run); advanceHeist(run, nextLevel); return; }
@@ -7716,6 +7750,7 @@ function heistTavernPick(run, key, nextLevel) {
 function advanceHeist(run, nextLevel) {
 	run.level = nextLevel;
 	run.bossId = heistBossFor(run.wing, nextLevel);
+	delete run.pendingResult; // the reward is taken: the result is settled
 	saveHeist(run);
 	const boss = Heist.BOSSES[run.bossId];
 	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${boss.health} HP)`);
@@ -7856,6 +7891,7 @@ function bootTombsEncounter(cardsById, run) {
 }
 
 function tombsVictory(run) {
+	const rwRnd = rewardRng(run, 1); // same offers after a reload
 	const explorer = Tombs.EXPLORERS.find(h => h.id === run.explorerId);
 	const nextLevel = run.level + 1;
 	if (run.level >= 8) {
@@ -7873,12 +7909,12 @@ function tombsVictory(run) {
 	const buckets = [...(Dungeon.BUCKETS[explorer.heroClass] || [])];
 	const offered = [];
 	while (offered.length < 3 && buckets.length) {
-		offered.push(buckets.splice(Math.floor(Math.random() * buckets.length), 1)[0]);
+		offered.push(buckets.splice(Math.floor(rwRnd() * buckets.length), 1)[0]);
 	}
 	const cardsOf = bucket => {
 		let ids = bucket.cards;
 		if (ids === 'class-all') {
-			ids = Object.values(state.cardsById).filter(d =>
+			ids = Object.values(runDefs()).filter(d =>
 				d.cardClass === explorer.heroClass && !d.token && !d.companion && !d.commander
 				&& d.type !== 'land' && d.type !== 'heropower' && !(d.colors && d.colors.length))
 				.map(d => d.id);
@@ -7886,9 +7922,9 @@ function tombsVictory(run) {
 		const picks = [];
 		const pool = [...ids];
 		while (picks.length < 3 && pool.length) {
-			picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+			picks.push(pool.splice(Math.floor(rwRnd() * pool.length), 1)[0]);
 		}
-		return picks.map(id => state.cardsById[id]);
+		return picks.map(id => runDefs()[id]);
 	};
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
@@ -7901,6 +7937,7 @@ function tombsVictory(run) {
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => {
 			run.deck.push(...picks.map(d => d.id));
+			rewardStage(run, 2, saveTombs);
 			afterTombsBucket(run, nextLevel);
 		}));
 		row.appendChild(box);
@@ -7911,14 +7948,15 @@ function tombsVictory(run) {
 // odd fights alternate the run's boons: passive treasures after 1 & 5, an
 // active treasure card into the deck after 3 & 7; even fights advance straight on
 function afterTombsBucket(run, nextLevel) {
+	const rwRnd = rewardRng(run, 2); // same offers after a reload
 	if (run.level === 1 || run.level === 5) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the expedition.');
 		const options = Object.keys(Tombs.PASSIVES).filter(t => !run.passives.includes(t));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
-			const def = state.cardsById['tomb_' + t];
+			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
+			const def = runDefs()['tomb_' + t];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
 			if (def) box.appendChild(miniFace(def));
@@ -7932,11 +7970,11 @@ function afterTombsBucket(run, nextLevel) {
 		el.appendChild(row);
 	} else if (run.level === 3 || run.level === 7) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'TOMBS_OF_TERROR' && !run.deck.includes(d.id));
+		const options = Object.values(runDefs()).filter(d => d.treasure && d.set === 'TOMBS_OF_TERROR' && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7956,6 +7994,7 @@ function afterTombsBucket(run, nextLevel) {
 function advanceTombs(run, nextLevel) {
 	run.level = nextLevel;
 	run.bossId = tombsBossFor(run.chapter, nextLevel);
+	delete run.pendingResult; // the reward is taken: the result is settled
 	saveTombs(run);
 	const boss = Tombs.BOSSES[run.bossId];
 	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${boss.health} HP)${boss.plagueLord ? ' — the Plague Lord!' : ''}`);
@@ -9313,6 +9352,7 @@ function arenaDefeat(run) { afterArenaGame(run, false); }
 // one game resolved: bank the result, end at 12 wins / 3 losses, else next fight
 function afterArenaGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	delete run.pendingResult; // the result is banked
 	saveArena(run);
 	if (run.wins >= 12) { arenaRunComplete(run); return; }
 	if (run.losses >= 3) { arenaRunOver(run); return; }
@@ -9320,7 +9360,7 @@ function afterArenaGame(run, won) {
 }
 
 function advanceArena(run, won) {
-	run.enemy = genArenaEnemy(state.cardsById, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
+	run.enemy = genArenaEnemy(runDefs(), run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveArena(run);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins} win${run.wins === 1 ? '' : 's'}` : `LOSS - ${run.losses}/3`, `Next up: ${run.enemy.name}. ${winLossLabel(run)} - your drafted deck stands pat.`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
