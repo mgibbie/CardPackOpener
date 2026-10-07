@@ -6,6 +6,7 @@
 //   Player.lua      -> grid movement @120px/s, 9-frame sprite, walk anim
 
 import { metatileId } from './metatile_labels.js';
+import { LOCKED_WARPS } from './locked_warps_data.js';
 // A decomp script boolean -> true / false / null. Scripts write TRUE/FALSE
 // (symbolic), 1/0, or real booleans; null/undefined means "not given" (callers
 // keep their default). NEVER Boolean(v) / !!v: the string "FALSE" is truthy.
@@ -519,7 +520,17 @@ export class World {
 	}
 
 	isPassable(tx, ty) {
-		if (this.warpAt(tx, ty)) return true; // doors are always enterable
+		if (this.warpAt(tx, ty)) {
+			// doors are always enterable — FRLG/Emerald walk INTO a wall-collision door —
+			// except a warp a script locks (tools/gen_locked_warps.mjs: the Basement Key
+			// door, the Storage Key doors, the sealed tombs): it follows its live cell,
+			// open when clear or a door/warp behavior, shut otherwise
+			if (!LOCKED_WARPS[this.current?.name]?.includes(tx + ',' + ty)) return true;
+			const w = this.gridAt(tx, ty);
+			if (w != null && (w & COLLISION_MASK) === 0) return true;
+			const b = this.behaviorAt(tx, ty);
+			return b >= 0x60 && b <= 0x6e;
+		}
 		const v = this.gridAt(tx, ty);
 		if (v == null) return false;
 		return (v & COLLISION_MASK) === 0;
