@@ -151,7 +151,13 @@ export class Items {
 				continue;
 			}
 			if (g.includes('BOULDER')) {
-				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'boulder' });
+				// a boulder that has fallen to the floor below (or not fallen here yet)
+				// is hidden by its flag: Seafoam's lower floors showed every boulder
+				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
+				// FRLG keeps the flag that reveals it on the floor BELOW in the
+				// object's trainer_type (GetBoulderRevealFlagByLocalIdAndMap)
+				const reveal = /^FLAG_/.test(o.trainer_type || '') ? o.trainer_type : null;
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'boulder', flag: /^FLAG_/.test(o.flag || '') ? o.flag : null, reveal });
 				continue;
 			}
 			// POKE_BALL is Crystal's spelling. items.js only ever matched ITEM_BALL, so

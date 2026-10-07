@@ -379,6 +379,7 @@ player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || ruinsWallClosed(world.cur
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
 S.strengthHinted = false;
+const MB_FALL_WARP = 0x66;   // pokefirered metatile_behaviors.h
 player.pushBoulder = (bx, by, dx, dy) => {
 	const obj = items.fieldObjAt(bx, by);
 	if (!obj || obj.kind !== 'boulder') return false;
@@ -395,6 +396,15 @@ player.pushBoulder = (bx, by, dx, dy) => {
 	if (!world.isPassable(tx, ty) || world.isSurfable(tx, ty)) return false;
 	if (player.blocked(tx, ty)) return false;
 	items.moveFieldObj(obj, tx, ty);
+	// FRLG's HandleBoulderFallThroughHole: shoved onto a hole (MB_FALL_WARP) it
+	// drops to the floor below — gone from here (its flag set), and the boulder
+	// waiting below revealed (Seafoam's current-stopping puzzle, 2026-10-07)
+	if (world.current?.layout?.game === 'firered' && world.behaviorAt(tx, ty) === MB_FALL_WARP) {
+		sfx('ledge');   // SE_FALL's stand-in (the port ships no fall sound)
+		items.removeFieldObj(obj);
+		if (obj.flag) Story.setFlag(obj.flag);
+		if (obj.reveal) Story.clearFlag(obj.reveal);
+	}
 	return true;
 };
 
