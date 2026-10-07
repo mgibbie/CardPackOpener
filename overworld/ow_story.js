@@ -33,14 +33,19 @@ import { whiteOut } from './ow_places.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
-import { halfParty, openHalfParty } from './ow_music.js';
+import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
+import { townMap } from './ow_menustate.js';
+import { describeDecoration, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
 import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
+import { unownPuzzleSpecial } from './unown_puzzle.js';
+import { startCrystalSlots } from './ow_crystalslots.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
+import { startCardFlip } from './minigames/cardflip/cardflip.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
 } from './main.js';
@@ -830,6 +835,17 @@ function rideCableCar() {
 	return 'wait';
 }
 
+// special CardFlip (engine/events/specials.asm): CheckCoinsAndCoinCase refuses
+// with no coins, then without a COIN CASE; otherwise the table takes the screen
+// and the machine's script (closetext / end) resumes when you leave it
+function openCardFlip() {
+	const refuse = Bag.getCoins() <= 0 ? 'You have no coins.'
+		: !Bag.count('coincase') ? "You don't have a\nCOIN CASE." : null;
+	if (refuse) { dialog.open(refuse, () => cutscene.resume()); return 'wait'; }
+	startCardFlip(() => cutscene.resume()).catch(e => { console.warn('[cardflip] failed to open', e); cutscene.resume(); });
+	return 'wait';
+}
+
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -890,7 +906,21 @@ export function runSpecial(name, store, op) {
 		case 'GiveOddEgg': giveOddEgg(); return;
 		case 'GiveShuckle': return set(giveShuckle());
 		case 'ReturnShuckie': return set(returnShuckie());
+		// Crystal's Game Corner card table (Goldenrod; Celadon in JohKanto) — the
+		// machines' signs (#658) ran a special nothing answered
+		case 'CardFlip': return openCardFlip();
+		// Crystal's slot machine (Goldenrod + Celadon Game Corners): CheckCoinsAndCoinCase,
+		// then the minigame (ow_crystalslots.js); the sign script resumes when you quit
+		case 'SlotMachine': return startCrystalSlots();
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
+		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
+		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
+		case 'UnownPuzzle': return unownPuzzleSpecial(() => cutscene.resume());
+		// the player's-room decorations (decorations.js): PlayersHouse2F's two
+		// callbacks and its poster sign (the TOWN MAP poster opens the map, to look at)
+		case 'ToggleDecorationsVisibility': toggleDecorationsVisibility(); return;
+		case 'ToggleMaptileDecorations': toggleMaptileDecorations(); return;
+		case 'DescribeDecoration': describeDecoration(op && op.which, () => { openTownMap(); townMap.viewOnly = true; }); return;
 		// the Mt. Chimney CABLE CAR (pokeemerald field_specials.c CableCarWarp +
 		// cable_car.c CableCar). Neither had a handler, so "Yes" walked you aboard
 		// and the ride never left (playtest, 2026-09-30 / 10-01).

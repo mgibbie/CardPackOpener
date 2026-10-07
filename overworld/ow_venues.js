@@ -13,6 +13,8 @@ import * as Dex from './pokedex.js';
 import { safeLoad, safeSave } from './safestore.js';
 import * as Slide from './slidepuzzle.js';
 import { sfx } from './sound.js';
+import * as Story from './events.js';
+import { ruinsPuzzleFlags } from './unown_puzzle.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { dexMilestoneCheck } from './ow_follower.js';
 import { syncMapBgm } from './ow_music.js';
@@ -285,7 +287,9 @@ export function drawSlide(W, H) {
 export const UNOWN_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '!', '?'];
 const UNOWN_ID = { A: 'unown', '!': 'unown_exclaim', '?': 'unown_question' };
 export const unownIdFor = L => UNOWN_ID[L] || 'unown_' + L.toLowerCase();
-export const allRuinsSolved = () => { const s = safeLoad(RUINS_KEY, { solved: {} }).solved || {}; return ['kabuto', 'omanyte', 'aerodactyl', 'hooh'].every(k => s[k]); };
+// a chamber counts when either its slide puzzle or its Crystal UNOWN PUZZLE
+// (EVENT_SOLVED_*_PUZZLE, unown_puzzle.js) is solved
+export const allRuinsSolved = () => { const s = safeLoad(RUINS_KEY, { solved: {} }).solved || {}; const f = ruinsPuzzleFlags(); return ['kabuto', 'omanyte', 'aerodactyl', 'hooh'].every((k, i) => s[k] || Story.getFlag(f[i])); };
 // the letters available in the wild right now: A..Z always, ! and ? once every
 // chamber puzzle is solved
 export function rollUnownLetter() {

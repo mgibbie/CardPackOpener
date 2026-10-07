@@ -45,15 +45,27 @@ const MP66 = (() => {
 // (Wed/Sat after the E4), the Game Corner TM and prize-Pokémon vendors (Goldenrod,
 // Celadon), the Celadon gambler's 18 coins, the Dept. Store 6F vending machines
 // and the Dragon Shrine quiz. Every label here was read by hand: its menus lead to
-// nothing the engine lacks (unlike the slots, the link/mobile counters, Moomoo...).
+// nothing the engine lacks (unlike the link/mobile counters, Moomoo...). The slot
+// machine signs get their `random 6` lucky-machine roll and `setval TRUE/FALSE`
+// back: `special SlotMachine` (ow_crystalslots.js) reads the script var the way
+// Slots_InitBias reads wScriptVar.
 const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 	'GoldenrodGameCorner:GoldenrodGameCornerTMVendor', 'GoldenrodGameCorner:GoldenrodGameCornerPrizeMonVendor',
 	'JohKantoCeladonGameCornerPrizeRoom:CeladonGameCornerPrizeRoomPokemonVendor', 'JohKantoCeladonGameCornerPrizeRoom:CeladonPrizeRoom_tmcounterloop',
 	'JohKantoCeladonGameCorner:CeladonGameCornerFisherScript',
 	'GoldenrodDeptStore6F:GoldenrodVendingMachine', 'JohKantoCeladonDeptStore6F:CeladonDeptStore6FVendingMachine',
-	'DragonShrine:DragonShrineTakeTestScript'];
+	'DragonShrine:DragonShrineTakeTestScript',
+	'GoldenrodGameCorner:GoldenrodGameCornerSlotsMachineScript', 'GoldenrodGameCorner:GoldenrodGameCornerLuckySlotsMachineScript',
+	'JohKantoCeladonGameCorner:CeladonGameCornerLuckySlotMachineScript', 'JohKantoCeladonGameCorner:CeladonGameCornerSlotMachineScript',
+	// the Ruins of Alph UNOWN PUZZLE panels: setval picks the puzzle, the special
+	// answers TRUE when it's solved, and .PuzzleComplete opens the floor (its
+	// changeblocks + the warpcheck that drops you into the inner chamber)
+	...['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle`)];
+// labels whose plain-script changeblocks / warpcheck are restored too (elsewhere
+// only MAP CALLBACK changeblocks are)
+const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`);
 // specials whose result the engine actually computes (ow_story.js runSpecial)
-const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor']);
+const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle']);
 // commands that leave hScriptVar alone (display / movement); anything else between
 // the writer and the test might overwrite it, so the restore stops there
 const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext', 'opentext', 'faceplayer',
@@ -62,7 +74,8 @@ const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext',
 const CONST = { PARTY_LENGTH: 6, NUM_POKEMON: 251, NUM_JOHTO_BADGES: 8, NUM_KANTO_BADGES: 8, NUM_BADGES: 16,
 	MORN_HOUR: 4, DAY_HOUR: 10, NITE_HOUR: 18, TRUE: 1, FALSE: 0, MAX_COINS: 9999,
 	// pokecrystal constants/script_constants.asm
-	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3 };
+	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3,
+	UNOWNPUZZLE_KABUTO: 0, UNOWNPUZZLE_OMANYTE: 1, UNOWNPUZZLE_AERODACTYL: 2, UNOWNPUZZLE_HO_OH: 3 };
 // the map's own `DEF NAME EQU value` lines (prices: GOLDENRODGAMECORNER_TM25_COINS)
 let LOCAL = {};
 function localDefs(asm) {
@@ -149,7 +162,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		const newKinds = RESTORE_COMMANDS_IN.some(p => `${stem}:${label}`.startsWith(p));
 		const wouldRestore = c => { if (!newKinds) { skipped.notEnabled.add(`${stem}:${label} (${c})`); return false; } return true; };
 		for (const [cmd, a, conv] of rows) {
-			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'setval', 'verticalmenu'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
+			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'setval', 'verticalmenu', 'random'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
 			// commands the transpile dropped outright (conv empty) that the engine runs
 			if (!conv.length && cmd === 'checkcoins' && evalExpr(a[0]) != null) { add({ op: 'checkcoins', amount: evalExpr(a[0]) }); n++; tally('checkcoins'); src = { var: 'VAR_RESULT', name: 'checkcoins' }; continue; }
 			if (!conv.length && cmd === 'takecoins' && evalExpr(a[0]) != null) { add({ op: 'takecoins', amount: evalExpr(a[0]) }); n++; tally('takecoins'); continue; }
@@ -160,9 +173,19 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			if (!conv.length && cmd === 'takemoney' && a[0] === 'YOUR_MONEY' && evalExpr(a[1]) != null) { add({ op: 'removemoney', amount: evalExpr(a[1]) }); n++; tally('takemoney'); continue; }
 			// givepoke SPECIES, LEVEL (no held item / OT extras): party, or the PC when full
 			if (!conv.length && cmd === 'givepoke' && a.length === 2 && /^[A-Z][A-Z0-9_]*$/.test(a[0]) && evalExpr(a[1]) != null) { add({ op: 'givemon', species: 'SPECIES_' + a[0], level: evalExpr(a[1]) }); n++; tally('givepoke'); src = null; continue; }
-			if (!conv.length && cmd === 'setval' && evalExpr(a[0]) != null) { add({ op: 'setvar', var: 'VAR_RESULT', value: evalExpr(a[0]) }); n++; tally('setval'); src = { var: 'VAR_RESULT', name: 'setval' }; continue; }
+			// `random N` (0..N-1 into the script var), read by the ifequal after it
+			if (!conv.length && cmd === 'random' && evalExpr(a[0]) != null) { add({ op: 'random', max: evalExpr(a[0]) }); n++; tally('random'); src = { var: 'VAR_RESULT', name: 'random' }; continue; }
+			if (!conv.length && cmd === 'setval'&& evalExpr(a[0]) != null) { add({ op: 'setvar', var: 'VAR_RESULT', value: evalExpr(a[0]) }); n++; tally('setval'); src = { var: 'VAR_RESULT', name: 'setval' }; continue; }
 			if (!conv.length && cmd === 'loadmenu') { menu = menuItems(asm, a[0], g); continue; }
-			if (!conv.length && cmd === 'changeblock' && inCallback(j.name, label)) {
+			const scriptTiles = SCRIPT_TILES_IN.includes(`${stem}:${label}`);
+			// warpcheck: take the warp under the player (the puzzle's fall into the hole)
+			if (!conv.length && cmd === 'warpcheck' && scriptTiles) { add({ op: 'warpcheck' }); n++; tally('warpcheck'); continue; }
+			// the player's-room poster sign (overworld/decorations.js); the doll and
+			// console descriptions stay dropped — their objects never show
+			if (!conv.length && cmd === 'describedecoration' && a[0] === 'DECODESC_POSTER' && `${stem}:${label}` === 'PlayersHouse2F:PlayersHousePosterScript.Script') {
+				add({ op: 'special', name: 'DescribeDecoration', which: a[0] }); add({ op: 'end' }); n++; tally('describedecoration'); continue;
+			}
+			if (!conv.length && cmd === 'changeblock' && (inCallback(j.name, label) || scriptTiles)) {
 				const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
 				const cells = x != null && y != null && Number.isFinite(block) ? blockCells(j.name, j._crystal_tileset, block) : null;
 				// changeblock x, y addresses the BLOCK containing that 16px cell

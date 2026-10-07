@@ -2,6 +2,7 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 // The menus' STATE objects and key handlers still live in main.js; this is the drawing + tap layer.
 import { choiceMenu } from './choice.js';
+import { crystalSlots } from './ow_crystalslots.js';
 import { phoneMenu, phoneMenuRows } from './phone.js';
 import { badgeGhost, badgeSprite } from './badgeart.js';
 import * as Badges from './badges.js';
@@ -1241,6 +1242,7 @@ export function summaryMovePick(i) {
 export function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
 	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
+	if (kind === 'slkey') { pressKey(a); return; }   // the Crystal slot machine's A / B / cursor pads
 	if (kind === 'party') { if (!partyMenu.action) { partyMenu.idx = +a; pressKey('z'); } return; }
 	if (kind === 'pact') { if (partyMenu.action) { partyMenu.action.idx = +a; pressKey('z'); } return; }
 	if (kind === 'take') { partyTakeItem(+a); return; }
@@ -1320,5 +1322,5 @@ export function menuTap(id) {
 		return;
 	}
 }
-export const anyMenuOpen = () => choiceMenu.open || phoneMenu.open || partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
+export const anyMenuOpen = () => choiceMenu.open || phoneMenu.open || partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open || crystalSlots.open;
 

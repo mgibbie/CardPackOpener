@@ -135,6 +135,7 @@ export function cutsceneCtx(talker, scriptLabel) {
 		},
 		healParty: () => healParty(S.party),
 		warp: (mapId, warpId, x, y) => warpTo(mapId, warpId, x, y),
+		warpCheck: () => { const w = world.warpAt(player.tx, player.ty); if (!w) return false; warpTo(w.dest_map, w.dest_warp_id); return true; },
 		// a ferry arrival lands on a tile, not a door (see sail_fix.js)
 		warpXy: (mapId, x, y) => flyTo(mapId, x, y),
 		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },

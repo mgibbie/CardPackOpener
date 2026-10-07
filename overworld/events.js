@@ -550,6 +550,9 @@ export class Cutscene {
 				// Land on a COORDINATE rather than a warp index. Dewford's five warps
 				// are all building doors, so a ferry arrival has nowhere to point; this
 				// bridges to flyTo, which already nudges to the nearest standable tile.
+				// Crystal `warpcheck`: take the warp under the player, if any (the Ruins of
+				// Alph puzzle's floor opening drops you into the inner chamber)
+				case 'warpcheck': if (ctx.warpCheck?.()) return this._finish(); break;
 				case 'warpxy': {
 					ctx.warpXy?.(op.map, op.x, op.y);
 					return this._finish();

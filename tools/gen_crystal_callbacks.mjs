@@ -38,7 +38,6 @@ const DENY = {
 	IcePathB1F: 'CMDQUEUE stone tables (boulders into holes) are not implemented',
 	BlackthornGym2F: 'CMDQUEUE stone tables (boulders into holes) are not implemented',
 	IlexForest: 'reads wFarfetchdPosition, which nothing in the port sets (the Farfetch\'d puzzle)',
-	PlayersHouse2F: 'decoration specials (ToggleDecorationsVisibility / ToggleMaptileDecorations) are not implemented',
 	TradeCenter: 'link play', Colosseum: 'link play', TimeCapsule: 'link play',
 	TinTowerRoof: 'HO-OH is encountered through the native legendary system (ow_legendaries.js)',
 	WhirlIslandLugiaChamber: 'LUGIA is encountered through the native legendary system (ow_legendaries.js)',
@@ -54,9 +53,8 @@ const ORDER = { NEWMAP: 0, TILES: 1, OBJECTS: 2, CMDQUEUE: 3, SPRITES: 4 };
 // Ruins of Alph puzzles, the Radio Tower card-key slot, ...). A sign whose script
 // we don't have still reads its sign text, as BGEVENT_READ signs always have.
 // Denied (with why): signs that lead to a mechanism the port doesn't run.
-const SIGN_DENY = {
-	PlayersHousePosterScript: 'describedecoration (the decoration system) is not implemented; PlayersHouse2F\'s callback is denied for the same reason',
-};
+// (the player's-room poster came back with overworld/decorations.js)
+const SIGN_DENY = {};
 const signsByName = {};   // crystal map name -> [{x, y, script, facing?, flag?, flagSet?}]
 const signsDenied = [];
 

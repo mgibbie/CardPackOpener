@@ -55,6 +55,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_buena_v1', 'magepunk_lottery_v1', 'magepunk_tid',
 	// your secret base (the spot + decorations; the server holds a copy too)
 	'magepunk_base_v1',
+	// the Crystal player's-room decorations (bed / poster / ... slots)
+	'magepunk_crystal_deco_v1',
 	// Trainer Hill best time; the one-shot venue events (generator, fossils,
 	// ruins inscriptions, soot sack + ash); a playing glass flute
 	'magepunk_trainerhill_v1', 'magepunk_events_v1', 'magepunk_flute_v1',

@@ -30,6 +30,7 @@ import { playerRegion } from './ow_progression.js';
 import { checkLegendaryTrigger } from './ow_follower.js';
 import { openTownMap } from './ow_music.js';
 import { partyMenu } from './ow_menustate.js';
+import { ruinsFloorClosed } from './unown_puzzle.js';
 import { afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo } from './ow_transitions.js';
 
 
@@ -373,7 +374,9 @@ player.onArrive = () => {
 	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; },
 		(S.party || []).some(m => m && m.curHP > 0 && (m.ability === 'flamebody' || m.ability === 'magmaarmor')) ? 2 : 1);
 	// warp tile?
-	const w = world.warpAt(player.tx, player.ty);
+	let w = world.warpAt(player.tx, player.ty);
+	// a Ruins of Alph chamber's floor is solid until its UNOWN PUZZLE is solved
+	if (ruinsFloorClosed(world.current.name, w)) w = null;
 	if (!w) savePos();
 	if (w) {
 		const dest = parseInt(w.dest_warp_id, 10);
