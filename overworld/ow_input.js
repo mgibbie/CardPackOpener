@@ -14,6 +14,7 @@ import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopM
 import { hillGuardAt, hillPrizeTalk, hillReceptionTalk, startHillBattle } from './ow_minigames.js';
 import { S } from './ow_state.js';
 import { runScriptLabel } from './ow_story.js';
+import { dollCounterTalk } from './dept_dolls.js';
 import { bugOfficerTalk, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
 import { contestReception } from './contest_ui.js';
 import { healParty, saveParty } from './party.js';
@@ -266,6 +267,7 @@ export function interact() {
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
 	if (svc === 'bikeshop') { bikeShopTalk(); return; }
+	if (svc === 'dollcounter') { dollCounterTalk(); return; }
 	if (svc === 'glassblower') { glassBlowerTalk(); return; }
 	if (svc === 'museumpaint') { museumPaintTalk(fx, fy); return; }
 	if (svc === 'museumcurator') { museumCuratorTalk(); return; }

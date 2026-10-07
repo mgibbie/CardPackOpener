@@ -144,6 +144,11 @@ const BIKE_SHOPS = {
 
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	// the DOLL COUNTER (dept_dolls.js): a clerk at 4F's empty second counter spot
+	// sells the dolls MOM buys in Crystal (the port has no Bank of Mom)
+	if (mapId === 'MAP_GOLDENROD_DEPT_STORE_4F') {
+		return { sprites: [{ img: 'clerk', tx: 13, ty: 6 }], zones: [{ kind: 'dollcounter', tiles: [[13, 6]] }], solid: [[13, 6]] };
+	}
 	if (BIKE_SHOPS[mapId]) {
 		return { sprites: [], zones: [{ kind: 'bikeshop', tiles: BIKE_SHOPS[mapId] }], solid: [] };
 	}
