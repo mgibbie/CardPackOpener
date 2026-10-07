@@ -312,6 +312,45 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		console.log(`switch room: ${doors.length} doors -> ${doors.length * 2} door labels + the callback`);
 	}
 }
+// Event scripts behind a GLOBAL label (`CardKeySlotScript::`, `BasementDoorScript::`
+// — exported for other banks) were never transpiled: the converter only took
+// `Label:` scripts, so the Radio Tower's CARD KEY slot and the Goldenrod
+// Underground's BASEMENT KEY door read their sign and then ran nothing, and the
+// Radio Tower takeover could not be finished (2026-10-07). A label a map's event
+// points at that our scripts lack entirely is rebuilt here from the trace (its
+// converted ops, plus its dropped changeblocks), with its .sublabels.
+let globalsRestored = 0;
+for (const { stem, name } of STEMS) {
+	const asmFile = path.join(CR, 'maps', name + '.asm');
+	if (!fs.existsSync(asmFile) || !trace[name]) continue;
+	const asm = fs.readFileSync(asmFile, 'utf8');
+	const sf = path.join(D, 'scripts', stem + '.json');
+	const ours = fs.existsSync(sf) ? JSON.parse(fs.readFileSync(sf, 'utf8')) : {};
+	const refs = new Set();
+	for (const m of asm.matchAll(/^\s*(?:bg_event\s+[^,\n]+,[^,\n]+,\s*\w+|coord_event\s+[^,\n]+,[^,\n]+,\s*\w+),\s*(\w+)/gm)) refs.add(m[1]);
+	for (const m of asm.matchAll(/^\s*object_event\s+([^\n;]+)/gm)) { const s = m[1].split(',').map(v => v.trim())[11]; if (s) refs.add(s); }
+	const ts = JSON.parse(fs.readFileSync(path.join(D, 'maps', stem + '_map.json'), 'utf8'))._crystal_tileset;
+	for (const L of refs) {
+		if (!new RegExp('^' + L + '::', 'm').test(asm) || L in ours || patches[stem]?.[L] || !trace[name][L]) continue;
+		for (const [label, rows] of Object.entries(trace[name])) {
+			if (label !== L && !label.startsWith(L + '.')) continue;
+			const ops = [];
+			for (const [cmd, a, conv] of rows) {
+				if (!conv.length && cmd === 'changeblock') {
+					const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
+					const cells = x != null && y != null && Number.isFinite(block) ? blockCells(name, ts, block) : null;
+					if (cells) ops.push({ op: 'changeblock', x: Math.floor(x / 2) * 2, y: Math.floor(y / 2) * 2, cells });
+					else changeblockSkipped.push(`${stem}:${label} changeblock ${a.join(',')}`);
+					continue;
+				}
+				ops.push(...conv);
+			}
+			(patches[stem] = patches[stem] || {})[label] = ops;
+			globalsRestored++;
+		}
+	}
+}
+console.log(`global-label event scripts restored: ${globalsRestored} label(s)`);
 // ALL OR NOTHING per callback: a TILES callback whose changeblocks are only partly
 // restorable could close an entrance without opening the exit (the Elite Four
 // rooms: the entrance-closing block exists in our layouts, the exit-opening one
