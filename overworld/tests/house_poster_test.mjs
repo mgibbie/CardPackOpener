@@ -78,7 +78,8 @@ try {
 		const g = window.__ow.world.current.layout.map;
 		return { flag: E.getFlag('EVENT_PLAYERS_ROOM_POSTER'), poster: [g[0][6], g[0][7], g[1][6], g[1][7]], bed: [g[4][0], g[4][1], g[5][0], g[5][1]] };
 	});
-	const deco = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld', 'crystal_decorations.json'), 'utf8'));
+	let deco = { decos: {} };
+	try { deco = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld', 'crystal_decorations.json'), 'utf8')); } catch (e) { console.log('(no overworld/crystal_decorations.json)'); }
 	A(room.flag === true, '1. entering the room sets EVENT_PLAYERS_ROOM_POSTER (a poster hangs)');
 	A(room.poster.join() === (deco.decos.DECO_TOWN_MAP?.cells || []).join(), '1. the TOWN MAP poster block is on the wall at (6,0)', JSON.stringify(room.poster));
 	A(room.bed.join() === (deco.decos.DECO_FEATHERY_BED?.cells || []).join(), '1. ...and the FEATHERY BED at (0,4)', JSON.stringify(room.bed));
