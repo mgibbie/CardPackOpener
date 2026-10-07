@@ -523,6 +523,9 @@ export class Cutscene {
 					break;
 				}
 				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
+				// FRLG/Emerald `getpartysize` (restored by tools/gen_multichoice.mjs): the
+				// gift scripts compare it against PARTY_SIZE to refuse a full party
+				case 'getpartysize': setVar('VAR_RESULT', ctx.partyCount?.() ?? 0); break;
 				// Crystal's Game Corner coins (restored by tools/gen_crystal_scriptvar.mjs):
 				// checkcoins answers HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkmoney
 				case 'checkcoins': { const have = ctx.coins?.() ?? 0, need = +op.amount || 0; setVar('VAR_RESULT', have > need ? 0 : have === need ? 1 : 2); break; }
@@ -679,6 +682,7 @@ export class Cutscene {
 		const actor = this._actor(op.who);
 		if (!actor) return null;
 		let steps = op.steps && op.steps.flatMap(rawStep);
+		if (!steps && COMMON_MOVEMENTS[op.movement]) steps = COMMON_MOVEMENTS[op.movement];
 		if (!steps && op.path) steps = op.path.map(d => ({ dir: d, mode: 'walk' }));
 		if (!steps && op.dir && op.count) steps = Array(op.count).fill({ dir: op.dir, mode: 'walk' });
 		if (!steps || !steps.length) return null;
@@ -753,6 +757,21 @@ export class Cutscene {
 // macro } — no `dir`. Those reached the walk code and set the actor's facing to
 // undefined (see update()). Translate the ones that mean a direction; the rest
 // (affine / anim / ground-effect toggles, scripted walk_to_* routes) do nothing.
+
+// The decomps' shared Common_Movement_* (data/scripts/movement.inc) arrive by NAME
+// only — the transpile inlines a map's own movements, not these — so a script that
+// used one moved nothing. The walks, turns and delays (the emotes and face_player
+// stay as they were). FireRed's Elite Four walk-in is Common_Movement_WalkUp5
+// through the room's closed entry (door audit, 2026-10-07).
+const walkN = (dir, n) => Array.from({ length: n }, () => ({ dir, mode: 'walk' }));
+const COMMON_MOVEMENTS = {
+	Common_Movement_WalkUp: walkN('up', 1), Common_Movement_WalkUp2: walkN('up', 2),
+	Common_Movement_WalkUp4: walkN('up', 4), Common_Movement_WalkUp5: walkN('up', 5),
+	Common_Movement_Delay32: [{ mode: 'delay', frames: 32 }], Common_Movement_Delay48: [{ mode: 'delay', frames: 48 }],
+	Common_Movement_FaceRight: [{ mode: 'face', dir: 'right' }], Common_Movement_FaceDown: [{ mode: 'face', dir: 'down' }],
+	Common_Movement_WalkInPlaceFasterLeft: [{ mode: 'face', dir: 'left' }], Common_Movement_WalkInPlaceFasterUp: [{ mode: 'face', dir: 'up' }],
+	Common_Movement_WalkInPlaceFasterRight: [{ mode: 'face', dir: 'right' }], Common_Movement_WalkInPlaceFasterDown: [{ mode: 'face', dir: 'down' }],
+};
 
 function rawStep(st) {
 	if (!st || st.mode !== 'raw') return [st];

@@ -61,6 +61,12 @@ const ALLOW = [
 	/^Aide_EventScript_/,                    // Prof. Oak's aides' replies (not enough caught / no room / declined)
 	/^Common_EventScript_PlayerHandedOverTheItem$/,   // "handed over the LETTER / METEORITE" (Steven, Cozmo)
 	/^RusturfTunnel_EventScript_SetRusturfTunnelOpen$/, // Rusturf Tunnel opens after Wanda's boyfriend digs through
+	// FireRed's Elite Four rooms: the walk-in past the closed entry (Common_Movement_WalkUp5
+	// — the entry row is solid; a scripted walk ignores it), the entry closing behind you
+	// and each room's door opening after the win. Missing, you arrived at (6,12) facing a
+	// wall in Lorelei's room and could only leave (door audit, 2026-10-07). Emerald's E4
+	// (PokemonLeague_EliteFour_*) stays native.
+	/^PokemonLeague_EventScript_(EnterRoom|CloseEntry|SetDoorOpen|OpenDoor|SetDoorOpenLance|OpenDoorLance)$/,
 	// FireRed's move tutors reached by `goto` (Cinnabar Metronome, ...): the map
 	// labels jump into pokefirered's shared move_tutors.inc (Instinct, 2026-10-05).
 	// They teach through special ChooseMonForMoveTutor (ow_story.js).

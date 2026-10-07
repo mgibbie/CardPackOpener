@@ -103,12 +103,105 @@ try {
 		}
 	}
 } catch (e) {}
+// The same for FireRed / Emerald: a `setmetatile x, y, TILE, FALSE` in any script
+// the map can run (its own labels, and the shared / restored labels they call)
+// opens that cell — the Pokémon Mansion's switch walls, the League's doors,
+// the Magma / Aqua hideout gates
+// the decomps spell it TRUE/FALSE or 1/0 — "FALSE" is a truthy string (engine.js scriptBool)
+const scriptBool = v => !(v == null || v === false || v === 0 || /^(false|0)$/i.test(String(v).trim()));
+const DYNAMIC = new Map(), FORCED = new Map();
+// events.js COMMON_MOVEMENTS: the shared walks a script names without steps
+const COMMON_WALKS = { Common_Movement_WalkUp: ['up'], Common_Movement_WalkUp2: ['up', 'up'], Common_Movement_WalkUp4: ['up', 'up', 'up', 'up'], Common_Movement_WalkUp5: ['up', 'up', 'up', 'up', 'up'] };
+for (const [k, v] of Object.entries(COMMON_WALKS)) COMMON_WALKS[k] = v.map(dir => ({ dir, mode: 'walk' }));
+const stemToId = new Map();
+const idOfStem = stem => {
+	if (!stemToId.has(stem)) { let id = null; try { id = JSON.parse(fs.readFileSync(path.join(DATA, 'maps', stem + '_map.json'), 'utf8')).id; } catch (e) {} stemToId.set(stem, id); }
+	return stemToId.get(stem);
+};
+try {
+	const shared = {};
+	const addShared = o => { for (const [k, v] of Object.entries(o || {})) if (Array.isArray(v)) shared[k] = v; };
+	try { addShared(JSON.parse(fs.readFileSync(path.join(DATA, 'shared_scripts.json'), 'utf8')).scripts); } catch (e) {}
+	try { addShared(JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/missing_labels_data.json'), 'utf8')).scripts); } catch (e) {}
+	let mc = {};
+	try { mc = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/multichoice_data.json'), 'utf8')); addShared(mc.shared); } catch (e) {}
+	const strings = (v, out) => { if (typeof v === 'string') out.push(v); else if (v && typeof v === 'object') for (const x of Object.values(v)) strings(x, out); return out; };
+	for (const f of fs.readdirSync(path.join(DATA, 'scripts'))) {
+		if (!f.endsWith('.json')) continue;
+		const stem = f.slice(0, -5), id = idOfStem(stem);
+		if (!id) continue;
+		let own = {};
+		try { own = JSON.parse(fs.readFileSync(path.join(DATA, 'scripts', f), 'utf8')); } catch (e) { continue; }
+		const lists = Object.values(own).filter(Array.isArray).concat(Object.values(mc.patches?.[stem] || {}).filter(Array.isArray));
+		const done = new Set();
+		for (let i = 0; i < lists.length; i++) {
+			for (const op of lists[i]) {
+				if (op && op.op === 'setmetatile' && !scriptBool(op.impassable) && Number.isInteger(op.x)) OPENED.add(id + ':' + op.x + ',' + op.y);
+				// an elevator's floors: the cab's MAP_DYNAMIC door goes wherever its
+				// setdynamicwarp pointed
+				if (op && op.op === 'setdynamicwarp' && /^MAP_/.test(op.map)) { if (!DYNAMIC.has(id)) DYNAMIC.set(id, []); DYNAMIC.get(id).push(op); }
+			}
+			for (const s of strings(lists[i], [])) if (shared[s] && !done.has(s)) { done.add(s); lists.push(shared[s]); }
+		}
+		// a walk-in the map's ON_FRAME / ON_WARP scene forces on arrival (FireRed's
+		// Elite Four: Common_Movement_WalkUp5 through the room's solid entry row) —
+		// a scripted walk has no collision
+		const label = k => own[k] || mc.patches?.[stem]?.[k] || shared[k];
+		const meta = own.__map__ || {};
+		for (const e of [...(meta.onFrame || []), ...(meta.onWarp || [])]) {
+			const steps = [], seen = new Set();
+			const walk = (k, depth) => {
+				const ops = label(k);
+				if (!ops || seen.has(k) || depth > 6) return;
+				seen.add(k);
+				for (const op of ops) {
+					if (op.op === 'move' && /PLAYER/i.test(String(op.who))) {
+						const st = op.steps || COMMON_WALKS[op.movement] || [];
+						for (const x of st) if (x.mode !== 'face' && ['up', 'down', 'left', 'right'].includes(x.dir)) steps.push(x.dir);
+					}
+					if ((op.op === 'call' || op.op === 'goto' || op.op === 'branch') && op.label) walk(op.label, depth + 1);
+				}
+			};
+			walk(e.label, 0);
+			if (steps.length) { if (!FORCED.has(id)) FORCED.set(id, []); FORCED.get(id).push(steps); }
+		}
+	}
+} catch (e) {}
+// a map whose scripts switch it to another layout (setmaplayoutindex: Sky Pillar's
+// entrance, Shoal Cave's tides, Seafoam's currents — overworld/maplayout_data.json):
+// a cell open in ANY of its layouts is reachable at some point
+const ALT = new Map();
+try {
+	const patches = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/maplayout_data.json'), 'utf8')).patches || {};
+	for (const [stem, labels] of Object.entries(patches)) {
+		const id = idOfStem(stem);
+		if (!id) continue;
+		for (const ops of Object.values(labels)) for (const op of ops) {
+			if (op.op !== 'setmaplayout' || !op.layout) continue;
+			let lay = null;
+			try { lay = JSON.parse(fs.readFileSync(path.join(DATA, 'layouts', op.layout + '.json'), 'utf8')); } catch (e) {}
+			if (lay) { if (!ALT.has(id)) ALT.set(id, []); ALT.get(id).push(lay); }
+		}
+	}
+} catch (e) {}
+// the floor below a cracked floor (overworld/holewarp_data.js, tools/gen_holewarps.mjs)
+let HOLES = {};
+try { HOLES = (await import(new URL('../overworld/holewarp_data.js', import.meta.url).href)).HOLE_WARPS; } catch (e) {}
+// scripted rides: the two ends are joined by a scene, not a warp. Both directions.
+const RIDES = {};
+for (const [a, b, why] of [
+	['MAP_ROUTE112_CABLE_CAR_STATION', 'MAP_MT_CHIMNEY_CABLE_CAR_STATION', 'the Cable Car (ow_story.js cable car scenes)'],
+]) { (RIDES[a] ||= []).push(b); (RIDES[b] ||= []).push(a); void why; }
 export function walkable(m, x, y) {
-	if (x < 0 || y < 0 || x >= m.layout.width || y >= m.layout.height) return false;
+	// a door is always enterable (engine.js isPassable) — including the exits
+	// upstream puts one row past the edge (FRLG rest houses, Slateport harbor)
 	if (m.warps.some(w => w.x === x && w.y === y)) return true;
+	if (x < 0 || y < 0 || x >= m.layout.width || y >= m.layout.height) return false;
 	if (CUT.has(m.id + ':' + x + ',' + y) || OPENED.has(m.id + ':' + x + ',' + y)) return true;
 	const v = m.layout.map[y]?.[x];
-	return v != null && (v & COLLISION_MASK) === 0; // 0 is a real cell (metatile 0)
+	if (v != null && (v & COLLISION_MASK) === 0) return true; // 0 is a real cell (metatile 0)
+	for (const L of ALT.get(m.id) || []) { const a = L.map?.[y]?.[x]; if (a != null && (a & COLLISION_MASK) === 0) return true; }
+	return false;
 }
 // where a step off the edge of m at (x,y) lands
 function across(m, x, y) {
@@ -148,6 +241,34 @@ export function flood(startId, sx, sy, { maps: limit } = {}) {
 			const dw = d && !isNaN(i) ? d.warps[i] : null;
 			if (dw) push(d, dw.x, dw.y);
 		}
+		// an elevator cab's MAP_DYNAMIC door: every floor its script can pick
+		if (w && w.dest_map === 'MAP_DYNAMIC') for (const op of DYNAMIC.get(m.id) || []) {
+			const d = loadMap(op.map);
+			if (!d) continue;
+			const i = parseInt(op.warp, 10);
+			const dw = !isNaN(i) && i >= 0 && i < 255 ? d.warps[i] : null;
+			if (dw) push(d, dw.x, dw.y);
+			else if (Number.isInteger(op.x) && op.x >= 0 && op.x < d.layout.width) push(d, op.x, op.y);
+		}
+		// arriving on a door whose map forces a walk-in (ON_FRAME / ON_WARP scene)
+		if (w) for (const steps of FORCED.get(m.id) || []) {
+			let px = x, py = y;
+			for (const dir of steps) {
+				const [ddx, ddy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+				px += ddx; py += ddy;
+				if (px < 0 || py < 0 || px >= m.layout.width || py >= m.layout.height) break;
+				// a scripted walk never rides a warp it passes over
+				if (!m.warps.some(q => q.x === px && q.y === py)) push(m, px, py);
+			}
+		}
+		// a cracked floor / hole drops you to the floor below at the same x, y (holes.js)
+		const below = HOLES[m.name];
+		if (below) {
+			const b = behaviorAt(m, x, y);
+			if (b === 0xD2 || b === 0x66) { const d = loadMap(below); if (d && walkable(d, x, y)) push(d, x, y); }
+		}
+		// a scripted ride (no warp joins the two ends)
+		for (const r of RIDES[m.id] || []) { const d = loadMap(r); if (d && d.warps[0]) push(d, d.warps[0].x, d.warps[0].y); }
 		// a ledge hop (engine.js tryMove): standing on a JUMP tile, or stepping onto
 		// one, carries you two tiles that way when the landing is open
 		const hop = MB_JUMP[behaviorAt(m, x, y)];
@@ -161,6 +282,8 @@ export function flood(startId, sx, sy, { maps: limit } = {}) {
 			const nx = x + dx, ny = y + dy;
 			if (nx >= 0 && ny >= 0 && nx < m.layout.width && ny < m.layout.height) {
 				if (walkable(m, nx, ny)) push(m, nx, ny);
+			} else if (m.warps.some(w => w.x === nx && w.y === ny)) {
+				push(m, nx, ny); // an edge exit past the map's last row
 			} else {
 				const a = across(m, nx, ny);
 				if (a && walkable(a[0], a[1], a[2])) push(a[0], a[1], a[2]);

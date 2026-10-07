@@ -67,7 +67,7 @@ const shared = JSON.parse(read(path.join(DATA, 'shared_scripts.json')));
 const sharedScripts = shared.scripts || shared;
 const patches = {}, sharedPatches = {};
 let found = 0, applied = 0;
-const restored = { multichoice: 0, checkmoney: 0, removemoney: 0, setdynamicwarp: 0, buffer: 0 };
+const restored = { multichoice: 0, checkmoney: 0, removemoney: 0, setdynamicwarp: 0, buffer: 0, getpartysize: 0, giveegg: 0 };
 const unapplied = [];
 
 // ---- the ALIGNER ----
@@ -79,8 +79,10 @@ const unapplied = [];
 // the STR_VAR fillers: `bufferspeciesname STR_VAR_1, VAR_TEMP_1` before "received
 // the {STR_VAR_1}" (2026-10-02: the Dojo gift printed a blank name)
 const BUFFER_KINDS = { bufferspeciesname: 'species', bufferitemname: 'item', bufferitemnameplural: 'itemplural', buffernumberstring: 'number', buffermovename: 'move' };
-const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp', ...Object.keys(BUFFER_KINDS)]);
-const RESTORED_OPS = new Set(['multichoice', 'checkmoney', 'removemoney', 'setdynamicwarp', 'buffer']);
+// `getpartysize` + `giveegg`: the Lavaridge egg woman (2026-10-07) checked a
+// stale VAR_RESULT against PARTY_SIZE and set her flag without handing over the egg
+const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp', 'getpartysize', 'giveegg', ...Object.keys(BUFFER_KINDS)]);
+const RESTORED_OPS = new Set(['multichoice', 'checkmoney', 'removemoney', 'setdynamicwarp', 'buffer', 'getpartysize', 'giveegg']);
 function keptAs(cmd, a) {
 	switch (cmd) {
 		case 'msgbox': case 'message': return o => (o.op === 'msg' || o.op === 'say') && o.text === a[0];
@@ -113,6 +115,8 @@ function restoredOp(cmd, a, lists, lastText) {
 	}
 	if (BUFFER_KINDS[cmd]) return { op: { op: 'buffer', kind: BUFFER_KINDS[cmd], dst: a[0], src: a[1] } };
 	if (cmd === 'checkmoney' || cmd === 'removemoney') return { op: { op: cmd, amount: +a[0] || 0 } };
+	if (cmd === 'getpartysize') return { op: { op: 'getpartysize' } };
+	if (cmd === 'giveegg') return { op: { op: 'giveegg', species: a[0] } };
 	if (cmd === 'setdynamicwarp') {
 		const op = { op: 'setdynamicwarp', map: a[0] };
 		// formatwarp: (map), (map, warpId), (map, x, y) or (map, warpId, x, y). FRLG's
