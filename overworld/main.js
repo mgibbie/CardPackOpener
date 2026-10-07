@@ -460,7 +460,12 @@ trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.curre
 		&& Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
 evolution.onDone = () => saveParty(S.party);
-evolution.onEvolved = (from, to) => Journal.add(`${from} evolved into ${to}!`);
+// the evolved species joins the POKeDEX now — it used to wait for the next
+// boot's party seeding (a Rare Candy evolution read as uncaught until reload)
+evolution.onEvolved = (from, to, mon) => {
+	Journal.add(`${from} evolved into ${to}!`);
+	if (mon?.speciesId) { Dex.markSeen(mon.speciesId); Dex.markCaught(mon.speciesId); dexMilestoneCheck(); }
+};
 S.loading = true;
 // safety-net watchdogs (see tick): a map load that hangs/throws must never strand
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
