@@ -40,6 +40,7 @@ import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
+import { startCrystalSlots } from './ow_crystalslots.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
@@ -890,6 +891,9 @@ export function runSpecial(name, store, op) {
 		case 'GiveOddEgg': giveOddEgg(); return;
 		case 'GiveShuckle': return set(giveShuckle());
 		case 'ReturnShuckie': return set(returnShuckie());
+		// Crystal's slot machine (Goldenrod + Celadon Game Corners): CheckCoinsAndCoinCase,
+		// then the minigame (ow_crystalslots.js); the sign script resumes when you quit
+		case 'SlotMachine': return startCrystalSlots();
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		// the Mt. Chimney CABLE CAR (pokeemerald field_specials.c CableCarWarp +
 		// cable_car.c CableCar). Neither had a handler, so "Yes" walked you aboard

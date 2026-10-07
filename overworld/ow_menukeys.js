@@ -19,6 +19,7 @@ import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { blendKey, blendMenu, contestKey, contestMenu, slideKey, slideMenu, unownDex, unownDexKey } from './ow_venues.js';
 import { slotsKey, slotsMenu } from './ow_minigames.js';
+import { crystalSlots, crystalSlotsKey } from './ow_crystalslots.js';
 import { beginNewGame, finishStarterPick } from './ow_story.js';
 import { decoKey, decoMenu, radioKey, radioMenu, socialKey, socialMenu } from './ow_features.js';
 import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_fieldmoves.js';
@@ -710,6 +711,8 @@ export function pressKey(k) {
 	// a restored multichoice is open under its paused script too (choice.js): it
 	// must take keys before the cutscene gate, or the question can never be answered
 	if (choiceMenu.open) { choiceKey(k); return; }
+	// Crystal's slot machine is a `special SlotMachine` under its paused sign script, too
+	if (crystalSlots.open) { crystalSlotsKey(k); return; }
 	// a scripted battle (gym leader / rival / villain / any trainer engaged via
 	// their EventScript) runs UNDER its paused cutscene — the trainerbattle op
 	// holds the cutscene's `cur` (so `blocking` stays true) until the fight
@@ -830,7 +833,7 @@ export function pressKey(k) {
 export const canvasMenuOpen = () => choiceMenu.open || phoneMenu.open || starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open || crystalSlots.open;
 export const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 

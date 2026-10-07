@@ -226,6 +226,7 @@ import { badgeSprite, badgeGhost } from './badgeart.js';
 import { Contest, CATS, RANKS } from './contest.js';
 import * as Slide from './slidepuzzle.js';
 import * as Slots from './slots.js';
+import { crystalSlots, stepCrystalSlots } from './ow_crystalslots.js';
 import * as Savefile from './savefile.js';
 import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
@@ -873,7 +874,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		get socialMenu() { return socialMenu; }, socialKey, drawSocial, openTradeOffer, openTradeInbox, sendTradeOffer, acceptTrade, declineTrade, claimTradeDeliveries,
 		friendsKey, drawFriendsMenu, refreshFriendBadges, friendAction,
 		KEY_ACTIONS, get keyBinds() { return S.keyBinds; }, translateKey, assignKeyBind, optionsKey,
-		Slots, get slotsMenu() { return slotsMenu; }, slotsKey, drawSlots,
+		Slots, get slotsMenu() { return slotsMenu; }, slotsKey, drawSlots, crystalSlots, stepCrystalSlots,
 		get hillRun() { return S.hillRun; }, set hillRun(v) { S.hillRun = v; }, hillReceptionTalk, hillPrizeTalk, hillWarp, hillPrepFloor, hillGuardAt, startHillBattle, hillGuardsLeft, HILL_FLOORS,
 		miscEvents, museumBackfill, museumPaintTalk, museumCuratorTalk, drawMuseum, ruinsWordTalk, fossilPick, fossilUnderpassTalk, fossilManiacTalk, generatorTalk, MUSEUM_PAINTINGS, FOSSIL_MONS,
 		useGadget, HM_FIELD, dexList, dexKey, HEADBUTT_MAPS, HEADBUTT_SETS,
