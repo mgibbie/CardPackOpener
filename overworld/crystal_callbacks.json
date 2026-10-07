@@ -319,6 +319,16 @@
     "OlivineCityFlypointCallback"
    ]
   ],
+  "PlayersHouse2F": [
+   [
+    "NEWMAP",
+    "PlayersHouse2FInitializeRoomCallback"
+   ],
+   [
+    "TILES",
+    "PlayersHouse2FSetUpTileDecorationsCallback"
+   ]
+  ],
   "RadioTower3F": [
    [
     "TILES",
@@ -481,8 +491,6 @@
   "DayCare:DayCareEggCheckCallback": "the Day-Care Man is run by the native daycare (daycare.js)",
   "IcePathB1F:IcePathB1FSetUpStoneTableCallback": "CMDQUEUE stone tables (boulders into holes) are not implemented",
   "IlexForest:IlexForestFarfetchdCallback": "reads wFarfetchdPosition, which nothing in the port sets (the Farfetch'd puzzle)",
-  "PlayersHouse2F:PlayersHouse2FInitializeRoomCallback": "decoration specials (ToggleDecorationsVisibility / ToggleMaptileDecorations) are not implemented",
-  "PlayersHouse2F:PlayersHouse2FSetUpTileDecorationsCallback": "decoration specials (ToggleDecorationsVisibility / ToggleMaptileDecorations) are not implemented",
   "Route34:Route34EggCheckCallback": "the Day-Care Man is run by the native daycare (daycare.js)",
   "Route35NationalParkGate:Route35NationalParkGateCheckIfContestRunningCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
   "Route35NationalParkGate:Route35NationalParkGateCheckIfContestAvailableCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
@@ -779,6 +787,14 @@
     "y": 1,
     "script": "PlayersHousePCScript",
     "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 0,
+    "script": "PlayersHousePosterScript.Script",
+    "flag": "EVENT_PLAYERS_ROOM_POSTER",
+    "flagSet": true
    }
   ],
   "PokecomCenterAdminOfficeMobile": [

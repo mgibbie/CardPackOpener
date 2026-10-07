@@ -33,7 +33,9 @@ import { whiteOut } from './ow_places.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
-import { halfParty, openHalfParty } from './ow_music.js';
+import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
+import { townMap } from './ow_menustate.js';
+import { describeDecoration, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
 import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
@@ -895,6 +897,11 @@ export function runSpecial(name, store, op) {
 		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
 		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
 		case 'UnownPuzzle': return unownPuzzleSpecial(() => cutscene.resume());
+		// the player's-room decorations (decorations.js): PlayersHouse2F's two
+		// callbacks and its poster sign (the TOWN MAP poster opens the map, to look at)
+		case 'ToggleDecorationsVisibility': toggleDecorationsVisibility(); return;
+		case 'ToggleMaptileDecorations': toggleMaptileDecorations(); return;
+		case 'DescribeDecoration': describeDecoration(op && op.which, () => { openTownMap(); townMap.viewOnly = true; }); return;
 		// the Mt. Chimney CABLE CAR (pokeemerald field_specials.c CableCarWarp +
 		// cable_car.c CableCar). Neither had a handler, so "Yes" walked you aboard
 		// and the ride never left (playtest, 2026-09-30 / 10-01).

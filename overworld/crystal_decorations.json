@@ -1,0 +1,150 @@
+{
+ "generated": "tools/gen_crystal_decorations.mjs",
+ "room": "PlayersHouse2F",
+ "init": {
+  "bed": "DECO_FEATHERY_BED",
+  "poster": "DECO_TOWN_MAP"
+ },
+ "coords": {
+  "bed": [
+   0,
+   4
+  ],
+  "plant": [
+   7,
+   4
+  ],
+  "poster": [
+   6,
+   0
+  ]
+ },
+ "decos": {
+  "DECO_FEATHERY_BED": {
+   "slot": "bed",
+   "block": 27,
+   "flag": "EVENT_DECO_BED_1",
+   "cells": [
+    3105,
+    6,
+    3106,
+    6
+   ]
+  },
+  "DECO_PINK_BED": {
+   "slot": "bed",
+   "block": 28,
+   "flag": "EVENT_DECO_BED_2",
+   "cells": [
+    3107,
+    6,
+    3108,
+    6
+   ]
+  },
+  "DECO_POLKADOT_BED": {
+   "slot": "bed",
+   "block": 29,
+   "flag": "EVENT_DECO_BED_3",
+   "cells": [
+    3109,
+    6,
+    3110,
+    6
+   ]
+  },
+  "DECO_PIKACHU_BED": {
+   "slot": "bed",
+   "block": 30,
+   "flag": "EVENT_DECO_BED_4",
+   "cells": [
+    3111,
+    6,
+    3112,
+    6
+   ]
+  },
+  "DECO_MAGNAPLANT": {
+   "slot": "plant",
+   "block": 32,
+   "flag": "EVENT_DECO_PLANT_1",
+   "cells": [
+    6,
+    3114,
+    6,
+    43
+   ]
+  },
+  "DECO_TROPICPLANT": {
+   "slot": "plant",
+   "block": 33,
+   "flag": "EVENT_DECO_PLANT_2",
+   "cells": [
+    6,
+    3116,
+    6,
+    43
+   ]
+  },
+  "DECO_JUMBOPLANT": {
+   "slot": "plant",
+   "block": 34,
+   "flag": "EVENT_DECO_PLANT_3",
+   "cells": [
+    6,
+    3117,
+    6,
+    3118
+   ]
+  },
+  "DECO_TOWN_MAP": {
+   "slot": "poster",
+   "block": 31,
+   "flag": "EVENT_DECO_POSTER_1",
+   "text": "It's the TOWN MAP.",
+   "townMap": true,
+   "cells": [
+    3113,
+    5,
+    6,
+    6
+   ]
+  },
+  "DECO_PIKACHU_POSTER": {
+   "slot": "poster",
+   "block": 35,
+   "flag": "EVENT_DECO_POSTER_2",
+   "text": "It's a poster of a\ncute PIKACHU.",
+   "cells": [
+    3119,
+    5,
+    6,
+    6
+   ]
+  },
+  "DECO_CLEFAIRY_POSTER": {
+   "slot": "poster",
+   "block": 36,
+   "flag": "EVENT_DECO_POSTER_3",
+   "text": "It's a poster of a\ncute CLEFAIRY.",
+   "cells": [
+    3120,
+    5,
+    6,
+    6
+   ]
+  },
+  "DECO_JIGGLYPUFF_POSTER": {
+   "slot": "poster",
+   "block": 37,
+   "flag": "EVENT_DECO_POSTER_4",
+   "text": "It's a poster of a\ncute JIGGLYPUFF.",
+   "cells": [
+    3121,
+    5,
+    6,
+    6
+   ]
+  }
+ }
+}

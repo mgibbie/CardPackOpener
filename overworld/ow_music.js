@@ -215,6 +215,7 @@ export function openTownMap() {
 	townMap.open = true;
 	townMap.idx = 0;
 	townMap.flash = null;
+	townMap.viewOnly = false;   // the player's-room TOWN MAP poster sets it: look, don't fly
 	const here = world.current?.map?.id;
 	const reg = Fly.REGION_OF[here] || 'kanto';
 	townMap.region = Math.max(0, Fly.REGION_ORDER.indexOf(reg));
@@ -232,6 +233,7 @@ export function townKey(k) {
 	if (k === 'ArrowUp') { townMap.idx = (townMap.idx + towns.length - 1) % towns.length; return; }
 	if (k === 'ArrowDown') { townMap.idx = (townMap.idx + 1) % towns.length; return; }
 	if (k === 'x' || k === 'Escape') { townMap.open = false; return; }
+	if ((k === 'z' || k === 'Enter') && townMap.viewOnly) { townMap.open = false; return; }
 	if (k === 'z' || k === 'Enter') {
 		const t = towns[townMap.idx];
 		if (!hasFlyPoint(t.map)) { townMap.flash = "You haven't visited there yet."; return; }

@@ -3,6 +3,7 @@ import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { loadCrystalCallbacks } from './crystal_callbacks.js';
+import { loadCrystalDecorations } from './decorations.js';
 import { loadCrystalObjectConsts } from './crystal_object_consts.js';
 import { loadSubvarFixData } from './subvar_fix.js';
 import { loadScrollMultichoice } from './scroll_multichoice.js';
@@ -646,6 +647,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
 	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)
+	await loadCrystalDecorations(getJSON);     // the player's-room decorations (decorations.js)
 	await loadSubvarFixData(getJSON);          // subvars the transpile turned into addvars (subvar_fix.js)
 	await loadScrollMultichoice(getJSON);      // Emerald's ShowScrollableMultichoice lists (scroll_multichoice.js)
 	mergePhoneTeams(S.trainerTeams);

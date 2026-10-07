@@ -173,6 +173,11 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			const scriptTiles = SCRIPT_TILES_IN.includes(`${stem}:${label}`);
 			// warpcheck: take the warp under the player (the puzzle's fall into the hole)
 			if (!conv.length && cmd === 'warpcheck' && scriptTiles) { add({ op: 'warpcheck' }); n++; tally('warpcheck'); continue; }
+			// the player's-room poster sign (overworld/decorations.js); the doll and
+			// console descriptions stay dropped — their objects never show
+			if (!conv.length && cmd === 'describedecoration' && a[0] === 'DECODESC_POSTER' && `${stem}:${label}` === 'PlayersHouse2F:PlayersHousePosterScript.Script') {
+				add({ op: 'special', name: 'DescribeDecoration', which: a[0] }); add({ op: 'end' }); n++; tally('describedecoration'); continue;
+			}
 			if (!conv.length && cmd === 'changeblock' && (inCallback(j.name, label) || scriptTiles)) {
 				const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
 				const cells = x != null && y != null && Number.isFinite(block) ? blockCells(j.name, j._crystal_tileset, block) : null;
