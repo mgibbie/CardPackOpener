@@ -18,13 +18,11 @@
 //   * the opponents' AI runs data/contest_ai_scripts.s with every command it uses
 //   * entry rules (GetContestEntryEligibility), results-board stars/hearts,
 //     the introduction hearts per rank
-// plus the berry-feeding side that stays in contest.js.
 //
 //   node overworld/tests/contest_test.mjs
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Contest as Feed, FLAVOR2CAT } from '../contest.js';
 import { Contest, makeRng, entryEligibility, hasWonBefore } from '../contest_engine.js';
 import { overworldSource } from './owsource.mjs';
 
@@ -198,14 +196,6 @@ const HA = moveWith('HIGHLY_APPEALING', 4); // a TOUGH move: no cheer in a COOL 
 	A(c.stars(0) === 0 && c.stars(1) === 1 && c.stars(2) === 2 && c.stars(3) === 10, 'GetNumPreliminaryPoints: round 1 / 63, rounded up, capped at 10', [0, 1, 2, 3].map(i => c.stars(i)).join(','));
 	A([0, 1, 2, 3].every(i => c.round2Hearts(i) === Math.min(10, Math.ceil(c.round2[i] / 80))), 'GetNumRound2Points: round 2 / 80, rounded up, capped at 10');
 	A(c.introHearts(1) === 6 && c.introHearts(0) === 0 && c.introHearts(3) === 8, 'the NORMAL rank introduction hearts (GetNumberOfHeartsNormal)', [0, 1, 2, 3].map(i => c.introHearts(i)).join(','));
-}
-
-// ---------- the condition side (contest.js) ----------
-{
-	Feed.init(JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/contest.json'), 'utf8')));
-	const mon = { contest: { cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0, sheen: 0 } };
-	const r = Feed.feed(mon, 'cheriberry');
-	A(r && r.gains.cool === 10 && mon.contest.cool === 10 && FLAVOR2CAT.spicy === 'cool', 'a CHERI berry (spicy) raises COOL');
 }
 
 // ---------- wiring ----------

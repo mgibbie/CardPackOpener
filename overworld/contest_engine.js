@@ -1021,6 +1021,23 @@ export class Contest {
 		n = Math.min(10, n);
 		return r < 0 ? -n : n;
 	}
+	// CalculateContestantsResultData: the results bar, in pixels (MAX_BAR_LENGTH 88):
+	// stage 1 shows the preliminary part, stage 2+ adds (or takes) round 2's
+	resultBar(i, stage) {
+		if (!this.done || stage < 1) return 0;
+		let high = Math.max(...this.total);
+		if (high < 0) high = Math.min(...this.total);
+		const rel = v => { let r = trunc((v * 1000) / Math.abs(high || 1)); if (r % 10 > 4) r += 10; return trunc(r / 10); };
+		const len = rel => { let b = Math.floor((rel * 0x5800) / 100); if ((b & 0xFF) > 0x7F) b += 0x100; return b >> 8; };
+		let pre = len(rel(this.round1[i]));
+		let r2 = len(rel(Math.abs(this.round2[i])));
+		const lost = this.round2[i] < 0;
+		if (this.standings[i]) {
+			if (pre + (lost ? -r2 : r2) === 88) { if (!lost && r2 > 0) r2--; else if (pre > 0) pre--; }
+		}
+		if (stage < 2) return Math.min(88, pre);
+		return Math.max(0, Math.min(88, pre + (lost ? -r2 : r2)));
+	}
 	// ContestHall_EventScript_GetNumberOfHearts<Rank>: the audience hearts at the introduction
 	introHearts(i) {
 		const t = [[80, 70, 60, 50, 40, 30, 20, 10], [230, 210, 190, 170, 150, 130, 110, 90],

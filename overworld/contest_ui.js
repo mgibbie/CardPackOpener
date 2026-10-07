@@ -110,10 +110,13 @@ async function receptionist() {
 		return;
 	}
 	// the POKéBLOCK CASE, when this build has one to give
-	if (Bag.ITEMS?.pokeblockcase && !Story.getFlag('FLAG_RECEIVED_POKEBLOCK_CASE')) {
+	// (LilycoveCity_ContestLobby_EventScript_GivePokeblockCase, then on to the question)
+	if (Bag.ITEMS?.pokeblockcase && !Story.getFlag('FLAG_RECEIVED_POKEBLOCK_CASE') && !Bag.count('pokeblockcase')) {
 		await say(T('LilycoveCity_ContestLobby_Text_ReceptionDontHavePokeblockCase'));
 		Bag.addItem('pokeblockcase', 1);
 		Story.setFlag('FLAG_RECEIVED_POKEBLOCK_CASE');
+		sfx('item_get');
+		await say(`${playerName().toUpperCase()} received the POKeBLOCK CASE!`);
 		await say(T('LilycoveCity_ContestLobby_Text_NowThatWeveClearedThatUp'));
 	} else await say(T('LilycoveCity_ContestLobby_Text_ContestReception'));
 	for (;;) {
@@ -236,8 +239,9 @@ async function appealRound(st) {
 	if (st.isTurnDisabled(st.playerIndex)) {
 		await showText(T('gText_AppealNumButItCantParticipate', n));
 	} else {
+		// Task_DisplayAppealNumberText prints in the stage's text box, then the move select opens
+		await showText(T('gText_AppealNumWhichMoveWillBePlayed', n));
 		view.phase = 'select';
-		view.text = T('gText_AppealNumWhichMoveWillBePlayed', n);
 		view.choice = Math.min(view.choice, st.mons[st.playerIndex].moves.filter(Boolean).length - 1);
 		for (;;) {
 			const k = await waitKey(['A', 'UP', 'DOWN']);
@@ -360,11 +364,10 @@ function spr(name, x, y) {
 	const r = gfx.rects[name];
 	if (r) sx.drawImage(gfx.sprites, r[0], r[1], r[2], r[3], Math.round(x), Math.round(y), r[2], r[3]);
 }
+// text is laid out in GBA pixels but drawn on the scaled canvas, so it stays crisp
+let labels = [];
 function text(s, x, y, color = '#303030', size = 11) {
-	sx.font = `${size}px m6x11plus, monospace`;
-	sx.fillStyle = color;
-	sx.textBaseline = 'top';
-	sx.fillText(String(s).replace(/é/g, 'e'), x, y); // the port's font folds é, like normalizeText
+	labels.push([String(s).replace(/é/g, 'e'), x, y, color, size]); // the port's font folds é, like normalizeText
 }
 function textBox(s) {
 	if (!s) return;
@@ -384,6 +387,7 @@ export function drawContest(sctx, SW, SH) {
 	if (!screen) { screen = document.createElement('canvas'); screen.width = 240; screen.height = 160; }
 	sx = screen.getContext('2d');
 	sx.imageSmoothingEnabled = false;
+	labels = [];
 	const st = contestMenu.st;
 	if (view.phase === 'results') drawResults(st);
 	else drawStage(st);
@@ -391,7 +395,14 @@ export function drawContest(sctx, SW, SH) {
 	const w = Math.floor(240 * k), h = Math.floor(160 * k);
 	sctx.save();
 	sctx.imageSmoothingEnabled = false;
-	sctx.drawImage(screen, Math.floor((SW - w) / 2), Math.floor((SH - h) / 2), w, h);
+	const ox = Math.floor((SW - w) / 2), oy = Math.floor((SH - h) / 2);
+	sctx.drawImage(screen, ox, oy, w, h);
+	sctx.textBaseline = 'top';
+	for (const [s, x, y, color, size] of labels) {
+		sctx.font = `${Math.round(size * k)}px m6x11plus, monospace`;
+		sctx.fillStyle = color;
+		sctx.fillText(s, ox + x * k, oy + y * k);
+	}
 	sctx.restore();
 }
 
@@ -451,7 +462,6 @@ function drawStage(st) {
 		monSprite(st.mons[view.active].species, -40 + slide * 112, 84, 56);
 	}
 	if (!select) textBox(view.text);
-	else view.text.split('\n').forEach((l, i) => text(l, 12, 2 + i * 12, '#f0f0f0'));
 }
 
 function drawResults(st) {
@@ -468,6 +478,8 @@ function drawResults(st) {
 			const h = st.round2Hearts(i);
 			for (let n = 0; n < Math.abs(h); n++) spr(h > 0 ? 'heart_red0' : 'heart_black0', 150 + n * 8, y + 9);
 		}
+		const bar = st.resultBar(i, view.resultsStage);
+		if (bar > 0) { sx.fillStyle = '#f05858'; sx.fillRect(56, y + 16, bar, 3); }
 		if (view.resultsStage >= 3) text(String(st.standings[i] + 1), 8, y + 2, st.standings[i] === 0 ? '#d03030' : '#303030');
 	}
 	sx.fillStyle = 'rgba(16,16,40,0.85)';
