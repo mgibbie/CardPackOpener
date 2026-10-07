@@ -34,6 +34,7 @@ import { cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, que
 import { flyTo, moveToMap } from './ow_transitions.js';
 import { fading } from './ow_fade.js';
 import { unownPuzzle, unownPuzzleKey } from './unown_puzzle.js';
+import { cardFlip, cardFlipKey } from './minigames/cardflip/cardflip.js';
 import {
 	STARTERS, refreshObjective, starterMenu,
 } from './main.js';
@@ -713,6 +714,8 @@ export function pressKey(k) {
 	if (choiceMenu.open) { choiceKey(k); return; }
 	// so is the Ruins of Alph UNOWN PUZZLE (`special UnownPuzzle`)
 	if (unownPuzzle.open) { unownPuzzleKey(k); return; }
+	// CARD FLIP runs under its machine's paused script too
+	if (cardFlip.open) { cardFlipKey(k); return; }
 	// a scripted battle (gym leader / rival / villain / any trainer engaged via
 	// their EventScript) runs UNDER its paused cutscene — the trainerbattle op
 	// holds the cutscene's `cur` (so `blocking` stays true) until the fight
@@ -833,7 +836,7 @@ export function pressKey(k) {
 export const canvasMenuOpen = () => choiceMenu.open || phoneMenu.open || starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open || cardFlip.open;
 export const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 

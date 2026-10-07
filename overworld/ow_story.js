@@ -44,6 +44,7 @@ import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { unownPuzzleSpecial } from './unown_puzzle.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
+import { startCardFlip } from './minigames/cardflip/cardflip.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
 } from './main.js';
@@ -833,6 +834,17 @@ function rideCableCar() {
 	return 'wait';
 }
 
+// special CardFlip (engine/events/specials.asm): CheckCoinsAndCoinCase refuses
+// with no coins, then without a COIN CASE; otherwise the table takes the screen
+// and the machine's script (closetext / end) resumes when you leave it
+function openCardFlip() {
+	const refuse = Bag.getCoins() <= 0 ? 'You have no coins.'
+		: !Bag.count('coincase') ? "You don't have a\nCOIN CASE." : null;
+	if (refuse) { dialog.open(refuse, () => cutscene.resume()); return 'wait'; }
+	startCardFlip(() => cutscene.resume()).catch(e => { console.warn('[cardflip] failed to open', e); cutscene.resume(); });
+	return 'wait';
+}
+
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -893,6 +905,9 @@ export function runSpecial(name, store, op) {
 		case 'GiveOddEgg': giveOddEgg(); return;
 		case 'GiveShuckle': return set(giveShuckle());
 		case 'ReturnShuckie': return set(returnShuckie());
+		// Crystal's Game Corner card table (Goldenrod; Celadon in JohKanto) — the
+		// machines' signs (#658) ran a special nothing answered
+		case 'CardFlip': return openCardFlip();
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
 		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
