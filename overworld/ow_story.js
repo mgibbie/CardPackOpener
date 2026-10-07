@@ -385,7 +385,17 @@ export async function runMapSetupScripts(isBoot) {
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	};
+	S.pendingLayout = null;
 	run();
+	// setmaplayoutindex (ON_TRANSITION) picked another layout: swap it in and run
+	// the setup again, so ON_LOAD's tile edits land on the layout the player sees
+	// (the GBA loads the map with the new layout before ON_LOAD runs)
+	if (S.pendingLayout) {
+		const id = S.pendingLayout;
+		S.pendingLayout = null;
+		if (await world.setLayout(id)) run();
+		S.pendingLayout = null;
+	}
 	if (vis() === before) return;
 	await npcs.loadForMap();
 	await trainers.loadForMap();

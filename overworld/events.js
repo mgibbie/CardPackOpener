@@ -483,6 +483,9 @@ export class Cutscene {
 				case 'takecoins': ctx.spendCoins?.(+op.amount || 0); break;
 				case 'givecoins': ctx.giveCoins?.(+op.amount || 0); break;
 				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
+				// `setmaplayoutindex`, restored by tools/gen_maplayout.mjs (maplayout.js):
+				// the map's setup applies it once the script returns
+				case 'setmaplayout': ctx.setMapLayout?.(op.layout); break;
 				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
 				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later
 				// message prints — "PLAYER received the {STR_VAR_1} from the KARATE MASTER."

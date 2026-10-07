@@ -1,6 +1,7 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
+import { loadMapLayoutData } from './maplayout.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { loadCrystalCallbacks } from './crystal_callbacks.js';
 import { decoSpriteFor, loadCrystalDecorations } from './decorations.js';
@@ -648,7 +649,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	// the PHONE: contacts, call lines, restored trainer scripts + Crystal's rematch teams
 	await loadPhoneData(getJSON);
 	await loadChoiceData(getJSON);   // every multichoice the transpile dropped (choice.js)
-	await loadFallthroughData(getJSON);   // the decomp's label fall-through (fallthrough.js)
+	await loadFallthroughData(getJSON);
+	await loadMapLayoutData(getJSON);   // the decomps' setmaplayoutindex (maplayout.js)   // the decomp's label fall-through (fallthrough.js)
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
 	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)

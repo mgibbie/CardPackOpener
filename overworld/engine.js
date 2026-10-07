@@ -443,6 +443,33 @@ export class World {
 		this.connections = loaded.filter(Boolean);
 	}
 
+	// the decomp's `setmaplayoutindex`: the CURRENT map, drawn and walked with
+	// another of its layouts (Route 131's Sky Pillar approach, the Sky Pillar's
+	// clean floors, Shoal Cave's tides, Seafoam's stopped currents). The cached
+	// bundle keeps its own layout — the swap lives on a copy — so a condition that
+	// flips back (the tide, the Sky Pillar crumbling) loads the original again.
+	// A Hoenn2_ map prefers its own LAYOUT_HOENN2_ copy when there is one.
+	async setLayout(layoutId) {
+		const cur = this.current;
+		if (!cur || !layoutId || cur.layout.id === layoutId) return false;
+		const ids = /^LAYOUT_HOENN2_/.test(cur.map.layout || '') ? [layoutId.replace(/^LAYOUT_/, 'LAYOUT_HOENN2_'), layoutId] : [layoutId];
+		let layout = null;
+		for (const id of ids) {
+			if (cur.layout.id === id) return false;
+			layout = await getJSON(`${DATA}/layouts/${id}.json`).catch(() => null);
+			if (layout) break;
+		}
+		if (!layout) { console.warn('[setmaplayoutindex] no layout', layoutId); return false; }
+		layout = { ...layout, map: layout.map.map(r => r.slice()) };   // tile edits must not reach the shared copy
+		const same = layout.primary_tileset === cur.layout.primary_tileset && layout.secondary_tileset === cur.layout.secondary_tileset;
+		const ts = same ? cur.ts : await loadTilesetsFor(layout);
+		const b = { ...cur, layout, ts, canvases: renderSection(layout, ts), borderCv: renderBorder(layout, ts) };
+		delete b._hasGrass;
+		if (this.current !== cur) return false;   // the player left while it loaded
+		this.current = b;
+		return true;
+	}
+
 	// world-tile -> grid value (main map or connections); null = outside every map.
 	// 0 is a REAL cell — metatile 0, no collision. The Crystal tilesets put a
 	// plain ground tile there, and treating 0 as "outside" walled off 1,012
