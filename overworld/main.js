@@ -1,6 +1,7 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
+import { loadMapLayoutData } from './maplayout.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { loadCrystalCallbacks } from './crystal_callbacks.js';
 import { decoSpriteFor, loadCrystalDecorations } from './decorations.js';
@@ -378,6 +379,7 @@ player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || ruinsWallClosed(world.cur
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
 S.strengthHinted = false;
+const MB_FALL_WARP = 0x66;   // pokefirered metatile_behaviors.h
 player.pushBoulder = (bx, by, dx, dy) => {
 	const obj = items.fieldObjAt(bx, by);
 	if (!obj || obj.kind !== 'boulder') return false;
@@ -394,6 +396,15 @@ player.pushBoulder = (bx, by, dx, dy) => {
 	if (!world.isPassable(tx, ty) || world.isSurfable(tx, ty)) return false;
 	if (player.blocked(tx, ty)) return false;
 	items.moveFieldObj(obj, tx, ty);
+	// FRLG's HandleBoulderFallThroughHole: shoved onto a hole (MB_FALL_WARP) it
+	// drops to the floor below — gone from here (its flag set), and the boulder
+	// waiting below revealed (Seafoam's current-stopping puzzle, 2026-10-07)
+	if (world.current?.layout?.game === 'firered' && world.behaviorAt(tx, ty) === MB_FALL_WARP) {
+		sfx('ledge');   // SE_FALL's stand-in (the port ships no fall sound)
+		items.removeFieldObj(obj);
+		if (obj.flag) Story.setFlag(obj.flag);
+		if (obj.reveal) Story.clearFlag(obj.reveal);
+	}
 	return true;
 };
 
@@ -460,7 +471,12 @@ trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.curre
 		&& Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
 evolution.onDone = () => saveParty(S.party);
-evolution.onEvolved = (from, to) => Journal.add(`${from} evolved into ${to}!`);
+// the evolved species joins the POKeDEX now — it used to wait for the next
+// boot's party seeding (a Rare Candy evolution read as uncaught until reload)
+evolution.onEvolved = (from, to, mon) => {
+	Journal.add(`${from} evolved into ${to}!`);
+	if (mon?.speciesId) { Dex.markSeen(mon.speciesId); Dex.markCaught(mon.speciesId); dexMilestoneCheck(); }
+};
 S.loading = true;
 // safety-net watchdogs (see tick): a map load that hangs/throws must never strand
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
@@ -648,7 +664,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	// the PHONE: contacts, call lines, restored trainer scripts + Crystal's rematch teams
 	await loadPhoneData(getJSON);
 	await loadChoiceData(getJSON);   // every multichoice the transpile dropped (choice.js)
-	await loadFallthroughData(getJSON);   // the decomp's label fall-through (fallthrough.js)
+	await loadFallthroughData(getJSON);
+	await loadMapLayoutData(getJSON);   // the decomps' setmaplayoutindex (maplayout.js)   // the decomp's label fall-through (fallthrough.js)
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
 	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)

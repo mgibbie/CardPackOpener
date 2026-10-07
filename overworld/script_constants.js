@@ -618,3 +618,16 @@ export const ITEM_NUMBERS = {
 	ITEM_OLD_SEA_MAP: 376,
 	ITEM_LIST_END: 65535,
 };
+
+// File-scoped `.equ NAME, value` from each map's scripts.inc, by map (the script
+// file's stem). The running map's table is read before SCRIPT_CONSTANTS: Routes
+// 11/15/16 each set their own REQUIRED_CAUGHT_MONS.
+export const MAP_CONSTANTS = {
+	CinnabarIsland_PokemonLab_ExperimentRoom: { HELIX_FOSSIL: 1, DOME_FOSSIL: 2, OLD_AMBER: 3 },
+	Route10_PokemonCenter_1F: { REQUIRED_OWNED_MONS: 20 },
+	Route11_EastEntrance_2F: { REQUIRED_CAUGHT_MONS: 30 },
+	Route15_WestEntrance_2F: { REQUIRED_CAUGHT_MONS: 50 },
+	Route16_NorthEntrance_2F: { REQUIRED_CAUGHT_MONS: 40 },
+	Route2_EastBuilding: { REQUIRED_SEEN_MONS: 10 },
+	Route4_PokemonCenter_1F: { MAGIKARP_PRICE: 500 },
+};

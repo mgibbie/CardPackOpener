@@ -443,21 +443,52 @@ export class World {
 		this.connections = loaded.filter(Boolean);
 	}
 
-	// world-tile -> grid value (main map or connections); 0 = outside
+	// the decomp's `setmaplayoutindex`: the CURRENT map, drawn and walked with
+	// another of its layouts (Route 131's Sky Pillar approach, the Sky Pillar's
+	// clean floors, Shoal Cave's tides, Seafoam's stopped currents). The cached
+	// bundle keeps its own layout — the swap lives on a copy — so a condition that
+	// flips back (the tide, the Sky Pillar crumbling) loads the original again.
+	// A Hoenn2_ map prefers its own LAYOUT_HOENN2_ copy when there is one.
+	async setLayout(layoutId) {
+		const cur = this.current;
+		if (!cur || !layoutId || cur.layout.id === layoutId) return false;
+		const ids = /^LAYOUT_HOENN2_/.test(cur.map.layout || '') ? [layoutId.replace(/^LAYOUT_/, 'LAYOUT_HOENN2_'), layoutId] : [layoutId];
+		let layout = null;
+		for (const id of ids) {
+			if (cur.layout.id === id) return false;
+			layout = await getJSON(`${DATA}/layouts/${id}.json`).catch(() => null);
+			if (layout) break;
+		}
+		if (!layout) { console.warn('[setmaplayoutindex] no layout', layoutId); return false; }
+		layout = { ...layout, map: layout.map.map(r => r.slice()) };   // tile edits must not reach the shared copy
+		const same = layout.primary_tileset === cur.layout.primary_tileset && layout.secondary_tileset === cur.layout.secondary_tileset;
+		const ts = same ? cur.ts : await loadTilesetsFor(layout);
+		const b = { ...cur, layout, ts, canvases: renderSection(layout, ts), borderCv: renderBorder(layout, ts) };
+		delete b._hasGrass;
+		if (this.current !== cur) return false;   // the player left while it loaded
+		this.current = b;
+		return true;
+	}
+
+	// world-tile -> grid value (main map or connections); null = outside every map.
+	// 0 is a REAL cell — metatile 0, no collision. The Crystal tilesets put a
+	// plain ground tile there, and treating 0 as "outside" walled off 1,012
+	// walkable cells on 38 Johto/Kanto maps (Route 34's grass, the Day Care's
+	// front door, Pewter and Viridian streets; 2026-10-07).
 	gridAt(tx, ty) {
 		const lay = this.current.layout;
 		if (tx >= 0 && tx < lay.width && ty >= 0 && ty < lay.height) {
-			return lay.map[ty]?.[tx] ?? 0;
+			return lay.map[ty]?.[tx] ?? null;
 		}
 		for (const conn of this.connections) {
 			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const lx = tx - ox, ly = ty - oy;
 			if (lx >= 0 && lx < conn.layout.width && ly >= 0 && ly < conn.layout.height) {
-				return conn.layout.map[ly]?.[lx] ?? 0;
+				return conn.layout.map[ly]?.[lx] ?? null;
 			}
 		}
-		return 0;
+		return null;
 	}
 
 	// which connection (if any) contains this world tile; returns {dir, conn, lx, ly}
@@ -481,7 +512,7 @@ export class World {
 	isPassable(tx, ty) {
 		if (this.warpAt(tx, ty)) return true; // doors are always enterable
 		const v = this.gridAt(tx, ty);
-		if (v === 0) return false;
+		if (v == null) return false;
 		return (v & COLLISION_MASK) === 0;
 	}
 
@@ -551,7 +582,7 @@ export class World {
 
 	behaviorAt(tx, ty) {
 		const v = this.gridAt(tx, ty);
-		if (v === 0) return 0;
+		if (v == null) return 0;
 		const id = v & METATILE_MASK;
 		// behavior must come from the owning section's tilesets
 		const owner = this.connectionAt(tx, ty)?.conn || this.current;
@@ -572,8 +603,8 @@ export class World {
 			let found = false;
 			for (let y = 0; y < lay.height && !found; y++) {
 				for (let x = 0; x < lay.width; x++) {
-					const v = lay.map[y]?.[x] ?? 0;
-					if (v === 0) continue;
+					const v = lay.map[y]?.[x];
+					if (v == null) continue;
 					const { attr } = metatileOf(cur.ts, v & METATILE_MASK);
 					if (isGrassBehavior(attr & BEHAVIOR_MASK)) { found = true; break; }
 				}
@@ -591,7 +622,7 @@ export class World {
 	// tiles block walking (you need a Water-type to Surf) but are open once
 	// you're riding the waves.
 	isSurfable(tx, ty) {
-		if (this.gridAt(tx, ty) === 0) return false;
+		if (this.gridAt(tx, ty) == null) return false;
 		const b = this.behaviorAt(tx, ty);
 		return b >= 0x10 && b <= 0x1B;
 	}

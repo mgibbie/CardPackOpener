@@ -149,6 +149,12 @@
     "GoldenrodUndergroundCheckDayOfWeekCallback"
    ]
   ],
+  "IlexForest": [
+   [
+    "OBJECTS",
+    "IlexForestFarfetchdCallback"
+   ]
+  ],
   "IndigoPlateauPokecenter1F": [
    [
     "NEWMAP",
@@ -490,7 +496,6 @@
   "BlackthornGym2F:BlackthornGym2FSetUpStoneTableCallback": "CMDQUEUE stone tables (boulders into holes) are not implemented",
   "DayCare:DayCareEggCheckCallback": "the Day-Care Man is run by the native daycare (daycare.js)",
   "IcePathB1F:IcePathB1FSetUpStoneTableCallback": "CMDQUEUE stone tables (boulders into holes) are not implemented",
-  "IlexForest:IlexForestFarfetchdCallback": "reads wFarfetchdPosition, which nothing in the port sets (the Farfetch'd puzzle)",
   "Route34:Route34EggCheckCallback": "the Day-Care Man is run by the native daycare (daycare.js)",
   "Route35NationalParkGate:Route35NationalParkGateCheckIfContestRunningCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
   "Route35NationalParkGate:Route35NationalParkGateCheckIfContestAvailableCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",

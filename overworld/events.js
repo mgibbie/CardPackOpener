@@ -6,7 +6,7 @@
 import { safeLoad, safeSave } from './safestore.js';
 import { STD_OF, STD_TEXT } from './crystal_stds.js';
 import { SCENE_SET } from './crystal_scenes.js';
-import { ITEM_NUMBERS, SCRIPT_CONSTANTS } from './script_constants.js';
+import { ITEM_NUMBERS, MAP_CONSTANTS, SCRIPT_CONSTANTS } from './script_constants.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
@@ -78,10 +78,22 @@ if (typeof addEventListener === 'function') {
 let badgeFlagResolver = null;
 export function setBadgeFlagResolver(fn) { badgeFlagResolver = typeof fn === 'function' ? fn : null; }
 const BADGE_FLAG_RE = /^FLAG_BADGE0([1-8])_GET$/;
+// Crystal's ENGINE_<NAME>BADGE (ENGINE_FOGBADGE...) is set by the gym's own
+// script — a badge earned any other way (a native gym victory, a cross-region
+// tier, a repair) never set it, and the Tin Tower sage told a player holding the
+// FOG BADGE it was missing (2026-10-07). A held badge answers true; otherwise the
+// stored flag stands, so nothing a script set is lost.
+let engineBadgeResolver = null;
+export function setEngineBadgeResolver(fn) { engineBadgeResolver = typeof fn === 'function' ? fn : null; }
+const ENGINE_BADGE_RE = /^ENGINE_([A-Z]+)BADGE$/;
 export function getFlag(f) {
 	if (badgeFlagResolver) {
 		const m = BADGE_FLAG_RE.exec(f);
 		if (m) { try { const r = badgeFlagResolver(+m[1]); if (r != null) return !!r; } catch (e) { /* fall back to the store */ } }
+	}
+	if (engineBadgeResolver) {
+		const m = ENGINE_BADGE_RE.exec(f);
+		if (m) { try { if (engineBadgeResolver(m[1].toLowerCase())) return true; } catch (e) { /* fall back to the store */ } }
 	}
 	return !!store.flags[f];
 }
@@ -159,7 +171,11 @@ export function clearTempFlags() {
 	// VAR_* vars; anything else is an unresolved `.equ` alias the transpile stored
 	// literally (SWITCH1_ID, TRASH_CAN_ID ...), fixed at the source by
 	// tools/fix_script_equ.mjs, whose leftovers would otherwise sit in saves.
-	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^VAR_/.test(k)) { delete store.vars[k]; n++; }
+	// Crystal's saved WRAM bytes are vars too (wFarfetchdPosition, wMooMooBerries,
+	// the rematch counts — tools/gen_crystal_scriptvar.mjs restores their
+	// loadmem/writemem): they must outlive a map change, or the Ilex Forest
+	// FARFETCH'D forgot where it ran to and MOOMOO every BERRY it ate (2026-10-07).
+	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^(VAR_|w[A-Z])/.test(k)) { delete store.vars[k]; n++; }
 	});
 	return n;
 }
@@ -176,6 +192,11 @@ const B_OUTCOME = {
 	B_OUTCOME_PLAYER_TELEPORTED: 5, B_OUTCOME_MON_FLED: 6, B_OUTCOME_CAUGHT: 7,
 	B_OUTCOME_NO_SAFARI_BALLS: 8, B_OUTCOME_FORFEITED: 9, B_OUTCOME_MON_TELEPORTED: 10,
 };
+// The loaded map's `.equ` table (script_constants.js MAP_CONSTANTS). A decomp
+// map file can name its own constants — `.equ REQUIRED_OWNED_MONS, 20` — and the
+// same name means something else in another file, so they can't go global.
+let mapConstants = null;
+export function setScriptMap(stem) { mapConstants = (stem && MAP_CONSTANTS[stem]) || null; }
 function resolveValue(v) {
 	if (typeof v === 'number') return v;
 	if (v === 'TRUE') return 1;
@@ -191,6 +212,8 @@ function resolveValue(v) {
 	// STRING, so `cmp(2, 'eq', 'DIR_EAST')` compared a number to text and was false
 	// forever: 1,464 comparisons that could never be true, every one of those
 	// branches taking the same path whatever the game state.
+	// the running map's file-scoped `.equ`s first (Route 10's REQUIRED_OWNED_MONS)
+	if (typeof v === 'string' && mapConstants && mapConstants[v] !== undefined) return mapConstants[v];
 	if (typeof v === 'string' && SCRIPT_CONSTANTS[v] !== undefined) return SCRIPT_CONSTANTS[v];
 	if (typeof v === 'string' && B_OUTCOME[v] !== undefined) return B_OUTCOME[v];
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
@@ -333,6 +356,27 @@ export class Cutscene {
 		applyScenes(entryLabel);
 		this.cur = { program, ctx, onDone, frames: [{ ops, i: 0 }], sub: null };
 		this._enter();
+	}
+
+	// Where the running script stands, by LABEL (frames hold op arrays, which a
+	// save can't carry): [{ label, i }], innermost last. `skip` steps the
+	// innermost frame past the op being executed — a static battle bookmarks the
+	// op AFTER its wildbattle, so a reload can finish the encounter's script.
+	bookmark(skip = 0) {
+		const c = this.cur;
+		if (!c || !c.frames.length) return null;
+		const labelOf = ops => Object.keys(c.program).find(k => c.program[k] === ops) || Object.keys(COMMON_STUBS).find(k => COMMON_STUBS[k] === ops);
+		const frames = c.frames.map((f, n) => ({ label: labelOf(f.ops), i: f.i + (n === c.frames.length - 1 ? skip : 0) }));
+		return frames.every(f => f.label) ? frames : null;
+	}
+	// re-enter a bookmarked script (ow_battleresume: a static battle resumed after
+	// a reload runs its post-battle branch — the fought flag, the object removed)
+	runFrom(program, frames, ctx, onDone) {
+		const fr = (frames || []).map(f => ({ ops: program[f.label] || COMMON_STUBS[f.label], i: f.i | 0 }));
+		if (!fr.length || fr.some(f => !f.ops)) return false;
+		this.cur = { program, ctx, onDone, frames: fr, sub: null };
+		this._enter();
+		return true;
 	}
 
 	// A scene that ends mid-step must hand its actors back in a sane state.
@@ -483,6 +527,9 @@ export class Cutscene {
 				case 'takecoins': ctx.spendCoins?.(+op.amount || 0); break;
 				case 'givecoins': ctx.giveCoins?.(+op.amount || 0); break;
 				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
+				// `setmaplayoutindex`, restored by tools/gen_maplayout.mjs (maplayout.js):
+				// the map's setup applies it once the script returns
+				case 'setmaplayout': ctx.setMapLayout?.(op.layout); break;
 				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
 				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later
 				// message prints — "PLAYER received the {STR_VAR_1} from the KARATE MASTER."

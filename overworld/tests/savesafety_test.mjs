@@ -55,7 +55,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/const OW_MAX_BYTES = 1_000_000/.test(sv), 'the ow size cap grew with the full-save payload');
 
 	const ev = fs.readFileSync(path.join(ROOT, 'overworld/evolution.js'), 'utf8');
-	A(/onEvolved\?\.\(this\.cur\.oldName, mon\.name\)/.test(ev), 'evolution announces itself to the journal hook');
+	A(/onEvolved\?\.\(this\.cur\.oldName, mon\.name[,)]/.test(ev), 'evolution announces itself to the journal hook');
 }
 
 // ---------- pure: the daily-snapshot prune, replicated ----------

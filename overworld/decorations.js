@@ -48,6 +48,10 @@ export function decoState() {
 function saveState(st) { safeSave(KEY, Object.fromEntries(SLOTS.map(s => [s, st[s] || null]))); }
 const nameOf = id => (DATA.decos[id] && DATA.decos[id].name) || '';
 const owns = id => !!(DATA.decos[id] && Story.getFlag(DATA.decos[id].flag));
+// for the Dept Store DOLL COUNTER (dept_dolls.js)
+export const decoName = id => nameOf(id);
+export const decoOwned = id => owns(id);
+export const decoFlag = id => (DATA.decos[id] && DATA.decos[id].flag) || null;
 const fill = (t, a = {}) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => k === 'player'
 	? ((typeof localStorage !== 'undefined' && localStorage.getItem('magepunk_name')) || 'PLAYER') : (a[k] ?? m));
 

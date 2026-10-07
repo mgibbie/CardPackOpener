@@ -154,6 +154,9 @@ export class NPCs {
 	// map an object graphics_id to a Pokémon overworld sprite name, or null
 	speciesOf(graphicsId) {
 		let s = (graphicsId || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase();
+		// Crystal's WEIRD_TREE is SUDOWOODO posing as a tree (Route 36). It was dropped
+		// as a prop, so the encounter — and the ROCK SMASH TM after it — never existed
+		if (s === 'weird_tree' && this.owSpecies.has('sudowoodo')) return 'sudowoodo';
 		if (this.owSpecies.has(s)) return s;
 		s = s.replace(/_(front|back|side|asleep|still|normal|standing)$/, '');
 		if (this.owSpecies.has(s)) return s;
@@ -192,7 +195,7 @@ export class NPCs {
 			// statues (44 of them!), the SS Tidal / Seagallop / Mr Briney's boat, the
 			// submarine + Kecleon-bridge shadows, cable car, moving boxes, dolls, etc.
 			// Draw nothing rather than a wrong villager.
-			if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL|STATUE|SUBMARINE|SS_TIDAL|SS_ANNE|SEAGALLOP|MR_BRINEY|_BOAT|CABLE_CAR|SHADOW|MOVING_BOX|BIRCHS_BAG|CLIPBOARD|CONSOLE|TOWN_MAP|OLD_AMBER|_DOLL|WEIRD_TREE/.test(ev.graphics_id || '')) return;
+			if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL|STATUE|SUBMARINE|SS_TIDAL|SS_ANNE|SEAGALLOP|MR_BRINEY|_BOAT|CABLE_CAR|SHADOW|MOVING_BOX|BIRCHS_BAG|CLIPBOARD|CONSOLE|TOWN_MAP|OLD_AMBER|_DOLL/.test(ev.graphics_id || '')) return;
 			// Pokémon object_events (Kecleon, roamers, dept-store pets, legendaries) were
 			// ALSO drawn as a man — render the actual overworld mon sprite instead
 			const species = this.speciesOf(ev.graphics_id);

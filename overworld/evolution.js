@@ -69,7 +69,7 @@ export class Evolution {
 		mon.stats = statsFor(sp, ivs, mon.level, mon);
 		mon.maxHP = mon.stats.hp;
 		mon.curHP = Math.max(1, mon.maxHP - damage);
-		this.onEvolved?.(this.cur.oldName, mon.name);
+		this.onEvolved?.(this.cur.oldName, mon.name, mon);
 	}
 
 	key(k) {

@@ -180,46 +180,65 @@ export function cycleForm(mon) {
 //
 // Blocks the script like a trainer battle does, and records the real outcome so
 // the script's own `GetBattleOutcome` branch works instead of always reading WON.
+// a static wild battle's result, as the script reads it (VAR_RESULT /
+// GetBattleOutcome). True when the script runs on; a black-out abandons it.
+export function staticBattleOutcome(result) {
+	if (result === 'caught' && battle.lastCaught) {
+		Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
+		const where = addCaught(S.party, battle.lastCaught);
+		hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+		offerNickname(battle.lastCaught);
+		S.lastBattleOutcome = B_OUTCOME_CAUGHT;
+		Story.setVar('VAR_RESULT', B_OUTCOME_CAUGHT);
+		return true;
+	}
+	if (result === 'victory') {
+		S.lastBattleOutcome = B_OUTCOME_WON;
+		Story.setVar('VAR_RESULT', B_OUTCOME_WON);
+		evolution.check(S.party, battle.data);
+		saveParty(S.party);
+		return true;
+	}
+	if (result === 'defeat') {
+		// blacked out: heal and abandon the rest of the script, as trainer
+		// battles do. Note the static is GONE either way — the decomp scripts
+		// set the object's hide flag before the battle, not after, so losing to
+		// the Route 12 Snorlax costs you that Snorlax. That is what the original
+		// does, and the second one on Route 16 is the game's own second chance.
+		S.lastBattleOutcome = B_OUTCOME_LOST;
+		Story.setVar('VAR_RESULT', B_OUTCOME_LOST);
+		whiteOut();
+		cutscene.stop();
+		return false;
+	}
+	// ran / it fled — the decomp scripts treat RAN the same as WON (the
+	// encounter is over and the object goes away), so let the script run on
+	S.lastBattleOutcome = B_OUTCOME_RAN;
+	Story.setVar('VAR_RESULT', B_OUTCOME_RAN);
+	saveParty(S.party);
+	return true;
+}
+// which object_event the script came from (VAR_LAST_TALKED: the ball or mon it
+// removes). By index: a FireRed item ball has no local_id.
+function staticObjIndex() {
+	const ev = (cutscene.cur?.ctx?.talker || S.lastTalkedNpc)?.ev;
+	const i = ev ? (world.current?.map?.object_events || []).indexOf(ev) : -1;
+	return i >= 0 ? i : null;
+}
 export function startScriptedWildBattle(species, level) {
 	if (!species || !battle.data?.species?.[species]) return 'skip';
 	if (!S.party || !leadMon(S.party) || battle.blocking) return 'skip';
 	Dex.markSeen(species);
 	S.scriptedWildCount = (S.scriptedWildCount || 0) + 1;   // a scripted ball's encounter happened (ow_input runScriptedBall)
-	battle.endSpec = { kind: 'wild' };   // the blocking script is gone after a reload; a plain wild ending is safe
-	battle.start(S.party, species, level, result => {
-		if (result === 'caught' && battle.lastCaught) {
-			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(S.party, battle.lastCaught);
-			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
-			offerNickname(battle.lastCaught);
-			S.lastBattleOutcome = B_OUTCOME_CAUGHT;
-			Story.setVar('VAR_RESULT', B_OUTCOME_CAUGHT);
-			cutscene.resume();
-		} else if (result === 'victory') {
-			S.lastBattleOutcome = B_OUTCOME_WON;
-			Story.setVar('VAR_RESULT', B_OUTCOME_WON);
-			evolution.check(S.party, battle.data);
-			saveParty(S.party);
-			cutscene.resume();
-		} else if (result === 'defeat') {
-			// blacked out: heal and abandon the rest of the script, as trainer
-			// battles do. Note the static is GONE either way — the decomp scripts
-			// set the object's hide flag before the battle, not after, so losing to
-			// the Route 12 Snorlax costs you that Snorlax. That is what the original
-			// does, and the second one on Route 16 is the game's own second chance.
-			S.lastBattleOutcome = B_OUTCOME_LOST;
-			Story.setVar('VAR_RESULT', B_OUTCOME_LOST);
-			whiteOut();
-			cutscene.stop();
-		} else {
-			// ran / it fled — the decomp scripts treat RAN the same as WON (the
-			// encounter is over and the object goes away), so let the script run on
-			S.lastBattleOutcome = B_OUTCOME_RAN;
-			Story.setVar('VAR_RESULT', B_OUTCOME_RAN);
-			saveParty(S.party);
-			cutscene.resume();
-		}
-	});
+	// the script stands just past its wildbattle op: a reload mid-fight resumes
+	// the battle AND, once it ends, the rest of that script (ow_battleresume
+	// 'static') — the fought flag, the object's removal. A plain wild ending left
+	// Power Plant's ELECTRODE item on the floor, unfought (2026-10-06, Instinct).
+	const frames = cutscene.bookmark(1);
+	battle.endSpec = frames
+		? { kind: 'static', map: world.current?.name || null, frames, obj: staticObjIndex() }
+		: { kind: 'wild' };
+	battle.start(S.party, species, level, result => { if (staticBattleOutcome(result)) cutscene.resume(); });
 	return 'wait';
 }
 // FireRed's `special StartMarowakBattle` (Pokémon Tower 6F). Unimplemented, it
