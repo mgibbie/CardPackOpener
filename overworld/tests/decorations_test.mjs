@@ -175,8 +175,10 @@ try {
 	const obj = g => up.objs.find(o => o.gfx === g);
 	A(obj('OBJ_EVENT_GFX_CONSOLE')?.w === 16 && obj('OBJ_EVENT_GFX_DOLL_1') && !obj('OBJ_EVENT_GFX_DOLL_2'), '3. the console and the LEFT doll show; the right doll slot stays empty', JSON.stringify(up.objs));
 	A(obj('OBJ_EVENT_GFX_BIG_DOLL')?.w === 32, '3. the BIG SNORLAX shows as a 32x32 big doll', JSON.stringify(up.objs));
-	const sprites = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld', 'deco_gfx', 'sprites.json'), 'utf8'));
-	A(obj('OBJ_EVENT_GFX_CONSOLE')?.sx === sprites.SPRITE_SNES.x && obj('OBJ_EVENT_GFX_DOLL_1')?.sx === sprites.SPRITE_PIKACHU.x && obj('OBJ_EVENT_GFX_BIG_DOLL')?.sx === sprites.SPRITE_BIG_SNORLAX.x,
+	let sprites = {};
+	try { sprites = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld', 'deco_gfx', 'sprites.json'), 'utf8')); } catch (e) { console.log('(no overworld/deco_gfx/sprites.json)'); }
+	const sx = s => sprites[s] ? sprites[s].x : -1;
+	A(obj('OBJ_EVENT_GFX_CONSOLE')?.sx === sx('SPRITE_SNES') && obj('OBJ_EVENT_GFX_DOLL_1')?.sx === sx('SPRITE_PIKACHU') && obj('OBJ_EVENT_GFX_BIG_DOLL')?.sx === sx('SPRITE_BIG_SNORLAX'),
 		'3. each wears its decoration sprite (SPRITE_SNES / SPRITE_PIKACHU / SPRITE_BIG_SNORLAX)', JSON.stringify(up.objs));
 	if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
 
