@@ -3,7 +3,7 @@
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
 import * as BUI from './battleui.js';
-import { battle, sctx } from './ow_core.js';
+import { battle, sctx, world } from './ow_core.js';
 import { menuChrome, optionList } from './ow_menus.js';
 import { slotsMenu } from './ow_minigames.js';
 import { S } from './ow_state.js';
@@ -28,8 +28,15 @@ const GC_PRIZES = [
 	{ mon: 'dratini', cost: 2800 }, { mon: 'scyther', cost: 5500 }, { mon: 'porygon', cost: 9999 },
 	{ item: 'tmthunderbolt', cost: 4000 }, { item: 'tmicebeam', cost: 4000 }, { item: 'tmflamethrower', cost: 4000 },
 ];
+// Crystal's corners have the real slot machines (special SlotMachine,
+// ow_crystalslots.js) on their floors, so the hub's generic slots retire there.
+// FireRed's Celadon and Emerald's Mauville keep them: their decomps' own slot
+// machines aren't ported.
+const CRYSTAL_SLOT_CORNERS = new Set(['MAP_GOLDENROD_GAME_CORNER', 'MAP_JOHKANTO_CELADON_GAME_CORNER', 'MAP_JOHKANTO_CELADON_GAME_CORNER_PRIZE_ROOM']);
+export const hubOffersSlots = () => !CRYSTAL_SLOT_CORNERS.has(world.current?.map?.id);
+const hubRows = () => ['PLAY VOLTORB FLIP', ...(hubOffersSlots() ? ['PLAY SLOTS'] : []), 'BUY COINS', 'PRIZE CORNER', 'Leave'];
 function gcRows() {
-	if (gcMenu.mode === 'hub') return ['PLAY VOLTORB FLIP', 'PLAY SLOTS', 'BUY COINS', 'PRIZE CORNER', 'Leave'];
+	if (gcMenu.mode === 'hub') return hubRows();
 	if (gcMenu.mode === 'coins') return ['50 COINS — $1,000', '500 COINS — $10,000', 'Back'];
 	return GC_PRIZES.map(pz => {
 		const name = pz.mon ? (battle.data.species[pz.mon]?.name?.toUpperCase() || pz.mon.toUpperCase()) : Bag.ITEMS[pz.item].name;
@@ -47,10 +54,11 @@ export function gcKey(k) {
 	}
 	if (k !== 'z' && k !== 'Enter') return;
 	if (gcMenu.mode === 'hub') {
-		if (gcMenu.idx === 0) { gcMenu.open = false; vfMenu.open = true; vfMenu.game = VFlip.newGame(1); vfMenu.cur = 12; vfMenu.flash = null; }
-		else if (gcMenu.idx === 1) { gcMenu.open = false; slotsMenu.open = true; slotsMenu.game = null; slotsMenu.msg = null; }
-		else if (gcMenu.idx === 2) { gcMenu.mode = 'coins'; gcMenu.idx = 0; gcMenu.flash = null; }
-		else if (gcMenu.idx === 3) { gcMenu.mode = 'prizes'; gcMenu.idx = 0; gcMenu.flash = null; }
+		const row = rows[gcMenu.idx];
+		if (row === 'PLAY VOLTORB FLIP') { gcMenu.open = false; vfMenu.open = true; vfMenu.game = VFlip.newGame(1); vfMenu.cur = 12; vfMenu.flash = null; }
+		else if (row === 'PLAY SLOTS') { gcMenu.open = false; slotsMenu.open = true; slotsMenu.game = null; slotsMenu.msg = null; }
+		else if (row === 'BUY COINS') { gcMenu.mode = 'coins'; gcMenu.idx = 0; gcMenu.flash = null; }
+		else if (row === 'PRIZE CORNER') { gcMenu.mode = 'prizes'; gcMenu.idx = 0; gcMenu.flash = null; }
 		else gcMenu.open = false;
 	} else if (gcMenu.mode === 'coins') {
 		const deal = [[50, 1000], [500, 10000]][gcMenu.idx];

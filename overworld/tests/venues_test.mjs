@@ -7,14 +7,13 @@
 //     the maze exit stays sealed until the SCROLL is found, the Trick Master
 //     pays and advances — and every puzzle room's scroll + exit are actually
 //     REACHABLE on foot (BFS over the shipped collision)
-//   * Ruins of Alph: the replica wall opens a 3×3 slide puzzle; solving it
-//     opens the floor to the chamber's item room and is remembered
+//   * Ruins of Alph: the replica wall is Crystal's own sign again (its 3×3
+//     slide puzzle retired for the UNOWN PUZZLE — retired_games_test.mjs)
 //
 //   node overworld/tests/venues_test.mjs
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as Slide from '../slidepuzzle.js';
 import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -23,21 +22,6 @@ const ROOT = path.resolve(HERE, '../../');
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra ? '  ' + extra : '')); } };
 
-// ---------- slide puzzle unit ----------
-{
-	A(Slide.solved(Slide.solvedBoard()), 'the solved board is solved');
-	const b = [0, 1, 2, 3, 4, 8, 6, 7, 5]; // one slide from home: tile 5 sits below the blank
-	A(Slide.move(b, 'up') === true && Slide.solved(b), 'sliding the tile below the blank upward completes it');
-	const s = Slide.solvedBoard(); // blank bottom-right
-	A(Slide.move(s, 'up') === false && Slide.move(s, 'left') === false, 'slides off the edge refuse');
-	A(Slide.move(s, 'down') === true && !Slide.solved(s), 'a legal slide moves exactly one tile');
-	for (let i = 0; i < 5; i++) {
-		const sh = Slide.shuffle(Math.random);
-		A(!Slide.solved(sh) && [...sh].sort((a, b) => a - b).join() === '0,1,2,3,4,5,6,7,8',
-			`shuffle ${i + 1} deals a real, unsolved permutation`);
-	}
-}
-
 // ---------- source wiring ----------
 {
 	const sv = fs.readFileSync(path.join(ROOT, 'overworld/services.js'), 'utf8');
@@ -45,7 +29,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		'both National Park gates carry the contest officer zone');
 	A(/MAP_ROUTE110_TRICK_HOUSE_PUZZLE8/.test(sv) && /trickscroll/.test(sv) && /trickend/.test(sv),
 		'all eight Trick House rooms carry scroll zones, the End room its master');
-	A(/MAP_RUINS_OF_ALPH_HO_OH_CHAMBER/.test(sv) && /ruinspuzzle/.test(sv), 'all four ruins chambers carry the puzzle wall');
+	A(!/ruinspuzzle/.test(sv), 'the ruins chambers no longer carry the retired slide-puzzle wall');
 	A(/sportball/.test(fs.readFileSync(path.join(ROOT, 'overworld/bag.js'), 'utf8')), 'the SPORT BALL exists (never sold)');
 	const mn = overworldSource();
 	A(/bugContestCatch\(battle\.lastCaught\)/.test(mn), 'the wild catch path defers to the contest entry keeper');
@@ -243,32 +227,18 @@ for (let n = 1; n <= 8; n++) {
 		});
 		A(th3 && /PUZZLE2$/.test(th3.map), 'the entrance door now leads to Puzzle 2', JSON.stringify(th3));
 
-		// --- ruins of alph ---
+		// --- ruins of alph: the replica wall reads its Crystal sign ---
 		const ruins = await page.evaluate(async () => {
 			const ow = window.__ow;
-			const o = {};
 			await ow.moveToMap('RuinsOfAlphKabutoChamber', 3, 6);
 			const p = ow.player;
 			p.tx = 2; p.ty = 4; p.px = 2 * 16; p.py = 4 * 16; p.facing = 'up';
 			ow.interact();
-			o.opened = ow.slideMenu.open;
-			o.tiles = [...(ow.slideMenu.board || [])].sort((a, b) => a - b).join();
-			ow.drawSlide(480, 320);
-			// cheat to one slide from home, then make the winning move
-			ow.slideMenu.board = [0, 1, 2, 3, 4, 8, 6, 7, 5];
-			ow.slideKey('ArrowUp');
-			o.done = ow.slideMenu.done;
-			o.saved = JSON.parse(localStorage.getItem('magepunk_ruins_v1') || '{}')?.solved?.kabuto === true;
-			o.dialogUp = ow.dialog.blocking;
-			return o;
+			await new Promise(r => setTimeout(r, 300));
+			return { text: JSON.stringify(ow.dialog.pages || ''), blocking: ow.dialog.blocking, puzzle: (await import('./unown_puzzle.js')).unownPuzzle.open };
 		});
-		A(ruins.opened && ruins.tiles === '0,1,2,3,4,5,6,7,8', 'the replica wall deals a real 3×3 slide puzzle');
-		A(ruins.done && ruins.saved, 'solving it is remembered per chamber', JSON.stringify(ruins));
-		A(ruins.dialogUp, 'the floor-opens moment plays');
+		A(ruins.blocking && /replica/i.test(JSON.stringify(ruins)) && !ruins.puzzle, "the replica wall reads Crystal's ANCIENT REPLICA sign", JSON.stringify(ruins));
 		for (let i = 0; i < 8 && await page.evaluate(() => window.__ow.dialog.blocking); i++) { await page.keyboard.press('z'); await new Promise(r => setTimeout(r, 150)); }
-		await new Promise(r => setTimeout(r, 1200)); // the warp into the item room lands
-		const dropped = await page.evaluate(() => window.__ow.world.current.name);
-		A(dropped === 'RuinsOfAlphKabutoItemRoom', 'the opened floor drops into the chamber item room', dropped);
 
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {

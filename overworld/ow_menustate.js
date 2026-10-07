@@ -79,7 +79,7 @@ export const questMenu = { open: false, idx: 0, page: 0 }; // page 0 = quest log
 export const THINGS_TO_DO = [
 	{ label: 'BUG-CATCHING CONTEST', where: 'National Park gate (Johto) — Tue/Thu/Sat', avail: () => isBugDay() },
 	{ label: 'POKeMON CONTESTS', where: 'Lilycove Contest Hall (Hoenn)', done: () => Object.values(contestProgress().ranks || {}).some(v => v > 0) },
-	{ label: 'THE RUINS OF ALPH', where: 'Solve the sliding tile puzzles (Johto)', done: () => allRuinsSolved() },
+	{ label: 'THE RUINS OF ALPH', where: 'Solve the four UNOWN PUZZLES (Johto)', done: () => allRuinsSolved() },
 	{ label: 'UNOWN DEX', where: 'Catch every Unown letter in the Ruins (Johto)', done: () => Dex.unownCount() >= 28 },
 	{ label: 'APRICORNS & KURT', where: 'Pick apricorns on Routes 37/42, see Kurt in Azalea (Johto)' },
 	{ label: 'THE RADIO', where: 'Tune in to a radio in any Johto house' },

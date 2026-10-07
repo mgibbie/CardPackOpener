@@ -14,7 +14,7 @@ import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopM
 import { hillGuardAt, hillPrizeTalk, hillReceptionTalk, startHillBattle } from './ow_minigames.js';
 import { S } from './ow_state.js';
 import { runScriptLabel } from './ow_story.js';
-import { blendMenu, bugOfficerTalk, contestMenu, openRuinsPuzzle, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
+import { blendMenu, bugOfficerTalk, contestMenu, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
 import { healParty, saveParty } from './party.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
@@ -108,6 +108,9 @@ export function useGadget(id) {
 		}
 		Bag.consume(id);
 		bagMenu.open = false;
+		// SpecialKabutoChamber: a rope used in the Kabuto chamber opens its hidden
+		// wall for the next visit
+		if (world.current?.map?.id === 'MAP_RUINS_OF_ALPH_KABUTO_CHAMBER') Story.setFlag('EVENT_WALL_OPENED_IN_KABUTO_CHAMBER');
 		dialog.open('You climbed the ESCAPE ROPE\nback to the open air!', () => moveToMap(lastOutdoor.map, lastOutdoor.x, lastOutdoor.y));
 		return true;
 	}
@@ -302,7 +305,6 @@ export function interact() {
 	if (svc === 'trickmaster') { trickMasterTalk(); return; }
 	if (svc === 'trickscroll') { trickScrollFind(); return; }
 	if (svc === 'trickend') { trickEndTalk(); return; }
-	if (svc === 'ruinspuzzle') { openRuinsPuzzle(); return; }
 	if (svc === 'contest') {
 		if (!S.party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
 		if (!(Contest.data?.opponents || []).length) { dialog.open('The hall is still being prepared for the next Contest...'); return; }
@@ -453,7 +455,7 @@ export function interact() {
 	// (MB_COUNTER, 0x80 in both FRLG and Emerald), the GBA talks to whoever stands
 	// one tile beyond (field_control_avatar.c). Without it the Celadon store
 	// clerks behind their counters could not be spoken to at all.
-	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy)
+	const npc = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy))
 		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? npcs.list.find(n => n.tx === fx + dx && n.ty === fy + dy) : null);
 	if (npc) {
 		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing] || npc.facing;

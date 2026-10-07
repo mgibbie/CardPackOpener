@@ -35,7 +35,7 @@ import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
 import { townMap } from './ow_menustate.js';
-import { describeDecoration, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
+import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
 import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
@@ -378,6 +378,7 @@ export async function runMapSetupScripts(isBoot) {
 	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
 		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
+		try { runChamberWallScene(); } catch (e) { console.warn('[plot] chamber wall scene failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	};
@@ -405,6 +406,26 @@ function runCrystalCallbacks() {
 		cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
 		if (cutscene.blocking) cutscene.stop();   // setup only
 	}
+}
+
+// The Ruins of Alph chambers' scene 0 (SCENE_RUINSOFALPH*CHAMBER_CHECK_WALL):
+// the wall at (4,0) opens onto the chamber's item room once its event is set —
+// Ho-Oh leading the party (special HoOhChamber), a WATER STONE in the bag or
+// held (special OmanyteChamber), FLASH used in the Aerodactyl chamber, an
+// ESCAPE ROPE used in the Kabuto one (engine/events/unown_walls.asm). The port
+// doesn't run scene scripts in general, so these four run here: on entering the
+// chamber, and right after FLASH. WallOpenScript sets the scene to NOOP
+// (crystal_scenes.js), so it opens once.
+const CHAMBER_WALL_SCENES = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber`);
+export function runChamberWallScene() {
+	const name = world.current?.name;
+	if (!CHAMBER_WALL_SCENES.includes(name) || cutscene.blocking) return false;
+	if (Story.getVar('VAR_SCENE_' + name) !== 0) return false;
+	const label = name + 'CheckWallScene';
+	if (!S.mapScripts[label]) return false;
+	cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
+	if (cutscene.blocking) cutscene.stop();
+	return true;
 }
 
 function runMapTransition() {
@@ -916,8 +937,16 @@ export function runSpecial(name, store, op) {
 		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
 		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
 		case 'UnownPuzzle': return unownPuzzleSpecial(() => cutscene.resume());
+		// the chambers' hidden walls (engine/events/unown_walls.asm; runChamberWallScene)
+		case 'HoOhChamber': if (S.party[0]?.speciesId === 'hooh') Story.setFlag('EVENT_WALL_OPENED_IN_HO_OH_CHAMBER'); return;
+		case 'OmanyteChamber':
+			if (Bag.count('waterstone') || S.party.some(m => m?.heldItem === 'waterstone')) Story.setFlag('EVENT_WALL_OPENED_IN_OMANYTE_CHAMBER');
+			return;
 		// the player's-room decorations (decorations.js): PlayersHouse2F's two
-		// callbacks and its poster sign (the TOWN MAP poster opens the map, to look at)
+		// callbacks, its PC's DECORATION menu (TRUE when the room changed: the
+		// script's iftrue .Warp reloads it) and describedecoration for the poster
+		// (the TOWN MAP poster opens the map, to look at), dolls, console, big doll
+		case 'PlayersHousePC': return playersHousePCSpecial();
 		case 'ToggleDecorationsVisibility': toggleDecorationsVisibility(); return;
 		case 'ToggleMaptileDecorations': toggleMaptileDecorations(); return;
 		case 'DescribeDecoration': describeDecoration(op && op.which, () => { openTownMap(); townMap.viewOnly = true; }); return;

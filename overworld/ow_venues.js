@@ -11,7 +11,6 @@ import { S } from './ow_state.js';
 import { addCaught, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
 import { safeLoad, safeSave } from './safestore.js';
-import * as Slide from './slidepuzzle.js';
 import { sfx } from './sound.js';
 import * as Story from './events.js';
 import { ruinsPuzzleFlags } from './unown_puzzle.js';
@@ -201,83 +200,11 @@ export function trickEndTalk() {
 		() => warpTo('MAP_ROUTE110_TRICK_HOUSE_ENTRANCE', '2'));
 }
 
-// ---------- Ruins of Alph sliding puzzles ----------
-// The ancient replica wall in each of the four chambers is a 3×3 slide puzzle
-// of that chamber's Pokémon. Solving one rumbles the floor open — down to the
-// chamber's ITEM ROOM (real shipped item balls) — and is remembered in
-// magepunk_ruins_v1.
+// ---------- Ruins of Alph: legacy slide-puzzle progress ----------
+// The replica walls used to deal a 3x3 slide puzzle of each chamber's Pokemon,
+// remembered in magepunk_ruins_v1. Crystal's own UNOWN PUZZLE (unown_puzzle.js)
+// replaced it; chambers solved the old way still count for the ! and ? Unown.
 const RUINS_KEY = 'magepunk_ruins_v1';
-const RUINS_SPECIES = {
-	MAP_RUINS_OF_ALPH_KABUTO_CHAMBER: 'kabuto',
-	MAP_RUINS_OF_ALPH_OMANYTE_CHAMBER: 'omanyte',
-	MAP_RUINS_OF_ALPH_AERODACTYL_CHAMBER: 'aerodactyl',
-	MAP_RUINS_OF_ALPH_HO_OH_CHAMBER: 'hooh',
-};
-export const slideMenu = { open: false, board: null, species: null, mapId: null, moves: 0, done: false };
-export function openRuinsPuzzle() {
-	const mapId = world.current?.map?.id;
-	const species = RUINS_SPECIES[mapId];
-	if (!species) return;
-	slideMenu.open = true;
-	slideMenu.board = Slide.shuffle();
-	slideMenu.species = species;
-	slideMenu.mapId = mapId;
-	slideMenu.moves = 0;
-	slideMenu.done = false;
-	contestSpriteFor(species); // warm the sprite the tiles are sliced from
-	sfx('ui_select');
-}
-export function slideKey(k) {
-	const s = slideMenu;
-	if (s.done) return; // the solve sequence owns the exit
-	if (k === 'x' || k === 'Escape') { s.open = false; return; }
-	const dir = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[k];
-	if (!dir) return;
-	if (Slide.move(s.board, dir)) { s.moves++; sfx('ui_select'); }
-	if (Slide.solved(s.board)) {
-		s.done = true;
-		const st = safeLoad(RUINS_KEY, { solved: {} });
-		const first = !st.solved[s.species];
-		st.solved[s.species] = true;
-		safeSave(RUINS_KEY, st);
-		if (first) Journal.add(`Solved the ${s.species.toUpperCase()} puzzle in the Ruins of Alph!`);
-		sfx('levelup');
-		const itemRoom = s.mapId.replace('_CHAMBER', '_ITEM_ROOM');
-		dialog.open('The tiles slide into place...\n\nThe ancient image is whole! The floor rumbles —\nand slides OPEN beneath you!', () => {
-			slideMenu.open = false;
-			warpTo(itemRoom, '0');
-		});
-	}
-}
-export function drawSlide(W, H) {
-	const u = H / 480;
-	const s = slideMenu;
-	const sp = battle.data.species[s.species];
-	menuChrome(W, H, u, 'ANCIENT PUZZLE', `Arrows slide the tiles.  Moves: ${s.moves}   X: step away`);
-	const size = 260 * u, cell = size / Slide.SIZE;
-	const gx = (W - size) / 2, gy = 96 * u;
-	sctx.fillStyle = 'rgba(20,28,44,0.95)';
-	BUI.rr(sctx, gx - 8 * u, gy - 8 * u, size + 16 * u, size + 16 * u, 10 * u); sctx.fill();
-	const img = contestSpriteFor(s.species);
-	for (let pos = 0; pos < 9; pos++) {
-		const v = s.board[pos];
-		if (v === 8) continue; // the blank
-		const px = gx + (pos % 3) * cell, py = gy + Math.floor(pos / 3) * cell;
-		sctx.fillStyle = BUI.C.btn;
-		BUI.rr(sctx, px + 2 * u, py + 2 * u, cell - 4 * u, cell - 4 * u, 6 * u); sctx.fill();
-		if (img) {
-			sctx.imageSmoothingEnabled = false;
-			const sw = img.width / 3, sh = img.height / 3;
-			sctx.drawImage(img, (v % 3) * sw, Math.floor(v / 3) * sh, sw, sh, px + 4 * u, py + 4 * u, cell - 8 * u, cell - 8 * u);
-		}
-		sctx.fillStyle = 'rgba(255,255,255,0.55)';
-		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-		sctx.fillText(String(v + 1), px + 7 * u, py + 15 * u);
-	}
-	sctx.fillStyle = BUI.C.dim;
-	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-	sctx.fillText(`Restore the ancient image of ${(sp?.name || s.species).toUpperCase()}.`, gx - 8 * u, gy + size + 30 * u);
-}
 
 // ---------- the UNOWN DEX (Ruins of Alph) ----------
 // 28 letters, one species each (unown = A, then unown_b … unown_z, unown_exclaim,
@@ -287,7 +214,7 @@ export function drawSlide(W, H) {
 export const UNOWN_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '!', '?'];
 const UNOWN_ID = { A: 'unown', '!': 'unown_exclaim', '?': 'unown_question' };
 export const unownIdFor = L => UNOWN_ID[L] || 'unown_' + L.toLowerCase();
-// a chamber counts when either its slide puzzle or its Crystal UNOWN PUZZLE
+// a chamber counts when either its (retired) slide puzzle or its Crystal UNOWN PUZZLE
 // (EVENT_SOLVED_*_PUZZLE, unown_puzzle.js) is solved
 export const allRuinsSolved = () => { const s = safeLoad(RUINS_KEY, { solved: {} }).solved || {}; const f = ruinsPuzzleFlags(); return ['kabuto', 'omanyte', 'aerodactyl', 'hooh'].every((k, i) => s[k] || Story.getFlag(f[i])); };
 // the letters available in the wild right now: A..Z always, ! and ? once every

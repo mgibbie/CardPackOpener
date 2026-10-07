@@ -3,7 +3,7 @@ import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { loadCrystalCallbacks } from './crystal_callbacks.js';
-import { loadCrystalDecorations } from './decorations.js';
+import { decoSpriteFor, loadCrystalDecorations } from './decorations.js';
 import { loadCrystalObjectConsts } from './crystal_object_consts.js';
 import { loadSubvarFixData } from './subvar_fix.js';
 import { loadScrollMultichoice } from './scroll_multichoice.js';
@@ -147,8 +147,8 @@ import {
 import {
 	CONTEST_KEY, UNOWN_ORDER, allRuinsSolved, blendBerries, blendKey, blendMenu, bugContest,
 	bugContestCatch, bugContestRoll, bugOfficerTalk, bugScore, contestKey, contestMenu,
-	contestProgress, contestSpriteFor, drawBlend, drawContest, drawSlide, drawUnownDex,
-	endBugContest, isBugDay, openRuinsPuzzle, openUnownDex, rollUnownLetter, slideKey, slideMenu,
+	contestProgress, contestSpriteFor, drawBlend, drawContest, drawUnownDex,
+	endBugContest, isBugDay, openUnownDex, rollUnownLetter,
 	trickEndTalk, trickHouseOpenDoors, trickMasterTalk, trickScrollFind, trickState, trickWarp,
 	unownDex, unownDexKey, unownIdFor,
 } from './ow_venues.js';
@@ -225,8 +225,8 @@ import * as MP from '../battlecards/mpmode.js';
 import { Journal } from './journal.js';
 import { badgeSprite, badgeGhost } from './badgeart.js';
 import { Contest, CATS, RANKS } from './contest.js';
-import * as Slide from './slidepuzzle.js';
 import * as Slots from './slots.js';
+import { ruinsWallClosed } from './unown_puzzle.js';
 import { crystalSlots, stepCrystalSlots } from './ow_crystalslots.js';
 import * as Savefile from './savefile.js';
 import { OW_RESET_KEYS } from '../site/owreset.js';
@@ -369,7 +369,7 @@ export const urlPinnedMap = new URLSearchParams(location.search).has('map');
 // instead of committing one more step into it. Same condition the tick uses to
 // decide whether input moves the player at all, so the two cannot disagree.
 player.canStep = () => !menuBlocking() && !trainers.engaging;
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || ruinsWallClosed(world.current?.name, world.warpAt(tx, ty)) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
@@ -648,7 +648,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
 	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)
-	await loadCrystalDecorations(getJSON);     // the player's-room decorations (decorations.js)
+	await loadCrystalDecorations(getJSON, getImage);   // the player's-room decorations + their object sprites (decorations.js)
+	npcs.decoSprite = decoSpriteFor;               // ...which the room's console / doll objects wear
 	await loadSubvarFixData(getJSON);          // subvars the transpile turned into addvars (subvar_fix.js)
 	await loadScrollMultichoice(getJSON);      // Emerald's ShowScrollableMultichoice lists (scroll_multichoice.js)
 	mergePhoneTeams(S.trainerTeams);
@@ -869,7 +870,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		Journal, Savefile, runSaveAction, loadBackups, restoreBackup, OPTION_ACTIONS, OPTION_KEYS, OW_KEYS, repelWoreOff, setRepel, drawOptions,
 		Contest, get contestMenu() { return contestMenu; }, get blendMenu() { return blendMenu; }, contestKey, blendKey, drawContest, drawBlend, contestProgress, blendBerries,
 		get bugContest() { return bugContest; }, bugOfficerTalk, bugContestCatch, bugContestRoll, bugScore, endBugContest, isBugDay,
-		trickState, trickWarp, trickScrollFind, trickMasterTalk, trickEndTalk, Slide, get slideMenu() { return slideMenu; }, openRuinsPuzzle, slideKey, drawSlide,
+		trickState, trickWarp, trickScrollFind, trickMasterTalk, trickEndTalk,
 		shoalTide, shoalWarp, shoalDig, shoalHermitTalk, kurtTalk, roamState, roamersOnMapChange, roamerHere, startRoamerBattle, roamerEnd, ROAMERS, ROAM_ROUTES,
 		myBase, saveMyBase, baseSpotKey, baseRoomFor, secretSpotInteract, enterBase, baseDecoInteract, get baseCtx() { return S.baseCtx; }, set baseCtx(v) { S.baseCtx = v; },
 		get decoMenu() { return decoMenu; }, decoKey, drawDecoMenu, drawBaseDeco, DECO_ITEMS,

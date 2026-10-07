@@ -102,8 +102,20 @@ class NPC {
 		}
 	}
 
+	// the tiles it stands on: a big doll (Crystal's BIG_OBJECT) fills 2x2 from its corner
+	covers(tx, ty) {
+		if (this.deco && this.deco.big) return tx >= this.tx && tx <= this.tx + 1 && ty >= this.ty && ty <= this.ty + 1;
+		return this.tx === tx && this.ty === ty;
+	}
+
 	draw(ctx2d, camX, camY) {
 		if (this.hidden) return; // hidden by a script (removeobject/set_invisible)
+		// a decoration: one still picture (FIXED_FACING), drawn 4px up as Crystal's sprites are
+		if (this.deco) {
+			const d = this.deco;
+			ctx2d.drawImage(d.img, d.sx, d.sy, d.w, d.h, Math.round(this.px - camX), Math.round(this.py - 4 - camY), d.w, d.h);
+			return;
+		}
 		if (this.isMon) { drawOwMon(ctx2d, this.img, this.px + META / 2, this.py + META, camX, camY); return; }
 		const stills = { down: 0, up: 1, left: 2, right: 2 };
 		const walks = { down: [3, 4], up: [5, 6], left: [7, 8], right: [7, 8] };
@@ -128,6 +140,9 @@ export class NPCs {
 		this.list = [];
 		this.gfx = null;
 		this.owSpecies = new Set(); // species with a data/pokemon_ow sprite (so mon object_events draw as the mon, not a generic man)
+		// Crystal's variable sprites: the player's-room console / dolls / big doll wear
+		// the placed decoration's sprite (decorations.js decoSpriteFor, set by main.js)
+		this.decoSprite = null;
 	}
 
 	async init() {
@@ -165,6 +180,8 @@ export class NPCs {
 			// invisible while the blanket flag rule hid them anyway; the moment flags
 			// are read honestly they would each be drawn TWICE, once as a fake NPC.
 			if (itemsOwns(ev.graphics_id)) return;          // items.js draws and drives these
+			const deco = this.decoSprite && this.decoSprite(ev);
+			if (deco) { const n = new NPC(ev, deco.img); n.deco = deco; this.list.push(n); return; }
 			// prop objects (cutscene furniture): drawing them with a person-sprite
 			// fallback put "guys" on Oak's counter (the two POKEDEX devices) and
 			// would park villagers where Littleroot's moving TRUCKs sit
@@ -197,11 +214,11 @@ export class NPCs {
 	// tile occupied by an NPC (current tile or the one it's stepping into)?
 	occupied(tx, ty, self = null) {
 		if (this.player && this.player.tx === tx && this.player.ty === ty) return true;
-		return this.list.some(n => n !== self && n.tx === tx && n.ty === ty);
+		return this.list.some(n => n !== self && n.covers(tx, ty));
 	}
 
 	npcBlocks(tx, ty) {
-		return this.list.some(n => !n.hidden && n.tx === tx && n.ty === ty);
+		return this.list.some(n => !n.hidden && n.covers(tx, ty));
 	}
 
 	update(dt) {
