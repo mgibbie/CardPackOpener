@@ -1,5 +1,6 @@
 // ow_places.js — place-specific systems: blacking out and heal points, the SAFARI GAME, museum paintings, ruins words, fossils and New Mauville.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import * as PB from './pokeblock.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
@@ -105,6 +106,7 @@ export function safariZoneOf(mapId) { return SAFARI_ZONES[mapId] || null; }
 export function saveSafari() { safeSave('magepunk_safari_v1', safari); }
 export function endSafari(reason) {
 	const zone = safari.zone;
+	PB.resetFeeders();   // ClearAllPokeblockFeeders
 	safari = { on: false, zone: null, balls: 0, steps: 0 };
 	saveSafari();
 	if (reason) dialog.open(reason, () => { if (zone) warpTo(SAFARI_GATES[zone], 0); });
@@ -123,6 +125,7 @@ export function checkSafariGate() {
 				return;
 			}
 			safari = { on: true, zone, balls: SAFARI_BALLS, steps: SAFARI_STEPS };
+			PB.resetFeeders();
 			saveSafari();
 			hud.textContent = `SAFARI GAME start! ${SAFARI_BALLS} balls, ${SAFARI_STEPS} steps.`;
 		});
@@ -164,7 +167,10 @@ export function startWildBattle(pick, forceDouble) {
 	// special-ball context: how we ran into it (LURE BALL) + dex ownership (REPEAT BALL)
 	const catchCtx = { method: pick.method || (player.surfing ? 'surf' : 'walk'), owns: id => Dex.isCaught(id) };
 	battle.start(S.party, pick.id, pick.level, result => wildBattleEnd(result, inSafari),
-		second, { weather: mapWeatherNow(), safari: inSafari ? safari : null, catchCtx });
+		second, { weather: mapWeatherNow(), safari: inSafari ? safari : null, catchCtx,
+			// PickWildMonNature: a POKeBLOCK FEEDER within 5 tiles turns 80% of
+			// Safari natures toward one that likes its flavor
+			pickNature: inSafari ? () => PB.feederNature(PB.feederInRange(world.current.map.id, player.tx, player.ty)) : null });
 }
 
 // the standard wild-battle ending — shared by live battles and RESUMED ones

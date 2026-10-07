@@ -1,4 +1,4 @@
-// ow_venues.js — the side venues: the Bug-Catching Contest, the Trick House, the Ruins of Alph sliding puzzles and UNOWN DEX, and Pokémon Contests (with the berry blender).
+// ow_venues.js — the side venues: the Bug-Catching Contest, the Trick House, the Ruins of Alph sliding puzzles and UNOWN DEX, and Pokémon Contests.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as Bag from './bag.js';
 import * as BUI from './battleui.js';
@@ -260,85 +260,7 @@ export function drawUnownDex(W, H) {
 
 // ---------- Pokémon Contests (Lilycove Contest Hall) ----------
 // The contest itself is contest_ui.js (the reception, the stage, the results) over
-// contest_engine.js (pokeemerald's rules). This corner keeps the Berry Blender.
+// contest_engine.js (pokeemerald's rules); the Berry Blender is minigames/blender/.
 export { CONTEST_KEY, contestKey, contestMenu, contestProgress, contestSpriteFor, drawContest } from './contest_ui.js';
 import { contestSpriteFor } from './contest_ui.js';
-export const blendMenu = { open: false, mode: 'pickmon', idx: 0, mon: null, flash: null };
-// the berries in the bag that the blender knows a flavor for
-export function blendBerries() {
-	return Object.keys(Contest.data?.berries || {}).filter(id => Bag.ITEMS[id] && Bag.count(id) > 0).map(id => [id, Bag.count(id)]);
-}
-export function blendKey(k) {
-	const b = blendMenu;
-	if (b.mode === 'pickmon') {
-		if (k === 'ArrowUp') b.idx = (b.idx + S.party.length - 1) % S.party.length;
-		if (k === 'ArrowDown') b.idx = (b.idx + 1) % S.party.length;
-		if (k === 'x' || k === 'Escape') { b.open = false; return; }
-		if ((k === 'z' || k === 'Enter') && S.party[b.idx]) { b.mon = S.party[b.idx]; b.mode = 'feed'; b.idx = 0; b.flash = null; }
-		return;
-	}
-	const list = blendBerries();
-	const rows = list.length + 1; // + Done
-	if (k === 'ArrowUp') b.idx = (b.idx + rows - 1) % rows;
-	if (k === 'ArrowDown') b.idx = (b.idx + 1) % rows;
-	if (k === 'x' || k === 'Escape') { b.mode = 'pickmon'; b.idx = 0; b.flash = null; return; }
-	if (k !== 'z' && k !== 'Enter') return;
-	if (b.idx >= list.length) { b.mode = 'pickmon'; b.idx = 0; return; }
-	const [id] = list[b.idx];
-	const r = Contest.feed(b.mon, id);
-	if (!r) { sfx('ui_denied'); b.flash = `${b.mon.name} can't eat another bite! (sheen is full)`; return; }
-	Bag.consume(id);
-	sfx('heal');
-	const g = Object.entries(r.gains).map(([c, v]) => `${c.toUpperCase()} +${v}`).join('  ') || 'no rise';
-	b.flash = `${g}   SHEEN ${r.sheen}/255`;
-	saveParty(S.party); // condition lives on the mon
-	b.idx = Math.min(b.idx, blendBerries().length); // ate the last of a kind -> stay in range
-}
-export function drawBlend(W, H) {
-	const u = H / 480;
-	const b = blendMenu;
-	if (b.mode === 'pickmon') {
-		menuChrome(W, H, u, 'BERRY BLENDER', 'Whose condition shall we raise?');
-		S.party.forEach((mo, i) => monRow('bb:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, b.idx === i, u));
-		return;
-	}
-	const c = Contest.cond(b.mon);
-	menuChrome(W, H, u, `BERRY BLENDER — ${b.mon.name}`, 'Flavor raises its category; smoothness fills SHEEN.');
-	const barW = W * 0.32;
-	CATS.forEach((cat, i) => {
-		const y = (96 + i * 30) * u;
-		sctx.fillStyle = BUI.C.dim;
-		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-		sctx.fillText(cat.toUpperCase(), 32 * u, y);
-		BUI.bar(sctx, 110 * u, y - 11 * u, barW, 13 * u, Math.min(1, c[cat] / 255), BUI.C.accent, 4 * u);
-		sctx.fillStyle = BUI.C.text;
-		sctx.fillText(String(c[cat]), 118 * u + barW, y);
-	});
-	const sy = (96 + 5 * 30 + 8) * u;
-	sctx.fillStyle = BUI.C.dim;
-	sctx.fillText('SHEEN', 32 * u, sy);
-	BUI.bar(sctx, 110 * u, sy - 11 * u, barW, 13 * u, Math.min(1, c.sheen / 255), '#c9a24a', 4 * u);
-	sctx.fillStyle = BUI.C.text;
-	sctx.fillText(`${c.sheen}/255`, 118 * u + barW, sy);
-	// the berry shelf
-	const list = blendBerries();
-	const rows = list.map(([id, n]) => `${Bag.ITEMS[id].name}  x${n}`).concat(['Done']);
-	const start = Math.max(0, Math.min(b.idx - 3, rows.length - 7));
-	rows.slice(start, start + 7).forEach((label, i) => {
-		const idx = start + i;
-		const bid = 'bbf:' + idx;
-		const btn = { id: bid, x: W * 0.55, y: (88 + i * 48) * u, w: W * 0.41, h: 42 * u, label, center: false };
-		S.menuUi.push(btn);
-		BUI.button(sctx, btn, S.menuHover === bid || b.idx === idx, u);
-	});
-	if (!list.length) {
-		sctx.fillStyle = BUI.C.dim;
-		sctx.fillText('No berries in the bag — they grow on routes!', W * 0.55, 100 * u);
-	}
-	if (b.flash) {
-		sctx.fillStyle = BUI.C.accent;
-		sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
-		sctx.fillText(b.flash, 32 * u, H - 18 * u);
-	}
-}
 

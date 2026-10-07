@@ -16,7 +16,9 @@ import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, edi
 import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, friendsMenu, mailMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
 import { checkIntroTrigger } from './ow_story.js';
-import { blendMenu, contestMenu, drawBlend, drawContest, drawUnownDex, unownDex } from './ow_venues.js';
+import { contestMenu, drawContest, drawUnownDex, unownDex } from './ow_venues.js';
+import { blender, drawBerryBlender } from './minigames/blender/blender.js';
+import { drawPokeblockCase, pbCase } from './pokeblock_case.js';
 import { safeSaveStr } from './safestore.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -349,6 +351,7 @@ export function tick(now) {
 		}
 		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
 		else if (contestMenu.open) drawContest(sctx, SW, SH); // full screen, the GBA contest screen scaled up
+		else if (blender.open) drawBerryBlender(sctx, SW, SH); // the GBA screen scaled up
 		else if (crystalSlots.open) drawCrystalSlots(SW, MH);
 		else if (partyMenu.open) drawPartyMenu(SW, MH);
 		else if (shopMenu.open) drawShopMenu(SW, MH);
@@ -356,7 +359,7 @@ export function tick(now) {
 		else if (pcMenu.open) drawPcMenu(SW, MH);
 		else if (vfMenu.open) drawVfMenu(SW, MH);
 		else if (gcMenu.open) drawGcMenu(SW, MH);
-		else if (blendMenu.open) drawBlend(SW, MH);
+		else if (pbCase.open) drawPokeblockCase(SW, MH);
 		else if (unownPuzzle.open) drawUnownPuzzle(SW, MH);
 		else if (decoMenu.open) drawDecoMenu(SW, MH);
 		else if (socialMenu.open) drawSocial(SW, MH);

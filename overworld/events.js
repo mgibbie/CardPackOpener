@@ -730,6 +730,7 @@ export function normalizeText(s, ctx = {}) {
 	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
 		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
 		.replace(/\{STR_VAR_([123])\}/g, (m, n) => strVars[n] || '')   // what a `buffer` op put there
+		.replace(/\{POKEBLOCK\}/g, 'POKéBLOCK')   // Emerald's charmap macro (the blender, the case, the feeders)
 		.replace(/\{[^{}]*\}/g, '')          // drop any remaining control token, incl. arg'd ones like {PAUSE 0x56}
 		// pokecrystal's charmap prints "#" as POKé, so the ported Johto strings
 		// are full of "#MON" / "#DEX" / "# BALL". Expand before the é fold below.
@@ -832,6 +833,8 @@ function setStrVar(dst, text) {
 	if (m && text != null) strVars[m[1]] = text;
 }
 export function getStrVar(n) { return strVars[n] || ''; }
+// a special that buffers a name itself (GetPokeblockFeederInFront -> STR_VAR_1)
+export function setStrVarText(n, text) { if (n >= 1 && n <= 3 && text != null) strVars[n] = String(text); }
 // SPECIES_HITMONLEE -> "HITMONLEE", ITEM_POKE_BALL -> "POKE BALL" (the game's
 // upper-case names), with the few that need punctuation spelled out
 const SYMBOL_NAMES = { MR_MIME: 'MR. MIME', MIME_JR: 'MIME JR.', NIDORAN_F: 'NIDORAN♀', NIDORAN_M: 'NIDORAN♂', FARFETCHD: "FARFETCH'D", HO_OH: 'HO-OH', PORYGON_Z: 'PORYGON-Z' };

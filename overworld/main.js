@@ -145,9 +145,9 @@ import {
 } from './ow_minigames.js';
 // ow_venues.js: ow_venues.js — the side venues: the Bug-Catching Contest, the Trick House, the Ruins of Alph sliding puzzles and UNOWN DEX, and Pokémon Contests (with the berry blender).
 import {
-	CONTEST_KEY, UNOWN_ORDER, allRuinsSolved, blendBerries, blendKey, blendMenu, bugContest,
+	CONTEST_KEY, UNOWN_ORDER, allRuinsSolved, bugContest,
 	bugContestCatch, bugContestRoll, bugOfficerTalk, bugScore, contestKey, contestMenu,
-	contestProgress, contestSpriteFor, drawBlend, drawContest, drawUnownDex,
+	contestProgress, contestSpriteFor, drawContest, drawUnownDex,
 	endBugContest, isBugDay, openUnownDex, rollUnownLetter,
 	trickEndTalk, trickHouseOpenDoors, trickMasterTalk, trickScrollFind, trickState, trickWarp,
 	unownDex, unownDexKey, unownIdFor,
@@ -220,6 +220,10 @@ import { statsFor, buildMon as battleBuildMon } from './battle.js';
 import * as Frontier from './frontier.js';
 import { getImage, drawOwMon } from './engine.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from './itemicon.js';
+import * as PB from './pokeblock.js';
+import { initPokeblockData } from './pokeblock.js';
+import { blender, blenderKey, blenderTest, drawBerryBlender, startBerryBlender } from './minigames/blender/blender.js';
+import { drawPokeblockCase, openPokeblockCase, pbCase, pokeblockCaseKey } from './pokeblock_case.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Journal } from './journal.js';
@@ -664,6 +668,10 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		// switches, 2026-10-04). A fallback under shared_scripts, like it.
 		const ml = await getJSON('missing_labels_data.json').catch(() => null);
 		if (ml) { sharedScripts = { ...(ml.scripts || {}), ...sharedScripts }; commonStrings = { ...(ml.strings || {}), ...commonStrings }; }
+		// + the POKeBLOCK scripts (the blenders, the Blend Master, the Safari
+		// feeders, the case gift) and the berries' flavors (tools/gen_pokeblock_data.mjs)
+		const pb = await getJSON('pokeblock_data.json').catch(() => null);
+		if (pb) { initPokeblockData(pb); sharedScripts = { ...(pb.scripts || {}), ...sharedScripts }; commonStrings = { ...(pb.strings || {}), ...commonStrings }; }
 	}
 	// one tab plays at a time: a newer tab pauses this one (no stale writes from it)
 	startTabLock({ keys: OW_KEYS });
@@ -868,7 +876,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Journal, Savefile, runSaveAction, loadBackups, restoreBackup, OPTION_ACTIONS, OPTION_KEYS, OW_KEYS, repelWoreOff, setRepel, drawOptions,
-		Contest, get contestMenu() { return contestMenu; }, get blendMenu() { return blendMenu; }, contestKey, blendKey, drawContest, drawBlend, contestProgress, blendBerries,
+		Contest, get contestMenu() { return contestMenu; }, contestKey, drawContest, contestProgress,
+		PB, blender, blenderKey, blenderTest, startBerryBlender, drawBerryBlender, pbCase, openPokeblockCase, pokeblockCaseKey, drawPokeblockCase,
 		get bugContest() { return bugContest; }, bugOfficerTalk, bugContestCatch, bugContestRoll, bugScore, endBugContest, isBugDay,
 		trickState, trickWarp, trickScrollFind, trickMasterTalk, trickEndTalk,
 		shoalTide, shoalWarp, shoalDig, shoalHermitTalk, kurtTalk, roamState, roamersOnMapChange, roamerHere, startRoamerBattle, roamerEnd, ROAMERS, ROAM_ROUTES,

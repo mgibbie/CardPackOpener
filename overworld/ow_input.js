@@ -14,13 +14,13 @@ import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopM
 import { hillGuardAt, hillPrizeTalk, hillReceptionTalk, startHillBattle } from './ow_minigames.js';
 import { S } from './ow_state.js';
 import { runScriptLabel } from './ow_story.js';
-import { blendMenu, bugOfficerTalk, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
+import { bugOfficerTalk, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
 import { contestReception } from './contest_ui.js';
 import { healParty, saveParty } from './party.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk } from './ow_places.js';
+import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk, safariZoneOf } from './ow_places.js';
 import { gcMenu } from './ow_gamecorner.js';
 import { legendaryHere, startLegendaryBattle } from './ow_follower.js';
 import { openDaycare, openMoveShop, openNameRater, openTownMap } from './ow_music.js';
@@ -35,6 +35,7 @@ import {
 import { oskOpen } from '../site/osk.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
+const MB_POKEBLOCK_FEEDER = 0x87;   // Emerald's Safari Zone feeders
 
 // ---------- input ----------
 // INPUT DIAGNOSTICS (temporary instrumentation): `?owlog=1` traces every
@@ -312,12 +313,6 @@ export function interact() {
 		contestReception();
 		return;
 	}
-	if (svc === 'berryblend') {
-		if (!S.party.length) { dialog.open('The BLEND MASTER: Bring a POKeMON and some berries, friend!'); return; }
-		sfx('ui_select');
-		blendMenu.open = true; blendMenu.mode = 'pickmon'; blendMenu.idx = 0; blendMenu.flash = null;
-		return;
-	}
 	if (svc === 'gamecorner') {
 		const openHub = () => { gcMenu.open = true; gcMenu.mode = 'hub'; gcMenu.idx = 0; gcMenu.flash = null; };
 		if (!Bag.count('coincase')) {
@@ -450,6 +445,10 @@ export function interact() {
 		// must always acknowledge that something is there.
 		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
 	}
+	// a Safari Zone POKeBLOCK FEEDER (MB_POKEBLOCK_FEEDER, field_control_avatar.c):
+	// EventScript_PokeBlockFeeder (pokeblock_data.json) places or reports the block
+	if (world.behaviorAt(fx, fy) === MB_POKEBLOCK_FEEDER && safariZoneOf(world.current.map.id)
+		&& runScriptLabel('EventScript_PokeBlockFeeder')) return;
 	// face-to-face NPC: have them turn toward the player
 	// ACROSS A COUNTER: with nobody on the faced tile and that tile a counter
 	// (MB_COUNTER, 0x80 in both FRLG and Emerald), the GBA talks to whoever stands

@@ -198,6 +198,7 @@ export const ITEMS = {
 	// themselves in the bag instead of as a squashed "SILPHSCOPE".
 	itemfinder:  { name: 'ITEMFINDER',   price: 0, kind: 'key' },
 	coincase:    { name: 'COIN CASE',    price: 0, kind: 'key' },
+	pokeblockcase: { name: 'POKeBLOCK CASE', price: 0, kind: 'key' },   // pokeblock_case.js
 	townmap:     { name: 'TOWN MAP',     price: 0, kind: 'key' },
 	escaperope:  { name: 'ESCAPE ROPE',  price: 0, kind: 'key' },
 	machbike:    { name: 'MACH BIKE',    price: 0, kind: 'key' },

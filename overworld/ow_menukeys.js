@@ -17,7 +17,9 @@ import { saveParty } from './party.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { blendKey, blendMenu, contestKey, contestMenu, unownDex, unownDexKey } from './ow_venues.js';
+import { contestKey, contestMenu, unownDex, unownDexKey } from './ow_venues.js';
+import { blender, blenderKey } from './minigames/blender/blender.js';
+import { openPokeblockCase, pbCase, pokeblockCaseKey } from './pokeblock_case.js';
 import { slotsKey, slotsMenu } from './ow_minigames.js';
 import { crystalSlots, crystalSlotsKey } from './ow_crystalslots.js';
 import { beginNewGame, finishStarterPick } from './ow_story.js';
@@ -552,6 +554,8 @@ function bagKey(k) {
 		const [id] = entries[bagMenu.idx];
 		const item = Bag.ITEMS[id];
 		if (item?.kind === 'rod') { castRod(id, item); return; }
+		// the POKeBLOCK CASE: its list, USE (feed a party POKeMON) / TOSS
+		if (id === 'pokeblockcase') { bagMenu.open = false; openPokeblockCase('field'); return; }
 		if (item?.kind === 'repel') {
 			if (S.repelSteps > 0) { bagMenu.flash = 'A REPEL is already working.'; return; }
 			Bag.consume(id);
@@ -717,6 +721,9 @@ export function pressKey(k) {
 	if (unownPuzzle.open) { unownPuzzleKey(k); return; }
 	// CARD FLIP runs under its machine's paused script too
 	if (cardFlip.open) { cardFlipKey(k); return; }
+	// the BERRY BLENDER and the POKeBLOCK CASE (the Safari feeder opens it under a script)
+	if (blender.open) { blenderKey(k); return; }
+	if (pbCase.open) { pokeblockCaseKey(k); return; }
 	// Crystal's slot machine is a `special SlotMachine` under its paused sign script, too
 	if (crystalSlots.open) { crystalSlotsKey(k); return; }
 	// a scripted battle (gym leader / rival / villain / any trainer engaged via
@@ -751,7 +758,6 @@ export function pressKey(k) {
 	if (vfMenu.open) { vfKey(k); return; }
 	if (gcMenu.open) { gcKey(k); return; }
 	if (contestMenu.open) { contestKey(k); return; }
-	if (blendMenu.open) { blendKey(k); return; }
 	if (decoMenu.open) { decoKey(k); return; }
 	if (socialMenu.open) { socialKey(k); return; }
 	if (slotsMenu.open) { slotsKey(k); return; }
@@ -838,7 +844,7 @@ export function pressKey(k) {
 export const canvasMenuOpen = () => choiceMenu.open || phoneMenu.open || starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open || cardFlip.open || crystalSlots.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blender.open || pbCase.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open || cardFlip.open || crystalSlots.open;
 export const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 
