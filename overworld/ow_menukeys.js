@@ -427,7 +427,7 @@ function bagKey(k) {
 					}
 				} else if (item?.kind === 'revive' && mon.curHP <= 0) {
 					Bag.consume(id);
-					mon.curHP = Math.floor(mon.maxHP / 2);
+					mon.curHP = item.full ? mon.maxHP : Math.floor(mon.maxHP / 2); // MAX REVIVE / REVIVAL HERB: full HP
 					mon.status = null;
 					saveParty(S.party);
 					bagMenu.picking = false;

@@ -1220,6 +1220,7 @@ export function partyTakeItem(i) {
 	if (!mon?.heldItem) return false;
 	Bag.addItem(mon.heldItem);
 	mon.heldItem = null;
+	delete mon.mail;   // a MAIL taken off a POKeMON leaves its message behind
 	saveParty(S.party);
 	return true;
 }
