@@ -348,6 +348,7 @@ export function tick(now) {
 			sctx.fillRect(0, MH, SW, SH - MH);
 		}
 		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
+		else if (contestMenu.open) drawContest(sctx, SW, SH); // full screen, the GBA contest screen scaled up
 		else if (crystalSlots.open) drawCrystalSlots(SW, MH);
 		else if (partyMenu.open) drawPartyMenu(SW, MH);
 		else if (shopMenu.open) drawShopMenu(SW, MH);
@@ -355,7 +356,6 @@ export function tick(now) {
 		else if (pcMenu.open) drawPcMenu(SW, MH);
 		else if (vfMenu.open) drawVfMenu(SW, MH);
 		else if (gcMenu.open) drawGcMenu(SW, MH);
-		else if (contestMenu.open) drawContest(SW, MH);
 		else if (blendMenu.open) drawBlend(SW, MH);
 		else if (unownPuzzle.open) drawUnownPuzzle(SW, MH);
 		else if (decoMenu.open) drawDecoMenu(SW, MH);

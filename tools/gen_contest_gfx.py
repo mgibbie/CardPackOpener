@@ -89,6 +89,12 @@ stage = Image.new('RGBA', (240, 160), pal_rgb(iface_pal, 0) + (255,))
 render_map(stage, read_map(f'{EM}/audience.bin'), vram, iface_pal, transparent=False)
 render_map(stage, read_map(f'{EM}/interface.bin'), vram, iface_pal)
 stage.save(os.path.join(OUT, 'stage.png'))
+# the move-select screen: BG2 scrolled down a screen (gBattle_BG2_Y = DISPLAY_HEIGHT,
+# Task_ShowMoveSelectScreen) shows interface.bin rows 20-39 over the unscrolled audience
+msel = Image.new('RGBA', (240, 160), pal_rgb(iface_pal, 0) + (255,))
+render_map(msel, read_map(f'{EM}/audience.bin'), vram, iface_pal, transparent=False)
+render_map(msel, read_map(f'{EM}/interface.bin')[20 * 32:], vram, iface_pal)
+msel.save(os.path.join(OUT, 'moveselect.png'))
 # the contestant boxes take their contestant's palette (DrawContestantWindows loads
 # contestant i's window palette into the slot it appeals from): slot 0's box,
 # re-rendered with banks 5-8 mapped to contestant k's bank 5+k
@@ -123,7 +129,7 @@ for c in range(5):
         img.save(os.path.join(OUT, f'results_{c}_{r}.png'))
 
 # ---------- the sprite sheet ----------
-sheet = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
+sheet = Image.new('RGBA', (256, 512), (0, 0, 0, 0))
 rects = {}
 cursor = [0, 0, 0]  # x, y, row height
 
@@ -188,6 +194,13 @@ for k in range(4):
     place(f'heart_black{k}', bg_tile(0x5014 + k * 0x1000))
     place(f'heart_empty{k}', bg_tile(0x5035 + k * 0x1000))
 place('star', bg_tile(0x2034))
+# PrintContestMoveDescription's 5x2 category icons
+for c, base in enumerate([0x4040, 0x4045, 0x404A, 0x406A, 0x408A]):
+    im = Image.new('RGBA', (40, 16), (0, 0, 0, 0))
+    for i in range(5):
+        im.paste(bg_tile(base + i), (i * 8, 0))
+        im.paste(bg_tile(base + 0x10 + i), (i * 8, 8))
+    place(f'cat{c}', im)
 for name, off in [('stat_circle', 0x80), ('stat_square', 0x82), ('stat_wave', 0x84), ('stat_x', 0x86), ('stat_swirl', 0x88)]:
     im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     im.paste(bg_tile(0x9000 + off), (0, 0))

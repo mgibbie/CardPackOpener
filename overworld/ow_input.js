@@ -14,7 +14,8 @@ import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopM
 import { hillGuardAt, hillPrizeTalk, hillReceptionTalk, startHillBattle } from './ow_minigames.js';
 import { S } from './ow_state.js';
 import { runScriptLabel } from './ow_story.js';
-import { blendMenu, bugOfficerTalk, contestMenu, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
+import { blendMenu, bugOfficerTalk, trickEndTalk, trickMasterTalk, trickScrollFind } from './ow_venues.js';
+import { contestReception } from './contest_ui.js';
 import { healParty, saveParty } from './party.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
@@ -307,9 +308,8 @@ export function interact() {
 	if (svc === 'trickend') { trickEndTalk(); return; }
 	if (svc === 'contest') {
 		if (!S.party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
-		if (!(Contest.data?.opponents || []).length) { dialog.open('The hall is still being prepared for the next Contest...'); return; }
-		sfx('ui_select');
-		contestMenu.open = true; contestMenu.mode = 'category'; contestMenu.idx = 0; contestMenu.flash = null;
+		// LilycoveCity_ContestLobby_EventScript_ContestReceptionist (contest_ui.js)
+		contestReception();
 		return;
 	}
 	if (svc === 'berryblend') {

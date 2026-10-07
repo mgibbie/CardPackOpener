@@ -56,6 +56,10 @@ for (const m of movesSrc.matchAll(/\[CONTEST_EFFECT_(\w+)\] =\s*\{\s*\.effectTyp
 	effects[num('CONTEST_EFFECT_' + m[1])] = { name: m[1], type: num(m[2]), appeal: +m[3], jam: +m[4] };
 }
 if (effects.filter(Boolean).length < 48) throw new Error('effects: ' + effects.length);
+// gContestEffectFuncs: several effects share a function (e.g. the three StartleFrontMon jams)
+const fnTable = movesSrc.slice(movesSrc.indexOf('gContestEffectFuncs[]'));
+[...fnTable.matchAll(/ContestEffect_(\w+)/g)].forEach((m, k) => { if (effects[k]) effects[k].fn = m[1]; });
+if (effects.some(e => !e.fn)) throw new Error('effect funcs');
 const lookup = movesSrc.slice(movesSrc.indexOf('gComboStarterLookupTable[]'));
 const comboStarterLookup = [...lookup.slice(0, lookup.indexOf('};')).matchAll(/\b(TRUE|FALSE)\b/g)].map(x => x[1] === 'TRUE' ? 1 : 0);
 
@@ -177,7 +181,7 @@ const text = {
 	...parseStrings(rd('data/maps/LilycoveCity_ContestLobby/scripts.inc')),
 };
 const stringsC = rd('src/strings.c');
-const WANT = /^gText_(Contest_\w+|CoolMove|BeautyMove|CuteMove|SmartMove|ToughMove|3QuestionMarks|Enter2|Info2|Exit|WhatsAContest|TypesOfContests|Ranks|Cancel2|CoolnessContest|BeautyContest|CutenessContest|SmartnessContest|ToughnessContest|NormalRank|SuperRank|HyperRank|MasterRank|AppealNumWhichMoveWillBeUsed|AppealNumButItCantParticipate|Coolness|Beauty|Cuteness|Smartness|Toughness)$/;
+const WANT = /^gText_(Contest_\w+|CoolMove|BeautyMove|CuteMove|SmartMove|ToughMove|3QuestionMarks|Enter2|Info2|Exit|WhatsAContest|TypesOfContests|Ranks|Cancel2|CoolnessContest|BeautyContest|CutenessContest|SmartnessContest|ToughnessContest|NormalRank|SuperRank|HyperRank|MasterRank|AppealNumWhichMoveWillBeUsed|AppealNumButItCantParticipate|Coolness|Beauty|Cuteness|Smartness|Toughness|AnnouncingResults|PreliminaryResults|Round2Results|ContestantsMonWon)$/;
 for (const m of stringsC.matchAll(/^const u8 (gText_\w+)\[\] = _\("((?:[^"\\]|\\.)*)"\);/gm)) if (WANT.test(m[1])) text[m[1]] = cleanText(m[2]);
 // the numbered string tables the engine indexes
 const tables = rd('src/data/contest_text_tables.h');
