@@ -37,7 +37,6 @@ const DENY = {
 	Route36NationalParkGate: 'the Bug-Catching Contest is run natively (ow_venues.js)',
 	IcePathB1F: 'CMDQUEUE stone tables (boulders into holes) are not implemented',
 	BlackthornGym2F: 'CMDQUEUE stone tables (boulders into holes) are not implemented',
-	IlexForest: 'reads wFarfetchdPosition, which nothing in the port sets (the Farfetch\'d puzzle)',
 	TradeCenter: 'link play', Colosseum: 'link play', TimeCapsule: 'link play',
 	TinTowerRoof: 'HO-OH is encountered through the native legendary system (ow_legendaries.js)',
 	WhirlIslandLugiaChamber: 'LUGIA is encountered through the native legendary system (ow_legendaries.js)',

@@ -78,10 +78,22 @@ if (typeof addEventListener === 'function') {
 let badgeFlagResolver = null;
 export function setBadgeFlagResolver(fn) { badgeFlagResolver = typeof fn === 'function' ? fn : null; }
 const BADGE_FLAG_RE = /^FLAG_BADGE0([1-8])_GET$/;
+// Crystal's ENGINE_<NAME>BADGE (ENGINE_FOGBADGE...) is set by the gym's own
+// script — a badge earned any other way (a native gym victory, a cross-region
+// tier, a repair) never set it, and the Tin Tower sage told a player holding the
+// FOG BADGE it was missing (2026-10-07). A held badge answers true; otherwise the
+// stored flag stands, so nothing a script set is lost.
+let engineBadgeResolver = null;
+export function setEngineBadgeResolver(fn) { engineBadgeResolver = typeof fn === 'function' ? fn : null; }
+const ENGINE_BADGE_RE = /^ENGINE_([A-Z]+)BADGE$/;
 export function getFlag(f) {
 	if (badgeFlagResolver) {
 		const m = BADGE_FLAG_RE.exec(f);
 		if (m) { try { const r = badgeFlagResolver(+m[1]); if (r != null) return !!r; } catch (e) { /* fall back to the store */ } }
+	}
+	if (engineBadgeResolver) {
+		const m = ENGINE_BADGE_RE.exec(f);
+		if (m) { try { if (engineBadgeResolver(m[1].toLowerCase())) return true; } catch (e) { /* fall back to the store */ } }
 	}
 	return !!store.flags[f];
 }
@@ -159,7 +171,11 @@ export function clearTempFlags() {
 	// VAR_* vars; anything else is an unresolved `.equ` alias the transpile stored
 	// literally (SWITCH1_ID, TRASH_CAN_ID ...), fixed at the source by
 	// tools/fix_script_equ.mjs, whose leftovers would otherwise sit in saves.
-	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^VAR_/.test(k)) { delete store.vars[k]; n++; }
+	// Crystal's saved WRAM bytes are vars too (wFarfetchdPosition, wMooMooBerries,
+	// the rematch counts — tools/gen_crystal_scriptvar.mjs restores their
+	// loadmem/writemem): they must outlive a map change, or the Ilex Forest
+	// FARFETCH'D forgot where it ran to and MOOMOO every BERRY it ate (2026-10-07).
+	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^(VAR_|w[A-Z])/.test(k)) { delete store.vars[k]; n++; }
 	});
 	return n;
 }

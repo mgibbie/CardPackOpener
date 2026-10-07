@@ -50,6 +50,9 @@ const MP66 = (() => {
 // back: `special SlotMachine` (ow_crystalslots.js) reads the script var the way
 // Slots_InitBias reads wScriptVar.
 const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
+	// the one-time gift POKeMON whose `givepoke` the transpile dropped (2026-10-07:
+	// Kiyo's TYROGUE set its flag and gave nothing; Bill's EEVEE the same)
+	'MountMortarB1F:MountMortarB1FKiyoScript', 'BillsFamilysHouse:BillScript',
 	'GoldenrodGameCorner:GoldenrodGameCornerTMVendor', 'GoldenrodGameCorner:GoldenrodGameCornerPrizeMonVendor',
 	'JohKantoCeladonGameCornerPrizeRoom:CeladonGameCornerPrizeRoomPokemonVendor', 'JohKantoCeladonGameCornerPrizeRoom:CeladonPrizeRoom_tmcounterloop',
 	'JohKantoCeladonGameCorner:CeladonGameCornerFisherScript',
@@ -61,6 +64,16 @@ const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 	// answers TRUE when it's solved, and .PuzzleComplete opens the floor (its
 	// changeblocks + the warpcheck that drops you into the inner chamber)
 	...['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle`)];
+// labels where the dropped WRAM bookkeeping comes back: `loadmem wX, N`,
+// `readmem wX` + `addval N` + `writemem wX`, `setval N` + `writemem wX` (all as
+// story vars, which is what the transpile already compares them as), and
+// `moveobject OBJ, x, y` (setobjxy). Each read by hand (2026-10-07 bug reports):
+// the Ilex Forest FARFETCH'D herding (wFarfetchdPosition + where the bird stands),
+// MOOMOO's berry count (wMooMooBerries), and the Goldenrod Underground switch room
+// (wUndergroundSwitchPositions, reset by the Underground and the Warehouse).
+const MEM_RESTORE_IN = ['IlexForest:IlexForestFarfetchd', 'Route39Barn:MoomooScript',
+	'GoldenrodUndergroundSwitchRoomEntrances:', 'GoldenrodUnderground:GoldenrodUndergroundResetSwitchesCallback',
+	'GoldenrodUndergroundWarehouse:GoldenrodUndergroundWarehouseResetSwitchesCallback'];
 // labels whose plain-script changeblocks / warpcheck are restored too (elsewhere
 // only MAP CALLBACK changeblocks are)
 // — and each chamber's WallOpenScript, the wall at (4,0) opening onto its item
@@ -164,7 +177,22 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		// restored menu would branch on a stale value.
 		const newKinds = RESTORE_COMMANDS_IN.some(p => `${stem}:${label}`.startsWith(p));
 		const wouldRestore = c => { if (!newKinds) { skipped.notEnabled.add(`${stem}:${label} (${c})`); return false; } return true; };
+		const memKinds = MEM_RESTORE_IN.some(p => `${stem}:${label}`.startsWith(p));
+		let acc = null;   // the script var as readmem/setval/addval leave it, for writemem
 		for (const [cmd, a, conv] of rows) {
+			if (memKinds && !conv.length) {
+				if (cmd === 'loadmem' && /^w\w+$/.test(a[0]) && evalExpr(a[1]) != null) { add({ op: 'setvar', var: a[0], value: evalExpr(a[1]) }); n++; tally('loadmem'); continue; }
+				if (cmd === 'readmem' && /^w\w+$/.test(a[0])) { acc = { var: a[0], delta: 0 }; continue; }
+				if (cmd === 'setval' && evalExpr(a[0]) != null) { acc = { value: evalExpr(a[0]) }; continue; }
+				if (cmd === 'addval' && acc && evalExpr(a[0]) != null) { if ('value' in acc) acc.value += evalExpr(a[0]); else acc.delta += evalExpr(a[0]); continue; }
+				if (cmd === 'writemem' && acc && /^w\w+$/.test(a[0])) {
+					if ('value' in acc) add({ op: 'setvar', var: a[0], value: acc.value });
+					else if (acc.var === a[0] && acc.delta) add({ op: 'addvar', var: a[0], value: acc.delta });
+					else continue;
+					n++; tally('writemem'); continue;
+				}
+				if (cmd === 'moveobject' && a.length === 3 && evalExpr(a[1]) != null && evalExpr(a[2]) != null) { add({ op: 'setobjxy', who: a[0], x: evalExpr(a[1]), y: evalExpr(a[2]) }); n++; tally('moveobject'); continue; }
+			}
 			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'setval', 'verticalmenu', 'random'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
 			// commands the transpile dropped outright (conv empty) that the engine runs
 			if (!conv.length && cmd === 'checkcoins' && evalExpr(a[0]) != null) { add({ op: 'checkcoins', amount: evalExpr(a[0]) }); n++; tally('checkcoins'); src = { var: 'VAR_RESULT', name: 'checkcoins' }; continue; }
@@ -206,7 +234,9 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			const isIf = /^if(equal|notequal|greater|less|true|false)$/.test(cmd);
 			if (isIf && !conv.length && src) {
 				const tf = cmd === 'iftrue' || cmd === 'iffalse';
-				const value = tf ? 0 : evalExpr(a[0]);
+				// a facing (UP/DOWN/LEFT/RIGHT) stays a symbol: VAR_FACING's encoding is
+				// the port's own (script_constants.js), which the engine resolves
+				const value = tf ? 0 : (evalExpr(a[0]) ?? (src.var === 'VAR_FACING' && /^(UP|DOWN|LEFT|RIGHT)$/.test(a[0]) ? a[0] : null));
 				const target = tf ? a[0] : a[1];
 				if (value == null || !target) { skipped.unresolved.push(`${stem}:${label} ${cmd} ${a.join(',')}`); }
 				else {
@@ -216,7 +246,12 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 				}
 			}
 			out.push(...conv);
-			if (cmd === 'special') src = ALLOW.has(a[0]) ? { var: 'VAR_RESULT', name: 'special ' + a[0] } : null;
+			// an `scall` to a helper that ends in `readvar V` (Ilex Forest's
+			// .CryAndCheckFacing) answers V to the ifequal after the call
+			const calleeVar = memKinds && cmd === 'scall' && conv.length
+				? ((trace[j.name][qualify(a[0], g)] || []).filter(r => r[0] === 'readvar').pop() || [])[1]?.[0] : null;
+			if (calleeVar) src = { var: calleeVar, name: 'scall readvar' };
+			else if (cmd === 'special') src = ALLOW.has(a[0]) ? { var: 'VAR_RESULT', name: 'special ' + a[0] } : null;
 			else if (cmd === 'readvar' && a[0]) src = { var: a[0], name: 'readvar ' + a[0] };
 			// a confirm subroutine ends in `yesorno` (the engine's prompt answers 1/0), and
 			// giveitem answers 1/0 — both read by the iffalse after them (listed labels only)
@@ -233,6 +268,48 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		}
 		(patches[stem] = patches[stem] || {})[label] = merged;
 		restored += n; labels++;
+	}
+}
+// The Goldenrod Underground switch room's doors are rgbasm macro LOOPS — `for n`
+// over the `ugdoor_def` table builds .OpenDoorN / .CloseDoorN (changeugdoor +
+// set/clear EVENT_DOOR_N_OPEN) and the TILES callback's per-door checks. The
+// transpile can't expand a `for`, so all 22 labels the switch positions `scall`
+// were missing and the callback was a broken template: no switch ever opened a
+// door (2026-10-07). Expanded here from the table, the decomp's own block ids.
+{
+	const NAME = 'GoldenrodUndergroundSwitchRoomEntrances';
+	const m = STEMS.find(s => s.name === NAME);
+	const asm = fs.readFileSync(path.join(CR, 'maps', NAME + '.asm'), 'utf8');
+	const doors = [...asm.matchAll(/^\s*ugdoor_def\s+([^;\n]+)/gm)].map(r => {
+		const v = r[1].split(',').map(s => s.trim());
+		const parts = [];
+		for (let i = 0; i + 3 < v.length; i += 4) parts.push({ x: +v[i], y: +v[i + 1], closed: parseInt(v[i + 2].replace('$', ''), 16), open: parseInt(v[i + 3].replace('$', ''), 16) });
+		return parts;
+	});
+	const ts = m && JSON.parse(fs.readFileSync(path.join(D, 'maps', m.stem + '_map.json'), 'utf8'))._crystal_tileset;
+	const blocks = (d, state) => d.map(p => {
+		const cells = blockCells(NAME, ts, p[state]);
+		return cells && { op: 'changeblock', x: Math.floor(p.x / 2) * 2, y: Math.floor(p.y / 2) * 2, cells };
+	});
+	const all = doors.flatMap(d => [...blocks(d, 'open'), ...blocks(d, 'closed')]);
+	if (!m || doors.length !== 11 || all.some(x => !x)) console.log(`switch room doors NOT restored (${m ? doors.length + ' doors, ' + all.filter(x => !x).length + ' blocks unharvestable' : 'map missing'})`);
+	else {
+		const P = (patches[m.stem] = patches[m.stem] || {});
+		const U = 'GoldenrodUndergroundSwitchRoomEntrances_UpdateDoors';
+		const CB = 'GoldenrodUndergroundSwitchRoomEntrancesUpdateDoorPositionsCallback';
+		doors.forEach((d, i) => {
+			const n = i + 1, flag = `EVENT_DOOR_${n}_OPEN`;
+			P[`${U}.OpenDoor${n}`] = [...blocks(d, 'open'), { op: 'setflag', flag }, { op: 'end' }];
+			P[`${U}.CloseDoor${n}`] = [...blocks(d, 'closed'), { op: 'clearflag', flag }, { op: 'end' }];
+			// the callback: each open door's blocks, door by door
+			const here = n === 1 ? CB : `${CB}.door_${n - 1}_closed`;
+			P[here] = [{ op: 'branch', kind: 'goto', cond: { flag, state: false }, label: `${CB}.door_${n}_closed` }, ...blocks(d, 'open'), { op: 'goto', label: `${CB}.door_${n}_closed` }];
+		});
+		P[`${CB}.door_${doors.length}_closed`] = [{ op: 'end' }];
+		// the loop templates' unexpandable changeblocks are handled here, not withdrawn
+		for (let k = changeblockSkipped.length - 1; k >= 0; k--) if (changeblockSkipped[k].startsWith(`${m.stem}:${CB}`) || changeblockSkipped[k].startsWith(`${m.stem}:${U}`)) changeblockSkipped.splice(k, 1);
+		restored += doors.length * 3; labels += doors.length * 3 + 1;
+		console.log(`switch room: ${doors.length} doors -> ${doors.length * 2} door labels + the callback`);
 	}
 }
 // ALL OR NOTHING per callback: a TILES callback whose changeblocks are only partly
