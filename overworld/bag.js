@@ -146,6 +146,8 @@ export const ITEMS = {
 	blueshard:   { name: 'BLUE SHARD',   price: 1000, kind: 'sell' },
 	yellowshard: { name: 'YELLOW SHARD', price: 1000, kind: 'sell' },
 	greenshard:  { name: 'GREEN SHARD',  price: 1000, kind: 'sell' },
+	// Crystal's FLOWER MAIL: what RANDY's KENYA carries to Route 31
+	flowermail:  { name: 'FLOWER MAIL',  price: 50, kind: 'misc' },
 	orangemail:  { name: 'ORANGE MAIL',  price: 50, kind: 'misc' },
 	wavemail:    { name: 'WAVE MAIL',    price: 50, kind: 'misc' },
 	woodmail:    { name: 'WOOD MAIL',    price: 50, kind: 'misc' },
