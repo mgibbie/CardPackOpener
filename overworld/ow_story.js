@@ -727,6 +727,9 @@ Story.setBadgeFlagResolver(n => {
 	const b = slice && Badges.BADGES[slice][n - 1];
 	return b ? Badges.has(slice, b.id) : null;
 });
+// ENGINE_<NAME>BADGE (Crystal): the Johto badge of that name, or the Kanto one as
+// Crystal's Kanto gyms award it (JOHKANTO)
+Story.setEngineBadgeResolver(id => ['JOHTO', 'JOHKANTO'].some(r => Badges.BADGES[r].some(b => b.id === id) && Badges.has(r, id)));
 
 // Norman's gym (Emerald PetalburgCity_Gym): VAR_PETALBURG_GYM_STATE is 2 once you
 // have met him, and each of the Rustboro / Dewford / Mauville / Lavaridge gym
