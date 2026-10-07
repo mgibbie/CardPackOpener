@@ -35,7 +35,7 @@ import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
 import { townMap } from './ow_menustate.js';
-import { describeDecoration, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
+import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
 import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
@@ -943,7 +943,10 @@ export function runSpecial(name, store, op) {
 			if (Bag.count('waterstone') || S.party.some(m => m?.heldItem === 'waterstone')) Story.setFlag('EVENT_WALL_OPENED_IN_OMANYTE_CHAMBER');
 			return;
 		// the player's-room decorations (decorations.js): PlayersHouse2F's two
-		// callbacks and its poster sign (the TOWN MAP poster opens the map, to look at)
+		// callbacks, its PC's DECORATION menu (TRUE when the room changed: the
+		// script's iftrue .Warp reloads it) and describedecoration for the poster
+		// (the TOWN MAP poster opens the map, to look at), dolls, console, big doll
+		case 'PlayersHousePC': return playersHousePCSpecial();
 		case 'ToggleDecorationsVisibility': toggleDecorationsVisibility(); return;
 		case 'ToggleMaptileDecorations': toggleMaptileDecorations(); return;
 		case 'DescribeDecoration': describeDecoration(op && op.which, () => { openTownMap(); townMap.viewOnly = true; }); return;

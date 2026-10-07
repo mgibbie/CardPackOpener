@@ -68,7 +68,7 @@ const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].flatMap(c => [
 	`RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`, `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberWallOpenScript`]);
 // specials whose result the engine actually computes (ow_story.js runSpecial)
-const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle']);
+const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle', 'PlayersHousePC']);
 // commands that leave hScriptVar alone (display / movement); anything else between
 // the writer and the test might overwrite it, so the restore stops there
 const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext', 'opentext', 'faceplayer',
@@ -183,9 +183,9 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			const scriptTiles = SCRIPT_TILES_IN.includes(`${stem}:${label}`);
 			// warpcheck: take the warp under the player (the puzzle's fall into the hole)
 			if (!conv.length && cmd === 'warpcheck' && scriptTiles) { add({ op: 'warpcheck' }); n++; tally('warpcheck'); continue; }
-			// the player's-room poster sign (overworld/decorations.js); the doll and
-			// console descriptions stay dropped — their objects never show
-			if (!conv.length && cmd === 'describedecoration' && a[0] === 'DECODESC_POSTER' && `${stem}:${label}` === 'PlayersHouse2F:PlayersHousePosterScript.Script') {
+			// the player's-room describedecoration sign and objects (overworld/decorations.js):
+			// the poster, both dolls, the big doll and the game console
+			if (!conv.length && cmd === 'describedecoration' && stem === 'PlayersHouse2F' && /^DECODESC_[A-Z_]+$/.test(a[0])) {
 				add({ op: 'special', name: 'DescribeDecoration', which: a[0] }); add({ op: 'end' }); n++; tally('describedecoration'); continue;
 			}
 			if (!conv.length && cmd === 'changeblock' && (inCallback(j.name, label) || scriptTiles)) {

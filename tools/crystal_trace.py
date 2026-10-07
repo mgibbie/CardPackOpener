@@ -14,6 +14,12 @@ from collections import Counter
 
 sys.path.insert(0, sys.argv[1])
 import transpile_crystal as T  # noqa: E402
+import re  # noqa: E402
+
+# An exported label (`PlayersHouseDoll1Script::`, 4 in pokecrystal's maps) did
+# not match the transpiler's LABEL_RE, so its commands were traced as the tail of
+# the label before it. Read both forms.
+T.LABEL_RE = re.compile(r'^(\.?[A-Za-z0-9_@]+)::?\s*(;.*)?$')
 
 maps_dir = sys.argv[2]
 out = {}

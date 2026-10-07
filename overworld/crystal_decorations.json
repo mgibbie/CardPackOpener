@@ -17,13 +17,138 @@
   "poster": [
    6,
    0
+  ],
+  "carpetTop": [
+   0,
+   0
+  ],
+  "carpetBottom": [
+   0,
+   2
   ]
+ },
+ "categories": [
+  {
+   "name": "BED",
+   "slot": "bed",
+   "decos": [
+    "DECO_FEATHERY_BED",
+    "DECO_PINK_BED",
+    "DECO_POLKADOT_BED",
+    "DECO_PIKACHU_BED"
+   ]
+  },
+  {
+   "name": "CARPET",
+   "slot": "carpet",
+   "decos": [
+    "DECO_RED_CARPET",
+    "DECO_BLUE_CARPET",
+    "DECO_YELLOW_CARPET",
+    "DECO_GREEN_CARPET"
+   ]
+  },
+  {
+   "name": "PLANT",
+   "slot": "plant",
+   "decos": [
+    "DECO_MAGNAPLANT",
+    "DECO_TROPICPLANT",
+    "DECO_JUMBOPLANT"
+   ]
+  },
+  {
+   "name": "POSTER",
+   "slot": "poster",
+   "decos": [
+    "DECO_TOWN_MAP",
+    "DECO_PIKACHU_POSTER",
+    "DECO_CLEFAIRY_POSTER",
+    "DECO_JIGGLYPUFF_POSTER"
+   ]
+  },
+  {
+   "name": "GAME CONSOLE",
+   "slot": "console",
+   "decos": [
+    "DECO_FAMICOM",
+    "DECO_SNES",
+    "DECO_N64",
+    "DECO_VIRTUAL_BOY"
+   ]
+  },
+  {
+   "name": "ORNAMENT",
+   "slot": "ornament",
+   "decos": [
+    "DECO_PIKACHU_DOLL",
+    "DECO_SURF_PIKACHU_DOLL",
+    "DECO_CLEFAIRY_DOLL",
+    "DECO_JIGGLYPUFF_DOLL",
+    "DECO_BULBASAUR_DOLL",
+    "DECO_CHARMANDER_DOLL",
+    "DECO_SQUIRTLE_DOLL",
+    "DECO_POLIWAG_DOLL",
+    "DECO_DIGLETT_DOLL",
+    "DECO_STARYU_DOLL",
+    "DECO_MAGIKARP_DOLL",
+    "DECO_ODDISH_DOLL",
+    "DECO_GENGAR_DOLL",
+    "DECO_SHELLDER_DOLL",
+    "DECO_GRIMER_DOLL",
+    "DECO_VOLTORB_DOLL",
+    "DECO_WEEDLE_DOLL",
+    "DECO_UNOWN_DOLL",
+    "DECO_GEODUDE_DOLL",
+    "DECO_MACHOP_DOLL",
+    "DECO_TENTACOOL_DOLL",
+    "DECO_GOLD_TROPHY_DOLL",
+    "DECO_SILVER_TROPHY_DOLL"
+   ]
+  },
+  {
+   "name": "BIG DOLL",
+   "slot": "bigDoll",
+   "decos": [
+    "DECO_BIG_SNORLAX_DOLL",
+    "DECO_BIG_ONIX_DOLL",
+    "DECO_BIG_LAPRAS_DOLL"
+   ]
+  }
+ ],
+ "exit": "EXIT",
+ "putAway": "PUT IT AWAY",
+ "cancel": "CANCEL",
+ "sides": [
+  "RIGHT SIDE",
+  "LEFT SIDE",
+  "CANCEL"
+ ],
+ "pc": {
+  "turnOn": "{player} turned on\nthe PC.",
+  "askWhatDo": "What do you want\nto do?",
+  "decoration": "DECORATION",
+  "turnOff": "TURN OFF"
+ },
+ "text": {
+  "nothingToChoose": "There's nothing to\nchoose.",
+  "whichSidePutOn": "Which side do you\nwant to put it on?",
+  "whichSidePutAway": "Which side do you\nwant to put away?",
+  "putAway": "Put away the\n{3}.",
+  "nothingToPutAway": "There's nothing to\nput away.",
+  "setUp": "Set up the\n{3}.",
+  "putAwayAndSetUp": "Put away the\n{3}\n\nand set up the\n{4}.",
+  "alreadySetUp": "That's already set\nup.",
+  "adorable": "It's an adorable\n{3}.",
+  "giant": "A giant doll! It's\nfluffy and cuddly."
  },
  "decos": {
   "DECO_FEATHERY_BED": {
+   "num": 2,
    "slot": "bed",
-   "block": 27,
+   "name": "FEATHERY BED",
    "flag": "EVENT_DECO_BED_1",
+   "block": 27,
    "cells": [
     3105,
     6,
@@ -32,9 +157,11 @@
    ]
   },
   "DECO_PINK_BED": {
+   "num": 3,
    "slot": "bed",
-   "block": 28,
+   "name": "PINK BED",
    "flag": "EVENT_DECO_BED_2",
+   "block": 28,
    "cells": [
     3107,
     6,
@@ -43,9 +170,11 @@
    ]
   },
   "DECO_POLKADOT_BED": {
+   "num": 4,
    "slot": "bed",
-   "block": 29,
+   "name": "POLKADOT BED",
    "flag": "EVENT_DECO_BED_3",
+   "block": 29,
    "cells": [
     3109,
     6,
@@ -54,9 +183,11 @@
    ]
   },
   "DECO_PIKACHU_BED": {
+   "num": 5,
    "slot": "bed",
-   "block": 30,
+   "name": "PIKACHU BED",
    "flag": "EVENT_DECO_BED_4",
+   "block": 30,
    "cells": [
     3111,
     6,
@@ -64,10 +195,120 @@
     6
    ]
   },
+  "DECO_RED_CARPET": {
+   "num": 7,
+   "slot": "carpet",
+   "name": "RED CARPET",
+   "flag": "EVENT_DECO_CARPET_1",
+   "block": 8,
+   "carpet": [
+    [
+     3074,
+     3074,
+     15,
+     15
+    ],
+    [
+     15,
+     15,
+     15,
+     15
+    ],
+    [
+     16,
+     17,
+     15,
+     15
+    ]
+   ]
+  },
+  "DECO_BLUE_CARPET": {
+   "num": 8,
+   "slot": "carpet",
+   "name": "BLUE CARPET",
+   "flag": "EVENT_DECO_CARPET_2",
+   "block": 11,
+   "carpet": [
+    [
+     3074,
+     3074,
+     18,
+     18
+    ],
+    [
+     18,
+     18,
+     18,
+     18
+    ],
+    [
+     19,
+     20,
+     18,
+     18
+    ]
+   ]
+  },
+  "DECO_YELLOW_CARPET": {
+   "num": 9,
+   "slot": "carpet",
+   "name": "YELLOW CARPET",
+   "flag": "EVENT_DECO_CARPET_3",
+   "block": 14,
+   "carpet": [
+    [
+     3074,
+     3074,
+     21,
+     21
+    ],
+    [
+     21,
+     21,
+     21,
+     21
+    ],
+    [
+     22,
+     23,
+     21,
+     21
+    ]
+   ]
+  },
+  "DECO_GREEN_CARPET": {
+   "num": 10,
+   "slot": "carpet",
+   "name": "GREEN CARPET",
+   "flag": "EVENT_DECO_CARPET_4",
+   "block": 17,
+   "carpet": [
+    [
+     3074,
+     3074,
+     24,
+     24
+    ],
+    [
+     24,
+     24,
+     24,
+     24
+    ],
+    [
+     25,
+     26,
+     24,
+     24
+    ]
+   ]
+  },
   "DECO_MAGNAPLANT": {
+   "num": 12,
    "slot": "plant",
-   "block": 32,
+   "name": "MAGNAPLANT",
    "flag": "EVENT_DECO_PLANT_1",
+   "block": 32,
    "cells": [
     6,
     3114,
@@ -76,9 +317,11 @@
    ]
   },
   "DECO_TROPICPLANT": {
+   "num": 13,
    "slot": "plant",
-   "block": 33,
+   "name": "TROPICPLANT",
    "flag": "EVENT_DECO_PLANT_2",
+   "block": 33,
    "cells": [
     6,
     3116,
@@ -87,9 +330,11 @@
    ]
   },
   "DECO_JUMBOPLANT": {
+   "num": 14,
    "slot": "plant",
-   "block": 34,
+   "name": "JUMBOPLANT",
    "flag": "EVENT_DECO_PLANT_3",
+   "block": 34,
    "cells": [
     6,
     3117,
@@ -98,9 +343,11 @@
    ]
   },
   "DECO_TOWN_MAP": {
+   "num": 16,
    "slot": "poster",
-   "block": 31,
+   "name": "TOWN MAP",
    "flag": "EVENT_DECO_POSTER_1",
+   "block": 31,
    "text": "It's the TOWN MAP.",
    "townMap": true,
    "cells": [
@@ -111,9 +358,11 @@
    ]
   },
   "DECO_PIKACHU_POSTER": {
+   "num": 17,
    "slot": "poster",
-   "block": 35,
+   "name": "PIKACHU POSTER",
    "flag": "EVENT_DECO_POSTER_2",
+   "block": 35,
    "text": "It's a poster of a\ncute PIKACHU.",
    "cells": [
     3119,
@@ -123,9 +372,11 @@
    ]
   },
   "DECO_CLEFAIRY_POSTER": {
+   "num": 18,
    "slot": "poster",
-   "block": 36,
+   "name": "CLEFAIRY POSTER",
    "flag": "EVENT_DECO_POSTER_3",
+   "block": 36,
    "text": "It's a poster of a\ncute CLEFAIRY.",
    "cells": [
     3120,
@@ -135,9 +386,11 @@
    ]
   },
   "DECO_JIGGLYPUFF_POSTER": {
+   "num": 19,
    "slot": "poster",
-   "block": 37,
+   "name": "JIGGLYPUFF POSTER",
    "flag": "EVENT_DECO_POSTER_4",
+   "block": 37,
    "text": "It's a poster of a\ncute JIGGLYPUFF.",
    "cells": [
     3121,
@@ -145,6 +398,216 @@
     6,
     6
    ]
+  },
+  "DECO_FAMICOM": {
+   "num": 21,
+   "slot": "console",
+   "name": "NES",
+   "flag": "EVENT_DECO_FAMICOM",
+   "sprite": "SPRITE_FAMICOM"
+  },
+  "DECO_SNES": {
+   "num": 22,
+   "slot": "console",
+   "name": "SUPER NES",
+   "flag": "EVENT_DECO_SNES",
+   "sprite": "SPRITE_SNES"
+  },
+  "DECO_N64": {
+   "num": 23,
+   "slot": "console",
+   "name": "NINTENDO 64",
+   "flag": "EVENT_DECO_N64",
+   "sprite": "SPRITE_N64"
+  },
+  "DECO_VIRTUAL_BOY": {
+   "num": 24,
+   "slot": "console",
+   "name": "VIRTUAL BOY",
+   "flag": "EVENT_DECO_VIRTUAL_BOY",
+   "sprite": "SPRITE_VIRTUAL_BOY"
+  },
+  "DECO_BIG_SNORLAX_DOLL": {
+   "num": 26,
+   "slot": "bigDoll",
+   "name": "BIG SNORLAX",
+   "flag": "EVENT_DECO_BIG_SNORLAX_DOLL",
+   "sprite": "SPRITE_BIG_SNORLAX"
+  },
+  "DECO_BIG_ONIX_DOLL": {
+   "num": 27,
+   "slot": "bigDoll",
+   "name": "BIG ONIX",
+   "flag": "EVENT_DECO_BIG_ONIX_DOLL",
+   "sprite": "SPRITE_BIG_ONIX"
+  },
+  "DECO_BIG_LAPRAS_DOLL": {
+   "num": 28,
+   "slot": "bigDoll",
+   "name": "BIG LAPRAS",
+   "flag": "EVENT_DECO_BIG_LAPRAS_DOLL",
+   "sprite": "SPRITE_BIG_LAPRAS"
+  },
+  "DECO_PIKACHU_DOLL": {
+   "num": 30,
+   "slot": "ornament",
+   "name": "PIKACHU DOLL",
+   "flag": "EVENT_DECO_PIKACHU_DOLL",
+   "sprite": "SPRITE_PIKACHU"
+  },
+  "DECO_SURF_PIKACHU_DOLL": {
+   "num": 31,
+   "slot": "ornament",
+   "name": "SURF PIKACHU DOLL",
+   "flag": "EVENT_DECO_SURFING_PIKACHU_DOLL",
+   "sprite": "SPRITE_SURFING_PIKACHU"
+  },
+  "DECO_CLEFAIRY_DOLL": {
+   "num": 32,
+   "slot": "ornament",
+   "name": "CLEFAIRY DOLL",
+   "flag": "EVENT_DECO_CLEFAIRY_DOLL",
+   "sprite": "SPRITE_CLEFAIRY"
+  },
+  "DECO_JIGGLYPUFF_DOLL": {
+   "num": 33,
+   "slot": "ornament",
+   "name": "JIGGLYPUFF DOLL",
+   "flag": "EVENT_DECO_JIGGLYPUFF_DOLL",
+   "sprite": "SPRITE_JIGGLYPUFF"
+  },
+  "DECO_BULBASAUR_DOLL": {
+   "num": 34,
+   "slot": "ornament",
+   "name": "BULBASAUR DOLL",
+   "flag": "EVENT_DECO_BULBASAUR_DOLL",
+   "sprite": "SPRITE_BULBASAUR"
+  },
+  "DECO_CHARMANDER_DOLL": {
+   "num": 35,
+   "slot": "ornament",
+   "name": "CHARMANDER DOLL",
+   "flag": "EVENT_DECO_CHARMANDER_DOLL",
+   "sprite": "SPRITE_CHARMANDER"
+  },
+  "DECO_SQUIRTLE_DOLL": {
+   "num": 36,
+   "slot": "ornament",
+   "name": "SQUIRTLE DOLL",
+   "flag": "EVENT_DECO_SQUIRTLE_DOLL",
+   "sprite": "SPRITE_SQUIRTLE"
+  },
+  "DECO_POLIWAG_DOLL": {
+   "num": 37,
+   "slot": "ornament",
+   "name": "POLIWAG DOLL",
+   "flag": "EVENT_DECO_POLIWAG_DOLL",
+   "sprite": "SPRITE_POLIWAG"
+  },
+  "DECO_DIGLETT_DOLL": {
+   "num": 38,
+   "slot": "ornament",
+   "name": "DIGLETT DOLL",
+   "flag": "EVENT_DECO_DIGLETT_DOLL",
+   "sprite": "SPRITE_DIGLETT"
+  },
+  "DECO_STARYU_DOLL": {
+   "num": 39,
+   "slot": "ornament",
+   "name": "STARYU DOLL",
+   "flag": "EVENT_DECO_STARYU_DOLL",
+   "sprite": "SPRITE_STARMIE"
+  },
+  "DECO_MAGIKARP_DOLL": {
+   "num": 40,
+   "slot": "ornament",
+   "name": "MAGIKARP DOLL",
+   "flag": "EVENT_DECO_MAGIKARP_DOLL",
+   "sprite": "SPRITE_MAGIKARP"
+  },
+  "DECO_ODDISH_DOLL": {
+   "num": 41,
+   "slot": "ornament",
+   "name": "ODDISH DOLL",
+   "flag": "EVENT_DECO_ODDISH_DOLL",
+   "sprite": "SPRITE_ODDISH"
+  },
+  "DECO_GENGAR_DOLL": {
+   "num": 42,
+   "slot": "ornament",
+   "name": "GENGAR DOLL",
+   "flag": "EVENT_DECO_GENGAR_DOLL",
+   "sprite": "SPRITE_GENGAR"
+  },
+  "DECO_SHELLDER_DOLL": {
+   "num": 43,
+   "slot": "ornament",
+   "name": "SHELLDER DOLL",
+   "flag": "EVENT_DECO_SHELLDER_DOLL",
+   "sprite": "SPRITE_SHELLDER"
+  },
+  "DECO_GRIMER_DOLL": {
+   "num": 44,
+   "slot": "ornament",
+   "name": "GRIMER DOLL",
+   "flag": "EVENT_DECO_GRIMER_DOLL",
+   "sprite": "SPRITE_GRIMER"
+  },
+  "DECO_VOLTORB_DOLL": {
+   "num": 45,
+   "slot": "ornament",
+   "name": "VOLTORB DOLL",
+   "flag": "EVENT_DECO_VOLTORB_DOLL",
+   "sprite": "SPRITE_VOLTORB"
+  },
+  "DECO_WEEDLE_DOLL": {
+   "num": 46,
+   "slot": "ornament",
+   "name": "WEEDLE DOLL",
+   "flag": "EVENT_DECO_WEEDLE_DOLL",
+   "sprite": "SPRITE_WEEDLE"
+  },
+  "DECO_UNOWN_DOLL": {
+   "num": 47,
+   "slot": "ornament",
+   "name": "UNOWN DOLL",
+   "flag": "EVENT_DECO_UNOWN_DOLL",
+   "sprite": "SPRITE_UNOWN"
+  },
+  "DECO_GEODUDE_DOLL": {
+   "num": 48,
+   "slot": "ornament",
+   "name": "GEODUDE DOLL",
+   "flag": "EVENT_DECO_GEODUDE_DOLL",
+   "sprite": "SPRITE_GEODUDE"
+  },
+  "DECO_MACHOP_DOLL": {
+   "num": 49,
+   "slot": "ornament",
+   "name": "MACHOP DOLL",
+   "flag": "EVENT_DECO_MACHOP_DOLL",
+   "sprite": "SPRITE_MACHOP"
+  },
+  "DECO_TENTACOOL_DOLL": {
+   "num": 50,
+   "slot": "ornament",
+   "name": "TENTACOOL DOLL",
+   "flag": "EVENT_DECO_TENTACOOL_DOLL",
+   "sprite": "SPRITE_TENTACOOL"
+  },
+  "DECO_GOLD_TROPHY_DOLL": {
+   "num": 51,
+   "slot": "ornament",
+   "name": "GOLD TROPHY",
+   "flag": "EVENT_DECO_GOLD_TROPHY",
+   "sprite": "SPRITE_GOLD_TROPHY"
+  },
+  "DECO_SILVER_TROPHY_DOLL": {
+   "num": 52,
+   "slot": "ornament",
+   "name": "SILVER TROPHY",
+   "flag": "EVENT_DECO_SILVER_TROPHY",
+   "sprite": "SPRITE_SILVER_TROPHY"
   }
  }
 }

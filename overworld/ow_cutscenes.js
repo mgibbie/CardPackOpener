@@ -12,7 +12,7 @@ import { shopMenu } from './ow_menukeys.js';
 import { startScriptedWildBattle } from './ow_scaling.js';
 import { S } from './ow_state.js';
 import { runSpecial, startScriptedBattle } from './ow_story.js';
-import { flyTo, warpTo } from './ow_transitions.js';
+import { flyTo, moveToMap, warpTo } from './ow_transitions.js';
 import { addCaught, healParty, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -135,6 +135,9 @@ export function cutsceneCtx(talker, scriptLabel) {
 		},
 		healParty: () => healParty(S.party),
 		warp: (mapId, warpId, x, y) => warpTo(mapId, warpId, x, y),
+		// `warp NONE, 0, 0` (Script_warp's MAPSETUP_BADWARP): reload this map where
+		// you stand — PlayersHouse2F's PC after the decorations changed
+		reloadMap: () => moveToMap(world.current.name, player.tx, player.ty),
 		warpCheck: () => { const w = world.warpAt(player.tx, player.ty); if (!w) return false; warpTo(w.dest_map, w.dest_warp_id); return true; },
 		// a ferry arrival lands on a tile, not a door (see sail_fix.js)
 		warpXy: (mapId, x, y) => flyTo(mapId, x, y),

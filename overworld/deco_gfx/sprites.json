@@ -1,0 +1,182 @@
+{
+ "SPRITE_FAMICOM": {
+  "x": 0,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_SNES": {
+  "x": 16,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_N64": {
+  "x": 32,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_VIRTUAL_BOY": {
+  "x": 48,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_BIG_SNORLAX": {
+  "x": 64,
+  "y": 0,
+  "w": 32,
+  "h": 32
+ },
+ "SPRITE_BIG_ONIX": {
+  "x": 96,
+  "y": 0,
+  "w": 32,
+  "h": 32
+ },
+ "SPRITE_BIG_LAPRAS": {
+  "x": 128,
+  "y": 0,
+  "w": 32,
+  "h": 32
+ },
+ "SPRITE_PIKACHU": {
+  "x": 160,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_SURFING_PIKACHU": {
+  "x": 176,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_CLEFAIRY": {
+  "x": 192,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_JIGGLYPUFF": {
+  "x": 208,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_BULBASAUR": {
+  "x": 224,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_CHARMANDER": {
+  "x": 240,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_SQUIRTLE": {
+  "x": 256,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_POLIWAG": {
+  "x": 272,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_DIGLETT": {
+  "x": 288,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_STARMIE": {
+  "x": 304,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_MAGIKARP": {
+  "x": 320,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_ODDISH": {
+  "x": 336,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_GENGAR": {
+  "x": 352,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_SHELLDER": {
+  "x": 368,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_GRIMER": {
+  "x": 384,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_VOLTORB": {
+  "x": 400,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_WEEDLE": {
+  "x": 416,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_UNOWN": {
+  "x": 432,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_GEODUDE": {
+  "x": 448,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_MACHOP": {
+  "x": 464,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_TENTACOOL": {
+  "x": 480,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_GOLD_TROPHY": {
+  "x": 496,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ },
+ "SPRITE_SILVER_TROPHY": {
+  "x": 512,
+  "y": 0,
+  "w": 16,
+  "h": 16
+ }
+}
