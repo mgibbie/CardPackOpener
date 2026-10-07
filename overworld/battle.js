@@ -369,6 +369,8 @@ const MOVE_FX = {
 	// REAL side guards now, not personal-Protect aliases: QUICK GUARD walls the
 	// whole side against priority moves, WIDE GUARD against spread moves
 	quickguard: { sideGuard: 'quick' }, wideguard: { sideGuard: 'wide' }, endure: { endure: true },
+	// FALSE SWIPE / HOLD BACK always leave the target at least 1 HP (even on a crit)
+	falseswipe: { leaveOne: true }, holdback: { leaveOne: true },
 	// entry hazards
 	spikes: { hazard: 'spikes' }, toxicspikes: { hazard: 'toxicspikes' },
 	stealthrock: { hazard: 'stealthrock' }, stickyweb: { hazard: 'stickyweb' },
@@ -2497,6 +2499,7 @@ export class Battle {
 				return;
 			}
 			let dealt = total;
+			if (fx.leaveOne && dealt >= target.curHP) dealt = Math.max(0, target.curHP - 1);
 			if (target.enduring && dealt >= target.curHP) {
 				dealt = target.curHP - 1;
 				this.pushMsg(`${this.label(target)} endured the hit!`);
@@ -3476,10 +3479,22 @@ export class Battle {
 		return best;
 	}
 
-	resolveTurn(myMove) {
+	// A new turn begins — for a move, AND for a turn spent on a ball, an item, a
+	// switch or a failed run. Only the move path used to count it, so throwing
+	// balls froze the turn counter (TIMER BALL never grew, QUICK BALL stayed
+	// "first turn"). Flinch is cleared here too: the second mover's flinch lands
+	// after endOfTurn has run (its lines queue behind it), and used to carry into
+	// the next turn — "flinched and couldn't move!" a whole turn late.
+	beginTurn() {
 		const a = this.active;
 		a.turnCount = (a.turnCount || 0) + 1;
 		a.meSide.quickGuard = a.meSide.wideGuard = a.foeSide.quickGuard = a.foeSide.wideGuard = false;
+		for (const m of [a.me, a.foe, a.meAlly, a.foeAlly]) if (m) m.flinched = false;
+	}
+
+	resolveTurn(myMove) {
+		const a = this.active;
+		this.beginTurn();
 		if (a.foeSwitchCd > 0) a.foeSwitchCd--;
 		// boss counter-switch: replaces the foe's move and resolves first (like
 		// any trainer switch), so your move hits the incoming mon
@@ -3558,7 +3573,12 @@ export class Battle {
 
 	checkFaints() {
 		const a = this.active;
+		// A double has its own faint pass (both slots, faintCounted, bench refill).
+		// endOfTurn and the item/switch turn queue THIS one, which knows only a.foe
+		// and has no faintCounted guard — a fainted primary foe left in its slot was
+		// "fainted" again and paid its EXP again at every end of turn.
 		this.checkFormTriggers(); // HP dropped past a threshold → Zen Mode / Schooling / Power Construct
+		if (a.double) { this.checkFaintsD(); return; }
 		const meDown = a.me.curHP <= 0;
 		if (a.foe.curHP <= 0) {
 			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`,
@@ -3814,10 +3834,9 @@ export class Battle {
 		} else {
 			this.pushAnim('ballbreak', 'foe', 0.35, () => { sfx('ball_open'); a.foeHidden = false; a.ballShown = false; });
 			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
-			this.pushMsg('', () => {
-				this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
-			});
-			this.pushMsg('', () => this.checkFaints());
+			// the throw spent the turn: the foe moves, then the end-of-turn pass
+			// (screens, weather, status chip) — it used to skip both
+			this.foeFreeMove();
 		}
 	}
 
@@ -3910,10 +3929,7 @@ export class Battle {
 		if (ok) this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); });
 		else {
 			this.pushMsg("Can't escape!");
-			this.pushMsg('', () => {
-				this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
-			});
-			this.pushMsg('', () => this.checkFaints());
+			this.foeFreeMove();   // a full turn: foe move, end of turn, faints
 		}
 	}
 
@@ -4754,7 +4770,7 @@ export class Battle {
 		const acts = [...a.plans];
 		a.plans = [];
 		a.actionFor = 0;
-		a.turnCount = (a.turnCount || 0) + 1;   // doubles never counted turns; Revenge/Avalanche read it
+		this.beginTurn();   // doubles never counted turns; Revenge/Avalanche read it
 		// each foe picks its best target, then its best move against that target
 		for (const foeMon of this.livingFoes()) {
 			const mine = this.livingMine();
@@ -4927,6 +4943,7 @@ export class Battle {
 	// the foe gets its move after an item/switch (it costs the turn)
 	foeFreeMove() {
 		const a = this.active;
+		this.beginTurn();
 		this.pushMsg('', () => {
 			if (a.foe.curHP <= 0 || a.me.curHP <= 0) return;
 			this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
