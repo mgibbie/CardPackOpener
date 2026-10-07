@@ -771,8 +771,9 @@ export class Player {
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
 		if (!open) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
 		// Sky Pillar's cracked floors give way underfoot — only the bike carries you
-		// across (they read as normal floor otherwise, so gate them explicitly)
-		if (this.world.isCrackedFloor(nx, ny) && !this.biking) { this.moveOutcome = 'cracked'; this.onBlockedCracked?.(); return; }
+		// across. Where the map has a floor below (setholewarp, holes.js) you may
+		// walk on and fall through, as on the GBA; anywhere else they stay a wall.
+		if (this.world.isCrackedFloor(nx, ny) && !this.biking && !this.canFall?.()) { this.moveOutcome = 'cracked'; this.onBlockedCracked?.(); return; }
 		if (this.blocked && this.blocked(nx, ny)) {
 			// a Strength boulder in the way may be shoved one tile ahead; if it
 			// moves, the player steps into the vacated tile
@@ -865,7 +866,7 @@ export class Player {
 	}
 
 	draw(ctx, camX, camY) {
-		if (!this.img) return;
+		if (!this.img || this.falling) return; // dropping through a cracked floor (holes.js)
 		const sheet = this.rideImg();
 		// only draw the fallback water ellipse when the real surf sheet is missing
 		if (this.surfing && !this.surfImg) {

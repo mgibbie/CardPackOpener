@@ -33,6 +33,7 @@ import { openTownMap } from './ow_music.js';
 import { partyMenu } from './ow_menustate.js';
 import { ruinsFloorClosed, ruinsWallClosed } from './unown_puzzle.js';
 import { afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo } from './ow_transitions.js';
+import { crackedFloorStep, holeWarpFor } from './holes.js';
 
 
 // ---------- Mach Bike ----------
@@ -375,6 +376,8 @@ async function crossConnection(hit) {
 }
 
 // nudge the player toward the bike when a cracked floor stops them
+// on a map with a floor below, walking onto a crack is allowed: you fall (holes.js)
+player.canFall = () => !!holeWarpFor(world.current?.name);
 player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
 player.onHop = () => sfx('ledge');
 // ONE bump handler: the wall thud (throttled — tryMove fires every held frame)
@@ -388,12 +391,29 @@ player.onBump = (tx, ty) => {
 	if (m) dialog.open(m);
 };
 
+// EventScript_FallDownHole: the player vanishes, SE_FALL, then warphole lands you
+// at the same x, y on the floor below
+function fallThroughFloor(mapId) {
+	const x = player.tx, y = player.ty;
+	S.loading = true;
+	player.falling = true;
+	sfx('ledge');
+	setTimeout(async () => {
+		try { await warpTo(mapId, null, x, y); }
+		finally { player.falling = false; S.loading = false; }
+	}, 450);
+}
+
 player.onArrive = () => {
 	// each completed step accrues Day Care EXP and incubates any egg
 	// FLAME BODY / MAGMA ARMOR halve the steps an egg needs — previously
 	// battle-only text on 20-odd species
 	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; },
 		(S.party || []).some(m => m && m.curHP > 0 && (m.ability === 'flamebody' || m.ability === 'magmaarmor')) ? 2 : 1);
+	// a cracked floor that gives way (Sky Pillar, Granite Cave, Mirage Tower,
+	// Mt. Pyre): drop through to the floor below at the same spot (holes.js)
+	const fallTo = crackedFloorStep(world, player);
+	if (fallTo) { fallThroughFloor(fallTo); return; }
 	// warp tile?
 	let w = world.warpAt(player.tx, player.ty);
 	// a Ruins of Alph chamber's floor is solid until its UNOWN PUZZLE is solved
