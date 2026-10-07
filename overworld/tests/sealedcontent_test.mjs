@@ -71,13 +71,14 @@ async function waitFor(fn, ms) {
 		Object.keys(genders).filter(k => !bat[k]).slice(0, 3).join(','));
 
 	// ---------- the sealed dungeons ----------
-	const dive = fs.readFileSync(path.join(ROOT, 'overworld/divelinks.js'), 'utf8');
+	// (the links are the decomp's setdivewarp: tools/gen_divewarps.mjs -> divewarp_data.js)
+	const { EXTRA_DIVE } = await import('../divelinks.js');
 	for (const [stem, why] of [
 		['Route134', 'the only sea route with no dive link — the SEALED CHAMBER hung off it'],
 		['Underwater_SealedChamber', 'surfacing into the SEALED CHAMBER itself'],
 		['AbandonedShip_Rooms_B1F', 'diving into the ABANDONED SHIP wreck'],
-		['AbandonedShip_Underwater2', 'surfacing onto its hidden floor'],
-	]) A(new RegExp(`\\b${stem}\\s*:`).test(dive), `divelinks now covers ${stem} — ${why}`);
+		['AbandonedShip_Underwater1', 'surfacing onto its hidden floor'],
+	]) A(!!EXTRA_DIVE[stem], `divelinks now covers ${stem} — ${why}`);
 
 	// ---------- engine ----------
 	const server = http.createServer(async (req, res) => {

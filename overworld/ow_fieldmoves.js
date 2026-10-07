@@ -5,7 +5,7 @@ import { phoneStep } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Daycare from './daycare.js';
-import { EXTRA_DIVE } from './divelinks.js';
+import { EXTRA_DIVE, diveLinkAt } from './divelinks.js';
 import { encounterChance } from './encounters.js';
 import { META } from './engine.js';
 import * as Story from './events.js';
@@ -157,7 +157,7 @@ export function saveFlute() { safeSave(FLUTE_KEY, S.fluteState); }
 // link restored in divelinks.js (maps served read-only from owdata)
 function diveConn(kind) {
 	return (world.current.map.connections || []).find(x => x.direction === kind)
-		|| EXTRA_DIVE[world.current.name]?.[kind] || null;
+		|| diveLinkAt(EXTRA_DIVE[world.current.name]?.[kind], player.tx, player.ty) || null;
 }
 export async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 	const c = diveConn(kind);
