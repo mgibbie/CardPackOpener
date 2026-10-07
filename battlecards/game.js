@@ -243,7 +243,8 @@ function freeSpaceForSnapshot() {
 }
 function saveRunSnapshot() {
 	const io = activeRunIO();
-	if (!io || !state || state.over || (typeof isGuest === 'function' && isGuest())) return;
+	if (!io || !state || (typeof isGuest === 'function' && isGuest())) return;
+	if (state.over) { recordRunResult(); return; }
 	const run = io.load();
 	if (!run || !run.active) return;
 	try {
@@ -321,6 +322,31 @@ function pushActiveRun(withSnapshot, keepalive) {
 	// keepalive lets the final push survive a hard tab-close (small snapshots only —
 	// keepalive caps the body at ~64KB, so large boards fall back to the local snapshot)
 	MPX.call('run-save', { key: io.key, run: toPush }, { keepalive: !!keepalive }).catch(() => {});
+}
+// A finished fight's RESULT is recorded the moment the engine ends it — not when
+// the event playback reaches gameOver and its 1200 ms beat fires the mode's
+// victory/defeat. Leaving inside that window (a reload, the lobby, a closed tab)
+// used to keep the PRE-DEATH snapshot: "Continue the run" reloaded the same lost
+// fight, which the seeded RNG replays identically, forever (Remy's Final Fantasy
+// run frozen at 2W/2L). The pending result rides the run (snapshot dropped) and
+// the boot settles it through the same victory/defeat path. Modes that resume a
+// post-game checkpoint (beginPostGame) only; beginPostGame clears the marker.
+const RESULT_RUN_KEYS = new Set([DUELS_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]);
+function recordRunResult() {
+	if (!state || !state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
+	const io = activeRunIO();
+	if (!io || !RESULT_RUN_KEYS.has(io.key)) return;
+	const run = io.load();
+	if (!run || !run.active || run.postGame || run.pendingResult) return;
+	run.pendingResult = { won: state.winner === HUMAN, at: Date.now() };
+	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
+	io.save(run);
+	pushActiveRun(true);
+}
+function settlePendingResult(run, victory, defeat) {
+	const won = !!run.pendingResult.won;
+	delete run.snapshot; delete run.snapshotAt;
+	(won ? victory : defeat)(run);   // -> after*Game -> beginPostGame clears pendingResult
 }
 function serverClearRun(key) { if (MP_ON) MPX.call('run-clear', { key }).catch(() => {}); }
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
@@ -2539,6 +2565,7 @@ function pump() {
 	// driver re-arms). A no-op in 1v1/solo, where a self-elimination ends the game.
 	E.settleTurn(state);
 	const fresh = E.takeEvents(state);
+	if (state.over) recordRunResult();
 	// which creatures had a REASON to leave this batch?
 	const accounted = new Set();
 	for (const ev of fresh) {
@@ -6729,7 +6756,7 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
-		if (run.postGame) resumePostGame(run, duelsLoot, afterDuelsLootBucket, advanceDuels); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
+		if (run.pendingResult) settlePendingResult(run, duelsVictory, duelsDefeat); else if (run.postGame) resumePostGame(run, duelsLoot, afterDuelsLootBucket, advanceDuels); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
 	} else if (lorequestRunMode) {
 		lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
@@ -6741,7 +6768,7 @@ async function start() {
 				enemy: genLorequestEnemy(cardsById, 0, 0, null, characterId) };
 			saveLorequest(run);
 		}
-		if (run.postGame) resumePostGame(run, lorequestLoot, afterLorequestBucket, advanceLorequest); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
+		if (run.pendingResult) settlePendingResult(run, lorequestVictory, lorequestDefeat); else if (run.postGame) resumePostGame(run, lorequestLoot, afterLorequestBucket, advanceLorequest); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
 	} else if (middleearthRunMode) {
 		middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
@@ -6753,7 +6780,7 @@ async function start() {
 				enemy: genMiddleEarthEnemy(cardsById, 0, null) };
 			saveMiddleearth(run);
 		}
-		if (run.postGame) resumePostGame(run, middleEarthLoot, afterMiddleEarthReward, advanceMiddleEarth); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
+		if (run.pendingResult) settlePendingResult(run, middleEarthVictory, middleEarthDefeat); else if (run.postGame) resumePostGame(run, middleEarthLoot, afterMiddleEarthReward, advanceMiddleEarth); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
 		} else if (swordcoastRunMode) {
 			swordcoastCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadSwordcoast();
@@ -6765,7 +6792,7 @@ async function start() {
 					enemy: genSwordCoastEnemy(cardsById, 0, null) };
 				saveSwordcoast(run);
 			}
-			if (run.postGame) resumePostGame(run, swordCoastLoot, afterSwordCoastReward, advanceSwordCoast); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
+			if (run.pendingResult) settlePendingResult(run, swordCoastVictory, swordCoastDefeat); else if (run.postGame) resumePostGame(run, swordCoastLoot, afterSwordCoastReward, advanceSwordCoast); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
 		} else if (finalfantasyRunMode) {
 			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadFinalfantasy();
@@ -6777,7 +6804,7 @@ async function start() {
 					enemy: genFinalFantasyEnemy(cardsById, 0, null) };
 				saveFinalfantasy(run);
 			}
-			if (run.postGame) resumePostGame(run, finalFantasyLoot, afterFinalFantasyReward, advanceFinalFantasy); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
+			if (run.pendingResult) settlePendingResult(run, finalFantasyVictory, finalFantasyDefeat); else if (run.postGame) resumePostGame(run, finalFantasyLoot, afterFinalFantasyReward, advanceFinalFantasy); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
 		} else if (multiverseRunMode) {
 			multiverseCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadMultiverse();
@@ -6789,7 +6816,7 @@ async function start() {
 					enemy: genMultiverseEnemy(cardsById, 0, null) };
 				saveMultiverse(run);
 			}
-			if (run.postGame) resumePostGame(run, multiverseLoot, afterMultiverseBucket, advanceMultiverse); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Multiverse fight.'); else bootMultiverseEncounter(cardsById, run);
+			if (run.pendingResult) settlePendingResult(run, multiverseVictory, multiverseDefeat); else if (run.postGame) resumePostGame(run, multiverseLoot, afterMultiverseBucket, advanceMultiverse); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Multiverse fight.'); else bootMultiverseEncounter(cardsById, run);
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
@@ -8403,7 +8430,7 @@ function bootLorequestEncounter(cardsById, run) {
 // second) with a seed, every offer is rolled from that seed (a reload shows the
 // SAME choices: resume is frame-exact), each pick is saved as it is made, and
 // boot reopens the reward instead of a fight. Advancing clears it.
-function beginPostGame(run, won) { run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
+function beginPostGame(run, won) { delete run.pendingResult; run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
 function postGameRng(run, salt) { return E.seededRng(((run.postGame ? run.postGame.seed : (Math.random() * 2 ** 31) >>> 0) + salt * 7919) >>> 0); }
 function postGameStage(run, stage, save) { if (run.postGame) { run.postGame.stage = stage; save(run); } }
 function resumePostGame(run, step1, step2, advance) {
