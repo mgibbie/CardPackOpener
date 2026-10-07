@@ -146,6 +146,18 @@ function colonlessSplits(asm, label, nRows) {
 	}
 	return at.size && n === nRows ? at : null;
 }
+// does the label's traced body hold any colon-less local label at all?
+function hasColonless(asm, label) {
+	const lines = asm.split(/\r?\n/);
+	const g = label.split('.')[0], local = label.includes('.') ? label.slice(g.length) : null;
+	let i = lines.findIndex(l => new RegExp('^' + g + '::?(\\s|;|$)').test(l)); if (i < 0) return false;
+	if (local) { const k = lines.findIndex((l, j) => j > i && l.startsWith(local + ':')); if (k < 0) return false; i = k; }
+	for (let k = i + 1; k < lines.length; k++) {
+		if (/^\.?[A-Za-z_]\w*::?(\s|;|$)/.test(lines[k])) return false;
+		if (/^\.[A-Za-z_]\w*\s*(;.*)?$/.test(lines[k])) return true;
+	}
+	return false;
+}
 // `loadmenu .Header` + `verticalmenu`: the Header's `dw .MenuData` lists the items
 // as `db "NAME@"`. Crystal's verticalmenu answers 1-based (B = 0) — see below.
 // A local `.MenuHeader` / `.MenuData` is the first one AFTER its global label (the
@@ -192,7 +204,9 @@ const trace = JSON.parse(execFileSync('python', [path.join('tools', 'crystal_tra
 const patches = {};
 const STEMS = [];
 let restored = 0, labels = 0;
-const skipped = { handPatched: [], unresolved: [], notEnabled: new Set() }, bySource = {};
+const skipped = { handPatched: [], unresolved: [], notEnabled: new Set(), colonlessUnaligned: [], colonlessHandPatched: [] }, bySource = {};
+let split = 0;
+const FALLTHROUGH = (() => { try { return JSON.parse(fs.readFileSync(path.join('overworld', 'fallthrough_data.json'), 'utf8')).edges || {}; } catch (e) { return {}; } })();
 for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 	if (!f.endsWith('_map.json')) continue;
 	const j = JSON.parse(fs.readFileSync(path.join(D, 'maps', f), 'utf8'));
@@ -222,7 +236,11 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		const memKinds = MEM_RESTORE_IN.some(p => `${stem}:${label}`.startsWith(p));
 		let lastGive = null; // the givemon op a following givepokemail attaches its MAIL to
 		let acc = null;   // the script var as readmem/setval/addval leave it, for writemem
-		const subAt = newKinds ? colonlessSplits(asm, label, rows.length) : null;
+		// every label's colon-less local labels are split out (2026-10-07: 29 branch
+		// targets on 17 maps dangled — Mr. POKeMON's `.refused`, the Dept. Store 5F
+		// clerk's TM menu, Burned Tower's rival); not only the restore-listed ones
+		const subAt = colonlessSplits(asm, label, rows.length);
+		if (!subAt && hasColonless(asm, label)) skipped.colonlessUnaligned.push(`${stem}:${label}`);
 		for (const [ri, [cmd, a, conv]] of rows.entries()) {
 			// a colon-less local label starts here: mark it (split below), and nothing
 			// before it answers a branch after it — control can arrive by a jump
@@ -327,8 +345,8 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			else if (newKinds && ['scall', 'giveitem', 'verbosegiveitem'].includes(cmd) && conv.length) src = { var: 'VAR_RESULT', name: cmd };
 			else if (!NEUTRAL.has(cmd)) src = null;
 		}
-		if (!n) continue;
-		if (strip(ours[label]) !== strip(fresh)) { skipped.handPatched.push(`${stem}:${label}`); continue; }
+		if (!n && !subAt) continue;
+		if (strip(ours[label]) !== strip(fresh)) { (n ? skipped.handPatched : skipped.colonlessHandPatched).push(`${stem}:${label}`); continue; }
 		// keep our copy's movement steps: splice into OUR ops at the same positions
 		const merged = []; let oi = 0;
 		for (const op of out) {
@@ -338,12 +356,17 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		// cut at the colon-less labels; a block that doesn't end runs on into the next
 		const segs = [{ name: label, ops: [] }];
 		for (const op of merged) { if (op && op.op === '__label__') segs.push({ name: op.name, ops: [] }); else segs[segs.length - 1].ops.push(op); }
+		// the last piece inherits the label's own fall-through into the next colon
+		// label (fallthrough_data.json — fallthrough.js only sees the head, which
+		// now ends in a goto to its first piece)
+		const tailNext = FALLTHROUGH[stem]?.[label];
 		segs.forEach((sg, si) => {
 			const last = sg.ops[sg.ops.length - 1];
-			if (si + 1 < segs.length && !(last && ['end', 'return', 'goto'].includes(last.op))) sg.ops.push({ op: 'goto', label: segs[si + 1].name });
+			const next = si + 1 < segs.length ? segs[si + 1].name : (segs.length > 1 ? tailNext : null);
+			if (next && !(last && ['end', 'return', 'goto'].includes(last.op))) sg.ops.push({ op: 'goto', label: next });
 			(patches[stem] = patches[stem] || {})[sg.name] = sg.ops;
 		});
-		if (segs.length > 1) tally('colonless labels');
+		if (segs.length > 1) { tally('colonless labels'); split += segs.length - 1; }
 		restored += n; labels++;
 	}
 }
@@ -451,6 +474,7 @@ fs.writeFileSync(OUT, JSON.stringify({ generated: 'tools/gen_crystal_scriptvar.m
 console.log(`restored ${restored} dropped comparison(s) in ${labels} label(s) across ${Object.keys(patches).length} map(s)`);
 console.log('by source:', JSON.stringify(bySource));
 console.log(`skipped (hand-patched labels, left alone): ${skipped.handPatched.length}`, skipped.handPatched.join(' '));
+console.log(`colon-less local labels split out: ${split}; NOT split — body doesn't line up with the trace: ${skipped.colonlessUnaligned.length}`, skipped.colonlessUnaligned.join(' '), `| hand-patched: ${skipped.colonlessHandPatched.length}`, skipped.colonlessHandPatched.join(' '));
 console.log(`skipped (value not resolvable): ${skipped.unresolved.length}`, skipped.unresolved.join(' | '));
 console.log('wrote ' + OUT);
 console.log(`changeblocks not restorable (block never appears in a converted map of that tileset): ${changeblockSkipped.length}`, changeblockSkipped.join(' | '));
