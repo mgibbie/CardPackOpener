@@ -84,7 +84,12 @@ export class Encounters {
 		// Tunnel, Victory Road, Cerulean Cave...) and 25 species were uncatchable.
 		// On a map with NO grass at all, the floor is the encounter tile, which is
 		// what gen 3 does. Routes keep the grass-only rule, because they have grass.
+		// FRLG maps say per tile (the metatile's encounter type), so they follow the
+		// decomp exactly: Route 17's road (no grass behavior anywhere on the map)
+		// used to fall through to the no-grass rule and roll on every tile.
+		const enc = world.encounterTypeAt ? world.encounterTypeAt(tx, ty) : null;
 		const kind = surfing && world.isSurfable(tx, ty) ? 'water'
+			: enc != null ? (!surfing && enc === 'land' ? 'land' : null)
 			: world.isTallGrass(tx, ty) ? 'land'
 			: (!surfing && !world.hasTallGrass()) ? 'land'
 			: null;
