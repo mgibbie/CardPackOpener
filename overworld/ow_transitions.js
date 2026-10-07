@@ -40,7 +40,7 @@ const scriptCache = new Map();
 export async function loadMapScripts(stem) {
 	S.mapScripts = {}; S.mapStrings = {};
 	Story.setScriptMap(stem);   // its file-scoped `.equ` constants
-	syncBikeFlags();             // before its ON_TRANSITION reads FLAG_GOT_BICYCLE (Cycling Road gates)
+	syncBikeFlags();             // before its scripts read FLAG_GOT_BICYCLE / FLAG_GOT_POKE_FLUTE (Cycling Road gates, SNORLAX)
 	if (!stem) return;
 	if (!scriptCache.has(stem)) {
 		const scr = await getJSON(`data/scripts/${stem}.json`).catch(() => null);

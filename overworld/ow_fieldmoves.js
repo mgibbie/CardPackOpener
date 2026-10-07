@@ -60,7 +60,19 @@ export function toggleBike() {
 // not (2026-10-06, Instinct). Any bike counts in every region, as it does for
 // riding. Run on each map load too, so a bike got before this fix counts.
 const BIKE_OWNED_FLAGS = ['FLAG_GOT_BICYCLE', 'FLAG_RECEIVED_BIKE', 'EVENT_GOT_BICYCLE'];
+// The same gap for the key items the port's native givers hand over (blockers.js
+// GIVERS): the decomp's giver sets a flag alongside giveitem, and later scripts
+// read the FLAG, not the bag. FireRed's Route 12 / 16 SNORLAX branch on
+// FLAG_GOT_POKE_FLUTE, so an owned flute only got "sprawled out in a deep and
+// comfortable slumber" (2026-10-07, Instinct). Owning the item sets its flags.
+const KEY_ITEM_FLAGS = {
+	pokeflute: ['FLAG_GOT_POKE_FLUTE'],               // pokefirered LavenderTown_VolunteerPokemonHouse (MR. FUJI)
+	devonscope: ['FLAG_RECEIVED_DEVON_SCOPE'],        // pokeemerald Route120 (STEVEN)
+	squirtbottle: ['EVENT_GOT_SQUIRTBOTTLE'],         // pokecrystal GoldenrodFlowerShop
+};
 export function syncBikeFlags() {
+	for (const [item, flags] of Object.entries(KEY_ITEM_FLAGS))
+		if (Bag.count(item) > 0) for (const f of flags) if (!Story.getFlag(f)) Story.setFlag(f);
 	if (!BIKES.some(b => Bag.count(b) > 0)) return;
 	for (const f of BIKE_OWNED_FLAGS) if (!Story.getFlag(f)) Story.setFlag(f);
 }

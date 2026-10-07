@@ -633,6 +633,20 @@ export class World {
 		}
 		return cur._hasGrass;
 	}
+	// FRLG metatiles carry the decomp's own encounter type (attribute bits 24-26:
+	// TILE_ENCOUNTER_LAND = 1, _WATER = 2), which is what pokefirered's
+	// wild_encounter.c checks — not the behavior. Answers 'land' / 'water' / 'none'
+	// for an FRLG map, and null where the attributes carry no encounter type
+	// (Emerald and Crystal tilesets), so Encounters.roll keeps its behavior rule.
+	encounterTypeAt(tx, ty) {
+		const cur = this.current;
+		if (cur.layout?.game !== 'firered' || cur.map?._crystal_tileset) return null;
+		const v = this.gridAt(tx, ty);
+		if (v == null) return 'none';
+		const owner = this.connectionAt(tx, ty)?.conn || cur;
+		const t = (metatileOf(owner.ts, v & METATILE_MASK).attr >>> 24) & 7;
+		return t === 1 ? 'land' : t === 2 ? 'water' : 'none';
+	}
 	isCrackedFloor(tx, ty) { return this.behaviorAt(tx, ty) === MB_CRACKED_FLOOR; }
 	// a map whose sea can be dived into (offers a 'dive' overlay); its deep water
 	// gets a distinct tint so DIVE spots are readable

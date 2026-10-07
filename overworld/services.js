@@ -103,6 +103,11 @@ const TRICK_HOUSE = {
 // apricorns into his handmade balls.
 const SHOAL_SPOTS = {
 	MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM: [[31, 8], [14, 26], [41, 20], [41, 10], [6, 9], [16, 13]],
+	// the same room at high tide (ow_features.js loads it as its own map): the decomp
+	// keeps the four SHELL stones whatever the tide and buries only the SALT piles
+	// (ShoalCave_LowTideInnerRoom_EventScript_SetShoalItemMetatiles skips salt on
+	// FLAG_SYS_SHOAL_TIDE) — (41,10) and (6,9) are reachable only by Surf at high tide
+	MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM: [[41, 20], [41, 10], [6, 9], [16, 13]],
 	MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM: [[18, 2]],
 	MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM: [[11, 11]],
 };
