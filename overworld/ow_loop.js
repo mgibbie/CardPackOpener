@@ -10,6 +10,7 @@ import { drawAwakening, drawLegendary } from './ow_legendaries.js';
 import { bagMenu, bpShopMenu, canvasMenuOpen, drawBpShopMenu, ferryMenu, menuBlocking, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
 import { drawBagMenu, drawCardsMenu, drawDaycare, drawDexMenu, drawFerryMenu, drawFriendsMenu, drawHalfParty, drawMoveShop, drawNameRater, drawOptions, drawPartyMenu, drawChoiceMenu, drawPcMenu, drawPhoneMenu, drawPortalMenu, drawQuest, drawRunMenu, drawShopMenu, drawStartMenu, drawStarterMenu, drawTownMap, drawTrainerCard } from './ow_menus.js';
 import { drawSlots, slotsMenu } from './ow_minigames.js';
+import { crystalSlots, drawCrystalSlots } from './ow_crystalslots.js';
 import { drawFriendGhosts, drawMailMenu } from './ow_pvp.js';
 import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView } from './ow_render.js';
 import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, friendsMenu, mailMenu } from './ow_screens.js';
@@ -347,6 +348,7 @@ export function tick(now) {
 			sctx.fillRect(0, MH, SW, SH - MH);
 		}
 		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
+		else if (crystalSlots.open) drawCrystalSlots(SW, MH);
 		else if (partyMenu.open) drawPartyMenu(SW, MH);
 		else if (shopMenu.open) drawShopMenu(SW, MH);
 		else if (bagMenu.open) drawBagMenu(SW, MH);

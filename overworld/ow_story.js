@@ -43,6 +43,7 @@ import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { unownPuzzleSpecial } from './unown_puzzle.js';
+import { startCrystalSlots } from './ow_crystalslots.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
 import { startCardFlip } from './minigames/cardflip/cardflip.js';
 import {
@@ -908,6 +909,9 @@ export function runSpecial(name, store, op) {
 		// Crystal's Game Corner card table (Goldenrod; Celadon in JohKanto) — the
 		// machines' signs (#658) ran a special nothing answered
 		case 'CardFlip': return openCardFlip();
+		// Crystal's slot machine (Goldenrod + Celadon Game Corners): CheckCoinsAndCoinCase,
+		// then the minigame (ow_crystalslots.js); the sign script resumes when you quit
+		case 'SlotMachine': return startCrystalSlots();
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
 		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
