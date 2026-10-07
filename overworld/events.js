@@ -559,6 +559,9 @@ export class Cutscene {
 				}
 				case 'warp': {
 					let map = op.map, id = resolveValue(op.warp) || 0;
+					// Crystal's `warp NONE, 0, 0` reloads the current map in place
+					// (Script_warp .not_ok -> MAPSETUP_BADWARP keeps map and position)
+					if (map === 'NONE' && op.coord) { ctx.reloadMap?.(); return this._finish(); }
 					if (WARP_NOT_A_MAP.test(String(map))) {
 						if (typeof op.warp !== 'string' || WARP_NOT_A_MAP.test(op.warp)) return this._finish();
 						map = op.warp; id = 0;

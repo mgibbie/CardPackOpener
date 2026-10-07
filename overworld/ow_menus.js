@@ -1093,8 +1093,14 @@ export function drawChoiceMenu(W, H) {
 	}
 	const cols = choiceMenu.cols, gap = 10;
 	const w = (W - 48 * u - (cols - 1) * gap * u) / cols;
+	// a list taller than the screen (the ORNAMENT decorations: 23 dolls + PUT IT
+	// AWAY + CANCEL) scrolls with the selection
+	const per = Math.max(1, Math.floor((H / u - y - 12) / 52)), rows = Math.ceil(choiceMenu.options.length / cols);
+	const top = rows > per ? Math.max(0, Math.min(Math.floor(choiceMenu.idx / cols) - per + 1, rows - per)) : 0;
 	choiceMenu.options.forEach((label, i) => {
-		const bid = 'choice:' + i, r = Math.floor(i / cols), cI = i % cols;
+		const r = Math.floor(i / cols) - top;
+		if (r < 0 || r >= per) return;
+		const bid = 'choice:' + i, cI = i % cols;
 		const b = { id: bid, x: 24 * u + cI * (w + gap * u), y: (y + r * 52) * u, w, h: 46 * u, label, center: true, kbSel: choiceMenu.idx === i };
 		S.menuUi.push(b);
 		BUI.button(sctx, b, S.menuHover === bid || choiceMenu.idx === i, u);
