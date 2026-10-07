@@ -50,6 +50,7 @@ import {
 // run it through the interpreter with the current map's strings
 export function runScriptLabel(label, talker) {
 	if (cutscene.blocking || !label) return false;
+	S.lastScriptLabel = label;   // diagnostics + tests: which script the last interaction started
 	// VAR_LAST_TALKED resolves to whoever this script was started ON. Recorded
 	// here rather than in interact() so trainer talks and coord scripts set it too.
 	if (talker) S.lastTalkedNpc = talker;

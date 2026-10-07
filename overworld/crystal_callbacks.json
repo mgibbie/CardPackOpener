@@ -494,6 +494,40 @@
   "WhirlIslandLugiaChamber:WhirlIslandLugiaChamberLugiaCallback": "LUGIA is encountered through the native legendary system (ow_legendaries.js)"
  },
  "signs": {
+  "DanceTheater": [
+   {
+    "type": "sign",
+    "x": 5,
+    "y": 6,
+    "script": "DanceTheaterFancyPanel",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 6,
+    "script": "DanceTheaterFancyPanel",
+    "facing": "up"
+   }
+  ],
+  "ElmsLab": [
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 5,
+    "script": "ElmsLabPC",
+    "facing": "down"
+   }
+  ],
+  "GoldenrodCity": [
+   {
+    "type": "sign",
+    "x": 16,
+    "y": 27,
+    "script": "GoldenrodCityPokecenterSign",
+    "facing": "up"
+   }
+  ],
   "GoldenrodDeptStore6F": [
    {
     "type": "sign",
@@ -521,6 +555,89 @@
     "x": 11,
     "y": 1,
     "script": "GoldenrodVendingMachine",
+    "facing": "up"
+   }
+  ],
+  "GoldenrodDeptStoreRoof": [
+   {
+    "type": "sign",
+    "x": 15,
+    "y": 3,
+    "script": "Binoculars1",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 15,
+    "y": 5,
+    "script": "Binoculars2",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 15,
+    "y": 6,
+    "script": "Binoculars3",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 0,
+    "script": "PokeDollVendingMachine",
+    "facing": "up"
+   }
+  ],
+  "GoldenrodGameCorner": [
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 11,
+    "script": "GoldenrodGameCornerSlotsMachineScript",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 7,
+    "y": 11,
+    "script": "GoldenrodGameCornerSlotsMachineScript",
+    "facing": "left"
+   },
+   {
+    "type": "sign",
+    "x": 12,
+    "y": 11,
+    "script": "GoldenrodGameCornerSlotsMachineScript",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 13,
+    "y": 11,
+    "script": "GoldenrodGameCornerCardFlipMachineScript",
+    "facing": "left"
+   },
+   {
+    "type": "sign",
+    "x": 18,
+    "y": 11,
+    "script": "GoldenrodGameCornerCardFlipMachineScript",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 12,
+    "y": 1,
+    "script": "GoldenrodGameCornerLeftTheirDrinkScript",
+    "facing": "left"
+   }
+  ],
+  "IlexForest": [
+   {
+    "type": "sign",
+    "x": 8,
+    "y": 22,
+    "script": "IlexForestShrineScript",
     "facing": "up"
    }
   ],
@@ -552,6 +669,341 @@
     "y": 1,
     "script": "CeladonDeptStore6FVendingMachine",
     "facing": "up"
+   }
+  ],
+  "JohKantoCeladonGameCorner": [
+   {
+    "type": "sign",
+    "x": 1,
+    "y": 11,
+    "script": "CeladonGameCornerCardFlipScript",
+    "facing": "left"
+   },
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 11,
+    "script": "CeladonGameCornerCardFlipScript",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 7,
+    "y": 11,
+    "script": "CeladonGameCornerLuckySlotMachineScript",
+    "facing": "left"
+   },
+   {
+    "type": "sign",
+    "x": 12,
+    "y": 11,
+    "script": "CeladonGameCornerLuckySlotMachineScript",
+    "facing": "right"
+   },
+   {
+    "type": "sign",
+    "x": 13,
+    "y": 11,
+    "script": "CeladonGameCornerLuckySlotMachineScript",
+    "facing": "left"
+   },
+   {
+    "type": "sign",
+    "x": 18,
+    "y": 11,
+    "script": "CeladonGameCornerLuckySlotMachineScript",
+    "facing": "right"
+   }
+  ],
+  "JohKantoCeladonMansion1F": [
+   {
+    "type": "sign",
+    "x": 5,
+    "y": 8,
+    "script": "CeladonMansionManagersSuiteSign",
+    "facing": "up"
+   }
+  ],
+  "JohKantoCeladonMansion2F": [
+   {
+    "type": "sign",
+    "x": 5,
+    "y": 8,
+    "script": "CeladonMansion2FMeetingRoomSign",
+    "facing": "up"
+   }
+  ],
+  "JohKantoCeladonMansion3F": [
+   {
+    "type": "sign",
+    "x": 5,
+    "y": 8,
+    "script": "CeladonMansion3FDevRoomSign",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 3,
+    "script": "CeladonMansion3FDrawing",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 1,
+    "y": 6,
+    "script": "CeladonMansion3FGameProgram",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 1,
+    "y": 3,
+    "script": "CeladonMansion3FReferenceMaterial",
+    "facing": "up"
+   }
+  ],
+  "JohKantoCeladonMansionRoof": [
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 1,
+    "script": "CeladonMansionRoofGraffiti",
+    "facing": "left"
+   }
+  ],
+  "PlayersHouse2F": [
+   {
+    "type": "sign",
+    "x": 2,
+    "y": 1,
+    "script": "PlayersHousePCScript",
+    "facing": "up"
+   }
+  ],
+  "PokecomCenterAdminOfficeMobile": [
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 26,
+    "script": "PokecomCenterAdminOfficeMobileComputer1",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 28,
+    "script": "PokecomCenterAdminOfficeMobileComputer2",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 26,
+    "script": "PokecomCenterAdminOfficeMobileComputer3",
+    "facing": "up"
+   }
+  ],
+  "RadioTower3F": [
+   {
+    "type": "sign",
+    "x": 14,
+    "y": 2,
+    "script": "CardKeySlotScript",
+    "facing": "up"
+   }
+  ],
+  "RuinsOfAlphAerodactylChamber": [
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 2,
+    "script": "RuinsOfAlphAerodactylChamberPuzzle",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 2,
+    "script": "RuinsOfAlphAerodactylChamberDescriptionSign",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 0,
+    "script": "RuinsOfAlphAerodactylChamberWallPatternLeft",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 0,
+    "script": "RuinsOfAlphAerodactylChamberWallPatternRight",
+    "facing": "up"
+   }
+  ],
+  "RuinsOfAlphHoOhChamber": [
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 2,
+    "script": "RuinsOfAlphHoOhChamberPuzzle",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 2,
+    "script": "RuinsOfAlphHoOhChamberDescriptionSign",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 0,
+    "script": "RuinsOfAlphHoOhChamberWallPatternLeft",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 0,
+    "script": "RuinsOfAlphHoOhChamberWallPatternRight",
+    "facing": "up"
+   }
+  ],
+  "RuinsOfAlphKabutoChamber": [
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 2,
+    "script": "RuinsOfAlphKabutoChamberPuzzle",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 2,
+    "script": "RuinsOfAlphKabutoChamberDescriptionSign",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 0,
+    "script": "RuinsOfAlphKabutoChamberWallPatternLeft",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 0,
+    "script": "RuinsOfAlphKabutoChamberWallPatternRight",
+    "facing": "up"
+   }
+  ],
+  "RuinsOfAlphOmanyteChamber": [
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 2,
+    "script": "RuinsOfAlphOmanyteChamberPuzzle",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 2,
+    "script": "RuinsOfAlphOmanyteChamberDescriptionSign",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 3,
+    "y": 0,
+    "script": "RuinsOfAlphOmanyteChamberWallPatternLeft",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 4,
+    "y": 0,
+    "script": "RuinsOfAlphOmanyteChamberWallPatternRight",
+    "facing": "up"
+   }
+  ],
+  "TeamRocketBaseB1F": [
+   {
+    "type": "sign",
+    "x": 24,
+    "y": 1,
+    "script": "TeamRocketBaseB1FSecurityCamera",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 6,
+    "y": 1,
+    "script": "TeamRocketBaseB1FSecurityCamera",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 8,
+    "y": 15,
+    "script": "TeamRocketBaseB1FSecurityCamera",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 22,
+    "y": 15,
+    "script": "TeamRocketBaseB1FSecurityCamera",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 24,
+    "y": 5,
+    "script": "TeamRocketBaseB1FSecurityCamera",
+    "facing": "up"
+   }
+  ],
+  "TeamRocketBaseB2F": [
+   {
+    "type": "sign",
+    "x": 14,
+    "y": 12,
+    "script": "TeamRocketBaseB2FLockedDoor.Script",
+    "flag": "EVENT_OPENED_DOOR_TO_ROCKET_HIDEOUT_TRANSMITTER",
+    "flagSet": false
+   },
+   {
+    "type": "sign",
+    "x": 15,
+    "y": 12,
+    "script": "TeamRocketBaseB2FLockedDoor.Script",
+    "flag": "EVENT_OPENED_DOOR_TO_ROCKET_HIDEOUT_TRANSMITTER",
+    "flagSet": false
+   }
+  ],
+  "TeamRocketBaseB3F": [
+   {
+    "type": "sign",
+    "x": 10,
+    "y": 9,
+    "script": "TeamRocketBaseB3FLockedDoor.Script",
+    "flag": "EVENT_OPENED_DOOR_TO_GIOVANNIS_OFFICE",
+    "flagSet": false
+   },
+   {
+    "type": "sign",
+    "x": 11,
+    "y": 9,
+    "script": "TeamRocketBaseB3FLockedDoor.Script",
+    "flag": "EVENT_OPENED_DOOR_TO_GIOVANNIS_OFFICE",
+    "flagSet": false
    }
   ]
  }
