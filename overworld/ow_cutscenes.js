@@ -114,8 +114,15 @@ export function cutsceneCtx(talker, scriptLabel) {
 			});
 			return 'wait';
 		},
-		giveMon: (species, level) => {
+		giveMon: (species, level, extra) => {
 			const mon = battle.data.species[species] && buildMonForGift(species, level);
+			// RANDY's KENYA: nickname, the giver as OT, and the MAIL it carries
+			if (mon && extra) {
+				if (extra.nickname) mon.nickname = extra.nickname;
+				if (extra.otName) { mon.otName = extra.otName; if (extra.otId != null) mon.otId = extra.otId; }
+				if (extra.item) mon.heldItem = extra.item;
+				if (extra.mail) mon.mail = extra.mail;
+			}
 			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(S.party, mon); saveParty(S.party); }
 		},
 		// Crystal's `giveegg`. Elm's aide hands over the TOGEPI EGG in the Violet

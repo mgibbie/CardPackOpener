@@ -37,6 +37,7 @@ import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
 import { townMap } from './ow_menustate.js';
 import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
 import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
+import { checkPokeMail } from './pokemail.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
@@ -1124,6 +1125,8 @@ export function runSpecial(name, store, op) {
 			return set(living().length);
 		// FireRed's move tutors (move_tutor.js): party pick -> forget a move -> VAR_RESULT
 		case 'ChooseMonForMoveTutor': return chooseMonForMoveTutor();
+		// Crystal's checkpokemail (Route 31: RANDY's KENYA and its MAIL), POKEMAIL_* in the script var
+		case 'CheckPokeMail': return checkPokeMail(op?.text || '');
 		case 'MoveTutor': return crystalMoveTutor();   // Crystal (Goldenrod City), move in the script var
 		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
 			return set(0); // party-slot pickers: default to the lead / no selection

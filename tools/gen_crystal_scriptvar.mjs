@@ -53,6 +53,9 @@ const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 	// the one-time gift POKeMON whose `givepoke` the transpile dropped (2026-10-07:
 	// Kiyo's TYROGUE set its flag and gave nothing; Bill's EEVEE the same)
 	'MountMortarB1F:MountMortarB1FKiyoScript', 'BillsFamilysHouse:BillScript',
+	// RANDY's KENYA (a nicknamed SPEAROW carrying MAIL: givepoke's name/OT args +
+	// givepokemail) and the Route 31 man who checks the mail (checkpokemail)
+	'Route35GoldenrodGate:RandyScript', 'Route31:Route31MailRecipientScript',
 	'GoldenrodGameCorner:GoldenrodGameCornerTMVendor', 'GoldenrodGameCorner:GoldenrodGameCornerPrizeMonVendor',
 	'JohKantoCeladonGameCornerPrizeRoom:CeladonGameCornerPrizeRoomPokemonVendor', 'JohKantoCeladonGameCornerPrizeRoom:CeladonPrizeRoom_tmcounterloop',
 	'JohKantoCeladonGameCorner:CeladonGameCornerFisherScript',
@@ -91,6 +94,8 @@ const CONST = { PARTY_LENGTH: 6, NUM_POKEMON: 251, NUM_JOHTO_BADGES: 8, NUM_KANT
 	MORN_HOUR: 4, DAY_HOUR: 10, NITE_HOUR: 18, TRUE: 1, FALSE: 0, MAX_COINS: 9999,
 	// pokecrystal constants/script_constants.asm
 	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3,
+	// checkpokemail answers
+	POKEMAIL_WRONG_MAIL: 0, POKEMAIL_CORRECT: 1, POKEMAIL_REFUSED: 2, POKEMAIL_NO_MAIL: 3, POKEMAIL_LAST_MON: 4,
 	UNOWNPUZZLE_KABUTO: 0, UNOWNPUZZLE_OMANYTE: 1, UNOWNPUZZLE_AERODACTYL: 2, UNOWNPUZZLE_HO_OH: 3 };
 // the map's own `DEF NAME EQU value` lines (prices: GOLDENRODGAMECORNER_TM25_COINS)
 let LOCAL = {};
@@ -103,6 +108,43 @@ function evalExpr(s) {
 	const t = String(s).replace(/[A-Z_][A-Z0-9_]*/g, n => (n in LOCAL ? String(LOCAL[n]) : n in CONST ? String(CONST[n]) : '#'));
 	if (/#|[^0-9+\-*\s()]/.test(t)) return null;
 	try { const v = Function('return (' + t + ')')(); return Number.isInteger(v) ? v : null; } catch (e) { return null; }
+}
+// a data label's strings: `Label:` then optional `db ITEM`, then `db "..."` /
+// `next "..."` lines up to the one ending in `@` (GiftSpearowName, GiftSpearowMail)
+function labelData(asm, label) {
+	const lines = asm.split(/\r?\n/);
+	const i = lines.findIndex(l => l.trim() === label + ':'); if (i < 0) return null;
+	let item = null; const parts = [];
+	for (let k = i + 1; k < lines.length && k < i + 8; k++) {
+		const m = /^\s*(db|next)\s+(?:"([^"]*)"|([A-Z_][A-Z0-9_]*))/.exec(lines[k]); if (!m) break;
+		if (m[3]) { item = m[3]; continue; }
+		const t = m[2]; if (t.endsWith('@')) { parts.push(t.slice(0, -1)); return { item, text: parts.join('\n') }; }
+		parts.push(t);
+	}
+	return null;
+}
+// rgbasm local labels written WITHOUT a colon (`.partyfull` alone on its line —
+// 80 of them in 31 pokecrystal maps) never matched the transpiler's label
+// pattern: their commands were traced as the tail of the label above, and every
+// branch to them dangles (events.js falls through a missing label). RANDY's
+// `.partyfull` / `.questcomplete` were unreachable: a full party still got KENYA,
+// and the HP UP was never given. For a label on RESTORE_COMMANDS_IN, find them in
+// the label's asm body: { row index -> ['.name', ...] }, or null when the body's
+// command lines don't line up 1:1 with the traced rows (then leave it alone).
+function colonlessSplits(asm, label, nRows) {
+	const lines = asm.split(/\r?\n/);
+	const g = label.split('.')[0], local = label.includes('.') ? label.slice(g.length) : null;
+	let i = lines.findIndex(l => new RegExp('^' + g + '::?(\\s|;|$)').test(l)); if (i < 0) return null;
+	if (local) { const k = lines.findIndex((l, j) => j > i && l.startsWith(local + ':')); if (k < 0) return null; i = k; }
+	const at = new Map(); let n = 0;
+	for (let k = i + 1; k < lines.length; k++) {
+		const l = lines[k];
+		if (/^\.?[A-Za-z_]\w*::?(\s|;|$)/.test(l)) break;   // the next colon label ends the traced body
+		const bare = /^(\.[A-Za-z_]\w*)\s*(;.*)?$/.exec(l);
+		if (bare) { if (!at.has(n)) at.set(n, []); at.get(n).push(bare[1]); continue; }
+		if (/^\s+[a-z_]\w*/.test(l)) n++;                    // a command line
+	}
+	return at.size && n === nRows ? at : null;
 }
 // `loadmenu .Header` + `verticalmenu`: the Header's `dw .MenuData` lists the items
 // as `db "NAME@"`. Crystal's verticalmenu answers 1-based (B = 0) — see below.
@@ -178,8 +220,13 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		const newKinds = RESTORE_COMMANDS_IN.some(p => `${stem}:${label}`.startsWith(p));
 		const wouldRestore = c => { if (!newKinds) { skipped.notEnabled.add(`${stem}:${label} (${c})`); return false; } return true; };
 		const memKinds = MEM_RESTORE_IN.some(p => `${stem}:${label}`.startsWith(p));
+		let lastGive = null; // the givemon op a following givepokemail attaches its MAIL to
 		let acc = null;   // the script var as readmem/setval/addval leave it, for writemem
-		for (const [cmd, a, conv] of rows) {
+		const subAt = newKinds ? colonlessSplits(asm, label, rows.length) : null;
+		for (const [ri, [cmd, a, conv]] of rows.entries()) {
+			// a colon-less local label starts here: mark it (split below), and nothing
+			// before it answers a branch after it — control can arrive by a jump
+			if (subAt?.has(ri)) { for (const nm of subAt.get(ri)) add({ op: '__label__', name: qualify(nm, g) }); src = null; acc = null; }
 			if (memKinds && !conv.length) {
 				if (cmd === 'loadmem' && /^w\w+$/.test(a[0]) && evalExpr(a[1]) != null) { add({ op: 'setvar', var: a[0], value: evalExpr(a[1]) }); n++; tally('loadmem'); continue; }
 				if (cmd === 'readmem' && /^w\w+$/.test(a[0])) { acc = { var: a[0], delta: 0 }; continue; }
@@ -193,7 +240,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 				}
 				if (cmd === 'moveobject' && a.length === 3 && evalExpr(a[1]) != null && evalExpr(a[2]) != null) { add({ op: 'setobjxy', who: a[0], x: evalExpr(a[1]), y: evalExpr(a[2]) }); n++; tally('moveobject'); continue; }
 			}
-			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'setval', 'verticalmenu', 'random'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
+			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'givepokemail', 'checkpokemail', 'setval', 'verticalmenu', 'random'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
 			// commands the transpile dropped outright (conv empty) that the engine runs
 			if (!conv.length && cmd === 'checkcoins' && evalExpr(a[0]) != null) { add({ op: 'checkcoins', amount: evalExpr(a[0]) }); n++; tally('checkcoins'); src = { var: 'VAR_RESULT', name: 'checkcoins' }; continue; }
 			if (!conv.length && cmd === 'takecoins' && evalExpr(a[0]) != null) { add({ op: 'takecoins', amount: evalExpr(a[0]) }); n++; tally('takecoins'); continue; }
@@ -202,6 +249,28 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			// FireRed one the engine also runs answers 1/0) — `crystal: true` picks the 3-way
 			if (!conv.length && cmd === 'checkmoney' && a[0] === 'YOUR_MONEY' && evalExpr(a[1]) != null) { add({ op: 'checkmoney', amount: evalExpr(a[1]), crystal: true }); n++; tally('checkmoney'); src = { var: 'VAR_RESULT', name: 'checkmoney' }; continue; }
 			if (!conv.length && cmd === 'takemoney' && a[0] === 'YOUR_MONEY' && evalExpr(a[1]) != null) { add({ op: 'removemoney', amount: evalExpr(a[1]) }); n++; tally('takemoney'); continue; }
+			// givepoke SPECIES, LEVEL, ITEM, NickLabel, OTLabel: a named gift with the giver
+			// as OT. GivePoke (engine/pokemon/move_mon.asm) gives a party mon with an OT
+			// name the ID RANDY_OT_ID (01001) — RANDY's KENYA is the only one in Crystal
+			if (!conv.length && cmd === 'givepoke' && a.length === 5 && newKinds && /^[A-Z][A-Z0-9_]*$/.test(a[0]) && evalExpr(a[1]) != null) {
+				const nick = labelData(asm, a[3]), ot = labelData(asm, a[4]);
+				if (nick && ot) {
+					lastGive = { op: 'givemon', species: 'SPECIES_' + a[0], level: evalExpr(a[1]), nickname: nick.text, otName: ot.text, otId: 1001 };
+					if (a[2] !== 'NO_ITEM') lastGive.item = 'ITEM_' + a[2];
+					add(lastGive); n++; tally('givepoke'); src = null; continue;
+				}
+			}
+			// givepokemail Label: the mon just given holds that MAIL (item + message)
+			if (!conv.length && cmd === 'givepokemail' && lastGive && newKinds) {
+				const m = labelData(asm, a[0]);
+				if (m && m.item) { lastGive.item = 'ITEM_' + m.item; lastGive.mail = m.text; tally('givepokemail'); continue; }
+			}
+			// checkpokemail Text: pick a party mon; its MAIL must read Text (mail.asm
+			// CheckPokeMail) — answers POKEMAIL_* in the script var
+			if (!conv.length && cmd === 'checkpokemail' && newKinds) {
+				const m = labelData(asm, a[0]);
+				if (m) { add({ op: 'special', name: 'CheckPokeMail', text: m.text }); n++; tally('checkpokemail'); src = { var: 'VAR_RESULT', name: 'checkpokemail' }; continue; }
+			}
 			// givepoke SPECIES, LEVEL (no held item / OT extras): party, or the PC when full
 			if (!conv.length && cmd === 'givepoke' && a.length === 2 && /^[A-Z][A-Z0-9_]*$/.test(a[0]) && evalExpr(a[1]) != null) { add({ op: 'givemon', species: 'SPECIES_' + a[0], level: evalExpr(a[1]) }); n++; tally('givepoke'); src = null; continue; }
 			// `random N` (0..N-1 into the script var), read by the ifequal after it
@@ -266,7 +335,15 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			if (inserted.has(op)) { merged.push(op); continue; }   // a restored op
 			merged.push(ours[label][oi++]);
 		}
-		(patches[stem] = patches[stem] || {})[label] = merged;
+		// cut at the colon-less labels; a block that doesn't end runs on into the next
+		const segs = [{ name: label, ops: [] }];
+		for (const op of merged) { if (op && op.op === '__label__') segs.push({ name: op.name, ops: [] }); else segs[segs.length - 1].ops.push(op); }
+		segs.forEach((sg, si) => {
+			const last = sg.ops[sg.ops.length - 1];
+			if (si + 1 < segs.length && !(last && ['end', 'return', 'goto'].includes(last.op))) sg.ops.push({ op: 'goto', label: segs[si + 1].name });
+			(patches[stem] = patches[stem] || {})[sg.name] = sg.ops;
+		});
+		if (segs.length > 1) tally('colonless labels');
 		restored += n; labels++;
 	}
 }
@@ -312,6 +389,45 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		console.log(`switch room: ${doors.length} doors -> ${doors.length * 2} door labels + the callback`);
 	}
 }
+// Event scripts behind a GLOBAL label (`CardKeySlotScript::`, `BasementDoorScript::`
+// — exported for other banks) were never transpiled: the converter only took
+// `Label:` scripts, so the Radio Tower's CARD KEY slot and the Goldenrod
+// Underground's BASEMENT KEY door read their sign and then ran nothing, and the
+// Radio Tower takeover could not be finished (2026-10-07). A label a map's event
+// points at that our scripts lack entirely is rebuilt here from the trace (its
+// converted ops, plus its dropped changeblocks), with its .sublabels.
+let globalsRestored = 0;
+for (const { stem, name } of STEMS) {
+	const asmFile = path.join(CR, 'maps', name + '.asm');
+	if (!fs.existsSync(asmFile) || !trace[name]) continue;
+	const asm = fs.readFileSync(asmFile, 'utf8');
+	const sf = path.join(D, 'scripts', stem + '.json');
+	const ours = fs.existsSync(sf) ? JSON.parse(fs.readFileSync(sf, 'utf8')) : {};
+	const refs = new Set();
+	for (const m of asm.matchAll(/^\s*(?:bg_event\s+[^,\n]+,[^,\n]+,\s*\w+|coord_event\s+[^,\n]+,[^,\n]+,\s*\w+),\s*(\w+)/gm)) refs.add(m[1]);
+	for (const m of asm.matchAll(/^\s*object_event\s+([^\n;]+)/gm)) { const s = m[1].split(',').map(v => v.trim())[11]; if (s) refs.add(s); }
+	const ts = JSON.parse(fs.readFileSync(path.join(D, 'maps', stem + '_map.json'), 'utf8'))._crystal_tileset;
+	for (const L of refs) {
+		if (!new RegExp('^' + L + '::', 'm').test(asm) || L in ours || patches[stem]?.[L] || !trace[name][L]) continue;
+		for (const [label, rows] of Object.entries(trace[name])) {
+			if (label !== L && !label.startsWith(L + '.')) continue;
+			const ops = [];
+			for (const [cmd, a, conv] of rows) {
+				if (!conv.length && cmd === 'changeblock') {
+					const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
+					const cells = x != null && y != null && Number.isFinite(block) ? blockCells(name, ts, block) : null;
+					if (cells) ops.push({ op: 'changeblock', x: Math.floor(x / 2) * 2, y: Math.floor(y / 2) * 2, cells });
+					else changeblockSkipped.push(`${stem}:${label} changeblock ${a.join(',')}`);
+					continue;
+				}
+				ops.push(...conv);
+			}
+			(patches[stem] = patches[stem] || {})[label] = ops;
+			globalsRestored++;
+		}
+	}
+}
+console.log(`global-label event scripts restored: ${globalsRestored} label(s)`);
 // ALL OR NOTHING per callback: a TILES callback whose changeblocks are only partly
 // restorable could close an entrance without opening the exit (the Elite Four
 // rooms: the entrance-closing block exists in our layouts, the exit-opening one

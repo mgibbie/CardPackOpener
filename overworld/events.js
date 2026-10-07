@@ -472,7 +472,9 @@ export class Cutscene {
 				// 28 branches read that. Nothing wrote it, so they all took the party arm.
 				case 'givemon': {
 					const full = (ctx.partyCount?.() ?? 0) >= 6;
-					ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5);
+					// a named gift (Crystal givepoke's nickname/OT args, givepokemail's MAIL)
+					const extra = op.nickname || op.otName || op.item ? { nickname: op.nickname, otName: op.otName, otId: op.otId, item: op.item ? itemId(op.item) : null, mail: op.mail } : null;
+					ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5, extra);
 					setVar('VAR_RESULT', full ? 1 : 0);   // MON_GIVEN_TO_PC : MON_GIVEN_TO_PARTY
 					break;
 				}

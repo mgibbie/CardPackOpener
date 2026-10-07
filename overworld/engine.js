@@ -390,6 +390,15 @@ export class World {
 	async loadBundle(name) {
 		const map = await getJSON(`${DATA}/maps/${name}_map.json`);
 		const layout = await getJSON(`${DATA}/layouts/${map.layout}.json`);
+		// Crystal cells whose converted collision bits are wrong (the Celadon Mansion:
+		// a solid roof whose house door couldn't be reached) — set from pokecrystal's
+		// own collision (tools/gen_crystal_collision_fix.mjs). Absolute, so applying it
+		// again to the cached layout changes nothing.
+		const fix = (await getJSON('crystal_collision_fix.json').catch(() => null))?.maps?.[map.id];
+		for (const [x, y, open] of fix || []) {
+			const row = layout.map[y];
+			if (row && row[x] != null) row[x] = open ? row[x] & ~COLLISION_MASK : row[x] | COLLISION_MASK;
+		}
 		const ts = await loadTilesetsFor(layout);
 		return { name, map, layout, ts };
 	}
