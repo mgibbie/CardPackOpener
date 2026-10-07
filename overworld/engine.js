@@ -109,7 +109,7 @@ function loadImageOnce(url) {
 	return new Promise((res, rej) => {
 		const img = new Image();
 		img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
-		const timer = setTimeout(() => { img.onload = img.onerror = null; img.src = ''; rej(new Error('img timed out ' + url)); }, IMG_TIMEOUT_MS);
+		const timer = setTimeout(() => { img.onload = img.onerror = null; img.src = ''; const e = new Error('img timed out ' + url); e.stalled = true; rej(e); }, IMG_TIMEOUT_MS);
 		img.onload = () => { clearTimeout(timer); res(img); };
 		img.onerror = () => { clearTimeout(timer); rej(new Error('img ' + url)); };
 		img.src = url;
@@ -117,7 +117,10 @@ function loadImageOnce(url) {
 }
 export function getImage(url) {
 	if (!imgCache.has(url)) {
-		imgCache.set(url, loadImageOnce(url).catch(() => sleep(FETCH_RETRY_MS[0]).then(() => loadImageOnce(url)))
+		// retry only a STALL: an image that errors outright (a missing sprite — many
+		// maps reference some) is a definite answer, and retrying it slowed every
+		// warp onto such a map by the retry delay (backwarp_test caught the late save)
+		imgCache.set(url, loadImageOnce(url).catch(e => { if (!e.stalled) throw e; return sleep(FETCH_RETRY_MS[0]).then(() => loadImageOnce(url)); })
 			.catch(e => { imgCache.delete(url); throw e; }));
 	}
 	return imgCache.get(url);
