@@ -29,6 +29,7 @@ import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, 
 import { persistBattle } from './ow_battleresume.js';
 import { findLanding } from './ow_transitions.js';
 import { FADE_SPEED, fade } from './ow_fade.js';
+import { cardFlip, drawCardFlip } from './minigames/cardflip/cardflip.js';
 import { gateReport, openCanvasMenus } from './ow_diagnostics.js';
 import {
 	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, lastRejectAt,
@@ -344,7 +345,8 @@ export function tick(now) {
 			sctx.fillStyle = 'rgba(10,8,18,0.82)';
 			sctx.fillRect(0, MH, SW, SH - MH);
 		}
-		if (partyMenu.open) drawPartyMenu(SW, MH);
+		if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
+		else if (partyMenu.open) drawPartyMenu(SW, MH);
 		else if (shopMenu.open) drawShopMenu(SW, MH);
 		else if (bagMenu.open) drawBagMenu(SW, MH);
 		else if (pcMenu.open) drawPcMenu(SW, MH);
