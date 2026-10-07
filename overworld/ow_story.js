@@ -40,6 +40,7 @@ import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
+import { unownPuzzleSpecial } from './unown_puzzle.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
@@ -891,6 +892,9 @@ export function runSpecial(name, store, op) {
 		case 'GiveShuckle': return set(giveShuckle());
 		case 'ReturnShuckie': return set(returnShuckie());
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
+		// the Ruins of Alph chamber panels (unown_puzzle.js): which puzzle is the
+		// setval in VAR_RESULT; solved answers TRUE there for `iftrue .PuzzleComplete`
+		case 'UnownPuzzle': return unownPuzzleSpecial(() => cutscene.resume());
 		// the Mt. Chimney CABLE CAR (pokeemerald field_specials.c CableCarWarp +
 		// cable_car.c CableCar). Neither had a handler, so "Yes" walked you aboard
 		// and the ride never left (playtest, 2026-09-30 / 10-01).

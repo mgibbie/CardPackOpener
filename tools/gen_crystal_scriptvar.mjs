@@ -51,9 +51,16 @@ const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 	'JohKantoCeladonGameCornerPrizeRoom:CeladonGameCornerPrizeRoomPokemonVendor', 'JohKantoCeladonGameCornerPrizeRoom:CeladonPrizeRoom_tmcounterloop',
 	'JohKantoCeladonGameCorner:CeladonGameCornerFisherScript',
 	'GoldenrodDeptStore6F:GoldenrodVendingMachine', 'JohKantoCeladonDeptStore6F:CeladonDeptStore6FVendingMachine',
-	'DragonShrine:DragonShrineTakeTestScript'];
+	'DragonShrine:DragonShrineTakeTestScript',
+	// the Ruins of Alph UNOWN PUZZLE panels: setval picks the puzzle, the special
+	// answers TRUE when it's solved, and .PuzzleComplete opens the floor (its
+	// changeblocks + the warpcheck that drops you into the inner chamber)
+	...['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle`)];
+// labels whose plain-script changeblocks / warpcheck are restored too (elsewhere
+// only MAP CALLBACK changeblocks are)
+const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`);
 // specials whose result the engine actually computes (ow_story.js runSpecial)
-const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor']);
+const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle']);
 // commands that leave hScriptVar alone (display / movement); anything else between
 // the writer and the test might overwrite it, so the restore stops there
 const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext', 'opentext', 'faceplayer',
@@ -62,7 +69,8 @@ const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext',
 const CONST = { PARTY_LENGTH: 6, NUM_POKEMON: 251, NUM_JOHTO_BADGES: 8, NUM_KANTO_BADGES: 8, NUM_BADGES: 16,
 	MORN_HOUR: 4, DAY_HOUR: 10, NITE_HOUR: 18, TRUE: 1, FALSE: 0, MAX_COINS: 9999,
 	// pokecrystal constants/script_constants.asm
-	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3 };
+	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3,
+	UNOWNPUZZLE_KABUTO: 0, UNOWNPUZZLE_OMANYTE: 1, UNOWNPUZZLE_AERODACTYL: 2, UNOWNPUZZLE_HO_OH: 3 };
 // the map's own `DEF NAME EQU value` lines (prices: GOLDENRODGAMECORNER_TM25_COINS)
 let LOCAL = {};
 function localDefs(asm) {
@@ -162,7 +170,10 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			if (!conv.length && cmd === 'givepoke' && a.length === 2 && /^[A-Z][A-Z0-9_]*$/.test(a[0]) && evalExpr(a[1]) != null) { add({ op: 'givemon', species: 'SPECIES_' + a[0], level: evalExpr(a[1]) }); n++; tally('givepoke'); src = null; continue; }
 			if (!conv.length && cmd === 'setval' && evalExpr(a[0]) != null) { add({ op: 'setvar', var: 'VAR_RESULT', value: evalExpr(a[0]) }); n++; tally('setval'); src = { var: 'VAR_RESULT', name: 'setval' }; continue; }
 			if (!conv.length && cmd === 'loadmenu') { menu = menuItems(asm, a[0], g); continue; }
-			if (!conv.length && cmd === 'changeblock' && inCallback(j.name, label)) {
+			const scriptTiles = SCRIPT_TILES_IN.includes(`${stem}:${label}`);
+			// warpcheck: take the warp under the player (the puzzle's fall into the hole)
+			if (!conv.length && cmd === 'warpcheck' && scriptTiles) { add({ op: 'warpcheck' }); n++; tally('warpcheck'); continue; }
+			if (!conv.length && cmd === 'changeblock' && (inCallback(j.name, label) || scriptTiles)) {
 				const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
 				const cells = x != null && y != null && Number.isFinite(block) ? blockCells(j.name, j._crystal_tileset, block) : null;
 				// changeblock x, y addresses the BLOCK containing that 16px cell

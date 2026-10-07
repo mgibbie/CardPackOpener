@@ -29,6 +29,7 @@ import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, 
 import { persistBattle } from './ow_battleresume.js';
 import { findLanding } from './ow_transitions.js';
 import { FADE_SPEED, fade } from './ow_fade.js';
+import { drawUnownPuzzle, unownPuzzle } from './unown_puzzle.js';
 import { gateReport, openCanvasMenus } from './ow_diagnostics.js';
 import {
 	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, lastRejectAt,
@@ -353,6 +354,7 @@ export function tick(now) {
 		else if (contestMenu.open) drawContest(SW, MH);
 		else if (blendMenu.open) drawBlend(SW, MH);
 		else if (slideMenu.open) drawSlide(SW, MH);
+		else if (unownPuzzle.open) drawUnownPuzzle(SW, MH);
 		else if (decoMenu.open) drawDecoMenu(SW, MH);
 		else if (socialMenu.open) drawSocial(SW, MH);
 		else if (slotsMenu.open) drawSlots(SW, MH);
