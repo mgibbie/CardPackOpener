@@ -781,7 +781,13 @@ export class Battle {
 		// SYNCHRONIZE afield: with a Synchronize lead, half of wild encounters
 		// share its nature — the classic nature-hunting tool, previously
 		// battle-only. Stats are recomputed since the nature was already baked in.
-		if (!restore && playerMon.ability === 'synchronize' && Math.random() < 0.5 && playerMon.nature) {
+		// a Safari POKeBLOCK FEEDER's nature comes first (PickWildMonNature), then Synchronize
+		const fedNature = !restore && opts?.pickNature ? opts.pickNature() : null;
+		if (fedNature) {
+			foe.nature = fedNature;
+			foe.stats = statsFor(this.data.species[wildId], foe.ivs, foe.level, foe);
+			foe.maxHP = foe.stats.hp; foe.curHP = foe.stats.hp;
+		} else if (!restore && playerMon.ability === 'synchronize' && Math.random() < 0.5 && playerMon.nature) {
 			foe.nature = playerMon.nature;
 			foe.stats = statsFor(this.data.species[wildId], foe.ivs, foe.level, foe);
 			foe.maxHP = foe.stats.hp; foe.curHP = foe.stats.hp;

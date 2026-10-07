@@ -29,7 +29,7 @@ import { shopStockNow } from './ow_pvp.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { restoreBackup, runSaveAction } from './ow_saves.js';
 import { BAG_POCKETS, FERRY_DESTS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
-import { blendKey, blendMenu, contestKey, contestMenu } from './ow_venues.js';
+import { pokeblockCaseClick } from './pokeblock_case.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
 import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems } from './ow_screens.js';
@@ -1315,9 +1315,7 @@ export function menuTap(id) {
 	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
-	if (kind === 'ct' || kind === 'ctr' || kind === 'ctm' || kind === 'ctmv') { contestMenu.idx = +a; contestKey('z'); return; }
-	if (kind === 'ct-next') { contestKey('z'); return; }
-	if (kind === 'bb' || kind === 'bbf') { blendMenu.idx = +a; blendKey('z'); return; }
+	if (kind === 'pbc' || kind === 'pba' || kind === 'pbm' || kind === 'pby') { pokeblockCaseClick(kind, a); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); syncBgmVolume(); return; }
 	if (kind === 'optact') { optionsMenu.idx = OPTION_KEYS.length + (+a); runSaveAction(OPTION_ACTIONS[+a]?.id); return; }
 	if (kind === 'ctl') { optionsMenu.idx = +a; optionsKey('z'); return; }

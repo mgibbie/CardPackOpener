@@ -12,6 +12,7 @@ import { levelCapNow, playerRegion } from './ow_progression.js';
 import { restoreBackup, runSaveAction } from './ow_saves.js';
 import { S } from './ow_state.js';
 import { contestMenu } from './ow_venues.js';
+import { blender } from './minigames/blender/blender.js';
 import { safeSave } from './safestore.js';
 import * as Settings from './settings.js';
 import { bgm, sfx, syncBgmVolume } from './sound.js';
@@ -102,7 +103,8 @@ export function bgmTick() {
 	} else {
 		battle.themeHint = null;               // any finished battle clears its hint
 		const T = BATTLE_THEMES[bgmGame()];
-		want = (contestMenu.open && contestMenu.st) ? 'emerald_MUS_CONTEST' // the stage theme carries the appeal round
+		want = blender.open && blender.music ? 'emerald_MUS_CYCLING'   // the BERRY BLENDER spins to MUS_CYCLING
+			: (contestMenu.open && contestMenu.st) ? 'emerald_MUS_CONTEST' // the stage theme carries the appeal round
 			: S.radioTune ? S.radioTune                // a tuned-in radio takes over the room's music
 			: player.surfing ? T?.surf
 			: player.biking ? T?.bike

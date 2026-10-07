@@ -30,7 +30,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/scripted: true/.test(it) && /scriptedAt/.test(it), 'non-item balls are scripted objects instead of parsing as junk');
 	A(/!b\.scripted && b\.tx === tx/.test(it), 'pickups skip scripted balls');
 	const mn = overworldSource();
-	A(/st\.rank === 3/.test(mn) && /paintings\[st\.category\]/.test(mn), 'a MASTER win commissions the portrait');
+	// the hall's prize scripts live in contest_ui.js (ShouldReadyContestArtist)
+	const cu = fs.readFileSync(path.join(ROOT, 'overworld/contest_ui.js'), 'utf8');
+	A(/rank === 3/.test(cu) && /paintings\[CATS\[cat\]\]/.test(cu), 'a MASTER win commissions the portrait');
 	A(/GFX_FOSSIL/.test(fs.readFileSync(path.join(ROOT, 'overworld/npcs.js'), 'utf8')), 'FOSSIL props never render as villagers');
 	A(/'magepunk_events_v1'/.test(fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8')), 'the one-shot events join the save inventory');
 }
