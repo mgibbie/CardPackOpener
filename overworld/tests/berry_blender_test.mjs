@@ -115,7 +115,15 @@ try {
 	A(/don't have a POKeBLOCK CASE yet/.test(s.dialog || ''), '2. the contest receptionist: "...you don\'t have a POKeBLOCK CASE yet."', s.dialog);
 	s = await talkUntil(s => !!s.bag.pokeblockcase && /received the POKeBLOCK CASE/.test(s.dialog || ''));
 	A(s.bag.pokeblockcase === 1, '2. MAY received the POKeBLOCK CASE', JSON.stringify([s.bag, s.dialog]));
-	await talkUntil(s => !s.dialog && !s.cut);
+	// the receptionist carries on to ENTER / INFO / EXIT (contest_ui.js, as the
+	// decomp's script does): read to the question, then B out of it
+	for (let i = 0; i < 20; i++) {
+		const ch = await W(async () => (await import('./choice.js')).choiceMenu.open);
+		s = await S();
+		if (ch) await key('x');
+		else if (s.dialog || s.cut) await key('z');
+		else break;
+	}
 
 	// ===== 3. the blender starts =====
 	await W(() => { const b = JSON.parse(localStorage.getItem('magepunk_bag_v1')); b.cheriberry = 2; localStorage.setItem('magepunk_bag_v1', JSON.stringify(b)); });
