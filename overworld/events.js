@@ -523,6 +523,9 @@ export class Cutscene {
 					break;
 				}
 				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
+				// FRLG/Emerald `getpartysize` (restored by tools/gen_multichoice.mjs): the
+				// gift scripts compare it against PARTY_SIZE to refuse a full party
+				case 'getpartysize': setVar('VAR_RESULT', ctx.partyCount?.() ?? 0); break;
 				// Crystal's Game Corner coins (restored by tools/gen_crystal_scriptvar.mjs):
 				// checkcoins answers HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkmoney
 				case 'checkcoins': { const have = ctx.coins?.() ?? 0, need = +op.amount || 0; setVar('VAR_RESULT', have > need ? 0 : have === need ? 1 : 2); break; }
