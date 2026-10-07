@@ -66,6 +66,11 @@ const ALLOW = [
 	// They teach through special ChooseMonForMoveTutor (ow_story.js).
 	/^EventScript_(ThunderWave|DreamEater|Softboiled|Counter|Metronome|Mimic)(Tutor|Declined|Taught|TaughtMale|TaughtFemale)$/,
 	/^CapeBrinkTutor_EventScript_FadeTaughtMove$/,   // the Cape Brink starter-move tutor's fade
+	// static_pokemon.inc: a scripted static battle's ending — the object leaves
+	// (removeobject VAR_LAST_TALKED). Missing, Power Plant's ELECTRODE item stayed
+	// on the floor after its fight and could be fought again (Instinct, 2026-10-06).
+	// The legendaries on these maps are native (ow_legendaries.js), not these scripts.
+	/^EventScript_(RemoveStaticMon|MonFlewAway)$/,
 ];
 const SHOW = process.argv.includes('--show');
 const readJ = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return d; } };

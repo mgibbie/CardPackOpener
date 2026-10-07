@@ -1,7 +1,7 @@
 // ow_battleresume.js — leave-and-resume for battles: the periodic battle snapshot, and rebuilding the right battle ending from it after a reload.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as Story from './events.js';
-import { battle, evolution, hud, pvp, trainers, world } from './ow_core.js';
+import { battle, cutscene, evolution, hud, pvp, trainers, world } from './ow_core.js';
 import { roamerEnd } from './ow_features.js';
 import { dexMilestoneCheck } from './ow_follower.js';
 import { frontier } from './ow_frontier.js';
@@ -10,6 +10,8 @@ import { onTrainerDefeated, runPostBattleScript } from './ow_progression.js';
 import { syncOverworldAchievements } from './ow_saves.js';
 import { offerNickname } from './ow_screens.js';
 import { S } from './ow_state.js';
+import { staticBattleOutcome } from './ow_scaling.js';
+import { cutsceneCtx, npcById } from './ow_cutscenes.js';
 import { B_OUTCOME_WON, afterRival, completeVillainBeat, runScriptLabel } from './ow_story.js';
 import { addCaught, healParty, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
@@ -66,6 +68,19 @@ function resumeEndHandler(end, savedMap) {
 		} else if (result === 'defeat') {
 			whiteOut();
 		} else saveParty(S.party);
+	};
+	// a STATIC wild battle (an object's script: Power Plant's ELECTRODE, the
+	// Snorlax in the road): finish its result as the live one does, then run the
+	// rest of its script from the op after the battle — the fought flag and the
+	// object's removal live there. Only on the map it started on.
+	if (kind === 'static') return result => {
+		if (!staticBattleOutcome(result)) return;
+		if (cutscene.blocking || !end.frames || end.map !== world.current?.name) { saveParty(S.party); return; }
+		// VAR_LAST_TALKED again: the object the script was started from (by index)
+		const talker = end.obj != null ? npcById(end.obj) : null;
+		if (talker) S.lastTalkedNpc = talker;
+		const ok = cutscene.runFrom(S.mapScripts, end.frames, cutsceneCtx(talker, end.frames[0].label), () => { saveParty(S.party); });
+		if (!ok) saveParty(S.party);
 	};
 	if (kind === 'trainer') return result => {
 		if (result === 'victory') {

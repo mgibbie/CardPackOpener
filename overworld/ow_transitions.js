@@ -9,7 +9,7 @@ import * as Story from './events.js';
 import * as Fly from './flydata.js';
 import { arcade, battle, blockers, cutscene, encounters, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
 import { roamersOnMapChange, shoalFixup } from './ow_features.js';
-import { silphDoorsApply } from './ow_fieldmoves.js';
+import { silphDoorsApply, syncBikeFlags } from './ow_fieldmoves.js';
 import { refreshFollower } from './ow_follower.js';
 import { POS_KEY, savePos } from './ow_input.js';
 import { checkAwakeningTrigger } from './ow_legendaries.js';
@@ -38,6 +38,8 @@ S.mapStrings = {}; S.mapScripts = {};
 const scriptCache = new Map();
 export async function loadMapScripts(stem) {
 	S.mapScripts = {}; S.mapStrings = {};
+	Story.setScriptMap(stem);   // its file-scoped `.equ` constants
+	syncBikeFlags();             // before its ON_TRANSITION reads FLAG_GOT_BICYCLE (Cycling Road gates)
 	if (!stem) return;
 	if (!scriptCache.has(stem)) {
 		const scr = await getJSON(`data/scripts/${stem}.json`).catch(() => null);

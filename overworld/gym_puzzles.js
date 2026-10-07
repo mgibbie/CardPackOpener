@@ -128,5 +128,9 @@ export function mauvilleGymDeactivatePuzzle(w) {
 // (call_if_set FLAG_POKEMON_MANSION_SWITCH_STATE), and the switch itself is ported
 // now (overworld/missing_labels_data.json), so a floor entered with the switch
 // pressed must show it pressed (2026-10-04).
+// + Cinnabar Gym: its quiz machines and trainers open each shutter live (plain
+// setmetatile scripts), but its ON_LOAD — which re-opens the shutters whose
+// FLAG_CINNABAR_GYM_QUIZ_N is set — never ran, so leaving and coming back shut
+// door 1 again for good (2026-10-07, Instinct).
 export const ONLOAD_MAPS = new Set(['VermilionCity_Gym', 'MauvilleCity_Gym', 'Hoenn2_MauvilleCity_Gym',
-	'PokemonMansion_1F', 'PokemonMansion_2F', 'PokemonMansion_3F', 'PokemonMansion_B1F']);
+	'PokemonMansion_1F', 'PokemonMansion_2F', 'PokemonMansion_3F', 'PokemonMansion_B1F', 'CinnabarIsland_Gym']);

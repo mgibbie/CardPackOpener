@@ -125,4 +125,11 @@ export function seedFrom(mons) {
 
 export function isSeen(id) { return dex.seen.has(id); }
 export function isCaught(id) { return dex.caught.has(id); }
-export function counts() { return { seen: dex.seen.size, caught: dex.caught.size }; }
+// keep(id) narrows to a regional dex (ow_story GetPokedexCount); none = national
+export function counts(keep) {
+	if (typeof keep !== 'function') return { seen: dex.seen.size, caught: dex.caught.size };
+	let seen = 0, caught = 0;
+	for (const id of dex.seen) if (keep(id)) seen++;
+	for (const id of dex.caught) if (keep(id)) caught++;
+	return { seen, caught };
+}

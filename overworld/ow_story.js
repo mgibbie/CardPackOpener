@@ -8,7 +8,7 @@ import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Daycare from './daycare.js';
 import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
-import { startChoice } from './choice.js';
+import { choiceMenu, startChoice } from './choice.js';
 import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
 import { Journal } from './journal.js';
@@ -877,6 +877,61 @@ function facingTile() {
 }
 function openPokeblockCaseLastPlaced() { return pbCase.placed || null; }
 
+// the regional dexes by national number: FireRed's Kanto dex is #1-151. Hoenn's
+// is a reordering of a non-contiguous set, so it counts nationally (as before).
+function regionalDexFilter(region) {
+	if (region !== 'kanto') return null;
+	const sp = battle.data?.species;
+	if (!sp) return null;
+	return id => { const n = sp[id]?.num; return n >= 1 && n <= 151; };
+}
+
+// ---- FireRed elevators + ListMenu (field_specials.c) ----
+const LISTMENUS = {
+	// LISTMENU_BADGES
+	0: ['BOULDERBADGE', 'CASCADEBADGE', 'THUNDERBADGE', 'RAINBOWBADGE', 'SOULBADGE', 'MARSHBADGE', 'VOLCANOBADGE', 'EARTHBADGE', 'EXIT'],
+	// LISTMENU_SILPHCO_FLOORS
+	1: ['11F', '10F', '9F', '8F', '7F', '6F', '5F', '4F', '3F', '2F', '1F', 'EXIT'],
+	// LISTMENU_BERRY_POWDER
+	5: ['ENERGYPOWDER  50', 'ENERGY ROOT  80', 'HEAL POWDER  50', 'REVIVAL HERB  300', 'PROTEIN  1,000', 'IRON  1,000',
+		'CARBOS  1,000', 'CALCIUM  1,000', 'ZINC  1,000', 'HP UP  1,000', 'PP UP  3,000', 'EXIT'],
+};
+const LISTMENU_IDS = { LISTMENU_BADGES: 0, LISTMENU_SILPHCO_FLOORS: 1, LISTMENU_ROCKET_HIDEOUT_FLOORS: 2, LISTMENU_DEPT_STORE_FLOORS: 3,
+	LISTMENU_WIRELESS_LECTURE_HEADERS: 4, LISTMENU_BERRY_POWDER: 5, LISTMENU_TRAINER_TOWER_FLOORS: 6 };
+let listMenuStart = 0;   // InitElevatorFloorSelectMenuPos -> the Silph list's first cursor row
+function openScriptListMenu(start) {
+	const v = Story.getVar('VAR_0x8004');
+	const id = typeof v === 'string' ? LISTMENU_IDS[v] : v;
+	const options = LISTMENUS[id];
+	listMenuStart = 0;
+	if (!options) return;
+	return startChoice({ options, list: `LISTMENU_${id}`, ignoreB: false, default: id === 1 ? start : (start | 0) });
+}
+// the elevator's dynamic warp: the floor whose door you came in by
+function elevatorFrom() { return String((S.dynamicWarp && S.dynamicWarp.map) || ''); }
+function elevatorFloor() {
+	const m = elevatorFrom();
+	let r;
+	if ((r = /^MAP_SILPH_CO_(\d+)F$/.exec(m))) return 3 + (+r[1]);
+	if ((r = /^MAP_ROCKET_HIDEOUT_B(\d)F$/.exec(m))) return { 1: 3, 2: 2, 4: 0 }[r[1]] ?? 4;
+	if ((r = /^MAP_CELADON_CITY_DEPARTMENT_STORE_(\d)F$/.exec(m))) return 3 + (+r[1]);
+	if (m === 'MAP_TRAINER_TOWER_LOBBY') return 3;
+	if (/^MAP_TRAINER_TOWER_/.test(m)) return 15;
+	return 4;
+}
+function elevatorMenuPos() {
+	const m = elevatorFrom();
+	let r;
+	if ((r = /^MAP_SILPH_CO_(\d+)F$/.exec(m))) {
+		const row = 11 - (+r[1]);   // 11F is row 0, 1F row 10; the window shows 7
+		return row <= 4 ? { scroll: 0, cursor: row } : row === 10 ? { scroll: 5, cursor: 5 } : { scroll: row - 4, cursor: 4 };
+	}
+	if ((r = /^MAP_ROCKET_HIDEOUT_B(\d)F$/.exec(m))) return { scroll: 0, cursor: { 1: 0, 2: 1, 4: 2 }[r[1]] ?? 0 };
+	if ((r = /^MAP_CELADON_CITY_DEPARTMENT_STORE_(\d)F$/.exec(m))) return { scroll: 0, cursor: 5 - (+r[1]) };
+	if (m === 'MAP_TRAINER_TOWER_LOBBY') return { scroll: 0, cursor: 1 };
+	return { scroll: 0, cursor: 0 };
+}
+
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -899,6 +954,20 @@ export function runSpecial(name, store, op) {
 			if (!sc) return;
 			return startChoice({ options: sc.options, list: sc.name, ignoreB: false, default: 0 });
 		}
+		// FireRed's elevators (field_specials.c). The floor you are on is the
+		// dynamic warp the elevator's door remembered when you walked in. None of
+		// these were implemented, so Silph Co's ListMenu never opened and the
+		// script read InitElevatorFloorSelectMenuPos's stray 0 as "11F" — every
+		// ride went to 11F (2026-10-06, Instinct). Rocket Hideout / Celadon read
+		// the same 0 as "you're on B1F / 5F", so their cursor started wrong.
+		case 'GetElevatorFloor': Story.setVar('VAR_ELEVATOR_FLOOR', elevatorFloor()); return;
+		case 'InitElevatorFloorSelectMenuPos': { const p = elevatorMenuPos(); listMenuStart = p.scroll + p.cursor; return set(p.cursor); }
+		case 'DrawElevatorCurrentFloorWindow': case 'CloseElevatorCurrentFloorWindow': case 'AnimateElevator': return;   // display only
+		// FireRed's script ListMenu: VAR_0x8004 names the list, the pick lands in
+		// VAR_RESULT (B = 127). The Cerulean badge describer keeps its list up
+		// between picks and comes back to it with ReturnToListMenu.
+		case 'ListMenu': return openScriptListMenu(listMenuStart);
+		case 'ReturnToListMenu': return openScriptListMenu(choiceMenu.idx);
 		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
 		// was missing, so the script read a stale VAR_RESULT and never fought
 		case 'StartMarowakBattle': return startMarowakBattle();
@@ -1015,8 +1084,19 @@ export function runSpecial(name, store, op) {
 		case 'CalculatePlayerPartyCount': return set((S.party || []).length);
 		case 'GetPlayerPartyCountForOverworld': return set((S.party || []).length);
 		case 'IsNationalPokedexEnabled': return set(1);
-		case 'GetPokedexCount': case 'GetHoennPokedexCount': case 'GetKantoPokedexCount':
-			return set(Dex.counts().caught);
+		// prof_pc.c / birch_pc.c: seen -> VAR_0x8005, caught -> VAR_0x8006 (the
+		// regional dex when VAR_0x8004 is 0, else the national one), and the RESULT
+		// is IsNationalPokedexEnabled. Only the result was written, so every Oak's
+		// Aide compared a stale VAR_0x8006 and handed over his gift regardless
+		// (2026-10-06: Route 10's EVERSTONE at 19 caught). Oak's rating reads the
+		// two counts the same way.
+		case 'GetPokedexCount': case 'GetHoennPokedexCount': {
+			const region = Story.getVar('VAR_0x8004') === 0 ? (name === 'GetHoennPokedexCount' ? 'hoenn' : 'kanto') : null;
+			const c = Dex.counts(region ? regionalDexFilter(region) : null);
+			Story.setVar('VAR_0x8005', c.seen); Story.setVar('VAR_0x8006', c.caught);
+			return set(1);
+		}
+		case 'GetKantoPokedexCount': return set(Dex.counts().caught);
 		case 'GetLeadMonFriendship': case 'GetLeadMonFriendshipScore':
 			return set(living()[0] ? (living()[0].friend ?? 70) : 0);
 		// Crystal: the FIRST non-egg party mon's happiness into the script var — the
