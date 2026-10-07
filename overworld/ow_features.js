@@ -335,7 +335,9 @@ export function shoalFixup(label) {
 	if (shoalArrival) { player.setTile(shoalArrival[0], shoalArrival[1]); shoalArrival = null; }
 }
 export function shoalDig() {
-	const key = `${world.current?.map?.id}:${player.tx + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[0])},${player.ty + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[1])}`;
+	// the high-tide Inner Room is the low one flooded: one set of spots, one record
+	const room = world.current?.map?.id === 'MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM' ? 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM' : world.current?.map?.id;
+	const key = `${room}:${player.tx + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[0])},${player.ty + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[1])}`;
 	const item = SHOAL_ITEM_AT[key];
 	if (!item) { dialog.open('Just wet cave rock.'); return; }
 	const st = safeLoad(SHOAL_KEY, { taken: {} });
