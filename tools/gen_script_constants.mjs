@@ -174,6 +174,33 @@ for (let pass = 0; pass < 12; pass++) {
 		const t = valueOf(v); if (t !== undefined) note(n, t, dec + ' (.set)');
 	}
 }
+// map-level `.equ NAME, value` — FILE-scoped constants (Route 10's aide checks
+// VAR_0x8006 < REQUIRED_OWNED_MONS, `.equ REQUIRED_OWNED_MONS, 20` at the top of
+// his map file; Routes 11/15/16 each set their own REQUIRED_CAUGHT_MONS). One
+// global table can't hold three values for one name, so these go to MAP_CONSTANTS
+// keyed by map (= the script file's stem); events.js reads the running map's first.
+// (2026-10-07: every Oak's Aide gift skipped its dex-count check.)
+const MAP_CONSTANTS = {};
+{
+	const per = new Map();   // map -> Map(name -> Set(values))
+	for (const dec of ['pokefirered', 'pokeemerald']) {
+		const maps = path.join(REF, dec, 'data', 'maps');
+		if (!fs.existsSync(maps)) continue;
+		for (const m of fs.readdirSync(maps)) {
+			const f = path.join(maps, m, 'scripts.inc');
+			if (!fs.existsSync(f)) continue;
+			for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+				const e = /^\s*\.equ\s+([A-Z_][A-Z0-9_]*)\s*,\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*(?:@.*)?$/.exec(line);
+				if (!e) continue;
+				if (!per.has(m)) per.set(m, new Map());
+				const t = per.get(m);
+				(t.get(e[1]) || t.set(e[1], new Set()).get(e[1])).add(Number(e[2]));
+			}
+		}
+	}
+	for (const [m, t] of per) for (const [n, vs] of t) if (vs.size === 1) (MAP_CONSTANTS[m] ||= {})[n] = [...vs][0];
+}
+console.log(`file-scoped .equ constants: ${Object.values(MAP_CONSTANTS).reduce((a, o) => a + Object.keys(o).length, 0)} in ${Object.keys(MAP_CONSTANTS).length} maps`);
 console.log(`constants harvested from the decomps: ${found.size}`);
 // a symbol's values from PLAIN numeric #defines only (no evaluated expressions) —
 // what branch comparisons have always been resolved from
@@ -276,6 +303,13 @@ ${rows}
 // in a script is never turned into a number by it.
 export const ITEM_NUMBERS = {
 ${Object.entries(ITEM_NUMBERS).sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0])).map(([k, v]) => `\t${k}: ${v},`).join('\n')}
+};
+
+// File-scoped \`.equ NAME, value\` from each map's scripts.inc, by map (the script
+// file's stem). The running map's table is read before SCRIPT_CONSTANTS: Routes
+// 11/15/16 each set their own REQUIRED_CAUGHT_MONS.
+export const MAP_CONSTANTS = {
+${Object.entries(MAP_CONSTANTS).sort((a, b) => a[0].localeCompare(b[0])).map(([m, o]) => `\t${m}: { ${Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(', ')} },`).join('\n')}
 };
 `);
 	console.log('\nwrote overworld/script_constants.js');

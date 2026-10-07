@@ -52,6 +52,17 @@ export function toggleBike() {
 	const name = Bag.count('machbike') ? 'MACH BIKE' : Bag.count('acrobike') ? 'ACRO BIKE' : 'BICYCLE';
 	hud.textContent = player.biking ? `You got on the ${name}!` : `You got off the ${name}.`;
 }
+// The decomps' "you own a bike" flags. The promo hands the bike over as an ITEM
+// only, so the story never learned you had one, and FireRed's Cycling Road gates
+// (Route 16 north / Route 18 east: their ON_TRANSITION disables the "You need a
+// BICYCLE" trigger only if FLAG_GOT_BICYCLE) turned every rider back, mounted or
+// not (2026-10-06, Instinct). Any bike counts in every region, as it does for
+// riding. Run on each map load too, so a bike got before this fix counts.
+const BIKE_OWNED_FLAGS = ['FLAG_GOT_BICYCLE', 'FLAG_RECEIVED_BIKE', 'EVENT_GOT_BICYCLE'];
+export function syncBikeFlags() {
+	if (!BIKES.some(b => Bag.count(b) > 0)) return;
+	for (const f of BIKE_OWNED_FLAGS) if (!Story.getFlag(f)) Story.setFlag(f);
+}
 // the bike-shop promo: your first bike, on the house
 const BIKE_SHOP_STOCK = {
 	MAP_GOLDENROD_BIKE_SHOP: ['bicycle', 'GOLDENROD CYCLES'],
@@ -62,6 +73,7 @@ export function bikeShopTalk() {
 	const stock = BIKE_SHOP_STOCK[world.current?.map?.id];
 	if (!stock) return;
 	const [bike, shopName] = stock;
+	syncBikeFlags();   // a bike from before this fix: the story learns it now
 	if (BIKES.some(b => Bag.count(b) > 0)) {
 		dialog.open(`CLERK: Enjoying the ride? Press C out on the\nroad any time — and tell your friends about\n${shopName}!`);
 		return;
@@ -69,6 +81,7 @@ export function bikeShopTalk() {
 	dialog.open(`CLERK: Welcome to ${shopName}!\n\nIt's your lucky day — our grand promotion!\nA free ${Bag.ITEMS[bike].name} for every new rider!\n\nTake it?   Z = Yes   X = No`, d => {
 		if (d === 'x') return;
 		Bag.addItem(bike, 1);
+		syncBikeFlags();
 		sfx('item_get');
 		Journal.add(`Got a free ${Bag.ITEMS[bike].name} from ${shopName}!`);
 		dialog.open(`You received the ${Bag.ITEMS[bike].name}!\n\nPress C outdoors to ride it.`);
