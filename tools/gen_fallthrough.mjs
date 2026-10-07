@@ -29,6 +29,13 @@ const REF = (() => {
 	}
 })();
 const OUT = path.join('overworld', 'fallthrough_data.json');
+// GLOBAL -> next GLOBAL label edges, verified the same way, on these labels only
+// (stem:label): the Game Corner prize counters, whose purchase
+// tools/gen_crystal_scriptvar.mjs restores
+const GLOBAL_EDGES_IN = new Set([
+	'GoldenrodGameCorner:GoldenrodGameCornerTMVendorScript',
+	'JohKantoCeladonGameCornerPrizeRoom:CeladonGameCornerPrizeRoomTMVendor',
+]);
 const TERM = new Set(['end', 'return', 'goto']);
 // decomp commands that end a block (control never reaches the next line)
 const TERM_ASM = /^\s*(end|return|sjump|jump|endcallback|endall|done|releaseall\s*$|goto\s|jumpstd\s|jumptext\s|jumptextfaceplayer\s|farjumptext\s|jumpopenedtext\s|farsjump\s|endtext)/;
@@ -53,7 +60,23 @@ for (const f of fs.readdirSync(SCRIPTS).filter(f => f.endsWith('.json')).sort())
 		const k = keys[i], ops = s[k];
 		if (!Array.isArray(ops) || !ops.length || TERM.has(ops[ops.length - 1].op)) continue;
 		const root = k.split('.')[0], nx = keys[i + 1];
-		if (!nx.startsWith(root + '.')) continue;
+		if (!nx.startsWith(root + '.')) {
+			// a GLOBAL label falling into the next global one (pokecrystal's Game Corner
+			// vendors: `...TMVendorScript` greets you and runs on into `..._LoopScript`,
+			// the prize menu). Only on the listed labels — see GLOBAL_EDGES_IN.
+			if (!GLOBAL_EDGES_IN.has(`${stem}:${k}`) || nx.includes('.')) continue;
+			const a = defs.get(root), b = defs.get(nx);
+			if (!a || !b || a[0] !== b[0] || b[1] <= a[1]) { unknown++; continue; }
+			const [lines, j] = b;
+			let p = j - 1; while (p > a[1] && /^\s*(;.*)?$/.test(lines[p])) p--;
+			// the line right above `nx:` must be inside k (no other label between) and not end it
+			let q = p; while (q > a[1] && !/^\.?[A-Za-z_]\w*::?/.test(lines[q])) q--;
+			const kLine = k.includes('.') ? k.slice(root.length) + ':' : root + ':';
+			if (!lines[q].startsWith(kLine) || TERM_ASM.test(lines[p])) { refused++; continue; }
+			(out[stem] = out[stem] || {})[k] = nx;
+			edges++;
+			continue;
+		}
 		const def = defs.get(root);
 		if (!def) { unknown++; continue; }
 		const [lines, start] = def, local = nx.slice(root.length);

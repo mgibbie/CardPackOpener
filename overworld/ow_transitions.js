@@ -1,6 +1,7 @@
 // ow_transitions.js — map transitions: moveToMap/warpTo/flyTo, per-map script loading, Fly points (split from main.js).
 import { choicePatches, sharedChoicePatches } from './choice.js';
 import { applyFallthrough } from './fallthrough.js';
+import { applySubvarFix } from './subvar_fix.js';
 import { scriptVarPatches } from './crystal_scriptvar.js';
 import { phoneScriptOverrides } from './phone.js';
 import { getImage, getJSON } from './engine.js';
@@ -64,7 +65,7 @@ export async function loadMapScripts(stem) {
 	// + each label's restored multichoice (choice.js; a map's own copy still wins
 	// over the shared one) + the PHONE's restored trainer scripts
 	// + the decomp's label fall-through (fallthrough.js: the leaders' TMs)
-	S.mapScripts = applyFallthrough(stem, applySailFix({ ...sharedScripts, ...sharedChoicePatches(), ...(c.scr || {}), ...scriptVarPatches(stem), ...choicePatches(stem), ...phoneScriptOverrides(stem) }), !!world.current?.map?._crystal_tileset);
+	S.mapScripts = applySubvarFix(applyFallthrough(stem, applySailFix({ ...sharedScripts, ...sharedChoicePatches(), ...(c.scr || {}), ...scriptVarPatches(stem), ...choicePatches(stem), ...phoneScriptOverrides(stem) }), !!world.current?.map?._crystal_tileset));
 	S.mapStrings = c.str || {};
 }
 
@@ -195,7 +196,8 @@ export function afterLoadError(where, err) {
 	console.warn(`[load-guard] ${where} failed`, err);
 	S.loading = false;
 	if (cutscene.blocking) cutscene.stop();
-	hud.textContent = "That area couldn't be loaded.";
+	hud.textContent = "Couldn't load that area — try again.";
+	try { globalThis.reportErr && globalThis.reportErr(`load failed: ${where}: ${String(err && err.message || err).slice(0, 160)}`, 'ow_transitions'); } catch (e) {}
 }
 
 export async function moveToMap(file, px, py) {

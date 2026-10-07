@@ -8,6 +8,8 @@ import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Daycare from './daycare.js';
 import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
+import { startChoice } from './choice.js';
+import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
@@ -32,11 +34,13 @@ import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_pr
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty } from './ow_music.js';
+import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
+import { crystalCallbacksFor } from './crystal_callbacks.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
 } from './main.js';
@@ -367,6 +371,7 @@ export async function runMapSetupScripts(isBoot) {
 	const before = vis();
 	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
+		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	};
@@ -376,6 +381,24 @@ export async function runMapSetupScripts(isBoot) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	run();
+}
+
+// Crystal map callbacks (`callback MAPCALLBACK_NEWMAP / TILES / OBJECTS`) — run as
+// the map loads, in that order, from crystal_callbacks.json
+// (tools/gen_crystal_callbacks.mjs): 82 of pokecrystal's 103 — the Day-of-Week
+// siblings, the Goldenrod move tutor, the Mahogany Mart staircase, the Rocket HQ
+// doors... The deny-list there (and its reasons) covers the ones that would
+// fight a native system. A TILES callback's changeblocks are restored only when
+// all of them can be (see tools/gen_crystal_scriptvar.mjs).
+function runCrystalCallbacks() {
+	const list = crystalCallbacksFor(world.current?.name);
+	if (!list.length) return;
+	syncScriptVars();   // VAR_WEEKDAY / VAR_HOUR are what the callbacks read
+	for (const [, label] of list) {
+		if (!S.mapScripts[label] || cutscene.blocking) continue;
+		cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
+		if (cutscene.blocking) cutscene.stop();   // setup only
+	}
 }
 
 function runMapTransition() {
@@ -819,6 +842,15 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Emerald's scroll list (the Glass Workshop's flutes/furniture, the Fan Club
+		// rater, the Frontier vendors...): VAR_0x8004 names the list, the pick lands
+		// in VAR_RESULT (B = MULTI_B_PRESSED). It was never implemented, so the menu
+		// never opened and the script branched on a stale result (2026-10-05).
+		case 'ShowScrollableMultichoice': {
+			const sc = scrollOptions(Story.getVar('VAR_0x8004'));
+			if (!sc) return;
+			return startChoice({ options: sc.options, list: sc.name, ignoreB: false, default: 0 });
+		}
 		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
 		// was missing, so the script read a stale VAR_RESULT and never fought
 		case 'StartMarowakBattle': return startMarowakBattle();
@@ -894,6 +926,9 @@ export function runSpecial(name, store, op) {
 		case 'GetFirstFreePartySlot': return set(Math.min((S.party || []).length, 6));
 		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
 			return set(living().length);
+		// FireRed's move tutors (move_tutor.js): party pick -> forget a move -> VAR_RESULT
+		case 'ChooseMonForMoveTutor': return chooseMonForMoveTutor();
+		case 'MoveTutor': return crystalMoveTutor();   // Crystal (Goldenrod City), move in the script var
 		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
 			return set(0); // party-slot pickers: default to the lead / no selection
 		case 'DoesPlayerPartyContainSpecies': case 'PlayerPartyContainsSpeciesWithPlayerID':

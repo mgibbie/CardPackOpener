@@ -35,6 +35,25 @@ import {
 	rejectedMoves, starterMenu,
 } from './main.js';
 
+// no map to fall back on (the very first load hung): an actionable Retry, not a black screen
+function showLoadRetry() {
+	if (typeof document === 'undefined' || document.getElementById('load-retry')) return;
+	const d = document.createElement('div');
+	d.id = 'load-retry';
+	d.setAttribute('role', 'alertdialog');
+	d.style.cssText = 'position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(10,8,24,0.86);color:#fff;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:16px';
+	const box = document.createElement('div');
+	box.style.cssText = 'max-width:420px;background:#1d1838;border:2px solid #6c5ce7;border-radius:12px;padding:20px 22px';
+	const p = document.createElement('p');
+	p.style.margin = '0 0 14px';
+	p.textContent = "The map couldn't be loaded (the connection may be slow). Your save is safe.";
+	const b = document.createElement('button');
+	b.type = 'button'; b.textContent = 'Retry';
+	b.style.cssText = 'font:inherit;padding:8px 16px;border-radius:8px;border:0;background:#6c5ce7;color:#fff;cursor:pointer';
+	b.addEventListener('click', () => location.reload());
+	box.append(p, b); d.append(box); document.body.append(d);
+}
+
 // ---------- loop ----------
 let last = performance.now();
 let playAccum = 0;
@@ -63,9 +82,22 @@ export function tick(now) {
 	}
 	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
 	// If a map load hangs (never resolves) or a handler after it wedged, recover.
+	// It must leave the game PLAYABLE: it used to clear `loading` but leave the
+	// warp's fade at full black, so the HUD said "Recovered" while every step was
+	// rejected as "fading" (2026-10-05). Now the fade comes back up on the map the
+	// player is still on (world.current only changes after a complete load), or —
+	// with no map at all — a Retry. Fetches time out well before this (engine.js),
+	// so this is the last resort.
 	if (S.loading) {
 		if (S.loadWatchStart == null) S.loadWatchStart = now;
-		else if (now - S.loadWatchStart > 12000) { S.loadWatchStart = null; S.loading = false; if (cutscene.blocking) cutscene.stop(); hud.textContent = 'Recovered from a stuck load.'; }
+		else if (now - S.loadWatchStart > (S.loadWatchLimit || 20000)) {
+			S.loadWatchStart = null; S.loading = false;
+			if (cutscene.blocking) cutscene.stop();
+			fade.target = 0;
+			if (world.current) hud.textContent = "Loading got stuck — you're back where you were.";
+			else showLoadRetry();
+			try { globalThis.reportErr && globalThis.reportErr('load watchdog fired' + (world.current ? ' (kept ' + world.current.name + ')' : ' (no map)'), 'ow_loop.tick'); } catch (e) {}
+		}
 	} else S.loadWatchStart = null;
 	if (S.loading || !world.current) return;
 	if (S.postBattleCatchUpArmed && !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking

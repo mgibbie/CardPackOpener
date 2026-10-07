@@ -27,6 +27,7 @@ import { DAYCARE_MAPS, DELETER_MAPS, MOM_SCRIPTS, NAMERATER_MAPS, ghostAt, momTa
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { gateReport } from './ow_diagnostics.js';
+import { crystalSignsFor } from './crystal_callbacks.js';
 import {
 	MP_ON, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
@@ -392,8 +393,9 @@ export function interact() {
 		}
 		return;
 	}
-	for (const ev of world.current.map.bg_events || []) {
+	for (const ev of [...(world.current.map.bg_events || []), ...crystalSignsFor(world.current.name)]) {
 		if (+ev.x !== fx || +ev.y !== fy) continue;
+		if (ev.facing && ev.facing !== player.facing) continue;   // Crystal BGEVENT_UP etc.
 		const lab = ev.script && ev.script !== '0x0' ? ev.script : null;
 		const scr = lab ? S.mapScripts[lab] : null;
 		// THE SCRIPT WINS WHENEVER IT DOES MORE THAN PRINT A LINE.

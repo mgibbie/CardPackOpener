@@ -5,6 +5,7 @@ import * as Daycare from './daycare.js';
 import { META } from './engine.js';
 import * as Story from './events.js';
 import { battle, cutscene, dialog, hud, items, npcs, player, trainers, world } from './ow_core.js';
+import { crystalObjectEvent } from './crystal_object_consts.js';
 import { dexMilestoneCheck } from './ow_follower.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { shopMenu } from './ow_menukeys.js';
@@ -82,6 +83,11 @@ export function npcById(localId) {
 		// which is exactly the no-op these references already were.
 		if (i >= 1 && i <= stem.length) return stem[i - 1];
 	}
+	// 6. Crystal: the constant is an INDEX into the map's objects (object_const_def).
+	//    A role-named constant matches no sprite name — GOLDENRODCITY_MOVETUTOR is a
+	//    POKEFAN_M — so the move tutor could never `appear`.
+	const ev = crystalObjectEvent(world.current?.map, localId);
+	if (ev) return list.find(n => n.ev === ev) || null;
 	return null;
 }
 // the bridge a running cutscene uses to touch the game
@@ -157,12 +163,19 @@ export function cutsceneCtx(talker, scriptLabel) {
 			if (f && f !== '0' && !/^FLAG_DECORATION_|^FLAG_HIDE_SECRET_BASE/.test(f)) Story.setFlag(f);
 		},
 		showObj: who => {
-			const n = npcById(who); if (!n) return;
-			n.hidden = false;
-			const f = n.ev && n.ev.flag;
+			// Crystal's `appear` clears the object's event flag. An object that is
+			// hidden right now was never loaded into npcs.list, so look it up in the
+			// map's object_events too — or `appear` could never bring back anyone who
+			// starts hidden (the Goldenrod move tutor). runMapSetupScripts reloads the
+			// objects when a flag changes their visibility.
+			const n = npcById(who);
+			const ev = n ? n.ev : ((world.current?.map?.object_events || []).find(o => o.local_id === who) || crystalObjectEvent(world.current?.map, who));
+			if (n) n.hidden = false;
+			const f = ev && ev.flag;
 			if (f && /^EVENT_/.test(f)) Story.clearFlag(f);
 		},
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
+		changeBlock: op => { const c = op.cells || []; [[0, 0], [1, 0], [0, 1], [1, 1]].forEach(([dx, dy], q) => { if (c[q] != null) world.setGridValue(op.x + dx, op.y + dy, c[q]); }); },
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
 		wildBattle: (species, level) => startScriptedWildBattle(species, level),
 		// a clerk's `openmart`: raise the standard shop counter and hold the script
@@ -176,6 +189,9 @@ export function cutsceneCtx(talker, scriptLabel) {
 		multichoice: op => startChoice(op),          // the restored FireRed/Emerald menu (choice.js)
 		money: () => Bag.getMoney(),
 		spendMoney: n => { Bag.spend(n); },
+		coins: () => Bag.getCoins(),                  // Crystal checkcoins / takecoins
+		spendCoins: n => { Bag.spendCoins(n); },
+		giveCoins: n => { Bag.addCoins(n); },
 		// the next MAP_DYNAMIC warp goes here (an elevator's floor, set by its script)
 		setDynamicWarp: op => { S.dynamicWarp = { map: op.map, warp: op.warp ?? null, x: op.x ?? null, y: op.y ?? null }; },
 		noteCompare: (cond, hit) => noteCompare(cond, hit),

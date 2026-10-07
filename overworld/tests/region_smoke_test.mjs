@@ -102,10 +102,15 @@ try {
 				const st = await page.evaluate(() => { const W = window.__ow, a = W.battle.active; return { d: W.dialog.blocking, c: W.cutscene.blocking, b: W.battle.blocking, name: a?.info?.displayName || (a ? 'wild ' + a.foe?.speciesId : null) }; });
 				if (!st.d && !st.c && !st.b) return;
 				if (st.b && st.name && !events.includes(st.name)) events.push(st.name);
-				await page.evaluate(() => {
+				await page.evaluate(async () => {
 					try {
 						const W = window.__ow, b = W.battle, a = b.active;
 						if (b.blocking && a) { if (a.phase === 'menu') a.menuIdx = 0; if (a.phase === 'moves') a.moveIdx = 0; if (['bag', 'switch'].includes(a.phase)) b.key('x'); else b.key('z'); return; }
+						// a townsperson may now ask a question (2026-10-07: Viridian's Dream
+						// Eater tutor works and opens his pick-a-POKeMON menu) — decline it, as
+						// a player pressing B would, rather than leave the menu blocking
+						const C = await import('./choice.js');
+						if (C.choiceMenu.open) { dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true })); return; }
 						W.dialog.revealed = 1e9; W.dialog.key('z');
 					} catch (e) {}
 				});

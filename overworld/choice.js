@@ -53,12 +53,16 @@ export function startChoice(op) {
 	choiceMenu.cols = Math.max(1, op.cols | 0 || 1);
 	choiceMenu.list = op.list || '';
 	const raw = op.prompt && ((S.mapStrings && S.mapStrings[op.prompt]) || null);
-	choiceMenu.prompt = raw ? Story.normalizeText(raw, cutsceneCtx()) : '';
+	choiceMenu.prompt = raw ? Story.normalizeText(raw, cutsceneCtx()) : (op.promptText || '');
+	// a code-driven menu (move_tutor.js) takes the pick itself, so it can chain
+	// steps (which POKeMON -> which move to forget) before the script resumes
+	choiceMenu.onPick = typeof op.onPick === 'function' ? op.onPick : null;
 	log({ list: choiceMenu.list, options: opts.slice(), shown: true, at: Date.now() });
 	return 'wait';
 }
 function pick(v) {
 	choiceMenu.open = false;
+	if (choiceMenu.onPick) { const f = choiceMenu.onPick; choiceMenu.onPick = null; f(v); return; }
 	Story.setVar('VAR_RESULT', v);
 	const rec = { list: choiceMenu.list, options: choiceMenu.options.slice(), selected: v, varResult: Story.getVar('VAR_RESULT'), at: Date.now() };
 	log(rec);
