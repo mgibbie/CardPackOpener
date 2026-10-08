@@ -173,12 +173,18 @@ export function markFlyPoint(mapId) {
 export function hasFlyPoint(mapId) { return loadFlyPoints().has(mapId); }
 
 // nearest walkable tile to a preferred spot (spiral search)
+// the landing searches stay on the current map: off its edge, gridAt reads the
+// CONNECTED map's cells, and a tile there passes isPassable — the stranded watchdog
+// once moved a diver at Underwater_Route128 (26,0) to (29,-3), outside its layout
+// (2026-10-08, Instinct)
+const inMap = (x, y) => { const l = world.current?.layout; return !!l && x >= 0 && y >= 0 && x < l.width && y < l.height; };
 export function findLanding(px, py) {
 	for (let r = 0; r < 14; r++) {
 		for (let dy = -r; dy <= r; dy++) {
 			for (let dx = -r; dx <= r; dx++) {
 				if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
 				const x = px + dx, y = py + dy;
+				if (!inMap(x, y)) continue;   // a connected map's cell is passable, but not a place to stand on THIS one
 				if (world.isPassable(x, y) && !world.isSurfable(x, y)) return [x, y];
 			}
 		}
@@ -194,7 +200,7 @@ export function findSurfLanding(px, py) {
 			for (let dx = -r; dx <= r; dx++) {
 				if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
 				const x = px + dx, y = py + dy;
-				if (world.isSurfable(x, y)) return [x, y];
+				if (inMap(x, y) && world.isSurfable(x, y)) return [x, y];
 			}
 		}
 	}
