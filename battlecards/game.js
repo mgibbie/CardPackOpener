@@ -337,10 +337,19 @@ function pushActiveRun(withSnapshot, keepalive) {
 const RESULT_RUN_KEYS = new Set([RUN_KEY, HEIST_KEY, TOMBS_KEY, ARENA_KEY, DUELS_KEY, LOREQUEST_KEY, MIDDLEEARTH_KEY, SWORDCOAST_KEY, FINALFANTASY_KEY, MULTIVERSE_KEY]);
 function recordRunResult() {
 	if (!state || !state.over || replayMode || spectateMode || (typeof isGuest === 'function' && isGuest())) return;
+	// ONE fight, ONE result. The finished state lingers after its mode has applied
+	// the result and moved on ("NEXT: ... Fight!" clears postGame and the pending
+	// marker), until the next fight boots. Fight! reloads the page, and this
+	// pagehide save then stamped the OLD result onto the NEXT fight: a phantom loss
+	// (or win), settled at boot, with "NEXT ... Fight!" shown again instead of the
+	// fight (Muse's Final Fantasy runs, 2026-10-07). A state records at most once.
+	if (state.resultRecorded) return;
 	const io = activeRunIO();
 	if (!io || !RESULT_RUN_KEYS.has(io.key)) return;
 	const run = io.load();
-	if (!run || !run.active || run.postGame || run.pendingResult) return;
+	if (!run || !run.active) return;
+	state.resultRecorded = true;   // whether recorded now or already accounted for (a pending result / reward)
+	if (run.postGame || run.pendingResult) return;
 	run.pendingResult = { won: state.winner === HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
 	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
 	io.save(run);
