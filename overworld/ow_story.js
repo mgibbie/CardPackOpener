@@ -33,7 +33,7 @@ import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox } from './ow_menukeys.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
-import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
+import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
 import { townMap } from './ow_menustate.js';
 import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
@@ -398,6 +398,9 @@ export async function runMapSetupScripts(isBoot) {
 		if (await world.setLayout(id)) run();
 		S.pendingLayout = null;
 	}
+	// a legendary caught through the native encounter: hide the decomp's object
+	// (and set the fought flag ON_TRANSITION just checked) before the reload below
+	try { hideResolvedLegendaryObjects(); } catch (e) { console.warn('[legendary] hide failed', e); }
 	if (vis() === before) return;
 	await npcs.loadForMap();
 	await trainers.loadForMap();

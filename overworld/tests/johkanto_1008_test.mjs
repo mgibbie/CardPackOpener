@@ -13,6 +13,9 @@
 //      by Fly/Dig/Rope/Teleport now aborts it as Crystal does; only a gate judges
 //   5. bug:1791452053586 — holding UP while surfing climbed Meteor Falls' waterfall
 //      without the Rain Badge: MB_WATERFALL pushes a surfer south on the GBA
+//   6. bug:1791409904360 — a ZAPDOS caught through the native encounter left the
+//      decomp's object standing; its script (special StartLegendaryBattle isn't
+//      implemented) then "won" with no battle. Same for 11 other static legendaries
 //
 //   node overworld/tests/johkanto_1008_test.mjs
 import fs from 'fs';
@@ -195,6 +198,19 @@ try {
 		const dn = await W(() => window.__ow.player.ty);
 		A(dn >= wf, '5. ...and down it is still open', JSON.stringify({ wf, dn }));
 	}
+
+	// ===== 6. a caught ZAPDOS leaves no decomp object behind =====
+	await scene('PowerPlant', 5, 12, 'up', { flags: { legend_caught_zapdos: true } });
+	const z = await W(() => ({ hide: !!JSON.parse(localStorage.getItem('magepunk_story')).flags.FLAG_HIDE_ZAPDOS, npc: window.__ow.npcs.list.some(n => n.tx === 5 && n.ty === 11) }));
+	A(z.hide && !z.npc, '6. with ZAPDOS caught, its Power Plant object is hidden (FLAG_HIDE_ZAPDOS)', JSON.stringify(z));
+	const zt = await talk();
+	const zf = (await story()).flags || {};
+	A(!zt.battle && !zt.seen.some(p => /Gyaoo/i.test(p)), '6. ...so facing its tile no longer runs the script that "wins" with no battle', JSON.stringify(zt));
+	A(zf.FLAG_FOUGHT_ZAPDOS === true, "6. ...and FLAG_FOUGHT_ZAPDOS is set, so the map's ON_TRANSITION won't show it again");
+	// not caught yet: the native encounter is still there
+	await scene('PowerPlant', 5, 12, 'up', {});
+	const zn = await W(() => !!JSON.parse(localStorage.getItem('magepunk_story')).flags.FLAG_HIDE_ZAPDOS);
+	A(!zn, '6. an uncaught ZAPDOS is left alone');
 
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
