@@ -11,6 +11,11 @@
 //   4. a trainer's Pokémon read "Foe <NAME> ..."
 //   5. a single wild battle reads "Wild <NAME> ..." too
 //
+// The battle starts pin Math.random: startWildBattle(pick, false) only means "don't
+// FORCE a double" — its 10% horde roll (and the 5% rift roll) still ran, so 1 run in
+// ~4 the "single" battle of section 5 came up a double, with the stubbed TAILLOW as
+// its second foe, and failed on "Wild TAILLOW used Growl!" (2026-10-08).
+//
 //   node overworld/tests/double_foe_label_test.mjs
 import fs from 'fs';
 import path from 'path';
@@ -90,7 +95,7 @@ try {
 	await page.evaluate(async () => {
 		const P = await import('./ow_places.js');
 		window.__ow.encounters.pick = () => ({ id: 'taillow', level: 7 });
-		P.startWildBattle({ id: 'whismur', level: 6 }, true);
+		{ const rr = Math.random; Math.random = () => 0.5; try { P.startWildBattle({ id: 'whismur', level: 6 }, true); } finally { Math.random = rr; } }
 	});
 	for (let i = 0; i < 100 && !(await page.evaluate(() => !!window.__ow.battle.active)); i++) await sleep(100);
 	await sleep(400);
@@ -105,7 +110,7 @@ try {
 	A(await endBattle(), 'setup: the double ends cleanly');
 
 	// ===== 5. a single wild battle =====
-	await page.evaluate(async () => { const P = await import('./ow_places.js'); window.__msgs = []; P.startWildBattle({ id: 'whismur', level: 6 }, false); });
+	await page.evaluate(async () => { const P = await import('./ow_places.js'); window.__msgs = []; { const rr = Math.random; Math.random = () => 0.5; try { P.startWildBattle({ id: 'whismur', level: 6 }, false); } finally { Math.random = rr; } } });
 	for (let i = 0; i < 100 && !(await page.evaluate(() => !!window.__ow.battle.active)); i++) await sleep(100);
 	await sleep(300);
 	const single = await act();
