@@ -109,6 +109,47 @@ try {
 		A(await p.evaluate(() => !!window.__ow.hillRun), '2. ...and Z starts the challenge');
 		await p.close();
 	}
+	// ===== 3. Slateport Harbor: Captain Stern isn't swallowed by the ferry =====
+	{
+		const p = await open('SlateportCity_Harbor', 6, 14, { flags: { FLAG_BADGE07_GET: true }, extra: { magepunk_bag_v1: { scanner: 1 } } });
+		const r = await p.evaluate(async () => {
+			const O = window.__ow; O.player.facing = 'up';
+			O.interact();
+			await new Promise(r => setTimeout(r, 300));
+			return { ferry: O.openCanvasMenus ? JSON.stringify(O.openCanvasMenus()) : '', cut: !!O.cutscene.blocking, text: O.dialog.pages ? O.dialog.pages.flat().join(' ') : '' };
+		});
+		A(!/ferry/i.test(r.ferry) && (r.cut || r.text), '3. facing Captain Stern runs his own script, not the FERRY menu', JSON.stringify(r).slice(0, 160));
+		// the attendant still runs the ferry
+		const f = await p.evaluate(async () => {
+			const O = window.__ow; O.player.tx = 8; O.player.ty = 11; O.player.x = 128; O.player.y = 176; O.player.facing = 'up';
+			for (let i = 0; i < 20 && (O.dialog.blocking || O.cutscene.blocking); i++) { O.cutscene.stop?.(); O.dialog.close?.(); await new Promise(r => setTimeout(r, 50)); }
+			O.interact();
+			await new Promise(r => setTimeout(r, 200));
+			return JSON.stringify(O.openCanvasMenus ? O.openCanvasMenus() : '');
+		});
+		A(/ferry/i.test(f), '3. ...while the ferry attendant still opens the FERRY menu', f);
+		await p.close();
+	}
+	// ===== 4. the ferry menu's highlighted row is where you sail =====
+	{
+		const p = await open('SlateportCity_Harbor', 8, 11);
+		const r = await p.evaluate(async () => {
+			const O = window.__ow, MK = await import('./ow_menukeys.js');
+			O.player.facing = 'up'; O.interact();
+			await new Promise(r => setTimeout(r, 200));
+			MK.pressKey('ArrowDown'); MK.pressKey('ArrowDown');
+			await new Promise(r => setTimeout(r, 300));   // a frame draws the rows
+			const sel = (O.menuUi || []).find(b => /^sail:/.test(b.id) && b.kbSel);
+			const rows = (O.menuUi || []).filter(b => /^sail:/.test(b.id)).map(b => b.label);
+			MK.pressKey('z');
+			for (let i = 0; i < 60 && O.world.current.name === 'SlateportCity_Harbor'; i++) await new Promise(r => setTimeout(r, 100));
+			const dest = MK.FERRY_DESTS.find(d => d.label === sel?.label);
+			return { label: sel?.label, rows, want: dest?.file, got: O.world.current.name };
+		});
+		A(r.label && r.want === r.got, '4. the highlighted ferry row is the port you arrive at', JSON.stringify(r));
+		A(!r.rows.some(l => /Battle Frontier|Faraway|Birth Island|Southern Island/.test(l)), '4. locked destinations are not drawn before they unlock', JSON.stringify(r.rows));
+		await p.close();
+	}
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split(String.fromCharCode(10)).slice(1, 3).join(' <- '));
