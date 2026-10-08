@@ -38,7 +38,7 @@ import {
 } from './ow_cutscenes.js';
 // ow_transitions.js: ow_transitions.js — map transitions: moveToMap/warpTo/flyTo, per-map script loading, Fly points (split from main.js).
 import {
-	flyTo, hasFlyPoint, loadMapScripts, markFlyPoint, moveToMap, warpTo,
+	applyMapFixups, flyTo, hasFlyPoint, loadMapScripts, markFlyPoint, moveToMap, warpTo,
 } from './ow_transitions.js';
 // ow_battleresume.js: ow_battleresume.js — leave-and-resume for battles: the periodic battle snapshot, and rebuilding the right battle ending from it after a reload.
 import {
@@ -743,6 +743,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	if (world.isSurfable(sx, sy)) player.surfing = true;
 	repairSaves();   // before the map's objects are read, so a repaired hide takes effect on THIS load
 	await syncRegionToMap(world.current.name);   // a save resumed in another region's town (flown there) is in THAT region
+	applyMapFixups(world.current.name, { boot: true });   // what refreshMapContent does on entry (Shoal exits, Silph doors, Hill guards)
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
