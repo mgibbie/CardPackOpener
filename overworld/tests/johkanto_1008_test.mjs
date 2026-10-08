@@ -16,6 +16,8 @@
 //   6. bug:1791409904360 — a ZAPDOS caught through the native encounter left the
 //      decomp's object standing; its script (special StartLegendaryBattle isn't
 //      implemented) then "won" with no battle. Same for 11 other static legendaries
+//   7. bug:1791440257652 — FireRed's Mt. Moon B2F fossils were skipped as props:
+//      invisible, and facing them did nothing
 //
 //   node overworld/tests/johkanto_1008_test.mjs
 import fs from 'fs';
@@ -211,6 +213,16 @@ try {
 	await scene('PowerPlant', 5, 12, 'up', {});
 	const zn = await W(() => !!JSON.parse(localStorage.getItem('magepunk_story')).flags.FLAG_HIDE_ZAPDOS);
 	A(!zn, '6. an uncaught ZAPDOS is left alone');
+
+	// ===== 7. Mt. Moon B2F: the DOME / HELIX fossils are there and can be chosen =====
+	await scene('MtMoon_B2F', 13, 8, 'up', { flags: {} });
+	const fos = await W(() => window.__ow.npcs.list.filter(n => n.ty === 7 && (n.tx === 13 || n.tx === 14)).map(n => [n.tx, n.ev.script, !!n.deco]));
+	A(fos.length === 2, '7. both fossils are drawn on B2F (13,7) and (14,7)', JSON.stringify(fos));
+	const ft = await talk();
+	const fb = await W(() => ({ dome: window.__ow.Bag.count('domefossil'), helix: window.__ow.Bag.count('helixfossil') }));
+	const ff = (await story()).flags || {};
+	A(fb.dome === 1 && ff.FLAG_GOT_FOSSIL_FROM_MT_MOON === true, '7. facing the DOME FOSSIL and saying YES takes it (FLAG_GOT_FOSSIL_FROM_MT_MOON)', JSON.stringify({ fb, ft: ft.seen.slice(0, 3) }));
+	A(fb.helix === 0, '7. ...and only that one', JSON.stringify(fb));
 
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
