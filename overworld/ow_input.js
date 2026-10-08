@@ -257,7 +257,19 @@ export function interact() {
 		if (hg) { startHillBattle(hg.key, hg.i); return; }
 	}
 	if (S.baseCtx && baseDecoInteract(fx, fy)) return;
-	const svc = services.kindAt(fx, fy);
+	// a service desk is talked to ACROSS ITS COUNTER the same way as the NPC below
+	// (the Trainer Hill attendant at (11,6) sits behind (10,6); with the zone only
+	// answering its own tiles, sign-up could never be reached — playtest 2026-10-08)
+	let svc = services.kindAt(fx, fy)
+		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? services.kindAt(fx + dx, fy + dy) : null);
+	// the harbors' ferry answers on EVERY tile (the dockside, the attendant); it must
+	// not swallow the harbor's other people — Captain Stern's SCANNER trade at Slateport
+	// never ran (playtest 2026-10-08). Facing anyone whose script isn't a ferry hand's,
+	// their own script runs instead.
+	if (svc === 'ferry') {
+		const who = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy));
+		if (who && who.ev?.script && !/Ferry|Gangway|Sailor/i.test(who.ev.script)) svc = null;
+	}
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
 		return;
@@ -445,7 +457,10 @@ export function interact() {
 		// Neither text nor a script label. Say "..." rather than nothing, which is
 		// exactly what an NPC with an unresolvable script already does: pressing A
 		// must always acknowledge that something is there.
-		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
+		// runScriptLabel still gets first refusal: it answers labels that have no
+		// body of their own — every std radio (KurtsHouseRadio opens the RADIO menu)
+		// and Crystal's jumpstd objects — and returns false only for a dead label.
+		if (ev.script && ev.script !== '0x0') { if (!runScriptLabel(lab)) dialog.open('...'); return; }
 	}
 	// a Safari Zone POKeBLOCK FEEDER (MB_POKEBLOCK_FEEDER, field_control_avatar.c):
 	// EventScript_PokeBlockFeeder (pokeblock_data.json) places or reports the block

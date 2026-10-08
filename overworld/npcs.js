@@ -185,6 +185,19 @@ export class NPCs {
 			if (itemsOwns(ev.graphics_id)) return;          // items.js draws and drives these
 			const deco = this.decoSprite && this.decoSprite(ev);
 			if (deco) { const n = new NPC(ev, deco.img); n.deco = deco; this.list.push(n); return; }
+			// a scripted FOSSIL object — FireRed's Mt. Moon B2F DOME / HELIX pair, which
+			// you choose between after beating MIGUEL — is the decomp's own object with
+			// its own script: draw it with the decomp's fossil sprite (fx/fossil.png,
+			// from pokefirered's object_events/pics/misc) as one still picture, so
+			// facing it runs that script. It used to be skipped as a prop below, which
+			// left both fossils invisible and unchoosable. Emerald's Mirage Tower /
+			// Desert Underpass fossils stay with their native overlay (ow_places.js).
+			if (/GFX_FOSSIL$/.test(ev.graphics_id || '') && ev.script && ev.script !== '0x0'
+				&& !/(MirageTower_4F|DesertUnderpass)$/.test(this.world.current.name || '')) {
+				const fimg = await getImage('fx/fossil.png').catch(() => null);
+				if (fimg) { const n = new NPC(ev, fimg); n.deco = { img: fimg, sx: 0, sy: 0, w: 16, h: 16 }; this.list.push(n); }
+				return;
+			}
 			// prop objects (cutscene furniture): drawing them with a person-sprite
 			// fallback put "guys" on Oak's counter (the two POKEDEX devices) and
 			// would park villagers where Littleroot's moving TRUCKs sit

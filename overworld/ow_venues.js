@@ -94,6 +94,20 @@ export function bugOfficerTalk() {
 		hud.textContent = 'The BUG-CATCHING CONTEST is ON! Hunt the park!';
 	});
 }
+// Leaving the park any way but a gate — Fly, Dig, an ESCAPE ROPE, Teleport — runs
+// pokecrystal's Script_AbortBugContest (engine/events/overworld.asm): the day's
+// contest is over, unjudged, and the entry is forfeited. Only walking out through a
+// gate is judged (ow_fieldmoves.js). Called on every map load; before this a Fly to
+// Goldenrod left the contest running, to be judged on the next visit to a gate.
+const BUG_CONTEST_MAPS = /^MAP_(NATIONAL_PARK|ROUTE_3[56]_NATIONAL_PARK_GATE)$/;
+export function bugContestLeftPark(mapId) {
+	if (!bugContest.active || BUG_CONTEST_MAPS.test(mapId || '')) return;
+	bugContest.active = false;
+	bugContest.caught = null;
+	saveBugContest();
+	for (let g = 0; g < 25 && Bag.count('sportball') > 0; g++) Bag.consume('sportball');
+	hud.textContent = 'You left the park, so the BUG-CATCHING CONTEST is over.';
+}
 export function endBugContest() {
 	if (!bugContest.active) return;
 	bugContest.active = false;

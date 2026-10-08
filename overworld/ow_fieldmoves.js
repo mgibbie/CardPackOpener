@@ -18,7 +18,7 @@ import { maybePortalTutorial } from './ow_menukeys.js';
 import { hillWarp } from './ow_minigames.js';
 import { spawnStepFx } from './ow_render.js';
 import { S } from './ow_state.js';
-import { checkCoordTrigger, checkOnFrame, runChamberWallScene } from './ow_story.js';
+import { checkCoordTrigger, checkOnFrame, runChamberWallScene, runSpecial } from './ow_story.js';
 import { bugContest, bugContestRoll, endBugContest, trickWarp } from './ow_venues.js';
 import { saveParty } from './party.js';
 import * as Quest from './quest.js';
@@ -290,6 +290,13 @@ export const HM_FIELD = {
 		if (o && o.kind === 'rock') {
 			dialog.open('The rock was smashed to bits!', () => {
 				items.removeFieldObj(o);
+				// EventScript_SmashRock: `removeobject` sets the rock's hide flag, then
+				// TryUpdateRusturfTunnelState — breaking a Rusturf rock arms the reunion
+				// scene (Wanda, HM STRENGTH) and skips the wild roll. Neither ran, so the
+				// tunnel opened with no scene and no HM (playtest 2026-10-08).
+				if (o.flag) Story.setFlag(o.flag);
+				runSpecial('TryUpdateRusturfTunnelState', 'VAR_RESULT');
+				if (Story.getVar('VAR_RESULT') === 1) { checkOnFrame(); return; }
 				const grp = encounters.data[world.current.map.id]?.rock_smash;
 				if (grp && Math.random() < encounterChance(world.current.map.id, grp.rate)) { const pick = encounters.pick(world.current.map.id, 'rock_smash'); if (pick) startWildBattle(pick); }
 			});
@@ -448,7 +455,8 @@ player.onArrive = () => {
 		// TRAINER HILL: no climb without a run, no stairs past standing guards
 		if (hillWarp(w) === 'blocked') return;
 		// leaving the park mid-Bug-Contest means the judging happens at the gate
-		if (bugContest.active && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
+		// (only FROM the park: arriving at a gate from Route 35/36 isn't leaving it)
+		if (bugContest.active && world.current.map.id === 'MAP_NATIONAL_PARK' && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
 			warpTo(w.dest_map, w.dest_warp_id);
 			setTimeout(() => endBugContest(), 700);
 			return;

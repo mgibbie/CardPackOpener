@@ -93,8 +93,12 @@ export const FERRY_DESTS = [
 	// the corridor; until now that was a map nobody could stand on.
 	{ label: 'S.S. Tidal (Hoenn liner)', file: 'SSTidalCorridor' },
 ];
+// the destinations offered from here: the same list for the menu's rows and its keys
+// (the rows used to skip only the dock you're on, the keys the locked ones too, so
+// a highlighted SEVII ISLANDS sailed to the S.S. TIDAL — playtest 2026-10-08)
+export const ferryDests = () => FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
 function ferryKey(k) {
-	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
+	const dests = ferryDests();
 	if (k === 'ArrowUp') ferryMenu.idx = (ferryMenu.idx + dests.length - 1) % dests.length;
 	if (k === 'ArrowDown') ferryMenu.idx = (ferryMenu.idx + 1) % dests.length;
 	if (k === 'x' || k === 'Escape') ferryMenu.open = false;

@@ -28,7 +28,7 @@ import { sfx, syncBgmVolume } from './sound.js';
 import { shopStockNow } from './ow_pvp.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { restoreBackup, runSaveAction } from './ow_saves.js';
-import { BAG_POCKETS, FERRY_DESTS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
+import { BAG_POCKETS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, ferryDests, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
 import { pokeblockCaseClick } from './pokeblock_case.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
@@ -1070,7 +1070,7 @@ export function drawPcMenu(W, H) {
 export function drawFerryMenu(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'FERRY', 'All aboard! Where to, sailor?');
-	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name);
+	const dests = ferryDests();
 	dests.forEach((d, i) => {
 		const bid = 'sail:' + i;
 		const b = { id: bid, x: 24 * u, y: (90 + i * 64) * u, w: W - 48 * u, h: 56 * u,
