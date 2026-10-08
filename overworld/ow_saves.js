@@ -289,6 +289,8 @@ export async function claimGifts() {
 		if (!payload) continue;
 		const got = [];
 		for (const [id, n] of Object.entries(payload.items || {})) {
+			// money rides as an amount (a refund, a prize): straight into the wallet
+			if (id === 'money') { Bag.earn(n); got.push(`$${n}`); continue; }
 			if (!Bag.ITEMS[id] && !/^(tm|hm)/.test(id)) continue; // an id this build doesn't know
 			Bag.addItem(id, n);
 			got.push(`${Bag.nameOf(id)} x${n}`);
