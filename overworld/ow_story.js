@@ -11,6 +11,7 @@ import * as Story from './events.js';
 import { choiceMenu, startChoice } from './choice.js';
 import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
+import { LOCKED_WARPS } from './locked_warps_data.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
 import { syncOverworldAchievements } from './ow_saves.js';
@@ -326,9 +327,14 @@ function puzzleWorld() {
 // ON_LOAD: the decomp's map-setup script, run before ON_TRANSITION. It lays out
 // puzzle tiles to match your progress. Only enabled for the maps whose puzzle
 // mechanics are actually ported (GymPuzzles.ONLOAD_MAPS) — game-wide it is 124
-// maps of never-executed setmetatile, some raising walls nothing here can lower.
+// maps of never-executed setmetatile, some raising walls nothing here can lower —
+// and for every map with a script-lockable door (LOCKED_WARPS, #664): there the
+// ON_LOAD is what puts the door back the way the story left it. Since World.isPassable
+// honours those doors' live collision, a door the layout ships CLOSED and ON_LOAD
+// opens (Sky Pillar after Wallace, Mt. Ember's cave, Ruin Valley's dotted hole, the
+// Altering Cave) stayed shut forever without it (playtest 2026-10-08).
 function runMapOnLoad() {
-	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name)) return;
+	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name) && !LOCKED_WARPS[world.current.name]) return;
 	const meta = S.mapScripts.__map__;
 	if (!meta || !meta.onLoad || !S.mapScripts[meta.onLoad] || cutscene.blocking) return;
 	cutscene.run(S.mapScripts, meta.onLoad, cutsceneCtx(), () => {});
