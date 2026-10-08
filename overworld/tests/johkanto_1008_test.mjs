@@ -5,6 +5,9 @@
 //      transpiled to a bare `end`, so the 2F stair guard never stepped aside
 //   2. bug:1791408988392 — HIKER ANTHONY (Route 33): beaten, then called for a
 //      rematch, talking to him did nothing
+//   3. bug:1791459156957 — KURT's radio (and every std house radio: Bill's, the
+//      Charcoal Kiln, ...) said "..." — a bg_event with neither a script body nor
+//      sign text never reached runScriptLabel, which owns the /Radio$/ hook
 //
 //   node overworld/tests/johkanto_1008_test.mjs
 import fs from 'fs';
@@ -141,6 +144,13 @@ try {
 	await scene('Route33', 6, 14, 'up', { flags: { crystal_events_seeded: true } });
 	const an0 = await talk();
 	A(an0.battle, '2. talking to an unbeaten ANTHONY starts his battle', JSON.stringify(an0));
+
+	// ===== 3. the std RADIOs: a bg_event with no script body and no sign text =====
+	await scene('KurtsHouse', 6, 2, 'up', { flags: { crystal_events_seeded: true } });
+	await W(() => window.__ow.interact());
+	await sleep(300);
+	const radio = await W(async () => { const F = await import('./ow_features.js'); return { open: F.radioMenu.open, dialog: window.__ow.dialog.pages ? window.__ow.dialog.pages.flat().join(' ') : null }; });
+	A(radio.open, "3. KURT's radio opens the RADIO menu (not '...')", JSON.stringify(radio));
 
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
