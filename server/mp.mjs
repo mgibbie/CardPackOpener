@@ -1069,7 +1069,8 @@ export default async function handler(req, env) {
 			// recipient's client ignore any id its bag doesn't know
 			if (!/^[a-z0-9_]{2,40}$/.test(id)) return json({ error: 'bad item id: ' + id }, 400);
 			const c = Number(n);
-			if (!Number.isInteger(c) || c < 1 || c > 999) return json({ error: 'item counts are 1-999' }, 400);
+			const cap = id === 'money' ? 999999 : 999;   // `money` is an amount, not a count
+			if (!Number.isInteger(c) || c < 1 || c > cap) return json({ error: id === 'money' ? 'money is 1-999999' : 'item counts are 1-999' }, 400);
 			clean[id] = c;
 		}
 		const list = (await store.get('gifts:' + to)) || [];
