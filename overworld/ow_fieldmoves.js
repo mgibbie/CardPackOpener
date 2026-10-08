@@ -202,8 +202,22 @@ export async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 			player.setTile(lx, ly);
 			player.surfing = world.isSurfable(lx, ly);
 		} else {
-			// same-footprint twin: keep the exact tile, surface -> water / dive -> seabed
-			player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
+			// same-footprint twin: keep the exact tile, surface -> water / dive -> seabed.
+			// Emerald dives only from DEEP WATER, which always lies over open seabed, and
+			// surfaces only where the sea above is open (MetatileBehavior_IsUnableToEmerge).
+			// The port's tilesets flattened the sea to one behavior, so check the twin's cell
+			// instead: a dive at Route 128's north edge (26,0) used to land boxed in on
+			// Underwater_Route128 (2026-10-08, Instinct). Refused: back where you were.
+			const x = Math.min(src.tx, lay.width - 1), y = Math.min(src.ty, lay.height - 1);
+			const ok = kind === 'emerge' ? world.isSurfable(x, y) : world.isPassable(x, y) && !world.isSurfable(x, y);
+			if (!ok) {
+				await world.load(src.name);
+				player.setTile(src.tx, src.ty);
+				S.loading = false;
+				dialog.open(kind === 'emerge' ? "You can't surface here." : "You can't DIVE here — the water isn't deep enough.");
+				return false;
+			}
+			player.setTile(x, y);
 			player.surfing = kind === 'emerge';
 		}
 		player.biking = false;
