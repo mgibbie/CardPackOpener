@@ -538,7 +538,8 @@ export class Cutscene {
 				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
 				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later
 				// message prints — "PLAYER received the {STR_VAR_1} from the KARATE MASTER."
-				case 'buffer': setStrVar(op.dst, bufferText(op)); break;
+				// bufferleadmonspeciesname: the lead's SPECIES ("Oh? Your VENOMOTH…", Slateport)
+				case 'buffer': setStrVar(op.dst, op.kind === 'leadspecies' ? (ctx.leadMonSpeciesName?.() ?? null) : bufferText(op)); break;
 				// FireRed/Emerald multichoice (restored by tools/gen_multichoice.mjs): the
 				// menu WAITS for the player; the pick lands in VAR_RESULT before the
 				// switch that follows reads it. No UI -> no answer is invented.

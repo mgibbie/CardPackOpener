@@ -11,6 +11,7 @@ import * as Story from './events.js';
 import { choiceMenu, startChoice } from './choice.js';
 import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
+import { LOCKED_WARPS } from './locked_warps_data.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
 import { syncOverworldAchievements } from './ow_saves.js';
@@ -326,9 +327,14 @@ function puzzleWorld() {
 // ON_LOAD: the decomp's map-setup script, run before ON_TRANSITION. It lays out
 // puzzle tiles to match your progress. Only enabled for the maps whose puzzle
 // mechanics are actually ported (GymPuzzles.ONLOAD_MAPS) — game-wide it is 124
-// maps of never-executed setmetatile, some raising walls nothing here can lower.
+// maps of never-executed setmetatile, some raising walls nothing here can lower —
+// and for every map with a script-lockable door (LOCKED_WARPS, #664): there the
+// ON_LOAD is what puts the door back the way the story left it. Since World.isPassable
+// honours those doors' live collision, a door the layout ships CLOSED and ON_LOAD
+// opens (Sky Pillar after Wallace, Mt. Ember's cave, Ruin Valley's dotted hole, the
+// Altering Cave) stayed shut forever without it (playtest 2026-10-08).
 function runMapOnLoad() {
-	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name)) return;
+	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name) && !LOCKED_WARPS[world.current.name]) return;
 	const meta = S.mapScripts.__map__;
 	if (!meta || !meta.onLoad || !S.mapScripts[meta.onLoad] || cutscene.blocking) return;
 	cutscene.run(S.mapScripts, meta.onLoad, cutsceneCtx(), () => {});
@@ -976,6 +982,8 @@ function elevatorMenuPos() {
 	return { scroll: 0, cursor: 0 };
 }
 
+// the decomp's GetLeadMonIndex: the first party member that isn't an egg
+const leadNonEgg = () => (S.party || []).find(m => !(m.isEgg || m.egg)) || null;
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -989,6 +997,31 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Slateport's EFFORT RIBBON woman (field_specials.c): the lead (GetLeadMonIndex:
+		// the first non-egg) gets it once its EVs total MAX_TOTAL_EVS (510). None of the
+		// three was handled, so the EV check read 0 and nobody ever got it (2026-10-08).
+		// field_specials.c: on Rusturf Tunnel, a smashed rock (its hide flag set)
+		// arms the reunion scene the map's ON_FRAME plays (state 4 or 5)
+		case 'TryUpdateRusturfTunnelState': {
+			if (Story.getFlag('FLAG_RUSTURF_TUNNEL_OPENED') || !/^(Hoenn2_)?RusturfTunnel$/.test(world.current?.name || '')) return set(0);
+			if (Story.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_1')) { Story.setVar('VAR_RUSTURF_TUNNEL_STATE', 4); return set(1); }
+			if (Story.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_2')) { Story.setVar('VAR_RUSTURF_TUNNEL_STATE', 5); return set(1); }
+			return set(0);
+		}
+		case 'LeadMonHasEffortRibbon': { const m = leadNonEgg(); return set(m?.ribbons?.includes('effort') ? 1 : 0); }
+		case 'Special_AreLeadMonEVsMaxedOut': {
+			const m = leadNonEgg(), ev = m?.evs || {};
+			return set(Object.values(ev).reduce((a, b) => a + (+b || 0), 0) >= 510 ? 1 : 0);
+		}
+		case 'GiveLeadMonEffortRibbon': {
+			const m = leadNonEgg();
+			if (!m) return;
+			m.ribbons = m.ribbons || [];
+			if (!m.ribbons.includes('effort')) m.ribbons.push('effort');
+			Story.setFlag('FLAG_SYS_RIBBON_GET');
+			saveParty(S.party);
+			return;
+		}
 		// Emerald's scroll list (the Glass Workshop's flutes/furniture, the Fan Club
 		// rater, the Frontier vendors...): VAR_0x8004 names the list, the pick lands
 		// in VAR_RESULT (B = MULTI_B_PRESSED). It was never implemented, so the menu

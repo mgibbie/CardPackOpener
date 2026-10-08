@@ -143,7 +143,10 @@ export class Items {
 			// neither, so 15 smashable rocks across Gen-2 Kanto and Johto were inert
 			// scenery. Anchored so it cannot catch OBJ_EVENT_GFX_ROCKET.
 			if (g.includes('BREAKABLE_ROCK') || g.includes('ROCK_SMASH') || /_ROCK$/.test(g)) {
-				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock' });
+				// a rock with its own hide flag stays smashed (`removeobject` set it:
+				// Rusturf Tunnel's two); the flagless ones regrow every visit
+				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
+				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock', flag: /^FLAG_/.test(o.flag || '') ? o.flag : null });
 				continue;
 			}
 			if (g.includes('CUTTABLE_TREE') || g.includes('CUT_TREE')) {

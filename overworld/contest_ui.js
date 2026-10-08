@@ -366,12 +366,16 @@ function spr(name, x, y) {
 }
 // text is laid out in GBA pixels but drawn on the scaled canvas, so it stays crisp
 let labels = [];
-function text(s, x, y, color = '#303030', size = 11) {
-	labels.push([String(s).replace(/é/g, 'e'), x, y, color, size]); // the port's font folds é, like normalizeText
+function text(s, x, y, color = '#303030', size = 11, maxW = null) {
+	labels.push([String(s).replace(/é/g, 'e'), x, y, color, size, maxW]); // the port's font folds é, like normalizeText
 }
+// the bottom-left box runs from x=12 to the contestant panels at x=144. The port's
+// font is wider than the GBA's, so the decomp's two lines ("MC: Hello! We're just
+// getting started") ran over the panels (playtest 2026-10-08): hold each line to the box.
+const TEXT_BOX_W = 128;
 function textBox(s) {
 	if (!s) return;
-	s.split('\n').slice(0, 2).forEach((l, i) => text(l, 12, 124 + i * 14));
+	s.split('\n').slice(0, 2).forEach((l, i) => text(l, 12, 124 + i * 14, undefined, undefined, TEXT_BOX_W));
 }
 function monSprite(species, x, y, w = 48) {
 	const img = contestSpriteFor(species);
@@ -398,10 +402,11 @@ export function drawContest(sctx, SW, SH) {
 	const ox = Math.floor((SW - w) / 2), oy = Math.floor((SH - h) / 2);
 	sctx.drawImage(screen, ox, oy, w, h);
 	sctx.textBaseline = 'top';
-	for (const [s, x, y, color, size] of labels) {
+	for (const [s, x, y, color, size, maxW] of labels) {
 		sctx.font = `${Math.round(size * k)}px m6x11plus, monospace`;
 		sctx.fillStyle = color;
-		sctx.fillText(s, ox + x * k, oy + y * k);
+		if (maxW) sctx.fillText(s, ox + x * k, oy + y * k, maxW * k);
+		else sctx.fillText(s, ox + x * k, oy + y * k);
 	}
 	sctx.restore();
 }

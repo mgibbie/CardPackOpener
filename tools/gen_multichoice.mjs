@@ -78,7 +78,9 @@ const unapplied = [];
 // that opens the label at index 0 (Lilycove's elevator and vending machine).
 // the STR_VAR fillers: `bufferspeciesname STR_VAR_1, VAR_TEMP_1` before "received
 // the {STR_VAR_1}" (2026-10-02: the Dojo gift printed a blank name)
-const BUFFER_KINDS = { bufferspeciesname: 'species', bufferitemname: 'item', bufferitemnameplural: 'itemplural', buffernumberstring: 'number', buffermovename: 'move' };
+const BUFFER_KINDS = { bufferspeciesname: 'species', bufferitemname: 'item', bufferitemnameplural: 'itemplural', buffernumberstring: 'number', buffermovename: 'move',
+	// the lead Pokémon's species (Slateport's Effort Ribbon woman, 2026-10-08)
+	bufferleadmonspeciesname: 'leadspecies' };
 // `getpartysize` + `giveegg`: the Lavaridge egg woman (2026-10-07) checked a
 // stale VAR_RESULT against PARTY_SIZE and set her flag without handing over the egg
 const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp', 'getpartysize', 'giveegg', ...Object.keys(BUFFER_KINDS)]);

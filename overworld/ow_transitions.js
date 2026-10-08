@@ -88,14 +88,24 @@ function warmBattleSprites() {
 	} catch { /* prefetch is best-effort */ }
 }
 
-export async function refreshMapContent(label) {
-	await syncRegionToMap(world.current.name);   // before anything below reads the region
-	S.strengthActive = false; S.strengthHinted = false; // STRENGTH must be re-used per map
-	trickHouseOpenDoors(label);
-	bugContestLeftPark(world.current.map.id);   // Fly / Dig / Rope out of the park ends it
+// the per-map fix-ups a map needs every time it loads — on entry (refreshMapContent)
+// AND on boot, which loads the saved map directly and used to skip them: a game
+// resumed in Shoal Cave's high-tide Inner Room had none of its eight exits
+// (playtest 2026-10-08); a resumed Silph floor / Trainer Hill floor
+// likewise came back with its doors shut or its guards missing. The Trick House's
+// door-opening is entry-only: on a boot the puzzle's own setup script lays its doors
+// out (trickhouse3_test), and clearing their collision first undid that.
+export function applyMapFixups(label, { boot = false } = {}) {
+	if (!boot) trickHouseOpenDoors(label);
 	shoalFixup(label);
 	silphDoorsApply(label);
 	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
+}
+export async function refreshMapContent(label) {
+	await syncRegionToMap(world.current.name);   // before anything below reads the region
+	S.strengthActive = false; S.strengthHinted = false; // STRENGTH must be re-used per map
+	applyMapFixups(label);
+	bugContestLeftPark(world.current.map.id);   // Fly / Dig / Rope out of the park ends it
 	roamersOnMapChange();
 	S.radioTune = null; // leaving the room switches the radio off; map track resumes
 	if (!/^SecretBase_/.test(label || '')) S.baseCtx = null; // left the base

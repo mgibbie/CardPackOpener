@@ -18,7 +18,7 @@ import { maybePortalTutorial } from './ow_menukeys.js';
 import { hillWarp } from './ow_minigames.js';
 import { spawnStepFx } from './ow_render.js';
 import { S } from './ow_state.js';
-import { checkCoordTrigger, checkOnFrame, runChamberWallScene } from './ow_story.js';
+import { checkCoordTrigger, checkOnFrame, runChamberWallScene, runSpecial } from './ow_story.js';
 import { bugContest, bugContestRoll, endBugContest, trickWarp } from './ow_venues.js';
 import { saveParty } from './party.js';
 import * as Quest from './quest.js';
@@ -290,6 +290,13 @@ export const HM_FIELD = {
 		if (o && o.kind === 'rock') {
 			dialog.open('The rock was smashed to bits!', () => {
 				items.removeFieldObj(o);
+				// EventScript_SmashRock: `removeobject` sets the rock's hide flag, then
+				// TryUpdateRusturfTunnelState — breaking a Rusturf rock arms the reunion
+				// scene (Wanda, HM STRENGTH) and skips the wild roll. Neither ran, so the
+				// tunnel opened with no scene and no HM (playtest 2026-10-08).
+				if (o.flag) Story.setFlag(o.flag);
+				runSpecial('TryUpdateRusturfTunnelState', 'VAR_RESULT');
+				if (Story.getVar('VAR_RESULT') === 1) { checkOnFrame(); return; }
 				const grp = encounters.data[world.current.map.id]?.rock_smash;
 				if (grp && Math.random() < encounterChance(world.current.map.id, grp.rate)) { const pick = encounters.pick(world.current.map.id, 'rock_smash'); if (pick) startWildBattle(pick); }
 			});
