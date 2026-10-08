@@ -953,6 +953,8 @@ function elevatorMenuPos() {
 	return { scroll: 0, cursor: 0 };
 }
 
+// the decomp's GetLeadMonIndex: the first party member that isn't an egg
+const leadNonEgg = () => (S.party || []).find(m => !(m.isEgg || m.egg)) || null;
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -966,6 +968,23 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Slateport's EFFORT RIBBON woman (field_specials.c): the lead (GetLeadMonIndex:
+		// the first non-egg) gets it once its EVs total MAX_TOTAL_EVS (510). None of the
+		// three was handled, so the EV check read 0 and nobody ever got it (2026-10-08).
+		case 'LeadMonHasEffortRibbon': { const m = leadNonEgg(); return set(m?.ribbons?.includes('effort') ? 1 : 0); }
+		case 'Special_AreLeadMonEVsMaxedOut': {
+			const m = leadNonEgg(), ev = m?.evs || {};
+			return set(Object.values(ev).reduce((a, b) => a + (+b || 0), 0) >= 510 ? 1 : 0);
+		}
+		case 'GiveLeadMonEffortRibbon': {
+			const m = leadNonEgg();
+			if (!m) return;
+			m.ribbons = m.ribbons || [];
+			if (!m.ribbons.includes('effort')) m.ribbons.push('effort');
+			Story.setFlag('FLAG_SYS_RIBBON_GET');
+			saveParty(S.party);
+			return;
+		}
 		// Emerald's scroll list (the Glass Workshop's flutes/furniture, the Fan Club
 		// rater, the Frontier vendors...): VAR_0x8004 names the list, the pick lands
 		// in VAR_RESULT (B = MULTI_B_PRESSED). It was never implemented, so the menu

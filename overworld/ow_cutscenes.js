@@ -206,6 +206,11 @@ export function cutsceneCtx(talker, scriptLabel) {
 		// the next MAP_DYNAMIC warp goes here (an elevator's floor, set by its script)
 		// setmaplayoutindex: runMapSetupScripts swaps it in (World.setLayout)
 		setMapLayout: id => { S.pendingLayout = id; },
+		// bufferleadmonspeciesname: the first non-egg party member's species name
+		leadMonSpeciesName: () => {
+			const m = (S.party || []).find(m => !(m.isEgg || m.egg));
+			return m ? String(battle.data?.species?.[m.speciesId]?.name || m.speciesId || '').toUpperCase() : null;
+		},
 		setDynamicWarp: op => { S.dynamicWarp = { map: op.map, warp: op.warp ?? null, x: op.x ?? null, y: op.y ?? null }; },
 		noteCompare: (cond, hit) => noteCompare(cond, hit),
 		hud: msg => { hud.textContent = msg; },

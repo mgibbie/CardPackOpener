@@ -150,6 +150,29 @@ try {
 		A(!r.rows.some(l => /Battle Frontier|Faraway|Birth Island|Southern Island/.test(l)), '4. locked destinations are not drawn before they unlock', JSON.stringify(r.rows));
 		await p.close();
 	}
+	// ===== 5. Slateport's EFFORT RIBBON =====
+	{
+		const talk = async p => p.evaluate(async () => {
+			const O = window.__ow; O.player.facing = 'down';
+			const pages = [];
+			O.interact();
+			for (let i = 0; i < 80; i++) {
+				await new Promise(r => setTimeout(r, 60));
+				if (O.dialog.blocking) { const t = O.dialog.pages ? O.dialog.pages.flat().join(' ') : ''; if (pages[pages.length - 1] !== t) pages.push(t); O.dialog.key('z'); }
+				else if (!O.cutscene.blocking) break;
+			}
+			return { pages: pages.join(' | '), ribbons: O.party[0].ribbons || [] };
+		});
+		let p = await open('SlateportCity', 4, 46);   // Venomoth's EVs total 510
+		const r = await talk(p);
+		A(/Your VENOMOTH/.test(r.pages), '5. "Oh? Your VENOMOTH…" names the lead (bufferleadmonspeciesname)', r.pages.slice(0, 120));
+		A(r.ribbons.includes('effort'), '5. a lead with 510 EVs receives the EFFORT RIBBON', JSON.stringify(r));
+		await p.close();
+		p = await open('SlateportCity', 4, 46, { extra: { magepunk_party_v1: [{ ...PARTY[0], evs: { hp: 10, atk: 10, def: 10, spa: 10, spd: 10, spe: 10 } }] } });
+		const r2 = await talk(p);
+		A(!r2.ribbons.includes('effort'), '5. ...a lead with 60 EVs does not', JSON.stringify(r2));
+		await p.close();
+	}
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split(String.fromCharCode(10)).slice(1, 3).join(' <- '));
