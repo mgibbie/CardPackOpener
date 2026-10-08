@@ -29,7 +29,8 @@ import { BOSS_CLASSES } from './trainers.js';
 import { openRadio } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
-import { whiteOut } from './ow_places.js';
+import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
+import { PC_BOXES, PC_BOX_CAP, getBox } from './ow_menukeys.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
@@ -1042,6 +1043,13 @@ export function runSpecial(name, store, op) {
 		case 'PlayerHasBerries': return set(PB.berries().some(b => Bag.count(b.id) > 0) ? 1 : 0);
 		case 'ShowBerryBlenderRecordWindow': dialog.open(recordText(), () => cutscene.resume()); return 'wait';
 		case 'RemoveRecordsWindow': return;
+		// the SAFARI ZONE gates (FireRed's Fuchsia entrance, Emerald's Route 121): the
+		// entrance script checks money and takes the fee itself, then starts the game
+		// here; a full party needs a free PC slot for whatever it catches
+		case 'EnterSafariMode': enterSafariMode(); return;
+		case 'ExitSafariMode': exitSafariMode(); return;
+		case 'IsThereRoomInAnyBoxForMorePokemon': case 'ScriptCheckFreePokemonStorageSpace':
+			return set(getBox().length < PC_BOXES * PC_BOX_CAP ? 1 : 0);
 		// the Safari Zone's POKeBLOCK FEEDERS (safari_zone.c)
 		case 'GetPokeblockFeederInFront': {
 			const [fx, fy] = facingTile();

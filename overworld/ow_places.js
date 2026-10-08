@@ -1,6 +1,7 @@
 // ow_places.js — place-specific systems: blacking out and heal points, the SAFARI GAME, museum paintings, ruins words, fossils and New Mauville.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as PB from './pokeblock.js';
+import * as Story from './events.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
@@ -100,7 +101,13 @@ const SAFARI_ZONES = {
 	MAP_SAFARI_ZONE_NORTHWEST: 'hoenn', MAP_SAFARI_ZONE_NORTHEAST: 'hoenn',
 };
 const SAFARI_GATES = { fr: 'MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE', hoenn: 'MAP_ROUTE121_SAFARI_ZONE_ENTRANCE' };
-const SAFARI_FEE = 500, SAFARI_BALLS = 30, SAFARI_STEPS = 600;
+const SAFARI_FEE = 500, SAFARI_BALLS = 30;
+// safari_zone.c EnterSafariMode: FireRed's counter starts at 600, Emerald's at 500
+const SAFARI_STEPS = { fr: 600, hoenn: 500 };
+// the decomp gates' own scene vars: FRLG's entrance runs ExitEarly / ExitWarpIn /
+// ExitWalkIn off VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE (2 = a game is
+// running), Emerald's off VAR_SAFARI_ZONE_STATE
+const SAFARI_SCENE_VARS = ['VAR_MAP_SCENE_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE', 'VAR_SAFARI_ZONE_STATE'];
 export let safari = safeLoad('magepunk_safari_v1', null) || { on: false, zone: null, balls: 0, steps: 0 };
 export function safariZoneOf(mapId) { return SAFARI_ZONES[mapId] || null; }
 export function saveSafari() { safeSave('magepunk_safari_v1', safari); }
@@ -109,7 +116,26 @@ export function endSafari(reason) {
 	PB.resetFeeders();   // ClearAllPokeblockFeeders
 	safari = { on: false, zone: null, balls: 0, steps: 0 };
 	saveSafari();
+	// the game this ended is over for the decomp gates too: a scene var left at
+	// "running" would greet the warp back with FRLG's "leave early?" prompt
+	for (const v of SAFARI_SCENE_VARS) if (Story.getVar(v)) Story.setVar(v, 0);
 	if (reason) dialog.open(reason, () => { if (zone) warpTo(SAFARI_GATES[zone], 0); });
+}
+// the decomp entrance's `special EnterSafariMode` (after its own checkmoney +
+// removemoney 500): start the session — 30 SAFARI BALLS and the game's step
+// count — without charging again. The zone is the gate's (Fuchsia = FireRed).
+export function enterSafariMode() {
+	const zone = /FUCHSIA/.test(world.current?.map?.id || '') ? 'fr' : 'hoenn';
+	PB.resetFeeders();   // ClearAllPokeblockFeeders
+	safari = { on: true, zone, balls: SAFARI_BALLS, steps: SAFARI_STEPS[zone] };
+	saveSafari();
+}
+// `special ExitSafariMode`: the decomp's exit scripts end the game themselves
+// (and do their own walking / warping)
+export function exitSafariMode() {
+	PB.resetFeeders();
+	safari = { on: false, zone: null, balls: 0, steps: 0 };
+	saveSafari();
 }
 // on every map entry: offer the game at the zone's doorstep, or end a running
 // game the moment the player is neither in a play area nor a zone rest house
@@ -118,18 +144,21 @@ export function checkSafariGate() {
 	const zone = safariZoneOf(id);
 	if (zone && !safari.on) {
 		if (cutscene.blocking || dialog.blocking) return;
-		dialog.open(`PA: Welcome to the SAFARI GAME!\n$${SAFARI_FEE} buys ${SAFARI_BALLS} SAFARI BALLS and ${SAFARI_STEPS} steps.\n\nZ = Play    X = Walk back out`, key => {
+		dialog.open(`PA: Welcome to the SAFARI GAME!\n$${SAFARI_FEE} buys ${SAFARI_BALLS} SAFARI BALLS and ${SAFARI_STEPS[zone]} steps.\n\nZ = Play    X = Walk back out`, key => {
 			if (key === 'x') { warpTo(SAFARI_GATES[zone], 0); return; }
 			if (!Bag.spend(SAFARI_FEE)) {
 				dialog.open("PA: You can't afford the entry fee...", () => warpTo(SAFARI_GATES[zone], 0));
 				return;
 			}
-			safari = { on: true, zone, balls: SAFARI_BALLS, steps: SAFARI_STEPS };
+			safari = { on: true, zone, balls: SAFARI_BALLS, steps: SAFARI_STEPS[zone] };
 			PB.resetFeeders();
 			saveSafari();
-			hud.textContent = `SAFARI GAME start! ${SAFARI_BALLS} balls, ${SAFARI_STEPS} steps.`;
+			hud.textContent = `SAFARI GAME start! ${SAFARI_BALLS} balls, ${SAFARI_STEPS[zone]} steps.`;
 		});
-	} else if (safari.on && !zone && !/REST_HOUSE|SECRET_HOUSE/.test(id)) {
+	} else if (safari.on && !zone && !/REST_HOUSE|SECRET_HOUSE/.test(id)
+		// back at FireRed's gate mid-game: its ExitEarly scene asks "leave early?" and
+		// either ends the game (ExitSafariMode) or sends you back in with it running
+		&& !(id === SAFARI_GATES.fr && Story.getVar(SAFARI_SCENE_VARS[0]) === 2)) {
 		// walked out through a gate (or flew away): the game ends quietly
 		endSafari(null);
 		hud.textContent = 'PA: Thanks for playing the SAFARI GAME!';
