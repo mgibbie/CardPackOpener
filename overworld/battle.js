@@ -73,6 +73,13 @@ const HIGH_CRIT = new Set(['slash', 'razorleaf', 'crabhammer', 'stoneedge', 'nig
 	'drillrun', 'karatechop', 'aeroblast', 'blazekick', 'poisontail', 'spacialrend',
 	'snipeshot', 'stoneaxe', 'skyattack', 'razorwind', 'crosspoison', 'aquacutter']);
 const ALWAYS_CRIT = new Set(['frostbreath', 'stormthrow', 'wickedblow', 'surgingstrikes', 'flowertrick']);
+// moves that never miss: no accuracy / evasion roll at all (Minimize, Double Team
+// and Sand Attack can't touch them). moves_battle.json writes their accuracy as a
+// plain 100, so the "--" in the games' data is restored here. They still can't
+// reach a target hidden by Fly / Dig / Dive (VANISH_REACH).
+const NEVER_MISS = new Set(['aerialace', 'aurasphere', 'clearsmog', 'disarmingvoice', 'falsesurrender', 'feintattack',
+	'magicalleaf', 'magnetbomb', 'shadowpunch', 'shockwave', 'smartstrike', 'swift', 'trumpcard', 'vitalthrow', 'bide', 'struggle',
+	'roar', 'whirlwind', 'meanlook', 'block', 'spiderweb', 'transform', 'foresight', 'odorsleuth', 'miracleeye', 'perishsong', 'psychup']);
 // two-turn moves whose charge turn hides the user, and the moves that can still
 // reach each hiding place
 const VANISH_MOVES = new Set(['fly', 'bounce', 'dig', 'dive', 'skydrop', 'phantomforce', 'shadowforce']);
@@ -1976,6 +1983,8 @@ export class Battle {
 			return;
 		}
 
+		// a never-miss move (Aerial Ace, Swift...), or TOXIC from a Poison type, skips the roll
+		const neverMiss = (mv.acc ?? 100) === true || NEVER_MISS.has(move.id) || (move.id === 'toxic' && (user.types || []).includes('Poison'));
 		let hitChance = (mv.acc ?? 100) * stageMult((userBoosts.acc || 0) - (targetBoosts.eva || 0));
 		if (a.fieldFx.gravity > 0) hitChance *= 5 / 3;
 		const uAbAcc = this.abilityOf(user), tAbAcc = this.abilityOf(target);
@@ -1985,7 +1994,7 @@ export class Battle {
 		if (tAbAcc === 'sandveil' && this.weatherKind() === 'sand') hitChance *= 0.8;
 		if (tAbAcc === 'snowcloak' && this.weatherKind() === 'hail') hitChance *= 0.8;
 		if (tAbAcc === 'tangledfeet' && target.confuseTurns > 0) hitChance *= 0.5;
-		if (tAbAcc === 'wonderskin' && mv.category === 'Status' && (mv.acc ?? 100) !== true) hitChance = Math.min(hitChance, 50);
+		if (tAbAcc === 'wonderskin' && mv.category === 'Status' && !neverMiss) hitChance = Math.min(hitChance, 50);
 		if (this.itemFx(user)?.accBoost) hitChance *= this.itemFx(user).accBoost;
 		if (this.itemFx(target)?.evade) hitChance *= this.itemFx(target).evade;
 		// weather rewrites some moves' accuracy outright
@@ -2007,7 +2016,7 @@ export class Battle {
 				return;
 			}
 		}
-		if (!sureHit && (mv.acc ?? 100) !== true && aimsAtFoe && Math.random() * 100 > hitChance) {
+		if (!sureHit && !neverMiss && aimsAtFoe && Math.random() * 100 > hitChance) {
 			user.rampN = 0; user.rampMove = null;   // a miss breaks the Rollout chain
 			this.pushMsg(`${this.label(user)}'s attack missed!`);
 			return;
