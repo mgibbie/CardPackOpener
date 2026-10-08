@@ -448,7 +448,8 @@ player.onArrive = () => {
 		// TRAINER HILL: no climb without a run, no stairs past standing guards
 		if (hillWarp(w) === 'blocked') return;
 		// leaving the park mid-Bug-Contest means the judging happens at the gate
-		if (bugContest.active && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
+		// (only FROM the park: arriving at a gate from Route 35/36 isn't leaving it)
+		if (bugContest.active && world.current.map.id === 'MAP_NATIONAL_PARK' && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
 			warpTo(w.dest_map, w.dest_warp_id);
 			setTimeout(() => endBugContest(), 700);
 			return;

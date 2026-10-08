@@ -8,6 +8,9 @@
 //   3. bug:1791459156957 — KURT's radio (and every std house radio: Bill's, the
 //      Charcoal Kiln, ...) said "..." — a bg_event with neither a script body nor
 //      sign text never reached runScriptLabel, which owns the /Radio$/ hook
+//   4. bug:1791467287353 — Fly out of the NATIONAL PARK left the Bug-Catching
+//      Contest running (judged later, on arriving at a gate from OUTSIDE): leaving
+//      by Fly/Dig/Rope/Teleport now aborts it as Crystal does; only a gate judges
 //
 //   node overworld/tests/johkanto_1008_test.mjs
 import fs from 'fs';
@@ -151,6 +154,28 @@ try {
 	await sleep(300);
 	const radio = await W(async () => { const F = await import('./ow_features.js'); return { open: F.radioMenu.open, dialog: window.__ow.dialog.pages ? window.__ow.dialog.pages.flat().join(' ') : null }; });
 	A(radio.open, "3. KURT's radio opens the RADIO menu (not '...')", JSON.stringify(radio));
+
+	// ===== 4. the BUG-CATCHING CONTEST: Fly out of the park ends it, unjudged =====
+	const contestSave = async (x, y, f) => {
+		await scene('NationalPark', x, y, f, { flags: { crystal_events_seeded: true }, bag: { pokeball: 5, sportball: 4 } });
+		await W((m) => {
+			const B = window.__ow.bugContest;
+			B.active = true; B.caught = m; B.date = new Date().toDateString();
+			localStorage.setItem('magepunk_bugcontest_v1', JSON.stringify(B));
+		}, mon('spinarak', 'SPINARAK'));
+	};
+	const contestState = () => W(() => ({ active: window.__ow.bugContest.active, caught: !!window.__ow.bugContest.caught, balls: window.__ow.Bag.count('sportball'), party: window.__ow.party.length }));
+	await contestSave(20, 20, 'down');
+	await W(async () => { const T = await import('./ow_transitions.js'); await T.flyTo('MAP_GOLDENROD_CITY', 15, 28); });
+	await sleep(600);
+	const fl = await contestState();
+	A(!fl.active && !fl.caught && fl.balls === 0, '4. Fly to Goldenrod ends the contest (Script_AbortBugContest): over, entry forfeited, SPORT BALLS gone', JSON.stringify(fl));
+	// walking out through a gate is still how you're judged
+	await contestSave(10, 46, 'down');
+	await page.keyboard.down('ArrowDown'); await sleep(240); await page.keyboard.up('ArrowDown');
+	for (let i = 0; i < 40 && !(await W(() => window.__ow.dialog.blocking)); i++) await sleep(100);
+	const gate = await W(() => ({ map: window.__ow.world.current.name, d: window.__ow.dialog.pages ? window.__ow.dialog.pages.flat().join(' ') : '', active: window.__ow.bugContest.active }));
+	A(/Gate/.test(gate.map) && /results are in/i.test(gate.d) && !gate.active, '4. ...while walking out through the gate is judged', JSON.stringify(gate).slice(0, 200));
 
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {

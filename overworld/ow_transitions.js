@@ -21,7 +21,7 @@ import { playerRegion } from './ow_progression.js';
 import { showAreaBanner } from './ow_render.js';
 import { S } from './ow_state.js';
 import { checkIntroTrigger, checkOnFrame, checkRivalTrigger, checkVillainTrigger, runMapSetupScripts } from './ow_story.js';
-import { trickHouseOpenDoors } from './ow_venues.js';
+import { bugContestLeftPark, trickHouseOpenDoors } from './ow_venues.js';
 import * as Quest from './quest.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { syncRegionToMap } from './region_sync.js';
@@ -92,6 +92,7 @@ export async function refreshMapContent(label) {
 	await syncRegionToMap(world.current.name);   // before anything below reads the region
 	S.strengthActive = false; S.strengthHinted = false; // STRENGTH must be re-used per map
 	trickHouseOpenDoors(label);
+	bugContestLeftPark(world.current.map.id);   // Fly / Dig / Rope out of the park ends it
 	shoalFixup(label);
 	silphDoorsApply(label);
 	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
