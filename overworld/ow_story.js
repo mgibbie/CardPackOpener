@@ -33,7 +33,7 @@ import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox } from './ow_menukeys.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
-import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
+import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
 import { townMap } from './ow_menustate.js';
 import { describeDecoration, playersHousePCSpecial, toggleDecorationsVisibility, toggleMaptileDecorations } from './decorations.js';
@@ -398,6 +398,9 @@ export async function runMapSetupScripts(isBoot) {
 		if (await world.setLayout(id)) run();
 		S.pendingLayout = null;
 	}
+	// a legendary caught through the native encounter: hide the decomp's object
+	// (and set the fought flag ON_TRANSITION just checked) before the reload below
+	try { hideResolvedLegendaryObjects(); } catch (e) { console.warn('[legendary] hide failed', e); }
 	if (vis() === before) return;
 	await npcs.loadForMap();
 	await trainers.loadForMap();
@@ -717,6 +720,32 @@ export function armStoryScenes(region) {
 export function syncStoryVars() {
 	Story.setVar('VAR_BADGES', Badges.count('JOHTO'));
 	syncPetalburgGym();
+	syncRocketTakeover();
+}
+
+// Every Johto gym ends `readvar VAR_BADGES` + `scall <Gym>ActivateRockets`, which
+// branches `ifequal 6` -> GoldenrodRocketsScript and `ifequal 7` ->
+// RadioTowerRocketsScript (pokecrystal engine/events/std_scripts.asm). The
+// transpile dropped the readvar, both ifequals and both jumpstds, so all eight
+// <Gym>ActivateRockets bodies were a bare `end`: the Radio Tower takeover never
+// began, its stair guard never stepped aside, and Clair's gym (which waits on
+// EVENT_CLEARED_RADIO_TOWER) could never open. Run here — after each badge, and on
+// boot for saves that already passed the 6th/7th without it — rather than only in
+// the gym script, so those saves reconcile too. Idempotent; off once the tower is
+// cleared. (The weird-broadcast phone call isn't ported.)
+function syncRocketTakeover() {
+	if (Story.getFlag('EVENT_CLEARED_RADIO_TOWER')) return;
+	const n = Badges.count('JOHTO');
+	if (n >= 6) Story.clearFlag('EVENT_GOLDENROD_CITY_ROCKET_TAKEOVER');   // GoldenrodRocketsScript
+	if (n >= 7 && !Story.getFlag('ENGINE_ROCKETS_IN_RADIO_TOWER')) {        // RadioTowerRocketsScript
+		Story.setFlag('ENGINE_ROCKETS_IN_RADIO_TOWER');
+		Story.setFlag('EVENT_GOLDENROD_CITY_CIVILIANS');
+		Story.setFlag('EVENT_RADIO_TOWER_BLACKBELT_BLOCKS_STAIRS');
+		Story.clearFlag('EVENT_RADIO_TOWER_ROCKET_TAKEOVER');
+		Story.clearFlag('EVENT_USED_THE_CARD_KEY_IN_THE_RADIO_TOWER');
+		Story.setFlag('EVENT_MAHOGANY_TOWN_POKEFAN_M_BLOCKS_EAST');
+		Story.setVar('VAR_SCENE_MahoganyTown', 1);                          // SCENE_MAHOGANYTOWN_NOOP
+	}
 }
 
 // FLAG_BADGE0N_GET as the scripts of THIS map's game mean it (see events.js):

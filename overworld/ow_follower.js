@@ -4,7 +4,7 @@ import * as Bag from './bag.js';
 import * as Clock from './clock.js';
 import { META, getImage } from './engine.js';
 import * as Story from './events.js';
-import { battle, dialog, evolution, hud, player, world } from './ow_core.js';
+import { battle, dialog, evolution, hud, npcs, player, world } from './ow_core.js';
 import { LEGENDARY_ENCOUNTERS } from './ow_legendaries.js';
 import { whiteOut } from './ow_places.js';
 import { syncOverworldAchievements } from './ow_saves.js';
@@ -173,6 +173,44 @@ export function legendariesHere() {
 	return (Array.isArray(v) ? v : [v]).filter(e => !Story.getFlag(e.flag) && (!e.requires || e.requires()));
 }
 export function legendaryHere() { return legendariesHere()[0] || null; } // the first (single-per-map back-compat)
+// The decomp's own object for the legendary (the Power Plant's ZAPDOS, ...) has a
+// hide flag only its script sets, after `special StartLegendaryBattle` — which this
+// port doesn't implement: the native encounter above is how the battle happens. So
+// once that's caught or beaten, hide the object too; left standing, its script ran
+// with no battle and "won" (an unhandled special leaves the outcome at WON), setting
+// the flags over a ZAPDOS already in the box. Matched by tile or by its graphics.
+// The map's ON_TRANSITION shows the object again unless its "fought" flag is set
+// (`call_if_unset FLAG_FOUGHT_ZAPDOS, PowerPlant_EventScript_ShowZapdos`), so that
+// flag is set too — read from the map's scripts as whatever guards a branch into a
+// label that clears the hide flag. Run after the map's setup scripts
+// (runMapSetupScripts, which reloads the objects) and when the native fight ends,
+// so saves that caught it before this reconcile on their next visit.
+function foughtFlagsFor(hide) {
+	const scr = S.mapScripts || {};
+	const shows = new Set(Object.keys(scr).filter(l => Array.isArray(scr[l]) && scr[l].some(o => o && o.op === 'clearflag' && o.flag === hide)));
+	const out = [];
+	for (const ops of Object.values(scr)) for (const o of Array.isArray(ops) ? ops : [])
+		if (o && o.op === 'branch' && o.cond && o.cond.flag && o.cond.state === false && shows.has(o.label)) out.push(o.cond.flag);
+	return out;
+}
+export function hideResolvedLegendaryObjects() {
+	const v = LEGENDARY_ENCOUNTERS[world.current?.map?.id];
+	if (!v) return;
+	const evs = world.current.map.object_events || [];
+	const hidden = [];
+	for (const e of (Array.isArray(v) ? v : [v])) {
+		if (!Story.getFlag(e.flag)) continue;
+		const gfx = e.species.toUpperCase();
+		for (const o of evs) {
+			if (!o.flag || o.flag === '0' || !/^(FLAG|EVENT)_/.test(o.flag)) continue;
+			if (!((+o.x === e.x && +o.y === e.y) || (o.graphics_id || '').toUpperCase().endsWith('_' + gfx))) continue;
+			for (const f of foughtFlagsFor(o.flag)) if (!Story.getFlag(f)) Story.setFlag(f);
+			if (!Story.getFlag(o.flag)) Story.setFlag(o.flag);
+			hidden.push(o);
+		}
+	}
+	if (hidden.length) npcs.list = npcs.list.filter(n => !hidden.includes(n.ev));
+}
 export function startLegendaryBattle(e) {
 	if (!S.party || !leadMon(S.party) || battle.blocking) return;
 	Dex.markSeen(e.species);
@@ -186,9 +224,11 @@ export function startLegendaryBattle(e) {
 				hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 				offerNickname(battle.lastCaught);
 				Story.setFlag(e.flag);
+				hideResolvedLegendaryObjects();
 				syncOverworldAchievements(); // a legendary was CAUGHT (only catches count toward the sets)
 			} else if (result === 'victory') {
 				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
+				hideResolvedLegendaryObjects();
 				evolution.check(S.party, battle.data);
 			} else if (result === 'defeat') {
 				whiteOut();

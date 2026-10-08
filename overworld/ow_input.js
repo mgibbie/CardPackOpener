@@ -445,7 +445,10 @@ export function interact() {
 		// Neither text nor a script label. Say "..." rather than nothing, which is
 		// exactly what an NPC with an unresolvable script already does: pressing A
 		// must always acknowledge that something is there.
-		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
+		// runScriptLabel still gets first refusal: it answers labels that have no
+		// body of their own — every std radio (KurtsHouseRadio opens the RADIO menu)
+		// and Crystal's jumpstd objects — and returns false only for a dead label.
+		if (ev.script && ev.script !== '0x0') { if (!runScriptLabel(lab)) dialog.open('...'); return; }
 	}
 	// a Safari Zone POKeBLOCK FEEDER (MB_POKEBLOCK_FEEDER, field_control_avatar.c):
 	// EventScript_PokeBlockFeeder (pokeblock_data.json) places or reports the block
