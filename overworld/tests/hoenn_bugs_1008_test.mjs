@@ -173,6 +173,62 @@ try {
 		A(!r2.ribbons.includes('effort'), '5. ...a lead with 60 EVs does not', JSON.stringify(r2));
 		await p.close();
 	}
+	// ===== 6. a game resumed in Shoal Cave's high-tide Inner Room keeps its exits =====
+	{
+		const p = await open('ShoalCave_HighTideInnerRoom', 33, 29);
+		const w = await p.evaluate(() => window.__ow.world.warps.map(w => w.x + ',' + w.y));
+		A(w.length >= 8 && w.includes('34,29'), '6. booting into the high-tide Inner Room keeps all 8 exits (34,29 included)', JSON.stringify(w));
+		await p.close();
+	}
+	// ===== 7. Rusturf Tunnel: ROCK SMASH plays the reunion and gives HM STRENGTH =====
+	{
+		const p = await open('RusturfTunnel', 24, 6, { flags: { FLAG_BADGE03_GET: true }, vars: { VAR_TEMP_1: 3 } });
+		const r = await p.evaluate(async () => {
+			const O = window.__ow, FM = await import('./ow_fieldmoves.js'), E = await import('./events.js');
+			O.player.facing = 'up';
+			const before = O.items.fieldObjs.filter(f => f.kind === 'rock').length;
+			FM.HM_FIELD.rocksmash.use();
+			for (let i = 0; i < 200; i++) {
+				await new Promise(r => setTimeout(r, 50));
+				if (O.dialog.blocking) O.dialog.key('z');
+				else if (!O.cutscene.blocking && i > 40) break;
+			}
+			return { before, after: O.items.fieldObjs.filter(f => f.kind === 'rock').length, rock1: E.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_1'),
+				hm: O.Bag.count('hmstrength') || O.Bag.count('hm04'), got: E.getFlag('FLAG_RECEIVED_HM_STRENGTH'), opened: E.getFlag('FLAG_RUSTURF_TUNNEL_OPENED'), wild: !!O.battle.active };
+		});
+		A(r.rock1, '7. the smashed rock\'s hide flag is set (removeobject)', JSON.stringify(r));
+		A(r.got && r.hm > 0, '7. the reunion scene runs and gives HM STRENGTH', JSON.stringify(r));
+		A(!r.wild, '7. ...and no wild encounter interrupts it', JSON.stringify(r));
+		await p.close();
+		// the smashed rock stays smashed on the next visit
+		const q = await open('RusturfTunnel', 24, 6, { flags: { FLAG_HIDE_RUSTURF_TUNNEL_ROCK_1: true, FLAG_RUSTURF_TUNNEL_OPENED: true } });
+		A(!(await q.evaluate(() => window.__ow.items.fieldObjs.some(f => f.kind === 'rock' && f.tx === 24 && f.ty === 5))), '7. a flagged rock stays smashed after a reload');
+		await q.close();
+	}
+	// ===== 8. the contest MC's text stays inside its box =====
+	{
+		const p = await open('LilycoveCity_ContestLobby', 14, 5);
+		const r = await p.evaluate(async () => {
+			const calls = [];
+			const orig = CanvasRenderingContext2D.prototype.fillText;
+			CanvasRenderingContext2D.prototype.fillText = function (s, x, y, maxW) {
+				calls.push({ s: String(s), x, w: this.measureText(String(s)).width, maxW: maxW ?? null, px: parseFloat(this.font) });
+				return orig.apply(this, arguments);
+			};
+			const C = await import('./contest_ui.js');
+			let err = null; C.contestMenu.fast = true; C.runContest(window.__ow.party[0], 3, 0).catch(e => { err = String(e && e.stack || e).slice(0, 300); });
+			for (let i = 0; i < 100 && !/Hello/.test(C.contestView().text || ''); i++) await new Promise(r => setTimeout(r, 50));
+			calls.length = 0;
+			await new Promise(r => setTimeout(r, 300));   // a few frames draw it
+			CanvasRenderingContext2D.prototype.fillText = orig;
+			const line = calls.find(c => /Hello/.test(c.s));
+			if (!line) return { none: true, text: C.contestView().text, err, phase: C.contestView().phase };
+			const k = line.px / 11, drawn = line.maxW != null ? Math.min(line.w, line.maxW) : line.w;
+			return { s: line.s, over: Math.round(line.x + drawn - (line.x + 132 * k)), maxW: line.maxW };
+		});
+		A(!r.none && r.over <= 1, '8. "MC: Hello! We\'re just getting started" stays left of the contestant panels', JSON.stringify(r));
+		await p.close();
+	}
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split(String.fromCharCode(10)).slice(1, 3).join(' <- '));

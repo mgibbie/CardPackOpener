@@ -971,6 +971,14 @@ export function runSpecial(name, store, op) {
 		// Slateport's EFFORT RIBBON woman (field_specials.c): the lead (GetLeadMonIndex:
 		// the first non-egg) gets it once its EVs total MAX_TOTAL_EVS (510). None of the
 		// three was handled, so the EV check read 0 and nobody ever got it (2026-10-08).
+		// field_specials.c: on Rusturf Tunnel, a smashed rock (its hide flag set)
+		// arms the reunion scene the map's ON_FRAME plays (state 4 or 5)
+		case 'TryUpdateRusturfTunnelState': {
+			if (Story.getFlag('FLAG_RUSTURF_TUNNEL_OPENED') || !/^(Hoenn2_)?RusturfTunnel$/.test(world.current?.name || '')) return set(0);
+			if (Story.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_1')) { Story.setVar('VAR_RUSTURF_TUNNEL_STATE', 4); return set(1); }
+			if (Story.getFlag('FLAG_HIDE_RUSTURF_TUNNEL_ROCK_2')) { Story.setVar('VAR_RUSTURF_TUNNEL_STATE', 5); return set(1); }
+			return set(0);
+		}
 		case 'LeadMonHasEffortRibbon': { const m = leadNonEgg(); return set(m?.ribbons?.includes('effort') ? 1 : 0); }
 		case 'Special_AreLeadMonEVsMaxedOut': {
 			const m = leadNonEgg(), ev = m?.evs || {};
