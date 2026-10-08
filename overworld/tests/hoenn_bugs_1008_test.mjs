@@ -91,6 +91,24 @@ try {
 		A(await passable(p, 42, 39), "1. Mt. Ember: the cave (42,39) opens once Celio's scene has advanced", JSON.stringify(await p.evaluate(() => window.__ow.world.current.name)));
 		await p.close();
 	}
+	// ===== 2. Trainer Hill: the reception is talked to across its counter =====
+	{
+		const p = await open('TrainerHill_Entrance', 9, 6);
+		const r = await p.evaluate(async () => {
+			const O = window.__ow, P = O.player;
+			P.facing = 'right';
+			const counter = O.world.behaviorAt(10, 6);
+			O.interact();
+			await new Promise(r => setTimeout(r, 200));
+			const text = O.dialog.pages ? O.dialog.pages.flat().join(' ') : '';
+			return { counter, text };
+		});
+		A(r.counter === 0x80, '2. (10,6) in front of the attendant is a counter', JSON.stringify(r.counter));
+		A(/Welcome to TRAINER HILL/.test(r.text), '2. facing the counter from the corridor opens the Trainer Hill sign-up', r.text.slice(0, 80));
+		for (let i = 0; i < 8 && await p.evaluate(() => window.__ow.dialog.blocking); i++) { await p.keyboard.press('z'); await sleep(150); }
+		A(await p.evaluate(() => !!window.__ow.hillRun), '2. ...and Z starts the challenge');
+		await p.close();
+	}
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split(String.fromCharCode(10)).slice(1, 3).join(' <- '));

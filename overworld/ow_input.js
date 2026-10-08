@@ -257,7 +257,11 @@ export function interact() {
 		if (hg) { startHillBattle(hg.key, hg.i); return; }
 	}
 	if (S.baseCtx && baseDecoInteract(fx, fy)) return;
-	const svc = services.kindAt(fx, fy);
+	// a service desk is talked to ACROSS ITS COUNTER the same way as the NPC below
+	// (the Trainer Hill attendant at (11,6) sits behind (10,6); with the zone only
+	// answering its own tiles, sign-up could never be reached — playtest 2026-10-08)
+	const svc = services.kindAt(fx, fy)
+		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? services.kindAt(fx + dx, fy + dy) : null);
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
 		return;
