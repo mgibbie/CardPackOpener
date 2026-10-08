@@ -1008,7 +1008,16 @@ export class Battle {
 
 	get blocking() { return this.active != null || !!this._starting; }
 
-	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
+	// ifAlive: a mon that must still be standing when the line comes up, or the
+	// whole entry is dropped (an end-of-turn heal queued before a lethal hit landed)
+	pushMsg(text, fn, ifAlive) { this.active.queue.push(ifAlive ? { text, fn, ifAlive } : { text, fn }); }
+	// end-of-turn recovery never lifts a fainted mon: HP 0 is terminal until a revive
+	healAlive(mon, n) {
+		if (!mon || mon.curHP <= 0) return 0;
+		const before = mon.curHP;
+		mon.curHP = Math.min(mon.maxHP, mon.curHP + n);
+		return mon.curHP - before;
+	}
 	// queued sprite animation: the message queue pauses while it plays
 	// BATTLE ANIM scales every queued animation. Durations were hardcoded
 	// literals, so there was no way to speed up or skip them while grinding.
@@ -1849,6 +1858,14 @@ export class Battle {
 		}
 		if (fx.firstTurn && !firstAction) { this.pushMsg(`${this.label(user)} used ${move.name}!`); this.pushMsg('But it failed!'); return; }
 		move.pp = Math.max(0, move.pp - 1);
+		// SNORE and SLEEP TALK work only while the user sleeps (or has Comatose). A mon
+		// that wakes this turn wakes in beforeMove first, so its Snore fails too.
+		// Both used to run awake: Snore dealt full damage to an awake Snorlax.
+		if ((move.id === 'snore' || move.id === 'sleeptalk') && user.status !== 'slp' && this.abilityOf(user) !== 'comatose') {
+			this.pushMsg(`${this.label(user)} used ${move.name}!`);
+			this.pushMsg('But it failed!');
+			return;
+		}
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
 		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
 			user.chargeMove = move.id;
@@ -2960,8 +2977,8 @@ export class Battle {
 			if (mon.status === 'psn' && this.abilityOf(mon) === 'poisonheal') {
 				if (mon.curHP < mon.maxHP) {
 					this.pushMsg(`${this.label(mon)}'s Poison Heal restored HP!`, () => {
-						mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 8)));
-					});
+						this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP / 8)));
+					}, mon);
 				}
 			} else if ((mon.status === 'brn' || mon.status === 'psn') && this.abilityOf(mon) !== 'magicguard') {
 				const chip = mon.badPsn
@@ -2981,7 +2998,7 @@ export class Battle {
 					mon.curHP = Math.max(0, mon.curHP - sap);
 					this.float(side, `-${sap}`, '#8ad86b');
 					if (other.curHP > 0) {
-						other.curHP = Math.min(other.maxHP, other.curHP + sap);
+						this.healAlive(other, sap);
 						this.float(side === 'me' ? 'foe' : 'me', `+${sap}`, '#6be08a');
 					}
 				});
@@ -3014,9 +3031,9 @@ export class Battle {
 			if (mon.aquaRing && mon.curHP < mon.maxHP) {
 				const heal = Math.max(1, Math.floor(mon.maxHP / 16));
 				this.pushMsg(`A veil of water restored ${mon.name}'s HP!`, () => {
-					mon.curHP = Math.min(mon.maxHP, mon.curHP + heal);
+					this.healAlive(mon, heal);
 					this.float(side, `+${heal}`, '#6be08a');
-				});
+				}, mon);
 			}
 			mon.protectedTurn = false;
 			// per-turn bookkeeping the conditional-power moves read (Payback,
@@ -3143,9 +3160,9 @@ export class Battle {
 					if (mon.curHP > 0 && mon.curHP < mon.maxHP) {
 						const heal = Math.max(1, Math.floor(mon.maxHP / 16));
 						this.pushMsg('', () => {
-							mon.curHP = Math.min(mon.maxHP, mon.curHP + heal);
+							this.healAlive(mon, heal);
 							this.float(mon === a.me ? 'me' : 'foe', `+${heal}`, '#6be08a');
-						});
+						}, mon);
 					}
 				}
 			}
@@ -3158,9 +3175,9 @@ export class Battle {
 		for (const [sname, s, active] of [['me', a.meSide, a.me], ['foe', a.foeSide, a.foe]]) {
 			if (s.wishT > 0 && --s.wishT === 0 && active.curHP > 0) {
 				this.pushMsg(`${this.label(active)}'s wish came true!`, () => {
-					active.curHP = Math.min(active.maxHP, active.curHP + s.wishAmt);
+					this.healAlive(active, s.wishAmt);
 					this.float(sname, `+${s.wishAmt}`, '#6be08a');
-				});
+				}, active);
 			}
 			for (const key of ['tailwind', 'safeguard', 'mist', 'luckychant']) {
 				if (s[key] > 0) s[key]--;
@@ -3203,13 +3220,13 @@ export class Battle {
 			}
 			if (ab === 'raindish' && this.weatherKind() === 'rain' && mon.curHP < mon.maxHP) {
 				this.pushMsg(`${this.label(mon)}'s Rain Dish restored a little HP!`, () => {
-					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
-				});
+					this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP / 16)));
+				}, mon);
 			}
 			if (ab === 'icebody' && this.weatherKind() === 'hail' && mon.curHP < mon.maxHP) {
 				this.pushMsg(`${this.label(mon)}'s Ice Body restored a little HP!`, () => {
-					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
-				});
+					this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP / 16)));
+				}, mon);
 			}
 			if (ab === 'shedskin' && mon.status && Math.random() < 0.3) {
 				this.pushMsg(`${this.label(mon)}'s Shed Skin cured its status!`, () => {
@@ -3245,8 +3262,8 @@ export class Battle {
 				const wk3 = this.weatherKind();
 				if (wk3 === 'rain' && mon.curHP < mon.maxHP) {
 					this.pushMsg(`${this.label(mon)}'s Dry Skin drank the rain!`, () => {
-						mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 8)));
-					});
+						this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP / 8)));
+					}, mon);
 				} else if (wk3 === 'sun') {
 					this.pushMsg(`${this.label(mon)}'s Dry Skin cracked in the sun!`, () => {
 						mon.curHP = Math.max(0, mon.curHP - Math.max(1, Math.floor(mon.maxHP / 8)));
@@ -3259,15 +3276,15 @@ export class Battle {
 			const held = this.itemFx(mon);
 			if (held?.endHealFrac && mon.curHP < mon.maxHP) {
 				this.pushMsg(`${this.label(mon)} restored a little HP with its ${this.itemName(mon)}!`, () => {
-					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP * held.endHealFrac)));
-				});
+					this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP * held.endHealFrac)));
+				}, mon);
 			}
 			if (held?.sludge) {
 				if (mon.types.includes('Poison')) {
 					if (mon.curHP < mon.maxHP) {
 						this.pushMsg(`${this.label(mon)} sipped its Black Sludge!`, () => {
-							mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
-						});
+							this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP / 16)));
+						}, mon);
 					}
 				} else if (this.abilityOf(mon) !== 'magicguard') {
 					this.pushMsg(`${this.label(mon)} is hurt by its Black Sludge!`, () => {
@@ -3515,9 +3532,10 @@ export class Battle {
 			});
 			this.pushAnim('enter', 'foe', 0.4);
 			this.pushMsg('', () => { this.applyHazards(a.foe, 'foe'); this.switchInAbility(a.foe, 'foe'); });
-			this.pushMsg('', () => { if (a.me.curHP > 0 && a.foe.curHP > 0) this.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false); });
-			this.pushMsg('', () => { if (a.foe.curHP > 0 && a.me.curHP > 0) this.endOfTurn(); });
-			this.pushMsg('', () => this.checkFaints());
+			this.pushMsg('', () => {
+				if (a.me.curHP > 0 && a.foe.curHP > 0) this.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false);
+				this.pushMsg('', () => this.afterMoves());
+			});
 			return;
 		}
 		// boss potion: once per battle at low HP, in place of the foe's move
@@ -3564,11 +3582,23 @@ export class Battle {
 		first();
 		this.pushMsg('', () => {
 			if (a.foe.curHP > 0 && a.me.curHP > 0) second();
+			// queued from INSIDE the second move's callback, so it runs after that
+			// move's own lines (the queue only appends)
+			this.pushMsg('', () => this.afterMoves());
 		});
-		this.pushMsg('', () => {
-			if (a.foe.curHP > 0 && a.me.curHP > 0) this.endOfTurn();
-		});
-		this.pushMsg('', () => this.checkFaints());
+	}
+
+	// The end of a turn, once BOTH moves have landed. endOfTurn + checkFaints used
+	// to be queued up front, beside the second move's callback; but that move
+	// queues its damage when it runs, BEHIND them. So end-of-turn ran on stale HP
+	// (rain healing lifted a mon the second hit had just KO'd — Dry Skin at 0 -> 13,
+	// back to the menu) and the faint check ran before the hit. Queue this from
+	// inside the last move's callback instead.
+	afterMoves() {
+		const a = this.active;
+		if (!a || a.phase === 'done') return;
+		if (a.foe.curHP > 0 && a.me.curHP > 0) this.endOfTurn();   // queues its own faint check last
+		else this.checkFaints();
 	}
 
 	checkFaints() {
@@ -3621,7 +3651,9 @@ export class Battle {
 		const gain = expGain(fallen || a.foe, this.data);
 		const winners = (a.double
 			? [a.me, a.meAlly].filter(m => m && m.curHP > 0)
-			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me)].filter(Boolean))
+			// a FAINTED mon earns nothing — a simultaneous KO (Self-Destruct) used to pay
+			// the fallen lead, whose level-up then lifted it from 0 HP back to life
+			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : null)].filter(Boolean))
 			.filter(m => this.ownerOf(m) !== 'partner');   // the partner's team is not yours to level
 		// LUCKY EGG multiplies its holder's own share (and only its own)
 		const heldOf = m => Bag.ITEMS[m?.heldItem]?.held || null;
@@ -3733,7 +3765,8 @@ export class Battle {
 				// Transform-snapshot restore roll it back after the battle
 				if (mon._origStats) mon._origStats = { ...mon.stats };
 				mon.maxHP = mon.stats.hp;
-				mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
+				// the max-HP growth is added to a standing mon only: HP 0 stays 0
+				if (mon.curHP > 0) mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
 				if (mon === a.me) a.meShownHP = mon.curHP;
 				else if (mon === a.meAlly) a.meAllyShownHP = mon.curHP;
 				// the stat-gain window, GBA style — leveling used to recalc silently,
@@ -3939,6 +3972,10 @@ export class Battle {
 		// already had one; victory was silent
 		if (result === 'victory') sfx('fanfare_victory');
 		for (const m of a.party) this.clearVolatiles(m, true);
+		// the CAUGHT mon leaves battle too: Mimic's copied move, a Transform, stat
+		// snapshots — none of it may be saved into its owned moveset (a Sudowoodo
+		// caught after Mimic kept the mimicked Sleep Powder, and the mimicSlot marker)
+		if (a.caughtMon) this.clearVolatiles(a.caughtMon);
 		a.result = result;
 		a.phase = 'done';
 	}
@@ -4805,47 +4842,57 @@ export class Battle {
 			if (qc.get(p) !== qc.get(q)) return qc.get(p) ? -1 : 1;
 			return this.speedOf(q.user) - this.speedOf(p.user);
 		});
-		for (const act of acts) {
-			this.pushMsg('', () => {
-				if (act.user.curHP <= 0) return;
-				const isFoe = this.sideOfMon(act.user) === 'foe';
-				// retarget if the intended victim already dropped
-				let tgt = act.target;
-				if (!tgt || tgt.curHP <= 0) {
-					const pool = isFoe ? this.livingMine() : this.livingFoes();
-					tgt = pool[0];
-				}
-				if (!tgt) return;
-				const spread = SPREAD_MOVES.has(act.move.id);
-				// Follow Me / Rage Powder / Spotlight pull single-target moves onto
-				// the mon that used them
-				// STALWART / PROPELLER TAIL ignore redirection and hit what they aimed at
-				const ignoresPull = ['stalwart', 'propellertail'].includes(this.abilityOf(act.user));
-				if (!spread && !ignoresPull) {
-					const pool = isFoe ? this.livingMine() : this.livingFoes();
-					const magnet = pool.find(m => m.centerOfAttention);
-					if (magnet && (this.data.moves[act.move.id]?.category !== 'Status')) tgt = magnet;
-				}
-				const victims = spread ? (isFoe ? this.livingMine() : this.livingFoes()) : [tgt];
-				// Earthquake and its family hit EVERYTHING adjacent — your own partner
-				// included, exactly the cost that balances a spread move. TELEPATHY on
-				// the partner finally has a job: it sidesteps the ally's blast.
-				if (spread && ALL_ADJACENT.has(act.move.id)) {
-					const partner = (isFoe ? [a.foe, a.foeAlly] : [a.me, a.meAlly])
-						.find(m => m && m !== act.user && m.curHP > 0);
-					if (partner && this.abilityOf(partner) !== 'telepathy') victims.push(partner);
-				}
-				for (const v of victims) {
-					this.useMove(act.user, this.boostsOf(act.user), v, this.boostsOf(v), act.move, isFoe,
-						{ spread: victims.length > 1 });
-				}
-			});
-			this.pushMsg('', () => this.checkFaintsD());
-		}
-		this.pushMsg('', () => {
-			if (this.livingFoes().length && this.livingMine().length) this.endOfTurn();
-		});
-		this.pushMsg('', () => this.checkFaintsD());
+		// ONE ACTION AT A TIME. Every action used to be queued up front, but a move
+		// queues its damage when it RUNS, behind all of them — so each later action
+		// passed its "still standing" check before any hit had landed, and a foe KO'd
+		// by a faster attack still used its move (Clefairy at 0 HP used Metronome).
+		// Each action now queues its faint check and then the next action, from
+		// inside its own callback, so they follow its damage.
+		const runAct = act => {
+			if (act.user.curHP <= 0) return;
+			const isFoe = this.sideOfMon(act.user) === 'foe';
+			// retarget if the intended victim already dropped
+			let tgt = act.target;
+			if (!tgt || tgt.curHP <= 0) {
+				const pool = isFoe ? this.livingMine() : this.livingFoes();
+				tgt = pool[0];
+			}
+			if (!tgt) return;
+			const spread = SPREAD_MOVES.has(act.move.id);
+			// Follow Me / Rage Powder / Spotlight pull single-target moves onto
+			// the mon that used them
+			// STALWART / PROPELLER TAIL ignore redirection and hit what they aimed at
+			const ignoresPull = ['stalwart', 'propellertail'].includes(this.abilityOf(act.user));
+			if (!spread && !ignoresPull) {
+				const pool = isFoe ? this.livingMine() : this.livingFoes();
+				const magnet = pool.find(m => m.centerOfAttention);
+				if (magnet && (this.data.moves[act.move.id]?.category !== 'Status')) tgt = magnet;
+			}
+			const victims = spread ? (isFoe ? this.livingMine() : this.livingFoes()) : [tgt];
+			// Earthquake and its family hit EVERYTHING adjacent — your own partner
+			// included, exactly the cost that balances a spread move. TELEPATHY on
+			// the partner finally has a job: it sidesteps the ally's blast.
+			if (spread && ALL_ADJACENT.has(act.move.id)) {
+				const partner = (isFoe ? [a.foe, a.foeAlly] : [a.me, a.meAlly])
+					.find(m => m && m !== act.user && m.curHP > 0);
+				if (partner && this.abilityOf(partner) !== 'telepathy') victims.push(partner);
+			}
+			for (const v of victims) {
+				this.useMove(act.user, this.boostsOf(act.user), v, this.boostsOf(v), act.move, isFoe,
+					{ spread: victims.length > 1 });
+			}
+		};
+		const step = i => {
+			if (!this.active || this.active.phase === 'done') return;
+			if (i >= acts.length) {
+				if (this.livingFoes().length && this.livingMine().length) this.endOfTurn();   // its own faint check last
+				else this.checkFaintsD();
+				return;
+			}
+			runAct(acts[i]);
+			this.pushMsg('', () => { this.checkFaintsD(); this.pushMsg('', () => step(i + 1)); });
+		};
+		this.pushMsg('', () => step(0));
 	}
 	checkFaintsD() {
 		const a = this.active;
@@ -4945,14 +4992,9 @@ export class Battle {
 		const a = this.active;
 		this.beginTurn();
 		this.pushMsg('', () => {
-			if (a.foe.curHP <= 0 || a.me.curHP <= 0) return;
-			this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
+			if (a.foe.curHP > 0 && a.me.curHP > 0) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
+			this.pushMsg('', () => this.afterMoves());
 		});
-		this.pushMsg('', () => {
-			const a2 = this.active;
-			if (a2.foe.curHP > 0 && a2.me.curHP > 0) this.endOfTurn();
-		});
-		this.pushMsg('', () => this.checkFaints());
 	}
 
 	useItem(itemId) {
@@ -5166,6 +5208,7 @@ export class Battle {
 			const dwell = cps === Infinity ? 0.2 : Math.min(1.6, Math.max(0.45, 48 / cps));
 			if ((a.msgT > dwell || a.msgT >= 99) && settled) {
 				const next = a.queue.shift();
+				if (next && next.ifAlive && next.ifAlive.curHP <= 0) { a.msgT = 99; return; }
 				if (next) {
 					if (next.anim) {
 						a.fx = { ...next.anim, t: 0 };
