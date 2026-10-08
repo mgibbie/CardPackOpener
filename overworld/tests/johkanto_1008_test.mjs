@@ -11,6 +11,8 @@
 //   4. bug:1791467287353 — Fly out of the NATIONAL PARK left the Bug-Catching
 //      Contest running (judged later, on arriving at a gate from OUTSIDE): leaving
 //      by Fly/Dig/Rope/Teleport now aborts it as Crystal does; only a gate judges
+//   5. bug:1791452053586 — holding UP while surfing climbed Meteor Falls' waterfall
+//      without the Rain Badge: MB_WATERFALL pushes a surfer south on the GBA
 //
 //   node overworld/tests/johkanto_1008_test.mjs
 import fs from 'fs';
@@ -176,6 +178,23 @@ try {
 	for (let i = 0; i < 40 && !(await W(() => window.__ow.dialog.blocking)); i++) await sleep(100);
 	const gate = await W(() => ({ map: window.__ow.world.current.name, d: window.__ow.dialog.pages ? window.__ow.dialog.pages.flat().join(' ') : '', active: window.__ow.bugContest.active }));
 	A(/Gate/.test(gate.map) && /results are in/i.test(gate.d) && !gate.active, '4. ...while walking out through the gate is judged', JSON.stringify(gate).slice(0, 200));
+
+	// ===== 5. SURF can't climb a WATERFALL (Meteor Falls, no Rain Badge) =====
+	await scene('MeteorFalls_1F_1R', 12, 17, 'up', { flags: { crystal_events_seeded: true } });
+	const wf = await W(() => { const w = window.__ow.world; for (let y = 17; y > 0; y--) if (w.behaviorAt(12, y) === 0x13) return y; return null; });
+	A(wf != null, '5. Meteor Falls 1F has its waterfall in column 12', String(wf));
+	await W((y) => { const P = window.__ow.player; P.tx = 12; P.ty = y + 1; P.x = P.px = 12 * 16; P.y = P.py = (y + 1) * 16; P.surfing = true; P.facing = 'up'; }, wf);
+	for (let i = 0; i < 4; i++) { await page.keyboard.down('ArrowUp'); await sleep(260); await page.keyboard.up('ArrowUp'); await sleep(150); }
+	const at = await W(() => ({ x: window.__ow.player.tx, y: window.__ow.player.ty, surf: window.__ow.player.surfing }));
+	A(at.y === wf + 1 && at.surf, '5. surfing UP into the waterfall is a wall (it pushes you back south)', JSON.stringify({ wf, at }));
+	// riding it DOWN is still allowed
+	await W((y) => { const P = window.__ow.player; P.tx = 12; P.ty = y - 1; P.x = P.px = 12 * 16; P.y = P.py = (y - 1) * 16; P.surfing = true; P.facing = 'down'; }, wf);
+	const above = await W((y) => window.__ow.world.isSurfable(12, y - 1) || window.__ow.world.behaviorAt(12, y - 1) === 0x13, wf);
+	if (above) {
+		await page.keyboard.down('ArrowDown'); await sleep(260); await page.keyboard.up('ArrowDown'); await sleep(200);
+		const dn = await W(() => window.__ow.player.ty);
+		A(dn >= wf, '5. ...and down it is still open', JSON.stringify({ wf, dn }));
+	}
 
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {

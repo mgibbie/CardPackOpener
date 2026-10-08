@@ -795,6 +795,12 @@ export class Player {
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
 		if (!open) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
+		// a WATERFALL (MB_WATERFALL 0x13) is a current that pushes the surfer south
+		// (ForcedMovement_PushedSouthByCurrent, FRLG + Emerald): you can ride it
+		// down, never up or across it. Climbing is the WATERFALL field move's job,
+		// with its badge check. Before this, holding UP surfed straight up Meteor
+		// Falls without the Rain Badge.
+		if (this.surfing && dir !== 'down' && this.world.behaviorAt(nx, ny) === 0x13) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }
 		// Sky Pillar's cracked floors give way underfoot — only the bike carries you
 		// across. Where the map has a floor below (setholewarp, holes.js) you may
 		// walk on and fall through, as on the GBA; anywhere else they stay a wall.
