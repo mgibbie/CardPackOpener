@@ -199,7 +199,15 @@ export function hideResolvedLegendaryObjects() {
 	const evs = world.current.map.object_events || [];
 	const hidden = [];
 	for (const e of (Array.isArray(v) ? v : [v])) {
-		if (!Story.getFlag(e.flag)) continue;
+		// not caught yet: a decomp object standing ON the native encounter tile (Sky
+		// Pillar's RAYQUAZA_STILL at 14,6, shown once VAR_SKY_PILLAR_STATE >= 2) would
+		// block the step-on trigger, and its own script calls the unported
+		// StartLegendaryBattle — which "wins" with no battle. Leave it out of the object
+		// list (no flags touched) so the native encounter is the way in.
+		if (!Story.getFlag(e.flag)) {
+			for (const o of evs) if (+o.x === e.x && +o.y === e.y && (o.graphics_id || '').toUpperCase().includes(e.species.toUpperCase())) hidden.push(o);
+			continue;
+		}
 		const gfx = e.species.toUpperCase();
 		for (const o of evs) {
 			if (!o.flag || o.flag === '0' || !/^(FLAG|EVENT)_/.test(o.flag)) continue;
