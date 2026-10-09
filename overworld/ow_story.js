@@ -115,17 +115,25 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	// two above your strongest, the rest one), everything else scales relatively.
 	const srcParty = team?.party?.length ? team.party : (roster?.party || []);
 	const aceLv = Math.max(0, ...srcParty.map(e => e.l || 0));
-	const foeLevel = (e) => {
+	// a VS Seeker rematch climbs the same way whichever way the fight starts —
+	// walking into the trainer's sight (trainers.buildBattle) or talking to them
+	// (here): +2 levels per saved rematch tier, the level learnset instead of the
+	// fixed early moves, and "(rematch)" on the name (2026-10-08, Instinct: Route
+	// 127 Donny at tier 7 fought his first-battle Lv26 team when talked to)
+	const tier = talker && trainers.list.includes(talker) ? (trainers.rematch[trainers.keyOf(talker)] || 0) : 0;
+	const bump = 2 * tier;
+	const baseLevel = (e) => {
 		if (!inJohKanto() && !johkantoLeagueKind(scriptLabel) && !johkantoLeagueKind(trainerId)) return e.l;
 		const lk = johkantoLeagueKind(scriptLabel) || johkantoLeagueKind(trainerId);
 		if (lk) return bossLevelFor(lk, (e.l || 0) >= aceLv);
 		if (BOSS_CLASSES.has(className)) return bossLevelFor('gym', (e.l || 0) >= aceLv);
 		return routeTrainerLevel(e.l);
 	};
+	const foeLevel = (e) => baseLevel(e) + bump;
 	if (team?.party?.length) {
 		foeParty = team.party.map(e => {
 			const mon = battleBuildMon(e.s, foeLevel(e), battle.data);
-			if (mon && e.moves?.length) {
+			if (mon && e.moves?.length && !bump) {
 				mon.moves = e.moves.map(id => {
 					const mv = battle.data.moves[id];
 					return mv ? { id, name: mv.name, pp: mv.pp, maxPp: mv.pp } : null;
@@ -151,7 +159,7 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!foeParty.length) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	const high = Math.max(5, ...foeParty.map(m => m.level));
 	const info = {
-		displayName: roster?.name ? `${className} ${roster.name}` : className,
+		displayName: (roster?.name ? `${className} ${roster.name}` : className) + (bump ? ' (rematch)' : ''),
 		defeatText: '', money: high * 8,
 		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
