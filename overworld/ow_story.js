@@ -12,6 +12,7 @@ import { choiceMenu, startChoice } from './choice.js';
 import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
 import { LOCKED_WARPS } from './locked_warps_data.js';
+import { reconcileAwakeningResolution } from './awakening_sync.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
 import { syncOverworldAchievements } from './ow_saves.js';
@@ -383,6 +384,8 @@ export function applyRestedSceneOutcomes(mapName) {
 
 export async function runMapSetupScripts(isBoot) {
 	expireDailyFlags();
+	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
+	world.restoreLockedCells();      // a reloaded map starts from its layout's doors, as the GBA's does
 	const evs = world.current?.map?.object_events || [];
 	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
 	const before = vis();
@@ -412,6 +415,7 @@ export async function runMapSetupScripts(isBoot) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	run();
+	try { hideResolvedLegendaryObjects(); } catch (e) { console.warn('[legendary] hide failed', e); }   // the reload brought them back
 }
 
 // Crystal map callbacks (`callback MAPCALLBACK_NEWMAP / TILES / OBJECTS`) — run as

@@ -7,6 +7,18 @@
 
 import { metatileId } from './metatile_labels.js';
 import { LOCKED_WARPS } from './locked_warps_data.js';
+// a script-lockable warp cell's value as its LAYOUT ships it, captured the first
+// time the layout object is seen (before any setmetatile reaches it): the bundle
+// cache and the shared JSON keep a closed door closed across visits, which the GBA
+// never does (it reloads every map from ROM), see World.restoreLockedCells
+const LOCKED_PRISTINE = new WeakMap();   // layout object -> Map('x,y' -> value)
+function captureLockedPristine(name, layout) {
+	const cells = LOCKED_WARPS[name];
+	if (!cells || !layout?.map || LOCKED_PRISTINE.has(layout)) return;
+	const m = new Map();
+	for (const c of cells) { const [x, y] = c.split(',').map(Number); const v = layout.map[y]?.[x]; if (v != null) m.set(c, v); }
+	LOCKED_PRISTINE.set(layout, m);
+}
 // A decomp script boolean -> true / false / null. Scripts write TRUE/FALSE
 // (symbolic), 1/0, or real booleans; null/undefined means "not given" (callers
 // keep their default). NEVER Boolean(v) / !!v: the string "FALSE" is truthy.
@@ -400,6 +412,7 @@ export class World {
 			const row = layout.map[y];
 			if (row && row[x] != null) row[x] = open ? row[x] & ~COLLISION_MASK : row[x] | COLLISION_MASK;
 		}
+		captureLockedPristine(name, layout);
 		const ts = await loadTilesetsFor(layout);
 		return { name, map, layout, ts };
 	}
@@ -471,6 +484,7 @@ export class World {
 		}
 		if (!layout) { console.warn('[setmaplayoutindex] no layout', layoutId); return false; }
 		layout = { ...layout, map: layout.map.map(r => r.slice()) };   // tile edits must not reach the shared copy
+		captureLockedPristine(cur.name, layout);
 		const same = layout.primary_tileset === cur.layout.primary_tileset && layout.secondary_tileset === cur.layout.secondary_tileset;
 		const ts = same ? cur.ts : await loadTilesetsFor(layout);
 		const b = { ...cur, layout, ts, canvases: renderSection(layout, ts), borderCv: renderBorder(layout, ts) };
@@ -517,6 +531,32 @@ export class World {
 
 	warpAt(tx, ty) {
 		return this.warps.find(w => w.x === tx && w.y === ty) || null;
+	}
+
+	// Put this map's script-lockable warp cells back the way the LAYOUT ships them,
+	// where that is OPEN, before its setup scripts run: ON_LOAD / the Crystal
+	// callbacks then shut whatever the story still has shut. The GBA reloads a map
+	// from ROM on every entry; this port reuses the edited layout, so a door a script
+	// closed stayed closed after the story opened it (Sootopolis's gym after Archie
+	// and Maxie leave: ON_LOAD stops locking it, but nothing ever unlocked it).
+	// Only cells the layout ships open are touched, so a door a native fix-up opened
+	// (the Trick House, the Sky Pillar) is never closed again here. Returns the count.
+	restoreLockedCells() {
+		const cur = this.current, lay = cur?.layout;
+		const pr = lay && LOCKED_PRISTINE.get(lay);
+		if (!pr) return 0;
+		let n = 0;
+		for (const [c, v] of pr) {
+			const [x, y] = c.split(',').map(Number);
+			if (lay.map[y]?.[x] === v) continue;
+			const { attr } = metatileOf(cur.ts, v & METATILE_MASK);
+			const b = attr & BEHAVIOR_MASK;
+			if ((v & COLLISION_MASK) !== 0 && !(b >= 0x60 && b <= 0x6e)) continue;   // ships shut: leave it
+			lay.map[y][x] = v;
+			this.setMetatile(x, y, v, null);   // repaint (keeps the collision just restored)
+			n++;
+		}
+		return n;
 	}
 
 	isPassable(tx, ty) {

@@ -10,6 +10,7 @@ import { S } from './ow_state.js';
 import { leadMon } from './party.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { startCutscene } from './ow_scaling.js';
+import { reconcileAwakeningResolution } from './awakening_sync.js';
 import { playerRegion } from './ow_progression.js';
 import { legendariesHere } from './ow_follower.js';
 import {
@@ -196,7 +197,7 @@ export function checkAwakeningTrigger() {
 			if (lay?.map?.[5]) world.setMetatile(14, 5, lay.map[5][14], false);
 		}
 		Story.setVar(AW_VAR, scene.next);
-		if (scene.resolve) { Story.clearFlag('FLAG_SYS_WEATHER_CTRL'); Story.clearFlag('FLAG_LEGENDARIES_IN_SOOTOPOLIS'); }
+		if (scene.resolve) { Story.clearFlag('FLAG_SYS_WEATHER_CTRL'); Story.clearFlag('FLAG_LEGENDARIES_IN_SOOTOPOLIS'); reconcileAwakeningResolution(); }
 	});
 }
 // render the clashing legendaries over SOOTOPOLIS during the crisis (real decomp tiles)
