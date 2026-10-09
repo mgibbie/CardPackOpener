@@ -315,6 +315,22 @@ function userStore(db) {
 				'ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at'
 			).bind(k, JSON.stringify(v)).run();
 		},
+		// The overworld save's revision guard, made ATOMIC: write `v` only if the
+		// stored blob's revision is not higher than `rev`, in ONE statement. A read
+		// (get) then a write (setJSON) let two in-flight saves interleave — during a
+		// network stall the client gives up on requests the server is still running,
+		// and an OLDER save could pass its check before a newer one landed and then
+		// write over it (2026-10-08: Instinct's local 37004 acked while the server
+		// held 36998). Returns true when the row was written.
+		setOwIfNotNewer: async (k, v, rev) => {
+			const r = await db.prepare(
+				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ' +
+				'ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at ' +
+				"WHERE COALESCE(CAST(json_extract(mp_store.value, '$.ow.magepunk_ow_rev') AS INTEGER), 0) <= ?"
+			).bind(k, JSON.stringify(v), rev).run();
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
+		},
 		delete: async (k) => {
 			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
 		},
@@ -2689,8 +2705,18 @@ export default async function handler(req, env) {
 				return json({ error: 'could not back up the stored save before replacing it; nothing changed' }, 503);
 			}
 		}
-		await store.setJSON('ow:' + username, { ow, updated_at: Date.now() });
-		return json({ ok: true });
+		// the write re-checks the revision atomically (the guard above read it
+		// earlier, and another in-flight save may have landed since); a forced
+		// write is the deliberate replace and skips it. `rev` echoes what is now
+		// stored, so the client acks exactly the revision the server holds.
+		const incomingRev = Math.max(0, parseInt(ow['magepunk_ow_rev'], 10) || 0);
+		if (body.force) await store.setJSON('ow:' + username, { ow, updated_at: Date.now() });
+		else if (!(await store.setOwIfNotNewer('ow:' + username, { ow, updated_at: Date.now() }, incomingRev))) {
+			const now = await store.get('ow:' + username);
+			const storedRev = Math.max(0, parseInt(now && now.ow && now.ow['magepunk_ow_rev'], 10) || 0);
+			return json({ error: 'stale revision', conflict: true, rev: storedRev }, 409);
+		}
+		return json({ ok: true, rev: incomingRev });
 	}
 	if (action === 'ow-load') {
 		return json({ ow: (await store.get('ow:' + username)) || null });

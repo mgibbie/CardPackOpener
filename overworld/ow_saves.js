@@ -264,7 +264,12 @@ export function pushOw(opts) {
 	try {
 		return MP.call('ow-save', { ow }, { keepalive })
 			.then(r => {
-				if (r && r.ok && !r.error) return done(true);
+				// an ack names the revision the server now holds (ow-save echoes it):
+				// only that exact revision counts as synced. A server that answers ok
+				// for some OTHER revision has not stored this body, so it stays dirty
+				// and the next push retries instead of skipping as "already-acked".
+				if (r && r.ok && !r.error && (r.rev == null || Number(r.rev) === rev)) return done(true);
+				if (r && r.ok && !r.error) return done(false, { error: 'ack for another revision', serverRev: r.rev });
 				// the server holds a HIGHER revision: another device is ahead. Keep our
 				// copy safe and let the next hydrate reconcile rather than clobbering.
 				if (r && r.conflict) return done(false, { conflict: true, serverRev: r.rev || null, error: String(r.error || 'stale revision') });
