@@ -393,6 +393,7 @@ export function applyRestedSceneOutcomes(mapName) {
 export async function runMapSetupScripts(isBoot) {
 	expireDailyFlags();
 	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
+	syncRocketTakeover();             // the Radio Tower takeover's flags + 5F scene, before this map's coord events read them
 	world.restoreLockedCells();      // a reloaded map starts from its layout's doors, as the GBA's does
 	const evs = world.current?.map?.object_events || [];
 	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
@@ -763,6 +764,21 @@ function syncRocketTakeover() {
 		Story.clearFlag('EVENT_USED_THE_CARD_KEY_IN_THE_RADIO_TOWER');
 		Story.setFlag('EVENT_MAHOGANY_TOWN_POKEFAN_M_BLOCKS_EAST');
 		Story.setVar('VAR_SCENE_MahoganyTown', 1);                          // SCENE_MAHOGANYTOWN_NOOP
+	}
+	// STORY_SEED rests RadioTower5F at SCENE_RADIOTOWER5F_NOOP (2) — its fake-
+	// Director coord event hands a key item, and without a takeover it would fire
+	// in free roam. But with the takeover running, scene 2 also silences the
+	// Rocket boss's coord event at (16,5) (scene 1), so the takeover could never
+	// end, EVENT_CLEARED_RADIO_TOWER never set, and Clair's gym stayed blocked
+	// (2026-10-09, Instinct). Re-arm it where pokecrystal has it at this point:
+	// FAKE_DIRECTOR (0) — or ROCKET_BOSS (1) once the fake Director is beaten or
+	// the player is already through the Basement door his key opens (his whole
+	// errand; a BASEMENT KEY from another region opens it too). Only from the
+	// seed's resting value, and never after the boss: no var moves backwards.
+	if (Story.getFlag('ENGINE_ROCKETS_IN_RADIO_TOWER') && Story.getVar('VAR_SCENE_RadioTower5F') === 2
+		&& !Story.getFlag('EVENT_BEAT_ROCKET_EXECUTIVEM_1')) {
+		const pastFakeDirector = Story.getFlag('EVENT_BEAT_ROCKET_EXECUTIVEM_3') || Story.getFlag('EVENT_USED_BASEMENT_KEY');
+		Story.setVar('VAR_SCENE_RadioTower5F', pastFakeDirector ? 1 : 0);
 	}
 }
 
