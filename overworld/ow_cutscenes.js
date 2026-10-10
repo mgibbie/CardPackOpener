@@ -184,6 +184,13 @@ export function cutsceneCtx(talker, scriptLabel) {
 			if (n) n.hidden = false;
 			const f = ev && ev.flag;
 			if (f && /^EVENT_/.test(f)) Story.clearFlag(f);
+			// FR/E `addobject` spawns the object even while its hide flag is set (the
+			// flag is read on map load only) — the scene-only actors new_game_flags.js
+			// keeps hidden: spawn it for this visit and hold the script until it stands
+			if (!n && ev && !world.current?.map?._crystal_tileset && f && /^FLAG_/.test(f)) {
+				npcs.spawn(ev).catch(() => null).then(() => cutscene.resume());
+				return 'wait';
+			}
 		},
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
 		changeBlock: op => { const c = op.cells || []; [[0, 0], [1, 0], [0, 1], [1, 1]].forEach(([dx, dy], q) => { if (c[q] != null) world.setGridValue(op.x + dx, op.y + dy, c[q]); }); },

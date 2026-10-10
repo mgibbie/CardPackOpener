@@ -121,10 +121,12 @@ export function resetStory() { store = fresh(); if (safeSave(KEY, store)) storeR
 // sealed behind a gate wanting eight badges that could only ever reach six.
 //
 // FireRed and Emerald work the same way, and their starting state is simpler than
-// Crystal's: `InitEventData` memsets every flag to zero, so a fresh save has them
-// all CLEAR and every object visible. There is no init list to port — the villain
-// grunts at Mt Chimney, the Rockets in Silph Co and the Magma hideout really are
-// present when you first walk in, and hiding them was this port's invention.
+// Crystal's: `InitEventData` memsets every flag to zero, so most objects start
+// VISIBLE — the villain grunts at Mt Chimney, the Rockets in Silph Co and the Magma
+// hideout really are present when you first walk in. The exception is the short
+// list EventScript_ResetAllMapFlags then SETS (the credits cast, the waiting
+// rivals, scene-only villains): new_game_flags.js; seedNewGameFlags applies the
+// part no script ever clears (the rest is cleared by scenes this port skips).
 // (Crystal is the odd one out: its InitializeEventsScript explicitly SETS ~124
 // events, which is why that one needed crystal_init_events.js.)
 //
@@ -494,7 +496,7 @@ export class Cutscene {
 					}
 					break;
 				case 'hideobj': { const a = this._actor(op.who); if (a) a.hidden = true; ctx.hideObj?.(op.who); break; }
-				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; ctx.showObj?.(op.who); break; }
+				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; if (ctx.showObj?.(op.who) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; } break; }
 				case 'setobjxy': ctx.setObjXy?.(op.who, op.x, op.y); break;
 			// script-run marts (department-store floors, the Battle Frontier mart,
 			// most Johto/Kanto clerks): the transpile dropped the decomp's item-list

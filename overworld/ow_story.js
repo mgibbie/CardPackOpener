@@ -6,6 +6,7 @@ import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon, statsFor } from './battle.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
+import { NEW_GAME_FLAGS } from './new_game_flags.js';
 import * as Daycare from './daycare.js';
 import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
@@ -862,6 +863,21 @@ export function seedCrystalEvents() {
 	if (Story.getFlag('crystal_events_seeded')) return;
 	for (const e of INIT_EVENTS) Story.setFlag(e);
 	Story.setFlag('crystal_events_seeded');
+}
+
+// FireRed and Emerald run EventScript_ResetAllMapFlags on a new game: a list of
+// FLAG_HIDE_* that keeps set-piece objects (the credits cast, the waiting
+// rivals, the Seafloor Cavern villains) off the map until a scene `addobject`s
+// them. This port never ran it, so on 2026-10-10 the credits-only OAK and rival
+// stood on Indigo Plateau's only door and sealed the Elite Four. Only the flags
+// NO decomp script ever clears are applied (neverCleared): the rest are cleared
+// by opening/story scenes the free-roam port skips (Oak's lab, Birch's lab), so
+// setting them would hide those NPCs for good. Every save, fresh or existing;
+// runs once.
+export function seedNewGameFlags() {
+	if (Story.getFlag('newgame_flags_seeded')) return;
+	for (const r of Object.values(NEW_GAME_FLAGS)) for (const f of r.neverCleared) Story.setFlag(f);
+	Story.setFlag('newgame_flags_seeded');
 }
 
 export function seedStoryState(region) {
