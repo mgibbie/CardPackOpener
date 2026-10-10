@@ -6,6 +6,8 @@ import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { loadCrystalCallbacks } from './crystal_callbacks.js';
 import { decoSpriteFor, loadCrystalDecorations } from './decorations.js';
 import { loadCrystalObjectConsts } from './crystal_object_consts.js';
+import { loadStoneTables, stoneTableRow } from './stonetables.js';
+import { loadCrystalParties } from './crystal_parties.js';
 import { loadSubvarFixData } from './subvar_fix.js';
 import { loadScrollMultichoice } from './scroll_multichoice.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
@@ -405,6 +407,17 @@ player.pushBoulder = (bx, by, dx, dy) => {
 		if (obj.flag) Story.setFlag(obj.flag);
 		if (obj.reveal) Story.clearFlag(obj.reveal);
 	}
+	// Crystal's STONE TABLE: the map names which boulder falls through which hole
+	// (Blackthorn Gym 2F's three bridges to Clair, Ice Path B1F) — 2026-10-09
+	const row = world.current?.map?._crystal_tileset ? stoneTableRow(world.current.name, tx, ty, obj.flag) : null;
+	if (row) {
+		sfx('ledge');   // SFX_STRENGTH + earthquake's stand-in
+		items.removeFieldObj(obj);
+		Story.setFlag(obj.flag);                     // `disappear`: the boulder's own event flag
+		for (const f of row.clear) Story.clearFlag(f); // its twin on the floor below (Ice Path)
+		for (const f of row.set) Story.setFlag(f);
+		dialog.open(row.text);
+	}
 	return true;
 };
 
@@ -668,6 +681,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await loadMapLayoutData(getJSON);   // the decomps' setmaplayoutindex (maplayout.js)   // the decomp's label fall-through (fallthrough.js)
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
+	await loadStoneTables(getJSON);            // Crystal boulder-into-hole tables (stonetables.js)
+	await loadCrystalParties(getJSON);         // Crystal trainer parties by trainerbattle id (crystal_parties.js)
 	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)
 	await loadCrystalDecorations(getJSON, getImage);   // the player's-room decorations + their object sprites (decorations.js)
 	npcs.decoSprite = decoSpriteFor;               // ...which the room's console / doll objects wear

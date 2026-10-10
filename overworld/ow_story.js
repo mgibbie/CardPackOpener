@@ -1,5 +1,6 @@
 // ow_story.js — the story layer: map-script triggers and the ported decomp scripts (runScriptLabel / runSpecial), scripted battles, the Space Center multi battle, the Johto gift POKeMON, the Fork B campaign open, villain arcs and the recurring rival.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { crystalParty } from './crystal_parties.js';
 import { givePhone, runPhoneSpecial } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
@@ -107,7 +108,12 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	// canonical team by TRAINER_ id first (exact species/level/moves), then the
 	// script-label roster, then a class-pool fallback at the map's level
 	const tid = (trainerId || '').replace(/^TRAINER_/, '');
-	const team = S.trainerTeams[tid];
+	// ...and a Crystal id (EXECUTIVEM_EXECUTIVEM_1, SCHOOLBOY_JACK2) names its exact
+	// decomp party: a scene's battle has no label roster (2026-10-09, the Radio
+	// Tower's Rocket boss fought the generic pool's Lv12 Mankey)
+	const cparty = S.trainerTeams[tid] ? null : crystalParty(tid);
+	const team = S.trainerTeams[tid] || cparty;
+	const cpName = cparty?.name && cparty.name !== '?' ? cparty.name : null; // '?' = the rival's player-given name
 	const roster = scriptLabel && trainers.data?.rosters?.[scriptLabel];
 	let foeParty = [];
 	let className = team?.class || roster?.class || 'Trainer';
@@ -159,7 +165,7 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!foeParty.length) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	const high = Math.max(5, ...foeParty.map(m => m.level));
 	const info = {
-		displayName: (roster?.name ? `${className} ${roster.name}` : className) + (bump ? ' (rematch)' : ''),
+		displayName: (cpName || roster?.name ? `${className} ${cpName || roster.name}` : className) + (bump ? ' (rematch)' : ''),
 		defeatText: '', money: high * 8,
 		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
