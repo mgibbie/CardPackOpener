@@ -7,6 +7,7 @@ import { loadCrystalCallbacks } from './crystal_callbacks.js';
 import { decoSpriteFor, loadCrystalDecorations } from './decorations.js';
 import { loadCrystalObjectConsts } from './crystal_object_consts.js';
 import { loadStoneTables, stoneTableRow } from './stonetables.js';
+import { loadCrystalParties } from './crystal_parties.js';
 import { loadSubvarFixData } from './subvar_fix.js';
 import { loadScrollMultichoice } from './scroll_multichoice.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
@@ -681,6 +682,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
 	await loadStoneTables(getJSON);            // Crystal boulder-into-hole tables (stonetables.js)
+	await loadCrystalParties(getJSON);         // Crystal trainer parties by trainerbattle id (crystal_parties.js)
 	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)
 	await loadCrystalDecorations(getJSON, getImage);   // the player's-room decorations + their object sprites (decorations.js)
 	npcs.decoSprite = decoSpriteFor;               // ...which the room's console / doll objects wear

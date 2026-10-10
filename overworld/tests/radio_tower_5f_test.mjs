@@ -139,6 +139,14 @@ try {
 		await sleep(100);
 	}
 	A(fought, '2. stepping onto (16,5) starts the Rocket boss battle (RadioTower5FRocketBossScript)', JSON.stringify(await W(() => ({ x: window.__ow.player.tx, y: window.__ow.player.ty }))));
+	// ...with the decomp's EXECUTIVEM_1 party, not the generic pool (2026-10-09,
+	// Instinct: "Trainer" with a lone Lv12 Mankey). In JohKanto/post-game the
+	// levels may scale, so the species and the name are the check.
+	if (fought) {
+		const foe = await W(() => { const a = window.__ow.battle.active; return { species: (a?.foes || []).map(m => m.speciesId), name: a?.info?.displayName }; });
+		A(JSON.stringify(foe.species) === JSON.stringify(['houndour', 'koffing', 'houndoom']), "2. the Executive fights EXECUTIVEM_1's party: Houndour, Koffing, Houndoom", JSON.stringify(foe));
+		A(/EXECUTIVE/.test(foe.name || ''), '2. ...under the name ROCKET EXECUTIVE, not a bare "Trainer"', JSON.stringify(foe.name));
+	}
 	if (fought) {
 		await W(async () => {
 			const b = window.__ow.battle; b.finish('victory');
