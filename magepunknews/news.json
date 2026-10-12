@@ -1,6 +1,198 @@
 {
-	"generated": "2026-10-05",
+	"generated": "2026-10-12",
 	"entries": [
+		{
+			"sha": "6a0cb91",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "Kanto E4 walk-in on first visit + E4 reset; black map: stall-based fetches, self-healing tilesets, non-blocking neighbours",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7a93a6a",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "JohKanto by the original Crystal route: Elm's S.S. TICKET at Grand Champion, S.S. Aqua, Power Plant, Copycat's PASS",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "203f679",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "JohKanto unlocks only as GRAND CHAMPION (all three Leagues)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b67f1ba",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "IsNationalPokedexEnabled answers honestly: the League door guard steps aside before the Hall of Fame",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "02e988e",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "Wild-double catching; Battlecards: wrapper targets, Tribute Dance, run starting life",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "18401f2",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "New-game hide flags (FRLG/Emerald): credits cast off Indigo Plateau's door, 107 story-only objects hidden",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d75fe1e",
+			"date": "2026-10-10",
+			"kind": "patch",
+			"title": "Crystal stonetables (Blackthorn Gym, Ice Path boulders fall) + all 541 decomp trainer parties",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "15e6b8f",
+			"date": "2026-10-09",
+			"kind": "patch",
+			"title": "Radio Tower takeover re-arms 5F's scene (fake Director / Rocket boss)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c65e8c7",
+			"date": "2026-10-09",
+			"kind": "patch",
+			"title": "ow-save: conditional write (no older-rev overwrite) + exact-rev ack; VS Seeker tier applies to dialogue rematches",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e4e519b",
+			"date": "2026-10-08",
+			"kind": "patch",
+			"title": "Sootopolis: the native Rayquaza resolution advances the decomp state; locked doors reset before ON_LOAD",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "238f02c",
+			"date": "2026-10-08",
+			"kind": "patch",
+			"title": "Gifts can carry money (for the Safari fee refund)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "dceaad8",
+			"date": "2026-10-08",
+			"kind": "patch",
+			"title": "Never-miss moves skip accuracy; Dive refuses a blocked landing; watchdog stays in bounds; deflake double_foe_label",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "846ae79",
+			"date": "2026-10-08",
+			"kind": "patch",
+			"title": "Bug batch 10-08: 20 tester reports (Sky Pillar, Radio Tower, Trainer Hill, faint order, phantom run loss, …)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "734fe77",
+			"date": "2026-10-08",
+			"kind": "patch",
+			"title": "Safari gates: real PC room check, EnterSafariMode starts the game (no second fee)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "001a3b2",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Tester bugs: Route 17 encounters, Snorlax flute flag, Shoal Cave high-tide shells",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9c7ca04",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Leftovers: Crystal local labels, Lavaridge egg, locked doors, Kanto/Hoenn reachability (FRLG E4, Sky Pillar)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "326d99c",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Follow-ups: Max Revive, Johto doors, KENYA quest, run-result window for 4 modes",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2a57777",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Bug batch: 21 tester reports + Goldenrod doll counter",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7148796",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Faithful Emerald Pokémon Contests + Pokéblocks / Berry Blender",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ff82fb6",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Crystal decoration system + retire the stand-in Game Corner slots and 3x3 ruins puzzle",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a4c62f9",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Crystal minigames: slot machines, card flip, Unown puzzle + PlayersHouse2F poster",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9eaaee9",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Crystal: 66 dropped signs restored; all 32 changeblocks apply",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "64a8a12",
+			"date": "2026-10-07",
+			"kind": "patch",
+			"title": "Tester batch: Secret Key, berry gift, stuck loads, move tutors, Goldenrod tutor, Glass Workshop, Crystal callbacks + Game Corner",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e8ebd88",
+			"date": "2026-10-05",
+			"kind": "patch",
+			"title": "Animal tribes become Beast (Tabaxi / Aarakocra humanoids); synergies and tokens follow",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "16a751a",
 			"date": "2026-10-05",
