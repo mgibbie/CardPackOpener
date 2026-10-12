@@ -131,6 +131,7 @@ const CHOSEN = {
 	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', permanent: 'permanent' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
 	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	'transform-into-chosen': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	'transform-copy': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'enemy-creature': 'enemy-creature' },
 	'swap-health-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
@@ -187,7 +188,12 @@ export function targetSpec(state, pi, card, choice) {
 	//  Miracle effects join the scan when the card was drawn this turn)
 	const _specEffects = [...(liveEffectsOf(state, pi, card, choice) || []),
 		...((card.miracle && card.drawnThisTurn) ? (card.miracle.effects || []) : [])];
-	for (const e of _specEffects) {
+	// a wrapper with no target of its own ("If you control an artifact, ... instead")
+	// passes the CHOSEN target down to its branches (the conditional handler hands
+	// `target` to execEffects), so the branches decide what to ask for — Karn's Touch,
+	// Chandra's Fury, Sensory Deprivation (2026-10-12: the card resolved untargeted)
+	const _expand = list => list.flatMap(e => (!e.target && (e.then || e.else)) ? [e, ..._expand([...(e.then || []), ...(e.else || [])])] : [e]);
+	for (const e of _expand(_specEffects)) {
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;
 		// Joust likewise lets you pick which opponent to Joust against
