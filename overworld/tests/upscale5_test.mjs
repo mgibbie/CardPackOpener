@@ -109,7 +109,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			for (const id of ['zephyr', 'hive', 'plain', 'fog', 'storm', 'mineral', 'glacier', 'rising']) B.earn('JOHTO', id);
 			B.crown('JOHTO');
 			out.johtoOnly = ow.postgameObjective();
-			// all three crowns -> the Magnet Train line
+			// all three crowns -> PROF. ELM's S.S. TICKET (Crystal's route, ss_aqua_route_test)
 			B.crown('KANTO'); B.crown('HOENN');
 			out.afterCrown = ow.postgameObjective();
 			// three old-Kanto badges -> the count moves
@@ -126,7 +126,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		});
 		A(arc.before === null, 'no postgame line before the JOHTO crown', JSON.stringify(arc.before));
 		A(/KANTO and HOENN POKeMON LEAGUES/.test(arc.johtoOnly || ''), 'the JOHTO crown alone points at the other two LEAGUES', arc.johtoOnly);
-		A(/MAGNET TRAIN.*8 of its GYMS/i.test(arc.afterCrown), 'the GRAND CHAMPION crown points at the old KANTO (8 gyms left)', arc.afterCrown);
+		A(/PROF\. ELM/.test(arc.afterCrown) && /S\.S\. AQUA/.test(arc.afterCrown), 'the GRAND CHAMPION crown sends you to PROF. ELM and the S.S. AQUA', arc.afterCrown);
 		A(/5 of its GYMS/i.test(arc.mid), '...and counts down as badges land', arc.mid);
 		A(/RED waits at the summit/i.test(arc.allBadges), 'all 16 badges point at RED', arc.allBadges);
 		A(/legendary POKeMON still hide/.test(arc.afterRed) && /Rumor places .+ in .+/.test(arc.afterRed),

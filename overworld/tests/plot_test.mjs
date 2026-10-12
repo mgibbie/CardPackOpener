@@ -104,7 +104,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			};
 		});
 		A(johto.enabled.every(x => x === false), 'JOHTO: the 9 safe scene vars are no longer rested (enabled)', JSON.stringify(johto.enabled));
-		A(johto.newbark === 1 && johto.port === 1 && johto.radio === 2, 'JOHTO: dangerous scenes stay rested (NewBark/OlivinePort/Radio)', JSON.stringify(johto));
+		// OlivinePort rests at 0 (SCENE_OLIVINEPORT_ASK_ENTER_SHIP, the decomp's noop
+		// start): 1 is the forced walk-off-the-ship scene, and resting there set the
+		// "already rode" flag on a first visit so the S.S. AQUA sailor refused you
+		A(johto.newbark === 1 && johto.port === 0 && johto.radio === 2, 'JOHTO: dangerous scenes stay rested (NewBark/Radio; OlivinePort at its noop 0)', JSON.stringify(johto));
 
 		// 3) a SAFE Hoenn scene FIRES: Route 118 Steven trigger at (44,11), var 0
 		const safe = await page.evaluate(() => window._fireAt('Route118', 'VAR_ROUTE118_STATE', 0, 44, 11));

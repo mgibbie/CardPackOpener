@@ -700,7 +700,10 @@ export const STORY_SEED = {
 		// These stay rested — each strands or corrupts a free-roam save: NewBarkTown
 		// (no-starter block), Route32 & MahoganyTown & Olivine & SproutTower3F &
 		// WiseTriosRoom & MagnetTrain (force-move the player / linear gates),
-		// Olivine/Vermilion PORTS & FastShip (warp the player onto the S.S. Aqua),
+		// FastShip (warp the player onto the S.S. Aqua). The two PORTS rest at 0, their
+		// own ASK_ENTER_SHIP scene: 1 is LEAVE_SHIP, which played the arrival walk-off on
+		// a first visit and set the 'already rode' temp flag, so the sailor refused to
+		// board you (2026-10-12; boarding needs ELM's S.S. TICKET in any case),
 		// RadioTower5F (hands a key item), Ecruteak TinTower entrance (a sage NPC that
 		// slides over to block the stairs — would gate Ho-Oh in free-roam).
 		vars: {
@@ -708,8 +711,8 @@ export const STORY_SEED = {
 			VAR_SCENE_Route32: 2,
 			VAR_SCENE_MahoganyTown: 1,
 			VAR_SCENE_OlivineCity: 1,
-			VAR_SCENE_OlivinePort: 1,
-			VAR_SCENE_VermilionPort: 1,
+			VAR_SCENE_OlivinePort: 0,
+			VAR_SCENE_VermilionPort: 0,
 			VAR_SCENE_FastShipB1F: 1,
 			VAR_SCENE_SproutTower3F: 1,
 			VAR_SCENE_EcruteakTinTowerEntrance: 1,

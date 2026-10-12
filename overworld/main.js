@@ -71,7 +71,7 @@ import {
 // ow_progression.js: ow_progression.js — progression: the sealed champions, badges + the Elite Four gate + the champion crown, cross-region tier rewards, the Grand Champion finale, the level curve and the level cap.
 import {
 	TIER_LEVEL_FLOOR, TIER_REWARDS, applyGymLevelFloors, badgeSliceFor, catchUpPostBattleScripts,
-	grandChampionFinale, grantGrandChampionReward, grantTierReward, leagueGateMessage, levelCapHint,
+	applyJohtoHallOfFame, grandChampionFinale, grantGrandChampionReward, grantTierReward, leagueGateMessage, levelCapHint,
 	levelCapNow, onTrainerDefeated, playerRegion, refreshLevelCap, repairSaves, runPostBattleScript,
 	showTierRewardDialog, startTrainerBattle,
 } from './ow_progression.js';
@@ -867,6 +867,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 			grantGrandChampionReward();
 			hud.textContent = 'GRAND CHAMPION of all three regions! A GOLD TROPHY awaits in your BAG.';
 		}
+		// ...and one crowned before ELM's S.S. TICKET step existed gets that step too
+		else if (Quest.SHARED.every(r => Badges.isChampion(r))) applyJohtoHallOfFame();
 		claimGifts().then(() => checkRepair()); // anything the owner sent this account; then a queued save repair, offered
 		claimTradeDeliveries(); // trade counterparts and returns come home, exactly once each
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a

@@ -9,8 +9,9 @@
 //   1. JOHTO champion only: the gate's door onto JohKanto Route 22 is solid and says
 //      why; the MAGNET TRAIN warp and Fly into JohKanto are refused; the gate still
 //      leads on to Victory Road; the objective points at the other two Leagues
-//   2. GRAND CHAMPION: the crown restores the Magnet Train's power, the door opens,
-//      the train reaches JohKanto
+//   2. GRAND CHAMPION: the door opens and a warp into JohKanto is allowed; the way in is
+//      Crystal's (ELM's S.S. TICKET -> the S.S. AQUA; the POWER PLANT, not the crown,
+//      restores the MAGNET TRAIN — ss_aqua_route_test), so the objective names ELM
 //   3. a save already holding a JohKanto badge keeps its way in
 //
 //   node overworld/tests/johkanto_gate_test.mjs
@@ -157,14 +158,15 @@ try {
 
 		// ===== 2. GRAND CHAMPION =====
 		await W(page, () => { window.__ow.Badges.crown('KANTO'); window.__ow.Badges.crown('HOENN'); window.__ow.grantGrandChampionReward(); });
-		A(await W(page, () => window.__ow.Story.getFlag('EVENT_RESTORED_POWER_TO_KANTO')), '2. the GRAND CHAMPION crown restores the MAGNET TRAIN\'s power');
+		A(!(await W(page, () => window.__ow.Story.getFlag('EVENT_RESTORED_POWER_TO_KANTO'))) && await W(page, () => window.__ow.Story.getFlag('EVENT_BEAT_ELITE_FOUR')),
+			'2. the GRAND CHAMPION crown is Crystal\'s HALL OF FAME (EVENT_BEAT_ELITE_FOUR); the MAGNET TRAIN\'s power waits for the POWER PLANT');
 		await W(page, () => window.__ow.warpTo('MAP_JOHKANTO_SAFFRON_MAGNET_TRAIN_STATION', 0));
-		A(await waitMap(page, 'JohKantoSaffronMagnetTrainStation') === 'JohKantoSaffronMagnetTrainStation', '2. ...and the train reaches SAFFRON');
+		A(await waitMap(page, 'JohKantoSaffronMagnetTrainStation') === 'JohKantoSaffronMagnetTrainStation', '2. ...and a warp into JohKanto is no longer refused');
 		await W(page, () => window.__ow.moveToMap('JohKantoVictoryRoadGate', 16, 7));
 		await waitMap(page, 'JohKantoVictoryRoadGate');
 		A(await W(page, () => !window.__ow.player.blocked(17, 7)), '2. the door onto JohKanto ROUTE 22 opens');
 		const obj2 = await W(page, () => window.__ow.postgameObjective());
-		A(/MAGNET TRAIN runs again/.test(obj2 || ''), '2. the objective now sends you to the KANTO of old', obj2);
+		A(/PROF\. ELM/.test(obj2 || '') && /S\.S\. AQUA/.test(obj2 || ''), '2. the objective now sends you to PROF. ELM and the S.S. AQUA', obj2);
 		await page.close();
 	}
 

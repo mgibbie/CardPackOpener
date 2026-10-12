@@ -37,7 +37,13 @@ export function postgameObjective() {
 	const jk = Badges.count('JOHKANTO');
 	if (!Story.getFlag('beat_red')) {
 		if (jk >= 8) return 'All 16 badges! The silent trainer RED waits at the summit of MT SILVER.';
-		return `The MAGNET TRAIN runs again — the KANTO of old awaits. ${8 - jk} of its GYMS remain. (Board at GOLDENROD.)`;
+		// the way in is Crystal's: ELM's S.S. TICKET, the S.S. AQUA, and the MAGNET
+		// TRAIN only once the POWER PLANT runs again (and the COPYCAT's PASS)
+		if (jk === 0 && !Story.getFlag('EVENT_GOT_SS_TICKET_FROM_ELM') && !Story.getFlag('EVENT_RESTORED_POWER_TO_KANTO'))
+			return 'PROF. ELM has something for you in NEW BARK TOWN — then the S.S. AQUA sails from OLIVINE to the KANTO of old.';
+		if (jk === 0 && !Story.getFlag('EVENT_RESTORED_POWER_TO_KANTO'))
+			return 'The S.S. AQUA sails from OLIVINE PORT to the KANTO of old (Mondays and Fridays). Show the sailor your S.S. TICKET.';
+		return `The KANTO of old awaits — ${8 - jk} of its GYMS remain.`;
 	}
 	const { caught, total } = legendStats();
 	if (caught >= total) return 'RED has fallen and every legend is caught. The world is yours to wander.';
