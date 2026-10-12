@@ -1,5 +1,6 @@
 // ow_postgame.js — the postgame arc as guidance: JohKanto's gyms, the legendary hunt's counter and rumors, and the objective / quest-log rows that point at them (split from main.js).
 import * as Badges from './badges.js';
+import { SHARED_REGIONS, johKantoOpen } from './johkanto_gate.js';
 import * as Story from './events.js';
 import { battle } from './ow_core.js';
 import { LEGENDARY_ENCOUNTERS } from './ow_legendaries.js';
@@ -27,7 +28,12 @@ function legendRumor() {
 	return `Rumor places ${(battle.data?.species?.[entry[1].species]?.name || entry[1].species).toUpperCase()} in ${pretty}.`;
 }
 export function postgameObjective() {
-	if (!Badges.isChampion('JOHTO')) return null;   // the postgame opens on the JOHTO crown
+	// JohKanto — the postgame — opens on the GRAND CHAMPION crown (johkanto_gate.js)
+	if (!johKantoOpen()) {
+		if (!SHARED_REGIONS.some(r => Badges.isChampion(r))) return null;
+		const left = SHARED_REGIONS.filter(r => !Badges.isChampion(r));
+		return `Champion! Now conquer the ${left.join(' and ')} POKeMON LEAGUE${left.length > 1 ? 'S' : ''} — only the GRAND CHAMPION may travel to the KANTO of old.`;
+	}
 	const jk = Badges.count('JOHKANTO');
 	if (!Story.getFlag('beat_red')) {
 		if (jk >= 8) return 'All 16 badges! The silent trainer RED waits at the summit of MT SILVER.';
@@ -39,7 +45,7 @@ export function postgameObjective() {
 }
 // quest-log rows for the same arc (appended to the region log by drawQuest)
 export function postgameLog() {
-	if (!Badges.isChampion('JOHTO')) return [];
+	if (!johKantoOpen()) return [];
 	const jk = Badges.count('JOHKANTO');
 	const rows = JOHKANTO_GYMS.map(([leader, town], i) => ({
 		label: `${leader} — ${town}`,

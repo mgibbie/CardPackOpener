@@ -104,9 +104,13 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const out = {};
 			// pre-crown: no postgame line
 			out.before = ow.postgameObjective ? ow.postgameObjective() : '(not exposed)';
-			// crown JOHTO -> the Magnet Train line
+			// crown JOHTO -> the other two Leagues first (2026-10-12: JohKanto opens only to
+			// the GRAND CHAMPION, johkanto_gate.js — it used to open on the JOHTO crown)
 			for (const id of ['zephyr', 'hive', 'plain', 'fog', 'storm', 'mineral', 'glacier', 'rising']) B.earn('JOHTO', id);
 			B.crown('JOHTO');
+			out.johtoOnly = ow.postgameObjective();
+			// all three crowns -> the Magnet Train line
+			B.crown('KANTO'); B.crown('HOENN');
 			out.afterCrown = ow.postgameObjective();
 			// three old-Kanto badges -> the count moves
 			for (const id of ['boulder', 'cascade', 'thunder']) B.earn('JOHKANTO', id);
@@ -121,7 +125,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			return out;
 		});
 		A(arc.before === null, 'no postgame line before the JOHTO crown', JSON.stringify(arc.before));
-		A(/MAGNET TRAIN.*8 of its GYMS/i.test(arc.afterCrown), 'the crown points at the old KANTO (8 gyms left)', arc.afterCrown);
+		A(/KANTO and HOENN POKeMON LEAGUES/.test(arc.johtoOnly || ''), 'the JOHTO crown alone points at the other two LEAGUES', arc.johtoOnly);
+		A(/MAGNET TRAIN.*8 of its GYMS/i.test(arc.afterCrown), 'the GRAND CHAMPION crown points at the old KANTO (8 gyms left)', arc.afterCrown);
 		A(/5 of its GYMS/i.test(arc.mid), '...and counts down as badges land', arc.mid);
 		A(/RED waits at the summit/i.test(arc.allBadges), 'all 16 badges point at RED', arc.allBadges);
 		A(/legendary POKeMON still hide/.test(arc.afterRed) && /Rumor places .+ in .+/.test(arc.afterRed),

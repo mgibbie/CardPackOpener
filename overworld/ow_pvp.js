@@ -17,6 +17,8 @@ import { mailMenu, openDeckSelect } from './ow_screens.js';
 import { POS_KEY } from './ow_input.js';
 import { TRADE_CATS, deckSelect, emptyOffer, trade } from './ow_menustate.js';
 import { moveToMap } from './ow_transitions.js';
+import { GATE_TEXT, blocksEntry } from './johkanto_gate.js';
+import { loadMapRegions } from './region_sync.js';
 import {
 	MP_ON,
 } from './main.js';
@@ -479,6 +481,11 @@ export async function visitWorld(f) {
 	const p = data.presence;
 	if (!p || !p.map) { dialog.open(`${f.username} isn't roaming right now.`); return; }
 	const file = world.fileFor(p.map) || p.map;
+	// JohKanto opens only to the GRAND CHAMPION (johkanto_gate.js) — a visit is no way in
+	await loadMapRegions();
+	if (blocksEntry(world.current?.name, file)) { dialog.open(`${f.username} is in the KANTO of old.
+
+${GATE_TEXT}`); return; }
 	S.visiting = { username: f.username };
 	await moveToMap(file, p.x, p.y);
 	heartbeat();
@@ -507,7 +514,13 @@ export async function pollPresence() {
 			if (S.visiting && f.username === S.visiting.username) {
 				if (!f.online) { dialog.open(`${S.visiting.username} went offline. Returning home…`); await leaveVisit(); return; }
 				const theirFile = world.fileFor(f.map) || f.map;
-				if (f.map && theirFile !== world.current.name && !S.loading) { await moveToMap(theirFile, f.x, f.y); }
+				if (f.map && theirFile !== world.current.name && !S.loading) {
+					// they went on into a JohKanto this player may not enter yet: go home
+					if (blocksEntry(world.current?.name, theirFile)) { dialog.open(`${S.visiting.username} went on to the KANTO of old.
+
+${GATE_TEXT}`); await leaveVisit(); return; }
+					await moveToMap(theirFile, f.x, f.y);
+				}
 			}
 			if (f.online && f.map === world.current.name) {
 				here.add(f.username);

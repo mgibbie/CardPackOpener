@@ -156,6 +156,8 @@ export function showTierRewardDialog(tier) {
 export function grantGrandChampionReward() {
 	if (Story.getFlag('grand_champion')) return false;
 	Story.setFlag('grand_champion');
+	// the KANTO of old opens: power back to the MAGNET TRAIN (Goldenrod <-> Saffron)
+	Story.setFlag('EVENT_RESTORED_POWER_TO_KANTO');
 	Bag.earn(50000);
 	Bag.addItem('rarecandy', 3);
 	Bag.addItem('maxrevive', 3);
@@ -172,6 +174,7 @@ export function grandChampionFinale(cb) {
 		{ op: 'say', text: 'No trainer has ever held all three crowns at once — until now.' },
 		{ op: 'say', text: `You are hereby named the GRAND CHAMPION of all three regions, ${you}!` },
 		{ op: 'say', text: 'Received the GOLD TROPHY, 3 RARE CANDIES,\n3 MAX REVIVES, and $50000!' },
+		{ op: 'say', text: 'And the KANTO of old opens to you at last —\nthe MAGNET TRAIN in GOLDENROD runs again.' },
 	], cb);
 }
 
@@ -442,9 +445,10 @@ export function onTrainerDefeated(script, opts) {
 		const fresh = Badges.crown(info.region);
 		if (fresh) Journal.add(`Became the ${info.region} Champion!`);
 		// becoming JOHTO Champion opens the legendary-bird tower hunt (the HO-OH/LUGIA
-		// wings) and restores the power that lets the MAGNET TRAIN run to KANTO
+		// wings). The MAGNET TRAIN's power — the way to the KANTO of old — now comes
+		// back only with the GRAND CHAMPION crown (owner rule 2026-10-12; see
+		// grantGrandChampionReward and johkanto_gate.js).
 		if (info.region === 'JOHTO') {
-			Story.setFlag('EVENT_RESTORED_POWER_TO_KANTO');
 			if (fresh) {
 				Bag.addItem('rainbowwing'); Bag.registerName('rainbowwing', 'RAINBOW WING');
 				Bag.addItem('silverwing'); Bag.registerName('silverwing', 'SILVER WING');

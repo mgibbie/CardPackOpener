@@ -29,6 +29,7 @@ import { REPEL_KEY, repelWoreOff, savePos } from './ow_input.js';
 import { endSafari, lastOutdoor, miscEvents, safari, safariZoneOf, saveMiscEvents, saveSafari, startWildBattle } from './ow_places.js';
 import { playerRegion } from './ow_progression.js';
 import { checkLegendaryTrigger } from './ow_follower.js';
+import { GATE_TEXT, doorBlocked } from './johkanto_gate.js';
 import { openTownMap } from './ow_music.js';
 import { partyMenu } from './ow_menustate.js';
 import { ruinsFloorClosed, ruinsWallClosed } from './unown_puzzle.js';
@@ -420,6 +421,8 @@ player.onBump = (tx, ty) => {
 	const now = performance.now();
 	if (now > bumpCooldown) { bumpCooldown = now + 350; sfx('bump'); }
 	if (dialog.blocking || !S.party) return;
+	// a door into JohKanto before the GRAND CHAMPION crown (johkanto_gate.js)
+	if (doorBlocked(world, tx, ty)) { dialog.open(GATE_TEXT); return; }
 	const m = blockers.messageAt(tx, ty);
 	if (m) dialog.open(m);
 };

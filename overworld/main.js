@@ -12,6 +12,7 @@ import { loadSubvarFixData } from './subvar_fix.js';
 import { loadScrollMultichoice } from './scroll_multichoice.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { syncRegionToMap } from './region_sync.js';
+import { doorBlocked } from './johkanto_gate.js';
 import { startTabLock } from './tab_lock.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
@@ -376,7 +377,7 @@ export const urlPinnedMap = new URLSearchParams(location.search).has('map');
 // instead of committing one more step into it. Same condition the tick uses to
 // decide whether input moves the player at all, so the two cannot disagree.
 player.canStep = () => !menuBlocking() && !trainers.engaging;
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || ruinsWallClosed(world.current?.name, world.warpAt(tx, ty)) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
+player.blocked = (tx, ty) => doorBlocked(world, tx, ty) || npcs.npcBlocks(tx, ty) || ruinsWallClosed(world.current?.name, world.warpAt(tx, ty)) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
