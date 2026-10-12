@@ -279,6 +279,15 @@ export function step(state, pi = 1) {
 			E.resolvePick(state, state.players[pi].lands?.some(l => l.tapped) ? '0' : '1');
 			return true;
 		}
+		if (pend.mode === 'transform-into') {
+			// Tribute Dance: grow our own creature into the strongest body; shrink a foe's into the weakest
+			const all = state.players.flatMap(p => p.board);
+			const t = all.find(c => c.uid === pend.targetUid);
+			const power = id => { const c = all.find(x => x.uid === id); return c ? c.attack + E.hp(c) : 0; };
+			const sorted = [...pend.ids].sort((a, b) => power(b) - power(a));
+			E.resolvePick(state, t && t.controller === pi ? sorted[0] : sorted[sorted.length - 1]);
+			return true;
+		}
 		if (pend.mode === 'tempt') {
 			// bear the Ring on your biggest threat — its Attack drives the L2 loot + L4 burn
 			const board = state.players[pi].board;
