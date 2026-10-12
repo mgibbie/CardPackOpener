@@ -101,6 +101,9 @@ export function tick(now) {
 			fade.target = 0;
 			if (world.current) hud.textContent = "Loading got stuck — you're back where you were.";
 			else showLoadRetry();
+			// a map drawn without its tilesheets (a stalled download) must not stay
+			// black: keep trying to fetch them and repaint when they land
+			try { world.healTilesets && world.healTilesets(); } catch (e) {}
 			try { globalThis.reportErr && globalThis.reportErr('load watchdog fired' + (world.current ? ' (kept ' + world.current.name + ')' : ' (no map)'), 'ow_loop.tick'); } catch (e) {}
 		}
 	} else S.loadWatchStart = null;
