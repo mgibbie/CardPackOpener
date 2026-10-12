@@ -8,7 +8,7 @@ import { phoneScriptOverrides } from './phone.js';
 import { getImage, getJSON } from './engine.js';
 import * as Story from './events.js';
 import * as Fly from './flydata.js';
-import { arcade, battle, blockers, cutscene, encounters, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
+import { arcade, battle, blockers, cutscene, dialog, encounters, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
 import { roamersOnMapChange, shoalFixup } from './ow_features.js';
 import { silphDoorsApply, syncBikeFlags } from './ow_fieldmoves.js';
 import { refreshFollower } from './ow_follower.js';
@@ -24,7 +24,8 @@ import { checkIntroTrigger, checkOnFrame, checkRivalTrigger, checkVillainTrigger
 import { bugContestLeftPark, trickHouseOpenDoors } from './ow_venues.js';
 import * as Quest from './quest.js';
 import { safeLoad, safeSave } from './safestore.js';
-import { syncRegionToMap } from './region_sync.js';
+import { loadMapRegions, syncRegionToMap } from './region_sync.js';
+import { GATE_TEXT, blocksEntry } from './johkanto_gate.js';
 import { applySailFix } from './sail_fix.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -220,6 +221,21 @@ export function afterLoadError(where, err) {
 	try { globalThis.reportErr && globalThis.reportErr(`load failed: ${where}: ${String(err && err.message || err).slice(0, 160)}`, 'ow_transitions'); } catch (e) {}
 }
 
+// JohKanto opens only to the GRAND CHAMPION (johkanto_gate.js). The doors into it are
+// solid, so a refusal here is the backstop for the other ways in: a scripted warp (the
+// MAGNET TRAIN) and Fly. moveToMap stays ungated: in play it only follows a heal point,
+// the last outdoor spot (Dig / Escape Rope), the ferry or a friend's visit (gated in
+// ow_pvp.js), none of which can lead into a shut JohKanto — and tests use it to jump.
+async function refuseJohKanto(destFile) {
+	await loadMapRegions();
+	if (!blocksEntry(world.current?.name, destFile)) return false;
+	console.warn('[johkanto-gate] refused', world.current?.name, '->', destFile);
+	if (cutscene.blocking) cutscene.stop();
+	S.loading = false;
+	dialog.open(GATE_TEXT);
+	return true;
+}
+
 export async function moveToMap(file, px, py) {
 	await fadeTo(1);              // dip to black before the swap (fades in below)
 	S.loading = true;
@@ -257,6 +273,7 @@ export async function warpTo(mapId, destWarpId, destX, destY) {
 		await backWarp();
 		return;
 	}
+	if (await refuseJohKanto(file)) return;
 	sfx('door');
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
 	// the door being used, for the arrival rule below
@@ -309,6 +326,7 @@ export async function warpTo(mapId, destWarpId, destX, destY) {
 export async function flyTo(mapId, tx, ty) {
 	const file = world.fileFor(mapId);
 	if (!file) { console.warn('unknown fly dest', mapId); return; }
+	if (await refuseJohKanto(file)) return;
 	S.loading = true;
 	player.surfing = false;
 	try {
