@@ -3844,14 +3844,18 @@ export class Battle {
 	}
 
 	// Gen3-style catch: HP factor + species rate x ball multiplier, 4 shakes
-	throwBall(ballName = 'POKe BALL', ballMult = 1, ballId = 'pokeball') {
+	throwBall(ballName = 'POKe BALL', ballMult = 1, ballId = 'pokeball', target = null) {
 		const a = this.active;
+		const t = target || a.foe;
+		// which foe slot the ball flies to (drawSide draws the ball and hides the mon there)
+		const slot = t === a.foeAlly && a.foeAlly ? 1 : 0, H = slot ? 'foeAllyHidden' : 'foeHidden';
+		a.ballSlot = slot;
 		this.pushMsg(`You threw a ${ballName}!`);
-		this.pushAnim('ballthrow', 'foe', 0.55, () => { sfx('ball_open'); a.foeHidden = true; a.ballShown = true; });
-		const rate = (this.data.extra?.[a.foe.speciesId]?.catch ?? 45) * ballMult;
-		const statusBonus = a.foe.status === 'slp' || a.foe.status === 'frz' ? 2
-			: a.foe.status ? 1.5 : 1;
-		const f = Math.max(1, Math.floor((3 * a.foe.maxHP - 2 * a.foe.curHP) * rate * statusBonus / (3 * a.foe.maxHP)));
+		this.pushAnim('ballthrow', 'foe', 0.55, () => { sfx('ball_open'); a[H] = true; a.ballShown = true; });
+		const rate = (this.data.extra?.[t.speciesId]?.catch ?? 45) * ballMult;
+		const statusBonus = t.status === 'slp' || t.status === 'frz' ? 2
+			: t.status ? 1.5 : 1;
+		const f = Math.max(1, Math.floor((3 * t.maxHP - 2 * t.curHP) * rate * statusBonus / (3 * t.maxHP)));
 		const b = Math.floor(1048560 / Math.sqrt(Math.sqrt(16711680 / f)));
 		let shakes = 0;
 		while (shakes < 4 && Math.floor(Math.random() * 65536) < b) shakes++;
@@ -3859,23 +3863,23 @@ export class Battle {
 		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
-			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
+			this.pushMsg(`Gotcha! ${t.name} was caught!`, () => {
 				rumble(0.4, 110);
 				sfx('fanfare_capture');
 				// FRIEND BALL sends it home already fond of you; LUXURY BALL primes fast bonding.
-				if (ballId === 'friendball') a.foe.friend = 200;
-				else if (ballId === 'luxuryball') a.foe.friend = Math.max(a.foe.friend || 70, 120);
-				a.caughtMon = a.foe;
+				if (ballId === 'friendball') t.friend = 200;
+				else if (ballId === 'luxuryball') t.friend = Math.max(t.friend || 70, 120);
+				a.caughtMon = t;
 			});
 			// Catching pays experience like a KO (the Gen-6 rule). It used to pay
 			// nothing, which quietly taught players that catching is bad for training.
 			// The AWARD half only — grantExp's tail decides "is the battle over" on
 			// KO logic and would report this catch as a victory.
-			this.awardBattleExp();
+			this.awardBattleExp(t);
 			this.pushMsg('', () => this.finish('caught'));
 		} else {
-			this.pushAnim('ballbreak', 'foe', 0.35, () => { sfx('ball_open'); a.foeHidden = false; a.ballShown = false; });
-			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
+			this.pushAnim('ballbreak', 'foe', 0.35, () => { sfx('ball_open'); a[H] = false; a.ballShown = false; });
+			this.pushMsg(`Oh no! The ${t.name} broke free!`);
 			// the throw spent the turn: the foe moves, then the end-of-turn pass
 			// (screens, weather, status chip) — it used to skip both
 			this.foeFreeMove();
@@ -5001,7 +5005,11 @@ export class Battle {
 		const a = this.active;
 		this.beginTurn();
 		this.pushMsg('', () => {
-			if (a.foe.curHP > 0 && a.me.curHP > 0) this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, this.chooseFoeMove(), true);
+			// the LIVE foe takes the free move (a fainted wild lead stays in the \`foe\`
+			// slot in doubles, so a.foe alone meant nobody answered a failed throw)
+			const f = [a.foe, a.foeAlly].find(m => m && m.curHP > 0);
+			const tg = [a.me, a.meAlly].find(m => m && m.curHP > 0);
+			if (f && tg) this.useMove(f, this.boostsOf(f), tg, this.boostsOf(tg), this.chooseFoeMove(f, tg), true);
 			this.pushMsg('', () => this.afterMoves());
 		});
 	}
@@ -5012,12 +5020,23 @@ export class Battle {
 		if (!item) return;
 		if (item.kind === 'ball') {
 			a.lastBall = itemId;          // R re-throws it; see the battle key handler
+			// Wild doubles (Gen 4's rule; Gen 3 had none): no throw while two wild
+			// mons are up, and the ball isn't spent. With one left the ball goes to
+			// THAT one — a fainted lead stays in the \`foe\` slot, and the throw used
+			// to "catch" it (bug 1791758361713: the fainted Horsea boxed at 1 HP
+			// while the live Tangela stood there).
+			const live = this.livingFoes();
+			if (live.length >= 2) {
+				this.startQueue(() => this.pushMsg("It's impossible to aim when there are two POKéMON!"));
+				return;
+			}
+			const target = live[0] || a.foe;
 			Bag.consume(itemId);
 			if (a.noCatch) {              // FRLG: the ball is spent and the turn with it
 				this.startQueue(() => { this.pushMsg('It dodged the thrown BALL!'); this.pushMsg('This POKéMON can\'t be caught!'); this.foeFreeMove(); });
 				return;
 			}
-			this.startQueue(() => this.throwBall(item.name, this.ballMultFor(itemId, item), itemId));
+			this.startQueue(() => this.throwBall(item.name, this.ballMultFor(itemId, item), itemId, target));
 			return;
 		}
 		if (item.kind === 'ether') {
@@ -5516,7 +5535,8 @@ export class Battle {
 			: (side === 'foe' ? a.foe : a.me);
 		const img = slot === 1 ? (side === 'foe' ? a.foeAllyImg : a.meAllyImg)
 			: (side === 'foe' ? a.foeImg : a.meImg);
-		const hidden = slot === 1 ? false : (side === 'foe' ? a.foeHidden : a.meHidden);
+		const hidden = slot === 1 ? (side === 'foe' && !!a.foeAllyHidden) : (side === 'foe' ? a.foeHidden : a.meHidden);
+		const ballHere = side === 'foe' && (a.ballSlot || 0) === slot;
 		if (!mon || mon.curHP <= 0) return;
 		const pose = this.spritePose(a, side, W, H, u, slot);
 		// platform with a type glow (Love2D drawPokemonSprite)
@@ -5531,12 +5551,12 @@ export class Battle {
 		ctx.restore();
 		// the ball, mid-catch
 		const fx = a.fx;
-		if (side === 'foe' && fx?.side === 'foe' && fx.kind === 'ballthrow') {
+		if (ballHere && fx?.side === 'foe' && fx.kind === 'ballthrow') {
 			const p = Math.min(1, fx.t / fx.dur);
 			const sx = W * 0.3, sy = H * 0.65, ex = pose.x, ey = pose.y - 20 * u;
 			const bx = sx + (ex - sx) * p, by = sy + (ey - sy) * p - Math.sin(Math.PI * p) * 120 * u;
 			UI.drawBall(ctx, bx, by, 13 * u, p * 6);
-		} else if (side === 'foe' && a.ballShown) {
+		} else if (ballHere && a.ballShown) {
 			UI.drawBall(ctx, pose.x, pose.y - 12 * u, 13 * u, pose.wob);
 			if (fx?.kind === 'ballcatch' && fx.side === 'foe') {
 				const p = Math.min(1, fx.t / fx.dur);
