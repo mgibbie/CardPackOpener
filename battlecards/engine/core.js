@@ -4079,9 +4079,41 @@ export function buffCreatureChoice(state, pi, attack, health) {
 	emit(state, { type: 'pickStart', player: pi, count: creatures.length });
 }
 
+// Tribute Dance: "Choose a creature. Choose a different creature to transform it
+// into." The first creature is the spell's target; the second is a pick among every
+// OTHER living creature (auto when there's exactly one). The target becomes a fresh
+// copy of the second creature's card, in place, for its own controller.
+export function transformIntoChoice(state, pi, t) {
+	if (!t || isDead(t)) return;
+	const others = [];
+	for (const pl of state.players) for (const c of pl.board) if (c !== t && c.type === 'creature' && !isDead(c)) others.push(c);
+	if (!others.length) return; // nothing to become: fizzles
+	if (others.length === 1) { transformInto(state, t, others[0]); return; }
+	state.pickQueue.push({ player: pi, mode: 'transform-into', targetUid: t.uid, ids: others.map(c => c.uid) });
+	emit(state, { type: 'pickStart', player: pi, count: others.length });
+}
+function transformInto(state, t, model) {
+	const board = state.players[t.controller]?.board;
+	if (!board || board.indexOf(t) < 0) return;
+	const def = state.cardsById[model.id];
+	const tok = instantiate(def || { id: model.id, name: model.name, type: 'creature', cost: model.cost || 0, rarity: model.rarity || 'common', description: model.description || '', attack: model.attack, health: model.maxHealth }, t.controller);
+	tok.zone = 'board';
+	tok.sick = t.sick;
+	board[board.indexOf(t)] = tok;
+	t.zone = 'gone';
+	emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: tok });
+	recomputeAuras(state);
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.mode === 'transform-into') {
+		const t = findCreature(state, pend.targetUid);
+		const model = findCreature(state, pend.ids.includes(id) ? id : pend.ids[0]);
+		if (t && model && !isDead(t) && !isDead(model) && t !== model) transformInto(state, t, model);
+		return true;
+	}
 	if (pend.mode === 'assemble') {
 		const slot = ['0', '1', '2'].includes(String(id)) ? Number(id) : 0;
 		placeContraption(state, pend.player, slot, pend.contraptionId);

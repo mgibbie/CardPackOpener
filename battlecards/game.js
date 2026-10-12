@@ -3077,6 +3077,33 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'transform-into') {
+		// Tribute Dance: pick the DIFFERENT creature the chosen one turns into (any board)
+		const find = id => state.players.map(p => p.board.find(x => x.uid === id)).find(Boolean);
+		const src = find(pend.targetUid);
+		modal.innerHTML = `<div class="wm-title">Transform ${(src && src.name) || 'it'} into — choose a creature</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const cr = find(id);
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${(cr && cr.name) || '?'}</b>${cr ? `<br><span style="font-size:.85em">${cr.attack}/${E.hp(cr)}</span>` : ''}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'grant-target') {
 		// a Contraption (Turbo-Thwacking) grants a keyword to a creature YOU choose
 		const board = state.players[HUMAN].board;
@@ -6910,7 +6937,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anoma
 	// run both heroes share a scaling life total (15 at level 1, +5 each level);
 	// a one-off ?boss= fight keeps the boss's designed health.
 	const bp = state.players[1];
-	const runHP = level ? 15 + (level - 1) * 5 : null;
+	const runHP = level ? runLifeFor(level) : null;
 	const bossHP = runHP ?? boss.health;
 	E.applyHeroMods(state, 1, { life: bossHP, maxLife: bossHP });
 	if (runHP != null) E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
@@ -6921,7 +6948,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anoma
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
 	E.stripLoadouts(state);
 	applyRunAnomaly(anomalyId);
-	setRunLife(level);
+	setRunLife(level, { full: true });
 	applyTreasures(passives || []);
 	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -7294,10 +7321,20 @@ function pickWeeklyAnomalyOverlay() {
 // escalating parity: run fights start small and grow — round 1 is 10 life each,
 // +5 per round for BOTH sides, so every fight stays even. One-off ?boss= fights
 // (no round number) keep the standard 40.
-function setRunLife(round) {
+// Every run fight starts both sides at the same life: 10 on round 1, +5 per round
+// (c72e31ed). The ONE source for it — the boots and the level previews read this.
+function runLifeFor(round) { return 10 + 5 * (round - 1); }
+// opts.full: the hero starts at FULL health (maxLife = life). Dungeon/Heist/Tombs
+//   always meant that (they set maxLife from their old 15+5 formula, which this
+//   then undercut, leaving both heroes "injured" at 15/20 — 2026-10-12 report).
+// opts.humanBonus: life the player earned on top (Heist's Good Food boon).
+function setRunLife(round, opts = {}) {
 	if (!round || round < 1) return;
-	const life = 10 + 5 * (round - 1);
-	for (const p of state.players) p.life = life;
+	const life = runLifeFor(round);
+	state.players.forEach((p, i) => {
+		p.life = life + (i === HUMAN ? (opts.humanBonus || 0) : 0);
+		if (opts.full) p.maxLife = p.life;
+	});
 	log(`❤️ Round ${round}: both sides start at ${life} life.`);
 }
 
@@ -7433,7 +7470,7 @@ function advanceRun(run, nextLevel) {
 	delete run.pendingResult; // the reward is taken: the result is settled
 	saveRun(run);
 	const boss = Dungeon.BOSSES[run.bossId];
-	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${boss.health} HP) — "${boss.flavor}"`);
+	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP) — "${boss.flavor}"`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -7574,7 +7611,7 @@ function bootHeistEncounter(cardsById, run) {
 	// boss surgery: themed deck, boss HP; the player's life scales with depth
 	// (+5 per Good Food tavern boon banked this run)
 	const bp = state.players[1];
-	const runHP = 15 + (run.level - 1) * 5 + (run.bonusHealth || 0);
+	const runHP = runLifeFor(run.level) + (run.bonusHealth || 0);
 	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Heist.buildBossDeck(cardsById, boss.theme));
@@ -7584,7 +7621,7 @@ function bootHeistEncounter(cardsById, run) {
 	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
 	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
 	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly — ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
-	setRunLife(run.level);
+	setRunLife(run.level, { full: true, humanBonus: run.bonusHealth || 0 });
 	log(`Heist fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card heist deck.`);
@@ -7762,7 +7799,7 @@ function advanceHeist(run, nextLevel) {
 	delete run.pendingResult; // the reward is taken: the result is settled
 	saveHeist(run);
 	const boss = Heist.BOSSES[run.bossId];
-	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${boss.health} HP)`);
+	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP)`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -7883,7 +7920,7 @@ function bootTombsEncounter(cardsById, run) {
 	// boss surgery: themed deck & the boss's designed HP; the player's life
 	// scales with depth (15 at fight 1, +5 per fight)
 	const bp = state.players[1];
-	const runHP = 15 + (run.level - 1) * 5;
+	const runHP = runLifeFor(run.level);
 	E.applyHeroMods(state, 1, { life: boss.health, maxLife: boss.health });
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
@@ -7891,7 +7928,7 @@ function bootTombsEncounter(cardsById, run) {
 	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
-	setRunLife(run.level);
+	setRunLife(run.level, { full: true });
 	for (const id of run.passives) Tombs.applyPassive(state, HUMAN, id);
 	log(`Tombs fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -8006,7 +8043,7 @@ function advanceTombs(run, nextLevel) {
 	delete run.pendingResult; // the reward is taken: the result is settled
 	saveTombs(run);
 	const boss = Tombs.BOSSES[run.bossId];
-	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${boss.health} HP)${boss.plagueLord ? ' — the Plague Lord!' : ''}`);
+	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP)${boss.plagueLord ? ' — the Plague Lord!' : ''}`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
