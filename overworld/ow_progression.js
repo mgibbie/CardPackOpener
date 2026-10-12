@@ -6,7 +6,7 @@ import * as Bag from './bag.js';
 import * as Story from './events.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, evolution, hud, trainers, world } from './ow_core.js';
-import { whiteOut } from './ow_places.js';
+import { resetEliteFour, whiteOut } from './ow_places.js';
 import { syncOverworldAchievements } from './ow_saves.js';
 import { startCutscene } from './ow_scaling.js';
 import { S } from './ow_state.js';
@@ -485,6 +485,7 @@ export function onTrainerDefeated(script, opts) {
 		// what makes the post-game reachable at all.
 		const finish = () => {
 			if (fresh) recordHallOfFame(info.region, S.party);
+			resetEliteFour(); // the HALL OF FAME resets the League run (both decomps)
 			healParty(S.party); saveParty(S.party);
 			const home = Quest.START[info.region];
 			const goHome = () => { if (home) moveToMap(home); refreshObjective(); syncOverworldAchievements(); };

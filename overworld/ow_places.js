@@ -47,7 +47,22 @@ export function healPoint() {
 // Facility runs (Trainer Hill, the Frontier) deliberately do NOT come here: a
 // facility loss ends the run, it does not black you out.
 const WHITEOUT_MONEY_FRACTION = 2;   // you lose 1/this of your money (the Gen 1-2 rule)
+// EventScript_ResetEliteFour (pokefirered hall_of_fame.inc) / EverGrandeCity_HallOfFame_
+// EventScript_ResetEliteFour (pokeemerald): both games run it on a WHITEOUT and at the
+// HALL OF FAME, so the next League visit starts at the first room with its walk-in.
+// Without it a lost run left the run state at the room you fell in, and the next
+// visit re-closed Lorelei's entry with no walk-in — stuck on the entry warp again.
+const ELITE_FOUR_RESET = {
+	flags: ['FLAG_DEFEATED_LORELEI', 'FLAG_DEFEATED_BRUNO', 'FLAG_DEFEATED_AGATHA', 'FLAG_DEFEATED_LANCE', 'FLAG_DEFEATED_CHAMP',
+		'FLAG_DEFEATED_ELITE_4_SIDNEY', 'FLAG_DEFEATED_ELITE_4_PHOEBE', 'FLAG_DEFEATED_ELITE_4_GLACIA', 'FLAG_DEFEATED_ELITE_4_DRAKE'],
+	vars: ['VAR_MAP_SCENE_POKEMON_LEAGUE', 'VAR_ELITE_4_STATE'],
+};
+export function resetEliteFour() {
+	for (const f of ELITE_FOUR_RESET.flags) if (Story.getFlag(f)) Story.clearFlag(f);
+	for (const v of ELITE_FOUR_RESET.vars) if (Story.getVar(v)) Story.setVar(v, 0);
+}
 export function whiteOut() {
+	resetEliteFour();
 	const lost = Math.floor(Bag.getMoney() / WHITEOUT_MONEY_FRACTION);
 	if (lost > 0) Bag.spend(lost);
 	healParty(S.party);
