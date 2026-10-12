@@ -480,19 +480,16 @@ export function onTrainerDefeated(script, opts) {
 				Bag.addItem('silverwing'); Bag.registerName('silverwing', 'SILVER WING');
 			}
 		}
-		// record the team, heal, and warp home — otherwise the player is stranded in the
-		// Champion's Room (the decomp room-warp + credits roll was never ported). This is
-		// what makes the post-game reachable at all.
-		const finish = () => {
-			if (fresh) recordHallOfFame(info.region, S.party);
-			resetEliteFour(); // the HALL OF FAME resets the League run (both decomps)
-			healParty(S.party); saveParty(S.party);
-			const home = Quest.START[info.region];
-			const goHome = () => { if (home) moveToMap(home); refreshObjective(); syncOverworldAchievements(); };
-			// the third League just fell -> the GRAND CHAMPION finale, then warp home
-			if (Quest.SHARED.every(r => Badges.isChampion(r))) grandChampionFinale(goHome);
-			else goHome();
-		};
+		// a win inside the decomp's own League script (FRLG: ChampionsRoom walk-in →
+		// Oak → the HALL OF FAME): that script still has the room to walk and Oak to
+		// hear; its `special EnterHallOfFame` closes the run (closeHallOfFame)
+		if ((opts && opts.deferFinish) || HALL_OF_FAME_ROOMS.has(world.current?.name)) {
+			pendingHallOfFame = { region: info.region, fresh };
+			watchPendingHallOfFame();
+			refreshObjective();
+			return;
+		}
+		const finish = () => closeHallOfFame(info.region, fresh);
 		if (!silent) {
 			const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
 			dialog.open(`You defeated the CHAMPION!\n\n. . .\n\nYou and your POKeMON are the new\n${region} CHAMPION!`,
@@ -503,6 +500,83 @@ export function onTrainerDefeated(script, opts) {
 	}
 	refreshObjective(); // the quest stage just advanced
 	syncOverworldAchievements(); // a gym badge (and maybe a full 8/16-badge circuit) may have unlocked
+}
+
+// The Champion fell inside the decomp's League script; the HALL OF FAME closes it.
+let pendingHallOfFame = null;
+// Champion's rooms whose decomp script walks on to a HALL OF FAME (FRLG Gary,
+// Emerald Wallace). Crystal's Lance closes at once, as before.
+const HALL_OF_FAME_ROOMS = new Set(['PokemonLeague_ChampionsRoom', 'EverGrandeCity_ChampionsRoom', 'Hoenn2_EverGrandeCity_ChampionsRoom']);
+// The safety net: if the script ends without reaching a Hall of Fame (the native
+// talk-to-Gary path is just the battle), or the Hall of Fame scene never fires,
+// close the run anyway — a crowned champion must never be left in the League.
+let hofWatch = 0;
+function watchPendingHallOfFame() {
+	const id = ++hofWatch;
+	let idleSince = 0;
+	const tick = () => {
+		if (id !== hofWatch || !pendingHallOfFame) return;
+		if (cutscene.blocking || battle.blocking || dialog.blocking) { idleSince = 0; setTimeout(tick, 250); return; }
+		if (!idleSince) idleSince = Date.now();
+		const inHof = !!HALL_OF_FAME_REGION[world.current?.name];
+		// leave the Hall of Fame's own scene time to start (and call its special)
+		if (Date.now() - idleSince < (inHof ? 8000 : 1500)) { setTimeout(tick, 250); return; }
+		const p = pendingHallOfFame; pendingHallOfFame = null;
+		closeHallOfFame(p.region, p.fresh);
+	};
+	setTimeout(tick, 250);
+}
+// record the team, heal, and warp home — otherwise the player is stranded in the
+// Champion's Room / Hall of Fame (the decomp's credits roll and title-screen return
+// were never ported). This is what makes the post-game reachable at all.
+export function closeHallOfFame(region, fresh) {
+	if (fresh) recordHallOfFame(region, S.party);
+	resetEliteFour(); // the HALL OF FAME resets the League run (both decomps)
+	healParty(S.party); saveParty(S.party);
+	const home = Quest.START[region];
+	const goHome = () => { if (home) moveToMap(home); refreshObjective(); syncOverworldAchievements(); };
+	// the third League just fell -> the GRAND CHAMPION finale, then warp home
+	if (Quest.SHARED.every(r => Badges.isChampion(r))) grandChampionFinale(goHome);
+	else goHome();
+}
+// `special EnterHallOfFame` (FRLG PokemonLeague_HallOfFame, Emerald
+// EverGrandeCity_HallOfFame): the region whose Champion just fell — the pending win,
+// else the League this Hall of Fame belongs to (crowned now if a path missed it)
+const HALL_OF_FAME_REGION = { PokemonLeague_HallOfFame: 'KANTO', EverGrandeCity_HallOfFame: 'HOENN', Hoenn2_EverGrandeCity_HallOfFame: 'HOENN' };
+export function enterHallOfFame(mapName) {
+	hofWatch++; // the scene reached its special: the safety net stands down
+	const p = pendingHallOfFame; pendingHallOfFame = null;
+	const region = p?.region || HALL_OF_FAME_REGION[mapName];
+	if (!region) return false;
+	const crowned = Badges.crown(region);
+	if (crowned) Journal.add(`Became the ${region} Champion!`);
+	closeHallOfFame(region, (p && p.fresh) || crowned);
+	return true;
+}
+
+// A save that beat the Champion before the decomp path was crowned (FRLG sets
+// FLAG_DEFEATED_CHAMP in the Champion's room script, then nothing recorded it —
+// playtest 2026-10-12, Gary beaten twice) heals on load: crowned silently, the
+// team recorded, and a player left in the HALL OF FAME (or still in the Champion's
+// room of the run that just got crowned) is sent home. No fight is replayed.
+export function healUnrecordedChampions() {
+	let healed = null;
+	if (Story.getStoredFlag('FLAG_DEFEATED_CHAMP') && !Badges.isChampion('KANTO')) {
+		Badges.crown('KANTO');
+		Journal.add('Became the KANTO Champion!');
+		recordHallOfFame('KANTO', S.party);
+		healed = 'KANTO';
+	}
+	const here = world.current?.name;
+	const region = HALL_OF_FAME_REGION[here] || (healed && HALL_OF_FAME_ROOMS.has(here) ? healed : null);
+	if (region && Badges.isChampion(region)) {
+		resetEliteFour();
+		healParty(S.party); saveParty(S.party);
+		const home = Quest.START[region];
+		if (home) moveToMap(home);
+	}
+	if (healed) { hud.textContent = `You are the ${healed} CHAMPION! Your HALL OF FAME team is recorded.`; refreshObjective(); }
+	return healed;
 }
 
 // snapshot the winning team into the Hall of Fame log (magepunk_hof)
