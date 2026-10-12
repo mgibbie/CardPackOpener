@@ -156,13 +156,35 @@ export function showTierRewardDialog(tier) {
 export function grantGrandChampionReward() {
 	if (Story.getFlag('grand_champion')) return false;
 	Story.setFlag('grand_champion');
-	// the KANTO of old opens: power back to the MAGNET TRAIN (Goldenrod <-> Saffron)
-	Story.setFlag('EVENT_RESTORED_POWER_TO_KANTO');
+	// the KANTO of old opens the way Crystal opens it: ELM's S.S. TICKET, the S.S. AQUA
+	// from OLIVINE, and only later (the POWER PLANT's MACHINE PART) the MAGNET TRAIN
+	applyJohtoHallOfFame();
 	Bag.earn(50000);
 	Bag.addItem('rarecandy', 3);
 	Bag.addItem('maxrevive', 3);
 	Bag.addItem('goldtrophy', 1); Bag.registerName('goldtrophy', 'GOLD TROPHY');
 	syncOverworldAchievements(); // surfaces the Grand Champion achievement on the profile
+	return true;
+}
+// pokecrystal maps/HallOfFame.asm, the flags its Hall of Fame sets on the way to the
+// credits. The port crowns its champions natively and never ran that script, so
+// EVENT_BEAT_ELITE_FOUR never came on — and PROF. ELM (ElmsLab ProfElmScript) gives
+// the S.S. TICKET only once it has. Under the owner rule (2026-10-12) the KANTO of
+// old is the GRAND CHAMPION's, so this runs on that crown, not the JOHTO one alone.
+// EVENT_RED_IN_MT_SILVER is left alone: RED's spawn is the port's own (main.js
+// trainers.spawnFlagged — JohKanto's eight badges). Idempotent; a save already Grand
+// Champion gets it on load (main.js).
+export function applyJohtoHallOfFame() {
+	if (Story.getFlag('EVENT_BEAT_ELITE_FOUR')) return false;
+	Story.setFlag('EVENT_BEAT_ELITE_FOUR');
+	Story.setFlag('EVENT_TELEPORT_GUY');
+	Story.setFlag('EVENT_RIVAL_SPROUT_TOWER');
+	Story.setFlag('EVENT_OLIVINE_PORT_SPRITES_BEFORE_HALL_OF_FAME');
+	Story.clearFlag('EVENT_OLIVINE_PORT_SPRITES_AFTER_HALL_OF_FAME');
+	Story.setVar('VAR_SCENE_SproutTower3F', 1); // setmapscene SPROUT_TOWER_3F, SCENE_SPROUTTOWER3F_NOOP (crystal_scenes.js)
+	// never sailed? the ports stand at their ASK_ENTER_SHIP scene, as in Crystal at this
+	// point (older saves were seeded at 1, LEAVE_SHIP — the sailor then refused to board)
+	if (!Story.getFlag('EVENT_FAST_SHIP_FIRST_TIME')) { Story.setVar('VAR_SCENE_OlivinePort', 0); Story.setVar('VAR_SCENE_VermilionPort', 0); }
 	return true;
 }
 export function grandChampionFinale(cb) {
@@ -174,7 +196,11 @@ export function grandChampionFinale(cb) {
 		{ op: 'say', text: 'No trainer has ever held all three crowns at once — until now.' },
 		{ op: 'say', text: `You are hereby named the GRAND CHAMPION of all three regions, ${you}!` },
 		{ op: 'say', text: 'Received the GOLD TROPHY, 3 RARE CANDIES,\n3 MAX REVIVES, and $50000!' },
-		{ op: 'say', text: 'And the KANTO of old opens to you at last —\nthe MAGNET TRAIN in GOLDENROD runs again.' },
+		// HallOfFame.asm's `specialphonecall SPECIALCALL_SSTICKET`: ELM rings (ElmPhoneGiftText)
+		{ op: 'say', text: 'Ring ring... It\'s PROF. ELM!' },
+		{ op: 'say', text: `Hello, ${you}?\nI have something here for you.` },
+		{ op: 'say', text: 'Could you swing by my LAB?\nSee you later!' },
+		{ op: 'say', text: 'The KANTO of old opens to you at last —\nthe S.S. AQUA sails there from OLIVINE.' },
 	], cb);
 }
 
