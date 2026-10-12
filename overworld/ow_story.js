@@ -1034,6 +1034,14 @@ function elevatorMenuPos() {
 
 // the decomp's GetLeadMonIndex: the first party member that isn't an egg
 const leadNonEgg = () => (S.party || []).find(m => !(m.isEgg || m.egg)) || null;
+// set by `special EnableNationalPokedex` (after the HALL OF FAME)
+const NATIONAL_DEX_FLAG = 'national_dex_enabled';
+export function nationalDexEnabled() {
+	if (Story.getFlag(NATIONAL_DEX_FLAG)) return true;
+	let saved = null;
+	try { saved = localStorage.getItem('magepunk_region'); } catch (e) {}
+	return Badges.isChampion(Badges.regionOfMap(world.current?.map?.id, saved));
+}
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -1217,7 +1225,14 @@ export function runSpecial(name, store, op) {
 		case 'GetBattleOutcome': return set(S.lastBattleOutcome); // a real static battle records its own; otherwise WON
 		case 'CalculatePlayerPartyCount': return set((S.party || []).length);
 		case 'GetPlayerPartyCountForOverworld': return set((S.party || []).length);
-		case 'IsNationalPokedexEnabled': return set(1);
+		// the NATIONAL DEX turns on after the HALL OF FAME (Oak in Pallet / Birch in
+		// Littleroot: `special EnableNationalPokedex`). Answering 1 from the start made
+		// every pre-champion game look like postgame — Indigo Plateau's ON_TRANSITION
+		// then parks the LEAGUE door guard on (4,2) ("LORELEI is absent") and the
+		// ELITE FOUR could never be reached (playtest 2026-10-12). A champion of this
+		// region counts too: the port crowns natively, without Oak's script.
+		case 'EnableNationalPokedex': Story.setFlag(NATIONAL_DEX_FLAG); return;
+		case 'IsNationalPokedexEnabled': return set(nationalDexEnabled() ? 1 : 0);
 		// prof_pc.c / birch_pc.c: seen -> VAR_0x8005, caught -> VAR_0x8006 (the
 		// regional dex when VAR_0x8004 is 0, else the national one), and the RESULT
 		// is IsNationalPokedexEnabled. Only the result was written, so every Oak's
