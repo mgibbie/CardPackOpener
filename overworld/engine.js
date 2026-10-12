@@ -85,40 +85,92 @@ const jsonCache = new Map(), imgCache = new Map();
 // (a transient 500 that morning) with backoff, so a stall becomes an ordinary
 // failure the transition's load-guard already handles. A 404 fails at once —
 // optional files (palettes, strings) rely on that.
-export const FETCH_HEADER_MS = 5000, FETCH_BODY_MS = 30000, FETCH_RETRY_MS = [400, 1200];
+//
+// 2026-10-12 (Instinct, three black maps): a slow link is not a dead one. The
+// body timeout was a flat 30 s for the WHOLE download and images had a flat 8 s
+// from the moment they were requested — queue time included. Arriving on a map
+// starts dozens of fetches at once (its tilesheets, its neighbours' maps,
+// layouts and tilesheets, sprites); on a slow connection a 285 KB tilesheet
+// that a lone fetch got in 2.6 s waited its turn past 8 s, was abandoned, and
+// the map drew black — and a reload started the same race over. Now a download
+// is given up only when it STALLS: no response headers for FETCH_HEADER_MS, or
+// no new bytes for FETCH_IDLE_MS. One that keeps arriving, however slowly, is
+// allowed to finish. Timeouts and network errors retry with backoff; a 404
+// (or other definite 4xx) fails at once.
+export const FETCH_HEADER_MS = 12000, FETCH_IDLE_MS = 10000, FETCH_RETRY_MS = [400, 1500, 4000];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function fetchJSONResilient(url) {
+// how long a map arrival waits for its neighbours before going ahead without the slow ones
+export const CONNECTION_WAIT_MS = 6000;
+// fetch url and read its whole body as bytes, aborting only on silence
+async function fetchBytesOnce(url) {
+	const ac = typeof AbortController === 'function' ? new AbortController() : null;
+	let timer = setTimeout(() => ac && ac.abort(), FETCH_HEADER_MS);
+	const kick = () => { clearTimeout(timer); timer = setTimeout(() => ac && ac.abort(), FETCH_IDLE_MS); };
+	try {
+		const r = await fetch(url, ac ? { signal: ac.signal } : undefined);
+		if (!r.ok) {
+			const err = new Error(`${r.status} ${url}`);
+			if (r.status < 500 && r.status !== 408 && r.status !== 429) err.fatal = true;
+			throw err;
+		}
+		kick();
+		if (!r.body || typeof r.body.getReader !== 'function') return new Uint8Array(await r.arrayBuffer());
+		const reader = r.body.getReader(), parts = [];
+		let len = 0;
+		for (;;) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			parts.push(value); len += value.length;
+			kick();   // bytes arrived: the stall clock starts over
+		}
+		const out = new Uint8Array(len);
+		let off = 0;
+		for (const p of parts) { out.set(p, off); off += p.length; }
+		return { bytes: out, type: r.headers.get('content-type') || '' };
+	} catch (e) {
+		if (e && e.name === 'AbortError') { const t = new Error(`timed out ${url}`); t.stalled = true; throw t; }
+		throw e;
+	} finally { clearTimeout(timer); }
+}
+async function fetchResilient(url, parse) {
 	let lastErr = null;
 	for (let attempt = 0; attempt <= FETCH_RETRY_MS.length; attempt++) {
-		const ac = typeof AbortController === 'function' ? new AbortController() : null;
-		let timer = setTimeout(() => ac && ac.abort(), FETCH_HEADER_MS);
 		try {
-			const r = await fetch(url, ac ? { signal: ac.signal } : undefined);
-			clearTimeout(timer);
-			if (r.ok) {
-				timer = setTimeout(() => ac && ac.abort(), FETCH_BODY_MS);   // a big file may take a while; a dead stream may not
-				return await r.json();
-			}
-			const err = new Error(`${r.status} ${url}`);
-			if (r.status < 500 && r.status !== 408 && r.status !== 429) { err.fatal = true; throw err; }
-			lastErr = err;
+			const got = await fetchBytesOnce(url);
+			const bytes = got instanceof Uint8Array ? got : got.bytes;
+			return await parse(bytes, got.type || '');
 		} catch (e) {
 			if (e && e.fatal) throw e;
-			lastErr = e && e.name === 'AbortError' ? new Error(`timed out ${url}`) : e;
-		} finally { clearTimeout(timer); }
+			lastErr = e;
+		}
 		if (attempt < FETCH_RETRY_MS.length) await sleep(FETCH_RETRY_MS[attempt]);
 	}
 	throw lastErr;
 }
+const parseJSON = bytes => JSON.parse(new TextDecoder().decode(bytes));
 export async function getJSON(url) {
 	if (!jsonCache.has(url)) {
-		jsonCache.set(url, fetchJSONResilient(url).catch(e => { jsonCache.delete(url); throw e; }));
+		jsonCache.set(url, fetchResilient(url, parseJSON).catch(e => { jsonCache.delete(url); throw e; }));
 	}
 	return jsonCache.get(url);
 }
-// images: same rule — an image that never answers is abandoned and retried once
-export const IMG_TIMEOUT_MS = 8000;
-function loadImageOnce(url) {
+// images: fetched as bytes under the same stall rule, then decoded from a blob
+// URL (same-origin, so the canvas stays untainted; the data project also sends
+// Access-Control-Allow-Origin: *). A missing image (404) is a definite answer
+// and is not retried — many maps reference a sprite that doesn't exist, and
+// retrying those slowed every warp onto such a map (backwarp_test).
+function decodeImage(bytes, type) {
+	return new Promise((res, rej) => {
+		const blobUrl = URL.createObjectURL(new Blob([bytes], type ? { type } : undefined));
+		const img = new Image();
+		img.onload = () => { URL.revokeObjectURL(blobUrl); res(img); };
+		img.onerror = () => { URL.revokeObjectURL(blobUrl); const e = new Error('img undecodable'); e.fatal = true; rej(e); };
+		img.src = blobUrl;
+	});
+}
+// without fetch streams (very old browsers): the plain <img> path, with a stall timer
+export const IMG_TIMEOUT_MS = 30000;
+function loadImageLegacy(url) {
 	return new Promise((res, rej) => {
 		const img = new Image();
 		img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
@@ -128,13 +180,13 @@ function loadImageOnce(url) {
 		img.src = url;
 	});
 }
+const canStreamImages = () => typeof fetch === 'function' && typeof Blob === 'function' && typeof URL?.createObjectURL === 'function';
 export function getImage(url) {
 	if (!imgCache.has(url)) {
-		// retry only a STALL: an image that errors outright (a missing sprite — many
-		// maps reference some) is a definite answer, and retrying it slowed every
-		// warp onto such a map by the retry delay (backwarp_test caught the late save)
-		imgCache.set(url, loadImageOnce(url).catch(e => { if (!e.stalled) throw e; return sleep(FETCH_RETRY_MS[0]).then(() => loadImageOnce(url)); })
-			.catch(e => { imgCache.delete(url); throw e; }));
+		const p = canStreamImages()
+			? fetchResilient(url, decodeImage)
+			: loadImageLegacy(url).catch(e => { if (!e.stalled) throw e; return sleep(FETCH_RETRY_MS[0]).then(() => loadImageLegacy(url)); });
+		imgCache.set(url, p.catch(e => { imgCache.delete(url); throw e; }));   // never cache a failure
 	}
 	return imgCache.get(url);
 }
@@ -192,14 +244,19 @@ async function loadTilesetsFor(layout) {
 		if (!name) return null;
 		// the PNG and its metatile JSON don't depend on each other — fetch both at
 		// once (each request also pays the _redirects hop, so serial hops add up)
+		let why = '', definite = false;
 		const [img, meta] = await Promise.all([
-			getImage(tilesetPng(name, game)).catch(() => null),
+			getImage(tilesetPng(name, game)).catch(e => { why = (e && e.message) || String(e); definite = !!(e && e.fatal); return null; }),
 			getJSON(metatileJson(name, isPrimary, game)).catch(() => null), // some primaries have none
 		]);
 		if (!img) {
 			// never silently: a missing sheet draws a black map under the sprites
-			// (S.S. Anne, then Silph Co). Say which file and which layout.
-			const msg = `tilesheet missing: ${tilesetPng(name, game)} (${isPrimary ? 'primary' : 'secondary'} ${name}, layout ${layout.id || layout.name || '?'})`;
+			// (S.S. Anne, then Silph Co). Say which file, which layout, and why. A
+			// sheet that timed out (rather than 404'd) marks the bundle INCOMPLETE:
+			// it is not kept in the render cache, and World retries it in the
+			// background until the map draws (healTilesets).
+			if (!definite) ts.incomplete = true;   // a 404 is an answer; a timeout is not
+			const msg = `tilesheet missing: ${tilesetPng(name, game)} (${isPrimary ? 'primary' : 'secondary'} ${name}, layout ${layout.id || layout.name || '?'})${why ? ' — ' + why : ''}`;
 			try { console.error('[tileset] ' + msg); globalThis.reportErr && globalThis.reportErr(msg, 'engine.loadTilesetsFor'); } catch (e) {}
 			return null;
 		}
@@ -429,9 +486,46 @@ export class World {
 			b.canvases = renderSection(b.layout, b.ts);
 			b.borderCv = renderBorder(b.layout, b.ts);
 		}
-		this._rendered.set(name, b);
-		while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+		// a bundle whose tilesheet failed draws black — never cache it, or the map
+		// stays black for the rest of the session even once the sheet is reachable
+		if (!b.ts?.incomplete) {
+			this._rendered.set(name, b);
+			while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+		} else this._healSoon(b);
 		return b;
+	}
+
+	// Background repair for a bundle drawn without its tilesheet(s): refetch the
+	// tilesets with growing pauses and, once they load, repaint IN PLACE — the
+	// bundle object is the very one `current` (or a connection) holds, and its
+	// layout keeps any tile edits a script has made since. Gives up only after
+	// a long while; a new map load starts a fresh attempt anyway.
+	_healSoon(b) {
+		if (!b || b._healing) return;
+		b._healing = true;
+		const delays = [1500, 4000, 8000, 15000, 30000, 60000];
+		const step = async i => {
+			if (i >= delays.length) { b._healing = false; return; }
+			await sleep(delays[i]);
+			let ts = null;
+			try { ts = await loadTilesetsFor(b.layout); } catch (e) { ts = null; }
+			if (!ts || ts.incomplete) return step(i + 1);
+			b.ts = ts;
+			b.canvases = renderSection(b.layout, ts);
+			b.borderCv = renderBorder(b.layout, ts);
+			b._healing = false;
+			// the current neighbours hold COPIES of a bundle ({...bundle, dir, offset})
+			for (const c of this.connections) if (c !== b && c.name === b.name && c.layout === b.layout) Object.assign(c, { ts, canvases: b.canvases, borderCv: b.borderCv });
+			this._rendered.set(b.name, b);
+			while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+			try { globalThis.reportErr && globalThis.reportErr(`tilesheets recovered for ${b.name} after ${i + 1} retr${i ? 'ies' : 'y'}`, 'engine.healTilesets'); } catch (e) {}
+		};
+		step(0);
+	}
+
+	// the current map (or a neighbour) is drawn without its tilesheets: try again now
+	healTilesets() {
+		for (const b of [this.current, ...this.connections]) if (b?.ts?.incomplete) this._healSoon(b);
 	}
 
 	async load(name) {
@@ -455,15 +549,35 @@ export class World {
 		// the map's own order.
 		this.connections = [];   // the previous map's must not outlive its layout while these load
 		const conns = (b.map.connections || []).filter(c => ['up', 'down', 'left', 'right', 'north', 'south', 'east', 'west'].includes(c.direction));
-		const loaded = await Promise.all(conns.map(async c => {
+		// A neighbour is scenery until you walk onto it, so a slow one must not hold
+		// the warp: wait for them all up to CONNECTION_WAIT_MS, then let the arrival
+		// finish and add the stragglers as they land (2026-10-12: Route 23's map JSON
+		// timing out kept Indigo Plateau "loading" until the 20 s watchdog gave up).
+		// A neighbour that fails is retried a few times in the background.
+		const one = async (c, tries = 0) => {
 			const file = this.fileFor(c.map);
 			if (!file) return null;
 			try {
 				const cb = await this._renderedBundle(file);
 				return { ...cb, dir: normDir(c.direction), offset: c.offset || 0 };
-			} catch (e) { console.warn('connection failed', c.map, e); return null; }
+			} catch (e) {
+				console.warn('connection failed', c.map, e);
+				try { globalThis.reportErr && globalThis.reportErr(`connection failed ${c.map} from ${name}: ${(e && e.message) || e}`, 'engine.World.load'); } catch (e2) {}
+				if (tries >= 3) return null;
+				await sleep([3000, 8000, 20000][tries]);
+				return this.current === b ? one(c, tries + 1) : null;
+			}
+		};
+		const pending = conns.map(c => one(c).then(conn => {
+			// a late arrival joins only if the player is still on this map
+			if (conn && this.current === b && !this.connections.some(x => x.name === conn.name && x.dir === conn.dir)) {
+				// keep the map's own connection order, whatever order they land in
+				const order = c2 => conns.findIndex(cc => this.fileFor(cc.map) === c2.name && normDir(cc.direction) === c2.dir);
+				this.connections = [...this.connections, conn].sort((p, q) => order(p) - order(q));
+			}
+			return conn;
 		}));
-		this.connections = loaded.filter(Boolean);
+		await Promise.race([Promise.all(pending), sleep(CONNECTION_WAIT_MS)]);
 	}
 
 	// the decomp's `setmaplayoutindex`: the CURRENT map, drawn and walked with

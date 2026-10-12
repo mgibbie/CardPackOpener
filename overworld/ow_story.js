@@ -487,11 +487,24 @@ function runMapTransition() {
 // entries are the "scene not started" default and must not fire from a blank
 // save (story vars default to 0) — they only trigger once a script has set the
 // var, which we track via an explicit presence check.
+// ...except the Kanto ELITE FOUR's run state, whose 0 IS the real start: each room's
+// ON_FRAME walks you in from the entry warp on VAR_MAP_SCENE_POKEMON_LEAGUE == 0, and
+// nothing writes that var before the first room (the decomp's new game and Hall of
+// Fame just leave it at 0). The presence guard kept the walk-in from ever firing, so
+// the player stood on LORELEI's entry warp facing a solid doorway (playtest 2026-10-12).
+// Emerald's VAR_ELITE_4_STATE walk-ins have the same shape but call the unported shared
+// PokemonLeague_EliteFour_EventScript_WalkInCloseDoor; those rooms are open at the
+// bottom and stay on the port's own flow (tools/audit_missing_labels.mjs).
+export const ZERO_IS_START_VARS = new Set(['VAR_MAP_SCENE_POKEMON_LEAGUE']);
+// ...and the CHAMPION's rooms, whose walk-in rides VAR_TEMP_1 == 0 (temp vars are
+// wiped on every map load, as on the GBA). By label, not for every VAR_TEMP_ entry:
+// most of those are the Battle Frontier's, which the port reimplements natively.
+export const ZERO_IS_START_LABELS = new Set(['PokemonLeague_ChampionsRoom_EventScript_EnterRoom']);
 export function checkOnFrame() {
 	const meta = S.mapScripts.__map__;
 	if (!meta || !meta.onFrame || cutscene.blocking) return;
 	for (const e of meta.onFrame) {
-		if (e.value === 0 && !Story.hasVar(e.var)) continue;
+		if (e.value === 0 && !Story.hasVar(e.var) && !ZERO_IS_START_VARS.has(e.var) && !ZERO_IS_START_LABELS.has(e.label)) continue;
 		if (plotBlocked(e.label)) continue; // never runs here (see plotBlocked)
 		if (Story.getVar(e.var) === e.value && S.mapScripts[e.label]) {
 			runScriptLabel(e.label);
