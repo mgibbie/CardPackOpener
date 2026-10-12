@@ -35,7 +35,7 @@ import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox } from './ow_menukeys.js';
-import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
+import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty, openTownMap } from './ow_music.js';
@@ -104,6 +104,17 @@ export function runScriptLabel(label, talker) {
 // running script label, else a class-pool team at the map's level), run it, and
 // resume the cutscene with the outcome in VAR_RESULT (1 = won). A loss stops the
 // script (the player blacked out) after healing.
+// the script key a scripted win reports to onTrainerDefeated: the talker's own
+// script when it names a gym / League battle, else the nearest running label that
+// does (a map-script battle has no talker)
+function progressKeyFor(talker) {
+	const own = talker?.ev?.script;
+	if (own && Badges.scriptInfo(own)) return own;
+	const labels = cutscene.runningLabels?.() || [];
+	for (let n = labels.length - 1; n >= 0; n--) if (Badges.scriptInfo(labels[n])) return labels[n];
+	return own || null;
+}
+
 export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!S.party || !leadMon(S.party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	// canonical team by TRAINER_ id first (exact species/level/moves), then the
@@ -177,7 +188,14 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 			S.lastBattleOutcome = B_OUTCOME_WON;
 			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
 			saveParty(S.party);
-			onTrainerDefeated(talker?.ev?.script, { silent: true }); // badge/crown; the script's own speech announces it
+			// badge/crown; the script's own speech announces it. A battle started by a
+			// MAP script has no talker — the FRLG Champion's walk-in (ChampionsRoom
+			// ON_FRAME → ..._EventScript_BattleBulbasaur) used to pass undefined and
+			// the win was never recorded (playtest 2026-10-12): fall back to the
+			// running script's own labels, innermost first. That script then carries
+			// on to the HALL OF FAME, whose `special EnterHallOfFame` closes the run.
+			const key = progressKeyFor(talker);
+			onTrainerDefeated(key, { silent: true, deferFinish: !talker?.ev?.script && !!key });
 			cutscene.resume(); // continue the script (defeat text, post-battle)
 		} else {
 			// blacked out / fled: heal and abandon the rest of the script
@@ -499,7 +517,11 @@ export const ZERO_IS_START_VARS = new Set(['VAR_MAP_SCENE_POKEMON_LEAGUE']);
 // ...and the CHAMPION's rooms, whose walk-in rides VAR_TEMP_1 == 0 (temp vars are
 // wiped on every map load, as on the GBA). By label, not for every VAR_TEMP_ entry:
 // most of those are the Battle Frontier's, which the port reimplements natively.
-export const ZERO_IS_START_LABELS = new Set(['PokemonLeague_ChampionsRoom_EventScript_EnterRoom']);
+// The HALL OF FAME rooms ride VAR_TEMP_1 == 0 too: Oak's (FRLG) and the Emerald
+// hall's scene end in `special EnterHallOfFame` / `GameClear`, which closes the
+// League run (ow_progression enterHallOfFame).
+export const ZERO_IS_START_LABELS = new Set(['PokemonLeague_ChampionsRoom_EventScript_EnterRoom',
+	'PokemonLeague_HallOfFame_EventScript_EnterRoom', 'EverGrandeCity_HallOfFame_EventScript_EnterHallOfFame']);
 export function checkOnFrame() {
 	const meta = S.mapScripts.__map__;
 	if (!meta || !meta.onFrame || cutscene.blocking) return;
@@ -814,6 +836,11 @@ Story.setBadgeFlagResolver(n => {
 	const slice = BADGE_FLAG_SLICE[mapRegionOf(world.current?.name)];
 	const b = slice && Badges.BADGES[slice][n - 1];
 	return b ? Badges.has(slice, b.id) : null;
+});
+// FLAG_SYS_GAME_CLEAR: the champion crown of the FireRed / Emerald region you're in
+Story.setGameClearResolver(() => {
+	const slice = BADGE_FLAG_SLICE[mapRegionOf(world.current?.name)];
+	return slice && Badges.isChampion(slice) ? true : null; // else the stored value stands
 });
 // ENGINE_<NAME>BADGE (Crystal): the Johto badge of that name, or the Kanto one as
 // Crystal's Kanto gyms award it (JOHKANTO)
@@ -1247,6 +1274,16 @@ export function runSpecial(name, store, op) {
 		// then parks the LEAGUE door guard on (4,2) ("LORELEI is absent") and the
 		// ELITE FOUR could never be reached (playtest 2026-10-12). A champion of this
 		// region counts too: the port crowns natively, without Oak's script.
+		// FRLG / Emerald HALL OF FAME (`special EnterHallOfFame`, then waitstate): the
+		// decomp records the team, rolls the credits and returns to the title; here the
+		// League run closes once the script has finished — crown (if a path missed it),
+		// Hall of Fame record, heal, home (ow_progression closeHallOfFame)
+		case 'EnterHallOfFame': case 'GameClear': {
+			const mapName = world.current?.name;
+			const close = () => { if (cutscene.blocking) { setTimeout(close, 50); return; } enterHallOfFame(mapName); };
+			setTimeout(close, 0);
+			return;
+		}
 		case 'EnableNationalPokedex': Story.setFlag(NATIONAL_DEX_FLAG); return;
 		case 'IsNationalPokedexEnabled': return set(nationalDexEnabled() ? 1 : 0);
 		// prof_pc.c / birch_pc.c: seen -> VAR_0x8005, caught -> VAR_0x8006 (the

@@ -71,7 +71,7 @@ import {
 // ow_progression.js: ow_progression.js — progression: the sealed champions, badges + the Elite Four gate + the champion crown, cross-region tier rewards, the Grand Champion finale, the level curve and the level cap.
 import {
 	TIER_LEVEL_FLOOR, TIER_REWARDS, applyGymLevelFloors, badgeSliceFor, catchUpPostBattleScripts,
-	applyJohtoHallOfFame, grandChampionFinale, grantGrandChampionReward, grantTierReward, leagueGateMessage, levelCapHint,
+	applyJohtoHallOfFame, grandChampionFinale, healUnrecordedChampions, grantGrandChampionReward, grantTierReward, leagueGateMessage, levelCapHint,
 	levelCapNow, onTrainerDefeated, playerRegion, refreshLevelCap, repairSaves, runPostBattleScript,
 	showTierRewardDialog, startTrainerBattle,
 } from './ow_progression.js';
@@ -827,6 +827,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		});
 	}
 	// Test Realm: load the account, greet the player, begin presence
+	healUnrecordedChampions(); // a Champion beaten but never crowned (decomp path, pre-fix)
 	if (MP_ON) {
 		S.mpAccount = MP.cachedState() || await MP.freshState();
 		hud.textContent = `${world.current.map.name || startMap}  ·  ${S.mpAccount?.username || ''} (${S.mpAccount?.friendCode || '……'})`;

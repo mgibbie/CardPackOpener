@@ -86,7 +86,15 @@ const BADGE_FLAG_RE = /^FLAG_BADGE0([1-8])_GET$/;
 let engineBadgeResolver = null;
 export function setEngineBadgeResolver(fn) { engineBadgeResolver = typeof fn === 'function' ? fn : null; }
 const ENGINE_BADGE_RE = /^ENGINE_([A-Z]+)BADGE$/;
+// FLAG_SYS_GAME_CLEAR is shared by FireRed and Emerald, but here each region has
+// its own League: answer it from the champion crown of the region you stand in
+// (a stored true still counts), so clearing KANTO never reads as HOENN cleared
+let gameClearResolver = null;
+export function setGameClearResolver(fn) { gameClearResolver = typeof fn === 'function' ? fn : null; }
 export function getFlag(f) {
+	if (f === 'FLAG_SYS_GAME_CLEAR' && gameClearResolver) {
+		try { const r = gameClearResolver(); if (r != null) return !!r; } catch (e) { /* fall back to the store */ }
+	}
 	if (badgeFlagResolver) {
 		const m = BADGE_FLAG_RE.exec(f);
 		if (m) { try { const r = badgeFlagResolver(+m[1]); if (r != null) return !!r; } catch (e) { /* fall back to the store */ } }
@@ -370,6 +378,14 @@ export class Cutscene {
 		const labelOf = ops => Object.keys(c.program).find(k => c.program[k] === ops) || Object.keys(COMMON_STUBS).find(k => COMMON_STUBS[k] === ops);
 		const frames = c.frames.map((f, n) => ({ label: labelOf(f.ops), i: f.i + (n === c.frames.length - 1 ? skip : 0) }));
 		return frames.every(f => f.label) ? frames : null;
+	}
+	// the labels of the running script's frames, innermost last — the ones that
+	// can be named (a trainerbattle's expanded sub-sequence can't, and bookmark()
+	// returns nothing at all then)
+	runningLabels() {
+		const c = this.cur;
+		if (!c || !c.frames.length) return [];
+		return c.frames.map(f => Object.keys(c.program).find(k => c.program[k] === f.ops)).filter(Boolean);
 	}
 	// re-enter a bookmarked script (ow_battleresume: a static battle resumed after
 	// a reload runs its post-battle branch — the fought flag, the object removed)
