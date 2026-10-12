@@ -137,7 +137,7 @@ import {
 	PLOT_ONESHOT, STORY_SEED, afterRival, armStoryScenes, beginNewGame, checkCoordTrigger,
 	checkIntroTrigger, checkOnFrame, checkRivalTrigger, checkVillainTrigger, completeVillainBeat,
 	finishStarterPick, loadFiredPlot, markPlotFired, maybeIntroCutscene, openStarterPick,
-	plotBlocked, runMapSetupScripts, runScriptLabel, runSpecial, seedCrystalEvents, seedStoryState,
+	plotBlocked, runMapSetupScripts, runScriptLabel, runSpecial, seedCrystalEvents, seedNewGameFlags, seedStoryState,
 	startIntroNarration, startRivalEncounter, startScriptedBattle, startVillainBattle,
 	syncStoryVars,
 } from './ow_story.js';
@@ -642,6 +642,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	// save has NEVER touched, so in-progress regions keep their story state.
 	for (const r of Object.keys(STORY_SEED)) armStoryScenes(r);
 	seedCrystalEvents();      // Crystal's own new-game event state (Misty is out, Blue is at Cinnabar)
+	seedNewGameFlags();       // FRLG/Emerald EventScript_ResetAllMapFlags (the credits cast off Indigo's door)
 	// Crystal one-shots the free-roam port can never reach: vanilla ends Route
 	// 30's battling-kids scene when you hand ELM the MYSTERY EGG (ElmsLab.asm
 	// sets EVENT_ROUTE_30_BATTLE to hide the four-sprite tableau and reveals
