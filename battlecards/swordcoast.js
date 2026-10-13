@@ -91,26 +91,26 @@ export const HERO_POWERS = {
 	'Targ Nar, Demon-Fang Gnoll': P('Gnoll Pack', 2, 'Summon a 1/1 Gnoll with Rush.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Gnoll Pack-Runner', tribe: 'Gnoll', keywords: ['rush'] }]),
 	'Kazuul, Tyrant of the Cliffs': P('Toll of the Cliffs', 2, 'Summon a 2/2 Ogre with Taunt.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Cliff Ogre', tribe: 'Ogre', keywords: ['taunt'] }]),
 	// enemies (Rung B)
-	'Xanathar, Guild Kingpin': P('Eye Rays', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Karazikar, the Eye Tyrant': P('Disintegration Ray', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
+	'Xanathar, Guild Kingpin': P('Eye Rays', 3, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
+	'Karazikar, the Eye Tyrant': P('Disintegration Ray', 3, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 	'Captain N\'ghathrod': P('Dredge the Deep', 2, 'Each opponent discards a card.', [{ type: 'enemy-discard', count: 1 }]),
 	'Zalto, Fire Giant Duke': P('Forge-Hammer', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Storvald, Frost Giant Jarl': P('Frost Breath', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
-	'Ebondeath, Dracolich': P('Undying Flight', 2, 'Summon a 2/2 Wraith with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Dracolich Wraith', tribe: 'Wraith', keywords: ['reborn'] }]),
+	'Ebondeath, Dracolich': P('Undying Flight', 3, 'Summon a 2/2 Wraith with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Dracolich Wraith', tribe: 'Wraith', keywords: ['reborn'] }]),
 	'Old Gnawbone': P('Hoard-Greed', 2, 'Gain two Coins.', [{ type: 'gain-coin', value: 2 }]),
-	'Baba Lysaga, Night Witch': P('Night Hexes', 2, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
+	'Baba Lysaga, Night Witch': P('Night Hexes', 3, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
 	'Jon Irenicus, Shattered One': P('Shatter the Mind', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	// enemies (Rung C — the Dead Three + archfiends)
 	'Bane, Lord of Darkness': P('Iron Tyranny', 2, 'Give your creatures +1/+0.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creatures' }]),
 	'Bhaal, Lord of Murder': P('Murder', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Myrkul, Lord of Bones': P('Call of Bones', 2, 'Summon a 2/2 Skeleton with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Myrkul Skeleton', tribe: 'Skeleton', keywords: ['deathtouch'] }]),
-	'Orcus, Prince of Undeath': P('Wand of Orcus', 2, 'Summon a 2/2 Undead.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Risen Undead', tribe: 'Zombie' }]),
+	'Orcus, Prince of Undeath': P('Wand of Orcus', 3, 'Summon a 2/2 Undead.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Risen Undead', tribe: 'Zombie' }]),
 	'Acererak the Archlich': P('Delve the Tomb', 2, 'Advance (venture into the dungeon).', [{ type: 'advance' }]),
 	'Sarevok, Deathbringer': P('Deathbringer', 2, 'Give a friendly creature +2/+0 and Deathtouch.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'deathtouch', target: 'friendly-creature' }]),
 	'Raphael, Fiendish Savior': P('Infernal Bargain', 2, 'Deal 1 damage to your hero and draw a card.', [{ type: 'damage', value: 1, target: 'own-hero' }, { type: 'draw', value: 1 }]),
 	// enemies (Rung D — final bosses)
-	Tiamat: P('Five Heads Roar', 2, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
-	'Asmodeus the Archfiend': P('Ruler of the Nine Hells', 2, 'Each opponent discards a card; draw a card.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }]),
+	Tiamat: P('Five Heads Roar', 3, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
+	'Asmodeus the Archfiend': P('Ruler of the Nine Hells', 3, 'Each opponent discards a card; draw a card.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }]),
 };
 export const powerOf = ch => HERO_POWERS[ch] || null;
 
