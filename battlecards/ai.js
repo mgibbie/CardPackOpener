@@ -212,9 +212,23 @@ function magnetizeTarget(state, pi, card) {
 
 // One AI action per call so the renderer can animate between steps.
 // Returns true if it acted, false when it wants to end the turn.
+// A turn that never ends freezes the game for the player watching it. A card loop
+// can do that — Bill Ferny's Fateful Discovery ("whenever you cast a spell, gain a
+// Coin") met the Coin, a spell, and the AI played Coins forever (2026-10-13, found by
+// the run-mode simulation: 116 of 200 Bill Ferny fights never ended). Past this many
+// voluntary actions in one turn the AI ends it; forced decisions are still answered.
+export const AI_TURN_ACTION_CAP = 200;
+const turnActions = new WeakMap();   // state -> { key, n }; kept off the state so snapshots never carry it
+
 export function step(state, pi = 1) {
 	if (state.over || state.current !== pi || state.players[pi].eliminated) return false;
 	const p = state.players[pi];
+	if (!E.hasPendingDecision(state, pi)) {
+		const key = state.turnNumber + ':' + pi;
+		let t = turnActions.get(state);
+		if (!t || t.key !== key) { t = { key, n: 0 }; turnActions.set(state, t); }
+		if (++t.n > AI_TURN_ACTION_CAP) return false;
+	}
 
 	// -1. resolve any pending scry/gaze this seat owes a decision on:
 	// keep own affordable cards, bury the enemy's best
