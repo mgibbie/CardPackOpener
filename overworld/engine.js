@@ -193,9 +193,11 @@ function loadImageLegacy(url) {
 const canStreamImages = () => typeof fetch === 'function' && typeof Blob === 'function' && typeof URL?.createObjectURL === 'function';
 export function getImage(url) {
 	if (!imgCache.has(url)) {
-		const p = canStreamImages()
+		const p = (canStreamImages()
 			? fetchResilient(url, decodeImage)
-			: loadImageLegacy(url).catch(e => { if (!e.stalled) throw e; return sleep(FETCH_RETRY_MS[0]).then(() => loadImageLegacy(url)); });
+			: loadImageLegacy(url).catch(e => { if (!e.stalled) throw e; return sleep(FETCH_RETRY_MS[0]).then(() => loadImageLegacy(url)); }))
+			// a blob-decoded image's .src is a revoked blob: URL; keep the asset path on it
+			.then(img => { img.dataset.src = url; return img; });
 		imgCache.set(url, p.catch(e => { imgCache.delete(url); throw e; }));   // never cache a failure
 	}
 	return imgCache.get(url);
