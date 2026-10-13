@@ -2,7 +2,7 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import { choiceMenu } from './choice.js';
 import { phoneMenu } from './phone.js';
-import { VIEW_H, VIEW_W } from './engine.js';
+import { VIEW_H, VIEW_W, drawsAboveTop } from './engine.js';
 import { arcade, battle, blockers, cutscene, dialog, evolution, factorySpec, hud, items, npcs, player, portals, pvp, screen, sctx, services, trainers, world } from './ow_core.js';
 import { decoMenu, drawBaseDeco, drawDecoMenu, drawRadio, drawSocial, radioMenu, socialMenu } from './ow_features.js';
 import { drawWatchingBadge, frontier, frontierWatchers } from './ow_frontier.js';
@@ -316,12 +316,17 @@ export function tick(now) {
 		const sprites = editView.on
 			? (editView.entities ? [...npcs.list, ...trainers.list] : [])
 			: [...npcs.list, ...trainers.list, player];
-		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
+		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower, follow: true });
 		sprites.sort((a, b) => a.py - b.py);
-		for (const s of sprites) s.draw(ctx, camX, camY);
+		// GBA draw priority from ELEVATION (engine.js drawsAboveTop): an object up
+		// on a bridge deck draws OVER the map's top layer, one under it below
+		const elevOf = s => (s === player || s.follow) ? player.elev : Number(s.ev?.elevation) || 0;
+		const over = sprites.filter(s => drawsAboveTop(elevOf(s)));
+		for (const s of sprites) if (!over.includes(s)) s.draw(ctx, camX, camY);
 		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
 		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
+		for (const s of over) s.draw(ctx, camX, camY);
 		drawCaveDark(ctx, camX, camY);
 		drawDayNightTint(ctx);
 		drawWeather(ctx); // rain/sand/hail/ash over the world, under the day-night mood

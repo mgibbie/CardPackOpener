@@ -1,7 +1,7 @@
 // trainers.js — trainer NPCs: sight lines, the "!" moment, walk-up, and
 // engagement. Rosters come from trainers.json (FireRed decomp + Johto
 // pokecrystal + hand-crafted gym leaders); fallback teams from class pools.
-import { getJSON, getImage, META } from './engine.js';
+import { getJSON, getImage, META, elevCompatible } from './engine.js';
 import { MAX_LEVEL } from './badges.js';
 import { buildMon } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
@@ -254,16 +254,16 @@ export class Trainers {
 		return this._dupBases;
 	}
 
-	occupied(tx, ty) {
+	occupied(tx, ty, elev = 0) {
 		// a defeated trainer no longer blocks its tile — so a beaten grunt can't wall
 		// a dungeon corridor (checkSight already skips defeated, so no re-battle)
-		return this.list.some(t => t.tx === tx && t.ty === ty && !this.isDefeated(t));
+		return this.list.some(t => t.tx === tx && t.ty === ty && !this.isDefeated(t) && elevCompatible(elev, Number(t.ev?.elevation) || 0));
 	}
 
 	get engaging() { return this.engagement != null; }
 
-	trainerAt(tx, ty) {
-		return this.list.find(t => t.tx === tx && t.ty === ty) || null;
+	trainerAt(tx, ty, elev = 0) {
+		return this.list.find(t => t.tx === tx && t.ty === ty && elevCompatible(elev, Number(t.ev?.elevation) || 0)) || null;
 	}
 
 	// talk-to engagement (Z in front of any trainer, incl. sight range 0)
@@ -274,10 +274,11 @@ export class Trainers {
 	}
 
 	// called when the player finishes a step; true if a trainer spotted them
-	checkSight(ptx, pty) {
+	checkSight(ptx, pty, elev = 0) {
 		if (this.engagement) return true;
 		for (const t of this.list) {
 			if (t.range <= 0) continue; // talk-to trainers don't spot you
+			if (!elevCompatible(elev, Number(t.ev?.elevation) || 0)) continue; // below/above the bridge you're on
 			if (this.isDefeated(t)) continue;
 			const dirs = t.seeAll ? ['down', 'up', 'left', 'right'] : [t.facing];
 			for (const dir of dirs) {
