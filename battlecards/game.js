@@ -170,37 +170,37 @@ function preserveRunConflict(key, run, reason) {
 }
 const loadRun = () => safeLoad(RUN_KEY, null);
 const saveRun = saverFor(RUN_KEY);
-const clearRun = () => { localStorage.removeItem(RUN_KEY); serverClearRun(RUN_KEY); };
+const clearRun = () => endRunKey(RUN_KEY);
 const loadHeist = () => safeLoad(HEIST_KEY, null);
 const saveHeist = saverFor(HEIST_KEY);
-const clearHeist = () => { localStorage.removeItem(HEIST_KEY); serverClearRun(HEIST_KEY); };
+const clearHeist = () => endRunKey(HEIST_KEY);
 const loadTombs = () => safeLoad(TOMBS_KEY, null);
 const saveTombs = saverFor(TOMBS_KEY);
-const clearTombs = () => { localStorage.removeItem(TOMBS_KEY); serverClearRun(TOMBS_KEY); };
+const clearTombs = () => endRunKey(TOMBS_KEY);
 const loadDuels = () => safeLoad(DUELS_KEY, null);
 const saveDuels = saverFor(DUELS_KEY);
-const clearDuels = () => { localStorage.removeItem(DUELS_KEY); serverClearRun(DUELS_KEY); };
+const clearDuels = () => endRunKey(DUELS_KEY);
 const loadArena = () => safeLoad(ARENA_KEY, null);
 const saveArena = saverFor(ARENA_KEY);
-const clearArena = () => { localStorage.removeItem(ARENA_KEY); serverClearRun(ARENA_KEY); };
+const clearArena = () => endRunKey(ARENA_KEY);
 const loadLorequest = () => safeLoad(LOREQUEST_KEY, null);
 const saveLorequest = saverFor(LOREQUEST_KEY);
-const clearLorequest = () => { localStorage.removeItem(LOREQUEST_KEY); serverClearRun(LOREQUEST_KEY); };
+const clearLorequest = () => endRunKey(LOREQUEST_KEY);
 const loadMiddleearth = () => safeLoad(MIDDLEEARTH_KEY, null);
 const saveMiddleearth = saverFor(MIDDLEEARTH_KEY);
-const clearMiddleearth = () => { localStorage.removeItem(MIDDLEEARTH_KEY); serverClearRun(MIDDLEEARTH_KEY); };
+const clearMiddleearth = () => endRunKey(MIDDLEEARTH_KEY);
 const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadSwordcoast = () => safeLoad(SWORDCOAST_KEY, null);
 const saveSwordcoast = saverFor(SWORDCOAST_KEY);
-const clearSwordcoast = () => { localStorage.removeItem(SWORDCOAST_KEY); serverClearRun(SWORDCOAST_KEY); };
+const clearSwordcoast = () => endRunKey(SWORDCOAST_KEY);
 const swordcoastGaleUnlocked = () => { try { return localStorage.getItem(SWORDCOAST_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadFinalfantasy = () => safeLoad(FINALFANTASY_KEY, null);
 const saveFinalfantasy = saverFor(FINALFANTASY_KEY);
-const clearFinalfantasy = () => { localStorage.removeItem(FINALFANTASY_KEY); serverClearRun(FINALFANTASY_KEY); };
+const clearFinalfantasy = () => endRunKey(FINALFANTASY_KEY);
 const finalfantasyGilgameshUnlocked = () => { try { return localStorage.getItem(FINALFANTASY_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadMultiverse = () => safeLoad(MULTIVERSE_KEY, null);
 const saveMultiverse = saverFor(MULTIVERSE_KEY);
-const clearMultiverse = () => { localStorage.removeItem(MULTIVERSE_KEY); serverClearRun(MULTIVERSE_KEY); };
+const clearMultiverse = () => endRunKey(MULTIVERSE_KEY);
 const multiverseSurferUnlocked = () => { try { return localStorage.getItem(MULTIVERSE_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
 // ---------- deterministic mid-fight resume (Phase 1) ----------
@@ -373,7 +373,21 @@ function rewardRng(run, salt) {
 // a pick made mid-reward is saved with the stage it leads to, so a reload resumes there
 // instead of offering (and granting) the earlier pick again
 function rewardStage(run, stage, save) { if (run.pendingResult) { run.pendingResult.stage = stage; save(run); } }
-function serverClearRun(key) { if (MP_ON) MPX.call('run-clear', { key }).catch(() => {}); }
+function serverClearRun(key, runId) { if (MP_ON) MPX.call('run-clear', runId ? { key, runId } : { key }).catch(() => {}); }
+// End a run for good. The server is told WHICH run ended (its marker refuses any
+// save of that run still in flight), and this device remembers it too, so a boot
+// never takes the finished run back from the server even if the clear itself never
+// arrived (a closed tab). Without both, a run "over" at 3 losses came back and
+// replayed its last fight (Muse's Final Fantasy runs, 2026-10).
+const ENDED_RUNS_KEY = 'magepunk_ended_runs_v1';
+const endedRunIds = () => { const l = safeLoad(ENDED_RUNS_KEY, []); return Array.isArray(l) ? l : []; };
+function endRunKey(key) {
+	const run = safeLoad(key, null);
+	const runId = run && run.runId ? String(run.runId) : null;
+	if (runId) safeSave(ENDED_RUNS_KEY, [...endedRunIds().filter(id => id !== runId), runId].slice(-50));
+	localStorage.removeItem(key);
+	serverClearRun(key, runId);
+}
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
 async function hydrateRunsFromServer() {
 	if (!MP_ON) return;
@@ -382,6 +396,7 @@ async function hydrateRunsFromServer() {
 		const runs = r && r.runs;
 		if (runs && typeof runs === 'object') for (const [key, entry] of Object.entries(runs)) {
 			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
+			if (entry.run.runId && endedRunIds().includes(String(entry.run.runId))) continue; // a run this device ended
 			// Pick ONE canonical copy. entry.updated_at is the server's own write stamp —
 			// authoritative recency, immune to client clocks — and was previously thrown
 			// away here, leaving the decision to "does the server copy have a snapshot?".
