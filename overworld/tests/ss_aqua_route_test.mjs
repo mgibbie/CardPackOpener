@@ -179,6 +179,34 @@ try {
 		await page.close();
 	}
 
+	// ===== 3b. the REAL sailor, by key press (2026-10-13) =====
+	// Section 3 drove the sailor's script directly. A player faces him and presses Z,
+	// and the port's generic FERRY service (it answers on every OLIVINE PORT tile, and
+	// counted any "Sailor" script as one of its hands) opened the FERRY menu instead.
+	{
+		const flags = { grand_champion: true, EVENT_BEAT_ELITE_FOUR: true, EVENT_GOT_SS_TICKET_FROM_ELM: true };
+		const { page, errors } = await boot(GRAND, 'OlivinePort', { flags, bag: { pokeball: 5, ssticket: 1 } });
+		const sailor = await W(page, () => { const n = window.__ow.npcs.list.find(n => n.ev && n.ev.script === 'OlivinePortSailorAfterHOFScript'); return n && { x: n.tx, y: n.ty }; });
+		await W(page, s => { const P = window.__ow.player; P.tx = s.x; P.ty = s.y - 1; P.x = s.x * 16; P.y = (s.y - 1) * 16; P.facing = 'down'; }, sailor);
+		await page.keyboard.press('z');
+		let ferry = false, map = 'OlivinePort';
+		for (let i = 0; i < 150 && map === 'OlivinePort'; i++) {
+			const s = await W(page, async () => {
+				const O = window.__ow, C = await import('./choice.js'), MK = await import('./ow_menukeys.js');
+				return { ferry: !!MK.ferryMenu.open, d: !!O.dialog.blocking, c: !!C.choiceMenu.open, map: O.world.current.name };
+			});
+			map = s.map;
+			if (s.ferry) { ferry = true; break; }
+			if (s.c) { await W(page, async () => { (await import('./choice.js')).choiceMenu.idx = 0; }); await page.keyboard.press('z'); }
+			else if (s.d) await page.keyboard.press('z');
+			await sleep(120);
+		}
+		A(!ferry, '3b. Z at the S.S. AQUA sailor does NOT open the generic FERRY menu', JSON.stringify({ sailor }));
+		A((await waitMap(page, 'FastShip1F')) === 'FastShip1F', '3b. ...his own script runs: the S.S. TICKET boards the S.S. AQUA', map);
+		A(errors.length === 0, '3b. no page errors', JSON.stringify(errors.slice(0, 3)));
+		await page.close();
+	}
+
 	// ===== 4. the POWER PLANT and the COPYCAT's PASS =====
 	{
 		const flags = { grand_champion: true, EVENT_BEAT_ELITE_FOUR: true, EVENT_GOT_SS_TICKET_FROM_ELM: true, EVENT_MET_MANAGER_AT_POWER_PLANT: true };

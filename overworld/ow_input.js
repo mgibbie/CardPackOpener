@@ -269,6 +269,12 @@ export function interact() {
 	if (svc === 'ferry') {
 		const who = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy));
 		if (who && who.ev?.script && !/Ferry|Gangway|Sailor/i.test(who.ev.script)) svc = null;
+		// OLIVINE PORT is Crystal's own harbor: its sailors ARE the S.S. AQUA's crew,
+		// with the decomp's boarding script (ticket check, the trip). The ferry's
+		// "a sailor is a ferry hand" rule swallowed them, so a ticket holder only ever
+		// got the generic FERRY menu (playtest 2026-10-13). On a Crystal map a faced
+		// object whose script is loaded runs it; the dockside still offers the ferry.
+		else if (who && who.ev?.script && world.current?.map?._crystal_tileset && S.mapScripts?.[who.ev.script]) svc = null;
 	}
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
