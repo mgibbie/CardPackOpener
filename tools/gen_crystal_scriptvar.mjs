@@ -85,7 +85,14 @@ const MEM_RESTORE_IN = ['IlexForest:IlexForestFarfetchd', 'Route39Barn:MoomooScr
 // — and each chamber's WallOpenScript, the wall at (4,0) opening onto its item
 // room (HoOh/OmanyteChamber specials, FLASH, an ESCAPE ROPE; ow_story.js)
 const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].flatMap(c => [
-	`RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`, `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberWallOpenScript`]);
+	`RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle.PuzzleComplete`, `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberWallOpenScript`])
+	// the Johto ELITE FOUR: each member's win opens the north door on the spot
+	// (`changeblock 4, 2, $16` + refreshmap) and each room's entry scene walls the
+	// door behind you. Only the map callbacks' copies were restored, so the door
+	// opened on the NEXT load and the room had to be re-entered (playtest 2026-10-13)
+	.concat([['WillsRoom', 'Will'], ['KogasRoom', 'Koga'], ['BrunosRoom', 'Bruno'], ['KarensRoom', 'Karen']].flatMap(([m, who]) => [
+		`${m}:${who}Script_Battle`, `${m}:${m}DoorLocksBehindYouScript`]))
+	.concat(['LancesRoom:LancesRoomDoorLocksBehindYouScript']);   // LANCE himself stays on the native champion path
 // specials whose result the engine actually computes (ow_story.js runSpecial)
 const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle', 'PlayersHousePC']);
 // commands that leave hScriptVar alone (display / movement); anything else between

@@ -2,6 +2,7 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import { phoneTalkDefeated } from './phone.js';
 import * as Bag from './bag.js';
+import { elevCompatible } from './engine.js';
 import { Contest } from './contest.js';
 import { crystalTrainerHeader } from './crystal_trainers.js';
 import * as Story from './events.js';
@@ -36,6 +37,7 @@ import {
 import { oskOpen } from '../site/osk.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
+const MB_PC = 0x83;        // metatile behavior: the storage PC (FRLG + Emerald)
 const MB_POKEBLOCK_FEEDER = 0x87;   // Emerald's Safari Zone feeders
 
 // ---------- input ----------
@@ -266,9 +268,22 @@ export function interact() {
 	// not swallow the harbor's other people — Captain Stern's SCANNER trade at Slateport
 	// never ran (playtest 2026-10-08). Facing anyone whose script isn't a ferry hand's,
 	// their own script runs instead.
+	// FRLG/Emerald open the storage PC from the metatile itself (MB_PC 0x83 in both:
+	// field_control_avatar.c -> EventScript_PC), not from a fixed tile — Emerald's
+	// Centers put the machine at (10,1), where the FR_CENTERS zone at (12,2) never
+	// answered (Pacifidlog/Slateport, playtest 2026-10-12). A bg_event on the tile
+	// (a bedroom PC, a secret base's) wins, as the decomp checks those first.
+	if (!svc && !world.current?.map?._crystal_tileset && world.behaviorAt(fx, fy) === MB_PC
+		&& !(world.current?.map?.bg_events || []).some(b => b.x === fx && b.y === fy)) svc = 'pc';
 	if (svc === 'ferry') {
 		const who = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy));
 		if (who && who.ev?.script && !/Ferry|Gangway|Sailor/i.test(who.ev.script)) svc = null;
+		// OLIVINE PORT is Crystal's own harbor: its sailors ARE the S.S. AQUA's crew,
+		// with the decomp's boarding script (ticket check, the trip). The ferry's
+		// "a sailor is a ferry hand" rule swallowed them, so a ticket holder only ever
+		// got the generic FERRY menu (playtest 2026-10-13). On a Crystal map a faced
+		// object whose script is loaded runs it; the dockside still offers the ferry.
+		else if (who && who.ev?.script && world.current?.map?._crystal_tileset && S.mapScripts?.[who.ev.script]) svc = null;
 	}
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
@@ -379,7 +394,7 @@ export function interact() {
 		dialog.open('The water is a deep blue...\n\nSURF would carry you across.');
 		return;
 	}
-	const t = trainers.trainerAt(fx, fy);
+	const t = trainers.trainerAt(fx, fy, player.elev);
 	if (t) {
 		if (trainers.isDefeated(t)) {
 			// a beaten Hoenn/Kanto PHONE trainer: register, rematch, or their line
@@ -471,7 +486,9 @@ export function interact() {
 	// (MB_COUNTER, 0x80 in both FRLG and Emerald), the GBA talks to whoever stands
 	// one tile beyond (field_control_avatar.c). Without it the Celadon store
 	// clerks behind their counters could not be spoken to at all.
-	const npc = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy))
+	// only someone at a compatible elevation (not under the bridge you stand on)
+	const atElev = n => elevCompatible(player.elev, Number(n.ev?.elevation) || 0);
+	const npc = npcs.list.find(n => (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy) && atElev(n))
 		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? npcs.list.find(n => n.tx === fx + dx && n.ty === fy + dy) : null);
 	if (npc) {
 		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing] || npc.facing;
