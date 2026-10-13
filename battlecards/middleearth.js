@@ -91,7 +91,7 @@ export const HERO_POWERS = {
 	'Gríma Wormtongue': P('Poison Words', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
 	'Grishnákh': P('Brash Charge', 3, 'Summon a 1/1 Orc with Rush.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Orc Raider', tribe: 'Orc', keywords: ['rush'] }]),
 	Gorbag: P('Cruel Bargain', 3, 'Deal 1 damage to your hero and draw a card.', [{ type: 'damage', value: 1, target: 'own-hero' }, { type: 'draw', value: 1 }]),
-	Shagrat: P('Loot the Fallen', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
+	Shagrat: P('Loot the Fallen', 2, 'Gain a Coin and deal 1 damage to an enemy creature.', [{ type: 'gain-coin', value: 1 }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'Old Man Willow': P('Snapping Bough', 3, 'Deal 1 damage to an enemy creature.', [{ type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'Tom, Bert & William': P('Hurl a Boulder', 2, 'Deal 2 damage to a random enemy.', [{ type: 'random-damage', value: 2, pool: 'enemies', count: 1 }]),
 	'The Chief Warg': P('Warg-call', 3, 'Summon a 2/1 Warg.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Warg', tribe: 'Wolf' }]),

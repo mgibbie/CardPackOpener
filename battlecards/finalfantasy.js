@@ -99,7 +99,7 @@ export const HERO_POWERS = {
 	'Black Waltz No. 3': P('Thundara', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Queen Brahne': P('Extract Eidolon', 4, 'Spiritsummon a random Spirit.', [spiritSummon]),
 	'Professor Hojo': P('Specimen Injection', 3, 'Summon a 2/2 Specimen.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Mako Specimen', tribe: 'Beast' }]),
-	'Ultros, Obnoxious Octopus': P('Tentacle', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
+	'Ultros, Obnoxious Octopus': P('Tentacle', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'Garland, Royal Kidnapper': P('Soul of Chaos', 2, 'Give a friendly creature +1 Attack.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creature' }]),
 	'Seymour Flux': P('Anima\'s Pain', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	// enemies (Rung B)
