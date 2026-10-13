@@ -33,6 +33,15 @@ A fresh clone has neither (see "start setup").
 - Battlecards engine tests: `npm test` (`battlecards/tests/run-all.mjs`).
 - Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`.
 
+## Balance simulator (Lorequest run modes)
+`node tools/runmode-sim.mjs --mode=<middleearth|swordcoast|finalfantasy> [--rung=A|B|C|D] [--games=10]`
+plays every hero against every enemy in a rung with the game's own AI on both seats and prints the
+hero win rate against each enemy (later rungs grow the hero's deck with the run's own rewards).
+Trust it for ranking ENEMIES (calibrated against tester replays), not heroes. Try a change first
+with `--overrides=trial.json`; find a deck's key cards with `node tools/runmode-ablate.mjs`.
+Owner rules: a nerf is +1 mana by default; a buff never lowers a mana cost. Pin every balance
+change with a regression test.
+
 ## "check on the testers"
 `node tools/playtest-digest.mjs` (SELECT-only) diffs the playtest accounts (the default
 `MP_BUG_REPORTERS` list in `server/mp.mjs`) against the last snapshot and writes
