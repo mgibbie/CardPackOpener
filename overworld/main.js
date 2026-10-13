@@ -377,7 +377,7 @@ export const urlPinnedMap = new URLSearchParams(location.search).has('map');
 // instead of committing one more step into it. Same condition the tick uses to
 // decide whether input moves the player at all, so the two cannot disagree.
 player.canStep = () => !menuBlocking() && !trainers.engaging;
-player.blocked = (tx, ty) => doorBlocked(world, tx, ty) || npcs.npcBlocks(tx, ty) || ruinsWallClosed(world.current?.name, world.warpAt(tx, ty)) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
+player.blocked = (tx, ty) => doorBlocked(world, tx, ty) || npcs.npcBlocks(tx, ty, player.elev) || ruinsWallClosed(world.current?.name, world.warpAt(tx, ty)) || trainers.occupied(tx, ty, player.elev) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
@@ -622,7 +622,12 @@ screen.addEventListener('pointerdown', e => {
 	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
 	if (anyMenuOpen()) {
 		const [x, y] = screenPos(e);
-		for (const b of S.menuUi) {
+		// topmost first: a button drawn later sits ON TOP of an earlier one (the
+		// party menu's action list overlaps the POKeMON rows under it — first-hit
+		// sent every SURF/CUT/FLY tap to the row instead, playtest 2026-10-12);
+		// the hover loop above already lets the last hit win
+		for (let i = S.menuUi.length - 1; i >= 0; i--) {
+			const b = S.menuUi[i];
 			if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { menuTap(b.id); return; }
 		}
 	}
