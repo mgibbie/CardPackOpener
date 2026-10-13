@@ -446,6 +446,13 @@ trainers.onEngage = t => {
 	// continuation runs on later talks (ow_input.js). Full scripts (Gym Leaders,
 	// Kevin, Sage Li...) are not headers and still run themselves.
 	const hdr = crystalTrainerHeader(world, script);
+	// ...except Crystal's ELITE FOUR (WILL/KOGA/BRUNO/KAREN): their room's whole
+	// state lives in the authored script — the beat event, the north door opening
+	// (changeblock) and EXIT_OPEN for the room callback. The plain path recorded only
+	// a generic win: the door never opened and talking replayed the fight
+	// (playtest 2026-10-13). LANCE stays native (the champion crowning + Hall of Fame).
+	const crystalElite = isLeague && role.kind === 'elite' && role.region === 'JOHTO';
+	if (crystalElite && S.mapScripts[script] && runScriptLabel(script, t)) return;
 	if (!isLeague && !hdr && S.mapScripts[script] && runScriptLabel(script, t)) return;
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
 	if (hdr) {
