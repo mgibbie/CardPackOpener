@@ -144,5 +144,15 @@ for (const c of pool) {
   E.fireOngoing(st, 0, 'turn-start');
   ok('Flowering of the White Tree anthem fires at turn start', v.attack === a0 + 1, [a0, v.attack]); }
 
+// Gandalf/Legolas/Gimli buff (2026-10-12: 9%, 15%, 16% fight win rates vs Aragorn's 76%)
+const stats = id => [byId[id].attack, byId[id].health];
+ok('Radagast is 2/4', String(stats('me_gandalf_radagast')) === '2,4', stats('me_gandalf_radagast'));
+ok('Gandalf of the Secret Fire is 3/4', String(stats('me_gandalf_secretfire')) === '3,4', stats('me_gandalf_secretfire'));
+ok('Legolas, Master Archer is 4/4', String(stats('me_legolas_sig')) === '4,4', stats('me_legolas_sig'));
+ok("Legolas' Orcish Bowmasters is 2/3", String(stats('me_legolas_bowmaster')) === '2,3', stats('me_legolas_bowmaster'));
+ok('Dwarven Mauler is 4/3', String(stats('me_gimli_mauler')) === '4,3', stats('me_gimli_mauler'));
+ok('Erebor Flamesmith is 3/5', String(stats('me_gimli_flamesmith')) === '3,5', stats('me_gimli_flamesmith'));
+ok('Dwarven Mattock taps for 3 Armor', byId.me_gimli_mattock.tapAbility.effects[0].value === 3, byId.me_gimli_mattock.tapAbility);
+
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

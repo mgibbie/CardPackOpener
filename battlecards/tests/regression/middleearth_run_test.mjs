@@ -126,6 +126,16 @@ for (const ch of ALL_CHARS) {
   const hp = st.players[0].heroPowers.find(h => h.name === "Don't You Leave Him");
   E.useHeroPower(st, 0, hp.uid, null, null);
   ok('Samwise power restores 3 Health to hero', st.players[0].life === l0 + 3, [l0, st.players[0].life]); }
+// Gandalf/Legolas/Gimli buff (2026-10-12: 9%, 15%, 16% fight win rates vs Aragorn's 76%)
+{ const st = bootWith('Gandalf'); const foe = put(st, 1, '_v');
+  const hp = st.players[0].heroPowers.find(h => h.name === 'You Shall Not Pass!');
+  E.useHeroPower(st, 0, hp.uid, { type: 'creature', uid: foe.uid, player: 1 }, null);
+  ok('Gandalf power deals 1 and freezes', E.hp(foe) === 1 && !!foe.frozen, [E.hp(foe), foe.frozen]); }
+ok('Legolas power costs 1', ME.HERO_POWERS.Legolas.cost === 1);
+{ const st = bootWith('Gimli'); const fr = put(st, 0, '_v');
+  const hp = st.players[0].heroPowers.find(h => h.name === 'And My Axe!');
+  E.useHeroPower(st, 0, hp.uid, { type: 'creature', uid: fr.uid, player: 0 }, null);
+  ok('Gimli power gives +2/+1', fr.attack === 4 && E.hp(fr) === 3, [fr.attack, E.hp(fr)]); }
 
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
