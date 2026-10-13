@@ -331,6 +331,38 @@ function userStore(db) {
 			const changes = r && r.meta ? r.meta.changes : r && r.changes;
 			return Number(changes) > 0;
 		},
+		// One run mode's entry in the per-user run doc, written ATOMICALLY (json_set in
+		// one statement, never read-then-write). The doc holds every mode, and the
+		// client fires saves and its end-of-run clear without waiting on each other:
+		// with a read and a separate write, a save that read the doc before the clear
+		// then wrote the finished run back over it, and the next boot resumed (or
+		// rebuilt) a fight from a run that had already ended (Muse's Final Fantasy
+		// runs, 2026-10: 36 fights played past a third loss). Refused, as one guard:
+		// a run its client has ENDED (the `ended` marker run-clear leaves), and an
+		// older revision of the stored run. Returns true when the entry was written.
+		setRunEntry: async (k, mode, entry, runId, rev) => {
+			const p = '$.' + mode;
+			const r = await db.prepare(
+				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, json_object(?, json(?)), unixepoch()) ' +
+				'ON CONFLICT(key) DO UPDATE SET value = json_set(mp_store.value, ?, json(?)), updated_at = unixepoch() ' +
+				'WHERE ? IS NULL OR (COALESCE(json_extract(mp_store.value, ?), \'\') <> ? ' +
+				'AND NOT (COALESCE(json_extract(mp_store.value, ?), \'\') = ? AND COALESCE(json_extract(mp_store.value, ?), 0) > ?))'
+			).bind(k, mode, entry, p, entry, runId, p + '.ended', runId, p + '.run.runId', runId, p + '.run.rev', rev).run();
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
+		},
+		// End one run: its entry becomes an `ended` marker naming the run, in one
+		// statement — unless the stored entry is a DIFFERENT run (a newer one started
+		// elsewhere), which an old run's clear must not touch.
+		endRunEntry: async (k, mode, runId) => {
+			const p = '$.' + mode;
+			const marker = JSON.stringify({ ended: runId, updated_at: Date.now() });
+			await db.prepare(
+				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, json_object(?, json(?)), unixepoch()) ' +
+				'ON CONFLICT(key) DO UPDATE SET value = json_set(mp_store.value, ?, json(?)), updated_at = unixepoch() ' +
+				'WHERE COALESCE(json_extract(mp_store.value, ?), ?) = ?'
+			).bind(k, mode, marker, p, marker, p + '.run.runId', runId, runId).run();
+		},
 		delete: async (k) => {
 			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
 		},
@@ -2615,16 +2647,22 @@ export default async function handler(req, env) {
 		const run = body.run;
 		if (!run || typeof run !== 'object' || Array.isArray(run)) return json({ error: 'bad run' }, 400);
 		if (JSON.stringify(run).length > RUN_MAX_BYTES) return json({ error: 'run too large' }, 413);
-		const doc = (await store.get('run:' + username)) || {};
-		doc[key] = { run, updated_at: Date.now() };
-		await store.setJSON('run:' + username, doc);
-		return json({ ok: true });
+		const entry = JSON.stringify({ run, updated_at: Date.now() });
+		const runId = run.runId ? String(run.runId) : null;   // legacy runs (no id) write unguarded, as before
+		const written = await store.setRunEntry('run:' + username, key, entry, runId, Number(run.rev) || 0);
+		return json(written ? { ok: true } : { ok: false, stale: true });
 	}
 	if (action === 'run-load') {
 		return json({ runs: (await store.get('run:' + username)) || {} });
 	}
 	if (action === 'run-clear') {
 		const key = String(body.key || '');
+		const runId = body.runId ? String(body.runId) : '';
+		if (key && runId) {
+			if (!RUN_KEYS.has(key)) return json({ error: 'bad run key' }, 400);
+			await store.endRunEntry('run:' + username, key, runId);
+			return json({ ok: true });
+		}
 		const doc = (await store.get('run:' + username)) || {};
 		if (key) delete doc[key]; else for (const k of Object.keys(doc)) delete doc[k];
 		await store.setJSON('run:' + username, doc);
