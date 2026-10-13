@@ -57,6 +57,16 @@ const METATILE_MASK = 0x3FF, COLLISION_MASK = 0x0C00, BEHAVIOR_MASK = 0x1FF;
 // A map-grid cell is one u16: metatile id | collision | elevation. The editor
 // needs to take it apart and put it back together, so the layout is public.
 export const GRID = { METATILE: METATILE_MASK, COLLISION: COLLISION_MASK, ELEVATION: 0xF000, ELEVATION_SHIFT: 12 };
+// FRLG/Emerald object ELEVATION (event_object_movement.c). Two objects interact
+// (collide, see each other, talk) only at compatible elevations — 0 and 15 (the
+// multi-level cells under a bridge) are compatible with anything — and an
+// object's draw priority comes from its elevation: 1 (and 0) sit ABOVE the map's
+// top layer, 2 below it. Victory Road 1F's trainers stand at elevation 3 UNDER the
+// bridge; ignoring this, they walled the bridge deck above them and were drawn
+// under its top layer (playtest 2026-10-12, Instinct).
+export const elevCompatible = (a, b) => !a || !b || a === 15 || b === 15 || a === b;
+const ELEV_PRIORITY = [2, 2, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 0, 0, 2];
+export const drawsAboveTop = e => (ELEV_PRIORITY[(e | 0) & 15] ?? 2) < 2;
 // how many metatiles this tileset pair can address (palette size for the editor)
 export const metatileCount = ts =>
 	(ts?.primaryMetatileCount || 0) + (ts?.secondary?.metatiles?.length || 0);
@@ -809,8 +819,23 @@ export class World {
 	// surfable water: the 0x10-0x1B "sea/pond/river" behavior band. These
 	// tiles block walking (you need a Water-type to Surf) but are open once
 	// you're riding the waves.
+	// a cell's elevation nibble (0 on Crystal maps, whose grid has none)
+	elevationAt(tx, ty) {
+		const v = this.gridAt(tx, ty);
+		if (v == null) return 0;
+		const owner = this.connectionAt(tx, ty)?.conn || this.current;
+		if (owner?.map?._crystal_tileset) return 0;
+		return (v >> GRID.ELEVATION_SHIFT) & 15;
+	}
 	isSurfable(tx, ty) {
 		if (this.gridAt(tx, ty) == null) return false;
+		// UNDERWATER the diver swims freely over every open cell: Emerald blocks a
+		// walker from water by ELEVATION, and an underwater map's cells all share the
+		// diver's. Underwater_SootopolisCity's whole floor is MB_DEEP_WATER (0x12), so
+		// treating it as water froze the diver on its one other cell — a warp tile —
+		// with every direction a bump (playtest 2026-10-12, Instinct)
+		const owner = this.connectionAt(tx, ty)?.conn || this.current;
+		if (owner?.map?.map_type === 'MAP_TYPE_UNDERWATER') return false;
 		const b = this.behaviorAt(tx, ty);
 		return b >= 0x10 && b <= 0x1B;
 	}
@@ -893,6 +918,7 @@ export class Player {
 		this.tx = 0; this.ty = 0;          // grid position (tiles)
 		this.px = 0; this.py = 0;          // pixel position (top-left of tile)
 		this.facing = 'down';
+		this.elev = 0;                     // object elevation (FRLG/Emerald; see elevCompatible)
 		this.moving = false;
 		this.jumping = false;
 		this.moveFrom = null; this.moveTo = null; this.moveT = 0; this.moveDist = META;
@@ -922,6 +948,13 @@ export class Player {
 		// open ocean, and without this the player is frozen there — every direction
 		// out is water, and you cannot walk onto water.
 		if (this.world?.isSurfable?.(tx, ty)) this.surfing = true;
+		this.updateElevation();
+	}
+	// ObjectEventUpdateElevation: a multi-level cell (15) keeps the elevation you
+	// arrived with — under a bridge or on top of it
+	updateElevation() {
+		const e = this.world?.elevationAt?.(this.tx, this.ty) ?? 0;
+		if (e !== 15) this.elev = e;
 	}
 
 	// Why the last attempted step did or did not start. A refusal that reports
@@ -1008,6 +1041,7 @@ export class Player {
 				const prevDist = this.moveDist;
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;
+				this.updateElevation();
 				if (this.surfing && !this.world.isSurfable(this.tx, this.ty)) this.surfing = false;
 				// ...and the inverse, which is a rescue rather than a rule: Johto and
 				// JohKanto shipped with no water behaviors at all, so their sea routes

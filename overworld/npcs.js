@@ -2,7 +2,7 @@
 // collision. Sprite sheets share the player's frame layout (16x32 frames:
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
-import { getJSON, getImage, META, drawOwMon } from './engine.js';
+import { getJSON, getImage, META, drawOwMon, elevCompatible } from './engine.js';
 import { isTrainerEvent, spritePath } from './trainers.js';
 import { itemsOwns } from './items.js';
 import { objectHiddenByFlag } from './events.js';
@@ -250,8 +250,10 @@ export class NPCs {
 		return this.list.some(n => n !== self && n.covers(tx, ty));
 	}
 
-	npcBlocks(tx, ty) {
-		return this.list.some(n => !n.hidden && n.covers(tx, ty));
+	// `elev`: the mover's elevation — an object at an incompatible elevation (under
+	// a bridge you're crossing) doesn't block (engine.js elevCompatible)
+	npcBlocks(tx, ty, elev = 0) {
+		return this.list.some(n => !n.hidden && n.covers(tx, ty) && elevCompatible(elev, Number(n.ev?.elevation) || 0));
 	}
 
 	update(dt) {

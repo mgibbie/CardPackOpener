@@ -527,7 +527,7 @@ player.onArrive = () => {
 	// a static legendary sitting on this tile
 	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
-	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) { sfx('notice'); return; }
+	if (!battle.blocking && trainers.checkSight(player.tx, player.ty, player.elev)) { sfx('notice'); return; }
 	// SAFARI GAME: every step in the zone burns the meter, and the step that
 	// empties it ends the game on the spot (no encounter on the way out)
 	if (safari.on && safariZoneOf(world.current.map.id)) {
