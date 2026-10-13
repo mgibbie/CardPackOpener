@@ -86,8 +86,8 @@ export const HERO_POWERS = {
 	Elrond: P("Rivendell's Grace", 2, 'Gain 2 life and Scry 1.', [{ type: 'heal', value: 2, target: 'self' }, { type: 'scry', value: 1 }]),
 	'Tom Bombadil': P('Ho! Merry Dol!', 2, 'Draw a card, then discard a card.', [{ type: 'draw', value: 1 }, { type: 'discard-random', count: 1 }]),
 	// enemies (Rung A)
-	'Bill Ferny': P('Con the Traveller', 2, 'Each opponent discards a random card.', [{ type: 'enemy-discard', count: 1 }]),
-	Lotho: P('Rally the Ruffians', 2, 'Summon a 1/1 Ruffian with Taunt.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Shire Ruffian', tribe: 'Halfling', keywords: ['taunt'] }]),
+	'Bill Ferny': P('Con the Traveller', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
+	Lotho: P('Rally the Ruffians', 2, 'Summon a 1/1 Ruffian.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Shire Ruffian', tribe: 'Halfling' }]),
 	'Gríma Wormtongue': P('Poison Words', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
 	'Grishnákh': P('Brash Charge', 2, 'Summon a 1/1 Orc with Rush.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Orc Raider', tribe: 'Orc', keywords: ['rush'] }]),
 	Gorbag: P('Cruel Bargain', 2, 'Deal 1 damage to your hero and draw a card.', [{ type: 'damage', value: 1, target: 'own-hero' }, { type: 'draw', value: 1 }]),
