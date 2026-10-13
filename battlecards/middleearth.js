@@ -75,9 +75,9 @@ const P = (name, cost, text, effects) => ({ name, cost, text, effects });
 export const HERO_POWERS = {
 	// heroes
 	Aragorn: P('Elessar', 2, 'Give a friendly creature +1/+1.', [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }]),
-	Gandalf: P('You Shall Not Pass!', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
-	Legolas: P('Elf-shot', 2, 'Deal 1 damage to any target.', [{ type: 'damage', value: 1, target: 'any' }]),
-	Gimli: P('And My Axe!', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
+	Gandalf: P('You Shall Not Pass!', 2, 'Deal 1 damage to an enemy creature & freeze it.', [{ type: 'damage', value: 1, target: 'enemy-creature' }, { type: 'freeze', target: 'enemy-creature' }]),
+	Legolas: P('Elf-shot', 1, 'Deal 1 damage to any target.', [{ type: 'damage', value: 1, target: 'any' }]),
+	Gimli: P('And My Axe!', 2, 'Give a friendly creature +2/+1.', [{ type: 'buff', attack: 2, health: 1, target: 'friendly-creature' }]),
 	Frodo: P('Slip Away', 2, 'Give a friendly creature Elusive.', [{ type: 'grant', keyword: 'elusive', target: 'friendly-creature' }]),
 	Samwise: P("Don't You Leave Him", 2, 'Gain 3 life.', [{ type: 'heal', value: 3, target: 'self' }]),
 	'Éowyn': P('I Am No Man', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
