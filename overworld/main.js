@@ -3,6 +3,7 @@ import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
 import { loadMapLayoutData } from './maplayout.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
+import { startOverlayHeal, trackedGetJSON } from './overlay_heal.js';
 import { loadCrystalCallbacks } from './crystal_callbacks.js';
 import { decoSpriteFor, loadCrystalDecorations } from './decorations.js';
 import { loadCrystalObjectConsts } from './crystal_object_consts.js';
@@ -689,36 +690,41 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	S.trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
 	// the PHONE: contacts, call lines, restored trainer scripts + Crystal's rematch teams
-	await loadPhoneData(getJSON);
-	await loadChoiceData(getJSON);   // every multichoice the transpile dropped (choice.js)
-	await loadFallthroughData(getJSON);
-	await loadMapLayoutData(getJSON);   // the decomps' setmaplayoutindex (maplayout.js)   // the decomp's label fall-through (fallthrough.js)
-	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
-	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
-	await loadStoneTables(getJSON);            // Crystal boulder-into-hole tables (stonetables.js)
-	await loadCrystalParties(getJSON);         // Crystal trainer parties by trainerbattle id (crystal_parties.js)
-	await loadCrystalCallbacks(getJSON);       // which Crystal map callbacks run (crystal_callbacks.js)
-	await loadCrystalDecorations(getJSON, getImage);   // the player's-room decorations + their object sprites (decorations.js)
+	// story overlays: a failed fetch is reported and healed in the background
+	// (overlay_heal.js) instead of silently running the raw transpile all session
+	const T = (fn, ...rest) => { const L = g => fn(g, ...rest); return L(trackedGetJSON(getJSON, L)); };
+	await T(loadPhoneData);
+	await T(loadChoiceData);   // every multichoice the transpile dropped (choice.js)
+	await T(loadFallthroughData);
+	await T(loadMapLayoutData);   // the decomps' setmaplayoutindex (maplayout.js)   // the decomp's label fall-through (fallthrough.js)
+	await T(loadCrystalScriptVarData);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
+	await T(loadCrystalObjectConsts);    // Crystal object constants -> map objects (crystal_object_consts.js)
+	await T(loadStoneTables);            // Crystal boulder-into-hole tables (stonetables.js)
+	await T(loadCrystalParties);         // Crystal trainer parties by trainerbattle id (crystal_parties.js)
+	await T(loadCrystalCallbacks);       // which Crystal map callbacks run (crystal_callbacks.js)
+	await T(loadCrystalDecorations, getImage);   // the player's-room decorations + their object sprites (decorations.js)
 	npcs.decoSprite = decoSpriteFor;               // ...which the room's console / doll objects wear
-	await loadSubvarFixData(getJSON);          // subvars the transpile turned into addvars (subvar_fix.js)
-	await loadScrollMultichoice(getJSON);      // Emerald's ShowScrollableMultichoice lists (scroll_multichoice.js)
+	await T(loadSubvarFixData);          // subvars the transpile turned into addvars (subvar_fix.js)
+	await T(loadScrollMultichoice);      // Emerald's ShowScrollableMultichoice lists (scroll_multichoice.js)
 	mergePhoneTeams(S.trainerTeams);
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	// the shared bodies, and the text they speak — an unstringed msg falls through
 	// to printing its own label, so the two have to arrive together
-	{
-		const sh = await getJSON('data/shared_scripts.json').catch(() => null);
+	// the shared bodies + their text, the missing labels and the POKeBLOCK scripts
+	const loadShared = async gj => {
+		const sh = await gj('data/shared_scripts.json').catch(() => null);
 		if (sh) { sharedScripts = sh.scripts || {}; commonStrings = { ...(sh.strings || {}), ...commonStrings }; }
 		// + labels a map's OWN script calls that the shared table never pulled in
 		// (tools/audit_missing_labels.mjs --write; the Pokemon Mansion statue
 		// switches, 2026-10-04). A fallback under shared_scripts, like it.
-		const ml = await getJSON('missing_labels_data.json').catch(() => null);
+		const ml = await gj('missing_labels_data.json').catch(() => null);
 		if (ml) { sharedScripts = { ...(ml.scripts || {}), ...sharedScripts }; commonStrings = { ...(ml.strings || {}), ...commonStrings }; }
 		// + the POKeBLOCK scripts (the blenders, the Blend Master, the Safari
 		// feeders, the case gift) and the berries' flavors (tools/gen_pokeblock_data.mjs)
-		const pb = await getJSON('pokeblock_data.json').catch(() => null);
+		const pb = await gj('pokeblock_data.json').catch(() => null);
 		if (pb) { initPokeblockData(pb); sharedScripts = { ...(pb.scripts || {}), ...sharedScripts }; commonStrings = { ...(pb.strings || {}), ...commonStrings }; }
-	}
+	};
+	await loadShared(trackedGetJSON(getJSON, loadShared));
 	// one tab plays at a time: a newer tab pauses this one (no stale writes from it)
 	startTabLock({ keys: OW_KEYS });
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
@@ -786,6 +792,9 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	Story.clearTempFlags();
 	noteOutdoor();
 	await loadMapScripts(world.current.name);
+	// a story overlay that failed at boot keeps retrying; when it lands, rebuild this
+	// map's scripts and run its setup again (its callbacks place objects by the overlay's ops)
+	startOverlayHeal(getJSON, async () => { if (!world.current || cutscene.blocking) return; await loadMapScripts(world.current.name); await runMapSetupScripts(false); });
 	S.postBattleCatchUpArmed = true;   // the boot path never ran the catch-up at all
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
