@@ -42,18 +42,34 @@ ok('an unknown enemy is refused', who.status === 2 && /unknown enemies/.test(who
 
 // ===== 5 =====
 const game = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
-for (const [fn, tag] of [['bootMiddleEarthEncounter', 'meDeck'], ['bootSwordCoastEncounter', 'scDeck'], ['bootFinalFantasyEncounter', 'ffDeck']]) {
+for (const [fn, basics] of [['bootMiddleEarthEncounter', "allowedBasicsFor(cardsById, 'meDeck'"], ['bootSwordCoastEncounter', "allowedBasicsFor(cardsById, 'scDeck'"],
+	['bootFinalFantasyEncounter', "allowedBasicsFor(cardsById, 'ffDeck'"], ['bootMultiverseEncounter', "allowedBasicsFor(cardsById, 'mvDeck'"],
+	['bootLorequestEncounter', 'Lorequest.allowedBasics(cardsById,']]) {
 	const i = game.indexOf(`function ${fn}(`);
 	const body = i < 0 ? '' : game.slice(i, game.indexOf('\n}\n', i));
 	ok(`${fn} exists`, i >= 0);
 	const mirrored = ['E.createGame(', 'E.resetDeckAndHand(state, 1,', 'E.drawCards(state, 1, 4)', 'E.addCoin(state, 1)', 'E.stripLoadouts(state)',
-		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', `allowedBasicsFor(cardsById, '${tag}'`];
+		'setRunLife((run.wins || 0) + (run.losses || 0) + 1)', basics];
 	const missing = mirrored.filter(s => !body.includes(s));
 	ok(`${fn} still does what the simulator mirrors`, missing.length === 0, missing);
 	const extra = ['applyRunAnomaly'].filter(s => body.includes(s));
 	ok(`${fn}: the only step the sim skips is the weekly anomaly (none by default)`, extra.length === 1);
 }
 ok('the sim uses game.js\'s run life formula', /function runLifeFor\(round\) \{ return 10 \+ 5 \* \(round - 1\); \}/.test(game));
+// the win-parity modes: the enemy is generated at the hero's win count, and Lorequest seats a
+// character with its CLASS power (no per-character power)
+ok('Lorequest/Multiverse enemies are generated at win-parity (game.js)', /Lorequest\.generateEnemy\(cardsById, character, wins, Math\.random\)/.test(game) && /Multiverse\.generateEnemy\(cardsById, character, wins, Math\.random\)/.test(game));
+{ const i = game.indexOf('function lorequestSeat('); ok('lorequestSeat seats the class power (no per-character power)', i >= 0 && !/powerOf\(/.test(game.slice(i, game.indexOf('\n}', i)))); }
+
+// ===== 7. the win-parity modes run =====
+const runMode = (m, rung, enemy, out) => { execFileSync(process.execPath, [TOOL, `--mode=${m}`, `--rung=${rung}`, `--enemies=${enemy}`, '--games=1', '--workers=2', `--out=${out}`], { stdio: 'ignore' });
+	return JSON.parse(fs.readFileSync(out, 'utf8')); };
+const lq = runMode('lorequest', 'A', 'Jace', tmp('lq.json'));
+ok('lorequest: 15 planeswalkers vs Jace (never Jace vs itself), every fight decided', lq.length === 15 && !lq.some(x => x.hero === 'Jace') && lq.every(x => x.result === 'win' || x.result === 'loss'), lq.map(x => x.result));
+const mv = runMode('multiverse', 'C', 'Galactus', tmp('mv.json'));
+ok('multiverse: a Cosmic-rung run finishes, one record per hero', mv.length === 10 && mv.every(x => x.result === 'win' || x.result === 'loss' || x.result === 'timeout'), mv.map(x => x.result));
+ok('a rung letter the mode lacks is refused', spawnSync(process.execPath, [TOOL, '--mode=lorequest', '--rung=C'], { encoding: 'utf8' }).status === 2);
+for (const f of ['lq.json', 'mv.json']) { try { fs.unlinkSync(tmp(f)); } catch { /* temp */ } }
 
 // ===== 6. priority =====
 // game.js answers an AI seat's priority with AI.chooseResponse (resolveAIResponds); the sim must

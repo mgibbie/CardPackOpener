@@ -19,9 +19,9 @@ import { fileURLToPath } from 'url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const args = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const [k, ...v] = a.slice(2).split('='); return [k, v.length ? v.join('=') : true]; }));
-const TAGS = { finalfantasy: 'ffDeck', swordcoast: 'scDeck', middleearth: 'meDeck' };
+const TAGS = { finalfantasy: 'ffDeck', swordcoast: 'scDeck', middleearth: 'meDeck', lorequest: 'loreDeck', multiverse: 'mvDeck' };
 const mode = args.mode, TAG = TAGS[mode];
-if (!TAG || !args.enemies) { console.error('usage: --mode=<middleearth|swordcoast|finalfantasy> --enemies="A|B" [--rung=A] [--games=4] [--overrides=base.json]'); process.exit(2); }
+if (!TAG || !args.enemies) { console.error('usage: --mode=<lorequest|middleearth|swordcoast|finalfantasy|multiverse> --enemies="A|B" [--rung=A] [--games=4] [--overrides=base.json]'); process.exit(2); }
 const enemies = String(args.enemies).split('|');
 const rung = args.rung || 'A', games = String(args.games || 4);
 const cards = JSON.parse(fs.readFileSync(path.join(HERE, '../battlecards/cards.json'), 'utf8')).cards;
