@@ -67,7 +67,7 @@ export const HERO_POWERS = {
 	'Wolverine': P('Snikt!', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Doctor Strange': P('Eye of Agamotto', 2, 'Draw a card; deal 1 damage to your hero.', [{ type: 'draw', value: 1 }, { type: 'damage', value: 1, target: 'own-hero' }]),
 	'Black Panther': P('Kinetic Blast', 2, 'Deal 2 damage to any target.', [{ type: 'damage', value: 2, target: 'any' }]),
-	'Storm': P('Lightning Squall', 2, 'Deal 1 damage to an enemy creature and freeze it.', [{ type: 'damage', value: 1, target: 'enemy-creature' }, { type: 'freeze', target: 'enemy-creatures' }]),
+	'Storm': P('Lightning Squall', 2, 'Deal 1 damage to an enemy creature and freeze it.', [{ type: 'damage', value: 1, target: 'enemy-creature' }, { type: 'freeze', target: 'enemy-creature' }]),
 	'Captain Marvel': P('Binary Light', 2, 'Gain 3 life.', [{ type: 'heal', value: 3, target: 'self' }]),
 	'Silver Surfer': P('Cosmic Awareness', 2, 'Deal 1 damage to any target and Scry 1.', [{ type: 'damage', value: 1, target: 'any' }, { type: 'scry', value: 1 }]),
 	// villains — Street-level
@@ -75,25 +75,25 @@ export const HERO_POWERS = {
 	'Venom': P('Symbiote Feast', 2, 'Give a friendly creature +1/+0 and Lifesteal.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'lifesteal', target: 'friendly-creature' }]),
 	'Carnage': P('Bloodlust', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
 	'Doctor Octopus': P('Tentacle Barrage', 2, 'Deal 2 damage split among random enemies.', [{ type: 'random-damage', value: 2, pool: 'enemies', count: 2 }]),
-	'Mysterio': P('Smoke and Mirrors', 2, 'Summon a 2/1 Illusion with Elusive.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Illusion', tribe: 'Illusion', keywords: ['elusive'] }]),
+	'Mysterio': P('Smoke and Mirrors', 3, 'Summon a 2/1 Illusion with Elusive.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Illusion', tribe: 'Illusion', keywords: ['elusive'] }]),
 	'Electro': P('Static Surge', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Rhino': P('Charge', 2, 'Give a friendly creature +2/+0 and Rush.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'rush', target: 'friendly-creature' }]),
-	'Sandman': P('Sand Wall', 2, 'Summon a 0/3 with Taunt.', [{ type: 'summon', count: 1, attack: 0, health: 3, name: 'Sand Wall', tribe: 'Elemental', keywords: ['taunt'] }]),
+	'Sandman': P('Sand Wall', 3, 'Summon a 0/3 with Taunt.', [{ type: 'summon', count: 1, attack: 0, health: 3, name: 'Sand Wall', tribe: 'Elemental', keywords: ['taunt'] }]),
 	'Vulture': P('Salvage', 2, 'Draw a card and gain a Coin.', [{ type: 'draw', value: 1 }, { type: 'gain-coin', value: 1 }]),
 	'Kraven': P('The Hunt', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Scorpion': P('Venom Strike', 2, 'Give a friendly creature Poisonous.', [{ type: 'grant', keyword: 'poisonous', target: 'friendly-creature' }]),
-	'Shocker': P('Shock Blast', 2, 'Deal 1 damage to any target and freeze an enemy creature.', [{ type: 'damage', value: 1, target: 'any' }, { type: 'freeze', target: 'enemy-creatures' }]),
+	'Shocker': P('Shock Blast', 3, 'Deal 1 damage to any target and freeze an enemy creature.', [{ type: 'damage', value: 1, target: 'any' }, { type: 'freeze', target: 'enemy-creature' }]),
 	'Hobgoblin': P('Firebomb', 2, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),
 	'Lizard': P('Savage Growth', 2, 'Give a friendly creature +1/+1.', [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }]),
 	'Kingpin': P('Extort', 2, 'Gain two Coins.', [{ type: 'gain-coin', value: 2 }]),
 	// villains — Masterminds
 	'Doctor Doom': P('Doombot Legion', 2, 'Summon a 2/2 Doombot.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Doombot', tribe: 'Robot' }]),
 	'Loki': P('Deceive', 2, 'Summon a 2/2 Illusion with Elusive.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: "Loki's Illusion", tribe: 'Illusion', keywords: ['elusive'] }]),
-	'Kang the Conqueror': P('Time Stop', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
+	'Kang the Conqueror': P('Time Stop', 3, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
 	'Abomination': P('Gamma Rage', 2, 'Give a friendly creature +2/+1.', [{ type: 'buff', attack: 2, health: 1, target: 'friendly-creature' }]),
 	// villains — Cosmic (final bosses)
 	'Thanos': P('The Snap', 2, 'Deal 3 damage to a random enemy.', [{ type: 'random-damage', value: 3, pool: 'enemies', count: 1 }]),
-	'Galactus': P('World Hunger', 2, 'Deal 2 damage to all enemy creatures.', [{ type: 'damage', value: 2, target: 'enemy-creatures' }]),
+	'Galactus': P('World Hunger', 5, 'Deal 2 damage to all enemy creatures.', [{ type: 'damage', value: 2, target: 'enemy-creatures' }]),
 };
 export const powerOf = ch => HERO_POWERS[ch] || null;
 
