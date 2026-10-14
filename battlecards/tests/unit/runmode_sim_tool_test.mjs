@@ -55,6 +55,24 @@ for (const [fn, tag] of [['bootMiddleEarthEncounter', 'meDeck'], ['bootSwordCoas
 }
 ok('the sim uses game.js\'s run life formula', /function runLifeFor\(round\) \{ return 10 \+ 5 \* \(round - 1\); \}/.test(game));
 
+// ===== 6. priority =====
+// game.js answers an AI seat's priority with AI.chooseResponse (resolveAIResponds); the sim must
+// do the same, or a land's tap ability strands priority on the inactive seat and the fight sits
+// still until turn 60 (2026-10-14: half of all Lidless Eye fights "stalled" that way).
+const sim = fs.readFileSync(TOOL, 'utf8');
+ok('game.js answers AI priority with AI.chooseResponse', /E\.resolveResponse\(state, pi, AI\.chooseResponse\(state, pi\)\)/.test(game));
+ok('the sim answers priority the same way before the active seat acts', /E\.resolveResponse\(st, st\.priority, AI\.chooseResponse\(st, st\.priority\)\)/.test(sim) && /const s = st\.current;/.test(sim));
+{
+	const E = await import(path.join(ROOT, 'battlecards/engine.js').replace(/\\/g, '/').replace(/^/, 'file:///'));
+	const AI = await import(path.join(ROOT, 'battlecards/ai.js').replace(/\\/g, '/').replace(/^/, 'file:///'));
+	const { seededRng } = await import(path.join(ROOT, 'battlecards/engine/rng.js').replace(/\\/g, '/').replace(/^/, 'file:///'));
+	const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'battlecards/cards.json'), 'utf8'));
+	const byId = {}; for (const c of raw.cards) byId[c.id] = c;
+	byId._v = { id: '_v', name: 'V', type: 'creature', cost: 2, attack: 2, health: 2, rarity: 'common' };
+	const st = E.createGame(byId, seededRng(1), ['_v', '_v', '_v', '_v', '_v', '_v'], 2);
+	ok('AI.chooseResponse passes (null) when it has nothing to respond with', AI.chooseResponse(st, 1) === null);
+}
+
 for (const f of ['a.json', 'b.json', 'c.json', 'ov.json']) { try { fs.unlinkSync(tmp(f)); } catch { /* temp */ } }
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
