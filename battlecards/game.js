@@ -2704,50 +2704,8 @@ function resolveAISacs() {
 function resolveAIResponds() {
 	while (state.priority != null && isAiSeat(state.priority) && !state.players[state.priority].eliminated) {
 		const pi = state.priority;
-		E.resolveResponse(state, pi, aiChooseResponse(state, pi));
+		E.resolveResponse(state, pi, AI.chooseResponse(state, pi));
 	}
-}
-
-// value-driven instant-speed decision: counter worthwhile spells, blow out an attack
-// by killing the attacker, remove a real threat — always with the cheapest source.
-function aiChooseResponse(state, pi) {
-	const p = state.players[pi];
-	const top = E.pendingSpellFor(state, pi);
-	const crHp = c => c.maxHealth - (c.damage || 0);
-	const dmgOf = fx => (fx || []).filter(e => e.type === 'damage' && (e.target === 'creature' || e.target === 'any')).reduce((a, e) => a + (e.value || 0), 0);
-
-	// 1) counter a spell that is expensive, or aimed at us
-	const counters = E.counterOptions(state, pi);
-	if (counters.length && top && top.kind === 'spell') {
-		const cost = top.card.cost || 0, t = top.target;
-		if (cost >= 3 || (t && t.player === pi && cost >= 1)) return { kind: 'spell', uid: counters[0].uid };
-	}
-
-	// gather my instant-speed damage sources (instants + creature abilities), cheapest first
-	const sources = [];
-	for (const c of E.responseOptions(state, pi)) { const d = c.counterSpell ? 0 : dmgOf(c.effects); if (d > 0) sources.push({ act: { kind: 'spell', uid: c.uid }, dmg: d, cost: E.effectiveCost(state, pi, c) }); }
-	for (const c of [...p.board, ...p.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
-	sources.sort((a, b) => a.cost - b.cost || a.dmg - b.dmg);
-	const killer = need => sources.find(s => s.dmg >= need);
-
-	// 2) defending an attack: kill the attacker to blow out the swing
-	if (top && top.kind === 'attack') {
-		let atkr = null;
-		for (const o of state.players) if (o !== p) { const c = o.board.find(x => x.uid === top.attackerUid); if (c) atkr = c; }
-		if (atkr) { const s = killer(crHp(atkr)); if (s) return { ...s.act, target: { type: 'creature', uid: atkr.uid } }; }
-	}
-
-	// 3) kill the biggest worthwhile enemy creature we can
-	let best = null;
-	for (const o of state.players) if (o !== p) for (const cr of o.board) {
-		if (cr.type !== 'creature') continue;
-		const worth = cr.attack + cr.maxHealth;
-		if (worth < 5) continue;
-		const s = killer(crHp(cr));
-		if (s && (!best || worth > best.worth)) best = { act: s.act, uid: cr.uid, worth };
-	}
-	if (best) return { ...best.act, target: { type: 'creature', uid: best.uid } };
-	return null; // hold priority
 }
 
 let autoPass = true;

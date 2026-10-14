@@ -127,7 +127,13 @@ function fight(hero, enemy, round, seed) {
 		st.players[1].allowedBasics = Duels.allowedBasicsFor(byId, TAG, enemy);
 		let actions = 0, stall = 0;
 		while (!st.over && st.turnNumber < 60 && actions < 4000) {
-			const s = st.priority != null ? st.priority : st.current;
+			// game.js resolveAIResponds: whoever holds priority answers it (respond or pass)
+			// before the active seat acts. Without this a land's tap ability left priority
+			// with the inactive seat and the fight sat still until turn 60.
+			let guard = 0;
+			while (st.priority != null && !st.over && guard++ < 50) E.resolveResponse(st, st.priority, AI.chooseResponse(st, st.priority));
+			if (st.over) break;
+			const s = st.current;
 			const before = st.turnNumber + ':' + st.current;
 			const acted = AI.step(st, s);
 			if (!acted) E.endTurn(st);
