@@ -100,7 +100,7 @@ export const HERO_POWERS = {
 	'Mauhúr': P('Reinforce', 4, 'Summon a 2/2 Uruk-hai with Rush.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Uruk-hai', tribe: 'Orc', keywords: ['rush'] }]),
 	Gothmog: P('Morgul Reserves', 2, 'Summon a 2/2 Morgul Orc.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Morgul Orc', tribe: 'Orc' }]),
 	'The Watcher in the Water': P('Drag Under', 3, 'Return an enemy creature to its owner’s hand.', [{ type: 'bounce', target: 'enemy-creature' }]),
-	'The Mouth of Sauron': P('Parley', 2, 'Each opponent discards a card; draw a card.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }]),
+	'The Mouth of Sauron': P('Parley', 2, 'Each opponent discards a card; draw a card and deal 1 damage to an enemy creature.', [{ type: 'enemy-discard', count: 1 }, { type: 'draw', value: 1 }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'King of the Oathbreakers': P('Summon the Dead', 4, 'Summon a 2/2 Shade with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Oathbreaker Shade', tribe: 'Spirit', keywords: ['deathtouch'] }]),
 	Shelob: P('Ensnare', 2, 'Freeze an enemy creature and deal 2 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'The Great Goblin': P('Goblin-town', 3, 'Summon two 1/1 Goblins.', [{ type: 'summon', count: 2, attack: 1, health: 1, name: 'Goblin-town Goblin', tribe: 'Goblin' }]),

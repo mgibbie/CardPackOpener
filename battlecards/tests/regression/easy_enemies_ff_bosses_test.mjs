@@ -27,12 +27,12 @@ const CARDS = {
 	"me_sl_mirkwood": {"cost":2,"attack":2,"health":4},
 	"me_sl_bats": {"cost":3,"attack":3,"health":3},
 	"me_sl_oldfat": {"cost":3,"attack":3,"health":4},
-	"me_mo_sig": {"cost":5,"attack":5,"health":5},
+	"me_mo_sig": {"cost":5,"attack":5,"health":6}, // +1 Health in #698
 	"me_mo_notion": {"cost":3,"attack":3,"health":3},
 	"me_mo_crebain": {"cost":2,"attack":2,"health":2},
-	"me_mo_archivist": {"cost":4,"attack":4,"health":4},
-	"me_mo_nazgul": {"cost":4,"attack":4,"health":3},
-	"me_mo_hostage": {"cost":4,"attack":3,"health":3},
+	"me_mo_archivist": {"cost":4,"attack":4,"health":5}, // +1 Health in #698
+	"me_mo_nazgul": {"cost":4,"attack":4,"health":4}, // +1 Health in #698
+	"me_mo_hostage": {"cost":4,"attack":3,"health":4}, // +1 Health in #698
 	"me_gm_crebain": {"cost":2,"attack":2,"health":2},
 	"me_gm_bats": {"cost":3,"attack":3,"health":3},
 	"me_gm_executioner": {"cost":3,"attack":3,"health":2},
