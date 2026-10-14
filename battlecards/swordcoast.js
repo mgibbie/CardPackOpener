@@ -95,7 +95,7 @@ export const HERO_POWERS = {
 	'Karazikar, the Eye Tyrant': P('Disintegration Ray', 3, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 	'Captain N\'ghathrod': P('Dredge the Deep', 2, 'Each opponent discards a card.', [{ type: 'enemy-discard', count: 1 }]),
 	'Zalto, Fire Giant Duke': P('Forge-Hammer', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Storvald, Frost Giant Jarl': P('Frost Breath', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
+	'Storvald, Frost Giant Jarl': P('Frost Breath', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'Ebondeath, Dracolich': P('Undying Flight', 3, 'Summon a 2/2 Wraith with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Dracolich Wraith', tribe: 'Wraith', keywords: ['reborn'] }]),
 	'Old Gnawbone': P('Hoard-Greed', 2, 'Gain two Coins.', [{ type: 'gain-coin', value: 2 }]),
 	'Baba Lysaga, Night Witch': P('Night Hexes', 3, 'Deal 1 damage to all enemy creatures.', [{ type: 'damage', value: 1, target: 'enemy-creatures' }]),

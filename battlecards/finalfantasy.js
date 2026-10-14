@@ -109,7 +109,7 @@ export const HERO_POWERS = {
 	'Kuja, Genome Sorcerer': P('Flare Star', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 	'Golbez, Crystal Collector': P('Shadow Dragon', 3, 'Summon a 2/2 with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Shadow Dragon', tribe: 'Dragon', keywords: ['deathtouch'] }]),
 	'The Emperor of Palamecia': P('Cyclone', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Xande, Dark Mage': P('Stop Spell', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
+	'Xande, Dark Mage': P('Stop Spell', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'Edea, Possessed Sorceress': P('Ice Strike', 2, 'Freeze an enemy creature and deal 1 damage to it.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'damage', value: 1, target: 'enemy-creature' }]),
 	'Zenos yae Galvus': P('Unfettered', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
 	// enemies (Rung C)
@@ -121,7 +121,7 @@ export const HERO_POWERS = {
 	'Cloud of Darkness': P('Particle Beam', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Jenova, Ancient Calamity': P('Reunion', 4, 'Summon a 2/2 with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Jenova Cell', tribe: 'Alien', keywords: ['reborn'] }]),
 	// enemies (Rung D — final bosses)
-	'Sephiroth, One-Winged Angel': P('Supernova', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
+	'Sephiroth, One-Winged Angel': P('Supernova', 2, 'Deal 4 damage to an enemy creature.', [{ type: 'damage', value: 4, target: 'enemy-creature' }]),
 	'Chaos, the Endless': P('Inferno', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 };
 export const powerOf = ch => HERO_POWERS[ch] || null;
