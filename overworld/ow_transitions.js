@@ -111,6 +111,11 @@ export async function refreshMapContent(label) {
 	S.radioTune = null; // leaving the room switches the radio off; map track resumes
 	if (!/^SecretBase_/.test(label || '')) S.baseCtx = null; // left the base
 
+	// the real games wipe the TEMP flag range on every map transition, BEFORE the
+	// map's objects spawn (Emerald/FRLG ClearTempFieldEventData; Crystal HandleNewMap ->
+	// ResetMapBufferEventFlags) — objects hidden by a temp flag (DRAGON SHRINE's elders,
+	// the Cable Club friends) read the cleared value
+	Story.clearTempFlags();
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -119,9 +124,6 @@ export async function refreshMapContent(label) {
 	blockers.loadForMap();
 	portals.loadForMap();
 	items.loadForMap();
-	// the real games wipe the TEMP flag range on every map transition
-	// (ClearTempFieldEventData); ours persists it, so do it here
-	Story.clearTempFlags();
 	noteOutdoor();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;

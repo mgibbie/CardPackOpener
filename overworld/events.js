@@ -170,7 +170,12 @@ export function objectHiddenByFlag(ev, _crystal) {
 export function clearTempFlags() {
 	let n = 0;
 	mutate(store => {   // the same rebase-then-write as every other story change
-	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k)) { delete store.flags[k]; n++; }
+	// Crystal's own temporary range too: HandleNewMap -> ResetMapBufferEventFlags zeroes
+	// the first byte of wEventFlags, i.e. EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1..8, on every
+	// new map. Kept forever here, the S.S. AQUA sailor's "already rode" check
+	// (EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1) refused every voyage after one walk-off scene
+	// (playtest 2026-10-13), and DRAGON SHRINE's elders stayed hidden.
+	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k) || /^EVENT_TEMPORARY_UNTIL_MAP_RELOAD_[1-8]$/.test(k)) { delete store.flags[k]; n++; }
 	// ...and the TEMP VARS. The decomp's ClearTempFieldEventData wipes
 	// VAR_TEMP_0..F on every map load too; this port kept them forever, so a value
 	// one map wrote gated coord triggers on every map after it. Reported: the
