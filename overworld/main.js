@@ -773,6 +773,11 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	repairSaves();   // before the map's objects are read, so a repaired hide takes effect on THIS load
 	await syncRegionToMap(world.current.name);   // a save resumed in another region's town (flown there) is in THAT region
 	applyMapFixups(world.current.name, { boot: true });   // what refreshMapContent does on entry (Shoal exits, Silph doors, Hill guards)
+	// the real games wipe the TEMP flag range on every map transition, BEFORE the
+	// map's objects spawn (Emerald/FRLG ClearTempFieldEventData; Crystal HandleNewMap ->
+	// ResetMapBufferEventFlags) — objects hidden by a temp flag (DRAGON SHRINE's elders,
+	// the Cable Club friends) read the cleared value
+	Story.clearTempFlags();
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -781,9 +786,6 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	blockers.loadForMap();
 	portals.loadForMap();
 	items.loadForMap();
-	// the real games wipe the TEMP flag range on every map transition
-	// (ClearTempFieldEventData); ours persists it, so do it here
-	Story.clearTempFlags();
 	noteOutdoor();
 	await loadMapScripts(world.current.name);
 	S.postBattleCatchUpArmed = true;   // the boot path never ran the catch-up at all

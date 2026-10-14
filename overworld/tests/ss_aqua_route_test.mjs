@@ -207,6 +207,44 @@ try {
 		await page.close();
 	}
 
+	// ===== 3c. a stale "temporary" flag (2026-10-13, Instinct) =====
+	// Crystal clears EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1..8 on every new map
+	// (HandleNewMap -> ResetMapBufferEventFlags). The port kept them forever, so one
+	// walk-off scene left _1 set and every sailor answered "Sorry. You can't board
+	// now." Instinct's state: TEMP_1 set, port sprites after the HALL OF FAME, no first
+	// voyage yet, a Wednesday (a first voyage ignores the sailing days).
+	{
+		const flags = { grand_champion: true, EVENT_BEAT_ELITE_FOUR: true, EVENT_GOT_SS_TICKET_FROM_ELM: true,
+			EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1: true, EVENT_OLIVINE_PORT_SPRITES_BEFORE_HALL_OF_FAME: true };
+		const { page, errors } = await boot(GRAND, 'OlivineCity', { flags, bag: { pokeball: 5, ssticket: 2 }, weekday: 3 });
+		A(!(await flag(page, 'EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1')), '3c. loading a map clears EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1 (boot)');
+		// set it again (a scene set it on the last map) and walk in: the entry path clears it too
+		await W(page, () => window.__ow.Story.setFlag('EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1'));
+		await W(page, () => window.__ow.moveToMap('OlivinePort', 7, 17));
+		await waitMap(page, 'OlivinePort');
+		await sleep(600);
+		A(!(await flag(page, 'EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1')), '3c. ...and entering OLIVINE PORT clears it (map change)');
+		const sailor = await W(page, () => { const n = window.__ow.npcs.list.find(n => n.ev && n.ev.script === 'OlivinePortSailorAfterHOFScript' && !n.hidden); return n && { x: n.tx, y: n.ty }; });
+		A(!!sailor, '3c. the after-HALL OF FAME sailor stands at the port', JSON.stringify(sailor));
+		await W(page, s => { const P = window.__ow.player; P.tx = s.x; P.ty = s.y - 1; P.x = s.x * 16; P.y = (s.y - 1) * 16; P.facing = 'down'; }, sailor);
+		await page.keyboard.press('z');
+		let map = 'OlivinePort', said = '';
+		for (let i = 0; i < 150 && map === 'OlivinePort'; i++) {
+			const s = await W(page, async () => {
+				const O = window.__ow, C = await import('./choice.js');
+				return { d: !!O.dialog.blocking, c: !!C.choiceMenu.open, map: O.world.current.name, t: O.dialog.pages ? O.dialog.pages.flat().join(' ') : '' };
+			});
+			map = s.map; if (s.t) said += s.t + ' | ';
+			if (s.c) { await W(page, async () => { (await import('./choice.js')).choiceMenu.idx = 0; }); await page.keyboard.press('z'); }
+			else if (s.d) await page.keyboard.press('z');
+			await sleep(120);
+		}
+		A(!/can't board/i.test(said), '3c. the sailor no longer says "Sorry. You can\'t board now."', said.slice(0, 240));
+		A((await waitMap(page, 'FastShip1F')) === 'FastShip1F', '3c. ...and the first voyage boards the S.S. AQUA (any weekday)', map);
+		A(errors.length === 0, '3c. no page errors', JSON.stringify(errors.slice(0, 3)));
+		await page.close();
+	}
+
 	// ===== 4. the POWER PLANT and the COPYCAT's PASS =====
 	{
 		const flags = { grand_champion: true, EVENT_BEAT_ELITE_FOUR: true, EVENT_GOT_SS_TICKET_FROM_ELM: true, EVENT_MET_MANAGER_AT_POWER_PLANT: true };
