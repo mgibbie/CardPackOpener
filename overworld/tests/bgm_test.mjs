@@ -224,7 +224,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const main = overworldSource();
 			const bgmDir = path.join(ROOT, 'overworld/data/sounds/bgm');
 			const refs = [...new Set([...main.matchAll(/'((?:crystal|firered|emerald)_MUS\w+)'/g)].map(m => m[1]))];
-			const gone = refs.filter(k => !fs.existsSync(path.join(bgmDir, k + '.ogg')));
+			// tracks shipped from the main project live in overworld/bgm_extra/ (sound.js BGM_EXTRA)
+			const extraDir = path.join(ROOT, 'overworld/bgm_extra');
+			const gone = refs.filter(k => !fs.existsSync(path.join(bgmDir, k + '.ogg')) && !fs.existsSync(path.join(extraDir, k + '.ogg')));
 			A(refs.length > 30 && gone.length === 0,
 				`all ${refs.length} theme keys in BATTLE_THEMES have real files`, gone.slice(0, 4).join(', '));
 		}
