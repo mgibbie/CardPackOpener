@@ -97,3 +97,66 @@ export const STICKER_POS = { eternal: { x: 0, y: 0 }, perishable: { x: 0, y: 2 }
 export const SOUL_POS = CENTERS.soul && CENTERS.soul.pos || { x: 0, y: 1 };
 export const STAKE_LIST = Object.entries(DATA.stakes).map(([k, v]) => ({ key: k, ...v })).sort((a, b) => a.stake_level - b.stake_level);
 export const BACK_LIST = Object.entries(DATA.centers).filter(([k, v]) => v.set === 'Back' && k !== 'b_challenge').map(([k, v]) => ({ key: k, ...v })).sort((a, b) => a.order - b.order);
+
+// ------------------------------------------------------------- mod art
+// Mod atlases live in the mods registry (ATLASES: name -> {src, px, py, frames?, mod};
+// px/py are the 1x cell, the files are 2x). The registry is bound once a mod module
+// has loaded (bindModRegistry); images load lazily the first time a card asks for
+// them. Mod art is served cross-origin in production (a separate Pages project),
+// so images are requested with CORS — the card canvases feed WebGL and must not taint.
+export const MODREG = { atlases: {}, types: {}, rarities: {}, mods: {}, center: () => null };
+export function bindModRegistry(m) {
+  if (!m) return;
+  MODREG.atlases = m.ATLASES || MODREG.atlases;
+  MODREG.types = m.CONSUMABLE_TYPES || MODREG.types;
+  MODREG.rarities = m.RARITIES || MODREG.rarities;
+  MODREG.mods = m.MODS || MODREG.mods;
+  if (m.centerByKey) MODREG.center = m.centerByKey;
+}
+const modImgs = new Map();          // atlas name -> {img, state: 'loading'|'ok'|'error'}
+const modListeners = new Set();
+/** cb(atlasName) whenever a mod atlas finishes loading (or fails). Returns an unsubscribe. */
+export function onModAtlas(cb) { modListeners.add(cb); return () => modListeners.delete(cb); }
+/** 'ok' | 'loading' | 'missing' — kicks off the load on first ask. */
+export function modAtlasState(name) {
+  const a = MODREG.atlases[name];
+  if (!a || !a.src) return 'missing';
+  let e = modImgs.get(name);
+  if (!e) {
+    e = { img: new Image(), state: 'loading' };
+    modImgs.set(name, e);
+    e.img.crossOrigin = 'anonymous';
+    const done = (st) => { e.state = st; for (const cb of modListeners) { try { cb(name); } catch (err) { /* ignore */ } } };
+    e.img.onload = () => done('ok');
+    e.img.onerror = () => { console.warn('micatro: mod atlas failed to load: ' + name); done('error'); };
+    e.img.src = a.src;
+  }
+  return e.state === 'ok' ? 'ok' : e.state === 'error' ? 'missing' : 'loading';
+}
+/** Draw one cell of a mod atlas; false when the art isn't (yet) available. */
+export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
+  if (!pos || modAtlasState(atlas) !== 'ok') return false;
+  const a = MODREG.atlases[atlas], im = modImgs.get(atlas).img;
+  const sw = a.px * S, sh = a.py * S;
+  try { ctx.drawImage(im, ((pos.x || 0) + frame) * sw, (pos.y || 0) * sh, sw, sh, dx, dy, dw ?? sw, dh ?? sh); } catch (e) { return false; }
+  return true;
+}
+/** CSS colour from a hex string ('#abc', 'abcdef') or Balatro rgba array ([r,g,b,a] 0..1). */
+export function cssColour(c) {
+  if (!c) return null;
+  if (Array.isArray(c)) return `rgba(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)},${c[3] == null ? 1 : c[3]})`;
+  const s = String(c).trim();
+  if (/^#?[0-9a-f]{3}([0-9a-f]{3})?([0-9a-f]{2})?$/i.test(s)) return s[0] === '#' ? s : '#' + s;
+  return /^(rgb|hsl)a?\(/i.test(s) ? s : null;
+}
+/** A mod consumable type by set name (case-insensitive), or null. */
+export function modType(set) {
+  if (!set) return null;
+  const t = MODREG.types;
+  if (t[set]) return t[set];
+  const k = String(set).toLowerCase();
+  for (const key of Object.keys(t)) if (key.toLowerCase() === k) return t[key];
+  return null;
+}
+/** Is this card set a consumable (vanilla Tarot/Planet/Spectral or a mod type)? */
+export const isConsumableSet = (set) => ['Tarot', 'Planet', 'Spectral'].includes(set) || !!modType(set);

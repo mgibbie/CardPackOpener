@@ -1359,9 +1359,20 @@ export default async function handler(req, env) {
 	// capped global board per mode. A strong Lorequest/Middle-earth/... run was
 	// previously invisible — cleared once and forgotten.
 	if (action === 'run-score' || action === 'run-leaderboard') {
-		const mode = String(body.mode || '');
-		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro'].includes(mode)) {
+		let mode = String(body.mode || '');
+		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded'].includes(mode)) {
 			return json({ error: 'no board for that mode' }, 400);
+		}
+		// MICATRO mods: a run with mods ranks on its own board ('micatro_modded'), each
+		// entry tagged with its sorted mod list; vanilla runs stay on 'micatro'. A
+		// 'micatro' score that carries mods is filed as modded (an old/odd client).
+		let modList = null;
+		if ((mode === 'micatro' || mode === 'micatro_modded') && action === 'run-score') {
+			modList = [...new Set((Array.isArray(body.mods) ? body.mods : [])
+				.filter(m => typeof m === 'string').map(m => m.trim().toLowerCase())
+				.filter(m => /^[a-z0-9_-]{1,32}$/.test(m)))].sort().slice(0, 16);
+			if (mode === 'micatro_modded' && !modList.length) return json({ error: 'a modded score needs its mods' }, 400);
+			if (modList.length) mode = 'micatro_modded';
 		}
 		const key = 'runboard:' + mode;
 		user.runBest = user.runBest || {};
@@ -1369,7 +1380,7 @@ export default async function handler(req, env) {
 		// W/L record. Scores can outgrow 2^53 or reach Infinity (Balatro's "naneinf"):
 		// JSON can't carry Infinity, so the client may send it as a string — a positive
 		// non-finite score is clamped to Number.MAX_VALUE; NaN is refused.
-		if (mode === 'micatro' && action === 'run-score') {
+		if ((mode === 'micatro' || mode === 'micatro_modded') && action === 'run-score') {
 			const raw = typeof body.score === 'string' ? body.score.trim() : body.score;
 			let score = typeof raw === 'number' ? raw : (typeof raw === 'string' && raw !== '' ? Number(raw) : NaN);
 			if (Number.isNaN(score)) return json({ error: 'bad score' }, 400);
@@ -1383,6 +1394,7 @@ export default async function handler(req, env) {
 				stake: Math.max(0, Math.min(99, parseInt(body.stake, 10) || 0)),
 				won: !!body.won,
 			};
+			if (mode === 'micatro_modded') run.mods = modList;
 			const prev = user.runBest[mode];
 			const better = !prev || typeof prev.score !== 'number' || score > prev.score;
 			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
