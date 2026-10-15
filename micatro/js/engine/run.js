@@ -1,0 +1,1335 @@
+// Micatro run controller — Balatro's state machine (game.lua update_*),
+// state_events.lua (play/discard/scoring/end_round) and the gameplay button
+// callbacks, as synchronous player ACTIONS.
+//
+//   newRun({seed, back, stake})   -> fresh run in BLIND_SELECT
+//   act({type, ...})               -> apply one player action, run the event
+//                                     queue + state machine until the game is
+//                                     waiting on the player again
+//
+// Everything a viewer needs (UI animation) lands in G.ui_events.
+
+import {
+  G, E_MANAGER, P_CENTERS, P_CARDS, P_BLINDS, P_TAGS, P_CENTER_POOLS, HANDS_PROTO, LOC,
+  CardArea, Card, copy_table, next, emit, card_eval_status_text, juice_card, play_sound, localize,
+  pseudohash, pseudoseed, pseudorandom, pseudorandom_element, random_string, math_random,
+  find_joker, ease_dollars, ease_discard, ease_hands_played, ease_round, ease_chips, ease_ante,
+  draw_card, level_up_hand, eval_card, create_card, poll_edition, get_pack,
+  calculate_reroll_cost, reset_idol_card, reset_mail_rank, reset_ancient_card, reset_castle_card,
+  reset_blinds, get_new_boss, get_next_voucher_key, get_next_tag_key, get_blind_amount,
+  mod_chips, mod_mult, set_hand_usage, number_format,
+} from './core.js';
+import { Blind } from './blind.js';
+import { Tag, add_tag } from './tag.js';
+import { Back } from './back.js';
+import './jokers.js';
+import './consumables.js';
+
+export const STATES = {
+  SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
+  BLIND_SELECT: 7, ROUND_EVAL: 8, TAROT_PACK: 9, PLANET_PACK: 10, MENU: 11, SPECTRAL_PACK: 15,
+  STANDARD_PACK: 17, BUFFOON_PACK: 18, NEW_ROUND: 19,
+};
+export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
+const PACK_STATES = [STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK];
+export const HANDLIST = Object.keys(HANDS_PROTO).sort((a, b) => HANDS_PROTO[a].order - HANDS_PROTO[b].order);
+
+function get_starting_params() {
+  return { dollars: 4, hand_size: 8, discards: 3, hands: 4, reroll_cost: 5, joker_slots: 5, ante_scaling: 1, consumable_slots: 2, no_faces: false, erratic_suits_and_ranks: false };
+}
+
+export function init_game_object() {
+  const bosses_used = {};
+  for (const [k, v] of Object.entries(P_BLINDS)) if (v.boss) bosses_used[k] = 0;
+  const cards_played = {};
+  for (const r of ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King']) cards_played[r] = { suits: {}, total: 0 };
+  const hands = {};
+  for (const [k, v] of Object.entries(HANDS_PROTO)) {
+    hands[k] = { visible: v.visible, order: v.order, mult: v.mult, chips: v.chips, s_mult: v.s_mult, s_chips: v.s_chips, level: v.level, l_mult: v.l_mult, l_chips: v.l_chips, played: 0, played_this_round: 0 };
+  }
+  return {
+    won: false,
+    round_scores: {
+      furthest_ante: { amt: 0 }, furthest_round: { amt: 0 }, hand: { amt: 0 }, poker_hand: { amt: 0 },
+      new_collection: { amt: 0 }, cards_played: { amt: 0 }, cards_discarded: { amt: 0 }, times_rerolled: { amt: 0 }, cards_purchased: { amt: 0 },
+    },
+    stats: { best_hand: 0, best_hand_name: '', furthest_ante: 1, dollars_earned: 0 },
+    joker_usage: {}, consumeable_usage: {}, consumeable_usage_total: { tarot: 0, planet: 0, spectral: 0, tarot_planet: 0, all: 0 },
+    hand_usage: {}, last_tarot_planet: null, win_ante: 8, stake: 1, modifiers: {},
+    starting_params: get_starting_params(), banned_keys: {}, round: 0,
+    probabilities: { normal: 1 }, bosses_used, pseudorandom: {}, starting_deck_size: 52, ecto_minus: 1,
+    pack_size: 2, skips: 0, STOP_USE: 0, edition_rate: 1, joker_rate: 20, tarot_rate: 4, planet_rate: 4,
+    spectral_rate: 0, playing_card_rate: 0, consumeable_buffer: 0, joker_buffer: 0, discount_percent: 0,
+    interest_cap: 25, interest_amount: 1, inflation: 0, hands_played: 0, unused_discards: 0,
+    perishable_rounds: 5, rental_rate: 3, blind: null, chips: 0, dollars: 0, max_jokers: 0, bankrupt_at: 0,
+    current_boss_streak: 0, base_reroll_cost: 5, blind_on_deck: null, sort: 'desc',
+    previous_round: { dollars: 4 }, tags: [], tag_tally: 0, pool_flags: {}, used_jokers: {}, used_vouchers: {},
+    current_round: {
+      current_hand: { chips: 0, mult: 0, chip_total: 0, handname: '', hand_level: '' },
+      used_packs: {}, cards_flipped: 0,
+      idol_card: { suit: 'Spades', rank: 'Ace' }, mail_card: { rank: 'Ace' }, ancient_card: { suit: 'Spades' }, castle_card: { suit: 'Spades' },
+      hands_left: 0, hands_played: 0, discards_left: 0, discards_used: 0, dollars: 0, reroll_cost: 5,
+      reroll_cost_increase: 0, jokers_purchased: 0, free_rerolls: 0, round_dollars: 0, most_played_poker_hand: 'High Card',
+    },
+    round_resets: {
+      hands: 1, discards: 1, reroll_cost: 1, temp_reroll_cost: null, temp_handsize: null, ante: 1, blind_ante: 1,
+      blind_states: { Small: 'Select', Big: 'Upcoming', Boss: 'Upcoming' },
+      blind_choices: { Small: 'bl_small', Big: 'bl_big' }, boss_rerolled: false,
+    },
+    round_bonus: { next_hands: 0, discards: 0 },
+    shop: { joker_max: 2 },
+    cards_played,
+    hands,
+  };
+}
+
+/** Run the deferred queue and the state machine until the game waits on the player. */
+export function pump() {
+  let guard = 0;
+  for (;;) {
+    E_MANAGER.flush();
+    if (G.STATE_COMPLETE) break;
+    if (++guard > 500) throw new Error('micatro: state machine did not settle in ' + STATE_NAMES[G.STATE]);
+    G.STATE_COMPLETE = true;
+    const h = STATE_HANDLERS[G.STATE];
+    if (h) h();
+  }
+}
+
+const STATE_HANDLERS = {
+  [STATES.SELECTING_HAND]() {
+    if (G.hand.cards.length < 1 && G.deck.cards.length < 1) end_round();
+    else check_hand_lock();
+  },
+  [STATES.HAND_PLAYED]() {
+    G.E_MANAGER.add_event(() => {
+      if (G.GAME.chips - G.GAME.blind.chips >= 0 || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
+      else G.STATE = STATES.DRAW_TO_HAND;
+      G.STATE_COMPLETE = false;
+    });
+  },
+  [STATES.DRAW_TO_HAND]() {
+    for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'round_start_bonus' });
+    G.E_MANAGER.add_event(() => {
+      if (draw_from_deck_to_hand(null)) return;
+      if (G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && G.GAME.facing_blind) {
+        for (const j of G.jokers.cards.slice()) j.calculate_joker({ first_hand_drawn: true });
+      }
+      G.E_MANAGER.add_event(() => {
+        G.STATE = STATES.SELECTING_HAND;
+        G.STATE_COMPLETE = false;
+        G.GAME.blind.drawn_to_hand();
+      });
+    });
+  },
+  [STATES.NEW_ROUND]() { end_round(); },
+  [STATES.ROUND_EVAL]() {
+    G.E_MANAGER.add_event(() => {
+      G.GAME.facing_blind = null;
+      evaluate_round();
+    });
+  },
+  [STATES.SHOP]() { update_shop(); },
+  [STATES.BLIND_SELECT]() {
+    G.E_MANAGER.add_event(() => {
+      // create_UIBox_blind_select / create_UIBox_blind_choice (UI_definitions.lua) own this in Lua.
+      const bs = G.GAME.round_resets.blind_states;
+      const gone = (s) => s === 'Defeated' || s === 'Skipped' || s === 'Hide';
+      G.GAME.blind_on_deck = !gone(bs.Small) ? 'Small' : !gone(bs.Big) ? 'Big' : 'Boss';
+      bs[G.GAME.blind_on_deck] = 'Select';
+      emit('blind_select', { on_deck: G.GAME.blind_on_deck });
+      for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
+      for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
+    });
+  },
+  [STATES.TAROT_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
+  [STATES.SPECTRAL_PACK]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
+  [STATES.PLANET_PACK]() {},
+  [STATES.STANDARD_PACK]() {},
+  [STATES.BUFFOON_PACK]() {},
+  [STATES.PLAY_TAROT]() {},
+  [STATES.GAME_OVER]() {
+    G.GAME.over = true;
+    emit('game_over', { won: !!G.GAME.won, ante: G.GAME.round_resets.ante, round: G.GAME.round });
+  },
+};
+
+/** The Psychic etc. may make the whole hand unplayable — nothing to do: Balatro lets you sit there. */
+function check_hand_lock() {}
+
+// --------------------------------------------------------------- new run
+export function newRun(args = {}) {
+  for (const k of Object.keys(G)) delete G[k];
+  G.STATES = STATES;
+  G.E_MANAGER = E_MANAGER;
+  E_MANAGER.queue.length = 0;
+  G.handlist = HANDLIST;
+  G.ui_events = [];
+  G.ui_seq = 0;
+  G.sort_id = 0;
+  G.playing_card = 0;
+  G.GAME = init_game_object();
+  G.GAME.stake = args.stake || 1;
+  G.GAME.STOP_USE = 0;
+  const backKey = args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' ? args.back : 'b_red';
+  G.GAME.selected_back = new Back(P_CENTERS[backKey]);
+  G.GAME.selected_back_key = backKey;
+
+  const st = G.GAME.stake;
+  if (st >= 2) { G.GAME.modifiers.no_blind_reward = G.GAME.modifiers.no_blind_reward || {}; G.GAME.modifiers.no_blind_reward.Small = true; }
+  if (st >= 3) G.GAME.modifiers.scaling = 2;
+  if (st >= 4) G.GAME.modifiers.enable_eternals_in_shop = true;
+  if (st >= 5) G.GAME.starting_params.discards -= 1;
+  if (st >= 6) G.GAME.modifiers.scaling = 3;
+  if (st >= 7) G.GAME.modifiers.enable_perishables_in_shop = true;
+  if (st >= 8) G.GAME.modifiers.enable_rentals_in_shop = true;
+
+  // Areas exist before the back applies (some backs queue joker/consumable adds).
+  const sp = G.GAME.starting_params;
+  G.consumeables = new CardArea('consumeables', { card_limit: sp.consumable_slots, type: 'consumeable', highlighted_limit: 1 });
+  G.jokers = new CardArea('jokers', { card_limit: sp.joker_slots, type: 'joker', highlighted_limit: 1 });
+  G.discard = new CardArea('discard', { card_limit: 500, type: 'discard' });
+  G.deck = new CardArea('deck', { card_limit: 52, type: 'deck' });
+  G.hand = new CardArea('hand', { card_limit: sp.hand_size, type: 'hand', highlighted_limit: 5, sort: 'desc' });
+  G.play = new CardArea('play', { card_limit: 5, type: 'play' });
+  G.shop_jokers = new CardArea('shop_jokers', { card_limit: G.GAME.shop.joker_max, type: 'shop', highlighted_limit: 1 });
+  G.shop_vouchers = new CardArea('shop_vouchers', { card_limit: 1, type: 'shop', highlighted_limit: 1 });
+  G.shop_booster = new CardArea('shop_booster', { card_limit: 2, type: 'shop', highlighted_limit: 1 });
+  G.pack_cards = new CardArea('pack_cards', { card_limit: 5, type: 'consumeable', highlighted_limit: 1 });
+  G.areas = [G.jokers, G.consumeables, G.hand, G.play, G.deck, G.discard, G.shop_jokers, G.shop_vouchers, G.shop_booster, G.pack_cards];
+  G.playing_cards = [];
+
+  G.GAME.pseudorandom.seed = (args.seed || random_string(8, Math.random())).toUpperCase();
+  G.GAME.seeded = !!args.seed;
+  G.GAME.pseudorandom.hashed_seed = pseudohash(G.GAME.pseudorandom.seed);
+
+  G.GAME.blind = new Blind();
+  G.GAME.selected_back.apply_to_run();
+
+  G.GAME.round_resets.hands = sp.hands;
+  G.GAME.round_resets.discards = sp.discards;
+  G.GAME.round_resets.reroll_cost = sp.reroll_cost;
+  G.GAME.dollars = sp.dollars;
+  G.GAME.base_reroll_cost = sp.reroll_cost;
+  G.GAME.current_round.reroll_cost = G.GAME.base_reroll_cost;
+  // Back effects may have changed starting params (Yellow +$10, Black -1 hand, ...).
+  G.jokers.config.card_limit = sp.joker_slots;
+  G.consumeables.config.card_limit = sp.consumable_slots;
+  G.hand.config.card_limit = sp.hand_size;
+
+  G.GAME.round_resets.blind_tags = {};
+  G.GAME.round_resets.blind_choices.Boss = get_new_boss();
+  G.GAME.current_round.voucher = get_next_voucher_key();
+  G.GAME.round_resets.blind_tags.Small = get_next_tag_key();
+  G.GAME.round_resets.blind_tags.Big = get_next_tag_key();
+
+  // Deck: every P_CARD, filtered/altered by starting params, sorted by Balatro's proto key.
+  let protos = [];
+  for (const k of Object.keys(P_CARDS)) {
+    if (k === 'empty') continue;
+    let key = k;
+    if (sp.erratic_suits_and_ranks) key = pseudorandom_element(Object.fromEntries(Object.entries(P_CARDS).filter(([kk]) => kk !== 'empty')), pseudoseed('erratic'))[1];
+    const _r = key.substring(2, 3), _s = key.substring(0, 1);
+    if (sp.no_faces && (_r === 'K' || _r === 'Q' || _r === 'J')) continue;
+    protos.push({ s: _s, r: _r });
+  }
+  if (sp.extra_cards) protos = protos.concat(sp.extra_cards);
+  const pk = (a) => (a.s || '') + (a.r || '') + (a.e || '') + (a.d || '') + (a.g || '');
+  protos.sort((a, b) => (pk(a) < pk(b) ? -1 : pk(a) > pk(b) ? 1 : 0));
+  for (const v of protos) {
+    G.playing_card += 1;
+    const c = new Card(P_CARDS[v.s + '_' + v.r], P_CENTERS[v.e || 'c_base'], { playing_card: G.playing_card });
+    c.playing_card = G.playing_card;
+    if (v.d) c.set_edition({ [v.d]: true }, true, true);
+    if (v.g) c.set_seal(v.g, true);
+    G.deck.emplace(c);
+    G.playing_cards.push(c);
+  }
+  G.GAME.starting_deck_size = G.playing_cards.length;
+
+  G.GAME.current_round.discards_left = G.GAME.round_resets.discards;
+  G.GAME.current_round.hands_left = G.GAME.round_resets.hands;
+  G.deck.shuffle();
+  reset_idol_card();
+  reset_mail_rank();
+  G.GAME.current_round.ancient_card.suit = null;
+  reset_ancient_card();
+  reset_castle_card();
+
+  G.STATE = STATES.BLIND_SELECT;
+  G.STATE_COMPLETE = false;
+  G.ui_events.length = 0;
+  pump();
+  emit('run_start', { seed: G.GAME.pseudorandom.seed, back: backKey, stake: G.GAME.stake });
+  return G;
+}
+
+// ---------------------------------------------------------- state events
+export function draw_from_deck_to_hand(e) {
+  if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.SPECTRAL_PACK) && G.hand.config.card_limit <= 0 && G.hand.cards.length === 0) {
+    G.STATE = STATES.GAME_OVER; G.STATE_COMPLETE = false;
+    return true;
+  }
+  let hand_space = e || Math.min(G.deck.cards.length, G.hand.config.card_limit - G.hand.cards.length);
+  if (G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled &&
+      (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0)) {
+    hand_space = Math.min(G.deck.cards.length, 3);
+  }
+  for (let i = 1; i <= hand_space; i++) draw_card(G.deck, G.hand, i * 100 / hand_space, 'up', true);
+}
+
+function new_round() {
+  G.E_MANAGER.add_event(() => {
+    const cr = G.GAME.current_round, rr = G.GAME.round_resets;
+    cr.discards_left = Math.max(0, rr.discards + G.GAME.round_bonus.discards);
+    cr.hands_left = Math.max(1, rr.hands + G.GAME.round_bonus.next_hands);
+    cr.hands_played = 0;
+    cr.discards_used = 0;
+    cr.reroll_cost_increase = 0;
+    cr.used_packs = {};
+    for (const v of Object.values(G.GAME.hands)) v.played_this_round = 0;
+    for (const v of G.playing_cards) v.ability.wheel_flipped = undefined;
+    cr.free_rerolls = find_joker('Chaos the Clown').length;
+    calculate_reroll_cost(true);
+    G.GAME.round_bonus.next_hands = 0;
+    G.GAME.round_bonus.discards = 0;
+    let blhash = '';
+    if (rr.blind === P_BLINDS.bl_small) { rr.blind_states.Small = 'Current'; G.GAME.current_boss_streak = 0; blhash = 'S'; }
+    else if (rr.blind === P_BLINDS.bl_big) { rr.blind_states.Big = 'Current'; G.GAME.current_boss_streak = 0; blhash = 'B'; }
+    else { rr.blind_states.Boss = 'Current'; blhash = 'L'; }
+    G.GAME.subhash = rr.ante + blhash;
+    G.GAME.blind.set_blind(rr.blind);
+    for (const j of G.jokers.cards.slice()) j.calculate_joker({ setting_blind: true, blind: rr.blind });
+    G.E_MANAGER.add_event(() => {
+      G.STATE = STATES.DRAW_TO_HAND;
+      G.deck.shuffle('nr' + rr.ante);
+      G.STATE_COMPLETE = false;
+    });
+  });
+}
+
+function end_round() {
+  G.E_MANAGER.add_event(() => {
+    let game_over = true, game_won = false;
+    if (G.GAME.chips - G.GAME.blind.chips >= 0) game_over = false;
+    for (const j of G.jokers.cards.slice()) {
+      const ev = j.calculate_joker({ end_of_round: true, game_over });
+      if (ev) {
+        if (ev.saved) game_over = false;
+        card_eval_status_text(j, 'jokers', null, null, null, ev);
+      }
+      j.calculate_rental();
+      j.calculate_perishable();
+    }
+    if (G.GAME.round_resets.ante === G.GAME.win_ante && G.GAME.blind.get_type() === 'Boss') {
+      game_won = true;
+      G.GAME.won = true;
+    }
+    if (game_over) {
+      G.STATE = STATES.GAME_OVER;
+      G.STATE_COMPLETE = false;
+      return;
+    }
+    G.GAME.unused_discards = (G.GAME.unused_discards || 0) + G.GAME.current_round.discards_left;
+    if (G.GAME.blind.get_type() === 'Boss') {
+      let _handname = 'High Card', _played = -1, _order = 100;
+      for (const k of HANDLIST) {
+        const v = G.GAME.hands[k];
+        if (v.played > _played || (v.played === _played && _order > v.order)) { _played = v.played; _handname = k; _order = v.order; }
+      }
+      G.GAME.current_round.most_played_poker_hand = _handname;
+      G.GAME.current_boss_streak += 1;
+    }
+    if (game_won && !G.GAME.win_notified) {
+      G.GAME.win_notified = true;
+      G.E_MANAGER.add_event(() => { G.GAME.won = true; emit('win', { ante: G.GAME.round_resets.ante }); });
+    }
+    for (let i = 0; i < G.hand.cards.length; i++) {
+      const hc = G.hand.cards[i];
+      const reps = [1];
+      for (let j = 0; j < reps.length; j++) {
+        if (reps[j] !== 1) card_eval_status_text((reps[j].jokers || reps[j].seals).card, 'jokers', null, null, null, reps[j].jokers || reps[j].seals);
+        const effects = [hc.get_end_of_round_effect()];
+        for (const jk of G.jokers.cards) {
+          const ev = jk.calculate_joker({ cardarea: G.hand, other_card: hc, individual: true, end_of_round: true });
+          if (ev) effects.push(ev);
+        }
+        if (reps[j] === 1) {
+          const ev = eval_card(hc, { end_of_round: true, cardarea: G.hand, repetition: true, repetition_only: true });
+          if (next(ev) && (next(effects[0]) || effects.length > 1)) for (let h = 0; h < ev.seals.repetitions; h++) reps.push(ev);
+          for (const jk of G.jokers.cards) {
+            const ev2 = eval_card(jk, { cardarea: G.hand, other_card: hc, repetition: true, end_of_round: true, card_effects: effects });
+            if (next(ev2)) for (let h = 0; h < ev2.jokers.repetitions; h++) reps.push(ev2);
+          }
+        }
+        for (const ef of effects) {
+          if (ef.card) juice_card(ef.card);
+          if (ef.h_dollars) { ease_dollars(ef.h_dollars); card_eval_status_text(hc, 'dollars', ef.h_dollars); }
+          if (ef.extra) card_eval_status_text(hc, 'extra', null, null, null, ef.extra);
+        }
+      }
+    }
+    draw_from_hand_to_discard();
+    if (G.GAME.blind.get_type() === 'Boss') {
+      G.GAME.voucher_restock = null;
+      if (G.GAME.modifiers.set_eternal_ante && G.GAME.round_resets.ante === G.GAME.modifiers.set_eternal_ante) for (const v of G.jokers.cards) v.set_eternal(true);
+      if (G.GAME.modifiers.set_joker_slots_ante && G.GAME.round_resets.ante === G.GAME.modifiers.set_joker_slots_ante) G.jokers.config.card_limit = 0;
+      ease_ante(1);
+    }
+    draw_from_discard_to_deck();
+    G.E_MANAGER.add_event(() => {
+      G.STATE = STATES.ROUND_EVAL;
+      G.STATE_COMPLETE = false;
+      const rr = G.GAME.round_resets;
+      if (rr.blind === P_BLINDS.bl_small) rr.blind_states.Small = 'Defeated';
+      else if (rr.blind === P_BLINDS.bl_big) rr.blind_states.Big = 'Defeated';
+      else {
+        G.GAME.current_round.voucher = get_next_voucher_key();
+        rr.blind_states.Boss = 'Defeated';
+        for (const v of G.playing_cards) v.ability.played_this_ante = undefined;
+      }
+      if (rr.temp_handsize) { G.hand.change_size(-rr.temp_handsize); rr.temp_handsize = null; }
+      if (rr.temp_reroll_cost) { rr.temp_reroll_cost = null; calculate_reroll_cost(true); }
+      reset_idol_card();
+      reset_mail_rank();
+      reset_ancient_card();
+      reset_castle_card();
+      for (const v of G.playing_cards) { v.ability.discarded = undefined; v.ability.forced_selection = undefined; }
+    });
+  });
+}
+
+function draw_from_play_to_discard() {
+  for (const v of G.play.cards.slice()) if (!v.shattered && !v.destroyed) draw_card(G.play, G.discard, 0, 'down', false, v);
+}
+export function draw_from_play_to_hand(cards) {
+  for (const c of cards) if (!c.shattered && !c.destroyed) draw_card(G.play, G.hand, 0, 'up', true, c);
+}
+function draw_from_discard_to_deck() {
+  G.E_MANAGER.add_event(() => {
+    const n = G.discard.cards.length;
+    for (let i = 0; i < n; i++) draw_card(G.discard, G.deck);
+  });
+}
+export function draw_from_hand_to_deck() {
+  const n = G.hand.cards.length;
+  for (let i = 0; i < n; i++) draw_card(G.hand, G.deck);
+}
+function draw_from_hand_to_discard() {
+  const n = G.hand.cards.length;
+  for (let i = 0; i < n; i++) draw_card(G.hand, G.discard);
+}
+
+// ----------------------------------------------------------- hand eval
+function get_X_same(num, hand) {
+  const vals = Array.from({ length: 15 }, () => []);
+  for (let i = hand.length - 1; i >= 0; i--) {
+    const curr = [hand[i]];
+    for (let j = 0; j < hand.length; j++) if (hand[i].get_id() === hand[j].get_id() && i !== j) curr.push(hand[j]);
+    if (curr.length === num) { const id = curr[0].get_id(); if (id >= 0) vals[id] = curr; }
+  }
+  const ret = [];
+  for (let i = vals.length - 1; i >= 0; i--) if (vals[i].length) ret.push(vals[i]);
+  return ret;
+}
+function get_flush(hand) {
+  const four = find_joker('Four Fingers').length > 0;
+  if (hand.length > 5 || hand.length < 5 - (four ? 1 : 0)) return [];
+  for (const suit of ['Spades', 'Hearts', 'Clubs', 'Diamonds']) {
+    const t = hand.filter((c) => c.is_suit(suit, null, true));
+    if (t.length >= 5 - (four ? 1 : 0)) return [t];
+  }
+  return [];
+}
+function get_straight(hand) {
+  const four = find_joker('Four Fingers').length > 0;
+  if (hand.length > 5 || hand.length < 5 - (four ? 1 : 0)) return [];
+  let t = [];
+  const IDS = {};
+  for (const c of hand) {
+    const id = c.get_id();
+    if (id > 1 && id < 15) (IDS[id] = IDS[id] || []).push(c);
+  }
+  let straight_length = 0, straight = false, skipped_rank = false;
+  const can_skip = find_joker('Shortcut').length > 0;
+  for (let j = 1; j <= 14; j++) {
+    const ids = IDS[j === 1 ? 14 : j];
+    if (ids) {
+      straight_length++;
+      skipped_rank = false;
+      for (const v of ids) t.push(v);
+    } else if (can_skip && !skipped_rank && j !== 14) {
+      skipped_rank = true;
+    } else {
+      straight_length = 0;
+      skipped_rank = false;
+      if (!straight) t = [];
+      if (straight) break;
+    }
+    if (straight_length >= 5 - (four ? 1 : 0)) straight = true;
+  }
+  if (!straight) return [];
+  return [t];
+}
+function get_highest(hand) {
+  let highest = null;
+  for (const v of hand) if (!highest || v.get_nominal() > highest.get_nominal()) highest = v;
+  return hand.length > 0 ? [[highest]] : [];
+}
+export function evaluate_poker_hand(hand) {
+  const results = {
+    'Flush Five': [], 'Flush House': [], 'Five of a Kind': [], 'Straight Flush': [], 'Four of a Kind': [],
+    'Full House': [], Flush: [], Straight: [], 'Three of a Kind': [], 'Two Pair': [], Pair: [], 'High Card': [], top: null,
+  };
+  const parts = {
+    _5: get_X_same(5, hand), _4: get_X_same(4, hand), _3: get_X_same(3, hand), _2: get_X_same(2, hand),
+    _flush: get_flush(hand), _straight: get_straight(hand), _highest: get_highest(hand),
+  };
+  const setTop = (k) => { if (!results.top) results.top = results[k]; };
+  if (parts._5.length && parts._flush.length) { results['Flush Five'] = parts._5; setTop('Flush Five'); }
+  if (parts._3.length && parts._2.length && parts._flush.length) { results['Flush House'].push([...parts._3[0], ...parts._2[0]]); setTop('Flush House'); }
+  if (parts._5.length) { results['Five of a Kind'] = parts._5; setTop('Five of a Kind'); }
+  if (parts._flush.length && parts._straight.length) {
+    const ret = [...parts._flush[0]];
+    for (const v of parts._straight[0]) if (!parts._flush[0].includes(v)) ret.push(v);
+    results['Straight Flush'] = [ret]; setTop('Straight Flush');
+  }
+  if (parts._4.length) { results['Four of a Kind'] = parts._4; setTop('Four of a Kind'); }
+  if (parts._3.length && parts._2.length) { results['Full House'].push([...parts._3[0], ...parts._2[0]]); setTop('Full House'); }
+  if (parts._flush.length) { results.Flush = parts._flush; setTop('Flush'); }
+  if (parts._straight.length) { results.Straight = parts._straight; setTop('Straight'); }
+  if (parts._3.length) { results['Three of a Kind'] = parts._3; setTop('Three of a Kind'); }
+  if (parts._2.length === 2 || (parts._3.length === 1 && parts._2.length === 1)) {
+    const a = parts._2[0], b = parts._2[1] || parts._3[0];
+    results['Two Pair'].push([...a, ...b]); setTop('Two Pair');
+  }
+  if (parts._2.length) { results.Pair = parts._2; setTop('Pair'); }
+  if (parts._highest.length) { results['High Card'] = parts._highest; setTop('High Card'); }
+  // Lua: a table indexed [1..4] by the first four groups (nil-padded) — keep the non-empty ones.
+  if (results['Five of a Kind'][0]) results['Four of a Kind'] = results['Five of a Kind'].slice(0, 4);
+  if (results['Four of a Kind'][0]) results['Three of a Kind'] = results['Four of a Kind'].slice(0, 3);
+  if (results['Three of a Kind'][0]) results.Pair = results['Three of a Kind'].slice(0, 2);
+  return results;
+}
+const HAND_ORDER = ['Flush Five', 'Flush House', 'Five of a Kind', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Pair', 'High Card'];
+/** -> {text, disp_text, poker_hands, scoring_hand} */
+export function get_poker_hand_info(_cards) {
+  const poker_hands = evaluate_poker_hand(_cards);
+  let scoring_hand = [], text = 'NULL';
+  for (const h of HAND_ORDER) if (poker_hands[h].length) { text = h; scoring_hand = poker_hands[h][0].slice(); break; }
+  let disp_text = text;
+  if (text === 'Straight Flush') {
+    let min = 10;
+    for (const c of scoring_hand) if (c.get_id() < min) min = c.get_id();
+    if (min >= 10) disp_text = 'Royal Flush';
+  }
+  return { text, disp_text, loc_disp_text: localize(disp_text, 'poker_hands'), poker_hands, scoring_hand };
+}
+
+// -------------------------------------------------------- evaluate_play
+function evaluate_play() {
+  const { text, disp_text, poker_hands } = get_poker_hand_info(G.play.cards);
+  let { scoring_hand } = get_poker_hand_info(G.play.cards);
+  const gh = G.GAME.hands[text];
+  gh.played += 1;
+  gh.played_this_round += 1;
+  G.GAME.last_hand_played = text;
+  set_hand_usage(text);
+  gh.visible = true;
+
+  const pures = [];
+  for (let i = 0; i < G.play.cards.length; i++) {
+    if (find_joker('Splash').length) scoring_hand[i] = G.play.cards[i];
+    else if (G.play.cards[i].ability.effect === 'Stone Card' && !scoring_hand.includes(G.play.cards[i])) pures.push(G.play.cards[i]);
+  }
+  scoring_hand = scoring_hand.filter(Boolean).concat(pures);
+  // Lua sorts by screen x; cards in G.play are laid out in area order.
+  scoring_hand.sort((a, b) => G.play.cards.indexOf(a) - G.play.cards.indexOf(b));
+  emit('scoring_hand', { cards: scoring_hand.map((c) => c.sort_id), hand: text, disp: disp_text });
+
+  let mult, hand_chips;
+  const base_ctx = () => ({ full_hand: G.play.cards, scoring_hand, scoring_name: text, poker_hands });
+
+  emit('hand_text', { handname: disp_text, level: gh.level, chips: gh.chips, mult: gh.mult });
+  if (!G.GAME.blind.debuff_hand(G.play.cards, poker_hands, text)) {
+    mult = mod_mult(gh.mult);
+    hand_chips = mod_chips(gh.chips);
+    if (G.GAME.first_used_hand_level && G.GAME.first_used_hand_level > 0) {
+      level_up_hand(G.deck.cards[0], text, null, G.GAME.first_used_hand_level);
+      G.GAME.first_used_hand_level = null;
+    }
+    for (const j of G.jokers.cards.slice()) {
+      const effects = eval_card(j, { cardarea: G.jokers, ...base_ctx(), before: true });
+      if (effects.jokers) {
+        card_eval_status_text(j, 'jokers', null, null, null, effects.jokers);
+        if (effects.jokers.level_up) level_up_hand(j, text);
+      }
+    }
+    mult = mod_mult(gh.mult);
+    hand_chips = mod_chips(gh.chips);
+    const mh = G.GAME.blind.modify_hand(G.play.cards, poker_hands, text, mult, hand_chips);
+    mult = mod_mult(mh[0]); hand_chips = mod_chips(mh[1]);
+    if (mh[2]) emit('hand_text', { chips: hand_chips, mult, modded: true });
+    emit('hand_text', { chips: hand_chips, mult });
+
+    for (let i = 0; i < scoring_hand.length; i++) {
+      const sc = scoring_hand[i];
+      if (sc.ability.effect !== 'Stone Card') {
+        const cp = G.GAME.cards_played[sc.base.value];
+        if (cp) { cp.total += 1; cp.suits[sc.base.suit] = true; }
+      }
+      if (sc.debuff) {
+        G.GAME.blind.triggered = true;
+        emit('blind_juice', {});
+        card_eval_status_text(sc, 'debuff');
+        continue;
+      }
+      const reps = [1];
+      const sev = eval_card(sc, { repetition_only: true, cardarea: G.play, ...base_ctx(), repetition: true });
+      if (next(sev)) for (let h = 0; h < sev.seals.repetitions; h++) reps.push(sev);
+      for (const j of G.jokers.cards) {
+        const ev = eval_card(j, { cardarea: G.play, ...base_ctx(), other_card: sc, repetition: true });
+        if (next(ev) && ev.jokers) for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
+      }
+      for (let r = 0; r < reps.length; r++) {
+        if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
+        const effects = [eval_card(sc, { cardarea: G.play, full_hand: G.play.cards, scoring_hand, poker_hand: text })];
+        for (const j of G.jokers.cards) {
+          const ev = j.calculate_joker({ cardarea: G.play, ...base_ctx(), other_card: sc, individual: true });
+          if (ev) effects.push(ev);
+        }
+        sc.lucky_trigger = undefined;
+        for (const ef of effects) {
+          if (ef.chips) { if (ef.card) juice_card(ef.card); hand_chips = mod_chips(hand_chips + ef.chips); card_eval_status_text(sc, 'chips', ef.chips); emit('hand_text', { chips: hand_chips }); }
+          if (ef.mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(mult + ef.mult); card_eval_status_text(sc, 'mult', ef.mult); emit('hand_text', { mult }); }
+          if (ef.p_dollars) { if (ef.card) juice_card(ef.card); ease_dollars(ef.p_dollars); card_eval_status_text(sc, 'dollars', ef.p_dollars); }
+          if (ef.dollars) { if (ef.card) juice_card(ef.card); ease_dollars(ef.dollars); card_eval_status_text(sc, 'dollars', ef.dollars); }
+          if (ef.extra) {
+            if (ef.card) juice_card(ef.card);
+            if (ef.extra.mult_mod) mult = mod_mult(mult + ef.extra.mult_mod);
+            if (ef.extra.chip_mod) hand_chips = mod_chips(hand_chips + ef.extra.chip_mod);
+            if (ef.extra.swap) { const om = mult; mult = mod_mult(hand_chips); hand_chips = mod_chips(om); }
+            if (ef.extra.func) ef.extra.func();
+            card_eval_status_text(sc, 'extra', null, null, null, ef.extra);
+            emit('hand_text', { chips: hand_chips, mult });
+          }
+          if (ef.x_mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(mult * ef.x_mult); card_eval_status_text(sc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
+          if (ef.edition) {
+            hand_chips = mod_chips(hand_chips + (ef.edition.chip_mod || 0));
+            mult = mult + (ef.edition.mult_mod || 0);
+            mult = mod_mult(mult * (ef.edition.x_mult_mod || 1));
+            card_eval_status_text(sc, 'extra', null, null, null, {
+              message: ef.edition.chip_mod ? '+' + ef.edition.chip_mod : ef.edition.mult_mod ? '+' + ef.edition.mult_mod + ' Mult' : 'X' + ef.edition.x_mult_mod + ' Mult',
+              chip_mod: ef.edition.chip_mod, mult_mod: ef.edition.mult_mod, x_mult_mod: ef.edition.x_mult_mod, edition: true,
+            });
+            emit('hand_text', { chips: hand_chips, mult });
+          }
+        }
+      }
+    }
+
+    // Held-in-hand effects
+    for (let i = 0; i < G.hand.cards.length; i++) {
+      const hc = G.hand.cards[i];
+      const reps = [1];
+      for (let r = 0; r < reps.length; r++) {
+        if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
+        const effects = [eval_card(hc, { cardarea: G.hand, ...base_ctx() })];
+        for (const j of G.jokers.cards) {
+          const ev = j.calculate_joker({ cardarea: G.hand, ...base_ctx(), other_card: hc, individual: true });
+          if (ev) effects.push(ev);
+        }
+        if (reps[r] === 1) {
+          const sev = eval_card(hc, { repetition_only: true, cardarea: G.hand, ...base_ctx(), repetition: true, card_effects: effects });
+          if (next(sev) && (next(effects[0]) || effects.length > 1)) for (let h = 0; h < sev.seals.repetitions; h++) reps.push(sev);
+          for (const j of G.jokers.cards) {
+            const ev = eval_card(j, { cardarea: G.hand, ...base_ctx(), other_card: hc, repetition: true, card_effects: effects });
+            if (next(ev)) for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
+          }
+        }
+        for (const ef of effects) {
+          if (ef.card) juice_card(ef.card);
+          if (ef.dollars) { ease_dollars(ef.dollars); card_eval_status_text(hc, 'dollars', ef.dollars); }
+          if (ef.h_mult) { mult = mod_mult(mult + ef.h_mult); card_eval_status_text(hc, 'h_mult', ef.h_mult); emit('hand_text', { mult }); }
+          if (ef.x_mult) { mult = mod_mult(mult * ef.x_mult); card_eval_status_text(hc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
+          if (ef.message) card_eval_status_text(hc, 'extra', null, null, null, ef);
+        }
+      }
+    }
+
+    // Joker main effects (jokers, then consumables — Observatory)
+    const n = G.jokers.cards.length + G.consumeables.cards.length;
+    for (let i = 0; i < n; i++) {
+      const _card = G.jokers.cards[i] || G.consumeables.cards[i - G.jokers.cards.length];
+      if (!_card) continue;
+      const edition_effects = eval_card(_card, { cardarea: G.jokers, ...base_ctx(), edition: true });
+      if (edition_effects.jokers) {
+        edition_effects.jokers.edition = true;
+        if (edition_effects.jokers.chip_mod) {
+          hand_chips = mod_chips(hand_chips + edition_effects.jokers.chip_mod);
+          card_eval_status_text(_card, 'jokers', null, null, null, { message: '+' + edition_effects.jokers.chip_mod, chip_mod: edition_effects.jokers.chip_mod, edition: true });
+          emit('hand_text', { chips: hand_chips });
+        }
+        if (edition_effects.jokers.mult_mod) {
+          mult = mod_mult(mult + edition_effects.jokers.mult_mod);
+          card_eval_status_text(_card, 'jokers', null, null, null, { message: '+' + edition_effects.jokers.mult_mod + ' Mult', mult_mod: edition_effects.jokers.mult_mod, edition: true });
+          emit('hand_text', { mult });
+        }
+      }
+      const effects = eval_card(_card, { cardarea: G.jokers, ...base_ctx(), joker_main: true });
+      if (effects.jokers) {
+        if (effects.jokers.mult_mod) mult = mod_mult(mult + effects.jokers.mult_mod);
+        if (effects.jokers.chip_mod) hand_chips = mod_chips(hand_chips + effects.jokers.chip_mod);
+        if (effects.jokers.Xmult_mod) mult = mod_mult(mult * effects.jokers.Xmult_mod);
+        card_eval_status_text(_card, 'jokers', null, null, null, effects.jokers);
+        emit('hand_text', { chips: hand_chips, mult });
+      }
+      for (const v of G.jokers.cards) {
+        const effect = v.calculate_joker({ ...base_ctx(), other_joker: _card });
+        if (effect) {
+          let changed = false;
+          if (effect.mult_mod) { mult = mod_mult(mult + effect.mult_mod); changed = true; }
+          if (effect.chip_mod) { hand_chips = mod_chips(hand_chips + effect.chip_mod); changed = true; }
+          if (effect.Xmult_mod) { mult = mod_mult(mult * effect.Xmult_mod); changed = true; }
+          if (changed) { card_eval_status_text(v, 'jokers', null, null, null, effect); emit('hand_text', { chips: hand_chips, mult }); }
+        }
+      }
+      if (edition_effects.jokers && edition_effects.jokers.x_mult_mod) {
+        mult = mod_mult(mult * edition_effects.jokers.x_mult_mod);
+        card_eval_status_text(_card, 'jokers', null, null, null, { message: 'X' + edition_effects.jokers.x_mult_mod + ' Mult', x_mult_mod: edition_effects.jokers.x_mult_mod, edition: true });
+        emit('hand_text', { mult });
+      }
+    }
+
+    const [nu_chip, nu_mult] = G.GAME.selected_back.trigger_effect({ context: 'final_scoring_step', chips: hand_chips, mult }) || [];
+    mult = mod_mult(nu_mult ?? mult);
+    hand_chips = mod_chips(nu_chip ?? hand_chips);
+    if (nu_chip !== undefined) emit('hand_text', { chips: hand_chips, mult, balanced: true });
+
+    const cards_destroyed = [];
+    for (const sc of scoring_hand) {
+      let destroyed = null;
+      for (const j of G.jokers.cards) {
+        destroyed = j.calculate_joker({ destroying_card: sc, full_hand: G.play.cards });
+        if (destroyed) break;
+      }
+      if (sc.ability.name === 'Glass Card' && !sc.debuff && pseudorandom('glass') < G.GAME.probabilities.normal / sc.ability.extra) destroyed = true;
+      if (destroyed) {
+        if (sc.ability.name === 'Glass Card') sc.shattered = true; else sc.destroyed = true;
+        cards_destroyed.push(sc);
+      }
+    }
+    for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: cards_destroyed });
+    for (const c of cards_destroyed) {
+      G.E_MANAGER.add_event(() => { if (c.ability.name === 'Glass Card') c.shatter(); else c.start_dissolve(); });
+    }
+  } else {
+    mult = mod_mult(0);
+    hand_chips = mod_chips(0);
+    emit('blind_juice', {});
+    emit('not_allowed', {});
+    emit('hand_text', { chips: 0, mult: 0 });
+    for (const j of G.jokers.cards.slice()) {
+      const effects = eval_card(j, { cardarea: G.jokers, ...base_ctx(), debuffed_hand: true });
+      if (effects.jokers) card_eval_status_text(j, 'jokers', null, null, null, effects.jokers);
+    }
+  }
+
+  const total = Math.floor(hand_chips * mult);
+  emit('hand_total', { chips: hand_chips, mult, total, hand: text });
+  if (total > (G.GAME.stats.best_hand || 0)) { G.GAME.stats.best_hand = total; G.GAME.stats.best_hand_name = disp_text; }
+  if (G.GAME.round_scores.hand.amt < total) G.GAME.round_scores.hand.amt = total;
+  G.GAME.last_hand_total = total;
+  G.E_MANAGER.add_event(() => {
+    G.GAME.chips = G.GAME.chips + total;
+    emit('chips', { total: G.GAME.chips, add: total });
+  });
+  for (const j of G.jokers.cards.slice()) {
+    const effects = eval_card(j, { cardarea: G.jokers, ...base_ctx(), after: true });
+    if (effects.jokers) card_eval_status_text(j, 'jokers', null, null, null, effects.jokers);
+  }
+  G.E_MANAGER.add_event(() => {
+    if (G.GAME.modifiers.debuff_played_cards) for (const v of scoring_hand) v.ability.perma_debuff = true;
+  });
+}
+
+function evaluate_round() {
+  const rows = [];
+  let dollars = 0;
+  const row = (r) => { rows.push(r); };
+  if (G.GAME.chips - G.GAME.blind.chips >= 0) {
+    row({ name: 'blind1', dollars: G.GAME.blind.dollars, blind: G.GAME.blind.config.blind && G.GAME.blind.config.blind.key });
+    dollars += G.GAME.blind.dollars;
+  } else {
+    row({ name: 'blind1', dollars: 0, saved: true });
+  }
+  G.E_MANAGER.add_event(() => G.GAME.blind.defeat());
+  G.GAME.selected_back.trigger_effect({ context: 'eval' });
+  if (G.GAME.current_round.hands_left > 0 && !G.GAME.modifiers.no_extra_hand_money) {
+    const d = G.GAME.current_round.hands_left * (G.GAME.modifiers.money_per_hand || 1);
+    row({ name: 'hands', dollars: d, disp: G.GAME.current_round.hands_left, bonus: true });
+    dollars += d;
+  }
+  if (G.GAME.current_round.discards_left > 0 && G.GAME.modifiers.money_per_discard) {
+    const d = G.GAME.current_round.discards_left * G.GAME.modifiers.money_per_discard;
+    row({ name: 'discards', dollars: d, disp: G.GAME.current_round.discards_left, bonus: true });
+    dollars += d;
+  }
+  G.jokers.cards.forEach((j, i) => {
+    const ret = j.calculate_dollar_bonus();
+    if (ret) { row({ name: 'joker' + (i + 1), dollars: ret, bonus: true, card: j.sort_id, center: j.config.center.key }); dollars += ret; }
+  });
+  G.GAME.tags.slice().forEach((t, i) => {
+    const ret = t.apply_to_run({ type: 'eval' });
+    if (ret) { row({ name: 'tag' + (i + 1), dollars: ret.dollars, bonus: true, tag: t.key, condition: ret.condition }); dollars += ret.dollars; }
+  });
+  if (G.GAME.dollars >= 5 && !G.GAME.modifiers.no_interest) {
+    const d = G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5);
+    row({ name: 'interest', dollars: d, bonus: true, disp: G.GAME.interest_amount });
+    dollars += d;
+  }
+  G.GAME.current_round.dollars = dollars;
+  G.GAME.round_eval = { rows, total: dollars };
+  emit('round_eval', { rows, total: dollars });
+}
+
+// ------------------------------------------------------------------ shop
+export function create_card_for_shop(area) {
+  for (const t of G.GAME.tags.slice()) {
+    const forced = t.apply_to_run({ type: 'store_joker_create', area });
+    if (forced) {
+      for (const tt of G.GAME.tags.slice()) if (tt.apply_to_run({ type: 'store_joker_modify', card: forced })) break;
+      return forced;
+    }
+  }
+  G.GAME.spectral_rate = G.GAME.spectral_rate || 0;
+  const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate;
+  const polled = pseudorandom(pseudoseed('cdt' + G.GAME.round_resets.ante)) * total_rate;
+  let check = 0;
+  const opts = [
+    { type: 'Joker', val: G.GAME.joker_rate },
+    { type: 'Tarot', val: G.GAME.tarot_rate },
+    { type: 'Planet', val: G.GAME.planet_rate },
+    { type: (G.GAME.used_vouchers.v_illusion && pseudorandom(pseudoseed('illusion')) > 0.6) ? 'Enhanced' : 'Base', val: G.GAME.playing_card_rate },
+    { type: 'Spectral', val: G.GAME.spectral_rate },
+  ];
+  for (const v of opts) {
+    if (polled > check && polled <= check + v.val) {
+      const card = create_card(v.type, area, null, null, null, null, null, 'sho');
+      G.E_MANAGER.add_event(() => {
+        for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'store_joker_modify', card })) break;
+      });
+      if ((v.type === 'Base' || v.type === 'Enhanced') && G.GAME.used_vouchers.v_illusion && pseudorandom(pseudoseed('illusion')) > 0.8) {
+        const ep = pseudorandom(pseudoseed('illusion'));
+        const ed = {};
+        if (ep > 1 - 0.15) ed.polychrome = true; else if (ep > 0.5) ed.holo = true; else ed.foil = true;
+        card.set_edition(ed);
+      }
+      return card;
+    }
+    check += v.val;
+  }
+  return create_card('Joker', area, null, null, null, null, null, 'sho');
+}
+
+function update_shop() {
+  G.shop_open = true;
+  G.E_MANAGER.add_event(() => {
+    for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_start' });
+    if (!G.shop_populated) {
+      G.shop_populated = true;
+      for (let i = G.shop_jokers.cards.length; i < G.GAME.shop.joker_max; i++) G.shop_jokers.emplace(create_card_for_shop(G.shop_jokers));
+      if (G.GAME.current_round.voucher && P_CENTERS[G.GAME.current_round.voucher]) {
+        const card = new Card(P_CARDS.empty, P_CENTERS[G.GAME.current_round.voucher]);
+        card.shop_voucher = true;
+        G.shop_vouchers.emplace(card);
+      }
+      for (let i = 1; i <= 2; i++) {
+        G.GAME.current_round.used_packs = G.GAME.current_round.used_packs || {};
+        if (!G.GAME.current_round.used_packs[i]) G.GAME.current_round.used_packs[i] = get_pack('shop_pack').key;
+        if (G.GAME.current_round.used_packs[i] !== 'USED') {
+          const card = new Card(P_CARDS.empty, P_CENTERS[G.GAME.current_round.used_packs[i]]);
+          card.ability.booster_pos = i;
+          G.shop_booster.emplace(card);
+        }
+      }
+      for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'voucher_add' });
+      for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_final_pass' });
+    }
+  });
+}
+export function change_shop_size(mod) {
+  if (!G.GAME.shop) return;
+  G.GAME.shop.joker_max += mod;
+  if (G.shop_jokers && G.shop_jokers.cards) {
+    if (mod < 0) {
+      for (let i = G.shop_jokers.cards.length - 1; i >= G.GAME.shop.joker_max; i--) {
+        const c = G.shop_jokers.cards[i];
+        if (c) c.remove();
+      }
+    }
+    G.shop_jokers.config.card_limit = G.GAME.shop.joker_max;
+    // Lua: G.shop_jokers only exists while the shop is open (a voucher redeems in PLAY_TAROT).
+    if (G.shop_open && mod > 0) {
+      for (let i = G.shop_jokers.cards.length; i < G.GAME.shop.joker_max; i++) G.shop_jokers.emplace(create_card_for_shop(G.shop_jokers));
+    }
+  }
+}
+
+function clear_area(area) {
+  for (const c of area.cards.slice()) c.remove();
+}
+
+// --------------------------------------------------------------- actions
+function find_card(id) {
+  for (const a of G.areas) for (const c of a.cards) if (c.sort_id === id) return c;
+  return null;
+}
+export function check_for_buy_space(card) {
+  if (card.ability.set !== 'Voucher' && card.ability.set !== 'Enhanced' && card.ability.set !== 'Default' &&
+      !(card.ability.set === 'Joker' && G.jokers.cards.length < G.jokers.config.card_limit + ((card.edition && card.edition.negative) ? 1 : 0)) &&
+      !(card.ability.consumeable && G.consumeables.cards.length < G.consumeables.config.card_limit + ((card.edition && card.edition.negative) ? 1 : 0))) {
+    emit('no_space', { card: card.sort_id });
+    return false;
+  }
+  return true;
+}
+
+/** G.FUNCS.use_card — consumables, pack picks, boosters, vouchers. */
+export function use_card(card) {
+  const area = card.area;
+  const prev_state = G.STATE;
+  let dont_dissolve = false;
+  if (card.check_use && card.check_use()) return false;
+  G.TAROT_INTERRUPT = G.STATE;
+  if (card.ability.set === 'Booster') G.GAME.PACK_INTERRUPT = G.STATE;
+  if (!PACK_STATES.includes(G.STATE)) G.STATE = STATES.PLAY_TAROT;
+  if (card.area) card.area.remove_card(card);
+  if (card.ability.consumeable) {
+    // Lua: only Tarot/Planet/Spectral packs skip the draw-to-play (Standard/Buffoon still draw).
+    if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK)) draw_card(G.hand, G.play, 1, 'up', true, card);
+    emit('use', { card: card.sort_id, center: card.config.center.key });
+    card.use_consumeable(area);
+    for (const j of G.jokers.cards.slice()) j.calculate_joker({ using_consumeable: true, consumeable: card });
+  } else if (card.ability.set === 'Enhanced' || card.ability.set === 'Default') {
+    G.playing_card = (G.playing_card || 0) + 1;
+    G.deck.emplace(card);
+    card.playing_card = G.playing_card;
+    for (const j of G.jokers.cards.slice()) j.calculate_joker({ playing_card_added: true, cards: [card] });
+    card.add_to_deck();
+    G.playing_cards.push(card);
+    dont_dissolve = true;
+  } else if (card.ability.set === 'Joker') {
+    card.add_to_deck();
+    G.jokers.emplace(card);
+    dont_dissolve = true;
+  } else if (card.ability.set === 'Booster') {
+    if (card.ability.booster_pos) G.GAME.current_round.used_packs[card.ability.booster_pos] = 'USED';
+    draw_card(G.hand, G.play, 1, 'up', true, card);
+    if (!card.from_tag) G.GAME.round_scores.cards_purchased.amt += 1;
+    emit('open_booster', { card: card.sort_id, center: card.config.center.key });
+    card.open();
+  } else if (card.ability.set === 'Voucher') {
+    draw_card(G.hand, G.play, 1, 'up', true, card);
+    G.GAME.round_scores.cards_purchased.amt += 1;
+    emit('redeem', { card: card.sort_id, center: card.config.center.key });
+    card.redeem();
+  }
+  if (card.ability.set === 'Booster') {
+    G.TAROT_INTERRUPT = null;
+  } else {
+    G.E_MANAGER.add_event(() => {
+      // Lua card:start_dissolve() -> Card:remove() -> remove_from_deck (a used Negative consumable gives its slot back).
+      if (!dont_dissolve) card.start_dissolve();
+      G.E_MANAGER.add_event(() => {
+        G.STATE = prev_state;
+        G.TAROT_INTERRUPT = null;
+        if (PACK_STATES.includes(prev_state)) {
+          if (area === G.consumeables) { /* used a held consumable mid-pack */ }
+          else if (G.GAME.pack_choices && G.GAME.pack_choices > 1) G.GAME.pack_choices -= 1;
+          else end_consumeable();
+        }
+      });
+    });
+  }
+  return true;
+}
+
+export function end_consumeable() {
+  G.E_MANAGER.add_event(() => {
+    clear_area(G.pack_cards);
+    G.GAME.pack_choices = 0;
+    draw_from_hand_to_deck();
+    G.E_MANAGER.add_event(() => {
+      G.STATE = G.GAME.PACK_INTERRUPT;
+      G.GAME.PACK_INTERRUPT = null;
+      emit('pack_closed', {});
+    });
+    for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
+  });
+}
+
+function select_blind(which) {
+  const rr = G.GAME.round_resets;
+  G.GAME.facing_blind = true;
+  G.E_MANAGER.add_event(() => {
+    ease_round(1);
+    rr.blind = P_BLINDS[rr.blind_choices[which]];
+    rr.blind_states[G.GAME.blind_on_deck] = 'Current';
+  });
+  G.E_MANAGER.add_event(() => new_round());
+}
+
+function skip_blind() {
+  const rr = G.GAME.round_resets;
+  G.GAME.skips = (G.GAME.skips || 0) + 1;
+  const skipped = G.GAME.blind_on_deck || 'Small';
+  const tagKey = rr.blind_tags[skipped];
+  if (!tagKey) return;
+  add_tag(new Tag(tagKey, false, skipped));
+  const skip_to = skipped === 'Small' ? 'Big' : 'Boss';
+  rr.blind_states[skipped] = 'Skipped';
+  rr.blind_states[skip_to] = 'Select';
+  G.GAME.blind_on_deck = skip_to;
+  emit('skip_blind', { skipped, tag: tagKey });
+  G.E_MANAGER.add_event(() => {
+    for (const j of G.jokers.cards.slice()) j.calculate_joker({ skip_blind: true });
+    for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
+    for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
+  });
+}
+
+export function reroll_boss(from_tag) {
+  G.GAME.round_resets.boss_rerolled = true;
+  if (!from_tag) ease_dollars(-10);
+  G.E_MANAGER.add_event(() => {
+    G.GAME.round_resets.blind_choices.Boss = get_new_boss();
+    emit('boss_rerolled', { boss: G.GAME.round_resets.blind_choices.Boss });
+    for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
+  });
+}
+
+function reroll_shop() {
+  if (G.GAME.current_round.reroll_cost > 0) ease_dollars(-G.GAME.current_round.reroll_cost);
+  G.E_MANAGER.add_event(() => {
+    const final_free = G.GAME.current_round.free_rerolls > 0;
+    G.GAME.current_round.free_rerolls = Math.max(G.GAME.current_round.free_rerolls - 1, 0);
+    G.GAME.round_scores.times_rerolled.amt += 1;
+    calculate_reroll_cost(final_free);
+    clear_area(G.shop_jokers);
+    for (let i = G.shop_jokers.cards.length; i < G.GAME.shop.joker_max; i++) G.shop_jokers.emplace(create_card_for_shop(G.shop_jokers));
+    emit('shop_rerolled', {});
+  });
+  G.E_MANAGER.add_event(() => {
+    G.E_MANAGER.add_event(() => { for (const j of G.jokers.cards.slice()) j.calculate_joker({ reroll_shop: true }); });
+  });
+}
+
+function buy_from_shop(c1, use) {
+  if (!use && !check_for_buy_space(c1)) return false;
+  G.E_MANAGER.add_event(() => {
+    c1.area.remove_card(c1);
+    c1.add_to_deck();
+    if (c1.ability.set === 'Default' || c1.ability.set === 'Enhanced') {
+      G.playing_card = (G.playing_card || 0) + 1;
+      G.deck.emplace(c1);
+      c1.playing_card = G.playing_card;
+      for (const j of G.jokers.cards.slice()) j.calculate_joker({ playing_card_added: true, cards: [c1] });
+      G.playing_cards.push(c1);
+    } else if (!use) {
+      if (c1.ability.consumeable) G.consumeables.emplace(c1);
+      else G.jokers.emplace(c1);
+      G.E_MANAGER.add_event(() => c1.calculate_joker({ buying_card: true, card: c1 }));
+    }
+    G.GAME.round_scores.cards_purchased.amt += 1;
+    if (c1.ability.set === 'Joker') G.GAME.current_round.jokers_purchased += 1;
+    for (const j of G.jokers.cards.slice()) j.calculate_joker({ buying_card: true, card: c1 });
+    if (G.GAME.modifiers.inflation) {
+      G.GAME.inflation += 1;
+      G.E_MANAGER.add_event(() => { for (const a of G.areas) for (const c of a.cards) c.set_cost(); });
+    }
+    if (c1.cost !== 0) ease_dollars(-c1.cost);
+    emit('bought', { card: c1.sort_id, cost: c1.cost });
+    if (use) use_card(c1);
+  });
+  return true;
+}
+
+function toggle_shop() {
+  for (const j of G.jokers.cards.slice()) j.calculate_joker({ ending_shop: true });
+  G.E_MANAGER.add_event(() => {
+    clear_area(G.shop_jokers);
+    clear_area(G.shop_vouchers);
+    clear_area(G.shop_booster);
+    G.shop_open = false;
+    G.shop_populated = false;
+    G.STATE_COMPLETE = false;
+    G.STATE = STATES.BLIND_SELECT;
+  });
+}
+
+function cash_out() {
+  G.deck.shuffle('cashout' + G.GAME.round_resets.ante);
+  G.E_MANAGER.add_event(() => {
+    G.GAME.round_eval = null;
+    G.GAME.current_round.jokers_purchased = 0;
+    G.GAME.current_round.discards_left = Math.max(0, G.GAME.round_resets.discards + G.GAME.round_bonus.discards);
+    G.GAME.current_round.hands_left = Math.max(1, G.GAME.round_resets.hands + G.GAME.round_bonus.next_hands);
+    G.STATE = STATES.SHOP;
+    G.GAME.shop_free = null;
+    G.GAME.shop_d6ed = null;
+    G.STATE_COMPLETE = false;
+  });
+  ease_dollars(G.GAME.current_round.dollars);
+  G.E_MANAGER.add_event(() => { G.GAME.previous_round.dollars = G.GAME.dollars; });
+  ease_chips(0);
+  if (G.GAME.round_resets.blind_states.Boss === 'Defeated') {
+    G.GAME.round_resets.blind_ante = G.GAME.round_resets.ante;
+    G.GAME.round_resets.blind_tags.Small = get_next_tag_key();
+    G.GAME.round_resets.blind_tags.Big = get_next_tag_key();
+  }
+  reset_blinds();
+}
+
+function play_cards_from_highlighted() {
+  if (G.play.cards[0]) return false;
+  G.GAME.blind.triggered = false;
+  for (const v of G.playing_cards) v.ability.forced_selection = undefined;
+  const hl = G.hand.highlighted.slice().sort((a, b) => G.hand.cards.indexOf(a) - G.hand.cards.indexOf(b));
+  G.hand.highlighted = hl;
+  G.E_MANAGER.add_event(() => { G.STATE = STATES.HAND_PLAYED; G.STATE_COMPLETE = true; });
+  ease_hands_played(-1);
+  for (const c of hl) {
+    c.base.times_played += 1;
+    c.ability.played_this_ante = true;
+    G.GAME.round_scores.cards_played.amt += 1;
+    draw_card(G.hand, G.play, 0, 'up', null, c);
+  }
+  G.GAME.blind.press_play();
+  G.E_MANAGER.add_event(() => {
+    G.E_MANAGER.add_event(() => evaluate_play());
+    G.E_MANAGER.add_event(() => {
+      draw_from_play_to_discard();
+      G.GAME.hands_played += 1;
+      G.GAME.current_round.hands_played += 1;
+    });
+    G.E_MANAGER.add_event(() => { G.STATE_COMPLETE = false; });
+  });
+  return true;
+}
+
+export function discard_cards_from_highlighted(hook) {
+  for (const v of G.playing_cards) v.ability.forced_selection = undefined;
+  const count = Math.min(G.hand.highlighted.length, G.discard.config.card_limit - G.play.cards.length);
+  if (count <= 0) return false;
+  const hl = G.hand.highlighted.slice().sort((a, b) => G.hand.cards.indexOf(a) - G.hand.cards.indexOf(b));
+  G.hand.highlighted = hl;
+  for (const j of G.jokers.cards.slice()) j.calculate_joker({ pre_discard: true, full_hand: hl, hook });
+  const destroyed_cards = [];
+  for (let i = 0; i < count; i++) {
+    const c = hl[i];
+    c.calculate_seal({ discard: true });
+    let removed = false;
+    for (const j of G.jokers.cards.slice()) {
+      const ev = j.calculate_joker({ discard: true, other_card: c, full_hand: hl });
+      if (ev) {
+        if (ev.remove) removed = true;
+        card_eval_status_text(j, 'jokers', null, 1, null, ev);
+      }
+    }
+    if (removed) {
+      destroyed_cards.push(c);
+      if (c.ability.name === 'Glass Card') c.shatter(); else c.start_dissolve();
+    } else {
+      c.ability.discarded = true;
+      draw_card(G.hand, G.discard, 0, 'down', false, c);
+    }
+  }
+  if (destroyed_cards.length) for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: destroyed_cards });
+  G.GAME.round_scores.cards_discarded.amt += count;
+  if (!hook) {
+    if (G.GAME.modifiers.discard_cost) ease_dollars(-G.GAME.modifiers.discard_cost);
+    ease_discard(-1);
+    G.GAME.current_round.discards_used += 1;
+    G.STATE = STATES.DRAW_TO_HAND;
+    G.E_MANAGER.add_event(() => { G.STATE_COMPLETE = false; });
+  }
+  return true;
+}
+
+// ----------------------------------------------------- public action API
+const can = (cond, why) => { if (!cond) throw new ActionError(why); };
+export class ActionError extends Error {}
+
+/**
+ * Apply one player action. Returns {ok, error?, events}. Actions are plain
+ * JSON so a run is replayable as (seed, back, stake, [actions]).
+ */
+export function act(a) {
+  const before = G.ui_events.length;
+  try {
+    can(!G.GAME.over, 'run is over');
+    can(G.STATE_COMPLETE, 'busy');
+    applyAction(a);
+    pump();
+    (G.action_log = G.action_log || []).push(a);
+    return { ok: true, events: G.ui_events.slice(before) };
+  } catch (e) {
+    if (!(e instanceof ActionError)) throw e;
+    return { ok: false, error: e.message, events: G.ui_events.slice(before) };
+  }
+}
+
+function inPack() { return PACK_STATES.includes(G.STATE); }
+
+function applyAction(a) {
+  const S = G.STATE;
+  switch (a.type) {
+    case 'select_blind': {
+      can(S === STATES.BLIND_SELECT, 'not choosing a blind');
+      const which = G.GAME.blind_on_deck;
+      can(which && G.GAME.round_resets.blind_states[which] === 'Select', 'no blind to select');
+      select_blind(which);
+      break;
+    }
+    case 'skip_blind': {
+      can(S === STATES.BLIND_SELECT, 'not choosing a blind');
+      can(G.GAME.blind_on_deck !== 'Boss', 'cannot skip the boss');
+      skip_blind();
+      break;
+    }
+    case 'reroll_boss': {
+      can(S === STATES.BLIND_SELECT, 'not choosing a blind');
+      can(G.GAME.dollars - G.GAME.bankrupt_at - 10 >= 0, 'not enough money');
+      can(G.GAME.used_vouchers.v_retcon || (G.GAME.used_vouchers.v_directors_cut && !G.GAME.round_resets.boss_rerolled), 'no boss reroll');
+      reroll_boss();
+      break;
+    }
+    case 'highlight': {
+      // toggle one hand card (or set exact selection with ids[])
+      can(S === STATES.SELECTING_HAND || inPack(), 'not selecting');
+      if (a.ids) {
+        G.hand.unhighlight_all();
+        for (const id of a.ids) { const c = find_card(id); if (c && c.area === G.hand) G.hand.add_to_highlighted(c); }
+      } else {
+        const c = find_card(a.id);
+        can(c && c.area === G.hand, 'no such card in hand');
+        if (G.hand.highlighted.includes(c)) G.hand.remove_from_highlighted(c);
+        else G.hand.add_to_highlighted(c);
+      }
+      emit('highlight', { ids: G.hand.highlighted.map((c) => c.sort_id) });
+      break;
+    }
+    case 'play': {
+      can(S === STATES.SELECTING_HAND, 'not selecting a hand');
+      can(G.hand.highlighted.length > 0 && G.hand.highlighted.length <= 5 && !G.GAME.blind.block_play, 'cannot play');
+      play_cards_from_highlighted();
+      break;
+    }
+    case 'discard': {
+      can(S === STATES.SELECTING_HAND, 'not selecting a hand');
+      can(G.GAME.current_round.discards_left > 0 && G.hand.highlighted.length > 0, 'cannot discard');
+      discard_cards_from_highlighted();
+      break;
+    }
+    case 'sort_hand': {
+      G.hand.sort(a.by === 'suit' ? 'suit desc' : 'desc');
+      emit('sorted', { area: 'hand', ids: G.hand.cards.map((c) => c.sort_id) });
+      break;
+    }
+    case 'reorder': {
+      const area = G[a.area];
+      can(area && (area === G.jokers || area === G.hand || area === G.consumeables), 'cannot reorder');
+      can(!(S === STATES.HAND_PLAYED), 'busy');
+      const ids = a.ids;
+      can(Array.isArray(ids) && ids.length === area.cards.length && ids.every((id) => area.cards.some((c) => c.sort_id === id)), 'bad order');
+      area.cards.sort((x, y) => ids.indexOf(x.sort_id) - ids.indexOf(y.sort_id));
+      area.set_ranks();
+      emit('sorted', { area: a.area, ids });
+      break;
+    }
+    case 'use': {
+      const c = find_card(a.id);
+      can(c && (c.area === G.consumeables || c.area === G.pack_cards), 'cannot use that');
+      // Targets are the hand selection the consumable is checked (and used) against.
+      if (a.targets) { G.hand.unhighlight_all(); for (const id of a.targets) { const t = find_card(id); if (t && t.area === G.hand) G.hand.add_to_highlighted(t); } }
+      if (c.area === G.pack_cards) {
+        can(inPack(), 'no pack open');
+        if (c.ability.consumeable) can(c.can_use_consumeable(), 'cannot use now');
+        else can(c.ability.set !== 'Joker' || (c.edition && c.edition.negative) || G.jokers.cards.length < G.jokers.config.card_limit, 'no joker space');
+      } else {
+        can(c.can_use_consumeable(), 'cannot use now');
+      }
+      use_card(c);
+      break;
+    }
+    case 'sell': {
+      const c = find_card(a.id);
+      can(c && (c.area === G.jokers || c.area === G.consumeables), 'cannot sell that');
+      can(c.can_sell_card(), 'cannot sell now');
+      c.sell_card();
+      for (const j of G.jokers.cards.slice()) if (j !== c) j.calculate_joker({ selling_card: true, card: c });
+      break;
+    }
+    case 'buy': {
+      can(S === STATES.SHOP, 'shop is closed');
+      const c = find_card(a.id);
+      can(c && (c.area === G.shop_jokers || c.area === G.shop_vouchers || c.area === G.shop_booster), 'not for sale');
+      can(!(c.cost > G.GAME.dollars - G.GAME.bankrupt_at && c.cost > 0), 'not enough money');
+      if (c.area === G.shop_vouchers) { use_card(c); break; }
+      if (c.area === G.shop_booster) { use_card(c); break; }
+      if (a.use) can(c.ability.consumeable && c.can_use_consumeable(), 'cannot use now');
+      buy_from_shop(c, !!a.use);
+      break;
+    }
+    case 'reroll_shop': {
+      can(S === STATES.SHOP, 'shop is closed');
+      can(!(G.GAME.dollars - G.GAME.bankrupt_at - G.GAME.current_round.reroll_cost < 0 && G.GAME.current_round.reroll_cost !== 0), 'not enough money');
+      reroll_shop();
+      break;
+    }
+    case 'next_round': {
+      can(S === STATES.SHOP, 'shop is closed');
+      toggle_shop();
+      break;
+    }
+    case 'skip_booster': {
+      can(inPack(), 'no pack open');
+      for (const j of G.jokers.cards.slice()) j.calculate_joker({ skipping_booster: true });
+      end_consumeable();
+      break;
+    }
+    case 'cash_out': {
+      can(S === STATES.ROUND_EVAL && G.GAME.round_eval, 'nothing to cash out');
+      cash_out();
+      break;
+    }
+    case 'endless': {
+      can(G.GAME.won && S === STATES.ROUND_EVAL || S === STATES.SHOP, 'not won yet');
+      G.GAME.endless = true;
+      break;
+    }
+    default:
+      throw new ActionError('unknown action ' + a.type);
+  }
+}
+
+/** Convenience for UIs/tests: what can the player do right now? */
+export function legal() {
+  const S = G.STATE;
+  return {
+    state: STATE_NAMES[S],
+    can_play: S === STATES.SELECTING_HAND && G.hand.highlighted.length > 0 && G.hand.highlighted.length <= 5 && !G.GAME.blind.block_play,
+    can_discard: S === STATES.SELECTING_HAND && G.GAME.current_round.discards_left > 0 && G.hand.highlighted.length > 0,
+    can_reroll: S === STATES.SHOP && !(G.GAME.dollars - G.GAME.bankrupt_at - G.GAME.current_round.reroll_cost < 0 && G.GAME.current_round.reroll_cost !== 0),
+    can_skip_blind: S === STATES.BLIND_SELECT && G.GAME.blind_on_deck !== 'Boss',
+    can_reroll_boss: S === STATES.BLIND_SELECT && G.GAME.dollars - G.GAME.bankrupt_at - 10 >= 0 && !!(G.GAME.used_vouchers.v_retcon || (G.GAME.used_vouchers.v_directors_cut && !G.GAME.round_resets.boss_rerolled)),
+  };
+}
+
+export function blindChips(key) {
+  const b = P_BLINDS[key];
+  return get_blind_amount(G.GAME.round_resets.ante) * b.mult * G.GAME.starting_params.ante_scaling;
+}
+
+export { G, STATES as S, number_format, get_poker_hand_info as pokerInfo };

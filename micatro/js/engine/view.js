@@ -1,0 +1,124 @@
+// View model: a plain-JSON picture of the run that the renderer draws from.
+// The local player renders toView() of the live engine; a spectator renders
+// the same object received over the network — so both see the same screen.
+
+import { G, P_BLINDS, P_TAGS, P_CENTERS, get_blind_amount } from './core.js';
+import { STATE_NAMES, HANDLIST, legal } from './run.js';
+import { describe, describeBlind, describeTag } from './describe.js';
+
+export const VIEW_VERSION = 1;
+
+export function cardView(c, withDesc) {
+  const v = {
+    id: c.sort_id,
+    center: c.config.center.key,
+    set: c.ability.set,
+    name: c.ability.name,
+  };
+  if (c.config.card && c.config.card.key) v.front = c.config.card.key;
+  if (c.edition && c.edition.type) v.edition = c.edition.type;
+  if (c.seal) v.seal = c.seal;
+  if (c.debuff) v.debuff = true;
+  if (c.facing === 'back') v.facing = 'back';
+  if (c.highlighted) v.hl = true;
+  if (c.ability.eternal) v.eternal = true;
+  if (c.ability.perishable) { v.perishable = true; v.perish_tally = c.ability.perish_tally; }
+  if (c.ability.rental) v.rental = true;
+  if (c.pinned) v.pinned = true;
+  if (c.area && (c.area.config.type === 'shop')) v.cost = c.cost;
+  if (c.area && (c.area === G.jokers || c.area === G.consumeables)) v.sell = c.sell_cost;
+  if (c.ability.set === 'Booster') v.cost = c.cost;
+  if (withDesc) {
+    try { v.desc = describe(c); } catch (e) { v.desc = { name: c.ability.name, lines: [] }; }
+  }
+  return v;
+}
+
+const areaView = (a, withDesc) => (a ? a.cards.map((c) => cardView(c, withDesc)) : []);
+
+export function toView() {
+  const GM = G.GAME;
+  const rr = GM.round_resets;
+  const b = GM.blind;
+  const scaling = GM.starting_params.ante_scaling;
+  const amt = get_blind_amount(rr.ante);
+  const choices = {};
+  for (const k of ['Small', 'Big', 'Boss']) {
+    const key = rr.blind_choices[k];
+    if (!key || !P_BLINDS[key]) continue;
+    const pb = P_BLINDS[key];
+    choices[k] = {
+      key, name: pb.name, state: rr.blind_states[k], chips: amt * pb.mult * scaling,
+      dollars: GM.modifiers.no_blind_reward && GM.modifiers.no_blind_reward[k] ? 0 : pb.dollars,
+      tag: k !== 'Boss' && rr.blind_tags ? rr.blind_tags[k] : undefined,
+      tagDesc: k !== 'Boss' && rr.blind_tags && rr.blind_tags[k] ? safe(() => describeTag({ key: rr.blind_tags[k] })) : undefined,
+      colour: pb.boss_colour, pos: pb.pos,
+      desc: safe(() => describeBlind(key)),
+    };
+  }
+  return {
+    v: VIEW_VERSION,
+    seed: GM.pseudorandom.seed,
+    back: GM.selected_back_key,
+    stake: GM.stake,
+    state: STATE_NAMES[G.STATE],
+    ante: rr.ante,
+    round: GM.round,
+    win_ante: GM.win_ante,
+    dollars: GM.dollars,
+    chips: GM.chips,
+    hands_left: GM.current_round.hands_left,
+    discards_left: GM.current_round.discards_left,
+    hand_limit: G.hand.config.card_limit,
+    joker_limit: G.jokers.config.card_limit,
+    consumeable_limit: G.consumeables.config.card_limit,
+    blind: b && b.config && b.config.blind ? {
+      key: b.config.blind.key, name: b.name, chips: b.chips, dollars: b.dollars, boss: !!b.boss,
+      disabled: !!b.disabled, colour: b.config.blind.boss_colour, pos: b.config.blind.pos,
+      desc: safe(() => describeBlind(b.config.blind.key, b)),
+    } : null,
+    blind_on_deck: GM.blind_on_deck,
+    choices,
+    boss_rerolled: !!rr.boss_rerolled,
+    hands: HANDLIST.map((name) => {
+      const h = GM.hands[name];
+      return { name, level: h.level, chips: h.chips, mult: h.mult, played: h.played, visible: !!h.visible };
+    }),
+    areas: {
+      hand: areaView(G.hand),
+      play: areaView(G.play),
+      jokers: areaView(G.jokers, true),
+      consumeables: areaView(G.consumeables, true),
+      shop_jokers: areaView(G.shop_jokers, true),
+      shop_vouchers: areaView(G.shop_vouchers, true),
+      shop_booster: areaView(G.shop_booster, true),
+      pack_cards: areaView(G.pack_cards, true),
+    },
+    deck_count: G.deck.cards.length,
+    discard_count: G.discard.cards.length,
+    deck_total: G.playing_cards.length,
+    // Full deck list (sorted, not in draw order) for the deck viewer.
+    deck_list: G.playing_cards.map((c) => [c.config.card.key, c.config.center.key, c.edition ? c.edition.type : 0, c.seal || 0, c.area === G.deck ? 1 : 0, c.debuff ? 1 : 0]),
+    tags: GM.tags.map((t) => ({ key: t.key, id: t.ID, desc: safe(() => describeTag(t)) })),
+    vouchers: Object.keys(GM.used_vouchers).filter((k) => GM.used_vouchers[k]),
+    round_eval: GM.round_eval || null,
+    reroll_cost: GM.current_round.reroll_cost,
+    pack_choices: GM.pack_choices || 0,
+    pack_kind: packKind(),
+    legal: legal(),
+    over: !!GM.over,
+    won: !!GM.won,
+    endless: !!GM.endless,
+    stats: { ...GM.stats },
+    interest_cap: GM.interest_cap,
+  };
+}
+
+function packKind() {
+  const S = G.STATES;
+  return ({ [S.TAROT_PACK]: 'Arcana', [S.PLANET_PACK]: 'Celestial', [S.SPECTRAL_PACK]: 'Spectral', [S.STANDARD_PACK]: 'Standard', [S.BUFFOON_PACK]: 'Buffoon' })[G.STATE] || null;
+}
+
+function safe(fn) { try { return fn(); } catch (e) { return undefined; } }
+
+export { P_CENTERS, P_TAGS };
