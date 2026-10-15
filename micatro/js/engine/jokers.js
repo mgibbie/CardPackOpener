@@ -14,7 +14,7 @@ import {
   G, Card, P_CENTERS, P_CARDS_LIST, localize, emit, card_eval_status_text, play_sound,
   pseudorandom, pseudoseed, pseudorandom_element, next,
   ease_dollars, ease_discard, ease_hands_played, draw_card, level_up_hand, update_hand_text, delay,
-  create_card, create_playing_card, copy_card,
+  create_card, create_playing_card, copy_card, probability_roll,
 } from './core.js';
 import { get_poker_hand_info } from './run.js';
 import { Tag, add_tag } from './tag.js';
@@ -193,7 +193,7 @@ Card.prototype.calculate_joker = function (context) {
     }
     if (context.open_booster) {
       if (this.ability.name === 'Hallucination' && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-        if (pseudorandom('halu' + G.GAME.round_resets.ante) < G.GAME.probabilities.normal / this.ability.extra) {
+        if (probability_roll(this, 'halu' + G.GAME.round_resets.ante, 1, this.ability.extra, 'halu')) {
           G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
           G.E_MANAGER.add_event(() => {
             const card = create_card('Tarot', G.consumeables, null, null, null, null, null, 'hal');
@@ -771,7 +771,7 @@ Card.prototype.calculate_joker = function (context) {
         }
 
         if (this.ability.name === 'Gros Michel' || this.ability.name === 'Cavendish') {
-          if (pseudorandom(this.ability.name === 'Cavendish' ? 'cavendish' : 'gros_michel') < G.GAME.probabilities.normal / this.ability.extra.odds) {
+          if (probability_roll(this, this.ability.name === 'Cavendish' ? 'cavendish' : 'gros_michel', 1, this.ability.extra.odds)) {
             food_remove(this);
             if (this.ability.name === 'Gros Michel') G.GAME.pool_flags.gros_michel_extinct = true;
             return {
@@ -839,7 +839,7 @@ Card.prototype.calculate_joker = function (context) {
           }
         }
         if (this.ability.name === '8 Ball' && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-          if (context.other_card.get_id() === 8 && pseudorandom('8ball') < G.GAME.probabilities.normal / this.ability.extra) {
+          if (context.other_card.get_id() === 8 && probability_roll(this, '8ball', 1, this.ability.extra)) {
             G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
             return {
               extra: {
@@ -907,7 +907,7 @@ Card.prototype.calculate_joker = function (context) {
         }
         if (this.ability.name === 'Business Card' &&
             context.other_card.is_face() &&
-            pseudorandom('business') < G.GAME.probabilities.normal / this.ability.extra) {
+            probability_roll(this, 'business', 1, this.ability.extra)) {
           G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + 2;
           G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
           return {
@@ -977,7 +977,7 @@ Card.prototype.calculate_joker = function (context) {
         }
         if (this.ability.name === 'Bloodstone' &&
             context.other_card.is_suit('Hearts') &&
-            pseudorandom('bloodstone') < G.GAME.probabilities.normal / this.ability.extra.odds) {
+            probability_roll(this, 'bloodstone', 1, this.ability.extra.odds)) {
           return {
             x_mult: this.ability.extra.Xmult,
             card: this,
@@ -1032,7 +1032,7 @@ Card.prototype.calculate_joker = function (context) {
         }
         if (this.ability.name === 'Reserved Parking' &&
             context.other_card.is_face() &&
-            pseudorandom('parking') < G.GAME.probabilities.normal / this.ability.extra.odds) {
+            probability_roll(this, 'parking', 1, this.ability.extra.odds)) {
           if (context.other_card.debuff) {
             return {
               message: localize('k_debuffed'),
@@ -1146,7 +1146,7 @@ Card.prototype.calculate_joker = function (context) {
               card: this,
             };
           }
-          if (this.ability.name === 'Space Joker' && pseudorandom('space') < G.GAME.probabilities.normal / this.ability.extra) {
+          if (this.ability.name === 'Space Joker' && probability_roll(this, 'space', 1, this.ability.extra)) {
             return {
               card: this,
               level_up: true,

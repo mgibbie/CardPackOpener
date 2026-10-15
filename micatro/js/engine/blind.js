@@ -8,7 +8,7 @@
 import {
   G, P_BLINDS, LOC, emit, card_eval_status_text, play_sound, attention_text, localize,
   pseudoseed, pseudorandom, pseudorandom_element, ease_discard, ease_hands_played, ease_dollars,
-  level_up_hand, get_blind_amount, number_format, copy_table,
+  level_up_hand, get_blind_amount, number_format, copy_table, probability_roll,
 } from './core.js';
 import { draw_from_deck_to_hand, discard_cards_from_highlighted } from './run.js';
 
@@ -122,6 +122,9 @@ export class Blind {
     if (this.name === 'The Manacle' && !reset) {
       G.hand.change_size(-1);
     }
+    // Steamodded mod blind hooks get (blind prototype, this Blind instance); per-fight state
+    // belongs on the instance, not the shared prototype.
+    if (!reset && blind && blind.mod && blind.set_blind) blind.set_blind(blind, this);
     if (this.name === 'Amber Acorn' && !reset && G.jokers.cards.length > 0) {
       G.jokers.unhighlight_all();
       for (const v of G.jokers.cards) v.flip();
@@ -175,6 +178,8 @@ export class Blind {
     if (this.name === 'The Manacle' && !this.disabled) {
       G.hand.change_size(1);
     }
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.defeat && !this.disabled) mb.defeat(mb, this);
   }
 
   get_type() {
@@ -220,6 +225,8 @@ export class Blind {
       this.chips = this.chips / 3;
       this.chip_text = number_format(this.chips);
     }
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.disable) mb.disable(mb, this);
     G.E_MANAGER.add_event(() => {
       if (this.boss && G.GAME.chips - G.GAME.blind.chips >= 0) {
         G.STATE = G.STATES.NEW_ROUND;
@@ -243,6 +250,8 @@ export class Blind {
   // ---------------------------------------------------------- press_play
   press_play() {
     if (this.disabled) return undefined;
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.press_play) return mb.press_play(mb, this);
     if (this.name === 'The Hook') {
       G.E_MANAGER.add_event(() => {
         let any_selected;
@@ -358,6 +367,8 @@ export class Blind {
 
   drawn_to_hand() {
     if (!this.disabled) {
+      const mb = this.config.blind;
+      if (mb && mb.mod && mb.drawn_to_hand) mb.drawn_to_hand(mb, this);
       if (this.name === 'Cerulean Bell') {
         let any_forced;
         for (const v of G.hand.cards) if (v.ability.forced_selection) any_forced = true;
@@ -389,7 +400,7 @@ export class Blind {
   stay_flipped(area, card) {
     if (!this.disabled) {
       if (area === G.hand) {
-        if (this.name === 'The Wheel' && pseudorandom(pseudoseed('wheel')) < G.GAME.probabilities.normal / 7) return true;
+        if (this.name === 'The Wheel' && probability_roll(this, pseudoseed('wheel'), 1, 7, 'wheel')) return true;
         if (this.name === 'The House' && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0) return true;
         if (this.name === 'The Mark' && card.is_face(true)) return true;
         if (this.name === 'The Fish' && this.prepped) return true;

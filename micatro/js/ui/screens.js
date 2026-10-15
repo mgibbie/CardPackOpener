@@ -1,7 +1,7 @@
 // Menus and modal screens: main menu, new-run setup (deck + stake + seed),
 // leaderboard, how-to-play, run info (poker hands / blinds / vouchers), options,
 // deck viewer, game over / win. All draw from plain view data.
-import { cellEl, drawCell, CENTERS, BLINDS, LOC, STAKE_LIST, BACK_LIST, TAGS, MODREG, cssColour } from './assets.js';
+import { cellEl, drawCell, CENTERS, BLINDS, LOC, STAKE_LIST, BACK_LIST, TAGS, MODREG, cssColour, drawModCell, onModAtlas } from './assets.js';
 import { composeFace, FACE_W, FACE_H } from './cardsprite.js';
 import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
@@ -94,12 +94,23 @@ const PREF = 'micatro_newrun';
 export function newRunScreen(o) {
   let pref = {};
   try { pref = JSON.parse(localStorage.getItem(PREF) || '{}'); } catch (e) { /* ignore */ }
-  let bi = Math.max(0, BACK_LIST.findIndex((b) => b.key === pref.back));
+  // Base decks + the decks of the mods selected below (refreshed when the mod selection changes).
+  const msel0 = loadModPrefs();
+  let backs = BACK_LIST;
+  const refreshBacks = (sel) => {
+    const cur = backs[bi] && backs[bi].key;
+    const extra = modsApi && modsApi.backs ? modsApi.backs(sel.ids.filter((id) => modsApi.isLoaded(id)), sel.options) : [];
+    backs = BACK_LIST.concat(extra.map((c) => ({ ...c, key: c.key })));
+    bi = Math.max(0, backs.findIndex((b) => b.key === cur));
+  };
+  let bi = 0;
+  refreshBacks(msel0);
+  bi = Math.max(0, backs.findIndex((b) => b.key === pref.back));
   let stake = Math.min(8, Math.max(1, pref.stake || 1));
   const el = h('div', 'new-run');
   const deckRow = h('div', 'nr-row nr-deck');
-  const left = btn('‹', 'arrow red', () => { bi = (bi + BACK_LIST.length - 1) % BACK_LIST.length; draw(); });
-  const right = btn('›', 'arrow red', () => { bi = (bi + 1) % BACK_LIST.length; draw(); });
+  const left = btn('‹', 'arrow red', () => { bi = (bi + backs.length - 1) % backs.length; draw(); });
+  const right = btn('›', 'arrow red', () => { bi = (bi + 1) % backs.length; draw(); });
   const deckView = h('div', 'nr-deckview');
   const deckInfo = h('div', 'nr-info');
   deckRow.append(left, deckView, deckInfo, right);
@@ -128,7 +139,7 @@ export function newRunScreen(o) {
     mrow.appendChild(h('span', 'nr-mods-l', 'Mods'));
     modsSum = h('span', 'nr-mods-sum');
     mrow.appendChild(modsSum);
-    mrow.appendChild(btn('Mods', 'green b-mods', () => modsPanel(msel, () => drawMods())));
+    mrow.appendChild(btn('Mods', 'green b-mods', () => modsPanel(msel, () => { drawMods(); refreshBacks(msel); draw(); })));
     el.appendChild(mrow);
   }
   function drawMods() {
@@ -136,8 +147,10 @@ export function newRunScreen(o) {
     modsSum.innerHTML = msel.ids.length ? modBadges(msel.ids) : '<span class="muted">None (vanilla run)</span>';
   }
   drawMods();
+  // decks of saved-on mods appear once those mods have loaded
+  if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); if (el.isConnected) draw(); }).catch(() => {});
   const play = btn('Play', 'blue big wide b-start', () => {
-    const back = BACK_LIST[bi].key;
+    const back = backs[bi].key;
     try { localStorage.setItem(PREF, JSON.stringify({ back, stake })); } catch (e) { /* ignore */ }
     const seed = seedOn.checked && seedIn.value ? seedIn.value : undefined;
     const mods = modsApi ? modsApi.withRequirements(msel.ids) : [];
@@ -148,9 +161,17 @@ export function newRunScreen(o) {
   });
   el.appendChild(play);
   function draw() {
-    const b = BACK_LIST[bi];
+    const b = backs[bi];
     deckView.innerHTML = '';
-    deckView.appendChild(cellEl('centers', b.pos, 'nr-back'));
+    if (b.mod) {
+      // a mod deck: its own atlas cell (redrawn when the art arrives)
+      const c = document.createElement('canvas');
+      c.className = 'nr-back'; c.width = 142; c.height = 190;
+      const paint = () => { const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); if (!drawModCell(ctx, b.atlas, b.pos, 0, 0, c.width, c.height)) drawCell(ctx, 'centers', { x: 0, y: 2 }, 0, 0, c.width, c.height); };
+      paint();
+      const off = onModAtlas((name) => { if (name === b.atlas) { paint(); off(); } });
+      deckView.appendChild(c);
+    } else deckView.appendChild(cellEl('centers', b.pos, 'nr-back'));
     const d = backDesc(b.key);
     deckInfo.innerHTML = `<div class="nr-name">${esc(d.name || b.name)}</div><div class="nr-desc">${(d.lines || []).map(markup).join('<br>')}</div>`;
     const s = STAKE_LIST[stake - 1];

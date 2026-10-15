@@ -20,7 +20,7 @@ import {
   pseudoseed, pseudorandom, pseudorandom_element, pseudoshuffle,
   ease_dollars, ease_discard, ease_hands_played, ease_ante, level_up_hand,
   create_card, create_playing_card, copy_card, poll_edition, all_cards, next,
-  set_consumeable_usage, check_for_unlock, inc_career_stat,
+  set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll,
 } from './core.js';
 import { callHook, reduceHook } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
@@ -424,7 +424,7 @@ Card.prototype.use_consumeable = function (area, copier) {
   if (this.ability.name === 'The Wheel of Fortune' || this.ability.name === 'Ectoplasm' || this.ability.name === 'Hex') {
     const temp_pool = (this.ability.name === 'The Wheel of Fortune' && this.eligible_strength_jokers) ||
       ((this.ability.name === 'Ectoplasm' || this.ability.name === 'Hex') && this.eligible_editionless_jokers) || [];
-    if (this.ability.name === 'Ectoplasm' || this.ability.name === 'Hex' || pseudorandom('wheel_of_fortune') < G.GAME.probabilities.normal / this.ability.extra) {
+    if (this.ability.name === 'Ectoplasm' || this.ability.name === 'Hex' || probability_roll(this, 'wheel_of_fortune', 1, this.ability.extra)) {
       G.E_MANAGER.add_event(() => {
         const [eligible_card] = pseudorandom_element(temp_pool, pseudoseed(
           (this.ability.name === 'The Wheel of Fortune' && 'wheel_of_fortune') ||
@@ -711,6 +711,9 @@ Card.prototype.redeem = function () {
 // ---------------------------------------------------------- Card:apply_to_run
 /** Card.apply_to_run(self, center) — `self` may be null (backs/tags call it as Card.apply_to_run(nil, center)). */
 function apply_to_run(self, center) {
+  // Steamodded: a mod voucher's redeem(self, card) replaces the vanilla effects.
+  const mod_center = center || (self && self.config.center);
+  if (mod_center && mod_center.mod && mod_center.redeem) { mod_center.redeem(mod_center, self); return; }
   const center_table = {
     name: center ? center.name : (self ? self.ability.name : undefined),
     extra: center ? center.config.extra : (self ? self.ability.extra : undefined),

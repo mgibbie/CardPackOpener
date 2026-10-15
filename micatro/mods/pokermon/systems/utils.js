@@ -14,10 +14,12 @@
 import {
   G, P_CENTERS, P_CARDS, P_CARDS_LIST, Card, copy_table, emit, card_eval_status_text, play_sound, localize,
   pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, ease_dollars, draw_card,
-  create_card as core_create_card, create_playing_card, poll_edition, find_joker,
+  create_card as core_create_card, create_playing_card, poll_edition, find_joker, probability_vars, probability_roll,
+  quantum_enhancements,
 } from '../../../js/engine/core.js';
 import { playing_card_joker_effects } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
+import { change_booster_limit as smods_change_booster_limit } from '../../../js/engine/run.js';
 import { opt } from '../../../js/mods/registry.js';
 
 export const MOD_ID = 'pokermon';
@@ -44,22 +46,26 @@ export function find_card(key, count_debuffed) {
 /** Lua `next(t)` on an array. */
 export const any = (t) => !!(t && t.length);
 
-/** SMODS.has_enhancement(card, key) (quantum enhancements are off in Micatro). */
-export const has_enhancement = (card, key) => !!(card && card.config && card.config.center && card.config.center.key === key);
+/** SMODS.has_enhancement(card, key), quantum enhancements included (core.js quantum_enhancements). */
+export const has_enhancement = (card, key) => !!(card && card.config && card.config.center
+  && (card.config.center.key === key || (key.startsWith('m_') && quantum_enhancements(card).includes(key))));
 /** SMODS.has_no_rank / has_no_suit: Stone cards and enhancements flagged no_rank / no_suit. */
 export const has_no_rank = (card) => card.ability.effect === 'Stone Card' || !!card.config.center.no_rank;
 export const has_no_suit = (card) => card.ability.effect === 'Stone Card' || !!card.config.center.no_suit;
 /** SMODS.has_any_suit: Wild cards (not debuffed). */
-export const has_any_suit = (card) => card.ability.name === 'Wild Card' && !card.debuff;
+export const has_any_suit = (card) => (card.ability.name === 'Wild Card' || has_enhancement(card, 'm_wild')) && !card.debuff;
 
-/** SMODS.get_probability_vars(card, num, dem) -> [numerator, denominator] with Oops! All 6s. */
-export function get_probability_vars(card, base_numerator, base_denominator) {
-  return [base_numerator * G.GAME.probabilities.normal, base_denominator];
+/**
+ * SMODS.get_probability_vars(card, num, dem, identifier) -> [numerator, denominator]: mod_probability
+ * (Venonat), Oops! All 6s, fix_probability — the engine's probability_vars.
+ */
+export function get_probability_vars(card, base_numerator, base_denominator, identifier) {
+  if (!G.jokers) return [base_numerator, base_denominator];
+  return probability_vars(card, base_numerator, base_denominator, identifier);
 }
-/** SMODS.pseudorandom_probability(card, seed, num, dem): the roll succeeds. */
-export function pseudorandom_probability(card, seed, base_numerator, base_denominator) {
-  const [num, dem] = get_probability_vars(card, base_numerator, base_denominator);
-  return pseudorandom(seed) < num / dem;
+/** SMODS.pseudorandom_probability(card, seed, num, dem, identifier): the roll succeeds. */
+export function pseudorandom_probability(card, seed, base_numerator, base_denominator, identifier) {
+  return probability_roll(card, seed, base_numerator, base_denominator, identifier);
 }
 
 /** SMODS.Ranks order (2..Ace); Ace -> 2 wraps for next/prev like Steamodded's rank table. */
@@ -84,7 +90,9 @@ export function change_base(card, suit, rank) {
  * soulable, key_append, stickers}) — the table-argument card factory Pokermon uses.
  */
 export function smods_create_card(t) {
-  const area = t.area || (t.set === 'Joker' ? G.jokers : G.consumeables);
+  const playing = t.set === 'Base' || t.set === 'Enhanced';
+  // SMODS: playing cards (set Base / Enhanced) default to G.hand.
+  const area = t.area || (playing ? G.hand : t.set === 'Joker' ? G.jokers : G.consumeables);
   const card = core_create_card(t.set || (t.key && P_CENTERS[t.key] && P_CENTERS[t.key].set) || 'Joker', area, t.legendary, t.rarity, t.skip_materialize, t.soulable, t.key || undefined, t.key_append);
   if (t.no_edition && card.edition) card.set_edition(null, true, true);
   if (t.edition) card.set_edition(t.edition, true, true);
@@ -92,11 +100,30 @@ export function smods_create_card(t) {
   if (t.seal) card.set_seal(t.seal, true);
   return card;
 }
+/**
+ * SMODS.debuff_card(card, debuff, source): debuff (true) / protect ('prevent_debuff') / clear (nil)
+ * a card on behalf of `source` (ability.debuff_sources, read by Card.set_debuff); 'reset' forgets
+ * every source without re-evaluating (the next blind's debuff pass does).
+ */
+export function smods_debuff_card(card, debuff, source) {
+  if (debuff === 'reset') { card.ability.debuff_sources = {}; return; }
+  const key = source && typeof source === 'object' ? 'card_' + source.sort_id : String(source);
+  card.ability.debuff_sources = card.ability.debuff_sources || {};
+  if (debuff === undefined || debuff === null || debuff === false) delete card.ability.debuff_sources[key];
+  else card.ability.debuff_sources[key] = debuff;
+  card.set_debuff();
+}
 /** SMODS.add_card(t): create and put it where it belongs (joker row / consumables). */
 export function add_card(t) {
   const card = smods_create_card(t);
+  const playing = t.set === 'Base' || t.set === 'Enhanced';
+  if (playing) {
+    G.playing_card = (G.playing_card || 0) + 1;
+    card.playing_card = G.playing_card;
+    G.playing_cards.push(card);
+  }
   card.add_to_deck();
-  (t.area || (card.ability.set === 'Joker' ? G.jokers : G.consumeables)).emplace(card);
+  (t.area || (playing ? G.hand : card.ability.set === 'Joker' ? G.jokers : G.consumeables)).emplace(card);
   return card;
 }
 
@@ -315,7 +342,9 @@ export function poke_suit_check(hand, num) {
 // ----------------------------------------------------- pokefunctions bits
 /** remove(self, card, context, check_shiny): the "fainted/eaten" self-destruct. */
 export function remove(self, card, context, check_shiny) {
-  // (check_shiny: the booster slot comes back through the shiny edition's card_removed hook.)
+  // check_shiny: the shiny booster slot goes back here — the card leaves the joker row before
+  // Card:remove, so the shiny card_removed hook doesn't see it (same as the Lua).
+  if (check_shiny && card.edition && card.edition.poke_shiny) smods_change_booster_limit(-1);
   play_sound('tarot1');
   card.juice_up(0.3, 0.4);
   G.E_MANAGER.add_event(() => {
@@ -395,3 +424,59 @@ export const C = {
   PURPLE: 'PURPLE', BLUE: 'BLUE', BLACK: 'BLACK', DARK_EDITION: 'DARK_EDITION', SECONDARY_SET: { Tarot: 'Tarot', Planet: 'Planet', Spectral: 'Spectral', Enhanced: 'Enhanced' },
 };
 
+
+// ------------------------------------------- pokefunctions.lua: "nature" target ranks
+/**
+ * get_poke_target_card_ranks(seed, num, default, use_deck): `num` target ranks sorted by id —
+ * random distinct ranks (pseudorandom_multi, seed 'default' like the Lua), or picked from the
+ * deck's non-Stone cards when use_deck. Returns `default` outside a run.
+ */
+export function get_poke_target_card_ranks(seed, num, _default, use_deck) {
+  let target_ranks = [];
+  let valid_cards = [];
+  if (!G.playing_cards) return _default;
+  if (use_deck) {
+    for (let i = 1; i <= num; i++) {
+      for (const v of G.playing_cards) {
+        if (v.ability.effect !== 'Stone Card') {
+          let already_picked = false;
+          for (const t of target_ranks) if (t.id === v.base.id) { already_picked = true; break; }
+          if (!already_picked) valid_cards.push(v);
+        }
+      }
+      if (valid_cards.length > 0) {
+        const [picked] = pseudorandom_element(valid_cards, pseudoseed(seed));
+        target_ranks.push({ value: picked.base.value, id: picked.base.id });
+        valid_cards = [];
+      } else if (target_ranks.length > 0) target_ranks.push(target_ranks[0]);
+      else target_ranks.push({ value: 'Ace', id: 14 });
+    }
+  } else {
+    const random = [];
+    for (let i = 2; i <= 14; i++) {
+      const cvalue = i === 11 ? 'Jack' : i === 12 ? 'Queen' : i === 13 ? 'King' : i === 14 ? 'Ace' : '' + i;
+      random.push({ value: cvalue, id: i });
+    }
+    target_ranks = pseudorandom_multi({ array: random, amt: num });
+  }
+  target_ranks.sort((a, b) => a.id - b.id);
+  return target_ranks;
+}
+/** add_target_cards_to_vars(vars, targets): append each target's localized rank to a loc_vars list. */
+export function add_target_cards_to_vars(vars, targets) {
+  for (const t of targets) vars.push(localize(t.value || 'Ace', 'ranks'));
+}
+
+// ------------------------------------------- SMODS hand-limit API (src/utils.lua)
+/** SMODS.change_play_limit(mod): most cards a played hand may hold (the 'play' action checks it). */
+export function change_play_limit(mod) {
+  const sp = G.GAME.starting_params;
+  sp.play_limit = (sp.play_limit ?? 5) + mod;
+  G.hand.config.highlighted_limit = Math.max(sp.discard_limit ?? 5, sp.play_limit, 5);
+}
+/** SMODS.change_discard_limit(mod): most cards one discard may hold (the 'discard' action checks it). */
+export function change_discard_limit(mod) {
+  const sp = G.GAME.starting_params;
+  sp.discard_limit = (sp.discard_limit ?? 5) + mod;
+  G.hand.config.highlighted_limit = Math.max(sp.discard_limit, sp.play_limit ?? 5, 5);
+}

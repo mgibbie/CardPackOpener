@@ -54,11 +54,16 @@ ok(avail('Joker', 0.1, 'j_poke_caterpie') && avail('Joker', 0.1, 'j_poke_weedle'
 ok(!avail('Joker', 0.1, 'j_joker'), 'pokemon_only (default on): base jokers out of the pool');
 ok(P_JOKER_RARITY_POOLS.poke_safari.some((c) => c.key === 'j_poke_ivysaur') && !P_JOKER_RARITY_POOLS[2].some((c) => c.key === 'j_poke_ivysaur'), 'safari rarity has its own (weight-0) pool');
 ok(P_JOKER_RARITY_POOLS.poke_mega.some((c) => c.key === 'j_poke_mega_venusaur'), 'mega rarity pool');
-ok(!avail('Joker', 0.1, 'j_poke_geodude') && P_CENTERS.j_poke_geodude.unported, 'unported jokers never offered');
-ok(avail('Item', null, 'c_poke_pokeball') && avail('Item', null, 'c_poke_thunderstone') && !avail('Item', null, 'c_poke_sunstone'), 'Item pool: ported only');
+// (Ports land file by file: pick whatever is still unported instead of naming one.)
+{
+  const uj = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && c.unported && c.rarity === 1);
+  ok(uj.every((c) => !avail('Joker', 0.1, c.key)), 'unported jokers never offered', uj.filter((c) => avail('Joker', 0.1, c.key)).map((c) => c.key));
+  const ui = Object.values(P_CENTERS).filter((c) => c.set === 'Item' && c.unported);
+  ok(avail('Item', null, 'c_poke_pokeball') && avail('Item', null, 'c_poke_thunderstone') && ui.every((c) => !avail('Item', null, c.key)), 'Item pool: ported only', ui.filter((c) => avail('Item', null, c.key)).map((c) => c.key));
+}
 ok(avail('Energy', null, 'c_poke_fire_energy') && !avail('Energy', null, 'c_poke_bird_energy'), 'Energy pool');
 ok(!avail('Spectral', null, 'c_poke_megastone'), 'hidden Megastone not in the plain pool');
-ok(P_CENTER_POOLS.Booster.some((b) => b.key === 'p_poke_pokepack_normal_1') && !P_CENTER_POOLS.Booster.some((b) => b.key === 'p_poke_pokepack_wish_pack'), 'Pocket packs pooled, unported packs not');
+ok(P_CENTER_POOLS.Booster.some((b) => b.key === 'p_poke_pokepack_normal_1') && P_CENTERS.p_poke_pokepack_wish_pack.in_pool() === false && P_CENTERS.p_poke_pokepack_starter_pack.in_pool() === false, 'Pocket packs pooled; Wish / Starter packs never rolled (tag-only)');
 add('j_poke_caterpie');
 ok(!avail('Joker', 0.1, 'j_poke_caterpie') && !avail('Joker', 0.1, 'j_poke_metapod'), 'family rule: held Caterpie blocks its line');
 ok(avail('Joker', 0.1, 'j_poke_weedle'), 'other families still offered');

@@ -6,7 +6,8 @@
  * cardView extras (view_card hook), under `v.poke`:
  *   ptype, tera (sticker type), energy / c_energy / energy_max, stage, rounds (level-evo
  *   countdown), evolve (an evolution item is applied — evolves at end of round), megas,
- *   form (Unown / Gourgeist / Rival ... forms), fainted, shiny (edition), anim
+ *   form (Unown / Gourgeist / Rival ... forms), illusion (Zorua's disguise key), broke_pos
+ *   (Mimikyu's busted disguise), fainted, shiny (edition), anim
  *   {frames, frames_per_row, fps, soul, atlas} for animated cards.
  */
 import { G } from '../../../js/engine/core.js';
@@ -39,6 +40,10 @@ export function view_card(card, v) {
     if (typeof ex.rounds === 'number') p.rounds = ex.rounds;
     if (ex.evolve) p.evolve = ex.evolve;
     if (ex.form !== undefined) p.form = ex.form;
+    // Zorua / Zoroark Illusion: drawn (and described) as this Pokémon outside the joker row.
+    if (ex.hidden_key && card.area !== G.jokers) p.illusion = ex.hidden_key;
+    // Mimikyu: the busted-disguise sprite (center.broke_pos).
+    if (ex.disguise === false && c.broke_pos) p.broke_pos = c.broke_pos;
   }
   if (c.megas) p.megas = c.megas.slice();
   if (card.ability.fainted !== undefined && G.GAME && card.ability.fainted === G.GAME.round) p.fainted = true;
