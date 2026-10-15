@@ -789,7 +789,10 @@ function evaluate_round() {
     dollars += d;
   }
   G.GAME.current_round.dollars = dollars;
-  G.GAME.round_eval = { rows, total: dollars };
+  const pb = G.GAME.blind.config && G.GAME.blind.config.blind;
+  // The blind is cleared on defeat (as in Lua); keep what the cash-out screen shows.
+  const blind = pb ? { key: pb.key, name: G.GAME.blind.name, chips: G.GAME.blind.chips, dollars: G.GAME.blind.dollars, boss: !!G.GAME.blind.boss, colour: pb.boss_colour, pos: pb.pos, defeated: true } : null;
+  G.GAME.round_eval = { rows, total: dollars, blind };
   emit('round_eval', { rows, total: dollars });
 }
 

@@ -3,7 +3,7 @@
 // the same object received over the network — so both see the same screen.
 
 import { G, P_BLINDS, P_TAGS, P_CENTERS, get_blind_amount } from './core.js';
-import { STATE_NAMES, HANDLIST, legal } from './run.js';
+import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag } from './describe.js';
 
 export const VIEW_VERSION = 1;
@@ -72,11 +72,13 @@ export function toView() {
     hand_limit: G.hand.config.card_limit,
     joker_limit: G.jokers.config.card_limit,
     consumeable_limit: G.consumeables.config.card_limit,
-    blind: b && b.config && b.config.blind ? {
+    seq: G.ui_seq || 0,
+    preview: preview(),
+    blind: b && b.config && b.config.blind && b.name ? {
       key: b.config.blind.key, name: b.name, chips: b.chips, dollars: b.dollars, boss: !!b.boss,
       disabled: !!b.disabled, colour: b.config.blind.boss_colour, pos: b.config.blind.pos,
       desc: safe(() => describeBlind(b.config.blind.key, b)),
-    } : null,
+    } : (GM.round_eval && GM.round_eval.blind) || null,
     blind_on_deck: GM.blind_on_deck,
     choices,
     boss_rerolled: !!rr.boss_rerolled,
@@ -112,6 +114,18 @@ export function toView() {
     stats: { ...GM.stats },
     interest_cap: GM.interest_cap,
   };
+}
+
+/** Hand name + base chips×mult of the selected cards (shown to spectators too). */
+function preview() {
+  if (G.STATE !== G.STATES.SELECTING_HAND || !G.hand.highlighted.length) return null;
+  const info = get_poker_hand_info(G.hand.highlighted);
+  if (!info || info.text === 'NULL') return null;
+  const h = G.GAME.hands[info.text];
+  const facedown = G.hand.highlighted.some((c) => c.facing === 'back');
+  if (facedown) return { name: '????', level: '?', chips: '?', mult: '?' };
+  const blocked = !!G.GAME.blind.debuff_hand(G.hand.highlighted, info.poker_hands, info.text, true);
+  return { name: info.loc_disp_text || info.disp_text, hand: info.text, level: h.level, chips: h.chips, mult: h.mult, blocked };
 }
 
 function packKind() {

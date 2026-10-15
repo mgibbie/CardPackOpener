@@ -63,6 +63,15 @@ const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action d
 const REPLAY_MAX_BYTES = 1_500_000; // a shared replay tape (gzipped + base64url) — slim (v2) tapes run ~100-600KB; this leaves headroom for marathon FFA games while staying under MAX_BODY_BYTES
 const SPEC_WINDOW_MS = 12_000;      // a spectator seen (polled) within this long is counted as actively watching
 const SPEC_CAP = 10;                // max concurrent spectators per GAME (aggregated across a duel's participants)
+// MICATRO (/micatro/, the poker roguelike) broadcasts its run like the card runs, but
+// the client only publishes when the view CHANGED (+ a ~10s keep-alive), so the row
+// counts as live for longer than a card snapshot, and an unchanged keep-alive only
+// rewrites the row when it is getting old (write budget, writebudget_test.mjs).
+const MICATRO_SNAPSHOT_MAX = 200_000; // one serialized run view — far under MAX_BODY_BYTES
+const MICATRO_STALE_MS = 45_000;    // no publish in this long → the run is not watchable
+const MICATRO_REFRESH_MS = 20_000;  // an unchanged keep-alive rewrites the state row only past this age
+const MICATRO_PRESENCE_MS = 30_000; // ...and the presence row only past this age (ONLINE_MS is 90s)
+const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is rewritten at most this often (< SPEC_WINDOW_MS)
 // Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are
 // abuse BRAKES, not precise quotas: the counter read-modify-write isn't atomic (a
 // burst can slightly under-count), which is fine. Legit play stays far under them
@@ -79,6 +88,8 @@ const RATE_LIMITS = {
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
+	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
+	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -115,7 +126,7 @@ const GC_INTERVAL_MS = 30 * 60_000;
 const HR = 3600; // seconds
 const GC_TABLE = [
 	['cardmatchstate:', 1 * HR], ['alive:', 1 * HR], ['cardintent:', 1 * HR], ['mm:matched:', 1 * HR], ['rl:', 1 * HR],
-	['cardstate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
+	['cardstate:', 6 * HR], ['micatrostate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
@@ -1349,11 +1360,41 @@ export default async function handler(req, env) {
 	// previously invisible — cleared once and forgotten.
 	if (action === 'run-score' || action === 'run-leaderboard') {
 		const mode = String(body.mode || '');
-		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) {
+		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro'].includes(mode)) {
 			return json({ error: 'no board for that mode' }, 400);
 		}
 		const key = 'runboard:' + mode;
 		user.runBest = user.runBest || {};
+		// MICATRO ranks by the run's best single-hand SCORE (higher is better), not a
+		// W/L record. Scores can outgrow 2^53 or reach Infinity (Balatro's "naneinf"):
+		// JSON can't carry Infinity, so the client may send it as a string — a positive
+		// non-finite score is clamped to Number.MAX_VALUE; NaN is refused.
+		if (mode === 'micatro' && action === 'run-score') {
+			const raw = typeof body.score === 'string' ? body.score.trim() : body.score;
+			let score = typeof raw === 'number' ? raw : (typeof raw === 'string' && raw !== '' ? Number(raw) : NaN);
+			if (Number.isNaN(score)) return json({ error: 'bad score' }, 400);
+			if (score === Infinity) score = Number.MAX_VALUE;
+			score = Math.max(0, score); // -Infinity / negatives → 0
+			const clean = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').slice(0, n).trim();
+			const run = {
+				score,
+				ante: Math.max(0, Math.min(1000, parseInt(body.ante, 10) || 0)),
+				seed: clean(body.seed, 16), back: clean(body.back, 32),
+				stake: Math.max(0, Math.min(99, parseInt(body.stake, 10) || 0)),
+				won: !!body.won,
+			};
+			const prev = user.runBest[mode];
+			const better = !prev || typeof prev.score !== 'number' || score > prev.score;
+			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
+			const best = user.runBest[mode] || null;
+			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
+			if (best) board.push({ name: username, ...best });
+			board.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.ante || 0) - (a.ante || 0) || a.when - b.when);
+			const capped = board.slice(0, 100);
+			if (better) await store.setJSON(key, capped);
+			const rank = capped.findIndex(e => e.name === username) + 1;
+			return json({ ok: true, better, best, rank: rank || null });
+		}
 		if (action === 'run-score') {
 			const wins = Math.max(0, Math.min(12, parseInt(body.wins, 10) || 0));
 			const losses = Math.max(0, Math.min(3, parseInt(body.losses, 10) || 0));
@@ -1610,6 +1651,73 @@ export default async function handler(req, env) {
 		return json({ ...fs, watchers, watcherNames });
 	}
 
+	// a MICATRO run (/micatro/) publishes its view here so friends can watch. Unlike
+	// cardstate (republished at a flat cadence), the client bumps `seq` ONLY when the
+	// view changed and otherwise sends a snapshot-less keep-alive every ~10s; an
+	// unchanged keep-alive skips the state-row write until the row nears staleness,
+	// and the presence row is only rewritten when its status changed or it is aging.
+	if (action === 'publish-micatro') {
+		const now = Date.now();
+		const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
+		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
+		const over = !!body.over, won = !!body.won;
+		const hasSnap = body.snapshot != null;
+		if (hasSnap && JSON.stringify(body.snapshot).length > MICATRO_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: MICATRO_SNAPSHOT_MAX }, 413);
+		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
+		const watchers = watcherNames.length;
+		const prev = await store.get('micatrostate:' + username);
+		const sameSeq = !!prev && prev.seq === seq;
+		const unchanged = sameSeq && !hasSnap && !!prev.over === over && !!prev.won === won && prev.label === label
+			&& (prev.watcherNames || []).join(',') === watcherNames.join(',') && now - prev.ts < MICATRO_REFRESH_MS;
+		if (!unchanged) {
+			await store.setJSON('micatrostate:' + username, {
+				snapshot: hasSnap ? body.snapshot : (sameSeq ? prev.snapshot : null),
+				label,
+				room: 'u:' + username, // spectators read the runner's chat room
+				seq, ts: now, over, won,
+				watchers, watcherNames,
+			});
+		}
+		// presence: "playing Micatro" while live; a finished run goes back to plain online
+		const status = over ? '' : ('micatro:' + label).slice(0, 64);
+		const pres = await store.get('presence:' + username);
+		if (!pres || pres.status !== status || pres.region !== label || now - (pres.lastSeen || 0) >= MICATRO_PRESENCE_MS) {
+			await store.setJSON('presence:' + username, {
+				name: username, map: '', x: 0, y: 0, facing: 'down',
+				status, region: label,
+				lastSeen: now,
+			});
+		}
+		return json({ ok: true, seq, watchers, watcherNames, wrote: !unchanged });
+	}
+
+	// a friend reads a MICATRO run's latest view (read-only spectating)
+	if (action === 'micatro-state') {
+		const who = String(body.username || '').trim().toLowerCase();
+		if (!who || !user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
+		const ms = await store.get('micatrostate:' + who);
+		const now = Date.now();
+		if (!ms || now - ms.ts > MICATRO_STALE_MS) return json({ snapshot: null, live: false });
+		// the same cap as card spectating; a viewer with a fresh heartbeat always gets back in
+		const prefix = 'spec:' + who + ':';
+		let mine = 0;
+		const watching = [];
+		for (const r of await store.list(prefix)) {
+			const name = r.key.slice(prefix.length), t = +r.value || 0;
+			if (name === username) mine = t;
+			if (now - t < SPEC_WINDOW_MS) watching.push(name);
+		}
+		if (!watching.includes(username) && watching.length >= SPEC_CAP) return json({ snapshot: null, full: true, max: SPEC_CAP }, 403);
+		// heartbeat: I'm watching `who` (throttled — a 1s poll needn't be a 1s row write)
+		if (now - mine >= SPEC_BEAT_MS) await store.setJSON('spec:' + who + ':' + username, now);
+		if (!watching.includes(username)) watching.push(username);
+		const watchers = watching.length, watcherNames = watching.slice(0, SPEC_CAP);
+		if (body.seq != null && Number(body.seq) === ms.seq) {
+			return json({ unchanged: true, seq: ms.seq, room: ms.room, label: ms.label, over: !!ms.over, won: !!ms.won, watchers, watcherNames });
+		}
+		return json({ ...ms, watchers, watcherNames });
+	}
+
 	// "Live now" hub: which friends are in a watchable game right now, with the mode
 	// + live watcher count. Read-only — reading cardstate:<f> here does NOT write a
 	// heartbeat, so browsing the hub never counts you as watching anyone.
@@ -1630,6 +1738,10 @@ export default async function handler(req, env) {
 				const fs = await store.get('factorystate:' + f);
 				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
+			} else if (st.startsWith('micatro:')) {
+				const ms = await store.get('micatrostate:' + f);
+				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
+				live.push({ username: f, kind: 'micatro', mode: 'micatro', label: ms.label || p.region || st.slice('micatro:'.length), watchers: ms.watchers || 0, full: (ms.watchers || 0) >= SPEC_CAP });
 			}
 		}
 		return json({ live });

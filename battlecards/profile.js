@@ -9,6 +9,7 @@ function activityText(p) {
 	const st = p.status || '';
 	if (st.startsWith('card:')) { const m = st.slice(5); return 'in ' + (CARD_MODE[m] || 'a card game') + (p.region ? ' · ' + p.region : ''); }
 	if (st.startsWith('battling:')) return 'in a Pokémon battle';
+	if (st.startsWith('micatro:')) { const l = p.region || st.slice(8); return 'playing Micatro' + (l ? ' · ' + l : ''); }
 	if (st.startsWith('visiting:')) return 'exploring the world';
 	return p.online ? 'online' : 'offline';
 }

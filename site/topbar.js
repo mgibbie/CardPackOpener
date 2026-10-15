@@ -14,6 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
+import { watchHref, micatroActivityLabel } from '/site/livewatch.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
@@ -634,6 +635,8 @@ async function addFriend(raw) {
 // Overworld heartbeat / the card client's publish-cardstate):
 //   battling:<matchId> → in a Pokémon battle (spectate via the Overworld)
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
+//   factory:<label>    → a Battle Frontier run (spectate in the Overworld)
+//   micatro:<label>    → a Micatro run (spectate on /micatro/); routing: site/livewatch.js
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
 	const st = f.status || '';
@@ -645,14 +648,17 @@ function friendActivity(f) {
 		const detail = f.region && !/^card (battle|duel)$/i.test(f.region) ? ' · ' + f.region : '';
 		return { live: true, kind: 'card', label: base + detail };
 	}
+	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: 'in the ' + (f.region || st.slice('factory:'.length) || 'Battle Frontier') };
+	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: micatroActivityLabel(f.region || st.slice('micatro:'.length)) };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }
 // route to the right spectator view for a live friend
 function watchFriend(f) {
 	const act = friendActivity(f);
-	if (act.kind === 'pokemon') { if (!act.matchId) { toast('Their battle just ended.'); return; } location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(act.matchId); }
-	else if (act.kind === 'card') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
+	const href = act.kind ? watchHref({ username: f.username, kind: act.kind, matchId: act.matchId }) : null; // site/livewatch.js
+	if (href) location.href = href;
+	else if (act.kind === 'pokemon') toast('Their battle just ended.');
 	else toast(f.username + ' isn\'t in a battle right now.');
 }
 // While the Friends tab is open, re-poll presence so a friend going live (or a
@@ -948,6 +954,7 @@ function analyticsLabel() {
 		return 'bc';
 	}
 	if (p.includes('/overworld')) return q.has('battle') ? 'ow:battle' : q.has('watch') ? 'ow:spectate' : 'overworld';
+	if (p.includes('/micatro')) return q.has('spectate') ? 'micatro:spectate' : 'micatro';
 	if (p.includes('/collection')) return 'collection';
 	if (p.includes('/designwiki')) return 'wiki';
 	if (p.includes('/learn')) return 'learn';

@@ -562,8 +562,9 @@
 	<script type="module">
 	import * as MP from './mpmode.js';
 	import { openProfile } from './profile.js';
-	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
-	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
+	import { watchHref, micatroActivityLabel } from '/site/livewatch.js';
+	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle', factory: 'the Battle Frontier' };
+	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', pvp: '⚔️', battle: '🃏', pokemon: '🔴', factory: '🏭', micatro: '🂡' };
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 	async function refreshLive() {
 		if (!MP.hasToken()) return;
@@ -575,9 +576,9 @@
 		list.innerHTML = '';
 		for (const f of live) {
 			const modeLabel = CARD_MODE[f.mode] || 'a game';
-			const bits = ['in ' + modeLabel];
-			if (f.label && f.label !== 'Pokémon battle') bits.push(esc(f.label)); // run progress e.g. "Fight 3/8"
-			if (f.kind === 'card') bits.push(`👁 ${f.watchers || 0}${f.full ? '/10 full' : ''} watching`);
+			const bits = f.kind === 'micatro' ? [esc(micatroActivityLabel(f.label))] : ['in ' + modeLabel];
+			if (f.kind !== 'micatro' && f.label && f.label !== 'Pokémon battle') bits.push(esc(f.label)); // run progress e.g. "Fight 3/8"
+			if (f.kind === 'card' || f.kind === 'factory' || f.kind === 'micatro') bits.push(`👁 ${f.watchers || 0}${f.full ? '/10 full' : ''} watching`);
 			const tile = document.createElement('div');
 			tile.className = 'tile live-tile';
 			tile.innerHTML = `<div class="glyph">${MODE_ICON[f.mode] || '🔴'}</div>`
@@ -587,10 +588,11 @@
 			watch.className = 'live-watch';
 			watch.textContent = f.full ? 'Full' : '👁 Watch';
 			if (f.full) watch.disabled = true;
-			watch.addEventListener('click', () => {
-				if (f.kind === 'pokemon') { if (f.matchId) location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(f.matchId); }
-				else location.href = 'index.html?spectate=' + encodeURIComponent(f.username) + '&mp=1';
-			});
+			// one router for every live kind (site/livewatch.js): card runs → Battlecards,
+			// Pokémon battles + Battle Frontier runs → the Overworld, Micatro → /micatro/
+			const href = watchHref(f);
+			if (href) watch.dataset.href = href; else watch.disabled = true;
+			watch.addEventListener('click', () => { if (href) location.href = href; });
 			const nameEl = tile.querySelector('.live-name');
 				nameEl.addEventListener('click', () => openProfile(f.username));
 				nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProfile(f.username); } });

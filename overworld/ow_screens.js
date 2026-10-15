@@ -30,6 +30,7 @@ import {
 	MP_ON,
 } from './main.js';
 import { askText } from '../site/osk.js';
+import { watchHref, micatroActivityLabel } from '../site/livewatch.js';
 
 // ---------- in-game NPC trades ----------
 // One flow for both dialects (see trades.js for why they broke differently).
@@ -602,6 +603,15 @@ export function friendAction(f) {
 		const label = f.status.slice('factory:'.length) || 'BATTLE FRONTIER';
 		dialog.open(`${f.username} is in the ${label}!\n\nZ = Watch   X = Cancel`, (declined) => {
 			if (declined !== 'x') location.href = '/overworld/?watchfactory=' + encodeURIComponent(f.username) + '&mp=1';
+		});
+		return;
+	}
+	// friend is playing MICATRO (the poker roguelike at /micatro/) → offer to watch it
+	if ((f.status || '').startsWith('micatro:')) {
+		const href = watchHref({ username: f.username, kind: 'micatro' });
+		const act = micatroActivityLabel(f.region || f.status.slice('micatro:'.length)).toUpperCase();
+		dialog.open(`${f.username}: ${act}!\n\nZ = Watch   X = Cancel`, (declined) => {
+			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
 		});
 		return;
 	}
