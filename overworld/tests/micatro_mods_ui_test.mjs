@@ -105,10 +105,21 @@ try {
 	const clickSel = async (page, sel) => { await page.waitForSelector(sel, { visible: true, timeout: 8000 }); await page.click(sel); };
 	// Panel rows can sit below the fold (the site's real mods are listed first): scroll the
 	// target into place instantly, then click, so the click can't land mid-scroll.
+	// Click like a player: scroll the target into view, check nothing covers its centre, then a real
+	// mouse click at that point. (page.click(selector) picked the wrong point inside the scrolled,
+	// animated Mods modal once enough mods were listed — the click landed elsewhere.)
 	const tap = async (page, sel) => {
 		await page.waitForSelector(sel, { visible: true, timeout: 8000 });
-		await page.evaluate((s) => document.querySelector(s).scrollIntoView({ block: 'center', behavior: 'instant' }), sel);
-		await page.click(sel);
+		const hit = await page.evaluate((s) => {
+			const el = document.querySelector(s);
+			el.scrollIntoView({ block: 'center', behavior: 'instant' });
+			const r = el.getBoundingClientRect();
+			const x = r.left + r.width / 2, y = r.top + r.height / 2;
+			const at = document.elementFromPoint(x, y);
+			return { ok: !!at && (at === el || el.contains(at)), x, y, at: at ? String(at.className || at.tagName) : 'nothing' };
+		}, sel);
+		A(hit.ok, `"${sel}" is reachable (not covered)`, hit.at);
+		if (hit.ok) await page.mouse.click(hit.x, hit.y);
 	};
 	// pixel at (fx, fy) (fractions) of a card's face / soul canvas
 	const cardPixel = (page, center, which = 'face', fx = 0.5, fy = 0.5) => page.evaluate((center, which, fx, fy) => {
@@ -165,11 +176,11 @@ try {
 		const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_mods') || 'null'));
 		A(saved && saved.ids.join() === 'tmui' && saved.options.tmui.flavor === 'hot', 'selection + options persist in localStorage', JSON.stringify(saved));
 		A(await page.evaluate(() => document.querySelector('.mod-row[data-mod="tmui"] .mod-opt-c.on').dataset.val === 'hot'), 'the chosen option is shown as on');
-		await page.click('.mods-modal .b-back');
+		await tap(page, '.mods-modal .b-back');
 		A(await page.evaluate(() => /UI Test Mod/.test(document.querySelector('.nr-mods-sum').textContent)), 'the New Run summary shows the active mod badge');
 
 		// ----- start the modded run
-		await clickSel(page, '.b-start');
+		await tap(page, '.b-start');
 		await waitFor(() => page.evaluate(() => window.__micatro.session && window.__micatro.view().state === 'BLIND_SELECT'), 15000);
 		await idle(page);
 		let v = await V(page);
@@ -194,10 +205,10 @@ try {
 		await page.waitForSelector('.opt-modal .active-mods', { visible: true, timeout: 5000 }).catch(() => { });
 		const am = await page.evaluate(() => { const e = document.querySelector('.active-mods'); return e ? e.textContent : ''; });
 		A(/UI Test Mod/.test(am) && /Flavor: hot/.test(am) && /Start with Adder: On/.test(am), 'Options lists the active mods with their options', am);
-		await page.click('.opt-modal .b-back');
+		await tap(page, '.opt-modal .b-back');
 		await page.keyboard.press('i');
 		A(await waitFor(() => page.evaluate(() => /UI Test Mod/.test((document.querySelector('.ri-mods') || {}).textContent || '')), 3000), 'Run Info shows the active mod badges');
-		await page.click('.ri-modal .b-back');
+		await tap(page, '.ri-modal .b-back');
 
 		// select the blind, then reload and Continue: the mods come back
 		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
