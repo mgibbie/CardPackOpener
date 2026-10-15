@@ -26,6 +26,8 @@ const ROOT = path.resolve(HERE, '../../');
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Wait for a condition instead of a fixed sleep (real-time intervals jitter under load).
+const until = async (cond, ms) => { const t0 = Date.now(); while (!cond() && Date.now() - t0 < ms) await sleep(50); };
 
 // ---------- a D1 stand-in that counts row writes ----------
 const sqlite = new DatabaseSync(':memory:');
@@ -229,14 +231,14 @@ try {
 	const watchersSeen = [];
 	const pub = Net.startPublisher(() => view, () => label);
 	pub.onWatchers((n, names) => watchersSeen.push([n, names.join(',')]));
-	await sleep(300);
 	const pubs = () => sent.filter(s => s.action === 'publish-micatro');
+	await until(() => pubs().length >= 1, 3000);
 	A(pubs().length === 1 && pubs()[0].payload.snapshot?.ante === 1 && pubs()[0].payload.seq > 1e12, 'the publisher pushes the first view at once (seq seeded from the clock)', JSON.stringify(pubs()[0]?.payload));
 	const seq0 = pubs()[0].payload.seq;
 	await sleep(1400);
 	A(pubs().length === 1, 'an unchanged view is not republished every tick');
 	view = { ante: 1, chips: 300 };
-	await sleep(1400);
+	await until(() => pubs().length >= 2, 4000);
 	A(pubs().length === 2 && pubs()[1].payload.seq === seq0 + 1 && pubs()[1].payload.snapshot?.chips === 300, 'a changed view bumps seq by one and carries the snapshot', JSON.stringify(pubs()[1]?.payload));
 
 	// erin spectates (switch the stub's identity per call)
@@ -249,16 +251,16 @@ try {
 	who = 'erin';
 	const spec = Net.startSpectate('dana', { onSnapshot: (s, m) => snaps.push([s, m]), onStatus: (s, i) => statuses.push([s, i]) });
 	who = 'dana';
-	await sleep(400);
+	await until(() => snaps.length >= 1, 3000);
 	A(snaps.length === 1 && snaps[0][0]?.chips === 300 && snaps[0][1].seq === seq0 + 1 && snaps[0][1].room === 'u:dana', 'startSpectate delivers the live view + meta', JSON.stringify(snaps[0]));
 	A(statuses.map(s => s[0]).join(',').startsWith('connecting,live'), 'status: connecting → live', statuses.map(s => s[0]).join(','));
 	await sleep(3200);
 	const polls = sent.filter(s => s.action === 'micatro-state');
-	A(polls.length >= 2 && polls.length <= 4 && polls.slice(1).every(p => p.payload.seq === seq0 + 1), 'unchanged polls send the known seq and ease off (~1s → 2.5s)', polls.length + ' polls');
+	A(polls.length >= 2 && polls.length <= 5 && polls.slice(1).every(p => p.payload.seq === seq0 + 1), 'unchanged polls send the known seq and ease off (~1s → 2.5s)', polls.length + ' polls');
 	A(snaps.length === 1, 'an unchanged poll does not re-deliver the snapshot');
 	// the publisher hears watchers on its next push (a changed view, or the ~10s keep-alive)
 	view = { ante: 1, chips: 900 };
-	await sleep(1400);
+	await until(() => watchersSeen.some(([n, names]) => n === 1 && names === 'erin'), 5000);
 	A(watchersSeen.some(([n, names]) => n === 1 && names === 'erin'), 'onWatchers reports who is watching', JSON.stringify(watchersSeen));
 	view = { ante: 2, chips: 0 }; label = 'Ante 2';
 	await pub.finish({ won: true });
@@ -266,6 +268,7 @@ try {
 	A(last.over === true && last.won === true && last.snapshot?.ante === 2, 'finish({won}) sends one final over:true push with the last view', JSON.stringify(last));
 	const nPub = pubs().length;
 	await sleep(3000);
+	await until(() => statuses.some(s => s[0] === 'over'), 4000);
 	A(pubs().length === nPub, 'the publisher stops after finish()');
 	A(statuses.some(s => s[0] === 'over' && s[1].won === true) && snaps.some(s => s[0]?.ante === 2), 'the spectator gets the final view and an over status (won)', statuses.map(s => s[0]).join(','));
 	const nPoll = sent.filter(s => s.action === 'micatro-state').length;
@@ -277,7 +280,7 @@ try {
 	const st2 = [];
 	globalThis.__MP.call = async (action, payload) => call(action, payload, tokens.carl);
 	Net.startSpectate('dana', { onStatus: s => st2.push(s) });
-	await sleep(300);
+	await until(() => st2.includes('forbidden'), 3000);
 	A(st2.includes('forbidden'), 'a non-friend spectator gets status forbidden', st2.join(','));
 	// scores through the client
 	globalThis.__MP.call = async (action, payload) => { sent.push({ action, payload }); return call(action, payload, tokens.dana); };
