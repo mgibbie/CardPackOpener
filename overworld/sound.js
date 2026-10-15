@@ -41,6 +41,12 @@ export const sfx = name => play(`data/sounds/sfx/${name}.ogg`, 0.55);
 // this takes a key instead of a URL.
 const BGM_BASE = 0.55;   // music sits under the punchier one-shot SFX
 let bgmEl = null, bgmKey = null;
+// tracks shipped from the MAIN project (overworld/bgm_extra/, tracked in git;
+// tools/gen_bgm_extras.mjs) rather than the overworld/data offload project
+export const BGM_EXTRA = new Set([
+	'crystal_MUSIC_POKE_FLUTE_CHANNEL',   // the JohKanto RADIO's POKé FLUTE station
+]);
+export const bgmUrl = key => BGM_EXTRA.has(key) ? `bgm_extra/${key}.ogg` : `data/sounds/bgm/${key}.ogg`;
 
 export function bgm(key) {
 	if ((key || null) === bgmKey) { bgmKick(); return; }
@@ -48,7 +54,7 @@ export function bgm(key) {
 	bgmKey = key || null;
 	if (!bgmKey) return;
 	try {
-		bgmEl = new Audio(`data/sounds/bgm/${bgmKey}.ogg`);
+		bgmEl = new Audio(bgmUrl(bgmKey));
 		bgmEl.loop = true;
 		bgmEl.volume = Math.max(0, Math.min(1, BGM_BASE * Settings.bgmMult()));
 		// autoplay policy may refuse until the first gesture — bgmKick retries

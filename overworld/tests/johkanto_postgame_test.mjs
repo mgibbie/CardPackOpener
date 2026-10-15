@@ -50,7 +50,7 @@ const server = http.createServer(async (req, res) => {
 	}
 	fs.readFile(path.join(ROOT, u), (e, d) => {
 		if (e) { res.writeHead(404); res.end('nf'); return; }
-		const t = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png' }[path.extname(u)] || 'application/octet-stream';
+		const t = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.ogg': 'audio/ogg' }[path.extname(u)] || 'application/octet-stream';
 		res.writeHead(200, { 'content-type': t }); res.end(d);
 	});
 });
@@ -129,6 +129,18 @@ try {
 	});
 	A(radio.inMenu, '2. the RADIO CARD puts a RADIO in the start menu', JSON.stringify(radio));
 	A(radio.channels.includes('POKé FLUTE'), '2. in Kanto with the EXPN CARD the radio offers the POKé FLUTE station', JSON.stringify(radio.channels));
+	// the station plays Crystal's own song (MUSIC_POKE_FLUTE_CHANNEL), not a stand-in,
+	// served from the tracked bgm_extra/ folder (no owdata redeploy needed)
+	const tune = await W(async () => {
+		const Snd = await import('./sound.js');
+		const key = (await import('./ow_state.js')).S?.radioTune ?? null;
+		const url = Snd.bgmUrl ? Snd.bgmUrl('crystal_MUSIC_POKE_FLUTE_CHANNEL') : `data/sounds/bgm/crystal_MUSIC_POKE_FLUTE_CHANNEL.ogg`;
+		const r = await fetch(url);
+		const len = r.ok ? (await r.arrayBuffer()).byteLength : 0;
+		return { key, now: Snd.bgmNow(), url, status: r.status, type: r.headers.get('content-type'), len };
+	});
+	A(tune.key === 'crystal_MUSIC_POKE_FLUTE_CHANNEL' && tune.now === 'crystal_MUSIC_POKE_FLUTE_CHANNEL', '2. the POKé FLUTE station plays Crystal\'s MUSIC_POKE_FLUTE_CHANNEL (no stand-in)', JSON.stringify(tune));
+	A(tune.status === 200 && /audio\/ogg/.test(tune.type || '') && tune.len > 100000 && /^bgm_extra\//.test(tune.url), '2. ...and that track loads from bgm_extra/ (real audio)', JSON.stringify(tune));
 	for (let i = 0; i < 10; i++) { const s = await state(); if (!s.d) break; await page.keyboard.press('z'); await sleep(120); }
 	await W(async () => { (await import('./ow_features.js')).radioMenu.open = false; });
 	const awake = await talk(34, 10, 'up');

@@ -580,9 +580,9 @@ export function radioKey(k) {
 		const label = chans[radioMenu.idx];
 		if (label === 'TURN IT OFF') { S.radioTune = null; S.radioStation = null; bgmTick(); radioMenu.open = false; return; }
 		if (label === POKE_FLUTE_CHANNEL) {
-			// the station's own tune isn't ported; a gentle stand-in plays, like the
-			// POKeMON MUSIC stations above, and the station is what SNORLAX hears
-			S.radioTune = 'crystal_MUSIC_POKEMON_CENTER'; S.radioStation = 'POKE_FLUTE'; bgmTick();
+			// Crystal's own POKé FLUTE channel song (MUSIC_POKE_FLUTE_CHANNEL, served
+			// from bgm_extra/ — sound.js BGM_EXTRA); the station is what SNORLAX hears
+			S.radioTune = 'crystal_MUSIC_POKE_FLUTE_CHANNEL'; S.radioStation = 'POKE_FLUTE'; bgmTick();
 			radioMenu.open = false;
 			dialog.open('The RADIO tunes to the POKé FLUTE.  ♪ A soothing melody plays. ♪', () => { radioMenu.open = true; });
 			return;
