@@ -20,6 +20,56 @@ export const AVAILABLE = [
     description: 'Pokémon add-on: Nincada, Darkrai, Meltan, Garganacl and more, the Timer Ball, five new decks, negative Energy and the Lilac stake.',
     load: () => import('../../mods/pokermonplus/index.js'),
   },
+  {
+    id: 'riskofjesters', name: 'Risk of Jesters', by: 'DVRP (rebuilt for Micatro)', requires: [],
+    description: 'Risk of Rain-themed jokers, vouchers (3D/Mili-Tech Printers) and blinds, in a vanilla style.',
+    load: () => import('../../mods/riskofjesters/index.js'),
+  },
+  {
+    id: 'sylviesilly', name: "Sylvie's Silliness", by: 'NewtTheFish (rebuilt for Micatro)', requires: [],
+    description: 'Decks, blinds, themed packs, moon planets that buff a suit, and the Bloom spectral.',
+    load: () => import('../../mods/sylviesilly/index.js'),
+  },
+  {
+    id: 'milatro', name: 'Milatro', by: 'Milan, Emilia & Emma (rebuilt for Micatro)', requires: [],
+    description: '30 new jokers.',
+    load: () => import('../../mods/milatro/index.js'),
+  },
+  {
+    id: 'mikas', name: "Mika's Mod Collection", by: 'Mikadoe (rebuilt for Micatro)', requires: [],
+    description: '60 jokers, 7 decks, and new Tarot/Spectral cards; playing cards can gain permanent Mult.',
+    load: () => import('../../mods/mikas/index.js'),
+  },
+  {
+    id: 'olympus', name: 'Olympus', by: 'AbhinavR314 (rebuilt for Micatro)', requires: [],
+    description: 'Jokers based on Greek myth.',
+    load: () => import('../../mods/olympus/index.js'),
+  },
+  {
+    id: 'inscrybed', name: 'Inscrybed Jokers', by: 'LunaAstraCassiopeia (rebuilt for Micatro)', requires: [],
+    description: 'Jokers inspired by Inscryption.',
+    load: () => import('../../mods/inscrybed/index.js'),
+  },
+  {
+    id: 'tagteam', name: 'Tag Team', by: 'Snoresville (rebuilt for Micatro)', requires: [],
+    description: 'A joker that prints Double Tags.',
+    load: () => import('../../mods/tagteam/index.js'),
+  },
+  {
+    id: 'smirkeo', name: 'Smirkeo', by: 'Mica (rebuilt for Micatro)', requires: [],
+    description: 'A joker that prints Negative Tags.',
+    load: () => import('../../mods/smirkeo/index.js'),
+  },
+  {
+    id: 'altavista', name: 'AltaVista', by: 'Mica (rebuilt for Micatro)', requires: [],
+    description: 'A joker that gives a Tarot card for each Pair played.',
+    load: () => import('../../mods/altavista/index.js'),
+  },
+  {
+    id: 'omertadeck', name: 'Omerta Deck', by: 'Mica (rebuilt for Micatro)', requires: [],
+    description: 'A deck with extra joker slots and extra Negative jokers.',
+    load: () => import('../../mods/omertadeck/index.js'),
+  },
 ];
 
 /** Load (register) the given mods and everything they require. */
