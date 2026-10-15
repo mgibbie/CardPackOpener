@@ -124,3 +124,10 @@ Each step: gate → merge when it passes → next.
 5. MoreFluff + BETMMA (in parallel).
 6. Bunco + Reverie (in parallel).
 7. Then: TheAutumnCircus + AutumnMoodMechanics, big-number scoring, native deck editor.
+8. Then the rest of the plan (owner, 2026-10-15): everything left over from the steps above —
+   mod-specific UI polish (Pokédex family viewer, evolution/shiny/zorua shader animations, type
+   badges, energy pips, animated jokers like Unown swarm), deck skins (Pokermon RBY/GSC, Bunco),
+   challenges for every mod (one Challenges screen), sleeves as deck variants, Pokermon's open
+   seams (Xatu all-planets packs, previous-evo win stickers), per-mod design-wiki sections + news
+   for any mod that lacks them, and a final all-mods-on fuzz/perf pass (load time, snapshot size,
+   spectator bandwidth) before calling the rebuild done.
