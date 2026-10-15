@@ -781,8 +781,15 @@ export function armStoryScenes(region) {
 // Johto's eight, deliberately: the gate is the Johto League's front door and the
 // decomp compares against NUM_JOHTO_BADGES. `badgeSliceFor` already awards JOHTO
 // badges for Johto's gyms whichever region you started in.
+//
+// Crystal's VAR_BADGES is Johto + Kanto (engine/events: CountBadges over both
+// wJohtoBadges and wKantoBadges) — and this port's Gen-2 Kanto is JOHKANTO. Oak
+// opens MT SILVER on `ifequal NUM_BADGES (16)`; counting Johto alone left him
+// saying "come back with the KANTO badges" forever (playtest 2026-10-14). The
+// Victory Road gate (>= 8) is unaffected: JohKanto opens only after the Johto
+// League (Grand Champion), so its badges always come on top of Johto's eight.
 export function syncStoryVars() {
-	Story.setVar('VAR_BADGES', Badges.count('JOHTO'));
+	Story.setVar('VAR_BADGES', Badges.count('JOHTO') + Badges.count('JOHKANTO'));
 	syncPetalburgGym();
 	syncRocketTakeover();
 }
@@ -1283,6 +1290,15 @@ export function runSpecial(name, store, op) {
 			const close = () => { if (cutscene.blocking) { setTimeout(close, 50); return; } enterHallOfFame(mapName); };
 			setTimeout(close, 0);
 			return;
+		}
+		// engine/events/specials.asm SnorlaxAwake: TRUE when the POKé FLUTE channel is
+		// the map music (the radio, ow_features.js) and the player stands on one of the
+		// tiles beside Vermilion's 2x2 SNORLAX at (34,8). Unported, it answered 0 and he
+		// slept forever (playtest 2026-10-14).
+		case 'SnorlaxAwake': {
+			const NEXT_TO = [[33, 8], [34, 10], [35, 10], [36, 8], [36, 9]];
+			const here = NEXT_TO.some(([x, y]) => player.tx === x && player.ty === y);
+			return set(S.radioStation === 'POKE_FLUTE' && here ? 1 : 0);
 		}
 		case 'EnableNationalPokedex': Story.setFlag(NATIONAL_DEX_FLAG); return;
 		case 'IsNationalPokedexEnabled': return set(nationalDexEnabled() ? 1 : 0);

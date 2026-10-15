@@ -6,7 +6,7 @@
 import { safeLoad, safeSave } from './safestore.js';
 import { STD_OF, STD_TEXT } from './crystal_stds.js';
 import { SCENE_SET } from './crystal_scenes.js';
-import { ITEM_NUMBERS, MAP_CONSTANTS, SCRIPT_CONSTANTS } from './script_constants.js';
+import { CRYSTAL_CONSTANTS, ITEM_NUMBERS, MAP_CONSTANTS, SCRIPT_CONSTANTS } from './script_constants.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
@@ -211,7 +211,10 @@ const B_OUTCOME = {
 // map file can name its own constants — `.equ REQUIRED_OWNED_MONS, 20` — and the
 // same name means something else in another file, so they can't go global.
 let mapConstants = null;
-export function setScriptMap(stem) { mapConstants = (stem && MAP_CONSTANTS[stem]) || null; }
+// ...and, on a Crystal map, Crystal's own value for a name the decomps define
+// differently: NUM_BADGES is 16 there (Johto + Kanto), 8 in FRLG/Emerald
+let crystalMap = false;
+export function setScriptMap(stem, crystal = false) { mapConstants = (stem && MAP_CONSTANTS[stem]) || null; crystalMap = !!crystal; }
 function resolveValue(v) {
 	if (typeof v === 'number') return v;
 	if (v === 'TRUE') return 1;
@@ -229,6 +232,7 @@ function resolveValue(v) {
 	// branches taking the same path whatever the game state.
 	// the running map's file-scoped `.equ`s first (Route 10's REQUIRED_OWNED_MONS)
 	if (typeof v === 'string' && mapConstants && mapConstants[v] !== undefined) return mapConstants[v];
+	if (typeof v === 'string' && crystalMap && CRYSTAL_CONSTANTS[v] !== undefined) return CRYSTAL_CONSTANTS[v];
 	if (typeof v === 'string' && SCRIPT_CONSTANTS[v] !== undefined) return SCRIPT_CONSTANTS[v];
 	if (typeof v === 'string' && B_OUTCOME[v] !== undefined) return B_OUTCOME[v];
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);

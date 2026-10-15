@@ -273,10 +273,12 @@ const readScript = f => JSON.parse(fs.readFileSync(path.join(D, 'scripts', f + '
 			const before = ow.Story.getVar('VAR_BADGES');
 			for (const id of ['zephyr', 'hive', 'plain', 'fog', 'storm', 'mineral', 'glacier', 'rising']) B.earn('JOHTO', id);
 			ow.syncStoryVars();
-			return { before, after: ow.Story.getVar('VAR_BADGES'), count: B.count('JOHTO') };
+			return { before, after: ow.Story.getVar('VAR_BADGES'), count: B.count('JOHTO'), jk: B.count('JOHKANTO') };
 		});
-		A(vr.before === 0 && vr.after === 8 && vr.count === 8,
-			'VAR_BADGES tracks the real Johto badge count, so the Victory Road gate opens instead of sealing',
+		// Crystal's VAR_BADGES is Johto + Kanto (= JOHKANTO here; this test earned all
+		// eight of those above), so it reads 16 — and the gate's >= 8 still opens
+		A(vr.before === 0 && vr.count === 8 && vr.after === vr.count + vr.jk && vr.after >= 8,
+			'VAR_BADGES tracks the real badge count (Johto + Kanto), so the Victory Road gate opens instead of sealing',
 			JSON.stringify(vr));
 
 		// --- item balls must not double-render now that flagged objects can appear ---

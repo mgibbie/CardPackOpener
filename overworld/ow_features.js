@@ -12,6 +12,7 @@ import { syncOverworldAchievements } from './ow_saves.js';
 import { S } from './ow_state.js';
 import { addCaught, leadMon, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
+import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -469,6 +470,14 @@ export function startRoamerBattle(key) {
 // against your Trainer ID). Driven as a stateful canvas menu (the gcMenu/shopMenu
 // pattern), intercepted in runScriptLabel before the std body would run.
 const RADIO_CHANNELS = ['POKeMON MUSIC', "OAK'S PKMN TALK", "BUENA'S PASSWORD", 'LUCKY CHANNEL', 'TURN IT OFF'];
+// Crystal's POKé FLUTE station (20.0): only with the EXPN CARD, and only in Kanto
+// (this port's Gen-2 Kanto is JOHKANTO). Tuned in beside Vermilion's SNORLAX it
+// wakes him — special SnorlaxAwake reads S.radioStation (playtest 2026-10-14).
+export const POKE_FLUTE_CHANNEL = 'POKé FLUTE';
+const pokeFluteAvailable = () => Story.getFlag('ENGINE_EXPN_CARD') && /^MAP_JOHKANTO_/.test(world.current?.map?.id || '');
+export const radioChannels = () => pokeFluteAvailable()
+	? [...RADIO_CHANNELS.slice(0, -1), POKE_FLUTE_CHANNEL, RADIO_CHANNELS[RADIO_CHANNELS.length - 1]]
+	: RADIO_CHANNELS;
 // Crystal's radio-only tunes weren't ported, so real, present city themes stand
 // in as "stations" (each key is confirmed live in music_map.json).
 const RADIO_STATIONS = [
@@ -477,6 +486,7 @@ const RADIO_STATIONS = [
 	{ name: 'UNOWN RADIO', key: 'crystal_MUSIC_ECRUTEAK_CITY' },
 ];
 S.radioTune = null;   // BGM override while a music channel plays; cleared on map change
+S.radioStation = null; // which station that is ('POKE_FLUTE' for SnorlaxAwake); cleared with it
 export const radioMenu = { open: false, idx: 0, station: 0 };
 // deterministic 32-bit FNV-1a — daily draws hash the date so a channel can't be
 // re-rolled by tuning in twice
@@ -499,7 +509,7 @@ export function openRadio() { radioMenu.open = true; radioMenu.idx = 0; sfx('ui_
 function playRadioStation() {
 	const s = RADIO_STATIONS[radioMenu.station % RADIO_STATIONS.length];
 	radioMenu.station++;
-	S.radioTune = s.key; bgmTick();   // apply the override immediately
+	S.radioTune = s.key; S.radioStation = 'MUSIC'; bgmTick();   // apply the override immediately
 	return `The RADIO tunes to POKeMON MUSIC.  ♪ Now playing: ${s.name} ♪`;
 }
 
@@ -562,18 +572,27 @@ export function luckyText() {
 }
 
 export function radioKey(k) {
-	const n = RADIO_CHANNELS.length;
+	const chans = radioChannels(), n = chans.length;
 	if (k === 'ArrowUp') { radioMenu.idx = (radioMenu.idx + n - 1) % n; return; }
 	if (k === 'ArrowDown') { radioMenu.idx = (radioMenu.idx + 1) % n; return; }
 	if (k === 'x' || k === 'Escape') { radioMenu.open = false; return; }
 	if (k === 'z' || k === 'Enter') {
-		const ch = radioMenu.idx;
-		if (ch === 4) { S.radioTune = null; bgmTick(); radioMenu.open = false; return; } // TURN IT OFF
+		const label = chans[radioMenu.idx];
+		if (label === 'TURN IT OFF') { S.radioTune = null; S.radioStation = null; bgmTick(); radioMenu.open = false; return; }
+		if (label === POKE_FLUTE_CHANNEL) {
+			// the station's own tune isn't ported; a gentle stand-in plays, like the
+			// POKeMON MUSIC stations above, and the station is what SNORLAX hears
+			S.radioTune = 'crystal_MUSIC_POKEMON_CENTER'; S.radioStation = 'POKE_FLUTE'; bgmTick();
+			radioMenu.open = false;
+			dialog.open('The RADIO tunes to the POKé FLUTE.  ♪ A soothing melody plays. ♪', () => { radioMenu.open = true; });
+			return;
+		}
+		const ch = RADIO_CHANNELS.indexOf(label);
 		const text = ch === 0 ? playRadioStation() : ch === 1 ? oakTalkText() : ch === 2 ? buenaText() : luckyText();
 		radioMenu.open = false;                      // hand off to the dialog...
 		dialog.open(text, () => { radioMenu.open = true; }); // ...then reopen so you can keep tuning
 	}
 }
 export function drawRadio(W, H) {
-	drawVertical(W, H, H / 480, 'RADIO', 'Tune in — up/down pick, Z listen, X off.', RADIO_CHANNELS, radioMenu.idx, 'radio');
+	drawVertical(W, H, H / 480, 'RADIO', 'Tune in — up/down pick, Z listen, X off.', radioChannels(), radioMenu.idx, 'radio');
 }

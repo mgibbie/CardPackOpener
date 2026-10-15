@@ -94,7 +94,7 @@ const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].flatMap(c =>
 		`${m}:${who}Script_Battle`, `${m}:${m}DoorLocksBehindYouScript`]))
 	.concat(['LancesRoom:LancesRoomDoorLocksBehindYouScript']);   // LANCE himself stays on the native champion path
 // specials whose result the engine actually computes (ow_story.js runSpecial)
-const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle', 'PlayersHousePC']);
+const ALLOW = new Set(['SnorlaxAwake', 'GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle', 'PlayersHousePC']);
 // commands that leave hScriptVar alone (display / movement); anything else between
 // the writer and the test might overwrite it, so the restore stops there
 const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext', 'opentext', 'faceplayer',

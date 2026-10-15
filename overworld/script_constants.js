@@ -156,6 +156,7 @@ export const SCRIPT_CONSTANTS = {
 	NUM_BERRY_MASTER_BERRIES: 10,
 	NUM_BERRY_MASTER_BERRIES_SKIPPED: 20,
 	NUM_BERRY_MASTER_WIFE_BERRIES: 10,
+	NUM_JOHTO_BADGES: 8,
 	NUM_KIRI_BERRIES: 10,
 	NUM_KIRI_BERRIES_SKIPPED: 20,
 	NUM_ROUTE_114_MAN_BERRIES: 5,
@@ -617,6 +618,12 @@ export const ITEM_NUMBERS = {
 	ITEM_MAGMA_EMBLEM: 375,
 	ITEM_OLD_SEA_MAP: 376,
 	ITEM_LIST_END: 65535,
+};
+
+// Crystal's own values where the decomps disagree (NUM_BADGES is 16 there):
+// read before SCRIPT_CONSTANTS while a Crystal map's scripts run.
+export const CRYSTAL_CONSTANTS = {
+	NUM_BADGES: 16,
 };
 
 // File-scoped `.equ NAME, value` from each map's scripts.inc, by map (the script

@@ -9,7 +9,7 @@ import * as Daycare from './daycare.js';
 import * as Story from './events.js';
 import { Journal } from './journal.js';
 import { battle, dialog, hud, player, sctx } from './ow_core.js';
-import { openTradeInbox, openTradeOffer } from './ow_features.js';
+import { openRadio, openTradeInbox, openTradeOffer } from './ow_features.js';
 import { toggleBike } from './ow_fieldmoves.js';
 import { bagMenu, canLearn, pcMenu } from './ow_menukeys.js';
 import { drawVertical, menuChrome, monRow } from './ow_menus.js';
@@ -293,6 +293,9 @@ export function startItems() {
 	// phone. Hidden while surfing, where toggleBike refuses anyway.
 	items.push('BAG');
 	if (hasPhone()) items.push('PHONE');
+	// Crystal's POKéGEAR RADIO (the RADIO CARD from Goldenrod's quiz): a radio you
+	// carry, so the POKé FLUTE station can play beside Vermilion's SNORLAX
+	if (Story.getFlag('ENGINE_RADIO_CARD')) items.push('RADIO');
 	items.push('TOWN MAP', 'PC');
 	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
 	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
@@ -325,6 +328,7 @@ export function startKey(k) {
 		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'PHONE') openPhoneMenu();
+		else if (it === 'RADIO') { startMenu.open = false; openRadio(); }
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it.startsWith('MAIL')) { openMailbox(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; dexMenu.grid = false; }

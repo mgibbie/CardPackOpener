@@ -120,7 +120,14 @@ for (const dec of ['pokefirered', 'pokeemerald']) {
 			const c = /^\s*const\s+([A-Z_][A-Z0-9_]*)/.exec(line);
 			if (c) { note(c[1], i, 'pokecrystal'); i++; continue; }
 			const e = /^\s*(?:DEF\s+)?([A-Z_][A-Z0-9_]*)\s+EQU\s+(-?(?:\$[0-9a-fA-F]+|\d+))\s*$/.exec(line);
-			if (e) note(e[1], Number(String(e[2]).replace('$', '0x')), 'pokecrystal');
+			if (e) { note(e[1], Number(String(e[2]).replace('$', '0x')), 'pokecrystal'); continue; }
+			// `DEF NUM_JOHTO_BADGES EQU const_value` closes a const run with its count;
+			// `DEF NUM_BADGES EQU NUM_JOHTO_BADGES + NUM_KANTO_BADGES` is evaluated below.
+			// Oak's Mt. SILVER check compares VAR_BADGES against both (playtest 2026-10-14)
+			const cv = /^\s*(?:DEF\s+)?([A-Z_][A-Z0-9_]*)\s+EQU\s+const_value\s*(?:;.*)?$/.exec(line);
+			if (cv) { note(cv[1], i, 'pokecrystal'); continue; }
+			const sx = /^\s*(?:DEF\s+)?([A-Z_][A-Z0-9_]*)\s+EQU\s+([A-Z_][A-Z0-9_]*(?:\s*[-+]\s*(?:[A-Z_][A-Z0-9_]*|\d+))+)\s*(?:;.*)?$/.exec(line);
+			if (sx) (exprs.get(sx[1]) || exprs.set(sx[1], []).get(sx[1])).push([sx[2], 'pokecrystal']);
 		}
 	}
 }
@@ -209,6 +216,33 @@ const plainOf = sym => {
 	const p = new Map([...m].map(([v, s]) => [v, s.filter(x => !/\(expr\)/.test(x))]).filter(([, s]) => s.length));
 	return p.size ? p : null;
 };
+// Crystal's OWN values for symbols the other decomps define differently (or only
+// as an expression): NUM_BADGES is 8 in FRLG/Emerald but 16 in Crystal, where
+// `readvar VAR_BADGES` counts Johto + Kanto. Oak opens MT SILVER on NUM_BADGES
+// (playtest 2026-10-14). events.js reads this table first on a Crystal map.
+const CRYSTAL_CONSTANTS = {};
+{
+	const cv = n => {
+		const m = found.get(n); if (!m) return undefined;
+		const vs = [...m].filter(([, src]) => src.some(x => /^pokecrystal/.test(x))).map(([v]) => v);
+		return vs.length === 1 ? vs[0] : undefined;
+	};
+	const cfound = new Map();
+	const cval = n => cfound.has(n) ? cfound.get(n) : cv(n);
+	const cryExprs = [...exprs].map(([n, l]) => [n, l.filter(([, d]) => d === 'pokecrystal')]).filter(([, l]) => l.length);
+	for (let pass = 0; pass < 8; pass++) for (const [n, l] of cryExprs) {
+		if (cval(n) !== undefined) continue;
+		for (const [ex] of l) {
+			let ok = true;
+			const num = ex.replace(/[A-Z_][A-Z0-9_]*/g, id => { const v = cval(id); if (v === undefined) ok = false; return String(v); });
+			if (!ok || /[^0-9 ()+-]/.test(num)) continue;
+			const v = arith(num); if (v !== undefined) { cfound.set(n, v); break; }
+		}
+	}
+	for (const [n] of cryExprs) { const v = cval(n); if (v !== undefined) CRYSTAL_CONSTANTS[n] = v; }
+	// plain Crystal values that clash with another decomp's
+	for (const [n, m] of found) if (m.size > 1) { const v = cv(n); if (v !== undefined) CRYSTAL_CONSTANTS[n] = v; }
+}
 // every item number the decomps agree on, so a COMPUTED item (a random berry,
 // FIRST_BERRY_INDEX + n) can be named back by events.js itemId. A SEPARATE table:
 // resolveValue never turns an ITEM_ symbol into a number because of it.
@@ -303,6 +337,12 @@ ${rows}
 // in a script is never turned into a number by it.
 export const ITEM_NUMBERS = {
 ${Object.entries(ITEM_NUMBERS).sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0])).map(([k, v]) => `\t${k}: ${v},`).join('\n')}
+};
+
+// Crystal's own values where the decomps disagree (NUM_BADGES is 16 there):
+// read before SCRIPT_CONSTANTS while a Crystal map's scripts run.
+export const CRYSTAL_CONSTANTS = {
+${Object.entries(CRYSTAL_CONSTANTS).filter(([k, v]) => /^NUM_/.test(k) && wanted.has(k) && out[k] !== v).sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => `\t${k}: ${v},`).join('\n')}
 };
 
 // File-scoped \`.equ NAME, value\` from each map's scripts.inc, by map (the script

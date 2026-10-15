@@ -1873,6 +1873,14 @@ export class Battle {
 			this.pushMsg('But it failed!');
 			return;
 		}
+		// DREAM EATER needs the TARGET asleep (or Comatose): on an awake target it does
+		// nothing — no damage, no drain (playtest 2026-10-14: a trainer's Noctowl drained
+		// an awake Zapdos turn after turn)
+		if (move.id === 'dreameater' && target && !this.dreamEaterHits(target)) {
+			this.pushMsg(`${this.label(user)} used ${move.name}!`);
+			this.pushMsg(`${this.label(target)} wasn't affected!`);
+			return;
+		}
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
 		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
 			user.chargeMove = move.id;
@@ -3405,6 +3413,12 @@ export class Battle {
 			if (safe.length) usable = safe;
 		}
 		if (!usable.length) return STRUGGLE();
+		// DREAM EATER does nothing to an awake target: don't pick it while there's
+		// anything else (with no other move it is still used, and fails)
+		if (target && !this.dreamEaterHits(target)) {
+			const awakeSafe = usable.filter(m => m.id !== 'dreameater');
+			if (awakeSafe.length) usable = awakeSafe;
+		}
 		// wild mons are random; route trainers keep a 15% wobble; boss-tier
 		// trainers (info.boss) always play the scored line
 		const boss = a.isTrainer && a.info?.boss;
@@ -3448,10 +3462,14 @@ export class Battle {
 	// target. Optional boost args let matchupScore rate a BENCHED candidate
 	// (boostsOf falls through to the active foe's stages, which a bench mon
 	// doesn't have).
+	// DREAM EATER lands only on a sleeping target (or one with Comatose)
+	dreamEaterHits(target) { return !!target && (target.status === 'slp' || this.abilityOf(target) === 'comatose'); }
+
 	estimateDamage(user, target, m, ub, tb) {
 		const mv = this.data.moves[m.id] || {};
 		const pw = mv.power || AI_EST_POWER[m.id] || 0;
 		if (!pw) return 0;
+		if (m.id === 'dreameater' && !this.dreamEaterHits(target)) return 0;
 		const phys = (mv.category || 'Physical') === 'Physical';
 		const A = this.statOf(user, ub || this.boostsOf(user), phys ? 'atk' : 'spa');
 		const D = Math.max(1, this.statOf(target, tb || this.boostsOf(target), phys ? 'def' : 'spd'));

@@ -40,7 +40,7 @@ S.mapStrings = {}; S.mapScripts = {};
 const scriptCache = new Map();
 export async function loadMapScripts(stem) {
 	S.mapScripts = {}; S.mapStrings = {};
-	Story.setScriptMap(stem);   // its file-scoped `.equ` constants
+	Story.setScriptMap(stem, !!world.current?.map?._crystal_tileset);   // its file-scoped `.equ` constants (and Crystal's own NUM_BADGES)
 	syncBikeFlags();             // before its scripts read FLAG_GOT_BICYCLE / FLAG_GOT_POKE_FLUTE (Cycling Road gates, SNORLAX)
 	if (!stem) return;
 	if (!scriptCache.has(stem)) {
@@ -108,7 +108,7 @@ export async function refreshMapContent(label) {
 	applyMapFixups(label);
 	bugContestLeftPark(world.current.map.id);   // Fly / Dig / Rope out of the park ends it
 	roamersOnMapChange();
-	S.radioTune = null; // leaving the room switches the radio off; map track resumes
+	S.radioTune = null; S.radioStation = null; // leaving the room switches the radio off; map track resumes
 	if (!/^SecretBase_/.test(label || '')) S.baseCtx = null; // left the base
 
 	// the real games wipe the TEMP flag range on every map transition, BEFORE the
