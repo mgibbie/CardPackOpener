@@ -44,26 +44,44 @@ export const HOOKS = [
   'find_joker_alias',   // (name) -> [cards] extra cards that count as `name`
   'is_face',            // (card, base) -> true/false/undefined override
   'splash',             // (scoring_hand, full_hand) -> true if every played card scores
-  'set_debuff',         // (card, should_debuff) -> true/false/undefined override
-  'calculate',          // (context) mod-level calculate (fires alongside jokers)
-  'end_round',          // () end of round, before round eval
-  'evaluate_round',     // (rows) add/modify cash-out rows
+  // (card, should_debuff) Steamodded's mod.set_debuff: `true` debuffs, 'prevent_debuff'
+  // forces the card undebuffed (even a spent Perishable), anything else = no opinion.
+  // Runs before the vanilla rules, like SMODS.
+  'set_debuff',
+  'calculate',          // (context) mod-level calculate (fires alongside jokers in calculate_context)
+  'end_round',          // () end of round, after the end_of_round joker pass, before round eval
+  'evaluate_round',     // (rows) -> extra cash-out rows (rows so far are passed in)
   'cash_out',           // (dollars) -> dollars
   'new_round',          // () setting a blind
   'shop_start',         // () shop opened
   'booster_open',       // (card) a booster was opened
-  'booster_limit',      // (n) -> n shop booster slots
+  'booster_limit',      // (n) -> n shop booster slots (n already includes G.GAME.modifiers.extra_boosters)
   'pack_choices',       // (card, n) -> n picks for this booster
   'pack_size',          // (card, n) -> n cards in this booster
   'level_up_hand',      // (card, hand, amount) -> false to block
   'debuff_hand',        // (cards, hand, handname) -> true/false/undefined
-  'card_removed',       // (card) a card was removed from the game
+  'card_removed',       // (card) Card:remove is about to take the card out of the game (area still set)
+  'add_to_deck',        // (card, from_debuff) Card:add_to_deck ran (after the center's own add_to_deck)
   'empty_pool_default', // (key, _type) -> fallback center key for an empty pool
   'straight_min',       // (n, hand) -> min cards for a straight (vanilla 5, Four Fingers 4)
   'flush_min',          // (n, hand) -> min cards for a flush
   'flush_suits',        // (suits, hand) -> suits a flush can be made of
   'reset_game_globals', // (initial) per-round resets (vanilla: idol/mail/ancient/castle cards)
+  'set_edition',        // (card, edition_key) -> false to refuse an edition (e.g. no shiny playing cards)
+  'edition_weight',     // (weight, type) -> weight of an edition in the weighted (mod-edition) poll
+  'scoring_areas',      // () -> [area] extra card areas scored like held cards (Pokermon's scry view)
+  'can_reserve',        // (card) -> true if a pack card may be saved to the consumable slots ('reserve' action)
+  'describe',           // (card, desc) adjust a live card's description (badges/info) — vanilla cards too
+  'view_card',          // (card, v) add mod fields to a card's view-model entry
+  'view',               // (view) add mod fields to the run view (e.g. view.areas.scry)
 ];
+
+/**
+ * Stickers registered by mods (Pokermon's Tera type stickers): key -> {key, badge_colour,
+ * atlas, pos, label?}. A sticker is an `ability[key]` flag on a card; the engine never
+ * reads it — the owning mod's rules do — so this table is for badges and art only.
+ */
+export const STICKERS = {};
 
 export function registerMod(mod) {
   if (!mod || !mod.id) throw new Error('registerMod: missing id');
@@ -96,6 +114,7 @@ export function registerMod(mod) {
     CONSUMABLE_TYPES[t.key] = t;
   }
   for (const r of C.rarities || []) { own(r); RARITIES[r.key] = r; }
+  for (const s of C.stickers || []) { own(s); STICKERS[s.key] = s; }
   for (const [name, a] of Object.entries(C.atlases || {})) ATLASES[name] = { ...a, mod: mod.id };
   if (C.loc) {
     for (const [set, entries] of Object.entries(C.loc.descriptions || {})) {
@@ -185,6 +204,24 @@ export function firstHook(name, ...args) {
 /** Active consumable types (for shop rates / pools). */
 export function activeConsumableTypes() {
   return Object.values(CONSUMABLE_TYPES).filter((t) => activeSet.has(t.mod));
+}
+
+/** True when any active mod defines `name` (lets the engine skip work for vanilla runs). */
+export function hasHook(name) {
+  for (const id of ACTIVE) if (MODS[id].hooks[name]) return true;
+  return false;
+}
+
+/** Mod editions (centers with set 'Edition' from an active mod), in registration order. */
+let _edCache = null, _edFor = null;
+export function activeModEditions() {
+  if (!ACTIVE.length) return [];
+  if (_edFor !== ACTIVE) {
+    _edCache = [];
+    for (const c of Object.values(P_CENTERS)) if (c.set === 'Edition' && c.mod && activeSet.has(c.mod)) _edCache.push(c);
+    _edFor = ACTIVE;
+  }
+  return _edCache;
 }
 
 /** Manifest of every mod the site ships (id -> loader), see ./index.js. */

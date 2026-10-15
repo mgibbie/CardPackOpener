@@ -407,3 +407,5 @@ b { font-weight: normal; }
 .lb-tabs { margin-bottom: 8px; }
 .lb-mods { display: inline-block; margin-left: 6px; }
 .lb-mods .mod-badge { font-size: 14px; padding: 2px 7px 0; margin: 0 2px; }
+
+.mod-preview { display: inline-block; font-size: 0.7em; padding: 1px 6px; border-radius: 4px; background: #fda200; color: #1b1b1b; vertical-align: middle; letter-spacing: 1px; }

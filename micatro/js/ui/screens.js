@@ -493,7 +493,7 @@ export function modsPanel(sel, onChange) {
       const head = h('div', 'mod-head');
       const title = h('div', 'mod-title');
       const by = m.by || m.author;
-      title.innerHTML = `<span class="mod-name">${esc(m.name || m.id)}</span>${by ? ` <span class="mod-by">by ${esc(by)}</span>` : ''}${m.size ? ` <span class="mod-size">${esc(m.size)}</span>` : ''}`;
+      title.innerHTML = `<span class="mod-name">${esc(m.name || m.id)}</span>${m.preview ? ' <span class="mod-preview">PREVIEW</span>' : ''}${by ? ` <span class="mod-by">by ${esc(by)}</span>` : ''}${m.size ? ` <span class="mod-size">${esc(m.size)}</span>` : ''}`;
       head.appendChild(title);
       const t = btn(on ? 'On' : 'Off', 'mod-toggle ' + (on ? 'green on' : 'grey'), () => toggle(m.id));
       t.dataset.k = 'toggle:' + m.id;

@@ -16,7 +16,7 @@
 import {
   G, P_CENTERS, P_BLINDS, P_TAGS, LOC, localize, get_blind_amount, number_format,
 } from './core.js';
-import { MOD_LOC, MODS, RARITIES } from '../mods/registry.js';
+import { MOD_LOC, MODS, RARITIES, callHook } from '../mods/registry.js';
 
 // --------------------------------------------------------------- helpers
 const MISC = LOC.misc;
@@ -55,7 +55,9 @@ const SEAL_KEY = (seal) => String(seal).toLowerCase() + '_seal';
 const RARITY_KEY = [null, 'common', 'uncommon', 'rare', 'legendary'];
 
 function badge(key) {
-  const label = (MISC.labels && MISC.labels[key]) || MISC.dictionary['k_' + key] || key;
+  const ML = MOD_LOC.misc;
+  const label = (MISC.labels && MISC.labels[key]) || MISC.dictionary['k_' + key] ||
+    (ML.labels && ML.labels[key]) || (ML.dictionary && ML.dictionary['k_' + key]) || key;
   return { key, label };
 }
 
@@ -407,6 +409,12 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
 // ------------------------------------------- generate_UIBox_ability_table
 /** Live description of a Card (joker, consumable, voucher, booster, playing card). */
 export function describe(card) {
+  const out = describe0(card);
+  // Mods may add badges / info to any live card (Pokermon: Tera type badge on base jokers).
+  callHook('describe', card, out);
+  return out;
+}
+function describe0(card) {
   const a = card.ability;
   const center = card.config.center;
   if (center.mod) return describe_mod(card, center);

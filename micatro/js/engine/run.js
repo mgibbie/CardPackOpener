@@ -118,6 +118,17 @@ const STATE_HANDLERS = {
       if (G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && G.GAME.facing_blind) {
         for (const j of G.jokers.cards.slice()) j.calculate_joker({ first_hand_drawn: true });
       }
+      // Steamodded's hand_drawn context (mod cards only): the cards this draw brought in
+      // (queued so it runs after the draw events above).
+      if (ACTIVE_MODS.length) {
+        G.E_MANAGER.add_event(() => {
+          if (G.GAME.facing_blind && G.drawn_cards && G.drawn_cards.length) {
+            const drawn = G.drawn_cards; G.drawn_cards = [];
+            calculate_context({ hand_drawn: drawn });
+            G.GAME.current_round.any_hand_drawn = true;
+          }
+        });
+      }
       G.E_MANAGER.add_event(() => {
         G.STATE = STATES.SELECTING_HAND;
         G.STATE_COMPLETE = false;
@@ -283,6 +294,7 @@ export function draw_from_deck_to_hand(e) {
     G.STATE = STATES.GAME_OVER; G.STATE_COMPLETE = false;
     return true;
   }
+  G.drawn_cards = [];
   let hand_space = e || Math.min(G.deck.cards.length, G.hand.config.card_limit - G.hand.cards.length);
   if (G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled &&
       (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0)) {
@@ -300,6 +312,7 @@ function new_round() {
     cr.discards_used = 0;
     cr.reroll_cost_increase = 0;
     cr.used_packs = {};
+    if (ACTIVE_MODS.length) cr.any_hand_drawn = undefined; // SMODS: reset for the next round's first draw
     for (const v of Object.values(G.GAME.hands)) v.played_this_round = 0;
     for (const v of G.playing_cards) v.ability.wheel_flipped = undefined;
     cr.free_rerolls = find_joker('Chaos the Clown').length;
@@ -327,13 +340,24 @@ function end_round() {
     let game_over = true, game_won = false;
     if (G.GAME.chips - G.GAME.blind.chips >= 0) game_over = false;
     for (const j of G.jokers.cards.slice()) {
-      const ev = j.calculate_joker({ end_of_round: true, game_over });
+      // main_eval / beat_boss: Steamodded's end_of_round flags (vanilla jokers ignore them).
+      const ev = j.calculate_joker({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
       if (ev) {
-        if (ev.saved) game_over = false;
+        if (ev.saved) { game_over = false; G.GAME.saved_by = j.config.center.key; }
         card_eval_status_text(j, 'jokers', null, null, null, ev);
+        mod_effect_tail(j, ev, { dollars: true });
       }
       j.calculate_rental();
       j.calculate_perishable();
+    }
+    if (ACTIVE_MODS.length) {
+      // Mod consumables (e.g. Pokermon's Megastone reset) see end_of_round too, like SMODS.
+      for (const c of G.consumeables.cards.slice()) {
+        if (!c.config.center.mod || !c.config.center.calculate) continue;
+        const ev = c.calculate_joker({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
+        if (ev) { card_eval_status_text(c, 'jokers', null, null, null, ev); mod_effect_tail(c, ev, { dollars: true }); }
+      }
+      callHook('end_round');
     }
     if (G.GAME.round_resets.ante === G.GAME.win_ante && G.GAME.blind.get_type() === 'Boss') {
       game_won = true;
@@ -543,6 +567,49 @@ export function get_poker_hand_info(_cards) {
   return { text, disp_text, loc_disp_text: localize(disp_text, 'poker_hands'), poker_hands, scoring_hand };
 }
 
+// ------------------------------------------------- mod contexts / effects
+/**
+ * Steamodded's calculate_effect extras for a MOD card's return value, in the places where
+ * vanilla only shows the text: `func()` runs, `extra` shows its own message and runs its
+ * func (recursively), and `dollars` pays out where the vanilla pass ignores it. A no-op for
+ * base-game cards, so vanilla scoring is untouched.
+ */
+export function mod_effect_tail(card, eff, opts = {}) {
+  if (!eff || typeof eff !== 'object' || !card || !card.config.center.mod) return;
+  if (opts.dollars && eff.dollars) { ease_dollars(eff.dollars); card_eval_status_text(eff.card || card, 'dollars', eff.dollars); }
+  if (typeof eff.func === 'function') eff.func();
+  let x = eff.extra, guard = 0;
+  while (x && typeof x === 'object' && guard++ < 10) {
+    if (x.message) card_eval_status_text(x.message_card || x.focus || card, 'extra', null, null, null, x);
+    if (x.dollars) { ease_dollars(x.dollars); card_eval_status_text(x.message_card || card, 'dollars', x.dollars); }
+    if (typeof x.func === 'function') x.func();
+    x = x.extra;
+  }
+}
+
+/**
+ * Steamodded's SMODS.calculate_context for contexts the base game doesn't have
+ * (post_discard, hand_drawn, poke_evolved, ...): every MOD joker / consumable gets the
+ * context (base-game cards don't know these contexts and are skipped), then each active
+ * mod's `calculate` hook. Returned effects are evaluated like SMODS.calculate_effect:
+ * message, dollars, func, extra. Returns the list of [card, effect] pairs.
+ */
+export function calculate_context(context) {
+  const out = [];
+  for (const area of [G.jokers, G.consumeables]) {
+    for (const c of area.cards.slice()) {
+      if (!c.config.center.mod || !c.config.center.calculate) continue;
+      const eff = c.calculate_joker(context);
+      if (!eff) continue;
+      out.push([c, eff]);
+      if (eff.message) card_eval_status_text(eff.message_card || c, 'extra', null, null, null, eff);
+      mod_effect_tail(c, eff, { dollars: true });
+    }
+  }
+  for (const r of callHook('calculate', context)) out.push([null, r]);
+  return out;
+}
+
 // -------------------------------------------------------- evaluate_play
 function evaluate_play() {
   const { text, disp_text, poker_hands } = get_poker_hand_info(G.play.cards);
@@ -580,6 +647,7 @@ function evaluate_play() {
       if (effects.jokers) {
         card_eval_status_text(j, 'jokers', null, null, null, effects.jokers);
         if (effects.jokers.level_up) level_up_hand(j, text);
+        mod_effect_tail(j, effects.jokers, { dollars: true });
       }
     }
     mult = mod_mult(gh.mult);
@@ -675,6 +743,38 @@ function evaluate_play() {
       }
     }
 
+    // Mod card areas scored like held cards (Pokermon's scry view: the top of the deck).
+    for (const area of ACTIVE_MODS.length ? [].concat(...callHook('scoring_areas')) : []) {
+      for (const sc of area.cards.slice()) {
+        const reps = [1];
+        for (const j of G.jokers.cards) {
+          const ev = j.calculate_joker({ cardarea: area, ...base_ctx(), other_card: sc, repetition: true });
+          if (ev && ev.repetitions) for (let h = 0; h < ev.repetitions; h++) reps.push(ev);
+        }
+        for (let r = 0; r < reps.length; r++) {
+          if (reps[r] !== 1) card_eval_status_text(reps[r].card || sc, 'jokers', null, null, null, reps[r]);
+          for (const j of G.jokers.cards) {
+            const ef = j.calculate_joker({ cardarea: area, ...base_ctx(), other_card: sc, individual: true });
+            if (!ef) continue;
+            const at = ef.message_card || sc;
+            const ch = (ef.chips || 0) + (ef.chip_mod || 0) + (ef.h_chips || 0);
+            const mu = (ef.mult || 0) + (ef.mult_mod || 0) + (ef.h_mult || 0);
+            const xm = ef.x_mult ?? ef.xmult ?? ef.Xmult ?? ef.Xmult_mod ?? ef.x_mult_mod;
+            if (ch) hand_chips = mod_chips(hand_chips + ch);
+            if (mu) mult = mod_mult(mult + mu);
+            if (xm !== undefined && xm !== 1) mult = mod_mult(mult * xm);
+            if (ef.dollars) ease_dollars(ef.dollars);
+            if (ef.message) card_eval_status_text(at, 'extra', null, null, null, ef);
+            else if (ch) card_eval_status_text(at, 'chips', ch);
+            else if (mu) card_eval_status_text(at, 'mult', mu);
+            else if (xm !== undefined) card_eval_status_text(at, 'x_mult', xm);
+            if (ch || mu || xm !== undefined) emit('hand_text', { chips: hand_chips, mult });
+            mod_effect_tail(j, { func: ef.func, extra: ef.extra });
+          }
+        }
+      }
+    }
+
     // Joker main effects (jokers, then consumables — Observatory)
     const n = G.jokers.cards.length + G.consumeables.cards.length;
     for (let i = 0; i < n; i++) {
@@ -702,6 +802,7 @@ function evaluate_play() {
         if (effects.jokers.dollars && _card.config.center.mod) ease_dollars(effects.jokers.dollars);
         card_eval_status_text(_card, 'jokers', null, null, null, effects.jokers);
         emit('hand_text', { chips: hand_chips, mult });
+        mod_effect_tail(_card, { func: effects.jokers.func, extra: effects.jokers.extra });
       }
       for (const v of G.jokers.cards) {
         const effect = v.calculate_joker({ ...base_ctx(), other_joker: _card });
@@ -729,7 +830,11 @@ function evaluate_play() {
     for (const sc of scoring_hand) {
       let destroyed = null;
       for (const j of G.jokers.cards) {
-        destroyed = j.calculate_joker({ destroying_card: sc, full_hand: G.play.cards });
+        // Mod jokers also get Steamodded's destroy_card form (cardarea G.play; {remove = true} destroys).
+        if (j.config.center.mod) {
+          const r = j.calculate_joker({ destroying_card: sc, destroy_card: sc, cardarea: G.play, full_hand: G.play.cards, scoring_hand });
+          destroyed = r && (r === true || r.remove) ? r : null;
+        } else destroyed = j.calculate_joker({ destroying_card: sc, full_hand: G.play.cards });
         if (destroyed) break;
       }
       if (sc.ability.name === 'Glass Card' && !sc.debuff && pseudorandom('glass') < G.GAME.probabilities.normal / sc.ability.extra) destroyed = true;
@@ -765,7 +870,7 @@ function evaluate_play() {
   });
   for (const j of G.jokers.cards.slice()) {
     const effects = eval_card(j, { cardarea: G.jokers, ...base_ctx(), after: true });
-    if (effects.jokers) card_eval_status_text(j, 'jokers', null, null, null, effects.jokers);
+    if (effects.jokers) { card_eval_status_text(j, 'jokers', null, null, null, effects.jokers); mod_effect_tail(j, effects.jokers, { dollars: true }); }
   }
   G.E_MANAGER.add_event(() => {
     if (G.GAME.modifiers.debuff_played_cards) for (const v of scoring_hand) v.ability.perma_debuff = true;
@@ -870,7 +975,7 @@ function update_shop() {
         card.shop_voucher = true;
         G.shop_vouchers.emplace(card);
       }
-      const booster_slots = reduceHook('booster_limit', 2);
+      const booster_slots = reduceHook('booster_limit', 2 + (G.GAME.modifiers.extra_boosters || 0));
       for (let i = 1; i <= booster_slots; i++) {
         G.GAME.current_round.used_packs = G.GAME.current_round.used_packs || {};
         if (!G.GAME.current_round.used_packs[i]) G.GAME.current_round.used_packs[i] = get_pack('shop_pack').key;
@@ -885,6 +990,21 @@ function update_shop() {
     }
   });
 }
+/**
+ * Steamodded's SMODS.change_booster_limit: +/- shop booster slots for the rest of the run
+ * (G.GAME.modifiers.extra_boosters). Gaining a slot while the shop is open stocks a pack now.
+ */
+export function change_booster_limit(mod) {
+  G.GAME.modifiers.extra_boosters = (G.GAME.modifiers.extra_boosters || 0) + mod;
+  if (mod > 0 && G.shop_open && G.STATE === STATES.SHOP) {
+    for (let i = 0; i < mod; i++) {
+      const card = new Card(P_CARDS.empty, get_pack('shop_pack'));
+      card.ability.booster_pos = G.shop_booster.cards.length + 1;
+      G.shop_booster.emplace(card);
+    }
+  }
+}
+
 export function change_shop_size(mod) {
   if (!G.GAME.shop) return;
   G.GAME.shop.joker_max += mod;
@@ -931,10 +1051,17 @@ export function use_card(card) {
   G.TAROT_INTERRUPT = G.STATE;
   if (card.ability.set === 'Booster') G.GAME.PACK_INTERRUPT = G.STATE;
   if (!PACK_STATES.includes(G.STATE)) G.STATE = STATES.PLAY_TAROT;
-  if (card.area) card.area.remove_card(card);
+  // Steamodded keep_on_use: the consumable stays where it is after use (e.g. Pokermon's Megastone).
+  const nc = !!(card.ability.consumeable && card.config.center.mod && card.config.center.keep_on_use && card.config.center.keep_on_use(card.config.center, card));
+  if (card.area && (!nc || card.area === G.pack_cards)) card.area.remove_card(card);
+  if (nc) dont_dissolve = true;
+  if (nc && area === G.pack_cards) {
+    // A kept card used straight from a pack moves to the consumable slots.
+    G.E_MANAGER.add_event(() => { card.add_to_deck(); G.consumeables.emplace(card); });
+  }
   if (card.ability.consumeable) {
     // Lua: only Tarot/Planet/Spectral packs skip the draw-to-play (Standard/Buffoon still draw).
-    if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK || G.STATE === STATES.MOD_PACK || G.STATE === STATES.MOD_PACK_HAND)) draw_card(G.hand, G.play, 1, 'up', true, card);
+    if (!nc && !(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK || G.STATE === STATES.MOD_PACK || G.STATE === STATES.MOD_PACK_HAND)) draw_card(G.hand, G.play, 1, 'up', true, card);
     emit('use', { card: card.sort_id, center: card.config.center.key });
     card.use_consumeable(area);
     for (const j of G.jokers.cards.slice()) j.calculate_joker({ using_consumeable: true, consumeable: card });
@@ -972,7 +1099,7 @@ export function use_card(card) {
         G.STATE = prev_state;
         G.TAROT_INTERRUPT = null;
         if (PACK_STATES.includes(prev_state)) {
-          if (area === G.consumeables) { /* used a held consumable mid-pack */ }
+          if (area === G.consumeables || area === G.jokers) { /* used a held consumable mid-pack (Pokermon: also from the joker row) */ }
           else if (G.GAME.pack_choices && G.GAME.pack_choices > 1) G.GAME.pack_choices -= 1;
           else end_consumeable();
         }
@@ -1174,6 +1301,8 @@ export function discard_cards_from_highlighted(hook) {
   }
   if (destroyed_cards.length) for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: destroyed_cards });
   G.GAME.round_scores.cards_discarded.amt += count;
+  // Steamodded post_discard context (a Pokermon lovely patch), mod cards only.
+  if (!hook && ACTIVE_MODS.length) calculate_context({ post_discard: true, full_hand: hl });
   if (!hook) {
     if (G.GAME.modifiers.discard_cost) ease_dollars(-G.GAME.modifiers.discard_cost);
     ease_discard(-1);
@@ -1280,6 +1409,9 @@ function applyAction(a) {
       can(c && (c.area === G.consumeables || c.area === G.pack_cards), 'cannot use that');
       // Targets are the hand selection the consumable is checked (and used) against.
       if (a.targets) { G.hand.unhighlight_all(); for (const id of a.targets) { const t = find_card(id); if (t && t.area === G.hand) G.hand.add_to_highlighted(t); } }
+      // joker_targets: the highlighted joker some mod consumables act on (Pokermon energy /
+      // evolution items: "use on the selected joker"). Base-game consumables never read it.
+      if (a.joker_targets) { G.jokers.highlighted.length = 0; for (const j of G.jokers.cards) j.highlighted = false; for (const id of a.joker_targets) { const t = find_card(id); if (t && t.area === G.jokers) G.jokers.add_to_highlighted(t); } }
       if (c.area === G.pack_cards) {
         can(inPack(), 'no pack open');
         if (c.ability.consumeable) can(c.can_use_consumeable(), 'cannot use now');
@@ -1288,6 +1420,24 @@ function applyAction(a) {
         can(c.can_use_consumeable(), 'cannot use now');
       }
       use_card(c);
+      break;
+    }
+    case 'reserve': {
+      // Save a pack card to the consumable slots instead of using it (Pokermon's Pocket
+      // packs and Megastone; adapted there from BETMMA). Only where an active mod allows it.
+      can(inPack(), 'no pack open');
+      const c = find_card(a.id);
+      can(c && c.area === G.pack_cards && c.ability.consumeable, 'cannot save that');
+      can(callHook('can_reserve', c).includes(true), 'cannot save that');
+      can(G.consumeables.cards.length < G.consumeables.config.card_limit, 'no consumable space');
+      G.E_MANAGER.add_event(() => {
+        c.area.remove_card(c);
+        c.add_to_deck();
+        G.consumeables.emplace(c);
+        emit('reserved', { card: c.sort_id });
+        G.GAME.pack_choices = G.GAME.pack_choices - 1;
+        if (G.GAME.pack_choices <= 0) end_consumeable();
+      });
       break;
     }
     case 'sell': {

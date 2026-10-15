@@ -5,6 +5,11 @@ import { P_CENTERS } from '../engine/core.js';
 
 export const AVAILABLE = [
   // { id, name, by, requires: [ids], description?, size?, load: () => import('./<id>/index.js') }
+  {
+    id: 'pokermon', name: 'Pokermon', preview: true, size: '~30 MB art', by: 'InertSteak & contributors (rebuilt for Micatro)', requires: [],
+    description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies. PREVIEW: Pokémon are being added in batches; only finished ones appear in runs.',
+    load: () => import('../../mods/pokermon/index.js'),
+  },
 ];
 
 /** Load (register) the given mods and everything they require. */

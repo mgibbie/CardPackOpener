@@ -1,0 +1,49 @@
+/**
+ * Animated cards, Unown forms and the per-card view data — the data side of Pokermon's
+ * functions/pokeanimations.lua (AnimatedPokemon) and pokedraw.lua. Rendering is the UI's
+ * job: this only exposes what to draw.
+ *
+ * cardView extras (view_card hook), under `v.poke`:
+ *   ptype, tera (sticker type), energy / c_energy / energy_max, stage, rounds (level-evo
+ *   countdown), evolve (an evolution item is applied — evolves at end of round), megas,
+ *   form (Unown / Gourgeist / Rival ... forms), fainted, shiny (edition), anim
+ *   {frames, frames_per_row, fps, soul, atlas} for animated cards.
+ */
+import { G } from '../../../js/engine/core.js';
+import { get_type, type_sticker_applied } from './types.js';
+import { energy_max } from './energy.js';
+
+/** AnimatedPokemon (pokeanimations.lua). `native` ones have their own atlas per key. */
+export const ANIMATED = {
+  j_poke_unown_swarm: { native: true, frames_per_row: 12, frames: 36, fps: 12, soul: true, size: { x: 290, y: 285 } },
+  j_poke_voltorb: { shiny_offset: 1, frames_per_row: 11, frames: 11, fps: 11 },
+  j_poke_electrode: { shiny_offset: 1, frames_per_row: 13, frames: 13, fps: 13 },
+  c_poke_bird_energy: { frames_per_row: 18, frames: 36, fps: 15 },
+};
+
+export function view_card(card, v) {
+  const c = card.config.center;
+  const ex = card.ability.extra;
+  const tera = type_sticker_applied(card);
+  const ptype = get_type(card);
+  const isPoke = c.mod === 'pokermon' && c.set === 'Joker';
+  if (!isPoke && !tera && !(card.edition && card.edition.poke_shiny) && !ANIMATED[c.key]) return;
+  const p = {};
+  if (ptype) p.ptype = ptype;
+  if (tera) p.tera = tera;
+  const holder = ex && typeof ex === 'object' ? ex : card.ability;
+  const e = holder.energy_count || 0, ce = holder.c_energy_count || 0;
+  if (e || ce) { p.energy = e; p.c_energy = ce; p.energy_max = energy_max + ((G.GAME && G.GAME.energy_plus) || 0); }
+  if (c.stage) p.stage = c.stage;
+  if (ex && typeof ex === 'object') {
+    if (typeof ex.rounds === 'number') p.rounds = ex.rounds;
+    if (ex.evolve) p.evolve = ex.evolve;
+    if (ex.form !== undefined) p.form = ex.form;
+  }
+  if (c.megas) p.megas = c.megas.slice();
+  if (card.ability.fainted !== undefined && G.GAME && card.ability.fainted === G.GAME.round) p.fainted = true;
+  if (card.edition && card.edition.poke_shiny) p.shiny = true;
+  const an = ANIMATED[c.key];
+  if (an) p.anim = { frames: an.frames, frames_per_row: an.frames_per_row, fps: an.fps, soul: !!an.soul, atlas: an.native ? c.key : undefined, size: an.size };
+  v.poke = p;
+}

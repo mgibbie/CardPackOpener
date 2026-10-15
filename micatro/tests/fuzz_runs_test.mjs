@@ -1,7 +1,7 @@
 // Fuzz: random-but-sensible bots play whole runs on many seeds/decks/stakes.
 // Catches engine crashes, state-machine stalls and broken invariants, and
 // checks determinism (same seed + same actions => identical state).
-//   node micatro/tests/fuzz_runs_test.mjs [runs=60]
+//   node micatro/tests/fuzz_runs_test.mjs [runs=60] [mods, comma-separated — e.g. pokermon]
 
 import { G, P_CENTERS } from '../js/engine/core.js';
 import { newRun, act, STATES, get_poker_hand_info } from '../js/engine/run.js';
@@ -9,10 +9,13 @@ import { toView } from '../js/engine/view.js';
 import { Session } from '../js/engine/session.js';
 
 const RUNS = Number(process.argv[2] || 60);
+// Optional mod set: the runs (and their replays) play with these mods on.
+const MODS = (process.argv[3] || '').split(',').filter(Boolean);
+if (MODS.length) { const { loadMods } = await import('../js/mods/index.js'); await loadMods(MODS); }
 let fail = 0;
 const ok = (c, m) => { if (!c) { fail++; console.log('FAIL', m); } };
 
-const BACKS = Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.key !== 'b_challenge').map((v) => v.key);
+const BACKS = Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.key !== 'b_challenge' && !v.mod).map((v) => v.key);
 
 // Small deterministic PRNG for the bot (independent of the engine's).
 function botRng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
@@ -47,7 +50,14 @@ function pickAction(r) {
       const c = G.consumeables.cards[Math.floor(r() * G.consumeables.cards.length)];
       const n = (c.ability.consumeable && c.ability.consumeable.max_highlighted) || 0;
       const targets = G.hand.cards.slice().sort(() => r() - 0.5).slice(0, n).map((x) => x.sort_id);
-      if (c.can_use_consumeable()) return { type: 'use', id: c.sort_id, targets };
+      // Mod consumables may act on a selected joker (Pokermon energy / items).
+      const jt = MODS.length && G.jokers.cards.length && r() < 0.5 ? [G.jokers.cards[Math.floor(r() * G.jokers.cards.length)].sort_id] : [];
+      const prevHl = G.jokers.highlighted.slice();
+      if (MODS.length) { G.jokers.highlighted.length = 0; for (const id of jt) { const j = G.jokers.cards.find((x) => x.sort_id === id); G.jokers.add_to_highlighted(j); } }
+      const usable = c.can_use_consumeable();
+      // Restore the selection: only the 'use' action itself may change it (replays must match).
+      if (MODS.length) { G.jokers.highlighted.length = 0; G.jokers.highlighted.push(...prevHl); }
+      if (usable) return { type: 'use', id: c.sort_id, targets, ...(MODS.length ? { joker_targets: jt } : {}) };
       return { type: 'sell', id: c.sort_id };
     }
     // Greedy: best estimated-score subset of up to 5 cards (sometimes random for coverage).
@@ -73,9 +83,10 @@ function pickAction(r) {
     if (r() < 0.15) return { type: 'reroll_shop' };
     return { type: 'next_round' };
   }
-  if ([STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK].includes(S)) {
+  if ([STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK, STATES.MOD_PACK, STATES.MOD_PACK_HAND].includes(S)) {
     if (r() < 0.1 || !G.pack_cards.cards.length) return { type: 'skip_booster' };
     const c = G.pack_cards.cards[Math.floor(r() * G.pack_cards.cards.length)];
+    if (MODS.length && c.ability.consumeable && r() < 0.3) return [{ type: 'reserve', id: c.sort_id }, { type: 'skip_booster' }];
     const n = (c.ability.consumeable && c.ability.consumeable.max_highlighted) || 0;
     const targets = G.hand.cards.slice().sort(() => r() - 0.5).slice(0, n).map((x) => x.sort_id);
     return { type: 'use', id: c.sort_id, targets };
@@ -104,6 +115,7 @@ function bestHand() {
 }
 
 let lastEvents = [];
+const modStats = {};
 let totalActions = 0, wins = 0, maxAnte = 0;
 for (let i = 0; i < RUNS; i++) {
   const back = BACKS[i % BACKS.length];
@@ -114,7 +126,7 @@ for (let i = 0; i < RUNS; i++) {
   const assisted = i % 2 === 1;
   const shopFunded = new Set();
   try {
-    newRun({ seed, back, stake });
+    newRun({ seed, back, stake, mods: MODS });
     let steps = 0, stuck = 0;
     while (!G.GAME.over && steps < 600) {
       // Assisted runs (odd index): guarantee the blind on the last hand and fund the shop,
@@ -130,6 +142,7 @@ for (let i = 0; i < RUNS; i++) {
       for (const x of acts) {
         const res = act(x);
         if (res.ok) { anyOk = true; log.push(x); }
+        if (MODS.length) for (const e of res.events) if (e.type === 'poke_evolve' || e.type === 'reserved' || (e.type === 'use' && P_CENTERS[e.center] && P_CENTERS[e.center].mod)) modStats[e.type] = (modStats[e.type] || 0) + 1;
         lastEvents = res.events.filter((e) => e.type !== 'sound' && e.type !== 'juice' && e.type !== 'hand_text').map((e) => [e.type, e.card, e.to, e.message || e.center || '']);
       }
       G.ui_events.length = 0;
@@ -158,7 +171,7 @@ for (let i = 0; i < RUNS; i++) {
     ok(JSON.stringify(v).length < 200000, `${seed}: view small enough (${JSON.stringify(v).length})`);
     // Determinism: replay the recipe and compare
     const before = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
-    Session.fromRecipe({ seed, back, stake, actions: log });
+    Session.fromRecipe({ seed, back, stake, mods: MODS, actions: log });
     const after = JSON.stringify({ d: G.GAME.dollars, a: G.GAME.round_resets.ante, r: G.GAME.round, c: G.GAME.chips, j: G.jokers.cards.map((c) => c.config.center.key), h: G.hand.cards.map((c) => c.config.card.key), s: G.STATE });
     if (!assisted) ok(before === after, `${seed}: replay deterministic\n  ${before}\n  ${after}`);
   } catch (e) {
@@ -166,5 +179,6 @@ for (let i = 0; i < RUNS; i++) {
     console.log('FAIL', seed, back, 'stake', stake, 'state', G.STATE, 'after', log.length, 'actions:', e && e.stack ? e.stack.split('\n').slice(0, 6).join('\n') : e);
   }
 }
-console.log(`fuzz: ${RUNS} runs, ${totalActions} actions, max ante ${maxAnte}, wins ${wins}, ${fail ? fail + ' FAIL' : 'all ok'}`);
+if (MODS.length) console.log('mod activity:', JSON.stringify(modStats));
+console.log(`fuzz${MODS.length ? ' [' + MODS.join(',') + ']' : ''}: ${RUNS} runs, ${totalActions} actions, max ante ${maxAnte}, wins ${wins}, ${fail ? fail + ' FAIL' : 'all ok'}`);
 process.exit(fail ? 1 : 0);
