@@ -350,7 +350,8 @@ export function interact() {
 		} else openHub();
 		return;
 	}
-	// arcade boxes: Route 1 launches PokéChess; Pallet Town's launches Pair of Pears
+	// arcade boxes: Route 1 launches PokéChess; Pallet Town's launches Pair of Pears;
+	// the Celadon Game Corner's MICATRO cabinet launches /micatro/
 	const arc = arcade.kindAt(fx, fy);
 	if (arc === 'pokechess') {
 		dialog.open('Do you want to play\nPOKéCHESS?', (k) => {
@@ -361,6 +362,12 @@ export function interact() {
 	if (arc === 'pears') {
 		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => {
 			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/pairofpears/?direct=1'; }
+		});
+		return;
+	}
+	if (arc === 'micatro') {
+		dialog.open("It's a MICATRO cabinet!\nPlay?", (k) => {
+			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/micatro/?direct=1'; }
 		});
 		return;
 	}

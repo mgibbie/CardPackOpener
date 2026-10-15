@@ -1527,6 +1527,390 @@ async function designCardDetail(slug) {
     : info);
 }
 
+// ---------- Micatro (the Balatro clone at /micatro/) ----------
+// Data: designwiki/data/micatro.json, generated from the game engine by
+// tools/micatro/gen_designwiki.mjs. Sprites are CSS background cells into the
+// game's own 2x atlases (../micatro/assets/textures/), never copied.
+let micatroPromise = null;
+function loadMicatro() {
+  if (!micatroPromise) micatroPromise = fetch('data/micatro.json' + CB).then(r => { if (!r.ok) throw new Error('micatro.json ' + r.status); return r.json(); });
+  return micatroPromise;
+}
+const MC_TEX = '../micatro/assets/textures/';
+// atlas: [file, width, height, cellW, cellH] at 2x (Balatro's asset_atli px/py × 2)
+const MC_ATLAS = {
+  Joker: ['Jokers.png', 1420, 3040, 142, 190], Tarot: ['Tarots.png', 1420, 1140, 142, 190],
+  Voucher: ['Vouchers.png', 1278, 760, 142, 190], Booster: ['boosters.png', 568, 1710, 142, 190],
+  centers: ['Enhancers.png', 994, 950, 142, 190], deck: ['8BitDeck.png', 1846, 760, 142, 190],
+  stickers: ['stickers.png', 710, 570, 142, 190], tags: ['tags.png', 408, 340, 68, 68],
+  blind: ['BlindChips.png', 1428, 2108, 68, 68], chips: ['chips.png', 290, 116, 58, 58],
+};
+/** A sprite: layers [[atlas, pos], ...] top-most first, drawn at `scale` (1 = the 2x atlas's own pixels). */
+function mcSprite(layers, cls, scale = 1, title) {
+  const [, , , cw, ch] = MC_ATLAS[layers[layers.length - 1][0]];
+  const img = [], bp = [], bs = [];
+  for (const [atlas, pos] of layers) {
+    const [file, aw, ah, w, hh] = MC_ATLAS[atlas];
+    img.push(`url("${MC_TEX + file}")`);
+    bp.push(`${-(pos.x || 0) * w * scale}px ${-(pos.y || 0) * hh * scale}px`);
+    bs.push(`${aw * scale}px ${ah * scale}px`);
+  }
+  return h('div', {
+    class: 'mc-spr' + (scale === 1 || scale === 0.5 ? ' mc-px' : '') + (cls ? ' ' + cls : ''), title: title || null, role: 'img', 'aria-label': title || null,
+    style: `width:${cw * scale}px;height:${ch * scale}px;background-image:${img.join(',')};background-position:${bp.join(',')};background-size:${bs.join(',')}`,
+  });
+}
+// Balatro text colours (G.C.*), as micatro/js/ui/markup.js uses them; a few darkened for a white page
+const MC_COL = {
+  mult: '#fe5f55', chips: '#009dff', money: '#d99a22', attention: '#ff8a00', filter: '#ff8a00',
+  blue: '#009dff', red: '#fe5f55', green: '#35a97c', tarot: '#a782d1', planet: '#13afce',
+  spectral: '#4584fa', legendary: '#b26cbb', enhanced: '#8389dd', purple: '#8867a5', important: '#ff8a00',
+  inactive: '#8a95a0', white: '#ffffff', grey: '#5f7377', light_black: '#4f6367', black: '#374244',
+  gold: '#c9a238', yellow: '#c9b400', orange: '#fda200', edition: '#4ca893', voucher: '#cb724c',
+  booster: '#646eb7', joker_grey: '#8a96a8', eternal: '#c75985', perishable: '#4f5da1', rental: '#b18f43',
+  hearts: '#f03464', diamonds: '#f06b3f', spades: '#403995', clubs: '#235955', default: '#4f6367',
+  chance: '#35a97c', pale_green: '#56a887', dark_edition: '#5a4fcf', secondary_set: '#4f6367',
+};
+const MC_BADGE = { Common: '#009dff', Uncommon: '#35a97c', Rare: '#fe5f55', Legendary: '#b26cbb', Tarot: '#a782d1', Planet: '#13afce', Spectral: '#4584fa', Voucher: '#fd682b', Booster: '#646eb7' };
+const mcEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+/** One Balatro markup line -> HTML ("{C:mult}+4{} Mult", "{X:mult,C:white} X2 {}", "{s:0.8}", "{V:1}"). */
+function mcMarkup(line, colours) {
+  const s = String(line == null ? '' : line);
+  let out = '', i = 0, open = false;
+  while (i < s.length) {
+    const b = s.indexOf('{', i);
+    if (b < 0) { out += mcEsc(s.slice(i)); break; }
+    out += mcEsc(s.slice(i, b));
+    const e = s.indexOf('}', b);
+    if (e < 0) { out += mcEsc(s.slice(b)); break; }
+    const spec = s.slice(b + 1, e).trim();
+    if (open) { out += '</span>'; open = false; }
+    if (spec) {
+      const st = []; let cls = '';
+      for (const part of spec.split(',')) {
+        const [k, v0] = part.split(':');
+        const v = (v0 || '').trim().toLowerCase();
+        if (k === 'C') { if (v === 'dark_edition') cls += ' dark-ed'; else st.push('color:' + (MC_COL[v] || MC_COL.default)); }
+        else if (k === 'X') { st.push('background:' + (MC_COL[v] || MC_COL.mult)); cls += ' xbox'; }
+        else if (k === 'V') { const c = colours && colours[(parseInt(v, 10) || 1) - 1]; const css = typeof c === 'string' ? MC_COL[c.toLowerCase()] : null; if (css) st.push('color:' + css); }
+        else if (k === 's' || k === 'S') { const n = parseFloat(v); if (n && n < 1) st.push('font-size:' + Math.round(n * 100) + '%'); }
+      }
+      out += `<span class="mk${cls}" style="${st.join(';')}">`;
+      open = true;
+    }
+    i = e + 1;
+  }
+  if (open) out += '</span>';
+  return out;
+}
+const mcDesc = (lines, colours, cls) => h('div', { class: 'mc-desc' + (cls ? ' ' + cls : ''), html: (lines || []).map(l => mcMarkup(l, colours)).join('<br>') || '<span class="muted">—</span>' });
+const mcBadge = (label, col) => h('span', { class: 'mc-badge', style: 'background:' + (col || '#6b7793') }, label);
+const mcInfo = info => (info && info.length) ? h('div', { class: 'mc-info' }, info.map(i => h('div', null, h('b', null, i.name), h('div', { html: i.lines.map(l => mcMarkup(l)).join('<br>') })))) : null;
+function mcSection(title, sub, ...kids) {
+  return h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' }, h('h2', null, title), sub ? h('p', { class: 'muted' }, sub) : null), ...kids);
+}
+const mcBack = () => h('p', { class: 'lp-back' }, h('a', { href: '#/micatro' }, '← Micatro'));
+function mcHead(title, count, unit, blurb) {
+  return h('div', { class: 'gallery-heading' },
+    h('div', null, h('h1', null, title), blurb ? h('p', { class: 'muted' }, blurb) : null),
+    count != null ? h('div', { class: 'result-count' }, count, h('span', null, ' ' + unit)) : null);
+}
+/** A card tile: sprite (+ layers), name, badges, description. */
+function mcTile(layers, it, badges, extra, opts = {}) {
+  return h('div', { class: 'mc-tile' + (opts.cls ? ' ' + opts.cls : ''), 'data-key': it.key || it.name, id: 'mc-' + (it.key || '') },
+    h('div', { class: 'mc-art' }, mcSprite(layers, opts.sprCls, opts.scale || 1, it.name)),
+    h('div', { class: 'mc-nm' }, it.name),
+    badges && badges.length ? h('div', { class: 'mc-badges' }, badges) : null,
+    mcDesc(it.lines, it.colours),
+    mcInfo(it.info), extra || null);
+}
+const mcCost = c => c != null ? h('span', { class: 'mc-cost' }, '$' + c) : null;
+async function mcLoadOr(title) {
+  try { return await loadMicatro(); }
+  catch (e) { content.replaceChildren(h('h1', null, title), h('p', { class: 'muted' }, 'Could not load the Micatro data.')); return null; }
+}
+const mcStillOn = sub => { const p = location.hash.slice(1).split('?')[0].split('/').filter(Boolean); return p[0] === 'micatro' && (p[1] || '') === sub; };
+
+async function micatroView() {
+  content.replaceChildren(h('h1', null, 'Micatro'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Micatro'); if (!D || !mcStillOn('')) return;
+  const table = (head, rows) => h('table', null,
+    h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))),
+    h('tbody', null, ...rows.map(r => h('tr', null, ...r.map(c => h('td', null, c)))))) ;
+  const kbd = (...k) => k.map((x, i) => [i ? ' / ' : '', h('kbd', null, x)]).flat();
+  const idx = [
+    ['jokers', 'Jokers', D.jokers.length, ['Joker', D.jokers[0].pos]],
+    ['consumables', 'Tarot, Planet & Spectral', D.tarots.length + D.planets.length + D.spectrals.length, ['Tarot', D.tarots[0].pos]],
+    ['vouchers', 'Vouchers', D.vouchers.length, ['Voucher', D.vouchers[0].pos]],
+    ['boosters', 'Booster Packs', D.boosters.length, ['Booster', D.boosters[0].pos]],
+    ['tags', 'Skip Tags', D.tags.length, ['tags', D.tags[0].pos]],
+    ['blinds', 'Blinds', D.blinds.length, ['blind', D.blinds[2].pos]],
+    ['decks', 'Decks', D.decks.length, ['centers', D.decks[0].pos]],
+    ['stakes', 'Stakes', D.stakes.length, ['chips', D.stakes[7].pos]],
+    ['hands', 'Poker Hands', D.hands.length, null],
+    ['enhancements', 'Enhancements & Seals', D.enhancements.length + D.editions.length + D.seals.length, ['centers', D.enhancements[0].pos]],
+  ];
+  content.replaceChildren(
+    h('div', { class: 'mc-hero' },
+      h('div', null,
+        h('h1', null, 'Micatro'),
+        h('p', null, 'A faithful clone of ', h('b', null, 'Balatro'), ' — the poker roguelike — rebuilt in plain JavaScript from the original game’s rules, numbers and art. Play poker hands to beat escalating Blinds, then spend your winnings on Jokers that bend the rules.'),
+        h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'every deck and stake is open from the start'))),
+      h('div', { class: 'mc-hero-art' }, mcSprite([['Joker', D.jokers[0].pos]], null, 1, 'Joker'),
+        mcSprite([['Joker', D.jokers.find(j => j.key === 'j_perkeo').soul], ['Joker', D.jokers.find(j => j.key === 'j_perkeo').pos]], null, 1, 'Perkeo'))),
+    h('div', { class: 'lp-grid mc-index' }, idx.map(([k, label, n, spr]) => h('a', { class: 'lp-tile mc-idx', href: '#/micatro/' + k },
+      spr ? mcSprite([spr], 'mc-idx-spr', spr[0] === 'blind' || spr[0] === 'tags' || spr[0] === 'chips' ? 1 : 0.5) : h('span', { class: 'mc-idx-spr mc-idx-txt' }, '♠♥'),
+      h('span', { class: 'mc-idx-txtwrap' }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count' }, n + ' entries'))))),
+    mcSection('Getting there', null,
+      h('ul', { class: 'mc-list' },
+        h('li', null, h('b', null, 'Landing page: '), 'the Micatro tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micatro/' }, '/micatro/'), '.'),
+        h('li', null, h('b', null, 'Overworld: '), 'the MICATRO arcade cabinet in the ', h('b', null, 'Celadon City Game Corner'), ' (Kanto). Interact with it and answer YES — your party and position are saved, and the game’s back link returns you to the overworld.'),
+        h('li', null, h('b', null, 'Watch a friend: '), 'a logged-in player’s run is broadcast live to their friends. When a friend is playing, they show up in the ', h('b', null, 'Live now'), ' hub on the Battlecards start page, the topbar’s ', h('b', null, 'Watch'), ' list, and the overworld friends list (“Playing Micatro — Ante 3”). Watching is read-only (/micatro/?spectate=<name>), up to 10 spectators per run, with chat.'),
+        h('li', null, h('b', null, 'Leaderboard: '), 'the main menu’s Leaderboard ranks players by their ', h('b', null, 'best single hand'), ' score in any run (logged-in players only; the run’s ante, deck and stake are shown beside it).'))),
+    mcSection('Rules in brief', 'Exactly Balatro’s rules — the details live on the pages above.',
+      h('ul', { class: 'mc-list' },
+        h('li', null, h('b', null, 'Antes & Blinds. '), 'Each Ante is a ', h('b', null, 'Small Blind'), ', a ', h('b', null, 'Big Blind'), ' and a ', h('a', { href: '#/micatro/blinds' }, 'Boss Blind'), ' with a nasty twist. Score at least the Blind’s chip target before your Hands run out (4 hands, 3 discards and 8 cards in hand by default; the deck and Vouchers change these). Beat the Ante 8 boss to win, then keep going in Endless mode if you like. Skip a Small or Big Blind to take its ', h('a', { href: '#/micatro/tags' }, 'Tag'), ' instead.'),
+        h('li', null, h('b', null, 'Chips × Mult. '), 'Play up to 5 cards. The ', h('a', { href: '#/micatro/hands' }, 'poker hand'), ' sets base Chips and Mult; each scoring card adds its rank in Chips (Ace 11, faces 10); then ', h('a', { href: '#/micatro/enhancements' }, 'enhancements, editions and seals'), ' and your ', h('a', { href: '#/micatro/jokers' }, 'Jokers'), ' (left to right) add to it. Score = Chips × Mult. Discards swap cards for new draws.'),
+        h('li', null, h('b', null, 'Money & the Shop. '), 'Clearing a Blind pays its reward plus $1 per unused hand and $1 interest per $5 held (up to $5). The Shop sells Jokers (5 slots max) and ', h('a', { href: '#/micatro/consumables' }, 'Tarot / Planet / Spectral'), ' cards (2 consumable slots), one ', h('a', { href: '#/micatro/vouchers' }, 'Voucher'), ' per Ante, and two ', h('a', { href: '#/micatro/boosters' }, 'booster packs'), '; rerolls start at $5. Sell a card for half its price.'),
+        h('li', null, h('b', null, 'Packs. '), 'Open a pack to choose 1 (or 2 from a Mega) of its cards: Arcana = Tarots used on your hand right there, Celestial = Planets that level a hand, Spectral = powerful but risky, Standard = playing cards for your deck, Buffoon = Jokers.'),
+        h('li', null, h('b', null, 'Decks & Stakes. '), 'Start a run on any of the ', h('a', { href: '#/micatro/decks' }, '15 decks'), ' and ', h('a', { href: '#/micatro/stakes' }, '8 stakes'), ' (each stake adds a new handicap on top of the ones before). Seeded runs are supported.'))),
+    mcSection('Controls', 'Mouse, touch, keyboard and controller all work. Spectators can open card info but not act.',
+      h('h3', { class: 'mc-h3' }, 'Mouse & touch'),
+      table(['Input', 'Action'], [
+        ['Click / tap a hand card', 'Select it (up to 5); again to deselect'],
+        ['Click / tap a Joker, consumable, shop item or pack card', 'Select it and show its buttons: Sell · Use · Buy · Buy & Use · Redeem · Open · Select'],
+        ['Drag a hand card, Joker or consumable', 'Reorder it (Joker order matters for scoring)'],
+        ['Hover (mouse) / long-press (touch)', 'Card info tooltip'],
+        ['Play Hand / Discard, Sort Hand: Rank / Suit', 'The on-table buttons'],
+      ]),
+      h('h3', { class: 'mc-h3' }, 'Keyboard'),
+      table(['Key', 'When', 'Action'], [
+        [kbd('Enter', 'P'), 'Choosing cards', 'Play hand'],
+        [kbd('D', 'Delete', 'Backspace'), 'Choosing cards', 'Discard'],
+        [kbd('1', '…', '9'), 'Choosing cards', 'Select / deselect the Nth card in hand'],
+        [kbd('R', 'S'), 'Choosing cards', 'Sort hand by rank / suit'],
+        [kbd('C'), 'Choosing cards', 'Clear the selection'],
+        [kbd('Enter', 'Space'), 'Blind select', 'Select the blind'],
+        [kbd('S'), 'Blind select', 'Skip the blind (take its tag)'],
+        [kbd('Enter', 'Space'), 'Round won', 'Cash out'],
+        [kbd('N', 'Enter'), 'Shop', 'Next round'],
+        [kbd('R'), 'Shop', 'Reroll'],
+        [kbd('S'), 'Opening a pack', 'Skip the pack'],
+        [kbd('V'), 'Any time in a run', 'Deck view'],
+        [kbd('I'), 'Any time in a run', 'Run info (hand levels, blinds, vouchers)'],
+        [kbd('Esc'), 'Any time', 'Close a dialog, else open Options'],
+      ]),
+      h('h3', { class: 'mc-h3' }, 'Controller'),
+      h('p', { class: 'muted' }, 'Signed-in players only (a signed-out pad shows “Log in to use a controller”). Nintendo layout like the rest of the site — right face confirms, bottom face cancels; remap in the overworld’s OPTIONS → CONTROLS (see ', h('a', { href: '#/controls' }, 'Controls'), '). A gold reticle marks the focus; the hint bar shows the live button names.'),
+      table(['Button', 'Action'], [
+        ['Stick / D-pad', 'Move the reticle between every card and button (or the open dialog)'],
+        ['Right face (confirm)', 'Hand card: select · shop item: buy · pack card: take · owned Joker/consumable: select (again = use the consumable) · button: press'],
+        ['Hold confirm + ◄ ►', 'Move the focused hand card, Joker or consumable'],
+        ['Top face (secondary)', 'Owned card: sell · shop consumable: buy & use · otherwise: sort hand (rank ⇄ suit)'],
+        ['Left face (context)', 'Card info tooltips on / off'],
+        ['LB / RB', 'The screen’s two main buttons: Play Hand / Discard · Select / Skip blind · Next Round / Reroll · Cash Out · Skip pack'],
+        ['Bottom face (cancel)', 'Close a dialog · deselect'],
+        ['Start', 'Pause menu (options, speed, run info, deck, quit)'],
+        ['Select', 'Deck view'],
+      ])));
+}
+
+let mcJokerQ = '', mcJokerRarity = 'all';
+async function micatroJokersView() {
+  content.replaceChildren(h('h1', null, 'Jokers'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Jokers'); if (!D || !mcStillOn('jokers')) return;
+  const grid = h('div', { class: 'mc-grid' });
+  const count = h('div', { class: 'result-count' });
+  const draw = () => {
+    const q = mcJokerQ.trim().toLowerCase();
+    const list = D.jokers.filter(j => (mcJokerRarity === 'all' || j.rarity === mcJokerRarity)
+      && (!q || (j.name + ' ' + j.lines.join(' ')).replace(/\{[^}]*\}/g, '').toLowerCase().includes(q)));
+    grid.replaceChildren(...list.map(j => mcTile(j.soul ? [['Joker', j.soul], ['Joker', j.pos]] : [['Joker', j.pos]], j,
+      [mcBadge(j.rarity, MC_BADGE[j.rarity]), mcCost(j.cost)],
+      !j.bp ? h('div', { class: 'mc-note' }, 'Not copyable by Blueprint / Brainstorm') : null, { cls: 'mc-joker' })));
+    if (!list.length) grid.replaceChildren(h('p', { class: 'muted' }, 'No jokers match.'));
+    count.replaceChildren(String(list.length), h('span', null, ' of ' + D.jokers.length + ' jokers'));
+  };
+  const search = h('input', { type: 'search', class: 'mc-search', placeholder: 'Search jokers (name or text)…', value: mcJokerQ, autocomplete: 'off' });
+  search.oninput = () => { mcJokerQ = search.value; draw(); };
+  const sel = h('select', { class: 'adv-select mc-select' }, ['all', 'Common', 'Uncommon', 'Rare', 'Legendary'].map(r =>
+    h('option', { value: r, selected: r === mcJokerRarity ? '' : null }, r === 'all' ? 'All rarities' : r)));
+  sel.onchange = () => { mcJokerRarity = sel.value; draw(); };
+  content.replaceChildren(mcBack(),
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Jokers'), h('p', { class: 'muted' }, 'All 150, in collection order, with their base values. Jokers score left to right; the shop rolls 70% Common / 25% Uncommon / 5% Rare — Legendaries come only from The Soul.')),
+      count),
+    h('div', { class: 'mc-filters' }, search, sel),
+    grid);
+  draw();
+}
+
+let mcConsTab = 'tarots';
+async function micatroConsumablesView() {
+  content.replaceChildren(h('h1', null, 'Consumables'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Consumables'); if (!D || !mcStillOn('consumables')) return;
+  const TABS = [
+    ['tarots', 'Tarot', D.tarots, 'Tarot cards change the cards in your hand or give money / cards. Bought in the shop or used straight from an Arcana pack.'],
+    ['planets', 'Planet', D.planets, 'Each Planet levels up one poker hand (more base Chips and Mult). The three dwarf planets level the secret hands and only appear once you have played them.'],
+    ['spectrals', 'Spectral', D.spectrals, 'Powerful, risky cards from Spectral packs (and rarely the shop on the Ghost Deck). The Soul (in Arcana and Spectral packs) and Black Hole (in Celestial and Spectral packs) are rare finds.'],
+  ];
+  const body = h('div');
+  const bar = h('div', { class: 'lq-sizebar mc-tabs' });
+  const draw = () => {
+    const [, label, list, blurb] = TABS.find(t => t[0] === mcConsTab);
+    bar.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.tab === mcConsTab));
+    body.replaceChildren(h('p', { class: 'muted' }, blurb),
+      h('div', { class: 'mc-grid' }, list.map(c => mcTile(c.key === 'c_soul' ? [['centers', D.soulPos], ['Tarot', c.pos]] : [['Tarot', c.pos]], c,
+        [mcBadge(c.dwarf ? 'Dwarf Planet' : label, MC_BADGE[label]), mcCost(c.cost)],
+        c.hidden ? h('div', { class: 'mc-note' }, 'Rare: can replace a card in a pack') : null))));
+  };
+  for (const [k, label, list] of TABS) bar.append(h('button', { type: 'button', class: 'lq-sizebtn', 'data-tab': k, onclick: () => { mcConsTab = k; draw(); } }, label + ' (' + list.length + ')'));
+  content.replaceChildren(mcBack(), mcHead('Tarot, Planet & Spectral', D.tarots.length + D.planets.length + D.spectrals.length, 'consumables'), bar, body);
+  draw();
+}
+
+async function micatroVouchersView() {
+  content.replaceChildren(h('h1', null, 'Vouchers'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Vouchers'); if (!D || !mcStillOn('vouchers')) return;
+  const nameOf = k => (D.vouchers.find(v => v.key === k) || {}).name || k;
+  content.replaceChildren(mcBack(),
+    mcHead('Vouchers', D.vouchers.length, 'vouchers', 'One Voucher is for sale in the shop each Ante ($10). Each comes as a base + an upgrade; the upgrade only appears after you redeem its base. Effects are permanent for the run.'),
+    h('div', { class: 'mc-grid' }, D.vouchers.map(v => mcTile([['Voucher', v.pos]], v,
+      [mcBadge(v.requires ? 'Upgrade' : 'Voucher', v.requires ? '#c2410c' : MC_BADGE.Voucher), mcCost(v.cost)],
+      v.requires ? h('div', { class: 'mc-note' }, 'Requires ', h('b', null, v.requires.map(nameOf).join(', '))) : null))));
+}
+
+async function micatroBoostersView() {
+  content.replaceChildren(h('h1', null, 'Booster Packs'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Booster Packs'); if (!D || !mcStillOn('boosters')) return;
+  const KINDS = [['Arcana', 'Tarot cards, used right away on a hand of 8 dealt from your deck.'], ['Celestial', 'Planet cards that level up poker hands.'],
+    ['Spectral', 'Spectral cards, used right away on a hand dealt from your deck.'], ['Standard', 'Playing cards (often enhanced, with editions or seals) added to your deck.'],
+    ['Buffoon', 'Jokers.']];
+  const total = D.boosters.reduce((n, b) => n + (b.weight || 0), 0);
+  content.replaceChildren(mcBack(),
+    mcHead('Booster Packs', D.boosters.length, 'packs', 'Two packs are in every shop. Normal packs show 3 cards (Buffoon/Spectral 2), Jumbo 5 (4), Mega 5 (4) and let you take 2. Each kind has several art variants. “Odds” is the pack’s share of the shop’s pack slot.'),
+    ...KINDS.map(([kind, blurb]) => {
+      const list = D.boosters.filter(b => b.kind === kind);
+      return mcSection(kind + ' Packs', blurb, h('div', { class: 'mc-grid' }, list.map(b => mcTile([['Booster', b.pos]], b,
+        [mcBadge(kind, MC_BADGE.Booster), mcCost(b.cost)],
+        h('div', { class: 'mc-note' }, 'Choose ' + b.choose + ' of ' + b.size + ' · odds ' + (100 * b.weight / total).toFixed(1) + '%')))));
+    }));
+}
+
+async function micatroTagsView() {
+  content.replaceChildren(h('h1', null, 'Skip Tags'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Skip Tags'); if (!D || !mcStillOn('tags')) return;
+  content.replaceChildren(mcBack(),
+    mcHead('Skip Tags', D.tags.length, 'tags', 'Skipping a Small or Big Blind gives up its reward and the shop that follows, but grants the Tag shown under it. Some tags only appear from a given Ante.'),
+    h('div', { class: 'mc-rows' }, D.tags.map(t => h('div', { class: 'mc-row', 'data-key': t.key },
+      mcSprite([['tags', t.pos]], null, 1, t.name),
+      h('div', { class: 'mc-row-body' },
+        h('div', { class: 'mc-nm' }, t.name, t.minAnte ? h('span', { class: 'mc-pill' }, 'Ante ' + t.minAnte + '+') : null),
+        mcDesc(t.lines), mcInfo(t.info))))));
+}
+
+async function micatroBlindsView() {
+  content.replaceChildren(h('h1', null, 'Blinds'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Blinds'); if (!D || !mcStillOn('blinds')) return;
+  const row = b => h('div', { class: 'mc-row mc-blind', 'data-key': b.key, style: b.colour ? 'border-left-color:' + b.colour : null },
+    mcSprite([['blind', b.pos]], 'mc-chip', 1, b.name),
+    h('div', { class: 'mc-row-body' },
+      h('div', { class: 'mc-nm' }, b.name,
+        b.minAnte ? h('span', { class: 'mc-pill' }, b.showdown ? 'Ante 8, 16, …' : 'Ante ' + b.minAnte + '+') : null,
+        h('span', { class: 'mc-pill mc-x' }, '×' + b.mult + ' score'), h('span', { class: 'mc-pill mc-money' }, '$' + b.dollars),
+        b.colour ? h('span', { class: 'mc-swatch', title: 'Boss colour ' + b.colour, style: 'background:' + b.colour }) : null),
+      b.lines.length ? mcDesc(b.lines) : h('div', { class: 'mc-desc muted' }, 'No effect.')));
+  const plain = D.blinds.filter(b => !b.boss), bosses = D.blinds.filter(b => b.boss && !b.showdown).sort((a, b) => a.minAnte - b.minAnte || a.name.localeCompare(b.name));
+  const finals = D.blinds.filter(b => b.showdown);
+  const ac = D.anteChips;
+  content.replaceChildren(mcBack(),
+    mcHead('Blinds', D.blinds.length, 'blinds', 'Every Ante is a Small Blind, a Big Blind and a Boss Blind. The target score is the Ante’s base chips × the Blind’s multiplier. Bosses are drawn from those whose minimum Ante you have reached (no repeats until the pool runs dry); every 8th Ante is a Showdown boss instead.'),
+    mcSection('Blind targets', 'Base chips per Ante (Small Blind = ×1, Big = ×1.5, most Bosses = ×2). The Plasma Deck doubles them all.',
+      h('div', { class: 'mc-scroll' }, h('table', { class: 'mc-table' },
+        h('thead', null, h('tr', null, h('th', null, 'Ante'), ...[1, 2, 3, 4, 5, 6, 7, 8].map(a => h('th', null, a)))),
+        h('tbody', null,
+          h('tr', null, h('th', null, 'White / Red Stake'), ...ac[1].map(n => h('td', null, n.toLocaleString('en-US')))),
+          h('tr', null, h('th', null, 'Green / Black / Blue'), ...ac[2].map(n => h('td', null, n.toLocaleString('en-US')))),
+          h('tr', null, h('th', null, 'Purple / Orange / Gold'), ...ac[3].map(n => h('td', null, n.toLocaleString('en-US')))))))),
+    mcSection('Small & Big Blinds', null, h('div', { class: 'mc-rows' }, plain.map(row))),
+    mcSection('Boss Blinds', 'Sorted by the first Ante they can appear on. Chip sprite = frame 0 of the animated chip; the left stripe is the boss colour.', h('div', { class: 'mc-rows' }, bosses.map(row))),
+    mcSection('Showdown Blinds', 'The Ante 8 finisher (and every 8th Ante in Endless).', h('div', { class: 'mc-rows' }, finals.map(row))));
+}
+
+async function micatroDecksView() {
+  content.replaceChildren(h('h1', null, 'Decks'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Decks'); if (!D || !mcStillOn('decks')) return;
+  content.replaceChildren(mcBack(),
+    mcHead('Decks', D.decks.length, 'decks', 'The deck you pick on the New Run screen. Every deck is unlocked in Micatro.'),
+    h('div', { class: 'mc-grid' }, D.decks.map(d => mcTile([['centers', d.pos]], d, null))));
+}
+
+async function micatroStakesView() {
+  content.replaceChildren(h('h1', null, 'Stakes'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Stakes'); if (!D || !mcStillOn('stakes')) return;
+  content.replaceChildren(mcBack(),
+    mcHead('Stakes', D.stakes.length, 'stakes', 'The difficulty you pick on the New Run screen. Each stake keeps every handicap of the ones below it.'),
+    h('div', { class: 'mc-rows' }, D.stakes.map(s => h('div', { class: 'mc-row', 'data-key': s.key },
+      mcSprite([['chips', s.pos]], null, 1, s.chip),
+      h('div', { class: 'mc-row-body' }, h('div', { class: 'mc-nm' }, s.name, h('span', { class: 'mc-pill' }, 'Level ' + s.level)), mcDesc(s.lines))))),
+    h('p', { class: 'muted' }, 'The Eternal, Perishable and Rental stickers are described on ', h('a', { href: '#/micatro/enhancements' }, 'Enhancements, Editions & Seals'), '.'));
+}
+
+/** A small playing card: base card + rank/suit front (+ an enhancement in place of the base). */
+const mcPlaying = (D, code, scale, under) => mcSprite([['deck', D.cards[code]], ['centers', under || D.basePos]], 'mc-pc', scale, code);
+async function micatroHandsView() {
+  content.replaceChildren(h('h1', null, 'Poker Hands'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Poker Hands'); if (!D || !mcStillOn('hands')) return;
+  content.replaceChildren(mcBack(),
+    mcHead('Poker Hands', D.hands.length, 'hands', 'Base Chips × Mult at level 1, and what each level (from its Planet card) adds. The highest-ranking hand your cards make is the one scored; only the cards that form it score (dimmed cards below don’t). Secret hands (Five of a Kind, Flush House, Flush Five) need duplicate cards in your deck and stay hidden until first played.'),
+    h('div', { class: 'mc-hands' }, D.hands.map(hd => h('div', { class: 'mc-hand', 'data-key': hd.name },
+      h('div', { class: 'mc-hand-info' },
+        h('div', { class: 'mc-nm' }, hd.name, hd.secret ? h('span', { class: 'mc-pill' }, 'Secret') : null),
+        h('div', { class: 'mc-score' }, h('span', { class: 'mc-chipsbox' }, hd.chips), ' × ', h('span', { class: 'mc-multbox' }, hd.mult)),
+        h('div', { class: 'mc-note' }, 'Per level: ', h('b', { style: 'color:' + MC_COL.chips }, '+' + hd.lChips + ' Chips'), ' ', h('b', { style: 'color:' + MC_COL.mult }, '+' + hd.lMult + ' Mult'), hd.planet ? ' · ' + hd.planet : ''),
+        mcDesc(hd.lines)),
+      h('div', { class: 'mc-example' }, (hd.example || []).map(([code, scores]) => {
+        const el = mcPlaying(D, code, 0.5);
+        if (!scores) el.classList.add('mc-dim');
+        return el;
+      }))))));
+}
+
+async function micatroEnhancementsView() {
+  content.replaceChildren(h('h1', null, 'Enhancements, Editions & Seals'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Enhancements'); if (!D || !mcStillOn('enhancements')) return;
+  const FRONTS = { m_bonus: 'H_K', m_mult: 'C_Q', m_wild: 'D_J', m_glass: 'S_A', m_steel: 'H_T', m_stone: null, m_gold: 'D_7', m_lucky: 'C_7' };
+  const joker = (D.jokers.find(j => j.key === 'j_joker') || {}).pos || { x: 0, y: 0 };
+  content.replaceChildren(mcBack(),
+    mcHead('Enhancements, Editions & Seals', null, null, 'Modifiers a playing card (or Joker) can carry. Tarot cards enhance; Spectral cards add seals and editions; Standard packs can roll all three.'),
+    mcSection('Enhancements', 'One per playing card — replaces the card’s base. Stone Cards have no rank or suit.',
+      h('div', { class: 'mc-grid' }, D.enhancements.map(e => mcTile(FRONTS[e.key] ? [['deck', D.cards[FRONTS[e.key]]], ['centers', e.pos]] : [['centers', e.pos]], e, [mcBadge('Enhancement', '#8389dd')])))),
+    mcSection('Editions', 'On Jokers and playing cards (Negative only on Jokers / consumables). The shimmer here is a stand-in for the in-game shader.',
+      h('div', { class: 'mc-grid' }, D.editions.map(e => mcTile([['Joker', joker]], e, [mcBadge('Edition', '#4ca893')], null, { sprCls: 'mc-ed mc-ed-' + e.key.slice(2) })))),
+    mcSection('Seals', 'One per playing card, drawn in its corner.',
+      h('div', { class: 'mc-grid' }, D.seals.map(s => mcTile([['centers', s.pos], ['deck', D.cards.S_A], ['centers', D.basePos]], s, [mcBadge('Seal', MC_COL[s.key.toLowerCase()] || '#6b7793')])))),
+    mcSection('Stickers', 'Shop Jokers on the higher ', h('a', { href: '#/micatro/stakes' }, 'stakes'), ' can carry these.',
+      h('div', { class: 'mc-grid' }, D.stickers.map(s => mcTile([['stickers', s.pos], ['Joker', joker]], s, [mcBadge('Sticker', MC_COL[s.key])])))));
+}
+
+function micatroRoute(sub) {
+  switch (sub || '') {
+    case '': return micatroView();
+    case 'jokers': return micatroJokersView();
+    case 'consumables': return micatroConsumablesView();
+    case 'vouchers': return micatroVouchersView();
+    case 'boosters': return micatroBoostersView();
+    case 'tags': return micatroTagsView();
+    case 'blinds': return micatroBlindsView();
+    case 'decks': return micatroDecksView();
+    case 'stakes': return micatroStakesView();
+    case 'hands': return micatroHandsView();
+    case 'enhancements': return micatroEnhancementsView();
+    default: return notFound();
+  }
+}
+
 function notFound() { content.replaceChildren(h('h1', null, 'Not found')); }
 function home() {
   const counts = h('p', { class: 'muted' }, Object.keys(DB.pokemon).length + ' Pokémon · ' +
@@ -2273,8 +2657,11 @@ function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
   const parts = hash.split('/').filter(Boolean);
-  document.querySelectorAll('#sidebar a').forEach(a =>
-    a.classList.toggle('active', a.getAttribute('href') === '#' + hash || a.getAttribute('href') === '#/' + parts[0]));
+  // a link to this exact page wins; otherwise the section's top link lights up (#/cards/x -> Card Gallery)
+  const navLinks = [...document.querySelectorAll('#sidebar a')];
+  const exact = navLinks.some(a => a.getAttribute('href') === '#' + hash);
+  navLinks.forEach(a =>
+    a.classList.toggle('active', a.getAttribute('href') === '#' + hash || (!exact && a.getAttribute('href') === '#/' + parts[0])));
   if (parts.length === 0) return home();
   const [section, id] = parts;
   if (section === 'pokemon') return id ? pokemonDetail(id) : pokedexView();
@@ -2329,6 +2716,7 @@ function route() {
   if (section === 'contraptions') return contraptionsView();
   if (section === 'dungeons') return dungeonsView();
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
+  if (section === 'micatro') return micatroRoute(id);
   notFound();
 }
 

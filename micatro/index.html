@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Micatro — Magepunk</title>
+	<meta charset="UTF-8">
+	<!-- pinch-zoom stays off: the table is scaled to the screen and touch-action:none
+	     owns every gesture (drag to reorder, long-press for tooltips) -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
+	<meta name="description" content="Micatro — a poker roguelike. Play poker hands, build a deck of Jokers, Tarots and Planets, and beat eight antes of blinds. Friends can watch your run live.">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/micatro/">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Magepunk">
+	<meta property="og:title" content="Micatro — Magepunk">
+	<meta property="og:description" content="A poker roguelike: build a deck of Jokers, chase huge Chips × Mult hands and beat eight antes of blinds.">
+	<meta property="og:url" content="https://www.michaelgibalerio.com/micatro/">
+	<meta property="og:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<meta property="og:image:width" content="1200">
+	<meta property="og:image:height" content="630">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="Micatro — Magepunk">
+	<meta name="twitter:description" content="A poker roguelike: build a deck of Jokers, chase huge Chips × Mult hands and beat eight antes of blinds.">
+	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<meta name="theme-color" content="#2b3b3f">
+	<link rel="preload" href="assets/fonts/m6x11plus.ttf" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="css/micatro.css">
+</head>
+<body>
+	<canvas id="bg" aria-hidden="true"></canvas>
+	<div id="viewport">
+		<div id="stage" class="landscape"></div>
+	</div>
+	<noscript><p style="color:#fff;padding:20px;font-family:sans-serif">Micatro needs JavaScript.</p></noscript>
+	<script type="module" src="js/ui/main.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
+</body>
+</html>
