@@ -104,7 +104,10 @@ class NPC {
 
 	// the tiles it stands on: a big doll (Crystal's BIG_OBJECT) fills 2x2 from its corner
 	covers(tx, ty) {
-		if (this.deco && this.deco.big) return tx >= this.tx && tx <= this.tx + 1 && ty >= this.ty && ty <= this.ty + 1;
+		// ...and so does a Crystal BIG_OBJECT on a map (SPRITE_BIG_SNORLAX / BIG_ONIX /
+		// BIG_LAPRAS): Vermilion's SNORLAX at (34,8) is a 2x2 body, which is why
+		// SnorlaxAwake's "next to it" tiles are (33,8)/(34,10)/(35,10)/(36,8)/(36,9)
+		if ((this.deco && this.deco.big) || /_GFX_BIG_|^SPRITE_BIG_/.test(this.ev?.graphics_id || '')) return tx >= this.tx && tx <= this.tx + 1 && ty >= this.ty && ty <= this.ty + 1;
 		return this.tx === tx && this.ty === ty;
 	}
 
