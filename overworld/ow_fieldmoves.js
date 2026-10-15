@@ -296,20 +296,26 @@ export const HM_FIELD = {
 	cut: { name: 'CUT', use() {
 		const [fx, fy] = facingTile();
 		const o = items.fieldObjAt(fx, fy);
-		if (o && o.kind === 'cut') { dialog.open('The tree was CUT down!', () => items.removeFieldObj(o)); return; }
+		// clear the tree FIRST, then say so: the removal used to wait for the
+		// message's close callback, which any other dialog opened over it drops
+		// (Dialog.open replaces onClose) — "The tree was CUT down!" with the tree
+		// still standing (playtest 2026-10-15)
+		if (o && o.kind === 'cut') { items.removeFieldObj(o); dialog.open('The tree was CUT down!'); return; }
 		dialog.open("There's nothing here to CUT.");
 	} },
 	rocksmash: { name: 'ROCK SMASH', use() {
 		const [fx, fy] = facingTile();
 		const o = items.fieldObjAt(fx, fy);
 		if (o && o.kind === 'rock') {
+			// the rock goes (and its hide flag is set) at once, like CUT's tree; the
+			// reunion scene / wild roll still follow the message
+			items.removeFieldObj(o);
+			if (o.flag) Story.setFlag(o.flag);
 			dialog.open('The rock was smashed to bits!', () => {
-				items.removeFieldObj(o);
 				// EventScript_SmashRock: `removeobject` sets the rock's hide flag, then
 				// TryUpdateRusturfTunnelState — breaking a Rusturf rock arms the reunion
 				// scene (Wanda, HM STRENGTH) and skips the wild roll. Neither ran, so the
 				// tunnel opened with no scene and no HM (playtest 2026-10-08).
-				if (o.flag) Story.setFlag(o.flag);
 				runSpecial('TryUpdateRusturfTunnelState', 'VAR_RESULT');
 				if (Story.getVar('VAR_RESULT') === 1) { checkOnFrame(); return; }
 				const grp = encounters.data[world.current.map.id]?.rock_smash;

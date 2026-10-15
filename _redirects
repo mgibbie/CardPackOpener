@@ -10,3 +10,8 @@
 /overworld/data/* https://magepunk-owdata.pages.dev/:splat 301
 /designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
+# /pokemon was never a route, but a stale bookmark there renders the homepage
+# (the SPA fallback), and the homepage's RELATIVE links ("overworld/") then
+# resolve under /pokemon/ and loop back to it — send it to the real game.
+/pokemon /overworld/ 301
+/pokemon/* /overworld/ 301
