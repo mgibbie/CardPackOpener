@@ -161,6 +161,13 @@ export function getMega_by_position(self, card) {
   return mega;
 }
 
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): fn(stone) run when a used
+ * Megastone resets at end of round, before its "Reset" message (Nacho: a Passimian holding the
+ * mega's ability frees the stone — its lovely patch on mart1.lua).
+ */
+export const MEGASTONE_RESET = [];
+
 /** Megastone.use: mega-evolve (or revert) the target. */
 export function megastone_use(stone) {
   const target = megastone_target();

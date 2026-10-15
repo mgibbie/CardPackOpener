@@ -5,7 +5,7 @@
 // Covers micatro/js/engine: core.js run.js jokers.js consumables.js blind.js tag.js
 // back.js describe.js view.js session.js, micatro/data/balatro_data.js, micatro/js/mods/registry.js
 // and micatro/mods/pokermon (index.js defs.js api.js data.js systems/ jokers/ consumables/
-// boosters/) — named here so `run-all.mjs --changed` selects this suite when any of them change.
+// boosters/), micatro/mods/pokermonplus (index.js data.js src/) — named here so `run-all.mjs --changed` selects this suite when any of them change.
 //   node overworld/tests/micatro_engine_test.mjs
 import { spawnSync } from 'child_process';
 import fs from 'fs';

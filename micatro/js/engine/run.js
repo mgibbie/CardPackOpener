@@ -10,7 +10,7 @@
 // Everything a viewer needs (UI animation) lands in G.ui_events.
 
 import {
-  G, E_MANAGER, P_CENTERS, P_CARDS, P_BLINDS, P_TAGS, P_CENTER_POOLS, HANDS_PROTO, LOC,
+  G, E_MANAGER, P_CENTERS, P_CARDS, P_BLINDS, P_TAGS, P_STAKES, P_CENTER_POOLS, HANDS_PROTO, LOC,
   CardArea, Card, copy_table, next, emit, card_eval_status_text, juice_card, play_sound, localize,
   pseudohash, pseudoseed, pseudorandom, pseudorandom_element, random_string, math_random,
   find_joker, ease_dollars, ease_discard, ease_hands_played, ease_round, ease_chips, ease_ante,
@@ -192,7 +192,11 @@ export function newRun(args = {}) {
   G.GAME.mod_options = allOptions();
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
   callHook('init_game_object', G.GAME);
-  G.GAME.stake = args.stake || 1;
+  // Mod stakes (SMODS.Stake): `stake` may be an active mod stake's key (see mod_stake_chain);
+  // it plays at the level of the stakes it applies, then runs its modifiers() below.
+  const modStakes = mod_stake_chain(args.stake);
+  G.GAME.stake = modStakes ? modStakes.level : (typeof args.stake === 'string' && isNaN(Number(args.stake)) ? 1 : (args.stake || 1));
+  if (modStakes) G.GAME.stake_key = args.stake;
   G.GAME.STOP_USE = 0;
   const backKey = args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' && backAvailable(P_CENTERS[args.back]) ? args.back : 'b_red';
   G.GAME.selected_back = new Back(P_CENTERS[backKey]);
@@ -206,6 +210,7 @@ export function newRun(args = {}) {
   if (st >= 6) G.GAME.modifiers.scaling = 3;
   if (st >= 7) G.GAME.modifiers.enable_perishables_in_shop = true;
   if (st >= 8) G.GAME.modifiers.enable_rentals_in_shop = true;
+  if (modStakes) for (const ms of modStakes.chain) if (typeof ms.modifiers === 'function') ms.modifiers(ms);
 
   // Areas exist before the back applies (some backs queue joker/consumable adds).
   const sp = G.GAME.starting_params;
@@ -287,6 +292,29 @@ export function newRun(args = {}) {
   pump();
   emit('run_start', { seed: G.GAME.pseudorandom.seed, back: backKey, stake: G.GAME.stake });
   return G;
+}
+
+/**
+ * SMODS.Stake for mod stakes (no-op for vanilla runs: a numeric `stake` returns null). A mod stake
+ * {key, applied_stakes: ['gold' | mod stake keys], stake_level?, modifiers()} plays at the highest
+ * level among the stakes it applies (vanilla 'gold' = 8; a mod stake applied in turn counts its own
+ * chain), and its modifiers — plus those of applied mod stakes, lowest first — run after the vanilla
+ * stake rules. -> {level, chain: [mod stake centers]} or null.
+ */
+export function mod_stake_chain(key, depth = 0) {
+  if (typeof key !== 'string' || depth > 10) return null;
+  const s = P_STAKES[key];
+  if (!s || !s.mod || !ACTIVE_MODS.includes(s.mod)) return null;
+  let level = typeof s.stake_level === 'number' ? s.stake_level : 1;
+  const chain = [];
+  for (const a of s.applied_stakes || []) {
+    const ak = P_STAKES[a] ? a : 'stake_' + a;
+    const sub = mod_stake_chain(ak, depth + 1);
+    if (sub) { level = Math.max(level, sub.level); for (const c of sub.chain) if (!chain.includes(c)) chain.push(c); }
+    else if (P_STAKES[ak] && typeof P_STAKES[ak].stake_level === 'number') level = Math.max(level, P_STAKES[ak].stake_level);
+  }
+  chain.push(s);
+  return { level, chain };
 }
 
 // ---------------------------------------------------------- state events
@@ -486,7 +514,7 @@ function get_X_same(num, hand) {
   for (let i = vals.length - 1; i >= 0; i--) if (vals[i].length) ret.push(vals[i]);
   return ret;
 }
-function get_flush(hand) {
+export function get_flush(hand) {
   const four = find_joker('Four Fingers').length > 0;
   const need = reduceHook('flush_min', 5 - (four ? 1 : 0), hand);
   if (hand.length > 5 || hand.length < need) return [];
@@ -640,6 +668,42 @@ export function calculate_context(context) {
   return out;
 }
 
+/**
+ * Steamodded better_calc.toml: a non-playing card destroyed while `getting_sliced` (Ceremonial
+ * Dagger, Madness, mod jokers that eat others) fires joker_type_destroyed for mod cards first; a
+ * {no_destroy} answer saves it. No-op in vanilla runs. (Nacho's Passimian receives the ability.)
+ */
+for (const m of ['start_dissolve', 'shatter']) {
+  const base = Card.prototype[m];
+  Card.prototype[m] = function (...args) {
+    if (ACTIVE_MODS.length && this.getting_sliced && this.ability && this.ability.set !== 'Default' && this.ability.set !== 'Enhanced') {
+      const flags = calculate_context({ joker_type_destroyed: true, card: this, shatters: m === 'shatter' || undefined });
+      if (flags.some(([, e]) => e && e.no_destroy)) { this.getting_sliced = undefined; return undefined; }
+    }
+    return base.apply(this, args);
+  };
+}
+
+/**
+ * Steamodded joker retriggers (optional feature retrigger_joker, which Nacho turns on): each time a
+ * joker's effect is evaluated, mod jokers answering `retrigger_joker_check` (other_card = that joker)
+ * with {repetitions} make it evaluate again with `retrigger_joker = true`. -> extra evaluations.
+ * Only mod jokers whose calculate mentions retrigger_joker_check are asked; 0 in vanilla runs.
+ */
+export function joker_retriggers(card, context) {
+  if (!ACTIVE_MODS.length || context.retrigger_joker || context.retrigger_joker_check) return 0;
+  let n = 0;
+  for (const j of G.jokers.cards) {
+    const c = j.config.center;
+    if (!c.mod || !c.calculate || j.debuff) continue;
+    if (c._retrig === undefined) c._retrig = String(c.calculate).includes('retrigger_joker_check');
+    if (!c._retrig) continue;
+    const r = j.calculate_joker({ retrigger_joker_check: true, other_card: card, other_context: context });
+    if (r && r.repetitions) { n += r.repetitions; card_eval_status_text(r.card || j, 'extra', null, null, null, r); }
+  }
+  return n;
+}
+
 // -------------------------------------------------------- evaluate_play
 function evaluate_play() {
   const { text, disp_text, poker_hands } = get_poker_hand_info(G.play.cards);
@@ -704,8 +768,15 @@ function evaluate_play() {
       const sev = eval_card(sc, { repetition_only: true, cardarea: G.play, ...base_ctx(), repetition: true });
       if (next(sev)) for (let h = 0; h < sev.seals.repetitions; h++) reps.push(sev);
       for (const j of G.jokers.cards) {
-        const ev = eval_card(j, { cardarea: G.play, ...base_ctx(), other_card: sc, repetition: true });
-        if (next(ev) && ev.jokers) for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
+        const rctx = { cardarea: G.play, ...base_ctx(), other_card: sc, repetition: true };
+        const ev = eval_card(j, rctx);
+        if (next(ev) && ev.jokers) {
+          for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
+          for (let t = joker_retriggers(j, rctx); t > 0; t--) {
+            const ev2 = eval_card(j, { ...rctx, retrigger_joker: true });
+            if (next(ev2) && ev2.jokers) for (let h = 0; h < ev2.jokers.repetitions; h++) reps.push(ev2);
+          }
+        }
       }
       for (let r = 0; r < reps.length; r++) {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
@@ -759,8 +830,15 @@ function evaluate_play() {
           const sev = eval_card(hc, { repetition_only: true, cardarea: G.hand, ...base_ctx(), repetition: true, card_effects: effects });
           if (next(sev) && (next(effects[0]) || effects.length > 1)) for (let h = 0; h < sev.seals.repetitions; h++) reps.push(sev);
           for (const j of G.jokers.cards) {
-            const ev = eval_card(j, { cardarea: G.hand, ...base_ctx(), other_card: hc, repetition: true, card_effects: effects });
-            if (next(ev)) for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
+            const rctx = { cardarea: G.hand, ...base_ctx(), other_card: hc, repetition: true, card_effects: effects };
+            const ev = eval_card(j, rctx);
+            if (next(ev)) {
+              for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
+              for (let t = joker_retriggers(j, rctx); t > 0; t--) {
+                const ev2 = eval_card(j, { ...rctx, retrigger_joker: true });
+                if (next(ev2) && ev2.jokers) for (let h = 0; h < (ev2.jokers.repetitions || 0); h++) reps.push(ev2);
+              }
+            }
           }
         }
         for (const ef of effects) {
@@ -837,13 +915,16 @@ function evaluate_play() {
       }
       for (const v of G.jokers.cards) {
         // Steamodded also names a consumable `other_consumeable` (Mega Alakazam).
-        const effect = v.calculate_joker({ ...base_ctx(), other_joker: _card, other_consumeable: _card.ability.consumeable ? _card : undefined });
-        if (effect) {
+        const octx = { ...base_ctx(), other_joker: _card, other_consumeable: _card.ability.consumeable ? _card : undefined };
+        let effect = v.calculate_joker(octx);
+        for (let t = effect ? joker_retriggers(v, octx) + 1 : 0; t > 0; t--) {
           let changed = false;
           if (effect.mult_mod) { mult = mod_mult(mult + effect.mult_mod); changed = true; }
           if (effect.chip_mod) { hand_chips = mod_chips(hand_chips + effect.chip_mod); changed = true; }
           if (effect.Xmult_mod) { mult = mod_mult(mult * effect.Xmult_mod); changed = true; }
           if (changed) { card_eval_status_text(v, 'jokers', null, null, null, effect); emit('hand_text', { chips: hand_chips, mult }); }
+          // Steamodded joker retriggers: the joker evaluates again (retrigger_joker = true).
+          if (t > 1) { effect = v.calculate_joker({ ...octx, retrigger_joker: true }); if (!effect) break; }
         }
       }
       if (edition_effects.jokers && edition_effects.jokers.x_mult_mod) {
@@ -1009,7 +1090,10 @@ function update_shop() {
     callHook('shop_start');
     if (!G.shop_populated) {
       G.shop_populated = true;
-      for (let i = G.shop_jokers.cards.length; i < G.GAME.shop.joker_max; i++) G.shop_jokers.emplace(create_card_for_shop(G.shop_jokers));
+      // A mod may stock a new shop's joker slots itself (Nacho's Sinnoh Adventure: the three starters).
+      if (!(ACTIVE_MODS.length && callHook('fill_shop_jokers').includes(true))) {
+        for (let i = G.shop_jokers.cards.length; i < G.GAME.shop.joker_max; i++) G.shop_jokers.emplace(create_card_for_shop(G.shop_jokers));
+      }
       if (G.GAME.current_round.voucher && P_CENTERS[G.GAME.current_round.voucher]) {
         const card = new Card(P_CARDS.empty, P_CENTERS[G.GAME.current_round.voucher]);
         card.shop_voucher = true;
@@ -1319,6 +1403,10 @@ function play_cards_from_highlighted() {
   for (const v of G.playing_cards) v.ability.forced_selection = undefined;
   const hl = G.hand.highlighted.slice().sort((a, b) => G.hand.cards.indexOf(a) - G.hand.cards.indexOf(b));
   G.hand.highlighted = hl;
+  // Steamodded's press_play context (after Blind:press_play in the Lua). The Lua moves the played
+  // cards with queued events, so its handlers still see them highlighted in G.hand — fired here,
+  // before the synchronous move, they see the same state (Nacho's Turtonator reads it).
+  if (ACTIVE_MODS.length) calculate_context({ press_play: true });
   G.E_MANAGER.add_event(() => { G.STATE = STATES.HAND_PLAYED; G.STATE_COMPLETE = true; });
   ease_hands_played(-1);
   for (const c of hl) {
@@ -1445,6 +1533,7 @@ function applyAction(a) {
         if (G.hand.highlighted.includes(c)) G.hand.remove_from_highlighted(c);
         else G.hand.add_to_highlighted(c);
       }
+      if (ACTIVE_MODS.length) callHook('hand_highlighted');
       emit('highlight', { ids: G.hand.highlighted.map((c) => c.sort_id) });
       break;
     }

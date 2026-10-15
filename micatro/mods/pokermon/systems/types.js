@@ -27,10 +27,31 @@ export const TYPE_COLOURS = {
 
 const STICKER_ORDER = ['grass', 'fire', 'water', 'lightning', 'psychic', 'fighting', 'colorless', 'dark', 'metal', 'fairy', 'dragon', 'earth'];
 
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): extra Tera types an add-on
+ * defines, as {type, sticker, wildcard?, gradient?, active()}. Nacho's Pokermon Dip adds Stellar
+ * ({type:'Stellar', sticker:'stellar_sticker', wildcard:true}) — its lovely patches on
+ * pokefunctions.lua / energyfunctions.lua: the sticker is read after the 12 base ones
+ * (type_sticker_applied), and a `wildcard` type counts as EVERY type (is_type,
+ * find_pokemon_type, energy_matches, type_evo; matching_energy finds no Energy for it).
+ * `active()` must be false while the add-on is off.
+ */
+export const EXTRA_TYPES = [];
+/** Add-on extension point: fn(card, sticker_type) -> a type that apply_type_sticker uses instead
+ *  (Nacho: Terapagos-Stellar makes every Tera sticker Stellar), or undefined. */
+export const TERA_OVERRIDES = [];
+/** True when the card carries an active add-on "counts as every type" sticker (Stellar). */
+export function wildcard_type(card) {
+  if (!EXTRA_TYPES.length || !card || !card.ability) return false;
+  for (const t of EXTRA_TYPES) if (t.wildcard && card.ability[t.sticker] && (!t.active || t.active())) return true;
+  return false;
+}
+
 /** -> 'Grass' | ... | false : the Tera sticker on a card. */
 export function type_sticker_applied(card) {
   if (!card || !card.ability) return false;
   for (const t of STICKER_ORDER) if (card.ability[t + '_sticker']) return POKETYPES[STICKER_ORDER.indexOf(t)];
+  for (const t of EXTRA_TYPES) if (card.ability[t.sticker] && (!t.active || t.active())) return t.type;
   return false;
 }
 
@@ -42,13 +63,14 @@ export function find_pokemon_type(target_type) {
   if (G.jokers && G.jokers.cards) {
     for (const v of G.jokers.cards) {
       const ex = extraTable(v);
-      if (v.ability && ((ex && target_type === ex.ptype) || v.ability[String(target_type).toLowerCase() + '_sticker'])) found.push(v);
+      if (v.ability && ((ex && target_type === ex.ptype) || wildcard_type(v) || v.ability[String(target_type).toLowerCase() + '_sticker'])) found.push(v);
     }
   }
   return found;
 }
 
 export function is_type(card, target_type) {
+  if (wildcard_type(card)) return true;
   const ex = extraTable(card);
   return !!(card.ability && ((ex && target_type === ex.ptype) || card.ability[String(target_type).toLowerCase() + '_sticker']));
 }
@@ -72,6 +94,7 @@ export function has_type(card) {
 /** Put a Tera sticker on a card (random type when none given), clearing the others. */
 export function apply_type_sticker(card, sticker_type) {
   let apply_type;
+  for (const f of TERA_OVERRIDES) { const t = f(card, sticker_type); if (t) sticker_type = t; }
   if (sticker_type) apply_type = sticker_type;
   else apply_type = pseudorandom_element(POKETYPES, pseudoseed('tera'))[0];
   card.ability[apply_type.toLowerCase() + '_sticker'] = true;
@@ -95,7 +118,10 @@ export function type_badge(card) {
   if (type_sticker_applied(card)) label = label + ' ' + localize('poke_tera');
   // (Lua: a Bird badge flickers away 1 frame in 6 via math.random — a renderer effect; the
   // description must not consume run RNG, so the view marks it and the UI may flicker it.)
-  return { key: 'poke_type', type: ptype, label, colour: TYPE_COLOURS[lower], text_colour: ptype === 'Lightning' ? '#000000' : '#FFFFFF', flicker: lower === 'bird' || undefined };
+  const b = { key: 'poke_type', type: ptype, label, colour: TYPE_COLOURS[lower], text_colour: ptype === 'Lightning' ? '#000000' : '#FFFFFF', flicker: lower === 'bird' || undefined };
+  // Add-on types may draw their badge as a cycling gradient (Nacho's Stellar: SMODS.Gradient sgbadge).
+  for (const t of EXTRA_TYPES) if (t.type === ptype && t.gradient) b.gradient = t.gradient.slice();
+  return b;
 }
 /** center.set_badges for Pokémon jokers. */
 export function poke_set_type_badge(self, card, badges) {
@@ -108,7 +134,7 @@ export function type_tooltip(self, info_queue, center) {
   if (!center || !center.ability) return;
   const a = center.ability;
   const ex = extraTable(center);
-  const max = G.GAME ? (G.GAME.energy_plus || 0) + ENERGY_MAX() : ENERGY_MAX();
+  const max = (G.GAME ? (G.GAME.energy_plus || 0) + ENERGY_MAX() : ENERGY_MAX()) + energy_limit_bonus(center);
   const pct = (f) => Math.round(Number(f.toFixed(3)) * 100 * 1000) / 1000;
   if (ex && ((ex.energy_count || 0) + (ex.c_energy_count || 0) > 0)) {
     info_queue.push({ set: 'Other', key: 'energy', vars: [(ex.energy_count || 0) + (ex.c_energy_count || 0), max] });
@@ -123,6 +149,19 @@ export function type_tooltip(self, info_queue, center) {
 let _emax = 3;
 export const ENERGY_MAX = () => _emax;
 export function set_energy_max(n) { _emax = n; }
+
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): functions card -> number added
+ * to THIS card's Energy limit (can_increase_energy and the energy tooltip). Pokermon+ uses it for
+ * the per-joker `energy_plus` its Void deck's negative Energy cards grant (its lovely patches on
+ * energyfunctions.lua / pokefunctions.lua). Each function must return 0 when its mod is off.
+ */
+export const ENERGY_LIMIT_BONUS = [];
+export function energy_limit_bonus(card) {
+  let n = 0;
+  for (const f of ENERGY_LIMIT_BONUS) n += f(card) || 0;
+  return n;
+}
 
 /** Count other jokers of a type plus matching Energy cards held. */
 export function find_other_poke_or_energy_type(card, poke_type, count_self) {

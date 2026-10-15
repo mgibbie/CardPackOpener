@@ -29,20 +29,24 @@ export const cfg = (key) => opt(MOD_ID, key);
 // ------------------------------------------------------------ SMODS shims
 /** SMODS.find_card(key, count_debuffed): jokers + consumables with this CENTER KEY. */
 export function find_card(key, count_debuffed) {
-  const out = [];
+  let out = [];
   for (const area of [G.jokers, G.consumeables]) {
     if (!area) continue;
     for (const v of area.cards) if (v.config.center.key === key && (count_debuffed || !v.debuff)) out.push(v);
   }
   // Pokermon's SMODS.find_card hook (pokermon.lua): vanilla keys also find their stand-ins.
   if (!out.length) {
-    if (key === 'j_shortcut') return find_joker('Shortcut');
-    if (key === 'j_four_fingers') return find_joker('Four Fingers');
-    if (key === 'j_pareidolia') return find_joker('Pareidolia');
-    if (key === 'j_smeared') return find_joker('Smeared Joker');
+    if (key === 'j_shortcut') out = find_joker('Shortcut');
+    else if (key === 'j_four_fingers') out = find_joker('Four Fingers');
+    else if (key === 'j_pareidolia') out = find_joker('Pareidolia');
+    else if (key === 'j_smeared') out = find_joker('Smeared Joker');
   }
+  // Add-on wrappers of SMODS.find_card append their own finds (Nacho: a Passimian holding the key's ability).
+  for (const f of FIND_CARD_EXTRA) { const more = f(key, count_debuffed); if (more && more.length) out = out.concat(more); }
   return out;
 }
+/** Add-on extension point (additive; empty = Pokermon unchanged): fn(key, count_debuffed) -> extra cards find_card returns. */
+export const FIND_CARD_EXTRA = [];
 /** Lua `next(t)` on an array. */
 export const any = (t) => !!(t && t.length);
 
@@ -340,8 +344,13 @@ export function poke_suit_check(hand, num) {
 }
 
 // ----------------------------------------------------- pokefunctions bits
+/** Add-on extension point (additive; empty = Pokermon unchanged): fn(card, skip) -> 'no_destroy' to cancel remove(). */
+export const BEFORE_REMOVE = [];
 /** remove(self, card, context, check_shiny): the "fainted/eaten" self-destruct. */
-export function remove(self, card, context, check_shiny) {
+export function remove(self, card, context, check_shiny, skip_joker_type_destroyed) {
+  // Add-on overrides of remove (Nacho's Passimian): fire joker_type_destroyed first; a
+  // {no_destroy} answer cancels the removal.
+  for (const f of BEFORE_REMOVE) if (f(card, skip_joker_type_destroyed) === 'no_destroy') return undefined;
   // check_shiny: the shiny booster slot goes back here — the card leaves the joker row before
   // Card:remove, so the shiny card_removed hook doesn't see it (same as the Lua).
   if (check_shiny && card.edition && card.edition.poke_shiny) smods_change_booster_limit(-1);

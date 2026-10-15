@@ -11,6 +11,7 @@ import {
   level_up_hand, get_blind_amount, number_format, copy_table, probability_roll,
 } from './core.js';
 import { draw_from_deck_to_hand, discard_cards_from_highlighted } from './run.js';
+import { firstHook, callHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 
 /** Lua's `vars = {}` survives the data export as `{}` — normalise to an array. */
 const as_list = (v) => (Array.isArray(v) ? v : []);
@@ -313,6 +314,13 @@ export class Blind {
 
   debuff_hand(cards, hand, handname, check) {
     if (this.disabled) return undefined;
+    // Mods may rule on the hand first: false = never debuffed (no Arm / Ox penalty either), true =
+    // debuffed (Nacho's Mega Gallade returns before the blind's own debuff_hand runs).
+    if (ACTIVE_MODS.length) {
+      const o = firstHook('debuff_hand', cards, hand, handname, check);
+      if (o === false) return undefined;
+      if (o === true) { this.triggered = true; return true; }
+    }
     if (this.debuff) {
       this.triggered = false;
       if (this.debuff.hand && hand[this.debuff.hand] && hand[this.debuff.hand].length > 0) {
@@ -376,6 +384,9 @@ export class Blind {
           G.hand.unhighlight_all();
           const [forced_card] = pseudorandom_element(G.hand.cards, pseudoseed('cerulean_bell'));
           forced_card.ability.forced_selection = true;
+          // Mods may tag the forced card too (Nacho's Turtonator: pokermon_forced_selection, which
+          // outlives the forced_selection reset when the hand is played).
+          if (ACTIVE_MODS.length) callHook('forced_selection', forced_card);
           G.hand.add_to_highlighted(forced_card);
           emit('highlight', { ids: G.hand.highlighted.map((c) => c.sort_id), forced: forced_card.sort_id });
         }

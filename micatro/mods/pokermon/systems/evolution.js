@@ -22,7 +22,7 @@ import { juice_card_until } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
 import DATA from '../data.js';
 import { find_card, any } from './utils.js';
-import { type_sticker_applied } from './types.js';
+import { type_sticker_applied, wildcard_type } from './types.js';
 import { energize } from './energy.js';
 import { get_random_poke_key } from './pools.js';
 
@@ -46,19 +46,28 @@ export function can_evolve(self, card, context, forced_key, ignore_step, allow_l
 }
 
 /** Evolve after N rounds (ability.extra.rounds counts down at end of round). */
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): fn(card) -> extra countdown steps
+ * level_evo takes per round, each with its own "level" status (Nacho's Audino: +1 per
+ * non-debuffed Audino — its lovely patch after every `rounds = rounds - 1` / status line).
+ */
+export const LEVEL_EVO_EXTRA = [];
+const level_extra = (card) => { let n = 0; for (const f of LEVEL_EVO_EXTRA) n += f(card) || 0; return n; };
+
 export function level_evo(self, card, context, forced_key) {
   if (card.ability.extra.rounds === undefined) return undefined;
   if (card.debuff) return undefined;
   let ret;
+  const level_msg = () => card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('poke_evolve_level') });
   if (can_evolve(self, card, context, forced_key)) {
-    if (card.ability.extra.rounds > 0) card.ability.extra.rounds = card.ability.extra.rounds - 1;
+    if (card.ability.extra.rounds > 0) card.ability.extra.rounds = card.ability.extra.rounds - 1 - level_extra(card);
     if (card.ability.extra.rounds <= 0) ret = { message: poke_evolve(card, forced_key) };
-    else card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('poke_evolve_level') });
+    else { level_msg(); for (let i = level_extra(card); i > 0; i--) level_msg(); }
   } else if (can_evolve(self, card, context, forced_key, null, true)) {
     // Everstone: still counts down, never evolves.
     if (card.ability.extra.rounds > 0) {
-      card.ability.extra.rounds = card.ability.extra.rounds - 1;
-      card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('poke_evolve_level') });
+      card.ability.extra.rounds = card.ability.extra.rounds - 1 - level_extra(card);
+      level_msg(); for (let i = level_extra(card); i > 0; i--) level_msg();
     }
   }
   if (ret) return ret;
@@ -98,10 +107,11 @@ export function scaling_evo(self, card, context, forced_key, current, target, ev
 
 /** Evolve at end of round when the card carries the type_req Tera sticker. */
 export function type_evo(self, card, context, forced_key, type_req) {
-  if (can_evolve(self, card, context, forced_key) && card.ability[type_req + '_sticker']) return { message: poke_evolve(card, forced_key) };
-  if (can_evolve(self, card, context, forced_key, true) && card.ability[type_req + '_sticker'] && !card.ability.extra.juiced) {
+  // (wildcard_type: an add-on's every-type Tera sticker — Nacho's Stellar — satisfies any type_req.)
+  if (can_evolve(self, card, context, forced_key) && (wildcard_type(card) || card.ability[type_req + '_sticker'])) return { message: poke_evolve(card, forced_key) };
+  if (can_evolve(self, card, context, forced_key, true) && (wildcard_type(card) || card.ability[type_req + '_sticker']) && !card.ability.extra.juiced) {
     card.ability.extra.juiced = true;
-    juice_card_until(card, (c) => c.ability[type_req + '_sticker'] && !c.removed, true);
+    juice_card_until(card, (c) => (wildcard_type(c) || c.ability[type_req + '_sticker']) && !c.removed, true);
   }
   return undefined;
 }
@@ -160,6 +170,7 @@ export function copy_scaled_values(card) {
  */
 export function poke_evolve(card, to_key, immediate, evolve_message, transformation) {
   if (G.GAME.modifiers.apply_randomizer && !transformation) to_key = get_random_poke_key('randomizer');
+  for (const f of EVOLVE_INTERCEPTS) if (f.immediate && f.immediate(card, to_key)) immediate = true;
   if (immediate) { poke_backend_evolve(card, to_key); return undefined; }
   G.E_MANAGER.add_event(() => {
     if (card.evolution_timer || P_CENTERS[to_key] === card.config.center || card.removed) return;
@@ -176,7 +187,27 @@ export function poke_evolve(card, to_key, immediate, evolve_message, transformat
 
 const NAMES_TO_KEEP = ['targets', 'rank', 'id', 'cards_scored', 'upgrade', 'hazards_drawn', 'energy_count', 'c_energy_count', 'form', 'jack_target', 'jacks_discarded'];
 
+/**
+ * Add-on extension points (additive; empty = Pokermon unchanged), mirroring the lovely patches
+ * add-ons put on poke_backend_evolve:
+ *   EVO_KEEP      extra ability.extra names carried through every evolution, restored even when
+ *                 the new center doesn't have them (like energy_count). Pokermon+: 'energy_plus'.
+ *   POST_EVOLVE   fn(card, from_key, to_key) after the kept / custom values are restored (the
+ *                 spot before `if new_card.soul_pos`). Pokermon+: re-apply the Weakened sticker.
+ */
+export const EVO_KEEP = [];
+export const POST_EVOLVE = [];
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): {immediate(card, to_key),
+ * backend(card, to_key)} — `immediate` true makes poke_evolve swap at once (no event);
+ * `backend` true means the add-on handled the "evolution" itself and the swap is skipped.
+ * Nacho's Passimian RECEIVES the evolved ability instead of evolving (its lovely patches on
+ * poke_evolve / poke_backend_evolve).
+ */
+export const EVOLVE_INTERCEPTS = [];
+
 export function poke_backend_evolve(card, to_key) {
+  for (const f of EVOLVE_INTERCEPTS) if (f.backend && f.backend(card, to_key)) return;
   const custom_values_to_keep = {};
   let has_custom = false;
   const new_card = P_CENTERS[to_key];
@@ -192,7 +223,7 @@ export function poke_backend_evolve(card, to_key) {
     card.ability.perish_tally = G.GAME.perishable_rounds;
     card.debuff = false;
   }
-  const names = NAMES_TO_KEEP.slice();
+  const names = NAMES_TO_KEEP.concat(EVO_KEEP);
   if (type_sticker_applied(card)) names.push('ptype');
   const values_to_keep = copy_scaled_values(card);
   if (isTable(card.ability.extra)) for (const k of names) values_to_keep[k] = card.ability.extra[k];
@@ -214,7 +245,7 @@ export function poke_backend_evolve(card, to_key) {
   const ex = card.ability.extra;
   if (isTable(ex)) {
     for (const [k, v] of Object.entries(values_to_keep)) {
-      if (lt(ex[k]) || k === 'energy_count' || k === 'c_energy_count') {
+      if (lt(ex[k]) || k === 'energy_count' || k === 'c_energy_count' || EVO_KEEP.includes(k)) {
         if (typeof ex[k] !== 'number' || (typeof v === 'number' && v > ex[k]) || k === 'form' || k === 'jack_target') {
           if (v === undefined || v === null) delete ex[k]; else ex[k] = v; // Lua: assigning nil removes the key
         }
@@ -227,6 +258,7 @@ export function poke_backend_evolve(card, to_key) {
     if (lt(ex.energy_count) || lt(ex.c_energy_count)) energize(card, null, true, true);
   }
   if (has_custom) for (const [k, v] of Object.entries(custom_values_to_keep)) card.ability.extra[k] = v;
+  for (const f of POST_EVOLVE) f(card, old_key, to_key);
   if (card.edition && card.edition.poke_shiny) play_sound('poke_e_shiny', 1, 0.2);
   card.juice_up();
   // SMODS PR #611 workaround: forget used_jokers keys no card holds any more.

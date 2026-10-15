@@ -19,7 +19,7 @@
 import { G, card_eval_status_text, localize, play_sound, pseudorandom, pseudoseed, ease_dollars } from '../../../js/engine/core.js';
 import DATA from '../data.js';
 import { cfg, set_spoon_item } from './utils.js';
-import { has_type, type_sticker_applied, set_energy_max } from './types.js';
+import { has_type, type_sticker_applied, set_energy_max, energy_limit_bonus, wildcard_type } from './types.js';
 
 export const energy_values = DATA.globals.energy_values;
 export const energy_max = DATA.globals.energy_max;
@@ -34,6 +34,7 @@ export function energy_matches(card, etype, include_colorless) {
   const a = card.ability;
   if (a && isTable(a.extra)) {
     if (has_type(card) && (etype === 'Trans' || etype === 'Bird')) return true;
+    if (wildcard_type(card)) return true; // add-on wildcard Tera type (Nacho's Stellar) matches every Energy
     if ((a.extra.ptype && etype && a.extra.ptype === etype && !type_sticker_applied(card)) || a[String(etype).toLowerCase() + '_sticker']) return true;
     if (etype === 'Colorless' && (a.extra.ptype || type_sticker_applied(card)) && include_colorless) return true;
   } else if (a && (typeof a.extra === 'number' || plainScoring(a))) {
@@ -50,7 +51,7 @@ export function get_total_energy(card) {
 
 export function can_increase_energy(card, etype) {
   if (cfg('unlimited_energy') || card.config.center.no_energy_limit || etype === 'Bird') return true;
-  return get_total_energy(card) < energy_max + (G.GAME.energy_plus || 0);
+  return get_total_energy(card) < energy_max + (G.GAME.energy_plus || 0) + energy_limit_bonus(card);
 }
 
 /** -> [rounded, frac] (frac undefined when nothing to carry). */
@@ -105,10 +106,18 @@ const VANILLA = {
  * energize(card, etype, evolving, silent): apply the card's energy to its scoring fields.
  * evolving=true re-applies ALL stored energy to a freshly evolved center's base values.
  */
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): fn(card) -> the config.extra
+ * table energize scales from instead of the center's own, or undefined (Nacho's Passimian
+ * scales its RECEIVED card's base values — its lovely patch on energize()).
+ */
+export const ENERGIZE_BASE = [];
+
 export function energize(card, etype, evolving, silent) {
   const ex = card.ability.extra;
   if (isTable(ex)) {
-    const base = card.config.center.config.extra || {};
+    let base = card.config.center.config.extra || {};
+    for (const f of ENERGIZE_BASE) { const b = f(card); if (b !== undefined) { base = b || {}; break; } }
     for (const name of ENERGY_FIELDS) {
       const data = ex[name];
       if (typeof data !== 'number') continue;
@@ -175,8 +184,23 @@ export function energy_increase(card, etype) {
   if (can_increase_energy(card)) increment_energy(card, etype);
 }
 
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged), mirroring the lovely patches
+ * Pokermon+ puts at the top of the four energy functions: each entry is
+ * fn(kind, self, card, area, copier) -> undefined (no opinion) or {value} (replace the function's
+ * result). kind = 'energy_can_use' | 'highlighted_energy_can_use' | 'energy_use' | 'highlighted_energy_use'.
+ * Pokermon+'s Void deck routes negative Energy cards through its own versions this way.
+ */
+export const ENERGY_OVERRIDES = [];
+function energy_override(kind, self, card, area, copier) {
+  for (const f of ENERGY_OVERRIDES) { const r = f(kind, self, card, area, copier); if (r !== undefined) return r; }
+  return undefined;
+}
+
 /** The first joker (left to right) this Energy can go on, or false. */
 export function energy_can_use(self, card) {
+  const ov = ENERGY_OVERRIDES.length ? energy_override('energy_can_use', self, card) : undefined;
+  if (ov) return ov.value;
   for (const v of G.jokers.cards) {
     if (!energy_matches(v, self.etype, true)) continue;
     if (isTable(v.ability.extra)) { if (can_increase_energy(v, self.etype) && hasEnergyField(v.ability.extra)) return v; }
@@ -187,6 +211,8 @@ export function energy_can_use(self, card) {
 }
 
 export function highlighted_energy_can_use(self, card) {
+  const ov = ENERGY_OVERRIDES.length ? energy_override('highlighted_energy_can_use', self, card) : undefined;
+  if (ov) return ov.value;
   if (!G.jokers.highlighted || G.jokers.highlighted.length !== 1) return false;
   const choice = G.jokers.highlighted[0];
   if (energy_matches(choice, self.etype, true)) {
@@ -200,7 +226,9 @@ export function highlighted_energy_can_use(self, card) {
 function count_energy_used() { G.GAME.energies_used = (G.GAME.energies_used || 0) + 1; }
 
 /** Use: energize the first matching joker. */
-export function energy_use(self, card) {
+export function energy_use(self, card, area, copier) {
+  const ov = ENERGY_OVERRIDES.length ? energy_override('energy_use', self, card, area, copier) : undefined;
+  if (ov) return ov.value;
   let applied = false;
   count_energy_used();
   play_sound('poke_energy_use', 1, 0.5);
@@ -215,7 +243,9 @@ export function energy_use(self, card) {
 }
 
 /** Use on the one highlighted joker. */
-export function highlighted_energy_use(self, card) {
+export function highlighted_energy_use(self, card, area, copier) {
+  const ov = ENERGY_OVERRIDES.length ? energy_override('highlighted_energy_use', self, card, area, copier) : undefined;
+  if (ov) return ov.value;
   if (!G.jokers.highlighted || G.jokers.highlighted.length !== 1) return false;
   const choice = G.jokers.highlighted[0];
   count_energy_used();
@@ -230,6 +260,7 @@ export function highlighted_energy_use(self, card) {
 
 /** The Energy card key matching a joker's type (Tera sticker wins). */
 export function matching_energy(card, allow_bird) {
+  if (wildcard_type(card)) return undefined; // add-on wildcard type (Nacho's Stellar): no "Stellar Energy"
   const ex = card.ability.extra;
   if (isTable(ex) && ex.ptype && (ex.ptype !== 'Bird' || allow_bird) && !type_sticker_applied(card)) {
     const t = ex.ptype.toLowerCase();
