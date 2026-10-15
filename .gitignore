@@ -22,3 +22,4 @@ overworld/tests/.gate-progress.json
 
 # Micatro mod art/audio: deployed to its own Pages project (magepunk-micatromods), see Plans/MICATRO_MODS_PLAN.md
 micatro/mods/*/assets/
+.micatromods/

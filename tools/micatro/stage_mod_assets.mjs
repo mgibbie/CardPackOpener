@@ -18,3 +18,12 @@ for (const id of fs.readdirSync(SRC)) {
 }
 fs.writeFileSync(path.join(OUT, '_headers'), '/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=86400\n');
 console.log(`staged ${files} files into ${OUT}`);
+// Each mod needs its own redirect line (Cloudflare won't match `:mod` + `*` in one rule).
+const redirects = fs.readFileSync('_redirects', 'utf8');
+for (const id of fs.readdirSync(OUT)) {
+  if (id.startsWith('_')) continue;
+  if (!redirects.includes(`/micatro/mods/${id}/assets/* https://magepunk-micatromods.pages.dev/${id}/assets/:splat 301`)) {
+    console.warn(`WARNING: _redirects has no art rule for mod '${id}' — add:
+  /micatro/mods/${id}/assets/* https://magepunk-micatromods.pages.dev/${id}/assets/:splat 301`);
+  }
+}
