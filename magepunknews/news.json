@@ -1,6 +1,258 @@
 {
-	"generated": "2026-10-12",
+	"generated": "2026-10-15",
+	"micatroAtlas": {
+		"Joker": {
+			"src": "/micatro/assets/textures/Jokers.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1420,
+			"h": 3040
+		},
+		"Tarot": {
+			"src": "/micatro/assets/textures/Tarots.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1420,
+			"h": 1140
+		},
+		"Planet": {
+			"src": "/micatro/assets/textures/Tarots.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1420,
+			"h": 1140
+		},
+		"Spectral": {
+			"src": "/micatro/assets/textures/Tarots.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1420,
+			"h": 1140
+		},
+		"Voucher": {
+			"src": "/micatro/assets/textures/Vouchers.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1278,
+			"h": 760
+		},
+		"Booster": {
+			"src": "/micatro/assets/textures/boosters.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 568,
+			"h": 1710
+		},
+		"Deck": {
+			"src": "/micatro/assets/textures/Enhancers.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 994,
+			"h": 950
+		},
+		"Tag": {
+			"src": "/micatro/assets/textures/tags.png",
+			"cw": 68,
+			"ch": 68,
+			"w": 408,
+			"h": 340
+		},
+		"Boss Blind": {
+			"src": "/micatro/assets/textures/BlindChips.png",
+			"cw": 68,
+			"ch": 68,
+			"w": 1428,
+			"h": 2108
+		}
+	},
 	"entries": [
+		{
+			"sha": "d9f83a5",
+			"date": "2026-10-15",
+			"kind": "micatro",
+			"title": "Micatro: Balatro clone in plain JS — spectating, leaderboard, controller, wiki, news",
+			"body": "",
+			"cards": [],
+			"micatroLaunch": {
+				"Deck": 15,
+				"Spectral": 18,
+				"Planet": 12,
+				"Tarot": 22,
+				"Joker": 150,
+				"Booster": 32,
+				"Voucher": 32,
+				"Boss Blind": 28,
+				"Tag": 24
+			}
+		},
+		{
+			"sha": "1333910",
+			"date": "2026-10-15",
+			"kind": "patch",
+			"title": "Radio POKé FLUTE station plays Crystal's real Poké Flute channel music",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d741b89",
+			"date": "2026-10-15",
+			"kind": "patch",
+			"title": "Mt. Silver (VAR_BADGES + Crystal NUM_BADGES), Vermilion Snorlax (SnorlaxAwake + Poké Flute radio), Dream Eater, CUT, /pokemon redirect",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "fa35ff0",
+			"date": "2026-10-14",
+			"kind": "patch",
+			"title": "Lorequest & Multiverse: first simulation balance pass, plus two freeze bugs",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6e6daaa",
+			"date": "2026-10-14",
+			"kind": "patch",
+			"title": "Middle-earth: buff Gríma, the Master of Lake-town and the Mouth of Sauron a bit more",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6bcea28",
+			"date": "2026-10-14",
+			"kind": "patch",
+			"title": "Lorequest: buff the easy enemies and Final Fantasy's final bosses",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1db327b",
+			"date": "2026-10-14",
+			"kind": "patch",
+			"title": "Simulator: answer stack priority like the game does (AI.chooseResponse)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "840fa87",
+			"date": "2026-10-14",
+			"kind": "patch",
+			"title": "Crystal temp event flags clear per map (S.S. Aqua); story overlays retry and heal on a failed load (Farfetch'd)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6fd66b9",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Bug batch 10-13: Johto E4 doors, S.S. Aqua sailor, party-menu taps, Center PCs, underwater movement, Emerald elevation",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9acdd76",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Buff the three easiest first-group enemies: Shagrat, Bill Ferny, Ultros",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3d5e490",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Middle-earth & Sword Coast: no flavour-only cards",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d6380f9",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Middle-earth: Bill Ferny's Coin loop froze the game; AI turns now capped",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "fd14366",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Middle-earth: simulation balance pass across all rungs",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f6bfee1",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Final Fantasy: simulation balance pass across all rungs",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9c071f8",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Sword Coast: nerf the later-rung outliers (from the AI-vs-AI simulation)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "48868a2",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Sword Coast: nerf seven Rung A enemies (from an AI-vs-AI simulation)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6abff7b",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Final Fantasy: nerf the Henchmen, buff Yuna, no flavour-only cards",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cf7529b",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Runs: a run that has ended stays ended (no fights past the third loss)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2592257",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Middle-earth: buff Gandalf, Legolas and Gimli",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4835e09",
+			"date": "2026-10-13",
+			"kind": "patch",
+			"title": "Middle-earth: nerf Lotho and Bill Ferny",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "64c4cb7",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "Champion wins via the decomp League path are crowned; the Hall of Fame closes the run; unrecorded wins self-heal",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8d4438a",
+			"date": "2026-10-12",
+			"kind": "patch",
+			"title": "Middle-earth: nerf Grishnákh and The Chief Warg",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "6a0cb91",
 			"date": "2026-10-12",
