@@ -19,3 +19,6 @@ tools/data/sprite_audit.json
 # per-suite timings + flake counts for overworld/tests/run-all.mjs
 overworld/tests/.gate-history.json
 overworld/tests/.gate-progress.json
+
+# Micatro mod art/audio: deployed to its own Pages project (magepunk-micatromods), see Plans/MICATRO_MODS_PLAN.md
+micatro/mods/*/assets/
