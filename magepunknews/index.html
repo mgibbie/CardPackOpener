@@ -70,6 +70,23 @@
 		}
 		article.cards { border-left: 3px solid var(--gold); }
 		article.patch { border-left: 3px solid var(--violet); }
+		article.micatro { border-left: 3px solid #fe5f55; }
+		.badge.micatro { background: rgba(254,95,85,0.14); color: #ff8a80; border: 1px solid #8a3a33; }
+		/* Micatro chips: a thumbnail cut from the game's sprite atlas */
+		.mc-chip { padding: 3px 10px 3px 4px; }
+		.mc-thumb { width: 28px; height: 38px; flex: none; border-radius: 3px; background-repeat: no-repeat; image-rendering: pixelated; position: relative; }
+		.mc-thumb.sq { width: 30px; height: 30px; }
+		.mc-thumb .soul, #mc-tip .big .soul { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: pixelated; }
+		.mc-launch { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+		.mc-launch span { background: #241b38; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 0.88rem; }
+		.mc-launch b { color: #ff8a80; }
+		#mc-tip { position: fixed; display: none; z-index: 9; pointer-events: none; max-width: 260px;
+			background: rgba(22,16,36,0.96); border: 1px solid #fe5f55; border-radius: 12px; padding: 10px; box-shadow: 0 6px 22px rgba(0,0,0,0.6); font-size: 0.88rem; }
+		#mc-tip .big { width: 142px; height: 190px; margin: 0 auto 8px; background-repeat: no-repeat; image-rendering: pixelated; position: relative; }
+		#mc-tip .big.sq { width: 68px; height: 68px; }
+		#mc-tip h4 { margin: 0 0 4px; text-align: center; }
+		#mc-tip .set { text-align: center; color: var(--muted); font-size: 0.78rem; margin-bottom: 6px; }
+		#mc-tip p { margin: 2px 0; text-align: center; }
 		.entry-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 		.badge {
 			font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
@@ -134,11 +151,12 @@
 
 <header>
 	<h1>MAGEPUNK NEWS</h1>
-	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards, straight from the game's development history.</p>
+	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards and Micatro, straight from the games' development history.</p>
 	<div class="cta-row">
 		<a class="cta primary" href="/battlecards/">&#9654; Play Battlecards</a>
 		<a class="cta" href="/learnmagepunk/">Learn to Play</a>
 		<a class="cta" href="/designwiki/#/cards">Card Gallery</a>
+		<a class="cta" href="/micatro/">&#9654; Play Micatro</a>
 	</div>
 </header>
 
@@ -146,12 +164,14 @@
 	<div class="filters" id="filters">
 		<button data-f="all" class="on">All</button>
 		<button data-f="cards">&#127183; Card Releases</button>
+		<button data-f="micatro">&#127183; Micatro</button>
 		<button data-f="patch">&#128736; Patch Notes</button>
 	</div>
 	<div id="feed"><p class="loading">Loading news&hellip;</p></div>
 </main>
 
 <div id="card-tip"><img alt=""></div>
+<div id="mc-tip"></div>
 
 <footer>
 	<p><b style="color:var(--gold)">Magepunk</b> &mdash; <a href="/battlecards/">Play Battlecards</a> &middot; <a href="/learnmagepunk/">Learn to Play</a> &middot; <a href="/designwiki/">Design Wiki</a> &middot; <a href="/">Home</a></p>
@@ -163,7 +183,8 @@ const feed = document.getElementById('feed');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmtDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-let entries = [], filter = 'all';
+let entries = [], filter = 'all', atlas = {};
+const mcByKey = new Map();
 
 const COLOR_NAMES = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
 function cardChip(c) {
@@ -176,6 +197,26 @@ function cardChip(c) {
 		`<span class="meta">${esc(cls)} ${esc(cap(c.type))}</span></a>`;
 }
 
+// ---- Micatro chips: sprite thumbnail from the game's 2x atlas ----
+const MC_SECTION = { Joker: 'jokers', Tarot: 'consumables', Planet: 'consumables', Spectral: 'consumables', Voucher: 'vouchers', Booster: 'boosters', Deck: 'decks', Tag: 'tags', 'Boss Blind': 'blinds' };
+const isSq = c => c.set === 'Tag' || c.set === 'Boss Blind';
+function spriteStyle(set, pos, w) {
+	const a = atlas[set]; if (!a || !pos) return '';
+	const k = w / a.cw;
+	return `background-image:url('${a.src}');background-size:${a.w * k}px ${a.h * k}px;background-position:${-pos.x * a.cw * k}px ${-pos.y * a.ch * k}px;`;
+}
+function mcSprite(c, w, cls) {
+	const soul = c.soul ? `<span class="soul" style="${spriteStyle(c.set, c.soul, w)}"></span>` : '';
+	return `<span class="${cls}${isSq(c) ? ' sq' : ''}" style="${spriteStyle(c.set, c.pos, w)}">${soul}</span>`;
+}
+function mcChip(c) {
+	return `<a class="card-chip mc-chip" data-mc="${esc(c.key)}" href="/designwiki/#/micatro/${MC_SECTION[c.set] || ''}">` +
+		mcSprite(c, isSq(c) ? 30 : 28, 'mc-thumb') +
+		`<span class="${c.rarity ? 'r-' + esc(c.rarity) : ''}">${esc(c.name)}</span>` +
+		`<span class="meta">${esc(c.rarity ? cap(c.rarity) + ' ' : '')}${esc(c.set)}</span></a>`;
+}
+const PLURAL = { Joker: 'Jokers', Tarot: 'Tarots', Planet: 'Planets', Spectral: 'Spectrals', Voucher: 'Vouchers', Booster: 'Booster Packs', Deck: 'Decks', Tag: 'Tags', 'Boss Blind': 'Boss Blinds' };
+
 function render() {
 	const shown = entries.filter(e => filter === 'all' || e.kind === filter);
 	if (!shown.length) { feed.innerHTML = '<p class="empty">Nothing here yet.</p>'; return; }
@@ -186,13 +227,18 @@ function render() {
 			day = e.date;
 			html += `<div class="day"><h2>${esc(fmtDate(day))}</h2>`;
 		}
+		const mcN = (e.micatro || []).length;
 		const badge = e.kind === 'cards'
 			? `&#127183; ${e.cards.length} new card${e.cards.length === 1 ? '' : 's'}`
-			: '&#128736; Patch';
+			: e.kind === 'micatro'
+				? (e.micatroLaunch ? '&#127183; Micatro launch' : `&#127183; ${mcN} new Micatro card${mcN === 1 ? '' : 's'}`)
+				: '&#128736; Patch';
 		html += `<article class="${e.kind}">` +
 			`<div class="entry-head"><span class="badge ${e.kind}">${badge}</span>` +
 			`<span class="entry-title">${esc(e.title)}</span></div>`;
 		if (e.cards && e.cards.length) html += `<div class="card-row">${e.cards.map(cardChip).join('')}</div>`;
+		if (e.micatroLaunch) html += `<div class="mc-launch">${Object.entries(e.micatroLaunch).map(([k, n]) => `<span><b>${n}</b> ${esc(n === 1 ? k : (PLURAL[k] || k))}</span>`).join('')}<span><a href="/micatro/">&#9654; Play</a> &middot; <a href="/designwiki/#/micatro">Design wiki</a></span></div>`;
+		if (mcN) { e.micatro.forEach(c => mcByKey.set(c.key, c)); html += `<div class="card-row">${e.micatro.map(mcChip).join('')}</div>`; }
 		if (e.body) html += `<details class="body-toggle"><summary>Details</summary><div class="body">${esc(e.body)}</div></details>`;
 		html += '</article>';
 	}
@@ -209,6 +255,7 @@ document.getElementById('filters').addEventListener('click', ev => {
 
 fetch('news.json?v=' + Date.now()).then(r => r.json()).then(data => {
 	entries = data.entries || [];
+	atlas = data.micatroAtlas || {};
 	document.getElementById('stamp').textContent = 'Last updated ' + fmtDate(data.generated) + ' · generated from the game’s commit history.';
 	render();
 }).catch(() => { feed.innerHTML = '<p class="empty">Couldn’t load the news feed.</p>'; });
@@ -248,8 +295,34 @@ function placeTip(chip) {
 	tip.style.visibility = '';
 }
 
+// ---- Micatro hover: big sprite + the card's text from the design wiki data ----
+const mcTip = document.getElementById('mc-tip');
+let mcTextPromise = null;
+const mcText = () => mcTextPromise ||= fetch('/designwiki/data/micatro.json').then(r => r.json()).then(d => {
+	const m = new Map();
+	for (const v of Object.values(d)) if (Array.isArray(v)) for (const x of v) if (x && x.key) m.set(x.key, x);
+	return m;
+}).catch(() => new Map());
+const plain = s => String(s).replace(/\{[^}]*\}/g, '');
 feed.addEventListener('mouseover', async ev => {
-	const chip = ev.target.closest('a.card-chip'); if (!chip) return;
+	const chip = ev.target.closest('a.mc-chip'); if (!chip) return;
+	const c = mcByKey.get(chip.dataset.mc); if (!c) return;
+	const info = (await mcText()).get(c.key);
+	const lines = (info && (info.lines || info.text)) || [];
+	mcTip.innerHTML = mcSprite(c, isSq(c) ? 68 : 142, 'big') + `<h4>${esc(c.name)}</h4><div class="set">${esc(c.rarity ? cap(c.rarity) + ' ' : '')}${esc(c.set)}${c.cost != null ? ' &middot; $' + esc(c.cost) : ''}</div>` +
+		(Array.isArray(lines) ? lines : [lines]).map(l => `<p>${esc(plain(l))}</p>`).join('');
+	const r = chip.getBoundingClientRect();
+	mcTip.style.visibility = 'hidden'; mcTip.style.display = 'block';
+	const w = mcTip.offsetWidth, h = mcTip.offsetHeight;
+	let x = r.right + 10; if (x + w > innerWidth - 10) x = Math.max(10, r.left - 10 - w);
+	mcTip.style.left = x + 'px'; mcTip.style.top = Math.min(Math.max(10, r.top + r.height / 2 - h / 2), innerHeight - h - 10) + 'px';
+	mcTip.style.visibility = '';
+});
+feed.addEventListener('mouseout', ev => { if (ev.target.closest('a.mc-chip')) mcTip.style.display = 'none'; });
+addEventListener('scroll', () => { mcTip.style.display = 'none'; }, { passive: true });
+
+feed.addEventListener('mouseover', async ev => {
+	const chip = ev.target.closest('a.card-chip'); if (!chip || chip.classList.contains('mc-chip')) return;
 	const id = decodeURIComponent(chip.getAttribute('href').split('/').pop());
 	hoverId = id;
 	const url = await faceFor(id).catch(() => null);
