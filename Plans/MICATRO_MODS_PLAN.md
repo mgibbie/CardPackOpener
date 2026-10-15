@@ -112,3 +112,15 @@ panel. Gate wrapper `overworld/tests/micatro_engine_test.mjs` picks up `micatro/
    OmertaDeck); a **native deck editor** (Deck Creator's builder, later phase); **big-number scoring**.
 5. **Leaderboard:** vanilla board by default + a **Modded** tab (runs tagged with their mod set).
 6. Broken mods are rebuilt **as their authors intended** (Pokermon+ especially), each fix documented + tested.
+
+## 7. Execution order (owner, 2026-10-15)
+Each step: gate → merge when it passes → next.
+1. M0 framework + M1 Pokermon systems + Mods UI → merge (Pokermon listed as **Preview** until all jokers land).
+2. Pokermon joker batches (parallel agents, one range of `pokejokers_NN` files each), then the rest of
+   Pokermon's content (consumables, packs, vouchers, decks, tags, boss, challenges).
+3. Nacho's Pokermon Dip + Pokermon+ (in parallel; Pokermon+ fixed as intended).
+4. Small mods batch: Risk of Jesters, SylvieSilly (clean copy), Milatro, MikasBalatro, + the old-folder
+   mods (Olympus, Inscrybed, TagTeam, Smirkeo, AltaVista, OmertaDeck).
+5. MoreFluff + BETMMA (in parallel).
+6. Bunco + Reverie (in parallel).
+7. Then: TheAutumnCircus + AutumnMoodMechanics, big-number scoring, native deck editor.
