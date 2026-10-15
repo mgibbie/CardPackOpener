@@ -67,6 +67,9 @@ export class Back {
   /** Returns [chips, mult] for Plasma's final_scoring_step (Lua's two return values), else undefined. */
   trigger_effect(args) {
     if (!args) return undefined;
+    // Steamodded: a mod back's calculate(self, back, context) — the cash-out 'eval' is its round_eval.
+    const mc = this.effect.center;
+    if (mc && mc.mod && mc.calculate && args.context === 'eval') mc.calculate(mc, this, { round_eval: true });
 
     if (this.name === 'Anaglyph Deck' && args.context === 'eval' && G.GAME.last_blind && G.GAME.last_blind.boss) {
       G.E_MANAGER.add_event(() => {
@@ -186,5 +189,8 @@ export class Back {
     if (cfg.extra_discard_bonus !== undefined) {
       G.GAME.modifiers.money_per_discard = cfg.extra_discard_bonus;
     }
+    // Steamodded: a mod back's apply(self, back) runs after the vanilla config effects.
+    const mc = this.effect.center;
+    if (mc && mc.mod && mc.apply) mc.apply(mc, this);
   }
 }

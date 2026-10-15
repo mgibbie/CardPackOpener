@@ -90,6 +90,12 @@ export class Tag {
   }
 
   apply_to_run(_context) {
+    // Steamodded: a mod tag's apply(self, tag, context) sees every context while untriggered.
+    const mt = P_TAGS[this.key];
+    if (!this.triggered && mt && mt.mod && mt.apply) {
+      const res = mt.apply(mt, this, _context);
+      if (res) return res;
+    }
     if (!this.triggered && this.config.type === _context.type) {
       if (_context.type === 'eval') {
         if (this.name === 'Investment Tag' && G.GAME.last_blind && G.GAME.last_blind.boss) {

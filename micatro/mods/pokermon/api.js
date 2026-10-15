@@ -16,6 +16,7 @@ export {
   get_poker_hand_info, evaluate_poker_hand, calculate_context, change_booster_limit, change_shop_size,
   draw_from_deck_to_hand, end_consumeable, STATES,
 } from '../../js/engine/run.js';
+export { change_voucher_limit } from '../../js/engine/run.js';
 export { opt } from '../../js/mods/registry.js';
 
 export * from './defs.js';

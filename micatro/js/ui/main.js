@@ -70,6 +70,7 @@ function modsApi() {
     withRequirements: (ids) => M.withRequirements(ids),
     dependentsOf: (id, ids) => M.dependentsOf(id, ids),
     modName: (id) => M.modName(id),
+    backs: (ids, options) => (M.modBacks ? M.modBacks(ids, options) : []),
   };
 }
 

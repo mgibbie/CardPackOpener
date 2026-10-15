@@ -570,6 +570,7 @@ export function describeTag(tag) {
 // ------------------------------------------------------------------- backs
 /** Back:generate_UI loc_args. */
 export function describeBack(key) {
+  { const mc = P_CENTERS[key]; if (mc && mc.mod) { const d = describe_mod({ ability: ability_from_center(mc), area: null, config: { center: mc }, fake: true }, mc); return { name: d.name, key, set: 'Back', lines: d.lines, mod: mc.mod }; } }
   const c = P_CENTERS[key];
   if (!c || c.set !== 'Back') return undefined;
   const cfg = c.config || {};

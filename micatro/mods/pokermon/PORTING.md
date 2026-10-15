@@ -186,48 +186,11 @@ exact numbers. Run: `node micatro/tests/mods/pokejokers_NN_test.mjs`, then
 
 ## Status
 
-| Lua file | jokers | range | status |
-|---|---|---|---|
-| pokejokers_01.lua | 36 | bulbasaur – nidorina | **ported** |
-| pokejokers_02.lua | 30 | nidoqueen – poliwag | unported |
-| pokejokers_03.lua | 33 | poliwhirl – shellder | unported |
-| pokejokers_04.lua | 32 | cloyster – staryu | unported |
-| pokejokers_05.lua | 36 | starmie – mega_mewtwo_y | unported |
-| pokejokers_06.lua | 30 | mew – flaaffy | unported |
-| pokejokers_07.lua | 33 | ampharos – granbull | unported |
-| pokejokers_08.lua | 33 | qwilfish – magby | unported |
-| pokejokers_09.lua | 25 | miltank – linoone | unported |
-| pokejokers_10.lua | 4 | shroomish – nosepass | unported |
-| pokejokers_11.lua | 6 | aron – mega_camerupt | unported |
-| pokejokers_12.lua | 6 | feebas – wynaut | unported |
-| pokejokers_13.lua | 12 | snorunt – jirachi_fixer | unported (+ jirachi copy / negging, unregistered in 3.2.1) |
-| pokejokers_14.lua | 6 | bidoof – floatzel | unported |
-| pokejokers_15.lua | 12 | ambipom – lucario | unported |
-| pokejokers_16.lua | 24 | mantyke – rotomm | unported |
-| pokejokers_17.lua | 2 | shaymin – shaymin_sky | unported |
-| pokejokers_18.lua | 11 | pansage – excadrill | unported |
-| pokejokers_19.lua | 3 | trubbish – zorua | unported |
-| pokejokers_20.lua | 11 | zoroark – ferrothorn | unported |
-| pokejokers_21.lua | 9 | elgyem – bisharp | unported |
-| pokejokers_22.lua | 3 | deino – hydreigon | unported |
-| pokejokers_23.lua | 2 | litleo – pyroar | unported |
-| pokejokers_24.lua | 3 | sylveon – gourgeist | unported |
-| pokejokers_25.lua | 7 | grubbin – lycanroc_dusk | unported |
-| pokejokers_26.lua | 1 | mimikyu | unported |
-| pokejokers_27.lua | 0 | (empty in 3.2.1) | — |
-| pokejokers_28.lua | 4 | nickit – boltund | unported |
-| pokejokers_29.lua | 0 | (empty in 3.2.1) | — |
-| pokejokers_30.lua | 6 | dreepy – kleavor | unported (+ hisuian_qwilfish / overqwil, unregistered in 3.2.1) |
-| pokejokers_31.lua | 5 | ursaluna – dachsbun | unported |
-| pokejokers_32.lua | 7 | charcadet – wiglett | unported |
-| pokejokers_33.lua | 5 | wugtrio – kingambit | unported |
-| pokejokers_34.lua | 3 | gimmighoul – gholdengo | unported |
-| pokejokers_35.lua | 0 | (empty in 3.2.1) | — |
-| zmissingno.lua | 1 | missingno | unported |
-| zotherjokers.lua | 12 | pokedex – billion_lions | partial: pokedex, everstone |
+**Complete (2026-10-15)** — every Pokermon 3.2.1 content file is ported and tested:
+all 37 joker files (452 jokers + the 4 written-but-unregistered ones: jirachi_copy, jirachi_negging,
+hisuian_qwilfish, overqwil), all 66 consumables (mart1/2/3, martz, berry juices, Rotom machines),
+10 boosters, 4 vouchers, 10 decks, 6 tags, the showdown boss, 2 enhancements, 2 seals, 12 type
+stickers and the shiny edition. One test file per source file in `micatro/tests/mods/`.
 
-Other content (M2): consumables — mart1 partial (Poké Balls, 12 Energies, Double Rainbow,
-Transformation, Megastone), mart2 partial (Moon Stone, Thunder Stone), mart3 / martz / zberryjuice /
-zmachine unported; boosters — 8 Pocket packs ported, Wish / Starter unported; vouchers, backs, tags,
-the Showdown boss (cgoose), seals (pink, silver), enhancements (hazard, flower) and challenges are
-registered from data but unported (never offered). The shiny edition and the 12 Tera stickers are done.
+Not yet: challenges, sleeves, deck skins (plan step 8), and `emergy` (Cryptid-only in the Lua).
+Intended-design fixes are noted in comments at each site (search "intended").

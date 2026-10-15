@@ -6,8 +6,8 @@ import { P_CENTERS } from '../engine/core.js';
 export const AVAILABLE = [
   // { id, name, by, requires: [ids], description?, size?, load: () => import('./<id>/index.js') }
   {
-    id: 'pokermon', name: 'Pokermon', preview: true, size: '~30 MB art', by: 'InertSteak & contributors (rebuilt for Micatro)', requires: [],
-    description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies. PREVIEW: Pokémon are being added in batches; only finished ones appear in runs.',
+    id: 'pokermon', name: 'Pokermon', size: '~30 MB art', by: 'InertSteak & contributors (rebuilt for Micatro)', requires: [],
+    description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies.',
     load: () => import('../../mods/pokermon/index.js'),
   },
 ];
@@ -35,6 +35,23 @@ export { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES };
 
 /** A registered center (mod or base) by key — e.g. a mod deck's art. */
 export const centerByKey = (key) => P_CENTERS[key] || null;
+/**
+ * Decks the given (loaded) mods add, for the New Run picker — honouring a deck's required mod
+ * option (`mod_option` / Pokermon's `poke_option`, e.g. its legacy decks).
+ */
+export function modBacks(ids, options = {}) {
+  const on = new Set(withRequirements(ids || []));
+  return Object.values(P_CENTERS)
+    .filter((c) => c.set === 'Back' && c.mod && on.has(c.mod) && !c.unported)
+    .filter((c) => {
+      const need = c.mod_option || c.poke_option;
+      if (!need) return true;
+      const o = options[c.mod] || {};
+      const def = (MODS[c.mod] && MODS[c.mod].options && MODS[c.mod].options[need]) ? MODS[c.mod].options[need].default : false;
+      return !!(o[need] !== undefined ? o[need] : def);
+    })
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
 
 /** The manifest entry for a mod id (or null). */
 export const manifest = (id) => AVAILABLE.find((m) => m.id === id) || null;

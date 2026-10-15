@@ -136,6 +136,36 @@ export function pseudorandom(seed, min, max) {
   if (min !== undefined && max !== undefined) return rint(r, min, max);
   return r();
 }
+/**
+ * SMODS.get_probability_vars(trigger_obj, num, den, identifier) -> [numerator, denominator]: every mod
+ * card's `mod_probability` context (each sees the running numerator/denominator and may return new
+ * ones — Pokermon's Venonat), then Oops! All 6s (G.GAME.probabilities.normal), then `fix_probability`.
+ */
+export function probability_vars(trigger_obj, base_numerator, base_denominator, identifier, from_roll) {
+  let numerator = base_numerator, denominator = base_denominator;
+  const pass = (key) => {
+    for (const area of [G.jokers, G.consumeables]) {
+      if (!area) continue;
+      for (const c of area.cards.slice()) {
+        if (!c.config.center.mod || !c.config.center.calculate) continue;
+        const r = c.calculate_joker({ [key]: true, from_roll, trigger_obj, identifier, numerator, denominator });
+        if (r && typeof r === 'object') {
+          if (r.numerator !== undefined) numerator = r.numerator;
+          if (r.denominator !== undefined) denominator = r.denominator;
+        }
+      }
+    }
+  };
+  pass('mod_probability');
+  numerator = numerator * (G.GAME && G.GAME.probabilities ? G.GAME.probabilities.normal : 1); // (Lua: 0 is truthy)
+  pass('fix_probability');
+  return [numerator, denominator];
+}
+/** SMODS.pseudorandom_probability(trigger_obj, seed, num, den, identifier): the listed-probability roll. */
+export function probability_roll(trigger_obj, seed, base_numerator, base_denominator, identifier) {
+  const [numerator, denominator] = probability_vars(trigger_obj, base_numerator, base_denominator, identifier || seed, true);
+  return pseudorandom(seed) < numerator / denominator;
+}
 /** Unkeyed math.random() calls in Balatro's logic, made deterministic. */
 export function math_random(min, max) {
   const r = seeded(pseudoseed('__math_random'));
@@ -424,6 +454,9 @@ export class Card {
       extra_value: 0, type: c.type || '', order: center.order,
       forced_selection: prev ? prev.forced_selection : undefined,
       perma_bonus: prev ? prev.perma_bonus || 0 : 0,
+      // SMODS perma_mult / perma_x_mult (Houndour, Tyranitar) persist like perma_bonus.
+      perma_mult: prev && prev.perma_mult ? prev.perma_mult : undefined,
+      perma_x_mult: prev && prev.perma_x_mult ? prev.perma_x_mult : undefined,
     };
     this.ability.bonus = ((prev && prev.bonus) || 0) + (c.bonus || 0);
     if (center.consumeable) this.ability.consumeable = c;
@@ -501,6 +534,8 @@ export class Card {
       this.set_cost();
       return;
     }
+    // SMODS: a base edition may also come as its key ('e_foil').
+    if (typeof edition === 'string') edition = { [ek.slice(2)]: true };
     if (edition.holo) this.edition = { mult: E.e_holo.config.extra, holo: true, type: 'holo' };
     else if (edition.foil) this.edition = { chips: E.e_foil.config.extra, foil: true, type: 'foil' };
     else if (edition.polychrome) this.edition = { x_mult: E.e_polychrome.config.extra, polychrome: true, type: 'polychrome' };
@@ -541,6 +576,15 @@ export class Card {
         return;
       }
       if (res === true) should_debuff = true;
+    }
+    // Steamodded SMODS.debuff_card(card, debuff, source) sources (ability.debuff_sources):
+    // a 'prevent_debuff' source wins outright, any other truthy source debuffs.
+    for (const v of Object.values(this.ability.debuff_sources || {})) {
+      if (v === 'prevent_debuff') {
+        if (this.debuff) { this.debuff = false; if (this.area === G.jokers) this.add_to_deck(true); emit('card_changed', { card: this.sort_id }); }
+        return;
+      }
+      if (v) should_debuff = true;
     }
     if (this.ability.perishable && this.ability.perish_tally <= 0) {
       if (!this.debuff) { this.debuff = true; if (this.area === G.jokers) this.remove_from_deck(true); emit('card_changed', { card: this.sort_id }); }
@@ -623,6 +667,7 @@ export class Card {
   }
   get_id() {
     if (this.ability.effect === 'Stone Card' && !this.vampired) return -(100 + this.sort_id * 7919); // never matches a rank
+    if (this.config.center.no_rank && !this.vampired) return -(100 + this.sort_id * 7919); // SMODS no_rank enhancement
     return this.base.id;
   }
   is_face(from_boss) {
@@ -635,7 +680,7 @@ export class Card {
   get_original_rank() { return this.base.original_value; }
   get_chip_bonus() {
     if (this.debuff) return 0;
-    if (this.ability.effect === 'Stone Card') return this.ability.bonus + (this.ability.perma_bonus || 0);
+    if (this.ability.effect === 'Stone Card' || this.config.center.replace_base_card) return this.ability.bonus + (this.ability.perma_bonus || 0);
     // Pokermon (lovely: Misdreavus): ability.nominal_drain lowers the rank's chips (never below 1).
     if (this.ability.nominal_drain) {
       this.ability.nominal_drain = Math.min(this.ability.nominal_drain, this.base.nominal - 1);
@@ -647,15 +692,22 @@ export class Card {
   get_chip_mult() {
     if (this.debuff) return 0;
     if (this.ability.set === 'Joker') return 0;
+    // SMODS: + ability.perma_mult (absent in the base game).
+    const perma = this.ability.perma_mult || 0;
     if (this.ability.effect === 'Lucky Card') {
-      if (pseudorandom('lucky_mult') < G.GAME.probabilities.normal / 5) { this.lucky_trigger = true; return this.ability.mult; }
-      return 0;
+      if (probability_roll(this, 'lucky_mult', 1, 5)) { this.lucky_trigger = true; return perma + this.ability.mult; }
+      return perma;
     }
-    return this.ability.mult;
+    return perma + this.ability.mult;
   }
   get_chip_x_mult() {
     if (this.debuff) return 0;
     if (this.ability.set === 'Joker') return 0;
+    // SMODS.multiplicative_stacking(x_mult, perma_x_mult) = x_mult * (1 + perma_x_mult); 1 -> 0 (no effect).
+    if (this.ability.perma_x_mult) {
+      const ret = (this.ability.x_mult || 1) * (this.ability.perma_x_mult + 1);
+      return ret === 1 ? 0 : ret > 0 ? ret : 0;
+    }
     if (this.ability.x_mult <= 1) return 0;
     return this.ability.x_mult;
   }
@@ -701,7 +753,7 @@ export class Card {
     if (this.seal === 'Gold') ret += 3;
     if (this.ability.p_dollars > 0) {
       if (this.ability.effect === 'Lucky Card') {
-        if (pseudorandom('lucky_money') < G.GAME.probabilities.normal / 15) { this.lucky_trigger = true; ret += this.ability.p_dollars; }
+        if (probability_roll(this, 'lucky_money', 1, 15)) { this.lucky_trigger = true; ret += this.ability.p_dollars; }
       } else ret += this.ability.p_dollars;
     }
     if (ret > 0) {
@@ -734,15 +786,17 @@ export class Card {
     }
   }
   is_suit(suit, bypass_debuff, flush_calc) {
+    if (this.config.center.no_suit) return false; // SMODS no_suit enhancement
     if (flush_calc) {
       if (this.ability.effect === 'Stone Card') return false;
-      if (this.ability.name === 'Wild Card' && !this.debuff) return true;
+      if ((this.ability.name === 'Wild Card' || (ACTIVE_MODS.length && quantum_enhancements(this).includes('m_wild'))) && !this.debuff) return true;
       if (find_joker('Smeared Joker').length && (this.base.suit === 'Hearts' || this.base.suit === 'Diamonds') === (suit === 'Hearts' || suit === 'Diamonds')) return true;
       return this.base.suit === suit;
     }
     if (this.debuff && !bypass_debuff) return false;
     if (this.ability.effect === 'Stone Card') return false;
-    if (this.ability.name === 'Wild Card') return true;
+    // (+ Steamodded quantum Wild: e.g. Pokermon's Shaymin Sky makes Flower cards Wild too)
+    if (this.ability.name === 'Wild Card' || (ACTIVE_MODS.length && quantum_enhancements(this).includes('m_wild'))) return true;
     if (find_joker('Smeared Joker').length && (this.base.suit === 'Hearts' || this.base.suit === 'Diamonds') === (suit === 'Hearts' || suit === 'Diamonds')) return true;
     return this.base.suit === suit;
   }
@@ -833,6 +887,14 @@ export function ease_dollars(mod, instant) {
     if (mod > 0) G.GAME.stats.dollars_earned = (G.GAME.stats.dollars_earned || 0) + mod;
     emit('dollars', { mod, total: G.GAME.dollars });
     play_sound(mod < 0 ? 'coin2' : 'coin1');
+    // Steamodded center update(dt) runs every frame in Lua, so a joker watching the money
+    // (Pokermon's Gimmighoul) sees each change on its own: run mod jokers' update() now.
+    if (ACTIVE_MODS.length && mod) {
+      for (const c of all_cards()) {
+        const mc = c.config.center;
+        if (mc.mod && mc.update && c.ability.set === 'Joker') mc.update(mc, c);
+      }
+    }
   };
   if (instant) _mod(); else G.E_MANAGER.add_event(_mod);
 }
@@ -912,12 +974,41 @@ export function level_up_hand(card, hand, instant, amount) {
   emit('level_up', { hand, level: h.level, chips: h.chips, mult: h.mult, card: card && card.sort_id, instant: !!instant });
 }
 
+/**
+ * Steamodded: a playing card's MOD enhancement and MOD seal `calculate(self, card, context)`
+ * (skipped while debuffed) -> {enhancement, seal} results, or undefined.
+ */
+export function mod_card_calculate(card, context) {
+  if (card.debuff || card.ability.set === 'Joker') return undefined;
+  let out;
+  const ec = card.config.center;
+  if (ec && ec.mod && ec.set === 'Enhanced' && ec.calculate) { const r = ec.calculate(ec, card, context); if (r) (out = out || {}).enhancement = r; }
+  const sc = card.seal && P_SEALS[card.seal];
+  if (sc && sc.mod && sc.calculate) { const r = sc.calculate(sc, card, context); if (r) (out = out || {}).seal = r; }
+  return out;
+}
+/** Merge a mod enhancement / seal scoring return into eval_card's playing-card result. */
+function merge_mod_card_effect(ret, ms, held) {
+  for (const r of ms ? [ms.enhancement, ms.seal] : []) {
+    if (!r || typeof r !== 'object') continue;
+    const x = r.x_mult ?? r.xmult ?? r.Xmult;
+    if (x !== undefined && x !== 1) ret.x_mult = ret.x_mult ? ret.x_mult * x : x;
+    const m = held ? (r.h_mult ?? r.mult) : r.mult;
+    if (m) ret[held ? 'h_mult' : 'mult'] = (ret[held ? 'h_mult' : 'mult'] || 0) + m;
+    const c = held ? (r.h_chips ?? r.chips) : r.chips;
+    if (c) ret[held ? 'h_chips' : 'chips'] = (ret[held ? 'h_chips' : 'chips'] || 0) + c;
+    if (r.dollars) ret.dollars = (ret.dollars || 0) + r.dollars;
+  }
+}
+
 export function eval_card(card, context) {
   context = context || {};
   const ret = {};
   if (context.repetition_only) {
     const seals = card.calculate_seal(context);
     if (seals) ret.seals = seals;
+    const ms = ACTIVE_MODS.length ? mod_card_calculate(card, context) : undefined;
+    if (!ret.seals && ms && ms.seal && ms.seal.repetitions) ret.seals = ms.seal;
     return ret;
   }
   if (context.cardarea === G.play) {
@@ -927,11 +1018,28 @@ export function eval_card(card, context) {
     const p_dollars = card.get_p_dollars(); if (p_dollars > 0) ret.p_dollars = p_dollars;
     const jokers = card.calculate_joker(context); if (jokers) ret.jokers = jokers;
     const edition = card.get_edition(context); if (edition) ret.edition = edition;
+    if (ACTIVE_MODS.length) merge_mod_card_effect(ret, mod_card_calculate(card, { ...context, main_scoring: true }), false);
   }
   if (context.cardarea === G.hand) {
     const h_mult = card.get_chip_h_mult(); if (h_mult > 0) ret.h_mult = h_mult;
     const h_x_mult = card.get_chip_h_x_mult(); if (h_x_mult > 0) ret.x_mult = h_x_mult;
     const jokers = card.calculate_joker(context); if (jokers) ret.jokers = jokers;
+    if (ACTIVE_MODS.length) merge_mod_card_effect(ret, mod_card_calculate(card, { ...context, main_scoring: true }), true);
+  }
+  // Steamodded quantum enhancements: the config effects of extra enhancements mod jokers grant.
+  if ((context.cardarea === G.play || context.cardarea === G.hand) && ACTIVE_MODS.length && !card.debuff) {
+    for (const k of quantum_enhancements(card)) {
+      const q = P_CENTERS[k].config || {};
+      if (context.cardarea === G.play) {
+        if (q.bonus) ret.chips = (ret.chips || 0) + q.bonus;
+        if (q.mult) ret.mult = (ret.mult || 0) + q.mult;
+        if (q.Xmult && q.Xmult !== 1) ret.x_mult = (ret.x_mult || 1) * q.Xmult;
+        if (q.p_dollars) ret.p_dollars = (ret.p_dollars || 0) + q.p_dollars;
+      } else {
+        if (q.h_mult) ret.h_mult = (ret.h_mult || 0) + q.h_mult;
+        if (q.h_x_mult) ret.x_mult = (ret.x_mult || 1) * q.h_x_mult;
+      }
+    }
   }
   if (context.cardarea === G.jokers || context.card === G.consumeables) {
     let jokers;
@@ -941,6 +1049,32 @@ export function eval_card(card, context) {
     if (jokers) ret.jokers = jokers;
   }
   return ret;
+}
+
+/**
+ * Steamodded quantum enhancements (SMODS optional_features.quantum_enhancements): the extra
+ * enhancement keys mod jokers grant `card` by answering the check_enhancement context with
+ * {m_steel = true, ...}. Only mod jokers that answer it are asked (center.quantum_enhancements,
+ * or a calculate that mentions check_enhancement); nested checks see only real enhancements.
+ */
+let _quantum_busy = false;
+export function quantum_enhancements(card) {
+  const out = [];
+  if (_quantum_busy || !ACTIVE_MODS.length || !G.jokers || !card || !card.config || !card.base || !card.base.suit) return out;
+  _quantum_busy = true;
+  try {
+    for (const j of G.jokers.cards) {
+      const c = j.config.center;
+      if (!c.mod || !c.calculate || j.debuff) continue;
+      if (c._quantum === undefined) c._quantum = !!c.quantum_enhancements || String(c.calculate).includes('check_enhancement');
+      if (!c._quantum) continue;
+      const r = c.calculate(c, j, { check_enhancement: true, other_card: card, no_blueprint: true });
+      if (r && typeof r === 'object') {
+        for (const [k, v] of Object.entries(r)) if (v === true && P_CENTERS[k] && P_CENTERS[k].set === 'Enhanced' && k !== card.config.center.key && !out.includes(k)) out.push(k);
+      }
+    }
+  } finally { _quantum_busy = false; }
+  return out;
 }
 
 export function get_current_pool(_type, _rarity, _legendary, _append) {
@@ -1102,7 +1236,8 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
       else if (G.GAME.modifiers.enable_perishables_in_shop && poll > 0.4 && poll <= 0.7) card.set_perishable(true);
       if (G.GAME.modifiers.enable_rentals_in_shop && pseudorandom((area === G.pack_cards ? 'packssjr' : 'ssjr') + G.GAME.round_resets.ante) > 0.7) card.set_rental(true);
     }
-    card.set_edition(poll_edition('edi' + (key_append || '') + G.GAME.round_resets.ante), true, true);
+    // SMODS: a card that already has an edition (set by its center's set_ability, e.g. Pokermon's Shell) keeps it.
+    if (!card.edition) card.set_edition(poll_edition('edi' + (key_append || '') + G.GAME.round_resets.ante), true, true);
   }
   callHook('create_card', card, _type, area, key_append);
   return card;
