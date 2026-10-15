@@ -103,6 +103,13 @@ try {
 	const idle = (page) => waitFor(() => page.evaluate(() => window.__micatro.idle()), 30000);
 	const V = (page) => page.evaluate(() => window.__micatro.view());
 	const clickSel = async (page, sel) => { await page.waitForSelector(sel, { visible: true, timeout: 8000 }); await page.click(sel); };
+	// Panel rows can sit below the fold (the site's real mods are listed first): scroll the
+	// target into place instantly, then click, so the click can't land mid-scroll.
+	const tap = async (page, sel) => {
+		await page.waitForSelector(sel, { visible: true, timeout: 8000 });
+		await page.evaluate((s) => document.querySelector(s).scrollIntoView({ block: 'center', behavior: 'instant' }), sel);
+		await page.click(sel);
+	};
 	// pixel at (fx, fy) (fractions) of a card's face / soul canvas
 	const cardPixel = (page, center, which = 'face', fx = 0.5, fy = 0.5) => page.evaluate((center, which, fx, fy) => {
 		const b = window.__micatro.board;
@@ -125,8 +132,10 @@ try {
 		await clickSel(page, '.b-mods');
 		await page.waitForSelector('.mods-panel', { visible: true });
 		const rows = await page.evaluate(() => [...document.querySelectorAll('.mod-row')].map(r => ({ id: r.dataset.mod, text: r.textContent })));
-		A(rows.length === 2 && rows[0].id === 'tmui' && /UI Test Mod/.test(rows[0].text) && /Tester/.test(rows[0].text) && /1 KB/.test(rows[0].text) && /tiny mod/.test(rows[0].text), 'the panel lists each mod with name, author, size and description', JSON.stringify(rows));
-		A(/Requires\s*UI Test Mod/.test(rows[1].text), 'an add-on lists what it requires', rows[1].text);
+		// rows are found by id: the site's real mods (e.g. Pokermon) are listed too
+		const rUi = rows.find((r) => r.id === 'tmui'), rAdd = rows.find((r) => r.id === 'tmaddon');
+		A(rUi && rAdd && /UI Test Mod/.test(rUi.text) && /Tester/.test(rUi.text) && /1 KB/.test(rUi.text) && /tiny mod/.test(rUi.text), 'the panel lists each mod with name, author, size and description', JSON.stringify(rows));
+		A(rAdd && /Requires\s*UI Test Mod/.test(rAdd.text), 'an add-on lists what it requires', rAdd && rAdd.text);
 
 		// controller: the reticle reaches the toggles (d-pad moves through the panel)
 		const padReach = await page.evaluate(() => {
@@ -139,20 +148,20 @@ try {
 		A(/mod-toggle/.test(padReach), 'the controller focus can land on a Mods panel toggle', padReach);
 
 		// dependency: turning on the add-on turns on its requirement (with a note)
-		await page.click('.mod-row[data-mod="tmaddon"] .mod-toggle');
+		await tap(page, '.mod-row[data-mod="tmaddon"] .mod-toggle');
 		await waitFor(() => page.evaluate(() => document.querySelector('.mod-row[data-mod="tmui"]').classList.contains('on') && !!document.querySelector('.mod-row[data-mod="tmui"] .mod-opt')), 8000);
 		let st = await page.evaluate(() => ({ on: [...document.querySelectorAll('.mod-row.on')].map(r => r.dataset.mod), note: document.querySelector('.mods-note').textContent }));
 		A(st.on.join() === 'tmui,tmaddon' && /Also turned on UI Test Mod/.test(st.note), 'turning on an add-on turns on what it requires, with a note', JSON.stringify(st));
 		// turning the requirement off turns the add-on off too
-		await page.click('.mod-row[data-mod="tmui"] .mod-toggle');
+		await tap(page, '.mod-row[data-mod="tmui"] .mod-toggle');
 		st = await page.evaluate(() => ({ on: [...document.querySelectorAll('.mod-row.on')].map(r => r.dataset.mod), note: document.querySelector('.mods-note').textContent }));
 		A(st.on.length === 0 && /Also turned off Test Add-on/.test(st.note), 'turning off a requirement turns off its dependents, with a note', JSON.stringify(st));
 		// on again (just tmui) -> its options render
-		await page.click('.mod-row[data-mod="tmui"] .mod-toggle');
+		await tap(page, '.mod-row[data-mod="tmui"] .mod-toggle');
 		await waitFor(() => page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt').length === 2), 8000);
 		const opts = await page.evaluate(() => [...document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt')].map(r => r.textContent));
 		A(opts.length === 2 && /Start with Adder\s*On/.test(opts[0]) && /Flavor\s*mild\s*hot/.test(opts[1]), 'the mod\'s options render (bool as a toggle, choice as buttons)', JSON.stringify(opts));
-		await page.click('.mod-row[data-mod="tmui"] .mod-opt-c[data-val="hot"]');
+		await tap(page, '.mod-row[data-mod="tmui"] .mod-opt-c[data-val="hot"]');
 		const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_mods') || 'null'));
 		A(saved && saved.ids.join() === 'tmui' && saved.options.tmui.flavor === 'hot', 'selection + options persist in localStorage', JSON.stringify(saved));
 		A(await page.evaluate(() => document.querySelector('.mod-row[data-mod="tmui"] .mod-opt-c.on').dataset.val === 'hot'), 'the chosen option is shown as on');
