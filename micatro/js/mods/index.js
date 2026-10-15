@@ -10,6 +10,16 @@ export const AVAILABLE = [
     description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies.',
     load: () => import('../../mods/pokermon/index.js'),
   },
+  {
+    id: 'nacho', name: "Nacho's Pokermon Dip", size: '~0.3 MB art', by: 'Eternalnacho (rebuilt for Micatro)', requires: ['pokermon'],
+    description: 'More Pokémon for Pokermon (Sinnoh starters, Ralts, Bagon, Goomy, Terapagos...), the Stellar type and the Elite Four stake.',
+    load: () => import('../../mods/nacho/index.js'),
+  },
+  {
+    id: 'pokermonplus', name: "Sonfive's Pokermon+", size: '~0.1 MB art', by: 'Sonfive, with marcavis, Kek & MyDude (rebuilt for Micatro)', requires: ['pokermon'],
+    description: 'Pokémon add-on: Nincada, Darkrai, Meltan, Garganacl and more, the Timer Ball, five new decks, negative Energy and the Lilac stake.',
+    load: () => import('../../mods/pokermonplus/index.js'),
+  },
 ];
 
 /** Load (register) the given mods and everything they require. */

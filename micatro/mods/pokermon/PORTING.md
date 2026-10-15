@@ -194,3 +194,18 @@ stickers and the shiny edition. One test file per source file in `micatro/tests/
 
 Not yet: challenges, sleeves, deck skins (plan step 8), and `emergy` (Cryptid-only in the Lua).
 Intended-design fixes are noted in comments at each site (search "intended").
+
+## Add-on extension points (for Pokermon add-ons: Nacho's Pokermon Dip, Pokermon+)
+
+Add-ons build ON Pokermon instead of patching it. All are additive (empty = Pokermon unchanged)
+and every registered handler must check that its own mod is active for the run.
+
+- `addon_pokemon_center(item, def, {prefix, file, sprites, atlas})` (index.js) — `pokermon.Pokemon`:
+  a Pokémon center with `poke_custom_prefix`, sprites, type badges and pool rules; the add-on
+  registers it in its own `registerMod` content. `add_family(list)` (systems/evolution.js).
+- types.js: `EXTRA_TYPES` (extra Tera types; `wildcard` = counts as every type), `TERA_OVERRIDES`,
+  `wildcard_type(card)`, `ENERGY_LIMIT_BONUS`.
+- energy.js: `ENERGIZE_BASE` (base values energize scales), `ENERGY_OVERRIDES`.
+- evolution.js: `LEVEL_EVO_EXTRA` (extra level_evo steps), `EVOLVE_INTERCEPTS` (immediate / handle
+  an evolution yourself), `EVO_KEEP`, `POST_EVOLVE`; `poke_evolved` context for every non-mega evolution.
+- pools.js: `POKE_POOL_RULES`. utils.js: `FIND_CARD_EXTRA`, `BEFORE_REMOVE`. items.js: `MEGASTONE_RESET`.

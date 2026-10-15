@@ -145,8 +145,8 @@ const behaviourOf = (def) => {
 const SPRITES = DATA.globals.PokemonSprites;
 
 /** pokespriteload.lua poke_load_atlas + poke_load_sprites (Basic sheet, base art). */
-function jokerSprite(item, c) {
-  const info = SPRITES[item.name];
+function jokerSprite(item, c, extra_sprites) {
+  const info = (extra_sprites && extra_sprites[item.name]) || SPRITES[item.name];
   if (!info) { c.atlas = atlasName(item.atlas); return; }
   let atlas;
   if (info.gen_atlas && item.gen) atlas = 'AtlasJokersBasicGen' + (item.gen < 10 ? '0' + item.gen : item.gen);
@@ -198,6 +198,43 @@ function jokerCenter(item, file) {
   else c.in_pool = (self) => pokemon_in_pool(self);
   // Joke content (Billion Lions) only with pokemon_aprilfools.
   if (item.name === 'billion_lions') { const p = c.in_pool; c.in_pool = (self) => !!cfg('pokemon_aprilfools') && (!p || p(self)); }
+  return c;
+}
+
+/**
+ * Add-on API (additive): `pokermon.Pokemon(item, custom_prefix, custom_atlas)` for add-on mods
+ * (Nacho's Pokermon Dip, ...). Builds a Pokémon joker center exactly like Pokermon's own —
+ * key `j_<prefix>_<name>`, `poke_custom_prefix` (family / evolution / mega keys resolve to the
+ * add-on's prefix), ptype / item_req / evo_list in config.extra, type badges, pokemon_in_pool
+ * unless custom_pool_func — with the Basic-sheet sprite from PokemonSprites, where the add-on's
+ * own `sprites` entries win (its Lua assigns into the shared table). `atlas` (an atlas name the
+ * add-on registers) = a custom-atlas Pokémon. `def` is the behaviour (functions + overrides).
+ * The add-on registers the returned centers in its own registerMod content (so they carry its
+ * mod id: off = gone) and adds its families with `add_family` (systems/evolution.js).
+ */
+export function addon_pokemon_center(item, def, { prefix, file, sprites, atlas } = {}) {
+  if (!prefix) throw new Error('addon_pokemon_center: prefix required');
+  const c = stripFns(item);
+  c.key = 'j_' + prefix + '_' + (item.key || item.name);
+  c.set = 'Joker';
+  c.poke_file = file;
+  c.poke_custom_prefix = prefix;
+  c.rarity = c.rarity ?? 1;
+  c.cost = c.cost ?? 3;
+  c.blueprint_compat = !!c.blueprint_compat;
+  c.perishable_compat = c.perishable_compat !== false;
+  c.eternal_compat = c.eternal_compat !== false;
+  c.config = c.config || {};
+  if (c.ptype) { if (isTable(c.config.extra)) c.config.extra.ptype = c.ptype; else c.config.extra = { ptype: c.ptype }; }
+  if (c.item_req) { if (isTable(c.config.extra)) c.config.extra.item_req = c.item_req; else c.config.extra = { item_req: c.item_req }; }
+  if (c.evo_list) { if (isTable(c.config.extra)) c.config.extra.evo_list = c.evo_list; else c.config.extra = { evo_list: c.evo_list }; }
+  if (atlas) { c.atlas = atlas; c.poke_custom_atlas = true; } else { jokerSprite(item, c, sprites); c.poke_no_custom_atlas = true; }
+  c.set_badges = poke_set_type_badge;
+  if (def) Object.assign(c, behaviourOf(def));
+  else c.unported = true;
+  if (c.unported) c.in_pool = UNPORTED_POOL;
+  else if (item.custom_pool_func) c.in_pool = def && def.in_pool;
+  else c.in_pool = (self) => pokemon_in_pool(self);
   return c;
 }
 

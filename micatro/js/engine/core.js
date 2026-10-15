@@ -730,6 +730,13 @@ export class Card {
     if (this.debuff) return {};
     const ret = {};
     if (this.ability.h_dollars > 0) { ret.h_dollars = this.ability.h_dollars; ret.card = this; }
+    // Steamodded quantum enhancements: an extra Gold enhancement pays too (Nacho's Carbink).
+    if (ACTIVE_MODS.length) {
+      for (const k of quantum_enhancements(this)) {
+        const q = P_CENTERS[k].config || {};
+        if (q.h_dollars > 0) { ret.h_dollars = (ret.h_dollars || 0) + q.h_dollars; ret.card = this; }
+      }
+    }
     if (this.seal === 'Blue' && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
       G.GAME.consumeable_buffer += 1;
       G.E_MANAGER.add_event(() => {
@@ -1340,8 +1347,12 @@ export function get_new_boss() {
   for (const [k, v] of Object.entries(P_BLINDS)) {
     if (!v.boss) continue;
     if (v.mod && (!centerActive(v) || (v.in_pool && !v.in_pool(v)))) continue;
-    if (!v.boss.showdown && v.boss.min <= a1 && (a1 % G.GAME.win_ante !== 0 || ante < 2)) eligible[k] = true;
-    else if (v.boss.showdown && ante % G.GAME.win_ante === 0 && ante >= 2) eligible[k] = true;
+    let ok = false;
+    if (!v.boss.showdown && v.boss.min <= a1 && (a1 % G.GAME.win_ante !== 0 || ante < 2)) ok = true;
+    else if (v.boss.showdown && ante % G.GAME.win_ante === 0 && ante >= 2) ok = true;
+    // Mods may change which antes draw showdown bosses (Nacho's Elite stake).
+    if (ACTIVE_MODS.length) { const o = firstHook('boss_eligible', ok, v, ante); if (o !== undefined) ok = !!o; }
+    if (ok) eligible[k] = true;
   }
   for (const k of Object.keys(G.GAME.banned_keys)) delete eligible[k];
   let min_use = 100;

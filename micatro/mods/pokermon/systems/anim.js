@@ -11,7 +11,7 @@
  *   {frames, frames_per_row, fps, soul, atlas} for animated cards.
  */
 import { G } from '../../../js/engine/core.js';
-import { get_type, type_sticker_applied } from './types.js';
+import { get_type, type_sticker_applied, energy_limit_bonus } from './types.js';
 import { energy_max } from './energy.js';
 
 /** AnimatedPokemon (pokeanimations.lua). `native` ones have their own atlas per key. */
@@ -27,14 +27,15 @@ export function view_card(card, v) {
   const ex = card.ability.extra;
   const tera = type_sticker_applied(card);
   const ptype = get_type(card);
-  const isPoke = c.mod === 'pokermon' && c.set === 'Joker';
+  // (+ add-on Pokémon registered through Pokermon's machinery: pokermon.Pokemon sets poke_custom_prefix)
+  const isPoke = (c.mod === 'pokermon' || !!c.poke_custom_prefix) && c.set === 'Joker';
   if (!isPoke && !tera && !(card.edition && card.edition.poke_shiny) && !ANIMATED[c.key]) return;
   const p = {};
   if (ptype) p.ptype = ptype;
   if (tera) p.tera = tera;
   const holder = ex && typeof ex === 'object' ? ex : card.ability;
   const e = holder.energy_count || 0, ce = holder.c_energy_count || 0;
-  if (e || ce) { p.energy = e; p.c_energy = ce; p.energy_max = energy_max + ((G.GAME && G.GAME.energy_plus) || 0); }
+  if (e || ce) { p.energy = e; p.c_energy = ce; p.energy_max = energy_max + ((G.GAME && G.GAME.energy_plus) || 0) + energy_limit_bonus(card); }
   if (c.stage) p.stage = c.stage;
   if (ex && typeof ex === 'object') {
     if (typeof ex.rounds === 'number') p.rounds = ex.rounds;

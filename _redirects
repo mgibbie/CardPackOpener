@@ -11,6 +11,8 @@
 /designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301
 # Micatro mod art (one line per mod; Cloudflare doesn't match a :placeholder combined with a * splat).
 /micatro/mods/pokermon/assets/* https://magepunk-micatromods.pages.dev/pokermon/assets/:splat 301
+/micatro/mods/nacho/assets/* https://magepunk-micatromods.pages.dev/nacho/assets/:splat 301
+/micatro/mods/pokermonplus/assets/* https://magepunk-micatromods.pages.dev/pokermonplus/assets/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
 # /pokemon was never a route, but a stale bookmark there renders the homepage
 # (the SPA fallback), and the homepage's RELATIVE links ("overworld/") then

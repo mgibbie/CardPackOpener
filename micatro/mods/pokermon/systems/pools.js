@@ -17,6 +17,7 @@
  */
 import { G, P_CENTERS, find_joker, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
 import { cfg, smods_create_card } from './utils.js';
+import { centerActive } from '../../../js/mods/registry.js';
 import { family } from './evolution.js';
 
 const fname = (y) => (y && typeof y === 'object' ? y.key : y);
@@ -29,8 +30,17 @@ function held_names() {
   return out;
 }
 
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): fn(center) -> false to keep a
+ * Pokémon out of every pool (shop, packs AND get_random_poke_key: Poké Balls, Timer Ball, ...),
+ * checked before the Showman / family rules like the wrapper add-ons put around pokemon_in_pool.
+ * A rule must only answer for its own mod's centers (Pokermon+'s per-line toggles do).
+ */
+export const POKE_POOL_RULES = [];
+
 /** Steamodded / Pokermon pool rule for a Pokémon center. */
 export function pokemon_in_pool(self) {
+  for (const rule of POKE_POOL_RULES) if (rule(self) === false) return false;
   if (find_joker('Showman').length || find_joker('pokedex').length) return true;
   const name = nameOf(self);
   if ((name === 'dreepy' || name === 'drakloak' || name === 'dragapult') && !P_CENTERS.j_poke_dreepy_dart) return false;
@@ -96,6 +106,8 @@ export function get_random_poke_key(pseed, stage, pokerarity, area, poketype, ex
   // Lua iterates G.P_CENTERS with pairs(); Micatro uses the registration order (deterministic).
   for (const v of Object.values(P_CENTERS)) {
     if (!v.stage || v.stage === 'Other' || !v.mod || v.unported) continue;
+    // Registered-but-inactive add-ons (loaded earlier this session, off for this run) are out.
+    if (!centerActive(v)) continue;
     if (stage && v.stage !== stage) continue;
     if (pokerarity && v.rarity !== pokerarity) continue;
     if (!get_gen_allowed(v) || (poketype && poketype !== v.ptype) || !pokemon_in_pool(v) || v.aux_poke || v.rarity === 'poke_mega') continue;

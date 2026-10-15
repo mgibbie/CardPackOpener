@@ -74,6 +74,11 @@ export const HOOKS = [
   'describe',           // (card, desc) adjust a live card's description (badges/info) — vanilla cards too
   'view_card',          // (card, v) add mod fields to a card's view-model entry
   'view',               // (view) add mod fields to the run view (e.g. view.areas.scry)
+  'boss_eligible',      // (eligible, blind, ante) -> true/false overrides whether a boss can be drawn (get_new_boss)
+  'hand_highlighted',   // () the player's hand selection changed (CardArea:parse_highlighted)
+  'pack_card',          // (booster, i) -> a Card to use as card i of a base-game booster (else the vanilla roll)
+  'fill_shop_jokers',   // () -> true when the mod stocked a new shop's joker slots itself
+  'forced_selection',   // (card) Cerulean Bell just forced this hand card into the selection
 ];
 
 /**
@@ -147,7 +152,14 @@ export function isActive(id) { return activeSet.has(id); }
 export function activeMods() { return ACTIVE.map((id) => MODS[id]); }
 
 /** Is this center/tag/blind/... available in the current run? Base content always is. */
-export function centerActive(c) { return !c || !c.mod || activeSet.has(c.mod); }
+export function centerActive(c) {
+  if (!c || !c.mod) return true;
+  if (!activeSet.has(c.mod)) return false;
+  // A center may need one of its mod's options (`mod_option`, e.g. Nacho's per-line toggles):
+  // off = gone, exactly like an inactive mod.
+  if (c.mod_option && !(modOptions[c.mod] && modOptions[c.mod][c.mod_option])) return false;
+  return true;
+}
 
 /**
  * Activate a set of mods for a new run (called by newRun before anything

@@ -22,7 +22,7 @@ import {
   create_card, create_playing_card, copy_card, poll_edition, all_cards, next,
   set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll,
 } from './core.js';
-import { callHook, reduceHook } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
 
 // ----------------------------------------------------- misc_functions.lua
@@ -571,6 +571,13 @@ Card.prototype.open = function () {
     G.GAME.pack_center = mc.key;
 
     G.GAME.pack_choices = this.config.center.config.choose || 1;
+    // Steamodded's formula (booster.toml): + booster_choice_mod, capped at the pack size (Nacho's
+    // Oranguru raises booster_choice_mod). Same numbers as vanilla when nothing sets the modifiers.
+    if (ACTIVE_MODS.length && (G.GAME.modifiers.booster_choice_mod || G.GAME.modifiers.booster_size_mod)) {
+      const ex = typeof this.ability.extra === 'number' ? this.ability.extra : this.config.center.config.extra;
+      G.GAME.pack_choices = Math.min((this.ability.choose || this.config.center.config.choose || 1) + (G.GAME.modifiers.booster_choice_mod || 0),
+        typeof ex === 'number' ? Math.max(1, ex + (G.GAME.modifiers.booster_size_mod || 0)) : 1);
+    }
     G.GAME.pack_size = reduceHook('pack_size', G.GAME.pack_size, this);
     G.GAME.pack_choices = reduceHook('pack_choices', G.GAME.pack_choices, this);
 
@@ -590,8 +597,9 @@ Card.prototype.open = function () {
         const _size = G.GAME.pack_size;
 
         for (let i = 1; i <= _size; i++) {
-          let card = null;
-          if (this.ability.name.includes('Arcana')) {
+          // A mod may supply a base-game pack's card (Nacho's Oranguru: Standard packs of your commonest rank).
+          let card = ACTIVE_MODS.length && !mc.mod ? (firstHook('pack_card', this, i) || null) : null;
+          if (card) { /* mod-supplied */ } else if (this.ability.name.includes('Arcana')) {
             if (G.GAME.used_vouchers.v_omen_globe && pseudorandom('omen_globe') > 0.8) {
               card = create_card('Spectral', G.pack_cards, null, null, true, true, null, 'ar2');
             } else {

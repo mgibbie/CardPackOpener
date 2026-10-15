@@ -6,7 +6,7 @@ import {
   create_random_poke_joker, energy_can_use, highlighted_energy_can_use, energy_use, highlighted_energy_use,
   energy_max, energy_increase, type_sticker_applied, get_highest_evo, poke_evolve,
   megastone_can_use, megastone_use, megastone_remove_from_deck, megastone_in_pool, card_eval_status_text,
-  increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards,
+  increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards, MEGASTONE_RESET,
 } from '../api.js';
 
 const FILE = 'consumables/mart1.lua';
@@ -101,6 +101,7 @@ const defs = {
     calculate(self, card, context) {
       if (context.end_of_round && !card.ability.extra.usable) {
         card.ability.extra.usable = true;
+        for (const f of MEGASTONE_RESET) f(card);
         card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_reset') });
       }
       return undefined;
