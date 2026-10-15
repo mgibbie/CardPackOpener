@@ -16,10 +16,11 @@
 //   Start     pause menu (options, speed, run info, deck, quit)   Select  deck view
 // The reticle hides when the mouse moves or the pad disconnects.
 import { startGamepad, buttonLabel, loadPadSettings, rumble } from '/site/gamepad.js';
+import { isConsumableSet } from './assets.js';
 
 const CARD_AREAS = ['hand', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
 const REORDER = ['hand', 'jokers', 'consumeables'];
-const PACK = /_PACK$/;
+const PACK = /_PACK(_HAND)?$/;   // TAROT_PACK ... BUFFOON_PACK, MOD_PACK, MOD_PACK_HAND
 const DOM_SEL = 'button:not(:disabled), a[href], input, .deck-pile, .tag-ico, [data-pad]';
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
@@ -96,6 +97,8 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
     focus = f ? (f.card != null ? { card: f.card } : { el: f.el }) : null;
     ringOn = !!focus;
     if (focus && focus.card != null) { const s = board.sprites.get(focus.card); if (s) s.hover = true; }
+    // a long modal (the Mods panel) scrolls to keep the focused control in view
+    if (focus && focus.el && focus.el.closest('.modal-box') && focus.el.scrollIntoView) { try { focus.el.scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ } }
     showTip();
     place();
   }
@@ -115,6 +118,10 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
     const changed = (v && v.state) !== lastState || modal !== lastModal;
     lastState = v && v.state; lastModal = modal;
     if (!changed && focus && list.some((s) => same(s, focus))) return { list, ok: true };
+    // a control that was rebuilt in place (Mods panel toggles) keeps the focus via its data-k
+    const k = !changed && focus && focus.el && !focus.el.isConnected && focus.el.dataset ? focus.el.dataset.k : null;
+    const again = k ? list.find((s) => s.el && s.el.dataset && s.el.dataset.k === k) : null;
+    if (again) { setFocus(again); return { list, ok: true }; }
     const h = list.length ? home(list) : null;
     setFocus(h);
     return { list, ok: false };
@@ -189,7 +196,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
     if (s && (s.area === 'jokers' || s.area === 'consumeables')) { board.act({ type: 'sell', id: s.id }, 'coin2'); return; }
     if (s && s.area === 'shop_jokers') {
       const d = board.data.get(s.id) || {};
-      if (['Tarot', 'Planet', 'Spectral'].includes(d.set)) { board.act({ type: 'buy', id: s.id, use: true }, 'coin1'); return; }
+      if (isConsumableSet(d.set)) { board.act({ type: 'buy', id: s.id, use: true }, 'coin1'); return; }
     }
     if (v.state === 'SELECTING_HAND') {
       lastSort = lastSort === 'rank' ? 'suit' : 'rank';
@@ -317,7 +324,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
       if (s && REORDER.includes(s.area)) parts.push(`hold ${L('confirm')}+◀▶ Move`);
       let sec = null;
       if (s && (s.area === 'jokers' || s.area === 'consumeables')) sec = 'Sell';
-      else if (s && s.area === 'shop_jokers' && ['Tarot', 'Planet', 'Spectral'].includes((board.data.get(s.id) || {}).set)) sec = 'Buy & Use';
+      else if (s && s.area === 'shop_jokers' && isConsumableSet((board.data.get(s.id) || {}).set)) sec = 'Buy & Use';
       else if (v && v.state === 'SELECTING_HAND') sec = 'Sort';
       if (sec) parts.push(`${L('secondary')} ${sec}`);
       const names = { '.b-play': 'Play', '.b-discard': 'Discard', '.b-select': 'Select', '.b-skip': 'Skip', '.b-next': 'Next Round', '.b-reroll': 'Reroll', '.b-cashout': 'Cash Out', '.b-skip-pack': 'Skip' };

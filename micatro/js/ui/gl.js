@@ -196,8 +196,14 @@ const lighten = (c, p) => [c[0] * (1 - p) + p, c[1] * (1 - p) + p, c[2] * (1 - p
 const darken = (c, p) => [c[0] * (1 - p), c[1] * (1 - p), c[2] * (1 - p), c[3]];
 
 /** Balatro's ease_background_colour(_blind) targets for a view state. */
-export function backgroundFor(state, blind, won) {
+export function backgroundFor(state, blind, won, pack) {
   const args = (o) => o;
+  if (state === 'MOD_PACK' || state === 'MOD_PACK_HAND') {
+    // a mod pack in its type's colours (Energy, Item, ...), else a neutral slate
+    const c = pack && colourArr(pack.colour);
+    if (c) { const sp = colourArr(pack.special); return args({ new_colour: c, special_colour: sp || darken(C.BLACK, 0.2), contrast: 2 }); }
+    return args({ new_colour: mix(C.WON, C.BLACK, 0.4), special_colour: darken(C.BLACK, 0.2), contrast: 1.6 });
+  }
   if (state === 'TAROT_PACK') return args({ new_colour: C.PURPLE, special_colour: darken(C.BLACK, 0.2), contrast: 1.5 });
   if (state === 'SPECTRAL_PACK') return args({ new_colour: C.SPECTRAL, special_colour: darken(C.BLACK, 0.2), contrast: 2 });
   if (state === 'STANDARD_PACK') return args({ new_colour: darken(C.BLACK, 0.2), special_colour: C.RED, contrast: 3 });
@@ -211,6 +217,15 @@ export function backgroundFor(state, blind, won) {
   if (blind.showdown) return { new_colour: C.BLUE, special_colour: C.RED, tertiary_colour: darken(C.BLACK, 0.4), contrast: 3 };
   const boss = blind.colour ? hex(blind.colour) : C.BLACK;
   return { new_colour: lighten(mix(boss, C.BLACK, 0.3), 0.1), special_colour: boss, contrast: 2 };
+}
+/** '#rrggbb' / 'rrggbb' / [r,g,b,a] (0..1) -> [r,g,b,1], or null. */
+function colourArr(c) {
+  if (!c) return null;
+  if (Array.isArray(c)) return [c[0], c[1], c[2], 1];
+  const s = String(c).trim().replace(/^#/, '');
+  if (/^[0-9a-f]{6}([0-9a-f]{2})?$/i.test(s)) return hex(s.slice(0, 6));
+  if (/^[0-9a-f]{3}$/i.test(s)) return hex(s.split('').map((x) => x + x).join(''));
+  return null;
 }
 function bgTargets(a) {
   if (a.special_colour && a.tertiary_colour) return { L: a.new_colour, C: a.special_colour, D: a.tertiary_colour, contrast: a.contrast };

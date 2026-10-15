@@ -2,9 +2,10 @@
 // The local player renders toView() of the live engine; a spectator renders
 // the same object received over the network — so both see the same screen.
 
-import { G, P_BLINDS, P_TAGS, P_CENTERS, get_blind_amount } from './core.js';
+import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount } from './core.js';
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag } from './describe.js';
+import { callHook } from '../mods/registry.js';
 
 export const VIEW_VERSION = 1;
 
@@ -16,8 +17,20 @@ export function cardView(c, withDesc) {
     name: c.ability.name,
   };
   if (c.config.card && c.config.card.key) v.front = c.config.card.key;
+  const ctr = c.config.center;
+  if (ctr.mod) {
+    v.mod = ctr.mod;
+    // Mod art: atlas name + cell (+ optional soul layer / animation frame / per-card override).
+    v.atlas = (ctr.get_atlas && ctr.get_atlas(ctr, c)) || ctr.atlas;
+    v.pos = (ctr.get_pos && ctr.get_pos(ctr, c)) || ctr.pos;
+    if (ctr.soul_pos) v.soul_pos = ctr.soul_pos;
+  }
   if (c.edition && c.edition.type) v.edition = c.edition.type;
-  if (c.seal) v.seal = c.seal;
+  if (c.seal) {
+    v.seal = c.seal;
+    const ps = P_SEALS[c.seal];
+    if (ps && ps.mod) { v.seal_atlas = ps.atlas; v.seal_pos = ps.pos; }
+  }
   if (c.debuff) v.debuff = true;
   if (c.facing === 'back') v.facing = 'back';
   if (c.highlighted) v.hl = true;
@@ -31,6 +44,7 @@ export function cardView(c, withDesc) {
   if (withDesc) {
     try { v.desc = describe(c); } catch (e) { v.desc = { name: c.ability.name, lines: [] }; }
   }
+  callHook('view_card', c, v);
   return v;
 }
 
@@ -56,7 +70,7 @@ export function toView() {
       desc: safe(() => describeBlind(key)),
     };
   }
-  return {
+  const view = {
     v: VIEW_VERSION,
     seed: GM.pseudorandom.seed,
     back: GM.selected_back_key,
@@ -112,8 +126,12 @@ export function toView() {
     won: !!GM.won,
     endless: !!GM.endless,
     stats: { ...GM.stats },
+    mods: GM.mods || [],
     interest_cap: GM.interest_cap,
   };
+  // Mods add their own fields / areas (Pokermon: view.areas.scry).
+  callHook('view', view, cardView);
+  return view;
 }
 
 /** Hand name + base chips×mult of the selected cards (shown to spectators too). */
@@ -130,7 +148,8 @@ function preview() {
 
 function packKind() {
   const S = G.STATES;
-  return ({ [S.TAROT_PACK]: 'Arcana', [S.PLANET_PACK]: 'Celestial', [S.SPECTRAL_PACK]: 'Spectral', [S.STANDARD_PACK]: 'Standard', [S.BUFFOON_PACK]: 'Buffoon' })[G.STATE] || null;
+  return ({ [S.TAROT_PACK]: 'Arcana', [S.PLANET_PACK]: 'Celestial', [S.SPECTRAL_PACK]: 'Spectral', [S.STANDARD_PACK]: 'Standard', [S.BUFFOON_PACK]: 'Buffoon' })[G.STATE] ||
+    ((G.STATE === S.MOD_PACK || G.STATE === S.MOD_PACK_HAND) ? (G.GAME.pack_kind || 'Mod') : null);
 }
 
 function safe(fn) { try { return fn(); } catch (e) { return undefined; } }

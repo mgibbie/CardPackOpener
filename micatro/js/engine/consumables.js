@@ -22,6 +22,7 @@ import {
   create_card, create_playing_card, copy_card, poll_edition, all_cards, next,
   set_consumeable_usage, check_for_unlock, inc_career_stat,
 } from './core.js';
+import { callHook, reduceHook } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
 
 // ----------------------------------------------------- misc_functions.lua
@@ -83,6 +84,7 @@ Card.prototype.use_consumeable = function (area, copier) {
   stop_use();
   if (!copier) set_consumeable_usage(this);
   if (this.debuff) return undefined;
+  if (this.config.center.mod && this.config.center.use) { this.config.center.use(this.config.center, this, area, copier); return undefined; }
   update_consumeable(this);
   const used_tarot = copier || this;
 
@@ -465,6 +467,7 @@ Card.prototype.use_consumeable = function (area, copier) {
 Card.prototype.can_use_consumeable = function (any_state, skip_check) {
   if (!skip_check && ((G.play && G.play.cards.length > 0) ||
       (G.GAME.STOP_USE && G.GAME.STOP_USE > 0))) return false;
+  if (this.config.center.mod && this.config.center.can_use) return !!this.config.center.can_use(this.config.center, this, any_state);
   update_consumeable(this);
   if ((G.STATE !== G.STATES.HAND_PLAYED && G.STATE !== G.STATES.DRAW_TO_HAND && G.STATE !== G.STATES.PLAY_TAROT) || any_state) {
     if (this.ability.name === 'The Hermit' || this.ability.consumeable.hand_type || this.ability.name === 'Temperance' || this.ability.name === 'Black Hole') {
@@ -501,7 +504,7 @@ Card.prototype.can_use_consumeable = function (any_state, skip_check) {
         return false;
       }
     }
-    if (G.STATE === G.STATES.SELECTING_HAND || G.STATE === G.STATES.TAROT_PACK || G.STATE === G.STATES.SPECTRAL_PACK || G.STATE === G.STATES.PLANET_PACK) {
+    if (G.STATE === G.STATES.SELECTING_HAND || G.STATE === G.STATES.TAROT_PACK || G.STATE === G.STATES.SPECTRAL_PACK || G.STATE === G.STATES.PLANET_PACK || G.STATE === G.STATES.MOD_PACK_HAND) {
       if (this.ability.consumeable.max_highlighted) {
         if (this.ability.consumeable.mod_num >= G.hand.highlighted.length && G.hand.highlighted.length >= (this.ability.consumeable.min_highlighted || 1)) {
           return true;
@@ -558,8 +561,18 @@ Card.prototype.open = function () {
       G.STATE = G.STATES.BUFFOON_PACK;
       G.GAME.pack_size = this.ability.extra;
     }
+    const mc = this.config.center;
+    if (mc.mod) {
+      // Mod booster: its own generator; draw_hand packs show your hand (like Arcana).
+      G.STATE = mc.draw_hand ? G.STATES.MOD_PACK_HAND : G.STATES.MOD_PACK;
+      G.GAME.pack_size = this.ability.extra;
+    }
+    G.GAME.pack_kind = mc.kind || null;
+    G.GAME.pack_center = mc.key;
 
     G.GAME.pack_choices = this.config.center.config.choose || 1;
+    G.GAME.pack_size = reduceHook('pack_size', G.GAME.pack_size, this);
+    G.GAME.pack_choices = reduceHook('pack_choices', G.GAME.pack_choices, this);
 
     if (this.cost > 0) {
       G.E_MANAGER.add_event(() => {
@@ -574,7 +587,7 @@ Card.prototype.open = function () {
       const pack_cards = [];
 
       G.E_MANAGER.add_event(() => {
-        const _size = this.ability.extra;
+        const _size = G.GAME.pack_size;
 
         for (let i = 1; i <= _size; i++) {
           let card = null;
@@ -623,6 +636,7 @@ Card.prototype.open = function () {
           } else if (this.ability.name.includes('Buffoon')) {
             card = create_card('Joker', G.pack_cards, null, null, true, true, null, 'buf');
           }
+          if (mc.mod && mc.create_card) card = card_from_spec(mc.create_card(mc, this, i));
           emit('materialize', { card: card.sort_id });
           pack_cards[i - 1] = card;
         }
@@ -643,6 +657,7 @@ Card.prototype.open = function () {
       for (let i = 0; i < G.jokers.cards.length; i++) {
         G.jokers.cards[i].calculate_joker({ open_booster: true, card: this });
       }
+      callHook('booster_open', this);
 
       if (G.GAME.modifiers.inflation) {
         G.GAME.inflation = G.GAME.inflation + 1;
@@ -798,3 +813,16 @@ Card.apply_to_run = function (self, center) {
   return apply_to_run(self || null, center);
 };
 
+
+/**
+ * A mod booster's create_card returns either a Card or a spec
+ * {set, area?, legendary?, rarity?, skip_materialize?, soulable?, key?, key_append?, edition?, seal?}.
+ */
+export function card_from_spec(spec) {
+  if (!spec) return undefined;
+  if (spec instanceof Card) return spec;
+  const card = create_card(spec.set, spec.area || G.pack_cards, spec.legendary, spec.rarity, spec.skip_materialize !== false, spec.soulable, spec.key, spec.key_append);
+  if (spec.edition) card.set_edition(typeof spec.edition === 'string' ? { [spec.edition]: true } : spec.edition, true, true);
+  if (spec.seal) card.set_seal(spec.seal, true);
+  return card;
+}

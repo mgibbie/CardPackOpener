@@ -3,7 +3,7 @@
 //                  -> broadcast to friends (net.startPublisher) when logged in
 //   ?spectate=u  : read-only; net.startSpectate feeds snapshots {view, events}
 //   ?direct=1    : launched from the overworld arcade (back goes to /overworld/)
-import { loadImages, loadFont } from './assets.js';
+import { loadImages, loadFont, bindModRegistry } from './assets.js';
 import { Background } from './gl.js';
 import { Board } from './board.js';
 import { Player } from './player.js';
@@ -19,6 +19,7 @@ const EVENT_LOG_CAP = 3000, PUBLISH_CAP = 300;
 
 let Engine = null;      // {Session, pokerInfo, G}
 let net = null;         // ../net.js (optional)
+let Mods = null;        // ../mods/index.js (AVAILABLE, loadMods + UI helpers), loaded on demand
 let session = null;
 let board, player, bg;
 let publisher = null, chat = null, spectateHandle = null, pad = null;
@@ -35,6 +36,43 @@ async function loadEngine() {
   try { describeBack = (await import('../engine/describe.js')).describeBack; } catch (e) { /* optional */ }
   return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack };
 }
+// ------------------------------------------------------------------- mods
+/** The mods manifest + loader (micatro/js/mods/index.js). Imported once; never throws. */
+async function loadModsModule() {
+  if (Mods) return Mods;
+  try {
+    Mods = await import('../mods/index.js');
+    // test hook (like pad.js's __owFakePads): extra manifest entries injected before boot
+    for (const m of (window.__micatroExtraMods || [])) if (m && m.id && !Mods.AVAILABLE.some((x) => x.id === m.id)) Mods.AVAILABLE.push(m);
+    bindModRegistry(Mods);
+  } catch (e) { console.warn('micatro: mods unavailable', e); Mods = null; }
+  return Mods;
+}
+/** Register the given mods (+ requirements). Returns {ok, missing:[ids the site doesn't ship]}. */
+async function ensureMods(ids) {
+  ids = (ids || []).filter((x) => typeof x === 'string');
+  if (!ids.length) return { ok: true, missing: [] };
+  const M = await loadModsModule();
+  if (!M) return { ok: false, missing: ids };
+  const missing = ids.filter((id) => !M.manifest(id));
+  try { await M.loadMods(ids.filter((id) => M.manifest(id))); } catch (e) { console.warn('micatro: a mod failed to load', e); return { ok: false, missing }; }
+  bindModRegistry(M);
+  return { ok: true, missing };
+}
+function modsApi() {
+  if (!Mods) return null;
+  const M = Mods;
+  return {
+    list: () => M.AVAILABLE,
+    load: (ids) => M.loadMods(ids),
+    isLoaded: (id) => !!M.MODS[id],
+    optionList: (id) => M.modOptionList(id),
+    withRequirements: (ids) => M.withRequirements(ids),
+    dependentsOf: (id, ids) => M.dependentsOf(id, ids),
+    modName: (id) => M.modName(id),
+  };
+}
+
 async function loadNet() {
   try { return await import('../net.js'); } catch (e) { console.warn('micatro: net.js unavailable', e); return null; }
 }
@@ -43,6 +81,13 @@ const myName = () => {
   if (net && net.myName) { const n = net.myName(); if (n) return n; }
   try { return (JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null') || {}).username || null; } catch (e) { return null; }
 };
+
+/** The session's view (+ the mod pack's kind, which view.js only reports for vanilla packs). */
+function viewOf() {
+  const v = session.view();
+  if (v && !v.pack_kind && /^MOD_PACK/.test(v.state || '') && Engine && Engine.G && Engine.G.GAME) v.pack_kind = Engine.G.GAME.pack_kind || null;
+  return v;
+}
 
 // ------------------------------------------------------------------ preview
 /** Selected-cards preview (hand name + chips×mult) for the local player only. */
@@ -67,7 +112,7 @@ function onAction(a) {
   let r;
   try { r = session.act(a); } catch (e) { console.error('micatro: engine error on', a, e); board.toast('Engine error — see console'); return { ok: false, error: 'engine error' }; }
   if (!r.ok) return r;
-  const view = session.view();
+  const view = viewOf();
   record(r.events);
   currentView = view;
   player.push(view, r.events);
@@ -87,7 +132,7 @@ function afterAct(view, events) {
   }
   if (view.over && !overHandled) {
     overHandled = true;
-    whenIdle(() => showGameOver(session.view()));
+    whenIdle(() => showGameOver(viewOf()));
   }
 }
 function whenIdle(fn) {
@@ -97,16 +142,27 @@ function whenIdle(fn) {
 }
 
 // --------------------------------------------------------------- run setup
-function startRun({ seed, back = 'b_red', stake = 1 } = {}) {
+async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {} } = {}) {
   stopPublishing();
+  if (mods && mods.length) {
+    // a mod's code + data download only now (and are cached for the session)
+    board.toast('Loading mods…');
+    const r = await ensureMods(mods);
+    if (!r.ok || r.missing.length) { board.toast(r.missing.length ? `Mod not available: ${r.missing.join(', ')}` : 'A mod failed to load'); UI.newRunScreen(menuOpts()); return; }
+  }
   session = new Engine.Session();
-  const evs = session.start({ seed, back, stake });
+  const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions } : { seed, back, stake });
   beginRun(evs);
 }
-function continueRun() {
+async function continueRun() {
   const rec = Engine.Session.saved();
   if (!rec) { UI.mainMenu(menuOpts()); return; }
   stopPublishing();
+  if (rec.mods && rec.mods.length) {
+    const r = await ensureMods(rec.mods);
+    if (r.missing.length) board.toast(`Mod no longer available: ${r.missing.join(', ')}`);
+    else if (!r.ok) board.toast('A mod failed to load');
+  }
   try { session = Engine.Session.fromRecipe(rec); } catch (e) { console.error(e); Engine.Session.clearSaved(); board.toast('Could not resume that run'); UI.mainMenu(menuOpts()); return; }
   beginRun([]);
 }
@@ -115,7 +171,7 @@ function beginRun(events) {
   overHandled = false; winShown = !!(session.view().won);
   allEvents.length = 0; pendingPublish = [];
   record(events);
-  currentView = session.view();
+  currentView = viewOf();
   player.lastSeq = 0;
   player.push(currentView, [], { jump: true });
   sound.play('whoosh', 1, 0.6);
@@ -160,7 +216,7 @@ function chatWrap() {
 // ---------------------------------------------------------------- endings
 function submit(view, won) {
   if (!loggedIn() || !net.submitScore) return null;
-  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won });
+  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [] });
 }
 function showGameOver(view) {
   const won = !!view.won;
@@ -197,6 +253,8 @@ function onMenu(what) {
       speed: player.speed, onSpeed: (s) => player.setSpeed(s), direct: DIRECT,
       onNewRun: MODE === 'normal' ? () => UI.newRunScreen(menuOpts()) : null,
       onMainMenu: MODE === 'normal' ? () => UI.mainMenu(menuOpts()) : null,
+      mods: v && v.mods && v.mods.length ? v.mods : null,
+      modOptions: (session && session.recipe && session.recipe.modOptions) || {},
     });
   }
 }
@@ -225,7 +283,7 @@ function onKey(e) {
   } else if (v.state === 'SHOP') {
     if (k === 'n' || k === 'enter') click('.b-next');
     else if (k === 'r') click('.b-reroll');
-  } else if (/_PACK$/.test(v.state)) {
+  } else if (/_PACK(_HAND)?$/.test(v.state)) {
     if (k === 's' || k === 'escape') click('.b-skip-pack');
   }
   if (k === ' ' || k === 'enter') e.preventDefault();
@@ -242,6 +300,7 @@ function startSpectating() {
   spectateHandle = net.startSpectate(user, {
     onSnapshot(snap, meta) {
       if (!snap || !snap.view) return;
+      spectatorMods(snap.view.mods);
       currentView = snap.view;
       record(snap.events || []);
       player.ingest(snap.view, snap.events || []);
@@ -260,6 +319,21 @@ function startSpectating() {
   });
   if (net.mountChat) { try { chat = net.mountChat(chatWrap(), { runner: user, spectator: true }); } catch (e) { console.warn('micatro: chat', e); } }
 }
+// A spectator never runs the engine, but the runner's mods supply card art, names,
+// badge + pack colours: register them, then redraw. Ids this site doesn't ship are
+// skipped (cards fall back to placeholders); each id is tried once.
+const specModsTried = new Set();
+let specModsWarned = false;
+function spectatorMods(ids) {
+  const want = (Array.isArray(ids) ? ids : []).filter((id) => typeof id === 'string' && !specModsTried.has(id));
+  if (!want.length) return;
+  for (const id of want) specModsTried.add(id);
+  ensureMods(want).then((r) => {
+    if (r.missing.length && !specModsWarned) { specModsWarned = true; console.warn('micatro: spectating with mods this site does not have:', r.missing.join(', ')); }
+    if (board) board.refreshModArt();
+  }).catch(() => {});
+}
+
 const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // --------------------------------------------------------------------- boot
@@ -268,19 +342,22 @@ async function boot() {
   const loading = document.createElement('div');
   loading.className = 'loading'; loading.textContent = 'Loading…';
   stage.appendChild(loading);
-  const [, , eng, nt] = await Promise.all([loadImages(), loadFont(), MODE === 'normal' ? loadEngine().catch((e) => { console.error('micatro: engine failed to load', e); return null; }) : null, loadNet()]);
+  const [, , eng, nt] = await Promise.all([loadImages(), loadFont(), MODE === 'normal' ? loadEngine().catch((e) => { console.error('micatro: engine failed to load', e); return null; }) : null, loadNet(),
+    MODE === 'normal' ? loadModsModule() : null]);
   Engine = eng; net = nt;
   loading.remove();
   board = new Board(stage, bg, { readOnly: MODE !== 'normal', onAction, onMenu, getPreview, onEvent: (ev) => { if (pad) pad.onGameEvent(ev); } });
   player = new Player(board);
   UI.initScreens(stage);
   if (Engine && Engine.describeBack) UI.setBackDescriber(Engine.describeBack);
+  UI.setModsApi(modsApi());
   document.body.classList.add('mode-' + MODE);
   addEventListener('keydown', onKey);
   try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => UI.mainMenu(menuOpts()) }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
   window.__micatro = {
     get session() { return session; },
-    view: () => (session ? session.view() : board.view),
+    view: () => (session ? viewOf() : board.view),
+    loadMods: (ids) => ensureMods(ids),
     act: (a) => onAction(a),
     events: allEvents,
     mode: MODE,

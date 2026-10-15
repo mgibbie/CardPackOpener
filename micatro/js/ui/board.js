@@ -3,13 +3,15 @@
 // (engine/view.js toView()) plus the UI event stream fed by the Player — never
 // from the engine's G — so a spectator draws exactly what the runner sees.
 import { CardSprite } from './cardsprite.js';
-import { cellEl, drawCell, CENTERS, BLINDS, TAGS, LOC } from './assets.js';
+import { cellEl, drawCell, CENTERS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
 import { backgroundFor } from './gl.js';
 import { markup, fmt, esc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
 import { sound } from './sound.js';
 
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
-const PACK_STATES = ['TAROT_PACK', 'PLANET_PACK', 'SPECTRAL_PACK', 'STANDARD_PACK', 'BUFFOON_PACK'];
+const PACK_STATES = ['TAROT_PACK', 'PLANET_PACK', 'SPECTRAL_PACK', 'STANDARD_PACK', 'BUFFOON_PACK', 'MOD_PACK', 'MOD_PACK_HAND'];
+// packs that show (and target) your hand: Arcana, Spectral and draw_hand mod packs
+const HAND_PACK_STATES = ['TAROT_PACK', 'SPECTRAL_PACK', 'MOD_PACK_HAND'];
 const HAND_STATES = ['SELECTING_HAND', 'HAND_PLAYED', 'DRAW_TO_HAND', 'NEW_ROUND', 'PLAY_TAROT'];
 // the button-hint bar (controller) sits under the controls: keep room for it
 const HINT_RESERVE = 46, HINT_RESERVE_P = 54;
@@ -40,6 +42,8 @@ export class Board {
     this.build();
     this.resize();
     addEventListener('resize', () => this.resize());
+    // a mod atlas arrived (or failed): recompose the cards drawn from it
+    onModAtlas((name) => this.refreshModArt(name));
     const loop = () => { this.frame(); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
   }
@@ -269,6 +273,20 @@ export class Board {
     this.positionCardButtons();
   }
 
+  /** Recompose mod cards (all, or those drawn from one atlas) — e.g. once their art has loaded. */
+  refreshModArt(atlas) {
+    for (const s of this.sprites.values()) {
+      const d = s.d || {};
+      if (!d.mod && !d.atlas) continue;
+      if (atlas && d.atlas !== atlas) continue;
+      s.vkey = ''; s.setData(d);
+    }
+    if (!atlas && this.view) { this.renderOverlay(); this.layout(); this.setBackground(this.view); }
+  }
+  setBackground(view) {
+    this.bg.set(backgroundFor(view.state, view.blind && { ...view.blind, showdown: view.blind && BLINDS[view.blind.key] && BLINDS[view.blind.key].boss && BLINDS[view.blind.key].boss.showdown }, view.won && view.state === 'ROUND_EVAL', packColours(view)));
+  }
+
   // ------------------------------------------------------------- view sync
   /** Snap the table to a full view (end of an animation sequence, or a jump). */
   setView(view, opts = {}) {
@@ -312,7 +330,7 @@ export class Board {
     this.renderOverlay();
     this.refreshSelection();
     this.layout();
-    this.bg.set(backgroundFor(view.state, view.blind && { ...view.blind, showdown: view.blind && BLINDS[view.blind.key] && BLINDS[view.blind.key].boss && BLINDS[view.blind.key].boss.showdown }, view.won && view.state === 'ROUND_EVAL'));
+    this.setBackground(view);
   }
 
   spawn(id, area, instant) {
@@ -421,7 +439,7 @@ export class Board {
     }
     this.lblJokers.textContent = `${this.areas.jokers.length}/${v.joker_limit}`;
     this.lblCons.textContent = `${this.areas.consumeables.length}/${v.consumeable_limit}`;
-    this.lblHand.textContent = HAND_STATES.includes(v.state) || ['TAROT_PACK', 'SPECTRAL_PACK'].includes(v.state) ? `${this.areas.hand.length}/${v.hand_limit}` : '';
+    this.lblHand.textContent = HAND_STATES.includes(v.state) || HAND_PACK_STATES.includes(v.state) ? `${this.areas.hand.length}/${v.hand_limit}` : '';
     this.deckEl.querySelector('.deck-count').textContent = `${v.deck_count}/${v.deck_total}`;
     // controls
     const L = v.legal || {};
@@ -593,14 +611,15 @@ export class Board {
   renderPack(ov, v) {
     ov.classList.add('ov-pack');
     const kind = v.pack_kind || 'Booster';
-    const name = { Arcana: 'Arcana Pack', Celestial: 'Celestial Pack', Spectral: 'Spectral Pack', Standard: 'Standard Pack', Buffoon: 'Buffoon Pack' }[kind] || 'Booster Pack';
+    const name = packName(kind, v.state);
     const hd = h('div', 'pack-head', `<div class="pack-name">${esc(name)}</div><div class="pack-choose">Choose <b>${v.pack_choices || 1}</b></div>`);
     const sk = h('button', 'btn grey b-skip-pack', 'Skip'); sk.type = 'button';
     sk.disabled = this.readOnly || this.locked;
     sk.addEventListener('click', () => this.act({ type: 'skip_booster' }, 'button'));
     hd.appendChild(sk);
     ov.appendChild(hd);
-    const showHand = kind === 'Arcana' || kind === 'Spectral';
+    const showHand = v.state === 'MOD_PACK_HAND' || ((v.state === 'TAROT_PACK' || v.state === 'SPECTRAL_PACK') && (kind === 'Arcana' || kind === 'Spectral'));
+    ov.classList.toggle('ov-mod-pack', /^MOD_PACK/.test(v.state));
     const R = this.R;
     if (showHand) this.packRect = { x: R.play.x, y: R.play.y - (this.mode === 'portrait' ? 6 : 10), w: R.play.w, h: this.ch };
     else this.packRect = { x: R.play.x, y: (R.play.y + R.hand.y) / 2, w: R.play.w, h: this.ch };
@@ -641,7 +660,7 @@ export class Board {
       b.addEventListener('click', (e) => { e.stopPropagation(); this.act(action, snd); });
       wrap.appendChild(b);
     };
-    const consumable = ['Tarot', 'Planet', 'Spectral'].includes(d.set);
+    const consumable = isConsumableSet(d.set);
     if (s.area === 'jokers' || s.area === 'consumeables') {
       add(`Sell<br><span class="money">$${d.sell != null ? d.sell : 0}</span>`, 'green sell', { type: 'sell', id: s.id }, 'coin2');
       if (s.area === 'consumeables') add('Use', 'red use', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
@@ -770,7 +789,7 @@ export class Board {
     if (this.readOnly) { this.showCardTip(s, true); return; }
     if (s.area === 'hand') {
       if (this.locked) return;
-      if (v.state === 'SELECTING_HAND' || ((v.state === 'TAROT_PACK' || v.state === 'SPECTRAL_PACK'))) {
+      if (v.state === 'SELECTING_HAND' || HAND_PACK_STATES.includes(v.state)) {
         const d = this.data.get(s.id);
         sound.play(d && d.hl ? 'cardSlide2' : 'cardSlide1', 1, 0.6);
         const r = this.opts.onAction && this.opts.onAction({ type: 'highlight', id: s.id });
@@ -804,17 +823,20 @@ export class Board {
     this.placeTip(s.T.x, s.T.y, s.area);
   }
   renderTip(desc, d, extra = '') {
-    const badges = (desc.badges || []).map((b) => {
+    const all = desc.badges || [];
+    const isMod = (b) => typeof b === 'object' && b && b.key === 'mod';
+    const badges = all.filter((b) => !isMod(b)).map((b) => {
       const txt = typeof b === 'string' ? b : (b.label || b.text || b.name || b.key || '');
       const key = typeof b === 'object' && b.key ? b.key : String(txt).toLowerCase();
-      const col = (typeof b === 'object' && typeof (b.colour || b.color) === 'string' && (b.colour || b.color)) || BADGE_COL[key] || BADGE_COL[String(txt).toLowerCase()] || '#4f6367';
-      return `<span class="badge${/^(foil|holographic|polychrome|negative)$/i.test(key) ? ' ed' : ''}" style="background:${col}">${esc(txt)}</span>`;
+      return `<span class="badge${/^(foil|holographic|polychrome|negative)$/i.test(key) ? ' ed' : ''}" style="background:${badgeColour(b, key, txt)}">${esc(txt)}</span>`;
     }).join('');
+    // the mod badge sits small under the card-type badges (Steamodded style)
+    const modB = all.filter(isMod).map((b) => `<span class="badge mod-badge" style="background:${cssColour(b.colour || b.color) || '#4f6367'}">${esc(b.label || b.mod || 'Mod')}</span>`).join('');
     const body = (lines0, colours) => (lines0 || []).map((l) => (l === '' ? '<div class="tip-gap"></div>' : `<div>${markup(l, colours)}</div>`)).join('');
     const lines = body(desc.lines, desc.colours);
     const info = (desc.info || []).filter((x) => x && (x.lines || []).length).slice(0, 3)
       .map((x) => `<div class="tip-info"><div class="ti-name">${esc(x.name || '')}</div><div class="tip-body">${body(x.lines)}</div></div>`).join('');
-    this.tip.innerHTML = `<div class="tip-main"><div class="tip-name">${esc(desc.name || (d && d.name) || '')}</div>${lines ? `<div class="tip-body">${lines}</div>` : ''}${extra}${badges ? `<div class="tip-badges">${badges}</div>` : ''}</div>${info}`;
+    this.tip.innerHTML = `<div class="tip-main"><div class="tip-name">${esc(desc.name || (d && d.name) || '')}</div>${lines ? `<div class="tip-body">${lines}</div>` : ''}${extra}${badges ? `<div class="tip-badges">${badges}</div>` : ''}${modB ? `<div class="tip-modbadges">${modB}</div>` : ''}</div>${info}`;
     this.tip.style.display = '';
   }
   placeTip(x, y, area) {
@@ -1177,4 +1199,36 @@ function levelColour(l) {
 }
 function errorText(e) {
   return ({ 'not enough money': 'Not enough money', 'no joker space': 'No room for another Joker', 'cannot use now': "Can't use that right now", 'cannot play': "Can't play that", 'cannot discard': "Can't discard", 'busy': 'Hold on…', 'cannot sell now': "Can't sell that" })[e] || e;
+}
+
+/** Badge colour: the badge's own colour, a mod consumable type's, else the Balatro table. */
+function badgeColour(b, key, txt) {
+  const own = typeof b === 'object' && b ? cssColour(b.colour || b.color) : null;
+  if (own) return own;
+  if (BADGE_COL[key] || BADGE_COL[String(txt).toLowerCase()]) return BADGE_COL[key] || BADGE_COL[String(txt).toLowerCase()];
+  const t = modType(key) || modType(txt);
+  if (t) return cssColour(t.secondary_colour) || cssColour(t.primary_colour) || '#4f6367';
+  const r = MODREG.rarities[key];
+  if (r) return cssColour(r.badge_colour) || '#4f6367';
+  return '#4f6367';
+}
+const VANILLA_PACK = { Arcana: 'Arcana Pack', Celestial: 'Celestial Pack', Spectral: 'Spectral Pack', Standard: 'Standard Pack', Buffoon: 'Buffoon Pack' };
+/** "Energy" -> "Energy Pack"; a kind already ending in Pack/Box/... is shown as is. */
+export function packName(kind, state) {
+  if (VANILLA_PACK[kind]) return VANILLA_PACK[kind];
+  if (!kind || kind === 'Booster') return 'Booster Pack';
+  return /(pack|box|bundle|crate|bag)$/i.test(kind) ? kind : kind + ' Pack';
+}
+/** Background colours for a mod pack, from the mod consumable type named like the pack's kind
+ *  (background_colour / primary_colour + secondary_colour); null = the neutral pack background. */
+export function packColours(view) {
+  if (!view || !/^MOD_PACK/.test(view.state)) return null;
+  const kind = view.pack_kind;
+  if (!kind) return null;
+  const t = modType(kind);
+  if (t) {
+    const a = t.background_colour || t.primary_colour, b = t.secondary_colour;
+    if (cssColour(a)) return { colour: a, special: b };
+  }
+  return null;
 }

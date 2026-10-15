@@ -3,7 +3,7 @@
 // each frame when it has an edition / debuff / dissolve. Position, rotation and
 // scale ease toward a target set by the board layout; juice/flip/dissolve/
 // shatter are local animations. Draws ONLY from view data (cardView objects).
-import { drawCell, centerAtlas, CENTERS, CARDS, SEAL_POS, STICKER_POS, SOUL_POS } from './assets.js';
+import { drawCell, centerAtlas, CENTERS, CARDS, SEAL_POS, STICKER_POS, SOUL_POS, MODREG, drawModCell, modAtlasState } from './assets.js';
 import { CardFX } from './gl.js';
 
 export const FACE_W = 142, FACE_H = 190;
@@ -15,20 +15,20 @@ const noGL = () => !fx().ok;
 export function composeFace(ctx, d, backKey) {
   ctx.clearRect(0, 0, FACE_W, FACE_H);
   const center = CENTERS[d.center] || null;
-  const back = CENTERS[backKey || 'b_red'] || CENTERS.b_red;
-  if (d.facing === 'back') {
-    drawCell(ctx, 'centers', back.pos, 0, 0, FACE_W, FACE_H);
-    return;
-  }
-  const isPlaying = !!d.front || (center && (center.set === 'Default' || center.set === 'Enhanced'));
+  if (d.facing === 'back') { drawBack(ctx, backKey); return; }
+  const modCard = !!(d.mod || d.atlas);
+  const isPlaying = !!d.front || (center && (center.set === 'Default' || center.set === 'Enhanced')) || (modCard && (d.set === 'Default' || d.set === 'Enhanced'));
   if (isPlaying) {
-    drawCell(ctx, 'centers', (center && center.pos) || { x: 1, y: 0 }, 0, 0, FACE_W, FACE_H);
+    // a mod enhancement draws its own base; the rank/suit goes on top as usual
+    if (!(modCard && d.atlas && drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H))) drawCell(ctx, 'centers', (center && center.pos) || { x: 1, y: 0 }, 0, 0, FACE_W, FACE_H);
     if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H);
     if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
+  } else if (modCard) {
+    if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
   } else if (center) {
     drawCell(ctx, centerAtlas(center), center.pos, 0, 0, FACE_W, FACE_H);
   } else {
-    drawCell(ctx, 'centers', back.pos, 0, 0, FACE_W, FACE_H);
+    drawBack(ctx, backKey);
   }
   if (d.eternal) drawCell(ctx, 'stickers', STICKER_POS.eternal, 0, 0, FACE_W, FACE_H);
   if (d.perishable) drawCell(ctx, 'stickers', STICKER_POS.perishable, 0, 0, FACE_W, FACE_H);
@@ -39,17 +39,49 @@ export function composeFace(ctx, d, backKey) {
     ctx.beginPath(); ctx.moveTo(10, 10); ctx.lineTo(FACE_W - 10, FACE_H - 10); ctx.moveTo(FACE_W - 10, 10); ctx.lineTo(10, FACE_H - 10); ctx.stroke();
   }
 }
-/** Which floating "soul" layer a card has (legendaries, The Soul, Hologram). */
+/** A deck back: vanilla from the Enhancers atlas, a mod deck from its own atlas. */
+export function drawBack(ctx, backKey) {
+  const key = backKey || 'b_red';
+  if (CENTERS[key]) { drawCell(ctx, 'centers', CENTERS[key].pos, 0, 0, FACE_W, FACE_H); return; }
+  const mc = MODREG.center(key);
+  if (mc && mc.atlas && drawModCell(ctx, mc.atlas, mc.pos, 0, 0, FACE_W, FACE_H)) return;
+  drawCell(ctx, 'centers', CENTERS.b_red.pos, 0, 0, FACE_W, FACE_H);
+}
+/** A clean stand-in for a mod card whose art is missing (or still loading): frame + name. */
+export function placeholderFace(ctx, d, loading) {
+  const W = FACE_W, H = FACE_H, r = 12;
+  ctx.save();
+  const rr = (x, y, w, h, rad) => { ctx.beginPath(); ctx.moveTo(x + rad, y); ctx.arcTo(x + w, y, x + w, y + h, rad); ctx.arcTo(x + w, y + h, x, y + h, rad); ctx.arcTo(x, y + h, x, y, rad); ctx.arcTo(x, y, x + w, y, rad); ctx.closePath(); };
+  rr(2, 2, W - 4, H - 4, r); ctx.fillStyle = '#e8ecee'; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = '#4f6367'; ctx.stroke();
+  rr(12, 12, W - 24, H - 24, 8); ctx.fillStyle = loading ? '#c9d2d5' : '#bfc7d5'; ctx.fill();
+  ctx.fillStyle = '#4f6367'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const words = String(d.name || d.center || '?').split(/\s+/);
+  const lines = []; let cur = '';
+  ctx.font = '26px m6x11, monospace';
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > W - 34 && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur);
+  const shown = lines.slice(0, 4);
+  shown.forEach((l, i) => ctx.fillText(l, W / 2, H / 2 + (i - (shown.length - 1) / 2) * 26, W - 30));
+  ctx.restore();
+}
+/** Which floating "soul" layer a card has (legendaries, The Soul, Hologram, mod soul_pos). */
 export function soulLayer(d) {
   if (d.facing === 'back') return null;
+  if (d.soul_pos && d.atlas) return { mod: true, atlas: d.atlas, pos: d.soul_pos };
   const c = CENTERS[d.center];
   if (!c) return null;
   if (c.soul_pos) return { atlas: 'Joker', pos: c.soul_pos };
   if (d.center === 'c_soul') return { atlas: 'centers', pos: SOUL_POS };
   return null;
 }
+/** Draw a soul layer (vanilla or mod atlas). */
+export function drawSoul(ctx, soul) {
+  if (soul.mod) return drawModCell(ctx, soul.atlas, soul.pos, 0, 0, FACE_W, FACE_H);
+  return drawCell(ctx, soul.atlas, soul.pos, 0, 0, FACE_W, FACE_H);
+}
 
-const visKey = (d, backKey) => [d.center, d.front, d.edition, d.seal, d.facing, d.debuff, d.eternal, d.perishable, d.rental, backKey].join('|');
+const visKey = (d, backKey) => [d.center, d.front, d.edition, d.seal, d.facing, d.debuff, d.eternal, d.perishable, d.rental, backKey, d.atlas, d.pos && d.pos.x, d.pos && d.pos.y, d.soul_pos && d.soul_pos.x, d.soul_pos && d.soul_pos.y].join('|');
 
 export class CardSprite {
   constructor(id, data, board) {
@@ -90,9 +122,10 @@ export class CardSprite {
     if (soul) {
       if (!this.soul) { this.soul = document.createElement('canvas'); this.soul.width = FACE_W; this.soul.height = FACE_H; this.soul.className = 'card-soul'; this.inner.appendChild(this.soul); }
       const sc = this.soul.getContext('2d'); sc.clearRect(0, 0, FACE_W, FACE_H);
-      drawCell(sc, soul.atlas, soul.pos, 0, 0, FACE_W, FACE_H);
+      drawSoul(sc, soul);
     } else if (this.soul) { this.soul.remove(); this.soul = null; }
-    this.el.classList.toggle('is-joker', CENTERS[this.d.center] && CENTERS[this.d.center].set === 'Joker');
+    this.el.classList.toggle('is-joker', (CENTERS[this.d.center] && CENTERS[this.d.center].set === 'Joker') || (!!this.d.mod && this.d.set === 'Joker'));
+    this.el.classList.toggle('is-mod', !!this.d.mod);
     this.el.classList.toggle('wee', this.d.center === 'j_wee');
   }
   needsFx() { return !!(this.dissolve || (this.d.facing !== 'back' && (this.d.edition || this.d.debuff))); }

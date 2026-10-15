@@ -6,7 +6,8 @@
 //      unchanged delta / keep-alive skips the row write / stale + over), presence,
 //      live-friends kind:'micatro', chat permissions, a snapshot size cap
 //   2. run-score / run-leaderboard accept mode 'micatro', rank by best hand score,
-//      clamp Infinity to a finite number, refuse NaN — and the W/L boards still work
+//      clamp Infinity to a finite number, refuse NaN — and the W/L boards still work;
+//      modded runs rank on their own board (mode 'micatro_modded', entries carry their mods)
 //   3. micatro/js/net.js end-to-end against the same handler: the publisher bumps
 //      seq only on a changed view and keep-alives carry no snapshot; spectate gets
 //      the view, eases off when unchanged, and sees the final over/won push
@@ -197,6 +198,22 @@ try {
 	const dlb = await call('run-leaderboard', { mode: 'duels' }, tokens.alice);
 	A(dl.status === 200 && dlb.top[0]?.wins === 7 && dlb.top[0]?.losses === 2, 'the W/L run boards still work unchanged');
 	A((await raw('run-score', { mode: 'micatrox', score: 5 }, tokens.alice)).status === 400, 'unknown modes are still refused');
+
+	// modded runs: their own board (micatro_modded), each entry tagged with its mod list
+	const m1 = await raw('run-score', { mode: 'micatro_modded', score: 9e9, ante: 6, back: 'b_red', stake: 1, mods: ['pokermon', 'Nacho_Dip', 'pokermon', 'bad mod!', 7] }, tokens.alice);
+	A(m1.status === 200 && m1.body.better === true && m1.body.rank === 1 && m1.body.best.mods.join() === 'nacho_dip,pokermon', 'run-score accepts micatro_modded and stores the cleaned, sorted mod list', JSON.stringify(m1.body));
+	const lbV = await call('run-leaderboard', { mode: 'micatro' }, tokens.alice);
+	A(lbV.you && lbV.you.score === 125000 && !(lbV.top || []).some(e => e.score === 9e9 || e.mods), 'a modded score never lands on (or replaces the best of) the vanilla board', JSON.stringify(lbV.you));
+	const lbM = await call('run-leaderboard', { mode: 'micatro_modded' }, tokens.alice);
+	A(lbM.top.length === 1 && lbM.top[0].name === 'alice' && lbM.top[0].mods.join() === 'nacho_dip,pokermon' && lbM.you && lbM.you.score === 9e9 && lbM.you.rank === 1, 'run-leaderboard micatro_modded lists modded runs with their mods + your best', JSON.stringify(lbM));
+	const m2 = await raw('run-score', { mode: 'micatro', score: 1e12, ante: 8, mods: ['pokermon'] }, tokens.bob);
+	const lbM2 = await call('run-leaderboard', { mode: 'micatro_modded' }, tokens.bob);
+	A(m2.status === 200 && lbM2.top[0].name === 'bob' && lbM2.top[0].mods.join() === 'pokermon', "a 'micatro' score that carries mods is filed on the modded board", JSON.stringify(lbM2.top));
+	A((await raw('run-score', { mode: 'micatro_modded', score: 5, mods: [] }, tokens.carl)).status === 400, 'a modded score without mods is refused');
+	const m3 = await raw('run-score', { mode: 'micatro_modded', score: 10, mods: ['pokermon'] }, tokens.alice);
+	A(m3.body.better === false && m3.body.best.score === 9e9, 'one best per player on the modded board (a lower modded score does not replace it)');
+	const lbV2 = await call('run-leaderboard', { mode: 'micatro' }, tokens.alice);
+	A(lbV2.top.some(e => e.name === 'alice' && e.score === 125000 && !e.mods), 'existing vanilla rows are untouched (no mods field)', JSON.stringify(lbV2.top.find(e => e.name === 'alice')));
 } catch (e) {
 	A(false, 'score harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
 }
@@ -292,6 +309,13 @@ try {
 	A(r3.ok === true && r3.better === false, 'submitScore accepts a BigInt');
 	const lb = await Net.fetchLeaderboard({ limit: 2 });
 	A(lb.top.length === 2 && lb.you && lb.you.rank >= 1 && lb.me === 'dana', 'fetchLeaderboard returns top N + you', JSON.stringify(lb).slice(0, 200));
+	// a modded run through the client: its own board, mods sorted + deduped
+	const r4 = await Net.submitScore({ score: 777, ante: 2, mods: ['pokermon', 'nacho_dip', 'pokermon'] });
+	A(r4.ok && sent[sent.length - 1].payload.mode === 'micatro_modded' && sent[sent.length - 1].payload.mods.join() === 'nacho_dip,pokermon' && r4.best.mods.join() === 'nacho_dip,pokermon', 'submitScore with mods posts to micatro_modded with the sorted mod list', JSON.stringify(sent[sent.length - 1].payload));
+	const r5 = await Net.submitScore({ score: 1, ante: 1, mods: [] });
+	A(r5.ok && sent[sent.length - 1].payload.mode === 'micatro' && !('mods' in sent[sent.length - 1].payload), 'submitScore with no mods stays on the vanilla board');
+	const lbm = await Net.fetchLeaderboard({ modded: true });
+	A(sent[sent.length - 1].payload.mode === 'micatro_modded' && lbm.top.some(e => e.name === 'dana' && e.mods && e.mods.join() === 'nacho_dip,pokermon') && lbm.you && lbm.you.score === 777, 'fetchLeaderboard({modded:true}) reads the Modded board', JSON.stringify(lbm).slice(0, 300));
 } catch (e) {
 	A(false, 'net.js harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
 }

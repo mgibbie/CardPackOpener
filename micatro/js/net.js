@@ -5,7 +5,8 @@
 //   publish-micatro  {snapshot?, label, seq, over, won}  → the runner's live view
 //   micatro-state    {username, seq}                     → a FRIEND reads it (cap 10)
 //   run-score        {mode:'micatro', score, ante, seed, back, stake, won}
-//   run-leaderboard  {mode:'micatro'}                    → {top, you}
+//                    {mode:'micatro_modded', ..., mods:[ids]}  (a modded run: its own board)
+//   run-leaderboard  {mode:'micatro' | 'micatro_modded'}  → {top, you}
 //
 // Write budget: the publisher bumps `seq` and sends the snapshot ONLY when the view
 // changed; otherwise it sends a snapshot-less keep-alive every ~10s (the server
@@ -175,21 +176,31 @@ function wireScore(score) {
 	return Math.max(0, n);
 }
 
-// submitScore({score, ante, seed, back, stake, won}) → {ok, better, best, rank} | {error}
-export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false } = {}) {
+/** A run's mod ids, cleaned + sorted (the board groups identical mod sets). */
+export function modList(mods) {
+	return [...new Set((Array.isArray(mods) ? mods : []).filter(m => typeof m === 'string' && m).map(String))].sort();
+}
+
+// submitScore({score, ante, seed, back, stake, won, mods}) → {ok, better, best, rank} | {error}
+// A run with mods posts to the separate Modded board (mode 'micatro_modded') with its mod list.
+export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [] } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	const s = wireScore(score);
 	if (s == null) return { error: 'bad score' };
-	try { return await MP.call('run-score', { mode: 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won }); }
+	const ml = modList(mods);
+	const body = { mode: ml.length ? 'micatro_modded' : 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won };
+	if (ml.length) body.mods = ml;
+	try { return await MP.call('run-score', body); }
 	catch (e) { return { error: 'offline' }; }
 }
 
-// fetchLeaderboard({limit}) → { top: [{name, score, ante, seed, back, stake, won, when}], you: {...best, rank} | null, me }
+// fetchLeaderboard({limit, modded}) → { top: [{name, score, ante, seed, back, stake, won, when, mods?}], you: {...best, rank} | null, me }
 // sorted by score (desc), then ante (desc), then earliest. The server keeps the top 100, returns 50.
-export async function fetchLeaderboard({ limit = 50 } = {}) {
+// modded:true reads the Modded board (each row carries its mod list).
+export async function fetchLeaderboard({ limit = 50, modded = false } = {}) {
 	if (!isLoggedIn()) return { top: [], you: null, me: null, error: 'not logged in' };
 	try {
-		const d = await MP.call('run-leaderboard', { mode: 'micatro' });
+		const d = await MP.call('run-leaderboard', { mode: modded ? 'micatro_modded' : 'micatro' });
 		if (!d || d.error) return { top: [], you: null, me: myName(), error: d?.error || 'bad response' };
 		return { top: (d.top || []).slice(0, Math.max(0, limit | 0)), you: d.you || null, me: myName() };
 	} catch { return { top: [], you: null, me: myName(), error: 'offline' }; }

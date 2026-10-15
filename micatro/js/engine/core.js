@@ -14,6 +14,7 @@
 //     run seed, so a run is fully reproducible from its seed + action list.
 
 import DATA from '../../data/balatro_data.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions } from '../mods/registry.js';
 
 export const G = {};
 
@@ -35,31 +36,41 @@ for (const [k, v] of Object.entries(P_CARDS)) v.key = k;
 P_CARDS.empty = {};
 
 const byOrder = (a, b) => a.order - b.order;
-export const P_CENTER_POOLS = {
-  Booster: [], Default: [], Enhanced: [], Edition: [], Joker: [], Tarot: [], Planet: [],
-  Tarot_Planet: [], Spectral: [], Consumeables: [], Voucher: [], Back: [], Tag: [], Seal: [], Stake: [], Demo: [],
-};
+const BASE_POOL_KEYS = ['Booster', 'Default', 'Enhanced', 'Edition', 'Joker', 'Tarot', 'Planet', 'Tarot_Planet', 'Spectral', 'Consumeables', 'Voucher', 'Back', 'Tag', 'Seal', 'Stake', 'Demo'];
+export const P_CENTER_POOLS = {};
 export const P_JOKER_RARITY_POOLS = [null, [], [], [], []];
-for (const v of Object.values(P_TAGS)) P_CENTER_POOLS.Tag.push(v);
-for (const v of Object.values(P_SEALS)) P_CENTER_POOLS.Seal.push(v);
-for (const v of Object.values(P_STAKES)) P_CENTER_POOLS.Stake.push(v);
-for (const v of Object.values(P_CENTERS)) {
-  if (v.set === 'Joker') P_CENTER_POOLS.Joker.push(v);
-  if (v.set && v.demo && v.pos) P_CENTER_POOLS.Demo.push(v);
-  if (!v.wip && !v.demo) {
-    if (v.set && v.set !== 'Joker' && !v.skip_pool && !v.omit) P_CENTER_POOLS[v.set].push(v);
-    if (v.set === 'Tarot' || v.set === 'Planet') P_CENTER_POOLS.Tarot_Planet.push(v);
-    if (v.consumeable) P_CENTER_POOLS.Consumeables.push(v);
-    if (v.rarity && v.set === 'Joker' && !v.demo) P_JOKER_RARITY_POOLS[v.rarity].push(v);
+/**
+ * (Re)build the center pools from base content plus whatever mod content
+ * `isActive(center)` allows. Called once at load (base only) and again by the
+ * mod system on every newRun, so a disabled mod's cards never enter a pool.
+ * Mod consumable sets get their own pool; mod rarities (string keys such as
+ * 'poke_safari') get a rarity pool under that key.
+ */
+export function rebuildPools(isActive = (c) => !c.mod) {
+  for (const k of Object.keys(P_CENTER_POOLS)) delete P_CENTER_POOLS[k];
+  for (const k of BASE_POOL_KEYS) P_CENTER_POOLS[k] = [];
+  P_JOKER_RARITY_POOLS.length = 0;
+  P_JOKER_RARITY_POOLS.push(null, [], [], [], []);
+  for (const k of Object.keys(P_JOKER_RARITY_POOLS)) if (isNaN(Number(k))) delete P_JOKER_RARITY_POOLS[k];
+  for (const v of Object.values(P_TAGS)) if (isActive(v)) P_CENTER_POOLS.Tag.push(v);
+  for (const v of Object.values(P_SEALS)) if (isActive(v)) P_CENTER_POOLS.Seal.push(v);
+  for (const v of Object.values(P_STAKES)) if (isActive(v)) P_CENTER_POOLS.Stake.push(v);
+  for (const v of Object.values(P_CENTERS)) {
+    if (!isActive(v)) continue;
+    if (v.set === 'Joker') P_CENTER_POOLS.Joker.push(v);
+    if (v.set && v.demo && v.pos) P_CENTER_POOLS.Demo.push(v);
+    if (!v.wip && !v.demo) {
+      if (v.set && v.set !== 'Joker' && !v.skip_pool && !v.omit) (P_CENTER_POOLS[v.set] = P_CENTER_POOLS[v.set] || []).push(v);
+      if (v.set === 'Tarot' || v.set === 'Planet') P_CENTER_POOLS.Tarot_Planet.push(v);
+      if (v.consumeable) P_CENTER_POOLS.Consumeables.push(v);
+      if (v.rarity && v.set === 'Joker' && !v.demo) (P_JOKER_RARITY_POOLS[v.rarity] = P_JOKER_RARITY_POOLS[v.rarity] || []).push(v);
+    }
   }
+  for (const k of Object.keys(P_CENTER_POOLS)) P_CENTER_POOLS[k].sort(byOrder);
+  // Balatro sorts the rarity pools by insertion of pairs() — make it stable by order.
+  for (const k of Object.keys(P_JOKER_RARITY_POOLS)) if (P_JOKER_RARITY_POOLS[k]) P_JOKER_RARITY_POOLS[k].sort(byOrder);
 }
-for (const k of ['Joker', 'Tarot', 'Planet', 'Tarot_Planet', 'Spectral', 'Voucher', 'Booster', 'Consumeables', 'Back', 'Enhanced', 'Edition'])
-  P_CENTER_POOLS[k].sort(byOrder);
-P_CENTER_POOLS.Tag.sort(byOrder);
-P_CENTER_POOLS.Seal.sort(byOrder);
-P_CENTER_POOLS.Stake.sort(byOrder);
-// Balatro sorts the rarity pools by insertion of pairs() — make it stable by order.
-for (let r = 1; r <= 4; r++) P_JOKER_RARITY_POOLS[r].sort(byOrder);
+rebuildPools();
 // Online/unlock state: everything counts as unlocked + discovered in Micatro.
 for (const v of Object.values(P_CENTERS)) { v.unlocked = true; v.discovered = true; }
 
@@ -208,15 +219,18 @@ export function attention_text(text) { emit('attention', { text }); }
 
 export function localize(key, set) {
   const m = LOC.misc;
-  if (set === 'poker_hands') return (m.poker_hands && m.poker_hands[key]) || key;
-  if (typeof key === 'string') return (m.dictionary && m.dictionary[key]) || key;
+  // Mods' localization (MOD_LOC) is the fallback for keys the base game doesn't have.
+  const mm = MOD_LOC.misc;
+  if (set === 'poker_hands') return (m.poker_hands && m.poker_hands[key]) || (mm.poker_hands && mm.poker_hands[key]) || key;
+  if (typeof key === 'string') return (m.dictionary && m.dictionary[key]) || (mm.dictionary && mm.dictionary[key]) || key;
   if (key && key.type === 'variable') {
-    let s = (m.v_dictionary && m.v_dictionary[key.key]) || key.key;
+    let s = (m.v_dictionary && m.v_dictionary[key.key]) || (mm.v_dictionary && mm.v_dictionary[key.key]) || key.key;
     (key.vars || []).forEach((v, i) => { s = s.replace('#' + (i + 1) + '#', v); });
     return s;
   }
   if (key && key.type === 'name_text') {
-    const d = LOC.descriptions[key.set] && LOC.descriptions[key.set][key.key];
+    const d = (LOC.descriptions[key.set] && LOC.descriptions[key.set][key.key]) ||
+      (MOD_LOC.descriptions[key.set] && MOD_LOC.descriptions[key.set][key.key]);
     return (d && d.name) || key.key;
   }
   return String(key);
@@ -232,6 +246,8 @@ export class CardArea {
   }
   emplace(card, location, stay_flipped) {
     if (location === 'front' || this.config.type === 'deck') this.cards.unshift(card);
+    // Pokermon's lovely patch (cardarea.lua): a numeric location inserts at that 1-based slot.
+    else if (typeof location === 'number') this.cards.splice(Math.max(0, location - 1), 0, card);
     else this.cards.push(card);
     if (card.facing === 'back' && this.config.type !== 'discard' && this.config.type !== 'deck' && !stay_flipped) card.flip();
     // Lua's CardArea:align_cards turns every deck/discard card face down each
@@ -328,6 +344,7 @@ export class CardArea {
           if (pseudorandom(pseudoseed('flipped_card')) < 1 / G.GAME.modifiers.flipped_cards) sf = true;
         }
         this.emplace(card, undefined, sf);
+        if (this === G.hand && area === G.deck && G.drawn_cards) G.drawn_cards.push(card); // SMODS.drawn_cards
         return true;
       }
     }
@@ -381,8 +398,18 @@ export class Card {
     if (!initial) emit('card_changed', { card: this.sort_id });
   }
 
-  set_ability(center, initial) {
+  set_ability(center, initial, delay_sprites) {
     const old_center = this.config.center;
+    // Steamodded (lovely/fixes.toml): with mods installed a card already in the deck takes
+    // its old center's remove_from_deck / new center's add_to_deck effects across the swap,
+    // and keeps every ability field the new center doesn't reset (e.g. Pokermon's Tera
+    // sticker flags and money fractions survive an evolution). Vanilla runs: unchanged.
+    const smods = ACTIVE_MODS.length > 0;
+    let was_added_to_deck = false;
+    if (smods && this.added_to_deck && old_center && !this.debuff) {
+      this.remove_from_deck();
+      was_added_to_deck = true;
+    }
     this.config.center = center;
     this.config.center_key = center.key;
     if (this.ability && old_center && old_center.config.bonus) this.ability.bonus = this.ability.bonus - old_center.config.bonus;
@@ -400,6 +427,18 @@ export class Card {
     };
     this.ability.bonus = ((prev && prev.bonus) || 0) + (c.bonus || 0);
     if (center.consumeable) this.ability.consumeable = c;
+    if (smods && prev) {
+      // SMODS: old fields persist unless the new ability sets them; reset keys always take the new value.
+      const fresh = this.ability;
+      this.ability = prev;
+      const extra_value = prev.extra_value || 0;
+      for (const [k, v] of Object.entries(fresh)) if (v !== undefined) this.ability[k] = v; // Lua pairs() skips nils
+      this.ability.extra_value = extra_value;
+      for (const k of ['name', 'effect', 'set', 'extra', 'played_this_ante', 'perma_debuff']) this.ability[k] = fresh[k];
+      if (!center.consumeable) delete this.ability.consumeable;
+    }
+    // SMODS center.toml: a mod center's whole config is copied onto the ability.
+    if (center.mod) for (const [k, v] of Object.entries(c)) if (k !== 'bonus' && k !== 'extra') this.ability[k] = copy_table(v);
     if (this.ability.name === 'Invisible Joker') this.ability.invis_rounds = 0;
     if (this.ability.name === 'To Do List') {
       const ph = Object.keys(G.GAME.hands).filter((k) => G.GAME.hands[k].visible);
@@ -419,6 +458,8 @@ export class Card {
     if (G.GAME && G.GAME.used_jokers) {
       for (const [k, v] of Object.entries(P_CENTERS)) if (v.name === this.ability.name) G.GAME.used_jokers[k] = true;
     }
+    if (center.set_ability) center.set_ability(center, this, initial, delay_sprites);
+    if (was_added_to_deck && !this.debuff) this.add_to_deck();
     if (!initial && G.GAME.blind) G.GAME.blind.debuff_card(this);
     if (!initial) emit('card_changed', { card: this.sort_id });
   }
@@ -427,6 +468,7 @@ export class Card {
     this.extra_cost = 0 + G.GAME.inflation;
     if (this.edition) {
       this.extra_cost += (this.edition.holo ? 3 : 0) + (this.edition.foil ? 2 : 0) + (this.edition.polychrome ? 5 : 0) + (this.edition.negative ? 5 : 0);
+      if (this.edition.key && P_CENTERS[this.edition.key] && P_CENTERS[this.edition.key].mod) this.extra_cost += P_CENTERS[this.edition.key].extra_cost || 0;
     }
     this.cost = Math.max(1, Math.floor((this.base_cost + this.extra_cost + 0.5) * (100 - G.GAME.discount_percent) / 100));
     if (this.ability.set === 'Booster' && G.GAME.modifiers.booster_ante_scaling) this.cost += G.GAME.round_resets.ante - 1;
@@ -434,12 +476,31 @@ export class Card {
     if (this.ability.rental) this.cost = 1;
     this.sell_cost = Math.max(1, Math.floor(this.cost / 2)) + (this.ability.extra_value || 0);
     if (this.area && this.ability.couponed && (this.area === G.shop_jokers || this.area === G.shop_booster)) this.cost = 0;
+    callHook('set_cost', this);
   }
 
   set_edition(edition, immediate, silent) {
+    // Mod editions (Steamodded SMODS.Edition): `edition` may also be a key string
+    // ('e_poke_shiny') or {poke_shiny: true}. Mods may refuse an edition (set_edition hook);
+    // the old mod edition's on_remove / the new one's on_apply run like SMODS's set_edition.
+    const ek = edition_key_of(edition);
+    if (ek && callHook('set_edition', this, ek).includes(false)) return;
+    const old = this.edition;
+    if (old && old.key && P_CENTERS[old.key] && P_CENTERS[old.key].mod && P_CENTERS[old.key].on_remove) P_CENTERS[old.key].on_remove(this);
     this.edition = null;
-    if (!edition) { this.set_cost(); return; }
+    if (!edition || !ek || ek === 'e_base') { this.set_cost(); if (old) emit('card_changed', { card: this.sort_id }); return; }
     const E = P_CENTERS;
+    const pe = E[ek];
+    if (pe && pe.mod && pe.set === 'Edition') {
+      const type = ek.slice(2);
+      this.edition = { [type]: true, type, key: ek };
+      for (const [k, v] of Object.entries(pe.config || {})) this.edition[k] = copy_table(v);
+      if (pe.on_apply) pe.on_apply(this);
+      if (!silent) { emit('edition', { card: this.sort_id, edition: type }); if (pe.sound) play_sound(pe.sound.sound || pe.sound, pe.sound.per, pe.sound.vol); }
+      else emit('card_changed', { card: this.sort_id });
+      this.set_cost();
+      return;
+    }
     if (edition.holo) this.edition = { mult: E.e_holo.config.extra, holo: true, type: 'holo' };
     else if (edition.foil) this.edition = { chips: E.e_foil.config.extra, foil: true, type: 'foil' };
     else if (edition.polychrome) this.edition = { x_mult: E.e_polychrome.config.extra, polychrome: true, type: 'polychrome' };
@@ -467,8 +528,20 @@ export class Card {
     this.ability.perishable = undefined;
     if (this.config.center.perishable_compat && !this.ability.eternal) { this.ability.perishable = true; this.ability.perish_tally = G.GAME.perishable_rounds; }
   }
-  set_rental(r) { this.ability.rental = r; this.set_cost(); }
+  set_rental(r) {
+    // Pokermon (lovely: Zorua): centers with rental_compat === false never become Rental.
+    if (this.config.center.rental_compat === false) return;
+    this.ability.rental = r; this.set_cost();
+  }
   set_debuff(should_debuff) {
+    // Steamodded mod.set_debuff (runs first): true debuffs, 'prevent_debuff' wins outright.
+    for (const res of callHook('set_debuff', this, should_debuff)) {
+      if (res === 'prevent_debuff') {
+        if (this.debuff) { this.debuff = false; if (this.area === G.jokers) this.add_to_deck(true); emit('card_changed', { card: this.sort_id }); }
+        return;
+      }
+      if (res === true) should_debuff = true;
+    }
     if (this.ability.perishable && this.ability.perish_tally <= 0) {
       if (!this.debuff) { this.debuff = true; if (this.area === G.jokers) this.remove_from_deck(true); emit('card_changed', { card: this.sort_id }); }
       return;
@@ -493,7 +566,10 @@ export class Card {
   add_to_deck(from_debuff) {
     if (this.added_to_deck) return;
     this.added_to_deck = true;
+    callHook('add_to_deck', this, from_debuff);
     if (this.ability.set === 'Enhanced' || this.ability.set === 'Default') return;
+    // Steamodded center API: a mod center's own add_to_deck runs before the vanilla effects.
+    if (this.config.center.mod && this.config.center.add_to_deck) this.config.center.add_to_deck(this.config.center, this, from_debuff);
     const n = this.ability.name;
     if (this.ability.h_size !== 0) G.hand.change_size(this.ability.h_size);
     if (this.ability.d_size > 0) { G.GAME.round_resets.discards += this.ability.d_size; ease_discard(this.ability.d_size); }
@@ -519,6 +595,7 @@ export class Card {
   remove_from_deck(from_debuff) {
     if (!this.added_to_deck) return;
     this.added_to_deck = false;
+    if (this.config.center.mod && this.config.center.remove_from_deck) this.config.center.remove_from_deck(this.config.center, this, from_debuff);
     const n = this.ability.name;
     if (this.ability.h_size !== 0) G.hand.change_size(-this.ability.h_size);
     if (this.ability.d_size > 0) { G.GAME.round_resets.discards -= this.ability.d_size; ease_discard(-this.ability.d_size); }
@@ -551,12 +628,20 @@ export class Card {
   is_face(from_boss) {
     if (this.debuff && !from_boss) return false;
     const id = this.get_id();
-    return id === 11 || id === 12 || id === 13 || find_joker('Pareidolia').length > 0;
+    const base = id === 11 || id === 12 || id === 13 || find_joker('Pareidolia').length > 0;
+    const o = firstHook('is_face', this, base);
+    return o === undefined ? base : !!o;
   }
   get_original_rank() { return this.base.original_value; }
   get_chip_bonus() {
     if (this.debuff) return 0;
     if (this.ability.effect === 'Stone Card') return this.ability.bonus + (this.ability.perma_bonus || 0);
+    // Pokermon (lovely: Misdreavus): ability.nominal_drain lowers the rank's chips (never below 1).
+    if (this.ability.nominal_drain) {
+      this.ability.nominal_drain = Math.min(this.ability.nominal_drain, this.base.nominal - 1);
+      this.ability.perma_bonus = Math.max(this.ability.perma_bonus || 0, -this.ability.bonus);
+      return this.base.nominal - this.ability.nominal_drain + this.ability.bonus + this.ability.perma_bonus;
+    }
     return this.base.nominal + this.ability.bonus + (this.ability.perma_bonus || 0);
   }
   get_chip_mult() {
@@ -578,6 +663,9 @@ export class Card {
   get_chip_h_x_mult() { return this.debuff ? 0 : this.ability.h_x_mult; }
   get_edition() {
     if (this.debuff) return undefined;
+    // A mod edition with no scoring numbers (e.g. Pokermon's Shiny) scores nothing.
+    if (this.edition && this.edition.key && P_CENTERS[this.edition.key] && P_CENTERS[this.edition.key].mod &&
+        !this.edition.chips && !this.edition.mult && !this.edition.x_mult) return undefined;
     if (this.edition) {
       const ret = { card: this };
       if (this.edition.x_mult) ret.x_mult_mod = this.edition.x_mult;
@@ -678,6 +766,7 @@ export class Card {
   }
   calculate_dollar_bonus() {
     if (this.debuff) return undefined;
+    if (this.config.center.mod) return this.config.center.calc_dollar_bonus ? this.config.center.calc_dollar_bonus(this.config.center, this) : undefined;
     if (this.ability.set === 'Joker') {
       const n = this.ability.name;
       if (n === 'Golden Joker') return this.ability.extra;
@@ -699,6 +788,7 @@ export class Card {
   juice_up() { juice_card(this); }
   /** Card:remove — take the card out of its area, the deck list, and the joker slots. */
   remove() {
+    if (!this.removed) callHook('card_removed', this);
     this.removed = true;
     if (this.area) this.area.remove_card(this);
     this.remove_from_deck();
@@ -732,6 +822,8 @@ export function find_joker(name, non_debuff) {
   const found = [];
   if (G.jokers && G.jokers.cards) for (const v of G.jokers.cards) if (v.ability.name === name && (non_debuff || !v.debuff)) found.push(v);
   if (G.consumeables && G.consumeables.cards) for (const v of G.consumeables.cards) if (v.ability.name === name && (non_debuff || !v.debuff)) found.push(v);
+  // Mods: cards that count as `name` (e.g. a joker that acts as Four Fingers).
+  for (const extra of callHook('find_joker_alias', name, non_debuff)) for (const c of extra) if (!found.includes(c)) found.push(c);
   return found;
 }
 export function ease_dollars(mod, instant) {
@@ -801,6 +893,7 @@ export function draw_card(from, to, percent, dir, sort, card, _delay, mute, stay
           if (pseudorandom(pseudoseed('flipped_card')) < 1 / G.GAME.modifiers.flipped_cards) sf = true;
         }
         to.emplace(card, undefined, sf);
+        if (to === G.hand && from === G.deck && G.drawn_cards) G.drawn_cards.push(card); // SMODS.drawn_cards
       }
     } else {
       to.draw_card_from(from, stay_flipped, discarded_only);
@@ -811,6 +904,7 @@ export function draw_card(from, to, percent, dir, sort, card, _delay, mute, stay
 
 export function level_up_hand(card, hand, instant, amount) {
   amount = amount === undefined ? 1 : amount;
+  if (callHook('level_up_hand', card, hand, amount).includes(false)) return;
   const h = G.GAME.hands[hand];
   h.level = Math.max(0, h.level + amount);
   h.mult = Math.max(h.s_mult + h.l_mult * (h.level - 1), 1);
@@ -854,8 +948,10 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
   let _starting_pool, _pool_key = '', _pool_size = 0;
   if (_type === 'Joker') {
     let rarity = _rarity ?? pseudorandom('rarity' + G.GAME.round_resets.ante + (_append || ''));
-    rarity = (_legendary && 4) || (rarity > 0.95 && 3) || (rarity > 0.7 && 2) || 1;
-    _starting_pool = P_JOKER_RARITY_POOLS[rarity];
+    // Steamodded: a rarity KEY (mod rarity such as 'poke_safari') picks that pool directly.
+    if (typeof rarity === 'string') rarity = _legendary ? 4 : rarity;
+    else rarity = (_legendary && 4) || (rarity > 0.95 && 3) || (rarity > 0.7 && 2) || 1;
+    _starting_pool = P_JOKER_RARITY_POOLS[rarity] || [];
     _pool_key = 'Joker' + rarity + ((!_legendary && _append) || '');
   } else {
     _starting_pool = P_CENTER_POOLS[_type];
@@ -882,8 +978,11 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
         add = false;
         for (const vv of G.playing_cards) if (vv.config.center.key === v.enhancement_gate) add = true;
       } else add = true;
-      if (v.name === 'Black Hole' || v.name === 'The Soul') add = false;
+      if (v.name === 'Black Hole' || v.name === 'The Soul' || v.hidden) add = false;
     }
+    // Mod content: the center's own in_pool and every active mod's pool_filter.
+    if (add && v.in_pool && !v.in_pool(v, { type: _type, append: _append })) add = false;
+    if (add && callHook('pool_filter', v, _type, _append).includes(false)) add = false;
     if (v.no_pool_flag && G.GAME.pool_flags[v.no_pool_flag]) add = false;
     if (v.yes_pool_flag && !G.GAME.pool_flags[v.yes_pool_flag]) add = false;
     if (add && !G.GAME.banned_keys[v.key]) { _pool.push(v.key); _pool_size++; }
@@ -896,12 +995,27 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     else if (_type === 'Spectral') _pool.push('c_incantation');
     else if (_type === 'Voucher') _pool.push('v_blank');
     else if (_type === 'Tag') _pool.push('tag_handy');
-    else _pool.push('j_joker');
+    else if (CONSUMABLE_TYPES[_type] && CONSUMABLE_TYPES[_type].default) _pool.push(CONSUMABLE_TYPES[_type].default);
+    else _pool.push(reduceHook('empty_pool_default', 'j_joker', _type));
   }
   return [_pool, _pool_key + (!_legendary ? G.GAME.round_resets.ante : '')];
 }
 
+/** Edition key ('e_holo', 'e_poke_shiny') of a set_edition argument, or null. */
+export function edition_key_of(edition) {
+  if (!edition) return null;
+  if (typeof edition === 'string') return edition.startsWith('e_') ? edition : 'e_' + edition;
+  if (edition.type) return 'e_' + edition.type;
+  for (const [k, v] of Object.entries(edition)) if (v) return 'e_' + k;
+  return null;
+}
+
 export function poll_edition(_key, _mod, _no_neg, _guaranteed) {
+  // Steamodded's weighted poll_edition, used only when an active mod adds a shop edition
+  // (so vanilla runs keep the exact vanilla thresholds). Vanilla weights: foil 20, holo 14,
+  // polychrome 3, negative 3; non-guaranteed polls pad the total so 96% stay editionless.
+  const modEds = (_key === 'wheel_of_fortune' || _key === 'aura') ? [] : activeModEditions().filter((e) => e.in_shop && (e.weight || 0) > 0 && (!e.in_pool || e.in_pool(e)));
+  if (modEds.length) return poll_edition_weighted(_key, _mod, _no_neg, _guaranteed, modEds);
   _mod = _mod || 1;
   const p = pseudorandom(pseudoseed(_key || 'edition_generic'));
   if (_guaranteed) {
@@ -917,12 +1031,49 @@ export function poll_edition(_key, _mod, _no_neg, _guaranteed) {
   }
   return null;
 }
+function poll_edition_weighted(_key, _mod, _no_neg, _guaranteed, modEds) {
+  let _modifier = 1;
+  const edition_poll = pseudorandom(pseudoseed(_key || 'edition_generic'));
+  const rate = G.GAME.edition_rate;
+  // Vanilla editions first (flipped: negative, polychrome, holo, foil), then mod editions.
+  const opts = [
+    { name: 'negative', weight: 3, get: () => 3 },
+    { name: 'polychrome', weight: 3, get: () => (rate - 1) * 3 + rate * 3 },
+    { name: 'holo', weight: 14, get: () => rate * 14 },
+    { name: 'foil', weight: 20, get: () => rate * 20 },
+    ...modEds.map((e) => ({ name: e.key.slice(2), weight: e.weight, get: () => (e.get_weight ? e.get_weight(e) : e.weight) })),
+  ];
+  let total_weight = 0;
+  for (const v of opts) total_weight += v.weight;
+  if (!_guaranteed) {
+    _modifier = _mod || 1;
+    total_weight = total_weight + (total_weight / 4 * 96);
+    for (const v of opts) v.weight = reduceHook('edition_weight', v.get(), v.name);
+  }
+  let weight_i = 0;
+  for (const v of opts) {
+    weight_i += v.weight * _modifier;
+    if (edition_poll > 1 - weight_i / total_weight) {
+      if (!(v.name === 'negative' && _no_neg)) return { [v.name]: true };
+    }
+  }
+  return null;
+}
 
 export function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append) {
   area = area || G.jokers;
   let center = P_CENTERS.b_red;
   const showman = find_joker('Showman').length > 0;
   if (!forced_key && soulable && !G.GAME.banned_keys.c_soul) {
+    // Steamodded: hidden mod consumables (soul_set / soul_rate) roll like The Soul, first.
+    if (ACTIVE_MODS.length) {
+      for (const v of P_CENTER_POOLS.Consumeables) {
+        if (!v.mod || !v.hidden || !(_type === v.set || _type === v.soul_set)) continue;
+        if (G.GAME.used_jokers[v.key] && !showman && !v.can_repeat_soul) continue;
+        if (v.in_pool && !v.in_pool(v, { type: _type, soul: true })) continue;
+        if (pseudorandom('soul_' + v.key + _type + G.GAME.round_resets.ante) > 1 - (v.soul_rate ?? 0.003)) forced_key = v.key;
+      }
+    }
     if ((_type === 'Tarot' || _type === 'Spectral' || _type === 'Tarot_Planet') && !(G.GAME.used_jokers.c_soul && !showman)) {
       if (pseudorandom('soul_' + _type + G.GAME.round_resets.ante) > 0.997) forced_key = 'c_soul';
     }
@@ -953,6 +1104,7 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     }
     card.set_edition(poll_edition('edi' + (key_append || '') + G.GAME.round_resets.ante), true, true);
   }
+  callHook('create_card', card, _type, area, key_append);
   return card;
 }
 /** G.P_CARDS without the synthetic `empty` entry, as an object keyed like Lua. */
@@ -1052,6 +1204,7 @@ export function get_new_boss() {
   const a1 = Math.max(1, ante);
   for (const [k, v] of Object.entries(P_BLINDS)) {
     if (!v.boss) continue;
+    if (v.mod && (!centerActive(v) || (v.in_pool && !v.in_pool(v)))) continue;
     if (!v.boss.showdown && v.boss.min <= a1 && (a1 % G.GAME.win_ante !== 0 || ante < 2)) eligible[k] = true;
     else if (v.boss.showdown && ante % G.GAME.win_ante === 0 && ante >= 2) eligible[k] = true;
   }
@@ -1087,12 +1240,14 @@ export function get_pack(_key, _type) {
     return P_CENTERS['p_buffoon_normal_' + math_random(1, 2)];
   }
   let cume = 0, it = 0, center;
-  for (const v of P_CENTER_POOLS.Booster) if ((!_type || _type === v.kind) && !G.GAME.banned_keys[v.key]) cume += v.weight || 1;
+  // Lua `v.weight or 1` (a weight of 0 stays 0); mod packs may also refuse via in_pool.
+  const ok = (v) => !G.GAME.banned_keys[v.key] && !(v.mod && v.in_pool && !v.in_pool(v, { type: 'Booster' }));
+  for (const v of P_CENTER_POOLS.Booster) if ((!_type || _type === v.kind) && ok(v)) cume += v.weight ?? 1;
   const poll = pseudorandom(pseudoseed((_key || 'pack_generic') + G.GAME.round_resets.ante)) * cume;
   for (const v of P_CENTER_POOLS.Booster) {
-    if (!G.GAME.banned_keys[v.key]) {
-      if (!_type || _type === v.kind) it += v.weight || 1;
-      if (it >= poll && it - (v.weight || 1) <= poll) { center = v; break; }
+    if (ok(v)) {
+      if (!_type || _type === v.kind) it += v.weight ?? 1;
+      if (it >= poll && it - (v.weight ?? 1) <= poll) { center = v; break; }
     }
   }
   return center;

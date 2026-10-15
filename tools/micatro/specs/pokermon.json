@@ -1,0 +1,20 @@
+{
+  "run_first": ["functions/pokefunctions.lua", "functions/pokespriteload.lua", "functions/energyfunctions.lua"],
+  "files": {
+    "jokers": ["pokemon/"],
+    "consumable_types": ["consumable types/"],
+    "consumables": ["consumables/"],
+    "boosters": ["boosters/"],
+    "seals": ["seals/"],
+    "stickers": ["stickers/"],
+    "editions": ["editions/"],
+    "enhancements": ["enhancements/"],
+    "vouchers": ["vouchers/"],
+    "blinds": ["blinds/"],
+    "tags": ["tags/"],
+    "backs": ["backs/"],
+    "challenges": ["challenges/"]
+  },
+  "globals": ["pokermon.family", "extended_family", "PokemonSprites", "energy_values", "energy_max", "poke_artist_info"],
+  "loc": "localization/en-us.lua"
+}

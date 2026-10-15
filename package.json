@@ -16,6 +16,7 @@
     "dev": "node mp-dev-server.mjs",
     "backup": "bash tools/backup-d1.sh",
     "normalize-cards": "node tools/normalize-cards.mjs",
-    "prepare": "git config core.hooksPath tools/githooks || true"
+    "prepare": "git config core.hooksPath tools/githooks || true",
+    "deploy-micatro-mods": "node tools/micatro/stage_mod_assets.mjs && cd .micatromods && npx wrangler pages deploy . --project-name magepunk-micatromods --branch main --commit-dirty=true"
   }
 }
