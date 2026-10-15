@@ -23,15 +23,18 @@ import { Blind } from './blind.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
+import { activateMods, callHook, reduceHook, firstHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions } from '../mods/registry.js';
 import './consumables.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
   BLIND_SELECT: 7, ROUND_EVAL: 8, TAROT_PACK: 9, PLANET_PACK: 10, MENU: 11, SPECTRAL_PACK: 15,
   STANDARD_PACK: 17, BUFFOON_PACK: 18, NEW_ROUND: 19,
+  // Mod boosters (SMODS_BOOSTER_OPENED in Steamodded): with / without the hand drawn.
+  MOD_PACK: 20, MOD_PACK_HAND: 21,
 };
 export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
-const PACK_STATES = [STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK];
+const PACK_STATES = [STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK, STATES.MOD_PACK, STATES.MOD_PACK_HAND];
 export const HANDLIST = Object.keys(HANDS_PROTO).sort((a, b) => HANDS_PROTO[a].order - HANDS_PROTO[b].order);
 
 function get_starting_params() {
@@ -147,6 +150,8 @@ const STATE_HANDLERS = {
   [STATES.PLANET_PACK]() {},
   [STATES.STANDARD_PACK]() {},
   [STATES.BUFFOON_PACK]() {},
+  [STATES.MOD_PACK]() {},
+  [STATES.MOD_PACK_HAND]() { G.E_MANAGER.add_event(() => draw_from_deck_to_hand()); },
   [STATES.PLAY_TAROT]() {},
   [STATES.GAME_OVER]() {
     G.GAME.over = true;
@@ -168,7 +173,13 @@ export function newRun(args = {}) {
   G.ui_seq = 0;
   G.sort_id = 0;
   G.playing_card = 0;
+  // Mods first: they decide what the pools contain and may adjust the game object.
+  activateMods(args.mods || [], args.modOptions || {});
   G.GAME = init_game_object();
+  G.GAME.mods = ACTIVE_MODS.slice();
+  G.GAME.mod_options = allOptions();
+  for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
+  callHook('init_game_object', G.GAME);
   G.GAME.stake = args.stake || 1;
   G.GAME.STOP_USE = 0;
   const backKey = args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' ? args.back : 'b_red';
@@ -246,6 +257,7 @@ export function newRun(args = {}) {
     G.playing_cards.push(c);
   }
   G.GAME.starting_deck_size = G.playing_cards.length;
+  callHook('start_run');
 
   G.GAME.current_round.discards_left = G.GAME.round_resets.discards;
   G.GAME.current_round.hands_left = G.GAME.round_resets.hands;
@@ -255,6 +267,7 @@ export function newRun(args = {}) {
   G.GAME.current_round.ancient_card.suit = null;
   reset_ancient_card();
   reset_castle_card();
+  callHook('reset_game_globals', true);
 
   G.STATE = STATES.BLIND_SELECT;
   G.STATE_COMPLETE = false;
@@ -266,7 +279,7 @@ export function newRun(args = {}) {
 
 // ---------------------------------------------------------- state events
 export function draw_from_deck_to_hand(e) {
-  if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.SPECTRAL_PACK) && G.hand.config.card_limit <= 0 && G.hand.cards.length === 0) {
+  if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.SPECTRAL_PACK || G.STATE === STATES.MOD_PACK_HAND) && G.hand.config.card_limit <= 0 && G.hand.cards.length === 0) {
     G.STATE = STATES.GAME_OVER; G.STATE_COMPLETE = false;
     return true;
   }
@@ -299,6 +312,7 @@ function new_round() {
     else { rr.blind_states.Boss = 'Current'; blhash = 'L'; }
     G.GAME.subhash = rr.ante + blhash;
     G.GAME.blind.set_blind(rr.blind);
+    callHook('new_round');
     for (const j of G.jokers.cards.slice()) j.calculate_joker({ setting_blind: true, blind: rr.blind });
     G.E_MANAGER.add_event(() => {
       G.STATE = STATES.DRAW_TO_HAND;
@@ -394,6 +408,7 @@ function end_round() {
       reset_mail_rank();
       reset_ancient_card();
       reset_castle_card();
+      callHook('reset_game_globals', false);
       for (const v of G.playing_cards) { v.ability.discarded = undefined; v.ability.forced_selection = undefined; }
     });
   });
@@ -434,16 +449,18 @@ function get_X_same(num, hand) {
 }
 function get_flush(hand) {
   const four = find_joker('Four Fingers').length > 0;
-  if (hand.length > 5 || hand.length < 5 - (four ? 1 : 0)) return [];
-  for (const suit of ['Spades', 'Hearts', 'Clubs', 'Diamonds']) {
+  const need = reduceHook('flush_min', 5 - (four ? 1 : 0), hand);
+  if (hand.length > 5 || hand.length < need) return [];
+  for (const suit of reduceHook('flush_suits', ['Spades', 'Hearts', 'Clubs', 'Diamonds'], hand)) {
     const t = hand.filter((c) => c.is_suit(suit, null, true));
-    if (t.length >= 5 - (four ? 1 : 0)) return [t];
+    if (t.length >= need) return [t];
   }
   return [];
 }
 function get_straight(hand) {
   const four = find_joker('Four Fingers').length > 0;
-  if (hand.length > 5 || hand.length < 5 - (four ? 1 : 0)) return [];
+  const need = reduceHook('straight_min', 5 - (four ? 1 : 0), hand);
+  if (hand.length > 5 || hand.length < need) return [];
   let t = [];
   const IDS = {};
   for (const c of hand) {
@@ -466,7 +483,7 @@ function get_straight(hand) {
       if (!straight) t = [];
       if (straight) break;
     }
-    if (straight_length >= 5 - (four ? 1 : 0)) straight = true;
+    if (straight_length >= need) straight = true;
   }
   if (!straight) return [];
   return [t];
@@ -539,7 +556,7 @@ function evaluate_play() {
 
   const pures = [];
   for (let i = 0; i < G.play.cards.length; i++) {
-    if (find_joker('Splash').length) scoring_hand[i] = G.play.cards[i];
+    if (find_joker('Splash').length || callHook('splash', G.play.cards).includes(true)) scoring_hand[i] = G.play.cards[i];
     else if (G.play.cards[i].ability.effect === 'Stone Card' && !scoring_hand.includes(G.play.cards[i])) pures.push(G.play.cards[i]);
   }
   scoring_hand = scoring_hand.filter(Boolean).concat(pures);
@@ -651,6 +668,7 @@ function evaluate_play() {
           if (ef.card) juice_card(ef.card);
           if (ef.dollars) { ease_dollars(ef.dollars); card_eval_status_text(hc, 'dollars', ef.dollars); }
           if (ef.h_mult) { mult = mod_mult(mult + ef.h_mult); card_eval_status_text(hc, 'h_mult', ef.h_mult); emit('hand_text', { mult }); }
+          if (ef.h_chips) { hand_chips = mod_chips(hand_chips + ef.h_chips); card_eval_status_text(hc, 'chips', ef.h_chips); emit('hand_text', { chips: hand_chips }); }
           if (ef.x_mult) { mult = mod_mult(mult * ef.x_mult); card_eval_status_text(hc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
           if (ef.message) card_eval_status_text(hc, 'extra', null, null, null, ef);
         }
@@ -681,6 +699,7 @@ function evaluate_play() {
         if (effects.jokers.mult_mod) mult = mod_mult(mult + effects.jokers.mult_mod);
         if (effects.jokers.chip_mod) hand_chips = mod_chips(hand_chips + effects.jokers.chip_mod);
         if (effects.jokers.Xmult_mod) mult = mod_mult(mult * effects.jokers.Xmult_mod);
+        if (effects.jokers.dollars && _card.config.center.mod) ease_dollars(effects.jokers.dollars);
         card_eval_status_text(_card, 'jokers', null, null, null, effects.jokers);
         emit('hand_text', { chips: hand_chips, mult });
       }
@@ -788,6 +807,7 @@ function evaluate_round() {
     row({ name: 'interest', dollars: d, bonus: true, disp: G.GAME.interest_amount });
     dollars += d;
   }
+  for (const r of callHook('evaluate_round', rows)) for (const row of [].concat(r)) { rows.push(row); dollars += row.dollars || 0; }
   G.GAME.current_round.dollars = dollars;
   const pb = G.GAME.blind.config && G.GAME.blind.config.blind;
   // The blind is cleared on defeat (as in Lua); keep what the cash-out screen shows.
@@ -806,7 +826,8 @@ export function create_card_for_shop(area) {
     }
   }
   G.GAME.spectral_rate = G.GAME.spectral_rate || 0;
-  const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate;
+  const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate +
+    activeConsumableTypes().reduce((n, t) => n + (G.GAME[t.rate_key] || 0), 0);
   const polled = pseudorandom(pseudoseed('cdt' + G.GAME.round_resets.ante)) * total_rate;
   let check = 0;
   const opts = [
@@ -815,6 +836,7 @@ export function create_card_for_shop(area) {
     { type: 'Planet', val: G.GAME.planet_rate },
     { type: (G.GAME.used_vouchers.v_illusion && pseudorandom(pseudoseed('illusion')) > 0.6) ? 'Enhanced' : 'Base', val: G.GAME.playing_card_rate },
     { type: 'Spectral', val: G.GAME.spectral_rate },
+    ...activeConsumableTypes().map((t) => ({ type: t.key, val: G.GAME[t.rate_key] || 0 })),
   ];
   for (const v of opts) {
     if (polled > check && polled <= check + v.val) {
@@ -839,6 +861,7 @@ function update_shop() {
   G.shop_open = true;
   G.E_MANAGER.add_event(() => {
     for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_start' });
+    callHook('shop_start');
     if (!G.shop_populated) {
       G.shop_populated = true;
       for (let i = G.shop_jokers.cards.length; i < G.GAME.shop.joker_max; i++) G.shop_jokers.emplace(create_card_for_shop(G.shop_jokers));
@@ -847,7 +870,8 @@ function update_shop() {
         card.shop_voucher = true;
         G.shop_vouchers.emplace(card);
       }
-      for (let i = 1; i <= 2; i++) {
+      const booster_slots = reduceHook('booster_limit', 2);
+      for (let i = 1; i <= booster_slots; i++) {
         G.GAME.current_round.used_packs = G.GAME.current_round.used_packs || {};
         if (!G.GAME.current_round.used_packs[i]) G.GAME.current_round.used_packs[i] = get_pack('shop_pack').key;
         if (G.GAME.current_round.used_packs[i] !== 'USED') {
@@ -910,7 +934,7 @@ export function use_card(card) {
   if (card.area) card.area.remove_card(card);
   if (card.ability.consumeable) {
     // Lua: only Tarot/Planet/Spectral packs skip the draw-to-play (Standard/Buffoon still draw).
-    if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK)) draw_card(G.hand, G.play, 1, 'up', true, card);
+    if (!(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK || G.STATE === STATES.MOD_PACK || G.STATE === STATES.MOD_PACK_HAND)) draw_card(G.hand, G.play, 1, 'up', true, card);
     emit('use', { card: card.sort_id, center: card.config.center.key });
     card.use_consumeable(area);
     for (const j of G.jokers.cards.slice()) j.calculate_joker({ using_consumeable: true, consumeable: card });

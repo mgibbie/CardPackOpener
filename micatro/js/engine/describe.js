@@ -16,6 +16,7 @@
 import {
   G, P_CENTERS, P_BLINDS, P_TAGS, LOC, localize, get_blind_amount, number_format,
 } from './core.js';
+import { MOD_LOC, MODS, RARITIES } from '../mods/registry.js';
 
 // --------------------------------------------------------------- helpers
 const MISC = LOC.misc;
@@ -27,7 +28,7 @@ function loc(key, set) {
   return String(key);
 }
 function name_text(set, key) {
-  const d = LOC.descriptions[set] && LOC.descriptions[set][key];
+  const d = desc(set, key);
   return (d && d.name) || key;
 }
 /** Lua tostring(number) prints %.14g. */
@@ -46,7 +47,9 @@ function fill(lines, vars) {
   vars = vars || [];
   return (Array.isArray(lines) ? lines : []).map((line) => line.replace(/#(\d+)#/g, (m, n) => (vars[n - 1] !== undefined ? fmt(vars[n - 1]) : m)));
 }
-function desc(set, key) { return LOC.descriptions[set] && LOC.descriptions[set][key]; }
+function desc(set, key) {
+  return (LOC.descriptions[set] && LOC.descriptions[set][key]) || (MOD_LOC.descriptions[set] && MOD_LOC.descriptions[set][key]);
+}
 function desc_lines(set, key, vars) { const d = desc(set, key); return d ? fill(d.text, vars) : []; }
 const SEAL_KEY = (seal) => String(seal).toLowerCase() + '_seal';
 const RARITY_KEY = [null, 'common', 'uncommon', 'rare', 'legendary'];
@@ -406,6 +409,7 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
 export function describe(card) {
   const a = card.ability;
   const center = card.config.center;
+  if (center.mod) return describe_mod(card, center);
   const card_type = a.set || 'None';
   let loc_vars, main_start, main_end;
   const playing_card = !!card.base && !!card.base.suit;
@@ -471,6 +475,7 @@ function set_badge(center) {
 export function describeCenter(key) {
   const c = P_CENTERS[key];
   if (!c) return undefined;
+  if (c.mod) return describe_mod({ ability: { ...ability_from_center(c), ...JSON.parse(JSON.stringify(c.config || {})), extra: c.config && c.config.extra !== undefined ? JSON.parse(JSON.stringify(c.config.extra)) : undefined }, area: null, config: { center: c }, fake: true }, c);
   if (c.set === 'Back') return describeBack(key);
   const card_type = c.set;
   let loc_vars;
@@ -574,4 +579,43 @@ export function describeBack(key) {
   else if (n === 'Anaglyph Deck') loc_args = [name_text('Tag', 'tag_double')];
   else if (n === 'Plasma Deck') loc_args = [cfg.ante_scaling];
   return { name: name_text('Back', key), key, set: 'Back', lines: desc_lines('Back', key, loc_args).filter((l) => l !== '') };
+}
+
+// ---------------------------------------------------------------- mod cards
+/**
+ * Mod centers describe themselves: `loc_vars(center, info_queue, card)` returns
+ * {vars, key?, set?, main_start?, main_end?, colours?} (Steamodded-style), text
+ * comes from the mod's localization (MOD_LOC, merged at registration), and
+ * `set_badges(center, card, badges)` may add badges (e.g. Pokémon types).
+ */
+function describe_mod(card, center) {
+  const info_queue = [];
+  let r = {};
+  try { r = (center.loc_vars && center.loc_vars(center, info_queue, card)) || {}; } catch (e) { r = {}; }
+  const set = r.set || center.set;
+  const key = r.key || center.key;
+  const d = desc(set, key) || (center.loc_txt) || { name: center.name || key, text: [] };
+  const lines = [...(r.main_start || []), ...fill(d.text, r.vars), ...(r.main_end || [])];
+  const info = [];
+  for (const q of info_queue) {
+    const k = typeof q === 'string' ? q : q.key;
+    const qset = (typeof q === 'object' && q.set) || (P_CENTERS[k] ? P_CENTERS[k].set : 'Other');
+    const qd = desc(qset, k) || desc('Other', k);
+    if (qd) info.push({ key: k, name: qd.name, lines: fill(qd.text, (typeof q === 'object' && q.vars) || (q.config && q.config.extra) || []) });
+  }
+  const badges = [];
+  if (center.set === 'Joker') {
+    const rar = RARITIES[center.rarity];
+    badges.push(rar ? { key: rar.key, label: rar.name || rar.key, colour: rar.badge_colour } : badge(RARITY_KEY[center.rarity] || 'common'));
+  } else if (center.set !== 'Default') badges.push(set_badge(center));
+  if (card.edition && card.edition.type) badges.push(badge(card.edition.type === 'holo' ? 'holographic' : card.edition.type));
+  if (card.seal) badges.push(badge(SEAL_KEY(card.seal)));
+  const a = card.ability || {};
+  if (a.eternal) badges.push(badge('eternal'));
+  if (a.perishable) badges.push({ ...badge('perishable'), tally: a.perish_tally });
+  if (a.rental) badges.push(badge('rental'));
+  if (center.set_badges) { try { center.set_badges(center, card, badges); } catch (e) { /* cosmetic */ } }
+  const mod = MODS[center.mod];
+  if (mod) badges.push({ key: 'mod', label: mod.name, colour: mod.badge_colour, mod: mod.id });
+  return { name: d.name, set: center.set, key: center.key, lines, badges, info, colours: r.colours, sort_id: card.sort_id, mod: center.mod };
 }

@@ -14,9 +14,9 @@ const SAVE_KEY = 'micatro_run_v1';
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
 
-  start({ seed, back = 'b_red', stake = 1 } = {}) {
-    newRun({ seed, back, stake });
-    this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, actions: [], started: Date.now() };
+  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {} } = {}) {
+    newRun({ seed, back, stake, mods, modOptions });
+    this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
     this.events = G.ui_events.splice(0);
     this.save();
     return this.events;
@@ -39,7 +39,7 @@ export class Session {
   /** Rebuild from a recipe. Stops at the first action the engine rejects. */
   static fromRecipe(recipe) {
     const s = new Session();
-    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake });
+    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {} });
     s.recipe = { ...recipe, actions: [] };
     for (const a of recipe.actions || []) {
       const r = act(a);

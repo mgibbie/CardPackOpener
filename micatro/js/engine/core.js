@@ -14,6 +14,7 @@
 //     run seed, so a run is fully reproducible from its seed + action list.
 
 import DATA from '../../data/balatro_data.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES } from '../mods/registry.js';
 
 export const G = {};
 
@@ -35,31 +36,41 @@ for (const [k, v] of Object.entries(P_CARDS)) v.key = k;
 P_CARDS.empty = {};
 
 const byOrder = (a, b) => a.order - b.order;
-export const P_CENTER_POOLS = {
-  Booster: [], Default: [], Enhanced: [], Edition: [], Joker: [], Tarot: [], Planet: [],
-  Tarot_Planet: [], Spectral: [], Consumeables: [], Voucher: [], Back: [], Tag: [], Seal: [], Stake: [], Demo: [],
-};
+const BASE_POOL_KEYS = ['Booster', 'Default', 'Enhanced', 'Edition', 'Joker', 'Tarot', 'Planet', 'Tarot_Planet', 'Spectral', 'Consumeables', 'Voucher', 'Back', 'Tag', 'Seal', 'Stake', 'Demo'];
+export const P_CENTER_POOLS = {};
 export const P_JOKER_RARITY_POOLS = [null, [], [], [], []];
-for (const v of Object.values(P_TAGS)) P_CENTER_POOLS.Tag.push(v);
-for (const v of Object.values(P_SEALS)) P_CENTER_POOLS.Seal.push(v);
-for (const v of Object.values(P_STAKES)) P_CENTER_POOLS.Stake.push(v);
-for (const v of Object.values(P_CENTERS)) {
-  if (v.set === 'Joker') P_CENTER_POOLS.Joker.push(v);
-  if (v.set && v.demo && v.pos) P_CENTER_POOLS.Demo.push(v);
-  if (!v.wip && !v.demo) {
-    if (v.set && v.set !== 'Joker' && !v.skip_pool && !v.omit) P_CENTER_POOLS[v.set].push(v);
-    if (v.set === 'Tarot' || v.set === 'Planet') P_CENTER_POOLS.Tarot_Planet.push(v);
-    if (v.consumeable) P_CENTER_POOLS.Consumeables.push(v);
-    if (v.rarity && v.set === 'Joker' && !v.demo) P_JOKER_RARITY_POOLS[v.rarity].push(v);
+/**
+ * (Re)build the center pools from base content plus whatever mod content
+ * `isActive(center)` allows. Called once at load (base only) and again by the
+ * mod system on every newRun, so a disabled mod's cards never enter a pool.
+ * Mod consumable sets get their own pool; mod rarities (string keys such as
+ * 'poke_safari') get a rarity pool under that key.
+ */
+export function rebuildPools(isActive = (c) => !c.mod) {
+  for (const k of Object.keys(P_CENTER_POOLS)) delete P_CENTER_POOLS[k];
+  for (const k of BASE_POOL_KEYS) P_CENTER_POOLS[k] = [];
+  P_JOKER_RARITY_POOLS.length = 0;
+  P_JOKER_RARITY_POOLS.push(null, [], [], [], []);
+  for (const k of Object.keys(P_JOKER_RARITY_POOLS)) if (isNaN(Number(k))) delete P_JOKER_RARITY_POOLS[k];
+  for (const v of Object.values(P_TAGS)) if (isActive(v)) P_CENTER_POOLS.Tag.push(v);
+  for (const v of Object.values(P_SEALS)) if (isActive(v)) P_CENTER_POOLS.Seal.push(v);
+  for (const v of Object.values(P_STAKES)) if (isActive(v)) P_CENTER_POOLS.Stake.push(v);
+  for (const v of Object.values(P_CENTERS)) {
+    if (!isActive(v)) continue;
+    if (v.set === 'Joker') P_CENTER_POOLS.Joker.push(v);
+    if (v.set && v.demo && v.pos) P_CENTER_POOLS.Demo.push(v);
+    if (!v.wip && !v.demo) {
+      if (v.set && v.set !== 'Joker' && !v.skip_pool && !v.omit) (P_CENTER_POOLS[v.set] = P_CENTER_POOLS[v.set] || []).push(v);
+      if (v.set === 'Tarot' || v.set === 'Planet') P_CENTER_POOLS.Tarot_Planet.push(v);
+      if (v.consumeable) P_CENTER_POOLS.Consumeables.push(v);
+      if (v.rarity && v.set === 'Joker' && !v.demo) (P_JOKER_RARITY_POOLS[v.rarity] = P_JOKER_RARITY_POOLS[v.rarity] || []).push(v);
+    }
   }
+  for (const k of Object.keys(P_CENTER_POOLS)) P_CENTER_POOLS[k].sort(byOrder);
+  // Balatro sorts the rarity pools by insertion of pairs() — make it stable by order.
+  for (const k of Object.keys(P_JOKER_RARITY_POOLS)) if (P_JOKER_RARITY_POOLS[k]) P_JOKER_RARITY_POOLS[k].sort(byOrder);
 }
-for (const k of ['Joker', 'Tarot', 'Planet', 'Tarot_Planet', 'Spectral', 'Voucher', 'Booster', 'Consumeables', 'Back', 'Enhanced', 'Edition'])
-  P_CENTER_POOLS[k].sort(byOrder);
-P_CENTER_POOLS.Tag.sort(byOrder);
-P_CENTER_POOLS.Seal.sort(byOrder);
-P_CENTER_POOLS.Stake.sort(byOrder);
-// Balatro sorts the rarity pools by insertion of pairs() — make it stable by order.
-for (let r = 1; r <= 4; r++) P_JOKER_RARITY_POOLS[r].sort(byOrder);
+rebuildPools();
 // Online/unlock state: everything counts as unlocked + discovered in Micatro.
 for (const v of Object.values(P_CENTERS)) { v.unlocked = true; v.discovered = true; }
 
@@ -434,6 +445,7 @@ export class Card {
     if (this.ability.rental) this.cost = 1;
     this.sell_cost = Math.max(1, Math.floor(this.cost / 2)) + (this.ability.extra_value || 0);
     if (this.area && this.ability.couponed && (this.area === G.shop_jokers || this.area === G.shop_booster)) this.cost = 0;
+    callHook('set_cost', this);
   }
 
   set_edition(edition, immediate, silent) {
@@ -474,6 +486,8 @@ export class Card {
       return;
     }
     should_debuff = !!should_debuff;
+    const forced = firstHook('set_debuff', this, should_debuff);
+    if (forced !== undefined) should_debuff = !!forced;
     if (should_debuff !== !!this.debuff) {
       if (this.area === G.jokers) { if (should_debuff) this.remove_from_deck(true); else this.add_to_deck(true); }
       this.debuff = should_debuff;
@@ -551,7 +565,9 @@ export class Card {
   is_face(from_boss) {
     if (this.debuff && !from_boss) return false;
     const id = this.get_id();
-    return id === 11 || id === 12 || id === 13 || find_joker('Pareidolia').length > 0;
+    const base = id === 11 || id === 12 || id === 13 || find_joker('Pareidolia').length > 0;
+    const o = firstHook('is_face', this, base);
+    return o === undefined ? base : !!o;
   }
   get_original_rank() { return this.base.original_value; }
   get_chip_bonus() {
@@ -732,6 +748,8 @@ export function find_joker(name, non_debuff) {
   const found = [];
   if (G.jokers && G.jokers.cards) for (const v of G.jokers.cards) if (v.ability.name === name && (non_debuff || !v.debuff)) found.push(v);
   if (G.consumeables && G.consumeables.cards) for (const v of G.consumeables.cards) if (v.ability.name === name && (non_debuff || !v.debuff)) found.push(v);
+  // Mods: cards that count as `name` (e.g. a joker that acts as Four Fingers).
+  for (const extra of callHook('find_joker_alias', name, non_debuff)) for (const c of extra) if (!found.includes(c)) found.push(c);
   return found;
 }
 export function ease_dollars(mod, instant) {
@@ -811,6 +829,7 @@ export function draw_card(from, to, percent, dir, sort, card, _delay, mute, stay
 
 export function level_up_hand(card, hand, instant, amount) {
   amount = amount === undefined ? 1 : amount;
+  if (callHook('level_up_hand', card, hand, amount).includes(false)) return;
   const h = G.GAME.hands[hand];
   h.level = Math.max(0, h.level + amount);
   h.mult = Math.max(h.s_mult + h.l_mult * (h.level - 1), 1);
@@ -884,6 +903,9 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
       } else add = true;
       if (v.name === 'Black Hole' || v.name === 'The Soul') add = false;
     }
+    // Mod content: the center's own in_pool and every active mod's pool_filter.
+    if (add && v.in_pool && !v.in_pool(v, { type: _type, append: _append })) add = false;
+    if (add && callHook('pool_filter', v, _type, _append).includes(false)) add = false;
     if (v.no_pool_flag && G.GAME.pool_flags[v.no_pool_flag]) add = false;
     if (v.yes_pool_flag && !G.GAME.pool_flags[v.yes_pool_flag]) add = false;
     if (add && !G.GAME.banned_keys[v.key]) { _pool.push(v.key); _pool_size++; }
@@ -896,7 +918,8 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     else if (_type === 'Spectral') _pool.push('c_incantation');
     else if (_type === 'Voucher') _pool.push('v_blank');
     else if (_type === 'Tag') _pool.push('tag_handy');
-    else _pool.push('j_joker');
+    else if (CONSUMABLE_TYPES[_type] && CONSUMABLE_TYPES[_type].default) _pool.push(CONSUMABLE_TYPES[_type].default);
+    else _pool.push(reduceHook('empty_pool_default', 'j_joker', _type));
   }
   return [_pool, _pool_key + (!_legendary ? G.GAME.round_resets.ante : '')];
 }
@@ -953,6 +976,7 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     }
     card.set_edition(poll_edition('edi' + (key_append || '') + G.GAME.round_resets.ante), true, true);
   }
+  callHook('create_card', card, _type, area, key_append);
   return card;
 }
 /** G.P_CARDS without the synthetic `empty` entry, as an object keyed like Lua. */

@@ -121,8 +121,32 @@ function food_remove(self) {
 }
 
 // ------------------------------------------------------ calculate_joker
+/**
+ * Mod effects may use the short scoring keys (mult / chips / xmult) in any
+ * scoring context; translate them to what evaluate_play reads for that context
+ * (joker_main & joker-on-joker: *_mod; per-card: x_mult) and add the standard
+ * popup text when the mod didn't supply one.
+ */
+export function normalize_mod_effect(r, context) {
+  if (!r || typeof r !== 'object') return r;
+  const x = r.xmult ?? r.Xmult ?? r.x_mult;
+  if (context.joker_main || context.other_joker) {
+    if (r.mult !== undefined && r.mult_mod === undefined) { r.mult_mod = r.mult; delete r.mult; if (!r.message) r.message = localize({ type: 'variable', key: 'a_mult', vars: [r.mult_mod] }); }
+    if (r.chips !== undefined && r.chip_mod === undefined) { r.chip_mod = r.chips; delete r.chips; if (!r.message) r.message = localize({ type: 'variable', key: 'a_chips', vars: [r.chip_mod] }); }
+    if (x !== undefined && r.Xmult_mod === undefined) { r.Xmult_mod = x; delete r.xmult; delete r.Xmult; delete r.x_mult; if (!r.message) r.message = localize({ type: 'variable', key: 'a_xmult', vars: [r.Xmult_mod] }); }
+  } else if (context.individual) {
+    if (x !== undefined && r.x_mult === undefined) { r.x_mult = x; delete r.xmult; delete r.Xmult; }
+  }
+  return r;
+}
+
 Card.prototype.calculate_joker = function (context) {
   if (this.debuff) return undefined;
+  const mc = this.config.center;
+  if (mc.mod) {
+    if (mc.update) mc.update(mc, this);
+    return mc.calculate ? normalize_mod_effect(mc.calculate(mc, this, context), context) : undefined;
+  }
   const self = this;
   if (this.ability.set === 'Joker') this.update_joker();
   if (this.ability.set === 'Planet' && !this.debuff) {

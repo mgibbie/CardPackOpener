@@ -16,6 +16,14 @@ export function cardView(c, withDesc) {
     name: c.ability.name,
   };
   if (c.config.card && c.config.card.key) v.front = c.config.card.key;
+  const ctr = c.config.center;
+  if (ctr.mod) {
+    v.mod = ctr.mod;
+    // Mod art: atlas name + cell (+ optional soul layer / animation frame / per-card override).
+    v.atlas = (ctr.get_atlas && ctr.get_atlas(ctr, c)) || ctr.atlas;
+    v.pos = (ctr.get_pos && ctr.get_pos(ctr, c)) || ctr.pos;
+    if (ctr.soul_pos) v.soul_pos = ctr.soul_pos;
+  }
   if (c.edition && c.edition.type) v.edition = c.edition.type;
   if (c.seal) v.seal = c.seal;
   if (c.debuff) v.debuff = true;
@@ -112,6 +120,7 @@ export function toView() {
     won: !!GM.won,
     endless: !!GM.endless,
     stats: { ...GM.stats },
+    mods: GM.mods || [],
     interest_cap: GM.interest_cap,
   };
 }
