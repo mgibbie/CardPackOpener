@@ -141,6 +141,25 @@ export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
   try { ctx.drawImage(im, ((pos.x || 0) + frame) * sw, (pos.y || 0) * sh, sw, sh, dx, dy, dw ?? sw, dh ?? sh); } catch (e) { return false; }
   return true;
 }
+/**
+ * A mod font by key (a mod's content.fonts: {key: {src, family}} — SMODS.Font), loaded on first use; returns the
+ * CSS family name (or null). AutumnCircus' Emojiokers write their names in Noto Emoji ({f:thac_emoji}).
+ */
+const modFonts = new Map();
+export function modFont(key) {
+  if (!key) return null;
+  if (modFonts.has(key)) return modFonts.get(key);
+  let fam = null;
+  for (const m of Object.values(MODREG.mods || {})) {
+    const f = m && m.content && m.content.fonts && m.content.fonts[key];
+    if (!f) continue;
+    fam = f.family || key;
+    try { const ff = new FontFace(fam, 'url(' + f.src + ')'); document.fonts.add(ff); ff.load().catch(() => {}); } catch (e) { /* no FontFace here */ }
+    break;
+  }
+  modFonts.set(key, fam);
+  return fam;
+}
 /** CSS colour from a hex string ('#abc', 'abcdef') or Balatro rgba array ([r,g,b,a] 0..1). */
 export function cssColour(c) {
   if (!c) return null;

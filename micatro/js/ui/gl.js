@@ -6,7 +6,7 @@
 // Everything degrades gracefully: no WebGL -> CSS gradient + plain cards.
 // Mod editions may bring their own pass: the edition center's `shader_fs` (a main() over the shared
 // prelude below — tex0, time, fx, texture_details, HSL/RGB, dissolve_mask), compiled on first use;
-// it replaces the card's plain pass (BETMMA's Phantom / Tentacle).
+// it replaces the card's plain pass (BETMMA's Phantom / Tentacle), or with `shader_overlay` is drawn over it (AutumnCircus' Gilded).
 import { MODREG } from './assets.js';
 
 const VS = `attribute vec2 p; varying vec2 vUv; void main(){ vUv = vec2(p.x*0.5+0.5, 0.5-p.y*0.5); gl_Position = vec4(p,0.,1.); }`;
@@ -369,6 +369,7 @@ export class CardFX {
     else if (ed === 'polychrome') passes.push('polychrome');
     else if (ed === 'negative') passes.push('negative', 'negative_shine');
     else if (ed === 'foil') passes.push('plain', 'foil');
+    else if (ed && this.modPass(ed) && MODREG.center('e_' + ed) && MODREG.center('e_' + ed).shader_overlay) passes.push('plain', this.modPass(ed)); // (an SMODS edition drawn over the card: AutumnCircus' Gilded)
     else passes.push((ed && this.modPass(ed)) || 'plain');
     if (opts.debuff) passes.push('debuff');
     for (const k of passes) {

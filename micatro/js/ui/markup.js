@@ -1,6 +1,6 @@
 // Balatro description markup -> HTML.  "{C:mult}+4{} Mult", "{X:mult,C:white} X2 {}",
 // "{s:0.8}", "{C:attention,T:tag_double}..." ({T:}/{E:}/{V:} are accepted and ignored).
-import { CENTERS, LOC, CARDS, modType, cssColour } from './assets.js';
+import { CENTERS, LOC, CARDS, modType, cssColour, modFont } from './assets.js';
 
 export const COL = {
   mult: '#fe5f55', chips: '#009dff', money: '#f3b958', attention: '#ff9a00', filter: '#ff9a00',
@@ -40,6 +40,7 @@ export function markup(line, colours) {
         else if (k === 'X') { st.push('background:' + (COL[v] || '#fe5f55')); cls += ' xbox'; }
         else if (k === 'V') { const c = colours && colours[(parseInt(v, 10) || 1) - 1]; const css = cssCol(c); if (css) st.push('color:' + css); }
         else if (k === 's') { const n = parseFloat(v); if (n) st.push("font-size:" + Math.round(Math.min(1.6, n) * 100) + "%"); }
+        else if (k === 'f') { const ff = modFont((v0 || '').trim()); if (ff) st.push("font-family:'" + ff + "',m6x11,sans-serif"); } // (a mod font: AutumnCircus' Noto Emoji)
       }
       out += `<span class="mk${cls}" style="${st.join(';')}">`;
       open = true;

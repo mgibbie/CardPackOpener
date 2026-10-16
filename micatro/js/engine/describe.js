@@ -45,7 +45,8 @@ function fmt(v) {
 /** Fill `#n#` placeholders like Balatro's localize{type='descriptions', vars=...}. */
 function fill(lines, vars) {
   vars = vars || [];
-  return (Array.isArray(lines) ? lines : []).map((line) => line.replace(/#(\d+)#/g, (m, n) => (vars[n - 1] !== undefined ? fmt(vars[n - 1]) : m)));
+  // (SMODS multi-box text — {{...}, {...}} — reads as one list of lines here)
+  return (Array.isArray(lines) ? lines.flat(Infinity).filter((l) => typeof l === 'string') : []).map((line) => line.replace(/#(\d+)#/g, (m, n) => (vars[n - 1] !== undefined ? fmt(vars[n - 1]) : m)));
 }
 function desc(set, key) {
   return (LOC.descriptions[set] && LOC.descriptions[set][key]) || (MOD_LOC.descriptions[set] && MOD_LOC.descriptions[set][key]);

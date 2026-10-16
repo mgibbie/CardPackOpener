@@ -14,7 +14,7 @@
 //     run seed, so a run is fully reproducible from its seed + action list.
 
 import DATA from '../../data/balatro_data.js';
-import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits, RARITIES } from '../mods/registry.js';
 
 export const G = {};
 
@@ -53,7 +53,8 @@ export function rebuildPools(isActive = (c) => !c.mod) {
   P_JOKER_RARITY_POOLS.push(null, [], [], [], []);
   for (const k of Object.keys(P_JOKER_RARITY_POOLS)) if (isNaN(Number(k))) delete P_JOKER_RARITY_POOLS[k];
   for (const v of Object.values(P_TAGS)) if (isActive(v)) P_CENTER_POOLS.Tag.push(v);
-  for (const v of Object.values(P_SEALS)) if (isActive(v)) P_CENTER_POOLS.Seal.push(v);
+  // (a mod 'seal' of another set — AutumnMoodMechanics' joker Stamps, set 'Stamp' — pools apart, like SMODS)
+  for (const v of Object.values(P_SEALS)) if (isActive(v)) (P_CENTER_POOLS[v.set && v.set !== 'Seal' ? v.set : 'Seal'] = P_CENTER_POOLS[v.set && v.set !== 'Seal' ? v.set : 'Seal'] || []).push(v);
   for (const v of Object.values(P_STAKES)) if (isActive(v)) P_CENTER_POOLS.Stake.push(v);
   for (const v of Object.values(P_CENTERS)) {
     if (!isActive(v)) continue;
@@ -155,10 +156,14 @@ export function probability_vars(trigger_obj, base_numerator, base_denominator, 
         }
       }
     }
+    // SMODS's 'individual' areas (the deck, blind, stake) see the context after the jokers: AutumnCircus' Gambling Deck
+    if (ACTIVE_MODS.length) [numerator, denominator] = reduceHook('probability_pass', [numerator, denominator], key, { from_roll, trigger_obj, identifier });
   };
   pass('mod_probability');
   numerator = numerator * (G.GAME && G.GAME.probabilities ? G.GAME.probabilities.normal : 1); // (Lua: 0 is truthy)
   pass('fix_probability');
+  // (a mod rule on any listed probability: AutumnCircus' Dusk Stamp)
+  if (ACTIVE_MODS.length) [numerator, denominator] = reduceHook('probability_vars', [numerator, denominator], trigger_obj, identifier);
   return [numerator, denominator];
 }
 /** SMODS.pseudorandom_probability(trigger_obj, seed, num, den, identifier): the listed-probability roll. */
@@ -374,7 +379,12 @@ export class CardArea {
     }
   }
   set_ranks() { this.cards.forEach((c, i) => { c.rank = i + 1; }); }
-  shuffle(seed) { pseudoshuffle(this.cards, pseudoseed(seed || 'shuffle')); this.set_ranks(); emit('shuffle', { area: this.name }); }
+  shuffle(seed) {
+    pseudoshuffle(this.cards, pseudoseed(seed || 'shuffle'));
+    // (a mod reorders after a shuffle: AutumnMoodMechanics' Bottled cards go on top)
+    if (ACTIVE_MODS.length) callHook('shuffled', this, seed);
+    this.set_ranks(); emit('shuffle', { area: this.name });
+  }
   sort(method) {
     this.config.sort = method || this.config.sort;
     const s = this.config.sort;
@@ -580,7 +590,10 @@ export class Card {
   }
 
   set_seal(_seal, silent) {
+    const prev = this.seal;
     this.seal = _seal || null;
+    // (SMODS seal / AMM Stamp apply-unapply: e.g. Jimbo's Stamp's +1 hand size while it's on an owned joker)
+    if (ACTIVE_MODS.length) callHook('set_seal', this, this.seal, prev);
     if (_seal && !silent) { emit('seal', { card: this.sort_id, seal: _seal }); play_sound('gold_seal'); }
     else emit('card_changed', { card: this.sort_id });
     this.set_cost();
@@ -1100,6 +1113,12 @@ function merge_mod_card_effect(ret, ms, held) {
     // SMODS x_chips (MoreFluff's Teal Card: X1.5 Chips while held).
     const xc = r.x_chips ?? r.xchips ?? r.Xchip_mod;
     if (xc !== undefined && xc !== 1) ret.x_chips = ret.x_chips ? ret.x_chips * xc : xc;
+    // SMODS p_dollars on a scored card (AutumnCircus' Jewel Card), and the rest of a full SMODS effect —
+    // message / func / extra — evaluated after the card's own effects (run.js post_effects).
+    if (!held && r.p_dollars) ret.p_dollars = (ret.p_dollars || 0) + r.p_dollars;
+    if (r.message || typeof r.func === 'function' || (r.extra && typeof r.extra === 'object')) {
+      (ret.post_effects = ret.post_effects || []).push({ message: r.message, colour: r.colour, card: r.card, func: r.func, extra: r.extra });
+    }
   }
 }
 
@@ -1183,7 +1202,8 @@ export function quantum_enhancements(card) {
   if (_quantum_busy || !ACTIVE_MODS.length || !G.jokers || !card || !card.config || !card.base || !card.base.suit) return out;
   _quantum_busy = true;
   try {
-    for (const j of G.jokers.cards) {
+    // (SMODS asks every joker-type area: mod consumables too — AutumnCircus' enhancement potions)
+    for (const j of G.consumeables ? G.jokers.cards.concat(G.consumeables.cards) : G.jokers.cards) {
       const c = j.config.center;
       if (!c.mod || !c.calculate || j.debuff) continue;
       if (c._quantum === undefined) c._quantum = !!c.quantum_enhancements || String(c.calculate).includes('check_enhancement');
@@ -1202,11 +1222,25 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
   let _starting_pool, _pool_key = '', _pool_size = 0;
   if (_type === 'Joker') {
     let rarity = _rarity ?? pseudorandom('rarity' + G.GAME.round_resets.ante + (_append || ''));
+    // SMODS.poll_rarity when an active mod rarity can be rolled (weight > 0: AutumnCircus' Homestuck rarities):
+    // Common 0.7 / Uncommon 0.25 / Rare 0.05 / Legendary 0 + the mod rarities, normalised, in that order.
+    let polled;
+    if (_rarity == null && !_legendary && ACTIVE_MODS.length) polled = poll_joker_rarity(rarity);
     // Steamodded: a rarity KEY (mod rarity such as 'poke_safari') picks that pool directly.
-    if (typeof rarity === 'string') rarity = _legendary ? 4 : rarity;
+    if (polled !== undefined) rarity = polled;
+    else if (typeof rarity === 'string') rarity = _legendary ? 4 : rarity;
     else rarity = (_legendary && 4) || (rarity > 0.95 && 3) || (rarity > 0.7 && 2) || 1;
     _starting_pool = P_JOKER_RARITY_POOLS[rarity] || [];
     _pool_key = 'Joker' + rarity + ((!_legendary && _append) || '');
+  } else if (CONSUMABLE_TYPES[_type] && CONSUMABLE_TYPES[_type].rarities && ACTIVE_MODS.length) {
+    // SMODS.ConsumableType with rarities (AutumnMoodMechanics' Oddities): roll a rarity (SMODS.poll_rarity) and
+    // draw from that rarity's pool; `_legendary` asks for the top rarity (`legendary_rarity`).
+    const T = CONSUMABLE_TYPES[_type];
+    let rarity;
+    if (_legendary && T.legendary_rarity !== undefined) { rarity = T.legendary_rarity; _pool_key = T.legendary_pool_key || (_type + rarity); }
+    else { rarity = _rarity ?? poll_type_rarity(T, 'rarity' + _type + G.GAME.round_resets.ante + (_append || '')); _pool_key = _type + rarity; }
+    _starting_pool = (P_CENTER_POOLS[_type] || []).filter((v) => v.rarity === rarity);
+    _pool_key = _pool_key + (_append || '');
   } else {
     _starting_pool = P_CENTER_POOLS[_type];
     _pool_key = _type + (_append || '');
@@ -1253,6 +1287,31 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     else _pool.push(reduceHook('empty_pool_default', 'j_joker', _type));
   }
   return [_pool, _pool_key + (!_legendary ? G.GAME.round_resets.ante : '')];
+}
+
+/** The SMODS joker rarity poll with weighted mod rarities (undefined = none active: the vanilla thresholds). */
+function poll_joker_rarity(poll) {
+  const mods = Object.values(RARITIES).filter((r) => r.mod && centerActive(r) && ((r.get_weight ? r.get_weight(r) : r.weight) || 0) > 0);
+  if (!mods.length) return undefined;
+  const avail = [{ key: 1, weight: 0.7 }, { key: 2, weight: 0.25 }, { key: 3, weight: 0.05 }, { key: 4, weight: 0 },
+    ...mods.map((r) => ({ key: r.key, weight: r.get_weight ? r.get_weight(r) : r.weight }))];
+  const total = avail.reduce((n, r) => n + r.weight, 0);
+  let wi = 0;
+  for (const r of avail) { wi += r.weight / total; if (poll < wi) return r.key; }
+  return 1;
+}
+
+/**
+ * SMODS.poll_rarity(_pool_key, _rand_key) over a consumable type's `rarities` [{key, weight}]: weights are
+ * normalised (each times G.GAME[<key>_mod] or 1) and the first rarity whose running total passes the roll wins.
+ */
+export function poll_type_rarity(T, rand_key) {
+  const poll = pseudorandom(pseudoseed(rand_key || ('rarity' + G.GAME.round_resets.ante)));
+  const avail = T.rarities.map((r) => ({ key: r.key, weight: r.weight * (G.GAME[String(r.key).toLowerCase() + '_mod'] || 1) }));
+  const total = avail.reduce((n, r) => n + r.weight, 0);
+  let wi = 0;
+  for (const r of avail) { wi += r.weight / total; if (poll < wi) return r.key; }
+  return null;
 }
 
 /** Edition key ('e_holo', 'e_poke_shiny') of a set_edition argument, or null. */
@@ -1318,6 +1377,8 @@ function poll_edition_weighted(_key, _mod, _no_neg, _guaranteed, modEds) {
 
 export function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append) {
   area = area || G.jokers;
+  // A mod may change what is made before anything rolls (AutumnCircus' Collector's Deck: every consumable is an Oddity).
+  if (ACTIVE_MODS.length) { const o = firstHook('create_card_type', _type, forced_key, area, key_append); if (o) { _type = o[0]; forced_key = o[1]; } }
   let center = P_CENTERS.b_red;
   const showman = find_joker('Showman').length > 0;
   // A mod may force a soul-like key first (a Lua create_card wrap: Reverie's Reverie spectral), which

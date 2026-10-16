@@ -97,7 +97,7 @@ export const AVAILABLE = [
   },
   {
     id: 'autumncircus', name: 'Þe Autumn Circus', size: '~2 MB art', by: 'AutumnMood (rebuilt for Micatro)', requires: ['autumnmood'],
-    description: 'Welcome to Þe Autumn Circus! 87 jokers, 60 Oddities, new tarots/planets/spectrals, 19 decks, stamps, aspects and more.',
+    description: 'Welcome to Þe Autumn Circus! 70 jokers, 28 Oddities, new tarots, planets and spectrals, 9 decks, joker Stamps, card Aspects and the Gilded edition (more with More Fluff on).',
     load: () => import('../../mods/autumncircus/index.js'),
   },
 ];
