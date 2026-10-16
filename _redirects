@@ -6,6 +6,8 @@
 # Short replay-share links: /r/<id> opens the replay viewer. 302 (not 301) —
 # shared replays GC after 30 days, so browsers must not cache these forever.
 /r/* /battlecards/index.html?rshare=:splat 302
+# Micatro run replays (a whole run): /mr/<id> opens the replay viewer. 302 for the same reason.
+/mr/* /micatro/?replay=:splat 302
 /battlecards/art/* https://magepunk-cardart.pages.dev/:splat 301
 /overworld/data/* https://magepunk-owdata.pages.dev/:splat 301
 /designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301

@@ -13,6 +13,11 @@
 //      the view, eases off when unchanged, and sees the final over/won push
 //   4. routing (site/livewatch.js) + its callers, GC/rate-limit registration, the
 //      Celadon Game Corner arcade cabinet and the landing tile
+//   5. run replays (a WHOLE run's recipe, micatro/js/replays.js): micatro-replay-put needs an account,
+//      validates the packed recipe (caps, shape, a zip bomb), stores exactly mreplay:<id> =
+//      {code, meta (allow-listed), by, when}, extends YOUR replay in place; micatro-replay-get is
+//      public (above the auth gate); run-score keeps a validated replay id on the board row; the
+//      final publish carries it to spectators; GC + rate-limit registration; /mr/<id> short link
 //
 //   node overworld/tests/micatro_server_test.mjs
 import fs from 'fs';
@@ -394,8 +399,114 @@ try {
 	A(sd2.error === 'stale' && sd2.rev === 1 && sd2.decks.length === 1, 'a stale saveDecks returns {error:stale, rev, decks}', JSON.stringify(sd2));
 	const fd1 = await Net.fetchDecks();
 	A(fd1.rev === 1 && fd1.decks[0].def.name === 'Goth Deck', 'fetchDecks returns the saved list');
+	// run replays through the client: upload (signed in), extend in place, fetch (public), score row link
+	const RPm = await import(pathToFileURL(path.join(ROOT, 'micatro/js/replays.js')).href);
+	globalThis.__MP.call = async (action, payload = {}) => { sent.push({ action, payload }); return call(action, payload, tokens.erin); }; // erin: no board row yet
+	const rcp = { v: 1, seed: 'NETRP', back: 'b_red', stake: 1, mods: [], actions: [{ type: 'select_blind' }, { type: 'highlight', ids: [1] }] };
+	const up1 = await Net.uploadReplay({ code: await RPm.packRecipe(rcp), meta: { score: 120, ante: 1 } });
+	A(up1.ok && /^[a-f0-9]{8}$/.test(up1.id) && sent[sent.length - 1].action === 'micatro-replay-put', 'uploadReplay puts the packed recipe and returns its id', JSON.stringify(up1));
+	const up2 = await Net.uploadReplay({ code: await RPm.packRecipe({ ...rcp, actions: [...rcp.actions, { type: 'play' }] }), meta: { score: 500, ante: 2 }, id: up1.id });
+	A(up2.ok && up2.id === up1.id && sent[sent.length - 1].payload.id === up1.id, 'uploadReplay({id}) extends the same replay (win -> Endless)', JSON.stringify(up2));
+	const sc = await Net.submitScore({ score: 99999999, ante: 9, mods: [], replay: up1.id });
+	A(sc.ok && sent[sent.length - 1].payload.replay === up1.id && sc.best.replay === up1.id, 'submitScore({replay}) sends the id and the best row keeps it', JSON.stringify(sc.best));
+	await Net.submitScore({ score: 1, ante: 1, replay: 'NOT-AN-ID' });
+	A(!('replay' in sent[sent.length - 1].payload), 'submitScore drops a malformed replay id client-side');
+	const realCall = globalThis.__MP.call, realHas = globalThis.__MP.hasToken;
+	globalThis.__MP.call = async (action, payload = {}) => { sent.push({ action, payload }); return call(action, payload); }; // NO token
+	globalThis.__MP.hasToken = () => false;
+	const fr = await Net.fetchReplay(up1.id);
+	const back = fr && fr.code ? await RPm.unpackRecipe(fr.code) : null;
+	A(back && back.actions.length === 3 && fr.meta.score === 500 && fr.by === 'erin', 'fetchReplay works signed out and returns the extended run', JSON.stringify(fr).slice(0, 160));
+	A((await Net.fetchReplay('zzz')).error === 'bad id' && (await Net.fetchReplay('abcdef0123')).error === 'not found', 'fetchReplay: a bad id / a missing replay come back as errors');
+	A((await Net.uploadReplay({ code: 'G1.x' })).error === 'not logged in', 'uploadReplay needs an account');
+	globalThis.__MP.call = realCall; globalThis.__MP.hasToken = realHas;
 } catch (e) {
 	A(false, 'net.js harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
+}
+
+// ===== 5. run replays (a whole run) =====
+try {
+	const RPm = await import(pathToFileURL(path.join(ROOT, 'micatro/js/replays.js')).href);
+	const recipe = { v: 1, seed: 'RPSEED', back: 'b_red', stake: 1, mods: ['pokermon'], modOptions: {}, actions: [{ type: 'select_blind' }, { type: 'highlight', ids: [3, 4] }, { type: 'play' }], started: 1 };
+	const code = await RPm.packRecipe(recipe);
+	const meta = { score: '1.234e450', handName: 'Flush', ante: 12, round: 30, won: true, endless: true, back: 'b_red', stake: 3, mods: ['pokermon', 'bad id!'], customDeck: 'Goth', seed: 'RPSEED', actions: 3, finalSeq: 77, checksum: 'A12R30$4#0badbeef', engineVersion: 1, evil: '<script>', username: 'mallory' };
+	// put needs an account (it sits below the auth gate)
+	const anon = await raw('micatro-replay-put', { code, meta });
+	A(anon.status === 401, 'micatro-replay-put without a token is refused (401)', JSON.stringify(anon));
+	let w0 = writes.length;
+	const p1 = await raw('micatro-replay-put', { code, meta }, tokens.alice);
+	const id = p1.body.id;
+	A(p1.status === 200 && p1.body.ok && /^[a-f0-9]{8}$/.test(id), 'a signed-in player uploads a run replay -> an 8-hex id', JSON.stringify(p1.body));
+	const rw = writes.slice(w0).filter(k => !k.startsWith('rl:') && !k.startsWith('gc:') && !k.startsWith('presence:'));
+	A(rw.length === 1 && rw[0] === 'mreplay:' + id, 'the put writes exactly one row: mreplay:<id>', JSON.stringify(rw));
+	const r1 = row('mreplay:' + id);
+	A(r1 && Object.keys(r1).sort().join() === 'by,code,meta,when' && r1.code === code && r1.by === 'alice' && typeof r1.when === 'number', 'the row is exactly {code, meta, by, when}', JSON.stringify(Object.keys(r1 || {})));
+	A(r1.meta.score === '1.234e450' && r1.meta.ante === 12 && r1.meta.won === true && r1.meta.endless === true && r1.meta.stake === 3 && r1.meta.checksum === 'A12R30$4#0badbeef' && r1.meta.customDeck === 'Goth', 'the meta keeps the run facts (big-number score as text)', JSON.stringify(r1.meta));
+	A(!('evil' in r1.meta) && !('username' in r1.meta) && r1.meta.mods.join() === 'pokermon', 'the meta is allow-listed: unknown fields + bad mod ids dropped; the author comes from the token', JSON.stringify(r1.meta));
+	// get is public: no token, IP-limited
+	const g1 = await raw('micatro-replay-get', { id });
+	A(g1.status === 200 && g1.body.code === code && g1.body.by === 'alice' && g1.body.meta.ante === 12, 'micatro-replay-get is public (no token) and returns {code, meta, by, when}', JSON.stringify(g1.body).slice(0, 120));
+	A(JSON.stringify(await RPm.unpackRecipe(g1.body.code)) === JSON.stringify(recipe), 'the fetched code unpacks to the uploaded recipe');
+	A((await raw('micatro-replay-get', { id: 'XYZ' })).status === 400 && (await raw('micatro-replay-get', { id: '../alice' })).status === 400, 'a malformed id is refused (400)');
+	A((await raw('micatro-replay-get', { id: 'deadbeef00' })).status === 404, 'a missing replay is 404');
+	A((await raw('micatro-replay-get', { id: 'deadbeef00' }, 'garbage-token')).status === 404, 'a bad token does not matter for the public read');
+	// caps + shape validation
+	const bad = async (body, tok = tokens.alice) => raw('micatro-replay-put', body, tok);
+	A((await bad({ code: 'G1.' + 'A'.repeat(300_001) })).status === 413, 'a packed code over 300 KB is refused (413)');
+	A((await bad({ code: 'X1.abc' })).status === 400 && (await bad({ code: 'G1.ab c' })).status === 400 && (await bad({})).status === 400, 'a non-code is refused (400)');
+	A((await bad({ code: 'G1.' + Buffer.from('not gzip').toString('base64url') })).status === 400, 'a G1 code that is not gzip is refused');
+	A((await bad({ code: await RPm.pack('{"seed":"x","actions":[]}') })).body.error === 'not a run recipe', 'a recipe without v is refused');
+	A((await bad({ code: await RPm.pack(JSON.stringify({ ...recipe, actions: [1, 2] })) })).body.error === 'not a run recipe', 'actions that are not {type} objects are refused');
+	A((await bad({ code: await RPm.pack(JSON.stringify({ ...recipe, seed: '' })) })).status === 400 && (await bad({ code: await RPm.pack('[1,2]') })).status === 400, 'an empty seed / a non-object is refused');
+	const many = await RPm.pack(JSON.stringify({ ...recipe, actions: Array.from({ length: 20001 }, () => ({ type: 'highlight', ids: [] })) }));
+	const mres = await bad({ code: many });
+	A(many.length < 300_000 && mres.status === 413 && mres.body.error === 'too many actions', 'a run over 20000 actions is refused (413)', JSON.stringify(mres.body));
+	const ok20k = await bad({ code: await RPm.pack(JSON.stringify({ ...recipe, actions: Array.from({ length: 20000 }, () => ({ type: 'highlight', ids: [] })) })) });
+	A(ok20k.status === 200, 'exactly 20000 actions is accepted');
+	const bomb = await RPm.pack('{"v":1,"seed":"x","actions":[],"pad":"' + '0'.repeat(6_000_000) + '"}');
+	const bres = await bad({ code: bomb });
+	A(bomb.length < 300_000 && bres.status === 400, 'a zip bomb (6 MB unpacked from a small code) is refused without inflating it all', JSON.stringify({ packed: bomb.length, status: bres.status }));
+	// extend in place: your own id is overwritten; somebody else's id is not
+	const code2 = await RPm.packRecipe({ ...recipe, actions: [...recipe.actions, { type: 'cash_out' }] });
+	const p2 = await raw('micatro-replay-put', { code: code2, meta: { ...meta, ante: 13 }, id }, tokens.alice);
+	A(p2.body.id === id && row('mreplay:' + id).code === code2 && row('mreplay:' + id).meta.ante === 13, 'putting with your own id extends that replay in place (win -> Endless)');
+	const p3 = await raw('micatro-replay-put', { code, meta, id }, tokens.bob);
+	A(p3.status === 200 && p3.body.id !== id && row('mreplay:' + id).code === code2 && row('mreplay:' + p3.body.id).by === 'bob', "another player's id is never overwritten (bob gets a new id)", JSON.stringify(p3.body));
+	const p4 = await raw('micatro-replay-put', { code, meta, id: 'ffffffff' }, tokens.alice);
+	A(p4.body.id !== 'ffffffff' && !row('mreplay:ffffffff'), 'a made-up id is not created on request');
+	// the board row links the run's replay — only a well-formed id of the scorer's own upload
+	const sc1 = await call('run-score', { mode: 'micatro', score: 10 ** 12, ante: 9, seed: 'RPSEED', back: 'b_red', stake: 1, won: true, replay: id }, tokens.alice);
+	A(sc1.ok && sc1.best.replay === id, 'run-score keeps the run replay id on the best row', JSON.stringify(sc1.best));
+	const lb = await call('run-leaderboard', { mode: 'micatro' }, tokens.carl);
+	A((lb.top || []).find(e => e.name === 'alice')?.replay === id, 'the leaderboard row carries the replay id');
+	const sc2 = await call('run-score', { mode: 'micatro', score: 10 ** 13, ante: 9, replay: p3.body.id }, tokens.alice);
+	A(sc2.ok && sc2.better && !('replay' in sc2.best), "a replay id someone ELSE uploaded is not linked on your row", JSON.stringify(sc2.best));
+	const sc3 = await call('run-score', { mode: 'micatro', score: 10 ** 14, ante: 9, replay: 'javascript:alert(1)' }, tokens.alice);
+	const sc4 = await call('run-score', { mode: 'micatro', score: 10 ** 15, ante: 9, replay: 'aaaaaaaa' }, tokens.alice);
+	A(sc3.ok && !('replay' in sc3.best) && sc4.ok && !('replay' in sc4.best), 'a malformed / nonexistent replay id is dropped (the score still posts)');
+	// the final publish carries the replay to spectators (only on the over push)
+	await call('add-friend', { username: 'carl' }, tokens.bob); // (bob already follows alice)
+	await call('publish-micatro', { snapshot: { ante: 9 }, label: 'Ante 9', seq: 500, replay: id }, tokens.alice);
+	A(!row('micatrostate:alice').replay, 'a live (not over) publish ignores a replay id');
+	await call('publish-micatro', { label: 'Ante 9', seq: 500, over: true, won: true, replay: id }, tokens.alice);
+	A(row('micatrostate:alice').replay === id && row('micatrostate:alice').over === true, 'the final over push stores the replay id on the state row');
+	const sv = await call('micatro-state', { username: 'alice' }, tokens.bob);
+	const su = await call('micatro-state', { username: 'alice', seq: 500 }, tokens.bob);
+	A(sv.replay === id && su.unchanged && su.replay === id, 'spectators read it (full + unchanged replies)', JSON.stringify(su));
+	await call('publish-micatro', { label: 'Ante 9', seq: 501, over: true, replay: 'NOPE' }, tokens.alice);
+	A(!row('micatrostate:alice').replay, 'a malformed replay id is not stored on the state row');
+	// registration: the public read sits ABOVE the auth gate, the put below it; GC + rate limit; the short link
+	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
+	const gate = src.indexOf('// everything below requires a valid token');
+	A(gate > 0 && src.indexOf("action === 'micatro-replay-get'") > 0 && src.indexOf("action === 'micatro-replay-get'") < gate && src.indexOf("action === 'micatro-replay-put'") > gate, 'micatro-replay-get is above the auth gate; micatro-replay-put below it');
+	A(/\['mreplay:', 30 \* 24 \* HR\]/.test(src.slice(src.indexOf('const GC_TABLE'), src.indexOf('const GC_TABLE') + 1400)), "GC_TABLE sweeps 'mreplay:' after 30 days");
+	A(/'micatro-replay-put': \[\d+, [\d_]+\]/.test(src.slice(src.indexOf('const RATE_LIMITS'), src.indexOf('const HIT_LIMIT'))), 'micatro-replay-put is rate-limited');
+	const getBlk = src.slice(src.indexOf("action === 'micatro-replay-get'"), src.indexOf("action === 'micatro-replay-get'") + 400);
+	A(getBlk.includes("rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1])") && getBlk.includes('REPLAY_ID_RE.test(id)'), 'the public read is IP-limited like replay-get, and checks the id');
+	const rd = fs.readFileSync(path.join(ROOT, '_redirects'), 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+	A(rd.includes('/mr/* /micatro/?replay=:splat 302'), '/mr/<id> redirects (302) to the replay viewer');
+} catch (e) {
+	A(false, 'replay section crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
 }
 
 // ===== 4. routing, registration, launch points =====

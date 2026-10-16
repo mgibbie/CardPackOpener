@@ -14,6 +14,8 @@
 //             Next Round / Reroll, Cash Out, Skip pack
 //   cancel    close a dialog · deselect
 //   Start     pause menu (options, speed, run info, deck, quit)   Select  deck view
+// Replay viewer (?replay=): LB / RB step back / forward, secondary plays / pauses, and the replay
+// bar's buttons (#replay-bar, outside the stage) are stops like any other button.
 // The reticle hides when the mouse moves or the pad disconnects.
 import { startGamepad, buttonLabel, loadPadSettings, rumble } from '/site/gamepad.js';
 import { isConsumableSet } from './assets.js';
@@ -31,7 +33,7 @@ export const padSignedIn = () => {
 const center = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 const onScreen = (r) => r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth && r.width > 4 && r.height > 4;
 
-export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
+export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay = null }) {
   let focus = null;            // {card:id} | {el}
   let ringOn = false, tipsOn = false, hold = null, lastState = null, lastModal = null, kind = 'generic';
   const signed = padSignedIn();
@@ -67,6 +69,8 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
       if (el.closest('.modal-layer') || !shownEl(el)) continue;
       out.push({ el, r: el.getBoundingClientRect() });
     }
+    const rbar = replay ? document.getElementById('replay-bar') : null;
+    if (rbar) for (const el of rbar.querySelectorAll(DOM_SEL)) if (shownEl(el)) out.push({ el, r: el.getBoundingClientRect() });
     return out;
   }
   const same = (a, b) => !!a && !!b && (a.card != null ? a.card === b.card : a.el === b.el);
@@ -191,6 +195,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
     showTip();
   }
   function secondary() {
+    if (replay && !topModal()) { replay.toggle(); return; }
     const s = sprite(), v = view();
     if (readOnly || !v) return;
     if (s && (s.area === 'jokers' || s.area === 'consumeables')) { board.act({ type: 'sell', id: s.id }, 'coin2'); return; }
@@ -212,6 +217,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
   };
   function pairFor(v) { if (!v) return [null, null]; if (PACK.test(v.state)) return [null, '.b-skip-pack']; return BUTTON_PAIRS[v.state] || [null, null]; }
   function shoulder(i) {
+    if (replay && !topModal()) { replay.step(i ? 1 : -1); return; }
     if (readOnly || topModal()) return;
     const sel = pairFor(view())[i];
     if (!sel) return;
@@ -316,6 +322,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
     const parts = [];
     if (!signed) { parts.push('Log in to use a controller'); }
     else if (modal) { parts.push(`${L('confirm')} Choose`, `${L('cancel')} Back`); }
+    else if (replay) { parts.push(`${L('confirm')} Press`, `${L('secondary')} Play/Pause`, `${L('prev')}${L('next')} Step`, `${L('menu')} Menu`); }
     else if (readOnly) { parts.push(`${L('confirm')} Info`, `${L('select')} Deck`, `${L('menu')} Menu`); }
     else {
       let c = 'Press';

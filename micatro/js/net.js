@@ -56,7 +56,7 @@ export function startPublisher(getSnapshot, getLabel) {
 		watchers = n; watcherNames = names;
 		for (const cb of cbs) { try { cb(watchers, watcherNames); } catch {} }
 	};
-	async function push({ over = false, won = false } = {}) {
+	async function push({ over = false, won = false, replay = null } = {}) {
 		const { snap, label, json } = read();
 		const tooBig = json.length > SNAPSHOT_MAX;
 		if (tooBig && !warnedBig) { warnedBig = true; console.warn('[micatro/net] snapshot over ' + SNAPSHOT_MAX + ' chars — not broadcast'); }
@@ -65,6 +65,7 @@ export function startPublisher(getSnapshot, getLabel) {
 		if (!needSnap && !over && now - lastSentAt < KEEPALIVE_MS) return; // nothing new, keep-alive not due
 		if (needSnap && json !== seqJson) { seq++; seqJson = json; }
 		const body = { seq, label, over, won: !!won };
+		if (over && replay) body.replay = String(replay); // spectators of the finished run can watch its replay
 		if (needSnap) body.snapshot = snap;
 		lastSentAt = now;
 		try {
@@ -84,11 +85,11 @@ export function startPublisher(getSnapshot, getLabel) {
 		stop() { stopped = true; clearTimeout(timer); },
 		// the run ended: one last push with over:true (spectators see the result; the
 		// runner's presence drops back to plain "online"), then the publisher stops.
-		async finish({ won = false } = {}) {
+		async finish({ won = false, replay = null } = {}) {
 			if (finished) return;
 			finished = true; stopped = true; clearTimeout(timer);
 			if (inflight) await inflight.catch(() => {});
-			await push({ over: true, won });
+			await push({ over: true, won, replay });
 		},
 		onWatchers(cb) { cbs.add(cb); return () => cbs.delete(cb); },
 		get watchers() { return watchers; },
@@ -106,7 +107,7 @@ export function startPublisher(getSnapshot, getLabel) {
 export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {} } = {}) {
 	const who = String(username || '').trim().toLowerCase();
 	let stopped = false, timer = null, seq = null, status = null, delay = POLL_FAST_MS, lastWatchSig = '';
-	const meta = { seq: null, label: '', over: false, won: false, watchers: 0, watcherNames: [], room: 'u:' + who };
+	const meta = { seq: null, label: '', over: false, won: false, watchers: 0, watcherNames: [], room: 'u:' + who, replay: null };
 	const setStatus = (s, info = meta) => {
 		const sig = s === 'live' ? (meta.watcherNames || []).join(',') + '|' + meta.label : '';
 		if (s === status && sig === lastWatchSig) return;
@@ -128,13 +129,13 @@ export function startSpectate(username, { onSnapshot = () => {}, onStatus = () =
 		else if (d.error === 'slow down') { delay = POLL_IDLE_MS; }
 		else if (d.error) { setStatus('forbidden', { error: d.error }); stopped = true; return; }
 		else if (d.unchanged) {
-			Object.assign(meta, { label: d.label ?? meta.label, over: !!d.over, won: !!d.won, watchers: d.watchers ?? meta.watchers, watcherNames: d.watcherNames || meta.watcherNames });
+			Object.assign(meta, { label: d.label ?? meta.label, over: !!d.over, won: !!d.won, replay: d.replay || meta.replay, watchers: d.watchers ?? meta.watchers, watcherNames: d.watcherNames || meta.watcherNames });
 			delay = Math.min(POLL_SLOW_MS, delay + 500); // nothing new → ease off toward 2.5s
 		} else if (d.snapshot == null && !d.seq) {
 			seq = null; setStatus('not-live', {}); delay = POLL_SLOW_MS;
 		} else {
 			seq = d.seq;
-			Object.assign(meta, { seq: d.seq, label: d.label || '', over: !!d.over, won: !!d.won, watchers: d.watchers || 0, watcherNames: d.watcherNames || [], room: d.room || meta.room });
+			Object.assign(meta, { seq: d.seq, label: d.label || '', over: !!d.over, won: !!d.won, replay: d.replay || null, watchers: d.watchers || 0, watcherNames: d.watcherNames || [], room: d.room || meta.room });
 			try { onSnapshot(d.snapshot, { ...meta }); } catch (e) { console.warn('[micatro/net] onSnapshot threw', e); }
 			delay = POLL_FAST_MS;
 		}
@@ -189,7 +190,7 @@ export function modList(mods) {
 // submitScore({score, ante, seed, back, stake, won, mods}) → {ok, better, best, rank} | {error}
 // A run with mods posts to the separate Modded board (mode 'micatro_modded') with its mod list.
 // A run with a CUSTOM DECK (the deck editor) is modded too: customDeck = the deck's name.
-export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '' } = {}) {
+export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	const s = wireScore(score);
 	if (s == null) return { error: 'bad score' };
@@ -198,6 +199,7 @@ export async function submitScore({ score, ante = 0, seed = '', back = '', stake
 	const body = { mode: ml.length || cd ? 'micatro_modded' : 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won };
 	if (ml.length) body.mods = ml;
 	if (cd) body.customDeck = cd;
+	if (replay && /^[a-f0-9]{8,20}$/.test(String(replay))) body.replay = String(replay); // the run's replay: the board row links to it
 	try { return await MP.call('run-score', body); }
 	catch (e) { return { error: 'offline' }; }
 }
@@ -229,5 +231,23 @@ export async function fetchDecks() {
 export async function saveDecks(decks, rev = 0) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	try { return (await MP.call('micatro-decks-put', { decks, rev })) || { error: 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+
+// ---------------------------------------------------------------- run replays
+// A finished run's replay (micatro/js/replays.js packs the recipe). Upload needs an account; READING
+// one is public (a share link opens logged-out too).
+//   uploadReplay({code, meta, id?}) -> {ok, id} | {error}   (id: extend YOUR earlier upload of this run)
+//   fetchReplay(id) -> {code, meta, by, when} | {error}
+export async function uploadReplay({ code, meta = {}, id = null } = {}) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	const body = { code: String(code || ''), meta };
+	if (id && /^[a-f0-9]{8,20}$/.test(String(id))) body.id = String(id);
+	try { const d = await MP.call('micatro-replay-put', body); return d && d.id ? { ok: true, id: d.id } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function fetchReplay(id) {
+	if (!/^[a-f0-9]{8,20}$/.test(String(id || ''))) return { error: 'bad id' };
+	try { const d = await MP.call('micatro-replay-get', { id: String(id) }); return d && d.code ? d : { error: (d && d.error) || 'not found' }; }
 	catch { return { error: 'offline' }; }
 }
