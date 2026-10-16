@@ -76,6 +76,60 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const MICATRO_DECKS_MAX = 30;           // decks per player
 const MICATRO_DECK_BYTES = 66_000;      // one serialized deck definition (the client caps a definition at 64 KB)
 const MICATRO_DECKS_BYTES = 400_000;    // the whole row
+// MICATRO run replays: a FINISHED run's recipe {v, seed, back, stake, mods, modOptions, customDeck?,
+// actions} packed like a Battlecards tape ('G1.' gzip / 'R1.' raw, base64url). One row per run,
+// `mreplay:<8 hex>` = {code, meta, by, when}; the viewer re-simulates it with the engine. A replay is
+// always a whole run — the client never uploads a single round.
+const MICATRO_REPLAY_MAX = 300_000;      // the packed code (a long Endless run packs to a few tens of KB)
+const MICATRO_REPLAY_UNPACKED = 4_000_000; // gunzip stops here (a zip bomb never inflates further)
+const MICATRO_REPLAY_ACTIONS = 20_000;   // actions in one run
+const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
+// a packed code -> its text (null on junk or past `max` bytes unpacked)
+async function unpackCapped(code, max) {
+	let bytes;
+	try {
+		const b64 = code.slice(3).replace(/-/g, '+').replace(/_/g, '/');
+		const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+		bytes = new Uint8Array(bin.length);
+		for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+	} catch { return null; }
+	if (code.startsWith('R1.')) return bytes.length > max ? null : new TextDecoder().decode(bytes);
+	try {
+		const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')).getReader();
+		const chunks = [];
+		let n = 0;
+		for (;;) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			n += value.length;
+			if (n > max) { reader.cancel().catch(() => {}); return null; }
+			chunks.push(value);
+		}
+		const out = new Uint8Array(n);
+		let o = 0;
+		for (const c of chunks) { out.set(c, o); o += c.length; }
+		return new TextDecoder('utf-8', { fatal: true }).decode(out);
+	} catch { return null; }
+}
+// a micatro replay's display meta — ALLOW-LISTED (it is shown in a public viewer)
+function cleanReplayMeta(m) {
+	m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+	const str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').slice(0, n).trim();
+	const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v)) || 0));
+	let score = 0;
+	if (typeof m.score === 'number' && Number.isFinite(m.score)) score = Math.max(0, m.score);
+	else if (typeof m.score === 'string' && m.score.length <= 48 && /^(\d+(\.\d+)?(e\+?\d+(\.\d+)?(e\+?\d{1,3})?)?|naneinf)$/i.test(m.score.trim())) score = m.score.trim();
+	return {
+		score, handName: str(m.handName, 32),
+		ante: int(m.ante, 0, 100000), round: int(m.round, 0, 1000000),
+		won: !!m.won, endless: !!m.endless,
+		back: str(m.back, 40), stake: typeof m.stake === 'string' ? str(m.stake, 40) : int(m.stake, 0, 99),
+		mods: [...new Set((Array.isArray(m.mods) ? m.mods : []).filter(x => typeof x === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(x)))].slice(0, 32),
+		customDeck: str(m.customDeck, 32), seed: str(m.seed, 16),
+		actions: int(m.actions, 0, MICATRO_REPLAY_ACTIONS), finalSeq: int(m.finalSeq, 0, 1e9),
+		checksum: str(m.checksum, 64), engineVersion: int(m.engineVersion, 0, 1e6),
+	};
+}
 // MICATRO big-number scores (any run past 1e308, sent as text "1.234e450"). The game's scale
 // tops out at 9.99e999: an exponent >= 1000 is "naneinf" (-> {naneinf:true}, stored like Infinity).
 // -> {text, man, exp} | {naneinf} | null for anything a plain number can hold.
@@ -123,6 +177,7 @@ const RATE_LIMITS = {
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
+	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -163,6 +218,7 @@ const GC_TABLE = [
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
+	['mreplay:', 30 * 24 * HR], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
@@ -898,6 +954,16 @@ export default async function handler(req, env) {
 		return json({ ids: rec.ids, meta: rec.meta || {} });
 	}
 
+	// public read of a MICATRO run replay (/micatro/?replay=<id>, /mr/<id>) — the same guard as replay-get
+	if (action === 'micatro-replay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('mreplay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+	}
+
 	// live art/sprite tuning overrides — PUBLIC read: every game client fetches
 	// these at boot and merges them over the committed tuning files, so an
 	// owner save from the live site (see tuning-save below) takes effect for
@@ -1439,6 +1505,9 @@ export default async function handler(req, env) {
 			};
 			if (mode === 'micatro_modded') run.mods = modList;
 			if (customDeck) run.customDeck = customDeck;
+			// the run's replay (micatro-replay-put): only a well-formed id of a replay THIS player uploaded
+			const rid = String(body.replay ?? '');
+			if (REPLAY_ID_RE.test(rid)) { const rr = await store.get('mreplay:' + rid); if (rr && rr.by === username) run.replay = rid; }
 			const prev = user.runBest[mode];
 			const better = !prev || typeof prev.score !== 'number' || micatroScoreCmp(run, prev) > 0;
 			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
@@ -1512,6 +1581,32 @@ export default async function handler(req, env) {
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('replay:' + id))) break; } // 8 hex chars — short enough for a /r/<id> link; collisions retried, tapes GC in 30 days
 		await store.setJSON('replay:' + id, { code, by: username, when: Date.now() });
 		return json({ id });
+	}
+
+	// upload a finished MICATRO run's replay → its id (the leaderboard row + share link point at it).
+	// {code, meta, id?}: with `id` naming one of YOUR replays the row is overwritten in place — a win's
+	// replay grows to cover the Endless run that followed, and the board's link stays valid.
+	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000}.
+	if (action === 'micatro-replay-put') {
+		const code = String(body.code || '');
+		if (code.length > MICATRO_REPLAY_MAX) return json({ error: 'replay too large', max: MICATRO_REPLAY_MAX }, 413);
+		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		const text = await unpackCapped(code, MICATRO_REPLAY_UNPACKED);
+		let recipe = null;
+		try { recipe = text ? JSON.parse(text) : null; } catch { recipe = null; }
+		if (!recipe || typeof recipe !== 'object' || Array.isArray(recipe) || typeof recipe.v !== 'number' || typeof recipe.seed !== 'string' || !recipe.seed
+			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')) return json({ error: 'not a run recipe' }, 400);
+		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
+		const meta = cleanReplayMeta(body.meta);
+		let id = null;
+		const want = String(body.id || '');
+		if (REPLAY_ID_RE.test(want)) {
+			const prev = await store.get('mreplay:' + want);
+			if (prev && prev.by === username) id = want; // only your own replay is extended in place
+		}
+		if (!id) for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('mreplay:' + id))) break; }
+		await store.setJSON('mreplay:' + id, { code, meta, by: username, when: Date.now() });
+		return json({ ok: true, id });
 	}
 
 	// a run's "super replay": an ORDERED playlist of tape ids already uploaded by
@@ -1717,13 +1812,14 @@ export default async function handler(req, env) {
 		const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
 		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
 		const over = !!body.over, won = !!body.won;
+		const replay = over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? String(body.replay) : null;
 		const hasSnap = body.snapshot != null;
 		if (hasSnap && JSON.stringify(body.snapshot).length > MICATRO_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: MICATRO_SNAPSHOT_MAX }, 413);
 		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
 		const watchers = watcherNames.length;
 		const prev = await store.get('micatrostate:' + username);
 		const sameSeq = !!prev && prev.seq === seq;
-		const unchanged = sameSeq && !hasSnap && !!prev.over === over && !!prev.won === won && prev.label === label
+		const unchanged = sameSeq && !hasSnap && !!prev.over === over && !!prev.won === won && prev.label === label && (prev.replay || null) === replay
 			&& (prev.watcherNames || []).join(',') === watcherNames.join(',') && now - prev.ts < MICATRO_REFRESH_MS;
 		if (!unchanged) {
 			await store.setJSON('micatrostate:' + username, {
@@ -1732,6 +1828,7 @@ export default async function handler(req, env) {
 				room: 'u:' + username, // spectators read the runner's chat room
 				seq, ts: now, over, won,
 				watchers, watcherNames,
+				...(replay ? { replay } : {}),
 			});
 		}
 		// presence: "playing Micatro" while live; a finished run goes back to plain online
@@ -1798,7 +1895,7 @@ export default async function handler(req, env) {
 		if (!watching.includes(username)) watching.push(username);
 		const watchers = watching.length, watcherNames = watching.slice(0, SPEC_CAP);
 		if (body.seq != null && Number(body.seq) === ms.seq) {
-			return json({ unchanged: true, seq: ms.seq, room: ms.room, label: ms.label, over: !!ms.over, won: !!ms.won, watchers, watcherNames });
+			return json({ unchanged: true, seq: ms.seq, room: ms.room, label: ms.label, over: !!ms.over, won: !!ms.won, watchers, watcherNames, ...(ms.replay ? { replay: ms.replay } : {}) });
 		}
 		return json({ ...ms, watchers, watcherNames });
 	}

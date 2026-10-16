@@ -139,3 +139,34 @@ Each step: gate → merge when it passes → next.
    seams (Xatu all-planets packs, previous-evo win stickers), per-mod design-wiki sections + news
    for any mod that lacks them, and a final all-mods-on fuzz/perf pass (load time, snapshot size,
    spectator bandwidth) before calling the rebuild done.
+
+## 8. Run replays (2026-10-16)
+A replay is always a **whole run** (first blind to game over / the win / the end of Endless), never one
+round: the run's recipe `{v, seed, back, stake, mods, modOptions, customDeck?, actions}` re-simulated
+by the engine (it is deterministic), so it costs a few KB and plays back exactly like live play.
+- **Recording** (`ui/main.js` recordReplay): at the game over, and at the win (a win that goes on into
+  Endless is recorded again at its game over under the SAME local id and server id, so the board link
+  always shows the whole run). Kept locally (`micatro_replays_v1`, last 10, oldest evicted when storage
+  is full — never the live run save) by `js/replays.js`, which also packs the share code (`G1.` gzip,
+  the Battlecards tape format) and builds the meta (score as big-number text, ante, round, won/endless,
+  deck, mods, seed, action count, final `viewChecksum`, engine version).
+- **Server** (`server/mp.mjs`): `micatro-replay-put` (signed in, rate-limited, packed <= 300 KB,
+  unpacked under a 4 MB cap, a `{v, seed, actions[{type}] <= 20000}` recipe; `id` extends YOUR
+  replay in place) writes exactly `mreplay:<8 hex>` = {code, meta (allow-listed), by, when}, GC'd
+  after 30 days; `micatro-replay-get` is public (above the auth gate, IP-limited like replay-get).
+  Signed in, the replay is uploaded first and `run-score` carries its id (`replay`, stored on the
+  board row only if it is the scorer's own upload) -> a ▶ on the leaderboard row. The final
+  `publish-micatro` carries it too, so a friend spectating the finished run gets "▶ Watch the full run".
+- **Viewer** (`ui/replayview.js`, MODE 'replay'): `/micatro/?replay=<id>` (`/mr/<id>` short link)
+  or `?replay=local:<id>`; the engine + the run's mods load, `Session.stepper(recipe)` (engine
+  `ReplayStepper`) steps the actions into `player.push(view, events)`; selections run instantly;
+  seeking rebuilds from the start (~0.3 ms an action). Bar: first / step back / play-pause / step
+  forward / last, 1-2-4x, scrubber with blind ticks + ante marks + the win star, Ante chips, counter,
+  Exit; keys Space / arrows / Home / End; controller LB/RB step, Y play-pause, bar buttons are pad
+  stops. It tucks away while playing. At the end the rebuild is checked against the meta checksum: a
+  different end, or an action the engine now rejects, shows "This replay was recorded on an older
+  version and may play out differently" (and stops there). Entry points: game-over / win modal
+  (Watch replay, Copy replay link when signed in), leaderboard ▶, main menu **Replays** list
+  (watch / copy link / delete).
+- Tests: `micatro/tests/replay_test.mjs` (engine), `overworld/tests/micatro_server_test.mjs`
+  (section 5), `overworld/tests/micatro_replay_test.mjs` (browser).

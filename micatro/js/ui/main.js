@@ -2,6 +2,8 @@
 //   normal       : local Session (engine) -> act -> Player animates {view, events}
 //                  -> broadcast to friends (net.startPublisher) when logged in
 //   ?spectate=u  : read-only; net.startSpectate feeds snapshots {view, events}
+//   ?replay=id   : read-only; a FINISHED RUN re-simulated from its recipe (ui/replayview.js) —
+//                  a server id (/mr/<id>, public) or local:<id> (this device's last 10 runs)
 //   ?direct=1    : launched from the overworld arcade (back goes to /overworld/)
 import { loadImages, loadFont, bindModRegistry } from './assets.js';
 import { Background } from './gl.js';
@@ -13,11 +15,12 @@ import { initPad } from './pad.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim();
-const MODE = SPECTATE ? 'spectate' : 'normal';
+const REPLAY = (params.get('replay') || '').trim();
+const MODE = REPLAY ? 'replay' : SPECTATE ? 'spectate' : 'normal';
 const DIRECT = params.get('direct') === '1';
 const EVENT_LOG_CAP = 3000, PUBLISH_CAP = 300;
 
-let Engine = null;      // {Session, pokerInfo, G}
+let Engine = null;      // {Session, pokerInfo, G, RP (replays.js), ...}
 let net = null;         // ../net.js (optional)
 let Mods = null;        // ../mods/index.js (AVAILABLE, loadMods + UI helpers), loaded on demand
 let session = null;
@@ -27,14 +30,17 @@ let currentView = null;
 const allEvents = [];
 let pendingPublish = [];
 let overHandled = false, winShown = false;
+let runReplay = null;   // this run's replay once it finished: {localId, local, serverId, upload: Promise<serverId|null>}
+let replayCtrl = null;  // MODE 'replay': the viewer (ui/replayview.js)
 
 const stage = document.getElementById('stage');
 
 async function loadEngine() {
   const [S, R] = await Promise.all([import('../engine/session.js'), import('../engine/run.js')]);
-  let describeBack = null;
+  let describeBack = null, RP = null;
   try { describeBack = (await import('../engine/describe.js')).describeBack; } catch (e) { /* optional */ }
-  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack };
+  try { RP = await import('../replays.js'); } catch (e) { console.warn('micatro: replays unavailable', e); }
+  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION };
 }
 // ------------------------------------------------------------------- mods
 /** The mods manifest + loader (micatro/js/mods/index.js). Imported once; never throws. */
@@ -85,8 +91,9 @@ const myName = () => {
 };
 
 /** The session's view (+ the mod pack's kind, which view.js only reports for vanilla packs). */
-function viewOf() {
-  const v = session.view();
+function viewOf() { return decorateView(session.view()); }
+/** (the engine's live view — the session's, or the replay stepper's) */
+function decorateView(v) {
   if (v && !v.pack_kind && /^MOD_PACK/.test(v.state || '') && Engine && Engine.G && Engine.G.GAME) v.pack_kind = Engine.G.GAME.pack_kind || null;
   return v;
 }
@@ -219,26 +226,83 @@ function chatWrap() {
 }
 
 // ---------------------------------------------------------------- endings
-function submit(view, won) {
+function submit(view, won, replay) {
   if (!loggedIn() || !net.submitScore) return null;
-  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '' });
+  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}) });
+}
+/**
+ * The run just finished (game over, or the win): keep its WHOLE-RUN replay. Saved locally (the last 10
+ * runs) and, signed in, uploaded — the score is posted only after, with the replay's id, so the board
+ * row links to it. A win that goes on into Endless calls this again at the game over: the same local
+ * entry and the same server id are extended to cover the whole run.
+ */
+function recordReplay(view) {
+  const RP = Engine && Engine.RP;
+  if (!RP || !session || !session.recipe) return null;
+  try {
+    const recipe = JSON.parse(JSON.stringify(session.recipe));
+    const meta = RP.buildMeta(recipe, view, { username: myName() });
+    const entry = RP.save(recipe, meta);
+    const localId = RP.localId(recipe);
+    const prev = runReplay && runReplay.localId === localId ? runReplay : null;
+    const rec = { localId, local: !!entry, serverId: (entry && entry.serverId) || (prev && prev.serverId) || null, recipe, meta };
+    rec.upload = !(loggedIn() && net.uploadReplay) ? Promise.resolve(null) : (async () => {
+      try {
+        const prevId = prev ? await prev.upload : rec.serverId;
+        const code = await RP.packRecipe(recipe);
+        if (code.length > RP.PACKED_MAX) return null;
+        const r = await net.uploadReplay({ code, meta, id: prevId || null });
+        if (r && r.id) { rec.serverId = r.id; if (rec.local) RP.setServerId(localId, r.id); }
+        return rec.serverId || null;
+      } catch (e) { console.warn('micatro: replay upload failed', e); return null; }
+    })();
+    runReplay = rec;
+    return rec;
+  } catch (e) { console.warn('micatro: could not keep the replay', e); return null; }
+}
+/** The game-over / win modal's replay buttons. */
+function replayButtons(rec) {
+  if (!rec || !Engine || !Engine.RP) return null;
+  const RP = Engine.RP;
+  const go = (url) => { location.href = url + (DIRECT ? '&direct=1' : ''); };
+  return {
+    guest: !loggedIn(),
+    watch: async () => {
+      if (rec.local) return go(RP.watchUrl(rec.localId, { local: true }));
+      const id = await rec.upload;
+      if (id) return go(RP.watchUrl(id));
+      board.toast('This replay could not be saved (storage full).');
+    },
+    link: async () => {
+      const id = await rec.upload;
+      return id ? RP.shareUrl(id) : null;
+    },
+  };
+}
+/** Spectators of this run get "Watch the full run" once its replay is up. */
+function finishPublishing(won, rec) {
+  if (!publisher || !publisher.finish) return;
+  const pub = publisher; publisher = null;
+  Promise.resolve(rec ? rec.upload : null).catch(() => null).then((id) => pub.finish({ won, replay: id || null })).catch(() => {});
 }
 function showGameOver(view) {
   const won = !!view.won;
-  const p = submit(view, won);
-  if (publisher && publisher.finish) { publisher.finish({ won }).catch(() => {}); publisher = null; }
+  const rec = recordReplay(view);
+  const p = loggedIn() && net.submitScore ? Promise.resolve(rec ? rec.upload : null).catch(() => null).then((id) => submit(view, won, id)) : null;
+  finishPublishing(won, rec);
   UI.gameOver(view, {
-    won: false, rankPromise: p, guest: !loggedIn(), net, me: myName(),
+    won: false, rankPromise: p, guest: !loggedIn(), net, me: myName(), replay: replayButtons(rec),
     onNewRun: () => UI.newRunScreen(menuOpts()), onMainMenu: () => UI.mainMenu(menuOpts()),
   });
 }
 function showWin(view) {
-  const p = submit(view, true);
+  const rec = recordReplay(view);
+  const p = loggedIn() && net.submitScore ? Promise.resolve(rec ? rec.upload : null).catch(() => null).then((id) => submit(view, true, id)) : null;
   UI.gameOver(view, {
-    won: true, rankPromise: p, guest: !loggedIn(), net, me: myName(),
+    won: true, rankPromise: p, guest: !loggedIn(), net, me: myName(), replay: replayButtons(rec),
     onEndless: () => { onAction({ type: 'endless' }); },
-    onNewRun: () => { if (publisher && publisher.finish) { publisher.finish({ won: true }).catch(() => {}); publisher = null; } Engine.Session.clearSaved(); UI.newRunScreen(menuOpts()); },
-    onMainMenu: () => { if (publisher && publisher.finish) { publisher.finish({ won: true }).catch(() => {}); publisher = null; } Engine.Session.clearSaved(); UI.mainMenu(menuOpts()); },
+    onNewRun: () => { finishPublishing(true, rec); Engine.Session.clearSaved(); UI.newRunScreen(menuOpts()); },
+    onMainMenu: () => { finishPublishing(true, rec); Engine.Session.clearSaved(); UI.mainMenu(menuOpts()); },
   });
 }
 
@@ -247,6 +311,29 @@ function menuOpts() {
   return {
     saved: !!(Engine && Engine.Session.saved()), direct: DIRECT, loggedIn: loggedIn(), net, seed: params.get('seed') || '',
     onNew: (o) => startRun(o), onContinue: () => continueRun(),
+    replays: replaysApi(),
+  };
+}
+/** The main menu's Replays list: this device's last 10 finished runs. */
+function replaysApi() {
+  const RP = Engine && Engine.RP;
+  if (!RP) return null;
+  return {
+    list: () => RP.list(),
+    loggedIn: loggedIn(),
+    watch: (e) => { location.href = RP.watchUrl(e.id, { local: true }) + (DIRECT ? '&direct=1' : ''); },
+    remove: (e) => RP.remove(e.id),
+    // the share link (uploads the replay first if it never was — e.g. it finished offline)
+    link: async (e) => {
+      if (e.serverId) return RP.shareUrl(e.serverId);
+      if (!loggedIn() || !net.uploadReplay) return null;
+      const code = await RP.packRecipe(e.recipe);
+      if (code.length > RP.PACKED_MAX) return null;
+      const r = await net.uploadReplay({ code, meta: e.meta || {} });
+      if (!r || !r.id) return null;
+      RP.setServerId(e.id, r.id); e.serverId = r.id;
+      return RP.shareUrl(r.id);
+    },
   };
 }
 function onMenu(what) {
@@ -317,7 +404,10 @@ function startSpectating() {
         full: 'Spectator slots are full — retrying…', over: (info && info.won) ? 'Run over — they won!' : 'Run over',
         forbidden: `You can only watch friends' runs`, login: 'Log in to watch', offline: 'Offline — retrying…',
       };
-      banner(S[status] || status);
+      let text = S[status] || status;
+      // the runner's final push carries their run's replay id: watch the whole run from the start
+      if (status === 'over' && info && typeof info.replay === 'string' && /^[a-f0-9]{8,20}$/.test(info.replay)) text += ` · <a class="b-watch-full" href="/micatro/?replay=${info.replay}">▶ Watch the full run</a>`;
+      banner(text);
       if (info && info.watchers) setWatchers(info.watchers, info.watcherNames);
       if (status === 'login') net.requireLogin();
     },
@@ -339,6 +429,22 @@ function spectatorMods(ids) {
   }).catch(() => {});
 }
 
+// ------------------------------------------------------------------ replay
+async function startReplayMode() {
+  if (!Engine || !Engine.RP) { board.setBanner('<a href="/micatro/">← Micatro</a><span class="spec-status">The replay viewer failed to load. Please refresh.</span>'); return; }
+  try {
+    const { startReplay } = await import('./replayview.js');
+    const { fmt } = await import('./markup.js');
+    replayCtrl = await startReplay({
+      spec: REPLAY, Engine, RP: Engine.RP, net, board, player, UI, ensureMods, decorateView, direct: DIRECT, fmt,
+      autoplay: params.get('autoplay') !== '0',
+    });
+  } catch (e) {
+    console.error('micatro: replay viewer failed', e);
+    board.setBanner('<a href="/micatro/">← Micatro</a><span class="spec-status">This replay could not be played.</span>');
+  }
+}
+
 const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // --------------------------------------------------------------------- boot
@@ -347,8 +453,8 @@ async function boot() {
   const loading = document.createElement('div');
   loading.className = 'loading'; loading.textContent = 'Loading…';
   stage.appendChild(loading);
-  const [, , eng, nt] = await Promise.all([loadImages(), loadFont(), MODE === 'normal' ? loadEngine().catch((e) => { console.error('micatro: engine failed to load', e); return null; }) : null, loadNet(),
-    MODE === 'normal' ? loadModsModule() : null]);
+  const [, , eng, nt] = await Promise.all([loadImages(), loadFont(), MODE !== 'spectate' ? loadEngine().catch((e) => { console.error('micatro: engine failed to load', e); return null; }) : null, loadNet(),
+    MODE !== 'spectate' ? loadModsModule() : null]);
   Engine = eng; net = nt;
   loading.remove();
   board = new Board(stage, bg, { readOnly: MODE !== 'normal', onAction, onMenu, getPreview, onEvent: (ev) => { if (pad) pad.onGameEvent(ev); } });
@@ -358,7 +464,9 @@ async function boot() {
   UI.setModsApi(modsApi());
   document.body.classList.add('mode-' + MODE);
   addEventListener('keydown', onKey);
-  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => UI.mainMenu(menuOpts()) }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
+  // (replay: LB/RB step, secondary plays/pauses — the controller drives the viewer)
+  const padReplay = MODE === 'replay' ? { toggle: () => replayCtrl && replayCtrl.toggle && replayCtrl.toggle(), step: (d) => replayCtrl && replayCtrl.ready && (d < 0 ? replayCtrl.stepBack() : replayCtrl.stepForward()) } : null;
+  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => UI.mainMenu(menuOpts()), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
   window.__micatro = {
     get session() { return session; },
     view: () => (session ? viewOf() : board.view),
@@ -369,9 +477,11 @@ async function boot() {
     idle: () => player.idle(),
     board, player,
     newRun: (o) => startRun(o || {}),
+    get replay() { return replayCtrl; },
     ready: true,
   };
   if (MODE === 'spectate') { startSpectating(); return; }
+  if (MODE === 'replay') { startReplayMode(); return; }
   if (!Engine) { board.toast('The game failed to load. Please refresh.'); return; }
   UI.mainMenu(menuOpts());
 }

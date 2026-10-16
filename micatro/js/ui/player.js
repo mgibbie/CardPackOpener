@@ -16,12 +16,16 @@ export class Player {
     try { const s = +localStorage.getItem(KEY); if ([1, 2, 4].includes(s)) this.speed = s; } catch (e) { /* ignore */ }
     board.speed = this.speed;
     this.onIdle = null;
+    this.gen = 0;
   }
-  setSpeed(s) {
+  /** opts.save:false (the replay viewer's speed) leaves the player's game-speed setting alone. */
+  setSpeed(s, { save = true } = {}) {
     this.speed = s; this.board.speed = s;
-    try { localStorage.setItem(KEY, String(s)); } catch (e) { /* ignore */ }
+    if (save) try { localStorage.setItem(KEY, String(s)); } catch (e) { /* ignore */ }
   }
   idle() { return !this.busy && this.queue.length === 0; }
+  /** Drop everything queued and cut the playing sequence short (a replay seek); the next push wins. */
+  cancel() { this.queue.length = 0; this.gen++; }
 
   /** Queue an update. opts.jump: snap without animating. */
   push(view, events = [], opts = {}) {
@@ -53,6 +57,7 @@ export class Player {
     const B = this.board;
     while (this.queue.length) {
       const u = this.queue.shift();
+      const gen = this.gen;
       const evs = u.events;
       for (const e of evs) if (typeof e.seq === 'number' && e.seq > this.lastSeq) this.lastSeq = e.seq;
       const animated = !u.jump && B.view && evs.some((e) => !INSTANT.has(e.type));
@@ -68,8 +73,11 @@ export class Player {
         let d = 0;
         try { d = B.applyEvent(e) || 0; } catch (err) { console.error('micatro: event', e.type, err); }
         if (d > 0) await this.wait(d);
+        if (gen !== this.gen) break;   // cancelled (a replay seek): skip the rest of this story
       }
+      if (gen !== this.gen) continue;  // the seek's jump (queued after cancel) sets the table
       await this.wait(0.15);
+      if (gen !== this.gen) continue;
       B.setView(u.view);
       B.setLocked(this.queue.length > 0);
     }

@@ -50,6 +50,7 @@ export function mainMenu(o) {
   if (o.saved) bar.appendChild(btn('Continue', 'orange big b-continue', () => o.onContinue()));
   bar.appendChild(btn('Leader<br>board', 'green big b-leaders', () => leaderboard(o.net)));
   bar.appendChild(btn('How to<br>play', 'red big b-howto', () => howTo()));
+  if (o.replays) bar.appendChild(btn('Replays', 'orange big b-replays', () => replaysList(o.replays)));
   el.appendChild(bar);
   const foot = h('div', 'menu-foot');
   foot.appendChild(h('a', 'back-link', o.direct ? '← Back to the overworld' : '← Magepunk'));
@@ -266,7 +267,9 @@ export async function leaderboard(net, highlight, opts = {}) {
           const back = x.back && CENTERS[x.back] ? CENTERS[x.back].name.replace(' Deck', '') : mc ? String(mc.name || '').replace(' Deck', '') : '';
           const mods = (Array.isArray(x.mods) && x.mods.length ? `<span class="lb-mods">${modBadges(x.mods)}</span>` : '') +
             (x.customDeck ? `<span class="lb-cdeck">Custom deck: ${esc(x.customDeck)}</span>` : '');
-          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
+          // the row's run replay (a whole run, re-simulated in the viewer) — a ▶ beside the name
+          const rp = typeof x.replay === 'string' && /^[a-f0-9]{8,20}$/.test(x.replay) ? `<a class="lb-replay b-lb-replay" href="/micatro/?replay=${x.replay}" title="Watch this run" aria-label="Watch ${esc(user)}'s run">▶</a>` : '';
+          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
         }).join('');
       body.innerHTML = '';
       body.appendChild(tbl);
@@ -508,6 +511,23 @@ export function gameOver(view, o) {
   el.appendChild(rank);
   if (o.rankPromise) o.rankPromise.then((r) => { if (r && r.rank) rank.innerHTML = `Leaderboard rank <b class="attn">#${r.rank}</b>`; else if (r && r.ok) rank.innerHTML = 'Score posted!'; }).catch(() => {});
   else if (o.guest) rank.innerHTML = '<a class="login-link" href="/login/?next=%2Fmicatro%2F">Log in to post high scores</a>';
+  // the WHOLE run's replay (never just this round): watch it, or copy its share link (signed in)
+  if (o.replay) {
+    const rb = h('div', 'go-replay');
+    rb.appendChild(btn('▶ Watch replay', 'green b-watch-replay', () => o.replay.watch()));
+    if (!o.replay.guest) {
+      const cp = btn('🔗 Copy replay link', 'grey b-copy-replay', async () => {
+        cp.disabled = true; cp.textContent = 'Uploading…';
+        let url = null;
+        try { url = await o.replay.link(); } catch (e) { url = null; }
+        cp.textContent = url ? ((await copyText(url)) ? '✓ Link copied' : url) : 'Could not share it';
+        cp.dataset.url = url || '';
+        cp.disabled = false;
+      });
+      rb.appendChild(cp);
+    }
+    el.appendChild(rb);
+  }
   const acts = h('div', 'go-acts');
   if (won && o.onEndless) acts.appendChild(btn('Endless Mode', 'orange big b-endless', () => { closeModal(); o.onEndless(); }));
   acts.appendChild(btn('New Run', 'blue big b-newrun', () => { closeAll(); o.onNewRun(); }));
@@ -515,6 +535,72 @@ export function gameOver(view, o) {
   if (o.net) acts.appendChild(btn('Leader<br>board', 'green big', () => leaderboard(o.net, o.me, { modded: !!((view.mods && view.mods.length) || view.custom_deck) })));
   el.appendChild(acts);
   modal(el, { cls: 'go-modal', noClose: true });
+}
+
+/** Copy text to the clipboard (false when the browser refuses). */
+export async function copyText(text) {
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; } } catch (e) { /* fall back */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return !!ok;
+  } catch (e) { return false; }
+}
+
+// ------------------------------------------------------------- replays
+// The main menu's Replays: this device's last 10 FINISHED runs (whole runs — there are no per-round
+// replays). api: {list() -> [{id, serverId?, meta, when, recipe}], watch(e), remove(e), link(e) -> url|null, loggedIn}
+export function replaysList(api) {
+  const el = h('div', 'replays');
+  const body = h('div', 'rp-list');
+  el.appendChild(h('div', 'rp-note muted', 'Your last 10 finished runs, from the first blind to the end. Signed in, a run you share stays online for 30 days.'));
+  el.appendChild(body);
+  const draw = () => {
+    body.innerHTML = '';
+    const list = api.list();
+    if (!list.length) { body.appendChild(h('div', 'muted rp-empty', 'No finished runs yet — finish a run and its replay shows up here.')); return; }
+    for (const e of list) {
+      const m = e.meta || {};
+      const row = h('div', 'rp-row');
+      row.dataset.id = e.id;
+      const backName = m.customDeck ? esc(m.customDeck) : esc(((CENTERS[m.back] || MODREG.center(m.back) || {}).name || '').replace(' Deck', ''));
+      const res = m.won ? (m.endless ? `<span class="won">★ Won</span> + Endless` : '<span class="won">★ Won</span>') : 'Game over';
+      const when = e.when ? new Date(e.when).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+      row.appendChild(h('div', 'rp-info',
+        `<div class="rp-top"><span class="chips">${fmt(m.score || 0)}</span> <span class="muted">best hand</span></div>` +
+        `<div class="rp-sub">${res} · Ante <b class="attn">${m.ante || 1}</b> · ${backName}${m.stake > 1 ? ' · stake ' + esc(m.stake) : ''} · <span class="muted">${esc(when)} · ${m.actions || (e.recipe && e.recipe.actions ? e.recipe.actions.length : 0)} moves</span></div>` +
+        (Array.isArray(m.mods) && m.mods.length ? `<div class="rp-mods">${modBadges(m.mods)}</div>` : '')));
+      const acts = h('div', 'rp-acts');
+      acts.appendChild(btn('▶', 'green rp-watch b-rp-watch', () => api.watch(e)));
+      acts.lastChild.title = 'Watch'; acts.lastChild.setAttribute('aria-label', 'Watch this run');
+      if (api.loggedIn || e.serverId) {
+        const cp = btn('🔗', 'grey rp-link b-rp-link', async () => {
+          cp.disabled = true;
+          let url = null;
+          try { url = await api.link(e); } catch (er) { url = null; }
+          cp.disabled = false;
+          cp.dataset.url = url || '';
+          cp.textContent = url && (await copyText(url)) ? '✓' : url ? '🔗' : '✗';
+          if (url) cp.title = url;
+        });
+        cp.title = 'Copy the share link'; cp.setAttribute('aria-label', 'Copy the share link');
+        acts.appendChild(cp);
+      }
+      const del = btn('🗑', 'red rp-del b-rp-del', () => {
+        if (del.dataset.armed !== '1') { del.dataset.armed = '1'; del.textContent = 'Delete?'; return; }
+        api.remove(e); draw();
+      });
+      del.title = 'Delete'; del.setAttribute('aria-label', 'Delete this replay');
+      acts.appendChild(del);
+      row.appendChild(acts);
+      body.appendChild(row);
+    }
+  };
+  draw();
+  modal(el, { title: 'Replays', cls: 'rp-modal' });
 }
 
 // ---------------------------------------------------------------- mods
