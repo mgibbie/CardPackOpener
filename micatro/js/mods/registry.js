@@ -79,6 +79,17 @@ export const HOOKS = [
   'pack_card',          // (booster, i) -> a Card to use as card i of a base-game booster (else the vanilla roll)
   'fill_shop_jokers',   // () -> true when the mod stocked a new shop's joker slots itself
   'forced_selection',   // (card) Cerulean Bell just forced this hand card into the selection
+  'remove_from_deck',   // (card, from_debuff) Card:remove_from_deck is running (added_to_deck just cleared; before the center's own)
+  'end_of_round_effect', // (card, ret) a held card's get_end_of_round_effect (not debuffed), before it returns ret
+  'hand_scored',        // (hand_chips, mult, ctx) end of evaluate_play (also for a debuffed hand: 0, 0)
+  'is_suit',            // (card, suit, bypass_debuff, flush_calc) -> true: the card also counts as `suit` (after the debuff/Stone/Wild checks, before Smeared)
+  'poll_edition',       // (key, mod, no_neg, guaranteed) -> edition table or null: replaces poll_edition (undefined = no opinion)
+  'calculate_joker',    // (card, context) -> an effect (or null = none) that REPLACES card:calculate_joker (runs before the debuff check, like a Lua wrap); undefined = no opinion
+  'copy_card',          // (new_card, other) copy_card just built new_card from other
+  'emplace',            // (area, card, location, stay_flipped) CardArea:emplace just placed the card
+  'edition_nil',        // (card) Card:set_edition was called with nil (Lua `edition == nil`; copy_card passes {})
+  'wheel_failed',       // (used_tarot) The Wheel of Fortune said "Nope!"
+  'booster_loc_vars',   // (vars, center) -> [choose, size] shown in a booster's description
 ];
 
 /**

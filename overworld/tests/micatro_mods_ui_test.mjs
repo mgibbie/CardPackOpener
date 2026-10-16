@@ -176,6 +176,15 @@ try {
 		const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_mods') || 'null'));
 		A(saved && saved.ids.join() === 'tmui' && saved.options.tmui.flavor === 'hot', 'selection + options persist in localStorage', JSON.stringify(saved));
 		A(await page.evaluate(() => document.querySelector('.mod-row[data-mod="tmui"] .mod-opt-c.on').dataset.val === 'hot'), 'the chosen option is shown as on');
+		// a mod with a long option list (Mika's: one toggle per card) starts collapsed
+		await tap(page, '.mod-row[data-mod="mikas"] .mod-toggle');
+		await waitFor(() => page.evaluate(() => !!document.querySelector('.mod-row[data-mod="mikas"] .mod-opts-toggle')), 15000);
+		let mk = await page.evaluate(() => ({ t: (document.querySelector('.mod-row[data-mod="mikas"] .mod-opts-toggle') || {}).textContent, n: document.querySelectorAll('.mod-row[data-mod="mikas"] .mod-opt').length }));
+		A(/Options \(\d+\) ▸/.test(mk.t || '') && mk.n === 0, 'a long option list starts collapsed', JSON.stringify(mk));
+		await tap(page, '.mod-row[data-mod="mikas"] .mod-opts-toggle');
+		mk = await page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="mikas"] .mod-opt').length);
+		A(mk > 6, 'expanding shows every option', mk);
+		await tap(page, '.mod-row[data-mod="mikas"] .mod-toggle');
 		await tap(page, '.mods-modal .b-back');
 		A(await page.evaluate(() => /UI Test Mod/.test(document.querySelector('.nr-mods-sum').textContent)), 'the New Run summary shows the active mod badge');
 

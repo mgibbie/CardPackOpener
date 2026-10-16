@@ -16,7 +16,7 @@
 import {
   G, P_CENTERS, P_BLINDS, P_TAGS, LOC, localize, get_blind_amount, number_format,
 } from './core.js';
-import { MOD_LOC, MODS, RARITIES, callHook } from '../mods/registry.js';
+import { MOD_LOC, MODS, RARITIES, callHook, reduceHook } from '../mods/registry.js';
 
 // --------------------------------------------------------------- helpers
 const MISC = LOC.misc;
@@ -315,6 +315,8 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
     let desc_override = 'p_arcana_normal';
     for (const [k, v] of Object.entries(kinds)) if (_c.name.includes(k)) desc_override = 'p_' + v + '_' + size;
     loc_vars = [_c.config.choose, _c.config.extra];
+    // Mods may show bigger packs (Risk of Jesters' 3D / Mili-Tech Printers).
+    loc_vars = reduceHook('booster_loc_vars', loc_vars, _c);
     name = name_text('Other', desc_override);
     lines.push(...desc_lines('Other', desc_override, loc_vars));
   } else if (_c.set === 'Spectral') {

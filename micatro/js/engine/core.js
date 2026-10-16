@@ -294,6 +294,7 @@ export class CardArea {
       if (tally > G.GAME.max_jokers) G.GAME.max_jokers = tally;
     }
     emit('move', { card: card.sort_id, to: this.name, front: location === 'front' || undefined });
+    if (ACTIVE_MODS.length) callHook('emplace', this, card, location, stay_flipped);
   }
   remove_card(card, discarded_only) {
     let _cards = this.cards;
@@ -521,7 +522,12 @@ export class Card {
     const old = this.edition;
     if (old && old.key && P_CENTERS[old.key] && P_CENTERS[old.key].mod && P_CENTERS[old.key].on_remove) P_CENTERS[old.key].on_remove(this);
     this.edition = null;
-    if (!edition || !ek || ek === 'e_base') { this.set_cost(); if (old) emit('card_changed', { card: this.sort_id }); return; }
+    if (!edition || !ek || ek === 'e_base') {
+      this.set_cost(); if (old) emit('card_changed', { card: this.sort_id });
+      // Lua `edition == nil` (not {}): Sylvie's Aurora deck rolls one for playing cards.
+      if (edition == null && ACTIVE_MODS.length) callHook('edition_nil', this);
+      return;
+    }
     const E = P_CENTERS;
     const pe = E[ek];
     if (pe && pe.mod && pe.set === 'Edition') {
@@ -639,6 +645,7 @@ export class Card {
   remove_from_deck(from_debuff) {
     if (!this.added_to_deck) return;
     this.added_to_deck = false;
+    if (ACTIVE_MODS.length) callHook('remove_from_deck', this, from_debuff);
     if (this.config.center.mod && this.config.center.remove_from_deck) this.config.center.remove_from_deck(this.config.center, this, from_debuff);
     const n = this.ability.name;
     if (this.ability.h_size !== 0) G.hand.change_size(-this.ability.h_size);
@@ -752,6 +759,8 @@ export class Card {
       card_eval_status_text(this, 'extra', null, null, null, { message: localize('k_plus_planet') });
       ret.effect = true;
     }
+    // Mods may add to a held card's end-of-round effect (Mika's: Blue Seal + Aurora Borealis / Harp Seal).
+    if (ACTIVE_MODS.length) callHook('end_of_round_effect', this, ret);
     return ret;
   }
   get_p_dollars() {
@@ -797,6 +806,7 @@ export class Card {
     if (flush_calc) {
       if (this.ability.effect === 'Stone Card') return false;
       if ((this.ability.name === 'Wild Card' || (ACTIVE_MODS.length && quantum_enhancements(this).includes('m_wild'))) && !this.debuff) return true;
+      if (ACTIVE_MODS.length && firstHook('is_suit', this, suit, bypass_debuff, flush_calc)) return true; // mod suit rules (Milatro's Colorblindness)
       if (find_joker('Smeared Joker').length && (this.base.suit === 'Hearts' || this.base.suit === 'Diamonds') === (suit === 'Hearts' || suit === 'Diamonds')) return true;
       return this.base.suit === suit;
     }
@@ -804,6 +814,7 @@ export class Card {
     if (this.ability.effect === 'Stone Card') return false;
     // (+ Steamodded quantum Wild: e.g. Pokermon's Shaymin Sky makes Flower cards Wild too)
     if (this.ability.name === 'Wild Card' || (ACTIVE_MODS.length && quantum_enhancements(this).includes('m_wild'))) return true;
+    if (ACTIVE_MODS.length && firstHook('is_suit', this, suit, bypass_debuff, flush_calc)) return true;
     if (find_joker('Smeared Joker').length && (this.base.suit === 'Hearts' || this.base.suit === 'Diamonds') === (suit === 'Hearts' || suit === 'Diamonds')) return true;
     return this.base.suit === suit;
   }
@@ -1037,7 +1048,12 @@ export function eval_card(card, context) {
   if ((context.cardarea === G.play || context.cardarea === G.hand) && ACTIVE_MODS.length && !card.debuff) {
     for (const k of quantum_enhancements(card)) {
       const q = P_CENTERS[k].config || {};
-      if (context.cardarea === G.play) {
+      if (context.cardarea === G.play && k === 'm_lucky') {
+        // SMODS scores a quantum enhancement as that enhancement, so a quantum Lucky card ROLLS
+        // like a real one (1 in 5 Mult, 1 in 15 money) — Milatro's Butterfly Effect.
+        if (probability_roll(card, 'lucky_mult', 1, 5)) { card.lucky_trigger = true; ret.mult = (ret.mult || 0) + q.mult; }
+        if (probability_roll(card, 'lucky_money', 1, 15)) { card.lucky_trigger = true; ret.p_dollars = (ret.p_dollars || 0) + q.p_dollars; }
+      } else if (context.cardarea === G.play) {
         if (q.bonus) ret.chips = (ret.chips || 0) + q.bonus;
         if (q.mult) ret.mult = (ret.mult || 0) + q.mult;
         if (q.Xmult && q.Xmult !== 1) ret.x_mult = (ret.x_mult || 1) * q.Xmult;
@@ -1152,6 +1168,8 @@ export function edition_key_of(edition) {
 }
 
 export function poll_edition(_key, _mod, _no_neg, _guaranteed) {
+  // A mod may replace the whole poll (Milatro's Rigged Wheel): an edition table, or null for none.
+  if (ACTIVE_MODS.length) { const h = firstHook('poll_edition', _key, _mod, _no_neg, _guaranteed); if (h !== undefined) return h; }
   // Steamodded's weighted poll_edition, used only when an active mod adds a shop edition
   // (so vanilla runs keep the exact vanilla thresholds). Vanilla weights: foil 20, holo 14,
   // polychrome 3, negative 3; non-guaranteed polls pad the total so 96% stay editionless.
@@ -1274,12 +1292,14 @@ export function copy_card(other, new_card, card_scale, playing_card, strip_editi
   new_card.ability.type = other.ability.type;
   new_card.set_base(other.config.card);
   for (const [k, v] of Object.entries(other.ability)) new_card.ability[k] = copy_table(v);
-  if (!strip_edition) new_card.set_edition(other.edition ? { [other.edition.type]: true } : null, null, true);
+  // Lua: set_edition(other.edition or {}, nil, true) — {} (not nil) when there is none.
+  if (!strip_edition) new_card.set_edition(other.edition ? { [other.edition.type]: true } : {}, null, true);
   new_card.set_seal(other.seal, true);
   if (other.params) { new_card.params = { ...other.params, playing_card }; }
   new_card.debuff = other.debuff;
   new_card.pinned = other.pinned;
   if (playing_card) new_card.playing_card = playing_card;
+  if (ACTIVE_MODS.length) callHook('copy_card', new_card, other);
   return new_card;
 }
 

@@ -456,6 +456,7 @@ Card.prototype.use_consumeable = function (area, copier) {
       G.E_MANAGER.add_event(() => {
         attention_text(localize('k_nope_ex'));
         emit('nope', { card: used_tarot.sort_id });
+        if (ACTIVE_MODS.length) callHook('wheel_failed', used_tarot);
         play_sound('tarot2', 1, 0.4);
         used_tarot.juice_up(0.3, 0.5);
       });
