@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk Wiki</title>
-  <link rel="stylesheet" href="style.css?v=20261016m">
+  <link rel="stylesheet" href="style.css?v=20261016mm">
   <!-- authentic MTG mana symbols (Andrew Gioia's Mana font, OFL) — same one the card faces use -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css">
   <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
@@ -18,7 +18,7 @@
     <button id="navToggle" type="button" aria-label="Open menu" aria-controls="sidebar">☰</button>
     <a class="site-home" href="/" title="Back to michaelgibalerio.com">⚙️</a>
     <a class="brand" href="#/">Magepunk Wiki</a>
-    <input id="search" type="search" placeholder="Search Pokémon, moves, cards…" autocomplete="off">
+    <input id="search" type="search" placeholder="Search Pokémon, moves, cards, Micatro…" autocomplete="off">
     <span id="status"></span>
   </header>
   <div id="navScrim" aria-hidden="true"></div>
@@ -69,35 +69,54 @@
       <a href="#/micatro/stakes" class="sub">Stakes</a>
       <a href="#/micatro/hands" class="sub">Poker Hands</a>
       <a href="#/micatro/enhancements" class="sub">Enhancements &amp; Seals</a>
+      <a href="#/micatro/challenges" class="sub">Challenges</a>
       <a href="#/micatro/deck-editor" class="sub">Deck Editor</a>
       <a href="#/micatro/replays" class="sub">Replays</a>
       <a href="#/micatro/big-numbers" class="sub">Big-number Scoring</a>
       <div class="nav-group">Micatro Mods</div>
-      <a href="#/micatro/mods" class="sub">All Mods</a>
-      <a href="#/micatro/mod/pokermon" class="sub" data-mod="pokermon">Pokermon</a>
-      <a href="#/micatro/mod/nacho" class="sub" data-mod="nacho">Nacho&#39;s Pokermon Dip</a>
-      <a href="#/micatro/mod/pokermonplus" class="sub" data-mod="pokermonplus">Sonfive&#39;s Pokermon+</a>
-      <a href="#/micatro/mod/riskofjesters" class="sub" data-mod="riskofjesters">Risk of Jesters</a>
-      <a href="#/micatro/mod/sylviesilly" class="sub" data-mod="sylviesilly">Sylvie&#39;s Silliness</a>
-      <a href="#/micatro/mod/milatro" class="sub" data-mod="milatro">Milatro</a>
-      <a href="#/micatro/mod/mikas" class="sub" data-mod="mikas">Mika&#39;s Mod Collection</a>
-      <a href="#/micatro/mod/olympus" class="sub" data-mod="olympus">Olympus</a>
-      <a href="#/micatro/mod/inscrybed" class="sub" data-mod="inscrybed">Inscrybed Jokers</a>
-      <a href="#/micatro/mod/tagteam" class="sub" data-mod="tagteam">Tag Team</a>
-      <a href="#/micatro/mod/smirkeo" class="sub" data-mod="smirkeo">Smirkeo</a>
-      <a href="#/micatro/mod/altavista" class="sub" data-mod="altavista">AltaVista</a>
-      <a href="#/micatro/mod/omertadeck" class="sub" data-mod="omertadeck">Omerta Deck</a>
-      <a href="#/micatro/mod/morefluff" class="sub" data-mod="morefluff">More Fluff</a>
-      <a href="#/micatro/mod/betmma" class="sub" data-mod="betmma">Betmma Vouchers</a>
-      <a href="#/micatro/mod/bunco" class="sub" data-mod="bunco">Bunco</a>
-      <a href="#/micatro/mod/reverie" class="sub" data-mod="reverie">Reverie</a>
-      <a href="#/micatro/mod/autumnmood" class="sub" data-mod="autumnmood">AutumnMoodMechanics</a>
-      <a href="#/micatro/mod/autumncircus" class="sub" data-mod="autumncircus">Þe Autumn Circus</a>
+      <a href="#/micatro-mods" class="sub">Overview</a>
+      <a href="#/micatro-mods/jokers" class="sub">Jokers</a>
+      <a href="#/micatro-mods/consumables" class="sub">Tarot, Planet &amp; Spectral</a>
+      <a href="#/micatro-mods/new-consumables" class="sub">New consumable types</a>
+      <a href="#/micatro-mods/vouchers" class="sub">Vouchers</a>
+      <a href="#/micatro-mods/boosters" class="sub">Booster Packs</a>
+      <a href="#/micatro-mods/tags" class="sub">Tags</a>
+      <a href="#/micatro-mods/blinds" class="sub">Blinds</a>
+      <a href="#/micatro-mods/decks" class="sub">Decks</a>
+      <a href="#/micatro-mods/sleeves" class="sub">Sleeves</a>
+      <a href="#/micatro-mods/stakes" class="sub">Stakes</a>
+      <a href="#/micatro-mods/modifiers" class="sub">Enhancements, Editions &amp; Seals</a>
+      <a href="#/micatro-mods/hands" class="sub">Poker Hands &amp; Suits</a>
+      <a href="#/micatro-mods/rarities" class="sub">Joker Rarities</a>
+      <a href="#/micatro-mods/challenges" class="sub">Challenges</a>
+      <a href="#/micatro-mods/skins" class="sub">Deck Skins</a>
+      <details class="nav-mods" id="navMods">
+        <summary class="sub">By mod (19)</summary>
+        <a href="#/micatro-mods/mod/pokermon" class="sub sub2" data-mod="pokermon">Pokermon</a>
+        <a href="#/micatro-mods/mod/nacho" class="sub sub2" data-mod="nacho">Nacho&#39;s Pokermon Dip</a>
+        <a href="#/micatro-mods/mod/pokermonplus" class="sub sub2" data-mod="pokermonplus">Sonfive&#39;s Pokermon+</a>
+        <a href="#/micatro-mods/mod/riskofjesters" class="sub sub2" data-mod="riskofjesters">Risk of Jesters</a>
+        <a href="#/micatro-mods/mod/sylviesilly" class="sub sub2" data-mod="sylviesilly">Sylvie&#39;s Silliness</a>
+        <a href="#/micatro-mods/mod/milatro" class="sub sub2" data-mod="milatro">Milatro</a>
+        <a href="#/micatro-mods/mod/mikas" class="sub sub2" data-mod="mikas">Mika&#39;s Mod Collection</a>
+        <a href="#/micatro-mods/mod/olympus" class="sub sub2" data-mod="olympus">Olympus</a>
+        <a href="#/micatro-mods/mod/inscrybed" class="sub sub2" data-mod="inscrybed">Inscrybed Jokers</a>
+        <a href="#/micatro-mods/mod/tagteam" class="sub sub2" data-mod="tagteam">Tag Team</a>
+        <a href="#/micatro-mods/mod/smirkeo" class="sub sub2" data-mod="smirkeo">Smirkeo</a>
+        <a href="#/micatro-mods/mod/altavista" class="sub sub2" data-mod="altavista">AltaVista</a>
+        <a href="#/micatro-mods/mod/omertadeck" class="sub sub2" data-mod="omertadeck">Omerta Deck</a>
+        <a href="#/micatro-mods/mod/morefluff" class="sub sub2" data-mod="morefluff">More Fluff</a>
+        <a href="#/micatro-mods/mod/betmma" class="sub sub2" data-mod="betmma">Betmma Vouchers</a>
+        <a href="#/micatro-mods/mod/bunco" class="sub sub2" data-mod="bunco">Bunco</a>
+        <a href="#/micatro-mods/mod/reverie" class="sub sub2" data-mod="reverie">Reverie</a>
+        <a href="#/micatro-mods/mod/autumnmood" class="sub sub2" data-mod="autumnmood">AutumnMoodMechanics</a>
+        <a href="#/micatro-mods/mod/autumncircus" class="sub sub2" data-mod="autumncircus">Þe Autumn Circus</a>
+      </details>
     </nav>
     <main id="content">Loading…</main>
   </div>
   <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
        reads this version and appends it to every sub-resource it loads) -->
-  <script src="app.js?v=20261016m"></script>
+  <script src="app.js?v=20261016mm"></script>
 </body>
 </html>

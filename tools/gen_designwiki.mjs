@@ -98,13 +98,16 @@ console.log(`Wrote designwiki/data: ${speciesIds.length} pokemon, ${Object.keys(
 	fs.mkdirSync(SPR_DST, { recursive: true });
 	const want = new Set(Object.values(pokemon).map(p => p.sprite).filter(Boolean));
 	let copied = 0, absent = 0;
+	// ...and REFRESH a copy whose art changed under the same name (107 form fronts
+	// were minisprites, replaced in place by tools/gen_form_sprites.py) — copying
+	// only missing files left the wiki on the old art forever.
 	for (const f of want) {
 		const dst = path.join(SPR_DST, f);
-		if (fs.existsSync(dst)) continue;
 		const src = path.join(SPR_SRC, f);
 		if (!fs.existsSync(src)) { absent++; continue; }
+		if (fs.existsSync(dst) && fs.readFileSync(src).equals(fs.readFileSync(dst))) continue;
 		fs.copyFileSync(src, dst);
 		copied++;
 	}
-	console.log(`Sprites: ${want.size} referenced, ${copied} copied in, ${absent} with no source art.`);
+	console.log(`Sprites: ${want.size} referenced, ${copied} copied in or refreshed, ${absent} with no source art.`);
 }

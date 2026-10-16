@@ -22,7 +22,9 @@ function h(tag, attrs, ...kids) {
     else if (k.startsWith('on')) e[k] = attrs[k];
     else if (attrs[k] != null) e.setAttribute(k, attrs[k]);
   }
-  for (const kid of kids.flat()) if (kid != null) e.append(kid.nodeType ? kid : document.createTextNode(kid));
+  // (flattened all the way: a nested list of nodes — [' Add-ons: ', list.map(x => [', ', link])] — must
+  // append its nodes, not print the array's toString "…,https://…" as text)
+  for (const kid of kids.flat(Infinity)) if (kid != null) e.append(kid.nodeType ? kid : document.createTextNode(kid));
   return e;
 }
 const typesArr = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
@@ -1650,6 +1652,7 @@ async function micatroView() {
     ['stakes', 'Stakes', D.stakes.length, ['chips', D.stakes[7].pos]],
     ['hands', 'Poker Hands', D.hands.length, null],
     ['enhancements', 'Enhancements & Seals', D.enhancements.length + D.editions.length + D.seals.length, ['centers', D.enhancements[0].pos]],
+    ['challenges', 'Challenges', (D.challenges || []).length, ['Joker', (D.jokers.find(j => j.key === 'j_egg') || D.jokers[0]).pos]],
   ];
   content.replaceChildren(
     h('div', { class: 'mc-hero' },
@@ -1662,13 +1665,13 @@ async function micatroView() {
     h('div', { class: 'lp-grid mc-index' }, idx.map(([k, label, n, spr]) => h('a', { class: 'lp-tile mc-idx', href: '#/micatro/' + k },
       spr ? mcSprite([spr], 'mc-idx-spr', spr[0] === 'blind' || spr[0] === 'tags' || spr[0] === 'chips' ? 1 : 0.5) : h('span', { class: 'mc-idx-spr mc-idx-txt' }, '♠♥'),
       h('span', { class: 'mc-idx-txtwrap' }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count' }, n + ' entries'))))),
-    mcSection('Mods & features', 'Optional content packs and built-in extras.',
+    mcSection('Built-in features', 'Extras of the base game, in every run.',
       h('div', { class: 'lp-grid mc-feat' }, [
-        ['mods', 'Mods', 'Popular Balatro mods rebuilt natively — Pokermon, Bunco, More Fluff and more — switched on per run.'],
         ['deck-editor', 'Deck editor', 'Build, share and play your own decks.'],
         ['replays', 'Replays', 'Watch any finished run again, start to finish.'],
         ['big-numbers', 'Big-number scoring', 'Scores past naneinf, up to 9.99e999.'],
-      ].map(([k, label, blurb]) => h('a', { class: 'lp-tile mc-featlink', href: '#/micatro/' + k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, blurb))))),
+      ].map(([k, label, blurb]) => h('a', { class: 'lp-tile mc-featlink', href: '#/micatro/' + k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, blurb)))),
+      h('p', { class: 'mc-crosslink' }, 'Looking for mod content? Pokermon, Bunco, More Fluff and the other rebuilt mods have their own section: ', h('a', { href: '#/micatro-mods' }, 'Micatro Mods →'))),
     mcSection('Getting there', null,
       h('ul', { class: 'mc-list' },
         h('li', null, h('b', null, 'Landing page: '), 'the Micatro tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micatro/' }, '/micatro/'), '.'),
@@ -1762,6 +1765,8 @@ async function micatroConsumablesView() {
     ['planets', 'Planet', D.planets, 'Each Planet levels up one poker hand (more base Chips and Mult). The three dwarf planets level the secret hands and only appear once you have played them.'],
     ['spectrals', 'Spectral', D.spectrals, 'Powerful, risky cards from Spectral packs (and rarely the shop on the Ghost Deck). The Soul (in Arcana and Spectral packs) and Black Hole (in Celestial and Spectral packs) are rare finds.'],
   ];
+  const want = mcHashParam('item'); // (?item= opens the tab that holds it)
+  if (want) { const t = TABS.find(x => x[2].some(c => c.key === want)); if (t) mcConsTab = t[0]; }
   const body = h('div');
   const bar = h('div', { class: 'lq-sizebar mc-tabs' });
   const draw = () => {
@@ -1901,6 +1906,15 @@ async function micatroEnhancementsView() {
       h('div', { class: 'mc-grid' }, D.stickers.map(s => mcTile([['stickers', s.pos], ['Joker', joker]], s, [mcBadge('Sticker', MC_COL[s.key])])))));
 }
 
+async function micatroChallengesView() {
+  content.replaceChildren(h('h1', null, 'Challenges'), h('p', { class: 'muted' }, 'Loading…'));
+  const D = await mcLoadOr('Challenges'); if (!D || !mcStillOn('challenges')) return;
+  const list = D.challenges || [];
+  content.replaceChildren(mcBack(),
+    mcHead('Challenges', list.length, 'challenges', 'Balatro’s challenge runs (main menu → Challenges). Each plays on the Challenge Deck at the first stake, with its own rules, starting cards, bans and deck. The text is the Challenges screen’s own.'),
+    h('div', { class: 'mc-rows' }, list.map(c => mcModRow(c))));
+}
+
 // ---------- Micatro mods + native features (big numbers, deck editor, replays) ----------
 // Data: designwiki/data/micatro_mods.json (index: credits, options, systems, intended-design
 // fixes, counts, every mod atlas, the feature pages) and designwiki/data/micatro_mods/<id>.json
@@ -1923,7 +1937,7 @@ function loadMicatroMod(id) {
 const mcPut = (...nodes) => content.replaceChildren(...nodes.filter(n => n != null));
 const mcOn = (...seg) => { const p = location.hash.slice(1).split('?')[0].split('/').filter(Boolean); return p[0] === 'micatro' && seg.every((s, i) => (p[i + 1] || '') === s) && p.length === seg.length + 1; };
 const mcHashParam = k => new URLSearchParams(location.hash.split('?')[1] || '').get(k);
-const mcModBack = () => h('p', { class: 'lp-back' }, h('a', { href: '#/micatro' }, '← Micatro'), ' · ', h('a', { href: '#/micatro/mods' }, 'All mods'));
+const mcModBack = () => h('p', { class: 'lp-back' }, h('a', { href: '#/micatro-mods' }, '← Micatro Mods'));
 /** Art layers of a generated item (['@atlas' | vanilla atlas, pos] top-most first), or a blank card. */
 function mcArt(it, cls) {
   const layers = (it.art || []).filter(l => l && MC_ATLAS[l[0]]);
@@ -1931,27 +1945,30 @@ function mcArt(it, cls) {
   return mcSprite(layers, cls || (it.chip ? 'mc-chip' : null), 1, it.name);
 }
 const mcPills = it => (it.pills || []).map(p => h('span', { class: 'mc-pill' + (p.cls ? ' mc-' + p.cls : '') + (p.off ? ' mc-off' : '') }, p.text));
-function mcModTile(it) {
-  return h('div', { class: 'mc-tile' + (it.edition ? ' mc-edtile' : ''), 'data-key': it.key, id: 'mc-' + it.key },
+/** A mod badge on an item listed outside its mod's page (links to the mod page). */
+const mcModTag = m => m ? h('a', { class: 'mc-modtag', href: '#/micatro-mods/mod/' + m.id, 'data-mod': m.id, title: m.name + ' — the mod’s page', style: m.badge ? '--mod:' + m.badge : null }, m.name) : null;
+function mcModTile(it, mod) {
+  return h('div', { class: 'mc-tile' + (it.edition ? ' mc-edtile' : ''), 'data-key': it.key, id: 'mc-' + it.key, 'data-mod': mod ? mod.id : null },
     h('div', { class: 'mc-art' }, mcArt(it)),
     h('div', { class: 'mc-nm' }, it.name),
+    mod ? h('div', { class: 'mc-badges' }, mcModTag(mod)) : null,
     h('div', { class: 'mc-badges' }, (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcCost(it.cost)),
     mcDesc(it.lines, it.colours), mcInfo(it.info),
     it.note ? h('div', { class: 'mc-note' }, it.note) : null,
     it.pills && it.pills.length ? h('div', { class: 'mc-badges' }, mcPills(it)) : null);
 }
-function mcModRow(it) {
-  return h('div', { class: 'mc-row' + (it.chip ? ' mc-blind' : ''), 'data-key': it.key, id: 'mc-' + it.key, style: it.colour ? 'border-left-color:' + it.colour : null },
+function mcModRow(it, mod) {
+  return h('div', { class: 'mc-row' + (it.chip ? ' mc-blind' : '') + (it.colour && !it.chip ? ' mc-colrow' : ''), 'data-key': it.key, id: 'mc-' + it.key, 'data-mod': mod ? mod.id : null, style: it.colour ? 'border-left-color:' + it.colour : null },
     it.art ? mcArt(it) : null,
     h('div', { class: 'mc-row-body' },
-      h('div', { class: 'mc-nm' }, it.name, (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcPills(it),
+      h('div', { class: 'mc-nm' }, it.name, mcModTag(mod), (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcPills(it),
         it.colour ? h('span', { class: 'mc-swatch', style: 'background:' + it.colour }) : null),
       it.lines && it.lines.length ? mcDesc(it.lines, it.colours) : h('div', { class: 'mc-desc muted' }, 'No effect.'), mcInfo(it.info)));
 }
-function mcModHand(it) {
-  return h('div', { class: 'mc-hand', 'data-key': it.key, id: 'mc-' + it.key },
+function mcModHand(it, mod) {
+  return h('div', { class: 'mc-hand', 'data-key': it.key, id: 'mc-' + it.key, 'data-mod': mod ? mod.id : null },
     h('div', { class: 'mc-hand-info' },
-      h('div', { class: 'mc-nm' }, it.name, it.secret ? h('span', { class: 'mc-pill' }, 'Secret') : null),
+      h('div', { class: 'mc-nm' }, it.name, mcModTag(mod), it.secret ? h('span', { class: 'mc-pill' }, 'Secret') : null),
       h('div', { class: 'mc-score' }, h('span', { class: 'mc-chipsbox' }, it.chips), ' × ', h('span', { class: 'mc-multbox' }, it.mult)),
       h('div', { class: 'mc-note' }, 'Per level: ', h('b', { style: 'color:' + MC_COL.chips }, '+' + it.lChips + ' Chips'), ' ', h('b', { style: 'color:' + MC_COL.mult }, '+' + it.lMult + ' Mult')),
       mcDesc(it.lines)));
@@ -1959,25 +1976,239 @@ function mcModHand(it) {
 const mcPlural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 const MC_SECTION_UNIT = { jokers: ['joker', 'jokers'], vouchers: ['voucher', 'vouchers'], boosters: ['pack', 'packs'], decks: ['deck', 'decks'], tags: ['tag', 'tags'], blinds: ['blind', 'blinds'], stakes: ['stake', 'stakes'] };
 
+// ---------- the Micatro Mods section (#/micatro-mods) ----------
+// A peer of the vanilla Micatro section: an overview (#/micatro-mods), one page per KIND of item across
+// every mod (#/micatro-mods/<category>, from micatro_mods.json `categories`), and one page per mod
+// (#/micatro-mods/mod/<id>). Category pages keep their filters in the hash (?mod= ?type= ?rarity= ?q=)
+// so a filtered view is a link; ?item=<key> highlights one entry.
+const MM = '#/micatro-mods';
+const mmOn = (...seg) => { const p = location.hash.slice(1).split('?')[0].split('/').filter(Boolean); return p[0] === 'micatro-mods' && seg.every((s, i) => (p[i + 1] || '') === s) && p.length === seg.length + 1; };
+const mmBack = () => h('p', { class: 'lp-back' }, h('a', { href: MM }, '← Micatro Mods'));
+const mmFail = title => content.replaceChildren(h('h1', null, title), h('p', { class: 'muted' }, 'Could not load the mod data.'));
+/** A generated item drawn the way its section draws it (tile / row / hand), with its mod's badge. */
+const mmItem = (kind, it, mod) => kind === 'row' ? mcModRow(it, mod) : kind === 'hand' ? mcModHand(it, mod) : mcModTile(it, mod);
+const mmText = it => (it.name + ' ' + (it.lines || []).join(' ') + ' ' + (it.badges || []).map(b => b.label).join(' ') + ' ' + (it.info || []).map(i => i.name + ' ' + i.lines.join(' ')).join(' '))
+  .replace(/\{[^}]*\}/g, '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); // (Blåhaj is found as "blahaj")
+/** A category's cover sprite (cards at half size, square art at full), or a text stand-in. */
+function mmCover(cover, cls) {
+  const layers = cover ? cover.art.filter(l => l && MC_ATLAS[l[0]]) : [];
+  return layers.length ? mcSprite(layers, cls, cover.sq ? 1 : 0.5, cover.name) : h('span', { class: (cls || '') + ' mc-idx-txt' }, '♠♥');
+}
+/** Section id -> category id (every mod section belongs to one category page). */
+const mmCatOf = D => { const o = {}; for (const c of D.categories || []) for (const s of c.sections) o[s.id] = c.id; return o; };
+
 async function micatroModsView() {
   content.replaceChildren(h('h1', null, 'Micatro Mods'), h('p', { class: 'muted' }, 'Loading…'));
-  let D; try { D = await loadMicatroMods(); } catch (e) { content.replaceChildren(h('h1', null, 'Micatro Mods'), h('p', { class: 'muted' }, 'Could not load the mod data.')); return; }
-  if (!mcOn('mods')) return;
+  let D; try { D = await loadMicatroMods(); } catch (e) { return mmFail('Micatro Mods'); }
+  if (!mmOn()) return;
   const total = D.mods.reduce((n, m) => n + m.total, 0);
-  mcPut(mcBack(),
-    mcHead('Mods', D.mods.length, 'mods', 'Popular Balatro mods, rebuilt natively for Micatro — every card, rule and number from the original, with their bugs fixed the way their authors meant. ' + total.toLocaleString('en-US') + ' cards and more in all.'),
+  const cats = D.categories || [];
+  const art = ['jokers', 'new-consumables'].map(id => (cats.find(c => c.id === id) || {}).cover).filter(c => c && c.art.some(l => MC_ATLAS[l[0]]));
+  mcPut(
+    h('div', { class: 'mc-hero' },
+      h('div', null,
+        h('h1', null, 'Micatro Mods'),
+        h('p', null, D.mods.length + ' popular Balatro mods, rebuilt natively for ', h('a', { href: '#/micatro' }, 'Micatro'), ' — every card, rule and number from the originals (with their bugs fixed the way their authors meant). ', h('b', null, total.toLocaleString('en-US') + ' entries'), ' in all: browse them by kind below, or open one mod’s own page.'),
+        h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'New Run → Mods: switch any of them on for a run'))),
+      art.length ? h('div', { class: 'mc-hero-art' }, art.map(c => mcSprite(c.art.filter(l => MC_ATLAS[l[0]]), null, 1, c.name))) : null),
+    h('div', { class: 'lp-grid mc-index' }, cats.map(c => h('a', { class: 'lp-tile mc-idx', href: MM + '/' + c.id, 'data-cat': c.id },
+      mmCover(c.cover, 'mc-idx-spr'),
+      h('span', { class: 'mc-idx-txtwrap' }, h('span', { class: 'lp-name' }, c.title),
+        h('span', { class: 'lp-count' }, c.count.toLocaleString('en-US') + ' entries · ' + mcPlural(Object.keys(c.perMod).length, 'mod', 'mods')))))),
+    mcSection('By mod', 'Each mod’s own page: credits, how to turn it on, its options, the bugs fixed as its author intended, and all of its cards.',
+      h('div', { class: 'mc-modgrid' }, D.mods.map(m => h('a', { class: 'lp-tile mc-modcard', href: MM + '/mod/' + m.id, 'data-mod': m.id, style: m.badge ? 'border-top:4px solid ' + m.badge : null },
+        h('div', { class: 'mc-modcard-top' },
+          m.cover ? mcSprite(m.cover.art.filter(l => MC_ATLAS[l[0]]), 'mc-modcover', m.cover.sq ? 1 : 0.5, m.name) : null,
+          h('div', null, h('span', { class: 'lp-name' }, m.name), h('div', { class: 'mc-note mc-by' }, m.by))),
+        h('div', { class: 'mc-moddesc' }, m.description),
+        h('div', { class: 'lp-meta' }, h('span', { class: 'lp-count' }, m.total + ' entries' + (m.fixes.length ? ' · ' + m.fixes.length + ' fixes' : '')),
+          m.requires.length ? h('span', { class: 'mc-pill' }, 'Needs ' + m.requires.map(r => (D.mods.find(x => x.id === r) || { name: r }).name).join(', ')) : null))))),
     mcSection('Turning mods on', null, h('ul', { class: 'mc-list' },
       h('li', null, h('b', null, 'Per run. '), 'On the New Run screen, open ', h('b', null, 'Mods'), ' and switch on the ones you want for that run. A mod that is off is gone: none of its cards, rules or art. Mods that need another mod (Pokermon add-ons, Þe Autumn Circus) switch it on with them.'),
       h('li', null, h('b', null, 'Options. '), 'Some mods have options (Pokermon’s generations, BETMMA’s per-voucher toggles, Bunco’s reworks) under their name in the Mods panel; each mod page lists them with their defaults.'),
+      h('li', null, h('b', null, 'Sleeves, challenges & skins. '), 'With a mod on, its ', h('a', { href: MM + '/sleeves' }, 'sleeves'), ' appear under the deck on the New Run screen and its ', h('a', { href: MM + '/challenges' }, 'challenges'), ' on the Challenges screen; ', h('a', { href: MM + '/skins' }, 'deck skins'), ' are picked in Options → Card skins.'),
       h('li', null, h('b', null, 'Saved with the run. '), 'The chosen mods and options are part of the run, so resuming, ', h('a', { href: '#/micatro/replays' }, 'replays'), ' and spectators load exactly the same set. Modded runs go on the leaderboard’s Modded tab.'),
       h('li', null, h('b', null, 'Art. '), 'A mod’s art downloads only when a run turns it on.'))),
-    h('div', { class: 'mc-modgrid' }, D.mods.map(m => h('a', { class: 'lp-tile mc-modcard', href: '#/micatro/mod/' + m.id, 'data-mod': m.id, style: m.badge ? 'border-top:4px solid ' + m.badge : null },
-      h('div', { class: 'mc-modcard-top' },
-        m.cover ? mcSprite(m.cover.art.filter(l => MC_ATLAS[l[0]]), 'mc-modcover', m.cover.sq ? 1 : 0.5, m.name) : null,
-        h('div', null, h('span', { class: 'lp-name' }, m.name), h('div', { class: 'mc-note mc-by' }, m.by))),
-      h('div', { class: 'mc-moddesc' }, m.description),
-      h('div', { class: 'lp-meta' }, h('span', { class: 'lp-count' }, m.total + ' entries' + (m.fixes.length ? ' · ' + m.fixes.length + ' fixes' : '')),
-        m.requires.length ? h('span', { class: 'mc-pill' }, 'Needs ' + m.requires.map(r => (D.mods.find(x => x.id === r) || { name: r }).name).join(', ')) : null)))));
+    h('p', { class: 'mc-crosslink' }, 'Balatro’s own cards, rules and controls: ', h('a', { href: '#/micatro' }, 'Micatro (the base game) →')));
+}
+
+const MM_BLIND_GROUPS = [
+  ['plain', 'Small & Big Blinds', 'Replacements for the Small or Big Blind.'],
+  ['boss', 'Boss Blinds', 'Drawn like Balatro’s bosses once their minimum Ante is reached.'],
+  ['showdown', 'Showdown Blinds', 'Ante 8 finishers (and every 8th Ante in Endless).'],
+  ['superboss', 'Superbosses', 'More Fluff’s DX bosses: redeem The Ticket and Ante 8’s boss becomes one of these, the only blind that wins the run. They also show up as showdowns past the winning Ante.'],
+];
+async function micatroModsCategoryView(cid) {
+  content.replaceChildren(h('h1', null, 'Micatro Mods'), h('p', { class: 'muted' }, 'Loading…'));
+  let D; try { D = await loadMicatroMods(); } catch (e) { return mmFail('Micatro Mods'); }
+  const C = (D.categories || []).find(c => c.id === cid);
+  if (!mmOn(cid)) return;
+  if (!C) return notFound();
+  const mods = D.mods.filter(m => C.perMod[m.id]);
+  let F; try { F = await Promise.all(mods.map(m => loadMicatroMod(m.id))); } catch (e) { return mmFail(C.title); }
+  if (!mmOn(cid)) return;
+  const secOf = Object.fromEntries(C.sections.map(s => [s.id, s]));
+  const all = []; // {it, m, sid, kind}
+  mods.forEach((m, i) => { for (const s of F[i].sections) if (secOf[s.id]) for (const it of s.items) all.push({ it, m, sid: s.id, kind: s.kind }); });
+  const tabs = C.sections.length > 1 && (cid === 'consumables' || cid === 'new-consumables');
+  const rarities = cid === 'jokers' ? [...new Set(all.map(x => x.it.rarity).filter(Boolean))] : [];
+  // filters: from the hash (a filtered view is a link); ?item= clears whatever would hide it
+  const P = new URLSearchParams(location.hash.split('?')[1] || '');
+  const st = {
+    mod: mods.some(m => m.id === P.get('mod')) ? P.get('mod') : 'all',
+    type: secOf[P.get('type')] ? P.get('type') : C.sections[0].id,
+    rarity: rarities.includes(P.get('rarity')) ? P.get('rarity') : 'all',
+    q: P.get('q') || '',
+  };
+  const want = P.get('item');
+  const hit = want && all.find(x => x.it.key === want);
+  if (hit) { if (st.mod !== 'all' && st.mod !== hit.m.id) st.mod = 'all'; st.q = ''; st.rarity = 'all'; st.type = hit.sid; }
+  const sync = () => {
+    const q = new URLSearchParams();
+    if (st.mod !== 'all') q.set('mod', st.mod);
+    if (tabs && st.type !== C.sections[0].id) q.set('type', st.type);
+    if (st.rarity !== 'all') q.set('rarity', st.rarity);
+    if (st.q.trim()) q.set('q', st.q.trim());
+    const qs = q.toString();
+    history.replaceState(null, '', MM + '/' + cid + (qs ? '?' + qs : ''));
+  };
+  const body = h('div');
+  const count = h('div', { class: 'result-count' });
+  const bar = tabs ? h('div', { class: 'lq-sizebar mc-tabs' }) : null;
+  const list = (kind, items, showMods) => {
+    const wrap = kind === 'row' ? 'mc-rows' : kind === 'hand' ? 'mc-hands' : 'mc-grid';
+    if (!showMods) return [h('div', { class: wrap }, items.map(x => mmItem(kind, x.it, x.m)))];
+    // every mod: one run of tiles per mod, under its badge
+    const out = [];
+    for (const m of mods) {
+      const mine = items.filter(x => x.m === m);
+      if (!mine.length) continue;
+      out.push(h('h3', { class: 'mc-h3 mm-modhead' }, mcModTag(m), h('span', { class: 'num' }, ' ' + mine.length)), h('div', { class: wrap }, mine.map(x => mmItem(kind, x.it, x.m))));
+    }
+    return out;
+  };
+  const draw = () => {
+    const q = st.q.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const pass = all.filter(x => (st.mod === 'all' || x.m.id === st.mod) && (st.rarity === 'all' || x.it.rarity === st.rarity) && (!q || mmText(x.it).includes(q)));
+    let shown = pass;
+    if (tabs) {
+      bar.replaceChildren(...C.sections.map(s => {
+        const n = pass.filter(x => x.sid === s.id).length;
+        return h('button', { type: 'button', class: 'lq-sizebtn' + (s.id === st.type ? ' active' : ''), 'data-tab': s.id, onclick: () => { st.type = s.id; sync(); draw(); } }, s.title + ' (' + n + ')');
+      }));
+      shown = pass.filter(x => x.sid === st.type);
+    }
+    const many = st.mod === 'all';
+    const blocks = [];
+    const secs = tabs ? [secOf[st.type]] : C.sections;
+    for (const s of secs) {
+      const items = shown.filter(x => x.sid === s.id);
+      if (!items.length) continue;
+      const groups = s.id === 'blinds' ? MM_BLIND_GROUPS.map(([g, t, b]) => [t, b, items.filter(x => (x.it.group || 'boss') === g)]) : [[secs.length > 1 ? s.title : null, null, items]];
+      for (const [title, blurb, gi] of groups) {
+        if (!gi.length) continue;
+        const kids = list(s.kind, gi, many && new Set(gi.map(x => x.m)).size > 1);
+        blocks.push(title ? h('section', { class: 'lp-tier', 'data-section': s.id }, h('div', { class: 'lp-tier-head' }, h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + gi.length + ')')), blurb ? h('p', { class: 'muted' }, blurb) : null), kids)
+          : h('div', { 'data-section': s.id }, kids));
+      }
+    }
+    body.replaceChildren(...(blocks.length ? blocks : [h('p', { class: 'muted' }, 'Nothing matches.')]));
+    count.replaceChildren(String(shown.length), h('span', null, ' of ' + (tabs ? all.filter(x => x.sid === st.type).length : all.length) + ' entries'));
+  };
+  const search = h('input', { type: 'search', class: 'mc-search', placeholder: 'Search ' + C.title.toLowerCase() + ' (name or text)…', value: st.q, autocomplete: 'off' });
+  search.oninput = () => { st.q = search.value; sync(); draw(); };
+  const modSel = h('select', { class: 'adv-select mc-select mm-modsel', 'aria-label': 'Filter by mod' },
+    h('option', { value: 'all', selected: st.mod === 'all' ? '' : null }, 'All mods (' + mods.length + ')'),
+    mods.map(m => h('option', { value: m.id, selected: st.mod === m.id ? '' : null }, m.name + ' (' + C.perMod[m.id] + ')')));
+  modSel.onchange = () => { st.mod = modSel.value; sync(); draw(); };
+  const rarSel = rarities.length ? h('select', { class: 'adv-select mc-select', 'aria-label': 'Filter by rarity' },
+    h('option', { value: 'all', selected: st.rarity === 'all' ? '' : null }, 'All rarities'),
+    rarities.map(r => h('option', { value: r, selected: st.rarity === r ? '' : null }, r))) : null;
+  if (rarSel) rarSel.onchange = () => { st.rarity = rarSel.value; sync(); draw(); };
+  mcPut(mmBack(),
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, C.title), h('p', { class: 'muted' }, C.blurb + ' From ' + mcPlural(mods.length, 'mod', 'mods') + '; each card’s badge links to its mod’s page, and the text is the game’s own.')),
+      count),
+    h('div', { class: 'mc-filters' }, search, modSel, rarSel),
+    bar, body);
+  draw();
+  if (hit) {
+    const el = document.getElementById('mc-' + want);
+    if (el) { el.classList.add('mc-hl'); el.scrollIntoView({ block: 'center' }); }
+  }
+}
+
+function micatroModsRoute(sub, id) {
+  if (!sub) return micatroModsView();
+  if (sub === 'mod') {
+    const nd = document.getElementById('navMods'); if (nd && id) nd.open = true; // (the sidebar's By-mod list shows where you are)
+    return id ? micatroModView(id) : (location.replace(MM), undefined);
+  }
+  return micatroModsCategoryView(sub);
+}
+
+// ---------- the header search box, wiki-wide (#/search?q=) ----------
+// On the list pages (Pokédex, moves, cards, ...) the box filters that list; anywhere else it opens
+// #/search: Pokémon, moves, abilities, Micatro's own cards and every Micatro mod's, by name (then text).
+let mcSearchIndex = null;
+function micatroSearchIndex() {
+  if (mcSearchIndex) return mcSearchIndex;
+  const V = { jokers: 'jokers', tarots: 'consumables', planets: 'consumables', spectrals: 'consumables', vouchers: 'vouchers', boosters: 'boosters', tags: 'tags', blinds: 'blinds', decks: 'decks', stakes: 'stakes', hands: 'hands', enhancements: 'enhancements', editions: 'enhancements', seals: 'enhancements', stickers: 'enhancements', challenges: 'challenges' };
+  const KIND = { jokers: 'Joker', tarots: 'Tarot', planets: 'Planet', spectrals: 'Spectral', vouchers: 'Voucher', boosters: 'Booster Pack', tags: 'Tag', blinds: 'Blind', decks: 'Deck', stakes: 'Stake', hands: 'Poker Hand', enhancements: 'Enhancement', editions: 'Edition', seals: 'Seal', stickers: 'Sticker', challenges: 'Challenge' };
+  const vanilla = loadMicatro().then(D => Object.entries(V).flatMap(([k, page]) => (D[k] || []).map(it => {
+    const key = k === 'hands' ? it.name : it.key;
+    return { name: it.name, text: (it.lines || []).join(' ').replace(/\{[^}]*\}/g, ''), kind: KIND[k], href: '#/micatro/' + page + '?item=' + encodeURIComponent(key) };
+  }))).catch(() => []);
+  const mods = loadMicatroMods().then(D => {
+    const cat = mmCatOf(D);
+    return Promise.all(D.mods.map(m => loadMicatroMod(m.id).then(F => F.sections.flatMap(s => s.items.map(it => ({
+      name: it.name, text: mmText(it), kind: s.title.replace(/ cards$/, '').replace(/s$/, ''), mod: m.name,
+      href: MM + '/' + (cat[s.id] || 'other') + '?item=' + encodeURIComponent(it.key),
+    })))))).then(x => x.flat());
+  }).catch(() => []);
+  return (mcSearchIndex = Promise.all([vanilla, mods]));
+}
+/** Name starts with q > a word of the name does > the name contains it > the text does. */
+const searchLc = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function searchRank(name, text, q) {
+  const n = searchLc(name);
+  if (n.startsWith(q)) return 0;
+  if (n.split(/[^a-z0-9]+/).some(w => w.startsWith(q))) return 1;
+  if (n.includes(q) || (norm(q) && norm(n).includes(norm(q)))) return 2;
+  return text && searchLc(text).includes(q) ? 3 : -1;
+}
+let searchSeq = 0;
+async function globalSearchView() {
+  const raw = new URLSearchParams(location.hash.split('?')[1] || '').get('q') || '';
+  if (document.activeElement !== searchEl && searchEl.value !== raw) searchEl.value = raw;
+  const q = searchLc(raw).trim();
+  const seq = ++searchSeq;
+  if (!q) return content.replaceChildren(h('h1', null, 'Search'), h('p', { class: 'muted' }, 'Type in the search box above: Pokémon, moves, abilities, Micatro cards and every Micatro mod’s cards.'));
+  content.replaceChildren(h('h1', null, 'Search'), h('p', { class: 'muted' }, 'Searching…'));
+  const rank = (list, nameOf, textOf) => list.map(x => [searchRank(nameOf(x), textOf ? textOf(x) : '', q), x]).filter(r => r[0] >= 0).sort((a, b) => a[0] - b[0] || String(nameOf(a[1])).localeCompare(String(nameOf(b[1])))).map(r => r[1]);
+  const pk = rank(Object.values(DB.pokemon || {}), p => p.name);
+  const mv = rank(Object.values(DB.moves || {}), m => m.name);
+  const ab = rank(Object.values(DB.abilities || {}), a => a.name);
+  const [van, mod] = await micatroSearchIndex();
+  if (seq !== searchSeq || (location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'search') return;
+  const mcV = rank(van, x => x.name, x => x.text), mcM = rank(mod, x => x.name, x => x.text);
+  const LIMIT = 60;
+  const group = (title, id, list, row) => list.length ? h('section', { class: 'lp-tier search-group', 'data-group': id },
+    h('div', { class: 'lp-tier-head' }, h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + list.length + ')'))),
+    h('ul', { class: 'search-list' }, list.slice(0, LIMIT).map(row)),
+    list.length > LIMIT ? h('p', { class: 'muted' }, 'Showing the first ' + LIMIT + ' — type more to narrow it.') : null) : null;
+  const li = (href, name, ...meta) => h('li', null, h('a', { href }, name), meta.filter(Boolean).length ? h('span', { class: 'search-meta' }, ' · ' + meta.filter(Boolean).join(' · ')) : null);
+  const groups = [
+    group('Pokémon', 'pokemon', pk, p => li('#/pokemon/' + p.id, p.name)),
+    group('Moves', 'moves', mv, m => li('#/moves/' + m.id, m.name)),
+    group('Abilities', 'abilities', ab, a => li('#/abilities/' + a.id, a.name)),
+    group('Micatro', 'micatro', mcV, x => li(x.href, x.name, x.kind)),
+    group('Micatro Mods', 'micatro-mods', mcM, x => li(x.href, x.name, x.kind, x.mod)),
+  ].filter(Boolean);
+  const n = pk.length + mv.length + ab.length + mcV.length + mcM.length;
+  mcPut(h('div', { class: 'gallery-heading' }, h('div', null, h('h1', null, 'Search: “' + raw.trim() + '”'), h('p', { class: 'muted' }, 'Battlecards have their own search on the ', h('a', { href: '#/cards?q=' + encodeURIComponent(raw.trim()) }, 'Card Gallery'), '.')),
+    h('div', { class: 'result-count' }, String(n), h('span', null, ' results'))),
+    ...(groups.length ? groups : [h('p', { class: 'muted' }, 'Nothing matches.')]));
 }
 
 let mcModQ = '', mcModQId = null;
@@ -1985,12 +2216,13 @@ async function micatroModView(id) {
   if (mcModQId !== id) { mcModQ = ''; mcModQId = id; } // the search box belongs to one mod page
   content.replaceChildren(h('h1', null, 'Micatro mod'), h('p', { class: 'muted' }, 'Loading…'));
   let D, M;
-  try { [D, M] = await Promise.all([loadMicatroMods(), loadMicatroMod(id)]); } catch (e) { if (mcOn('mod', id)) notFound(); return; }
-  if (!mcOn('mod', id)) return;
+  try { [D, M] = await Promise.all([loadMicatroMods(), loadMicatroMod(id)]); } catch (e) { if (mmOn('mod', id)) notFound(); return; }
+  if (!mmOn('mod', id)) return;
   const m = D.mods.find(x => x.id === id);
   if (!m) return notFound();
   const nameOf = r => (D.mods.find(x => x.id === r) || { name: r }).name;
   const dependents = D.mods.filter(x => x.requires.includes(id));
+  const catOf = mmCatOf(D), catTitle = Object.fromEntries((D.categories || []).map(c => [c.id, c.title]));
   const body = h('div');
   const count = h('div', { class: 'result-count' });
   const total = M.sections.reduce((n, s) => n + s.items.length, 0);
@@ -2002,11 +2234,13 @@ async function micatroModView(id) {
       const items = s.items.filter(match);
       shown += items.length;
       if (!items.length) return null;
-      const list = s.kind === 'row' ? h('div', { class: 'mc-rows' }, items.map(mcModRow))
-        : s.kind === 'hand' ? h('div', { class: 'mc-hands' }, items.map(mcModHand))
-          : h('div', { class: 'mc-grid' }, items.map(mcModTile));
+      const list = s.kind === 'row' ? h('div', { class: 'mc-rows' }, items.map(x => mcModRow(x)))
+        : s.kind === 'hand' ? h('div', { class: 'mc-hands' }, items.map(x => mcModHand(x)))
+          : h('div', { class: 'mc-grid' }, items.map(x => mcModTile(x)));
       return h('section', { class: 'lp-tier', id: 'mcs-' + s.id, 'data-section': s.id },
-        h('div', { class: 'lp-tier-head' }, h('h2', null, s.title, ' ', h('span', { class: 'num' }, '(' + (q ? items.length + ' of ' : '') + s.items.length + ')')), s.blurb ? h('p', { class: 'muted' }, s.blurb) : null), list);
+        h('div', { class: 'lp-tier-head' }, h('h2', null, s.title, ' ', h('span', { class: 'num' }, '(' + (q ? items.length + ' of ' : '') + s.items.length + ')')), s.blurb ? h('p', { class: 'muted' }, s.blurb) : null,
+          catOf[s.id] && D.mods.filter(x => (D.categories.find(c => c.id === catOf[s.id]) || { perMod: {} }).perMod[x.id]).length > 1
+            ? h('p', { class: 'mm-catlink' }, h('a', { href: MM + '/' + catOf[s.id] }, 'Every mod’s ' + catTitle[catOf[s.id]] + ' →')) : null), list);
     }));
     if (!shown) body.replaceChildren(h('p', { class: 'muted' }, 'Nothing matches.'));
     count.replaceChildren(String(shown), h('span', null, ' of ' + total + ' entries'));
@@ -2029,9 +2263,9 @@ async function micatroModView(id) {
     mcSection('About this mod', null, h('ul', { class: 'mc-list' },
       h('li', null, h('b', null, 'Credits. '), 'The original Balatro mod is by ', h('b', null, m.by.replace(/\s*\(rebuilt for Micatro\)\s*$/, '')), '. Micatro’s version is a native rebuild of it — same cards, numbers, rules and art, written for Micatro’s engine instead of loaded through Steamodded.'),
       h('li', null, h('b', null, 'Turning it on. '), 'New Run → ', h('b', null, 'Mods'), ' → ', m.name, '. It is off by default and lasts for that run only; off means gone (no cards, rules or art).',
-        m.requires.length ? [' It needs ', m.requires.map(r => h('a', { href: '#/micatro/mod/' + r }, nameOf(r))), ', which switches on with it.'] : null,
-        dependents.length ? [' Add-ons for it: ', dependents.map((x, i) => [i ? ', ' : '', h('a', { href: '#/micatro/mod/' + x.id }, x.name)]), '.'] : null,
-        m.optional.length ? [' Extra cards appear when it is combined with ', m.optional.map((r, i) => [i ? ', ' : '', h('a', { href: '#/micatro/mod/' + r }, nameOf(r))]), '.'] : null),
+        m.requires.length ? [' It needs ', m.requires.map((r, i) => [i ? ', ' : '', h('a', { href: '#/micatro-mods/mod/' + r }, nameOf(r))]), ', which switches on with it.'] : null,
+        dependents.length ? [' Add-ons for it: ', dependents.map((x, i) => [i ? ', ' : '', h('a', { href: '#/micatro-mods/mod/' + x.id }, x.name)]), '.'] : null,
+        m.optional.length ? [' Extra cards appear when it is combined with ', m.optional.map((r, i) => [i ? ', ' : '', h('a', { href: '#/micatro-mods/mod/' + r }, nameOf(r))]), '.'] : null),
       m.size ? h('li', null, h('b', null, 'Download. '), m.size + ', fetched only when a run turns it on.') : null,
       m.unported ? h('li', null, h('b', null, 'Not in pools. '), mcPlural(m.unported, 'card the original registers is', 'cards the original registers are'), ' disabled there and stay out of Micatro’s pools too.') : null)),
     m.systems.length ? mcSection('What it adds', null, h('ul', { class: 'mc-list' }, m.systems.map(s => h('li', null, s)))) : null,
@@ -2073,7 +2307,7 @@ async function micatroBigNumbersView() {
       h('li', null, 'Saves, ', h('a', { href: '#/micatro/replays' }, 'replays'), ' and spectators keep the exact value. The leaderboard ranks a big score above every ordinary one, and naneinf above everything.'))),
     mcSection('How numbers are shown', 'Straight from the game’s own number formatter.',
       mcTable(['Value', 'Shown as', ''], B.examples.map(x => [x.value, h('b', null, x.shown), x.big ? h('span', { class: 'mc-pill' }, 'big number') : '']))),
-    mcSection('Where it matters', null, h('p', null, 'Exponential builds — long X Mult stacks, retrigger chains, and mods with X Chips or ^Mult jokers such as ', h('a', { href: '#/micatro/mod/morefluff' }, 'More Fluff'), ' — can pass 1e308, especially deep into Endless mode. Blind targets keep scaling with the Ante too, so the Endless climb goes on instead of stalling at naneinf.')));
+    mcSection('Where it matters', null, h('p', null, 'Exponential builds — long X Mult stacks, retrigger chains, and mods with X Chips or ^Mult jokers such as ', h('a', { href: '#/micatro-mods/mod/morefluff' }, 'More Fluff'), ' — can pass 1e308, especially deep into Endless mode. Blind targets keep scaling with the Ante too, so the Endless climb goes on instead of stalling at naneinf.')));
 }
 
 async function micatroDeckEditorView() {
@@ -2090,7 +2324,7 @@ async function micatroDeckEditorView() {
       h('li', null, h('b', null, 'Runs. '), 'A custom deck is part of the run, so resume, ', h('a', { href: '#/micatro/replays' }, 'replays'), ' and spectating rebuild the very same run. Custom-deck runs rank on the leaderboard’s Modded tab. Every random rule uses the run’s seed, so a seeded custom run is repeatable.'),
       h('li', null, h('b', null, 'Origin. '), 'A rebuild of Nyoxide’s ', h('b', null, 'Deck Creator'), ' (1.2.2) mod as a built-in Micatro feature.'))),
     E.examples.length ? mcSection('Example decks', 'Shown in every player’s Custom Decks list.', h('div', { class: 'mc-rows' }, E.examples.map(x => h('div', { class: 'mc-row', 'data-key': x.id },
-      h('div', { class: 'mc-row-body' }, h('div', { class: 'mc-nm' }, x.name, h('span', { class: 'mc-pill' }, 'by ' + x.by), x.mods.map(id => h('a', { class: 'mc-pill', href: '#/micatro/mod/' + id }, id))),
+      h('div', { class: 'mc-row-body' }, h('div', { class: 'mc-nm' }, x.name, h('span', { class: 'mc-pill' }, 'by ' + x.by), x.mods.map(id => h('a', { class: 'mc-pill', href: '#/micatro-mods/mod/' + id }, id))),
         h('div', { class: 'mc-desc mc-left' }, x.desc, x.jokers.length ? [h('br'), 'Jokers: ', x.jokers.join(', ')] : null, x.vouchers.length ? [h('br'), 'Vouchers: ', x.vouchers.join(', ')] : null)))))) : null,
     mcSection('Starting numbers', 'The Deck tab. Defaults are a standard run’s.', E.params.flatMap(g => [h('h3', { class: 'mc-h3' }, g.group), mcTable(['Setting', 'Default', 'Range'], g.items.map(p => [p.label, String(p.default), range(p)]))])),
     mcSection('Starting deck presets', null, h('p', null, E.presets.join(' · '), '. Up to ' + E.limits.cards + ' cards.')),
@@ -2131,10 +2365,26 @@ async function micatroReplaysView() {
 }
 const kbdList = (...k) => k.map((x, i) => [i ? ' / ' : '', h('kbd', null, x)]).flat();
 
+/** ?item=<key> on a Micatro page: highlight that entry and scroll to it (the wiki search links here). */
+function mcFocusItem() {
+  const want = mcHashParam('item');
+  if (!want) return;
+  const el = content.querySelector('[data-key="' + CSS.escape(want) + '"]');
+  if (el) { el.classList.add('mc-hl'); el.scrollIntoView({ block: 'center' }); }
+}
 function micatroRoute(sub, id) {
+  if (sub === 'mods' || sub === 'mod') {
+    // the mods moved to their own section (#/micatro-mods); old links (Magepunk News, bookmarks) still land
+    const q = location.hash.includes('?') ? '?' + location.hash.split('?')[1] : '';
+    location.replace('#/micatro-mods' + (sub === 'mod' && id ? '/mod/' + id : '') + q);
+    return;
+  }
+  if (mcHashParam('item') && sub === 'jokers') { mcJokerQ = ''; mcJokerRarity = 'all'; }
+  return Promise.resolve(micatroVanillaRoute(sub, id)).then(() => { if (mcStillOn(sub || '')) mcFocusItem(); });
+}
+function micatroVanillaRoute(sub) {
   switch (sub || '') {
-    case 'mods': return micatroModsView();
-    case 'mod': return id ? micatroModView(id) : micatroModsView();
+    case 'challenges': return micatroChallengesView();
     case 'big-numbers': return micatroBigNumbersView();
     case 'deck-editor': return micatroDeckEditorView();
     case 'replays': return micatroReplaysView();
@@ -2959,6 +3209,8 @@ function route() {
   if (section === 'dungeons') return dungeonsView();
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
   if (section === 'micatro') return micatroRoute(id, parts[2]);
+  if (section === 'micatro-mods') return micatroModsRoute(id, parts[2]);
+  if (section === 'search') return globalSearchView();
   notFound();
 }
 
@@ -2976,8 +3228,18 @@ searchEl.addEventListener('input', () => {
       return;
     }
     route();
+    return;
   }
+  // anywhere else: the wiki-wide results page (#/search?q=); typing on it rewrites its own hash in place
+  clearTimeout(globalSearchTimer);
+  globalSearchTimer = setTimeout(() => {
+    const q = searchEl.value.trim();
+    const target = '#/search' + (q ? '?q=' + encodeURIComponent(q) : '');
+    if (s[0] === 'search') { history.replaceState(null, '', target); globalSearchView(); }
+    else if (q) location.hash = target;
+  }, 150);
 });
+let globalSearchTimer = null;
 window.addEventListener('hashchange', route);
 
 // ---- mobile nav drawer: hamburger toggles an off-canvas sidebar ----

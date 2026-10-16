@@ -398,3 +398,36 @@ a.mc-pill { text-decoration: none; }
   .mc-modhero { padding: 12px; }
   .mc-modhero .mc-hero-art { display: none; }
 }
+
+/* Micatro Mods section (#/micatro-mods): category pages, mod badges, the sidebar's By-mod list */
+.mc-modtag { display: inline-block; max-width: 100%; padding: 1px 8px; border-radius: 9px; background: #fff; color: #2a3656; border: 1px solid var(--mod, #9aa7bd); border-left-width: 4px; font-size: 11px; font-weight: 700; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-modtag:hover { text-decoration: none; background: #eef4fd; }
+.mm-modhead { display: flex; align-items: center; gap: 6px; margin: 12px 0 2px; }
+.mm-modhead .mc-modtag { font-size: 12.5px; }
+.mm-catlink { margin: 0 0 6px; font-size: 13px; }
+.mc-crosslink { margin: 4px 0 20px; padding: 10px 13px; background: #f4f6fa; border: 1px solid #e1e6f0; border-radius: 9px; color: #4f5b73; }
+.mc-crosslink a { font-weight: 700; }
+.mc-colrow { border-left-width: 5px; }
+.mc-tabs { flex-wrap: wrap; max-width: 100%; }
+.mc-tabs .lq-sizebtn { height: auto; min-height: 28px; padding: 4px 12px; }
+#sidebar details.nav-mods > summary { display: block; padding: 7px 18px 7px 32px; color: #2a3656; cursor: pointer; list-style: none; }
+#sidebar details.nav-mods > summary::-webkit-details-marker { display: none; }
+#sidebar details.nav-mods > summary::before { content: '▸'; display: inline-block; width: 14px; color: #8590ab; }
+#sidebar details.nav-mods[open] > summary::before { content: '▾'; }
+#sidebar details.nav-mods > summary:hover { background: #eef2fb; }
+#sidebar a.sub2 { padding-left: 46px; font-size: 13.5px; }
+/* wiki-wide search results (#/search) */
+.search-list { margin: 4px 0 18px; padding: 0; list-style: none; columns: 3 220px; column-gap: 18px; }
+.search-list li { break-inside: avoid; padding: 3px 0; overflow-wrap: anywhere; }
+.search-meta { color: #76819c; font-size: 12.5px; }
+@media (max-width: 720px) {
+  .mc-filters .mc-search { min-width: 0; flex-basis: 100%; max-width: none; }
+  .mc-filters .mc-select { max-width: 100%; }
+  .search-list { columns: 1; }
+}
+.mc-idx .lp-count { white-space: normal; }
+.mc-index .mc-idx-txtwrap .lp-name { overflow-wrap: break-word; hyphens: auto; }
+@media (max-width: 430px) {
+  .mc-index .mc-idx { gap: 8px; padding: 10px 9px; }
+  .mc-index .mc-idx .lp-name { font-size: 13.5px; }
+}
