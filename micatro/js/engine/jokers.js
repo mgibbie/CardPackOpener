@@ -18,6 +18,7 @@ import {
 } from './core.js';
 import { get_poker_hand_info } from './run.js';
 import { Tag, add_tag } from './tag.js';
+import { firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 
 // G.C colours, kept as plain strings so returned tables stay serialisable.
 const C = {
@@ -141,6 +142,9 @@ export function normalize_mod_effect(r, context) {
 }
 
 Card.prototype.calculate_joker = function (context) {
+  // A mod may replace this card's calculation outright (Risk of Jesters: Temporary jokers break at
+  // end of round instead of acting) — a Lua Card:calculate_joker wrap; null = no effect.
+  if (ACTIVE_MODS.length) { const o = firstHook('calculate_joker', this, context); if (o !== undefined) return o === null ? undefined : o; }
   if (this.debuff) return undefined;
   const mc = this.config.center;
   if (mc.mod) {

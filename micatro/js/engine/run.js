@@ -996,6 +996,8 @@ function evaluate_play() {
   G.E_MANAGER.add_event(() => {
     if (G.GAME.modifiers.debuff_played_cards) for (const v of scoring_hand) v.ability.perma_debuff = true;
   });
+  // Mods that wrap G.FUNCS.evaluate_play to see the hand's final score (Mika's mmc_scored_chips).
+  if (ACTIVE_MODS.length) callHook('hand_scored', hand_chips, mult, { full_hand: G.play.cards, scoring_hand, scoring_name: text });
 }
 
 function evaluate_round() {

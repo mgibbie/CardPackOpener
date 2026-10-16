@@ -410,6 +410,9 @@ export class Blind {
 
   stay_flipped(area, card) {
     if (!this.disabled) {
+      // Mod blind (prototype, this Blind, area, card) -> true: the card is drawn face down.
+      const mb = this.config.blind;
+      if (mb && mb.mod && mb.stay_flipped && mb.stay_flipped(mb, this, area, card)) return true;
       if (area === G.hand) {
         if (this.name === 'The Wheel' && probability_roll(this, pseudoseed('wheel'), 1, 7, 'wheel')) return true;
         if (this.name === 'The House' && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0) return true;
@@ -422,6 +425,12 @@ export class Blind {
 
   debuff_card(card, from_blind) {
     if (this.debuff && !this.disabled && card.area !== G.jokers) {
+      // Mod blind (prototype, this Blind, card, from_blind) -> true: this playing card is debuffed.
+      const mb = this.config.blind;
+      if (mb && mb.mod && mb.debuff_card && mb.debuff_card(mb, this, card, from_blind)) {
+        card.set_debuff(true);
+        return;
+      }
       if (this.debuff.suit && card.is_suit(this.debuff.suit, true)) {
         card.set_debuff(true);
         return;

@@ -13,6 +13,16 @@
 /micatro/mods/pokermon/assets/* https://magepunk-micatromods.pages.dev/pokermon/assets/:splat 301
 /micatro/mods/nacho/assets/* https://magepunk-micatromods.pages.dev/nacho/assets/:splat 301
 /micatro/mods/pokermonplus/assets/* https://magepunk-micatromods.pages.dev/pokermonplus/assets/:splat 301
+/micatro/mods/riskofjesters/assets/* https://magepunk-micatromods.pages.dev/riskofjesters/assets/:splat 301
+/micatro/mods/sylviesilly/assets/* https://magepunk-micatromods.pages.dev/sylviesilly/assets/:splat 301
+/micatro/mods/milatro/assets/* https://magepunk-micatromods.pages.dev/milatro/assets/:splat 301
+/micatro/mods/mikas/assets/* https://magepunk-micatromods.pages.dev/mikas/assets/:splat 301
+/micatro/mods/olympus/assets/* https://magepunk-micatromods.pages.dev/olympus/assets/:splat 301
+/micatro/mods/inscrybed/assets/* https://magepunk-micatromods.pages.dev/inscrybed/assets/:splat 301
+/micatro/mods/tagteam/assets/* https://magepunk-micatromods.pages.dev/tagteam/assets/:splat 301
+/micatro/mods/smirkeo/assets/* https://magepunk-micatromods.pages.dev/smirkeo/assets/:splat 301
+/micatro/mods/altavista/assets/* https://magepunk-micatromods.pages.dev/altavista/assets/:splat 301
+/micatro/mods/omertadeck/assets/* https://magepunk-micatromods.pages.dev/omertadeck/assets/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
 # /pokemon was never a route, but a stale bookmark there renders the homepage
 # (the SPA fallback), and the homepage's RELATIVE links ("overworld/") then

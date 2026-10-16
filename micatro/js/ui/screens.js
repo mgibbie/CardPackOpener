@@ -461,6 +461,7 @@ export function modsPanel(sel, onChange) {
   const note = h('div', 'mods-note');
   el.append(list, note);
   const loading = new Set(), failed = new Set();
+  const expanded = new Set(); // mods whose long option lists are open (collapsed by default)
   const changed = () => { saveModPrefs(sel); if (onChange) onChange(sel); };
   const say = (t) => { note.textContent = t || ''; note.style.display = t ? '' : 'none'; };
   say('');
@@ -530,7 +531,17 @@ export function modsPanel(sel, onChange) {
         if (loading.has(m.id)) opts.appendChild(h('div', 'muted', 'Loading…'));
         else if (failed.has(m.id)) opts.appendChild(h('div', 'red', "Couldn't load this mod."));
         else {
-          for (const op of modsApi.optionList(m.id)) {
+          const optList = modsApi.optionList(m.id);
+          // Long option lists (e.g. a per-card toggle for every joker) start collapsed.
+          const LONG = 6;
+          const collapsed = optList.length > LONG && !expanded.has(m.id);
+          if (optList.length > LONG) {
+            const tg = btn(collapsed ? `Options (${optList.length}) ▸` : `Options (${optList.length}) ▾`, 'grey opt mod-opts-toggle', () => { if (expanded.has(m.id)) expanded.delete(m.id); else expanded.add(m.id); draw(); });
+            tg.dataset.k = 'opts:' + m.id;
+            tg.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            opts.appendChild(tg);
+          }
+          for (const op of (collapsed ? [] : optList)) {
             const cur = sel.options[m.id] && sel.options[m.id][op.key] !== undefined ? sel.options[m.id][op.key] : op.default;
             const r = h('div', 'mod-opt');
             r.appendChild(h('div', 'mod-opt-l', esc(op.label)));
