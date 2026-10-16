@@ -7686,6 +7686,7 @@ pokemon_follow/rowlet.png
 pokemon_follow/rufflet.png
 pokemon_follow/runerigus.png
 pokemon_follow/sableye.png
+pokemon_follow/sakurovix.png
 pokemon_follow/salamence.png
 pokemon_follow/salandit.png
 pokemon_follow/salazzle.png
@@ -8701,6 +8702,7 @@ pokemon_ow/rowlet.png
 pokemon_ow/rufflet.png
 pokemon_ow/runerigus.png
 pokemon_ow/sableye.png
+pokemon_ow/sakurovix.png
 pokemon_ow/salamence.png
 pokemon_ow/salandit.png
 pokemon_ow/salazzle.png
