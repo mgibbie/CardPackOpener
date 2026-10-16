@@ -113,12 +113,16 @@ Micatro fires the vanilla contexts plus these Steamodded ones (mod cards only wh
 | `poke_evolved`* (+`card`, `from`, `to`) | after a non-mega evolution | for add-ons (Nacho) |
 
 Not available yet (add a **generic** engine seam + registry HOOKS entry when a joker needs one, and
-list it in your report): `check_enhancement` (quantum enhancements are off), `mod_probability` /
+list it in your report): `mod_probability` /
 `fix_probability`, `main_scoring`, `final_scoring_step` for jokers, `post_trigger`,
 `other_consumeable`, `round_eval`, `setting_ability`, `other_drawn` outside poke_draw_one,
-`poke_load` (resume is a replay — no load hook needed), the Celestial-pack card override Xatu uses
-(needs a pack-card seam), sprite/UI functions (`set_sprites`, `generate_ui`, `draw`: UI's job;
+`poke_load` (resume is a replay — no load hook needed), sprite/UI functions (`set_sprites`, `generate_ui`, `draw`: UI's job;
 expose data through `systems/anim.js` instead).
+
+`check_enhancement` (Steamodded quantum enhancements) IS available: answer it from `calculate` with
+`{m_steel: true}` and put `quantum_enhancements: true` on the definition (core.js only asks centers that
+declare it). Xatu's all-planets Celestial packs use the `pack_card` hook (systems/rules.js); the
+previous-evolution win stickers are the `joker_win_keys` hook (systems/evolution.js family_win_keys).
 
 ### `card.ability`
 

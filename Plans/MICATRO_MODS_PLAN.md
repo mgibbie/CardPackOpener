@@ -139,6 +139,17 @@ Each step: gate → merge when it passes → next.
    seams (Xatu all-planets packs, previous-evo win stickers), per-mod design-wiki sections + news
    for any mod that lacks them, and a final all-mods-on fuzz/perf pass (load time, snapshot size,
    spectator bandwidth) before calling the rebuild done.
+   **Step 8 UI (2026-10-16):** one **Challenges** screen (main menu): Balatro's 20 (`micatro/data/challenges.js`,
+   played by `engine/challenge.js`) + every enabled mod's (Pokermon 7, Nacho 4, Pokermon+ 4, MoreFluff 1, BETMMA 5 —
+   rules in each mod's `challenges.js`); a challenge is a normal run at stake 1 on the Challenge Deck, recorded by id in
+   the recipe (`challenge`), posts no high score, earns no win stickers. **Sleeves** as deck variants
+   (`engine/sleeve.js`; Pokermon 10, Pokermon+ 5, MoreFluff 4 in each mod's `sleeves.js`, deck pairings as `alt`): New
+   Run's sleeve row, recipe `sleeve`. **Deck skins** (cosmetic, `ui/skins.js`; Pokermon RBY/GSC, Bunco in each mod's
+   `skins.js`): Options > Card skins, per player. **Pokermon UI** (`mods/pokermon/ui.js` through the mod UI seam
+   `ui/modui.js`): type pills + Energy pips, the Pokédex (right-click / double-click / Dex / P / Run Info tab),
+   shiny / evolution / Zorua shaders, Zorua's disguise, the Unown swarm animation. **Win stickers** per joker
+   (`ui/stickers.js`, from the engine's `win` event). Tests: `micatro/tests/challenges_test.mjs`,
+   `overworld/tests/micatro_challenges_ui_test.mjs`, `overworld/tests/micatro_winstickers_test.mjs`.
 
 ## 8. Run replays (2026-10-16)
 A replay is always a **whole run** (first blind to game over / the win / the end of Endless), never one

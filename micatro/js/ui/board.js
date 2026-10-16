@@ -8,6 +8,9 @@ import { backgroundFor } from './gl.js';
 import { markup, fmt, esc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
 import { isNumeric, isBig } from '../engine/bignum.js';
 import { sound } from './sound.js';
+import { first as modFirst, all as modAll, hasModUI } from './modui.js';
+import { onSkins } from './skins.js';
+import { onWinStickers, winSticker } from './stickers.js';
 
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
 const PACK_STATES = ['TAROT_PACK', 'PLANET_PACK', 'SPECTRAL_PACK', 'STANDARD_PACK', 'BUFFOON_PACK', 'MOD_PACK', 'MOD_PACK_HAND'];
@@ -48,6 +51,10 @@ export class Board {
     addEventListener('resize', () => this.resize());
     // a mod atlas arrived (or failed): recompose the cards drawn from it
     onModAtlas((name) => this.refreshModArt(name));
+    // a deck skin was chosen (or its art arrived): recompose the playing cards
+    onSkins(() => { for (const s of this.sprites.values()) if (s.d && s.d.front) { s.vkey = ''; s.setData(s.d); } });
+    // a joker earned a win sticker (or the option changed): recompose the jokers
+    onWinStickers(() => { for (const s of this.sprites.values()) if (s.d && !s.d.front) { s.vkey = ''; s.setData(s.d); } });
     const loop = () => { this.frame(); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
   }
@@ -140,6 +147,15 @@ export class Board {
 
     // pointer handling for cards
     this.layer.addEventListener('pointerdown', (e) => this.onDown(e));
+    // a mod's card context action (ui/modui.js cardContext — Pokermon: right-click / double-click opens the Pokédex)
+    const ctxCard = (e) => {
+      const el = e.target.closest('.card');
+      if (!el || e.target.closest('.card-btns') || !hasModUI()) return;
+      const id = +el.dataset.id, d = this.data.get(id) || (this.sprites.get(id) || {}).d;
+      if (d && d.facing !== 'back' && modFirst('cardContext', d, this.uiApi())) { e.preventDefault(); this.hideTip(); }
+    };
+    this.layer.addEventListener('contextmenu', ctxCard);
+    this.layer.addEventListener('dblclick', ctxCard);
     addEventListener('pointermove', (e) => this.onMove(e));
     addEventListener('pointerup', (e) => this.onUp(e));
     addEventListener('pointercancel', (e) => this.onUp(e, true));
@@ -329,12 +345,15 @@ export class Board {
     }
     this.placeModAreas();
   }
-  /** Slot rect of the i-th mod area: right of the play area under the consumables (landscape), smaller cards in portrait. */
+  /** Slot rect of the i-th mod area: right of the play area under the consumables (landscape), smaller cards in portrait.
+   *  It starts below the consumables' "n/limit" counter (that label sits 8px under the area and is ~32px tall), so the
+   *  counter is never covered (Reverie's Cine slots used to hide the "0/2"). */
   modAreaRect(i) {
     const R = this.R;
-    if (this.mode === 'landscape') return { x: this.W - 16 - 176, y: R.jokers.y + R.jokers.h + 44 + i * (this.ch + 48), w: 176, h: this.ch, s: 1 };
+    const top = R.consumeables.y + R.consumeables.h + 8 + 34 + 12;
+    if (this.mode === 'landscape') return { x: this.W - 16 - 176, y: top + i * (this.ch + 48), w: 176, h: this.ch, s: 1 };
     const s = 0.7;
-    return { x: 708 - 160, y: R.jokers.y + R.jokers.h + 16 + i * (this.ch * s + 40), w: 160, h: this.ch * s, s };
+    return { x: 708 - 160, y: top + i * (this.ch * s + 40), w: 160, h: this.ch * s, s };
   }
   placeModAreas() {
     if (!this.R) return;
@@ -779,9 +798,17 @@ export class Board {
       if (!d.no_use) add(d.use_label || (consumable ? 'Use' : 'Select'), 'green buy', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
       if (d.reserve) add(d.reserve_label || 'Save', 'green buy', { type: 'reserve', id: s.id }, 'button');
       wrap.classList.add('below');
-    } else if (!(d.mod_actions && d.mod_actions.length)) return null;
+    } else if (!(d.mod_actions && d.mod_actions.length) && !(hasModUI() && modAll('cardActions', d).length)) return null;
     // Mod card actions (view_card's mod_actions: [{label, action}]; e.g. BETMMA's Vanish, Balatro Mobile's moves)
     for (const ma of d.mod_actions || []) add(esc(ma.label), 'blue modact', ma.action, 'button');
+    // Mod UI buttons (client-only, ui/modui.js cardActions: Pokermon's Pokédex)
+    if (hasModUI() && d.facing !== 'back') for (const a of modAll('cardActions', d)) {
+      const b = h('button', 'btn modui ' + (a.cls || 'blue'), esc(a.label)); b.type = 'button';
+      if (a.title) b.title = a.title;
+      b.addEventListener('pointerdown', (e) => e.stopPropagation());
+      b.addEventListener('click', (e) => { e.stopPropagation(); sound.play('button'); a.run(this.uiApi()); });
+      wrap.appendChild(b);
+    }
     if (!wrap.classList.contains('side') && !wrap.classList.contains('below')) wrap.classList.add('below');
     if (v && !['SHOP'].includes(v.state) && s.area.startsWith('shop')) return null;
     return wrap;
@@ -959,9 +986,13 @@ export class Board {
     return describeCenterFallback(d.center);
   }
   showCardTip(s, sticky) {
-    const desc = this.descFor(s.id, s);
+    let desc = this.descFor(s.id, s);
     if (!desc) return;
     const d = this.data.get(s.id) || s.d;
+    // its win sticker, explained (Balatro: info_queue <colour>_sticker)
+    const st = d && d.set === 'Joker' && d.facing !== 'back' ? winSticker(d.center) : null;
+    const sd = st && LOC.descriptions.Other[st.toLowerCase() + '_sticker'];
+    if (sd) desc = { ...desc, info: [...(desc.info || []), { key: st.toLowerCase() + '_sticker', name: sd.name, lines: sd.text }] };
     let extra = '';
     if (d.perish_tally != null && d.perishable) extra += `<div class="tip-note">Perishable: ${d.perish_tally} rounds left</div>`;
     this.renderTip(desc, d, extra);
@@ -1278,9 +1309,11 @@ export class Board {
         }
         return 0.05;
       }
-      default: return 0;
+      default: return (hasModUI() && modFirst('onEvent', ev, this)) || 0; // (a mod's own animation: Pokermon's evolution)
     }
   }
+  /** What a mod UI gets to open its screens with (ui/screens.js modApi, via main.js). */
+  uiApi() { return this.opts.uiApi ? this.opts.uiApi() : null; }
 
   statusEvent(ev) {
     const t = ev.eval_type;

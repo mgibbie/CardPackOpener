@@ -82,11 +82,20 @@
 		.mc-launch b { color: #ff8a80; }
 		#mc-tip { position: fixed; display: none; z-index: 9; pointer-events: none; max-width: 260px;
 			background: rgba(22,16,36,0.96); border: 1px solid #fe5f55; border-radius: 12px; padding: 10px; box-shadow: 0 6px 22px rgba(0,0,0,0.6); font-size: 0.88rem; }
-		#mc-tip .big { width: 142px; height: 190px; margin: 0 auto 8px; background-repeat: no-repeat; image-rendering: pixelated; position: relative; }
+		#mc-tip .big { display: block; width: 142px; height: 190px; margin: 0 auto 8px; background-repeat: no-repeat; image-rendering: pixelated; position: relative; }
 		#mc-tip .big.sq { width: 68px; height: 68px; }
 		#mc-tip h4 { margin: 0 0 4px; text-align: center; }
 		#mc-tip .set { text-align: center; color: var(--muted); font-size: 0.78rem; margin-bottom: 6px; }
 		#mc-tip p { margin: 2px 0; text-align: center; }
+		/* Micatro mod releases + new features */
+		.mc-mod { margin-top: 10px; }
+		.mc-mod h3 { margin: 0 0 2px; font-size: 1rem; }
+		.mc-mod h3 a { color: #ff8a80; }
+		.mc-mod .mc-launch { margin-top: 6px; }
+		.mc-more { cursor: pointer; background: #241b38; color: #ff8a80; border: 1px dashed #8a3a33; border-radius: 8px; padding: 4px 10px; font: inherit; font-size: 0.85rem; }
+		.mc-feature { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin-top: 10px; background: #241b38; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+		.mc-feature b { color: #ff8a80; }
+		.mc-feature span { color: var(--muted); }
 		.entry-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 		.badge {
 			font-size: 0.68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
@@ -151,7 +160,7 @@
 
 <header>
 	<h1>MAGEPUNK NEWS</h1>
-	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards and Micatro, straight from the games' development history.</p>
+	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards and Micatro (and its mods), straight from the games' development history.</p>
 	<div class="cta-row">
 		<a class="cta primary" href="/battlecards/">&#9654; Play Battlecards</a>
 		<a class="cta" href="/learnmagepunk/">Learn to Play</a>
@@ -199,23 +208,40 @@ function cardChip(c) {
 
 // ---- Micatro chips: sprite thumbnail from the game's 2x atlas ----
 const MC_SECTION = { Joker: 'jokers', Tarot: 'consumables', Planet: 'consumables', Spectral: 'consumables', Voucher: 'vouchers', Booster: 'boosters', Deck: 'decks', Tag: 'tags', 'Boss Blind': 'blinds' };
-const isSq = c => c.set === 'Tag' || c.set === 'Boss Blind';
+const atlasOf = c => atlas[c.atlas || c.set];
+const isSq = c => { const a = atlasOf(c); return a ? a.cw === a.ch : (c.set === 'Tag' || c.set === 'Boss Blind' || c.set === 'Blind' || c.set === 'Stake'); };
 function spriteStyle(set, pos, w) {
 	const a = atlas[set]; if (!a || !pos) return '';
 	const k = w / a.cw;
 	return `background-image:url('${a.src}');background-size:${a.w * k}px ${a.h * k}px;background-position:${-pos.x * a.cw * k}px ${-pos.y * a.ch * k}px;`;
 }
 function mcSprite(c, w, cls) {
-	const soul = c.soul ? `<span class="soul" style="${spriteStyle(c.set, c.soul, w)}"></span>` : '';
-	return `<span class="${cls}${isSq(c) ? ' sq' : ''}" style="${spriteStyle(c.set, c.pos, w)}">${soul}</span>`;
+	const at = c.atlas || c.set;
+	const soul = c.soul ? `<span class="soul" style="${spriteStyle(at, c.soul, w)}"></span>` : '';
+	return `<span class="${cls}${isSq(c) ? ' sq' : ''}" style="${spriteStyle(at, c.pos, w)}">${soul}</span>`;
 }
 function mcChip(c) {
-	return `<a class="card-chip mc-chip" data-mc="${esc(c.key)}" href="/designwiki/#/micatro/${MC_SECTION[c.set] || ''}">` +
+	const href = c.mod ? `/designwiki/#/micatro/mod/${encodeURIComponent(c.mod)}?item=${encodeURIComponent(c.key)}` : `/designwiki/#/micatro/${MC_SECTION[c.set] || ''}`;
+	return `<a class="card-chip mc-chip" data-mc="${esc(c.key)}"${c.mod ? ` data-mod="${esc(c.mod)}"` : ''} href="${href}">` +
 		mcSprite(c, isSq(c) ? 30 : 28, 'mc-thumb') +
 		`<span class="${c.rarity ? 'r-' + esc(c.rarity) : ''}">${esc(c.name)}</span>` +
 		`<span class="meta">${esc(c.rarity ? cap(c.rarity) + ' ' : '')}${esc(c.set)}</span></a>`;
 }
-const PLURAL = { Joker: 'Jokers', Tarot: 'Tarots', Planet: 'Planets', Spectral: 'Spectrals', Voucher: 'Vouchers', Booster: 'Booster Packs', Deck: 'Decks', Tag: 'Tags', 'Boss Blind': 'Boss Blinds' };
+const PLURAL = { Joker: 'Jokers', Tarot: 'Tarots', Planet: 'Planets', Spectral: 'Spectrals', Voucher: 'Vouchers', Booster: 'Booster Packs', Deck: 'Decks', Tag: 'Tags', 'Boss Blind': 'Boss Blinds', Blind: 'Blinds', Stake: 'Stakes', Seal: 'Seals', Stamp: 'Stamps', Enhancement: 'Enhancements', Edition: 'Editions', Item: 'Items', Energy: 'Energy cards', Colour: 'Colour cards', Rotarot: 'Rotarots', Polymino: 'Polyminoes', Cine: 'Cine cards', Oddity: 'Oddities' };
+const MC_CHIPS_SHOWN = 24;
+/** A row of Micatro chips; a long one shows the first MC_CHIPS_SHOWN and a "+N more" button. */
+function mcRow(list) {
+	list.forEach(c => mcByKey.set(c.key, c));
+	const first = list.slice(0, MC_CHIPS_SHOWN), rest = list.slice(MC_CHIPS_SHOWN);
+	return `<div class="card-row">${first.map(mcChip).join('')}${rest.length ? `<button type="button" class="mc-more" data-more="${esc(rest.map(c => c.key).join(','))}">+${rest.length} more</button>` : ''}</div>`;
+}
+/** A mod's block in an entry: its release (per-set counts) or its new cards. */
+function mcModBlock(m) {
+	const link = `/designwiki/#/micatro/mod/${encodeURIComponent(m.id)}`;
+	if (m.launch) return `<div class="mc-mod"><h3><a href="${link}">${esc(m.name)}</a></h3><div class="mc-launch">${Object.entries(m.launch).map(([k, n]) => `<span><b>${n}</b> ${esc(n === 1 ? k : (PLURAL[k] || k + 's'))}</span>`).join('')}<span><a href="${link}">Design wiki</a></span></div></div>`;
+	const added = (m.added || []).map(c => ({ ...c, mod: m.id }));
+	return `<div class="mc-mod"><h3><a href="${link}">${esc(m.name)}</a>: ${added.length} new card${added.length === 1 ? '' : 's'}</h3>${mcRow(added)}</div>`;
+}
 
 function render() {
 	const shown = entries.filter(e => filter === 'all' || e.kind === filter);
@@ -228,23 +254,36 @@ function render() {
 			html += `<div class="day"><h2>${esc(fmtDate(day))}</h2>`;
 		}
 		const mcN = (e.micatro || []).length;
+		const mods = e.micatroMods || [], feats = e.micatroFeatures || [];
+		const modLaunch = mods.filter(m => m.launch), modNew = mods.reduce((n, m) => n + (m.added || []).length, 0);
 		const badge = e.kind === 'cards'
 			? `&#127183; ${e.cards.length} new card${e.cards.length === 1 ? '' : 's'}`
 			: e.kind === 'micatro'
-				? (e.micatroLaunch ? '&#127183; Micatro launch' : `&#127183; ${mcN} new Micatro card${mcN === 1 ? '' : 's'}`)
+				? (e.micatroLaunch ? '&#127183; Micatro launch'
+					: mcN ? `&#127183; ${mcN} new Micatro card${mcN === 1 ? '' : 's'}`
+						: modLaunch.length ? (modLaunch.length === 1 ? '&#127183; New Micatro mod' : `&#127183; ${modLaunch.length} new Micatro mods`)
+							: modNew ? `&#127183; ${modNew} new Micatro mod card${modNew === 1 ? '' : 's'}`
+								: '&#10024; New in Micatro')
 				: '&#128736; Patch';
 		html += `<article class="${e.kind}">` +
 			`<div class="entry-head"><span class="badge ${e.kind}">${badge}</span>` +
 			`<span class="entry-title">${esc(e.title)}</span></div>`;
 		if (e.cards && e.cards.length) html += `<div class="card-row">${e.cards.map(cardChip).join('')}</div>`;
 		if (e.micatroLaunch) html += `<div class="mc-launch">${Object.entries(e.micatroLaunch).map(([k, n]) => `<span><b>${n}</b> ${esc(n === 1 ? k : (PLURAL[k] || k))}</span>`).join('')}<span><a href="/micatro/">&#9654; Play</a> &middot; <a href="/designwiki/#/micatro">Design wiki</a></span></div>`;
-		if (mcN) { e.micatro.forEach(c => mcByKey.set(c.key, c)); html += `<div class="card-row">${e.micatro.map(mcChip).join('')}</div>`; }
+		if (mcN) html += mcRow(e.micatro);
+		for (const x of feats) html += `<div class="mc-feature" data-feature="${esc(x.id)}"><b>&#10024; ${esc(x.title)}</b><span>${esc(x.blurb)}</span><a href="${esc(x.wiki)}">Read more</a></div>`;
+		for (const m of mods) html += mcModBlock(m);
 		if (e.body) html += `<details class="body-toggle"><summary>Details</summary><div class="body">${esc(e.body)}</div></details>`;
 		html += '</article>';
 	}
 	html += '</div>';
 	feed.innerHTML = html;
 }
+
+feed.addEventListener('click', ev => {
+	const b = ev.target.closest('button.mc-more'); if (!b) return;
+	b.outerHTML = b.dataset.more.split(',').map(k => mcByKey.get(k)).filter(Boolean).map(mcChip).join('');
+});
 
 document.getElementById('filters').addEventListener('click', ev => {
 	const b = ev.target.closest('button'); if (!b) return;
@@ -303,11 +342,17 @@ const mcText = () => mcTextPromise ||= fetch('/designwiki/data/micatro.json').th
 	for (const v of Object.values(d)) if (Array.isArray(v)) for (const x of v) if (x && x.key) m.set(x.key, x);
 	return m;
 }).catch(() => new Map());
+const mcModText = {};
+const mcModInfo = id => mcModText[id] ||= fetch('/designwiki/data/micatro_mods/' + encodeURIComponent(id) + '.json').then(r => r.json()).then(d => {
+	const m = new Map();
+	for (const sec of d.sections || []) for (const x of sec.items) m.set(x.key, x);
+	return m;
+}).catch(() => new Map());
 const plain = s => String(s).replace(/\{[^}]*\}/g, '');
 feed.addEventListener('mouseover', async ev => {
 	const chip = ev.target.closest('a.mc-chip'); if (!chip) return;
 	const c = mcByKey.get(chip.dataset.mc); if (!c) return;
-	const info = (await mcText()).get(c.key);
+	const info = (await (c.mod ? mcModInfo(c.mod) : mcText())).get(c.key);
 	const lines = (info && (info.lines || info.text)) || [];
 	mcTip.innerHTML = mcSprite(c, isSq(c) ? 68 : 142, 'big') + `<h4>${esc(c.name)}</h4><div class="set">${esc(c.rarity ? cap(c.rarity) + ' ' : '')}${esc(c.set)}${c.cost != null ? ' &middot; $' + esc(c.cost) : ''}</div>` +
 		(Array.isArray(lines) ? lines : [lines]).map(l => `<p>${esc(plain(l))}</p>`).join('');

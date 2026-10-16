@@ -17,7 +17,7 @@ import {
   draw_card, level_up_hand, eval_card, mod_card_calculate, create_card, poll_edition, get_pack,
   calculate_reroll_cost, reset_idol_card, reset_mail_rank, reset_ancient_card, reset_castle_card,
   reset_blinds, get_new_boss, get_next_voucher_key, get_next_tag_key, get_blind_amount,
-  mod_chips, mod_mult, set_hand_usage, number_format, probability_roll,
+  mod_chips, mod_mult, set_hand_usage, number_format, probability_roll, mod_context_effect, mod_effect_tail,
 } from './core.js';
 import { Blind } from './blind.js';
 import * as B from './bignum.js';
@@ -28,6 +28,8 @@ import './jokers.js';
 import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS, feature } from '../mods/registry.js';
 import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
+import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
+import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -147,7 +149,7 @@ const STATE_HANDLERS = {
     G.E_MANAGER.add_event(() => {
       if (draw_from_deck_to_hand(null)) return;
       if (G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && G.GAME.facing_blind) {
-        for (const j of G.jokers.cards.slice()) j.calculate_joker({ first_hand_drawn: true });
+        for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ first_hand_drawn: true }));
       }
       // Steamodded's hand_drawn context (mod cards only): the cards this draw brought in
       // (queued so it runs after the draw events above).
@@ -219,13 +221,20 @@ export function newRun(args = {}) {
   // A custom deck (the native deck editor, engine/customdeck.js): a validated definition, the mods its content
   // needs, and its rules as the internal 'customdeck' mod (never listed in G.GAME.mods).
   const cdeck = args.customDeck ? validateDeck(args.customDeck) : null;
+  // A challenge (engine/challenge.js; played at stake 1) or a sleeve (engine/sleeve.js): internal mods too.
+  const chal = !cdeck && args.challenge ? findChallenge(args.challenge) : null;
+  const sleeve0 = !cdeck && !chal && args.sleeve ? findSleeve(args.sleeve) : null;
+  if (chal) args = { ...args, stake: 1 };
+  if (chal || sleeve0) { prepareChallenge(chal); prepareSleeve(sleeveFor(sleeve0, args.back)); }
+  const runMods = (ids) => (chal ? [...ids, ...challengeMods(chal), CHALLENGE_ID] : sleeve0 ? [...ids, sleeve0.mod, SLEEVE_ID] : ids);
   // Mods first: they decide what the pools contain and may adjust the game object.
-  activateMods(cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || []), args.modOptions || {});
+  activateMods(runMods(cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || [])), args.modOptions || {});
   rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
   G.GAME = init_game_object();
   G.GAME.mods = cdeck ? ACTIVE_MODS.filter((id) => id !== CUSTOM_DECK_ID) : ACTIVE_MODS.slice();
   G.GAME.mod_options = allOptions();
   if (cdeck) { delete G.GAME.mod_options[CUSTOM_DECK_ID]; G.GAME.custom_deck = cdeck; }
+  if (chal || sleeve0) { G.GAME.mods = G.GAME.mods.filter((id) => id !== CHALLENGE_ID && id !== SLEEVE_ID); delete G.GAME.mod_options[CHALLENGE_ID]; delete G.GAME.mod_options[SLEEVE_ID]; }
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
   callHook('init_game_object', G.GAME);
   // Mod stakes (SMODS.Stake): `stake` may be an active mod stake's key (see mod_stake_chain);
@@ -235,7 +244,7 @@ export function newRun(args = {}) {
   if (modStakes) G.GAME.stake_key = args.stake;
   G.GAME.STOP_USE = 0;
   // (a custom deck plays on the neutral Challenge back; its own back is art only)
-  const backKey = cdeck ? CUSTOM_DECK_BACK : args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' && backAvailable(P_CENTERS[args.back]) ? args.back : 'b_red';
+  const backKey = cdeck ? CUSTOM_DECK_BACK : chal ? challengeBack(chal) : args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' && backAvailable(P_CENTERS[args.back]) ? args.back : 'b_red';
   G.GAME.selected_back = new Back(P_CENTERS[backKey]);
   G.GAME.selected_back_key = backKey;
 
@@ -269,7 +278,10 @@ export function newRun(args = {}) {
   G.GAME.pseudorandom.hashed_seed = pseudohash(G.GAME.pseudorandom.seed);
 
   G.GAME.blind = new Blind();
+  if (sleeve0) G.GAME.selected_sleeve = sleeve0.key; // (decks paired with a sleeve read it: MoreFluff's)
   G.GAME.selected_back.apply_to_run();
+  if (sleeve0) apply_sleeve(sleeveFor(sleeve0, backKey)); // (CardSleeves: right after the deck)
+  if (chal) apply_challenge(chal); // (Game:start_run: after the back's apply_to_run)
 
   G.GAME.round_resets.hands = sp.hands;
   G.GAME.round_resets.discards = sp.discards;
@@ -302,6 +314,7 @@ export function newRun(args = {}) {
     if (sp.no_faces && (_r === 'K' || _r === 'Q' || _r === 'J')) continue;
     protos.push({ s: _s, r: _r });
   }
+  if (chal) protos = challenge_protos(chal, protos);
   if (sp.extra_cards) protos = protos.concat(sp.extra_cards);
   const pk = (a) => (a.s || '') + (a.r || '') + (a.e || '') + (a.d || '') + (a.g || '');
   protos.sort((a, b) => (pk(a) < pk(b) ? -1 : pk(a) > pk(b) ? 1 : 0));
@@ -480,7 +493,7 @@ function end_round() {
     }
     if (game_won && !G.GAME.win_notified) {
       G.GAME.win_notified = true;
-      G.E_MANAGER.add_event(() => { G.GAME.won = true; emit('win', { ante: G.GAME.round_resets.ante }); });
+      G.E_MANAGER.add_event(() => { G.GAME.won = true; emit('win', { ante: G.GAME.round_resets.ante, stake: G.GAME.stake, jokers: joker_win_keys() }); });
     }
     for (let i = 0; i < G.hand.cards.length; i++) {
       const hc = G.hand.cards[i];
@@ -718,38 +731,23 @@ export function get_poker_hand_info(_cards) {
 
 // ------------------------------------------------- mod contexts / effects
 /**
- * SMODS.calculate_context evaluation of a MOD card's return in a vanilla context whose return
- * the base game ignores (setting_blind, pre_discard, using_consumeable): message, level_up
- * (`level_up_hand` or 1 level), then dollars / func / extra. A no-op for base-game cards.
+ * misc_functions.lua set_joker_win: the jokers that earn this win (a stake sticker on each, per profile) — every
+ * joker held, plus the keys a mod adds for it (Pokermon's previous-evolution stickers: joker_win_keys hook).
+ * Reported in the 'win' event (`jokers`, with `stake`) for the client's profile; the run itself doesn't change.
  */
-export function mod_context_effect(card, eff, context) {
-  if (!eff || typeof eff !== 'object' || !card || !card.config.center.mod) return;
-  if (eff.message) card_eval_status_text(eff.message_card || card, 'extra', null, null, null, eff);
-  if (eff.level_up) {
-    const h = eff.level_up_hand || (context && context.scoring_name);
-    if (h && G.GAME.hands[h]) level_up_hand(eff.card || card, h, null, eff.level_up === true ? 1 : eff.level_up);
+function joker_win_keys() {
+  const out = [];
+  for (const v of G.jokers.cards) {
+    if (!v.config.center_key || v.ability.set !== 'Joker') continue;
+    if (!out.includes(v.config.center_key)) out.push(v.config.center_key);
+    if (ACTIVE_MODS.length) for (const ks of callHook('joker_win_keys', v)) for (const k of ks || []) if (!out.includes(k)) out.push(k);
   }
-  mod_effect_tail(card, eff, { dollars: true });
+  return out;
 }
 
-/**
- * Steamodded's calculate_effect extras for a MOD card's return value, in the places where
- * vanilla only shows the text: `func()` runs, `extra` shows its own message and runs its
- * func (recursively), and `dollars` pays out where the vanilla pass ignores it. A no-op for
- * base-game cards, so vanilla scoring is untouched.
- */
-export function mod_effect_tail(card, eff, opts = {}) {
-  if (!eff || typeof eff !== 'object' || !card || !card.config.center.mod) return;
-  if (opts.dollars && eff.dollars) { ease_dollars(eff.dollars); card_eval_status_text(eff.card || card, 'dollars', eff.dollars); }
-  if (typeof eff.func === 'function') eff.func();
-  let x = eff.extra, guard = 0;
-  while (x && typeof x === 'object' && guard++ < 10) {
-    if (x.message) card_eval_status_text(x.message_card || x.focus || card, 'extra', null, null, null, x);
-    if (x.dollars) { ease_dollars(x.dollars); card_eval_status_text(x.message_card || card, 'dollars', x.dollars); }
-    if (typeof x.func === 'function') x.func();
-    x = x.extra;
-  }
-}
+// (mod_context_effect / mod_effect_tail live in core.js, so the vanilla contexts in core / consumables /
+// jokers route MOD returns through them too; re-exported here for the mods that import them from run.js.)
+export { mod_context_effect, mod_effect_tail };
 
 /**
  * Steamodded / Talisman scoring keys a MOD return may carry beyond the ones the vanilla scoring loops
@@ -1271,7 +1269,7 @@ function evaluate_play() {
       }
     }
     // SMODS better_calc.toml: with mods on, remove_playing_cards only fires when a card was destroyed (Mareep line).
-    if (!ACTIVE_MODS.length || cards_destroyed.length) for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: cards_destroyed });
+    if (!ACTIVE_MODS.length || cards_destroyed.length) for (const j of G.jokers.cards.slice()) mod_context_effect(j, eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: cards_destroyed }).jokers);
     for (const c of cards_destroyed) {
       G.E_MANAGER.add_event(() => { if (c.ability.name === 'Glass Card' || c.shattered) c.shatter(); else c.start_dissolve(); });
     }
@@ -1568,7 +1566,7 @@ export function use_card(card) {
     G.playing_card = (G.playing_card || 0) + 1;
     G.deck.emplace(card);
     card.playing_card = G.playing_card;
-    for (const j of G.jokers.cards.slice()) j.calculate_joker({ playing_card_added: true, cards: [card] });
+    for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ playing_card_added: true, cards: [card] }));
     card.add_to_deck();
     G.playing_cards.push(card);
     dont_dissolve = true;
@@ -1650,7 +1648,7 @@ function skip_blind() {
   G.GAME.blind_on_deck = skip_to;
   emit('skip_blind', { skipped, tag: tagKey });
   G.E_MANAGER.add_event(() => {
-    for (const j of G.jokers.cards.slice()) j.calculate_joker({ skip_blind: true });
+    for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ skip_blind: true }));
     for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
     for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
   });
@@ -1681,7 +1679,7 @@ function reroll_shop() {
     emit('shop_rerolled', {});
   });
   G.E_MANAGER.add_event(() => {
-    G.E_MANAGER.add_event(() => { for (const j of G.jokers.cards.slice()) j.calculate_joker({ reroll_shop: true }); });
+    G.E_MANAGER.add_event(() => { for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ reroll_shop: true })); });
   });
   if (ACTIVE_MODS.length) callHook('reroll_shop'); // (Lua G.FUNCS.reroll_shop wraps: BETMMA's 4D Boosters / 4D Vouchers / Reroll Aisle)
 }
@@ -1697,17 +1695,17 @@ function buy_from_shop(c1, use) {
       G.playing_card = (G.playing_card || 0) + 1;
       G.deck.emplace(c1);
       c1.playing_card = G.playing_card;
-      for (const j of G.jokers.cards.slice()) j.calculate_joker({ playing_card_added: true, cards: [c1] });
+      for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ playing_card_added: true, cards: [c1] }));
       G.playing_cards.push(c1);
     } else if (!use) {
       // (a mod may place a bought consumable elsewhere: BETMMA's Forbidden Area -> the joker row)
       if (c1.ability.consumeable) ((ACTIVE_MODS.length && firstHook('buy_area', c1)) || G.consumeables).emplace(c1);
       else G.jokers.emplace(c1);
-      G.E_MANAGER.add_event(() => c1.calculate_joker({ buying_card: true, card: c1 }));
+      G.E_MANAGER.add_event(() => mod_context_effect(c1, c1.calculate_joker({ buying_card: true, card: c1 })));
     }
     G.GAME.round_scores.cards_purchased.amt += 1;
     if (c1.ability.set === 'Joker') G.GAME.current_round.jokers_purchased += 1;
-    for (const j of G.jokers.cards.slice()) j.calculate_joker({ buying_card: true, card: c1 });
+    for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ buying_card: true, card: c1 }));
     if (G.GAME.modifiers.inflation) {
       G.GAME.inflation += 1;
       G.E_MANAGER.add_event(() => { for (const a of G.areas) for (const c of a.cards) c.set_cost(); });
@@ -1721,7 +1719,7 @@ function buy_from_shop(c1, use) {
 }
 
 function toggle_shop() {
-  for (const j of G.jokers.cards.slice()) j.calculate_joker({ ending_shop: true });
+  for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ ending_shop: true }));
   G.E_MANAGER.add_event(() => {
     clear_area(G.shop_jokers);
     clear_area(G.shop_vouchers);
@@ -1834,7 +1832,7 @@ export function discard_cards_from_highlighted(hook) {
       draw_card(G.hand, (ACTIVE_MODS.length && firstHook('discard_destination', c)) || G.discard, 0, 'down', false, c);
     }
   }
-  if (destroyed_cards.length) for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: destroyed_cards });
+  if (destroyed_cards.length) for (const j of G.jokers.cards.slice()) mod_context_effect(j, eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: destroyed_cards }).jokers);
   G.GAME.round_scores.cards_discarded.amt += count;
   // Steamodded post_discard context (a Pokermon lovely patch), mod cards only.
   if (!hook && ACTIVE_MODS.length) calculate_context({ post_discard: true, full_hand: hl });
@@ -2008,7 +2006,7 @@ function applyAction(a) {
       can(c && (c.area === G.jokers || c.area === G.consumeables || (ACTIVE_MODS.length && c.area && callHook('action_area', c, 'sell').includes(true))), 'cannot sell that');
       can(c.can_sell_card(), 'cannot sell now');
       c.sell_card();
-      for (const j of G.jokers.cards.slice()) if (j !== c) j.calculate_joker({ selling_card: true, card: c });
+      for (const j of G.jokers.cards.slice()) if (j !== c) mod_context_effect(j, j.calculate_joker({ selling_card: true, card: c }));
       break;
     }
     case 'buy': {
@@ -2036,7 +2034,7 @@ function applyAction(a) {
     }
     case 'skip_booster': {
       can(inPack(), 'no pack open');
-      for (const j of G.jokers.cards.slice()) j.calculate_joker({ skipping_booster: true });
+      for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ skipping_booster: true }));
       if (ACTIVE_MODS.length) callHook('skip_booster'); // (a G.FUNCS.skip_booster wrap: a custom deck's money for skipping)
       end_consumeable();
       break;

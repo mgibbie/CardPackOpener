@@ -1551,9 +1551,9 @@ function mcSprite(layers, cls, scale = 1, title) {
   const img = [], bp = [], bs = [];
   for (const [atlas, pos] of layers) {
     const [file, aw, ah, w, hh] = MC_ATLAS[atlas];
-    img.push(`url("${MC_TEX + file}")`);
+    img.push(`url("${/^(\/|https?:)/.test(file) ? file : MC_TEX + file}")`); // (a mod atlas: its own absolute src)
     bp.push(`${-(pos.x || 0) * w * scale}px ${-(pos.y || 0) * hh * scale}px`);
-    bs.push(`${aw * scale}px ${ah * scale}px`);
+    bs.push(aw ? `${aw * scale}px ${ah * scale}px` : `auto`); // (a mod atlas without a known pixel size: natural 2x size)
   }
   return h('div', {
     class: 'mc-spr' + (scale === 1 || scale === 0.5 ? ' mc-px' : '') + (cls ? ' ' + cls : ''), title: title || null, role: 'img', 'aria-label': title || null,
@@ -1662,6 +1662,13 @@ async function micatroView() {
     h('div', { class: 'lp-grid mc-index' }, idx.map(([k, label, n, spr]) => h('a', { class: 'lp-tile mc-idx', href: '#/micatro/' + k },
       spr ? mcSprite([spr], 'mc-idx-spr', spr[0] === 'blind' || spr[0] === 'tags' || spr[0] === 'chips' ? 1 : 0.5) : h('span', { class: 'mc-idx-spr mc-idx-txt' }, '♠♥'),
       h('span', { class: 'mc-idx-txtwrap' }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count' }, n + ' entries'))))),
+    mcSection('Mods & features', 'Optional content packs and built-in extras.',
+      h('div', { class: 'lp-grid mc-feat' }, [
+        ['mods', 'Mods', 'Popular Balatro mods rebuilt natively — Pokermon, Bunco, More Fluff and more — switched on per run.'],
+        ['deck-editor', 'Deck editor', 'Build, share and play your own decks.'],
+        ['replays', 'Replays', 'Watch any finished run again, start to finish.'],
+        ['big-numbers', 'Big-number scoring', 'Scores past naneinf, up to 9.99e999.'],
+      ].map(([k, label, blurb]) => h('a', { class: 'lp-tile mc-featlink', href: '#/micatro/' + k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, blurb))))),
     mcSection('Getting there', null,
       h('ul', { class: 'mc-list' },
         h('li', null, h('b', null, 'Landing page: '), 'the Micatro tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micatro/' }, '/micatro/'), '.'),
@@ -1894,8 +1901,243 @@ async function micatroEnhancementsView() {
       h('div', { class: 'mc-grid' }, D.stickers.map(s => mcTile([['stickers', s.pos], ['Joker', joker]], s, [mcBadge('Sticker', MC_COL[s.key])])))));
 }
 
-function micatroRoute(sub) {
+// ---------- Micatro mods + native features (big numbers, deck editor, replays) ----------
+// Data: designwiki/data/micatro_mods.json (index: credits, options, systems, intended-design
+// fixes, counts, every mod atlas, the feature pages) and designwiki/data/micatro_mods/<id>.json
+// (one mod's content sections), generated from the mod modules by
+// tools/micatro/gen_designwiki_mods.mjs. Mod art is a CSS cell of the mod's own atlas
+// (/micatro/mods/<id>/assets/2x/..., the mod-art Pages project in production).
+let mcModsPromise = null;
+const mcModPromises = {};
+function loadMicatroMods() {
+  if (!mcModsPromise) mcModsPromise = fetch('data/micatro_mods.json' + CB).then(r => { if (!r.ok) throw new Error('micatro_mods.json ' + r.status); return r.json(); })
+    .then(D => { for (const [name, a] of Object.entries(D.atlases || {})) MC_ATLAS['@' + name] = [a.src, a.w, a.h, a.cw, a.ch]; return D; });
+  return mcModsPromise;
+}
+function loadMicatroMod(id) {
+  if (!mcModPromises[id]) mcModPromises[id] = loadMicatroMods().then(() => fetch('data/micatro_mods/' + encodeURIComponent(id) + '.json' + CB))
+    .then(r => { if (!r.ok) throw new Error(id + '.json ' + r.status); return r.json(); });
+  return mcModPromises[id];
+}
+/** replaceChildren that skips the null of an absent optional section (replaceChildren would print "null"). */
+const mcPut = (...nodes) => content.replaceChildren(...nodes.filter(n => n != null));
+const mcOn = (...seg) => { const p = location.hash.slice(1).split('?')[0].split('/').filter(Boolean); return p[0] === 'micatro' && seg.every((s, i) => (p[i + 1] || '') === s) && p.length === seg.length + 1; };
+const mcHashParam = k => new URLSearchParams(location.hash.split('?')[1] || '').get(k);
+const mcModBack = () => h('p', { class: 'lp-back' }, h('a', { href: '#/micatro' }, '← Micatro'), ' · ', h('a', { href: '#/micatro/mods' }, 'All mods'));
+/** Art layers of a generated item (['@atlas' | vanilla atlas, pos] top-most first), or a blank card. */
+function mcArt(it, cls) {
+  const layers = (it.art || []).filter(l => l && MC_ATLAS[l[0]]);
+  if (!layers.length) return h('div', { class: 'mc-spr mc-noart' + (it.sq ? ' sq' : ''), title: it.name }, '?');
+  return mcSprite(layers, cls || (it.chip ? 'mc-chip' : null), 1, it.name);
+}
+const mcPills = it => (it.pills || []).map(p => h('span', { class: 'mc-pill' + (p.cls ? ' mc-' + p.cls : '') + (p.off ? ' mc-off' : '') }, p.text));
+function mcModTile(it) {
+  return h('div', { class: 'mc-tile' + (it.edition ? ' mc-edtile' : ''), 'data-key': it.key, id: 'mc-' + it.key },
+    h('div', { class: 'mc-art' }, mcArt(it)),
+    h('div', { class: 'mc-nm' }, it.name),
+    h('div', { class: 'mc-badges' }, (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcCost(it.cost)),
+    mcDesc(it.lines, it.colours), mcInfo(it.info),
+    it.note ? h('div', { class: 'mc-note' }, it.note) : null,
+    it.pills && it.pills.length ? h('div', { class: 'mc-badges' }, mcPills(it)) : null);
+}
+function mcModRow(it) {
+  return h('div', { class: 'mc-row' + (it.chip ? ' mc-blind' : ''), 'data-key': it.key, id: 'mc-' + it.key, style: it.colour ? 'border-left-color:' + it.colour : null },
+    it.art ? mcArt(it) : null,
+    h('div', { class: 'mc-row-body' },
+      h('div', { class: 'mc-nm' }, it.name, (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcPills(it),
+        it.colour ? h('span', { class: 'mc-swatch', style: 'background:' + it.colour }) : null),
+      it.lines && it.lines.length ? mcDesc(it.lines, it.colours) : h('div', { class: 'mc-desc muted' }, 'No effect.'), mcInfo(it.info)));
+}
+function mcModHand(it) {
+  return h('div', { class: 'mc-hand', 'data-key': it.key, id: 'mc-' + it.key },
+    h('div', { class: 'mc-hand-info' },
+      h('div', { class: 'mc-nm' }, it.name, it.secret ? h('span', { class: 'mc-pill' }, 'Secret') : null),
+      h('div', { class: 'mc-score' }, h('span', { class: 'mc-chipsbox' }, it.chips), ' × ', h('span', { class: 'mc-multbox' }, it.mult)),
+      h('div', { class: 'mc-note' }, 'Per level: ', h('b', { style: 'color:' + MC_COL.chips }, '+' + it.lChips + ' Chips'), ' ', h('b', { style: 'color:' + MC_COL.mult }, '+' + it.lMult + ' Mult')),
+      mcDesc(it.lines)));
+}
+const mcPlural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+const MC_SECTION_UNIT = { jokers: ['joker', 'jokers'], vouchers: ['voucher', 'vouchers'], boosters: ['pack', 'packs'], decks: ['deck', 'decks'], tags: ['tag', 'tags'], blinds: ['blind', 'blinds'], stakes: ['stake', 'stakes'] };
+
+async function micatroModsView() {
+  content.replaceChildren(h('h1', null, 'Micatro Mods'), h('p', { class: 'muted' }, 'Loading…'));
+  let D; try { D = await loadMicatroMods(); } catch (e) { content.replaceChildren(h('h1', null, 'Micatro Mods'), h('p', { class: 'muted' }, 'Could not load the mod data.')); return; }
+  if (!mcOn('mods')) return;
+  const total = D.mods.reduce((n, m) => n + m.total, 0);
+  mcPut(mcBack(),
+    mcHead('Mods', D.mods.length, 'mods', 'Popular Balatro mods, rebuilt natively for Micatro — every card, rule and number from the original, with their bugs fixed the way their authors meant. ' + total.toLocaleString('en-US') + ' cards and more in all.'),
+    mcSection('Turning mods on', null, h('ul', { class: 'mc-list' },
+      h('li', null, h('b', null, 'Per run. '), 'On the New Run screen, open ', h('b', null, 'Mods'), ' and switch on the ones you want for that run. A mod that is off is gone: none of its cards, rules or art. Mods that need another mod (Pokermon add-ons, Þe Autumn Circus) switch it on with them.'),
+      h('li', null, h('b', null, 'Options. '), 'Some mods have options (Pokermon’s generations, BETMMA’s per-voucher toggles, Bunco’s reworks) under their name in the Mods panel; each mod page lists them with their defaults.'),
+      h('li', null, h('b', null, 'Saved with the run. '), 'The chosen mods and options are part of the run, so resuming, ', h('a', { href: '#/micatro/replays' }, 'replays'), ' and spectators load exactly the same set. Modded runs go on the leaderboard’s Modded tab.'),
+      h('li', null, h('b', null, 'Art. '), 'A mod’s art downloads only when a run turns it on.'))),
+    h('div', { class: 'mc-modgrid' }, D.mods.map(m => h('a', { class: 'lp-tile mc-modcard', href: '#/micatro/mod/' + m.id, 'data-mod': m.id, style: m.badge ? 'border-top:4px solid ' + m.badge : null },
+      h('div', { class: 'mc-modcard-top' },
+        m.cover ? mcSprite(m.cover.art.filter(l => MC_ATLAS[l[0]]), 'mc-modcover', m.cover.sq ? 1 : 0.5, m.name) : null,
+        h('div', null, h('span', { class: 'lp-name' }, m.name), h('div', { class: 'mc-note mc-by' }, m.by))),
+      h('div', { class: 'mc-moddesc' }, m.description),
+      h('div', { class: 'lp-meta' }, h('span', { class: 'lp-count' }, m.total + ' entries' + (m.fixes.length ? ' · ' + m.fixes.length + ' fixes' : '')),
+        m.requires.length ? h('span', { class: 'mc-pill' }, 'Needs ' + m.requires.map(r => (D.mods.find(x => x.id === r) || { name: r }).name).join(', ')) : null)))));
+}
+
+let mcModQ = '', mcModQId = null;
+async function micatroModView(id) {
+  if (mcModQId !== id) { mcModQ = ''; mcModQId = id; } // the search box belongs to one mod page
+  content.replaceChildren(h('h1', null, 'Micatro mod'), h('p', { class: 'muted' }, 'Loading…'));
+  let D, M;
+  try { [D, M] = await Promise.all([loadMicatroMods(), loadMicatroMod(id)]); } catch (e) { if (mcOn('mod', id)) notFound(); return; }
+  if (!mcOn('mod', id)) return;
+  const m = D.mods.find(x => x.id === id);
+  if (!m) return notFound();
+  const nameOf = r => (D.mods.find(x => x.id === r) || { name: r }).name;
+  const dependents = D.mods.filter(x => x.requires.includes(id));
+  const body = h('div');
+  const count = h('div', { class: 'result-count' });
+  const total = M.sections.reduce((n, s) => n + s.items.length, 0);
+  const draw = () => {
+    const q = mcModQ.trim().toLowerCase();
+    const match = it => !q || (it.name + ' ' + (it.lines || []).join(' ') + ' ' + (it.badges || []).map(b => b.label).join(' ')).replace(/\{[^}]*\}/g, '').toLowerCase().includes(q);
+    let shown = 0;
+    body.replaceChildren(...M.sections.map(s => {
+      const items = s.items.filter(match);
+      shown += items.length;
+      if (!items.length) return null;
+      const list = s.kind === 'row' ? h('div', { class: 'mc-rows' }, items.map(mcModRow))
+        : s.kind === 'hand' ? h('div', { class: 'mc-hands' }, items.map(mcModHand))
+          : h('div', { class: 'mc-grid' }, items.map(mcModTile));
+      return h('section', { class: 'lp-tier', id: 'mcs-' + s.id, 'data-section': s.id },
+        h('div', { class: 'lp-tier-head' }, h('h2', null, s.title, ' ', h('span', { class: 'num' }, '(' + (q ? items.length + ' of ' : '') + s.items.length + ')')), s.blurb ? h('p', { class: 'muted' }, s.blurb) : null), list);
+    }));
+    if (!shown) body.replaceChildren(h('p', { class: 'muted' }, 'Nothing matches.'));
+    count.replaceChildren(String(shown), h('span', null, ' of ' + total + ' entries'));
+  };
+  const search = h('input', { type: 'search', class: 'mc-search', placeholder: 'Search ' + m.name + ' (name or text)…', value: mcModQ, autocomplete: 'off' });
+  search.oninput = () => { mcModQ = search.value; draw(); };
+  const jump = h('div', { class: 'mc-jump' }, M.sections.map(s => h('button', { type: 'button', class: 'mc-jumpbtn', onclick: () => { const el = document.getElementById('mcs-' + s.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, s.title + ' ', h('b', null, s.items.length))));
+  const fixes = m.fixes || [];
+  const optRows = (m.options || []).map(o => h('tr', null, h('td', null, h('b', null, o.label), o.desc ? h('div', { class: 'mc-note mc-left' }, o.desc) : null),
+    h('td', null, o.type === 'bool' ? (o.default ? 'On' : 'Off') : String(o.default))));
+  mcPut(mcModBack(),
+    h('div', { class: 'mc-hero mc-modhero', style: m.badge ? 'border-left:6px solid ' + m.badge : null },
+      h('div', null,
+        h('h1', null, m.name, m.version ? h('span', { class: 'num' }, ' v' + m.version) : null),
+        h('p', { class: 'mc-by' }, 'By ', h('b', null, m.by)),
+        h('p', null, m.description),
+        h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'New Run → Mods → ' + m.name))),
+      m.cover ? h('div', { class: 'mc-hero-art' }, mcSprite(m.cover.art.filter(l => MC_ATLAS[l[0]]), null, 1, m.name)) : null),
+    jump,
+    mcSection('About this mod', null, h('ul', { class: 'mc-list' },
+      h('li', null, h('b', null, 'Credits. '), 'The original Balatro mod is by ', h('b', null, m.by.replace(/\s*\(rebuilt for Micatro\)\s*$/, '')), '. Micatro’s version is a native rebuild of it — same cards, numbers, rules and art, written for Micatro’s engine instead of loaded through Steamodded.'),
+      h('li', null, h('b', null, 'Turning it on. '), 'New Run → ', h('b', null, 'Mods'), ' → ', m.name, '. It is off by default and lasts for that run only; off means gone (no cards, rules or art).',
+        m.requires.length ? [' It needs ', m.requires.map(r => h('a', { href: '#/micatro/mod/' + r }, nameOf(r))), ', which switches on with it.'] : null,
+        dependents.length ? [' Add-ons for it: ', dependents.map((x, i) => [i ? ', ' : '', h('a', { href: '#/micatro/mod/' + x.id }, x.name)]), '.'] : null,
+        m.optional.length ? [' Extra cards appear when it is combined with ', m.optional.map((r, i) => [i ? ', ' : '', h('a', { href: '#/micatro/mod/' + r }, nameOf(r))]), '.'] : null),
+      m.size ? h('li', null, h('b', null, 'Download. '), m.size + ', fetched only when a run turns it on.') : null,
+      m.unported ? h('li', null, h('b', null, 'Not in pools. '), mcPlural(m.unported, 'card the original registers is', 'cards the original registers are'), ' disabled there and stay out of Micatro’s pools too.') : null)),
+    m.systems.length ? mcSection('What it adds', null, h('ul', { class: 'mc-list' }, m.systems.map(s => h('li', null, s)))) : null,
+    optRows.length ? mcSection('Options', 'Set per run in the Mods panel. Defaults are the mod’s own shipped config.',
+      h('div', { class: 'mc-scroll mc-opts' }, h('table', null, h('thead', null, h('tr', null, h('th', null, 'Option'), h('th', null, 'Default'))), h('tbody', null, optRows)))) : null,
+    fixes.length ? mcSection('Fixed as the author intended', 'Bugs in the shipped mod that Micatro fixes the way its text and author meant (each pinned by a regression test). From the rebuild’s source notes.',
+      h('details', { class: 'mc-fixes', open: fixes.length <= 8 ? '' : null },
+        h('summary', null, mcPlural(fixes.length, 'fix', 'fixes')),
+        h('ol', { class: 'mc-list' }, fixes.map(f => h('li', null, f.text, ' ', h('span', { class: 'mc-file' }, f.file)))))) : null,
+    m.notPorted ? mcSection('Left out', null, h('p', { class: 'muted mc-left' }, m.notPorted)) : null,
+    h('div', { class: 'gallery-heading mc-modcontent' }, h('div', null, h('h2', null, 'Content'), h('p', { class: 'muted' }, 'Every card the mod adds, with its base values (the text is the game’s own).')), count),
+    h('div', { class: 'mc-filters' }, search),
+    body);
+  draw();
+  const want = mcHashParam('item');
+  if (want) {
+    const el = document.getElementById('mc-' + want);
+    if (el) { el.classList.add('mc-hl'); el.scrollIntoView({ block: 'center' }); }
+  }
+}
+
+async function mcFeatureData(title, sub) {
+  content.replaceChildren(h('h1', null, title), h('p', { class: 'muted' }, 'Loading…'));
+  try { const D = await loadMicatroMods(); return mcOn(sub) ? D.features : null; }
+  catch (e) { content.replaceChildren(h('h1', null, title), h('p', { class: 'muted' }, 'Could not load the Micatro data.')); return null; }
+}
+const mcTable = (head, rows) => h('div', { class: 'mc-scroll' }, h('table', null, h('thead', null, h('tr', null, head.map(c => h('th', null, c)))), h('tbody', null, rows.map(r => h('tr', null, r.map(c => h('td', null, c)))))));
+
+async function micatroBigNumbersView() {
+  const F = await mcFeatureData('Big-number scoring', 'big-numbers'); if (!F) return;
+  const B = F.bignum;
+  mcPut(mcBack(),
+    mcHead('Big-number scoring', null, null, 'Scores past Balatro’s limit — in every run, vanilla or modded.'),
+    mcSection('What it does', null, h('ul', { class: 'mc-list' },
+      h('li', null, 'Balatro keeps the score in an ordinary floating-point number, which runs out at about 1.8e308: past that the score becomes infinity and the game shows ', h('b', null, 'naneinf'), '.'),
+      h('li', null, 'Micatro keeps going. Chips, Mult, hand scores, the round score and Blind targets can all reach ', h('b', null, '9.99e' + (B.maxExp - 1)), '. Only at 1e' + B.maxExp + ' does a score become infinity (“naneinf”).'),
+      h('li', null, 'It is built into the base game, not a mod: it replaces the InfiniteScore / Talisman mods Balatro players use. Scores below 1e308 are calculated exactly as before, so ordinary runs (and their replays) are unchanged.'),
+      h('li', null, 'Big numbers are shown like Balatro shows large scores — 3 decimals and an exponent (', h('b', null, '1.234e450'), '). An exponent too long to fit is shortened again (', h('b', null, '1.000e1.234e43'), ').'),
+      h('li', null, 'Saves, ', h('a', { href: '#/micatro/replays' }, 'replays'), ' and spectators keep the exact value. The leaderboard ranks a big score above every ordinary one, and naneinf above everything.'))),
+    mcSection('How numbers are shown', 'Straight from the game’s own number formatter.',
+      mcTable(['Value', 'Shown as', ''], B.examples.map(x => [x.value, h('b', null, x.shown), x.big ? h('span', { class: 'mc-pill' }, 'big number') : '']))),
+    mcSection('Where it matters', null, h('p', null, 'Exponential builds — long X Mult stacks, retrigger chains, and mods with X Chips or ^Mult jokers such as ', h('a', { href: '#/micatro/mod/morefluff' }, 'More Fluff'), ' — can pass 1e308, especially deep into Endless mode. Blind targets keep scaling with the Ante too, so the Endless climb goes on instead of stalling at naneinf.')));
+}
+
+async function micatroDeckEditorView() {
+  const F = await mcFeatureData('Deck editor', 'deck-editor'); if (!F) return;
+  const E = F.deckeditor;
+  const range = p => p.min + ' – ' + p.max + (p.step ? ' (step ' + p.step + ')' : '');
+  const kind = r => ({ bool: 'On / off', pct: 'Chance %', int: 'Number', num: 'Number' }[r.kind] || r.kind);
+  mcPut(mcBack(),
+    mcHead('Deck editor', null, null, 'Build your own deck — starting cards, money, slots, Jokers, Vouchers, bans and house rules — and play it, share it, or rank with it.'),
+    mcSection('Using it', null, h('ul', { class: 'mc-list' },
+      h('li', null, h('b', null, 'Where. '), 'New Run → ', h('b', null, 'Custom deck'), ' opens your Custom Decks: your saved decks plus built-in examples, each with Use / Edit / Copy / Share / Delete, and New deck / Import.'),
+      h('li', null, h('b', null, 'The editor. '), 'Tabs: ', h('b', null, 'Deck'), ' (name, back art, starting numbers) · ', h('b', null, 'Cards'), ' (the starting deck: presets, add / duplicate / remove cards with rank, suit, enhancement, edition and seal) · ', h('b', null, 'Items'), ' (starting Jokers, consumables, Vouchers and Tags — mod cards too) · ', h('b', null, 'Bans'), ' · ', h('b', null, 'Rules'), ' (house rules, below) · ', h('b', null, 'Share'), '. Mouse, touch and controller all work.'),
+      h('li', null, h('b', null, 'Saving & sharing. '), 'Decks are saved on your account when you are signed in (otherwise in this browser). Share copies an ', h('b', null, 'MCD1.'), ' code a friend can import.'),
+      h('li', null, h('b', null, 'Runs. '), 'A custom deck is part of the run, so resume, ', h('a', { href: '#/micatro/replays' }, 'replays'), ' and spectating rebuild the very same run. Custom-deck runs rank on the leaderboard’s Modded tab. Every random rule uses the run’s seed, so a seeded custom run is repeatable.'),
+      h('li', null, h('b', null, 'Origin. '), 'A rebuild of Nyoxide’s ', h('b', null, 'Deck Creator'), ' (1.2.2) mod as a built-in Micatro feature.'))),
+    E.examples.length ? mcSection('Example decks', 'Shown in every player’s Custom Decks list.', h('div', { class: 'mc-rows' }, E.examples.map(x => h('div', { class: 'mc-row', 'data-key': x.id },
+      h('div', { class: 'mc-row-body' }, h('div', { class: 'mc-nm' }, x.name, h('span', { class: 'mc-pill' }, 'by ' + x.by), x.mods.map(id => h('a', { class: 'mc-pill', href: '#/micatro/mod/' + id }, id))),
+        h('div', { class: 'mc-desc mc-left' }, x.desc, x.jokers.length ? [h('br'), 'Jokers: ', x.jokers.join(', ')] : null, x.vouchers.length ? [h('br'), 'Vouchers: ', x.vouchers.join(', ')] : null)))))) : null,
+    mcSection('Starting numbers', 'The Deck tab. Defaults are a standard run’s.', E.params.flatMap(g => [h('h3', { class: 'mc-h3' }, g.group), mcTable(['Setting', 'Default', 'Range'], g.items.map(p => [p.label, String(p.default), range(p)]))])),
+    mcSection('Starting deck presets', null, h('p', null, E.presets.join(' · '), '. Up to ' + E.limits.cards + ' cards.')),
+    mcSection('House rules', 'The Rules tab: Deck Creator’s rule options, all off by default.', E.rules.flatMap(g => [h('h3', { class: 'mc-h3' }, g.group + ' (' + g.items.length + ')'), mcTable(['Rule', 'Type'], g.items.map(r => [r.label, kind(r)]))])),
+    E.fixes.length ? mcSection('Fixed from Deck Creator', 'Options that did not work as labelled in the original, and work here.', h('ul', { class: 'mc-list' }, E.fixes.map(f => h('li', null, f)))) : null,
+    mcSection('Not carried over', null, mcTable(['Deck Creator option', 'Why'], E.skipped.map(s => [s.key, s.why]))),
+    mcSection('Limits', null, h('p', { class: 'muted' }, 'Name ' + E.limits.name + ' characters · description ' + E.limits.desc + ' · ' + E.limits.cards + ' cards · ' + E.limits.jokers + ' Jokers · ' + E.limits.consumables + ' consumables · ' + E.limits.vouchers + ' Vouchers · ' + E.limits.tags + ' Tags · ' + E.limits.bans + ' bans · ' + E.limits.mods + ' mods.')));
+}
+
+async function micatroReplaysView() {
+  const F = await mcFeatureData('Replays', 'replays'); if (!F) return;
+  const R = F.replays;
+  mcPut(mcBack(),
+    mcHead('Replays', null, null, 'Watch any finished run again, from the first blind to the last hand — yours or a friend’s.'),
+    mcSection('What a replay is', null, h('ul', { class: 'mc-list' },
+      h('li', null, 'Always a ', h('b', null, 'whole run'), ': from the first blind to the game over, the win, or the end of Endless — never a single round.'),
+      h('li', null, 'Micatro is deterministic, so a replay is just the run’s recipe (seed, deck, stake, mods and their options, custom deck) plus every action you took. The game plays it back exactly like live play, and a replay costs only a few KB.'),
+      h('li', null, 'Recorded automatically at the game over and at the win. A win you carry on into Endless is recorded again at its game over under the same link, so the link always shows the whole run.'))),
+    mcSection('Finding replays', null, h('ul', { class: 'mc-list' },
+      h('li', null, h('b', null, 'Main menu → Replays: '), 'your last ' + R.localMax + ' runs on this device (watch, copy link, delete).'),
+      h('li', null, h('b', null, 'Game over / win screen: '), 'Watch replay, and (signed in) Copy replay link.'),
+      h('li', null, h('b', null, 'Leaderboard: '), 'a ▶ on a row plays the run that set that score.'),
+      h('li', null, h('b', null, 'Friends: '), 'watching a friend’s run that just ended offers “▶ Watch the full run”.'),
+      h('li', null, h('b', null, 'Links: '), h('code', null, '/mr/<id>'), ' (short) or ', h('code', null, '/micatro/?replay=<id>'), '. Signed-in players’ replays are uploaded and kept for 30 days.'))),
+    mcSection('Watching', null,
+      mcTable(['Control', 'Does'], [
+        ['⏮ / ⏭', 'Jump to the start / the end'],
+        ['◀ / ▶ (step)', 'One action back / forward'],
+        ['Play / pause', 'Play at 1×, 2× or 4× speed'],
+        ['Scrubber', 'Drag anywhere; ticks mark each blind, ante marks and a star for the win'],
+        [kbdList('Space'), 'Play / pause'],
+        [kbdList('←', '→'), 'Step back / forward'],
+        [kbdList('Home', 'End'), 'Start / end'],
+        ['Controller', 'LB / RB step, Y play / pause; the bar’s buttons are reachable with the reticle'],
+      ]),
+      h('p', { class: 'muted' }, 'The bar tucks away while playing. At the end the replay checks itself against the recorded result: if the game has changed since the run was played, it says the replay was recorded on an older version and may play out differently.')),
+    mcSection('Limits', null, h('p', { class: 'muted' }, 'Up to ' + R.actionsMax.toLocaleString('en-US') + ' actions and ' + Math.round(R.packedMax / 1000) + ' KB packed per run. Mods and custom decks load exactly as recorded.')));
+}
+const kbdList = (...k) => k.map((x, i) => [i ? ' / ' : '', h('kbd', null, x)]).flat();
+
+function micatroRoute(sub, id) {
   switch (sub || '') {
+    case 'mods': return micatroModsView();
+    case 'mod': return id ? micatroModView(id) : micatroModsView();
+    case 'big-numbers': return micatroBigNumbersView();
+    case 'deck-editor': return micatroDeckEditorView();
+    case 'replays': return micatroReplaysView();
     case '': return micatroView();
     case 'jokers': return micatroJokersView();
     case 'consumables': return micatroConsumablesView();
@@ -2716,7 +2958,7 @@ function route() {
   if (section === 'contraptions') return contraptionsView();
   if (section === 'dungeons') return dungeonsView();
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
-  if (section === 'micatro') return micatroRoute(id);
+  if (section === 'micatro') return micatroRoute(id, parts[2]);
   notFound();
 }
 

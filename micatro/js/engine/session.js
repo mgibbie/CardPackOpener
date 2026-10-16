@@ -14,12 +14,15 @@ const SAVE_KEY = 'micatro_run_v1';
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
 
-  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null } = {}) {
-    newRun({ seed, back, stake, mods, modOptions, customDeck });
+  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null } = {}) {
+    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
     // A custom deck (the deck editor): its validated definition is part of the recipe, so a resume /
     // replay / spectator rebuilds exactly this run.
     if (G.GAME.custom_deck) this.recipe.customDeck = G.GAME.custom_deck;
+    // A challenge (engine/challenge.js, played at stake 1) / a deck sleeve (engine/sleeve.js): by id.
+    if (G.GAME.challenge) { this.recipe.challenge = G.GAME.challenge; this.recipe.stake = G.GAME.stake; }
+    if (G.GAME.selected_sleeve) this.recipe.sleeve = G.GAME.selected_sleeve;
     this.events = G.ui_events.splice(0);
     this.save();
     return this.events;
@@ -42,7 +45,7 @@ export class Session {
   /** Rebuild from a recipe. Stops at the first action the engine rejects. */
   static fromRecipe(recipe) {
     const s = new Session();
-    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null });
+    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null });
     s.recipe = { ...recipe, actions: [] };
     for (const a of recipe.actions || []) {
       const r = act(a);
@@ -112,7 +115,7 @@ export class ReplayStepper {
   /** Back to the run's first view. Returns the run-start UI events. */
   reset() {
     const r = this.recipe;
-    newRun({ seed: r.seed, back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null });
+    newRun({ seed: r.seed, back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null });
     this.index = 0;
     this.error = null;
     this.startEvents = G.ui_events.splice(0);

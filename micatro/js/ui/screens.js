@@ -1,10 +1,13 @@
 // Menus and modal screens: main menu, new-run setup (deck + stake + seed),
 // leaderboard, how-to-play, run info (poker hands / blinds / vouchers), options,
 // deck viewer, game over / win. All draw from plain view data.
-import { cellEl, drawCell, CENTERS, BLINDS, LOC, STAKE_LIST, BACK_LIST, TAGS, MODREG, cssColour, drawModCell, onModAtlas } from './assets.js';
-import { composeFace, FACE_W, FACE_H } from './cardsprite.js';
+import { cellEl, drawCell, CENTERS, CARDS, BLINDS, LOC, STAKE_LIST, BACK_LIST, TAGS, MODREG, cssColour, drawModCell, onModAtlas } from './assets.js';
+import { composeFace, FACE_W, FACE_H, soulLayer, drawSoul } from './cardsprite.js';
 import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
+import { all as modAll } from './modui.js';
+import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
+import { stickersShown, setStickersShown } from './stickers.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', (e) => { sound.play('button'); fn(e); }); return b; };
@@ -51,6 +54,7 @@ export function mainMenu(o) {
   bar.appendChild(btn('Leader<br>board', 'green big b-leaders', () => leaderboard(o.net)));
   bar.appendChild(btn('How to<br>play', 'red big b-howto', () => howTo()));
   if (o.replays) bar.appendChild(btn('Replays', 'orange big b-replays', () => replaysList(o.replays)));
+  if (o.challenges) bar.appendChild(btn('Chal&shy;lenges', 'red big b-challenges', () => challengesScreen(o)));
   el.appendChild(bar);
   const foot = h('div', 'menu-foot');
   foot.appendChild(h('a', 'back-link', o.direct ? '← Back to the overworld' : '← Magepunk'));
@@ -72,12 +76,36 @@ export function mainMenu(o) {
   requestAnimationFrame(spin);
 }
 
+/** What a mod UI module gets to draw its screens with (ui/modui.js: Pokermon's Pokédex). */
+export function modApi() {
+  return { modal, closeModal, cardCanvas: liveCard, markup, esc, fmt, btn };
+}
+
+/** A card canvas that redraws itself once its mod art has loaded (screens built before the atlas arrived). */
+export function liveCard(d, cls, backKey) {
+  const c = cardCanvas(d, cls, backKey);
+  const want = new Set([d.atlas, d.front_atlas, d.back_atlas].filter(Boolean));
+  if (want.size) {
+    const off = onModAtlas((name) => {
+      if (!c.isConnected && c._drawn) { off(); return; }
+      if (want.has(name)) { c._drawn = true; drawStill(c.getContext('2d'), d, backKey); }
+    });
+  }
+  return c;
+}
+
 export function cardCanvas(d, cls, backKey) {
   const c = document.createElement('canvas');
   c.width = FACE_W; c.height = FACE_H;
   c.className = 'mini-card ' + (cls || '');
-  composeFace(c.getContext('2d'), d, backKey);
+  drawStill(c.getContext('2d'), d, backKey);
   return c;
+}
+/** A still card: the face plus its floating layer (legendaries, The Soul, a Mega Pokémon's sprite) flattened on. */
+function drawStill(ctx, d, backKey) {
+  composeFace(ctx, d, backKey, { collection: true });
+  const soul = soulLayer(d);
+  if (soul) drawSoul(ctx, soul);
 }
 
 // ------------------------------------------------------- new run setup
@@ -155,7 +183,7 @@ export function newRunScreen(o) {
     mrow.appendChild(h('span', 'nr-mods-l', 'Mods'));
     modsSum = h('span', 'nr-mods-sum');
     mrow.appendChild(modsSum);
-    mrow.appendChild(btn('Mods', 'green b-mods', () => modsPanel(msel, () => { drawMods(); refreshBacks(msel); refreshStakes(msel); draw(); })));
+    mrow.appendChild(btn('Mods', 'green b-mods', () => modsPanel(msel, () => { drawMods(); refreshBacks(msel); refreshStakes(msel); refreshSleeves(msel); draw(); })));
     el.appendChild(mrow);
   }
   function drawMods() {
@@ -181,8 +209,50 @@ export function newRunScreen(o) {
     left.disabled = right.disabled = !!csel;
   }
   drawC();
+  // deck sleeve (CardSleeves, engine/sleeve.js): a deck variant from the selected mods, put on top of the
+  // deck above; part of the run recipe. The last pick is remembered per player.
+  const SL_KEY = 'micatro_sleeve_v1:' + (o.me || 'guest');
+  let slKey = null;
+  try { slKey = localStorage.getItem(SL_KEY) || null; } catch (e) { slKey = null; }
+  let sleeves = [];
+  const srow = h('div', 'nr-row nr-sleeve');
+  const cycle = (dir) => {
+    const keys = [null, ...sleeves.map((x) => x.key)];
+    const i = Math.max(0, keys.indexOf(slKey));
+    slKey = keys[(i + dir + keys.length) % keys.length];
+    drawS();
+  };
+  const sll = btn('‹', 'arrow red b-sleeve-prev', () => cycle(-1));
+  const slr = btn('›', 'arrow red b-sleeve-next', () => cycle(1));
+  const sleeveView = h('div', 'nr-sleeveview');
+  const sleeveInfo = h('div', 'nr-info');
+  srow.append(sll, sleeveView, sleeveInfo, slr);
+  el.insertBefore(srow, deckRow.nextSibling);
+  function refreshSleeves(sel) {
+    const ids = modsApi ? sel.ids.filter((id) => modsApi.isLoaded(id)) : [];
+    sleeves = o.sleeves && ids.length ? o.sleeves.list(modsApi.withRequirements(ids), sel.options) : [];
+  }
+  function drawS() {
+    srow.style.display = sleeves.length && !csel ? '' : 'none';
+    const s = sleeves.find((x) => x.key === slKey) || null;
+    sleeveView.innerHTML = '';
+    if (!s) {
+      sleeveView.appendChild(h('div', 'nr-nosleeve', 'No<br>sleeve'));
+      sleeveInfo.innerHTML = `<div class="nr-name">No Sleeve</div><div class="nr-desc">${sleeves.length} sleeve${sleeves.length === 1 ? '' : 's'} from your mods — put one on the deck for a variant.</div>`;
+      return;
+    }
+    const info = o.sleeves.info(s, backs[bi] && backs[bi].key);
+    const c = document.createElement('canvas');
+    c.className = 'nr-sleeve-art'; c.width = 146; c.height = 190;
+    const paint = () => { const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); drawModCell(ctx, s.atlas, s.pos, 0, 0, c.width, c.height); };
+    paint();
+    const off = onModAtlas((name) => { if (name === s.atlas) { paint(); off(); } });
+    sleeveView.appendChild(c);
+    sleeveInfo.innerHTML = `<div class="nr-name">${esc(info.name)}${info.alt ? ' <span class="mod-preview nr-alt" title="Paired with this deck">+ deck</span>' : ''} ${modBadges([s.mod])}</div><div class="nr-desc">${info.lines.map(markup).join('<br>')}</div>`;
+  }
+  refreshSleeves(msel);
   // decks of saved-on mods appear once those mods have loaded
-  if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); if (el.isConnected) draw(); }).catch(() => {});
+  if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); refreshSleeves(msel); if (el.isConnected) draw(); }).catch(() => {});
   const play = btn('Play', 'blue big wide b-start', () => {
     const back = backs[bi].key;
     const st = stakes[si] || stakes[0];
@@ -194,10 +264,14 @@ export function newRunScreen(o) {
     for (const id of mods) if (msel.options[id]) modOptions[id] = { ...msel.options[id] };
     closeAll();
     const cdeck = csel ? { customDeck: csel.def } : {};
+    const sl = !csel && slKey && sleeves.some((x) => x.key === slKey) ? slKey : null;
+    try { if (slKey) localStorage.setItem(SL_KEY, slKey); else localStorage.removeItem(SL_KEY); } catch (e) { /* ignore */ }
+    if (sl) cdeck.sleeve = sl;
     o.onNew(mods.length ? { back, stake, seed, mods, modOptions, ...cdeck } : { back, stake, seed, ...cdeck });
   });
   el.appendChild(play);
   function draw() {
+    drawS();
     const b = backs[bi];
     deckView.innerHTML = '';
     if (b.mod) {
@@ -385,6 +459,17 @@ export function runInfo(view) {
     });
     b.dataset.k = 'mod:' + t.key; tabs.appendChild(b);
   }
+  // Mod UI tabs (ui/modui.js runInfoTabs: Pokermon's Pokédex — the controller's way in)
+  for (const t of modAll('runInfoTabs', view)) {
+    const b = btn(t.label, 'red tab b-ri-' + t.key, () => {
+      for (const x of tabs.children) x.classList.toggle('on', x === b);
+      body.innerHTML = '';
+      try { t.render(body, modApi()); } catch (e) { console.warn('micatro: mod tab', e); body.innerHTML = '<div class="muted">Unavailable.</div>'; }
+    });
+    b.dataset.k = 'modui:' + t.key; tabs.appendChild(b);
+  }
+  if (view.challenge) el.appendChild(h('div', 'ri-mods ri-challenge', `<span class="muted">Challenge</span> <b class="attn">${esc(view.challenge.name)}</b>`));
+  if (view.sleeve) el.appendChild(h('div', 'ri-mods ri-sleeve', `<span class="muted">Sleeve</span> <b class="attn">${esc(view.sleeve.name)}</b>`));
   if (view.mods && view.mods.length) el.appendChild(h('div', 'ri-mods', `<span class="muted">Mods</span> ${modBadges(view.mods)}`));
   if (view.custom_deck) el.appendChild(h('div', 'ri-mods ri-cdeck', `<span class="muted">Custom deck</span> <b class="attn">${esc(view.custom_deck.name)}</b>`));
   el.append(tabs, body);
@@ -424,6 +509,10 @@ export function options(o) {
   row('Game speed', [[1, '1×'], [2, '2×'], [4, '4×']], o.speed, o.onSpeed);
   row('Sound', [[true, 'On'], [false, 'Off']], sound.sfx, (v) => sound.setSfx(v));
   row('Music', [[true, 'On'], [false, 'Off']], sound.music, (v) => sound.setMusic(v));
+  // Balatro's "Display stickers": the jokers' win stickers on the table (ui/stickers.js)
+  row('Stake stickers', [[true, 'On'], [false, 'Off']], stickersShown(), (v) => setStickersShown(v));
+  const sk = skinsBox();
+  if (sk) el.appendChild(sk);
   if (o.mods && o.mods.length) el.appendChild(activeModsBox(o.mods, o.modOptions || {}));
   const acts = h('div', 'opt-acts');
   if (o.onNewRun) acts.appendChild(btn('New Run', 'blue wide', () => { closeAll(); o.onNewRun(); }));
@@ -433,6 +522,54 @@ export function options(o) {
   acts.appendChild(back);
   el.appendChild(acts);
   modal(el, { title: 'Options', cls: 'opt-modal' });
+}
+
+// ------------------------------------------------------------ deck skins
+// Options > Card skins (ui/skins.js): per suit, the face cards' art from the mods that ship skins
+// (Pokermon's RBY / GSC sprites, Bunco's). Cosmetic, remembered per player; changes show at once.
+const SUIT_PREVIEW = { Spades: 'S', Hearts: 'H', Clubs: 'C', Diamonds: 'D' };
+function skinPreview(suit, rank) {
+  const c = document.createElement('canvas');
+  c.width = FACE_W; c.height = FACE_H; c.className = 'mini-card sk-card';
+  const ctx = c.getContext('2d');
+  drawCell(ctx, 'centers', { x: 1, y: 0 }, 0, 0, FACE_W, FACE_H);
+  const L = SUIT_PREVIEW[suit];
+  const d = L ? { front: L + '_' + rank } : { front: suit + '_' + rank, front_suit: suit };
+  const pos = L && CARDS[d.front] ? CARDS[d.front].pos : null;
+  if (!drawSkinFront(ctx, d, pos, FACE_W, FACE_H) && pos) drawCell(ctx, 'cards_1', pos, 0, 0, FACE_W, FACE_H);
+  return c;
+}
+function skinsBox() {
+  const box = h('div', 'skins-box');
+  box.appendChild(h('div', 'am-title', 'Card skins'));
+  const rows = h('div', 'sk-rows');
+  box.appendChild(rows);
+  const draw = () => {
+    rows.innerHTML = '';
+    box.style.display = skinSuits().length ? '' : 'none'; // (the lists load at boot; shown once they have)
+    for (const { suit, name } of skinSuits()) {
+      const ch = choicesFor(suit);
+      const cur = choiceFor(suit);
+      let i = Math.max(0, ch.findIndex((x) => cur && x.skin === cur.skin && x.palette === cur.palette));
+      const r = h('div', 'sk-row');
+      r.dataset.suit = suit;
+      r.appendChild(h('div', 'sk-suit', esc(name)));
+      const set = (j) => { const x = ch[(j + ch.length) % ch.length]; setSkin(suit, x.skin, x.palette); };
+      const prev = btn('‹', 'grey sk-arrow b-skin-prev', () => set(i - 1));
+      const next = btn('›', 'grey sk-arrow b-skin-next', () => set(i + 1));
+      prev.dataset.k = 'skin-prev:' + suit; next.dataset.k = 'skin-next:' + suit;
+      const mid = h('div', 'sk-mid');
+      const cards = h('div', 'sk-cards');
+      // (a mod suit's own default art comes with its mod; only a chosen skin is previewed for it)
+      if (SUIT_PREVIEW[suit] || cur) for (const rk of ['K', 'Q', 'J']) cards.appendChild(skinPreview(suit, rk));
+      mid.append(cards, h('div', 'sk-name', esc(ch[i].label)));
+      r.append(prev, mid, next);
+      rows.appendChild(r);
+    }
+  };
+  draw();
+  const off = onSkins(() => { if (!box.isConnected) { off(); return; } draw(); });
+  return box;
 }
 
 // ------------------------------------------------------------ deck view
@@ -494,7 +631,8 @@ function deckBody(view, src, tab) {
 export function gameOver(view, o) {
   const won = !!o.won;
   const el = h('div', 'game-over' + (won ? ' win' : ''));
-  el.appendChild(h('div', 'go-title', won ? 'You Win!' : 'Game Over'));
+  el.appendChild(h('div', 'go-title', won ? (view.challenge ? 'Challenge Complete!' : 'You Win!') : 'Game Over'));
+  if (view.challenge) el.appendChild(h('div', 'go-challenge', `Challenge: <b class="attn">${esc(view.challenge.name)}</b><br><span class="muted">Challenge runs post no high scores</span>`));
   const most = (view.hands || []).reduce((a, b) => (b.played > (a ? a.played : -1) ? b : a), null);
   const st = view.stats || {};
   const rows = [
@@ -510,7 +648,7 @@ export function gameOver(view, o) {
   const rank = h('div', 'go-rank');
   el.appendChild(rank);
   if (o.rankPromise) o.rankPromise.then((r) => { if (r && r.rank) rank.innerHTML = `Leaderboard rank <b class="attn">#${r.rank}</b>`; else if (r && r.ok) rank.innerHTML = 'Score posted!'; }).catch(() => {});
-  else if (o.guest) rank.innerHTML = '<a class="login-link" href="/login/?next=%2Fmicatro%2F">Log in to post high scores</a>';
+  else if (o.guest && !view.challenge) rank.innerHTML = '<a class="login-link" href="/login/?next=%2Fmicatro%2F">Log in to post high scores</a>';
   // the WHOLE run's replay (never just this round): watch it, or copy its share link (signed in)
   if (o.replay) {
     const rb = h('div', 'go-replay');
@@ -532,7 +670,7 @@ export function gameOver(view, o) {
   if (won && o.onEndless) acts.appendChild(btn('Endless Mode', 'orange big b-endless', () => { closeModal(); o.onEndless(); }));
   acts.appendChild(btn('New Run', 'blue big b-newrun', () => { closeAll(); o.onNewRun(); }));
   acts.appendChild(btn('Main Menu', 'red big b-mainmenu', () => { closeAll(); o.onMainMenu(); }));
-  if (o.net) acts.appendChild(btn('Leader<br>board', 'green big', () => leaderboard(o.net, o.me, { modded: !!((view.mods && view.mods.length) || view.custom_deck) })));
+  if (o.net && !view.challenge) acts.appendChild(btn('Leader<br>board', 'green big', () => leaderboard(o.net, o.me, { modded: !!((view.mods && view.mods.length) || view.custom_deck) })));
   el.appendChild(acts);
   modal(el, { cls: 'go-modal', noClose: true });
 }
@@ -601,6 +739,151 @@ export function replaysList(api) {
   };
   draw();
   modal(el, { title: 'Replays', cls: 'rp-modal' });
+}
+
+// ----------------------------------------------------------- challenges
+// One Challenges screen (Balatro's main menu > Challenges): Balatro's 20 challenges, then every ENABLED
+// mod's (the mods chosen in New Run > Mods; their modules load when the screen opens). A challenge is a
+// normal run with its rules (engine/challenge.js), recorded in the run recipe by id, so resume / replay /
+// spectate rebuild it. Finished challenges are ticked per player ('micatro_challenges_v1:<user>').
+// o.challenges: {list(modIds) -> Promise<[challenge + info]>, done() -> {id: ts}, start(ch, mods, modOptions)}
+const CH_KEY = (me) => 'micatro_challenges_v1:' + (me || 'guest');
+export function challengeDone(me) {
+  try { const p = JSON.parse(localStorage.getItem(CH_KEY(me)) || '{}'); return p && typeof p === 'object' && !Array.isArray(p) ? p : {}; } catch (e) { return {}; }
+}
+export function markChallengeDone(me, id) {
+  try { const p = challengeDone(me); if (!p[id]) { p[id] = Date.now(); localStorage.setItem(CH_KEY(me), JSON.stringify(p)); } } catch (e) { /* private mode: not remembered */ }
+}
+export function challengesScreen(o) {
+  const api = o.challenges;
+  const msel = loadModPrefs();
+  const el = h('div', 'challenges');
+  const top = h('div', 'ch-top');
+  const topNote = h('span', 'ch-note');
+  top.appendChild(topNote);
+  if (modsApi && modsApi.list().length) top.appendChild(btn('Mods', 'green b-ch-mods', () => modsPanel(msel, () => reload())));
+  const main = h('div', 'ch-main');
+  const list = h('div', 'ch-list');
+  const detail = h('div', 'ch-detail');
+  main.append(list, detail);
+  el.append(top, main);
+  let all = [], cur = null, tab = 'rules', token = 0;
+  const done = () => (api.done ? api.done() : {});
+  const mini = (d, cls = '') => {
+    const c = liveCard({ ...d, desc: undefined }, 'ch-card ' + cls);
+    c.title = d.name || d.center;
+    return c;
+  };
+  const cardRow = (cards, empty) => {
+    const r = h('div', 'ch-cards');
+    if (!cards.length) { r.appendChild(h('span', 'muted', empty || 'None')); return r; }
+    for (const d of cards) {
+      const w = h('div', 'ch-cardw');
+      w.appendChild(mini(d));
+      const tags = [d.eternal ? 'Eternal' : '', d.pinned ? 'Pinned' : '', d.edition ? d.edition[0].toUpperCase() + d.edition.slice(1) : ''].filter(Boolean);
+      w.appendChild(h('div', 'ch-cname', esc(d.name || d.center) + (tags.length ? `<br><span class="ch-ctag">${esc(tags.join(' · '))}</span>` : '')));
+      r.appendChild(w);
+    }
+    return r;
+  };
+  const sec = (title, node) => { const b = h('div', 'ch-sec'); b.appendChild(h('div', 'ch-sec-t', esc(title))); b.appendChild(node); return b; };
+  const lines = (ls) => h('div', 'ch-lines', ls.length ? ls.map((l) => `<div>${markup(l)}</div>`).join('') : '<span class="muted">None</span>');
+  function drawDetail() {
+    detail.innerHTML = '';
+    if (!cur) { detail.appendChild(h('div', 'muted ch-empty', 'Pick a challenge.')); return; }
+    const i = cur.info;
+    const head = h('div', 'ch-head');
+    head.innerHTML = `<span class="ch-title">${esc(cur.name)}</span>${cur.mod ? ' ' + modBadges([cur.mod]) : ''}${done()[cur.id] ? ' <span class="ch-done" title="Completed">✓ Completed</span>' : ''}`;
+    detail.appendChild(head);
+    const tabs = h('div', 'tabs ch-tabs');
+    const body = h('div', 'ch-body');
+    for (const [k, label] of [['rules', 'Rules'], ['restrictions', 'Restrictions'], ['deck', 'Deck']]) {
+      const b = btn(label, 'red tab b-ch-' + k, () => { tab = k; drawDetail(); });
+      b.dataset.k = 'chtab:' + k;
+      if (k === tab) b.classList.add('on');
+      tabs.appendChild(b);
+    }
+    detail.append(tabs, body);
+    if (tab === 'rules') {
+      body.appendChild(sec('Custom rules', lines(i.rules)));
+      body.appendChild(sec('Game modifiers', lines(i.modifiers)));
+      body.appendChild(sec('Starting jokers', cardRow(i.jokers)));
+      if (i.consumables.length) body.appendChild(sec('Starting consumables', cardRow(i.consumables)));
+      if (i.vouchers.length) body.appendChild(sec('Starting vouchers', cardRow(i.vouchers)));
+    } else if (tab === 'restrictions') {
+      body.appendChild(sec('Banned cards', cardRow(i.banned_cards)));
+      const chips = (arr) => h('div', 'ch-chips', arr.length ? arr.map((t) => `<span class="badge ch-chip">${esc(t.name)}</span>`).join('') : '<span class="muted">None</span>');
+      body.appendChild(sec('Banned tags', chips(i.banned_tags)));
+      body.appendChild(sec('Banned blinds', chips(i.banned_other)));
+    } else {
+      const row = h('div', 'ch-deckrow');
+      row.appendChild(cardCanvas({ facing: 'back' }, 'ch-back', i.deck.back));
+      row.appendChild(h('div', 'ch-lines', `<div class="nr-name">${esc((CENTERS[i.deck.back] && CENTERS[i.deck.back].name) || 'Challenge Deck')}</div>` + i.deck.lines.map((l) => `<div>${esc(l)}</div>`).join('')));
+      body.appendChild(row);
+      const grid = h('div', 'dv-grid ch-deckgrid');
+      for (const S of ['S', 'H', 'C', 'D']) {
+        const cards = i.deck.cards.filter((x) => x[0][0] === S).sort((a, b) => RANK_ORDER.indexOf(a[0].split('_')[1]) - RANK_ORDER.indexOf(b[0].split('_')[1]));
+        if (!cards.length) continue;
+        const r = h('div', 'dv-row');
+        for (const [front, e, d, g] of cards) r.appendChild(cardCanvas({ front, center: e || 'c_base', edition: d || undefined, seal: g || undefined }, 'ch-dcard'));
+        grid.appendChild(r);
+      }
+      body.appendChild(grid);
+    }
+    const play = btn('Start Challenge', 'blue big wide b-ch-start', () => {
+      const ids = modsApi ? modsApi.withRequirements([...msel.ids, ...(cur.mod ? [cur.mod] : [])]) : (cur.mod ? [cur.mod] : []);
+      const modOptions = {};
+      for (const id of ids) if (msel.options[id]) modOptions[id] = { ...msel.options[id] };
+      closeAll();
+      api.start(cur, ids, modOptions);
+    });
+    detail.appendChild(play);
+  }
+  function drawList() {
+    list.innerHTML = '';
+    const d = done();
+    const groups = [];
+    for (const c of all) {
+      const g = c.mod || '';
+      let gr = groups.find((x) => x.mod === g);
+      if (!gr) groups.push(gr = { mod: g, items: [] });
+      gr.items.push(c);
+    }
+    for (const gr of groups) {
+      list.appendChild(h('div', 'ch-group', gr.mod ? modBadges([gr.mod]) : '<span class="badge ch-base">Balatro</span>'));
+      for (const c of gr.items) {
+        const b = btn(`<span class="ch-iname">${esc(c.name)}</span>${d[c.id] ? '<span class="ch-tick" title="Completed">✓</span>' : ''}`, 'grey ch-item' + (cur && cur.id === c.id ? ' on' : ''), () => {
+          cur = c; tab = 'rules';
+          for (const x of list.querySelectorAll('.ch-item')) x.classList.toggle('on', x === b);
+          drawDetail();
+          if (document.body.classList.contains('portrait-ui') || (window.matchMedia && matchMedia('(orientation: portrait)').matches)) { try { detail.scrollIntoView({ block: 'start' }); } catch (e) { /* ignore */ } }
+        });
+        b.dataset.ch = c.id;
+        b.dataset.k = 'ch:' + c.id;
+        if (c.colour) b.style.setProperty('--chc', cssColour(c.colour) || '');
+        list.appendChild(b);
+      }
+    }
+  }
+  async function reload() {
+    const my = ++token;
+    const ids = modsApi ? modsApi.withRequirements(msel.ids) : [];
+    topNote.innerHTML = ids.length ? 'Loading mods…' : '';
+    list.innerHTML = '<div class="muted">Loading…</div>';
+    let res = [];
+    try { res = await api.list(ids); } catch (e) { console.warn('micatro: challenges', e); }
+    if (my !== token || !el.isConnected) return;
+    all = res;
+    const nMod = all.filter((c) => c.mod).length;
+    topNote.innerHTML = `<b class="attn">${all.length}</b> challenges` + (ids.length ? ` · ${nMod} from your mods` : ' · <span class="muted">turn on mods for theirs</span>');
+    if (!cur || !all.some((c) => c.id === cur.id)) cur = all[0] || null;
+    else cur = all.find((c) => c.id === cur.id);
+    drawList();
+    drawDetail();
+  }
+  modal(el, { title: 'Challenges', cls: 'ch-modal' });
+  reload();
+  return el;
 }
 
 // ---------------------------------------------------------------- mods

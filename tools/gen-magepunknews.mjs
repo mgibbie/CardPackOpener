@@ -14,16 +14,26 @@
 // lives in micatro/data/*.js (`export default {centers, blinds, tags, ...}`); jokers,
 // consumables, vouchers, boosters, decks, tags and blinds that appear in a commit
 // become a 'micatro' release entry (the commit that first adds the data is the launch).
+//
+// Micatro MODS (micatro/mods/<id>/, JS content packs) are tracked too: a commit touching a mod is
+// snapshotted (its micatro/ tree, through a temporary git index — no checkout) and its mods are
+// loaded headlessly by tools/micatro/dump_mod_items.mjs. A mod's first appearance is a mod release
+// (per-set counts); later cards it gains are listed as new mod cards. Snapshots are cached by the
+// micatro/ tree hash in the OS temp dir. Built-in features (big-number scoring, the deck editor,
+// replays) get an entry on the commit that first adds their engine file.
 
 import { execFileSync } from 'child_process';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync, rmSync, mkdtempSync } from 'fs';
+import { tmpdir } from 'os';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const git = (...args) => execFileSync('git', args, { maxBuffer: 1 << 28, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
 
 // battlecards files that count as gameplay for patch notes (not art/UI chrome).
 // Includes every run mode's data layer — duels/heist/tombs work often lands in
 // those files alone, and used to be missed entirely.
-const GAME_FILES = /^(battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|lorequest|middleearth|mpmode|cards\.json|classes\.json)|micatro\/(js\/engine|data)\/|overworld\/[\w-]+\.js|tools\/(gen_frem_night|gen_johto_daynight|repair_fakemon|deploy_fakemon_trainers|gen_designwiki|gen_battlescale)\.mjs)/;
+const GAME_FILES = /^(battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|lorequest|middleearth|mpmode|cards\.json|classes\.json)|micatro\/(js\/(engine|mods)\/|js\/replays\.js|data\/|mods\/)|overworld\/[\w-]+\.js|tools\/(gen_frem_night|gen_johto_daynight|repair_fakemon|deploy_fakemon_trainers|gen_designwiki|gen_battlescale)\.mjs)/;
 
 const cardsAt = sha => {
 	try {
@@ -60,6 +70,40 @@ const micatroAt = sha => {
 	return map;
 };
 
+// ---- Micatro mods: every mod's player-facing items at a commit (see the header) ----
+const DUMP = join(dirname(fileURLToPath(import.meta.url)), 'micatro/dump_mod_items.mjs');
+const MOD_CACHE = join(tmpdir(), 'magepunknews-modcache-v1');
+const modsAt = sha => {
+	if (!existsSync(DUMP)) return null;
+	let tree;
+	try { tree = git('rev-parse', `${sha}:micatro`).trim(); } catch { return null; }
+	const cached = join(MOD_CACHE, tree + '.json');
+	try { return JSON.parse(readFileSync(cached, 'utf8')); } catch { }
+	const tmp = mkdtempSync(join(tmpdir(), 'mpnews-snap-'));
+	let out = null;
+	try {
+		const env = { ...process.env, GIT_INDEX_FILE: join(tmp, 'index') };
+		execFileSync('git', ['read-tree', `--prefix=micatro/`, `${sha}:micatro`], { env, stdio: 'ignore' });
+		execFileSync('git', ['checkout-index', '-a', `--prefix=${join(tmp, 'tree')}/`], { env, stdio: 'ignore' });
+		out = JSON.parse(execFileSync(process.execPath, [DUMP, join(tmp, 'tree')], { maxBuffer: 1 << 28, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }));
+		if (!out.error) { mkdirSync(MOD_CACHE, { recursive: true }); writeFileSync(cached, JSON.stringify(out)); }
+	} catch { out = null; }
+	finally { rmSync(tmp, { recursive: true, force: true }); }
+	return out && !out.error ? out : null;
+};
+// Native Micatro features, announced on the commit that first adds their file.
+const MICATRO_FEATURES = [
+	{ file: 'micatro/js/engine/bignum.js', id: 'big-numbers', title: 'Big-number scoring', blurb: 'Scores go past Balatro’s naneinf, up to 9.99e999 — in every run.' },
+	{ file: 'micatro/js/engine/customdeck.js', id: 'deck-editor', title: 'Deck editor', blurb: 'Build, share and play your own decks (New Run → Custom deck).' },
+	{ file: 'micatro/js/replays.js', id: 'replays', title: 'Replays', blurb: 'Watch any finished run again, start to finish — and share the link.' },
+];
+const featureAt = {};
+for (const ft of MICATRO_FEATURES) {
+	let first = '';
+	try { first = git('log', '--first-parent', '--reverse', '--diff-filter=A', '--format=%H', '--', ft.file).split('\n')[0].trim(); } catch { }
+	if (first) (featureAt[first] ||= []).push({ id: ft.id, title: ft.title, blurb: ft.blurb, wiki: '/designwiki/#/micatro/' + ft.id });
+}
+
 // A shallow clone silently truncates the feed — the oldest releases just vanish,
 // and the result looks plausible. Refuse to write a feed we know is incomplete.
 // (CI checks out with fetch-depth: 0; locally, `git fetch --unshallow`.)
@@ -76,6 +120,8 @@ const log = git('log', '--first-parent', '--reverse', '--format=%H%x1f%cs%x1f%s%
 const entries = [];
 let prevCards = null;
 let prevMicatro = null;
+let prevMods = null; // {id: Map(key -> item)}
+const modAtlas = {};
 
 for (let c of log) {
 	let files;
@@ -117,6 +163,33 @@ for (let c of log) {
 		} else micatroAdded = [...now.values()].filter(k => !prevMicatro.has(k.key));
 		prevMicatro = now;
 	}
+	// Micatro mods: a mod's first appearance is its release; later commits list its new cards
+	const micatroMods = [];
+	if (gameFiles.some(f => f.startsWith('micatro/mods/') || f.startsWith('micatro/js/mods/'))) {
+		const snap = modsAt(c.sha);
+		if (snap) {
+			if (prevMods === null) {
+				prevMods = {};
+				let parent = null;
+				try { parent = modsAt(git('rev-parse', `${c.sha}^`).trim()); } catch { }
+				for (const [id, m] of Object.entries((parent && parent.mods) || {})) prevMods[id] = new Map(m.items.map(i => [i.key, i]));
+			}
+			Object.assign(modAtlas, snap.atlases || {});
+			for (const [id, m] of Object.entries(snap.mods)) {
+				const before = prevMods[id];
+				if (!before) {
+					const counts = {};
+					for (const i of m.items) counts[i.set] = (counts[i.set] || 0) + 1;
+					micatroMods.push({ id, name: m.name, launch: counts, total: m.items.length });
+				} else {
+					const added = m.items.filter(i => !before.has(i.key));
+					if (added.length) micatroMods.push({ id, name: m.name, added });
+				}
+				prevMods[id] = new Map(m.items.map(i => [i.key, i]));
+			}
+		}
+	}
+	const micatroFeatures = featureAt[c.sha] || [];
 	// tokens/uncollectibles ride along with releases but aren't "new cards" to
 	// open — EXCEPT run-mode treasures (token-flagged by design, but they're
 	// player-facing loot worth announcing)
@@ -131,7 +204,7 @@ for (let c of log) {
 	entries.push({
 		sha: c.sha.slice(0, 7),
 		date: c.date,
-		kind: collectible.length ? 'cards' : (micatroAdded.length || micatroLaunch) ? 'micatro' : 'patch',
+		kind: collectible.length ? 'cards' : (micatroAdded.length || micatroLaunch || micatroMods.length || micatroFeatures.length) ? 'micatro' : 'patch',
 		title: c.subject.replace(/^Battlecards:\s*/i, ''),
 		body,
 		cards: collectible.map(k => ({
@@ -142,6 +215,8 @@ for (let c of log) {
 		})),
 		...(micatroAdded.length ? { micatro: micatroAdded } : {}),
 		...(micatroLaunch ? { micatroLaunch } : {}),
+		...(micatroMods.length ? { micatroMods } : {}),
+		...(micatroFeatures.length ? { micatroFeatures } : {}),
 	});
 }
 
@@ -156,6 +231,17 @@ for (const [set, file, cw, ch] of [['Joker', 'Jokers.png', 142, 190], ['Tarot', 
 	const sz = existsSync(f) && pngSize(f);
 	if (sz) micatroAtlas[set] = { src: '/' + f, cw, ch, w: sz.w, h: sz.h };
 }
+// mod atlases the feed's mod cards use, with their pixel size from the design wiki's mod index
+// (designwiki/data/micatro_mods.json, generated where the gitignored mod art exists)
+let wikiAtlases = {};
+try { wikiAtlases = JSON.parse(readFileSync('designwiki/data/micatro_mods.json', 'utf8')).atlases || {}; } catch { }
+const usedModAtlases = new Set();
+for (const e of entries) for (const m of e.micatroMods || []) for (const i of m.added || []) if (i.atlas) usedModAtlases.add(i.atlas.slice(1));
+for (const name of usedModAtlases) {
+	const a = wikiAtlases[name] || modAtlas[name];
+	if (a && a.w && a.h) micatroAtlas['@' + name] = { src: a.src, cw: a.cw, ch: a.ch, w: a.w, h: a.h };
+}
 const mReleases = entries.filter(e => e.kind === 'micatro');
+const modReleases = entries.reduce((n, e) => n + (e.micatroMods || []).length, 0);
 writeFileSync('magepunknews/news.json', JSON.stringify({ generated: git('log', '-1', '--format=%cs').trim(), micatroAtlas, entries }, null, '\t'));
-console.log(`magepunknews/news.json: ${entries.length} entries (${releases.length} card releases, ${totalNew} new cards, ${mReleases.length} Micatro releases)`);
+console.log(`magepunknews/news.json: ${entries.length} entries (${releases.length} card releases, ${totalNew} new cards, ${mReleases.length} Micatro releases, ${modReleases} mod releases)`);

@@ -21,7 +21,7 @@ import { G, P_CENTERS, emit, card_eval_status_text, localize, play_sound, pseudo
 import { juice_card_until } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
 import DATA from '../data.js';
-import { find_card, any } from './utils.js';
+import { find_card, any, cfg } from './utils.js';
 import { type_sticker_applied, wildcard_type } from './types.js';
 import { energize } from './energy.js';
 import { get_random_poke_key } from './pools.js';
@@ -372,4 +372,40 @@ export function get_family_keys(cardname, custom_prefix, card) {
     for (const r of Array.isArray(req) ? req : [req]) keys.push('c_' + (NATIVE.includes(r) ? 'poke' : initial_custom_prefix) + '_' + r);
   }
   return keys;
+}
+
+/**
+ * pokeutils.lua set_joker_family_win(card), run for every joker when a run is won (lovely.toml "Pokermon Family
+ * Stake Sticker Logic", after vanilla's set_joker_win bookkeeping): with the previous_evo_stickers option on, a
+ * winning Pokémon also earns the win (stake sticker) for its earlier stages — not for later evolutions, not for
+ * the other branches of a split line — plus same-stage forms (aux_poke) and auto_sticker entries.
+ * Returns the extra joker keys (the card's own key is vanilla's); the engine reports them in the 'win' event.
+ */
+export function family_win_keys(card) {
+  if (!cfg('previous_evo_stickers')) return [];
+  const c = card.config.center;
+  if (!c || c.set !== 'Joker' || !c.stage || !c.name) return [];
+  const keys = get_family_keys(c.name, c.poke_custom_prefix, card);
+  const out = [];
+  if (keys.length <= 1) return out;
+  const prev = get_previous_evo(card, true);
+  const prev_stage = prev && P_CENTERS[prev] ? P_CENTERS[prev].stage : undefined;
+  let index;
+  for (let k = 0; k < keys.length; k++) {
+    let v = keys[k];
+    if (isTable(v)) v = v.key;
+    if (v === c.key) index = k;
+    const P = P_CENTERS[v];
+    if (!P) continue;
+    // Excludes higher evolutions
+    if (index !== undefined && k > index && (P.stage !== c.stage || P.stage === 'Legendary') && P.auto_sticker !== true) break;
+    if ((P.set === 'Joker' && P.stage !== c.stage && // excludes the same-stage mons in an evo line
+          !((c.stage === 'One' || c.stage === 'Two' || c.stage === 'Mega') && prev_stage !== undefined && P.stage === prev_stage && v !== prev)) || // branching evos in previous stages
+        (c.stage === 'Legendary' && prev && P.stage === prev_stage) || // (i.e. Meltan, Cosmog, Terapagos)
+        (P.set === 'Joker' && P.aux_poke === true && P.stage === c.stage) || // forms (same stage: Jirachi, Rotom)
+        (P.set === 'Joker' && P.auto_sticker === true)) {
+      if (v !== c.key && !out.includes(v)) out.push(v);
+    }
+  }
+  return out;
 }

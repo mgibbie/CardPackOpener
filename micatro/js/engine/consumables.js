@@ -20,7 +20,7 @@ import {
   pseudoseed, pseudorandom, pseudorandom_element, pseudoshuffle,
   ease_dollars, ease_discard, ease_hands_played, ease_ante, level_up_hand,
   create_card, create_playing_card, copy_card, poll_edition, all_cards, next,
-  set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll,
+  set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll, has_quantum_enhancement, mod_context_effect,
 } from './core.js';
 import { callHook, reduceHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
@@ -40,7 +40,7 @@ export function dec_stop_use(_depth) {
 }
 export function playing_card_joker_effects(cards) {
   for (let i = 0; i < G.jokers.cards.length; i++) {
-    G.jokers.cards[i].calculate_joker({ playing_card_added: true, cards });
+    mod_context_effect(G.jokers.cards[i], G.jokers.cards[i].calculate_joker({ playing_card_added: true, cards }));
   }
 }
 /** Profile statistics only in Balatro — nothing to track per run. */
@@ -263,7 +263,7 @@ Card.prototype.use_consumeable = function (area, copier) {
       G.E_MANAGER.add_event(() => {
         for (let i = G.hand.highlighted.length - 1; i >= 0; i--) {
           const card = G.hand.highlighted[i];
-          if (card.ability.name === 'Glass Card') {
+          if (card.ability.name === 'Glass Card' || has_quantum_enhancement(card, 'm_glass')) {
             card.shatter();
           } else {
             card.start_dissolve();
@@ -279,7 +279,7 @@ Card.prototype.use_consumeable = function (area, copier) {
       G.E_MANAGER.add_event(() => {
         for (let i = destroyed_cards.length - 1; i >= 0; i--) {
           const card = destroyed_cards[i];
-          if (card.ability.name === 'Glass Card') {
+          if (card.ability.name === 'Glass Card' || has_quantum_enhancement(card, 'm_glass')) {
             card.shatter();
           } else {
             card.start_dissolve();
@@ -325,7 +325,7 @@ Card.prototype.use_consumeable = function (area, copier) {
       G.E_MANAGER.add_event(() => {
         for (let i = destroyed_cards.length - 1; i >= 0; i--) {
           const card = destroyed_cards[i];
-          if (card.ability.name === 'Glass Card') {
+          if (card.ability.name === 'Glass Card' || has_quantum_enhancement(card, 'm_glass')) {
             card.shatter();
           } else {
             card.start_dissolve();
@@ -335,7 +335,7 @@ Card.prototype.use_consumeable = function (area, copier) {
       ease_dollars(this.ability.extra.dollars);
     }
     for (let i = 0; i < G.jokers.cards.length; i++) {
-      G.jokers.cards[i].calculate_joker({ remove_playing_cards: true, removed: destroyed_cards });
+      mod_context_effect(G.jokers.cards[i], G.jokers.cards[i].calculate_joker({ remove_playing_cards: true, removed: destroyed_cards }));
     }
   }
   if (this.ability.name === 'The Fool') {
@@ -676,7 +676,7 @@ Card.prototype.open = function () {
       });
 
       for (let i = 0; i < G.jokers.cards.length; i++) {
-        G.jokers.cards[i].calculate_joker({ open_booster: true, card: this });
+        mod_context_effect(G.jokers.cards[i], G.jokers.cards[i].calculate_joker({ open_booster: true, card: this }));
       }
       callHook('booster_open', this);
 
@@ -722,7 +722,7 @@ Card.prototype.redeem = function (layer) {
     this.apply_to_run();
 
     for (let i = 0; i < G.jokers.cards.length; i++) {
-      G.jokers.cards[i].calculate_joker({ buying_card: true, card: this });
+      mod_context_effect(G.jokers.cards[i], G.jokers.cards[i].calculate_joker({ buying_card: true, card: this }));
     }
     if (G.GAME.modifiers.inflation) {
       G.GAME.inflation = G.GAME.inflation + 1;

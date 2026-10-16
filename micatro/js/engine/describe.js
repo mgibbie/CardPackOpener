@@ -488,7 +488,8 @@ function set_badge(center) {
 export function describeCenter(key) {
   const c = P_CENTERS[key];
   if (!c) return undefined;
-  if (c.mod) return describe_mod({ ability: { ...ability_from_center(c), ...JSON.parse(JSON.stringify(c.config || {})), extra: c.config && c.config.extra !== undefined ? JSON.parse(JSON.stringify(c.config.extra)) : undefined }, area: null, config: { center: c }, fake: true }, c);
+  // (the collection's card: Card:set_cost gives it its cost / sell value — Litwick / Lampent / Chandelure show it)
+  if (c.mod) return describe_mod({ ability: { ...ability_from_center(c), ...JSON.parse(JSON.stringify(c.config || {})), extra: c.config && c.config.extra !== undefined ? JSON.parse(JSON.stringify(c.config.extra)) : undefined }, area: null, config: { center: c }, fake: true, cost: c.cost || 0, sell_cost: Math.max(1, Math.floor((c.cost || 0) / 2)) }, c);
   if (c.set === 'Back') return describeBack(key);
   const card_type = c.set;
   let loc_vars;
@@ -529,8 +530,13 @@ export function describeBlind(blindKey) {
   if (!proto) return undefined;
   const live = G.GAME && G.GAME.blind && G.GAME.blind.config && G.GAME.blind.config.blind === proto && G.GAME.blind.name ? G.GAME.blind : null;
   let vars = [loc(G.GAME.current_round.most_played_poker_hand, 'poker_hands')];
-  // A mod blind's own loc_vars(self) -> {vars} (Bunco's The Tine / The Mask / The Blade).
-  if (proto.mod && proto.loc_vars) { try { vars = (proto.loc_vars(proto) || {}).vars || vars; } catch (e) { /* cosmetic */ } }
+  // A mod blind's own loc_vars(self) -> {vars} (Bunco's The Tine / The Mask / The Blade); outside a run (the
+  // collection) its collection_loc_vars, as SMODS does — the placeholders "(most played hand)" etc.
+  if (proto.mod && (proto.loc_vars || proto.collection_loc_vars)) {
+    const f = (!G.jokers && proto.collection_loc_vars) || proto.loc_vars || proto.collection_loc_vars;
+    try { vars = (f(proto) || {}).vars || vars; } catch (e) { /* cosmetic */ }
+    if (proto.collection_loc_vars && (!vars || vars.some((v) => v === undefined || v === 'ERROR'))) { try { vars = (proto.collection_loc_vars(proto) || {}).vars || vars; } catch (e) { /* cosmetic */ } }
+  }
   const d = desc('Blind', blindKey) || { name: proto.name, text: [] };
   let lines = fill(d.text, vars);
   if (proto.name === 'The Wheel' && lines.length) lines[0] = fmt(G.GAME.probabilities.normal) + lines[0];
@@ -614,7 +620,8 @@ function describe_mod(card, center) {
   try { r = (center.loc_vars && center.loc_vars(center, info_queue, card)) || {}; } catch (e) { r = {}; }
   const set = r.set || center.set;
   const key = r.key || center.key;
-  const d = desc(set, key) || (center.loc_txt) || { name: center.name || key, text: [] };
+  // (SMODS.Booster keeps its text in descriptions.Other: Pokermon's packs, Autumn Circus's Option Select)
+  const d = desc(set, key) || (set === 'Booster' ? desc('Other', key) : null) || (center.loc_txt) || { name: center.name || key, text: [] };
   const lines = [...(r.main_start || []), ...fill(d.text, r.vars), ...(r.main_end || [])];
   const info = [];
   for (const q of info_queue) {
@@ -628,8 +635,12 @@ function describe_mod(card, center) {
       if (sub) { info.push({ key: k, name: sub.name, lines: sub.lines }); continue; }
     }
     const qset = (typeof q === 'object' && q.set) || (P_CENTERS[k] ? P_CENTERS[k].set : 'Other');
+    // A tag pushed as {key, set = 'Tag'} shows that tag's own text (Tag:get_uibox_table fills its vars: Garbage, Orbital, Juggle).
+    if (qset === 'Tag' && P_TAGS[k] && !(typeof q === 'object' && q.vars)) { const t = describeTag(k); info.push({ key: k, name: t.name, lines: t.lines }); continue; }
     const qd = desc(qset, k) || desc('Other', k);
-    if (qd) info.push({ key: k, name: qd.name, lines: fill(qd.text, (typeof q === 'object' && q.vars) || (q.config && q.config.extra) || []) });
+    // ({key = 'e_negative_consumable', set = 'Edition', config = {extra = 1}}: config.extra is #1#)
+    const qv = (typeof q === 'object' && q.vars) || (q.config && q.config.extra !== undefined ? [].concat(q.config.extra) : []);
+    if (qd) info.push({ key: k, name: qd.name, lines: fill(qd.text, qv) });
   }
   const badges = [];
   if (center.set === 'Joker') {

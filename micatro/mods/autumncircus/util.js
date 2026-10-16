@@ -179,7 +179,7 @@ export function get_card_suits(card, bypass_debuff) { return AMM.suit_buffer().f
 /** func.favorite_hand(): the most played hand (ties: the first in hand-list order, like Telescope). */
 export function favorite_hand() {
   let chosen = 'High Card', highest = 0;
-  for (const v of G.handlist) if (G.GAME.hands[v].played > highest) { chosen = v; highest = G.GAME.hands[v].played; }
+  for (const v of G.handlist || []) if (G.GAME.hands[v] && G.GAME.hands[v].played > highest) { chosen = v; highest = G.GAME.hands[v].played; }
   return chosen;
 }
 /** func.pseudorandom_enhancement(): a random Enhanced center (seed 'universe_tarot'). */

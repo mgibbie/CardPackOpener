@@ -1,17 +1,27 @@
 // Fuzz: random-but-sensible bots play whole runs on many seeds/decks/stakes.
 // Catches engine crashes, state-machine stalls and broken invariants, and
 // checks determinism (same seed + same actions => identical state).
-//   node micatro/tests/fuzz_runs_test.mjs [runs=60] [mods, comma-separated — e.g. pokermon]
+//   node micatro/tests/fuzz_runs_test.mjs [runs=60] [mods, comma-separated — e.g. pokermon — or "all"]
+// With mods on, the bot also favours the mods' jokers in shops and Buffoon packs, plays every third run
+// on a mod deck and every fourth on a mod stake, and reports what it exercised (mod activity). The
+// vanilla path (no mods) is unchanged: same bot, same actions.
 
-import { G, P_CENTERS } from '../js/engine/core.js';
+import { G, P_CENTERS, P_STAKES } from '../js/engine/core.js';
 import { newRun, act, STATES, get_poker_hand_info } from '../js/engine/run.js';
 import { toView } from '../js/engine/view.js';
 import { Session } from '../js/engine/session.js';
 
 const RUNS = Number(process.argv[2] || 60);
 // Optional mod set: the runs (and their replays) play with these mods on.
-const MODS = (process.argv[3] || '').split(',').filter(Boolean);
-if (MODS.length) { const { loadMods } = await import('../js/mods/index.js'); await loadMods(MODS); }
+let MODS = (process.argv[3] || '').split(',').filter(Boolean);
+if (MODS.length) {
+  const { loadMods, AVAILABLE } = await import('../js/mods/index.js');
+  if (MODS.includes('all')) MODS = AVAILABLE.map((m) => m.id);
+  MODS = await loadMods(MODS); // (+ their requirements)
+}
+const OVERFILL = new Set(['j_betmma_friends_of_jimbo']);
+let overfilled = false;
+const isModCard = (c) => !!(c && c.config.center.mod && MODS.includes(c.config.center.mod));
 let fail = 0;
 const ok = (c, m) => { if (!c) { fail++; console.log('FAIL', m); } };
 
@@ -35,7 +45,9 @@ function invariants0(tag) {
   const pc = new Set(G.playing_cards.map((c) => c.sort_id));
   for (const a of [G.deck, G.hand, G.discard, G.play]) for (const c of a.cards) ok(pc.has(c.sort_id), `${tag}: ${a.name} card ${c.sort_id} not in playing_cards`);
   ok(Number.isFinite(G.GAME.dollars), `${tag}: dollars ${G.GAME.dollars}`);
-  ok(G.jokers.cards.length <= G.jokers.config.card_limit + 1 || G.jokers.cards.some((c) => c.edition && c.edition.negative), `${tag}: too many jokers`);
+  // (mod jokers that make jokers with no room by design — BETMMA's Friends of Jimbo: "No need to have room")
+  if (MODS.length) for (const c of G.jokers.cards) if (OVERFILL.has(c.config.center.key)) overfilled = true;
+  ok(G.jokers.cards.length <= G.jokers.config.card_limit + 1 || G.jokers.cards.some((c) => c.edition && c.edition.negative) || overfilled, `${tag}: too many jokers`);
 }
 
 function pickAction(r) {
@@ -84,14 +96,24 @@ function pickAction(r) {
     }
     const forSale = [...G.shop_jokers.cards, ...G.shop_vouchers.cards, ...G.shop_booster.cards]
       .filter((c) => c.cost <= G.GAME.dollars - G.GAME.bankrupt_at);
-    if (forSale.length && r() < 0.6) return { type: 'buy', id: forSale[Math.floor(r() * forSale.length)].sort_id };
+    if (forSale.length && r() < 0.6) {
+      if (MODS.length) {
+        const modJokers = forSale.filter((c) => c.ability.set === 'Joker' && isModCard(c));
+        if (modJokers.length && r() < 0.7) return { type: 'buy', id: modJokers[Math.floor(r() * modJokers.length)].sort_id };
+      }
+      return { type: 'buy', id: forSale[Math.floor(r() * forSale.length)].sort_id };
+    }
     if (G.jokers.cards.length && r() < 0.05) return { type: 'sell', id: G.jokers.cards[0].sort_id };
     if (r() < 0.15) return { type: 'reroll_shop' };
     return { type: 'next_round' };
   }
   if ([STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK, STATES.MOD_PACK, STATES.MOD_PACK_HAND].includes(S)) {
     if (r() < 0.1 || !G.pack_cards.cards.length) return { type: 'skip_booster' };
-    const c = G.pack_cards.cards[Math.floor(r() * G.pack_cards.cards.length)];
+    let c = G.pack_cards.cards[Math.floor(r() * G.pack_cards.cards.length)];
+    if (MODS.length) {
+      const modJokers = G.pack_cards.cards.filter((x) => x.ability.set === 'Joker' && isModCard(x));
+      if (modJokers.length && r() < 0.7) c = modJokers[Math.floor(r() * modJokers.length)];
+    }
     if (MODS.length && c.ability.consumeable && r() < 0.3) return [{ type: 'reserve', id: c.sort_id }, { type: 'skip_booster' }];
     const n = (c.ability.consumeable && c.ability.consumeable.max_highlighted) || 0;
     const targets = G.hand.cards.slice().sort(() => r() - 0.5).slice(0, n).map((x) => x.sort_id);
@@ -122,18 +144,26 @@ function bestHand() {
 
 let lastEvents = [];
 const modStats = {};
+const modJokersSeen = new Set();
 let totalActions = 0, wins = 0, maxAnte = 0;
 for (let i = 0; i < RUNS; i++) {
   // (mod runs: every third run on one of the mods' decks)
   const modBacks = MODS.length ? Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.mod && MODS.includes(v.mod)).map((v) => v.key) : [];
   const back = modBacks.length && i % 3 === 2 ? modBacks[(i / 3 | 0) % modBacks.length] : BACKS[i % BACKS.length];
-  const stake = 1 + (i % 8);
+  // (mod runs: every fourth run on one of the mods' stakes)
+  const modStakes = MODS.length ? Object.values(P_STAKES).filter((v) => v.mod && MODS.includes(v.mod)).map((v) => v.key) : [];
+  const stake = modStakes.length && i % 4 === 3 ? modStakes[(i / 4 | 0) % modStakes.length] : 1 + (i % 8);
+  if (MODS.length) {
+    if (P_CENTERS[back].mod) modStats.mod_deck_runs = (modStats.mod_deck_runs || 0) + 1;
+    if (typeof stake === 'string') modStats.mod_stake_runs = (modStats.mod_stake_runs || 0) + 1;
+  }
   const seed = 'FUZZ' + i;
   const r = botRng(i * 7919 + 13);
   const log = [];
   const assisted = i % 2 === 1;
   const shopFunded = new Set();
   try {
+    overfilled = false;
     newRun({ seed, back, stake, mods: MODS });
     let steps = 0, stuck = 0;
     while (!G.GAME.over && steps < 600) {
@@ -151,6 +181,8 @@ for (let i = 0; i < RUNS; i++) {
         const res = act(x);
         if (res.ok) { anyOk = true; log.push(x); }
         if (MODS.length) for (const e of res.events) if (e.type === 'poke_evolve' || e.type === 'reserved' || (e.type === 'use' && P_CENTERS[e.center] && P_CENTERS[e.center].mod)) modStats[e.type] = (modStats[e.type] || 0) + 1;
+        if (MODS.length && res.ok && x.type === 'buy') { const bought = G.jokers.cards.find((j) => j.sort_id === x.id); if (bought && isModCard(bought)) modStats.mod_jokers_bought = (modStats.mod_jokers_bought || 0) + 1; }
+        if (MODS.length) for (const j of G.jokers.cards) if (isModCard(j)) modJokersSeen.add(j.config.center.key);
         lastEvents = res.events.filter((e) => e.type !== 'sound' && e.type !== 'juice' && e.type !== 'hand_text').map((e) => [e.type, e.card, e.to, e.message || e.center || '']);
       }
       G.ui_events.length = 0;
@@ -187,6 +219,6 @@ for (let i = 0; i < RUNS; i++) {
     console.log('FAIL', seed, back, 'stake', stake, 'state', G.STATE, 'after', log.length, 'actions:', e && e.stack ? e.stack.split('\n').slice(0, 6).join('\n') : e);
   }
 }
-if (MODS.length) console.log('mod activity:', JSON.stringify(modStats));
-console.log(`fuzz${MODS.length ? ' [' + MODS.join(',') + ']' : ''}: ${RUNS} runs, ${totalActions} actions, max ante ${maxAnte}, wins ${wins}, ${fail ? fail + ' FAIL' : 'all ok'}`);
+if (MODS.length) console.log('mod activity:', JSON.stringify({ ...modStats, distinct_mod_jokers_held: modJokersSeen.size }));
+console.log(`fuzz${MODS.length ? ' [' + (process.argv[3] === 'all' ? 'all mods' : MODS.join(',')) + ']' : ''}: ${RUNS} runs, ${totalActions} actions, max ante ${maxAnte}, wins ${wins}, ${fail ? fail + ' FAIL' : 'all ok'}`);
 process.exit(fail ? 1 : 0);

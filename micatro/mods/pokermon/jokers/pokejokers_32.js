@@ -173,6 +173,7 @@ defineJokers({
   },
   // Tinkaton 959
   tinkaton: {
+    quantum_enhancements: true, // answers check_enhancement (core.js quantum_enhancements)
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) {

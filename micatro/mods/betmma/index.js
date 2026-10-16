@@ -46,6 +46,7 @@ import * as V from './vouchers.js';
 import * as J from './jokers.js';
 import * as E from './editions.js';
 import * as RR from './real_random.js';
+import { CHALLENGE_HOOKS } from './challenges.js';
 import { LOC_VOUCHERS, LOC_JOKERS, LOC_REAL_RANDOM, LOC_PERISHABLE_NO_DEBUFF, LOC_DICTIONARY } from './loc.js';
 
 const L = layout();
@@ -130,7 +131,7 @@ export const CHALLENGES = [
     },
   },
 ];
-for (const c of CHALLENGES) { c.mod = MOD_ID; c.button_colour = '#ED40BF'; }
+for (const c of CHALLENGES) { c.mod = MOD_ID; c.button_colour = '#ED40BF'; c.hooks = CHALLENGE_HOOKS; } // (challenges.js: the rules' code)
 /** The challenges' custom rules (shown by the challenge screen). Their engine effects come with it. */
 const CHALLENGE_RULES = {
   ch_c_faster_scaling: ['Required score scales extremely faster for each {C:attention}Ante'],

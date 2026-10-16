@@ -63,10 +63,11 @@ const spawn = (key, n = 1, after) => G.E_MANAGER.add_event(() => {
   }
 });
 centers.push(
-  deck('grosmichel', 'Gros Michel Deck', 0, { mf_grosmichel: true }, () => spawn('j_gros_michel')),
+  // (with its paired sleeve the deck skips its own joker: the sleeve's alt gives one instead — sleeves.js)
+  deck('grosmichel', 'Gros Michel Deck', 0, { mf_grosmichel: true }, () => { if (G.GAME.selected_sleeve !== 'sleeve_mf_grosmichel') spawn('j_gros_michel'); }),
   deck('philosophical', 'Philosophical Deck', 1, { mf_philosophical: true }, () => spawn('j_mf_philosophical', 5)),
   deck('rainbow', 'Rainbow Deck', 2, { voucher: 'v_mf_paintroller', consumables: ['c_mf_white'] }),
-  deck('blasphemy', 'Blasphemous Deck', 3, { mf_blasphemy: true }, () => spawn('j_mf_blasphemy', 1, (c) => { c.set_edition({ negative: true }); c.set_eternal(true); })),
+  deck('blasphemy', 'Blasphemous Deck', 3, { mf_blasphemy: true }, () => { if (G.GAME.selected_sleeve !== 'sleeve_mf_blasphemy') spawn('j_mf_blasphemy', 1, (c) => { c.set_edition({ negative: true }); c.set_eternal(true); }); }),
 );
 
 // ------------------------------------------------------------------ music

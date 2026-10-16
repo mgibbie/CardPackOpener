@@ -308,6 +308,8 @@ export class Blind {
   /** -> [mult, hand_chips, modded] (Lua returns three values). */
   modify_hand(cards, poker_hands, text, mult, hand_chips) {
     if (this.disabled) return [mult, hand_chips, false];
+    // A mod rule may replace any blind's modify_hand (a Lua Blind:modify_hand wrap: BETMMA's Overpowered Boss challenge).
+    if (ACTIVE_MODS.length) { const r = firstHook('blind_modify_hand', this, cards, poker_hands, text, mult, hand_chips); if (r) return r; }
     // Steamodded: a mod blind's modify_hand(self, cards, poker_hands, text, mult, hand_chips) -> [mult, hand_chips, modded].
     const mb = this.config.blind;
     if (mb && mb.mod && mb.modify_hand) return mb.modify_hand(mb, this, cards, poker_hands, text, mult, hand_chips);

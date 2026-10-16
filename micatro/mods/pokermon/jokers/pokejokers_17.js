@@ -36,6 +36,7 @@ defineJokers({
     },
   },
   shaymin_sky: {
+    quantum_enhancements: true, // answers check_enhancement (core.js quantum_enhancements)
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) { info_queue.push(P_CENTERS.m_wild); info_queue.push(P_CENTERS.m_poke_flower); }

@@ -157,6 +157,9 @@ for (const f of DATA.groups.challenges) for (const item of listOf(f)) CHALLENGES
 const loc = JSON.parse(JSON.stringify(DATA.loc));
 loc.misc.dictionary = loc.misc.dictionary || {};
 loc.misc.dictionary.poke_stellar_badge = 'Stellar'; // (lovely patch on Pokermon's en-us.lua)
+// The Stellar sticker's text (Nacho has none for the sticker key itself): its Stellar Type box.
+loc.descriptions.Other = loc.descriptions.Other || {};
+if (!loc.descriptions.Other.stellar_sticker && loc.descriptions.Other.stellar_type) loc.descriptions.Other.stellar_sticker = JSON.parse(JSON.stringify(loc.descriptions.Other.stellar_type));
 
 // ------------------------------------------------------------------ options (config.lua defaults)
 const OPT = (def, label) => ({ default: def, label });
@@ -181,6 +184,7 @@ export const NACHO = registerMod({
   options,
   content: { centers, stakes, stickers, atlases, loc },
   hooks,
+  challenges: CHALLENGES, // (engine/challenge.js plays them; sinnoh_adv is systems.js)
 });
 
 /** Port status for tests / the wiki. */

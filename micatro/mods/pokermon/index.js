@@ -80,7 +80,11 @@ import { shiny_edition, shiny_hooks } from './systems/shiny.js';
 import * as rules from './systems/rules.js';
 import { install_scry, scoring_areas, scry_view, scry_visible } from './systems/scry.js';
 import { view_card } from './systems/anim.js';
+import { CHALLENGES } from './challenges.js';
+import { SLEEVES } from './sleeves.js';
+import { POKE_UI } from './ui.js';
 import { cfg } from './systems/utils.js';
+import { family_win_keys } from './systems/evolution.js';
 
 /**
  * Where the mod's art lives: <base>/<path as in the mod's assets/2x folder>. Production
@@ -107,6 +111,9 @@ const ATLAS_FILES = {
   placeholder_deck: ['placeholder_deck.png'],
   placeholder_item: ['placeholder_item.png'],
   placeholder_sleeve: ['placeholder_sleeve.png'],
+  // Micatro-made (Pokermon never shipped Hisuian Qwilfish art): + its shiny twin, named like the Natdex sheets
+  hisuian_qwilfish: ['hisuian_qwilfish.png'],
+  hisuian_qwilfishShiny: ['hisuian_qwilfishShiny.png'],
   unergy: ['unergy.png'],
   unitem: ['unitem.png'],
   j_poke_unown_swarm: ['j_poke_unown_swarm.png', 290, 285],
@@ -137,11 +144,24 @@ function stripFns(o) {
   return r;
 }
 const listOf = (f) => (f && f.ret && Array.isArray(f.ret.list) ? f.ret.list : []);
-const behaviourOf = (def) => {
+/**
+ * Every center is built the same way: static data first, behaviour after. A definition's own static (non-function)
+ * fields — overrides of data.js, or the whole static data of an object data.js doesn't have — are merged into the
+ * data item (deep-copied) BEFORE the center is built, so they go through the same processing as data.js's (atlas
+ * names, ptype / item_req / evo_list into config.extra, sprites, ...); only the functions are assigned afterwards.
+ */
+const staticOf = (def) => {
   const out = {};
-  for (const [k, v] of Object.entries(def || {})) if (k !== 'poke_file') out[k] = v;
+  for (const [k, v] of Object.entries(def || {})) if (k !== 'poke_file' && typeof v !== 'function') out[k] = stripFns(v);
   return out;
 };
+const behaviourOf = (def) => {
+  const out = {};
+  for (const [k, v] of Object.entries(def || {})) if (typeof v === 'function') out[k] = v;
+  return out;
+};
+/** The data item with the definition's static fields merged in. */
+const withStatic = (item, def) => (def ? { ...item, ...staticOf(def) } : item);
 const SPRITES = DATA.globals.PokemonSprites;
 
 /** pokespriteload.lua poke_load_atlas + poke_load_sprites (Basic sheet, base art). */
@@ -166,8 +186,9 @@ const PORTED = { jokers: [], consumables: [], boosters: [] };
 const UNPORTED = { jokers: [], consumables: [], boosters: [], vouchers: [], backs: [], tags: [], blinds: [], seals: [], enhancements: [] };
 
 // -------------------------------------------------------------------- jokers
-function jokerCenter(item, file) {
-  const def = DEFS.jokers[item.name];
+function jokerCenter(data_item, file) {
+  const def = DEFS.jokers[data_item.name];
+  const item = withStatic(data_item, def);
   const c = stripFns(item);
   c.key = 'j_poke_' + (item.key || item.name);
   c.set = 'Joker';
@@ -212,8 +233,9 @@ function jokerCenter(item, file) {
  * The add-on registers the returned centers in its own registerMod content (so they carry its
  * mod id: off = gone) and adds its families with `add_family` (systems/evolution.js).
  */
-export function addon_pokemon_center(item, def, { prefix, file, sprites, atlas } = {}) {
+export function addon_pokemon_center(data_item, def, { prefix, file, sprites, atlas } = {}) {
   if (!prefix) throw new Error('addon_pokemon_center: prefix required');
+  const item = withStatic(data_item, def);
   const c = stripFns(item);
   c.key = 'j_' + prefix + '_' + (item.key || item.name);
   c.set = 'Joker';
@@ -239,8 +261,9 @@ export function addon_pokemon_center(item, def, { prefix, file, sprites, atlas }
 }
 
 // ---------------------------------------------------------------- consumables
-function consumableCenter(item, file) {
-  const def = DEFS.consumables[item.name];
+function consumableCenter(data_item, file) {
+  const def = DEFS.consumables[data_item.name];
+  const item = withStatic(data_item, def);
   const c = stripFns(item);
   c.key = 'c_poke_' + (item.key || item.name);
   c.consumeable = true;
@@ -259,8 +282,9 @@ function consumableCenter(item, file) {
   return c;
 }
 
-function boosterCenter(item, file) {
-  const def = DEFS.boosters[item.key];
+function boosterCenter(data_item, file) {
+  const def = DEFS.boosters[data_item.key];
+  const item = withStatic(data_item, def);
   const c = stripFns(item);
   c.key = 'p_poke_' + item.key;
   c.set = 'Booster';
@@ -272,8 +296,9 @@ function boosterCenter(item, file) {
   return c;
 }
 
-function simpleCenter(kind, prefix, set, item, file) {
-  const def = DEFS[kind][item.key];
+function simpleCenter(kind, prefix, set, data_item, file) {
+  const def = DEFS[kind][data_item.key];
+  const item = withStatic(data_item, def);
   const c = stripFns(item);
   c.key = prefix + item.key;
   c.set = set;
@@ -290,14 +315,13 @@ const centers = [];
 const dataJokerNames = new Set();
 for (const f of DATA.groups.jokers) for (const item of listOf(f)) { dataJokerNames.add(item.name); centers.push(jokerCenter(item, f.file)); }
 // Jokers the 3.2.1 Lua writes but never returns from its file (e.g. Jirachi's copy / negging forms,
-// Hisuian Qwilfish / Overqwil) aren't in data.js: a port may define them in full — static fields
-// (name, pos, config, rarity, cost, stage, ptype, gen, atlas, ...) plus behaviour.
+// Hisuian Qwilfish / Overqwil) aren't in data.js: a port defines them in full — static fields (pos, config,
+// rarity, cost, stage, ptype, gen, atlas as the Lua names it, ...) plus behaviour — and jokerCenter builds
+// them exactly like data.js's (withStatic), so their atlas / sprite / config.extra.ptype come out the same way.
 for (const [name, def] of Object.entries(DEFS.jokers)) {
   if (dataJokerNames.has(name)) continue;
   if (!def.stage || def.rarity === undefined) throw new Error(`pokermon: joker '${name}' is not in data.js and its definition has no static data (stage/rarity/pos/config)`);
-  const item = { name, ...Object.fromEntries(Object.entries(def).filter(([, v]) => typeof v !== 'function')) };
-  item.config = item.config ? JSON.parse(JSON.stringify(item.config)) : {};
-  centers.push(jokerCenter(item, def.poke_file));
+  centers.push(jokerCenter({ name }, def.poke_file));
 }
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 for (const f of DATA.groups.boosters) for (const item of listOf(f)) centers.push(boosterCenter(item, f.file));
@@ -341,6 +365,19 @@ const stickers = [];
 for (const f of DATA.groups.stickers) for (const item of listOf(f)) {
   stickers.push({ ...stripFns(item), atlas: 'poke_AtlasStickersBasic', label: 'Tera', type: item.key.replace('_sticker', '') });
 }
+// The Tera stickers' own text: en-us.lua has it commented out (so they showed none); the author's entries were
+// {name = "Type", text = {"{X:grass,C:white}Grass{}"}} — restored here, plus the type's tooltip below it.
+{
+  const OTHER = DATA.loc.descriptions.Other;
+  for (const s of stickers) {
+    if (OTHER[s.key]) continue;
+    const T = s.type[0].toUpperCase() + s.type.slice(1);
+    OTHER[s.key] = { name: 'Type', text: ['{X:' + s.type + ',C:white}' + T + '{}'] };
+  }
+  // The Jirachi tag (tags1.lua: no_collection, no loc entry — it showed its raw key while on the HUD).
+  const TAG = (DATA.loc.descriptions.Tag = DATA.loc.descriptions.Tag || {});
+  if (!TAG.tag_poke_jirachi_tag) TAG.tag_poke_jirachi_tag = { name: 'Jirachi Tag', text: ["Jirachi grants a wish:", 'opens a free {C:attention}Wish Pack{}', 'when the next Blind is chosen'] };
+}
 
 const consumable_types = [];
 for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
@@ -364,6 +401,8 @@ const hooks = {
   evaluate_round: rules.evaluate_round,
   reset_game_globals: rules.reset_game_globals,
   pack_size: rules.pack_size,
+  pack_card: rules.pack_card,
+  joker_win_keys: family_win_keys,
   can_reserve: rules.can_reserve,
   calculate: rules.calculate,
   add_to_deck: shiny_hooks.add_to_deck,
@@ -448,6 +487,9 @@ export const POKERMON = registerMod({
     loc: DATA.loc,
   },
   hooks,
+  challenges: CHALLENGES, // (challenges.js: engine/challenge.js plays them)
+  sleeves: SLEEVES, // (sleeves.js: deck variants, engine/sleeve.js)
+  ui: POKE_UI, // (ui.js: type pills, energy pips, the Pokédex, shaders, animations — micatro/js/ui/modui.js)
 });
 
 /** Port status (for tests, the wiki and PORTING.md). */

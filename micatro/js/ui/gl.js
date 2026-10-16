@@ -7,6 +7,9 @@
 // Mod editions may bring their own pass: the edition center's `shader_fs` (a main() over the shared
 // prelude below — tex0, time, fx, texture_details, HSL/RGB, dissolve_mask), compiled on first use;
 // it replaces the card's plain pass (BETMMA's Phantom / Tentacle), or with `shader_overlay` is drawn over it (AutumnCircus' Gilded).
+// A mod's UI module may also add EXTRA passes drawn over a card (render opts.extra: [{key, fs, src?, u}] —
+// Pokermon's evolution glow and Zorua's shadow): each a main() over the same prelude, its own uniforms
+// (u: {name: number | [numbers]}), sampling tex0 = `src` (another canvas, e.g. a sprite) or the card face.
 import { MODREG } from './assets.js';
 
 const VS = `attribute vec2 p; varying vec2 vUv; void main(){ vUv = vec2(p.x*0.5+0.5, 0.5-p.y*0.5); gl_Position = vec4(p,0.,1.); }`;
@@ -372,6 +375,7 @@ export class CardFX {
     else if (ed && this.modPass(ed) && MODREG.center('e_' + ed) && MODREG.center('e_' + ed).shader_overlay) passes.push('plain', this.modPass(ed)); // (an SMODS edition drawn over the card: AutumnCircus' Gilded)
     else passes.push((ed && this.modPass(ed)) || 'plain');
     if (opts.debuff) passes.push('debuff');
+    const extra = (opts.extra || []).filter((x) => x && x.key && x.fs && this.extraPass(x));
     for (const k of passes) {
       const { p, u } = this.progs[k];
       gl.useProgram(p);
@@ -384,7 +388,35 @@ export class CardFX {
       if (u.fx) gl.uniform2f(u.fx, opts.fx ? opts.fx[0] : 0, opts.fx ? opts.fx[1] : 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
+    for (const x of extra) {
+      const { p, u } = this.progs['x:' + x.key];
+      if (x.src) this.texFor(x.src); else this.texFor(src);
+      gl.useProgram(p);
+      gl.uniform1i(u.tex0, 0);
+      gl.uniform1f(u.dissolve, opts.dissolve || 0);
+      gl.uniform1f(u.time, opts.t || 0);
+      if (u.texture_details) gl.uniform4f(u.texture_details, 0, 0, 71, 95);
+      if (u.burn_colour_1) gl.uniform4fv(u.burn_colour_1, opts.burn1 || C.BLACK);
+      if (u.burn_colour_2) gl.uniform4fv(u.burn_colour_2, opts.burn2 || C.ORANGE);
+      if (u.fx) gl.uniform2f(u.fx, opts.fx ? opts.fx[0] : 0, opts.fx ? opts.fx[1] : 0);
+      for (const [name, v] of Object.entries(x.u || {})) {
+        const loc = u[name];
+        if (!loc) continue;
+        const a = Array.isArray(v) ? v : [v];
+        if (a.length === 1) gl.uniform1f(loc, a[0]); else if (a.length === 2) gl.uniform2fv(loc, a); else if (a.length === 3) gl.uniform3fv(loc, a); else gl.uniform4fv(loc, a);
+      }
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     ctx.clearRect(0, 0, dst.width, dst.height);
     ctx.drawImage(this.canvas, 0, 0);
+  }
+  /** Compile a mod UI's extra pass once (by key); false when it failed (it is then skipped). */
+  extraPass(x) {
+    const k = 'x:' + x.key;
+    if (!(k in this.progs)) {
+      this.progs[k] = null;
+      try { this.progs[k] = compile(this.gl, VS, PRE + x.fs); } catch (e) { console.warn('micatro: mod UI shader failed: ' + x.key, e); }
+    }
+    return !!this.progs[k];
   }
 }

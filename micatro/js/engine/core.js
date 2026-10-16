@@ -249,7 +249,7 @@ export function card_eval_status_text(card, eval_type, amt, percent, dir, extra)
   // (Bunco's Nil Bill / Neon Joker watch the 'debuff' popup — "a debuffed card was played")
   if (ACTIVE_MODS.length) callHook('status_text', card, eval_type, amt, extra);
   // Lua: card_eval_status_text ends with playing_card_joker_effects(extra.playing_cards_created) (DNA -> Hologram).
-  if (extra && extra.playing_cards_created) for (const j of G.jokers.cards) j.calculate_joker({ playing_card_added: true, cards: extra.playing_cards_created });
+  if (extra && extra.playing_cards_created) for (const j of G.jokers.cards) mod_context_effect(j, j.calculate_joker({ playing_card_added: true, cards: extra.playing_cards_created }));
 }
 export function juice_card(card) { emit('juice', { card: cid(card) }); }
 export function play_sound(sound, per, vol) { emit('sound', { sound, per, vol }); }
@@ -888,7 +888,7 @@ export class Card {
   /** Card:sell_card — synchronous; sell price paid via the queue like Lua. */
   sell_card() {
     if (ACTIVE_MODS.length) callHook('sell_card', this);
-    this.calculate_joker({ selling_self: true });
+    mod_context_effect(this, this.calculate_joker({ selling_self: true }));
     G.E_MANAGER.add_event(() => {
       play_sound('coin2');
       ease_dollars(this.sell_cost);
@@ -1199,8 +1199,9 @@ export function eval_card(card, context) {
 /**
  * Steamodded quantum enhancements (SMODS optional_features.quantum_enhancements): the extra
  * enhancement keys mod jokers grant `card` by answering the check_enhancement context with
- * {m_steel = true, ...}. Only mod jokers that answer it are asked (center.quantum_enhancements,
- * or a calculate that mentions check_enhancement); nested checks see only real enhancements.
+ * {m_steel = true, ...}. Only centers that declare it are asked: `quantum_enhancements: true` on the
+ * joker / consumable center that grants the extra enhancement (an explicit flag — nothing is inferred
+ * from source text); nested checks see only real enhancements.
  */
 let _quantum_busy = false;
 export function quantum_enhancements(card) {
@@ -1212,8 +1213,7 @@ export function quantum_enhancements(card) {
     for (const j of G.consumeables ? G.jokers.cards.concat(G.consumeables.cards) : G.jokers.cards) {
       const c = j.config.center;
       if (!c.mod || !c.calculate || j.debuff) continue;
-      if (c._quantum === undefined) c._quantum = !!c.quantum_enhancements || String(c.calculate).includes('check_enhancement');
-      if (!c._quantum) continue;
+      if (!c.quantum_enhancements) continue;
       const r = c.calculate(c, j, { check_enhancement: true, other_card: card, no_blueprint: true });
       if (r && typeof r === 'object') {
         for (const [k, v] of Object.entries(r)) if (v === true && P_CENTERS[k] && P_CENTERS[k].set === 'Enhanced' && k !== card.config.center.key && !out.includes(k)) out.push(k);
@@ -1221,6 +1221,50 @@ export function quantum_enhancements(card) {
     }
   } finally { _quantum_busy = false; }
   return out;
+}
+
+/**
+ * SMODS.calculate_context evaluation of a MOD card's return in a vanilla context whose return
+ * the base game ignores (setting_blind, pre_discard, using_consumeable, first_hand_drawn, playing_card_added,
+ * remove_playing_cards, buying_card, selling_card, selling_self, open_booster, skipping_booster, skip_blind,
+ * reroll_shop, ending_shop): SMODS shows those returns like any other. message, level_up
+ * (`level_up_hand` or 1 level), then dollars / func / extra. A no-op for base-game cards.
+ */
+export function mod_context_effect(card, eff, context) {
+  if (!eff || typeof eff !== 'object' || !card || !(card.config.center.mod || eff._mod)) return; // (eff._mod: a mod joker's return copied by Blueprint / Brainstorm)
+  if (eff.message) card_eval_status_text(eff.message_card || card, 'extra', null, null, null, eff);
+  if (eff.level_up) {
+    const h = eff.level_up_hand || (context && context.scoring_name);
+    if (h && G.GAME.hands[h]) level_up_hand(eff.card || card, h, null, eff.level_up === true ? 1 : eff.level_up);
+  }
+  mod_effect_tail(card, eff, { dollars: true });
+}
+
+/**
+ * Steamodded's calculate_effect extras for a MOD card's return value, in the places where
+ * vanilla only shows the text: `func()` runs, `extra` shows its own message and runs its
+ * func (recursively), and `dollars` pays out where the vanilla pass ignores it. A no-op for
+ * base-game cards, so vanilla scoring is untouched.
+ */
+export function mod_effect_tail(card, eff, opts = {}) {
+  if (!eff || typeof eff !== 'object' || !card || !(card.config.center.mod || eff._mod)) return; // (eff._mod: a mod joker's return copied by Blueprint / Brainstorm)
+  if (opts.dollars && eff.dollars) { ease_dollars(eff.dollars); card_eval_status_text(eff.card || card, 'dollars', eff.dollars); }
+  if (typeof eff.func === 'function') eff.func();
+  let x = eff.extra, guard = 0;
+  while (x && typeof x === 'object' && guard++ < 10) {
+    if (x.message) card_eval_status_text(x.message_card || x.focus || card, 'extra', null, null, null, x);
+    if (x.dollars) { ease_dollars(x.dollars); card_eval_status_text(x.message_card || card, 'dollars', x.dollars); }
+    if (typeof x.func === 'function') x.func();
+    x = x.extra;
+  }
+}
+/**
+ * The quantum half of SMODS.has_enhancement(card, key): true when an enabled mod grants `card` the
+ * extra enhancement `key` (its own enhancement is the caller's vanilla check). Always false with no
+ * mods on, so vanilla code paths stay exactly the base game's.
+ */
+export function has_quantum_enhancement(card, key) {
+  return ACTIVE_MODS.length > 0 && quantum_enhancements(card).includes(key);
 }
 
 export function get_current_pool(_type, _rarity, _legendary, _append) {
@@ -1271,7 +1315,7 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
         if (!v.config.softlock || G.GAME.hands[v.config.hand_type].played > 0) add = true;
       } else if (v.enhancement_gate) {
         add = false;
-        for (const vv of G.playing_cards) if (vv.config.center.key === v.enhancement_gate) add = true;
+        for (const vv of G.playing_cards) if (vv.config.center.key === v.enhancement_gate || has_quantum_enhancement(vv, v.enhancement_gate)) add = true;
       } else add = true;
       if (v.name === 'Black Hole' || v.name === 'The Soul' || v.hidden) {
         // (a custom deck may let The Soul / Black Hole into ordinary pools: Deck Creator's allow_soul / allow_black_hole)
