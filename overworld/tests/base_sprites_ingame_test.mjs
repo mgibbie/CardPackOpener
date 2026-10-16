@@ -2,7 +2,7 @@
 // your own Gen-9 mon is drawn from BEHIND, in the real game; the design wiki shows the
 // new art on desktop and on a phone.
 //
-// Covers: overworld/battle.js (loadSprite, drawSide), tools/gen_base_sprites.py,
+// Covers: overworld/battle.js (loadSprite, drawSide), tools/gen_base_sprites.py, tools/gen_fakemon_sprites.py,
 // designwiki/app.js (pokemonDetail), overworld/data/pokemon, designwiki/sprites.
 //
 // Screenshots (to LOOK at): $SHOTS or overworld/tests/base_sprites_*.png
@@ -47,12 +47,12 @@ const bat = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_b
 		}, STATE);
 		// getImage() serves blob: URLs, so identify an image by its PIXELS
 		await page.evaluateOnNewDocument(() => {
-			window.__samePixels = async (img, url) => {
+			window.__samePixels = async (img, url, flip) => { // flip: compare with the reference MIRRORED
 				if (!img || !img.width) return false;
 				const ref = new Image(); ref.src = url; await ref.decode();
 				if (ref.width !== img.width || ref.height !== img.height) return false;
-				const px = im => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); return x.getImageData(0, 0, c.width, c.height).data; };
-				const a = px(img), b = px(ref);
+				const px = (im, f) => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); if (f) { x.translate(im.width, 0); x.scale(-1, 1); } x.drawImage(im, 0, 0); return x.getImageData(0, 0, c.width, c.height).data; };
+				const a = px(img), b = px(ref, flip);
 				for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
 				return true;
 			};
@@ -65,7 +65,11 @@ const bat = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_b
 		// ---------- battles: (your mon, the wild foe) ----------
 		const fights = [['grookey', 'urshifu', 'base_sprites_battle_urshifu.png'], ['sprigatito', 'morpeko', 'base_sprites_battle_morpeko.png'],
 			['scorbunny', 'calyrex', 'base_sprites_battle_calyrex.png'],
-			['okidogi', 'ogerpon', 'base_sprites_battle_okidogi.png']]; // a #1011+ DLC species as your mon: its real back
+			['okidogi', 'ogerpon', 'base_sprites_battle_okidogi.png'], // a #1011+ DLC species as your mon: its real back
+			// fakemon (tools/gen_fakemon_sprites.py): your Uranium Aotius / Zephy from BEHIND (both were the
+			// mirrored front), vs Ransei fakemon in their full-size source art; your CAP Tactite (real back)
+			['aotius', 'hydrotaur', 'fakemon_sprites_battle_aotius.png'], ['zephy', 'monstricity', 'fakemon_sprites_battle_zephy.png'],
+			['tactite', 'sakurovix', 'fakemon_sprites_battle_tactite.png']];
 		for (const [mine, foe, shot] of fights) {
 			const bt = await page.evaluate(async (mine, foe, files) => {
 				const ow = window.__ow, B = ow.battle, Bmod = await import('/overworld/battle.js');
@@ -79,12 +83,13 @@ const bat = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_b
 				}
 				const meImg = a()?.meImg, foeImg = a()?.foeImg, P = f => '/overworld/data/pokemon/' + f;
 				return { phase: a()?.phase, me: a()?.me?.speciesId, foe: a()?.foe?.speciesId, foeW: Math.max(foeImg?.width || 0, foeImg?.height || 0),
-					meIsBack: await window.__samePixels(meImg, P(files.myBack)), meIsFront: await window.__samePixels(meImg, P(files.myFront)),
+					meIsBack: await window.__samePixels(meImg, P(files.myBack)), meIsFront: await window.__samePixels(meImg, P(files.myFront)), meIsMirroredFront: await window.__samePixels(meImg, P(files.myFront), true),
 					foeIsFront: await window.__samePixels(foeImg, P(files.foeFront)) };
 			}, mine, foe, { myBack: bat[mine].sprite.replace('.png', '-b.png'), myFront: bat[mine].sprite, foeFront: bat[foe].sprite });
 			A(bt.me === mine && bt.foe === foe, `battle: your ${mine} vs a wild ${foe}`, JSON.stringify(bt));
 			A(bt.foeIsFront && bt.foeW >= 40, `the wild ${foe} is drawn with its full-size front (${bat[foe].sprite}, ${bt.foeW}px, not the old icon)`, JSON.stringify(bt));
 			A(bt.meIsBack && !bt.meIsFront, `your ${mine} is drawn with its BACK sprite`, JSON.stringify(bt));
+			if (!(bat[mine].num > 0)) A(!bt.meIsMirroredFront, `your fakemon ${mine}'s back is a real back view, not its front mirrored`, JSON.stringify(bt));
 			await new Promise(r => setTimeout(r, 400));
 			await page.screenshot({ path: path.join(SHOTS, shot) });
 			await page.evaluate(() => { const B = window.__ow.battle; if (B.active) B.active = null; });
