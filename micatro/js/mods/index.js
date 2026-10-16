@@ -80,6 +80,16 @@ export const AVAILABLE = [
     description: '58 new vouchers and 24 fusion vouchers (with voucher rarities), voucher packs, 11 jokers, 2 editions and 5 challenges.',
     load: () => import('../../mods/betmma/index.js'),
   },
+  {
+    id: 'bunco', name: 'Bunco', size: '~6 MB art + music', by: 'Firch, RENREN, Peas, minichibis, J.D., Guwahavel, Ciirulean & ejwu (rebuilt for Micatro)', requires: [],
+    description: '80 jokers, two exotic suits (Fleurons, Halberds), Spectrum hands, Polymino cards that link cards together, Blind and Virtual packs, 25 blinds, 16 tags and more.',
+    load: () => import('../../mods/bunco/index.js'),
+  },
+  {
+    id: 'reverie', name: 'Reverie', size: '~0.3 MB art', by: 'DVRP (rebuilt for Micatro)', requires: [],
+    description: 'A movie-themed expansion: Cine cards and quests that turn the next shop into a special shop (tags, packs, food jokers...).',
+    load: () => import('../../mods/reverie/index.js'),
+  },
 ];
 
 /** Load (register) the given mods and everything they require. */
