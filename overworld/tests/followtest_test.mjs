@@ -125,6 +125,16 @@ async function boot(browser, username) {
 		});
 		A(sheets.fakemon === 'none', 'a fakemon (gigalion) uses the mini, never a sheet', sheets.fakemon);
 		A(sheets.canonical !== 'none', 'a canonical species still loads its follower sheet', String(sheets.canonical));
+		// the one fakemon with real walking art (Radical Ransei's sakurovix charset, tools/gen_fakemon_walk.py)
+		// walks with its own sheet; it is a real 4x4 grid of 32px frames, not the mini
+		const sak = await page.evaluate(async () => {
+			const ow = window.__ow;
+			ow.followSheet('sakurovix');
+			for (let i = 0; i < 60 && ow.followCache.get('sakurovix') == null; i++) await new Promise(r => setTimeout(r, 50));
+			const v = ow.followCache.get('sakurovix');
+			return v && v !== 'none' ? { w: v.width, h: v.height } : String(v);
+		});
+		A(sak && sak.w === 128 && sak.h === 128, 'sakurovix (a fakemon with real walking art) follows with its own walk sheet', JSON.stringify(sak));
 
 		// walking right faces the follower right (the mini mirrors to match)
 		await page.keyboard.down('ArrowRight'); await new Promise(r => setTimeout(r, 220)); await page.keyboard.up('ArrowRight');

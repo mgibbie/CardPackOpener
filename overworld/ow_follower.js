@@ -22,12 +22,15 @@ import { legendStats } from './ow_postgame.js';
 // 4x4 walk sheet from data/pokemon_follow/<id>.png: rows down/left/right/up,
 // cols = walk frames. It trails onto whatever tile the player just vacated.
 export const followCache = new Map();
+// The fakemon with REAL walking art (tools/gen_fakemon_walk.py: Radical Ransei's own charset).
+// No pack or source has charsets for the rest, so they walk as the battle-sprite mini.
+const FAKEMON_SHEETS = new Set(['sakurovix']);
 export function followSheet(id) {
 	if (!id) return null;
-	// fakemon (negative dex numbers) have no dedicated follower sheet — always fall
-	// back to the battle-sprite mini. Also cache-proofs the removed AI sheets: even
-	// if a stale CDN copy of data/pokemon_follow/<fakemon>.png lingers, we never load it.
-	if ((battle.data?.species?.[id]?.num || 0) < 0) { if (followCache.get(id) !== 'none') followCache.set(id, 'none'); return null; }
+	// other fakemon (negative dex numbers) have no follower sheet — always fall back
+	// to the battle-sprite mini. Also cache-proofs the removed AI sheets: even if a
+	// stale CDN copy of data/pokemon_follow/<fakemon>.png lingers, we never load it.
+	if ((battle.data?.species?.[id]?.num || 0) < 0 && !FAKEMON_SHEETS.has(id)) { if (followCache.get(id) !== 'none') followCache.set(id, 'none'); return null; }
 	if (!followCache.has(id)) {
 		followCache.set(id, null);
 		getImage(`data/pokemon_follow/${id}.png`).then(img => followCache.set(id, img)).catch(() => {
