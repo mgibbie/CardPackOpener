@@ -6,6 +6,7 @@ import { CardSprite, modAtlasesOf } from './cardsprite.js';
 import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
 import { backgroundFor } from './gl.js';
 import { markup, fmt, esc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
+import { isNumeric, isBig } from '../engine/bignum.js';
 import { sound } from './sound.js';
 
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
@@ -546,7 +547,7 @@ export class Board {
       H.lvl.textContent = hh.level ? 'lvl.' + hh.level : '';
       H.lvl.style.color = levelColour(hh.level);
     }
-    const num = (x) => (typeof x === 'number' ? fmt(x) : (x == null ? '0' : String(x)));
+    const num = (x) => (typeof x === 'number' || isBig(x) || (typeof x === 'string' && isNumeric(x)) ? fmt(x) : (x == null ? '0' : String(x)));
     H.chips.textContent = num(hh.chips);
     H.mult.textContent = num(hh.mult);
     H.handBox.classList.toggle('blocked', !!hh.blocked);
@@ -1066,6 +1067,8 @@ export class Board {
   /** Tween the round score display. */
   tweenScore(to, dur) {
     const from = this.shownScore, t0 = performance.now();
+    // (big-number scoring: a Decimal / "1.234e450" score jumps straight there — no tween past 1e308)
+    if (typeof from !== 'number' || typeof to !== 'number' || !isFinite(to - from)) { this.shownScore = to; this.H.score.textContent = fmt(to); return; }
     const step = () => {
       const p = Math.min(1, (performance.now() - t0) / (dur * 1000));
       this.shownScore = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));

@@ -39,6 +39,7 @@
  *     consumable is picked then.
  *  3. Pawn's description localized the rank ID ('11' -> ERROR for Jack ... Ace); it names the rank.
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, P_CARDS, Card, copy_card, poll_edition, pseudorandom, level_up_hand, ease_discard,
   math_random, play_sound, localize, draw_card,
@@ -507,7 +508,7 @@ J('critic', {
     if (ctx.joker_main) {
       const temp_chips = G.GAME.blind.chips;
       const hand_chips = ctx.hand_chips, mult = ctx.mult;
-      if (Math.floor(hand_chips * mult) < temp_chips / card.ability.extra.fraction) {
+      if (BN.lt(BN.floor(BN.mul(hand_chips, mult)), BN.div(temp_chips, card.ability.extra.fraction))) {
         return { Xmult_mod: card.ability.extra.xmult, card, message: a_xmult(card.ability.extra.xmult) };
       }
     }

@@ -203,6 +203,16 @@ export const HOOKS = [
   'create_card_type',   // (_type, forced_key, area, key_append) -> [_type, forced_key]: what create_card makes, before any roll (undefined = as asked)
   'joker_retriggers',   // (n, joker, context) -> n extra evaluations of this joker's effect (SMODS.calculate_retriggers wrap: a Sock and Buskin Stamp)
   'shuffled',           // (area, seed) CardArea:shuffle just shuffled this area (a Lua CardArea:shuffle wrap; reorder area.cards in place)
+  // ---- the native deck editor (engine/customdeck.js: Deck Creator's rule options)
+  'drawn_to_hand',      // (card) CardArea:draw_card_from just drew this card from the deck into the hand
+  'pool_duplicates',    // (_type) -> true: get_current_pool lets already-used centers back in (as if Showman were held)
+  'pool_hidden',        // (center, _type) -> true: The Soul / Black Hole may sit in an ordinary pool
+  'calculate_seal',     // (card, context) -> a result that REPLACES Card:calculate_seal (null = nothing); undefined = no opinion
+  'blue_seal',          // (card) a Blue Seal triggers at the end of the round -> a Planet key it makes instead (undefined = the usual)
+  'use_consumeable',    // (card, area, copier) -> true: the mod applied this consumable's effect itself (a Card:use_consumeable wrap)
+  'booster_free',       // (card) -> true: opening this shop booster costs nothing
+  'skip_booster',       // () a booster pack is being skipped (G.FUNCS.skip_booster)
+  'blind_on_deck',      // (slot) the blind select put this blind ('Small' | 'Big' | 'Boss') on deck
 ];
 
 /**

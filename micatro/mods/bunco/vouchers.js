@@ -10,6 +10,7 @@
 // animation delays); the intended behaviour — the pack's cards are thrown away and the SAME pack opens again,
 // free, with its state, size and remaining picks unchanged, once per pack — is the engine's `reopening` path
 // in Card:open plus the `bunc_reroll_pack` action here.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, P_CENTERS, P_CARDS, Card, get_pack, pseudorandom, pseudoseed, number_format, emit, play_sound } from '../../js/engine/core.js';
 import { STATES } from '../../js/engine/run.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
@@ -88,7 +89,7 @@ export const hooks = {
   // Hedge Trimmer (Blind:press_play, every blind): -5% of the blind's score each hand.
   blind_press_play(b) {
     if (!used('hedge_trimmer')) return;
-    const final_chips = (b.chips / 100) * (100 - P_CENTERS.v_bunc_hedge_trimmer.config.percent);
+    const final_chips = BN.mul(BN.div(b.chips, 100), 100 - P_CENTERS.v_bunc_hedge_trimmer.config.percent);
     event(() => { b.chips = final_chips; b.chip_text = number_format(b.chips); });
   },
   // Masquerade: Blind Packs cost nothing.

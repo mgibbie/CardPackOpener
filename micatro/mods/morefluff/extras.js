@@ -3,6 +3,7 @@
 //   the Clutch Tag (X4 Mult for the next blind; lovely/clutch_tag.toml), 4 decks, "temporary" cards
 //   (ability.mf_temporary: gone at the end of the round — the end_round wrap pulled from Entropy),
 //   and the music tracks (SMODS.Sound select_music_track -> the run view's `music`).
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, P_CENTERS, create_card, card_eval_status_text, emit } from '../../js/engine/core.js';
 import { STATES } from '../../js/engine/run.js';
 import { DATA, modded_begin, modded_end, modded_pool_filter } from './util.js';
@@ -100,7 +101,7 @@ export const hooks = {
   modify_scoring([chips, mult], step) {
     if (step !== 'final_scoring_step') return undefined;
     for (const t of clutch_on()) {
-      mult = mult * P_CENTERS_TAG_EXTRA(t);
+      mult = BN.mul(mult, P_CENTERS_TAG_EXTRA(t));
       emit('tag_yep', { tag: t.key, id: t.ID, message: 'X' + P_CENTERS_TAG_EXTRA(t) + ' Mult', colour: 'RED' });
       card_eval_status_text(null, 'extra', null, null, null, { message: 'X' + P_CENTERS_TAG_EXTRA(t) + ' Mult', colour: 'RED' });
       emit('hand_text', { chips, mult });

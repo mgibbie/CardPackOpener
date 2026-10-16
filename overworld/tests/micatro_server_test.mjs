@@ -214,6 +214,67 @@ try {
 	A(m3.body.better === false && m3.body.best.score === 9e9, 'one best per player on the modded board (a lower modded score does not replace it)');
 	const lbV2 = await call('run-leaderboard', { mode: 'micatro' }, tokens.alice);
 	A(lbV2.top.some(e => e.name === 'alice' && e.score === 125000 && !e.mods), 'existing vanilla rows are untouched (no mods field)', JSON.stringify(lbV2.top.find(e => e.name === 'alice')));
+
+	// big-number scoring: a modded run's score past 1e308 arrives as text ("1.5e450"); the row keeps
+	// it exactly (big) with a sortable key (exp, man) and ranks it above every plain number
+	const md = (who, score, ante, mods = ['morefluff']) => raw('run-score', { mode: 'micatro_modded', score, ante, mods }, tokens[who]);
+	const g1 = await md('viewer2', '1.5e450', 20);
+	A(g1.status === 200 && g1.body.better === true && g1.body.rank === 1 && g1.body.best.big === '1.5e450' && g1.body.best.exp === 450 && g1.body.best.man === 1.5 && g1.body.best.score === Number.MAX_VALUE,
+		'a big score is stored exactly (text + exponent/mantissa key; score clamped for old readers)', JSON.stringify(g1.body));
+	await md('viewer3', '9.99e449', 30);
+	// the scale tops out at 9.99e999: 1e1000 and above is naneinf (stored like Infinity), above every big score
+	const g4 = await md('viewer4', '2e1000', 12, ['bunco']);
+	A(g4.status === 200 && g4.body.best.score === Number.MAX_VALUE && !g4.body.best.big, 'an exponent >= 1000 is naneinf (clamped like Infinity, no big text)', JSON.stringify(g4.body.best));
+	await md('viewer5', 'Infinity', 40, ['bunco']);
+	const g5 = await md('viewer6', '1e1e+43', 50);
+	A(g5.status === 200 && g5.body.best.score === Number.MAX_VALUE && !g5.body.best.big, 'a huge exponent ("1e1e+43") is naneinf too', JSON.stringify(g5.body.best));
+	await md('viewer10', '9.99e999', 1);
+	const lbB = await call('run-leaderboard', { mode: 'micatro_modded' }, tokens.viewer2);
+	const order = (lbB.top || []).map(e => e.name).join(',');
+	A(order === 'viewer6,viewer5,viewer4,viewer10,viewer2,viewer3,bob,alice', 'the board ranks naneinf (ties by ante) above 9.99e999, big scores by exponent then mantissa, then plain ones', order);
+	A(lbB.you && lbB.you.big === '1.5e450' && lbB.you.rank === 5, "run-leaderboard returns the caller's big best + rank", JSON.stringify(lbB.you));
+	A((await md('viewer2', '1.4e450', 21)).body.better === false && (await md('viewer2', 5e300, 22)).body.better === false, 'a smaller big score / a plain score does not beat a big best');
+	const g7 = await md('viewer2', '1.6e450', 23);
+	A(g7.body.better === true && g7.body.best.big === '1.6e450' && g7.body.rank === 5, 'a larger mantissa at the same exponent is better', JSON.stringify(g7.body));
+	const g8 = await md('viewer7', '1.5e300', 9);
+	A(g8.status === 200 && g8.body.best.score === 1.5e300 && !('big' in g8.body.best), 'a score a double can hold stays a plain number (no big field)', JSON.stringify(g8.body.best));
+	A((await md('viewer7', '1.5e45x', 9)).status === 400, 'a malformed score is still refused');
+	const lbV3 = await call('run-leaderboard', { mode: 'micatro' }, tokens.alice);
+	A(lbV3.top.every(e => !e.big) && lbV3.you && lbV3.you.score === 125000, 'the vanilla board is untouched by big scores');
+
+	// CUSTOM DECKS (the deck editor): a custom-deck run is modded — the vanilla board stays pure and the
+	// Modded board's row carries the deck's name
+	const cd1 = await raw('run-score', { mode: 'micatro', score: 4242, ante: 3, back: 'b_red', stake: 1, customDeck: 'Goth\u0001 Deck' }, tokens.carl);
+	A(cd1.status === 200 && cd1.body.best.customDeck === 'Goth  Deck' && Array.isArray(cd1.body.best.mods) && cd1.body.best.mods.length === 0, 'a custom-deck score (even sent as micatro) goes to the Modded board, tagged with the cleaned deck name', JSON.stringify(cd1.body));
+	A(row('runboard:micatro_modded').some(e => e.name === 'carl' && e.customDeck === 'Goth  Deck') && !(row('runboard:micatro') || []).some(e => e.name === 'carl' && (e.score === 4242 || e.customDeck)), 'the Modded board lists it; the vanilla board does not');
+	const lbC = await call('run-leaderboard', { mode: 'micatro_modded' }, tokens.carl);
+	A(lbC.top.some(e => e.name === 'carl' && e.customDeck === 'Goth  Deck') && lbC.you && lbC.you.customDeck === 'Goth  Deck', 'run-leaderboard returns the custom deck name (the Modded tab shows "Custom deck: <name>")');
+	const cd2 = await raw('run-score', { mode: 'micatro_modded', score: 9, customDeck: 'X'.repeat(80), mods: ['bunco'] }, tokens.viewer8);
+	A(cd2.status === 200 && cd2.body.best.customDeck.length === 32 && cd2.body.best.mods.join() === 'bunco', 'the deck name is clipped to 32 and kept beside the mod list');
+	A((await raw('run-score', { mode: 'micatro_modded', score: 5, customDeck: '   ' }, tokens.viewer9)).status === 400, 'a blank deck name is not a modded run');
+
+	// saved custom decks: one row per player (micatrodecks:<user>), rev-guarded, capped
+	const dg0 = await call('micatro-decks-get', {}, tokens.carl);
+	A(dg0.rev === 0 && Array.isArray(dg0.decks) && dg0.decks.length === 0, 'micatro-decks-get: no decks yet (rev 0)', JSON.stringify(dg0));
+	const w0 = writes.length;
+	const dp1 = await raw('micatro-decks-put', { rev: 0, decks: [{ id: 'd1', def: { name: 'First', rules: { aces_are_faces: true } }, updated: 5 }] }, tokens.carl);
+	A(dp1.status === 200 && dp1.body.ok && dp1.body.rev === 1 && dp1.body.count === 1, 'micatro-decks-put saves (rev 1)', JSON.stringify(dp1.body));
+	const wrote = writes.slice(w0).filter(k => !k.startsWith('rl:') && k !== 'carl' && !k.startsWith('gc:'));
+	A(wrote.length === 1 && wrote[0] === 'micatrodecks:carl', 'it writes exactly micatrodecks:<user> (plus its rate-limit counter)', JSON.stringify(writes.slice(w0)));
+	const dg1 = await call('micatro-decks-get', {}, tokens.carl);
+	A(dg1.rev === 1 && dg1.decks.length === 1 && dg1.decks[0].id === 'd1' && dg1.decks[0].def.name === 'First' && dg1.decks[0].updated === 5, 'micatro-decks-get returns them');
+	A((await call('micatro-decks-get', {}, tokens.alice)).decks.length === 0, 'a player only sees their own decks');
+	const stale = await raw('micatro-decks-put', { rev: 0, decks: [] }, tokens.carl);
+	A(stale.status === 409 && stale.body.error === 'stale' && stale.body.rev === 1 && stale.body.decks.length === 1 && row('micatrodecks:carl').decks.length === 1, 'a stale rev is refused with the current row (a second device merges, never clobbers)', JSON.stringify(stale.body).slice(0, 120));
+	A((await raw('micatro-decks-put', { rev: 1, decks: [{ id: 'bad id!', def: {} }] }, tokens.carl)).status === 400, 'a bad deck id is refused');
+	A((await raw('micatro-decks-put', { rev: 1, decks: [{ id: 'a', def: {} }, { id: 'a', def: {} }] }, tokens.carl)).status === 400, 'duplicate ids are refused');
+	A((await raw('micatro-decks-put', { rev: 1, decks: [{ id: 'a', def: [1, 2] }] }, tokens.carl)).status === 400, 'a non-object definition is refused');
+	A((await raw('micatro-decks-put', { rev: 1, decks: Array.from({ length: 31 }, (_, i) => ({ id: 'x' + i, def: {} })) }, tokens.carl)).status === 400, 'more than 30 decks are refused');
+	A((await raw('micatro-decks-put', { rev: 1, decks: [{ id: 'big', def: { name: 'x'.repeat(70000) } }] }, tokens.carl)).status === 413, 'an oversized deck is refused (413)');
+	A((await raw('micatro-decks-put', { rev: 1, decks: 'nope' }, tokens.carl)).status === 400 && row('micatrodecks:carl').rev === 1, 'a malformed body is refused and the row is unchanged');
+	const dp2 = await raw('micatro-decks-put', { rev: 1, decks: [] }, tokens.carl);
+	A(dp2.status === 200 && dp2.body.rev === 2 && row('micatrodecks:carl').decks.length === 0, 'deleting every deck is a put of [] at the current rev');
+	A((await raw('micatro-decks-get', {})).status === 401, 'deck actions need a login');
 } catch (e) {
 	A(false, 'score harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
 }
@@ -316,6 +377,23 @@ try {
 	A(r5.ok && sent[sent.length - 1].payload.mode === 'micatro' && !('mods' in sent[sent.length - 1].payload), 'submitScore with no mods stays on the vanilla board');
 	const lbm = await Net.fetchLeaderboard({ modded: true });
 	A(sent[sent.length - 1].payload.mode === 'micatro_modded' && lbm.top.some(e => e.name === 'dana' && e.mods && e.mods.join() === 'nacho_dip,pokermon') && lbm.you && lbm.you.score === 777, 'fetchLeaderboard({modded:true}) reads the Modded board', JSON.stringify(lbm).slice(0, 300));
+	// big-number scoring: the engine's Decimal (or the view's "1.234e450" string) travels as text
+	const r6 = await Net.submitScore({ score: { m: 1.234, e: 450, toJSON() { return '1.234e450'; } }, ante: 25, mods: ['morefluff'] });
+	A(r6.ok && r6.better === true && sent[sent.length - 1].payload.score === '1.234e450' && r6.best.big === '1.234e450', 'submitScore sends a big (Decimal) score as its text', JSON.stringify(sent[sent.length - 1].payload));
+	const r7 = await Net.submitScore({ score: '9.9e449', ante: 30, mods: ['morefluff'] });
+	A(r7.ok && r7.better === false && sent[sent.length - 1].payload.score === '9.9e449', 'a big view string travels as text; a smaller big score is not better', JSON.stringify(r7));
+	// a custom-deck run through the client: Modded board + the deck's name
+	const r8 = await Net.submitScore({ score: 31337, ante: 5, back: 'b_red', mods: [], customDeck: 'Goth Deck' });
+	A(r8.ok && sent[sent.length - 1].payload.mode === 'micatro_modded' && sent[sent.length - 1].payload.customDeck === 'Goth Deck' && !('mods' in sent[sent.length - 1].payload), 'submitScore({customDeck}) posts to micatro_modded with the deck name', JSON.stringify(sent[sent.length - 1].payload));
+	// the deck editor's storage through the client: fetch, save, a stale save comes back as 'stale'
+	const fd0 = await Net.fetchDecks();
+	A(fd0.rev === 0 && fd0.decks.length === 0, 'fetchDecks: none yet', JSON.stringify(fd0));
+	const sd1 = await Net.saveDecks([{ id: 'goth', def: { name: 'Goth Deck' }, updated: 1 }], 0);
+	A(sd1.ok && sd1.rev === 1, 'saveDecks saves at rev 0 -> 1', JSON.stringify(sd1));
+	const sd2 = await Net.saveDecks([], 0);
+	A(sd2.error === 'stale' && sd2.rev === 1 && sd2.decks.length === 1, 'a stale saveDecks returns {error:stale, rev, decks}', JSON.stringify(sd2));
+	const fd1 = await Net.fetchDecks();
+	A(fd1.rev === 1 && fd1.decks[0].def.name === 'Goth Deck', 'fetchDecks returns the saved list');
 } catch (e) {
 	A(false, 'net.js harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
 }

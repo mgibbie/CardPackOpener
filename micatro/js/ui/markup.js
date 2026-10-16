@@ -1,6 +1,7 @@
 // Balatro description markup -> HTML.  "{C:mult}+4{} Mult", "{X:mult,C:white} X2 {}",
 // "{s:0.8}", "{C:attention,T:tag_double}..." ({T:}/{E:}/{V:} are accepted and ignored).
 import { CENTERS, LOC, CARDS, modType, cssColour, modFont } from './assets.js';
+import { isBig, from as bigFrom, formatBig } from '../engine/bignum.js';
 
 export const COL = {
   mult: '#fe5f55', chips: '#009dff', money: '#f3b958', attention: '#ff9a00', filter: '#ff9a00',
@@ -67,6 +68,9 @@ function cssCol(c) {
 /** Balatro's number_format: commas, scientific past 1e11. */
 export function fmt(n) {
   if (n == null || n === '') return '0';
+  // big-number scoring: a Decimal, or its JSON string from a spectated view ("1.234e450")
+  if (typeof n === 'string' && /e/i.test(n)) n = bigFrom(n);
+  if (isBig(n)) return formatBig(n);
   if (typeof n !== 'number') n = Number(n);
   if (!isFinite(n)) return n > 0 ? 'naneinf' : '-naneinf';
   if (Math.abs(n) >= 1e11) {

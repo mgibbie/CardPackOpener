@@ -15,6 +15,7 @@
 //   unscored perma   perma_u_chips / perma_u_mult / perma_u_x_chips / perma_u_x_mult (amm.lua, lovely)
 //
 // Everything is a no-op while autumnmood isn't active for the run (hooks only run for active mods).
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { isActive, feature, MOD_SUITS, activeModSuits } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_CARDS, P_SEALS, P_CENTER_POOLS, Card, CardArea, emit, card_eval_status_text, play_sound, juice_card,
@@ -125,12 +126,12 @@ export function destroy_random_jokers(cards, amt) {
 export function mod_blind(val, silent, percent_val, allow_end) {
   const b = G.GAME.blind;
   if (!b) return;
-  b.chips = percent_val ? Math.floor(b.chips * val) : Math.floor(b.chips + val);
+  b.chips = percent_val ? BN.floor(BN.mul(b.chips, val)) : BN.floor(BN.add(b.chips, val));
   b.chip_text = number_format(b.chips);
   emit('blind', { action: 'chips', key: b.config && b.config.blind && b.config.blind.key, chips: b.chips, chip_text: b.chip_text });
   emit('blind_juice', {});
   if (!silent) play_sound('chips2');
-  if (allow_end && G.GAME.chips - b.chips >= 0) { G.STATE = G.STATES.NEW_ROUND; G.STATE_COMPLETE = false; }
+  if (allow_end && BN.beats(G.GAME.chips, b.chips)) { G.STATE = G.STATES.NEW_ROUND; G.STATE_COMPLETE = false; }
 }
 
 // ================================================================== aspects

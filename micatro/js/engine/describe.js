@@ -16,6 +16,7 @@
 import {
   G, P_CENTERS, P_BLINDS, P_TAGS, LOC, localize, get_blind_amount, number_format,
 } from './core.js';
+import * as B from './bignum.js';
 import { MOD_LOC, MODS, RARITIES, callHook, reduceHook } from '../mods/registry.js';
 
 // --------------------------------------------------------------- helpers
@@ -33,6 +34,7 @@ function name_text(set, key) {
 }
 /** Lua tostring(number) prints %.14g. */
 function fmt(v) {
+  if (B.isBig(v)) return B.formatBig(v);
   if (typeof v === 'number') {
     if (!isFinite(v)) return v > 0 ? 'inf' : '-inf';
     return String(Number(v.toPrecision(14)));
@@ -536,7 +538,7 @@ export function describeBlind(blindKey) {
   if (live && proto.name === 'The Mouth' && live.only_hand) lines.push('[' + loc(live.only_hand, 'poker_hands') + ']');
   lines = lines.filter((l) => l !== '');
   const ante = G.GAME.round_resets.blind_ante || G.GAME.round_resets.ante;
-  const chips = live ? live.chips : get_blind_amount(ante) * proto.mult * G.GAME.starting_params.ante_scaling;
+  const chips = live ? live.chips : B.mul(B.mul(get_blind_amount(ante), proto.mult), G.GAME.starting_params.ante_scaling);
   let type = proto.blind_type || (proto.name === 'Small Blind' ? 'Small' : proto.name === 'Big Blind' ? 'Big' : 'Boss');
   let dollars = live ? live.dollars : proto.dollars;
   if (!live && G.GAME.modifiers.no_blind_reward && G.GAME.modifiers.no_blind_reward[type]) dollars = 0;

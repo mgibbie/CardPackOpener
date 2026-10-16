@@ -169,7 +169,12 @@ export function mountChat(container, { runner, spectator = false } = {}) {
 // Scores are plain JS numbers that can overflow to Infinity (or a BigInt / numeric
 // string from the engine): JSON can't carry Infinity, so it travels as the string
 // 'Infinity' and the server clamps it to Number.MAX_VALUE. NaN is refused locally.
+// A run's big-number score (a Decimal past 1e308, or its JSON string "1.234e450"; naneinf is 1e1000+)
+// travels as that string; the server ranks it above every plain number.
+const BIG_SCORE = /^\d(\.\d{1,20})?e\+?\d{1,20}(\.\d+)?(e\+?\d{1,3})?$/i;
 function wireScore(score) {
+	if (score && typeof score === 'object' && typeof score.toJSON === 'function') score = score.toJSON();
+	if (typeof score === 'string' && BIG_SCORE.test(score.trim()) && !Number.isFinite(Number(score.trim()))) return score.trim();
 	let n = typeof score === 'bigint' ? Number(score) : typeof score === 'string' ? Number(score.trim()) : +score;
 	if (Number.isNaN(n)) return null;
 	if (n === Infinity) return 'Infinity';
@@ -183,13 +188,16 @@ export function modList(mods) {
 
 // submitScore({score, ante, seed, back, stake, won, mods}) → {ok, better, best, rank} | {error}
 // A run with mods posts to the separate Modded board (mode 'micatro_modded') with its mod list.
-export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [] } = {}) {
+// A run with a CUSTOM DECK (the deck editor) is modded too: customDeck = the deck's name.
+export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '' } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	const s = wireScore(score);
 	if (s == null) return { error: 'bad score' };
 	const ml = modList(mods);
-	const body = { mode: ml.length ? 'micatro_modded' : 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won };
+	const cd = String(customDeck || '').slice(0, 32);
+	const body = { mode: ml.length || cd ? 'micatro_modded' : 'micatro', score: s, ante, seed: String(seed || ''), back: String(back || ''), stake, won: !!won };
 	if (ml.length) body.mods = ml;
+	if (cd) body.customDeck = cd;
 	try { return await MP.call('run-score', body); }
 	catch (e) { return { error: 'offline' }; }
 }
@@ -204,4 +212,22 @@ export async function fetchLeaderboard({ limit = 50, modded = false } = {}) {
 		if (!d || d.error) return { top: [], you: null, me: myName(), error: d?.error || 'bad response' };
 		return { top: (d.top || []).slice(0, Math.max(0, limit | 0)), you: d.you || null, me: myName() };
 	} catch { return { top: [], you: null, me: myName(), error: 'offline' }; }
+}
+
+// ---------------------------------------------------------------- custom decks
+// The deck editor's saved decks live on the server for a signed-in player (one row,
+// `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}); guests keep them in
+// localStorage (ui/deckeditor.js). A put whose `rev` is stale gets 409 + the current
+// row: the caller merges and retries (two devices never clobber each other).
+//   fetchDecks() → {rev, decks} | {error}
+//   saveDecks(decks, rev) → {ok, rev} | {error:'stale', rev, decks} | {error}
+export async function fetchDecks() {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-decks-get', {}); return d && !d.error ? { rev: d.rev || 0, decks: Array.isArray(d.decks) ? d.decks : [] } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function saveDecks(decks, rev = 0) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { return (await MP.call('micatro-decks-put', { decks, rev })) || { error: 'bad response' }; }
+	catch { return { error: 'offline' }; }
 }

@@ -8,6 +8,7 @@
 //   Reactive / Rental (made by The Depths / The Chasm; never in the pool).
 // Port notes: the hand_played tags change the hand's running score through flow.js's `modify_scoring` steps
 // (context.score = {hand_chips, mult}); Tag:instayep (the delayless yep) is `instayep` below.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, P_CENTERS, P_CARDS, Card, emit, play_sound, mod_chips, mod_mult, pseudorandom, pseudoseed, pseudorandom_element } from '../../js/engine/core.js';
 import { use_card } from '../../js/engine/run.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
@@ -119,10 +120,10 @@ export const tags = [
   }),
   edition_tag('glitter', 'bunc_glitter'),
   { ...edition_tag('fluorescent', 'bunc_fluorescent'), in_pool: () => pseudorandom('fluorescent' + SEED()) < 0.5 },
-  hand_tag('chips', 'before', () => P_CENTERS.e_foil.config.extra, (s) => { s.hand_chips = mod_chips(s.hand_chips + P_CENTERS.e_foil.config.extra); }),
-  hand_tag('mult', 'before', () => P_CENTERS.e_holo.config.extra, (s) => { s.mult = mod_mult(s.mult + P_CENTERS.e_holo.config.extra); }),
-  hand_tag('xmult', 'after', () => P_CENTERS.e_polychrome.config.extra, (s) => { s.mult = mod_mult(s.mult * P_CENTERS.e_polychrome.config.extra); }),
-  hand_tag('xchips', 'after', () => P_CENTERS.e_bunc_glitter.config.Xchips, (s) => { s.hand_chips = mod_chips(s.hand_chips * P_CENTERS.e_bunc_glitter.config.Xchips); }),
+  hand_tag('chips', 'before', () => P_CENTERS.e_foil.config.extra, (s) => { s.hand_chips = mod_chips(BN.add(s.hand_chips, P_CENTERS.e_foil.config.extra)); }),
+  hand_tag('mult', 'before', () => P_CENTERS.e_holo.config.extra, (s) => { s.mult = mod_mult(BN.add(s.mult, P_CENTERS.e_holo.config.extra)); }),
+  hand_tag('xmult', 'after', () => P_CENTERS.e_polychrome.config.extra, (s) => { s.mult = mod_mult(BN.mul(s.mult, P_CENTERS.e_polychrome.config.extra)); }),
+  hand_tag('xchips', 'after', () => P_CENTERS.e_bunc_glitter.config.Xchips, (s) => { s.hand_chips = mod_chips(BN.mul(s.hand_chips, P_CENTERS.e_bunc_glitter.config.Xchips)); }),
   tag('filigree', {
     loc_vars: (s, iq) => { iq.push({ key: 'bunc_exotic_cards', set: 'Other' }); return { vars: [] }; },
     apply(self, t, ctx) {

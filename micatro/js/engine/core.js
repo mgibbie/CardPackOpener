@@ -14,6 +14,7 @@
 //     run seed, so a run is fully reproducible from its seed + action list.
 
 import DATA from '../../data/balatro_data.js';
+import * as B from './bignum.js';
 import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits, RARITIES } from '../mods/registry.js';
 
 export const G = {};
@@ -405,6 +406,7 @@ export class CardArea {
         }
         this.emplace(card, undefined, sf);
         if (this === G.hand && area === G.deck && G.drawn_cards) G.drawn_cards.push(card); // SMODS.drawn_cards
+        if (ACTIVE_MODS.length && this === G.hand && area === G.deck) callHook('drawn_to_hand', card); // (custom decks: rank up on draw)
         return true;
       }
     }
@@ -786,10 +788,12 @@ export class Card {
     }
     if (this.seal === 'Blue' && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
       G.GAME.consumeable_buffer += 1;
+      // (a custom deck may name the planet: Deck Creator's blue_seal_always_most_played)
+      const forced = ACTIVE_MODS.length ? firstHook('blue_seal', this) : undefined;
       G.E_MANAGER.add_event(() => {
-        if (G.GAME.last_hand_played) {
-          let _planet = 0;
-          for (const v of P_CENTER_POOLS.Planet) if (v.config.hand_type === G.GAME.last_hand_played) _planet = v.key;
+        if (forced || G.GAME.last_hand_played) {
+          let _planet = forced || 0;
+          if (!forced) for (const v of P_CENTER_POOLS.Planet) if (v.config.hand_type === G.GAME.last_hand_played) _planet = v.key;
           // A mod hand without a planet (Bunco's Deal): Pluto, like Bunco's "Deal hand crash fix for Blue Seal".
           if (_planet === 0 && ACTIVE_MODS.length) _planet = 'c_pluto';
           const card = create_card('Planet', G.consumeables, null, null, null, null, _planet, 'blusl');
@@ -822,6 +826,8 @@ export class Card {
   }
   calculate_seal(context) {
     if (this.debuff) return undefined;
+    // (a custom deck's seal rules replace the vanilla Red / Purple Seal: Deck Creator's seal options)
+    if (ACTIVE_MODS.length) { const o = firstHook('calculate_seal', this, context); if (o !== undefined) return o || undefined; }
     if (context.repetition && this.seal === 'Red') return { message: localize('k_again_ex'), repetitions: 1, card: this };
     // Mods may retrigger the seal (MoreFluff's retrigger_seal_ctx: Lightning Strikes Thrice on a Purple
     // Seal's discard): the hook returns [{card, ret: {repetitions, message}}] per retriggering joker.
@@ -1245,7 +1251,8 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     _starting_pool = P_CENTER_POOLS[_type];
     _pool_key = _type + (_append || '');
   }
-  const showman = find_joker('Showman').length > 0;
+  // (a custom deck may allow duplicates: Deck Creator's allow_duplicate_jokers)
+  const showman = find_joker('Showman').length > 0 || (ACTIVE_MODS.length > 0 && callHook('pool_duplicates', _type).includes(true));
   for (const v of _starting_pool) {
     let add = false;
     if (_type === 'Enhanced') add = true;
@@ -1266,7 +1273,10 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
         add = false;
         for (const vv of G.playing_cards) if (vv.config.center.key === v.enhancement_gate) add = true;
       } else add = true;
-      if (v.name === 'Black Hole' || v.name === 'The Soul' || v.hidden) add = false;
+      if (v.name === 'Black Hole' || v.name === 'The Soul' || v.hidden) {
+        // (a custom deck may let The Soul / Black Hole into ordinary pools: Deck Creator's allow_soul / allow_black_hole)
+        add = ACTIVE_MODS.length > 0 && (v.name === 'Black Hole' || v.name === 'The Soul') && callHook('pool_hidden', v, _type).includes(true);
+      }
     }
     // Mod content: the center's own in_pool and every active mod's pool_filter.
     if (add && v.in_pool && !v.in_pool(v, { type: _type, append: _append })) add = false;
@@ -1630,9 +1640,19 @@ function base_blind_amount(ante) {
   if (ante <= 8) return amounts[ante - 1];
   const a = amounts[7], b = 1.6, c = ante - 8, d = 1 + 0.2 * (ante - 8);
   let amount = Math.floor(a * Math.pow(b + Math.pow(k * c, d), c));
-  if (!isFinite(amount)) return amount;
+  if (!isFinite(amount)) return big_blind_amount(amount, a, b, k * c, c, d);
   amount = amount - amount % Math.pow(10, Math.floor(Math.log10(amount) - 1));
   return amount;
+}
+/**
+ * An endless-ante requirement past the double range: the same formula a * (b + kc^d)^c in Decimals
+ * (big-number scoring, every run), kept to 2 significant digits; past 9.99e999 it's Infinity (naneinf).
+ */
+function big_blind_amount(inf, a, b, kc, c, d) {
+  if (!B.bigOn() || inf !== inf) return inf;
+  const amount = B.floor(B.mul(a, B.pow(B.add(b, B.pow(kc, d)), c)));
+  if (!B.isBig(amount)) return isFinite(amount) ? amount - amount % Math.pow(10, Math.floor(Math.log10(amount) - 1)) : amount;
+  return new B.Decimal(Math.floor(amount.m * 10) / 10, amount.e);
 }
 /** SMODS.get_blind_amount(ante) (src/utils.lua) for a scaling outside 1..3. */
 function smods_blind_amount(ante, scale) {
@@ -1645,13 +1665,14 @@ function smods_blind_amount(ante, scale) {
   if (ante <= 8) { const v = amounts[ante - 1]; return v - v % Math.pow(10, Math.floor(Math.log10(v) - 1)); }
   const a = amounts[7], b = amounts[7] / amounts[6], c = ante - 8, d = 1 + 0.2 * (ante - 8);
   let amount = Math.floor(a * Math.pow(b + Math.pow(b * 0.75 * c, d), c));
-  if (!isFinite(amount)) return amount;
+  if (!isFinite(amount)) return big_blind_amount(amount, a, b, b * 0.75 * c, c, d);
   amount = amount - amount % Math.pow(10, Math.floor(Math.log10(amount) - 1));
   return amount;
 }
 
 export function number_format(num) {
   if (num === undefined || num === null) return '0';
+  if (B.isBig(num)) return B.formatBig(num); // (big-number scoring: "1.234e450")
   if (!isFinite(num)) return num > 0 ? 'naneinf' : '-naneinf';
   if (Math.abs(num) >= 1e11) {
     const e = Math.floor(Math.log10(Math.abs(num)));
@@ -1662,7 +1683,7 @@ export function number_format(num) {
 
 export function mod_chips(c) {
   if (ACTIVE_MODS.length) c = reduceHook('mod_chips', c); // (BETMMA's Round Up; before the vanilla cap, like the Lua wrap)
-  return G.GAME.modifiers.chips_dollar_cap ? Math.min(c, Math.max(G.GAME.dollars, 0)) : c;
+  return G.GAME.modifiers.chips_dollar_cap ? B.min(c, Math.max(G.GAME.dollars, 0)) : c;
 }
 export function mod_mult(m) { return ACTIVE_MODS.length ? reduceHook('mod_mult', m) : m; }
 

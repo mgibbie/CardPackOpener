@@ -12,6 +12,7 @@
 // ticks in the Lua — the end value is set in one event here. The Depths / The Chasm also require the profile to
 // have won the deck on stake 7 / 10 (get_deck_win_stake); Micatro has no profile and everything is unlocked,
 // so that requirement counts as met (only the ante minimum applies).
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, number_format, math_random, get_blind_amount, localize, ease_dollars } from '../../js/engine/core.js';
 import { get_poker_hand_info, HANDLIST, discard_cards_from_highlighted } from '../../js/engine/run.js';
 import { add_tag, Tag } from '../../js/engine/tag.js';
@@ -91,20 +92,20 @@ export const blinds = [
   blind('stone', {
     set_blind(self, b) {
       b.original_chips = b.chips;
-      if (G.GAME.dollars >= 10) raise_to(b, (b.chips / b.mult) * (Math.floor(G.GAME.dollars / 10) + b.mult));
+      if (G.GAME.dollars >= 10) raise_to(b, BN.mul(BN.div(b.chips, b.mult), Math.floor(G.GAME.dollars / 10) + b.mult));
     },
     disable: restore,
   }),
   blind('sand', {
     set_blind(self, b) {
       b.original_chips = b.chips;
-      if (G.GAME.tags.length !== 0) raise_to(b, (b.chips / b.mult) * (G.GAME.tags.length + b.mult));
+      if (G.GAME.tags.length !== 0) raise_to(b, BN.mul(BN.div(b.chips, b.mult), G.GAME.tags.length + b.mult));
     },
     disable: restore,
     in_pool: (self) => !(G.GAME.round_resets.ante < self.boss.min || G.GAME.tags.length < 2),
   }),
   blind('blade', {
-    loc_vars: (self) => ({ vars: [number_format(get_blind_amount(G.GAME.round_resets.ante) * self.mult * G.GAME.starting_params.ante_scaling * 1.5)] }),
+    loc_vars: (self) => ({ vars: [number_format(BN.mul(BN.mul(BN.mul(get_blind_amount(G.GAME.round_resets.ante), self.mult), G.GAME.starting_params.ante_scaling), 1.5))] }),
   }),
   blind('claw'),
   blind('veil'),
@@ -158,7 +159,7 @@ export const blinds = [
   blind('final_trident', {
     set_blind(self, b) {
       b.original_chips = b.chips;
-      if (G.GAME.ante_purchases) raise_to(b, (b.chips / b.mult) * (G.GAME.ante_purchases + b.mult));
+      if (G.GAME.ante_purchases) raise_to(b, BN.mul(BN.div(b.chips, b.mult), G.GAME.ante_purchases + b.mult));
     },
     disable: restore,
   }),
@@ -167,7 +168,7 @@ export const blinds = [
   blind('final_shield', {
     set_blind(self, b) {
       b.original_chips = b.chips;
-      if (G.GAME.overscore && G.GAME.overscore !== 0) raise_to(b, b.chips + (G.GAME.overscore || 0));
+      if (G.GAME.overscore && G.GAME.overscore !== 0) raise_to(b, BN.add(b.chips, G.GAME.overscore || 0));
     },
     disable: restore,
     defeat() { G.GAME.Shield = false; },
@@ -214,7 +215,7 @@ export const hooks = {
   ease_dollars(mod) { if (G.GAME.Trident && mod <= 0) G.GAME.ante_purchases = (G.GAME.ante_purchases || 0) + 1; return mod; },
   // Turquoise Shield 2/2: chips scored over a blind add to the Shield's.
   end_round_start() {
-    if (G.GAME.Shield === true && G.GAME.chips - G.GAME.blind.chips >= 0) G.GAME.overscore = (G.GAME.overscore || 0) + G.GAME.chips - G.GAME.blind.chips;
+    if (G.GAME.Shield === true && BN.beats(G.GAME.chips, G.GAME.blind.chips)) G.GAME.overscore = BN.sub(BN.add(G.GAME.overscore || 0, G.GAME.chips), G.GAME.blind.chips);
   },
   // The Tine 2/3 + The Mask 1/2 (end_round, after a Boss): most played rank, least played visible hand.
   end_round() {

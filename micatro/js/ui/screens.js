@@ -91,6 +91,11 @@ function backDesc(key) {
   return { name: d.name, lines: (d.text || []).map((l) => String(l).replace(/#(\d)#/g, (m, i) => (vals[i - 1] != null ? Math.abs(vals[i - 1]) : '')).replace(/\{[^}]*T:[^}]*\}/g, '{C:attention}')) };
 }
 const PREF = 'micatro_newrun';
+// The custom deck picked for the next run ({id, def}; written by ui/deckeditor.js) — read without loading the editor.
+function readCustomDeckSel() {
+  try { const s = JSON.parse(localStorage.getItem('micatro_cdeck_sel') || 'null'); return s && s.def && typeof s.def === 'object' ? s : null; } catch (e) { return null; }
+}
+const deckEditor = () => import('./deckeditor.js');
 export function newRunScreen(o) {
   let pref = {};
   try { pref = JSON.parse(localStorage.getItem(PREF) || '{}'); } catch (e) { /* ignore */ }
@@ -157,6 +162,24 @@ export function newRunScreen(o) {
     modsSum.innerHTML = msel.ids.length ? modBadges(msel.ids) : '<span class="muted">None (vanilla run)</span>';
   }
   drawMods();
+  // custom deck (the native deck editor, ui/deckeditor.js, loaded on demand): the chosen deck replaces the deck above
+  let csel = readCustomDeckSel();
+  const crow = h('div', 'nr-mods nr-cdeck');
+  crow.appendChild(h('span', 'nr-mods-l', 'Custom deck'));
+  const csum = h('span', 'nr-mods-sum nr-cdeck-sum');
+  const coff = btn('Off', 'grey b-cdeck-off', () => { csel = null; deckEditor().then((m) => m.setSelection(null)).catch(() => {}); drawC(); draw(); });
+  const copen = btn('Decks', 'green b-cdecks', () => deckEditor().then((m) => m.openDeckList({
+    net: o.net, modsApi, selectedMods: () => msel.ids,
+    onPick: (entry) => { csel = entry; m.setSelection(entry); drawC(); draw(); },
+  })).catch((e) => console.warn('micatro: deck editor unavailable', e)));
+  crow.append(csum, coff, copen);
+  el.appendChild(crow);
+  function drawC() {
+    csum.innerHTML = csel ? `<b class="attn">${esc(csel.def.name)}</b>` : '<span class="muted">Off (play a deck above)</span>';
+    coff.style.display = csel ? '' : 'none';
+    left.disabled = right.disabled = !!csel;
+  }
+  drawC();
   // decks of saved-on mods appear once those mods have loaded
   if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); if (el.isConnected) draw(); }).catch(() => {});
   const play = btn('Play', 'blue big wide b-start', () => {
@@ -169,7 +192,8 @@ export function newRunScreen(o) {
     const modOptions = {};
     for (const id of mods) if (msel.options[id]) modOptions[id] = { ...msel.options[id] };
     closeAll();
-    o.onNew(mods.length ? { back, stake, seed, mods, modOptions } : { back, stake, seed });
+    const cdeck = csel ? { customDeck: csel.def } : {};
+    o.onNew(mods.length ? { back, stake, seed, mods, modOptions, ...cdeck } : { back, stake, seed, ...cdeck });
   });
   el.appendChild(play);
   function draw() {
@@ -186,6 +210,11 @@ export function newRunScreen(o) {
     } else deckView.appendChild(cellEl('centers', b.pos, 'nr-back'));
     const d = backDesc(b.key);
     deckInfo.innerHTML = `<div class="nr-name">${esc(d.name || b.name)}</div><div class="nr-desc">${(d.lines || []).map(markup).join('<br>')}</div>`;
+    if (csel) {
+      deckView.innerHTML = '';
+      deckView.appendChild(cardCanvas({ facing: 'back' }, 'nr-back', csel.def.back));
+      deckInfo.innerHTML = `<div class="nr-name">${esc(csel.def.name)}</div><div class="nr-desc">Custom deck${csel.def.desc ? '<br>' + esc(csel.def.desc) : ''}</div>`;
+    }
     const s = stakes[si];
     stakeView.innerHTML = '';
     if (s && s.mod) {
@@ -235,12 +264,13 @@ export async function leaderboard(net, highlight, opts = {}) {
           const user = x.user || x.username || x.name || '?';
           const mc = !CENTERS[x.back] && x.back ? MODREG.center(x.back) : null;
           const back = x.back && CENTERS[x.back] ? CENTERS[x.back].name.replace(' Deck', '') : mc ? String(mc.name || '').replace(' Deck', '') : '';
-          const mods = Array.isArray(x.mods) && x.mods.length ? `<span class="lb-mods">${modBadges(x.mods)}</span>` : '';
-          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${mods}</span><span class="chips">${fmt(x.score || 0)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
+          const mods = (Array.isArray(x.mods) && x.mods.length ? `<span class="lb-mods">${modBadges(x.mods)}</span>` : '') +
+            (x.customDeck ? `<span class="lb-cdeck">Custom deck: ${esc(x.customDeck)}</span>` : '');
+          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
         }).join('');
       body.innerHTML = '';
       body.appendChild(tbl);
-      if (r && r.you && r.you.rank && !rows.some((x) => (x.name || x.user) === hl)) body.appendChild(h('div', 'lb-you', `Your best: <b class="chips">${fmt(r.you.score || 0)}</b> · rank <b class="attn">#${r.you.rank}</b>`));
+      if (r && r.you && r.you.rank && !rows.some((x) => (x.name || x.user) === hl)) body.appendChild(h('div', 'lb-you', `Your best: <b class="chips">${lbScore(r.you)}</b> · rank <b class="attn">#${r.you.rank}</b>`));
     } catch (e) { if (my === token) body.innerHTML = '<div class="muted">Could not load the leaderboard.</div>'; }
   };
   for (const [k, label] of [['vanilla', 'Vanilla'], ['modded', 'Modded']]) {
@@ -353,6 +383,7 @@ export function runInfo(view) {
     b.dataset.k = 'mod:' + t.key; tabs.appendChild(b);
   }
   if (view.mods && view.mods.length) el.appendChild(h('div', 'ri-mods', `<span class="muted">Mods</span> ${modBadges(view.mods)}`));
+  if (view.custom_deck) el.appendChild(h('div', 'ri-mods ri-cdeck', `<span class="muted">Custom deck</span> <b class="attn">${esc(view.custom_deck.name)}</b>`));
   el.append(tabs, body);
   show('hands');
   modal(el, { title: 'Run Info', cls: 'ri-modal' });
@@ -481,7 +512,7 @@ export function gameOver(view, o) {
   if (won && o.onEndless) acts.appendChild(btn('Endless Mode', 'orange big b-endless', () => { closeModal(); o.onEndless(); }));
   acts.appendChild(btn('New Run', 'blue big b-newrun', () => { closeAll(); o.onNewRun(); }));
   acts.appendChild(btn('Main Menu', 'red big b-mainmenu', () => { closeAll(); o.onMainMenu(); }));
-  if (o.net) acts.appendChild(btn('Leader<br>board', 'green big', () => leaderboard(o.net, o.me, { modded: !!(view.mods && view.mods.length) })));
+  if (o.net) acts.appendChild(btn('Leader<br>board', 'green big', () => leaderboard(o.net, o.me, { modded: !!((view.mods && view.mods.length) || view.custom_deck) })));
   el.appendChild(acts);
   modal(el, { cls: 'go-modal', noClose: true });
 }
@@ -517,6 +548,9 @@ export function modBadges(ids) {
     return `<span class="badge mod-badge" data-mod="${esc(id)}" style="background:${col}">${esc(modLabel(id))}</span>`;
   }).join('');
 }
+// A board row's score: its big text, or naneinf for a clamped Infinity (the server stores
+// naneinf -- 1e1000 and above -- as Number.MAX_VALUE with no big text).
+const lbScore = (x) => (x.big ? fmt(x.big) : (x.score || 0) >= Number.MAX_VALUE ? 'naneinf' : fmt(x.score || 0));
 const fmtOpt = (v) => (v === true ? 'On' : v === false ? 'Off' : v == null ? '-' : String(v));
 const choiceVal = (c) => (c && typeof c === 'object' ? c.value : c);
 const choiceLabel = (c) => (c && typeof c === 'object' ? (c.label != null ? c.label : c.value) : c);

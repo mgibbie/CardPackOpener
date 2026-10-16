@@ -25,7 +25,7 @@ evidently intended (documented per fix, each with a test).
 | SylvieSilly 0.11 | **old Micatro folder copy** (the `mods off` copy has a syntax error) | 0 | 4 decks, 6 blinds, 8 packs, 8 moons | suit-chip planets | 0.3 MB |
 
 Not ported as mods (they fix the original game's UI/engine; Micatro gets native equivalents
-where useful): Better_Vouchers_This_Run_UI, Deck Creator (→ optional native deck editor later),
+where useful): Better_Vouchers_This_Run_UI, Deck Creator (→ the native deck editor: BUILT — `micatro/js/engine/customdeck.js` + `micatro/js/ui/deckeditor.js`),
 InfiniteScore (→ native big-number scoring, §2.6), JokerDisplay compat, speed mods.
 Also in the old `Projects/Programming/Micatro/Micatro` folder only: Olympus (6), Inscrybed (4),
 TagTeam (1), Smirkeo (1), AltaVista (1), OmertaDeck (1 deck) — small; port with the S-tier batch if wanted.
@@ -61,6 +61,14 @@ TagTeam (1), Smirkeo (1), AltaVista (1), OmertaDeck (1 deck) — small; port wit
    see §6.
 6. **Big-number scoring** (native, replaces InfiniteScore/Talisman): chips/mult/score as a Decimal
    type once any enabled mod can exceed 1e308; vanilla runs keep plain numbers.
+   **DONE** (`micatro/js/engine/bignum.js`): BUILT INTO THE BASE GAME (owner, 2026-10-16) — every run,
+   vanilla included, goes past 1e308 up to 9.99e999; 1e1000 and above is Infinity, shown as "naneinf"
+   (`MAX_EXP`), and ranks above every big score. Hybrid: a value stays a JS number while it fits and
+   becomes a Decimal (m in [1,10), 308 <= e < 1000) only on overflow, so runs below 1e308 are
+   bit-identical to before (the vanilla fuzz is unchanged).
+   Engine accumulators/blind amounts/`G.GAME.chips`/best hand go through `B.add/mul/pow/beats...`;
+   a Decimal's valueOf() is inf so un-ported mod arithmetic degrades instead of throwing. JSON/view
+   form is the string "1.234e450"; the leaderboard stores `big` + sortable `exp`/`man`.
 7. **Leaderboard**: modded runs are tagged with their mod set; the default board shows vanilla
    runs, with a "Modded" tab.
 8. **Wiki + news**: each mod gets a design-wiki section (generated from its registry entry); the news
@@ -109,7 +117,7 @@ panel. Gate wrapper `overworld/tests/micatro_engine_test.mjs` picks up `micatro/
 2. **Ro-Balatro: SKIP.**
 3. **Assets: separate Cloudflare Pages project** for mod art/music (like `battlecards/art` → magepunk-cardart).
 4. **In scope extras:** the old-folder-only mods (Olympus, Inscrybed, TagTeam, Smirkeo, AltaVista,
-   OmertaDeck); a **native deck editor** (Deck Creator's builder, later phase); **big-number scoring**.
+   OmertaDeck); a **native deck editor** (Deck Creator's builder — built: New Run → Custom deck; decks saved per player in `micatrodecks:<user>`, MCD1. share codes, custom-deck runs rank as modded); **big-number scoring**.
 5. **Leaderboard:** vanilla board by default + a **Modded** tab (runs tagged with their mod set).
 6. Broken mods are rebuilt **as their authors intended** (Pokermon+ especially), each fix documented + tested.
 

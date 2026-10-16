@@ -19,6 +19,7 @@
  *  - Steamodded evaluates a joker's end_of_round with cardarea = G.jokers; Micatro's end-of-round joker
  *    pass has no cardarea, so `context.cardarea == G.jokers` there reads as the main (non-individual) pass.
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, P_CARDS, create_card, create_playing_card, ease_dollars, ease_discard, ease_hands_played,
   probability_roll, probability_vars, pseudorandom_element, pseudoseed, localize, juice_card, card_eval_status_text,
@@ -455,7 +456,7 @@ export const hooks = {
       if (j.config.center.key !== 'j_mf_unregisteredhypercam' || j.debuff) continue;
       const r = j.calculate_joker({ ...ctx, cardarea: G.jokers, mf_before_cards: true, main_eval: true, mf_mult: mult, mf_chips: chips });
       if (r && r.Xmult_mod) {
-        mult = mult * r.Xmult_mod;
+        mult = BN.mul(mult, r.Xmult_mod);
         card_eval_status_text(j, 'extra', null, null, null, { message: r.message, colour: r.colour });
       }
     }

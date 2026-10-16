@@ -10,6 +10,7 @@ import {
   pseudoseed, pseudorandom, pseudorandom_element, ease_discard, ease_hands_played, ease_dollars,
   level_up_hand, get_blind_amount, number_format, copy_table, probability_roll,
 } from './core.js';
+import * as B from './bignum.js';
 import { draw_from_deck_to_hand, discard_cards_from_highlighted } from './run.js';
 import { firstHook, callHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 
@@ -80,7 +81,7 @@ export class Blind {
       G.GAME.last_blind.boss = this.boss;
       G.GAME.last_blind.name = this.name;
 
-      this.chips = get_blind_amount(G.GAME.round_resets.ante) * this.mult * G.GAME.starting_params.ante_scaling;
+      this.chips = B.mul(B.mul(get_blind_amount(G.GAME.round_resets.ante), this.mult), G.GAME.starting_params.ante_scaling);
       this.chip_text = number_format(this.chips);
 
       if (!blind) this.chips = 0;
@@ -211,7 +212,7 @@ export class Blind {
       ease_hands_played(this.hands_sub);
     }
     if (this.name === 'The Wall') {
-      this.chips = this.chips / 2;
+      this.chips = B.div(this.chips, 2);
       this.chip_text = number_format(this.chips);
     }
     if (this.name === 'Cerulean Bell') {
@@ -225,13 +226,13 @@ export class Blind {
       // nothing (Lua has an empty branch)
     }
     if (this.name === 'Violet Vessel') {
-      this.chips = this.chips / 3;
+      this.chips = B.div(this.chips, 3);
       this.chip_text = number_format(this.chips);
     }
     const mb = this.config.blind;
     if (mb && mb.mod && mb.disable) mb.disable(mb, this);
     G.E_MANAGER.add_event(() => {
-      if (this.boss && G.GAME.chips - G.GAME.blind.chips >= 0) {
+      if (this.boss && B.beats(G.GAME.chips, G.GAME.blind.chips)) {
         G.STATE = G.STATES.NEW_ROUND;
         G.STATE_COMPLETE = false;
       }

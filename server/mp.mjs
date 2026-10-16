@@ -72,6 +72,38 @@ const MICATRO_STALE_MS = 45_000;    // no publish in this long → the run is no
 const MICATRO_REFRESH_MS = 20_000;  // an unchanged keep-alive rewrites the state row only past this age
 const MICATRO_PRESENCE_MS = 30_000; // ...and the presence row only past this age (ONLINE_MS is 90s)
 const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is rewritten at most this often (< SPEC_WINDOW_MS)
+// MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
+const MICATRO_DECKS_MAX = 30;           // decks per player
+const MICATRO_DECK_BYTES = 66_000;      // one serialized deck definition (the client caps a definition at 64 KB)
+const MICATRO_DECKS_BYTES = 400_000;    // the whole row
+// MICATRO big-number scores (any run past 1e308, sent as text "1.234e450"). The game's scale
+// tops out at 9.99e999: an exponent >= 1000 is "naneinf" (-> {naneinf:true}, stored like Infinity).
+// -> {text, man, exp} | {naneinf} | null for anything a plain number can hold.
+const BIG_SCORE_RE = /^(\d(?:\.\d{1,20})?)e\+?(\d{1,20}(?:\.\d+)?(?:e\+?\d{1,3})?)$/i;
+function parseBigScore(s) {
+	const m = s.length <= 48 && BIG_SCORE_RE.exec(s);
+	if (!m || Number.isFinite(Number(s))) return null;
+	const man = Number(m[1]), exp = Number(m[2]);
+	if (!(man >= 1 && man < 10) || !(exp >= 308)) return null;
+	if (exp >= 1000) return { naneinf: true };
+	return { text: s.toLowerCase().replace('e+', 'e'), man, exp };
+}
+// A board row's sort key: [exponent, mantissa] (big rows store theirs; plain scores derive it).
+// A clamped Infinity (score === MAX_VALUE, no big text) is naneinf: past 9.99e999, above every big row.
+const scoreKey = (e) => {
+	if (e.big && Number.isFinite(e.exp) && Number.isFinite(e.man)) return [e.exp, e.man];
+	const s = Number(e.score) || 0;
+	if (s <= 0) return [-Infinity, 0];
+	if (s >= Number.MAX_VALUE) return [Infinity, 1];
+	const x = Math.floor(Math.log10(s));
+	return [x, s / Math.pow(10, x)];
+};
+// > 0 when a outranks b. Two plain rows compare exactly as before (score difference).
+function micatroScoreCmp(a, b) {
+	if (!a.big && !b.big) return (a.score || 0) - (b.score || 0);
+	const [ea, ma] = scoreKey(a), [eb, mb] = scoreKey(b);
+	return ea !== eb ? (ea > eb ? 1 : -1) : ma === mb ? 0 : (ma > mb ? 1 : -1);
+}
 // Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are
 // abuse BRAKES, not precise quotas: the counter read-modify-write isn't atomic (a
 // burst can slightly under-count), which is fine. Legit play stays far under them
@@ -90,6 +122,7 @@ const RATE_LIMITS = {
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
+	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -1366,13 +1399,16 @@ export default async function handler(req, env) {
 		// MICATRO mods: a run with mods ranks on its own board ('micatro_modded'), each
 		// entry tagged with its sorted mod list; vanilla runs stay on 'micatro'. A
 		// 'micatro' score that carries mods is filed as modded (an old/odd client).
-		let modList = null;
+		let modList = null, customDeck = '';
 		if ((mode === 'micatro' || mode === 'micatro_modded') && action === 'run-score') {
 			modList = [...new Set((Array.isArray(body.mods) ? body.mods : [])
 				.filter(m => typeof m === 'string').map(m => m.trim().toLowerCase())
 				.filter(m => /^[a-z0-9_-]{1,32}$/.test(m)))].sort().slice(0, 16);
-			if (mode === 'micatro_modded' && !modList.length) return json({ error: 'a modded score needs its mods' }, 400);
-			if (modList.length) mode = 'micatro_modded';
+			// a CUSTOM-DECK run (the deck editor) is modded too: the vanilla board stays pure, and the
+			// Modded board's row says "Custom deck: <name>"
+			customDeck = String(body.customDeck ?? '').replace(/[ -]/g, ' ').slice(0, 32).trim();
+			if (mode === 'micatro_modded' && !modList.length && !customDeck) return json({ error: 'a modded score needs its mods' }, 400);
+			if (modList.length || customDeck) mode = 'micatro_modded';
 		}
 		const key = 'runboard:' + mode;
 		user.runBest = user.runBest || {};
@@ -1380,28 +1416,36 @@ export default async function handler(req, env) {
 		// W/L record. Scores can outgrow 2^53 or reach Infinity (Balatro's "naneinf"):
 		// JSON can't carry Infinity, so the client may send it as a string — a positive
 		// non-finite score is clamped to Number.MAX_VALUE; NaN is refused.
+		// A run's BIG-NUMBER score (past 1e308, e.g. "1.234e450") is kept exactly: the
+		// row stores it as text (`big`) plus a sortable key (`exp`, `man`), with `score` clamped
+		// to MAX_VALUE for old readers; micatroScoreCmp ranks big and plain rows together.
 		if ((mode === 'micatro' || mode === 'micatro_modded') && action === 'run-score') {
 			const raw = typeof body.score === 'string' ? body.score.trim() : body.score;
-			let score = typeof raw === 'number' ? raw : (typeof raw === 'string' && raw !== '' ? Number(raw) : NaN);
+			let big = typeof raw === 'string' ? parseBigScore(raw) : null;
+			const naneinf = !!(big && big.naneinf); // >= 1e1000: the same as Infinity
+			if (naneinf) big = null;
+			let score = naneinf ? Infinity : big ? Number.MAX_VALUE : typeof raw === 'number' ? raw : (typeof raw === 'string' && raw !== '' ? Number(raw) : NaN);
 			if (Number.isNaN(score)) return json({ error: 'bad score' }, 400);
 			if (score === Infinity) score = Number.MAX_VALUE;
 			score = Math.max(0, score); // -Infinity / negatives → 0
 			const clean = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').slice(0, n).trim();
 			const run = {
 				score,
+				...(big ? { big: big.text, exp: big.exp, man: big.man } : {}),
 				ante: Math.max(0, Math.min(1000, parseInt(body.ante, 10) || 0)),
 				seed: clean(body.seed, 16), back: clean(body.back, 32),
 				stake: Math.max(0, Math.min(99, parseInt(body.stake, 10) || 0)),
 				won: !!body.won,
 			};
 			if (mode === 'micatro_modded') run.mods = modList;
+			if (customDeck) run.customDeck = customDeck;
 			const prev = user.runBest[mode];
-			const better = !prev || typeof prev.score !== 'number' || score > prev.score;
+			const better = !prev || typeof prev.score !== 'number' || micatroScoreCmp(run, prev) > 0;
 			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
 			const best = user.runBest[mode] || null;
 			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
 			if (best) board.push({ name: username, ...best });
-			board.sort((a, b) => (b.score || 0) - (a.score || 0) || (b.ante || 0) - (a.ante || 0) || a.when - b.when);
+			board.sort((a, b) => micatroScoreCmp(b, a) || (b.ante || 0) - (a.ante || 0) || a.when - b.when);
 			const capped = board.slice(0, 100);
 			if (better) await store.setJSON(key, capped);
 			const rank = capped.findIndex(e => e.name === username) + 1;
@@ -1701,6 +1745,35 @@ export default async function handler(req, env) {
 			});
 		}
 		return json({ ok: true, seq, watchers, watcherNames, wrote: !unchanged });
+	}
+
+	// MICATRO custom decks (the deck editor): the player's saved decks, one row per player.
+	// put {decks, rev}: replaces the list when `rev` matches the row's (else 409 + the current row, so a
+	// second device merges instead of clobbering); writes exactly `micatrodecks:<username>`.
+	if (action === 'micatro-decks-get') {
+		const row = (await store.get('micatrodecks:' + username)) || { rev: 0, decks: [] };
+		return json({ rev: row.rev || 0, decks: Array.isArray(row.decks) ? row.decks : [] });
+	}
+	if (action === 'micatro-decks-put') {
+		if (!Array.isArray(body.decks)) return json({ error: 'decks must be a list' }, 400);
+		if (body.decks.length > MICATRO_DECKS_MAX) return json({ error: `at most ${MICATRO_DECKS_MAX} decks`, max: MICATRO_DECKS_MAX }, 400);
+		const decks = [], ids = new Set();
+		for (const d of body.decks) {
+			const id = String(d && d.id || '').slice(0, 40);
+			const def = d && d.def;
+			if (!/^[A-Za-z0-9_-]{1,40}$/.test(id) || ids.has(id) || !def || typeof def !== 'object' || Array.isArray(def)) return json({ error: 'bad deck entry' }, 400);
+			const text = JSON.stringify(def);
+			if (text.length > MICATRO_DECK_BYTES) return json({ error: 'deck too large', max: MICATRO_DECK_BYTES }, 413);
+			ids.add(id);
+			decks.push({ id, def: JSON.parse(text), updated: Math.max(0, Math.floor(+d.updated || 0)) || Date.now() });
+		}
+		if (JSON.stringify(decks).length > MICATRO_DECKS_BYTES) return json({ error: 'too much deck data', max: MICATRO_DECKS_BYTES }, 413);
+		const key = 'micatrodecks:' + username;
+		const prev = (await store.get(key)) || { rev: 0, decks: [] };
+		if ((+body.rev || 0) !== (prev.rev || 0)) return json({ error: 'stale', rev: prev.rev || 0, decks: prev.decks || [] }, 409);
+		const rev = (prev.rev || 0) + 1;
+		await store.setJSON(key, { rev, decks, updated_at: Date.now() });
+		return json({ ok: true, rev, count: decks.length });
 	}
 
 	// a friend reads a MICATRO run's latest view (read-only spectating)

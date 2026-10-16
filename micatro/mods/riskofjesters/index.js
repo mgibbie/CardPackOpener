@@ -43,6 +43,7 @@
  *  string rarity (Pokermon's Safari/Mega); here such jokers are explicitly not upgradable (JS
  *  would merely compare false, so this is guarded rather than a behaviour change).
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { registerMod, isActive } from '../../js/mods/registry.js';
 import {
   G, localize, emit, card_eval_status_text, play_sound, pseudorandom, pseudoseed, pseudorandom_element,
@@ -184,7 +185,7 @@ J.kjaro = {
   calculate(self, card, context) {
     if (joker_ctx_end(context) && !context.blueprint && !(context.blueprint_card || card).getting_sliced) {
       // (the Lua hard-codes 4 — the same number as `required`)
-      if (G.GAME.chips >= G.GAME.blind.chips * card.ability.extra.required) {
+      if (BN.gte(G.GAME.chips, BN.mul(G.GAME.blind.chips, card.ability.extra.required))) {
         card.ability.enabled = true;
         return { message: localize('k_active_ex'), colour: FILTER };
       }
@@ -365,9 +366,9 @@ const blinds = [
     set_blind(self, blind) { blind.prepped = undefined; },
     press_play(self, blind) { blind.prepped = true; return undefined; },
     drawn_to_hand(self, blind) {
-      if (blind.prepped) { ease_required_chips(blind, blind.chips * 1.5); blind.wiggle(); }
+      if (blind.prepped) { ease_required_chips(blind, BN.mul(blind.chips, 1.5)); blind.wiggle(); }
     },
-    disable(self, blind) { ease_required_chips(blind, get_blind_amount(G.GAME.round_resets.ante) * blind.mult * G.GAME.starting_params.ante_scaling); },
+    disable(self, blind) { ease_required_chips(blind, BN.mul(BN.mul(get_blind_amount(G.GAME.round_resets.ante), blind.mult), G.GAME.starting_params.ante_scaling)); },
   },
 ];
 for (const b of blinds) {
@@ -378,7 +379,7 @@ for (const b of blinds) {
 }
 /** RiskofJesters.lua ease_required_chips: the blind's target eases to floor(mod) (the ease's last step). */
 function ease_required_chips(blind, mod) {
-  blind.chips = Math.floor(mod || 0);
+  blind.chips = BN.floor(mod || 0);
   blind.chip_text = number_format(blind.chips);
   emit('blind', { action: 'chips', key: blind.config.blind && blind.config.blind.key, name: blind.name, chips: blind.chips, chip_text: blind.chip_text });
 }

@@ -50,6 +50,7 @@
  *     and Lucky cards always paid their +20 — the engine's perma_mult adds to the vanilla rules
  *     (shown as "+N extra Mult"; a Mult Card shows its total as the lovely patch does).
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { registerMod, MOD_LOC } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_CARDS, LOC, localize, card_eval_status_text, play_sound, emit,
@@ -126,7 +127,7 @@ const P_CENTERS_POOL = (set) => P_CENTER_POOLS[set] || [];
 
 /** The Lua blind-requirement cut (Grudgeful / Historical): never below 0. */
 function lower_blind(amount) {
-  G.GAME.blind.chips = Math.max(G.GAME.blind.chips - amount, 0);
+  G.GAME.blind.chips = BN.max(BN.sub(G.GAME.blind.chips, amount), 0);
   G.GAME.blind.chip_text = number_format(G.GAME.blind.chips);
   emit('blind', { action: 'chips', key: G.GAME.blind.config && G.GAME.blind.config.blind && G.GAME.blind.config.blind.key, chips: G.GAME.blind.chips, chip_text: G.GAME.blind.chip_text });
   emit('blind_juice', {});
@@ -343,9 +344,9 @@ def('showoff', 'MMC The Show-Off', { name: 'The Show-Off', text: ['Gains {X:mult
     calculate(card, ctx) {
       const e = ex(card);
       if (endCtx(ctx) && e.current_Xmult > 1) return { message: lv('a_xmult', e.current_Xmult), Xmult_mod: e.current_Xmult, card };
-      if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) e.total_chips += ctx.mmc_scored_chips;
+      if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) e.total_chips = BN.add(e.total_chips, ctx.mmc_scored_chips);
       if (eor(ctx) && !ctx.blueprint) {
-        if (e.total_chips > e.req * G.GAME.blind.chips) { e.current_Xmult += e.Xmult_mod; say(card, localize('k_upgrade_ex'), 'RED'); }
+        if (BN.gt(e.total_chips, BN.mul(e.req, G.GAME.blind.chips))) { e.current_Xmult += e.Xmult_mod; say(card, localize('k_upgrade_ex'), 'RED'); }
         e.total_chips = 0;
       }
     },
@@ -357,9 +358,9 @@ def('sniper', 'MMC The Sniper', { name: 'The Sniper', text: ['Gains {X:mult,C:wh
     calculate(card, ctx) {
       const e = ex(card);
       if (endCtx(ctx) && e.current_Xmult > 1) return { message: lv('a_xmult', e.current_Xmult), Xmult_mod: e.current_Xmult, card };
-      if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) e.total_chips += ctx.mmc_scored_chips;
+      if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) e.total_chips = BN.add(e.total_chips, ctx.mmc_scored_chips);
       if (eor(ctx) && !ctx.blueprint) {
-        if (e.total_chips <= G.GAME.blind.chips * (1 + e.percentage / 100)) { e.current_Xmult += e.Xmult_mod; say(card, localize('k_upgrade_ex'), 'RED'); }
+        if (BN.lte(e.total_chips, BN.mul(G.GAME.blind.chips, 1 + e.percentage / 100))) { e.current_Xmult += e.Xmult_mod; say(card, localize('k_upgrade_ex'), 'RED'); }
         e.total_chips = 0;
       }
     },
@@ -405,8 +406,8 @@ def('batman', 'MMC Batman', { name: 'Batman', text: ['Gains {C:mult}+#2#{} Mult 
       const e = ex(card);
       if (endCtx(ctx)) return { message: lv('a_mult', e.current_mult), mult_mod: e.current_mult };
       if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) {
-        e.total_chips += ctx.mmc_scored_chips;
-        if (e.total_chips < G.GAME.blind.chips) e.current_mult += e.mult_mod;
+        e.total_chips = BN.add(e.total_chips, ctx.mmc_scored_chips);
+        if (BN.lt(e.total_chips, G.GAME.blind.chips)) e.current_mult += e.mult_mod;
       }
       if (eor(ctx) && !ctx.blueprint) e.total_chips = 0;
     },
@@ -449,15 +450,15 @@ def('grudgeful', 'MMC Grudgeful Joker', { name: 'Grudgeful Joker', text: ['Lower
     loc_vars: (c) => [ex(c).current_chips, ex(c).percentage],
     calculate(card, ctx) {
       const e = ex(card);
-      if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) e.total_chips += ctx.mmc_scored_chips;
+      if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) e.total_chips = BN.add(e.total_chips, ctx.mmc_scored_chips);
       if (endCtx(ctx) && e.current_chips > 0) {
         say(card, lv('a_chips', e.current_chips), 'CHIPS');
         lower_blind(e.current_chips);
       }
       if (afterJ(ctx) && !ctx.blueprint) e.current_chips = 0;
       if (eor(ctx) && !ctx.blueprint) {
-        if (e.total_chips >= G.GAME.blind.chips) {
-          e.current_chips = Math.ceil(Math.min(G.GAME.blind.chips * e.percentage / 100, e.total_chips - G.GAME.blind.chips));
+        if (BN.gte(e.total_chips, G.GAME.blind.chips)) {
+          e.current_chips = BN.ceil(BN.min(BN.div(BN.mul(G.GAME.blind.chips, e.percentage), 100), BN.sub(e.total_chips, G.GAME.blind.chips)));
           say(card, lv('a_chips', e.current_chips), 'CHIPS');
         }
         e.total_chips = 0; // fix 3: "excess Chips from last round"
@@ -501,7 +502,7 @@ def('historical', 'MMC Historical Joker', { name: 'Historical Joker', text: ['If
       const e = ex(card);
       if (ctx.before && !ctx.blueprint) for (const v of ctx.full_hand) e.current_cards.push(v.base.id);
       if (ctx.mmc_scored_chips !== undefined && !ctx.blueprint) {
-        e.current_chips = Math.ceil(Math.min(G.GAME.blind.chips * e.percentage / 100, ctx.mmc_scored_chips));
+        e.current_chips = BN.ceil(BN.min(BN.div(BN.mul(G.GAME.blind.chips, e.percentage), 100), ctx.mmc_scored_chips));
       }
       if (endCtx(ctx) && e.prev_cards.join('') === e.current_cards.join('')) { // tables_equal: table.concat(a) == table.concat(b)
         say(card, lv('a_chips', e.current_chips), 'CHIPS');
@@ -533,7 +534,7 @@ def('printer', 'MMC The Printer', { name: 'The Printer', text: ['If hand scores 
       const e = ex(card);
       if (ctx.before) for (const v of ctx.full_hand) e.hand.push(v.sort_id);
       if (ctx.mmc_scored_chips !== undefined) {
-        if (ctx.mmc_scored_chips >= G.GAME.blind.chips) {
+        if (BN.gte(ctx.mmc_scored_chips, G.GAME.blind.chips)) {
           for (const id of e.hand) {
             const v = byId(id);
             if (!v) continue;
@@ -1127,7 +1128,7 @@ def('scoring_test', 'MMC Scoring Test', { name: 'Scoring Test', text: ['If playe
       // fix 7: a debuffed hand (no joker_main) is recorded too
       if ((endCtx(ctx) || ctx.debuffed_hand) && ctx.full_hand) e.played_hand = ctx.full_hand.map((v) => v.sort_id);
       if (ctx.mmc_scored_chips !== undefined) {
-        if (ctx.mmc_scored_chips < G.GAME.blind.chips * e.percentage / 100) {
+        if (BN.lt(ctx.mmc_scored_chips, BN.div(BN.mul(G.GAME.blind.chips, e.percentage), 100))) {
           for (const id of e.played_hand) {
             const v = byId(id);
             if (!v) continue;
@@ -1432,7 +1433,7 @@ const hooks = {
   hand_scored(hand_chips, mult) {
     for (const j of G.jokers.cards.slice()) {
       if (j.config.center.mod !== MOD_ID) continue; // (base jokers ignore the context; others' could misread a bare `after`)
-      const eff = eval_card(j, { card: G.consumeables, after: true, mmc_scored_chips: hand_chips * mult });
+      const eff = eval_card(j, { card: G.consumeables, after: true, mmc_scored_chips: BN.mul(hand_chips, mult) });
       if (eff.jokers) card_eval_status_text(j, 'jokers', null, 0.3, null, eff.jokers);
     }
   },

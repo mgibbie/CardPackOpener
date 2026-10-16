@@ -1,6 +1,7 @@
 // Pokermon 3.2.1 — pokemon/pokejokers_26.lua (Pokédex 751-780: Mimikyu), 1 joker.
 // Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
 // The busted-disguise sprite (broke_pos) is view data: `ability.extra.disguise === false`.
+import * as BN from '../../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, localize, play_sound, defineJokers, type_tooltip } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_26.lua';
@@ -23,7 +24,7 @@ defineJokers({
       }
       if (context.end_of_round && context.game_over && card.ability.extra.disguise) {
         let save = false;
-        if (G.GAME.chips / G.GAME.blind.chips >= 0.50) save = true;
+        if (BN.gte(BN.div(G.GAME.chips, G.GAME.blind.chips), 0.50)) save = true;
         if (save) {
           card.ability.extra.disguise = false;
           G.E_MANAGER.add_event(() => { play_sound('tarot2', 1, 0.4); play_sound('tarot2', 0.76, 0.4); });

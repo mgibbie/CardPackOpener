@@ -44,6 +44,7 @@
  *  - Daggerkind / Bladekind / Pokerkind / Combat Capability / Pseudo-Scratch Gambit are the mod's unfinished
  *    ("Work In Progress!") jokers: no effect, yes_pool_flag 'no' (never rolled), text from their inline loc_txt.
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, P_CENTERS, P_CENTER_POOLS, P_CARDS_LIST, pseudoshuffle, ease_dollars } from '../../js/engine/core.js';
 import { get_poker_hand_info, joker_retriggers } from '../../js/engine/run.js';
 import {
@@ -143,10 +144,10 @@ J('transfusion', {
     if (ctx.joker_main) {
       const e = card.ability.extra;
       if (!ctx.retrigger_joker) e.buffer = 0; // (port note: the Lua's func resets it once all evaluations applied)
-      const hchips = ctx.hand_chips - e.buffer;
-      const val = Math.floor(e.rate * hchips);
-      e.buffer = e.buffer + val;
-      return { chip_mod: -val, mult_mod: val * e.Xmult, card, colour: 'PURPLE', message: localize('k_thac_converted') };
+      const hchips = BN.sub(ctx.hand_chips, e.buffer);
+      const val = BN.floor(BN.mul(e.rate, hchips));
+      e.buffer = BN.add(e.buffer, val);
+      return { chip_mod: BN.neg(val), mult_mod: BN.mul(val, e.Xmult), card, colour: 'PURPLE', message: localize('k_thac_converted') };
     }
   },
 });

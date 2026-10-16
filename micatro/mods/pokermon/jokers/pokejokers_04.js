@@ -1,6 +1,7 @@
 // Pokermon 3.2.1 — pokemon/pokejokers_04.lua (Pokédex 091-120: Cloyster -> Staryu), 32 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage,
 // ptype, gen, item_req, megas, volatile, enhancement_gate) comes from data.js.
+import * as BN from '../../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
   create_card, copy_card, juice_card_until, playing_card_joker_effects, play_sound,
@@ -93,7 +94,7 @@ function stone_bonus(card, context) {
 }
 /** Koffing / Weezing: halve the Boss Blind's requirement when sold. */
 function halve_boss() {
-  G.GAME.blind.chips = G.GAME.blind.chips / 2;
+  G.GAME.blind.chips = BN.div(G.GAME.blind.chips, 2);
   G.GAME.blind.chip_text = number_format(G.GAME.blind.chips);
 }
 /** Goldeen / Seaking: retrigger Gold cards held in hand. */

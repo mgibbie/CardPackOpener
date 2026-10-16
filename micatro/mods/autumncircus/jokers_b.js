@@ -53,6 +53,7 @@
  *  - With Pokermon on, TAC's lovely patch stops the Silver Seal from triggering on a graveyard card scored by
  *    Twisted Mind: the card is flagged `discarded` (the seal's own guard) while it scores.
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, localize, pseudorandom, pseudoseed, pseudorandom_element, create_playing_card, playing_card_joker_effects,
   card_eval_status_text, play_sound, juice_card, joker, find, say, chance, prob_vars, scale_card, change_base, poll_seal,
@@ -255,7 +256,7 @@ const final_step = (ctx) => ctx.final_scoring_step && ctx.thac_final_step;
 add('underdogs_secret', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.threshold, card.ability.extra.money] }),
   calculate(s, card, ctx) {
-    if (final_step(ctx) && ctx.hand_chips >= ctx.mult * card.ability.extra.threshold) {
+    if (final_step(ctx) && BN.gte(ctx.hand_chips, BN.mul(ctx.mult, card.ability.extra.threshold))) {
       ease_dollars(card.ability.extra.money);
       return { message: localize('$') + card.ability.extra.money, colour: 'MONEY' };
     }
@@ -265,7 +266,7 @@ add('underdogs_secret', {
 add('topple_the_titans', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.threshold, card.ability.extra.reduction * 100] }),
   calculate(s, card, ctx) {
-    if (final_step(ctx) && ctx.hand_chips >= ctx.mult * card.ability.extra.threshold) {
+    if (final_step(ctx) && BN.gte(ctx.hand_chips, BN.mul(ctx.mult, card.ability.extra.threshold))) {
       return {
         extra: { focus: card, message: localize({ type: 'variable', key: 'a_blind_minus_percent', vars: [card.ability.extra.reduction * 100] }) },
         card,
@@ -278,7 +279,7 @@ add('topple_the_titans', {
 add('autoapotheosis', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.threshold] }),
   calculate(s, card, ctx) {
-    if (final_step(ctx) && ctx.hand_chips >= ctx.mult * card.ability.extra.threshold) {
+    if (final_step(ctx) && BN.gte(ctx.hand_chips, BN.mul(ctx.mult, card.ability.extra.threshold))) {
       // (pairs(AMM.Aspects): the registered aspects, in registration order here)
       const keyset = AMM.active_aspects().map((a) => a.key);
       let n = 0;
