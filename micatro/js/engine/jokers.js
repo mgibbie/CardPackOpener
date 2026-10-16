@@ -14,7 +14,7 @@ import {
   G, Card, P_CENTERS, P_CARDS_LIST, localize, emit, card_eval_status_text, play_sound,
   pseudorandom, pseudoseed, pseudorandom_element, next,
   ease_dollars, ease_discard, ease_hands_played, draw_card, level_up_hand, update_hand_text, delay,
-  create_card, create_playing_card, copy_card, probability_roll,
+  create_card, create_playing_card, copy_card, probability_roll, quantum_enhancements, has_quantum_enhancement, mod_context_effect,
 } from './core.js';
 import * as B from './bignum.js';
 import { get_poker_hand_info } from './run.js';
@@ -34,7 +34,7 @@ const lmod = (a, b) => ((a % b) + b) % b;
 /** misc_functions.lua playing_card_joker_effects(cards) */
 export function playing_card_joker_effects(cards) {
   for (let i = 0; i < G.jokers.cards.length; i++) {
-    G.jokers.cards[i].calculate_joker({ playing_card_added: true, cards });
+    mod_context_effect(G.jokers.cards[i], G.jokers.cards[i].calculate_joker({ playing_card_added: true, cards }));
   }
 }
 
@@ -67,11 +67,11 @@ Card.prototype.update_joker = function () {
   }
   if (n === "Driver's License") {
     this.ability.driver_tally = 0;
-    for (const v of G.playing_cards) if (v.config.center !== P_CENTERS.c_base) this.ability.driver_tally++;
+    for (const v of G.playing_cards) if (v.config.center !== P_CENTERS.c_base || (ACTIVE_MODS.length && quantum_enhancements(v).length)) this.ability.driver_tally++;
   }
   if (n === 'Steel Joker') {
     this.ability.steel_tally = 0;
-    for (const v of G.playing_cards) if (v.config.center === P_CENTERS.m_steel) this.ability.steel_tally++;
+    for (const v of G.playing_cards) if (v.config.center === P_CENTERS.m_steel || has_quantum_enhancement(v, 'm_steel')) this.ability.steel_tally++;
   }
   if (n === 'Cloud 9') {
     this.ability.nine_tally = 0;
@@ -79,7 +79,7 @@ Card.prototype.update_joker = function () {
   }
   if (n === 'Stone Joker') {
     this.ability.stone_tally = 0;
-    for (const v of G.playing_cards) if (v.config.center === P_CENTERS.m_stone) this.ability.stone_tally++;
+    for (const v of G.playing_cards) if (v.config.center === P_CENTERS.m_stone || has_quantum_enhancement(v, 'm_stone')) this.ability.stone_tally++;
   }
   if (n === 'Joker Stencil') {
     this.ability.x_mult = G.jokers.config.card_limit - G.jokers.cards.length;
@@ -518,7 +518,7 @@ Card.prototype.calculate_joker = function (context) {
       if (this.ability.name === 'Glass Joker' && !context.blueprint && context.consumeable.ability.name === 'The Hanged Man') {
         let shattered_glass = 0;
         for (const val of G.hand.highlighted) {
-          if (val.ability.name === 'Glass Card') shattered_glass = shattered_glass + 1;
+          if (val.ability.name === 'Glass Card' || has_quantum_enhancement(val, 'm_glass')) shattered_glass = shattered_glass + 1;
         }
         if (shattered_glass > 0) {
           this.ability.x_mult = this.ability.x_mult + this.ability.extra * shattered_glass;
@@ -888,7 +888,7 @@ Card.prototype.calculate_joker = function (context) {
           };
         }
         if (this.ability.name === 'Golden Ticket' &&
-            context.other_card.ability.name === 'Gold Card') {
+            (context.other_card.ability.name === 'Gold Card' || has_quantum_enhancement(context.other_card, 'm_gold'))) {
           G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + this.ability.extra;
           G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
           return {

@@ -62,6 +62,7 @@ import nacli from './src/pokemon/932_nacli_line.js';
 import cetoddle from './src/pokemon/974_cetoddle_line.js';
 import timerball from './src/consumables/timerball.js';
 import backs from './src/backs/backs.js';
+import { SLEEVES } from './sleeves.js';
 
 const JOKER_DEFS = { ...nincada, ...croagunk, ...darkrai, ...vullaby, ...meltan, ...stonjourner, ...lechonk, ...nacli, ...cetoddle };
 const PREFIX = 'sonfive';
@@ -265,6 +266,7 @@ export const POKERMONPLUS = registerMod({
     loc: DATA.loc,
   },
   challenges,
+  sleeves: SLEEVES, // (sleeves.js: deck variants, engine/sleeve.js)
   hooks,
 });
 

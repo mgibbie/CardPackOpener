@@ -143,3 +143,6 @@ console.log(`wrote ${path.relative(ROOT, file)} (${(fs.statSync(file).size / 102
   `${jokers.length} jokers, ${tarots.length} tarots, ${planets.length} planets, ${spectrals.length} spectrals, ` +
   `${vouchers.length} vouchers, ${boosters.length} boosters, ${tags.length} tags, ${blinds.length} blinds, ` +
   `${decks.length} decks, ${stakes.length} stakes, ${hands.length} hands`);
+
+// The mods' sections (designwiki/data/micatro_mods*.json), from the mod modules themselves.
+await import('./gen_designwiki_mods.mjs');

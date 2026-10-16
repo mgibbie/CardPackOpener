@@ -40,6 +40,7 @@ export const blinds = [
   blind('umbrella', { disable: () => unflip_hand() }),
   blind('tine', {
     loc_vars: () => ({ vars: [localize(G.GAME.current_round.most_played_rank, 'ranks')] }),
+    collection_loc_vars: () => ({ vars: [localize('bunc_most_played_rank')] }),
     debuff_card: (self, b, card) => card.config.center.key !== 'm_stone' && card.base.value === G.GAME.current_round.most_played_rank,
   }),
   blind('swing', {
@@ -52,6 +53,7 @@ export const blinds = [
   blind('flame', { debuff_card: (self, b, card) => card.config.center.key !== 'c_base' }),
   blind('mask', {
     loc_vars: () => ({ vars: [localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands'), localize(G.GAME.current_round.least_played_poker_hand, 'poker_hands')] }),
+    collection_loc_vars: () => ({ vars: [localize('ph_most_played'), localize('bunc_least_played_hand')] }),
     modify_hand(self, b, cards, poker_hands, text, mult, hand_chips) {
       if (G.GAME.last_hand_played === G.GAME.current_round.most_played_poker_hand) {
         b.triggered = true;
@@ -63,6 +65,7 @@ export const blinds = [
   }),
   blind('bulwark', {
     loc_vars: () => ({ vars: [localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')] }),
+    collection_loc_vars: () => ({ vars: [localize('ph_most_played')] }),
     press_play(self, b) {
       if (get_poker_hand_info(G.hand.highlighted).text === G.GAME.current_round.most_played_poker_hand) {
         event(() => {
@@ -106,6 +109,7 @@ export const blinds = [
   }),
   blind('blade', {
     loc_vars: (self) => ({ vars: [number_format(BN.mul(BN.mul(BN.mul(get_blind_amount(G.GAME.round_resets.ante), self.mult), G.GAME.starting_params.ante_scaling), 1.5))] }),
+    collection_loc_vars: () => ({ vars: [localize('bunc_blade')] }),
   }),
   blind('claw'),
   blind('veil'),

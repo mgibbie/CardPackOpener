@@ -14,9 +14,10 @@
  *
  * Owner decision (2026-10-16): the Homestuck content is in — the 12 Aspects and the Homelatro jokers (nekogloop,
  * autumnmood, the unnamed third player and the three God Tiers). Homelatro itself isn't in Micatro, so its two
- * rarities are defined here: Player (weight 0.04) and God Tier (weight 0.02, rolled only while a God Tier can
- * appear — each needs its Player to have gone extinct). Homelatro's own weights aren't in this mod; these keep
- * the line reachable at roughly Uncommon/Rare-tier frequency. Tune in RARITIES below.
+ * rarities are defined here exactly as Homelatro's src/rarity.lua has them (github.com/factwixard/Homelatro,
+ * 2025-08-27): Player (default_weight 0.35, #53A3FF) and God Tier (default_weight 0.25, #FF6000), with its
+ * get_weight rules applied to the Players / God Tiers that exist here (see RARITIES below), and its
+ * "Ascended!" / "Happen!" extinction strings.
  *
  * Skipped (they need mods Micatro doesn't ship): jokers Helpful / Dutiful Joker, Penumbra Phantasm, Onyx Moonmage,
  * Olivine (SixSuits), Amethyst Starmage, Meteorite (SixSuits + Ortalab), Paint Mixer, Celestial Awe
@@ -29,7 +30,7 @@
  * Not ported (cosmetic): the title-screen card / logo / quips, card pronoun badges, art-credit tooltips.
  */
 import { registerMod, isActive } from '../../js/mods/registry.js';
-import { G, P_CENTER_POOLS } from '../../js/engine/core.js';
+import { G, P_CENTER_POOLS, find_joker } from '../../js/engine/core.js';
 import LOC from './loc.js';
 import { MOD_ID, ART } from './util.js';
 import * as SYS from './systems.js';
@@ -76,12 +77,26 @@ const atlases = {
   thac_StakeMyCardsPls: at('StakeMyCardsPls'),
 };
 
-/** The Homelatro rarities (see the header). A God Tier only rolls while one can appear (its Player went extinct). */
-const godtier_available = () => (P_CENTER_POOLS.Joker || []).some((c) => c.rarity === 'hmlt_godtier' && c.yes_pool_flag && G.GAME && G.GAME.pool_flags[c.yes_pool_flag]);
+/**
+ * The Homelatro rarities (Homelatro src/rarity.lua; see the header). get_weight, over the Homestuck jokers that exist
+ * here: a Player rolls until every Player has gone extinct (Homelatro: "not (every *_extinct flag)"); a God Tier rolls
+ * while some God Tier's Player is extinct and that God Tier isn't held (Showman excepted: Homelatro's
+ * "flag and (SMODS.showman() or not next(SMODS.find_card(god tier)))").
+ */
+const hmlt = (rarity) => (P_CENTER_POOLS.Joker || []).filter((c) => c.rarity === rarity);
+const flag = (f) => !!(G.GAME && G.GAME.pool_flags && G.GAME.pool_flags[f]);
+const players_left = () => hmlt('hmlt_player').some((c) => !(c.no_pool_flag && flag(c.no_pool_flag)));
+const godtier_available = () => {
+  const showman = !!(G.jokers && find_joker('Showman').length);
+  return hmlt('hmlt_godtier').some((c) => c.yes_pool_flag && flag(c.yes_pool_flag) &&
+    (showman || !(G.jokers && G.jokers.cards.some((j) => j.config.center.key === c.key))));
+};
 export const RARITIES = [
-  { key: 'hmlt_player', name: 'Player', weight: 0.04, badge_colour: '#4AC925' },
-  { key: 'hmlt_godtier', name: 'God Tier', weight: 0.02, badge_colour: '#F2C74E', get_weight: (r) => (godtier_available() ? r.weight : 0) },
+  { key: 'hmlt_player', name: 'Player', weight: 0.35, badge_colour: '#53A3FF', get_weight: (r) => (players_left() ? r.weight : 0) },
+  { key: 'hmlt_godtier', name: 'God Tier', weight: 0.25, badge_colour: '#FF6000', get_weight: (r) => (godtier_available() ? r.weight : 0) },
 ];
+// Homelatro's localization (en-us.lua misc.dictionary): the Players' end-of-round extinction popups.
+Object.assign(LOC.misc.dictionary, { hmlt_extinct: 'Ascended!', hmlt_safe: 'Happen!', k_hmlt_player: 'Player', k_hmlt_godtier: 'God Tier' });
 
 // SMODS multi-line names ({name = {'Cultist Potion', '{C:autumn,s:0.5}CAW CAW!!!!'}}): the first line is the name,
 // the rest a small subtitle (kept as `name_sub`).

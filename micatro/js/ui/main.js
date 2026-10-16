@@ -12,6 +12,7 @@ import { Player } from './player.js';
 import { sound } from './sound.js';
 import * as UI from './screens.js';
 import { initPad } from './pad.js';
+import { first as modFirst } from './modui.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim();
@@ -32,6 +33,7 @@ let pendingPublish = [];
 let overHandled = false, winShown = false;
 let runReplay = null;   // this run's replay once it finished: {localId, local, serverId, upload: Promise<serverId|null>}
 let replayCtrl = null;  // MODE 'replay': the viewer (ui/replayview.js)
+let Stickers = null;    // ui/stickers.js (the jokers' win stickers), once loaded
 
 const stage = document.getElementById('stage');
 
@@ -40,7 +42,10 @@ async function loadEngine() {
   let describeBack = null, RP = null;
   try { describeBack = (await import('../engine/describe.js')).describeBack; } catch (e) { /* optional */ }
   try { RP = await import('../replays.js'); } catch (e) { console.warn('micatro: replays unavailable', e); }
-  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION };
+  // challenges (Balatro's + the mods') and deck sleeves: the lists + their screen text
+  let CH = null;
+  try { CH = { ...(await import('../engine/challenge.js')), ...(await import('../engine/sleeve.js')) }; } catch (e) { console.warn('micatro: challenges unavailable', e); }
+  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION };
 }
 // ------------------------------------------------------------------- mods
 /** The mods manifest + loader (micatro/js/mods/index.js). Imported once; never throws. */
@@ -135,6 +140,10 @@ function record(events) {
 }
 function afterAct(view, events) {
   const won = (events || []).some((e) => e.type === 'win');
+  // Balatro's set_joker_win: the run's jokers (+ a mod's extra keys) earn this stake's sticker — not in a
+  // seeded or a challenge run (win_game skips it). Only the player's own live run records (never a replay).
+  const winEv = (events || []).find((e) => e.type === 'win');
+  if (winEv && Stickers && !view.challenge && !(Engine && Engine.G && Engine.G.GAME && Engine.G.GAME.seeded)) Stickers.recordWin(winEv);
   if (won && !winShown) {
     winShown = true;
     whenIdle(() => showWin(view));
@@ -151,7 +160,7 @@ function whenIdle(fn) {
 }
 
 // --------------------------------------------------------------- run setup
-async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null } = {}) {
+async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null } = {}) {
   stopPublishing();
   // a custom deck (the deck editor) brings the mods its content needs
   const needMods = [...new Set([...(mods || []), ...((customDeck && Array.isArray(customDeck.mods)) ? customDeck.mods : [])])];
@@ -163,6 +172,9 @@ async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions
   }
   session = new Engine.Session();
   const cd = customDeck ? { customDeck } : {};
+  // a challenge (by id: the recipe replays it) or a deck sleeve
+  if (challenge) cd.challenge = challenge;
+  else if (sleeve && !customDeck) cd.sleeve = sleeve;
   const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions, ...cd } : { seed, back, stake, ...cd });
   beginRun(evs);
 }
@@ -228,6 +240,7 @@ function chatWrap() {
 // ---------------------------------------------------------------- endings
 function submit(view, won, replay) {
   if (!loggedIn() || !net.submitScore) return null;
+  if (view.challenge) return null; // (Balatro: challenge runs post no high scores — the replay is still kept)
   return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}) });
 }
 /**
@@ -296,6 +309,7 @@ function showGameOver(view) {
   });
 }
 function showWin(view) {
+  if (view.challenge) UI.markChallengeDone(myName(), view.challenge.id);
   const rec = recordReplay(view);
   const p = loggedIn() && net.submitScore ? Promise.resolve(rec ? rec.upload : null).catch(() => null).then((id) => submit(view, true, id)) : null;
   UI.gameOver(view, {
@@ -311,7 +325,38 @@ function menuOpts() {
   return {
     saved: !!(Engine && Engine.Session.saved()), direct: DIRECT, loggedIn: loggedIn(), net, seed: params.get('seed') || '',
     onNew: (o) => startRun(o), onContinue: () => continueRun(),
-    replays: replaysApi(),
+    replays: replaysApi(), me: myName(),
+    challenges: challengesApi(), sleeves: sleevesApi(),
+  };
+}
+/** The Challenges screen: Balatro's 20 + the enabled mods' (their modules load first). */
+function challengesApi() {
+  const CH = Engine && Engine.CH;
+  if (!CH) return null;
+  return {
+    async list(ids) {
+      if (ids && ids.length) { const r = await ensureMods(ids); if (!r.ok) board.toast('A mod failed to load'); }
+      const on = new Set(ids || []);
+      return CH.allChallenges().filter((c) => !c.mod || on.has(c.mod)).map((c) => ({ ...c, info: CH.challengeInfo(c) }));
+    },
+    done: () => UI.challengeDone(myName()),
+    start: (ch, mods, modOptions) => startRun({ challenge: ch.id, mods, modOptions, back: 'b_challenge', stake: 1 }),
+  };
+}
+/** New Run's sleeve picker: the sleeves of the selected (loaded) mods, honouring a sleeve's mod option. */
+function sleevesApi() {
+  const CH = Engine && Engine.CH;
+  if (!CH) return null;
+  const optOn = (options, s) => {
+    if (!s.mod_option) return true;
+    const o = (options || {})[s.mod] || {};
+    if (o[s.mod_option] !== undefined) return !!o[s.mod_option];
+    const m = Mods && Mods.MODS[s.mod];
+    return !!(m && m.options && m.options[s.mod_option] && m.options[s.mod_option].default);
+  };
+  return {
+    list: (ids, options) => CH.allSleeves().filter((s) => (ids || []).includes(s.mod) && optOn(options, s)),
+    info: (s, back) => CH.sleeveInfo(s, back),
   };
 }
 /** The main menu's Replays list: this device's last 10 finished runs. */
@@ -359,6 +404,8 @@ function onKey(e) {
   const v = board.view, k = e.key.toLowerCase();
   const click = (sel) => { const b = stage.querySelector(sel); if (b && !b.disabled && b.offsetParent) { b.click(); return true; } return false; };
   if (k === 'v') return onMenu('deck');
+  // P: a mod's card view for the selected joker (Pokermon's Pokédex: its SMODS.Keybind "openPokedex")
+  if (k === 'p' && board.sel != null) { const d = board.data.get(board.sel); if (d && modFirst('cardContext', d, UI.modApi())) return; }
   if (k === 'i') return onMenu('runinfo');
   if (v.state === 'SELECTING_HAND') {
     if (k === 'enter' || k === 'p') click('.b-play');
@@ -457,7 +504,12 @@ async function boot() {
     MODE !== 'spectate' ? loadModsModule() : null]);
   Engine = eng; net = nt;
   loading.remove();
-  board = new Board(stage, bg, { readOnly: MODE !== 'normal', onAction, onMenu, getPreview, onEvent: (ev) => { if (pad) pad.onGameEvent(ev); } });
+  board = new Board(stage, bg, { readOnly: MODE !== 'normal', onAction, onMenu, getPreview, onEvent: (ev) => { if (pad) pad.onGameEvent(ev); }, uiApi: () => UI.modApi() });
+  // deck skins: this player's choices (cosmetic, ui/skins.js)
+  import('./skins.js').then((m) => m.initSkins(myName())).catch((e) => console.warn('micatro: skins unavailable', e));
+  // the jokers' win stickers: this player's record (ui/stickers.js)
+  Stickers = await import('./stickers.js').catch(() => null);
+  if (Stickers) Stickers.initWinStickers(myName());
   player = new Player(board);
   UI.initScreens(stage);
   if (Engine && Engine.describeBack) UI.setBackDescriber(Engine.describeBack);

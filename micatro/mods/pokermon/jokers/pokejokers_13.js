@@ -194,7 +194,7 @@ defineJokers({
   // Intended-design fix: the owner wants these two Jirachi wishes live. (The 3.2.1 Wish Pack
   // still never offers them: its "copy" wish is jirachi_invis, and fake_negging isn't in it.)
   jirachi_copy: {
-    pos: { x: 10, y: 2 }, soul_pos: { x: 11, y: 2 }, atlas: 'poke_AtlasJokersBasicGen03', // (definition fields override the built center: prefixed atlas, ptype in extra)
+    pos: { x: 10, y: 2 }, soul_pos: { x: 11, y: 2 }, atlas: 'AtlasJokersBasicGen03',
     config: { extra: { energy_buff: 1, ptype: 'Metal' } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 3,
     aux_poke: true, no_collection: true, perishable_compat: false, blueprint_compat: true, custom_pool_func: true,
@@ -247,7 +247,7 @@ defineJokers({
     in_pool: not_in_pool,
   },
   jirachi_negging: {
-    pos: { x: 10, y: 2 }, atlas: 'poke_AtlasJokersBasicGen03', // (definition fields override the built center: prefixed atlas, ptype in extra)
+    pos: { x: 10, y: 2 }, atlas: 'AtlasJokersBasicGen03',
     config: { extra: { slots: 2, chance: 2, ptype: 'Metal' } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 3,
     aux_poke: true, no_collection: true, perishable_compat: false, blueprint_compat: false, custom_pool_func: true,

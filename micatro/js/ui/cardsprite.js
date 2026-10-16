@@ -5,6 +5,9 @@
 // shatter are local animations. Draws ONLY from view data (cardView objects).
 import { drawCell, centerAtlas, CENTERS, CARDS, TAGS, SEAL_POS, STICKER_POS, SOUL_POS, MODREG, drawModCell, modAtlasState } from './assets.js';
 import { CardFX } from './gl.js';
+import { first as modFirst, all as modAll, hasModUI } from './modui.js';
+import { drawSkinFront, skinVer } from './skins.js';
+import { winSticker, STICKER_POS as WIN_POS, stickerVer } from './stickers.js';
 
 export const FACE_W = 142, FACE_H = 190;
 let FX = null;
@@ -12,7 +15,8 @@ const fx = () => (FX || (FX = new CardFX(FACE_W, FACE_H)));
 
 const noGL = () => !fx().ok;
 
-export function composeFace(ctx, d, backKey) {
+/** opts.collection: a collection-style view (the Pokédex, Challenges): win stickers always show. */
+export function composeFace(ctx, d, backKey, opts) {
   ctx.clearRect(0, 0, FACE_W, FACE_H);
   const center = CENTERS[d.center] || null;
   if (d.facing === 'back') {
@@ -35,8 +39,9 @@ export function composeFace(ctx, d, backKey) {
     // a mod enhancement draws its own base; the rank/suit goes on top as usual
     if (!(modCard && d.atlas && drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H))) drawCell(ctx, 'centers', (center && center.pos) || { x: 1, y: 0 }, 0, 0, FACE_W, FACE_H);
     // (a mod suit's card — Bunco's Fleurons / Halberds — draws from its mod atlas)
-    if (d.front_atlas && !(center && center.name === 'Stone Card')) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H);
-    else if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H);
+    // (a deck skin the player chose for this suit draws instead — ui/skins.js, cosmetic only)
+    if (d.front_atlas && !(center && center.name === 'Stone Card')) { if (!drawSkinFront(ctx, d, null, FACE_W, FACE_H)) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H); }
+    else if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) { if (!drawSkinFront(ctx, d, CARDS[d.front].pos, FACE_W, FACE_H)) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H); }
     if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
   } else if (modCard) {
     if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
@@ -51,6 +56,11 @@ export function composeFace(ctx, d, backKey) {
   if (d.group) drawModCell(ctx, 'bunco_link', { x: (d.group - 1) % 5, y: 0 }, 0, 0, FACE_W, FACE_H);
   if (d.perishable) drawCell(ctx, 'stickers', STICKER_POS.perishable, 0, 0, FACE_W, FACE_H);
   if (d.rental) drawCell(ctx, 'stickers', STICKER_POS.rental, 0, 0, FACE_W, FACE_H);
+  // the joker's win sticker: the highest stake this player has won with it (ui/stickers.js; Balatro's sticker_run)
+  if ((center && center.set === 'Joker') || (modCard && d.set === 'Joker')) {
+    const st = winSticker(d.win_key || d.center, opts && opts.collection);
+    if (st) drawCell(ctx, 'stickers', WIN_POS[st], 0, 0, FACE_W, FACE_H);
+  }
   if (d.debuff && noGL()) {
     ctx.fillStyle = 'rgba(200,40,40,.35)'; ctx.fillRect(0, 0, FACE_W, FACE_H);
     ctx.strokeStyle = 'rgba(255,60,60,.9)'; ctx.lineWidth = 10;
@@ -122,7 +132,7 @@ export function drawSoul(ctx, soul) {
   return drawCell(ctx, soul.atlas, soul.pos, 0, 0, FACE_W, FACE_H);
 }
 
-const visKey = (d, backKey) => [d.center, d.front, d.edition, d.seal, d.facing, d.debuff, d.eternal, d.perishable, d.rental, backKey, d.atlas, d.pos && d.pos.x, d.pos && d.pos.y, d.soul_pos && d.soul_pos.x, d.soul_pos && d.soul_pos.y, d.tag_card, d.back_atlas,
+const visKey = (d, backKey) => [d.front ? skinVer : 0, d.set === 'Joker' || d.mod ? stickerVer : 0, d.center, d.front, d.edition, d.seal, d.facing, d.debuff, d.eternal, d.perishable, d.rental, backKey, d.atlas, d.pos && d.pos.x, d.pos && d.pos.y, d.soul_pos && d.soul_pos.x, d.soul_pos && d.soul_pos.y, d.tag_card, d.back_atlas,
   d.front_atlas, d.blind_card && d.blind_card.key, d.group, (d.mod_stickers || []).map((s) => s.atlas + s.pos.x + ',' + s.pos.y).join(';')].join('|');
 
 export class CardSprite {
@@ -152,15 +162,29 @@ export class CardSprite {
     this.setData(data);
   }
   place(x, y, r = 0, s = 1) { this.T.x = this.tgt.x = x; this.T.y = this.tgt.y = y; this.T.r = this.tgt.r = r; this.T.s = this.tgt.s = s; }
+  /** What the face shows: the card, or a mod UI's stand-in (Zorua's disguise, ...) — ui/modui.js face(). */
+  faceData() {
+    const d = this.d;
+    if (!d.mod || !hasModUI()) return d;
+    const b = this.board;
+    const jokers = b.areas && b.areas.jokers ? b.areas.jokers.map((id) => b.data.get(id)).filter(Boolean) : [];
+    return modFirst('face', d, { jokers, area: this.area }) || d;
+  }
   setData(d) {
     this.d = d || this.d;
-    const k = visKey(this.d, this.board.backKey);
+    const fd = this.faceData();
+    this.anim = fd.mod && hasModUI() ? modFirst('anim', fd) : null;
+    const deco = this.d.mod && hasModUI() ? modFirst('decorate', this.d) : null;
+    const k = visKey(fd, this.board.backKey) + '|' + (fd === this.d ? '' : 'f') + (deco ? deco.key : '');
     if (k === this.vkey) return;
     this.vkey = k;
-    composeFace(this.base.getContext('2d'), this.d, this.board.backKey);
+    this.fd = fd;
+    this.animIdx = -1;
+    composeFace(this.base.getContext('2d'), fd, this.board.backKey);
     this.base._ver++;
     this.drawStatic();
-    const soul = soulLayer(this.d);
+    this.setDeco(deco);
+    const soul = soulLayer(fd);
     if (soul) {
       if (!this.soul) { this.soul = document.createElement('canvas'); this.soul.width = FACE_W; this.soul.height = FACE_H; this.soul.className = 'card-soul'; this.inner.appendChild(this.soul); }
       const sc = this.soul.getContext('2d'); sc.clearRect(0, 0, FACE_W, FACE_H);
@@ -171,7 +195,30 @@ export class CardSprite {
     this.el.classList.toggle('is-tag', !!this.d.tag_card);
     this.el.classList.toggle('wee', this.d.center === 'j_wee');
   }
-  needsFx() { return !!(this.dissolve || (this.d.facing !== 'back' && (this.d.edition || this.d.debuff))); }
+  /** A mod UI's DOM decorations over the face (Pokermon's type pill + energy pips). */
+  setDeco(deco) {
+    if (!deco || !deco.html) { if (this.deco) { this.deco.remove(); this.deco = null; } return; }
+    if (!this.deco) { this.deco = document.createElement('div'); this.deco.className = 'card-deco'; this.inner.appendChild(this.deco); }
+    if (this.deco.dataset.k !== deco.key) { this.deco.innerHTML = deco.html; this.deco.dataset.k = deco.key; }
+  }
+  /** An animated sheet (ui/modui.js anim): recompose the face (and soul) when the frame changes. */
+  animStep(now) {
+    const a = this.anim;
+    if (!a || !a.frames || this.d.facing === 'back') return;
+    const idx = Math.floor(now * (a.fps || 10)) % a.frames;
+    if (idx === this.animIdx) return;
+    this.animIdx = idx;
+    const fpr = a.fpr || a.frames;
+    const pos = { x: idx % fpr, y: Math.floor(idx / fpr) };
+    composeFace(this.base.getContext('2d'), { ...this.fd, atlas: a.atlas || this.fd.atlas, pos }, this.board.backKey);
+    this.base._ver++;
+    if (!this.needsFx() || noGL()) this.drawStatic();
+    if (this.soul && a.soulAtlas) {
+      const sc = this.soul.getContext('2d'); sc.clearRect(0, 0, FACE_W, FACE_H);
+      drawModCell(sc, a.soulAtlas, pos, 0, 0, FACE_W, FACE_H);
+    }
+  }
+  needsFx() { return !!(this.dissolve || (this.d.facing !== 'back' && (this.d.edition || this.d.debuff || (this.extra && this.extra.length)))); }
   drawStatic() {
     if (this.needsFx() && !noGL()) { this.lastFx = 0; return; }
     const c = this.face.getContext('2d');
@@ -223,12 +270,17 @@ export class CardSprite {
       const t = now + this.phase;
       this.soul.style.transform = `translateY(${(-4 - 3 * Math.sin(t * 1.9)).toFixed(1)}px) scale(${(1.04 + 0.025 * Math.sin(t * 2.4)).toFixed(3)}) rotate(${(1.6 * Math.sin(t * 1.4)).toFixed(2)}deg)`;
     }
+    // mod UI: an animation frame, extra shader passes (Pokermon's evolution / Zorua shadow)
+    if (this.anim) this.animStep(now);
+    const hadExtra = !!(this.extra && this.extra.length);
+    this.extra = this.d.mod && this.d.facing !== 'back' && hasModUI() ? modAll('fx', this.d, this, now) : null;
+    if (hadExtra && !(this.extra && this.extra.length) && !this.needsFx()) this.drawStatic();
     // shader pass
     if (this.dissolve) {
       const D = this.dissolve;
       let p = Math.min(1, (now - D.start) / D.dur);
       const amt = D.reverse ? 1 - p : p;
-      fx().render(this.base, this.face, { edition: this.d.facing !== 'back' ? this.d.edition : null, debuff: this.d.debuff, dissolve: amt, t: now, fx: [now / 28 + this.tilt.y * 0.02, now] });
+      fx().render(this.base, this.face, { edition: this.d.facing !== 'back' ? this.d.edition : null, debuff: this.d.debuff, dissolve: amt, t: now, fx: [now / 28 + this.tilt.y * 0.02, now], extra: this.extra });
       if (p >= 1) {
         const cb = D.cb; this.dissolve = null;
         if (D.reverse) this.drawStatic();
@@ -236,7 +288,7 @@ export class CardSprite {
       }
     } else if (this.needsFx() && !noGL() && now - this.lastFx > (this.board.lowFx ? 0.08 : 0.033)) {
       this.lastFx = now;
-      fx().render(this.base, this.face, { edition: this.d.edition, debuff: this.d.debuff, dissolve: 0, t: now, fx: [now / 28 + (this.tilt.x + this.tilt.y) * 0.03 + T.r * 3, now] });
+      fx().render(this.base, this.face, { edition: this.d.edition, debuff: this.d.debuff, dissolve: 0, t: now, fx: [now / 28 + (this.tilt.x + this.tilt.y) * 0.03 + T.r * 3, now], extra: this.extra });
     }
   }
   /** Glass shatter: shards fly apart from the card's spot (Canvas2D overlay). */

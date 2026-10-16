@@ -362,3 +362,39 @@ kbd { display: inline-block; min-width: 18px; padding: 0 5px; border: 1px solid 
   .mc-hero-art { display: none; }
   .mc-hand { padding: 10px; }
 }
+/* Micatro mods + feature pages */
+.mc-tile .mc-art { max-width: 100%; overflow: hidden; } /* (a mod atlas with oversized cells never widens a tile) */
+.mc-noart { width: 142px; height: 190px; border-radius: 9px; background: repeating-linear-gradient(135deg, #eef1f7 0 10px, #e4e8f1 10px 20px); color: #9aa7bd; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; }
+.mc-noart.sq { width: 68px; height: 68px; font-size: 22px; }
+.mc-modgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin: 6px 0 24px; }
+.mc-modcard { justify-content: flex-start; min-width: 0; }
+.mc-modcard-top { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.mc-modcard-top > div { min-width: 0; overflow-wrap: anywhere; }
+.mc-modcover { flex: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); }
+.mc-by { color: #5d6b84; overflow-wrap: anywhere; }
+.mc-note.mc-by { text-align: left; margin-top: 2px; }
+.mc-moddesc { color: #4f5b73; font-size: 13px; line-height: 1.45; flex: 1; }
+.mc-modhero { background: #fff; border: 1px solid #e1e6f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
+.mc-modhero h1 .num { font-size: 15px; }
+.mc-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.mc-jumpbtn { border: 1px solid #ccd5e5; background: #fff; border-radius: 16px; padding: 4px 11px; font: inherit; font-size: 12.5px; color: #2a3656; cursor: pointer; }
+.mc-jumpbtn b { color: #2456b8; margin-left: 2px; }
+.mc-jumpbtn:hover { border-color: #2b6cb0; background: #eef4fd; }
+.mc-hl { outline: 3px solid #ff8a00; outline-offset: 2px; }
+.mc-fixes summary { cursor: pointer; font-weight: 700; color: #2a3656; margin-bottom: 4px; }
+.mc-fixes li { margin: 7px 0; }
+.mc-file { display: inline-block; padding: 0 6px; border-radius: 6px; background: #eef1f7; color: #76819c; font: 11px ui-monospace, monospace; }
+.mc-left { text-align: left; line-height: 1.5; }
+.mc-pill.mc-off { background: #f3eefc; color: #6b4fa0; }
+a.mc-pill { text-decoration: none; }
+.mc-feat { margin: 6px 0 18px; }
+.mc-featlink { justify-content: flex-start; }
+.mc-wrap { white-space: normal; line-height: 1.4; }
+.mc-modcontent { margin-top: 18px; }
+.mc-opts td:last-child { white-space: nowrap; width: 1%; }
+.mc-edtile .mc-spr { filter: saturate(1.5) hue-rotate(40deg); }
+@media (max-width: 760px) {
+  .mc-modgrid { grid-template-columns: 1fr; }
+  .mc-modhero { padding: 12px; }
+  .mc-modhero .mc-hero-art { display: none; }
+}

@@ -25,7 +25,7 @@
  *   calculate         Garbodor's per-ante discard counter (post_discard)
  * plus faint_baby_poke / volatile_active (Baby and volatile Pokémon position rules).
  */
-import { G, P_CENTER_POOLS, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
+import { G, P_CENTER_POOLS, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed, create_card as core_create_card } from '../../../js/engine/core.js';
 import { find_card, any, has_no_rank, has_no_suit, applies_splash } from './utils.js';
 import { apply_type_sticker, type_sticker_applied } from './types.js';
 import { energy_increase } from './energy.js';
@@ -197,6 +197,18 @@ export function pack_size(n, card) {
   if (String(card.ability.name).includes('Celestial') && find_joker('xatu').length) return P_CENTER_POOLS.Planet.length;
   if (G.GAME.extra_pocket_picks && G.GAME.extra_pocket_picks > 0) return n + G.GAME.extra_pocket_picks;
   return undefined;
+}
+
+/**
+ * lovely.toml "Xatu Make All Planets Appear" (patches the base Celestial pack's create_card): with Xatu out, card i
+ * of a Celestial pack is the i-th Planet of the pool (pack_size above makes the pack hold all of them), ahead of
+ * Telescope. Mod packs keep their own create_card (the engine only asks this for base-game boosters).
+ */
+export function pack_card(booster, i) {
+  if (!String(booster.ability.name).includes('Celestial') || !find_joker('xatu').length) return undefined;
+  const planet = P_CENTER_POOLS.Planet[i - 1];
+  if (!planet) return undefined;
+  return core_create_card('Planet', G.pack_cards, null, null, true, true, planet.key, 'pl1');
 }
 
 export function can_reserve(card) {

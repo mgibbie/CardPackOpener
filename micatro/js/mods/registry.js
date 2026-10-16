@@ -77,6 +77,7 @@ export const HOOKS = [
   'boss_eligible',      // (eligible, blind, ante) -> true/false overrides whether a boss can be drawn (get_new_boss)
   'hand_highlighted',   // () the player's hand selection changed (CardArea:parse_highlighted)
   'pack_card',          // (booster, i) -> a Card to use as card i of a base-game booster (else the vanilla roll)
+  'joker_win_keys',     // (card) -> [joker keys] that also earn this win (Pokermon: a winner's previous evolutions)
   'fill_shop_jokers',   // () -> true when the mod stocked a new shop's joker slots itself
   'forced_selection',   // (card) Cerulean Bell just forced this hand card into the selection
   'remove_from_deck',   // (card, from_debuff) Card:remove_from_deck is running (added_to_deck just cleared; before the center's own)
@@ -213,6 +214,8 @@ export const HOOKS = [
   'booster_free',       // (card) -> true: opening this shop booster costs nothing
   'skip_booster',       // () a booster pack is being skipped (G.FUNCS.skip_booster)
   'blind_on_deck',      // (slot) the blind select put this blind ('Small' | 'Big' | 'Boss') on deck
+  // ---- challenges (engine/challenge.js: a challenge's own rules, active only in its run)
+  'blind_modify_hand',  // (blind, cards, poker_hands, text, mult, hand_chips) -> [mult, hand_chips, modded] replacing Blind:modify_hand (not called while disabled)
 ];
 
 /**
@@ -295,7 +298,8 @@ export function registerMod(mod) {
     if (c.order === undefined) c.order = 10000 + Object.keys(P_CENTERS).length;
     P_CENTERS[c.key] = c;
   }
-  for (const t of C.tags || []) { own(t); t.order = t.order ?? 1000 + Object.keys(P_TAGS).length; P_TAGS[t.key] = t; }
+  // (SMODS.Tag sets set = 'Tag' itself: the describe / tooltip text is looked up by it — Bunco's tags don't name it)
+  for (const t of C.tags || []) { own(t); t.set = t.set || 'Tag'; t.order = t.order ?? 1000 + Object.keys(P_TAGS).length; P_TAGS[t.key] = t; }
   for (const b of C.blinds || []) { own(b); b.order = b.order ?? 1000 + Object.keys(P_BLINDS).length; P_BLINDS[b.key] = b; }
   for (const s of C.seals || []) { own(s); s.order = s.order ?? 100 + Object.keys(P_SEALS).length; P_SEALS[s.key] = s; }
   for (const s of C.stakes || []) { own(s); P_STAKES[s.key] = s; }

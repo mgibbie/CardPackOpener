@@ -126,8 +126,7 @@ add('globe', {
           G.GAME.consumeable_buffer = 0;
         });
       }
-      // (the reroll_shop context's return isn't shown by the engine: show it here)
-      say(ctx.blueprint_card || card, localize('k_plus_planet'), 'Planet');
+      return { message: localize('k_plus_planet'), colour: 'Planet', card };
     }
   },
 });
@@ -231,7 +230,7 @@ add('friendinsideme', {
         if (sold.edition) n.set_edition({ [sold.edition.type]: true });
         n.add_to_deck();
         G.jokers.emplace(n);
-        say(card, 'Friend!'); // (the engine ignores a selling_card return: shown here)
+        return { message: 'Friend!' };
       }
     }
     if (end_main(ctx) && !ctx.blueprint && G.GAME.blind.boss) {
@@ -413,7 +412,7 @@ add('passando', {
           }
         });
       } else {
-        say(card, e.blinds_skipped + '/' + e.threshold); // (the engine ignores a skip_blind return: shown here)
+        return { message: e.blinds_skipped + '/' + e.threshold };
       }
     }
   },

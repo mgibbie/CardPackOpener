@@ -578,3 +578,104 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 	.rb-exit .rb-xl { display: none; }
 	.rb-exit .rb-x { display: inline; }
 }
+
+/* ---------------------------------------- challenges (screens.js challengesScreen; engine/challenge.js) */
+.ch-modal .modal-box { width: 1240px; max-width: 96%; }
+.challenges { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+.ch-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 24px; }
+.ch-top .btn { font-size: 24px; padding: 8px 16px; }
+.ch-main { display: grid; grid-template-columns: 330px 1fr; gap: 12px; align-items: start; min-height: 0; }
+.ch-list { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; padding: 4px 6px 8px 2px; }
+.ch-group { margin-top: 6px; font-size: 20px; }
+.ch-group .mod-badge, .ch-group .badge { margin: 0; }
+.badge.ch-base { background: var(--red); font-size: 17px; padding: 3px 10px 1px; border-radius: 7px; }
+.btn.ch-item { --b: var(--panel-d); --bd: var(--panel-dd); font-size: 25px; padding: 9px 12px 7px; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px; box-shadow: inset 6px 0 0 var(--chc, var(--red)), 0 4px 0 var(--bd); }
+.btn.ch-item.on { --b: #50676b; box-shadow: inset 6px 0 0 var(--chc, var(--red)), 0 4px 0 var(--bd), 0 0 0 3px #fff; }
+.ch-tick { color: var(--green); font-size: 24px; }
+.ch-detail { background: var(--panel-d); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ch-head { font-size: 34px; text-align: center; }
+.ch-head .mod-badge { font-size: 16px; }
+.ch-done { font-size: 20px; color: var(--green); background: rgba(0,0,0,.25); border-radius: 8px; padding: 3px 8px 1px; vertical-align: middle; }
+.ch-tabs { margin-bottom: 2px; }
+.ch-tabs .btn { font-size: 24px; padding: 8px 14px; }
+.ch-body { display: flex; flex-direction: column; gap: 10px; max-height: 40vh; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.ch-sec { background: var(--panel); border-radius: 12px; padding: 8px 10px; }
+.ch-sec-t { font-size: 22px; color: #c6d1d3; margin-bottom: 6px; }
+.ch-lines { background: #fff; color: var(--text-dark); border-radius: 10px; padding: 8px 10px 6px; font-size: 24px; line-height: 1.12; text-align: center; }
+.ch-lines .nr-name { font-size: 30px; }
+.ch-cards { display: flex; flex-wrap: wrap; gap: 10px; }
+.ch-cardw { display: flex; flex-direction: column; align-items: center; width: 92px; gap: 4px; }
+.ch-card { width: 71px; height: 95px; filter: drop-shadow(3px 4px 0 rgba(0,0,0,.3)); }
+.ch-cname { font-size: 17px; text-align: center; line-height: 1.05; }
+.ch-ctag { color: var(--attn); font-size: 15px; }
+.ch-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge.ch-chip { background: var(--grey); font-size: 20px; padding: 4px 10px 2px; border-radius: 8px; }
+.ch-deckrow { display: flex; gap: 12px; align-items: center; }
+.ch-deckrow .ch-lines { flex: 1; }
+.ch-back { width: 85px; height: 114px; filter: drop-shadow(4px 5px 0 rgba(0,0,0,.35)); }
+.ch-deckgrid { padding-left: 4px; }
+.ch-deckgrid .dv-row .mini-card.ch-dcard { width: 54px; height: 72px; margin-right: -10px; }
+.portrait .ch-deckgrid .dv-row .mini-card.ch-dcard { width: 40px; height: 54px; margin-right: -14px; }
+.go-challenge { text-align: center; font-size: 24px; margin-top: -6px; }
+.portrait .ch-modal .modal-box { width: 98%; max-width: 98%; }
+.portrait .ch-main { grid-template-columns: 1fr; }
+.portrait .ch-list { max-height: 30vh; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.portrait .ch-group { grid-column: 1 / -1; }
+.portrait .btn.ch-item { font-size: 22px; padding: 8px 8px 6px; }
+.portrait .ch-body { max-height: none; overflow: visible; }
+
+/* ------------------------------------------------ deck sleeves (New Run; engine/sleeve.js) */
+.nr-sleeveview { width: 142px; display: flex; justify-content: center; }
+.nr-sleeve-art { width: 110px; height: 143px; display: block; filter: drop-shadow(5px 7px 0 rgba(0,0,0,.35)); }
+.nr-nosleeve { width: 110px; height: 143px; border: 4px dashed #8a9a9d; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; color: #b9c6c8; font-size: 26px; }
+.nr-sleeve .mod-badge { font-size: 14px; }
+.nr-alt { background: var(--green); color: #fff; }
+.portrait .nr-sleeveview { width: 106px; }
+.portrait .nr-sleeve-art, .portrait .nr-nosleeve { width: 84px; height: 110px; }
+
+/* ------------------------------------------------ deck skins (Options; ui/skins.js) */
+.skins-box { background: var(--panel-d); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.sk-rows { display: flex; flex-direction: column; gap: 8px; }
+.sk-row { display: grid; grid-template-columns: 120px 54px 1fr 54px; align-items: center; gap: 8px; background: var(--panel); border-radius: 10px; padding: 6px 8px; }
+.sk-suit { font-size: 24px; }
+.sk-arrow { font-size: 34px; padding: 6px 0 10px; }
+.sk-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.sk-cards { display: flex; gap: 0; }
+.sk-card { width: 50px; height: 67px; margin-left: -12px; filter: drop-shadow(2px 3px 0 rgba(0,0,0,.3)); }
+.sk-card:first-child { margin-left: 0; }
+.sk-name { font-size: 19px; text-align: center; line-height: 1.05; }
+.portrait .sk-row { grid-template-columns: 90px 46px 1fr 46px; }
+
+/* ------------------------------------------ mod UI decorations (ui/modui.js; Pokermon's mods/pokermon/ui.js) */
+.card-deco { position: absolute; inset: 0; pointer-events: none; }
+.poke-type { position: absolute; left: 50%; top: -11px; transform: translateX(-50%); font-size: 15px; line-height: 1; padding: 3px 7px 1px; border-radius: 7px; color: #fff; white-space: nowrap;
+	box-shadow: 0 2px 0 rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.25); text-shadow: 0 1px 0 rgba(0,0,0,.45); }
+.poke-type.dark { color: #374244; text-shadow: none; }
+.poke-type.tera { box-shadow: 0 2px 0 rgba(0,0,0,.35), 0 0 0 2px #fff, 0 0 8px 2px rgba(255,255,255,.8); }
+.poke-pips { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); display: flex; gap: 3px; align-items: center; background: rgba(31,42,44,.85); padding: 3px 5px; border-radius: 8px; }
+.poke-pips .pip { display: block; width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 2px #9fb0b3; }
+.poke-pips .pip.on { box-shadow: inset 0 0 0 1px rgba(0,0,0,.3); }
+.poke-pips .pip.on.c { background: #c8c0f8; }
+.poke-pips .pip-more { font-size: 13px; color: #fff; margin-left: 2px; }
+.portrait .poke-type { font-size: 13px; top: -9px; padding: 2px 5px 0; }
+.card-btns .btn.modui { --b: var(--blue); --bd: var(--blue-d); }
+
+/* ------------------------------------------------ the Pokédex (mods/pokermon/ui.js openPokedex) */
+.dex-modal .modal-box { width: 900px; max-width: 96%; }
+.pokedex { display: flex; flex-direction: column; gap: 12px; }
+.dex-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.btn.dex-card { --b: var(--panel-d); --bd: var(--panel-dd); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px 8px; width: 150px; }
+.btn.dex-card.on { box-shadow: 0 4px 0 var(--bd), 0 0 0 4px #fff; --b: #50676b; }
+.btn.dex-card.is-you .dex-cname::after { content: ' ★'; color: var(--attn); }
+.dex-canvas { width: 106px; height: 142px; filter: drop-shadow(4px 5px 0 rgba(0,0,0,.35)); }
+.dex-cname { font-size: 22px; text-align: center; line-height: 1.05; text-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.dex-row.many .btn.dex-card { width: 124px; }
+.dex-row.many .dex-canvas { width: 85px; height: 114px; }
+.dex-info { background: var(--panel-d); border-radius: 14px; padding: 10px; text-align: center; display: flex; flex-direction: column; gap: 6px; }
+.dex-name { font-size: 34px; }
+.dex-badges .badge { font-size: 18px; padding: 3px 10px 1px; border-radius: 7px; margin: 0 3px; }
+.badge.dex-stage { background: var(--grey); }
+.dex-body { text-align: center; }
+.portrait .btn.dex-card { width: 118px; padding: 8px 4px 6px; }
+.portrait .dex-canvas { width: 80px; height: 107px; }
+.portrait .dex-cname { font-size: 18px; }

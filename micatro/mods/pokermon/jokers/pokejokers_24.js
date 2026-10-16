@@ -80,7 +80,7 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       const forms = ['j_poke_gourgeist_small', 'j_poke_gourgeist_average', 'j_poke_gourgeist_large', 'j_poke_gourgeist_super'];
       return { vars: [center.ability.extra.jack_target, Math.max(0, center.ability.extra.jack_target - center.ability.extra.jacks_discarded), center.ability.extra.money],
-        key: forms[center.ability.extra.form] };
+        key: forms[center.ability.extra.form] || forms[1] }; // (form -1 = no size picked yet, the collection's card: Average)
     },
     set_ability(self, card, initial) {
       if (initial) card.ability.extra.form = pseudorandom_element([0, 1, 2, 3], pseudoseed('gourgeist'))[0];

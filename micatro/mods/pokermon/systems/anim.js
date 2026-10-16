@@ -41,6 +41,8 @@ export function view_card(card, v) {
     if (typeof ex.rounds === 'number') p.rounds = ex.rounds;
     if (ex.evolve) p.evolve = ex.evolve;
     if (ex.form !== undefined) p.form = ex.form;
+    // Zorua's copy switch (its disguise + shadow show only while active: pokedraw.lua zorua_shadow)
+    if (typeof ex.active === 'boolean' && (c.key === 'j_poke_zorua' || c.key === 'j_poke_zoroark')) p.active = ex.active;
     // Zorua / Zoroark Illusion: drawn (and described) as this Pokémon outside the joker row.
     if (ex.hidden_key && card.area !== G.jokers) p.illusion = ex.hidden_key;
     // Mimikyu: the busted-disguise sprite (center.broke_pos).

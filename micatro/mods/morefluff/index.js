@@ -36,6 +36,8 @@ import * as COLOURS from './colours.js';
 import * as ROTAROTS from './rotarots.js';
 import * as ENH from './enhancements.js';
 import * as SUPERBOSS from './superboss.js';
+import { CHALLENGES } from './challenges.js';
+import { SLEEVES } from './sleeves.js';
 import * as EXTRAS from './extras.js';
 
 const PARTS = [JA, JB, JC, COLOURS, ROTAROTS, ENH, SUPERBOSS, EXTRAS];
@@ -102,6 +104,8 @@ export const MOREFLUFF = registerMod({
     loc: LOC,
   },
   hooks,
+  challenges: CHALLENGES, // (challenges.js: engine/challenge.js plays it)
+  sleeves: SLEEVES, // (sleeves.js: deck variants, engine/sleeve.js)
 });
 
 const keys = (set) => centers.filter((c) => c.set === set).map((c) => c.key);

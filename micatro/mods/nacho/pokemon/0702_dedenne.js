@@ -34,6 +34,7 @@ defineNacho({
 defineNacho({
   // Carbink 703: cards with no rank (Stone, Hazard) also count as Gold cards (a quantum enhancement)
   carbink: {
+    quantum_enhancements: true, // answers check_enhancement (core.js quantum_enhancements)
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       info_queue.push(P_CENTERS.m_gold);

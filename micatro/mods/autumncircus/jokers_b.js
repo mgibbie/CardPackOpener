@@ -46,8 +46,8 @@
  *    of Void sets Negative without set_edition's slot (add_to_deck's own Negative bookkeeping then adds it once),
  *    and its shatters are queued. Wished-for seam: an add_to_deck hook at the end of Card:add_to_deck.
  *  - Snecko Eye answers hand_drawn only (the engine doesn't emit SMODS's other_drawn).
- *  - Homelatro's "hmlt_extinct" / "hmlt_safe" strings aren't in Micatro: they fall back to vanilla's
- *    "Extinct!" / "Safe!" (k_extinct_ex / k_safe_ex).
+ *  - Homelatro's "hmlt_extinct" / "hmlt_safe" strings ("Ascended!" / "Happen!") are defined in index.js (the
+ *    fallback to vanilla's "Extinct!" / "Safe!" only applies if they're missing).
  *  - The Homestuck jokers' text is SMODS multi-box (arrays of line arrays), which describe()'s fill() can't read
  *    (it crashed): their boxes are flattened into one line list at load (a describe.js box seam would keep them apart).
  *  - With Pokermon on, TAC's lovely patch stops the Silver Seal from triggering on a graveyard card scored by

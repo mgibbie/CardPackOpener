@@ -95,18 +95,20 @@ defineJokers({
   // Hisuian Qwilfish (Overqwil 904's pre-evolution). Not registered in 3.2.1 (the Lua is commented
   // out and missing from the file's list) — Intended-design fix: registered here, as written.
   hisuian_qwilfish: {
-    pos: { x: 5, y: 4 },
+    // Pokermon has no Hisuian Qwilfish art ('Regionals' never shipped): Micatro's own card — the real
+    // Hisuian sprite grafted into Pokermon's Dark-type Basic frame and Qwilfish's underwater scene.
+    pos: { x: 0, y: 0 },
     config: { extra: { hazard_ratio: 10, chip_mod: 5, chips: 0 }, evo_rqmt: 80 },
     rarity: 2,
     cost: 7,
     stage: 'Basic',
     ptype: 'Dark',
-    atlas: 'Regionals',
+    atlas: 'hisuian_qwilfish',
     blueprint_compat: true,
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      info_queue.push({ set: 'Other', key: 'poke_hazards' });
+      info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [qwil_vars(card)] });
       info_queue.push(P_CENTERS.m_poke_hazard);
       return { vars: [qwil_vars(card), abbr.hazard_ratio, abbr.chip_mod, abbr.chips, self.config.evo_rqmt] };
     },
@@ -136,7 +138,7 @@ defineJokers({
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      info_queue.push({ set: 'Other', key: 'poke_hazards' });
+      info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [qwil_vars(card)] });
       info_queue.push(P_CENTERS.m_poke_hazard);
       return { vars: [qwil_vars(card), abbr.hazard_ratio, abbr.chip_mod, abbr.chips] };
     },
