@@ -1642,17 +1642,19 @@ async function micatroView() {
     h('tbody', null, ...rows.map(r => h('tr', null, ...r.map(c => h('td', null, c)))))) ;
   const kbd = (...k) => k.map((x, i) => [i ? ' / ' : '', h('kbd', null, x)]).flat();
   const idx = [
-    ['jokers', 'Jokers', D.jokers.length, ['Joker', D.jokers[0].pos]],
-    ['consumables', 'Tarot, Planet & Spectral', D.tarots.length + D.planets.length + D.spectrals.length, ['Tarot', D.tarots[0].pos]],
-    ['vouchers', 'Vouchers', D.vouchers.length, ['Voucher', D.vouchers[0].pos]],
-    ['boosters', 'Booster Packs', D.boosters.length, ['Booster', D.boosters[0].pos]],
-    ['tags', 'Skip Tags', D.tags.length, ['tags', D.tags[0].pos]],
-    ['blinds', 'Blinds', D.blinds.length, ['blind', D.blinds[2].pos]],
-    ['decks', 'Decks', D.decks.length, ['centers', D.decks[0].pos]],
-    ['stakes', 'Stakes', D.stakes.length, ['chips', D.stakes[7].pos]],
-    ['hands', 'Poker Hands', D.hands.length, null],
-    ['enhancements', 'Enhancements & Seals', D.enhancements.length + D.editions.length + D.seals.length, ['centers', D.enhancements[0].pos]],
-    ['challenges', 'Challenges', (D.challenges || []).length, ['Joker', (D.jokers.find(j => j.key === 'j_egg') || D.jokers[0]).pos]],
+    // [route, label, count, art layers (top-most first)]
+    ['jokers', 'Jokers', D.jokers.length, [['Joker', D.jokers[0].pos]]],
+    ['consumables', 'Tarot, Planet & Spectral', D.tarots.length + D.planets.length + D.spectrals.length, [['Tarot', D.tarots[0].pos]]],
+    ['vouchers', 'Vouchers', D.vouchers.length, [['Voucher', D.vouchers[0].pos]]],
+    ['boosters', 'Booster Packs', D.boosters.length, [['Booster', D.boosters[0].pos]]],
+    ['tags', 'Skip Tags', D.tags.length, [['tags', D.tags[0].pos]]],
+    ['blinds', 'Blinds', D.blinds.length, [['blind', D.blinds[2].pos]]],
+    ['decks', 'Decks', D.decks.length, [['centers', D.decks[0].pos]]],
+    ['stakes', 'Stakes', D.stakes.length, [['chips', D.stakes[7].pos]]],
+    ['hands', 'Poker Hands', D.hands.length, [['deck', D.cards.S_A], ['centers', D.basePos]]], // (the Royal Flush's Ace)
+    ['enhancements', 'Enhancements & Seals', D.enhancements.length + D.editions.length + D.seals.length, [['centers', D.enhancements[0].pos]]],
+    // Balatro's Challenge Deck (b_challenge), the back every challenge plays on
+    ['challenges', 'Challenges', (D.challenges || []).length, (D.challenges && D.challenges[0] && D.challenges[0].art) || [['centers', { x: 0, y: 4 }]]],
   ];
   content.replaceChildren(
     h('div', { class: 'mc-hero' },
@@ -1662,8 +1664,8 @@ async function micatroView() {
         h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'every deck and stake is open from the start'))),
       h('div', { class: 'mc-hero-art' }, mcSprite([['Joker', D.jokers[0].pos]], null, 1, 'Joker'),
         mcSprite([['Joker', D.jokers.find(j => j.key === 'j_perkeo').soul], ['Joker', D.jokers.find(j => j.key === 'j_perkeo').pos]], null, 1, 'Perkeo'))),
-    h('div', { class: 'lp-grid mc-index' }, idx.map(([k, label, n, spr]) => h('a', { class: 'lp-tile mc-idx', href: '#/micatro/' + k },
-      spr ? mcSprite([spr], 'mc-idx-spr', spr[0] === 'blind' || spr[0] === 'tags' || spr[0] === 'chips' ? 1 : 0.5) : h('span', { class: 'mc-idx-spr mc-idx-txt' }, '♠♥'),
+    h('div', { class: 'lp-grid mc-index' }, idx.map(([k, label, n, art]) => h('a', { class: 'lp-tile mc-idx', href: '#/micatro/' + k, 'data-cat': k },
+      mcSprite(art, 'mc-idx-spr', ['blind', 'tags', 'chips'].includes(art[art.length - 1][0]) ? 1 : 0.5, label),
       h('span', { class: 'mc-idx-txtwrap' }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count' }, n + ' entries'))))),
     mcSection('Built-in features', 'Extras of the base game, in every run.',
       h('div', { class: 'lp-grid mc-feat' }, [
@@ -1939,10 +1941,10 @@ const mcOn = (...seg) => { const p = location.hash.slice(1).split('?')[0].split(
 const mcHashParam = k => new URLSearchParams(location.hash.split('?')[1] || '').get(k);
 const mcModBack = () => h('p', { class: 'lp-back' }, h('a', { href: '#/micatro-mods' }, '← Micatro Mods'));
 /** Art layers of a generated item (['@atlas' | vanilla atlas, pos] top-most first), or a blank card. */
-function mcArt(it, cls) {
+function mcArt(it, cls, scale = 1) {
   const layers = (it.art || []).filter(l => l && MC_ATLAS[l[0]]);
   if (!layers.length) return h('div', { class: 'mc-spr mc-noart' + (it.sq ? ' sq' : ''), title: it.name }, '?');
-  return mcSprite(layers, cls || (it.chip ? 'mc-chip' : null), 1, it.name);
+  return mcSprite(layers, cls || (it.chip ? 'mc-chip' : null), scale, it.name);
 }
 const mcPills = it => (it.pills || []).map(p => h('span', { class: 'mc-pill' + (p.cls ? ' mc-' + p.cls : '') + (p.off ? ' mc-off' : '') }, p.text));
 /** A mod badge on an item listed outside its mod's page (links to the mod page). */
@@ -1959,7 +1961,7 @@ function mcModTile(it, mod) {
 }
 function mcModRow(it, mod) {
   return h('div', { class: 'mc-row' + (it.chip ? ' mc-blind' : '') + (it.colour && !it.chip ? ' mc-colrow' : ''), 'data-key': it.key, id: 'mc-' + it.key, 'data-mod': mod ? mod.id : null, style: it.colour ? 'border-left-color:' + it.colour : null },
-    it.art ? mcArt(it) : null,
+    it.art ? mcArt(it, null, it.sq || it.chip ? 1 : 0.5) : null,
     h('div', { class: 'mc-row-body' },
       h('div', { class: 'mc-nm' }, it.name, mcModTag(mod), (it.badges || []).map(b => mcBadge(b.label, b.colour)), mcPills(it),
         it.colour ? h('span', { class: 'mc-swatch', style: 'background:' + it.colour }) : null),
@@ -1996,6 +1998,57 @@ function mmCover(cover, cls) {
 }
 /** Section id -> category id (every mod section belongs to one category page). */
 const mmCatOf = D => { const o = {}; for (const c of D.categories || []) for (const s of c.sections) o[s.id] = c.id; return o; };
+
+// ---------- incremental rendering of the big lists (Pokermon alone has 457 jokers)
+// A list is a run of "slots" (a container + the items it will hold, in page order). The first MM_PAGE
+// items are drawn at once; the rest come MM_PAGE at a time as the footer nears the viewport
+// (IntersectionObserver), or from its Show more / Show all buttons. A slot (and its heading) stays
+// hidden until it has a drawn item. Sprites are CSS backgrounds, so an undrawn card fetches no atlas.
+const MM_PAGE = 60;
+/** slots: [{wrap, items, draw(item) -> node, show?: [els], block?: el}]; first = items to draw up front. */
+function mmPager(slots, first, stillOn) {
+  const total = slots.reduce((n, sl) => n + sl.items.length, 0);
+  let budget = Math.max(MM_PAGE, Math.ceil((first || 0) / MM_PAGE) * MM_PAGE);
+  const more = h('button', { type: 'button', class: 'mm-more' }), all = h('button', { type: 'button', class: 'mm-more mm-all' });
+  const left = h('span', { class: 'muted mm-left' });
+  const foot = h('div', { class: 'mm-pager' }, left, more, all);
+  let io = null;
+  const fill = () => {
+    let room = budget, drawn = 0;
+    const blocks = new Map();
+    for (const sl of slots) {
+      sl.n = sl.n || 0;
+      const want = Math.min(sl.items.length, Math.max(0, room));
+      if (sl.n < want) {
+        const frag = document.createDocumentFragment();
+        while (sl.n < want) frag.appendChild(sl.draw(sl.items[sl.n++]));
+        sl.wrap.appendChild(frag);
+      }
+      room -= sl.items.length; drawn += sl.n;
+      sl.wrap.hidden = !sl.n;
+      for (const el of sl.show || []) el.hidden = !sl.n;
+      if (sl.block) blocks.set(sl.block, (blocks.get(sl.block) || 0) + sl.n);
+    }
+    for (const [b, n] of blocks) b.hidden = !n;
+    const rest = total - drawn;
+    foot.hidden = rest <= 0;
+    left.textContent = 'Showing ' + drawn.toLocaleString('en-US') + ' of ' + total.toLocaleString('en-US') + '.';
+    more.textContent = 'Show ' + Math.min(MM_PAGE, rest) + ' more';
+    all.textContent = 'Show all ' + total.toLocaleString('en-US');
+    if (rest <= 0 && io) { io.disconnect(); io = null; }
+    else if (io) { io.unobserve(foot); io.observe(foot); } // (re-checks at once: keeps filling while the footer is still in view)
+  };
+  const grow = n => { budget += n; fill(); };
+  more.onclick = () => grow(MM_PAGE);
+  all.onclick = () => grow(total);
+  if (typeof IntersectionObserver === 'function') io = new IntersectionObserver(es => {
+    if (!stillOn() || !foot.isConnected) { if (io) io.disconnect(); io = null; return; }
+    if (es.some(e => e.isIntersecting) && !foot.hidden) grow(MM_PAGE);
+  }, { rootMargin: '0px 0px 900px 0px' });
+  return { foot, total, start() { fill(); }, stop() { if (io) io.disconnect(); io = null; } };
+}
+/** The draw position of an item in a pager's slots (-1 when absent). */
+const mmSlotIndex = (slots, pred) => { let i = 0; for (const sl of slots) { const k = sl.items.findIndex(pred); if (k >= 0) return i + k; i += sl.items.length; } return -1; };
 
 async function micatroModsView() {
   content.replaceChildren(h('h1', null, 'Micatro Mods'), h('p', { class: 'muted' }, 'Loading…'));
@@ -2075,19 +2128,25 @@ async function micatroModsCategoryView(cid) {
   const body = h('div');
   const count = h('div', { class: 'result-count' });
   const bar = tabs ? h('div', { class: 'lq-sizebar mc-tabs' }) : null;
-  const list = (kind, items, showMods) => {
+  let slots = [], pager = null;
+  const drawX = x => mmItem(x.kind, x.it, x.m);
+  /** One group's containers (empty: the pager fills them) — every mod: one run of tiles per mod, under its badge. */
+  const list = (kind, items, showMods, block) => {
     const wrap = kind === 'row' ? 'mc-rows' : kind === 'hand' ? 'mc-hands' : 'mc-grid';
-    if (!showMods) return [h('div', { class: wrap }, items.map(x => mmItem(kind, x.it, x.m)))];
-    // every mod: one run of tiles per mod, under its badge
+    if (!showMods) { const w = h('div', { class: wrap }); slots.push({ wrap: w, items, draw: drawX, block }); return [w]; }
     const out = [];
     for (const m of mods) {
       const mine = items.filter(x => x.m === m);
       if (!mine.length) continue;
-      out.push(h('h3', { class: 'mc-h3 mm-modhead' }, mcModTag(m), h('span', { class: 'num' }, ' ' + mine.length)), h('div', { class: wrap }, mine.map(x => mmItem(kind, x.it, x.m))));
+      const head = h('h3', { class: 'mc-h3 mm-modhead' }, mcModTag(m), h('span', { class: 'num' }, ' ' + mine.length)), w = h('div', { class: wrap });
+      slots.push({ wrap: w, items: mine, draw: drawX, show: [head], block });
+      out.push(head, w);
     }
     return out;
   };
-  const draw = () => {
+  const draw = (focus) => {
+    if (pager) pager.stop();
+    slots = [];
     const q = st.q.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const pass = all.filter(x => (st.mod === 'all' || x.m.id === st.mod) && (st.rarity === 'all' || x.it.rarity === st.rarity) && (!q || mmText(x.it).includes(q)));
     let shown = pass;
@@ -2107,12 +2166,17 @@ async function micatroModsCategoryView(cid) {
       const groups = s.id === 'blinds' ? MM_BLIND_GROUPS.map(([g, t, b]) => [t, b, items.filter(x => (x.it.group || 'boss') === g)]) : [[secs.length > 1 ? s.title : null, null, items]];
       for (const [title, blurb, gi] of groups) {
         if (!gi.length) continue;
-        const kids = list(s.kind, gi, many && new Set(gi.map(x => x.m)).size > 1);
-        blocks.push(title ? h('section', { class: 'lp-tier', 'data-section': s.id }, h('div', { class: 'lp-tier-head' }, h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + gi.length + ')')), blurb ? h('p', { class: 'muted' }, blurb) : null), kids)
-          : h('div', { 'data-section': s.id }, kids));
+        const block = title ? h('section', { class: 'lp-tier', 'data-section': s.id }, h('div', { class: 'lp-tier-head' }, h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + gi.length + ')')), blurb ? h('p', { class: 'muted' }, blurb) : null))
+          : h('div', { 'data-section': s.id });
+        block.append(...list(s.kind, gi, many && new Set(gi.map(x => x.m)).size > 1, block));
+        blocks.push(block);
       }
     }
-    body.replaceChildren(...(blocks.length ? blocks : [h('p', { class: 'muted' }, 'Nothing matches.')]));
+    // drawn up to the focused item (?item=), so a deep link to the 800th joker still lands on it
+    const at = focus ? mmSlotIndex(slots, x => x.it.key === focus) : -1;
+    pager = mmPager(slots, at + 1, () => mmOn(cid));
+    body.replaceChildren(...(blocks.length ? [...blocks, pager.foot] : [h('p', { class: 'muted' }, 'Nothing matches.')]));
+    pager.start();
     count.replaceChildren(String(shown.length), h('span', null, ' of ' + (tabs ? all.filter(x => x.sid === st.type).length : all.length) + ' entries'));
   };
   const search = h('input', { type: 'search', class: 'mc-search', placeholder: 'Search ' + C.title.toLowerCase() + ' (name or text)…', value: st.q, autocomplete: 'off' });
@@ -2131,7 +2195,7 @@ async function micatroModsCategoryView(cid) {
       count),
     h('div', { class: 'mc-filters' }, search, modSel, rarSel),
     bar, body);
-  draw();
+  draw(hit ? want : null);
   if (hit) {
     const el = document.getElementById('mc-' + want);
     if (el) { el.classList.add('mc-hl'); el.scrollIntoView({ block: 'center' }); }
@@ -2159,13 +2223,12 @@ function micatroSearchIndex() {
     const key = k === 'hands' ? it.name : it.key;
     return { name: it.name, text: (it.lines || []).join(' ').replace(/\{[^}]*\}/g, ''), kind: KIND[k], href: '#/micatro/' + page + '?item=' + encodeURIComponent(key) };
   }))).catch(() => []);
-  const mods = loadMicatroMods().then(D => {
-    const cat = mmCatOf(D);
-    return Promise.all(D.mods.map(m => loadMicatroMod(m.id).then(F => F.sections.flatMap(s => s.items.map(it => ({
-      name: it.name, text: mmText(it), kind: s.title.replace(/ cards$/, '').replace(/s$/, ''), mod: m.name,
-      href: MM + '/' + (cat[s.id] || 'other') + '?item=' + encodeURIComponent(it.key),
-    })))))).then(x => x.flat());
-  }).catch(() => []);
+  // every mod item from designwiki/data/micatro_mods_search.json (key, name, mod, category, kind, text:
+  // ~250 KB instead of the 19 mod files); the category page a result links to loads the full mod file
+  const mods = fetch('data/micatro_mods_search.json' + CB).then(r => { if (!r.ok) throw new Error('micatro_mods_search.json ' + r.status); return r.json(); })
+    .then(S => S.items.map(([key, name, mi, ci, ki, text]) => ({
+      name, text, kind: S.kinds[ki], mod: S.mods[mi][1], href: MM + '/' + (S.cats[ci] || 'other') + '?item=' + encodeURIComponent(key),
+    }))).catch(() => []);
   return (mcSearchIndex = Promise.all([vanilla, mods]));
 }
 /** Name starts with q > a word of the name does > the name contains it > the text does. */
@@ -2226,22 +2289,27 @@ async function micatroModView(id) {
   const body = h('div');
   const count = h('div', { class: 'result-count' });
   const total = M.sections.reduce((n, s) => n + s.items.length, 0);
-  const draw = () => {
+  let pagers = [];
+  const draw = (focus) => {
     const q = mcModQ.trim().toLowerCase();
     const match = it => !q || (it.name + ' ' + (it.lines || []).join(' ') + ' ' + (it.badges || []).map(b => b.label).join(' ')).replace(/\{[^}]*\}/g, '').toLowerCase().includes(q);
     let shown = 0;
+    for (const p of pagers) p.stop();
+    pagers = [];
     body.replaceChildren(...M.sections.map(s => {
       const items = s.items.filter(match);
       shown += items.length;
       if (!items.length) return null;
-      const list = s.kind === 'row' ? h('div', { class: 'mc-rows' }, items.map(x => mcModRow(x)))
-        : s.kind === 'hand' ? h('div', { class: 'mc-hands' }, items.map(x => mcModHand(x)))
-          : h('div', { class: 'mc-grid' }, items.map(x => mcModTile(x)));
+      const list = h('div', { class: s.kind === 'row' ? 'mc-rows' : s.kind === 'hand' ? 'mc-hands' : 'mc-grid' });
+      const one = { wrap: list, items, draw: s.kind === 'row' ? x => mcModRow(x) : s.kind === 'hand' ? x => mcModHand(x) : x => mcModTile(x) };
+      const pager = mmPager([one], focus ? items.findIndex(x => x.key === focus) + 1 : 0, () => mmOn('mod', id));
+      pagers.push(pager);
       return h('section', { class: 'lp-tier', id: 'mcs-' + s.id, 'data-section': s.id },
         h('div', { class: 'lp-tier-head' }, h('h2', null, s.title, ' ', h('span', { class: 'num' }, '(' + (q ? items.length + ' of ' : '') + s.items.length + ')')), s.blurb ? h('p', { class: 'muted' }, s.blurb) : null,
           catOf[s.id] && D.mods.filter(x => (D.categories.find(c => c.id === catOf[s.id]) || { perMod: {} }).perMod[x.id]).length > 1
-            ? h('p', { class: 'mm-catlink' }, h('a', { href: MM + '/' + catOf[s.id] }, 'Every mod’s ' + catTitle[catOf[s.id]] + ' →')) : null), list);
+            ? h('p', { class: 'mm-catlink' }, h('a', { href: MM + '/' + catOf[s.id] }, 'Every mod’s ' + catTitle[catOf[s.id]] + ' →')) : null), list, pager.foot);
     }));
+    for (const p of pagers) p.start();
     if (!shown) body.replaceChildren(h('p', { class: 'muted' }, 'Nothing matches.'));
     count.replaceChildren(String(shown), h('span', null, ' of ' + total + ' entries'));
   };
@@ -2279,8 +2347,8 @@ async function micatroModView(id) {
     h('div', { class: 'gallery-heading mc-modcontent' }, h('div', null, h('h2', null, 'Content'), h('p', { class: 'muted' }, 'Every card the mod adds, with its base values (the text is the game’s own).')), count),
     h('div', { class: 'mc-filters' }, search),
     body);
-  draw();
   const want = mcHashParam('item');
+  draw(want);
   if (want) {
     const el = document.getElementById('mc-' + want);
     if (el) { el.classList.add('mc-hl'); el.scrollIntoView({ block: 'center' }); }

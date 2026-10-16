@@ -153,6 +153,14 @@ function consumableItem(c, mod) {
   return centerItem(c, mod, { badges: [{ label: setLabel(c.set), colour }], ...(c.hidden ? { note: 'Rare: can replace a card in a pack' } : {}) });
 }
 
+/** A rarity's art: its first joker (own mod first, then any mod's), so the rarity rows and the Joker Rarities cover show one. */
+function rarityArt(key) {
+  const js = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && c.rarity === key && !c.unported).sort((a, b) => (a.mod === RAR_MOD(key) ? 0 : 1) - (b.mod === RAR_MOD(key) ? 0 : 1) || (a.order || 0) - (b.order || 0));
+  for (const j of js) { const art = centerArt(j); if (art) return art; }
+  return null;
+}
+const RAR_MOD = (key) => (REG.RARITIES[key] || {}).mod;
+
 function sectionsFor(id) {
   const mod = REG.MODS[id];
   const S = [];
@@ -242,12 +250,12 @@ function sectionsFor(id) {
     ...(h.visible === false ? { secret: true } : {}), lines: clean(PHD[h.key] || []),
   })));
   add('rarities', 'Joker Rarities', 'row', Object.values(REG.RARITIES).filter((r) => r.mod === id).map((r) => ({
-    key: r.key, name: plainName(r.name || r.key), lines: [r.weight ? 'Shop weight ' + r.weight + ' (vanilla: Common 0.7, Uncommon 0.25, Rare 0.05).' : 'Never rolled in the shop: these jokers come from their own sources.'],
+    key: r.key, name: plainName(r.name || r.key), ...(rarityArt(r.key) ? { art: rarityArt(r.key) } : {}), lines: [r.weight ? 'Shop weight ' + r.weight + ' (vanilla: Common 0.7, Uncommon 0.25, Rare 0.05).' : 'Never rolled in the shop: these jokers come from their own sources.'],
     badges: [{ label: 'Rarity', colour: css(r.badge_colour) || '#6b7793' }],
   })));
   // challenges: the Challenges screen's own text (engine/challenge.js challengeInfo)
   const challenges = (Array.isArray(mod.challenges) ? mod.challenges : []).filter((c) => c && typeof c === 'object' && (c.key || c.id));
-  add('challenges', 'Challenges', 'row', challenges.map((c) => challengeItem(c, id, IDX.modName)), 'Challenge runs this mod ships, played from the Challenges screen (main menu → Challenges) with the mod on.');
+  add('challenges', 'Challenges', 'row', challenges.map((c) => challengeItem(c, id, IDX.modName, (k) => (P_CENTERS[k] ? centerArt(P_CENTERS[k]) : null))), 'Challenge runs this mod ships, played from the Challenges screen (main menu → Challenges) with the mod on.');
   // sleeves (CardSleeves deck variants, engine/sleeve.js): the New Run picker's own text, plus the
   // alternate effect a sleeve plays with its paired deck
   add('sleeves', 'Sleeves', 'tile', (Array.isArray(mod.sleeves) ? mod.sleeves : []).filter((s) => s && s.key).map((s0) => {
@@ -434,13 +442,41 @@ for (const [cid, title, , blurb] of CATS) {
     sec.find((x) => x.id === s.id).count += s.items.length;
     perMod[m.id] = (perMod[m.id] || 0) + s.items.length;
     count += s.items.length;
-    if (!cover) { const it = s.items.find((x) => x.art && x.art.length); if (it) cover = { art: it.art, sq: !!it.sq, name: it.name }; }
+    // (Joker Rarities: a joker with a soul layer if any, e.g. a Mega — the plain first one is the Jokers tile's twin)
+    const pick = (x) => x.art && x.art.length && (cid !== 'rarities' || x.art.length > 1);
+    if (!cover) { const it = s.items.find(pick); if (it) cover = { art: it.art, sq: !!it.sq, name: it.name }; }
   }
+  // (no soul-layered rarity joker: any art)
+  if (!cover) for (const m of index) for (const s of sectionsOf[m.id]) { const it = !cover && catOf(s.id) === cid && s.items.find((x) => x.art && x.art.length); if (it) cover = { art: it.art, sq: !!it.sq, name: it.name }; }
   if (!count) continue;
   // section order: the CATS-wide canonical one (Tarot, Planet, Spectral first; then the rest by size)
   const ORDER = ['jokers', ...VANILLA_CONS, 'enhancements', 'editions', 'seals', 'aspects', 'stickers', 'suits', 'hands'];
   sec.sort((a, b) => ((ORDER.indexOf(a.id) + 1) || 99) - ((ORDER.indexOf(b.id) + 1) || 99) || b.count - a.count);
   categories.push({ id: cid, title, blurb, count, sections: sec, perMod, cover });
+}
+
+// ------------------------------------------------------------------ the header search's index
+// designwiki/data/micatro_mods_search.json: every mod item's key, name, mod, category page, kind and
+// searchable text (lower-case, markup and accents stripped — the wiki's mmText minus the name), so the
+// wiki-wide search needn't fetch all 19 mod files; a result links to its category page, which loads
+// the full file. {mods: [[id, name]], cats: [id], kinds: [label], items: [[key, name, mod#, cat#, kind#, text]]}
+{
+  const fold = (s) => String(s).replace(/\{[^}]*\}/g, '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const cats = categories.map((c) => c.id), kinds = [];
+  const kindOf = (title) => { const k = title.replace(/ cards$/, '').replace(/s$/, ''); let i = kinds.indexOf(k); if (i < 0) i = kinds.push(k) - 1; return i; };
+  const items = [];
+  index.forEach((m, mi) => {
+    for (const s of sectionsOf[m.id]) {
+      const ci = cats.indexOf(catOf(s.id)), ki = kindOf(s.title);
+      for (const it of s.items) {
+        const text = fold([...(it.lines || []), ...(it.badges || []).map((b) => b.label), ...(it.info || []).flatMap((i) => [i.name, ...i.lines])].join(' '));
+        items.push([it.key, it.name, mi, ci, ki, text]);
+      }
+    }
+  });
+  const sfile = path.join(ROOT, 'designwiki/data/micatro_mods_search.json');
+  fs.writeFileSync(sfile, JSON.stringify({ generated: 'tools/micatro/gen_designwiki_mods.mjs', mods: index.map((m) => [m.id, m.name]), cats, kinds, items }));
+  console.log(`wrote ${path.relative(ROOT, sfile)} (${(fs.statSync(sfile).size / 1024).toFixed(1)} KB): ${items.length} search entries`);
 }
 
 // ------------------------------------------------------------------ the native-feature pages

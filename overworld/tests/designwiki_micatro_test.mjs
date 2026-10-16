@@ -72,6 +72,12 @@ try {
 		A(ok && got === n, `#/${route} renders ${n} × ${sel}`, `got ${got}`);
 	};
 	await go('micatro', '.mc-idx', 11);
+	// every overview tile has real game art (Poker Hands and Challenges had a ♠♥ text stand-in)
+	const idxArt = await page.$$eval('#content .mc-idx', t => t.map(a => { const s = a.querySelector('.mc-spr'); return [a.dataset.cat, s ? s.style.backgroundImage : '', s ? s.style.backgroundPosition : '', !!a.querySelector('.mc-idx-txt')]; }));
+	A(idxArt.length === 11 && idxArt.every(([, img, , txt]) => /textures\/\w+\.png/.test(img) && !txt), 'overview: every tile has a sprite from the game atlases (no text stand-in)', JSON.stringify(idxArt.filter(([, img, , txt]) => !img || txt)));
+	const chTile = idxArt.find(x => x[0] === 'challenges') || [], hTile = idxArt.find(x => x[0] === 'hands') || [];
+	A(/Enhancers\.png/.test(chTile[1]) && chTile[2] === '0px -380px', 'overview: Challenges tile = the Challenge Deck (Enhancers.png 0,4)', JSON.stringify(chTile));
+	A(/8BitDeck\.png/.test(hTile[1]) && /Enhancers\.png/.test(hTile[1]), 'overview: Poker Hands tile = a playing card (8BitDeck face on the base card)', JSON.stringify(hTile));
 	A(await page.$eval('#content', el => /Celadon City Game Corner/.test(el.textContent) && /best single hand/.test(el.textContent) && !!el.querySelector('a[href="/micatro/"]')), 'overview: play link, arcade cabinet, leaderboard');
 	A(await page.$$eval('#content table', t => t.length) === 3, 'overview: mouse/touch, keyboard and controller tables');
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micatro', 'nav: Overview is active');
@@ -117,6 +123,9 @@ try {
 	A(W.challenges && W.challenges.length === 20 && W.challenges.every(c => c.name && c.lines.length && c.info.some(i => i.name === 'Deck')), 'data: the 20 vanilla challenges with rules + deck');
 	await go('micatro/challenges', '.mc-row', W.challenges.length);
 	A(await page.$eval('#content .mc-row[data-key="c_omelette_1"]', el => /The Omelette/.test(el.textContent) && /Egg ×5/.test(el.textContent) && /no reward money/.test(el.textContent)), 'challenges: The Omelette — rules, 5 Eggs');
+	A(await page.$$eval('#content .mc-row', r => r.every(x => { const s = x.querySelector('.mc-spr'); return s && /Enhancers\.png/.test(s.style.backgroundImage) && s.style.backgroundPosition === '0px -380px'; })), 'challenges: every row shows the Challenge Deck it plays on');
+	const rawKey = await page.$eval('#content', el => (el.textContent.match(/\b(?:j|c|v|p|tag|bl|b|m|e)_[a-z0-9]+(?:_[a-z0-9]+)*\b/) || [null])[0]);
+	A(!rawKey, 'challenges: no raw game keys in the text', rawKey);
 	// ?item= (the header search links here) highlights the entry, even behind a filter
 	await page.goto(`http://localhost:${PORT}/designwiki/index.html#/micatro/consumables?item=c_black_hole`, { waitUntil: 'networkidle0' });
 	A(await page.waitForSelector('#content .mc-hl', { timeout: 10000 }).then(el => el.evaluate(e => e.dataset.key), () => null) === 'c_black_hole', '?item= opens the Spectral tab and highlights Black Hole');

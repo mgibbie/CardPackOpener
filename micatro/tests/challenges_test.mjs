@@ -10,6 +10,7 @@
 import { T, clearHand, hand, play, discard, winRound, nextRound, G, P_CENTERS, act, STATES } from './mods/oio_helpers.mjs';
 import { newRun } from '../js/engine/run.js';
 import { get_blind_amount } from '../js/engine/core.js';
+import * as core from '../js/engine/core.js';
 import { Session } from '../js/engine/session.js';
 import { toView } from '../js/engine/view.js';
 import { MODS, ACTIVE } from '../js/mods/registry.js';
@@ -168,6 +169,36 @@ start('c_sonfive_wonder_guard', ['pokermonplus']);
 ok(G.GAME.modifiers.sonfive_wonderguard === true && jokers().includes('j_sonfive_shedinja'), 'Guard the Wonder: rule + Shedinja');
 start('c_sonfive_salt_cured', ['pokermonplus']);
 ok(G.jokers.cards.some((c) => c.config.center.key === 'j_poke_corsola' && c.edition && c.edition.poke_shiny), 'Salt Cured: a shiny Corsola');
+// Balls of Patience bans Balatro's Holographic Tag, which the shipped Lua spells "tag_holographic" (no such
+// tag: Balatro's is tag_holo), so the ban never applied. FIX (intended design) in pokermonplus/index.js:
+// the Holographic Tag can never be rolled in that challenge.
+start('c_sonfive_balls_of_patience', ['pokermonplus']);
+{
+  ok(G.GAME.banned_keys.tag_holo === true && !G.GAME.banned_keys.tag_holographic, 'Balls of Patience: tag_holo is banned', Object.keys(G.GAME.banned_keys).filter((k) => /^tag_/.test(k)));
+  let seen = false;
+  for (let ante = 1; ante <= 12 && !seen; ante++) {
+    G.GAME.round_resets.ante = ante;
+    if (core.get_current_pool('Tag')[0].includes('tag_holo')) seen = true;
+    for (let i = 0; i < 40 && !seen; i++) if (core.get_next_tag_key('bop' + ante + '_' + i) === 'tag_holo') seen = true;
+  }
+  ok(!seen, 'Balls of Patience: the Holographic Tag never appears (pool or roll), antes 1-12');
+}
+// every key a challenge names (starting cards, bans, deck) is a real center / tag / blind / seal
+{
+  const bad = [];
+  for (const c of all) {
+    const chk = (what, id, real) => { if (!real) bad.push(c.id + ' ' + what + ' ' + id); };
+    for (const j of [...c.jokers, ...c.consumeables, ...c.vouchers]) chk('card', j.id, P_CENTERS[j.id]);
+    for (const b of c.restrictions.banned_cards) { chk('banned card', b.id, P_CENTERS[b.id]); for (const x of b.ids || []) chk('banned card', x, P_CENTERS[x]); }
+    for (const b of c.restrictions.banned_tags) chk('banned tag', b.id, core.P_TAGS[b.id]);
+    for (const b of c.restrictions.banned_other) chk('banned blind', b.id, core.P_BLINDS[b.id]);
+    const d = c.deck || {};
+    if (d.enhancement) chk('deck enhancement', d.enhancement, P_CENTERS[d.enhancement]);
+    if (d.edition) chk('deck edition', d.edition, P_CENTERS['e_' + d.edition]);
+    if (d.type && d.type !== 'Challenge Deck') chk('deck back', d.type, CH.challengeBack(c) !== CH.CHALLENGE_BACK);
+  }
+  ok(!bad.length, 'every challenge key resolves (' + all.length + ' challenges)', bad);
+}
 
 // MoreFluff's Better Balatro II: Superboss on from the start, scaling 4 + 4
 start('c_mf_superboss_always', ['morefluff']);

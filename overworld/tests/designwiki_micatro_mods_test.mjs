@@ -16,6 +16,11 @@
 //      or broken text — the Pokermon "Add-ons for it: ,https://…" bug), the old #/micatro/mod(s) links
 //      redirecting, the sidebar group, the vanilla Micatro pages showing no mod items, the header
 //      search finding mod cards, the three feature pages, no console errors, phone layout.
+//   3. art + paging + search index: every tile of both overviews (Micatro, Micatro Mods) has real game
+//      art (Joker Rarities = a joker of that rarity, Challenges = the Challenge Deck); big lists draw 60
+//      at a time (Show more / Show all / scrolling), a ?item= deep link to a late card still lands on it;
+//      the header search reads designwiki/data/micatro_mods_search.json, never the 19 mod files; no
+//      challenge page prints a raw key (Balls of Patience's "tag_holographic").
 //   node overworld/tests/designwiki_micatro_mods_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -130,6 +135,23 @@ const bunco = W.mods.find(x => x.id === 'bunco');
 A(bunco && bunco.options.some(o => o.key === 'gameplay_reworks' && o.default === true && o.desc), 'Bunco: its options with defaults and descriptions');
 const tags = files.bunco && files.bunco.sections.find(s => s.id === 'tags');
 A(tags && tags.items.every(t => t.name !== t.key && t.lines.length), 'Bunco tags: real names and text (not the raw key)', tags && tags.items.filter(t => t.name === t.key).map(t => t.key).slice(0, 3).join(','));
+// every category has cover art; the rarity rows show a joker of that rarity, challenges the deck they play on
+A(W.categories.every(c => c.cover && c.cover.art.length), 'every category has cover art', W.categories.filter(c => !c.cover).map(c => c.id).join(','));
+A(W.categories.find(c => c.id === 'challenges').cover?.art?.[0][0] === 'centers' && JSON.stringify(W.categories.find(c => c.id === 'challenges').cover?.art?.[0][1]) === '{"x":0,"y":4}', 'Challenges cover: the Challenge Deck (Enhancers.png 0,4)');
+const rarItems = Object.values(files).flatMap(F => F.sections.filter(x => x.id === 'rarities').flatMap(x => x.items));
+A(rarItems.length >= 5 && rarItems.every(r => r.art && r.art.length && Object.values(files).some(F => F.sections.some(x => x.id === 'jokers' && x.items.some(j => j.rarity === r.name && JSON.stringify(j.art) === JSON.stringify(r.art))))), 'every mod rarity shows one of its own jokers', rarItems.filter(r => !r.art).map(r => r.key).join(','));
+const chItems = Object.values(files).flatMap(F => F.sections.filter(x => x.id === 'challenges').flatMap(x => x.items));
+const KEYRE = /\b(?:j|c|v|p|tag|bl|b|m|e)_[a-z0-9]+(?:_[a-z0-9]+)*\b/;
+A(chItems.length >= 21 && chItems.every(c => c.art && c.art.length), 'every mod challenge shows its deck');
+A(chItems.every(c => !KEYRE.test(JSON.stringify([c.name, c.lines, c.info]))), 'mod challenges: no raw keys in their text', chItems.map(c => JSON.stringify([c.name, c.lines, c.info]).match(KEYRE)).filter(Boolean).map(m => m[0]).join(','));
+const bop = chItems.find(c => c.key === 'c_sonfive_balls_of_patience');
+A(bop && bop.info.some(i => i.name === 'Banned' && i.lines.some(l => /Tags: .*Holographic Tag/.test(l))), 'Balls of Patience: bans the Holographic Tag (by name)', JSON.stringify(bop && bop.info));
+// the header search's compact index: every item, nothing else
+const SI = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/micatro_mods_search.json'), 'utf8'));
+const siKeys = new Set(SI.items.map(x => x[0]));
+A(SI.items.length === totalItems && Object.values(files).every(F => F.sections.every(x => x.items.every(it => siKeys.has(it.key)))) && SI.items.every(x => SI.mods[x[2]] && SI.cats[x[3]] && SI.kinds[x[4]] != null), `search index: all ${totalItems} items with mod / category / kind`, SI.items.length);
+const siSize = fs.statSync(path.join(ROOT, 'designwiki/data/micatro_mods_search.json')).size, modsSize = Object.keys(files).reduce((n, id) => n + fs.statSync(path.join(ROOT, 'designwiki/data/micatro_mods', id + '.json')).size, 0);
+A(siSize < modsSize / 2, `search index (${Math.round(siSize / 1024)} KB) is well under the mod files (${Math.round(modsSize / 1024)} KB)`);
 const F = W.features || {};
 A(F.bignum && F.bignum.maxExp === 1000 && F.bignum.examples.some(x => x.shown === 'naneinf') && F.bignum.examples.some(x => /e450$/.test(x.shown)), 'feature data: big numbers (formatter examples)');
 A(F.deckeditor && F.deckeditor.params.length >= 3 && F.deckeditor.rules.length >= 1 && F.deckeditor.examples.some(x => x.name === 'Goth Deck') && F.deckeditor.fixes.length >= 3, 'feature data: deck editor (settings, rules, Goth Deck, fixes)');
@@ -164,11 +186,16 @@ try {
 	// (the 'Fixed as the author intended' notes quote source code — undefined globals, raw markup — on purpose)
 	const text = () => page.$eval('#content', el => { const c = el.cloneNode(true); c.querySelectorAll('.mc-fixes').forEach(x => x.remove()); return c.textContent; });
 	const rawAt = t => (t.match(new RegExp('.{0,40}(' + RAW.source + ').{0,40}')) || [])[0];
+	// big lists draw 60 at a time: press every "Show all" (category / mod pages)
+	const showAll = () => page.$$eval('#content .mm-pager:not([hidden]) .mm-all', b => b.forEach(x => x.click()));
 	// the overview: hero, one tile per category (with its count), the By-mod grid
 	A(await open('micatro-mods', '.mc-modcard', W.mods.length) && await page.$$eval('#content .mc-modcard', e => e.length) === W.mods.length, `#/micatro-mods: the By-mod grid lists all ${W.mods.length} mods`);
 	const tiles = await page.$$eval('#content .mc-idx[data-cat]', e => e.map(x => [x.dataset.cat, x.getAttribute('href'), x.textContent]));
 	A(tiles.length === W.categories.length && W.categories.every((c, i) => tiles[i][0] === c.id && tiles[i][1] === '#/micatro-mods/' + c.id && tiles[i][2].includes(c.count.toLocaleString('en-US') + ' entries')), `#/micatro-mods: a tile per category (${W.categories.length}) with its count`, JSON.stringify(tiles.slice(0, 3)));
-	A(await page.$eval('#content .mc-hero h1', e => e.textContent) === 'Micatro Mods' && await page.$$eval('#content .mc-idx .mc-spr', e => e.length) >= W.categories.length - 3, 'overview: its own hero + category art');
+	A(await page.$eval('#content .mc-hero h1', e => e.textContent) === 'Micatro Mods', 'overview: its own hero');
+	const ovArt = await page.$$eval('#content .mc-idx[data-cat]', t => t.map(a => { const s = a.querySelector('.mc-spr'); return [a.dataset.cat, s ? s.style.backgroundImage : '', !!a.querySelector('.mc-idx-txt')]; }));
+	A(ovArt.length === W.categories.length && ovArt.every(([, img, txt]) => /url\(/.test(img) && !txt), 'overview: every category tile has real art (no ♠♥ stand-in)', JSON.stringify(ovArt.filter(([, img, txt]) => !img || txt)));
+	A(/Enhancers\.png/.test((ovArt.find(x => x[0] === 'challenges') || [])[1]) && /poke_|Jokers|jokers/i.test((ovArt.find(x => x[0] === 'rarities') || [])[1]), 'overview: Challenges = the Challenge Deck, Joker Rarities = a joker', JSON.stringify(ovArt.filter(x => ['challenges', 'rarities'].includes(x[0]))));
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micatro-mods', 'nav: Micatro Mods overview is active');
 	A(await page.$$eval('#content .mc-modcard', e => e.every(a => a.getAttribute('href') === '#/micatro-mods/mod/' + a.dataset.mod)), 'overview: each mod card links its mod page');
 	A(!RAW.test(await text()), 'overview: no raw text', rawAt(await text()));
@@ -183,6 +210,7 @@ try {
 		const seen = new Map();
 		for (const t of tabs.length ? tabs : [null]) {
 			if (t) await page.click(`#content .mc-tabs button[data-tab="${t}"]`);
+			await showAll();
 			for (const [k, mod] of await page.$$eval('#content [data-key]', e => e.map(x => [x.dataset.key, x.dataset.mod]))) seen.set(k, mod);
 		}
 		const missing = [...want.keys()].filter(k => !seen.has(k)), extra = [...seen.keys()].filter(k => !want.has(k));
@@ -190,15 +218,36 @@ try {
 		A(!missing.length && !extra.length && !wrongMod.length, `#/micatro-mods/${c.id}: exactly its ${want.size} items${tabs.length ? ' (' + tabs.length + ' tabs)' : ''}, each with its mod badge`, `missing ${missing.slice(0, 4)} extra ${extra.slice(0, 4)} wrong mod ${wrongMod.slice(0, 4)}`);
 		const t = await text();
 		A(!RAW.test(t), `#/micatro-mods/${c.id}: no raw text`, rawAt(t));
+		if (c.id === 'challenges') {
+			A(!KEYRE.test(t), '#/micatro-mods/challenges: no raw game keys (tag_holographic)', (t.match(KEYRE) || [])[0]);
+			A(await page.$$eval('#content .mc-row', r => r.length && r.every(x => x.querySelector('.mc-spr'))), '#/micatro-mods/challenges: every row shows its deck');
+		}
 	}
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micatro-mods/' + W.categories[W.categories.length - 1].id, 'nav: the category link is active');
 	// the mod filter, and its ?mod= link
 	const bj = [...itemsOf('jokers')].filter(([, v]) => v.mod === 'bunco').length;
-	await open('micatro-mods/jokers', '[data-key]', 100);
+	// paging: 60 drawn, Show more adds 60, scrolling to the footer draws more, a deep link to a late card lands on it
+	const allJ = [...itemsOf('jokers')];
+	await open('micatro-mods/jokers', '[data-key]', 60);
+	const drawn = () => page.$$eval('#content [data-key]', e => e.length);
+	A(await drawn() === 60 && await page.$eval('#content .mm-pager', e => !e.hidden && /Showing 60 of 882/.test(e.textContent.replace(/,/g, ''))), `jokers: the first 60 of ${allJ.length} drawn, with a pager`, await drawn());
+	await page.click('#content .mm-pager .mm-more:not(.mm-all)').catch(() => {});
+	A(await drawn() === 120, 'jokers: Show more draws 60 more', await drawn());
+	await page.$eval('#content .mm-pager', e => e.scrollIntoView()).catch(() => {});
+	A(await page.waitForFunction(() => document.querySelector('#content .mm-pager') && document.querySelectorAll('#content [data-key]').length > 120, { timeout: 5000 }).then(() => true, () => false), 'jokers: scrolling to the footer draws more (IntersectionObserver)', await drawn());
+	const lateKey = allJ[allJ.length - 1][0];
+	await open('micatro-mods/jokers?item=' + encodeURIComponent(lateKey), '.mc-hl', 1);
+	const late = await page.$eval('#content .mc-hl', e => { const r = e.getBoundingClientRect(); return { key: e.dataset.key, inView: r.top >= 0 && r.bottom <= innerHeight }; }).catch(() => ({}));
+	A(late.key === lateKey && late.inView, `?item= a late joker (#${allJ.length}, ${lateKey}): drawn, scrolled to and highlighted`, JSON.stringify(late));
+	await open('micatro-mods/mod/pokermon?item=' + encodeURIComponent(files.pokermon.sections[0].items[440].key), '.mc-hl', 1);
+	A(await page.$eval('#content .mc-hl', e => e.dataset.key).catch(() => null) === files.pokermon.sections[0].items[440].key, 'mod page ?item= a late card (Pokermon joker #441): drawn and highlighted');
+	await open('micatro-mods/jokers', '[data-key]', 50);
 	await page.select('#content .mm-modsel', 'bunco');
+	await showAll();
 	const fj = await page.$$eval('#content [data-key]', e => e.map(x => x.dataset.mod));
 	A(fj.length === bj && fj.every(x => x === 'bunco') && await page.evaluate(() => location.hash) === '#/micatro-mods/jokers?mod=bunco', `mod filter: Bunco's ${bj} jokers only, and the hash says so`, fj.length + ' ' + await page.evaluate(() => location.hash));
 	await open('micatro-mods/jokers?mod=morefluff', '[data-key]', 10);
+	await showAll();
 	const mfj = files.morefluff.sections.find(x => x.id === 'jokers').items.length;
 	A(await page.$$eval('#content [data-key]', e => e.length === e.filter(x => x.dataset.mod === 'morefluff').length && e.length) === mfj && await page.$eval('#content .mm-modsel', e => e.value) === 'morefluff', `?mod=morefluff opens filtered (${mfj})`);
 	await page.type('#content .mc-search', 'blahaj');
@@ -212,7 +261,9 @@ try {
 	// every mod page: all items, and no raw / broken text (e.g. the Pokermon page's add-on links)
 	for (const m of W.mods) {
 		const n = m.total;
-		const ok = await open('micatro-mods/mod/' + m.id, '[data-section] [data-key]', n);
+		await open('micatro-mods/mod/' + m.id, '[data-section] [data-key]', 1);
+		await showAll();
+		const ok = await page.waitForFunction(k => document.querySelectorAll('#content [data-section] [data-key]').length >= k, { timeout: 20000 }, n).then(() => true, () => false);
 		const got = await page.$$eval('#content [data-section] [data-key]', e => e.length);
 		A(ok && got === n, `#/micatro-mods/mod/${m.id}: all ${n} items drawn`, `got ${got}`);
 		const t = await text();
@@ -234,6 +285,24 @@ try {
 		A(!leak.length && !v.tags, `vanilla #/${r}: no mod items`, leak.slice(0, 4).join(','));
 	}
 	A(await open('micatro', '.mc-crosslink', 1) && await page.$$eval('#content a[href^="#/micatro-mods"]', a => a.length) === 1 && await page.$$eval('#content a[href^="#/micatro/mod"]', a => a.length) === 0, 'vanilla overview: mods only as one cross-link to Micatro Mods');
+	// the header search reads the compact index, not the 19 mod files
+	{
+		const modFiles = [];
+		const onReq = r => { if (/\/data\/micatro_mods\//.test(r.url())) modFiles.push(r.url()); };
+		page.on('request', onReq);
+		await page.goto('about:blank'); // (a fresh document: nothing cached from the pages above)
+		await page.goto(`http://localhost:${PORT}/designwiki/index.html#/search?q=bulbasaur`, { waitUntil: 'networkidle0' });
+		const found = await page.waitForFunction(() => [...document.querySelectorAll('#content [data-group="micatro-mods"] a')].some(a => a.textContent === 'Bulbasaur' && a.getAttribute('href') === '#/micatro-mods/jokers?item=j_poke_bulbasaur'), { timeout: 15000 }).then(() => true, () => false);
+		A(found, 'header search: finds a mod card (Bulbasaur -> #/micatro-mods/jokers?item=j_poke_bulbasaur)');
+		await page.goto(`http://localhost:${PORT}/designwiki/index.html#/search?q=blahaj`, { waitUntil: 'networkidle0' });
+		A(await page.waitForFunction(() => [...document.querySelectorAll('#content [data-group="micatro-mods"] a')].some(a => a.getAttribute('href') === '#/micatro-mods/jokers?item=j_mf_blahaj'), { timeout: 15000 }).then(() => true, () => false), 'header search: accent-folded name (Blåhaj)');
+		A(modFiles.length === 0, 'header search: no mod file fetched (micatro_mods_search.json only)', modFiles.slice(0, 3).join(' '));
+		await page.goto(`http://localhost:${PORT}/designwiki/index.html#/search?q=${encodeURIComponent('retrigger all played')}`, { waitUntil: 'networkidle0' });
+		A(await page.waitForFunction(() => document.querySelectorAll('#content [data-group="micatro-mods"] a').length > 0, { timeout: 15000 }).then(() => true, () => false), 'header search: card text matches too (index carries the text)');
+		page.off('request', onReq);
+		await page.$eval('#search', e => { e.value = ''; });
+		await page.goto(`http://localhost:${PORT}/designwiki/index.html#/micatro`, { waitUntil: 'networkidle0' });
+	}
 	// the header search finds mod cards and links them to their category page
 	await page.type('#search', 'fleurons');
 	A(await page.waitForFunction(() => location.hash.startsWith('#/search') && document.querySelector('#content [data-group="micatro-mods"] a'), { timeout: 15000 }).then(() => true, () => false), 'header search: opens #/search with Micatro Mods results');
