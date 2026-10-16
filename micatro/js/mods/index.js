@@ -90,6 +90,16 @@ export const AVAILABLE = [
     description: 'A movie-themed expansion: Cine cards and quests that turn the next shop into a special shop (tags, packs, food jokers...).',
     load: () => import('../../mods/reverie/index.js'),
   },
+  {
+    id: 'autumnmood', name: 'AutumnMoodMechanics', size: '~0.2 MB art', by: 'AutumnMood (rebuilt for Micatro)', requires: [],
+    description: 'Mechanics library: Oddity cards and packs, joker Stamps, card Aspects, a graveyard for destroyed cards, suit levels.',
+    load: () => import('../../mods/autumnmood/index.js'),
+  },
+  {
+    id: 'autumncircus', name: 'Þe Autumn Circus', size: '~2 MB art', by: 'AutumnMood (rebuilt for Micatro)', requires: ['autumnmood'],
+    description: 'Welcome to Þe Autumn Circus! 87 jokers, 60 Oddities, new tarots/planets/spectrals, 19 decks, stamps, aspects and more.',
+    load: () => import('../../mods/autumncircus/index.js'),
+  },
 ];
 
 /** Load (register) the given mods and everything they require. */
