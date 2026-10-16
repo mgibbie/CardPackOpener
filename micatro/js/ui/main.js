@@ -13,6 +13,7 @@ import { sound } from './sound.js';
 import * as UI from './screens.js';
 import { initPad } from './pad.js';
 import { first as modFirst } from './modui.js';
+import { installZoomGuard } from './zoomguard.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim();
@@ -496,6 +497,8 @@ const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<':
 
 // --------------------------------------------------------------------- boot
 async function boot() {
+  // iPhone Safari: never stay zoomed into part of the board (ui/zoomguard.js)
+  try { window.__micatroZoomGuard = installZoomGuard(window); } catch (e) { /* no visualViewport */ }
   bg = new Background(document.getElementById('bg'));
   const loading = document.createElement('div');
   loading.className = 'loading'; loading.textContent = 'Loading…';

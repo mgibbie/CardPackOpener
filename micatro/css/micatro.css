@@ -9,8 +9,11 @@
 	--panel: #3a4b4f; --panel-d: #2a3739; --panel-dd: #1f2a2c; --edge: #4f6367; --text-dark: #4f6367;
 	--purple: #8867a5; --tarot: #a782d1; --planet: #13afce; --spectral: #4584fa;
 }
+/* touch-action: manipulation, not none — iOS Safari ignores none (and user-scalable=no), so a double
+   tap zoomed the page and a tester got stuck zoomed in; manipulation kills double-tap zoom there.
+   Cards keep `none` for dragging (.card below); ui/zoomguard.js snaps any other zoom back. */
 html, body { margin: 0; height: 100%; overflow: hidden; background: #2d3d40; color: #fff; font-family: 'm6x11', 'Courier New', monospace;
-	touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+	touch-action: manipulation; overscroll-behavior: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 body { height: 100dvh; }
 body.no-webgl { background: radial-gradient(circle at 45% 50%, #5a9e83 0%, #3f6b5a 45%, #23332d 100%); }
 #bg { position: fixed; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block; }
