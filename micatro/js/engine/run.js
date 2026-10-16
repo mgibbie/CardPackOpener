@@ -24,7 +24,7 @@ import { quantum_enhancements } from './core.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
-import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS } from '../mods/registry.js';
+import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS, feature } from '../mods/registry.js';
 import './consumables.js';
 
 export const STATES = {
@@ -789,6 +789,56 @@ export function mod_score_ops(eff, at, hand_chips, mult, opts = {}) {
 }
 
 /**
+ * Steamodded's SMODS.calculate_effect(effect, scored_card) for a mod's effect table in a place the
+ * vanilla loops don't read it (AMM Aspects / Stamps, unscored cards): every key in SMODS.calculation_keys
+ * order - chips, h_chips, chip_mod, x_chips (xchips, Xchip_mod), mult, h_mult, mult_mod, x_mult (Xmult,
+ * xmult, x_mult_mod, Xmult_mod), p_dollars, dollars, h_dollars, swap, balance, message, level_up, func,
+ * extra (evaluated like its own effect) - with SMODS's default popups (none for the *_mod keys, or
+ * with remove_default_message). Outside scoring (hand_chips undefined) the scoring keys are skipped.
+ * -> [hand_chips, mult]
+ */
+export function smods_effect(effect, scored_card, hand_chips, mult, depth = 0) {
+  if (!effect || typeof effect !== 'object' || depth > 20) return [hand_chips, mult];
+  const has = (k) => effect[k] !== undefined && effect[k] !== null && effect[k] !== false;
+  const at = effect.message_card || effect.juice_card || scored_card || effect.card || effect.focus;
+  const juice = () => { if (effect.card && effect.card !== scored_card) juice_card(effect.card); };
+  const say = (type, amt, ex) => { if (!effect.remove_default_message) card_eval_status_text(at, type, amt, null, null, ex); };
+  const scoring = hand_chips !== undefined && mult !== undefined;
+  if (scoring) {
+    for (const k of ['chips', 'h_chips', 'chip_mod']) if (has(k)) {
+      juice(); hand_chips = mod_chips(hand_chips + effect[k]); emit('hand_text', { chips: hand_chips });
+      if (k !== 'chip_mod') { if (effect.chip_message) say('extra', null, effect.chip_message); else say('chips', effect[k]); }
+    }
+    for (const k of ['x_chips', 'xchips', 'Xchip_mod']) if (has(k) && effect[k] !== 1) {
+      juice(); hand_chips = mod_chips(hand_chips * effect[k]); emit('hand_text', { chips: hand_chips });
+      if (k !== 'Xchip_mod') { if (effect.xchip_message) say('extra', null, effect.xchip_message); else say('extra', null, { message: 'X' + effect[k] + ' Chips', colour: 'CHIPS' }); }
+    }
+    for (const k of ['mult', 'h_mult', 'mult_mod']) if (has(k)) {
+      juice(); mult = mod_mult(mult + effect[k]); emit('hand_text', { mult });
+      if (k !== 'mult_mod') { if (effect.mult_message) say('extra', null, effect.mult_message); else say('mult', effect[k]); }
+    }
+    for (const k of ['x_mult', 'Xmult', 'xmult', 'x_mult_mod', 'Xmult_mod']) if (has(k) && effect[k] !== 1) {
+      juice(); mult = mod_mult(mult * effect[k]); emit('hand_text', { mult });
+      if (k !== 'Xmult_mod') { if (effect.xmult_message) say('extra', null, effect.xmult_message); else say('x_mult', effect[k]); }
+    }
+  }
+  for (const k of ['p_dollars', 'dollars', 'h_dollars']) if (has(k)) {
+    juice(); ease_dollars(effect[k]);
+    if (effect.dollar_message) say('extra', null, effect.dollar_message); else say('dollars', effect[k]);
+  }
+  if (scoring && effect.swap) { juice(); const om = mult; mult = mod_mult(hand_chips); hand_chips = mod_chips(om); emit('hand_text', { chips: hand_chips, mult }); }
+  if (scoring && effect.balance) {
+    juice(); const tot = mult + hand_chips; mult = mod_mult(tot / 2); hand_chips = mod_chips(tot / 2); emit('hand_text', { chips: hand_chips, mult });
+    say('extra', null, effect.balance_message || { message: localize('k_balanced'), colour: 'PURPLE' });
+  }
+  if (effect.message) { juice(); card_eval_status_text(at, 'extra', null, null, null, effect); }
+  if (has('level_up')) level_up_hand(scored_card, effect.level_up_hand || G.GAME.last_hand_played, effect.instant, effect.level_up === true ? 1 : effect.level_up);
+  if (typeof effect.func === 'function') effect.func();
+  if (effect.extra && typeof effect.extra === 'object') [hand_chips, mult] = smods_effect(effect.extra, scored_card, hand_chips, mult, depth + 1);
+  return [hand_chips, mult];
+}
+
+/**
  * Steamodded's SMODS.calculate_context for contexts the base game doesn't have
  * (post_discard, hand_drawn, poke_evolved, ...): every MOD joker / consumable gets the
  * context (base-game cards don't know these contexts and are skipped), then each active
@@ -844,6 +894,8 @@ export function joker_retriggers(card, context) {
     const r = j.calculate_joker({ retrigger_joker_check: true, other_card: card, other_context: context });
     if (r && r.repetitions) { n += r.repetitions; card_eval_status_text(r.card || j, 'extra', null, null, null, r); }
   }
+  // (a mod's own retriggers for this joker: AutumnCircus' Sock and Buskin Stamp)
+  n = reduceHook('joker_retriggers', n, card, context);
   return n;
 }
 
@@ -974,18 +1026,50 @@ function evaluate_play() {
             card_eval_status_text(sc, 'extra', null, null, null, { message: 'X' + ef.edition.x_chip_mod + ' ' + localize('bunc_chips'), edition: true, colour: 'CHIPS' });
             emit('hand_text', { chips: hand_chips, mult });
           }
+          // Mod effects on the card itself after its seal (SMODS trigger order: AMM Aspects), each a full SMODS effect.
+          if (ef.post_effects) for (const pe of ef.post_effects) [hand_chips, mult] = smods_effect(pe, sc, hand_chips, mult);
         }
       }
     };
-    for (let i = 0; i < scoring_hand.length; i++) score_played_card(scoring_hand[i]);
+    // SMODS optional feature 'unscored' (a mod turns it on): the played cards that don't score get their own
+    // main-scoring pass in play order (cardarea 'unscored': the card's own mod effects, then jokers' individual).
+    const unscored_on = ACTIVE_MODS.length > 0 && feature('unscored');
+    const score_unscored_card = (uc) => {
+      if (uc.debuff) return;
+      const uctx = () => ({ cardarea: 'unscored', ...base_ctx() });
+      const reps = [1];
+      for (let r = 0; r < reps.length; r++) {
+        if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card || uc, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
+        const effects = [];
+        for (const e of callHook('unscored_card', uc, { ...uctx(), main_scoring: true })) for (const x of [].concat(e)) if (x) effects.push(x);
+        for (const j of G.jokers.cards) {
+          const ictx = { ...uctx(), other_card: uc, individual: true };
+          const ev = j.calculate_joker(ictx);
+          if (ev) {
+            effects.push(ev);
+            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
+          }
+        }
+        for (const ef of effects) [hand_chips, mult] = smods_effect(ef, uc, hand_chips, mult);
+        if (r === 0 && effects.length) {
+          const sev = eval_card(uc, { repetition_only: true, ...uctx(), repetition: true });
+          if (next(sev) && sev.seals) for (let h = 0; h < (sev.seals.repetitions || 0); h++) reps.push(sev);
+          for (const j of G.jokers.cards) {
+            const ev = eval_card(j, { ...uctx(), other_card: uc, repetition: true, card_effects: effects });
+            if (next(ev) && ev.jokers) for (let h = 0; h < (ev.jokers.repetitions || 0); h++) reps.push(ev);
+          }
+        }
+      }
+    };
+    if (unscored_on) { for (const c of G.play.cards.slice()) { if (scoring_hand.includes(c)) score_played_card(c); else score_unscored_card(c); } }
+    else for (let i = 0; i < scoring_hand.length; i++) score_played_card(scoring_hand[i]);
     // Mods may score played cards again once they've all scored (SMODS.score_card from a post-effect: Bunco's Copper).
     if (ACTIVE_MODS.length) callHook('rescore_cards', scoring_hand, base_ctx(), (c) => score_played_card(c, true));
 
     // Mods acting once the played cards have scored (BETMMA's Double Flipped Card: flipped ones are held now)
     if (ACTIVE_MODS.length) callHook('played_cards_scored');
-    // Held-in-hand effects
-    for (let i = 0; i < G.hand.cards.length; i++) {
-      const hc = G.hand.cards[i];
+    // Held-in-hand effects (one held card's scoring; mods may score more cards as held: G.scoring.score_held)
+    const score_held_card = (hc) => {
       const reps = [1];
       for (let r = 0; r < reps.length; r++) {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
@@ -1021,9 +1105,16 @@ function evaluate_play() {
           if (ef.x_mult) { mult = mod_mult(mult * ef.x_mult); card_eval_status_text(hc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
           if (ACTIVE_MODS.length && (ef._mod || ef === effects[0])) [hand_chips, mult] = mod_score_ops(ef, hc, hand_chips, mult, { held: ef !== effects[0] });
           if (ef.message) card_eval_status_text(hc, 'extra', null, null, null, ef);
+          // (mod effects on the card itself after its seal: AMM Aspects)
+          if (ef.post_effects) for (const pe of ef.post_effects) [hand_chips, mult] = smods_effect(pe, hc, hand_chips, mult);
         }
       }
-    }
+    };
+    // SMODS.score_card for mods during scoring (AMM's Void Aspect scores a held card as played; AutumnCircus'
+    // Twisted Mind scores graveyard cards as held). score_played doesn't count the card as played again.
+    G.scoring = { score_played: (c) => score_played_card(c, true), score_held: (c) => score_held_card(c) };
+    for (let i = 0; i < G.hand.cards.length; i++) score_held_card(G.hand.cards[i]);
+    if (ACTIVE_MODS.length) callHook('held_cards_scored', base_ctx());
 
     // Mod card areas scored like held cards (Pokermon's scry view: the top of the deck).
     for (const area of ACTIVE_MODS.length ? [].concat(...callHook('scoring_areas')) : []) {
@@ -1079,6 +1170,8 @@ function evaluate_play() {
       }
       // (mod runs: the running score rides along — Lua's globals hand_chips / mult, read by Bunco's Critic)
       const mctx = ACTIVE_MODS.length ? { cardarea: G.jokers, ...base_ctx(), joker_main: true, hand_chips, mult } : { cardarea: G.jokers, ...base_ctx(), joker_main: true };
+      // SMODS: a joker's own seal (an AMM Stamp) calculates before the joker (trigger order: edition, seals, jokers).
+      if (ACTIVE_MODS.length && _card.seal) for (const se of callHook('joker_seal', _card, mctx)) [hand_chips, mult] = smods_effect(se, _card, hand_chips, mult);
       let effects = eval_card(_card, mctx);
       for (let t = effects.jokers ? joker_retriggers(_card, mctx) + 1 : 0; t > 0; t--) {
         if (effects.jokers.mult_mod) mult = mod_mult(mult + effects.jokers.mult_mod);
@@ -1156,6 +1249,19 @@ function evaluate_play() {
         cards_destroyed.push(sc);
       }
     }
+    // (SMODS 'unscored': mod jokers may destroy played cards that didn't score - cardarea 'unscored')
+    if (unscored_on) {
+      for (const uc of G.play.cards) {
+        if (scoring_hand.includes(uc)) continue;
+        let destroyed = false;
+        for (const j of G.jokers.cards) {
+          if (!j.config.center.mod) continue;
+          const r = j.calculate_joker({ destroy_card: uc, cardarea: 'unscored', full_hand: G.play.cards, scoring_hand });
+          if (r && (r === true || r.remove)) { destroyed = true; break; }
+        }
+        if (destroyed) { uc.destroyed = true; cards_destroyed.push(uc); }
+      }
+    }
     // SMODS better_calc.toml: with mods on, remove_playing_cards only fires when a card was destroyed (Mareep line).
     if (!ACTIVE_MODS.length || cards_destroyed.length) for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: cards_destroyed });
     for (const c of cards_destroyed) {
@@ -1199,6 +1305,7 @@ function evaluate_play() {
   });
   // Mods that wrap G.FUNCS.evaluate_play to see the hand's final score (Mika's mmc_scored_chips).
   if (ACTIVE_MODS.length) callHook('hand_scored', hand_chips, mult, { full_hand: G.play.cards, scoring_hand, scoring_name: text });
+  G.scoring = undefined;
 }
 
 function evaluate_round() {

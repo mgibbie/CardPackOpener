@@ -334,11 +334,30 @@ export function runInfo(view) {
   for (const [k, label] of [['hands', 'Poker Hands'], ['blinds', 'Blinds'], ['vouchers', 'Vouchers']]) {
     const b = btn(label, 'red tab', () => show(k)); b.dataset.k = k; tabs.appendChild(b);
   }
+  // Mod tabs (view.mod_runinfo_tabs: [{key, label, kind: 'levels', rows: [{name, level, chips, mult, count, suit?}]}] —
+  // AutumnMoodMechanics' "Suits": suit levels laid out like the poker hands list).
+  for (const t of view.mod_runinfo_tabs || []) {
+    const b = btn(t.label, 'red tab', () => {
+      for (const x of tabs.children) x.classList.toggle('on', x === b);
+      body.innerHTML = '';
+      const list = h('div', 'hand-list');
+      for (const r of t.rows || []) {
+        const col = r.suit ? (SUIT_COL[r.suit] || '#4f6367') : '#4f6367';
+        const asc = r.asc ? ' <b class="money">+' + r.asc + '</b>' : '';
+        list.appendChild(h('div', 'hand-row', '<span class="hl-lvl" style="color:' + lvlCol(r.level) + '">lvl.' + r.level + asc + '</span><span class="hl-name" style="color:' + col + '">' + esc(r.name) +
+          '</span><span class="hl-cxm"><span class="cx">' + fmt(r.chips) + '</span><b>X</b><span class="mx">' + fmt(r.mult) + '</span></span><span class="hl-played">#&nbsp;' + (r.count == null ? '' : r.count) + '</span>'));
+      }
+      if (!(t.rows || []).length) list.appendChild(h('div', 'muted', esc(t.empty || 'Nothing here yet.')));
+      body.appendChild(list);
+    });
+    b.dataset.k = 'mod:' + t.key; tabs.appendChild(b);
+  }
   if (view.mods && view.mods.length) el.appendChild(h('div', 'ri-mods', `<span class="muted">Mods</span> ${modBadges(view.mods)}`));
   el.append(tabs, body);
   show('hands');
   modal(el, { title: 'Run Info', cls: 'ri-modal' });
 }
+const SUIT_COL = { Spades: '#403995', Hearts: '#f03464', Clubs: '#235955', Diamonds: '#f06b3f' };
 const lvlCol = (l) => ['#fe5f55', '#efefef', '#95acff', '#65efaf', '#fae37e', '#ffc052', '#f87d75', '#caa0ef'][Math.min(7, l || 1)];
 
 // ------------------------------------------------------- pause (Start)
@@ -387,13 +406,39 @@ const SUIT_ORDER = ['S', 'H', 'C', 'D'];
 const RANK_ORDER = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 export function deckView(view) {
   const el = h('div', 'deck-view');
-  const list = (view.deck_list || []).slice();
+  // Mod tabs beside the full deck (view.mod_deck_tabs: [{key, label, list, empty}] — AutumnMoodMechanics' Graveyard).
+  const mt = view.mod_deck_tabs || [];
+  if (mt.length) {
+    const tabs = h('div', 'tabs');
+    const body = h('div', 'tab-body');
+    const show = (k) => {
+      for (const b of tabs.children) b.classList.toggle('on', b.dataset.k === k);
+      body.innerHTML = '';
+      const t = mt.find((x) => x.key === k);
+      body.appendChild(deckBody(view, t ? t.list || [] : view.deck_list || [], t));
+    };
+    for (const [k, label] of [['full', 'Full Deck'], ...mt.map((t) => [t.key, t.label])]) {
+      const b = btn(label, 'red tab', () => show(k)); b.dataset.k = k; tabs.appendChild(b);
+    }
+    el.append(tabs, body);
+    show('full');
+    modal(el, { title: 'Deck', cls: 'dv-modal' });
+    return;
+  }
+  el.appendChild(deckBody(view, view.deck_list || []));
+  modal(el, { title: 'Deck', cls: 'dv-modal' });
+}
+/** One deck listing (the full deck, or a mod tab's cards). */
+function deckBody(view, src, tab) {
+  const el = h('div', 'deck-body');
+  const list = (src || []).slice();
+  if (tab && !list.length) { el.appendChild(h('div', 'muted', esc(tab.empty || 'Empty'))); return el; }
   const counts = { total: list.length, left: list.filter((x) => x[4]).length };
   const rankOf = (k) => (k || '').split('_')[1] || '';
   const suitOf = (k) => (k || '').split('_')[0] || '';
   const summary = h('div', 'dv-sum');
   const by = (f) => list.filter(f).length;
-  summary.innerHTML = `<div><b class="attn">${counts.left}</b>/${counts.total} cards remaining</div>
+  summary.innerHTML = `<div>${tab ? `<b class="attn">${counts.total}</b> cards` : `<b class="attn">${counts.left}</b>/${counts.total} cards remaining`}</div>
     <div>Aces <b>${by((x) => rankOf(x[0]) === 'A')}</b> · Faces <b>${by((x) => 'KQJ'.includes(rankOf(x[0]) || 'x'))}</b> · Numbers <b>${by((x) => /^[2-9T]$/.test(rankOf(x[0])))}</b></div>
     <div><span style="color:#403995">♠</span> ${by((x) => suitOf(x[0]) === 'S')} <span style="color:#f03464">♥</span> ${by((x) => suitOf(x[0]) === 'H')} <span style="color:#235955">♣</span> ${by((x) => suitOf(x[0]) === 'C')} <span style="color:#f06b3f">♦</span> ${by((x) => suitOf(x[0]) === 'D')}</div>`;
   el.appendChild(summary);
@@ -408,7 +453,7 @@ export function deckView(view) {
     if (cards.length) grid.appendChild(row);
   }
   el.appendChild(grid);
-  modal(el, { title: 'Deck', cls: 'dv-modal' });
+  return el;
 }
 
 // ---------------------------------------------------------- game over

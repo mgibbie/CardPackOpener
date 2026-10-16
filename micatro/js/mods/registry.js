@@ -192,7 +192,29 @@ export const HOOKS = [
   'status_text',        // (card, eval_type, amt, extra) card_eval_status_text showed a popup (e.g. 'debuff')
   'create_card_rarity', // (_rarity, _type, area, key_append) -> the rarity create_card rolls its pool with (non-forced cards)
   'reordered',          // (area, before) the 'reorder' action rearranged an area (before = the old card order)
+  // ---- AutumnMoodMechanics (joker Stamps, card Aspects, graveyard, unscored cards, suit levels)
+  'set_seal',           // (card, seal, prev) Card:set_seal just changed the seal / stamp (prev = the old one; SMODS seal apply / unapply)
+  'joker_seal',         // (joker, context) -> a Steamodded effect table: the joker's seal (a Stamp) calculates in joker_main, before the joker
+  'probability_vars',   // ([numerator, denominator], trigger_obj, identifier) -> [numerator, denominator] after the fix_probability pass
+  'probability_pass',   // ([numerator, denominator], 'mod_probability' | 'fix_probability', ctx) -> [n, d]: the deck/blind/stake's turn in a probability pass
+  'consumable_highlight_count', // (n, card) -> how many selected hand cards a max_highlighted consumable counts (vanilla: #G.hand.highlighted)
+  'unscored_card',      // (card, ctx) -> [effects]: a played, NOT scoring card's own main scoring (SMODS cardarea 'unscored'; optional feature)
+  'held_cards_scored',  // (ctx) the held-in-hand cards have scored (G.scoring.score_held / score_played may score more cards)
+  'create_card_type',   // (_type, forced_key, area, key_append) -> [_type, forced_key]: what create_card makes, before any roll (undefined = as asked)
+  'joker_retriggers',   // (n, joker, context) -> n extra evaluations of this joker's effect (SMODS.calculate_retriggers wrap: a Sock and Buskin Stamp)
+  'shuffled',           // (area, seed) CardArea:shuffle just shuffled this area (a Lua CardArea:shuffle wrap; reorder area.cards in place)
 ];
+
+/**
+ * Steamodded optional features (SMODS.current_mod.optional_features): a feature is on for a run when an
+ * ACTIVE mod declares it (`optional_features: {unscored: true, ...}`). The engine reads 'unscored'
+ * (played cards that don't score get the cardarea 'unscored' pass); mods may read their own.
+ */
+export function feature(name) {
+  if (!ACTIVE.length) return false;
+  for (const id of ACTIVE) { const f = MODS[id].optional_features; if (f && f[name]) return true; }
+  return false;
+}
 
 /**
  * Stickers registered by mods (Pokermon's Tera type stickers): key -> {key, badge_colour,
@@ -319,6 +341,8 @@ export function centerActive(c) {
   // A center may need one of its mod's options (`mod_option`, e.g. Nacho's per-line toggles):
   // off = gone, exactly like an inactive mod.
   if (c.mod_option && !(modOptions[c.mod] && modOptions[c.mod][c.mod_option])) return false;
+  // Steamodded `dependencies` on an item: a cross-mod card exists only while every mod it needs is on too.
+  if (c.dependencies && !c.dependencies.every((d) => activeSet.has(d))) return false;
   return true;
 }
 

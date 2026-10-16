@@ -507,7 +507,9 @@ Card.prototype.can_use_consumeable = function (any_state, skip_check) {
     }
     if (G.STATE === G.STATES.SELECTING_HAND || G.STATE === G.STATES.TAROT_PACK || G.STATE === G.STATES.SPECTRAL_PACK || G.STATE === G.STATES.PLANET_PACK || G.STATE === G.STATES.MOD_PACK_HAND) {
       if (this.ability.consumeable.max_highlighted) {
-        if (this.ability.consumeable.mod_num >= G.hand.highlighted.length && G.hand.highlighted.length >= (this.ability.consumeable.min_highlighted || 1)) {
+        // (a mod may not count some selected cards against the limit: AutumnCircus' Breath Aspect)
+        const n_sel = ACTIVE_MODS.length ? reduceHook('consumable_highlight_count', G.hand.highlighted.length, this) : G.hand.highlighted.length;
+        if (this.ability.consumeable.mod_num >= n_sel && G.hand.highlighted.length >= (this.ability.consumeable.min_highlighted || 1)) {
           return true;
         }
       }

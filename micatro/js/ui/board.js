@@ -518,7 +518,7 @@ export class Board {
     this.lblCons.textContent = `${this.areas.consumeables.length}/${v.consumeable_limit}`;
     this.placeModAreas();
     this.lblHand.textContent = HAND_STATES.includes(v.state) || HAND_PACK_STATES.includes(v.state) ? `${this.areas.hand.length}/${v.hand_limit}` : '';
-    this.deckEl.querySelector('.deck-count').textContent = `${v.deck_count}/${v.deck_total}`;
+    this.deckEl.querySelector('.deck-count').textContent = `${v.deck_count}/${v.deck_total}${v.deck_extra || ''}`;
     // controls
     const L = v.legal || {};
     const playing = HAND_STATES.includes(v.state) && !v.over;
@@ -823,8 +823,36 @@ export class Board {
       const r = s.el.getBoundingClientRect();
       const nx = (e.clientX - r.left) / r.width - 0.5, ny = (e.clientY - r.top) / r.height - 0.5;
       s.tilt.ty = nx * 22; s.tilt.tx = -ny * 22;
+      if (this.view && this.view.amm_petting) this.petTrack(s, e);
     });
     s.el.addEventListener('pointerleave', () => { s.hover = false; s.tilt.tx = s.tilt.ty = 0; if (this.tipFor === s.id && this.sel !== s.id) this.hideTip(); });
+  }
+  /**
+   * AutumnMoodMechanics' petting (api/Petting.lua): circling the mouse 1.75 turns over a card "pets" it. The
+   * circle's centre resets every 0.2 s; turning the other way starts over. Fires the 'amm_pet' action
+   * (direction: clockwise / counter-clockwise, time: seconds spent circling) — mods react to amm_pet_card.
+   */
+  petTrack(s, e) {
+    const now = performance.now() / 1000;
+    const P = this._pet && this._pet.id === s.id ? this._pet : (this._pet = { id: s.id, t0: now, cx: e.clientX, cy: e.clientY, prev: null, total: 0, start: now });
+    if (now - P.t0 >= 0.2) { P.t0 = now; P.cx = e.clientX; P.cy = e.clientY; P.prev = null; }
+    const dx = e.clientX - P.cx, dy = e.clientY - P.cy;
+    if (Math.hypot(dx, dy) < 0.5) { P.prev = null; return; }
+    const ang = Math.atan2(dy, dx);
+    if (P.prev !== null) {
+      let diff = ang - P.prev;
+      if (diff > Math.PI) diff -= 2 * Math.PI; else if (diff < -Math.PI) diff += 2 * Math.PI;
+      if (P.total !== 0 && diff !== 0 && Math.sign(P.total) !== Math.sign(diff)) { P.total = 0; P.start = now; }
+      P.total += diff;
+      if (Math.abs(P.total) >= 1.75 * Math.PI) {
+        const direction = P.total > 0 ? 'clockwise' : 'counter-clockwise';
+        const time = Math.round((now - P.start) * 1000) / 1000;
+        P.total = 0; P.start = now;
+        s.juiceUp(0.1, 0.1);
+        if (!this.readOnly && this.opts.onAction) this.opts.onAction({ type: 'amm_pet', id: s.id, direction, time });
+      }
+    }
+    P.prev = ang;
   }
   toStage(e) { const r = this.stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / this.scale, y: (e.clientY - r.top) / this.scale }; }
   onDown(e) {
