@@ -24,7 +24,7 @@ import { quantum_enhancements } from './core.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
-import { activateMods, callHook, reduceHook, firstHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions } from '../mods/registry.js';
+import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions } from '../mods/registry.js';
 import './consumables.js';
 
 export const STATES = {
@@ -247,6 +247,7 @@ export function newRun(args = {}) {
 
   G.GAME.round_resets.blind_tags = {};
   G.GAME.round_resets.blind_choices.Boss = get_new_boss();
+  if (ACTIVE_MODS.length) callHook('new_boss_choice');
   G.GAME.current_round.voucher = get_next_voucher_key();
   G.GAME.round_resets.blind_tags.Small = get_next_tag_key();
   G.GAME.round_resets.blind_tags.Big = get_next_tag_key();
@@ -333,6 +334,8 @@ export function draw_from_deck_to_hand(e) {
   }
   G.drawn_cards = [];
   let hand_space = e || Math.min(G.deck.cards.length, G.hand.config.card_limit - G.hand.cards.length);
+  // Mods may change how many cards are drawn (MoreFluff's Snake / The Serpent DX), before The Serpent.
+  if (ACTIVE_MODS.length) hand_space = reduceHook('draw_hand_space', hand_space, e);
   if (G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled &&
       (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0)) {
     hand_space = Math.min(G.deck.cards.length, 3);
@@ -345,6 +348,7 @@ function new_round() {
     const cr = G.GAME.current_round, rr = G.GAME.round_resets;
     cr.discards_left = Math.max(0, rr.discards + G.GAME.round_bonus.discards);
     cr.hands_left = Math.max(1, rr.hands + G.GAME.round_bonus.next_hands);
+    if (ACTIVE_MODS.length) callHook('round_counts', 'after', 'new_round'); // (BETMMA's Garbage Bag / Handbag carry-over)
     cr.hands_played = 0;
     cr.discards_used = 0;
     cr.reroll_cost_increase = 0;
@@ -364,7 +368,13 @@ function new_round() {
     G.GAME.subhash = rr.ante + blhash;
     G.GAME.blind.set_blind(rr.blind);
     callHook('new_round');
-    for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ setting_blind: true, blind: rr.blind }));
+    for (const j of G.jokers.cards.slice()) {
+      const sctx = { setting_blind: true, blind: rr.blind };
+      const eff = j.calculate_joker(sctx);
+      mod_context_effect(j, eff);
+      // Steamodded joker retriggers (MoreFluff's Brass Joker / CBA): an effect may evaluate again.
+      if (eff) for (let t = joker_retriggers(j, sctx); t > 0; t--) mod_context_effect(j, j.calculate_joker({ ...sctx, retrigger_joker: true }));
+    }
     G.E_MANAGER.add_event(() => {
       G.STATE = STATES.DRAW_TO_HAND;
       G.deck.shuffle('nr' + rr.ante);
@@ -374,16 +384,20 @@ function new_round() {
 }
 
 function end_round() {
+  // Mods acting as the Lua end_round() is called, before its queued work (MoreFluff: temporary cards go).
+  if (ACTIVE_MODS.length) callHook('end_round_start');
   G.E_MANAGER.add_event(() => {
     let game_over = true, game_won = false;
     if (G.GAME.chips - G.GAME.blind.chips >= 0) game_over = false;
     for (const j of G.jokers.cards.slice()) {
       // main_eval / beat_boss: Steamodded's end_of_round flags (vanilla jokers ignore them).
-      const ev = j.calculate_joker({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
-      if (ev) {
+      const ectx = { end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss };
+      let ev = j.calculate_joker(ectx);
+      for (let t = ev ? joker_retriggers(j, ectx) + 1 : 0; t > 0; t--) {
         if (ev.saved) { game_over = false; G.GAME.saved_by = j.config.center.key; }
         card_eval_status_text(j, 'jokers', null, null, null, ev);
         mod_effect_tail(j, ev, { dollars: true });
+        if (t > 1) { ev = j.calculate_joker({ ...ectx, retrigger_joker: true }); if (!ev) break; } // (Steamodded joker retriggers)
       }
       j.calculate_rental();
       j.calculate_perishable();
@@ -399,7 +413,11 @@ function end_round() {
       for (const hc of G.hand.cards.slice()) mod_card_calculate(hc, { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss });
       callHook('end_round');
     }
-    if (G.GAME.round_resets.ante === G.GAME.win_ante && G.GAME.blind.get_type() === 'Boss') {
+    // A mod may say which blind slot this was ('Small' | 'Big' | 'Boss'): only the Boss slot wins / ends
+    // the ante (MoreFluff's Superboss puts a regular boss in the Big slot). Vanilla: the blind's type.
+    const slot = ACTIVE_MODS.length ? firstHook('blind_slot', G.GAME.blind) : undefined;
+    const ante_boss = slot ? slot === 'Boss' : G.GAME.blind.get_type() === 'Boss';
+    if (G.GAME.round_resets.ante === G.GAME.win_ante && ante_boss) {
       game_won = true;
       G.GAME.won = true;
     }
@@ -437,7 +455,8 @@ function end_round() {
           if (next(ev) && (next(effects[0]) || effects.length > 1)) for (let h = 0; h < ev.seals.repetitions; h++) reps.push(ev);
           for (const jk of G.jokers.cards) {
             const ev2 = eval_card(jk, { cardarea: G.hand, other_card: hc, repetition: true, end_of_round: true, card_effects: effects });
-            if (next(ev2)) for (let h = 0; h < ev2.jokers.repetitions; h++) reps.push(ev2);
+            // (a joker's eval can be non-empty without a repetition: a mod joker with held values, BETMMA's Balatro Mobile)
+            if (next(ev2) && ev2.jokers) for (let h = 0; h < (ev2.jokers.repetitions || 0); h++) reps.push(ev2);
           }
         }
         for (const ef of effects) {
@@ -450,7 +469,7 @@ function end_round() {
       }
     }
     draw_from_hand_to_discard();
-    if (G.GAME.blind.get_type() === 'Boss') {
+    if (ante_boss) {
       G.GAME.voucher_restock = null;
       if (G.GAME.modifiers.set_eternal_ante && G.GAME.round_resets.ante === G.GAME.modifiers.set_eternal_ante) for (const v of G.jokers.cards) v.set_eternal(true);
       if (G.GAME.modifiers.set_joker_slots_ante && G.GAME.round_resets.ante === G.GAME.modifiers.set_joker_slots_ante) G.jokers.config.card_limit = 0;
@@ -461,8 +480,8 @@ function end_round() {
       G.STATE = STATES.ROUND_EVAL;
       G.STATE_COMPLETE = false;
       const rr = G.GAME.round_resets;
-      if (rr.blind === P_BLINDS.bl_small) rr.blind_states.Small = 'Defeated';
-      else if (rr.blind === P_BLINDS.bl_big) rr.blind_states.Big = 'Defeated';
+      if (slot ? slot === 'Small' : rr.blind === P_BLINDS.bl_small) rr.blind_states.Small = 'Defeated';
+      else if (slot ? slot === 'Big' : rr.blind === P_BLINDS.bl_big) rr.blind_states.Big = 'Defeated';
       else {
         G.GAME.current_round.voucher = get_next_voucher_key();
         G.GAME.current_round.extra_vouchers = null; // (SMODS voucher slots: new ones next ante)
@@ -482,6 +501,13 @@ function end_round() {
 }
 
 function draw_from_play_to_discard() {
+  // A mod wrapping G.FUNCS.draw_from_play_to_discard (BETMMA: flipped cards go back to the hand first,
+  // and the rest follow in an event, after the hand's queued shatters — a Bulletproof Glass Card stays).
+  if (ACTIVE_MODS.length && hasHook('draw_from_play_to_discard')) {
+    callHook('draw_from_play_to_discard');
+    G.E_MANAGER.add_event(() => { for (const v of G.play.cards.slice()) if (!v.shattered && !v.destroyed) draw_card(G.play, G.discard, 0, 'down', false, v); });
+    return;
+  }
   for (const v of G.play.cards.slice()) if (!v.shattered && !v.destroyed) draw_card(G.play, G.discard, 0, 'down', false, v);
 }
 export function draw_from_play_to_hand(cards) {
@@ -517,7 +543,8 @@ function get_X_same(num, hand) {
 export function get_flush(hand) {
   const four = find_joker('Four Fingers').length > 0;
   const need = reduceHook('flush_min', 5 - (four ? 1 : 0), hand);
-  if (hand.length > 5 || hand.length < need) return [];
+  // (Steamodded drops vanilla's "more than 5 cards: no flush/straight" — mods let you play more: BETMMA's Slate)
+  if ((hand.length > 5 && !ACTIVE_MODS.length) || hand.length < need) return [];
   for (const suit of reduceHook('flush_suits', ['Spades', 'Hearts', 'Clubs', 'Diamonds'], hand)) {
     const t = hand.filter((c) => c.is_suit(suit, null, true));
     if (t.length >= need) return [t];
@@ -527,7 +554,7 @@ export function get_flush(hand) {
 function get_straight(hand) {
   const four = find_joker('Four Fingers').length > 0;
   const need = reduceHook('straight_min', 5 - (four ? 1 : 0), hand);
-  if (hand.length > 5 || hand.length < need) return [];
+  if ((hand.length > 5 && !ACTIVE_MODS.length) || hand.length < need) return [];
   let t = [];
   const IDS = {};
   for (const c of hand) {
@@ -593,6 +620,7 @@ export function evaluate_poker_hand(hand) {
   if (results['Five of a Kind'][0]) results['Four of a Kind'] = results['Five of a Kind'].slice(0, 4);
   if (results['Four of a Kind'][0]) results['Three of a Kind'] = results['Four of a Kind'].slice(0, 3);
   if (results['Three of a Kind'][0]) results.Pair = results['Three of a Kind'].slice(0, 2);
+  if (ACTIVE_MODS.length) callHook('evaluate_poker_hand', results, hand); // (a Lua evaluate_poker_hand wrap: BETMMA's Ascension)
   return results;
 }
 const HAND_ORDER = ['Flush Five', 'Flush House', 'Five of a Kind', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Pair', 'High Card'];
@@ -643,6 +671,51 @@ export function mod_effect_tail(card, eff, opts = {}) {
     if (typeof x.func === 'function') x.func();
     x = x.extra;
   }
+}
+
+/**
+ * Steamodded / Talisman scoring keys a MOD return may carry beyond the ones the vanilla scoring loops
+ * read: x_chips (xchips / Xchip_mod), e_chips / e_mult (echips / emult: ^n), and swap (chips <-> mult);
+ * plus, down its `extra` chain, every scoring key (SMODS evaluates each `extra` like a return of its own —
+ * MoreFluff's Complexity Creep chains its effects this way). Only for returns from MOD cards
+ * (`eff._mod`, set by normalize_mod_effect) or mod enhancements; vanilla scoring is untouched.
+ *   opts.held       the held-in-hand loop: the return's own `mult` / `chips` count too (vanilla reads h_mult)
+ *   opts.individual the per-card loop: vanilla already applied the first `extra`'s mult_mod / chip_mod / swap
+ *   opts.joker      a joker-row context: mod_effect_tail shows the chain's messages
+ * -> [hand_chips, mult]
+ */
+export function mod_score_ops(eff, at, hand_chips, mult, opts = {}) {
+  if (!ACTIVE_MODS.length || !eff || typeof eff !== 'object') return [hand_chips, mult];
+  const c0 = hand_chips, m0 = mult;
+  const say = (message, colour) => card_eval_status_text(at, 'extra', null, null, null, { message, colour });
+  const ops = (r, level) => {
+    const own = level === 0;
+    if (!own || opts.held) {
+      const c = r.chips ?? (own ? undefined : r.chip_mod);
+      if (c && !(opts.individual && level === 1 && r.chip_mod !== undefined && r.chips === undefined)) { hand_chips = mod_chips(hand_chips + c); if (!own && !r.message) say('+' + c, 'CHIPS'); }
+      const m = r.mult ?? (own ? undefined : r.mult_mod);
+      if (m && !(opts.individual && level === 1 && r.mult_mod !== undefined && r.mult === undefined)) { mult = mod_mult(mult + m); if (!own && !r.message) say('+' + m + ' Mult', 'MULT'); }
+    }
+    const xc = r.x_chips ?? r.xchips ?? r.Xchip_mod;
+    if (xc !== undefined && xc !== 1) { hand_chips = mod_chips(hand_chips * xc); if (!r.message) say('X' + xc + ' Chips', 'CHIPS'); }
+    if (!own) {
+      const xm = r.x_mult ?? r.xmult ?? r.Xmult ?? r.Xmult_mod;
+      if (xm !== undefined && xm !== 1) { mult = mod_mult(mult * xm); if (!r.message) say('X' + xm + ' Mult', 'MULT'); }
+    }
+    const ec = r.e_chips ?? r.echips ?? r.Echip_mod;
+    if (ec !== undefined && ec !== 1) { hand_chips = mod_chips(Math.pow(hand_chips, ec)); if (!r.message) say('^' + ec + ' Chips', 'DARK_EDITION'); }
+    const em = r.e_mult ?? r.emult ?? r.Emult_mod;
+    if (em !== undefined && em !== 1) { mult = mod_mult(Math.pow(mult, em)); if (!r.message) say('^' + em + ' Mult', 'DARK_EDITION'); }
+    if (r.swap && !(opts.individual && level === 1)) { const om = mult; mult = mod_mult(hand_chips); hand_chips = mod_chips(om); if (!own && !r.message) say(localize('k_swap_ex') === 'k_swap_ex' ? 'Swap!' : localize('k_swap_ex')); }
+    if (!own && r.message && opts.individual && level > 1) say(r.message, r.colour);
+  };
+  ops(eff, 0);
+  if (eff._mod || opts.held || opts.chain) {
+    let x = eff.extra, level = 1, guard = 0;
+    while (x && typeof x === 'object' && guard++ < 20) { ops(x, level++); x = x.extra; }
+  }
+  if (hand_chips !== c0 || mult !== m0) emit('hand_text', { chips: hand_chips, mult });
+  return [hand_chips, mult];
 }
 
 /**
@@ -738,11 +811,13 @@ function evaluate_play() {
       G.GAME.first_used_hand_level = null;
     }
     for (const j of G.jokers.cards.slice()) {
-      const effects = eval_card(j, { cardarea: G.jokers, ...base_ctx(), before: true });
-      if (effects.jokers) {
+      const bctx = { cardarea: G.jokers, ...base_ctx(), before: true };
+      let effects = eval_card(j, bctx);
+      for (let t = effects.jokers ? joker_retriggers(j, bctx) + 1 : 0; t > 0; t--) {
         card_eval_status_text(j, 'jokers', null, null, null, effects.jokers);
         if (effects.jokers.level_up) level_up_hand(j, text);
         mod_effect_tail(j, effects.jokers, { dollars: true });
+        if (t > 1) { effects = eval_card(j, { ...bctx, retrigger_joker: true }); if (!effects.jokers) break; } // (Steamodded joker retriggers)
       }
     }
     mult = mod_mult(gh.mult);
@@ -751,6 +826,9 @@ function evaluate_play() {
     mult = mod_mult(mh[0]); hand_chips = mod_chips(mh[1]);
     if (mh[2]) emit('hand_text', { chips: hand_chips, mult, modded: true });
     emit('hand_text', { chips: hand_chips, mult });
+    // Mods may act on the running score here, before any card scores (MoreFluff's before_scoring_ctx:
+    // Unregistered Hypercam 2 / Hyperjimbo). -> [hand_chips, mult]
+    if (ACTIVE_MODS.length) [hand_chips, mult] = reduceHook('modify_scoring', [hand_chips, mult], 'before_cards', base_ctx());
 
     for (let i = 0; i < scoring_hand.length; i++) {
       const sc = scoring_hand[i];
@@ -782,8 +860,13 @@ function evaluate_play() {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
         const effects = [eval_card(sc, { cardarea: G.play, full_hand: G.play.cards, scoring_hand, poker_hand: text })];
         for (const j of G.jokers.cards) {
-          const ev = j.calculate_joker({ cardarea: G.play, ...base_ctx(), other_card: sc, individual: true });
-          if (ev) effects.push(ev);
+          const ictx = { cardarea: G.play, ...base_ctx(), other_card: sc, individual: true };
+          const ev = j.calculate_joker(ictx);
+          if (ev) {
+            effects.push(ev);
+            // Steamodded joker retriggers: a mod joker may make this joker's per-card effect happen again.
+            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
+          }
         }
         sc.lucky_trigger = undefined;
         for (const ef of effects) {
@@ -801,6 +884,7 @@ function evaluate_play() {
             emit('hand_text', { chips: hand_chips, mult });
           }
           if (ef.x_mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(mult * ef.x_mult); card_eval_status_text(sc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
+          if (ACTIVE_MODS.length && (ef._mod || ef === effects[0])) [hand_chips, mult] = mod_score_ops(ef, sc, hand_chips, mult, { individual: true });
           if (ef.edition) {
             hand_chips = mod_chips(hand_chips + (ef.edition.chip_mod || 0));
             mult = mult + (ef.edition.mult_mod || 0);
@@ -815,6 +899,8 @@ function evaluate_play() {
       }
     }
 
+    // Mods acting once the played cards have scored (BETMMA's Double Flipped Card: flipped ones are held now)
+    if (ACTIVE_MODS.length) callHook('played_cards_scored');
     // Held-in-hand effects
     for (let i = 0; i < G.hand.cards.length; i++) {
       const hc = G.hand.cards[i];
@@ -823,8 +909,12 @@ function evaluate_play() {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
         const effects = [eval_card(hc, { cardarea: G.hand, ...base_ctx() })];
         for (const j of G.jokers.cards) {
-          const ev = j.calculate_joker({ cardarea: G.hand, ...base_ctx(), other_card: hc, individual: true });
-          if (ev) effects.push(ev);
+          const ictx = { cardarea: G.hand, ...base_ctx(), other_card: hc, individual: true };
+          const ev = j.calculate_joker(ictx);
+          if (ev) {
+            effects.push(ev);
+            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
+          }
         }
         if (reps[r] === 1) {
           const sev = eval_card(hc, { repetition_only: true, cardarea: G.hand, ...base_ctx(), repetition: true, card_effects: effects });
@@ -832,7 +922,7 @@ function evaluate_play() {
           for (const j of G.jokers.cards) {
             const rctx = { cardarea: G.hand, ...base_ctx(), other_card: hc, repetition: true, card_effects: effects };
             const ev = eval_card(j, rctx);
-            if (next(ev)) {
+            if (next(ev) && ev.jokers) {
               for (let h = 0; h < ev.jokers.repetitions; h++) reps.push(ev);
               for (let t = joker_retriggers(j, rctx); t > 0; t--) {
                 const ev2 = eval_card(j, { ...rctx, retrigger_joker: true });
@@ -847,6 +937,7 @@ function evaluate_play() {
           if (ef.h_mult) { mult = mod_mult(mult + ef.h_mult); card_eval_status_text(hc, 'h_mult', ef.h_mult); emit('hand_text', { mult }); }
           if (ef.h_chips) { hand_chips = mod_chips(hand_chips + ef.h_chips); card_eval_status_text(hc, 'chips', ef.h_chips); emit('hand_text', { chips: hand_chips }); }
           if (ef.x_mult) { mult = mod_mult(mult * ef.x_mult); card_eval_status_text(hc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
+          if (ACTIVE_MODS.length && (ef._mod || ef === effects[0])) [hand_chips, mult] = mod_score_ops(ef, hc, hand_chips, mult, { held: ef !== effects[0] });
           if (ef.message) card_eval_status_text(hc, 'extra', null, null, null, ef);
         }
       }
@@ -903,15 +994,19 @@ function evaluate_play() {
           emit('hand_text', { mult });
         }
       }
-      const effects = eval_card(_card, { cardarea: G.jokers, ...base_ctx(), joker_main: true });
-      if (effects.jokers) {
+      const mctx = { cardarea: G.jokers, ...base_ctx(), joker_main: true };
+      let effects = eval_card(_card, mctx);
+      for (let t = effects.jokers ? joker_retriggers(_card, mctx) + 1 : 0; t > 0; t--) {
         if (effects.jokers.mult_mod) mult = mod_mult(mult + effects.jokers.mult_mod);
         if (effects.jokers.chip_mod) hand_chips = mod_chips(hand_chips + effects.jokers.chip_mod);
         if (effects.jokers.Xmult_mod) mult = mod_mult(mult * effects.jokers.Xmult_mod);
         if (effects.jokers.dollars && _card.config.center.mod) ease_dollars(effects.jokers.dollars);
         card_eval_status_text(_card, 'jokers', null, null, null, effects.jokers);
         emit('hand_text', { chips: hand_chips, mult });
+        if (ACTIVE_MODS.length && effects.jokers._mod) [hand_chips, mult] = mod_score_ops(effects.jokers, _card, hand_chips, mult, { joker: true });
         mod_effect_tail(_card, { func: effects.jokers.func, extra: effects.jokers.extra });
+        // Steamodded joker retriggers (MoreFluff's Brass Joker / CBA): the joker evaluates again.
+        if (t > 1) { effects = eval_card(_card, { ...mctx, retrigger_joker: true }); if (!effects.jokers) break; }
       }
       for (const v of G.jokers.cards) {
         // Steamodded also names a consumable `other_consumeable` (Mega Alakazam).
@@ -923,6 +1018,7 @@ function evaluate_play() {
           if (effect.chip_mod) { hand_chips = mod_chips(hand_chips + effect.chip_mod); changed = true; }
           if (effect.Xmult_mod) { mult = mod_mult(mult * effect.Xmult_mod); changed = true; }
           if (changed) { card_eval_status_text(v, 'jokers', null, null, null, effect); emit('hand_text', { chips: hand_chips, mult }); }
+          if (ACTIVE_MODS.length && effect._mod) [hand_chips, mult] = mod_score_ops(effect, v, hand_chips, mult, { joker: true });
           // Steamodded joker retriggers: the joker evaluates again (retrigger_joker = true).
           if (t > 1) { effect = v.calculate_joker({ ...octx, retrigger_joker: true }); if (!effect) break; }
         }
@@ -937,6 +1033,8 @@ function evaluate_play() {
     // Steamodded's final_scoring_step context for mod cards (after the jokers, before the deck's
     // Plasma step). Effects that change chips/mult aren't applied yet — add them when a joker needs it.
     if (ACTIVE_MODS.length) calculate_context({ ...base_ctx(), final_scoring_step: true });
+    // ... and may change the score there (MoreFluff's Clutch Tag: X4 Mult). -> [hand_chips, mult]
+    if (ACTIVE_MODS.length) [hand_chips, mult] = reduceHook('modify_scoring', [hand_chips, mult], 'final_scoring_step', base_ctx());
     const [nu_chip, nu_mult] = G.GAME.selected_back.trigger_effect({ context: 'final_scoring_step', chips: hand_chips, mult }) || [];
     mult = mod_mult(nu_mult ?? mult);
     hand_chips = mod_chips(nu_chip ?? hand_chips);
@@ -952,6 +1050,11 @@ function evaluate_play() {
           destroyed = r && (r === true || r.remove) ? r : null;
         } else destroyed = j.calculate_joker({ destroying_card: sc, full_hand: G.play.cards });
         if (destroyed) break;
+      }
+      // Steamodded: the card's own MOD enhancement / seal may destroy it ({remove = true}: MoreFluff's Brass / Yucky Card).
+      if (ACTIVE_MODS.length) {
+        const ms = mod_card_calculate(sc, { destroy_card: sc, destroying_card: sc, cardarea: G.play, full_hand: G.play.cards, scoring_hand });
+        if (ms && ((ms.enhancement && (ms.enhancement === true || ms.enhancement.remove)) || (ms.seal && (ms.seal === true || ms.seal.remove)))) destroyed = true;
       }
       if (sc.ability.name === 'Glass Card' && !sc.debuff && probability_roll(sc, 'glass', 1, sc.ability.extra)) destroyed = true;
       // Steamodded quantum enhancements: a card that is also Glass (Pokermon's Tinkaton: Steel cards)
@@ -990,8 +1093,12 @@ function evaluate_play() {
     emit('chips', { total: G.GAME.chips, add: total });
   });
   for (const j of G.jokers.cards.slice()) {
-    const effects = eval_card(j, { cardarea: G.jokers, ...base_ctx(), after: true });
-    if (effects.jokers) { card_eval_status_text(j, 'jokers', null, null, null, effects.jokers); mod_effect_tail(j, effects.jokers, { dollars: true }); }
+    const actx = { cardarea: G.jokers, ...base_ctx(), after: true };
+    let effects = eval_card(j, actx);
+    for (let t = effects.jokers ? joker_retriggers(j, actx) + 1 : 0; t > 0; t--) {
+      card_eval_status_text(j, 'jokers', null, null, null, effects.jokers); mod_effect_tail(j, effects.jokers, { dollars: true });
+      if (t > 1) { effects = eval_card(j, { ...actx, retrigger_joker: true }); if (!effects.jokers) break; } // (Steamodded joker retriggers)
+    }
   }
   G.E_MANAGER.add_event(() => {
     if (G.GAME.modifiers.debuff_played_cards) for (const v of scoring_hand) v.ability.perma_debuff = true;
@@ -1001,6 +1108,8 @@ function evaluate_play() {
 }
 
 function evaluate_round() {
+  // Mods wrapping G.FUNCS.evaluate_round (BETMMA's Rich Boss / Money Target / Deep Roots): their undo runs at the end.
+  const undo = ACTIVE_MODS.length ? callHook('evaluate_round_pre').filter((f) => typeof f === 'function') : null;
   const rows = [];
   let dollars = 0;
   const row = (r) => { rows.push(r); };
@@ -1042,6 +1151,7 @@ function evaluate_round() {
   const blind = pb ? { key: pb.key, name: G.GAME.blind.name, chips: G.GAME.blind.chips, dollars: G.GAME.blind.dollars, boss: !!G.GAME.blind.boss, colour: pb.boss_colour, pos: pb.pos, defeated: true } : null;
   G.GAME.round_eval = { rows, total: dollars, blind };
   emit('round_eval', { rows, total: dollars });
+  if (undo) for (const f of undo) f();
 }
 
 // ------------------------------------------------------------------ shop
@@ -1054,8 +1164,10 @@ export function create_card_for_shop(area) {
     }
   }
   G.GAME.spectral_rate = G.GAME.spectral_rate || 0;
+  // Mods may add card types a shop slot can roll (BETMMA's Voucher Tycoon: Vouchers, rate 2).
+  const mod_types = ACTIVE_MODS.length ? [].concat(...callHook('shop_card_types')) : [];
   const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate +
-    activeConsumableTypes().reduce((n, t) => n + (G.GAME[t.rate_key] || 0), 0);
+    activeConsumableTypes().reduce((n, t) => n + (G.GAME[t.rate_key] || 0), 0) + mod_types.reduce((n, t) => n + (t.val || 0), 0);
   const polled = pseudorandom(pseudoseed('cdt' + G.GAME.round_resets.ante)) * total_rate;
   let check = 0;
   const opts = [
@@ -1065,6 +1177,7 @@ export function create_card_for_shop(area) {
     { type: (G.GAME.used_vouchers.v_illusion && pseudorandom(pseudoseed('illusion')) > 0.6) ? 'Enhanced' : 'Base', val: G.GAME.playing_card_rate },
     { type: 'Spectral', val: G.GAME.spectral_rate },
     ...activeConsumableTypes().map((t) => ({ type: t.key, val: G.GAME[t.rate_key] || 0 })),
+    ...mod_types,
   ];
   for (const v of opts) {
     if (polled > check && polled <= check + v.val) {
@@ -1112,8 +1225,12 @@ function update_shop() {
           G.shop_booster.emplace(card);
         }
       }
+      // Mods may add shop vouchers around the Voucher Tag's (MoreFluff: The Ticket before, Junk Mail after).
+      if (ACTIVE_MODS.length) callHook('voucher_add', 'before_tags');
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'voucher_add' });
+      if (ACTIVE_MODS.length) callHook('voucher_add', 'after_tags');
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'shop_final_pass' });
+      if (ACTIVE_MODS.length) callHook('shop_stocked'); // (BETMMA's Bargain / Clearance Aisle)
     }
   });
 }
@@ -1148,6 +1265,7 @@ function stock_extra_vouchers(from, to) {
     if (key && P_CENTERS[key] && !G.GAME.used_vouchers[key] && !G.shop_vouchers.cards.some((v) => v.config.center.key === key)) {
       const card = new Card(P_CARDS.empty, P_CENTERS[key]);
       card.shop_voucher = true;
+      card.extra_voucher = true; // (an extra slot's voucher: redeeming it leaves the round's voucher alone)
       G.shop_vouchers.emplace(card);
     }
   }
@@ -1187,6 +1305,8 @@ function find_card(id) {
   return null;
 }
 export function check_for_buy_space(card) {
+  // A mod card may always fit (MoreFluff's Philosophical Joker brings its own slot).
+  if (ACTIVE_MODS.length && callHook('buy_space', card).includes(true)) return true;
   if (card.ability.set !== 'Voucher' && card.ability.set !== 'Enhanced' && card.ability.set !== 'Default' &&
       !(card.ability.set === 'Joker' && G.jokers.cards.length < G.jokers.config.card_limit + ((card.edition && card.edition.negative) ? 1 : 0)) &&
       !(card.ability.consumeable && G.consumeables.cards.length < G.consumeables.config.card_limit + ((card.edition && card.edition.negative) ? 1 : 0))) {
@@ -1198,6 +1318,7 @@ export function check_for_buy_space(card) {
 
 /** G.FUNCS.use_card — consumables, pack picks, boosters, vouchers. */
 export function use_card(card) {
+  if (ACTIVE_MODS.length) callHook('use_card', card); // (a Lua G.FUNCS.use_card wrap: BETMMA's Engulfer)
   const area = card.area;
   const prev_state = G.STATE;
   let dont_dissolve = false;
@@ -1206,7 +1327,8 @@ export function use_card(card) {
   if (card.ability.set === 'Booster') G.GAME.PACK_INTERRUPT = G.STATE;
   if (!PACK_STATES.includes(G.STATE)) G.STATE = STATES.PLAY_TAROT;
   // Steamodded keep_on_use: the consumable stays where it is after use (e.g. Pokermon's Megastone).
-  const nc = !!(card.ability.consumeable && card.config.center.mod && card.config.center.keep_on_use && card.config.center.keep_on_use(card.config.center, card));
+  // (card.keep_on_use: a mod keeping this one card — BETMMA's Forbidden Area uses consumables in the joker row)
+  const nc = !!(card.ability.consumeable && ((card.config.center.mod && card.config.center.keep_on_use && card.config.center.keep_on_use(card.config.center, card)) || card.keep_on_use));
   if (card.area && (!nc || card.area === G.pack_cards)) card.area.remove_card(card);
   if (nc) dont_dissolve = true;
   if (nc && area === G.pack_cards) {
@@ -1218,6 +1340,7 @@ export function use_card(card) {
     if (!nc && !(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK || G.STATE === STATES.MOD_PACK || G.STATE === STATES.MOD_PACK_HAND)) draw_card(G.hand, G.play, 1, 'up', true, card);
     emit('use', { card: card.sort_id, center: card.config.center.key });
     card.use_consumeable(area);
+    if (ACTIVE_MODS.length) callHook('used_consumeable', card, area); // (a Lua Card:use_consumeable wrap: BETMMA's Solar System)
     for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ using_consumeable: true, consumeable: card }));
   } else if (card.ability.set === 'Enhanced' || card.ability.set === 'Default') {
     G.playing_card = (G.playing_card || 0) + 1;
@@ -1289,6 +1412,7 @@ function select_blind(which) {
 }
 
 function skip_blind() {
+  if (ACTIVE_MODS.length) callHook('skip_blind', 'before'); // (Lua G.FUNCS.skip_blind wraps: BETMMA's Skip / Skipper / Overshopping)
   const rr = G.GAME.round_resets;
   G.GAME.skips = (G.GAME.skips || 0) + 1;
   const skipped = G.GAME.blind_on_deck || 'Small';
@@ -1305,6 +1429,7 @@ function skip_blind() {
     for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
     for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
   });
+  if (ACTIVE_MODS.length) callHook('skip_blind', 'after');
 }
 
 export function reroll_boss(from_tag) {
@@ -1312,9 +1437,11 @@ export function reroll_boss(from_tag) {
   if (!from_tag) ease_dollars(-10);
   G.E_MANAGER.add_event(() => {
     G.GAME.round_resets.blind_choices.Boss = get_new_boss();
+    if (ACTIVE_MODS.length) callHook('new_boss_choice');
     emit('boss_rerolled', { boss: G.GAME.round_resets.blind_choices.Boss });
     for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
   });
+  if (ACTIVE_MODS.length) callHook('reroll_boss', from_tag); // (BETMMA's Reroll Cut)
 }
 
 function reroll_shop() {
@@ -1331,6 +1458,7 @@ function reroll_shop() {
   G.E_MANAGER.add_event(() => {
     G.E_MANAGER.add_event(() => { for (const j of G.jokers.cards.slice()) j.calculate_joker({ reroll_shop: true }); });
   });
+  if (ACTIVE_MODS.length) callHook('reroll_shop'); // (Lua G.FUNCS.reroll_shop wraps: BETMMA's 4D Boosters / 4D Vouchers / Reroll Aisle)
 }
 
 function buy_from_shop(c1, use) {
@@ -1345,7 +1473,8 @@ function buy_from_shop(c1, use) {
       for (const j of G.jokers.cards.slice()) j.calculate_joker({ playing_card_added: true, cards: [c1] });
       G.playing_cards.push(c1);
     } else if (!use) {
-      if (c1.ability.consumeable) G.consumeables.emplace(c1);
+      // (a mod may place a bought consumable elsewhere: BETMMA's Forbidden Area -> the joker row)
+      if (c1.ability.consumeable) ((ACTIVE_MODS.length && firstHook('buy_area', c1)) || G.consumeables).emplace(c1);
       else G.jokers.emplace(c1);
       G.E_MANAGER.add_event(() => c1.calculate_joker({ buying_card: true, card: c1 }));
     }
@@ -1360,6 +1489,7 @@ function buy_from_shop(c1, use) {
     emit('bought', { card: c1.sort_id, cost: c1.cost });
     if (use) use_card(c1);
   });
+  if (ACTIVE_MODS.length) callHook('bought', c1, use); // (Lua G.FUNCS.buy_from_shop wraps: BETMMA's Double Planet, Cryptozoology, Balatro Mobile)
   return true;
 }
 
@@ -1381,8 +1511,10 @@ function cash_out() {
   G.E_MANAGER.add_event(() => {
     G.GAME.round_eval = null;
     G.GAME.current_round.jokers_purchased = 0;
+    if (ACTIVE_MODS.length) callHook('round_counts', 'before', 'cash_out'); // (BETMMA's Garbage Bag / Handbag)
     G.GAME.current_round.discards_left = Math.max(0, G.GAME.round_resets.discards + G.GAME.round_bonus.discards);
     G.GAME.current_round.hands_left = Math.max(1, G.GAME.round_resets.hands + G.GAME.round_bonus.next_hands);
+    if (ACTIVE_MODS.length) callHook('round_counts', 'after', 'cash_out');
     G.STATE = STATES.SHOP;
     G.GAME.shop_free = null;
     G.GAME.shop_d6ed = null;
@@ -1443,14 +1575,18 @@ export function discard_cards_from_highlighted(hook) {
   for (let i = 0; i < count; i++) {
     const c = hl[i];
     c.calculate_seal({ discard: true });
+    if (ACTIVE_MODS.length) callHook('discard_card', c, { full_hand: hl, hook }); // (BETMMA's Echo Wall)
     let removed = false;
     for (const j of G.jokers.cards.slice()) {
-      const ev = j.calculate_joker({ discard: true, other_card: c, full_hand: hl });
-      if (ev) {
+      const dctx = { discard: true, other_card: c, full_hand: hl };
+      let ev = j.calculate_joker(dctx);
+      for (let t = ev ? joker_retriggers(j, dctx) + 1 : 0; t > 0; t--) {
         if (ev.remove) removed = true;
         card_eval_status_text(j, 'jokers', null, 1, null, ev);
         // Steamodded calculate_effect: a mod joker's discard return pays `dollars` / runs `func`.
         mod_effect_tail(j, ev, { dollars: true });
+        // Steamodded joker retriggers (MoreFluff's Lightning Strikes Thrice: discard effects twice more).
+        if (t > 1) { ev = j.calculate_joker({ ...dctx, retrigger_joker: true }); if (!ev) break; }
       }
     }
     if (removed) {
@@ -1472,6 +1608,7 @@ export function discard_cards_from_highlighted(hook) {
     G.STATE = STATES.DRAW_TO_HAND;
     G.E_MANAGER.add_event(() => { G.STATE_COMPLETE = false; });
   }
+  if (ACTIVE_MODS.length) callHook('discarded', hook); // (BETMMA's Trash Picker)
   return true;
 }
 
@@ -1490,6 +1627,8 @@ export function act(a) {
     can(G.STATE_COMPLETE, 'busy');
     applyAction(a);
     pump();
+    // Mods' per-frame checks (Lua Card:update / Game:update), after every action (BETMMA: Stow / Stash debuffs).
+    if (ACTIVE_MODS.length && hasHook('update')) { callHook('update'); pump(); }
     (G.action_log = G.action_log || []).push(a);
     return { ok: true, events: G.ui_events.slice(before) };
   } catch (e) {
@@ -1513,6 +1652,8 @@ function applyAction(a) {
     case 'skip_blind': {
       can(S === STATES.BLIND_SELECT, 'not choosing a blind');
       can(G.GAME.blind_on_deck !== 'Boss', 'cannot skip the boss');
+      // A mod may forbid skipping (MoreFluff's Superboss hides the skip tags).
+      can(!(ACTIVE_MODS.length && callHook('can_skip_blind').includes(false)), 'cannot skip now');
       skip_blind();
       break;
     }
@@ -1542,13 +1683,17 @@ function applyAction(a) {
     case 'play': {
       can(S === STATES.SELECTING_HAND, 'not selecting a hand');
       // SMODS hand_limit.toml: play_limit (default 5; Pokermon's Aipom lowers it).
-      can(G.hand.highlighted.length > 0 && G.hand.highlighted.length <= Math.max(G.GAME.starting_params.play_limit ?? 5, 1) && !G.GAME.blind.block_play, 'cannot play');
+      const play_lim = ACTIVE_MODS.length ? reduceHook('selection_limit', Math.max(G.GAME.starting_params.play_limit ?? 5, 1), 'play') : Math.max(G.GAME.starting_params.play_limit ?? 5, 1);
+      can(G.hand.highlighted.length > 0 && G.hand.highlighted.length <= play_lim && !G.GAME.blind.block_play, 'cannot play');
+      // Mods acting as Play is pressed (a Lua G.FUNCS.play_cards_from_highlighted wrap); false = no hand after all.
+      if (ACTIVE_MODS.length && callHook('pre_play').includes(false)) break;
       play_cards_from_highlighted();
       break;
     }
     case 'discard': {
       can(S === STATES.SELECTING_HAND, 'not selecting a hand');
-      can(G.GAME.current_round.discards_left > 0 && G.hand.highlighted.length > 0 && G.hand.highlighted.length <= Math.max(G.GAME.starting_params.discard_limit ?? 5, 0), 'cannot discard');
+      const disc_lim = ACTIVE_MODS.length ? reduceHook('selection_limit', Math.max(G.GAME.starting_params.discard_limit ?? 5, 0), 'discard') : Math.max(G.GAME.starting_params.discard_limit ?? 5, 0);
+      can((G.GAME.current_round.discards_left > 0 || (ACTIVE_MODS.length && callHook('can_discard').includes(true))) && G.hand.highlighted.length > 0 && G.hand.highlighted.length <= disc_lim, 'cannot discard');
       discard_cards_from_highlighted();
       break;
     }
@@ -1570,7 +1715,8 @@ function applyAction(a) {
     }
     case 'use': {
       const c = find_card(a.id);
-      can(c && (c.area === G.consumeables || c.area === G.pack_cards), 'cannot use that');
+      // (a consumable may also live in the joker row with mods: BETMMA's Forbidden Area, Balatro Mobile)
+      can(c && (c.area === G.consumeables || c.area === G.pack_cards || (c.area === G.jokers && c.ability.consumeable)), 'cannot use that');
       // Targets are the hand selection the consumable is checked (and used) against.
       if (a.targets) { G.hand.unhighlight_all(); for (const id of a.targets) { const t = find_card(id); if (t && t.area === G.hand) G.hand.add_to_highlighted(t); } }
       // joker_targets: the highlighted joker some mod consumables act on (Pokermon energy /
@@ -1579,7 +1725,7 @@ function applyAction(a) {
       if (c.area === G.pack_cards) {
         can(inPack(), 'no pack open');
         if (c.ability.consumeable) can(c.can_use_consumeable(), 'cannot use now');
-        else can(c.ability.set !== 'Joker' || (c.edition && c.edition.negative) || G.jokers.cards.length < G.jokers.config.card_limit, 'no joker space');
+        else can(c.ability.set !== 'Joker' || (c.edition && c.edition.negative) || G.jokers.cards.length < G.jokers.config.card_limit || (ACTIVE_MODS.length && callHook('buy_space', c).includes(true)), 'no joker space');
       } else {
         can(c.can_use_consumeable(), 'cannot use now');
       }
@@ -1593,11 +1739,13 @@ function applyAction(a) {
       const c = find_card(a.id);
       can(c && c.area === G.pack_cards && c.ability.consumeable, 'cannot save that');
       can(callHook('can_reserve', c).includes(true), 'cannot save that');
-      can(G.consumeables.cards.length < G.consumeables.config.card_limit, 'no consumable space');
+      // (full consumable slots: a mod may take it elsewhere — BETMMA's Forbidden Area, the joker row)
+      const to = G.consumeables.cards.length < G.consumeables.config.card_limit ? G.consumeables : firstHook('reserve_area', c);
+      can(to, 'no consumable space');
       G.E_MANAGER.add_event(() => {
         c.area.remove_card(c);
         c.add_to_deck();
-        G.consumeables.emplace(c);
+        to.emplace(c);
         emit('reserved', { card: c.sort_id });
         G.GAME.pack_choices = G.GAME.pack_choices - 1;
         if (G.GAME.pack_choices <= 0) end_consumeable();
@@ -1617,7 +1765,7 @@ function applyAction(a) {
       const c = find_card(a.id);
       can(c && (c.area === G.shop_jokers || c.area === G.shop_vouchers || c.area === G.shop_booster), 'not for sale');
       can(!(c.cost > G.GAME.dollars - G.GAME.bankrupt_at && c.cost > 0), 'not enough money');
-      if (c.area === G.shop_vouchers) { use_card(c); break; }
+      if (c.area === G.shop_vouchers || c.ability.set === 'Voucher') { use_card(c); break; } // (a voucher in a shop slot: mods' Voucher Tycoon)
       if (c.area === G.shop_booster) { use_card(c); break; }
       if (a.use) can(c.ability.consumeable && c.can_use_consumeable(), 'cannot use now');
       buy_from_shop(c, !!a.use);
@@ -1650,8 +1798,12 @@ function applyAction(a) {
       G.GAME.endless = true;
       break;
     }
-    default:
-      throw new ActionError('unknown action ' + a.type);
+    default: {
+      // Mod actions (BETMMA's Flip, Vanish, the pack Discard, Balatro Mobile's moves): true = done, a string = why not.
+      const r = ACTIVE_MODS.length ? firstHook('action', a, S) : undefined;
+      if (r === undefined) throw new ActionError('unknown action ' + a.type);
+      can(r === true, typeof r === 'string' ? r : 'cannot do that');
+    }
   }
 }
 
@@ -1663,7 +1815,7 @@ export function legal() {
     can_play: S === STATES.SELECTING_HAND && G.hand.highlighted.length > 0 && G.hand.highlighted.length <= 5 && !G.GAME.blind.block_play,
     can_discard: S === STATES.SELECTING_HAND && G.GAME.current_round.discards_left > 0 && G.hand.highlighted.length > 0,
     can_reroll: S === STATES.SHOP && !(G.GAME.dollars - G.GAME.bankrupt_at - G.GAME.current_round.reroll_cost < 0 && G.GAME.current_round.reroll_cost !== 0),
-    can_skip_blind: S === STATES.BLIND_SELECT && G.GAME.blind_on_deck !== 'Boss',
+    can_skip_blind: S === STATES.BLIND_SELECT && G.GAME.blind_on_deck !== 'Boss' && !(ACTIVE_MODS.length && callHook('can_skip_blind').includes(false)),
     can_reroll_boss: S === STATES.BLIND_SELECT && G.GAME.dollars - G.GAME.bankrupt_at - 10 >= 0 && !!(G.GAME.used_vouchers.v_retcon || (G.GAME.used_vouchers.v_directors_cut && !G.GAME.round_resets.boss_rerolled)),
   };
 }

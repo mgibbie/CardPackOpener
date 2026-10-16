@@ -681,10 +681,16 @@ Card.prototype.open = function () {
 };
 
 // --------------------------------------------------------------- Card:redeem
-Card.prototype.redeem = function () {
+Card.prototype.redeem = function (layer) {
   if (this.ability.set === 'Voucher') {
+    // Mods acting as a voucher is redeemed (a Lua Card:redeem wrap; BETMMA's B1G vouchers): what they
+    // return runs once this redeem is done.
+    const after = ACTIVE_MODS.length ? callHook('redeem', this, layer).filter((f) => typeof f === 'function') : null;
     stop_use();
-    if (this.shop_voucher) G.GAME.current_round.voucher = null;
+    // SMODS voucher slots: redeeming clears the round's voucher only for the shop's main voucher (or, as in
+    // vanilla, a Voucher Tag's) — not for an extra voucher slot's card, nor a pack's / a mod's free redeem.
+    const clears_round_voucher = !this.extra_voucher && !!(this.shop_voucher || this.from_tag);
+    if (this.shop_voucher && clears_round_voucher) G.GAME.current_round.voucher = null;
 
     G.GAME.used_vouchers[this.config.center_key] = true;
 
@@ -699,7 +705,7 @@ Card.prototype.redeem = function () {
     inc_career_stat('c_vouchers_bought', 1);
     set_voucher_usage(this);
     check_for_unlock({ type: 'run_redeem' });
-    G.GAME.current_round.voucher = null;
+    if (clears_round_voucher) G.GAME.current_round.voucher = null;
 
     this.apply_to_run();
 
@@ -714,12 +720,15 @@ Card.prototype.redeem = function () {
         }
       });
     }
+    if (after) for (const f of after) f();
   }
 };
 
 // ---------------------------------------------------------- Card:apply_to_run
 /** Card.apply_to_run(self, center) — `self` may be null (backs/tags call it as Card.apply_to_run(nil, center)). */
 function apply_to_run(self, center) {
+  // Mods seeing every voucher applied (a Lua Card:apply_to_run wrap; BETMMA's Collector counts them).
+  if (ACTIVE_MODS.length) callHook('apply_to_run', self, center);
   // Steamodded: a mod voucher's redeem(self, card) replaces the vanilla effects.
   const mod_center = center || (self && self.config.center);
   if (mod_center && mod_center.mod && mod_center.redeem) { mod_center.redeem(mod_center, self); return; }

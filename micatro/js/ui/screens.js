@@ -279,17 +279,33 @@ export function runInfo(view) {
       body.appendChild(row);
       body.appendChild(h('div', 'ri-note', `Ante <b class="attn">${view.ante}</b> / ${view.win_ante || 8} · Round <b class="attn">${view.round}</b> · Seed <b>${esc(view.seed)}</b> · Stake ${view.stake}`));
     } else {
+      // Every redeemed voucher, base and mod, in a list that scrolls once it's long (a run can redeem dozens
+      // with BETMMA's bundles / B1G vouchers — Micatro's take on its Better Vouchers This Run UI).
+      const modV = (k2) => { const m = MODREG.center(k2); return m && m.set === 'Voucher' ? m : null; };
+      const vs = (view.vouchers || []).map((k2) => [k2, CENTERS[k2] || modV(k2)]).filter(([, c]) => c);
       const list = h('div', 'voucher-list');
-      if (!(view.vouchers || []).length) list.appendChild(h('div', 'muted', 'No vouchers redeemed yet.'));
-      for (const k2 of view.vouchers || []) {
-        const c = CENTERS[k2];
-        if (!c) continue;
+      if (!vs.length) list.appendChild(h('div', 'muted', 'No vouchers redeemed yet.'));
+      else body.appendChild(h('div', 'ri-note', `<b class="attn">${vs.length}</b> voucher${vs.length === 1 ? '' : 's'} redeemed`));
+      if (vs.length > 6) { list.style.maxHeight = '58vh'; list.style.overflowY = 'auto'; list.style.overscrollBehavior = 'contain'; list.style.paddingRight = '6px'; }
+      for (const [k2, c] of vs) {
         const it = h('div', 'voucher-item');
-        it.appendChild(cellEl('Voucher', c.pos, 'v-ico'));
-        const d = describeCenterFallback(k2);
-        const cfg = c.config || {};
-        const vals = Object.values(cfg).filter((x) => typeof x === 'number');
-        it.appendChild(h('div', 'v-text', `<div class="nr-name">${esc(d.name)}</div><div class="nr-desc">${(d.lines || []).map((l) => markup(String(l).replace(/#(\d)#/g, (m, i) => (vals[i - 1] != null ? vals[i - 1] : '')))).join('<br>')}</div>`));
+        let d, vals;
+        if (c.mod) {
+          const cv = document.createElement('canvas'); cv.width = FACE_W; cv.height = FACE_H; cv.className = 'v-ico';
+          const draw = () => { const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, FACE_W, FACE_H); return drawModCell(ctx, c.atlas, c.pos, 0, 0, FACE_W, FACE_H); };
+          if (!draw()) { const off = onModAtlas((name) => { if (name === c.atlas) { draw(); off(); } }); }
+          it.appendChild(cv);
+          const mod = MODREG.mods[c.mod];
+          const ml = mod && mod.content && mod.content.loc && mod.content.loc.descriptions;
+          const md = ml && ml.Voucher && ml.Voucher[k2];
+          d = { name: (md && md.name) || c.name || k2, lines: (md && md.text) || [] };
+          try { vals = (c.loc_vars && (c.loc_vars(c, [], { ability: JSON.parse(JSON.stringify(c.config || {})), config: { center: c }, fake: true }) || {}).vars) || []; } catch (e) { vals = []; }
+        } else {
+          it.appendChild(cellEl('Voucher', c.pos, 'v-ico'));
+          d = describeCenterFallback(k2);
+          vals = Object.values(c.config || {}).filter((x) => typeof x === 'number');
+        }
+        it.appendChild(h('div', 'v-text', `<div class="nr-name">${esc(d.name)}</div><div class="nr-desc">${(d.lines || []).map((l) => markup(String(l).replace(/#(\d+)#/g, (m, i) => (vals[i - 1] != null ? (typeof vals[i - 1] === 'number' ? fmt(vals[i - 1]) : String(vals[i - 1])) : '')))).join('<br>')}</div>`));
         list.appendChild(it);
       }
       body.appendChild(list);

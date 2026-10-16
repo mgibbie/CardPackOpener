@@ -336,7 +336,9 @@ export class CardArea {
       if (this.highlighted.length >= this.config.highlighted_limit) this.remove_from_highlighted(this.highlighted[0]);
       this.highlighted.push(card); card.highlighted = true;
     } else {
-      if (this.highlighted.length >= this.config.highlighted_limit) card.highlighted = false;
+      // Mods may change how many cards this area lets you select (BETMMA's Slate: Stone Cards don't count).
+      const limit = ACTIVE_MODS.length ? reduceHook('highlight_limit', this.config.highlighted_limit, this, card) : this.config.highlighted_limit;
+      if (this.highlighted.length >= limit) card.highlighted = false;
       else { this.highlighted.push(card); card.highlighted = true; }
     }
   }
@@ -493,6 +495,8 @@ export class Card {
       for (const [k, v] of Object.entries(P_CENTERS)) if (v.name === this.ability.name) G.GAME.used_jokers[k] = true;
     }
     if (center.set_ability) center.set_ability(center, this, initial, delay_sprites);
+    // Mods acting on any set_ability (a Lua Card:set_ability wrap; BETMMA's Chaos / Real Random).
+    if (smods) callHook('set_ability', this, center, old_center, initial);
     if (was_added_to_deck && !this.debuff) this.add_to_deck();
     if (!initial && G.GAME.blind) G.GAME.blind.debuff_card(this);
     if (!initial) emit('card_changed', { card: this.sort_id });
@@ -781,6 +785,16 @@ export class Card {
   calculate_seal(context) {
     if (this.debuff) return undefined;
     if (context.repetition && this.seal === 'Red') return { message: localize('k_again_ex'), repetitions: 1, card: this };
+    // Mods may retrigger the seal (MoreFluff's retrigger_seal_ctx: Lightning Strikes Thrice on a Purple
+    // Seal's discard): the hook returns [{card, ret: {repetitions, message}}] per retriggering joker.
+    if (ACTIVE_MODS.length && !context.retriggered) {
+      context.retriggered = true;
+      for (const list of callHook('seal_retriggers', this, context)) {
+        for (const { card, ret } of list) {
+          for (let i = 0; i < (ret.repetitions || 0); i++) { card_eval_status_text(card, 'jokers', null, null, null, ret); this.calculate_seal(context); }
+        }
+      }
+    }
     if (context.discard && this.seal === 'Purple' && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
       G.GAME.consumeable_buffer += 1;
       G.E_MANAGER.add_event(() => {
@@ -793,6 +807,7 @@ export class Card {
     }
   }
   calculate_rental() {
+    if (ACTIVE_MODS.length && callHook('calculate_rental', this).includes(false)) return; // (BETMMA's Debt Burden)
     if (this.ability.rental) { ease_dollars(-G.GAME.rental_rate); card_eval_status_text(this, 'dollars', -G.GAME.rental_rate); }
   }
   calculate_perishable() {
@@ -821,10 +836,12 @@ export class Card {
   can_sell_card() {
     if ((G.play && G.play.cards.length > 0) || (G.GAME.STOP_USE && G.GAME.STOP_USE > 0)) return false;
     return !!(this.area && this.area.config.type === 'joker' && !this.ability.eternal) ||
-      !!(this.area && this.area.config.type === 'consumeable');
+      // (Lua: the consumable area is a 'joker' type area too, so an Eternal consumable — mods only — can't be sold)
+      !!(this.area && this.area.config.type === 'consumeable' && !this.ability.eternal);
   }
   /** Card:sell_card — synchronous; sell price paid via the queue like Lua. */
   sell_card() {
+    if (ACTIVE_MODS.length) callHook('sell_card', this);
     this.calculate_joker({ selling_self: true });
     G.E_MANAGER.add_event(() => {
       play_sound('coin2');
@@ -855,8 +872,15 @@ export class Card {
       }
     }
   }
-  start_dissolve() { emit('dissolve', { card: this.sort_id }); this.remove(); }
-  shatter() { emit('shatter', { card: this.sort_id }); play_sound('glass1'); this.remove(); }
+  start_dissolve() {
+    if (ACTIVE_MODS.length) callHook('start_dissolve', this);
+    emit('dissolve', { card: this.sort_id }); this.remove();
+  }
+  shatter() {
+    // A mod may keep a breaking card in play (BETMMA's Bulletproof Glass Cards).
+    if (ACTIVE_MODS.length && callHook('shatter', this).includes(true)) return;
+    emit('shatter', { card: this.sort_id }); play_sound('glass1'); this.remove();
+  }
   juice_up() { juice_card(this); }
   /** Card:remove — take the card out of its area, the deck list, and the joker slots. */
   remove() {
@@ -883,6 +907,18 @@ export class Card {
   //   use_consumeable / can_use_consumeable / open / redeem / apply_to_run -> consumables.js
 }
 
+/**
+ * Mods may adjust what a card scores (a Lua Card:get_chip_bonus / get_chip_mult / get_chip_x_mult /
+ * get_p_dollars wrap; BETMMA's Real Random and over-retriggered cards): reduceHook(name, value, card).
+ */
+for (const [m, h] of [['get_chip_bonus', 'chip_bonus'], ['get_chip_mult', 'chip_mult'], ['get_chip_x_mult', 'chip_x_mult'], ['get_p_dollars', 'p_dollars']]) {
+  const base = Card.prototype[m];
+  Card.prototype[m] = function (...args) {
+    const r = base.apply(this, args);
+    return ACTIVE_MODS.length ? reduceHook(h, r, this) : r;
+  };
+}
+
 // ------------------------------------------------------------ common_events
 export function all_cards() {
   const out = [];
@@ -899,6 +935,13 @@ export function find_joker(name, non_debuff) {
   return found;
 }
 export function ease_dollars(mod, instant) {
+  // Mods may change the amount (BETMMA's Gold Round Up) and react to it (Piggy Bank), like Lua wraps.
+  const orig = mod;
+  if (ACTIVE_MODS.length) mod = reduceHook('ease_dollars', mod, instant);
+  queue_ease_dollars(mod, instant);
+  if (ACTIVE_MODS.length) callHook('dollars_eased', orig, instant);
+}
+function queue_ease_dollars(mod, instant) {
   const _mod = () => {
     mod = mod || 0;
     G.GAME.dollars += mod;
@@ -933,6 +976,7 @@ export function ease_hands_played(mod, instant) {
   if (instant) _mod(); else G.E_MANAGER.add_event(_mod);
 }
 export function ease_ante(mod) {
+  if (ACTIVE_MODS.length) callHook('ease_ante', mod);
   G.E_MANAGER.add_event(() => {
     G.GAME.round_resets.ante += mod || 0;
     G.GAME.stats.furthest_ante = Math.max(G.GAME.stats.furthest_ante || 0, G.GAME.round_resets.ante);
@@ -990,6 +1034,7 @@ export function level_up_hand(card, hand, instant, amount) {
   h.mult = Math.max(h.s_mult + h.l_mult * (h.level - 1), 1);
   h.chips = Math.max(h.s_chips + h.l_chips * (h.level - 1), 0);
   emit('level_up', { hand, level: h.level, chips: h.chips, mult: h.mult, card: card && card.sort_id, instant: !!instant });
+  if (ACTIVE_MODS.length) callHook('hand_leveled', card, hand, amount);
 }
 
 /**
@@ -1016,6 +1061,9 @@ function merge_mod_card_effect(ret, ms, held) {
     const c = held ? (r.h_chips ?? r.chips) : r.chips;
     if (c) ret[held ? 'h_chips' : 'chips'] = (ret[held ? 'h_chips' : 'chips'] || 0) + c;
     if (r.dollars) ret.dollars = (ret.dollars || 0) + r.dollars;
+    // SMODS x_chips (MoreFluff's Teal Card: X1.5 Chips while held).
+    const xc = r.x_chips ?? r.xchips ?? r.Xchip_mod;
+    if (xc !== undefined && xc !== 1) ret.x_chips = ret.x_chips ? ret.x_chips * xc : xc;
   }
 }
 
@@ -1027,6 +1075,15 @@ export function eval_card(card, context) {
     if (seals) ret.seals = seals;
     const ms = ACTIVE_MODS.length ? mod_card_calculate(card, context) : undefined;
     if (!ret.seals && ms && ms.seal && ms.seal.repetitions) ret.seals = ms.seal;
+    // A mod ENHANCEMENT's repetitions add to the seal's (MoreFluff's Brass Card: 2 more).
+    const er = ms && ms.enhancement && ms.enhancement.repetitions;
+    if (er) ret.seals = ret.seals ? { ...ret.seals, repetitions: (ret.seals.repetitions || 0) + er } : ms.enhancement;
+    // A mod's own-card retriggers add up the same way (BETMMA's Omnicard Wild Cards, Mirror's queued ones).
+    if (ACTIVE_MODS.length) {
+      for (const r of callHook('card_repetitions', card, context)) {
+        for (const x of [].concat(r)) if (x && x.repetitions) ret.seals = ret.seals ? { ...ret.seals, repetitions: (ret.seals.repetitions || 0) + x.repetitions } : x;
+      }
+    }
     return ret;
   }
   if (context.cardarea === G.play) {
@@ -1064,6 +1121,10 @@ export function eval_card(card, context) {
       }
     }
   }
+  // Mods acting on a played / held card's main scoring (lovely "main scoring on played/held cards"
+  // targets; BETMMA's Mirror, Real Random, Echo Chamber) — they may add to ret.
+  if (ACTIVE_MODS.length && (context.cardarea === G.play || context.cardarea === G.hand) && !context.repetition &&
+      (card.ability.set === 'Default' || card.ability.set === 'Enhanced')) callHook('eval_card', card, context, ret);
   if (context.cardarea === G.jokers || context.card === G.consumeables) {
     let jokers;
     if (context.edition) jokers = card.get_edition(context);
@@ -1349,6 +1410,7 @@ export function reset_blinds() {
     rr.blind_states.Small = 'Upcoming'; rr.blind_states.Big = 'Upcoming'; rr.blind_states.Boss = 'Upcoming';
     G.GAME.blind_on_deck = 'Small';
     rr.blind_choices.Boss = get_new_boss();
+    if (ACTIVE_MODS.length) callHook('new_boss_choice'); // (MoreFluff's Superboss re-picks Small/Big/Boss)
     rr.boss_rerolled = false;
   }
 }
@@ -1385,6 +1447,8 @@ export function get_new_boss() {
   return boss;
 }
 export function get_next_voucher_key(_from_tag) {
+  // A mod may pick the voucher itself (BETMMA: voucher rarity + weighted fusions, voucher packs' pools).
+  if (ACTIVE_MODS.length) { const k = firstHook('next_voucher_key', _from_tag); if (k !== undefined) return k; }
   let [_pool, _pool_key] = get_current_pool('Voucher');
   if (_from_tag) _pool_key = 'Voucher_fromtag';
   let [center] = pseudorandom_element(_pool, pseudoseed(_pool_key));
@@ -1420,17 +1484,40 @@ export function get_pack(_key, _type) {
 }
 
 export function get_blind_amount(ante) {
+  const amount = base_blind_amount(ante);
+  // Mods may change every blind's requirement (BETMMA's Collector: -4% per voucher redeemed).
+  return ACTIVE_MODS.length ? reduceHook('blind_amount', amount, ante) : amount;
+}
+function base_blind_amount(ante) {
   const k = 0.75;
   const tables = {
     1: [300, 800, 2000, 5000, 11000, 20000, 35000, 50000],
     2: [300, 900, 2600, 8000, 20000, 36000, 60000, 100000],
     3: [300, 1000, 3200, 9000, 25000, 60000, 110000, 200000],
   };
+  // Steamodded (stake.toml): any other scaling (MoreFluff's Superboss: +3) uses SMODS.get_blind_amount.
+  const sc = G.GAME.modifiers.scaling;
+  if (sc && !tables[sc]) return smods_blind_amount(ante, sc);
   const amounts = tables[G.GAME.modifiers.scaling || 1] || tables[1];
   if (ante < 1) return 100;
   if (ante <= 8) return amounts[ante - 1];
   const a = amounts[7], b = 1.6, c = ante - 8, d = 1 + 0.2 * (ante - 8);
   let amount = Math.floor(a * Math.pow(b + Math.pow(k * c, d), c));
+  if (!isFinite(amount)) return amount;
+  amount = amount - amount % Math.pow(10, Math.floor(Math.log10(amount) - 1));
+  return amount;
+}
+/** SMODS.get_blind_amount(ante) (src/utils.lua) for a scaling outside 1..3. */
+function smods_blind_amount(ante, scale) {
+  const amounts = [
+    300, 700 + 100 * scale, 1400 + 600 * scale, 2100 + 2900 * scale, 15000 + 5000 * scale * Math.log(scale),
+    12000 + 8000 * (scale + 1) * (0.4 * scale), 10000 + 25000 * (scale + 1) * Math.pow(scale / 4, 2),
+    50000 * Math.pow(scale + 1, 2) * Math.pow(scale / 7, 2),
+  ];
+  if (ante < 1) return 100;
+  if (ante <= 8) { const v = amounts[ante - 1]; return v - v % Math.pow(10, Math.floor(Math.log10(v) - 1)); }
+  const a = amounts[7], b = amounts[7] / amounts[6], c = ante - 8, d = 1 + 0.2 * (ante - 8);
+  let amount = Math.floor(a * Math.pow(b + Math.pow(b * 0.75 * c, d), c));
   if (!isFinite(amount)) return amount;
   amount = amount - amount % Math.pow(10, Math.floor(Math.log10(amount) - 1));
   return amount;
@@ -1446,8 +1533,11 @@ export function number_format(num) {
   return Math.floor(num).toLocaleString('en-US');
 }
 
-export function mod_chips(c) { return G.GAME.modifiers.chips_dollar_cap ? Math.min(c, Math.max(G.GAME.dollars, 0)) : c; }
-export function mod_mult(m) { return m; }
+export function mod_chips(c) {
+  if (ACTIVE_MODS.length) c = reduceHook('mod_chips', c); // (BETMMA's Round Up; before the vanilla cap, like the Lua wrap)
+  return G.GAME.modifiers.chips_dollar_cap ? Math.min(c, Math.max(G.GAME.dollars, 0)) : c;
+}
+export function mod_mult(m) { return ACTIVE_MODS.length ? reduceHook('mod_mult', m) : m; }
 
 export function check_for_unlock() { /* achievements are out of scope */ }
 export function inc_career_stat() {}

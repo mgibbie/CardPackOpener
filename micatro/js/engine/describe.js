@@ -534,7 +534,7 @@ export function describeBlind(blindKey) {
   lines = lines.filter((l) => l !== '');
   const ante = G.GAME.round_resets.blind_ante || G.GAME.round_resets.ante;
   const chips = live ? live.chips : get_blind_amount(ante) * proto.mult * G.GAME.starting_params.ante_scaling;
-  let type = proto.name === 'Small Blind' ? 'Small' : proto.name === 'Big Blind' ? 'Big' : 'Boss';
+  let type = proto.blind_type || (proto.name === 'Small Blind' ? 'Small' : proto.name === 'Big Blind' ? 'Big' : 'Boss');
   let dollars = live ? live.dollars : proto.dollars;
   if (!live && G.GAME.modifiers.no_blind_reward && G.GAME.modifiers.no_blind_reward[type]) dollars = 0;
   const out = {
@@ -565,6 +565,9 @@ export function describeTag(tag) {
     const placeholder = '[' + loc('k_poker_hand') + ']';
     loc_vars = [tag.ability.orbital_hand === placeholder ? tag.ability.orbital_hand : loc(tag.ability.orbital_hand, 'poker_hands'), cfg.levels];
   } else if (n === 'Economy Tag') loc_vars = [cfg.max];
+  // A mod tag's own loc_vars(self, info_queue, tag) -> {vars} (MoreFluff's Clutch Tag: X#1# Mult).
+  const mt = P_TAGS[tag.key];
+  if (mt && mt.mod && mt.loc_vars) { try { loc_vars = ((mt.loc_vars(mt, [], tag) || {}).vars) || []; } catch (e) { /* cosmetic */ } }
   const ui = generate_card_ui(P_TAGS[tag.key], loc_vars, 'Tag');
   return { name: ui.name, key: tag.key, set: 'Tag', lines: ui.lines, info: ui.info, id: tag.ID };
 }
@@ -599,6 +602,7 @@ export function describeBack(key) {
  * comes from the mod's localization (MOD_LOC, merged at registration), and
  * `set_badges(center, card, badges)` may add badges (e.g. Pokémon types).
  */
+let _info_depth = 0;
 function describe_mod(card, center) {
   const info_queue = [];
   let r = {};
@@ -610,6 +614,14 @@ function describe_mod(card, center) {
   const info = [];
   for (const q of info_queue) {
     const k = typeof q === 'string' ? q : q.key;
+    // A center pushed without its own vars (Steamodded: G.P_CENTERS.m_mf_yucky / G.P_CENTERS.m_steel) is described
+    // like the collection shows it — its own loc_vars / config fill the #n# (not just config.extra).
+    if (P_CENTERS[k] && !(typeof q === 'object' && q.vars) && P_CENTERS[k].set !== 'Other' && _info_depth < 2) {
+      _info_depth++;
+      let sub;
+      try { sub = describeCenter(k); } finally { _info_depth--; }
+      if (sub) { info.push({ key: k, name: sub.name, lines: sub.lines }); continue; }
+    }
     const qset = (typeof q === 'object' && q.set) || (P_CENTERS[k] ? P_CENTERS[k].set : 'Other');
     const qd = desc(qset, k) || desc('Other', k);
     if (qd) info.push({ key: k, name: qd.name, lines: fill(qd.text, (typeof q === 'object' && q.vars) || (q.config && q.config.extra) || []) });

@@ -4,6 +4,10 @@
 //    dissolve_mask — run on ONE shared offscreen canvas that renders a card's
 //    composed face; the card sprite then copies the result with drawImage.
 // Everything degrades gracefully: no WebGL -> CSS gradient + plain cards.
+// Mod editions may bring their own pass: the edition center's `shader_fs` (a main() over the shared
+// prelude below — tex0, time, fx, texture_details, HSL/RGB, dissolve_mask), compiled on first use;
+// it replaces the card's plain pass (BETMMA's Phantom / Tentacle).
+import { MODREG } from './assets.js';
 
 const VS = `attribute vec2 p; varying vec2 vUv; void main(){ vUv = vec2(p.x*0.5+0.5, 0.5-p.y*0.5); gl_Position = vec4(p,0.,1.); }`;
 
@@ -329,6 +333,18 @@ export class CardFX {
     }
     return rec.t;
   }
+  /** A mod edition's own pass ('mod:<type>'), compiled from its center's shader_fs; null = none / failed. */
+  modPass(ed) {
+    const k = 'mod:' + ed;
+    if (!(k in this.progs)) {
+      const c = MODREG.center('e_' + ed);
+      this.progs[k] = null;
+      if (c && c.shader_fs) {
+        try { this.progs[k] = compile(this.gl, VS, PRE + c.shader_fs); } catch (e) { console.warn('micatro: mod edition shader failed: ' + ed, e); }
+      }
+    }
+    return this.progs[k] ? k : null;
+  }
   /**
    * Render `src` (a composed card face canvas, w×h) through Balatro's edition
    * passes into `dst` (2D canvas same size). opts: {edition, debuff, dissolve, t, fx}
@@ -353,7 +369,7 @@ export class CardFX {
     else if (ed === 'polychrome') passes.push('polychrome');
     else if (ed === 'negative') passes.push('negative', 'negative_shine');
     else if (ed === 'foil') passes.push('plain', 'foil');
-    else passes.push('plain');
+    else passes.push((ed && this.modPass(ed)) || 'plain');
     if (opts.debuff) passes.push('debuff');
     for (const k of passes) {
       const { p, u } = this.progs[k];

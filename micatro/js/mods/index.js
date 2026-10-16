@@ -70,6 +70,16 @@ export const AVAILABLE = [
     description: 'A deck with extra joker slots and extra Negative jokers.',
     load: () => import('../../mods/omertadeck/index.js'),
   },
+  {
+    id: 'morefluff', name: 'More Fluff', size: '~3 MB art + music', by: 'notmario & contributors (rebuilt for Micatro)', requires: [],
+    description: '83 jokers, Colour cards that charge up over rounds, Rotarot cards, new enhancements and decks, and DX Superboss blinds for after you win.',
+    load: () => import('../../mods/morefluff/index.js'),
+  },
+  {
+    id: 'betmma', name: 'Betmma Vouchers', size: '~1 MB art', by: 'Betmma (rebuilt for Micatro)', requires: [],
+    description: '58 new vouchers and 24 fusion vouchers (with voucher rarities), voucher packs, 11 jokers, 2 editions and 5 challenges.',
+    load: () => import('../../mods/betmma/index.js'),
+  },
 ];
 
 /** Load (register) the given mods and everything they require. */
