@@ -143,8 +143,8 @@ for (const [id, min] of [['urshifu', 75], ['calyrex', 75], ['morpeko', 40], ['gr
 
 // ---------- your own mon faces AWAY ----------
 // The front-facing pictures the Gen-9 species (#906-#1010) used to have as their
-// "-b" sprite (sha1, first 12 hex). #1011-#1025 have no back art in either pack:
-// they still show a front-facing picture (a documented gap; not icon-sized).
+// "-b" sprite (sha1, first 12 hex), and the front-facing pictures #1011-#1025 had
+// (no back art in either pack; real backs from PokeAPI via tools/gen_dlc_backs.py).
 const FRONT_FACING = new Set([
 	'442edd152154', 'd097a876693b', '96b441f472fd', '885cbf5d5940', '358cd4ba7089', '414fe42eea91', 'feb62acb1eae', '270c23f0778f',
 	'ceebb4cbc5e3', 'b75f0f4b18d4', '63415b8d9cab', '980297d4392c', '441ea016ef39', 'c87e6d3843d6', 'e183598c4c49', 'f35807bd1f9d',
@@ -160,13 +160,18 @@ const FRONT_FACING = new Set([
 	'f9cfcf448ebc', 'dd99eb14b544', 'f7efb3014f6a', '90eb07b6edff', 'bf616f3478e0', '48bf33be50f3', 'dffee20eb0aa', 'c2282242f3ea',
 	'07ffa4b3634e', 'a9e328cdde48', 'da7c29457bc1', 'eda596fc2eb4', 'b86538f6b685', '1f6bf826f519', 'faef346bb9a7', '1b0d85b89acd',
 	'da99605ccaf0',
+	// #1011 Dipplin .. #1025 Pecharunt
+	'b00a3ba88cf5', '46b9af051e1e', '39762f33c13e', '7416382756eb', 'af66397a04cd', '63f1636bc247', '9b68a348c15d', '73b344a954ac',
+	'af0ea3288baa', '00540759b239', 'eb8b7a04715a', 'a44e93dbfa11', '8b6de5e39c59', 'b9362c15dd6e', '30fea59dd15b',
 ]);
-const NO_BACK_ART = ['dipplin', 'poltchageist', 'sinistcha', 'okidogi', 'munkidori', 'fezandipiti', 'ogerpon', 'archaludon',
-	'hydrapple', 'gougingfire', 'ragingbolt', 'ironboulder', 'ironcrown', 'terapagos', 'pecharunt'];
 const sha = f => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 12);
 const facing = have.filter(id => FRONT_FACING.has(sha(P(backOf(bat[id].sprite)))));
 A(facing.length === 0, 'no back sprite is one of the old front-facing Gen-9 pictures', `${facing.length}: ${facing.slice(0, 12).join(',')}`);
-A(NO_BACK_ART.every(id => bat[id].num >= 1011), 'the no-back-art gap is only the #1011+ DLC species');
+// and no back is simply its own front (or the front mirrored) — every species faces away
+const mirrorOf = (id) => sha(P(bat[id].sprite)) === sha(P(backOf(bat[id].sprite)));
+const selfFront = have.filter(mirrorOf);
+A(selfFront.length === 0, 'no species uses its own front as its back sprite', selfFront.slice(0, 12).join(','));
+A(['dipplin', 'okidogi', 'ogerpon', 'terapagos', 'pecharunt'].every(id => have.includes(id) && !FRONT_FACING.has(sha(P(backOf(bat[id].sprite))))), 'the #1011+ DLC species have real back sprites');
 
 // ---------- battle tuning crops measured on each species' OWN current files ----------
 const tun = rd(path.join(ROOT, 'overworld/sprite_tuning.json'));
