@@ -64,7 +64,8 @@ const bat = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_b
 
 		// ---------- battles: (your mon, the wild foe) ----------
 		const fights = [['grookey', 'urshifu', 'base_sprites_battle_urshifu.png'], ['sprigatito', 'morpeko', 'base_sprites_battle_morpeko.png'],
-			['scorbunny', 'calyrex', 'base_sprites_battle_calyrex.png']];
+			['scorbunny', 'calyrex', 'base_sprites_battle_calyrex.png'],
+			['okidogi', 'ogerpon', 'base_sprites_battle_okidogi.png']]; // a #1011+ DLC species as your mon: its real back
 		for (const [mine, foe, shot] of fights) {
 			const bt = await page.evaluate(async (mine, foe, files) => {
 				const ow = window.__ow, B = ow.battle, Bmod = await import('/overworld/battle.js');
