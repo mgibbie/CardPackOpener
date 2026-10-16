@@ -90,6 +90,60 @@ export const HOOKS = [
   'edition_nil',        // (card) Card:set_edition was called with nil (Lua `edition == nil`; copy_card passes {})
   'wheel_failed',       // (used_tarot) The Wheel of Fortune said "Nope!"
   'booster_loc_vars',   // (vars, center) -> [choose, size] shown in a booster's description
+  'blind_slot',         // (blind) -> 'Small' | 'Big' | 'Boss': the slot this blind fills (only Boss wins / ends the ante)
+  'new_boss_choice',    // () the ante's Boss choice was just (re)rolled (newRun, reset_blinds, reroll_boss)
+  'end_round_start',    // () end_round() was called (before its queued end-of-round work)
+  'draw_hand_space',    // (n, e) -> n cards to draw to hand (before The Serpent)
+  'modify_scoring',     // ([chips, mult], step, ctx) -> [chips, mult]; step 'before_cards' | 'final_scoring_step'
+  'seal_retriggers',    // (card, context) -> [{card, ret: {repetitions, message}}] extra Card:calculate_seal runs
+  'voucher_add',        // (phase) shop stocked: 'before_tags' / 'after_tags' the Voucher Tag's voucher_add
+  'buy_space',          // (card) -> true: this card fits even with full slots (shop buy / pack pick)
+  'can_skip_blind',     // () -> false: the blind on deck can't be skipped now
+  // ---- BETMMA (vouchers that bend base rules; each is a Lua wrap in the mod)
+  'next_voucher_key',   // (from_tag) -> a voucher key: replaces get_next_voucher_key's pick (undefined = no opinion)
+  'apply_to_run',       // (self, center) Card:apply_to_run is about to apply a voucher (any voucher, before its effect)
+  'redeem',             // (card, layer) Card:redeem is starting -> a function to run after it (or undefined)
+  'set_ability',        // (card, center, old_center, initial) Card:set_ability ran (after the center's own set_ability)
+  'chip_bonus',         // (ret, card) -> Card:get_chip_bonus's value
+  'chip_mult',          // (ret, card) -> Card:get_chip_mult's value
+  'chip_x_mult',        // (ret, card) -> Card:get_chip_x_mult's value
+  'p_dollars',          // (ret, card) -> Card:get_p_dollars's value
+  'card_repetitions',   // (card, context) -> [{message, repetitions, card}] the card's own extra retriggers (like a Red Seal)
+  'eval_card',          // (card, context, ret) eval_card scored a played (G.play) / held (G.hand) card; may add to ret
+  'evaluate_poker_hand',// (results, hand) evaluate_poker_hand's result table, before it's returned (edit in place)
+  'played_cards_scored',// () the played cards have scored, before the held-in-hand effects
+  'draw_from_play_to_discard', // () played cards are about to go to the discard (the rest go in a following event)
+  'calculate_rental',   // (card) -> false: no rental payment this time
+  'start_dissolve',     // (card) Card:start_dissolve is destroying this card (not called for sold cards)
+  'shatter',            // (card) -> true: Card:shatter leaves the card in play (it didn't break)
+  'sell_card',          // (card) Card:sell_card is starting
+  'ease_dollars',       // (mod, instant) -> mod: the amount ease_dollars will apply
+  'dollars_eased',      // (mod, instant) ease_dollars(mod) was called (the original amount; its event may be queued)
+  'ease_ante',          // (mod) ease_ante was called
+  'hand_leveled',       // (card, hand, amount) level_up_hand leveled a hand
+  'blind_amount',       // (amount, ante) -> get_blind_amount's value
+  'mod_chips',          // (chips) -> chips (mod_chips, before the vanilla cap)
+  'mod_mult',           // (mult) -> mult (mod_mult)
+  'highlight_limit',    // (limit, area, card) -> how many cards may be selected in this hand-type area
+  'selection_limit',    // (n, kind) -> how many selected cards may be played / discarded ('play' | 'discard')
+  'can_discard',        // () -> true: a discard is allowed with no discards left
+  'discard_card',       // (card, ctx) a card is being discarded (after its seal, before the jokers)
+  'discarded',          // (hook) discard_cards_from_highlighted finished (hook = a forced discard)
+  'pre_play',           // () the player pressed Play (before the cards move) -> false: don't play after all
+  'round_counts',       // (when, where) 'before'/'after' the round's hands & discards are reset; where 'new_round'|'cash_out'
+  'evaluate_round_pre', // () evaluate_round is starting -> a function that undoes the changes afterwards
+  'shop_card_types',    // () -> [{type, val}] extra card types (and rates) a shop slot can roll
+  'shop_stocked',       // () a new shop was stocked (after the shop_final_pass tags)
+  'skip_blind',         // ('before' | 'after') skipping a blind
+  'reroll_boss',        // (from_tag) the boss was rerolled
+  'reroll_shop',        // () the shop was rerolled
+  'buy_area',           // (card) -> the area a bought consumable goes to (default G.consumeables)
+  'bought',             // (card, use) a shop card was bought (its move into place may still be queued)
+  'use_card',           // (card) G.FUNCS.use_card is starting
+  'used_consumeable',   // (card, area, copier) a consumable's use_consumeable ran (inside use_card)
+  'reserve_area',       // (card) -> an area a reserved pack card goes to when the consumable slots are full
+  'action',             // (a) -> true (done) / an error string, for mod action types the engine doesn't know
+  'update',             // () after every action (Lua Card:update / Game:update per-frame checks)
 ];
 
 /**
@@ -98,6 +152,12 @@ export const HOOKS = [
  * reads it — the owning mod's rules do — so this table is for badges and art only.
  */
 export const STICKERS = {};
+/**
+ * Mod sounds (Steamodded SMODS.Sound): full key ('mf_gun') -> {src, mod, music?}. The engine plays
+ * them by key through play_sound like the base set; the UI resolves the key here (ui/sound.js). A run
+ * picks a mod music track through its view (`view.music`, set by a mod's `view` hook).
+ */
+export const SOUNDS = {};
 
 export function registerMod(mod) {
   if (!mod || !mod.id) throw new Error('registerMod: missing id');
@@ -131,6 +191,7 @@ export function registerMod(mod) {
   }
   for (const r of C.rarities || []) { own(r); RARITIES[r.key] = r; }
   for (const s of C.stickers || []) { own(s); STICKERS[s.key] = s; }
+  for (const [key, snd] of Object.entries(C.sounds || {})) SOUNDS[key] = { ...snd, mod: mod.id };
   for (const [name, a] of Object.entries(C.atlases || {})) ATLASES[name] = { ...a, mod: mod.id };
   if (C.loc) {
     for (const [set, entries] of Object.entries(C.loc.descriptions || {})) {
@@ -187,6 +248,9 @@ export function activateMods(ids, options = {}) {
     for (const [k, o] of Object.entries(m.options)) defaults[k] = o.default;
     modOptions[id] = { ...defaults, ...(options[id] || {}) };
   }
+  // A registered mod may undo run-wide changes to shared tables at every new run, on or off
+  // (`reset_run`; BETMMA's Bonus+ / Mult+ / Slate raise the shared enhancement values like the Lua).
+  for (const m of Object.values(MODS)) if (typeof m.reset_run === 'function') m.reset_run();
   rebuildPools(centerActive);
   return ACTIVE;
 }

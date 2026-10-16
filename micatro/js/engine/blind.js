@@ -186,6 +186,8 @@ export class Blind {
   get_type() {
     if (this.name === 'Small Blind') return 'Small';
     if (this.name === 'Big Blind') return 'Big';
+    // A mod blind may name its type (MoreFluff's Bigger Blind is a 'Small' blind).
+    if (this.name && this.config.blind && this.config.blind.blind_type) return this.config.blind.blind_type;
     if (this.name && this.name !== '') return 'Boss';
     return undefined;
   }

@@ -1,6 +1,7 @@
 // Sounds: Balatro's .ogg set, lazily decoded through WebAudio. Nothing plays
 // until the first user gesture (autoplay rules); SFX + music toggles persist.
 import { assetUrl } from './assets.js';
+import { SOUNDS } from '../mods/registry.js'; // mod sounds by full key ('mf_gun' -> {src, music?})
 
 const KEY_SFX = 'micatro_sfx', KEY_MUSIC = 'micatro_music';
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v === '1'; } catch (e) { return d; } };
@@ -37,7 +38,7 @@ class Sound {
   }
   load(name) {
     if (!this.ctx || this.buffers[name] || this.loading[name]) return this.loading[name];
-    this.loading[name] = fetch(assetUrl('sounds/' + name + '.ogg')).then((r) => r.arrayBuffer())
+    this.loading[name] = fetch(SOUNDS[name] ? SOUNDS[name].src : assetUrl('sounds/' + name + '.ogg')).then((r) => r.arrayBuffer())
       .then((b) => new Promise((res, rej) => this.ctx.decodeAudioData(b, res, rej)))
       .then((buf) => { this.buffers[name] = buf; return buf; }).catch(() => null);
     return this.loading[name];
@@ -45,7 +46,7 @@ class Sound {
   /** play(name, pitch=1, vol=1) — name may be a Balatro sound id. */
   play(name, pitch = 1, vol = 1) {
     if (!this.sfx || !this.ctx || !name) return;
-    if (!KNOWN.has(name)) { const m = /^(crumple|coin|glass|whoosh)$/.exec(name); if (m) name = name + '1'; else return; }
+    if (!KNOWN.has(name) && !SOUNDS[name]) { const m = /^(crumple|coin|glass|whoosh)$/.exec(name); if (m) name = name + '1'; else return; }
     const now = performance.now();
     if (now - (this.lastAt[name] || 0) < 35) return; // de-dupe bursts
     this.lastAt[name] = now;
@@ -60,11 +61,21 @@ class Sound {
   }
   startMusic() {
     if (!this.unlocked) return;
+    const src = this.track && SOUNDS[this.track] ? SOUNDS[this.track].src : assetUrl('sounds/music1.ogg');
+    if (this.musicEl && this.musicEl.dataset.src !== src) { this.musicEl.pause(); this.musicEl = null; }
     if (!this.musicEl) {
-      this.musicEl = new Audio(assetUrl('sounds/music1.ogg'));
+      this.musicEl = new Audio(src);
+      this.musicEl.dataset.src = src;
       this.musicEl.loop = true; this.musicEl.volume = 0.32;
     }
     this.musicEl.play().catch(() => {});
+  }
+  /** A mod music track (registry SOUNDS key, from the run view's `music`) or null for the base loop. */
+  setTrack(key) {
+    key = key && SOUNDS[key] ? key : null;
+    if (key === (this.track || null)) return;
+    this.track = key;
+    if (this.music && this.unlocked) this.startMusic();
   }
   stopMusic() { if (this.musicEl) this.musicEl.pause(); }
   setSfx(on) { this.sfx = !!on; put(KEY_SFX, this.sfx); }

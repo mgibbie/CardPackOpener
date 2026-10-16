@@ -117,6 +117,9 @@ export class Board {
       <button class="btn red big b-discard" type="button">Discard</button>`;
     st.appendChild(this.controls);
     this.C = { play: this.controls.querySelector('.b-play'), discard: this.controls.querySelector('.b-discard'), rank: this.controls.querySelector('.b-rank'), suit: this.controls.querySelector('.b-suit') };
+    // Mod buttons beside Play / Discard (view.mod_buttons with where 'hand'; e.g. BETMMA's Flip)
+    this.modBtns = h('div', 'mod-btns'); this.modBtns.style.display = 'flex'; this.modBtns.style.gap = '12px';
+    this.controls.appendChild(this.modBtns);
     this.C.play.addEventListener('click', () => this.act({ type: 'play' }, 'button'));
     this.C.discard.addEventListener('click', () => this.act({ type: 'discard' }, 'button'));
     this.C.rank.addEventListener('click', () => this.act({ type: 'sort_hand', by: 'rank' }, 'cardSlide1'));
@@ -292,6 +295,7 @@ export class Board {
   setView(view, opts = {}) {
     const first = !this.view;
     this.view = view;
+    sound.setTrack(view.music || null); // a mod's music for this moment (MoreFluff's pack / Superboss tracks)
     this.stage.classList.remove('no-run');
     if (view.back && view.back !== this.backKey) {
       this.backKey = view.back;
@@ -450,6 +454,14 @@ export class Board {
     this.C.discard.disabled = busy || !L.can_discard;
     this.C.rank.disabled = this.C.suit.disabled = busy || v.state !== 'SELECTING_HAND';
     this.controls.classList.toggle('readonly', this.readOnly);
+    const mb = (v.mod_buttons || []).filter((b) => b.where === 'hand');
+    const mbKey = JSON.stringify(mb.map((b) => [b.label, b.colour, b.action]));
+    if (mbKey !== this._modBtnKey) {
+      this._modBtnKey = mbKey;
+      this.modBtns.innerHTML = '';
+      for (const b of mb) this.modBtns.appendChild(modButton(b, () => this.act(b.action, 'button')));
+    }
+    mb.forEach((b, i) => { if (this.modBtns.children[i]) this.modBtns.children[i].disabled = busy || !b.enabled; });
   }
   renderHandBox() {
     const hh = this.hud.hand, H = this.H;
@@ -617,6 +629,12 @@ export class Board {
     sk.disabled = this.readOnly || this.locked;
     sk.addEventListener('click', () => this.act({ type: 'skip_booster' }, 'button'));
     hd.appendChild(sk);
+    // Mod pack buttons (view.mod_buttons with where 'pack'; e.g. BETMMA's Recycle Area discard)
+    for (const b of (v.mod_buttons || []).filter((x) => x.where === 'pack')) {
+      const el = modButton(b, () => this.act(b.action, 'button'));
+      el.disabled = this.readOnly || this.locked || !b.enabled;
+      hd.appendChild(el);
+    }
     ov.appendChild(hd);
     const showHand = v.state === 'MOD_PACK_HAND' || ((v.state === 'TAROT_PACK' || v.state === 'SPECTRAL_PACK') && (kind === 'Arcana' || kind === 'Spectral'));
     ov.classList.toggle('ov-mod-pack', /^MOD_PACK/.test(v.state));
@@ -674,8 +692,15 @@ export class Board {
     } else if (s.area === 'shop_booster') {
       add('Open', 'green buy', { type: 'buy', id: s.id }, 'coin1'); wrap.classList.add('below');
     } else if (s.area === 'pack_cards') {
-      add(consumable ? 'Use' : 'Select', 'green buy', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button'); wrap.classList.add('below');
-    } else return null;
+      // A mod may let a pack card be saved to the consumable slots (view_card: reserve / reserve_label),
+      // or allow ONLY that (no_use: MoreFluff's Colour cards are taken, never used, from a pack).
+      if (!d.no_use) add(consumable ? 'Use' : 'Select', 'green buy', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
+      if (d.reserve) add(d.reserve_label || 'Save', 'green buy', { type: 'reserve', id: s.id }, 'button');
+      wrap.classList.add('below');
+    } else if (!(d.mod_actions && d.mod_actions.length)) return null;
+    // Mod card actions (view_card's mod_actions: [{label, action}]; e.g. BETMMA's Vanish, Balatro Mobile's moves)
+    for (const ma of d.mod_actions || []) add(esc(ma.label), 'blue modact', ma.action, 'button');
+    if (!wrap.classList.contains('side') && !wrap.classList.contains('below')) wrap.classList.add('below');
     if (v && !['SHOP'].includes(v.state) && s.area.startsWith('shop')) return null;
     return wrap;
   }
@@ -1214,6 +1239,15 @@ function badgeColour(b, key, txt) {
 }
 const VANILLA_PACK = { Arcana: 'Arcana Pack', Celestial: 'Celestial Pack', Spectral: 'Spectral Pack', Standard: 'Standard Pack', Buffoon: 'Buffoon Pack' };
 /** "Energy" -> "Energy Pack"; a kind already ending in Pack/Box/... is shown as is. */
+/** A mod button ({label, colour: btn class or '#hex', enabled, action}) -> <button>. */
+function modButton(b, onClick) {
+  const hexCol = /^#/.test(b.colour || '');
+  const el = h('button', 'btn ' + (hexCol ? 'blue' : (b.colour || 'blue')) + ' b-mod', esc(b.label));
+  el.type = 'button';
+  if (hexCol) { el.style.setProperty('--b', b.colour); el.style.setProperty('--bd', b.colour_d || b.colour); }
+  el.addEventListener('click', onClick);
+  return el;
+}
 export function packName(kind, state) {
   if (VANILLA_PACK[kind]) return VANILLA_PACK[kind];
   if (!kind || kind === 'Booster') return 'Booster Pack';

@@ -180,7 +180,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu }) {
     switch (s.area) {
       case 'hand': board.clickCard(s, 'pad'); break;
       case 'shop_jokers': case 'shop_vouchers': case 'shop_booster': board.act({ type: 'buy', id: s.id }, 'coin1'); break;
-      case 'pack_cards': board.act({ type: 'use', id: s.id }, 'button'); break;
+      case 'pack_cards': { const d = s.d || {}; board.act(d.no_use && d.reserve ? { type: 'reserve', id: s.id } : { type: 'use', id: s.id }, 'button'); break; }
       case 'consumeables':
         if (board.sel === s.id) board.act({ type: 'use', id: s.id }, 'button');
         else board.clickCard(s, 'pad');

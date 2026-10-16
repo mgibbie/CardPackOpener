@@ -130,6 +130,8 @@ function food_remove(self) {
  */
 export function normalize_mod_effect(r, context) {
   if (!r || typeof r !== 'object') return r;
+  // Marks a MOD card's return: the scoring loops then also read Steamodded's extra keys (run.js mod_score_ops).
+  if (!r._mod) Object.defineProperty(r, '_mod', { value: true, enumerable: false, configurable: true });
   const x = r.xmult ?? r.Xmult ?? r.x_mult;
   if (context.joker_main || context.other_joker) {
     if (r.mult !== undefined && r.mult_mod === undefined) { r.mult_mod = r.mult; delete r.mult; if (!r.message) r.message = localize({ type: 'variable', key: 'a_mult', vars: [r.mult_mod] }); }
