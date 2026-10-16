@@ -997,7 +997,7 @@ export class Board {
     if (d.perish_tally != null && d.perishable) extra += `<div class="tip-note">Perishable: ${d.perish_tally} rounds left</div>`;
     this.renderTip(desc, d, extra);
     this.tipFor = s.id;
-    this.placeTip(s.T.x, s.T.y, s.area);
+    this.placeTip(s.T.x, s.T.y, s.area, s.btns);
   }
   renderTip(desc, d, extra = '') {
     const all = desc.badges || [];
@@ -1016,13 +1016,26 @@ export class Board {
     this.tip.innerHTML = `<div class="tip-main"><div class="tip-name">${esc(desc.name || (d && d.name) || '')}</div>${lines ? `<div class="tip-body">${lines}</div>` : ''}${extra}${badges ? `<div class="tip-badges">${badges}</div>` : ''}${modB ? `<div class="tip-modbadges">${modB}</div>` : ''}</div>${info}`;
     this.tip.style.display = '';
   }
-  placeTip(x, y, area) {
+  placeTip(x, y, area, btns) {
     const tw = this.tip.offsetWidth, th = this.tip.offsetHeight;
     let tx = x - tw / 2, ty;
+    let under = y + this.ch * 0.55 + 12;
+    const over = y - this.ch * 0.6 - th - 14;
+    // The selected card's own buttons (Sell / Use / Dex / Buy) must stay reachable: in portrait they
+    // hang UNDER the card, exactly where a joker's tooltip went (a tester couldn't press Sell or Dex).
+    // Below the card means below its buttons; if that runs off the screen, go above the card.
+    let bTop = null, bBot = null;
+    if (btns && btns.isConnected && btns.offsetHeight) {
+      const c = this.elCenter(btns);
+      bTop = c.y - c.h / 2; bBot = c.y + c.h / 2;
+      if (bBot > y) under = Math.max(under, bBot + 10);
+    }
+    const hitsBtns = (t) => bTop != null && t < bBot && t + th > bTop;
     const below = area === 'jokers' || area === 'consumeables';
-    if (below) ty = y + this.ch * 0.55 + 12; else ty = y - this.ch * 0.6 - th - 14;
-    if (ty < 8) ty = y + this.ch * 0.55 + 12;
-    if (ty + th > this.SH - 8) ty = Math.max(8, y - this.ch * 0.6 - th - 14);
+    if (below) ty = under; else ty = over;
+    if (ty < 8) ty = under;
+    if (ty + th > this.SH - 8) ty = Math.max(8, over);
+    if (hitsBtns(ty)) ty = !hitsBtns(Math.max(8, over)) && over >= 8 ? over : under; // never on the buttons
     tx = Math.max(8, Math.min(this.W - tw - 8, tx));
     this.tip.style.transform = `translate(${tx}px,${ty}px)`;
   }
@@ -1369,7 +1382,7 @@ export class Board {
     }
     if (this.tipFor != null && typeof this.tipFor === 'number') {
       const s = this.sprites.get(this.tipFor);
-      if (s && !s.leaving) this.placeTip(s.T.x, s.T.y, s.area); else this.hideTip();
+      if (s && !s.leaving) this.placeTip(s.T.x, s.T.y, s.area, s.btns); else this.hideTip();
     }
   }
 }
