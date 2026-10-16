@@ -131,10 +131,14 @@ const stickers = [
 const cards = {};
 for (const [k, v] of Object.entries(DATA.cards)) cards[k] = v.pos;
 
+// Balatro's 20 challenges (micatro/data/challenges.js), described by the engine's challengeInfo()
+const { challengeItem, VANILLA_CHALLENGES } = await import('./gen_designwiki_challenges.mjs');
+const challenges = VANILLA_CHALLENGES.map((c) => challengeItem(c));
+
 const out = {
   generated: 'tools/micatro/gen_designwiki.mjs',
   jokers, tarots, planets, spectrals, vouchers, boosters, tags, blinds, anteChips, decks, stakes, hands,
-  enhancements, editions, seals, stickers, cards,
+  enhancements, editions, seals, stickers, challenges, cards,
   soulPos: (C.soul && C.soul.pos) || { x: 0, y: 1 }, basePos: C.c_base.pos,
 };
 const file = path.join(ROOT, 'designwiki/data/micatro.json');
@@ -142,7 +146,7 @@ fs.writeFileSync(file, JSON.stringify(out));
 console.log(`wrote ${path.relative(ROOT, file)} (${(fs.statSync(file).size / 1024).toFixed(1)} KB): ` +
   `${jokers.length} jokers, ${tarots.length} tarots, ${planets.length} planets, ${spectrals.length} spectrals, ` +
   `${vouchers.length} vouchers, ${boosters.length} boosters, ${tags.length} tags, ${blinds.length} blinds, ` +
-  `${decks.length} decks, ${stakes.length} stakes, ${hands.length} hands`);
+  `${decks.length} decks, ${stakes.length} stakes, ${hands.length} hands, ${challenges.length} challenges`);
 
 // The mods' sections (designwiki/data/micatro_mods*.json), from the mod modules themselves.
 await import('./gen_designwiki_mods.mjs');

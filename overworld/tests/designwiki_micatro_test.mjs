@@ -71,7 +71,7 @@ try {
 		const got = await page.$$eval('#content ' + sel, els => els.length);
 		A(ok && got === n, `#/${route} renders ${n} × ${sel}`, `got ${got}`);
 	};
-	await go('micatro', '.mc-idx', 10);
+	await go('micatro', '.mc-idx', 11);
 	A(await page.$eval('#content', el => /Celadon City Game Corner/.test(el.textContent) && /best single hand/.test(el.textContent) && !!el.querySelector('a[href="/micatro/"]')), 'overview: play link, arcade cabinet, leaderboard');
 	A(await page.$$eval('#content table', t => t.length) === 3, 'overview: mouse/touch, keyboard and controller tables');
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micatro', 'nav: Overview is active');
@@ -113,10 +113,17 @@ try {
 	await go('micatro/hands', '.mc-hand', W.hands.length);
 	A(await page.$$eval('#content .mc-hand .mc-pc', p => p.length) === W.hands.reduce((n, h) => n + h.example.length, 0), 'hands: every example card is drawn');
 	await go('micatro/enhancements', '.mc-tile', W.enhancements.length + W.editions.length + W.seals.length + W.stickers.length);
+	// Balatro's 20 challenges (micatro/data/challenges.js), the Challenges screen's own text
+	A(W.challenges && W.challenges.length === 20 && W.challenges.every(c => c.name && c.lines.length && c.info.some(i => i.name === 'Deck')), 'data: the 20 vanilla challenges with rules + deck');
+	await go('micatro/challenges', '.mc-row', W.challenges.length);
+	A(await page.$eval('#content .mc-row[data-key="c_omelette_1"]', el => /The Omelette/.test(el.textContent) && /Egg ×5/.test(el.textContent) && /no reward money/.test(el.textContent)), 'challenges: The Omelette — rules, 5 Eggs');
+	// ?item= (the header search links here) highlights the entry, even behind a filter
+	await page.goto(`http://localhost:${PORT}/designwiki/index.html#/micatro/consumables?item=c_black_hole`, { waitUntil: 'networkidle0' });
+	A(await page.waitForSelector('#content .mc-hl', { timeout: 10000 }).then(el => el.evaluate(e => e.dataset.key), () => null) === 'c_black_hole', '?item= opens the Spectral tab and highlights Black Hole');
 
 	// phone: the drawer nav + no sideways scroll
 	await page.setViewport({ width: 390, height: 844 });
-	for (const r of ['micatro', 'micatro/jokers', 'micatro/blinds', 'micatro/hands']) {
+	for (const r of ['micatro', 'micatro/jokers', 'micatro/blinds', 'micatro/hands', 'micatro/challenges']) {
 		await page.goto(`http://localhost:${PORT}/designwiki/index.html#/${r}`, { waitUntil: 'networkidle0' });
 		await page.waitForSelector('#content .lp-back, #content .mc-hero', { timeout: 10000 }).catch(() => {});
 		const ov = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);

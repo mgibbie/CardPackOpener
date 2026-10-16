@@ -28,6 +28,8 @@ const REG = await imp('micatro/js/mods/registry.js');
 const B = await imp('micatro/js/engine/bignum.js');
 const CD = await imp('micatro/js/engine/customdeck.js');
 const RP = await imp('micatro/js/replays.js');
+const SLV = await imp('micatro/js/engine/sleeve.js');
+const { challengeItem } = await import('./gen_designwiki_challenges.mjs');
 const { G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES } = core;
 
 // ------------------------------------------------------------------ load every mod
@@ -66,6 +68,17 @@ for (const [name, a] of Object.entries(REG.ATLASES)) {
   const rel = decodeURIComponent(String(a.src).replace(/^\//, ''));
   const sz = /^https?:/.test(a.src) ? null : pngSize(path.join(ROOT, rel));
   ATLASES[name] = { mod: a.mod, src: a.src, cw: a.px * 2, ch: a.py * 2, ...(sz ? { w: sz.w, h: sz.h } : {}), ...(a.frames ? { frames: a.frames } : {}) };
+}
+// deck skins (mods/<id>/skins.js: plain data, cosmetic; micatro/js/ui/skins.js draws them): each palette
+// sheet is an atlas of 2x card cells — J / Q / K in a row, or (a whole-deck resprite) the 8BitDeck layout
+const SKINS = [];
+for (const m of IDX.AVAILABLE) {
+  const f = path.join(ROOT, 'micatro/mods', m.id, 'skins.js');
+  if (fs.existsSync(f)) SKINS.push(...((await import(pathToFileURL(f).href)).SKINS || []).map((s) => ({ mod: m.id, ...s })));
+}
+for (const s of SKINS) for (const p of s.palettes) {
+  const sz = pngSize(path.join(ROOT, decodeURIComponent(String(p.src).replace(/^\//, ''))));
+  ATLASES['skin_' + s.key + '_' + p.key] = { mod: s.mod, src: p.src, cw: 142, ch: 190, ...(sz ? { w: sz.w, h: sz.h } : {}) };
 }
 const VANILLA = { Joker: 'Joker', Tarot: 'Tarot', Planet: 'Tarot', Spectral: 'Tarot', Voucher: 'Voucher', Booster: 'Booster' };
 /** An art layer: ['@<mod atlas>' | '<vanilla atlas>', pos]; null when the item has no drawable art. */
@@ -190,7 +203,10 @@ function sectionsFor(id) {
     else if (b.blind_type) pills.push({ text: b.blind_type + ' Blind' });
     if (b.mult != null) pills.push({ text: '×' + b.mult + ' score', cls: 'x' });
     if (b.dollars != null) pills.push({ text: '$' + b.dollars, cls: 'money' });
-    return { key: b.key, name: plainName(d.name || b.name), art: [layer(b.atlas, b.pos, 'blind')].filter(Boolean), sq: true, chip: true, lines: clean(d.lines), pills, ...(css(b.boss_colour) ? { colour: css(b.boss_colour) } : {}) };
+    // (the wiki's Blinds page groups them: More Fluff's DX bosses are Superbosses — debuff.superboss)
+    const group = b.debuff && b.debuff.superboss ? 'superboss' : b.boss ? (b.boss.showdown ? 'showdown' : 'boss') : 'plain';
+    if (group === 'superboss') pills.unshift({ text: 'Superboss' });
+    return { key: b.key, name: plainName(d.name || b.name), art: [layer(b.atlas, b.pos, 'blind')].filter(Boolean), sq: true, chip: true, group, lines: clean(d.lines), pills, ...(css(b.boss_colour) ? { colour: css(b.boss_colour) } : {}) };
   }));
   add('stakes', 'Stakes', 'row', Object.values(P_STAKES).filter((s) => s.mod === id).map((s) => {
     const d = desc('Stake', s.key) || {};
@@ -229,19 +245,41 @@ function sectionsFor(id) {
     key: r.key, name: plainName(r.name || r.key), lines: [r.weight ? 'Shop weight ' + r.weight + ' (vanilla: Common 0.7, Uncommon 0.25, Rare 0.05).' : 'Never rolled in the shop: these jokers come from their own sources.'],
     badges: [{ label: 'Rarity', colour: css(r.badge_colour) || '#6b7793' }],
   })));
-  const challenges = (Array.isArray(mod.challenges) ? mod.challenges : []).filter((c) => c && typeof c === 'object' && c.key);
-  add('challenges', 'Challenges', 'row', challenges.map((c) => {
-    const lines = [];
-    const nameOf = (k) => plainName((safe(() => describeCenter(k), null) || {}).name || (P_TAGS[k] && P_TAGS[k].name) || k);
-    if (c.jokers && c.jokers.length) lines.push('Starts with: ' + c.jokers.map((j) => nameOf(j.id) + (j.eternal ? ' (Eternal)' : '') + (j.edition ? ' (' + j.edition + ')' : '')).join(', '));
-    if (c.vouchers && c.vouchers.length) lines.push('Vouchers: ' + c.vouchers.map((v) => nameOf(v.id)).join(', '));
-    const mods = (c.rules && c.rules.modifiers) || [];
-    if (mods.length) lines.push('Rules: ' + mods.map((m) => m.id.replace(/_/g, ' ') + ' ' + m.value).join(', '));
-    const bans = c.restrictions && c.restrictions.banned_cards ? c.restrictions.banned_cards.length : 0;
-    if (bans) lines.push(bans + ' banned card' + (bans === 1 ? '' : 's'));
-    const nm = (MOD_LOC.misc.challenge_names || {})[c.key] || (LOC.misc.challenge_names || {})[c.key] || c.name || c.key;
-    return { key: c.key, name: plainName(nm), lines };
-  }), 'Challenge runs this mod ships (data; played from the Challenges screen).');
+  // challenges: the Challenges screen's own text (engine/challenge.js challengeInfo)
+  const challenges = (Array.isArray(mod.challenges) ? mod.challenges : []).filter((c) => c && typeof c === 'object' && (c.key || c.id));
+  add('challenges', 'Challenges', 'row', challenges.map((c) => challengeItem(c, id, IDX.modName)), 'Challenge runs this mod ships, played from the Challenges screen (main menu → Challenges) with the mod on.');
+  // sleeves (CardSleeves deck variants, engine/sleeve.js): the New Run picker's own text, plus the
+  // alternate effect a sleeve plays with its paired deck
+  add('sleeves', 'Sleeves', 'tile', (Array.isArray(mod.sleeves) ? mod.sleeves : []).filter((s) => s && s.key).map((s0) => {
+    const s = s0.mod ? s0 : { ...s0, mod: id };
+    const d = SLV.sleeveInfo(s, null);
+    const info = [];
+    if (s.alt && s.alt.deck) {
+      const alt = SLV.sleeveInfo(s, s.alt.deck);
+      if (alt.alt) info.push({ name: 'With the ' + plainName((safe(() => describeCenter(s.alt.deck), null) || {}).name || s.alt.deck), lines: clean(alt.lines) });
+    }
+    const pill = optionPill(s, mod);
+    return {
+      key: s.key, name: plainName(d.name || s.name || s.key), art: [layer(s.atlas, s.pos)].filter(Boolean), lines: clean(d.lines),
+      ...(info.length ? { info } : {}), badges: [{ label: 'Sleeve', colour: '#4f6367' }], ...(pill ? { pills: [pill] } : {}),
+    };
+  }), 'Deck variants (Larswijn’s CardSleeves): New Run → Sleeve puts one on top of any deck.');
+  // deck skins: cosmetic face-card art, chosen per suit in Options → Card skins
+  const SUITN = { Spades: 'Spades', Hearts: 'Hearts', Clubs: 'Clubs', Diamonds: 'Diamonds' };
+  const suitName = (k) => SUITN[k] || plainName(label(k) || (REG.MOD_SUITS[k] && REG.MOD_SUITS[k].name) || String(k).replace(/^[a-z]+_/, ''));
+  add('skins', 'Deck Skins', 'tile', SKINS.filter((s) => s.mod === id).map((s) => {
+    const p = s.palettes[0];
+    const L = { S: 'Spades', H: 'Hearts', C: 'Clubs', D: 'Diamonds' };
+    const letter = Object.keys(L).find((k) => L[k] === s.suit);
+    const face = s.deck ? (letter && DATA.cards[letter + '_K'] ? DATA.cards[letter + '_K'] : null) : { x: Math.max(0, s.ranks.indexOf('K')), y: 0 };
+    return {
+      key: 'skin_' + s.key, name: plainName(s.name) + (s.deck ? ' (' + suitName(s.suit) + ')' : ''),
+      art: face ? [['@skin_' + s.key + '_' + p.key, face], ['centers', DATA.centers.c_base.pos]] : null,
+      lines: [(s.deck ? 'Resprites every card of {C:attention}' : 'New art for the {C:attention}' + s.ranks.join(', ') + '{} of {C:attention}') + suitName(s.suit) + '{}.',
+        s.palettes.length > 1 ? 'Palettes: ' + s.palettes.map((x) => x.label || 'Standard').join(', ') + '.' : null].filter(Boolean),
+      badges: [{ label: 'Deck skin', colour: '#4f6367' }, { label: suitName(s.suit), colour: '#6b7793' }],
+    };
+  }), 'Cosmetic face-card art, chosen per suit in Options → Card skins. Never changes a run (each viewer sees their own choice).');
   return S;
 }
 
@@ -361,6 +399,50 @@ for (const m of IDX.AVAILABLE) {
   fs.writeFileSync(path.join(ROOT, 'designwiki/data/micatro_mods', m.id + '.json'), JSON.stringify({ id: m.id, name: m.name, generated: 'tools/micatro/gen_designwiki_mods.mjs', sections }));
 }
 
+// ------------------------------------------------------------------ categories (the wiki's "Micatro Mods" section)
+// Every section id of every mod belongs to exactly one category page (#/micatro-mods/<id>), which lists
+// that kind of item across ALL mods. `match` takes a section id; order = the overview grid / sidebar order.
+const VANILLA_CONS = ['consumables-tarot', 'consumables-planet', 'consumables-spectral'];
+const CATS = [
+  ['jokers', 'Jokers', (s) => s === 'jokers', 'Every joker the mods add, with its rarity (the mods’ own rarities too).'],
+  ['consumables', 'Tarot, Planet & Spectral', (s) => VANILLA_CONS.includes(s), 'The mods’ cards of Balatro’s own three consumable types.'],
+  ['new-consumables', 'New consumable types', (s) => s.startsWith('consumables-') && !VANILLA_CONS.includes(s), 'Whole new consumable types: Energy, Items, Colours, Rotarots, Polyminoes, Cines, Oddities.'],
+  ['vouchers', 'Vouchers', (s) => s === 'vouchers', 'Mod vouchers — BETMMA alone adds 82, fusions included.'],
+  ['boosters', 'Booster Packs', (s) => s === 'boosters', 'The mods’ packs, including packs for their new card types.'],
+  ['tags', 'Tags', (s) => s === 'tags', 'Skip Tags (and Reverie’s tags sold as cards).'],
+  ['blinds', 'Blinds', (s) => s === 'blinds', 'Small / Big Blind variants, Boss Blinds, Showdowns and More Fluff’s Superbosses.'],
+  ['decks', 'Decks', (s) => s === 'decks', 'Decks for the New Run screen, from every mod.'],
+  ['sleeves', 'Sleeves', (s) => s === 'sleeves', 'Deck variants put on top of any deck (CardSleeves).'],
+  ['stakes', 'Stakes', (s) => s === 'stakes', 'Extra difficulty stakes.'],
+  ['modifiers', 'Enhancements, Editions & Seals', (s) => ['enhancements', 'editions', 'seals', 'aspects', 'stickers'].includes(s), 'Enhancements, editions, seals, stamps, aspects and stickers.'],
+  ['hands', 'Poker Hands & Suits', (s) => s === 'hands' || s === 'suits', 'Bunco’s exotic suits and the Spectrum hands they make.'],
+  ['rarities', 'Joker Rarities', (s) => s === 'rarities', 'New joker rarities and how often the shop rolls them.'],
+  ['challenges', 'Challenges', (s) => s === 'challenges', 'Challenge runs the mods ship.'],
+  ['skins', 'Deck Skins', (s) => s === 'skins', 'Cosmetic face-card art per suit.'],
+  ['other', 'Other cards', () => true, 'Cards of a kind none of the other pages covers.'],
+];
+const catOf = (sid) => CATS.find((c) => c[2](sid))[0];
+const categories = [];
+const sectionsOf = {};
+for (const m of index) sectionsOf[m.id] = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/micatro_mods', m.id + '.json'), 'utf8')).sections;
+for (const [cid, title, , blurb] of CATS) {
+  const sec = [], perMod = {};
+  let count = 0, cover = null;
+  for (const m of index) for (const s of sectionsOf[m.id]) {
+    if (catOf(s.id) !== cid) continue;
+    if (!sec.some((x) => x.id === s.id)) sec.push({ id: s.id, title: s.title.replace(/ cards$/, ''), kind: s.kind, count: 0 });
+    sec.find((x) => x.id === s.id).count += s.items.length;
+    perMod[m.id] = (perMod[m.id] || 0) + s.items.length;
+    count += s.items.length;
+    if (!cover) { const it = s.items.find((x) => x.art && x.art.length); if (it) cover = { art: it.art, sq: !!it.sq, name: it.name }; }
+  }
+  if (!count) continue;
+  // section order: the CATS-wide canonical one (Tarot, Planet, Spectral first; then the rest by size)
+  const ORDER = ['jokers', ...VANILLA_CONS, 'enhancements', 'editions', 'seals', 'aspects', 'stickers', 'suits', 'hands'];
+  sec.sort((a, b) => ((ORDER.indexOf(a.id) + 1) || 99) - ((ORDER.indexOf(b.id) + 1) || 99) || b.count - a.count);
+  categories.push({ id: cid, title, blurb, count, sections: sec, perMod, cover });
+}
+
 // ------------------------------------------------------------------ the native-feature pages
 const bigExamples = [[123456, '123456'], [1e11, '1e11'], [1.5e308, '1.5 × 10^308 (a double would overflow)'], [B.mul(1e300, 1e150), '10^450'], [B.pow(10, 999.5), '10^999.5']]
   .map(([v, l]) => ({ value: l, shown: core.number_format(v), big: B.isBig(v) }));
@@ -386,10 +468,11 @@ const features = {
   replays: { localMax: RP.LOCAL_MAX, actionsMax: RP.ACTIONS_MAX, packedMax: RP.PACKED_MAX },
 };
 
-const out = { generated: 'tools/micatro/gen_designwiki_mods.mjs', mods: index, atlases: ATLASES, features };
+const out = { generated: 'tools/micatro/gen_designwiki_mods.mjs', mods: index, categories, atlases: ATLASES, features };
 const file = path.join(ROOT, 'designwiki/data/micatro_mods.json');
 fs.writeFileSync(file, JSON.stringify(out));
 const missingDims = Object.values(ATLASES).filter((a) => !a.w).length;
 console.log(`wrote ${path.relative(ROOT, file)} (${(fs.statSync(file).size / 1024).toFixed(1)} KB) + designwiki/data/micatro_mods/*.json: ${index.length} mods, ` +
   `${index.reduce((n, m) => n + m.total, 0)} items, ${index.reduce((n, m) => n + m.fixes.length, 0)} documented fixes` + (missingDims ? ` (${missingDims} atlases without local art: no pixel size)` : ''));
 for (const m of index) console.log('  ' + m.id.padEnd(14) + ' ' + Object.entries(m.counts).map(([k, n]) => k + ' ' + n).join(', ') + ' | fixes ' + m.fixes.length + (m.unported ? ' | unported ' + m.unported : ''));
+console.log('  categories: ' + categories.map((c) => c.id + ' ' + c.count).join(', '));

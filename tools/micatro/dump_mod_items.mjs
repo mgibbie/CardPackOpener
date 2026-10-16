@@ -39,6 +39,12 @@ try {
   for (const b of Object.values(core.P_BLINDS)) if (b.mod && !failed.has(b.mod)) add(b.mod, { key: b.key, name: name('Blind', b.key, b.name), set: b.boss ? 'Boss Blind' : 'Blind', ...art(b) });
   for (const s of Object.values(core.P_STAKES)) if (s.mod && !failed.has(s.mod)) add(s.mod, { key: s.key, name: name('Stake', s.key, s.name), set: 'Stake', ...art(s) });
   for (const s of Object.values(core.P_SEALS)) if (s.mod && !failed.has(s.mod)) add(s.mod, { key: s.key, name: String(s.display_name || name('Other', s.key.toLowerCase() + '_seal', s.name)), set: s.set === 'Stamp' ? 'Stamp' : 'Seal', ...art(s) });
+  // sleeves + challenges ride on the mod object (registerMod({sleeves, challenges}))
+  for (const m of Object.values(REG.MODS || {})) {
+    if (!m || !m.id || m.hidden || failed.has(m.id) || !(IDX.AVAILABLE || []).some((a) => a.id === m.id)) continue;
+    for (const s of Array.isArray(m.sleeves) ? m.sleeves : []) if (s && s.key) add(m.id, { key: s.key, name: name('Sleeve', s.key, s.name), set: 'Sleeve', ...art(s) });
+    for (const c of Array.isArray(m.challenges) ? m.challenges : []) if (c && (c.key || c.id)) add(m.id, { key: c.key || c.id, name: String(((L.misc && L.misc.challenge_names) || {})[c.key || c.id] || c.name || c.key || c.id), set: 'Challenge' });
+  }
   // a mod that failed to load in this snapshot is reported so the caller keeps its previous list
   out.failed = [...failed];
   out.atlases = {};
