@@ -412,3 +412,95 @@ b { font-weight: normal; }
 .mod-preview { display: inline-block; font-size: 0.7em; padding: 1px 6px; border-radius: 4px; background: #fda200; color: #1b1b1b; vertical-align: middle; letter-spacing: 1px; }
 
 .mod-opts-toggle { margin: 4px 0; font-size: 0.85em; }
+
+/* ------------------------------------------------- custom decks (the deck editor, ui/deckeditor.js) */
+.nr-cdeck .btn { font-size: 26px; padding: 8px 18px; }
+.nr-row .arrow:disabled { --b: #59676a; --bd: #3d4749; opacity: .55; }
+.nr-cdeck-sum b { font-weight: normal; }
+.lb-cdeck { display: inline-block; margin-left: 6px; font-size: 16px; padding: 2px 8px 0; border-radius: 6px; background: #8867a5; color: #fff; vertical-align: middle; }
+.ri-cdeck b { font-weight: normal; }
+.cd-list, .cd-editor { width: 900px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.portrait .cd-list, .portrait .cd-editor { width: 100%; }
+.cd-status { font-size: 22px; text-align: center; }
+.cd-acts { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.cd-h { font-size: 30px; margin-top: 6px; }
+.cd-rows { display: flex; flex-direction: column; gap: 8px; }
+.cd-row { display: flex; align-items: center; gap: 12px; background: var(--panel-d); border-radius: 14px; padding: 8px 10px; flex-wrap: wrap; }
+.cd-back { width: 71px; height: 95px; display: block; filter: drop-shadow(3px 4px 0 rgba(0,0,0,.35)); flex: none; }
+.cd-back.big { width: 106px; height: 142px; }
+.cd-row-info { flex: 1; min-width: 200px; }
+.cd-row-name { font-size: 30px; }
+.cd-row-sub { font-size: 20px; color: #c6d1d3; margin-top: 4px; }
+.cd-row-sub b { color: var(--attn); font-weight: normal; }
+.cd-by { font-size: 20px; color: #c6d1d3; }
+.cd-row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.cd-row-btns .btn { font-size: 22px; padding: 8px 12px; }
+.cd-empty { font-size: 22px; padding: 6px 4px; }
+.cd-input { font-family: inherit; font-size: 26px; padding: 8px 12px 6px; border-radius: 10px; border: 3px solid #bfc7d5; background: var(--panel-dd); color: #fff; min-width: 0; user-select: text; -webkit-user-select: text; }
+.cd-name { font-size: 34px; width: 100%; text-align: center; }
+.cd-desc { width: 100%; }
+.cd-code { width: 100%; font-size: 20px; }
+.cd-head { display: flex; gap: 10px; }
+.cd-tabs { flex-wrap: wrap; margin-bottom: 0; }
+.cd-tabs .btn { font-size: 24px; padding: 8px 12px; }
+.cd-body { display: flex; flex-direction: column; gap: 10px; }
+.cd-sec { background: var(--panel-d); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.cd-sec-t { font-size: 28px; }
+.cd-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 22px; flex-wrap: wrap; }
+.cd-line.changed > .cd-l { color: var(--attn); }
+.cd-l { font-size: 22px; flex: 1; min-width: 180px; }
+.cd-step { display: flex; align-items: center; gap: 6px; }
+.cd-sb { font-size: 26px; padding: 6px 14px; min-width: 52px; }
+.cd-num { width: 110px; text-align: center; }
+.cd-tog { min-width: 96px; font-size: 22px; padding: 7px 12px; }
+.cd-cyc { font-size: 22px; padding: 7px 12px; }
+.cd-wrap { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cd-chip { font-size: 20px; padding: 6px 10px; }
+.cd-chip.on { --b: var(--red); --bd: var(--red-d); }
+.cd-preset { font-size: 20px; padding: 7px 10px; }
+.cd-art { display: flex; align-items: center; gap: 12px; justify-content: center; }
+.cd-art .arrow { font-size: 44px; padding: 4px 12px 10px; min-height: 120px; }
+.cd-art-n { font-size: 24px; text-align: center; min-width: 160px; }
+.cd-art-n b { font-weight: normal; color: var(--attn); }
+.cd-small { font-size: 18px; }
+.cd-note { font-size: 20px; text-align: center; }
+.cd-mods { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cd-cards { display: flex; flex-direction: column; gap: 6px; }
+.cd-cardrow { display: flex; flex-wrap: wrap; gap: 4px; }
+.cd-pc { position: relative; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; touch-action: manipulation; }
+.cd-pc:focus-visible, .cd-tile:focus-visible { outline: 3px solid var(--attn); }
+.cd-pcimg { width: 50px; height: 67px; display: block; }
+.cd-pcimg.big { width: 142px; height: 190px; }
+.portrait .cd-pcimg { width: 44px; height: 59px; }
+.portrait .cd-cardrow { gap: 3px; }
+.cd-count { position: absolute; right: -2px; bottom: -2px; font-size: 16px; background: var(--attn); color: #fff; border-radius: 6px; padding: 1px 4px 0; }
+.cd-carddlg { display: flex; gap: 14px; align-items: flex-start; width: 760px; max-width: 100%; flex-wrap: wrap; }
+.portrait .cd-carddlg { width: 100%; }
+.cd-cardpv { flex: none; }
+.cd-cardopts { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 8px; }
+.cd-item { display: flex; align-items: center; gap: 10px; background: var(--panel-dd); border-radius: 10px; padding: 6px 8px; }
+.cd-ithumb { width: 57px; height: 76px; flex: none; }
+.cd-item-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cd-item-n { font-size: 24px; }
+.cd-x { font-size: 22px; padding: 6px 12px; }
+.cd-rgroup { gap: 6px; }
+.cd-rhead { text-align: left; font-size: 26px; padding: 10px 12px; }
+.cd-rgroup.open .cd-rhead { --b: var(--panel); }
+.cd-rhead b { font-weight: normal; }
+.cd-msg { font-size: 22px; text-align: center; color: var(--attn); min-height: 0; }
+.cd-foot .btn.big { min-width: 220px; }
+.cd-picker { width: 900px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.portrait .cd-picker { width: 100%; }
+.cd-pick-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.cd-search { flex: 1; min-width: 200px; }
+.cd-pick-note { font-size: 20px; }
+.cd-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.cd-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px; border: 0; border-radius: 10px; background: var(--panel-d); color: #fff; font-family: inherit; cursor: pointer; touch-action: manipulation; }
+.cd-tile:hover { filter: brightness(1.15); }
+.cd-tile .cd-thumb { width: 71px; height: 95px; }
+.cd-tile-n { font-size: 17px; line-height: 1.05; text-align: center; }
+.cd-modtag { display: block; font-size: 13px; color: #c6d1d3; }
+.cd-share { width: 760px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; font-size: 22px; }
+.portrait .cd-share { width: 100%; }
+.cd-confirm { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.cd-confirm-t { font-size: 30px; text-align: center; }

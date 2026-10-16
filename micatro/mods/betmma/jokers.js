@@ -1,6 +1,7 @@
 // BETMMA Jokers (Betmma_Jokers.lua + localization/en-us.lua): 11 jokers. Their Lua wraps (Ascension's
 // evaluate_poker_hand, Hasty's calculate_dollar_bonus, Piggy Bank's ease_dollars, Housing Choice's
 // ease_ante, Balatro Mobile's update / buy_from_shop) are functions index.js's hooks call.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, P_CARDS, create_card, find_joker, ease_dollars, localize, pseudorandom, pseudoseed,
   pseudorandom_element, get_current_pool, emit,
@@ -225,7 +226,7 @@ export const JOKER_DATA = {
       for (const j of G.jokers.cards.slice()) j.calculate_joker({ remove_playing_cards: true, removed: destroyed_cards });
     },
     calculate(c, card, context) {
-      if (context.after && card.area === G.jokers && (G.GAME.chips + (G.GAME.last_hand_total || 0)) > card.ability.extra.win_value) {
+      if (context.after && card.area === G.jokers && BN.gt(BN.add(G.GAME.chips, G.GAME.last_hand_total || 0), card.ability.extra.win_value)) {
         G.GAME.balatro_mobile_win = true;
         G.E_MANAGER.add_event(() => {
           card.start_dissolve();

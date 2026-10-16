@@ -40,6 +40,7 @@
  * pta_saka, TOGA, Maximus, JoyousSpring, a MoreFluff Cryptid check). Its Pokermon patch (an evolving joker
  * keeps its Stamp) needs nothing: Micatro's Pokermon evolves a joker in place (set_ability), so its seal stays.
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { registerMod, isActive, feature, MOD_LOC } from '../../js/mods/registry.js';
 import { G, P_CENTERS, P_SEALS, P_CENTER_POOLS, localize } from '../../js/engine/core.js';
 import { smods_effect } from '../../js/engine/run.js';
@@ -162,7 +163,7 @@ const hooks = {
     }
   },
   end_round() {
-    const game_over = !(G.GAME.chips - G.GAME.blind.chips >= 0);
+    const game_over = !BN.beats(G.GAME.chips, G.GAME.blind.chips);
     API.stamps_in_context({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
     for (const c of G.hand.cards.slice()) {
       const eff = aspect_effect(c, { end_of_round: true, cardarea: G.hand, game_over });

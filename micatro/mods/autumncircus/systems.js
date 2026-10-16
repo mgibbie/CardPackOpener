@@ -15,6 +15,7 @@
 //   probability cap, the Breath Aspect's selection limits, Ceaseless Wheel, the +$2 stamp price (Stamp Coupon),
 //   the Collector's Deck (every consumable is an Oddity), Undying Deck / Soulbound (graveyard -> deck after a
 //   Boss), round_resets.hands_played.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, P_SEALS, P_CENTER_POOLS, card_eval_status_text, localize, pseudorandom, pseudoseed, pseudorandom_element,
   create_card, copy_card, poll_edition, juice_card, play_sound, emit, number_format, math_random, get_current_pool, ease_dollars,
@@ -554,7 +555,7 @@ export const hooks = {
       let score_mult = 1;
       for (const card of G.jokers.cards) if (stamp_of(card) === 'thac_mr_bones') { score_mult *= 0.85; juice_card(card); }
       const b = G.GAME.blind;
-      b.chips = Math.floor(b.chips * score_mult);
+      b.chips = BN.floor(BN.mul(b.chips, score_mult));
       b.chip_text = number_format(b.chips);
       emit('blind', { action: 'chips', key: b.config && b.config.blind && b.config.blind.key, chips: b.chips, chip_text: b.chip_text });
       if (G.GAME.wheel_of_wheel_of_fortune === true) {
@@ -568,7 +569,7 @@ export const hooks = {
   },
   // ---- Chaos' Stamp ($4 a round won), graveyard -> deck after a Boss (Soulbound / Undying Deck), Gilded jokers
   end_round() {
-    const won = G.GAME.chips - G.GAME.blind.chips >= 0;
+    const won = BN.beats(G.GAME.chips, G.GAME.blind.chips);
     if (won) {
       for (const card of G.jokers.cards) if (stamp_of(card) === 'thac_chaos') { ease_dollars(4); card_eval_status_text(card, 'dollars', 4); }
     }

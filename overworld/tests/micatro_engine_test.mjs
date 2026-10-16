@@ -3,7 +3,7 @@
 // (micatro/tests/mods/*_test.mjs) and a fuzz pass with Pokermon on, so the gate covers the
 // engine and the mods. No browser, no server.
 // Covers micatro/js/engine: core.js run.js jokers.js consumables.js blind.js tag.js
-// back.js describe.js view.js session.js, micatro/data/balatro_data.js, micatro/js/mods/registry.js
+// back.js describe.js view.js session.js customdeck.js (custom decks: micatro/tests/customdeck_test.mjs), micatro/data/balatro_data.js, micatro/js/mods/registry.js
 // and micatro/mods/pokermon (index.js defs.js api.js data.js systems/ jokers/ consumables/
 // boosters/), micatro/mods/pokermonplus (index.js data.js src/) — named here so `run-all.mjs --changed` selects this suite when any of them change.
 //   node overworld/tests/micatro_engine_test.mjs

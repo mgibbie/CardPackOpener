@@ -144,16 +144,19 @@ function whenIdle(fn) {
 }
 
 // --------------------------------------------------------------- run setup
-async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {} } = {}) {
+async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null } = {}) {
   stopPublishing();
-  if (mods && mods.length) {
+  // a custom deck (the deck editor) brings the mods its content needs
+  const needMods = [...new Set([...(mods || []), ...((customDeck && Array.isArray(customDeck.mods)) ? customDeck.mods : [])])];
+  if (needMods.length) {
     // a mod's code + data download only now (and are cached for the session)
     board.toast('Loading mods…');
-    const r = await ensureMods(mods);
+    const r = await ensureMods(needMods);
     if (!r.ok || r.missing.length) { board.toast(r.missing.length ? `Mod not available: ${r.missing.join(', ')}` : 'A mod failed to load'); UI.newRunScreen(menuOpts()); return; }
   }
   session = new Engine.Session();
-  const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions } : { seed, back, stake });
+  const cd = customDeck ? { customDeck } : {};
+  const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions, ...cd } : { seed, back, stake, ...cd });
   beginRun(evs);
 }
 async function continueRun() {
@@ -218,7 +221,7 @@ function chatWrap() {
 // ---------------------------------------------------------------- endings
 function submit(view, won) {
   if (!loggedIn() || !net.submitScore) return null;
-  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [] });
+  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '' });
 }
 function showGameOver(view) {
   const won = !!view.won;

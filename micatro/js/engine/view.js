@@ -6,6 +6,7 @@ import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount } from './cor
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag } from './describe.js';
 import { callHook, MOD_LOC } from '../mods/registry.js';
+import { mul, toJSONValue as J } from './bignum.js';
 
 export const VIEW_VERSION = 1;
 
@@ -67,12 +68,12 @@ export function toView() {
     if (!key || !P_BLINDS[key]) continue;
     const pb = P_BLINDS[key];
     choices[k] = {
-      key, name: pb.name, state: rr.blind_states[k], chips: amt * pb.mult * scaling,
+      key, name: pb.name, state: rr.blind_states[k], chips: J(mul(mul(amt, pb.mult), scaling)),
       dollars: GM.modifiers.no_blind_reward && GM.modifiers.no_blind_reward[k] ? 0 : pb.dollars,
       tag: k !== 'Boss' && rr.blind_tags ? rr.blind_tags[k] : undefined,
       tagDesc: k !== 'Boss' && rr.blind_tags && rr.blind_tags[k] ? safe(() => describeTag({ key: rr.blind_tags[k] })) : undefined,
       colour: pb.boss_colour, pos: pb.pos,
-      desc: safe(() => describeBlind(key)),
+      desc: safe(() => bigDesc(describeBlind(key))),
     };
   }
   const view = {
@@ -85,7 +86,7 @@ export function toView() {
     round: GM.round,
     win_ante: GM.win_ante,
     dollars: GM.dollars,
-    chips: GM.chips,
+    chips: J(GM.chips),
     hands_left: GM.current_round.hands_left,
     discards_left: GM.current_round.discards_left,
     hand_limit: G.hand.config.card_limit,
@@ -94,10 +95,10 @@ export function toView() {
     seq: G.ui_seq || 0,
     preview: preview(),
     blind: b && b.config && b.config.blind && b.name ? {
-      key: b.config.blind.key, name: b.name, chips: b.chips, dollars: b.dollars, boss: !!b.boss,
+      key: b.config.blind.key, name: b.name, chips: J(b.chips), dollars: b.dollars, boss: !!b.boss,
       disabled: !!b.disabled, colour: b.config.blind.boss_colour, pos: b.config.blind.pos,
-      desc: safe(() => describeBlind(b.config.blind.key, b)),
-    } : (GM.round_eval && GM.round_eval.blind) || null,
+      desc: safe(() => bigDesc(describeBlind(b.config.blind.key, b))),
+    } : bigBlind(GM.round_eval && GM.round_eval.blind) || null,
     blind_on_deck: GM.blind_on_deck,
     choices,
     boss_rerolled: !!rr.boss_rerolled,
@@ -122,7 +123,7 @@ export function toView() {
     deck_list: G.playing_cards.map((c) => [c.config.card.key, c.config.center.key, c.edition ? c.edition.type : 0, c.seal || 0, c.area === G.deck ? 1 : 0, c.debuff ? 1 : 0]),
     tags: GM.tags.map((t) => ({ key: t.key, id: t.ID, desc: safe(() => describeTag(t)) })),
     vouchers: Object.keys(GM.used_vouchers).filter((k) => GM.used_vouchers[k]),
-    round_eval: GM.round_eval || null,
+    round_eval: GM.round_eval ? (GM.round_eval.blind && typeof GM.round_eval.blind.chips === 'object' ? { ...GM.round_eval, blind: bigBlind(GM.round_eval.blind) } : GM.round_eval) : null,
     reroll_cost: GM.current_round.reroll_cost,
     pack_choices: GM.pack_choices || 0,
     pack_kind: packKind(),
@@ -130,7 +131,7 @@ export function toView() {
     over: !!GM.over,
     won: !!GM.won,
     endless: !!GM.endless,
-    stats: { ...GM.stats },
+    stats: { ...GM.stats, best_hand: J(GM.stats.best_hand) },
     mods: GM.mods || [],
     interest_cap: GM.interest_cap,
   };
@@ -156,6 +157,11 @@ function packKind() {
   return ({ [S.TAROT_PACK]: 'Arcana', [S.PLANET_PACK]: 'Celestial', [S.SPECTRAL_PACK]: 'Spectral', [S.STANDARD_PACK]: 'Standard', [S.BUFFOON_PACK]: 'Buffoon' })[G.STATE] ||
     ((G.STATE === S.MOD_PACK || G.STATE === S.MOD_PACK_HAND) ? (G.GAME.pack_kind || 'Mod') : null);
 }
+
+// Big-number scoring: a Decimal travels as its JSON string ("1.234e450") — the local board and a
+// spectator then draw the same view. (Plain numbers pass through, so vanilla views are unchanged.)
+function bigDesc(d) { if (d && typeof d.chips === 'object' && d.chips) d.chips = J(d.chips); return d; }
+function bigBlind(b) { return b && typeof b.chips === 'object' && b.chips ? { ...b, chips: J(b.chips) } : b; }
 
 function safe(fn) { try { return fn(); } catch (e) { return undefined; } }
 

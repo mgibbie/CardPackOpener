@@ -34,6 +34,7 @@
  *     those two triggers settle their effects (money + popups) themselves.
  *  4. Less Fluff's "X#1#" popup used the variable key 'x_mult' (not a key: no text); it uses a_xmult.
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, create_card, copy_card, pseudorandom, pseudoseed, pseudorandom_element, probability_roll,
   probability_vars, localize, ease_dollars, number_format, emit, card_eval_status_text,
@@ -410,7 +411,7 @@ J('fleshprison', {
   calculate(self, card, context) {
     if (context.setting_blind && !context.blueprint && context.blind && context.blind.boss && !card.getting_sliced) {
       card.gone = false;
-      G.GAME.blind.chips = G.GAME.blind.chips * card.ability.extra.boss_size;
+      G.GAME.blind.chips = BN.mul(G.GAME.blind.chips, card.ability.extra.boss_size);
       G.GAME.blind.chip_text = number_format(G.GAME.blind.chips);
       G.E_MANAGER.add_event(() => { say(card, 'Good luck!'); });
     }
@@ -629,8 +630,8 @@ export const hooks = {
       const jctx = { cardarea: G.jokers, ...ctx, mf_before_cards: true };
       let eff = j.calculate_joker(jctx);
       for (let t = eff ? joker_retriggers(j, jctx) + 1 : 0; t > 0; t--) {
-        const x = Math.pow(chips, Math.pow(chips, eff.mf_eechips - 1) - 1); // the mod's Xchip_mod
-        chips = chips * x;
+        const x = BN.pow(chips, BN.sub(BN.pow(chips, eff.mf_eechips - 1), 1)); // the mod's Xchip_mod
+        chips = BN.mul(chips, x);
         card_eval_status_text(j, 'extra', null, null, null, { message: eff.message, colour: eff.colour });
         emit('hand_text', { chips, mult });
         if (t > 1) { eff = j.calculate_joker({ ...jctx, retrigger_joker: true }); if (!eff) break; }

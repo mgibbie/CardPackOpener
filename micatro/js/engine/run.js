@@ -20,12 +20,14 @@ import {
   mod_chips, mod_mult, set_hand_usage, number_format, probability_roll,
 } from './core.js';
 import { Blind } from './blind.js';
+import * as B from './bignum.js';
 import { quantum_enhancements } from './core.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
 import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS, feature } from '../mods/registry.js';
 import './consumables.js';
+import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -135,7 +137,7 @@ const STATE_HANDLERS = {
   },
   [STATES.HAND_PLAYED]() {
     G.E_MANAGER.add_event(() => {
-      if (G.GAME.chips - G.GAME.blind.chips >= 0 || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
+      if (B.beats(G.GAME.chips, G.GAME.blind.chips) || G.GAME.current_round.hands_left < 1) G.STATE = STATES.NEW_ROUND;
       else G.STATE = STATES.DRAW_TO_HAND;
       G.STATE_COMPLETE = false;
     });
@@ -181,6 +183,7 @@ const STATE_HANDLERS = {
       G.GAME.blind_on_deck = !gone(bs.Small) ? 'Small' : !gone(bs.Big) ? 'Big' : 'Boss';
       bs[G.GAME.blind_on_deck] = 'Select';
       emit('blind_select', { on_deck: G.GAME.blind_on_deck });
+      if (ACTIVE_MODS.length) callHook('blind_on_deck', G.GAME.blind_on_deck); // (a custom deck's skip-disable rolls)
       for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' });
       for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
     });
@@ -213,12 +216,16 @@ export function newRun(args = {}) {
   G.ui_seq = 0;
   G.sort_id = 0;
   G.playing_card = 0;
+  // A custom deck (the native deck editor, engine/customdeck.js): a validated definition, the mods its content
+  // needs, and its rules as the internal 'customdeck' mod (never listed in G.GAME.mods).
+  const cdeck = args.customDeck ? validateDeck(args.customDeck) : null;
   // Mods first: they decide what the pools contain and may adjust the game object.
-  activateMods(args.mods || [], args.modOptions || {});
+  activateMods(cdeck ? [...(args.mods || []), ...cdeck.mods, CUSTOM_DECK_ID] : (args.mods || []), args.modOptions || {});
   rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
   G.GAME = init_game_object();
-  G.GAME.mods = ACTIVE_MODS.slice();
+  G.GAME.mods = cdeck ? ACTIVE_MODS.filter((id) => id !== CUSTOM_DECK_ID) : ACTIVE_MODS.slice();
   G.GAME.mod_options = allOptions();
+  if (cdeck) { delete G.GAME.mod_options[CUSTOM_DECK_ID]; G.GAME.custom_deck = cdeck; }
   for (const t of activeConsumableTypes()) G.GAME[t.rate_key] = t.shop_rate || 0;
   callHook('init_game_object', G.GAME);
   // Mod stakes (SMODS.Stake): `stake` may be an active mod stake's key (see mod_stake_chain);
@@ -227,7 +234,8 @@ export function newRun(args = {}) {
   G.GAME.stake = modStakes ? modStakes.level : (typeof args.stake === 'string' && isNaN(Number(args.stake)) ? 1 : (args.stake || 1));
   if (modStakes) G.GAME.stake_key = args.stake;
   G.GAME.STOP_USE = 0;
-  const backKey = args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' && backAvailable(P_CENTERS[args.back]) ? args.back : 'b_red';
+  // (a custom deck plays on the neutral Challenge back; its own back is art only)
+  const backKey = cdeck ? CUSTOM_DECK_BACK : args.back && P_CENTERS[args.back] && P_CENTERS[args.back].set === 'Back' && backAvailable(P_CENTERS[args.back]) ? args.back : 'b_red';
   G.GAME.selected_back = new Back(P_CENTERS[backKey]);
   G.GAME.selected_back_key = backKey;
 
@@ -422,7 +430,7 @@ function end_round() {
   if (ACTIVE_MODS.length) callHook('end_round_start');
   G.E_MANAGER.add_event(() => {
     let game_over = true, game_won = false;
-    if (G.GAME.chips - G.GAME.blind.chips >= 0) game_over = false;
+    if (B.beats(G.GAME.chips, G.GAME.blind.chips)) game_over = false;
     for (const j of G.jokers.cards.slice()) {
       // main_eval / beat_boss: Steamodded's end_of_round flags (vanilla jokers ignore them).
       const ectx = { end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss };
@@ -762,20 +770,20 @@ export function mod_score_ops(eff, at, hand_chips, mult, opts = {}) {
     const own = level === 0;
     if (!own || opts.held) {
       const c = r.chips ?? (own ? undefined : r.chip_mod);
-      if (c && !(opts.individual && level === 1 && r.chip_mod !== undefined && r.chips === undefined)) { hand_chips = mod_chips(hand_chips + c); if (!own && !r.message) say('+' + c, 'CHIPS'); }
+      if (c && !(opts.individual && level === 1 && r.chip_mod !== undefined && r.chips === undefined)) { hand_chips = mod_chips(B.add(hand_chips, c)); if (!own && !r.message) say('+' + c, 'CHIPS'); }
       const m = r.mult ?? (own ? undefined : r.mult_mod);
-      if (m && !(opts.individual && level === 1 && r.mult_mod !== undefined && r.mult === undefined)) { mult = mod_mult(mult + m); if (!own && !r.message) say('+' + m + ' Mult', 'MULT'); }
+      if (m && !(opts.individual && level === 1 && r.mult_mod !== undefined && r.mult === undefined)) { mult = mod_mult(B.add(mult, m)); if (!own && !r.message) say('+' + m + ' Mult', 'MULT'); }
     }
     const xc = r.x_chips ?? r.xchips ?? r.Xchip_mod;
-    if (xc !== undefined && xc !== 1) { hand_chips = mod_chips(hand_chips * xc); if (!r.message) say('X' + xc + ' Chips', 'CHIPS'); }
+    if (xc !== undefined && xc !== 1) { hand_chips = mod_chips(B.mul(hand_chips, xc)); if (!r.message) say('X' + xc + ' Chips', 'CHIPS'); }
     if (!own) {
       const xm = r.x_mult ?? r.xmult ?? r.Xmult ?? r.Xmult_mod;
-      if (xm !== undefined && xm !== 1) { mult = mod_mult(mult * xm); if (!r.message) say('X' + xm + ' Mult', 'MULT'); }
+      if (xm !== undefined && xm !== 1) { mult = mod_mult(B.mul(mult, xm)); if (!r.message) say('X' + xm + ' Mult', 'MULT'); }
     }
     const ec = r.e_chips ?? r.echips ?? r.Echip_mod;
-    if (ec !== undefined && ec !== 1) { hand_chips = mod_chips(Math.pow(hand_chips, ec)); if (!r.message) say('^' + ec + ' Chips', 'DARK_EDITION'); }
+    if (ec !== undefined && ec !== 1) { hand_chips = mod_chips(B.pow(hand_chips, ec)); if (!r.message) say('^' + ec + ' Chips', 'DARK_EDITION'); }
     const em = r.e_mult ?? r.emult ?? r.Emult_mod;
-    if (em !== undefined && em !== 1) { mult = mod_mult(Math.pow(mult, em)); if (!r.message) say('^' + em + ' Mult', 'DARK_EDITION'); }
+    if (em !== undefined && em !== 1) { mult = mod_mult(B.pow(mult, em)); if (!r.message) say('^' + em + ' Mult', 'DARK_EDITION'); }
     if (r.swap && !(opts.individual && level === 1)) { const om = mult; mult = mod_mult(hand_chips); hand_chips = mod_chips(om); if (!own && !r.message) say(localize('k_swap_ex') === 'k_swap_ex' ? 'Swap!' : localize('k_swap_ex')); }
     if (!own && r.message && opts.individual && level > 1) say(r.message, r.colour);
   };
@@ -806,19 +814,19 @@ export function smods_effect(effect, scored_card, hand_chips, mult, depth = 0) {
   const scoring = hand_chips !== undefined && mult !== undefined;
   if (scoring) {
     for (const k of ['chips', 'h_chips', 'chip_mod']) if (has(k)) {
-      juice(); hand_chips = mod_chips(hand_chips + effect[k]); emit('hand_text', { chips: hand_chips });
+      juice(); hand_chips = mod_chips(B.add(hand_chips, effect[k])); emit('hand_text', { chips: hand_chips });
       if (k !== 'chip_mod') { if (effect.chip_message) say('extra', null, effect.chip_message); else say('chips', effect[k]); }
     }
     for (const k of ['x_chips', 'xchips', 'Xchip_mod']) if (has(k) && effect[k] !== 1) {
-      juice(); hand_chips = mod_chips(hand_chips * effect[k]); emit('hand_text', { chips: hand_chips });
+      juice(); hand_chips = mod_chips(B.mul(hand_chips, effect[k])); emit('hand_text', { chips: hand_chips });
       if (k !== 'Xchip_mod') { if (effect.xchip_message) say('extra', null, effect.xchip_message); else say('extra', null, { message: 'X' + effect[k] + ' Chips', colour: 'CHIPS' }); }
     }
     for (const k of ['mult', 'h_mult', 'mult_mod']) if (has(k)) {
-      juice(); mult = mod_mult(mult + effect[k]); emit('hand_text', { mult });
+      juice(); mult = mod_mult(B.add(mult, effect[k])); emit('hand_text', { mult });
       if (k !== 'mult_mod') { if (effect.mult_message) say('extra', null, effect.mult_message); else say('mult', effect[k]); }
     }
     for (const k of ['x_mult', 'Xmult', 'xmult', 'x_mult_mod', 'Xmult_mod']) if (has(k) && effect[k] !== 1) {
-      juice(); mult = mod_mult(mult * effect[k]); emit('hand_text', { mult });
+      juice(); mult = mod_mult(B.mul(mult, effect[k])); emit('hand_text', { mult });
       if (k !== 'Xmult_mod') { if (effect.xmult_message) say('extra', null, effect.xmult_message); else say('x_mult', effect[k]); }
     }
   }
@@ -828,7 +836,7 @@ export function smods_effect(effect, scored_card, hand_chips, mult, depth = 0) {
   }
   if (scoring && effect.swap) { juice(); const om = mult; mult = mod_mult(hand_chips); hand_chips = mod_chips(om); emit('hand_text', { chips: hand_chips, mult }); }
   if (scoring && effect.balance) {
-    juice(); const tot = mult + hand_chips; mult = mod_mult(tot / 2); hand_chips = mod_chips(tot / 2); emit('hand_text', { chips: hand_chips, mult });
+    juice(); const tot = B.add(mult, hand_chips); mult = mod_mult(B.div(tot, 2)); hand_chips = mod_chips(B.div(tot, 2)); emit('hand_text', { chips: hand_chips, mult });
     say('extra', null, effect.balance_message || { message: localize('k_balanced'), colour: 'PURPLE' });
   }
   if (effect.message) { juice(); card_eval_status_text(at, 'extra', null, null, null, effect); }
@@ -995,25 +1003,25 @@ function evaluate_play() {
         }
         sc.lucky_trigger = undefined;
         for (const ef of effects) {
-          if (ef.chips) { if (ef.card) juice_card(ef.card); hand_chips = mod_chips(hand_chips + ef.chips); card_eval_status_text(sc, 'chips', ef.chips); emit('hand_text', { chips: hand_chips }); }
-          if (ef.mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(mult + ef.mult); card_eval_status_text(sc, 'mult', ef.mult); emit('hand_text', { mult }); }
+          if (ef.chips) { if (ef.card) juice_card(ef.card); hand_chips = mod_chips(B.add(hand_chips, ef.chips)); card_eval_status_text(sc, 'chips', ef.chips); emit('hand_text', { chips: hand_chips }); }
+          if (ef.mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(B.add(mult, ef.mult)); card_eval_status_text(sc, 'mult', ef.mult); emit('hand_text', { mult }); }
           if (ef.p_dollars) { if (ef.card) juice_card(ef.card); ease_dollars(ef.p_dollars); card_eval_status_text(sc, 'dollars', ef.p_dollars); }
           if (ef.dollars) { if (ef.card) juice_card(ef.card); ease_dollars(ef.dollars); card_eval_status_text(sc, 'dollars', ef.dollars); }
           if (ef.extra) {
             if (ef.card) juice_card(ef.card);
-            if (ef.extra.mult_mod) mult = mod_mult(mult + ef.extra.mult_mod);
-            if (ef.extra.chip_mod) hand_chips = mod_chips(hand_chips + ef.extra.chip_mod);
+            if (ef.extra.mult_mod) mult = mod_mult(B.add(mult, ef.extra.mult_mod));
+            if (ef.extra.chip_mod) hand_chips = mod_chips(B.add(hand_chips, ef.extra.chip_mod));
             if (ef.extra.swap) { const om = mult; mult = mod_mult(hand_chips); hand_chips = mod_chips(om); }
             if (ef.extra.func) ef.extra.func();
             card_eval_status_text(sc, 'extra', null, null, null, ef.extra);
             emit('hand_text', { chips: hand_chips, mult });
           }
-          if (ef.x_mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(mult * ef.x_mult); card_eval_status_text(sc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
+          if (ef.x_mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(B.mul(mult, ef.x_mult)); card_eval_status_text(sc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
           if (ACTIVE_MODS.length && (ef._mod || ef === effects[0])) [hand_chips, mult] = mod_score_ops(ef, sc, hand_chips, mult, { individual: true });
           if (ef.edition && (ef.edition.chip_mod || ef.edition.mult_mod || ef.edition.x_mult_mod || !ef.edition.x_chip_mod)) {
-            hand_chips = mod_chips(hand_chips + (ef.edition.chip_mod || 0));
-            mult = mult + (ef.edition.mult_mod || 0);
-            mult = mod_mult(mult * (ef.edition.x_mult_mod || 1));
+            hand_chips = mod_chips(B.add(hand_chips, (ef.edition.chip_mod || 0)));
+            mult = B.add(mult, ef.edition.mult_mod || 0);
+            mult = mod_mult(B.mul(mult, (ef.edition.x_mult_mod || 1)));
             card_eval_status_text(sc, 'extra', null, null, null, {
               message: ef.edition.chip_mod ? '+' + ef.edition.chip_mod : ef.edition.mult_mod ? '+' + ef.edition.mult_mod + ' Mult' : 'X' + ef.edition.x_mult_mod + ' Mult',
               chip_mod: ef.edition.chip_mod, mult_mod: ef.edition.mult_mod, x_mult_mod: ef.edition.x_mult_mod, edition: true,
@@ -1022,7 +1030,7 @@ function evaluate_play() {
           }
           // A mod edition's X Chips (Bunco's Glitter), after the card's own effects.
           if (ef.edition && ef.edition.x_chip_mod) {
-            hand_chips = mod_chips(hand_chips * ef.edition.x_chip_mod);
+            hand_chips = mod_chips(B.mul(hand_chips, ef.edition.x_chip_mod));
             card_eval_status_text(sc, 'extra', null, null, null, { message: 'X' + ef.edition.x_chip_mod + ' ' + localize('bunc_chips'), edition: true, colour: 'CHIPS' });
             emit('hand_text', { chips: hand_chips, mult });
           }
@@ -1100,9 +1108,9 @@ function evaluate_play() {
         for (const ef of effects) {
           if (ef.card) juice_card(ef.card);
           if (ef.dollars) { ease_dollars(ef.dollars); card_eval_status_text(hc, 'dollars', ef.dollars); }
-          if (ef.h_mult) { mult = mod_mult(mult + ef.h_mult); card_eval_status_text(hc, 'h_mult', ef.h_mult); emit('hand_text', { mult }); }
-          if (ef.h_chips) { hand_chips = mod_chips(hand_chips + ef.h_chips); card_eval_status_text(hc, 'chips', ef.h_chips); emit('hand_text', { chips: hand_chips }); }
-          if (ef.x_mult) { mult = mod_mult(mult * ef.x_mult); card_eval_status_text(hc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
+          if (ef.h_mult) { mult = mod_mult(B.add(mult, ef.h_mult)); card_eval_status_text(hc, 'h_mult', ef.h_mult); emit('hand_text', { mult }); }
+          if (ef.h_chips) { hand_chips = mod_chips(B.add(hand_chips, ef.h_chips)); card_eval_status_text(hc, 'chips', ef.h_chips); emit('hand_text', { chips: hand_chips }); }
+          if (ef.x_mult) { mult = mod_mult(B.mul(mult, ef.x_mult)); card_eval_status_text(hc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
           if (ACTIVE_MODS.length && (ef._mod || ef === effects[0])) [hand_chips, mult] = mod_score_ops(ef, hc, hand_chips, mult, { held: ef !== effects[0] });
           if (ef.message) card_eval_status_text(hc, 'extra', null, null, null, ef);
           // (mod effects on the card itself after its seal: AMM Aspects)
@@ -1133,9 +1141,9 @@ function evaluate_play() {
             const ch = (ef.chips || 0) + (ef.chip_mod || 0) + (ef.h_chips || 0);
             const mu = (ef.mult || 0) + (ef.mult_mod || 0) + (ef.h_mult || 0);
             const xm = ef.x_mult ?? ef.xmult ?? ef.Xmult ?? ef.Xmult_mod ?? ef.x_mult_mod;
-            if (ch) hand_chips = mod_chips(hand_chips + ch);
-            if (mu) mult = mod_mult(mult + mu);
-            if (xm !== undefined && xm !== 1) mult = mod_mult(mult * xm);
+            if (ch) hand_chips = mod_chips(B.add(hand_chips, ch));
+            if (mu) mult = mod_mult(B.add(mult, mu));
+            if (xm !== undefined && xm !== 1) mult = mod_mult(B.mul(mult, xm));
             if (ef.dollars) ease_dollars(ef.dollars);
             if (ef.message) card_eval_status_text(at, 'extra', null, null, null, ef);
             else if (ch) card_eval_status_text(at, 'chips', ch);
@@ -1158,12 +1166,12 @@ function evaluate_play() {
       if (edition_effects.jokers) {
         edition_effects.jokers.edition = true;
         if (edition_effects.jokers.chip_mod) {
-          hand_chips = mod_chips(hand_chips + edition_effects.jokers.chip_mod);
+          hand_chips = mod_chips(B.add(hand_chips, edition_effects.jokers.chip_mod));
           card_eval_status_text(_card, 'jokers', null, null, null, { message: '+' + edition_effects.jokers.chip_mod, chip_mod: edition_effects.jokers.chip_mod, edition: true });
           emit('hand_text', { chips: hand_chips });
         }
         if (edition_effects.jokers.mult_mod) {
-          mult = mod_mult(mult + edition_effects.jokers.mult_mod);
+          mult = mod_mult(B.add(mult, edition_effects.jokers.mult_mod));
           card_eval_status_text(_card, 'jokers', null, null, null, { message: '+' + edition_effects.jokers.mult_mod + ' Mult', mult_mod: edition_effects.jokers.mult_mod, edition: true });
           emit('hand_text', { mult });
         }
@@ -1174,9 +1182,9 @@ function evaluate_play() {
       if (ACTIVE_MODS.length && _card.seal) for (const se of callHook('joker_seal', _card, mctx)) [hand_chips, mult] = smods_effect(se, _card, hand_chips, mult);
       let effects = eval_card(_card, mctx);
       for (let t = effects.jokers ? joker_retriggers(_card, mctx) + 1 : 0; t > 0; t--) {
-        if (effects.jokers.mult_mod) mult = mod_mult(mult + effects.jokers.mult_mod);
-        if (effects.jokers.chip_mod) hand_chips = mod_chips(hand_chips + effects.jokers.chip_mod);
-        if (effects.jokers.Xmult_mod) mult = mod_mult(mult * effects.jokers.Xmult_mod);
+        if (effects.jokers.mult_mod) mult = mod_mult(B.add(mult, effects.jokers.mult_mod));
+        if (effects.jokers.chip_mod) hand_chips = mod_chips(B.add(hand_chips, effects.jokers.chip_mod));
+        if (effects.jokers.Xmult_mod) mult = mod_mult(B.mul(mult, effects.jokers.Xmult_mod));
         if (effects.jokers.dollars && _card.config.center.mod) ease_dollars(effects.jokers.dollars);
         card_eval_status_text(_card, 'jokers', null, null, null, effects.jokers);
         emit('hand_text', { chips: hand_chips, mult });
@@ -1191,9 +1199,9 @@ function evaluate_play() {
         let effect = v.calculate_joker(octx);
         for (let t = effect ? joker_retriggers(v, octx) + 1 : 0; t > 0; t--) {
           let changed = false;
-          if (effect.mult_mod) { mult = mod_mult(mult + effect.mult_mod); changed = true; }
-          if (effect.chip_mod) { hand_chips = mod_chips(hand_chips + effect.chip_mod); changed = true; }
-          if (effect.Xmult_mod) { mult = mod_mult(mult * effect.Xmult_mod); changed = true; }
+          if (effect.mult_mod) { mult = mod_mult(B.add(mult, effect.mult_mod)); changed = true; }
+          if (effect.chip_mod) { hand_chips = mod_chips(B.add(hand_chips, effect.chip_mod)); changed = true; }
+          if (effect.Xmult_mod) { mult = mod_mult(B.mul(mult, effect.Xmult_mod)); changed = true; }
           if (changed) { card_eval_status_text(v, 'jokers', null, null, null, effect); emit('hand_text', { chips: hand_chips, mult }); }
           if (ACTIVE_MODS.length && effect._mod) [hand_chips, mult] = mod_score_ops(effect, v, hand_chips, mult, { joker: true });
           // Steamodded joker retriggers: the joker evaluates again (retrigger_joker = true).
@@ -1201,13 +1209,13 @@ function evaluate_play() {
         }
       }
       if (edition_effects.jokers && edition_effects.jokers.x_mult_mod) {
-        mult = mod_mult(mult * edition_effects.jokers.x_mult_mod);
+        mult = mod_mult(B.mul(mult, edition_effects.jokers.x_mult_mod));
         card_eval_status_text(_card, 'jokers', null, null, null, { message: 'X' + edition_effects.jokers.x_mult_mod + ' Mult', x_mult_mod: edition_effects.jokers.x_mult_mod, edition: true });
         emit('hand_text', { mult });
       }
       // A mod edition's X Chips (Bunco's Glitter: SMODS post_joker), where X Mult goes.
       if (edition_effects.jokers && edition_effects.jokers.x_chip_mod) {
-        hand_chips = mod_chips(hand_chips * edition_effects.jokers.x_chip_mod);
+        hand_chips = mod_chips(B.mul(hand_chips, edition_effects.jokers.x_chip_mod));
         card_eval_status_text(_card, 'jokers', null, null, null, { message: 'X' + edition_effects.jokers.x_chip_mod + ' ' + localize('bunc_chips'), edition: true, colour: 'CHIPS' });
         emit('hand_text', { chips: hand_chips });
       }
@@ -1281,15 +1289,15 @@ function evaluate_play() {
     }
   }
 
-  const total = Math.floor(hand_chips * mult);
+  const total = B.floor(B.mul(hand_chips, mult));
   emit('hand_total', { chips: hand_chips, mult, total, hand: text });
-  if (total > (G.GAME.stats.best_hand || 0)) { G.GAME.stats.best_hand = total; G.GAME.stats.best_hand_name = disp_text; }
-  if (G.GAME.round_scores.hand.amt < total) G.GAME.round_scores.hand.amt = total;
+  if (B.gt(total, G.GAME.stats.best_hand || 0)) { G.GAME.stats.best_hand = total; G.GAME.stats.best_hand_name = disp_text; }
+  if (B.lt(G.GAME.round_scores.hand.amt, total)) G.GAME.round_scores.hand.amt = total;
   G.GAME.last_hand_total = total;
   // (a mod may change what the hand adds to the round score — Bunco's Magenta Dagger subtracts it)
   const added = ACTIVE_MODS.length ? reduceHook('chips_scored', total, { full_hand: G.play.cards, scoring_hand, scoring_name: text }) : total;
   G.E_MANAGER.add_event(() => {
-    G.GAME.chips = G.GAME.chips + added;
+    G.GAME.chips = B.add(G.GAME.chips, added);
     emit('chips', { total: G.GAME.chips, add: added });
   });
   for (const j of G.jokers.cards.slice()) {
@@ -1314,7 +1322,7 @@ function evaluate_round() {
   const rows = [];
   let dollars = 0;
   const row = (r) => { rows.push(r); };
-  if (G.GAME.chips - G.GAME.blind.chips >= 0) {
+  if (B.beats(G.GAME.chips, G.GAME.blind.chips)) {
     row({ name: 'blind1', dollars: G.GAME.blind.dollars, blind: G.GAME.blind.config.blind && G.GAME.blind.config.blind.key });
     dollars += G.GAME.blind.dollars;
   } else {
@@ -2029,6 +2037,7 @@ function applyAction(a) {
     case 'skip_booster': {
       can(inPack(), 'no pack open');
       for (const j of G.jokers.cards.slice()) j.calculate_joker({ skipping_booster: true });
+      if (ACTIVE_MODS.length) callHook('skip_booster'); // (a G.FUNCS.skip_booster wrap: a custom deck's money for skipping)
       end_consumeable();
       break;
     }
@@ -2066,7 +2075,7 @@ export function legal() {
 
 export function blindChips(key) {
   const b = P_BLINDS[key];
-  return get_blind_amount(G.GAME.round_resets.ante) * b.mult * G.GAME.starting_params.ante_scaling;
+  return B.mul(B.mul(get_blind_amount(G.GAME.round_resets.ante), b.mult), G.GAME.starting_params.ante_scaling);
 }
 
 export { G, STATES as S, number_format, get_poker_hand_info as pokerInfo };

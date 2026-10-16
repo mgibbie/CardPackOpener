@@ -16,6 +16,7 @@ import {
   ease_dollars, ease_discard, ease_hands_played, draw_card, level_up_hand, update_hand_text, delay,
   create_card, create_playing_card, copy_card, probability_roll,
 } from './core.js';
+import * as B from './bignum.js';
 import { get_poker_hand_info } from './run.js';
 import { Tag, add_tag } from './tag.js';
 import { firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
@@ -790,7 +791,7 @@ Card.prototype.calculate_joker = function (context) {
           }
         }
         if (this.ability.name === 'Mr. Bones' && context.game_over &&
-            G.GAME.chips / G.GAME.blind.chips >= 0.25) {
+            B.gte(B.div(G.GAME.chips, G.GAME.blind.chips), 0.25)) {
           G.E_MANAGER.add_event(() => {
             emit('blind_juice', {});
             play_sound('tarot1');

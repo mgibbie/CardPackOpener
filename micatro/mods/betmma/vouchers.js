@@ -1,6 +1,7 @@
 // BETMMA Vouchers (Betmma_Vouchers.lua v3.0.2.3 + lovely/lovely.toml): 58 vouchers and 24 fusion
 // vouchers, voucher rarity, and every rule they bend. Each Lua wrap becomes a function the mod's hooks
 // call (index.js composes them in the Lua wrap order). Numbers, rules and text are the mod's.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card, quantum_enhancements, get_next_voucher_key,
   create_card, find_joker, ease_dollars, ease_discard, ease_hands_played, ease_ante,
@@ -432,7 +433,7 @@ export function end_round_effects() {
   for (const c of G.consumeables.cards.slice()) if (c.ability.v_epilogue) c.start_dissolve();
   if (used('epilogue')) G.E_MANAGER.add_event(() => randomly_create_spectral('v_epilogue', null, { eternal: true, extra_ability: 'v_epilogue' }));
   // Overkill / Big Blast
-  if (used('overkill') && chips - need >= 0 && chips * 100 - need * vcfg('overkill').extra >= 0) {
+  if (used('overkill') && BN.beats(chips, need) && BN.beats(BN.mul(chips, 100), BN.mul(need, vcfg('overkill').extra))) {
     const temp_pool = G.jokers.cards.filter((v) => v.ability.set === 'Joker' && !v.edition);
     if (temp_pool.length) {
       G.E_MANAGER.add_event(() => {
@@ -587,8 +588,8 @@ export function shop_stocked() {
 
 // ----------------------------------------------------------------- money / scoring rules
 /** Round Up / Round Up Plus (mod_chips / mod_mult wraps). */
-export const round_up_chips = (c) => (used('round_up') ? Math.ceil(c / 10) * 10 : undefined);
-export const round_up_mult = (m) => (used('round_up_plus') ? Math.ceil(m / 10) * 10 : undefined);
+export const round_up_chips = (c) => (used('round_up') ? (BN.isBig(c) ? c : Math.ceil(c / 10) * 10) : undefined);
+export const round_up_mult = (m) => (used('round_up_plus') ? (BN.isBig(m) ? m : Math.ceil(m / 10) * 10) : undefined);
 /** Gold Round Up (ease_dollars wrap): your money always lands on an even number. */
 export function gold_round_up(mod) {
   if (!used('gold_round_up') || !mod) return undefined;
@@ -600,7 +601,7 @@ export function gold_round_up(mod) {
 /** Collector (get_blind_amount wrap): -4% Blind requirement per voucher redeemed (multiplicative). */
 export function collector_amount(amount) {
   if (!used('collector')) return undefined;
-  return amount * Math.pow(1 - vcfg('collector').extra / 100, G.GAME.vouchers_bought || 0);
+  return BN.mul(amount, Math.pow(1 - vcfg('collector').extra / 100, G.GAME.vouchers_bought || 0));
 }
 /** Rich Boss / Richer Boss: the boss blind's extra reward ($8, + $4 per ante). */
 export function rich_boss_bonus(ante_mod) {

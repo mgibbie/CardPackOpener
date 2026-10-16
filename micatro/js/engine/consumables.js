@@ -84,6 +84,9 @@ Card.prototype.use_consumeable = function (area, copier) {
   stop_use();
   if (!copier) set_consumeable_usage(this);
   if (this.debuff) return undefined;
+  // A mod may apply the effect itself (a Lua Card:use_consumeable wrap: a custom deck's Death / Ankh / Hex /
+  // Ectoplasm / Ouija / Wraith / Familiar... rules, engine/customdeck.js).
+  if (ACTIVE_MODS.length && callHook('use_consumeable', this, area, copier).includes(true)) return undefined;
   if (this.config.center.mod && this.config.center.use) { this.config.center.use(this.config.center, this, area, copier); return undefined; }
   update_consumeable(this);
   const used_tarot = copier || this;
@@ -589,7 +592,8 @@ Card.prototype.open = function () {
       G.GAME.pack_choices = reduceHook('pack_choices', G.GAME.pack_choices, this);
     }
 
-    if (this.cost > 0) {
+    // (a custom deck may open it for free: Deck Creator's chance_for_free_booster)
+    if (this.cost > 0 && !(ACTIVE_MODS.length && callHook('booster_free', this).includes(true))) {
       G.E_MANAGER.add_event(() => {
         inc_career_stat('c_shop_dollars_spent', this.cost);
         this.juice_up();

@@ -5,6 +5,7 @@
 //
 // Everstone blocks evolution (see can_evolve); Pokédex lifts the one-per-family pool rule
 // (see pokemon_in_pool / poke_family_present).
+import * as BN from '../../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, play_sound, delay,
   create_card, copy_card, all_cards, juice_card_until, change_booster_limit,
@@ -267,7 +268,7 @@ defineJokers({
       if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
         let beaten = false;
         if (!G.GAME.chips || !G.GAME.blind.chips || card.ability.extra.form === undefined) return undefined;
-        if (G.GAME.chips / G.GAME.blind.chips >= (2 ** card.ability.extra.form) + 1) beaten = true;
+        if (BN.gte(BN.div(G.GAME.chips, G.GAME.blind.chips), (2 ** card.ability.extra.form) + 1)) beaten = true;
         if (beaten) {
           G.GAME.rival_losses = G.GAME.rival_losses + 1;
           let money = 5;

@@ -14,9 +14,12 @@ const SAVE_KEY = 'micatro_run_v1';
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
 
-  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {} } = {}) {
-    newRun({ seed, back, stake, mods, modOptions });
+  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null } = {}) {
+    newRun({ seed, back, stake, mods, modOptions, customDeck });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
+    // A custom deck (the deck editor): its validated definition is part of the recipe, so a resume /
+    // replay / spectator rebuilds exactly this run.
+    if (G.GAME.custom_deck) this.recipe.customDeck = G.GAME.custom_deck;
     this.events = G.ui_events.splice(0);
     this.save();
     return this.events;
@@ -39,7 +42,7 @@ export class Session {
   /** Rebuild from a recipe. Stops at the first action the engine rejects. */
   static fromRecipe(recipe) {
     const s = new Session();
-    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {} });
+    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null });
     s.recipe = { ...recipe, actions: [] };
     for (const a of recipe.actions || []) {
       const r = act(a);

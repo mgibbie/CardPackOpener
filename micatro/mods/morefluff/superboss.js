@@ -5,6 +5,7 @@
 // off again. Skip tags are hidden (no skipping) while it is on, and DUEL ZONE plays (extras.js view hook).
 // The DX bosses also appear on their own as showdown bosses past the win ante (ante 16, 24, ... in Endless).
 //   + the "Better Balatro II" challenge's data (superboss_always): registered as data; challenge UI later.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_BLINDS, P_CENTERS, pseudorandom, pseudorandom_element, pseudoseed, ease_hands_played, ease_discard,
   number_format, level_up_hand, get_new_boss, draw_card,
@@ -39,7 +40,7 @@ export const blinds = [
   },
   dx('violet_vessel_dx', 'Violet Vessel DX', 1, {
     mult: 24,
-    disable(self, b) { b.chips = b.chips / 8; b.chip_text = number_format(b.chips); },
+    disable(self, b) { b.chips = BN.div(b.chips, 8); b.chip_text = number_format(b.chips); },
   }),
   dx('cerulean_bell_dx', 'Cerulean Bell DX', 2, {
     debuff: { force_select_count: 3 },

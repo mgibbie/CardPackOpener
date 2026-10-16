@@ -10,6 +10,7 @@
 //    the end of the hand).
 //  * Copper Cards' re-score (Bunco.lua post_eval_card + SMODS.calculate_main_scoring wrap): once the played
 //    cards have scored, each Copper that ends a streak of adjacent Coppers scores the whole streak again.
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { G, P_CENTERS, eval_card, ease_dollars, ease_discard, card_eval_status_text, emit, juice_card } from '../../js/engine/core.js';
 import { calculate_context, mod_context_effect, play_cards_from_highlighted } from '../../js/engine/run.js';
 import { find, forced_message, event, localize, play_sound } from './util.js';
@@ -112,7 +113,7 @@ export const hooks = {
     return undefined;
   },
   // Magenta Dagger 5/5: the score goes down.
-  chips_scored: (total) => (G.GAME.blind && G.GAME.blind.antiscore ? -total : total),
+  chips_scored: (total) => (G.GAME.blind && G.GAME.blind.antiscore ? BN.neg(total) : total),
   hand_scored(hand_chips, mult, ctx) {
     // Magenta Dagger 3/5
     if (G.GAME.blind && G.GAME.blind.antiscore) G.GAME.blind.antiscore = false;
@@ -172,8 +173,8 @@ export const hooks = {
     if (step === 'end_scoring') {
       // The Blade (before the tags, as in the lovely order)
       if (blind_is('bl_bunc_blade')) {
-        const overscore = G.GAME.blind.chips * 1.5;
-        if (overscore < Math.floor(hand_chips * mult) + G.GAME.chips) {
+        const overscore = BN.mul(G.GAME.blind.chips, 1.5);
+        if (BN.lt(overscore, BN.add(BN.floor(BN.mul(hand_chips, mult)), G.GAME.chips))) {
           mult = 0; hand_chips = 0;
           event(() => G.GAME.blind.disable());
           emit('attention', { text: localize('bunc_exceeded_score') });

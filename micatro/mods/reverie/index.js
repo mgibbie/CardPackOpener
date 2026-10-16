@@ -54,6 +54,7 @@
  * walked in its declared order (Lua pairs() order is unspecified); every roll is seeded (the Stub Tag's /
  * Eerie Inn's math.random -> math_random).
  */
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { registerMod, isActive } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_TAGS, P_CARDS, P_CENTER_POOLS, Card, CardArea, emit, play_sound, localize, card_eval_status_text,
@@ -450,7 +451,7 @@ function quest_calc(q, ctx, gone) {
   const r = q.config.center.reward, a = q.ability;
   const csets = (s) => ctx.using_consumeable && ctx.consumeable.ability.set === s;
   if ((r === 'c_rev_gem_heist' && ctx.selling_card && ctx.card.ability.set === 'Joker' && ctx.card.edition) ||
-      (r === 'c_rev_ive_no_shape' && ctx.end_of_round && G.GAME.chips >= G.GAME.blind.chips * a.extra.chips) ||
+      (r === 'c_rev_ive_no_shape' && ctx.end_of_round && BN.gte(G.GAME.chips, BN.mul(G.GAME.blind.chips, a.extra.chips))) ||
       (r === 'c_rev_unseen' && ctx.end_of_round && G.jokers.config.card_limit - (G.jokers.cards.length + G.GAME.joker_buffer) >= a.extra.slots) ||
       (r === 'c_rev_crazy_lucky' && ctx.open_booster) ||
       (r === 'c_rev_tag_or_die' && ctx.skip_blind) ||

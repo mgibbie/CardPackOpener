@@ -4,6 +4,7 @@ import {
   G, P_CENTERS, Card, emit, play_sound, attention_text, localize, pseudoseed, pseudorandom_element,
   copy_table, create_card, update_hand_text,
 } from './core.js';
+import * as B from './bignum.js';
 import { Tag, add_tag } from './tag.js';
 
 /** Card.apply_to_run(nil, center) — the voucher effect lives in consumables.js. */
@@ -83,9 +84,9 @@ export class Back {
     }
 
     if (this.name === 'Plasma Deck' && args.context === 'final_scoring_step') {
-      const tot = args.chips + args.mult;
-      args.chips = Math.floor(tot / 2);
-      args.mult = Math.floor(tot / 2);
+      const tot = B.add(args.chips, args.mult);
+      args.chips = B.floor(B.div(tot, 2));
+      args.mult = B.floor(B.div(tot, 2));
       update_hand_text({ delay: 0 }, { mult: args.mult, chips: args.chips });
 
       G.E_MANAGER.add_event(() => {
