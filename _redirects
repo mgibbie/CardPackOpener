@@ -25,6 +25,8 @@
 /micatro/mods/omertadeck/assets/* https://magepunk-micatromods.pages.dev/omertadeck/assets/:splat 301
 /micatro/mods/morefluff/assets/* https://magepunk-micatromods.pages.dev/morefluff/assets/:splat 301
 /micatro/mods/betmma/assets/* https://magepunk-micatromods.pages.dev/betmma/assets/:splat 301
+/micatro/mods/bunco/assets/* https://magepunk-micatromods.pages.dev/bunco/assets/:splat 301
+/micatro/mods/reverie/assets/* https://magepunk-micatromods.pages.dev/reverie/assets/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
 # /pokemon was never a route, but a stale bookmark there renders the homepage
 # (the SPA fallback), and the homepage's RELATIVE links ("overworld/") then

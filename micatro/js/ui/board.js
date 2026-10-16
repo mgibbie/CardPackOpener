@@ -2,8 +2,8 @@
 // shop, booster packs) and the status popups. Renders ONLY from a view-model
 // (engine/view.js toView()) plus the UI event stream fed by the Player — never
 // from the engine's G — so a spectator draws exactly what the runner sees.
-import { CardSprite } from './cardsprite.js';
-import { cellEl, drawCell, CENTERS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
+import { CardSprite, modAtlasesOf } from './cardsprite.js';
+import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
 import { backgroundFor } from './gl.js';
 import { markup, fmt, esc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
 import { sound } from './sound.js';
@@ -30,6 +30,9 @@ export class Board {
     this.data = new Map();
     this.pending = new Map();
     this.areas = Object.fromEntries(VISIBLE.map((k) => [k, []]));
+    // Mod card areas (view.mod_areas: [{key, label, limit, buttons}]; e.g. Reverie's Cine slots), drawn as extra rows.
+    this.modAreas = [];
+    this.modLbls = new Map();
     this.raised = new Set();
     this.sel = null;
     this.view = null;
@@ -140,7 +143,7 @@ export class Board {
     addEventListener('pointerup', (e) => this.onUp(e));
     addEventListener('pointercancel', (e) => this.onUp(e, true));
     this.stage.addEventListener('pointerdown', (e) => {
-      if (!e.target.closest('.card') && !e.target.closest('.card-btns') && !e.target.closest('.tip')) { if (this.sel != null) { this.sel = null; this.refreshSelection(); } this.hideTip(); }
+      if (!e.target.closest('.card') && !e.target.closest('.card-btns') && !e.target.closest('.tip')) { if (this.sel != null) { const prev = this.sel; this.sel = null; this.syncSel(prev); this.refreshSelection(); } this.hideTip(); }
     });
   }
 
@@ -218,6 +221,7 @@ export class Board {
     pos(this.lblHand, R.handLbl);
     this.deckEl.style.left = (R.deck.x - this.cw / 2) + 'px';
     this.deckEl.style.top = (R.deck.y - this.ch / 2) + 'px';
+    if (this.modAreas) this.placeModAreas();
   }
   deckPos() { return { x: this.R.deck.x, y: this.R.deck.y }; }
 
@@ -251,16 +255,34 @@ export class Board {
     const hl = (id) => { const d = this.data.get(id); return d && d.hl; };
     const handIds = this.areas.hand;
     const handRect = R.hand;
-    this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
-      if (hl(handIds[i])) t.y -= this.ch * 0.3;
-      set(handIds[i], t);
-    });
+    if (this.view && this.view.bunc_virtual && handIds.length) {
+      // A Virtual Pack (Bunco) holds the whole deck in hand: one overlapping row per suit, like the mod's
+      // "Virtual pack deck alignment" (Spades on top ... exotic suits below).
+      const ORDER = ['Spades', 'Hearts', 'Clubs', 'Diamonds', 'bunc_Fleurons', 'bunc_Halberds'];
+      const suitOf = (id) => { const d = this.data.get(id) || {}; return d.front_suit || (CARDS[d.front] && CARDS[d.front].suit) || null; };
+      const rows = ORDER.map((s) => handIds.filter((id) => suitOf(id) === s));
+      rows.push(handIds.filter((id) => !ORDER.includes(suitOf(id))));
+      const used = rows.filter((r) => r.length);
+      used.forEach((ids, ri) => {
+        const rect = { ...handRect, y: handRect.y - (used.length - 1 - ri) * this.ch * 0.42 };
+        this.rowTargets(ids, rect, { z: 100 + ri * 20, gap: 0.6 }).forEach((t, i) => { t.s = (t.s || 1) * 0.8; if (hl(ids[i])) t.y -= this.ch * 0.25; set(ids[i], t); });
+      });
+    } else {
+      this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
+        if (hl(handIds[i])) t.y -= this.ch * 0.3;
+        set(handIds[i], t);
+      });
+    }
     const playIds = this.areas.play;
     this.rowTargets(playIds, R.play, { z: 200, gap: 1.1 }).forEach((t, i) => { if (this.raised.has(playIds[i])) t.y -= this.ch * 0.2; set(playIds[i], t); });
     for (const k of ['jokers', 'consumeables']) {
       const ids = this.areas[k];
       this.rowTargets(ids, R[k], { z: k === 'jokers' ? 300 : 320, gap: 1.06 }).forEach((t, i) => { if (this.sel === ids[i]) t.y += this.mode === 'portrait' ? 10 : 14; set(ids[i], t); });
     }
+    this.modAreas.forEach((a, i) => {
+      const ids = this.areas[a.key] || [], r = this.modAreaRect(i);
+      this.rowTargets(ids, r, { z: 150, gap: 1.0, scale: r.s }).forEach((t, j) => { if (this.sel === ids[j]) t.y += 10; set(ids[j], t); });
+    });
     const S = this.shopRects;
     if (state !== 'SHOP') {
       // the shop slides away (e.g. while a booster from it is open)
@@ -280,11 +302,62 @@ export class Board {
   refreshModArt(atlas) {
     for (const s of this.sprites.values()) {
       const d = s.d || {};
-      if (!d.mod && !d.atlas) continue;
-      if (atlas && d.atlas !== atlas) continue;
+      const used = modAtlasesOf(d); // (its own art + a mod suit's front, a blind card, link / sticker overlays)
+      if (!d.mod && !used.length) continue;
+      if (atlas && !used.includes(atlas)) continue;
       s.vkey = ''; s.setData(d);
     }
     if (!atlas && this.view) { this.renderOverlay(); this.layout(); this.setBackground(this.view); }
+    this._tagsKey = null; // (mod tag icons are drawn from mod atlases)
+    if (this.view) this.renderTagsEtc(this.view);
+  }
+  /** The visible areas: the base ones plus the view's mod areas. */
+  vis() { return this.modAreas.length ? VISIBLE.concat(this.modAreas.map((a) => a.key)) : VISIBLE; }
+  modArea(k) { return this.modAreas.find((a) => a.key === k) || null; }
+  /** Pick up view.mod_areas: area lists + their slot boxes / counters. */
+  syncModAreas(view) {
+    this.modAreas = (view && view.mod_areas) || [];
+    for (const a of this.modAreas) if (!this.areas[a.key]) this.areas[a.key] = [];
+    for (const [k, el] of this.modLbls) if (!this.modArea(k)) { el.box.remove(); el.lbl.remove(); this.modLbls.delete(k); }
+    for (const a of this.modAreas) {
+      if (!this.modLbls.has(a.key)) {
+        const box = h('div', 'area-box'), lbl = h('div', 'area-lbl');
+        this.areaLabels.append(box, lbl);
+        this.modLbls.set(a.key, { box, lbl });
+      }
+    }
+    this.placeModAreas();
+  }
+  /** Slot rect of the i-th mod area: right of the play area under the consumables (landscape), smaller cards in portrait. */
+  modAreaRect(i) {
+    const R = this.R;
+    if (this.mode === 'landscape') return { x: this.W - 16 - 176, y: R.jokers.y + R.jokers.h + 44 + i * (this.ch + 48), w: 176, h: this.ch, s: 1 };
+    const s = 0.7;
+    return { x: 708 - 160, y: R.jokers.y + R.jokers.h + 16 + i * (this.ch * s + 40), w: 160, h: this.ch * s, s };
+  }
+  placeModAreas() {
+    if (!this.R) return;
+    this.modAreas.forEach((a, i) => {
+      const el = this.modLbls.get(a.key);
+      if (!el) return;
+      const r = this.modAreaRect(i);
+      const pos = (e, q) => { e.style.left = q.x + 'px'; e.style.top = q.y + 'px'; if (q.w != null) e.style.width = q.w + 'px'; if (q.h != null) e.style.height = q.h + 'px'; };
+      pos(el.box, { x: r.x - 6, y: r.y - 6, w: r.w + 12, h: r.h + 12 });
+      pos(el.lbl, { x: r.x, y: r.y + r.h + 8 });
+      el.lbl.textContent = `${a.label ? a.label + ' ' : ''}${(this.areas[a.key] || []).length}/${a.limit != null ? a.limit : '?'}`;
+    });
+  }
+  /** A tag's icon: the base atlas, or a mod tag's own (MoreFluff, Reverie, ...). */
+  tagIcon(key) {
+    const tg = TAGS[key];
+    if (!tg || !tg.pos) return null;
+    if (tg.mod && tg.atlas && MODREG.atlases[tg.atlas]) {
+      const a = MODREG.atlases[tg.atlas];
+      const c = document.createElement('canvas'); c.width = a.px * 2; c.height = a.py * 2; c.className = 'tag-ico';
+      drawModCell(c.getContext('2d'), tg.atlas, tg.pos, 0, 0, c.width, c.height);
+      return c;
+    }
+    return cellEl('tags', tg.pos, 'tag-ico');
   }
   setBackground(view) {
     this.bg.set(backgroundFor(view.state, view.blind && { ...view.blind, showdown: view.blind && BLINDS[view.blind.key] && BLINDS[view.blind.key].boss && BLINDS[view.blind.key].boss.showdown }, view.won && view.state === 'ROUND_EVAL', packColours(view)));
@@ -295,6 +368,7 @@ export class Board {
   setView(view, opts = {}) {
     const first = !this.view;
     this.view = view;
+    this.syncModAreas(view);
     sound.setTrack(view.music || null); // a mod's music for this moment (MoreFluff's pack / Superboss tracks)
     this.stage.classList.remove('no-run');
     if (view.back && view.back !== this.backKey) {
@@ -303,7 +377,7 @@ export class Board {
       for (const s of this.sprites.values()) { s.vkey = ''; s.setData(s.d); }
     }
     const seen = new Set();
-    for (const k of VISIBLE) {
+    for (const k of this.vis()) {
       const list = (view.areas && view.areas[k]) || [];
       this.areas[k] = list.map((c) => c.id);
       for (const c of list) { this.data.set(c.id, c); seen.add(c.id); }
@@ -314,7 +388,7 @@ export class Board {
       if (seen.has(id) || s.leaving) continue;
       this.retire(id, opts.instant ? 'drop' : 'auto');
     }
-    for (const k of VISIBLE) {
+    for (const k of this.vis()) {
       for (const id of this.areas[k]) {
         let s = this.sprites.get(id);
         if (!s) s = this.spawn(id, k, first || opts.instant);
@@ -432,9 +506,8 @@ export class Board {
       this._tagsKey = key;
       H.tags.innerHTML = '';
       for (const t of tags) {
-        const pos = TAGS[t.key] && TAGS[t.key].pos;
-        if (!pos) continue;
-        const c = cellEl('tags', pos, 'tag-ico');
+        const c = this.tagIcon(t.key);
+        if (!c) continue;
         c.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.showTagTip(t, c); });
         c.addEventListener('pointerleave', () => this.hideTip());
         c.addEventListener('click', () => this.showTagTip(t, c));
@@ -443,6 +516,7 @@ export class Board {
     }
     this.lblJokers.textContent = `${this.areas.jokers.length}/${v.joker_limit}`;
     this.lblCons.textContent = `${this.areas.consumeables.length}/${v.consumeable_limit}`;
+    this.placeModAreas();
     this.lblHand.textContent = HAND_STATES.includes(v.state) || HAND_PACK_STATES.includes(v.state) ? `${this.areas.hand.length}/${v.hand_limit}` : '';
     this.deckEl.querySelector('.deck-count').textContent = `${v.deck_count}/${v.deck_total}`;
     // controls
@@ -522,11 +596,10 @@ export class Board {
       col.appendChild(body);
       if (k !== 'Boss' && c.tag) {
         const sk = h('div', 'blind-skip');
-        const pos = TAGS[c.tag] && TAGS[c.tag].pos;
         sk.innerHTML = '<div class="or">or</div>';
         const line = h('div', 'skip-line');
-        if (pos) {
-          const tc = cellEl('tags', pos, 'tag-ico');
+        const tc = this.tagIcon(c.tag);
+        if (tc) {
           tc.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.showTagTip({ key: c.tag, desc: c.tagDesc }, tc); });
           tc.addEventListener('pointerleave', () => this.hideTip());
           tc.addEventListener('click', () => this.showTagTip({ key: c.tag, desc: c.tagDesc }, tc));
@@ -683,18 +756,26 @@ export class Board {
       add(`Sell<br><span class="money">$${d.sell != null ? d.sell : 0}</span>`, 'green sell', { type: 'sell', id: s.id }, 'coin2');
       if (s.area === 'consumeables') add('Use', 'red use', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
       wrap.classList.add(s.area === 'jokers' ? 'side' : 'side');
+    } else if (this.modArea(s.area)) {
+      // a mod area's card: the buttons the area offers (Reverie's Cine slots: Sell + Use)
+      const btns = this.modArea(s.area).buttons || [];
+      if (btns.includes('sell')) add(`Sell<br><span class="money">$${d.sell != null ? d.sell : 0}</span>`, 'green sell', { type: 'sell', id: s.id }, 'coin2');
+      if (btns.includes('use') && consumable) add('Use', 'red use', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
+      wrap.classList.add('side');
+    } else if (s.area === 'shop_jokers' && d.set === 'Booster') {
+      add('Open', 'green buy', { type: 'buy', id: s.id }, 'coin1'); wrap.classList.add('below'); // (a pack in a card slot: Reverie's Cine shops)
     } else if (s.area === 'shop_jokers') {
       add(`Buy`, 'green buy', { type: 'buy', id: s.id }, 'coin1');
       if (consumable) add('Buy<br>&amp; Use', 'green buyuse', { type: 'buy', id: s.id, use: true }, 'coin1');
       wrap.classList.add('below');
     } else if (s.area === 'shop_vouchers') {
-      add('Redeem', 'green buy', { type: 'buy', id: s.id }, 'coin1'); wrap.classList.add('below');
+      add(d.set === 'Booster' ? 'Open' : 'Redeem', 'green buy', { type: 'buy', id: s.id }, 'coin1'); wrap.classList.add('below');
     } else if (s.area === 'shop_booster') {
       add('Open', 'green buy', { type: 'buy', id: s.id }, 'coin1'); wrap.classList.add('below');
     } else if (s.area === 'pack_cards') {
       // A mod may let a pack card be saved to the consumable slots (view_card: reserve / reserve_label),
       // or allow ONLY that (no_use: MoreFluff's Colour cards are taken, never used, from a pack).
-      if (!d.no_use) add(consumable ? 'Use' : 'Select', 'green buy', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
+      if (!d.no_use) add(d.use_label || (consumable ? 'Use' : 'Select'), 'green buy', { type: 'use', id: s.id, targets: this.handHighlighted() }, 'button');
       if (d.reserve) add(d.reserve_label || 'Save', 'green buy', { type: 'reserve', id: s.id }, 'button');
       wrap.classList.add('below');
     } else if (!(d.mod_actions && d.mod_actions.length)) return null;
@@ -703,6 +784,15 @@ export class Board {
     if (!wrap.classList.contains('side') && !wrap.classList.contains('below')) wrap.classList.add('below');
     if (v && !['SHOP'].includes(v.state) && s.area.startsWith('shop')) return null;
     return wrap;
+  }
+  /** A card whose selection the engine must know (view_card select_action — Bunco's The 8 lifts the hand's
+   *  selection limit while it is selected): tell it when the UI selection moves on or off it. */
+  syncSel(prev) {
+    if (prev === this.sel || this.readOnly) return;
+    for (const id of [prev, this.sel]) {
+      const d = id != null ? this.data.get(id) : null;
+      if (d && d.select_action && this.opts.onAction) this.opts.onAction({ ...d.select_action, on: id === this.sel });
+    }
   }
   handHighlighted() { return this.areas.hand.filter((id) => { const d = this.data.get(id); return d && d.hl; }); }
   positionCardButtons() { /* buttons live inside the card element; nothing to do */ }
@@ -822,9 +912,11 @@ export class Board {
       }
       return;
     }
-    if (['jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'].includes(s.area)) {
+    if (['jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'].includes(s.area) || this.modArea(s.area)) {
       sound.play('cardSlide1', 1.1, 0.6);
+      const prev = this.sel;
       this.sel = this.sel === s.id ? null : s.id;
+      this.syncSel(prev);
       this.refreshSelection();
       if (this.sel === s.id) { if (ptype !== 'mouse') this.showCardTip(s, true); s.juiceUp(0.12, 0.1); } else this.hideTip();
     }
@@ -958,11 +1050,12 @@ export class Board {
   // ------------------------------------------------- sequence (event) API
   beginSequence(finalView) {
     this._finalView = finalView;
-    for (const k of VISIBLE) for (const c of (finalView.areas && finalView.areas[k]) || []) this.pending.set(c.id, c);
+    this.syncModAreas(finalView);
+    for (const k of this.vis()) for (const c of (finalView.areas && finalView.areas[k]) || []) this.pending.set(c.id, c);
     this.sel = null; this.refreshSelection(); this.hideTip();
   }
-  areaOf(id) { for (const k of VISIBLE) if (this.areas[k].includes(id)) return k; return null; }
-  removeFromAreas(id) { for (const k of VISIBLE) { const i = this.areas[k].indexOf(id); if (i >= 0) this.areas[k].splice(i, 1); } }
+  areaOf(id) { for (const k of this.vis()) if (this.areas[k].includes(id)) return k; return null; }
+  removeFromAreas(id) { for (const k of this.vis()) { const i = this.areas[k].indexOf(id); if (i >= 0) this.areas[k].splice(i, 1); } }
 
   /** Apply one UI event; returns how long (seconds at 1×) the player should wait after it. */
   applyEvent(ev) {
@@ -973,7 +1066,7 @@ export class Board {
         const id = ev.card, to = ev.to;
         const from = this.areaOf(id);
         this.removeFromAreas(id);
-        if (VISIBLE.includes(to)) {
+        if (this.vis().includes(to)) {
           let s = this.sprites.get(id);
           if (s && s.leaving) { this.destroySprite(id); s = null; }
           if (ev.front) this.areas[to].unshift(id); else this.areas[to].push(id);
@@ -1257,6 +1350,7 @@ export function packName(kind, state) {
  *  (background_colour / primary_colour + secondary_colour); null = the neutral pack background. */
 export function packColours(view) {
   if (!view || !/^MOD_PACK/.test(view.state)) return null;
+  if (view.pack_colours && cssColour(view.pack_colours.colour)) return view.pack_colours; // (a mod's own pack colours: Reverie)
   const kind = view.pack_kind;
   if (!kind) return null;
   const t = modType(kind);

@@ -1,0 +1,5 @@
+{
+  "note": "Bunco.lua needs two prelude lines the stub VM can't provide; run the tool on a scratch copy whose Bunco.lua starts with: SMODS.current_mod.config = {gameplay_reworks = true, fixed_sprites = false, high_quality_shaders = false}; SMODS.Suit.obj_buffer = {'Diamonds','Clubs','Hearts','Spades','Fleurons','Halberds'} — then group the captured items by kind into micatro/mods/bunco/data.js (keys prefixed j_bunc_ / c_bunc_ / ...) and copy LOC to loc.js.",
+  "files": { "all": ["Bunco.lua"] },
+  "loc": "localization/default.lua"
+}

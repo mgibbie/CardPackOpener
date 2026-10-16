@@ -76,6 +76,12 @@ function pickAction(r) {
   }
   if (S === STATES.ROUND_EVAL) return { type: 'cash_out' };
   if (S === STATES.SHOP) {
+    // Mod card areas (Reverie's Cine slots): use what can be used here sometimes.
+    if (MODS.length && r() < 0.5) {
+      const base = [G.jokers, G.consumeables, G.hand, G.play, G.deck, G.discard, G.shop_jokers, G.shop_vouchers, G.shop_booster, G.pack_cards];
+      const usable = G.areas.filter((a) => !base.includes(a)).flatMap((a) => a.cards).filter((c) => c.ability.consumeable && c.can_use_consumeable());
+      if (usable.length) return { type: 'use', id: usable[Math.floor(r() * usable.length)].sort_id, targets: [] };
+    }
     const forSale = [...G.shop_jokers.cards, ...G.shop_vouchers.cards, ...G.shop_booster.cards]
       .filter((c) => c.cost <= G.GAME.dollars - G.GAME.bankrupt_at);
     if (forSale.length && r() < 0.6) return { type: 'buy', id: forSale[Math.floor(r() * forSale.length)].sort_id };
@@ -118,7 +124,9 @@ let lastEvents = [];
 const modStats = {};
 let totalActions = 0, wins = 0, maxAnte = 0;
 for (let i = 0; i < RUNS; i++) {
-  const back = BACKS[i % BACKS.length];
+  // (mod runs: every third run on one of the mods' decks)
+  const modBacks = MODS.length ? Object.values(P_CENTERS).filter((v) => v.set === 'Back' && v.mod && MODS.includes(v.mod)).map((v) => v.key) : [];
+  const back = modBacks.length && i % 3 === 2 ? modBacks[(i / 3 | 0) % modBacks.length] : BACKS[i % BACKS.length];
   const stake = 1 + (i % 8);
   const seed = 'FUZZ' + i;
   const r = botRng(i * 7919 + 13);

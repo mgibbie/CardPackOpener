@@ -10,6 +10,7 @@ import {
   level_up_hand, update_hand_text, calculate_reroll_cost, get_next_voucher_key,
 } from './core.js';
 import { use_card, reroll_boss, HANDLIST } from './run.js';
+import { callHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 
 /**
  * create_UIBox_blind_choice (UI_definitions.lua) rolls the Orbital Tag hand for
@@ -90,6 +91,11 @@ export class Tag {
   }
 
   apply_to_run(_context) {
+    // A mod may hold a tag back from a context (a Lua Tag:apply_to_run wrap: Reverie keeps
+    // new_blind_choice tags waiting while its Cine shop is open).
+    if (ACTIVE_MODS.length && callHook('tag_apply', this, _context).includes(false)) return undefined;
+    // A mod may rework a base tag (SMODS.Tag:take_ownership — Bunco's Boss Tag / D6 Tag): its result replaces this call.
+    if (ACTIVE_MODS.length && !this.triggered) { const o = firstHook('apply_tag', this, _context); if (o !== undefined) return o; }
     // Steamodded: a mod tag's apply(self, tag, context) sees every context while untriggered.
     const mt = P_TAGS[this.key];
     if (!this.triggered && mt && mt.mod && mt.apply) {
@@ -228,7 +234,7 @@ export class Tag {
           this.triggered = true;
         }
       } else if (_context.type === 'tag_add') {
-        if (this.name === 'Double Tag' && _context.tag.key !== 'tag_double') {
+        if (this.name === 'Double Tag' && _context.tag.key !== 'tag_double' && !(ACTIVE_MODS.length && callHook('double_tag_copies', _context.tag).includes(false))) {
           this.yep('+', 'BLUE', () => {
             if (_context.tag.ability && _context.tag.ability.orbital_hand) G.orbital_hand = _context.tag.ability.orbital_hand;
             add_tag(new Tag(_context.tag.key));
@@ -375,6 +381,8 @@ export class Tag {
 
 /** UI_definitions.lua add_tag — existing tags see it (Double Tag) before it joins the list. */
 export function add_tag(_tag) {
+  // A mod may swap the new tag (Bunco's Pin Collector: Double Tags arrive as Triple Tags).
+  if (ACTIVE_MODS.length) { const r = firstHook('add_tag', _tag); if (r) _tag = r; }
   for (let i = 0; i < G.GAME.tags.length; i++) {
     G.GAME.tags[i].apply_to_run({ type: 'tag_add', tag: _tag });
   }
