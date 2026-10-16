@@ -431,3 +431,10 @@ a.mc-pill { text-decoration: none; }
   .mc-index .mc-idx { gap: 8px; padding: 10px 9px; }
   .mc-index .mc-idx .lp-name { font-size: 13.5px; }
 }
+/* Micatro Mods: the big lists draw 60 at a time (designwiki/app.js mmPager) */
+.mm-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 22px; padding: 12px; border: 1px dashed #ccd5e5; border-radius: 10px; }
+.mm-pager[hidden], .mm-modhead[hidden], [data-section][hidden], .mc-grid[hidden], .mc-rows[hidden], .mc-hands[hidden] { display: none; }
+.mm-more { border: 1px solid #2b6cb0; background: #2b6cb0; color: #fff; border-radius: 16px; padding: 6px 14px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.mm-more.mm-all { background: #fff; color: #2b6cb0; }
+.mm-more:hover { filter: brightness(1.08); }
+.mm-left { font-size: 13px; }

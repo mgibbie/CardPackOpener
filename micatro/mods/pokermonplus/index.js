@@ -30,6 +30,11 @@
  *  5. energy_shift's j_marcpoke_toxtricity_amped branch (another mod's joker) is dropped.
  *  6. (Manifest: missing Steamodded/Lovely deps, jokerdisplay/definitions9.lua never loaded —
  *     irrelevant natively; JokerDisplay isn't part of Micatro.)
+ *  7. Balls of Patience (src/challenges/000_balls_of_patience.lua) banned "tag_holographic", a tag
+ *     Balatro doesn't have (its Holographic Tag is tag_holo), so the Holographic Tag still rolled in
+ *     the challenge; it bans tag_holo. Its Buffoon-pack ban also listed p_buffoon_normal_3/_4,
+ *     p_buffoon_jumbo_2 and p_buffoon_mega_2, which don't exist (every real Buffoon pack is already
+ *     in the list); they are dropped.
  *  + Croagunk / Toxicroak logic, Lechonk/Oinkologne volatile flag, Darkrai on base jokers,
  *    Shiny deck weight stacking, negative Energy on base jokers, Oinkologne's sprite — each
  *    documented at its site.
@@ -187,6 +192,23 @@ for (const f of DATA.groups.backs) {
 }
 
 // ---------------------------------------------------------------- challenges
+/**
+ * Keys the shipped challenges name that Balatro doesn't have, mapped to the ones the author meant
+ * (null = drop: the intent is already met by the rest of the list). Intended-design fix 7 above.
+ */
+const CHALLENGE_KEY_FIXES = {
+  tag_holographic: 'tag_holo',
+  p_buffoon_normal_3: null, p_buffoon_normal_4: null, p_buffoon_jumbo_2: null, p_buffoon_mega_2: null,
+};
+function fix_challenge_keys(c) {
+  const rs = c.restrictions;
+  if (!rs) return;
+  const fix = (k) => (k in CHALLENGE_KEY_FIXES ? CHALLENGE_KEY_FIXES[k] : k);
+  for (const list of [rs.banned_cards, rs.banned_tags, rs.banned_other]) for (const v of Array.isArray(list) ? list : []) {
+    if (v && v.id) v.id = fix(v.id);
+    if (v && Array.isArray(v.ids)) v.ids = v.ids.map(fix).filter(Boolean);
+  }
+}
 /** Registered as data only (challenge UI is a later phase for every mod). */
 const challenges = [];
 for (const f of DATA.groups.challenges) {
@@ -195,6 +217,7 @@ for (const f of DATA.groups.challenges) {
     c.key = 'c_' + PREFIX + '_' + item.key;
     c.name = (DATA.loc.misc.challenge_names || {})[c.key] || item.key;
     c.button_colour = '#87DEFF';
+    fix_challenge_keys(c);
     challenges.push(c);
   }
 }
