@@ -14,7 +14,7 @@
 //     run seed, so a run is fully reproducible from its seed + action list.
 
 import DATA from '../../data/balatro_data.js';
-import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits } from '../mods/registry.js';
 
 export const G = {};
 
@@ -240,6 +240,8 @@ export function card_eval_status_text(card, eval_type, amt, percent, dir, extra)
     if (extra.card && extra.card !== card) e.source = cid(extra.card);
   }
   emit('status', e);
+  // (Bunco's Nil Bill / Neon Joker watch the 'debuff' popup — "a debuffed card was played")
+  if (ACTIVE_MODS.length) callHook('status_text', card, eval_type, amt, extra);
   // Lua: card_eval_status_text ends with playing_card_joker_effects(extra.playing_cards_created) (DNA -> Hologram).
   if (extra && extra.playing_cards_created) for (const j of G.jokers.cards) j.calculate_joker({ playing_card_added: true, cards: extra.playing_cards_created });
 }
@@ -326,7 +328,15 @@ export class CardArea {
       }
     });
   }
-  add_to_highlighted(card) {
+  add_to_highlighted(card, silent) {
+    // A mod may do the highlighting itself (a Lua CardArea:add_to_highlighted wrap — Bunco's linked cards
+    // select their whole group); its own add_to_highlighted calls take the vanilla path below.
+    if (ACTIVE_MODS.length && !this.mod_highlighting) {
+      this.mod_highlighting = true;
+      let done;
+      try { done = callHook('add_to_highlighted', this, card, silent).includes(true); } finally { this.mod_highlighting = false; }
+      if (done) return;
+    }
     // A card can only be selected once (Cerulean Bell's forced card survives unhighlight_all).
     if (this.highlighted.includes(card)) return;
     if (this.config.type === 'shop') {
@@ -343,6 +353,13 @@ export class CardArea {
     }
   }
   remove_from_highlighted(card, force) {
+    // (a Lua CardArea:remove_from_highlighted wrap — Bunco: a linked group is deselected together)
+    if (ACTIVE_MODS.length && !this.mod_highlighting && card) {
+      this.mod_highlighting = true;
+      let done;
+      try { done = callHook('remove_from_highlighted', this, card, force).includes(true); } finally { this.mod_highlighting = false; }
+      if (done) return;
+    }
     if (!force && card && card.ability.forced_selection && this === G.hand) return;
     const i = this.highlighted.indexOf(card);
     if (i >= 0) this.highlighted.splice(i, 1);
@@ -425,7 +442,8 @@ export class Card {
     if (r) { this.base.nominal = r[0]; this.base.face_nominal = r[1]; this.base.id = r[2]; }
     if (initial) this.base.original_value = this.base.value;
     else this.base.original_value = this.base.original_value ?? card.value;
-    const s = SUIT_NOM[this.base.suit];
+    // (a mod suit: SMODS gives each suit the next 0.01 of suit_nominal in registration order)
+    const s = SUIT_NOM[this.base.suit] || (MOD_SUITS[this.base.suit] && [MOD_SUITS[this.base.suit].nominal, MOD_SUITS[this.base.suit].nominal / 10]);
     if (s) { this.base.suit_nominal = s[0]; this.base.suit_nominal_original = orig || s[1]; }
     if (!initial && G.GAME.blind) G.GAME.blind.debuff_card(this);
     if (!initial) emit('card_changed', { card: this.sort_id });
@@ -607,10 +625,14 @@ export class Card {
       emit('card_changed', { card: this.sort_id });
     }
   }
-  flip() { this.facing = this.facing === 'front' ? 'back' : 'front'; emit('flip', { card: this.sort_id, facing: this.facing }); }
+  flip() {
+    // A mod may keep a face-up card face up (Bunco's Fluorescent edition).
+    if (ACTIVE_MODS.length && this.facing === 'front' && callHook('flip', this).includes(false)) return;
+    this.facing = this.facing === 'front' ? 'back' : 'front'; emit('flip', { card: this.sort_id, facing: this.facing });
+  }
 
   change_suit(new_suit) {
-    const code = { Diamonds: 'D_', Spades: 'S_', Clubs: 'C_', Hearts: 'H_' }[new_suit];
+    const code = { Diamonds: 'D_', Spades: 'S_', Clubs: 'C_', Hearts: 'H_' }[new_suit] || (MOD_SUITS[new_suit] && MOD_SUITS[new_suit].card_key + '_');
     const v = this.base.value;
     const val = v === 'Ace' ? 'A' : v === 'King' ? 'K' : v === 'Queen' ? 'Q' : v === 'Jack' ? 'J' : v === '10' ? 'T' : v;
     this.set_base(P_CARDS[code + val]);
@@ -641,8 +663,7 @@ export class Card {
     if (n === 'Stuntman') G.hand.change_size(-this.ability.extra.h_size);
     if (this.edition && this.edition.negative) {
       if (from_debuff) this.ability.queue_negative_removal = undefined;
-      else if (this.ability.consumeable) G.consumeables.config.card_limit += 1;
-      else G.jokers.config.card_limit += 1;
+      else negative_area(this).config.card_limit += 1;
     }
     if (G.GAME.blind) G.E_MANAGER.add_event(() => G.GAME.blind.set_blind(null, true, null));
   }
@@ -664,8 +685,7 @@ export class Card {
     if (n === 'Stuntman') G.hand.change_size(this.ability.extra.h_size);
     if (this.edition && this.edition.negative && G.jokers) {
       if (from_debuff) this.ability.queue_negative_removal = true;
-      else if (this.ability.consumeable) G.consumeables.config.card_limit -= 1;
-      else G.jokers.config.card_limit -= 1;
+      else negative_area(this).config.card_limit -= 1;
     }
     if (G.GAME.blind) G.E_MANAGER.add_event(() => G.GAME.blind.set_blind(null, true, null));
   }
@@ -728,12 +748,15 @@ export class Card {
     if (this.debuff) return undefined;
     // A mod edition with no scoring numbers (e.g. Pokermon's Shiny) scores nothing.
     if (this.edition && this.edition.key && P_CENTERS[this.edition.key] && P_CENTERS[this.edition.key].mod &&
-        !this.edition.chips && !this.edition.mult && !this.edition.x_mult) return undefined;
+        !this.edition.chips && !this.edition.mult && !this.edition.x_mult && !(this.edition.x_chips ?? this.edition.Xchips)) return undefined;
     if (this.edition) {
       const ret = { card: this };
       if (this.edition.x_mult) ret.x_mult_mod = this.edition.x_mult;
       if (this.edition.mult) ret.mult_mod = this.edition.mult;
       if (this.edition.chips) ret.chip_mod = this.edition.chips;
+      // A mod edition's X Chips (Bunco's Glitter) scores where X Mult does (mod editions only).
+      const xc = this.edition.x_chips ?? this.edition.Xchips;
+      if (xc) ret.x_chip_mod = xc;
       return ret;
     }
   }
@@ -754,6 +777,8 @@ export class Card {
         if (G.GAME.last_hand_played) {
           let _planet = 0;
           for (const v of P_CENTER_POOLS.Planet) if (v.config.hand_type === G.GAME.last_hand_played) _planet = v.key;
+          // A mod hand without a planet (Bunco's Deal): Pluto, like Bunco's "Deal hand crash fix for Blue Seal".
+          if (_planet === 0 && ACTIVE_MODS.length) _planet = 'c_pluto';
           const card = create_card('Planet', G.consumeables, null, null, null, null, _planet, 'blusl');
           card.add_to_deck();
           G.consumeables.emplace(card);
@@ -821,7 +846,8 @@ export class Card {
     if (flush_calc) {
       if (this.ability.effect === 'Stone Card') return false;
       if ((this.ability.name === 'Wild Card' || (ACTIVE_MODS.length && quantum_enhancements(this).includes('m_wild'))) && !this.debuff) return true;
-      if (ACTIVE_MODS.length && firstHook('is_suit', this, suit, bypass_debuff, flush_calc)) return true; // mod suit rules (Milatro's Colorblindness)
+      // mod suit rules (Milatro's Colorblindness; Bunco's Myopia / Astigmatism — or false: an exotic suit is never Smeared)
+      if (ACTIVE_MODS.length) { const o = firstHook('is_suit', this, suit, bypass_debuff, flush_calc); if (o === true || o === false) return o; }
       if (find_joker('Smeared Joker').length && (this.base.suit === 'Hearts' || this.base.suit === 'Diamonds') === (suit === 'Hearts' || suit === 'Diamonds')) return true;
       return this.base.suit === suit;
     }
@@ -829,12 +855,13 @@ export class Card {
     if (this.ability.effect === 'Stone Card') return false;
     // (+ Steamodded quantum Wild: e.g. Pokermon's Shaymin Sky makes Flower cards Wild too)
     if (this.ability.name === 'Wild Card' || (ACTIVE_MODS.length && quantum_enhancements(this).includes('m_wild'))) return true;
-    if (ACTIVE_MODS.length && firstHook('is_suit', this, suit, bypass_debuff, flush_calc)) return true;
+    if (ACTIVE_MODS.length) { const o = firstHook('is_suit', this, suit, bypass_debuff, flush_calc); if (o === true || o === false) return o; }
     if (find_joker('Smeared Joker').length && (this.base.suit === 'Hearts' || this.base.suit === 'Diamonds') === (suit === 'Hearts' || suit === 'Diamonds')) return true;
     return this.base.suit === suit;
   }
   can_sell_card() {
     if ((G.play && G.play.cards.length > 0) || (G.GAME.STOP_USE && G.GAME.STOP_USE > 0)) return false;
+    if (ACTIVE_MODS.length && callHook('can_sell', this).includes(false)) return false; // (Bunco: a sold Hindered joker)
     return !!(this.area && this.area.config.type === 'joker' && !this.ability.eternal) ||
       // (Lua: the consumable area is a 'joker' type area too, so an Eternal consumable — mods only — can't be sold)
       !!(this.area && this.area.config.type === 'consumeable' && !this.ability.eternal);
@@ -846,8 +873,12 @@ export class Card {
     G.E_MANAGER.add_event(() => {
       play_sound('coin2');
       ease_dollars(this.sell_cost);
-      emit('dissolve', { card: this.sort_id, reason: 'sold' });
-      this.remove();
+      // A mod may keep the sold card in place (Bunco's Hindered sticker: it leaves at the end of the round).
+      if (ACTIVE_MODS.length && callHook('sell_card_keep', this).includes(true)) { emit('card_changed', { card: this.sort_id }); }
+      else {
+        emit('dissolve', { card: this.sort_id, reason: 'sold' });
+        this.remove();
+      }
       if (this.ability.set === 'Joker' && G.GAME.blind && G.GAME.blind.name === 'Verdant Leaf') {
         G.E_MANAGER.add_event(() => G.GAME.blind.disable());
       }
@@ -884,14 +915,12 @@ export class Card {
   juice_up() { juice_card(this); }
   /** Card:remove — take the card out of its area, the deck list, and the joker slots. */
   remove() {
-    if (!this.removed) callHook('card_removed', this);
+    const first = !this.removed;
+    if (first) callHook('card_removed', this);
     this.removed = true;
     if (this.area) this.area.remove_card(this);
     this.remove_from_deck();
-    if (this.ability.queue_negative_removal) {
-      if (this.ability.consumeable) G.consumeables.config.card_limit -= 1;
-      else G.jokers.config.card_limit -= 1;
-    }
+    if (this.ability.queue_negative_removal) negative_area(this).config.card_limit -= 1;
     // Free the center for future pools (rerolled shop jokers can come back).
     if (G.GAME && G.GAME.used_jokers && !find_joker(this.ability.name, true).length) {
       for (const [k, v] of Object.entries(P_CENTERS)) if (v.name === this.ability.name) delete G.GAME.used_jokers[k];
@@ -901,6 +930,8 @@ export class Card {
       if (i >= 0) G.playing_cards.splice(i, 1);
       G.playing_cards.forEach((v, k) => { v.playing_card = k + 1; });
     }
+    // (Bunco: a linked group goes with its card; a Scattering joker takes a neighbour with it)
+    if (first && ACTIVE_MODS.length) callHook('card_removed_after', this);
   }
   // Filled in by sibling modules:
   //   calculate_joker(context)        -> jokers.js
@@ -917,6 +948,11 @@ for (const [m, h] of [['get_chip_bonus', 'chip_bonus'], ['get_chip_mult', 'chip_
     const r = base.apply(this, args);
     return ACTIVE_MODS.length ? reduceHook(h, r, this) : r;
   };
+}
+
+/** The area whose slots a Negative edition on this card adds to (a mod may say: Reverie's Cine slots). */
+function negative_area(card) {
+  return (ACTIVE_MODS.length && firstHook('negative_area', card)) || (card.ability.consumeable ? G.consumeables : G.jokers);
 }
 
 // ------------------------------------------------------------ common_events
@@ -1284,6 +1320,12 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
   area = area || G.jokers;
   let center = P_CENTERS.b_red;
   const showman = find_joker('Showman').length > 0;
+  // A mod may force a soul-like key first (a Lua create_card wrap: Reverie's Reverie spectral), which
+  // skips the soul rolls below, as forced_key does in the Lua.
+  if (ACTIVE_MODS.length && !forced_key && soulable && !G.GAME.banned_keys.c_soul) {
+    const k = firstHook('create_card_key', _type, area, key_append);
+    if (k) forced_key = k;
+  }
   if (!forced_key && soulable && !G.GAME.banned_keys.c_soul) {
     // Steamodded: hidden mod consumables (soul_set / soul_rate) roll like The Soul, first.
     if (ACTIVE_MODS.length) {
@@ -1306,6 +1348,8 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     center = P_CENTERS[forced_key];
     _type = center.set !== 'Default' ? center.set : _type;
   } else {
+    // A mod may raise the rarity roll first (Bunco's Doorhanger: no Commons).
+    if (ACTIVE_MODS.length) _rarity = reduceHook('create_card_rarity', _rarity, _type, area, key_append);
     const [_pool, _pool_key] = get_current_pool(_type, _rarity, legendary, key_append);
     let [c] = pseudorandom_element(_pool, pseudoseed(_pool_key));
     let it = 1;
@@ -1315,10 +1359,14 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
   const front = (_type === 'Base' || _type === 'Enhanced') ? pseudorandom_element(P_CARDS_LIST(), pseudoseed('front' + (key_append || '') + G.GAME.round_resets.ante))[0] : undefined;
   const card = new Card(front, center, { discover: area === G.jokers || area === G.consumeables });
   if (_type === 'Joker') {
-    if (G.GAME.modifiers.all_eternal) card.set_eternal(true);
+    // (Bunco: a joker with one of its stickers never gets Eternal here — block_eternal)
+    const eternal_ok = () => !(ACTIVE_MODS.length && callHook('block_eternal', card).includes(true));
+    if (G.GAME.modifiers.all_eternal && eternal_ok()) card.set_eternal(true);
     if (area === G.shop_jokers || area === G.pack_cards) {
+      // Mod shop stickers roll first (Bunco's Cyan / Pink / Magenta stakes).
+      if (ACTIVE_MODS.length) callHook('shop_joker_stickers', card, area);
       const poll = pseudorandom((area === G.pack_cards ? 'packetper' : 'etperpoll') + G.GAME.round_resets.ante);
-      if (G.GAME.modifiers.enable_eternals_in_shop && poll > 0.7) card.set_eternal(true);
+      if (G.GAME.modifiers.enable_eternals_in_shop && poll > 0.7) { if (eternal_ok()) card.set_eternal(true); }
       else if (G.GAME.modifiers.enable_perishables_in_shop && poll > 0.4 && poll <= 0.7) card.set_perishable(true);
       if (G.GAME.modifiers.enable_rentals_in_shop && pseudorandom((area === G.pack_cards ? 'packssjr' : 'ssjr') + G.GAME.round_resets.ante) > 0.7) card.set_rental(true);
     }
@@ -1331,9 +1379,20 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
 /** G.P_CARDS without the synthetic `empty` entry, as an object keyed like Lua. */
 let _pcards;
 export function P_CARDS_LIST() {
-  if (!_pcards) { _pcards = {}; for (const [k, v] of Object.entries(P_CARDS)) if (k !== 'empty') _pcards[k] = v; }
+  if (!_pcards) { _pcards = {}; for (const [k, v] of Object.entries(P_CARDS)) if (k !== 'empty' && !v.mod) _pcards[k] = v; }
+  // Mod suits (SMODS pool.toml): their cards join the pick only while the suit's in_pool allows it.
+  if (ACTIVE_MODS.length) {
+    const extra = activeModSuits().filter((s) => !s.in_pool || s.in_pool(s, {}));
+    if (extra.length) {
+      const out = { ..._pcards };
+      for (const [k, v] of Object.entries(P_CARDS)) if (v.mod && extra.some((s) => s.key === v.suit)) out[k] = v;
+      return out;
+    }
+  }
   return _pcards;
 }
+/** The registry changed P_CARDS (mod suits on / off). */
+export function reset_p_cards_list() { _pcards = null; }
 
 export function create_playing_card(card_init, area) {
   card_init = card_init || {};
@@ -1367,10 +1426,14 @@ export function copy_card(other, new_card, card_scale, playing_card, strip_editi
 export function calculate_reroll_cost(skip_increment) {
   const cr = G.GAME.current_round;
   if (cr.free_rerolls < 0) cr.free_rerolls = 0;
-  if (cr.free_rerolls > 0) { cr.reroll_cost = 0; return; }
-  cr.reroll_cost_increase = cr.reroll_cost_increase || 0;
-  if (!skip_increment) cr.reroll_cost_increase += 1;
-  cr.reroll_cost = (G.GAME.round_resets.temp_reroll_cost ?? G.GAME.round_resets.reroll_cost) + cr.reroll_cost_increase;
+  if (cr.free_rerolls > 0) cr.reroll_cost = 0;
+  else {
+    cr.reroll_cost_increase = cr.reroll_cost_increase || 0;
+    if (!skip_increment) cr.reroll_cost_increase += 1;
+    cr.reroll_cost = (G.GAME.round_resets.temp_reroll_cost ?? G.GAME.round_resets.reroll_cost) + cr.reroll_cost_increase;
+  }
+  // Mods adjusting the result (a Lua calculate_reroll_cost wrap: Reverie's Cine shops).
+  if (ACTIVE_MODS.length) cr.reroll_cost = reduceHook('reroll_cost', cr.reroll_cost);
 }
 
 export function reset_idol_card() {
@@ -1472,15 +1535,18 @@ export function get_pack(_key, _type) {
   let cume = 0, it = 0, center;
   // Lua `v.weight or 1` (a weight of 0 stays 0); mod packs may also refuse via in_pool.
   const ok = (v) => !G.GAME.banned_keys[v.key] && !(v.mod && v.in_pool && !v.in_pool(v, { type: 'Booster' }));
-  for (const v of P_CENTER_POOLS.Booster) if ((!_type || _type === v.kind) && ok(v)) cume += v.weight ?? 1;
+  // (SMODS: a mod pack's get_weight() — Bunco's Arcade Machine makes Virtual Packs 4X likelier)
+  const wt = (v) => ((v.mod && v.get_weight) ? v.get_weight(v) : (v.weight ?? 1));
+  for (const v of P_CENTER_POOLS.Booster) if ((!_type || _type === v.kind) && ok(v)) cume += wt(v);
   const poll = pseudorandom(pseudoseed((_key || 'pack_generic') + G.GAME.round_resets.ante)) * cume;
   for (const v of P_CENTER_POOLS.Booster) {
     if (ok(v)) {
-      if (!_type || _type === v.kind) it += v.weight ?? 1;
-      if (it >= poll && it - (v.weight ?? 1) <= poll) { center = v; break; }
+      if (!_type || _type === v.kind) it += wt(v);
+      if (it >= poll && it - wt(v) <= poll) { center = v; break; }
     }
   }
-  return center;
+  // Mods may swap the pack (a Lua get_pack wrap: Reverie's Cine shops keep their pack kinds).
+  return ACTIVE_MODS.length ? reduceHook('get_pack', center, _key, _type) : center;
 }
 
 export function get_blind_amount(ante) {

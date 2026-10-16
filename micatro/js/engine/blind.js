@@ -252,6 +252,7 @@ export class Blind {
 
   // ---------------------------------------------------------- press_play
   press_play() {
+    if (ACTIVE_MODS.length) callHook('blind_press_play', this); // (Bunco's Hedge Trimmer: every blind, even disabled)
     if (this.disabled) return undefined;
     const mb = this.config.blind;
     if (mb && mb.mod && mb.press_play) return mb.press_play(mb, this);
@@ -306,6 +307,9 @@ export class Blind {
   /** -> [mult, hand_chips, modded] (Lua returns three values). */
   modify_hand(cards, poker_hands, text, mult, hand_chips) {
     if (this.disabled) return [mult, hand_chips, false];
+    // Steamodded: a mod blind's modify_hand(self, cards, poker_hands, text, mult, hand_chips) -> [mult, hand_chips, modded].
+    const mb = this.config.blind;
+    if (mb && mb.mod && mb.modify_hand) return mb.modify_hand(mb, this, cards, poker_hands, text, mult, hand_chips);
     if (this.name === 'The Flint') {
       this.triggered = true;
       this.juice_up();
@@ -323,6 +327,8 @@ export class Blind {
       if (o === false) return undefined;
       if (o === true) { this.triggered = true; return true; }
     }
+    // Steamodded: a mod blind's debuff_hand(self, cards, hand, handname, check) decides on its own.
+    { const mb = this.config.blind; if (mb && mb.mod && mb.debuff_hand) return mb.debuff_hand(mb, this, cards, hand, handname, check); }
     if (this.debuff) {
       this.triggered = false;
       if (this.debuff.hand && hand[this.debuff.hand] && hand[this.debuff.hand].length > 0) {
@@ -416,6 +422,8 @@ export class Blind {
       const mb = this.config.blind;
       if (mb && mb.mod && mb.stay_flipped && mb.stay_flipped(mb, this, area, card)) return true;
       if (area === G.hand) {
+        // (Bunco's Vandalism: a hand card may be drawn face down)
+        if (ACTIVE_MODS.length && callHook('blind_stay_flipped', area, card, this).includes(true)) return true;
         if (this.name === 'The Wheel' && probability_roll(this, pseudoseed('wheel'), 1, 7, 'wheel')) return true;
         if (this.name === 'The House' && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0) return true;
         if (this.name === 'The Mark' && card.is_face(true)) return true;

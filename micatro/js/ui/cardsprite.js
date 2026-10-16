@@ -3,7 +3,7 @@
 // each frame when it has an edition / debuff / dissolve. Position, rotation and
 // scale ease toward a target set by the board layout; juice/flip/dissolve/
 // shatter are local animations. Draws ONLY from view data (cardView objects).
-import { drawCell, centerAtlas, CENTERS, CARDS, SEAL_POS, STICKER_POS, SOUL_POS, MODREG, drawModCell, modAtlasState } from './assets.js';
+import { drawCell, centerAtlas, CENTERS, CARDS, TAGS, SEAL_POS, STICKER_POS, SOUL_POS, MODREG, drawModCell, modAtlasState } from './assets.js';
 import { CardFX } from './gl.js';
 
 export const FACE_W = 142, FACE_H = 190;
@@ -15,13 +15,28 @@ const noGL = () => !fx().ok;
 export function composeFace(ctx, d, backKey) {
   ctx.clearRect(0, 0, FACE_W, FACE_H);
   const center = CENTERS[d.center] || null;
-  if (d.facing === 'back') { drawBack(ctx, backKey); return; }
+  if (d.facing === 'back') {
+    // a mod's own back for this card (Reverie: face-down vouchers / tags / boosters in an Adrifting shop)
+    if (d.back_atlas && (d.tag_card ? drawTagCell(ctx, d.back_atlas, d.back_pos, d.tag_card) : drawModCell(ctx, d.back_atlas, d.back_pos, 0, 0, FACE_W, FACE_H))) return;
+    drawBack(ctx, backKey);
+    return;
+  }
+  if (d.tag_card) {
+    // a Tag sold / packed as a card (Reverie): the square tag sprite, small in the shop, big in packs
+    const tg = TAGS[d.tag || d.center];
+    if (!drawTagCell(ctx, d.atlas || (tg && tg.atlas), (d.atlas && d.pos) || (tg && tg.pos), d.tag_card)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
+    return;
+  }
+  // A mod's "blind card" (Bunco's Blind Packs): the blind's chip, square in the card's place.
+  if (d.blind_card) { drawBlindCard(ctx, d.blind_card); return; }
   const modCard = !!(d.mod || d.atlas);
   const isPlaying = !!d.front || (center && (center.set === 'Default' || center.set === 'Enhanced')) || (modCard && (d.set === 'Default' || d.set === 'Enhanced'));
   if (isPlaying) {
     // a mod enhancement draws its own base; the rank/suit goes on top as usual
     if (!(modCard && d.atlas && drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H))) drawCell(ctx, 'centers', (center && center.pos) || { x: 1, y: 0 }, 0, 0, FACE_W, FACE_H);
-    if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H);
+    // (a mod suit's card — Bunco's Fleurons / Halberds — draws from its mod atlas)
+    if (d.front_atlas && !(center && center.name === 'Stone Card')) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H);
+    else if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H);
     if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
   } else if (modCard) {
     if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
@@ -31,6 +46,9 @@ export function composeFace(ctx, d, backKey) {
     drawBack(ctx, backKey);
   }
   if (d.eternal) drawCell(ctx, 'stickers', STICKER_POS.eternal, 0, 0, FACE_W, FACE_H);
+  // mod stickers (view_card mod_stickers: [{atlas, pos}]) and a linked group's chain (view_card group: Bunco)
+  for (const st of d.mod_stickers || []) drawModCell(ctx, st.atlas, st.pos, 0, 0, FACE_W, FACE_H);
+  if (d.group) drawModCell(ctx, 'bunco_link', { x: (d.group - 1) % 5, y: 0 }, 0, 0, FACE_W, FACE_H);
   if (d.perishable) drawCell(ctx, 'stickers', STICKER_POS.perishable, 0, 0, FACE_W, FACE_H);
   if (d.rental) drawCell(ctx, 'stickers', STICKER_POS.rental, 0, 0, FACE_W, FACE_H);
   if (d.debuff && noGL()) {
@@ -38,6 +56,29 @@ export function composeFace(ctx, d, backKey) {
     ctx.strokeStyle = 'rgba(255,60,60,.9)'; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.moveTo(10, 10); ctx.lineTo(FACE_W - 10, FACE_H - 10); ctx.moveTo(FACE_W - 10, 10); ctx.lineTo(10, FACE_H - 10); ctx.stroke();
   }
+}
+/** A tag cell (base 'tags' atlas, or a mod atlas) as a square centred on the card face. */
+function drawTagCell(ctx, atlas, pos, size) {
+  if (!pos) return false;
+  const w = FACE_W * (size === 'big' ? 1 : 0.8), x = (FACE_W - w) / 2, y = (FACE_H - w) / 2;
+  if (atlas && MODREG.atlases[atlas]) return drawModCell(ctx, atlas, pos, x, y, w, w);
+  return drawCell(ctx, 'tags', pos, x, y, w, w);
+}
+/** A blind chip drawn as a card face (frame 0 of the blind's animated atlas). */
+function drawBlindCard(ctx, b) {
+  const sz = FACE_W, y = (FACE_H - sz) / 2;
+  if (b.atlas && drawModCell(ctx, b.atlas, b.pos, 0, y, sz, sz)) return;
+  drawCell(ctx, 'blind_chips', b.pos || { x: 0, y: 0 }, 0, y, sz, sz);
+}
+/** Every mod atlas a card's face uses (to recompose it once one has loaded). */
+export function modAtlasesOf(d) {
+  const out = [];
+  if (d.atlas) out.push(d.atlas);
+  if (d.front_atlas) out.push(d.front_atlas);
+  if (d.blind_card && d.blind_card.atlas) out.push(d.blind_card.atlas);
+  if (d.group) out.push('bunco_link');
+  for (const st of d.mod_stickers || []) out.push(st.atlas);
+  return out;
 }
 /** A deck back: vanilla from the Enhancers atlas, a mod deck from its own atlas. */
 export function drawBack(ctx, backKey) {
@@ -81,7 +122,8 @@ export function drawSoul(ctx, soul) {
   return drawCell(ctx, soul.atlas, soul.pos, 0, 0, FACE_W, FACE_H);
 }
 
-const visKey = (d, backKey) => [d.center, d.front, d.edition, d.seal, d.facing, d.debuff, d.eternal, d.perishable, d.rental, backKey, d.atlas, d.pos && d.pos.x, d.pos && d.pos.y, d.soul_pos && d.soul_pos.x, d.soul_pos && d.soul_pos.y].join('|');
+const visKey = (d, backKey) => [d.center, d.front, d.edition, d.seal, d.facing, d.debuff, d.eternal, d.perishable, d.rental, backKey, d.atlas, d.pos && d.pos.x, d.pos && d.pos.y, d.soul_pos && d.soul_pos.x, d.soul_pos && d.soul_pos.y, d.tag_card, d.back_atlas,
+  d.front_atlas, d.blind_card && d.blind_card.key, d.group, (d.mod_stickers || []).map((s) => s.atlas + s.pos.x + ',' + s.pos.y).join(';')].join('|');
 
 export class CardSprite {
   constructor(id, data, board) {
@@ -126,6 +168,7 @@ export class CardSprite {
     } else if (this.soul) { this.soul.remove(); this.soul = null; }
     this.el.classList.toggle('is-joker', (CENTERS[this.d.center] && CENTERS[this.d.center].set === 'Joker') || (!!this.d.mod && this.d.set === 'Joker'));
     this.el.classList.toggle('is-mod', !!this.d.mod);
+    this.el.classList.toggle('is-tag', !!this.d.tag_card);
     this.el.classList.toggle('wee', this.d.center === 'j_wee');
   }
   needsFx() { return !!(this.dissolve || (this.d.facing !== 'back' && (this.d.edition || this.d.debuff))); }

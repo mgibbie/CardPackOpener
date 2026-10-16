@@ -106,7 +106,17 @@ export function newRunScreen(o) {
   let bi = 0;
   refreshBacks(msel0);
   bi = Math.max(0, backs.findIndex((b) => b.key === pref.back));
-  let stake = Math.min(8, Math.max(1, pref.stake || 1));
+  // Stakes: the 8 base stakes, then the stakes of the selected mods (passed to the engine by key).
+  let stakes = STAKE_LIST.map((s, i) => ({ ...s, level: i + 1 }));
+  const refreshStakes = (sel) => {
+    const cur = stakes[si] && (stakes[si].level || stakes[si].key);
+    const extra = modsApi && modsApi.stakes ? modsApi.stakes(sel.ids.filter((id) => modsApi.isLoaded(id))) : [];
+    stakes = STAKE_LIST.map((s, i) => ({ ...s, level: i + 1 })).concat(extra);
+    si = Math.max(0, stakes.findIndex((s) => (s.level || s.key) === cur));
+  };
+  let si = Math.max(0, Math.min(7, (typeof pref.stake === 'number' ? pref.stake : 1) - 1));
+  refreshStakes(msel0);
+  if (typeof pref.stake === 'string') si = Math.max(0, stakes.findIndex((s) => s.key === pref.stake));
   const el = h('div', 'new-run');
   const deckRow = h('div', 'nr-row nr-deck');
   const left = btn('‹', 'arrow red', () => { bi = (bi + backs.length - 1) % backs.length; draw(); });
@@ -116,8 +126,8 @@ export function newRunScreen(o) {
   deckRow.append(left, deckView, deckInfo, right);
   el.appendChild(deckRow);
   const stakeRow = h('div', 'nr-row nr-stake');
-  const sl = btn('‹', 'arrow red', () => { stake = stake > 1 ? stake - 1 : 8; draw(); });
-  const sr = btn('›', 'arrow red', () => { stake = stake < 8 ? stake + 1 : 1; draw(); });
+  const sl = btn('‹', 'arrow red', () => { si = (si + stakes.length - 1) % stakes.length; draw(); });
+  const sr = btn('›', 'arrow red', () => { si = (si + 1) % stakes.length; draw(); });
   const stakeView = h('div', 'nr-stakeview');
   const stakeInfo = h('div', 'nr-info');
   stakeRow.append(sl, stakeView, stakeInfo, sr);
@@ -139,7 +149,7 @@ export function newRunScreen(o) {
     mrow.appendChild(h('span', 'nr-mods-l', 'Mods'));
     modsSum = h('span', 'nr-mods-sum');
     mrow.appendChild(modsSum);
-    mrow.appendChild(btn('Mods', 'green b-mods', () => modsPanel(msel, () => { drawMods(); refreshBacks(msel); draw(); })));
+    mrow.appendChild(btn('Mods', 'green b-mods', () => modsPanel(msel, () => { drawMods(); refreshBacks(msel); refreshStakes(msel); draw(); })));
     el.appendChild(mrow);
   }
   function drawMods() {
@@ -148,9 +158,11 @@ export function newRunScreen(o) {
   }
   drawMods();
   // decks of saved-on mods appear once those mods have loaded
-  if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); if (el.isConnected) draw(); }).catch(() => {});
+  if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); if (el.isConnected) draw(); }).catch(() => {});
   const play = btn('Play', 'blue big wide b-start', () => {
     const back = backs[bi].key;
+    const st = stakes[si] || stakes[0];
+    const stake = st.level || st.key;
     try { localStorage.setItem(PREF, JSON.stringify({ back, stake })); } catch (e) { /* ignore */ }
     const seed = seedOn.checked && seedIn.value ? seedIn.value : undefined;
     const mods = modsApi ? modsApi.withRequirements(msel.ids) : [];
@@ -174,11 +186,19 @@ export function newRunScreen(o) {
     } else deckView.appendChild(cellEl('centers', b.pos, 'nr-back'));
     const d = backDesc(b.key);
     deckInfo.innerHTML = `<div class="nr-name">${esc(d.name || b.name)}</div><div class="nr-desc">${(d.lines || []).map(markup).join('<br>')}</div>`;
-    const s = STAKE_LIST[stake - 1];
+    const s = stakes[si];
     stakeView.innerHTML = '';
-    if (s) stakeView.appendChild(cellEl('chips', s.pos, 'nr-chip'));
-    const sd = s && LOC.descriptions.Stake[s.key];
-    stakeInfo.innerHTML = `<div class="nr-name">${esc(sd ? sd.name : 'Stake ' + stake)}</div><div class="nr-desc">${sd ? sd.text.map(markup).join('<br>') : ''}</div>`;
+    if (s && s.mod) {
+      const c = document.createElement('canvas');
+      c.className = 'nr-chip'; c.width = 58; c.height = 58;
+      const paint = () => { const ctx = c.getContext('2d'); ctx.clearRect(0, 0, 58, 58); drawModCell(ctx, s.atlas, s.pos, 0, 0, 58, 58); };
+      paint();
+      const off = onModAtlas((name) => { if (name === s.atlas) { paint(); off(); } });
+      stakeView.appendChild(c);
+    } else if (s) stakeView.appendChild(cellEl('chips', s.pos, 'nr-chip'));
+    const sd = s && (s.mod ? s.text : LOC.descriptions.Stake[s.key]);
+    const sname = sd ? sd.name : (s && s.name) || 'Stake';
+    stakeInfo.innerHTML = `<div class="nr-name">${esc(sname)}${s && s.mod ? ' <span class="mod-preview" style="background:#4f6367;color:#fff">' + esc(modsApi && modsApi.modName ? modsApi.modName(s.mod) : s.mod) + '</span>' : ''}</div><div class="nr-desc">${sd && sd.text ? sd.text.map(markup).join('<br>') : ''}</div>`;
   }
   draw();
   modal(el, { title: 'New Run', cls: 'nr-modal' });

@@ -542,45 +542,50 @@ Card.prototype.explode = function () {
 // ----------------------------------------------------------------- Card:open
 Card.prototype.open = function () {
   if (this.ability.set === 'Booster') {
-    stop_use();
-    G.STATE_COMPLETE = false;
-    this.opening = true;
-
-    if (this.ability.name.includes('Arcana')) {
-      G.STATE = G.STATES.TAROT_PACK;
-      G.GAME.pack_size = this.ability.extra;
-    } else if (this.ability.name.includes('Celestial')) {
-      G.STATE = G.STATES.PLANET_PACK;
-      G.GAME.pack_size = this.ability.extra;
-    } else if (this.ability.name.includes('Spectral')) {
-      G.STATE = G.STATES.SPECTRAL_PACK;
-      G.GAME.pack_size = this.ability.extra;
-    } else if (this.ability.name.includes('Standard')) {
-      G.STATE = G.STATES.STANDARD_PACK;
-      G.GAME.pack_size = this.ability.extra;
-    } else if (this.ability.name.includes('Buffoon')) {
-      G.STATE = G.STATES.BUFFOON_PACK;
-      G.GAME.pack_size = this.ability.extra;
-    }
+    // A mod may re-open the pack in place (Bunco's Shell Game: reroll its contents once): its state, size and
+    // choices stay as they are, and it isn't paid for or exploded again (Shell Game lovely patches 4-10).
+    const reopen = !!this.reopening;
     const mc = this.config.center;
-    if (mc.mod) {
-      // Mod booster: its own generator; draw_hand packs show your hand (like Arcana).
-      G.STATE = mc.draw_hand ? G.STATES.MOD_PACK_HAND : G.STATES.MOD_PACK;
-      G.GAME.pack_size = this.ability.extra;
-    }
-    G.GAME.pack_kind = mc.kind || null;
-    G.GAME.pack_center = mc.key;
+    if (!reopen) {
+      stop_use();
+      G.STATE_COMPLETE = false;
+      this.opening = true;
 
-    G.GAME.pack_choices = this.config.center.config.choose || 1;
-    // Steamodded's formula (booster.toml): + booster_choice_mod, capped at the pack size (Nacho's
-    // Oranguru raises booster_choice_mod). Same numbers as vanilla when nothing sets the modifiers.
-    if (ACTIVE_MODS.length && (G.GAME.modifiers.booster_choice_mod || G.GAME.modifiers.booster_size_mod)) {
-      const ex = typeof this.ability.extra === 'number' ? this.ability.extra : this.config.center.config.extra;
-      G.GAME.pack_choices = Math.min((this.ability.choose || this.config.center.config.choose || 1) + (G.GAME.modifiers.booster_choice_mod || 0),
-        typeof ex === 'number' ? Math.max(1, ex + (G.GAME.modifiers.booster_size_mod || 0)) : 1);
+      if (this.ability.name.includes('Arcana')) {
+        G.STATE = G.STATES.TAROT_PACK;
+        G.GAME.pack_size = this.ability.extra;
+      } else if (this.ability.name.includes('Celestial')) {
+        G.STATE = G.STATES.PLANET_PACK;
+        G.GAME.pack_size = this.ability.extra;
+      } else if (this.ability.name.includes('Spectral')) {
+        G.STATE = G.STATES.SPECTRAL_PACK;
+        G.GAME.pack_size = this.ability.extra;
+      } else if (this.ability.name.includes('Standard')) {
+        G.STATE = G.STATES.STANDARD_PACK;
+        G.GAME.pack_size = this.ability.extra;
+      } else if (this.ability.name.includes('Buffoon')) {
+        G.STATE = G.STATES.BUFFOON_PACK;
+        G.GAME.pack_size = this.ability.extra;
+      }
+      if (mc.mod) {
+        // Mod booster: its own generator; draw_hand packs show your hand (like Arcana).
+        G.STATE = mc.draw_hand ? G.STATES.MOD_PACK_HAND : G.STATES.MOD_PACK;
+        G.GAME.pack_size = this.ability.extra;
+      }
+      G.GAME.pack_kind = mc.kind || null;
+      G.GAME.pack_center = mc.key;
+
+      G.GAME.pack_choices = this.config.center.config.choose || 1;
+      // Steamodded's formula (booster.toml): + booster_choice_mod, capped at the pack size (Nacho's
+      // Oranguru raises booster_choice_mod). Same numbers as vanilla when nothing sets the modifiers.
+      if (ACTIVE_MODS.length && (G.GAME.modifiers.booster_choice_mod || G.GAME.modifiers.booster_size_mod)) {
+        const ex = typeof this.ability.extra === 'number' ? this.ability.extra : this.config.center.config.extra;
+        G.GAME.pack_choices = Math.min((this.ability.choose || this.config.center.config.choose || 1) + (G.GAME.modifiers.booster_choice_mod || 0),
+          typeof ex === 'number' ? Math.max(1, ex + (G.GAME.modifiers.booster_size_mod || 0)) : 1);
+      }
+      G.GAME.pack_size = reduceHook('pack_size', G.GAME.pack_size, this);
+      G.GAME.pack_choices = reduceHook('pack_choices', G.GAME.pack_choices, this);
     }
-    G.GAME.pack_size = reduceHook('pack_size', G.GAME.pack_size, this);
-    G.GAME.pack_choices = reduceHook('pack_choices', G.GAME.pack_choices, this);
 
     if (this.cost > 0) {
       G.E_MANAGER.add_event(() => {
@@ -591,7 +596,7 @@ Card.prototype.open = function () {
     }
 
     G.E_MANAGER.add_event(() => {
-      this.explode();
+      if (!reopen) this.explode();
       const pack_cards = [];
 
       G.E_MANAGER.add_event(() => {
@@ -646,6 +651,7 @@ Card.prototype.open = function () {
             card = create_card('Joker', G.pack_cards, null, null, true, true, null, 'buf');
           }
           if (mc.mod && mc.create_card) card = card_from_spec(mc.create_card(mc, this, i));
+          if (ACTIVE_MODS.length) callHook('pack_card_created', this, card, i); // (Bunco's Lamination / Supercoating)
           emit('materialize', { card: card.sort_id });
           pack_cards[i - 1] = card;
         }

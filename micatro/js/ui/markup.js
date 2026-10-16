@@ -1,6 +1,6 @@
 // Balatro description markup -> HTML.  "{C:mult}+4{} Mult", "{X:mult,C:white} X2 {}",
 // "{s:0.8}", "{C:attention,T:tag_double}..." ({T:}/{E:}/{V:} are accepted and ignored).
-import { CENTERS, LOC, CARDS } from './assets.js';
+import { CENTERS, LOC, CARDS, modType, cssColour } from './assets.js';
 
 export const COL = {
   mult: '#fe5f55', chips: '#009dff', money: '#f3b958', attention: '#ff9a00', filter: '#ff9a00',
@@ -36,7 +36,7 @@ export function markup(line, colours) {
       for (const part of spec.split(',')) {
         const [k, v0] = part.split(':');
         const v = (v0 || '').trim().toLowerCase();
-        if (k === 'C') { if (v === 'dark_edition') cls += ' dark-ed'; else st.push('color:' + (COL[v] || '#4f6367')); }
+        if (k === 'C') { if (v === 'dark_edition') cls += ' dark-ed'; else st.push('color:' + (COL[v] || typeColour(v) || '#4f6367')); }
         else if (k === 'X') { st.push('background:' + (COL[v] || '#fe5f55')); cls += ' xbox'; }
         else if (k === 'V') { const c = colours && colours[(parseInt(v, 10) || 1) - 1]; const css = cssCol(c); if (css) st.push('color:' + css); }
         else if (k === 's') { const n = parseFloat(v); if (n) st.push("font-size:" + Math.round(Math.min(1.6, n) * 100) + "%"); }
@@ -48,6 +48,12 @@ export function markup(line, colours) {
   }
   if (open) out += '</span>';
   return out;
+}
+
+/** {C:<mod consumable type>} — the type's colour (Reverie's {C:cine}, More Fluff's Colour cards). */
+function typeColour(v) {
+  const t = modType(v);
+  return t ? (cssColour(t.secondary_colour) || cssColour(t.primary_colour)) : null;
 }
 
 function cssCol(c) {
@@ -76,7 +82,8 @@ const NOMINAL = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9
 
 /** Tooltip model for a playing card (the view carries no describe() for hand cards). */
 export function describePlaying(cv) {
-  const front = CARDS[cv.front] || {};
+  // (a mod suit's card carries its own rank / suit: spectators may not have the mod's P_CARDS)
+  const front = cv.front_value ? { value: cv.front_value, suit: cv.front_suit_name || cv.front_suit } : (CARDS[cv.front] || {});
   const center = CENTERS[cv.center] || {};
   const D = LOC.descriptions;
   const name = cv.facing === 'back' ? '???' : (center.name === 'Stone Card' ? 'Stone Card' : `${RANK_NAME[front.value] || front.value} of ${front.suit}`);
@@ -105,6 +112,8 @@ export function describePlaying(cv) {
     const s = D.Other[cv.seal.toLowerCase() + '_seal'];
     if (s) { extra(s.name, s.text); badges.push(s.name); }
   }
+  // lines a mod adds to a playing card's tooltip (view_card mod_lines: Bunco's linked group, mod editions)
+  if (cv.mod_lines && cv.mod_lines.length) { lines.push(''); lines.push(...cv.mod_lines); }
   if (cv.debuff) { lines.push(''); lines.push('{C:red}Debuffed'); }
   return { name, lines, badges };
 }

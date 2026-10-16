@@ -133,6 +133,7 @@ b { font-weight: normal; }
 .card-face, .card-soul { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .card.wee .card-face, .card.wee .card-soul { inset: 15%; width: 70%; height: 70%; }
 .card.dissolving .card-shadow { opacity: 0; transition: opacity .3s; }
+.card.is-tag .card-shadow { display: none; } /* a Tag sold as a card (Reverie): square sprite, no card shadow */
 .shards { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 60; }
 .price-tag { position: absolute; left: 50%; top: -44px; transform: translateX(-50%); background: var(--panel); color: var(--money); font-size: 28px; padding: 5px 14px 3px; border-radius: 10px; box-shadow: 0 4px 0 var(--panel-dd); white-space: nowrap; text-shadow: 0 2px 0 rgba(0,0,0,.35); pointer-events: none; }
 .price-tag.poor { color: #e88; }

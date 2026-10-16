@@ -12,7 +12,7 @@
 // saves, replays and spectators load exactly the same mods.
 
 import {
-  G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, rebuildPools,
+  G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, P_CARDS, rebuildPools, reset_p_cards_list,
 } from '../engine/core.js';
 
 /** Every registered mod, by id. */
@@ -144,6 +144,54 @@ export const HOOKS = [
   'reserve_area',       // (card) -> an area a reserved pack card goes to when the consumable slots are full
   'action',             // (a) -> true (done) / an error string, for mod action types the engine doesn't know
   'update',             // () after every action (Lua Card:update / Game:update per-frame checks)
+  // ---- Reverie (special "Cine" shops, tags sold as cards, a quest card area)
+  'create_card_key',    // (_type, area, key_append) -> a forced key for a soulable create_card, rolled before the vanilla Soul / Black Hole rolls (undefined = none)
+  'create_card_for_shop', // (area) -> a Card that replaces create_card_for_shop's roll (undefined = the vanilla roll)
+  'reroll_cost',        // (cost) -> G.GAME.current_round.reroll_cost after calculate_reroll_cost (also with free rerolls)
+  'get_pack',           // (pack, _key, _type) -> the booster center get_pack returns
+  'tag_apply',          // (tag, context) -> false: the tag ignores this apply_to_run context (no effect, not triggered)
+  'shop_end',           // () the shop closed (toggle_shop's event, before the next blind select)
+  'action_area',        // (card, kind) -> true: a card in a mod card area may be used / sold here (kind 'use' | 'sell')
+  'pack_select',        // (card) -> true / false: overrides whether this pack card may be taken now (undefined = the vanilla check)
+  'pack_take_area',     // (card) -> a CardArea: this pack consumable is TAKEN into that area (added to the deck), not used
+  'use_other',          // (card, area) -> true: use_card handled a card of a set it doesn't know (e.g. a Tag sold as a card)
+  'use_card_done',      // (card, area) G.FUNCS.use_card returned (a Lua use_card wrap's tail)
+  'buy_place',          // (card, use) -> true: buy_from_shop: the mod placed the bought card itself (no add_to_deck / area)
+  'negative_area',      // (card) -> the CardArea whose card_limit a Negative edition on this card raises (default consumables / jokers)
+  // ---- Bunco (linked cards, exotic suits, Blind / Virtual packs, discard & play rule changes)
+  'add_to_highlighted', // (area, card, silent) -> true: the mod highlighted the card(s) itself (its own calls take the vanilla path)
+  'remove_from_highlighted', // (area, card, force) -> true: the mod un-highlighted the card(s) itself (its own calls take the vanilla path)
+  'can_highlight',      // (area, card) -> false: the 'highlight' action may not select this card (CardArea:can_highlight)
+  'use_targets',        // (card) the 'use' action is about to select this consumable's targets in hand
+  'use_card_override',  // (card) -> true: G.FUNCS.use_card is handled by the mod (e.g. a Blind card's "Select")
+  'draw_from_deck_to_hand', // (e) G.FUNCS.draw_from_deck_to_hand just queued its draws (a Lua wrap: linked cards follow)
+  'flip',               // (card) -> false: Card:flip leaves this face-up card face up
+  'card_removed_after', // (card) Card:remove finished (out of its area and G.playing_cards)
+  'sell_card_keep',     // (card) -> true: Card:sell_card pays out but leaves the card in place (not removed)
+  'can_sell',           // (card) -> false: this card can't be sold now
+  'shop_joker_stickers',// (card, area) create_card: a shop / pack joker, before the vanilla eternal / perishable poll
+  'block_eternal',      // (card) -> true: create_card's set_eternal(true) is skipped for this card
+  'consumable_edition_scores', // (card) -> false: a consumable's edition doesn't score in the joker loop
+  'rescore_cards',      // (scoring_hand, ctx, score_card) once the played cards scored: score_card(card) scores a played card again (Bunco's Copper)
+  'chips_scored',       // (total, ctx) -> the amount the hand adds to G.GAME.chips (the stats keep the real total)
+  'skip_shop',          // () -> true: cash_out goes straight to the blind select (no shop)
+  'play_start',         // () G.FUNCS.play_cards_from_highlighted is starting (cards still highlighted in hand)
+  'play_pressed',       // () just before the hand is counted (ease_hands_played), cards still highlighted in hand
+  'consume_hand',       // () -> false: this play doesn't use up a hand
+  'discard_begin',      // (hook) -> true: G.FUNCS.discard_cards_from_highlighted is taken over (stop here)
+  'discard_cards',      // (cards, count, hook) the discarded cards, before their per-card loop
+  'discard_destination',// (card) -> the area a discarded card goes to (default G.discard)
+  'discard_counted',    // () the discard was counted (not for a hook discard) -> true: stop here (no draw-state change)
+  'discard_end',        // (hook) the end of discard_cards_from_highlighted (also with nothing to discard) -> true: handled
+  'pack_card_created',  // (booster, card, i) Card:open made pack card i
+  'blind_press_play',   // (blind) Blind:press_play is starting (before its disabled check)
+  'blind_stay_flipped', // (area, card, blind) -> true: drawn face down (Blind:stay_flipped's hand branch, before The Wheel)
+  'apply_tag',          // (tag, context) -> a result that replaces Tag:apply_to_run (undefined = no opinion)
+  'add_tag',            // (tag) -> a replacement Tag for add_tag
+  'double_tag_copies',  // (tag) -> false: a Double Tag doesn't copy this new tag
+  'status_text',        // (card, eval_type, amt, extra) card_eval_status_text showed a popup (e.g. 'debuff')
+  'create_card_rarity', // (_rarity, _type, area, key_append) -> the rarity create_card rolls its pool with (non-forced cards)
+  'reordered',          // (area, before) the 'reorder' action rearranged an area (before = the old card order)
 ];
 
 /**
@@ -158,6 +206,41 @@ export const STICKERS = {};
  * picks a mod music track through its view (`view.music`, set by a mod's `view` hook).
  */
 export const SOUNDS = {};
+/** Mod suits (SMODS.Suit), by suit key ('bunc_Fleurons'). Their playing cards are P_CARDS[`${card_key}_${rank}`]. */
+export const MOD_SUITS = {};
+/** Mod poker hands (SMODS.PokerHand), by hand key ('bunc_Spectrum'): {key, chips, mult, l_chips, l_mult, visible, above_hand?, order_offset?, evaluate(parts, hand), modify_display_text?}. */
+export const MOD_POKER_HANDS = {};
+/** Mod poker hand parts (SMODS.PokerHandPart), by part key ('bunc_spectrum'): {key, func(hand) -> [[cards]]}. */
+export const MOD_HAND_PARTS = {};
+const RANK_KEYS = [['2', '2'], ['3', '3'], ['4', '4'], ['5', '5'], ['6', '6'], ['7', '7'], ['8', '8'], ['9', '9'], ['T', '10'], ['J', 'Jack'], ['Q', 'Queen'], ['K', 'King'], ['A', 'Ace']];
+/**
+ * SMODS.inject_p_card for mod suits: an ACTIVE mod's suits get their 13 P_CARDS entries
+ * (`<card_key>_<rank>`: {name, value, suit, pos, atlas, mod}); an inactive mod's are removed, so a
+ * vanilla run's P_CARDS is exactly the base table. No-op without mod suits.
+ */
+function apply_mod_suits() {
+  const keys = Object.keys(MOD_SUITS);
+  if (!keys.length) return;
+  for (const k of keys) {
+    const s = MOD_SUITS[k];
+    const on = activeSet.has(s.mod);
+    RANK_KEYS.forEach(([rk, value], i) => {
+      const ck = s.card_key + '_' + rk;
+      if (on) P_CARDS[ck] = { key: ck, name: value + ' of ' + s.key, value, suit: s.key, pos: { x: i, y: (s.pos && s.pos.y) || 0 }, atlas: s.atlas, mod: s.mod };
+      else delete P_CARDS[ck];
+    });
+  }
+  reset_p_cards_list();
+}
+/** Active mod suits, in registration order. */
+export function activeModSuits() {
+  const out = [];
+  for (const s of Object.values(MOD_SUITS)) if (activeSet.has(s.mod)) out.push(s);
+  return out;
+}
+/** Active mod poker hands / parts. */
+export function activeModHands() { return Object.values(MOD_POKER_HANDS).filter((h) => activeSet.has(h.mod)); }
+export function activeModHandParts() { return Object.values(MOD_HAND_PARTS).filter((h) => activeSet.has(h.mod)); }
 
 export function registerMod(mod) {
   if (!mod || !mod.id) throw new Error('registerMod: missing id');
@@ -190,6 +273,12 @@ export function registerMod(mod) {
     CONSUMABLE_TYPES[t.key] = t;
   }
   for (const r of C.rarities || []) { own(r); RARITIES[r.key] = r; }
+  // Mod suits (SMODS.Suit): {key, card_key, pos:{y}, ui_pos, atlas, colour, nominal?, in_pool(args)}; their
+  // P_CARDS entries exist only while the mod is on (activateMods).
+  for (const s of C.suits || []) { own(s); MOD_SUITS[s.key] = s; }
+  // Mod poker hands (SMODS.PokerHand / PokerHandPart): see run.js rebuild_handlist / evaluate_poker_hand.
+  for (const h of C.poker_hands || []) { own(h); MOD_POKER_HANDS[h.key] = h; }
+  for (const p of C.poker_hand_parts || []) { own(p); MOD_HAND_PARTS[p.key] = p; }
   for (const s of C.stickers || []) { own(s); STICKERS[s.key] = s; }
   for (const [key, snd] of Object.entries(C.sounds || {})) SOUNDS[key] = { ...snd, mod: mod.id };
   for (const [name, a] of Object.entries(C.atlases || {})) ATLASES[name] = { ...a, mod: mod.id };
@@ -251,6 +340,7 @@ export function activateMods(ids, options = {}) {
   // A registered mod may undo run-wide changes to shared tables at every new run, on or off
   // (`reset_run`; BETMMA's Bonus+ / Mult+ / Slate raise the shared enhancement values like the Lua).
   for (const m of Object.values(MODS)) if (typeof m.reset_run === 'function') m.reset_run();
+  apply_mod_suits();
   rebuildPools(centerActive);
   return ACTIVE;
 }

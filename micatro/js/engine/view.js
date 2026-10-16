@@ -5,7 +5,7 @@
 import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount } from './core.js';
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag } from './describe.js';
-import { callHook } from '../mods/registry.js';
+import { callHook, MOD_LOC } from '../mods/registry.js';
 
 export const VIEW_VERSION = 1;
 
@@ -17,6 +17,11 @@ export function cardView(c, withDesc) {
     name: c.ability.name,
   };
   if (c.config.card && c.config.card.key) v.front = c.config.card.key;
+  // A mod suit's card (Bunco's Fleurons / Halberds): its art cell, plus rank/suit for the text (spectators lack P_CARDS).
+  if (c.config.card && c.config.card.atlas) {
+    v.front_atlas = c.config.card.atlas; v.front_pos = c.config.card.pos; v.front_value = c.config.card.value; v.front_suit = c.config.card.suit;
+    v.front_suit_name = (MOD_LOC.misc.suits_plural && MOD_LOC.misc.suits_plural[c.config.card.suit]) || c.config.card.suit;
+  }
   const ctr = c.config.center;
   if (ctr.mod) {
     v.mod = ctr.mod;

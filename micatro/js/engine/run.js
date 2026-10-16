@@ -24,7 +24,7 @@ import { quantum_enhancements } from './core.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
-import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions } from '../mods/registry.js';
+import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS } from '../mods/registry.js';
 import './consumables.js';
 
 export const STATES = {
@@ -37,6 +37,26 @@ export const STATES = {
 export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
 const PACK_STATES = [STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK, STATES.MOD_PACK, STATES.MOD_PACK_HAND];
 export const HANDLIST = Object.keys(HANDS_PROTO).sort((a, b) => HANDS_PROTO[a].order - HANDS_PROTO[b].order);
+const BASE_HANDLIST = HANDLIST.slice();
+/**
+ * SMODS.PokerHand order (post_inject_class): every hand sorted by mult*chips (+ order_offset), a hand
+ * with `above_hand` just above that hand. Rebuilt in place for each run so the active mods' hands are in
+ * it; with no mod hands it is exactly the base list. (SMODS's sort ties exactly when a mod hand's score
+ * equals its above_hand's — Bunco's Deal over Flush Five — and the mod hand goes above, as declared.)
+ */
+export function rebuild_handlist() {
+  const mod = activeModHands();
+  HANDLIST.length = 0;
+  if (!mod.length) { HANDLIST.push(...BASE_HANDLIST); return; }
+  const all = {};
+  for (const k of BASE_HANDLIST) all[k] = HANDS_PROTO[k];
+  for (const h of mod) all[h.key] = h;
+  const ev = (h) => h.mult * h.chips + (h.order_offset || 0);
+  const score = (k) => { const h = all[k]; const a = h.above_hand && all[h.above_hand]; return a ? [ev(a), 1, ev(h)] : [ev(h), 0, 0]; };
+  const keys = [...BASE_HANDLIST, ...mod.map((h) => h.key)];
+  keys.sort((x, y) => { const a = score(x), b = score(y); for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return b[i] - a[i]; return keys.indexOf(x) - keys.indexOf(y); });
+  HANDLIST.push(...keys);
+}
 
 function get_starting_params() {
   return { dollars: 4, hand_size: 8, discards: 3, hands: 4, reroll_cost: 5, joker_slots: 5, ante_scaling: 1, consumable_slots: 2, no_faces: false, erratic_suits_and_ranks: false };
@@ -50,6 +70,14 @@ export function init_game_object() {
   const hands = {};
   for (const [k, v] of Object.entries(HANDS_PROTO)) {
     hands[k] = { visible: v.visible, order: v.order, mult: v.mult, chips: v.chips, s_mult: v.s_mult, s_chips: v.s_chips, level: v.level, l_mult: v.l_mult, l_chips: v.l_chips, played: 0, played_this_round: 0 };
+  }
+  // Mod poker hands (SMODS: every hand's order is its place in the sorted hand list).
+  const modHands = activeModHands();
+  if (modHands.length) {
+    for (const h of modHands) {
+      hands[h.key] = { visible: h.visible !== false, order: 0, mult: h.mult, chips: h.chips, s_mult: h.mult, s_chips: h.chips, level: h.level ?? 1, l_mult: h.l_mult, l_chips: h.l_chips, played: 0, played_this_round: 0 };
+    }
+    for (const k of Object.keys(hands)) hands[k].order = HANDLIST.indexOf(k) + 1;
   }
   return {
     won: false,
@@ -187,6 +215,7 @@ export function newRun(args = {}) {
   G.playing_card = 0;
   // Mods first: they decide what the pools contain and may adjust the game object.
   activateMods(args.mods || [], args.modOptions || {});
+  rebuild_handlist(); // (mod poker hands join the hand list; the base list otherwise)
   G.GAME = init_game_object();
   G.GAME.mods = ACTIVE_MODS.slice();
   G.GAME.mod_options = allOptions();
@@ -254,10 +283,13 @@ export function newRun(args = {}) {
 
   // Deck: every P_CARD, filtered/altered by starting params, sorted by Balatro's proto key.
   let protos = [];
+  // A mod suit's cards start in the deck only if the suit allows it (SMODS in_pool {initial_deck = true}).
+  const in_start_deck = (k) => { const v = P_CARDS[k]; if (!v.mod) return true; const s = MOD_SUITS[v.suit]; return !!(s && s.in_pool && s.in_pool(s, { initial_deck: true })); };
   for (const k of Object.keys(P_CARDS)) {
-    if (k === 'empty') continue;
+    if (k === 'empty' || !in_start_deck(k)) continue;
     let key = k;
-    if (sp.erratic_suits_and_ranks) key = pseudorandom_element(Object.fromEntries(Object.entries(P_CARDS).filter(([kk]) => kk !== 'empty')), pseudoseed('erratic'))[1];
+    if (sp.erratic_suits_and_ranks) key = pseudorandom_element(Object.fromEntries(Object.entries(P_CARDS).filter(([kk]) => kk !== 'empty' && in_start_deck(kk))), pseudoseed('erratic'))[1];
+    if (P_CARDS[key].mod) { const i = key.lastIndexOf('_'); protos.push({ s: key.slice(0, i), r: key.slice(i + 1) }); continue; }
     const _r = key.substring(2, 3), _s = key.substring(0, 1);
     if (sp.no_faces && (_r === 'K' || _r === 'Q' || _r === 'J')) continue;
     protos.push({ s: _s, r: _r });
@@ -341,6 +373,8 @@ export function draw_from_deck_to_hand(e) {
     hand_space = Math.min(G.deck.cards.length, 3);
   }
   for (let i = 1; i <= hand_space; i++) draw_card(G.deck, G.hand, i * 100 / hand_space, 'up', true);
+  // (a Lua G.FUNCS.draw_from_deck_to_hand wrap: Bunco's linked cards follow their group into the hand)
+  if (ACTIVE_MODS.length) callHook('draw_from_deck_to_hand', e);
 }
 
 function new_round() {
@@ -620,20 +654,56 @@ export function evaluate_poker_hand(hand) {
   if (results['Five of a Kind'][0]) results['Four of a Kind'] = results['Five of a Kind'].slice(0, 4);
   if (results['Four of a Kind'][0]) results['Three of a Kind'] = results['Four of a Kind'].slice(0, 3);
   if (results['Three of a Kind'][0]) results.Pair = results['Three of a Kind'].slice(0, 2);
+  // Mod poker hands (SMODS.PokerHand / PokerHandPart, e.g. Bunco's Spectrums): evaluated on Steamodded's parts.
+  if (ACTIVE_MODS.length) evaluate_mod_hands(results, hand);
   if (ACTIVE_MODS.length) callHook('evaluate_poker_hand', results, hand); // (a Lua evaluate_poker_hand wrap: BETMMA's Ascension)
   return results;
+}
+/** SMODS get_X_same(num, hand, or_more = true): every rank group of at least `num` cards, highest rank first. */
+function get_X_same_or_more(num, hand) {
+  const vals = {};
+  for (let i = hand.length - 1; i >= 0; i--) {
+    const curr = [hand[i]];
+    for (let j = 0; j < hand.length; j++) if (hand[i].get_id() === hand[j].get_id() && i !== j) curr.push(hand[j]);
+    if (curr.length >= num) { const id = curr[0].get_id(); if (id >= 0) vals[id] = curr; }
+  }
+  return Object.keys(vals).map(Number).sort((a, b) => b - a).map((id) => vals[id]);
+}
+/** SMODS.merge_lists(...): the lists' cards in order, without duplicates -> [cards]. */
+export function merge_lists(...lists) {
+  const out = [];
+  for (const l of lists) for (const li of l || []) for (const c of li || []) if (!out.includes(c)) out.push(c);
+  return out;
+}
+function evaluate_mod_hands(results, hand) {
+  const mod = activeModHands();
+  if (!mod.length) return;
+  const parts = {
+    _highest: get_highest(hand), _straight: get_straight(hand), _flush: get_flush(hand),
+    _2: get_X_same_or_more(2, hand), _3: get_X_same_or_more(3, hand), _4: get_X_same_or_more(4, hand), _5: get_X_same_or_more(5, hand),
+  };
+  parts._all_pairs = parts._2.length ? [merge_lists(parts._2)] : [];
+  for (const p of activeModHandParts()) parts[p.key] = p.func(hand) || [];
+  for (const h of mod) results[h.key] = h.evaluate(parts, hand) || [];
+  results.top = null;
+  for (const k of HANDLIST) if (results[k] && results[k].length) { results.top = results[k]; break; }
 }
 const HAND_ORDER = ['Flush Five', 'Flush House', 'Five of a Kind', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Pair', 'High Card'];
 /** -> {text, disp_text, poker_hands, scoring_hand} */
 export function get_poker_hand_info(_cards) {
   const poker_hands = evaluate_poker_hand(_cards);
   let scoring_hand = [], text = 'NULL';
-  for (const h of HAND_ORDER) if (poker_hands[h].length) { text = h; scoring_hand = poker_hands[h][0].slice(); break; }
+  // (with mod hands, the run's hand list orders them; it is HAND_ORDER otherwise)
+  for (const h of HANDLIST.length > HAND_ORDER.length ? HANDLIST : HAND_ORDER) if (poker_hands[h] && poker_hands[h].length) { text = h; scoring_hand = poker_hands[h][0].slice(); break; }
   let disp_text = text;
   if (text === 'Straight Flush') {
     let min = 10;
     for (const c of scoring_hand) if (c.get_id() < min) min = c.get_id();
     if (min >= 10) disp_text = 'Royal Flush';
+  } else if (ACTIVE_MODS.length) {
+    // A mod hand's own display name (SMODS modify_display_text: Bunco's Royal Spectrum).
+    const mh = activeModHands().find((h) => h.key === text);
+    if (mh && mh.modify_display_text) disp_text = mh.modify_display_text(mh, _cards, scoring_hand) || disp_text;
   }
   return { text, disp_text, loc_disp_text: localize(disp_text, 'poker_hands'), poker_hands, scoring_hand };
 }
@@ -822,6 +892,8 @@ function evaluate_play() {
     }
     mult = mod_mult(gh.mult);
     hand_chips = mod_chips(gh.chips);
+    // Mods acting on the base score before the blind's modify_hand (Bunco's Chips / Mult Tags). -> [hand_chips, mult]
+    if (ACTIVE_MODS.length) [hand_chips, mult] = reduceHook('modify_scoring', [hand_chips, mult], 'before_blind', base_ctx());
     const mh = G.GAME.blind.modify_hand(G.play.cards, poker_hands, text, mult, hand_chips);
     mult = mod_mult(mh[0]); hand_chips = mod_chips(mh[1]);
     if (mh[2]) emit('hand_text', { chips: hand_chips, mult, modded: true });
@@ -830,9 +902,10 @@ function evaluate_play() {
     // Unregistered Hypercam 2 / Hyperjimbo). -> [hand_chips, mult]
     if (ACTIVE_MODS.length) [hand_chips, mult] = reduceHook('modify_scoring', [hand_chips, mult], 'before_cards', base_ctx());
 
-    for (let i = 0; i < scoring_hand.length; i++) {
-      const sc = scoring_hand[i];
-      if (sc.ability.effect !== 'Stone Card') {
+    // One played card's scoring (its repetitions, effects and edition). `again`: a mod scores it a
+    // second time (SMODS.score_card — Bunco's Copper Cards); the play isn't counted twice.
+    const score_played_card = (sc, again) => {
+      if (!again && sc.ability.effect !== 'Stone Card') {
         const cp = G.GAME.cards_played[sc.base.value];
         if (cp) { cp.total += 1; cp.suits[sc.base.suit] = true; }
       }
@@ -840,7 +913,7 @@ function evaluate_play() {
         G.GAME.blind.triggered = true;
         emit('blind_juice', {});
         card_eval_status_text(sc, 'debuff');
-        continue;
+        return;
       }
       const reps = [1];
       const sev = eval_card(sc, { repetition_only: true, cardarea: G.play, ...base_ctx(), repetition: true });
@@ -885,7 +958,7 @@ function evaluate_play() {
           }
           if (ef.x_mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(mult * ef.x_mult); card_eval_status_text(sc, 'x_mult', ef.x_mult); emit('hand_text', { mult }); }
           if (ACTIVE_MODS.length && (ef._mod || ef === effects[0])) [hand_chips, mult] = mod_score_ops(ef, sc, hand_chips, mult, { individual: true });
-          if (ef.edition) {
+          if (ef.edition && (ef.edition.chip_mod || ef.edition.mult_mod || ef.edition.x_mult_mod || !ef.edition.x_chip_mod)) {
             hand_chips = mod_chips(hand_chips + (ef.edition.chip_mod || 0));
             mult = mult + (ef.edition.mult_mod || 0);
             mult = mod_mult(mult * (ef.edition.x_mult_mod || 1));
@@ -895,9 +968,18 @@ function evaluate_play() {
             });
             emit('hand_text', { chips: hand_chips, mult });
           }
+          // A mod edition's X Chips (Bunco's Glitter), after the card's own effects.
+          if (ef.edition && ef.edition.x_chip_mod) {
+            hand_chips = mod_chips(hand_chips * ef.edition.x_chip_mod);
+            card_eval_status_text(sc, 'extra', null, null, null, { message: 'X' + ef.edition.x_chip_mod + ' ' + localize('bunc_chips'), edition: true, colour: 'CHIPS' });
+            emit('hand_text', { chips: hand_chips, mult });
+          }
         }
       }
-    }
+    };
+    for (let i = 0; i < scoring_hand.length; i++) score_played_card(scoring_hand[i]);
+    // Mods may score played cards again once they've all scored (SMODS.score_card from a post-effect: Bunco's Copper).
+    if (ACTIVE_MODS.length) callHook('rescore_cards', scoring_hand, base_ctx(), (c) => score_played_card(c, true));
 
     // Mods acting once the played cards have scored (BETMMA's Double Flipped Card: flipped ones are held now)
     if (ACTIVE_MODS.length) callHook('played_cards_scored');
@@ -980,7 +1062,8 @@ function evaluate_play() {
     for (let i = 0; i < n; i++) {
       const _card = G.jokers.cards[i] || G.consumeables.cards[i - G.jokers.cards.length];
       if (!_card) continue;
-      const edition_effects = eval_card(_card, { cardarea: G.jokers, ...base_ctx(), edition: true });
+      // (a mod may stop consumables' editions scoring here — Bunco: they give a Tag when used instead)
+      const edition_effects = (ACTIVE_MODS.length && _card.ability.consumeable && callHook('consumable_edition_scores', _card).includes(false)) ? {} : eval_card(_card, { cardarea: G.jokers, ...base_ctx(), edition: true });
       if (edition_effects.jokers) {
         edition_effects.jokers.edition = true;
         if (edition_effects.jokers.chip_mod) {
@@ -994,7 +1077,8 @@ function evaluate_play() {
           emit('hand_text', { mult });
         }
       }
-      const mctx = { cardarea: G.jokers, ...base_ctx(), joker_main: true };
+      // (mod runs: the running score rides along — Lua's globals hand_chips / mult, read by Bunco's Critic)
+      const mctx = ACTIVE_MODS.length ? { cardarea: G.jokers, ...base_ctx(), joker_main: true, hand_chips, mult } : { cardarea: G.jokers, ...base_ctx(), joker_main: true };
       let effects = eval_card(_card, mctx);
       for (let t = effects.jokers ? joker_retriggers(_card, mctx) + 1 : 0; t > 0; t--) {
         if (effects.jokers.mult_mod) mult = mod_mult(mult + effects.jokers.mult_mod);
@@ -1027,6 +1111,12 @@ function evaluate_play() {
         mult = mod_mult(mult * edition_effects.jokers.x_mult_mod);
         card_eval_status_text(_card, 'jokers', null, null, null, { message: 'X' + edition_effects.jokers.x_mult_mod + ' Mult', x_mult_mod: edition_effects.jokers.x_mult_mod, edition: true });
         emit('hand_text', { mult });
+      }
+      // A mod edition's X Chips (Bunco's Glitter: SMODS post_joker), where X Mult goes.
+      if (edition_effects.jokers && edition_effects.jokers.x_chip_mod) {
+        hand_chips = mod_chips(hand_chips * edition_effects.jokers.x_chip_mod);
+        card_eval_status_text(_card, 'jokers', null, null, null, { message: 'X' + edition_effects.jokers.x_chip_mod + ' ' + localize('bunc_chips'), edition: true, colour: 'CHIPS' });
+        emit('hand_text', { chips: hand_chips });
       }
     }
 
@@ -1071,6 +1161,8 @@ function evaluate_play() {
     for (const c of cards_destroyed) {
       G.E_MANAGER.add_event(() => { if (c.ability.name === 'Glass Card' || c.shattered) c.shatter(); else c.start_dissolve(); });
     }
+    // The end of a scored (not debuffed) hand (Bunco: The Blade's overscore check, Megamult / Ultrachips Tags). -> [hand_chips, mult]
+    if (ACTIVE_MODS.length) [hand_chips, mult] = reduceHook('modify_scoring', [hand_chips, mult], 'end_scoring', base_ctx());
   } else {
     mult = mod_mult(0);
     hand_chips = mod_chips(0);
@@ -1088,9 +1180,11 @@ function evaluate_play() {
   if (total > (G.GAME.stats.best_hand || 0)) { G.GAME.stats.best_hand = total; G.GAME.stats.best_hand_name = disp_text; }
   if (G.GAME.round_scores.hand.amt < total) G.GAME.round_scores.hand.amt = total;
   G.GAME.last_hand_total = total;
+  // (a mod may change what the hand adds to the round score — Bunco's Magenta Dagger subtracts it)
+  const added = ACTIVE_MODS.length ? reduceHook('chips_scored', total, { full_hand: G.play.cards, scoring_hand, scoring_name: text }) : total;
   G.E_MANAGER.add_event(() => {
-    G.GAME.chips = G.GAME.chips + total;
-    emit('chips', { total: G.GAME.chips, add: total });
+    G.GAME.chips = G.GAME.chips + added;
+    emit('chips', { total: G.GAME.chips, add: added });
   });
   for (const j of G.jokers.cards.slice()) {
     const actx = { cardarea: G.jokers, ...base_ctx(), after: true };
@@ -1156,6 +1250,8 @@ function evaluate_round() {
 
 // ------------------------------------------------------------------ shop
 export function create_card_for_shop(area) {
+  // A mod may stock the slot itself (a Lua create_card_for_shop wrap: Reverie's Cine shops).
+  if (ACTIVE_MODS.length) { const mc = firstHook('create_card_for_shop', area); if (mc) return mc; }
   for (const t of G.GAME.tags.slice()) {
     const forced = t.apply_to_run({ type: 'store_joker_create', area });
     if (forced) {
@@ -1318,11 +1414,16 @@ export function check_for_buy_space(card) {
 
 /** G.FUNCS.use_card — consumables, pack picks, boosters, vouchers. */
 export function use_card(card) {
+  // A mod may handle the use itself (Bunco: a Blind card's "Select" in a Blind Pack).
+  if (ACTIVE_MODS.length && callHook('use_card_override', card).includes(true)) return true;
   if (ACTIVE_MODS.length) callHook('use_card', card); // (a Lua G.FUNCS.use_card wrap: BETMMA's Engulfer)
   const area = card.area;
   const prev_state = G.STATE;
   let dont_dissolve = false;
-  if (card.check_use && card.check_use()) return false;
+  // A mod may TAKE this pack consumable into an area instead of using it (Reverie: Cine cards and
+  // Crazy Lucky / Film / Tag pack picks) — no use check then (Reverie's Card:check_use wrap).
+  const take = ACTIVE_MODS.length && area === G.pack_cards && card.ability.consumeable ? firstHook('pack_take_area', card) : undefined;
+  if (!take && card.check_use && card.check_use()) return false;
   G.TAROT_INTERRUPT = G.STATE;
   if (card.ability.set === 'Booster') G.GAME.PACK_INTERRUPT = G.STATE;
   if (!PACK_STATES.includes(G.STATE)) G.STATE = STATES.PLAY_TAROT;
@@ -1335,7 +1436,13 @@ export function use_card(card) {
     // A kept card used straight from a pack moves to the consumable slots.
     G.E_MANAGER.add_event(() => { card.add_to_deck(); G.consumeables.emplace(card); });
   }
-  if (card.ability.consumeable) {
+  if (card.ability.consumeable && take) {
+    take.emplace(card);
+    card.add_to_deck();
+    emit('reserved', { card: card.sort_id });
+    play_sound('card1', 0.8, 0.6);
+    dont_dissolve = true;
+  } else if (card.ability.consumeable) {
     // Lua: only Tarot/Planet/Spectral packs skip the draw-to-play (Standard/Buffoon still draw).
     if (!nc && !(G.STATE === STATES.TAROT_PACK || G.STATE === STATES.PLANET_PACK || G.STATE === STATES.SPECTRAL_PACK || G.STATE === STATES.MOD_PACK || G.STATE === STATES.MOD_PACK_HAND)) draw_card(G.hand, G.play, 1, 'up', true, card);
     emit('use', { card: card.sort_id, center: card.config.center.key });
@@ -1365,6 +1472,8 @@ export function use_card(card) {
     G.GAME.round_scores.cards_purchased.amt += 1;
     emit('redeem', { card: card.sort_id, center: card.config.center.key });
     card.redeem();
+  } else if (ACTIVE_MODS.length && callHook('use_other', card, area).includes(true)) {
+    dont_dissolve = true; // (a mod's own card kind: Reverie's Tags sold as cards)
   }
   if (card.ability.set === 'Booster') {
     G.TAROT_INTERRUPT = null;
@@ -1383,6 +1492,7 @@ export function use_card(card) {
       });
     });
   }
+  if (ACTIVE_MODS.length) callHook('use_card_done', card, area); // (a Lua G.FUNCS.use_card wrap's tail: Reverie's quests)
   return true;
 }
 
@@ -1465,8 +1575,10 @@ function buy_from_shop(c1, use) {
   if (!use && !check_for_buy_space(c1)) return false;
   G.E_MANAGER.add_event(() => {
     c1.area.remove_card(c1);
-    c1.add_to_deck();
-    if (c1.ability.set === 'Default' || c1.ability.set === 'Enhanced') {
+    // A mod may place the bought card itself (Reverie: a Tag bought as a card joins your tags).
+    const placed = ACTIVE_MODS.length && callHook('buy_place', c1, use).includes(true);
+    if (!placed) c1.add_to_deck();
+    if (placed) { /* placed by the mod */ } else if (c1.ability.set === 'Default' || c1.ability.set === 'Enhanced') {
       G.playing_card = (G.playing_card || 0) + 1;
       G.deck.emplace(c1);
       c1.playing_card = G.playing_card;
@@ -1499,6 +1611,7 @@ function toggle_shop() {
     clear_area(G.shop_jokers);
     clear_area(G.shop_vouchers);
     clear_area(G.shop_booster);
+    if (ACTIVE_MODS.length) callHook('shop_end'); // (a Lua G.FUNCS.toggle_shop wrap: Reverie ends its Cine shop)
     G.shop_open = false;
     G.shop_populated = false;
     G.STATE_COMPLETE = false;
@@ -1515,7 +1628,8 @@ function cash_out() {
     G.GAME.current_round.discards_left = Math.max(0, G.GAME.round_resets.discards + G.GAME.round_bonus.discards);
     G.GAME.current_round.hands_left = Math.max(1, G.GAME.round_resets.hands + G.GAME.round_bonus.next_hands);
     if (ACTIVE_MODS.length) callHook('round_counts', 'after', 'cash_out');
-    G.STATE = STATES.SHOP;
+    // (a mod may skip the shop: Bunco's The Miser)
+    G.STATE = (ACTIVE_MODS.length && callHook('skip_shop').includes(true)) ? STATES.BLIND_SELECT : STATES.SHOP;
     G.GAME.shop_free = null;
     G.GAME.shop_d6ed = null;
     G.STATE_COMPLETE = false;
@@ -1531,8 +1645,9 @@ function cash_out() {
   reset_blinds();
 }
 
-function play_cards_from_highlighted() {
+export function play_cards_from_highlighted() {
   if (G.play.cards[0]) return false;
+  if (ACTIVE_MODS.length) callHook('play_start'); // (Bunco's Vandalism)
   G.GAME.blind.triggered = false;
   for (const v of G.playing_cards) v.ability.forced_selection = undefined;
   const hl = G.hand.highlighted.slice().sort((a, b) => G.hand.cards.indexOf(a) - G.hand.cards.indexOf(b));
@@ -1542,7 +1657,10 @@ function play_cards_from_highlighted() {
   // before the synchronous move, they see the same state (Nacho's Turtonator reads it).
   if (ACTIVE_MODS.length) calculate_context({ press_play: true });
   G.E_MANAGER.add_event(() => { G.STATE = STATES.HAND_PLAYED; G.STATE_COMPLETE = true; });
-  ease_hands_played(-1);
+  // (Bunco: The Swing / The Umbrella flip the hand, Cellphone; a play that isn't a hand — Cracker Cards,
+  // Magenta Dagger's discard-play — doesn't use one up)
+  if (ACTIVE_MODS.length) callHook('play_pressed');
+  if (!(ACTIVE_MODS.length && callHook('consume_hand').includes(false))) ease_hands_played(-1);
   for (const c of hl) {
     c.base.times_played += 1;
     c.ability.played_this_ante = true;
@@ -1563,15 +1681,18 @@ function play_cards_from_highlighted() {
 }
 
 export function discard_cards_from_highlighted(hook) {
+  // A mod may take the discard over (Bunco: Magenta Dagger plays the cards instead; Cracker Cards step out).
+  if (ACTIVE_MODS.length && callHook('discard_begin', hook).includes(true)) return true;
   for (const v of G.playing_cards) v.ability.forced_selection = undefined;
   const count = Math.min(G.hand.highlighted.length, G.discard.config.card_limit - G.play.cards.length);
-  if (count <= 0) return false;
+  if (count <= 0) { if (ACTIVE_MODS.length && callHook('discard_end', hook).includes(true)) return true; return false; }
   const hl = G.hand.highlighted.slice().sort((a, b) => G.hand.cards.indexOf(a) - G.hand.cards.indexOf(b));
   // A copy: a card a joker destroys mid-discard (dissolve is instant here, animated in Lua) leaves
   // G.hand.highlighted, and must not shift `hl` while it is being walked.
   G.hand.highlighted = hl.slice();
   for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ pre_discard: true, full_hand: hl, hook }));
   const destroyed_cards = [];
+  if (ACTIVE_MODS.length) callHook('discard_cards', hl, count, hook); // (Bunco's The Paling: $1 per card)
   for (let i = 0; i < count; i++) {
     const c = hl[i];
     c.calculate_seal({ discard: true });
@@ -1594,7 +1715,8 @@ export function discard_cards_from_highlighted(hook) {
       if (c.ability.name === 'Glass Card') c.shatter(); else c.start_dissolve();
     } else {
       c.ability.discarded = true;
-      draw_card(G.hand, G.discard, 0, 'down', false, c);
+      // (a mod may send it elsewhere: Bunco's The Claw shuffles discards back into the deck)
+      draw_card(G.hand, (ACTIVE_MODS.length && firstHook('discard_destination', c)) || G.discard, 0, 'down', false, c);
     }
   }
   if (destroyed_cards.length) for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: destroyed_cards });
@@ -1605,9 +1727,12 @@ export function discard_cards_from_highlighted(hook) {
     if (G.GAME.modifiers.discard_cost) ease_dollars(-G.GAME.modifiers.discard_cost);
     ease_discard(-1);
     G.GAME.current_round.discards_used += 1;
+    // (Bunco: Cracker Cards are played now instead — no draw; The Swing flips the hand)
+    if (ACTIVE_MODS.length && callHook('discard_counted').includes(true)) { callHook('discarded', hook); return true; }
     G.STATE = STATES.DRAW_TO_HAND;
     G.E_MANAGER.add_event(() => { G.STATE_COMPLETE = false; });
   }
+  if (ACTIVE_MODS.length) callHook('discard_end', hook);
   if (ACTIVE_MODS.length) callHook('discarded', hook); // (BETMMA's Trash Picker)
   return true;
 }
@@ -1669,12 +1794,13 @@ function applyAction(a) {
       can(S === STATES.SELECTING_HAND || inPack(), 'not selecting');
       if (a.ids) {
         G.hand.unhighlight_all();
-        for (const id of a.ids) { const c = find_card(id); if (c && c.area === G.hand) G.hand.add_to_highlighted(c); }
+        for (const id of a.ids) { const c = find_card(id); if (c && c.area === G.hand && !(ACTIVE_MODS.length && callHook('can_highlight', G.hand, c).includes(false))) G.hand.add_to_highlighted(c); }
       } else {
         const c = find_card(a.id);
         can(c && c.area === G.hand, 'no such card in hand');
         if (G.hand.highlighted.includes(c)) G.hand.remove_from_highlighted(c);
-        else G.hand.add_to_highlighted(c);
+        // (CardArea:can_highlight — Bunco: a linked group that won't fit can't be picked)
+        else if (!(ACTIVE_MODS.length && callHook('can_highlight', G.hand, c).includes(false))) G.hand.add_to_highlighted(c);
       }
       if (ACTIVE_MODS.length) callHook('hand_highlighted');
       emit('highlight', { ids: G.hand.highlighted.map((c) => c.sort_id) });
@@ -1708,23 +1834,33 @@ function applyAction(a) {
       can(!(S === STATES.HAND_PLAYED), 'busy');
       const ids = a.ids;
       can(Array.isArray(ids) && ids.length === area.cards.length && ids.every((id) => area.cards.some((c) => c.sort_id === id)), 'bad order');
+      const before = ACTIVE_MODS.length ? area.cards.slice() : null;
       area.cards.sort((x, y) => ids.indexOf(x.sort_id) - ids.indexOf(y.sort_id));
       area.set_ranks();
       emit('sorted', { area: a.area, ids });
+      if (ACTIVE_MODS.length) callHook('reordered', area, before); // (a card drag — Bunco's Knight resets when jokers move)
       break;
     }
     case 'use': {
       const c = find_card(a.id);
       // (a consumable may also live in the joker row with mods: BETMMA's Forbidden Area, Balatro Mobile)
-      can(c && (c.area === G.consumeables || c.area === G.pack_cards || (c.area === G.jokers && c.ability.consumeable)), 'cannot use that');
+      can(c && (c.area === G.consumeables || c.area === G.pack_cards || (c.area === G.jokers && c.ability.consumeable) ||
+        (ACTIVE_MODS.length && c.area && callHook('action_area', c, 'use').includes(true))), 'cannot use that'); // (a mod card area: Reverie's Cine slots)
       // Targets are the hand selection the consumable is checked (and used) against.
-      if (a.targets) { G.hand.unhighlight_all(); for (const id of a.targets) { const t = find_card(id); if (t && t.area === G.hand) G.hand.add_to_highlighted(t); } }
+      if (a.targets) {
+        if (ACTIVE_MODS.length) callHook('use_targets', c); // (Bunco: The 8 lifts the selection limit while it's the card in use)
+        G.hand.unhighlight_all();
+        for (const id of a.targets) { const t = find_card(id); if (t && t.area === G.hand && !(ACTIVE_MODS.length && callHook('can_highlight', G.hand, t).includes(false))) G.hand.add_to_highlighted(t); }
+      }
       // joker_targets: the highlighted joker some mod consumables act on (Pokermon energy /
       // evolution items: "use on the selected joker"). Base-game consumables never read it.
       if (a.joker_targets) { G.jokers.highlighted.length = 0; for (const j of G.jokers.cards) j.highlighted = false; for (const id of a.joker_targets) { const t = find_card(id); if (t && t.area === G.jokers) G.jokers.add_to_highlighted(t); } }
       if (c.area === G.pack_cards) {
         can(inPack(), 'no pack open');
-        if (c.ability.consumeable) can(c.can_use_consumeable(), 'cannot use now');
+        // A mod may decide whether this pack card can be taken (Reverie: Cine cards / Crazy Lucky picks need a free slot).
+        const sel = ACTIVE_MODS.length ? firstHook('pack_select', c) : undefined;
+        if (sel !== undefined) can(sel, 'no space');
+        else if (c.ability.consumeable) can(c.can_use_consumeable(), 'cannot use now');
         else can(c.ability.set !== 'Joker' || (c.edition && c.edition.negative) || G.jokers.cards.length < G.jokers.config.card_limit || (ACTIVE_MODS.length && callHook('buy_space', c).includes(true)), 'no joker space');
       } else {
         can(c.can_use_consumeable(), 'cannot use now');
@@ -1754,7 +1890,7 @@ function applyAction(a) {
     }
     case 'sell': {
       const c = find_card(a.id);
-      can(c && (c.area === G.jokers || c.area === G.consumeables), 'cannot sell that');
+      can(c && (c.area === G.jokers || c.area === G.consumeables || (ACTIVE_MODS.length && c.area && callHook('action_area', c, 'sell').includes(true))), 'cannot sell that');
       can(c.can_sell_card(), 'cannot sell now');
       c.sell_card();
       for (const j of G.jokers.cards.slice()) if (j !== c) j.calculate_joker({ selling_card: true, card: c });
@@ -1766,7 +1902,8 @@ function applyAction(a) {
       can(c && (c.area === G.shop_jokers || c.area === G.shop_vouchers || c.area === G.shop_booster), 'not for sale');
       can(!(c.cost > G.GAME.dollars - G.GAME.bankrupt_at && c.cost > 0), 'not enough money');
       if (c.area === G.shop_vouchers || c.ability.set === 'Voucher') { use_card(c); break; } // (a voucher in a shop slot: mods' Voucher Tycoon)
-      if (c.area === G.shop_booster) { use_card(c); break; }
+      // (a booster in any shop slot opens: Reverie's Cine shops stock packs in the card / voucher slots)
+      if (c.area === G.shop_booster || c.ability.set === 'Booster') { use_card(c); break; }
       if (a.use) can(c.ability.consumeable && c.can_use_consumeable(), 'cannot use now');
       buy_from_shop(c, !!a.use);
       break;

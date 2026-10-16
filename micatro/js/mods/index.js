@@ -1,7 +1,7 @@
 // Every mod Micatro ships, loaded on demand (a mod's code and data only
 // download when a run enables it). Order = default display order.
-import { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, resolveMods } from './registry.js';
-import { P_CENTERS } from '../engine/core.js';
+import { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC, resolveMods } from './registry.js';
+import { P_CENTERS, P_STAKES } from '../engine/core.js';
 
 export const AVAILABLE = [
   // { id, name, by, requires: [ids], description?, size?, load: () => import('./<id>/index.js') }
@@ -119,6 +119,12 @@ export const centerByKey = (key) => P_CENTERS[key] || null;
  * Decks the given (loaded) mods add, for the New Run picker — honouring a deck's required mod
  * option (`mod_option` / Pokermon's `poke_option`, e.g. its legacy decks).
  */
+/** Stakes the given (loaded) mods add, for the New Run picker (shown after the 8 base stakes). */
+export function modStakes(ids) {
+  const on = new Set(withRequirements(ids || []));
+  return Object.values(P_STAKES).filter((s) => s.mod && on.has(s.mod))
+    .map((s) => ({ ...s, text: (MOD_LOC.descriptions.Stake || {})[s.key] || null }));
+}
 export function modBacks(ids, options = {}) {
   const on = new Set(withRequirements(ids || []));
   return Object.values(P_CENTERS)

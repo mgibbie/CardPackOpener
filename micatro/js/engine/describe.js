@@ -525,7 +525,9 @@ export function describeBlind(blindKey) {
   const proto = P_BLINDS[blindKey];
   if (!proto) return undefined;
   const live = G.GAME && G.GAME.blind && G.GAME.blind.config && G.GAME.blind.config.blind === proto && G.GAME.blind.name ? G.GAME.blind : null;
-  const vars = [loc(G.GAME.current_round.most_played_poker_hand, 'poker_hands')];
+  let vars = [loc(G.GAME.current_round.most_played_poker_hand, 'poker_hands')];
+  // A mod blind's own loc_vars(self) -> {vars} (Bunco's The Tine / The Mask / The Blade).
+  if (proto.mod && proto.loc_vars) { try { vars = (proto.loc_vars(proto) || {}).vars || vars; } catch (e) { /* cosmetic */ } }
   const d = desc('Blind', blindKey) || { name: proto.name, text: [] };
   let lines = fill(d.text, vars);
   if (proto.name === 'The Wheel' && lines.length) lines[0] = fmt(G.GAME.probabilities.normal) + lines[0];
