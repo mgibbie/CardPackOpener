@@ -258,6 +258,11 @@ G.I18n.add({
   'Que no me rindo nunca.': 'That I never give up.', 'Tu día libre ideal es…': 'Your ideal day off is…', 'Entrenar para ser mejor.': 'Training to get better.',
   'Quedar con todos mis amigos.': 'Hanging out with all my friends.', 'Una aventura sin ningún plan.': 'An adventure with no plan at all.',
   'Leer, pensar, estar tranquilo.': 'Reading, thinking, being calm.',
+  // personality traits (the test result shows the trait name — it was left untranslated, "Leal")
+  'Valiente': 'Brave', 'Impulsivo': 'Impulsive', 'Prudente': 'Cautious', 'Leal': 'Loyal', 'Paciente': 'Patient',
+  'Dulce': 'Kind', 'Tímido': 'Timid', 'Travieso': 'Mischievous', 'Sereno': 'Calm', 'Astuto': 'Clever',
+  'Alegre': 'Cheerful', 'Tenaz': 'Tenacious', 'Orgulloso': 'Proud', 'Solitario': 'Loner', 'Tranquilo': 'Relaxed',
+  'Caótico': 'Chaotic',
   'No te lo piensas dos veces cuando alguien necesita ayuda.': 'You don\'t think twice when someone needs help.',
   'Tus amigos saben que pueden contar contigo siempre.': 'Your friends know they can always count on you.',
   'Mides cada paso antes de darlo.': 'You measure every step before taking it.', 'Contagias energía allá donde vas.': 'You spread energy wherever you go.',
