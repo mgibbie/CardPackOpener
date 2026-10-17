@@ -79,6 +79,12 @@ controller layer is what we take — the *design*, re-implemented in JS on our g
   persists, navigate every menu without mouse/keyboard.
 
 ### M3 — Into Magepunk
+> **Built 2026-10-17** (branch `feat/micasurvivor-m3`; details in `micasurvivor/README.md` → "Magepunk
+> (M3)"): landing tile, the cabinet in the Pewter Museum 1F lobby (15,8), Magepunk accounts
+> (`micasurvivor-save-get/-put`, revision compare-and-set + upstream's merge, once-only guest
+> carry-over with a backup), the `micasurvivor` run board, the design wiki section and the news
+> launch entry. Log out / Delete account stay hidden (the account is the site's; Settings shows the
+> Magepunk username and a link to Magepunk). Live spectating stays optional/later.
 - **Landing-page tile** like Micatro/Pair of Pears (index.html game tiles).
 - **Arcade box in Pewter City** (overworld arcade-box pattern: Route 1 → PokéChess, Celadon →
   Micatro cabinet): pick a sensible indoor spot (e.g. the Pewter Museum lobby or a house), a

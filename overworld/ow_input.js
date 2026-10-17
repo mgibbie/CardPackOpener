@@ -423,7 +423,8 @@ export function interact() {
 		return;
 	}
 	// arcade boxes: Route 1 launches PokéChess; Pallet Town's launches Pair of Pears;
-	// the Celadon Game Corner's MICATRO cabinet launches /micatro/
+	// the Celadon Game Corner's MICATRO cabinet launches /micatro/; the Pewter Museum's
+	// MICASURVIVOR cabinet launches /micasurvivor/ (its back link returns here)
 	const arc = arcade.kindAt(fx, fy);
 	if (arc === 'pokechess') {
 		dialog.open('Do you want to play\nPOKéCHESS?', (k) => {
@@ -440,6 +441,12 @@ export function interact() {
 	if (arc === 'micatro') {
 		dialog.open("It's a MICATRO cabinet!\nPlay?", (k) => {
 			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/micatro/?direct=1'; }
+		});
+		return;
+	}
+	if (arc === 'micasurvivor') {
+		dialog.open("It's a MICASURVIVOR cabinet!\nPlay?", (k) => {
+			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/micasurvivor/?direct=1'; }
 		});
 		return;
 	}

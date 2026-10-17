@@ -379,6 +379,172 @@ G.DB = (() => {
   }
 
   // =====================================================================
+  //          MODO MAGEPUNK (MicaSurvivor M3, not upstream)
+  // =====================================================================
+  /*
+   * A player logged into Magepunk (G.MicaAccount.name()) plays as that user. The save is
+   * the server row `micasurvivor:<user>` (POST /api/mp micasurvivor-save-get / -put); this
+   * browser keeps a copy under micasurvivor_save.mp:<user> (cache + offline play) and the
+   * row's revision under micasurvivor_rev.mp:<user>.
+   *
+   * MERGE STRATEGY. Every write is compare-and-set on the row's `rev`. A write from a
+   * device that has not seen the latest rev gets 409 + the stored save; the device then
+   * MERGES the two with upstream's merge() (below, the same one their Firestore
+   * transaction used) and writes again on the new rev. merge() never loses progress:
+   *   - collections (owned Pokémon, shinies, legendaries, arenas, items, evolved moves,
+   *     achievements): union
+   *   - upgrades, stats and records: the max of each
+   *   - Pokémonedas and tickets: the per-device LEDGER (save.led[device] = [earned, spent])
+   *     — the max of each device's entries, the balance is the sum, so coins earned on two
+   *     devices both count and a spend is never undone
+   *   - partner, settings-like fields: the most recently updated save
+   * On boot the server copy and the local copy are merged the same way, so play done
+   * offline (or in a tab whose push failed) is folded in on the next visit.
+   *
+   * GUEST -> ACCOUNT. A guest save in this browser (micasurvivor_save.guest) is offered to
+   * the account ONCE (G.DB.carryOffer, the screen in mica/account.js). An empty account
+   * takes it over; an account with progress is merged with it (its ledger re-keyed so the
+   * two balances add up). The account save is backed up first (micasurvivor_backup.<key>.<ts>)
+   * and the guest save itself is never deleted. Either answer is remembered
+   * (micasurvivor_migrated.guest), so it is never asked again in this browser.
+   */
+  const K_MPREV = 'micasurvivor_rev.', K_BACKUP = 'micasurvivor_backup.';
+  const MP_GAP = { urgent: 3000, run: 2000, normal: 30000 };
+  let mpUser = null, mpRev = 0, mpPushT = 0, mpPushing = null, mpPending = false, mpFails = 0, mpHiddenAt = 0;
+  let carryOffer = null, mpDue = 0;
+
+  const hasProgress = s => !!(s && (s.partner || (s.stats && s.stats.runs > 0) || Object.keys(s.owned || {}).length));
+
+  async function openMagepunk(name) {
+    const A = G.MicaAccount;
+    mode = 'magepunk';
+    mpUser = name; key = 'mp:' + name; user = name; guest = false; uid = null;
+    const cached = read(K_SAVE + key);
+    mpRev = +read(K_MPREV + key) || 0;
+    const r = await A.getSave();
+    const online = r.ok;
+    const remote = online && r.body.save ? r.body.save : null;
+    if (online) mpRev = +r.body.rev || 0;
+    let s = merge(cached && fold(migrate(cached, name)), remote && migrate(remote, name));
+    if (!s) s = newSave(name);
+    s.name = name;
+    save = fold(migrate(s, name));
+    write(K_SAVE + key, save); write(K_MPREV + key, mpRev);
+    // the guest's progress in this browser, offered once
+    const g = read(K_SAVE + 'guest');
+    carryOffer = g && !read(K_MIGRATED + 'guest') && hasProgress(g) ? { guest: migrate(g, 'Trainer'), accountEmpty: !hasProgress(save) } : null;
+    if (!online) { mpPending = true; setSync('offline'); scheduleMp(retryGap()); }
+    else if (remote && (!cached || (cached.updated || 0) <= (remote.updated || 0))) setSync('ok');
+    else pushMp();
+  }
+
+  /** Answer the carry-over offer: 'carry' (bring / merge the guest save in) or 'skip'. */
+  function carryGuest(choice) {
+    const offer = carryOffer;
+    carryOffer = null;
+    if (!offer || !save || !mpUser) return false;
+    write(K_MIGRATED + 'guest', { to: mpUser, at: Date.now(), choice });
+    if (choice !== 'carry') return false;
+    write(K_BACKUP + key + '.' + Date.now(), plain(fold(save)));    // the account save before the change
+    // the guest's coin/ticket ledger under its own device names, so both balances add up
+    const g = JSON.parse(JSON.stringify(offer.guest));
+    const gl = ledOf(g, DEV), led = {};
+    for (const dev in gl) led['g.' + dev] = gl[dev];
+    g.led = led;
+    g.name = mpUser;
+    let next;
+    if (offer.accountEmpty) {
+      // an empty account takes the guest save over. Its own ledger entries (the 500 starting
+      // coins...) are kept but zeroed (earned = spent), so another device's copy of the empty
+      // account, merged in later, can't add its starting coins on top of the guest's.
+      next = g;
+      const al = ledOf(plain(fold(save)), DEV);
+      for (const dev in al) for (const k in al[dev]) {
+        const m = Math.max(num(al[dev][k][0]), num(al[dev][k][1]));
+        ((led[dev] = led[dev] || {})[k] = [m, m]);
+      }
+    } else { g.updated = 0; next = merge(plain(fold(save)), g); }   // the account's own choices win; nothing is lost
+    next.name = mpUser;
+    applyInPlace(migrate(next, mpUser));
+    fold(save);
+    commit(true);
+    if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
+    return true;
+  }
+
+  function retryGap() { return Math.min(10 * 60e3, 15e3 * Math.pow(2, mpFails)); }
+  function scheduleMp(ms) {
+    clearTimeout(mpPushT); mpDue = Date.now() + ms;
+    mpPushT = setTimeout(() => { mpPushT = 0; pushMp(); }, ms);
+  }
+
+  /** Write the save to the account (compare-and-set; a 409 merges and retries). */
+  function pushMp(opts = {}) {
+    if (mode !== 'magepunk' || !save || !mpUser) return Promise.resolve();
+    if (mpPushing) { mpPending = true; return mpPushing; }
+    clearTimeout(mpPushT); mpPushT = 0;
+    mpPending = false;
+    setSync('syncing');
+    mpPushing = (async () => {
+      for (let i = 0; i < 4; i++) {
+        const r = await G.MicaAccount.putSave(plain(fold(save)), mpRev, opts);
+        if (r.ok) {
+          mpRev = +r.body.rev || mpRev + 1; mpFails = 0;
+          write(K_MPREV + key, mpRev);
+          setSync(mpPending ? 'pending' : 'ok');
+          return;
+        }
+        if (r.status === 409 && r.body && r.body.error === 'stale') {
+          // another device saved first: merge with what it wrote, then try again on its rev
+          mpRev = +r.body.rev || 0;
+          if (r.body.save) {
+            applyInPlace(merge(plain(fold(save)), migrate(r.body.save, mpUser)));
+            write(K_SAVE + key, save);
+            if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
+          }
+          continue;
+        }
+        if (r.status === 400 || r.status === 413) {     // refused for good: it stays in this browser
+          console.warn('[DB] the account refused the save:', r.body && r.body.error);
+          setSync('pending');
+          return;
+        }
+        // offline, rate-limited, server trouble, expired login: keep it local and retry later
+        mpPending = true; mpFails = Math.min(mpFails + 1, 6);
+        setSync('offline');
+        scheduleMp(retryGap());
+        return;
+      }
+      mpPending = true; setSync('pending'); scheduleMp(retryGap());
+    })().finally(() => {
+      mpPushing = null;
+      if (mpPending && !mpPushT) scheduleMp(MP_GAP.urgent);
+    });
+    return mpPushing;
+  }
+
+  /** Back in the tab after a while: fold in what another device saved meanwhile (menus only). */
+  async function pullMp() {
+    if (mode !== 'magepunk' || !save || mpPushing || (G.Game && G.Game.state && G.Game.state !== 'ui')) return;
+    const r = await G.MicaAccount.getSave();
+    if (!r.ok || !save) return;
+    if ((+r.body.rev || 0) === mpRev) return;
+    mpRev = +r.body.rev || 0;
+    if (r.body.save) applyInPlace(merge(plain(fold(save)), migrate(r.body.save, mpUser)));
+    write(K_SAVE + key, save); write(K_MPREV + key, mpRev);
+    if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
+    pushMp();   // the merge may hold progress the server lacks (a no-op write otherwise)
+  }
+
+  addEventListener('pagehide', () => { if (mode === 'magepunk' && (mpPending || mpPushT)) pushMp({ keepalive: true }); });
+  document.addEventListener('visibilitychange', () => {
+    if (mode !== 'magepunk') return;
+    if (document.visibilityState === 'hidden') { mpHiddenAt = Date.now(); if (mpPending || mpPushT) pushMp(); }
+    else if (mpHiddenAt && Date.now() - mpHiddenAt > 5 * 60e3) pullMp();
+  });
+  addEventListener('online', () => { if (mode === 'magepunk' && mpPending) pushMp(); });
+
+  // =====================================================================
   //                               MODO NUBE
   // =====================================================================
 
@@ -666,6 +832,12 @@ G.DB = (() => {
   function ready() {
     if (readyP) return readyP;
     readyP = (async () => {
+      // MicaSurvivor (M3): logged into Magepunk -> play as that user, saved to the account.
+      const mpName = G.MicaAccount && G.MicaAccount.name();
+      if (mpName) {
+        try { await openMagepunk(mpName); return true; }
+        catch (e) { console.warn('[DB] Magepunk save:', e.message); mode = 'local'; mpUser = null; }
+      }
       try { if (await initCloud()) mode = 'cloud'; }
       catch (e) { console.warn('[DB] sin nube:', e.message); localReason = 'error'; mode = 'local'; }
       if (mode === 'local') { setSync('local'); return restoreLocal(); }
@@ -714,7 +886,7 @@ G.DB = (() => {
 
   /** Cambia el nombre que se ve en la partida (al elegir apodo). */
   function setName(n) {
-    if (!save || guest) return;
+    if (!save || guest || mode === 'magepunk') return;   // MicaSurvivor: a Magepunk player is their username
     save.name = n; user = n;
     commit();
   }
@@ -747,6 +919,15 @@ G.DB = (() => {
     save.updated = Date.now();
     fold(save);
     if (mode === 'local') return write(K_SAVE + key, save);
+    if (mode === 'magepunk') {           // MicaSurvivor (M3): the local copy now, the account soon after
+      const ok = write(K_SAVE + key, save);
+      mpPending = true;
+      if (!mpPushing) setSync('pending');
+      const gap = urgent === 'run' ? MP_GAP.run : urgent ? MP_GAP.urgent : MP_GAP.normal;
+      const due = Date.now() + gap;
+      if (!mpPushT || due < mpDue) { mpDue = due; scheduleMp(gap); }
+      return ok;
+    }
     write(K_CLOUD + uid, save);
     pending = true;
     setSync('pending');
@@ -767,6 +948,10 @@ G.DB = (() => {
     } else if (mode === 'local' && !guest) {
       commit();
       remove(K_SES);
+    } else if (mode === 'magepunk') {
+      // (MicaSurvivor: never reached from the UI — a Magepunk player logs out on the site)
+      if (mpPending || mpPushT) { try { await pushMp(); } catch (e) { /* the local copy stays */ } }
+      clearTimeout(mpPushT); mpPushT = 0; mpUser = null; mode = 'local';
     }
     clearTimeout(pushT); clearTimeout(retryT);
     user = key = save = uid = null; guest = false; pending = false;
@@ -863,7 +1048,12 @@ G.DB = (() => {
   }
 
   return {
-    ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
+    ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount,
+    flush: () => (mode === 'magepunk' ? pushMp() : pushNow()),
+    // MicaSurvivor (M3): Magepunk accounts
+    get magepunk() { return mode === 'magepunk' ? mpUser : null; },
+    get carryOffer() { return carryOffer; }, carryGuest,
+    get mpRev() { return mpRev; },
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },

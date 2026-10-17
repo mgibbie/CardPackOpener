@@ -32,6 +32,8 @@ G.RankingUI = (() => {
   }
 
   function open() {
+    // MicaSurvivor (M3): the Magepunk leaderboard (js/mica/account.js) replaces the Firebase boards.
+    if (G.MicaUI) { G.MicaUI.openRanking(); return; }
     if (!G.SocialUI.needOnline()) return;
     G.UI.show('scr-rank', true);
     if (!G.Social.started) G.Social.start();
