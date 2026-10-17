@@ -275,6 +275,7 @@ G.Player = class Player {
     const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
     const d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close);
     this.hp -= d;
+    if (!this.remote && G.Modes && G.Modes.noDeath()) this.hp = Math.max(this.hp, 1);   // MicaSurvivor (M5 lote 6): la Fiesta no muere (main.gd 1861)
     this.invuln = 0.45;
     this.flash = 0.14;
     G.Audio.sfx('hurt');

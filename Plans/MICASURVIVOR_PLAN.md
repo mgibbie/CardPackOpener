@@ -121,6 +121,7 @@ each with tests and the matching controller action wired into js/core/pad.js onc
    *(built 2026-10-17, branch `feat/micasurvivor-m5-b5`; README → "Batch 5: Dynamax and raid dens")*
 6. **Quick modes**: Daily Challenge, Rift Time Attack, Type Survival, Party, 6 modifiers; the
    in-run level-up card **ban** (owner asked for it).
+   *(built 2026-10-17, branch `feat/micasurvivor-m5-b6`; README → "Batch 6: Quick modes, modifiers and the card ban")*
 7. **Team mode** (2–3 Pokémon, swap mid-run).
 8. **Boss Rush**, then the **Tower** (30 floors, risk pacts, relics, checkpoints).
 9. **Adaptive difficulty**, biome-themed spawns, enemy support caps.

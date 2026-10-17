@@ -30,6 +30,16 @@ G.Icons = (() => {
     flag: { pal: { r: '#ff5f6d', w: '#c9cfdc' }, rows: [
       '.kk.........', '.kwkkkkkk...', '.kwkrrrrrk..', '.kwkrrrrrrk.', '.kwkrrrrrk..', '.kwkrrrrk...',
       '.kwkkkkk....', '.kwk........', '.kwk........', '.kwk........', 'kkwkk.......', 'kkkkk.......'] },
+    // MicaSurvivor (M5 lote 6, icons.gd m_daily / m_party / m_horde): modos y el modificador Horda.
+    m_daily: { pal: { r: '#ff5f6d', w: '#f4f4ff' }, rows: [
+      '.k..k..k..k.', 'kkkkkkkkkkkk', 'krrrrrrrrrrk', 'kkkkkkkkkkkk', 'kwwwwwwwwwwk', 'kwkkwkkwkkwk',
+      'kwwwwwwwwwwk', 'kwkkwkkwrrwk', 'kwwwwwwwrrwk', 'kwkkwkkwwwwk', 'kwwwwwwwwwwk', 'kkkkkkkkkkkk'] },
+    m_party: { pal: { o: '#ffb347', y: '#ffd23f', p: '#ff8ad8', b: '#4fb4ff' }, rows: [
+      '.......y..p.', '..b..y......', '.........b..', '....kk.p....', '...kook.....', '..kooyk..y..',
+      '..koyook....', '.kooyook..b.', '.koyooook...', 'kooyoook....', 'kkooook.....', '.kkkkk......'] },
+    m_horde: { pal: { r: '#ff5f6d', g: '#5fe08a', b: '#4fb4ff', w: '#f4f8ff' }, rows: [
+      '............', '.kkk....kkk.', 'krrrk..kgggk', 'krwrk..kgwgk', 'krrrkkkkgggk', '.kkkbbbbkkk.',
+      '...kbwwbk...', '..kbbbbbbk..', '..kbbbbbbk..', '...kkkkkk...', '............', '............'] },
     // Prohibido (Veto: movimiento bloqueado).
     ban: { pal: { r: '#ff5f6d' }, rows: [
       '...kkkkkk...', '..krrrrrrk..', '.krrkkkkrrk.', 'krrk..krrrrk', 'krk..krrkkrk', 'krk.krrk.krk',

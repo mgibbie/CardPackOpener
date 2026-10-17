@@ -591,6 +591,7 @@ G.World = (() => {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
+    get seed() { return seed; },   // MicaSurvivor (M5 lote 6): el Desafío diario siembra el mundo (pruebas)
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
     /** Arena de la grieta: { tx, ty, r } (en tiles) o null. */
     setArena(a) {

@@ -28,6 +28,8 @@
 G.Progress = (() => {
   const TYPES = Object.keys(G.U.TYPE_NAME);
   let achT = 0, toastQ = [], toastT = 0;
+  // MicaSurvivor (M5 lote 6, progress.gd 208): en el Modo Fiesta no cuenta nada (misiones, logros, stats).
+  let off = false;
 
   // ---------------- misiones ----------------
 
@@ -135,7 +137,7 @@ G.Progress = (() => {
 
   function event(kind, d = {}) {
     const s = G.DB.save;
-    if (!s) return;
+    if (!s || off) return;
     ensure(s);
     const S = s.stats;
     switch (kind) {
@@ -188,7 +190,7 @@ G.Progress = (() => {
 
   function checkAch() {
     const s = G.DB.save;
-    if (!s) return;
+    if (!s || off) return;
     achT = performance.now();
     if (G.ZMoves) G.ZMoves.zcheck(s);   // MicaSurvivor (M5 lote 4): misiones de Cristal Z (progress.gd check -> zcheck)
     s.ach = s.ach || {};
@@ -243,7 +245,7 @@ G.Progress = (() => {
   /** MicaSurvivor (M5 lote 4): un cofre abierto (cualquiera; port main.gd _open_chest -> stats "chests"). */
   function countChest() {
     const s = G.DB.save;
-    if (!s || !s.stats) return;
+    if (!s || !s.stats || off) return;
     s.stats.chests = (s.stats.chests || 0) + 1;
   }
 
@@ -253,5 +255,5 @@ G.Progress = (() => {
     return (s && s.stats && s.stats['tk_' + type]) || 0;
   }
 
-  return { typeKills, countChest, notify, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
+  return { get off() { return off; }, set off(v) { off = !!v; }, typeKills, countChest, notify, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
 })();

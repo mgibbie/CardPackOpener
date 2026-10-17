@@ -5,13 +5,14 @@ G.MenuUI = (() => {
   let dexFilter = 'all', dexGen = 1, dexSel = null;
 
   function init() {
-    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', modes: 'm_daily', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
         if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
+        else if (go === 'modes') G.ModesUI.open();   // MicaSurvivor (M5 lote 6)
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'gacha') G.GachaUI.open();

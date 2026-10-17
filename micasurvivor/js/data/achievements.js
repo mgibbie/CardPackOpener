@@ -14,7 +14,7 @@ G.AchDefs = (() => {
   const count = k => s => Object.keys(s[k] || {}).length;
 
   const CATS = [['coleccion', 'Colección'], ['supervivencia', 'Supervivencia'], ['combate', 'Combate'],
-                ['grietas', 'Grietas'], ['legendarios', 'Legendarios'], ['otros', 'Misiones y más']];
+                ['grietas', 'Grietas'], ['legendarios', 'Legendarios'], ['modos', 'Modos de juego'], ['otros', 'Misiones y más']];
 
   const LIST = [
     // ---------- colección ----------
@@ -65,6 +65,29 @@ G.AchDefs = (() => {
     { id: 'leg10', cat: 'legendarios', tier: 2, name: 'Cazalegendarios', desc: 'Vence a 10 legendarios distintos.', value: legends, goal: 10, reward: { t10: 1 }, title: 'Cazalegendarios' },
     { id: 'leg30', cat: 'legendarios', tier: 3, name: 'Domador de mitos', desc: 'Vence a 30 legendarios distintos.', value: legends, goal: 30, reward: { t10: 2 } },
     { id: 'legAll', cat: 'legendarios', tier: 3, name: 'Leyenda', desc: 'Vence a todos los legendarios.', value: legends, goal: 87, reward: { t10: 5 }, title: 'Leyenda' },
+
+    // ---------- modos de juego (MicaSurvivor M5 lote 6, progress.gd 107-134: los de los modos de este
+    // lote; los del Rush de Jefes, la Torre y el Equipo llegan con sus lotes) ----------
+    { id: 'daily1', cat: 'modos', tier: 1, name: 'Reto del día', desc: 'Juega un Desafío diario.', value: st('dailyPlays'), goal: 1, reward: { coins: 150, t1: 2 } },
+    { id: 'daily7', cat: 'modos', tier: 2, name: 'Rutina diaria', desc: 'Juega 7 Desafíos diarios.', value: st('dailyPlays'), goal: 7, reward: { coins: 500, t1: 5 } },
+    { id: 'daily30', cat: 'modos', tier: 3, name: 'Fiel al reto', desc: 'Juega 30 Desafíos diarios.', value: st('dailyPlays'), goal: 30, reward: { coins: 2000, t1: 3, t10: 2 }, title: 'Fiel al reto' },
+    { id: 'dailyMin10', cat: 'modos', tier: 2, name: 'Reto superado', desc: 'Aguanta 10 minutos en un Desafío diario.', value: st('dailyBestMin'), goal: 10, reward: { coins: 1000, t10: 1 } },
+    { id: 'dailyMin20', cat: 'modos', tier: 3, name: 'Campeón del día', desc: 'Aguanta 20 minutos en un Desafío diario.', value: st('dailyBestMin'), goal: 20, reward: { coins: 2500, t10: 2 }, title: 'Campeón del día' },
+    { id: 'mod1', cat: 'modos', tier: 1, name: 'Con un extra', desc: 'Aguanta 5 minutos con un modificador activo.', value: st('mn1'), goal: 5, reward: { coins: 300, t1: 3 } },
+    { id: 'mod3', cat: 'modos', tier: 2, name: 'Doble dificultad', desc: 'Aguanta 8 minutos con 3 modificadores.', value: st('mn3'), goal: 8, reward: { coins: 1200, t10: 1 } },
+    { id: 'mod4', cat: 'modos', tier: 3, name: 'Sin red', desc: 'Aguanta 10 minutos con 4 modificadores.', value: st('mn4'), goal: 10, reward: { coins: 3000, t1: 2, t10: 2 }, title: 'Sin red' },
+    { id: 'modAll', cat: 'modos', tier: 3, name: 'Masoquista', desc: 'Aguanta 5 minutos con los 6 modificadores.', value: st('mn6'), goal: 5, reward: { coins: 6000, t1: 3, t10: 4 }, title: 'Masoquista' },
+    { id: 'noheal10', cat: 'modos', tier: 2, name: 'Sin curas', desc: 'Aguanta 10 minutos con «Sin curación».', value: st('mb_nohealing'), goal: 10, reward: { coins: 1500, t10: 1 } },
+    { id: 'frail10', cat: 'modos', tier: 2, name: 'Cristal', desc: 'Aguanta 10 minutos con «Frágil».', value: st('mb_frail'), goal: 10, reward: { coins: 1500, t10: 1 } },
+    { id: 'horde10', cat: 'modos', tier: 2, name: 'Entre la multitud', desc: 'Aguanta 10 minutos con «Horda».', value: st('mb_horde'), goal: 10, reward: { coins: 1500, t10: 1 } },
+    { id: 'type1', cat: 'modos', tier: 1, name: 'Especialista', desc: 'Aguanta 5 minutos en Supervivencia por tipo.', value: st('typeBestMin'), goal: 5, reward: { coins: 300, t1: 3 } },
+    { id: 'type10', cat: 'modos', tier: 2, name: 'Experto en tipo', desc: 'Aguanta 10 minutos en Supervivencia por tipo.', value: st('typeBestMin'), goal: 10, reward: { coins: 1200, t10: 1 } },
+    { id: 'typeVar9', cat: 'modos', tier: 3, name: 'Todoterreno', desc: 'Aguanta 10 minutos en 9 tipos distintos de Supervivencia por tipo.', value: count('typeDone'), goal: 9, reward: { coins: 3000, t1: 3, t10: 2 } },
+    { id: 'typeAll', cat: 'modos', tier: 3, name: 'Maestro de tipos', desc: 'Aguanta 10 minutos en los 18 tipos de Supervivencia por tipo.', value: count('typeDone'), goal: 18, reward: { coins: 8000, t1: 5, t10: 5 }, title: 'Maestro de tipos' },
+    { id: 'rifts3', cat: 'modos', tier: 1, name: 'Contrarreloj', desc: 'Gana 3 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 3, reward: { coins: 500, t1: 3 } },
+    { id: 'rifts5', cat: 'modos', tier: 2, name: 'Pasillo de grietas', desc: 'Gana 5 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 5, reward: { coins: 1500, t10: 1 } },
+    { id: 'rifts8', cat: 'modos', tier: 3, name: 'Cazador contrarreloj', desc: 'Gana 8 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 8, reward: { coins: 3500, t1: 3, t10: 2 }, title: 'Cazador contrarreloj' },
+    { id: 'riftsRuns10', cat: 'modos', tier: 2, name: 'Siempre con prisa', desc: 'Juega 10 Contrarrelojes de grietas.', value: st('riftsRuns'), goal: 10, reward: { coins: 1500, t10: 1 } },
 
     // ---------- misiones y más ----------
     { id: 'mis10', cat: 'otros', tier: 1, name: 'Cumplidor', desc: 'Completa 10 misiones.', value: st('missionsDone'), goal: 10, reward: { t1: 3 } },

@@ -7,7 +7,7 @@
 //        node tools/micasurvivor/gen_designwiki.mjs
 //   2. Every #/micasurvivor route renders in headless Chrome with no console errors: the overview
 //      (how to play, the Pewter Museum cabinet, accounts + leaderboard, the controller table, the
-//      credits / PolyForm Noncommercial notice), all 966 Pokémon with their ability (+ the filter,
+//      credits / PolyForm Noncommercial notice, the Game modes of M5 batch 6), all 966 Pokémon with their ability (+ the filter,
 //      also by ability), the abilities list, every move, every
 //      item and upgrade; the sidebar links them; the phone layout (390 px) has no horizontal overflow.
 //   node overworld/tests/designwiki_micasurvivor_test.mjs
@@ -50,6 +50,12 @@ A(W.dynrules && W.dynrules.dur === 60 && W.dynrules.minLevel === 20 && W.dynrule
 // MicaSurvivor M5 batch 4: the Z-moves
 A(W.counts.zmoves === 18 && W.zmoves.length === 18 && W.zmoves[0].name === 'Starlight Dash' && W.zmoves.every(z => z.name && z.desc && z.mission && !/[¡¿ñáíóú]/.test(z.desc + z.mission)) && W.zrules.cooldown === 240 && W.zrules.need === 250, '18 Z-moves in English with their missions and the rules (240 s, 250 kills)', JSON.stringify(W.counts));
 
+// MicaSurvivor M5 batch 6: the quick modes, the 6 modifiers and the level-up ban
+const MO = W.modes || {};
+A(JSON.stringify((MO.list || []).map(m => m.name)) === JSON.stringify(['Normal run', 'Daily Challenge', 'Party Mode', 'Rift Time Attack', 'Survival by Type']) && (MO.mods || []).length === 6 && MO.mods.every(m => m.name && m.desc && !/[¡¿ñáíóú]/.test(m.desc))
+	&& MO.rifts.limit === 480 && MO.coins.daily === 1.25 && MO.coins.type === 0.5 && MO.k.horde === 1.8 && MO.ban.max === 3 && JSON.stringify(MO.ban.costs) === '[300,570,1080]',
+	'Game modes from modes.js: 5 modes, 6 modifiers in English, the port numbers (480 s, x1.25, +0.5, horde x1.8) and the ban (Ban upgrade, 3 levels)', JSON.stringify(MO).slice(0, 300));
+
 // ---------- 2. the pages
 const server = http.createServer((req, res) => {
 	let u = decodeURIComponent(req.url.split('?')[0]);
@@ -80,7 +86,10 @@ try {
 	A(ov.play && ov.art === 96, 'overview: the play link and the tile art', JSON.stringify({ play: ov.play, art: ov.art }));
 	A(/How to play/.test(ov.text) && /Pewter Museum/.test(ov.text) && /best survival time/.test(ov.text) && /Magepunk/.test(ov.text), 'overview: how to play, the Pewter Museum cabinet, accounts + the leaderboard');
 	A(/Required Notice: Copyright 2026 JPTER78 \(https:\/\/github\.com\/JPTER78\/pokesurvivor\)/.test(ov.text) && /PolyForm Noncommercial/.test(ov.text) && /CC BY-NC 4\.0/.test(ov.text) && /JayElDragon/.test(ov.text) && /never gets ads, paid items/.test(ov.text), 'overview: credits + the licence notice (Required Notice, PolyForm NC, CC BY-NC, JayElDragon, never sold)');
-	A(ov.tables === 2 && /Nintendo/.test(ov.text), 'overview: the keyboard and controller tables');
+	A(ov.tables === 4 && /Nintendo/.test(ov.text), 'overview: the modes and modifiers tables, the keyboard and controller tables');
+	A(/Game modes/.test(ov.text) && /Rift Time Attack/.test(ov.text) && /8:00 on the clock/.test(ov.text) && /Survival by Type/.test(ov.text) && /Heavy hitters/.test(ov.text) && /Banning a level-up card/.test(ov.text) && /Ban a level-up card/.test(ov.text)
+		&& await page.$$eval('#content .ms-modes tbody tr', r => r.length) === 5 && await page.$$eval('#content .ms-mods tbody tr', r => r.length) === 6,
+		'overview: Game modes (5 modes, 6 modifiers, the ban, the B key and the controller row; M5 batch 6)');
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micasurvivor', 'nav: Overview is active');
 
 	await go('micasurvivor/pokemon', '.ms-pokemon tbody tr', 966);
