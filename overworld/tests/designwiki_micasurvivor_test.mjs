@@ -45,6 +45,8 @@ A(W.counts.abilities === 54 && ABI.size === 54 && W.abilities.every(a => a.name 
 A(W.pokemon.every(p => ABI.has(p[6])) && W.abilities.reduce((s, a) => s + a.pokemon, 0) === 966, 'every Pokémon has its ability (the counts add up to 966)');
 A(W.pokemon.find(p => p[0] === 4)[6] === 'blaze' && ABI.get('blaze').name === 'Blaze' && ABI.get('sturdy').desc === 'A hit that would KO you leaves you at 1 HP (every 90 s).', 'Charmander has Blaze; Sturdy is described with the port\'s numbers');
 
+// MicaSurvivor M5 batch 5: Dynamax + raid dens
+A(W.dynrules && W.dynrules.dur === 60 && W.dynrules.minLevel === 20 && W.dynrules.cooldown === 240 && W.dynrules.denRate === 0.05 && W.dynrules.reward.coins === 120 && W.dynrules.status.length === 11, 'Dynamax rules from dynamax.js (60 s, level 20, 240 s, dens 5 %, 120 coins, 11 status types)', JSON.stringify(W.dynrules));
 // MicaSurvivor M5 batch 4: the Z-moves
 A(W.counts.zmoves === 18 && W.zmoves.length === 18 && W.zmoves[0].name === 'Starlight Dash' && W.zmoves.every(z => z.name && z.desc && z.mission && !/[¡¿ñáíóú]/.test(z.desc + z.mission)) && W.zrules.cooldown === 240 && W.zrules.need === 250, '18 Z-moves in English with their missions and the rules (240 s, 250 kills)', JSON.stringify(W.counts));
 
@@ -93,9 +95,10 @@ try {
 	A(await page.$$eval('#content .ms-pokemon tbody tr', r => r.length) === dragons, `pokemon: filtering by type (dragon: ${dragons})`);
 	await page.$eval('#content .ms-abilities tbody tr:nth-child(19) a', a => a.click());   // Sturdy
 	A(await page.$$eval('#content .ms-pokemon tbody tr', r => r.length) === ABI.get('sturdy').pokemon, `pokemon: clicking an ability's count lists its Pokémon (Sturdy: ${ABI.get('sturdy').pokemon})`);
-	await go('micasurvivor/moves', 'tbody tr', W.moves.length + W.zmoves.length);
+	await go('micasurvivor/moves', 'tbody tr', W.moves.length + W.zmoves.length + W.dynrules.status.length);
 	A(await page.$eval('#content', el => /Overheat/.test(el.textContent) && /Reflexes/.test(el.textContent)), 'moves: evolutions and their stat');
 	A(await page.$$eval('#content .ms-zmoves tbody tr', r => r.length) === 18 && await page.$eval('#content', el => /Z-Moves/.test(el.textContent) && /Pyrotechnic Holocaust.*Survive 8 minutes in a run./s.test(el.textContent) && /at most 28 %/.test(el.textContent) && /defeating 250 Pokémon/.test(el.textContent)), 'moves: the 18 Z-moves with their Z-crystal missions and rules (M5 batch 4)');
+	A(await page.$$eval('#content .ms-dynamax tbody tr', r => r.length) === 11 && await page.$eval('#content', el => /Dynamax & raid dens/.test(el.textContent) && /for 60 s/.test(el.textContent) && /5 % chance to open a den/.test(el.textContent) && /120 coins/.test(el.textContent) && /paralyses/.test(el.textContent)), 'moves: Dynamax and raid dens with the port numbers and the Max-wave status per type (M5 batch 5)');
 	await go('micasurvivor/items', 'tbody tr', W.items.length + W.upgrades.length);
 	A(await page.$eval('#content', el => /Light Ball.*Pichu, Pikachu, Raichu/s.test(el.textContent) && /Rare Candy.*takes no slot/s.test(el.textContent) && /Backpack.*7500/s.test(el.textContent) && /Second Chance.*2500 · 5000/s.test(el.textContent) && /TWO with the Backpack/.test(el.textContent)), 'items: who can use the species-locked ones, the Backpack, upgrade prices per level (M5 batch 3)');
 

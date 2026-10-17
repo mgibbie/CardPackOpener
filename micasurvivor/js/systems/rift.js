@@ -13,8 +13,12 @@
  * Mientras dura la arena, los enemigos del mapa se guardan (EnemyMgr.stash) y
  * no aparecen nuevos; al volver todo sigue como estaba.
  *
+ * MicaSurvivor (M5 lote 5, dynamax.js): desde los 120 s, cada chequeo tiene un 5 % de abrir en su
+ * lugar una GUARIDA DYNAMAX (30 s abierta, cráter rojo con su columna de luz): dentro, un Pokémon
+ * normal del tramo actual, gigante; vencerlo desbloquea / recarga el Dynamax (G.Dynamax.denDown).
+ *
  * Cooperativo: lo decide el anfitrión. Mensajes (ver coop.js):
- *   'rift' x y ttl · 'riftx' · 'arena' cfg · 'aw' (ganada) · 'al' (perdida)
+ *   'rift' x y ttl den · 'riftx' · 'arena' cfg · 'aw' (ganada) · 'al' (perdida)
  *   y del invitado al anfitrión 're' (he entrado en la grieta).
  */
 G.Rift = (() => {
@@ -45,6 +49,9 @@ G.Rift = (() => {
       if (checkT <= 0) {
         checkT = CHECK;
         if (G.EnemyMgr.bossAlive()) return;           // con un jefe vivo no cuenta como intento
+        // MicaSurvivor (M5 lote 5, main.gd 5867): guarida Dynamax, 5 % por chequeo desde los 120 s
+        // (no en la Contrarreloj de grietas); no toca la racha de grietas fallidas.
+        if (G.Dynamax && G.Dynamax.denRoll(time)) { open(true); return; }
         if (Math.random() < CHANCE * (1 + misses)) { misses = 0; open(); }
         else misses++;
       }
@@ -52,26 +59,27 @@ G.Rift = (() => {
     if (arena) arenaTick(dt, pl);
   }
 
-  function open() {
+  function open(den = false) {
+    const ttl = den ? G.Dynamax.DEN_TTL : TTL;
     const alive = G.Game.everyone().filter(p => !p.dead);
     const near = G.U.pick(alive.length ? alive : [G.Game.player]);
     for (let i = 0; i < 24; i++) {
       const a = Math.random() * 6.2832, d = G.U.rand(380, 560);
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
       if (!G.World.isFree(x, y, 22)) continue;
-      show(x, y, TTL);
-      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL]);
+      show(x, y, ttl, den);
+      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), ttl, den ? 1 : 0]);
       return;
     }
   }
 
   /** Aparece la grieta (también la que manda el anfitrión). */
-  function show(x, y, ttl) {
-    rift = { x, y, ttl, t: 0 };
+  function show(x, y, ttl, den = false) {
+    rift = { x, y, ttl, t: 0, den: !!den };
     asked = false;
     // (El aviso grande lo dibuja hud.js mientras rift.t < 4,5 s.)
     G.Audio.sfx('rift');
-    G.FX.ring(x, y, 6, 80, '#b48aff', 0.7, 5);
+    G.FX.ring(x, y, 6, 80, den ? G.Dynamax.RED : '#b48aff', 0.7, 5);
   }
 
   function enter() {
@@ -88,6 +96,7 @@ G.Rift = (() => {
 
   function start(forceType) {
     if (arena) return;
+    if (rift && rift.den) { startDen(); return; }
     forceType = forceType || nextType; nextType = null;
     let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
     if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
@@ -102,6 +111,24 @@ G.Rift = (() => {
       dex: mon.dex, shiny: G.Sprites.hasShiny(mon.dex) && Math.random() < 1 / 512,
       // La arena es la de uno de sus tipos, al azar.
       type: forceType || G.U.pick(mon.types)
+    };
+    if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
+    begin(cfg);
+    spawnLegend();
+  }
+
+  /**
+   * Guarida Dynamax (main.gd _open_rift den / _arena_begin): un Pokémon normal del tramo actual, en
+   * la arena de uno de sus tipos (Normal si ese tipo no tiene arena), nunca shiny.
+   */
+  function startDen(forceDex) {
+    const mon = forceDex ? G.DEX_BY[forceDex] : G.Dynamax.denMon(G.Game.st.time);
+    if (!mon) { rift = null; return; }
+    let type = G.U.pick(mon.types);
+    if (!G.Tiles.ARENA_THEMES[type]) type = 'normal';
+    const cfg = {
+      tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: ARENA_R,
+      dex: mon.dex, shiny: false, type, den: true
     };
     if (G.Coop.isHost) G.Coop.broadcast(['arena', cfg]);
     begin(cfg);
@@ -132,7 +159,7 @@ G.Rift = (() => {
     G.Camera.x = pl.x; G.Camera.y = pl.y;
     G.Game.flash('#c9a6ff', 0.9);
     G.Audio.sfx('rift');
-    G.Spawner.say('Has entrado en la grieta…', 2.4, true);
+    G.Spawner.say(cfg.den ? 'Has entrado en la guarida…' : 'Has entrado en la grieta…', 2.4, true);
   }
 
   function spawnLegend() {
@@ -140,7 +167,7 @@ G.Rift = (() => {
     const t = G.Game.st.time;
     const n = G.Game.everyone().length;
     const ts = TS();
-    const def = {
+    let def = {
       dex: mon.dex, name: mon.name,
       hp: Math.round((3200 + t * 9) * G.Coop.scaleHp(n) * (n > 1 ? 1.4 : 1)),
       spd: Math.round(G.U.clamp(48 + (mon.spd - 78) * 0.6, 48, 105)),
@@ -148,15 +175,23 @@ G.Rift = (() => {
       behavior: mon.types.some(x => ['psychic', 'electric', 'ghost', 'fairy', 'fire', 'water', 'ice', 'dragon'].includes(x)) ? 'ranged' : 'charger',
       shotDmg: Math.round(18 + t / 40), shotCd: 0.9, range: 300
     };
+    // MicaSurvivor (M5 lote 5, main.gd _den_def): la guarida, con 2400 + 8 × t de vida (en grupo, la
+    // misma escala que el legendario) y 380 + t de experiencia; usa el Movimiento Max (enemy.js).
+    if (arena.den) {
+      def = G.Dynamax.denDef(def, t);
+      def.hp = Math.round(def.hp * G.Coop.scaleHp(n) * (n > 1 ? 1.4 : 1));
+    }
     const e = new G.Enemy(def, arena.x, arena.y - ts * 3.5, { hp: 1, spd: 1, dmg: 1 }, true);
     e.legend = true;
     // Choca con las paredes y columnas como tú: si volara por encima de las
     // rocas, tus disparos no podrían alcanzarle (bug de Celebi).
     e.flying = false;
+    if (arena.den) G.Dynamax.giant(e);
     if (arena.shiny) e.makeShiny();
     G.EnemyMgr.add(e);
     arena.bossId = e.id;
-    G.Spawner.say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' te esperaba en la grieta!', 3.2);
+    if (arena.den) G.Spawner.say('¡' + e.name + ' Dynamax te desafía!', 3.0);
+    else G.Spawner.say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' te esperaba en la grieta!', 3.2);
     G.Camera.kick(1.1);
     G.Audio.sfx('boss');
   }
@@ -177,6 +212,7 @@ G.Rift = (() => {
       if (!authority()) return;
       keepInside();
       const boss = G.EnemyMgr.get(arena.bossId);
+      if (boss) { arena.bx = boss.x; arena.by = boss.y; }   // (dónde cae el premio de la guarida)
       if (!boss || boss.dead) { G.Coop.isHost && G.Coop.broadcast(['aw']); won(); return; }
       const allDown = G.Game.everyone().every(p => p.dead);
       downT = allDown ? downT + dt : 0;
@@ -190,6 +226,13 @@ G.Rift = (() => {
   function won() {
     if (!arena || arena.phase !== 'fight') return;
     arena.phase = 'won'; arena.endT = 5;
+    // MicaSurvivor (M5 lote 5, main.gd _den_down): la guarida no es una grieta (ni vínculo ni
+    // victoria de grieta): su premio, el Caramelo Dynamax y, la primera vez, el desbloqueo.
+    if (arena.den) {
+      const bx = arena.bx != null ? arena.bx : arena.x, by = arena.by != null ? arena.by : arena.y - TS() * 3.5;
+      G.Dynamax.denDown(bx, by, authority());
+      return;
+    }
     G.Progress.event('rift', { type: arena.type });
     G.Pickups.pullAll();
     G.Spawner.say('¡Has vencido a ' + G.DEX_BY[arena.dex].name + '! Recoge el premio…', 3.4, true);
@@ -240,6 +283,8 @@ G.Rift = (() => {
     return {
       y: rift.y,
       draw(ctx) {
+        // MicaSurvivor (M5 lote 5): la guarida es un cráter rojo (su columna de luz va por encima: dynamax.js).
+        if (rift.den) { G.Dynamax.drawDen(ctx, rift.x, rift.y, rift.t, Math.min(1, rift.t * 2) * Math.min(1, rift.ttl / 1.5)); return; }
         const P = G.Sprites.PX;
         const img = G.Tiles.propSprite(0, 'rift', Math.floor(rift.t * 8) % 4);
         const w = img.width * P, h = img.height * P;
@@ -260,7 +305,7 @@ G.Rift = (() => {
 
   function onEvent(ev) {
     switch (ev[0]) {
-      case 'rift': show(ev[1], ev[2], ev[3]); break;
+      case 'rift': show(ev[1], ev[2], ev[3], !!ev[4]); break;
       case 'riftx': rift = null; break;
       case 'arena': begin(ev[1]); break;
       case 'aw': won(); break;
@@ -273,7 +318,10 @@ G.Rift = (() => {
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },
-    debugOpen() { open(); },
+    debugOpen(den = false) { open(den); },
+    /** Para pruebas: la guarida ya (con un Pokémon dado, si se quiere). */
+    debugDen(dex) { if (!arena) { rift = { x: 0, y: 0, ttl: 1, t: 0, den: true }; startDen(dex); } },
+    get den() { return !!((arena && arena.den) || (!arena && rift && rift.den)); },
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { start(type); },
     /** Para vídeos: la próxima grieta en la que entres será de este tipo. */

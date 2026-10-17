@@ -118,6 +118,7 @@ each with tests and the matching controller action wired into js/core/pad.js onc
 4. **Z-moves** (18 types, cinematic, unlocks by kills / Z-crystal missions / gacha crystal).
    *(built 2026-10-17, branch `feat/micasurvivor-m5-b4`; README → "Batch 4: Z-moves")*
 5. **Dynamax + raid dens**.
+   *(built 2026-10-17, branch `feat/micasurvivor-m5-b5`; README → "Batch 5: Dynamax and raid dens")*
 6. **Quick modes**: Daily Challenge, Rift Time Attack, Type Survival, Party, 6 modifiers; the
    in-run level-up card **ban** (owner asked for it).
 7. **Team mode** (2–3 Pokémon, swap mid-run).

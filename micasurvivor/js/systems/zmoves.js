@@ -1012,6 +1012,15 @@ G.ZMoves = (() => {
       ctx.restore();
     }
   }
+  /**
+   * MicaSurvivor (M5 lote 5): un golpe de área suelto con las utilidades del Z, sin coreografía
+   * (dynamax.gd _pulse hace ZMS.new() y usa boom / hit / ring_burst): las ondas Max del Dynamax.
+   * El tope del 28 % contra jefes cuenta por objeto, como en el port (una onda = un objeto).
+   */
+  function area(pl, type, cx, cy, dmg) {
+    const z = Object.create(Effect.prototype);
+    return Object.assign(z, { pl, type, pal: type, cx, cy, t: 0, dur: 0, ev: [], done: true, acc: 0, acc2: 0, dim: 0, st: { bs: {} }, dmg });
+  }
   function updateWorld(dt) {
     for (const w of wisps) w.update(dt);
     if (wisps.some(w => w.gone)) wisps = wisps.filter(w => !w.gone);
@@ -1196,7 +1205,7 @@ G.ZMoves = (() => {
   return {
     ORDER, NEED, COOLDOWN, MIN_LEVEL, CINE_T, BOSS_CAP, CRYSTAL_P, ZMIS_COINS, BLOCKED_MODES, DEF, ZMIS,
     unlocked, unlockedList, typesFor, typeFor, choose, grantCrystal, rollCrystal, stat, zdone, zcheck,
-    reset, can, tryStart, cineTick, update, updateWorld, drawWorld, drawDim, drawCine, drawButton, buttonRect, blocked, activeType,
+    reset, can, tryStart, cineTick, update, updateWorld, drawWorld, drawDim, drawCine, drawButton, buttonRect, blocked, activeType, area,
     get busy() { return busy(); }, get cine() { return state === 'cine'; }, get state() { return state; }, get t() { return t; },
     get used() { return used; }, get cd() { return cd; }, get type() { return ztype; }, get fx() { return fx; }, get wisps() { return wisps.length; }
   };

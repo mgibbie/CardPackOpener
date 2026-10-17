@@ -146,11 +146,14 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   | cancel | back on every screen; resume from pause | B | ○ | **B (bottom face)** |
   | reroll | reroll the level-up cards (R) | Y | △ | X |
   | zmove | the Z-move (Z), M5 batch 4 | LS (L3) | L3 | LS |
+  | dynamax | Dynamax (C), M5 batch 5 | View | Share | − |
 
-  View / Back with nothing bound to it works as back in menus and as pause in a run. In a run the
-  port's extras also fire the Z-move: the reroll button (Y / △ / X, which only rerolls on the card
-  screen) and the right trigger when nothing is bound to it. The port's **ban, swap and Dynamax**
-  actions come with their M5 batches (in-run card ban, team mode, Dynamax). A map saved before an
+  View / Back with nothing bound to it works as back in menus and as pause in a run (by default it
+  is now Dynamax, the port's `JOY_BUTTON_BACK`; pause stays on Start). In a run the port's extras
+  also fire the Z-move: the reroll button (Y / △ / X, which only rerolls on the card screen) and
+  the right trigger when nothing is bound to it; and Dynamax: the left trigger and the left face
+  button (X / □ / Y) when nothing is bound to them. The port's **ban and swap** actions come with
+  their M5 batches (in-run card ban, team mode). A map saved before an
   action existed keeps its buttons; the new action gets its default, or the first free button if
   a remap already took it.
 - **Layouts**: Xbox, PlayStation and Nintendo. Nintendo swaps confirm and cancel. It is the
@@ -442,6 +445,65 @@ keys. The carry-over text now lists Z-moves among what is merged.
 - The HUD level label: "Nv. {x}" now has an English pattern, so the HUD level reads
   "Lv. 20" in English (it used to stay "Nv.").
 
+### Batch 5: Dynamax and raid dens
+
+**Dynamax** (`js/systems/dynamax.js`, `G.Dynamax`; port `dynamax.gd` whole, `main.gd` 183-189 /
+383-385 / 1226-1281 / 4216 / 4263 / 5867-5870 / 5903-5936 / 5990-5996 / 6037-6051 / 6189-6221, HUD
+`draw_dyn` 8430-8503). The numbers are the port's.
+
+| Rule | Value |
+|---|---|
+| Unlock | clear one **raid den** (`stats.dens >= 1`, plus `stats.dynamax = 1`) |
+| Usable from | level 20 |
+| Lasts | 60 s; then a 240 s cooldown (counted only after it ends). Every den cleared recharges it at once (the port's "Dynamax Candy") |
+| Stats | +30 % to all: damage x1.3, speed x1.3, cooldowns /1.3, 23.08 % less damage taken (`pl.dyn`, read live in the `Player` getters, so the end reverts exactly; `cdMul` is now a getter over `_cdMul`) |
+| HP | max HP +30 % (rounded), current HP up by the same; at the end the bonus goes and HP keeps its proportion (never below 1) |
+| Size | the sprite (and shadow and aura) grows in Super Mario Bros DS steps 1.22x1.0, 1.04, 1.42x1.3, 1.16x1.2, 1.792, 1.6 (0.9 s, a flash + sound + ring on three of them); shrinks back in 0.35 s. Hit radius unchanged, as in the port |
+| Max waves | every 1.5 s (the first at 0.6 s): (30 + 8 x level) x attack, radius 280; every 3rd radius 420, x1.9 and a ring of stars. Through `G.Combat.land()` via the Z-move helpers (`G.ZMoves.area`), with the type's status from the port's STATUS table: electric paralyses, ice freezes, ghost sleeps, psychic / fairy confuse, poison / grass poison, water / bug / ground slow 40 / 35 / 30 % |
+| Not allowed | the Tower (`G.Game.mode === 'tower'`), the Judgment of Arceus, during a Z-move cinematic. **Allowed in rift and den arenas** (the port's `_dyn_can` does not block them, unlike the Z-move) |
+| Ends early | when you fall; `G.Dynamax.stop(pl)` is the hook team mode (batch 7) calls on a swap |
+
+On screen: a red aura drawn in code (light puddle, glow, spiralling red / violet mist, sparks), a
+pulsing red border, a time bar "DYNAMAX 42 s", and the "DYNAMAX" banner whose letters drop and
+bounce in (with a pink flash; a third of it with "Fewer flashes").
+
+**Raid dens** (`js/systems/rift.js` + `dynamax.js`): from 120 s into a run, every 30 s rift check
+has a 5 % chance to open a **den** instead of a rift (not in Rift Time Attack: `G.Game.mode ===
+'rifts'`, batch 6; it does not touch the rift miss streak). A den stays open 30 s and is drawn in
+code: a rocky crater with seven red crystals and a pulsing energy pit, and a red light pillar with
+rising rings and sparks (additive, above everything). The notice, the arrow and the label turn red
+("A DYNAMAX DEN HAS OPENED!", "DEN · 12 m · 30 s"). Inside waits a **normal Pokémon of the current
+tier** (any candidate of that tier's BST band, not just the run's cast), in the arena of one of its
+types: HP 2400 + 8 x t (scaled in co-op like the legendary), XP 380 + t, drawn 1.5x (sprite and
+height) with the red aura and a red tint, and 28 % of its attacks become its **Max Move** (two
+warned rings of explosions: 1 + 6 + 9 zones). Winning gives **12 big XP orbs (380 + t), 2 items,
+2 tickets, 120 coins (12 x 10) and a heal**, all pulled to you, recharges Dynamax and counts
+`stats.dens`; the first time it says "You unlocked Dynamax! MAX button, C key or left trigger
+(from level 20)". A den is not a legendary (no `legends` entry), a rift win or a bond.
+
+**Input:** the C key, the round **MAX button** above the Z button (click or tap; it pulses when
+ready, shows "Lv. 20", the cooldown or "Not here", and the C key or the pad's glyph in its
+corner; hidden until unlocked, in the Tower and while active), and the pad's `dynamax` action
+(View / Share / − by default; plus the left trigger and the left face button when unbound).
+Missions → **Z-Crystals** starts with a **Dynamax** card (unlocked or "Clear a Dynamax den: 0/1",
+the rules, dens cleared).
+
+**Saved and merged:** `stats.dens` and `stats.dynamax` ride on the merge's max of every stat, so
+an account never loses the unlock (a newer save from another device without it merges it back).
+No port mission or achievement reads the den count (`progress.gd` has none; the port only shows
+it in its encyclopedia, batch 11), so nothing else changed there.
+
+**Deviations, and why:**
+- The time bar sits above the move bar, not at the top (the web HUD has the clock, the event line
+  and the boss bar there).
+- The MAX button shows greyed "Lv. 20" below level 20 (the port hid it, although its draw code
+  has that state); the same for "Not here" in the Judgment.
+- The den boss's red tint is a translucent red wash over the sprite (canvas has no `modulate`).
+- The arena's normal boss scale (`bossScale`) applies before the x1.5, as the port's boss scaling does.
+- Co-op (still "Coming soon"): the host decides dens (`'rift'` carries a den flag, the arena cfg
+  `den: true`), each player's save counts the den, only the host drops the reward; a partner's
+  Dynamax is not mirrored on other screens yet.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -497,4 +559,15 @@ keys. The carry-over text now lists Z-moves among what is merged.
   damage formula through a real hit, the 28 % boss cap; all 18 plans (duration, damage, their own
   effects); the Z key, the HUD button clicked on the canvas, the pad's zmove (L3), the right trigger,
   Y, remap with swap-on-conflict, an old saved map gaining zmove, the HUD glyph.
+- `node overworld/tests/micasurvivor_dynamax_test.mjs` (M5 batch 5), logged in with a stubbed
+  account row: the port's numbers and STATUS table, English strings; locked on a new save; the
+  unlock by a real den clear (arena won), reaching the account, a 409 merge and `merge()` both
+  ways; the level-20 gate; every stat x1.3 and max HP +30 % reverting exactly (a cooldown card taken
+  meanwhile kept), HP in proportion, 60 s; the size steps; pulse cadence (40 in 60 s), radii,
+  damage through a real hit and x1.9, the status of every type; the 240 s cooldown and the den
+  recharge; falling and the swap hook; the Tower / Judgment blocks and arenas allowed; den odds over
+  200000 rolls and thousands of real `G.Rift.update` checks (never before 120 s or in Rift Time
+  Attack), 30 s open; the den boss (tier, HP, XP, x1.5, aura, Max Move with its 16 zones); the
+  rewards; the C key, the MAX button clicked, the pad (View, left trigger, X), remap, an old map
+  gaining dynamax, the glyph; the Dynamax card on the missions screen.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

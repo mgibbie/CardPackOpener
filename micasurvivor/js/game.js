@@ -108,6 +108,7 @@ G.Game = (() => {
     G.Path.clear();
     G.Hazards.clear();
     G.ZMoves.reset();   // MicaSurvivor (M5 lote 4)
+    G.Dynamax.reset();  // MicaSurvivor (M5 lote 5)
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
     G.World.setBiome(0, true);
     biome = 0;
@@ -586,6 +587,7 @@ G.Game = (() => {
       if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
     }
     if (G.Input.tap('keyz')) G.ZMoves.tryStart(pl);   // MicaSurvivor (M5 lote 4): Movimiento Z
+    if (G.Input.tap('keyc')) G.Dynamax.tryStart(pl);  // MicaSurvivor (M5 lote 5): Dynamax
     if (G.Input.tap('keyq')) pl.cycle(-1);
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
@@ -706,6 +708,7 @@ G.Game = (() => {
     G.Combat.updateFields(dt);
     G.ZMoves.update(dt, pl);        // MicaSurvivor (M5 lote 4): el Movimiento Z y su enfriamiento
     G.ZMoves.updateWorld(dt);
+    G.Dynamax.update(dt, pl);       // MicaSurvivor (M5 lote 5): Dynamax (crecer, ondas Max, final) y su enfriamiento
     G.Pickups.update(dt, all, onCollect);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
@@ -780,6 +783,7 @@ G.Game = (() => {
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
     G.ZMoves.drawWorld(ctx);        // MicaSurvivor (M5 lote 4): el fuego fatuo
+    G.Dynamax.drawWorld(ctx);       // MicaSurvivor (M5 lote 5): la columna de luz de la guarida
     G.Judgment.drawAir(ctx);
     ctx.restore();
 
@@ -795,6 +799,7 @@ G.Game = (() => {
       ctx.fillRect(0, 0, w, h);
     }
     G.ZMoves.drawDim(ctx, w, h);    // MicaSurvivor (M5 lote 4): la pantalla se oscurece durante el Z
+    if (!G.Judgment.cinematic) G.Dynamax.drawOverlay(ctx, w, h);   // MicaSurvivor (M5 lote 5): borde rojo, tiempo y cartel
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
     G.ZMoves.drawCine(ctx, w, h);
     G.Judgment.drawOverlay(ctx, w, h);

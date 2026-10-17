@@ -2530,6 +2530,7 @@ async function micasurvivorView() {
         [kbd('1', '2', '3'), 'Pick a level-up card'],
         [kbd('R'), 'Reroll the level-up cards'],
         [kbd('Z'), 'Z-move (from level 15, once unlocked)'],
+        [kbd('C'), 'Dynamax (from level 20, once a raid den is cleared)'],
         [kbd('Esc', 'P'), 'Pause'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Touch'),
@@ -2544,6 +2545,7 @@ async function micasurvivorView() {
         ['Back / cancel', 'B', '○', 'B (bottom)'],
         ['Reroll the level-up cards', 'Y', '△', 'X'],
         ['Z-move (in a run Y / △ / X and the right trigger also fire it)', 'LS (L3)', 'L3', 'LS'],
+        ['Dynamax (in a run X / □ / Y and the left trigger also fire it)', 'View', 'Share', '−'],
       ])),
     mcSection('Credits & licence', null,
       h('ul', { class: 'mc-list' },
@@ -2601,7 +2603,21 @@ async function micasurvivorMovesView() {
       + Math.round(D.zrules.bossCap * 100) + ' % of a boss\'s max HP; not in rift arenas or the Judgment. The active Pokémon\'s type picks it (with two unlocked types, choose in the Pokédex). '
       + 'Unlock a type\'s Z by defeating ' + D.zrules.need + ' Pokémon of that type, by its Z-crystal mission (+' + D.zrules.missionCoins + ' coins) or with a crystal from a ×10 gacha pull ('
       + Math.round(D.zrules.crystal * 100) + ' %, only types still locked). Use it with the Z key, the HUD button or the controller (L3).',
-      msTable(['Z-Move', 'Type', 'What it does', 'Z-crystal mission'], D.zmoves.map(z => [h('b', null, z.name), msType(z.type), z.desc, z.mission]), 'ms-zmoves'))] : []));
+      msTable(['Z-Move', 'Type', 'What it does', 'Z-crystal mission'], D.zmoves.map(z => [h('b', null, z.name), msType(z.type), z.desc, z.mission]), 'ms-zmoves'))] : []),
+    // MicaSurvivor M5 batch 5: Dynamax and raid dens (micasurvivor/js/systems/dynamax.js)
+    ...(D.dynrules ? [(() => {
+      const R = D.dynrules, pct = v => Math.round(v * 100) + ' %';
+      const CC = { para: 'paralyses', freeze: 'freezes', sleep: 'puts to sleep', conf: 'confuses' };
+      return mcSection('Dynamax & raid dens', 'From the Android port by JayElDragon. Your Pokémon turns giant (' + R.grow + '×) for ' + R.dur + ' s: +' + pct(R.statK - 1)
+        + ' to every stat (damage and speed ×' + R.statK + ', cooldowns ÷' + R.statK + ', ' + (R.taken * 100).toFixed(2) + ' % less damage taken) and +' + pct(R.hpBonus)
+        + ' max HP (removed at the end, HP in proportion). Every ' + R.pulse + ' s it sends a Max wave of its type — radius ' + R.pulseR + ', every third ' + R.bigR
+        + ' at ×' + R.bigK + ' — for (30 + 8 × level) × attack. From level ' + R.minLevel + '; a ' + R.cooldown / 60 + '-minute cooldown after it ends; not in the Tower or the Judgment (fine inside arenas). '
+        + 'Unlocked by clearing a raid den: from ' + R.denFrom + ' s into a run, each 30 s rift check has a ' + pct(R.denRate) + ' chance to open a den instead (not in Rift Time Attack). '
+        + 'A den stays open ' + R.denTtl + ' s; inside waits a normal Pokémon of the current tier, ' + R.denScale + '× and red, with 2400 + 8 × t HP and its own Max Move. Reward: '
+        + R.reward.orbs + ' XP orbs, ' + R.reward.items + ' items, ' + R.reward.tickets + ' tickets, ' + R.reward.coins + ' coins and a heal — and every den cleared recharges Dynamax at once. '
+        + 'Use it with the C key, the HUD MAX button or the controller (View / Share / −).',
+        msTable(['Type', 'Max wave adds'], R.status.map(st => [msType(st.type), [st.cc ? CC[st.cc] || st.cc : '', st.poison ? 'poison' : '', st.slow ? 'slows ' + pct(st.slow) : ''].filter(Boolean).join(', ')]), 'ms-dynamax'));
+    })()] : []));
 }
 
 async function micasurvivorItemsView() {
