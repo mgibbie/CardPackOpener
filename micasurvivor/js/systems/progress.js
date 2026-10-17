@@ -14,6 +14,9 @@
  * y esto actualiza en la partida guardada:
  *   stats.bossesTotal · riftWins · evolutions · missionsDone · groupRuns
  *   stats.judged · judgeTime (mejor tiempo ante Arceus) · judgeBosses (mejor nº de jefes)
+ *   stats.tk_<tipo>  derrotados de cada tipo, de por vida (MicaSurvivor M5, del port de Android:
+ *                    progress.gd "tk_"; un Pokémon de dos tipos suma en los dos; la mezcla de
+ *                    partidas de db.js se queda con el mayor de cada uno)
  *   legends{dex} · arenas{tipo} · itemsFound{id} · evoMoves{id} · ach{id}
  *   missions { day, daily[], rerolled, week, weekly[] }
  *
@@ -137,6 +140,8 @@ G.Progress = (() => {
     switch (kind) {
       case 'kill':
         if (d.boss) S.bossesTotal = (S.bossesTotal || 0) + 1;
+        // MicaSurvivor (M5): derrotados por tipo.
+        for (const t of d.types || []) if (typeof t === 'string' && t) S['tk_' + t] = (S['tk_' + t] || 0) + 1;
         if (d.legend) { s.legends = s.legends || {}; if (!s.legends[d.legend]) s.legends[d.legend] = Date.now(); }
         break;
       case 'rift':
@@ -232,5 +237,11 @@ G.Progress = (() => {
     }, 2800);
   }
 
-  return { ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
+  /** MicaSurvivor (M5): derrotados de un tipo, de por vida (0 si ninguno). */
+  function typeKills(type) {
+    const s = G.DB.save;
+    return (s && s.stats && s.stats['tk_' + type]) || 0;
+  }
+
+  return { typeKills, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
 })();

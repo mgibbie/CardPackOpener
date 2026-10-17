@@ -392,6 +392,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .card .txt { flex: 1; }
 .card .nm { font-weight: 700; font-size: 18px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .card .ds { color: var(--muted); font-size: 14px; }
+.card .ds .cc-chance { color: #ffd23f; }   /* MicaSurvivor (M5): "Can freeze (15%)." */
 .card .key { font-size: 13px; color: var(--muted); border: 2px solid rgba(244,248,255,.3); border-radius: 6px; padding: 2px 8px; }
 .tag-chip { font-size: 11px; padding: 2px 7px; border-radius: 5px; color: #10131a; text-shadow: none; font-weight: 700; }
 

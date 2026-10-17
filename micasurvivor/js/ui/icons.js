@@ -58,6 +58,10 @@ G.Icons = (() => {
     sprout: { pal: { g: '#5fe08a', d: '#2f9a52', b: '#8a5a2b' }, rows: [
       '............', '..kkk..kkk..', '.kgggk.kgggk', '.kggggkgggdk', '..kdggkggdk.', '...kkdgdkk..',
       '.....kgk....', '.....kgk....', '...kkkdkkk..', '..kbbbbbbbk.', '..kbbbbbbbk.', '...kkkkkkk..'] },
+    // MicaSurvivor (M5): Calibre (carta de stat): un orbe con flechas que lo agrandan.
+    size: { pal: { b: '#4fb4ff', d: '#2a6fb0', w: '#f4f8ff' }, rows: [
+      'kkkk....kkkk', 'kwwk....kwwk', 'kwk......kwk', 'kk..kkkk..kk', '...kbwbbk...', '..kbwbbbdk..',
+      '..kbbbbbdk..', '...kbbddk...', 'kk..kkkk..kk', 'kwk......kwk', 'kwwk....kwwk', 'kkkk....kkkk'] },
     magnet: { pal: { r: '#ff5f6d', s: '#c23a4b', w: '#e8e8f0' }, rows: [
       '............', '..kkkkkkkk..', '.krrrrrrrrk.', 'krrsskkssrrk', 'krrk....krrk', 'krrk....krrk',
       'krrk....krrk', 'kwwk....kwwk', 'kwwk....kwwk', 'kkkk....kkkk', '............', '............'] },
