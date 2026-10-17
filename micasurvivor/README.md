@@ -3,6 +3,7 @@
 MicaSurvivor is **PokéSurvivor by JPTER78** (https://github.com/JPTER78/pokesurvivor), a browser
 bullet-heaven roguelike with Pokémon Mystery Dungeon sprites, ported into the Magepunk site. This
 is phase M1 of `Plans/MICASURVIVOR_PLAN.md`: the game as-is, offline, with no network calls.
+Phase M2 adds controller support (see "Controller" below).
 
 Required Notice: Copyright 2026 JPTER78 (https://github.com/JPTER78/pokesurvivor)
 
@@ -72,6 +73,56 @@ Every edit is marked `MicaSurvivor` in a comment:
 - `js/core/sprites.js`: `crossOrigin = 'anonymous'` on sprite sheets.
 - Every storage key went from `ps.` to `micasurvivor_`. All text files were normalised to LF.
 
+## Controller (M2)
+
+`js/core/pad.js` (`G.Pad`) adds controller play. The design comes from the Godot Android port
+by **JayElDragon** (MIT, https://github.com/JayElDragon/poke-survivor: `scripts/pad.gd`,
+`padicons.gd`, and the menu / pause / card-choice handling). It is rebuilt in JS on the site's
+gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and blur latching.
+`pad.js` loads that core with a relative dynamic `import()`.
+
+- **Move**: the left stick (radial deadzone 0.2, rescaled so speed is analog) or the D-pad,
+  alongside the keyboard and touch. `G.Input.axis()` asks `G.Pad.axis()` after touch.
+- **Actions** (remappable):
+
+  | Action | What it does | Xbox | PlayStation | Nintendo |
+  |---|---|---|---|---|
+  | prev / next | switch move (Q / E); cycle a screen's tabs; walk the level-up cards | LB / RB | L1 / R1 | L / R |
+  | pause | pause / resume (Esc) | Menu | Options | + |
+  | confirm | press the focused control; pick the focused card | A | ✕ | **A (right face)** |
+  | cancel | back on every screen; resume from pause | B | ○ | **B (bottom face)** |
+  | reroll | reroll the level-up cards (R) | Y | △ | X |
+
+  View / Back with nothing bound to it works as back in menus and as pause in a run. The port's
+  **ban, swap, Z-move and Dynamax** actions are left out because the web game has none of those
+  mechanics: there is no in-run card ban (Veto is chosen in Upgrades), no team mode, no Z-moves
+  and no Dynamax.
+- **Layouts**: Xbox, PlayStation and Nintendo. Nintendo swaps confirm and cancel. It is the
+  default (the site standard, also read from `magepunk_pad_v1`). Picking a layout resets the
+  mapping to that layout's defaults.
+- **Settings → Controls** has the layout picker, a **remap** row per action, a vibration switch
+  and **Reset mapping**. To remap, select a row, then press any button except the D-pad or Guide.
+  If another action already used that button, the two actions **swap**. Keyboard Esc or 8 s
+  without a press cancels. Everything is saved in `micasurvivor_settings` (`padLayout`,
+  `padMap`, `padRumble`).
+- **Glyphs**: button icons drawn as SVG, the same per-layout set as the port's `padicons.gd`.
+  They appear on the level-up / item / bond cards (the focused card shows confirm), the
+  "1 2 3" and "R" prompts, the pause hints, the HUD (LB / RB beside the move bar, plus the first
+  14 s hint line), the menu hint bar, and the remap rows. `body.pad-input` switches every prompt
+  to glyphs while a pad is in use. Any key, mouse click or touch switches back to keys.
+- **Focus navigation**: every screen and overlay (title, test, menu, Pokémon, Upgrades, Gacha
+  with the slot machine, Missions, Settings, Credits, pause, cards, summary...) has a gold focus
+  ring. Focus moves spatially with the D-pad or stick. Confirm presses the focused control. Left
+  and right change a `<select>` or slider. Cancel is back everywhere. The right stick scrolls long
+  panels. The first press after keyboard or mouse use only shows the ring. Cards that pop up in a
+  run ignore confirm for 0.4 s, so a held button can't pick one by accident.
+- **Hot-plug**: the first pad that presses something drives. Other pads are ignored until it is
+  unplugged. **Rumble on hit** (`player.hurt`) is optional and off by default.
+- **Site rule**: controller play is for **signed-in** Magepunk players (owner decision
+  2026-09-28, the same as the overworld, Battlecards and Micatro). A guest's pad only shows
+  "Log in to Magepunk to use a controller". The game itself still plays fully for guests with
+  keyboard and touch. One switch turns this off: `SIGNED_IN_ONLY` in `pad.js`.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -79,4 +130,8 @@ Every edit is marked `MicaSurvivor` in a comment:
   reload.
 - `node overworld/tests/micasurvivor_phone_test.mjs` is the 390px phone smoke test (touch
   controls).
+- `node overworld/tests/micasurvivor_pad_test.mjs` covers the controller with a synthetic Gamepad
+  API: the guest gate, title to run with the pad only, every menu screen, the gacha, layouts, remap
+  with swap-on-conflict surviving a reload, stick and D-pad movement, pause, level-up reroll and
+  pick, glyphs switching between keys and pad, rumble, and hot-plug.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

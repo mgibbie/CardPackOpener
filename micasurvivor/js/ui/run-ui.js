@@ -52,7 +52,7 @@ G.RunUI = (() => {
       el.innerHTML =
         `<div class="ico" style="background:${c.color}33">${G.Icons.html(c.icon, 32)}</div>
          <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
-         <div class="key">${i + 1}</div>`;
+         <div class="key"><span class="key-k">${i + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div>`;   // MicaSurvivor (M2): the pad's confirm glyph on the focused card
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
       el.onclick = () => pick(i);
       box.appendChild(el);
@@ -150,7 +150,7 @@ G.RunUI = (() => {
       el.className = 'card' + (i === 1 ? ' evo' : '');
       el.innerHTML = `<div class="ico">${G.Icons.html(id, 36)}</div>
         <div class="txt"><div class="nm">${verb} ${it.name}</div><div class="ds">${it.desc}</div></div>
-        <div class="key">${i + 1}</div>`;
+        <div class="key"><span class="key-k">${i + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div>`;
       el.onclick = () => { G.UI.hide('scr-item'); cb(id); };
       box.appendChild(el);
     });
@@ -192,7 +192,7 @@ G.RunUI = (() => {
       el.innerHTML =
         `<div class="ico" style="background:${col}33">${G.Icons.html('move:' + m.id, 32)}</div>
          <div class="txt"><div class="nm">${m.name} <span class="tag-chip" style="background:${col}">Nv.${m.lvl}</span></div><div class="ds">${desc}</div></div>
-         <div class="key">${i + 1}</div>`;
+         <div class="key"><span class="key-k">${i + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div>`;
       el.dataset.sfx = 'none';
       el.onclick = () => pickBond(i);
       box.appendChild(el);
