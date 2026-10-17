@@ -156,6 +156,16 @@ export class Board {
     };
     this.layer.addEventListener('contextmenu', ctxCard);
     this.layer.addEventListener('dblclick', ctxCard);
+    // iPhone: a quick second tap on a card zoomed the page into it (a tester's cousin). Cards keep
+    // touch-action:none for dragging, which Safari doesn't take as "no double-tap zoom", so cancel the
+    // second tap of a quick double tap on a card. Card selection runs on pointer events (unaffected);
+    // the cancelled tap's dblclick is replaced by calling the card's double-tap action directly.
+    let lastCardTap = 0;
+    this.layer.addEventListener('touchend', (e) => {
+      if (!e.target.closest('.card') || e.target.closest('.card-btns')) { lastCardTap = 0; return; }
+      const now = performance.now();
+      if (now - lastCardTap < 350) { e.preventDefault(); lastCardTap = 0; ctxCard(e); } else lastCardTap = now;
+    }, { passive: false });
     addEventListener('pointermove', (e) => this.onMove(e));
     addEventListener('pointerup', (e) => this.onUp(e));
     addEventListener('pointercancel', (e) => this.onUp(e, true));

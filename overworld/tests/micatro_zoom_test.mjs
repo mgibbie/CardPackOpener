@@ -76,6 +76,34 @@ try {
 		return n;
 	});
 	A(reacted >= 2, 'a pinch/double-tap zoom (visualViewport scale 2) triggers the reset', reacted);
+
+	// 4. a tester's cousin (iPhone): tapping cards quickly still zoomed into the card. Cards keep
+	// touch-action:none for dragging, which Safari doesn't treat as "no double-tap zoom", so the
+	// board cancels the second tap of a quick double tap ON A CARD (selection is pointer events,
+	// unaffected); buttons and slow taps are left alone.
+	await page.evaluate(async () => { await window.__micatro.newRun({ seed: 'DBLTAP', back: 'b_red' }); await window.__micatro.act({ type: 'select_blind' }); });
+	await page.waitForFunction(() => window.__micatro.idle() && document.querySelectorAll('.card').length > 3, { timeout: 30000 });
+	const taps = await page.evaluate(async () => {
+		const tap = (el) => {
+			const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+			const t = new Touch({ identifier: Date.now() % 1000, target: el, clientX: x, clientY: y });
+			el.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [t], targetTouches: [t], changedTouches: [t] }));
+			const end = new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], targetTouches: [], changedTouches: [t] });
+			el.dispatchEvent(end);
+			return end.defaultPrevented;
+		};
+		const card = document.querySelector('.card');
+		const btn = [...document.querySelectorAll('button')].find((b) => b.offsetParent);
+		const first = tap(card), quick = tap(card);
+		await new Promise((r) => setTimeout(r, 600));
+		const slow = tap(card);
+		await new Promise((r) => setTimeout(r, 600));
+		const b1 = btn ? tap(btn) : null, b2 = btn ? tap(btn) : null;
+		return { first, quick, slow, b1, b2 };
+	});
+	A(!taps.first && taps.quick, 'a quick second tap on a card is cancelled (no iPhone double-tap zoom)', JSON.stringify(taps));
+	A(!taps.slow, 'a slow second tap is a normal tap', JSON.stringify(taps));
+	A(taps.b2 === false || taps.b2 === null, 'quick taps on buttons are left alone (their clicks still work)', JSON.stringify(taps));
 } finally {
 	await browser.close(); server.close();
 }
