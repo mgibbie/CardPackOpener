@@ -114,6 +114,7 @@ each with tests and the matching controller action wired into js/core/pad.js onc
    54 passives, one per Pokémon (shown in HUD / Pokédex / partner / starters / pause).
 3. **Items +15** (incl. Rare Candy, Light Ball/Thick Club, Weakness Policy…), carry 2 items,
    **upgrades +4** (Calibre, TM, Second Chance, Bag) — keep the web's free reroll.
+   *(built 2026-10-17, branch `feat/micasurvivor-m5-b3`; README → "Batch 3: Items and upgrades")*
 4. **Z-moves** (18 types, cinematic, unlocks by kills / Z-crystal missions / gacha crystal).
 5. **Dynamax + raid dens**.
 6. **Quick modes**: Daily Challenge, Rift Time Attack, Type Survival, Party, 6 modifiers; the

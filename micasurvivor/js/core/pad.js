@@ -438,15 +438,19 @@ G.Pad = (() => {
     const list = stops(scope);
     const r0 = focus.getBoundingClientRect(), c0 = center(r0);
     const [dx, dy] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
-    let best = null, bs = Infinity;
+    // Prefer controls inside a 2:1 cone that way: a slightly offset one a row above is not "right"
+    // (MicaSurvivor M5 batch 3: right from Repertoire's wide price button jumped up to Magnet).
+    let best = null, bs = Infinity, cone = false;
     for (const el of list) {
       if (el === focus || el.contains(focus) || focus.contains(el)) continue;
       const c = center(el.getBoundingClientRect());
       const along = (c.x - c0.x) * dx + (c.y - c0.y) * dy;
       if (along <= 4) continue;
       const across = Math.abs((c.x - c0.x) * dy) + Math.abs((c.y - c0.y) * dx);
+      const inCone = across <= along * 2;
+      if (cone && !inCone) continue;
       const s = along + across * 2.2;
-      if (s < bs) { bs = s; best = el; }
+      if ((inCone && !cone) || s < bs) { bs = s; best = el; cone = cone || inCone; }
     }
     if (best) { setFocus(best, scope, true); return; }
     // nothing that way: scroll a long panel (credits, news, settings) instead

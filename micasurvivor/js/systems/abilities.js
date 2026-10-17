@@ -380,8 +380,10 @@ G.Abilities = (() => {
     }
   }
 
-  const trapImmune = pl => n(pl, 'trapimm') > 0;
-  const weatherImmune = pl => n(pl, 'wximm') > 0;
+  // (M5 lote 3: también los objetos Botas Gruesas y Gafas Protectoras, main.gd 5057 / 6310.)
+  const hasIt = (pl, id) => !!(pl && pl.hasItem && pl.hasItem(id));
+  const trapImmune = pl => n(pl, 'trapimm') > 0 || hasIt(pl, 'heavyboots');
+  const weatherImmune = pl => n(pl, 'wximm') > 0 || hasIt(pl, 'safetygoggles');
   /** ¿Inmune a este estado? (Foco Interno: sueño y confusión; Flexibilidad: parálisis y congelación) */
   const statusImmune = (pl, kind) => !!(fxOf(pl).stimm && fxOf(pl).stimm.includes(kind));
 

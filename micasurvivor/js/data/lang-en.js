@@ -353,7 +353,7 @@ G.I18n.add({
   'Evolución': 'Evolution', 'Evolucionista': 'Evolutionist', 'Maestro de movimientos': 'Move master', 'Evoluciona un movimiento.': 'Evolve a move.',
   'Evoluciona 25 movimientos.': 'Evolve 25 moves.', 'Evoluciona los {x} movimientos distintos.': 'Evolve all {x} different moves.',
   'Evoluciona los 47 movimientos distintos.': 'Evolve all 47 different moves.', 'Coleccionista de objetos': 'Item collector', 'Bolsa llena': 'Full bag',
-  'Encuentra 5 objetos distintos.': 'Find 5 different items.', 'Encuentra los 11 objetos.': 'Find all 11 items.',
+  'Encuentra 5 objetos distintos.': 'Find 5 different items.', 'Encuentra los {x} objetos.': 'Find all {x} items.',
   'Cumplidor': 'Reliable', 'Constante': 'Steady', 'Incansable': 'Tireless', 'Completa 10 misiones.': 'Complete 10 missions.',
   'Completa 50 misiones.': 'Complete 50 missions.', 'Completa 200 misiones.': 'Complete 200 missions.', 'En compañía': 'In good company',
   'Cien amigos': 'A hundred friends', 'Juega una partida en grupo.': 'Play a group game.', 'Juega 10 partidas en grupo.': 'Play 10 group games.',
@@ -727,4 +727,37 @@ G.I18n.add({
   '+15% de daño de Roca y Tierra, e inmunidad a la arena.': '+15% damage with Rock and Ground moves, and immunity to sandstorms.',
   'Mutatipo': 'Protean',
   '+8% de daño y +4% de velocidad.': '+8% damage and +4% speed.'
+});
+G.I18n.add({
+  // ---------------- MicaSurvivor (M5 lote 3): objetos y mejoras del port de Android ----------------
+  // (nombres en inglés del port: data/lang_en.json)
+  'Hielo Eterno': 'Never-Melt Ice', 'Periscopio': 'Scope Lens', 'Cinta Experto': 'Expert Belt', 'Lente Amplia': 'Wide Lens',
+  'Gema de tipo': 'Type Gem', 'Baya Zidra': 'Sitrus Berry', 'Botas Gruesas': 'Heavy-Duty Boots', 'Gafas Protectoras': 'Safety Goggles',
+  'Seguro Debilidad': 'Weakness Policy', 'Caramelo Raro': 'Rare Candy', 'Incienso Puro': 'Pure Incense', 'Bola Luminosa': 'Light Ball',
+  'Hueso Grueso': 'Thick Club', 'Polvo Plata': 'Silver Powder',
+  'Los enemigos que te golpean van un 30% más lentos durante 2 s.': 'Enemies that hit you move 30% slower for 2 s.',
+  '+15% de probabilidad de golpe crítico.': '+15% critical hit chance.',
+  '+25% de daño en golpes súper efectivos.': '+25% damage on super-effective hits.',
+  '+20% de radio y alcance en tus movimientos.': '+20% radius and reach on your moves.',
+  '+30% de tamaño en tus proyectiles, orbes y áreas.': '+30% size for your projectiles, orbs and areas.',
+  '+20% de daño con movimientos del tipo de tu Pokémon.': '+20% damage with moves of your Pokémon\'s type.',
+  'Al bajar del 50% de vida, curas un 30% (cada 90 s).': 'When your HP drops below 50%, heal 30% (every 90 s).',
+  'Eres inmune a las trampas del mapa.': 'You are immune to map traps.',
+  'Eres inmune al daño del clima (arena y nieve).': 'You are immune to weather damage (sand and snow).',
+  'Si te golpea algo súper efectivo, +50% de daño durante 8 s.': 'If you\'re hit by something super effective, +50% damage for 8 s.',
+  'Subes 1 nivel al cogerlo (no ocupa hueco).': 'Gain 1 level when you take it (doesn\'t use a slot).',
+  'Salen un 25% menos de enemigos, pero más fuertes y con más experiencia y monedas.': '25% fewer enemies appear, but they\'re stronger and give more experience and coins.',
+  'Pikachu, Pichu y Raichu: x2 de daño eléctrico.': 'Pikachu, Pichu and Raichu: x2 Electric damage.',
+  'Cubone y Marowak: +50% de daño de Tierra.': 'Cubone and Marowak: +50% Ground damage.',
+  '+20% de daño con movimientos de tipo Bicho.': '+20% damage with Bug-type moves.',
+  '¡Seguro Debilidad!': 'Weakness Policy!', '¡Baya Zidra!': 'Sitrus Berry!', '¡Segunda oportunidad!': 'Second Chance!',
+  '¡Caramelo Raro! +1 nivel': 'Rare Candy! +1 level',
+  'Puedes llevar dos objetos ·': 'You can carry two items ·', 'Quedarme con los dos': 'Keep both',
+  'Sigues con tus objetos actuales.': 'You keep your current items.', 'Sustituye: {x}': 'Replaces: {x}',
+  // mejoras
+  '+8% de tamaño de proyectiles, orbes y áreas': '+8% size for projectiles, orbs and areas',
+  'MT': 'TM', 'Elige tu movimiento inicial (de tus tipos)': 'Choose your starting move (from your types)',
+  'Segunda oportunidad': 'Second Chance', '+1 corazón: al caer, revives con la vida completa': '+1 heart: when you fall, revive with full HP',
+  'Mochila': 'Backpack', 'Llevas 2 objetos a la vez por partida': 'Carry 2 items at once per run',
+  'Elige el movimiento con el que empiezas cada partida. Puedes cambiarlo gratis cuando quieras.': 'Choose the move you start every run with. You can change it for free whenever you want.'
 });

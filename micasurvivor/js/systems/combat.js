@@ -28,15 +28,18 @@ G.Combat = (() => {
   // rayos, y el empuje de algunos movimientos crece con su nivel (Moves.KNOCK_LV). Se ataca con
   // una vista de la instancia (Object.create): lee todo lo demás de `m` y no la modifica.
   const SIZE_AREA = ['aura', 'melee', 'mine', 'meteor', 'cone', 'chain', 'trail', 'beam', 'boomerang', 'dash'];
+  // (M5 lote 3: la Lente Amplia, ×1,2 al radio de todos los movimientos antes del tamaño, main.gd 1412.)
   function eff(pl, m) {
     const k = pl.sizeK ? pl.sizeK() : 1;
     const kn = G.Moves.knockOf(m);
-    if (k === 1 && kn === (m.knock || 0)) return m;
+    const wide = m.radius != null && pl.hasItem && pl.hasItem('widelens') ? G.Items.WIDE : 1;
+    if (k === 1 && wide === 1 && kn === (m.knock || 0)) return m;
     const v = Object.create(m);
+    if (wide !== 1) v.radius = m.radius * wide;
     if (k !== 1) {
       if (m.radius != null) {
-        if (SIZE_AREA.includes(m.kind)) v.radius = m.radius * k;
-        else if (m.kind === 'orbit') v.radius = m.radius * (1 + (k - 1) * 0.5);   // los orbes, la mitad
+        if (SIZE_AREA.includes(m.kind)) v.radius = m.radius * wide * k;
+        else if (m.kind === 'orbit') v.radius = m.radius * wide * (1 + (k - 1) * 0.5);   // los orbes, la mitad
       }
       if (m.size != null) v.size = m.size * k;
       if (m.width != null) v.width = m.width * k;
@@ -571,6 +574,7 @@ G.Combat = (() => {
     if (mt === 'electric' && e.paraT > 0) k *= G.Status.PARA_ELECTRIC;
     if (crit) k *= CRIT_MUL;
     if (pl && pl.abFx) k *= G.Abilities.outK(pl, e, mt, src.mkind || src.kind);
+    if (pl) k *= G.Items.outK(pl, e, mt);   // M5 lote 3: Cinta Experto, Gema, Bola Luminosa, Hueso Grueso, Polvo Plata
     const d = dmg * k;
     e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null);
     if (!e.dead) {
@@ -714,6 +718,7 @@ G.Combat = (() => {
       e.strike(pl);
       pl.hurt(e.dmg, e.atkType);
       if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      if (pl.hasItem('eternalice')) e.applySlow(G.Items.ICE.slow, G.Items.ICE.dur);   // M5 lote 3: Hielo Eterno
       G.Abilities.contact(pl, e);   // MicaSurvivor (M5): Piel Tosca, Elec. Estática, Cuerpo Llama...
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;

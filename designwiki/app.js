@@ -2599,10 +2599,10 @@ async function micasurvivorItemsView() {
   const D = await msLoadOr('Items & Upgrades', 'items'); if (!D) return;
   content.replaceChildren(msBack(),
     mcHead('Items & Upgrades', D.counts.items + D.counts.upgrades, 'entries', null),
-    mcSection('Held items', 'Found in chests (often the locked ones) and dropped by bosses. You hold ONE at a time for the run; finding another lets you choose which to keep.',
-      msTable(['Item', 'Effect'], D.items.map(i => [h('b', null, i.name), i.desc]))),
+    mcSection('Held items', 'Found in chests (often the locked ones) and dropped by bosses, all equally likely. You hold ONE at a time for the run (TWO with the Backpack upgrade); finding another lets you choose which to keep. Species-locked items only drop for the Pokémon that can use them.',
+      msTable(['Item', 'Effect', 'Who'], D.items.map(i => [h('b', null, i.name), i.desc, i.only ? i.only.join(', ') : i.instant ? 'Anyone (used at once, takes no slot)' : 'Anyone']))),
     mcSection('Upgrades', 'Permanent, bought with Pokémonedas between runs — for each Pokémon separately.',
-      msTable(['Upgrade', 'Per level', 'Max level'], D.upgrades.map(u => [h('b', null, u.name), u.unit, String(u.max)]))));
+      msTable(['Upgrade', 'Per level', 'Max level', 'Cost per level'], D.upgrades.map(u => [h('b', null, u.name), u.unit, String(u.max), (u.costs || []).join(' · ')]))));
 }
 
 function micasurvivorRoute(sub) {

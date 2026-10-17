@@ -141,17 +141,40 @@ G.RunUI = (() => {
   }
 
   /** Has encontrado un objeto llevando ya otro: ¿con cuál te quedas? */
-  function showItemChoice(cur, next, cb) {
+  /**
+   * @param held  los que llevas: [uno] o, con la Mochila llena, [hueco 1, hueco 2]
+   * @param next  el que has encontrado
+   * @param cb    recibe { slot } (te lo pones en ese hueco) o null (te quedas como estabas)
+   * MicaSurvivor (M5 lote 3, main.gd _offer_item): con dos objetos, una carta por hueco
+   * ("Sustituye: …") y otra para quedarte con los dos.
+   */
+  function showItemChoice(held, next, cb) {
+    if (!Array.isArray(held)) held = [held];
     const box = $('item-cards');
     box.innerHTML = '';
-    [[cur, 'Quedarme con'], [next, 'Cambiar a']].forEach(([id, verb], i) => {
-      const it = G.Items.BY[id];
+    const nx = G.Items.BY[next];
+    const opts = held.length > 1
+      ? [...held.map((id, i) => ({ icon: next, cls: ' evo', nm: 'Cambiar a ' + nx.name, ds: 'Sustituye: ' + G.Items.BY[id].name, pick: { slot: i + 1 } })),
+         { icon: held[0], cls: '', nm: 'Quedarme con los dos', ds: 'Sigues con tus objetos actuales.', pick: null }]
+      : [{ icon: held[0], cls: '', nm: 'Quedarme con ' + G.Items.BY[held[0]].name, ds: G.Items.BY[held[0]].desc, pick: null },
+         { icon: next, cls: ' evo', nm: 'Cambiar a ' + nx.name, ds: nx.desc, pick: { slot: 1 } }];
+    $('item-sub').textContent = held.length > 1 ? 'Puedes llevar dos objetos ·' : 'Sólo puedes llevar uno ·';
+    const keys = document.querySelector('#scr-item .sub .key-k');
+    if (keys) keys.innerHTML = opts.map((_, i) => `<kbd>${i + 1}</kbd>`).join(' ');
+    if (held.length > 1) {
+      // Lo que hace el nuevo, encima de las cartas (las de sustituir dicen a cuál quitas).
+      const info = document.createElement('p');
+      info.className = 'sub item-new';
+      info.innerHTML = `${G.Icons.html(next, 20)} <b>${nx.name}</b>: ${nx.desc}`;
+      box.appendChild(info);
+    }
+    opts.forEach((o, i) => {
       const el = document.createElement('div');
-      el.className = 'card' + (i === 1 ? ' evo' : '');
-      el.innerHTML = `<div class="ico">${G.Icons.html(id, 36)}</div>
-        <div class="txt"><div class="nm">${verb} ${it.name}</div><div class="ds">${it.desc}</div></div>
+      el.className = 'card' + o.cls;
+      el.innerHTML = `<div class="ico">${G.Icons.html(o.icon, 36)}</div>
+        <div class="txt"><div class="nm">${o.nm}</div><div class="ds">${o.ds}</div></div>
         <div class="key"><span class="key-k">${i + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div>`;
-      el.onclick = () => { G.UI.hide('scr-item'); cb(id); };
+      el.onclick = () => { G.UI.hide('scr-item'); cb(o.pick); };
       box.appendChild(el);
     });
     G.UI.show('scr-item');

@@ -81,6 +81,7 @@ G.DB = (() => {
       personality: null,      // { trait, scores }
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
       pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
+      ptm: {},                // dex -> movimiento inicial elegido con la MT (M5 lote 3)
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -158,6 +159,10 @@ G.DB = (() => {
         s.pban[d] = [...new Set(l.filter(id => typeof id === 'string' && (!G.Moves || G.Moves.BY_ID[id])))].slice(0, 3);
       }
     } else s.pban = {};
+    // MT (M5 lote 3): dex -> id de un movimiento que exista.
+    if (s.ptm && typeof s.ptm === 'object' && !Array.isArray(s.ptm)) {
+      for (const d of Object.keys(s.ptm)) if (typeof s.ptm[d] !== 'string' || (G.Moves && !G.Moves.BY_ID[s.ptm[d]])) delete s.ptm[d];
+    } else s.ptm = {};
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -258,6 +263,9 @@ G.DB = (() => {
       for (const k in older.pupg[d]) mine[k] = Math.max(mine[k] || 0, older.pupg[d][k]);
     }
     r.pupgDone = r.pupgDone || older.pupgDone;
+    // MT (M5 lote 3): el elegido de la versión más reciente; si ésa no tiene, el de la otra.
+    r.ptm = r.ptm || {};
+    for (const d in older.ptm || {}) if (!r.ptm[d]) r.ptm[d] = older.ptm[d];
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
       r[coll] = r[coll] || {};

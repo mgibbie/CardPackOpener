@@ -70,11 +70,22 @@ G.Player = class Player {
     this.power = null;         // poder de altar activo: { def, t, dur }
     this.slowT = 0;            // pegado por una trampa
     this.item = null;          // objeto equipado (data/items.js), uno por run
-    this.sashT = -999;         // última vez que salvó la Banda Focus
+    this.item2 = null;         // MicaSurvivor (M5 lote 3): segundo objeto (mejora Mochila)
+    // Última vez que salvó la Banda Focus (performance.now(), ms). -Infinity: con -999 no salvaba
+    // en el primer minuto desde que se abrió la página (M5 lote 3; el port usa el tiempo de run).
+    this.sashT = -Infinity;
     this.bellHeal = 0;         // curación pendiente del Cascabel Concha
     this.statsTaken = {};      // mejoras de stat cogidas (condición de evolución)
-    // MicaSurvivor (M5): tamaño permanente (la mejora Calibre de la tienda llega en el lote 3).
+    // MicaSurvivor (M5): tamaño permanente (la mejora Calibre de la tienda, +8 % por nivel).
     this.sizePerk = perks.size || 1;
+    // MicaSurvivor (M5 lote 3, main.gd 466-470 / 1863-1897): Mochila (2 objetos), corazones de
+    // Segunda oportunidad, y los relojes de la Baya Zidra y el Seguro Debilidad (tiempo de run).
+    this.bag = !!perks.bag;
+    this.bagPact = false;      // la Torre (lote 8): el pacto "Doble equipaje" también da el 2.º hueco
+    this.revives = perks.revives || 0;
+    this.itemClock = 0;
+    this.sitrusT = -999;
+    this.wpT = 0;
     // MicaSurvivor (M5): la habilidad pasiva de su Pokémon (systems/abilities.js). El modo Equipo
     // la cambiará con G.Abilities.set(pl, id) al cambiar de Pokémon activo.
     this.ability = null;
@@ -102,7 +113,8 @@ G.Player = class Player {
   // ---------------- stats efectivos ----------------
   // MicaSurvivor (M5): la habilidad multiplica ataque (daño, Autoestima, Competitivo) y velocidad,
   // y suma defensa y regeneración (main.gd _atk / _spd / _reduction / _regen).
-  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) * G.Abilities.atkK(this); }
+  // (M5 lote 3: Seguro Debilidad ×1,5 mientras dura.)
+  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) * G.Abilities.atkK(this) * (this.wpT > 0 ? G.Items.WPOLICY.atk : 1); }
   get spd() {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
@@ -263,6 +275,18 @@ G.Player = class Player {
     G.Camera.kick(0.28);
     G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(d), eff === 'super' ? '#ff3048' : eff === 'weak' ? '#c9a0a8' : '#ff6b7a', eff === 'super');
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff5f6d', 6, 90);
+    // MicaSurvivor (M5 lote 3, main.gd 1863-1870): Seguro Debilidad y Baya Zidra.
+    if (eff === 'super' && this.hasItem('weaknesspolicy') && this.hp > 0) {
+      this.wpT = G.Items.WPOLICY.dur;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 18, '¡Seguro Debilidad!', '#ff8a5b', true);
+    }
+    const SB = G.Items.SITRUS;
+    if (this.hp > 0 && this.hp < this.maxHp * SB.below && this.hasItem('sitrusberry') && this.itemClock - this.sitrusT > SB.every) {
+      this.sitrusT = this.itemClock;
+      this.hp = Math.min(this.maxHp, this.hp + this.maxHp * SB.heal);
+      G.FX.dmgText(this.x, this.y - this.bodyH - 18, '¡Baya Zidra!', '#ffd83d', true);
+      G.FX.ring(this.x, this.y, 6, 80, '#ffd83d', 0.5, 4);
+    }
     // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
     if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
       this.sashT = performance.now();
@@ -271,6 +295,7 @@ G.Player = class Player {
       G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
     }
     G.Abilities.sturdy(this);   // MicaSurvivor (M5): Robustez (después de la Banda Focus, como en el port)
+    if (this.hp <= 0 && this.secondChance()) return;
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
       this.anim.play('Faint', { hold: true });
@@ -278,6 +303,30 @@ G.Player = class Player {
       this.reviveT = 0;
     }
   }
+
+  /**
+   * MicaSurvivor (M5 lote 3, main.gd 1885-1897): Segunda oportunidad. Si te quedan corazones,
+   * se gasta uno y revives con la vida completa (2,5 s invulnerable) y los enemigos a menos de
+   * 260 salen despedidos (empuje 500). Devuelve true si te ha salvado.
+   */
+  secondChance() {
+    if (this.hp > 0 || this.revives <= 0 || this.remote) return false;
+    this.revives--;
+    this.hp = this.maxHp;
+    this.invuln = 2.5;
+    G.Audio.sfx('legend');
+    G.FX.dmgText(this.x, this.y - this.bodyH - 18, '¡Segunda oportunidad!', '#ff8ad8', true);
+    G.FX.ring(this.x, this.y, 8, Player.REVIVE_R, '#ff8ad8', 0.8, 6);
+    G.Camera.kick(0.6);
+    for (const e of G.EnemyMgr.all()) {
+      if (e.dead || G.U.dist2(e.x, e.y, this.x, this.y) >= Player.REVIVE_R * Player.REVIVE_R) continue;
+      const [nx, ny] = G.U.norm(e.x - this.x, e.y - this.y);
+      e.kx = nx * Player.REVIVE_KNOCK; e.ky = ny * Player.REVIVE_KNOCK;
+    }
+    return true;
+  }
+  static get REVIVE_R() { return 260; }
+  static get REVIVE_KNOCK() { return 500; }
 
   heal(amount) {
     const before = this.hp;
@@ -302,18 +351,26 @@ G.Player = class Player {
   }
 
   // ---------------- objeto equipado ----------------
-  hasItem(id) { return this.item === id; }
+  // MicaSurvivor (M5 lote 3): dos huecos con la Mochila (main.gd _has_item: item o item2).
+  hasItem(id) { return !!id && (this.item === id || this.item2 === id); }
 
-  /** Se pone un objeto (y se quita el que llevara). */
-  equip(id) {
-    if (this.item) G.Items.BY[this.item].off(this);
-    this.item = id;
+  /** Huecos de objeto: 1, o 2 con la mejora Mochila (o el pacto de la Torre, `bagPact`). */
+  itemSlots() { return this.bag || this.bagPact ? 2 : 1; }
+
+  /** Objetos que llevas, en orden de hueco. */
+  items() { return [this.item, this.item2].filter(Boolean); }
+
+  /** Se pone un objeto en el hueco `slot` (1 o 2) y se quita el que hubiera ahí. */
+  equip(id, slot = 1) {
+    const key = slot === 2 ? 'item2' : 'item';
+    if (this[key]) G.Items.BY[this[key]].off(this);
+    this[key] = id || null;
     if (id) G.Items.BY[id].on(this);
   }
 
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
   onDealt(dmg) {
-    if (this.item === 'shellbell') this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
+    if (this.hasItem('shellbell')) this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
   }
 
   /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */
@@ -345,6 +402,8 @@ G.Player = class Player {
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
+    this.itemClock += dt;                       // M5 lote 3: reloj de la Baya Zidra
+    if (this.wpT > 0) this.wpT = Math.max(0, this.wpT - dt);
     if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);

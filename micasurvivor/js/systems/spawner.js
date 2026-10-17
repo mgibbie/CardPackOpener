@@ -66,6 +66,9 @@ G.Spawner = (() => {
     return alive.length ? G.U.pick(alive) : players[0];
   }
 
+  /** MicaSurvivor (M5 lote 3): ¿lleva el Incienso Puro el jugador de esta partida? (main.gd 3213 / 3261) */
+  function incense() { const p = G.Game && G.Game.player; return !!(p && p.hasItem && p.hasItem('pureincense')); }
+
   function scaled(sc, k) { return k === 1 ? sc : Object.assign({}, sc, { hp: sc.hp * k }); }
 
   function isFlyer(def) { return G.Sprites.hovers(def.dex); }
@@ -84,6 +87,7 @@ G.Spawner = (() => {
     const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
     e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
     if (G.EnemyMgr.count >= CAP * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
+    if (incense()) { const I = G.Items.INCENSE; e.maxHp = e.hp = Math.round(e.maxHp * I.hp); e.xp = Math.round(e.xp * I.xp); }
     if (shiny) e.makeShiny();
     if (G.Events.golden) e.makeGolden();
     G.EnemyMgr.add(e);
@@ -127,7 +131,7 @@ G.Spawner = (() => {
 
     // --- goteo normal ---
     if (G.EnemyMgr.count < CAP) {
-      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * dt;
+      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * (incense() ? G.Items.INCENSE.rate : 1) * dt;
       let n = Math.floor(acc);
       acc -= n;
       while (n-- > 0 && G.EnemyMgr.count < CAP) spawnOne(anchor(), t);
@@ -179,6 +183,6 @@ G.Spawner = (() => {
   /** Invitado en cooperativo: sólo corre el reloj del aviso. */
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
-  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP,
+  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP, spawnOne, incense,
            debugForceShiny(n = 1) { forceShiny = n; } };
 })();

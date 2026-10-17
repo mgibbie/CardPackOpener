@@ -56,6 +56,8 @@ G.HUD = (() => {
     ctx.fillStyle = 'rgba(255,255,255,.95)';
     ctx.textAlign = 'center';
     ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
+    // MicaSurvivor (M5 lote 3, main.gd 8670): corazones de Segunda oportunidad que quedan.
+    for (let i = 0; i < (pl.revives || 0); i++) G.Icons.draw(ctx, 'revive', px + 48 + 168 + 6 + i * 22, py + 12, 20);
 
     // buffs activos
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
@@ -371,20 +373,25 @@ G.HUD = (() => {
     }
 
     // ---------- objeto equipado (a la izquierda de los movimientos) ----------
+    // (M5 lote 3: con la Mochila, el segundo hueco va encima del primero, cada uno con su nombre.)
     {
-      const ix = sx - S - 18, iy = sy;
-      roundRect(ctx, ix, iy, S, S, 12);
-      ctx.fillStyle = pl.item ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
-      ctx.fill();
-      ctx.lineWidth = pl.item ? 2 : 1;
-      ctx.strokeStyle = pl.item ? '#ffd23f' : 'rgba(140,170,210,.18)';
-      ctx.stroke();
-      if (pl.item) {
-        G.Icons.draw(ctx, pl.item, ix + (S - 36) / 2, iy + (S - 36) / 2, 36);
-        ctx.font = F(700, 9);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffd23f';
-        ctx.fillText(G.Items.BY[pl.item].name, ix + S / 2, iy - 6);
+      const slots = pl.itemSlots ? pl.itemSlots() : 1;
+      for (let k = 0; k < slots; k++) {
+        const id = k === 0 ? pl.item : pl.item2;
+        const ix = sx - S - 18, iy = sy - k * (S + 20);
+        roundRect(ctx, ix, iy, S, S, 12);
+        ctx.fillStyle = id ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
+        ctx.fill();
+        ctx.lineWidth = id ? 2 : 1;
+        ctx.strokeStyle = id ? '#ffd23f' : 'rgba(140,170,210,.18)';
+        ctx.stroke();
+        if (id) {
+          G.Icons.draw(ctx, id, ix + (S - 36) / 2, iy + (S - 36) / 2, 36);
+          ctx.font = F(700, 9);
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#ffd23f';
+          ctx.fillText(G.Items.BY[id].name, ix + S / 2, iy - 6);
+        }
       }
     }
 

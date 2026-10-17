@@ -37,6 +37,8 @@ A(JSON.stringify(fresh) === JSON.stringify(W), 'micasurvivor.json matches the ga
 A(W.pokemon.length === 966 && W.counts.pokemon === 966 && W.starters.length === 29 && W.moves.length >= 60 && W.items.length >= 10 && W.upgrades.length >= 10, 'counts: 966 Pokémon, 29 starters, the moves, items and upgrades', JSON.stringify(W.counts));
 A(W.moves.find(m => m.id === 'ember')?.name === 'Ember' && W.items.find(i => i.id === 'leftovers')?.name === 'Leftovers' && W.upgrades.find(u => u.id === 'hp')?.name === 'Vitality', 'names are in English (the game translates from Spanish)');
 A(W.moves.find(m => m.id === 'flamethrower')?.evo?.name === 'Overheat', 'move evolutions are listed (Flamethrower -> Overheat)');
+// MicaSurvivor M5 batch 3: 26 items (15 from the Android port) and 17 upgrades (+Caliber, TM, Second Chance, Backpack)
+A(W.counts.items === 26 && W.counts.upgrades === 17 && W.items.find(i => i.id === 'lightball')?.only?.join() === 'Pichu,Pikachu,Raichu' && W.items.find(i => i.id === 'rarecandy')?.instant && JSON.stringify(W.upgrades.find(u => u.id === 'size')?.costs) === '[80,110,160,220,310,430]', 'items + upgrades of M5 batch 3 (species locks, Rare Candy, Caliber prices)', JSON.stringify(W.counts));
 // MicaSurvivor M5 batch 2: abilities
 const ABI = new Map((W.abilities || []).map(a => [a.id, a]));
 A(W.counts.abilities === 54 && ABI.size === 54 && W.abilities.every(a => a.name && a.desc && !/[¡¿ñáíóú]/.test(a.desc.replace(/Poké/g, ''))), '54 abilities, each with an English name and description', JSON.stringify(W.counts));
@@ -91,6 +93,7 @@ try {
 	await go('micasurvivor/moves', 'tbody tr', W.moves.length);
 	A(await page.$eval('#content', el => /Overheat/.test(el.textContent) && /Reflexes/.test(el.textContent)), 'moves: evolutions and their stat');
 	await go('micasurvivor/items', 'tbody tr', W.items.length + W.upgrades.length);
+	A(await page.$eval('#content', el => /Light Ball.*Pichu, Pikachu, Raichu/s.test(el.textContent) && /Rare Candy.*takes no slot/s.test(el.textContent) && /Backpack.*7500/s.test(el.textContent) && /Second Chance.*2500 · 5000/s.test(el.textContent) && /TWO with the Backpack/.test(el.textContent)), 'items: who can use the species-locked ones, the Backpack, upgrade prices per level (M5 batch 3)');
 
 	// phone
 	await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
