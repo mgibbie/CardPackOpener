@@ -46,7 +46,7 @@ import {
 } from './ow_transitions.js';
 // ow_battleresume.js: ow_battleresume.js — leave-and-resume for battles: the periodic battle snapshot, and rebuilding the right battle ending from it after a reload.
 import {
-	persistBattle, resumeSavedBattle,
+	BATTLE_ENDED_KEY, BATTLE_SAVE_KEY, persistBattle, resumeSavedBattle,
 } from './ow_battleresume.js';
 // ow_menustate.js: the menus' state objects, the service-map tables + MOM, and the water animation
 import {
@@ -341,8 +341,21 @@ export function refreshObjective() {
 	// no POKeMON yet (a fresh save past the region pick, or one that lost its
 	// party): the line says where to get one instead of going blank
 	const lab = NEW_GAME_INTRO[playerRegion()];
-	objectiveEl.textContent = S.party && S.party.length ? ('NEXT: ' + (pg || Quest.objective(playerRegion())))
+	const text = S.party && S.party.length ? ('NEXT: ' + (pg || Quest.objective(playerRegion())))
 		: localStorage.getItem('magepunk_region') && lab ? `NEXT: Get your first POKeMON from ${lab.prof} at the LAB` : '';
+	if (objectiveEl.textContent !== text) objectiveEl.textContent = text;   // only touch the DOM on a change
+}
+// The line is a function of the save (badges, flags, the dex), and those change
+// in a hundred places — a legendary caught, a badge, a story beat. Refreshing it
+// only on a map change or a few named beats left it stale: after catching RAGING
+// BOLT it still read "(3/103). Rumor places RAGING BOLT in AQUA HIDEOUT 1F" until
+// the next reload (playtest 2026-10-15). So the game loop re-derives it about
+// once a second as well; refreshObjective writes only when the text differs.
+let objectiveAt = 0;
+export function tickObjective(now) {
+	if (now - objectiveAt < 1000) return;
+	objectiveAt = now;
+	try { refreshObjective(); } catch (e) { /* a guidance line must never break the frame */ }
 }
 
 export let signTexts = {};
@@ -726,7 +739,9 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	};
 	await loadShared(trackedGetJSON(getJSON, loadShared));
 	// one tab plays at a time: a newer tab pauses this one (no stale writes from it)
-	startTabLock({ keys: OW_KEYS });
+	// ...and the battle snapshot, which is not synced but is just as shared: a paused
+	// tab still in a battle kept writing it back over a battle this tab had finished
+	startTabLock({ keys: [...OW_KEYS, BATTLE_SAVE_KEY, BATTLE_ENDED_KEY] });
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
 	installImportInput(); // #ow-save-import: a persistent file input for automated save restores
 	S.party = loadParty(battle.data);

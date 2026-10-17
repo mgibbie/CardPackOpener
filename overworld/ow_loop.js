@@ -37,7 +37,7 @@ import { cardFlip, drawCardFlip } from './minigames/cardflip/cardflip.js';
 import { gateReport, openCanvasMenus } from './ow_diagnostics.js';
 import {
 	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, lastRejectAt,
-	rejectedMoves, starterMenu,
+	rejectedMoves, starterMenu, tickObjective,
 } from './main.js';
 
 // no map to fall back on (the very first load hung): an actionable Retry, not a black screen
@@ -199,6 +199,7 @@ export function tick(now) {
 	battle.update(dt);
 	bgmTick();
 	persistBattle();
+	tickObjective(now);   // the NEXT: line follows the save as it changes (a legendary caught...)
 	pvp.update(dt);
 	factorySpec.update(dt);
 	evolution.update(dt);
