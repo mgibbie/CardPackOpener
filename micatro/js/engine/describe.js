@@ -48,7 +48,10 @@ function fmt(v) {
 function fill(lines, vars) {
   vars = vars || [];
   // (SMODS multi-box text — {{...}, {...}} — reads as one list of lines here)
-  return (Array.isArray(lines) ? lines.flat(Infinity).filter((l) => typeof l === 'string') : []).map((line) => line.replace(/#(\d+)#/g, (m, n) => (vars[n - 1] !== undefined ? fmt(vars[n - 1]) : m)));
+  // A `{br:N}` line is SMODS's box break; the rest of it is filler the author typed only because the
+  // line can't be empty ("text", "ERROR - CONTACT STEAK", "ribbit") — it becomes a gap, never text.
+  return (Array.isArray(lines) ? lines.flat(Infinity).filter((l) => typeof l === 'string') : [])
+    .map((line) => (/^\s*\{br:[^}]*\}/.test(line) ? '' : line.replace(/#(\d+)#/g, (m, n) => (vars[n - 1] !== undefined ? fmt(vars[n - 1]) : m))));
 }
 function desc(set, key) {
   return (LOC.descriptions[set] && LOC.descriptions[set][key]) || (MOD_LOC.descriptions[set] && MOD_LOC.descriptions[set][key]);

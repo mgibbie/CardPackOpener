@@ -196,7 +196,7 @@ export function openPokedex(d, api) {
     let desc = null;
     try { desc = describeCenter(key); } catch (e) { desc = null; }
     const c = P_CENTERS[key] || {};
-    const lines = (desc && desc.lines ? desc.lines : []).filter((l) => !/ERROR - CONTACT/.test(l));
+    const lines = desc && desc.lines ? desc.lines : []; // ({br} filler lines are gaps already: engine/describe.js fill)
     const t = c.ptype ? `<span class="badge poke-type-badge" style="background:${typeColour(c.ptype)};color:${DARK_TEXT.has(String(c.ptype).toLowerCase()) ? '#374244' : '#fff'}">${esc(typeLabel(c.ptype))}</span>` : '';
     const st = STAGE[c.stage] ? `<span class="badge dex-stage">${esc(STAGE[c.stage])}</span>` : '';
     info.innerHTML = `<div class="dex-name">${esc((desc && desc.name) || c.name || key)}</div><div class="dex-badges">${t}${st}</div>` +
