@@ -109,6 +109,9 @@
 	.tile h3 .arrow { color: var(--muted); transition: transform .16s ease, color .16s ease; }
 	.tile:hover h3 .arrow { transform: translateX(3px); color: var(--gold); }
 	.tile p { color: var(--muted); font-size: .86rem; line-height: 1.45; margin-top: 4px; }
+	.tile .glyph-art { overflow: hidden; padding: 0; }
+	.tile .glyph-art img { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+	.tile p.credit { font-size: .74rem; opacity: .85; margin-top: 3px; }
 
 	/* footer */
 	footer { margin-top: 46px; text-align: center; color: var(--muted); font-size: .84rem; }
@@ -181,6 +184,10 @@
 			<a class="tile" href="micatro/">
 				<div class="glyph">🃏</div>
 				<div><h3>Micatro <span class="arrow">→</span></h3><p>A poker roguelike: build hands, collect jokers, beat the blinds. Friends can watch live.</p></div>
+			</a>
+			<a class="tile" href="micasurvivor/">
+				<div class="glyph glyph-art"><img src="micasurvivor/icons/tile.png" alt="" width="46" height="46" loading="lazy"></div>
+				<div><h3>MicaSurvivor <span class="arrow">→</span></h3><p>Survive the Pokémon hordes with your partner — evolve your moves, fill your collection.</p><p class="credit">Based on PokéSurvivor by JPTER78</p></div>
 			</a>
 			<a class="tile" href="scoundrel/">
 				<div class="glyph">🗡️</div>

@@ -33,7 +33,7 @@ const git = (...args) => execFileSync('git', args, { maxBuffer: 1 << 28, encodin
 // battlecards files that count as gameplay for patch notes (not art/UI chrome).
 // Includes every run mode's data layer — duels/heist/tombs work often lands in
 // those files alone, and used to be missed entirely.
-const GAME_FILES = /^(battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|lorequest|middleearth|mpmode|cards\.json|classes\.json)|micatro\/(js\/(engine|mods)\/|js\/replays\.js|data\/|mods\/)|overworld\/[\w-]+\.js|tools\/(gen_frem_night|gen_johto_daynight|repair_fakemon|deploy_fakemon_trainers|gen_designwiki|gen_battlescale)\.mjs)/;
+const GAME_FILES = /^(battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|lorequest|middleearth|mpmode|cards\.json|classes\.json)|micatro\/(js\/(engine|mods)\/|js\/replays\.js|data\/|mods\/)|micasurvivor\/js\/|overworld\/[\w-]+\.js|tools\/(gen_frem_night|gen_johto_daynight|repair_fakemon|deploy_fakemon_trainers|gen_designwiki|gen_battlescale)\.mjs)/;
 
 const cardsAt = sha => {
 	try {
@@ -103,6 +103,23 @@ for (const ft of MICATRO_FEATURES) {
 	try { first = git('log', '--first-parent', '--reverse', '--diff-filter=A', '--format=%H', '--', ft.file).split('\n')[0].trim(); } catch { }
 	if (first) (featureAt[first] ||= []).push({ id: ft.id, title: ft.title, blurb: ft.blurb, wiki: '/designwiki/#/micatro/' + ft.id });
 }
+
+// MicaSurvivor (the PokéSurvivor port, /micasurvivor/): its LAUNCH on Magepunk is the commit that
+// first adds its accounts bridge (M3: the landing tile, the Pewter Museum cabinet, accounts and the
+// leaderboard all arrive together). The counts come from the design wiki's generated reference
+// (designwiki/data/micasurvivor.json, tools/micasurvivor/gen_designwiki.mjs) at that commit.
+const MICASURVIVOR_LAUNCH_FILE = 'micasurvivor/js/mica/account.js';
+let micasurvivorLaunchSha = '';
+try { micasurvivorLaunchSha = git('log', '--first-parent', '--reverse', '--diff-filter=A', '--format=%H', '--', MICASURVIVOR_LAUNCH_FILE).split('\n')[0].trim(); } catch { }
+const micasurvivorLaunchAt = sha => {
+	let counts = {};
+	try { counts = JSON.parse(git('show', `${sha}:designwiki/data/micasurvivor.json`)).counts || {}; } catch { }
+	return {
+		title: 'MicaSurvivor', play: '/micasurvivor/', wiki: '/designwiki/#/micasurvivor',
+		blurb: 'Survive the Pokémon hordes with your partner — based on PokéSurvivor by JPTER78. Play it from the home page or the arcade cabinet in the Pewter Museum; logged-in players save to their Magepunk account and race for the best survival time on the leaderboard.',
+		counts: { Pokémon: counts.pokemon || 0, Starters: counts.starters || 0, Moves: counts.moves || 0, 'Held items': counts.items || 0 },
+	};
+};
 
 // A shallow clone silently truncates the feed — the oldest releases just vanish,
 // and the result looks plausible. Refuse to write a feed we know is incomplete.
@@ -190,6 +207,7 @@ for (let c of log) {
 		}
 	}
 	const micatroFeatures = featureAt[c.sha] || [];
+	const micasurvivorLaunch = micasurvivorLaunchSha && c.sha === micasurvivorLaunchSha ? micasurvivorLaunchAt(c.sha) : null;
 	// tokens/uncollectibles ride along with releases but aren't "new cards" to
 	// open — EXCEPT run-mode treasures (token-flagged by design, but they're
 	// player-facing loot worth announcing)
@@ -204,7 +222,7 @@ for (let c of log) {
 	entries.push({
 		sha: c.sha.slice(0, 7),
 		date: c.date,
-		kind: collectible.length ? 'cards' : (micatroAdded.length || micatroLaunch || micatroMods.length || micatroFeatures.length) ? 'micatro' : 'patch',
+		kind: collectible.length ? 'cards' : (micatroAdded.length || micatroLaunch || micatroMods.length || micatroFeatures.length) ? 'micatro' : micasurvivorLaunch ? 'micasurvivor' : 'patch',
 		title: c.subject.replace(/^Battlecards:\s*/i, ''),
 		body,
 		cards: collectible.map(k => ({
@@ -217,6 +235,7 @@ for (let c of log) {
 		...(micatroLaunch ? { micatroLaunch } : {}),
 		...(micatroMods.length ? { micatroMods } : {}),
 		...(micatroFeatures.length ? { micatroFeatures } : {}),
+		...(micasurvivorLaunch ? { micasurvivorLaunch } : {}),
 	});
 }
 
@@ -244,4 +263,4 @@ for (const name of usedModAtlases) {
 const mReleases = entries.filter(e => e.kind === 'micatro');
 const modReleases = entries.reduce((n, e) => n + (e.micatroMods || []).length, 0);
 writeFileSync('magepunknews/news.json', JSON.stringify({ generated: git('log', '-1', '--format=%cs').trim(), micatroAtlas, entries }, null, '\t'));
-console.log(`magepunknews/news.json: ${entries.length} entries (${releases.length} card releases, ${totalNew} new cards, ${mReleases.length} Micatro releases, ${modReleases} mod releases)`);
+console.log(`magepunknews/news.json: ${entries.length} entries (${releases.length} card releases, ${totalNew} new cards, ${mReleases.length} Micatro releases, ${modReleases} mod releases${micasurvivorLaunchSha ? ', MicaSurvivor launch' : ''})`);

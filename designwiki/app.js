@@ -2471,6 +2471,141 @@ function micatroVanillaRoute(sub) {
   }
 }
 
+// ---------------------------------------------------------------- MicaSurvivor
+// The PokéSurvivor port at /micasurvivor/ (Plans/MICASURVIVOR_PLAN.md). Reference data is
+// generated from the game's own files: data/micasurvivor.json (tools/micasurvivor/gen_designwiki.mjs).
+let micasurvivorPromise = null;
+function loadMicasurvivor() {
+  if (!micasurvivorPromise) micasurvivorPromise = fetch('data/micasurvivor.json' + CB).then(r => { if (!r.ok) throw new Error('micasurvivor.json ' + r.status); return r.json(); });
+  return micasurvivorPromise;
+}
+const msType = t => typeChip(String(t).charAt(0).toUpperCase() + String(t).slice(1));
+const msStillOn = sub => { const p = location.hash.slice(1).split('?')[0].split('/').filter(Boolean); return p[0] === 'micasurvivor' && (p[1] || '') === sub; };
+const msBack = () => h('p', { class: 'lp-back' }, h('a', { href: '#/micasurvivor' }, '← MicaSurvivor'));
+const msTable = (head, rows, cls) => h('table', { class: 'ms-table' + (cls ? ' ' + cls : '') },
+  h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))),
+  h('tbody', null, ...rows.map(r => h('tr', null, ...r.map(c => h('td', null, c))))));
+async function msLoadOr(title, sub) {
+  content.replaceChildren(h('h1', null, title), h('p', { class: 'muted' }, 'Loading…'));
+  let D = null;
+  try { D = await loadMicasurvivor(); } catch (e) { content.replaceChildren(h('h1', null, title), h('p', { class: 'muted' }, 'Could not load the MicaSurvivor data.')); return null; }
+  return msStillOn(sub) ? D : null;
+}
+
+async function micasurvivorView() {
+  const D = await msLoadOr('MicaSurvivor', ''); if (!D) return;
+  const kbd = (...k) => k.map((x, i) => [i ? ' / ' : '', h('kbd', null, x)]).flat();
+  const C = D.counts;
+  content.replaceChildren(
+    h('div', { class: 'mc-hero ms-hero' },
+      h('div', null,
+        h('h1', null, 'MicaSurvivor'),
+        h('p', null, 'A bullet-heaven survival roguelike with ', h('b', null, C.pokemon + ' Pokémon'), ' in Mystery Dungeon sprites: you are one Pokémon against endless hordes. Your moves fire on their own — you walk, pick upgrades and survive as long as you can. Based on ', h('b', null, 'PokéSurvivor by JPTER78'), ', ported into Magepunk as-is.'),
+        h('p', null, h('a', { class: 'mc-play ms-play', href: '/micasurvivor/' }, '▶ Play MicaSurvivor'), ' ', h('span', { class: 'muted' }, 'free — no ads, nothing to buy'))),
+      h('img', { class: 'ms-hero-art', src: '../micasurvivor/icons/tile.png', alt: '', width: 96, height: 96 })),
+    h('div', { class: 'lp-grid ms-index' }, [
+      ['pokemon', 'Pokémon', C.pokemon + ' Pokémon · ' + C.starters + ' starters · ' + C.legendaries + ' legendaries'],
+      ['moves', 'Moves', C.moves + ' moves and their evolutions'],
+      ['items', 'Items & Upgrades', C.items + ' held items · ' + C.upgrades + ' upgrades'],
+    ].map(([k, label, n]) => h('a', { class: 'lp-tile ms-idx', href: '#/micasurvivor/' + k, 'data-cat': k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, n)))),
+    mcSection('How to play', null,
+      h('ul', { class: 'mc-list' },
+        h('li', null, h('b', null, 'Your partner. '), 'A short personality test picks your partner from the ', h('a', { href: '#/micasurvivor/pokemon' }, C.starters + ' starters'), ' (or choose one yourself). Every Pokémon you own can be your partner later.'),
+        h('li', null, h('b', null, 'A run. '), 'Walk around the dungeon; your active move attacks by itself. Defeated foes drop experience. Each level up offers three cards — a new ', h('a', { href: '#/micasurvivor/moves' }, 'move'), ', a level for one you have, or a stat boost. Up to four moves; only the active one fires (switch with 1–4 or Q / E).'),
+        h('li', null, h('b', null, 'Evolving moves. '), 'A move at its top level evolves once you have also taken the stat it needs (Flamethrower + Reflexes → Overheat): far stronger.'),
+        h('li', null, h('b', null, 'Bosses, chests and rifts. '), 'Strong bosses come at set times; chests hold ', h('a', { href: '#/micasurvivor/items' }, 'held items'), ' (one at a time); rifts open on a legendary or a type arena. Arceus judges long runs.'),
+        h('li', null, h('b', null, 'Between runs. '), 'Runs pay Pokémonedas. Spend them on permanent ', h('a', { href: '#/micasurvivor/items' }, 'upgrades'), ' per Pokémon and on the ', h('b', null, 'gacha'), ' (9 regional banners, shinies) — all earned in play, never bought. Daily / weekly missions and achievements pay out too.'))),
+    mcSection('Getting there', null,
+      h('ul', { class: 'mc-list' },
+        h('li', null, h('b', null, 'Landing page: '), 'the MicaSurvivor tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micasurvivor/' }, '/micasurvivor/'), '.'),
+        h('li', null, h('b', null, 'Overworld: '), 'the MICASURVIVOR arcade cabinet in the ', h('b', null, 'Pewter Museum'), ' lobby (Kanto), against the reception counter right of the entrance. Interact with it (A on a controller) and answer YES — your party and position are saved, and the game’s “Back to the overworld” link returns you beside the cabinet.'),
+        h('li', null, h('b', null, 'Your account: '), 'logged into Magepunk, you play as your Magepunk user and your progress (collection, coins, upgrades, records) is saved to your account — on any device. Guests keep a save in their browser; the first time a guest logs in, the game offers once to bring that progress into the account.'),
+        h('li', null, h('b', null, 'Leaderboard: '), 'the menu’s Leaderboard ranks logged-in players by their ', h('b', null, 'best survival time'), ' in a solo run (ties: more foes defeated), with their level and partner. Runs under 2 minutes don’t count. Friends and co-op are coming later.'))),
+    mcSection('Controls', 'Keyboard, mouse, touch and controller all work.',
+      h('h3', { class: 'mc-h3' }, 'Keyboard'),
+      msTable(['Key', 'Action'], [
+        [kbd('W', 'A', 'S', 'D'), 'Move (or the arrow keys)'],
+        [kbd('1', '…', '4'), 'Choose the active move'],
+        [kbd('Q', 'E'), 'Previous / next move'],
+        [kbd('1', '2', '3'), 'Pick a level-up card'],
+        [kbd('R'), 'Reroll the level-up cards'],
+        [kbd('Esc', 'P'), 'Pause'],
+      ]),
+      h('h3', { class: 'mc-h3' }, 'Touch'),
+      h('p', null, 'A virtual joystick (fixed or floating, three sizes) and on-screen move / pause buttons you can place anywhere (Settings → Controls). The game is played in landscape.'),
+      h('h3', { class: 'mc-h3' }, 'Controller'),
+      h('p', { class: 'muted' }, 'Signed-in Magepunk players only (a guest’s pad shows “Log in to Magepunk to use a controller”). Design from the Android port by JayElDragon. Xbox, PlayStation and Nintendo layouts (Nintendo is the default, like the rest of the site: the right face button confirms); remap any action in Settings → Controls — binding a button another action used swaps the two.'),
+      msTable(['Action', 'Xbox', 'PlayStation', 'Nintendo'], [
+        ['Move', 'Left stick / D-pad', 'Left stick / D-pad', 'Left stick / D-pad'],
+        ['Previous / next move, tabs, walk the cards', 'LB / RB', 'L1 / R1', 'L / R'],
+        ['Pause / resume', 'Menu', 'Options', '+'],
+        ['Confirm (the focused button / card)', 'A', '✕', 'A (right)'],
+        ['Back / cancel', 'B', '○', 'B (bottom)'],
+        ['Reroll the level-up cards', 'Y', '△', 'X'],
+      ])),
+    mcSection('Credits & licence', null,
+      h('ul', { class: 'mc-list' },
+        h('li', null, h('b', null, 'Game: '), h('a', { href: 'https://github.com/JPTER78/pokesurvivor', target: '_blank', rel: 'noopener' }, 'PokéSurvivor by JPTER78'), ', code under the ', h('a', { href: '/micasurvivor/LICENSE-NONCOMMERCIAL.md' }, 'PolyForm Noncommercial License 1.0.0'), ' (versions before 14-10-2026: ', h('a', { href: '/micasurvivor/LICENSE' }, 'MIT'), '). ', h('code', null, 'Required Notice: Copyright 2026 JPTER78 (https://github.com/JPTER78/pokesurvivor)')),
+        h('li', null, h('b', null, 'Non-commercial: '), 'MicaSurvivor never gets ads, paid items or anything sold — everything is earned by playing.'),
+        h('li', null, h('b', null, 'Sprites: '), h('a', { href: 'https://github.com/PMDCollab/SpriteCollab', target: '_blank', rel: 'noopener' }, 'PMDCollab SpriteCollab'), ', CC BY-NC 4.0 — every artist is listed in the game’s Credits screen and ', h('a', { href: '/micasurvivor/CREDITS.md' }, 'CREDITS.md'), '.'),
+        h('li', null, h('b', null, 'Controller design: '), h('a', { href: 'https://github.com/JayElDragon/poke-survivor', target: '_blank', rel: 'noopener' }, 'the Android port by JayElDragon'), ' (MIT).'),
+        h('li', null, 'Pokémon © Nintendo / Creatures Inc. / GAME FREAK. A non-commercial fan project, not affiliated with them.'))));
+}
+
+let msPokeQ = '';
+async function micasurvivorPokemonView() {
+  const D = await msLoadOr('Pokémon', 'pokemon'); if (!D) return;
+  const STARS = n => '★'.repeat(n);
+  const starterGrid = h('div', { class: 'ms-starters' }, D.starters.map(s => h('div', { class: 'ms-starter' },
+    h('b', null, s.name), h('div', null, s.types.map(msType)), h('small', { class: 'muted' }, '#' + s.dex + ' · starts with ' + s.start))));
+  const body = h('tbody');
+  const count = h('span', { class: 'muted' });
+  const draw = () => {
+    const q = msPokeQ.trim().toLowerCase();
+    const list = D.pokemon.filter(([dex, name, types]) => !q || name.toLowerCase().includes(q) || String(dex) === q || types.includes(q));
+    count.textContent = list.length + ' shown';
+    body.replaceChildren(...list.map(([dex, name, types, rarity, gen, leg]) => h('tr', null,
+      h('td', null, '#' + dex), h('td', null, name), h('td', null, types.map(msType)), h('td', { class: 'ms-stars' }, STARS(rarity)), h('td', null, 'Gen ' + gen), h('td', null, leg ? 'Legendary (rifts only)' : ''))));
+  };
+  const input = h('input', { type: 'search', placeholder: 'Filter by name, number or type', value: msPokeQ, class: 'ms-filter' });
+  input.addEventListener('input', () => { msPokeQ = input.value; draw(); });
+  draw();
+  content.replaceChildren(msBack(),
+    mcHead('Pokémon', D.counts.pokemon, 'Pokémon', 'Every Pokémon in the game can be your partner once you own it (the starters, the gacha, shinies caught in runs). Legendaries and mythicals appear only in rifts. Rarity (★1–5) sets the gacha odds.'),
+    mcSection('Starters', D.counts.starters + ' partners the personality test can choose (every region’s starters, and two friends).', starterGrid),
+    mcSection('Every Pokémon', null, h('p', null, input, ' ', count),
+      h('table', { class: 'ms-table' }, h('thead', null, h('tr', null, ...['Dex', 'Name', 'Types', 'Rarity', 'Banner', ''].map(c => h('th', null, c)))), body)));
+}
+
+async function micasurvivorMovesView() {
+  const D = await msLoadOr('Moves', 'moves'); if (!D) return;
+  const KIND = { projectile: 'Projectile', melee: 'Melee arc', beam: 'Beam', orbit: 'Orbit', nova: 'Nova', aura: 'Aura', buff: 'Buff', boomerang: 'Boomerang', chain: 'Chain', mine: 'Mines', meteor: 'Meteor', turret: 'Turret', dash: 'Dash', trail: 'Trail', cone: 'Cone' };
+  content.replaceChildren(msBack(),
+    mcHead('Moves', D.counts.moves, 'moves', 'Your active move attacks on its own. A Pokémon learns Normal moves plus the moves of its own types. Each move levels up to its maximum through the level-up cards; at the top level it EVOLVES once you have also taken the stat card it needs.'),
+    msTable(['Move', 'Type', 'Kind', 'Cooldown', 'Damage', 'Evolves into', 'What it does'], D.moves.map(m => [
+      h('b', null, m.name), msType(m.type), KIND[m.kind] || m.kind, m.cd != null ? m.cd + ' s' : '—', m.dmg != null ? String(m.dmg) : '—',
+      m.evo ? [h('b', null, m.evo.name), h('small', { class: 'muted' }, ' (needs ' + m.evo.needs + ')')] : '—', m.desc,
+    ]), 'ms-moves'));
+}
+
+async function micasurvivorItemsView() {
+  const D = await msLoadOr('Items & Upgrades', 'items'); if (!D) return;
+  content.replaceChildren(msBack(),
+    mcHead('Items & Upgrades', D.counts.items + D.counts.upgrades, 'entries', null),
+    mcSection('Held items', 'Found in chests (often the locked ones) and dropped by bosses. You hold ONE at a time for the run; finding another lets you choose which to keep.',
+      msTable(['Item', 'Effect'], D.items.map(i => [h('b', null, i.name), i.desc]))),
+    mcSection('Upgrades', 'Permanent, bought with Pokémonedas between runs — for each Pokémon separately.',
+      msTable(['Upgrade', 'Per level', 'Max level'], D.upgrades.map(u => [h('b', null, u.name), u.unit, String(u.max)]))));
+}
+
+function micasurvivorRoute(sub) {
+  if (sub === 'pokemon') return micasurvivorPokemonView();
+  if (sub === 'moves') return micasurvivorMovesView();
+  if (sub === 'items') return micasurvivorItemsView();
+  if (!sub) return micasurvivorView();
+  notFound();
+}
+
 function notFound() { content.replaceChildren(h('h1', null, 'Not found')); }
 function home() {
   const counts = h('p', { class: 'muted' }, Object.keys(DB.pokemon).length + ' Pokémon · ' +
@@ -3278,6 +3413,7 @@ function route() {
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
   if (section === 'micatro') return micatroRoute(id, parts[2]);
   if (section === 'micatro-mods') return micatroModsRoute(id, parts[2]);
+  if (section === 'micasurvivor') return micasurvivorRoute(id);
   if (section === 'search') return globalSearchView();
   notFound();
 }

@@ -80,6 +80,13 @@
 		.mc-launch { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 		.mc-launch span { background: #241b38; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 0.88rem; }
 		.mc-launch b { color: #ff8a80; }
+		article.micasurvivor { border-left: 3px solid #3fbf6f; }
+		.badge.micasurvivor { background: rgba(63,191,111,0.14); color: #7be3a0; border: 1px solid #2f7a4a; }
+		.ms-launch { display: flex; gap: 14px; align-items: flex-start; margin-top: 10px; }
+		.ms-launch img { width: 72px; height: 72px; image-rendering: pixelated; border-radius: 8px; flex-shrink: 0; }
+		.ms-launch p { margin: 0 0 4px; }
+		.ms-launch .mc-launch { margin-top: 6px; }
+		.ms-launch .mc-launch b { color: #7be3a0; }
 		#mc-tip { position: fixed; display: none; z-index: 9; pointer-events: none; max-width: 260px;
 			background: rgba(22,16,36,0.96); border: 1px solid #fe5f55; border-radius: 12px; padding: 10px; box-shadow: 0 6px 22px rgba(0,0,0,0.6); font-size: 0.88rem; }
 		#mc-tip .big { display: block; width: 142px; height: 190px; margin: 0 auto 8px; background-repeat: no-repeat; image-rendering: pixelated; position: relative; }
@@ -160,12 +167,13 @@
 
 <header>
 	<h1>MAGEPUNK NEWS</h1>
-	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards and Micatro (and its mods), straight from the games' development history.</p>
+	<p class="tagline">Patch notes and new card releases for Magepunk Battlecards, Micatro (and its mods) and MicaSurvivor, straight from the games' development history.</p>
 	<div class="cta-row">
 		<a class="cta primary" href="/battlecards/">&#9654; Play Battlecards</a>
 		<a class="cta" href="/learnmagepunk/">Learn to Play</a>
 		<a class="cta" href="/designwiki/#/cards">Card Gallery</a>
 		<a class="cta" href="/micatro/">&#9654; Play Micatro</a>
+		<a class="cta" href="/micasurvivor/">&#9654; Play MicaSurvivor</a>
 	</div>
 </header>
 
@@ -174,6 +182,7 @@
 		<button data-f="all" class="on">All</button>
 		<button data-f="cards">&#127183; Card Releases</button>
 		<button data-f="micatro">&#127183; Micatro</button>
+		<button data-f="micasurvivor">&#127918; MicaSurvivor</button>
 		<button data-f="patch">&#128736; Patch Notes</button>
 	</div>
 	<div id="feed"><p class="loading">Loading news&hellip;</p></div>
@@ -243,6 +252,12 @@ function mcModBlock(m) {
 	return `<div class="mc-mod"><h3><a href="${link}">${esc(m.name)}</a>: ${added.length} new card${added.length === 1 ? '' : 's'}</h3>${mcRow(added)}</div>`;
 }
 
+/** MicaSurvivor's launch: the tile art, a blurb, its counts, Play + Design wiki. */
+function msLaunch(L) {
+	const counts = Object.entries(L.counts || {}).filter(([, n]) => n).map(([k, n]) => `<span><b>${esc(n)}</b> ${esc(k)}</span>`).join('');
+	return `<div class="ms-launch" data-launch="micasurvivor"><img src="/micasurvivor/icons/tile.png" alt="" width="72" height="72"><div><p>${esc(L.blurb)}</p><div class="mc-launch">${counts}<span><a href="${esc(L.play)}">&#9654; Play</a> &middot; <a href="${esc(L.wiki)}">Design wiki</a></span></div></div></div>`;
+}
+
 function render() {
 	const shown = entries.filter(e => filter === 'all' || e.kind === filter);
 	if (!shown.length) { feed.innerHTML = '<p class="empty">Nothing here yet.</p>'; return; }
@@ -264,7 +279,8 @@ function render() {
 						: modLaunch.length ? (modLaunch.length === 1 ? '&#127183; New Micatro mod' : `&#127183; ${modLaunch.length} new Micatro mods`)
 							: modNew ? `&#127183; ${modNew} new Micatro mod card${modNew === 1 ? '' : 's'}`
 								: '&#10024; New in Micatro')
-				: '&#128736; Patch';
+				: e.kind === 'micasurvivor' ? '&#127918; MicaSurvivor launch'
+					: '&#128736; Patch';
 		html += `<article class="${e.kind}">` +
 			`<div class="entry-head"><span class="badge ${e.kind}">${badge}</span>` +
 			`<span class="entry-title">${esc(e.title)}</span></div>`;
@@ -273,6 +289,7 @@ function render() {
 		if (mcN) html += mcRow(e.micatro);
 		for (const x of feats) html += `<div class="mc-feature" data-feature="${esc(x.id)}"><b>&#10024; ${esc(x.title)}</b><span>${esc(x.blurb)}</span><a href="${esc(x.wiki)}">Read more</a></div>`;
 		for (const m of mods) html += mcModBlock(m);
+		if (e.micasurvivorLaunch) html += msLaunch(e.micasurvivorLaunch);
 		if (e.body) html += `<details class="body-toggle"><summary>Details</summary><div class="body">${esc(e.body)}</div></details>`;
 		html += '</article>';
 	}

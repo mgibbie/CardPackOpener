@@ -139,13 +139,16 @@ G.SettingsUI = (() => {
       return;
     }
     const nick = G.Social.me ? G.Social.me.name : (G.DB.user || '');
-    const kind = G.DB.mode === 'local' ? 'Cuenta de este navegador' : G.DB.nameAccount ? 'Nombre y contraseña' : 'Google';
+    const kind = G.DB.mode === 'magepunk' ? 'Cuenta de Magepunk' : G.DB.mode === 'local' ? 'Cuenta de este navegador' : G.DB.nameAccount ? 'Nombre y contraseña' : 'Google';
+    const SYNCM = { ok: 'Guardado en tu cuenta de Magepunk' };   // MicaSurvivor (M3)
     box.innerHTML = section('Cuenta')
       + `<div class="set-row"><div class="grow"><b>Apodo</b><small>Es único y no se puede cambiar.</small></div><span class="gold" translate="no">${esc(nick)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Tipo de cuenta</b></div><span>${esc(kind)}</span></div>`
-      + `<div class="set-row"><div class="grow"><b>Partida</b></div><span>${esc(SYNC[st] || st)}</span></div>`
-      // MicaSurvivor (owner, 2026-10-17): no Log out / Delete account until Magepunk accounts (M3) —
-      // on the browser-only save, "Delete account" would just wipe the player's progress.
+      + `<div class="set-row"><div class="grow"><b>Partida</b></div><span>${esc((G.DB.mode === 'magepunk' && SYNCM[st]) || SYNC[st] || st)}</span></div>`
+      // MicaSurvivor: no Log out / Delete account here. On the browser-only save "Delete account"
+      // would just wipe the player's progress, and a Magepunk player's account is the SITE's: they log
+      // out / manage it on Magepunk (M3, a link instead).
+      + (G.DB.mode === 'magepunk' ? `<div class="set-row"><div class="grow"><small>Se cierra sesión y se gestiona la cuenta en Magepunk.</small></div><a class="btn small" href="/">Abrir Magepunk</a></div>` : '')
       + `<p class="note" id="set-msg"></p>`;
   }
 

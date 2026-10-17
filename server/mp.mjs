@@ -76,6 +76,15 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const MICATRO_DECKS_MAX = 30;           // decks per player
 const MICATRO_DECK_BYTES = 66_000;      // one serialized deck definition (the client caps a definition at 64 KB)
 const MICATRO_DECKS_BYTES = 400_000;    // the whole row
+// MICASURVIVOR (/micasurvivor/, the PokéSurvivor port) cloud save: one row per player,
+// `micasurvivor:<user>` = {rev, save, updated_at}. The client keeps a localStorage copy
+// (cache/offline) and writes with compare-and-set on `rev`: a stale put gets 409 + the
+// stored save, the client MERGES (micasurvivor/js/core/db.js merge(): collections union,
+// stats max, coins/tickets by per-device ledger) and retries, so a second device never
+// silently overwrites the first.
+const MICASURVIVOR_SAVE_MAX = 400_000;  // one serialized save (a full collection with upgrades is ~100-200 KB)
+// MICASURVIVOR leaderboard (run-score mode 'micasurvivor'): best survival time, solo.
+const MICASURVIVOR_MAX_TIME = 4 * 3600; // seconds; a longer "run" is refused, not clamped onto the board
 // MICATRO run replays: a FINISHED run's recipe {v, seed, back, stake, mods, modOptions, customDeck?,
 // actions} packed like a Battlecards tape ('G1.' gzip / 'R1.' raw, base64url). One row per run,
 // `mreplay:<8 hex>` = {code, meta, by, when}; the viewer re-simulates it with the engine. A replay is
@@ -178,6 +187,8 @@ const RATE_LIMITS = {
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
+	// MicaSurvivor cloud save: the client debounces (purchases ~3s, run end, else ~30s) — a brake on floods
+	'micasurvivor-save-put': [30, 60_000], 'micasurvivor-save-get': [30, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -422,6 +433,18 @@ function userStore(db) {
 		// and an OLDER save could pass its check before a newer one landed and then
 		// write over it (2026-10-08: Instinct's local 37004 acked while the server
 		// held 36998). Returns true when the row was written.
+		// Compare-and-set on a row's top-level `rev` in ONE statement: writes `v` only when
+		// the stored row's rev equals `expect` (expect 0 = the row must not exist yet, or
+		// carry no rev). Returns true when the row was written. (MicaSurvivor saves.)
+		setIfRev: async (k, v, expect) => {
+			const r = await db.prepare(
+				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ' +
+				'ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at ' +
+				"WHERE COALESCE(CAST(json_extract(mp_store.value, '$.rev') AS INTEGER), 0) = ?"
+			).bind(k, JSON.stringify(v), expect).run();
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
+		},
 		setOwIfNotNewer: async (k, v, rev) => {
 			const r = await db.prepare(
 				'INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ' +
@@ -1459,7 +1482,7 @@ export default async function handler(req, env) {
 	// previously invisible — cleared once and forgotten.
 	if (action === 'run-score' || action === 'run-leaderboard') {
 		let mode = String(body.mode || '');
-		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded'].includes(mode)) {
+		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded', 'micasurvivor'].includes(mode)) {
 			return json({ error: 'no board for that mode' }, 400);
 		}
 		// MICATRO mods: a run with mods ranks on its own board ('micatro_modded'), each
@@ -1515,6 +1538,34 @@ export default async function handler(req, env) {
 			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
 			if (best) board.push({ name: username, ...best });
 			board.sort((a, b) => micatroScoreCmp(b, a) || (b.ante || 0) - (a.ante || 0) || a.when - b.when);
+			const capped = board.slice(0, 100);
+			if (better) await store.setJSON(key, capped);
+			const rank = capped.findIndex(e => e.name === username) + 1;
+			return json({ ok: true, better, best, rank: rank || null });
+		}
+		// MICASURVIVOR ranks a solo run by SURVIVAL TIME (seconds, higher is better), then
+		// kills, then the earliest. A time past MICASURVIVOR_MAX_TIME (or not a number) is
+		// refused rather than clamped, so a bogus run can't sit at the top of the board.
+		if (mode === 'micasurvivor' && action === 'run-score') {
+			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
+			const time = int(body.time);
+			if (!(time >= 0 && time <= MICASURVIVOR_MAX_TIME)) return json({ error: 'bad time', max: MICASURVIVOR_MAX_TIME }, 400);
+			const dex = int(body.dex);
+			const run = {
+				time,
+				kills: Math.max(0, Math.min(10_000_000, int(body.kills) || 0)),
+				level: Math.max(1, Math.min(9999, int(body.level) || 1)),
+				dex: dex >= 1 && dex <= 2000 ? dex : 0,
+				shiny: body.shiny === true,
+			};
+			const cmp = (a, b) => (a.time - b.time) || ((a.kills || 0) - (b.kills || 0));
+			const prev = user.runBest[mode];
+			const better = !prev || typeof prev.time !== 'number' || cmp(run, prev) > 0;
+			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
+			const best = user.runBest[mode] || null;
+			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
+			if (best) board.push({ name: username, ...best });
+			board.sort((a, b) => cmp(b, a) || a.when - b.when);
 			const capped = board.slice(0, 100);
 			if (better) await store.setJSON(key, capped);
 			const rank = capped.findIndex(e => e.name === username) + 1;
@@ -1871,6 +1922,29 @@ export default async function handler(req, env) {
 		const rev = (prev.rev || 0) + 1;
 		await store.setJSON(key, { rev, decks, updated_at: Date.now() });
 		return json({ ok: true, rev, count: decks.length });
+	}
+
+	// MICASURVIVOR cloud save (micasurvivor/js/core/db.js, Magepunk mode). Exact key
+	// `micasurvivor:<username>` only. get → {rev, save|null}. put {save, rev} writes iff the
+	// stored rev equals `rev` (atomic setIfRev; 0 = no row yet) → {ok, rev}; otherwise 409
+	// {error:'stale', rev, save} so the client merges with the stored save and retries.
+	if (action === 'micasurvivor-save-get') {
+		const row = await store.get('micasurvivor:' + username);
+		return json({ rev: (row && row.rev) || 0, save: (row && row.save) || null });
+	}
+	if (action === 'micasurvivor-save-put') {
+		const save = body.save;
+		if (!save || typeof save !== 'object' || Array.isArray(save) || typeof save.v !== 'number'
+			|| !save.owned || typeof save.owned !== 'object' || Array.isArray(save.owned)) return json({ error: 'not a save' }, 400);
+		const text = JSON.stringify(save);
+		if (text.length > MICASURVIVOR_SAVE_MAX) return json({ error: 'save too large', max: MICASURVIVOR_SAVE_MAX }, 413);
+		const expect = Number.isInteger(body.rev) && body.rev >= 0 ? body.rev : -1;
+		if (expect < 0) return json({ error: 'bad rev' }, 400);
+		const key = 'micasurvivor:' + username;
+		const rev = expect + 1;
+		if (await store.setIfRev(key, { rev, save: JSON.parse(text), updated_at: Date.now() }, expect)) return json({ ok: true, rev });
+		const cur = await store.get(key);
+		return json({ error: 'stale', rev: (cur && cur.rev) || 0, save: (cur && cur.save) || null }, 409);
 	}
 
 	// a friend reads a MICATRO run's latest view (read-only spectating)

@@ -16,6 +16,8 @@
 //     with D-pad + confirm, LB / RB switch moves, rumble on hit, quit to the summary and back
 //   - glyphs switch back to keys on keyboard use and to the pad on pad use
 //   - hot-plug: unplugging hides the ring; the first pad that presses drives, a second one is ignored
+//   - (M3) signing in mid-session: after the reload the game plays as the Magepunk user and offers
+//     the guest progress to the account (a stub /api/mp); the pad answers the offer
 //   - the port's ban / swap / zmove / dynamax are not offered (the web game has no such mechanics)
 // Screenshots (pad_menu_focus, pad_settings_remap, pad_levelup) go to MICASURVIVOR_SHOTS=<dir>.
 // Covers micasurvivor/js/core/pad.js, js/core/input.js, js/game.js (G.Pad.poll), js/ui/run-ui.js
@@ -43,8 +45,16 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applic
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(80); } return false; }
 
-const server = http.createServer((req, res) => {
+let stubRev = 0;
+const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
+	if (u === '/api/mp') {   // (M3) a signed-in player's save: an empty account, writes accepted
+		let raw = ''; for await (const c of req) raw += c;
+		let b = {}; try { b = JSON.parse(raw); } catch { }
+		res.writeHead(200, { 'content-type': 'application/json' });
+		res.end(JSON.stringify(b.action === 'micasurvivor-save-put' ? { ok: true, rev: ++stubRev } : { rev: stubRev, save: null }));
+		return;
+	}
 	const f = u.endsWith('/') ? u + 'index.html' : u;
 	fs.readFile(path.join(ROOT, f), (e, d) => {
 		if (e) { res.writeHead(404); res.end('nf'); return; }
@@ -262,8 +272,12 @@ try {
 	const saved = await ev(() => ({ m: G.Pad.map(), lay: G.Pad.layout(), raw: JSON.parse(localStorage.getItem('micasurvivor_settings')) }));
 	A(saved.m.pause === 2 && saved.m.reroll === 9 && saved.lay === 'nintendo' && saved.raw.padMap && saved.raw.padRumble === true, 'remap, layout and vibration persist across a reload (micasurvivor_settings)', JSON.stringify(saved));
 	if (await visible('tap-start')) await press(B.confirm);
-	A(await waitFor(() => visible('scr-menu'), 10000), 'reload lands on the menu');
-	await press(B.confirm); await sleep(100);   // first press: shows the ring
+	// (M3) signed in now: the guest progress made above is offered to the Magepunk account, once
+	A(await waitFor(() => visible('scr-carry'), 10000) && await ev(() => G.DB.magepunk === 'padtester'), 'after the reload: playing as the Magepunk user, offered the guest progress');
+	for (let i = 0; i < 4 && await visible('scr-carry'); i++) await press(B.confirm);
+	A(await waitFor(() => visible('scr-menu'), 10000), 'the pad brings it into the account: the menu');
+	await sleep(300);
+	if (!(await ev(() => !!document.querySelector('.pad-focus')))) { await press(B.confirm); await sleep(100); }   // first press: shows the ring (the pad already drove the offer)
 
 	// ---- a run, with the pad only
 	A(await navTo('#scr-menu [data-go=play]'), 'D-pad reaches Play');

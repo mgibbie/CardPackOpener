@@ -326,6 +326,8 @@ G.Game = (() => {
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
+    // MicaSurvivor (M3): the Magepunk leaderboard (best survival time) for logged-in players
+    if (ok && !coop) G.MicaUI.runEnded({ time: Math.floor(time), kills: pl.kills, level: pl.level, dex: pl.dex, shiny: !!pl.shiny });
 
     G.RunUI.showOver({
       dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
@@ -892,6 +894,7 @@ G.Flow = {
     // La base de datos (nube o local) recupera la sesión anterior.
     G.DB.ready().then(restored => {
       document.getElementById('boot').classList.add('hidden');
+      G.MicaUI.decorate();   // MicaSurvivor (M3): Magepunk login button / way back / leaderboard label
       // En otra tarea: crear el sonido para comprobarlo cuesta ~60 ms y no debe bloquear la carga.
       setTimeout(() => this.tapToStart(() => { if (restored) this.afterLogin(); else this.toLogin(); }), 0);
     });
@@ -920,6 +923,8 @@ G.Flow = {
   toLogin() { G.Audio.music('village'); G.LoginUI.open(); },
   afterLogin() {
     G.Audio.music('village');
+    // MicaSurvivor (M3): a guest save in this browser is offered to the Magepunk account, once.
+    if (G.DB.carryOffer) { G.MicaUI.offerCarry(() => this.afterLogin()); return; }
     if (!G.DB.save.partner) G.TestUI.start();
     else this.goMenu();
   },

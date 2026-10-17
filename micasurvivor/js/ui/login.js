@@ -65,8 +65,9 @@ G.LoginUI = (() => {
 
   /** Explica dónde se guarda la partida según el modo de la base de datos. */
   function modeNote() {
-    // MicaSurvivor: offline build — progress lives in this browser until Magepunk accounts (M3).
-    if (G.DB.localReason === 'mica') return 'Tu partida se guarda en este navegador.';
+    // MicaSurvivor: a guest's progress lives in this browser; logged into Magepunk it is saved to the account (M3).
+    if (G.DB.mode === 'magepunk') return 'Tu partida se guarda en tu cuenta de Magepunk.';
+    if (G.DB.localReason === 'mica') return 'Tu partida se guarda en este navegador. Inicia sesión en Magepunk para guardar tu progreso en tu cuenta y salir en la clasificación.';
     if (G.DB.mode === 'cloud') return 'Tu partida se guarda en la nube: entra desde cualquier ordenador. Como invitado no se guarda.';
     const why = G.DB.localReason === 'file'
       ? 'Abierto desde un archivo: la partida sólo se guarda en este navegador. Para guardar en la nube, juega en la versión publicada.'
@@ -92,6 +93,7 @@ G.LoginUI = (() => {
     if (!G.DB.storageOk) $('login-err').textContent = 'Este navegador no deja guardar datos: juega como invitado.';
     $('btn-google').classList.toggle('hidden', G.DB.mode !== 'cloud');
     $('login-mode').textContent = modeNote();
+    G.MicaUI.decorate();   // MicaSurvivor (M3): the "Log in with Magepunk" button
     if (G.DB.localReason !== 'mica') setTimeout(() => $('f-user').focus(), 50);
   }
 

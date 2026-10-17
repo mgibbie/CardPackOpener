@@ -438,3 +438,14 @@ a.mc-pill { text-decoration: none; }
 .mm-more.mm-all { background: #fff; color: #2b6cb0; }
 .mm-more:hover { filter: brightness(1.08); }
 .mm-left { font-size: 13px; }
+
+/* ---- MicaSurvivor (#/micasurvivor, app.js micasurvivor*View) ---- */
+.ms-hero-art { width: 96px; height: 96px; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+.ms-play { background: #2f8f4e; box-shadow: 0 3px 0 #1d6234; }
+.ms-table td .chip { margin: 0 3px 2px 0; }
+@media (max-width: 760px) { .ms-table { display: block; overflow-x: auto; } }
+.ms-moves td:last-child { min-width: 220px; }
+.ms-stars { color: #d59a3c; white-space: nowrap; }
+.ms-starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.ms-starter { background: #fff; border: 1px solid #e1e6f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+.ms-filter { padding: 6px 10px; border: 1px solid #c9d2e3; border-radius: 6px; font: inherit; width: min(320px, 100%); }

@@ -880,3 +880,7 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .pad-hint-bar span { display: inline-flex; align-items: center; gap: 5px; }
 .pad-bind { min-width: 150px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .pad-row > span { display: inline-flex; gap: 6px; }
+
+/* MicaSurvivor (M3): the Magepunk leaderboard reuses #scr-rank without the Firebase filters */
+.mica-board #rk-mode, .mica-board #rk-period, .mica-board .rk-tools { display: none; }
+.mica-back { color: var(--muted); }

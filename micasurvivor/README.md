@@ -1,9 +1,10 @@
 # MicaSurvivor
 
 MicaSurvivor is **PokéSurvivor by JPTER78** (https://github.com/JPTER78/pokesurvivor), a browser
-bullet-heaven roguelike with Pokémon Mystery Dungeon sprites, ported into the Magepunk site. This
-is phase M1 of `Plans/MICASURVIVOR_PLAN.md`: the game as-is, offline, with no network calls.
-Phase M2 adds controller support (see "Controller" below).
+bullet-heaven roguelike with Pokémon Mystery Dungeon sprites, ported into the Magepunk site
+(`Plans/MICASURVIVOR_PLAN.md`). Phase M1 is the game as-is, offline. Phase M2 adds controller
+support (see "Controller" below). Phase M3 brings it into Magepunk: the landing tile, the Pewter
+Museum arcade cabinet, Magepunk accounts and the leaderboard (see "Magepunk (M3)" below).
 
 Required Notice: Copyright 2026 JPTER78 (https://github.com/JPTER78/pokesurvivor)
 
@@ -44,9 +45,57 @@ which is a separate Pages project. Sheets load with `crossOrigin = 'anonymous'`,
 
 ## Saves
 
-The game saves to localStorage only. Every key starts with `micasurvivor_` (upstream used
-`ps.`). The main save is `micasurvivor_save.guest`. In M3 this moves to `/api/mp` for logged-in
-players.
+Every localStorage key starts with `micasurvivor_` (upstream used `ps.`). A guest's save is
+`micasurvivor_save.guest` and stays in the browser (a guest makes no network request at all). A
+player logged into Magepunk saves to their account (see "Magepunk (M3)").
+
+## Magepunk (M3)
+
+- **Landing tile**: `index.html` (art: `icons/tile.png`, a sprite composite drawn by
+  `tools/micasurvivor/make_art.mjs` from the game's own SpriteCollab sheets), with the "Based on
+  PokéSurvivor by JPTER78" credit. Also in `sitemap.xml`.
+- **Arcade cabinet**: the Pewter Museum 1F lobby, `overworld/arcade.js` (15,8), against the foot of
+  the reception counter; played from (14,8). Sprite `overworld/fx/micasurvivorbox.png` (20x32, same
+  script). Interacting saves party + position and opens `/micasurvivor/?direct=1`; with `?direct=1`
+  the game's "Back to the overworld" links (login screen, menu) go to `/overworld/`, otherwise
+  "Back to Magepunk" goes to `/`.
+- **Accounts** (`js/mica/account.js` + the Magepunk mode in `js/core/db.js`): with the site's
+  login in localStorage (`magepunk_mp_token_v1` + `magepunk_mp_state_v1`) the game skips the login
+  screen and plays as that user (the user pill shows the username). The save is the server row
+  `micasurvivor:<user>` (`POST /api/mp` `micasurvivor-save-get` / `micasurvivor-save-put`: logged
+  in only, exact key from the token, 400 KB cap, 30 writes a minute), and this browser keeps a copy
+  under `micasurvivor_save.mp:<user>` (cache and offline play) with the row's revision under
+  `micasurvivor_rev.mp:<user>`. Writes are debounced (a purchase or pull ~3 s, a finished run ~2 s,
+  anything else ~30 s) and flushed when the tab is hidden or closed.
+- **Merge strategy**: every write is a compare-and-set on the row's `rev` (one atomic SQL
+  statement). A device that has not seen the latest revision gets **409** with the stored save; it
+  merges the two with upstream's own `merge()` and writes again on the new revision, so a second
+  device never silently overwrites the first. `merge()` never loses progress: owned Pokémon,
+  shinies, legendaries, arenas, items, evolved moves and achievements are unioned; upgrades, stats
+  and records keep the max; Pokémonedas and tickets come from the per-device ledger (`save.led`,
+  earned / spent per device, the max of each entry, the balance is the sum), so coins earned on two
+  devices both count and a spend is never undone; the partner and other choices come from the most
+  recently updated save. On boot the server copy and the local copy are merged the same way. Back in
+  a tab after 5+ minutes, the menu pulls and merges what another device saved.
+- **Guest -> account**: a guest save in this browser is offered to the account **once**
+  (`#scr-carry`). An empty account takes it over (its own starting ledger entries zeroed, so no
+  extra 500 coins appear later); an account with progress is merged with it (the guest ledger
+  re-keyed `g.<device>` so both balances add up; the account's own choices win). The account save
+  is backed up first to `micasurvivor_backup.mp:<user>.<time>`; the guest save is never deleted; the
+  answer is remembered in `micasurvivor_migrated.guest`.
+- **Log out / Delete account** stay hidden: a Magepunk player's account belongs to the site
+  (Settings -> Account shows "Magepunk account", the username, and a link to Magepunk instead).
+  Upstream's "What's new" stays hidden too (it is PokéSurvivor's own changelog).
+- **Leaderboard**: `run-score` mode `micasurvivor` on the site's run boards: a clean solo run of
+  2+ minutes (upstream's `MIN_T`, and its anti-tamper `clean()`) sends `{time, kills, level, dex,
+  shiny}`; the board ranks by survival time, then kills; a time past 4 hours is refused. The menu's
+  Ranking item opens the board (top 50 + your rank) in place of upstream's Firebase boards. Friends
+  and co-op still say "Coming soon".
+- **Design wiki**: `#/micasurvivor` (overview, Pokémon, Moves, Items & Upgrades), data generated by
+  `node tools/micasurvivor/gen_designwiki.mjs` into `designwiki/data/micasurvivor.json` — rerun it
+  after changing `js/data`.
+- **Magepunk News**: `tools/gen-magepunknews.mjs` announces the launch on the commit that first
+  adds `js/mica/account.js` (entry kind `micasurvivor`).
 
 ## What changed from upstream
 
@@ -59,15 +108,17 @@ Every edit is marked `MicaSurvivor` in a comment:
   `version.json`, `dev.html`, `js/app.min.js`, `tools/`, GDD.md and `assets/og-image.jpg`.
 - `js/core/db.js`: the Firebase cloud is stubbed (`initCloud` returns false, so the game never
   loads the SDK). The upstream body is kept, never called, to keep the diff small. "Play" is a
-  **persistent** local guest profile, where upstream's guest save lived only in memory.
+  **persistent** local guest profile, where upstream's guest save lived only in memory. (M3) A
+  Magepunk mode: a logged-in player's save lives in their account (see "Magepunk (M3)").
 - `index.html`: SEO/og/ld+json and preconnects are gone. The login screen has one **Play**
-  button (password and Google login are hidden until Magepunk accounts arrive in M3). The
+  button and a "Log in with Magepunk" button (upstream's password and Google login stay hidden:
+  Magepunk accounts replace them). The
   Gmail-recovery and donation screens are gone. The legal screen is now **Credits & licences**,
   filled by `js/mica/credits.js`. The title says MicaSurvivor, with the "based on PokéSurvivor by
   JPTER78" credit on the boot screen, title screen, menu, footer and Settings → About.
 - `js/core/i18n.js`: English by default. Español is still selectable in Settings → Graphics.
-- `js/ui/social-ui.js`, `js/ui/menu.js`: Friends, co-op and Ranking show "Coming soon"
-  (they need the cloud).
+- `js/ui/social-ui.js`, `js/ui/menu.js`: Friends and co-op show "Coming soon" (they need the
+  cloud). `js/ui/ranking-ui.js`: the Ranking opens the Magepunk leaderboard (M3).
 - `js/net/net.js`: no STUN servers, so the game makes no external request even if co-op code runs.
 - `js/main.js`, `js/game.js`: no service worker, no SupportUI or Updater.
 - `js/core/sprites.js`: `crossOrigin = 'anonymous'` on sprite sheets.
@@ -134,4 +185,14 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   API: the guest gate, title to run with the pad only, every menu screen, the gacha, layouts, remap
   with swap-on-conflict surviving a reload, stick and D-pad movement, pause, level-up reroll and
   pick, glyphs switching between keys and pad, rumble, and hot-plug.
+- `node overworld/tests/micasurvivor_server_test.mjs` (M3): the save actions (login, exact key,
+  shape, size cap, 409 on a stale revision, one winner in a race, rate limit), the `micasurvivor`
+  board, and the wiring (cabinet tiles, sprite, landing tile, sitemap).
+- `node overworld/tests/micasurvivor_account_test.mjs` (M3): the real server in the loop — playing
+  as the Magepunk user, two devices merging, the guest carry-over (take over / merge / decline),
+  the leaderboard screen.
+- `node overworld/tests/micasurvivor_arcade_test.mjs` (M3): the Pewter Museum cabinet, walked to
+  and opened with the overworld controller, and the way back.
+- `designwiki_micasurvivor_test.mjs` and `magepunknews_micasurvivor_test.mjs` (M3): the wiki
+  section and the news entry.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.
