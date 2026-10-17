@@ -114,14 +114,19 @@ G.Player = class Player {
   // MicaSurvivor (M5): la habilidad multiplica ataque (daño, Autoestima, Competitivo) y velocidad,
   // y suma defensa y regeneración (main.gd _atk / _spd / _reduction / _regen).
   // (M5 lote 3: Seguro Debilidad ×1,5 mientras dura.)
-  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) * G.Abilities.atkK(this) * (this.wpT > 0 ? G.Items.WPOLICY.atk : 1); }
+  // (M5 lote 5, main.gd _atk / _spd / _cd / _reduction: Dynamax ×1,3 de daño y velocidad, recargas ÷1,3
+  // y +23,08 % de defensa. Se lee de pl.dyn al momento: al acabar vuelve todo exactamente a lo de antes.)
+  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) * G.Abilities.atkK(this) * (this.wpT > 0 ? G.Items.WPOLICY.atk : 1) * (this.dyn ? G.Dynamax.DMG_K : 1); }
   get spd() {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
-    return s * slow * w * G.Abilities.spdK(this);
+    return s * slow * w * G.Abilities.spdK(this) * (this.dyn ? G.Dynamax.STAT_K : 1);
   }
-  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount + G.Abilities.taken(this)); }
+  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount + G.Abilities.taken(this) + (this.dyn ? G.Dynamax.TAKEN : 0)); }
+  /** Multiplicador de recarga: el guardado (mejoras, cartas, objetos, poderes) ÷ 1,3 con el Dynamax. */
+  get cdMul() { return this.dyn ? this._cdMul / G.Dynamax.STAT_K : this._cdMul; }
+  set cdMul(v) { this._cdMul = this.dyn ? v * G.Dynamax.STAT_K : v; }
   get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount + G.Abilities.regen(this); }
 
   // ---------------- movimientos ----------------
@@ -526,7 +531,7 @@ G.Player = class Player {
       ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.5, this.r * 0.6, 0, 0, 6.2832); ctx.stroke();
       ctx.restore();
     }
-    G.Sprites.drawShadow(ctx, this.dex, this.x, this.y);
+    G.Sprites.drawShadow(ctx, this.dex, this.x, this.y, this.dynScale ? this.dynScale[0] : 1);   // (M5 lote 5: gigante con el Dynamax)
     // Poder de altar: aro de su color latiendo bajo los pies.
     if (this.power && !this.dead) {
       ctx.save();
@@ -538,7 +543,12 @@ G.Player = class Player {
 
     // (Durante el Movimiento Z no parpadea: la invulnerabilidad es del Z.)
     const alpha = this.invuln > 0 && !this.dead && !(G.ZMoves && G.ZMoves.busy && !this.remote) ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
+    // MicaSurvivor (M5 lote 5): Dynamax — el aura detrás y el sprite gigante (escala desde los pies).
+    const ds = this.dynScale;
+    if (ds) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(ds[0], ds[1]); ctx.translate(-this.x, -this.y); }
+    if (this.dyn && !this.dead) G.Dynamax.drawAura(ctx, this.x, this.y, this.bodyH, this.r * 1.8, performance.now() / 1000);
     this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    if (ds) ctx.restore();
 
     // Arcos de buff alrededor de los pies.
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };

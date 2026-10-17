@@ -2,7 +2,7 @@
 // (designwiki/app.js micasurvivor*View), generated from the game's own data files:
 //   micasurvivor/js/data/{pokedex,starters,moves,items,upgrades}.js, js/systems/abilities.js (the
 //   passive ability of every Pokémon, M5 batch 2), js/systems/zmoves.js (the 18 Z-moves and their
-//   Z-crystal missions, M5 batch 4) (+ lang-en.js for the English
+//   Z-crystal missions, M5 batch 4), js/systems/dynamax.js (Dynamax + raid dens, M5 batch 5) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -32,7 +32,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js']) {
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -61,11 +61,17 @@ export function build() {
 	const Z = G.ZMoves;
 	const zmoves = Z.ORDER.map(t => { const m = Z.ZMIS.find(x => x.type === t); return { type: t, name: T(Z.DEF[t].name), desc: T(Z.DEF[t].desc), mission: T(m.desc) }; });
 	const zrules = { need: Z.NEED, cooldown: Z.COOLDOWN, minLevel: Z.MIN_LEVEL, bossCap: Z.BOSS_CAP, crystal: Z.CRYSTAL_P, missionCoins: Z.ZMIS_COINS };
+	// (M5 batch 5: Dynamax and its raid dens)
+	const D = G.Dynamax;
+	const dynrules = { dur: D.DUR, minLevel: D.MIN_LEVEL, cooldown: D.COOLDOWN, statK: D.STAT_K, hpBonus: D.HP_BONUS, taken: D.TAKEN, grow: D.GROW, pulse: D.PULSE,
+		pulseR: D.PULSE_R, bigR: D.BIG_R, bigK: D.BIG_K, denRate: D.DEN_RATE, denTtl: D.DEN_TTL, denFrom: D.DEN_FROM, denScale: D.DEN_SCALE,
+		reward: { orbs: D.DEN_REWARD.orbs, items: D.DEN_REWARD.items, tickets: D.DEN_REWARD.tickets, coins: D.DEN_REWARD.coins * D.DEN_REWARD.coinValue },
+		status: Object.entries(D.STATUS).map(([t, [cc, poison, slow]]) => ({ type: t, cc, poison, slow })) };
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
 		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
-		starters, moves, zmoves, zrules, items, upgrades, abilities, pokemon,
+		starters, moves, zmoves, zrules, dynrules, items, upgrades, abilities, pokemon,
 	};
 }
 

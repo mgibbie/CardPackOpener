@@ -11,8 +11,10 @@
  *     cancel, reroll, zmove (M5 batch 4: the Z-move, L3 like the port; in a run the port's
  *     extras also fire it: the top face button (reroll's) and an unbound right trigger).
  *     Layouts Xbox / PlayStation / Nintendo (Nintendo swaps confirm and cancel: the RIGHT
- *     face button confirms, the site standard). The port's ban / swap / dynamax come with
- *     their M5 batches (in-run card ban, team mode, Dynamax). A map saved before an action
+ *     face button confirms, the site standard). dynamax (M5 batch 5: View / Back / Share / −
+ *     like the port's JOY_BUTTON_BACK; in a run an unbound left trigger and an unbound left face
+ *     button (X / Square / Y, the port's ban button) also fire it). The port's ban / swap come
+ *     with their M5 batches (in-run card ban, team mode). A map saved before an action
  *     existed keeps its buttons; the new action takes its default (or the first free button).
  *   - Remap with swap-on-conflict + reset, in Settings > Controls; saved with the
  *     game's settings (micasurvivor_settings: padLayout, padMap, padRumble).
@@ -36,11 +38,11 @@ G.Pad = (() => {
   const SIGNED_IN_ONLY = true;
   const LAYOUTS = ['xbox', 'playstation', 'nintendo'];
   const LAYOUT_NAME = { xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
-  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'zmove'];
+  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'zmove', 'dynamax'];
   const LABELS = {
     prev: 'Movimiento anterior', next: 'Movimiento siguiente', pause: 'Pausa',
     confirm: 'Aceptar / elegir', cancel: 'Atrás / cancelar', reroll: 'Cambiar cartas',
-    zmove: 'Movimiento Z'
+    zmove: 'Movimiento Z', dynamax: 'Dynamax'
   };
   // Buttons an action may take (W3C standard mapping). The D-pad always moves /
   // navigates and Guide belongs to the system.
@@ -60,8 +62,8 @@ G.Pad = (() => {
   }
   function defaults(lay = layout()) {
     const n = lay === 'nintendo';
-    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK)
-    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, zmove: 10 };
+    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK; dynamax: View / Back, pad.gd JOY_BUTTON_BACK)
+    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, zmove: 10, dynamax: 8 };
   }
   function map() {
     const m = G.Settings.get('padMap');
@@ -108,6 +110,10 @@ G.Pad = (() => {
     if (t[8] == null) t[8] = 'back';
     // MicaSurvivor (M5 batch 4, main.gd _z_poll): the right trigger with nothing on it fires the Z-move in a run.
     if (t[7] == null) t[7] = 'ztrigger';
+    // MicaSurvivor (M5 batch 5, main.gd _dyn_poll / 676): the left trigger and the left face button
+    // (the port's ban button) with nothing on them fire Dynamax in a run.
+    if (t[6] == null) t[6] = 'dtrigger';
+    if (t[2] == null) t[2] = 'dynx';
     return t;
   }
 
@@ -598,6 +604,8 @@ G.Pad = (() => {
     // MicaSurvivor (M5 batch 4): the Z-move; in a run the port also fires it with Y / Triangle (the
     // reroll button, which only rerolls on the card screen) and the right trigger.
     else if ((a === 'zmove' || a === 'reroll' || a === 'ztrigger') && G.ZMoves) G.ZMoves.tryStart(pl);
+    // MicaSurvivor (M5 batch 5): Dynamax; in a run the port also fires it with the left trigger and X / Square.
+    else if ((a === 'dynamax' || a === 'dtrigger' || a === 'dynx') && G.Dynamax) G.Dynamax.tryStart(pl);
     else if (a === 'pause' || a === 'back') game.togglePause();
   }
 

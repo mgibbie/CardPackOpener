@@ -802,5 +802,17 @@ G.I18n.add({
   'Derrota a 4 jefes en el Rush de Jefes.': 'Defeat 4 bosses in Boss Rush.', 'Supera el piso 8 de la Torre de pisos.': 'Clear floor 8 of the Floor Tower.',
   'Gana 5 peleas en grietas.': 'Win 5 fights in rifts.', 'Aguanta 12 minutos en una partida.': 'Survive 12 minutes in a run.',
   'Vence a 3 legendarios distintos.': 'Defeat 3 different legendaries.', 'Aguanta 8 minutos en Supervivencia por tipo.': 'Survive 8 minutes in Type Survival.',
-  'Aguanta 8 minutos en Modo Equipo.': 'Survive 8 minutes in Team Mode.'
+  'Aguanta 8 minutos en Modo Equipo.': 'Survive 8 minutes in Team Mode.',
+  // ---------------- MicaSurvivor M5 lote 5: Dynamax y guaridas Dynamax (port de Android, lang_en.json) ----------------
+  '¡Dynamax listo!': 'Dynamax ready!',
+  '¡Has desbloqueado el Dynamax! Botón MAX, tecla C o gatillo izquierdo (desde el nivel {x})': 'You unlocked Dynamax! MAX button, C key or left trigger (from level {x})',
+  '¡Guarida superada! Caramelo Dynamax: puedes usar el Dynamax otra vez': 'Den cleared! Dynamax Candy: you can use Dynamax again',
+  '¡SE HA ABIERTO UNA GUARIDA DYNAMAX!': 'A DYNAMAX DEN HAS OPENED!',
+  'Sigue la flecha roja: dentro te espera un Pokémon gigante': 'Follow the red arrow: a giant Pokémon awaits inside',
+  'GUARIDA · {x} m · {x} s': 'DEN · {x} m · {x} s', 'GUARIDA · {x} s': 'DEN · {x} s', 'GUARIDA ·': 'DEN ·', 'Guarida ·': 'Den ·',
+  '¡{x} Dynamax te desafía!': 'Dynamax {x} challenges you!', 'Has entrado en la guarida…': 'You entered the den…',
+  'Desbloqueado': 'Unlocked', 'Vence una guarida Dynamax: {x}/1': 'Clear a Dynamax den: {x}/1',
+  'Guaridas Dynamax vencidas: {x}': 'Dynamax dens cleared: {x}',
+  'Cada 4 minutos (desde el nivel {x}): tu Pokémon se vuelve gigante {x} s con +30% a todos sus atributos y lanza ondas Max de su tipo. Cada guarida Dynamax vencida lo recarga al instante.':
+    'Every 4 minutes (from level {x}): your Pokémon turns giant for {x} s with +30% to all its stats and fires Max waves of its type. Every Dynamax den you clear recharges it instantly.'
 });

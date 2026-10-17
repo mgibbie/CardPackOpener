@@ -3,7 +3,8 @@
  *   Misiones  3 diarias + 2 semanales, con barra, premio y botón de recoger
  *   Logros    medallas por categoría; los legendarios, uno a uno con su sprite
  *   Perfil    tus 3 favoritos y tu título; vista previa del perfil público
- *   Cristales Z  las 18 misiones de Cristal Z (MicaSurvivor M5 lote 4, menu.gd _goals_zcrystals)
+ *   Cristales Z  las 18 misiones de Cristal Z (MicaSurvivor M5 lote 4, menu.gd _goals_zcrystals) y la
+ *                ficha del Dynamax (M5 lote 5: desbloqueado o "vence una guarida", guaridas vencidas)
  * y la ventana del perfil público de cualquier jugador (G.ProfileUI.show).
  */
 (() => {
@@ -153,6 +154,18 @@
       const nd = Z.ZMIS.filter(zm => Z.zdone(zm, s)).length;
       box.insertAdjacentHTML('beforeend', `<p class="sub">Cristales Z: ${nd} / ${Z.ZMIS.length}</p>
         <p class="sub">Cumple la misión de un tipo para desbloquear su movimiento Z. También se desbloquea derrotando a 250 Pokémon de ese tipo o con un cristal del gacha.</p>`);
+      // MicaSurvivor (M5 lote 5, menu.gd 3167-3171, la ficha "Z y Dynamax"): el Dynamax y sus guaridas.
+      const D = G.Dynamax;
+      if (D) {
+        const dn = (s.stats && s.stats.dens) || 0, dok = D.unlocked(s);
+        const dg = document.createElement('div');
+        dg.className = 'ach-grid dyn-card';
+        dg.innerHTML = `<div class="ach dyn${dok ? ' ok' : ''}" data-dyn="1"><span class="dyn-ic${dok ? '' : ' off'}">MAX</span>
+          <div class="a-txt"><b>Dynamax</b><small>Cada 4 minutos (desde el nivel ${D.MIN_LEVEL}): tu Pokémon se vuelve gigante ${D.DUR} s con +30% a todos sus atributos y lanza ondas Max de su tipo. Cada guarida Dynamax vencida lo recarga al instante.</small>
+            <div class="a-rw">${dok ? 'Desbloqueado' : `Vence una guarida Dynamax: ${Math.min(dn, 1)}/1`}</div>
+            <small>Guaridas Dynamax vencidas: ${dn}</small></div></div>`;
+        box.appendChild(dg);
+      }
       const grid = document.createElement('div');
       grid.className = 'ach-grid zc-missions';
       for (const zm of Z.ZMIS) {

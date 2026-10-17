@@ -915,3 +915,8 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .z-pick button { justify-content: center; font-size: 13px; }
 .ach.zc .zc-ic { flex: 0 0 52px; display: flex; justify-content: center; }
 .ach.zc.unlocked:not(.ok) { border-color: rgba(127,224,255,.45); }
+/* MicaSurvivor M5 lote 5: la ficha del Dynamax (pestaña Cristales Z) */
+.dyn-card { margin-bottom: 10px; }
+.ach.dyn { border-color: rgba(255,61,110,.55); }
+.dyn-ic { flex: 0 0 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; background: #240812; border: 3px solid #ff3d6e; box-shadow: 0 0 12px rgba(255,61,110,.55); }
+.dyn-ic.off { color: #999ead; border-color: #808594; box-shadow: none; }

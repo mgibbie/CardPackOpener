@@ -174,6 +174,9 @@
         if (this.shiny) { G.FX.burst(this.x, cy, '#ffe9a0', 30, 220); G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5); }
         return;
       }
+      // MicaSurvivor (M5 lote 5, main.gd _drop -> _den_down): el jefe de una guarida Dynamax no suelta
+      // nada al caer; el premio de la guarida lo da G.Dynamax.denDown (rift.js won).
+      if (this.den) { G.Audio.sfx('bossDown'); return; }
       // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
       if (this.boss && !this.judge) {
         G.Camera.kick(0.9);
@@ -468,6 +471,8 @@
         } else {
           id = dist < 115 ? 'slam' : dist < 430 ? G.U.pick(ai.ranged) : null;
         }
+        // MicaSurvivor (M5 lote 5, main.gd 4216): el jefe de una guarida a veces usa su Movimiento Max.
+        if (id && this.def.dyna && dist < 520 && Math.random() < G.Dynamax.DEN_MAXMOVE) id = 'maxmove';
         if (id) this.bossStart(id, pl);
       }
       return [vx, vy, 'Walk'];
@@ -522,6 +527,23 @@
                             delay: 1.0, dmg: this.shotDmg() * 1.2, type, color: col });
           }
           c.wind = 1.0; c.after = 0.25; this.anim.play('Charge', { speed: 1.1 });
+          break;
+        }
+        case 'maxmove': {  // MicaSurvivor (M5 lote 5, main.gd 4263): dos anillos de explosiones alrededor (con huecos)
+          c.wind = 1.5 * f; c.after = 0.6;
+          this.anim.play('Charge', { speed: 0.9 });
+          G.FX.ring(this.x, this.y, this.r, this.r * 4, col, c.wind, 3);
+          const md = this.shotDmg() * 1.4, a0 = Math.random() * 6.2832;
+          G.Hazards.add({ kind: 'zone', x: this.x, y: this.y, r: 110 + this.r, delay: 1.3 * f, dmg: md, type, color: col });
+          for (let i = 0; i < 6; i++) {
+            const a1 = a0 + 6.2832 * i / 6;
+            G.Hazards.add({ kind: 'zone', x: this.x + Math.cos(a1) * 190, y: this.y + Math.sin(a1) * 0.85 * 190, r: 62, delay: 1.4 * f, dmg: md, type, color: col });
+          }
+          for (let i = 0; i < 9; i++) {
+            const a2 = a0 + 0.3 + 6.2832 * i / 9;
+            G.Hazards.add({ kind: 'zone', x: this.x + Math.cos(a2) * 330, y: this.y + Math.sin(a2) * 0.85 * 330, r: 56, delay: 1.7 * f, dmg: md, type, color: col });
+          }
+          G.Camera.shake = Math.max(G.Camera.shake, 5 / 7);
           break;
         }
         case 'volley':     // abanico de disparos
@@ -694,6 +716,30 @@
       }
     }
 
+    /**
+     * MicaSurvivor (M5 lote 5): el sprite teñido de rojo del jefe de una guarida (el port: modulate
+     * 1.25 / 0.8 / 0.95). Se pinta en un lienzo aparte y se tiñe sólo donde hay sprite (source-atop).
+     */
+    drawTinted(ctx, lift, alpha) {
+      const S = Math.ceil(Math.max(256, this.bodyH * 3));
+      const oc = Enemy.tintCanvas || (Enemy.tintCanvas = document.createElement('canvas'));
+      if (oc.width < S) { oc.width = S; oc.height = S; }
+      const o = oc.getContext('2d');
+      o.setTransform(1, 0, 0, 1, 0, 0);
+      o.clearRect(0, 0, oc.width, oc.height);
+      o.imageSmoothingEnabled = false;
+      const ox = Math.round(S / 2), oy = Math.round(S * 0.8);
+      this.anim.draw(o, ox, oy, { flash: this.flash > 0 });
+      o.globalCompositeOperation = 'source-atop';
+      o.fillStyle = 'rgba(255,38,92,0.26)';
+      o.fillRect(0, 0, S, S);
+      o.globalCompositeOperation = 'source-over';
+      const prev = ctx.globalAlpha;
+      ctx.globalAlpha = prev * alpha;
+      ctx.drawImage(oc, 0, 0, S, S, this.x - ox, this.y - lift - oy, S, S);
+      ctx.globalAlpha = prev;
+    }
+
     draw(ctx) {
       const alpha = this.dead ? G.U.clamp(this.fade / 0.5, 0, 1) : 1;
       if (alpha <= 0) return;
@@ -713,7 +759,11 @@
       // Los que flotan ya van en el aire en su sprite: sólo se mecen un poco.
       // (Y los que saltan, en arco.)
       const lift = (this.flying && !this.boss ? 1 + Math.sin(this.bob) * 1.5 : 0) + (this.jumpLift || 0);
-      this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, alpha });
+      // MicaSurvivor (M5 lote 5, main.gd 6042-6051): el jefe de la guarida, con el aura roja detrás y
+      // teñido de rojo (modulate 1.25 / 0.8 / 0.95).
+      if (this.den && !this.dead) G.Dynamax.drawAura(ctx, this.x, this.y - lift, this.bodyH, this.r * 1.8, performance.now() / 1000 + this.id);
+      if (this.den) this.drawTinted(ctx, lift, alpha);
+      else this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, alpha });
       ctx.restore();
 
       if (this.dead) return;
