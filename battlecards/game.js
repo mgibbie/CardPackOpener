@@ -19,8 +19,9 @@ import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
-import { pickCanonicalRun, useLocalAsyncTurn } from './runsync.js';
+import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun } from './runsync.js';
 import { winLossLabel, plural } from './runlabel.js';
+import { runSummary } from './runlabel.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
 
@@ -311,17 +312,90 @@ function resumeRunSnapshot(run, byId) {
 // seconds (snapshot stripped, deduped) and the FULL run (with the mid-fight snapshot) only when you
 // leave (tab hidden / pagehide) — the moment a cross-device handoff matters.
 let _lastPushedRunJson = '';
-function pushActiveRun(withSnapshot, keepalive) {
+// A run write that MUST reach the server (a finished fight's result, the end of a
+// run): retried with backoff on anything transient — a network error, the 20 s
+// timeout, a 429 "slow down", a 5xx/garbled reply. It stops at the first answer
+// that settles it: written ({ok}), refused as stale (the server holds a newer
+// copy or the run has ended — see onRunWriteReply), or a definitive error (bad
+// key / too large). Resolves with that answer, or null when every try failed.
+const RUN_WRITE_BACKOFF = [1000, 2000, 4000, 8000, 16000];
+const isTransientRunReply = d => !d || (d.error && /slow down|bad response/i.test(String(d.error)));
+async function runWrite(action, payload, opts = {}) {
+	const waits = opts.backoff || RUN_WRITE_BACKOFF;
+	for (let i = 0; ; i++) {
+		let d = null;
+		try { d = await MPX.call(action, payload, { keepalive: !!opts.keepalive }); } catch (e) { d = null; }
+		if (!isTransientRunReply(d)) return d;
+		if (i >= waits.length) return null;
+		await new Promise(r => setTimeout(r, waits[i]));
+	}
+}
+// What a run-save's answer means for the run in this tab. Every failure used to
+// be swallowed (`.catch(() => {})` on a reply that never throws), so a refused or
+// lost save left the server behind with nobody the wiser.
+function onRunWriteReply(key, sent, json, d, mustLand) {
+	const ok = !!(d && d.ok);
+	if (!ok && _lastPushedRunJson === json) _lastPushedRunJson = ''; // not on the server: the next heartbeat resends it
+	if (ok || !d) {
+		// a lost heartbeat is simply resent next tick; a lost RESULT (all its retries spent) is said out loud
+		if (!d && mustLand && _runSyncWarned !== 'lost') { _runSyncWarned = 'lost'; banner('⚠ Could not reach the server to save this result — still trying. Keep this tab open.', 5000); try { window.reportErr?.('run result could not reach the server (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ } }
+		else if (ok) _runSyncWarned = '';
+		return;
+	}
+	const local = safeLoad(key, null);
+	const sameRun = !!(local && sent && local.runId && String(local.runId) === String(sent.runId));
+	if (d.stale && d.ended) { if (sameRun) runEndedOnServer(key, local); return; }
+	if (d.stale) {
+		// the server holds a NEWER revision of this run (another tab or device moved it on)
+		if (sameRun && d.rev != null && (local.rev || 0) < d.rev && _runSyncWarned !== 'stale') {
+			_runSyncWarned = 'stale';
+			banner('⚠ This run was continued somewhere else — reload the page to pick up the latest copy.', 6000);
+			try { window.reportErr?.('run save refused: server has a newer revision (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ }
+		}
+		return;
+	}
+	if (d.error && _runSyncWarned !== 'error') {
+		_runSyncWarned = 'error';
+		banner('⚠ The server would not save your run: ' + String(d.error).slice(0, 60), 6000);
+		try { window.reportErr?.('run save failed: ' + String(d.error).slice(0, 80) + ' (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ }
+	}
+}
+let _runSyncWarned = '';
+function pushActiveRun(withSnapshot, keepalive, mustLand) {
 	if (!MP_ON || (typeof isGuest === 'function' && isGuest())) return;
 	const io = activeRunIO(); if (!io) return;
 	const run = io.load(); if (!run || !run.active) return;
 	const toPush = withSnapshot ? run : { ...run, snapshot: undefined, snapshotAt: undefined };
 	const json = JSON.stringify(toPush);
-	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged
+	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged (and already on the server)
 	_lastPushedRunJson = json;
 	// keepalive lets the final push survive a hard tab-close (small snapshots only —
 	// keepalive caps the body at ~64KB, so large boards fall back to the local snapshot)
-	MPX.call('run-save', { key: io.key, run: toPush }, { keepalive: !!keepalive }).catch(() => {});
+	const payload = { key: io.key, run: toPush };
+	const sent = mustLand ? runWrite('run-save', payload, { keepalive: !!keepalive })
+		: MPX.call('run-save', payload, { keepalive: !!keepalive }).catch(() => null);
+	sent.then(d => onRunWriteReply(io.key, run, json, d, mustLand)).catch(() => {});
+}
+// The server ended this run (its slot holds `{ended: runId}`), but this browser
+// still has it — the writes that removed it were lost (a killed or crashed browser
+// drops recent localStorage writes). Playing on can never commit: every save of an
+// ended run is refused. Put the local copy away (stashed, never deleted) and say so.
+function endLocalRunCopy(key, local, reason) {
+	preserveRunConflict(key, local, reason);
+	const runId = String(local.runId);
+	safeSave(ENDED_RUNS_KEY, [...endedRunIds().filter(id => id !== runId), runId].slice(-50));
+	try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+}
+let _endedOnServerShown = false;
+function runEndedOnServer(key, local) {
+	endLocalRunCopy(key, local, 'server-ended');
+	const io = activeRunIO();
+	if (!io || io.key !== key || _endedOnServerShown) return;
+	_endedOnServerShown = true;
+	if (state && !state.over) state.over = true; // freeze the zombie fight: its result is already on the server
+	const el = dungeonOverlay('RUN ALREADY ENDED', `This run (${runSummary(local)}) had already ended — its result is saved on the server. This fight was a stale copy and can't change it.`);
+	el.appendChild(overlayButton('New Run', () => location.reload()));
+	updateHud();
 }
 // A finished fight's RESULT is recorded the moment the engine ends it — not when
 // the event playback reaches gameOver and its 1200 ms beat fires the mode's
@@ -353,7 +427,7 @@ function recordRunResult() {
 	run.pendingResult = { won: state.winner === HUMAN, at: Date.now(), seed: (Math.random() * 2 ** 31) >>> 0 };
 	delete run.snapshot; delete run.snapshotAt;   // the fight is over: never resume it
 	io.save(run);
-	pushActiveRun(true);
+	pushActiveRun(true, false, true);   // the result MUST reach the server: retried with backoff, never silently dropped
 }
 function settlePendingResult(run, victory, defeat, stages) {
 	const won = !!run.pendingResult.won;
@@ -373,7 +447,14 @@ function rewardRng(run, salt) {
 // a pick made mid-reward is saved with the stage it leads to, so a reload resumes there
 // instead of offering (and granting) the earlier pick again
 function rewardStage(run, stage, save) { if (run.pendingResult) { run.pendingResult.stage = stage; save(run); } }
-function serverClearRun(key, runId) { if (MP_ON) MPX.call('run-clear', runId ? { key, runId } : { key }).catch(() => {}); }
+function serverClearRun(key, runId) {
+	if (!MP_ON) return;
+	// the end of a run must land too: retried with backoff (a clear that never arrives
+	// still can't resurrect the run — its pending result, already sent, settles it)
+	runWrite('run-clear', runId ? { key, runId } : { key }).then(d => {
+		if (!d || !d.ok) banner('⚠ Could not tell the server this run ended — it will settle the next time you open the mode.', 5000);
+	}).catch(() => {});
+}
 // End a run for good. The server is told WHICH run ended (its marker refuses any
 // save of that run still in flight), and this device remembers it too, so a boot
 // never takes the finished run back from the server even if the clear itself never
@@ -389,12 +470,16 @@ function endRunKey(key) {
 	serverClearRun(key, runId);
 }
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
+const _runsEndedAtBoot = new Set();   // run keys whose stale local copy the boot put away
 async function hydrateRunsFromServer() {
 	if (!MP_ON) return;
 	try {
 		const r = await MPX.call('run-load');
 		const runs = r && r.runs;
 		if (runs && typeof runs === 'object') for (const [key, entry] of Object.entries(runs)) {
+			// the server says this very run is OVER: a local copy of it is a zombie (its
+			// removal was lost) — every save of it would be refused, so put it away now
+			if (serverEndedRun(safeLoad(key, null), entry)) { endLocalRunCopy(key, safeLoad(key, null), 'server-ended'); _runsEndedAtBoot.add(key); continue; }
 			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
 			if (entry.run.runId && endedRunIds().includes(String(entry.run.runId))) continue; // a run this device ended
 			// Pick ONE canonical copy. entry.updated_at is the server's own write stamp —
@@ -6698,6 +6783,7 @@ async function start() {
 		menuChosen = true;
 	}
 	await hydrateRunsFromServer(); // server-authoritative: refresh the localStorage run caches from D1 before booting
+	if (activeRunIO() && _runsEndedAtBoot.has(activeRunIO().key)) { log('Your last run had already ended — its result is saved on the server. Pick a new run.'); banner('Your last run had already ended — its result is saved.', 4000); }
 	if (dungeonRunMode) {
 		let run = loadRun();
 		// a saved run offers resume-or-abandon; it never locks the class choice

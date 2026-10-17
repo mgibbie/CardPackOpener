@@ -430,7 +430,12 @@ player.onBump = (tx, ty) => {
 	// a door into JohKanto before the GRAND CHAMPION crown (johkanto_gate.js)
 	if (doorBlocked(world, tx, ty)) { dialog.open(GATE_TEXT); return; }
 	const m = blockers.messageAt(tx, ty);
-	if (m) dialog.open(m);
+	if (m) { dialog.open(m); return; }
+	// deep water refuses a walker without a word on the GBA too, and a pool edge
+	// in a gym reads as "an invisible wall" (Cerulean Gym, two playtest reports
+	// 2026-10-16: the walkway north is ONE column, x=9, and both testers pushed
+	// north at x=8 and x=10 — open water — while world.isPassable said true).
+	if (!player.surfing && world.isSurfable(tx, ty)) hud.textContent = 'Deep water — you can\'t walk on it. SURF would carry you across.';
 };
 
 // EventScript_FallDownHole: the player vanishes, SE_FALL, then warphole lands you

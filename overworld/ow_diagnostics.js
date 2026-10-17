@@ -35,6 +35,25 @@ export function openCanvasMenus() {
 		tradeMenu, gcMenu, vfMenu, contestMenu, blender, pbCase, decoMenu, socialMenu, slotsMenu, phoneMenu, choiceMenu };
 	return Object.keys(m).filter(k => m[k] && m[k].open);
 }
+// The tile the player faces and what a step onto it would hit, in tryMove's
+// order. world.isPassable is COLLISION only: deep water is "passable" (a surfer
+// crosses it) yet refuses a walker. Two playtest reports (Cerulean Gym,
+// 2026-10-16) read "isPassable(8,15)=true, every gate clear" as an invisible wall
+// when (8,15) is the gym's pool — gateReport named every gate but not the tile.
+const FACE = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
+export function aheadReport() {
+	const [dx, dy] = FACE[player.facing] || [0, 0];
+	const x = player.tx + dx, y = player.ty + dy;
+	if (!world.current) return { x, y, refusal: null };
+	const passable = !!world.isPassable(x, y), water = !!world.isSurfable(x, y);
+	const refusal = (player.surfing ? !(water || passable) : !passable) ? 'wall'
+		: !player.surfing && water ? 'water (needs SURF)'
+		: player.surfing && player.facing !== 'down' && world.behaviorAt(x, y) === 0x13 ? 'waterfall'
+		: world.isCrackedFloor?.(x, y) && !player.biking && !player.canFall?.() ? 'cracked floor'
+		: player.blocked && player.blocked(x, y) ? 'object (NPC/trainer/blocker/boulder)'
+		: null;
+	return { x, y, behavior: world.behaviorAt(x, y), passable, water, refusal };
+}
 // why the last movement input was accepted or ignored, plus every gate's live value
 export function gateReport() {
 	const menus = openCanvasMenus();
@@ -58,6 +77,7 @@ export function gateReport() {
 		playerMoving: !!player.moving, moveT: player.moveT, moveOutcome: player.moveOutcome, moveDist: player.moveDist,
 		surfing: !!player.surfing, biking: !!player.biking, facing: player.facing,
 		tx: player.tx, ty: player.ty, map: world.current ? world.current.name : null,
+		ahead: aheadReport(),
 		tick: { ...tickStats },
 	};
 	r.blockedBy = r.typingInChat ? 'typingInChat'
