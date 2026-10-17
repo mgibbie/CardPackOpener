@@ -616,7 +616,7 @@
 	// behind Resume. READ-ONLY on purpose: the game page stays the single writer, so a
 	// tile can never clobber an in-flight local snapshot.
 	import * as MPT from './mpmode.js';
-	import { pickCanonicalRun } from './runsync.js';
+	import { pickCanonicalRun, serverEndedRun } from './runsync.js';
 	import { runSummary } from './runlabel.js';
 
 	const runTiles = [...document.querySelectorAll('.tile[data-run]')];
@@ -647,6 +647,8 @@
 			const key = el.getAttribute('data-run');
 			const entry = runs[key];
 			const local = localRun(key);
+			// the server ended this very run: the local copy is a stale zombie, not a run to resume
+			if (serverEndedRun(local, entry)) { paint(el, null); continue; }
 			if (!entry || !entry.run) { paint(el, local); continue; }
 			const verdict = pickCanonicalRun(local, entry.run, entry.updated_at);
 			paint(el, verdict.pick === 'local' ? local : entry.run);

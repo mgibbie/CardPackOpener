@@ -116,6 +116,21 @@ export function pickCanonicalRun(local, server, serverUpdatedAt) {
 	return decide('local', 'tie-keep-local'); // identical standing: don't clobber
 }
 
+// The server's answer that a run is OVER. Ending a run leaves `{ ended: runId }` in
+// its slot on the server (run-clear), and from then on every save of that run is
+// refused. A local copy of the SAME run is therefore a zombie: the browser lost the
+// writes that removed it (a killed/crashed browser drops recent localStorage writes),
+// so it still holds the run as it was mid-fight. Booting it replays a fight whose
+// result is already on the server, and since every save of it is refused, the replay
+// can never "commit" — Remy's Final Fantasy run: one loss, 27 identical replays,
+// "Continue the run" offered after every one (2026-10-14..16). Only the runId
+// decides: a different (newer) local run is never touched.
+export function serverEndedRun(local, entry) {
+	if (!entry || typeof entry !== 'object' || entry.run || !entry.ended) return false;
+	if (!local || typeof local !== 'object' || !local.runId) return false;
+	return String(entry.ended) === String(local.runId);
+}
+
 // Back-compat boolean wrapper: true = keep the local copy, false = take the server's.
 export function keepLocalRun(local, serverRun, serverUpdatedAt) {
 	return pickCanonicalRun(local, serverRun, serverUpdatedAt).pick === 'local';

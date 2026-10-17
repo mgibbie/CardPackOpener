@@ -2944,7 +2944,13 @@ export default async function handler(req, env) {
 		const entry = JSON.stringify({ run, updated_at: Date.now() });
 		const runId = run.runId ? String(run.runId) : null;   // legacy runs (no id) write unguarded, as before
 		const written = await store.setRunEntry('run:' + username, key, entry, runId, Number(run.rev) || 0);
-		return json(written ? { ok: true } : { ok: false, stale: true });
+		if (written) return json({ ok: true });
+		// Refused: say WHY, so the client can act instead of playing on unsaved. `ended`:
+		// this run is over (its slot holds the run-clear marker) — a local copy is a zombie
+		// whose removal the browser lost. Otherwise the server holds a newer revision
+		// (`rev`), i.e. another tab or device moved the run on. (Read only on refusal.)
+		const cur = ((await store.get('run:' + username)) || {})[key] || null;
+		return json({ ok: false, stale: true, ended: !!(cur && cur.ended && runId && String(cur.ended) === runId), rev: cur && cur.run ? (Number(cur.run.rev) || 0) : null });
 	}
 	if (action === 'run-load') {
 		return json({ runs: (await store.get('run:' + username)) || {} });
