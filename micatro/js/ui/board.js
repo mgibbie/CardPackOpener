@@ -39,6 +39,10 @@ export class Board {
     this.modLbls = new Map();
     this.raised = new Set();
     this.sel = null;
+    // The joker a consumable acts on (Balatro's G.jokers.highlighted): it stays picked while you
+    // choose a consumable or a pack card, and Use sends it (joker_targets) — Pokermon's evolution
+    // stones, Energy, Berry Juice, TM machine (a tester couldn't Dawn-Stone Charcadet from a pack).
+    this.jsel = null;
     this.view = null;
     this.backKey = 'b_red';
     this.now = performance.now() / 1000;
@@ -170,7 +174,7 @@ export class Board {
     addEventListener('pointerup', (e) => this.onUp(e));
     addEventListener('pointercancel', (e) => this.onUp(e, true));
     this.stage.addEventListener('pointerdown', (e) => {
-      if (!e.target.closest('.card') && !e.target.closest('.card-btns') && !e.target.closest('.tip')) { if (this.sel != null) { const prev = this.sel; this.sel = null; this.syncSel(prev); this.refreshSelection(); } this.hideTip(); }
+      if (!e.target.closest('.card') && !e.target.closest('.card-btns') && !e.target.closest('.tip')) { if (this.sel != null || this.jsel != null) { const prev = this.sel; this.sel = null; this.jsel = null; this.syncSel(prev); this.refreshSelection(); } this.hideTip(); }
     });
   }
 
@@ -304,7 +308,7 @@ export class Board {
     this.rowTargets(playIds, R.play, { z: 200, gap: 1.1 }).forEach((t, i) => { if (this.raised.has(playIds[i])) t.y -= this.ch * 0.2; set(playIds[i], t); });
     for (const k of ['jokers', 'consumeables']) {
       const ids = this.areas[k];
-      this.rowTargets(ids, R[k], { z: k === 'jokers' ? 300 : 320, gap: 1.06 }).forEach((t, i) => { if (this.sel === ids[i]) t.y += this.mode === 'portrait' ? 10 : 14; set(ids[i], t); });
+      this.rowTargets(ids, R[k], { z: k === 'jokers' ? 300 : 320, gap: 1.06 }).forEach((t, i) => { if (this.sel === ids[i] || (k === 'jokers' && this.jsel === ids[i])) t.y += this.mode === 'portrait' ? 10 : 14; set(ids[i], t); });
     }
     this.modAreas.forEach((a, i) => {
       const ids = this.areas[a.key] || [], r = this.modAreaRect(i);
@@ -427,6 +431,7 @@ export class Board {
       }
     }
     if (this.sel != null && !seen.has(this.sel)) this.sel = null;
+    if (this.jsel != null && !this.areas.jokers.includes(this.jsel)) this.jsel = null;
     this.raised.clear();
     // HUD
     const H = this.hud;
@@ -838,14 +843,17 @@ export class Board {
   act(a, snd) {
     if (this.readOnly || this.locked) return;
     if (a.type === 'use' || a.type === 'sell' || a.type === 'buy') a = { ...a };
-    if (a.type === 'use') a.targets = this.handHighlighted();
+    if (a.type === 'use') {
+      a.targets = this.handHighlighted();
+      if (this.jsel != null && this.areas.jokers.includes(this.jsel) && this.jsel !== a.id) a.joker_targets = [this.jsel];
+    }
     if (snd) sound.play(snd);
     const r = this.opts.onAction ? this.opts.onAction(a) : null;
     if (r && !r.ok && r.error) {
       sound.play('cancel');
       this.toast(errorText(r.error));
       if (a.id != null) { const s = this.sprites.get(a.id); if (s) s.juiceUp(0.3, 0.3); }
-    } else if (a.type === 'sell' || a.type === 'buy' || a.type === 'use') { this.sel = null; }
+    } else if (a.type === 'sell' || a.type === 'buy' || a.type === 'use') { this.sel = null; if (a.type !== 'buy') this.jsel = null; }
   }
 
   // -------------------------------------------------------- card pointer
@@ -982,6 +990,7 @@ export class Board {
       sound.play('cardSlide1', 1.1, 0.6);
       const prev = this.sel;
       this.sel = this.sel === s.id ? null : s.id;
+      if (s.area === 'jokers') this.jsel = this.sel === s.id ? s.id : null; // (other areas leave the joker picked)
       this.syncSel(prev);
       this.refreshSelection();
       if (this.sel === s.id) { if (ptype !== 'mouse') this.showCardTip(s, true); s.juiceUp(0.12, 0.1); } else this.hideTip();
