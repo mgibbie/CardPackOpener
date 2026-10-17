@@ -335,6 +335,8 @@ G.VFX = (() => {
     'confusion':     { proj: 'ring' },
     'psybeam':       { beam: 'ring' },
     'psychic':       { proj: 'ring' },
+    'hypnosis':      { aura: 'ring' },                  // MicaSurvivor (M5), como en el port (vfx.gd)
+    'dream-eater':   { aura: 'heart', inward: true },
     'sludge':        { proj: 'blob', trail: 'bubbles' },
     'poison-sting':  { proj: 'needle' },
     'toxic':         { aura: 'bubble', rise: true },

@@ -275,6 +275,8 @@ G.DB = (() => {
         m.told = m.told || o.told;
       });
     }
+    // (MicaSurvivor M5: también los derrotados por tipo, stats.tk_<tipo>: el mayor de cada uno.)
+    r.stats = r.stats || {};
     for (const k in older.stats || {}) r.stats[k] = Math.max(r.stats[k] || 0, older.stats[k] || 0);
     if (r.starter == null) r.starter = older.starter;
     if (r.personality == null) r.personality = older.personality;

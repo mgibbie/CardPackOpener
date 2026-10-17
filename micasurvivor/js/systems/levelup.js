@@ -23,6 +23,9 @@ G.LevelUp = (() => {
       apply: pl => pl.magnet *= 1.30, max: 6 },
     { id: 'xp',   icon: 'book', title: 'Aprendizaje',  desc: '+12% de experiencia ganada.',
       apply: pl => pl.xpMul *= 1.12, max: 8 },
+    // MicaSurvivor (M5, main.gd:154): Player.sizeK() lee statsTaken.size.
+    { id: 'size', icon: 'size', title: 'Calibre',      desc: '+12% de tamaño de proyectiles, orbes y áreas.',
+      apply: () => {}, max: 6 },
     { id: 'heal', icon: 'berry', title: 'Baya Zidra',   desc: 'Recupera el 45% de tu vida ahora mismo.',
       apply: pl => pl.heal(pl.maxHp * 0.45) }
   ];
@@ -44,7 +47,8 @@ G.LevelUp = (() => {
           w: 10, type: 'new', key: 'new:' + id,
           icon: 'move:' + id, color: G.U.TYPE_COLOR[d.type],
           tag: G.U.TYPE_NAME[d.type],
-          title: d.name, desc: d.desc,
+          // MicaSurvivor (M5): "Puede congelar (15%)." en su propio <span> (se traduce aparte).
+          title: d.name, desc: d.desc + (G.Status.suffix(d) ? ' <span class="cc-chance">' + G.Status.suffix(d) + '</span>' : ''),
           apply: p => p.addMove(id)
         });
       }
@@ -52,22 +56,26 @@ G.LevelUp = (() => {
 
     // --- evoluciones: movimiento al máximo + su condición cumplida ---
     const waiting = {};                   // stat -> movimiento que la espera para evolucionar
+    // MicaSurvivor (M5, main.gd:1484-1532): un movimiento puede tener dos evoluciones (la
+    // alternativa pide Calibre o la Esfera Colosal); si las dos están listas, salen las dos y
+    // el jugador elige. La que pide una stat que no tienes hace salir esa stat con aviso.
+    const hasItem = id => pl.hasItem(id);
     for (const m of pl.moves) {
-      const ev = G.Moves.evoInfo(m, pl.statsTaken);
-      if (!ev) continue;
-      if (!ev.ready) { waiting[ev.needs] = m; continue; }
-      out.push({
-        w: 40, type: 'evo', key: 'evo:' + m.id,
-        icon: 'move:' + m.id, color: '#ffd23f', tag: 'EVOLUCIÓN',
-        title: m.name + ' → ' + ev.name, desc: ev.text,
-        apply: p => {
-          G.Moves.evolve(m);
-          G.FX.ring(p.x, p.y, 8, 120, '#ffd23f', 0.8, 6);
-          G.FX.burst(p.x, p.y - p.bodyH * 0.5, '#ffe14d', 40, 240);
-          G.Audio.sfx('legend');
-          G.Progress.event('evolve', { move: m.id });
-        }
-      });
+      for (const ev of G.Moves.evoInfos(m, pl.statsTaken, hasItem)) {
+        if (!ev.ready) { if (STATS.some(s => s.id === ev.needs)) waiting[ev.needs] = m; continue; }
+        out.push({
+          w: 40, type: 'evo', key: 'evo:' + m.id + (ev.alt ? ':alt' : ''), mid: m.id, alt: ev.alt,
+          icon: 'move:' + m.id, color: '#ffd23f', tag: 'EVOLUCIÓN',
+          title: m.name + ' → ' + ev.name, desc: ev.text,
+          apply: p => {
+            if (!G.Moves.evolve(m, ev.alt)) return;
+            G.FX.ring(p.x, p.y, 8, 120, '#ffd23f', 0.8, 6);
+            G.FX.burst(p.x, p.y - p.bodyH * 0.5, '#ffe14d', 40, 240);
+            G.Audio.sfx('legend');
+            G.Progress.event('evolve', { move: m.id });
+          }
+        });
+      }
     }
 
     // --- mejoras de movimientos que ya tienes ---
@@ -111,7 +119,12 @@ G.LevelUp = (() => {
     const used = new Set();
     // Si hay una evolución lista, su carta dorada sale siempre.
     const evo = pool.findIndex(c => c.type === 'evo');
-    if (evo >= 0) { const c = pool.splice(evo, 1)[0]; used.add(c.key); picked.push(c); }
+    if (evo >= 0) {
+      const c = pool.splice(evo, 1)[0]; used.add(c.key); picked.push(c);
+      // MicaSurvivor (M5): y si ese movimiento tiene otra evolución lista, también: se elige entre las dos.
+      const twin = pool.findIndex(o => o.type === 'evo' && o.mid === c.mid);
+      if (twin >= 0 && picked.length < n) { const t = pool.splice(twin, 1)[0]; used.add(t.key); picked.push(t); }
+    }
 
     while (picked.length < n && pool.length) {
       const total = pool.reduce((a, c) => a + c.w, 0);

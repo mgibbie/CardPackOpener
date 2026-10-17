@@ -76,6 +76,8 @@
       // Rezagados: si se quedan atrás, fuera de la vista, mientras huyes,
       // vuelven a salir por delante (ver EnemyMgr.update).
       this.lagT = 0;
+      // MicaSurvivor (M5): congelado / paralizado / dormido / confundido (systems/status.js).
+      G.Status.init(this);
     }
 
     cy() { return this.y; }
@@ -99,6 +101,8 @@
     /** @param eff  'super' | 'weak' | null (tabla de tipos, sólo para enseñarlo) */
     hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null) {
       if (this.dead) return;
+      // MicaSurvivor (M5): congelado recibe un 25 % más (main.gd _damage_enemy).
+      if (this.frozenT > 0) amount *= G.Status.FROZEN_TAKEN;
       const d = Math.max(1, Math.round(amount));
       // Copia de un enemigo del anfitrión: el golpe se le manda a él, que es
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
@@ -247,8 +251,10 @@
           G.FX.twinkle(this.x + G.U.rand(-this.r, this.r) * 1.2, this.y - G.U.rand(4, this.bodyH * 1.1));
         }
       }
-      if (this.touchCd > 0) this.touchCd -= dt;
+      // MicaSurvivor (M5): paralizado, ataca 2,5 veces más lento.
+      if (this.touchCd > 0) this.touchCd -= dt * (this.paraT > 0 ? G.Status.PARA_SLOW : 1);
       this.bob += dt * 6;
+      G.Status.tick(this, dt);
 
       // --- estados ---
       if (this.slowT > 0) { this.slowT -= dt; if (this.slowT <= 0) this.slow = 0; }
@@ -276,7 +282,19 @@
         } else if (le.slow) terrainMul = le.slow < 0.5 ? 0.45 : 0.55;
       }
 
-      const spd = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
+      const spd0 = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
+      // MicaSurvivor (M5): estados de control (main.gd _enemy_step). Congelado o dormido no se
+      // mueve ni ataca (sólo lo empujan los golpes); confundido vaga y pega a otros enemigos;
+      // paralizado va al 40 %. (Un salto ya empezado termina antes.)
+      if (!this.jump && G.Status.stunned(this)) {
+        this.x += this.kx * dt; this.y += this.ky * dt;
+        this.kx *= Math.pow(0.0015, dt); this.ky *= Math.pow(0.0015, dt);
+        if (!this.flying) G.World.collide(this);
+        this.anim.loop('Idle', 0.05);
+        return;
+      }
+      if (!this.jump && this.confT > 0) { G.Status.confusedStep(this, dt, spd0); return; }
+      const spd = spd0 * (this.paraT > 0 ? G.Status.PARA_SLOW : 1);
       let [dx, dy] = G.U.norm(pl.x - this.x, pl.y - this.y);
       const dist = G.U.dist(this.x, this.y, pl.x, pl.y);
       // Duende del tesoro: huye de ti (en zigzag) en cuanto te acercas.
@@ -365,7 +383,7 @@
         const [ddx, ddy] = G.U.norm(pl.x - this.x, pl.y - this.y);
         if (dist < keep * 0.75) { vx = -ddx * spd * 0.8; vy = -ddy * spd * 0.8; }
         else if (dist < keep) { vx *= 0.1; vy *= 0.1; animBase = 'Idle'; }
-        this.shotCd -= dt;
+        this.shotCd -= dt * (this.paraT > 0 ? G.Status.PARA_SLOW : 1);
         if (this.shotCd <= 0 && dist < range) {
           this.shotCd = this.def.shotCd || 2;
           this.special(pl, ddx, ddy);
@@ -716,6 +734,9 @@
         ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.2, this.r * 0.5, 0, 0, 6.2832); ctx.fill();
         ctx.restore();
       }
+
+      // MicaSurvivor (M5): indicadores de congelado / dormido / confundido / paralizado.
+      G.Status.draw(ctx, this, lift);
 
       // Apoyos: icono encima, para saber a quién ir primero.
       const SUP = { healer: 'heart', shielder: 'shield', summoner: 'friends' };

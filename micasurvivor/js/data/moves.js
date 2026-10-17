@@ -193,34 +193,43 @@
     // (Antes Gigadrenado: curaba con cada golpe y estaba roto. Mismo id para no romper partidas.)
     { id: 'giga-drain', name: 'Hierba Lazo', type: 'grass', kind: 'aura',
       desc: 'Raíces que atrapan y machacan todo lo que tienes cerca.',
-      cd: 0.55, dmg: 9, radius: 76 },
+      cd: 0.55, dmg: 9, radius: 76, cc: 'sleep', ccp: 0.06 },
 
     // ---------------- ELÉCTRICO ----------------
     { id: 'thunder-shock', name: 'Impactrueno', type: 'electric', kind: 'projectile',
       desc: 'Descarga rapidísima que atraviesa varios enemigos.',
-      cd: 0.40, dmg: 13, speed: 480, count: 1, spread: 0.08, pierce: 2, life: 1.1, size: 5 },
+      cd: 0.40, dmg: 13, speed: 480, count: 1, spread: 0.08, pierce: 2, life: 1.1, size: 5, cc: 'para', ccp: 0.18 },
 
     { id: 'discharge', name: 'Chispazo', type: 'electric', kind: 'aura',
       desc: 'Campo eléctrico permanente alrededor de ti.',
-      cd: 0.45, dmg: 8, radius: 70 },
+      cd: 0.45, dmg: 8, radius: 70, cc: 'para', ccp: 0.07 },
 
     { id: 'thunderbolt', name: 'Rayo', type: 'electric', kind: 'chain',
       desc: 'Un rayo que salta de un enemigo a otro.',
-      cd: 0.95, dmg: 21, count: 4, radius: 140 },
+      cd: 0.95, dmg: 21, count: 4, radius: 140, cc: 'para', ccp: 0.15 },
 
     // ---------------- PSÍQUICO ----------------
     // (11-10-2026: -22/-30 % de daño y persiguen menos; llenaban el ranking.)
     { id: 'confusion', name: 'Confusión', type: 'psychic', kind: 'projectile',
       desc: 'Onda que persigue sola a su objetivo.',
-      cd: 0.58, dmg: 13, speed: 280, count: 1, spread: 0.1, pierce: 0, life: 2.2, size: 8, homing: 2.0 },
+      cd: 0.58, dmg: 13, speed: 280, count: 1, spread: 0.1, pierce: 0, life: 2.2, size: 8, homing: 2.0, cc: 'conf', ccp: 0.14 },
 
     { id: 'psybeam', name: 'Psicorrayo', type: 'psychic', kind: 'beam',
       desc: 'Rayo psíquico ancho y contundente.',
-      cd: 1.15, dmg: 17, radius: 215, width: 40 },
+      cd: 1.15, dmg: 17, radius: 215, width: 40, cc: 'conf', ccp: 0.12 },
 
     { id: 'psychic', name: 'Psíquico', type: 'psychic', kind: 'nova',
       desc: 'Estallido mental radial que busca enemigos.',
-      cd: 1.35, dmg: 10, speed: 230, count: 12, pierce: 1, life: 1.6, size: 7, homing: 1.0 },
+      cd: 1.35, dmg: 10, speed: 230, count: 12, pierce: 1, life: 1.6, size: 7, homing: 1.0, cc: 'conf', ccp: 0.10 },
+
+    // MicaSurvivor (M5): Hipnosis y Come Sueños, del port de Android (moves_data.gd:30-31).
+    { id: 'hypnosis', name: 'Hipnosis', type: 'psychic', kind: 'aura',
+      desc: 'Ondas hipnóticas que pueden dormir a los enemigos cercanos.',
+      cd: 1.1, dmg: 5, radius: 120, cc: 'sleep', ccp: 0.3 },
+
+    { id: 'dream-eater', name: 'Come Sueños', type: 'psychic', kind: 'aura',
+      desc: 'Devora los sueños: solo golpea a enemigos dormidos, con mucho daño, y te cura.',
+      cd: 0.7, dmg: 46, radius: 150, dream: 1, heal: 0.012, cc: 'sleep', ccp: 0 },
 
     // ---------------- TIPOS SECUNDARIOS ----------------
     { id: 'sludge', name: 'Residuos', type: 'poison', kind: 'projectile',
@@ -287,11 +296,11 @@
     // ---------------- HIELO ----------------
     { id: 'ice-beam', name: 'Rayo Hielo', type: 'ice', kind: 'beam',
       desc: 'Rayo helado que congela casi del todo.',
-      cd: 1.1, dmg: 20, radius: 220, width: 30, slow: 0.7 },
+      cd: 1.1, dmg: 20, radius: 220, width: 30, slow: 0.7, cc: 'freeze', ccp: 0.15 },
 
     { id: 'powder-snow', name: 'Nieve Polvo', type: 'ice', kind: 'aura',
       desc: 'Ventisca a tu alrededor que ralentiza.',
-      cd: 0.55, dmg: 8, radius: 76, slow: 0.45 },
+      cd: 0.55, dmg: 8, radius: 76, slow: 0.45, cc: 'freeze', ccp: 0.07 },
 
     // ---------------- LUCHA ----------------
     { id: 'karate-chop', name: 'Golpe Kárate', type: 'fighting', kind: 'melee',
@@ -305,7 +314,7 @@
     // ---------------- FANTASMA ----------------
     { id: 'lick', name: 'Lengüetazo', type: 'ghost', kind: 'melee',
       desc: 'Lametazo espectral que paraliza un poco.',
-      cd: 0.48, dmg: 12, radius: 48, arc: 1.8, slow: 0.4 },
+      cd: 0.48, dmg: 12, radius: 48, arc: 1.8, slow: 0.4, cc: 'para', ccp: 0.2 },
 
     { id: 'shadow-ball', name: 'Bola Sombra', type: 'ghost', kind: 'projectile',
       desc: 'Esfera oscura que atraviesa a varios.',
@@ -349,7 +358,7 @@
 
     { id: 'night-shade', name: 'Tinieblas', type: 'dark', kind: 'aura',
       desc: 'Una sombra te rodea y consume lo cercano.',
-      cd: 0.5, dmg: 9, radius: 72 },
+      cd: 0.5, dmg: 9, radius: 72, cc: 'sleep', ccp: 0.08 },
 
     // ---------------- NUEVOS (2026-10-10): mismas formas, otras mecánicas ----------------
     { id: 'bonemerang', name: 'Huesomerang', type: 'ground', kind: 'boomerang',
@@ -370,7 +379,7 @@
 
     { id: 'hail', name: 'Granizo', type: 'ice', kind: 'meteor',
       desc: 'Bolas de hielo caen sobre los enemigos y los frenan.',
-      cd: 1.2, dmg: 18, count: 4, radius: 40, slow: 0.4 },
+      cd: 1.2, dmg: 18, count: 4, radius: 40, slow: 0.4, cc: 'freeze', ccp: 0.12 },
 
     { id: 'meteor-mash', name: 'Puño Meteoro', type: 'steel', kind: 'meteor',
       desc: 'Dos meteoros de acero que aplastan donde caen.',
@@ -397,7 +406,7 @@
       cd: 0.65, dmg: 6, count: 7, arc: 1.0, speed: 340, life: 0.45, size: 6, slow: 0.3 },
 
     { id: 'hex', name: 'Infortunio', type: 'ghost', kind: 'chain',
-      desc: 'Maldición que salta entre enemigos. Mucho más daño si están quemados, envenenados o frenados.',
+      desc: 'Maldición que salta entre enemigos. Mucho más daño si están quemados, envenenados, frenados o con un estado alterado.',
       cd: 0.9, dmg: 17, count: 4, radius: 150, hex: 1.7 }
   ];
 
@@ -486,7 +495,8 @@
    * carta dorada. Los potenciadores (buff) no evolucionan.
    */
   const NEED_NAME = { hp: 'Vigor', atk: 'Potencia', spd: 'Carrera', cd: 'Reflejos', def: 'Coraza',
-                      rgn: 'Síntesis', mag: 'Imán', xp: 'Aprendizaje' };
+                      rgn: 'Síntesis', mag: 'Imán', xp: 'Aprendizaje',
+                      size: 'Calibre', bigorb: 'Esfera Colosal' };   // MicaSurvivor (M5)
   const EVO = {
     'tackle': ['Derribo', 'hp'],             'quick-attack': ['Velocidad Extrema', 'spd'],
     'body-slam': ['Gigaimpacto', 'atk'],     'hyper-voice': ['Alboroto', 'cd'],
@@ -537,26 +547,98 @@
     cone:       { t: '×1,7 daño, +4 disparos y +1 perforación', m: { dmg: 1.7, count: 4, pierce: 1 } }
   };
 
-  /** ¿Puede evolucionar ya? → { name, needs, needName, text, ready } o null */
-  function evoInfo(m, statsTaken) {
+  // ---------------- MicaSurvivor (M5): del port de Android (moves_data.gd:94-118) ----------------
+  /*
+   * Segunda evolución (EVO_ALT): [nombre, condición, texto, ajustes]. La condición es una
+   * mejora de stat (Calibre) o llevar la Esfera Colosal ('bigorb'). Si las dos evoluciones
+   * de un movimiento están listas, el jugador elige entre ellas (salen las dos cartas).
+   */
+  const EVO_ALT = {
+    'gust':         ['Ciclón Colosal', 'size', '+2 orbes, ×1,5 daño, orbes mucho más grandes y el doble de empuje', { count: 2, dmg: 1.5, size: 1.5, radius: 1.2, knock: 320 }],
+    'fire-spin':    ['Vórtice Ígneo', 'bigorb', '+2 orbes, ×1,4 daño, orbes y anillo mucho más grandes', { count: 2, dmg: 1.4, size: 1.5, radius: 1.25 }],
+    'leaf-storm':   ['Huracán Floral', 'bigorb', '+2 orbes, ×1,4 daño, orbes y ciclón mucho más grandes', { count: 2, dmg: 1.4, size: 1.5, radius: 1.25 }],
+    'bulldoze':     ['Sismo Colosal', 'bigorb', '×1,5 daño, área ×1,6 y frena más a los enemigos', { dmg: 1.5, radius: 1.6, slow: 0.5 }],
+    'discharge':    ['Descarga Titánica', 'bigorb', '×1,5 daño, área ×1,6 y más probabilidad de paralizar', { dmg: 1.5, radius: 1.6, ccp: 0.12 }],
+    'flamethrower': ['Llamarada Colosal', 'bigorb', '+4 llamas, ×1,4 daño y llamas mucho más grandes', { dmg: 1.4, size: 1.8, count: 4 }],
+    'toxic':        ['Ciénaga Colosal', 'bigorb', '×2 daño, charcos enormes y mucho más duraderos', { dmg: 2.0, radius: 1.8, dur: 1.5 }],
+    'flame-wheel':  ['Rueda Colosal', 'bigorb', '×2 daño, rastro de llamas enorme y mucho más duradero', { dmg: 2.0, radius: 1.8, dur: 1.5 }],
+    'razor-leaf':   ['Hoja Colosal', 'bigorb', '+1 hoja, ×1,5 daño y hojas mucho más grandes', { dmg: 1.5, size: 1.8, count: 1 }]
+  };
+  // Ajustes extra al evolucionar (la evolución normal), además de EVO_MODS de su familia.
+  const EVO_EXTRA = {
+    'confusion':   { dmg: 1.6 },
+    'rock-throw':  { dmg: 1.6, knock: 30 },
+    'shadow-ball': { dmg: 1.3 },
+    'fairy-wind':  { dmg: 1.5 },
+    'gust':        { dmg: 1.6 }
+  };
+  // Empuje que se gana al mejorar el movimiento: nivel 1 sin empuje; desde el 2, el valor
+  // de la tabla (+50 % por cada nivel más) más el empuje propio; evolucionado, ×1,5.
+  const KNOCK_LV = { 'heat-wave': 200, 'bubble': 150, 'psychic': 150, 'mud-shot': 180, 'hyper-voice': 260,
+    'fairy-wind': 150, 'dark-pulse': 170, 'bulldoze': 200, 'bug-buzz': 140, 'hydro-pump': 180, 'flamethrower': 120,
+    'bubble-beam': 100, 'water-gun': 60, 'shadow-ball': 70, 'aura-sphere': 90, 'meteor-mash': 90, 'hail': 60,
+    'razor-leaf': 60, 'fire-spin': 70, 'leaf-storm': 70 };
+
+  /** Empuje efectivo de una instancia (main.gd _f(m, "knock")). */
+  function knockOf(m) {
+    const v = m.knock || 0;
+    const base = KNOCK_LV[m.id];
+    if (base == null) return v;
+    const lv = m.lvl || 1;
+    const kv = lv < 2 ? 0 : base * (1 + 0.5 * (lv - 2)) + v;
+    return kv * (m.evolved ? 1.5 : 1);
+  }
+
+  /**
+   * Todas las evoluciones posibles (la normal y, si la tiene, la alternativa).
+   * @param statsTaken  mejoras de stat cogidas en la run
+   * @param hasItem     id -> bool (la Esfera Colosal; ver Player.hasItem)
+   * → [{ name, needs, needName, text, ready, alt }]
+   */
+  function evoInfos(m, statsTaken, hasItem) {
+    const out = [];
+    if (m.evolved || m.lvl < m.def.maxLvl) return out;
     const e = EVO[m.id];
-    if (!e || m.evolved || m.lvl < m.def.maxLvl || !EVO_MODS[m.kind]) return null;
-    const [name, needs] = e;
-    return { name, needs, needName: NEED_NAME[needs], text: EVO_MODS[m.kind].t,
-             ready: !!(statsTaken && statsTaken[needs]) };
+    if (e && EVO_MODS[m.kind]) {
+      out.push({ name: e[0], needs: e[1], needName: NEED_NAME[e[1]], text: EVO_MODS[m.kind].t,
+                 ready: !!(statsTaken && statsTaken[e[1]]), alt: false });
+    }
+    const a = EVO_ALT[m.id];
+    if (a) {
+      const ready = a[1] === 'bigorb' ? !!(hasItem && hasItem('bigorb')) : !!(statsTaken && statsTaken[a[1]]);
+      out.push({ name: a[0], needs: a[1], needName: NEED_NAME[a[1]], text: a[2], ready, alt: true });
+    }
+    return out;
+  }
+
+  /** ¿Puede evolucionar ya? → { name, needs, needName, text, ready, alt } o null (la lista primero). */
+  function evoInfo(m, statsTaken, hasItem) {
+    const l = evoInfos(m, statsTaken, hasItem);
+    return l.find(e => e.ready) || l[0] || null;
   }
 
   /** Evoluciona una instancia (cambia nombre y potencia; sigue siendo del mismo tipo). */
-  function evolve(m) {
-    const e = EVO[m.id];
-    if (!e || m.evolved) return false;
-    applyMods(m, EVO_MODS[m.kind].m);
-    m.baseName = m.name;
-    m.name = e[0];
+  function evolve(m, alt = false) {
+    if (m.evolved) return false;
+    const a = alt && EVO_ALT[m.id];
+    if (a) {
+      applyMods(m, a[3]);
+      m.baseName = m.name;
+      m.name = a[0];
+      m.evoAlt = true;
+    } else {
+      const e = EVO[m.id];
+      if (!e) return false;
+      applyMods(m, EVO_MODS[m.kind].m);
+      if (EVO_EXTRA[m.id]) applyMods(m, EVO_EXTRA[m.id]);
+      m.baseName = m.name;
+      m.name = e[0];
+    }
     m.evolved = true;
     return true;
   }
 
   G.Moves = { ALL: RAW, BY_ID, POOL, poolFor, instance, levelUp, nextUpText, startFor,
-              EVO, NEED_NAME, evoInfo, evolve };
+              EVO, NEED_NAME, evoInfo, evolve,
+              EVO_ALT, EVO_EXTRA, KNOCK_LV, knockOf, evoInfos };
 })();

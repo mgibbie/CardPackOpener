@@ -24,22 +24,44 @@ G.Combat = (() => {
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
   }
 
-  function tickMove(dt, pl, m, now) {
+  // MicaSurvivor (M5, main.gd _f / _size_k): el Calibre agranda áreas, proyectiles, orbes y
+  // rayos, y el empuje de algunos movimientos crece con su nivel (Moves.KNOCK_LV). Se ataca con
+  // una vista de la instancia (Object.create): lee todo lo demás de `m` y no la modifica.
+  const SIZE_AREA = ['aura', 'melee', 'mine', 'meteor', 'cone', 'chain', 'trail', 'beam', 'boomerang', 'dash'];
+  function eff(pl, m) {
+    const k = pl.sizeK ? pl.sizeK() : 1;
+    const kn = G.Moves.knockOf(m);
+    if (k === 1 && kn === (m.knock || 0)) return m;
+    const v = Object.create(m);
+    if (k !== 1) {
+      if (m.radius != null) {
+        if (SIZE_AREA.includes(m.kind)) v.radius = m.radius * k;
+        else if (m.kind === 'orbit') v.radius = m.radius * (1 + (k - 1) * 0.5);   // los orbes, la mitad
+      }
+      if (m.size != null) v.size = m.size * k;
+      if (m.width != null) v.width = m.width * k;
+    }
+    v.knock = kn;
+    return v;
+  }
+
+  function tickMove(dt, pl, m0, now) {
+    const m = eff(pl, m0);
     if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
 
-    m.t -= dt;
-    if (m.t > 0) return;
+    m0.t -= dt;
+    if (m0.t > 0) return;
     // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
     if (needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
-      m.t = 0.05;
+      m0.t = 0.05;
       return;
     }
-    m.t = Math.max(0.05, m.cd * pl.cdMul);
-    pl.cast(m);
-    if (G.Coop.active) G.Coop.cast(pl, m);
+    m0.t = Math.max(0.05, m0.cd * pl.cdMul);
+    pl.cast(m0);
+    if (G.Coop.active) G.Coop.cast(pl, m0);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
     // enemigo, como Ascuas tras Ataque Rápido, casi no se ve).
-    m.castAt = performance.now();
+    m0.castAt = performance.now();
 
     run(pl, m);
   }
@@ -77,7 +99,8 @@ G.Combat = (() => {
   }
 
   function payload(m) {
-    return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type };
+    return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type,
+             cc: m.cc || '', ccp: m.ccp || 0 };   // MicaSurvivor (M5): estado de control
   }
 
   /** Tabla de tipos × clima para un ataque de tipo `type` contra `e`. */
@@ -162,7 +185,7 @@ G.Combat = (() => {
       return Math.abs(-px * sa + py * ca) <= w / 2 + r;
     };
     for (const e of G.EnemyMgr.queryCircle(mx, my, len / 2 + w)) {
-      if (onBeam(e.x, e.y, e.r)) hit(pl, e, m.dmg * pl.atk, col, ca, sa, 0, m);
+      if (onBeam(e.x, e.y, e.r)) hit(pl, e, m.dmg * pl.atk, col, ca, sa, m.knock || 0, m);   // MicaSurvivor (M5): empuje por nivel
     }
     for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
       if (onBeam(p.x, p.y, p.r)) G.World.damageProp(p, m.dmg * pl.atk, col);
@@ -188,10 +211,13 @@ G.Combat = (() => {
     if (ghost) return;
     let healed = 0;
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, m.radius)) {
-      hit(pl, e, m.dmg * pl.atk, col, e.x - pl.x, e.y - pl.y, 0, m);
+      // MicaSurvivor (M5): Come Sueños sólo afecta a enemigos dormidos, y cura con cada uno.
+      if (m.dream && !(e.sleepT > 0)) continue;
+      hit(pl, e, m.dmg * pl.atk, col, e.x - pl.x, e.y - pl.y, m.knock || 0, m);
       if (m.drain) healed += m.drain;
+      if (m.heal && !pl.dead) pl.heal(pl.maxHp * m.heal);
     }
-    for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, m.dmg * pl.atk, col);
+    if (!m.dream) for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, m.dmg * pl.atk, col);
     if (healed > 0) pl.heal(Math.min(healed, 6));
   }
 
@@ -236,8 +262,8 @@ G.Combat = (() => {
       const tx = cur.x, ty = cur.y - cur.bodyH * 0.5;
       G.FX.beam(fx, fy, Math.atan2(ty - fy, tx - fx), Math.hypot(tx - fx, ty - fy), 10, col, vis);
       if (!ghost) {
-        // Infortunio: más daño a quien ya sufre un estado.
-        const hex = m.hex && (cur.burn > 0 || cur.poison > 0 || cur.slow > 0) ? m.hex : 1;
+        // Infortunio: más daño a quien ya sufre un estado (MicaSurvivor M5: también los de control).
+        const hex = m.hex && (cur.burn > 0 || cur.poison > 0 || cur.slow > 0 || G.Status.any(cur)) ? m.hex : 1;
         hit(pl, cur, m.dmg * pl.atk * k * hex, col, tx - fx, ty - fy, 0, m);
       }
       k *= 0.85;
@@ -484,7 +510,8 @@ G.Combat = (() => {
         dmg: m.dmg * pl.atk,
         oa: (i / want) * 6.2832, orad: m.radius, ospeed: m.speed,
         rehit: Math.max(0.12, m.cd),
-        knock: m.knock || 0, burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, mtype: m.type
+        knock: m.knock || 0, burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, mtype: m.type,
+        cc: m.cc || '', ccp: m.ccp || 0
       });
     }
     const live = G.Projectiles.all().filter(mine);
@@ -493,6 +520,7 @@ G.Combat = (() => {
       p.orad = m.radius;
       p.ospeed = m.speed;
       p.r = m.size;
+      p.knock = m.knock || 0;   // MicaSurvivor (M5): crece con el nivel y el Calibre agranda el orbe
       if (relayout) p.oa = base + (i / live.length) * 6.2832;
     });
 
@@ -526,16 +554,36 @@ G.Combat = (() => {
   const CRIT_MUL = 1.5;
   const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
 
+  /**
+   * MicaSurvivor (M5): un golpe de un ataque a un enemigo (main.gd _hit_enemy). Un dormido
+   * recibe +30 % y se despierta (salvo con un movimiento que duerme); un paralizado, +35 % de
+   * daño eléctrico; y luego, si sigue en pie, la probabilidad de estado del movimiento (`cc`,
+   * `ccp`). @param src  el movimiento o el proyectil (type/mtype, cc, ccp, burn, poison, slow).
+   * @returns el daño hecho.
+   */
+  function land(e, dmg, col, dx, dy, knock, src, crit) {
+    const mt = src.mtype || src.type;
+    const asleep = e.sleepT > 0 && src.cc !== 'sleep';
+    let k = mt ? typeK(mt, e) : 1;
+    if (asleep) k *= G.Status.SLEEP_BONUS;
+    if (mt === 'electric' && e.paraT > 0) k *= G.Status.PARA_ELECTRIC;
+    if (crit) k *= CRIT_MUL;
+    const d = dmg * k;
+    e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null);
+    if (!e.dead) {
+      if (asleep) G.Status.wake(e);
+      if (src.cc && src.ccp > 0 && Math.random() < src.ccp) G.Status.apply(e, src.cc);
+    }
+    if (src.burn) e.applyBurn(src.burn);
+    if (src.poison) e.applyPoison(src.poison);
+    if (src.slow) e.applySlow(src.slow);
+    return d;
+  }
+
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
-    const k = typeK(m.type, e);
-    const crit = isCrit(pl);
-    dmg *= k * (crit ? CRIT_MUL : 1);
-    e.hurt(dmg, col, dx, dy, knock, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
+    dmg = land(e, dmg, col, dx, dy, knock, m, isCrit(pl));
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
-    if (m.burn) e.applyBurn(m.burn);
-    if (m.poison) e.applyPoison(m.poison);
-    if (m.slow) e.applySlow(m.slow);
   }
 
   // ---------------- colisiones ----------------
@@ -635,16 +683,11 @@ G.Combat = (() => {
           break;
         }
 
-        const crit = isCrit(pl);
-        const k = (p.mtype ? typeK(p.mtype, e) : 1) * (crit ? CRIT_MUL : 1);
-        e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock,
-               crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
+        // MicaSurvivor (M5): el mismo golpe que el resto de ataques (estados de control incluidos).
+        const dd = land(e, p.dmg, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock, p, isCrit(pl));
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
-        pl.dmgDealt += p.dmg * k;
-        pl.onDealt(p.dmg * k);
-        if (p.burn) e.applyBurn(p.burn);
-        if (p.poison) e.applyPoison(p.poison);
-        if (p.slow) e.applySlow(p.slow);
+        pl.dmgDealt += dd;
+        pl.onDealt(dd);
 
         if (!p.orb) {
           if (p.pierce > 0) { p.pierce--; }
@@ -662,6 +705,8 @@ G.Combat = (() => {
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.touchCd > 0 || e.behavior === 'thief') continue;
+      // MicaSurvivor (M5): congelado, dormido o confundido no te ataca.
+      if (G.Status.stunned(e) || e.confT > 0) continue;
       e.touchCd = 0.55;
       e.strike(pl);
       pl.hurt(e.dmg, e.atkType);
@@ -671,6 +716,6 @@ G.Combat = (() => {
     }
   }
 
-  return { tick, resolve, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
+  return { tick, resolve, ghostCast, eff, land, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
            get fieldCount() { return fields.length; } };
 })();

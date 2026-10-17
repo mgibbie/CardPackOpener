@@ -73,6 +73,16 @@ G.Player = class Player {
     this.sashT = -999;         // última vez que salvó la Banda Focus
     this.bellHeal = 0;         // curación pendiente del Cascabel Concha
     this.statsTaken = {};      // mejoras de stat cogidas (condición de evolución)
+    // MicaSurvivor (M5): tamaño permanente (la mejora Calibre de la tienda llega en el lote 3).
+    this.sizePerk = perks.size || 1;
+  }
+
+  /**
+   * MicaSurvivor (M5, main.gd _size_k): multiplicador de tamaño de proyectiles, orbes y áreas =
+   * mejora permanente × carta Calibre (+12 % por nivel, hasta 6) × Esfera Colosal (×1,3).
+   */
+  sizeK() {
+    return (this.sizePerk || 1) * Math.pow(1.12, this.statsTaken.size || 0) * (this.hasItem('bigorb') ? 1.3 : 1);
   }
 
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */

@@ -19,6 +19,8 @@ Required Notice: Copyright 2026 JPTER78 (https://github.com/JPTER78/pokesurvivor
 - **Font**: Pixelify Sans, SIL OFL (`fonts/OFL.txt`).
 - **Controller design** (M2): taken from the Android port by JayElDragon (MIT),
   https://github.com/JayElDragon/poke-survivor.
+- **Mechanics** (M5): ported from the same Android port by JayElDragon (MIT); see "Mechanics from
+  the Android port".
 - Pokémon © Nintendo / Creatures Inc. / GAME FREAK. This is a non-commercial fan project.
 
 ## How it loads
@@ -174,6 +176,77 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   "Log in to Magepunk to use a controller". The game itself still plays fully for guests with
   keyboard and touch. One switch turns this off: `SIGNED_IN_ONLY` in `pad.js`.
 
+## Mechanics from the Android port
+
+M5 brings over every mechanic the Godot Android port by **JayElDragon** (MIT,
+https://github.com/JayElDragon/poke-survivor) added to the game, one batch at a time
+(`Plans/MICASURVIVOR_PLAN.md` → M5). The behaviour and the numbers are the port's; the code is
+the web game's own (no GDScript translated line by line). Every edit is marked `MicaSurvivor (M5)`.
+
+### Batch 1: Foundation
+
+- **Kills per type** (`js/systems/progress.js`, port `progress.gd` "tk_"): every enemy that falls
+  adds 1 to `save.stats.tk_<type>` for each of its types (a Charizard counts fire and flying), for
+  life. `G.Progress.typeKills(type)` reads it. The save merge (`js/core/db.js merge()`, used for
+  the Magepunk account's 409 conflicts and the guest carry-over) keeps the max of every stats
+  key, so two devices never lose counts.
+- **Enemy status effects** (`js/systems/status.js`, `G.Status`; port `main.gd` 213-216 and
+  2489-2641), next to the web's burn / poison / slow:
+
+  | Status | Lasts | Effect |
+  |---|---|---|
+  | Frozen | 1.8 s | doesn't move or attack (only knockback moves it); takes +25% damage |
+  | Paralysed | 3 s | 40% speed; attacks and shoots 2.5x slower; takes +35% electric damage |
+  | Asleep | 4 s | doesn't move or attack; the next hit does +30% and wakes it (hits from sleep moves don't) |
+  | Confused | 3 s | wanders toward the nearest other enemy (within 380) and hits it every 0.6 s for 1.8x its damage + 3% of the target's max HP (1.2% on a boss), waking it; doesn't attack you |
+
+  Bosses get 35% of freeze / sleep and 50% of paralysis / confusion, then are immune for 4 s.
+  Darkrai (491) never falls asleep ("Immune!"). A frozen or sleeping enemy can't be paralysed or
+  confused; freezing ends sleep and confusion, sleep ends confusion. Moves carry `cc` (the status)
+  and `ccp` (the chance per hit), the port's values: Grass Knot (sleep 6%), Thunder Shock (para
+  18%), Discharge (7%), Thunderbolt (15%), Confusion (conf 14%), Psybeam (12%), Psychic (10%), Ice
+  Beam (freeze 15%), Powder Snow (7%), Lick (para 20%), Night Shade (sleep 8%), Hail (freeze 12%),
+  Hypnosis and Dream Eater. Every hit goes through one function, `G.Combat.land()` (projectiles,
+  orbs and fields included). Hex counts these statuses too. The new-move card says the chance
+  ("Can freeze (15%)."). The indicators are drawn in code, no new art: an ice block, rising
+  "Z z z", yellow sparks, pink stars circling the head, a coloured patch on the ground, and a
+  floating "Frozen!" / "Paralyzed!" / "Asleep!" / "Confused!" when it starts.
+- **Hypnosis** (aura, radius 120, 5 damage, 30% sleep) and **Dream Eater** (aura, radius 150, 46
+  damage, only hits sleeping enemies, heals 1.2% of your max HP per enemy hit, doesn't wake them)
+  are new psychic moves (`js/data/moves.js`). Their icons are generated like the others
+  (`G.Icons`, the psychic emblem + the aura badge); their effects come from `js/entities/vfx.js`.
+- **Alternative evolutions** (`G.Moves.EVO_ALT`, port `moves_data.gd` 99-110 and `main.gd`
+  1484-1532): 9 moves have a second evolution. Gust → Colossal Cyclone needs **Calibre**; Fire
+  Spin, Petal Blizzard, Bulldoze, Discharge, Flamethrower, Toxic, Flame Wheel and Razor Leaf need
+  the **Big Orb** item. When both evolutions of a move are ready, both gold cards come up together
+  and the player picks one. A missing stat shows its card flagged "Evolves <move>". The Big Orb
+  itself comes in batch 3. The hook is `Player.hasItem('bigorb')`, which also gives x1.3 size.
+  **EVO_EXTRA** (`moves_data.gd` 112-118) adds the port's extra tweaks to five normal
+  evolutions: Confusion x1.6, Rock Throw x1.6 and knock 30, Shadow Ball x1.3, Fairy Wind x1.5,
+  Gust x1.6.
+- **Knockback by move level** (`G.Moves.KNOCK_LV` / `knockOf()`, port `moves_data.gd` 94 and
+  `main.gd` 1405-1410): 20 moves push nothing at Lv1. From Lv2 they push the table's value (+50%
+  for each level after that) plus their own knockback, and x1.5 once evolved. For example, Hyper
+  Voice pushes 0 / 260 / 390 / 520 / 650, then 975 evolved. Beams and auras now pass their
+  knockback on too, so Hydro Pump, Bulldoze and Bug Buzz push.
+- **Calibre** (`js/systems/levelup.js`, port `main.gd` 143-156 and 1397-1420): a level-up stat card,
+  +12% size of projectiles, orbs and areas, up to 6 times. `Player.sizeK()` = permanent upgrade
+  (`perks.size`, the shop upgrade comes in batch 3) x 1.12^cards x Big Orb 1.3. Combat attacks
+  with a scaled view of the move (`G.Combat.eff()`): the radius of auras, melee, mines, meteors,
+  cones, chains, trails, beams, boomerangs and dashes; projectile / orb size; beam width. The orbit
+  ring itself grows half as much.
+- Every new string is in `js/data/lang-en.js`. The English is taken from the port's own
+  `lang_en.json`.
+
+**Kept as the web has them:** melee balance and the altars (owner). The port's base numbers for
+the moves (it rebalanced many) are **not** taken. Only the `cc` / `ccp` fields, the two new
+moves, the alternative evolutions, EVO_EXTRA and KNOCK_LV are.
+
+**Not yet (later batches or co-op):** the port's status traps (freeze / shock / sleep / confuse
+pads that also hit you) and the ability / Z-move sources of these statuses come with those
+batches. In co-op (still "Coming soon"), a partner's statuses on the host's enemies, and a
+partner's alternative evolution in the ghost replay, are not synced.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -195,4 +268,12 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   and opened with the overworld controller, and the way back.
 - `designwiki_micasurvivor_test.mjs` and `magepunknews_micasurvivor_test.mjs` (M3): the wiki
   section and the news entry.
+- `node overworld/tests/micasurvivor_mechanics_test.mjs` (M5 batch 1) steps a paused run by
+  hand and checks every rule above with numbers: kills per type (a real kill, saved, back after a
+  reload, merged by max), each status's duration, boss resistance and immunity, frozen +25%, sleep
+  +30% and wake, paralysis speed / attack rate / +35% electric, confusion infighting, Darkrai, the
+  cc moves and their roll through the real projectile code, Hypnosis, Dream Eater, choosing
+  Colossal Cyclone in the real level-up screen, the Big Orb hook, EVO_EXTRA, knockback per level
+  (a real Hydro Pump hit), Calibre scaling (a real aura and Ember shot) and its cap, and the
+  English of every new string.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

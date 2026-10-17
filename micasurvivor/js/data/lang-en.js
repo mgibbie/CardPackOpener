@@ -596,5 +596,29 @@ G.I18n.add({
   'Pulsa cualquier botón del mando para usarlo.': 'Press any button on the controller to use it.',
   'Conecta un mando y pulsa cualquier botón.': 'Connect a controller and press any button.',
   'Mando conectado': 'Controller connected', 'Mando desconectado': 'Controller disconnected', 'Pestañas': 'Tabs',
-  'cambiar de ataque': 'switch move', 'cambiar las cartas': 'reroll the cards'
+  'cambiar de ataque': 'switch move', 'cambiar las cartas': 'reroll the cards',
+
+  // ---------------- MicaSurvivor (M5): mecánicas del port de Android (English from its lang_en.json) ----------------
+  'Hipnosis': 'Hypnosis', 'Come Sueños': 'Dream Eater',
+  'Ondas hipnóticas que pueden dormir a los enemigos cercanos.': 'Hypnotic waves that can put nearby enemies to sleep.',
+  'Devora los sueños: solo golpea a enemigos dormidos, con mucho daño, y te cura.': 'Devours dreams: only hits sleeping enemies, deals big damage and heals you.',
+  'Maldición que salta entre enemigos. Mucho más daño si están quemados, envenenados, frenados o con un estado alterado.': 'A curse that jumps between enemies. Much more damage if they are burned, poisoned, slowed or under any status effect.',
+  '¡Congelado!': 'Frozen!', '¡Paralizado!': 'Paralyzed!', '¡Dormido!': 'Asleep!', '¡Confundido!': 'Confused!',
+  '¡Despertó!': 'Woke up!', '¡Inmune!': 'Immune!',
+  'Puede congelar ({x}%).': 'Can freeze ({x}%).', 'Puede paralizar ({x}%).': 'Can paralyze ({x}%).',
+  'Puede dormir ({x}%).': 'Can put to sleep ({x}%).', 'Puede confundir ({x}%).': 'Can confuse ({x}%).',
+  'Calibre': 'Caliber', '+12% de tamaño de proyectiles, orbes y áreas.': '+12% size for projectiles, orbs and areas.',
+  'Esfera Colosal': 'Colossal Orb',
+  'Ciclón Colosal': 'Colossal Cyclone', 'Vórtice Ígneo': 'Fire Vortex', 'Huracán Floral': 'Flower Hurricane',
+  'Sismo Colosal': 'Colossal Quake', 'Descarga Titánica': 'Titanic Discharge', 'Llamarada Colosal': 'Colossal Blaze',
+  'Ciénaga Colosal': 'Colossal Swamp', 'Rueda Colosal': 'Colossal Wheel', 'Hoja Colosal': 'Colossal Leaf',
+  '+2 orbes, ×1,5 daño, orbes mucho más grandes y el doble de empuje': '+2 orbs, ×1.5 damage, much bigger orbs and double the push',
+  '+2 orbes, ×1,4 daño, orbes y anillo mucho más grandes': '+2 orbs, ×1.4 damage, much bigger orbs and ring',
+  '+2 orbes, ×1,4 daño, orbes y ciclón mucho más grandes': '+2 orbs, ×1.4 damage, much bigger orbs and cyclone',
+  '×1,5 daño, área ×1,6 y frena más a los enemigos': '×1.5 damage, area ×1.6 and slows enemies more',
+  '×1,5 daño, área ×1,6 y más probabilidad de paralizar': '×1.5 damage, area ×1.6 and higher paralysis chance',
+  '+4 llamas, ×1,4 daño y llamas mucho más grandes': '+4 flames, ×1.4 damage and much bigger flames',
+  '×2 daño, charcos enormes y mucho más duraderos': '×2 damage, huge and much longer-lasting puddles',
+  '×2 daño, rastro de llamas enorme y mucho más duradero': '×2 damage, a huge and much longer-lasting flame trail',
+  '+1 hoja, ×1,5 daño y hojas mucho más grandes': '+1 leaf, ×1.5 damage and much bigger leaves'
 });

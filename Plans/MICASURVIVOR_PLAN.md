@@ -103,6 +103,31 @@ controller layer is what we take — the *design*, re-implemented in JS on our g
   PMD-style multi-direction animated sheets; our fakemon only have battle/front-back sprites. To be
   planned separately once the sprite pipeline exists.
 
+### M5 — Every mechanic from the Android port (owner, 2026-10-17: "any and all missing mechanics")
+Audit (Godot port vs web, 2026-10-17) found these missing; ported in this order, one batch per PR,
+each with tests and the matching controller action wired into js/core/pad.js once the feature exists:
+1. **Foundation** *(built 2026-10-17, branch `feat/micasurvivor-m5-b1`; README → "Mechanics from the
+   Android port")*: per-type kill tracking; enemy status effects (freeze, paralysis, sleep, confusion,
+   boss resistance/immunity); Hypnosis + Dream Eater; 9 alternative evolutions + Big Orb route;
+   knockback by move level; the "Calibre" stat card.
+2. **Abilities**: 54 passives, one per Pokémon (shown in HUD / Pokédex).
+3. **Items +15** (incl. Rare Candy, Light Ball/Thick Club, Weakness Policy…), carry 2 items,
+   **upgrades +4** (Calibre, TM, Second Chance, Bag) — keep the web's free reroll.
+4. **Z-moves** (18 types, cinematic, unlocks by kills / Z-crystal missions / gacha crystal).
+5. **Dynamax + raid dens**.
+6. **Quick modes**: Daily Challenge, Rift Time Attack, Type Survival, Party, 6 modifiers; the
+   in-run level-up card **ban** (owner asked for it).
+7. **Team mode** (2–3 Pokémon, swap mid-run).
+8. **Boss Rush**, then the **Tower** (30 floors, risk pacts, relics, checkpoints).
+9. **Adaptive difficulty**, biome-themed spawns, enemy support caps.
+10. **Minimap**, field-of-view slider, UI scale.
+11. **Achievements/missions/titles** (+93 / +13 / more missions), run damage breakdown,
+    in-game encyclopedia, trainer card.
+12. **Local co-op partner** (AI or 2nd pad).
+13. **9 more languages** (Godot %s -> {x} converter; CJK fonts).
+Not ported: Android-only parts (APK updater, notch insets beyond CSS env(), save codes, keep-awake).
+Kept as the web has them unless the owner asks: altar powers (port redesigned them), melee balance.
+
 ## 3. Owner decisions (2026-10-16)
 1. **Version: latest HEAD under PolyForm Noncommercial** — MicaSurvivor never gets ads, paid items
    or anything sold; ship the licence + Required Notice + sprite credits.
