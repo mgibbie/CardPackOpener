@@ -75,6 +75,10 @@ G.Player = class Player {
     this.statsTaken = {};      // mejoras de stat cogidas (condición de evolución)
     // MicaSurvivor (M5): tamaño permanente (la mejora Calibre de la tienda llega en el lote 3).
     this.sizePerk = perks.size || 1;
+    // MicaSurvivor (M5): la habilidad pasiva de su Pokémon (systems/abilities.js). El modo Equipo
+    // la cambiará con G.Abilities.set(pl, id) al cambiar de Pokémon activo.
+    this.ability = null;
+    G.Abilities.set(this);
   }
 
   /**
@@ -96,15 +100,17 @@ G.Player = class Player {
   cy() { return this.y; }
 
   // ---------------- stats efectivos ----------------
-  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount); }
+  // MicaSurvivor (M5): la habilidad multiplica ataque (daño, Autoestima, Competitivo) y velocidad,
+  // y suma defensa y regeneración (main.gd _atk / _spd / _reduction / _regen).
+  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount) * G.Abilities.atkK(this); }
   get spd() {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
-    return s * slow * w;
+    return s * slow * w * G.Abilities.spdK(this);
   }
-  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount); }
-  get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount; }
+  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount + G.Abilities.taken(this)); }
+  get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount + G.Abilities.regen(this); }
 
   // ---------------- movimientos ----------------
   addMove(id) {
@@ -243,6 +249,8 @@ G.Player = class Player {
       eff = G.Types.label(k);
       amount *= k * G.Weather.mult(type);
     }
+    // MicaSurvivor (M5): habilidad — tipos resistidos, súper eficaces, Multiescala, Competitivo.
+    amount *= G.Abilities.inK(this, type, eff);
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
     const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
@@ -262,6 +270,7 @@ G.Player = class Player {
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Banda Focus!', '#ff9a3d', true);
       G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
     }
+    G.Abilities.sturdy(this);   // MicaSurvivor (M5): Robustez (después de la Banda Focus, como en el port)
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
       this.anim.play('Faint', { hold: true });
@@ -325,6 +334,7 @@ G.Player = class Player {
   // ---------------- ciclo ----------------
   update(dt) {
     this.anim.update(dt);
+    G.Abilities.tick(this, dt);   // MicaSurvivor (M5): reloj de Robustez / Multiescala, Competitivo
     if (this.dead) return;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;

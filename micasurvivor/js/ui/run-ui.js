@@ -225,6 +225,9 @@ G.RunUI = (() => {
     G.UI.soundControls($('pause-sound'));
     $('pause-coop').classList.toggle('hidden', !coop);
     $('btn-quit').textContent = coop ? 'Salir de la partida' : 'Abandonar run';
+    // MicaSurvivor (M5): la habilidad del Pokémon activo (el modo Equipo la cambiará).
+    const pl = G.Game.player;
+    $('pause-ability').innerHTML = pl && pl.ability ? G.UI.abilityLine(pl.dex, false, pl.ability) : '';
     G.UI.show('scr-pause');
   }
 

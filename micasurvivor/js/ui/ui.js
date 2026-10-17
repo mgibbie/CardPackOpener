@@ -277,6 +277,18 @@ G.UI = (() => {
     return cv;
   }
 
-  return { $, show, hide, hideAll, isOpen, chrome, refreshCoins, toast, typeChips, stars, confirmDelete,
+  /**
+   * MicaSurvivor (M5): "Habilidad: <nombre>" y lo que hace, para la Pokédex, el compañero, los
+   * iniciales y la pausa. @param short  sólo el nombre (lo que hace va en el title)
+   * @param id  habilidad concreta (si no, la del Pokémon `dex`)
+   */
+  function abilityLine(dex, short = false, id = null) {
+    const ab = G.Abilities.def(id || G.Abilities.of(dex));
+    const t = s => G.I18n.t(s);
+    return `<div class="ability${short ? ' short' : ''}" data-ability="${id || G.Abilities.of(dex)}" title="${t(ab.desc)}">`
+      + `<b>${G.Icons.html('star', 14)} Habilidad: ${ab.name}</b>${short ? '' : `<span>${ab.desc}</span>`}</div>`;
+  }
+
+  return { abilityLine, $, show, hide, hideAll, isOpen, chrome, refreshCoins, toast, typeChips, stars, confirmDelete,
            sprite, spriteCanvas, tick, initChrome, soundControls };
 })();

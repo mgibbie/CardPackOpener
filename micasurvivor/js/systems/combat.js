@@ -100,7 +100,8 @@ G.Combat = (() => {
 
   function payload(m) {
     return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type,
-             cc: m.cc || '', ccp: m.ccp || 0 };   // MicaSurvivor (M5): estado de control
+             cc: m.cc || '', ccp: m.ccp || 0,    // MicaSurvivor (M5): estado de control
+             mkind: m.kind };                      // MicaSurvivor (M5): familia, para las habilidades (Puño Férreo...)
   }
 
   /** Tabla de tipos × clima para un ataque de tipo `type` contra `e`. */
@@ -511,7 +512,7 @@ G.Combat = (() => {
         oa: (i / want) * 6.2832, orad: m.radius, ospeed: m.speed,
         rehit: Math.max(0.12, m.cd),
         knock: m.knock || 0, burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, mtype: m.type,
-        cc: m.cc || '', ccp: m.ccp || 0
+        cc: m.cc || '', ccp: m.ccp || 0, mkind: 'orbit'
       });
     }
     const live = G.Projectiles.all().filter(mine);
@@ -559,15 +560,17 @@ G.Combat = (() => {
    * recibe +30 % y se despierta (salvo con un movimiento que duerme); un paralizado, +35 % de
    * daño eléctrico; y luego, si sigue en pie, la probabilidad de estado del movimiento (`cc`,
    * `ccp`). @param src  el movimiento o el proyectil (type/mtype, cc, ccp, burn, poison, slow).
+   * @param pl  quien golpea: su habilidad cambia el daño (G.Abilities.outK, main.gd 2508-2520).
    * @returns el daño hecho.
    */
-  function land(e, dmg, col, dx, dy, knock, src, crit) {
+  function land(e, dmg, col, dx, dy, knock, src, crit, pl) {
     const mt = src.mtype || src.type;
     const asleep = e.sleepT > 0 && src.cc !== 'sleep';
     let k = mt ? typeK(mt, e) : 1;
     if (asleep) k *= G.Status.SLEEP_BONUS;
     if (mt === 'electric' && e.paraT > 0) k *= G.Status.PARA_ELECTRIC;
     if (crit) k *= CRIT_MUL;
+    if (pl && pl.abFx) k *= G.Abilities.outK(pl, e, mt, src.mkind || src.kind);
     const d = dmg * k;
     e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null);
     if (!e.dead) {
@@ -581,7 +584,7 @@ G.Combat = (() => {
   }
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
-    dmg = land(e, dmg, col, dx, dy, knock, m, isCrit(pl));
+    dmg = land(e, dmg, col, dx, dy, knock, m, isCrit(pl), pl);
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
   }
@@ -684,7 +687,7 @@ G.Combat = (() => {
         }
 
         // MicaSurvivor (M5): el mismo golpe que el resto de ataques (estados de control incluidos).
-        const dd = land(e, p.dmg, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock, p, isCrit(pl));
+        const dd = land(e, p.dmg, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock, p, isCrit(pl), p.owner || pl);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += dd;
         pl.onDealt(dd);
@@ -711,6 +714,7 @@ G.Combat = (() => {
       e.strike(pl);
       pl.hurt(e.dmg, e.atkType);
       if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      G.Abilities.contact(pl, e);   // MicaSurvivor (M5): Piel Tosca, Elec. Estática, Cuerpo Llama...
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;
     }
