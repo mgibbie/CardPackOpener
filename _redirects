@@ -31,6 +31,8 @@
 /micatro/mods/reverie/assets/* https://magepunk-micatromods.pages.dev/reverie/assets/:splat 301
 /micatro/mods/autumnmood/assets/* https://magepunk-micatromods.pages.dev/autumnmood/assets/:splat 301
 /micatro/mods/autumncircus/assets/* https://magepunk-micatromods.pages.dev/autumncircus/assets/:splat 301
+# MicaSurvivor sprites (13.5k PMD sheets, gitignored): their own Pages project, see micasurvivor/README.md
+/micasurvivor/assets/* https://magepunk-micasurvivor.pages.dev/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
 # /pokemon was never a route, but a stale bookmark there renders the homepage
 # (the SPA fallback), and the homepage's RELATIVE links ("overworld/") then
