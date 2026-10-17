@@ -108,7 +108,8 @@ G.Weather = (() => {
     chipT -= dt;
     if (chipT <= 0) {
       chipT = 2;
-      if (pl && !pl.dead && hurts(pl.mon.types) && level() > 0.5) {
+      // MicaSurvivor (M5): Velo Arena, Ímpetu Arena, Quitanieves y Chorro Arena te libran (main.gd 6310).
+      if (pl && !pl.dead && hurts(pl.mon.types) && level() > 0.5 && !G.Abilities.weatherImmune(pl)) {
         const d = Math.max(1, pl.maxHp * 0.012);
         if (pl.hp > d + 1) {
           pl.hp -= d;
@@ -169,7 +170,7 @@ G.Weather = (() => {
   }
 
   return {
-    KINDS, reset, update, draw, mult, speedFor, hurts, onEvent,
+    KINDS, reset, update, draw, mult, speedFor, hurts, onEvent, level,   // level: MicaSurvivor (M5), Nado Rápido...
     get current() { return cur && level() > 0 ? Object.assign({ left: Math.max(0, cur.dur - cur.t) }, cur, KINDS[cur.kind]) : null; },
     get vignette() { return cur && cur.kind === 'fog' ? level() : 0; },
     /** Pone un clima ya (la arena de la grieta; no se manda: cada uno lo pone). */

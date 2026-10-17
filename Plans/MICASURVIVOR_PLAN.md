@@ -110,7 +110,8 @@ each with tests and the matching controller action wired into js/core/pad.js onc
    Android port")*: per-type kill tracking; enemy status effects (freeze, paralysis, sleep, confusion,
    boss resistance/immunity); Hypnosis + Dream Eater; 9 alternative evolutions + Big Orb route;
    knockback by move level; the "Calibre" stat card.
-2. **Abilities**: 54 passives, one per Pokémon (shown in HUD / Pokédex).
+2. **Abilities** *(built 2026-10-17, branch `feat/micasurvivor-m5-b2`; README → "Batch 2: Abilities")*:
+   54 passives, one per Pokémon (shown in HUD / Pokédex / partner / starters / pause).
 3. **Items +15** (incl. Rare Candy, Light Ball/Thick Club, Weakness Policy…), carry 2 items,
    **upgrades +4** (Calibre, TM, Second Chance, Bag) — keep the web's free reroll.
 4. **Z-moves** (18 types, cinematic, unlocks by kills / Z-crystal missions / gacha crystal).

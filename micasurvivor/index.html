@@ -100,6 +100,7 @@
     <p id="res-text"></p>
     <canvas id="res-stage" class="stage" width="200" height="150"></canvas>
     <h3>Tu compañero: <span class="gold" id="res-name"></span></h3>
+    <div id="res-ability"></div> <!-- MicaSurvivor (M5): the partner's ability -->
     <div class="row" style="justify-content:center;margin-top:14px">
       <button id="res-ok" class="btn gold">¡Vamos juntos!</button>
       <button id="res-other" class="btn">Elegir otro</button>
@@ -484,6 +485,7 @@
     <!-- MicaSurvivor (M2): the controller's version of the hints (js/core/pad.js fills the glyphs) -->
     <p class="sub pad-hint"><span class="key-p" data-glyphs="lstick"></span> moverse · <span class="key-p" data-glyphs="prev next"></span> cambiar de ataque · <span class="key-p" data-glyphs="pause"></span> pausa</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
+    <div id="pause-ability"></div> <!-- MicaSurvivor (M5): the partner's ability -->
     <div id="pause-sound" class="sound-inline"></div>
     <div class="row" style="justify-content:center">
       <button id="btn-resume" class="btn gold">Continuar</button>
@@ -541,6 +543,7 @@
 <!-- sistemas -->
 <script defer src="js/systems/combat.js"></script>
 <script defer src="js/systems/status.js"></script> <!-- MicaSurvivor (M5): freeze / paralysis / sleep / confusion -->
+<script defer src="js/systems/abilities.js"></script> <!-- MicaSurvivor (M5): one passive ability per Pokémon -->
 <script defer src="js/systems/spawner.js"></script>
 <script defer src="js/systems/levelup.js"></script>
 <script defer src="js/systems/gacha.js"></script>

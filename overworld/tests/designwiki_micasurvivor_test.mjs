@@ -2,11 +2,13 @@
 // micasurvivorRoute + micasurvivor*View, designwiki/style.css .ms-*, designwiki/index.html nav,
 // designwiki/data/micasurvivor.json from tools/micasurvivor/gen_designwiki.mjs).
 //   1. micasurvivor.json is exactly what the generator builds from micasurvivor/js/data today
-//      (every Pokémon, starter, move, item and upgrade; English names). On drift, regenerate:
+//      (every Pokémon with its ability, starter, move, item, upgrade and the 54 abilities of M5
+//      batch 2; English names). On drift, regenerate:
 //        node tools/micasurvivor/gen_designwiki.mjs
 //   2. Every #/micasurvivor route renders in headless Chrome with no console errors: the overview
 //      (how to play, the Pewter Museum cabinet, accounts + leaderboard, the controller table, the
-//      credits / PolyForm Noncommercial notice), all 966 Pokémon (+ the filter), every move, every
+//      credits / PolyForm Noncommercial notice), all 966 Pokémon with their ability (+ the filter,
+//      also by ability), the abilities list, every move, every
 //      item and upgrade; the sidebar links them; the phone layout (390 px) has no horizontal overflow.
 //   node overworld/tests/designwiki_micasurvivor_test.mjs
 import http from 'http';
@@ -35,6 +37,11 @@ A(JSON.stringify(fresh) === JSON.stringify(W), 'micasurvivor.json matches the ga
 A(W.pokemon.length === 966 && W.counts.pokemon === 966 && W.starters.length === 29 && W.moves.length >= 60 && W.items.length >= 10 && W.upgrades.length >= 10, 'counts: 966 Pokémon, 29 starters, the moves, items and upgrades', JSON.stringify(W.counts));
 A(W.moves.find(m => m.id === 'ember')?.name === 'Ember' && W.items.find(i => i.id === 'leftovers')?.name === 'Leftovers' && W.upgrades.find(u => u.id === 'hp')?.name === 'Vitality', 'names are in English (the game translates from Spanish)');
 A(W.moves.find(m => m.id === 'flamethrower')?.evo?.name === 'Overheat', 'move evolutions are listed (Flamethrower -> Overheat)');
+// MicaSurvivor M5 batch 2: abilities
+const ABI = new Map((W.abilities || []).map(a => [a.id, a]));
+A(W.counts.abilities === 54 && ABI.size === 54 && W.abilities.every(a => a.name && a.desc && !/[¡¿ñáíóú]/.test(a.desc.replace(/Poké/g, ''))), '54 abilities, each with an English name and description', JSON.stringify(W.counts));
+A(W.pokemon.every(p => ABI.has(p[6])) && W.abilities.reduce((s, a) => s + a.pokemon, 0) === 966, 'every Pokémon has its ability (the counts add up to 966)');
+A(W.pokemon.find(p => p[0] === 4)[6] === 'blaze' && ABI.get('blaze').name === 'Blaze' && ABI.get('sturdy').desc === 'A hit that would KO you leaves you at 1 HP (every 90 s).', 'Charmander has Blaze; Sturdy is described with the port\'s numbers');
 
 // ---------- 2. the pages
 const server = http.createServer((req, res) => {
@@ -69,14 +76,18 @@ try {
 	A(ov.tables === 2 && /Nintendo/.test(ov.text), 'overview: the keyboard and controller tables');
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micasurvivor', 'nav: Overview is active');
 
-	await go('micasurvivor/pokemon', 'tbody tr', 966);
+	await go('micasurvivor/pokemon', '.ms-pokemon tbody tr', 966);
+	await go('micasurvivor/pokemon', '.ms-abilities tbody tr', 54);
+	A(await page.$$eval('#content .ms-pokemon tbody tr', r => /Blaze/.test(r[3].textContent) && r.every(x => x.querySelector('.ms-ab'))), 'pokemon: every row shows its ability (Charmander: Blaze)');
 	A(await page.$$eval('#content .ms-starter', s => s.length) === 29, 'pokemon: the 29 starters');
 	await page.type('#content .ms-filter', 'pikachu');
-	A(await page.$$eval('#content tbody tr', r => r.length === 1 && /Pikachu/.test(r[0].textContent)), 'pokemon: the filter finds Pikachu');
+	A(await page.$$eval('#content .ms-pokemon tbody tr', r => r.length === 1 && /Pikachu/.test(r[0].textContent) && /Static/.test(r[0].textContent)), 'pokemon: the filter finds Pikachu (Static)');
 	await page.$eval('#content .ms-filter', el => { el.value = ''; el.dispatchEvent(new Event('input')); });
 	await page.type('#content .ms-filter', 'dragon');
 	const dragons = W.pokemon.filter(p => p[2].includes('dragon') || p[1].toLowerCase().includes('dragon')).length;
-	A(await page.$$eval('#content tbody tr', r => r.length) === dragons, `pokemon: filtering by type (dragon: ${dragons})`);
+	A(await page.$$eval('#content .ms-pokemon tbody tr', r => r.length) === dragons, `pokemon: filtering by type (dragon: ${dragons})`);
+	await page.$eval('#content .ms-abilities tbody tr:nth-child(19) a', a => a.click());   // Sturdy
+	A(await page.$$eval('#content .ms-pokemon tbody tr', r => r.length) === ABI.get('sturdy').pokemon, `pokemon: clicking an ability's count lists its Pokémon (Sturdy: ${ABI.get('sturdy').pokemon})`);
 	await go('micasurvivor/moves', 'tbody tr', W.moves.length);
 	A(await page.$eval('#content', el => /Overheat/.test(el.textContent) && /Reflexes/.test(el.textContent)), 'moves: evolutions and their stat');
 	await go('micasurvivor/items', 'tbody tr', W.items.length + W.upgrades.length);

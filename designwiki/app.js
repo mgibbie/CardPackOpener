@@ -2504,7 +2504,7 @@ async function micasurvivorView() {
         h('p', null, h('a', { class: 'mc-play ms-play', href: '/micasurvivor/' }, '▶ Play MicaSurvivor'), ' ', h('span', { class: 'muted' }, 'free — no ads, nothing to buy'))),
       h('img', { class: 'ms-hero-art', src: '../micasurvivor/icons/tile.png', alt: '', width: 96, height: 96 })),
     h('div', { class: 'lp-grid ms-index' }, [
-      ['pokemon', 'Pokémon', C.pokemon + ' Pokémon · ' + C.starters + ' starters · ' + C.legendaries + ' legendaries'],
+      ['pokemon', 'Pokémon', C.pokemon + ' Pokémon · ' + C.starters + ' starters · ' + C.legendaries + ' legendaries · ' + C.abilities + ' abilities'],
       ['moves', 'Moves', C.moves + ' moves and their evolutions'],
       ['items', 'Items & Upgrades', C.items + ' held items · ' + C.upgrades + ' upgrades'],
     ].map(([k, label, n]) => h('a', { class: 'lp-tile ms-idx', href: '#/micasurvivor/' + k, 'data-cat': k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, n)))),
@@ -2558,23 +2558,30 @@ async function micasurvivorPokemonView() {
   const STARS = n => '★'.repeat(n);
   const starterGrid = h('div', { class: 'ms-starters' }, D.starters.map(s => h('div', { class: 'ms-starter' },
     h('b', null, s.name), h('div', null, s.types.map(msType)), h('small', { class: 'muted' }, '#' + s.dex + ' · starts with ' + s.start))));
+  // MicaSurvivor M5 batch 2: every Pokémon has one passive ability (micasurvivor/js/systems/abilities.js)
+  const AB = Object.fromEntries((D.abilities || []).map(a => [a.id, a]));
+  const abCell = id => { const a = AB[id]; return a ? h('span', { class: 'ms-ab', title: a.desc }, a.name) : ''; };
   const body = h('tbody');
   const count = h('span', { class: 'muted' });
   const draw = () => {
     const q = msPokeQ.trim().toLowerCase();
-    const list = D.pokemon.filter(([dex, name, types]) => !q || name.toLowerCase().includes(q) || String(dex) === q || types.includes(q));
+    const list = D.pokemon.filter(([dex, name, types, , , , ab]) => !q || name.toLowerCase().includes(q) || String(dex) === q || types.includes(q) || (AB[ab] && AB[ab].name.toLowerCase() === q));
     count.textContent = list.length + ' shown';
-    body.replaceChildren(...list.map(([dex, name, types, rarity, gen, leg]) => h('tr', null,
-      h('td', null, '#' + dex), h('td', null, name), h('td', null, types.map(msType)), h('td', { class: 'ms-stars' }, STARS(rarity)), h('td', null, 'Gen ' + gen), h('td', null, leg ? 'Legendary (rifts only)' : ''))));
+    body.replaceChildren(...list.map(([dex, name, types, rarity, gen, leg, ab]) => h('tr', null,
+      h('td', null, '#' + dex), h('td', null, name), h('td', null, types.map(msType)), h('td', null, abCell(ab)), h('td', { class: 'ms-stars' }, STARS(rarity)), h('td', null, 'Gen ' + gen), h('td', null, leg ? 'Legendary (rifts only)' : ''))));
   };
+  const abTable = msTable(['Ability', 'What it does', 'Pokémon'], (D.abilities || []).map(a => [
+    h('b', null, a.name), a.desc, h('a', { href: '#/micasurvivor/pokemon', onclick: e => { e.preventDefault(); msPokeQ = a.name.toLowerCase(); input.value = msPokeQ; draw(); body.closest('section')?.scrollIntoView({ behavior: 'smooth' }); } }, String(a.pokemon)),
+  ]), 'ms-abilities');
   const input = h('input', { type: 'search', placeholder: 'Filter by name, number or type', value: msPokeQ, class: 'ms-filter' });
   input.addEventListener('input', () => { msPokeQ = input.value; draw(); });
   draw();
   content.replaceChildren(msBack(),
     mcHead('Pokémon', D.counts.pokemon, 'Pokémon', 'Every Pokémon in the game can be your partner once you own it (the starters, the gacha, shinies caught in runs). Legendaries and mythicals appear only in rifts. Rarity (★1–5) sets the gacha odds.'),
     mcSection('Starters', D.counts.starters + ' partners the personality test can choose (every region’s starters, and two friends).', starterGrid),
+    mcSection('Abilities', D.counts.abilities + ' passive abilities, from the Android port by JayElDragon: every Pokémon has one (shown in the run’s HUD, the Pokédex and the pause screen). The numbers are the port’s. Click a count to list those Pokémon.', abTable),
     mcSection('Every Pokémon', null, h('p', null, input, ' ', count),
-      h('table', { class: 'ms-table' }, h('thead', null, h('tr', null, ...['Dex', 'Name', 'Types', 'Rarity', 'Banner', ''].map(c => h('th', null, c)))), body)));
+      h('table', { class: 'ms-table ms-pokemon' }, h('thead', null, h('tr', null, ...['Dex', 'Name', 'Types', 'Ability', 'Rarity', 'Banner', ''].map(c => h('th', null, c)))), body)));
 }
 
 async function micasurvivorMovesView() {

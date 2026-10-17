@@ -62,6 +62,24 @@ G.HUD = (() => {
     const LBL = { atk: 'ATK', spd: 'VEL', def: 'DEF', regen: 'REG' };
     let bx = px;
     ctx.textAlign = 'left';
+    // MicaSurvivor (M5): la habilidad (main.gd 1043 / 8651), primera de la fila: dorada, más viva
+    // cuando está actuando, con su recarga (Robustez, Multiescala) o su bonus (Autoestima).
+    // Tocarla (o pulsarla con el ratón) dice lo que hace.
+    if (pl.ability) {
+      const ab = G.Abilities.def(pl.ability), st = G.Abilities.state(pl);
+      ctx.font = F(800, 9);
+      const name = G.I18n.t(ab.name), extra = st.txt ? ' ' + st.txt : '';
+      const nw = ctx.measureText(name).width, tw = nw + ctx.measureText(extra).width + 22;
+      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      ctx.fillStyle = st.on ? 'rgba(90,64,10,.75)' : 'rgba(0,0,0,.5)'; ctx.fill();
+      if (st.on) { ctx.strokeStyle = 'rgba(255,217,138,.8)'; ctx.lineWidth = 1; ctx.stroke(); }
+      ctx.fillStyle = st.on ? '#ffe9a8' : '#ffd98a';
+      ctx.fillText('✦', bx + 5, py + 45);
+      ctx.fillText(name, bx + 16, py + 45);
+      if (extra) { ctx.fillStyle = '#c8d6ee'; ctx.fillText(extra, bx + 16 + nw, py + 45); }
+      G.Touch.addButton(bx, py + 34, tw, 15, () => G.Spawner.say(G.I18n.t(ab.name) + ': ' + G.I18n.t(ab.desc), 4, true), 4);
+      bx += tw + 5;
+    }
     for (const k in pl.buffs) {
       const b = pl.buffs[k];
       if (b.n <= 0) continue;

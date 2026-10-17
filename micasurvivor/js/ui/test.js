@@ -48,6 +48,7 @@ G.TestUI = (() => {
     $('res-trait').textContent = result.trait.charAt(0).toUpperCase() + result.trait.slice(1);
     $('res-text').textContent = G.TRAIT_TEXT[result.trait] || '';
     $('res-name').textContent = mon.name;
+    $('res-ability').innerHTML = G.UI.abilityLine(mon.dex);   // MicaSurvivor (M5): su habilidad
     G.UI.sprite($('res-stage'), mon.dex, { lively: true, scale: 4, hero: true });
     $('res-stage').style.setProperty('--stage-c', G.U.TYPE_COLOR[mon.types[0]]);
     G.UI.show('scr-result');
@@ -71,7 +72,8 @@ G.TestUI = (() => {
         cell.classList.add('on');
         picked = s.dex;
         const mv = G.Moves.BY_ID[s.start];
-        $('starter-info').innerHTML = `${G.UI.typeChips(mon.types)} ${G.Icons.html('move:' + s.start, 16)} ${mv.name} · ${s.traits.join(', ')}`;
+        $('starter-info').innerHTML = `${G.UI.typeChips(mon.types)} ${G.Icons.html('move:' + s.start, 16)} ${mv.name} · ${s.traits.join(', ')}`
+          + G.UI.abilityLine(s.dex);   // MicaSurvivor (M5): su habilidad
         $('starter-ok').disabled = false;
       };
       if (result && s.dex === result.dex) { picked = s.dex; $('starter-ok').disabled = false; }

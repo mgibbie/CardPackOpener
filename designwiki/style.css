@@ -444,6 +444,7 @@ a.mc-pill { text-decoration: none; }
 .ms-play { background: #2f8f4e; box-shadow: 0 3px 0 #1d6234; }
 .ms-table td .chip { margin: 0 3px 2px 0; }
 @media (max-width: 760px) { .ms-table { display: block; overflow-x: auto; } }
+.ms-ab { border-bottom: 1px dotted currentColor; cursor: help; white-space: nowrap; }   /* MicaSurvivor M5: ability (description on hover) */
 .ms-moves td:last-child { min-width: 220px; }
 .ms-stars { color: #d59a3c; white-space: nowrap; }
 .ms-starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }

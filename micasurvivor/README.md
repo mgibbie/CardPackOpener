@@ -247,6 +247,54 @@ pads that also hit you) and the ability / Z-move sources of these statuses come 
 batches. In co-op (still "Coming soon"), a partner's statuses on the host's enemies, and a
 partner's alternative evolution in the ghost replay, are not synced.
 
+### Batch 2: Abilities
+
+Every Pokémon has one **passive ability** (`js/systems/abilities.js`, `G.Abilities`; port
+`abilities.gd` and its hooks in `main.gd`). There are 54 abilities. The per-dex table is the
+port's own: all 966 Pokémon are listed, and the port's fallback (Protean) is never needed. The
+numbers are the port's:
+
+| Family | Abilities | Effect |
+|---|---|---|
+| Pinch | Blaze, Overgrow, Torrent, Swarm | below 40% HP, moves of that type deal +35% |
+| Flat damage | Huge Power ("Power") +25%, Guts +12% (and 4% less taken), Technician +10%, Protean +8% (and +4% speed), Mold Breaker +6% (and +10% vs bosses) | multiplies attack |
+| By move | Iron Fist (melee), Mega Launcher (projectile / beam / boomerang / cone / chain / meteor) +20%; Adaptability +20% with your own types; Drought (fire), Drizzle (water), Snow Warning (ice), Sand Stream (rock + ground) +15% | multiplies the hit |
+| Hits | Tinted Lens: not-very-effective hits +40% · Moxie: +2% damage per 40 kills this run, max +20% · Defiant ("Competitive"): +15% damage for 4 s after you are hit | |
+| Speed | Speed Boost ("Haste") +12%, Run Away +8% (and +5% XP); Swift Swim (rain), Chlorophyll (sun), Sand Rush (sand), Slush Rush (snow) +30% in that weather once it is past half strength | |
+| Economy | Early Bird +12% XP, Pickup +20% coins at the end, Lucky +8% crit and +10% coins, Compound Eyes +10% crit, Magnet Pull ("Magnet") +40% magnet, Prankster -10% cooldown, Regenerator ("Regen") 1% max HP per second | |
+| Defence | Intimidate 10%, Battle Armor 8%, Fur Coat 12%, Wonder Guard 35% less damage (added to defence, still capped at 80%); Thick Fat halves fire + ice; Water Absorb, Volt Absorb, Flash Fire, Sap Sipper halve their type; Solid Rock: super-effective hits -25%; Multiscale: the first hit every 25 s does half | |
+| Sturdy | a hit that would KO you leaves 1 HP and 1.2 s of invulnerability, once every 90 s (after Focus Sash, as in the port) | |
+| Contact | when an enemy touches you: Static 25% paralysis, Flame Body 25% burn (1 stack), Poison Point 25% poison (1 stack), Cute Charm 25% confusion, Effect Spore 20% sleep (through `G.Status`); Rough Skin hurts the attacker 12 + 3 x level | |
+| Immunities | Levitate: map traps don't affect you · Sand Veil, Sand Rush, Slush Rush, Sand Stream: no weather damage · Inner Focus (sleep, confusion) and Limber (paralysis, freeze): status immunity | |
+
+Where it plugs in: `Player` (`atk`, `spd`, `reduction`, `regen`, `hurt()` for the incoming
+side and Sturdy, `update()` for the clocks); `G.Combat.land()` (every hit of yours, with the move
+kind carried by projectiles and orbs as `mkind`); the contact loop in `G.Combat.resolve()`;
+`G.Weather` (the chip damage; `level()` is exported now); and `G.Interact.trapEffect`. Cooldown,
+magnet, XP, coins and crit are multiplied in once by `G.Abilities.set(pl, id)`, which also undoes
+the previous ability. That is the call team mode (batch 7) will make when it swaps the active
+Pokémon. The Sturdy and Multiscale clocks belong to the player, as in the port.
+
+**Shown:** a gold chip "✦ Blaze" at the start of the HUD's buff row. It lights up while the
+ability is acting (low HP for the pinch ones, Defiant, the weather boost, Sturdy or Multiscale
+ready), shows the recharge ("62s") or Moxie's bonus ("+6%"), and tapping or clicking it shows
+what it does. It also appears in the Pokédex detail (under the stats), the main-menu partner card
+(the description is the tooltip), the personality result, the starter choice and the pause screen.
+The English is the port's `lang_en.json`, so some names differ from the games: Power, Regen,
+Haste, Magnet, Lucky, Competitive, Snowfall. The design wiki lists the abilities and gives each
+Pokémon's ability (`tools/micasurvivor/gen_designwiki.mjs`).
+
+**Approximations and hooks:**
+- Inner Focus and Limber only matter against the port's status traps that hit the player
+  (sleep / confusion / paralysis / freeze pads). Those are not ported yet. `G.Abilities.statusImmune(pl,
+  kind)` is ready for them, and the test checks it.
+- The port's Safety Goggles and Heavy-Duty Boots items (same immunities as Sand Veil and Levitate)
+  come with batch 3; their checks go next to the ability checks then.
+- The web slows non-ice Pokémon in snow. The port has no such slow for the player, so Slush Rush
+  and Sand Veil don't remove it, as in the port.
+- In co-op (still "Coming soon") each player's ability applies on their own machine. A partner
+  copy has its ability set, but its stats come over the network.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -276,4 +324,12 @@ partner's alternative evolution in the ghost replay, are not synced.
   Colossal Cyclone in the real level-up screen, the Big Orb hook, EVO_EXTRA, knockback per level
   (a real Hydro Pump hit), Calibre scaling (a real aura and Ember shot) and its cap, and the
   English of every new string.
+- `node overworld/tests/micasurvivor_abilities_test.mjs` (M5 batch 2): the 54 abilities and the
+  966-entry table; every fx key handled and every ability measurably doing something (no silent
+  no-ops); each family with the port's numbers (pinch, flat stats, weather speed and immunity,
+  contact chances through the real contact loop and over 4000 rolls, type halving, Solid Rock,
+  Multiscale's 25 s, Sturdy's 90 s, Defiant's 4 s, the Moxie steps and cap, Tinted Lens, Mold
+  Breaker, Iron Fist / Mega Launcher through real casts, Levitate against real traps); swapping an
+  ability back exactly; and the HUD chip, the Pokédex, the partner card, the result, the starters
+  and the pause screen, in English.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.
