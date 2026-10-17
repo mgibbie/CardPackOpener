@@ -429,31 +429,54 @@ G.Game = (() => {
     if (openItem && !G.UI.isOpen('scr-item')) {
       const o = openItem;
       if (o.mine) { state = 'choice'; if (G.Coop.active) G.Coop.holdStart(); }
-      G.RunUI.showItemChoice(o.cur, o.next, o.take);
+      G.RunUI.showItemChoice(o.held, o.next, o.take);
       return;
     }
     if (laterItems.length) offerItem(laterItems.shift());
   }
 
-  /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
+  /**
+   * MicaSurvivor (M5 lote 3, main.gd 5698-5705): el Caramelo Raro se gasta al cogerlo: +1 nivel
+   * (con sus cartas) y no ocupa hueco. (El port lo ofrecía como carta; aquí se usa al momento,
+   * como dice su descripción.)
+   */
+  function rareCandy() {
+    pl.level++;
+    pl.xpNext = G.Player.xpFor(pl.level);
+    pendingLevels++;
+    G.Progress.event('item', { id: 'rarecandy' });
+    G.Audio.sfx('levelup');
+    G.FX.ring(pl.x, pl.y, 8, 140, '#4f9cf0', 0.7, 5);
+    G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, '¡Caramelo Raro! +1 nivel', '#4f9cf0', true);
+  }
+
+  /**
+   * Has cogido un objeto: si tienes un hueco libre te lo pones; si no, eliges.
+   * MicaSurvivor (M5 lote 3, main.gd 5754-5793): con la Mochila hay 2 huecos; con los dos llenos
+   * eliges a cuál sustituye o te quedas con los tuyos.
+   */
   function offerItem(id) {
     if (!pl || !G.Items.BY[id]) return;
     if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
+    if (G.Items.BY[id].instant) { rareCandy(); return; }
     let mine = false;            // esta elección es la que ha parado el juego
-    const take = got => {
+    // choice: { slot } = te lo pones en ese hueco · null = te quedas como estabas
+    const take = choice => {
       openItem = null;
-      if (got !== pl.item) {
-        pl.equip(got);
-        G.Spawner.say('¡Llevas ' + G.Items.BY[got].name + '!', 2.6, true);
-        G.Progress.event('item', { id: got });
+      if (choice && choice.slot) {
+        pl.equip(id, choice.slot);
+        G.Spawner.say('¡Llevas ' + G.Items.BY[id].name + '!', 2.6, true);
+        G.Progress.event('item', { id });
       }
       if (!mine) { afterLevelUp(); return; }
       if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
       if (G.Coop.active) G.Coop.holdEnd();
       afterLevelUp();
     };
-    if (!pl.item) { take(id); return; }
-    if (pl.item === id) { G.Spawner.say('Ya llevas ' + G.Items.BY[id].name, 2, true); return; }
+    if (pl.hasItem(id)) { G.Spawner.say('Ya llevas ' + G.Items.BY[id].name, 2, true); return; }
+    const two = pl.itemSlots() >= 2;
+    if (!pl.item) { take({ slot: 1 }); return; }
+    if (two && !pl.item2) { take({ slot: 2 }); return; }
     // Se para el juego mientras eliges; en grupo, para todos (como con las
     // fusiones). Antes en grupo seguía y te pegaban mientras elegías.
     if (state === 'playing' || state === 'held') {
@@ -461,8 +484,9 @@ G.Game = (() => {
       state = 'choice';
       if (G.Coop.active) G.Coop.holdStart();
     }
-    openItem = { cur: pl.item, next: id, take, get mine() { return mine; } };
-    G.RunUI.showItemChoice(pl.item, id, take);
+    const held = two ? [pl.item, pl.item2] : [pl.item];
+    openItem = { held, next: id, take, get mine() { return mine; } };
+    G.RunUI.showItemChoice(held, id, take);
   }
 
   /** @param who  quien lo ha cogido (en cooperativo puede ser un compañero) */
@@ -480,8 +504,10 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'coin') {
-      pl.coins += p.value;
-      G.FX.dmgText(who.x, who.y - who.bodyH - 6, '+' + p.value, '#ffd23f');
+      // M5 lote 3: Incienso Puro, +25 % de monedas (main.gd 5379; el resto se redondea al azar).
+      const v = pl.hasItem('pureincense') ? Math.floor(p.value * G.Items.INCENSE.coins + Math.random()) : p.value;
+      pl.coins += v;
+      G.FX.dmgText(who.x, who.y - who.bodyH - 6, '+' + v, '#ffd23f');
       return;
     }
     if (p.kind === 'item') {
@@ -539,8 +565,9 @@ G.Game = (() => {
       return;
     }
     if (G.UI.isOpen('scr-item')) {
-      for (let i = 0; i < 2; i++) {
-        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) document.querySelectorAll('#item-cards .card')[i].click();
+      const cards = document.querySelectorAll('#item-cards .card');   // 2, o 3 con la Mochila llena
+      for (let i = 0; i < cards.length; i++) {
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) cards[i].click();
       }
       return;
     }
@@ -866,7 +893,10 @@ G.Game = (() => {
   })();
 
   return {
-    init, startRun, everyone, levelXp, flash, offerBond,
+    init, startRun, everyone, levelXp, flash, offerBond, offerItem,
+    get pendingLevels() { return pendingLevels; },
+    /** Para pruebas: recoge un objeto del suelo como si lo tocaras (monedas, objetos...). */
+    debugCollect(p) { onCollect(p); },
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */

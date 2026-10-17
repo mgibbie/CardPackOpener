@@ -51,8 +51,9 @@ export function build() {
 		dex: s.dex, name: name(s.dex), types: (G.DEX_BY[s.dex] || {}).types || [],
 		start: T((G.Moves.BY_ID[s.start] || {}).name || s.start),
 	}));
-	const items = G.Items.LIST.map(i => ({ id: i.id, name: T(i.name), desc: T(i.desc) }));
-	const upgrades = G.Upgrades.LIST.map(u => ({ id: u.id, name: T(u.name), unit: T(u.unit), max: u.max }));
+	// (M5 batch 3: species-locked items say who can use them; upgrades carry their price per level)
+	const items = G.Items.LIST.map(i => ({ id: i.id, name: T(i.name), desc: T(i.desc), ...(i.only ? { only: i.only.map(name) } : {}), ...(i.instant ? { instant: true } : {}) }));
+	const upgrades = G.Upgrades.LIST.map(u => ({ id: u.id, name: T(u.name), unit: T(u.unit), max: u.max, costs: Array.from({ length: u.max }, (_, l) => G.Upgrades.cost(u.id, l)) }));
 	// [dex, name, types, rarity, gen, legendary, ability id]
 	const pokemon = G.DEX.map(p => [p.dex, p.name, p.types, p.rarity, p.gen, p.leg ? 1 : 0, G.Abilities.of(p.dex)]);
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));

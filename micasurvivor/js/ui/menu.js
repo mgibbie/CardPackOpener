@@ -272,11 +272,13 @@ G.MenuUI = (() => {
           <b>${u.name}</b> <span style="color:var(--muted);font-size:13px">${u.unit}</span>
           <div class="pips">${Array.from({ length: u.max }, (_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</div>
         </div>
-        <div class="upg-btns">
+        <div class="upg-btns${(u.id === 'ban' || u.id === 'tm') && lvl > 0 ? ' two' : ''}">
           ${u.id === 'ban' && lvl > 0 ? `<button class="btn small" data-ban>Elegir (${banList().length}/${lvl})</button>` : ''}
+          ${u.id === 'tm' && lvl > 0 ? '<button class="btn small" data-tm>Elegir</button>' : ''}
           <button class="btn small ${maxed ? '' : 'gold'}" data-buy data-sfx="none" ${maxed || s.coins < cost ? 'disabled' : ''}>
           ${maxed ? 'Máx.' : `<span class="coin"></span> ${cost}`}</button></div>`;
       if (u.id === 'ban' && lvl > 0) el.querySelector('[data-ban]').onclick = () => { banOpen = !banOpen; renderUpgrades(); };
+      if (u.id === 'tm' && lvl > 0) el.querySelector('[data-tm]').onclick = () => { tmOpen = !tmOpen; renderUpgrades(); };
       el.querySelector('[data-buy]').onclick = () => {
         // Se vuelve a leer todo al pulsar (la partida puede haber cambiado desde que se dibujó).
         const sv = G.DB.save, lv = G.DB.upgradesOf(upgDex), now = lv[u.id] || 0;
@@ -293,6 +295,7 @@ G.MenuUI = (() => {
       };
       box.appendChild(el);
       if (u.id === 'ban' && lvl > 0 && banOpen) box.appendChild(banPicker(lvl));
+      if (u.id === 'tm' && lvl > 0 && tmOpen) box.appendChild(tmPicker());
     }
     box.appendChild(bindPanel());
   }
@@ -324,6 +327,27 @@ G.MenuUI = (() => {
         s.pbind[upgDex] = l;
         G.DB.commit();
         G.Audio.sfx('select');
+        renderUpgrades();
+      };
+    });
+    return el;
+  }
+
+  // ---------------- MT: movimiento inicial (M5 lote 3, menu.gd _tm_panel) ----------------
+  // save.ptm[dex] = id. Gratis cambiarlo cuando quieras; el elegido sale de los vetados.
+  let tmOpen = false;
+  function tmPicker() {
+    const cur = G.startMoveOf(upgDex);
+    const ids = G.tmPool(upgDex).slice().sort((a, b) => G.I18n.t(G.Moves.BY_ID[a].name).localeCompare(G.I18n.t(G.Moves.BY_ID[b].name)));
+    const el = document.createElement('div');
+    el.className = 'panel tm-picker';
+    el.id = 'tm-picker';
+    el.innerHTML = `<p class="sub" style="margin:0 0 8px">Elige el movimiento con el que empiezas cada partida. Puedes cambiarlo gratis cuando quieras.</p>
+      <div class="ban-moves">${ids.map(id => { const d = G.Moves.BY_ID[id]; const on = id === cur;
+        return `<button class="chip ${on ? 'on' : ''}" data-tm-id="${id}">${G.Icons.html('move:' + id, 16)} ${d.name}${on ? ' ✔' : ''}</button>`; }).join('')}</div>`;
+    el.querySelectorAll('[data-tm-id]').forEach(b => {
+      b.onclick = () => {
+        if (G.tmSet(upgDex, b.dataset.tmId)) G.Audio.sfx('select');
         renderUpgrades();
       };
     });

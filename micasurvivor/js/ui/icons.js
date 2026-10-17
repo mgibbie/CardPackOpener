@@ -166,6 +166,116 @@ G.Icons = (() => {
     assaultvest: { pal: { g: '#4f8a3a', d: '#2f5a22', y: '#ffd23f' }, rows: [
       '............', '.kkk....kkk.', 'kggk....kggk', 'kgggkkkkgggk', 'kgggyggygggk', 'kgggggggggdk',
       'kggyggggygdk', 'kgggggggggdk', 'kgggggggggdk', 'kddddddddddk', 'kkkkkkkkkkkk', '............'] },
+    // MicaSurvivor (M5 lote 3): los 15 objetos del port de Android (data/icons.json "ui" y
+    // scripts/icons.gd EXTRA para la Esfera Colosal), copiados tal cual: 20×20 (16×16 la Esfera), sin contorno extra.
+    eternalice: { pal: { a: '#7fc8ee', b: '#bfe9ff', c: '#ffffff', e: '#4f9ad0' }, outline: false, rows: [
+      '....................', '..........kk........', '.........kaak.......', '........kabbak......',
+      '.......kabbbbak.....', '......kabcbbbbak....', '.....kabccbbbbbak...', '....kabcccbbbbbbak..',
+      '...kabcccbbbbbbbbak.', '..kabbccbbbbbbbbbbak', '..kaebbbbbbbbbbbbeak', '..kaeebbbbbbbbbbeeak',
+      '...kaeeebbbbbbeeeak.', '....kaaeeeeeeeeaak..', '.....kkaaaaaaaakk...', '.......kkkkkkkk.....',
+      '....................', '....................', '....................', '....................'] },
+    scopelens: { pal: { a: '#e8493f', b: '#bfe6ff', c: '#ffffff' }, outline: false, rows: [
+      '....................', '....................', '......kkkkkkkk......', '.....kaaaakaaak.....',
+      '....kaaakkkkaaak....', '...kaakkbbkbkkaak...', '..kaakbbbbkbbbkaak..', '..kaakbbbbkbbbkaak..',
+      '..kakbbbcbkbbbbkak..', '..kakbbcbbkbbbbkak..', '..kkkkkkkkkkkkkkkk..', '..kakbbbbbkbbbbkak..',
+      '..kaakbbbbkbbbkaak..', '..kaakbbbbkbbbkaak..', '...kaakkbbkbkkaak...', '....kaaakkkkaaak....',
+      '.....kaaaakaaak.....', '......kkkkkkkk......', '....................', '....................'] },
+    expertbelt: { pal: { a: '#ffd23f', b: '#3a3a48', c: '#6a6a7a' }, outline: false, rows: [
+      '....................', '....................', '....................', '....................',
+      '....................', '.......kkkkkk.......', '.......kaaaak.......', '.kkkkkkkaaaakkkkkkk.',
+      '.kbbbbbkabbakbbbbbk.', '.kbbbbbkabbakbbbbbk.', '.kbcbbckabbakbbcbbk.', '.kbbbbbkabbakbbbbbk.',
+      '.kbbbbbkabbakbbbbbk.', '.kkkkkkkaaaakkkkkkk.', '.......kaaaak.......', '.......kkkkkk.......',
+      '....................', '....................', '....................', '....................'] },
+    widelens: { pal: { a: '#d6f2a0', b: '#9ad94a', c: '#ffffff', d: '#8a6a3a' }, outline: false, rows: [
+      '....................', '....................', '.....kkkkkkkk.......', '....kkaaaaaakk......',
+      '...kaaakkkkaaak.....', '..kkakkbbbbkkakk....', '..kaakccbbbbkaak....', '..kakbcbbbbbbkak....',
+      '..kakbbbbbbbbkak....', '..kakbbbbbbbbkak....', '..kakbbbbbbbbkak....', '..kaakbbbbbbkaak....',
+      '..kkakkbbbbkkakk....', '...kaaakkkkaaak.....', '....kkaaaaaakkd.....', '.....kkkkkkkkkkd....',
+      '..............kkd...', '...............kkd..', '................kkd.', '.................k..'] },
+    bigorb: { pal: { O: '#8a5ad0', Y: '#c9a6ff', W: '#f4ecff', o: '#4a2a96' }, outline: false, rows: [
+      '......kWWk......', '.....kWWWWk.....', '......kWWk......', '....kkkOOkkk....',
+      '...kOOYYYYOOk...', '..kOYWWYYYYOk...', 'kWOYWYYYYYYYOWk.', 'kWWOYYYYYYYYOWWk',
+      'kWWOYYYYYYYYOWWk', 'kWOOYYYYYYYOOWk.', '..kOOYYYYYOOk...', '...kooOOOOook...',
+      '....kkoooookk...', '......kWWk......', '.....kWWWWk.....', '......kWWk......'] },
+    typegem: { pal: { a: '#d9f1ff', b: '#9fd8ff', c: '#5fb0e8' }, outline: false, rows: [
+      '....................', '....................', '..........k.........', '.........kak........',
+      '........kbaak.......', '.......kbbaaak......', '.....kbbbbaaaaak....', '....kbbbbbaaaaaak...',
+      '...kkkkkkkkkkkkkkk..', '....kccccccbbbbbk...', '....kkcccccbbbbkk...', '.....kcccccbbbbk....',
+      '......kccccbbbk.....', '.......kcccbbk......', '.......kkccbkk......', '........kccbk.......',
+      '.........kck........', '.........kkk........', '..........k.........', '....................'] },
+    sitrusberry: { pal: { a: '#5fb84a', b: '#ffd83d', c: '#fff7c8', d: '#ffe98a' }, outline: false, rows: [
+      '....................', '..............a.....', '............aaa.....', '..........kaaaaa....',
+      '......kkkkkaaaaa....', '.....kkbbbkabkk.....', '....kbbbbbbbbbbk....', '...kkbbbcbbbbbbkk...',
+      '...kbbbcddddbbbbk...', '...kbbbddddddbbbk...', '...kbbddddddddbbk...', '...kbbddddddddbbk...',
+      '...kbbddddddddbbk...', '...kbbddddddddbbk...', '...kkbbddddddbbkk...', '....kbbbddddbbbk....',
+      '.....kkbbbbbbkk.....', '......kkkkkkkk......', '....................', '....................'] },
+    heavyboots: { pal: { a: '#a8aebf', b: '#7a7f8f', c: '#c9cfdc', d: '#3a3a48' }, outline: false, rows: [
+      '....................', '....................', '......kkkkkkk.......', '......kaaaabk.......',
+      '......kaaaabk.......', '......kaaaabk.......', '......kaaaabk.......', '......kbbbbbk.......',
+      '......kbbbbbk.......', '......kbbbbbk.......', '......kbbbbbk.......', '....kkkbbbbbk.......',
+      '....kbbbbbbbkkkk....', '....kbbbbbbbbbbkkkk.', '....kbbbbbbbbccccck.', '....kdddddddddddddk.',
+      '....kdddddddddddddk.', '....kkkkkkkkkkkkkkk.', '....................', '....................'] },
+    safetygoggles: { pal: { a: '#ffb347', b: '#fff3c8' }, outline: false, rows: [
+      '....................', '....................', '....................', '....................',
+      '....................', '....................', '...kkkkkk..kkkkkk...', '..kkaaaakkkkaaaakk..',
+      '.kkaabaaakkaabaaakk.', '.kkaaaaaakkaaaaaakk.', '.kkaaaaaakkaaaaaakk.', '.kkaaaaaakkaaaaaakk.',
+      '..kkaaaakkkkaaaakk..', '...kkkkkk..kkkkkk...', '....................', '....................',
+      '....................', '....................', '....................', '....................'] },
+    weaknesspolicy: { pal: { a: '#f4f0e0', b: '#9a9a9a', c: '#e0434f' }, outline: false, rows: [
+      '....................', '....................', '....kkkkkkkkkkkk....', '....kaaaaaaaaaak....',
+      '....kaaaaaaaaaak....', '....kaaaaaaaaaak....', '....kaabbbbbbaak....', '....kaaaaaaaaaak....',
+      '....kaabbbbbbaak....', '....kaaaaaaaaaak....', '....kaaaaaaaaaak....', '....kaaccccccaak....',
+      '....kaaccccccaak....', '....kcccccccccck....', '....kaccccccccak....', '....kaacccccaaak....',
+      '....kaaacccaaaak....', '....kaaaacaaaaak....', '....kkkkkkkkkkkk....', '....................'] },
+    rarecandy: { pal: { a: '#ffffff', b: '#4f9cf0', c: '#bfe0ff' }, outline: false, rows: [
+      '....................', '....................', '....................', '....................',
+      '....................', '.k.....kkkkkk......k', '.kak..kbbcccbk...kak', '.kaakkbccbbbcck.kaak',
+      '.kaaakbcbbbbbbkaaaak', '.kaaakbbbbbbbbkaaaak', '.kaaakbbbbbbbbkaaaak', '.kaaakbbbbbbbbkaaaak',
+      '.kaaakbbbbbbbbkaaaak', '.kaak.kbbbbbbk..kaak', '.kak...kkkkkk....kak', '.k.................k',
+      '....................', '....................', '....................', '....................'] },
+    pureincense: { pal: { a: '#dfe8f5', b: '#bcd0ea', c: '#e8493f', d: '#a8683a' }, outline: false, rows: [
+      '....................', '..........a.........', '.........a..........', '..........a.b.......',
+      '........b..a........', '..........a.........', '....................', '.........cc.........',
+      '.........cc.........', '.........dd.........', '.........dd.........', '.........dd.........',
+      '.........dd.........', '.........dd.........', '.........dd.........', '.........dd.........',
+      '.........dd.........', '........kkkk........', '........kkkk........', '....................'] },
+    lightball: { pal: { a: '#ffd23f', b: '#e0434f', c: '#fffbe0', d: '#ffe98a' }, outline: false, rows: [
+      '....................', '....................', '.......kkkkkk.......', '.....kkaaaaaakk.....',
+      '....kkaaaaabaakk....', '...kkaaaaabbaaakk...', '...kaacaddbbaaaak...', '..kaaaaddbbbdaaaak..',
+      '..kaaadddbbbbbbaak..', '..kaaaddbbbbbbaaak..', '..kaaaddbbbbbbaaak..', '..kaaadbbbbbbdaaak..',
+      '..kaaaadddbbdaaaak..', '...kaaaaddbbaaaak...', '...kkaaaabbaaaakk...', '....kkaaabbaaakk....',
+      '.....kkaabaaakk.....', '.......kkkkkk.......', '....................', '....................'] },
+    thickclub: { pal: { a: '#f1ead6', b: '#ffffff', c: '#d8cba8', d: '#e0d6b8' }, outline: false, rows: [
+      '..............kk....', '.............kaak...', '............kaaakk..', '............kaakaak.',
+      '.............kkaaaak', '.............akaaaak', '............abakaak.', '...........abaaakk..',
+      '..........abaaa.....', '.........abaaa......', '........abaaa.......', '.......abaaa........',
+      '..kk..abaaa.........', '.kaakabaaa..........', 'kaaakkaaa...........', 'kaakaaka............',
+      '.kkaacak............', '..kacaak.......d....', '...kaak.............', '....kk..............'] },
+    silverpowder: { pal: { a: '#aeb8c8', b: '#c9453b', c: '#d6deea', d: '#ffffff', e: '#8793a8', f: '#e8f0ff' }, outline: false, rows: [
+      '....................', '....................', '....................', '......k.......k.....',
+      '.......ak...ka......', '.......kaaaaak......', '........aaaaa.......', '.......kbbbbbk......',
+      '......kkkkkkkkk.....', '.....kkccccaaakk....', '....kkccccaaaaakk...', '....kacccaaaaaaak...',
+      '...kacccaaaaaaaaak..', '..kacccaadaaaeeeeak.', '..kaaaaaaaaaaeeeeak.', '...kaaaaaaadeeeeek..',
+      '...kaaaafaaaeeeeek..', '...kkkaaaaaaaeekkk..', '.....kkaaaaaaekk....', '.......kkkkkkk......'] },
+    // MicaSurvivor (M5 lote 3): iconos de las mejoras MT, Segunda oportunidad y Mochila (port, data/icons.json).
+    tm: { pal: { a: '#2a3a5a', b: '#3f5a8a', c: '#1a2640', d: '#8fb0e8', e: '#ffd23f', f: '#e0e8f8' }, outline: false, rows: [
+      '....................', '....................', '....kkkkkkkkkkkk....', '...kbbbbbbbbbbbbk...',
+      '..kbddbbbbbbbbbbbk..', '..kbdbbbbbbbbbbbbk..', '..kbbbbbbbbbbbbbbk..', '..kbbbkkkkkkkkbbbk..',
+      '..kbbkaaaaaaaakbbk..', '..kbbkaaffffaakbbk..', '..kbbkaafaaaaakbbk..', '..kbbkaafffaaakbbk..',
+      '..kbbkaafaaaaakbbk..', '..kbbkaaffffaakbbk..', '..kbbkaaaaaaaakbbk..', '..kbbbkkkkkkkkbbbk..',
+      '..kbbbbbbbbeebbbbk..', '...kbbbbbbbeebbbk...', '....kkkkkkkkkkkk....', '....................'] },
+    revive: { pal: { r: '#e8435a', h: '#ff9aa8', d: '#a82a3c', w: '#f6f6f6', g: '#a8a8a8' }, outline: false, rows: [
+      '....................', '....kkk......kkk....', '...krrrkk..kkrrrk...', '..krhhrrrkkrrrrrgg..',
+      '.krhhrrrrrrrrrggwwg.', '.krhrrrrrrrrggwwwwg.', '.krrrrrrrrrgwwwwggk.', '.krrrrrrrggwwwwwrrk.',
+      '.ggggggggwwwwwwwggg.', '.gwwwwwwwwwwwwwwwwg.', '..gwwwwwgggggggggg..', '..gwwwwgrrrrrrrrdk..',
+      '...gwggrrrrrrrrrk...', '...ggrrrrrrrrrrdk...', '....krrrrrrrrrdk....', '.....kkrrrrrdkk.....',
+      '.......krrrrk.......', '........krrk........', '.........kk.........', '....................'] },
+    bag: { pal: { a: '#c24a2a', b: '#e0673f', c: '#8a2a14', d: '#ffb088', e: '#f09060', f: '#ffd23f' }, outline: false, rows: [
+      '....................', '....................', '.......kkkkkk.......', '......kaaaaaak......',
+      '.....kaaaaaaaak.....', '.....kaaaaaaaak.....', '....kbcaaaaaacbk....', '...kbbckkkkkkcbbk...',
+      '...kbdcbbbbbbcbbk...', '...kbdcbbbbbbcbbk...', '...kbbkkkkkkkkbbk...', '...kbbkeeeeeekbbk...',
+      '...kbbkeeffeekbbk...', '...kbbkeeffeekbbk...', '...kbbkeeeeeekbbk...', '...kbbkeeeeeekbbk...',
+      '...kbbkkkkkkkkbbk...', '....kbbbbbbbbbbk....', '.....kkkkkkkkkk.....', '....................'] },
     // ---------- medallas de logros (bronce, plata, oro) ----------
     medal1: { pal: { r: '#ff5f6d', q: '#b8283a', m: '#d08a4a', n: '#8a5226', w: '#ffd0a0', s: '#ffe8c8' }, rows: MEDAL },
     medal2: { pal: { r: '#4fb4ff', q: '#2a6fb0', m: '#c9d2de', n: '#7d8899', w: '#ffffff', s: '#ffffff' }, rows: MEDAL },

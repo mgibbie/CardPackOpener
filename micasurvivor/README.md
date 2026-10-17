@@ -220,7 +220,7 @@ the web game's own (no GDScript translated line by line). Every edit is marked `
   Spin, Petal Blizzard, Bulldoze, Discharge, Flamethrower, Toxic, Flame Wheel and Razor Leaf need
   the **Big Orb** item. When both evolutions of a move are ready, both gold cards come up together
   and the player picks one. A missing stat shows its card flagged "Evolves <move>". The Big Orb
-  itself comes in batch 3. The hook is `Player.hasItem('bigorb')`, which also gives x1.3 size.
+  ("Colossal Orb") is an item since batch 3. The hook is `Player.hasItem('bigorb')`, which also gives x1.3 size.
   **EVO_EXTRA** (`moves_data.gd` 112-118) adds the port's extra tweaks to five normal
   evolutions: Confusion x1.6, Rock Throw x1.6 and knock 30, Shadow Ball x1.3, Fairy Wind x1.5,
   Gust x1.6.
@@ -231,7 +231,7 @@ the web game's own (no GDScript translated line by line). Every edit is marked `
   knockback on too, so Hydro Pump, Bulldoze and Bug Buzz push.
 - **Calibre** (`js/systems/levelup.js`, port `main.gd` 143-156 and 1397-1420): a level-up stat card,
   +12% size of projectiles, orbs and areas, up to 6 times. `Player.sizeK()` = permanent upgrade
-  (`perks.size`, the shop upgrade comes in batch 3) x 1.12^cards x Big Orb 1.3. Combat attacks
+  (`perks.size`, the Caliber upgrade of batch 3, +8% a level) x 1.12^cards x Big Orb 1.3. Combat attacks
   with a scaled view of the move (`G.Combat.eff()`): the radius of auras, melee, mines, meteors,
   cones, chains, trails, beams, boomerangs and dashes; projectile / orb size; beam width. The orbit
   ring itself grows half as much.
@@ -289,11 +289,78 @@ Pokémon's ability (`tools/micasurvivor/gen_designwiki.mjs`).
   (sleep / confusion / paralysis / freeze pads). Those are not ported yet. `G.Abilities.statusImmune(pl,
   kind)` is ready for them, and the test checks it.
 - The port's Safety Goggles and Heavy-Duty Boots items (same immunities as Sand Veil and Levitate)
-  come with batch 3; their checks go next to the ability checks then.
+  came with batch 3: `trapImmune()` / `weatherImmune()` check them too.
 - The web slows non-ice Pokémon in snow. The port has no such slow for the player, so Slush Rush
   and Sand Veil don't remove it, as in the port.
 - In co-op (still "Coming soon") each player's ability applies on their own machine. A partner
   copy has its ability set, but its stats come over the network.
+
+### Batch 3: Items and upgrades
+
+**15 new held items** (`js/data/items.js`, port `types_data.gd` ITEMS and their hooks in
+`main.gd`), 26 in all, in the port's order. They drop where the web's items always did (bosses
+always, locked chests 50%, plain chests 8%). As in the port, every item has the same chance,
+you never roll one you already hold, and the species-locked ones only drop for the Pokémon that
+can use them (`G.Items.roll()` / `okFor()`). The icons are the port's pixel art, copied as-is
+from `data/icons.json` "ui" (the Colossal Orb from `icons.gd` EXTRA) into `G.Icons.UI`.
+
+| Item | Effect | Where it plugs in |
+|---|---|---|
+| Never-Melt Ice | an enemy that hits you is 30% slower for 2 s | the contact loop in `G.Combat.resolve()` |
+| Scope Lens | +15% critical hit chance | `critChance`, on equip / unequip |
+| Expert Belt | super-effective hits x1.25 | `G.Items.outK()` in `G.Combat.land()` |
+| Wide Lens | x1.2 radius (and reach) of every move | `G.Combat.eff()` |
+| Colossal Orb (Big Orb) | x1.3 size; enables the 8 Big Orb alternative evolutions of batch 1 | `Player.sizeK()`, `hasItem('bigorb')` |
+| Type Gem | x1.2 with moves of your Pokémon's types | `outK()` |
+| Sitrus Berry | when a hit leaves you below 50%, heal 30% of max HP, once every 90 s | `Player.hurt()` |
+| Heavy-Duty Boots | map traps don't affect you | `G.Abilities.trapImmune()` |
+| Safety Goggles | no sandstorm / snow damage | `G.Abilities.weatherImmune()` |
+| Weakness Policy | a super-effective hit on you gives x1.5 attack for 8 s | `Player.hurt()`, `Player.atk` |
+| Rare Candy | +1 level at once (its level-up cards come up); takes no slot | `offerItem()` in `game.js` |
+| Pure Incense | 25% fewer enemies (x0.75 spawn rate), each with x1.3 HP and x1.5 XP; coins picked up x1.25 | `G.Spawner`, coin pickup |
+| Light Ball | Pichu, Pikachu, Raichu only: Electric x2 | `outK()`; drops only for them |
+| Thick Club | Cubone, Marowak only: Ground x1.5 | `outK()`; drops only for them |
+| Silver Powder | Bug moves x1.2 | `outK()` |
+
+**Carry two** (`Player.item2`, `itemSlots()`, `items()`, `equip(id, slot)`; port `main.gd`
+5754-5793): with the Backpack upgrade you hold two items. A new one goes into a free slot by
+itself. With both full, the item screen shows three cards: replace slot 1, replace slot 2, or keep
+both (keys 1-3, or the pad). Without the Backpack it is the web's two-card choice as before.
+`hasItem()` checks both slots. The HUD stacks the second slot above the first, each with its name.
+The Tower's "Double baggage" pact (batch 8) only has to set `Player.bagPact = true`.
+
+**4 new permanent upgrades** (`js/data/upgrades.js`, port `save_data.gd` UPGRADES / perks), each
+bought per Pokémon like the others:
+
+| Upgrade | Levels | Cost per level | Effect |
+|---|---|---|---|
+| Caliber | 6 | 80 · 110 · 160 · 220 · 310 · 430 | +8% size per level (`perks.size` -> `Player.sizePerk`, the permanent half of `sizeK()`) |
+| TM | 1 | 2000 | choose your starting move: "Choose" opens the editor under the row (port `menu.gd` `_tm_panel`). The pool is the Pokémon's types plus Normal, without support moves (Mew: every move). Changing it is free. The pick leaves the ban list (`G.tmPool`, `G.tmPick`, `G.tmSet` in `js/data/starters.js`; `G.startMoveOf()` returns the pick while the TM is owned) |
+| Second Chance | 2 | 2500 · 5000 | a heart per level: a lethal hit spends one and you revive with full HP, 2.5 s invulnerable, and every enemy within 260 is knocked away (500). It comes after Focus Sash and Sturdy. The hearts show next to the HP bar |
+| Backpack | 1 | 7500 | two item slots (above) |
+
+The web's **free card reroll** stays (the port has none). The TM editor is plain buttons in the
+upgrades screen, so the pad's focus navigation reaches it. While doing this, `G.Pad`'s D-pad
+navigation got a 2:1 cone: going right from a wide price button no longer jumps to the row above.
+
+**Saved and merged:** levels go in `save.pupg[dex]`, as before. `G.DB.merge()` keeps the max of
+every level, so new ids need nothing extra, and `sanitize()` clamps a hand-edited level to the
+max. The TM pick is `save.ptm[dex]` (a move id; sanitized). On merge the newer save's pick wins,
+and Pokémon it has no pick for take the other save's. The "Item collector" achievement now asks
+for all 26 items, as the port's does.
+
+**Approximations:**
+- **Rare Candy** is used the moment you pick it up. The port shows it as an item card (take or
+  keep yours). The item's own text says "Gain 1 level when you take it (doesn't use a slot)", and
+  turning a free level down makes no sense.
+- **Drop places and rates** stay the web's. The port also rebalanced its chests (16% item chance,
+  guaranteed when you hold none) and enemies (1.5% item drop). That is a separate balance change,
+  like the altars and melee balance the owner kept.
+- **Bug fix found by the tests:** Focus Sash's clock started at -999 ms against
+  `performance.now()`, so the Sash could not save you during the first minute after the page
+  loaded. It starts at -Infinity now (regression test in the items suite).
+- In co-op (still "Coming soon") items stay per player, as before. Pure Incense reads the host's
+  items.
 
 ## Tests
 
@@ -332,4 +399,12 @@ Pokémon's ability (`tools/micasurvivor/gen_designwiki.mjs`).
   Breaker, Iron Fist / Mega Launcher through real casts, Levitate against real traps); swapping an
   ability back exactly; and the HUD chip, the Pokédex, the partner card, the result, the starters
   and the pause screen, in English.
+- `node overworld/tests/micasurvivor_items_test.mjs` (M5 batch 3), logged in with a stubbed account
+  row: the 26 items and 17 upgrades (order, icons, costs, English); buying Caliber / TM / Second
+  Chance / Backpack in the real screen; the TM editor driven by a synthetic gamepad; the upgrades
+  and the TM pick reaching the account, surviving a reload and a 409 merge (max levels, a clamped
+  hand edit); a run with them; every new item's effect with numbers (a real Ember for Type Gem, the
+  real contact loop for Never-Melt Ice, real traps and sandstorm for the Boots and Goggles, the
+  spawner for Pure Incense, 3000 rolls for the species locks); Rare Candy; carrying two (auto-fill,
+  the 3-card choice, keys, HUD); Second Chance revive and knockback; the Focus Sash regression.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

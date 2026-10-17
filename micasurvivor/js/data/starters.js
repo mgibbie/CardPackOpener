@@ -41,8 +41,44 @@ for (const s of G.STARTERS) G.STARTER_BY[s.dex] = s;
 
 /** Movimiento inicial de cualquier Pokémon (starter o del gacha). */
 G.startMoveOf = dex => {
+  // MicaSurvivor (M5 lote 3, save_data.gd start_move_of): con la MT comprada, el que elegiste.
+  const pick = G.tmPick(dex);
+  return pick || G.naturalStartOf(dex);
+};
+
+/** El movimiento inicial de siempre (sin la MT). */
+G.naturalStartOf = dex => {
   const s = G.STARTER_BY[dex];
   return s ? s.start : G.Moves.startFor(G.DEX_BY[dex]);
+};
+
+/**
+ * MicaSurvivor (M5 lote 3, save_data.gd tm_pool): los movimientos que se pueden elegir de
+ * inicio con la MT: los de sus tipos y los Normales (Mew, todos), sin los de apoyo.
+ */
+G.tmPool = dex => {
+  const mon = G.DEX_BY[dex];
+  if (!mon) return [];
+  return G.Moves.ALL.filter(m => m.kind !== 'buff' && (+dex === 151 || m.type === 'normal' || mon.types.includes(m.type))).map(m => m.id);
+};
+
+/** El elegido con la MT (save.ptm[dex]) si la tienes comprada y sigue siendo válido; si no, null. */
+G.tmPick = dex => {
+  const sv = G.DB && G.DB.save;
+  if (!sv || !((sv.pupg || {})[dex] || {}).tm) return null;
+  const id = (sv.ptm || {})[dex];
+  return id && G.tmPool(dex).includes(id) ? id : null;
+};
+
+/** Elige el movimiento inicial (MT). No puede quedarse vetado (save_data.gd tm_set). */
+G.tmSet = (dex, id) => {
+  const sv = G.DB.save;
+  if (!G.tmPool(dex).includes(id)) return false;
+  sv.ptm = sv.ptm || {};
+  sv.ptm[dex] = id;
+  if (sv.pban && sv.pban[dex]) sv.pban[dex] = sv.pban[dex].filter(b => b !== id);
+  G.DB.commit();
+  return true;
 };
 
 /** Descripción corta de cada rasgo, para la pantalla de resultado. */
