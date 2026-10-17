@@ -287,7 +287,11 @@ const COMMON_STUBS = {
 	// a static legendary you failed to catch, and the clean-up that removes it
 	// from the map afterwards
 	Common_EventScript_LegendaryFlewAway: [{ op: 'msg', text: 'The POKeMON flew away!' }, { op: 'return' }],
-	Common_EventScript_RemoveStaticPokemon: [{ op: 'return' }],
+	// pokeemerald event_scripts.s: fade, `removeobject VAR_LAST_TALKED`, release,
+	// end. As a bare return the beaten static never left: the Frontier SUDOWOODO
+	// set FLAG_DEFEATED_SUDOWOODO and went on standing in the Artisan Cave
+	// channel (its hide flag is what removeobject sets — ow_cutscenes hideObj).
+	Common_EventScript_RemoveStaticPokemon: [{ op: 'hideobj', who: 'VAR_LAST_TALKED' }, { op: 'release' }, { op: 'end' }],
 	// engine plumbing with no counterpart here: fanfares, the nickname prompt,
 	// rival sprite selection, the trendy-phrase and Briney/weather bookkeeping
 	Common_EventScript_PlayGymBadgeFanfare: [{ op: 'return' }],

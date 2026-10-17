@@ -66,6 +66,8 @@ export const OW_RESET_KEYS = [
 	// (the battle snapshot used to survive a reset — a fresh save would then try
 	// to resume a fight belonging to the deleted game)
 	'magepunk_journal_v1', 'magepunk_repellast', 'magepunk_battle_v1',
+	// ...and the id of the last battle that ended (a stale snapshot of it is refused)
+	'magepunk_battle_ended_v1',
 	// where you wake up after blacking out (the last POKeMON CENTER you healed at)
 	'magepunk_healpoint_v1',
 	// the save-sync revision: which copy of this game is newer. It rides along

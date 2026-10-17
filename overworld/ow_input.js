@@ -131,7 +131,79 @@ export function useGadget(id) {
 		return true;
 	}
 	if (id === 'townmap') { bagMenu.open = false; openTownMap(); return true; }
+	if (useWateringItem(id)) return true;
 	return false;
+}
+
+// ---------- watering the odd tree (WAILMER PAIL / SQUIRTBOTTLE) ----------
+// On cartridge the SUDOWOODO is watered from the BAG, in native code, not by a
+// script: pokeemerald item_use.c ItemUseOutOfBattle_WailmerPail ->
+// TryToWaterSudowoodo (the object one step ahead has OBJ_EVENT_GFX_SUDOWOODO) ->
+// ScriptContext_SetupScript(BattleFrontier_OutsideEast_EventScript_WaterSudowoodo),
+// else TryToWaterBerryTree, else Dad's "not the time" line. pokecrystal's
+// SQUIRTBOTTLE does the same from engine/events/squirtbottle.asm into Route 36's
+// exported WateredWeirdTreeScript. The transpiler only ever sees the scripts, so
+// the watering label shipped with nothing able to call it and the WAILMER PAIL
+// was inert: the Frontier SUDOWOODO could never be cleared, sealing the surf
+// channel to ARTISAN CAVE (playtest 2026-10-15). Route 36 still worked only
+// because Crystal's TALK script also checks for the SQUIRTBOTTLE.
+//   from: start the label at this op (Route 36's .Fight opens with the question
+//         its lost yes/no asked; WateredWeirdTreeScript begins one op later)
+//   ask:  talking to it with the item in the bag offers to use it (Crystal's
+//         talk-script flow, given to the Frontier tree as well)
+const WATER_TARGETS = [
+	{ item: 'wailmerpail', gfx: 'OBJ_EVENT_GFX_SUDOWOODO', label: 'BattleFrontier_OutsideEast_EventScript_WaterSudowoodo', ask: true },
+	{ item: 'squirtbottle', script: 'SudowoodoScript', label: 'SudowoodoScript.Fight', from: 1 },
+];
+function facedObject() {
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
+	const fx = player.tx + dx, fy = player.ty + dy;
+	return npcs.list.find(n => !n.hidden && (n.covers ? n.covers(fx, fy) : n.tx === fx && n.ty === fy)
+		&& elevCompatible(player.elev, Number(n.ev?.elevation) || 0)) || null;
+}
+export function waterTargetFor(npc, item = null) {
+	if (!npc || !npc.ev || npc.hidden) return null;
+	return WATER_TARGETS.find(t => (!item || t.item === item)
+		&& (t.gfx ? npc.ev.graphics_id === t.gfx : npc.ev.script === t.script)
+		&& S.mapScripts?.[t.label]) || null;
+}
+function waterObject(npc, t) {
+	if (!t.from) return runScriptLabel(t.label, npc);
+	if (cutscene.blocking) return false;
+	S.lastTalkedNpc = npc;
+	S.lastScriptLabel = t.label;
+	return cutscene.runFrom(S.mapScripts, [{ label: t.label, i: t.from }], cutsceneCtx(npc, t.label));
+}
+export function useWateringItem(id) {
+	if (!WATER_TARGETS.some(t => t.item === id)) return false;
+	const npc = facedObject();
+	const t = waterTargetFor(npc, id);
+	if (t) {
+		bagMenu.open = false;
+		if (!waterObject(npc, t)) dialog.open('...');
+		return true;
+	}
+	// a berry tree: this port grows berries on a fixed 24h timer (items.js), so
+	// there is no yield for the water to raise — but the pail is not ignored
+	if (id === 'wailmerpail') {
+		const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
+		const tree = (items.trees || []).find(tr => tr.tx === player.tx + dx && tr.ty === player.ty + dy);
+		if (tree) { bagMenu.open = false; dialog.open(`You watered the ${tree.name.toUpperCase()} tree.\n\nIt looks refreshed!`); return true; }
+	}
+	sfx('ui_denied');
+	bagMenu.flash = "This isn't the time to use that!";
+	return true;
+}
+// talking to the tree with the right item in the bag: offer it (X just pokes it)
+function offerWatering(npc) {
+	const t = waterTargetFor(npc);
+	if (!t || !t.ask || Bag.count(t.item) < 1) return false;
+	const name = Bag.ITEMS[t.item]?.name || t.item.toUpperCase();
+	dialog.open(`It's an odd tree. Its leaves look parched...\nUse the ${name}?\n\nZ = Yes   X = No`, k => {
+		if (k === 'x') runScriptLabel(npc.ev.script, npc);
+		else if (!waterObject(npc, t)) dialog.open('...');
+	});
+	return true;
 }
 
 // the gen-5 nicety: when a repel runs out and the bag holds another of the same
@@ -514,6 +586,8 @@ export function interact() {
 		// survived the transpile, so she chatted without tucking anyone in.
 		// (During the intro her original script still runs its story beats.)
 		if (npc.ev && MOM_SCRIPTS.has(npc.ev.script) && Story.getFlag('intro_done')) { momTalk(); return; }
+		// the odd tree, with its WAILMER PAIL in the bag: offer to water it
+		if (offerWatering(npc)) return;
 		// ported story script for this NPC (dialogue/movement/flags)
 		if (npc.ev && npc.ev.script && runScriptLabel(npc.ev.script, npc)) return;
 	}

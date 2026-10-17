@@ -1055,7 +1055,7 @@ export class Battle {
 	// is reapplied. Infinity survives as 'inf' (JSON drops it otherwise).
 	snapshot() {
 		const a = this.active;
-		if (!a || a.phase === 'done' || !a.me || !a.foe || a.foe.curHP <= 0 || a.me.curHP <= 0) return null;
+		if (!a || a.phase === 'done' || a.decided || a.caughtMon || !a.me || !a.foe || a.foe.curHP <= 0 || a.me.curHP <= 0) return null;
 		const strip = m => {
 			const seen = new WeakSet();   // per CALL — foes[i] and foe are the same object across calls
 			return JSON.parse(JSON.stringify(m, (k, v) => {
@@ -3990,7 +3990,9 @@ export class Battle {
 			const f = (Math.floor(mySpe * 128 / foeSpe) + 30 * a.runAttempts) % 256;
 			ok = Math.floor(Math.random() * 256) < f;
 		}
-		if (ok) this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); });
+		// decided the moment the roll succeeds: the leave-and-resume snapshot must not
+		// capture the escape's own message as a battle still to be fought (ow_battleresume)
+		if (ok) { a.decided = 'escaped'; this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); }); }
 		else {
 			this.pushMsg("Can't escape!");
 			this.foeFreeMove();   // a full turn: foe move, end of turn, faints
@@ -4034,7 +4036,7 @@ export class Battle {
 					if (a.menuIdx === 0) this.startQueue(() => this.safariBall());
 					else if (a.menuIdx === 1) this.startQueue(() => this.safariBait());
 					else if (a.menuIdx === 2) this.startQueue(() => this.safariRock());
-					else this.startQueue(() => this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); }));
+					else { a.decided = 'escaped'; this.startQueue(() => this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); })); }
 				}
 				return;
 			}

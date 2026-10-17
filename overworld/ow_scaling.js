@@ -190,6 +190,13 @@ export function staticBattleOutcome(result) {
 		offerNickname(battle.lastCaught);
 		S.lastBattleOutcome = B_OUTCOME_CAUGHT;
 		Story.setVar('VAR_RESULT', B_OUTCOME_CAUGHT);
+		// a CAUGHT static leaves through its map's ON_RESUME, not its script: every
+		// Emerald one is `call_if_set FLAG_SYS_CTRL_OBJ_DELETE, ..TryRemove..` ->
+		// GetBattleOutcome == CAUGHT -> removeobject VAR_LAST_TALKED, run on the
+		// return from battle while the script still holds the flag. This port never
+		// runs ON_RESUME after a battle, so a caught Frontier SUDOWOODO stayed in
+		// the channel (and came back on every visit). Same rule, here.
+		if (Story.getFlag('FLAG_SYS_CTRL_OBJ_DELETE')) cutsceneCtx().hideObj?.('VAR_LAST_TALKED');
 		return true;
 	}
 	if (result === 'victory') {

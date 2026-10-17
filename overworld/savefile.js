@@ -36,7 +36,7 @@ export function exportSave() {
 // exactly what to fix. Nothing in here writes storage.
 export const SAVE_VERSION = 1;
 // plain-text keys (written with safeSaveStr, not JSON)
-const TEXT_KEYS = new Set(['magepunk_region', 'magepunk_starter', 'magepunk_rival', 'magepunk_name', 'magepunk_repellast']);
+const TEXT_KEYS = new Set(['magepunk_region', 'magepunk_starter', 'magepunk_rival', 'magepunk_name', 'magepunk_repellast', 'magepunk_battle_ended_v1']);
 // non-negative integer keys
 const INT_KEYS = new Set(['magepunk_ow_rev', 'magepunk_playtime', 'magepunk_tid', 'magepunk_money', 'magepunk_coins_v1', 'magepunk_repel_v1']);
 const isObj = v => v != null && typeof v === 'object' && !Array.isArray(v);

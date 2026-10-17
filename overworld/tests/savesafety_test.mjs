@@ -31,10 +31,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(reset.includes(`'${k}'`), `owreset's canonical key list carries ${k}`);
 
 	const mn = overworldSource();
-	// minus the live battle snapshot and the LOCAL-ONLY conflict stash + its archive
+	// minus the live battle snapshot (and its ended-battle id) and the LOCAL-ONLY conflict stash + its archive
 	// (synced, the stash nested each previous one until the save hit the server's
 	// size limit — see owconflict_test)
-	A(/const OW_KEYS = OW_RESET_KEYS\.filter\(k => k !== 'magepunk_battle_v1' && !LOCAL_ONLY_KEYS\.includes\(k\)\)/.test(mn)
+	A(/const OW_KEYS = OW_RESET_KEYS\.filter\(k => k !== 'magepunk_battle_v1' && k !== 'magepunk_battle_ended_v1' && !LOCAL_ONLY_KEYS\.includes\(k\)\)/.test(mn)
 		&& /const LOCAL_ONLY_KEYS = \['magepunk_ow_conflict', 'magepunk_ow_conflict_archive', 'magepunk_ow_story_conflict'\]/.test(mn),
 		'the server sync covers the whole canonical save (minus the live battle snapshot and the local-only conflict stash)');
 	A(/'battleAnim'\]/.test(mn.match(/const OPTION_KEYS = \[[^\]]+\]/)?.[0] || ''),

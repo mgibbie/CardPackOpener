@@ -18,6 +18,7 @@ import * as Dex from './pokedex.js';
 import * as Quest from './quest.js';
 import { rivalFlag } from './rivals.js';
 import { safeLoad, safeSave } from './safestore.js';
+import { isTabPaused } from './tab_lock.js';
 
 // ---------- leave-and-resume for battles ----------
 // Hitting the gear (or closing the tab) mid-battle used to vaporize the fight
@@ -26,25 +27,84 @@ import { safeLoad, safeSave } from './safestore.js';
 // serializable snapshot (battle.snapshot) plus an endSpec tag naming which
 // ending to rebuild, written every ~1.5s while a resumable battle runs and on
 // pagehide, consumed at boot.
-const BATTLE_SAVE_KEY = 'magepunk_battle_v1';
-let battleSaveAt = 0, battleSaveDirty = false;
+export const BATTLE_SAVE_KEY = 'magepunk_battle_v1';
+// The id of the last battle that ENDED on this device. A snapshot carrying it is
+// a finished battle, whoever wrote it, and is never resumed.
+export const BATTLE_ENDED_KEY = 'magepunk_battle_ended_v1';
+// A finished battle must never come back. 2026-10-15 (Instinct): ran from a wild
+// CONIFUR ("Got away safely!"), saved, reloaded — and the same battle resumed,
+// same HP, same stat stages; magepunk_battle_v1 still held it after the escape.
+// The battle's own tab clears the key the frame the battle ends, so something
+// else wrote it back: a SECOND tab. tab_lock pauses an older tab, but it only
+// blocked the synced save keys — not this one — so a paused tab still in that
+// battle went on writing its snapshot every 1.5s, and again on pagehide when it
+// was closed or reloaded. Now: a paused tab never touches the snapshot (and the
+// lock blocks the key outright); every battle carries an id, and the id of a
+// battle that ended is remembered, so a stale copy of it is refused at boot; a
+// battle whose outcome is already decided (the escape roll succeeded, the ball
+// held, the result is on screen) is saved AS decided and resumes into its
+// ending, never back into the fight.
+let battleSaveAt = 0;
+let tracked = null;        // the battle.active being persisted
+let trackedId = null;      // ...and its id
+let resumeId = null;       // the id a resumed battle carries over
+let decidedSaved = false;  // the decided record for `tracked` is written
+const newBattleId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function markEnded(id) {
+	if (!id) return;
+	try { localStorage.setItem(BATTLE_ENDED_KEY, id); } catch (e) { /* storage gone */ }
+}
+function stripMon(m) {
+	if (!m) return null;
+	const seen = new WeakSet();
+	return JSON.parse(JSON.stringify(m, (k, v) => {
+		if (typeof v === 'function') return undefined;
+		if (v && typeof v === 'object') { if (seen.has(v)) return undefined; seen.add(v); }
+		return v;
+	}));
+}
 export function persistBattle() {
-	const resumable = battle.blocking && battle.active && battle.endSpec && !pvp.blocking && !frontier.active;
+	if (isTabPaused()) return;   // another tab owns the game: its battle, its snapshot
+	const a = battle.active;
+	const resumable = battle.blocking && a && battle.endSpec && !pvp.blocking && !frontier.active;
+	if (resumable && a !== tracked) {
+		tracked = a; trackedId = resumeId || newBattleId(); resumeId = null; decidedSaved = false;
+	}
 	if (resumable) {
+		// the outcome is settled but its ending has not run yet: record THAT
+		const decided = a.phase === 'done' ? a.result : a.caughtMon ? 'caught' : a.decided || null;
+		if (decided) {
+			if (decidedSaved) return;
+			decidedSaved = true;
+			try {
+				safeSave(BATTLE_SAVE_KEY, { v: 1, id: trackedId, decided, caught: decided === 'caught' ? stripMon(a.caughtMon) : null, end: battle.endSpec, map: world.current.name });
+				saveParty(S.party);
+			} catch (e) { console.warn('[battle-save] decided record failed', e); }
+			return;
+		}
 		const now = performance.now();
 		if (now - battleSaveAt < 1500) return;
 		battleSaveAt = now;   // even a failed attempt waits — a throwing snapshot must not spin every frame
 		try {
 			const snap = battle.snapshot();
 			if (!snap) return;
-			safeSave(BATTLE_SAVE_KEY, { v: 1, snap, end: battle.endSpec, map: world.current.name });
+			safeSave(BATTLE_SAVE_KEY, { v: 1, id: trackedId, snap, end: battle.endSpec, map: world.current.name });
 			saveParty(S.party);   // the party's mid-battle HP/PP must match the snapshot
-			battleSaveDirty = true;
 		} catch (e) { console.warn('[battle-save] snapshot failed', e); }
-	} else if (battleSaveDirty && !battle.blocking) {
-		battleSaveDirty = false;
+	} else if (tracked && !battle.blocking) {
+		// every ending (won, lost, ran, caught, fled, forfeited, doubles, partner,
+		// static, legendary) comes through here: the battle is gone, so is its save
+		markEnded(trackedId);
+		tracked = null; trackedId = null; decidedSaved = false;
 		try { localStorage.removeItem(BATTLE_SAVE_KEY); } catch (e) { /* storage gone */ }
 	}
+}
+// a saved battle that can no longer be fought: the foe side is down, or yours is
+function snapshotOver(snap) {
+	if (!snap || !snap.foe) return true;
+	const foesUp = snap.isTrainer ? (snap.foes || []).some(f => f && f.curHP > 0) : snap.foe.curHP > 0 || (snap.foeAlly?.curHP > 0);
+	const mineUp = (S.party || []).some(m => m && m.curHP > 0 && !m.egg);
+	return !foesUp || !mineUp;
 }
 addEventListener('pagehide', () => { battleSaveAt = 0; persistBattle(); });
 addEventListener('beforeunload', () => { battleSaveAt = 0; persistBattle(); });
@@ -74,11 +134,12 @@ function resumeEndHandler(end, savedMap) {
 	// rest of its script from the op after the battle — the fought flag and the
 	// object's removal live there. Only on the map it started on.
 	if (kind === 'static') return result => {
+		// VAR_LAST_TALKED again: the object the script was started from (by index).
+		// Before the outcome: a CAUGHT static removes VAR_LAST_TALKED right there.
+		const talker = end.obj != null && end.map === world.current?.name ? npcById(end.obj) : null;
+		if (talker) S.lastTalkedNpc = talker;
 		if (!staticBattleOutcome(result)) return;
 		if (cutscene.blocking || !end.frames || end.map !== world.current?.name) { saveParty(S.party); return; }
-		// VAR_LAST_TALKED again: the object the script was started from (by index)
-		const talker = end.obj != null ? npcById(end.obj) : null;
-		if (talker) S.lastTalkedNpc = talker;
 		const ok = cutscene.runFrom(S.mapScripts, end.frames, cutsceneCtx(talker, end.frames[0].label), () => { saveParty(S.party); });
 		if (!ok) saveParty(S.party);
 	};
@@ -144,12 +205,26 @@ function resumeEndHandler(end, savedMap) {
 
 export function resumeSavedBattle() {
 	const saved = safeLoad(BATTLE_SAVE_KEY, null);
-	if (!saved || !saved.snap || !S.party) return false;
+	if (!saved || !S.party) return false;
 	try { localStorage.removeItem(BATTLE_SAVE_KEY); } catch (e) {}   // consume: a crash must not loop
-	const snap = saved.snap;
+	// a battle that already ENDED here (a stale copy written back by another tab)
+	let ended = null; try { ended = localStorage.getItem(BATTLE_ENDED_KEY); } catch (e) {}
+	if (saved.id && saved.id === ended) { console.warn('[battle-resume] refused: that battle already ended', saved.id); return false; }
 	const onEnd = resumeEndHandler(saved.end, saved.map);
+	// decided before the page went away: land its ending, don't refight it
+	if (saved.decided) {
+		battle.lastCaught = saved.decided === 'caught' ? saved.caught || null : null;
+		battle.endSpec = null;
+		markEnded(saved.id);
+		const result = saved.decided === 'caught' && !saved.caught ? 'escaped' : saved.decided;
+		try { onEnd(result); } catch (e) { console.warn('[battle-resume] decided ending failed', e); }
+		return true;
+	}
+	if (!saved.snap) return false;
+	if (snapshotOver(saved.snap)) { console.warn('[battle-resume] refused: the saved battle is already over'); markEnded(saved.id); return false; }
+	const snap = saved.snap;
+	resumeId = saved.id || null;   // the resumed battle keeps its id
 	battle.endSpec = saved.end || { kind: 'wild' };
-	battleSaveDirty = true;   // re-arms the tick, which re-saves while it runs
 	// a multi battle ran on a VIEW of the party (the picked mons); resume on the same one
 	const side = saved.end?.kind === 'spacecenter'
 		? (saved.end.picks || []).map(i => S.party[i]).filter(Boolean)
