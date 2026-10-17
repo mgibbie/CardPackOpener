@@ -7,6 +7,7 @@
  *   G.Icons.url('star')          data URL (para CSS)
  *   'move:<id>'                  emblema del tipo + insignia de la familia
  *   'type:<tipo>'                sólo el emblema
+ *   'zc:<tipo>'                  Cristal Z de un tipo (24×16; MicaSurvivor M5 lote 4)
  */
 G.Icons = (() => {
   const K = '#1b1528';          // contorno
@@ -402,6 +403,37 @@ G.Icons = (() => {
     return cv;
   }
 
+  /**
+   * MicaSurvivor (M5 lote 4, icons.gd _zcrystal_img): Cristal Z de un tipo, 24×16. Rombo con borde
+   * negro y filo blanco, el color del tipo a dos tonos y su símbolo en oscuro.
+   */
+  function zcrystal(type) {
+    const W = 24, H = 16;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const c = cv.getContext('2d', { willReadFrequently: true });   // se lee en svgOf()
+    const col = G.U.TYPE_COLOR[type] || '#b0a99f';
+    const lite = shade(col, 1.25), dark = shade(col, 0.72);
+    const cx = (W - 1) * 0.5, cy = (H - 1) * 0.5;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const d = Math.abs(x - cx) / 11.8 + Math.abs(y - cy) / 7.8;
+      if (d > 1) continue;
+      let f;
+      if (d > 0.86) f = K;
+      else if (d > 0.78) f = '#f4f6fb';
+      else {
+        f = (y - cy) + (x - cx) * 0.25 < 0 ? lite : dark;
+        if (d > 0.70) f = shade(f, 0.85);
+      }
+      c.fillStyle = f; c.fillRect(x, y, 1, 1);
+    }
+    const g = TYPE_GLYPH[type] || TYPE_GLYPH.normal;
+    const gw = Math.max(...g.map(r => r.length)), ox = Math.floor((W - gw) / 2), oy = Math.floor((H - g.length) / 2);
+    c.fillStyle = K;
+    g.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') c.fillRect(ox + x, oy + y, 1, 1); }));
+    return cv;
+  }
+
   function canvas(name) {
     let cv = cache.get(name);
     if (cv) return cv;
@@ -410,6 +442,8 @@ G.Icons = (() => {
       cv = emblem(m ? m.type : 'normal', m ? m.kind : null);
     } else if (name.startsWith('type:')) {
       cv = emblem(name.slice(5));
+    } else if (name.startsWith('zc:')) {
+      cv = zcrystal(name.slice(3));
     } else {
       cv = fromRows(UI[name] || UI.star);
     }
@@ -421,7 +455,7 @@ G.Icons = (() => {
     let u = urls.get(name);
     if (!u) {
       // Los de interfaz, directamente de su dibujo; los emblemas (tipos, movimientos), del canvas.
-      const plain = !name.startsWith('move:') && !name.startsWith('type:');
+      const plain = !name.startsWith('move:') && !name.startsWith('type:') && !name.startsWith('zc:');
       u = plain ? svgOfRows(UI[name] || UI.star) : svgOf(canvas(name));
       urls.set(name, u);
     }

@@ -3,6 +3,7 @@
  *   Misiones  3 diarias + 2 semanales, con barra, premio y botón de recoger
  *   Logros    medallas por categoría; los legendarios, uno a uno con su sprite
  *   Perfil    tus 3 favoritos y tu título; vista previa del perfil público
+ *   Cristales Z  las 18 misiones de Cristal Z (MicaSurvivor M5 lote 4, menu.gd _goals_zcrystals)
  * y la ventana del perfil público de cualquier jugador (G.ProfileUI.show).
  */
 (() => {
@@ -35,6 +36,7 @@
       box.innerHTML = '';
       if (tab === 'missions') missions(box);
       else if (tab === 'ach') achievements(box);
+      else if (tab === 'zcr') zcrystals(box);
       else profile(box);
     }
 
@@ -142,6 +144,32 @@
           <div class="a-rw">${ok ? '¡Conseguido!' : v.toLocaleString('es') + ' / ' + a.goal.toLocaleString('es')} · ${G.Progress.rewardText(a.reward)}
           ${a.title ? ` · <span class="gold">Título: ${esc(a.title)}</span>` : ''}</div></div>`;
       return el;
+    }
+
+    // ---------------- Cristales Z (MicaSurvivor M5 lote 4) ----------------
+
+    function zcrystals(box) {
+      const s = G.DB.save, Z = G.ZMoves;
+      const nd = Z.ZMIS.filter(zm => Z.zdone(zm, s)).length;
+      box.insertAdjacentHTML('beforeend', `<p class="sub">Cristales Z: ${nd} / ${Z.ZMIS.length}</p>
+        <p class="sub">Cumple la misión de un tipo para desbloquear su movimiento Z. También se desbloquea derrotando a 250 Pokémon de ese tipo o con un cristal del gacha.</p>`);
+      const grid = document.createElement('div');
+      grid.className = 'ach-grid zc-missions';
+      for (const zm of Z.ZMIS) {
+        const done = Z.zdone(zm, s), un = Z.unlocked(zm.type, s);
+        const v = Math.min(zm.goal, Z.stat(zm.stat, s));
+        const kills = (s.stats && s.stats['tk_' + zm.type]) || 0;
+        const el = document.createElement('div');
+        el.className = 'ach zc' + (done ? ' ok' : '') + (un ? ' unlocked' : '');
+        el.dataset.zc = zm.type;
+        el.innerHTML = `<span class="zc-ic${done || un ? '' : ' off'}">${G.Icons.html('zc:' + zm.type, 48)}</span>
+          <div class="a-txt"><b>${esc(Z.DEF[zm.type].name)}</b><small>${esc(zm.desc)}</small>
+            ${done ? '' : `<div class="bar"><i style="width:${v / zm.goal * 100}%"></i></div>`}
+            <div class="a-rw">${done ? '¡Conseguido!' : v.toLocaleString('es') + ' / ' + zm.goal.toLocaleString('es')} · ${G.Progress.rewardText({ coins: Z.ZMIS_COINS })}</div>
+            <small>${un ? 'Movimiento Z desbloqueado' : `Derrotados de tipo ${G.U.TYPE_NAME[zm.type]}: ${Math.min(kills, Z.NEED)} / ${Z.NEED}`}</small></div>`;
+        grid.appendChild(el);
+      }
+      box.appendChild(grid);
     }
 
     // ---------------- perfil (editar) ----------------

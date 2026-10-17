@@ -145,11 +145,14 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   | confirm | press the focused control; pick the focused card | A | ✕ | **A (right face)** |
   | cancel | back on every screen; resume from pause | B | ○ | **B (bottom face)** |
   | reroll | reroll the level-up cards (R) | Y | △ | X |
+  | zmove | the Z-move (Z), M5 batch 4 | LS (L3) | L3 | LS |
 
-  View / Back with nothing bound to it works as back in menus and as pause in a run. The port's
-  **ban, swap, Z-move and Dynamax** actions are left out because the web game has none of those
-  mechanics: there is no in-run card ban (Veto is chosen in Upgrades), no team mode, no Z-moves
-  and no Dynamax.
+  View / Back with nothing bound to it works as back in menus and as pause in a run. In a run the
+  port's extras also fire the Z-move: the reroll button (Y / △ / X, which only rerolls on the card
+  screen) and the right trigger when nothing is bound to it. The port's **ban, swap and Dynamax**
+  actions come with their M5 batches (in-run card ban, team mode, Dynamax). A map saved before an
+  action existed keeps its buttons; the new action gets its default, or the first free button if
+  a remap already took it.
 - **Layouts**: Xbox, PlayStation and Nintendo. Nintendo swaps confirm and cancel. It is the
   default (the site standard, also read from `magepunk_pad_v1`). Picking a layout resets the
   mapping to that layout's defaults.
@@ -362,6 +365,83 @@ for all 26 items, as the port's does.
 - In co-op (still "Coming soon") items stay per player, as before. Pure Incense reads the host's
   items.
 
+### Batch 4: Z-moves
+
+One **Z-move** per type (18), each with its own choreography (`js/systems/zmoves.js`, `G.ZMoves`;
+port `zmove.gd`, `main.gd` 171-182 / 1226-1322 / 8504-8594, `save_data.gd` 250-266 / 479-551,
+`progress.gd` 233-289, `menu.gd`). The numbers are the port's.
+
+| Rule | Value |
+|---|---|
+| Usable from | level 15 |
+| Cooldown | 240 s, counted after the move **ends** (so not during the cinematic or the move) |
+| Cinematic | 2.2 s: the world and the run clock stop, the screen dims, a banner opens with rotating rays, speed lines, the type's Z-crystal and the name falling letter by letter (white flash on the first letter; a third of it with "Fewer flashes") |
+| Invulnerable | the whole time (the cinematic, then 0.3 s renewed every frame of the move; lava and "pure" damage too) |
+| Damage | (100 + 24 x level) x attack, times each hit's factor; every hit goes through `G.Combat.land()` (type chart, crit, ability, items) |
+| Bosses | one Z takes at most 28 % of a boss's max HP in total (counted after every multiplier: `enemy.hpFloor` during the hit). A boss with less than 28 % left can still fall |
+| Not allowed | the Tower (`G.Game.mode === 'tower'`, the flag batch 8 sets), a rift arena (`G.Rift.inArena`), the Judgment of Arceus (`G.Judgment.active`) |
+
+The 18 plans, as in `zmove.gd`: Starlight Dash (three dashes, then a blast), Pyrotechnic Holocaust
+(a crown of 24 will-o'-wisps drawn in code, each launched at an enemy), Abyssal Hydro Vortex
+(pulls everything in, a final wave), Gigavolt Storm (three chains of up to 14 bolts that
+paralyse), Cataclysmic Bloom (roots: slow, squeeze, bloom and heal 2 % per enemy, max 25 %),
+Absolute Zero (freeze all, then shatter), Total Crush (22 blows on the strongest enemy, then an
+uppercut), Acid Deluge (9 acid pools that poison), Tectonic Fury (three waves of 5 cracks), Supersonic
+Dive (vanish, dive on the densest group), Shattered Mind (6 waves of confusion), Devastating
+Plague (16 bugs hunting on their own, poison + slow), Continental Avalanche (two rock walls across
+the screen), Eternal Nightmare (8 drains: 22 % + 7 % of the enemy's HP, heal up to 18 %),
+Draconic Cataclysm (4 spinning dragon beams), Abyssal Eclipse (a shrinking dark ring, then an
+implosion), Metal Drill (a 900-unit drill dash, then an explosion) and Dreamy Flash (sleep all,
+heal over time, then eat their dreams). The effects use the shapes of `js/entities/vfx.js`, the
+sounds `legend` (start) and `bossDown` (the move).
+
+**Unlocking** a type's Z (any of):
+- **250 defeated** of that type (`stats.tk_<type>` from batch 1);
+- its **Z-crystal mission** (18, port `progress.gd` ZMIS, 500 coins each, checked with the
+  achievements): defeat 1,500 Pokémon (normal), survive 8 min (fire), play 15 runs (water), reach
+  level 25 (electric), open 25 chests (grass; `stats.chests` is new and counts every chest), 30
+  gacha pulls (ice), 10 bosses (fighting), evolve 10 moves (poison), own 30 Pokémon (ground),
+  find 10 items (psychic), win 5 rift fights (ghost), survive 12 min (dragon), 3 legendaries
+  (dark). Five read stats that later batches write: 5 Daily Challenges (flying, batch 6), 4 Boss
+  Rush bosses (bug, batch 8), Tower floor 8 (rock, batch 8), 8 min of Type Survival (steel,
+  batch 6), 8 min of Team Mode (fairy, batch 7). Until then those unlock by kills or the gacha;
+- a **Z-crystal from the gacha**: each x10 pull has a 3 % chance to give the crystal of a type
+  still locked (never on x1, nothing once all 18 are unlocked). The pull result shows it, and the
+  gacha's rates panel shows the 18 crystals (locked ones dimmed).
+
+The **Z type follows the active Pokémon**: it is read from `pl.dex` when you use it (the port fixed
+it at the start of the run). Team mode (batch 7) only has to change the active Pokémon. A Pokémon
+with two unlocked types uses the first, or the one chosen in its **Pokédex** entry (a button per
+type, focus-navigable). Missions has a new **Z-Crystals** tab with the 18 missions, their
+progress and the kills of each type.
+
+**Input:** the Z key, the round **HUD button** (bottom right; click or tap it; it pulses when
+ready, shows "Lv. 15", the cooldown "3:58" or "Not here", and the Z key or the pad's zmove glyph
+in its corner), and the controller's `zmove` action (above).
+
+**Saved and merged:** crystals are `stats.zcr_<type> = 1` (as in the port), so the merge's max of
+every stat makes them a union, like the kills. Completed missions are `save.zmis[id]` (union).
+The per-Pokémon choice is `save.pz[dex] = { type, at }`: on merge (`G.DB.merge()`, used by the
+account's 409 path and the guest carry-over) the choice with the latest `at` wins for each
+Pokémon, whichever save is newer. `sanitize()` drops bad types, unknown Pokémon and bad mission
+keys. The carry-over text now lists Z-moves among what is merged.
+
+**Deviations, and why:**
+- The **Z type is read at use time** (the port's bug: it was fixed once per run).
+- The Z button is shown **greyed in a rift arena / the Judgment** ("Not here"); the port showed it
+  ready but did nothing. In the Tower it is hidden, as in the port.
+- The Pokédex shows **one button per unlocked type** instead of the port's single "Switch Z-Move"
+  button that cycles.
+- The **boss cap** clamps the HP during the hit (`hpFloor`) instead of refunding the excess
+  afterwards: the port's refund came after the death check, so a capped hit could still kill.
+- The steel and flying final bursts start where you land, not at the starting point (a visual fix).
+- Screen shake uses the web's camera (port shake / 7, x0.25 with "Fewer shakes").
+- The HUD button has a fixed place (it is not in the touch layout editor yet).
+- In co-op (still "Coming soon") a guest's Z hits the host's enemies through the usual hit
+  forwarding; the boss cap and the statuses are only enforced on the host's own enemies.
+- The HUD level label: "Nv. {x}" now has an English pattern, so the HUD level reads
+  "Lv. 20" in English (it used to stay "Nv.").
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -407,4 +487,14 @@ for all 26 items, as the port's does.
   real contact loop for Never-Melt Ice, real traps and sandstorm for the Boots and Goggles, the
   spawner for Pure Incense, 3000 rolls for the species locks); Rare Candy; carrying two (auto-fill,
   the 3-card choice, keys, HUD); Second Chance revive and knockback; the Focus Sash regression.
+- `node overworld/tests/micasurvivor_zmoves_test.mjs` (M5 batch 4), logged in with a stubbed account
+  row: the 18 Z-moves (names, numbers, icons, English); each unlock route (the 250th kill, the
+  mission paying once, 3 % of x10 pulls over 30000 rolls only for locked types, the real pull and
+  gacha screen); the Z-Crystals tab; the Pokédex choice picked with a synthetic gamepad; the account
+  push and a 409 merge (union, newest choice per Pokémon), `merge()` both ways, `sanitize()`; in a
+  run the level-15 gate, locked types, the type following the active Pokémon, the Tower / rift /
+  Judgment blocks, the real-time cinematic freeze, invulnerability, the cooldown after the end, the
+  damage formula through a real hit, the 28 % boss cap; all 18 plans (duration, damage, their own
+  effects); the Z key, the HUD button clicked on the canvas, the pad's zmove (L3), the right trigger,
+  Y, remap with swap-on-conflict, an old saved map gaining zmove, the HUD glyph.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

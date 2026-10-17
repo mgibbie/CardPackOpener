@@ -82,6 +82,8 @@ G.DB = (() => {
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
       pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
       ptm: {},                // dex -> movimiento inicial elegido con la MT (M5 lote 3)
+      pz: {},                 // dex -> { type, at }: Movimiento Z elegido (Pokémon de dos tipos, M5 lote 4)
+      zmis: {},               // id -> fecha: misiones de Cristal Z cumplidas (M5 lote 4; los cristales: stats.zcr_<tipo>)
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -163,6 +165,15 @@ G.DB = (() => {
     if (s.ptm && typeof s.ptm === 'object' && !Array.isArray(s.ptm)) {
       for (const d of Object.keys(s.ptm)) if (typeof s.ptm[d] !== 'string' || (G.Moves && !G.Moves.BY_ID[s.ptm[d]])) delete s.ptm[d];
     } else s.ptm = {};
+    // Movimiento Z (M5 lote 4): dex -> { type: un tipo, at: fecha }; misiones: id -> fecha.
+    if (isObj(s.pz)) {
+      for (const d of Object.keys(s.pz)) {
+        const c = s.pz[d];
+        if (!isObj(c) || typeof c.type !== 'string' || !G.U.TYPE_NAME[c.type] || (G.DEX_BY && !G.DEX_BY[d])) delete s.pz[d];
+        else s.pz[d] = { type: c.type, at: n(c.at) };
+      }
+    } else s.pz = {};
+    if (isObj(s.zmis)) { for (const k of Object.keys(s.zmis)) if (!/^zc_[a-z]+$/.test(k)) delete s.zmis[k]; } else s.zmis = {};
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -267,7 +278,15 @@ G.DB = (() => {
     r.ptm = r.ptm || {};
     for (const d in older.ptm || {}) if (!r.ptm[d]) r.ptm[d] = older.ptm[d];
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
-    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
+    // Movimiento Z (M5 lote 4): por Pokémon gana la elección más reciente (pz[dex].at). Los
+    // desbloqueos son unión: las misiones (zmis) aquí abajo y los cristales (stats.zcr_<tipo>) y
+    // los derrotados por tipo (stats.tk_<tipo>) por el máximo de cada stat.
+    r.pz = isObj(r.pz) ? r.pz : {};
+    for (const d in isObj(older.pz) ? older.pz : {}) {
+      const o = older.pz[d], m = r.pz[d];
+      if (isObj(o) && (!isObj(m) || (o.at || 0) > (m.at || 0))) r.pz[d] = o;
+    }
+    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];
     }
@@ -1065,6 +1084,7 @@ G.DB = (() => {
     get carryOffer() { return carryOffer; }, carryGuest,
     get mpRev() { return mpRev; },
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    sanitize,   // MicaSurvivor (M5 lote 4): para las pruebas (lo que quita de una partida editada a mano)
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

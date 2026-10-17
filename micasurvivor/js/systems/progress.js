@@ -14,6 +14,7 @@
  * y esto actualiza en la partida guardada:
  *   stats.bossesTotal · riftWins · evolutions · missionsDone · groupRuns
  *   stats.judged · judgeTime (mejor tiempo ante Arceus) · judgeBosses (mejor nº de jefes)
+ *   stats.chests     cofres abiertos, de por vida (M5 lote 4: la misión de Cristal Z de Planta)
  *   stats.tk_<tipo>  derrotados de cada tipo, de por vida (MicaSurvivor M5, del port de Android:
  *                    progress.gd "tk_"; un Pokémon de dos tipos suma en los dos; la mezcla de
  *                    partidas de db.js se queda con el mayor de cada uno)
@@ -188,6 +189,7 @@ G.Progress = (() => {
     const s = G.DB.save;
     if (!s) return;
     achT = performance.now();
+    if (G.ZMoves) G.ZMoves.zcheck(s);   // MicaSurvivor (M5 lote 4): misiones de Cristal Z (progress.gd check -> zcheck)
     s.ach = s.ach || {};
     for (const a of G.AchDefs.LIST) {
       if (s.ach[a.id]) continue;
@@ -237,11 +239,18 @@ G.Progress = (() => {
     }, 2800);
   }
 
+  /** MicaSurvivor (M5 lote 4): un cofre abierto (cualquiera; port main.gd _open_chest -> stats "chests"). */
+  function countChest() {
+    const s = G.DB.save;
+    if (!s || !s.stats) return;
+    s.stats.chests = (s.stats.chests || 0) + 1;
+  }
+
   /** MicaSurvivor (M5): derrotados de un tipo, de por vida (0 si ninguno). */
   function typeKills(type) {
     const s = G.DB.save;
     return (s && s.stats && s.stats['tk_' + type]) || 0;
   }
 
-  return { typeKills, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
+  return { typeKills, countChest, notify, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
 })();

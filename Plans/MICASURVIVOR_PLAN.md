@@ -116,6 +116,7 @@ each with tests and the matching controller action wired into js/core/pad.js onc
    **upgrades +4** (Calibre, TM, Second Chance, Bag) — keep the web's free reroll.
    *(built 2026-10-17, branch `feat/micasurvivor-m5-b3`; README → "Batch 3: Items and upgrades")*
 4. **Z-moves** (18 types, cinematic, unlocks by kills / Z-crystal missions / gacha crystal).
+   *(built 2026-10-17, branch `feat/micasurvivor-m5-b4`; README → "Batch 4: Z-moves")*
 5. **Dynamax + raid dens**.
 6. **Quick modes**: Daily Challenge, Rift Time Attack, Type Survival, Party, 6 modifiers; the
    in-run level-up card **ban** (owner asked for it).

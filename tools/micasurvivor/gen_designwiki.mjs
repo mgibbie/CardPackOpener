@@ -1,7 +1,8 @@
 // gen_designwiki.mjs — designwiki/data/micasurvivor.json, the design wiki's MicaSurvivor reference
 // (designwiki/app.js micasurvivor*View), generated from the game's own data files:
 //   micasurvivor/js/data/{pokedex,starters,moves,items,upgrades}.js, js/systems/abilities.js (the
-//   passive ability of every Pokémon, M5 batch 2) (+ lang-en.js for the English
+//   passive ability of every Pokémon, M5 batch 2), js/systems/zmoves.js (the 18 Z-moves and their
+//   Z-crystal missions, M5 batch 4) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -31,7 +32,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js']) {
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -56,11 +57,15 @@ export function build() {
 	const upgrades = G.Upgrades.LIST.map(u => ({ id: u.id, name: T(u.name), unit: T(u.unit), max: u.max, costs: Array.from({ length: u.max }, (_, l) => G.Upgrades.cost(u.id, l)) }));
 	// [dex, name, types, rarity, gen, legendary, ability id]
 	const pokemon = G.DEX.map(p => [p.dex, p.name, p.types, p.rarity, p.gen, p.leg ? 1 : 0, G.Abilities.of(p.dex)]);
+	// (M5 batch 4: one Z-move per type, with its Z-crystal mission)
+	const Z = G.ZMoves;
+	const zmoves = Z.ORDER.map(t => { const m = Z.ZMIS.find(x => x.type === t); return { type: t, name: T(Z.DEF[t].name), desc: T(Z.DEF[t].desc), mission: T(m.desc) }; });
+	const zrules = { need: Z.NEED, cooldown: Z.COOLDOWN, minLevel: Z.MIN_LEVEL, bossCap: Z.BOSS_CAP, crystal: Z.CRYSTAL_P, missionCoins: Z.ZMIS_COINS };
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
-		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length },
-		starters, moves, items, upgrades, abilities, pokemon,
+		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
+		starters, moves, zmoves, zrules, items, upgrades, abilities, pokemon,
 	};
 }
 

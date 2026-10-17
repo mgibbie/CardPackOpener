@@ -2505,7 +2505,7 @@ async function micasurvivorView() {
       h('img', { class: 'ms-hero-art', src: '../micasurvivor/icons/tile.png', alt: '', width: 96, height: 96 })),
     h('div', { class: 'lp-grid ms-index' }, [
       ['pokemon', 'Pokémon', C.pokemon + ' Pokémon · ' + C.starters + ' starters · ' + C.legendaries + ' legendaries · ' + C.abilities + ' abilities'],
-      ['moves', 'Moves', C.moves + ' moves and their evolutions'],
+      ['moves', 'Moves', C.moves + ' moves and their evolutions' + (C.zmoves ? ' · ' + C.zmoves + ' Z-moves' : '')],
       ['items', 'Items & Upgrades', C.items + ' held items · ' + C.upgrades + ' upgrades'],
     ].map(([k, label, n]) => h('a', { class: 'lp-tile ms-idx', href: '#/micasurvivor/' + k, 'data-cat': k }, h('span', { class: 'lp-name' }, label), h('span', { class: 'lp-count mc-wrap' }, n)))),
     mcSection('How to play', null,
@@ -2529,6 +2529,7 @@ async function micasurvivorView() {
         [kbd('Q', 'E'), 'Previous / next move'],
         [kbd('1', '2', '3'), 'Pick a level-up card'],
         [kbd('R'), 'Reroll the level-up cards'],
+        [kbd('Z'), 'Z-move (from level 15, once unlocked)'],
         [kbd('Esc', 'P'), 'Pause'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Touch'),
@@ -2542,6 +2543,7 @@ async function micasurvivorView() {
         ['Confirm (the focused button / card)', 'A', '✕', 'A (right)'],
         ['Back / cancel', 'B', '○', 'B (bottom)'],
         ['Reroll the level-up cards', 'Y', '△', 'X'],
+        ['Z-move (in a run Y / △ / X and the right trigger also fire it)', 'LS (L3)', 'L3', 'LS'],
       ])),
     mcSection('Credits & licence', null,
       h('ul', { class: 'mc-list' },
@@ -2592,7 +2594,14 @@ async function micasurvivorMovesView() {
     msTable(['Move', 'Type', 'Kind', 'Cooldown', 'Damage', 'Evolves into', 'What it does'], D.moves.map(m => [
       h('b', null, m.name), msType(m.type), KIND[m.kind] || m.kind, m.cd != null ? m.cd + ' s' : '—', m.dmg != null ? String(m.dmg) : '—',
       m.evo ? [h('b', null, m.evo.name), h('small', { class: 'muted' }, ' (needs ' + m.evo.needs + ')')] : '—', m.desc,
-    ]), 'ms-moves'));
+    ]), 'ms-moves'),
+    // MicaSurvivor M5 batch 4: the Z-moves (micasurvivor/js/systems/zmoves.js)
+    ...((D.zmoves || []).length ? [mcSection('Z-Moves', 'One finishing move per type, each with its own choreography. From level ' + D.zrules.minLevel
+      + '; a ' + D.zrules.cooldown / 60 + '-minute cooldown that starts when the move ends; a 2.2 s cinematic and invulnerable throughout; damage (100 + 24 × level) × attack; at most '
+      + Math.round(D.zrules.bossCap * 100) + ' % of a boss\'s max HP; not in rift arenas or the Judgment. The active Pokémon\'s type picks it (with two unlocked types, choose in the Pokédex). '
+      + 'Unlock a type\'s Z by defeating ' + D.zrules.need + ' Pokémon of that type, by its Z-crystal mission (+' + D.zrules.missionCoins + ' coins) or with a crystal from a ×10 gacha pull ('
+      + Math.round(D.zrules.crystal * 100) + ' %, only types still locked). Use it with the Z key, the HUD button or the controller (L3).',
+      msTable(['Z-Move', 'Type', 'What it does', 'Z-crystal mission'], D.zmoves.map(z => [h('b', null, z.name), msType(z.type), z.desc, z.mission]), 'ms-zmoves'))] : []));
 }
 
 async function micasurvivorItemsView() {

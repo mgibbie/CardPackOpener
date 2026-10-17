@@ -255,6 +255,8 @@ G.Player = class Player {
    */
   hurt(amount, type = null, pure = false) {
     if (this.invuln > 0 || this.dead) return;
+    // MicaSurvivor (M5 lote 4): invulnerable durante todo el Movimiento Z (también la lava, que pone invuln a 0).
+    if (!this.remote && G.ZMoves && G.ZMoves.busy) return;
     let eff = null;
     if (type) {
       const k = G.Types.mult(type, this.mon.types);
@@ -513,6 +515,7 @@ G.Player = class Player {
   }
 
   draw(ctx) {
+    if (this.zHidden) return;      // MicaSurvivor (M5 lote 4): Picado Supersónico, en el cielo
     // Halo del tipo del movimiento activo, en el suelo.
     const m = this.activeMove();
     if (m && !this.dead) {
@@ -533,7 +536,8 @@ G.Player = class Player {
       ctx.restore();
     }
 
-    const alpha = this.invuln > 0 && !this.dead ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
+    // (Durante el Movimiento Z no parpadea: la invulnerabilidad es del Z.)
+    const alpha = this.invuln > 0 && !this.dead && !(G.ZMoves && G.ZMoves.busy && !this.remote) ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
     this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
 
     // Arcos de buff alrededor de los pies.

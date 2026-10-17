@@ -387,6 +387,7 @@ G.World = (() => {
       return;
     }
     if (p.type === 'chest') {
+      G.Progress.countChest();   // MicaSurvivor (M5 lote 4)
       G.FX.burst(p.x, p.y - 10, '#f2c443', 22, 180);
       G.FX.ring(p.x, p.y - 8, 6, 46, '#f2c443', 0.45, 4);
       G.Camera.kick(0.25);
@@ -398,6 +399,7 @@ G.World = (() => {
       return;
     }
     if (p.type === 'bigchest') {
+      G.Progress.countChest();   // MicaSurvivor (M5 lote 4)
       // Botín grande: monedas, tickets y experiencia para subir un nivel.
       G.FX.burst(p.x, p.y - 12, '#f2c443', 34, 220);
       G.FX.ring(p.x, p.y - 8, 6, 80, '#f2c443', 0.6, 5);

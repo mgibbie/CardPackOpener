@@ -8,10 +8,12 @@
  *   - Left stick (radial deadzone, analog speed) or D-pad moves the partner, next to
  *     keyboard and touch (G.Input.axis asks G.Pad.axis first).
  *   - Remappable ACTIONS with per-layout defaults: prev / next move, pause, confirm,
- *     cancel, reroll. Layouts Xbox / PlayStation / Nintendo (Nintendo swaps confirm
- *     and cancel: the RIGHT face button confirms, the site standard). The port's
- *     ban / swap / zmove / dynamax are left out: the web game has no in-run card ban
- *     (Veto is picked in Upgrades), no team mode, no Z-moves and no Dynamax.
+ *     cancel, reroll, zmove (M5 batch 4: the Z-move, L3 like the port; in a run the port's
+ *     extras also fire it: the top face button (reroll's) and an unbound right trigger).
+ *     Layouts Xbox / PlayStation / Nintendo (Nintendo swaps confirm and cancel: the RIGHT
+ *     face button confirms, the site standard). The port's ban / swap / dynamax come with
+ *     their M5 batches (in-run card ban, team mode, Dynamax). A map saved before an action
+ *     existed keeps its buttons; the new action takes its default (or the first free button).
  *   - Remap with swap-on-conflict + reset, in Settings > Controls; saved with the
  *     game's settings (micasurvivor_settings: padLayout, padMap, padRumble).
  *   - Button glyphs (inline SVG for the DOM, the same SVG as an <img> for the canvas
@@ -34,10 +36,11 @@ G.Pad = (() => {
   const SIGNED_IN_ONLY = true;
   const LAYOUTS = ['xbox', 'playstation', 'nintendo'];
   const LAYOUT_NAME = { xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
-  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll'];
+  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'zmove'];
   const LABELS = {
     prev: 'Movimiento anterior', next: 'Movimiento siguiente', pause: 'Pausa',
-    confirm: 'Aceptar / elegir', cancel: 'Atrás / cancelar', reroll: 'Cambiar cartas'
+    confirm: 'Aceptar / elegir', cancel: 'Atrás / cancelar', reroll: 'Cambiar cartas',
+    zmove: 'Movimiento Z'
   };
   // Buttons an action may take (W3C standard mapping). The D-pad always moves /
   // navigates and Guide belongs to the system.
@@ -57,13 +60,24 @@ G.Pad = (() => {
   }
   function defaults(lay = layout()) {
     const n = lay === 'nintendo';
-    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3 };
+    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK)
+    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, zmove: 10 };
   }
   function map() {
     const m = G.Settings.get('padMap');
     if (m && typeof m === 'object') {
-      const vals = ACTIONS.map(a => m[a]);
-      if (vals.every(v => BINDABLE.includes(v)) && new Set(vals).size === vals.length) return Object.assign({}, m);
+      const out = {};
+      for (const a of ACTIONS) out[a] = m[a];
+      // MicaSurvivor (M5 batch 4): a map saved before an action existed (zmove) keeps its buttons;
+      // the new action takes its default, or the first free button if a remap already uses it.
+      const d = defaults();
+      for (const a of ACTIONS) {
+        if (out[a] != null) continue;
+        const taken = new Set(ACTIONS.map(x => out[x]).filter(v => v != null));
+        out[a] = !taken.has(d[a]) ? d[a] : BINDABLE.find(b => !taken.has(b));
+      }
+      const vals = ACTIONS.map(a => out[a]);
+      if (vals.every(v => BINDABLE.includes(v)) && new Set(vals).size === vals.length) return out;
     }
     return defaults();
   }
@@ -92,6 +106,8 @@ G.Pad = (() => {
     t[12] = 'up'; t[13] = 'down'; t[14] = 'left'; t[15] = 'right';
     // View / Back with nothing on it: back in menus, pause in a run (as the port does).
     if (t[8] == null) t[8] = 'back';
+    // MicaSurvivor (M5 batch 4, main.gd _z_poll): the right trigger with nothing on it fires the Z-move in a run.
+    if (t[7] == null) t[7] = 'ztrigger';
     return t;
   }
 
@@ -579,6 +595,9 @@ G.Pad = (() => {
     if (!game || game.state !== 'playing' || !pl || pl.dead) return;
     if (a === 'prev') pl.cycle(-1);
     else if (a === 'next') pl.cycle(1);
+    // MicaSurvivor (M5 batch 4): the Z-move; in a run the port also fires it with Y / Triangle (the
+    // reroll button, which only rerolls on the card screen) and the right trigger.
+    else if ((a === 'zmove' || a === 'reroll' || a === 'ztrigger') && G.ZMoves) G.ZMoves.tryStart(pl);
     else if (a === 'pause' || a === 'back') game.togglePause();
   }
 

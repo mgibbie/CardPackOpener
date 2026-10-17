@@ -21,6 +21,8 @@ G.Game = (() => {
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
+  // MicaSurvivor (M5 lote 4): modo de la partida. La Torre (lote 8) pondrá 'tower' (sin Movimientos Z).
+  let runMode = 'normal';
 
   const st = { get time() { return time; } };
 
@@ -105,6 +107,7 @@ G.Game = (() => {
     G.Weather.reset();
     G.Path.clear();
     G.Hazards.clear();
+    G.ZMoves.reset();   // MicaSurvivor (M5 lote 4)
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
     G.World.setBiome(0, true);
     biome = 0;
@@ -582,6 +585,7 @@ G.Game = (() => {
     for (let i = 0; i < 4; i++) {
       if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
     }
+    if (G.Input.tap('keyz')) G.ZMoves.tryStart(pl);   // MicaSurvivor (M5 lote 4): Movimiento Z
     if (G.Input.tap('keyq')) pl.cycle(-1);
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
@@ -651,6 +655,15 @@ G.Game = (() => {
       G.Audio.music(G.Judgment.music);
       return;
     }
+    // MicaSurvivor (M5 lote 4, main.gd 960): la cinemática del Movimiento Z para el mundo (y el reloj).
+    if (G.ZMoves.cine) {
+      G.ZMoves.cineTick(dt, pl);
+      pl.anim.update(dt);
+      G.Camera.follow(pl.x, pl.y, dt);
+      G.World.update(dt, G.Camera);
+      G.FX.update(dt);
+      return;
+    }
     // Tras caer, deja que se vea la animación de Faint antes del resumen.
     // (En la arena de la grieta no: allí caer sólo te echa de vuelta.)
     if (pl.dead && !coop && !G.Rift.inArena) {
@@ -691,6 +704,8 @@ G.Game = (() => {
     G.Projectiles.update(dt, pl, G.EnemyMgr.all());
     G.Combat.resolve(dt, pl, time);
     G.Combat.updateFields(dt);
+    G.ZMoves.update(dt, pl);        // MicaSurvivor (M5 lote 4): el Movimiento Z y su enfriamiento
+    G.ZMoves.updateWorld(dt);
     G.Pickups.update(dt, all, onCollect);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
@@ -764,6 +779,7 @@ G.Game = (() => {
     G.Projectiles.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
+    G.ZMoves.drawWorld(ctx);        // MicaSurvivor (M5 lote 4): el fuego fatuo
     G.Judgment.drawAir(ctx);
     ctx.restore();
 
@@ -778,7 +794,9 @@ G.Game = (() => {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
+    G.ZMoves.drawDim(ctx, w, h);    // MicaSurvivor (M5 lote 4): la pantalla se oscurece durante el Z
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
+    G.ZMoves.drawCine(ctx, w, h);
     G.Judgment.drawOverlay(ctx, w, h);
     G.Touch.draw(ctx);
     if (G.Settings.get('fps')) {
@@ -907,6 +925,8 @@ G.Game = (() => {
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
     toUI() { state = 'ui'; Backdrop.restore(); },
+    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; la Torre del lote 8 pondrá 'tower'). */
+    get mode() { return runMode; }, set mode(m) { runMode = m || 'normal'; },
     get state() { return state; }, get player() { return pl; }, st
   };
 })();

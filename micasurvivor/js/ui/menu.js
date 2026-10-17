@@ -207,6 +207,7 @@ G.MenuUI = (() => {
         ${bar('Ataque', p.atk, max.atk, '×' + p.atk.toFixed(2))}
         ${bar('Velocidad', p.spd, max.spd, p.spd)}
         ${G.UI.abilityLine(dex)}
+        ${zLine(dex)}
         <p style="font-size:14px;margin:10px 0 4px">Empieza con <b class="gold">${G.Moves.BY_ID[G.startMoveOf(dex)].name}</b></p>
         <p class="move-icons" title="Movimientos que puede aprender">
           ${G.Moves.poolFor(p).map(id => `<span title="${G.Moves.BY_ID[id].name}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
@@ -222,6 +223,16 @@ G.MenuUI = (() => {
     box.querySelectorAll('.seg button').forEach(b => {
       b.onclick = () => { viewShiny = b.dataset.v === '1'; showDetail(dex); };
     });
+    // MicaSurvivor (M5 lote 4): con dos tipos desbloqueados, eliges su Movimiento Z.
+    box.querySelectorAll('[data-zpick]').forEach(b => {
+      b.onclick = () => {
+        if (G.ZMoves.choose(dex, b.dataset.zpick)) { G.Audio.sfx('select'); G.UI.toast('Movimiento Z: ' + G.ZMoves.DEF[b.dataset.zpick].name); }
+        // (sin volver a dibujar la ficha: el foco del mando se queda en el botón)
+        const cur = G.ZMoves.typeFor(dex), line = box.querySelector('.z-line');
+        box.querySelectorAll('[data-zpick]').forEach(o => o.classList.toggle('on', o.dataset.zpick === cur));
+        if (line) { line.title = G.ZMoves.DEF[cur].desc; line.innerHTML = G.Icons.html('zc:' + cur, 24) + ' Movimiento Z: <b>' + G.ZMoves.DEF[cur].name + '</b>'; }
+      };
+    });
     const pick = $('dex-pick');
     if (pick) pick.onclick = () => {
       s.partner = dex;
@@ -230,6 +241,21 @@ G.MenuUI = (() => {
       G.UI.toast(p.name + (s.partnerShiny ? ' shiny' : '') + ' es ahora tu compañero');
       renderGrid(); showDetail(dex);
     };
+  }
+
+  /**
+   * MicaSurvivor (M5 lote 4, menu.gd 2215-2226): el Movimiento Z de un Pokémon en su ficha:
+   * bloqueado (y cómo se consigue), el suyo, o, con sus dos tipos desbloqueados, cuál de los dos.
+   */
+  function zLine(dex) {
+    const Z = G.ZMoves, l = Z.typesFor(dex);
+    if (!l.length) return `<p class="z-line off">${G.Icons.html('zc:' + G.DEX_BY[dex].types[0], 24)} Movimiento Z: bloqueado (derrota ${Z.NEED} Pokémon de su tipo)</p>`;
+    const cur = Z.typeFor(dex);
+    let h = `<p class="z-line" title="${Z.DEF[cur].desc}">${G.Icons.html('zc:' + cur, 24)} Movimiento Z: <b>${Z.DEF[cur].name}</b></p>`;
+    if (l.length > 1) {
+      h += `<div class="seg z-pick">${l.map(t => `<button class="${t === cur ? 'on' : ''}" data-zpick="${t}" title="${Z.DEF[t].desc}">${G.Icons.html('zc:' + t, 24)} ${Z.DEF[t].name}</button>`).join('')}</div>`;
+    }
+    return h;
   }
 
   // ---------------- mejoras ----------------

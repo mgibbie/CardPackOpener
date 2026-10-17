@@ -900,3 +900,18 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 #starter-info .ability { margin: 6px 0 0; }
 #pause-ability { margin: 6px auto 10px; max-width: 380px; }
 #res-ability { max-width: 360px; margin: 6px auto 0; }
+
+/* MicaSurvivor (M5 batch 4): Z-moves — gacha crystals, the Pokédex line + choice, the Z-crystal missions */
+.rates .zc-rate { border-bottom: 0; align-items: center; margin-top: 8px; }
+.rates .zc-rate span:first-child { display: inline-flex; align-items: center; gap: 6px; color: #7fe0ff; }
+.rates .zc-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; border-bottom: 0; padding: 2px 0 4px; }
+.zc-grid span { display: flex; justify-content: center; }
+.zc-grid span.off, .zc-ic.off img { opacity: .35; filter: grayscale(.6); }
+.zc-found { flex-basis: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; color: #ffd23f; font-size: 17px; margin-top: 4px; }
+.z-line { display: flex; align-items: center; gap: 6px; margin: 6px 0 4px; font-size: 14px; color: #ffb86b; }
+.z-line.off { color: #8a96b0; font-size: 13px; }
+.z-line.off img { opacity: .4; filter: grayscale(.7); }
+.seg.z-pick { width: 100%; flex-direction: column; gap: 0; }
+.z-pick button { justify-content: center; font-size: 13px; }
+.ach.zc .zc-ic { flex: 0 0 52px; display: flex; justify-content: center; }
+.ach.zc.unlocked:not(.ok) { border-color: rgba(127,224,255,.45); }

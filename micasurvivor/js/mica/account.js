@@ -26,8 +26,8 @@ G.I18n.add({
   'Guardado en tu cuenta de Magepunk': 'Saved to your Magepunk account',
   'Tu progreso de invitado': 'Your guest progress',
   'Has jugado como invitado en este navegador. ¿Quieres llevar ese progreso a tu cuenta de Magepunk?': 'You played as a guest in this browser. Bring that progress into your Magepunk account?',
-  'Tu cuenta ya tiene progreso. Se juntan las dos partidas: no se pierde nada de ninguna (Pokémon, shinies, mejoras, monedas y récords se suman o se quedan con lo mejor). Antes se guarda una copia de seguridad de tu cuenta.':
-    'Your account already has progress. The two saves are merged: nothing from either is lost (Pokémon, shinies, upgrades, coins and records are added up or the best is kept). A backup of your account save is made first.',
+  'Tu cuenta ya tiene progreso. Se juntan las dos partidas: no se pierde nada de ninguna (Pokémon, shinies, mejoras, Movimientos Z, monedas y récords se suman o se quedan con lo mejor). Antes se guarda una copia de seguridad de tu cuenta.':
+    'Your account already has progress. The two saves are merged: nothing from either is lost (Pokémon, shinies, upgrades, Z-moves, coins and records are added up or the best is kept). A backup of your account save is made first.',
   'Tu cuenta aún no tiene progreso: pasará a tener el de invitado.': 'Your account has no progress yet: it takes over your guest progress.',
   'Llevar a mi cuenta': 'Bring it into my account', 'Juntar con mi cuenta': 'Merge into my account', 'No, gracias': 'No, thanks',
   'La partida de invitado se queda en este navegador. Sólo se pregunta una vez.': 'The guest save stays in this browser. You are only asked once.',
@@ -142,7 +142,7 @@ G.MicaUI = (() => {
     const box = $('scr-carry');
     $('carry-text').textContent = G.T(offer.accountEmpty
       ? 'Tu cuenta aún no tiene progreso: pasará a tener el de invitado.'
-      : 'Tu cuenta ya tiene progreso. Se juntan las dos partidas: no se pierde nada de ninguna (Pokémon, shinies, mejoras, monedas y récords se suman o se quedan con lo mejor). Antes se guarda una copia de seguridad de tu cuenta.');
+      : 'Tu cuenta ya tiene progreso. Se juntan las dos partidas: no se pierde nada de ninguna (Pokémon, shinies, mejoras, Movimientos Z, monedas y récords se suman o se quedan con lo mejor). Antes se guarda una copia de seguridad de tu cuenta.');
     const g = offer.guest, owned = Object.keys(g.owned || {}).length;
     $('carry-guest').innerHTML = `<b translate="no">${owned}</b> Pokémon · <b translate="no">${(g.coins || 0).toLocaleString('en')}</b> ${esc(G.T('monedas'))} · Runs <b translate="no">${(g.stats && g.stats.runs) || 0}</b>`;
     $('carry-yes').textContent = G.T(offer.accountEmpty ? 'Llevar a mi cuenta' : 'Juntar con mi cuenta');
