@@ -395,6 +395,9 @@ G.HUD = (() => {
       }
     }
 
+    // ---------- Movimiento Z (MicaSurvivor M5 lote 4, main.gd draw_z): botón con su recarga ----------
+    if (G.ZMoves && !pl.remote) G.ZMoves.drawButton(ctx, w, h, pl);
+
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
       const sa = G.Touch.safeArea();

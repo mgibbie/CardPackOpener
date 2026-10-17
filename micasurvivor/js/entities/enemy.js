@@ -120,6 +120,8 @@
         amount = d - a;
       }
       this.hp -= Math.max(1, Math.round(amount));
+      // MicaSurvivor (M5 lote 4): suelo de vida durante un golpe de Movimiento Z (el tope del 28 % contra jefes).
+      if (this.hpFloor != null && this.hp < this.hpFloor) this.hp = this.hpFloor;
       G.Judgment.noteDmg(amount, this);
       this.showHurt(d, color, dirX, dirY, eff);
       if (knock > 0 && !this.boss) {

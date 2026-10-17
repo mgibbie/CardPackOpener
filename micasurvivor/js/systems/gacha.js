@@ -121,6 +121,9 @@ G.Gacha = (() => {
       out.push({ dex: mon.dex, rarity, shiny, isNew, refund });
     }
     save.stats.pulls = (save.stats.pulls || 0) + n;
+    // MicaSurvivor (M5 lote 4, save_data.gd pull): premio extra en las tiradas de 10, un 3 % de un
+    // Cristal Z de un tipo que aún no tengas desbloqueado (out.zCrystal = el tipo, o '').
+    out.zCrystal = G.ZMoves ? G.ZMoves.rollCrystal(save, n) : '';
     return out;
   }
 

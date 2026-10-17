@@ -63,7 +63,7 @@ G.GachaUI = (() => {
        · A las ${G.Gacha.PITY_5} tiradas sin Legendaria en un banner, la siguiente lo es.<br>
        · Los repetidos dan Pokémonedas. Los shiny no se repiten.<br>
        · Los tickets se consiguen jugando: algunos Pokémon los sueltan al caer, y
-         los jefes y los legendarios de las grietas, a veces, tickets ×10.</p>`;
+         los jefes y los legendarios de las grietas, a veces, tickets ×10.</p>` + zCrystals(s);
 
     const t = s.tickets;
     $('cost-1').innerHTML = `${G.Icons.html('ticket', 18)} 1`;
@@ -74,6 +74,17 @@ G.GachaUI = (() => {
     $('pull-10').disabled = !G.Gacha.costOf(s, 10, 't1');
     $('pull-10b').disabled = !G.Gacha.costOf(s, 10, 't10');
     G.UI.refreshCoins();
+  }
+
+  /**
+   * MicaSurvivor (M5 lote 4, menu.gd 2896-2918): los Cristales Z del gacha, su probabilidad y cuáles
+   * tienes ya (los bloqueados se ven apagados).
+   */
+  function zCrystals(s) {
+    const Z = G.ZMoves;
+    return `<div class="zc-rate"><span>${G.Icons.html('zc:normal', 24)} Cristal Z</span><span>${Math.round(Z.CRYSTAL_P * 100)}% · ×10</span></div>
+      <div class="zc-grid">${Z.ORDER.map(t => `<span class="${Z.unlocked(t, s) ? 'on' : 'off'}" title="${Z.DEF[t].name}">${G.Icons.html('zc:' + t, 24)}</span>`).join('')}</div>
+      <p class="note">· Cada tirada ×10 puede dar un Cristal Z de un tipo aún bloqueado (se ve apagado arriba).</p>`;
   }
 
   const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -112,6 +123,12 @@ G.GachaUI = (() => {
       out.appendChild(c);
       G.Audio.sfx('reveal', { rarity: r.rarity });
       await wait(n === 10 ? 150 : 0);
+    }
+    // MicaSurvivor (M5 lote 4): ¡Cristal Z!
+    if (res.zCrystal) {
+      const zc = res.zCrystal;
+      out.insertAdjacentHTML('beforeend', `<div class="zc-found" data-zc="${zc}">${G.Icons.html('zc:' + zc, 48)}<b>${'¡Cristal Z encontrado! Desbloqueas: ' + G.ZMoves.DEF[zc].name}</b></div>`);
+      G.Audio.sfx('legend');
     }
     $('pull-close').classList.remove('hidden');
     busy = false;
