@@ -138,10 +138,9 @@ G.SettingsUI = (() => {
       + `<div class="set-row"><div class="grow"><b>Apodo</b><small>Es único y no se puede cambiar.</small></div><span class="gold" translate="no">${esc(nick)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Tipo de cuenta</b></div><span>${esc(kind)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Partida</b></div><span>${esc(SYNC[st] || st)}</span></div>`
-      + `<div class="row wrap" style="gap:8px;margin-top:12px">
-           <button class="btn" id="set-logout">Cerrar sesión</button>
-           <button class="btn danger" id="set-delete">Borrar cuenta</button>
-         </div><p class="note" id="set-msg"></p>`;
+      // MicaSurvivor (owner, 2026-10-17): no Log out / Delete account until Magepunk accounts (M3) —
+      // on the browser-only save, "Delete account" would just wipe the player's progress.
+      + `<p class="note" id="set-msg"></p>`;
   }
 
   function wire(box) {

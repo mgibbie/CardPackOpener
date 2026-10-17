@@ -144,7 +144,13 @@ try {
 	const about = await page.evaluate(() => document.getElementById('set-body').innerText);
 	A(/MicaSurvivor/.test(about) && /Based on PokéSurvivor by JPTER78/.test(about) && /Credits & licences/.test(about), 'Settings > About: MicaSurvivor + credit + Credits button', about.slice(0, 200));
 	A(!/Contacto|Contact\b/.test(about), 'no upstream contact page link');
+	// owner 2026-10-17: no Log out / Delete account (browser-only save) and no upstream "What's new" until M3
+	await page.click('#set-tabs [data-t=acc]');
+	const acc = await page.evaluate(() => ({ out: !!document.getElementById('set-logout'), del: !!document.getElementById('set-delete') }));
+	A(!acc.out && !acc.del, 'Settings > Account has no Log out / Delete account buttons', JSON.stringify(acc));
 	await page.click('#set-close');
+	const hid = await page.evaluate(() => ['btn-news', 'btn-logout'].map((id) => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display === 'none'; }));
+	A(hid[0] && hid[1], 'the "What\'s new" and menu log-out buttons are hidden', JSON.stringify(hid));
 
 	// start a run
 	await page.click('#scr-menu [data-go=play]');
