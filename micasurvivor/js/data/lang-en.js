@@ -859,5 +859,10 @@ G.I18n.add({
   'Cazador contrarreloj': 'Time-attack hunter', 'Gana 8 grietas en una Contrarreloj de grietas.': 'Win 8 rifts in a Rift Time Attack.',
   'Siempre con prisa': 'Always in a hurry', 'Juega 10 Contrarrelojes de grietas.': 'Play 10 Rift Time Attacks.',
   // (el resumen de la partida: "recogidas 130" y "Nv.3" se quedaban en español)
-  'recogidas': 'picked up', 'Nv.{x}': 'Lv.{x}'
+  'recogidas': 'picked up', 'Nv.{x}': 'Lv.{x}',
+  // (los Pokémon Paradoja venían con su nombre español: "¡Ferropúas salvaje apareció!" en inglés)
+  'Colmilargo': 'Great Tusk', 'Colagrito': 'Scream Tail', 'Melenaleteo': 'Flutter Mane', 'Reptalada': 'Slither Wing',
+  'Pelarena': 'Sandy Shocks', 'Ferrosaco': 'Iron Bundle', 'Ferropalmas': 'Iron Hands', 'Ferropolilla': 'Iron Moth',
+  'Ferropúas': 'Iron Thorns', 'Bramaluna': 'Roaring Moon', 'Ferropaladín': 'Iron Valiant', 'Ondulagua': 'Walking Wake',
+  'Ferroverdor': 'Iron Leaves'
 });

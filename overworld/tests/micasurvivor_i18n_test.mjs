@@ -79,6 +79,18 @@ try {
 	A(traits.length >= 16 && untranslated.length === 0, `all ${traits.length} personality trait names are translated (e.g. Leal -> ${traits.find(t => t[0] === 'Leal')?.[1]})`, JSON.stringify(untranslated));
 	A(traits.every(([, , d]) => !spanishLines(d).length), 'every trait description is translated');
 
+	// 1b. every species shows its official English name (bug 2026-10-17: the Paradox Pokémon kept their
+	// Spanish names — "A wild Ferropúas appeared!" instead of Iron Thorns)
+	const idx = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_index.json'), 'utf8'));
+	const official = {};
+	for (const [k, v] of Object.entries(idx)) if (v.num > 0 && !k.includes('_') && !official[v.num]) official[v.num] = v.name.replace(/\\u([0-9a-f]{4})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
+	const norm = s => String(s).normalize('NFC').toLowerCase().replace(/nidoran-f/, 'nidoran♀').replace(/nidoran-m/, 'nidoran♂').replace(/[^\p{L}\p{N}♀♂]/gu, '');
+	const shown = await page.evaluate(() => G.DEX.map(p => [p.dex, p.name, G.I18n.t(p.name), G.I18n.t('¡{x} salvaje apareció!'.replace('{x}', p.name))]));
+	const wrong = shown.filter(([d, , en]) => official[d] && norm(en) !== norm(official[d]));
+	A(shown.length > 900 && wrong.length === 0, `all ${shown.length} species names are in English`, wrong.slice(0, 20).map(([d, es, en]) => `#${d} ${es} -> ${en} (want ${official[d]})`).join(' | '));
+	const wild = shown.find(r => r[0] === 995);
+	A(wild && wild[3] === 'A wild Iron Thorns appeared!', `the wild-encounter notice uses the English name ("${wild && wild[3]}")`);
+
 	// 2. the test result screen shows the trait in English
 	await page.click('#btn-guest');
 	await waitFor(() => visible('scr-test'), 8000);
