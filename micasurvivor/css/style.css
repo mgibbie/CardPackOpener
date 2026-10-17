@@ -920,3 +920,51 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .ach.dyn { border-color: rgba(255,61,110,.55); }
 .dyn-ic { flex: 0 0 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; background: #240812; border: 3px solid #ff3d6e; box-shadow: 0 0 12px rgba(255,61,110,.55); }
 .dyn-ic.off { color: #999ead; border-color: #808594; box-shadow: none; }
+/* ---------- MicaSurvivor (M5 lote 6): modos rápidos (port menu.gd "Elige un modo") y vetar cartas ---------- */
+.modes-box { max-height: calc(100vh - 90px); overflow-y: auto; }
+.modes-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 8px; }
+.mode-card {
+  appearance: none; cursor: pointer; text-align: left; color: inherit; font: inherit;
+  display: grid; grid-template-columns: 46px 1fr; gap: 12px; align-items: center;
+  padding: 7px 12px; border-radius: 10px; border: 2px solid rgba(244,248,255,.25); background: rgba(255,255,255,.04);
+}
+.mode-card:hover, .mode-card:focus-visible { border-color: var(--edge); background: rgba(255,255,255,.09); outline: none; }
+.mode-card .mode-ico { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 10px; background: rgba(0,0,0,.28); }
+.mode-card b { display: block; font-size: 19px; color: var(--gold); text-shadow: 2px 2px 0 var(--shadow); }
+.mode-card small { display: block; font-size: 13px; color: var(--muted); line-height: 1.35; margin-top: 2px; }
+.mode-card small span + span { display: block; margin-top: 3px; color: #e8eeff; }
+.mode-group { display: flex; flex-direction: column; gap: 5px; }
+.mode-group .mode-card { flex: 1; }
+.mode-sub { font-size: 14px; padding: 4px 12px; display: flex; gap: 8px; align-items: center; justify-content: center; }
+.modes-h { font-size: 15px; color: var(--gold); margin: 12px 0 6px; }
+.modes-mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 8px; }
+.mod-tog {
+  appearance: none; cursor: pointer; text-align: left; color: inherit; font: inherit;
+  display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center;
+  padding: 8px 10px; border-radius: 8px; border: 2px solid rgba(244,248,255,.22); background: rgba(0,0,0,.2);
+}
+.mod-tog b { display: block; font-size: 15px; }
+.mod-tog small { display: block; font-size: 12px; color: var(--muted); line-height: 1.3; }
+.mod-tog .mod-ico { display: grid; place-items: center; opacity: .55; }
+.mod-tog .mod-sw { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,.1); color: var(--muted); }
+.mod-tog.on { border-color: #ff8a5b; background: rgba(255,120,80,.14); }
+.mod-tog.on .mod-ico { opacity: 1; }
+.mod-tog.on .mod-sw { background: #ff8a5b; color: #2b1200; }
+.mod-tog:hover, .mod-tog:focus-visible { border-color: var(--edge); outline: none; }
+.party-grid { margin-top: 8px; max-height: calc(100vh - 230px); overflow-y: auto; }
+.pause-mode { color: #ffb36b; margin: 4px 0 8px; }
+.over-mode { color: #ffb36b; font-weight: 700; }
+.over-mode p { margin: 0; }
+.lvl-extras { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.ban-btn { border-color: rgba(255,107,122,.6); }
+.ban-btn.on { background: #5a1f2a; border-color: #ff6b7a; color: #ffd0d6; }
+.ban-hint { color: #ff9aa5; margin: 6px 0 0; }
+.cards.ban-mode .card { border-color: #ff6b7a; box-shadow: 0 0 0 2px rgba(255,107,122,.35); }
+.cards.ban-mode .card.no-ban { opacity: .4; border-color: rgba(244,248,255,.18); box-shadow: none; cursor: not-allowed; }
+@media (max-height: 520px) {
+  .mode-card { grid-template-columns: 40px 1fr; padding: 7px 9px; }
+  .mode-card .mode-ico { width: 40px; height: 40px; }
+  .mode-card .mode-ico img { width: 32px; height: 32px; }
+  .mode-card b { font-size: 16px; }
+  .mode-card small { font-size: 12px; }
+}

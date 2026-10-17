@@ -2,6 +2,10 @@
 G.RunUI = (() => {
   const $ = G.UI.$;
   let offers = null, offerCb = null, coopMode = false;
+  // MicaSurvivor (M5 lote 6, main_e16.gd / main.gd Cards 7484-7670): vetar una carta. "Vetar (N)" al lado
+  // de "Cambiar"; con el veto activo, la carta de movimiento nuevo que toques no vuelve a salir en la
+  // partida y se reparten cartas nuevas (gratis: no gasta cambios). N = nivel de la mejora Veto.
+  let banMode = false;
 
   /** @param coop  en grupo: tras elegir, se queda esperando a los demás */
   function showLevelUp(level, list, cb, coop = false) {
@@ -12,6 +16,7 @@ G.RunUI = (() => {
     $('cards').classList.remove('done');
     renderCards(list);
     $('lvl-reroll').onclick = reroll;
+    $('lvl-ban').onclick = toggleBan;
     G.UI.show('scr-levelup');
   }
 
@@ -26,15 +31,52 @@ G.RunUI = (() => {
   }
 
   function reroll() {
-    if (!offers || rerollsLeft() <= 0) return;
+    if (!offers || rerollsLeft() <= 0 || banMode) return;
     const p = G.Game.player;
     p.rerolls = (p.rerolls || 0) + 1;
     G.Audio.sfx('select');
     renderCards(G.LevelUp.offer(p));
   }
 
+  /** Vetos que te quedan en esta partida. */
+  function bansLeft() { const p = G.Game.player; return p ? Math.max(0, p.bansLeft || 0) : 0; }
+
+  /** Activa / desactiva el veto (botón, tecla B o la acción `ban` del mando). */
+  function toggleBan() {
+    if (!offers || (!banMode && bansLeft() <= 0)) return false;
+    banMode = !banMode;
+    G.Audio.sfx('select');
+    syncBan();
+    return banMode;
+  }
+
+  /** Veta la carta i (sólo un movimiento nuevo) y reparte otras. */
+  function ban(i) {
+    const p = G.Game.player, c = offers && offers[i];
+    if (!c || !p || c.type !== 'new' || bansLeft() <= 0) return false;
+    p.banned = p.banned || new Set();
+    p.banned.add(c.key.slice(4));
+    p.bansLeft--;
+    banMode = false;
+    G.Audio.sfx('break');
+    renderCards(G.LevelUp.offer(p));
+    return true;
+  }
+
+  function syncBan() {
+    const left = bansLeft();
+    $('lvl-ban-n').textContent = left;
+    $('lvl-ban').classList.toggle('hidden', left <= 0 && !banMode);
+    $('lvl-ban').classList.toggle('on', banMode);
+    $('lvl-banhint').classList.toggle('hidden', !banMode);
+    $('cards').classList.toggle('ban-mode', banMode);
+    $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('no-ban', banMode && !(offers && offers[j] && offers[j].type === 'new')));
+    $('lvl-reroll').classList.toggle('hidden', rerollsLeft() <= 0 || banMode);
+  }
+
   function renderCards(list) {
     offers = list;
+    banMode = false;
     const left = rerollsLeft();
     $('lvl-rr-n').textContent = left;
     $('lvl-reroll').classList.toggle('hidden', left <= 0);
@@ -57,13 +99,16 @@ G.RunUI = (() => {
       el.onclick = () => pick(i);
       box.appendChild(el);
     });
+    syncBan();
   }
 
   function pick(i) {
     if (!offers || !offers[i]) return;
+    if (banMode) { ban(i); return; }    // con el veto activo, tocar una carta la veta (si es un movimiento nuevo)
     const c = offers[i], cb = offerCb;
     offers = null; offerCb = null;
     $('lvl-reroll').classList.add('hidden');
+    $('lvl-ban').classList.add('hidden');
     if (coopMode) {
       // Se queda la carta elegida a la vista mientras eligen los demás.
       $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('picked', j === i));
@@ -84,7 +129,9 @@ G.RunUI = (() => {
   }
 
   function closeLevelUp() {
-    offers = null; offerCb = null;
+    offers = null; offerCb = null; banMode = false;
+    $('lvl-banhint').classList.add('hidden');
+    $('cards').classList.remove('ban-mode');
     $('cards').classList.remove('done');
     G.UI.hide('scr-levelup');
   }
@@ -103,8 +150,11 @@ G.RunUI = (() => {
   }
 
   function showOver(r, onBack) {
-    $('over-title').textContent = r.dead ? 'Has caído…' : 'Run terminada';
-    $('over-stats').innerHTML = `
+    // MicaSurvivor (M5 lote 6): "¡Tiempo!" al acabar la Contrarreloj; las líneas del modo (récords del Diario,
+    // grietas ganadas, el tipo, la Fiesta) bajo el título.
+    $('over-title').textContent = r.timeUp ? '¡Tiempo!' : r.dead ? 'Has caído…' : 'Run terminada';
+    const modeLine = (r.modeLines || []).length ? `<div style="grid-column:1/-1;text-align:center" class="over-mode"><p>${r.modeLines.map(l => `<span>${l}</span>`).join(' · ')}</p></div>` : '';
+    $('over-stats').innerHTML = modeLine + (r.rifts != null ? `<div style="grid-column:1/-1"><span>Grietas ganadas</span><b class="gold">${r.rifts}</b></div>` : '') + `
       <div><span>Tiempo</span><b>${G.U.mmss(r.time)}</b></div>
       <div><span>Nivel</span><b>${r.level}</b></div>
       <div><span>Derrotados</span><b>${r.kills}</b></div>
@@ -116,7 +166,7 @@ G.RunUI = (() => {
       ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
         ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
-        ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${m.name} Nv.${m.lvl}`).join(' · ') || '—'}</b></div>
+        ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${m.name} <span>Nv.${m.lvl}</span>`).join(' · ') || '—'}</b></div>
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>
         <div class="caught-row" id="over-caught"></div></div>` : ''}
       ${r.record ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de tiempo!</div>' : ''}
@@ -251,6 +301,10 @@ G.RunUI = (() => {
     // MicaSurvivor (M5): la habilidad del Pokémon activo (el modo Equipo la cambiará).
     const pl = G.Game.player;
     $('pause-ability').innerHTML = pl && pl.ability ? G.UI.abilityLine(pl.dex, false, pl.ability) : '';
+    // MicaSurvivor (M5 lote 6): el modo y sus modificadores.
+    const lbl = G.Modes.label();
+    $('pause-mode').innerHTML = lbl ? lbl.split(' · ').map(t => `<span>${t}</span>`).join(' · ') : '';
+    $('pause-mode').classList.toggle('hidden', !lbl);
     G.UI.show('scr-pause');
   }
 
@@ -259,5 +313,5 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showLevelUp, reroll, toggleBan, ban, bansLeft, get banMode() { return banMode; }, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
 })();

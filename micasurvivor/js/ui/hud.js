@@ -98,11 +98,22 @@ G.HUD = (() => {
     // ---------- reloj / bioma / kills ----------
     ctx.textAlign = 'center';
     ctx.font = F(800, 26);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.fillText(G.U.mmss(st.time), w / 2, 42);
-    ctx.font = F(600, 10);
-    ctx.fillStyle = '#8fa3c4';
-    ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
+    if (G.Modes.rifts()) {
+      // MicaSurvivor (M5 lote 6, main.gd 8701-8705): la Contrarreloj cuenta hacia atrás (rojo los últimos
+      // 30 s) y debajo, las grietas ganadas.
+      const left = G.Modes.timeLeft(st.time);
+      ctx.fillStyle = left < 30 ? '#ff6b7a' : 'rgba(255,255,255,.95)';
+      ctx.fillText(G.U.mmss(left), w / 2, 42);
+      ctx.font = F(700, 12);
+      ctx.fillStyle = '#c9a6ff';
+      ctx.fillText('Grietas ganadas: ' + G.Modes.riftsWon, w / 2, 58);
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.fillText(G.U.mmss(st.time), w / 2, 42);
+      ctx.font = F(600, 10);
+      ctx.fillStyle = '#8fa3c4';
+      ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
+    }
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -117,6 +128,21 @@ G.HUD = (() => {
       G.Icons.draw(ctx, wx.icon, x0 + 6, y0 + 3, 20);
       ctx.fillStyle = wx.color;
       ctx.fillText(txt, x0 + 32, y0 + 17);
+    }
+    // MicaSurvivor (M5 lote 6): el modo de la partida y los iconos de sus modificadores, arriba a la derecha.
+    const MD = G.Modes, mt = MD.title();
+    if (mt || MD.mods.length) {
+      let mx = w - 16 - (touch ? 56 : 0);
+      const my = wx ? 46 : 16;
+      for (const id of MD.mods.slice().reverse()) { mx -= 16; G.Icons.draw(ctx, MD.MOD[id].icon, mx, my, 14); mx -= 3; }
+      if (mt) {
+        ctx.font = F(800, 10);
+        ctx.textAlign = 'right';
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)';
+        ctx.strokeText(mt.toUpperCase(), mx - 4, my + 11);
+        ctx.fillStyle = '#ffb36b';
+        ctx.fillText(mt.toUpperCase(), mx - 4, my + 11);
+      }
     }
 
     // ---------- barra del jefe ----------

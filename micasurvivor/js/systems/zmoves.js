@@ -57,9 +57,9 @@ G.ZMoves = (() => {
     steel: { name: 'Taladro Metálico', desc: 'Perforas en línea recta a través de todo con un taladro de acero y rematas con una explosión.' },
     fairy: { name: 'Destello Ensueño', desc: 'Duermes a todos los enemigos y te curas; al final devoras sus sueños y recibes más cura por cada uno.' }
   };
-  // Misiones de Cristal Z (progress.gd ZMIS): [tipo, texto, stat, meta]. Las de modos que llegan en
-  // lotes posteriores (Desafío diario, Rush de Jefes, Torre, Supervivencia por tipo, Equipo) leen
-  // el stat que esos lotes escribirán; hasta entonces se quedan en 0.
+  // Misiones de Cristal Z (progress.gd ZMIS): [tipo, texto, stat, meta]. Las de modos leen el stat que
+  // escribe cada modo: el Desafío diario y la Supervivencia por tipo desde el lote 6 (js/systems/modes.js);
+  // las del Rush de Jefes, la Torre y el Equipo se quedan en 0 hasta sus lotes.
   const ZMIS = [
     ['normal', 'Derrota a 1.500 Pokémon en total.', 'totalKills', 1500],
     ['fire', 'Aguanta 8 minutos en una partida.', 'bestMin', 8],

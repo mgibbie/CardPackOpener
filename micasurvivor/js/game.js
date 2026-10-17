@@ -86,11 +86,17 @@ G.Game = (() => {
 
   // ---------------- run ----------------
 
-  /** @param coop  { seed, host, members } para una partida en grupo */
-  function startRun(coop = null) {
+  /**
+   * @param coop  { seed, host, members } para una partida en grupo
+   * @param mode  MicaSurvivor (M5 lote 6): 'normal' | 'daily' | 'party' | 'rifts' | 'type' (js/systems/modes.js;
+   *              en grupo, siempre normal y sin modificadores)
+   */
+  function startRun(coop = null, mode = 'normal') {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
-    const mon = G.DEX_BY[save.partner];
+    const cfg = G.Modes.begin(coop ? { mode: 'normal' } : G.Modes.plan(mode));
+    // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas).
+    const mon = G.DEX_BY[cfg.dex || save.partner];
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
 
     G.UI.hideAll();
@@ -100,36 +106,17 @@ G.Game = (() => {
     G.Combat.clearFields();
     G.EnemyMgr.clear();
     G.Pickups.clear();
-    G.Spawner.reset();
     G.Rift.reset();
     G.Judgment.reset();
-    G.Events.reset();
-    G.Weather.reset();
     G.Path.clear();
     G.Hazards.clear();
     G.ZMoves.reset();   // MicaSurvivor (M5 lote 4)
     G.Dynamax.reset();  // MicaSurvivor (M5 lote 5)
-    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
-    G.World.setBiome(0, true);
-    biome = 0;
-    time = 0; pendingLevels = 0;
-    runReal = performance.now(); tampered = false;
-
-    pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
-    banked = { t1: 0, t10: 0 };
-    caught = [];
-    // Atajos: movimientos con hueco fijo (save.pbind[dex] = [id del 1, id del 2, ...]),
-    // antes de aprender nada: addMove ya los coloca.
-    (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
-    pl.addMove(G.startMoveOf(mon.dex));
-    // Mejora "Veto": movimientos que no quieres que te salgan.
-    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
-    // Mejora "Repertorio": un segundo movimiento de ataque al azar.
-    if (perks.startMoves >= 2) {
-      const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');
-      if (pool.length) pl.addMove(G.U.pick(pool));
-      pl.setActive(0);
-    }
+    // MicaSurvivor (M5 lote 6, main.gd 432): el Desafío diario siembra el azar con la fecha: el mismo
+    // mundo, elenco, jefes y movimientos iniciales para todos ese día.
+    if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
+    else setupRun(coop, save, mon, perks);
+    G.Modes.startPlayer(pl);   // Frágil: vida máxima a la mitad
 
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
@@ -144,6 +131,35 @@ G.Game = (() => {
     deathT = 0;
 
     state = 'playing';
+  }
+
+  /** Lo que se sortea al montar la partida (en el Diario, con la semilla del día). */
+  function setupRun(coop, save, mon, perks) {
+    G.Spawner.reset();
+    G.Events.reset();
+    G.Weather.reset();
+    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
+    G.World.setBiome(0, true);
+    biome = 0;
+    time = 0; pendingLevels = 0;
+    runReal = performance.now(); tampered = false;
+
+    pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl.bansLeft = perks.bans || 0;   // MicaSurvivor (M5 lote 6): vetos de cartas en la partida (main_e16.gd 197)
+    banked = { t1: 0, t10: 0 };
+    caught = [];
+    // Atajos: movimientos con hueco fijo (save.pbind[dex] = [id del 1, id del 2, ...]),
+    // antes de aprender nada: addMove ya los coloca.
+    (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
+    pl.addMove(G.startMoveOf(mon.dex));
+    // Mejora "Veto": movimientos que no quieres que te salgan.
+    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    // Mejora "Repertorio": un segundo movimiento de ataque al azar.
+    if (perks.startMoves >= 2) {
+      const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');
+      if (pool.length) pl.addMove(G.U.pick(pool));
+      pl.setActive(0);
+    }
   }
 
   function quitRun() {
@@ -179,7 +195,7 @@ G.Game = (() => {
   let banked = { t1: 0, t10: 0 };
   function bankTickets(save_ = true) {
     const sv = G.DB.save;
-    if (!sv || !pl) return;
+    if (!sv || !pl || !G.Modes.saves()) return;   // MicaSurvivor (M5 lote 6): la Fiesta no guarda nada
     sv.tickets = sv.tickets || { t1: 0, t10: 0 };
     const d1 = Math.max(0, pl.t1 - banked.t1), d10 = Math.max(0, pl.t10 - banked.t10);
     if (!d1 && !d10) return;
@@ -264,6 +280,7 @@ G.Game = (() => {
   /** Has llevado a casa a un Pokémon perdido y se une a ti (events.js). */
   G.onRescue = (dex, name) => {
     if (!G.DB.save || !pl) return;
+    if (!G.Modes.saves()) { G.Spawner.say('Modo Fiesta: no se guarda progreso', 3); return; }   // MicaSurvivor (M5 lote 6)
     const isNew = !G.DB.owns(dex);
     if (isNew) { G.DB.grant(dex, 'rescue'); G.DB.commit(true); }
     else pl.coins += 150;
@@ -274,6 +291,7 @@ G.Game = (() => {
   /** Un shiny salvaje cae: te lo quedas (y la versión normal si no la tenías). */
   G.onShinyCaught = e => {
     if (!G.DB.save || !pl) return;
+    if (!G.Modes.saves()) { G.Spawner.say('Modo Fiesta: no se guarda progreso', 3); return; }   // MicaSurvivor (M5 lote 6)
     if (G.Coop.isHost) G.Coop.shinyCaught(e);
     const isNew = G.DB.grantShiny(e.dex, 'wild');
     G.DB.save.stats.shinies++;
@@ -295,7 +313,20 @@ G.Game = (() => {
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
-    const mul = pl.coinMul;
+    // MicaSurvivor (M5 lote 6, main.gd 782-786): la Fiesta no guarda nada (ni monedas, ni stats, ni ranking).
+    if (!G.Modes.saves()) {
+      G.Judgment.reset();
+      G.Progress.off = false;
+      G.RunUI.showOver({
+        dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
+        moves: pl.moves, caught: [], modeLines: [G.Modes.NAME.party, 'No se guarda progreso'], breakdown: ''
+      }, () => { pl = null; G.Flow.afterRun(); });
+      return;
+    }
+    // MicaSurvivor (M5 lote 6, main.gd 787-855): récords y stats del modo, y su multiplicador de monedas.
+    const md = G.Modes.finish(time, save);
+    const timeUp = G.Modes.timeUp;
+    const mul = md.base * pl.coinMul + md.add;
     const parts = {
       tiempo: Math.floor(time / 5),
       derrotados: Math.floor(pl.kills * 0.25),
@@ -326,7 +357,8 @@ G.Game = (() => {
     // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
     const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills };
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
-    const ok = clean();
+    // MicaSurvivor (M5 lote 6): los rankings sólo cuentan partidas normales (los otros modos cambian las reglas).
+    const ok = clean() && G.Modes.is('normal');
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
@@ -334,10 +366,12 @@ G.Game = (() => {
     if (ok && !coop) G.MicaUI.runEnded({ time: Math.floor(time), kills: pl.kills, level: pl.level, dex: pl.dex, shiny: !!pl.shiny });
 
     G.RunUI.showOver({
-      dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
+      dead: dead && !timeUp, timeUp, rifts: G.Modes.rifts() ? G.Modes.riftsWon : null, modeLines: md.lines,
+      time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
-                 (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
+                 (pl.coinMul > 1 ? ` · ×${pl.coinMul.toFixed(2)} Fortuna` : '') +
+                 (md.base !== 1 || md.add ? ` · ×${(md.base * pl.coinMul + md.add).toFixed(2)} con el modo` : '')
     }, () => { pl = null; G.Flow.afterRun(); });
   }
 
@@ -560,6 +594,7 @@ G.Game = (() => {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pick(i);
       }
       if (G.Input.tap('keyr')) G.RunUI.reroll();
+      if (G.Input.tap('keyb')) G.RunUI.toggleBan();   // MicaSurvivor (M5 lote 6): vetar una carta (port: tecla B)
       return;
     }
     if (G.UI.isOpen('scr-bond')) {
@@ -577,8 +612,8 @@ G.Game = (() => {
     }
     if (state === 'ui') {
       // Esc en una subpantalla del menú vuelve al menú.
-      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals'].some(G.UI.isOpen)
-          && document.getElementById('pull-fx').classList.contains('hidden')) G.MenuUI.open();
+      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-modes'].some(G.UI.isOpen)
+          && document.getElementById('pull-fx').classList.contains('hidden')) { if (!(G.ModesUI && G.ModesUI.back())) G.MenuUI.open(); }
       return;
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
@@ -678,6 +713,8 @@ G.Game = (() => {
       return;
     }
     time += dt;
+    // MicaSurvivor (M5 lote 6, main.gd 966): la Contrarreloj de grietas acaba a los 8 minutos (fuera de la arena).
+    if (G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); endRun(false); return; }
 
     const b = Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
@@ -716,6 +753,7 @@ G.Game = (() => {
     G.Judgment.update(dt, pl, time);
     G.Events.update(dt, all, time);
     G.Weather.update(dt, time, pl);
+    G.Modes.healTick(pl);           // MicaSurvivor (M5 lote 6): "Sin curación"
     G.FX.update(dt);
 
     G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : G.EnemyMgr.bossAlive() ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
@@ -930,7 +968,7 @@ G.Game = (() => {
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
     toUI() { state = 'ui'; Backdrop.restore(); },
-    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; la Torre del lote 8 pondrá 'tower'). */
+    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; la Torre del lote 8 pondrá 'tower'). */
     get mode() { return runMode; }, set mode(m) { runMode = m || 'normal'; },
     get state() { return state; }, get player() { return pl; }, st
   };
@@ -941,7 +979,7 @@ G.Flow = {
   boot() {
     G.UI.initChrome();
     G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
-    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.NewsUI.init();   // MicaSurvivor: no SupportUI (donations) / Updater (forced reloads)
+    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.ModesUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.NewsUI.init();   // MicaSurvivor: no SupportUI (donations) / Updater (forced reloads)
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');
     G.Audio.music('village');     // suena tras el primer clic (lo exige el navegador)
@@ -998,7 +1036,7 @@ G.Flow = {
       G.LobbyUI.open();
     } else this.goMenu();
   },
-  play() { G.Game.startRun(); },
+  play(mode) { G.Game.startRun(null, mode); },   // MicaSurvivor (M5 lote 6): mode = un modo rápido (js/ui/modes-ui.js)
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;

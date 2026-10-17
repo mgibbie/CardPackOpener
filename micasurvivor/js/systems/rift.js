@@ -34,7 +34,11 @@ G.Rift = (() => {
   const authority = () => !G.Coop.active || G.Coop.isHost;
   const TS = () => G.Tiles.T * G.Sprites.PX;
 
-  function reset() { rift = null; arena = null; checkT = CHECK; asked = false; downT = 0; misses = 0; }
+  // MicaSurvivor (M5 lote 6, main.gd 449 / 5862-5871 / 6266): en la Contrarreloj de grietas la primera
+  // grieta se mira a los 20 s, luego cada 8 s (6 s tras una pelea), siempre abre (si no hay jefe vivo) y
+  // ninguna nueva en los últimos 40 s. Sin guaridas Dynamax (dynamax.js NO_DEN_MODES).
+  const R = () => G.Modes.RIFTS;
+  function reset() { rift = null; arena = null; checkT = G.Modes.rifts() ? R().first : CHECK; asked = false; downT = 0; misses = 0; }
 
   // ---------------- grieta en el mapa ----------------
 
@@ -44,11 +48,12 @@ G.Rift = (() => {
       rift.ttl -= dt;
       if (rift.ttl <= 0) { rift = null; return; }
       if (!arena && !pl.dead && G.U.dist2(pl.x, pl.y, rift.x, rift.y - 10) < 30 * 30) enter();
-    } else if (!arena && authority() && time > FROM && time < G.Judgment.AT - 120) {
+    } else if (!arena && authority() && (G.Modes.rifts() ? time < R().limit - R().last : time > FROM && time < G.Judgment.AT - 120)) {
       checkT -= dt;
       if (checkT <= 0) {
-        checkT = CHECK;
+        checkT = G.Modes.rifts() ? R().every : CHECK;
         if (G.EnemyMgr.bossAlive()) return;           // con un jefe vivo no cuenta como intento
+        if (G.Modes.rifts()) { misses = 0; open(); return; }
         // MicaSurvivor (M5 lote 5, main.gd 5867): guarida Dynamax, 5 % por chequeo desde los 120 s
         // (no en la Contrarreloj de grietas); no toca la racha de grietas fallidas.
         if (G.Dynamax && G.Dynamax.denRoll(time)) { open(true); return; }
@@ -234,6 +239,7 @@ G.Rift = (() => {
       return;
     }
     G.Progress.event('rift', { type: arena.type });
+    G.Modes.riftWon();   // MicaSurvivor (M5 lote 6): grietas ganadas en la Contrarreloj
     G.Pickups.pullAll();
     G.Spawner.say('¡Has vencido a ' + G.DEX_BY[arena.dex].name + '! Recoge el premio…', 3.4, true);
     G.Audio.sfx('legend');
@@ -272,6 +278,7 @@ G.Rift = (() => {
     if (pl.dead) pl.revive(0.3);
     G.Camera.x = pl.x; G.Camera.y = pl.y;
     G.Game.flash('#c9a6ff', 0.8);
+    if (G.Modes.rifts()) checkT = R().after;   // (M5 lote 6, main.gd 6266)
     if (pl.bonds > 0) G.Game.offerBond();
   }
 
@@ -316,7 +323,7 @@ G.Rift = (() => {
   return {
     reset, update, drawable, onEvent, enterRequest() { if (!arena) start(); },
     get rift() { return rift; }, get arena() { return arena; },
-    get inArena() { return !!arena; },
+    get inArena() { return !!arena; }, get checkT() { return checkT; },   // (checkT: M5 lote 6, para pruebas)
     get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },
     debugOpen(den = false) { open(den); },
     /** Para pruebas: la guarida ya (con un Pokémon dado, si se quiere). */

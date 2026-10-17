@@ -819,6 +819,7 @@
     function clear() { list = []; corpses = []; grid.clear(); byId.clear(); }
     function all() { return list; }
     function add(e) {
+      if (G.Modes) G.Modes.enemyAdded(e);   // MicaSurvivor (M5 lote 6): modificadores Veloces / Resistentes / Golpes duros
       list.push(e);
       byId.set(e.id, e);
       if (G.Coop.isHost) G.Coop.enemyAdded(e);

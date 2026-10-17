@@ -111,9 +111,17 @@ G.Enemies = (() => {
     return d;
   }
 
-  /** Todos los candidatos de un tramo (sin legendarios ni míticos). */
+  /**
+   * Todos los candidatos de un tramo (sin legendarios ni míticos).
+   * MicaSurvivor (M5 lote 6, main.gd 2859-2866): en la Supervivencia por tipo, sólo los de ese tipo
+   * (si el tramo tiene alguno).
+   */
   function candidates(tier) {
-    return G.DEX.filter(p => p.rarity < 5 && p.bst >= tier.bst[0] && p.bst <= tier.bst[1] && G.SPRITE_META[p.dex]);
+    const out = G.DEX.filter(p => p.rarity < 5 && p.bst >= tier.bst[0] && p.bst <= tier.bst[1] && G.SPRITE_META[p.dex]);
+    const only = G.Modes && G.Modes.onlyType();
+    if (!only) return out;
+    const of = out.filter(p => p.types.includes(only));
+    return of.length ? of : out;
   }
 
   // ---------------- elenco de la run ----------------
@@ -153,9 +161,15 @@ G.Enemies = (() => {
       if (r) { r.behavior = 'runner'; r.spd = Math.round(r.spd * 1.6); r.hp = Math.round(r.hp * 0.7); }
     }
     const used = new Set();
+    // (MicaSurvivor M5 lote 6, main.gd 2986-2998: en la Supervivencia por tipo, jefes de ese tipo:
+    //  de su franja, si no de 580+, si no cualquiera de ese tipo; y si no hay, como siempre.)
+    const only = G.Modes && G.Modes.onlyType();
+    const ofType = p => !only || p.types.includes(only);
     bosses = BOSS_SLOTS.map(slot => {
       const ok = p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex);
-      let pool = G.DEX.filter(p => ok(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
+      let pool = G.DEX.filter(p => ok(p) && ofType(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
+      if (!pool.length) pool = G.DEX.filter(p => ok(p) && ofType(p) && p.bst >= 580);
+      if (!pool.length && only) pool = G.DEX.filter(p => ok(p) && ofType(p));
       if (!pool.length) pool = G.DEX.filter(p => ok(p) && p.bst >= 580);
       const p = G.U.pick(pool);
       used.add(p.dex);

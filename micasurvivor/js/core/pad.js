@@ -13,9 +13,11 @@
  *     Layouts Xbox / PlayStation / Nintendo (Nintendo swaps confirm and cancel: the RIGHT
  *     face button confirms, the site standard). dynamax (M5 batch 5: View / Back / Share / −
  *     like the port's JOY_BUTTON_BACK; in a run an unbound left trigger and an unbound left face
- *     button (X / Square / Y, the port's ban button) also fire it). The port's ban / swap come
- *     with their M5 batches (in-run card ban, team mode). A map saved before an action
- *     existed keeps its buttons; the new action takes its default (or the first free button).
+ *     button (X / Square / Y, the port's ban button) also fire it). ban (M5 batch 6: ban a card
+ *     on the level-up screen, X / Square / Y like pad.gd JOY_BUTTON_X; in a run it fires Dynamax,
+ *     the way reroll fires the Z-move, as the port's X does). The port's swap comes with team mode
+ *     (batch 7). A map saved before an action existed keeps its buttons; the new action takes its
+ *     default (or the first free button).
  *   - Remap with swap-on-conflict + reset, in Settings > Controls; saved with the
  *     game's settings (micasurvivor_settings: padLayout, padMap, padRumble).
  *   - Button glyphs (inline SVG for the DOM, the same SVG as an <img> for the canvas
@@ -38,11 +40,12 @@ G.Pad = (() => {
   const SIGNED_IN_ONLY = true;
   const LAYOUTS = ['xbox', 'playstation', 'nintendo'];
   const LAYOUT_NAME = { xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
-  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'zmove', 'dynamax'];
+  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'ban', 'zmove', 'dynamax'];
+  const ADDED = ['zmove', 'dynamax', 'ban'];   // actions added by M5 batches 4, 5, 6 (oldest first)
   const LABELS = {
     prev: 'Movimiento anterior', next: 'Movimiento siguiente', pause: 'Pausa',
     confirm: 'Aceptar / elegir', cancel: 'Atrás / cancelar', reroll: 'Cambiar cartas',
-    zmove: 'Movimiento Z', dynamax: 'Dynamax'
+    ban: 'Vetar carta', zmove: 'Movimiento Z', dynamax: 'Dynamax'
   };
   // Buttons an action may take (W3C standard mapping). The D-pad always moves /
   // navigates and Guide belongs to the system.
@@ -62,8 +65,8 @@ G.Pad = (() => {
   }
   function defaults(lay = layout()) {
     const n = lay === 'nintendo';
-    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK; dynamax: View / Back, pad.gd JOY_BUTTON_BACK)
-    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, zmove: 10, dynamax: 8 };
+    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK; dynamax: View / Back, pad.gd JOY_BUTTON_BACK; ban: X / Square / Y, pad.gd JOY_BUTTON_X)
+    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, ban: 2, zmove: 10, dynamax: 8 };
   }
   function map() {
     const m = G.Settings.get('padMap');
@@ -72,8 +75,9 @@ G.Pad = (() => {
       for (const a of ACTIONS) out[a] = m[a];
       // MicaSurvivor (M5 batch 4): a map saved before an action existed (zmove) keeps its buttons;
       // the new action takes its default, or the first free button if a remap already uses it.
+      // (M5 batch 6: the missing ones are filled in the order they arrived: zmove, dynamax, then ban.)
       const d = defaults();
-      for (const a of ACTIONS) {
+      for (const a of [...ACTIONS.filter(x => !ADDED.includes(x)), ...ADDED]) {
         if (out[a] != null) continue;
         const taken = new Set(ACTIONS.map(x => out[x]).filter(v => v != null));
         out[a] = !taken.has(d[a]) ? d[a] : BINDABLE.find(b => !taken.has(b));
@@ -111,7 +115,8 @@ G.Pad = (() => {
     // MicaSurvivor (M5 batch 4, main.gd _z_poll): the right trigger with nothing on it fires the Z-move in a run.
     if (t[7] == null) t[7] = 'ztrigger';
     // MicaSurvivor (M5 batch 5, main.gd _dyn_poll / 676): the left trigger and the left face button
-    // (the port's ban button) with nothing on them fire Dynamax in a run.
+    // with nothing on them fire Dynamax in a run (M5 batch 6: the left face button now holds `ban` by
+    // default, which fires Dynamax in a run itself; 'dynx' is for a map that moved ban elsewhere).
     if (t[6] == null) t[6] = 'dtrigger';
     if (t[2] == null) t[2] = 'dynx';
     return t;
@@ -521,7 +526,8 @@ G.Pad = (() => {
   const BACK = {
     'scr-settings': '#set-close', 'scr-legal': '#legal-close', 'scr-news': '#news-close', 'scr-profile': '#prof-close',
     'scr-layout': '#lay-cancel', 'scr-starters': '#starter-back', 'scr-bond': '#bond-back', 'scr-mod': '#mod-back',
-    'scr-recover': '#rec-later', 'scr-nick': '#nick-later', 'scr-lobby': '#lobby-menu', 'scr-pause': '#btn-resume'
+    'scr-recover': '#rec-later', 'scr-nick': '#nick-later', 'scr-lobby': '#lobby-menu', 'scr-pause': '#btn-resume',
+    'scr-modes': '#party-back'   // (M5 batch 6: the party picker goes back to the list; else the screen's Back)
   };
   function back(scope) {
     if (listening) { stopListening(); return; }
@@ -594,6 +600,9 @@ G.Pad = (() => {
       case 'reroll':
         if (scope.id === 'scr-levelup') G.RunUI.reroll();
         break;
+      case 'ban':   // MicaSurvivor (M5 batch 6): ban mode on the level-up screen (then confirm a new-move card)
+        if (scope.id === 'scr-levelup') G.RunUI.toggleBan();
+        break;
     }
   }
   function gameplay(a) {
@@ -604,8 +613,9 @@ G.Pad = (() => {
     // MicaSurvivor (M5 batch 4): the Z-move; in a run the port also fires it with Y / Triangle (the
     // reroll button, which only rerolls on the card screen) and the right trigger.
     else if ((a === 'zmove' || a === 'reroll' || a === 'ztrigger') && G.ZMoves) G.ZMoves.tryStart(pl);
-    // MicaSurvivor (M5 batch 5): Dynamax; in a run the port also fires it with the left trigger and X / Square.
-    else if ((a === 'dynamax' || a === 'dtrigger' || a === 'dynx') && G.Dynamax) G.Dynamax.tryStart(pl);
+    // MicaSurvivor (M5 batch 5): Dynamax; in a run the port also fires it with the left trigger and X / Square
+    // (M5 batch 6: X / Square is the ban button, which only bans on the card screen, as reroll / Y and the Z-move).
+    else if ((a === 'dynamax' || a === 'dtrigger' || a === 'dynx' || a === 'ban') && G.Dynamax) G.Dynamax.tryStart(pl);
     else if (a === 'pause' || a === 'back') game.togglePause();
   }
 

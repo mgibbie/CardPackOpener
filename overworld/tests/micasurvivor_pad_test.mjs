@@ -117,9 +117,9 @@ try {
 
 	await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
 	A(await waitFor(() => ev(() => document.getElementById('boot').classList.contains('hidden') && G.Pad && G.Pad.ready), 30000), 'boots; the pad module and the site gamepad core load');
-	A(await ev(() => G.Pad.layout()) === 'nintendo' && JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, zmove: 10, dynamax: 8 }),
-		'default layout is Nintendo (site standard): right face confirms, bottom cancels, LB/RB prev/next, Start pause, top face reroll, L3 Z-move, − Dynamax', JSON.stringify(await ev(() => G.Pad.map())));
-	A(await ev(() => G.Pad.ACTIONS.includes('zmove') && G.Pad.ACTIONS.includes('dynamax') && !['ban', 'swap'].some(a => G.Pad.ACTIONS.includes(a))), 'zmove (M5 batch 4) and dynamax (batch 5) are offered; ban / swap are not yet (their M5 batches)');
+	A(await ev(() => G.Pad.layout()) === 'nintendo' && JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, ban: 2, zmove: 10, dynamax: 8 }),
+		'default layout is Nintendo (site standard): right face confirms, bottom cancels, LB/RB prev/next, Start pause, top face reroll, left face ban, L3 Z-move, − Dynamax', JSON.stringify(await ev(() => G.Pad.map())));
+	A(await ev(() => G.Pad.ACTIONS.includes('zmove') && G.Pad.ACTIONS.includes('dynamax') && G.Pad.ACTIONS.includes('ban') && !G.Pad.ACTIONS.includes('swap')), 'zmove (M5 batch 4), dynamax (batch 5) and ban (batch 6) are offered; swap is not yet (team mode, batch 7)');
 
 	// ---- guest: the pad only hints
 	await ev(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
@@ -153,7 +153,7 @@ try {
 	A(ring === 'solid', 'the focus ring is visible (gold outline)', ring);
 	await press(B.down);
 	f = await focus();
-	A(f && /Pokémon/.test(f.text), 'D-pad down moves the ring to Pokémon', JSON.stringify(f));
+	A(f && /Game modes/.test(f.text), 'D-pad down moves the ring to Game modes (the M5 batch 6 entry under Play)', JSON.stringify(f));
 	await shot('pad_menu_focus.png');
 
 	// ---- every menu screen, opened and left with the pad
@@ -416,7 +416,7 @@ try {
 	for (let i = 0; i < 6; i++) { if (await ev(() => document.querySelector('#set-tabs .on').dataset.t) === 'ctl') break; await press(B.RB, 1); }
 	A(await navTo('#pad-reset', 1), 'D-pad reaches "Reset mapping"');
 	await press(B.confirm, 1);
-	A(JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, zmove: 10, dynamax: 8 }), 'reset restores the layout defaults', JSON.stringify(await ev(() => G.Pad.map())));
+	A(JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, ban: 2, zmove: 10, dynamax: 8 }), 'reset restores the layout defaults', JSON.stringify(await ev(() => G.Pad.map())));
 
 	A(errors.length === 0, 'no console errors', errors.slice(0, 5).join(' | '));
 } catch (e) {

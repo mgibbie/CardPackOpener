@@ -2515,6 +2515,8 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Evolving moves. '), 'A move at its top level evolves once you have also taken the stat it needs (Flamethrower + Reflexes → Overheat): far stronger.'),
         h('li', null, h('b', null, 'Bosses, chests and rifts. '), 'Strong bosses come at set times; chests hold ', h('a', { href: '#/micasurvivor/items' }, 'held items'), ' (one at a time); rifts open on a legendary or a type arena. Arceus judges long runs.'),
         h('li', null, h('b', null, 'Between runs. '), 'Runs pay Pokémonedas. Spend them on permanent ', h('a', { href: '#/micasurvivor/items' }, 'upgrades'), ' per Pokémon and on the ', h('b', null, 'gacha'), ' (9 regional banners, shinies) — all earned in play, never bought. Daily / weekly missions and achievements pay out too.'))),
+    // MicaSurvivor M5 batch 6: the quick modes, the 6 modifiers and the level-up ban (micasurvivor/js/systems/modes.js)
+    ...(D.modes ? [msModesSection(D.modes)] : []),
     mcSection('Getting there', null,
       h('ul', { class: 'mc-list' },
         h('li', null, h('b', null, 'Landing page: '), 'the MicaSurvivor tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micasurvivor/' }, '/micasurvivor/'), '.'),
@@ -2529,6 +2531,7 @@ async function micasurvivorView() {
         [kbd('Q', 'E'), 'Previous / next move'],
         [kbd('1', '2', '3'), 'Pick a level-up card'],
         [kbd('R'), 'Reroll the level-up cards'],
+        [kbd('B'), 'Ban a level-up card (with the Ban upgrade), then pick the new move to ban'],
         [kbd('Z'), 'Z-move (from level 15, once unlocked)'],
         [kbd('C'), 'Dynamax (from level 20, once a raid den is cleared)'],
         [kbd('Esc', 'P'), 'Pause'],
@@ -2544,6 +2547,7 @@ async function micasurvivorView() {
         ['Confirm (the focused button / card)', 'A', '✕', 'A (right)'],
         ['Back / cancel', 'B', '○', 'B (bottom)'],
         ['Reroll the level-up cards', 'Y', '△', 'X'],
+        ['Ban a level-up card (in a run it fires Dynamax)', 'X', '□', 'Y'],
         ['Z-move (in a run Y / △ / X and the right trigger also fire it)', 'LS (L3)', 'L3', 'LS'],
         ['Dynamax (in a run X / □ / Y and the left trigger also fire it)', 'View', 'Share', '−'],
       ])),
@@ -2554,6 +2558,26 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Sprites: '), h('a', { href: 'https://github.com/PMDCollab/SpriteCollab', target: '_blank', rel: 'noopener' }, 'PMDCollab SpriteCollab'), ', CC BY-NC 4.0 — every artist is listed in the game’s Credits screen and ', h('a', { href: '/micasurvivor/CREDITS.md' }, 'CREDITS.md'), '.'),
         h('li', null, h('b', null, 'Controller design: '), h('a', { href: 'https://github.com/JayElDragon/poke-survivor', target: '_blank', rel: 'noopener' }, 'the Android port by JayElDragon'), ' (MIT).'),
         h('li', null, 'Pokémon © Nintendo / Creatures Inc. / GAME FREAK. A non-commercial fan project, not affiliated with them.'))));
+}
+
+// MicaSurvivor M5 batch 6: Game modes (from the Android port by JayElDragon; the numbers are the port's)
+function msModesSection(M) {
+  const pct = v => Math.round(v * 100) + ' %', mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  const N = Object.fromEntries(M.list.map(m => [m.id, m.name]));
+  const rows = [
+    [N.normal, 'The classic run, with any modifiers you switch on (+' + pct(M.coins.perMod) + ' coins each).'],
+    [N.daily, 'One run a day, the same for everyone: the date (YYYYMMDD) seeds the Pokémon you play (a non-legendary one, owned or not), one of the 6 modifiers as the day’s rule, the map, the enemies, the bosses and your starting moves. Coins ×' + M.coins.daily + ' (your own modifiers are not added). Your best time of the day is kept; replay it as often as you like.'],
+    [N.party, 'Play any Pokémon (Pikachu until you pick another, owned or not). You cannot die (a lethal hit leaves 1 HP) and nothing is saved — no coins, records, missions, achievements, tickets or shinies, and it never reaches a leaderboard.'],
+    [N.rifts, mmss(M.rifts.limit) + ' on the clock, counting down: the first rift check comes at ' + M.rifts.first + ' s, then every ' + M.rifts.every + ' s (' + M.rifts.after + ' s after a fight) and each one opens a rift unless a boss is alive; none in the last ' + M.rifts.last + ' s, and no Dynamax dens. Win as many legendary fights as you can — a fight still going at 8:00 is finished first. Coins +' + pct(M.coins.rifts) + '; your record of rifts won is kept.'],
+    [N.type, 'Only Pokémon of the chosen type appear — the enemy waves, the 5 bosses and the raid dens (change the type on the mode screen). Coins +' + pct(M.coins.type) + '. Surviving ' + M.typeMin + ' minutes marks that type as beaten (achievements for 9 and all ' + M.types + ' types).'],
+  ];
+  return mcSection('Game modes', 'Main menu → Game modes (mouse, touch or controller). Records and unlocks are saved to your account and merged safely across devices (the best of each record; the Daily’s best is kept per date). Leaderboards only take Normal runs. Twenty achievements reward the modes (Missions → Achievements → Game modes).',
+    msTable(['Mode', 'Rules'], rows.map(([a, b]) => [h('b', null, a), b]), 'ms-modes'),
+    h('h3', { class: 'mc-h3' }, 'Modifiers'),
+    h('p', null, 'Switch any of the six on for every mode but the Daily (which brings its own) and Party: each adds +' + pct(M.coins.perMod) + ' coins at the end. They apply to every enemy — waves, bosses, legendaries and dens.'),
+    msTable(['Modifier', 'Effect'], M.mods.map(m => [h('b', null, m.name), m.desc]), 'ms-mods'),
+    h('h3', { class: 'mc-h3' }, 'Banning a level-up card'),
+    h('p', null, 'With the ' + M.ban.upgrade + ' upgrade (up to ' + M.ban.max + ' levels: ' + M.ban.costs.join(' · ') + ' coins) you get that many bans per run. On the level-up screen press Ban (the B key, or X / □ / Y on a controller), then pick a new-move card: that move never shows up again in the run and three fresh cards are dealt — free, it does not use a reroll. The same upgrade still lets you pre-ban moves in Upgrades.'));
 }
 
 let msPokeQ = '';

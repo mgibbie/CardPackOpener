@@ -141,6 +141,7 @@
     <div class="box">
       <div class="menu-list">
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
+        <button class="menu-item" data-go="modes">Modos de juego<small id="menu-modes-sub">Desafío diario y más</small></button> <!-- MicaSurvivor (M5 batch 6) -->
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
@@ -399,6 +400,23 @@
   </div>
 </section>
 
+<!-- ====== Modos de juego (MicaSurvivor M5 lote 6, port menu.gd "Elige un modo") ====== -->
+<section id="scr-modes" class="scr dim hidden">
+  <div class="box wide modes-box">
+    <div class="row between"><h2 id="modes-title">Elige un modo</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div id="modes-main">
+      <div class="modes-list" id="modes-list"></div>
+      <h3 class="modes-h">Modificadores (todos los modos menos Diario y Fiesta): +25% de monedas por cada uno activo</h3>
+      <div class="modes-mods" id="modes-mods"></div>
+    </div>
+    <div id="modes-party" class="hidden">
+      <div class="row between"><p class="sub" style="margin:0">Toca un Pokémon para la fiesta</p><button id="party-back" class="btn small">Atrás</button></div>
+      <div class="gen-tabs" id="party-gens"></div>
+      <div class="grid party-grid" id="party-grid"></div>
+    </div>
+  </div>
+</section>
+
 <!-- ====== Mejoras ====== -->
 <section id="scr-upgrades" class="scr dim hidden">
   <div class="box wide">
@@ -455,7 +473,12 @@
     <h2>¡Nivel <span id="lvl-num">2</span>!</h2>
     <p class="sub">Elige una recompensa · <span class="key-k"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></span><span class="key-p" data-glyphs="dpad_lr confirm"></span></p>
     <div id="cards" class="cards"></div>
-    <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none" style="margin-top:10px">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <span class="key-k"><kbd>R</kbd></span><span class="key-p" data-glyphs="reroll"></span></button>
+    <div class="lvl-extras">
+      <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <span class="key-k"><kbd>R</kbd></span><span class="key-p" data-glyphs="reroll"></span></button>
+      <!-- MicaSurvivor (M5 lote 6): vetar una carta (la mejora Veto; port main.gd Cards "Vetar (%d) [B]") -->
+      <button id="lvl-ban" class="btn small ghost ban-btn hidden" data-sfx="none">Vetar (<span id="lvl-ban-n">0</span>) · <span class="key-k"><kbd>B</kbd></span><span class="key-p" data-glyphs="ban"></span></button>
+    </div>
+    <p id="lvl-banhint" class="note ban-hint hidden">Elige un movimiento nuevo para vetarlo</p>
     <p id="lvl-wait" class="note hidden"></p>
   </div>
 </section>
@@ -487,6 +510,7 @@
     <p class="sub pad-hint"><span class="key-p" data-glyphs="lstick"></span> moverse · <span class="key-p" data-glyphs="prev next"></span> cambiar de ataque · <span class="key-p" data-glyphs="pause"></span> pausa</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div id="pause-ability"></div> <!-- MicaSurvivor (M5): the partner's ability -->
+    <p id="pause-mode" class="sub pause-mode hidden"></p> <!-- MicaSurvivor (M5 batch 6): the run's mode and modifiers -->
     <div id="pause-sound" class="sound-inline"></div>
     <div class="row" style="justify-content:center">
       <button id="btn-resume" class="btn gold">Continuar</button>
@@ -557,6 +581,7 @@
 <script defer src="js/systems/progress.js"></script>
 <script defer src="js/systems/zmoves.js"></script> <!-- MicaSurvivor (M5): Z-moves -->
 <script defer src="js/systems/dynamax.js"></script> <!-- MicaSurvivor (M5): Dynamax + raid dens -->
+<script defer src="js/systems/modes.js"></script> <!-- MicaSurvivor (M5 batch 6): quick modes + modifiers -->
 <script defer src="js/systems/hazards.js"></script>
 <!-- red: amigos, salas, cooperativo y ranking -->
 <script defer src="js/net/social.js"></script>
@@ -570,6 +595,7 @@
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>
+<script defer src="js/ui/modes-ui.js"></script> <!-- MicaSurvivor (M5 batch 6): the mode-select screen -->
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
 <script defer src="js/ui/run-ui.js"></script>

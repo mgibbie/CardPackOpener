@@ -174,6 +174,8 @@ G.DB = (() => {
       }
     } else s.pz = {};
     if (isObj(s.zmis)) { for (const k of Object.keys(s.zmis)) if (!/^zc_[a-z]+$/.test(k)) delete s.zmis[k]; } else s.zmis = {};
+    // Modos (M5 lote 6): lo elegido (modos), la marca del Desafío diario (daily) y los tipos superados (typeDone).
+    if (G.Modes) G.Modes.sanitize(s);
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -286,7 +288,13 @@ G.DB = (() => {
       const o = older.pz[d], m = r.pz[d];
       if (isObj(o) && (!isObj(m) || (o.at || 0) > (m.at || 0))) r.pz[d] = o;
     }
-    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis']) {
+    // Modos (M5 lote 6): los tipos superados en la Supervivencia por tipo son unión (typeDone, abajo);
+    // el Desafío diario, la marca del día más reciente (del mismo día, la mejor); lo elegido en el menú
+    // (modificadores, tipo, Pokémon de la fiesta), el de la versión más reciente.
+    const daily = G.Modes ? G.Modes.mergeDaily(r.daily, older.daily) : r.daily || older.daily;
+    if (daily) r.daily = daily;
+    if (!isObj(r.modes) && isObj(older.modes)) r.modes = JSON.parse(JSON.stringify(older.modes));
+    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis', 'typeDone']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];
     }

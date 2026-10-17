@@ -550,7 +550,7 @@ try {
 		A(await E(() => G.Dynamax.active), 'the left trigger (unbound) also fires it in a run (main.gd _dyn_poll)');
 		await goPlay();
 		await press(2);
-		A(await E(() => G.Dynamax.active), 'X / Square / Y (left face, unbound until the batch-6 ban) also fires it in a run (main.gd 676)');
+		A(await E(() => G.Dynamax.active), 'X / Square / Y (left face: the ban button since batch 6, which only bans on the card screen) also fires it in a run (main.gd 676)');
 		await goPlay();
 		const notMenu = await E(() => { const t = G.Pad.map(); return t; });
 		A(notMenu.dynamax === 8 && notMenu.zmove === 10, 'the map now has dynamax = 8 next to zmove = 10', JSON.stringify(notMenu));

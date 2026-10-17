@@ -145,6 +145,7 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   | confirm | press the focused control; pick the focused card | A | ✕ | **A (right face)** |
   | cancel | back on every screen; resume from pause | B | ○ | **B (bottom face)** |
   | reroll | reroll the level-up cards (R) | Y | △ | X |
+  | ban | ban a level-up card (B), M5 batch 6 | X | □ | Y |
   | zmove | the Z-move (Z), M5 batch 4 | LS (L3) | L3 | LS |
   | dynamax | Dynamax (C), M5 batch 5 | View | Share | − |
 
@@ -152,8 +153,9 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   is now Dynamax, the port's `JOY_BUTTON_BACK`; pause stays on Start). In a run the port's extras
   also fire the Z-move: the reroll button (Y / △ / X, which only rerolls on the card screen) and
   the right trigger when nothing is bound to it; and Dynamax: the left trigger and the left face
-  button (X / □ / Y) when nothing is bound to them. The port's **ban and swap** actions come with
-  their M5 batches (in-run card ban, team mode). A map saved before an
+  button (X / □ / Y) when nothing is bound to them. Since batch 6 that button is **ban**, which
+  only bans on the card screen and fires Dynamax in a run (as reroll fires the Z-move). The port's
+  **swap** action comes with team mode (batch 7). A map saved before an
   action existed keeps its buttons; the new action gets its default, or the first free button if
   a remap already took it.
 - **Layouts**: Xbox, PlayStation and Nintendo. Nintendo swaps confirm and cancel. It is the
@@ -504,6 +506,68 @@ it in its encyclopedia, batch 11), so nothing else changed there.
   `den: true`), each player's save counts the den, only the host drops the reward; a partner's
   Dynamax is not mirrored on other screens yet.
 
+### Batch 6: Quick modes, modifiers and the card ban
+
+**Game modes** (`js/systems/modes.js`, `G.Modes`; the screen `js/ui/modes-ui.js`, `G.ModesUI`; port
+`menu.gd` 1496-1675, `save_data.gd` 16-22 / 556-572, `main.gd` 262 / 339-357 / 426-449 / 782-860 /
+966-983 / 1063 / 1861 / 2859-2998 / 3146-3152 / 3261 / 5862-5871 / 6266 / 8701-8705). The menu's
+**Game modes** entry (under Play; mouse, touch and pad) opens "Choose a mode": one card per mode,
+"Choose the party Pokémon", "Change type" and the six modifier switches, in the port's wording.
+Play still starts a Normal run in one tap. `G.Game.mode` is the run's mode. The numbers are the port's.
+
+| Mode | Rules |
+|---|---|
+| Normal run | as before, with the chosen modifiers |
+| Daily Challenge | the seed is the date (`YYYYMMDD`): the Pokémon (`pool[(sd x 7919 + 13) % n]`, non-legendary, owned or not), the rule (`MOD_IDS[(sd x 31 + 7) % 6]`, the only modifier) and, through a seeded `Math.random` while the run is set up, the map, the enemy cast, the bosses and the starting moves. Coins x1.25 (chosen modifiers not added). `save.daily = { date, best }`: the best time of the day, replayable |
+| Party Mode | any Pokémon (Pikachu by default; the picker lists every Pokémon), cannot die (a lethal hit leaves 1 HP), saves nothing: no coins, stats, records, kills per type, missions, achievements, Z-crystal missions, tickets, shinies, rescues, dens or ranking (`G.Progress.off`, the port's `PG.off`) |
+| Rift Time Attack | 8:00 counting down (red under 30 s, "Rifts won: N" below): the first rift check at 20 s, then every 8 s (6 s after a fight), each opens a rift (if no boss is alive), none in the last 40 s, no dens. Time's up only outside an arena. Coins +0.25; `stats.riftsBest` / `riftsRuns` |
+| Survival by Type | only the chosen type: the enemy cast (each tier's candidates, if it has any), the 5 bosses (their band, then 580+, then any of the type) and the raid dens. Coins +0.5. 10 minutes marks the type beaten (`save.typeDone`); `typeRuns`, `typeBestMin` |
+
+**Modifiers** (every mode but Daily and Party; +0.25 coins each): Fast (enemies x1.4 speed, bosses
+x1.15), Horde (spawn rate x1.8), Tough (x1.6 HP), Heavy hitters (x1.5 damage), Fragile (your max HP
+halved at the start), No healing (HP never goes up except by what a max-HP gain adds; the port's
+per-frame clamp). The enemy ones apply in `G.EnemyMgr.add` to every enemy (waves, bosses,
+legendaries, dens; once, even across an arena's stash and restore). Ending a run: coins = base x
+(1 + 0.25 per modifier, or 1.25 in the Daily) x your multiplier, + 0.5 (Type) or + 0.25 (Rifts);
+`stats.mn1..mn6` and `mb_<mod>` keep the best minutes.
+
+**Achievements:** a "Game modes" category with the port's 20 for these modes (`progress.gd`
+107-134: daily x5, modifiers x7, type x4, rifts x4), same goals, rewards and titles. The Z-crystal
+missions that read `dailyPlays` (Flying) and `typeBestMin` (Steel) now progress.
+
+**The level-up card ban** (`js/ui/run-ui.js`; port `main_e16.gd` 197 and the `Cards` class,
+`main.gd` 7484-7670): the **Ban (N)** button next to Reroll (the B key, a click / tap, or the pad's
+new `ban` action). N = the Ban upgrade's level (0-3) per run. Ban mode turns the button red, hides
+Reroll and says "Pick a new move to ban it"; only new-move cards can be banned (the others dim).
+The banned move joins `pl.banned` and never shows up again in the run; three fresh cards are dealt,
+free (no reroll used). Hidden with no bans left.
+
+**Controller:** the `ban` action (X / Square / Y on every layout, pad.gd `JOY_BUTTON_X`), remappable
+in Settings > Controls. In a run it fires Dynamax, the way reroll fires the Z-move (the port's X =
+Dynamax unless the cards are open). A map saved before batch 6 gains `ban` (X, or the first free
+button); missing actions are now filled in the order they arrived (zmove, dynamax, ban).
+
+**Saved and merged:** records are stats (the merge keeps the max of each); `save.daily` merges by
+date (the newer date wins; the same date keeps the better time); `save.typeDone` is a union;
+`save.modes` (modifiers, type, party Pokémon) follows the newer save. All three are sanitized.
+
+**Deviations, and why:**
+- Play still starts a Normal run; the modes are a separate **Game modes** menu entry (in the port
+  Play opens the list). One tap to play stays, and the existing flows and tests are unchanged.
+- Only this batch's modes are on the screen; Boss Rush and the Tower (batch 8), Team mode (batch 7)
+  and the local co-op partner (batch 12) come with their batches. Online co-op runs stay Normal
+  without modifiers.
+- The ban count: the port's last version made the in-run ban dead code (`bans = 0`) and kept only
+  the pre-run Veto list; earlier builds (`main_e16.gd`) gave Veto-level bans per run. The owner asked
+  for the in-run ban, so it uses that count, and the pre-run list in Upgrades keeps working too.
+- Daily determinism: the port seeds the whole run; here `Math.random` is seeded only while the run
+  is set up (map, cast, bosses, moves), as the frame timing makes the rest differ anyway.
+- Party saves nothing at all; the port still counted a won legendary or a den during it.
+- Leaderboards (ours and Magepunk's) only take Normal runs: the other modes change the rules and
+  Party never ends.
+- The HUD shows the mode and the modifier icons at the top right (the port shows none).
+- The run summary's "recogidas" and "Nv.3" were left in Spanish in English; translated now.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -570,4 +634,17 @@ it in its encyclopedia, batch 11), so nothing else changed there.
   Attack), 30 s open; the den boss (tier, HP, XP, x1.5, aura, Max Move with its 16 zones); the
   rewards; the C key, the MAX button clicked, the pad (View, left trigger, X), remap, an old map
   gaining dynamax, the glyph; the Dynamax card on the missions screen.
+- `node overworld/tests/micasurvivor_modes_test.mjs` (M5 batch 6), logged in with a stubbed account
+  row: the port's numbers and daily formulas, every new string in English; the modes screen by mouse,
+  touch (phone tap) and pad (focus, confirm, cancel out of the picker), modifier switches, the type
+  button, the party picker; the Daily (today's Pokémon and rule, the same world / cast / bosses /
+  moves twice, another date differs, its best keyed by date, x1.25 coins, stats); Party (an unowned
+  Pokémon, no death, nothing saved); Rift Time Attack (20 / 8 / 6 s checks, always a rift, a boss
+  blocks, never a den in 2000 checks, none in the last 40 s, the countdown HUD, 8:00 waits for the
+  arena, the record, coins); Survival by Type (cast, bosses, dens, 10 minutes, coins, the HUD tag);
+  the 6 modifiers (factors through `EnemyMgr.add`, once across a stash, the spawner's horde factor,
+  Fragile, No healing against heals, regen and a max-HP card; mn / mb stats; achievements); the ban
+  (B key, click, pad action, only new moves, never offered again in 600 offers, free, 0 = hidden;
+  Dynamax from the ban button in a run; remap and migration); the account push, a 409 merge and
+  `merge()` both ways; English on every new screen. `ONLY=3,7` runs just those sections.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

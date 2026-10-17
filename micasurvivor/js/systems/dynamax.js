@@ -49,7 +49,7 @@ G.Dynamax = (() => {
   const SHRINK = 0.35;
   const GROW_FX = [[0.14, 0.4], [0.40, 0.7], [0.72, 1.0]];
   const BLOCKED_MODES = ['tower'];        // la Torre llega en el lote 8
-  const NO_DEN_MODES = ['rifts'];         // la Contrarreloj de grietas llega en el lote 6
+  const NO_DEN_MODES = ['rifts'];         // la Contrarreloj de grietas (lote 6, js/systems/modes.js)
   const DEN_RATE = 0.05, DEN_TTL = 30, DEN_FROM = 120;
   const DEN_SCALE = 1.5, DEN_MAXMOVE = 0.28;
   const DEN_REWARD = { orbs: 12, items: 2, tickets: 2, coins: 12, coinValue: 10, heal: 1 };
@@ -235,7 +235,7 @@ G.Dynamax = (() => {
   function denDown(x, y, drop = true) {
     const s = save();
     let first = false;
-    if (s) {
+    if (s && (!G.Modes || G.Modes.saves())) {   // (M5 lote 6: en el Modo Fiesta no se guarda)
       s.stats = s.stats || {};
       first = !unlocked(s);
       s.stats.dens = (s.stats.dens || 0) + 1;
