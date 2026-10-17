@@ -333,9 +333,16 @@ G.HUD = (() => {
       }
     }
 
+    // MicaSurvivor (M2): with a controller, its prev / next move buttons either side of the bar.
+    const padOn = G.Pad && G.Pad.mode === 'pad';
+    if (padOn && n > 1) {
+      G.Pad.drawGlyph(ctx, 'prev', sx - S - 18 - 32, sy + S / 2 - 13, 26);
+      G.Pad.drawGlyph(ctx, 'next', sx + totalW + 6, sy + S / 2 - 13, 26);
+    }
+
     // ---------- vínculo guardado (aún no hay dos movimientos sueltos) ----------
     if (pl.bonds > 0) {
-      const bx = sx + totalW + 12, by = sy + S / 2 - 12;
+      const bx = sx + totalW + 12 + (padOn && n > 1 ? 30 : 0), by = sy + S / 2 - 12;
       G.Icons.draw(ctx, 'bond', bx, by, 24);
       if (pl.bonds > 1) {
         ctx.font = F(800, 10);
@@ -378,7 +385,8 @@ G.HUD = (() => {
     }
 
     // pista de controles
-    if (st.time < 14) {
+    if (st.time < 14 && G.Pad && G.Pad.mode === 'pad') padHint(ctx, w, h);   // MicaSurvivor (M2)
+    else if (st.time < 14) {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
@@ -387,6 +395,24 @@ G.HUD = (() => {
     }
 
     ctx.restore();
+  }
+
+  /** MicaSurvivor (M2): the bottom controls hint with the controller's glyphs. */
+  function padHint(ctx, w, h) {
+    const parts = [['g', 'lstick'], ['t', 'moverse  ·  '], ['g', 'prev'], ['g', 'next'], ['t', 'cambiar de ataque  ·  '], ['g', 'pause'], ['t', 'pausa']];
+    const GS = 14;
+    ctx.font = F(600, 10);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(180,200,230,.7)';
+    const items = parts.map(([k, v]) => (k === 'g' ? { g: v, w: GS + 2 } : { t: ' ' + G.T(v.replace(/[\s·]+$/, '')) + (v.includes('·') ? '  ·  ' : ''), w: 0 }));
+    for (const it of items) if (it.t) it.w = ctx.measureText(it.t).width;
+    let x = (w - items.reduce((a, it) => a + it.w, 0)) / 2;
+    const y = h - 4;
+    for (const it of items) {
+      if (it.g) G.Pad.drawGlyph(ctx, it.g, x, y - GS + 3, GS);
+      else ctx.fillText(it.t, x, y);
+      x += it.w;
+    }
   }
 
   // ---------------- cooperativo ----------------

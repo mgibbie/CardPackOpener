@@ -29,6 +29,9 @@ G.Input = (() => {
     axis() {
       const t = G.Touch && G.Touch.vector();
       if (t && (t[0] || t[1])) return t;
+      // MicaSurvivor (M2): a controller's left stick / D-pad (js/core/pad.js), analog.
+      const p = G.Pad && G.Pad.axis();
+      if (p) return p;
       let x = 0, y = 0;
       if (MOVE_KEYS.left.some(k => down.has(k))) x -= 1;
       if (MOVE_KEYS.right.some(k => down.has(k))) x += 1;

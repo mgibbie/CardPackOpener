@@ -421,7 +421,7 @@
 </section>
 
 <div id="pull-fx" class="hidden">
-  <canvas id="slot" width="176" height="170" title="Clic para acelerar"></canvas>
+  <canvas id="slot" width="176" height="170" title="Clic para acelerar" data-pad></canvas> <!-- MicaSurvivor (M2): data-pad = a controller focus stop (confirm speeds it up) -->
   <div class="pull-results" id="pull-results"></div>
   <button id="pull-close" class="btn gold hidden">Continuar</button>
 </div>
@@ -430,9 +430,9 @@
 <section id="scr-levelup" class="scr dim hidden">
   <div class="box center">
     <h2>¡Nivel <span id="lvl-num">2</span>!</h2>
-    <p class="sub">Elige una recompensa · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></p>
+    <p class="sub">Elige una recompensa · <span class="key-k"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></span><span class="key-p" data-glyphs="dpad_lr confirm"></span></p>
     <div id="cards" class="cards"></div>
-    <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none" style="margin-top:10px">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <kbd>R</kbd></button>
+    <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none" style="margin-top:10px">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <span class="key-k"><kbd>R</kbd></span><span class="key-p" data-glyphs="reroll"></span></button>
     <p id="lvl-wait" class="note hidden"></p>
   </div>
 </section>
@@ -450,7 +450,7 @@
 <section id="scr-item" class="scr dim hidden">
   <div class="box center">
     <h2>¡Un objeto!</h2>
-    <p class="sub">Sólo puedes llevar uno · <kbd>1</kbd> <kbd>2</kbd></p>
+    <p class="sub">Sólo puedes llevar uno · <span class="key-k"><kbd>1</kbd> <kbd>2</kbd></span><span class="key-p" data-glyphs="dpad_lr confirm"></span></p>
     <div id="item-cards" class="cards"></div>
   </div>
 </section>
@@ -460,6 +460,8 @@
     <h2>Pausa</h2>
     <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
+    <!-- MicaSurvivor (M2): the controller's version of the hints (js/core/pad.js fills the glyphs) -->
+    <p class="sub pad-hint"><span class="key-p" data-glyphs="lstick"></span> moverse · <span class="key-p" data-glyphs="prev next"></span> cambiar de ataque · <span class="key-p" data-glyphs="pause"></span> pausa</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div id="pause-sound" class="sound-inline"></div>
     <div class="row" style="justify-content:center">
@@ -491,6 +493,7 @@
 <script defer src="js/core/db.js"></script>
 <script defer src="js/core/audio.js"></script>
 <script defer src="js/core/input.js"></script>
+<script defer src="js/core/pad.js"></script> <!-- MicaSurvivor (M2): controller -->
 <script defer src="js/core/touch.js"></script>
 <script defer src="js/core/sprites.js"></script>
 <script defer src="js/core/camera.js"></script>

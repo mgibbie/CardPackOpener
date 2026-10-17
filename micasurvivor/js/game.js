@@ -595,6 +595,7 @@ G.Game = (() => {
     if (fpsAcc >= 0.5) { fpsShown = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
     frameDt = state === 'playing' ? dt : 0;
 
+    if (G.Pad) G.Pad.poll(ts);   // MicaSurvivor (M2): controller, before the keyboard
     handleKeys();
 
     if (state === 'playing') update(dt);

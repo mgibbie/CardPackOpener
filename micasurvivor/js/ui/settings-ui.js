@@ -65,6 +65,9 @@ G.SettingsUI = (() => {
     return `<div class="chips set-chips">${opts.map(([v, l]) => `<button class="chip ${v === cur ? 'on' : ''}" data-k="${key}" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
   }
 
+  /** MicaSurvivor (M2): re-draw the open tab, keeping the scroll (the controller remap re-renders it). */
+  function refresh() { const box = $('set-body'), y = box.scrollTop; render(); box.scrollTop = y; }
+
   function render() {
     document.querySelectorAll('#set-tabs .gen-tab').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
     const box = $('set-body');
@@ -100,7 +103,9 @@ G.SettingsUI = (() => {
              <div><kbd>Q</kbd> / <kbd>E</kbd></div><span>ataque anterior / siguiente</span>
              <div><kbd>Esc</kbd> o <kbd>P</kbd></div><span>pausa</span>
              <div><kbd>1</kbd>–<kbd>3</kbd></div><span>elegir carta al subir de nivel</span>
-           </div>`;
+             <div><kbd>R</kbd></div><span>cambiar las cartas</span>
+           </div>`
+        + G.Pad.settingsHTML();   // MicaSurvivor (M2): controller layout, remap, rumble
     } else if (tab === 'acc') {
       renderAccount(box);
     } else {
@@ -121,6 +126,7 @@ G.SettingsUI = (() => {
            </div>`;
     }
     wire(box);
+    if (tab === 'ctl') G.Pad.wireSettings(box);   // MicaSurvivor (M2)
   }
 
   function renderAccount(box) {
@@ -175,5 +181,5 @@ G.SettingsUI = (() => {
     G.DB.logout().then(() => G.Flow.toLogin());
   }
 
-  return { init, open, close, get isOpen() { return isOpen(); } };
+  return { init, open, close, refresh, get isOpen() { return isOpen(); } };
 })();

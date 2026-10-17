@@ -576,5 +576,20 @@ G.I18n.add({
   // ---------------- reportar marcas del ranking ----------------
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
-  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
+  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it',
+  // ---------------- MicaSurvivor (M2): controller (js/core/pad.js) ----------------
+  'Mando': 'Controller', 'Mando:': 'Controller:', 'Tipo de mando': 'Controller type',
+  'Movimiento anterior': 'Previous move', 'Movimiento siguiente': 'Next move', 'Aceptar / elegir': 'Confirm / pick',
+  'Atrás / cancelar': 'Back / cancel', 'Cambiar cartas': 'Reroll cards', 'Moverse': 'Move',
+  'Cambia los iconos de los botones y restablece la asignación.': 'Changes the button icons and resets the mapping.',
+  'Elige una acción y pulsa el botón que quieras: si otra acción lo usaba, se intercambian.': 'Pick an action, then press the button you want: if another action used it, the two swap.',
+  'Stick izquierdo o cruceta (no se cambia).': 'Left stick or D-pad (fixed).', 'Pulsa un botón…': 'Press a button…',
+  'Vibración': 'Vibration', 'El mando vibra cuando te golpean (si lo admite).': 'The controller rumbles when you get hit (if it can).',
+  'Restablecer asignación': 'Reset mapping', 'Asignación restablecida': 'Mapping reset',
+  'Inicia sesión en Magepunk para usar el mando': 'Log in to Magepunk to use a controller',
+  'Inicia sesión en Magepunk para usar el mando.': 'Log in to Magepunk to use a controller.',
+  'Pulsa cualquier botón del mando para usarlo.': 'Press any button on the controller to use it.',
+  'Conecta un mando y pulsa cualquier botón.': 'Connect a controller and press any button.',
+  'Mando conectado': 'Controller connected', 'Mando desconectado': 'Controller disconnected', 'Pestañas': 'Tabs',
+  'cambiar de ataque': 'switch move', 'cambiar las cartas': 'reroll the cards'
 });
