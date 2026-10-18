@@ -18,7 +18,7 @@
 //   - hot-plug: unplugging hides the ring; the first pad that presses drives, a second one is ignored
 //   - (M3) signing in mid-session: after the reload the game plays as the Magepunk user and offers
 //     the guest progress to the account (a stub /api/mp); the pad answers the offer
-//   - the port's zmove action is offered (M5 batch 4, L3 by default); ban / swap / dynamax are not yet (later M5 batches)
+//   - the port's zmove (M5 batch 4, L3 by default), dynamax (batch 5), ban (batch 6) and swap (batch 7, R3) actions are offered
 // Screenshots (pad_menu_focus, pad_settings_remap, pad_levelup) go to MICASURVIVOR_SHOTS=<dir>.
 // Covers micasurvivor/js/core/pad.js, js/core/input.js, js/game.js (G.Pad.poll), js/ui/run-ui.js
 // (card glyphs), js/ui/settings-ui.js (Controls tab), js/ui/hud.js (move-switch glyphs),
@@ -117,9 +117,9 @@ try {
 
 	await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
 	A(await waitFor(() => ev(() => document.getElementById('boot').classList.contains('hidden') && G.Pad && G.Pad.ready), 30000), 'boots; the pad module and the site gamepad core load');
-	A(await ev(() => G.Pad.layout()) === 'nintendo' && JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, ban: 2, zmove: 10, dynamax: 8 }),
+	A(await ev(() => G.Pad.layout()) === 'nintendo' && JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, ban: 2, swap: 11, zmove: 10, dynamax: 8 }),
 		'default layout is Nintendo (site standard): right face confirms, bottom cancels, LB/RB prev/next, Start pause, top face reroll, left face ban, L3 Z-move, − Dynamax', JSON.stringify(await ev(() => G.Pad.map())));
-	A(await ev(() => G.Pad.ACTIONS.includes('zmove') && G.Pad.ACTIONS.includes('dynamax') && G.Pad.ACTIONS.includes('ban') && !G.Pad.ACTIONS.includes('swap')), 'zmove (M5 batch 4), dynamax (batch 5) and ban (batch 6) are offered; swap is not yet (team mode, batch 7)');
+	A(await ev(() => G.Pad.ACTIONS.includes('zmove') && G.Pad.ACTIONS.includes('dynamax') && G.Pad.ACTIONS.includes('ban') && G.Pad.ACTIONS.includes('swap')), 'zmove (M5 batch 4), dynamax (batch 5), ban (batch 6) and swap (team mode, batch 7) are offered');
 
 	// ---- guest: the pad only hints
 	await ev(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
@@ -416,7 +416,7 @@ try {
 	for (let i = 0; i < 6; i++) { if (await ev(() => document.querySelector('#set-tabs .on').dataset.t) === 'ctl') break; await press(B.RB, 1); }
 	A(await navTo('#pad-reset', 1), 'D-pad reaches "Reset mapping"');
 	await press(B.confirm, 1);
-	A(JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, ban: 2, zmove: 10, dynamax: 8 }), 'reset restores the layout defaults', JSON.stringify(await ev(() => G.Pad.map())));
+	A(JSON.stringify(await ev(() => G.Pad.map())) === JSON.stringify({ prev: 4, next: 5, pause: 9, confirm: 1, cancel: 0, reroll: 3, ban: 2, swap: 11, zmove: 10, dynamax: 8 }), 'reset restores the layout defaults', JSON.stringify(await ev(() => G.Pad.map())));
 
 	A(errors.length === 0, 'no console errors', errors.slice(0, 5).join(' | '));
 } catch (e) {

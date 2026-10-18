@@ -15,8 +15,9 @@
  *     like the port's JOY_BUTTON_BACK; in a run an unbound left trigger and an unbound left face
  *     button (X / Square / Y, the port's ban button) also fire it). ban (M5 batch 6: ban a card
  *     on the level-up screen, X / Square / Y like pad.gd JOY_BUTTON_X; in a run it fires Dynamax,
- *     the way reroll fires the Z-move, as the port's X does). The port's swap comes with team mode
- *     (batch 7). A map saved before an action existed keeps its buttons; the new action takes its
+ *     the way reroll fires the Z-move, as the port's X does). swap (M5 batch 7: switch Pokémon in
+ *     team mode, RS / R3 on every layout like pad.gd JOY_BUTTON_RIGHT_STICK; no other action used
+ *     it). A map saved before an action existed keeps its buttons; the new action takes its
  *     default (or the first free button).
  *   - Remap with swap-on-conflict + reset, in Settings > Controls; saved with the
  *     game's settings (micasurvivor_settings: padLayout, padMap, padRumble).
@@ -40,12 +41,12 @@ G.Pad = (() => {
   const SIGNED_IN_ONLY = true;
   const LAYOUTS = ['xbox', 'playstation', 'nintendo'];
   const LAYOUT_NAME = { xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
-  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'ban', 'zmove', 'dynamax'];
-  const ADDED = ['zmove', 'dynamax', 'ban'];   // actions added by M5 batches 4, 5, 6 (oldest first)
+  const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'ban', 'swap', 'zmove', 'dynamax'];
+  const ADDED = ['zmove', 'dynamax', 'ban', 'swap'];   // actions added by M5 batches 4, 5, 6, 7 (oldest first)
   const LABELS = {
     prev: 'Movimiento anterior', next: 'Movimiento siguiente', pause: 'Pausa',
     confirm: 'Aceptar / elegir', cancel: 'Atrás / cancelar', reroll: 'Cambiar cartas',
-    ban: 'Vetar carta', zmove: 'Movimiento Z', dynamax: 'Dynamax'
+    ban: 'Vetar carta', swap: 'Cambiar Pokémon (Modo Equipo)', zmove: 'Movimiento Z', dynamax: 'Dynamax'
   };
   // Buttons an action may take (W3C standard mapping). The D-pad always moves /
   // navigates and Guide belongs to the system.
@@ -65,8 +66,9 @@ G.Pad = (() => {
   }
   function defaults(lay = layout()) {
     const n = lay === 'nintendo';
-    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK; dynamax: View / Back, pad.gd JOY_BUTTON_BACK; ban: X / Square / Y, pad.gd JOY_BUTTON_X)
-    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, ban: 2, zmove: 10, dynamax: 8 };
+    // (zmove: L3, pad.gd JOY_BUTTON_LEFT_STICK; dynamax: View / Back, pad.gd JOY_BUTTON_BACK; ban: X / Square / Y, pad.gd JOY_BUTTON_X;
+    //  swap: R3, pad.gd JOY_BUTTON_RIGHT_STICK)
+    return { prev: 4, next: 5, pause: 9, confirm: n ? 1 : 0, cancel: n ? 0 : 1, reroll: 3, ban: 2, swap: 11, zmove: 10, dynamax: 8 };
   }
   function map() {
     const m = G.Settings.get('padMap');
@@ -75,7 +77,7 @@ G.Pad = (() => {
       for (const a of ACTIONS) out[a] = m[a];
       // MicaSurvivor (M5 batch 4): a map saved before an action existed (zmove) keeps its buttons;
       // the new action takes its default, or the first free button if a remap already uses it.
-      // (M5 batch 6: the missing ones are filled in the order they arrived: zmove, dynamax, then ban.)
+      // (M5 batch 6: the missing ones are filled in the order they arrived: zmove, dynamax, ban, then swap.)
       const d = defaults();
       for (const a of [...ACTIONS.filter(x => !ADDED.includes(x)), ...ADDED]) {
         if (out[a] != null) continue;
@@ -610,6 +612,8 @@ G.Pad = (() => {
     if (!game || game.state !== 'playing' || !pl || pl.dead) return;
     if (a === 'prev') pl.cycle(-1);
     else if (a === 'next') pl.cycle(1);
+    // MicaSurvivor (M5 batch 7, main.gd 667-668): switch Pokémon in team mode (the next one standing)
+    else if (a === 'swap') { if (G.Team && G.Team.on) G.Team.request(pl); }
     // MicaSurvivor (M5 batch 4): the Z-move; in a run the port also fires it with Y / Triangle (the
     // reroll button, which only rerolls on the card screen) and the right trigger.
     else if ((a === 'zmove' || a === 'reroll' || a === 'ztrigger') && G.ZMoves) G.ZMoves.tryStart(pl);

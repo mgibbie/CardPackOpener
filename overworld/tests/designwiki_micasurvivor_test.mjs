@@ -52,9 +52,11 @@ A(W.counts.zmoves === 18 && W.zmoves.length === 18 && W.zmoves[0].name === 'Star
 
 // MicaSurvivor M5 batch 6: the quick modes, the 6 modifiers and the level-up ban
 const MO = W.modes || {};
-A(JSON.stringify((MO.list || []).map(m => m.name)) === JSON.stringify(['Normal run', 'Daily Challenge', 'Party Mode', 'Rift Time Attack', 'Survival by Type']) && (MO.mods || []).length === 6 && MO.mods.every(m => m.name && m.desc && !/[¡¿ñáíóú]/.test(m.desc))
+A(JSON.stringify((MO.list || []).map(m => m.name)) === JSON.stringify(['Normal run', 'Daily Challenge', 'Party Mode', 'Rift Time Attack', 'Survival by Type', 'Team Mode']) && (MO.mods || []).length === 6 && MO.mods.every(m => m.name && m.desc && !/[¡¿ñáíóú]/.test(m.desc))
 	&& MO.rifts.limit === 480 && MO.coins.daily === 1.25 && MO.coins.type === 0.5 && MO.k.horde === 1.8 && MO.ban.max === 3 && JSON.stringify(MO.ban.costs) === '[300,570,1080]',
-	'Game modes from modes.js: 5 modes, 6 modifiers in English, the port numbers (480 s, x1.25, +0.5, horde x1.8) and the ban (Ban upgrade, 3 levels)', JSON.stringify(MO).slice(0, 300));
+	'Game modes from modes.js: 6 modes (+ Team, batch 7), 6 modifiers in English, the port numbers (480 s, x1.25, +0.5, horde x1.8) and the ban (Ban upgrade, 3 levels)', JSON.stringify(MO).slice(0, 300));
+// MicaSurvivor M5 batch 7: Team mode
+A(JSON.stringify(MO.team) === JSON.stringify({ max: 3, minOwned: 2, cooldown: 3, inv: 1, invAuto: 1.5, regen: 0.012 }), 'Team mode from team.js: 3 Pokémon, unlocked with 2, 3 s cooldown, 1 s / 1.5 s invulnerable, 1.2 %/s bench recovery', JSON.stringify(MO.team));
 
 // ---------- 2. the pages
 const server = http.createServer((req, res) => {
@@ -88,8 +90,9 @@ try {
 	A(/Required Notice: Copyright 2026 JPTER78 \(https:\/\/github\.com\/JPTER78\/pokesurvivor\)/.test(ov.text) && /PolyForm Noncommercial/.test(ov.text) && /CC BY-NC 4\.0/.test(ov.text) && /JayElDragon/.test(ov.text) && /never gets ads, paid items/.test(ov.text), 'overview: credits + the licence notice (Required Notice, PolyForm NC, CC BY-NC, JayElDragon, never sold)');
 	A(ov.tables === 4 && /Nintendo/.test(ov.text), 'overview: the modes and modifiers tables, the keyboard and controller tables');
 	A(/Game modes/.test(ov.text) && /Rift Time Attack/.test(ov.text) && /8:00 on the clock/.test(ov.text) && /Survival by Type/.test(ov.text) && /Heavy hitters/.test(ov.text) && /Banning a level-up card/.test(ov.text) && /Ban a level-up card/.test(ov.text)
-		&& await page.$$eval('#content .ms-modes tbody tr', r => r.length) === 5 && await page.$$eval('#content .ms-mods tbody tr', r => r.length) === 6,
-		'overview: Game modes (5 modes, 6 modifiers, the ban, the B key and the controller row; M5 batch 6)');
+		&& await page.$$eval('#content .ms-modes tbody tr', r => r.length) === 6 && await page.$$eval('#content .ms-mods tbody tr', r => r.length) === 6,
+		'overview: Game modes (6 modes, 6 modifiers, the ban, the B key and the controller row; M5 batch 6)');
+	A(/Team Mode/.test(ov.text) && /swap them mid-run/.test(ov.text) && /Switch Pokémon \(Team Mode\)/.test(ov.text) && /Twenty-three achievements/.test(ov.text), 'overview: Team Mode (its row, the Tab key and the controller\'s swap row; M5 batch 7)');
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micasurvivor', 'nav: Overview is active');
 
 	await go('micasurvivor/pokemon', '.ms-pokemon tbody tr', 966);

@@ -33,7 +33,10 @@ G.MissionDefs = (() => {
     { id: 'item', ev: 'item', goals: [1], reward: { t1: 2, coins: 150 },
       text: () => 'Encuentra un objeto equipable' },
     { id: 'evolve', ev: 'evolve', goals: [1], reward: { t1: 3, coins: 250 },
-      text: () => 'Evoluciona un movimiento' }
+      text: () => 'Evoluciona un movimiento' },
+    // MicaSurvivor (M5 lote 7, progress.gd 316 "req": "team"): sólo cuentan las partidas del Modo Equipo
+    { id: 'mTeam', ev: 'runEnd', mode: 'max', value: min, goals: [5, 8], reward: { t1: 3, coins: 300 },
+      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` }
   ];
 
   const weekly = [
@@ -48,7 +51,10 @@ G.MissionDefs = (() => {
     { id: 'wevolve', ev: 'evolve', goals: [3, 5], reward: { t10: 1, coins: 900 },
       text: n => `Evoluciona ${n} movimientos` },
     { id: 'wdaily', ev: 'missionDone', match: d => d.daily, goals: [8, 12], reward: { t10: 1, coins: 800 },
-      text: n => `Completa ${n} misiones diarias` }
+      text: n => `Completa ${n} misiones diarias` },
+    // MicaSurvivor (M5 lote 7, progress.gd 330)
+    { id: 'wTeam', ev: 'runEnd', mode: 'max', value: min, goals: [10, 15], reward: { t1: 3, t10: 1, coins: 1200 },
+      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` }
   ];
 
   const BY = {};

@@ -952,6 +952,10 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .mod-tog.on .mod-sw { background: #ff8a5b; color: #2b1200; }
 .mod-tog:hover, .mod-tog:focus-visible { border-color: var(--edge); outline: none; }
 .party-grid { margin-top: 8px; max-height: calc(100vh - 230px); overflow-y: auto; }
+/* MicaSurvivor (M5 lote 7): el selector del equipo (los elegidos, con su número) */
+.team-count { margin: 6px 0 0; color: var(--gold); font-weight: 700; }
+.team-grid .cell .team-no { position: absolute; top: 3px; right: 6px; min-width: 20px; height: 20px; border-radius: 10px; background: var(--gold); color: #2b1d00; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+.team-grid { max-height: calc(100vh - 260px); }
 .pause-mode { color: #ffb36b; margin: 4px 0 8px; }
 .over-mode { color: #ffb36b; font-weight: 700; }
 .over-mode p { margin: 0; }

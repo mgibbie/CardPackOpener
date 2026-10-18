@@ -89,13 +89,13 @@ G.Game = (() => {
   /**
    * @param coop  { seed, host, members } para una partida en grupo
    * @param mode  MicaSurvivor (M5 lote 6): 'normal' | 'daily' | 'party' | 'rifts' | 'type' (js/systems/modes.js;
-   *              en grupo, siempre normal y sin modificadores)
+   *              en grupo, siempre normal y sin modificadores); M5 lote 7: 'team' (js/systems/team.js)
    */
   function startRun(coop = null, mode = 'normal') {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
     const cfg = G.Modes.begin(coop ? { mode: 'normal' } : G.Modes.plan(mode));
-    // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas).
+    // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas). Equipo: el primero.
     const mon = G.DEX_BY[cfg.dex || save.partner];
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
 
@@ -117,6 +117,7 @@ G.Game = (() => {
     if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
     else setupRun(coop, save, mon, perks);
     G.Modes.startPlayer(pl);   // Frágil: vida máxima a la mitad
+    G.Team.begin(pl, perks);   // MicaSurvivor (M5 lote 7): el Modo Equipo (los demás del equipo, con sus vidas)
 
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
@@ -347,7 +348,8 @@ G.Game = (() => {
     const judge = G.Judgment.summary();
     if (judge) G.Progress.event('judgeEnd', judge);
     G.Judgment.reset();
-    G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
+    // (M5 lote 7: con el modo y los modificadores, para las misiones de modos; progress.gd _advance "req")
+    G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop, mode: G.Game.mode, nmods: G.Modes.is('daily') ? 0 : G.Modes.mods.length });
     G.Progress.checkAch();
     // A la nube al acabar la partida (como mucho cada 30 min); si la marca entra
     // en un top (hoy, semana o mes), enseguida (abajo, tras subirla al ranking).
@@ -624,7 +626,9 @@ G.Game = (() => {
     if (G.Input.tap('keyz')) G.ZMoves.tryStart(pl);   // MicaSurvivor (M5 lote 4): Movimiento Z
     if (G.Input.tap('keyc')) G.Dynamax.tryStart(pl);  // MicaSurvivor (M5 lote 5): Dynamax
     if (G.Input.tap('keyq')) pl.cycle(-1);
-    if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
+    // MicaSurvivor (M5 lote 7, main.gd 642): en el Modo Equipo, Tab cambia de Pokémon (si no, el siguiente movimiento)
+    if (G.Input.tap('tab') && G.Team.on) G.Team.request(pl);
+    else if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
 
   // ---------------- bucle ----------------
@@ -669,6 +673,7 @@ G.Game = (() => {
     handleKeys();
 
     if (state === 'playing') update(dt);
+    else if (state === 'levelup' || state === 'choice') G.Team.tick(Math.min(1 / 30, real));   // (M5 lote 7: como en el port)
     else if (pl && state !== 'ui') { G.FX.update(dt * 0.25); pl.anim.update(dt * 0.25); }
     // La red se atiende siempre (también con las cartas de nivel abiertas).
     if (G.Coop.active && pl && state !== 'ui' && state !== 'over') G.Coop.tick(dt);
@@ -682,6 +687,9 @@ G.Game = (() => {
   function update(dt) {
     const coop = G.Coop.active;
     if (flashT > 0) flashT -= dt;
+    // MicaSurvivor (M5 lote 7, main.gd 1055): Modo Equipo, la espera entre cambios y la banca corren
+    // siempre que no estés en pausa (también durante el Z, la Sentencia y las cartas: ver frame)
+    G.Team.tick(dt);
     // La Sentencia de Arceus: mientras dura la animación, todo lo demás se para.
     if (G.Judgment.cinematic) {
       G.Judgment.cineTick(dt);
@@ -968,7 +976,7 @@ G.Game = (() => {
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
     toUI() { state = 'ui'; Backdrop.restore(); },
-    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; la Torre del lote 8 pondrá 'tower'). */
+    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; lote 7: 'team'; la Torre del lote 8 pondrá 'tower'). */
     get mode() { return runMode; }, set mode(m) { runMode = m || 'normal'; },
     get state() { return state; }, get player() { return pl; }, st
   };

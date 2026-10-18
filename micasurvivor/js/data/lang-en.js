@@ -858,6 +858,20 @@ G.I18n.add({
   'Pasillo de grietas': 'Rift corridor', 'Gana 5 grietas en una Contrarreloj de grietas.': 'Win 5 rifts in a Rift Time Attack.',
   'Cazador contrarreloj': 'Time-attack hunter', 'Gana 8 grietas en una Contrarreloj de grietas.': 'Win 8 rifts in a Rift Time Attack.',
   'Siempre con prisa': 'Always in a hurry', 'Juega 10 Contrarrelojes de grietas.': 'Play 10 Rift Time Attacks.',
+  // MicaSurvivor (M5 lote 7): Modo Equipo (lang_en.json del port de Android)
+  'Modo Equipo': 'Team Mode',
+  'Lleva hasta 3 Pokémon y cámbialos en plena partida (botón táctil de la derecha, tocando su ficha, R3 o Tab). Si uno cae, entra el siguiente; los de banca se recuperan. Equipo: {x}': 'Bring up to 3 Pokémon and swap them mid-run (touch button on the right, tapping their card, R3 or Tab). If one faints, the next one comes in; benched ones recover. Team: {x}',
+  'Elegir equipo (hasta 3)': 'Choose team (up to 3)', 'Toca hasta 3 Pokémon tuyos para el equipo': 'Tap up to 3 of your Pokémon for the team',
+  'Equipo: {x} / 3': 'Team: {x} / 3', '¡Equipo listo!': 'Team ready!',
+  'Necesitas al menos 2 Pokémon para formar un equipo.': 'You need at least 2 Pokémon to form a team.', 'Consigue otro Pokémon primero': 'Get another Pokémon first',
+  'Cambiar Pokémon (Modo Equipo)': 'Switch Pokémon (Team Mode)', '¡Adelante, {x}!': 'Go, {x}!',
+  'Mejor en equipo': 'Better together', 'Juega una partida en Modo Equipo.': 'Play a run in Team Mode.',
+  'Relevo perfecto': 'Perfect relay', 'Aguanta 10 minutos en Modo Equipo.': 'Survive 10 minutes in Team Mode.',
+  'Líder de equipo': 'Team leader', 'Aguanta 20 minutos en Modo Equipo.': 'Survive 20 minutes in Team Mode.',
+  'Aguanta {x} minutos en Modo Equipo': 'Survive {x} minutes in Team Mode',
+  'cambiar de Pokémon': 'switch Pokémon', 'K.O.': 'KO',
+  'WASD moverse · 1-4 / Q / E o clic en un ataque para cambiarlo · Tab cambiar de Pokémon · Esc pausa': 'WASD move · 1-4 / Q / E or click a move to switch · Tab switch Pokémon · Esc pause',
+  'Arrastra el dedo para moverte · toca un ataque para cambiarlo · toca una ficha para cambiar de Pokémon': 'Drag your finger to move · tap a move to switch · tap a card to switch Pokémon',
   // (el resumen de la partida: "recogidas 130" y "Nv.3" se quedaban en español)
   'recogidas': 'picked up', 'Nv.{x}': 'Lv.{x}',
   // (los Pokémon Paradoja venían con su nombre español: "¡Ferropúas salvaje apareció!" en inglés)

@@ -146,6 +146,7 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   | cancel | back on every screen; resume from pause | B | ○ | **B (bottom face)** |
   | reroll | reroll the level-up cards (R) | Y | △ | X |
   | ban | ban a level-up card (B), M5 batch 6 | X | □ | Y |
+  | swap | switch Pokémon in Team mode (Tab), M5 batch 7 | RS (R3) | R3 | RS |
   | zmove | the Z-move (Z), M5 batch 4 | LS (L3) | L3 | LS |
   | dynamax | Dynamax (C), M5 batch 5 | View | Share | − |
 
@@ -155,7 +156,7 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   the right trigger when nothing is bound to it; and Dynamax: the left trigger and the left face
   button (X / □ / Y) when nothing is bound to them. Since batch 6 that button is **ban**, which
   only bans on the card screen and fires Dynamax in a run (as reroll fires the Z-move). The port's
-  **swap** action comes with team mode (batch 7). A map saved before an
+  **swap** action came with Team mode (batch 7) on R3, a button nothing else used. A map saved before an
   action existed keeps its buttons; the new action gets its default, or the first free button if
   a remap already took it.
 - **Layouts**: Xbox, PlayStation and Nintendo. Nintendo swaps confirm and cancel. It is the
@@ -568,6 +569,61 @@ date (the newer date wins; the same date keeps the better time); `save.typeDone`
 - The HUD shows the mode and the modifier icons at the top right (the port shows none).
 - The run summary's "recogidas" and "Nv.3" were left in Spanish in English; translated now.
 
+### Batch 7: Team mode
+
+**Team mode** (`js/systems/team.js`, `G.Team`; port `save_data.gd` 21 / 189-203, `menu.gd` 1640-1657 /
+2158-2174, `main.gd` 265-269 / 436-438 / 498 / 642 / 667-668 / 704-705 / 806-807 / 844-846 / 1055 /
+1425-1428 / 1733-1804 / 1885-1902 / 8359-8396 / 8815-8863, `pad.gd` 17 / 42, `progress.gd` 129-131 /
+253 / 316 / 330). A **Team Mode** card on "Choose a mode" (mouse, touch and pad), in the port's words,
+names the team; **Choose team (up to 3)** opens a picker of your own Pokémon (by generation). The
+numbers are the port's.
+
+| Rule | Port |
+|---|---|
+| Who | up to 3 of your Pokémon; locked below 2 ("You need at least 2 Pokémon to form a team.", the card only says "Get another Pokémon first") |
+| Picking | opening the picker clears the team; a tap adds (or removes) one, numbered; the third closes it ("Team ready!") |
+| Filling (`team_list`) | the picked ones you still own (no repeats, 3 at most); if none, your partner; then the first Pokémon you got (`owned[].at`) up to 3. Saved as `save.modes.team` |
+| The run | the first one starts; its upgrades, Veto list, slot binds and starting move are the run's. Each member's HP = its species' base + the Vitality upgrade (halved by Fragile) |
+| Swapping | Tab, the pad's `swap` (R3), the round swap button (left of the Z button) or a tap / click on a team card; to the next one standing (or that card). 3 s between swaps; not on the cards, while paused or during the Z-move |
+| On a swap | the old one keeps its HP on the bench; max-HP gains are the team's (max HP = base + that gain); the new one comes in with its own HP, 1 s invulnerable, a 0.5 flash, the gold ring (8 to 150 in 0.5 s), "Go, X!" |
+| Per member / shared | species, sprite, types, speed, attack and passive ability are the active one's; level, XP, moves, items, buffs, Second Chance hearts and the Z-move (one per run) are the team's. A swap ends Dynamax (`G.Dynamax.stop`, its 240 s cooldown starts) and restarts No healing from the new HP |
+| The bench | recovers 1.2 % of its base HP a second (up to the base), like the cooldown, whenever the game is not paused |
+| Fainting | Focus Sash, Sturdy and a Second Chance heart come first; then the next one comes in at once (no cooldown wait, 1.5 s invulnerable) and the fallen card shows KO. Nobody left: the run ends |
+
+**Other modes:** modifiers apply (+0.25 coins each, no extra for the mode, the `mn` / `mb_` records
+count); Daily, Party and Survival by Type are other modes; online co-op runs stay Normal; leaderboards
+only take Normal runs.
+
+**HUD:** the team cards under your HP (name, HP, bar; gold border on the active one, dimmed during the
+cooldown, KO when down) and the round swap button with the next one's name, a red cooldown arc, and
+the Tab key or the pad's glyph. The controls hint adds "Tab switch Pokémon" / "tap a card to switch
+Pokémon" / the swap glyph.
+
+**Controller:** the `swap` action, R3 / RS on every layout (`pad.gd` `JOY_BUTTON_RIGHT_STICK`),
+remappable; no other action used that button. A map saved before batch 7 gains `swap` (R3, or the first
+free button).
+
+**Achievements and missions** (`progress.gd`): Better together (1 team run: 150 coins, 2 tickets),
+Perfect relay (10 minutes: 1500 coins, a x10 ticket), Team leader (20 minutes: 3500 coins, 2 tickets, 2
+x10 tickets, the title); the daily mission "Survive 5 / 8 minutes in Team Mode" and the weekly one (10 /
+15 minutes), counting only team runs (`runEnd` now carries `mode` and `nmods`); the Fairy Z-crystal
+mission (8 minutes) now progresses. `stats.teamRuns` / `teamBestMin` merge by max on a 409; the picked
+team follows the newer save and is sanitized.
+
+**Deviations, and why:**
+- The port's `_swap_team` calls `_dyn_stop()` before checking the cooldown and the target, so pressing
+  swap during the cooldown ended Dynamax without swapping. Here Dynamax ends only when a swap happens.
+- The team cards sit under your HP on the left (the port: top right) and the swap button left of the
+  Z button (the port: a 120 px button bottom right): the web's right column already holds the weather,
+  the mode tag and the Z / MAX buttons. The cards also show the HP numbers and "KO".
+- Tab: the web used Tab for "next move" (as E). In a team run Tab swaps, like the port; otherwise it
+  still cycles moves (E always does).
+- Upgrades are per Pokémon on the web (the port's are global), so the leader's apply to the run,
+  including every member's Vitality HP.
+- The Z-move's type follows the active Pokémon (batch 4's choice; the port fixed it at the start).
+- Shiny: the web's single "play shiny" switch applies to each member whose shiny you own.
+- The picker is a grid of your Pokémon by generation (the port reused the Pokédex filtered to owned).
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -647,4 +703,13 @@ date (the newer date wins; the same date keeps the better time); `save.typeDone`
   (B key, click, pad action, only new moves, never offered again in 600 offers, free, 0 = hidden;
   Dynamax from the ban button in a run; remap and migration); the account push, a 409 merge and
   `merge()` both ways; English on every new screen. `ONLY=3,7` runs just those sections.
+- `node overworld/tests/micasurvivor_team_test.mjs` (M5 batch 7), logged in with a stubbed account
+  row: the port's numbers, the `swap` pad action, the team achievements, missions and the Fairy
+  Z-mission, English; `team_list` (partner, order got, cleaning, a team of 2, locked at 1); the Team
+  card and picker by mouse, touch (phone) and pad; a run: Tab, a HUD card click, the swap button
+  (click and tap) and R3; the cooldown, the level-up block, HP per member, the shared max-HP gain,
+  level / XP / moves / item, species / types / stats / ability, bench recovery, Dynamax ending, No
+  healing; fainting after a Second Chance heart, the auto-swap ignoring the cooldown, the end, coins
+  with modifiers, stats, achievements and missions (only team runs); no Spanish on the canvas or the
+  screens; the account push, a 409 merge and `merge()` both ways.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

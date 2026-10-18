@@ -429,6 +429,8 @@ G.HUD = (() => {
     if (G.ZMoves && !pl.remote) G.ZMoves.drawButton(ctx, w, h, pl);
     // ---------- Dynamax (M5 lote 5, main.gd draw_dyn): el botón MAX, encima del Z ----------
     if (G.Dynamax && !pl.remote) G.Dynamax.drawButton(ctx, w, h, pl);
+    // ---------- Modo Equipo (M5 lote 7, main.gd draw_team / TeamUi): las fichas y el botón de cambiar ----------
+    if (G.Team && !pl.remote) G.Team.drawHud(ctx, w, h, pl);
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
@@ -450,7 +452,10 @@ G.HUD = (() => {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
-      ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
+      // (M5 lote 7: en el Modo Equipo, cómo se cambia de Pokémon)
+      const team = G.Team && G.Team.on;
+      ctx.fillText(touch ? (team ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo  ·  toca una ficha para cambiar de Pokémon' : 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo')
+                         : team ? 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Tab cambiar de Pokémon  ·  Esc pausa'
                          : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
     }
 
@@ -459,7 +464,8 @@ G.HUD = (() => {
 
   /** MicaSurvivor (M2): the bottom controls hint with the controller's glyphs. */
   function padHint(ctx, w, h) {
-    const parts = [['g', 'lstick'], ['t', 'moverse  ·  '], ['g', 'prev'], ['g', 'next'], ['t', 'cambiar de ataque  ·  '], ['g', 'pause'], ['t', 'pausa']];
+    const parts = [['g', 'lstick'], ['t', 'moverse  ·  '], ['g', 'prev'], ['g', 'next'], ['t', 'cambiar de ataque  ·  '],
+      ...(G.Team && G.Team.on ? [['g', 'swap'], ['t', 'cambiar de Pokémon  ·  ']] : []), ['g', 'pause'], ['t', 'pausa']];   // (M5 lote 7)
     const GS = 14;
     ctx.font = F(600, 10);
     ctx.textAlign = 'left';
