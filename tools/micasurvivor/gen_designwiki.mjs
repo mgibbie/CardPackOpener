@@ -3,7 +3,8 @@
 //   micasurvivor/js/data/{pokedex,starters,moves,items,upgrades}.js, js/systems/abilities.js (the
 //   passive ability of every Pokémon, M5 batch 2), js/systems/zmoves.js (the 18 Z-moves and their
 //   Z-crystal missions, M5 batch 4), js/systems/dynamax.js (Dynamax + raid dens, M5 batch 5), js/systems/modes.js
-//   (the quick modes, the 6 modifiers and the level-up ban, M5 batch 6) (+ lang-en.js for the English
+//   (the quick modes, the 6 modifiers and the level-up ban, M5 batch 6), js/systems/team.js (Team mode, M5
+//   batch 7) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -33,7 +34,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js']) {
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -72,7 +73,9 @@ export function build() {
 	const M = G.Modes, ban = G.Upgrades.BY.ban;
 	const modes = { list: M.LIST.map(id => ({ id, name: T(M.NAME[id]) })), mods: M.MOD_IDS.map(id => ({ id, name: T(M.MOD[id].name), desc: T(M.MOD[id].desc) })),
 		rifts: M.RIFTS, coins: M.COINS, k: M.K, typeMin: M.TYPE_DONE_MIN, partyDex: M.PARTY_DEX, types: M.TYPES.length,
-		ban: { upgrade: T(ban.name), max: ban.max, costs: Array.from({ length: ban.max }, (_, l) => G.Upgrades.cost('ban', l)) } };
+		ban: { upgrade: T(ban.name), max: ban.max, costs: Array.from({ length: ban.max }, (_, l) => G.Upgrades.cost('ban', l)) },
+		// (M5 batch 7: Team mode)
+		team: { max: G.Team.MAX, minOwned: G.Team.MIN_OWNED, cooldown: G.Team.CD, inv: G.Team.INV, invAuto: G.Team.INV_AUTO, regen: G.Team.REGEN } };
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',

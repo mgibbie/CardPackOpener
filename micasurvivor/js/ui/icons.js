@@ -37,6 +37,11 @@ G.Icons = (() => {
     m_party: { pal: { o: '#ffb347', y: '#ffd23f', p: '#ff8ad8', b: '#4fb4ff' }, rows: [
       '.......y..p.', '..b..y......', '.........b..', '....kk.p....', '...kook.....', '..kooyk..y..',
       '..koyook....', '.kooyook..b.', '.koyooook...', 'kooyoook....', 'kkooook.....', '.kkkkk......'] },
+    // MicaSurvivor (M5 lote 7, icons.gd m_team): dos Poké Balls, el Modo Equipo.
+    m_team: { pal: { W: '#f4f6fb', R: '#e0434f' }, rows: [
+      '................', '...........k....', '.........kkRkk..', '........kRRRRRk.', '.....k.kRRRRRRRk', '...kkRkkRRRRRRRk',
+      '..kRRRRkkkkWkkkk', '.kRRRRRRWWWWWWWk', '.kRRRRRRWWWWWWWk', '.kkkkWkkkWWWWWk.', '.kWWWWWWWkkWkk..', '.kWWWWWWWk.k....',
+      '..kWWWWWk.......', '...kkWkk........', '.....k..........', '................'] },
     m_horde: { pal: { r: '#ff5f6d', g: '#5fe08a', b: '#4fb4ff', w: '#f4f8ff' }, rows: [
       '............', '.kkk....kkk.', 'krrrk..kgggk', 'krwrk..kgwgk', 'krrrkkkkgggk', '.kkkbbbbkkk.',
       '...kbwwbk...', '..kbbbbbbk..', '..kbbbbbbk..', '...kkkkkk...', '............', '............'] },

@@ -2534,6 +2534,7 @@ async function micasurvivorView() {
         [kbd('B'), 'Ban a level-up card (with the Ban upgrade), then pick the new move to ban'],
         [kbd('Z'), 'Z-move (from level 15, once unlocked)'],
         [kbd('C'), 'Dynamax (from level 20, once a raid den is cleared)'],
+        [kbd('Tab'), 'Team Mode: switch to the next Pokémon (otherwise: next move)'],
         [kbd('Esc', 'P'), 'Pause'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Touch'),
@@ -2550,6 +2551,7 @@ async function micasurvivorView() {
         ['Ban a level-up card (in a run it fires Dynamax)', 'X', '□', 'Y'],
         ['Z-move (in a run Y / △ / X and the right trigger also fire it)', 'LS (L3)', 'L3', 'LS'],
         ['Dynamax (in a run X / □ / Y and the left trigger also fire it)', 'View', 'Share', '−'],
+        ['Switch Pokémon (Team Mode)', 'RS (R3)', 'R3', 'RS'],
       ])),
     mcSection('Credits & licence', null,
       h('ul', { class: 'mc-list' },
@@ -2570,8 +2572,10 @@ function msModesSection(M) {
     [N.party, 'Play any Pokémon (Pikachu until you pick another, owned or not). You cannot die (a lethal hit leaves 1 HP) and nothing is saved — no coins, records, missions, achievements, tickets or shinies, and it never reaches a leaderboard.'],
     [N.rifts, mmss(M.rifts.limit) + ' on the clock, counting down: the first rift check comes at ' + M.rifts.first + ' s, then every ' + M.rifts.every + ' s (' + M.rifts.after + ' s after a fight) and each one opens a rift unless a boss is alive; none in the last ' + M.rifts.last + ' s, and no Dynamax dens. Win as many legendary fights as you can — a fight still going at 8:00 is finished first. Coins +' + pct(M.coins.rifts) + '; your record of rifts won is kept.'],
     [N.type, 'Only Pokémon of the chosen type appear — the enemy waves, the 5 bosses and the raid dens (change the type on the mode screen). Coins +' + pct(M.coins.type) + '. Surviving ' + M.typeMin + ' minutes marks that type as beaten (achievements for 9 and all ' + M.types + ' types).'],
+    // MicaSurvivor M5 batch 7: Team mode (micasurvivor/js/systems/team.js)
+    ...(M.team && N.team ? [[N.team, 'Bring up to ' + M.team.max + ' of your Pokémon (unlocked once you own ' + M.team.minOwned + ') and swap them mid-run: Tab, R3 on a controller, the round swap button or a tap on a team card. "Choose team" picks them; any empty place is filled with your partner and the first Pokémon you got. A swap needs ' + M.team.cooldown + ' s since the last one and gives ' + M.team.inv + ' s of invulnerability. Each member keeps its own HP (benched ones recover ' + (M.team.regen * 100).toFixed(1) + ' % of their base HP a second); level, moves, items and max-HP gains are shared; type, speed, attack and ability are the active one’s, and a swap ends Dynamax. When the active one faints the next comes in at once (' + M.team.invAuto + ' s invulnerable) — after any Second Chance heart — and the run ends when all are down. Modifiers apply; three achievements and two missions reward it.']] : []),
   ];
-  return mcSection('Game modes', 'Main menu → Game modes (mouse, touch or controller). Records and unlocks are saved to your account and merged safely across devices (the best of each record; the Daily’s best is kept per date). Leaderboards only take Normal runs. Twenty achievements reward the modes (Missions → Achievements → Game modes).',
+  return mcSection('Game modes', 'Main menu → Game modes (mouse, touch or controller). Records and unlocks are saved to your account and merged safely across devices (the best of each record; the Daily’s best is kept per date). Leaderboards only take Normal runs. ' + (M.team ? 'Twenty-three' : 'Twenty') + ' achievements reward the modes (Missions → Achievements → Game modes).',
     msTable(['Mode', 'Rules'], rows.map(([a, b]) => [h('b', null, a), b]), 'ms-modes'),
     h('h3', { class: 'mc-h3' }, 'Modifiers'),
     h('p', null, 'Switch any of the six on for every mode but the Daily (which brings its own) and Party: each adds +' + pct(M.coins.perMod) + ' coins at the end. They apply to every enemy — waves, bosses, legendaries and dens.'),

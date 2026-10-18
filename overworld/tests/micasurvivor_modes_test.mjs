@@ -212,7 +212,7 @@ try {
 		A(JSON.stringify(r.coins) === JSON.stringify({ daily: 1.25, perMod: 0.25, type: 0.5, rifts: 0.25 }), 'coins: Daily x1.25, +0.25 per modifier, +0.5 Type Survival, +0.25 Rift Time Attack (main.gd 799-822)', JSON.stringify(r.coins));
 		A(JSON.stringify(r.k) === JSON.stringify({ fast: 1.4, fastBoss: 1.15, horde: 1.8, tank: 1.6, hard: 1.5, frail: 0.5 }) && JSON.stringify(r.mods) === '["fast","horde","tank","hard","frail","nohealing"]',
 			'the 6 modifiers in the port\'s order with its factors (fast 1.4 / bosses 1.15, horde 1.8, tank 1.6, hard 1.5, frail 0.5)', JSON.stringify([r.k, r.mods]));
-		A(r.types === 18 && r.typeMin === 10 && r.party === 25 && JSON.stringify(r.list) === '["normal","daily","party","rifts","type"]', '18 types, 10 minutes marks a type, party Pokémon defaults to Pikachu (25), the batch-6 modes');
+		A(r.types === 18 && r.typeMin === 10 && r.party === 25 && JSON.stringify(r.list) === '["normal","daily","party","rifts","type","team"]', '18 types, 10 minutes marks a type, party Pokémon defaults to Pikachu (25), the batch-6 modes (+ team, batch 7)');
 		A(r.seed === 20261017 && r.seedJan === 20270105, 'the daily seed is the date as YYYYMMDD (save_data.gd daily_seed)', JSON.stringify([r.seed, r.seedJan]));
 		A(r.dex === r.want && r.noLeg && r.mod === r.wantMod, `the daily Pokémon = pool[(sd*7919+13) % n] (non-legendary) and the rule = MOD_IDS[(sd*31+7) % 6] (${r.dex}, ${r.mod})`, JSON.stringify(r));
 		const bad = r.en.filter(([es, en]) => es === en && !/^(Horda|No)$/.test(es) || SPANISH.test(en.replace(/Pok[ée]mon/g, '')));
@@ -220,8 +220,8 @@ try {
 		const en = Object.fromEntries(r.en);
 		A(en['Hoy: Pikachu con la regla «Horda» (misma para todos). +25% de monedas.'] === 'Today: Pikachu with the rule “Horde” (same for everyone). +25% coins.' && en['Supervivencia: Fuego'] === 'Survival: Fire' && en['Grietas ganadas: 3'] === 'Rifts won: 3',
 			'patterns fill their holes (Today: Pikachu with the rule “Horde”…, Survival: Fire, Rifts won: 3)', JSON.stringify([en['Hoy: Pikachu con la regla «Horda» (misma para todos). +25% de monedas.'], en['Supervivencia: Fuego']]));
-		A(r.ach.length === 20 && r.cats.includes('modos') && JSON.stringify(r.ach.find(a => a[0] === 'daily1')) === '["daily1",1,{"coins":150,"t1":2}]' && JSON.stringify(r.ach.find(a => a[0] === 'typeAll')) === '["typeAll",18,{"coins":8000,"t1":5,"t10":5}]',
-			'20 "Game modes" achievements from progress.gd (daily, modifiers, type, rifts) with the port\'s goals and rewards', JSON.stringify(r.ach.slice(0, 3)));
+		A(r.ach.length === 23 && r.cats.includes('modos') && JSON.stringify(r.ach.find(a => a[0] === 'daily1')) === '["daily1",1,{"coins":150,"t1":2}]' && JSON.stringify(r.ach.find(a => a[0] === 'typeAll')) === '["typeAll",18,{"coins":8000,"t1":5,"t10":5}]',
+			'23 "Game modes" achievements from progress.gd (daily, modifiers, type, rifts; + team, batch 7) with the port\'s goals and rewards', JSON.stringify(r.ach.slice(0, 3)));
 	}
 
 	// ================= 2. the modes screen: mouse =================
@@ -237,7 +237,7 @@ try {
 			daily: document.querySelector('#modes-list [data-mode=daily]').innerText,
 			dailyDex: G.DEX_BY[G.Modes.dailyDex(G.Modes.dailySeed())].name, rule: G.I18n.t(G.Modes.MOD[G.Modes.dailyMod(G.Modes.dailySeed())].name),
 		}));
-		A(r.title === 'Choose a mode' && JSON.stringify(r.cards) === '["normal","daily","party","rifts","type"]' && r.mods.length === 6, 'one card per mode (Normal, Daily, Party, Rift Time Attack, Survival by Type) and 6 modifier switches', JSON.stringify(r));
+		A(r.title === 'Choose a mode' && JSON.stringify(r.cards) === '["normal","daily","party","rifts","type","team"]' && r.mods.length === 6, 'one card per mode (Normal, Daily, Party, Rift Time Attack, Survival by Type; + Team, batch 7) and 6 modifier switches', JSON.stringify(r));
 		A(r.daily.includes(r.dailyDex) && r.daily.includes('“' + r.rule + '”') && /You haven't played it today\./.test(r.daily), "the Daily card names today's Pokémon and rule, and \"You haven't played it today.\"", r.daily);
 		const sp = await spanishOn('#scr-modes');
 		A(sp.bad.length === 0, 'the modes screen shows no Spanish in English mode', JSON.stringify(sp));

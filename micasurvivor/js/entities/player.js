@@ -86,8 +86,8 @@ G.Player = class Player {
     this.itemClock = 0;
     this.sitrusT = -999;
     this.wpT = 0;
-    // MicaSurvivor (M5): la habilidad pasiva de su Pokémon (systems/abilities.js). El modo Equipo
-    // la cambiará con G.Abilities.set(pl, id) al cambiar de Pokémon activo.
+    // MicaSurvivor (M5): la habilidad pasiva de su Pokémon (systems/abilities.js). El Modo Equipo
+    // (lote 7, systems/team.js) la cambia con G.Abilities.set(pl) al cambiar de Pokémon activo.
     this.ability = null;
     G.Abilities.set(this);
   }
@@ -304,6 +304,8 @@ G.Player = class Player {
     }
     G.Abilities.sturdy(this);   // MicaSurvivor (M5): Robustez (después de la Banda Focus, como en el port)
     if (this.hp <= 0 && this.secondChance()) return;
+    // MicaSurvivor (M5 lote 7, main.gd 1898-1902): Modo Equipo, si cae el que juega entra el siguiente.
+    if (this.hp <= 0 && G.Team && G.Team.onFaint(this)) return;
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
       this.anim.play('Faint', { hold: true });

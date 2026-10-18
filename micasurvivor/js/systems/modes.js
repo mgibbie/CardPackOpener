@@ -20,6 +20,8 @@
  *           los últimos 40 s, sin guaridas Dynamax. +25 % de monedas. Récord de grietas ganadas.
  *   type    Supervivencia por tipo: sólo salen Pokémon del tipo elegido (y sus jefes). +50 % de
  *           monedas. Aguantar 10 minutos marca ese tipo como superado (save.typeDone).
+ *   team    Modo Equipo (lote 7, js/systems/team.js): hasta 3 Pokémon tuyos que cambias en plena
+ *           partida. Con los modificadores elegidos; el equipo va en save.modes.team.
  *
  *   Modificadores (todos los modos menos el Diario, que trae el suyo, y la Fiesta): +25 % de
  *   monedas cada uno. fast: enemigos ×1,4 de velocidad (jefes ×1,15) · horde: ×1,8 de aparición
@@ -32,9 +34,9 @@
  *   mayor de cada stat, la mejor marca del día más reciente y la unión de los tipos superados.
  */
 G.Modes = (() => {
-  const LIST = ['normal', 'daily', 'party', 'rifts', 'type'];
-  const NAME = { normal: 'Partida normal', daily: 'Desafío diario', party: 'Modo Fiesta', rifts: 'Contrarreloj de grietas', type: 'Supervivencia por tipo' };
-  const ICON = { normal: 'flag', daily: 'm_daily', party: 'm_party', rifts: 'clock', type: 'm_type' };
+  const LIST = ['normal', 'daily', 'party', 'rifts', 'type', 'team'];   // (team: M5 lote 7)
+  const NAME = { normal: 'Partida normal', daily: 'Desafío diario', party: 'Modo Fiesta', rifts: 'Contrarreloj de grietas', type: 'Supervivencia por tipo', team: 'Modo Equipo' };
+  const ICON = { normal: 'flag', daily: 'm_daily', party: 'm_party', rifts: 'clock', type: 'm_type', team: 'm_team' };
   const MOD_IDS = ['fast', 'horde', 'tank', 'hard', 'frail', 'nohealing'];
   const MOD = {
     fast: { name: 'Veloces', desc: 'Los enemigos corren un 40% más rápido.', icon: 'boot' },
@@ -82,11 +84,18 @@ G.Modes = (() => {
 
   // ======================= lo elegido en el menú (save.modes) =======================
   function prefs(s = save()) {
-    if (!s) return { mods: [], type: 'fire', party: PARTY_DEX };
+    if (!s) return { mods: [], type: 'fire', party: PARTY_DEX, team: [] };
     const p = s.modes && typeof s.modes === 'object' && !Array.isArray(s.modes) ? s.modes : (s.modes = {});
     p.mods = Array.isArray(p.mods) ? MOD_IDS.filter(id => p.mods.includes(id)) : [];
     if (!TYPES.includes(p.type)) p.type = 'fire';
     if (!(G.DEX_BY && G.DEX_BY[p.party])) p.party = PARTY_DEX;
+    // Modo Equipo (lote 7): los elegidos a mano, tuyos, sin repetir, hasta 3 (save_data.gd team_list;
+    // sin elegir nunca, no se guarda nada)
+    if (p.team != null) {
+      const team = [];
+      for (const x of Array.isArray(p.team) ? p.team : []) { const d = Math.floor(+x); if (s.owned && s.owned[d] && !team.includes(d) && team.length < 3) team.push(d); }
+      p.team = team;
+    }
     return p;
   }
   function toggleMod(id) {
@@ -111,7 +120,7 @@ G.Modes = (() => {
   }
 
   // ======================= la partida =======================
-  let run = { mode: 'normal', mods: [], type: null, dex: null, seed: 0 };
+  let run = { mode: 'normal', mods: [], type: null, dex: null, seed: 0, team: null };
   let riftsWon = 0, timeUp = false, nh = null;
 
   /** Cómo será una partida de `mode` (sin empezarla). */
@@ -123,11 +132,17 @@ G.Modes = (() => {
       return { mode, mods: [dailyMod(seed)], type: null, dex: dailyDex(seed), seed };
     }
     if (mode === 'party') return { mode, mods: [], type: null, dex: p.party, seed: 0 };
+    // Modo Equipo (lote 7, main.gd 436-438): empieza el primero del equipo; con los modificadores elegidos.
+    if (mode === 'team') {
+      const team = G.Team ? G.Team.list(s) : [];
+      if (team.length >= 2) return { mode, mods: p.mods.slice(), type: null, dex: team[0], seed: 0, team };
+      mode = 'normal';
+    }
     return { mode, mods: p.mods.slice(), type: mode === 'type' ? p.type : null, dex: null, seed: 0 };
   }
   /** Al empezar la partida (game.js startRun). En grupo, siempre normal y sin modificadores. */
   function begin(cfg) {
-    run = Object.assign({ mode: 'normal', mods: [], type: null, dex: null, seed: 0 }, cfg || {});
+    run = Object.assign({ mode: 'normal', mods: [], type: null, dex: null, seed: 0, team: null }, cfg || {});
     riftsWon = 0; timeUp = false; nh = null;
     if (G.Game) G.Game.mode = run.mode;
     if (G.Progress) G.Progress.off = run.mode === 'party';
@@ -153,6 +168,8 @@ G.Modes = (() => {
     if (has('frail')) { pl.maxHp = Math.round(pl.maxHp * K.frail); pl.hp = pl.maxHp; }
     nh = { last: pl.hp, max: pl.maxHp };
   }
+  /** Modo Equipo (lote 7, main.gd 1783-1784): al cambiar, "Sin curación" sigue desde la vida del que entra. */
+  function resetHeal(pl) { if (nh && pl) nh = { last: pl.hp, max: pl.maxHp }; }
   /** Sin curación (main.gd 976-983): la vida no sube salvo lo que suba la vida máxima. Cada fotograma. */
   function healTick(pl) {
     if (!has('nohealing') || !pl || !nh) return;
@@ -209,6 +226,10 @@ G.Modes = (() => {
       if (riftsWon > best) out.lines.push('¡Récord!');
       S.riftsRuns = (S.riftsRuns || 0) + 1;
       S.riftsBest = Math.max(best, riftsWon);
+    } else if (run.mode === 'team') {
+      // Modo Equipo (lote 7, main.gd 806-807 / 844-846): sólo el nombre en el resumen; stats teamRuns / teamBestMin
+      out.lines.push(NAME.team);
+      if (G.Team) G.Team.finish(S, min); else { S.teamRuns = (S.teamRuns || 0) + 1; S.teamBestMin = Math.max(S.teamBestMin || 0, min); }
     }
     if (run.mode !== 'daily') {
       for (let k = 1; k <= run.mods.length; k++) S['mn' + k] = Math.max(S['mn' + k] || 0, min);
@@ -259,7 +280,7 @@ G.Modes = (() => {
     LIST, NAME, ICON, MOD_IDS, MOD, K, TYPES, RIFTS, COINS, TYPE_DONE_MIN, PARTY_DEX,
     dailySeed, dailyDex, dailyMod, dailyBest, rng, seeded,
     prefs, toggleMod, cycleType, setParty,
-    plan, begin, has, is, enemyAdded, spawnK, onlyType, startPlayer, healTick, noDeath, saves,
+    plan, begin, has, is, enemyAdded, spawnK, onlyType, startPlayer, resetHeal, healTick, noDeath, saves,
     rifts, riftWon, checkTime, timeLeft, finish, typeDoneCount, title, label, mergeDaily, sanitize,
     get run() { return run; }, get mode() { return run.mode; }, get mods() { return run.mods.slice(); },
     get riftsWon() { return riftsWon; }, get timeUp() { return timeUp; }

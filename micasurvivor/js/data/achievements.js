@@ -67,7 +67,7 @@ G.AchDefs = (() => {
     { id: 'legAll', cat: 'legendarios', tier: 3, name: 'Leyenda', desc: 'Vence a todos los legendarios.', value: legends, goal: 87, reward: { t10: 5 }, title: 'Leyenda' },
 
     // ---------- modos de juego (MicaSurvivor M5 lote 6, progress.gd 107-134: los de los modos de este
-    // lote; los del Rush de Jefes, la Torre y el Equipo llegan con sus lotes) ----------
+    // lote; lote 7: los del Modo Equipo; los del Rush de Jefes y la Torre llegan con su lote) ----------
     { id: 'daily1', cat: 'modos', tier: 1, name: 'Reto del día', desc: 'Juega un Desafío diario.', value: st('dailyPlays'), goal: 1, reward: { coins: 150, t1: 2 } },
     { id: 'daily7', cat: 'modos', tier: 2, name: 'Rutina diaria', desc: 'Juega 7 Desafíos diarios.', value: st('dailyPlays'), goal: 7, reward: { coins: 500, t1: 5 } },
     { id: 'daily30', cat: 'modos', tier: 3, name: 'Fiel al reto', desc: 'Juega 30 Desafíos diarios.', value: st('dailyPlays'), goal: 30, reward: { coins: 2000, t1: 3, t10: 2 }, title: 'Fiel al reto' },
@@ -84,6 +84,10 @@ G.AchDefs = (() => {
     { id: 'type10', cat: 'modos', tier: 2, name: 'Experto en tipo', desc: 'Aguanta 10 minutos en Supervivencia por tipo.', value: st('typeBestMin'), goal: 10, reward: { coins: 1200, t10: 1 } },
     { id: 'typeVar9', cat: 'modos', tier: 3, name: 'Todoterreno', desc: 'Aguanta 10 minutos en 9 tipos distintos de Supervivencia por tipo.', value: count('typeDone'), goal: 9, reward: { coins: 3000, t1: 3, t10: 2 } },
     { id: 'typeAll', cat: 'modos', tier: 3, name: 'Maestro de tipos', desc: 'Aguanta 10 minutos en los 18 tipos de Supervivencia por tipo.', value: count('typeDone'), goal: 18, reward: { coins: 8000, t1: 5, t10: 5 }, title: 'Maestro de tipos' },
+    // (M5 lote 7, progress.gd 129-131)
+    { id: 'team1', cat: 'modos', tier: 1, name: 'Mejor en equipo', desc: 'Juega una partida en Modo Equipo.', value: st('teamRuns'), goal: 1, reward: { coins: 150, t1: 2 } },
+    { id: 'team10', cat: 'modos', tier: 2, name: 'Relevo perfecto', desc: 'Aguanta 10 minutos en Modo Equipo.', value: st('teamBestMin'), goal: 10, reward: { coins: 1500, t10: 1 } },
+    { id: 'team20', cat: 'modos', tier: 3, name: 'Líder de equipo', desc: 'Aguanta 20 minutos en Modo Equipo.', value: st('teamBestMin'), goal: 20, reward: { coins: 3500, t1: 2, t10: 2 }, title: 'Líder de equipo' },
     { id: 'rifts3', cat: 'modos', tier: 1, name: 'Contrarreloj', desc: 'Gana 3 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 3, reward: { coins: 500, t1: 3 } },
     { id: 'rifts5', cat: 'modos', tier: 2, name: 'Pasillo de grietas', desc: 'Gana 5 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 5, reward: { coins: 1500, t10: 1 } },
     { id: 'rifts8', cat: 'modos', tier: 3, name: 'Cazador contrarreloj', desc: 'Gana 8 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 8, reward: { coins: 3500, t1: 3, t10: 2 }, title: 'Cazador contrarreloj' },

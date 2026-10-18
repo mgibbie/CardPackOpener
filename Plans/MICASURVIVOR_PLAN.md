@@ -123,6 +123,7 @@ each with tests and the matching controller action wired into js/core/pad.js onc
    in-run level-up card **ban** (owner asked for it).
    *(built 2026-10-17, branch `feat/micasurvivor-m5-b6`; README → "Batch 6: Quick modes, modifiers and the card ban")*
 7. **Team mode** (2–3 Pokémon, swap mid-run).
+   *(built 2026-10-17, branch `feat/micasurvivor-m5-b7`; README → "Batch 7: Team mode")*
 8. **Boss Rush**, then the **Tower** (30 floors, risk pacts, relics, checkpoints).
 9. **Adaptive difficulty**, biome-themed spawns, enemy support caps.
 10. **Minimap**, field-of-view slider, UI scale.
