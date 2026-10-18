@@ -5,7 +5,10 @@
  *   Perfil    tus 3 favoritos y tu título; vista previa del perfil público
  *   Cristales Z  las 18 misiones de Cristal Z (MicaSurvivor M5 lote 4, menu.gd _goals_zcrystals) y la
  *                ficha del Dynamax (M5 lote 5: desbloqueado o "vence una guarida", guaridas vencidas)
- * y la ventana del perfil público de cualquier jugador (G.ProfileUI.show).
+ *   Títulos   (M5 lote 11, menu.gd _goals_titles 3772-3806) todos los títulos: el que llevas, "Sin título" y,
+ *             por cada uno, su logro y Usar / En uso / Bloqueado
+ * la ventana del perfil público de cualquier jugador (G.ProfileUI.show) y la tarjeta de entrenador
+ * (G.TrainerCard, M5 lote 11: menu.gd _show_card 3681-3740).
  */
 (() => {
   const $ = G.UI.$;
@@ -38,6 +41,7 @@
       if (tab === 'missions') missions(box);
       else if (tab === 'ach') achievements(box);
       else if (tab === 'zcr') zcrystals(box);
+      else if (tab === 'titles') titlesTab(box);
       else profile(box);
     }
 
@@ -185,6 +189,39 @@
       box.appendChild(grid);
     }
 
+    // ---------------- títulos (MicaSurvivor M5 lote 11, menu.gd _goals_titles) ----------------
+
+    function titlesTab(box) {
+      const s = G.DB.save, cur = (s.profile && s.profile.title) || '';
+      const all = G.Progress.titleList(s);
+      box.insertAdjacentHTML('beforeend', `<h3 class="title-cur">Título en uso: <span class="gold">${cur ? esc(cur) : 'ninguno'}</span></h3>
+        <p class="sub">Títulos: ${all.filter(t => t.done).length} / ${all.length} · Se ven en tu perfil, en tu tarjeta de entrenador y en el menú.</p>`);
+      const none = document.createElement('button');
+      none.className = 'btn small' + (cur ? '' : ' gold');
+      none.id = 'title-none';
+      none.textContent = 'Sin título';
+      none.disabled = !cur;
+      none.onclick = () => { if (G.Progress.setTitle('')) { G.Audio.sfx('confirm'); render(); } };
+      box.appendChild(none);
+      const grid = document.createElement('div');
+      grid.className = 'title-list';
+      for (const t of all) {
+        const el = document.createElement('div');
+        el.className = 'title-row' + (t.done ? ' ok' : '') + (t.title === cur ? ' on' : '');
+        el.dataset.title = t.title;
+        el.innerHTML = `${G.Icons.html(t.done ? 'medal' + t.ach.tier : 'medalOff', 32)}
+          <div class="a-txt"><b class="${t.done ? 'gold' : ''}">${esc(t.title)}</b><small>Logro: ${esc(t.ach.name)}</small></div>`;
+        const b = document.createElement('button');
+        b.className = 'btn small' + (t.done && t.title !== cur ? ' gold' : '');
+        if (!t.done) { b.textContent = 'Bloqueado'; b.disabled = true; }
+        else if (t.title === cur) { b.textContent = 'En uso'; b.disabled = true; }
+        else { b.textContent = 'Usar'; b.onclick = () => { if (G.Progress.setTitle(t.title)) { G.Audio.sfx('confirm'); render(); } }; }
+        el.appendChild(b);
+        grid.appendChild(el);
+      }
+      box.appendChild(grid);
+    }
+
     // ---------------- perfil (editar) ----------------
 
     function profile(box) {
@@ -214,16 +251,25 @@
       const sel = document.createElement('select');
       sel.className = 'field';
       sel.style.maxWidth = '320px';
-      sel.innerHTML = `<option value="">(sin título)</option>` + titles.map(t => `<option ${t === P.title ? 'selected' : ''}>${esc(t)}</option>`).join('');
-      sel.onchange = () => { P.title = sel.value; save(); };
+      sel.innerHTML = `<option value="">(sin título)</option>` + titles.map(t => `<option value="${esc(t)}" ${t === P.title ? 'selected' : ''}>${esc(t)}</option>`).join('');
+      sel.onchange = () => { G.Progress.setTitle(sel.value); G.Audio.sfx('confirm'); };   // (M5 lote 11: con la hora, para fusionar)
       box.appendChild(sel);
       if (!titles.length) box.insertAdjacentHTML('beforeend', '<p class="note">Consigue logros para desbloquear títulos.</p>');
 
+      const row = document.createElement('div');
+      row.className = 'row prof-btns';
+      // MicaSurvivor (M5 lote 11, menu.gd 3600 "Ver mi tarjeta de entrenador")
+      const card = document.createElement('button');
+      card.className = 'btn gold'; card.id = 'btn-tcard';
+      card.textContent = 'Ver mi tarjeta de entrenador';
+      card.onclick = () => G.TrainerCard.show();
+      row.appendChild(card);
       const prev = document.createElement('button');
-      prev.className = 'btn gold'; prev.style.marginTop = '16px';
+      prev.className = 'btn';
       prev.textContent = 'Ver mi perfil público';
       prev.onclick = () => G.ProfileUI.showData(G.Social.profileData());
-      box.appendChild(prev);
+      row.appendChild(prev);
+      box.appendChild(row);
     }
 
     function pickFav(i) {
@@ -265,6 +311,75 @@
     }
 
     return { init, open, render };
+  })();
+
+  // ======================= TARJETA DE ENTRENADOR =======================
+  /*
+   * MicaSurvivor (M5 lote 11): la tarjeta del port (menu.gd _show_card 3681-3740): tu nombre, tu título (o
+   * "(sin título)"), tu Pokémon y tus 3 favoritos, y 9 datos: Partidas, Mejor tiempo, Mejor nivel, Derrotados,
+   * Jefes, Cofres, Pokémon (x / total), Logros (x / total) y Tiempo jugado. Debajo, los récords de cada modo
+   * (lo pidió el lote 8 para la Torre y el Rush). Como en el port, sólo se ve (no se comparte ni se exporta) y no
+   * enseña nada de la cuenta salvo el nombre que ya ven los demás.
+   */
+  G.TrainerCard = (() => {
+    function init() {
+      $('tcard-close').onclick = close;
+      $('scr-tcard').onclick = e => { if (e.target.id === 'scr-tcard') close(); };
+    }
+    const isOpen = () => !$('scr-tcard').classList.contains('hidden');
+    function close() { $('scr-tcard').classList.add('hidden'); }
+
+    /** Lo que sale en la tarjeta (de la partida guardada). */
+    function data(s = G.DB.save) {
+      const st = s.stats || {}, prof = s.profile || {};
+      const owned = Object.keys(s.owned || {}).filter(d => G.DEX_BY[d]).length;
+      const tt = st.totalTime || 0;
+      const loc = G.I18n.lang === 'en' ? 'en' : 'es';   // 54,321 en inglés, 54.321 en español
+      return {
+        name: (G.Social.me && G.Social.me.name) || G.DB.user || s.name || 'Entrenador',
+        title: prof.title || '',
+        partner: s.partner, partnerShiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner),
+        favs: (prof.favs || []).filter(f => f && G.DEX_BY[f.dex]).slice(0, 3),
+        cells: [
+          ['Partidas', (st.runs || 0).toLocaleString(loc)],
+          ['Mejor tiempo', G.U.mmss(st.bestTime || 0)],
+          ['Mejor nivel', String(st.bestLevel || 0)],
+          ['Derrotados', (st.totalKills || 0).toLocaleString(loc)],
+          ['Jefes', (st.bossesTotal || 0).toLocaleString(loc)],
+          ['Cofres', (st.chests || 0).toLocaleString(loc)],
+          ['Pokémon', owned + ' / ' + G.DEX.length],
+          ['Logros', Object.keys(s.ach || {}).filter(k => G.AchDefs.BY[k]).length + ' / ' + G.AchDefs.LIST.length],
+          ['Tiempo jugado', Math.floor(tt / 3600) + 'h ' + String(Math.floor(tt % 3600 / 60)).padStart(2, '0') + 'm']
+        ],
+        modes: [
+          ['Desafío diario', (st.dailyPlays || 0) + ' · ' + (st.dailyBestMin || 0) + ' min'],
+          ['Rush de Jefes', G.BossRush.best(s) + ' jefes'],
+          ['Torre de pisos', 'Piso ' + G.Tower.rec(s).best + ' · ' + G.Tower.relics(s) + '/' + G.Tower.RELICS_MAX + ' reliquias'],
+          ['Contrarreloj de grietas', (st.riftsBest || 0) + ' grietas'],
+          ['Supervivencia por tipo', G.Modes.typeDoneCount(s) + '/' + G.Modes.TYPES.length + ' tipos · ' + (st.typeBestMin || 0) + ' min'],
+          ['Modo Equipo', (st.teamBestMin || 0) + ' min'],
+          ['Ante Arceus', G.U.mmss(st.judgeTime || 0)]
+        ]
+      };
+    }
+
+    function show() {
+      const d = data();
+      const body = $('tcard-body');
+      body.innerHTML = `<div class="tcard">
+        <h2 class="tcard-name" translate="no">${esc(d.name)}</h2>
+        <div class="tcard-title">${d.title ? esc(d.title) : '(sin título)'}</div>
+        <div class="tcard-mons" id="tcard-mons"></div>
+        <div class="tcard-cells">${d.cells.map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+        <h3 class="tcard-h">Récords por modo</h3>
+        <div class="tcard-modes">${d.modes.map(([k, v]) => `<div><span>${k}</span><b>${String(v).split(' · ').map(p => `<span>${esc(p)}</span>`).join(' · ')}</b></div>`).join('')}</div></div>`;
+      const mons = $('tcard-mons');
+      if (G.DEX_BY[d.partner]) mons.appendChild(G.UI.spriteCanvas(d.partner, 150, 124, { scale: 3, lively: true, shiny: d.partnerShiny, shadow: true }));
+      for (const f of d.favs) mons.appendChild(G.UI.spriteCanvas(f.dex, 84, 72, { scale: 2, shiny: !!f.shiny }));
+      $('scr-tcard').classList.remove('hidden');
+    }
+
+    return { init, show, close, isOpen, data };
   })();
 
   // ======================= PERFIL PÚBLICO =======================

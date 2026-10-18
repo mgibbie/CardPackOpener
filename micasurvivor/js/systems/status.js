@@ -119,7 +119,7 @@ G.Status = (() => {
       e.confCd = 0.6;
       e.strike(tgt);
       const hit = e.dmg * 1.8 + tgt.maxHp * (tgt.boss ? 0.012 : 0.03);
-      tgt.hurt(hit, COL.conf, tgt.x - e.x, tgt.y - e.y, 140);
+      G.DmgLog.as('status', () => tgt.hurt(hit, COL.conf, tgt.x - e.x, tgt.y - e.y, 140));   // (M5 lote 11: a "Estados alterados")
       if (!tgt.dead) wake(tgt, true);
       return tgt;
     }

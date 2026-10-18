@@ -132,8 +132,10 @@ each with tests and the matching controller action wired into js/core/pad.js onc
    *(built 2026-10-17, branch `feat/micasurvivor-m5-b10`; README → "Batch 10: Minimap, field of view and UI scale")*
 11. **Achievements/missions/titles** (+93 / +13 / more missions), run damage breakdown,
     in-game encyclopedia, trainer card.
+   *(built 2026-10-18, branch `feat/micasurvivor-m5-b11`; README → "Batch 11: Achievements, missions, titles, damage breakdown, Lexicon and trainer card")*
 12. **Local co-op partner** (AI or 2nd pad).
-13. **9 more languages** (Godot %s -> {x} converter; CJK fonts).
+13. ~~**9 more languages** (Godot %s -> {x} converter; CJK fonts).~~
+   *(dropped by the owner, 2026-10-18: MicaSurvivor stays English and Spanish only)*
 Not ported: Android-only parts (APK updater, notch insets beyond CSS env(), save codes, keep-awake).
 Kept as the web has them unless the owner asks: altar powers (port redesigned them), melee balance.
 

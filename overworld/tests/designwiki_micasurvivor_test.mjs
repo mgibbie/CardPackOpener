@@ -67,6 +67,19 @@ const DP = W.display || {};
 A(DP.fov && DP.fov.min === 100 && DP.fov.max === 200 && DP.fov.step === 5 && DP.fov.def === 165 && DP.fov.name === 'Field of view' && DP.ui && DP.ui.min === 60 && DP.ui.max === 140 && DP.ui.def === 100 && DP.ui.name === 'Interface size'
 	&& DP.minimap && DP.minimap.size === 200 && DP.minimap.tiles === 48 && DP.minimap.foes === 12 && DP.minimap.name === 'Minimap' && !/[¡¿ñáíóú]/.test(DP.minimap.desc),
 	'display from display.js + minimap.js: the port\'s field of view (100-200, 165), Screen size (60-140, 100) and minimap numbers, in English', JSON.stringify(DP).slice(0, 300));
+// MicaSurvivor M5 batch 11: achievements, missions, titles, the damage breakdown, the Lexicon and the trainer card
+const GO = W.goals || {};
+A(GO.achievements && GO.achievements.total === 223 && GO.achievements.types === 54 && JSON.stringify(GO.achievements.cats.map(c => c.key)) === '["coleccion","supervivencia","combate","tipos","grietas","legendarios","modos","otros"]'
+	&& GO.achievements.cats[3].name === 'By type' && GO.achievements.bosses.length === 7 && GO.achievements.bosses.find(b => b.id === 'boss1000').title === 'King of bosses'
+	&& JSON.stringify(GO.achievements.byType.map(t => t.goal)) === '[250,1000,5000]' && GO.achievements.byType[0].name === 'X-type tracker',
+	'goals from achievements.js: 223 achievements, the "By type" category in its place, the 7 boss ones (King of bosses), the per-type tiers 250 / 1,000 / 5,000', JSON.stringify(GO.achievements || {}).slice(0, 300));
+A(Array.isArray(GO.missions) && GO.missions.filter(m => m.period === 'daily').length === 17 && GO.missions.filter(m => m.period === 'weekly').length === 13
+	&& GO.missions.find(m => m.id === 'mDaily').text === 'Play the Daily Challenge' && GO.missions.find(m => m.id === 'wMods').text === 'Survive 6 / 8 minutes with 3 or more modifiers'
+	&& GO.missions.every(m => !/[¡¿ñáíóú]/.test(m.text.replace(/Pokémon/g, ''))),
+	'missions from missions.js: 17 daily + 13 weekly, in English (Play the Daily Challenge, Survive 6 / 8 minutes with 3 or more modifiers)', JSON.stringify((GO.missions || []).slice(10, 12)));
+A(GO.titles && GO.titles.length === 36 && GO.titles.some(t => t.title === 'Boss executioner') && GO.breakdown && GO.breakdown.map(b => b.name).join('|') === 'Z-Move|Dynamax|Items|Abilities|Status effects|Partner / team|Other (traps, bombs, terrain)'
+	&& GO.lexicon && GO.lexicon.tabs.length === 8 && GO.lexicon.tabs[4].name === 'Z-Moves & Dynamax' && GO.lexicon.status.length === 7 && GO.lexicon.status[0].name === 'Frozen' && GO.card && GO.card.length === 9 && GO.card[8] === 'Time played',
+	'titles (36), the breakdown rows, the Lexicon tabs and status texts, the trainer card’s 9 cells, in English', JSON.stringify([GO.breakdown, GO.card]));
 const DF = W.difficulty || {};
 A(DF.adaptive && DF.adaptive.base === 0.62 && DF.adaptive.max === 1.5 && DF.adaptive.min === 0.55 && DF.adaptive.every === 45 && DF.adaptive.setting === 'Adaptive difficulty' && !/[¡¿ñáíóú]/.test(DF.adaptive.desc)
 	&& JSON.stringify((DF.biomes || []).map(b => [b.key, b.name, b.types.join('/')])) === JSON.stringify([['forest', 'Shady Forest', 'bug/grass'], ['cave', 'Crystal Cave', 'rock/ground'], ['volcano', 'Ash Volcano', 'fire']])
@@ -103,7 +116,10 @@ try {
 	A(ov.play && ov.art === 96, 'overview: the play link and the tile art', JSON.stringify({ play: ov.play, art: ov.art }));
 	A(/How to play/.test(ov.text) && /Pewter Museum/.test(ov.text) && /best survival time/.test(ov.text) && /Magepunk/.test(ov.text), 'overview: how to play, the Pewter Museum cabinet, accounts + the leaderboard');
 	A(/Required Notice: Copyright 2026 JPTER78 \(https:\/\/github\.com\/JPTER78\/pokesurvivor\)/.test(ov.text) && /PolyForm Noncommercial/.test(ov.text) && /CC BY-NC 4\.0/.test(ov.text) && /JayElDragon/.test(ov.text) && /never gets ads, paid items/.test(ov.text), 'overview: credits + the licence notice (Required Notice, PolyForm NC, CC BY-NC, JayElDragon, never sold)');
-	A(ov.tables === 8 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, biomes, support and display tables, the keyboard and controller tables');
+	A(ov.tables === 13 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, biomes, support, display, achievement (2), mission (2) and status tables, the keyboard and controller tables');
+	A(/Goals, titles, Lexicon and trainer card/.test(ov.text) && /223 achievements in 8 categories/.test(ov.text) && /King of bosses/.test(ov.text) && /Play the Daily Challenge/.test(ov.text) && /After a run: damage and defeats/.test(ov.text) && /View my trainer card/.test(ov.text)
+		&& await page.$$eval('#content .ms-daily tbody tr', r => r.length) === 17 && await page.$$eval('#content .ms-weekly tbody tr', r => r.length) === 13 && await page.$$eval('#content .ms-achcats tbody tr', r => r.length) === 8 && await page.$$eval('#content .ms-status tbody tr', r => r.length) === 7,
+		'overview: Goals (8 achievement categories, the boss / per-type table, 17 daily + 13 weekly missions, titles, the damage breakdown, the Lexicon’s 7 statuses, the trainer card; M5 batch 11)');
 	A(/Display/.test(ov.text) && /Minimap/.test(ov.text) && /Field of view/.test(ov.text) && /100–200 % in steps of 5 \(165 %\)/.test(ov.text) && /Interface size/.test(ov.text) && /60–140 % in steps of 5 \(100 %\)/.test(ov.text)
 		&& await page.$$eval('#content .ms-display tbody tr', r => r.length) === 3, 'overview: Display (the minimap, the field of view 100-200 % and the interface size 60-140 %; M5 batch 10)');
 	A(/Game modes/.test(ov.text) && /Rift Time Attack/.test(ov.text) && /8:00 on the clock/.test(ov.text) && /Survival by Type/.test(ov.text) && /Heavy hitters/.test(ov.text) && /Banning a level-up card/.test(ov.text) && /Ban a level-up card/.test(ov.text)

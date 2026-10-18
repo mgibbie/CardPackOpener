@@ -187,6 +187,8 @@ try {
 		// b. the Z-crystal mission (real checkAch -> zcheck): 15 runs -> water, 25 chests -> grass
 		const b = await E(() => {
 			const s = G.DB.save, Z = G.ZMoves;
+			// (M5 batch 11: the 250 fire kills above also unlock the "Fire-type tracker" achievement, +300 coins; settle it first)
+			G.Progress.checkAch();
 			const c0 = s.coins;
 			s.stats.runs = 14;
 			G.Progress.checkAch();

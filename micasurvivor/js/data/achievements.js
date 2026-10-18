@@ -13,7 +13,8 @@ G.AchDefs = (() => {
   const st = k => s => (s.stats && s.stats[k]) || 0;
   const count = k => s => Object.keys(s[k] || {}).length;
 
-  const CATS = [['coleccion', 'Colección'], ['supervivencia', 'Supervivencia'], ['combate', 'Combate'],
+  // (M5 lote 11: la categoría "Por tipo" del port, progress.gd 9-10, en su sitio: tras Combate)
+  const CATS = [['coleccion', 'Colección'], ['supervivencia', 'Supervivencia'], ['combate', 'Combate'], ['tipos', 'Por tipo'],
                 ['grietas', 'Grietas'], ['legendarios', 'Legendarios'], ['modos', 'Modos de juego'], ['otros', 'Misiones y más']];
 
   const LIST = [
@@ -49,7 +50,12 @@ G.AchDefs = (() => {
     { id: 'kills100k', cat: 'combate', tier: 3, name: 'Leyenda viva', desc: 'Derrota a 100.000 Pokémon.', value: st('totalKills'), goal: 100000, reward: { t10: 3 }, title: 'Leyenda viva' },
     { id: 'boss1', cat: 'combate', tier: 1, name: 'Matagigantes', desc: 'Derrota a un jefe.', value: st('bossesTotal'), goal: 1, reward: { t1: 2 } },
     { id: 'boss25', cat: 'combate', tier: 2, name: 'Cazajefes', desc: 'Derrota a 25 jefes.', value: st('bossesTotal'), goal: 25, reward: { t10: 1 }, title: 'Cazajefes' },
+    // (M5 lote 11, progress.gd 72-76: los otros cuatro de jefes, en el orden del port)
+    { id: 'boss10', cat: 'combate', tier: 1, name: 'Aprendiz de cazajefes', desc: 'Derrota a 10 jefes.', value: st('bossesTotal'), goal: 10, reward: { t1: 3 } },
     { id: 'boss100', cat: 'combate', tier: 3, name: 'Terror de los jefes', desc: 'Derrota a 100 jefes.', value: st('bossesTotal'), goal: 100, reward: { t10: 2 } },
+    { id: 'boss250', cat: 'combate', tier: 3, name: 'Azote de jefes', desc: 'Derrota a 250 jefes.', value: st('bossesTotal'), goal: 250, reward: { t10: 3 } },
+    { id: 'boss500', cat: 'combate', tier: 3, name: 'Verdugo de jefes', desc: 'Derrota a 500 jefes.', value: st('bossesTotal'), goal: 500, reward: { t10: 5 }, title: 'Verdugo de jefes' },
+    { id: 'boss1000', cat: 'combate', tier: 3, name: 'Rey de los jefes', desc: 'Derrota a 1.000 jefes.', value: st('bossesTotal'), goal: 1000, reward: { t10: 10 }, title: 'Rey de los jefes' },
     { id: 'evo1', cat: 'combate', tier: 1, name: 'Evolución', desc: 'Evoluciona un movimiento.', value: st('evolutions'), goal: 1, reward: { t1: 3 } },
     { id: 'evo25', cat: 'combate', tier: 2, name: 'Evolucionista', desc: 'Evoluciona 25 movimientos.', value: st('evolutions'), goal: 25, reward: { t10: 1 }, title: 'Evolucionista' },
     { id: 'evoAll', cat: 'combate', tier: 3, name: 'Maestro de movimientos', desc: 'Evoluciona los 47 movimientos distintos.', value: count('evoMoves'), goal: 47, reward: { t10: 3 }, title: 'Maestro de movimientos' },
@@ -114,6 +120,21 @@ G.AchDefs = (() => {
     { id: 'group1', cat: 'otros', tier: 1, name: 'En compañía', desc: 'Juega una partida en grupo.', value: st('groupRuns'), goal: 1, reward: { t1: 2 } },
     { id: 'group10', cat: 'otros', tier: 2, name: 'Compañero fiel', desc: 'Juega 10 partidas en grupo.', value: st('groupRuns'), goal: 10, reward: { t10: 1 }, title: 'Compañero fiel' }
   ];
+
+  // MicaSurvivor (M5 lote 11, progress.gd 83-88): por tipo, Pokémon derrotados de cada tipo (stats.tk_<tipo>, que
+  // ya se cuentan en progress.js; los de doble tipo suman en los dos), 250 / 1.000 / 5.000, justo tras Combate.
+  const TK = [[250, 1, 'Rastreador de tipo ', 'Derrota a 250 Pokémon de tipo ', { coins: 300, t1: 2 }],
+              [1000, 2, 'Cazador de tipo ', 'Derrota a 1.000 Pokémon de tipo ', { coins: 1000, t1: 3, t10: 1 }],
+              [5000, 3, 'Maestro de tipo ', 'Derrota a 5.000 Pokémon de tipo ', { coins: 3000, t10: 3 }]];
+  const byType = [];
+  for (const t of Object.keys(G.U.TYPE_NAME)) {
+    const tn = G.U.TYPE_NAME[t];
+    for (const [goal, tier, name, desc, reward] of TK) {
+      byType.push({ id: 'tk' + goal + '_' + t, cat: 'tipos', tier, type: t, name: name + tn, desc: desc + tn + '.',
+                    value: st('tk_' + t), goal, reward: Object.assign({}, reward) });
+    }
+  }
+  LIST.splice(LIST.findIndex(a => a.id === 'itemsAll') + 1, 0, ...byType);
 
   // Un logro por legendario: "Vence a Mewtwo"...
   for (const p of G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex])) {

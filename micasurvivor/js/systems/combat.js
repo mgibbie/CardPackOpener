@@ -104,7 +104,8 @@ G.Combat = (() => {
   function payload(m) {
     return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type,
              cc: m.cc || '', ccp: m.ccp || 0,    // MicaSurvivor (M5): estado de control
-             mkind: m.kind };                      // MicaSurvivor (M5): familia, para las habilidades (Puño Férreo...)
+             mkind: m.kind,                        // MicaSurvivor (M5): familia, para las habilidades (Puño Férreo...)
+             mid: m.id };                          // MicaSurvivor (M5 lote 11): de qué movimiento es (el desglose de daño)
   }
 
   /** Tabla de tipos × clima para un ataque de tipo `type` contra `e`. */
@@ -576,7 +577,8 @@ G.Combat = (() => {
     if (pl && pl.abFx) k *= G.Abilities.outK(pl, e, mt, src.mkind || src.kind);
     if (pl) k *= G.Items.outK(pl, e, mt);   // M5 lote 3: Cinta Experto, Gema, Bola Luminosa, Hueso Grueso, Polvo Plata
     const d = dmg * k;
-    e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null);
+    // MicaSurvivor (M5 lote 11, main.gd 2481 / 5168 dmg_src): la vida que pierde va a la fuente de este golpe.
+    G.DmgLog.as(G.DmgLog.keyOf(src), () => e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null));
     if (!e.dead) {
       if (asleep) G.Status.wake(e);
       if (src.cc && src.ccp > 0 && Math.random() < src.ccp) G.Status.apply(e, src.cc);
@@ -717,9 +719,9 @@ G.Combat = (() => {
       e.touchCd = 0.55;
       e.strike(pl);
       pl.hurt(e.dmg, e.atkType);
-      if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      if (pl.hasItem('rockyhelmet')) G.DmgLog.as('item', () => e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80));   // (M5 lote 11: a "Objetos")
       if (pl.hasItem('eternalice')) e.applySlow(G.Items.ICE.slow, G.Items.ICE.dur);   // M5 lote 3: Hielo Eterno
-      G.Abilities.contact(pl, e);   // MicaSurvivor (M5): Piel Tosca, Elec. Estática, Cuerpo Llama...
+      G.DmgLog.as('ability', () => G.Abilities.contact(pl, e));   // MicaSurvivor (M5): Piel Tosca, Elec. Estática, Cuerpo Llama... (lote 11: a "Habilidades")
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;
     }

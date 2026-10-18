@@ -1,6 +1,7 @@
 /* ============ missions.js — plantillas de misiones diarias y semanales ============
  * Cada día salen 3 diarias y cada semana 2 semanales (hora de España), con
- * objetivos y tipos sorteados. Se completan jugando y el premio se recoge en
+ * objetivos y tipos sorteados (el sorteo y el orden de las listas, los del port de Android: progress.gd
+ * 301-334 y ensure / _pick_set; MicaSurvivor M5 lote 11 completa las 17 diarias y 13 semanales). Se completan jugando y el premio se recoge en
  * la pantalla de Misiones. La lógica está en systems/progress.js.
  *
  *   ev      evento que la hace avanzar (ver G.Progress.event)
@@ -34,14 +35,24 @@ G.MissionDefs = (() => {
       text: () => 'Encuentra un objeto equipable' },
     { id: 'evolve', ev: 'evolve', goals: [1], reward: { t1: 3, coins: 250 },
       text: () => 'Evoluciona un movimiento' },
-    // MicaSurvivor (M5 lote 7, progress.gd 316 "req": "team"): sólo cuentan las partidas del Modo Equipo
-    { id: 'mTeam', ev: 'runEnd', mode: 'max', value: min, goals: [5, 8], reward: { t1: 3, coins: 300 },
-      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` },
-    // MicaSurvivor (M5 lote 8, progress.gd 313 / 317): sólo cuentan el Rush de Jefes (jefes) y la Torre (pisos superados)
+    // MicaSurvivor: las misiones de los modos, en el orden del port (progress.gd 312-318; el orden importa: el sorteo
+    // del día elige por posición). "req" (progress.gd _advance 535-540): sólo cuentan las partidas de ese modo; mMods,
+    // las que llevan algún modificador (el Desafío diario llega con nmods 0). Lote 7: mTeam; lote 8: mRush, mTower;
+    // lote 11: mDaily, mMods, mType, mRifts.
+    { id: 'mDaily', ev: 'runEnd', goals: [1], reward: { t1: 3, coins: 250 },
+      match: d => d.mode === 'daily', text: () => 'Juega el Desafío diario' },
     { id: 'mRush', ev: 'runEnd', mode: 'max', value: d => d.bosses || 0, goals: [2, 4], reward: { t1: 3, coins: 300 },
       match: d => d.mode === 'rush', text: n => `Derrota a ${n} jefes en el Rush de Jefes` },
+    { id: 'mMods', ev: 'runEnd', mode: 'max', value: min, goals: [4, 6], reward: { t1: 3, coins: 300 },
+      match: d => (d.nmods || 0) >= 1, text: n => `Aguanta ${n} minutos con algún modificador activo` },
+    { id: 'mType', ev: 'runEnd', mode: 'max', value: min, goals: [4, 6], reward: { t1: 3, coins: 300 },
+      match: d => d.mode === 'type', text: n => `Aguanta ${n} minutos en Supervivencia por tipo` },
+    { id: 'mTeam', ev: 'runEnd', mode: 'max', value: min, goals: [5, 8], reward: { t1: 3, coins: 300 },
+      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` },
     { id: 'mTower', ev: 'runEnd', mode: 'max', value: d => d.floor || 0, goals: [2, 3], reward: { t1: 3, coins: 350 },
-      match: d => d.mode === 'tower', text: n => `Supera ${n} pisos de la Torre de pisos` }
+      match: d => d.mode === 'tower', text: n => `Supera ${n} pisos de la Torre de pisos` },
+    { id: 'mRifts', ev: 'runEnd', mode: 'max', value: d => d.rifts || 0, goals: [2, 3], reward: { t1: 3, coins: 350 },
+      match: d => d.mode === 'rifts', text: n => `Gana ${n} grietas en la Contrarreloj de grietas` }
   ];
 
   const weekly = [
@@ -57,14 +68,22 @@ G.MissionDefs = (() => {
       text: n => `Evoluciona ${n} movimientos` },
     { id: 'wdaily', ev: 'missionDone', match: d => d.daily, goals: [8, 12], reward: { t10: 1, coins: 800 },
       text: n => `Completa ${n} misiones diarias` },
-    // MicaSurvivor (M5 lote 7, progress.gd 330)
-    { id: 'wTeam', ev: 'runEnd', mode: 'max', value: min, goals: [10, 15], reward: { t1: 3, t10: 1, coins: 1200 },
-      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` },
-    // MicaSurvivor (M5 lote 8, progress.gd 328 / 331)
+    // MicaSurvivor: las de los modos en el orden del port (progress.gd 327-333). Lote 7: wTeam; lote 8: wRush, wTower;
+    // lote 11: wDailyCh, wType, wRifts, wMods (3 o más modificadores).
+    { id: 'wDailyCh', ev: 'runEnd', goals: [3, 5], reward: { t1: 3, t10: 1, coins: 1000 },
+      match: d => d.mode === 'daily', text: n => `Juega ${n} Desafíos diarios` },
     { id: 'wRush', ev: 'runEnd', mode: 'max', value: d => d.bosses || 0, goals: [6, 9], reward: { t1: 3, t10: 1, coins: 1100 },
       match: d => d.mode === 'rush', text: n => `Derrota a ${n} jefes en una sola partida de Rush de Jefes` },
+    { id: 'wType', ev: 'runEnd', mode: 'max', value: min, goals: [8, 12], reward: { t1: 3, t10: 1, coins: 1100 },
+      match: d => d.mode === 'type', text: n => `Aguanta ${n} minutos en Supervivencia por tipo` },
+    { id: 'wTeam', ev: 'runEnd', mode: 'max', value: min, goals: [10, 15], reward: { t1: 3, t10: 1, coins: 1200 },
+      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` },
     { id: 'wTower', ev: 'runEnd', mode: 'max', value: d => d.floor || 0, goals: [6, 9], reward: { t1: 4, t10: 1, coins: 1300 },
-      match: d => d.mode === 'tower', text: n => `Supera ${n} pisos de la Torre de pisos en una sola partida` }
+      match: d => d.mode === 'tower', text: n => `Supera ${n} pisos de la Torre de pisos en una sola partida` },
+    { id: 'wRifts', ev: 'runEnd', mode: 'max', value: d => d.rifts || 0, goals: [5, 7], reward: { t1: 4, t10: 1, coins: 1300 },
+      match: d => d.mode === 'rifts', text: n => `Gana ${n} grietas en una Contrarreloj de grietas` },
+    { id: 'wMods', ev: 'runEnd', mode: 'max', value: min, goals: [6, 8], reward: { t1: 3, t10: 1, coins: 1200 },
+      match: d => (d.nmods || 0) >= 3, text: n => `Aguanta ${n} minutos con 3 o más modificadores` }
   ];
 
   const BY = {};

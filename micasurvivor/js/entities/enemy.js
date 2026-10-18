@@ -112,6 +112,7 @@
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
       if (this.remote) {
         G.Coop.hit(this, d, color, dirX, dirY, knock);
+        if (G.DmgLog) G.DmgLog.note(Math.min(d, Math.max(0, this.hp)), false);   // M5 lote 11 (la baja la decide el anfitrión)
         this.hp = Math.max(1, this.hp - d);
         this.showHurt(d, color, dirX, dirY, eff);
         return;
@@ -123,9 +124,12 @@
         if (a >= d) { G.FX.dmgText(this.x, this.y - this.bodyH - 4, d, '#9fd8ff'); this.flash = 0.05; return; }
         amount = d - a;
       }
+      const hp0 = this.hp;
       this.hp -= Math.max(1, Math.round(amount));
       // MicaSurvivor (M5 lote 4): suelo de vida durante un golpe de Movimiento Z (el tope del 28 % contra jefes).
       if (this.hpFloor != null && this.hp < this.hpFloor) this.hp = this.hpFloor;
+      // MicaSurvivor (M5 lote 11, main.gd 4484-4492): la vida que de verdad pierde, y la baja, a la fuente del golpe.
+      if (G.DmgLog) G.DmgLog.note(Math.max(0, hp0 - Math.max(0, this.hp)), hp0 > 0 && this.hp <= 0);
       G.Judgment.noteDmg(amount, this);
       this.showHurt(d, color, dirX, dirY, eff);
       if (knock > 0 && !this.boss) {
@@ -271,12 +275,12 @@
       if (this.slowT > 0) { this.slowT -= dt; if (this.slowT <= 0) this.slow = 0; }
       if (this.burn > 0) {
         this.burnT -= dt; this.burnTick -= dt;
-        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
+        if (this.burnTick <= 0) { this.burnTick = 0.5; G.DmgLog.as('status', () => this.hurt(1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d')); }
         if (this.burnT <= 0) this.burn = 0;
       }
       if (this.poison > 0) {
         this.poisonT -= dt; this.poisonTick -= dt;
-        if (this.poisonTick <= 0) { this.poisonTick = 0.6; this.hurt(this.maxHp * 0.012 * this.poison + 1, '#d47cf0'); }
+        if (this.poisonTick <= 0) { this.poisonTick = 0.6; G.DmgLog.as('status', () => this.hurt(this.maxHp * 0.012 * this.poison + 1, '#d47cf0')); }
         if (this.poisonT <= 0) this.poison = 0;
       }
       if (this.dead) return;

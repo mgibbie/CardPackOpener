@@ -257,7 +257,7 @@ G.Coop = (() => {
           const e = G.EnemyMgr.get(ev[1]);
           if (!e || e.dead || e.remote) break;
           hitFrom = from;
-          e.hurt(ev[2], ev[3], ev[4], ev[5], ev[6]);
+          G.DmgLog.as('ally', () => e.hurt(ev[2], ev[3], ev[4], ev[5], ev[6]));   // (M5 lote 11: lo de un compañero, a "Compañero / equipo")
           hitFrom = null;
           break;
         }
