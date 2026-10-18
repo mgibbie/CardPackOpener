@@ -233,7 +233,25 @@ export const E_MANAGER = {
 /** UI event log. The renderer drains it; spectators receive it in snapshots. */
 export function emit(type, data = {}) {
   if (!G.ui_events) return;
-  G.ui_events.push({ type, seq: ++G.ui_seq, ...data });
+  const ev = { type, seq: ++G.ui_seq, ...data };
+  // A card's in-place change (an enhancement, seal, edition, rank/suit, debuff) or flip carries the card's
+  // view as it is right now, so the board redraws it at that moment. Without it the board only had the
+  // end-of-action view, which misses a card that has left the table by then (an Arcana pack's hand goes
+  // back to the deck when the pack closes: The Empress's Mult showed only the next time the card was drawn).
+  if (eventCardView && CARD_VIEW_EVENTS.has(type) && ev.card != null && ev.view === undefined) {
+    const c = cardById(ev.card);
+    if (c) { try { ev.view = eventCardView(c); } catch (e) { /* the board falls back to the final view */ } }
+  }
+  G.ui_events.push(ev);
+}
+const CARD_VIEW_EVENTS = new Set(['card_changed', 'edition', 'seal', 'flip']);
+let eventCardView = null;
+/** engine/view.js registers its cardView here (view.js imports core.js, so core can't import it). */
+export function setEventCardView(fn) { eventCardView = fn; }
+function cardById(id) {
+  for (const a of G.areas || []) for (const c of a.cards) if (c.sort_id === id) return c;
+  for (const c of G.playing_cards || []) if (c.sort_id === id) return c;
+  return null;
 }
 const cid = (card) => (card && card.sort_id !== undefined ? card.sort_id : undefined);
 /** card_eval_status_text(card, eval_type, amt, percent, dir, extra) */

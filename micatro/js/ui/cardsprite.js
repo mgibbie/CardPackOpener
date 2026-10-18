@@ -155,7 +155,7 @@ export class CardSprite {
     this.juice = null;
     this.hover = false;
     this.tilt = { x: 0, y: 0, tx: 0, ty: 0 };
-    this.dissolve = null; this.flipAnim = null; this.shattered = false;
+    this.dissolve = null; this.flipAnim = null; this.flipNext = null; this.shattered = false;
     this.lastFx = 0;
     this.phase = Math.random() * 10;
     this.vkey = '';
@@ -231,7 +231,19 @@ export class CardSprite {
     this.T.s = this.tgt.s * (1 - 0.6 * amount * 0.5);
   }
   startDissolve(dur = 0.7, cb) { this.dissolve = { start: this.board.now, dur, cb }; this.el.classList.add('dissolving'); }
-  startFlip(newData, dur = 0.28) { this.flipAnim = { start: this.board.now, dur, data: newData, swapped: false }; }
+  /** Flip over to `newData` (its face swaps in at the half-way point). A flip asked for while one is still
+   *  turning waits for it, so a flip over and straight back (The Empress at 4x) still shows both halves. */
+  startFlip(newData, dur = 0.28) {
+    if (this.flipAnim) { this.flipNext = { data: newData, dur }; return; }
+    this.flipAnim = { start: this.board.now, dur, data: newData, swapped: false };
+  }
+  /** New data for the card: lands now, or, mid-flip, as the face the flip turns to (an Empress's Mult
+   *  arrives while the card is turning face down; setting it now would undo when the flip swaps). */
+  updateData(d) {
+    if (this.flipNext) this.flipNext.data = d;
+    else if (this.flipAnim && !this.flipAnim.swapped) this.flipAnim.data = d;
+    else this.setData(d);
+  }
   startMaterialize(dur = 0.5) { this.dissolve = { start: this.board.now, dur, reverse: true }; this.lastFx = 0; }
   frame(now, dt) {
     const T = this.T, g = this.tgt;
@@ -254,7 +266,10 @@ export class CardSprite {
       const F = this.flipAnim, p = Math.min(1, (now - F.start) / F.dur);
       sx = Math.abs(Math.cos(Math.PI * p));
       if (p >= 0.5 && !F.swapped) { F.swapped = true; this.setData(F.data); }
-      if (p >= 1) this.flipAnim = null;
+      if (p >= 1) {
+        this.flipAnim = null;
+        if (this.flipNext) { const N = this.flipNext; this.flipNext = null; this.startFlip(N.data, N.dur); }
+      }
     }
     // ambient sway + hover tilt (Balatro's tilt_var)
     const amb = this.hover ? 0 : 0.012 * Math.sin(now * 1.3 + this.phase);

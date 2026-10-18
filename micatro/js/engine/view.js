@@ -2,7 +2,7 @@
 // The local player renders toView() of the live engine; a spectator renders
 // the same object received over the network — so both see the same screen.
 
-import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount } from './core.js';
+import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount, setEventCardView } from './core.js';
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag } from './describe.js';
 import { callHook, MOD_LOC } from '../mods/registry.js';
@@ -57,6 +57,10 @@ export function cardView(c, withDesc) {
   callHook('view_card', c, v);
   return v;
 }
+
+// The view a card event carries (core.js emit): described where its area's view is (toView below).
+const DESC_AREAS = () => [G.jokers, G.consumeables, G.shop_jokers, G.shop_vouchers, G.shop_booster, G.pack_cards];
+setEventCardView((c) => cardView(c, !!c.area && DESC_AREAS().includes(c.area)));
 
 const areaView = (a, withDesc) => (a ? a.cards.map((c) => cardView(c, withDesc)) : []);
 
