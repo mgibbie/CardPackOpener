@@ -470,7 +470,7 @@ export class Board {
       for (const id of this.areas[k]) {
         let s = this.sprites.get(id);
         if (!s) s = this.spawn(id, k, first || opts.instant);
-        else s.setData(this.data.get(id));
+        else s.updateData(this.data.get(id));
         s.area = k;
       }
     }
@@ -1314,21 +1314,31 @@ export class Board {
       case 'flip': {
         const s = this.sprites.get(ev.card);
         if (s) {
-          const nd = { ...(this.pending.get(ev.card) || this.data.get(ev.card) || s.d), facing: ev.facing === 'back' ? 'back' : undefined };
+          // ev.view: the card as it is at this flip (engine/core.js emit); older event streams lack it.
+          const nd = ev.view ? { ...ev.view, hl: (this.data.get(ev.card) || s.d).hl }
+            : { ...(this.pending.get(ev.card) || this.data.get(ev.card) || s.d), facing: ev.facing === 'back' ? 'back' : undefined };
           this.data.set(ev.card, nd);
           s.startFlip(nd, 0.28 / Math.max(1, sp * 0.7));
           sound.play('card1', 1.1, 0.4);
+          // turning back up a card changed while face down (a tarot's flip-change-flip): Balatro's 0.15 a
+          // card, so the new face is seen before the cards move on (an Arcana pack's hand returns to the deck)
+          if (nd.facing !== 'back' && s.changedDown) { s.changedDown = false; return 0.15; }
           return 0.06;
         }
         return 0;
       }
       case 'card_changed': case 'edition': case 'seal': {
+        // Redraw the card now, as the engine changed it (ev.view): an Empress / Justice / Talisman / Aura /
+        // Strength shows on the card in hand — even one that has gone back to the deck by the end of the
+        // action (an Arcana pack's hand). Older event streams without ev.view fall back to the final view.
         const s = this.sprites.get(ev.card);
-        const nd = this.pending.get(ev.card);
+        const nd = ev.view || this.pending.get(ev.card);
         if (s && nd) {
           const cur = this.data.get(ev.card) || {};
-          const merged = { ...nd, facing: cur.facing === 'back' && ev.type !== 'card_changed' ? 'back' : nd.facing, hl: cur.hl };
-          this.data.set(ev.card, merged); s.setData(merged);
+          const merged = ev.view ? { ...ev.view, hl: cur.hl }
+            : { ...nd, facing: cur.facing === 'back' && ev.type !== 'card_changed' ? 'back' : nd.facing, hl: cur.hl };
+          this.data.set(ev.card, merged); s.updateData(merged);
+          if (merged.facing === 'back') s.changedDown = true;
           if (ev.type !== 'card_changed') { s.juiceUp(0.3); return 0.35; }
           s.juiceUp(0.15);
         }
