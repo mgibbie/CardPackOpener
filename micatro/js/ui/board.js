@@ -488,6 +488,16 @@ export class Board {
     this.refreshSelection();
     this.layout();
     this.setBackground(view);
+    this.refreshCardTip();
+  }
+  /** An open card tooltip follows the card's live description, as Balatro's does: Moon Stone's
+   *  "(Hand: None)" names the hand once you pick cards (it stayed "None", so in a Pocket pack the
+   *  stone looked blind to the hand you picked; a tester couldn't get it to work in the shop). */
+  refreshCardTip() {
+    if (typeof this.tipFor !== 'number' || this.tip.style.display === 'none') return;
+    const s = this.sprites.get(this.tipFor);
+    if (!s || s.leaving) return;
+    if (JSON.stringify(this.descFor(s.id, s)) !== this.tipSig) this.showCardTip(s, true);
   }
 
   spawn(id, area, instant) {
@@ -1052,6 +1062,7 @@ export class Board {
   showCardTip(s, sticky) {
     let desc = this.descFor(s.id, s);
     if (!desc) return;
+    this.tipSig = JSON.stringify(desc);
     const d = this.data.get(s.id) || s.d;
     // its win sticker, explained (Balatro: info_queue <colour>_sticker)
     const st = d && d.set === 'Joker' && d.facing !== 'back' ? winSticker(d.center) : null;

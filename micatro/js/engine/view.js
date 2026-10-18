@@ -50,6 +50,10 @@ export function cardView(c, withDesc) {
   if (withDesc) {
     try { v.desc = describe(c); } catch (e) { v.desc = { name: c.ability.name, lines: [] }; }
   }
+  // A pack card an active mod lets you save to the consumable slots (the 'reserve' action) offers Save
+  // beside Use: Pokermon's Pocket packs and its Mega Stone (lovely.toml reserve_and_use). Pokermon never
+  // flagged it, so its Save button was missing; mods that label it themselves still do so in view_card.
+  if (c.area && c.area === G.pack_cards && c.ability.consumeable && callHook('can_reserve', c).includes(true)) v.reserve = true;
   callHook('view_card', c, v);
   return v;
 }
