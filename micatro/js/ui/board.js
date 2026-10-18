@@ -20,6 +20,44 @@ const HAND_STATES = ['SELECTING_HAND', 'HAND_PLAYED', 'DRAW_TO_HAND', 'NEW_ROUND
 // the button-hint bar (controller) sits under the controls: keep room for it
 const HINT_RESERVE = 46, HINT_RESERVE_P = 54;
 const FAN = { landscape: { rot: 0.1, droop: 16 }, portrait: { rot: 0.07, droop: 10 } };
+// Portrait geometry (design px). The shop panel opens under the jokers row and holds two card rows
+// (shop jokers; voucher + boosters) with their Buy / Open buttons under them, so the portrait canvas
+// must be at least tall enough for that — a squat phone screen (Safari's toolbars showing) used to
+// lay the voucher / booster row and its Open button out below the canvas, off the screen.
+const P_CW = 112, P_CH = Math.round(P_CW * 95 / 71), P_JOKERS_Y = 476;
+const SHOP_P = { row1: 120, rowGap: 120, below: 84 }; // first row's top, gap between rows, room under the last row (buttons)
+const P_OVERLAY_Y = P_JOKERS_Y + P_CH + 12 + 50;
+const P_MIN_H = P_OVERLAY_Y + SHOP_P.row1 + P_CH + SHOP_P.rowGap + P_CH + SHOP_P.below + 10;
+const P_MAX_H = 1700;
+// The visible part of the window, in CSS px. innerWidth/innerHeight can include what the browser's
+// own UI covers (iOS Safari's bottom toolbar — iOS 26's floats over the page), and with
+// viewport-fit=cover the notch / home indicator overlap the page too: fit the table into
+// visualViewport (when not pinch-zoomed or typing on the on-screen keyboard) minus the safe-area insets.
+let insetProbe = null;
+function safeInsets() {
+  try {
+    if (!insetProbe) {
+      insetProbe = document.createElement('div');
+      insetProbe.setAttribute('aria-hidden', 'true');
+      insetProbe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
+        + 'padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+      document.body.appendChild(insetProbe);
+    }
+    const cs = getComputedStyle(insetProbe), n = (v) => Math.max(0, parseFloat(v) || 0);
+    return { t: n(cs.paddingTop), r: n(cs.paddingRight), b: n(cs.paddingBottom), l: n(cs.paddingLeft) };
+  } catch (e) { return { t: 0, r: 0, b: 0, l: 0 }; }
+}
+const typing = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.isContentEditable || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file)$/i.test(a.type))); };
+export function visibleBox() {
+  let w = innerWidth, h = innerHeight;
+  const vv = window.visualViewport;
+  if (vv && Math.abs((vv.scale || 1) - 1) < 0.01 && !typing()) {
+    if (vv.width > 50) w = Math.min(w, Math.round(vv.width));
+    if (vv.height > 50) h = Math.min(h, Math.round(vv.height));
+  }
+  const s = safeInsets();
+  return { x: s.l, y: s.t, w: Math.max(100, w - s.l - s.r), h: Math.max(100, h - s.t - s.b) };
+}
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const STATUS_COL = { chips: '#009dff', mult: '#fe5f55', h_mult: '#fe5f55', x_mult: '#fe5f55', h_x_mult: '#fe5f55', dollars: '#f3b958', debuff: '#fe5f55', swap: '#8867a5' };
 const NAMED_COL = { red: '#fe5f55', mult: '#fe5f55', blue: '#009dff', chips: '#009dff', green: '#4bc292', money: '#f3b958', gold: '#eac058', attention: '#ff9a00', filter: '#ff9a00', purple: '#8867a5', tarot: '#a782d1', planet: '#13afce', spectral: '#4584fa', secondary_set: '#4f6367', black: '#374244', white: '#ffffff', edition: '#4ca893', dark_edition: '#5a4fcf' };
@@ -53,6 +91,10 @@ export class Board {
     this.build();
     this.resize();
     addEventListener('resize', () => this.resize());
+    // Safari's toolbars showing / hiding (and the keyboard closing) change only the VISUAL viewport
+    const refit = () => { const b = visibleBox(); if (b.x + ',' + b.y + ',' + b.w + ',' + b.h !== this.boxKey) this.resize(); };
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
+    addEventListener('focusout', () => setTimeout(refit, 50));
     // a mod atlas arrived (or failed): recompose the cards drawn from it
     onModAtlas((name) => this.refreshModArt(name));
     // a deck skin was chosen (or its art arrived): recompose the playing cards
@@ -191,21 +233,23 @@ export class Board {
 
   // ----------------------------------------------------------------- layout
   resize() {
-    const vw = innerWidth, vh = innerHeight;
+    const box = visibleBox(), vw = box.w, vh = box.h;
+    this.boxKey = box.x + ',' + box.y + ',' + box.w + ',' + box.h;
+    document.documentElement.style.setProperty('--mic-vis-h', (box.y + box.h) + 'px'); // (CSS outside the stage: the chat bubble)
     const portrait = vw < vh * 0.95;
     this.mode = portrait ? 'portrait' : 'landscape';
     let W, H;
-    if (portrait) { W = 720; H = Math.max(1180, Math.min(1700, Math.round(720 * vh / vw))); }
+    if (portrait) { W = 720; H = Math.max(P_MIN_H, Math.min(P_MAX_H, Math.round(720 * vh / vw))); }
     else { H = 900; W = Math.max(1360, Math.min(2100, Math.round(900 * vw / vh))); }
     this.W = W; this.SH = H;
     this.scale = Math.min(vw / W, vh / H);
     const st = this.stage;
     st.className = this.mode + (this.view ? '' : ' no-run');
     st.style.width = W + 'px'; st.style.height = H + 'px';
-    st.style.left = Math.round((vw - W * this.scale) / 2) + 'px';
-    st.style.top = Math.round((vh - H * this.scale) / 2) + 'px';
+    st.style.left = Math.round(box.x + (vw - W * this.scale) / 2) + 'px';
+    st.style.top = Math.round(box.y + (vh - H * this.scale) / 2) + 'px';
     st.style.transform = `scale(${this.scale})`;
-    this.cw = portrait ? 112 : 128;
+    this.cw = portrait ? P_CW : 128;
     this.ch = Math.round(this.cw * 95 / 71);
     st.style.setProperty('--cw', this.cw + 'px');
     st.style.setProperty('--ch', this.ch + 'px');
@@ -230,7 +274,7 @@ export class Board {
       R.play = { x: X0 + 60, y: 300, w: X1 - X0 - 260, h: this.ch };
       R.overlay = { x: X0 + 10, y: R.jokers.y + R.jokers.h + 52, w: X1 - X0 - 200, h: H - (R.jokers.y + R.jokers.h + 52) - 14 };
     } else {
-      const topY = 476;
+      const topY = P_JOKERS_Y;
       R.jokers = { x: 12, y: topY, w: 470, h: this.ch + 12 };
       R.consumeables = { x: 494, y: topY, w: 214, h: this.ch + 12 };
       R.controls = { x: 12, y: H - 100 - HINT_RESERVE_P, w: 560, h: 100 };
@@ -719,12 +763,13 @@ export class Board {
       };
       vl.style.left = '30px'; vl.style.top = (Hh - 52) + 'px'; vl.style.width = (this.cw + 40) + 'px';
     } else {
+      const y2 = SHOP_P.row1 + this.ch + SHOP_P.rowGap; // (resize() keeps the canvas tall enough for y2 + ch + SHOP_P.below)
       this.shopRects = {
-        jokers: { x: ox + 190, y: oy + 120, w: W - 200, h: this.ch },
-        voucher: { x: ox + 20, y: oy + 120 + this.ch + 120, w: this.cw + 40, h: this.ch },
-        boosters: { x: ox + 210, y: oy + 120 + this.ch + 120, w: W - 220, h: this.ch },
+        jokers: { x: ox + 190, y: oy + SHOP_P.row1, w: W - 200, h: this.ch },
+        voucher: { x: ox + 20, y: oy + y2, w: this.cw + 40, h: this.ch },
+        boosters: { x: ox + 210, y: oy + y2, w: W - 220, h: this.ch },
       };
-      vl.style.left = '20px'; vl.style.top = (120 + this.ch * 2 + 130) + 'px'; vl.style.width = (this.cw + 40) + 'px';
+      vl.style.left = '20px'; vl.style.top = (y2 + this.ch + 10) + 'px'; vl.style.width = (this.cw + 40) + 'px';
     }
   }
 
