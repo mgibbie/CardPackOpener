@@ -2,8 +2,8 @@
 //
 // prompt() can't be reached with a controller, blocks the page, and looks like the
 // browser. askText() (site/osk.js) keeps its contract (the text, or null on cancel)
-// and is driven three ways: typing into its field, tapping its keys, or — for a
-// signed-in player — a controller (Nintendo layout: right = press key, bottom =
+// and is driven three ways: typing into its field, tapping its keys, or — for anyone,
+// guests included — a controller (Nintendo layout: right = press key, bottom =
 // delete, Start = OK). While it is up, the game ignores every key and button.
 //
 //   node overworld/tests/osk_test.mjs

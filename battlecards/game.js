@@ -5617,7 +5617,7 @@ window.__game = {
 	publishDuel: () => publishDuel(),
 };
 
-// CONTROLLER PLAY on the board (padboard.js, signed-in players): it drives the
+// CONTROLLER PLAY on the board (padboard.js, every player): it drives the
 // same functions a mouse ends in — releasePlay for a hand card, a replayed quick
 // click for anything on the board, commitPending / panelClick for targets.
 initPadboard({

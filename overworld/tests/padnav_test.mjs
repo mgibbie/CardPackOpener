@@ -5,7 +5,8 @@
 // (headless Chrome has no controllers). Covers the in-match modals — whose
 // buttons listen on POINTERDOWN, which is why activation replays a full mouse
 // click — a run-mode overlay, the deck builder's text field and dropdown, the
-// signed-in rule, and the mouse hiding the focus ring.
+// guests' pads working too (the signed-in-only rule was dropped on 2026-10-18),
+// and the mouse hiding the focus ring.
 //
 //   node overworld/tests/padnav_test.mjs
 import fs from 'fs';
@@ -51,9 +52,8 @@ try {
 		await page.evaluateOnNewDocument((st, signedIn) => {
 			const pad = { id: 'Pro Controller 057e', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
 			window.__owFakePads = [pad]; window.__pad = pad;
-			localStorage.setItem('magepunk_mp_token_v1', 'padnav-token');
-			if (signedIn) localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
-			else localStorage.removeItem('magepunk_mp_state_v1');
+			if (signedIn) { localStorage.setItem('magepunk_mp_token_v1', 'padnav-token'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }
+			else { localStorage.removeItem('magepunk_mp_token_v1'); localStorage.removeItem('magepunk_mp_state_v1'); }
 		}, STATE, signedIn);
 		await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: 'domcontentloaded' });
 		const tap = async b => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(70); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(120); };
@@ -201,11 +201,16 @@ try {
 		await t.ctx.close();
 	}
 
-	// ===== not signed in: no navigator =====
+	// ===== not signed in (a guest, no token at all): the navigator runs and the pad moves focus =====
 	{
 		const t = await open('/battlecards/deck.html', false);
 		await sleep(2500);
-		A(await t.page.evaluate(() => !window.__padnav), 'without a loaded account, no controller navigation runs');
+		A(await t.page.evaluate(() => !!window.__padnav), 'guest: controller navigation runs without an account');
+		await t.tap(BTN.down);                                    // first press picks a stop and shows the ring
+		const f0 = await t.focus();
+		await t.tap(BTN.down); await t.tap(BTN.rightD);
+		const f1 = await t.focus();
+		A(!!f0 && !!f1 && f1.ring && (f1.id !== f0.id || f1.text !== f0.text || f1.cls !== f0.cls), 'guest: the d-pad moves the focus ring', JSON.stringify({ f0, f1 }));
 		await t.ctx.close();
 	}
 } catch (e) {

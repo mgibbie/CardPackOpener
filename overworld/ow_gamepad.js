@@ -1,5 +1,5 @@
 // ow_gamepad.js — controller play for the overworld and Pokémon battles
-// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 1). Signed-in players only.
+// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 1). Everyone, guests included.
 //
 // It adds no new input path. Exactly like the touch d-pad, it feeds the two
 // entry points every other input already uses:
@@ -172,7 +172,7 @@ function syncHints(connected) {
 }
 
 let pad = null;
-// Called once the account is loaded. `hooks.onConnect/onDisconnect` let
+// Called once at boot. `hooks.onConnect/onDisconnect` let
 // main.js swap the touch HUD out while a controller is in use.
 export function initGamepad(hooks = {}) {
 	if (pad) return pad;
@@ -183,9 +183,4 @@ export function initGamepad(hooks = {}) {
 		onDisconnect: e => { setPadDir(null); S.runHeld = false; hooks.onDisconnect?.(e); },
 	});
 	return pad;
-}
-// Signed out: a controller does nothing, but says why, once.
-export function gamepadNeedsLogin() {
-	if (typeof addEventListener !== 'function') return;
-	addEventListener('gamepadconnected', () => { hud.textContent = 'Sign in to play with a controller.'; }, { once: true });
 }

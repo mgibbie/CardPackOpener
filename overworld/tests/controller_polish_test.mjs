@@ -171,8 +171,8 @@ try {
 	{
 		const t = await open('/designwiki/index.html#/controls');
 		await sleep(1500);
-		const w = await t.page.evaluate(() => ({ h1: document.querySelector('#content h1, main h1, h1')?.textContent, tables: document.querySelectorAll('table').length, signed: /signed-in/i.test(document.body.textContent), link: !!document.querySelector('a[href="#/controls"]') }));
-		A(w.h1 === 'Controls' && w.tables >= 4 && w.signed && w.link, 'the design wiki has a Controls page (all four surfaces, the sign-in rule)', JSON.stringify(w));
+		const w = await t.page.evaluate(() => ({ h1: document.querySelector('#content h1, main h1, h1')?.textContent, tables: document.querySelectorAll('table').length, everyone: /controller play is for everyone/i.test(document.body.textContent) && !/controller play is for signed-in/i.test(document.body.textContent), link: !!document.querySelector('a[href="#/controls"]') }));
+		A(w.h1 === 'Controls' && w.tables >= 4 && w.everyone && w.link, 'the design wiki has a Controls page (all four surfaces; controllers for everyone, guests included)', JSON.stringify(w));
 		await t.ctx.close();
 	}
 } catch (e) {

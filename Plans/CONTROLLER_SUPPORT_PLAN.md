@@ -26,6 +26,7 @@ About 115 run-mode screens (dungeon, heist, tombs, duels, lorequest) are DOM ove
 ## Owner decisions (2026-09-28)
 
 - **Signed-in players only.** Controller play starts once the account has loaded with a username. Anyone else who plugs in a pad gets a one-time "Sign in to play with a controller" message.
+  - **Superseded 2026-10-18:** the owner dropped the signed-in-only rule across all games. Guests use a pad exactly like signed-in players; the "Sign in to play with a controller" / "Log in to use a controller" messages and the `signedIn()` gates in `overworld/main.js`, `site/osk.js`, `overworld/pokechess/game.js`, `micatro/js/ui/pad.js`, `battlecards/padnav.js` and `battlecards/padboard.js` are gone (MicaSurvivor's gate is removed in its own PR). Covered by `overworld/tests/controllers_guest_test.mjs`.
 - **Nintendo layout is the standard.** The RIGHT face button confirms and the BOTTOM one cancels, as on a Switch, SNES or GBA. The Xbox layout (bottom confirms) is an option (`layout: 'xbox'` in `site/gamepad.js`; settings UI in Phase 5).
 
 ## Button layout

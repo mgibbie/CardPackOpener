@@ -9,8 +9,8 @@
 //   // -> the text, or null when cancelled (exactly prompt()'s contract)
 //
 // Every input still works: the field is a real <input> (type, paste, Enter
-// submits, Escape cancels), every key is clickable/tappable, and a signed-in
-// player's controller drives it (Nintendo layout, like the rest of the game):
+// submits, Escape cancels), every key is clickable/tappable, and a
+// controller drives it (Nintendo layout, like the rest of the game):
 //   d-pad / stick  move over the keys      confirm (right face)  press the key
 //   cancel (bottom) backspace; on an empty field, close
 //   Start           OK                     top face  space      left face  shift
@@ -24,11 +24,6 @@ const ACTIONS = ['SHIFT', 'SPACE', 'DEL', 'CANCEL', 'OK'];
 
 let active = null;   // one keyboard at a time
 export const oskOpen = () => !!active;
-
-const signedIn = () => {
-	try { return !!localStorage.getItem('magepunk_mp_token_v1') && !!JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null')?.username; }
-	catch (e) { return false; }
-};
 
 function injectStyle() {
 	if (document.getElementById('osk-style')) return;
@@ -134,9 +129,9 @@ export function askText(opts = {}) {
 		});
 		root.addEventListener('pointerdown', e => { if (e.target === root) { e.preventDefault(); } });
 
-		// the controller, for signed-in players (the owner's rule for controller play)
+		// the controller, for everyone (guests included since 2026-10-18)
 		let pad = null;
-		if (signedIn()) {
+		{
 			const DIR = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
 			pad = startGamepad({
 				readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
@@ -154,7 +149,7 @@ export function askText(opts = {}) {
 				hint.textContent = `D-pad move · ${L('confirm')} type the key · ${L('cancel')} delete · ${L('menu')} OK · ${L('secondary')} space · ${L('context')} shift`;
 			};
 			setHint(); setTimeout(setHint, 60);   // once the pad has reported its family
-		} else hint.textContent = 'Type, or tap the keys. Enter = OK, Esc = cancel.';
+		}
 
 		let done = false;
 		function finish(val) {

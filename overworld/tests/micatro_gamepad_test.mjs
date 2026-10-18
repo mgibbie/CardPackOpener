@@ -5,7 +5,8 @@
 // -> pick 5 cards -> Play (L) -> Discard (R) -> beat the blind -> Cash Out -> buy in
 // the shop -> open a pack and take a card -> Next Round. Also: hold-confirm moves a
 // card, top face sorts, left face shows card info, Start pauses, the hint bar shows
-// the right glyphs, and a signed-out pad only says "log in".
+// the right glyphs, and a signed-out (guest) pad drives the game exactly the same
+// (the owner dropped the signed-in-only rule on 2026-10-18).
 // Covers micatro/js/ui/pad.js (+ board.js / screens.js / main.js wiring) on site/gamepad.js.
 //   node overworld/tests/micatro_gamepad_test.mjs
 import http from 'http';
@@ -263,12 +264,16 @@ try {
 		await ctx.close();
 	}
 
-	// ------------------------------------------------------------- signed out
+	// ------------------------------------------------------------- signed out (guest)
 	{
 		const { page, ctx, tap } = await open('/micatro/', false);
-		await tap(B.right); await tap(B.confirm); await sleep(200);
-		const st = await page.evaluate(() => ({ toast: document.querySelector('.toast').textContent, reticle: document.querySelector('.pad-reticle').style.display, menu: !!document.querySelector('.main-menu'), newRun: !!document.querySelector('.new-run') }));
-		A(/log in to use a controller/i.test(st.toast) && st.reticle === 'none' && st.menu && !st.newRun, 'a signed-out pad only says "Log in to use a controller"', JSON.stringify(st));
+		A(await waitFor(() => page.evaluate(() => getComputedStyle(document.getElementById('pad-hints')).display !== 'none'), 3000), 'guest: a connected pad shows the button-hint bar');
+		await tap(B.right);
+		A(await page.evaluate(() => document.querySelector('.pad-reticle').style.display !== 'none'), 'guest: the first press shows the focus reticle');
+		await tap(B.confirm);
+		const opened = await waitFor(() => page.evaluate(() => !!document.querySelector('.new-run')), 3000);
+		const st = await page.evaluate(() => ({ toast: (document.querySelector('.toast') || {}).textContent || '', hints: document.getElementById('pad-hints').textContent }));
+		A(opened && !/log in to use a controller/i.test(st.toast + st.hints), 'guest: confirm opens the New Run screen, and nothing says "Log in to use a controller"', JSON.stringify(st));
 		await ctx.close();
 	}
 } catch (e) {

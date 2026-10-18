@@ -7,7 +7,6 @@ import { ChessBoard, WHITE, BLACK, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } fro
 import { getBestMove } from './ai.js';
 import { Battle, buildMon } from '../battle.js';
 import { startGamepad } from '../../site/gamepad.js';
-import { hasToken, cachedState } from '../../battlecards/mpmode.js';
 
 const battle = new Battle();
 
@@ -344,9 +343,9 @@ addEventListener('keydown', e => {
 	if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'x', 'Enter'].includes(e.key)) e.preventDefault();
 	chessKey(e.key);
 });
-// CONTROLLER (signed-in players only, like the overworld): the same keys, from
-// the shared core — Nintendo layout, View leaves back to the arcade
-if (hasToken() && cachedState()?.username) {
+// CONTROLLER (everyone, guests included, like the overworld): the same keys,
+// from the shared core — Nintendo layout, View leaves back to the arcade
+{
 	const PAD = { confirm: 'z', cancel: 'x', menu: 'Enter', select: 'Escape', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 	startGamepad({
 		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
