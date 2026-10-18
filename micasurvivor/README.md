@@ -758,6 +758,61 @@ port (arena biomes take the volcano's weather; they used to wrap to the forest's
   against the web's (0.24, x0.4). Batch 8 kept the web's curve; changing it is a balance call for the owner.
 - "Challenge" sits one line lower than in the port: the web's biome / defeated / coins line is already there.
 
+### Batch 10: Minimap, field of view and UI scale
+
+`js/core/display.js` (`G.Display`) and `js/ui/minimap.js` (`G.Minimap`); port `main.gd` 335 / 532 / 546-554 /
+3176-3184 / 7798-8120, `pause_ui.gd` 178-216, `display.gd`, `menu.gd` 3965-4001, `save_data.gd` 87 / 126-129. The
+numbers are the port's. All three live in Settings > Graphics > Display (mouse, touch, pad; the sliders move by 5
+with the D-pad's left / right), and the field of view is also on the pause screen, as in the port.
+
+| Setting | Port | Here |
+|---|---|---|
+| Field of view ("View") | 100-200 %, step 5, default 165; it is the camera's zoom, applied live | The same. 165 % is the web's existing view (768 x 420 world px), so the visible world is 768 x 165 / FOV wide (1267 at 100 %, 634 at 200 %). Dynamax and the Tower / rift arena keep it, like the port (its zoom only changes from the slider) |
+| UI scale ("Screen size") | 60-140 %, step 5, default 100, a Reset button and "Screen (px) → game view" | The same range, Reset and info line. Scales the canvas HUD (drawn in w / k x h / k units) and every DOM layer (each laid out in a virtual 100vw / k x 100dvh / k viewport and scaled by k) |
+| Minimap | Always on | On by default, with a Yes / No switch |
+
+**The minimap** (port `class Minimap`): a 200 px circle (radius 96, white rim, an "N") showing 48 tiles across at
+4 px a tile, centred on you and scrolling with you. Real terrain colours (floor, flowers, wall faces and tops,
+water / lava with shore and foam; the web's biome palettes are the same as the port's) under a fog of
+exploration: within 14 tiles full colour and explored, explored ground dimmed (0.5), the rest near black (0.94).
+Chests (and the web's locked chests), altars and springs within 20 tiles or on explored tiles, with a pulsing ring
+when near; traps within 9 tiles; enemies (red dots) within 12 tiles; bosses always (their Pokémon in a red disc),
+pinned to the rim when far; the rift always, pinned to the rim, with a pointer on the rim; you in the centre with
+your Pokémon and a gold ring. Hidden in the rift arena, during the Judgment and while down, like the port.
+
+**Placement.** The port puts it at (8, 92), under the HP. Here it goes in that left column at the first free spot
+under what is already there: `hud.js` records every element's rect (HP, ability / buff chips, the centre clock
+block, weather, mode tag, boss bar, move bar, items, Z / MAX / swap, Team chips, co-op rows, the touch pause
+button, the fixed joystick, the controls hint) and `G.Minimap.place` scans down from y 92 for a spot that touches
+none of them; if the column is full (a phone in Team mode with the fixed joystick) it tries just right of the
+column, then shrinks it (down to 72). It is 200 px at 720 px tall and proportionally smaller on shorter screens
+(108 on an 844 x 390 phone; the port's view is 720 tall), times the UI scale. The edge arrows (rift, shinies,
+co-op mates, the lost Pokémon, thieves) step aside so they never sit under it.
+
+**Clamps** (so phones stay playable and nothing overflows):
+- Field of view: on a small screen (the short side under 500 px) it never goes below 130 % (the setting keeps the
+  chosen value; the slider says so).
+- UI scale: it goes only as large as keeps the virtual viewport (screen / scale) in the same height / width bracket
+  of `style.css` (781 / 661 / 521 / 401 px tall, 360 on a landscape phone; 761 / 640 wide), never below 100 %:
+  1280 x 720 reaches 109 %, 1366 x 768 116 %, 1920 x 1080 138 %, 844 x 390 108 %. With a touch screen it does not go
+  below 85 %; HUD buttons keep at least their 100 % touch area, and menu controls stay at least 24 px tall.
+
+**Saved** device-locally with the other display settings (`micasurvivor_settings` in localStorage: `fov`,
+`uiScale`, `minimap`), not in the account save: the port keeps them in its local settings file and each device has
+its own screen. Nothing new to merge on a 409.
+
+**Deviations, and why:**
+- The UI scale scales the interface only. The port's content_scale_factor scales the whole canvas, world
+  included; here the world's zoom is the field of view alone, so the two settings do not compound.
+- The maximum UI scale depends on the screen (above). At 140 % on a 1280 x 720 screen the menus' compact
+  layout rules would no longer match, so it stops at 109 %; the info line shows the applied size.
+- The setting is named "Interface size" (port: "Screen size"), since it no longer zooms the world.
+- The minimap can be switched off (the port has no switch; no pad action or key, as in the port), and it also
+  hides on the level-up / item / pause screens (the port covers it with those screens).
+- Dens are red and co-op mates show as dots in their colour (the port shows neither on its minimap). Chests,
+  altars, springs and traps use the port's fallback shapes, not its prop sprites.
+- The minimap redraws every frame (the web's HUD does); the port caches its drawing at 25 Hz.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -875,4 +930,12 @@ port (arena biomes take the volcano's weather; they used to wrap to the forest's
   every tier and biome, the fallback, preloading, the biome weather); Survival by Type winning, the Tower's
   floor biomes; the support caps through 10 simulated minutes of the real spawner and enemy AI (minions,
   per-summoner stop, shields per cast and the 14 s lock), healers x0.9 above 4.
+- `node overworld/tests/micasurvivor_display_test.mjs` (M5 batch 10), logged in with a stubbed account row: the
+  port's numbers and English; the minimap's contents read from what it drew (you, an enemy at a known offset, one
+  beyond 12 tiles, a near and a far boss pinned to the rim, the rift and a den, props by the radar rules, the fog's
+  explored disc) and when it hides; the switch; the field of view moving the real camera live (100 / 165 / 200 %,
+  clamps, 130 % on a phone, unchanged by Dynamax and the Tower); the UI scale measured on real DOM and HUD sizes,
+  its caps, touch areas, Reset, and nothing overflowing at the min / max on 1280 x 720 and 844 x 390; no overlap
+  between the minimap and any HUD element in a busy run at three scales on desktop and phone (and with the fixed
+  joystick); the pad on both sliders and the pause screen's; device-local persistence after a reload.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

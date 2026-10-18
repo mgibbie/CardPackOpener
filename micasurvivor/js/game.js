@@ -114,6 +114,7 @@ G.Game = (() => {
     G.ZMoves.reset();   // MicaSurvivor (M5 lote 4)
     G.Dynamax.reset();  // MicaSurvivor (M5 lote 5)
     G.Adaptive.reset(); // MicaSurvivor (M5 lote 9): la dificultad adaptativa empieza en 100 % y baja / sube a su objetivo
+    G.Minimap.reset();  // MicaSurvivor (M5 lote 10): el minimapa empieza sin nada explorado
     // MicaSurvivor (M5 lote 6, main.gd 432): el Desafío diario siembra el azar con la fecha: el mismo
     // mundo, elenco, jefes y movimientos iniciales para todos ese día.
     if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
@@ -1026,6 +1027,7 @@ G.Flow = {
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');
     G.Audio.music('village');     // suena tras el primer clic (lo exige el navegador)
+    G.Display.init();             // MicaSurvivor (M5 lote 10): campo de visión y tamaño de la interfaz
     G.Game.init();
     // La base de datos (nube o local) recupera la sesión anterior.
     G.DB.ready().then(restored => {

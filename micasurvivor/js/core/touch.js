@@ -57,7 +57,7 @@ G.Touch = (() => {
   function hit(x, y) {
     for (let i = buttons.length - 1; i >= 0; i--) {
       const b = buttons[i];
-      if (x >= b.x - b.pad && x <= b.x + b.w + b.pad && y >= b.y - b.pad && y <= b.y + b.h + b.pad) return b;
+      if (x >= b.x - b.px && x <= b.x + b.w + b.px && y >= b.y - b.py && y <= b.y + b.h + b.py) return b;
     }
     return null;
   }
@@ -130,7 +130,21 @@ G.Touch = (() => {
 
   /** El HUD vacía y vuelve a registrar sus botones cada fotograma. */
   function clearButtons() { buttons = []; }
-  function addButton(x, y, w, h, fn, pad = 6) { buttons.push({ x, y, w, h, fn, pad }); }
+  /**
+   * MicaSurvivor (M5 lote 10): el HUD se dibuja escalado (tamaño de la interfaz, display.js) y registra sus
+   * botones en sus unidades; aquí pasan a px de pantalla. Por debajo del 100 % la zona que se puede tocar
+   * nunca es más pequeña que al 100 % (el dibujo encoge, el dedo no).
+   */
+  let bk = 1;
+  function scaleButtons(k) { bk = k > 0 ? k : 1; }
+  function addButton(x, y, w, h, fn, pad = 6) {
+    const k = bk;
+    let px = pad * k, py = pad * k;
+    if (k < 1) { px = Math.max(px, pad + w * (1 - k) / 2); py = Math.max(py, pad + h * (1 - k) / 2); }
+    buttons.push({ x: x * k, y: y * k, w: w * k, h: h * k, fn, pad, px, py });
+  }
+  /** Para las pruebas: los botones registrados (px de pantalla, con su margen táctil). */
+  function buttonList() { return buttons.map(b => ({ x: b.x - b.px, y: b.y - b.py, w: b.w + 2 * b.px, h: b.h + 2 * b.py, dx: b.w, dy: b.h })); }
 
   /** Dibuja el joystick (coordenadas de pantalla, CSS px). */
   function draw(ctx) {
@@ -157,6 +171,6 @@ G.Touch = (() => {
     ctx.restore();
   }
 
-  return { init, vector, draw, drawStick, clearButtons, addButton, reset, safeArea, spot, stickBase, R, STICK_DEF,
+  return { init, vector, draw, drawStick, clearButtons, addButton, scaleButtons, buttonList, reset, safeArea, spot, stickBase, R, STICK_DEF,
            get active() { return active; }, get stick() { return stick; } };
 })();

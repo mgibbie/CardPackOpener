@@ -508,7 +508,8 @@ G.Pad = (() => {
       el.dispatchEvent(new Event('change', { bubbles: true }));
       return;
     }
-    const min = +el.min || 0, max = el.max === '' ? 100 : +el.max, step = (max - min) / 10;
+    // (M5 batch 10: a slider may name its own D-pad step, like the port's HSlider step of 5 for View / Screen size)
+    const min = +el.min || 0, max = el.max === '' ? 100 : +el.max, step = +el.dataset.padStep || (max - min) / 10;
     el.value = Math.max(min, Math.min(max, +el.value + d * step));
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));

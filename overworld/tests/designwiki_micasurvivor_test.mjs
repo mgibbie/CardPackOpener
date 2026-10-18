@@ -62,6 +62,11 @@ A(MO.rush && MO.rush.first === 5 && MO.rush.rest === 8 && MO.rush.legEvery === 3
 A(MO.tower && MO.tower.floors === 30 && MO.tower.bossAt === 50 && MO.tower.maxRisks === 6 && MO.tower.risks.length === 15 && MO.tower.legends.length === 4 && MO.tower.relicsMax === 6 && MO.tower.risks.every(r => r.name && r.desc && !/[¡¿ñáíóú]/.test(r.name + r.desc)) && MO.tower.risks[0].name === 'Frenzy' && MO.tower.legends[0].name === 'Time mastery',
 	'the Floor Tower from tower.js: 30 floors, the boss at 50 s, 6 pacts, the 15 risk cards and 4 legendary ones in English, 6 relics', JSON.stringify(MO.tower).slice(0, 300));
 // MicaSurvivor M5 batch 9: adaptive difficulty, biome spawns and the support caps
+// MicaSurvivor M5 batch 10: the minimap, the field of view and the UI scale
+const DP = W.display || {};
+A(DP.fov && DP.fov.min === 100 && DP.fov.max === 200 && DP.fov.step === 5 && DP.fov.def === 165 && DP.fov.name === 'Field of view' && DP.ui && DP.ui.min === 60 && DP.ui.max === 140 && DP.ui.def === 100 && DP.ui.name === 'Interface size'
+	&& DP.minimap && DP.minimap.size === 200 && DP.minimap.tiles === 48 && DP.minimap.foes === 12 && DP.minimap.name === 'Minimap' && !/[¡¿ñáíóú]/.test(DP.minimap.desc),
+	'display from display.js + minimap.js: the port\'s field of view (100-200, 165), Screen size (60-140, 100) and minimap numbers, in English', JSON.stringify(DP).slice(0, 300));
 const DF = W.difficulty || {};
 A(DF.adaptive && DF.adaptive.base === 0.62 && DF.adaptive.max === 1.5 && DF.adaptive.min === 0.55 && DF.adaptive.every === 45 && DF.adaptive.setting === 'Adaptive difficulty' && !/[¡¿ñáíóú]/.test(DF.adaptive.desc)
 	&& JSON.stringify((DF.biomes || []).map(b => [b.key, b.name, b.types.join('/')])) === JSON.stringify([['forest', 'Shady Forest', 'bug/grass'], ['cave', 'Crystal Cave', 'rock/ground'], ['volcano', 'Ash Volcano', 'fire']])
@@ -98,7 +103,9 @@ try {
 	A(ov.play && ov.art === 96, 'overview: the play link and the tile art', JSON.stringify({ play: ov.play, art: ov.art }));
 	A(/How to play/.test(ov.text) && /Pewter Museum/.test(ov.text) && /best survival time/.test(ov.text) && /Magepunk/.test(ov.text), 'overview: how to play, the Pewter Museum cabinet, accounts + the leaderboard');
 	A(/Required Notice: Copyright 2026 JPTER78 \(https:\/\/github\.com\/JPTER78\/pokesurvivor\)/.test(ov.text) && /PolyForm Noncommercial/.test(ov.text) && /CC BY-NC 4\.0/.test(ov.text) && /JayElDragon/.test(ov.text) && /never gets ads, paid items/.test(ov.text), 'overview: credits + the licence notice (Required Notice, PolyForm NC, CC BY-NC, JayElDragon, never sold)');
-	A(ov.tables === 7 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, biomes and support tables, the keyboard and controller tables');
+	A(ov.tables === 8 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, biomes, support and display tables, the keyboard and controller tables');
+	A(/Display/.test(ov.text) && /Minimap/.test(ov.text) && /Field of view/.test(ov.text) && /100–200 % in steps of 5 \(165 %\)/.test(ov.text) && /Interface size/.test(ov.text) && /60–140 % in steps of 5 \(100 %\)/.test(ov.text)
+		&& await page.$$eval('#content .ms-display tbody tr', r => r.length) === 3, 'overview: Display (the minimap, the field of view 100-200 % and the interface size 60-140 %; M5 batch 10)');
 	A(/Game modes/.test(ov.text) && /Rift Time Attack/.test(ov.text) && /8:00 on the clock/.test(ov.text) && /Survival by Type/.test(ov.text) && /Heavy hitters/.test(ov.text) && /Banning a level-up card/.test(ov.text) && /Ban a level-up card/.test(ov.text)
 		&& await page.$$eval('#content .ms-modes tbody tr', r => r.length) === 8 && await page.$$eval('#content .ms-mods tbody tr', r => r.length) === 6,
 		'overview: Game modes (6 modes, 6 modifiers, the ban, the B key and the controller row; M5 batch 6)');

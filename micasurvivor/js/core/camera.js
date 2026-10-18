@@ -18,10 +18,16 @@ G.Camera = {
 
   resize(cssW, cssH, dpr = 1) {
     this.dpr = dpr;
+    this.cw = cssW; this.ch = cssH;
+    // MicaSurvivor (M5 lote 10): el campo de visión (display.js) fija cuánto mundo se ve: 768 × 165 / visión.
+    if (G.Display) { this.VIEW_W = G.Display.viewW(cssW, cssH); this.MIN_VIEW_H = G.Display.viewH(cssW, cssH); }
     this.scale = Math.min(cssW / this.VIEW_W, cssH / this.MIN_VIEW_H);
     this.w = cssW / this.scale;
     this.h = cssH / this.scale;
   },
+
+  /** MicaSurvivor (M5 lote 10): vuelve a calcular la vista al cambiar el campo de visión (en vivo). */
+  refit() { if (this.cw) this.resize(this.cw, this.ch, this.dpr); },
 
   follow(tx, ty, dt) {
     this.x = G.U.damp(this.x, tx, 9, dt);
