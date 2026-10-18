@@ -271,7 +271,7 @@ try {
 		A(await waitFor(() => visible('scr-modes'), 4000), 'the menu\'s Game modes opens "Choose a mode"');
 		await sleep(300);
 		const c = await E(() => ({ cards: [...document.querySelectorAll('#modes-list [data-mode]')].map(b => b.dataset.mode), card: document.querySelector('#modes-list [data-mode=tower]').innerText, start: !!document.getElementById('modes-tower-start') }));
-		A(c.cards.join() === 'normal,daily,rush,party,tower,rifts,type,team' && /Floor Tower/.test(c.card) && /30 floors, each with a fixed boss/.test(c.card) && /Best floor: 0 · Relics: 0 \/ 6\./.test(c.card) && !c.start,
+		A(c.cards.join() === 'normal,daily,rush,party,coop,tower,rifts,type,team' && /Floor Tower/.test(c.card) && /30 floors, each with a fixed boss/.test(c.card) && /Best floor: 0 · Relics: 0 \/ 6\./.test(c.card) && !c.start,
 			'the Tower card in the port\'s menu order (after Party), in its words, best floor 0 and relics 0 / 6; no "Starting floor" without a checkpoint', JSON.stringify(c));
 		const sp = await spanishOn('#scr-modes');
 		A(sp.bad.length === 0, 'the modes screen shows no Spanish in English mode', JSON.stringify(sp));

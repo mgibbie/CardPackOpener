@@ -90,7 +90,8 @@ G.Game = (() => {
    * @param coop  { seed, host, members } para una partida en grupo
    * @param mode  MicaSurvivor (M5 lote 6): 'normal' | 'daily' | 'party' | 'rifts' | 'type' (js/systems/modes.js;
    *              en grupo, siempre normal y sin modificadores); M5 lote 7: 'team' (js/systems/team.js);
-   *              M5 lote 8: 'rush' (js/systems/bossrush.js) y 'tower' (js/systems/tower.js)
+   *              M5 lote 8: 'rush' (js/systems/bossrush.js) y 'tower' (js/systems/tower.js); M5 lote 12a: 'coop'
+   *              (js/systems/localcoop.js, el cooperativo en la misma pantalla: no es el de `coop`, el online)
    */
   function startRun(coop = null, mode = 'normal') {
     holdBy = []; awayBy = null;
@@ -126,6 +127,7 @@ G.Game = (() => {
     if (G.Tower.begin(pl)) { biome = G.Tower.floor - 1; G.World.setBiome(biome, true); }
     G.Modes.startPlayer(pl);   // Frágil: vida máxima a la mitad
     G.Team.begin(pl, perks);   // MicaSurvivor (M5 lote 7): el Modo Equipo (los demás del equipo, con sus vidas)
+    G.LocalCoop.begin(pl);     // MicaSurvivor (M5 lote 12a): el Modo Cooperativo (el compañero, de la IA o del jugador 2)
 
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
@@ -319,6 +321,7 @@ G.Game = (() => {
     if (G.Coop.active) G.Coop.end();
     if (coop) G.Social.setPlaying(false);
     state = 'over';
+    G.LocalCoop.end();   // MicaSurvivor (M5 lote 12a)
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
@@ -760,7 +763,10 @@ G.Game = (() => {
     }
 
     pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
-    pl.update(dt);
+    // MicaSurvivor (M5 lote 12a, main.gd 985-989): en el Modo Cooperativo, caído espectas a tu compañero (no te
+    // mueves ni atacas: tu "cuerpo" va con él); luego se mueve y ataca él (la IA o el jugador 2).
+    if (G.LocalCoop.down) G.LocalCoop.downTick(dt, pl); else pl.update(dt);
+    G.LocalCoop.update(dt, pl);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead) reviveTick(dt);
@@ -855,7 +861,7 @@ G.Game = (() => {
     ctx.save();
     ctx.scale(G.Camera.scale, G.Camera.scale);
     G.Camera.apply(ctx);
-    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl]);
+    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl, ...G.LocalCoop.drawables(pl)]);   // (M5 lote 12a: el compañero)
     G.Projectiles.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
@@ -1020,7 +1026,7 @@ G.Game = (() => {
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
     toUI() { state = 'ui'; Backdrop.restore(); },
-    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; lote 7: 'team'; lote 8: 'rush' | 'tower'). */
+    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; lote 7: 'team'; lote 8: 'rush' | 'tower'; lote 12a: 'coop'). */
     get mode() { return runMode; }, set mode(m) { runMode = m || 'normal'; },
     get state() { return state; }, get player() { return pl; }, st
   };

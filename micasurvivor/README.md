@@ -180,10 +180,12 @@ gamepad core, `/site/gamepad.js`, which handles edges, held-direction repeat and
   run ignore confirm for 0.4 s, so a held button can't pick one by accident.
 - **Hot-plug**: the first pad that presses something drives. Other pads are ignored until it is
   unplugged. **Rumble on hit** (`player.hurt`) is optional and off by default.
-- **Site rule**: controller play is for **signed-in** Magepunk players (owner decision
-  2026-09-28, the same as the overworld, Battlecards and Micatro). A guest's pad only shows
-  "Log in to Magepunk to use a controller". The game itself still plays fully for guests with
-  keyboard and touch. One switch turns this off: `SIGNED_IN_ONLY` in `pad.js`.
+- **Guests too**: from 2026-09-28 controller play was for signed-in Magepunk players only (a
+  guest's pad showed "Log in to Magepunk to use a controller"). The owner dropped that rule on
+  2026-10-18: batch 12a removed `SIGNED_IN_ONLY`, the toast and the Settings note, so a pad works
+  for everyone.
+- **Player 2** (M5 batch 12a, Co-op Mode): a second pad moves the partner with its left stick; see
+  "Batch 12a" below.
 
 ## Mechanics from the Android port
 
@@ -889,6 +891,41 @@ from the account but the name other players already see.
 - Not ported (languages dropped by the owner, 2026-10-18): nothing; the port has no language achievements or
   missions, and its Lexicon text is ported in Spanish and English only.
 
+### Batch 12a: Co-op Mode (the local partner)
+
+`js/systems/localcoop.js` (`G.LocalCoop`), `js/systems/modes.js`, `js/ui/modes-ui.js`, `js/core/pad.js` (player 2),
+`js/ui/hud.js`, `js/ui/minimap.js`; port `menu.gd` 1584-1600 / 2109 / 2151-2156, `main.gd` 162-167 / 195-202 / 439 /
+523-524 / 815-817 / 838-841 / 985-989 / 1062 / 1243 / 1267 / 1623-1731 / 1807-1811 / 1917 / 1939-2007 / 8653-8661,
+`progress.gd` 105-106 / 155. The numbers are the port's. It is the port's local co-op, on one screen; the online
+4-player co-op (`js/net/coop.js`, batch 12b) is a separate thing and stays off here.
+
+| Rule | Port |
+|---|---|
+| Mode | "Co-op Mode" on Choose a mode, after Party (the port's order), its own mode: "A second Pokémon comes along and attacks on its own. Plug in a second controller and player 2 moves it with the left stick. It shares your upgrades. -20% coins. Partner: X". Modifiers apply (+0.25 coins each, then ×0.8). No leaderboard |
+| Partner | "Choose partner": your own Pokémon only, by generation (mouse, touch, pad; Esc / Back / B back). Saved as `save.coopDex` (+ `coopAt`). With no pick (or an unknown one): the first of your team (`G.Team.list`) that is not the Pokémon you play, else Eevee (Pikachu if you play Eevee). Shiny if you play shinies and own it |
+| Movement (AI) | speed 118. Past 150 from you it walks to you; within 120 of you, with an enemy within 240 of it, it closes in at half speed; else it stops. Steering eases (lerp ×5 a second). Past 520 from you it reappears 70 from you with a blue ring |
+| Player 2 | a second connected pad (the one player 1 is not using) moves it with the left stick: raw axes, 0.22 deadzone, speed 118 × the stick. No buttons: player 2 never drives a menu, pauses or picks a card, and while a co-op run is on, player 2's pad is never taken as player 1's. Unplugged: the AI takes over ("Player 2: controller disconnected, the AI takes over your partner"); plugged in: player 2 again ("Player 2: controller connected"). The HUD chip says "X · AI" or "X · P2" (with the left-stick glyph) and the partner wears a P2 tag |
+| Attack | the first projectile move of its main type (else a Normal one, else Ember), level 1 + your level / 6, at the nearest enemy within 520, every move-cooldown ×1.15 (your cooldown upgrades don't apply). Each shot does the move's damage × YOUR attack × 0.8 — "it shares your upgrades": attack upgrades, cards, items, ability, Dynamax — with your size (Calibre, Big Orb), crits and on-hit item effects. Its damage and defeats are "Partner / team" on the run-over breakdown |
+| Safety | enemies only go for you; it takes no damage while you stand. Not in a rift arena (hidden; it waits) |
+| Falling | after any Second Chance heart, a lethal hit doesn't end the run: you spectate ("You fell! Watch your partner"; the camera follows it; your Dynamax ends, no Z-move or Dynamax). It gets your max HP and takes the hits meant for you (×0.8, with its types and the weather; pure damage as is; 0.45 s apart); the AI flees enemies within 190. The HUD: "Spectating: you revive in N s" and "Your partner's HP". After 20 s it revives you next to it at half HP, 2.5 s invulnerable, knocking enemies within 220 back (450). If it falls first, the run is over |
+| End | coins ×0.8 ("×0.80 with the mode"), "Co-op Mode" on the result. `stats.coopRuns` +1; a run of 60 s or more also adds `stats.groupRuns`, which "In good company" / "Loyal partner" count (the port: "Co-op Mode already counts as a group run"). Both merge by max |
+
+The minimap shows the partner as a dot in the online co-op's second colour (`#5fc8ff`), and a HUD arrow points to it
+when it is off screen. The Lexicon's Modes tab lists Co-op Mode with your runs and partner.
+
+**Deviations, and why:**
+- The pick is saved as `save.coopDex` with a `coopAt` time (the port's `coop_dex` has none), so that a 409 merge keeps
+  the pick made last even when the other save is newer for another reason.
+- Its hits are always "Partner / team" (`dsrc: 'ally'`). The port files them under the move's id and moves you don't
+  carry go to that row, so a partner using the same move as you would have its damage counted as yours.
+- Its move level stops at the move's top level (5 for projectiles). The port asks for up to 6, past the end of its
+  4-step ladder.
+- Player 2 is "the pad player 1 is not using" rather than Godot's `get_connected_joypads()[1]`: the web keeps
+  player 1 on whichever pad pressed first.
+- Added for clarity (the port has none): the HUD chip, the off-screen arrow, the P2 tag, the minimap dot, and the
+  player-2 connect / disconnect toasts.
+- The partner is not tinted blue (the port modulates it slightly); the tag, chip and minimap colour mark it instead.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -897,7 +934,7 @@ from the account but the name other players already see.
 - `node overworld/tests/micasurvivor_phone_test.mjs` is the 390px phone smoke test (touch
   controls).
 - `node overworld/tests/micasurvivor_pad_test.mjs` covers the controller with a synthetic Gamepad
-  API: the guest gate, title to run with the pad only, every menu screen, the gacha, layouts, remap
+  API: a guest's pad working (no sign-in gate), title to run with the pad only, every menu screen, the gacha, layouts, remap
   with swap-on-conflict surviving a reload, stick and D-pad movement, pause, level-up reroll and
   pick, glyphs switching between keys and pad, rumble, and hot-plug.
 - `node overworld/tests/micasurvivor_server_test.mjs` (M3): the save actions (login, exact key,
@@ -1030,4 +1067,15 @@ from the account but the name other players already see.
   opening (all 966 Pokémon included); on each tab an entry opened by pad and by touch; unlock tracking against the
   save (items found, moves evolved, Z unlocks, Dynamax before / after dens, owned Pokémon, mode records, relics,
   the Tower boss log); no Spanish on any tab or entry.
+- `node overworld/tests/micasurvivor_localcoop_test.mjs` (M5 batch 12a), logged in with a stubbed account row and
+  two synthetic gamepads: the port's numbers and the move per type; who the partner is (pick, fallback, sanitize,
+  merge by the newest pick, the account push and a 409); the Co-op card and "Choose partner" by mouse, touch
+  (844x390), pad and Esc; an AI run (following, standing still, engaging, the leash teleport, hidden in a rift
+  arena, its shots from YOUR attack and size at ×0.8 and ×1.15 cooldown, the move level, real hits counted as
+  Partner / team, the minimap dot, the HUD chip fitting at phone width); player 2 (the second pad's stick, the
+  deadzone, no buttons, player 1 keeping the pause menu, disconnect -> AI and connect -> P2 with toasts, player 2's
+  presses never taking player 1's seat); fainting (Second Chance first, spectating, the partner taking your hits
+  ×0.8 with its type, no Z / Dynamax, the revive after 20 s, the run ending when it falls); the run end (-20 % coins
+  measured on the result, coopRuns / groupRuns and "In good company", the Partner / team row, a short run, a normal
+  run without a partner); no Spanish on the screens or the canvas; the Lexicon entry.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

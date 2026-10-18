@@ -52,11 +52,15 @@ A(W.counts.zmoves === 18 && W.zmoves.length === 18 && W.zmoves[0].name === 'Star
 
 // MicaSurvivor M5 batch 6: the quick modes, the 6 modifiers and the level-up ban
 const MO = W.modes || {};
-A(JSON.stringify((MO.list || []).map(m => m.name)) === JSON.stringify(['Normal run', 'Daily Challenge', 'Boss Rush', 'Party Mode', 'Floor Tower', 'Rift Time Attack', 'Survival by Type', 'Team Mode']) && (MO.mods || []).length === 6 && MO.mods.every(m => m.name && m.desc && !/[¡¿ñáíóú]/.test(m.desc))
+A(JSON.stringify((MO.list || []).map(m => m.name)) === JSON.stringify(['Normal run', 'Daily Challenge', 'Boss Rush', 'Party Mode', 'Co-op Mode', 'Floor Tower', 'Rift Time Attack', 'Survival by Type', 'Team Mode']) && (MO.mods || []).length === 6 && MO.mods.every(m => m.name && m.desc && !/[¡¿ñáíóú]/.test(m.desc))
 	&& MO.rifts.limit === 480 && MO.coins.daily === 1.25 && MO.coins.type === 0.5 && MO.k.horde === 1.8 && MO.ban.max === 3 && JSON.stringify(MO.ban.costs) === '[300,570,1080]',
-	'Game modes from modes.js: 6 modes (+ Team, batch 7; + Boss Rush and Floor Tower, batch 8), 6 modifiers in English, the port numbers (480 s, x1.25, +0.5, horde x1.8) and the ban (Ban upgrade, 3 levels)', JSON.stringify(MO).slice(0, 300));
+	'Game modes from modes.js: 6 modes (+ Team, batch 7; + Boss Rush and Floor Tower, batch 8; + Co-op, batch 12a), 6 modifiers in English, the port numbers (480 s, x1.25, +0.5, horde x1.8) and the ban (Ban upgrade, 3 levels)', JSON.stringify(MO).slice(0, 300));
 // MicaSurvivor M5 batch 7: Team mode
 A(JSON.stringify(MO.team) === JSON.stringify({ max: 3, minOwned: 2, cooldown: 3, inv: 1, invAuto: 1.5, regen: 0.012 }), 'Team mode from team.js: 3 Pokémon, unlocked with 2, 3 s cooldown, 1 s / 1.5 s invulnerable, 1.2 %/s bench recovery', JSON.stringify(MO.team));
+// MicaSurvivor M5 batch 12a: Co-op Mode (the local partner)
+A(MO.coop && MO.coop.speed === 118 && MO.coop.follow === 150 && MO.coop.engage === 120 && MO.coop.seek === 240 && MO.coop.leash === 520 && MO.coop.deadzone === 0.22 && MO.coop.dmg === 0.8 && MO.coop.cd === 1.15
+	&& MO.coop.lvEvery === 6 && MO.coop.coins === 0.8 && MO.coop.groupMin === 60 && MO.coop.reviveT === 20 && MO.coop.downK === 0.8 && MO.coop.reviveHp === 0.5 && MO.coop.fallback === 'Eevee',
+	'Co-op Mode from localcoop.js: speed 118, follow 150 / engage 120 / seek 240, leash 520, 0.22 deadzone, ×0.8 damage, ×1.15 cooldown, -20 % coins, 20 s to revive at half HP', JSON.stringify(MO.coop));
 // MicaSurvivor M5 batch 8: Boss Rush and the Floor Tower
 A(MO.rush && MO.rush.first === 5 && MO.rush.rest === 8 && MO.rush.legEvery === 3 && MO.rush.biome === 150 && MO.rush.hp.base === 1400 && MO.rush.hp.grow === 1.27, 'Boss Rush from bossrush.js: 5 s, 8 s between bosses, a legendary every third, 150 s biomes, HP 1400 x 1.27^i', JSON.stringify(MO.rush));
 A(MO.tower && MO.tower.floors === 30 && MO.tower.bossAt === 50 && MO.tower.maxRisks === 6 && MO.tower.risks.length === 15 && MO.tower.legends.length === 4 && MO.tower.relicsMax === 6 && MO.tower.risks.every(r => r.name && r.desc && !/[¡¿ñáíóú]/.test(r.name + r.desc)) && MO.tower.risks[0].name === 'Frenzy' && MO.tower.legends[0].name === 'Time mastery',
@@ -123,9 +127,11 @@ try {
 	A(/Display/.test(ov.text) && /Minimap/.test(ov.text) && /Field of view/.test(ov.text) && /100–200 % in steps of 5 \(165 %\)/.test(ov.text) && /Interface size/.test(ov.text) && /60–140 % in steps of 5 \(100 %\)/.test(ov.text)
 		&& await page.$$eval('#content .ms-display tbody tr', r => r.length) === 3, 'overview: Display (the minimap, the field of view 100-200 % and the interface size 60-140 %; M5 batch 10)');
 	A(/Game modes/.test(ov.text) && /Rift Time Attack/.test(ov.text) && /8:00 on the clock/.test(ov.text) && /Survival by Type/.test(ov.text) && /Heavy hitters/.test(ov.text) && /Banning a level-up card/.test(ov.text) && /Ban a level-up card/.test(ov.text)
-		&& await page.$$eval('#content .ms-modes tbody tr', r => r.length) === 8 && await page.$$eval('#content .ms-mods tbody tr', r => r.length) === 6,
+		&& await page.$$eval('#content .ms-modes tbody tr', r => r.length) === 9 && await page.$$eval('#content .ms-mods tbody tr', r => r.length) === 6,
 		'overview: Game modes (6 modes, 6 modifiers, the ban, the B key and the controller row; M5 batch 6)');
 	A(/Team Mode/.test(ov.text) && /swap them mid-run/.test(ov.text) && /Switch Pokémon \(Team Mode\)/.test(ov.text), 'overview: Team Mode (its row, the Tab key and the controller\'s swap row; M5 batch 7)');
+	A(/Co-op Mode/.test(ov.text) && /player 2 moves it with the left stick \(speed 118/.test(ov.text) && /after 20 s it revives you at 50 % HP/.test(ov.text) && /coins ×0\.8 \(−20 %\)/.test(ov.text) && /guests included/.test(ov.text) && !/Log in to Magepunk to use a controller/.test(ov.text),
+		'overview: Co-op Mode (its row: the partner, player 2, spectating, -20 % coins) and controllers for guests too (M5 batch 12a)');
 	A(/Boss Rush/.test(ov.text) && /Only bosses, one after another: the first after 5 s/.test(ov.text) && /Floor Tower: rest and risk pacts/.test(ov.text) && /Starting floor/.test(ov.text) && /Thirty-five achievements/.test(ov.text)
 		&& await page.$$eval('#content .ms-pacts tbody tr', r => r.length) === 19, 'overview: Boss Rush and the Floor Tower rows, the 19-card pacts table, the checkpoints, 35 mode achievements (M5 batch 8)');
 	A(/Difficulty and biomes/.test(ov.text) && /Adaptive difficulty/.test(ov.text) && /Challenge: N%/.test(ov.text) && /Biome-themed spawns/.test(ov.text) && /Support Pokémon caps/.test(ov.text)

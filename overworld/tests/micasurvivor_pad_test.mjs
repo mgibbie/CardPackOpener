@@ -2,7 +2,8 @@
 // headless Chrome with a SYNTHETIC Gamepad API (navigator.getGamepads overridden in the page; the
 // pads are plain objects the test presses buttons / tilts sticks on). No mouse, no keyboard, except
 // where the test checks that keyboard use switches the prompts back to keys.
-//   - site rule: a guest's pad only says "Log in to Magepunk to use a controller"; signed in, it drives
+//   - a guest's pad drives too (owner, 2026-10-18: controllers no longer need a Magepunk sign-in; M5 batch 12a
+//     removed the gate and its "Log in to Magepunk to use a controller" toast)
 //   - default layout = Nintendo (site standard: RIGHT face confirms, bottom face cancels)
 //   - title -> personality test -> partner -> menu with the pad only; focus ring on every screen;
 //     Pokémon / Upgrades / Gacha / Missions / Settings / Credits opened and left with cancel;
@@ -121,21 +122,20 @@ try {
 		'default layout is Nintendo (site standard): right face confirms, bottom cancels, LB/RB prev/next, Start pause, top face reroll, left face ban, L3 Z-move, − Dynamax', JSON.stringify(await ev(() => G.Pad.map())));
 	A(await ev(() => G.Pad.ACTIONS.includes('zmove') && G.Pad.ACTIONS.includes('dynamax') && G.Pad.ACTIONS.includes('ban') && G.Pad.ACTIONS.includes('swap')), 'zmove (M5 batch 4), dynamax (batch 5), ban (batch 6) and swap (team mode, batch 7) are offered');
 
-	// ---- guest: the pad only hints
+	// ---- guest: the pad drives (no sign-in gate any more, owner 2026-10-18)
 	await ev(() => { window.__pads[0] = window.__mkPad(0, 'Synthetic Pro Controller (STANDARD GAMEPAD)'); });
 	if (await visible('tap-start')) { await press(B.confirm); }
 	A(await waitFor(() => visible('scr-login'), 10000), 'title (login) screen shows');
 	await press(B.confirm);
-	A(/Log in to Magepunk to use a controller/.test(await toastText()), 'guest: a pad press says "Log in to Magepunk to use a controller"', await toastText());
-	A(await ev(() => !G.Pad.active && !document.body.classList.contains('pad-input')) && await visible('scr-login'), 'guest: the pad does not drive (no ring, still on the title)');
-
-	// ---- signed in: the pad drives
-	await ev(() => { localStorage.setItem('magepunk_mp_token_v1', 'test-token'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'padtester' })); });
-	await sleep(2200);
-	await press(B.confirm);
-	A(/Controller connected/.test(await toastText()) && await ev(() => G.Pad.active && document.body.classList.contains('pad-input')), 'signed in: the first press takes the pad ("Controller connected", pad prompts on)', await toastText());
+	A(/Controller connected/.test(await toastText()) && !/Log in to Magepunk/.test(await toastText()) && await ev(() => G.Pad.active && document.body.classList.contains('pad-input') && G.Pad.SIGNED_IN_ONLY === undefined),
+		'guest: the first press takes the pad ("Controller connected", pad prompts on; no "Log in to Magepunk to use a controller", no sign-in switch)', await toastText());
 	let f = await focus();
 	A(f && f.id === 'btn-guest' && await visible('scr-login'), 'that first press only shows the focus ring, on Play', JSON.stringify(f));
+	A(await ev(() => !/Inicia sesión en Magepunk|Log in to Magepunk/.test(G.Pad.settingsHTML()) && /^Mando: /.test(document.createRange().createContextualFragment(G.Pad.settingsHTML()).getElementById('pad-status').textContent)),
+		'guest: Settings > Controls shows the pad in use, with no sign-in note');
+	// (the account the later M3 checks use: logged in from here on)
+	await ev(() => { localStorage.setItem('magepunk_mp_token_v1', 'test-token'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'padtester' })); });
+	await sleep(300);
 	await press(B.confirm);
 	A(await waitFor(() => visible('scr-test'), 5000), 'confirm on Play: the personality test');
 	for (let i = 0; i < 40 && await visible('scr-test'); i++) await press(B.confirm);

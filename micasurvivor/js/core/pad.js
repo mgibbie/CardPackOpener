@@ -29,8 +29,12 @@
  *     screen's tabs.
  *   - Hot-plug: the first pad that presses something drives until it is unplugged.
  *     Rumble on hit (setting, off by default like the site's).
- *   - Site rule (owner, 2026-09-28): controller play is for SIGNED-IN Magepunk players;
- *     a guest's pad only shows how to enable it. One switch: SIGNED_IN_ONLY.
+ *   - Guests too (owner, 2026-10-18): controllers no longer need a Magepunk sign-in. (From 2026-09-28 they
+ *     were for signed-in players only; M5 batch 12a removed that gate, its toast and its Settings note.)
+ *   - Player 2 (M5 batch 12a, Co-op Mode, main.gd 1662 / 1672-1677): in a co-op run a SECOND connected pad (the
+ *     one player 1 is not using) moves the partner with its left stick (p2 / p2Axis: raw axes, 0.22 deadzone,
+ *     like the port). Player 2 has no buttons and never drives the menus (the port only reads that pad's
+ *     stick): while a co-op run is on, the player-2 pad is never picked up as player 1's.
  *
  *   G.Pad.poll(ts)        once a frame, from game.js (before the keyboard)
  *   G.Pad.axis()          [x, y] movement or null
@@ -38,7 +42,6 @@
  *   G.Pad.drawGlyph(ctx, k, x, y, size)   the same on a canvas
  */
 G.Pad = (() => {
-  const SIGNED_IN_ONLY = true;
   const LAYOUTS = ['xbox', 'playstation', 'nintendo'];
   const LAYOUT_NAME = { xbox: 'Xbox', playstation: 'PlayStation', nintendo: 'Nintendo' };
   const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'ban', 'swap', 'zmove', 'dynamax'];
@@ -53,6 +56,7 @@ G.Pad = (() => {
   const BINDABLE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   const MOVE_DZ = 0.2;          // movement: radial deadzone, rescaled so speed starts at 0
   const NAV_DZ = 0.5;           // menus: the stick must really mean it
+  const P2_DZ = 0.22;           // player 2's stick in Co-op Mode (main.gd 1676)
   const CORE_URL = new URL('../../../site/gamepad.js', document.currentScript ? document.currentScript.src : location.href).href;
 
   // ---------------------------------------------------------------- settings
@@ -242,19 +246,6 @@ G.Pad = (() => {
     if (im.complete && im.naturalWidth) ctx.drawImage(im, x, y, size, size);
   }
 
-  // ---------------------------------------------------------------- who may play
-  let signedAt = -1e9, signedVal = false;
-  function signedIn() {
-    const now = performance.now();
-    if (now - signedAt > 2000) {
-      signedAt = now;
-      try { signedVal = !!localStorage.getItem('magepunk_mp_token_v1') && !!(JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null') || {}).username; }
-      catch (e) { signedVal = false; }
-    }
-    return signedVal;
-  }
-  const allowed = () => !SIGNED_IN_ONLY || signedIn();
-
   // ---------------------------------------------------------------- input mode (keys / pad)
   let mode = 'keys';
   function setMode(m) {
@@ -275,7 +266,7 @@ G.Pad = (() => {
   addEventListener('touchstart', () => setMode('keys'), { passive: true, capture: true });
 
   // ---------------------------------------------------------------- the pad itself
-  let core = null, activeIdx = null, cur = null, lastHintAt = -1e9, guardRaw = new Set(), modeAtPoll = 'keys';
+  let core = null, activeIdx = null, cur = null, guardRaw = new Set(), modeAtPoll = 'keys';
   const readAll = () => {
     let l = [];
     try { l = navigator.getGamepads ? [...navigator.getGamepads()] : []; } catch (e) { l = []; }
@@ -316,11 +307,9 @@ G.Pad = (() => {
       setMode('keys');
     }
     if (!cur) {
-      const p = pads.find(busy);
-      if (p && !allowed()) {
-        if (performance.now() - lastHintAt > 4000) { lastHintAt = performance.now(); G.UI && G.UI.toast(G.T('Inicia sesión en Magepunk para usar el mando'), 3000); }
-        return;
-      }
+      // (M5 batch 12a: in a co-op run player 2's pad never takes over player 1's menus and moves)
+      const p2i = G.LocalCoop && G.LocalCoop.on ? G.LocalCoop.padIdx : null;
+      const p = pads.find(x => busy(x) && x.index !== p2i);
       if (p) { activeIdx = p.index; cur = p; G.UI && G.UI.toast(G.T('Mando conectado')); }
     }
     if (!cur || !core) return;
@@ -333,7 +322,7 @@ G.Pad = (() => {
 
   /** Movement: D-pad (digital) or the left stick (analog, radial deadzone rescaled to 0..1). */
   function axis() {
-    if (!cur || !allowed()) return null;
+    if (!cur) return null;
     const b = cur.buttons || [];
     let x = (isDown(b[15]) ? 1 : 0) - (isDown(b[14]) ? 1 : 0), y = (isDown(b[13]) ? 1 : 0) - (isDown(b[12]) ? 1 : 0);
     if (x || y) { const m = Math.hypot(x, y); return [x / m, y / m]; }
@@ -342,6 +331,27 @@ G.Pad = (() => {
     if (m < MOVE_DZ) return null;
     const k = Math.min(1, (m - MOVE_DZ) / (1 - MOVE_DZ)) / m;
     return [x * k, y * k];
+  }
+
+  /**
+   * MicaSurvivor (M5 batch 12a): player 2's pad: with 2 or more pads connected, the first one (by index) that
+   * player 1 is not using (with no pad of player 1's yet, the second one), like the port's pads[1].
+   */
+  function p2() {
+    const pads = readAll().sort((a, b) => a.index - b.index);
+    if (pads.length < 2) return null;
+    const p1 = activeIdx != null && pads.some(p => p.index === activeIdx) ? activeIdx : pads[0].index;
+    return pads.find(p => p.index !== p1) || null;
+  }
+  /** Player 2's left stick: [x, y] with the port's 0.22 deadzone (not rescaled), at most length 1; null with no player 2. */
+  function p2Axis() {
+    const p = p2();
+    if (!p) return null;
+    let x = +(p.axes && p.axes[0]) || 0, y = +(p.axes && p.axes[1]) || 0;
+    const m = Math.hypot(x, y);
+    if (m < P2_DZ) return [0, 0];
+    if (m > 1) { x /= m; y /= m; }
+    return [x, y];
   }
 
   function rumble(strength = 0.6, ms = 120) {
@@ -648,8 +658,7 @@ G.Pad = (() => {
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const lay = layout(), m = map();
     const pads = readAll();
-    const status = !allowed() ? '<span class="err">Inicia sesión en Magepunk para usar el mando.</span>'
-      : cur ? `Mando: <span translate="no">${esc(String(cur.id || '').slice(0, 48))}</span>`
+    const status = cur ? `Mando: <span translate="no">${esc(String(cur.id || '').slice(0, 48))}</span>`
       : pads.length ? 'Pulsa cualquier botón del mando para usarlo.' : 'Conecta un mando y pulsa cualquier botón.';
     const rows = ACTIONS.map(a => {
       const on = listening && listening.action === a;
@@ -686,10 +695,10 @@ G.Pad = (() => {
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', () => fillStatic()); else fillStatic();
 
   return {
-    poll, axis, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
-    layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS, SIGNED_IN_ONLY,
+    poll, axis, p2, p2Axis, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
+    layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS,
     get mode() { return mode; }, get listening() { return listening ? listening.action : null; },
-    get active() { return !!cur; }, get ready() { return !!core; }, signedIn, allowed,
+    get active() { return !!cur; }, get ready() { return !!core; },
     get focus() { return focus; }, topScope
   };
 })();

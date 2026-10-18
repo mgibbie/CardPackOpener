@@ -591,8 +591,6 @@ G.I18n.add({
   'Stick izquierdo o cruceta (no se cambia).': 'Left stick or D-pad (fixed).', 'Pulsa un botón…': 'Press a button…',
   'Vibración': 'Vibration', 'El mando vibra cuando te golpean (si lo admite).': 'The controller rumbles when you get hit (if it can).',
   'Restablecer asignación': 'Reset mapping', 'Asignación restablecida': 'Mapping reset',
-  'Inicia sesión en Magepunk para usar el mando': 'Log in to Magepunk to use a controller',
-  'Inicia sesión en Magepunk para usar el mando.': 'Log in to Magepunk to use a controller.',
   'Pulsa cualquier botón del mando para usarlo.': 'Press any button on the controller to use it.',
   'Conecta un mando y pulsa cualquier botón.': 'Connect a controller and press any button.',
   'Mando conectado': 'Controller connected', 'Mando desconectado': 'Controller disconnected', 'Pestañas': 'Tabs',
@@ -1033,5 +1031,17 @@ G.I18n.add({
   'Cada {x} pisos superados por primera vez ganas una reliquia permanente: +{x} de vida y +{x}% de ataque dentro de la Torre.': 'Every {x} floors cleared for the first time earn a permanent relic: +{x} health and +{x}% attack inside the Tower.',
   'Pactos de riesgo': 'Risk pacts', 'Pactos legendarios': 'Legendary pacts', 'Registro de jefes': 'Boss log',
   '{x} últimos': 'last {x}', 'Aún sin jefes': 'No bosses yet',
-  'Los últimos jefes de la Torre que has vencido: piso, tiempo y vida perdida.': 'The last Tower bosses you beat: floor, time and health lost.'
+  'Los últimos jefes de la Torre que has vencido: piso, tiempo y vida perdida.': 'The last Tower bosses you beat: floor, time and health lost.',
+  // MicaSurvivor (M5 batch 12a): Co-op Mode, the local partner (the port's menu.gd 1584-1600 / main.gd 1939-2007 wording)
+  'Modo Cooperativo': 'Co-op Mode', 'Elegir compañero': 'Choose partner', 'Compañero: {x}': 'Partner: {x}',
+  'Un segundo Pokémon te acompaña y ataca solo. Si conectas un segundo mando, el jugador 2 lo mueve con su stick izquierdo. Comparte tus mejoras. -20% de monedas. Compañero: {x}':
+    'A second Pokémon comes along and attacks on its own. Plug in a second controller and player 2 moves it with the left stick. It shares your upgrades. -20% coins. Partner: {x}',
+  'Un segundo Pokémon te acompaña y ataca solo. Si conectas un segundo mando, el jugador 2 lo mueve con su stick izquierdo. Comparte tus mejoras. -20% de monedas.':
+    'A second Pokémon comes along and attacks on its own. Plug in a second controller and player 2 moves it with the left stick. It shares your upgrades. -20% coins.',
+  'Toca el Pokémon que será tu compañero': 'Tap the Pokémon that will be your partner',
+  '¡Has caído! Mira a tu compañero': 'You fell! Watch your partner', 'Espectando: revivirás en {x} s': 'Spectating: you revive in {x} s',
+  'Vida de tu compañero': "Your partner's HP", '¡Tu compañero te ha revivido!': 'Your partner revived you!',
+  'Jugador 2: mando conectado': 'Player 2: controller connected',
+  'Jugador 2: mando desconectado, la IA lleva a tu compañero': 'Player 2: controller disconnected, the AI takes over your partner',
+  '{x} · IA': '{x} · AI', '{x} · J2': '{x} · P2', 'J2': 'P2'
 });

@@ -172,8 +172,8 @@ try {
 		A(JSON.stringify(r.status) === JSON.stringify(PORT_STATUS), 'the 7 status effects with the port\'s text (menu.gd LEX_STATUS)');
 		A(r.i === r.want.i && r.i === 26 && r.m === r.want.m && r.s === 7 && r.a === r.want.a && r.p === r.want.p, `every item (26), move (${r.m}), status (7), ability (${r.a}) and Pokémon (${r.p})`, JSON.stringify(r));
 		A(r.z.length === 20 && r.z[0] === 'z:dynamax' && r.z[1] === 'z:dens' && r.z[2] === 'z:normal', 'Z-Moves & Dynamax: the Dynamax entry (pending since batch 5), the raid dens and the 18 Z-moves', JSON.stringify(r.z.slice(0, 4)));
-		A(r.md.length === 15 && r.md.slice(0, 8).join() === 'md:normal,md:daily,md:rush,md:party,md:tower,md:rifts,md:type,md:team' && r.md.includes('md:mod_nohealing') && r.md[14] === 'md:adaptive',
-			'Modes: the 8 modes, the 6 modifiers and adaptive difficulty', JSON.stringify(r.md));
+		A(r.md.length === 16 && r.md.slice(0, 9).join() === 'md:normal,md:daily,md:rush,md:party,md:coop,md:tower,md:rifts,md:type,md:team' && r.md.includes('md:mod_nohealing') && r.md[15] === 'md:adaptive',
+			'Modes: the 9 modes (Co-op from batch 12a), the 6 modifiers and adaptive difficulty', JSON.stringify(r.md));
 		A(r.t.length === 24 && r.t[0] === 't:relics' && r.t.includes('t:rest_shield') && r.t.includes('t:frenzy') && r.t.includes('t:l_time') && r.t[23] === 't:log',
 			'Floor Tower: relics, the 3 rest cards, the 15 risk pacts, the 4 legendary pacts and the boss log', JSON.stringify(r.t));
 		A(r.menu, 'the main menu has a "Lexicon" entry (menu.gd 1465)');

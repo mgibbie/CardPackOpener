@@ -8,7 +8,8 @@
 //   js/data/enemies.js + js/world/tiles.js (adaptive difficulty, biome spawns and the support caps, M5 batch 9), js/core/display.js +
 //   js/ui/minimap.js (the minimap, the field of view and the UI scale, M5 batch 10), js/data/achievements.js +
 //   js/data/missions.js + js/systems/dmglog.js + js/ui/lexicon-ui.js (achievements, missions, titles, the damage
-//   breakdown, the Lexicon and the trainer card, M5 batch 11) (+ lang-en.js for the English
+//   breakdown, the Lexicon and the trainer card, M5 batch 11), js/systems/localcoop.js (Co-op Mode, the local partner,
+//   M5 batch 12a) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -38,7 +39,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/localcoop.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js']) {
 		if (f === 'ui/lexicon-ui.js') sandbox.G.UI = sandbox.G.UI || { $: () => null };   // (only its data tables are read)
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
@@ -81,6 +82,10 @@ export function build() {
 		ban: { upgrade: T(ban.name), max: ban.max, costs: Array.from({ length: ban.max }, (_, l) => G.Upgrades.cost('ban', l)) },
 		// (M5 batch 7: Team mode)
 		team: { max: G.Team.MAX, minOwned: G.Team.MIN_OWNED, cooldown: G.Team.CD, inv: G.Team.INV, invAuto: G.Team.INV_AUTO, regen: G.Team.REGEN },
+		// (M5 batch 12a: Co-op Mode, the local partner: AI or a second controller)
+		coop: (C => ({ speed: C.speed, follow: C.follow, engage: C.engage, seek: C.seek, flee: C.flee, leash: C.leash, tpR: C.tpR, deadzone: C.dz, dmg: C.dmg, cd: C.cd,
+			lvEvery: C.lvEvery, lvMax: C.lvMax, coins: C.coins, groupMin: C.groupMin, reviveT: C.reviveT, downK: C.downK, reviveHp: C.reviveHp, reviveInv: C.reviveInv,
+			fallback: name(C.fallback), fallback2: name(C.fallback2) }))(G.LocalCoop.K),
 		// (M5 batch 8: Boss Rush and the Floor Tower, with its risk pacts and legendary cards)
 		rush: { first: G.BossRush.FIRST, rest: G.BossRush.REST, legEvery: G.BossRush.LEG_EVERY, biome: G.BossRush.BIOME_EVERY, hp: G.BossRush.HP, dmg: G.BossRush.DMG, bst: G.BossRush.BST },
 		tower: { floors: G.Tower.FLOORS, bossAt: G.Tower.BOSS_AT, k: G.Tower.K, adapt: { maxHp: G.Tower.ADAPT.maxHp, maxDmg: G.Tower.ADAPT.maxDmg }, maxRisks: G.Tower.MAX_RISKS, legendChance: G.Tower.LEGEND_CHANCE,
