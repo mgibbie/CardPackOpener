@@ -21,7 +21,7 @@ G.Game = (() => {
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
-  // MicaSurvivor (M5 lote 4): modo de la partida. La Torre (lote 8) pondrá 'tower' (sin Movimientos Z).
+  // MicaSurvivor (M5 lote 4): modo de la partida ('tower', la Torre del lote 8: sin Movimientos Z ni Dynamax).
   let runMode = 'normal';
 
   const st = { get time() { return time; } };
@@ -89,7 +89,8 @@ G.Game = (() => {
   /**
    * @param coop  { seed, host, members } para una partida en grupo
    * @param mode  MicaSurvivor (M5 lote 6): 'normal' | 'daily' | 'party' | 'rifts' | 'type' (js/systems/modes.js;
-   *              en grupo, siempre normal y sin modificadores); M5 lote 7: 'team' (js/systems/team.js)
+   *              en grupo, siempre normal y sin modificadores); M5 lote 7: 'team' (js/systems/team.js);
+   *              M5 lote 8: 'rush' (js/systems/bossrush.js) y 'tower' (js/systems/tower.js)
    */
   function startRun(coop = null, mode = 'normal') {
     holdBy = []; awayBy = null;
@@ -116,6 +117,10 @@ G.Game = (() => {
     // mundo, elenco, jefes y movimientos iniciales para todos ese día.
     if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
     else setupRun(coop, save, mon, perks);
+    // MicaSurvivor (M5 lote 8): Rush de Jefes (un bioma al azar) y la Torre (piso inicial, reliquias y
+    // experiencia ×0,65: antes de Frágil, que parte la vida con las reliquias ya sumadas, main.gd 462-488)
+    if (G.BossRush.begin()) { biome = G.BossRush.biomeAt(0); G.World.setBiome(biome, true); }
+    if (G.Tower.begin(pl)) { biome = G.Tower.floor - 1; G.World.setBiome(biome, true); }
     G.Modes.startPlayer(pl);   // Frágil: vida máxima a la mitad
     G.Team.begin(pl, perks);   // MicaSurvivor (M5 lote 7): el Modo Equipo (los demás del equipo, con sus vidas)
 
@@ -325,7 +330,7 @@ G.Game = (() => {
       return;
     }
     // MicaSurvivor (M5 lote 6, main.gd 787-855): récords y stats del modo, y su multiplicador de monedas.
-    const md = G.Modes.finish(time, save);
+    const md = G.Modes.finish(time, save, pl);
     const timeUp = G.Modes.timeUp;
     const mul = md.base * pl.coinMul + md.add;
     const parts = {
@@ -349,7 +354,9 @@ G.Game = (() => {
     if (judge) G.Progress.event('judgeEnd', judge);
     G.Judgment.reset();
     // (M5 lote 7: con el modo y los modificadores, para las misiones de modos; progress.gd _advance "req")
-    G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop, mode: G.Game.mode, nmods: G.Modes.is('daily') ? 0 : G.Modes.mods.length });
+    // (M5 lote 8: bosses y floor, para las misiones del Rush de Jefes y la Torre: progress.gd "val")
+    G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop, mode: G.Game.mode, nmods: G.Modes.is('daily') ? 0 : G.Modes.mods.length,
+      bosses: pl.bosses, floor: G.Tower.clears });
     G.Progress.checkAch();
     // A la nube al acabar la partida (como mucho cada 30 min); si la marca entra
     // en un top (hoy, semana o mes), enseguida (abajo, tras subirla al ranking).
@@ -368,6 +375,7 @@ G.Game = (() => {
     if (ok && !coop) G.MicaUI.runEnded({ time: Math.floor(time), kills: pl.kills, level: pl.level, dex: pl.dex, shiny: !!pl.shiny });
 
     G.RunUI.showOver({
+      title: G.Tower.won ? '¡TORRE COMPLETA!' : null,   // (M5 lote 8, main.gd _tower_win)
       dead: dead && !timeUp, timeUp, rifts: G.Modes.rifts() ? G.Modes.riftsWon : null, modeLines: md.lines,
       time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
@@ -430,7 +438,7 @@ G.Game = (() => {
    */
   function offerBond(quiet = false) {
     if (!pl || pl.bonds <= 0 || pl.dead || (state !== 'playing' && state !== 'held') || G.Rift.inArena) return;
-    if (['scr-bond', 'scr-pause', 'scr-item', 'scr-levelup'].some(G.UI.isOpen)) return;
+    if (['scr-bond', 'scr-pause', 'scr-item', 'scr-levelup', 'scr-tower'].some(G.UI.isOpen)) return;
     const opt = pl.bondOptions();
     if (!opt) {
       if (!quiet) G.Spawner.say('Guardas el vínculo: aprende otro movimiento para usarlo', 3, true);
@@ -562,7 +570,7 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'heal') {
-      if (mine) pl.heal(pl.maxHp * 0.3);
+      if (mine) pl.heal(pl.maxHp * 0.3 * G.Tower.healK());   // (M5 lote 8: el pacto Ayuno, main.gd 5371)
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
       return;
     }
@@ -602,6 +610,13 @@ G.Game = (() => {
     if (G.UI.isOpen('scr-bond')) {
       for (let i = 0; i < 4; i++) {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pickBond(i);
+      }
+      return;
+    }
+    // MicaSurvivor (M5 lote 8): el descanso y los pactos de la Torre, con 1-4
+    if (G.UI.isOpen('scr-tower')) {
+      for (let i = 0; i < 4; i++) {
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.TowerUI.pick(i);
       }
       return;
     }
@@ -724,7 +739,8 @@ G.Game = (() => {
     // MicaSurvivor (M5 lote 6, main.gd 966): la Contrarreloj de grietas acaba a los 8 minutos (fuera de la arena).
     if (G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); endRun(false); return; }
 
-    const b = Math.floor(time / 240);
+    // (M5 lote 8, main.gd 4705-4707: en el Rush cada 150 s desde un bioma al azar; en la Torre, uno por piso)
+    const b = G.Tower.on ? G.Tower.floor - 1 : G.BossRush.on ? G.BossRush.biomeAt(time) : Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
       biome = b;
       G.World.setBiome(b);
@@ -757,9 +773,13 @@ G.Game = (() => {
     G.Pickups.update(dt, all, onCollect);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
-    G.Rift.update(dt, pl, time);
-    G.Judgment.update(dt, pl, time);
-    G.Events.update(dt, all, time);
+    // MicaSurvivor (M5 lote 8, main.gd 1007 / 3249-3253 / 5863): en el Rush de Jefes y la Torre no hay
+    // grietas (ni guaridas), ni Sentencia de Arceus, ni eventos (hordas, hora dorada, duendes)
+    if (!G.BossRush.on && !G.Tower.on) {
+      G.Rift.update(dt, pl, time);
+      G.Judgment.update(dt, pl, time);
+      G.Events.update(dt, all, time);
+    }
     G.Weather.update(dt, time, pl);
     G.Modes.healTick(pl);           // MicaSurvivor (M5 lote 6): "Sin curación"
     G.FX.update(dt);
@@ -961,8 +981,21 @@ G.Game = (() => {
     return { init, render, restore };
   })();
 
+  /**
+   * MicaSurvivor (M5 lote 8): niveles gratis (la Torre: una mejora por piso saltado desde un punto de
+   * control, main.gd 3338-3344; raise = false: sólo la carta, el "Entrenamiento" del descanso).
+   */
+  function grantLevels(n, raise = true) {
+    if (!pl || n <= 0) return;
+    if (raise) { pl.level += n; pl.xpNext = G.Player.xpFor(pl.level); }
+    pendingLevels += n;
+  }
+  /** MicaSurvivor (M5 lote 8): una elección que para la partida (el descanso de la Torre), como el objeto. */
+  function choiceStart() { if (state === 'playing' || state === 'held') state = 'choice'; }
+  function choiceEnd() { if (state === 'choice') { state = holdBy.length ? 'held' : 'playing'; afterLevelUp(); } }
+
   return {
-    init, startRun, everyone, levelXp, flash, offerBond, offerItem,
+    init, startRun, everyone, levelXp, flash, offerBond, offerItem, grantLevels, choiceStart, choiceEnd, endRun,
     get pendingLevels() { return pendingLevels; },
     /** Para pruebas: recoge un objeto del suelo como si lo tocaras (monedas, objetos...). */
     debugCollect(p) { onCollect(p); },
@@ -976,7 +1009,7 @@ G.Game = (() => {
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
     toUI() { state = 'ui'; Backdrop.restore(); },
-    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; lote 7: 'team'; la Torre del lote 8 pondrá 'tower'). */
+    /** MicaSurvivor (M5 lote 4): modo de la partida ('normal'; M5 lote 6: 'daily' | 'party' | 'rifts' | 'type'; lote 7: 'team'; lote 8: 'rush' | 'tower'). */
     get mode() { return runMode; }, set mode(m) { runMode = m || 'normal'; },
     get state() { return state; }, get player() { return pl; }, st
   };

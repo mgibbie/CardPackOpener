@@ -36,7 +36,7 @@ G.ZMoves = (() => {
   const BOSS_CAP = 0.28;      // tope contra un jefe: el 28 % de su vida máxima por Z
   const CRYSTAL_P = 0.03;     // cristal Z por tirada ×10
   const ZMIS_COINS = 500;
-  const BLOCKED_MODES = ['tower'];   // la Torre llega en el lote 8: basta con G.Game.mode = 'tower'
+  const BLOCKED_MODES = ['tower'];   // la Torre (lote 8, js/systems/tower.js; main.gd 1243 _z_can: mode != "tower")
   const DEF = {
     normal: { name: 'Carrera Estelar', desc: 'Embistes tres veces a toda velocidad contra los enemigos, atravesando todo a tu paso.' },
     fire: { name: 'Hecatombe Pirotécnica', desc: 'Una lluvia de bolas de fuego cae sobre los enemigos.' },
@@ -58,8 +58,8 @@ G.ZMoves = (() => {
     fairy: { name: 'Destello Ensueño', desc: 'Duermes a todos los enemigos y te curas; al final devoras sus sueños y recibes más cura por cada uno.' }
   };
   // Misiones de Cristal Z (progress.gd ZMIS): [tipo, texto, stat, meta]. Las de modos leen el stat que
-  // escribe cada modo: el Desafío diario y la Supervivencia por tipo desde el lote 6 (js/systems/modes.js);
-  // las del Rush de Jefes, la Torre y el Equipo se quedan en 0 hasta sus lotes.
+  // escribe cada modo: el Desafío diario y la Supervivencia por tipo desde el lote 6 (js/systems/modes.js),
+  // el Equipo desde el lote 7, y el Rush de Jefes (Bicho: rushBest) y la Torre (Roca: towerBest) desde el lote 8.
   const ZMIS = [
     ['normal', 'Derrota a 1.500 Pokémon en total.', 'totalKills', 1500],
     ['fire', 'Aguanta 8 minutos en una partida.', 'bestMin', 8],

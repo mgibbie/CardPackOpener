@@ -36,7 +36,12 @@ G.MissionDefs = (() => {
       text: () => 'Evoluciona un movimiento' },
     // MicaSurvivor (M5 lote 7, progress.gd 316 "req": "team"): sólo cuentan las partidas del Modo Equipo
     { id: 'mTeam', ev: 'runEnd', mode: 'max', value: min, goals: [5, 8], reward: { t1: 3, coins: 300 },
-      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` }
+      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` },
+    // MicaSurvivor (M5 lote 8, progress.gd 313 / 317): sólo cuentan el Rush de Jefes (jefes) y la Torre (pisos superados)
+    { id: 'mRush', ev: 'runEnd', mode: 'max', value: d => d.bosses || 0, goals: [2, 4], reward: { t1: 3, coins: 300 },
+      match: d => d.mode === 'rush', text: n => `Derrota a ${n} jefes en el Rush de Jefes` },
+    { id: 'mTower', ev: 'runEnd', mode: 'max', value: d => d.floor || 0, goals: [2, 3], reward: { t1: 3, coins: 350 },
+      match: d => d.mode === 'tower', text: n => `Supera ${n} pisos de la Torre de pisos` }
   ];
 
   const weekly = [
@@ -54,7 +59,12 @@ G.MissionDefs = (() => {
       text: n => `Completa ${n} misiones diarias` },
     // MicaSurvivor (M5 lote 7, progress.gd 330)
     { id: 'wTeam', ev: 'runEnd', mode: 'max', value: min, goals: [10, 15], reward: { t1: 3, t10: 1, coins: 1200 },
-      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` }
+      match: d => d.mode === 'team', text: n => `Aguanta ${n} minutos en Modo Equipo` },
+    // MicaSurvivor (M5 lote 8, progress.gd 328 / 331)
+    { id: 'wRush', ev: 'runEnd', mode: 'max', value: d => d.bosses || 0, goals: [6, 9], reward: { t1: 3, t10: 1, coins: 1100 },
+      match: d => d.mode === 'rush', text: n => `Derrota a ${n} jefes en una sola partida de Rush de Jefes` },
+    { id: 'wTower', ev: 'runEnd', mode: 'max', value: d => d.floor || 0, goals: [6, 9], reward: { t1: 4, t10: 1, coins: 1300 },
+      match: d => d.mode === 'tower', text: n => `Supera ${n} pisos de la Torre de pisos en una sola partida` }
   ];
 
   const BY = {};

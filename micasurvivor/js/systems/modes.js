@@ -22,6 +22,10 @@
  *           monedas. Aguantar 10 minutos marca ese tipo como superado (save.typeDone).
  *   team    Modo Equipo (lote 7, js/systems/team.js): hasta 3 Pokémon tuyos que cambias en plena
  *           partida. Con los modificadores elegidos; el equipo va en save.modes.team.
+ *   rush    Rush de Jefes (lote 8, js/systems/bossrush.js): sólo jefes, cada vez más fuertes. Récord de
+ *           jefes (stats.rushBest). Con los modificadores elegidos.
+ *   tower   Torre de pisos (lote 8, js/systems/tower.js): 30 pisos con su jefe, descansos, pactos de
+ *           riesgo, reliquias y puntos de control (save.tower, save.modes.towerStart). Con los modificadores.
  *
  *   Modificadores (todos los modos menos el Diario, que trae el suyo, y la Fiesta): +25 % de
  *   monedas cada uno. fast: enemigos ×1,4 de velocidad (jefes ×1,15) · horde: ×1,8 de aparición
@@ -34,9 +38,10 @@
  *   mayor de cada stat, la mejor marca del día más reciente y la unión de los tipos superados.
  */
 G.Modes = (() => {
-  const LIST = ['normal', 'daily', 'party', 'rifts', 'type', 'team'];   // (team: M5 lote 7)
-  const NAME = { normal: 'Partida normal', daily: 'Desafío diario', party: 'Modo Fiesta', rifts: 'Contrarreloj de grietas', type: 'Supervivencia por tipo', team: 'Modo Equipo' };
-  const ICON = { normal: 'flag', daily: 'm_daily', party: 'm_party', rifts: 'clock', type: 'm_type', team: 'm_team' };
+  // (team: M5 lote 7; rush y tower: lote 8, en el orden del menú del port: menu.gd 1563-1657)
+  const LIST = ['normal', 'daily', 'rush', 'party', 'tower', 'rifts', 'type', 'team'];
+  const NAME = { normal: 'Partida normal', daily: 'Desafío diario', rush: 'Rush de Jefes', party: 'Modo Fiesta', tower: 'Torre de pisos', rifts: 'Contrarreloj de grietas', type: 'Supervivencia por tipo', team: 'Modo Equipo' };
+  const ICON = { normal: 'flag', daily: 'm_daily', rush: 'm_rush', party: 'm_party', tower: 'm_tower', rifts: 'clock', type: 'm_type', team: 'm_team' };
   const MOD_IDS = ['fast', 'horde', 'tank', 'hard', 'frail', 'nohealing'];
   const MOD = {
     fast: { name: 'Veloces', desc: 'Los enemigos corren un 40% más rápido.', icon: 'boot' },
@@ -199,7 +204,7 @@ G.Modes = (() => {
    * Monedas: base (1 + 0,25 por modificador, o 1,25 en el Diario) × lo de tus objetos, + 0,5
    * (Supervivencia por tipo) o + 0,25 (Contrarreloj).
    */
-  function finish(time, s = save()) {
+  function finish(time, s = save(), pl = null) {
     const out = { base: 1, add: 0, lines: [] };
     if (!s || run.mode === 'party') return out;
     const S = s.stats = s.stats || {};
@@ -230,6 +235,12 @@ G.Modes = (() => {
       // Modo Equipo (lote 7, main.gd 806-807 / 844-846): sólo el nombre en el resumen; stats teamRuns / teamBestMin
       out.lines.push(NAME.team);
       if (G.Team) G.Team.finish(S, min); else { S.teamRuns = (S.teamRuns || 0) + 1; S.teamBestMin = Math.max(S.teamBestMin || 0, min); }
+    } else if (run.mode === 'rush') {
+      // M5 lote 8 (main.gd 795-798 / 847-849): jefes derrotados, récord; stats rushRuns / rushBest
+      out.lines.push(...G.BossRush.finish(S, pl ? pl.bosses : 0));
+    } else if (run.mode === 'tower') {
+      // M5 lote 8 (main.gd 808-815 / 842-843): el piso, los últimos jefes; stats towerRuns (towerBest al superar cada piso)
+      out.lines.push(...G.Tower.finish(S));
     }
     if (run.mode !== 'daily') {
       for (let k = 1; k <= run.mods.length; k++) S['mn' + k] = Math.max(S['mn' + k] || 0, min);

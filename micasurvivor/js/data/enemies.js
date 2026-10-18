@@ -239,6 +239,7 @@ G.Enemies = (() => {
 
   return {
     TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
+    behaviorOf, baseSpd,   // (M5 lote 8: los jefes del Rush de Jefes y de la Torre)
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
     get cast() { if (!cast) rollRun(); return cast; }
   };

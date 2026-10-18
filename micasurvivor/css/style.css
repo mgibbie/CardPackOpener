@@ -713,7 +713,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .scr { padding: 50px 10px 6px; }
   /* Sin barra superior encima: no hace falta dejarle hueco. */
   #scr-login, #scr-test, #scr-result, #scr-starters, #scr-nick, #scr-levelup, #scr-pause,
-  #scr-over, #scr-item, #scr-settings, #scr-legal, #scr-profile { padding: 6px 10px; }
+  #scr-over, #scr-item, #scr-tower, #scr-settings, #scr-legal, #scr-profile { padding: 6px 10px; }
   .split { grid-template-columns: 1fr; }
   .logo .t1 { font-size: 30px; }
   .box { padding: 10px 14px; border-radius: 10px; }
@@ -971,4 +971,18 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
   .mode-card .mode-ico img { width: 32px; height: 32px; }
   .mode-card b { font-size: 16px; }
   .mode-card small { font-size: 12px; }
+}
+/* MicaSurvivor (M5 batch 8): the Tower's rest and risk cards (main.gd 3485-3532): the golden legendary card, "No risks" */
+#scr-tower .box { width: min(640px, 100%); }
+.tower-cards { margin: 0 auto; width: 100%; }
+.tower-cards.risk .card { border-color: rgba(255,91,138,.55); }
+.tower-cards .card.legend { border-color: var(--gold); background: linear-gradient(90deg, rgba(255,210,63,.24), rgba(255,210,63,.05)); box-shadow: 0 0 18px rgba(255,210,63,.35); }
+.tower-cards .card.legend .nm { color: var(--gold); }
+.tower-cards .card.skip { border-color: rgba(143,163,196,.5); background: rgba(0,0,0,.12); }
+@media (max-height: 520px) {
+  .tower-cards { gap: 6px; }
+  .tower-cards .card { padding: 6px 10px; gap: 10px; }
+  .tower-cards .card .ico { flex-basis: 38px; height: 38px; }
+  .tower-cards .card .nm { font-size: 15px; }
+  .tower-cards .card .ds { font-size: 12px; }
 }

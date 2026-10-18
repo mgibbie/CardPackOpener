@@ -183,6 +183,8 @@
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);
         // Los jefes siempre sueltan un objeto equipable.
         G.Pickups.drop('item', this.x - 26, this.y - 10, G.Items.roll());
+        // MicaSurvivor (M5 lote 8, main.gd 5313-5314): en el Rush de Jefes y la Torre, también una baya y un imán
+        if ((G.BossRush && G.BossRush.on) || (G.Tower && G.Tower.on)) G.BossRush.bossDrops(this, true);
       }
       G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
@@ -820,12 +822,20 @@
     function all() { return list; }
     function add(e) {
       if (G.Modes) G.Modes.enemyAdded(e);   // MicaSurvivor (M5 lote 6): modificadores Veloces / Resistentes / Golpes duros
+      if (G.Tower) G.Tower.enemyAdded(e);   // MicaSurvivor (M5 lote 8): los enemigos de la Torre (piso, pactos, Torre adaptativa)
       list.push(e);
       byId.set(e.id, e);
       if (G.Coop.isHost) G.Coop.enemyAdded(e);
       return e;
     }
     function get(id) { return byId.get(id); }
+    /** MicaSurvivor (M5 lote 8, main.gd 3456-3460): la Torre limpia el piso al caer su jefe (los cuerpos se quedan). */
+    function clearAlive() {
+      // (los que acaban de caer se quedan hasta update: ahí cuentan como derrotados, jefes, misiones...)
+      for (const e of list) if (!e.dead) byId.delete(e.id);
+      list = list.filter(e => e.dead);
+      grid.clear();
+    }
 
     /** Copia local de un enemigo del anfitrión (cooperativo). */
     function addRemote(o) {
@@ -983,6 +993,7 @@
           pl.kills++;
           if (e.boss && !e.judge) pl.bosses++;
           G.Progress.kill(e);
+          if (G.Tower) G.Tower.onKill(e, pl);   // MicaSurvivor (M5 lote 8): Sed de victoria y Pacto de sangre
           corpses.push(e);
           list.splice(i, 1);
           byId.delete(e.id);
@@ -1032,7 +1043,7 @@
     function bossAlive() { return list.some(e => e.boss && !e.dead); }
     function shinies() { return list.filter(e => e.shiny && !e.dead); }
 
-    return { clear, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, shinies, nearestPlayer,
+    return { clear, clearAlive, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, shinies, nearestPlayer,
              get count() { return list.length; } };
   })();
 })();

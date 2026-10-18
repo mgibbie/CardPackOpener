@@ -48,7 +48,7 @@ G.Dynamax = (() => {
   const STEPS = [[1.22, 1.0, 0.14], [1.04, 1.04, 0.10], [1.42, 1.3, 0.16], [1.16, 1.2, 0.10], [GROW * 1.12, GROW * 1.12, 0.22], [GROW, GROW, 0.18]];
   const SHRINK = 0.35;
   const GROW_FX = [[0.14, 0.4], [0.40, 0.7], [0.72, 1.0]];
-  const BLOCKED_MODES = ['tower'];        // la Torre llega en el lote 8
+  const BLOCKED_MODES = ['tower'];        // la Torre (lote 8, js/systems/tower.js; main.gd 1267 _dyn_can: mode != "tower")
   const NO_DEN_MODES = ['rifts'];         // la Contrarreloj de grietas (lote 6, js/systems/modes.js)
   const DEN_RATE = 0.05, DEN_TTL = 30, DEN_FROM = 120;
   const DEN_SCALE = 1.5, DEN_MAXMOVE = 0.28;

@@ -66,13 +66,19 @@ G.AchDefs = (() => {
     { id: 'leg30', cat: 'legendarios', tier: 3, name: 'Domador de mitos', desc: 'Vence a 30 legendarios distintos.', value: legends, goal: 30, reward: { t10: 2 } },
     { id: 'legAll', cat: 'legendarios', tier: 3, name: 'Leyenda', desc: 'Vence a todos los legendarios.', value: legends, goal: 87, reward: { t10: 5 }, title: 'Leyenda' },
 
-    // ---------- modos de juego (MicaSurvivor M5 lote 6, progress.gd 107-134: los de los modos de este
-    // lote; lote 7: los del Modo Equipo; los del Rush de Jefes y la Torre llegan con su lote) ----------
+    // ---------- modos de juego (MicaSurvivor M5 lote 6, progress.gd 107-142: los de los modos de este
+    // lote; lote 7: los del Modo Equipo; lote 8: los del Rush de Jefes y la Torre, en el orden del port) ----------
     { id: 'daily1', cat: 'modos', tier: 1, name: 'Reto del día', desc: 'Juega un Desafío diario.', value: st('dailyPlays'), goal: 1, reward: { coins: 150, t1: 2 } },
     { id: 'daily7', cat: 'modos', tier: 2, name: 'Rutina diaria', desc: 'Juega 7 Desafíos diarios.', value: st('dailyPlays'), goal: 7, reward: { coins: 500, t1: 5 } },
     { id: 'daily30', cat: 'modos', tier: 3, name: 'Fiel al reto', desc: 'Juega 30 Desafíos diarios.', value: st('dailyPlays'), goal: 30, reward: { coins: 2000, t1: 3, t10: 2 }, title: 'Fiel al reto' },
     { id: 'dailyMin10', cat: 'modos', tier: 2, name: 'Reto superado', desc: 'Aguanta 10 minutos en un Desafío diario.', value: st('dailyBestMin'), goal: 10, reward: { coins: 1000, t10: 1 } },
     { id: 'dailyMin20', cat: 'modos', tier: 3, name: 'Campeón del día', desc: 'Aguanta 20 minutos en un Desafío diario.', value: st('dailyBestMin'), goal: 20, reward: { coins: 2500, t10: 2 }, title: 'Campeón del día' },
+    // (M5 lote 8, progress.gd 113-117: Rush de Jefes)
+    { id: 'rush3', cat: 'modos', tier: 1, name: 'Calentamiento de jefes', desc: 'Derrota a 3 jefes en el Rush de Jefes.', value: st('rushBest'), goal: 3, reward: { coins: 400, t1: 3 } },
+    { id: 'rush6', cat: 'modos', tier: 2, name: 'Ráfaga de jefes', desc: 'Derrota a 6 jefes en el Rush de Jefes.', value: st('rushBest'), goal: 6, reward: { coins: 1200, t10: 1 } },
+    { id: 'rush10', cat: 'modos', tier: 3, name: 'Aplastajefes', desc: 'Derrota a 10 jefes en el Rush de Jefes.', value: st('rushBest'), goal: 10, reward: { coins: 3000, t1: 2, t10: 2 } },
+    { id: 'rush15', cat: 'modos', tier: 3, name: 'Rey del Rush', desc: 'Derrota a 15 jefes en el Rush de Jefes.', value: st('rushBest'), goal: 15, reward: { coins: 6000, t1: 3, t10: 4 }, title: 'Rey del Rush' },
+    { id: 'rushRuns25', cat: 'modos', tier: 2, name: 'Cazador de récords', desc: 'Juega 25 Rush de Jefes.', value: st('rushRuns'), goal: 25, reward: { coins: 1500, t10: 1 } },
     { id: 'mod1', cat: 'modos', tier: 1, name: 'Con un extra', desc: 'Aguanta 5 minutos con un modificador activo.', value: st('mn1'), goal: 5, reward: { coins: 300, t1: 3 } },
     { id: 'mod3', cat: 'modos', tier: 2, name: 'Doble dificultad', desc: 'Aguanta 8 minutos con 3 modificadores.', value: st('mn3'), goal: 8, reward: { coins: 1200, t10: 1 } },
     { id: 'mod4', cat: 'modos', tier: 3, name: 'Sin red', desc: 'Aguanta 10 minutos con 4 modificadores.', value: st('mn4'), goal: 10, reward: { coins: 3000, t1: 2, t10: 2 }, title: 'Sin red' },
@@ -92,6 +98,14 @@ G.AchDefs = (() => {
     { id: 'rifts5', cat: 'modos', tier: 2, name: 'Pasillo de grietas', desc: 'Gana 5 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 5, reward: { coins: 1500, t10: 1 } },
     { id: 'rifts8', cat: 'modos', tier: 3, name: 'Cazador contrarreloj', desc: 'Gana 8 grietas en una Contrarreloj de grietas.', value: st('riftsBest'), goal: 8, reward: { coins: 3500, t1: 3, t10: 2 }, title: 'Cazador contrarreloj' },
     { id: 'riftsRuns10', cat: 'modos', tier: 2, name: 'Siempre con prisa', desc: 'Juega 10 Contrarrelojes de grietas.', value: st('riftsRuns'), goal: 10, reward: { coins: 1500, t10: 1 } },
+    // (M5 lote 8, progress.gd 136-142: la Torre de pisos; "Dueño de la Torre" pide llegar al 30, es decir superar el 29)
+    { id: 'tower5', cat: 'modos', tier: 1, name: 'Primeros pisos', desc: 'Supera el piso 5 de la Torre de pisos.', value: st('towerBest'), goal: 5, reward: { coins: 800, t1: 3, t10: 1 } },
+    { id: 'tower10', cat: 'modos', tier: 2, name: 'Escalando', desc: 'Supera el piso 10 de la Torre de pisos.', value: st('towerBest'), goal: 10, reward: { coins: 2000, t1: 4, t10: 2 } },
+    { id: 'tower15', cat: 'modos', tier: 3, name: 'Casi en la cima', desc: 'Supera el piso 15 de la Torre de pisos.', value: st('towerBest'), goal: 15, reward: { coins: 4000, t1: 5, t10: 3 } },
+    { id: 'tower20', cat: 'modos', tier: 3, name: 'Escalador', desc: 'Supera el piso 20 de la Torre de pisos.', value: st('towerBest'), goal: 20, reward: { coins: 7000, t1: 6, t10: 4 }, title: 'Escalador' },
+    { id: 'tower30', cat: 'modos', tier: 3, name: 'Dueño de la Torre', desc: 'Llega al piso 30 de la Torre de pisos, donde espera Arceus.', value: st('towerBest'), goal: 29, reward: { coins: 15000, t1: 10, t10: 8 }, title: 'Dueño de la Torre' },
+    { id: 'towerArceus', cat: 'modos', tier: 3, name: 'Vencedor de Arceus', desc: 'Derrota a Arceus, el jefe final del piso 30 de la Torre de pisos.', value: st('arceus'), goal: 1, reward: { coins: 30000, t1: 15, t10: 15 }, title: 'Vencedor de Arceus' },
+    { id: 'towerRuns10', cat: 'modos', tier: 2, name: 'Aprendiz de la Torre', desc: 'Juega 10 veces la Torre de pisos.', value: st('towerRuns'), goal: 10, reward: { coins: 1200, t10: 1 } },
 
     // ---------- misiones y más ----------
     { id: 'mis10', cat: 'otros', tier: 1, name: 'Cumplidor', desc: 'Completa 10 misiones.', value: st('missionsDone'), goal: 10, reward: { t1: 3 } },
