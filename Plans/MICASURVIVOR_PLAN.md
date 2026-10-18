@@ -127,6 +127,7 @@ each with tests and the matching controller action wired into js/core/pad.js onc
 8. **Boss Rush**, then the **Tower** (30 floors, risk pacts, relics, checkpoints).
    *(built 2026-10-17, branch `feat/micasurvivor-m5-b8`; README → "Batch 8: Boss Rush and the Floor Tower")*
 9. **Adaptive difficulty**, biome-themed spawns, enemy support caps.
+   *(built 2026-10-17, branch `feat/micasurvivor-m5-b9`; README → "Batch 9: Adaptive difficulty, biome spawns and support caps")*
 10. **Minimap**, field-of-view slider, UI scale.
 11. **Achievements/missions/titles** (+93 / +13 / more missions), run damage breakdown,
     in-game encyclopedia, trainer card.

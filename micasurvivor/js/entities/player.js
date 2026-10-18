@@ -46,7 +46,7 @@ G.Player = class Player {
 
     this.level = 1;
     this.xp = 0;
-    this.xpNext = Player.xpFor(1);
+    this.xpNext = Player.xpNeed(1);
     this.kills = 0;
     this.bosses = 0;
     this.rerolls = 0;          // veces que ha cambiado las cartas de nivel en esta run
@@ -106,6 +106,10 @@ G.Player = class Player {
   // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
   static xpFor(level) {
     return Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
+  }
+  /** MicaSurvivor (M5 lote 9, main.gd _xp_need): la de cada nivel, ×k^0,8 con la dificultad adaptativa. */
+  static xpNeed(level) {
+    return Player.xpFor(level) * (G.Adaptive ? G.Adaptive.xpK() : 1);
   }
 
   cy() { return this.y; }
@@ -365,7 +369,7 @@ G.Player = class Player {
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
       this.level++;
-      this.xpNext = Player.xpFor(this.level);
+      this.xpNext = Player.xpNeed(this.level);
       leveled++;
     }
     return leveled;

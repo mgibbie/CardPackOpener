@@ -54,7 +54,8 @@ G.Events = (() => {
     nextT -= dt;
     if (nextT > 0) return;
     if (G.EnemyMgr.bossAlive()) { nextT = 10; return; }
-    nextT = G.U.rand(EVERY[0], EVERY[1]);
+    // (MicaSurvivor M5 lote 9, main.gd 3663: con la dificultad adaptativa, hordas más seguidas: ÷k)
+    nextT = G.U.rand(EVERY[0], EVERY[1]) / G.Adaptive.k();
     const ids = ['horde', 'gold', 'lost'].filter(id => id !== last);
     start(G.U.pick(ids), time, players);
   }
@@ -352,6 +353,8 @@ G.Events = (() => {
     get current() { return cur ? cur.id : null; },
     /** Para pruebas. */
     debugStart(id) { start(id, G.Game.st.time, G.Game.everyone()); },
+    /** MicaSurvivor (M5 lote 9): para pruebas, la cuenta atrás del próximo evento. */
+    get nextT() { return nextT; }, debugNext(v) { nextT = v; },
     debugThief() { spawnThief(G.Game.everyone(), G.Game.st.time); },
     _dbg() { return lost && { x: lost.x, y: lost.y, tx: lost.tx, ty: lost.ty, state: lost.state, hp: lost.hp }; }
   };

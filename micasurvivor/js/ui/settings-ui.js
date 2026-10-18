@@ -65,6 +65,17 @@ G.SettingsUI = (() => {
     return `<div class="chips set-chips">${opts.map(([v, l]) => `<button class="chip ${v === cur ? 'on' : ''}" data-k="${key}" data-v="${v}">${esc(l)}</button>`).join('')}</div>`;
   }
 
+  /**
+   * MicaSurvivor (M5 lote 9, menu.gd 4144): la dificultad adaptativa. Va en tu partida (save.modes.adaptive,
+   * viaja con la cuenta), no en este aparato; sin partida cargada no se enseña.
+   */
+  function adaptiveRow() {
+    if (!G.DB.save || !G.Adaptive) return '';
+    const on = G.Adaptive.enabled();
+    return `<div class="set-row" id="set-adaptive-row"><div class="grow"><b>Dificultad adaptativa</b><small>${esc('En la partida normal, el juego empieza fácil y se pone más difícil según tus mejoras: más vida y daño, más enemigos, hordas más seguidas y más experiencia por nivel.')}</small></div>
+      <button class="btn small switch ${on ? 'gold' : ''}" id="set-adaptive">${on ? 'Sí' : 'No'}</button></div>`;
+  }
+
   /** MicaSurvivor (M2): re-draw the open tab, keeping the scroll (the controller remap re-renders it). */
   function refresh() { const box = $('set-body'), y = box.scrollTop; render(); box.scrollTop = y; }
 
@@ -86,6 +97,7 @@ G.SettingsUI = (() => {
         + toggle('dmgNumbers', 'Números de daño', 'Los números que salen al golpear y al recibir daño.')
         + toggle('calm', 'Menos sacudidas y destellos', 'La cámara tiembla menos y los fogonazos son suaves.')
         + toggle('fps', 'Mostrar FPS', 'Fotogramas por segundo, en la esquina de abajo.')
+        + adaptiveRow()
         + (canFull() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>Sin barras del navegador.</small></div>
              <button class="btn small" id="set-full">${isFull() ? 'Salir' : 'Activar'}</button></div>`
            : iosTip() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>${esc(IOS_TIP)}</small></div></div>` : '');
@@ -158,6 +170,7 @@ G.SettingsUI = (() => {
       b.onclick = () => { const v = b.dataset.v; G.Settings.set(b.dataset.k, isNaN(+v) ? v : +v); render(); };
     });
     const full = $('set-full'); if (full) full.onclick = toggleFull;
+    const ad = $('set-adaptive'); if (ad) ad.onclick = () => { G.Adaptive.toggle(); refresh(); };   // (M5 lote 9)
     const lay = $('set-layout'); if (lay) lay.onclick = () => G.LayoutUI.open();
     box.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== G.I18n.lang) G.I18n.set(b.dataset.lang); }; });
     const lo = $('set-login'); if (lo) lo.onclick = () => { close(); leave(); };

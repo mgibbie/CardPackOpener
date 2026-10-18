@@ -32,7 +32,8 @@
  *   · tank: ×1,6 de vida · hard: ×1,5 de daño · frail: tu vida máxima a la mitad · nohealing: no
  *   recuperas vida (sólo la que da subir la vida máxima).
  *
- *   Lo elegido (modificadores, tipo, Pokémon de la fiesta) va en save.modes; los récords en
+ *   Lo elegido (modificadores, tipo, Pokémon de la fiesta y, desde el lote 9, adaptive: false si apagas la
+ *   dificultad adaptativa de la partida normal, systems/adaptive.js) va en save.modes; los récords en
  *   save.stats (dailyPlays, dailyBestMin, riftsRuns, riftsBest, typeRuns, typeBestMin, mn1..mn6,
  *   mb_<mod>), save.daily y save.typeDone: la fusión de partidas (db.js merge) se queda con el
  *   mayor de cada stat, la mejor marca del día más reciente y la unión de los tipos superados.
@@ -94,6 +95,8 @@ G.Modes = (() => {
     p.mods = Array.isArray(p.mods) ? MOD_IDS.filter(id => p.mods.includes(id)) : [];
     if (!TYPES.includes(p.type)) p.type = 'fire';
     if (!(G.DEX_BY && G.DEX_BY[p.party])) p.party = PARTY_DEX;
+    // Dificultad adaptativa (lote 9, systems/adaptive.js): sólo se guarda el "no"
+    if (p.adaptive != null && p.adaptive !== false) delete p.adaptive;
     // Modo Equipo (lote 7): los elegidos a mano, tuyos, sin repetir, hasta 3 (save_data.gd team_list;
     // sin elegir nunca, no se guarda nada)
     if (p.team != null) {

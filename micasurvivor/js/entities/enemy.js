@@ -12,6 +12,8 @@
  */
 (() => {
   let nextId = 1;
+  // MicaSurvivor (M5 lote 9): los topes de los apoyos del port (curanderos, escudos, invocadores): data/enemies.js.
+  const SUPPORT_CAPS = G.Enemies.SUPPORT_CAPS;
   /** Los jefes se agrandan hasta ~110 de alto, según lo grande que ya sea su sprite. */
   function bossScale(dex) {
     const m = G.Sprites.animMeta(dex, 'Idle');
@@ -70,6 +72,8 @@
       // personalidades
       this.sc = sc;                       // escala de la run (para sus invocaciones)
       this.shield = 0; this.shieldT = 0;  // escudo que absorbe daño
+      this.shieldLock = 0;                // (M5 lote 9) espera hasta poder recibir otro escudo
+      this.isMinion = false;              // (M5 lote 9) súbdito de un invocador (tope de 20 en el mapa)
       this.skillCd = G.U.rand(1, 4);      // escudos / saltos
       this.minions = [];
       this.jump = null;                   // { sx, sy, tx, ty, t, dur }
@@ -327,6 +331,8 @@
       }
 
       // --- personalidad (escudos, saltos, explosión) ---
+      // (MicaSurvivor M5 lote 9, main.gd 3876-3881: tras un escudo, 14 s sin poder recibir otro)
+      if (this.shieldLock > 0) this.shieldLock -= dt;
       if (this.shieldT > 0 && (this.shieldT -= dt) <= 0) this.shield = 0;
       if (this.jump) { this.updateJump(dt); return; }
       if (this.behavior === 'bomber' && this.phase === 'fuse') {
@@ -340,7 +346,7 @@
       if (this.behavior === 'shielder' || this.behavior === 'jumper') {
         this.skillCd -= dt;
         if (this.skillCd <= 0) {
-          if (this.behavior === 'shielder') { this.skillCd = 6; this.castShields(); }
+          if (this.behavior === 'shielder') { this.skillCd = SUPPORT_CAPS.shieldCd; this.castShields(); }
           else if (dist < 250) { this.skillCd = G.U.rand(5, 7); this.startJump(pl); return; }
           else this.skillCd = 0.5;
         }
@@ -638,7 +644,11 @@
       // doble de ataque cura un 27 % más, con 10 veces más un 124 %, y como
       // mucho ×2,5. (Como los enemigos que tienen más vida si haces más daño.)
       const pow = Math.max(1, ...G.Game.everyone().map(p => (p.atk > 0 && p.baseAtk > 0 ? p.atk / p.baseAtk : 1)));
-      const k = 0.07 * Math.min(2.5, Math.pow(pow, 0.35));
+      let k = 0.07 * Math.min(2.5, Math.pow(pow, 0.35));
+      // MicaSurvivor (M5 lote 9, main.gd 4038-4044): con más de 4 curanderos vivos, cada uno cura un 10 % menos.
+      let healers = 0;
+      for (const e of G.EnemyMgr.all()) if (!e.dead && e.behavior === 'healer') healers++;
+      if (healers > SUPPORT_CAPS.healers) k *= SUPPORT_CAPS.healerK;
       let n = 0;
       for (const e of G.EnemyMgr.queryCircle(this.x, this.y, 150)) {
         if (e.dead || e.hp >= e.maxHp) continue;
@@ -653,9 +663,19 @@
     }
 
     castShields() {
-      const near = G.EnemyMgr.queryCircle(this.x, this.y, 160).filter(e => !e.dead)
-        .sort((a, b) => G.U.dist2(a.x, a.y, this.x, this.y) - G.U.dist2(b.x, b.y, this.x, this.y)).slice(0, 6);
-      for (const e of near) { e.shield = Math.max(e.shield, e.maxHp * 0.35); e.shieldT = 8; }
+      // MicaSurvivor (M5 lote 9, main.gd 4053-4075): escudo del 30 % (antes 35 %) durante 7 s, y un mismo
+      // Pokémon no recibe otro hasta 14 s después (nada de escudos infinitos). Como mucho 5 por lanzamiento,
+      // a los más cercanos que no tengan escudo ni la espera.
+      const C = SUPPORT_CAPS;
+      const near = G.EnemyMgr.queryCircle(this.x, this.y, C.shieldR).filter(e => !e.dead)
+        .sort((a, b) => G.U.dist2(a.x, a.y, this.x, this.y) - G.U.dist2(b.x, b.y, this.x, this.y));
+      let given = 0;
+      for (const e of near) {
+        if (given >= C.shieldMax) break;
+        if (e.shield > 0 || e.shieldLock > 0) continue;
+        e.shield = e.maxHp * C.shieldK; e.shieldT = C.shieldT; e.shieldLock = C.shieldLock;
+        given++;
+      }
       this.anim.play('Charge');
       G.FX.ring(this.x, this.y, 8, 160, '#7fc8ff', 0.5, 3);
       if (G.Coop.isHost) G.Coop.broadcast(['fxr', Math.round(this.x), Math.round(this.y), 160, '#7fc8ff']);
@@ -664,14 +684,20 @@
     summon() {
       this.minions = this.minions.filter(m => !m.dead && G.EnemyMgr.get(m.id));
       // Con el tope general de enemigos (menos Pokémon en pantalla), con un pequeño margen.
-      if (this.minions.length >= 4 || G.EnemyMgr.count > G.Spawner.CAP + 15) return;
+      // MicaSurvivor (M5 lote 9, main.gd 4078-4102): cada invocación saca 4, con un máximo de 20 súbditos
+      // vivos en todo el mapa y 8 por invocador.
+      const C = SUPPORT_CAPS;
+      let total = 0;
+      for (const q of G.EnemyMgr.all()) if (q.isMinion && !q.dead) total++;
+      if (this.minions.length >= C.perSummoner || total >= C.minions || G.EnemyMgr.count > G.Spawner.CAP + C.capPad) return;
       const dex = this.def.minion || this.dex;
       const mon = G.DEX_BY[dex];
       const def = { dex, name: mon ? mon.name : '', hp: Math.round(this.def.hp * 0.35), spd: Math.round(this.def.spd * 1.1),
                     dmg: Math.round(this.def.dmg * 0.6), xp: Math.max(1, Math.round(this.def.xp * 0.25)), behavior: 'chase' };
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < Math.min(C.perCast, C.minions - total); i++) {
         const a = Math.random() * 6.2832;
         const m = new Enemy(def, this.x + Math.cos(a) * 30, this.y + Math.sin(a) * 22, this.sc || { hp: 1, spd: 1, dmg: 1 });
+        m.isMinion = true;
         G.EnemyMgr.add(m);
         this.minions.push(m);
         G.FX.burst(m.x, m.y - 8, '#c47bff', 8, 90);
@@ -810,6 +836,7 @@
   // ---------------- gestor ----------------
 
   G.Enemy = Enemy;
+  G.Enemy.SUPPORT_CAPS = SUPPORT_CAPS;   // MicaSurvivor (M5 lote 9)
 
   G.EnemyMgr = (() => {
     let list = [];            // vivos

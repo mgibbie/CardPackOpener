@@ -292,7 +292,7 @@ G.DB = (() => {
     }
     // Modos (M5 lote 6): los tipos superados en la Supervivencia por tipo son unión (typeDone, abajo);
     // el Desafío diario, la marca del día más reciente (del mismo día, la mejor); lo elegido en el menú
-    // (modificadores, tipo, Pokémon de la fiesta), el de la versión más reciente.
+    // (modificadores, tipo, Pokémon de la fiesta y, lote 9, la dificultad adaptativa), el de la versión más reciente.
     const daily = G.Modes ? G.Modes.mergeDaily(r.daily, older.daily) : r.daily || older.daily;
     if (daily) r.daily = daily;
     if (!isObj(r.modes) && isObj(older.modes)) r.modes = JSON.parse(JSON.stringify(older.modes));
