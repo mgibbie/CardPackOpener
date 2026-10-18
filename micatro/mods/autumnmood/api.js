@@ -18,7 +18,7 @@
 import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import { isActive, feature, MOD_SUITS, activeModSuits } from '../../js/mods/registry.js';
 import {
-  G, P_CENTERS, P_CARDS, P_SEALS, P_CENTER_POOLS, Card, CardArea, emit, card_eval_status_text, play_sound, juice_card,
+  G, P_CENTERS, P_CARDS, P_SEALS, P_CENTER_POOLS, Card, CardArea, enhancement_pool, emit, card_eval_status_text, play_sound, juice_card,
   pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, copy_card, create_playing_card, poll_edition,
   localize, number_format, quantum_enhancements,
 } from '../../js/engine/core.js';
@@ -457,11 +457,11 @@ export const QUALITIES = {
   },
   suitless: {
     has: has_no_suit, value_mod: (v) => v,
-    create: (a, p) => ({ key: pseudorandom_element((P_CENTER_POOLS.Enhanced || []).filter((v) => v.no_suit || v.key === 'm_stone').map((v) => v.key), pseudoseed(p))[0], set: 'Enhanced' }),
+    create: (a, p) => ({ key: pseudorandom_element(enhancement_pool().filter((v) => v.no_suit || v.key === 'm_stone').map((v) => v.key), pseudoseed(p))[0], set: 'Enhanced' }),
   },
   rankless: {
     has: has_no_rank, value_mod: (v) => v,
-    create: (a, p) => ({ key: pseudorandom_element((P_CENTER_POOLS.Enhanced || []).filter((v) => v.no_rank || v.key === 'm_stone').map((v) => v.key), pseudoseed(p))[0], set: 'Enhanced' }),
+    create: (a, p) => ({ key: pseudorandom_element(enhancement_pool().filter((v) => v.no_rank || v.key === 'm_stone').map((v) => v.key), pseudoseed(p))[0], set: 'Enhanced' }),
   },
   unenhanced: { has: (c) => c.config.center.set === 'Default', value_mod: (v) => v * 0.8 },
   enhanced: { has: (c) => c.config.center.set === 'Enhanced', value_mod: (v) => v * 1.25, create: () => ({ set: 'Enhanced' }) },
@@ -470,7 +470,7 @@ export const QUALITIES = {
   materialenh: { has: (c) => in_list(materials().materials, c), value_mod: (v) => (v + 0.1) * 1.25, create: (a, p) => ({ key: pseudorandom_element(materials().materials, pseudoseed(p))[0], set: 'Enhanced' }) },
   nonmaterialenh: {
     has: (c) => !in_list(materials().materials, c), value_mod: (v) => (v + 0.5) ** 0.89,
-    create: (a, p) => { const m = materials().materials; return { key: pseudorandom_element((P_CENTER_POOLS.Enhanced || []).map((v) => v.key).filter((k) => !m.includes(k)), pseudoseed(p))[0], set: 'Enhanced' }; },
+    create: (a, p) => { const m = materials().materials; return { key: pseudorandom_element(enhancement_pool().map((v) => v.key).filter((k) => !m.includes(k)), pseudoseed(p))[0], set: 'Enhanced' }; },
   },
   unsealed: { has: (c) => c.get_seal() == null, value_mod: (v) => v ** (v < 1 ? 1 / 0.85 : 0.85) },
   sealed: { has: (c) => c.get_seal() != null, value_mod: (v) => v ** (v < 1 ? 1 / 1.15 : 1.15), create: (a, p) => ({ seal: poll_seal_guaranteed(p) }) },
@@ -518,7 +518,7 @@ export const CARD_QUALITIES = {
 export function add_playing_card(struc, area, pseed) {
   let center = P_CENTERS.c_base;
   if (struc.key && P_CENTERS[struc.key]) center = P_CENTERS[struc.key];
-  else if (struc.set === 'Enhanced') center = pseudorandom_element((P_CENTER_POOLS.Enhanced || []).filter((c) => !c.in_pool || c.in_pool(c)), pseudoseed(pseed || 'add_card'))[0] || P_CENTERS.m_bonus;
+  else if (struc.set === 'Enhanced') center = pseudorandom_element(enhancement_pool(), pseudoseed(pseed || 'add_card'))[0] || P_CENTERS.m_bonus;
   const suit = struc.suit || pseudorandom_element(['Spades', 'Hearts', 'Clubs', 'Diamonds'], pseudoseed((pseed || 'add_card') + '_suit'))[0];
   const rank = struc.rank || pseudorandom_element(RANKS, pseudoseed((pseed || 'add_card') + '_rank'))[0];
   const card = create_playing_card({ front: front_of(suit, rank), center }, area);

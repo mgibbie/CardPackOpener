@@ -91,11 +91,13 @@ export function describePlaying(cv) {
   const front = cv.front_value ? { value: cv.front_value, suit: cv.front_suit_name || cv.front_suit } : (CARDS[cv.front] || {});
   const center = CENTERS[cv.center] || {};
   const D = LOC.descriptions;
-  const name = cv.facing === 'back' ? '???' : (center.name === 'Stone Card' ? 'Stone Card' : `${RANK_NAME[front.value] || front.value} of ${front.suit}`);
+  const enh = cv.enh; // a mod enhancement (engine/view.js cardView)
+  const noBase = center.name === 'Stone Card' || !!(enh && enh.replace);
+  const name = cv.facing === 'back' ? '???' : (enh && enh.replace ? enh.name : center.name === 'Stone Card' ? 'Stone Card' : `${RANK_NAME[front.value] || front.value} of ${front.suit}`);
   const lines = [];
   const badges = [];
   if (cv.facing === 'back') return { name, lines: ['{C:inactive}Face down'], badges };
-  if (center.name !== 'Stone Card') lines.push(`{C:chips}+${NOMINAL[front.value] || 0}{} chips`);
+  if (!noBase) lines.push(`{C:chips}+${NOMINAL[front.value] || 0}{} chips`);
   const cfg = center.config || {};
   const extra = (title, l) => { lines.push(''); lines.push(`{C:attention}${title}`); lines.push(...l); };
   switch (cv.center) {
@@ -109,6 +111,7 @@ export function describePlaying(cv) {
     case 'm_wild': extra('Wild Card', D.Enhanced.m_wild.text); break;
     default: break;
   }
+  if (enh) { if (enh.replace) lines.push(...enh.lines); else extra(enh.name, enh.lines); }
   if (cv.edition) {
     const ed = { foil: ['Foil', '{C:chips}+50{} chips'], holo: ['Holographic', '{C:mult}+10{} Mult'], polychrome: ['Polychrome', '{X:mult,C:white} X1.5 {} Mult'], negative: ['Negative', ''] }[cv.edition];
     if (ed) { extra(ed[0], ed[1] ? [ed[1]] : []); badges.push(ed[0]); }

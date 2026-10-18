@@ -14,7 +14,7 @@
 //    card_repetitions hook (every playing-card repetition check, as SMODS asks the consumable area).
 //  - The Jollars' update() (sell value = face value, every frame) is the set_cost hook (sell_cost after each set_cost).
 import {
-  G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card, create_card, create_playing_card, poll_edition, pseudorandom, pseudoseed,
+  G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card, enhancement_pool, create_card, create_playing_card, poll_edition, pseudorandom, pseudoseed,
   pseudorandom_element, pseudoshuffle, card_eval_status_text, localize, juice_card, play_sound, ease_dollars, ease_hands_played,
   get_next_voucher_key,
 } from '../../js/engine/core.js';
@@ -256,7 +256,7 @@ export const centers = [
     loc_vars(s, iq, card) { iq.push(P_CENTERS.e_polychrome); iq.push({ key: 'thac_heart_aspect', set: 'Aspect' }); return { vars: [ext(card).cards] }; },
     use() {
       let enhancement = P_CENTERS.c_base;
-      if (pseudorandom(pseudoseed('gift_of_the_knight')) < 0.5) enhancement = pseudorandom_element(P_CENTER_POOLS.Enhanced)[0];
+      if (pseudorandom(pseudoseed('gift_of_the_knight')) < 0.5) enhancement = pseudorandom_element(enhancement_pool())[0];
       const cm = create_playing_card({ front: P_CARDS.H_3, center: enhancement }, G.hand);
       cm.set_edition({ polychrome: true });
       cm.set_seal(poll_seal({ key: 'gift_of_the_knight', mod: 10 }));
