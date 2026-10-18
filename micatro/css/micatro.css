@@ -1,6 +1,6 @@
 /* Micatro — Balatro look: m6x11 pixel font, flat rounded panels with drop
    "lips", the palette from globals.lua (G.C). The #stage is a fixed design
-   canvas (1360-2100 x 900 landscape / 720 x 1180-1700 portrait) scaled to fit. */
+   canvas (1360-2100 x 900 landscape / 720 x 1322-1700 portrait) scaled to fit the VISIBLE viewport (ui/board.js visibleBox). */
 @font-face { font-family: 'm6x11'; src: url('../assets/fonts/m6x11plus.ttf') format('truetype'); font-display: block; }
 
 :root {
@@ -372,7 +372,7 @@ b { font-weight: normal; }
 .pause { width: 420px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
 @media (max-width: 600px) { #pad-hints { font-size: 12px; padding: 4px 8px 3px; } #pad-hints .sep { width: 8px; } }
 /* the site chat overlay: in portrait the bottom-left corner is the hand, so float it over the play area */
-@media (orientation: portrait) and (max-width: 820px) { #chat-wrap #mp-chat { bottom: auto; top: 44vh; max-width: 62vw; } }
+@media (orientation: portrait) and (max-width: 820px) { #chat-wrap #mp-chat { bottom: auto; top: calc(var(--mic-vis-h, 100vh) * .44); /* (--mic-vis-h: the visible height, ui/board.js resize) */ max-width: 62vw; } }
 .area-lbl.hand-lbl { transform: translateX(-50%); }
 .hud-hand.blocked .hh-hand { color: #ff9a8f; text-decoration: line-through; }
 
