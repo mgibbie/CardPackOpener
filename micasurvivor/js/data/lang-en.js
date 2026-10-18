@@ -951,5 +951,87 @@ G.I18n.add({
   'Pantalla (px) → vista del juego:': 'Screen (px) → game view:',
   'Minimapa': 'Minimap',
   'El mapa redondo de la izquierda: el terreno que has explorado, los enemigos cercanos, los cofres y altares, los jefes y la grieta.':
-    'The round map on the left: the ground you have explored, nearby enemies, chests and altars, bosses and the rift.'
+    'The round map on the left: the ground you have explored, nearby enemies, chests and altars, bosses and the rift.',
+  // MicaSurvivor (M5 lote 11): logros, misiones y títulos que faltaban, el desglose de daño, el Léxico y la tarjeta de
+  // entrenador (lang_en.json del port de Android donde existe)
+  'Por tipo': 'By type',
+  'Aprendiz de cazajefes': 'Boss hunter apprentice',
+  'Azote de jefes': 'Scourge of bosses', 'Derrota a 250 jefes.': 'Defeat 250 bosses.',
+  'Verdugo de jefes': 'Boss executioner', 'Derrota a 500 jefes.': 'Defeat 500 bosses.',
+  'Rey de los jefes': 'King of bosses', 'Derrota a 1.000 jefes.': 'Defeat 1,000 bosses.',
+  ...(() => {   // los 54 por tipo: "Rastreador de tipo Fuego" -> "Fire-type tracker" (progress.gd 83-88)
+    const EN = { Normal: 'Normal', Fuego: 'Fire', Agua: 'Water', Planta: 'Grass', 'Eléctrico': 'Electric', Hielo: 'Ice', Lucha: 'Fighting',
+      Veneno: 'Poison', Tierra: 'Ground', Volador: 'Flying', 'Psíquico': 'Psychic', Bicho: 'Bug', Roca: 'Rock', Fantasma: 'Ghost',
+      'Dragón': 'Dragon', Siniestro: 'Dark', Acero: 'Steel', Hada: 'Fairy' };
+    const o = {};
+    for (const [es, en] of Object.entries(EN)) {
+      o['Rastreador de tipo ' + es] = en + '-type tracker'; o['Derrota a 250 Pokémon de tipo ' + es + '.'] = 'Defeat 250 ' + en + '-type Pokémon.';
+      o['Cazador de tipo ' + es] = en + '-type hunter'; o['Derrota a 1.000 Pokémon de tipo ' + es + '.'] = 'Defeat 1,000 ' + en + '-type Pokémon.';
+      o['Maestro de tipo ' + es] = en + '-type master'; o['Derrota a 5.000 Pokémon de tipo ' + es + '.'] = 'Defeat 5,000 ' + en + '-type Pokémon.';
+    }
+    return o;
+  })(),
+  'Juega el Desafío diario': 'Play the Daily Challenge',
+  'Aguanta {x} minutos con algún modificador activo': 'Survive {x} minutes with any modifier active',
+  'Aguanta {x} minutos en Supervivencia por tipo': 'Survive {x} minutes in Survival by Type',
+  'Gana {x} grietas en la Contrarreloj de grietas': 'Win {x} rifts in the Rift Time Attack',
+  'Gana {x} grietas en una Contrarreloj de grietas': 'Win {x} rifts in a single Rift Time Attack',
+  'Juega {x} Desafíos diarios': 'Play {x} Daily Challenges',
+  'Aguanta {x} minutos con 3 o más modificadores': 'Survive {x} minutes with 3 or more modifiers',
+  // el desglose de daño (menu.gd 1801-1890)
+  'Daño y derrotas por movimiento': 'Damage and defeats per move', 'Movimiento': 'Move', 'Daño': 'Damage',
+  'Objetos': 'Items', 'Habilidades': 'Abilities', 'Estados alterados': 'Status effects',
+  'Compañero / equipo': 'Partner / team', 'Otros (trampas, bombas, terreno)': 'Other (traps, bombs, terrain)',
+  // títulos (menu.gd _goals_titles)
+  'Títulos': 'Titles', 'Título en uso:': 'Title in use:', 'ninguno': 'none', 'Sin título': 'No title',
+  'Títulos: {x} / {x} · Se ven en tu perfil, en tu tarjeta de entrenador y en el menú.': 'Titles: {x} / {x} · They show on your profile, your trainer card and the menu.',
+  'Logro: {x}': 'Achievement: {x}', 'Usar': 'Use', 'En uso': 'In use', 'Bloqueado': 'Locked',
+  // la tarjeta de entrenador (menu.gd _show_card)
+  'Ver mi tarjeta de entrenador': 'View my trainer card', 'Partidas': 'Runs', 'Cofres': 'Chests', 'Tiempo jugado': 'Time played',
+  'Récords por modo': 'Records by mode',
+  '{x} jefes': '{x} bosses', '{x} grietas': '{x} rifts', '{x}/{x} reliquias': '{x}/{x} relics', '{x}/{x} tipos': '{x}/{x} types',
+  // el Léxico (menu.gd 3047-3194)
+  'Léxico': 'Lexicon', 'Objetos, movimientos, estados y más': 'Items, moves, status effects and more',
+  'Estados': 'Status', 'Z y Dynamax': 'Z-Moves & Dynamax', 'Modos': 'Modes',
+  'Objetos: {x} / {x} encontrados': 'Items: {x} / {x} found', 'Movimientos: {x}': 'Moves: {x}', 'Habilidades: {x}': 'Abilities: {x}',
+  'Movimientos Z: {x}': 'Z-Moves: {x}', 'Pokémon: {x} / {x}': 'Pokémon: {x} / {x}',
+  'Se recargan cada 4 minutos, desde el nivel {x}. Se desbloquean derrotando {x} Pokémon de ese tipo.': 'They recharge every 4 minutes, from level {x}. Unlocked by defeating {x} Pokémon of that type.',
+  '✔ Encontrado': '✔ Found', 'Aún sin encontrar': 'Not found yet', 'Encontrado el': 'Found on',
+  'Evoluciona en: {x}': 'Evolves into: {x}', 'Tipo': 'Type', 'Recarga': 'Cooldown', 'Necesita: {x}': 'Needs: {x}',
+  'Evolucionado alguna vez': 'Ever evolved', '✔ Evolucionado': '✔ Evolved',
+  'Congelado': 'Frozen', 'Paralizado': 'Paralyzed', 'Dormido': 'Asleep', 'Confundido': 'Confused', 'Quemado': 'Burned',
+  'Envenenado': 'Poisoned', 'Ralentizado': 'Slowed', 'Duración': 'Duration',
+  'El enemigo no se mueve ni ataca y recibe un 25% más de daño. Los jefes lo resisten.': 'The enemy can\'t move or attack and takes 25% more damage. Bosses resist it.',
+  'El enemigo va mucho más lento y recibe más daño eléctrico. Los jefes lo resisten.': 'The enemy moves much slower and takes more Electric damage. Bosses resist it.',
+  'El enemigo no actúa, recibe un 30% más de daño y se despierta con el primer golpe. Darkrai es inmune.': 'The enemy doesn\'t act, takes 30% more damage and wakes up on the first hit. Darkrai is immune.',
+  'El enemigo se mueve sin rumbo y ataca a otros enemigos. Los jefes lo resisten.': 'The enemy wanders aimlessly and attacks other enemies. Bosses resist it.',
+  'Daño continuo y el enemigo hace menos daño.': 'Damage over time, and the enemy deals less damage.',
+  'Daño continuo según su vida máxima (menos contra jefes).': 'Damage over time based on its max HP (less against bosses).',
+  'El enemigo se mueve más despacio durante un rato.': 'The enemy moves slower for a while.',
+  'Pokémon con esta habilidad': 'Pokémon with this ability',
+  'Guaridas Dynamax': 'Dynamax dens', 'Guaridas Dynamax vencidas': 'Dynamax dens cleared', 'Desde el nivel': 'From level',
+  'A partir del minuto {x}, a veces una grieta se abre en rojo: es una guarida Dynamax. Dentro espera un Pokémon gigante con mucha vida que a veces lanza su Movimiento Max. Vencerlo desbloquea el Dynamax (o lo recarga al instante) y suelta experiencia, objetos, tickets y monedas. No hay guaridas en la Contrarreloj de grietas.':
+    'From minute {x}, a rift sometimes opens in red: a Dynamax den. Inside waits a giant Pokémon with lots of HP that sometimes uses its Max Move. Beating it unlocks Dynamax (or recharges it at once) and drops experience, items, tickets and coins. There are no dens in the Rift Time Attack.',
+  'Probabilidad por grieta': 'Chance per rift', 'Tiempo para entrar': 'Time to enter', 'Premio': 'Reward',
+  '{x} orbes': '{x} orbs', '{x} objetos': '{x} items', '{x} tickets': '{x} tickets',
+  'Derrota {x} Pokémon de tipo {x}: {x}/{x}': 'Defeat {x} {x}-type Pokémon: {x}/{x}', 'Misión de Cristal Z': 'Z-Crystal mission',
+  '✔ Lo tienes': '✔ You have it', 'Habilidad': 'Ability', 'Rareza': 'Rarity', 'Movimiento inicial': 'Starting move',
+  'Legendario': 'Legendary', 'Lo tienes': 'Owned',
+  'Cada día, el mismo Pokémon y la misma regla para todos. +25% de monedas.': 'Every day, the same Pokémon and the same rule for everyone. +25% coins.',
+  'Solo jefes y legendarios, uno tras otro, cada vez más fuertes.': 'Only bosses and legendaries, one after another, each stronger than the last.',
+  'Cualquier Pokémon, no puedes morir y no se guarda progreso.': 'Any Pokémon, you can\'t die and no progress is saved.',
+  '30 pisos, cada uno con un jefe fijo. Cada piso da un premio la primera vez y cada 5 pisos ganas una reliquia permanente (+6 de vida y +2% de ataque dentro de la Torre). Entre pisos eliges descanso y pactos de riesgo.':
+    '30 floors, each with a fixed boss. Every floor gives a reward the first time, and every 5 floors you earn a permanent relic (+6 health and +2% attack inside the Tower). Between floors you pick a rest and risky pacts.',
+  '8 minutos: las grietas se abren sin parar. Gana todas las peleas que puedas. +25% de monedas.': '8 minutes: rifts keep opening nonstop. Win as many fights as you can. +25% coins.',
+  'Solo aparecen Pokémon del tipo que elijas (y sus jefes). +50% de monedas.': 'Only Pokémon of the type you choose appear (and their bosses). +50% coins.',
+  'Lleva hasta 3 Pokémon y cámbialos en plena partida. Si uno cae, entra el siguiente; los de banca se recuperan.': 'Bring up to 3 Pokémon and swap them mid-run. If one faints, the next one comes in; benched ones recover.',
+  'Modos de juego, modificadores y dificultad': 'Game modes, modifiers and difficulty',
+  'Jugados': 'Played', 'Mejor marca': 'Best mark', 'Récord de jefes': 'Boss record', 'Mejor piso': 'Best floor', 'Reliquias': 'Relics',
+  'Arceus vencido': 'Arceus defeated', 'Récord de grietas': 'Rift record', 'Tipos superados': 'Types beaten', 'Modificadores': 'Modifiers',
+  '+25% de monedas': '+25% coins', 'Mejor marca con él': 'Best mark with it', 'Dificultad': 'Difficulty', 'Activada': 'On', 'Desactivada': 'Off',
+  'Dónde se cambia': 'Where to change it', 'Ajustes → Gráficos': 'Settings → Graphics', 'Piso inicial': 'Starting floor',
+  'Cada {x} pisos superados por primera vez ganas una reliquia permanente: +{x} de vida y +{x}% de ataque dentro de la Torre.': 'Every {x} floors cleared for the first time earn a permanent relic: +{x} health and +{x}% attack inside the Tower.',
+  'Pactos de riesgo': 'Risk pacts', 'Pactos legendarios': 'Legendary pacts', 'Registro de jefes': 'Boss log',
+  '{x} últimos': 'last {x}', 'Aún sin jefes': 'No bosses yet',
+  'Los últimos jefes de la Torre que has vencido: piso, tiempo y vida perdida.': 'The last Tower bosses you beat: floor, time and health lost.'
 });

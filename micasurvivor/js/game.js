@@ -115,6 +115,7 @@ G.Game = (() => {
     G.Dynamax.reset();  // MicaSurvivor (M5 lote 5)
     G.Adaptive.reset(); // MicaSurvivor (M5 lote 9): la dificultad adaptativa empieza en 100 % y baja / sube a su objetivo
     G.Minimap.reset();  // MicaSurvivor (M5 lote 10): el minimapa empieza sin nada explorado
+    G.DmgLog.reset();   // MicaSurvivor (M5 lote 11): el desglose de daño de la partida empieza vacío
     // MicaSurvivor (M5 lote 6, main.gd 432): el Desafío diario siembra el azar con la fecha: el mismo
     // mundo, elenco, jefes y movimientos iniciales para todos ese día.
     if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
@@ -327,7 +328,8 @@ G.Game = (() => {
       G.Progress.off = false;
       G.RunUI.showOver({
         dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
-        moves: pl.moves, caught: [], modeLines: [G.Modes.NAME.party, 'No se guarda progreso'], breakdown: ''
+        moves: pl.moves, caught: [], modeLines: [G.Modes.NAME.party, 'No se guarda progreso'], breakdown: '',
+        dmg: G.DmgLog.summary(pl.moves)   // (M5 lote 11: el port también lo enseña en la Fiesta, menu.gd 1801)
       }, () => { pl = null; G.Flow.afterRun(); });
       return;
     }
@@ -352,13 +354,15 @@ G.Game = (() => {
     if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
     save.stats.bestLevel = Math.max(save.stats.bestLevel, pl.level);
     save.stats.coinsEarned += coins;
+    // MicaSurvivor (M5 lote 11, save_data.gd 588 total_time): el tiempo jugado, para la tarjeta de entrenador.
+    save.stats.totalTime = (save.stats.totalTime || 0) + Math.floor(time);
     const judge = G.Judgment.summary();
     if (judge) G.Progress.event('judgeEnd', judge);
     G.Judgment.reset();
     // (M5 lote 7: con el modo y los modificadores, para las misiones de modos; progress.gd _advance "req")
     // (M5 lote 8: bosses y floor, para las misiones del Rush de Jefes y la Torre: progress.gd "val")
     G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop, mode: G.Game.mode, nmods: G.Modes.is('daily') ? 0 : G.Modes.mods.length,
-      bosses: pl.bosses, floor: G.Tower.clears });
+      bosses: pl.bosses, floor: G.Tower.clears, rifts: G.Modes.riftsWon });   // (M5 lote 11: rifts, para mRifts / wRifts: progress.gd "val": "rifts")
     G.Progress.checkAch();
     // A la nube al acabar la partida (como mucho cada 30 min); si la marca entra
     // en un top (hoy, semana o mes), enseguida (abajo, tras subirla al ranking).
@@ -381,6 +385,7 @@ G.Game = (() => {
       dead: dead && !timeUp, timeUp, rifts: G.Modes.rifts() ? G.Modes.riftsWon : null, modeLines: md.lines,
       time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
+      dmg: G.DmgLog.summary(pl.moves),   // MicaSurvivor (M5 lote 11): daño y derrotas por fuente (main.gd 768-781 / 858)
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (pl.coinMul > 1 ? ` · ×${pl.coinMul.toFixed(2)} Fortuna` : '') +
                  (md.base !== 1 || md.add ? ` · ×${(md.base * pl.coinMul + md.add).toFixed(2)} con el modo` : '')
@@ -631,7 +636,10 @@ G.Game = (() => {
     }
     if (state === 'ui') {
       // Esc en una subpantalla del menú vuelve al menú.
-      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-modes'].some(G.UI.isOpen)
+      // (M5 lote 11: Esc cierra antes la tarjeta de entrenador o la ficha abierta del Léxico)
+      if (G.Input.tap('escape') && G.TrainerCard.isOpen()) { G.TrainerCard.close(); return; }
+      if (G.Input.tap('escape') && G.LexiconUI.back()) return;
+      if (G.Input.tap('escape') && !G.UI.isOpen('scr-profile') && ['scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-friends', 'scr-rank', 'scr-goals', 'scr-modes', 'scr-lexicon'].some(G.UI.isOpen)
           && document.getElementById('pull-fx').classList.contains('hidden')) { if (!(G.ModesUI && G.ModesUI.back())) G.MenuUI.open(); }
       return;
     }
@@ -1023,7 +1031,7 @@ G.Flow = {
   boot() {
     G.UI.initChrome();
     G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
-    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.ModesUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.NewsUI.init();   // MicaSurvivor: no SupportUI (donations) / Updater (forced reloads)
+    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.ModesUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.TrainerCard.init(); G.LexiconUI.init(); G.SettingsUI.init(); G.NewsUI.init();   // MicaSurvivor: no SupportUI (donations) / Updater (forced reloads)
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');
     G.Audio.music('village');     // suena tras el primer clic (lo exige el navegador)

@@ -193,6 +193,7 @@ G.Dynamax = (() => {
   /** Onda Max: golpea a los enemigos cercanos con el tipo del Pokémon; cada tercera es más grande. */
   function maxPulse(pl, big) {
     const z = G.ZMoves.area(pl, type, pl.x, pl.y, (30 + 8 * pl.level) * pl.atk * (big ? BIG_K : 1));
+    z.dsrc = 'dyna';   // MicaSurvivor (M5 lote 11): en el desglose de daño, a "Dynamax" (no al Movimiento Z)
     const r = big ? BIG_R : PULSE_R;
     z.boom(z.cx, z.cy, r, big ? 6 : 3);
     const st = STATUS[type] || ['', 0, 0];

@@ -61,7 +61,8 @@ input { font: inherit; }
 .scr.hidden { display: none; }
 /* Pantallas que se abren con la barra superior a la vista: empiezan debajo de ella. */
 @media (min-height: 521px) {
-  #scr-goals, #scr-dex, #scr-upgrades, #scr-gacha, #scr-friends, #scr-rank, #scr-lobby, #scr-profile { padding-top: 66px; }
+  #scr-goals, #scr-dex, #scr-upgrades, #scr-gacha, #scr-friends, #scr-rank, #scr-lobby, #scr-profile,
+  #scr-lexicon, #scr-lexpop, #scr-tcard { padding-top: 66px; }   /* (M5 batch 11: the Lexicon, an entry, the trainer card) */
 }
 .scr.dim { background: radial-gradient(circle at 50% 40%, rgba(10,20,50,.55), rgba(3,6,16,.88)); }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
@@ -1018,3 +1019,103 @@ html.ui-scaled body.touch .scr button, html.ui-scaled body.touch .scr .chip, htm
 .pause-fov { text-align: left; margin: 2px 0 8px; }
 .pause-fov .set-row { border-bottom: 0; padding: 2px 0; }
 @media (max-height: 520px) { .pause-fov .set-row small:not(.range-note) { display: none; } }
+
+/* ================= MicaSurvivor (M5 batch 11): damage breakdown, titles, trainer card, Lexicon ================= */
+/* the run-over damage table (menu.gd 1801-1890) */
+.over-dmg .dm-wrap { margin-top: 4px; }
+.over-dmg .dm-wrap.scroll { max-height: 180px; overflow-y: auto; }
+.dm-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+.dm-table th { color: var(--muted); font-size: 11px; font-weight: 400; text-transform: uppercase; padding: 0 4px 2px; }
+.dm-table th:not(:first-child), .dm-table td:not(:first-child) { text-align: right; white-space: nowrap; }
+.dm-table td { padding: 2px 4px; border-top: 1px solid rgba(244,248,255,.08); }
+.dm-table td.dm-src { overflow-wrap: anywhere; }
+.dm-table td.dm-src img { vertical-align: middle; }
+.dm-table td.dm-src small { color: var(--muted); }
+.stats .dm-table b { font-size: 14px; color: var(--gold); }
+.dm-table .dm-pct { color: var(--muted); font-size: 12px; }
+.dm-table tr:not(.dm-move) .dm-nm { color: #8fe3b0; }
+/* titles (menu.gd _goals_titles) */
+.title-cur { margin: 4px 0 2px; }
+#title-none { margin: 4px 0 8px; }
+.title-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.title-row { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,.2); border: 2px solid rgba(244,248,255,.1); }
+.title-row.ok { border-color: rgba(255,210,63,.45); }
+.title-row.on { border-color: var(--gold); background: rgba(255,210,63,.12); }
+.title-row .a-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.title-row .a-txt small { color: var(--muted); font-size: 12px; }
+.title-row:not(.ok) .a-txt b { color: #8a94b0; }
+.menu-title { color: var(--gold); font-size: 14px; margin-top: 2px; }
+.prof-btns { gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+/* the trainer card (menu.gd _show_card) */
+.tcard-box { width: min(640px, 100%); max-height: 100%; overflow-y: auto; }
+.tcard { text-align: center; }
+.tcard-name { margin: 0; color: var(--gold); font-size: 34px; overflow-wrap: anywhere; }
+.tcard-title { color: var(--muted); font-size: 18px; margin-bottom: 4px; }
+.tcard-mons { display: flex; justify-content: center; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 4px 0 8px; }
+.tcard-cells, .tcard-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: left; }
+.tcard-modes { grid-template-columns: repeat(4, 1fr); }
+.tcard-mons canvas { max-height: 110px; width: auto; }
+.tcard-cells div, .tcard-modes div { background: rgba(5,10,26,.55); border: 2px solid rgba(128,158,230,.35); border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; min-width: 0; }
+.tcard-cells span, .tcard-modes span { color: #9fb4dc; font-size: 12px; }
+.tcard-cells b { font-size: 22px; }
+.tcard-modes b { font-size: 15px; }
+.tcard-h { margin: 12px 0 6px; color: var(--gold); }
+/* the Lexicon (menu.gd 3047-3194) */
+.lex-tabs { flex-wrap: wrap; }
+.lex-h { margin: 4px 0 6px; color: var(--gold); }
+.lex-g { margin: 12px 0 6px; font-size: 16px; }
+.lex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.lex-card { display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  background: rgba(0,0,0,.2); border: 2px solid rgba(244,248,255,.1); color: var(--ink); font: inherit; min-width: 0; }
+.lex-card:hover, .lex-card.pad-focus { border-color: var(--gold); }
+.lex-card.dim .lex-tx b { color: #8fa3c4; }
+.lex-card.dim .lex-ic img { filter: grayscale(.8) brightness(.7); }
+.lex-ic { flex: 0 0 auto; min-width: 40px; display: flex; justify-content: center; }
+.lex-tx { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.lex-tx b { font-size: 16px; }
+.lex-tx small { font-size: 12px; }
+.lex-ds { color: #c8d6ee; font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lex-types .type { font-size: 10px; }
+.lex-dot { display: inline-block; width: 26px; height: 26px; border-radius: 50%; margin-top: 4px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); }
+.lex-card .dyn-ic, .lexpop-ic .dyn-ic { font-size: 13px; }
+.lexpop-box { width: min(560px, 100%); max-height: 100%; overflow-y: auto; }
+.lexpop-head { display: flex; gap: 14px; align-items: center; margin-bottom: 6px; }
+.lexpop-head h2 { margin: 0; }
+.lexpop-ic { flex: 0 0 auto; min-width: 56px; display: flex; justify-content: center; }
+.lexpop-ic img { width: 56px; height: auto; }
+.lexpop-sub { font-size: 14px; }
+#lexpop-body p { margin: 6px 0; color: #c8d6ee; }
+.lexpop-facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 8px 0 10px; }
+.lexpop-facts div { background: rgba(0,0,0,.25); border-radius: 8px; padding: 5px 8px; display: flex; flex-direction: column; min-width: 0; }
+.lexpop-facts span { color: var(--muted); font-size: 12px; }
+.lexpop-facts b { font-size: 15px; overflow-wrap: anywhere; }
+#scr-tcard .row, #scr-lexpop .row { justify-content: center; margin-top: 10px; }
+/* the run-over screen grew a table: it scrolls inside the screen instead of running off it */
+#scr-over .box { max-height: 100%; overflow-y: auto; }
+@media (max-width: 760px) { .tcard-cells, .tcard-modes { grid-template-columns: repeat(2, 1fr); } .lexpop-facts { grid-template-columns: 1fr; } }
+@media (max-height: 520px) {
+  #scr-over .box { width: min(640px, 100%) !important; }
+  #scr-over .stats { grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 6px 0 10px; }
+  #scr-over .stats > div { padding: 5px 8px; }
+  #scr-over .stats b { font-size: 18px; }
+  #scr-over h2 { margin: 0; }
+  .lex-tabs { gap: 4px; margin-bottom: 8px; }
+  .lex-tabs .tab { padding: 4px 6px; font-size: 12px; }
+  .lex-h { margin: 0 0 4px; font-size: 15px; }
+  .over-dmg .dm-wrap.scroll { max-height: none; }
+  .tcard-box { width: min(820px, 100%); padding: 6px 12px; }
+  .tcard-name { font-size: 22px; display: inline; }
+  .tcard-title { display: inline; margin-left: 10px; font-size: 15px; }
+  .tcard-mons { margin: 0 0 2px; }
+  .tcard-mons canvas { max-height: 42px; }
+  .tcard-cells { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .tcard-modes { gap: 4px; }
+  .tcard-cells div, .tcard-modes div { padding: 3px 8px; }
+  .tcard-cells span, .tcard-modes span { font-size: 11px; }
+  .tcard-modes b { font-size: 13px; }
+  .tcard-h { margin: 4px 0 3px; font-size: 13px; }
+  #scr-tcard .row { margin-top: 6px; }
+  #scr-tcard .btn { padding: 4px 18px; }
+  .tcard-cells b { font-size: 15px; }
+  .lex-grid, .ach-grid, .title-list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+}

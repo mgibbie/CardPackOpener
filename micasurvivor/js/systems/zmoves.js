@@ -277,7 +277,8 @@ G.ZMoves = (() => {
     /** Un golpe del Z. Contra un jefe, el total de este Z no pasa del 28 % de su vida máxima. */
     zhit(e, amount, dx, dy, knock = 0, poison = 0, slow = 0, cc = '') {
       const pl = this.pl;
-      const src = { mtype: this.type, cc, ccp: cc ? 1 : 0, poison, slow, mkind: 'zmove' };
+      // (M5 lote 11: dsrc 'dyna' en las ondas Max del Dynamax, que usan este mismo golpe; si no, el desglose lo apunta al Z)
+      const src = { mtype: this.type, cc, ccp: cc ? 1 : 0, poison, slow, mkind: 'zmove', dsrc: this.dsrc || '' };
       const crit = pl.critChance > 0 && Math.random() < pl.critChance;
       let d;
       if (!e.boss) d = G.Combat.land(e, amount, this.col(3), dx, dy, knock, src, crit, pl);

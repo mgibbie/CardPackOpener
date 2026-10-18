@@ -94,7 +94,8 @@ G.DB = (() => {
       missions: {},           // misiones del día / semana (systems/progress.js)
       profile: { favs: [], title: '' },   // perfil público: 3 favoritos y título
       stats: { runs: 0, bestTime: 0, bestLevel: 0, totalKills: 0, pulls: 0, coinsEarned: 0, shinies: 0,
-               bossesTotal: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
+               bossesTotal: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0,
+               totalTime: 0, chests: 0 }   // (M5 lote 11: tiempo jugado y cofres, para la tarjeta de entrenador; save_data.gd 86)
     };
   }
 
@@ -318,6 +319,14 @@ G.DB = (() => {
     // (MicaSurvivor M5: también los derrotados por tipo, stats.tk_<tipo>: el mayor de cada uno.)
     r.stats = r.stats || {};
     for (const k in older.stats || {}) r.stats[k] = Math.max(r.stats[k] || 0, older.stats[k] || 0);
+    // MicaSurvivor (M5 lote 11): el título en uso, el elegido más tarde (profile.titleAt) aunque la otra versión sea la
+    // más reciente por otra cosa; los títulos que tienes salen de los logros (unión, arriba), así que nunca se pierde uno.
+    const po = isObj(older.profile) ? older.profile : null;
+    if (po && (po.titleAt || 0) > ((r.profile && r.profile.titleAt) || 0)) {
+      r.profile = isObj(r.profile) ? r.profile : { favs: [], title: '' };
+      r.profile.title = typeof po.title === 'string' ? po.title : '';
+      r.profile.titleAt = po.titleAt;
+    }
     if (r.starter == null) r.starter = older.starter;
     if (r.personality == null) r.personality = older.personality;
     if (r.partner == null || !r.owned[r.partner]) { r.partner = older.partner; r.partnerShiny = older.partnerShiny; }

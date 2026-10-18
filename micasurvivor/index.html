@@ -146,6 +146,7 @@
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
+        <button class="menu-item" data-go="lexicon">Léxico<small>Objetos, movimientos, estados y más</small></button> <!-- MicaSurvivor (M5 batch 11): the encyclopedia -->
         <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
         <button class="menu-item" data-go="rank">Ranking<small id="menu-rank-sub">Próximamente</small></button>
         <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
@@ -362,9 +363,33 @@
       <div class="tab on" data-tab="missions">Misiones</div>
       <div class="tab" data-tab="ach">Logros</div>
       <div class="tab" data-tab="zcr">Cristales Z</div>
+      <div class="tab" data-tab="titles">Títulos</div> <!-- MicaSurvivor (M5 batch 11) -->
       <div class="tab" data-tab="profile">Perfil</div>
     </div>
     <div id="goals-body" class="goals-body"></div>
+  </div>
+</section>
+
+<!-- ====== MicaSurvivor (M5 batch 11): tarjeta de entrenador ====== -->
+<section id="scr-tcard" class="scr dim hidden">
+  <div class="box tcard-box">
+    <div id="tcard-body"></div>
+    <div class="row center"><button class="btn gold" id="tcard-close">Cerrar</button></div>
+  </div>
+</section>
+
+<!-- ====== MicaSurvivor (M5 batch 11): el Léxico (enciclopedia) ====== -->
+<section id="scr-lexicon" class="scr dim hidden">
+  <div class="box wide">
+    <div class="row between"><h2>Léxico</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="tabs lex-tabs" id="lex-tabs"></div>
+    <div id="lex-body" class="goals-body lex-body"></div>
+  </div>
+</section>
+<section id="scr-lexpop" class="scr dim hidden">
+  <div class="box lexpop-box">
+    <div id="lexpop-body"></div>
+    <div class="row center"><button class="btn gold" id="lexpop-close">Cerrar</button></div>
   </div>
 </section>
 
@@ -597,6 +622,7 @@
 <script defer src="js/systems/weather.js"></script>
 <script defer src="js/systems/pathing.js"></script>
 <script defer src="js/systems/progress.js"></script>
+<script defer src="js/systems/dmglog.js"></script> <!-- MicaSurvivor (M5 batch 11): damage per source -->
 <script defer src="js/systems/zmoves.js"></script> <!-- MicaSurvivor (M5): Z-moves -->
 <script defer src="js/systems/dynamax.js"></script> <!-- MicaSurvivor (M5): Dynamax + raid dens -->
 <script defer src="js/systems/modes.js"></script> <!-- MicaSurvivor (M5 batch 6): quick modes + modifiers -->
@@ -627,6 +653,7 @@
 <script defer src="js/ui/ranking-ui.js"></script>
 <script defer src="js/ui/mod-ui.js"></script>
 <script defer src="js/ui/goals-ui.js"></script>
+<script defer src="js/ui/lexicon-ui.js"></script> <!-- MicaSurvivor (M5 batch 11): the encyclopedia (Lexicon) -->
 <script defer src="js/ui/settings-ui.js"></script>
 <script defer src="js/ui/layout-ui.js"></script>
 <script defer src="js/ui/news-ui.js"></script>

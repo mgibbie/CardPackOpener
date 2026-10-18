@@ -2521,6 +2521,8 @@ async function micasurvivorView() {
     ...(D.difficulty ? [msDifficultySection(D.difficulty)] : []),
     // MicaSurvivor M5 batch 10: the minimap, the field of view and the UI scale (micasurvivor/js/core/display.js, js/ui/minimap.js)
     ...(D.display ? [msDisplaySection(D.display)] : []),
+    // MicaSurvivor M5 batch 11: achievements, missions, titles, the damage breakdown, the Lexicon and the trainer card
+    ...(D.goals ? [msGoalsSection(D.goals)] : []),
     mcSection('Getting there', null,
       h('ul', { class: 'mc-list' },
         h('li', null, h('b', null, 'Landing page: '), 'the MicaSurvivor tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micasurvivor/' }, '/micasurvivor/'), '.'),
@@ -2626,6 +2628,35 @@ function msDisplaySection(D) {
       [h('b', null, F.name), F.min + '–' + F.max + ' % in steps of ' + F.step + ' (' + F.def + ' %)', 'The camera zoom, applied live (also on the pause screen). Lower shows more of the world: at ' + F.def + ' % the view is ' + F.viewW + ' world px across, at ' + F.min + ' % about ' + Math.round(F.viewW * F.def / F.min) + '. Dynamax and the Tower keep it. On a small screen (a phone) it never goes below ' + F.phoneMin + ' %.'],
       [h('b', null, U.name), U.min + '–' + U.max + ' % in steps of ' + U.step + ' (' + U.def + ' %)', 'Scales the in-run HUD and every menu and button together, with a Reset button. It goes only as large as the screen allows (so nothing is cut off) and, with a touch screen, no smaller than ' + U.touchMin + ' %; on-screen buttons keep their full touch area.'],
     ], 'ms-display'));
+}
+
+// MicaSurvivor M5 batch 11: achievements, missions and titles, the run damage breakdown, the in-game encyclopedia
+// ("Lexicon") and the trainer card (from the Android port by JayElDragon; the lists and rewards are the port's)
+function msGoalsSection(D) {
+  const A = D.achievements;
+  const rw = r => [r.coins ? r.coins.toLocaleString('en') + ' coins' : '', r.t1 ? r.t1 + ' ticket' + (r.t1 > 1 ? 's' : '') : '', r.t10 ? r.t10 + ' ×10 ticket' + (r.t10 > 1 ? 's' : '') : ''].filter(Boolean).join(' + ');
+  const daily = D.missions.filter(m => m.period === 'daily'), weekly = D.missions.filter(m => m.period === 'weekly');
+  return mcSection('Goals, titles, Lexicon and trainer card', 'Missions → Missions / Achievements / Titles / Profile, and Lexicon on the main menu (mouse, touch or controller). Every reward is coins or gacha tickets earned in play; achievements, titles and records are saved to your account and merged safely across devices.',
+    h('h3', { class: 'mc-h3' }, 'Achievements'),
+    h('p', null, A.total + ' achievements in ' + A.cats.length + ' categories, each with a bronze, silver or gold medal and a reward when you get it; some also give a title. "By type" has three per type (defeat 250 / 1,000 / 5,000 Pokémon of that type; a dual-type Pokémon counts for both), and "Legendaries" one per legendary beaten in a rift.'),
+    msTable(['Category', 'Achievements', 'Titles'], A.cats.map(c => [h('b', null, c.name), String(c.count), String(c.titles)]), 'ms-achcats'),
+    msTable(['Achievement', 'Goal', 'Reward'], [
+      ...A.bosses.map(b => [h('b', null, b.name), 'Defeat ' + b.goal.toLocaleString('en') + ' boss' + (b.goal > 1 ? 'es' : ''), rw(b.reward) + (b.title ? ' · title “' + b.title + '”' : '')]),
+      ...A.byType.map(t => [h('b', null, t.name), 'Defeat ' + t.goal.toLocaleString('en') + ' X-type Pokémon (each of the 18 types)', rw(t.reward)]),
+    ], 'ms-achboss'),
+    h('h3', { class: 'mc-h3' }, 'Missions'),
+    h('p', null, 'Every day ' + 3 + ' daily missions and every week ' + 2 + ' weekly ones are drawn from these lists (the same for your account on every device; one daily can be swapped a day). Where a mission has several goals, one is drawn. Mode missions count only runs of that mode; the modifier ones count any run with that many modifiers (the Daily Challenge’s rule is not a modifier). Claim the reward on the Missions tab.'),
+    msTable(['Daily mission', 'Reward'], daily.map(m => [m.random ? m.text.replace('Fire-type', 'X-type') + ' (type drawn at random)' : m.text, rw(m.reward)]), 'ms-daily'),
+    msTable(['Weekly mission', 'Reward'], weekly.map(m => [m.text, rw(m.reward)]), 'ms-weekly'),
+    h('h3', { class: 'mc-h3' }, 'Titles'),
+    h('p', null, D.titles.length + ' titles, each from an achievement: ' + D.titles.map(t => t.title).join(', ') + '. Choose one on Missions → Titles or in your profile; it shows under your Pokémon on the main menu, on your trainer card and on your public profile. On two devices, the title chosen last wins.'),
+    h('h3', { class: 'mc-h3' }, 'After a run: damage and defeats'),
+    h('p', null, 'The run-over screen lists the damage (the HP enemies really lost) and the defeats of each of your moves, most damage first, then ' + D.breakdown.map(b => b.name).join(', ') + ', each with its share of the total (they add up to 100 %).'),
+    h('h3', { class: 'mc-h3' }, 'Lexicon'),
+    h('p', null, 'The in-game encyclopedia, with the tabs ' + D.lexicon.tabs.map(t => t.name).join(', ') + '. Items show whether you have found them, moves what they evolve into and whether you ever evolved them, Z-moves and Dynamax whether they are unlocked, Pokémon whether you have them, and the modes and the Floor Tower your records (best floor, relics, the boss log). Every entry opens with its full text.'),
+    msTable(['Status', 'What it does'], D.lexicon.status.map(st => [h('b', null, st.name), st.desc]), 'ms-status'),
+    h('h3', { class: 'mc-h3' }, 'Trainer card'),
+    h('p', null, 'Profile → "View my trainer card": your name, your title, your Pokémon and three favourites, and ' + D.card.join(', ') + ', with your records in every mode. View only: nothing to share or export, and nothing from your account beyond the name other players already see.'));
 }
 
 let msPokeQ = '';

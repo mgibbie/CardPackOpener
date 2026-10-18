@@ -166,8 +166,8 @@ G.RunUI = (() => {
         <div style="font-size:12px;color:var(--muted)">${r.breakdown}</div></div>
       ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
         ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
-      <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
-        ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${m.name} <span>Nv.${m.lvl}</span>`).join(' · ') || '—'}</b></div>
+      ${r.dmg ? dmgTable(r.dmg) : `<div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
+        ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${m.name} <span>Nv.${m.lvl}</span>`).join(' · ') || '—'}</b></div>`}
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>
         <div class="caught-row" id="over-caught"></div></div>` : ''}
       ${r.record ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de tiempo!</div>' : ''}
@@ -189,6 +189,28 @@ G.RunUI = (() => {
       }
     }
     G.UI.show('scr-over');
+  }
+
+  /** El número corto del port (menu.gd _fmt_n): 12.3k, 1.2M. */
+  const fmtN = n => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'k' : String(n));
+  /**
+   * MicaSurvivor (M5 lote 11, menu.gd 1801-1890): "Daño y derrotas por movimiento". Una fila por movimiento que
+   * llevas (de más a menos daño, con su icono y nivel), y luego Movimiento Z, Dynamax, Objetos, Habilidades,
+   * Estados alterados, Compañero / equipo y Otros (G.DmgLog.summary). Cada fila: daño (y su %, que entre
+   * todas suman 100) y derrotados. Con más de 5 filas, la tabla se desplaza (como el port).
+   */
+  function dmgTable(d) {
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const rows = d.rows.map(r => {
+      const label = r.id ? `${G.Icons.html('move:' + r.id, 18)} <span class="dm-nm">${esc(r.name)}</span> <small>Nv.${r.lvl}</small>`
+                         : `<span class="dm-nm">${esc(r.name)}</span>`;
+      return `<tr data-key="${esc(r.key)}" class="${r.id ? 'dm-move' : 'dm-' + r.key}"><td class="dm-src">${label}</td>
+        <td class="dm-dmg"><b>${fmtN(r.dmg)}</b> <span class="dm-pct">(${r.pct}%)</span></td><td class="dm-k">${r.kills}</td></tr>`;
+    }).join('');
+    return `<div style="grid-column:1/-1" class="over-dmg" id="over-dmg"><span>Daño y derrotas por movimiento</span>
+      <div class="dm-wrap${d.rows.length > 5 ? ' scroll' : ''}"><table class="dm-table">
+        <thead><tr><th>Movimiento</th><th>Daño</th><th>Derrotados</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="3">—</td></tr>'}</tbody></table></div></div>`;
   }
 
   /** Has encontrado un objeto llevando ya otro: ¿con cuál te quedas? */

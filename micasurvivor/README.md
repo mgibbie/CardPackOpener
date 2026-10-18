@@ -813,6 +813,82 @@ its own screen. Nothing new to merge on a 409.
   altars, springs and traps use the port's fallback shapes, not its prop sprites.
 - The minimap redraws every frame (the web's HUD does); the port caches its drawing at 25 Hz.
 
+### Batch 11: Achievements, missions, titles, damage breakdown, Lexicon and trainer card
+
+`js/data/achievements.js`, `js/data/missions.js`, `js/systems/progress.js`, `js/systems/dmglog.js` (`G.DmgLog`),
+`js/ui/lexicon-ui.js` (`G.LexiconUI`), `js/ui/goals-ui.js` (`G.TrainerCard`, the Titles tab), `js/ui/run-ui.js`;
+port `progress.gd` 9-151 / 291-334 / 447-639, `main.gd` 351-355 / 758-858 / 2481 / 4484-4492 / 5168, `menu.gd`
+1465 / 1691 / 1801-1890 / 3047-3194 / 3503-3826, `save_data.gd` 84-86 / 588. The plan's "+93 / +13" was counted
+before batches 6-8; diffing the port's full lists against ours left exactly this:
+
+| | Port | We had | Added |
+|---|---|---|---|
+| Achievements | 82 + 54 per type + one per legendary (223 here) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
+| Daily missions | 17 | 13 | `mDaily`, `mMods`, `mType`, `mRifts` |
+| Weekly missions | 13 | 9 | `wDailyCh`, `wType`, `wRifts`, `wMods` |
+| Titles | 36 (one per achievement that gives one) | 34 | "Verdugo de jefes" (500 bosses), "Rey de los jefes" (1,000) |
+
+**Achievements.** The port's goals, tiers and rewards; the new "Por tipo" category sits after Combate, as in the
+port. Per type: defeat 250 / 1,000 / 5,000 Pokémon of a type ("Rastreador / Cazador / Maestro de tipo X";
+300 coins + 2 tickets, 1,000 + 3 + one x10, 3,000 + three x10), from `stats.tk_<type>`, which progress.js
+already counted (a dual-type Pokémon counts for both). Bosses: 10 (3 tickets), 250 (three x10), 500 (five x10 and
+a title), 1,000 (ten x10 and a title), from `stats.bossesTotal`. Every reward is coins or gacha tickets, earned in
+play. Nothing in the port depends on local co-op or on other languages, so nothing is pending.
+
+**Missions.** The lists are now in the port's order (the daily draw picks by position), with its goals, rewards
+and wording. The new ones count only their own runs, as the port's `req`: `mDaily` / `wDailyCh` the Daily
+Challenge, `mType` / `wType` Survival by Type, `mRifts` / `wRifts` the rifts won in a Rift Time Attack (game.js now
+sends `rifts` with `runEnd`), `mMods` any run with a modifier and `wMods` one with 3 or more (the Daily's rule is
+not a modifier: it reports 0). Rotation as the port: 3 daily + 2 weekly a period, seeded by FNV-1a of period +
+account and mulberry32, one reroll a day to a mission not already listed.
+
+**Titles.** Missions → Titles (the port's `_goals_titles`): "Title in use", "No title", then every title with its
+achievement and Use / In use / Locked. The Profile tab's select does the same. Equipping stores
+`profile.title` and `profile.titleAt`; on a 409 or any merge the title chosen later wins (whichever save is newer
+otherwise), and the titles you own come from the achievements (a union), so none is ever lost. Shown on the main
+menu under your Pokémon (`menu.gd` 1691), on the trainer card and on the public profile, as before.
+
+**Run damage breakdown** (`menu.gd` "Damage and defeats per move"). Every point of HP an enemy loses is recorded
+in `Enemy.hurt` (after shields, never more than the HP it had; the kill goes to the finishing source), with the
+source set by `G.Combat.land` (moves, their projectiles, orbs, mines, turrets, trails; the Z-move; Dynamax's Max
+waves) or where the hit happens (Rocky Helmet → Items, contact abilities → Abilities, burn / poison ticks and
+confused enemies → Status effects, a co-op mate's hits → Partner / team; traps, bombs and lava → Other). The
+run-over screen lists your moves (icon, level; most damage first), then Z-Move, Dynamax, Items, Abilities, Status
+effects, Partner / team and Other, each with damage (12.3k as the port), its percentage and defeats. The table
+scrolls past 5 rows.
+
+**Lexicon** (main menu → Lexicon; mouse, touch, pad). The port's five tabs: Items ("✔ Found" / "Not found yet" and
+"Items: n / 26 found"), Moves (by type, "Evolves into: …"), Status (the port's 7 texts), Abilities, Z-Moves &
+Dynamax (the rule, the Dynamax entry left pending in batch 5, each Z with "Defeat 250 X-type Pokémon: n/250" or
+"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 966, by generation; yours with their sprite, the
+others as silhouettes), Modes (the 8 modes with your records, the Tower and Boss Rush included, the 6 modifiers,
+adaptive difficulty) and the Floor Tower (relics, the rest cards, the 15 + 4 pacts and the boss log that was only
+on the fail screen). Every card opens an entry with its full text and data; Close, Esc, B or a tap outside closes
+it. Tracking reads what the save already has (items found, moves evolved, Z unlocks, dens, owned Pokémon, mode
+stats); nothing new is stored.
+
+**Trainer card** (Profile → "View my trainer card"; `menu.gd` `_show_card`): your display name, your title (or
+"(no title)"), your Pokémon and your 3 favourites, and the port's 9 cells: Runs, Best time, Best level, Defeated,
+Bosses, Chests, Pokémon (n / 966), Achievements (n / 223), Time played (new stat `stats.totalTime`, seconds,
+max-merged like every stat). Below, "Records by mode". View only, like the port: no share or export, and nothing
+from the account but the name other players already see.
+
+**Deviations, and why:**
+- The breakdown splits the port's single "Other (status, traps, items)" row into Z-Move, Dynamax, Items,
+  Abilities, Status effects and Other (the plan asks for each), and shows a percentage on every row (the port
+  leaves it off "Other"), rounded by largest remainder so they add up to 100. No DPS column and nothing on the
+  pause screen: the port has neither.
+- The mission seeds keep this web game's period ids (`d20261018`, ISO weeks) and account key (`created` in ms)
+  rather than the port's (`2026-10-18`, the Monday's date, seconds). The algorithm and the list order are the
+  port's; changing the seed format would have re-rolled everyone's missions of the day.
+- The Lexicon adds the Pokémon, Modes, Floor Tower and dens pages, and opens each card into an entry (the port
+  shows the text on the card only).
+- Titles are not shown on co-op name tags: the port's co-op (batch 12) doesn't show them either.
+- The trainer card adds "Records by mode" (batch 8 asked for the Tower / Rush records there). The name is the
+  account's display name: the web has no separate "trainer name" field (the port's nick).
+- Not ported (languages dropped by the owner, 2026-10-18): nothing; the port has no language achievements or
+  missions, and its Lexicon text is ported in Spanish and English only.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -938,4 +1014,20 @@ its own screen. Nothing new to merge on a 409.
   its caps, touch areas, Reset, and nothing overflowing at the min / max on 1280 x 720 and 844 x 390; no overlap
   between the minimap and any HUD element in a busy run at three scales on desktop and phone (and with the fixed
   joystick); the pad on both sliders and the pause screen's; device-local persistence after a reload.
+- `node overworld/tests/micasurvivor_progress_test.mjs` (M5 batch 11), logged in with a stubbed account row: the port's
+  full achievement list (the 58 added with their goals, tiers, rewards and titles, the category's place) and both
+  mission lists in the port's order, English; every new achievement unlocked by a real kill (not one short) and
+  paying exactly its reward, dual types, the Judgment exception; the mission rotation against a reimplementation of
+  progress.gd over 10 days / accounts and 400 days, the reroll; each new mission counting only its own mode, then
+  real runs of each mode ended by the game, claiming; titles: the list, Use / Locked, equip by mouse, touch and pad,
+  the profile select, the menu, the public profile, the account row, a reload, a 409 merge (the later title, the max
+  of each stat) and `merge()` both ways; damage attribution in a controlled run (2 moves, Rocky Helmet through the
+  real contact, a Z-move, Dynamax, a burn tick) against the HP each really took, the kill, the row order, the
+  largest-remainder percentages, Partner / team, and the run-over table (12.0k, %, headers); the trainer card
+  against the save by mouse, touch, pad and Esc; no Spanish on any of these screens.
+- `node overworld/tests/micasurvivor_encyclopedia_test.mjs` (M5 batch 11): the Lexicon's tabs, the port's status
+  texts and every entry list; reaching it by mouse, touch and pad, Back / B / Esc; every one of its 1,178 entries
+  opening (all 966 Pokémon included); on each tab an entry opened by pad and by touch; unlock tracking against the
+  save (items found, moves evolved, Z unlocks, Dynamax before / after dens, owned Pokémon, mode records, relics,
+  the Tower boss log); no Spanish on any tab or entry.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

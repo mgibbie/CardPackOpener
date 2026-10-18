@@ -6,7 +6,7 @@
  *   item      { id }        objeto equipado
  *   evolve    { move }      movimiento evolucionado
  *   rift      { type }      pelea de grieta ganada
- *   runEnd    { time, level, coins, types, group }
+ *   runEnd    { time, level, coins, types, group, mode, nmods, bosses, floor, rifts }  (lo de los modos: M5 lotes 7, 8 y 11)
  *   judge     llegas a la Sentencia de Arceus (minuto 30)
  *   judgeEnd  { time, bosses }  aguantado ante Arceus (al acabar la partida)
  *   missionDone { daily }   (lo lanza claim)
@@ -18,7 +18,9 @@
  *   stats.tk_<tipo>  derrotados de cada tipo, de por vida (MicaSurvivor M5, del port de Android:
  *                    progress.gd "tk_"; un Pokémon de dos tipos suma en los dos; la mezcla de
  *                    partidas de db.js se queda con el mayor de cada uno)
+ *   stats.totalTime  segundos jugados, de por vida (M5 lote 11: la tarjeta de entrenador; save_data.gd total_time)
  *   legends{dex} · arenas{tipo} · itemsFound{id} · evoMoves{id} · ach{id}
+ *   profile.title / titleAt   el título en uso y cuándo se eligió (M5 lote 11: setTitle; db.js merge se queda el último)
  *   missions { day, daily[], rerolled, week, weekly[] }
  *
  * Misiones: 3 diarias + 2 semanales, sorteadas con una semilla de la fecha y
@@ -209,6 +211,24 @@ G.Progress = (() => {
     return G.AchDefs.LIST.filter(a => a.title && s && s.ach && s.ach[a.id]).map(a => a.title);
   }
 
+  /** MicaSurvivor (M5 lote 11, menu.gd _goals_titles 3772-3806): todos los títulos del juego, con su logro y si es tuyo. */
+  function titleList(s = G.DB.save) {
+    return G.AchDefs.LIST.filter(a => a.title).map(a => ({ title: a.title, ach: a, done: !!(s && s.ach && s.ach[a.id]) }));
+  }
+
+  /** Ponte un título ('' = ninguno). Sólo uno que tengas (menu.gd _set_title); se guarda con la hora (para fusionar). */
+  function setTitle(t, s = G.DB.save) {
+    if (!s) return false;
+    t = typeof t === 'string' ? t : '';
+    if (t && !titles().includes(t)) return false;
+    s.profile = s.profile || { favs: [], title: '' };
+    s.profile.title = t;
+    s.profile.titleAt = Date.now();
+    G.DB.commit();
+    if (G.Social.me) G.Social.publishProfile(true);
+    return true;
+  }
+
   /** Premios de misiones por recoger (para el aviso del menú). */
   function pending() {
     const s = G.DB.save;
@@ -255,5 +275,5 @@ G.Progress = (() => {
     return (s && s.stats && s.stats['tk_' + type]) || 0;
   }
 
-  return { get off() { return off; }, set off(v) { off = !!v; }, typeKills, countChest, notify, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
+  return { get off() { return off; }, set off(v) { off = !!v; }, typeKills, countChest, notify, ensure, event, kill, claim, reroll, checkAch, titles, titleList, setTitle, pending, text, done, rewardText, grant, rng, pickSet };
 })();

@@ -356,7 +356,7 @@ try {
 		await pauseRun();
 		const b = await snap();
 		A(a.world === b.world && a.cast === b.cast && a.bosses === b.bosses && a.moves === b.moves && a.dex === b.dex, 'a second daily today: the same world seed, enemy cast, bosses, Pokémon and starting moves (seeded)', JSON.stringify([a.world, b.world, a.bosses, b.bosses]));
-		const other = await E(() => { const s2 = 20261018; return G.Modes.seeded(s2, () => { const r = G.Enemies.rollRun(); return { cast: r.cast.map(t => t.list.map(d => d.dex + ':' + d.behavior)).join(','), bosses: r.bosses.map(b => b.dex).join(',') }; }); });
+		const other = await E(() => { const s2 = G.Modes.dailySeed() === 20261018 ? 20261019 : 20261018;   /* (never today: on 2026-10-18 the fixed date WAS today) */ return G.Modes.seeded(s2, () => { const r = G.Enemies.rollRun(); return { cast: r.cast.map(t => t.list.map(d => d.dex + ':' + d.behavior)).join(','), bosses: r.bosses.map(b => b.dex).join(',') }; }); });
 		A(other.cast !== a.cast || other.bosses !== a.bosses, 'another date seeds a different run');
 		const c2 = await endRun(100);
 		const o2 = await E(() => ({ daily: G.DB.save.daily, plays: G.DB.save.stats.dailyPlays, mode: document.querySelector('#scr-over .over-mode').innerText }));

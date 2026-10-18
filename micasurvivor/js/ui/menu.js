@@ -5,7 +5,7 @@ G.MenuUI = (() => {
   let dexFilter = 'all', dexGen = 1, dexSel = null;
 
   function init() {
-    const ICON = { play: 'ball', modes: 'm_daily', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', modes: 'm_daily', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', lexicon: 'cards', friends: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
@@ -17,6 +17,7 @@ G.MenuUI = (() => {
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'gacha') G.GachaUI.open();
         else if (go === 'goals') G.GoalsUI.open();
+        else if (go === 'lexicon') G.LexiconUI.open();   // MicaSurvivor (M5 lote 11): el Léxico (menu.gd 1465)
         else if (go === 'friends') G.FriendsUI.open();
         else if (go === 'rank') G.RankingUI.open();
         else if (go === 'settings') G.SettingsUI.open();
@@ -46,6 +47,9 @@ G.MenuUI = (() => {
     $('menu-partner-name').innerHTML = mon.name + (shiny ? ' ' + G.Icons.html('shiny', 24) : '');
     $('menu-partner-info').innerHTML = G.UI.typeChips(mon.types) + ' ' + G.UI.stars(mon.rarity)
       + G.UI.abilityLine(mon.dex, true);   // MicaSurvivor (M5): su habilidad
+    // MicaSurvivor (M5 lote 11, menu.gd 1691-1693): tu título, bajo tu Pokémon
+    const ttl = s.profile && s.profile.title;
+    if (ttl) $('menu-partner-info').insertAdjacentHTML('beforeend', `<div class="menu-title" id="menu-title">${ttl.replace(/[&<>"]/g, '')}</div>`);
     // Normal / shiny a mano, aquí mismo (en el móvil no se encontraba en la ficha).
     const seg = $('menu-shiny');
     seg.classList.toggle('hidden', !G.DB.ownsShiny(mon.dex));

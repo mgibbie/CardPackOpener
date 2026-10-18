@@ -6,7 +6,9 @@
 //   (the quick modes, the 6 modifiers and the level-up ban, M5 batch 6), js/systems/team.js (Team mode, M5
 //   batch 7), js/systems/bossrush.js + js/systems/tower.js (Boss Rush and the Floor Tower, M5 batch 8), js/systems/adaptive.js +
 //   js/data/enemies.js + js/world/tiles.js (adaptive difficulty, biome spawns and the support caps, M5 batch 9), js/core/display.js +
-//   js/ui/minimap.js (the minimap, the field of view and the UI scale, M5 batch 10) (+ lang-en.js for the English
+//   js/ui/minimap.js (the minimap, the field of view and the UI scale, M5 batch 10), js/data/achievements.js +
+//   js/data/missions.js + js/systems/dmglog.js + js/ui/lexicon-ui.js (achievements, missions, titles, the damage
+//   breakdown, the Lexicon and the trainer card, M5 batch 11) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -36,7 +38,8 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js']) {
+		if (f === 'ui/lexicon-ui.js') sandbox.G.UI = sandbox.G.UI || { $: () => null };   // (only its data tables are read)
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -104,11 +107,29 @@ export function build() {
 		minimap: { name: T('Minimapa'), desc: T('El mapa redondo de la izquierda: el terreno que has explorado, los enemigos cercanos, los cofres y altares, los jefes y la grieta.'),
 			size: MK.size, tiles: MK.VIEW, sight: MK.SIGHT, radar: MK.RADAR, traps: MK.TRAP_R, foes: MK.FOE_R },
 	};
+	// (M5 batch 11: achievements, missions, titles, the damage breakdown, the Lexicon and the trainer card)
+	const AD = G.AchDefs, MD = G.MissionDefs;
+	const rw = r => ({ coins: r.coins || 0, t1: r.t1 || 0, t10: r.t10 || 0 });
+	const goals = {
+		achievements: {
+			total: AD.LIST.length,
+			cats: AD.CATS.map(([k, n]) => ({ key: k, name: T(n), count: AD.LIST.filter(a => a.cat === k).length, titles: AD.LIST.filter(a => a.cat === k && a.title).length })),
+			bosses: AD.LIST.filter(a => /^boss[0-9]+$/.test(a.id)).map(a => ({ id: a.id, name: T(a.name), goal: a.goal, tier: a.tier, reward: rw(a.reward), title: a.title ? T(a.title) : '' })),
+			byType: AD.LIST.filter(a => a.cat === 'tipos' && a.type === 'fire').map(a => ({ goal: a.goal, tier: a.tier, name: T(a.name).replace('Fire', 'X'), reward: rw(a.reward) })),
+			types: AD.LIST.filter(a => a.cat === 'tipos').length,
+		},
+		missions: ['daily', 'weekly'].map(k => MD[k].map(d => ({ id: d.id, period: k, goals: d.goals, reward: rw(d.reward),
+			text: T(d.text(d.goals.join(' / '), 'fire')), random: d.param === 'type' }))).flat(),
+		titles: AD.LIST.filter(a => a.title).map(a => ({ title: T(a.title), ach: T(a.name), id: a.id })),
+		breakdown: G.DmgLog.ROWS.map(([k, n]) => ({ key: k, name: T(n) })),
+		lexicon: { tabs: G.LexiconUI.TABS.map(([k, n]) => ({ key: k, name: T(n) })), status: G.LexiconUI.STATUS.map(([k, n, d]) => ({ key: k, name: T(n), desc: T(d) })) },
+		card: ['Partidas', 'Mejor tiempo', 'Mejor nivel', 'Derrotados', 'Jefes', 'Cofres', 'Pokémon', 'Logros', 'Tiempo jugado'].map(T),
+	};
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
 		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
-		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, items, upgrades, abilities, pokemon,
+		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, goals, items, upgrades, abilities, pokemon,
 	};
 }
 
