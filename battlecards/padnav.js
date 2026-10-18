@@ -1,5 +1,6 @@
 // padnav.js — controller navigation for Battlecards' DOM screens
-// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 3). Signed-in players only.
+// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 3). Everyone, guests included
+// (the owner dropped the signed-in-only rule on 2026-10-18).
 //
 // A spatial navigator: every visible, clickable thing on the TOP layer is a
 // stop, and the d-pad moves to the nearest one in that direction. "Top layer"
@@ -27,11 +28,6 @@ import { askText, oskOpen } from '../site/osk.js';
 
 const SEL = 'button, a[href], input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"]), [data-padnav]';
 const TEXTY = /^(text|search|email|url|number|tel|password)?$/i;
-
-const signedIn = () => {
-	try { return !!localStorage.getItem('magepunk_mp_token_v1') && !!JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null')?.username; }
-	catch (e) { return false; }
-};
 
 let focused = null, lastRect = null, ringOn = false;
 
@@ -233,7 +229,7 @@ function scrollWithRightStick() {
 
 let pad = null;
 export function initPadnav() {
-	if (pad || typeof window === 'undefined' || !signedIn()) return null;
+	if (pad || typeof window === 'undefined') return null;
 	pad = startGamepad({
 		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
 		onPress,

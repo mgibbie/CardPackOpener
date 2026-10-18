@@ -1714,7 +1714,7 @@ async function micatroView() {
         [kbd('Esc'), 'Any time', 'Close a dialog, else open Options'],
       ]),
       h('h3', { class: 'mc-h3' }, 'Controller'),
-      h('p', { class: 'muted' }, 'Signed-in players only (a signed-out pad shows “Log in to use a controller”). Nintendo layout like the rest of the site — right face confirms, bottom face cancels; remap in the overworld’s OPTIONS → CONTROLS (see ', h('a', { href: '#/controls' }, 'Controls'), '). A gold reticle marks the focus; the hint bar shows the live button names.'),
+      h('p', { class: 'muted' }, 'Everyone, guests included. Nintendo layout like the rest of the site — right face confirms, bottom face cancels; remap in the overworld’s OPTIONS → CONTROLS (see ', h('a', { href: '#/controls' }, 'Controls'), '). A gold reticle marks the focus; the hint bar shows the live button names.'),
       table(['Button', 'Action'], [
         ['Stick / D-pad', 'Move the reticle between every card and button (or the open dialog)'],
         ['Right face (confirm)', 'Hand card: select · shop item: buy · pack card: take · owned Joker/consumable: select (again = use the consumable) · button: press'],
@@ -3451,7 +3451,7 @@ function controlsView() {
   content.replaceChildren(
     h('h1', null, 'Controls'),
     h('p', { class: 'muted' }, 'Every mode plays with a keyboard, a mouse or touch, or a game controller. ',
-      h('b', null, 'Controller play is for signed-in players.'),
+      h('b', null, 'Controller play is for everyone, signed in or not.'),
       ' The standard layout is Nintendo-style: the RIGHT face button confirms and the BOTTOM one cancels. On a Switch pad that reads A / B; on Xbox, B / A; on PlayStation, ○ / ✕. Switch to the Xbox layout, remap any button, or turn rumble on in the overworld under OPTIONS → CONTROLS (the setting applies everywhere).'),
     section('Overworld and Pokémon battles', 'Buttons by position; the hint bar at the bottom shows the names for the pad you are holding.',
       table(['Button', 'Roaming', 'Menus and battles'], [

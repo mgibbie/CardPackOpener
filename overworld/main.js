@@ -242,7 +242,7 @@ import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
 import { FactorySpec } from './factoryspec.js';
 import * as Chat from '../battlecards/chat.js';
-import { gamepadNeedsLogin, initGamepad } from './ow_gamepad.js';
+import { initGamepad } from './ow_gamepad.js';
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -920,10 +920,9 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	// CONTROLLER PLAY is for signed-in players only (owner's call, 2026-09-28):
-	// it starts once the account has loaded with a username. Signed out, a pad
-	// says so instead of silently doing nothing.
-	if (MP_ON && S.mpAccount?.username) {
+	// CONTROLLER PLAY: everyone, guests included (the owner dropped the old
+	// signed-in-only rule on 2026-10-18).
+	{
 		let touchWas = false;
 		const restoreTouch = () => { if (touchWas && !document.body.classList.contains('touch')) { document.body.classList.add('touch'); fitCanvas(); } };
 		S.gamepad = initGamepad({
@@ -935,7 +934,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		});
 		// ...and comes straight back on the next real touch
 		addEventListener('pointerdown', e => { if (e.pointerType === 'touch') restoreTouch(); });
-	} else gamepadNeedsLogin();
+	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, cutsceneCtxForTest: () => cutsceneCtx(), canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return S.party; }, get menuUi() { return S.menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
 		// save import without the native file chooser (automation): see importSave in ow_saves.js

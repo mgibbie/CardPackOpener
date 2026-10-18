@@ -61,7 +61,7 @@ try {
 	const tap = async (b, ms = 70) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(ms); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(140); };
 	const pb = () => page.evaluate(() => ({ mode: window.__padboard?.mode, focus: window.__padboard?.focus, slot: window.__padboard?.slot, active: window.__padboard?.active() }));
 
-	A(await page.evaluate(() => !!window.__padboard), 'signed in: the board controller runs on the match page');
+	A(await page.evaluate(() => !!window.__padboard), 'the board controller runs on the match page');
 	// the mulligan is a DOM modal: the board stands aside for padnav
 	A(await page.evaluate(() => window.__padboard.active() === false), 'while the mulligan is up the board stands aside (padnav owns modals)');
 	await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /keep hand/i.test(x.textContent)); if (b) { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.click(); } });

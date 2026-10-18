@@ -1,6 +1,6 @@
 // pad.js — controller play for Micatro (site/gamepad.js core, Nintendo layout:
-// right face = confirm, bottom face = cancel). Signed-in players only; a
-// signed-out player's pad just says how to enable it.
+// right face = confirm, bottom face = cancel). Everyone, guests included
+// (the owner dropped the signed-in-only rule on 2026-10-18).
 //
 // A focus reticle moves between every card and button on the table (or the
 // open modal) with the d-pad / left stick — the same spatial scoring as
@@ -26,17 +26,12 @@ const PACK = /_PACK(_HAND)?$/;   // TAROT_PACK ... BUFFOON_PACK, MOD_PACK, MOD_P
 const DOM_SEL = 'button:not(:disabled), a[href], input, .deck-pile, .tag-ico, [data-pad]';
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
-export const padSignedIn = () => {
-  try { return !!localStorage.getItem('magepunk_mp_token_v1') && !!(JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null') || {}).username; }
-  catch (e) { return false; }
-};
 const center = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 const onScreen = (r) => r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth && r.width > 4 && r.height > 4;
 
 export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay = null }) {
   let focus = null;            // {card:id} | {el}
   let ringOn = false, tipsOn = false, hold = null, lastState = null, lastModal = null, kind = 'generic';
-  const signed = padSignedIn();
 
   const reticle = document.createElement('div'); reticle.className = 'pad-reticle'; reticle.style.display = 'none';
   stage.appendChild(reticle);
@@ -247,12 +242,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
   }
 
   // --------------------------------------------------------------- input
-  let loginHinted = 0;
   function onPress(action) {
-    if (!signed) {
-      if (Date.now() - loginHinted > 4000) { loginHinted = Date.now(); board.toast('Log in to use a controller'); }
-      return;
-    }
     if (document.getElementById('osk')) return;            // the on-screen keyboard runs its own pad
     if (!ringOn && focus) { ringOn = true; place(); if (action !== 'menu' && action !== 'select') return; }
     if (hold && DIRS[action]) { reorderStep(action); return; }
@@ -320,8 +310,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
     const L = (a) => `<span class="pk">${buttonLabel(a, kind, { layout: st.layout, remap: st.remap })}</span>`;
     const v = view(), s = sprite(), modal = topModal();
     const parts = [];
-    if (!signed) { parts.push('Log in to use a controller'); }
-    else if (modal) { parts.push(`${L('confirm')} Choose`, `${L('cancel')} Back`); }
+    if (modal) { parts.push(`${L('confirm')} Choose`, `${L('cancel')} Back`); }
     else if (replay) { parts.push(`${L('confirm')} Press`, `${L('secondary')} Play/Pause`, `${L('prev')}${L('next')} Step`, `${L('menu')} Menu`); }
     else if (readOnly) { parts.push(`${L('confirm')} Info`, `${L('select')} Deck`, `${L('menu')} Menu`); }
     else {
@@ -348,7 +337,7 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
   const pad = startGamepad({
     readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
     onPress, onRelease,
-    onConnect: (e) => { kind = e.kind || 'generic'; if (!signed) board.toast('Log in to use a controller'); renderHints(); },
+    onConnect: (e) => { kind = e.kind || 'generic'; renderHints(); },
     onDisconnect: () => { setTimeout(() => { if (!pad.connected()) { ringOn = false; hold = null; place(); renderHints(); const s = sprite(); if (s) s.hover = false; } }, 0); },
     onFrame: () => {
       if (!pad.connected()) { if (hints.style.display !== 'none') hints.style.display = 'none'; return; }

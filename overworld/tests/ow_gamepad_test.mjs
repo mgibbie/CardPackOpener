@@ -1,7 +1,8 @@
 // ow_gamepad_test.mjs — controller play in the overworld and Pokémon battles
 // (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 1).
 //
-// Owner's calls: controller play is for SIGNED-IN players only, and the
+// Owner's calls: controller play is for EVERYONE, guests included (the
+// signed-in-only rule was dropped on 2026-10-18), and the
 // Nintendo layout is the standard (the RIGHT face button confirms, the bottom
 // one cancels). Headless Chrome has no controllers, so fake pads ride in
 // window.__owFakePads through the real site/gamepad.js poller; everything below
@@ -14,6 +15,7 @@ import { fileURLToPath } from 'url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
+const MAIN_ROOT = path.basename(path.dirname(ROOT)) === '.worktrees' ? path.resolve(ROOT, '../..') : null;
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 
@@ -37,11 +39,13 @@ const server = http.createServer(async (req, res) => {
 		const noUser = /nouser/.test(req.headers.authorization || '');
 		return res.end(JSON.stringify({ ok: true, state: noUser ? null : STATE, friends: [], challenges: [], match: null, presence: null, gifts: [], messages: [], rows: [], ow: null }));
 	}
-	fs.readFile(path.join(ROOT, u === '/' ? '/index.html' : u), (e, d) => {
+	const send = (e, d) => {
 		if (e) { res.writeHead(404); res.end('nf'); return; }
 		res.writeHead(200, { 'content-type': MIME[path.extname(u)] || 'application/octet-stream' });
 		res.end(d);
-	});
+	};
+	// run from a git worktree, the gitignored overworld/data is read from the main checkout
+	fs.readFile(path.join(ROOT, u === '/' ? '/index.html' : u), (e, d) => (e && MAIN_ROOT ? fs.readFile(path.join(MAIN_ROOT, u), send) : send(e, d)));
 });
 await new Promise(r => server.listen(PORT, r));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -90,18 +94,19 @@ try {
 		return { ctx, page, errors, hold, tap, stick, st };
 	};
 
-	// ===== not signed in (no account loaded): the controller does nothing, and says why =====
+	// ===== not signed in (no account loaded): the controller works exactly the same =====
 	{
 		const t = await open(false);
-		A(await t.page.evaluate(() => window.__ow.gamepad === null), 'signed out: no controller layer is started');
+		A(await t.page.evaluate(() => !!window.__ow.gamepad && window.__ow.gamepad.connected()), 'signed out: the controller layer runs and sees the pad');
 		await t.page.evaluate(() => dispatchEvent(new Event('gamepadconnected')));
 		await sleep(100);
-		A(/Sign in to play with a controller/.test((await t.st()).hud), '...and plugging one in says to sign in', (await t.st()).hud);
-		await t.tap(BTN.start);
+		A(!/Sign in to play with a controller/.test((await t.st()).hud), '...and plugging one in never says to sign in', (await t.st()).hud);
 		const x0 = (await t.st()).x;
-		await t.stick(1, 0); await sleep(600); await t.stick(0, 0); await sleep(300);
+		await t.stick(1, 0); await sleep(700); await t.stick(0, 0); await sleep(400);
 		const s = await t.st();
-		A(!s.start && s.x === x0, '...Start and the stick do nothing', JSON.stringify(s));
+		A(s.x > x0, '...the stick walks the player', `${x0} -> ${s.x}`);
+		await t.tap(BTN.start); await sleep(200);
+		A((await t.st()).start, '...and Start opens the start menu');
 		await t.ctx.close();
 	}
 
@@ -221,7 +226,7 @@ try {
 	A(t.errors.length === 0, 'no uncaught page error', JSON.stringify(t.errors.slice(0, 2)));
 	await t.ctx.close();
 
-	// PokéChess: its own page, same core, same sign-in rule
+	// PokéChess: its own page, same core (a guest pad works too: controllers_guest_test)
 	{
 		const ctx = await browser.createBrowserContext();
 		const page = await ctx.newPage();

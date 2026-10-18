@@ -1,5 +1,6 @@
 // padboard.js — playing a Battlecards match on a controller
-// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 4). Signed-in players only.
+// (Plans/CONTROLLER_SUPPORT_PLAN.md, Phase 4). Everyone, guests included
+// (the owner dropped the signed-in-only rule on 2026-10-18).
 //
 // The board is a Three.js canvas, so the DOM navigator (padnav.js) can't see
 // it. This keeps its own focus over what's on screen — your hand, both boards
@@ -27,11 +28,6 @@
 import { startGamepad, buttonLabel, loadPadSettings } from '../site/gamepad.js';
 import { oskOpen } from '../site/osk.js';
 import { openModal, setBoardGuard } from './padnav.js';
-
-const signedIn = () => {
-	try { return !!localStorage.getItem('magepunk_mp_token_v1') && !!JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null')?.username; }
-	catch (e) { return false; }
-};
 
 let api = null, pad = null;
 let focusKey = null;        // 'u:<uid>' | 'h:<playerIndex>'
@@ -366,7 +362,7 @@ function onFrame() {
 }
 
 export function initPadboard(gameApi) {
-	if (pad || typeof window === 'undefined' || !signedIn()) return null;
+	if (pad || typeof window === 'undefined') return null;
 	api = gameApi;
 	setBoardGuard(boardActive);
 	pad = startGamepad({
