@@ -2519,6 +2519,8 @@ async function micasurvivorView() {
     ...(D.modes ? [msModesSection(D.modes)] : []),
     // MicaSurvivor M5 batch 9: adaptive difficulty, biome spawns, support caps (micasurvivor/js/systems/adaptive.js, js/data/enemies.js)
     ...(D.difficulty ? [msDifficultySection(D.difficulty)] : []),
+    // MicaSurvivor M5 batch 10: the minimap, the field of view and the UI scale (micasurvivor/js/core/display.js, js/ui/minimap.js)
+    ...(D.display ? [msDisplaySection(D.display)] : []),
     mcSection('Getting there', null,
       h('ul', { class: 'mc-list' },
         h('li', null, h('b', null, 'Landing page: '), 'the MicaSurvivor tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micasurvivor/' }, '/micasurvivor/'), '.'),
@@ -2613,6 +2615,17 @@ function msDifficultySection(D) {
       [h('b', null, 'Summoner'), 'Calls ' + S.perCast + ' of its pack at a time; it stops calling with ' + S.perSummoner + ' of its own alive, and the map never holds more than ' + S.minions + ' summoned Pokémon (none at all when more than ' + S.capPad + ' foes over the cap are out).'],
       [h('b', null, 'Everywhere'), 'Each tier’s cast has one support Pokémon; biome extras and hordes never bring one.'],
     ], 'ms-support'));
+}
+
+// MicaSurvivor M5 batch 10: the minimap, the field-of-view slider and the UI scale (from the Android port by JayElDragon)
+function msDisplaySection(D) {
+  const F = D.fov, U = D.ui, M = D.minimap;
+  return mcSection('Display', 'Three display settings from the Android port, in Settings → Graphics → Display. They belong to the device (saved in the browser, not the account).',
+    msTable(['Setting', 'Range', 'What it does'], [
+      [h('b', null, M.name), 'On / off (on)', M.desc + ' Round, ' + M.size + ' px across on a 720 px tall screen (proportionally smaller on a phone), ' + M.tiles + ' tiles wide. Explored ground stays drawn (dimmed); you see everything within ' + M.sight + ' tiles. Chests, altars and springs within ' + M.radar + ' tiles (or already explored), traps within ' + M.traps + ', enemies within ' + M.foes + '; bosses and the rift always, pinned to the rim when far. It sits under your HP and moves to the next free spot so it never covers the HUD. Hidden in the rift arena, during Arceus’s Judgment and on the card and pause screens.'],
+      [h('b', null, F.name), F.min + '–' + F.max + ' % in steps of ' + F.step + ' (' + F.def + ' %)', 'The camera zoom, applied live (also on the pause screen). Lower shows more of the world: at ' + F.def + ' % the view is ' + F.viewW + ' world px across, at ' + F.min + ' % about ' + Math.round(F.viewW * F.def / F.min) + '. Dynamax and the Tower keep it. On a small screen (a phone) it never goes below ' + F.phoneMin + ' %.'],
+      [h('b', null, U.name), U.min + '–' + U.max + ' % in steps of ' + U.step + ' (' + U.def + ' %)', 'Scales the in-run HUD and every menu and button together, with a Reset button. It goes only as large as the screen allows (so nothing is cut off) and, with a touch screen, no smaller than ' + U.touchMin + ' %; on-screen buttons keep their full touch area.'],
+    ], 'ms-display'));
 }
 
 let msPokeQ = '';

@@ -273,6 +273,15 @@ G.World = (() => {
     return out;
   }
 
+  /** MicaSurvivor (M5 lote 10): todos los objetos de los chunks que toca un círculo (el minimapa). */
+  function propsAround(x, y, r) {
+    const out = [];
+    const c0x = Math.floor((x - r) / CW), c1x = Math.floor((x + r) / CW);
+    const c0y = Math.floor((y - r) / CW), c1y = Math.floor((y + r) / CW);
+    for (let cy = c0y; cy <= c1y; cy++) for (let cx = c0x; cx <= c1x; cx++) for (const p of chunkData(cx, cy).props) out.push(p);
+    return out;
+  }
+
   /** Roca o cofre más cercano (para apuntar cuando no hay enemigos). */
   function nearestBreakable(x, y, r) {
     let best = null, bd = r * r;
@@ -591,6 +600,8 @@ G.World = (() => {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
+    // MicaSurvivor (M5 lote 10): el minimapa lee el terreno por casilla (0 suelo, 1 pared, 2 líquido) y los objetos
+    terrain: terrainAt, propsAround,
     get seed() { return seed; },   // MicaSurvivor (M5 lote 6): el Desafío diario siembra el mundo (pruebas)
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
     /** Arena de la grieta: { tx, ty, r } (en tiles) o null. */

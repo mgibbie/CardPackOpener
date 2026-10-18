@@ -25,10 +25,30 @@ G.HUD = (() => {
     }
   }
 
-  function draw(ctx, w, h, pl, st) {
+  // MicaSurvivor (M5 lote 10): el HUD se dibuja escalado por el tamaño de la interfaz (display.js) en unidades
+  // propias (w / k × h / k). Cada elemento apunta su rectángulo (mark) para colocar el minimapa en un hueco libre
+  // y para las pruebas de solapes; el minimapa se coloca con los del fotograma anterior.
+  let hudK = 1, rects = [], last = [], mm = null;
+  function mark(name, x, y, w, h) { if (w > 0 && h > 0) rects.push({ name, x, y, w, h }); }
+  /** Un punto del mundo en unidades del HUD. */
+  function toHud(x, y) { const cam = G.Camera; return [(x - cam.left()) * cam.scale / hudK, (y - cam.top()) * cam.scale / hudK]; }
+  /** Las flechas del borde (grieta, shinies, compañeros, eventos) no se meten debajo del minimapa. */
+  function avoid(ex, ey, r) {
+    if (mm && ex - r < mm.x + mm.s + 6 && ex + r > mm.x && ey + r > mm.y && ey - r < mm.y + mm.s) ex = mm.x + mm.s + 6 + r;
+    return ex;
+  }
+
+  function draw(ctx, W, H, pl, st) {
     ctx.save();
+    const k = G.Display ? G.Display.ui(W, H) : 1;
+    hudK = k;
+    ctx.scale(k, k);
+    const w = W / k, h = H / k;
+    last = rects; rects = [];
+    mm = G.Minimap ? G.Minimap.place(w, h, last, H) : null;
     ctx.textBaseline = 'alphabetic';
     G.Touch.clearButtons();
+    G.Touch.scaleButtons(k);
     const touch = G.Touch.active;
 
     // ---------- barra de experiencia (borde superior) ----------
@@ -58,6 +78,7 @@ G.HUD = (() => {
     ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
     // MicaSurvivor (M5 lote 3, main.gd 8670): corazones de Segunda oportunidad que quedan.
     for (let i = 0; i < (pl.revives || 0); i++) G.Icons.draw(ctx, 'revive', px + 48 + 168 + 6 + i * 22, py + 12, 20);
+    mark('hp', px, py, 48 + 168 + (pl.revives ? 6 + pl.revives * 22 : 0), 32);
 
     // buffs activos
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
@@ -133,6 +154,13 @@ G.HUD = (() => {
       ctx.fillStyle = G.Adaptive.color(adPct);
       ctx.fillText('Reto: ' + adPct + '%', w / 2, 72);
     }
+    {
+      // (M5 lote 10) el bloque del centro: reloj, línea de debajo y el "Reto"
+      ctx.font = F(600, 10);
+      const sub = G.Modes.rifts() || G.Tower.on ? 190 : ctx.measureText(G.I18n.t(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS')).width;
+      const cw = Math.max(90, sub + 8);
+      mark('clock', w / 2 - cw / 2, 18, cw, (adPct > 0 ? 76 : 62) - 18);
+    }
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -147,6 +175,7 @@ G.HUD = (() => {
       G.Icons.draw(ctx, wx.icon, x0 + 6, y0 + 3, 20);
       ctx.fillStyle = wx.color;
       ctx.fillText(txt, x0 + 32, y0 + 17);
+      mark('weather', x0, y0, tw, 26);
     }
     // MicaSurvivor (M5 lote 6): el modo de la partida y los iconos de sus modificadores, arriba a la derecha.
     const MD = G.Modes, mt = MD.title();
@@ -161,7 +190,9 @@ G.HUD = (() => {
         ctx.strokeText(mt.toUpperCase(), mx - 4, my + 11);
         ctx.fillStyle = '#ffb36b';
         ctx.fillText(mt.toUpperCase(), mx - 4, my + 11);
+        mx -= 4 + ctx.measureText(G.I18n.t(mt.toUpperCase())).width;
       }
+      mark('mode', mx, my, w - 16 - (touch ? 56 : 0) - mx, 15);
     }
 
     // ---------- barra del jefe ----------
@@ -172,16 +203,17 @@ G.HUD = (() => {
       ctx.font = F(800, 10);
       ctx.fillStyle = '#20160a';
       ctx.fillText(boss.name.toUpperCase(), w / 2, by + 10);
+      mark('boss', (w - bw) / 2, by, bw, 12);
     }
 
     // ---------- aviso ----------
     // ---------- shinies fuera de pantalla: destello en el borde ----------
     const cam = G.Camera, pulse = 0.6 + Math.sin(performance.now() / 160) * 0.4;
     for (const e of G.EnemyMgr.shinies()) {
-      const sx = (e.x - cam.left()) * cam.scale, sy = (e.y - cam.top()) * cam.scale;
+      const [sx, sy] = toHud(e.x, e.y);
       if (sx > 0 && sx < w && sy > 0 && sy < h) continue;
       const M = 34;
-      const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 60, h - M - 70);
+      const ey = G.U.clamp(sy, M + 60, h - M - 70), ex = avoid(G.U.clamp(sx, M, w - M), ey, 24);
       const a = Math.atan2(sy - ey, sx - ex);
       ctx.save();
       ctx.globalAlpha = pulse;
@@ -209,6 +241,7 @@ G.HUD = (() => {
       ctx.fillText(txt, bx + 6, py + 45);
       bx += tw + 5;
     }
+    mark('chips', px, py + 34, bx - 5 - px, 15);
 
     if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));
 
@@ -216,7 +249,7 @@ G.HUD = (() => {
     // flecha que bota encima; en la arena, cuenta atrás.
     const rift = G.Rift.rift;
     if (rift) {
-      const sx = (rift.x - cam.left()) * cam.scale, sy = (rift.y - 40 - cam.top()) * cam.scale;
+      const [sx, sy] = toHud(rift.x, rift.y - 40);
       const now = performance.now() / 1000, beat = 0.5 + Math.sin(now * 7) * 0.5;
       // MicaSurvivor (M5 lote 5): la guarida Dynamax, en rojo y "GUARIDA ·".
       const den = !!rift.den, LBL = den ? 'GUARIDA · ' : 'GRIETA · ';
@@ -225,7 +258,7 @@ G.HUD = (() => {
       const off = sx < 0 || sx > w || sy < 0 || sy > h;
       ctx.save();
       if (off) {
-        const M = 52, ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);
+        const M = 52, ey = G.U.clamp(sy, M + 70, h - M - 80), ex = avoid(G.U.clamp(sx, M, w - M), ey, 40);
         const a = Math.atan2(sy - ey, sx - ex), ca = Math.cos(a), sa = Math.sin(a);
         ctx.translate(ex, ey);
         // Halo que late.
@@ -268,6 +301,7 @@ G.HUD = (() => {
       ctx.font = F(800, 12);
       ctx.fillStyle = G.Rift.den ? '#ffd0d6' : '#d9c2ff';
       ctx.fillText((G.Rift.den ? 'GUARIDA · ' : 'GRIETA · ') + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
+      mark('arena', w / 2 - 60, (boss ? 98 : 76) - 11, 120, 14);
     }
 
     // Eventos: cuenta atrás, flecha al Pokémon perdido / a la marca y a los duendes.
@@ -402,6 +436,7 @@ G.HUD = (() => {
       }
     }
 
+    mark('moves', sx, sy - 6 - 18, totalW, S + 6 + 18);
     // MicaSurvivor (M2): with a controller, its prev / next move buttons either side of the bar.
     const padOn = G.Pad && G.Pad.mode === 'pad';
     if (padOn && n > 1) {
@@ -431,6 +466,7 @@ G.HUD = (() => {
         roundRect(ctx, ix, iy, S, S, 12);
         ctx.fillStyle = id ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
         ctx.fill();
+        mark('item', ix, iy - 16, S, S + 16);
         ctx.lineWidth = id ? 2 : 1;
         ctx.strokeStyle = id ? '#ffd23f' : 'rgba(140,170,210,.18)';
         ctx.stroke();
@@ -450,6 +486,13 @@ G.HUD = (() => {
     if (G.Dynamax && !pl.remote) G.Dynamax.drawButton(ctx, w, h, pl);
     // ---------- Modo Equipo (M5 lote 7, main.gd draw_team / TeamUi): las fichas y el botón de cambiar ----------
     if (G.Team && !pl.remote) G.Team.drawHud(ctx, w, h, pl);
+    // (M5 lote 10) la columna de la derecha: Z, MAX y el botón de cambiar (con su texto de debajo) y las fichas del equipo
+    if (G.ZMoves && !pl.remote && G.ZMoves.activeType(pl)) { const r = G.ZMoves.buttonRect(w, h); mark('zmove', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
+    if (G.Dynamax && !pl.remote && G.Dynamax.unlocked()) { const r = G.Dynamax.buttonRect(w, h); mark('dynamax', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
+    if (G.Team && G.Team.on && !pl.remote && G.Team.view(pl).length > 1) {
+      G.Team.chipRects().forEach((r, i) => mark('team' + i, r.x, r.y, r.w, r.h));
+      const r = G.Team.buttonRect(w, h); mark('swap', r.x - 6, r.y - 6, r.s + 12, r.s + 26);
+    }
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
@@ -463,9 +506,13 @@ G.HUD = (() => {
       ctx.fillStyle = '#f4f8ff';
       ctx.fillRect(bx + 13, by + 11, 5, 18); ctx.fillRect(bx + 22, by + 11, 5, 18);
       G.Touch.addButton(bx, by, bs, bs, () => G.Game.togglePause(), 8);
+      mark('pause', bx, by, bs, bs);
     }
+    // (M5 lote 10) el joystick fijo (se dibuja sin escalar, en px de pantalla)
+    if (touch && G.Settings.get('stickMode') === 'fixed') { const b = G.Touch.stickBase(W, H), r = G.Touch.R(); mark('stick', (b.x - r) / k, (b.y - r) / k, 2 * r / k, 2 * r / k); }
 
     // pista de controles
+    if (st.time < 14) mark('hint', w / 2 - Math.min(w, 620) / 2, h - 16, Math.min(w, 620), 16);
     if (st.time < 14 && G.Pad && G.Pad.mode === 'pad') padHint(ctx, w, h);   // MicaSurvivor (M2)
     else if (st.time < 14) {
       ctx.font = F(600, 10);
@@ -478,7 +525,11 @@ G.HUD = (() => {
                          : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
     }
 
+    // ---------- minimapa (MicaSurvivor M5 lote 10, js/ui/minimap.js) ----------
+    if (mm) { G.Minimap.draw(ctx, mm, pl); mark('minimap', mm.x, mm.y, mm.s, mm.s); }
+
     ctx.restore();
+    G.Touch.scaleButtons(1);
   }
 
   /** MicaSurvivor (M2): the bottom controls hint with the controller's glyphs. */
@@ -528,15 +579,16 @@ G.HUD = (() => {
       }
       y += 15;
     }
+    mark('coop', px, top, 200, y - top);
 
     // Flechas hacia los compañeros fuera de la vista.
     for (const m of G.Coop.mates) {
       if (!m.connected) continue;
       const o = m.pl;
-      const sx = (o.x - cam.left()) * cam.scale, sy = (o.y - o.bodyH * 0.5 - cam.top()) * cam.scale;
+      const [sx, sy] = toHud(o.x, o.y - o.bodyH * 0.5);
       if (sx > 0 && sx < w && sy > 0 && sy < h) continue;
       const M = 42;
-      const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);
+      const ey = G.U.clamp(sy, M + 70, h - M - 80), ex = avoid(G.U.clamp(sx, M, w - M), ey, 28);
       const a = Math.atan2(sy - ey, sx - ex);
       const metres = Math.round(G.U.dist(pl.x, pl.y, o.x, o.y) / 32);
       const col = o.dead ? (Math.sin(t * 8) > 0 ? '#ff5f6d' : '#ffd0d5') : m.color;
@@ -584,5 +636,9 @@ G.HUD = (() => {
     }
   }
 
-  return { draw, roundRect, bar };
+  return {
+    draw, roundRect, bar, toHud, avoid,
+    /** MicaSurvivor (M5 lote 10): la escala del último fotograma y los rectángulos de sus elementos (unidades del HUD). */
+    get k() { return hudK; }, rects: () => rects.map(r => Object.assign({}, r)), get minimap() { return mm; }
+  };
 })();

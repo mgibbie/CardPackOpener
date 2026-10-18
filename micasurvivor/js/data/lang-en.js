@@ -940,5 +940,16 @@ G.I18n.add({
   'Reto: {x}%': 'Challenge: {x}%',
   'Dificultad adaptativa': 'Adaptive difficulty',
   'En la partida normal, el juego empieza fácil y se pone más difícil según tus mejoras: más vida y daño, más enemigos, hordas más seguidas y más experiencia por nivel.':
-    'In normal runs, the game starts easy and gets harder as you upgrade: more enemy health and damage, more enemies, more frequent hordes and more experience needed per level.'
+    'In normal runs, the game starts easy and gets harder as you upgrade: more enemy health and damage, more enemies, more frequent hordes and more experience needed per level.',
+  // MicaSurvivor (M5 lote 10): campo de visión, tamaño de la interfaz y minimapa (lang_en.json del port: "View",
+  // "Screen size", "Screen (px) → game view: ")
+  'Campo de visión': 'Field of view',
+  'Acerca o aleja la cámara: con menos se ve más mundo, con más se ve de más cerca.': 'Zooms the camera out or in: lower shows more of the world, higher shows it closer.',
+  'En pantallas pequeñas, como mínimo {x}%': 'On small screens, at least {x}%',
+  'Tamaño de la interfaz': 'Interface size',
+  'El tamaño del HUD, los menús y los botones.': 'The size of the HUD, the menus and the buttons.',
+  'Pantalla (px) → vista del juego:': 'Screen (px) → game view:',
+  'Minimapa': 'Minimap',
+  'El mapa redondo de la izquierda: el terreno que has explorado, los enemigos cercanos, los cofres y altares, los jefes y la grieta.':
+    'The round map on the left: the ground you have explored, nearby enemies, chests and altars, bosses and the rift.'
 });

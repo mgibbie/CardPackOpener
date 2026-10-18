@@ -5,7 +5,8 @@
 //   Z-crystal missions, M5 batch 4), js/systems/dynamax.js (Dynamax + raid dens, M5 batch 5), js/systems/modes.js
 //   (the quick modes, the 6 modifiers and the level-up ban, M5 batch 6), js/systems/team.js (Team mode, M5
 //   batch 7), js/systems/bossrush.js + js/systems/tower.js (Boss Rush and the Floor Tower, M5 batch 8), js/systems/adaptive.js +
-//   js/data/enemies.js + js/world/tiles.js (adaptive difficulty, biome spawns and the support caps, M5 batch 9) (+ lang-en.js for the English
+//   js/data/enemies.js + js/world/tiles.js (adaptive difficulty, biome spawns and the support caps, M5 batch 9), js/core/display.js +
+//   js/ui/minimap.js (the minimap, the field of view and the UI scale, M5 batch 10) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -35,7 +36,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js']) {
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -95,11 +96,19 @@ export function build() {
 		arenas: G.Tiles.ARENA_TYPES.filter(t => t !== 'judgment').length, extra: EN.BIOME_EXTRA, mul: EN.BIOME_W_MUL,
 		support: EN.SUPPORT_CAPS,
 	};
+	// (M5 batch 10: the minimap, the field-of-view slider and the UI scale)
+	const DP = G.Display, MK = G.Minimap.K;
+	const display = {
+		fov: { name: T('Campo de visión'), min: DP.FOV.min, max: DP.FOV.max, step: DP.FOV.step, def: DP.FOV.def, phoneMin: DP.FOV.phoneMin, phoneSide: DP.FOV.phoneSide, viewW: DP.VIEW.w },
+		ui: { name: T('Tamaño de la interfaz'), min: DP.UI.min, max: DP.UI.max, step: DP.UI.step, def: DP.UI.def, touchMin: DP.UI.touchMin },
+		minimap: { name: T('Minimapa'), desc: T('El mapa redondo de la izquierda: el terreno que has explorado, los enemigos cercanos, los cofres y altares, los jefes y la grieta.'),
+			size: MK.size, tiles: MK.VIEW, sight: MK.SIGHT, radar: MK.RADAR, traps: MK.TRAP_R, foes: MK.FOE_R },
+	};
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
 		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
-		starters, moves, zmoves, zrules, dynrules, modes, difficulty, items, upgrades, abilities, pokemon,
+		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, items, upgrades, abilities, pokemon,
 	};
 }
 

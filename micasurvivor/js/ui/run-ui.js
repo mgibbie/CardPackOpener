@@ -297,6 +297,9 @@ G.RunUI = (() => {
 
   function showPause(coop = false) {
     G.UI.soundControls($('pause-sound'));
+    // MicaSurvivor (M5 lote 10, pause_ui.gd 178-216): el campo de visión también en la pausa, como en el port.
+    $('pause-fov-box').innerHTML = G.Display.fovRow('pause');
+    G.Display.wire($('pause-fov-box'));
     $('pause-coop').classList.toggle('hidden', !coop);
     $('btn-quit').textContent = coop ? 'Salir de la partida' : 'Abandonar run';
     // MicaSurvivor (M5): la habilidad del Pokémon activo (el modo Equipo la cambiará).

@@ -323,9 +323,10 @@ G.Events = (() => {
   }
 
   function edgeArrow(ctx, w, h, cam, x, y, col, label, F) {
-    const sx = (x - cam.left()) * cam.scale, sy = (y - cam.top()) * cam.scale;
+    // (M5 lote 10: en unidades del HUD escalado, y sin meterse debajo del minimapa)
+    const [sx, sy] = G.HUD.toHud(x, y);
     if (sx > 0 && sx < w && sy > 0 && sy < h) return;
-    const M = 44, ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);
+    const M = 44, ey = G.U.clamp(sy, M + 70, h - M - 80), ex = G.HUD.avoid(G.U.clamp(sx, M, w - M), ey, 30);
     const a = Math.atan2(sy - ey, sx - ex), ca = Math.cos(a), sa = Math.sin(a);
     const pulse = 0.65 + Math.sin(performance.now() / 160) * 0.35;
     ctx.save();

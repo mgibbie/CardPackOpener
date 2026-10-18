@@ -31,6 +31,8 @@
   --shadow: #0a1430;
   --r1: #9fb1c9; --r2: #5fe08a; --r3: #4fb4ff; --r4: #c47bff; --r5: #ffcb3d;
   --font: 'Pixelify', 'Segoe UI', system-ui, sans-serif;
+  /* MicaSurvivor (M5 batch 10): viewport units of the menus' (virtual) viewport, see "UI scale" at the end */
+  --ui: 1; --vw: 1vw; --vh: 1vh; --dvh: 1dvh;
 }
 
 * { box-sizing: border-box; }
@@ -195,7 +197,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 /* ---------- rejilla de Pokémon ---------- */
 .grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px; max-height: 56vh; overflow-y: auto; padding: 4px;
+  gap: 8px; max-height: calc(56 * var(--vh)); overflow-y: auto; padding: 4px;
 }
 .cell {
   position: relative; cursor: pointer; text-align: center;
@@ -238,7 +240,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
   padding: 30px; min-width: 0;
 }
-.menu-left .logo .t1 { font-size: clamp(36px, 6vw, 64px); }
+.menu-left .logo .t1 { font-size: clamp(36px, calc(6 * var(--vw)), 64px); }
 .partner-card { text-align: center; margin-top: 10px; }
 .partner-card .nm { font-size: 24px; font-weight: 700; text-shadow: 3px 3px 0 var(--shadow); }
 .partner-card .lv { color: var(--muted); font-size: 14px; text-shadow: 2px 2px 0 var(--shadow); }
@@ -260,12 +262,12 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   .menu-item small { font-size: 11px; }
 }
 @media (max-height: 660px) and (min-height: 521px) {
-  .menu-right { width: min(500px, 52vw); }
+  .menu-right { width: min(500px, calc(52 * var(--vw))); }
   .menu-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
   .menu-item.play { grid-column: span 2; }
   .menu-item small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .menu-left .logo .t1 { font-size: clamp(32px, 5vw, 52px); }
-  #menu-partner { height: min(30vh, 200px); width: auto; }
+  .menu-left .logo .t1 { font-size: clamp(32px, calc(5 * var(--vw)), 52px); }
+  #menu-partner { height: min(calc(30 * var(--vh)), 200px); width: auto; }
 }
 .topbar {
   position: fixed; top: 14px; right: 16px; z-index: 25;
@@ -492,7 +494,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
   background: #050914; color: var(--muted); font-size: 18px; }
 
 /* ---------- amigos, sala, invitaciones y ranking ---------- */
-.fr-list { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.fr-list { display: flex; flex-direction: column; gap: 6px; max-height: calc(52 * var(--vh)); overflow-y: auto; padding-right: 4px; }
 .fr-row {
   display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
   background: rgba(0,0,0,.22); border: 2px solid rgba(244,248,255,.14);
@@ -526,7 +528,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 
 .rk-tools { gap: 8px; margin-bottom: 8px; }
 .rk-tools .field { width: 220px; padding: 6px 10px; font-size: 15px; }
-.rk-list { display: flex; flex-direction: column; gap: 4px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+.rk-list { display: flex; flex-direction: column; gap: 4px; max-height: calc(46 * var(--vh)); overflow-y: auto; padding-right: 4px; }
 .rk-row {
   display: grid; grid-template-columns: 54px auto 1fr auto 26px; gap: 10px; align-items: center;
   padding: 4px 12px; border-radius: 8px; background: rgba(0,0,0,.2); border: 2px solid transparent;
@@ -566,11 +568,11 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 select.field { font-family: var(--font); }
 
 /* ---------- tragaperras del gacha ---------- */
-#slot { width: min(528px, 92vw, 66vh); height: auto; image-rendering: pixelated; cursor: pointer;
+#slot { width: min(528px, calc(92 * var(--vw)), calc(66 * var(--vh))); height: auto; image-rendering: pixelated; cursor: pointer;
   filter: drop-shadow(0 0 30px rgba(255,90,90,.35)); animation: pop .25s ease-out both; }
 
 /* ---------- misiones, logros, perfil y objetos ---------- */
-.goals-body { max-height: 62vh; overflow-y: auto; padding-right: 6px; }
+.goals-body { max-height: calc(62 * var(--vh)); overflow-y: auto; padding-right: 6px; }
 .goals-h { margin: 6px 0 4px; }
 .goals-h h3 { margin: 0; }
 .mission {
@@ -603,7 +605,7 @@ select.field { font-family: var(--font); }
 }
 .fav-slots.view .fav-slot { cursor: default; border-style: solid; border-color: rgba(255,210,63,.55); }
 .fav-slot b { font-size: 14px; }
-.profile-box { width: min(640px, 100%); max-height: 90vh; overflow-y: auto; }
+.profile-box { width: min(640px, 100%); max-height: calc(90 * var(--vh)); overflow-y: auto; }
 .prof-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: -10px; }
 .prof-head h2 { margin: 0; }
 .prof-title { color: var(--gold); font-size: 15px; border: 2px solid var(--gold); border-radius: 8px; padding: 1px 8px; }
@@ -682,7 +684,7 @@ body.touch kbd, body.touch .card .key, body.touch .kbd-hint { display: none !imp
 .lay-help { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
 .lay-turn { color: var(--gold); font-size: 13px; margin: 4px 0; }
 .lay-btns { justify-content: center; gap: 8px; margin-top: 6px; }
-.box.settings { width: min(640px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; }
+.box.settings { width: min(640px, 100%); max-height: calc(calc(100 * var(--dvh)) - 24px); display: flex; flex-direction: column; }
 .set-body { overflow-y: auto; padding-right: 4px; min-height: 0; }
 #set-tabs { flex-wrap: wrap; }
 #set-tabs .gen-tab { padding: 6px 12px; }
@@ -735,11 +737,11 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-left .logo { margin-bottom: 2px; }
   .menu-left .logo .t1 { font-size: 28px; }
   .logo .t2 { font-size: 10px; margin-top: 2px; letter-spacing: 2px; }
-  #menu-partner { height: min(34vh, 130px); width: auto; }
+  #menu-partner { height: min(calc(34 * var(--vh)), 130px); width: auto; }
   .partner-card { margin-top: 2px; }
   .partner-card .nm { font-size: 17px; }
   .partner-card .lv { font-size: 12px; }
-  .menu-right { width: min(54vw, 420px); padding: 50px 8px 6px; gap: 6px; justify-content: flex-start; overflow-y: auto; }
+  .menu-right { width: min(calc(54 * var(--vw)), 420px); padding: 50px 8px 6px; gap: 6px; justify-content: flex-start; overflow-y: auto; }
   .menu-right .box { padding: 6px 8px; }
   .menu-right > .box:last-child { display: none; }
   .menu-right > :first-child { margin-top: 0; }
@@ -750,7 +752,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-item.play { grid-column: span 2; font-size: 21px; }
   .menu-item::before { display: none; }
   .mi-ico img { width: 20px; height: 20px; }
-  .box.settings { max-height: calc(100dvh - 12px); }
+  .box.settings { max-height: calc(calc(100 * var(--dvh)) - 12px); }
 }
 /* Móviles muy bajos (iPhone SE y similares): sin subtítulos en el menú, para que quepa entero. */
 @media (max-height: 400px) {
@@ -759,7 +761,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-item { font-size: 14px; padding: 5px 6px; }
   .menu-item.play { font-size: 19px; }
   .menu-item.play small { display: block; }
-  #menu-partner { height: min(30vh, 110px); }
+  #menu-partner { height: min(calc(30 * var(--vh)), 110px); }
 }
 
 /* ---------- pantalla de carga (lo primero que se ve y lo que lee Google) ---------- */
@@ -804,7 +806,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .news-btn { position: relative; }
 .news-btn .dot { display: none; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; background: #ff5f6d; box-shadow: 0 0 0 2px var(--shadow); }
 .news-btn.new .dot { display: block; }
-.box.news-box { width: min(640px, 100%); max-height: calc(100dvh - 90px); display: flex; flex-direction: column; }
+.box.news-box { width: min(640px, 100%); max-height: calc(calc(100 * var(--dvh)) - 90px); display: flex; flex-direction: column; }
 .news-body { overflow-y: auto; padding-right: 4px; }
 .news-day { padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
 .news-day:last-child { border-bottom: 0; }
@@ -921,7 +923,7 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .dyn-ic { flex: 0 0 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; background: #240812; border: 3px solid #ff3d6e; box-shadow: 0 0 12px rgba(255,61,110,.55); }
 .dyn-ic.off { color: #999ead; border-color: #808594; box-shadow: none; }
 /* ---------- MicaSurvivor (M5 lote 6): modos rápidos (port menu.gd "Elige un modo") y vetar cartas ---------- */
-.modes-box { max-height: calc(100vh - 90px); overflow-y: auto; }
+.modes-box { max-height: calc(calc(100 * var(--vh)) - 90px); overflow-y: auto; }
 .modes-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 8px; }
 .mode-card {
   appearance: none; cursor: pointer; text-align: left; color: inherit; font: inherit;
@@ -951,11 +953,11 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .mod-tog.on .mod-ico { opacity: 1; }
 .mod-tog.on .mod-sw { background: #ff8a5b; color: #2b1200; }
 .mod-tog:hover, .mod-tog:focus-visible { border-color: var(--edge); outline: none; }
-.party-grid { margin-top: 8px; max-height: calc(100vh - 230px); overflow-y: auto; }
+.party-grid { margin-top: 8px; max-height: calc(calc(100 * var(--vh)) - 230px); overflow-y: auto; }
 /* MicaSurvivor (M5 lote 7): el selector del equipo (los elegidos, con su número) */
 .team-count { margin: 6px 0 0; color: var(--gold); font-weight: 700; }
 .team-grid .cell .team-no { position: absolute; top: 3px; right: 6px; min-width: 20px; height: 20px; border-radius: 10px; background: var(--gold); color: #2b1d00; font-size: 12px; font-weight: 800; display: grid; place-items: center; }
-.team-grid { max-height: calc(100vh - 260px); }
+.team-grid { max-height: calc(calc(100 * var(--vh)) - 260px); }
 .pause-mode { color: #ffb36b; margin: 4px 0 8px; }
 .over-mode { color: #ffb36b; font-weight: 700; }
 .over-mode p { margin: 0; }
@@ -986,3 +988,33 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
   .tower-cards .card .nm { font-size: 15px; }
   .tower-cards .card .ds { font-size: 12px; }
 }
+
+/* ================= MicaSurvivor (M5 batch 10): UI scale (js/core/display.js) =================
+ * Like the port's content_scale_factor: each menu layer is laid out in a virtual viewport of 100vw/k x 100dvh/k
+ * and scaled by k, so it still fills the screen exactly; the viewport units inside use --vw / --vh / --dvh.
+ * Only while the scale isn't 100 % (html.ui-scaled), so the default layout is untouched. The canvas HUD scales
+ * itself (hud.js). display.js keeps k within what fits (the media-query brackets don't change). */
+html.ui-scaled { --vw: calc(1vw / var(--ui)); --vh: calc(1vh / var(--ui)); --dvh: calc(1dvh / var(--ui)); }
+html.ui-scaled .scr { inset: auto; left: 0; top: 0; width: calc(100vw / var(--ui)); height: calc(100vh / var(--ui)); height: calc(100dvh / var(--ui));
+  transform: scale(var(--ui)); transform-origin: 0 0; }
+html.ui-scaled .topbar { transform: scale(var(--ui)); transform-origin: top right; }
+html.ui-scaled .sound-panel { top: calc(14px + 48px * var(--ui)); transform: scale(var(--ui)); transform-origin: top right; }
+html.ui-scaled .credits-line { transform: scale(var(--ui)); transform-origin: bottom left; }
+html.ui-scaled .invite-pop, html.ui-scaled .pad-hint-bar { transform: scale(var(--ui)); transform-origin: bottom right; }
+html.ui-scaled .toast { transform: translateX(-50%) scale(var(--ui)); transform-origin: bottom center; }
+html.ui-scaled .ach-pop { transform: translateX(-50%) scale(var(--ui)); transform-origin: top center; }
+/* the sliders (Settings > Graphics > Display, and the field of view on the pause screen) */
+.set-range .range-line { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.set-range input[type=range] { flex: 1; min-width: 0; height: 24px; border-radius: 0;
+  background: linear-gradient(rgba(0,0,0,.4), rgba(0,0,0,.4)) center / 100% 8px no-repeat; }
+.range-val { min-width: 46px; text-align: right; color: var(--gold); font-weight: 700; }
+.set-row small.range-note { margin-top: 3px; }
+.set-row small.range-note:empty { display: none; }
+body.touch .set-range input[type=range] { height: 34px; background-size: 100% 12px; }
+body.touch .set-range input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; border-radius: 6px; }
+body.touch .set-range input[type=range]::-moz-range-thumb { width: 24px; height: 24px; }
+/* with touch, a scaled-down menu control never gets under 24 px */
+html.ui-scaled body.touch .scr button, html.ui-scaled body.touch .scr .chip, html.ui-scaled body.touch .scr .gen-tab { min-height: max(24px, calc(24px / var(--ui))); }
+.pause-fov { text-align: left; margin: 2px 0 8px; }
+.pause-fov .set-row { border-bottom: 0; padding: 2px 0; }
+@media (max-height: 520px) { .pause-fov .set-row small:not(.range-note) { display: none; } }
