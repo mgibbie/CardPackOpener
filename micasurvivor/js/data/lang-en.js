@@ -935,5 +935,10 @@ G.I18n.add({
   'Colmilargo': 'Great Tusk', 'Colagrito': 'Scream Tail', 'Melenaleteo': 'Flutter Mane', 'Reptalada': 'Slither Wing',
   'Pelarena': 'Sandy Shocks', 'Ferrosaco': 'Iron Bundle', 'Ferropalmas': 'Iron Hands', 'Ferropolilla': 'Iron Moth',
   'Ferropúas': 'Iron Thorns', 'Bramaluna': 'Roaring Moon', 'Ferropaladín': 'Iron Valiant', 'Ondulagua': 'Walking Wake',
-  'Ferroverdor': 'Iron Leaves'
+  'Ferroverdor': 'Iron Leaves',
+  // MicaSurvivor (M5 lote 9): la dificultad adaptativa (lang_en.json del port de Android)
+  'Reto: {x}%': 'Challenge: {x}%',
+  'Dificultad adaptativa': 'Adaptive difficulty',
+  'En la partida normal, el juego empieza fácil y se pone más difícil según tus mejoras: más vida y daño, más enemigos, hordas más seguidas y más experiencia por nivel.':
+    'In normal runs, the game starts easy and gets harder as you upgrade: more enemy health and damage, more enemies, more frequent hordes and more experience needed per level.'
 });

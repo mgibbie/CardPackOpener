@@ -2517,6 +2517,8 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Between runs. '), 'Runs pay Pokémonedas. Spend them on permanent ', h('a', { href: '#/micasurvivor/items' }, 'upgrades'), ' per Pokémon and on the ', h('b', null, 'gacha'), ' (9 regional banners, shinies) — all earned in play, never bought. Daily / weekly missions and achievements pay out too.'))),
     // MicaSurvivor M5 batch 6: the quick modes, the 6 modifiers and the level-up ban (micasurvivor/js/systems/modes.js)
     ...(D.modes ? [msModesSection(D.modes)] : []),
+    // MicaSurvivor M5 batch 9: adaptive difficulty, biome spawns, support caps (micasurvivor/js/systems/adaptive.js, js/data/enemies.js)
+    ...(D.difficulty ? [msDifficultySection(D.difficulty)] : []),
     mcSection('Getting there', null,
       h('ul', { class: 'mc-list' },
         h('li', null, h('b', null, 'Landing page: '), 'the MicaSurvivor tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micasurvivor/' }, '/micasurvivor/'), '.'),
@@ -2591,6 +2593,26 @@ function msModesSection(M) {
     msTable(['Modifier', 'Effect'], M.mods.map(m => [h('b', null, m.name), m.desc]), 'ms-mods'),
     h('h3', { class: 'mc-h3' }, 'Banning a level-up card'),
     h('p', null, 'With the ' + M.ban.upgrade + ' upgrade (up to ' + M.ban.max + ' levels: ' + M.ban.costs.join(' · ') + ' coins) you get that many bans per run. On the level-up screen press Ban (the B key, or X / □ / Y on a controller), then pick a new-move card: that move never shows up again in the run and three fresh cards are dealt — free, it does not use a reroll. The same upgrade still lets you pre-ban moves in Upgrades.'));
+}
+
+// MicaSurvivor M5 batch 9: adaptive difficulty, biome-themed spawns and the support caps (from the Android port by
+// JayElDragon; the numbers are the port's)
+function msDifficultySection(D) {
+  const A = D.adaptive, S = D.support, pct = v => Math.round(v * 100) + ' %';
+  return mcSection('Difficulty and biomes', 'How a normal run adapts to you, which Pokémon each biome favours, and the limits on support Pokémon.',
+    h('h3', { class: 'mc-h3' }, A.setting),
+    h('p', null, 'Normal runs only (not the Daily Challenge, which is the same for everyone, nor the other modes, nor inside a rift). The game starts easy and gets harder as you grow. Your power is your stat cards plus your move levels (+' + A.evo + ' per evolved move) plus half your level; your Pokémon’s permanent upgrades set the base (0 to ' + A.permFull + '). The challenge is ' + A.base + ' + ' + A.perm + ' × base + (' + A.push + ' + ' + A.pushPerm + ' × base) × power (power counts up to ' + A.powerFull + '), from ' + pct(A.min) + ' to ' + pct(A.max) + '; your first ' + A.newRuns + ' runs are easier still (×' + A.newK + ' rising to ×1).'),
+    h('p', null, 'Every ' + A.every + ' s without a boss alive it checks how you are doing: losing more than ' + pct(A.hurtHi) + ' of your HP (or being under ' + pct(A.lowHp) + ') eases it by ' + A.down + '; losing under ' + pct(A.hurtLo) + ' raises it by ' + A.up + ' (in all, between ' + A.adjMin + ' and +' + A.adjMax + '). It moves towards its target by ' + A.glide + ' a second. It multiplies enemy and boss HP (×challenge), their damage (×challenge^' + A.dmgExp + '), how many enemies appear and how often hordes come, and the experience each level needs (×challenge^' + A.xpExp + '). Coins and records are not affected. It shows as “Challenge: N%” under the clock (green below 100 %, gold at 100 %, orange above) and can be switched off in Settings → Graphics (saved to your account).'),
+    h('h3', { class: 'mc-h3' }, 'Biome-themed spawns'),
+    h('p', null, 'Each biome favours its own Pokémon: in the run’s enemy cast those that fit the biome appear ×' + D.mul + ' as often, and every tier adds ' + D.extra + ' extra Pokémon of the biome (its own Pokémon first, then its types; never a support Pokémon, and plain attackers only in the first tier), also ×' + D.mul + '. The ' + D.arenas + ' rift-arena biomes favour their own type. If a tier has no Pokémon of the biome, the cast spawns as usual. In Survival by Type the chosen type wins; the Tower themes each floor by its biome. Weather follows the biome too.'),
+    msTable(['Biome', 'Types', 'Its own Pokémon'], D.biomes.map(b => [h('b', null, b.name), h('span', null, b.types.map(msType)), b.dex.length ? b.dex.join(', ') : '—']), 'ms-biomes'),
+    h('h3', { class: 'mc-h3' }, 'Support Pokémon caps'),
+    msTable(['Support', 'Limit'], [
+      [h('b', null, 'Healer'), 'Heals nearby foes for 7 % of their HP; with more than ' + S.healers + ' healers alive each heals ×' + S.healerK + '.'],
+      [h('b', null, 'Shielder'), 'Every ' + S.shieldCd + ' s shields up to ' + S.shieldMax + ' foes within ' + S.shieldR + ' px for ' + pct(S.shieldK) + ' of their HP, lasting ' + S.shieldT + ' s; the same foe cannot get another shield for ' + S.shieldLock + ' s.'],
+      [h('b', null, 'Summoner'), 'Calls ' + S.perCast + ' of its pack at a time; it stops calling with ' + S.perSummoner + ' of its own alive, and the map never holds more than ' + S.minions + ' summoned Pokémon (none at all when more than ' + S.capPad + ' foes over the cap are out).'],
+      [h('b', null, 'Everywhere'), 'Each tier’s cast has one support Pokémon; biome extras and hordes never bring one.'],
+    ], 'ms-support'));
 }
 
 let msPokeQ = '';

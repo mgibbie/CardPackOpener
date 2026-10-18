@@ -697,6 +697,67 @@ valid checkpoint; a hand-edited record is cleaned (`sanitize`).
   boss to be counted (kills, boss missions, Thirst for victory) before it clears the floor's enemies.
 - Port strings with two spaces ("Floor N cleared!  +X coins") use one: the web's translator joins spaces.
 
+### Batch 9: Adaptive difficulty, biome spawns and support caps
+
+**Adaptive difficulty** (`js/systems/adaptive.js`, `G.Adaptive`; port `main.gd` 173-177 / 992 / 1037 / 1162-1223 /
+3111 / 3228 / 3262 / 3663 / 8708-8710, `menu.gd` 4144, `save_data.gd` 87). The numbers are the port's.
+
+| Rule | Port |
+|---|---|
+| Where | Normal runs only, with the setting on, outside a rift arena. Not in the Daily (the same run for everyone), Party, Rift Time Attack, Survival by Type, Team, Boss Rush or the Tower (which keeps its own adaptive scaling from batch 8) |
+| Power | stat cards taken + move levels (+3 per evolved move) + level / 2 |
+| Base | the Pokémon's permanent upgrades (0-40) |
+| Target | 0.62 + 0.38 b + (0.2 + 0.3 b) p, with b = smoothstep(upgrades / 40) and p = smoothstep(power / 70); x0.9 rising to x1 over your first 8 runs (`stats.runs`); plus the suffering adjustment; clamped 0.55-1.5 |
+| Suffering | every 45 s of run time, unless a boss is alive: HP lost in the window > 50 % of max HP, or HP under 30 % -> -0.05; lost < 8 % -> +0.03; the adjustment stays in -0.2..+0.1 |
+| Glide | a run starts at 100 % and moves 0.03 a second towards the target; in a rift arena it is off and resets to 100 % |
+| Effect (k) | enemy and boss HP x k, their damage x k^0.7, the spawn rate x k, the horde / golden hour interval / k, the XP each level needs x k^0.8. Coins and records are unaffected. Modifiers stack on top |
+| HUD | "Challenge: N%" under the clock (and the biome line): green under 100, gold at 100, orange above. The boss bar moves down a line while it shows |
+| Setting | Settings > Graphics > "Adaptive difficulty" (Yes / No; mouse, touch, pad), on by default. Saved in the save as `save.modes.adaptive = false` (only "off" is stored), so it follows the account; a 409 merge keeps the newer save's choice like the other menu choices; `sanitize` drops anything but `false` |
+
+**Biome-themed spawns** (`js/data/enemies.js`; port `main.gd` 87-104 / 3028-3106 / 3614-3624). Biome keys:
+forest, cave, volcano, then each rift-arena biome's type (the Tower's later floors, Boss Rush's random start).
+
+| Biome | Types | Its own Pokémon |
+|---|---|---|
+| Shady Forest | Bug, Grass | - |
+| Crystal Cave | Rock, Ground | Zubat, Golbat, Crobat, Woobat, Swoobat, Noibat, Noivern |
+| Ash Volcano | Fire | - |
+| an arena biome | its own type | - |
+
+The run's enemy cast members that fit the biome on screen (a type, or the biome's list) weigh x1.6 in the bag
+(16 instead of 10, or 5 instead of 3 for old tiers), and each tier adds 2 extra Pokémon of the biome (its own
+Pokémon first, then its types; never a support, never one already in the cast, plain attackers only in tier 0),
+also x1.6, picked once per run. A tier with no candidates for the biome adds none and the bag is the cast's
+(the Judgment ruins have no type, so nothing changes there). Survival by Type wins over the biome (no biome
+weighting at all, only the chosen type). The Tower's waves use each floor's biome; Boss Rush has no waves. The
+current and the next biome's extras are preloaded. The biome weather now uses `BIOME_W[min(biome, 2)]` like the
+port (arena biomes take the volcano's weather; they used to wrap to the forest's / cave's).
+
+**Support caps** (`js/entities/enemy.js`, the numbers in `G.Enemies.SUPPORT_CAPS`; port `main.gd` 4026-4102 /
+3876-3881):
+- Healers: with more than 4 healers alive each heal is x0.9.
+- Shielders: every 8 s (was 6) shield up to 5 (was 6) of the nearest foes within 160 px, itself included, for 30 %
+  of their max HP (was 35 %) for 7 s (was 8); a foe that got a shield cannot get another for 14 s (new: no endless
+  shields), and one already shielded is skipped.
+- Summoners: 4 per summon (was 2); no summon with 8 of its own alive (was 4) or 20 summoned Pokémon on the map
+  (new; a summon never takes the map past 20), or with more than CAP + 15 enemies out.
+- One support per tier in the cast (as before), none in the biome extras or the hordes.
+
+**Deviations, and why:**
+- Online co-op runs (still "coming soon") get no adaptive difficulty: it measures one player, and co-op already
+  scales by the number of players.
+- The setting lives in the save (`save.modes`), not in the device's settings: the port keeps it in its save too,
+  and this way it follows the Magepunk account.
+- The Daily stays seeded: the biome extras use their own seed (the day's), so drawing them never shifts the
+  seeded set-up (map, cast, bosses, moves), and adaptive difficulty never applies to it.
+- "beach" and "sky" (and the beach list of 28 coast Pokémon) are in the port's tables but no biome of the port
+  or of the web has those keys, so they never apply; they are kept as in the port.
+- The web counts all 22 biomes (the Judgment ruins included, batch 8), so a Tower floor or a Boss Rush start on
+  the ruins has no themed spawns; the port skips that biome.
+- Port-only numbers in this area that were not changed: the port's base spawn density (0.17, surges x0.28)
+  against the web's (0.24, x0.4). Batch 8 kept the web's curve; changing it is a balance call for the owner.
+- "Challenge" sits one line lower than in the port: the web's biome / defeated / coins line is already there.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -803,4 +864,15 @@ valid checkpoint; a hand-edited record is cleaned (`sanitize`).
   legendary, a Tough modifier, Z / Dynamax allowed, no rifts / Judgment / events past minute 30, biomes
   every 150 s; the end (record, rushRuns, coins, achievements, missions, a worse run keeping the record);
   the account push and a 409 merge.
+- `node overworld/tests/micasurvivor_adaptive_test.mjs` (M5 batch 9), logged in with a stubbed account row:
+  the port's numbers and English; the adaptive formula at four player states (new, 4 runs, mid, maxed)
+  measured on real spawned enemies and bosses (HP, damage), the XP per level, the real spawner's rate, the
+  horde interval, the 45 s suffering window and its caps, the glide, off in the rift arena and every other
+  mode, with modifiers, the Tower's shared counts; the "Challenge: N%" HUD and its colours (hidden when off,
+  in the Daily and in the Tower); the setting by mouse, touch and pad, the account push, a reload, a 409
+  merge, `merge()` both ways, `sanitize()`; the Daily (no adaptive, two identical seeded starts including
+  the biome extras); biome spawns (the bag's weights, 4000 real spawns per biome, the extras' rules for
+  every tier and biome, the fallback, preloading, the biome weather); Survival by Type winning, the Tower's
+  floor biomes; the support caps through 10 simulated minutes of the real spawner and enemy AI (minions,
+  per-summoner stop, shields per cast and the 14 s lock), healers x0.9 above 4.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

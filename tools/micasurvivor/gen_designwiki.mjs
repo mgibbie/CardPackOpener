@@ -4,7 +4,8 @@
 //   passive ability of every Pokémon, M5 batch 2), js/systems/zmoves.js (the 18 Z-moves and their
 //   Z-crystal missions, M5 batch 4), js/systems/dynamax.js (Dynamax + raid dens, M5 batch 5), js/systems/modes.js
 //   (the quick modes, the 6 modifiers and the level-up ban, M5 batch 6), js/systems/team.js (Team mode, M5
-//   batch 7), js/systems/bossrush.js + js/systems/tower.js (Boss Rush and the Floor Tower, M5 batch 8) (+ lang-en.js for the English
+//   batch 7), js/systems/bossrush.js + js/systems/tower.js (Boss Rush and the Floor Tower, M5 batch 8), js/systems/adaptive.js +
+//   js/data/enemies.js + js/world/tiles.js (adaptive difficulty, biome spawns and the support caps, M5 batch 9) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -34,7 +35,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js']) {
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -82,11 +83,23 @@ export function build() {
 			rest: G.Tower.REST, relic: G.Tower.RELIC, relicsMax: G.Tower.RELICS_MAX, bonds: G.Tower.BOND_FLOORS, reward: [1, 5, 30].map(f => ({ floor: f, ...G.Tower.reward(f) })),
 			rests: G.Tower.REST_CARDS.map(c => ({ id: c.id, name: T(c.title), desc: c.desc ? T(c.desc) : null })),
 			risks: G.Tower.RISKS.map(r => ({ id: r.id, name: T(r.name), desc: T(r.desc) })), legends: G.Tower.LEGENDS.map(r => ({ id: r.id, name: T(r.name), desc: T(r.desc) })) } };
+	// (M5 batch 9: adaptive difficulty, biome-themed spawns and the enemy support caps)
+	const AK = G.Adaptive.K, EN = G.Enemies;
+	const biomeNames = G.Tiles.BIOMES.slice(0, EN.BASE_BIOMES.length).map(b => T(b.name));
+	const difficulty = {
+		adaptive: { base: AK.base, perm: AK.perm, push: AK.push, pushPerm: AK.pushPerm, permFull: AK.permFull, powerFull: AK.powerFull, lvl: AK.lvl, evo: AK.evo,
+			newRuns: AK.newRuns, newK: AK.newK, min: AK.min, max: AK.max, every: AK.every, hurtHi: AK.hurtHi, lowHp: AK.lowHp, hurtLo: AK.hurtLo,
+			down: AK.down, up: AK.up, adjMin: AK.adjMin, adjMax: AK.adjMax, glide: AK.glide, dmgExp: AK.dmgExp, xpExp: AK.xpExp,
+			setting: T('Dificultad adaptativa'), desc: T('En la partida normal, el juego empieza fácil y se pone más difícil según tus mejoras: más vida y daño, más enemigos, hordas más seguidas y más experiencia por nivel.') },
+		biomes: EN.BASE_BIOMES.map((key, i) => ({ key, name: biomeNames[i], types: EN.BIOME_TYPES[key], dex: (EN.BIOME_DEX[key] || []).map(name) })),
+		arenas: G.Tiles.ARENA_TYPES.filter(t => t !== 'judgment').length, extra: EN.BIOME_EXTRA, mul: EN.BIOME_W_MUL,
+		support: EN.SUPPORT_CAPS,
+	};
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
 		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
-		starters, moves, zmoves, zrules, dynrules, modes, items, upgrades, abilities, pokemon,
+		starters, moves, zmoves, zrules, dynrules, modes, difficulty, items, upgrades, abilities, pokemon,
 	};
 }
 

@@ -83,7 +83,9 @@ G.Weather = (() => {
   }
 
   function pick(biome) {
-    const w = BIOME_W[biome % BIOME_W.length];
+    // (MicaSurvivor M5 lote 9, main.gd 6292: TD.BIOME_W[mini(biome, 2)]: las arenas de bioma, 3+, usan el
+    //  reparto del volcán; antes daban la vuelta a bosque / cueva / volcán)
+    const w = BIOME_W[Math.min(Math.max(0, biome), BIOME_W.length - 1)];
     let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0);
     for (const k in w) { r -= w[k]; if (r <= 0) return k; }
     return 'rain';
@@ -171,6 +173,7 @@ G.Weather = (() => {
 
   return {
     KINDS, reset, update, draw, mult, speedFor, hurts, onEvent, level,   // level: MicaSurvivor (M5), Nado Rápido...
+    pick,   // MicaSurvivor (M5 lote 9): el clima que toca en un bioma (para las pruebas)
     get current() { return cur && level() > 0 ? Object.assign({ left: Math.max(0, cur.dur - cur.t) }, cur, KINDS[cur.kind]) : null; },
     get vignette() { return cur && cur.kind === 'fog' ? level() : 0; },
     /** Pone un clima ya (la arena de la grieta; no se manda: cada uno lo pone). */

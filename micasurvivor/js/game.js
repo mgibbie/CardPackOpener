@@ -113,6 +113,7 @@ G.Game = (() => {
     G.Hazards.clear();
     G.ZMoves.reset();   // MicaSurvivor (M5 lote 4)
     G.Dynamax.reset();  // MicaSurvivor (M5 lote 5)
+    G.Adaptive.reset(); // MicaSurvivor (M5 lote 9): la dificultad adaptativa empieza en 100 % y baja / sube a su objetivo
     // MicaSurvivor (M5 lote 6, main.gd 432): el Desafío diario siembra el azar con la fecha: el mismo
     // mundo, elenco, jefes y movimientos iniciales para todos ese día.
     if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
@@ -490,7 +491,7 @@ G.Game = (() => {
    */
   function rareCandy() {
     pl.level++;
-    pl.xpNext = G.Player.xpFor(pl.level);
+    pl.xpNext = G.Player.xpNeed(pl.level);
     pendingLevels++;
     G.Progress.event('item', { id: 'rarecandy' });
     G.Audio.sfx('levelup');
@@ -759,6 +760,7 @@ G.Game = (() => {
     G.World.update(dt, G.Camera);
 
     const all = everyone();
+    G.Adaptive.update(dt, pl, time);   // MicaSurvivor (M5 lote 9, main.gd 992 / _adapt): la dificultad adaptativa
     if (!coop || G.Coop.isHost) { G.Path.update(dt, all); G.Spawner.update(dt, all, time); }
     else G.Spawner.tickBanner(dt);
     G.EnemyMgr.update(dt, all);
@@ -987,7 +989,7 @@ G.Game = (() => {
    */
   function grantLevels(n, raise = true) {
     if (!pl || n <= 0) return;
-    if (raise) { pl.level += n; pl.xpNext = G.Player.xpFor(pl.level); }
+    if (raise) { pl.level += n; pl.xpNext = G.Player.xpNeed(pl.level); }
     pendingLevels += n;
   }
   /** MicaSurvivor (M5 lote 8): una elección que para la partida (el descanso de la Torre), como el objeto. */

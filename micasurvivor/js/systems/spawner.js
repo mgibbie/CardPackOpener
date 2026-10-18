@@ -136,7 +136,8 @@ G.Spawner = (() => {
     // --- goteo normal ---
     if (G.EnemyMgr.count < CAP) {
       // (MicaSurvivor M5 lote 6, main.gd 3261: el modificador Horda, ×1,8)
-      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * (incense() ? G.Items.INCENSE.rate : 1) * G.Modes.spawnK() * dt;
+      // (M5 lote 9, main.gd 3262: y la dificultad adaptativa, ×k)
+      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * (incense() ? G.Items.INCENSE.rate : 1) * G.Modes.spawnK() * G.Adaptive.rateK() * dt;
       let n = Math.floor(acc);
       acc -= n;
       while (n-- > 0 && G.EnemyMgr.count < CAP) spawnOne(anchor(), t);

@@ -64,6 +64,36 @@ G.Enemies = (() => {
                    62: 60, 68: 66, 73: 72, 78: 77, 82: 81, 85: 84, 91: 90, 117: 116, 130: 129, 168: 167, 169: 41,
                    199: 79, 230: 116, 262: 261, 334: 333, 405: 403, 416: 415, 462: 81, 466: 239, 553: 551, 637: 636 };
 
+  // ---------------- biomas (MicaSurvivor M5 lote 9, main.gd 87-104 / 3028-3106 / 3614-3624) ----------------
+  // Tipos que "pertenecen" a cada bioma: salen más a menudo en él (además del elenco de la run). Las arenas de
+  // la grieta (biomas 3+) usan su propio tipo. ("beach" y "sky" son del port: ningún bioma suyo ni nuestro
+  // se llama así, así que no se usan; se quedan como en el port.)
+  const BIOME_TYPES = {
+    forest: ['bug', 'grass'],
+    cave: ['rock', 'ground'],
+    volcano: ['fire'],
+    beach: ['water', 'ground'],
+    sky: ['flying', 'dragon']
+  };
+  // Además de los tipos, Pokémon concretos que encajan con el bioma (murciélagos en la cueva, costa en la playa).
+  const BIOME_DEX = {
+    cave: [41, 42, 169, 527, 528, 714, 715],   // Zubat, Golbat, Crobat, Woobat, Swoobat, Noibat, Noivern
+    beach: [769, 770, 90, 91, 98, 99, 120, 121, 72, 73, 278, 279, 341, 342, 226, 223, 224, 422, 423, 557, 558, 688, 689, 739, 740, 746, 747, 748]
+  };
+  const BIOME_EXTRA = 2;      // Pokémon extra por tramo propios del bioma
+  const BIOME_W_MUL = 1.6;    // peso de los extras (y de los del elenco que ya son del bioma) respecto a los demás
+  const BASE_BIOMES = ['forest', 'cave', 'volcano'];
+
+  /**
+   * Los topes de los apoyos (MicaSurvivor M5 lote 9, main.gd 4026-4102; los usa entities/enemy.js). Curanderos:
+   * con más de 4 vivos curan ×0,9. Escudos: 30 % de la vida durante 7 s, como mucho 5 por lanzamiento (cada
+   * 8 s) en 160 px, y 14 s de espera antes de que el mismo reciba otro. Invocadores: 4 por invocación, ninguna
+   * más con 8 de los suyos vivos o 20 súbditos en el mapa (y nunca más de 20), ni con más de CAP + 15 enemigos.
+   * (Además: un solo apoyo por tramo en el elenco, y ninguno en los extras de bioma ni en las hordas.)
+   */
+  const SUPPORT_CAPS = { healers: 4, healerK: 0.9, shieldK: 0.3, shieldT: 7, shieldLock: 14, shieldMax: 5, shieldCd: 8, shieldR: 160,
+                         perCast: 4, perSummoner: 8, minions: 20, capPad: 15 };
+
   function behaviorOf(p) {
     const t = p.types, h = H(p.dex, 11);
     const has = (...xs) => xs.some(x => t.includes(x));
@@ -148,9 +178,15 @@ G.Enemies = (() => {
 
   let cast = null;      // [{ from, list: [def] }]
   let bosses = null;    // [def de jefe]
+  // (M5 lote 9) Extras de bioma de la run: bio[tramo][bioma] = [def], elegidos al necesitarlos. Se sortean con
+  // su propia semilla (la del día en el Desafío diario, sin gastar el azar sembrado del montaje), así el
+  // Diario sigue igual para todos.
+  let bio = [], bioSeed = 1;
 
   /** Sortea el elenco de una run nueva. */
   function rollRun() {
+    bio = TIERS.map(() => ({}));
+    bioSeed = G.Modes && G.Modes.is && G.Modes.is('daily') ? G.Modes.run.seed : 1 + Math.floor(Math.random() * 2147483646);
     cast = TIERS.map((tier, ti) => ({
       from: tier.from,
       list: castFor(tier).map(p => defFor(p, tier, ti))
@@ -187,15 +223,18 @@ G.Enemies = (() => {
 
   // (El "tiempo extra" del minuto 60 se quitó al llegar la Sentencia de Arceus,
   //  que acaba todas las partidas en el minuto 30: ver systems/judgment.js.)
+  // (MicaSurvivor M5 lote 9, main.gd 3111 / 3228: con la dificultad adaptativa, vida ×k y daño ×k^0,7;
+  //  k = 1 fuera de la partida normal, ver systems/adaptive.js)
+  const AD = () => G.Adaptive || { hpK: () => 1, dmgK: () => 1 };
   function scale(t) {
-    return { hp: 1 + t / 95, dmg: 1 + t / 420, spd: 1 + Math.min(0.35, t / 1400) };
+    return { hp: (1 + t / 95) * AD().hpK(), dmg: (1 + t / 420) * AD().dmgK(), spd: 1 + Math.min(0.35, t / 1400) };
   }
 
   /**
    * Los jefes ya traen su vida base creciente (1.400 ... 16.000), así que
    * escalan mucho más suave: con la curva normal el último llegaba a 168.000 PV.
    */
-  function bossScale(t) { return { hp: 1 + t / 600, dmg: 1 + t / 600, spd: 1 }; }
+  function bossScale(t) { return { hp: (1 + t / 600) * AD().hpK(), dmg: (1 + t / 600) * AD().dmgK(), spd: 1 }; }
 
   /** Tramo que toca en el segundo `t`. */
   function tierAt(t) { let ti = 0; TIERS.forEach((tr, i) => { if (t >= tr.from) ti = i; }); return ti; }
@@ -213,18 +252,74 @@ G.Enemies = (() => {
     return G.U.pickN(pool, 4).map(p => defFor(p, TIERS[ti], ti));
   }
 
-  /** Bolsa de enemigos disponibles en el segundo `t`. */
-  function bagAt(t) {
+  // ---------------- biomas (M5 lote 9) ----------------
+  /** Clave del bioma `b` (main.gd _biome_key): bosque / cueva / volcán, y luego el tipo de cada arena. */
+  function biomeKey(b) {
+    const n = G.Tiles ? G.Tiles.BIOMES.length : BASE_BIOMES.length;
+    b = ((b % n) + n) % n;
+    return b < BASE_BIOMES.length ? BASE_BIOMES[b] : G.Tiles.ARENA_TYPES[b - BASE_BIOMES.length];
+  }
+  const biomeTypes = key => BIOME_TYPES[key] || [key];
+  /** ¿Encaja con el bioma? (de uno de sus tipos, o de su lista de Pokémon propios) */
+  function fitsBiome(p, key) {
+    if (!p || !key) return false;
+    const ts = biomeTypes(key);
+    return p.types.some(t => ts.includes(t)) || (BIOME_DEX[key] || []).includes(p.dex);
+  }
+  /**
+   * El bioma que cuenta ahora ('' = ninguno): el que se ve, salvo en la arena de una grieta y en la
+   * Supervivencia por tipo, donde manda el tipo (main.gd 3085).
+   */
+  function biomeNow() {
+    if ((G.Rift && G.Rift.inArena) || (G.Modes && G.Modes.onlyType())) return '';
+    return biomeKey(G.World ? G.World.biome : 0);
+  }
+  function hashKey(ti, key) { let x = 2166136261 ^ (ti + 1); for (const c of key) x = Math.imul(x ^ c.charCodeAt(0), 16777619); return x >>> 0; }
+  /**
+   * Los Pokémon extra de un tramo propios de un bioma (main.gd _bio_extra): 2, primero los de la lista del
+   * bioma (murciélagos, costa...) y luego los de sus tipos; nunca apoyos (curanderos, escudos, invocadores),
+   * ni repetidos del elenco, y en el primer tramo sólo los sencillos. Si el tramo no tiene candidatos del
+   * bioma, ninguno (la bolsa se queda con el elenco). Se eligen una vez por run.
+   */
+  function bioExtra(ti, key) {
+    if (!cast) rollRun();
+    if (!key || !TIERS[ti]) return [];
+    const box = bio[ti] || (bio[ti] = {});
+    if (box[key]) return box[key];
+    const tier = TIERS[ti], have = new Set(cast[ti].list.map(d => d.dex));
+    const pool = candidates(tier).filter(p => {
+      if (have.has(p.dex) || !fitsBiome(p, key)) return false;
+      const b = behaviorOf(p);
+      return !SUPPORT.includes(b) && !(tier.from === 0 && !PLAIN.includes(b));
+    });
+    const dl = BIOME_DEX[key] || [];
+    const special = pool.filter(p => dl.includes(p.dex)), byType = pool.filter(p => !dl.includes(p.dex));
+    const pickIt = () => { const c = G.U.pickN(special, BIOME_EXTRA); return c.concat(G.U.pickN(byType, BIOME_EXTRA - c.length)); };
+    const chosen = G.Modes && G.Modes.seeded ? G.Modes.seeded((bioSeed ^ hashKey(ti, key)) >>> 0, pickIt) : pickIt();
+    return (box[key] = chosen.map(p => defFor(p, tier, ti)));
+  }
+
+  /**
+   * Bolsa de enemigos disponibles en el segundo `t`.
+   * (M5 lote 9, main.gd _bag_at: en cada bioma, los del elenco que encajan pesan ×1,6 y se añaden 2 extras
+   *  del bioma por tramo, también ×1,6. En la grieta y en la Supervivencia por tipo, sin bioma.)
+   */
+  function bagAt(t, key = biomeNow()) {
     // Durante una horda de un tipo sólo salen los de ese tipo (systems/events.js).
     const horde = G.Events && G.Events.bag();
     if (horde) return horde;
     if (!cast) rollRun();
     const bag = [];
-    for (const tier of cast) {
-      if (t < tier.from) continue;
+    cast.forEach((tier, ti) => {
+      if (t < tier.from) return;
       const w = t - tier.from > 260 ? 3 : 10;       // los tramos viejos pierden peso
-      for (const e of tier.list) for (let i = 0; i < w; i++) bag.push(e);
-    }
+      const wb = Math.round(w * BIOME_W_MUL);
+      for (const e of tier.list) {
+        const n = key && fitsBiome(G.DEX_BY[e.dex], key) ? wb : w;
+        for (let i = 0; i < n; i++) bag.push(e);
+      }
+      if (key) for (const e of bioExtra(ti, key)) for (let i = 0; i < wb; i++) bag.push(e);
+    });
     return bag.length ? bag : cast[0].list;
   }
 
@@ -233,6 +328,12 @@ G.Enemies = (() => {
     if (!cast) rollRun();
     const out = [];
     for (const tier of cast) if (tier.from <= t + ahead) for (const e of tier.list) out.push(e.dex);
+    // (M5 lote 9, main.gd 3619-3623: también los extras del bioma actual y del siguiente)
+    const key = biomeNow();
+    if (key) {
+      const nx = biomeKey((G.World ? G.World.biome : 0) + 1);
+      cast.forEach((tier, ti) => { if (tier.from <= t + ahead) for (const k of [key, nx]) for (const e of bioExtra(ti, k)) out.push(e.dex); });
+    }
     for (const b of bosses) if (b.at <= t + ahead) out.push(b.dex);
     return out;
   }
@@ -240,6 +341,8 @@ G.Enemies = (() => {
   return {
     TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
     behaviorOf, baseSpd,   // (M5 lote 8: los jefes del Rush de Jefes y de la Torre)
+    // (M5 lote 9: biomas y apoyos)
+    BIOME_TYPES, BIOME_DEX, BIOME_EXTRA, BIOME_W_MUL, BASE_BIOMES, PLAIN, SUPPORT, SUPPORT_CAPS, biomeKey, biomeTypes, fitsBiome, biomeNow, bioExtra,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
     get cast() { if (!cast) rollRun(); return cast; }
   };

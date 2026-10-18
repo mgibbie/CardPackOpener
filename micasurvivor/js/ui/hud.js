@@ -123,6 +123,16 @@ G.HUD = (() => {
         ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
       }
     }
+    // MicaSurvivor (M5 lote 9, main.gd 8708-8710): el "Reto: N%" de la dificultad adaptativa bajo el reloj (sólo
+    // en la partida normal con el ajuste encendido): verde por debajo de 100, dorado en 100, naranja por encima.
+    const adPct = G.Adaptive.pct();
+    if (adPct > 0) {
+      ctx.font = F(800, 11);
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+      ctx.strokeText('Reto: ' + adPct + '%', w / 2, 72);
+      ctx.fillStyle = G.Adaptive.color(adPct);
+      ctx.fillText('Reto: ' + adPct + '%', w / 2, 72);
+    }
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -157,11 +167,11 @@ G.HUD = (() => {
     // ---------- barra del jefe ----------
     const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead);
     if (boss) {
-      const bw = Math.min(420, w - 80);
-      bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
+      const bw = Math.min(420, w - 80), by = adPct > 0 ? 80 : 70;   // (M5 lote 9: bajo el "Reto")
+      bar(ctx, (w - bw) / 2, by, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
       ctx.font = F(800, 10);
       ctx.fillStyle = '#20160a';
-      ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
+      ctx.fillText(boss.name.toUpperCase(), w / 2, by + 10);
     }
 
     // ---------- aviso ----------

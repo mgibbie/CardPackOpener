@@ -463,7 +463,7 @@ try {
 			const pl = T.eq('leftovers', 'quickclaw');
 			const lv = pl.level, pend = G.Game.pendingLevels;
 			G.Game.offerItem('rarecandy');
-			out.candy = { up: pl.level - lv, pend: G.Game.pendingLevels - pend, xpNext: pl.xpNext === G.Player.xpFor(pl.level), items: [pl.item, pl.item2], choice: !document.getElementById('scr-item').classList.contains('hidden'), found: !!G.DB.save.itemsFound.rarecandy };
+			out.candy = { up: pl.level - lv, pend: G.Game.pendingLevels - pend, xpNext: pl.xpNext === G.Player.xpNeed(pl.level) /* (M5 batch 9: x the adaptive XP factor) */, items: [pl.item, pl.item2], choice: !document.getElementById('scr-item').classList.contains('hidden'), found: !!G.DB.save.itemsFound.rarecandy };
 			const pl2 = T.clean(); const lv2 = pl2.level; G.Game.offerItem('rarecandy');
 			out.candyEmpty = { up: pl2.level - lv2, items: [pl2.item, pl2.item2] };
 			// Pure Incense: the same enemy with and without (x1.3 HP, x1.5 XP); x0.75 spawn rate; x1.25 coins
@@ -480,7 +480,8 @@ try {
 				return n;
 			};
 			const n0 = count(null), n1 = count('pureincense');
-			out.rate = { n0, n1, expect0: Math.floor(G.Spawner.rate(150) * 25), expect1: Math.floor(G.Spawner.rate(150) * 25 * 0.75) };
+			const ak = G.Adaptive.rateK();   // (M5 batch 9: the normal run's adaptive difficulty multiplies the spawn rate too)
+			out.rate = { n0, n1, ak, expect0: Math.floor(G.Spawner.rate(150) * 25 * ak), expect1: Math.floor(G.Spawner.rate(150) * 25 * 0.75 * ak) };
 			G.World.isFree = free;
 			const coins = (id, rnd) => { const p = id ? T.eq(id) : T.clean(); const c = p.coins; T.withRandom(rnd, () => G.Game.debugCollect({ kind: 'coin', value: 10, x: p.x, y: p.y })); return p.coins - c; };
 			out.coins = [coins('pureincense', 0), coins('pureincense', 0.6), coins(null, 0.6)];

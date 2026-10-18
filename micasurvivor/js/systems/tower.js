@@ -230,12 +230,8 @@ G.Tower = (() => {
 
   /** Torre adaptativa (main.gd _tower_adapt): mejoras de la partida y permanentes del Pokémon. */
   function adapt(pl) {
-    let ru = 0;
-    for (const k in pl.statsTaken || {}) ru += pl.statsTaken[k] || 0;
-    for (const m of pl.moves || []) ru += m.lvl || 0;
-    const s = save(), up = s && s.pupg && s.pupg[pl.dex] || {};
-    let pu = 0;
-    for (const k in up) pu += +up[k] || 0;
+    // (M5 lote 9: las mismas cuentas que la dificultad adaptativa de la partida normal, adaptive.js)
+    const ru = G.Adaptive.runUps(pl), pu = G.Adaptive.permUps(pl.dex, save());
     adaptHp = Math.min(1 + ADAPT.maxHp, 1 + ADAPT.hp * ru + ADAPT.hpP * pu);
     adaptDmg = Math.min(1 + ADAPT.maxDmg, 1 + ADAPT.dmg * ru + ADAPT.dmgP * pu);
     return { ru, pu };
