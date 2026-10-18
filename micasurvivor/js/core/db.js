@@ -179,6 +179,8 @@ G.DB = (() => {
     if (G.Modes) G.Modes.sanitize(s);
     // Torre (M5 lote 8): pisos superados (1-30), el mejor piso, el registro y el punto de control elegido.
     if (G.Tower) G.Tower.sanitize(s);
+    // Modo Cooperativo (M5 lote 12a): el compañero elegido (coopDex, un Pokémon que exista) y cuándo (coopAt).
+    if (G.LocalCoop) G.LocalCoop.sanitize(s);
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -300,6 +302,8 @@ G.DB = (() => {
     // Torre (M5 lote 8): los pisos superados son unión (con la fecha más antigua), el mejor piso el mayor,
     // el registro de jefes el de la versión más reciente y el punto de control elegido el más alto.
     if (G.Tower) G.Tower.merge(r, older);
+    // Modo Cooperativo (M5 lote 12a): el compañero elegido más tarde (coopAt), aunque la otra versión sea la más reciente.
+    if (G.LocalCoop) G.LocalCoop.merge(r, older);
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis', 'typeDone']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];

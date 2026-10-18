@@ -209,10 +209,10 @@ try {
 			};
 		});
 		A(JSON.stringify(r.rifts) === JSON.stringify({ limit: 480, first: 20, every: 8, after: 6, last: 40 }), 'Rift Time Attack: 480 s, checks at 20 s then every 8 s (6 s after a fight), none in the last 40 s (main.gd 262 / 449 / 5862-5866 / 6266)', JSON.stringify(r.rifts));
-		A(JSON.stringify(r.coins) === JSON.stringify({ daily: 1.25, perMod: 0.25, type: 0.5, rifts: 0.25 }), 'coins: Daily x1.25, +0.25 per modifier, +0.5 Type Survival, +0.25 Rift Time Attack (main.gd 799-822)', JSON.stringify(r.coins));
+		A(JSON.stringify(r.coins) === JSON.stringify({ daily: 1.25, perMod: 0.25, type: 0.5, rifts: 0.25, coop: 0.8 }), 'coins: Daily x1.25, +0.25 per modifier, +0.5 Type Survival, +0.25 Rift Time Attack (main.gd 799-822); Co-op x0.8 (batch 12a, main.gd 816)', JSON.stringify(r.coins));
 		A(JSON.stringify(r.k) === JSON.stringify({ fast: 1.4, fastBoss: 1.15, horde: 1.8, tank: 1.6, hard: 1.5, frail: 0.5 }) && JSON.stringify(r.mods) === '["fast","horde","tank","hard","frail","nohealing"]',
 			'the 6 modifiers in the port\'s order with its factors (fast 1.4 / bosses 1.15, horde 1.8, tank 1.6, hard 1.5, frail 0.5)', JSON.stringify([r.k, r.mods]));
-		A(r.types === 18 && r.typeMin === 10 && r.party === 25 && JSON.stringify(r.list) === '["normal","daily","rush","party","tower","rifts","type","team"]', '18 types, 10 minutes marks a type, party Pokémon defaults to Pikachu (25), the batch-6 modes (+ team, batch 7; + Boss Rush and the Tower in the menu order of the port, batch 8)');
+		A(r.types === 18 && r.typeMin === 10 && r.party === 25 && JSON.stringify(r.list) === '["normal","daily","rush","party","coop","tower","rifts","type","team"]', '18 types, 10 minutes marks a type, party Pokémon defaults to Pikachu (25), the batch-6 modes (+ team, batch 7; + Boss Rush and the Tower in the menu order of the port, batch 8; + Co-op, batch 12a)');
 		A(r.seed === 20261017 && r.seedJan === 20270105, 'the daily seed is the date as YYYYMMDD (save_data.gd daily_seed)', JSON.stringify([r.seed, r.seedJan]));
 		A(r.dex === r.want && r.noLeg && r.mod === r.wantMod, `the daily Pokémon = pool[(sd*7919+13) % n] (non-legendary) and the rule = MOD_IDS[(sd*31+7) % 6] (${r.dex}, ${r.mod})`, JSON.stringify(r));
 		const bad = r.en.filter(([es, en]) => es === en && !/^(Horda|No)$/.test(es) || SPANISH.test(en.replace(/Pok[ée]mon/g, '')));
@@ -237,7 +237,7 @@ try {
 			daily: document.querySelector('#modes-list [data-mode=daily]').innerText,
 			dailyDex: G.DEX_BY[G.Modes.dailyDex(G.Modes.dailySeed())].name, rule: G.I18n.t(G.Modes.MOD[G.Modes.dailyMod(G.Modes.dailySeed())].name),
 		}));
-		A(r.title === 'Choose a mode' && JSON.stringify(r.cards) === '["normal","daily","rush","party","tower","rifts","type","team"]' && r.mods.length === 6, 'one card per mode (Normal, Daily, Party, Rift Time Attack, Survival by Type; + Team, batch 7; + Boss Rush and Floor Tower, batch 8) and 6 modifier switches', JSON.stringify(r));
+		A(r.title === 'Choose a mode' && JSON.stringify(r.cards) === '["normal","daily","rush","party","coop","tower","rifts","type","team"]' && r.mods.length === 6, 'one card per mode (Normal, Daily, Party, Rift Time Attack, Survival by Type; + Team, batch 7; + Boss Rush and Floor Tower, batch 8; + Co-op, batch 12a) and 6 modifier switches', JSON.stringify(r));
 		A(r.daily.includes(r.dailyDex) && r.daily.includes('“' + r.rule + '”') && /You haven't played it today\./.test(r.daily), "the Daily card names today's Pokémon and rule, and \"You haven't played it today.\"", r.daily);
 		const sp = await spanishOn('#scr-modes');
 		A(sp.bad.length === 0, 'the modes screen shows no Spanish in English mode', JSON.stringify(sp));

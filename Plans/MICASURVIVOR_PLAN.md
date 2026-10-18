@@ -133,7 +133,23 @@ each with tests and the matching controller action wired into js/core/pad.js onc
 11. **Achievements/missions/titles** (+93 / +13 / more missions), run damage breakdown,
     in-game encyclopedia, trainer card.
    *(built 2026-10-18, branch `feat/micasurvivor-m5-b11`; README → "Batch 11: Achievements, missions, titles, damage breakdown, Lexicon and trainer card")*
-12. **Local co-op partner** (AI or 2nd pad).
+12. **Playing together** (owner, 2026-10-18: "more than local co-op partner — play with friends
+    online as well as spectate a friend playing live / share a game replay"). Three PRs:
+    - **12a. Local co-op partner** (from the Android port): a 2nd pad on the same screen, or an AI
+      partner.
+      *(built 2026-10-18, branch `feat/micasurvivor-m5-b12a`; README → "Batch 12a: Co-op Mode (the local partner)".
+      Also removed MicaSurvivor's controller sign-in gate (owner, 2026-10-18: pads work for guests))*
+    - **12b. Online co-op with friends:**
+      - Re-enable the upstream 4-player WebRTC co-op (`js/net/coop.js`, `net.js`), currently
+        "Coming soon" because it signalled through Firebase.
+      - Signalling goes through `/api/mp` with Magepunk accounts and friends: invite from the
+        friends list, a lobby, and a relay fallback when peers can't connect directly.
+      - Mode, modifier and team rules follow upstream's group runs.
+    - **12c. Spectate + replays:**
+      - Live: a friend's run shows as "live now", and you can watch it in real time without
+        affecting it (like Micatro's friend spectating).
+      - Replays: a finished run is saved and shared as a full replay link, recorded as a snapshot
+        stream (the game is real-time, so it can't re-simulate like Micatro), with size caps.
 13. ~~**9 more languages** (Godot %s -> {x} converter; CJK fonts).~~
    *(dropped by the owner, 2026-10-18: MicaSurvivor stays English and Spanish only)*
 Not ported: Android-only parts (APK updater, notch insets beyond CSS env(), save codes, keep-awake).

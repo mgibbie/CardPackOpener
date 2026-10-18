@@ -170,7 +170,7 @@ G.ZMoves = (() => {
   /** El Z del Pokémon ACTIVO, leído ahora (el port lo fijaba al empezar la partida). */
   const activeType = pl => (pl ? typeFor(pl.dex) : '');
   function can(pl) {
-    return !!pl && !pl.dead && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)
+    return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
       && state === '' && !used && pl.level >= MIN_LEVEL && !!activeType(pl) && !blocked();
   }
   function tryStart(pl) {

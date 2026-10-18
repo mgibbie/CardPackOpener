@@ -26,6 +26,8 @@
  *           jefes (stats.rushBest). Con los modificadores elegidos.
  *   tower   Torre de pisos (lote 8, js/systems/tower.js): 30 pisos con su jefe, descansos, pactos de
  *           riesgo, reliquias y puntos de control (save.tower, save.modes.towerStart). Con los modificadores.
+ *   coop    Modo Cooperativo (lote 12a, js/systems/localcoop.js): un segundo Pokémon (save.coopDex) te acompaña,
+ *           de la IA o del jugador 2 con un segundo mando. Con los modificadores; -20 % de monedas (multiplica).
  *
  *   Modificadores (todos los modos menos el Diario, que trae el suyo, y la Fiesta): +25 % de
  *   monedas cada uno. fast: enemigos ×1,4 de velocidad (jefes ×1,15) · horde: ×1,8 de aparición
@@ -39,10 +41,10 @@
  *   mayor de cada stat, la mejor marca del día más reciente y la unión de los tipos superados.
  */
 G.Modes = (() => {
-  // (team: M5 lote 7; rush y tower: lote 8, en el orden del menú del port: menu.gd 1563-1657)
-  const LIST = ['normal', 'daily', 'rush', 'party', 'tower', 'rifts', 'type', 'team'];
-  const NAME = { normal: 'Partida normal', daily: 'Desafío diario', rush: 'Rush de Jefes', party: 'Modo Fiesta', tower: 'Torre de pisos', rifts: 'Contrarreloj de grietas', type: 'Supervivencia por tipo', team: 'Modo Equipo' };
-  const ICON = { normal: 'flag', daily: 'm_daily', rush: 'm_rush', party: 'm_party', tower: 'm_tower', rifts: 'clock', type: 'm_type', team: 'm_team' };
+  // (team: M5 lote 7; rush y tower: lote 8; coop: lote 12a; en el orden del menú del port: menu.gd 1563-1657)
+  const LIST = ['normal', 'daily', 'rush', 'party', 'coop', 'tower', 'rifts', 'type', 'team'];
+  const NAME = { normal: 'Partida normal', daily: 'Desafío diario', rush: 'Rush de Jefes', party: 'Modo Fiesta', coop: 'Modo Cooperativo', tower: 'Torre de pisos', rifts: 'Contrarreloj de grietas', type: 'Supervivencia por tipo', team: 'Modo Equipo' };
+  const ICON = { normal: 'flag', daily: 'm_daily', rush: 'm_rush', party: 'm_party', coop: 'm_coop', tower: 'm_tower', rifts: 'clock', type: 'm_type', team: 'm_team' };
   const MOD_IDS = ['fast', 'horde', 'tank', 'hard', 'frail', 'nohealing'];
   const MOD = {
     fast: { name: 'Veloces', desc: 'Los enemigos corren un 40% más rápido.', icon: 'boot' },
@@ -55,7 +57,7 @@ G.Modes = (() => {
   const K = { fast: 1.4, fastBoss: 1.15, horde: 1.8, tank: 1.6, hard: 1.5, frail: 0.5 };
   const TYPES = ['normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
   const RIFTS = { limit: 480, first: 20, every: 8, after: 6, last: 40 };
-  const COINS = { daily: 1.25, perMod: 0.25, type: 0.5, rifts: 0.25 };
+  const COINS = { daily: 1.25, perMod: 0.25, type: 0.5, rifts: 0.25, coop: 0.8 };   // (coop: lote 12a, main.gd 816: mul *= 0,8)
   const TYPE_DONE_MIN = 10;
   const PARTY_DEX = 25;
 
@@ -244,6 +246,11 @@ G.Modes = (() => {
     } else if (run.mode === 'tower') {
       // M5 lote 8 (main.gd 808-815 / 842-843): el piso, los últimos jefes; stats towerRuns (towerBest al superar cada piso)
       out.lines.push(...G.Tower.finish(S));
+    } else if (run.mode === 'coop') {
+      // M5 lote 12a (main.gd 815-817 / 838-841): -20 % de monedas (multiplica a todo); stats coopRuns y, desde 60 s, groupRuns
+      out.base *= COINS.coop;
+      out.lines.push(NAME.coop);
+      if (G.LocalCoop) G.LocalCoop.finish(S, time);
     }
     if (run.mode !== 'daily') {
       for (let k = 1; k <= run.mods.length; k++) S['mn' + k] = Math.max(S['mn' + k] || 0, min);

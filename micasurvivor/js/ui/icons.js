@@ -42,6 +42,11 @@ G.Icons = (() => {
       '................', '...........k....', '.........kkRkk..', '........kRRRRRk.', '.....k.kRRRRRRRk', '...kkRkkRRRRRRRk',
       '..kRRRRkkkkWkkkk', '.kRRRRRRWWWWWWWk', '.kRRRRRRWWWWWWWk', '.kkkkWkkkWWWWWk.', '.kWWWWWWWkkWkk..', '.kWWWWWWWk.k....',
       '..kWWWWWk.......', '...kkWkk........', '.....k..........', '................'] },
+    // MicaSurvivor (M5 lote 12a, icons.gd EXTRA m_coop): dos Pokémon juntos, azul y naranja, el Modo Cooperativo.
+    m_coop: { pal: { A: '#4fa8ff', B: '#ff8a5b' }, rows: [
+      '................', '................', '.....k.....k....', '...kkAkk.kkBkk..', '..kAAAAAkBBBBBk.', '..kAAAAAkBBBBBk.',
+      '.kAAkAkABBkBkBBk', '..kAAAAAkBBBBBk.', '..kAAAAAkBBBBBk.', '..kkkAkkkkkBkkk.', '.kAAAAAABBBBBBBk', '.kAAAAAABBBBBBBk',
+      '.kAAAAAABBBBBBBk', '.kAAAAAABBBBBBBk', '.kAAAAAABBBBBBBk', '..kkkkkkkkkkkkk.'] },
     // MicaSurvivor (M5 lote 8, icons.gd EXTRA): Rush de Jefes, Torre de pisos, descansos y cartas de riesgo.
     m_rush: { pal: { W: '#f4f6fb', R: '#e0434f', H: '#ff9aa2', S: '#c9cfdc' }, rows: [
       '........k.......', '.....kkkRkkk....', '....kRRRRRRRk...', '...kHHRRRRRRRk..', '..kRHRRRRRRRRRk.', '.kRRRRRRRRRRRRRk',

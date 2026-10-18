@@ -263,6 +263,8 @@ G.Player = class Player {
    * @param pure  daño que no baja con la defensa ni el cuerpo a cuerpo (Arceus)
    */
   hurt(amount, type = null, pure = false) {
+    // MicaSurvivor (M5 lote 12a, main.gd 1810-1812): en el Modo Cooperativo, mientras espectas los golpes los recibe tu compañero.
+    if (this.coopDown && !this.remote && G.LocalCoop) { G.LocalCoop.hurtMate(amount, type, pure); return; }
     if (this.invuln > 0 || this.dead) return;
     // MicaSurvivor (M5 lote 4): invulnerable durante todo el Movimiento Z (también la lava, que pone invuln a 0).
     if (!this.remote && G.ZMoves && G.ZMoves.busy) return;
@@ -321,6 +323,8 @@ G.Player = class Player {
     if (this.hp <= 0 && this.secondChance()) return;
     // MicaSurvivor (M5 lote 7, main.gd 1898-1902): Modo Equipo, si cae el que juega entra el siguiente.
     if (this.hp <= 0 && G.Team && G.Team.onFaint(this)) return;
+    // MicaSurvivor (M5 lote 12a, main.gd 1917): en el Modo Cooperativo, caer no acaba la partida: espectas a tu compañero.
+    if (this.hp <= 0 && G.LocalCoop && G.LocalCoop.onFaint(this)) return;
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
       this.anim.play('Faint', { hold: true });
@@ -539,6 +543,7 @@ G.Player = class Player {
 
   draw(ctx) {
     if (this.zHidden) return;      // MicaSurvivor (M5 lote 4): Picado Supersónico, en el cielo
+    if (this.coopDown) return;     // MicaSurvivor (M5 lote 12a): caído en el Modo Cooperativo (espectas a tu compañero)
     // Halo del tipo del movimiento activo, en el suelo.
     const m = this.activeMove();
     if (m && !this.dead) {

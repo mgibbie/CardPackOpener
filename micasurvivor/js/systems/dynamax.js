@@ -78,7 +78,7 @@ G.Dynamax = (() => {
     return BLOCKED_MODES.includes(G.Game && G.Game.mode) || !!(G.Judgment && G.Judgment.active);
   }
   function can(pl) {
-    return !!pl && !pl.dead && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)
+    return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
       && !(G.ZMoves && G.ZMoves.cine) && unlocked() && !used && !active && pl.level >= MIN_LEVEL && !blocked();
   }
   function tryStart(pl) {

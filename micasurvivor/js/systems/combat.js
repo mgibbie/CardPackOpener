@@ -19,7 +19,7 @@ G.Combat = (() => {
   // ---------------- ejecutar el movimiento activo ----------------
 
   function tick(dt, pl, now) {
-    if (pl.dead) return;
+    if (pl.dead || pl.coopDown) return;   // (M5 lote 12a: caído en el Modo Cooperativo no atacas, main.gd _update_down)
     // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
   }

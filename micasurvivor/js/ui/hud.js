@@ -244,6 +244,7 @@ G.HUD = (() => {
     mark('chips', px, py + 34, bx - 5 - px, 15);
 
     if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));
+    else if (G.LocalCoop && G.LocalCoop.on) drawLocalCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));   // (M5 lote 12a)
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.
@@ -633,6 +634,79 @@ G.HUD = (() => {
       const f = (pl.reviveT || 0) / G.Player.REVIVE_TIME;
       if (f > 0) bar(ctx, w / 2 - 110, h * 0.62 + 12, 220, 10, f, '#5fe08a');
       ctx.restore();
+    }
+  }
+
+  /**
+   * MicaSurvivor (M5 lote 12a): el Modo Cooperativo (js/systems/localcoop.js).
+   * - Debajo de tu vida: una ficha con tu compañero y quién lo lleva (IA, o J2 y el stick del jugador 2).
+   * - Si se aleja fuera de la vista, una flecha en el borde con su nombre y a cuántos metros está (como net/coop.js).
+   * - Si has caído (main.gd 8653-8661): "Espectando: revivirás en N s" y la vida de tu compañero.
+   */
+  function drawLocalCoop(ctx, w, h, pl, px, top) {
+    const LC = G.LocalCoop, o = LC.mate;
+    if (!o) return;
+    const col = LC.COLOR, p2 = LC.ctrl === 'p2';
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.font = F(800, 10);
+    const label = o.mon.name + ' · ' + (p2 ? 'J2' : 'IA');
+    const tw = ctx.measureText(G.I18n.t(label)).width, cw = tw + 28 + (p2 ? 18 : 0);
+    roundRect(ctx, px, top, cw, 17, 7);
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fill();
+    G.Icons.draw(ctx, 'm_coop', px + 4, top + 2, 13);
+    ctx.fillStyle = col;
+    ctx.fillText(label, px + 21, top + 12);
+    if (p2 && G.Pad) G.Pad.drawGlyph(ctx, 'lstick', px + 23 + tw, top + 1, 15);
+    mark('coop', px, top, cw, 17);
+
+    // flecha hacia el compañero si no se ve
+    if (LC.visible(pl)) {
+      const [sx, sy] = toHud(o.x, o.y - o.bodyH * 0.5);
+      if (!(sx > 0 && sx < w && sy > 0 && sy < h)) {
+        const M = 42;
+        const ey = G.U.clamp(sy, M + 70, h - M - 80), ex = avoid(G.U.clamp(sx, M, w - M), ey, 28);
+        const a = Math.atan2(sy - ey, sx - ex);
+        ctx.save();
+        ctx.translate(ex, ey);
+        ctx.fillStyle = 'rgba(0,0,0,.55)';
+        ctx.beginPath(); ctx.arc(0, 0, 17, 0, 6.2832); ctx.fill();
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * 28, Math.sin(a) * 28);
+        ctx.lineTo(Math.cos(a + 2.4) * 14, Math.sin(a + 2.4) * 14);
+        ctx.lineTo(Math.cos(a - 2.4) * 14, Math.sin(a - 2.4) * 14);
+        ctx.closePath(); ctx.fill();
+        G.Icons.draw(ctx, 'm_coop', -8, -8, 16);
+        const lx = -Math.cos(a) * 30, ly = -Math.sin(a) * 26 + 4;
+        ctx.font = F(800, 12);
+        const t2 = o.mon.name + ' · ' + Math.round(G.U.dist(pl.x, pl.y, o.x, o.y) / 32) + ' m';
+        ctx.textAlign = Math.cos(a) > 0.3 ? 'right' : Math.cos(a) < -0.3 ? 'left' : 'center';
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)';
+        ctx.strokeText(t2, lx, ly);
+        ctx.fillStyle = col;
+        ctx.fillText(t2, lx, ly);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    // caído: espectas a tu compañero
+    if (LC.down) {
+      const bw = Math.min(300, w - 40), x0 = w / 2 - bw / 2, y0 = Math.round(h * 0.62) - 30;
+      ctx.save();
+      roundRect(ctx, x0 - 6, y0 - 6, bw + 12, 66, 9);
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fill();
+      ctx.textAlign = 'center';
+      ctx.font = F(800, 14);
+      ctx.fillStyle = '#ffd2d8';
+      ctx.fillText('Espectando: revivirás en ' + Math.ceil(LC.downLeft) + ' s', w / 2, y0 + 12);
+      bar(ctx, x0, y0 + 21, bw, 12, LC.mateHp / Math.max(1, LC.mateMax), '#9ad0ff', 'rgba(0,0,0,.6)');
+      ctx.font = F(700, 11);
+      ctx.fillStyle = '#cfe6ff';
+      ctx.fillText('Vida de tu compañero', w / 2, y0 + 50);
+      ctx.restore();
+      mark('down', x0 - 6, y0 - 6, bw + 12, 66);
     }
   }
 

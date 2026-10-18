@@ -4,7 +4,7 @@
  * Supervivencia por tipo), "Elegir Pokémon de la fiesta", "Cambiar tipo" y los 6 modificadores.
  * Se abre desde "Modos de juego" en el menú; ratón, táctil y mando (todo son botones: el foco del
  * mando los recorre, aceptar los pulsa, atrás vuelve). El Rush de Jefes y la Torre llegan en el lote 8
- * (abajo); el cooperativo local se añadirá aquí con su lote.
+ * (abajo); el cooperativo local, en el lote 12a (abajo).
  *
  * M5 lote 7 (menu.gd 1640-1657 / 2158-2174): la tarjeta del Modo Equipo con "Elegir equipo (hasta 3)"
  * (con menos de 2 Pokémon, la tarjeta lo dice y no empieza). El selector enseña sólo tus Pokémon,
@@ -14,15 +14,20 @@
  * M5 lote 8 (menu.gd 1571-1572 / 1601-1625): las tarjetas del Rush de Jefes (con su récord) y de la Torre
  * de pisos (mejor piso y reliquias) en el orden del port, y "Piso inicial: N" (sólo si has desbloqueado
  * algún punto de control: cada pulsación pasa al siguiente; se guarda en save.modes.towerStart).
+ *
+ * M5 lote 12a (menu.gd 1584-1600 / 2109 / 2151-2156): la tarjeta del Modo Cooperativo (con el compañero que
+ * llevarás) tras la de la Fiesta, como en el port, y "Elegir compañero": sólo tus Pokémon, por generación; tocar
+ * uno lo elige (save.coopDex, js/systems/localcoop.js) y vuelve a la lista.
  */
 G.ModesUI = (() => {
   const $ = G.UI.$;
   const GEN_NAMES = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Teselia', 'Kalos', 'Alola', 'Galar', 'Paldea'];
-  let partyGen = 1, teamGen = 1;
+  let partyGen = 1, teamGen = 1, coopGen = 1;
 
   function init() {
     $('party-back').onclick = closeParty;
     $('team-back').onclick = closeTeam;
+    $('coop-back').onclick = closeCoop;
   }
 
   const nameOf = dex => (G.DEX_BY[dex] || {}).name || '#' + dex;
@@ -33,6 +38,7 @@ G.ModesUI = (() => {
     G.UI.show('scr-modes', true);
     closeParty(true);
     closeTeam(true);
+    closeCoop(true);
     render();
   }
 
@@ -56,6 +62,9 @@ G.ModesUI = (() => {
       card('rush', M.ICON.rush, M.NAME.rush, ['Solo jefes y legendarios, uno tras otro, cada vez más fuertes. Récord: ' + G.BossRush.best(s) + ' jefes.']),
       `<div class="mode-group">${card('party', M.ICON.party, M.NAME.party, ['Cualquier Pokémon, no puedes morir y no se guarda progreso. Pokémon: ' + esc(nameOf(p.party))])}
         <button class="btn mode-sub" id="modes-party-pick">${G.Icons.html('ball', 18)} Elegir Pokémon de la fiesta</button></div>`,
+      // M5 lote 12a: Modo Cooperativo (menu.gd 1584-1600)
+      `<div class="mode-group">${card('coop', M.ICON.coop, M.NAME.coop, ['Un segundo Pokémon te acompaña y ataca solo. Si conectas un segundo mando, el jugador 2 lo mueve con su stick izquierdo. Comparte tus mejoras. -20% de monedas. Compañero: ' + esc(nameOf(G.LocalCoop.dex(s)))])}
+        <button class="btn mode-sub" id="modes-coop-pick">${G.Icons.html('ball', 18)} Elegir compañero</button></div>`,
       // M5 lote 8: la Torre de pisos y su punto de control (menu.gd 1601-1625)
       towerCard(s),
       card('rifts', M.ICON.rifts, M.NAME.rifts, [`8 minutos: las grietas se abren sin parar. Gana todas las peleas que puedas. +25% de monedas. Récord: ${st.riftsBest || 0} grietas.`]),
@@ -77,6 +86,7 @@ G.ModesUI = (() => {
     $('modes-list').querySelectorAll('[data-mode]').forEach(b => { b.onclick = () => start(b.dataset.mode); });
     $('modes-party-pick').onclick = openParty;
     if ($('modes-team-pick')) $('modes-team-pick').onclick = openTeam;
+    $('modes-coop-pick').onclick = openCoop;
     $('modes-type').onclick = () => { M.cycleType(); render(); };
     if ($('modes-tower-start')) $('modes-tower-start').onclick = () => { G.Tower.cycleStart(); render(); };
     $('modes-mods').querySelectorAll('[data-mod]').forEach(b => { b.onclick = () => { M.toggleMod(b.dataset.mod); render(); }; });
@@ -117,6 +127,7 @@ G.ModesUI = (() => {
   function back() {
     if (!G.UI.isOpen('scr-modes')) return false;
     if (!$('modes-team').classList.contains('hidden')) { closeTeam(); return true; }
+    if (!$('modes-coop').classList.contains('hidden')) { closeCoop(); return true; }
     if ($('modes-party').classList.contains('hidden')) return false;
     closeParty();
     return true;
@@ -205,5 +216,55 @@ G.ModesUI = (() => {
     }
   }
 
-  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam };
+  // ---------------- M5 lote 12a: elegir el compañero del cooperativo (sólo tus Pokémon; menu.gd 2109 / 2151-2156) ----------------
+  function openCoop() {
+    const mine = G.LocalCoop.owned(), cur = G.DEX_BY[G.LocalCoop.dex()];
+    coopGen = cur && mine.includes(cur.dex) ? cur.gen : (G.DEX_BY[mine[0]] || { gen: 1 }).gen;
+    $('modes-main').classList.add('hidden');
+    $('modes-coop').classList.remove('hidden');
+    document.querySelector('#scr-modes [data-back]').classList.add('hidden');
+    G.UI.toast('Toca el Pokémon que será tu compañero');
+    renderCoop();
+  }
+  function closeCoop(quiet) {
+    $('modes-coop').classList.add('hidden');
+    if ($('modes-party').classList.contains('hidden') && $('modes-team').classList.contains('hidden')) $('modes-main').classList.remove('hidden');
+    document.querySelector('#scr-modes [data-back]').classList.remove('hidden');
+    if (quiet !== true && G.UI.isOpen('scr-modes')) render();
+  }
+  function renderCoop() {
+    const mine = G.LocalCoop.owned(), sel = G.LocalCoop.dex(), s = G.DB.save;
+    const gens = [...new Set(mine.map(d => G.DEX_BY[d].gen))].sort((a, b) => a - b);
+    if (!gens.includes(coopGen)) coopGen = gens[0] || 1;
+    const tabs = $('coop-gens');
+    tabs.innerHTML = '';
+    for (const g of gens) {
+      const b = document.createElement('button');
+      b.className = 'gen-tab' + (g === coopGen ? ' on' : '');
+      b.innerHTML = `<b>${GEN_NAMES[g - 1]}</b>`;
+      b.onclick = () => { coopGen = g; renderCoop(); };
+      tabs.appendChild(b);
+    }
+    const grid = $('coop-grid');
+    grid.innerHTML = '';
+    for (const d of mine) {
+      const p = G.DEX_BY[d];
+      if (p.gen !== coopGen) continue;
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (d === sel ? ' on' : '');
+      cell.dataset.dex = d;
+      cell.insertAdjacentHTML('beforeend', `<span class="no">${String(d).padStart(3, '0')}</span>`);
+      cell.appendChild(G.UI.spriteCanvas(d, 92, 80, { scale: 2, shadow: true, shiny: !!s.partnerShiny && G.DB.ownsShiny(d) }));
+      cell.insertAdjacentHTML('beforeend', `<b>${p.name}</b>`);
+      cell.onclick = () => {
+        if (!G.LocalCoop.pick(d)) { G.Audio.sfx('error'); return; }
+        G.Audio.sfx('confirm');
+        G.UI.toast('Compañero: ' + p.name);
+        closeCoop();
+      };
+      grid.appendChild(cell);
+    }
+  }
+
+  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop };
 })();

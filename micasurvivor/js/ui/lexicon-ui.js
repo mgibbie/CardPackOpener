@@ -43,6 +43,7 @@ G.LexiconUI = (() => {
     daily: 'Cada día, el mismo Pokémon y la misma regla para todos. +25% de monedas.',
     rush: 'Solo jefes y legendarios, uno tras otro, cada vez más fuertes.',
     party: 'Cualquier Pokémon, no puedes morir y no se guarda progreso.',
+    coop: 'Un segundo Pokémon te acompaña y ataca solo. Si conectas un segundo mando, el jugador 2 lo mueve con su stick izquierdo. Comparte tus mejoras. -20% de monedas.',   // (M5 lote 12a)
     tower: '30 pisos, cada uno con un jefe fijo. Cada piso da un premio la primera vez y cada 5 pisos ganas una reliquia permanente (+6 de vida y +2% de ataque dentro de la Torre). Entre pisos eliges descanso y pactos de riesgo.',
     rifts: '8 minutos: las grietas se abren sin parar. Gana todas las peleas que puedas. +25% de monedas.',
     type: 'Solo aparecen Pokémon del tipo que elijas (y sus jefes). +50% de monedas.',
@@ -153,6 +154,7 @@ G.LexiconUI = (() => {
       daily: [['Jugados', n(st.dailyPlays)], ['Mejor marca', (st.dailyBestMin || 0) + ' min']],
       rush: [['Récord de jefes', G.BossRush.best(s)], ['Partidas', n(st.rushRuns)]],
       party: [],
+      coop: [['Partidas', n(st.coopRuns)], ['Compañero', (G.DEX_BY[G.LocalCoop.dex(s)] || {}).name || '—']],   // (M5 lote 12a)
       tower: [['Mejor piso', G.Tower.rec(s).best + ' / ' + G.Tower.FLOORS], ['Reliquias', G.Tower.relics(s) + ' / ' + G.Tower.RELICS_MAX], ['Arceus vencido', st.arceus ? 'Sí' : 'No'], ['Partidas', n(st.towerRuns)]],
       rifts: [['Récord de grietas', st.riftsBest || 0], ['Partidas', n(st.riftsRuns)]],
       type: [['Tipos superados', M.typeDoneCount(s) + ' / ' + M.TYPES.length], ['Mejor marca', (st.typeBestMin || 0) + ' min']],
