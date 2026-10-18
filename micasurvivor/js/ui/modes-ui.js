@@ -3,13 +3,17 @@
  * tarjeta por modo (Partida normal, Desafío diario, Modo Fiesta, Contrarreloj de grietas,
  * Supervivencia por tipo), "Elegir Pokémon de la fiesta", "Cambiar tipo" y los 6 modificadores.
  * Se abre desde "Modos de juego" en el menú; ratón, táctil y mando (todo son botones: el foco del
- * mando los recorre, aceptar los pulsa, atrás vuelve). Los modos de lotes posteriores (Rush de
- * Jefes, Torre, cooperativo local) se añadirán aquí con sus lotes.
+ * mando los recorre, aceptar los pulsa, atrás vuelve). El Rush de Jefes y la Torre llegan en el lote 8
+ * (abajo); el cooperativo local se añadirá aquí con su lote.
  *
  * M5 lote 7 (menu.gd 1640-1657 / 2158-2174): la tarjeta del Modo Equipo con "Elegir equipo (hasta 3)"
  * (con menos de 2 Pokémon, la tarjeta lo dice y no empieza). El selector enseña sólo tus Pokémon,
  * por generación; al abrirlo el equipo empieza de cero, tocar uno lo añade (o lo quita) y con 3
  * vuelve solo ("¡Equipo listo!"). Lo que no elijas se rellena (js/systems/team.js list).
+ *
+ * M5 lote 8 (menu.gd 1571-1572 / 1601-1625): las tarjetas del Rush de Jefes (con su récord) y de la Torre
+ * de pisos (mejor piso y reliquias) en el orden del port, y "Piso inicial: N" (sólo si has desbloqueado
+ * algún punto de control: cada pulsación pasa al siguiente; se guarda en save.modes.towerStart).
  */
 G.ModesUI = (() => {
   const $ = G.UI.$;
@@ -48,8 +52,12 @@ G.ModesUI = (() => {
       card('daily', M.ICON.daily, M.NAME.daily, [
         `Hoy: ${esc(nameOf(M.dailyDex(sd)))} con la regla «${M.MOD[M.dailyMod(sd)].name}» (misma para todos). +25% de monedas.`,
         best > 0 ? 'Tu mejor tiempo de hoy: ' + G.U.mmss(best) : 'Aún no lo has jugado hoy.']),
+      // M5 lote 8: Rush de Jefes (menu.gd 1571-1572)
+      card('rush', M.ICON.rush, M.NAME.rush, ['Solo jefes y legendarios, uno tras otro, cada vez más fuertes. Récord: ' + G.BossRush.best(s) + ' jefes.']),
       `<div class="mode-group">${card('party', M.ICON.party, M.NAME.party, ['Cualquier Pokémon, no puedes morir y no se guarda progreso. Pokémon: ' + esc(nameOf(p.party))])}
         <button class="btn mode-sub" id="modes-party-pick">${G.Icons.html('ball', 18)} Elegir Pokémon de la fiesta</button></div>`,
+      // M5 lote 8: la Torre de pisos y su punto de control (menu.gd 1601-1625)
+      towerCard(s),
       card('rifts', M.ICON.rifts, M.NAME.rifts, [`8 minutos: las grietas se abren sin parar. Gana todas las peleas que puedas. +25% de monedas. Récord: ${st.riftsBest || 0} grietas.`]),
       `<div class="mode-group">${card('type', 'type:' + p.type, M.NAME.type, [`Solo aparecen Pokémon de tipo ${T(p.type)} (y sus jefes). +50% de monedas.`,
         `Tipos superados: ${M.typeDoneCount(s)} / ${M.TYPES.length}`])}
@@ -70,7 +78,17 @@ G.ModesUI = (() => {
     $('modes-party-pick').onclick = openParty;
     if ($('modes-team-pick')) $('modes-team-pick').onclick = openTeam;
     $('modes-type').onclick = () => { M.cycleType(); render(); };
+    if ($('modes-tower-start')) $('modes-tower-start').onclick = () => { G.Tower.cycleStart(); render(); };
     $('modes-mods').querySelectorAll('[data-mod]').forEach(b => { b.onclick = () => { M.toggleMod(b.dataset.mod); render(); }; });
+  }
+
+  /** La tarjeta de la Torre (+ "Piso inicial: N" con algún punto de control desbloqueado). */
+  function towerCard(s) {
+    const T = G.Tower, cps = T.checkpoints(s);
+    const c = card('tower', G.Modes.ICON.tower, G.Modes.NAME.tower, ['30 pisos, cada uno con un jefe fijo. Cada piso da un premio la primera vez y cada 5 pisos ganas una reliquia permanente (+6 de vida y +2% de ataque dentro de la Torre). Entre pisos eliges descanso y pactos de riesgo. Mejor piso: ' + T.rec(s).best + ' · Reliquias: ' + T.relics(s) + ' / ' + T.RELICS_MAX + '.']);
+    if (cps.length < 2) return c;
+    return `<div class="mode-group">${c}
+        <button class="btn mode-sub" id="modes-tower-start">${G.Icons.html('m_tower', 18)} Piso inicial: ${T.startFloor(s)}</button></div>`;
   }
 
   function start(mode) {

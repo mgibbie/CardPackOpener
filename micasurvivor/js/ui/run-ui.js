@@ -152,7 +152,8 @@ G.RunUI = (() => {
   function showOver(r, onBack) {
     // MicaSurvivor (M5 lote 6): "¡Tiempo!" al acabar la Contrarreloj; las líneas del modo (récords del Diario,
     // grietas ganadas, el tipo, la Fiesta) bajo el título.
-    $('over-title').textContent = r.timeUp ? '¡Tiempo!' : r.dead ? 'Has caído…' : 'Run terminada';
+    // (M5 lote 8: «¡TORRE COMPLETA!» al superar el piso 30, main.gd _tower_win)
+    $('over-title').textContent = r.title || (r.timeUp ? '¡Tiempo!' : r.dead ? 'Has caído…' : 'Run terminada');
     const modeLine = (r.modeLines || []).length ? `<div style="grid-column:1/-1;text-align:center" class="over-mode"><p>${r.modeLines.map(l => `<span>${l}</span>`).join(' · ')}</p></div>` : '';
     $('over-stats').innerHTML = modeLine + (r.rifts != null ? `<div style="grid-column:1/-1"><span>Grietas ganadas</span><b class="gold">${r.rifts}</b></div>` : '') + `
       <div><span>Tiempo</span><b>${G.U.mmss(r.time)}</b></div>

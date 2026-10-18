@@ -176,6 +176,8 @@ G.DB = (() => {
     if (isObj(s.zmis)) { for (const k of Object.keys(s.zmis)) if (!/^zc_[a-z]+$/.test(k)) delete s.zmis[k]; } else s.zmis = {};
     // Modos (M5 lote 6): lo elegido (modos), la marca del Desafío diario (daily) y los tipos superados (typeDone).
     if (G.Modes) G.Modes.sanitize(s);
+    // Torre (M5 lote 8): pisos superados (1-30), el mejor piso, el registro y el punto de control elegido.
+    if (G.Tower) G.Tower.sanitize(s);
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -294,6 +296,9 @@ G.DB = (() => {
     const daily = G.Modes ? G.Modes.mergeDaily(r.daily, older.daily) : r.daily || older.daily;
     if (daily) r.daily = daily;
     if (!isObj(r.modes) && isObj(older.modes)) r.modes = JSON.parse(JSON.stringify(older.modes));
+    // Torre (M5 lote 8): los pisos superados son unión (con la fecha más antigua), el mejor piso el mayor,
+    // el registro de jefes el de la versión más reciente y el punto de control elegido el más alto.
+    if (G.Tower) G.Tower.merge(r, older);
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis', 'typeDone']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];

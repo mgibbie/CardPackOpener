@@ -375,7 +375,7 @@ G.Pad = (() => {
   const $ = id => document.getElementById(id);
   const SEL = 'button, a[href], select, input:not([type=hidden]), .menu-item, .tab, .chip, .card, .cell, .answer, .gen-tab, .fav-slot, [data-pad]';
   const LAYERS = '.scr, #pull-fx, #tap-start, #sound-panel';
-  const GUARDED = ['scr-levelup', 'scr-item', 'scr-bond'];      // pop up mid-run: no accidental pick
+  const GUARDED = ['scr-levelup', 'scr-item', 'scr-bond', 'scr-tower'];   // pop up mid-run: no accidental pick (M5 batch 8: the Tower's rest / pacts)
   let focus = null, focusKey = '', focusRect = null, lastScope, scopeSince = 0;
   const remembered = new Map();
 
@@ -529,7 +529,8 @@ G.Pad = (() => {
     'scr-settings': '#set-close', 'scr-legal': '#legal-close', 'scr-news': '#news-close', 'scr-profile': '#prof-close',
     'scr-layout': '#lay-cancel', 'scr-starters': '#starter-back', 'scr-bond': '#bond-back', 'scr-mod': '#mod-back',
     'scr-recover': '#rec-later', 'scr-nick': '#nick-later', 'scr-lobby': '#lobby-menu', 'scr-pause': '#btn-resume',
-    'scr-modes': '#party-back'   // (M5 batch 6: the party picker goes back to the list; else the screen's Back)
+    'scr-modes': '#party-back',  // (M5 batch 6: the party picker goes back to the list; else the screen's Back)
+    'scr-tower': '#tower-skip'   // (M5 batch 8: on the Tower's risk cards, cancel = "No risks"; the rest has no way out)
   };
   function back(scope) {
     if (listening) { stopListening(); return; }
@@ -556,7 +557,7 @@ G.Pad = (() => {
     return true;
   }
 
-  /** Card choice (level-up / item / bond): prev / next walk the cards in order, wrapping (as the port's LB / RB). */
+  /** Card choice (level-up / item / bond / the Tower's rest and pacts): prev / next walk the cards in order, wrapping (as the port's LB / RB). */
   function stepCards(scope, d) {
     const cards = [...scope.querySelectorAll('.card')].filter(usable);
     if (!cards.length) return;

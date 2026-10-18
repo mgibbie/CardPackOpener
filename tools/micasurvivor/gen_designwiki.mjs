@@ -4,7 +4,7 @@
 //   passive ability of every Pokémon, M5 batch 2), js/systems/zmoves.js (the 18 Z-moves and their
 //   Z-crystal missions, M5 batch 4), js/systems/dynamax.js (Dynamax + raid dens, M5 batch 5), js/systems/modes.js
 //   (the quick modes, the 6 modifiers and the level-up ban, M5 batch 6), js/systems/team.js (Team mode, M5
-//   batch 7) (+ lang-en.js for the English
+//   batch 7), js/systems/bossrush.js + js/systems/tower.js (Boss Rush and the Floor Tower, M5 batch 8) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -34,7 +34,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/bossrush.js', 'systems/tower.js']) {
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
 	const G = sandbox.G;
@@ -75,7 +75,13 @@ export function build() {
 		rifts: M.RIFTS, coins: M.COINS, k: M.K, typeMin: M.TYPE_DONE_MIN, partyDex: M.PARTY_DEX, types: M.TYPES.length,
 		ban: { upgrade: T(ban.name), max: ban.max, costs: Array.from({ length: ban.max }, (_, l) => G.Upgrades.cost('ban', l)) },
 		// (M5 batch 7: Team mode)
-		team: { max: G.Team.MAX, minOwned: G.Team.MIN_OWNED, cooldown: G.Team.CD, inv: G.Team.INV, invAuto: G.Team.INV_AUTO, regen: G.Team.REGEN } };
+		team: { max: G.Team.MAX, minOwned: G.Team.MIN_OWNED, cooldown: G.Team.CD, inv: G.Team.INV, invAuto: G.Team.INV_AUTO, regen: G.Team.REGEN },
+		// (M5 batch 8: Boss Rush and the Floor Tower, with its risk pacts and legendary cards)
+		rush: { first: G.BossRush.FIRST, rest: G.BossRush.REST, legEvery: G.BossRush.LEG_EVERY, biome: G.BossRush.BIOME_EVERY, hp: G.BossRush.HP, dmg: G.BossRush.DMG, bst: G.BossRush.BST },
+		tower: { floors: G.Tower.FLOORS, bossAt: G.Tower.BOSS_AT, k: G.Tower.K, adapt: { maxHp: G.Tower.ADAPT.maxHp, maxDmg: G.Tower.ADAPT.maxDmg }, maxRisks: G.Tower.MAX_RISKS, legendChance: G.Tower.LEGEND_CHANCE,
+			rest: G.Tower.REST, relic: G.Tower.RELIC, relicsMax: G.Tower.RELICS_MAX, bonds: G.Tower.BOND_FLOORS, reward: [1, 5, 30].map(f => ({ floor: f, ...G.Tower.reward(f) })),
+			rests: G.Tower.REST_CARDS.map(c => ({ id: c.id, name: T(c.title), desc: c.desc ? T(c.desc) : null })),
+			risks: G.Tower.RISKS.map(r => ({ id: r.id, name: T(r.name), desc: T(r.desc) })), legends: G.Tower.LEGENDS.map(r => ({ id: r.id, name: T(r.name), desc: T(r.desc) })) } };
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',

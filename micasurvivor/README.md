@@ -624,6 +624,79 @@ team follows the newer save and is sanitized.
 - Shiny: the web's single "play shiny" switch applies to each member whose shiny you own.
 - The picker is a grid of your Pokémon by generation (the port reused the Pokédex filtered to owned).
 
+### Batch 8: Boss Rush and the Floor Tower
+
+**Boss Rush** (`js/systems/bossrush.js`, `G.BossRush`; port `main.gd` 339-343 / 441-445 / 577 / 795-798 /
+847-849 / 1007 / 2931-2955 / 3249-3251 / 3598-3611 / 4705 / 5288-5320 / 5863, `menu.gd` 1571-1572,
+`progress.gd` 113-117 / 247 / 313 / 328) and the **Floor Tower** (`js/systems/tower.js`, `G.Tower`, with its
+rest / pact picker in `js/ui/tower-ui.js`; port `main.gd` 117-139 / 203-261 / 451-466 / 808-815 / 842-843 /
+1035-1067 / 1143-1158 / 1348-1381 / 1834-1848 / 3154-3164 / 3189-3192 / 3286-3611 / 4174-4183 / 4493-4498 /
+4706 / 5260 / 5371 / 8711-8720, `save_data.gd` 206-213, `menu.gd` 1601-1625, `progress.gd` 136-142 / 248 /
+317 / 331). Both are cards on "Choose a mode", in the port's menu order (Normal, Daily, Boss Rush, Party,
+Floor Tower, Rift Time Attack, Survival by Type, Team), by mouse, touch and pad. Neither has an unlock
+(as in the port). The numbers are the port's.
+
+| Boss Rush | Port |
+|---|---|
+| Flow | only bosses: the first at 5 s ("Boss Rush! Get ready…" in the last 4 s), each next one 8 s after the last falls ("Boss N: name"). No waves, surges, events, rifts, dens or Judgment |
+| Order | boss i (0-based): a legendary when i % 3 == 2 (any with sprites); else a non-legendary with base stat total in [lo, lo + 110], lo = min(640, 490 + 14 i) (fallback: any non-legendary of 480+) |
+| Scaling | HP 1400 x 1.27^i x 1.35, damage min(150, 34 + 5 i) x 1.2, shots 0.55 of that every 1.1 s (range 260), speed 40 + base speed / 2 (40-100); created as at second 60 i (HP and damage x (1 + 60 i / 600)); XP = your level's x 1.25 |
+| Between fights | each boss leaves its XP, coins and an item, plus a heal berry (30 % HP) and a magnet |
+| World | a random starting biome, then a new one every 150 s |
+| End | only by falling. Record = bosses beaten (`stats.rushBest`, "New record!"); `stats.rushRuns` |
+
+| Floor Tower | Port |
+|---|---|
+| Floors | 30. Each: waves for 50 s (the HUD: "Floor N / 30 · Boss in Xs", then "Boss!", "Pacts: N", "Thirst for victory +x%"), then its fixed boss ("Floor N: name"); beating it clears the floor and clears the floor's enemies. One biome per floor |
+| Bosses | fixed per floor (seeded 7919 f + 31): a legendary every 5 floors, Eternatus on 25, Arceus on 30. HP 900 x 1.2^(min(f,15)-1) x 1.07^(f-15) x (1.8 + 3.2 clamp((f-5)/25)) x 1.35; damage min(120, 26 + 4.5 f) x 1.2; created at t = 15 f. Arceus has floor 30's HP plus floor 25's, x 1.25, and a last breath at 25 % (x1.1 speed, a wave of up to 14). From floor 11 the boss brings 3 + (f-10)/2 escorts |
+| Scaling | difficulty time 20 + 42 (f-1) + 14 max(0, f-10) + floor time; enemies x1.15 HP, x1.12 damage, x1.12 spawns (x1.06 more per floor past 10), x1.02 speed per floor past 10 (half for bosses); bosses x1.2 HP; surges from floor 11 (every max(16, 46 - 1.5 (f-10)) s, 8 + (f-10) enemies; during the boss too from 21); the cap +2 per floor past 20 (up to +20); XP x0.65 |
+| Adaptive | every 2 s: run upgrades (stat cards + move levels) and the Pokémon's permanent upgrades raise new enemies' HP (+1 % / +0.4 % each, up to x2; bosses up to x1.5) and damage (+0.4 % / +0.2 %, up to +40 %) |
+| Rest | after each floor: Rest (heal 40 % of max HP; 25 % from floor 22), Training (an extra level-up card) or Shield (35 % of max HP absorbs the next floor's damage) |
+| Pacts | then three random risk cards and "No risks"; up to 6 pacts per run, each for the whole run. 1 % per screen: a golden legendary card (no cost, not counted) replaces one. The 15: Frenzy (cooldown x0.8, damage taken x1.2), Glass cannon (damage x1.2, max HP x0.85), Light feet (speed x1.2, enemies x1.1), Blood pact (+2 HP per kill, bosses hit x1.2), Forbidden knowledge (XP x1.5, enemies HP x1.2), Stone skin (damage taken x0.75, speed x0.85), Boss contract (floor coins x1.5, bosses HP x1.25), Fasting (damage x1.15, berries and rest heal x0.55), Call of the horde (damage x1.12, XP x1.2, spawns x1.3), Quick hands (cooldown x0.7, damage x0.9), Charged blows (damage x1.22, cooldown x1.2), Overclock (cooldown x0.75, max HP x0.9), Frantic rhythm (cooldown x0.8, spawns x1.15), Slow burn (cooldown x1.15, damage taken x0.75, +1 HP/s), Blind fury (cooldown x0.85, damage x1.1, damage taken x1.1). Legendary: Time mastery (cooldown x0.3), Double baggage (2 item slots + an item now), Thirst for victory (+0.30 % damage per kill), Legendary armor (+60 % defense) |
+| Rewards | first clear of floor f: 120 + 40 f coins, 1 + f/5 tickets, and f/5 x10 tickets every 5 floors; a repeat clear 40 + 10 f coins (both x the coins pacts). Floors 10 and 20: an attack bond |
+| Relics | one per floor multiple of 5 ever cleared (up to 6): +6 max HP and +2 % attack each, inside the Tower; shown on the card ("Relics: N / 6") and announced on the clear ("Tower relic!") |
+| Checkpoints | floors 6 / 11 / 16 / 21 / 26 open once the floor before was cleared; "Starting floor: N" under the card cycles them (`save.modes.towerStart`). Starting there gives a free level-up card per skipped floor (level = floor) |
+| End | falling ("You fell…", "Tower: floor N", the last 3 bosses' time and HP lost) or clearing floor 30 ("TOWER COMPLETE!", "Floors cleared: N"). `stats.towerRuns`; `stats.towerBest` and `stats.arceus` at each clear |
+| Blocked | Z-moves and Dynamax (`G.ZMoves` / `G.Dynamax` `BLOCKED_MODES`, keyed on `G.Game.mode === 'tower'`; their HUD buttons hide) |
+
+**Pickers:** the rest and pact cards are their own screen (`scr-tower`): a click, a tap, the 1-4 keys, or
+the pad (D-pad / LB / RB walk the cards, confirm picks, cancel on the pact cards = "No risks"; the screen
+is guarded against an accidental pick as it pops up). The game is paused while you choose.
+
+**Other modes:** modifiers apply to both (+0.25 coins each, no extra for the mode, the `mn` / `mb_` records
+count). Daily, Party, Survival by Type and Team are other modes (the port's single mode switch); online
+co-op runs stay Normal; leaderboards only take Normal runs.
+
+**Achievements and missions** (`progress.gd`): Boss warm-up / Boss barrage / Boss crusher / Rush King (3 /
+6 / 10 / 15 bosses), Record hunter (25 Rushes); First floors / Climbing / Almost at the top / Climber (clear
+floor 5 / 10 / 15 / 20), Master of the Tower (reach floor 30: `towerBest` 29), Arceus Conqueror, Tower
+apprentice (10 Tower runs), with the port's coins, tickets and titles. Missions: "Defeat N bosses in the
+Boss Rush" (2 / 4, daily), "... in a single Boss Rush run" (6 / 9, weekly), "Clear N floors of the Floor
+Tower" (2 / 3, daily) and "... in a single run" (6 / 9, weekly), counting only their mode (`runEnd` now
+carries `bosses` and `floor`). The Bug (4 Rush bosses) and Rock (clear floor 8) Z-crystal missions now
+progress.
+
+**Saves:** `stats.rushBest` / `rushRuns` / `towerBest` / `towerRuns` / `arceus` merge by max on a 409.
+`save.tower = { claimed: { floor: date }, best, log }`: the claimed floors are a union (the earliest date;
+relics and checkpoints derive from them), the best floor the max, the boss log (last 80) the newer save's.
+The chosen checkpoint keeps the higher floor of the two saves, then falls back to floor 1 if it is not a
+valid checkpoint; a hand-edited record is cleaned (`sanitize`).
+
+**Deviations, and why:**
+- "Relics" in the port are not picked: they are earned automatically (one per 5th floor cleared once) and
+  only add HP and attack. The pickable cards are the rest cards, the risk pacts and the 4 golden legendary
+  cards; all are ported as such. The task's "relic picker" is the legendary card on the pact screen.
+- The fixed boss of each floor uses the web's seeded RNG (mulberry32) instead of Godot's, so the species on
+  floors other than 25 and 30 differ from the Android build, but each floor is still always the same boss.
+- The Boss Rush biome offset and the Tower's floor biomes run through all of `G.Tiles.BIOMES` (3 normal + the
+  rift themes), as the port's `ground.count()` does.
+- Boss drops: the web never dropped the port's 1-in-3 x10 ticket from bosses; Rush and Tower bosses add only
+  the port's heal berry and magnet, so the Rush (all bosses) does not become a ticket farm.
+- Spawning uses the web's spawn curve (its `DENSITY` and HP factors) with the Tower's multipliers on top.
+- The HUD line also shows the rest shield while it lasts ("Shield N"), and the floor clear waits for the
+  boss to be counted (kills, boss missions, Thirst for victory) before it clears the floor's enemies.
+- Port strings with two spaces ("Floor N cleared!  +X coins") use one: the web's translator joins spaces.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -712,4 +785,22 @@ team follows the newer save and is sanitized.
   healing; fainting after a Second Chance heart, the auto-swap ignoring the cooldown, the end, coins
   with modifiers, stats, achievements and missions (only team runs); no Spanish on the canvas or the
   screens; the account push, a 409 merge and `merge()` both ways.
+- `node overworld/tests/micasurvivor_tower_test.mjs` (M5 batch 8), logged in with a stubbed account row:
+  the port's numbers, the 15 risk and 4 legendary cards with their exact effects, icons, achievements,
+  missions and the Rock Z-mission, English; every floor's boss (pool, HP, damage, Eternatus, Arceus) and
+  reward; the Tower card and the "Starting floor" checkpoints by mouse, touch and pad; a run: the Z-move /
+  Dynamax block, relics, XP x0.65, the HUD line, the boss at 50 s and its scaling, the floor clear (reward,
+  the boss counted, enemies cleared), the rest and pact pickers by keys, mouse and pad (RB, confirm, cancel
+  = No risks), every pact fired (player stats, a real hit, new enemies and bosses, the spawn rate, coins,
+  heals, kills), the 6-pact cap, the shield, Boss contract and Double baggage through real clears, bonds,
+  escorts, Arceus's last breath and the clear screen; resuming from a checkpoint, the fail screen, missions
+  (only Tower runs), the Rock Z-crystal; no Spanish on the screens or the canvas; the account push, a 409
+  merge, `merge()` both ways and `sanitize()`.
+- `node overworld/tests/micasurvivor_bossrush_test.mjs` (M5 batch 8), logged in with a stubbed account row:
+  the port's numbers, achievements, missions and the Bug Z-mission, English; the boss order and scaling
+  (24 bosses x 40 draws); the card by mouse, pad and touch; a run: nothing but bosses, the warning, the
+  first boss at 5 s, the heal / magnet drops, 8 s between bosses, scaling x1.1 for the second, the third a
+  legendary, a Tough modifier, Z / Dynamax allowed, no rifts / Judgment / events past minute 30, biomes
+  every 150 s; the end (record, rushRuns, coins, achievements, missions, a worse run keeping the record);
+  the account push and a 409 merge.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

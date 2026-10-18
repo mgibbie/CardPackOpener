@@ -116,6 +116,10 @@ G.Spawner = (() => {
     // En la arena de la grieta no sale nada más (y el reloj de jefes espera).
     // En la Sentencia de Arceus, sólo sus legendarios (systems/judgment.js).
     if (G.Rift.inArena || G.Judgment.active) return;
+    // MicaSurvivor (M5 lote 8, main.gd 3249-3253): el Rush de Jefes (sólo jefes) y la Torre (pisos) llevan
+    // su propio ritmo: ni los jefes de siempre, ni las oleadas, ni las mareas normales.
+    if (G.BossRush && G.BossRush.on) { G.BossRush.update(dt, anchor()); return; }
+    if (G.Tower && G.Tower.on) { G.Tower.update(dt, anchor); return; }
 
     // Precarga lo que va a salir en el próximo minuto.
     preloadT -= dt;
@@ -184,6 +188,6 @@ G.Spawner = (() => {
   /** Invitado en cooperativo: sólo corre el reloj del aviso. */
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
-  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP, spawnOne, incense,
+  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP, spawnOne, spawnBoss, incense,
            debugForceShiny(n = 1) { forceShiny = n; } };
 })();

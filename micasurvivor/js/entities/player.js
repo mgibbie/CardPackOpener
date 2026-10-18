@@ -81,7 +81,7 @@ G.Player = class Player {
     // MicaSurvivor (M5 lote 3, main.gd 466-470 / 1863-1897): Mochila (2 objetos), corazones de
     // Segunda oportunidad, y los relojes de la Baya Zidra y el Seguro Debilidad (tiempo de run).
     this.bag = !!perks.bag;
-    this.bagPact = false;      // la Torre (lote 8): el pacto "Doble equipaje" también da el 2.º hueco
+    this.bagPact = false;      // la Torre (lote 8): la carta legendaria "Doble equipaje" también da el 2.º hueco
     this.revives = perks.revives || 0;
     this.itemClock = 0;
     this.sitrusT = -999;
@@ -273,7 +273,18 @@ G.Player = class Player {
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
     const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
-    const d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close);
+    let d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close * (this.remote ? 1 : G.Tower.takenK()));
+    // MicaSurvivor (M5 lote 8, main.gd 1834-1848): en la Torre, los pactos (Frenesí, Piel de piedra...) cambian
+    // el daño recibido y el escudo del descanso lo absorbe antes que tu vida.
+    if (!this.remote && G.Tower.on) {
+      d = G.Tower.absorb(d);
+      if (d <= 0) {
+        this.invuln = 0.45;
+        G.Audio.sfx('hit');
+        G.FX.dmgText(this.x, this.y - this.bodyH - 4, 'Escudo', '#7fe0ff');
+        return;
+      }
+    }
     this.hp -= d;
     if (!this.remote && G.Modes && G.Modes.noDeath()) this.hp = Math.max(this.hp, 1);   // MicaSurvivor (M5 lote 6): la Fiesta no muere (main.gd 1861)
     this.invuln = 0.45;
