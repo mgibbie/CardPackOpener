@@ -1068,6 +1068,25 @@ G.Game = (() => {
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */
     debugSpeed(k) { if (k > 1) tampered = true; speedK = k; },
+    /**
+     * Para pruebas (MicaSurvivor DLC D0a, overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs): avanza n pasos
+     * fijos de dt segundos sin requestAnimationFrame ni dibujo: lo de cada fotograma de frame() que mueve la partida
+     * (teclas, update, la repetición y la vista de repetición), sin el reloj real, el mando, la red ni el dibujo.
+     * Sólo lo llama la prueba: sin usarlo, nada cambia.
+     */
+    debugStep(n = 1, dt = 1 / 60) {
+      tampered = true;
+      for (let i = 0; i < n; i++) {
+        frameDt = state === 'playing' ? dt : 0;
+        handleKeys();
+        if (state === 'playing') update(dt);
+        else if (state === 'watch') G.WatchUI.tick(dt);
+        else if (state === 'levelup' || state === 'choice') G.Team.tick(dt);
+        else if (pl && state !== 'ui') { G.FX.update(dt * 0.25); pl.anim.update(dt * 0.25); }
+        if (pl && state !== 'ui' && state !== 'over' && state !== 'watch') G.Replay.observe(frameDt, state === 'playing');
+        G.Input.endFrame();
+      }
+    },
     togglePause,
     /** Abandona la partida en curso (p. ej. al cerrar sesión desde Ajustes). */
     quit() { if (state !== 'ui' && state !== 'over') quitRun(); },
