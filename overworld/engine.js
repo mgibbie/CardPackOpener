@@ -7,6 +7,7 @@
 
 import { metatileId } from './metatile_labels.js';
 import { LOCKED_WARPS } from './locked_warps_data.js';
+import { DEAD_WARPS } from './crystal_dead_warps_data.js';
 // a script-lockable warp cell's value as its LAYOUT ships it, captured the first
 // time the layout object is seen (before any setmetatile reaches it): the bundle
 // cache and the shared JSON keep a closed door closed across visits, which the GBA
@@ -544,6 +545,12 @@ export class World {
 		const b = await this._renderedBundle(name);
 		this.current = b;
 		this.warps = (b.map.warp_events || []).map(w => ({ ...w, x: +w.x, y: +w.y }));
+		// Crystal warp_events on a square that is not a warp tile (a landing, a G/S
+		// leftover): the GBC never fires them underfoot, so neither do we. Burned Tower
+		// B1F's (10,8) bounced you back to 1F before the beasts (tools/gen_crystal_dead_warps.mjs).
+		// They keep their place in the list: still the arrival square of the warp naming them.
+		const dead = DEAD_WARPS[name];
+		if (dead) for (const w of this.warps) if (dead.includes(w.x + ',' + w.y)) w.inert = true;
 		// Exits the decomp sends to MAP_DYNAMIC ("back where you came in") that the
 		// exported data hardwired to one route. Terra Cave's exit went to Route 114
 		// warp 4 — a Surf-only pocket — so a player who walked in from Route 116 came
@@ -656,7 +663,7 @@ export class World {
 	}
 
 	warpAt(tx, ty) {
-		return this.warps.find(w => w.x === tx && w.y === ty) || null;
+		return this.warps.find(w => w.x === tx && w.y === ty && !w.inert) || null;
 	}
 
 	// Put this map's script-lockable warp cells back the way the LAYOUT ships them,
