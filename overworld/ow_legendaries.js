@@ -29,7 +29,9 @@ import {
 const HAND_PLACED_LEGENDS = {
 	// Hoenn weather trio (decoupled from the awakening plot)
 	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
-	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
+	// (10,26): beside Emerald's own trigger square (9,26), which this port's dive exit
+	// now holds; KYOGRE's object lies in the rock at (9,22), where no one can step
+	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 10, y: 26, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
 	MAP_TERRA_CAVE_END:  { species: 'groudon',  dex: 383, level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
 	// the three REGI — sealed in their chambers, they stir only for the HOENN CHAMPION
 	MAP_DESERT_RUINS: { species: 'regirock', dex: 377, level: 40, x: 8, y: 7, flag: 'legend_caught_regirock',
@@ -50,7 +52,9 @@ const HAND_PLACED_LEGENDS = {
 		{ species: 'latias', dex: 380, level: 50, x: 11, y: 12, flag: 'legend_caught_latias',
 			requires: () => Badges.isChampion('HOENN'), intro: 'A red eon POKeMON watches from the branches — LATIAS reveals herself.' },
 	],
-	MAP_BIRTH_ISLAND_EXTERIOR: { species: 'deoxys', dex: 386, level: 60, x: 15, y: 3, flag: 'legend_caught_deoxys',
+	// (15,11): just above the triangle. The decomp's DEOXYS object floats at (15,3), in
+	// the rock face — a tile you can't stand on, and these fire when you step on them.
+	MAP_BIRTH_ISLAND_EXTERIOR: { species: 'deoxys', dex: 386, level: 60, x: 15, y: 11, flag: 'legend_caught_deoxys',
 		requires: () => Badges.isChampion('HOENN'), intro: 'The strange triangle pulses — DEOXYS materializes from deep space.' },
 	MAP_FARAWAY_ISLAND_INTERIOR: { species: 'mew', dex: 151, level: 30, x: 13, y: 17, flag: 'legend_caught_mew',
 		requires: () => Badges.isChampion('HOENN'), intro: 'Something playful darts through the grass... MEW appears!' },
@@ -70,7 +74,8 @@ const HAND_PLACED_LEGENDS = {
 	// flags as the Tin Tower / Whirl Islands entries above, so a save still gets
 	// exactly one HO-OH and one LUGIA: this is a second route to them, not a
 	// second copy. Johto asks for the WINGS, Kanto asks you to be its Champion.
-	MAP_NAVEL_ROCK_TOP: { species: 'hooh', dex: 250, level: 70, x: 12, y: 4, flag: 'legend_caught_hooh',
+	// (12,9), the summit's last walkable square (the HO-OH object perches at (12,4), in rock)
+	MAP_NAVEL_ROCK_TOP: { species: 'hooh', dex: 250, level: 70, x: 12, y: 9, flag: 'legend_caught_hooh',
 		requires: () => Badges.isChampion('KANTO'), intro: 'Light floods the peak — HO-OH descends over NAVEL ROCK!' },
 	MAP_NAVEL_ROCK_BOTTOM: { species: 'lugia', dex: 249, level: 70, x: 11, y: 13, flag: 'legend_caught_lugia',
 		requires: () => Badges.isChampion('KANTO'), intro: 'The cavern floods with sound — LUGIA rises from the deep!' },
@@ -79,7 +84,9 @@ const HAND_PLACED_LEGENDS = {
 	// gates it behind the GS Ball, an item this port has no equivalent for, so it
 	// waits at the Ilex Forest shrine for the region's CHAMPION instead. That also
 	// gives Johto a second post-game beat; it previously had only Mt Silver.
-	MAP_ILEX_FOREST: { species: 'celebi', dex: 251, level: 60, x: 4, y: 19, flag: 'legend_caught_celebi',
+	// (8,23) is the square in front of the shrine (pokecrystal's bg_event 8, 22, BGEVENT_UP).
+	// It sat at (4,19), inside the tree wall, where no one could step (bug:1792420478358).
+	MAP_ILEX_FOREST: { species: 'celebi', dex: 251, level: 60, x: 8, y: 23, flag: 'legend_caught_celebi',
 		requires: () => Badges.isChampion('JOHTO'),
 		intro: 'The shrine hums, and the forest folds around a small green shape — CELEBI!' },
 	// JOHKANTO had NO legendaries at all, while Hoenn has 9, Johto 5 and Kanto 4.
@@ -90,12 +97,16 @@ const HAND_PLACED_LEGENDS = {
 		intro: 'The generators scream — ZAPDOS bursts from the machinery!' },
 	// The three legendary beasts — once you've woken them at the Burned Tower they can
 	// be confronted at the top of Tin Tower (a map can hold several: an array).
+	// They stand on the floor below the 1F chamber, row 11. The decomp's beasts at
+	// (7,9) (9,9) (12,9) are set dressing in a walled room the player never enters
+	// (pokecrystal TinTower1F.asm), and an encounter here fires when you step on it,
+	// so the old tiles could never start a battle (bug:1792417144316).
 	MAP_TIN_TOWER_1F: [
-		{ species: 'raikou', dex: 243, level: 40, x: 7, y: 9, flag: 'legend_caught_raikou',
+		{ species: 'raikou', dex: 243, level: 40, x: 7, y: 11, flag: 'legend_caught_raikou',
 			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'Thunder cracks — RAIKOU bares its fangs!' },
-		{ species: 'suicune', dex: 245, level: 40, x: 9, y: 9, flag: 'legend_caught_suicune',
+		{ species: 'suicune', dex: 245, level: 40, x: 9, y: 11, flag: 'legend_caught_suicune',
 			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'The north wind stirs — SUICUNE regards you with clear eyes.' },
-		{ species: 'entei', dex: 244, level: 40, x: 12, y: 9, flag: 'legend_caught_entei',
+		{ species: 'entei', dex: 244, level: 40, x: 12, y: 11, flag: 'legend_caught_entei',
 			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'A volcanic roar — ENTEI blocks your path!' },
 	],
 };

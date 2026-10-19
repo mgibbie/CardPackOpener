@@ -284,6 +284,13 @@ const COMMON_STUBS = {
 	CableClub_EventScript_TradeCenter: [{ op: 'return' }],
 	CableClub_EventScript_RecordCorner: [{ op: 'return' }],
 	CableClub_EventScript_Colosseum: [{ op: 'return' }],
+	// the Sevii harbors' SEAGALLOP (pokefirered data/scripts/seagallop.inc): its
+	// destination menu and the crossing are specials no map file carries, so the
+	// sailor asked "Where do you want to sail?" and the script ended there. The
+	// port's own menu (ow_menukeys.js openSeagallopMenu) asks and sails.
+	EventScript_ChooseDestFromOneIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	EventScript_ChooseDestFromTwoIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	EventScript_ChooseDestFromIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
 	// a static legendary you failed to catch, and the clean-up that removes it
 	// from the map afterwards
 	Common_EventScript_LegendaryFlewAway: [{ op: 'msg', text: 'The POKeMON flew away!' }, { op: 'return' }],
@@ -554,6 +561,10 @@ export class Cutscene {
 					break;
 				}
 				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
+				// `settrainerflag` / `cleartrainerflag` (restored by tools/gen_multichoice.mjs):
+				// a gym leader's win marks the gym's trainers beaten (set_gym_trainers.inc)
+				case 'settrainerflag': ctx.setTrainerFlag?.(op.trainer, true); break;
+				case 'cleartrainerflag': ctx.setTrainerFlag?.(op.trainer, false); break;
 				// FRLG/Emerald `getpartysize` (restored by tools/gen_multichoice.mjs): the
 				// gift scripts compare it against PARTY_SIZE to refuse a full party
 				case 'getpartysize': setVar('VAR_RESULT', ctx.partyCount?.() ?? 0); break;
@@ -617,6 +628,10 @@ export class Cutscene {
 					// and every "do you have item X" gate in the game was dead.
 					if (op.cond.item != null) hit = !!ctx.hasItem?.(itemId(op.cond.item)) === !!op.cond.state;
 					else if (op.cond.flag != null) hit = getFlag(op.cond.flag) === !!op.cond.state;
+					// `goto_if_defeated TRAINER_X` / `goto_if_not_defeated` (FireRed/Emerald),
+					// restored by tools/gen_multichoice.mjs: the transpile dropped all 79, so
+					// Mt. Ember's two Rocket grunts never knew they had lost (bug:1792263054606)
+					else if (op.cond.trainer != null) hit = !!ctx.trainerDefeated?.(op.cond.trainer) === !!op.cond.state;
 					else hit = cmp(getVar(op.cond.var), op.cond.cmp, resolveValue(op.cond.value));
 					if (op.cond.var === 'VAR_RESULT') ctx.noteCompare?.(op.cond, hit);   // multichoice instrumentation
 					if (hit) {

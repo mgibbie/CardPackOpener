@@ -19,7 +19,8 @@ import fs from 'fs';
 import path from 'path';
 
 const REF = process.env.MAGEPUNK_REF || path.resolve('..', 'Magepunk66', 'Reference');
-const DATA = path.resolve('overworld', 'data');
+// MAGEPUNK_OWDATA: read another checkout's overworld/data (a worktree has none of its own)
+const DATA = process.env.MAGEPUNK_OWDATA || path.resolve('overworld', 'data');
 const read = p => fs.readFileSync(p, 'utf8');
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
 const warn = [];
@@ -67,7 +68,7 @@ const shared = JSON.parse(read(path.join(DATA, 'shared_scripts.json')));
 const sharedScripts = shared.scripts || shared;
 const patches = {}, sharedPatches = {};
 let found = 0, applied = 0;
-const restored = { multichoice: 0, checkmoney: 0, removemoney: 0, setdynamicwarp: 0, buffer: 0, getpartysize: 0, giveegg: 0 };
+const restored = { multichoice: 0, checkmoney: 0, removemoney: 0, setdynamicwarp: 0, buffer: 0, getpartysize: 0, giveegg: 0, trainerflag: 0 };
 const unapplied = [];
 
 // ---- the ALIGNER ----
@@ -83,8 +84,14 @@ const BUFFER_KINDS = { bufferspeciesname: 'species', bufferitemname: 'item', buf
 	bufferleadmonspeciesname: 'leadspecies' };
 // `getpartysize` + `giveegg`: the Lavaridge egg woman (2026-10-07) checked a
 // stale VAR_RESULT against PARTY_SIZE and set her flag without handing over the egg
-const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp', 'getpartysize', 'giveegg', ...Object.keys(BUFFER_KINDS)]);
-const RESTORED_OPS = new Set(['multichoice', 'checkmoney', 'removemoney', 'setdynamicwarp', 'buffer', 'getpartysize', 'giveegg']);
+// the TRAINER FLAG questions and writes: `goto_if_defeated TRAINER_X, label` and its
+// three siblings (79 of them), and settrainerflag / cleartrainerflag. Mt. Ember's
+// grunts asked goto_if_defeated and, with it gone, re-battled forever and never let
+// the player into the Ruby Path (bug:1792263054606, 2026-10-17). They restore as an
+// ordinary branch on a TRAINER condition (events.js asks ctx.trainerDefeated).
+const TRAINER_BRANCH = { goto_if_defeated: ['goto', true], call_if_defeated: ['call', true], goto_if_not_defeated: ['goto', false], call_if_not_defeated: ['call', false] };
+const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp', 'getpartysize', 'giveegg', ...Object.keys(BUFFER_KINDS), ...Object.keys(TRAINER_BRANCH), 'settrainerflag', 'cleartrainerflag']);
+const RESTORED_OPS = new Set(['multichoice', 'checkmoney', 'removemoney', 'setdynamicwarp', 'buffer', 'getpartysize', 'giveegg', 'settrainerflag', 'cleartrainerflag']);
 function keptAs(cmd, a) {
 	switch (cmd) {
 		case 'msgbox': case 'message': return o => (o.op === 'msg' || o.op === 'say') && o.text === a[0];
@@ -118,6 +125,12 @@ function restoredOp(cmd, a, lists, lastText) {
 	if (BUFFER_KINDS[cmd]) return { op: { op: 'buffer', kind: BUFFER_KINDS[cmd], dst: a[0], src: a[1] } };
 	if (cmd === 'checkmoney' || cmd === 'removemoney') return { op: { op: cmd, amount: +a[0] || 0 } };
 	if (cmd === 'getpartysize') return { op: { op: 'getpartysize' } };
+	if (TRAINER_BRANCH[cmd]) {
+		if (!a[0] || !a[1]) return { err: `${cmd} without a trainer and a label` };
+		const [kind, state] = TRAINER_BRANCH[cmd];
+		return { op: { op: 'branch', kind, cond: { trainer: a[0], state }, label: a[1] } };
+	}
+	if (cmd === 'settrainerflag' || cmd === 'cleartrainerflag') return a[0] ? { op: { op: cmd, trainer: a[0] } } : { err: cmd + ' without a trainer' };
 	if (cmd === 'giveegg') return { op: { op: 'giveegg', species: a[0] } };
 	if (cmd === 'setdynamicwarp') {
 		const op = { op: 'setdynamicwarp', map: a[0] };
@@ -164,7 +177,7 @@ for (const g of GAMES) {
 						const r = restoredOp(cmd, a, lists, lastText);
 						if (r.err) { ok = false; unapplied.push(`${g.name} ${lab}: ${r.err}`); break; }
 						ops.splice(p, 0, r.op); p++;
-						{ const ck = /^multichoice/.test(cmd) ? 'multichoice' : BUFFER_KINDS[cmd] ? 'buffer' : cmd; counts[ck] = (counts[ck] || 0) + 1; }
+						{ const ck = /^multichoice/.test(cmd) ? 'multichoice' : BUFFER_KINDS[cmd] ? 'buffer' : (TRAINER_BRANCH[cmd] || /trainerflag$/.test(cmd)) ? 'trainerflag' : cmd; counts[ck] = (counts[ck] || 0) + 1; }
 						continue;
 					}
 					if (cmd === 'msgbox' || cmd === 'message') lastText = a[0];

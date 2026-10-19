@@ -1071,9 +1071,11 @@ export function drawFerryMenu(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'FERRY', 'All aboard! Where to, sailor?');
 	const dests = ferryDests();
+	// rows shrink to fit: a champion's list (or a SEAGALLOP's seven stops) ran off the bottom at 64 each
+	const step = Math.min(64, Math.floor(380 / Math.max(1, dests.length)));
 	dests.forEach((d, i) => {
 		const bid = 'sail:' + i;
-		const b = { id: bid, x: 24 * u, y: (90 + i * 64) * u, w: W - 48 * u, h: 56 * u,
+		const b = { id: bid, x: 24 * u, y: (90 + i * step) * u, w: W - 48 * u, h: (step - 8) * u,
 			label: d.label, big: true, center: true, kbSel: ferryMenu.idx === i };
 		S.menuUi.push(b);
 		BUI.button(sctx, b, S.menuHover === bid || ferryMenu.idx === i, u);
