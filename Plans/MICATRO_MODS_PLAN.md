@@ -182,3 +182,47 @@ by the engine (it is deterministic), so it costs a few KB and plays back exactly
   (watch / copy link / delete).
 - Tests: `micatro/tests/replay_test.mjs` (engine), `overworld/tests/micatro_server_test.mjs`
   (section 5), `overworld/tests/micatro_replay_test.mjs` (browser).
+
+## 9. Mod version pins + key aliases (2026-10-19)
+Saved runs and replays are recipes that re-simulate from their actions, so a change to how a mod plays would
+silently change every old run that is resumed or watched. Each recipe now records the versions it was played on.
+- **The pin** (`js/mods/pins.js`): `recipe.modVersions = {modId: pin}` for every active mod (requirements
+  included) and `recipe.engineRev = ENGINE_CONTENT_REV`, stamped by `Session.start`. A pin is the mod's
+  registered `version`, plus `+r<contentRev>` when the mod declares `contentRev` (`'3.2.1+r1'`). The replay
+  meta (`js/replays.js` buildMeta) copies them; `server/mp.mjs` keeps `modVersions` (<= 32 entries, id
+  `[A-Za-z0-9_-]{1,40}`, pin `[A-Za-z0-9 ._+()-]{1,40}`, bad entries dropped), `engineRev` (int) and
+  `pinAssumed` in the allow-listed meta, and refuses a recipe whose own pins are malformed.
+  `recipe.v` (`ENGINE_VERSION`) stays the recipe FORMAT version: never bump it for a rules change (a saved
+  run with another `v` is not offered at all).
+- **Old recipes** (no pins) are read as `LEGACY_MOD_VERSIONS` / `LEGACY_ENGINE_REV` (the versions shipped on
+  `PIN_DATE`, 2026-10-19), and `Session.fromRecipe` writes that assumption in (`pinAssumed: 'legacy:2026-10-19'`).
+  The legacy table is frozen: never edit it.
+- **Resume** (`ui/main.js` continueRun): when `pinDiff(recipe)` is non-empty the player gets a prompt naming each
+  changed mod and both versions: **Continue anyway** (the run is rebuilt on the new rules and re-pinned to them;
+  the old pins go to `recipe.repinned`; a move the new rules reject ends the rebuild there, with a toast) or
+  **Abandon run** (pressed twice). Both keep a copy of the save first (`micatro_run_backup_v1`); Back keeps it
+  untouched. A run that can't be rebuilt at all is never wiped silently either: it gets the same prompt.
+- **Replay** (`ui/replayview.js`): a mismatch shows a banner up front ("Recorded with Pokermon 3.2.1; current
+  3.9.1. Playback may differ.") and still plays; a move the engine rejects stops playback there with a message
+  naming the change.
+- **Key aliases** (`js/mods/aliases.js`, no imports): per mod `{renamed: {old: new}, removed: [keys], names}`,
+  in `MOD_ALIASES` or a mod's `registerMod({aliases})`. Resolved when READ, never by rewriting what is stored:
+  a recipe's back / stake / sleeve (`newRun`), a custom deck's keys (`validateDeck`), the win stickers (a
+  sticker under the old key counts for the new one). A rename only applies once the old key is no longer
+  registered, so it can be seeded before the upgrade lands (`bl_poke_cgoose` -> `bl_poke_iridescent_hacker` is,
+  dormant). A removed key keeps its stickers and records, is skipped in play, and is listed greyed out as a
+  "retired card" (Achievements > Record for stickers, the deck editor's items and bans). The Nuzlocke record
+  holds no card keys (counts per type only), and there is no stored Pokédex seen-list.
+- **Not pinned:** the spectate state (spectators receive the runner's rendered views, they never re-simulate)
+  and Super-replay playlists (Battlecards tapes only; a Micatro replay is already the whole run).
+
+**In every mod upgrade (or any change to how a mod plays):**
+1. An upstream upgrade: set the mod's `version`. Any behaviour change of ours (a port fix, a house rule,
+   re-extracted data, a pool weight, an RNG seed key): bump its `contentRev` in `registerMod` (it only ever goes
+   up). Base-game behaviour: bump `ENGINE_CONTENT_REV` in `js/mods/pins.js`. Never edit `LEGACY_MOD_VERSIONS`.
+2. Every key that was renamed: `renamed: {old: new}` under the mod in `js/mods/aliases.js` (or the mod's
+   `aliases`). Every key that is gone: `removed: [key]` (+ `names: {key: 'Display Name'}`). Never reuse a
+   removed key for a different card.
+3. Re-record the seeded mod tests and fuzz baselines in the same PR, naming the version in the fixture.
+4. Tests: `micatro/tests/modpin_test.mjs` (engine), `overworld/tests/micatro_mod_version_pin_test.mjs`
+   (browser + server); add the upgrade's own renamed / removed keys to its mod test.

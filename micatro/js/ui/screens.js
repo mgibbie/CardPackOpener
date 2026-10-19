@@ -7,7 +7,7 @@ import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
 import { all as modAll } from './modui.js';
 import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
-import { stickersShown, setStickersShown, onWinStickers } from './stickers.js';
+import { stickersShown, setStickersShown, onWinStickers, retiredStickers } from './stickers.js';
 import { stickDeckCanvas } from './decksticker.js';
 import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins } from './progress.js';
 
@@ -753,6 +753,18 @@ function recordPanel() {
     const n = (p.mono || {})[t.toLowerCase()] || 0;
     return `<div class="rec-type${n ? '' : ' off'}" data-type="${t}" style="${typeStyle(t)}">${t}<small>${n ? n + ' win' + (n === 1 ? '' : 's') : '-'}</small></div>`;
   }).join('')));
+  // win stickers on cards a mod upgrade removed (mods/aliases.js): kept, listed greyed out
+  const ret = retiredStickers();
+  if (ret.length) {
+    const box = h('div', 'rec-retired');
+    box.appendChild(h('div', 'muted', 'Retired cards (removed by a mod update; their win stickers are kept)'));
+    for (const r of ret) {
+      const row = h('div', 'retired-card', `${esc(r.name)} <small>retired card${r.sticker ? ' · ' + esc(r.sticker.label) : ''}</small>`);
+      row.dataset.key = r.key;
+      box.appendChild(row);
+    }
+    el.appendChild(box);
+  }
   return el;
 }
 /** The Achievements screen (main menu, Run Info's Badges tab): the list + the record. */
@@ -785,6 +797,28 @@ export function achievementsScreen(tab = 'ach') {
   }
   show(tab);
   modal(el, { title: 'Achievements', cls: 'ach-modal' });
+}
+
+// ------------------------------------------------------------- resume prompt
+/**
+ * Asked before a saved run is resumed when it can't simply continue (mods/pins.js: a mod or the engine
+ * changed since it was recorded; or it can't be rebuilt). Never decides on its own: Continue anyway /
+ * Abandon run (a second press confirms) / Back (keeps the save as it is).
+ * o: {title, html, onContinue?, onAbandon, onBack?}
+ */
+export function resumePrompt(o) {
+  const el = h('div', 'resume-prompt');
+  el.appendChild(h('div', 'rz-text', o.html));
+  const acts = h('div', 'rz-acts');
+  let decided = false;
+  if (o.onContinue) acts.appendChild(btn('Continue anyway', 'blue big b-resume-continue', () => { decided = true; closeModal(); o.onContinue(); }));
+  const ab = btn('Abandon run', 'red big b-resume-abandon', () => {
+    if (ab.dataset.armed !== '1') { ab.dataset.armed = '1'; ab.innerHTML = 'Really abandon?'; return; }
+    decided = true; closeModal(); o.onAbandon();
+  });
+  acts.appendChild(ab);
+  el.appendChild(acts);
+  return modal(el, { title: o.title, cls: 'resume-modal', onClose: () => { if (!decided && o.onBack) o.onBack(); } });
 }
 
 // ------------------------------------------------------------- replays

@@ -31,6 +31,10 @@
 //   * Collection-style screens (the Pokédex, the Challenges screen) always show them; on the table they show
 //     while Options > "Stake stickers" is on (Balatro's "Display stickers"; on by default here, since Micatro
 //     has no collection screen to see them in otherwise).
+//   * Mod upgrades (mods/aliases.js): a sticker stored under a key the mod RENAMED counts for the new key (read-time:
+//     the stored record is never rewritten, so the account's max-merge is untouched); one under a REMOVED key
+//     stays stored and is listed greyed out as a "retired card" (retiredStickers), never dropped.
+import { aliasesOf, isRetired, retiredName } from '../mods/aliases.js';
 export const STICKER_NAMES = ['White', 'Red', 'Green', 'Black', 'Blue', 'Purple', 'Orange', 'Gold'];
 /** stickers.png cells (game.lua G.shared_stickers). */
 export const STICKER_POS = {
@@ -209,10 +213,28 @@ export function recordWin(ev) {
   }
   return n;
 }
+/** A key's stored record merged with its renamed-from keys' (max per category), or undefined. */
+function recordOf(centerKey, from = wins) {
+  if (!centerKey) return undefined;
+  const olds = aliasesOf(centerKey);
+  if (!olds.length) return from[centerKey];
+  let out = null;
+  for (const k of [centerKey, ...olds]) {
+    const r = from[k];
+    if (!r) continue;
+    out = out || {};
+    for (const c of Object.keys(r)) if ((out[c] || 0) < r[c]) out[c] = r[c];
+  }
+  return out || undefined;
+}
 /** This joker's full record: {win?, poke?, nuz?, mono?, both?} (a copy; {} when it has none). */
-export const winRecord = (centerKey) => ({ ...((centerKey && wins[centerKey]) || {}) });
+export const winRecord = (centerKey) => ({ ...(recordOf(centerKey) || {}) });
 /** The highest stake level this joker has won on, in any category (0 = none). */
-export const winLevel = (centerKey) => { const r = centerKey && wins[centerKey]; return r ? Math.max(0, ...Object.values(r)) : 0; };
+export const winLevel = (centerKey) => { const r = recordOf(centerKey); return r ? Math.max(0, ...Object.values(r)) : 0; };
+/** Stickers kept on RETIRED cards (a mod upgrade removed them): [{key, name, sticker}] — listed greyed out. */
+export function retiredStickers() {
+  return Object.keys(wins).filter((k) => isRetired(k)).sort().map((k) => ({ key: k, name: retiredName(k), sticker: stickerFor(wins[k]) }));
+}
 /** Which sticker a record shows: both > mono > nuz > poke > win (null when none). Pure (tests use it). */
 export function stickerFor(rec) {
   const r = normRecord(rec);
@@ -229,8 +251,7 @@ export function stickerFor(rec) {
 /** The sticker to draw on this joker (stickerFor), or null. `collection`: always (else only with the option on). */
 export function winStickerInfo(centerKey, collection) {
   if (!collection && !show) return null;
-  const from = source || wins;
-  return stickerFor(centerKey && from[centerKey]);
+  return stickerFor(recordOf(centerKey, source || wins));
 }
 
 // ---------------------------------------------------------------- a watched player's stickers

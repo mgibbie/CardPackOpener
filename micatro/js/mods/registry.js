@@ -14,6 +14,7 @@
 import {
   G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, P_CARDS, rebuildPools, reset_p_cards_list,
 } from '../engine/core.js';
+import { addAliases, resolveKey as resolveAlias, isRetired as isRetiredAlias } from './aliases.js';
 
 /** Every registered mod, by id. */
 export const MODS = {};
@@ -277,6 +278,12 @@ export function activeModSuits() {
 export function activeModHands() { return Object.values(MOD_POKER_HANDS).filter((h) => activeSet.has(h.mod)); }
 export function activeModHandParts() { return Object.values(MOD_HAND_PARTS).filter((h) => activeSet.has(h.mod)); }
 
+/**
+ * Register a mod. Besides its content: `version` (upstream's) and optional `contentRev` (OUR behaviour
+ * counter — bump it whenever we change how the mod plays) make its pin in every run recipe (mods/pins.js);
+ * optional `aliases: {renamed: {old: new}, removed: [keys], names}` keep an upgrade's renamed / removed
+ * keys loadable (mods/aliases.js).
+ */
 export function registerMod(mod) {
   if (!mod || !mod.id) throw new Error('registerMod: missing id');
   const prefix = mod.prefix || mod.id;
@@ -328,9 +335,18 @@ export function registerMod(mod) {
       Object.assign(MOD_LOC.misc[k], v);
     }
   }
+  // key aliases for a mod upgrade's renamed / removed keys (mods/aliases.js)
+  if (mod.aliases) addAliases(mod.id, mod.aliases);
   MODS[mod.id] = mod;
   return mod;
 }
+
+/** Is this key registered (a center, tag, blind, seal or stake — base or any mod's)? */
+export const keyKnown = (k) => typeof k === 'string' && !!(P_CENTERS[k] || P_TAGS[k] || P_BLINDS[k] || P_SEALS[k] || P_STAKES[k]);
+/** A stored card key -> the key to use now (a renamed key that is no longer registered -> its new key). */
+export const resolveCardKey = (k) => resolveAlias(k, keyKnown);
+/** A removed ("retired") card key that is no longer registered. */
+export const isRetiredKey = (k) => isRetiredAlias(k, keyKnown);
 
 /** Ids plus everything they require, in dependency order. Unknown ids are dropped. */
 export function resolveMods(ids) {
