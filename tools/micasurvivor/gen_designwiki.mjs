@@ -9,7 +9,8 @@
 //   js/ui/minimap.js (the minimap, the field of view and the UI scale, M5 batch 10), js/data/achievements.js +
 //   js/data/missions.js + js/systems/dmglog.js + js/ui/lexicon-ui.js (achievements, missions, titles, the damage
 //   breakdown, the Lexicon and the trainer card, M5 batch 11), js/systems/localcoop.js (Co-op Mode, the local partner,
-//   M5 batch 12a) (+ lang-en.js for the English
+//   M5 batch 12a), js/net/coop.js + js/entities/player.js + server/mp.mjs's MSURV_* limits (online co-op with friends,
+//   M5 batch 12b) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -39,7 +40,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/localcoop.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/localcoop.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js', 'entities/player.js', 'mica/online.js', 'net/net.js', 'net/coop.js']) {
 		if (f === 'ui/lexicon-ui.js') sandbox.G.UI = sandbox.G.UI || { $: () => null };   // (only its data tables are read)
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
@@ -130,11 +131,22 @@ export function build() {
 		lexicon: { tabs: G.LexiconUI.TABS.map(([k, n]) => ({ key: k, name: T(n) })), status: G.LexiconUI.STATUS.map(([k, n, d]) => ({ key: k, name: T(n), desc: T(d) })) },
 		card: ['Partidas', 'Mejor tiempo', 'Mejor nivel', 'Derrotados', 'Jefes', 'Cofres', 'Pokémon', 'Logros', 'Tiempo jugado'].map(T),
 	};
+	// (M5 batch 12b: online co-op with friends: upstream's group rules (js/net/coop.js) and the server's limits)
+	const CO = G.Coop, sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
+	const lim = k => { const m = new RegExp('const MSURV_' + k + ' = (?:[^;]*\\|\\| )?([0-9_]+(?: \\* [0-9_]+)*);').exec(sv); if (!m) throw new Error('MSURV_' + k + ' not found'); return m[1].split(' * ').reduce((a, n) => a * Number(n.replace(/_/g, '')), 1); };
+	const online = {
+		max: lim('MAX'), colors: CO.COLORS, rateDirect: CO.K.rateDirect, rateRelay: CO.K.rateRelay, stall: CO.K.stall, revive: G.Player.REVIVE_TIME,
+		scale: [1, 2, 3, 4].map(n => ({ players: n, spawn: CO.scaleRate(n), hp: CO.scaleHp(n), xp: Math.round(1000 / (1 + 0.6 * (n - 1))) / 1000 })),
+		lobby: { idle: lim('LOBBY_IDLE_MS') / 1000, runIdle: lim('RUN_IDLE_MS') / 1000, member: lim('MEMBER_IDLE_MS') / 1000, invite: lim('INVITE_TTL_MS') / 1000 },
+		relay: { min: lim('RELAY_MIN_MS'), msg: lim('RELAY_MSG_MAX'), row: lim('RELAY_MAX'), window: lim('RELAY_WINDOW'), stale: lim('RELAY_STALE_MS') / 1000, daily: lim('RELAY_DAILY_MIN') },
+		signal: { row: lim('SIGNAL_MAX'), window: lim('SIGNAL_WINDOW') },
+		strings: ['Jugar con amigos', 'Estoy listo', 'Conectado (por servidor)', 'Inicia sesión para jugar con amigos', 'Relé: quedan 12 min hoy', CO.BUDGET_MSG].map(T),
+	};
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
 		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
-		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, goals, items, upgrades, abilities, pokemon,
+		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, goals, online, items, upgrades, abilities, pokemon,
 	};
 }
 

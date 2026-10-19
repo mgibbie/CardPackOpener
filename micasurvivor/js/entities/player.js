@@ -517,7 +517,14 @@ G.Player = class Player {
     if (!n) return;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
-    if (G.U.dist2(this.x, this.y, n.x, n.y) > 300 * 300) { this.x = n.x; this.y = n.y; }
+    if (n.slow) {
+      // MicaSurvivor (M5 batch 12b): over the 1-a-second relay, lead along its last velocity (up to 1.1 s) and ease
+      // towards it, so the partner glides between updates instead of jumping.
+      const lead = Math.min(1.1, (performance.now() - (n.t || 0)) / 1000);
+      const tx = n.x + (n.vx || 0) * lead, ty = n.y + (n.vy || 0) * lead;
+      if (G.U.dist2(this.x, this.y, tx, ty) > 600 * 600) { this.x = tx; this.y = ty; }
+      else { this.x = G.U.damp(this.x, tx, 6, dt); this.y = G.U.damp(this.y, ty, 6, dt); }
+    } else if (G.U.dist2(this.x, this.y, n.x, n.y) > 300 * 300) { this.x = n.x; this.y = n.y; }
     else { this.x = G.U.damp(this.x, n.x, 14, dt); this.y = G.U.damp(this.y, n.y, 14, dt); }
     if (n.hp < this.hp - 0.5 && !n.dead) this.flash = 0.14;
     this.hp = n.hp; this.maxHp = n.maxHp;

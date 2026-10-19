@@ -20,13 +20,20 @@
  *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
  *                            ja:[x,y,anim,dir] (Arceus, sólo en la Sentencia) }
  *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny}] }
+ *
+ * MicaSurvivor (M5 batch 12b): switched on, with Magepunk accounts and friends (js/mica/social.js) and the
+ * signalling + relay over the site's backend (js/mica/online.js). The relay runs at RATE_SLOW (3 a second).
+ * The rules are upstream's, unchanged; K below exposes its numbers for the design wiki.
  */
 G.Coop = (() => {
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
   const COLORS = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8'];
   // Mensajes por segundo: 15 por la conexión directa y 3 por el relé de la
   // Realtime Database (apagado: 1 $ el GB).
-  const RATE_FAST = 1 / 15, RATE_SLOW = 1 / 3;
+  // MicaSurvivor (M5 batch 12b): the relay goes over the site's D1 (rows written), so it runs at 1 a second (owner,
+  // 2026-10-18: "slow relay + time cap"; upstream: 3). Frames still carry the whole state, so it is only choppier, and
+  // netState() / the enemies below glide between them (velocity lead + easing) instead of teleporting.
+  const RATE_FAST = 1 / 15, RATE_SLOW = 1;
   const rateFor = u => (G.Net.slow(u) ? RATE_SLOW : RATE_FAST);
   const NEAR = 950;                     // radio de enemigos que se mandan a cada uno
 
@@ -47,6 +54,9 @@ G.Coop = (() => {
   // y la última que has elegido (invitado). Y el último "quién elige" aplicado.
   let levelSeq = 0, levelNow = 1, seenSeq = 0, doneSeq = 0, lastHo = '';
   const STALL_MS = 2500;
+  // (MicaSurvivor 12b: on the 1-a-second relay a frame can take ~2-3 s to arrive: no "waiting for the host" for that)
+  const STALL_RELAY_MS = 7000;
+  const stallMs = () => (G.Net.slow(hostUid) ? STALL_RELAY_MS : STALL_MS);
   let members = [];
 
   // ---------------- escalado de dificultad ----------------
@@ -69,7 +79,7 @@ G.Coop = (() => {
     api = cb;
     members = cfg.members;
     mates.clear();
-    outEv = []; flushT = 0; waiting = new Set(); holds = new Set();
+    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); budgetTold = false;
     hostAway = false; stalled = false; lastHostAt = performance.now();
     levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
     cfg.members.forEach((m, i) => {
@@ -135,6 +145,22 @@ G.Coop = (() => {
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
             r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq];
+  }
+
+  /**
+   * MicaSurvivor (M5 batch 12b): a player's state from the network, with its velocity when it comes slowly (the
+   * relay): Player.netUpdate leads along it and eases, so 1 update a second glides instead of jumping.
+   */
+  function netState(pl, a, slow) {
+    const n = readState(a), o = pl.net, now = performance.now();
+    n.vx = 0; n.vy = 0;
+    if (slow && o && o.t) {
+      const dts = (now - o.t) / 1000;
+      if (dts > 0.2 && dts < 2.5) { n.vx = G.U.clamp((n.x - o.x) / dts, -400, 400); n.vy = G.U.clamp((n.y - o.y) / dts, -400, 400); }
+    }
+    n.t = now; n.slow = !!slow;
+    pl.net = n;
+    return n;
   }
 
   function readState(a) {
@@ -209,7 +235,7 @@ G.Coop = (() => {
         G.Net.send(m.uid, hostFrame(m));
       }
     } else {
-      if (!stalled && performance.now() - lastHostAt > STALL_MS) { stalled = true; updateAway(); }
+      if (!stalled && performance.now() - lastHostAt > stallMs()) { stalled = true; updateAway(); }
       flushT -= dt;
       if (flushT <= 0) {
         flushT = rateFor(hostUid);
@@ -228,10 +254,16 @@ G.Coop = (() => {
     if (host) onClientFrame(from, msg); else if (from === hostUid) onHostFrame(msg);
   });
 
+  // MicaSurvivor (M5 batch 12b): the relay's daily minutes used up (G.Net.budgetOut): its own message.
+  const BUDGET_MSG = 'Se ha agotado el tiempo de relé de hoy: quien no puede conectarse directamente no puede seguir. Las conexiones directas siguen funcionando.';
+  let budgetTold = false;
   G.Net.onPeer((u, mode) => {
     if (!active || (mode !== 'closed' && mode !== 'failed')) return;
-    if (host) mateGone(u);
-    else if (u === hostUid) { const cb = api.lost; end(); if (cb) cb('Se ha perdido la conexión con el anfitrión.'); }
+    if (host) {
+      if (G.Net.budgetOut && !budgetTold) { budgetTold = true; G.UI.toast(BUDGET_MSG, 6000); }
+      mateGone(u);
+    }
+    else if (u === hostUid) { const cb = api.lost; end(); if (cb) cb(G.Net.budgetOut ? BUDGET_MSG : 'Se ha perdido la conexión con el anfitrión.', G.Net.budgetOut); }
   });
 
   function mateGone(u) {
@@ -250,7 +282,7 @@ G.Coop = (() => {
   function onClientFrame(from, msg) {
     const m = mates.get(from);
     if (!m || !m.connected) return;
-    if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
+    if (msg.p) { m.state = msg.p; netState(m.pl, msg.p, G.Net.slow(from)); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
         case 'h': {
@@ -323,15 +355,17 @@ G.Coop = (() => {
                    t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
     for (const u in msg.p || {}) {
       const m = mates.get(u);
-      if (m) m.pl.net = readState(msg.p[u]);
+      if (m) netState(m.pl, msg.p[u], G.Net.slow(hostUid));
     }
     const now = performance.now();
+    const slow = G.Net.slow(hostUid);    // (MicaSurvivor 12b: on the 1-a-second relay, keep the velocity across ~1 s gaps)
     for (const a of msg.e || []) {
       const e = G.EnemyMgr.get(a[0]);
       if (!e || !e.remote || e.dead) continue;
       const n = e.net;
+      n.slow = slow;
       const dts = (now - (n.last || now)) / 1000;
-      if (dts > 0.02 && dts < 1) {
+      if (dts > 0.02 && dts < (slow ? 2.5 : 1)) {
         n.vx = G.U.clamp((a[1] - n.x) / dts, -600, 600);
         n.vy = G.U.clamp((a[2] - n.y) / dts, -600, 600);
       } else { n.vx = 0; n.vy = 0; }
@@ -492,6 +526,9 @@ G.Coop = (() => {
 
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
+    /** MicaSurvivor (M5 batch 12b): the numbers, for the design wiki (tools/micasurvivor/gen_designwiki.mjs). */
+    K: { rateDirect: Math.round(1 / RATE_FAST), rateRelay: Math.round(1 / RATE_SLOW), stall: STALL_MS / 1000, stallRelay: STALL_RELAY_MS / 1000, near: NEAR },
+    BUDGET_MSG,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */

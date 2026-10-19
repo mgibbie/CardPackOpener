@@ -82,12 +82,8 @@ G.MenuUI = (() => {
     $('menu-goals-sub').textContent = pend ? pend + (pend === 1 ? ' premio por recoger' : ' premios por recoger') : 'Misiones, logros y perfil';
     $('menu-goals-sub').classList.toggle('gold', pend > 0);
     // Con cuenta en la nube: amigos en línea, invitaciones y (una vez) el apodo.
-    if (G.DB.online && !G.Social.started) {
-      G.Social.start().then(r => {
-        if (r === 'need-nick' && !G.NickUI.skipped && G.UI.isOpen('scr-menu')) G.NickUI.open();
-        socialLine();
-      });
-    }
+    // MicaSurvivor (M5 batch 12b): with a Magepunk account (friends, lobbies and invites live there).
+    if (G.MicaAccount.name() && !G.Social.started) G.Social.start().then(() => socialLine());
     G.InvitePop.refresh();
   }
 
@@ -102,7 +98,8 @@ G.MenuUI = (() => {
     const parts = [];
     if (on) parts.push(on + ' en línea');
     if (req) parts.push(req + (req === 1 ? ' solicitud' : ' solicitudes'));
-    $('menu-friends-sub').textContent = parts.length ? parts.join(' · ') : G.DB.online ? 'Juega en grupo, hasta 4' : 'Próximamente';   // MicaSurvivor
+    // MicaSurvivor (M5 batch 12b): online co-op with Magepunk friends; a guest is told to sign in
+    $('menu-friends-sub').textContent = parts.length ? parts.join(' · ') : G.MicaAccount.name() ? 'Jugar con amigos, hasta 4' : 'Inicia sesión para jugar con amigos';
     $('menu-friends-sub').classList.toggle('gold', req > 0);
   }
 
@@ -418,5 +415,5 @@ G.MenuUI = (() => {
     return el;
   }
 
-  return { init, open, GEN_NAMES };
+  return { init, open, openDex, GEN_NAMES };   // (MicaSurvivor 12b: openDex, the lobby's "Change Pokémon")
 })();

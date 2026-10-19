@@ -253,9 +253,13 @@ G.Game = (() => {
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
       if (d && d.t) time = d.t;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
+      G.Spawner.say('', 0, true);   // (MicaSurvivor 12b: no "Paused: waiting for…" left behind the summary)
       endRun(!(d && d.why === 'host'));
     },
-    lost(msg) { G.UI.toast(msg, 3600); endRun(false); },
+    // MicaSurvivor (M5 batch 12b): the host is gone (not just out of the run): out of its lobby too, so the
+    // summary leads to the menu instead of a lobby nobody hosts. endRun saves your rewards as always.
+    // (the relay's minutes used up: the host is still there, so you stay in the lobby)
+    lost(msg, keepRoom) { G.UI.toast(msg, keepRoom ? 6000 : 3600); G.Spawner.say('', 0, true); if (!keepRoom && G.Social.room && !G.Social.room.isHost) G.Social.leaveRoom(); endRun(false); },
     item(id) { offerItem(id); },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
@@ -1099,7 +1103,12 @@ G.Flow = {
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
+    // MicaSurvivor (M5 batch 12b): only your lobby's host starts it, with you in it (the start comes over
+    // the data channel / relay AND from the lobby on the server: whichever arrives first, once).
+    const room = G.Social.room;
+    if (!cfg || cfg.host !== room.host || !Array.isArray(cfg.members) || !cfg.members.some(m => m.uid === G.Social.uid)) return;
     G.LobbyUI.close();
+    document.getElementById('invite-pop').classList.add('hidden');
     G.Game.startRun(cfg);
   }
 };

@@ -188,7 +188,9 @@ try {
 	A(await g1.doTest(), 'guest: partner chosen, main menu');
 	await g1.page.evaluate(() => { G.DB.save.coins += 1234; G.DB.grant(133, 'gacha'); G.DB.commit(true); });
 	const guestSave = await g1.page.evaluate(() => JSON.parse(localStorage.getItem('micasurvivor_save.guest')));
-	A(apiLog.length === api0, 'a guest makes no /api/mp request', JSON.stringify(apiLog.slice(api0)));
+	// (the logged-in pages from sections 1-2 stay open and poll their co-op invites, M5 batch 12b: only
+	// requests WITHOUT a token can be the guest's)
+	A(apiLog.slice(api0).filter(x => !x.auth).length === 0, 'a guest makes no /api/mp request', JSON.stringify(apiLog.slice(api0).filter(x => !x.auth)));
 	A(await g1.page.evaluate(() => { const b = document.getElementById('btn-mp-login'); b.click(); return location.href; }) && await waitFor(() => g1.page.evaluate(() => location.pathname === '/login/'), 5000) === true,
 		'"Log in with Magepunk" goes to the site login');
 	A(decodeURIComponent(await g1.page.evaluate(() => location.search)) === '?next=/micasurvivor/', '...with next= back to MicaSurvivor', await g1.page.evaluate(() => location.search));

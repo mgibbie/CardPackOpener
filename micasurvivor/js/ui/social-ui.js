@@ -5,9 +5,10 @@
 
   /** ¿Se puede usar lo online? Si no, explica por qué. */
   function needOnline() {
-    if (G.DB.online) return true;
-    // MicaSurvivor: friends, co-op and the ranking arrive with Magepunk accounts (M3).
-    G.UI.toast('Próximamente: amigos, partidas en grupo y ranking con tu cuenta de Magepunk.', 3200);
+    // MicaSurvivor (M5 batch 12b): online play needs a Magepunk account (friends live there), not a
+    // controller or anything else: a guest is told to sign in.
+    if (G.MicaAccount && G.MicaAccount.name()) return true;
+    G.UI.toast('Inicia sesión para jugar con amigos.', 3200);
     return false;
   }
 
@@ -48,7 +49,8 @@
   function withNick(fn) {
     if (!needOnline()) return;
     if (G.Social.me) { fn(); return; }
-    G.Social.start().then(r => { if (r === 'ok') fn(); else G.NickUI.open(fn); });
+    // MicaSurvivor (M5 batch 12b): your Magepunk username is your name: no nickname to choose.
+    G.Social.start().then(r => { if (r === 'ok') fn(); });
   }
 
   // ======================= AMIGOS =======================
@@ -64,6 +66,13 @@
         if (r.ok) $('fr-name').value = '';
       };
       $('fr-room').onclick = () => G.LobbyUI.open();
+      // MicaSurvivor (M5 batch 12b): "Play with friends" opens a lobby to invite them into.
+      $('fr-play').onclick = async () => {
+        $('fr-play').disabled = true;
+        const room = await G.Social.createRoom();
+        $('fr-play').disabled = false;
+        if (room) G.LobbyUI.open(); else msg('No se pudo crear la sala.', true);
+      };
       G.Social.on(() => { if (G.UI.isOpen('scr-friends')) render(); });
     }
 
@@ -88,13 +97,15 @@
       if (f.status === 'in') return 'Quiere ser tu amigo';
       if (f.status === 'out') return 'Solicitud enviada';
       if (!f.online) return f.seen ? 'Visto ' + ago(f.seen) : 'Desconectado';
-      return f.play ? 'Jugando' : 'En línea';
+      return f.play ? 'Jugando' : f.here ? 'En MicaSurvivor' : 'En línea';   // (MicaSurvivor 12b: here = in MicaSurvivor)
     }
 
     function render() {
       const room = G.Social.room;
-      $('fr-me').innerHTML = 'Tu apodo: <b class="gold" translate="no">' + esc(G.Social.me ? G.Social.me.name : '') + '</b> · dáselo a tus amigos para que te añadan.';
+      // MicaSurvivor (M5 batch 12b): your Magepunk username, and the lobby button.
+      $('fr-me').innerHTML = 'Juegas como <b class="gold" translate="no">' + esc(G.Social.me ? G.Social.me.name : '') + '</b>. Crea una sala e invita a tus amigos para jugar juntos en línea (hasta 4).';
       $('fr-room').classList.toggle('hidden', !room);
+      $('fr-play').classList.toggle('hidden', !!room);
       const list = G.Social.friends.sort((a, b) => {
         const rank = f => f.status === 'in' ? 0 : f.status === 'ok' ? (f.online ? (f.play ? 2 : 1) : 3) : 4;
         return rank(a) - rank(b) || a.name.localeCompare(b.name);
@@ -102,7 +113,7 @@
       const box = $('fr-list');
       box.innerHTML = '';
       if (!list.length) {
-        box.innerHTML = '<p class="sub">Aún no tienes amigos añadidos. Escribe arriba el apodo de un amigo.</p>';
+        box.innerHTML = '<p class="sub">Aún no tienes amigos. Añade arriba a un amigo por su nombre de usuario de Magepunk.</p>';
         return;
       }
       for (const f of list) {
@@ -130,7 +141,7 @@
               if (r.ok) G.LobbyUI.open();
             });
           }
-          btn('Quitar', 'ghost', () => { if (confirm('¿Quitar a ' + f.name + ' de tus amigos?')) G.Social.remove(f.uid); });
+          // (MicaSurvivor 12b: friends are managed on Magepunk; no Remove here)
         }
         box.appendChild(el);
       }
@@ -153,6 +164,16 @@
       $('lobby-menu').onclick = () => G.MenuUI.open();
       $('lobby-start').onclick = start;
       $('lobby-start').dataset.sfx = 'confirm';
+      // MicaSurvivor (M5 batch 12b): ready, and changing your Pokémon (the collection; Play brings you back)
+      $('lobby-ready').onclick = async () => {
+        const room = G.Social.room, mine = room && room.members.find(m => m.uid === G.Social.uid);
+        if (!mine) return;
+        $('lobby-ready').disabled = true;
+        const r = await G.Social.setReady(!mine.ready);
+        $('lobby-ready').disabled = false;
+        if (!r.ok && r.error) G.UI.toast(r.error, 2600);
+      };
+      $('lobby-mon').onclick = () => { if (G.MenuUI.openDex) G.MenuUI.openDex(); };
       // Conecta / desconecta la red al entrar o salir de una sala.
       G.Social.on(what => {
         const room = G.Social.room;
@@ -162,7 +183,7 @@
         } else if (G.Net.open_) G.Net.close();
         if (what === 'room-closed') {
           G.UI.toast('La sala se ha cerrado', 2600);
-          if (G.UI.isOpen('scr-lobby')) G.MenuUI.open();
+          if (G.UI.isOpen('scr-lobby') || G.UI.isOpen('scr-friends')) G.MenuUI.open();
         }
         if (G.UI.isOpen('scr-lobby')) render();
       });
@@ -180,11 +201,13 @@
 
     function close() { G.UI.hide('scr-lobby'); }
 
+    // MicaSurvivor (M5 batch 12b): the host sees each guest's connection; a guest sees theirs to the host
+    // (on the host's card) and their own ready state.
+    const modeText = mode => mode === 'direct' ? 'Conectado' : mode === 'relay' ? 'Conectado (por servidor)' : mode === 'failed' ? 'No se pudo conectar (reintentando…)' : 'Conectando…';
     function connText(m, room) {
-      if (m.uid === room.host) return 'Anfitrión';
-      if (!room.isHost) return m.uid === G.Social.uid ? 'Tú' : 'En la sala';
-      const mode = G.Net.mode(m.uid);
-      return mode === 'direct' ? 'Conectado' : mode === 'relay' ? 'Conectado (por servidor)' : mode === 'failed' ? 'No se pudo conectar (reintentando…)' : 'Conectando…';
+      if (m.uid === room.host) return room.isHost ? 'Anfitrión' : 'Anfitrión · ' + modeText(G.Net.mode(m.uid));
+      if (!room.isHost) return m.uid === G.Social.uid ? (m.ready ? 'Tú · Listo' : 'Tú · No estás listo') : (m.ready ? 'Listo' : 'No está listo');
+      return (m.ready ? 'Listo' : 'No está listo') + ' · ' + modeText(G.Net.mode(m.uid));
     }
 
     function render() {
@@ -196,7 +219,7 @@
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
 
       // Las tarjetas sólo se rehacen si cambian los miembros (los sprites no parpadean).
-      const key = ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|');
+      const key = ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|') + '|' + G.I18n.lang;
       const box = $('lobby-members');
       if (key !== membersKey) {
         membersKey = key;
@@ -218,7 +241,7 @@
         if (!m) return;
         const t = connText(m, room);
         el.textContent = t;
-        el.className = 'conn' + (t === 'Conectando…' ? ' wait' : '');
+        el.className = 'conn' + (/Conectando|No está listo|No estás listo|No se pudo/.test(t) ? ' wait' : '');
       });
 
       // Invitar (sólo el anfitrión y si queda sitio).
@@ -228,14 +251,18 @@
       inv.classList.toggle('hidden', !canInvite);
       if (canInvite) {
         inv.innerHTML = '';
-        const free = G.Social.friends.filter(f => f.status === 'ok' && f.online && !ms.some(m => m.uid === f.uid));
+        const free = G.Social.friends.filter(f => f.status === 'ok' && f.online && !ms.some(m => m.uid === f.uid))
+          .sort((a, b) => (b.here - a.here) || a.name.localeCompare(b.name));
         if (!free.length) inv.innerHTML = '<p class="sub" style="margin:0">Ningún amigo en línea ahora mismo.</p>';
+        const invited = new Set(room.invited || []);
         for (const f of free) {
           const el = document.createElement('div');
           el.className = 'fr-row';
-          el.innerHTML = `<i class="dot ${f.play ? 'play' : 'on'}"></i><b translate="no">${esc(f.name)}</b><span class="st">${f.play ? 'Jugando' : 'En línea'}</span><span class="grow"></span>`;
+          el.innerHTML = `<i class="dot ${f.play ? 'play' : 'on'}"></i><b translate="no">${esc(f.name)}</b><span class="st">${f.play ? 'Jugando' : f.here ? 'En MicaSurvivor' : 'En línea'}</span><span class="grow"></span>`;
           const b = document.createElement('button');
-          b.className = 'btn small gold'; b.textContent = 'Invitar';
+          const sent = invited.has(f.uid);
+          b.className = 'btn small ' + (sent ? 'ghost' : 'gold'); b.textContent = sent ? 'Ya invitado' : 'Invitar';
+          b.disabled = f.play;
           b.onclick = async () => { const r = await G.Social.invite(f.uid); G.UI.toast(r.ok ? r.msg : r.error); };
           el.appendChild(b);
           inv.appendChild(el);
@@ -246,24 +273,42 @@
       btn.classList.toggle('hidden', !room.isHost);
       const connecting = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'connecting');
       const failed = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'failed');
-      btn.disabled = !room.isHost || ms.length < 2 || connecting || failed;
+      const unready = ms.some(m => m.uid !== room.host && !m.ready);   // (MicaSurvivor 12b: everyone ready first)
+      btn.disabled = !room.isHost || ms.length < 2 || connecting || failed || unready || starting;
       btn.textContent = 'Empezar partida (' + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
-      $('lobby-note').textContent = !room.isHost ? 'Cuando el anfitrión empiece, entraréis todos a la vez.'
+      const mine = ms.find(m => m.uid === G.Social.uid);
+      const rb = $('lobby-ready');
+      rb.classList.toggle('hidden', room.isHost || !mine);
+      rb.textContent = mine && mine.ready ? 'Ya no estoy listo' : 'Estoy listo';
+      rb.classList.toggle('gold', !(mine && mine.ready));
+      rb.classList.toggle('ghost', !!(mine && mine.ready));
+      const relay = ms.some(m => m.uid !== G.Social.uid && G.Net.mode(room.isHost ? m.uid : room.host) === 'relay');
+      const budgetOut = G.Net.budgetOut;
+      const base = !room.isHost ? (mine && mine.ready ? 'Cuando el anfitrión empiece, entraréis todos a la vez.' : 'Pulsa "Estoy listo" cuando quieras empezar.')
         : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
+        : budgetOut && failed ? ''
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
-        : connecting ? 'Conectando con tus amigos…' : 'La partida empieza para todos a la vez.';
+        : connecting ? 'Conectando con tus amigos…'
+        : unready ? 'Esperando a que todos estén listos…'
+        : relay ? 'Alguien juega por el servidor (sin conexión directa): irá algo más a saltos.' : 'La partida empieza para todos a la vez.';
+      // MicaSurvivor (M5 batch 12b): the relay's daily minutes (the host's), warned ahead while a pair is on it
+      const left = G.MicaNet.relayLeft;
+      const line = budgetOut ? G.Coop.BUDGET_MSG : relay && left != null ? 'Relé: quedan ' + left + ' min hoy' : '';
+      $('lobby-note').innerHTML = (base ? esc(base) : '') + (line ? (base ? '<br>' : '') + '<b class="relay-left' + (budgetOut || left < 6 ? ' low' : '') + '">' + esc(line) + '</b>' : '');
     }
 
-    function start() {
+    // MicaSurvivor (M5 batch 12b): the server checks everyone is ready and stores the seed and the
+    // members (guests read the start from the lobby too); then the 'start' message, as upstream.
+    let starting = false;
+    async function start() {
       const room = G.Social.room;
-      if (!room || !room.isHost || room.members.length < 2) return;
-      const cfg = {
-        k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
-        members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny }))
-      };
-      G.Social.setOpen(false);
-      G.Net.broadcast(cfg);
-      G.Flow.startCoop(cfg);
+      if (!room || !room.isHost || room.members.length < 2 || starting) return;
+      starting = true; render();
+      const r = await G.Social.startRoom(Math.floor(Math.random() * 1e6));
+      starting = false;
+      if (!r.ok) { G.UI.toast(r.error || 'No se pudo empezar.', 2600); render(); return; }
+      G.Net.broadcast(r.cfg);
+      G.Flow.startCoop(r.cfg);
     }
 
     return { init, open, close, render };
@@ -290,9 +335,14 @@
     function hide() { cur = null; $('invite-pop').classList.add('hidden'); }
 
     /** Enseña la invitación más antigua si estás en los menús (no en plena partida). */
+    const told = new Set();
     function refresh() {
       const room = G.Social.room;
       const list = G.Social.invites.filter(i => !room || i.room !== room.id).sort((a, b) => a.at - b.at);
+      // MicaSurvivor (M5 batch 12b): in a solo run, a toast (once per invite) instead of the popup
+      if (list.length && G.Game.state !== 'ui' && G.DB.loggedIn && !G.Coop.active) {
+        for (const i of list) if (!told.has(i.from + i.room)) { told.add(i.from + i.room); G.UI.toast(i.name + ' te invita a jugar en su sala · abre el menú para unirte', 4200); }
+      }
       if (!list.length || G.Game.state !== 'ui' || !G.DB.loggedIn) { hide(); return; }
       if (cur && cur.from === list[0].from) return;
       cur = list[0];

@@ -2517,6 +2517,8 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Between runs. '), 'Runs pay Pokémonedas. Spend them on permanent ', h('a', { href: '#/micasurvivor/items' }, 'upgrades'), ' per Pokémon and on the ', h('b', null, 'gacha'), ' (9 regional banners, shinies) — all earned in play, never bought. Daily / weekly missions and achievements pay out too.'))),
     // MicaSurvivor M5 batch 6: the quick modes, the 6 modifiers and the level-up ban (micasurvivor/js/systems/modes.js)
     ...(D.modes ? [msModesSection(D.modes)] : []),
+    // MicaSurvivor M5 batch 12b: online co-op with friends (micasurvivor/js/net/coop.js, js/mica/social.js, js/mica/online.js)
+    ...(D.online ? [msOnlineSection(D.online)] : []),
     // MicaSurvivor M5 batch 9: adaptive difficulty, biome spawns, support caps (micasurvivor/js/systems/adaptive.js, js/data/enemies.js)
     ...(D.difficulty ? [msDifficultySection(D.difficulty)] : []),
     // MicaSurvivor M5 batch 10: the minimap, the field of view and the UI scale (micasurvivor/js/core/display.js, js/ui/minimap.js)
@@ -2528,7 +2530,9 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Landing page: '), 'the MicaSurvivor tile on ', h('a', { href: '/' }, 'michaelgibalerio.com'), ' opens ', h('a', { href: '/micasurvivor/' }, '/micasurvivor/'), '.'),
         h('li', null, h('b', null, 'Overworld: '), 'the MICASURVIVOR arcade cabinet in the ', h('b', null, 'Pewter Museum'), ' lobby (Kanto), against the reception counter right of the entrance. Interact with it (A on a controller) and answer YES — your party and position are saved, and the game’s “Back to the overworld” link returns you beside the cabinet.'),
         h('li', null, h('b', null, 'Your account: '), 'logged into Magepunk, you play as your Magepunk user and your progress (collection, coins, upgrades, records) is saved to your account — on any device. Guests keep a save in their browser; the first time a guest logs in, the game offers once to bring that progress into the account.'),
-        h('li', null, h('b', null, 'Leaderboard: '), 'the menu’s Leaderboard ranks logged-in players by their ', h('b', null, 'best survival time'), ' in a solo run (ties: more foes defeated), with their level and partner. Runs under 2 minutes don’t count. Friends and co-op are coming later.'))),
+        h('li', null, h('b', null, 'Leaderboard: '), 'the menu’s Leaderboard ranks logged-in players by their ', h('b', null, 'best survival time'), ' in a solo run (ties: more foes defeated), with their level and partner. Runs under 2 minutes don’t count (nor do group runs).'),
+        // MicaSurvivor M5 batch 12b: online co-op with friends
+        h('li', null, h('b', null, 'Friends: '), 'with your Magepunk account, play online with up to 3 of your Magepunk friends (see Online co-op below). Guests are asked to sign in.'))),
     mcSection('Controls', 'Keyboard, mouse, touch and controller all work.',
       h('h3', { class: 'mc-h3' }, 'Keyboard'),
       msTable(['Key', 'Action'], [
@@ -2606,6 +2610,39 @@ function msModesSection(M) {
     msTable(['Modifier', 'Effect'], M.mods.map(m => [h('b', null, m.name), m.desc]), 'ms-mods'),
     h('h3', { class: 'mc-h3' }, 'Banning a level-up card'),
     h('p', null, 'With the ' + M.ban.upgrade + ' upgrade (up to ' + M.ban.max + ' levels: ' + M.ban.costs.join(' · ') + ' coins) you get that many bans per run. On the level-up screen press Ban (the B key, or X / □ / Y on a controller), then pick a new-move card: that move never shows up again in the run and three fresh cards are dealt — free, it does not use a reroll. The same upgrade still lets you pre-ban moves in Upgrades.'));
+}
+
+// MicaSurvivor M5 batch 12b: online co-op with friends — upstream PokéSurvivor's 4-player group runs (WebRTC, the host
+// runs the enemies), on Magepunk accounts; the numbers come from js/net/coop.js and server/mp.mjs (MSURV_*)
+function msOnlineSection(O) {
+  const pct = v => Math.round(v * 100) + ' %', kb = n => Math.round(n / 1000) + ' KB';
+  const [play, ready, viaServer, signIn, leftEg, usedUp] = O.strings;
+  return mcSection('Online co-op with friends', 'Up to ' + O.max + ' players over the internet, each on their own device: upstream PokéSurvivor’s group runs, on Magepunk accounts and friends.',
+    h('h3', { class: 'mc-h3' }, 'Getting together'),
+    h('ol', { class: 'mc-list' },
+      h('li', null, 'Main menu → ', h('b', null, 'Friends'), ' → ', h('b', null, play), ' opens a lobby (or press Invite next to a friend). Your friends are your Magepunk friends; you can add one by username there. Guests see “' + signIn + '”: friends need an account.'),
+      h('li', null, 'Invite friends who are online. A friend in MicaSurvivor gets a popup (in a solo run, a note to open the menu); anywhere else on Magepunk a message in their inbox bell. An invite lasts ' + Math.round(O.lobby.invite / 60) + ' minutes; only the host’s friends can join, checked by the server.'),
+      h('li', null, 'The lobby shows each player’s Pokémon (Change Pokémon picks another), whether they are ready and how they are connected. Each guest presses “' + ready + '”; the host starts when everyone is — the same world for all.'),
+      h('li', null, 'Mouse, touch and controller all work. A lobby whose host stops answering closes after ' + O.lobby.idle + ' s; a guest who stops answering in the lobby is dropped after ' + O.lobby.member + ' s.')),
+    h('h3', { class: 'mc-h3' }, 'Rules (upstream’s)'),
+    msTable(['Rule', 'How it works'], [
+      [h('b', null, 'Who runs what'), 'The host runs the enemies, items on the ground, the team’s experience and level, the clock and the end of the run. Each player runs their own Pokémon (movement, HP, attacks); your hits on enemies are sent to the host, who applies them.'],
+      [h('b', null, 'Mode'), 'Always a Normal run with no modifiers. Not Daily, Rush, Tower, Team, Co-op Mode (the local partner) or the other modes; adaptive difficulty is off. Group runs are not on the leaderboard.'],
+      [h('b', null, 'More players, more foes'), msTableInline(O.scale)],
+      [h('b', null, 'Experience and level'), 'Shared by the team: every gem counts for everyone, with the average of the players’ experience bonuses, divided as above (otherwise a group would level several times faster).'],
+      [h('b', null, 'Level-up'), 'The cards come up for everyone at once and the run waits until every player has picked (“Waiting for …”). Who is still choosing rides on every message, so a lost message never leaves anyone stuck. A bond (fusion) choice pauses everyone the same way.'],
+      [h('b', null, 'Falling'), 'A fallen player is revived by a partner standing next to them for ' + O.revive + ' s (back at 50 % HP). The run ends when everyone is down.'],
+      [h('b', null, 'Pause'), 'Pausing does not stop the run for the others. If the host’s tab is hidden or silent for ' + O.stall + ' s, everyone waits for the host.'],
+      [h('b', null, 'Rewards'), 'Each player earns their own coins and records from the team’s time, defeats, bosses and coins; every group run counts for “In good company” / “Loyal partner” and your best group time.'],
+      [h('b', null, 'Leaving'), 'A guest who leaves (or closes the tab) is removed and the others go on. If the host leaves, the run ends for everyone, with their rewards saved; afterwards the lobby reopens.'],
+    ], 'ms-online'),
+    h('h3', { class: 'mc-h3' }, 'Connection'),
+    h('p', null, 'Browsers connect directly to the host (WebRTC, like a video call: players can see each other’s IP address), negotiated through the Magepunk server and public STUN only. When two browsers can’t connect directly (some routers and mobile data), the pair falls back to a relay through the Magepunk server (“' + viaServer + '”): ' + O.rateRelay + ' update' + (O.rateRelay === 1 ? '' : 's') + ' a second instead of ' + O.rateDirect + ', so it is choppier (partners and enemies glide between updates). The relay is capped: one write every ' + O.relay.min + ' ms per player at most, ' + kb(O.relay.msg) + ' per message, ' + O.relay.window + ' unacknowledged messages and ' + kb(O.relay.row) + ' per player, and a player silent for ' + O.relay.stale + ' s is gone.'),
+    // MicaSurvivor M5 batch 12b (owner, 2026-10-18: "slow relay + time cap")
+    h('p', null, 'Each host gets ' + O.relay.daily + ' relay minutes per day (UTC), across all their lobbies: a minute counts once when anyone in the lobby used the relay during it. The lobby warns ahead while a pair is on the relay (“' + leftEg + '”). When they run out: “' + usedUp + '” A relayed guest’s run ends with its rewards saved and the host carries on; pairs connected directly are not affected.'));
+}
+function msTableInline(rows) {
+  return h('span', null, rows.filter(r => r.players > 1).map(r => r.players + ' players: foes appear ×' + r.spawn + ', enemy HP ×' + r.hp + ', experience ×' + r.xp).join(' · ') + ' (bosses also ×1.4 HP in a group).');
 }
 
 // MicaSurvivor M5 batch 9: adaptive difficulty, biome-themed spawns and the support caps (from the Android port by

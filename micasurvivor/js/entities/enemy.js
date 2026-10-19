@@ -235,12 +235,13 @@
       const n = this.net;
       if (!n) return;
       // Se adelanta hasta 0,3 s (por si llegan pocas posiciones por segundo).
-      const lead = Math.min(0.3, n.age);
+      // (MicaSurvivor 12b: over the 1-a-second relay, lead up to 1.1 s and ease more gently)
+      const lead = Math.min(n.slow ? 1.1 : 0.3, n.age);
       n.age += dt;
       const tx = n.x + n.vx * lead, ty = n.y + n.vy * lead;
       const ox = this.x, oy = this.y;
-      if (G.U.dist2(this.x, this.y, tx, ty) > 160 * 160) { this.x = tx; this.y = ty; }
-      else { this.x = G.U.damp(this.x, tx, 12, dt); this.y = G.U.damp(this.y, ty, 12, dt); }
+      if (G.U.dist2(this.x, this.y, tx, ty) > (n.slow ? 420 * 420 : 160 * 160)) { this.x = tx; this.y = ty; }
+      else { this.x = G.U.damp(this.x, tx, n.slow ? 7 : 12, dt); this.y = G.U.damp(this.y, ty, n.slow ? 7 : 12, dt); }
       const vx = (this.x - ox) / (dt || 1), vy = (this.y - oy) / (dt || 1);
       const moving = Math.abs(vx) + Math.abs(vy) > 8;
       this.anim.dir = n.dir;
