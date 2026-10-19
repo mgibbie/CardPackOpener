@@ -140,8 +140,11 @@ G.Minimap = (() => {
     const m = G.Sprites.animMeta(a.dex, a.cur, a.shiny), s = G.Sprites.sheet(a.dex, a.cur, a.shiny);
     if (!m || !s || !s.ready) return false;
     const k = mx / Math.max(m.w, m.h), fw = m.w * k, fh = m.h * k;
+    const flip = G.Sprites.flipOf(a.dex, a.dir);    // (B1c) las hojas de combate se voltean según hacia dónde van
+    if (flip) { ctx.save(); ctx.translate(2 * Math.round(q.x), 0); ctx.scale(-1, 1); }
     ctx.drawImage(s.img, Math.min(a.frame || 0, m.n - 1) * m.w, G.Sprites.rowOf(a.dex, a.dir, m) * m.h, m.w, m.h,
       Math.round(q.x - fw / 2), Math.round(q.y - fh / 2), fw, fh);
+    if (flip) ctx.restore();
     return true;
   }
   const circle = (ctx, x, y, r, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); };

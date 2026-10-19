@@ -54,10 +54,9 @@ from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fetch_sprites import OUT_ASSETS, OUT_META, RAW, eligible, fetch, read_existing, save_optimized  # noqa: E402
+from fetch_sprites import ASSET_ROOT, OUT_ASSETS, OUT_META, RAW, eligible, fetch, read_existing, save_optimized  # noqa: E402
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-OW = os.path.join(REPO, 'overworld', 'data')
+OW = os.path.join(ASSET_ROOT, 'overworld', 'data')     # (B1c) MAGEPUNK_ASSET_ROOT, see fetch_sprites.py
 PROG = os.environ.get('ESSENTIALS_ROOT', r'C:/Users/guide/Desktop/Projects/Programming')
 PACK = os.path.join(PROG, 'PokemonZero2024', 'Graphics', 'Characters')
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache')
@@ -274,8 +273,9 @@ def main():
         only = {int(x) for x in args[args.index('--only') + 1].split(',') if x.strip()}
     head, rows, nl = read_existing()
     ids = ids_by_dex()
+    # (B1c) a battle-sprite fallback row (battle_sprites.py) gives way to a follower sheet, which walks
     wanted = [d for d in range(1, 1026) if (only is None or d in only)
-              and (d not in rows or '"src":"follow"' in rows[d])]
+              and (d not in rows or '"src":"follow"' in rows[d] or '"src":"battle"' in rows[d])]
     print('Reading SpriteCollab tracker.json...')
     tracker = json.loads(fetch(RAW + '/tracker.json').decode('utf-8'))
     now_real = [d for d in wanted if eligible(tracker, d)]

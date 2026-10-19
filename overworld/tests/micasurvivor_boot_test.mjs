@@ -24,6 +24,9 @@ import puppeteer from 'puppeteer-core';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
+// (B1c) MAGEPUNK_ASSET_ROOT=<checkout>: serve the gitignored micasurvivor/assets/ and overworld/data/ from that checkout
+// (read only; a git worktree has neither), as micasurvivor_pokedex_test does
+const AROOT = process.env.MAGEPUNK_ASSET_ROOT ? path.resolve(process.env.MAGEPUNK_ASSET_ROOT) : ROOT;
 const CHROME = process.env.CHROME || [
 	'C:/Program Files/Google/Chrome/Application/chrome.exe',
 	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -51,7 +54,7 @@ A(fs.readFileSync(path.join(MS, 'README.md'), 'utf8').includes('Required Notice:
 const html = fs.readFileSync(path.join(MS, 'index.html'), 'utf8');
 for (const gone of ['firebase', 'ko-fi', 'updater.js', 'support-ui.js', 'funding.js', 'gstatic', 'googletagmanager', 'sw.js'])
 	A(!html.toLowerCase().includes(gone), `index.html has no ${gone}`);
-const ASSETS = fs.existsSync(path.join(MS, 'assets/pokemon/1'));
+const ASSETS = fs.existsSync(path.join(AROOT, 'micasurvivor/assets/pokemon/1'));
 if (!ASSETS) console.log('note: micasurvivor/assets/pokemon is missing locally — sprites will 404 (run with the assets present)');
 
 // ---- server: the repo root, like Cloudflare Pages
@@ -59,7 +62,7 @@ const external = [], notFound = [];
 const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	const f = u.endsWith('/') ? u + 'index.html' : u;
-	fs.readFile(path.join(ROOT, f), (e, d) => {
+	fs.readFile(path.join(/^\/(micasurvivor\/assets|overworld\/data)\//.test(f) ? AROOT : ROOT, f), (e, d) => {
 		if (e) { notFound.push(u); res.writeHead(404); res.end('nf'); return; }
 		res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d);
 	});
