@@ -147,7 +147,7 @@
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
         <button class="menu-item" data-go="lexicon">Léxico<small>Objetos, movimientos, estados y más</small></button> <!-- MicaSurvivor (M5 batch 11): the encyclopedia -->
-        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
+        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Jugar con amigos, hasta 4</small></button>
         <button class="menu-item" data-go="rank">Ranking<small id="menu-rank-sub">Próximamente</small></button>
         <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
       </div>
@@ -301,8 +301,10 @@
     <div class="row between"><h2>Amigos</h2>
       <div class="row"><button id="fr-room" class="btn small gold hidden">Ir a la sala</button><button class="btn small ghost" data-back>Volver</button></div></div>
     <p class="sub" id="fr-me"></p>
+    <!-- MicaSurvivor (M5 batch 12b): online co-op with your Magepunk friends -->
+    <div class="row" style="margin-bottom:10px"><button id="fr-play" class="btn gold grow" data-sfx="confirm">Jugar con amigos</button></div>
     <form id="fr-add" class="row" autocomplete="off">
-      <input id="fr-name" class="field grow" maxlength="16" spellcheck="false" placeholder="Apodo de tu amigo">
+      <input id="fr-name" class="field grow" maxlength="40" spellcheck="false" placeholder="Nombre de usuario de tu amigo">
       <button class="btn gold" type="submit" data-sfx="confirm">Añadir amigo</button>
     </form>
     <p id="fr-msg" class="note"></p>
@@ -320,6 +322,9 @@
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>
     <div id="lobby-invite" class="fr-list"></div>
     <div class="row" style="margin-top:14px">
+      <!-- MicaSurvivor (M5 batch 12b): ready, and your Pokémon -->
+      <button id="lobby-mon" class="btn ghost">Cambiar Pokémon</button>
+      <button id="lobby-ready" class="btn gold grow hidden">Estoy listo</button>
       <button id="lobby-start" class="btn gold grow">Empezar partida</button>
     </div>
     <p class="note" id="lobby-note"></p>
@@ -640,6 +645,8 @@
 <script defer src="js/systems/hazards.js"></script>
 <!-- red: amigos, salas, cooperativo y ranking -->
 <script defer src="js/net/social.js"></script>
+<script defer src="js/mica/social.js"></script> <!-- MicaSurvivor (M5 batch 12b): friends, lobbies and invites on Magepunk accounts -->
+<script defer src="js/mica/online.js"></script> <!-- MicaSurvivor (M5 batch 12b): co-op signalling + relay over /api/mp -->
 <script defer src="js/net/net.js"></script>
 <script defer src="js/net/coop.js"></script>
 <script defer src="js/net/ranking.js"></script>

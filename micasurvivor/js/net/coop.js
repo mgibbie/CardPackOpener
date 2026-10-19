@@ -20,6 +20,10 @@
  *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
  *                            ja:[x,y,anim,dir] (Arceus, sólo en la Sentencia) }
  *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny}] }
+ *
+ * MicaSurvivor (M5 batch 12b): switched on, with Magepunk accounts and friends (js/mica/social.js) and the
+ * signalling + relay over the site's backend (js/mica/online.js). The relay runs at RATE_SLOW (3 a second).
+ * The rules are upstream's, unchanged; K below exposes its numbers for the design wiki.
  */
 G.Coop = (() => {
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
@@ -492,6 +496,8 @@ G.Coop = (() => {
 
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
+    /** MicaSurvivor (M5 batch 12b): the numbers, for the design wiki (tools/micasurvivor/gen_designwiki.mjs). */
+    K: { rateDirect: Math.round(1 / RATE_FAST), rateRelay: Math.round(1 / RATE_SLOW), stall: STALL_MS / 1000, near: NEAR },
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */

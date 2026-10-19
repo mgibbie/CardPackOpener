@@ -83,6 +83,29 @@ const MICATRO_DECKS_BYTES = 400_000;    // the whole row
 // stats max, coins/tickets by per-device ledger) and retries, so a second device never
 // silently overwrites the first.
 const MICASURVIVOR_SAVE_MAX = 400_000;  // one serialized save (a full collection with upgrades is ~100-200 KB)
+// MICASURVIVOR online co-op (M5 batch 12b; the msurv-* actions). Friends-only lobbies of up to 4,
+// WebRTC signalling and a polling relay fallback, all through this table:
+//   msurvlobby:<id>          {id, host, open, rev, ts, members:[{name,dex,shiny,ready,seen}], invited:{name:at}, start}
+//                            every change is a compare-and-set on `rev` (setIfRev), so joins never clobber
+//   msurvinv:<to>:<host>     {id, host, at}: an invite (one row per pair, so two hosts never clobber)
+//   msurvsig:<id>:<from>     {ts, to:{name:[[seq, signal]...]}}: one sender's signalling window
+//   msurvrelay:<id>:<from>   {ts, to:{name:[[seq, msg]...]}, ack:{name:seq}}: one sender's relay window
+// A row is only ever written by its own sender (no read-modify-write races between players); a
+// receiver reads the rows of the other members of ITS lobby and keeps the part addressed to it.
+const MSURV_MAX = 4;                       // players per lobby (upstream's MAX_PLAYERS)
+const MSURV_LOBBY_IDLE_MS = +process.env.MSURV_LOBBY_IDLE_MS || 60_000;   // a waiting lobby whose host stopped polling is closed
+const MSURV_RUN_IDLE_MS = 10 * 60_000;     // ...a started one (the host keeps it alive every ~2 min in a run)
+const MSURV_MEMBER_IDLE_MS = +process.env.MSURV_MEMBER_IDLE_MS || 45_000; // a waiting guest who stopped polling is dropped
+const MSURV_SEEN_BEAT_MS = 15_000;         // a member's `seen` is rewritten at most this often
+const MSURV_INVITE_TTL_MS = 3 * 60_000;    // upstream's INVITE_TTL
+const MSURV_PRESENCE_MS = 60_000;          // presence from MicaSurvivor is rewritten at most this often (ONLINE_MS is 90s)
+const MSURV_SIGNAL_MAX = 24_000;           // one sender's signalling row (SDP offers are ~1-3 KB, a candidate ~250 B)
+const MSURV_SIGNAL_WINDOW = 48;            // signals kept per recipient
+const MSURV_RELAY_MSG_MAX = 16_000;        // one relayed game message
+const MSURV_RELAY_MAX = 64_000;            // one sender's relay row (its unacknowledged window to everyone)
+const MSURV_RELAY_WINDOW = 30;             // unacknowledged messages kept per recipient (~10 s at 3 Hz)
+const MSURV_RELAY_MIN_MS = +process.env.MSURV_RELAY_MIN_MS || 250;        // HARD floor between one sender's relay writes (<= 4 writes/s)
+const MSURV_RELAY_STALE_MS = 30_000;       // a relay row this old is ignored (its sender is gone)
 // MICASURVIVOR leaderboard (run-score mode 'micasurvivor'): best survival time, solo.
 const MICASURVIVOR_MAX_TIME = 4 * 3600; // seconds; a longer "run" is refused, not clamped onto the board
 // MICATRO run replays: a FINISHED run's recipe {v, seed, back, stake, mods, modOptions, customDeck?,
@@ -189,6 +212,14 @@ const RATE_LIMITS = {
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
 	// MicaSurvivor cloud save: the client debounces (purchases ~3s, run end, else ~30s) — a brake on floods
 	'micasurvivor-save-put': [30, 60_000], 'micasurvivor-save-get': [30, 60_000],
+	// MicaSurvivor online co-op (M5 batch 12b): the lobby polls ~1/2s, signalling ~1/s while a pair
+	// connects, the relay fallback ~3/s per player (each push is ALSO hard-floored at
+	// MSURV_RELAY_MIN_MS per sender by its own row's timestamp, so isolates can't multiply it)
+	'msurv-lobby-create': [10, 60_000], 'msurv-lobby-join': [20, 60_000], 'msurv-lobby-leave': [20, 60_000],
+	'msurv-lobby-update': [60, 60_000], 'msurv-lobby-poll': [30, 10_000],
+	'msurv-invite': [20, 60_000], 'msurv-invites': [20, 60_000], 'msurv-invite-decline': [20, 60_000],
+	'msurv-signal-put': [40, 10_000], 'msurv-signal-poll': [30, 10_000],
+	'msurv-relay-push': [45, 10_000], 'msurv-relay-pull': [45, 10_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -233,6 +264,10 @@ const GC_TABLE = [
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
+	// MicaSurvivor online co-op (M5 batch 12b). Every row also has a much shorter LOGICAL life
+	// (MSURV_* below: a lobby whose host stopped polling is closed, an invite lasts 3 min, a relay
+	// row is ignored after 30 s); these sweeps only reclaim the rows of lobbies nobody closed.
+	['msurvsig:', 1 * HR], ['msurvrelay:', 1 * HR], ['msurvinv:', 1 * HR], ['msurvlobby:', 12 * HR],
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -1945,6 +1980,276 @@ export default async function handler(req, env) {
 		if (await store.setIfRev(key, { rev, save: JSON.parse(text), updated_at: Date.now() }, expect)) return json({ ok: true, rev });
 		const cur = await store.get(key);
 		return json({ error: 'stale', rev: (cur && cur.rev) || 0, save: (cur && cur.save) || null }, 409);
+	}
+
+	// MICASURVIVOR online co-op (M5 batch 12b): friends-only lobbies, WebRTC signalling and the
+	// relay fallback (see the MSURV_* constants for the rows and their lives). Every row written
+	// here is an EXACT key derived from the token's user and a lobby it belongs to.
+	if (action.startsWith('msurv-')) {
+		const now = Date.now();
+		const myFriends = Array.isArray(user.friends) ? user.friends : [];
+		const LKEY = id => 'msurvlobby:' + id;
+		const SKEY = (id, who) => 'msurvsig:' + id + ':' + who;
+		const RKEY = (id, who) => 'msurvrelay:' + id + ':' + who;
+		const IKEY = (to, from) => 'msurvinv:' + to + ':' + from;
+		const id = String(body.id || '');
+		const okId = /^[0-9a-f]{12}$/.test(id);
+		const NAME_RE = /^[a-z0-9_.-]{1,40}$/;
+		const dexOf = v => { const d = Math.floor(+v); return d >= 1 && d <= 1025 ? d : 25; };
+		const member = (lb, who) => lb.members.find(m => m.name === who) || null;
+		const hostSeen = lb => (member(lb, lb.host) || {}).seen || 0;
+		const live = lb => !!lb && now - hostSeen(lb) < (lb.start ? MSURV_RUN_IDLE_MS : MSURV_LOBBY_IDLE_MS);
+		const view = lb => ({
+			id: lb.id, host: lb.host, open: !!lb.open, v: lb.rev || 0,
+			members: lb.members.map(m => ({ name: m.name, dex: m.dex, shiny: !!m.shiny, ready: m.name === lb.host || !!m.ready })),
+			start: lb.start || null,
+			...(lb.host === username ? { invited: Object.keys(lb.invited || {}).filter(n => now - lb.invited[n] < MSURV_INVITE_TTL_MS) } : {}),
+		});
+		// compare-and-set on the lobby's rev: fn(lb) edits lb in place and returns nothing, an
+		// {error, status} to refuse, or false for "nothing to write". Retries a lost race.
+		const mutate = async (fn) => {
+			for (let i = 0; i < 6; i++) {
+				const lb = await store.get(LKEY(id));
+				if (!live(lb)) return { error: 'lobby closed', status: 404, closed: true };
+				const r = fn(lb);
+				if (r && r.error) return r;
+				if (r === false) return { lb };
+				// a waiting guest who stopped polling (tab closed without a goodbye) is dropped
+				if (!lb.start) lb.members = lb.members.filter(m => m.name === lb.host || now - (m.seen || 0) < MSURV_MEMBER_IDLE_MS);
+				const prev = lb.rev || 0;
+				lb.rev = prev + 1; lb.ts = now;
+				if (await store.setIfRev(LKEY(id), lb, prev)) return { lb };
+			}
+			return { error: 'busy, try again', status: 503 };
+		};
+		const fail = r => json({ error: r.error, ...(r.closed ? { closed: true } : {}) }, r.status || 400);
+		// the caller's lobby, for the signalling / relay actions: must be live and the caller in it
+		const myLobby = async () => {
+			if (!okId) return { error: 'bad lobby id', status: 400 };
+			const lb = await store.get(LKEY(id));
+			if (!live(lb)) return { error: 'lobby closed', status: 404, closed: true };
+			if (!member(lb, username)) return { error: 'not in this lobby', status: 403, closed: true };
+			return { lb };
+		};
+		// {name: [[seq, payload]...]} addressed to OTHER members only, within the caps
+		const cleanWindow = (lb, to, maxEach, maxMsg) => {
+			if (!to || typeof to !== 'object' || Array.isArray(to)) return { error: 'bad window', status: 400 };
+			const out = {};
+			for (const [who, list] of Object.entries(to)) {
+				if (who === username || !member(lb, who)) return { error: 'not a member: ' + String(who).slice(0, 40), status: 403 };
+				if (!Array.isArray(list) || list.length > maxEach) return { error: 'too many messages', max: maxEach, status: 400 };
+				const ok = [];
+				for (const e of list) {
+					if (!Array.isArray(e) || e.length !== 2 || !Number.isSafeInteger(e[0]) || e[0] < 0) return { error: 'bad message', status: 400 };
+					if (maxMsg && JSON.stringify(e[1]).length > maxMsg) return { error: 'message too large', max: maxMsg, status: 413 };
+					ok.push(e);
+				}
+				if (ok.length) out[who] = ok;
+			}
+			return { out };
+		};
+		const sinceOf = (who) => { const s = body.since && Number(body.since[who]); return Number.isFinite(s) ? s : -1; };
+
+		// ---- lobbies ----
+		if (action === 'msurv-lobby-create') {
+			for (let i = 0; i < 4; i++) {
+				const nid = randomBytes(6).toString('hex');
+				const lb = { id: nid, host: username, open: true, rev: 1, at: now, ts: now, invited: {}, start: null,
+					members: [{ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: true, seen: now }] };
+				if (await store.setIfRev(LKEY(nid), lb, 0)) return json({ lobby: view(lb) });
+			}
+			return json({ error: 'busy, try again' }, 503);
+		}
+		if (action === 'msurv-lobby-join') {
+			if (!okId) return json({ error: 'bad lobby id' }, 400);
+			const lb0 = await store.get(LKEY(id));
+			if (!live(lb0)) return json({ error: 'lobby closed', closed: true }, 404);
+			// friends only: the host must be YOUR friend and you THEIRS (the server's lists, not the client's)
+			const hostUser = lb0.host === username ? user : await store.get(lb0.host);
+			if (lb0.host !== username && (!myFriends.includes(lb0.host) || !Array.isArray(hostUser?.friends) || !hostUser.friends.includes(username)))
+				return json({ error: 'only the host\'s friends can join' }, 403);
+			const r = await mutate(lb => {
+				const me = member(lb, username);
+				if (me) { me.dex = dexOf(body.dex); me.shiny = !!body.shiny; me.seen = now; return; }
+				if (!lb.open || lb.start) return { error: 'already started', status: 409 };
+				if (lb.members.filter(m => m.name === lb.host || now - (m.seen || 0) < MSURV_MEMBER_IDLE_MS).length >= MSURV_MAX) return { error: 'lobby full', max: MSURV_MAX, status: 409 };
+				lb.members.push({ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: false, seen: now });
+			});
+			if (r.error) return fail(r);
+			await store.delete(IKEY(username, r.lb.host));   // the invite is used up
+			return json({ lobby: view(r.lb) });
+		}
+		if (action === 'msurv-lobby-leave') {
+			if (!okId) return json({ error: 'bad lobby id' }, 400);
+			const lb = await store.get(LKEY(id));
+			if (!lb || !member(lb, username)) return json({ ok: true });
+			if (lb.host === username) {
+				// the host leaving closes the lobby: its row, every member's signalling / relay row
+				// and the invites still out (all exact keys)
+				await store.delete(LKEY(id));
+				await store.deleteKeys([...lb.members.flatMap(m => [SKEY(id, m.name), RKEY(id, m.name)]),
+					...Object.keys(lb.invited || {}).filter(n => NAME_RE.test(n)).map(n => IKEY(n, username))]);
+				return json({ ok: true, closed: true });
+			}
+			if (live(lb)) await mutate(l => { const n = l.members.length; l.members = l.members.filter(m => m.name !== username); return l.members.length === n ? false : undefined; });
+			await store.deleteKeys([SKEY(id, username), RKEY(id, username)]);
+			return json({ ok: true });
+		}
+		if (action === 'msurv-lobby-poll') {
+			if (!okId) return json({ error: 'bad lobby id' }, 400);
+			let lb = await store.get(LKEY(id));
+			if (!live(lb)) return json({ closed: true });
+			const me = member(lb, username);
+			if (!me) return json({ closed: true, removed: true });
+			if (now - (me.seen || 0) >= MSURV_SEEN_BEAT_MS) {
+				const r = await mutate(l => { const m = member(l, username); if (!m) return { error: 'removed', status: 200, closed: true }; m.seen = now; });
+				if (r.error) return json({ closed: true, removed: true });
+				lb = r.lb;
+			}
+			if (body.v != null && Number(body.v) === (lb.rev || 0)) return json({ unchanged: true, v: lb.rev || 0 });
+			return json({ lobby: view(lb) });
+		}
+		if (action === 'msurv-lobby-update') {
+			if (!okId) return json({ error: 'bad lobby id' }, 400);
+			const r = await mutate(lb => {
+				const me = member(lb, username);
+				if (!me) return { error: 'not in this lobby', status: 403, closed: true };
+				const isHost = lb.host === username;
+				if ((body.open != null || body.start != null) && !isHost) return { error: 'only the host can do that', status: 403 };
+				if (body.dex != null) me.dex = dexOf(body.dex);
+				if (body.shiny != null) me.shiny = !!body.shiny;
+				if (body.ready != null && !isHost) me.ready = !!body.ready;
+				me.seen = now;
+				if (body.open === true) { lb.open = true; lb.start = null; for (const m of lb.members) if (m.name !== lb.host) m.ready = false; }
+				else if (body.open === false) lb.open = false;
+				if (body.start != null) {
+					if (lb.start) return { error: 'already started', status: 409 };
+					const live2 = lb.members.filter(m => m.name === lb.host || now - (m.seen || 0) < MSURV_MEMBER_IDLE_MS);
+					if (live2.length < 2) return { error: 'you need at least one friend in the lobby', status: 409 };
+					if (live2.some(m => m.name !== lb.host && !m.ready)) return { error: 'not everyone is ready', status: 409 };
+					const seed = Math.floor(+body.start.seed);
+					lb.members = live2;
+					lb.open = false;
+					lb.start = { seed: seed >= 0 && seed < 1e9 ? seed : Math.floor(Math.random() * 1e6), at: now, host: lb.host,
+						members: live2.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny })) };
+				}
+			});
+			if (r.error) return fail(r);
+			return json({ lobby: view(r.lb) });
+		}
+
+		// ---- invites (a row per pair + a bell message in the friend's DM inbox) ----
+		if (action === 'msurv-invite') {
+			if (!okId) return json({ error: 'bad lobby id' }, 400);
+			const to = String(body.to || '').trim().toLowerCase();
+			if (!NAME_RE.test(to) || to === username || !myFriends.includes(to)) return json({ error: 'you can only invite your friends' }, 403);
+			let fresh = false;
+			const prevInv = await store.get(IKEY(to, username));
+			const recent = !!prevInv && prevInv.id === id && now - (+prevInv.at || 0) < MSURV_INVITE_TTL_MS / 3;
+			const r = await mutate(lb => {
+				if (lb.host !== username) return { error: 'only the host can invite', status: 403 };
+				if (!lb.open || lb.start) return { error: 'already started', status: 409 };
+				if (member(lb, to)) return { error: 'already in the lobby', status: 409 };
+				if (lb.members.length >= MSURV_MAX) return { error: 'lobby full', max: MSURV_MAX, status: 409 };
+				lb.invited = lb.invited || {};
+				for (const n of Object.keys(lb.invited)) if (now - lb.invited[n] >= MSURV_INVITE_TTL_MS) delete lb.invited[n];
+				if (recent) return false;   // just sent (and still there): no second write, no second bell message
+				fresh = true;
+				lb.invited[to] = now;
+			});
+			if (r.error) return fail(r);
+			if (fresh) {
+				await store.setJSON(IKEY(to, username), { id, host: username, at: now });
+				const room = 'chat:dm:' + to;
+				const list = (await store.get(room)) || [];
+				list.push({ from: username, text: ('🎮 ' + username + ' invites you to MicaSurvivor co-op! Open /micasurvivor/ within 3 min to join.').slice(0, 140), emote: null, ts: now, kind: 'msurv-invite' });
+				await store.setJSON(room, list.slice(-40));
+			}
+			return json({ ok: true, sent: fresh, lobby: view(r.lb) });
+		}
+		if (action === 'msurv-invites') {
+			const prefix = 'msurvinv:' + username + ':';
+			const rows = (await store.list(prefix)).filter(x => x.key.startsWith(prefix) && NAME_RE.test(x.key.slice(prefix.length)));
+			const out = [], dead = [];
+			for (const x of rows) {
+				const from = x.key.slice(prefix.length), v = x.value || {};
+				const lb = myFriends.includes(from) && now - (+v.at || 0) < MSURV_INVITE_TTL_MS && /^[0-9a-f]{12}$/.test(String(v.id)) ? await store.get(LKEY(v.id)) : null;
+				if (lb && live(lb) && lb.host === from && lb.open && !lb.start && !member(lb, username) && lb.members.length < MSURV_MAX)
+					out.push({ from, id: v.id, at: v.at, members: lb.members.length });
+				else dead.push(x.key);
+			}
+			if (dead.length) await store.deleteKeys(dead);
+			// presence ("in MicaSurvivor"), only for players someone can see, and at most once a minute
+			const STATUSES = ['micasurvivor', 'micasurvivor:lobby', 'micasurvivor:run'];
+			if (!body.quiet && myFriends.length) {
+				const status = STATUSES.includes(body.status) ? body.status : 'micasurvivor';
+				const pres = await store.get('presence:' + username);
+				if (!pres || pres.status !== status || now - (pres.lastSeen || 0) >= MSURV_PRESENCE_MS)
+					await store.setJSON('presence:' + username, { name: username, map: '', x: 0, y: 0, facing: 'down', status, region: 'MicaSurvivor', lastSeen: now });
+			}
+			return json({ invites: out, now });
+		}
+		if (action === 'msurv-invite-decline') {
+			const from = String(body.from || '').trim().toLowerCase();
+			if (!NAME_RE.test(from)) return json({ error: 'bad name' }, 400);
+			await store.delete(IKEY(username, from));
+			return json({ ok: true });
+		}
+
+		// ---- WebRTC signalling (offer / answer / ICE), one window row per sender ----
+		if (action === 'msurv-signal-put') {
+			const g = await myLobby();
+			if (g.error) return fail(g);
+			const w = cleanWindow(g.lb, body.to, MSURV_SIGNAL_WINDOW, 0);
+			if (w.error) return json({ error: w.error, ...(w.max ? { max: w.max } : {}) }, w.status);
+			const row = { ts: now, to: w.out };
+			if (JSON.stringify(row).length > MSURV_SIGNAL_MAX) return json({ error: 'signal too large', max: MSURV_SIGNAL_MAX }, 413);
+			await store.setJSON(SKEY(id, username), row);
+			return json({ ok: true });
+		}
+		if (action === 'msurv-signal-poll') {
+			const g = await myLobby();
+			if (g.error) return fail(g);
+			const msgs = {};
+			for (const m of g.lb.members) {
+				if (m.name === username) continue;
+				const row = await store.get(SKEY(id, m.name));
+				const list = row && row.to && Array.isArray(row.to[username]) ? row.to[username].filter(e => e[0] > sinceOf(m.name)) : [];
+				if (list.length) msgs[m.name] = list;
+			}
+			return json({ msgs, members: g.lb.members.map(m => m.name) });
+		}
+
+		// ---- relay fallback (no direct connection): one window row per sender, acked by seq ----
+		if (action === 'msurv-relay-push' || action === 'msurv-relay-pull') {
+			const g = await myLobby();
+			if (g.error) return fail(g);
+			const pre = 'msurvrelay:' + id + ':';
+			const rows = new Map((await store.list(pre)).filter(x => x.key.startsWith(pre)).map(x => [x.key.slice(pre.length), x.value]));
+			if (action === 'msurv-relay-push') {
+				const mine = rows.get(username);
+				if (mine && now - (mine.ts || 0) < MSURV_RELAY_MIN_MS) return json({ error: 'slow down', wait: MSURV_RELAY_MIN_MS - (now - mine.ts) }, 429);
+				const w = cleanWindow(g.lb, body.to || {}, MSURV_RELAY_WINDOW, MSURV_RELAY_MSG_MAX);
+				if (w.error) return json({ error: w.error, ...(w.max ? { max: w.max } : {}) }, w.status);
+				const ack = {};
+				for (const [who, s] of Object.entries(body.ack || {})) if (who !== username && member(g.lb, who) && Number.isSafeInteger(s)) ack[who] = s;
+				const row = { ts: now, to: w.out, ack };
+				if (JSON.stringify(row).length > MSURV_RELAY_MAX) return json({ error: 'relay window too large', max: MSURV_RELAY_MAX }, 413);
+				await store.setJSON(RKEY(id, username), row);
+			}
+			const msgs = {}, acks = {}, age = {};
+			for (const m of g.lb.members) {
+				if (m.name === username) continue;
+				const row = rows.get(m.name);
+				if (!row || now - (row.ts || 0) >= MSURV_RELAY_STALE_MS) continue;
+				age[m.name] = now - (row.ts || 0);
+				const list = row.to && Array.isArray(row.to[username]) ? row.to[username].filter(e => e[0] > sinceOf(m.name)) : [];
+				if (list.length) msgs[m.name] = list;
+				if (row.ack && Number.isSafeInteger(row.ack[username])) acks[m.name] = row.ack[username];
+			}
+			return json({ msgs, acks, age, members: g.lb.members.map(m => m.name), started: !!g.lb.start });
+		}
+		return json({ error: 'unknown action' }, 400);
 	}
 
 	// a friend reads a MICATRO run's latest view (read-only spectating)

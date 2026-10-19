@@ -1,11 +1,12 @@
 // micasurvivor_boot_test.mjs — MicaSurvivor (the vendored PokéSurvivor port, M1) end to end
 // in headless Chrome, served from /micasurvivor/ with the local (gitignored) sprite assets:
 //   - boots with no console errors and NO request to any non-localhost origin (no Firebase,
-//     no fonts CDN, no STUN, no analytics); English by default; "MicaSurvivor" title and the
+//     no fonts CDN, no STUN outside a co-op lobby, no analytics); English by default; "MicaSurvivor" title and the
 //     "based on PokéSurvivor by JPTER78" credit visible; the Credits screen shows the Required
 //     Notice, the SpriteCollab artists and the JayElDragon controller credit
 //   - guest start (one "Play" button) -> personality test -> partner -> main menu
-//   - Friends says "coming soon"; Ranking (M3: the Magepunk leaderboard) asks a guest to log in
+//   - Friends asks a guest to sign in (M5 batch 12b: online co-op needs a Magepunk account); Ranking (M3: the
+//     Magepunk leaderboard) asks a guest to log in
 //   - start a run; a bot walking in circles survives ~30 s; level-up cards are picked
 //   - quit the run -> summary; coins + run stats are saved under micasurvivor_* keys and
 //     round-trip through a reload (the session is restored straight into the menu)
@@ -131,15 +132,16 @@ try {
 	A(/MicaSurvivor/.test(menu.text) && /Based on PokéSurvivor by JPTER78/.test(menu.text), 'menu logo + credit');
 	await shot('desktop_menu.png');
 
-	// friends: coming soon, no error; the leaderboard (M3) asks a guest to log in to Magepunk
+	// friends (M5 batch 12b): a guest is asked to sign in, no error; the leaderboard (M3) asks a guest to log in to Magepunk
 	for (const go of ['friends', 'rank']) {
 		await page.click(`#scr-menu [data-go=${go}]`);
 		await sleep(300);
 		const t = await page.evaluate(() => document.querySelector('.toast') ? document.querySelector('.toast').textContent : '');
-		const want = go === 'friends' ? /Coming soon/i : /Log in to Magepunk to join the leaderboard/;
+		const want = go === 'friends' ? /Sign in to play with friends/ : /Log in to Magepunk to join the leaderboard/;
 		A(want.test(t) && await visible('scr-menu'), `${go}: says ${want}, stays on the menu`, t);
 	}
 	A(await page.evaluate(() => document.getElementById('menu-rank-sub').textContent) === 'Log in to Magepunk', 'the Ranking item says "Log in to Magepunk" for a guest');
+	A(await page.evaluate(() => document.getElementById('menu-friends-sub').textContent) === 'Sign in to play with friends', 'the Friends item says "Sign in to play with friends" for a guest (no "Coming soon")');
 	A(await page.evaluate(() => [...document.querySelectorAll('.mica-back')].every(a => a.getAttribute('href') === '/' && a.textContent === 'Back to Magepunk')), 'without ?direct=1 the way back goes to the Magepunk home page');
 	// settings -> about has the credits button
 	await page.click('#btn-settings');

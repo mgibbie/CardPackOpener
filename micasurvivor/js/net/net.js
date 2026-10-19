@@ -11,6 +11,11 @@
  *   relé     (APAGADO) los mensajes irían por la Realtime Database:
  *            rooms/{sala}/q/{destinatario}/{id}, a 1 $ el GB.
  *
+ * MicaSurvivor (M5 batch 12b): no Firebase. The signalling AND the relay go through the site's
+ * backend (/api/mp, by polling: js/mica/online.js, G.MicaNet), the relay is ON again as the
+ * fallback when two browsers can't connect directly, and the ICE servers are public STUN only
+ * (no TURN). A pair that only has the relay plays at upstream's slow rate (3 messages a second).
+ *
  * Se envía por el canal directo si está abierto; si no, por el relé. El que
  * recibe escucha los dos, así que no hace falta ponerse de acuerdo.
  *
@@ -19,18 +24,21 @@
  *       peers() · mode(uid) -> 'connecting' | 'direct' | 'relay' | 'closed'
  */
 G.Net = (() => {
-  // MicaSurvivor: no external STUN servers (co-op is off until M4).
-  const ICE = [];
-  const DIRECT_TIMEOUT = 9000;     // ms para conseguir canal directo antes de usar el relé
+  // MicaSurvivor (M5 batch 12b): public STUN only (Google + Cloudflare), used only once you are in a
+  // co-op lobby. window.__msurvNet (tests): {ice} replaces it, {noRtc} skips WebRTC, {directMs}.
+  const hook = () => window.__msurvNet || {};
+  const ICE_PUBLIC = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
+  const iceServers = () => (Array.isArray(hook().ice) ? hook().ice : ICE_PUBLIC);
+  const directTimeout = () => +hook().directMs || 9000;   // ms para conseguir canal directo antes de usar el relé
+  const DISCONNECT_MS = 4000;
   // Relé por la Realtime Database APAGADO (12-10-2026): a 1 $ el GB era lo que más
   // costaba del cooperativo. Sin conexión directa, esa pareja no puede jugar
   // junta ('failed') y el anfitrión lo reintenta cada RETRY_MS. Por la base de datos
   // sólo pasa la señalización (unos pocos mensajes pequeños para conectarse).
-  const ALLOW_RELAY = false, RETRY_MS = 15000;
+  // MicaSurvivor (M5 batch 12b): the relay is back, over /api/mp (G.MicaNet), capped by the server.
+  const ALLOW_RELAY = true, RETRY_MS = 15000;
 
-
-  let rtdb = null, uid = null, roomId = null, isHost = false, hostUid = null;
-  let qref = null;
+  let uid = null, roomId = null, isHost = false, hostUid = null;
   const peers = new Map();         // uid -> { pc, dc, mode, timer }
   const handlers = new Set(), peerHandlers = new Set();
   let stats = { sent: 0, recv: 0, relaySent: 0 };
@@ -38,6 +46,12 @@ G.Net = (() => {
   function emitPeer(u) {
     const p = peers.get(u);
     peerHandlers.forEach(fn => { try { fn(u, p ? p.mode : 'closed'); } catch (e) { console.warn(e); } });
+    pollSignals();
+  }
+
+  /** MicaSurvivor (M5 batch 12b): signalling is polled only while some pair is still connecting. */
+  function pollSignals() {
+    G.MicaNet.wantSignals(!!roomId && [...peers.values()].some(p => p.mode === 'connecting'));
   }
 
   // ---------------- apertura ----------------
@@ -45,31 +59,30 @@ G.Net = (() => {
   function open(id, host, hostId) {
     if (roomId === id) return;
     close();
-    const fb = G.DB.fb;
-    rtdb = fb.rtdb; uid = fb.uid;
+    // MicaSurvivor (M5 batch 12b): your Magepunk username is your uid; messages come from G.MicaNet.
+    uid = G.Social.uid;
     roomId = id; isHost = host; hostUid = hostId;
-    qref = rtdb.ref('rooms/' + id + '/q/' + uid);
-    qref.on('child_added', s => {
-      const raw = s.val();
-      s.ref.remove().catch(() => {});
-      let m;
-      try { m = JSON.parse(raw); } catch (e) { return; }
-      if (!m || !m.f) return;
-      if (m.sig) onSignal(m.f, m.sig);
-      else deliver(m.f, m.d);
+    G.MicaNet.open(id, uid, {
+      signal: (from, sig) => onSignal(from, sig),
+      relay: (from, msg) => { const p = peers.get(from); if (p && p.mode !== 'closed') deliver(from, msg); },
+      // a relay peer that stopped writing (its tab closed): gone, as a closed data channel
+      lost: u => { const p = peers.get(u); if (p && p.mode === 'relay') drop(u); },
+      closed: () => { for (const u of [...peers.keys()]) drop(u); }
     });
     // Invitado: hueco para el anfitrión desde ya (se sustituye al llegar su
     // oferta). Así, si no llega nunca, se sigue por el relé y se sabe cuándo se va.
     if (!isHost) {
       const p = { pc: null, dc: null, mode: 'connecting', timer: 0 };
-      p.timer = setTimeout(() => { if (p.mode === 'connecting') { p.mode = ALLOW_RELAY ? 'relay' : 'failed'; emitPeer(hostId); } }, DIRECT_TIMEOUT + 3000);
+      const toRelay = () => { if (p.mode === 'connecting') { p.mode = ALLOW_RELAY ? 'relay' : 'failed'; if (p.mode === 'relay') G.MicaNet.relayPeer(hostId, true); emitPeer(hostId); } };
+      p.timer = setTimeout(toRelay, hook().noRtc ? 0 : directTimeout() + 3000);
       peers.set(hostId, p);
     }
+    pollSignals();
   }
 
   function close() {
     for (const u of [...peers.keys()]) drop(u);
-    if (qref) { qref.off(); qref = null; }
+    G.MicaNet.close();
     roomId = null; isHost = false; hostUid = null;
   }
 
@@ -91,21 +104,34 @@ G.Net = (() => {
     peers.set(u, p);
     // Sin WebRTC (navegador antiguo o bloqueado): directamente por el relé.
     let pc;
-    try { pc = p.pc = new RTCPeerConnection({ iceServers: ICE }); }
-    catch (e) { p.mode = 'relay'; emitPeer(u); return p; }
+    try {
+      if (hook().noRtc) throw new Error('WebRTC off (test hook)');
+      pc = p.pc = new RTCPeerConnection({ iceServers: iceServers() });
+    }
+    catch (e) { p.mode = 'relay'; G.MicaNet.relayPeer(u, true); emitPeer(u); return p; }
     pc.onicecandidate = e => { if (e.candidate) signal(u, { c: e.candidate.toJSON() }); };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'failed' && p.mode !== 'closed') useRelay(u);
+      // MicaSurvivor (M5 batch 12b): 'disconnected' for DISCONNECT_MS (the other tab crashed or lost its
+      // network: 'failed' only comes ~30 s later) -> the relay, where a peer that never writes is dropped
+      // (G.MicaNet lostMs); back to 'connected' -> back to the data channel.
+      clearTimeout(p.discT);
+      if (pc.connectionState === 'disconnected' && p.mode === 'direct') {
+        p.discT = setTimeout(() => { if (peers.get(u) === p && pc.connectionState !== 'connected' && p.mode === 'direct') useRelay(u); }, DISCONNECT_MS);
+      } else if (pc.connectionState === 'connected' && p.mode === 'relay' && p.dc && p.dc.readyState === 'open') {
+        p.mode = 'direct'; G.MicaNet.relayPeer(u, false); emitPeer(u);
+      }
     };
     // Si en unos segundos no hay canal directo, se sigue por el relé.
-    p.timer = setTimeout(() => { if (p.mode === 'connecting') useRelay(u); }, DIRECT_TIMEOUT);
+    p.timer = setTimeout(() => { if (p.mode === 'connecting') useRelay(u); }, directTimeout());
     emitPeer(u);
     return p;
   }
 
   function wireChannel(u, p, dc) {
     p.dc = dc;
-    dc.onopen = () => { clearTimeout(p.timer); p.mode = 'direct'; emitPeer(u); };
+    // (MicaSurvivor: a pair on the relay that later gets its channel moves over to it)
+    dc.onopen = () => { clearTimeout(p.timer); p.mode = 'direct'; G.MicaNet.relayPeer(u, false); emitPeer(u); };
     dc.onclose = () => { if (p.mode === 'direct') { p.mode = 'connecting'; useRelay(u); } };
     dc.onmessage = e => {
       let m;
@@ -116,8 +142,9 @@ G.Net = (() => {
 
   function useRelay(u) {
     const p = peers.get(u);
-    if (!p || p.mode === 'direct' || p.mode === 'closed' || p.mode === 'failed') return;
-    if (ALLOW_RELAY) { p.mode = 'relay'; emitPeer(u); return; }
+    if (!p || p.mode === 'closed' || p.mode === 'failed') return;
+    if (p.mode === 'direct' && p.dc && p.dc.readyState === 'open' && p.pc && p.pc.connectionState === 'connected') return;
+    if (ALLOW_RELAY) { clearTimeout(p.timer); p.mode = 'relay'; G.MicaNet.relayPeer(u, true); emitPeer(u); return; }
     // Sin relé: no se puede jugar con esa persona por ahora. El anfitrión reintenta.
     clearTimeout(p.timer);
     p.mode = 'failed';
@@ -129,6 +156,7 @@ G.Net = (() => {
   /** Anfitrión: abre conexión con un invitado. */
   async function connect(u) {
     if (!roomId || peers.has(u)) return;
+    G.MicaNet.resetSignals(u);       // (MicaSurvivor: a fresh negotiation window)
     const p = newPeer(u);
     if (!p.pc) return;
     wireChannel(u, p, p.pc.createDataChannel('g', { ordered: true }));
@@ -147,6 +175,7 @@ G.Net = (() => {
       if (sig.sdp && sig.sdp.type === 'offer') {
         if (isHost) return;
         if (p) drop(from, true);
+        G.MicaNet.resetSignals(from);
         p = newPeer(from);
         if (!p.pc) return;
         p.pc.ondatachannel = e => wireChannel(from, p, e.channel);
@@ -173,8 +202,9 @@ G.Net = (() => {
   function drop(u, silent) {
     const p = peers.get(u);
     if (!p) return;
-    clearTimeout(p.timer);
+    clearTimeout(p.timer); clearTimeout(p.discT);
     p.mode = 'closed';
+    G.MicaNet.relayPeer(u, false);
     try { if (p.dc) p.dc.close(); } catch (e) { /* nada */ }
     try { if (p.pc) p.pc.close(); } catch (e) { /* nada */ }
     peers.delete(u);
@@ -183,21 +213,25 @@ G.Net = (() => {
 
   // ---------------- envío / recepción ----------------
 
+  // MicaSurvivor (M5 batch 12b): signals and relayed messages go through G.MicaNet (/api/mp).
   function relayPush(to, env) {
-    if (!rtdb || !roomId) return;
-    rtdb.ref('rooms/' + roomId + '/q/' + to).push(JSON.stringify(env)).catch(e => console.warn('[Net] relé:', e.code || e.message));
+    if (!roomId) return;
+    if (env.sig) G.MicaNet.signal(to, env.sig);
+    else G.MicaNet.relay(to, env.d);
   }
 
   function send(to, msg) {
     if (!roomId) return;
     const p = peers.get(to);
     stats.sent++;
-    if (p && p.dc && p.dc.readyState === 'open') {
+    if (p && p.mode === 'direct' && p.dc && p.dc.readyState === 'open') {   // (MicaSurvivor 12b: a pair moved to the relay stops using a dead channel)
       try { p.dc.send(JSON.stringify(msg)); return; } catch (e) { /* cae al relé */ }
     }
     // Sin relé, los datos de la partida no van por la base de datos (se pierden: esa
     // pareja no está conectada). Sólo pasa el aviso de empezar.
-    if (!ALLOW_RELAY && !(msg && msg.k === 'start')) return;
+    // MicaSurvivor (M5 batch 12b): only a pair that IS on the relay uses it (a pair still connecting
+    // sends nothing, so no D1 write is spent on it); the start also reaches guests through the lobby.
+    if (!ALLOW_RELAY || !p || p.mode !== 'relay') return;
     stats.relaySent++;
     relayPush(to, { f: uid, d: msg });
   }
@@ -218,6 +252,8 @@ G.Net = (() => {
     /** ¿Va por el relé (o no hay conexión)? Entonces se manda menos a menudo. */
     slow(u) { const p = peers.get(u); return !p || p.mode !== 'direct'; },
     peers() { return [...peers.keys()]; },
+    /** MicaSurvivor (M5 batch 12b): plain data for tests and for 12c (spectating / replays). */
+    snapshot() { return { roomId, uid, isHost, hostUid, peers: Object.fromEntries([...peers].map(([u, p]) => [u, p.mode])), stats: Object.assign({}, stats), transport: G.MicaNet.snapshot() }; },
     get open_() { return !!roomId; },
     get isHost() { return isHost; },
     get uid() { return uid; },
