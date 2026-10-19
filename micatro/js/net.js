@@ -274,14 +274,14 @@ export async function fetchReplay(id) {
 // The record + achievements (ui/progress.js), account-saved in the row micatro_progress:<user>. The server MERGES a
 // put (counts: max; types / achievements: union) and returns the merged record, so nothing goes backwards.
 //   fetchProgress() → {progress} | {error}
-//   saveProgress(progress) → {ok, progress} | {error}
+//   saveProgress(progress, {keepalive}) → {ok, progress} | {error}
 export async function fetchProgress() {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	try { const d = await MP.call('micatro-progress-get', {}); return d && d.progress ? { progress: d.progress } : { error: (d && d.error) || 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }
-export async function saveProgress(progress) {
+export async function saveProgress(progress, { keepalive = false } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
-	try { return (await MP.call('micatro-progress-put', { progress })) || { error: 'bad response' }; }
+	try { return (await MP.call('micatro-progress-put', { progress }, keepalive ? { keepalive: true } : {})) || { error: 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }

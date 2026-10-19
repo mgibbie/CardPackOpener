@@ -166,10 +166,11 @@ function afterAct(view, events) {
   // Ambipom / Arceus over the stake sticker). The joker list is the engine's win event's (joker_win_keys, with previous evolutions).
   // The deck earns its sticker too (its back key joins the list; Balatro's deck stake stickers) — not a custom deck's
   // neutral back. Seeded and challenge runs earn none.
+  // (seeded = the player typed the seed; a resumed run keeps the recipe's own flag — engine/session.js recipeSeeded)
   const deckKey = view.back && !view.custom_deck && /^[A-Za-z0-9_]{1,64}$/.test(view.back) ? view.back : null;
-  if (winEv && Stickers && !view.challenge && !(Engine && Engine.G && Engine.G.GAME && Engine.G.GAME.seeded)) Stickers.recordWin({ ...winEv, jokers: [...(winEv.jokers || []), ...(deckKey ? [deckKey] : [])], categories: Progress ? Progress.winCategories(earned, (view.mods || []).includes('pokermon')) : ['win'] });
+  if (winEv && Stickers && !view.challenge && !(Engine && Engine.G && Engine.G.GAME && Engine.G.GAME.seeded)) Stickers.recordWin({ ...winEv, jokers: [...(winEv.jokers || []), ...(deckKey ? [deckKey] : [])], categories: winCategoriesOf(earned, (view.mods || []).includes('pokermon')) });
   if (earned && Progress) {
-    const unlocked = Progress.recordRunWin(earned, view.stake);
+    const unlocked = Progress.recordRunWin(earned, view.stake, Date.now(), runIdOf());
     if (unlocked.length) Progress.achievementToast(stage, unlocked);
   }
   if (won && !winShown) {
@@ -180,6 +181,20 @@ function afterAct(view, events) {
     overHandled = true;
     whenIdle(() => showGameOver(viewOf()));
   }
+}
+/** The win stickers' categories (ui/progress.js winCategories; the same rule inline if that module failed to load). */
+function winCategoriesOf(earned, pokermon) {
+  if (Progress && Progress.winCategories) return Progress.winCategories(earned, pokermon);
+  const c = ['win'];
+  if (pokermon) c.push('poke');
+  if (earned && earned.nuz) c.push('nuz');
+  if (earned && earned.mono) c.push('mono');
+  if (earned && earned.nuz && earned.mono) c.push('both');
+  return c;
+}
+/** This run's id (its local replay id: stable across a resume) — a won run adds to the record once. */
+function runIdOf() {
+  try { return session && session.recipe && Engine && Engine.RP ? Engine.RP.localId(session.recipe) : null; } catch (e) { return null; }
 }
 function whenIdle(fn) {
   if (player.idle()) { fn(); return; }

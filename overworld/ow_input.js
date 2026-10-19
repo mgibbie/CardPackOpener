@@ -363,7 +363,7 @@ export function interact() {
 	}
 	if (svc === 'pc') { sfx('pc_on'); pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
-	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
+	if (svc === 'ferry') { ferryMenu.list = null; ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
 	if (svc === 'bikeshop') { bikeShopTalk(); return; }
 	if (svc === 'dollcounter') { dollCounterTalk(); return; }

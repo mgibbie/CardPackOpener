@@ -341,6 +341,22 @@ ok(G.GAME.won && RV().eligible === false && RV().earned === undefined, 'a seeded
   st.seek(st.total);
   ok(st.view().run_badges.nuz === false && st.view().run_badges.nuz_reason === 'sold Charmander', '... and broken after the sell, as it was');
 }
+// eligibility survives a resume (bug 2026-10-19, jfost711: every recipe carries a seed, and a resumed run read it
+// as a typed one -> "seeded": its win earned no stickers / badges / record); a typed seed stays seeded
+{
+  const s = new Session();
+  s.start({ back: 'b_red', mods: ['pokermon'] });
+  ok(s.recipe.seeded === undefined && G.GAME.seeded === false && RV().eligible === true, 'a random-seed run: not seeded, eligible');
+  Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
+  ok(G.GAME.seeded === false && RV().eligible === true, 'resumed (fromRecipe): still not seeded, still eligible', RV());
+  const st = Session.stepper(JSON.parse(JSON.stringify(s.recipe)));
+  ok(G.GAME.seeded === false && st.view().run_badges.eligible === true, 'a replay of it: eligible too');
+  const t = new Session();
+  t.start({ seed: 'TYPED1', back: 'b_red', mods: ['pokermon'] });
+  ok(t.recipe.seeded === true && RV().eligible === false, 'a typed seed: recipe.seeded, not eligible');
+  Session.fromRecipe(JSON.parse(JSON.stringify(t.recipe)));
+  ok(G.GAME.seeded === true && RV().eligible === false, 'resumed: still seeded');
+}
 // a bot-played Pokermon run: the resumed state matches the live one
 let botGains = 0;
 for (const seed of [3, 7, 11]) {
