@@ -167,6 +167,11 @@ b { font-weight: normal; }
 @keyframes attn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(-4deg); } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(2deg); } 24% { transform: translate(-50%, -50%) scale(1) rotate(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(.95); } }
 .toast { position: absolute; left: 50%; bottom: 140px; z-index: 55; transform: translateX(-50%); background: var(--red); padding: 10px 22px 8px; border-radius: 12px; font-size: 30px; opacity: 0; pointer-events: none; box-shadow: 0 5px 0 var(--red-d); white-space: nowrap; }
 .toast.show { animation: toast 2s ease-out forwards; }
+/* hold R to restart (ui/main.js startRHold): Balatro's little fill bar */
+.restart-hold { position: absolute; left: 50%; top: 40%; z-index: 57; transform: translate(-50%, -50%); background: var(--panel-d, #1e2b2d); padding: 10px 18px 14px; border-radius: 12px; pointer-events: none; box-shadow: 0 5px 0 rgba(0,0,0,.35); text-align: center; }
+.rh-label { font-size: 30px; margin-bottom: 8px; }
+.rh-track { width: 260px; height: 16px; border-radius: 8px; background: rgba(0,0,0,.4); overflow: hidden; }
+.rh-fill { width: 0; height: 100%; background: var(--red); border-radius: 8px; }
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, 20px); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; } 100% { opacity: 0; } }
 .banner { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 52; background: rgba(31,42,44,.92); border-radius: 14px; padding: 10px 20px 8px; font-size: 28px; display: flex; gap: 18px; align-items: center; box-shadow: 0 5px 0 rgba(0,0,0,.3); white-space: nowrap; }
 .landscape .banner { left: calc(50% + 200px); }
@@ -351,6 +356,10 @@ b { font-weight: normal; }
 .opt-g { display: flex; gap: 8px; }
 .opt-g .btn { min-width: 84px; }
 .opt-g .btn.on { --b: var(--red); --bd: var(--red-d); }
+.opt-keys { background: var(--panel-d); border-radius: 12px; padding: 10px 12px; }
+.opt-keys .kb-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; font-size: 20px; color: #dfe7e8; }
+.opt-keys .kb-grid b { color: var(--attn); white-space: nowrap; }
+@media (hover: none) and (pointer: coarse) { .opt-keys { display: none; } }
 .opt-acts { display: flex; flex-direction: column; gap: 10px; align-items: stretch; text-align: center; }
 .deck-view { max-width: 1200px; }
 .dv-sum { display: flex; gap: 24px; justify-content: center; font-size: 26px; flex-wrap: wrap; margin-bottom: 10px; }
