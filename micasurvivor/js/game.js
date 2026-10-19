@@ -125,7 +125,7 @@ G.Game = (() => {
     // MicaSurvivor (M5 lote 8): Rush de Jefes (un bioma al azar) y la Torre (piso inicial, reliquias y
     // experiencia ×0,65: antes de Frágil, que parte la vida con las reliquias ya sumadas, main.gd 462-488)
     if (G.BossRush.begin()) { biome = G.BossRush.biomeAt(0); G.World.setBiome(biome, true); }
-    if (G.Tower.begin(pl)) { biome = G.Tower.floor - 1; G.World.setBiome(biome, true); }
+    if (G.Tower.begin(pl)) { biome = G.Tower.biomeOf(G.Tower.floor); G.World.setBiome(biome, true); }
     G.Modes.startPlayer(pl);   // Frágil: vida máxima a la mitad
     G.Team.begin(pl, perks);   // MicaSurvivor (M5 lote 7): el Modo Equipo (los demás del equipo, con sus vidas)
     G.LocalCoop.begin(pl);     // MicaSurvivor (M5 lote 12a): el Modo Cooperativo (el compañero, de la IA o del jugador 2)
@@ -389,7 +389,9 @@ G.Game = (() => {
     const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills };
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
     // MicaSurvivor (M5 lote 6): los rankings sólo cuentan partidas normales (los otros modos cambian las reglas).
-    const ok = clean() && G.Modes.is('normal');
+    // MicaSurvivor: y sin modificadores (Veloces, Horda... cambian la partida igual que un modo); vale para los
+    // dos rankings (el de upstream, solo y grupo, y el de Magepunk). Los récords personales del modo siguen igual.
+    const ok = clean() && G.Modes.is('normal') && !G.Modes.mods.length;
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
@@ -771,7 +773,7 @@ G.Game = (() => {
     if (G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); endRun(false); return; }
 
     // (M5 lote 8, main.gd 4705-4707: en el Rush cada 150 s desde un bioma al azar; en la Torre, uno por piso)
-    const b = G.Tower.on ? G.Tower.floor - 1 : G.BossRush.on ? G.BossRush.biomeAt(time) : Math.floor(time / 240);
+    const b = G.Tower.on ? G.Tower.biomeOf(G.Tower.floor) : G.BossRush.on ? G.BossRush.biomeAt(time) : Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
       biome = b;
       G.World.setBiome(b);

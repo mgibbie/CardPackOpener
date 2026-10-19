@@ -445,6 +445,27 @@ try {
 		await E(() => { const c = document.querySelector('#cards .card'); if (c) c.click(); });
 		await waitFor(() => E(() => G.Game.state === 'playing'), 3000);
 		await safe();
+		// base-board fix: the floor biomes skip the Judgment ruins (Arceus's arena), like the port (tileworld.gd 58-78:
+		// count() leaves "judgment" out). Each floor 1-30 is walked twice through the real game loop: never the ruins,
+		// always the same biome; floors 1-21 keep their old biome, 22-30 (22 used to be the ruins) shift one along.
+		const walk = async () => {
+			const out = [];
+			for (let f = 1; f <= 30; f++) {
+				// a frame or two of the real game loop with this floor (enemies cleared so the late floors stay fast)
+				const t0 = await E(f => { G.EnemyMgr.clear(); G.Tower.debugFloor(f); return G.Game.st.time; }, f);
+				await waitFor(() => E(t0 => G.Game.st.time > t0 + 0.05, t0), 4000);
+				out.push(await E(() => G.Game.state === 'playing' ? G.World.biome : G.Game.state));
+			}
+			return out;
+		};
+		const fl0 = await E(() => G.Tower.floor);
+		const w1 = await walk(), w2 = await walk();
+		await E(f => G.Tower.debugFloor(f), fl0);
+		await sleep(150);
+		const bio = await E(() => { const T = G.Tiles; return { n: T.BIOMES.length, ruins: T.ARENA + T.ARENA_TYPES.indexOf('judgment') }; });
+		const cyc = [...Array(bio.n).keys()].filter(i => i !== bio.ruins);
+		A(w1.length === 30 && !w1.includes(bio.ruins), 'Tower floors 1-30 never land on the Judgment ruins biome (base-board fix)', JSON.stringify([bio, w1]));
+		A(JSON.stringify(w1) === JSON.stringify(w2) && w1.every((b, i) => b === cyc[i % cyc.length]), 'each floor still maps to one fixed biome: the cycle without the ruins (floors 1-21 unchanged)', JSON.stringify([w1, w2]));
 		await E(() => G.Game.quit());
 		await toMenu();
 	}

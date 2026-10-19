@@ -499,12 +499,15 @@ G.Tower = (() => {
     return lines;
   }
 
+  /** El bioma de un piso (main.gd 4706: uno por piso, siempre el mismo), nunca las Ruinas del Juicio (G.Tiles.CYCLE). */
+  const biomeOf = f => G.Tiles.cycleBiome(f - 1);
+
   return {
     FLOORS, BOSS_AT, K, ADAPT, MAX_RISKS, LEGEND_CHANCE, OFFER, REST, RELIC, RELICS_MAX, ETERNATUS, ETERNATUS_AT, FINAL_DEX,
     BOND_FLOORS, SURGE, LAST, LOG_MAX, REAP, RISKS, LEGENDS, BY, REST_CARDS, SKIP,
     rec, relics, checkpoints, startFloor, cycleStart, reward, repeatCoins, merge, sanitize, def,
     reset, begin, rk, rkAdd, riskCount, dt, cap, rate, adapt, enemyAdded, update, clear, restOpen, restPick, riskCards, riskOpen, riskPick, restDone, apply,
-    takenK, absorb, healK, onKill, hudLine, finish, restHeal,
+    takenK, absorb, healK, onKill, hudLine, finish, restHeal, biomeOf,
     get on() { return on; }, get floor() { return floor; }, get t() { return t; }, get boss() { return boss; }, get phase() { return phase; },
     get risks() { return risks.slice(); }, get shield() { return shield; }, get clears() { return clears; }, get won() { return won; },
     get adaptHp() { return adaptHp; }, get adaptDmg() { return adaptDmg; }, get reap() { return reap; }, get log() { return log.slice(); },
