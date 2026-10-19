@@ -54,6 +54,13 @@ export function cardView(c, withDesc) {
   // beside Use: Pokermon's Pocket packs and its Mega Stone (lovely.toml reserve_and_use). Pokermon never
   // flagged it, so its Save button was missing; mods that label it themselves still do so in view_card.
   if (c.area && c.area === G.pack_cards && c.ability.consumeable && callHook('can_reserve', c).includes(true)) v.reserve = true;
+  // A playing card with a mod's enhancement (Pokermon's Flower / Hazard, MoreFluff's, Bunco's, ...): its name and
+  // text for the card's tooltip (ui/markup.js describePlaying knows only the base enhancements, so a Flower Queen
+  // explained nothing but "+10 chips"), and whether it replaces the rank and suit (SMODS replace_base_card).
+  if (ctr.mod && c.ability.set === 'Enhanced' && c.base && c.base.suit) {
+    try { const d = describe(c); v.enh = { name: d.name, lines: d.lines || [] }; } catch (e) { v.enh = { name: c.ability.name, lines: [] }; }
+    if (ctr.replace_base_card) v.enh.replace = true;
+  }
   callHook('view_card', c, v);
   return v;
 }

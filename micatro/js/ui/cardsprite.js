@@ -40,8 +40,11 @@ export function composeFace(ctx, d, backKey, opts) {
     if (!(modCard && d.atlas && drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H))) drawCell(ctx, 'centers', (center && center.pos) || { x: 1, y: 0 }, 0, 0, FACE_W, FACE_H);
     // (a mod suit's card — Bunco's Fleurons / Halberds — draws from its mod atlas)
     // (a deck skin the player chose for this suit draws instead — ui/skins.js, cosmetic only)
-    if (d.front_atlas && !(center && center.name === 'Stone Card')) { if (!drawSkinFront(ctx, d, null, FACE_W, FACE_H)) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H); }
-    else if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) { if (!drawSkinFront(ctx, d, CARDS[d.front].pos, FACE_W, FACE_H)) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H); }
+    // (a Stone card, or a mod enhancement that replaces the rank and suit — SMODS replace_base_card: Pokermon's
+    // Hazard, MoreFluff's Gemstone — shows no rank / suit)
+    const noBase = (center && center.name === 'Stone Card') || !!(d.enh && d.enh.replace);
+    if (d.front_atlas && !noBase) { if (!drawSkinFront(ctx, d, null, FACE_W, FACE_H)) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H); }
+    else if (d.front && CARDS[d.front] && !noBase) { if (!drawSkinFront(ctx, d, CARDS[d.front].pos, FACE_W, FACE_H)) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H); }
     // (a mod seal — Pokermon's Pink / Silver — draws its cell from the mod's atlas: engine/view.js seal_atlas / seal_pos)
     if (d.seal && d.seal_atlas) drawModCell(ctx, d.seal_atlas, d.seal_pos, 0, 0, FACE_W, FACE_H);
     else if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);

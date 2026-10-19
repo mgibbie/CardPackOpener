@@ -24,7 +24,7 @@
 //   * Celestial "never most played" rerolls freed their discarded planets (Lua leaked them as used).
 
 import {
-  G, P_CENTERS, P_CARDS, P_BLINDS, P_TAGS, P_SEALS, P_CENTER_POOLS, Card, create_card, create_playing_card, copy_card,
+  G, P_CENTERS, P_CARDS, P_BLINDS, P_TAGS, P_SEALS, P_CENTER_POOLS, Card, enhancement_pool, create_card, create_playing_card, copy_card,
   add_joker, poll_edition, pseudoseed, pseudorandom, pseudorandom_element, pseudoshuffle, ease_dollars,
   level_up_hand, card_eval_status_text, localize, emit, P_CARDS_LIST, probability_roll, get_pack, play_sound,
 } from './core.js';
@@ -742,7 +742,7 @@ const hooks = {
       if (n === 'Immolate') { ease_dollars(card.ability.extra.dollars); return true; }
       G.E_MANAGER.add_event(() => {
         const cards = [];
-        const cen_pool = P_CENTER_POOLS.Enhanced.filter((v) => v.key !== 'm_stone');
+        const cen_pool = enhancement_pool().filter((v) => v.key !== 'm_stone');
         for (let i = 1; i <= card.ability.extra; i++) {
           let s, r;
           if (n === 'Familiar') { [r] = pseudorandom_element(['J', 'Q', 'K'], pseudoseed('familiar_create')); [s] = pseudorandom_element(SUITS, pseudoseed('familiar_create')); }

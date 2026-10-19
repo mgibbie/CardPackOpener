@@ -1285,6 +1285,13 @@ export function has_quantum_enhancement(card, key) {
   return ACTIVE_MODS.length > 0 && quantum_enhancements(card).includes(key);
 }
 
+/** The enhancements a "random Enhancement" pick may roll (Familiar / Grim / Incantation, a mod's random
+ *  enhance): P_CENTER_POOLS.Enhanced less any center whose in_pool says no. A mod's special enhancement
+ *  (Pokermon's Flower and Hazard, `in_pool() { return false }`) comes only from its own source — Familiar
+ *  made Flower face cards that nobody could explain. Vanilla centers have no in_pool: unchanged rolls. */
+export function enhancement_pool() {
+  return (P_CENTER_POOLS.Enhanced || []).filter((v) => !(v.in_pool && !v.in_pool(v, { type: 'Enhanced' })));
+}
 export function get_current_pool(_type, _rarity, _legendary, _append) {
   const _pool = [];
   let _starting_pool, _pool_key = '', _pool_size = 0;

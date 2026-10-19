@@ -43,7 +43,7 @@
  *     Knight reset; every (non-debuffed) Knight now resets when the jokers are rearranged.
  */
 import {
-  G, P_CENTERS, P_CENTER_POOLS, create_card, ease_dollars, ease_ante, eval_card, level_up_hand, localize,
+  G, P_CENTERS, P_CENTER_POOLS, enhancement_pool, create_card, ease_dollars, ease_ante, eval_card, level_up_hand, localize,
   math_random, poll_edition, pseudorandom, pseudorandom_element, pseudoseed, play_sound,
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
@@ -329,7 +329,7 @@ J('jmjb', {
         event(() => {
           if (G.pack_cards && G.pack_cards.cards && G.pack_cards.cards[0]) {
             for (const v of G.pack_cards.cards) {
-              if (v.config.center === P_CENTERS.c_base) v.set_ability(P_CENTER_POOLS.Enhanced[math_random(P_CENTER_POOLS.Enhanced.length) - 1]);
+              if (v.config.center === P_CENTERS.c_base) { const pool = enhancement_pool(); v.set_ability(pool[math_random(pool.length) - 1]); }
             }
           }
         });

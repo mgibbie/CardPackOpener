@@ -23,7 +23,6 @@ import {
 import { smods_effect } from '../../js/engine/run.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import { isActive, CONSUMABLE_TYPES, MOD_LOC } from '../../js/mods/registry.js';
-import { describe } from '../../js/engine/describe.js';
 import { AMM, object, chance, prob_vars, say, room, has_no_suit, has_no_rank, has_any_suit } from './util.js';
 
 const hex = (h) => (h ? (String(h).startsWith('#') ? String(h) : '#' + h) : undefined);
@@ -627,11 +626,11 @@ export const hooks = {
       if (e) (ret.post_effects = ret.post_effects || []).push(e);
     }
   },
-  // ---- a playing card's tooltip (the board's describePlaying only knows the base enhancements / editions)
+  // ---- a playing card's tooltip (the board's describePlaying only knows the base editions)
   view_card(card, v) {
     if (!(card.ability.set === 'Default' || card.ability.set === 'Enhanced') || !card.base || !card.base.suit) return;
     const lines = [];
-    if (card.config.center.mod === 'autumncircus') { const d = describe(card); lines.push('{C:attention}' + d.name, ...d.lines); }
+    // (its own enhancements' text comes from engine/view.js cardView, like every mod enhancement's)
     if (gilded(card)) {
       const d = MOD_LOC.descriptions.Edition.e_thac_gilded;
       const vars = editions[0].loc_vars(editions[0], [], card).vars;

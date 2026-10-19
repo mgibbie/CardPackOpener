@@ -2,7 +2,7 @@
 // the Rotarot Tag. The Fool remembers the last Rotarot / Colour card used (lovely/rot_fool.toml:
 // G.GAME.last_rot_tarot_colour, set two events after G.FUNCS.use_card like last_tarot_planet).
 import {
-  G, P_CENTERS, P_CARDS, P_CENTER_POOLS, create_card, create_playing_card, copy_card, localize, play_sound, attention_text,
+  G, P_CENTERS, P_CARDS, P_CENTER_POOLS, enhancement_pool, create_card, create_playing_card, copy_card, localize, play_sound, attention_text,
   pseudorandom_element, pseudoseed, pseudoshuffle, probability_vars, probability_roll, ease_dollars, emit,
 } from '../../js/engine/core.js';
 import { use_card } from '../../js/engine/run.js';
@@ -75,7 +75,7 @@ function suit_cards(card, copier) {
     for (let i = 1; i <= card.ability.val; i++) {
       const [_rank] = pseudorandom_element(['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'], pseudoseed('suitarot'));
       const _suit = card.ability.suit;
-      const cen_pool = P_CENTER_POOLS.Enhanced.filter((v) => v.key !== 'm_stone' && !v.overrides_base_rank);
+      const cen_pool = enhancement_pool().filter((v) => v.key !== 'm_stone' && !v.overrides_base_rank);
       const [center] = pseudorandom_element(cen_pool, pseudoseed('suitarot'));
       cards.push(create_playing_card({ front: P_CARDS[_suit + '_' + _rank], center }, target_area));
     }

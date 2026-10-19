@@ -15,7 +15,7 @@
 // every state change stays in a G.E_MANAGER event in Lua's order.
 
 import {
-  G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card,
+  G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card, enhancement_pool,
   emit, play_sound, attention_text, localize, update_hand_text,
   pseudoseed, pseudorandom, pseudorandom_element, pseudoshuffle,
   ease_dollars, ease_discard, ease_hands_played, ease_ante, level_up_hand,
@@ -303,7 +303,7 @@ Card.prototype.use_consumeable = function (area, copier) {
           }
           _suit = _suit || 'S'; _rank = _rank || 'A';
           const cen_pool = [];
-          for (const v of P_CENTER_POOLS.Enhanced) {
+          for (const v of enhancement_pool()) {
             if (v.key !== 'm_stone') cen_pool.push(v);
           }
           create_playing_card({ front: P_CARDS[_suit + '_' + _rank], center: pseudorandom_element(cen_pool, pseudoseed('spe_card'))[0] }, G.hand);

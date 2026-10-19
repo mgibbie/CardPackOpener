@@ -3,7 +3,7 @@
 // Steamodded utilities the Lua calls, as small Micatro equivalents. AMM's API is re-exported as AMM.
 import { isActive, MOD_LOC } from '../../js/mods/registry.js';
 import {
-  G, P_CENTERS, P_CARDS, P_SEALS, P_CENTER_POOLS, Card, emit, play_sound, card_eval_status_text, localize, juice_card,
+  G, P_CENTERS, P_CARDS, P_SEALS, P_CENTER_POOLS, Card, enhancement_pool, emit, play_sound, card_eval_status_text, localize, juice_card,
   pseudorandom, pseudoseed, pseudorandom_element, create_card, create_playing_card, probability_roll, probability_vars,
   quantum_enhancements,
 } from '../../js/engine/core.js';
@@ -183,7 +183,7 @@ export function favorite_hand() {
   return chosen;
 }
 /** func.pseudorandom_enhancement(): a random Enhanced center (seed 'universe_tarot'). */
-export function pseudorandom_enhancement() { return pseudorandom_element(P_CENTER_POOLS.Enhanced, pseudoseed('universe_tarot'))[0]; }
+export function pseudorandom_enhancement() { return pseudorandom_element(enhancement_pool(), pseudoseed('universe_tarot'))[0]; }
 /**
  * func.force_draw_cards(cards): draw `cards` more cards into a hand that already has 2+ (hand size raised for
  * the draw only; discards_used parked at 666 so first_hand_drawn can't fire again).
