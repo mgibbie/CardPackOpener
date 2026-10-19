@@ -59,6 +59,13 @@ export function mainMenu(o) {
   if (o.challenges) bar.appendChild(btn('Chal&shy;lenges', 'red big b-challenges', () => challengesScreen(o)));
   bar.appendChild(btn('Achieve&shy;ments', 'green big b-achievements', () => achievementsScreen()));
   el.appendChild(bar);
+  // the run on offer came from the account (ui/runsync.js): say where it came from
+  const cl = o.cloud;
+  if (o.saved && cl && (cl.kind === 'account' || cl.kind === 'conflict')) {
+    const where = cl.kind === 'conflict' ? 'Two runs in progress — press Continue to choose one'
+      : (cl.fromOtherDevice ? 'Continue run from another device' : 'Continue run saved to your account') + (cl.account ? ': ' + runWhere(cl.account) : '');
+    el.insertBefore(h('div', 'menu-cloud', '☁ ' + esc(where)), bar.nextSibling);
+  }
   const foot = h('div', 'menu-foot');
   foot.appendChild(h('a', 'back-link', o.direct ? '← Back to the overworld' : '← Magepunk'));
   foot.lastChild.href = o.direct ? '/overworld/' : '/';
@@ -821,6 +828,40 @@ export function resumePrompt(o) {
   return modal(el, { title: o.title, cls: 'resume-modal', onClose: () => { if (!decided && o.onBack) o.onBack(); } });
 }
 
+/** "Ante 4 · Round 11" for a run summary (ui/runsync.js offer()); "N moves" when the ante isn't known. */
+export function runWhere(r) {
+  if (!r) return '';
+  if (r.ante) return `Ante\u00a0${r.ante}` + (r.round ? `\u00a0·\u00a0Round\u00a0${r.round}` : ''); // (one unbreakable group: no dangling dot at phone width)
+  return `${r.actions || 0} moves`;
+}
+/**
+ * Two DIFFERENT runs in progress — this device's and the account's (from another device). Never decides on its own:
+ * the player picks one to continue; the other is backed up on this device (ui/runsync.js) before anything changes.
+ * Back keeps both as they are. o: {local, account (offer() summaries), onLocal(), onAccount(), onBack?}
+ */
+export function runChoicePrompt(o) {
+  const el = h('div', 'resume-prompt run-choice');
+  const deck = (r) => { const c = r && r.back ? (CENTERS[r.back] || MODREG.center(r.back) || {}) : {}; return c.name ? esc(c.name) : 'Run'; };
+  const when = (t) => (t ? new Date(t).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
+  const card = (label, r, cls, btnLabel, fn) => {
+    const c = h('div', 'rc-run ' + cls);
+    c.appendChild(h('div', 'rc-head', esc(label)));
+    c.appendChild(h('div', 'rc-where', `<b class="attn">${esc(runWhere(r))}</b> <span class="rc-deck">·&nbsp;${deck(r)}</span>`));
+    c.appendChild(h('div', 'rc-sub muted', `${r.actions || 0} moves${r.at ? ' · last played ' + esc(when(r.at)) : ''}`));
+    c.appendChild(btn(btnLabel, (cls === 'rc-local' ? 'blue' : 'green') + ' big b-run-' + (cls === 'rc-local' ? 'local' : 'account'), () => { decided = true; closeModal(); fn(); }));
+    return c;
+  };
+  let decided = false;
+  el.appendChild(h('div', 'rz-text', '<p>You have two different runs in progress. Which one do you want to continue?</p>'));
+  const row = h('div', 'rc-runs');
+  row.appendChild(card('On this device', o.local || {}, 'rc-local', 'Continue this one', o.onLocal));
+  const dev = o.account && o.account.device && o.account.device.label ? ` (${o.account.device.label})` : '';
+  row.appendChild(card('From another device' + dev, o.account || {}, 'rc-account', 'Continue this one', o.onAccount));
+  el.appendChild(row);
+  el.appendChild(h('div', 'rz-text muted rc-note', '<p>The other run is kept as a backup on this device.</p>'));
+  return modal(el, { title: 'Two runs in progress', cls: 'resume-modal run-choice-modal', onClose: () => { if (!decided && o.onBack) o.onBack(); } });
+}
+
 // ------------------------------------------------------------- replays
 // The main menu's Replays: this device's last 10 FINISHED runs (whole runs — there are no per-round
 // replays). api: {list() -> [{id, serverId?, meta, when, recipe}], watch(e), remove(e), link(e) -> url|null, loggedIn}
@@ -879,15 +920,10 @@ export function replaysList(api) {
 // One Challenges screen (Balatro's main menu > Challenges): Balatro's 20 challenges, then every ENABLED
 // mod's (the mods chosen in New Run > Mods; their modules load when the screen opens). A challenge is a
 // normal run with its rules (engine/challenge.js), recorded in the run recipe by id, so resume / replay /
-// spectate rebuild it. Finished challenges are ticked per player ('micatro_challenges_v1:<user>').
+// spectate rebuild it. Finished challenges are ticked per player ('micatro_challenges_v1:<user>'), and signed in
+// they are saved on the account (ui/challengesync.js), so they show on every device.
 // o.challenges: {list(modIds) -> Promise<[challenge + info]>, done() -> {id: ts}, start(ch, mods, modOptions)}
-const CH_KEY = (me) => 'micatro_challenges_v1:' + (me || 'guest');
-export function challengeDone(me) {
-  try { const p = JSON.parse(localStorage.getItem(CH_KEY(me)) || '{}'); return p && typeof p === 'object' && !Array.isArray(p) ? p : {}; } catch (e) { return {}; }
-}
-export function markChallengeDone(me, id) {
-  try { const p = challengeDone(me); if (!p[id]) { p[id] = Date.now(); localStorage.setItem(CH_KEY(me), JSON.stringify(p)); } } catch (e) { /* private mode: not remembered */ }
-}
+export { challengeDone, markChallengeDone } from './challengesync.js';
 export function challengesScreen(o) {
   const api = o.challenges;
   const msel = loadModPrefs();

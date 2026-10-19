@@ -183,6 +183,18 @@ b { font-weight: normal; }
 .resume-prompt p { margin: 0; }
 .rz-diff { margin: 0; padding-left: 28px; color: var(--attn); }
 .rz-acts { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+/* two different runs in progress (ui/runsync.js): this device's vs the account's */
+.run-choice { max-width: 900px; }
+.rc-runs { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.rc-run { flex: 1 1 300px; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,.25); border-radius: 14px; padding: 14px 16px; align-items: stretch; }
+.rc-head { font-size: 24px; color: #cfe8ff; }
+.rc-where { font-size: 30px; }
+.rc-sub { font-size: 20px; }
+.rc-run .btn { margin-top: 6px; }
+.rc-note { font-size: 20px; text-align: center; }
+/* the main menu: the run on offer came from the account */
+.menu-cloud { margin-top: 10px; color: #fff; background: rgba(0,0,0,.35); border-radius: 12px; padding: 8px 16px 6px; font-size: 26px; text-align: center; max-width: calc(100% - 24px); }
+.portrait .menu-cloud { font-size: 30px; }
 /* retired cards (a mod update removed them): kept, greyed out */
 .cd-item.retired, .cd-chip.retired, .retired-card { opacity: .55; filter: grayscale(1); }
 .retired-tag { color: #9aa7a9; font-size: 20px; }

@@ -47,6 +47,7 @@ function stickerKeys(view, into = new Set()) {
   return into;
 }
 let Progress = null;    // ui/progress.js (the Nuzlocke / Monotype record + achievements), once loaded
+let RunSync = null;     // ui/runsync.js (the run in progress, saved on the account so it follows the player between devices)
 
 const stage = document.getElementById('stage');
 
@@ -146,6 +147,7 @@ function onAction(a) {
   currentView = view;
   player.push(view, r.events);
   stickerKeys(view, seenJokers);
+  if (RunSync) RunSync.track(session.recipe, view); // (pushed to the account when due: round checkpoints, idle, hide)
   afterAct(view, r.events);
   return r;
 }
@@ -173,6 +175,9 @@ function afterAct(view, events) {
     const unlocked = Progress.recordRunWin(earned, view.stake, Date.now(), runIdOf());
     if (unlocked.length) Progress.achievementToast(stage, unlocked);
   }
+  // the run finished: the account's copy of it is cleared (that run only; a won run going on into Endless reopens it)
+  if (RunSync && winEv && session) RunSync.endedRun('won', session.recipe);
+  if (RunSync && view.over && !overHandled && session) RunSync.endedRun('lost', session.recipe);
   if (won && !winShown) {
     winShown = true;
     whenIdle(() => showWin(view));
@@ -219,7 +224,7 @@ async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions
   if (challenge) cd.challenge = challenge;
   else if (sleeve && !customDeck) cd.sleeve = sleeve;
   const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions, ...cd } : { seed, back, stake, ...cd });
-  beginRun(evs);
+  beginRun(evs, { fresh: true });
 }
 /**
  * Resume the saved run. Its recipe re-simulates from the start, so when a mod (or the engine's rules) changed
@@ -229,7 +234,7 @@ async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions
  */
 async function continueRun() {
   const rec = Engine.Session.saved();
-  if (!rec) { UI.mainMenu(menuOpts()); return; }
+  if (!rec) { showMenu(); return; }
   stopPublishing();
   if (rec.mods && rec.mods.length) {
     const r = await ensureMods(rec.mods);
@@ -239,8 +244,9 @@ async function continueRun() {
   const abandon = (why) => {
     Engine.Session.backupSaved(why);
     Engine.Session.clearSaved();
+    if (RunSync) RunSync.endedRun('abandoned', rec);
     board.toast('Run abandoned');
-    UI.mainMenu(menuOpts());
+    showMenu();
   };
   const resume = (repin) => {
     try { session = Engine.Session.fromRecipe(rec, { repin }); } catch (e) {
@@ -268,7 +274,7 @@ async function continueRun() {
     onAbandon: () => abandon('abandon: ' + Engine.pins.diffText(diff)),
   });
 }
-function beginRun(events) {
+function beginRun(events, { fresh = false } = {}) {
   UI.closeAll();
   overHandled = false; winShown = !!(session.view().won);
   allEvents.length = 0; pendingPublish = [];
@@ -279,7 +285,51 @@ function beginRun(events) {
   player.push(currentView, [], { jump: true });
   sound.play('whoosh', 1, 0.6);
   startPublishing();
-  if (currentView.over) { overHandled = true; whenIdle(() => showGameOver(currentView)); }
+  // the account's copy: a new run replaces it (the old one backed up), a resumed one is pushed if it moved on
+  if (RunSync) { if (fresh) RunSync.startedRun(session.recipe, currentView); else RunSync.track(session.recipe, currentView, { now: true }); }
+  if (currentView.over) { overHandled = true; if (RunSync) RunSync.endedRun('lost', session.recipe); whenIdle(() => showGameOver(currentView)); }
+}
+
+/**
+ * Continue (the main menu): this device's run, the account's (a run from another device, further along or the only
+ * one: its recipe becomes this device's save, the old local copy backed up), or — two DIFFERENT runs — the player
+ * picks one and the other is backed up (ui/runsync.js). Then the normal resume (the version pin prompt included).
+ */
+function continueFlow() {
+  const o = RunSync ? RunSync.offer() : { kind: 'local' };
+  if (o.kind === 'conflict') {
+    UI.runChoicePrompt({
+      local: o.local, account: o.account,
+      onLocal: () => { RunSync.keepLocal(); continueRun(); },
+      onAccount: () => { if (!RunSync.takeAccount()) { board.toast('Could not load that run'); showMenu(); return; } continueRun(); },
+    });
+    return;
+  }
+  if (o.kind === 'account' && RunSync && !RunSync.takeAccount()) { board.toast('Could not load that run'); showMenu(); return; }
+  continueRun();
+}
+/** The main menu; signed in, the account's run is re-read and the menu redrawn if what is on offer changed. */
+function showMenu() {
+  UI.mainMenu(menuOpts());
+  if (RunSync && loggedIn()) {
+    const before = JSON.stringify(RunSync.offer());
+    RunSync.reload().then((o) => { if (JSON.stringify(o) !== before) redrawMenu(); }).catch(() => {});
+  }
+}
+/** Redraw the main menu if it is what is showing (nothing opened over it). */
+function redrawMenu() {
+  const top = document.querySelector('.modal-layer > .modal:last-child');
+  if (top && top.classList.contains('menu-modal')) UI.mainMenu(menuOpts());
+}
+/** A push of this run was refused: say why (the run itself stays saved on this device). */
+function runSyncHalted(why) {
+  const msg = {
+    behind: 'This run is further along on another device — open the main menu to continue from there.',
+    other: 'Your account has a different run in progress from another device. This one is kept on this device — choose at the main menu.',
+    ended: 'This run already finished on another device.',
+    invalid: 'This run is too long to save on your account; it is still saved on this device.',
+  }[why];
+  if (msg && board) board.toast(msg);
 }
 
 // -------------------------------------------------------------- broadcast
@@ -390,7 +440,7 @@ function showGameOver(view) {
   finishPublishing(won, rec);
   UI.gameOver(view, {
     won: false, rankPromise: p, guest: !loggedIn(), net, me: myName(), replay: replayButtons(rec),
-    onNewRun: () => UI.newRunScreen(menuOpts()), onMainMenu: () => UI.mainMenu(menuOpts()),
+    onNewRun: () => UI.newRunScreen(menuOpts()), onMainMenu: () => showMenu(),
   });
 }
 function showWin(view) {
@@ -401,15 +451,22 @@ function showWin(view) {
     won: true, rankPromise: p, guest: !loggedIn(), net, me: myName(), replay: replayButtons(rec),
     onEndless: () => { onAction({ type: 'endless' }); },
     onNewRun: () => { finishPublishing(true, rec); Engine.Session.clearSaved(); UI.newRunScreen(menuOpts()); },
-    onMainMenu: () => { finishPublishing(true, rec); Engine.Session.clearSaved(); UI.mainMenu(menuOpts()); },
+    onMainMenu: () => { finishPublishing(true, rec); Engine.Session.clearSaved(); showMenu(); },
   });
 }
 
 // ------------------------------------------------------------------- menus
+/** Is there a run to Continue (this device's, or the account's from another device), and where it came from. */
+function savedOpts() {
+  if (!Engine) return { saved: false, cloud: null };
+  if (!RunSync) return { saved: !!Engine.Session.saved(), cloud: null };
+  const o = RunSync.offer();
+  return { saved: o.kind !== 'none', cloud: o };
+}
 function menuOpts() {
   return {
-    saved: !!(Engine && Engine.Session.saved()), direct: DIRECT, loggedIn: loggedIn(), net, seed: params.get('seed') || '',
-    onNew: (o) => startRun(o), onContinue: () => continueRun(),
+    ...savedOpts(), direct: DIRECT, loggedIn: loggedIn(), net, seed: params.get('seed') || '',
+    onNew: (o) => startRun(o), onContinue: () => continueFlow(),
     replays: replaysApi(), me: myName(),
     challenges: challengesApi(), sleeves: sleevesApi(),
     progress: Progress,
@@ -475,7 +532,7 @@ function onMenu(what) {
     UI.options({
       speed: player.speed, onSpeed: (s) => player.setSpeed(s), direct: DIRECT,
       onNewRun: MODE === 'normal' ? () => UI.newRunScreen(menuOpts()) : null,
-      onMainMenu: MODE === 'normal' ? () => UI.mainMenu(menuOpts()) : null,
+      onMainMenu: MODE === 'normal' ? () => showMenu() : null,
       mods: v && v.mods && v.mods.length ? v.mods : null,
       modOptions: (session && session.recipe && session.recipe.modOptions) || {},
     });
@@ -605,6 +662,8 @@ async function boot() {
   // the Nuzlocke / Monotype record + achievements: this player's, synced with the account (ui/progress.js)
   Progress = await import('./progress.js').catch(() => null);
   if (Progress) Progress.initProgress(loggedIn() ? myName() : null, net);
+  // completed challenges: this player's, synced with the account (ui/challengesync.js)
+  if (MODE === 'normal') import('./challengesync.js').then((m) => m.initChallengeSync(loggedIn() ? myName() : null, loggedIn() && net && net.fetchChallenges ? { fetch: () => net.fetchChallenges(), push: (d, o) => net.saveChallenges(d, o) } : null)).catch((e) => console.warn('micatro: challenge sync unavailable', e));
   player = new Player(board);
   UI.initScreens(stage);
   if (Engine && Engine.describeBack) UI.setBackDescriber(Engine.describeBack);
@@ -613,7 +672,7 @@ async function boot() {
   addEventListener('keydown', onKey);
   // (replay: LB/RB step, secondary plays/pauses — the controller drives the viewer)
   const padReplay = MODE === 'replay' ? { toggle: () => replayCtrl && replayCtrl.toggle && replayCtrl.toggle(), step: (d) => replayCtrl && replayCtrl.ready && (d < 0 ? replayCtrl.stepBack() : replayCtrl.stepForward()) } : null;
-  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => UI.mainMenu(menuOpts()), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
+  try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => showMenu(), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }
   window.__micatro = {
     get session() { return session; },
     view: () => (session ? viewOf() : board.view),
@@ -626,11 +685,20 @@ async function boot() {
     newRun: (o) => startRun(o || {}),
     get replay() { return replayCtrl; },
     get progress() { return Progress; },
+    get runSync() { return RunSync; },
     ready: true,
   };
   if (MODE === 'spectate') { startSpectating(); return; }
   if (MODE === 'replay') { startReplayMode(); return; }
   if (!Engine) { board.toast('The game failed to load. Please refresh.'); return; }
+  // the run in progress: signed in, also saved on the account (ui/runsync.js) — read it before the menu offers
+  // Continue (briefly: a slow network redraws the menu when it arrives)
+  RunSync = await import('./runsync.js').catch((e) => { console.warn('micatro: run sync unavailable', e); return null; });
+  if (RunSync) {
+    const ready = RunSync.initRunSync({ me: loggedIn() ? myName() : null, net, Session: Engine.Session, onHalt: runSyncHalted });
+    const first = await Promise.race([ready.then(() => true), new Promise((r) => setTimeout(() => r(false), 3000))]);
+    if (!first) ready.then(() => redrawMenu()).catch(() => {});
+  }
   UI.mainMenu(menuOpts());
 }
 boot().catch((e) => { console.error('micatro boot failed', e); });

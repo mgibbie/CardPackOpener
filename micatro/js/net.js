@@ -285,3 +285,41 @@ export async function saveProgress(progress, { keepalive = false } = {}) {
 	try { return (await MP.call('micatro-progress-put', { progress }, keepalive ? { keepalive: true } : {})) || { error: 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }
+
+// ---------------------------------------------------------------- completed challenges
+// The ticked challenges (ui/challengesync.js), account-saved in the row micatro_challenges:<user> = {done: {id: ts}}.
+// The server MERGES a put (union; earliest time per id) and returns the merged map, so nothing is un-completed.
+//   fetchChallenges() -> {done, rev} | {error}
+//   saveChallenges(done, {keepalive}) -> {ok, done, rev} | {error}
+export async function fetchChallenges() {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-challenges-get', {}); return d && !d.error && d.done && typeof d.done === 'object' && !Array.isArray(d.done) ? { done: d.done, rev: d.rev || 0 } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function saveChallenges(done, { keepalive = false } = {}) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-challenges-put', { done }, keepalive ? { keepalive: true } : {}); return d && d.ok && d.done && typeof d.done === 'object' ? d : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+
+// ---------------------------------------------------------------- the run in progress
+// ONE active run per account (ui/runsync.js), the row micatro_run:<user>, so a run follows the player between devices.
+//   fetchRun() -> {rev, run: {id, recipe, updatedAt, device, progress} | null, ended: [{id, actions, outcome, at}]} | {error}
+//   saveRun({recipe, rev, device, progress, replace?, endless?, restore?}, {keepalive}) -> {ok, rev, wrote, run}
+//       | {error: 'stale' | 'other' | 'behind' | 'ended', rev, run} (refused: see server/mp.mjs) | {error} (network)
+//   clearRun({id, outcome, actions}) -> {ok, rev} | {error: 'other', rev, run} | {error}
+export async function fetchRun() {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-run-get', {}); return d && !d.error && typeof d.rev === 'number' ? { rev: d.rev, run: d.run || null, ended: Array.isArray(d.ended) ? d.ended : [] } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function saveRun(body, { keepalive = false } = {}) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { return (await MP.call('micatro-run-put', body, keepalive ? { keepalive: true } : {})) || { error: 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function clearRun({ id, outcome, actions = 0 } = {}) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { return (await MP.call('micatro-run-clear', { id, outcome, actions })) || { error: 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}

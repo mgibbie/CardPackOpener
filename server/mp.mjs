@@ -86,6 +86,19 @@ const MICATRO_STICKERS_MAX = 5000;        // joker keys per player (vanilla + ev
 const MICATRO_STICKERS_BYTES = 700_000;   // one serialized `wins` map (5000 64-char keys x 4 categories is ~525 KB)
 const MICATRO_STICKER_KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
 const MICATRO_STICKER_CATS = ['win', 'poke', 'nuz', 'mono', 'both'];
+// MICATRO completed challenges (micatro/js/ui/challengesync.js): one durable row per player,
+// `micatro_challenges:<user>` = {v:1, done: {challengeId: first completion time}, rev, updatedAt}. A put MERGES
+// (union; the EARLIEST time per id), so a stale or second device can never un-complete a challenge.
+const MICATRO_CHALLENGES_MAX = 1000;      // ids per player (Balatro's 20 + every mod's is well under 200)
+const MICATRO_CHALLENGE_ID_RE = /^[A-Za-z0-9_.-]{1,64}$/;
+// MICATRO in-progress run (micatro/js/ui/runsync.js): ONE active run per player, so it follows them between
+// devices. `micatro_run:<user>` = {v:1, rev, run: {id, recipe, updatedAt, device, progress: {ante, round, actions}} | null,
+// ended: [{id, actions, outcome, at}] (the last few runs that FINISHED, so a late put can't resurrect them), updatedAt}.
+// The run's id is seed + ':' + started (the recipe's own fields). A long won run (~860 actions) is ~25 KB; an
+// Endless marathon at the replay cap (20000 actions) ~600 KB.
+const MICATRO_RUN_BYTES = 700_000;        // one serialized recipe
+const MICATRO_RUN_ENDED = 10;             // finished-run tombstones kept
+const MICATRO_RUN_OUTCOMES = ['won', 'lost', 'abandoned', 'replaced'];
 const stickerLevel = (v) => (Number.isInteger(v) && v >= 1 && v <= 8 ? v : 0);
 // one joker's record, either form -> {cat: level}; null when it is not a valid, non-empty record
 // (`loose`: skip a bad category instead of refusing the record — for rows already stored)
@@ -427,6 +440,10 @@ const RATE_LIMITS = {
 	// the Nuzlocke / Monotype record + achievements: read at boot / sign-in, written after a win (merged, never backwards)
 	'micatro-progress-get': [30, 60_000], 'micatro-progress-put': [20, 60_000],
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
+	// completed challenges: a load per boot + a push per completed challenge (merged, never backwards)
+	'micatro-challenges-get': [30, 60_000], 'micatro-challenges-put': [20, 60_000],
+	// the in-progress run: a load per boot / menu; the client pushes at round checkpoints (~1 per 20 s at most) and on hide
+	'micatro-run-get': [30, 60_000], 'micatro-run-put': [30, 60_000], 'micatro-run-clear': [20, 60_000],
 	// MicaSurvivor cloud save: the client debounces (purchases ~3s, run end, else ~30s) — a brake on floods
 	'micasurvivor-save-put': [30, 60_000], 'micasurvivor-save-get': [30, 60_000],
 	'micasurvivor-exp-save-put': [30, 60_000], 'micasurvivor-exp-save-get': [30, 60_000], // MicaSurvivor Expedition (DLC D0b)
@@ -2325,6 +2342,133 @@ export default async function handler(req, env) {
 			if (await store.setIfRev(key, { rev: rev + 1, progress: merged, updated_at: Date.now() }, rev)) return json({ ok: true, progress: merged, wrote: true });
 		}
 		return json({ error: 'busy, retry' }, 409);
+	}
+
+	// MICATRO completed challenges (micatro/js/ui/challengesync.js): exact key `micatro_challenges:<username>`, durable.
+	// get -> {done: {id: ts}, rev}. put {done} MERGES: the union of ids, each keeping its EARLIEST completion time, so
+	// nothing is ever un-completed; written with compare-and-set on `rev` (re-merged on a lost race) and only when
+	// something changed. Ids are checked by shape (the registry lives in the client: mods register their own).
+	const storedChallenges = (row) => {
+		const out = Object.create(null);
+		const had = row && row.done && typeof row.done === 'object' && !Array.isArray(row.done) ? row.done : {};
+		for (const k of Object.keys(had)) if (MICATRO_CHALLENGE_ID_RE.test(k) && k !== '__proto__' && Number.isInteger(had[k]) && had[k] > 0) out[k] = had[k];
+		return out;
+	};
+	if (action === 'micatro-challenges-get') {
+		const row = await store.get('micatro_challenges:' + username);
+		return json({ done: storedChallenges(row), rev: (row && row.rev) || 0 });
+	}
+	if (action === 'micatro-challenges-put') {
+		const inc = body.done;
+		if (!inc || typeof inc !== 'object' || Array.isArray(inc)) return json({ error: 'done must be an object' }, 400);
+		const ids = Object.keys(inc);
+		if (ids.length > MICATRO_CHALLENGES_MAX) return json({ error: `at most ${MICATRO_CHALLENGES_MAX} challenges`, max: MICATRO_CHALLENGES_MAX }, 413);
+		const now = Date.now();
+		for (const id of ids) {
+			const ts = inc[id];
+			if (!MICATRO_CHALLENGE_ID_RE.test(id) || id === '__proto__' || !Number.isInteger(ts) || ts <= 0 || ts > now + 86_400_000) return json({ error: 'bad challenge entry' }, 400);
+		}
+		const key = 'micatro_challenges:' + username;
+		for (let attempt = 0; attempt < 5; attempt++) {
+			const prev = await store.get(key);
+			const rev = (prev && prev.rev) || 0;
+			const merged = storedChallenges(prev);
+			let changed = false;
+			for (const id of ids) if (!merged[id] || inc[id] < merged[id]) { merged[id] = inc[id]; changed = true; }
+			if (!changed) return json({ ok: true, done: merged, rev, changed: false });
+			if (Object.keys(merged).length > MICATRO_CHALLENGES_MAX) return json({ error: `at most ${MICATRO_CHALLENGES_MAX} challenges`, max: MICATRO_CHALLENGES_MAX }, 413);
+			if (await store.setIfRev(key, { v: 1, done: merged, rev: rev + 1, updatedAt: now }, rev)) return json({ ok: true, done: merged, rev: rev + 1, changed: true });
+		}
+		return json({ error: 'busy, retry' }, 503);
+	}
+
+	// MICATRO in-progress run (micatro/js/ui/runsync.js): exact key `micatro_run:<username>`, durable, ONE active run.
+	//   get -> {rev, run: {id, recipe, updatedAt, device, progress} | null, ended: [{id, actions, outcome, at}]}
+	//   put {recipe, rev, device?, progress?, replace?, endless?} — compare-and-set on `rev` (the row's rev the client
+	//       last saw; 0 = none). Refused (409, with the stored run's summary so the client can decide):
+	//         'stale'  — the row changed since that rev (the client re-reads and retries if it is still ahead)
+	//         'other'  — the account holds a DIFFERENT run (another seed/started) and `replace` doesn't name it:
+	//                    a device never silently overwrites another's run (the player chooses)
+	//         'behind' — the same run, but the stored copy has MORE actions (a further-along device wins)
+	//         'ended'  — this run already finished (won / lost / abandoned) — a late put can't resurrect it; only a
+	//                    WON run going on into Endless (`endless`, past the win's action count) reopens, and a run
+	//                    another device REPLACED comes back only on the player's explicit choice (`restore`)
+	//       Equal progress on the same run writes nothing (D1 writes are budgeted).
+	//   clear {id, outcome} — the run finished: clears ONLY that run (a different stored run is left alone, 409
+	//       'other'), and leaves a tombstone for it in `ended`.
+	// The action count is the recipe's own (never the client's word); ante / round are display-only.
+	const runSummary = (r) => (r ? { id: r.id, updatedAt: r.updatedAt || 0, device: r.device || null, progress: r.progress || null } : null);
+	const runEnded = (row) => (row && Array.isArray(row.ended) ? row.ended.filter((e) => e && typeof e.id === 'string').slice(-MICATRO_RUN_ENDED) : []);
+	if (action === 'micatro-run-get') {
+		const row = await store.get('micatro_run:' + username);
+		return json({ rev: (row && row.rev) || 0, run: (row && row.run) || null, ended: runEnded(row) });
+	}
+	if (action === 'micatro-run-put') {
+		let text;
+		try { text = JSON.stringify(body.recipe); } catch { text = ''; }
+		if (!text) return json({ error: 'not a run recipe' }, 400);
+		if (text.length > MICATRO_RUN_BYTES) return json({ error: 'run too large', max: MICATRO_RUN_BYTES }, 413);
+		const recipe = body.recipe;
+		if (!recipe || typeof recipe !== 'object' || Array.isArray(recipe) || typeof recipe.v !== 'number' || typeof recipe.seed !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(recipe.seed)
+			|| (recipe.started !== undefined && !(Number.isInteger(recipe.started) && recipe.started >= 0 && recipe.started <= 1e13))
+			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')
+			|| (recipe.modVersions !== undefined && !cleanModVersions(recipe.modVersions, false))
+			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))) return json({ error: 'not a run recipe' }, 400);
+		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
+		const id = recipe.seed + ':' + (recipe.started || 0);
+		const actions = recipe.actions.length;
+		const int = (v, hi) => Math.max(0, Math.min(hi, Math.floor(Number(v)) || 0));
+		const p = body.progress && typeof body.progress === 'object' ? body.progress : {};
+		const progress = { ante: int(p.ante, 100000), round: int(p.round, 1000000), actions };
+		const d = body.device && typeof body.device === 'object' ? body.device : {};
+		const device = { id: /^[a-z0-9]{6,24}$/.test(String(d.id || '')) ? String(d.id) : '', label: String(d.label || '').replace(/[\u0000-\u001f<>]/g, '').slice(0, 24) };
+		const key = 'micatro_run:' + username;
+		const row = await store.get(key);
+		const rev = (row && row.rev) || 0;
+		const cur = (row && row.run) || null;
+		let ended = runEnded(row);
+		const tomb = ended.find((e) => e.id === id);
+		// (a run another device REPLACED may come back only on the player's explicit choice: `restore`)
+		const reopen = tomb && ((body.endless === true && tomb.outcome === 'won' && actions > (tomb.actions || 0)) || (body.restore === true && tomb.outcome === 'replaced'));
+		if (tomb && !reopen) return json({ error: 'ended', rev, run: runSummary(cur), ended: tomb }, 409);
+		if ((+body.rev || 0) !== rev) return json({ error: 'stale', rev, run: runSummary(cur) }, 409);
+		if (cur && cur.id !== id && body.replace !== cur.id) return json({ error: 'other', rev, run: runSummary(cur) }, 409);
+		if (cur && cur.id === id) {
+			const had = (cur.progress && cur.progress.actions) || 0;
+			if (actions < had) return json({ error: 'behind', rev, run: runSummary(cur) }, 409);
+			if (actions === had) return json({ ok: true, rev, wrote: false, run: runSummary(cur) });
+		}
+		if (tomb) ended = ended.filter((e) => e.id !== id); // a won run going on into Endless
+		// (a replaced run is remembered as ended too: its other device's late puts can't take the slot back)
+		if (cur && cur.id !== id) ended = [...ended.filter((e) => e.id !== cur.id), { id: cur.id, actions: (cur.progress && cur.progress.actions) || 0, outcome: 'replaced', at: Date.now() }].slice(-MICATRO_RUN_ENDED);
+		const run = { id, recipe, updatedAt: Date.now(), device, progress };
+		if (!(await store.setIfRev(key, { v: 1, rev: rev + 1, run, ended, updatedAt: run.updatedAt }, rev))) {
+			const now2 = await store.get(key);
+			return json({ error: 'stale', rev: (now2 && now2.rev) || 0, run: runSummary(now2 && now2.run) }, 409);
+		}
+		return json({ ok: true, rev: rev + 1, wrote: true, run: runSummary(run) });
+	}
+	if (action === 'micatro-run-clear') {
+		const id = String(body.id || '');
+		if (!/^[A-Za-z0-9_-]{1,32}:\d{1,13}$/.test(id)) return json({ error: 'bad run id' }, 400);
+		const outcome = MICATRO_RUN_OUTCOMES.includes(body.outcome) ? body.outcome : 'abandoned';
+		const int = (v) => Math.max(0, Math.min(MICATRO_REPLAY_ACTIONS, Math.floor(Number(v)) || 0));
+		const key = 'micatro_run:' + username;
+		for (let attempt = 0; attempt < 5; attempt++) {
+			const row = await store.get(key);
+			const rev = (row && row.rev) || 0;
+			const cur = (row && row.run) || null;
+			if (cur && cur.id !== id) return json({ error: 'other', rev, run: runSummary(cur) }, 409);
+			// (a device that fell BEHIND another in this run never clears the further-along copy)
+			if (cur && int(body.actions) < ((cur.progress && cur.progress.actions) || 0)) return json({ error: 'behind', rev, run: runSummary(cur) }, 409);
+			const ended = runEnded(row);
+			const had = ended.find((e) => e.id === id);
+			const at = Math.max(int(body.actions), (cur && cur.progress && cur.progress.actions) || 0);
+			if (!cur && had && had.actions >= at && had.outcome === outcome) return json({ ok: true, rev, wrote: false });
+			const next = [...ended.filter((e) => e.id !== id), { id, actions: at, outcome, at: Date.now() }].slice(-MICATRO_RUN_ENDED);
+			if (await store.setIfRev(key, { v: 1, rev: rev + 1, run: null, ended: next, updatedAt: Date.now() }, rev)) return json({ ok: true, rev: rev + 1, wrote: true });
+		}
+		return json({ error: 'busy, retry' }, 503);
 	}
 
 	// MICASURVIVOR cloud save (micasurvivor/js/core/db.js, Magepunk mode). Exact key

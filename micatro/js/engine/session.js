@@ -118,6 +118,18 @@ export class Session {
     } catch (e) { return false; }
   }
   static savedBackup() { try { return JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null'); } catch (e) { return null; } }
+  /** Back up ANY recipe (e.g. the account's copy of a run another device played) into the backup slot. */
+  static backupRecipe(recipe, reason) {
+    try {
+      if (!recipe || typeof recipe !== 'object') return false;
+      localStorage.setItem(BACKUP_KEY, JSON.stringify({ recipe, reason: String(reason || ''), when: Date.now() }));
+      return true;
+    } catch (e) { return false; }
+  }
+  /** Make `recipe` this device's saved run (the account's copy, chosen to continue). Back the old one up first. */
+  static writeSaved(recipe) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(recipe)); return true; } catch (e) { return false; }
+  }
 }
 
 // ------------------------------------------------------------------ replays

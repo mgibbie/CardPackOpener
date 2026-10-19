@@ -226,3 +226,25 @@ silently change every old run that is resumed or watched. Each recipe now record
 3. Re-record the seeded mod tests and fuzz baselines in the same PR, naming the version in the fixture.
 4. Tests: `micatro/tests/modpin_test.mjs` (engine), `overworld/tests/micatro_mod_version_pin_test.mjs`
    (browser + server); add the upgrade's own renamed / removed keys to its mod test.
+
+## 11. What follows the player between devices (2026-10-19)
+
+Signed in, these are saved on the Magepunk account (D1, `server/mp.mjs`) as well as in the browser, so they
+follow the player between PC and phone. Guests keep everything in this browser; the first account that signs in
+there takes the guest's data once (merged, never deleted).
+
+| Data | Where | How it syncs |
+|---|---|---|
+| **Run in progress** | `micatro_run:<user>` (one active run) + `micatro_run_v1` | `ui/runsync.js`: pushed at round checkpoints / once a minute / on hide (~45-55 writes for an 8-ante run). Compare-and-set on `rev`; a behind or different run never overwrites; cleared on win / loss / abandon (that run only, tombstoned). Two different runs: the player picks, the other is backed up to `micatro_run_backup_v1`. |
+| **Completed challenges** | `micatro_challenges:<user>` + `micatro_challenges_v1:<user>` | `ui/challengesync.js`: union, earliest time kept |
+| Win (stake) stickers | `micatro_stickers:<user>` | max per joker and category |
+| Nuzlocke / Monotype record + achievements | `micatro_progress:<user>` | counts max, union |
+| Custom decks | `micatrodecks:<user>` | CAS on `rev`, merge on conflict |
+| Leaderboard rows, uploaded replays | `runboard:*`, `mreplay:*` | server-side |
+
+**Device-local only:** options (speed, sound, stake stickers on/off), deck skins, the New Run screen's last
+picks and mod selection, the Replays list (this device's last 10 runs; a shared one lives on the server), the
+one run backup slot (`micatro_run_backup_v1`), the device id (`micatro_device_v1`).
+
+Tests: `overworld/tests/micatro_runsync_server_test.mjs` (server), `overworld/tests/micatro_runsync_test.mjs`
+(two browser contexts as two devices on one account).
