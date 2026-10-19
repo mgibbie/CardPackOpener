@@ -1046,4 +1046,7 @@ changes the base game's enemy pool.
   Gen 5–8 ones now use their overworld follower sprites (re-packed, scaled; `tools/micasurvivor/follow_sprites.py`):
   **1007**. The 18 Gen 9 ones were to use SpriteCollab portraits, transparent ones only; all their portraits have
   an opaque background, so they stay pending (`micasurvivor/README.md`, "Batch B1b").
+- **B1c status (2026-10-19, built, not merged):** the owner chose the 18 Gen 9 ones' transparent battle sprites
+  (front mirrored for facing, back for Up; `tools/micasurvivor/battle_sprites.py`): **1025**, nothing pending
+  (`micasurvivor/README.md`, "Batch B1c").
 - **Mega sprites:** the Legends Z-A Megas also need Mega sheets for the League (part of D4c).
