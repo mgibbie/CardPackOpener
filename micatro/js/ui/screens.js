@@ -373,7 +373,7 @@ export function howTo() {
     <p><b class="red">Discard</b> unwanted cards to draw new ones (limited per round).</p>
     <p>Beat a blind to earn <b class="money">$</b> — plus $1 per unused hand and interest on your savings — then spend it in the <b class="attn">Shop</b> on <b class="attn">Jokers</b>, <b style="color:#a782d1">Tarot</b>, <b style="color:#13afce">Planet</b> and <b style="color:#4584fa">Spectral</b> cards, Vouchers and booster packs.</p>
     <p>Each <b class="attn">Ante</b> is a Small Blind, a Big Blind and a <b class="red">Boss Blind</b> with a nasty twist. Skip a blind to take its <b class="attn">Tag</b> instead. Beat the Ante 8 boss to win.</p>
-    <p class="muted">Tap a card to select it · drag to reorder · long-press (or hover) for details.<br>Keys: Enter play · D discard · R/S sort · 1–9 pick cards · V deck · I run info · Esc options</p>`;
+    <p class="muted">Tap a card to select it · drag to reorder · long-press (or hover) for details.<br>Keys: Enter play · D discard · R/S sort · 1–9, 0 pick cards · right-click let go of picks · hold R restart · V deck · I run info · Esc options</p>`;
   modal(el, { title: 'How to play', cls: 'howto-modal' });
 }
 
@@ -542,6 +542,7 @@ export function options(o) {
   const sk = skinsBox();
   if (sk) el.appendChild(sk);
   if (o.mods && o.mods.length) el.appendChild(activeModsBox(o.mods, o.modOptions || {}));
+  el.appendChild(keysBox());
   const acts = h('div', 'opt-acts');
   if (o.onNewRun) acts.appendChild(btn('New Run', 'blue wide', () => { closeAll(); o.onNewRun(); }));
   if (o.onMainMenu) acts.appendChild(btn('Main Menu', 'orange wide', () => { closeAll(); o.onMainMenu(); }));
@@ -550,6 +551,22 @@ export function options(o) {
   acts.appendChild(back);
   el.appendChild(acts);
   modal(el, { title: 'Options', cls: 'opt-modal' });
+}
+
+/** Options > Keyboard: the desktop shortcuts (ui/main.js onKey; right-click: ui/board.js). Hidden on touch screens. */
+export const KEYS = [
+  ['1–9, 0', 'Pick the 1st–10th card in hand (again to let go); in a pack, its cards'],
+  ['Right-click', 'Let go of all chosen cards'],
+  ['Enter / P', 'Play hand'], ['D', 'Discard'], ['C', 'Clear the selection'],
+  ['R / S', 'Sort the hand by rank / suit'], ['R', 'Reroll (in the shop)'], ['Hold R', 'Restart the run (same deck and stake)'],
+  ['Enter / Space', 'Select the blind · cash out · next round'], ['S', 'Skip the blind / the pack'],
+  ['V', 'Deck'], ['I', 'Run info'], ['Esc', 'Options'],
+];
+function keysBox() {
+  const box = h('div', 'opt-keys');
+  box.appendChild(h('div', 'am-title', 'Keyboard'));
+  box.appendChild(h('div', 'kb-grid', KEYS.map(([k, t]) => `<b>${esc(k)}</b><span>${esc(t)}</span>`).join('')));
+  return box;
 }
 
 // ------------------------------------------------------------ deck skins
