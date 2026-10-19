@@ -308,10 +308,26 @@ function stopPublishing() {
 }
 function setWatchers(n, names) {
   let el = document.getElementById('watchers');
-  if (!el) { el = document.createElement('div'); el.id = 'watchers'; el.className = 'watchers'; document.body.appendChild(el); }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'watchers'; el.className = 'watchers'; document.body.appendChild(el);
+    addEventListener('resize', placeWatchers);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', placeWatchers);
+  }
   el.style.display = n > 0 ? '' : 'none';
   el.textContent = `👁 ${n} watching`;
   el.title = (names || []).join(', ');
+  placeWatchers();
+}
+/** The "N watching" chip sits just LEFT of the site's settings / bell buttons (#mp-topbar), on their row: free
+ *  space above the HUD at every size (under them it covered the portrait Round score box). No top bar: the CSS spot. */
+function placeWatchers() {
+  const el = document.getElementById('watchers');
+  if (!el || el.style.display === 'none') return;
+  const tb = document.getElementById('mp-topbar');
+  const r = tb && tb.getBoundingClientRect();
+  if (!r || r.width < 2) { el.style.top = el.style.right = ''; return; }
+  el.style.right = Math.max(0, Math.round(innerWidth - r.left + 8)) + 'px';
+  el.style.top = Math.max(0, Math.round(r.top + (r.height - el.offsetHeight) / 2)) + 'px';
 }
 function chatWrap() {
   let el = document.getElementById('chat-wrap');
