@@ -14,6 +14,8 @@ import puppeteer from 'puppeteer-core';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
+// (mod art missing from this checkout — a worktree: gitignored — is served read-only from the main checkout; MICATRO_MAIN overrides)
+const MAIN = process.env.MICATRO_MAIN || path.resolve(ROOT, '../..');
 const CHROME = process.env.CHROME || [
 	'C:/Program Files/Google/Chrome/Application/chrome.exe',
 	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -31,7 +33,13 @@ const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') { let raw = ''; for await (const c of req) raw += c; res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, state: STATE, top: [], messages: [] })); return; }
 	const f = u.endsWith('/') ? u + 'index.html' : u;
-	fs.readFile(path.join(ROOT, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
+	const send = (d) => { res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); };
+	const nf = () => { res.writeHead(404); res.end('nf'); };
+	fs.readFile(path.join(ROOT, f), (e, d) => {
+		if (!e) return send(d);
+		if (!f.startsWith('/micatro/mods/') || path.resolve(MAIN) === ROOT || f.includes('..')) return nf();
+		fs.readFile(path.join(MAIN, f), (e2, d2) => (e2 ? nf() : send(d2)));
+	});
 });
 await new Promise(r => server.listen(PORT, r));
 

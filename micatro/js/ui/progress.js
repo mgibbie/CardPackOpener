@@ -10,6 +10,9 @@
 //     signed-in boot (merged), then the guest copy is cleared.
 //   * Only the player's own live run records (never a replay or a spectated run); seeded and challenge runs
 //     earn nothing (the engine marks them not eligible, like the win stickers).
+//   * A run counts ONCE (recordRunWin's runId: the ids of the last runs recorded stay in this browser), and a
+//     signed-in push that fails is retried with backoff (and on 'online' / a keepalive at 'pagehide'); the
+//     next boot's sync() pushes anything still missing too.
 export const TYPES = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Colorless', 'Dark', 'Metal', 'Fairy', 'Dragon', 'Earth'];
 /** Pokermon's type colours (systems/types.js TYPE_COLOURS) — copied so the board/leaderboard can draw them without the mod loaded. */
 export const TYPE_COLOURS = {
@@ -50,6 +53,10 @@ let progress = emptyProgress();
 let syncing = null;
 const listeners = new Set();
 const KEY = (u) => 'micatro_progress_v1:' + (u || 'guest');
+const RUNS_KEY = (u) => 'micatro_progress_runs_v1:' + (u || 'guest');
+const RUNS_MAX = 50;
+const RETRY_MIN_MS = 2000, RETRY_MAX_MS = 60_000;
+let pushT = null, pushBackoff = RETRY_MIN_MS, pushing = false, pushDirty = false, pushGen = 0;
 const readLocal = (u) => { try { const p = JSON.parse(localStorage.getItem(KEY(u)) || 'null'); return p && typeof p === 'object' && !Array.isArray(p) ? mergeProgress(p, {}) : null; } catch (e) { return null; } };
 const writeLocal = () => { try { localStorage.setItem(KEY(user), JSON.stringify(progress)); } catch (e) { /* private mode: not remembered */ } };
 const bump = () => { for (const cb of listeners) { try { cb(progress); } catch (e) { /* ignore */ } } };
@@ -62,6 +69,7 @@ export const monoWins = (p = progress) => Object.values(p.mono || {}).reduce((a,
 
 /** Load this player's record (+ sync with the account when signed in). netApi: {isLoggedIn, fetchProgress, saveProgress}. */
 export function initProgress(username, netApi) {
+  clearTimeout(pushT); pushT = null; pushDirty = false; pushBackoff = RETRY_MIN_MS; pushGen++;
   user = (username && String(username)) || 'guest';
   net = netApi || null;
   progress = readLocal(user) || emptyProgress();
@@ -91,9 +99,48 @@ export function sync() {
   })();
   return syncing;
 }
+/** Push the record to the account; a failure (offline, server error) is retried with backoff until it lands. */
 function push() {
   if (!signedIn() || !net.saveProgress) return;
-  Promise.resolve(net.saveProgress(progress)).then((w) => { if (w && w.progress) { progress = mergeProgress(progress, w.progress); writeLocal(); bump(); } }).catch(() => {});
+  pushDirty = true;
+  schedulePush(0);
+}
+function schedulePush(ms) {
+  clearTimeout(pushT);
+  pushT = setTimeout(doPush, ms);
+}
+async function doPush() {
+  pushT = null;
+  if (pushing || !pushDirty || !signedIn() || !net.saveProgress) return;
+  const gen = pushGen;
+  pushing = true; pushDirty = false;
+  let ok = false;
+  try {
+    const w = await net.saveProgress(progress);
+    if (gen !== pushGen) return; // (another player signed in meanwhile)
+    if (w && !w.error && (w.ok || w.progress)) {
+      ok = true;
+      if (w.progress) { progress = mergeProgress(progress, w.progress); writeLocal(); bump(); }
+    }
+  } catch (e) { /* offline: retried below */ } finally { pushing = false; }
+  if (gen !== pushGen) return;
+  if (!ok) { pushDirty = true; schedulePush(pushBackoff); pushBackoff = Math.min(RETRY_MAX_MS, pushBackoff * 2); return; }
+  pushBackoff = RETRY_MIN_MS;
+  if (pushDirty) schedulePush(0);
+}
+/** Debug / tests: the account push state. */
+export const progressPushState = () => ({ dirty: pushDirty, pushing, retrying: !!pushT, backoff: pushBackoff });
+try {
+  addEventListener('online', () => { if (pushDirty) { pushBackoff = RETRY_MIN_MS; schedulePush(0); } });
+  addEventListener('pagehide', () => { if (pushDirty && !pushing && signedIn() && net.saveProgress) { try { net.saveProgress(progress, { keepalive: true }); } catch (e) { /* ignore */ } } });
+} catch (e) { /* no window */ }
+
+/** Has this run (its id) already been recorded here? */
+const readRuns = () => { try { const a = JSON.parse(localStorage.getItem(RUNS_KEY(user)) || '[]'); return Array.isArray(a) ? a.filter((x) => typeof x === 'string') : []; } catch (e) { return []; } };
+export const runRecorded = (runId) => !!runId && readRuns().includes(String(runId));
+function markRun(runId) {
+  if (!runId) return;
+  try { localStorage.setItem(RUNS_KEY(user), JSON.stringify([String(runId), ...readRuns().filter((x) => x !== String(runId))].slice(0, RUNS_MAX))); } catch (e) { /* not remembered */ }
 }
 
 /** The achievement ids this record has earned (whether or not they are unlocked yet). */
@@ -108,10 +155,13 @@ function earnedIds(p) {
 }
 /**
  * A won run's badges (view.run_badges.earned = {nuz, mono: 'Fire' | null}) at this stake -> the record grows.
+ * `runId` (the run's replay id): a run already recorded in this browser is not counted again.
  * Returns the achievements this win unlocked (for the toast).
  */
-export function recordRunWin(earned, stake, now = Date.now()) {
+export function recordRunWin(earned, stake, now = Date.now(), runId = null) {
   if (!earned || (!earned.nuz && !earned.mono)) return [];
+  if (runId && runRecorded(runId)) return []; // (a run counts once)
+  markRun(runId);
   const p = mergeProgress(progress, {});
   const mono = earned.mono && TYPES.includes(earned.mono) ? earned.mono.toLowerCase() : null;
   if (earned.nuz) { p.nuz += 1; p.nuzStake = Math.max(p.nuzStake, Math.min(99, Math.max(1, Math.floor(+stake || 1)))); }

@@ -16,12 +16,22 @@ export { ENGINE_CONTENT_REV } from '../mods/pins.js';
 const SAVE_KEY = 'micatro_run_v1';
 const BACKUP_KEY = 'micatro_run_backup_v1';
 
+/**
+ * Was this recipe's run SEEDED (the player typed the seed)? Session.start records `seeded: true` for those. A recipe
+ * rebuilt by fromRecipe / the replay stepper passes it to newRun, which would otherwise read the recipe's seed
+ * (every run has one) as a typed one. A recipe from before the flag reads as unseeded: the seed field can't tell.
+ */
+export const recipeSeeded = (recipe) => !!(recipe && recipe.seeded === true);
+
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
 
   start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null } = {}) {
     newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
+    // (every recipe carries a seed — the random one too — so whether the PLAYER chose it is recorded: a resumed or
+    //  replayed run must not turn into a seeded one, which earns no win stickers / Nuzlocke / Monotype)
+    if (G.GAME.seeded) this.recipe.seeded = true;
     // A custom deck (the deck editor): its validated definition is part of the recipe, so a resume /
     // replay / spectator rebuilds exactly this run.
     if (G.GAME.custom_deck) this.recipe.customDeck = G.GAME.custom_deck;
@@ -57,7 +67,7 @@ export class Session {
    */
   static fromRecipe(recipe, { repin: doRepin = false } = {}) {
     const s = new Session();
-    newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null });
+    newRun({ seed: recipe.seed, seeded: recipeSeeded(recipe), back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null });
     s.recipe = { ...recipe, actions: [] };
     recordLegacyAssumption(s.recipe);
     const all = recipe.actions || [];
@@ -148,7 +158,7 @@ export class ReplayStepper {
   /** Back to the run's first view. Returns the run-start UI events. */
   reset() {
     const r = this.recipe;
-    newRun({ seed: r.seed, back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null });
+    newRun({ seed: r.seed, seeded: recipeSeeded(r), back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {}, customDeck: r.customDeck || null, challenge: r.challenge || null, sleeve: r.sleeve || null });
     this.index = 0;
     this.error = null;
     this.startEvents = G.ui_events.splice(0);

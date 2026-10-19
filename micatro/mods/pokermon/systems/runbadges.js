@@ -34,6 +34,8 @@
  *
  * Once the run is won the badges are frozen (Endless can't lose them). Seeded and challenge runs are
  * tracked but not eligible (like the win stickers: Balatro's win_game gives them none), so the HUD hides them.
+ * (Seeded = the player TYPED the seed. A resumed / replayed run keeps its recipe's `seeded` flag — engine/session.js
+ * recipeSeeded — never "it has a seed": every recipe has one.)
  */
 import { G, LOC, emit } from '../../../js/engine/core.js';
 import { MOD_LOC } from '../../../js/mods/registry.js';
