@@ -38,10 +38,11 @@ export const CORE = [
 ];
 // suites a PATH always selects, whatever its diff names. MicaSurvivor DLC D0a: the "base unchanged" golden runs
 // (micasurvivor_dlc_base_unchanged_test.mjs) guard every base mode, so any micasurvivor/** change runs them, and so
-// does a server change whose diff (its lines or its hunk headers) touches the MicaSurvivor / msurv actions.
+// does a server change whose diff (its lines or its hunk headers) touches the MicaSurvivor / msurv actions. DLC D0b adds
+// the same runs with the Expedition code force-loaded and the Expedition plumbing test.
 export const BY_PATH = [
-	{ re: /^micasurvivor\//, suites: ['micasurvivor_dlc_base_unchanged_test.mjs'], why: 'MicaSurvivor changed: the DLC base-unchanged golden runs' },
-	{ re: /^(server|functions)\//, diff: /micasurvivor|msurv/i, suites: ['micasurvivor_dlc_base_unchanged_test.mjs'], why: 'the MicaSurvivor server actions changed: the DLC base-unchanged golden runs' },
+	{ re: /^micasurvivor\//, suites: ['micasurvivor_dlc_base_unchanged_test.mjs', 'micasurvivor_expedition_forceload_test.mjs', 'micasurvivor_expedition_plumbing_test.mjs'], why: 'MicaSurvivor changed: the DLC base-unchanged golden runs (also with the Expedition code loaded) and the Expedition plumbing' },
+	{ re: /^(server|functions)\//, diff: /micasurvivor|msurv/i, suites: ['micasurvivor_dlc_base_unchanged_test.mjs', 'micasurvivor_expedition_plumbing_test.mjs', 'micasurvivor_server_test.mjs'], why: 'the MicaSurvivor server actions changed: the DLC base-unchanged golden runs, the Expedition plumbing and the server actions' },
 ];
 // never affects a suite
 const IGNORE = [/\.(md|txt|png|jpg|jpeg|gif|webp|svg|ico|wav|mp3|ogg)$/i, /^Plans\//, /^wiki\//, /^\.github\//, /^docs?\//];

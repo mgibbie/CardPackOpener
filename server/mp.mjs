@@ -185,14 +185,76 @@ function cleanMsurvReplayMeta(m) {
 	const str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').slice(0, n).trim();
 	const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v)) || 0));
 	return {
-		dex: int(m.dex, 0, 2000), shiny: !!m.shiny, mon: str(m.mon, 32), mode: /^[a-z]{1,12}$/.test(String(m.mode)) ? m.mode : 'normal',
+		dex: int(m.dex, 0, 2000), shiny: !!m.shiny, mon: str(m.mon, 32), mode: /^[a-z]{1,12}$/.test(String(m.mode)) || /^exp-[a-z]{1,12}$/.test(String(m.mode)) ? m.mode : 'normal',
 		time: int(m.time, 0, 4 * 3600), level: int(m.level, 0, 9999), kills: int(m.kills, 0, 1e8), bosses: int(m.bosses, 0, 1e5),
 		dead: !!m.dead, coop: (Array.isArray(m.coop) ? m.coop : []).map(x => str(x, 40)).filter(x => /^[a-z0-9_.-]{1,40}$/.test(x)).slice(0, 4),
 		frames: int(m.frames, 0, MSURV_REPLAY_FRAMES),
+		// DLC D0b: an Expedition run's content version + map / difficulty (absent for a base run)
+		...(Number.isInteger(m.dv) && m.dv >= 1 && m.dv <= 9999 ? { dv: m.dv, map: /^[a-z]{1,16}$/.test(String(m.map)) ? m.map : '', diff: /^[a-z]{1,16}$/.test(String(m.diff)) ? m.diff : '' } : {}),
 	};
 }
 // MICASURVIVOR leaderboard (run-score mode 'micasurvivor'): best survival time, solo.
 const MICASURVIVOR_MAX_TIME = 4 * 3600; // seconds; a longer "run" is refused, not clamped onto the board
+// MICASURVIVOR EXPEDITION (DLC D0b; micasurvivor/js/systems/expedition.js): new modes with their OWN save and boards.
+//   micasurvivorexp:<user>   {rev, save, updated_at}: Expedition progress (League, unlocks, Lab...), never the base row.
+//                            save = {v, counters:{name:n}, sets:{name:[id]}}; a put is compare-and-set on rev AND is
+//                            merged into the stored save (max per counter, union per set), so nothing goes backwards.
+//   runboard:micasurvivor_expedition:<map>:<diff>   one board per map + difficulty (owner decision #8), ranked by
+//                            score, then time. An Expedition score (it carries expMode / dv / map / diff) is refused
+//                            on the base 'micasurvivor' board, and an Expedition board score without them is refused,
+//                            like micatro / micatro_modded. The key is built here from allow-listed fields.
+const MSURV_EXP_SAVE_MAX = 200_000;
+const MSURV_EXP_MAPS = ['viridian', 'mtmoon', 'cerulean'];
+const MSURV_EXP_DIFFS = ['normal', 'hard', 'nightmare'];
+const MSURV_EXP_MODE_RE = /^exp-[a-z]{1,12}$/;
+const MSURV_EXP_NAME_RE = /^[a-z][a-z0-9_.:-]{0,63}$/;
+const MSURV_EXP_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
+const msurvExpDvOk = dv => Number.isInteger(dv) && dv >= 1 && dv <= 9999;
+// an Expedition save -> {save} in its canonical form, or {error} (strict: the client's own clean() drops what this refuses)
+function cleanMsurvExpSave(s) {
+	const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
+	if (!isObj(s) || !Number.isInteger(s.v) || s.v < 1 || s.v > 1000) return { error: 'not an Expedition save' };
+	for (const k of Object.keys(s)) if (!['v', 'counters', 'sets'].includes(k)) return { error: 'unknown field: ' + k.slice(0, 32) };
+	const out = { v: s.v, counters: {}, sets: {} };
+	if (s.counters != null) {
+		if (!isObj(s.counters)) return { error: 'bad counters' };
+		const ks = Object.keys(s.counters);
+		if (ks.length > 2000) return { error: 'too many counters', max: 2000 };
+		for (const k of ks) {
+			const n = s.counters[k];
+			if (!MSURV_EXP_NAME_RE.test(k) || !Number.isSafeInteger(n) || n < 0 || n > 1e15) return { error: 'bad counter: ' + k.slice(0, 64) };
+			out.counters[k] = n;
+		}
+	}
+	if (s.sets != null) {
+		if (!isObj(s.sets)) return { error: 'bad sets' };
+		const ks = Object.keys(s.sets);
+		if (ks.length > 200) return { error: 'too many sets', max: 200 };
+		for (const k of ks) {
+			const l = s.sets[k];
+			if (!MSURV_EXP_NAME_RE.test(k) || !Array.isArray(l) || l.length > 5000) return { error: 'bad set: ' + k.slice(0, 64) };
+			const ids = [];
+			for (const x of l) {
+				const id = typeof x === 'number' && Number.isSafeInteger(x) ? String(x) : x;
+				if (typeof id !== 'string' || !MSURV_EXP_ID_RE.test(id)) return { error: 'bad set entry in ' + k.slice(0, 64) };
+				if (!ids.includes(id)) ids.push(id);
+			}
+			out.sets[k] = ids;
+		}
+	}
+	return { save: out };
+}
+// a + b, never backwards: the max of each counter, the union of each set (a's order first)
+function mergeMsurvExpSave(a, b) {
+	const out = { v: Math.max(a.v || 1, b.v || 1), counters: { ...a.counters }, sets: {} };
+	for (const [k, n] of Object.entries(b.counters)) out.counters[k] = Math.max(out.counters[k] || 0, n);
+	for (const k of new Set([...Object.keys(a.sets), ...Object.keys(b.sets)])) {
+		const l = (a.sets[k] || []).slice(), seen = new Set(l);
+		for (const id of b.sets[k] || []) if (!seen.has(id)) { seen.add(id); l.push(id); }
+		out.sets[k] = l.slice(0, 5000);
+	}
+	return out;
+}
 // MICATRO run replays: a FINISHED run's recipe {v, seed, back, stake, mods, modOptions, customDeck?,
 // actions} packed like a Battlecards tape ('G1.' gzip / 'R1.' raw, base64url). One row per run,
 // `mreplay:<8 hex>` = {code, meta, by, when}; the viewer re-simulates it with the engine. A replay is
@@ -367,6 +429,7 @@ const RATE_LIMITS = {
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
 	// MicaSurvivor cloud save: the client debounces (purchases ~3s, run end, else ~30s) — a brake on floods
 	'micasurvivor-save-put': [30, 60_000], 'micasurvivor-save-get': [30, 60_000],
+	'micasurvivor-exp-save-put': [30, 60_000], 'micasurvivor-exp-save-get': [30, 60_000], // MicaSurvivor Expedition (DLC D0b)
 	// MicaSurvivor online co-op (M5 batch 12b): the lobby polls ~1/2s, signalling ~1/s while a pair
 	// connects, the relay fallback ~1/s per player (each push is ALSO hard-floored at
 	// MSURV_RELAY_MIN_MS per sender by its own row's timestamp, so isolates can't multiply it)
@@ -1692,7 +1755,7 @@ export default async function handler(req, env) {
 	// previously invisible — cleared once and forgotten.
 	if (action === 'run-score' || action === 'run-leaderboard') {
 		let mode = String(body.mode || '');
-		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded', 'micasurvivor'].includes(mode)) {
+		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'micatro', 'micatro_modded', 'micasurvivor', 'micasurvivor_expedition'].includes(mode)) {
 			return json({ error: 'no board for that mode' }, 400);
 		}
 		// MICATRO mods: a run with mods ranks on its own board ('micatro_modded'), each
@@ -1709,8 +1772,48 @@ export default async function handler(req, env) {
 			if (mode === 'micatro_modded' && !modList.length && !customDeck) return json({ error: 'a modded score needs its mods' }, 400);
 			if (modList.length || customDeck) mode = 'micatro_modded';
 		}
-		const key = 'runboard:' + mode;
+		// MICASURVIVOR EXPEDITION (DLC D0b): its own boards, one per map + difficulty; an Expedition score never lands
+		// on the base board, and the Expedition board takes only Expedition scores (the micatro_modded pattern)
+		const expFields = ['expMode', 'dv', 'map', 'diff'].filter(f => body[f] != null);
+		if (mode === 'micasurvivor' && action === 'run-score' && expFields.length) {
+			return json({ error: 'an Expedition score goes to the micasurvivor_expedition board', fields: expFields }, 400);
+		}
+		let expSub = '';
+		if (mode === 'micasurvivor_expedition') {
+			if (!MSURV_EXP_MAPS.includes(body.map) || !MSURV_EXP_DIFFS.includes(body.diff)) return json({ error: 'an Expedition board needs its map and difficulty', maps: MSURV_EXP_MAPS, diffs: MSURV_EXP_DIFFS }, 400);
+			if (action === 'run-score' && (!MSURV_EXP_MODE_RE.test(String(body.expMode)) || !msurvExpDvOk(body.dv))) return json({ error: 'an Expedition score needs its mode and content version' }, 400);
+			expSub = ':' + body.map + ':' + body.diff;
+		}
+		const key = 'runboard:' + mode + expSub;
 		user.runBest = user.runBest || {};
+		if (mode === 'micasurvivor_expedition' && action === 'run-score') {
+			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
+			const time = int(body.time), score = int(body.score);
+			if (!(time >= 0 && time <= MICASURVIVOR_MAX_TIME)) return json({ error: 'bad time', max: MICASURVIVOR_MAX_TIME }, 400);
+			if (!(score >= 0 && score <= 1e12)) return json({ error: 'bad score' }, 400);
+			const dex = int(body.dex);
+			const run = {
+				score, time,
+				kills: Math.max(0, Math.min(10_000_000, int(body.kills) || 0)),
+				level: Math.max(1, Math.min(9999, int(body.level) || 1)),
+				dex: dex >= 1 && dex <= 2000 ? dex : 0,
+				shiny: body.shiny === true,
+				expMode: body.expMode, dv: body.dv,
+			};
+			const cmp = (a, b) => (a.score - b.score) || (a.time - b.time);
+			const bestKey = mode + expSub;
+			const prev = user.runBest[bestKey];
+			const better = !prev || typeof prev.score !== 'number' || cmp(run, prev) > 0;
+			if (better) { user.runBest[bestKey] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
+			const best = user.runBest[bestKey] || null;
+			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
+			if (best) board.push({ name: username, ...best });
+			board.sort((a, b) => cmp(b, a) || a.when - b.when);
+			const capped = board.slice(0, 100);
+			if (better) await store.setJSON(key, capped);
+			const rank = capped.findIndex(e => e.name === username) + 1;
+			return json({ ok: true, better, best, rank: rank || null, board: key.slice('runboard:'.length) });
+		}
 		// MICATRO ranks by the run's best single-hand SCORE (higher is better), not a
 		// W/L record. Scores can outgrow 2^53 or reach Infinity (Balatro's "naneinf"):
 		// JSON can't carry Infinity, so the client may send it as a string — a positive
@@ -1806,7 +1909,8 @@ export default async function handler(req, env) {
 		}
 		const board = (await store.get(key)) || [];
 		const rank = board.findIndex(e => e.name === username) + 1;
-		return json({ top: board.slice(0, 50), you: user.runBest[mode] ? { ...user.runBest[mode], rank: rank || null } : null });
+		const youKey = mode + expSub;   // (an Expedition board: the best per map + difficulty)
+		return json({ top: board.slice(0, 50), you: user.runBest[youKey] ? { ...user.runBest[youKey], rank: rank || null } : null });
 	}
 
 	// ---------- PvP rating (Elo) ----------
@@ -2246,6 +2350,33 @@ export default async function handler(req, env) {
 		return json({ error: 'stale', rev: (cur && cur.rev) || 0, save: (cur && cur.save) || null }, 409);
 	}
 
+	// MICASURVIVOR EXPEDITION save (DLC D0b; micasurvivor/js/expedition/save.js). Exact key `micasurvivorexp:<username>`
+	// only (the base micasurvivor:<username> row is never read or written here). get -> {rev, save|null}. put {save, rev}:
+	// a stale rev gets 409 {error:'stale', rev, save} (the client merges and retries); on the current rev the save is
+	// MERGED into the stored one (max per counter, union per set) and written iff the rev still matches (setIfRev), so a
+	// put can add progress but never take any away. -> {ok, rev, save} (the merged save).
+	if (action === 'micasurvivor-exp-save-get') {
+		const row = await store.get('micasurvivorexp:' + username);
+		return json({ rev: (row && row.rev) || 0, save: (row && row.save) || null });
+	}
+	if (action === 'micasurvivor-exp-save-put') {
+		const c = cleanMsurvExpSave(body.save);
+		if (c.error) return json({ error: c.error, ...(c.max ? { max: c.max } : {}) }, 400);
+		if (JSON.stringify(c.save).length > MSURV_EXP_SAVE_MAX) return json({ error: 'save too large', max: MSURV_EXP_SAVE_MAX }, 413);
+		const expect = Number.isInteger(body.rev) && body.rev >= 0 ? body.rev : -1;
+		if (expect < 0) return json({ error: 'bad rev' }, 400);
+		const key = 'micasurvivorexp:' + username;
+		const cur = await store.get(key);
+		const curRev = (cur && cur.rev) || 0;
+		if (curRev !== expect) return json({ error: 'stale', rev: curRev, save: (cur && cur.save) || null }, 409);
+		const stored = cur && cur.save ? cleanMsurvExpSave(cur.save).save : null;
+		const merged = stored ? mergeMsurvExpSave(stored, c.save) : c.save;
+		if (JSON.stringify(merged).length > MSURV_EXP_SAVE_MAX) return json({ error: 'save too large', max: MSURV_EXP_SAVE_MAX }, 413);
+		if (await store.setIfRev(key, { rev: expect + 1, save: merged, updated_at: Date.now() }, expect)) return json({ ok: true, rev: expect + 1, save: merged });
+		const now = await store.get(key);
+		return json({ error: 'stale', rev: (now && now.rev) || 0, save: (now && now.save) || null }, 409);
+	}
+
 	// MICASURVIVOR online co-op (M5 batch 12b): friends-only lobbies, WebRTC signalling and the
 	// relay fallback (see the MSURV_* constants for the rows and their lives). Every row written
 	// here is an EXACT key derived from the token's user and a lobby it belongs to.
@@ -2268,6 +2399,7 @@ export default async function handler(req, env) {
 			id: lb.id, host: lb.host, open: !!lb.open, v: lb.rev || 0,
 			members: lb.members.map(m => ({ name: m.name, dex: m.dex, shiny: !!m.shiny, ready: m.name === lb.host || !!m.ready })),
 			start: lb.start || null,
+			...(lb.dv != null ? { mode: lb.mode, dv: lb.dv } : {}),   // (DLC D0b: an Expedition lobby only)
 			...(lb.host === username ? { invited: Object.keys(lb.invited || {}).filter(n => now - lb.invited[n] < MSURV_INVITE_TTL_MS) } : {}),
 		});
 		// compare-and-set on the lobby's rev: fn(lb) edits lb in place and returns nothing, an
@@ -2334,10 +2466,14 @@ export default async function handler(req, env) {
 
 		// ---- lobbies ----
 		if (action === 'msurv-lobby-create') {
+			// DLC D0b: an Expedition lobby carries its mode ('exp-…') and content version (dv), both or neither
+			const exp = body.mode != null || body.dv != null;
+			if (exp && (!MSURV_EXP_MODE_RE.test(String(body.mode)) || !msurvExpDvOk(body.dv))) return json({ error: 'bad Expedition mode or version' }, 400);
 			for (let i = 0; i < 4; i++) {
 				const nid = randomBytes(6).toString('hex');
 				const lb = { id: nid, host: username, open: true, rev: 1, at: now, ts: now, invited: {}, start: null,
 					members: [{ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: true, seen: now }] };
+				if (exp) { lb.mode = body.mode; lb.dv = body.dv; }   // (DLC D0b: an Expedition lobby; a base one has neither)
 				if (await store.setIfRev(LKEY(nid), lb, 0)) return json({ lobby: view(lb) });
 			}
 			return json({ error: 'busy, try again' }, 503);
@@ -2350,6 +2486,8 @@ export default async function handler(req, env) {
 			const hostUser = lb0.host === username ? user : await store.get(lb0.host);
 			if (lb0.host !== username && (!myFriends.includes(lb0.host) || !Array.isArray(hostUser?.friends) || !hostUser.friends.includes(username)))
 				return json({ error: 'only the host\'s friends can join' }, 403);
+			// DLC D0b: an Expedition lobby takes only players on the same content version (a stale cache reloads)
+			if (lb0.dv != null && body.dv !== lb0.dv) return json({ error: 'your game is out of date: reload', mode: lb0.mode, dv: lb0.dv }, 409);
 			const r = await mutate(lb => {
 				const me = member(lb, username);
 				if (me) { me.dex = dexOf(body.dex); me.shiny = !!body.shiny; me.seen = now; return; }
@@ -2415,6 +2553,7 @@ export default async function handler(req, env) {
 					lb.open = false;
 					lb.start = { seed: seed >= 0 && seed < 1e9 ? seed : Math.floor(Math.random() * 1e6), at: now, host: lb.host,
 						members: live2.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny })) };
+					if (lb.dv != null) { lb.start.mode = lb.mode; lb.start.dv = lb.dv; }   // (DLC D0b: an Expedition lobby's start)
 				}
 			});
 			if (r.error) return fail(r);
@@ -2576,7 +2715,7 @@ export default async function handler(req, env) {
 		const run = String(body.run || '');
 		if (!/^[0-9a-f]{8,16}$/.test(run)) return json({ error: 'bad run id' }, 400);
 		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
-		const mode = /^[a-z]{1,12}$/.test(String(body.mode)) ? String(body.mode) : 'normal';
+		const mode = /^[a-z]{1,12}$/.test(String(body.mode)) || MSURV_EXP_MODE_RE.test(String(body.mode)) ? String(body.mode) : 'normal';   // (DLC D0b: 'exp-…' too)
 		const dex = Math.max(0, Math.min(2000, Math.floor(+body.dex) || 0));
 		const group = Array.isArray(body.group) ? [...new Set(body.group.map(x => String(x).toLowerCase()).filter(x => NAME_RE.test(x)))].slice(0, MSURV_MAX) : [];
 		const over = !!body.over;

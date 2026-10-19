@@ -141,6 +141,8 @@ G.Game = (() => {
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
     if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
     deathT = 0;
+    // MicaSurvivor (DLC D0b): the Expedition seam (js/core/hooks.js; no listener in a base page: nothing happens)
+    G.Hooks.call('run.start', cfg, pl);
 
     state = 'playing';
     // MicaSurvivor (M5 lote 12c): la repetición se graba desde aquí, y tus amigos pueden verte en directo
@@ -338,6 +340,21 @@ G.Game = (() => {
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
+    // MicaSurvivor (DLC D0b): una partida de Expedición no toca la partida guardada de siempre (ni monedas, ni stats,
+    // ni misiones, ni el ranking de siempre): su progreso, sus marcas y su paga van por el código de la Expedición
+    // (el seam run.end, js/expedition/core.js); aquí sólo su resumen.
+    if (G.Modes.isExp()) {
+      G.Judgment.reset();
+      G.Progress.off = false;
+      const R = G.Modes.run;
+      const res = G.Hooks.reduce('run.end', { lines: [G.Modes.title()] }, { mode: R.mode, dv: R.dv, map: R.map, diff: R.diff,
+        time: Math.floor(time), level: pl.level, kills: pl.kills, bosses: pl.bosses, dead: !!dead, dex: pl.dex, shiny: !!pl.shiny, clean: clean(), group: coop });
+      G.RunUI.showOver({
+        dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
+        moves: pl.moves, caught: [], modeLines: res.lines, breakdown: '', replay, dmg: G.DmgLog.summary(pl.moves)
+      }, () => { pl = null; G.Flow.afterRun(); });
+      return;
+    }
     // MicaSurvivor (M5 lote 6, main.gd 782-786): la Fiesta no guarda nada (ni monedas, ni stats, ni ranking).
     if (!G.Modes.saves()) {
       G.Judgment.reset();
@@ -1168,7 +1185,17 @@ G.Flow = {
       G.LobbyUI.open();
     } else this.goMenu();
   },
-  play(mode) { G.Game.startRun(null, mode); },   // MicaSurvivor (M5 lote 6): mode = un modo rápido (js/ui/modes-ui.js)
+  play(mode) {   // MicaSurvivor (M5 lote 6): mode = un modo rápido (js/ui/modes-ui.js)
+    // MicaSurvivor (DLC D0b): un modo de Expedición carga antes su código (js/systems/expedition.js load); mientras no
+    // esté activado ("Próximamente"), no empieza.
+    const X = G.Expedition;
+    if (X && X.isExp(mode)) {
+      if (!X.enabled(mode)) { G.UI.toast('La Expedición llegará pronto.'); G.Audio.sfx('error'); return Promise.resolve(false); }
+      return X.load().then(() => { if (G.Game.state !== 'ui') return false; G.Game.startRun(null, mode); return true; },
+        e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+    }
+    G.Game.startRun(null, mode);
+  },
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
@@ -1176,6 +1203,11 @@ G.Flow = {
     // the data channel / relay AND from the lobby on the server: whichever arrives first, once).
     const room = G.Social.room;
     if (!cfg || cfg.host !== room.host || !Array.isArray(cfg.members) || !cfg.members.some(m => m.uid === G.Social.uid)) return;
+    // MicaSurvivor (DLC D0b): an Expedition lobby's start carries its content version (dv): only the same build plays it
+    if (G.Expedition && !G.Expedition.lobbyOk(cfg.dv)) {
+      G.UI.toast('Tu juego no está actualizado: recarga la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
+      return;
+    }
     G.LobbyUI.close();
     document.getElementById('invite-pop').classList.add('hidden');
     G.Game.startRun(cfg);
