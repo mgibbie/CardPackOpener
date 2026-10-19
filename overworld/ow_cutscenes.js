@@ -11,7 +11,7 @@ import { buildMonForGift } from './ow_gamecorner.js';
 import { shopMenu } from './ow_menukeys.js';
 import { startScriptedWildBattle } from './ow_scaling.js';
 import { S } from './ow_state.js';
-import { runSpecial, startScriptedBattle } from './ow_story.js';
+import { runSpecial, setTrainerBeaten, startScriptedBattle, trainerBeaten } from './ow_story.js';
 import { flyTo, moveToMap, warpTo } from './ow_transitions.js';
 import { addCaught, healParty, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
@@ -195,6 +195,8 @@ export function cutsceneCtx(talker, scriptLabel) {
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
 		changeBlock: op => { const c = op.cells || []; [[0, 0], [1, 0], [0, 1], [1, 1]].forEach(([dx, dy], q) => { if (c[q] != null) world.setGridValue(op.x + dx, op.y + dy, c[q]); }); },
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
+		trainerDefeated: trainerId => trainerBeaten(trainerId),          // goto_if_defeated (events.js)
+		setTrainerFlag: (trainerId, on) => setTrainerBeaten(trainerId, on), // settrainerflag / cleartrainerflag
 		wildBattle: (species, level) => startScriptedWildBattle(species, level),
 		// a clerk's `openmart`: raise the standard shop counter and hold the script
 		// until it closes (shopKey resumes the cutscene on exit)

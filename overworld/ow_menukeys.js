@@ -70,7 +70,7 @@ export function drawBpShopMenu(W, H) {
 		BUI.button(sctx, b, S.menuHover === bid || bpShopMenu.idx === i, u);
 	});
 }
-export const ferryMenu = { open: false, idx: 0 };
+export const ferryMenu = { open: false, idx: 0, list: null };
 export const FERRY_DESTS = [
 	{ label: 'Vermilion Harbor (Kanto)', file: 'SSAnne_Exterior' },
 	{ label: 'Olivine Port (Johto)', file: 'OlivinePort' },
@@ -96,16 +96,48 @@ export const FERRY_DESTS = [
 // the destinations offered from here: the same list for the menu's rows and its keys
 // (the rows used to skip only the dock you're on, the keys the locked ones too, so
 // a highlighted SEVII ISLANDS sailed to the S.S. TIDAL — playtest 2026-10-08)
-export const ferryDests = () => FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
+// (a SEAGALLOP sailor opens the same menu with his own list: ferryMenu.list)
+export const ferryDests = () => ferryMenu.list || FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
+
+// THE SEAGALLOP, from a Sevii harbor. Every island's sailor ends in
+// `goto EventScript_ChooseDestFrom(One|Two)Island` / `..FromIsland` (pokefirered
+// data/scripts/seagallop.inc), which no map file holds, and its menu and the
+// crossing itself are specials (DrawSeagallopDestinationMenu, DoSeagallopFerryScene)
+// — so the sailor said "Where do you want to sail?" and nothing followed, and no
+// one could leave One Island by boat (bug:1792261107959, 2026-10-17). events.js
+// stubs those labels onto `special SeagallopMenu`, which lands here. The list is
+// the decomp's: ONE..THREE ISLAND always, FOUR..SEVEN once the RAINBOW PASS is
+// in hand (VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F >= 5), and VERMILION, which
+// this port's own ferry already sails to. Arrival is sSeagallopSpawnTable's tile.
+const SEAGALLOP_HARBORS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
+export function seagallopDests() {
+	const here = world.current?.name;
+	const all = Story.getVar('VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F') >= 5;
+	const out = [{ label: 'VERMILION CITY', file: 'VermilionCity', x: 23, y: 32 }];
+	SEAGALLOP_HARBORS.forEach((n, i) => {
+		if (i >= 3 && !all) return;
+		const file = n + 'Island_Harbor';
+		if (file !== here) out.push({ label: n.toUpperCase() + ' ISLAND', file, x: 8, y: 5 });
+	});
+	return out;
+}
+export function openSeagallopMenu() {
+	ferryMenu.list = seagallopDests();
+	ferryMenu.idx = 0;
+	ferryMenu.open = true;
+}
 function ferryKey(k) {
 	const dests = ferryDests();
 	if (k === 'ArrowUp') ferryMenu.idx = (ferryMenu.idx + dests.length - 1) % dests.length;
 	if (k === 'ArrowDown') ferryMenu.idx = (ferryMenu.idx + 1) % dests.length;
-	if (k === 'x' || k === 'Escape') ferryMenu.open = false;
+	if (k === 'x' || k === 'Escape') { ferryMenu.open = false; ferryMenu.list = null; }
 	if (k === 'z' || k === 'Enter') {
 		const dest = dests[ferryMenu.idx];
-		ferryMenu.open = false;
-		moveToMap(dest.file).then(() => dialog.open(`The ferry sets sail...\n\nWelcome to ${dest.label}!`));
+		const seagallop = !!ferryMenu.list;
+		ferryMenu.open = false; ferryMenu.list = null;
+		moveToMap(dest.file, dest.x, dest.y).then(() => dialog.open(seagallop
+			? `The SEAGALLOP sets sail...\n\nWelcome to ${dest.label}!`
+			: `The ferry sets sail...\n\nWelcome to ${dest.label}!`));
 	}
 }
 // inter-region PORTAL destination menu (opened from a portal pad). dests = the two

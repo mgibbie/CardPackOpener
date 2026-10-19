@@ -34,7 +34,7 @@ import { openRadio } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
-import { PC_BOXES, PC_BOX_CAP, getBox } from './ow_menukeys.js';
+import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu } from './ow_menukeys.js';
 import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
@@ -115,6 +115,30 @@ function progressKeyFor(talker) {
 	return own || null;
 }
 
+// THE DECOMP'S TRAINER FLAG, by TRAINER_ id. A sight trainer's win is kept under its
+// map:script key (trainers.js), but FireRed/Emerald scripts ask about the TRAINER:
+// `goto_if_defeated TRAINER_TEAM_ROCKET_GRUNT_43`. Those questions were dropped by the
+// transpile and are now restored (tools/gen_multichoice.mjs), so a scripted win has to
+// answer them: Mt. Ember's grunts are plain NPCs, nothing recorded their loss, and they
+// re-battled on every talk and never cleared the Ruby Path (bug:1792263054606). A
+// story flag per trainer id; a sight trainer beaten before this existed still counts
+// through its map:script record (the object on this map whose script battles it).
+const TRAINER_FLAG = id => 'trainer_beaten_' + String(id || '').replace(/^TRAINER_/, '');
+const tidOfBattle = a => /^TRAINER_BATTLE_/.test(a?.[0] || '') ? (a.find(x => /^TRAINER_(?!BATTLE_)/.test(x)) || a[0]) : a?.[0];
+export function trainerBeaten(tid) {
+	if (!tid) return false;
+	if (Story.getFlag(TRAINER_FLAG(tid))) return true;
+	for (const t of trainers.list || []) {
+		const ops = S.mapScripts?.[t.ev?.script];
+		if (Array.isArray(ops) && ops.some(o => o?.op === 'trainerbattle' && tidOfBattle(o.args) === tid) && trainers.isDefeated(t)) return true;
+	}
+	return false;
+}
+export function setTrainerBeaten(tid, on) {
+	if (!tid) return;
+	if (on) Story.setFlag(TRAINER_FLAG(tid)); else Story.clearFlag(TRAINER_FLAG(tid));
+}
+
 export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!S.party || !leadMon(S.party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	// canonical team by TRAINER_ id first (exact species/level/moves), then the
@@ -187,6 +211,7 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 			Story.setVar('VAR_RESULT', 1);
 			S.lastBattleOutcome = B_OUTCOME_WON;
 			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
+			if (/^TRAINER_/.test(trainerId || '')) setTrainerBeaten(trainerId, true);   // what goto_if_defeated reads
 			saveParty(S.party);
 			// badge/crown; the script's own speech announces it. A battle started by a
 			// MAP script has no talker — the FRLG Champion's walk-in (ChampionsRoom
@@ -1105,6 +1130,8 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// a Sevii harbor's SEAGALLOP sailor (events.js stubs seagallop.inc's menus onto this)
+		case 'SeagallopMenu': openSeagallopMenu(); return;
 		// Slateport's EFFORT RIBBON woman (field_specials.c): the lead (GetLeadMonIndex:
 		// the first non-egg) gets it once its EVs total MAX_TOTAL_EVS (510). None of the
 		// three was handled, so the EV check read 0 and nobody ever got it (2026-10-08).
