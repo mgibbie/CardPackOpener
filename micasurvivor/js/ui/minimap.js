@@ -140,7 +140,7 @@ G.Minimap = (() => {
     const m = G.Sprites.animMeta(a.dex, a.cur, a.shiny), s = G.Sprites.sheet(a.dex, a.cur, a.shiny);
     if (!m || !s || !s.ready) return false;
     const k = mx / Math.max(m.w, m.h), fw = m.w * k, fh = m.h * k;
-    ctx.drawImage(s.img, Math.min(a.frame || 0, m.n - 1) * m.w, Math.min(a.dir || 0, m.r - 1) * m.h, m.w, m.h,
+    ctx.drawImage(s.img, Math.min(a.frame || 0, m.n - 1) * m.w, G.Sprites.rowOf(a.dex, a.dir, m) * m.h, m.w, m.h,
       Math.round(q.x - fw / 2), Math.round(q.y - fh / 2), fw, fh);
     return true;
   }

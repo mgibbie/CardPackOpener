@@ -17,7 +17,7 @@
   /** Los jefes se agrandan hasta ~110 de alto, según lo grande que ya sea su sprite. */
   function bossScale(dex) {
     const m = G.Sprites.animMeta(dex, 'Idle');
-    const h = (m ? m.ay : 30) * G.Sprites.PX;
+    const h = (m ? m.ay * G.Sprites.artScale(dex) : 30) * G.Sprites.PX;
     // En múltiplos de 0,5: con la cámara a ×2 cada píxel de arte ocupa un
     // número entero de píxeles de pantalla (escalas como 1,37 lo deforman).
     return G.U.clamp(Math.round(110 / h * 2) / 2, 1, 2);
