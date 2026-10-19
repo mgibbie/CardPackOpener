@@ -181,6 +181,9 @@ b { font-weight: normal; }
 .tip-info { min-width: 180px; max-width: 250px; opacity: .97; }
 .tip-name { font-size: 34px; padding: 4px 8px 8px; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
 .ti-name { font-size: 26px; padding: 2px 6px 6px; }
+/* a playing card's name: Balatro's card_h_popup puts it on a white pill ("6 of" light_black, the suit in its colour) */
+.tip-name.pc { text-shadow: none; }
+.tip-pc { display: inline-block; background: #fff; color: #4f6367; border-radius: 10px; padding: 2px 14px 0; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
 .tip-body { background: #fff; color: var(--text-dark); border-radius: 10px; padding: 8px 10px 6px; font-size: 25px; line-height: 1.08; }
 .tip-info .tip-body { font-size: 22px; }
 .tip-gap { height: 8px; }
