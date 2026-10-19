@@ -152,6 +152,25 @@ Each step: gate → merge when it passes → next.
    localStorage as the offline cache; guests keep them in the browser). Tests: `micatro/tests/challenges_test.mjs`,
    `overworld/tests/micatro_challenges_ui_test.mjs`, `overworld/tests/micatro_winstickers_test.mjs`.
 
+   **Admin: revoking a sticker granted by mistake.** Max-merge means deleting it from the row is not enough
+   (the player's device pushes it back). Instead, add a top-level `revoked` field to the D1 row
+   `micatro_stickers:<user>` (keep `v`, `wins`, `rev` and `updatedAt` as they are):
+   ```json
+   "revoked": { "b_plasma": { "cats": true, "at": 1792400000000 } }
+   ```
+   - The key is the joker or deck key. `cats` is `true` for every category, or a list such as `["nuz", "mono"]`
+     (from `win`, `poke`, `nuz`, `mono`, `both`). `at` is the revocation time in epoch ms (`Date.now()`).
+   - Short forms: `"b_plasma": true` or `"j_half": ["nuz"]`. Without `at`, the key stays blocked even for new
+     wins until you remove the entry.
+   - Effect: every put keeps `revoked` verbatim and strips those keys from incoming and stored wins. Get and put
+     return it, and each device deletes the sticker locally on its next load or push and never re-pushes it.
+     Deleting it from `wins` as well is optional, because the next write drops it anyway.
+   - Re-earn: a win of that key after `at` sticks. `recordWin` stamps the earn time per category, the put carries it
+     in `earned`, and the server keeps it in the row's `earned`. A device clock that is far ahead could re-earn
+     early, so set `at` a minute or so later than the mistaken grant if in doubt.
+   - To lift the revocation, delete its entry. Tests: `overworld/tests/micatro_stickers_server_test.mjs`
+     and `micatro_stickers_account_test.mjs`.
+
 ## 8. Run replays (2026-10-16)
 A replay is always a **whole run** (first blind to game over / the win / the end of Endless), never one
 round: the run's recipe `{v, seed, back, stake, mods, modOptions, customDeck?, actions}` re-simulated
