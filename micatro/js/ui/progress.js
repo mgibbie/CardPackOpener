@@ -122,9 +122,10 @@ export function recordRunWin(earned, stake, now = Date.now()) {
   progress = p; writeLocal(); bump(); push();
   return unlocked.filter(Boolean);
 }
-/** The win stickers' categories for this win (ui/stickers.js on feat/micatro-stickers-account): ['win', 'nuz'?, 'mono'?, 'both'?]. */
-export function winCategories(earned) {
+/** The win stickers' categories for this win (ui/stickers.js): ['win', 'poke'? (Pokermon was on), 'nuz'?, 'mono'?, 'both'?]. */
+export function winCategories(earned, pokermon = !!earned) {
   const c = ['win'];
+  if (pokermon) c.push('poke');
   if (earned && earned.nuz) c.push('nuz');
   if (earned && earned.mono) c.push('mono');
   if (earned && earned.nuz && earned.mono) c.push('both');

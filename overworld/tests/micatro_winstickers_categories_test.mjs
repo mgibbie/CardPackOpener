@@ -87,6 +87,11 @@ try {
 	A((await pick({ win: 8, nuz: 8, mono: 2 })).join('|') === 'mono|Red|Ambipom|Monotype win — Red Stake|#fe5f55', 'mono beats nuz and win (Ambipom)', JSON.stringify(await pick({ win: 8, nuz: 8, mono: 2 })));
 	A((await pick({ win: 8, nuz: 8, mono: 8, both: 5 })).join('|') === 'both|Blue|Arceus|Nuzlocke Monotype win — Blue Stake|#009dff', 'both beats everything (Arceus)', JSON.stringify(await pick({ win: 8, nuz: 8, mono: 8, both: 5 })));
 	A((await pick(7))[0] === 'win' && (await pick(7))[1] === 'Orange', 'an old flat level picks the plain sticker');
+	// poke (Pikachu: any Pokermon win) ranks between Aipom and the plain sticker
+	A((await pick({ win: 8, poke: 1 })).join('|') === 'poke|White|Pikachu|Pokermon win — White Stake|#ffffff', 'poke beats a higher-stake plain sticker (a White Pikachu over Gold)', JSON.stringify(await pick({ win: 8, poke: 1 })));
+	A((await pick({ win: 8, poke: 8, nuz: 1 })).join('|') === 'nuz|White|Aipom|Nuzlocke win — White Stake|#ffffff', 'Aipom (nuz) beats a Gold Pikachu', JSON.stringify(await pick({ win: 8, poke: 8, nuz: 1 })));
+	A(JSON.stringify(await S((M) => [M.CATEGORIES, M.PRIORITY])) === JSON.stringify([['win', 'poke', 'nuz', 'mono', 'both'], ['both', 'mono', 'nuz', 'poke', 'win']]), 'the five categories and their priority', JSON.stringify(await S((M) => [M.CATEGORIES, M.PRIORITY])));
+	A(await S((M) => M.recordWin({ jokers: ['j_poke_rec'], stake: 3, categories: ['win', 'poke'] })) === 1 && JSON.stringify(await S((M) => M.winRecord('j_poke_rec'))) === '{"win":3,"poke":3}', 'recordWin stores poke like the others', JSON.stringify(await S((M) => M.winRecord('j_poke_rec'))));
 	const cols = await S((M) => [1, 2, 3, 4, 5, 6, 7, 8].map((lv) => M.stickerFor({ nuz: lv }).colour));
 	A(cols.join() === '#ffffff,#fe5f55,#4bc292,#374244,#009dff,#8867a5,#fda200,#eac058', 'ring colours are Balatro\'s stake colours (White..Gold)', cols.join());
 	const info = await S((M) => { const i = M.winStickerInfo('j_joker', true); return [i.category, i.stake, i.special.pokemon]; });
@@ -119,14 +124,19 @@ try {
 	await S((M) => M.recordWin({ jokers: ['j_red_both'], stake: 2, categories: ['both'] }));
 	const rb = await drawn('j_joker', 'j_red_both');
 	A(rb.ring.every((p) => near(p, '#fe5f55')), 'a Red Arceus sticker is ringed in Red (#fe5f55)', JSON.stringify(rb.ring));
+	await S((M) => M.recordWin({ jokers: ['j_purple_poke'], stake: 6, categories: ['win', 'poke'] }));
+	await drawn('j_joker', 'j_purple_poke');
+	await waitFor(async () => (await drawn('j_joker', 'j_purple_poke')).sprite > 20, 8000);
+	const pp = await drawn('j_joker', 'j_purple_poke');
+	A(pp.ring.every((p) => near(p, '#8867a5')) && pp.sprite > 20, 'a Purple Pikachu sticker is ringed in Purple (#8867a5), with the sprite inside', JSON.stringify(pp));
 	const plain = await drawn('j_joker', 'j_greedy_joker');
 	A(!plain.ring.every((p) => near(p, '#eac058')), 'a plain (win-only) Gold sticker draws the stake chip, not a ring', JSON.stringify(plain.ring));
 	const sprites = await page.evaluate(async () => {
 		const out = {};
-		for (const n of ['aipom', 'ambipom', 'arceus']) out[n] = await new Promise((res) => { const im = new Image(); im.onload = () => res(im.width > 0); im.onerror = () => res(false); im.src = '/micatro/assets/textures/winstickers/' + n + '.png'; });
+		for (const n of ['aipom', 'ambipom', 'arceus', 'pikachu']) out[n] = await new Promise((res) => { const im = new Image(); im.onload = () => res(im.width > 0); im.onerror = () => res(false); im.src = '/micatro/assets/textures/winstickers/' + n + '.png'; });
 		return out;
 	});
-	A(sprites.aipom && sprites.ambipom && sprites.arceus, 'the three sticker sprites ship with Micatro', JSON.stringify(sprites));
+	A(sprites.aipom && sprites.ambipom && sprites.arceus && sprites.pikachu, 'the four sticker sprites ship with Micatro', JSON.stringify(sprites));
 
 	// ----- the tooltip -----
 	await page.evaluate(() => window.__micatro.newRun({ stake: 1 }));

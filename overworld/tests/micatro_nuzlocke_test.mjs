@@ -13,6 +13,8 @@
 //   5. a run without Pokermon shows nothing (no badges, no Badges tab)
 //   6. deck stickers: the won run's deck (b_red) gets the Arceus sticker (both) — on the deck pile, in the New Run
 //      deck select and in Run Info — and a deck with only a plain win shows the plain stake sticker
+//   7. Pikachu (poke): a Pokermon win with both badges broken gives its jokers AND its deck the Pikachu sticker
+//      (ranked below Aipom, above the plain sticker); a vanilla win records no poke
 // (owner rule 2026-10-18: a non-Pokémon joker breaks BOTH badges — one toast, two lines)
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides), like micatro_pack_hand_items_test.mjs.
@@ -153,6 +155,24 @@ try {
 		await act(d, { type: 'play' });
 		await act(d, { type: 'cash_out' });
 	};
+	/** Win the current run: the last ante's three blinds with forced chips (jokers added first, outside the shop). */
+	const winNow = async (d, jokers = []) => {
+		await d.page.evaluate(async (keys) => {
+			const { G, add_joker } = await import('/micatro/js/engine/core.js');
+			for (const k of keys) add_joker(k);
+			G.E_MANAGER.flush();
+			G.GAME.round_resets.ante = G.GAME.win_ante;
+		}, jokers);
+		for (let b = 0; b < 3; b++) {
+			await act(d, { type: 'select_blind' });
+			const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
+			await act(d, { type: 'highlight', ids });
+			await act(d, { type: 'play' });
+			if (b < 2) { await act(d, { type: 'cash_out' }); await act(d, { type: 'next_round' }); }
+		}
+		return waitFor(() => d.page.evaluate(() => !!document.querySelector('.go-modal')), 15000);
+	};
+	const stkRec = (d, k) => d.page.evaluate(async (k) => (await import('/micatro/js/ui/stickers.js')).winRecord(k), k);
 	const pills = (d) => d.page.evaluate(() => [...document.querySelectorAll('.hud.has-rb .hud-rbadges .rb-pill')].filter((e) => e.offsetParent).map((e) => e.textContent));
 	const rbToast = (d) => d.page.evaluate(() => { const t = document.querySelector('.rb-toast'); return t && t.classList.contains('show') ? t.textContent : ''; });
 	/** Overlap check: the badges vs every HUD control / board area that's showing. -> {ok, badges, hits, offscreen} */
@@ -254,7 +274,8 @@ try {
 	const stk = await dA.page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winRecord('j_poke_charmander'));
 	A(stk.win >= 1 && stk.nuz >= 1 && stk.mono >= 1 && stk.both >= 1, 'the win stickers got the categories (win, nuz, mono, both) for the run\'s jokers', JSON.stringify(stk));
 	const deckRec = await dA.page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winRecord('b_red'));
-	A(deckRec.win === 1 && deckRec.nuz === 1 && deckRec.mono === 1 && deckRec.both === 1, 'the deck (b_red) is recorded with the same categories', JSON.stringify(deckRec));
+	A(deckRec.win === 1 && deckRec.poke === 1 && deckRec.nuz === 1 && deckRec.mono === 1 && deckRec.both === 1, 'the deck (b_red) is recorded with the same categories (poke too: a Pokermon win)', JSON.stringify(deckRec));
+	A((await stkRec(dA, 'j_poke_charmander')).poke === 1, 'a Pokermon win records poke on its jokers');
 	A(await waitFor(() => dA.page.evaluate(() => { const c = document.querySelector('.deck-stack canvas:last-child'); return c && c.dataset.sticker === 'both:White'; }), 5000), 'the deck pile wears the Arceus sticker (White ring)', await dA.page.evaluate(() => document.querySelector('.deck-stack canvas:last-child').dataset.sticker));
 	await waitFor(() => dA.page.evaluate(() => !document.querySelector('.ach-toast')), 15000);
 	// the leaderboard (from the win screen)
@@ -300,6 +321,31 @@ try {
 	await shot(dA, 'deck_select_plain.png');
 	await dA.page.evaluate(() => { const b = [...document.querySelectorAll('.modal .b-back')].pop(); b.click(); });
 
+	// ===== 7. Pikachu: a Pokermon win with both badges broken (a non-Pokémon joker) =====
+	await dA.page.evaluate(async () => { await window.__micatro.newRun({ back: 'b_yellow', mods: ['pokermon'] }); });
+	await waitFor(() => dA.page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 40000);
+	A(await winNow(dA, ['j_poke_squirtle', 'j_joker']), 'a broken Pokermon run won (Yellow Deck)');
+	const sq = await stkRec(dA, 'j_poke_squirtle'), yd = await stkRec(dA, 'b_yellow');
+	A(JSON.stringify(sq) === '{"win":1,"poke":1}' && JSON.stringify(yd) === '{"win":1,"poke":1}', 'its jokers and deck get win + poke only (no Nuzlocke / Monotype)', JSON.stringify([sq, yd]));
+	A(!(await dA.page.evaluate(() => !!document.querySelector('.go-badges'))), 'the win screen lists no badges (both were broken)');
+	await dA.page.evaluate(() => document.querySelector('.go-modal .b-endless').click());
+	await idle(dA);
+	await sleep(800);
+	A(await waitFor(() => dA.page.evaluate(() => { const c = document.querySelector('.deck-stack canvas:last-child'); return c && c.dataset.sticker === 'poke:White'; }), 5000), 'the deck pile wears the Pikachu sticker');
+	const jk = await dA.page.evaluate(async () => { const M = await import('/micatro/js/ui/stickers.js'); const i = M.winStickerInfo('j_poke_squirtle'); return i && [i.category, i.special && i.special.pokemon, i.colour]; });
+	A(jk && jk.join() === 'poke,Pikachu,#ffffff', 'Squirtle shows the White-ringed Pikachu sticker', JSON.stringify(jk));
+	await shot(dA, 'pikachu_joker_and_deck.png');
+	await dA.page.evaluate(() => localStorage.setItem('micatro_newrun', JSON.stringify({ back: 'b_yellow', stake: 1 })));
+	await dA.page.evaluate(() => window.__micatro.board && document.querySelector('.b-options').click());
+	await sleep(400);
+	await dA.page.evaluate(() => { const b = document.querySelector('.opt-modal .b-mainmenu, .options .b-mainmenu') || [...document.querySelectorAll('.modal .btn')].find((x) => /Main Menu/.test(x.textContent)); if (b) b.click(); });
+	await sleep(500);
+	await dA.page.evaluate(() => document.querySelector('.b-menu-play').click());
+	await sleep(700);
+	A((await dA.page.evaluate(() => document.querySelector('.nr-back') && document.querySelector('.nr-back').dataset.sticker)) === 'poke:White', 'deck select: the Yellow Deck shows its Pikachu sticker');
+	await shot(dA, 'deck_select_pikachu.png');
+	await dA.page.evaluate(() => { const b = [...document.querySelectorAll('.modal .b-back')].pop(); if (b) b.click(); });
+
 	// ===== 4. the record on a second device; a guest's record carried into an account =====
 	const dB = await device('B');
 	A(await boot(dB, 'nuzzy'), 'device B: same account, empty storage');
@@ -322,6 +368,10 @@ try {
 	A(!(await dA.page.evaluate(() => !!document.querySelector('.b-ri-badges'))), 'and Run Info has no Badges tab');
 	A((await dA.page.evaluate(() => { const c = document.querySelector('.ri-deck .ri-back'); return c && c.dataset.sticker; })) === 'both:White', 'Run Info shows the deck with its win sticker');
 	await shot(dA, 'runinfo_deck_sticker.png');
+	await dA.page.evaluate(() => { const b = document.querySelector('.ri-modal .b-back'); if (b) b.click(); });
+	A(await winNow(dA, ['j_greedy_joker']), 'a vanilla run won');
+	const gj = await stkRec(dA, 'j_greedy_joker');
+	A(gj.win === 1 && !gj.poke, 'a vanilla win records no poke (no Pikachu)', JSON.stringify(gj));
 	await shot(dA, 'vanilla_run_no_badges.png');
 
 	for (const d of [dA, dB, dC]) A(!d.errors.length, d.name + ': no page errors', d.errors.slice(0, 3).join(' | '));

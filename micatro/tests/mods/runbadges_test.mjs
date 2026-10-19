@@ -310,4 +310,13 @@ for (const seed of [3, 7, 11]) {
 }
 ok(botGains > 0, 'the bot runs gained jokers', botGains);
 
+// ======================================================== the win stickers' categories (ui/progress.js winCategories)
+{
+  const { winCategories } = await import('../../js/ui/progress.js');
+  ok(JSON.stringify(winCategories(null, false)) === '["win"]', 'a vanilla win: only the plain win category (no Pikachu)');
+  ok(JSON.stringify(winCategories({ nuz: false, mono: null }, true)) === '["win","poke"]', 'a Pokermon win with both badges broken: win + poke (Pikachu)');
+  ok(JSON.stringify(winCategories({ nuz: true, mono: null }, true)) === '["win","poke","nuz"]', 'a Nuzlocke win: win + poke + nuz');
+  ok(JSON.stringify(winCategories({ nuz: true, mono: 'Fire' }, true)) === '["win","poke","nuz","mono","both"]', 'Nuzlocke + Monotype: every category');
+}
+
 done();

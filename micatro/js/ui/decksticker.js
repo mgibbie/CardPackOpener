@@ -2,7 +2,7 @@
 // select). A won run's back key is recorded in the same store as the jokers' win stickers (ui/stickers.js
 // recordWin: main.js adds the back key to the win's `jokers` list; seeded / challenge / custom-deck runs earn
 // none), with the same categories and priority: Arceus (Nuzlocke + Monotype) > Ambipom (Monotype) > Aipom
-// (Nuzlocke) > the plain stake sticker, a special one in a ring of its stake's colour.
+// (Nuzlocke) > Pikachu (any Pokermon win) > the plain stake sticker, a special one in a ring of its stake's colour.
 // Drawn on the deck back in the New Run deck select, Run Info and the deck pile on the table.
 import { winStickerInfo, drawSpecialSticker, STICKER_POS } from './stickers.js';
 import { drawCell } from './assets.js';

@@ -78,14 +78,14 @@ const MICATRO_DECKS_MAX = 30;           // decks per player
 const MICATRO_DECK_BYTES = 66_000;      // one serialized deck definition (the client caps a definition at 64 KB)
 const MICATRO_DECKS_BYTES = 400_000;    // the whole row
 // MICATRO per-joker win (stake) stickers (micatro/js/ui/stickers.js): one durable row per player,
-// `micatro_stickers:<user>` = {v:2, wins: {jokerKey: {win, nuz, mono, both}}, rev, updatedAt}, each category the
-// highest stake level 1..8 won at (win = any win; nuz = Nuzlocke; mono = Monotype; both = the two together).
+// `micatro_stickers:<user>` = {v:2, wins: {jokerKey: {win, poke, nuz, mono, both}}, rev, updatedAt}, each category the
+// highest stake level 1..8 won at (win = any win; poke = a win with Pokermon on; nuz = Nuzlocke; mono = Monotype; both = the two together).
 // The older flat form {jokerKey: level} means {win: level}. A put MERGES (max per key and category), so a stale
 // device can never lower or drop a sticker.
 const MICATRO_STICKERS_MAX = 5000;        // joker keys per player (vanilla + every mod is well under 2000)
 const MICATRO_STICKERS_BYTES = 700_000;   // one serialized `wins` map (5000 64-char keys x 4 categories is ~525 KB)
 const MICATRO_STICKER_KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
-const MICATRO_STICKER_CATS = ['win', 'nuz', 'mono', 'both'];
+const MICATRO_STICKER_CATS = ['win', 'poke', 'nuz', 'mono', 'both'];
 const stickerLevel = (v) => (Number.isInteger(v) && v >= 1 && v <= 8 ? v : 0);
 // one joker's record, either form -> {cat: level}; null when it is not a valid, non-empty record
 // (`loose`: skip a bad category instead of refusing the record — for rows already stored)

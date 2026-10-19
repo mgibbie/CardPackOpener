@@ -2,13 +2,14 @@
 // in it — and, with Pokermon's previous_evo_stickers, a Pokémon's earlier stages (the engine's `win` event
 // lists the keys: run.js joker_win_keys) — with the highest stake it has won on. The joker then wears that
 // stake's sticker (stickers.png: White, Red, Green, Black, Blue, Purple, Orange, Gold) and its tooltip says so.
-//   * Per CATEGORY of win: {jokerKey: {win, nuz, mono, both}}, each the highest stake level (1..8) won at:
+//   * Per CATEGORY of win: {jokerKey: {win, poke, nuz, mono, both}}, each the highest stake level (1..8) won at:
 //       win  — any win (the plain stake sticker)
 //       nuz  — a Nuzlocke run             -> an Aipom sticker
 //       mono — a Monotype run             -> an Ambipom sticker
 //       both — Nuzlocke AND Monotype      -> an Arceus sticker
+//       poke — any win with Pokermon on   -> a Pikachu sticker
 //     recordWin({jokers, stake, categories}) (categories default ['win']; the Pokermon runs pass theirs).
-//     The joker wears ONE sticker: both > mono > nuz > win — any special beats a plain one, whatever the
+//     The joker wears ONE sticker: both > mono > nuz > poke > win — any special beats a plain one, whatever the
 //     stakes (a White-stake Aipom shows instead of a Gold plain sticker). A special is the Pokémon in a ring
 //     of its category's stake colour (Balatro's G.C.STAKES). The old flat format {jokerKey: level} (an
 //     older cache / account row) means {win: level}.
@@ -38,14 +39,15 @@ export const STAKE_COLOURS = {
   Blue: '#009dff', Purple: '#8867a5', Orange: '#fda200', Gold: '#eac058',
 };
 /** The win categories, and which one a joker shows (first earned wins). */
-export const CATEGORIES = ['win', 'nuz', 'mono', 'both'];
-export const PRIORITY = ['both', 'mono', 'nuz', 'win'];
-const CATEGORY_LABEL = { win: 'Win', nuz: 'Nuzlocke', mono: 'Monotype', both: 'Nuzlocke Monotype' };
+export const CATEGORIES = ['win', 'poke', 'nuz', 'mono', 'both'];
+export const PRIORITY = ['both', 'mono', 'nuz', 'poke', 'win'];
+const CATEGORY_LABEL = { win: 'Win', poke: 'Pokermon', nuz: 'Nuzlocke', mono: 'Monotype', both: 'Nuzlocke Monotype' };
 /** The special stickers: a Pokémon sprite (micatro/assets/textures/winstickers/<img>.png) in a stake-coloured ring. */
 export const SPECIAL = {
   both: { pokemon: 'Arceus', num: 493, img: 'arceus' },
   mono: { pokemon: 'Ambipom', num: 424, img: 'ambipom' },
   nuz: { pokemon: 'Aipom', num: 190, img: 'aipom' },
+  poke: { pokemon: 'Pikachu', num: 25, img: 'pikachu' },
 };
 const SHOW_KEY = 'micatro_stake_stickers';
 const GUEST_CARRIED_KEY = 'micatro_joker_wins_guest_carried';
@@ -53,7 +55,7 @@ const KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
 const PUSH_DEBOUNCE_MS = 1500;
 const RETRY_MIN_MS = 2000, RETRY_MAX_MS = 60_000;
 let user = 'guest';
-let wins = Object.create(null);   // {jokerKey: {win?, nuz?, mono?, both?}}
+let wins = Object.create(null);   // {jokerKey: {win?, poke?, nuz?, mono?, both?}}
 let show = true;
 let sess = null;         // the account sync for the current user (null: a guest / no account API)
 export let stickerVer = 0;
@@ -180,7 +182,7 @@ export function onWinStickers(cb) { listeners.add(cb); return () => listeners.de
 /** A stake level (1..8; a mod stake's higher level counts as Gold) -> its sticker name. */
 export const stickerName = (level) => (level > 0 ? STICKER_NAMES[Math.min(8, Math.max(1, Math.floor(level))) - 1] : null);
 /**
- * The win event ({jokers: [keys], stake, categories?: ['win', 'nuz', 'mono', 'both']}) -> stored (each listed
+ * The win event ({jokers: [keys], stake, categories?: ['win', 'poke', 'nuz', 'mono', 'both']}) -> stored (each listed
  * category raised to this stake). Returns how many jokers improved.
  */
 export function recordWin(ev) {
@@ -203,11 +205,11 @@ export function recordWin(ev) {
   }
   return n;
 }
-/** This joker's full record: {win?, nuz?, mono?, both?} (a copy; {} when it has none). */
+/** This joker's full record: {win?, poke?, nuz?, mono?, both?} (a copy; {} when it has none). */
 export const winRecord = (centerKey) => ({ ...((centerKey && wins[centerKey]) || {}) });
 /** The highest stake level this joker has won on, in any category (0 = none). */
 export const winLevel = (centerKey) => { const r = centerKey && wins[centerKey]; return r ? Math.max(0, ...Object.values(r)) : 0; };
-/** Which sticker a record shows: both > mono > nuz > win (null when none). Pure (tests use it). */
+/** Which sticker a record shows: both > mono > nuz > poke > win (null when none). Pure (tests use it). */
 export function stickerFor(rec) {
   const r = normRecord(rec);
   if (!r) return null;

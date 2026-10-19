@@ -2,7 +2,7 @@
 // (server/mp.mjs micatro-stickers-get / micatro-stickers-put; client: micatro/js/ui/stickers.js + net.js).
 // The REAL handler (bundled like the dev server) over an in-memory sqlite D1 stand-in:
 //   * both actions need a login (401 without a token)
-//   * the record is per joker AND per category: {jokerKey: {win, nuz, mono, both}} (win = any win, nuz = a
+//   * the record is per joker AND per category: {jokerKey: {win, poke, nuz, mono, both}} (win = any win, poke = a Pokermon win, nuz = a
 //     Nuzlocke run, mono = Monotype, both = the two together), each the highest stake level 1..8; the old
 //     flat form {jokerKey: level} means {win: level} (in a put, and in a row already stored)
 //   * put validates: `wins` must be an object; keys /^[A-Za-z0-9_]{1,64}$/; known categories only; levels
@@ -154,6 +154,15 @@ try {
 	const after = row('micatro_stickers:stkalice');
 	A(ca.ok && cb.ok && after.wins.j_a_only.mono === 5 && after.wins.j_b_only.win === 4 && after.wins.j_joker.win === 8 && after.wins.j_joker.nuz === 7, 'two concurrent puts both land (compare-and-set + re-merge); neither lowers the other', JSON.stringify([ca.rev, cb.rev, after.wins.j_joker]));
 	A((await raw('micatro-stickers-put', { wins: fit }, tokens.stkfull)).status === 200, 'a full record (5000 64-char keys x 4 categories) fits the caps');
+
+	// ----- poke (Pikachu: any Pokermon win) is a category like the others, max-merged -----
+	const pk1 = await call('micatro-stickers-put', { wins: { j_pika: { win: 2, poke: 5 }, b_red: { poke: 3 } } }, tokens.stkalice);
+	A(pk1.ok && JSON.stringify(pk1.wins.j_pika) === '{"win":2,"poke":5}' && pk1.wins.b_red.poke === 3, 'a put with the poke category is accepted (jokers and a deck back key)', JSON.stringify(pk1));
+	const pk2 = await call('micatro-stickers-put', { wins: { j_pika: { poke: 2 } } }, tokens.stkalice);
+	A(pk2.ok && pk2.changed === false && row('micatro_stickers:stkalice').wins.j_pika.poke === 5, 'a lower poke never lowers it (max-merge)', JSON.stringify(pk2.wins && pk2.wins.j_pika));
+	const pk3 = await call('micatro-stickers-put', { wins: { j_pika: { poke: 8 } } }, tokens.stkalice);
+	A(pk3.ok && pk3.changed === true && row('micatro_stickers:stkalice').wins.j_pika.poke === 8 && row('micatro_stickers:stkalice').wins.j_pika.win === 2, 'a higher poke raises it (and leaves win alone)', JSON.stringify(row('micatro_stickers:stkalice').wins.j_pika));
+	A((await raw('micatro-stickers-put', { wins: { j_pika: { poke: 9 } } }, tokens.stkalice)).status === 400, 'a poke level outside 1..8 is refused');
 
 	// ----- no cross-user access -----
 	const gb = await call('micatro-stickers-get', { username: 'stkalice' }, tokens.stkbob);
