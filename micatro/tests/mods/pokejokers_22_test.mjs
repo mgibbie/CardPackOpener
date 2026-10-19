@@ -1,7 +1,7 @@
 // Pokermon pokejokers_22 (Deino line): all 3 jokers fired through real plays (act), plus both
 // evolutions.   node micatro/tests/mods/pokejokers_22_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, G, P_CENTERS } from './poke_helpers.mjs';
-import { STATUS } from '../../mods/pokermon/index.js';
+import { STATUS, POKERMON } from '../../mods/pokermon/index.js';
 
 const { ok, done } = T();
 const key = (c) => c.config.center.key;
@@ -16,12 +16,21 @@ let r = play(hand(['S_2', 'H_2', 'D_2']));
 ok(r.total.chips === 36 && close(r.total.mult, 4.5) && j.ability.extra.hand_played === 1, 'deino: X1.5 on Three of a Kind', r.total);
 r = play(hand(['S_3', 'H_3']));
 ok(r.total.mult === 2 && j.ability.extra.hand_played === 1, 'deino: nothing on other hands', r.total);
+// House rule (owner, 2026-10-18): any hand CONTAINING a Three of a Kind triggers it (the Lua needed an exact one).
+r = play(hand(['S_4', 'H_4', 'D_4', 'C_5', 'S_5']));
+ok(close(r.total.mult, 4 * 1.5) && j.ability.extra.hand_played === 2, 'deino: X1.5 on a Full House (contains a Three of a Kind)', [r.total, j.ability.extra]);
+r = play(hand(['S_6', 'H_6', 'D_6', 'C_6']));
+ok(close(r.total.mult, 7 * 1.5) && j.ability.extra.hand_played === 3, 'deino: X1.5 on Four of a Kind', [r.total, j.ability.extra]);
+const deinoText = (k) => ((POKERMON.loc || POKERMON.content?.loc || POKERMON.def?.loc)?.descriptions?.Joker?.[k]?.text || []).join(' ');
+ok(/contains a \{C:attention\}Three of a Kind/.test(deinoText('j_poke_deino')) && /contains a \{C:attention\}Three of a Kind/.test(deinoText('j_poke_zweilous')), 'deino / zweilous text says "contains a Three of a Kind"', [deinoText('j_poke_deino'), deinoText('j_poke_zweilous')]);
 j.ability.extra.hand_played = 8;
 winRound();
 ok(key(j) === 'j_poke_zweilous', 'deino -> zweilous after 8 Three of a Kinds', key(j));
 nextRound();
 r = play(hand(['S_2', 'H_2', 'D_2']));
 ok(close(r.total.mult, 6) && j.ability.extra.hand_played === 1, 'zweilous: X2 on Three of a Kind (count restarts)', [r.total, j.ability.extra]);
+r = play(hand(['S_7', 'H_7', 'D_7', 'C_8', 'S_8']));
+ok(close(r.total.mult, 4 * 2) && j.ability.extra.hand_played === 2, 'zweilous: X2 on a Full House', [r.total, j.ability.extra]);
 j.ability.extra.hand_played = 10;
 winRound();
 ok(key(j) === 'j_poke_hydreigon', 'zweilous -> hydreigon after 10', key(j));
