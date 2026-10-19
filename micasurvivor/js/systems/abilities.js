@@ -150,7 +150,7 @@ G.Abilities = (() => {
       fx: {dmg: 0.08, spd: 0.04} },
   };
 
-  // Pokémon (nº de la Pokédex) -> habilidad (abilities.gd BY_DEX; 966 entradas + las 17 del lote B1).
+  // Pokémon (nº de la Pokédex) -> habilidad (abilities.gd BY_DEX; 966 entradas + las 17 del lote B1 + las 24 del B1b).
   const BY_DEX = {
     1:'overgrow',2:'overgrow',3:'overgrow',4:'blaze',5:'blaze',6:'blaze',7:'torrent',8:'torrent',9:'torrent',10:'battlearmor',11:'regenerator',12:'compoundeyes',
     13:'battlearmor',14:'regenerator',15:'swarm',16:'compoundeyes',17:'compoundeyes',18:'compoundeyes',19:'runaway',20:'runaway',21:'compoundeyes',22:'compoundeyes',23:'intimidate',24:'intimidate',
@@ -236,7 +236,14 @@ G.Abilities = (() => {
     // (MicaSurvivor lote B1, 2026-10-19: los 17 Pokémon que completan la Pokédex. El port no los tiene: cada uno
     //  lleva la habilidad de su familia si la tabla la tiene, y si no la más parecida a la suya de las 54.)
     593:'waterabsorb',618:'static',683:'regenerator',733:'compoundeyes',865:'defiant',870:'battlearmor',879:'guts',929:'earlybird',945:'poisonpoint',948:'effectspore',990:'moldbreaker',999:'pickup',
-    1003:'moldbreaker',1008:'megalauncher',1020:'moldbreaker',1021:'moldbreaker',1025:'poisonpoint'
+    1003:'moldbreaker',1008:'megalauncher',1020:'moldbreaker',1021:'moldbreaker',1025:'poisonpoint',
+    // (lote B1b, 2026-10-19: los 24 con hoja de respaldo, con la misma regla: la de su familia si está en la tabla,
+    //  si no la más parecida a la suya: Zebra Dinamo -> Absorbe Electricidad, Roca Sólida, Herbívoro, Foco Interno,
+    //  Absorbe Fuego para la línea de Rolycoly (Combustible / Antídoto Fuego), Defensa Hoja -> Clorofila)
+    514:'regenerator',516:'regenerator',520:'battlearmor',522:'voltabsorb',523:'voltabsorb',538:'sturdy',558:'sturdy',
+    564:'solidrock',565:'solidrock',591:'effectspore',592:'waterabsorb',616:'regenerator',626:'sapsipper',668:'moxie',
+    732:'compoundeyes',735:'compoundeyes',756:'compoundeyes',765:'innerfocus',837:'flashfire',838:'flashfire',839:'flashfire',
+    866:'battlearmor',878:'guts',893:'chlorophyll'
   };
 
   const DEFAULT = 'protean';

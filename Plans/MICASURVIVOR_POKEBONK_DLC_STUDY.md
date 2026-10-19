@@ -1042,4 +1042,8 @@ changes the base game's enemy pool.
   Idle + Walk, 8 with only a one-frame Idle, 4 only in an alternate-form folder), now in the game: **983**. The
   other **42** have no sheet at all and wait for the owner's call on a fallback (see `micasurvivor/README.md`,
   "Batch B1").
+- **B1b status (2026-10-19, built, not merged):** the owner chose fallbacks from images we already have. The 24
+  Gen 5–8 ones now use their overworld follower sprites (re-packed, scaled; `tools/micasurvivor/follow_sprites.py`):
+  **1007**. The 18 Gen 9 ones were to use SpriteCollab portraits, transparent ones only; all their portraits have
+  an opaque background, so they stay pending (`micasurvivor/README.md`, "Batch B1b").
 - **Mega sprites:** the Legends Z-A Megas also need Mega sheets for the League (part of D4c).

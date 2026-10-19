@@ -54,6 +54,12 @@ def main():
             continue
         dex = int(m.group(2))
         data = json.loads(m.group(3))
+        if data.get('src'):
+            # (B1b) a fallback row (follow_sprites.py): its sheets are not PMD ones and its flag comes from its family
+            out.append(ln)
+            if data.get('hv'):
+                hovering.append(dex)
+            continue
         data.pop('hv', None)
         idle = data['a'].get('Idle') or data['a'].get('Walk')
         if idle and gap_of(dex, idle) >= GAP:

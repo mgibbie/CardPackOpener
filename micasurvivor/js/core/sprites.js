@@ -16,6 +16,19 @@ G.Sprites = (() => {
 
   function meta(dex) { return G.SPRITE_META[dex] || null; }
 
+  /**
+   * (Lote B1b) Escala del arte. Las hojas de respaldo (src "follow", tools/micasurvivor/follow_sprites.py: los
+   * sprites de seguidor del overworld) son más pequeñas que las de Mundo Misterioso: "k" las lleva al tamaño de
+   * sus vecinos. Las de SpriteCollab no tienen k (1).
+   */
+  function artScale(dex) { const m = meta(dex); return (m && m.k) || 1; }
+
+  /** Fila de la hoja para la dirección 0..7: las de respaldo tienen 4 filas y "dm" dice cuál toca a cada una. */
+  function rowOf(dex, dir, m) {
+    const pm = meta(dex);
+    return pm && pm.dm ? (pm.dm[dir] || 0) : Math.min(dir || 0, m.r - 1);
+  }
+
   /** ¿Flota en su sprite? (tools/hover_flags.py) Pasa por encima de rocas y agua. */
   function hovers(dex) { const m = meta(dex); return !!(m && m.hv); }
 
@@ -95,7 +108,7 @@ G.Sprites = (() => {
     }
     if (sheets.size >= MAX_SHEETS) evict(now);
     s = { ready: false, failed: false, img: new Image(), tries: 0, retryAt: 0, at: now,
-          src: `assets/pokemon/${dex}/${shiny ? 's/' : ''}${name}.png` };
+          src: `assets/pokemon/${dex}/${m && m.src ? m.src + '/' : ''}${shiny ? 's/' : ''}${name}.png` };
     s.img.crossOrigin = 'anonymous';   // MicaSurvivor: sheets 301 to magepunk-micasurvivor.pages.dev (CORS)
     s.img.onload = () => { s.ready = true; };
     s.img.onerror = () => { s.failed = true; s.retryAt = performance.now() + 1000 * Math.min(8, 2 ** s.tries++); };
@@ -127,14 +140,14 @@ G.Sprites = (() => {
   /** Radio de colisión aproximado a partir del tamaño del sprite. */
   function bodyRadius(dex, scale = 1) {
     const m = animMeta(dex, 'Idle');
-    const w = m ? m.w : 32;
+    const w = m ? m.w * artScale(dex) : 32;
     return G.U.clamp(w * 0.22, 5, 26) * PX * scale;
   }
 
   /** Alto visual aproximado (para barras de vida y números de daño). */
   function bodyHeight(dex, scale = 1) {
     const m = animMeta(dex, 'Idle');
-    return (m ? m.ay : 24) * PX * scale;
+    return (m ? m.ay * artScale(dex) : 24) * PX * scale;
   }
 
   /** Sombra elíptica bajo los pies, tamaño según el ShadowSize de PMD. */
@@ -231,7 +244,7 @@ G.Sprites = (() => {
     draw(ctx, x, y, opts = {}) {
       let m = animMeta(this.dex, this.cur, this.shiny);
       let s = sheet(this.dex, this.cur, this.shiny);
-      const k = PX * this.scale;
+      const k = PX * this.scale * artScale(this.dex);
       if (s && !s.ready) {
         // Mientras carga esta animación, enseña Idle si ya está.
         const idle = sheet(this.dex, 'Idle', this.shiny);
@@ -244,7 +257,7 @@ G.Sprites = (() => {
         ctx.beginPath(); ctx.arc(x, y - 12 * k, 8 * k, 0, 6.2832); ctx.fill();
         return;
       }
-      const row = Math.min(this.dir, m.r - 1);
+      const row = rowOf(this.dex, this.dir, m);
       const alpha = opts.alpha == null ? 1 : opts.alpha;
       if (alpha <= 0) return;
       const sx = Math.min(frame, m.n - 1) * m.w, sy = row * m.h;
@@ -265,6 +278,6 @@ G.Sprites = (() => {
     }
   }
 
-  return { PX, meta, hasShiny, hovers, white, animMeta, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
+  return { PX, meta, hasShiny, hovers, white, animMeta, artScale, rowOf, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
            drawShadow, Animator, ANIMS, get sheetCount() { return sheets.size; } };
 })();

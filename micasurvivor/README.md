@@ -71,12 +71,50 @@ an ability (`abilities.js`), English names where the Spanish one differs (`lang-
 healer (`enemies.js`). Eight of them only have a one-frame Idle on SpriteCollab, used for every animation; when
 they walk they hop 2 px (`js/core/sprites.js`; none of the 966 has a one-frame Walk).
 
-**Pending the owner's call (42, no SpriteCollab sheet at all):** 514, 516, 520, 522, 523, 538, 558, 564, 565, 591,
+**Pending the owner's call (42, no SpriteCollab sheet at all; 24 got a fallback in B1b, below):** 514, 516, 520, 522, 523, 538, 558, 564, 565, 591,
 592, 616, 626, 668, 732, 735, 756, 765, 837, 838, 839, 866, 878, 893, 931, 942, 943, 944, 947, 949, 950, 954, 956,
 962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023. They are not in `pokedex.js` (nothing can spawn them);
 `overworld/tests/micasurvivor_pokedex_test.mjs` lists them as `PENDING_ART`.
 
 Deploy order: the new sheets first (`npm run deploy-micasurvivor`), then merge the code, or the new Pokémon 404.
+
+## Batch B1b: fallback sheets from the overworld followers (2026-10-19)
+
+The owner's call on the 42: build fallbacks from images we already have (crop, scale, re-pack; nothing drawn).
+
+- **24 Gen 5–8 Pokémon, from the overworld follower sprites**: `tools/micasurvivor/follow_sprites.py` turns each
+  4-direction follower charset (`overworld/data/pokemon_follow/<id>.png`: 4x4 cells of 32 px, rows
+  down/left/right/up, the walk cycle stand/step/stand/step) into a MicaSurvivor sheet in
+  `assets/pokemon/{dex}/follow/`: **Walk** = the 4 frames, **Idle** = walk frame 0; Attack / Hurt / ... are
+  missing on purpose, so the game's own fallback (`animName`) plays Idle for them, with the usual hurt flash.
+  Those charsets were downscaled smoothly from the PokemonZero2024 Essentials pack, where they are the same
+  drawings at exactly 2x; when the pack is on the PC (`ESSENTIALS_ROOT`) the generator takes its pixels at 1x
+  instead (crisp), and its "Followers shiny" folder gives all 24 a shiny. Every frame is cropped to the union of
+  all 16 (no jitter), the feet 2 px below the ground anchor (the usual PMD walker).
+- The row in `sprites-meta.js` carries `"src":"follow"` (the sheet folder), `"k"` (art scale) and `"dm"` (the
+  sheet has 4 rows, Down / Right / Up / Left; `dm` maps the game's 8 directions to them, a diagonal taking the
+  side view). `js/core/sprites.js` applies them (`artScale`, `rowOf`: the drawing, the body radius and height,
+  the boss scale, the menu previews and the minimap). `k` = the median ratio of PMD Walk height to follower
+  height over the 872 Pokémon that have both, among those whose follower is about as tall (1.05–1.45 here);
+  `s` (shadow) is that group's median; Frillish floats like Jellicent (`HV_LIKE`).
+- **Real sheets win**: `fetch_sprites.py` does not count a `src` row as "already there", so once SpriteCollab
+  has a sheet, `fetch_sprites.py --only <dex>` fetches it and the real row replaces the fallback (the real files
+  are in `{dex}/`, so no published file changes); `follow_sprites.py` never writes a row for a Pokémon
+  SpriteCollab covers and tells you to fetch it. `hover_flags.py` leaves `src` rows alone.
+- Pokédex rows from `fetch_pokedex.py` as for the rest; abilities by B1's rule (the family's, else the closest);
+  Mr. Rime shields like Mr. Mime; Zarude is mythical (leg: rifts, Judgment, Tower, its achievement: 227).
+  Credits: the "Sprites de respaldo" section of `CREDITS.md`, written by the generator.
+
+Result: **1007 Pokémon** (+24): Simisear, Simipour, Tranquill, Blitzle, Zebstrika, Throh, Crustle, Tirtouga,
+Carracosta, Amoonguss, Frillish, Shelmet, Bouffalant, Pyroar, Trumbeak, Gumshoos, Shiinotic, Oranguru, Rolycoly,
+Carkol, Coalossal, Mr. Rime, Cufant, Zarude.
+
+**Still pending (18, Gen 9):** 931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002, 1014,
+1022, 1023. The plan was their SpriteCollab portraits, using only transparent ones; every one of their portraits
+(all emotions, 18 species) is a 40x40 bust on an opaque painted background, so none qualifies. They have no
+follower sprite either. They stay out of `pokedex.js`, listed as `PENDING_ART` in the Pokédex test.
+
+Deploy order again: `npm run deploy-micasurvivor` (the 96 new files in `{dex}/follow/`) before the merge.
 
 ## Saves
 
@@ -863,7 +901,7 @@ before batches 6-8; diffing the port's full lists against ours left exactly this
 
 | | Port | We had | Added |
 |---|---|---|---|
-| Achievements | 82 + 54 per type + one per legendary (226 here since B1) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
+| Achievements | 82 + 54 per type + one per legendary (227 here since B1b) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
 | Daily missions | 17 | 13 | `mDaily`, `mMods`, `mType`, `mRifts` |
 | Weekly missions | 13 | 9 | `wDailyCh`, `wType`, `wRifts`, `wMods` |
 | Titles | 36 (one per achievement that gives one) | 34 | "Verdugo de jefes" (500 bosses), "Rey de los jefes" (1,000) |
@@ -900,7 +938,7 @@ scrolls past 5 rows.
 **Lexicon** (main menu → Lexicon; mouse, touch, pad). The port's five tabs: Items ("✔ Found" / "Not found yet" and
 "Items: n / 26 found"), Moves (by type, "Evolves into: …"), Status (the port's 7 texts), Abilities, Z-Moves &
 Dynamax (the rule, the Dynamax entry left pending in batch 5, each Z with "Defeat 250 X-type Pokémon: n/250" or
-"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 983 since B1, by generation; yours with their sprite, the
+"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 1007 since B1b, by generation; yours with their sprite, the
 others as silhouettes), Modes (the 8 modes with your records, the Tower and Boss Rush included, the 6 modifiers,
 adaptive difficulty) and the Floor Tower (relics, the rest cards, the 15 + 4 pacts and the boss log that was only
 on the fail screen). Every card opens an entry with its full text and data; Close, Esc, B or a tap outside closes
@@ -909,7 +947,7 @@ stats); nothing new is stored.
 
 **Trainer card** (Profile → "View my trainer card"; `menu.gd` `_show_card`): your display name, your title (or
 "(no title)"), your Pokémon and your 3 favourites, and the port's 9 cells: Runs, Best time, Best level, Defeated,
-Bosses, Chests, Pokémon (n / 983), Achievements (n / 226), Time played (new stat `stats.totalTime`, seconds,
+Bosses, Chests, Pokémon (n / 1007), Achievements (n / 227), Time played (new stat `stats.totalTime`, seconds,
 max-merged like every stat). Below, "Records by mode". View only, like the port: no share or export, and nothing
 from the account but the name other players already see.
 
@@ -1390,5 +1428,6 @@ summary card with Watch again / Back to menu. An unknown or expired id: "This re
 - `node overworld/tests/micasurvivor_pokedex_test.mjs` (batch B1): every dex 1..1025 is in the game or pending art,
   every sheet of every Pokémon on disk with its meta's geometry, the 17 new ones loading in the browser, spawning
   in a normal run (forced into the cast), as bosses, the legendaries as rift bosses, their Lexicon entries and
-  English names.
+  English names. Batch B1b: the 24 follower-based ones the same way (sheets decode, they spawn, Zarude as a rift
+  boss), drawn at their neighbours' size (sampled pixels) and facing the way they walk.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.
