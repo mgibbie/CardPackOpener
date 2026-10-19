@@ -31,6 +31,8 @@ import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
+// (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
+import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults } from './smods.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -40,6 +42,7 @@ export const STATES = {
   MOD_PACK: 20, MOD_PACK_HAND: 21,
 };
 export const STATE_NAMES = Object.fromEntries(Object.entries(STATES).map(([k, v]) => [v, k]));
+SEAM_STATE.STATES = STATES;
 const PACK_STATES = [STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK, STATES.MOD_PACK, STATES.MOD_PACK_HAND];
 export const HANDLIST = Object.keys(HANDS_PROTO).sort((a, b) => HANDS_PROTO[a].order - HANDS_PROTO[b].order);
 const BASE_HANDLIST = HANDLIST.slice();
@@ -151,6 +154,7 @@ const STATE_HANDLERS = {
       if (draw_from_deck_to_hand(null)) return;
       if (G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && G.GAME.facing_blind) {
         for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ first_hand_drawn: true }));
+        if (ACTIVE_MODS.length) blind_calculate({ first_hand_drawn: true });
       }
       // Steamodded's hand_drawn context (mod cards only): the cards this draw brought in
       // (queued so it runs after the draw events above).
@@ -400,6 +404,12 @@ export function draw_from_deck_to_hand(e) {
       (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0)) {
     hand_space = Math.min(G.deck.cards.length, 3);
   }
+  // Steamodded's drawing_cards context {amount}: a listener's {cards_to_draw = n} / {modify = n} sets how many (SMODS.draw_cards)
+  if (ACTIVE_MODS.length && wanted('drawing_cards')) {
+    const f = calculate_seam({ drawing_cards: true, amount: Math.max(hand_space, 0) }, 'drawing_cards');
+    const n = (f.cards_to_draw !== undefined && f.cards_to_draw !== null && f.cards_to_draw !== false) ? f.cards_to_draw : (f.modify !== undefined && f.modify !== null && f.modify !== false) ? f.modify : hand_space;
+    hand_space = Math.min(G.deck.cards.length, n);
+  }
   for (let i = 1; i <= hand_space; i++) draw_card(G.deck, G.hand, i * 100 / hand_space, 'up', true);
   // (a Lua G.FUNCS.draw_from_deck_to_hand wrap: Bunco's linked cards follow their group into the hand)
   if (ACTIVE_MODS.length) callHook('draw_from_deck_to_hand', e);
@@ -437,6 +447,7 @@ function new_round() {
       // Steamodded joker retriggers (MoreFluff's Brass Joker / CBA): an effect may evaluate again.
       if (eff) for (let t = joker_retriggers(j, sctx); t > 0; t--) mod_context_effect(j, j.calculate_joker({ ...sctx, retrigger_joker: true }));
     }
+    if (ACTIVE_MODS.length) blind_calculate({ setting_blind: true, blind: rr.blind });
     G.E_MANAGER.add_event(() => {
       G.STATE = STATES.DRAW_TO_HAND;
       G.deck.shuffle('nr' + rr.ante);
@@ -471,8 +482,11 @@ function end_round() {
         const ev = c.calculate_joker({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
         if (ev) { card_eval_status_text(c, 'jokers', null, null, null, ev); mod_effect_tail(c, ev, { dollars: true }); }
       }
-      // Held playing cards' MOD enhancements / seals see end_of_round too (Pokermon's Hazard).
-      for (const hc of G.hand.cards.slice()) mod_card_calculate(hc, { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss });
+      blind_calculate({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
+      // Held playing cards' MOD enhancements / seals see end_of_round too (Pokermon's Hazard); Steamodded marks this
+      // pass playing_card_end_of_round (Pokermon 3.9.1's Seed enhancement checks it).
+      const pceor = wanted('playing_card_end_of_round') || undefined;
+      for (const hc of G.hand.cards.slice()) mod_card_calculate(hc, { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss, ...(pceor ? { playing_card_end_of_round: true } : {}) });
       callHook('end_round');
     }
     // A mod may say which blind slot this was ('Small' | 'Big' | 'Boss'): only the Boss slot wins / ends
@@ -535,7 +549,8 @@ function end_round() {
       G.GAME.voucher_restock = null;
       if (G.GAME.modifiers.set_eternal_ante && G.GAME.round_resets.ante === G.GAME.modifiers.set_eternal_ante) for (const v of G.jokers.cards) v.set_eternal(true);
       if (G.GAME.modifiers.set_joker_slots_ante && G.GAME.round_resets.ante === G.GAME.modifiers.set_joker_slots_ante) G.jokers.config.card_limit = 0;
-      ease_ante(1);
+      SEAM_STATE.ante_end = true; // (SMODS.ante_end: the modify_ante / ante_change contexts' ante_end)
+      try { ease_ante(1); } finally { SEAM_STATE.ante_end = undefined; }
     }
     draw_from_discard_to_deck();
     G.E_MANAGER.add_event(() => {
@@ -870,6 +885,8 @@ export function calculate_context(context) {
       mod_effect_tail(c, eff, { dollars: true });
     }
   }
+  // Steamodded Blind:calculate (a mod blind's prototype calculate — Pokermon 3.9.1's boss blinds; none before)
+  if (ACTIVE_MODS.length) { const be = blind_calculate(context); if (be) out.push([null, be]); }
   for (const r of callHook('calculate', context)) out.push([null, r]);
   return out;
 }
@@ -932,6 +949,8 @@ function evaluate_play() {
   scoring_hand = scoring_hand.filter(Boolean).concat(pures);
   // Lua sorts by screen x; cards in G.play are laid out in area order.
   scoring_hand.sort((a, b) => G.play.cards.indexOf(a) - G.play.cards.indexOf(b));
+  // Steamodded's modify_scoring_hand context: a listener may add a played card to the scoring hand or take one out.
+  if (ACTIVE_MODS.length && wanted('modify_scoring_hand')) scoring_hand = modify_scoring_hand(G.play.cards, scoring_hand, true);
   emit('scoring_hand', { cards: scoring_hand.map((c) => c.sort_id), hand: text, disp: disp_text });
 
   let mult, hand_chips;
@@ -955,11 +974,12 @@ function evaluate_play() {
         if (t > 1) { effects = eval_card(j, { ...bctx, retrigger_joker: true }); if (!effects.jokers) break; } // (Steamodded joker retriggers)
       }
     }
+    if (ACTIVE_MODS.length) blind_calculate({ cardarea: G.jokers, ...base_ctx(), before: true });
     mult = mod_mult(gh.mult);
     hand_chips = mod_chips(gh.chips);
     // Mods acting on the base score before the blind's modify_hand (Bunco's Chips / Mult Tags). -> [hand_chips, mult]
     if (ACTIVE_MODS.length) [hand_chips, mult] = reduceHook('modify_scoring', [hand_chips, mult], 'before_blind', base_ctx());
-    const mh = G.GAME.blind.modify_hand(G.play.cards, poker_hands, text, mult, hand_chips);
+    const mh = G.GAME.blind.modify_hand(G.play.cards, poker_hands, text, mult, hand_chips, scoring_hand);
     mult = mod_mult(mh[0]); hand_chips = mod_chips(mh[1]);
     if (mh[2]) emit('hand_text', { chips: hand_chips, mult, modded: true });
     emit('hand_text', { chips: hand_chips, mult });
@@ -1358,6 +1378,13 @@ function evaluate_round() {
     row({ name: 'interest', dollars: d, bonus: true, disp: G.GAME.interest_amount });
     dollars += d;
   }
+  // Steamodded's modify_final_cashout context {amount}: a listener's {modify = n} adds n (its own bonus row).
+  if (ACTIVE_MODS.length && wanted('modify_final_cashout')) {
+    const ctx = { modify_final_cashout: true, amount: dollars };
+    const f = calculate_seam(ctx, 'modify_final_cashout');
+    (f.cashout_rows || []).forEach((r, i) => row({ name: 'cashout_mod' + (i + 1), dollars: r.dollars, bonus: true, card: r.card && r.card.sort_id, center: r.card && r.card.config && r.card.config.center && r.card.config.center.key }));
+    dollars = ctx.amount;
+  }
   for (const r of callHook('evaluate_round', rows)) for (const row of [].concat(r)) { rows.push(row); dollars += row.dollars || 0; }
   G.GAME.current_round.dollars = dollars;
   const pb = G.GAME.blind.config && G.GAME.blind.config.blind;
@@ -1380,6 +1407,7 @@ export function create_card_for_shop(area) {
     }
   }
   G.GAME.spectral_rate = G.GAME.spectral_rate || 0;
+  if (object_weights()) return create_shop_card(area);
   // Mods may add card types a shop slot can roll (BETMMA's Voucher Tycoon: Vouchers, rate 2).
   const mod_types = ACTIVE_MODS.length ? [].concat(...callHook('shop_card_types')) : [];
   const total_rate = G.GAME.joker_rate + G.GAME.tarot_rate + G.GAME.planet_rate + G.GAME.playing_card_rate + G.GAME.spectral_rate +
@@ -1412,6 +1440,41 @@ export function create_card_for_shop(area) {
     check += v.val;
   }
   return create_card('Joker', area, null, null, null, null, null, 'sho');
+}
+
+/**
+ * SMODS.create_shop_card (Steamodded's object_weights shop roll, after the store_joker_create tags): the card type by
+ * poll_object_type (the G.GAME rates), the key by poll_object (append 'sho'), the create_shop_card context's
+ * shop_create_flags, then modify_shop_card, the Tag modify event and Illusion's edition. Playing cards pick their
+ * suit and rank like SMODS.create_card ('sccsuit' / 'sccrank').
+ */
+function create_shop_card(area) {
+  const ante = G.GAME.round_resets.ante;
+  const card_args = { type: poll_object_type({ seed: 'cdt' + ante }), area };
+  card_args.key = poll_object({ type: card_args.type, append: 'sho', guaranteed: card_args.type === 'Enhanced' });
+  if (card_args.key === 'INTERNAL_PLAYING_CARD') { card_args.key = undefined; card_args.set = 'Base'; }
+  const flags = calculate_seam({ create_shop_card: true, set: card_args.type, key: card_args.key, cardarea: area }, 'create_shop_card');
+  const t = merge_defaults(flags.shop_create_flags || {}, card_args);
+  let card;
+  if (t.set === 'Base' || t.set === 'Enhanced') {
+    const ka = t.key_append || '';
+    const SUITS = { Clubs: 'C', Diamonds: 'D', Hearts: 'H', Spades: 'S' };
+    const RANKS = { 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: 'T', Jack: 'J', Queen: 'Q', King: 'K', Ace: 'A' };
+    const [s] = pseudorandom_element(SUITS, pseudoseed('sccsuit' + ka + ante));
+    const [r] = pseudorandom_element(RANKS, pseudoseed('sccrank' + ka + ante));
+    SEAM_STATE.create_front = P_CARDS[s + '_' + r];
+    try { card = create_card(t.set, area, t.legendary, t.rarity, t.skip_materialize, t.soulable, t.set === 'Enhanced' ? t.key : undefined, t.key_append); }
+    finally { SEAM_STATE.create_front = undefined; }
+  } else card = create_card(t.set, area, t.legendary, t.rarity, t.skip_materialize, t.soulable, t.key, t.key_append);
+  if (t.edition) card.set_edition(typeof t.edition === 'string' ? { [t.edition.replace(/^e_/, '')]: true } : t.edition, true, true);
+  calculate_seam({ modify_shop_card: true, card }, 'modify_shop_card');
+  G.E_MANAGER.add_event(() => {
+    for (const tg of G.GAME.tags.slice()) if (tg.apply_to_run({ type: 'store_joker_modify', card })) break;
+  });
+  if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && G.GAME.used_vouchers.v_illusion && pseudorandom(pseudoseed('illusion')) > 0.8) {
+    card.set_edition(poll_edition('illusion', null, true, true));
+  }
+  return card;
 }
 
 function update_shop() {
@@ -1626,6 +1689,8 @@ export function end_consumeable() {
       G.GAME.PACK_INTERRUPT = null;
       emit('pack_closed', {});
     });
+    // Steamodded's ending_booster context {booster = the opened booster's center}
+    if (ACTIVE_MODS.length && wanted('ending_booster')) calculate_seam({ ending_booster: true, booster: SEAM_STATE.booster }, 'ending_booster');
     for (const t of G.GAME.tags.slice()) if (t.apply_to_run({ type: 'new_blind_choice' })) break;
   });
 }
@@ -1767,7 +1832,8 @@ function cash_out() {
     G.GAME.shop_d6ed = null;
     G.STATE_COMPLETE = false;
   });
-  ease_dollars(G.GAME.current_round.dollars);
+  SEAM_STATE.money_from_cashout = true; // (SMODS.money_from_cashout: money_altered's from_cashout)
+  try { ease_dollars(G.GAME.current_round.dollars); } finally { SEAM_STATE.money_from_cashout = undefined; }
   G.E_MANAGER.add_event(() => { G.GAME.previous_round.dollars = G.GAME.dollars; });
   ease_chips(0);
   if (G.GAME.round_resets.blind_states.Boss === 'Defeated') {
@@ -1824,6 +1890,7 @@ export function discard_cards_from_highlighted(hook) {
   // G.hand.highlighted, and must not shift `hl` while it is being walked.
   G.hand.highlighted = hl.slice();
   for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ pre_discard: true, full_hand: hl, hook }));
+  if (ACTIVE_MODS.length) blind_calculate({ pre_discard: true, full_hand: hl, hook });
   const destroyed_cards = [];
   if (ACTIVE_MODS.length) callHook('discard_cards', hl, count, hook); // (Bunco's The Paling: $1 per card)
   for (let i = 0; i < count; i++) {
@@ -2055,6 +2122,8 @@ function applyAction(a) {
     }
     case 'skip_booster': {
       can(inPack(), 'no pack open');
+      // (a G.FUNCS.can_skip_booster wrap: MoreFluff's Superboss Pack can't be skipped)
+      can(!(ACTIVE_MODS.length && firstHook('can_skip_booster') === false), "this pack can't be skipped");
       for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ skipping_booster: true }));
       if (ACTIVE_MODS.length) callHook('skip_booster'); // (a G.FUNCS.skip_booster wrap: a custom deck's money for skipping)
       end_consumeable();

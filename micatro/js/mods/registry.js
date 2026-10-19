@@ -12,9 +12,10 @@
 // saves, replays and spectators load exactly the same mods.
 
 import {
-  G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, P_CARDS, rebuildPools, reset_p_cards_list,
+  G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, P_CARDS, P_CENTER_POOLS, rebuildPools, reset_p_cards_list,
 } from '../engine/core.js';
 import { addAliases, resolveKey as resolveAlias, isRetired as isRetiredAlias } from './aliases.js';
+import SMODS_ATTRIBUTES from '../engine/smods_attributes.js';
 
 /** Every registered mod, by id. */
 export const MODS = {};
@@ -30,6 +31,47 @@ export const RARITIES = {};
 export const ATLASES = {};
 /** Mod localization: set -> key -> {name, text:[...]} merged from all mods. */
 export const MOD_LOC = { descriptions: {}, misc: { dictionary: {}, labels: {} } };
+
+/**
+ * SMODS.Attribute: key -> {key, keys: [object keys], alias?: [attribute keys], mod?}. Steamodded's built-in
+ * attributes (engine/smods_attributes.js) plus each mod's `content.attributes` ([{key, keys?, alias?}]; a key
+ * registered twice merges). Objects may also list theirs (`attributes: [...]` on a center / tag / blind / seal).
+ * Read through engine/smods.js (get_attribute_pool, has_attribute); nothing in the engine rolls by them unless
+ * content asks (SMODS.poll_object / create_card with `attributes`).
+ */
+export const ATTRIBUTES = {};
+function addAttribute(a, modId) {
+  const key = String(a.key).toLowerCase();
+  const cur = ATTRIBUTES[key];
+  const merge = (x, y) => { const out = [...(x || [])]; for (const v of y || []) if (!out.includes(v)) out.push(v); return out; };
+  if (cur) { cur.keys = merge(cur.keys, a.keys); if (a.alias) cur.alias = merge(cur.alias, a.alias); }
+  else ATTRIBUTES[key] = { key, keys: [...(a.keys || [])], ...(a.alias ? { alias: [...a.alias] } : {}), ...(modId ? { mod: modId } : {}) };
+}
+for (const a of SMODS_ATTRIBUTES) addAttribute(a);
+
+/**
+ * Consumable-set aliases (`content.set_aliases: {alias: canonical}`): Pokermon 3.9.1 renamed its sets
+ * Energy -> poke_energy and Item -> poke_item; Micatro keeps the old names canonical and answers to the new
+ * ones (create_card / get_current_pool / P_CENTER_POOLS / CONSUMABLE_TYPES / MOD_LOC.descriptions, and a
+ * registered center or consumable type whose set is an alias is filed under the canonical set). Empty = no-op.
+ */
+export const SET_ALIASES = {};
+/** A set name -> the canonical set (itself unless an alias is registered). */
+export const resolve_set = (s) => (typeof s === 'string' && Object.prototype.hasOwnProperty.call(SET_ALIASES, s) ? SET_ALIASES[s] : s);
+/** Is this card / center of set `name` (either name of an aliased set)? */
+export function is_set(thing, name) {
+  if (!thing) return false;
+  const set = thing.ability ? thing.ability.set : thing.set;
+  return set === name || resolve_set(set) === resolve_set(name);
+}
+/** A non-enumerable alias property: obj[alias] reads / writes obj[canonical] (Object.keys never sees it). */
+function aliasProp(obj, alias, canonical) {
+  if (Object.prototype.hasOwnProperty.call(obj, alias)) return;
+  Object.defineProperty(obj, alias, { configurable: true, enumerable: false, get: () => obj[canonical], set: (v) => { obj[canonical] = v; } });
+}
+let REG_VERSION = 0;
+/** Bumped by every registerMod (caches keyed on the registry — engine/smods.js — rebuild). */
+export const registryVersion = () => REG_VERSION;
 
 /**
  * Hook names the engine calls. Each active mod may provide a function per hook;
@@ -122,6 +164,9 @@ export const HOOKS = [
   'ease_dollars',       // (mod, instant) -> mod: the amount ease_dollars will apply
   'dollars_eased',      // (mod, instant) ease_dollars(mod) was called (the original amount; its event may be queued)
   'ease_ante',          // (mod) ease_ante was called
+  'ease_ante_mod',      // (mod) -> mod: the step ease_ante will apply (before 'ease_ante'; MoreFluff's Superboss / Final Stake)
+  'can_use_consumeable', // (card) -> true: this consumable can be used whatever its own check says (MoreFluff's Suspended sticker)
+  'can_skip_booster',   // () -> false: the open pack can't be skipped (the skip_booster action refuses; MoreFluff's Superboss Pack)
   'hand_leveled',       // (card, hand, amount) level_up_hand leveled a hand
   'blind_amount',       // (amount, ante) -> get_blind_amount's value
   'mod_chips',          // (chips) -> chips (mod_chips, before the vanilla cap)
@@ -295,11 +340,23 @@ export function registerMod(mod) {
   mod.content = mod.content || {};
   const C = mod.content;
   const own = (o) => { o.mod = mod.id; return o; };
+  REG_VERSION++;
+  // set aliases first, so this mod's own centers / types may already use the alias names
+  for (const [alias, canonical] of Object.entries(C.set_aliases || {})) {
+    if (alias === canonical) continue;
+    SET_ALIASES[alias] = canonical;
+    aliasProp(P_CENTER_POOLS, alias, canonical);
+    aliasProp(CONSUMABLE_TYPES, alias, canonical);
+    aliasProp(MOD_LOC.descriptions, alias, canonical);
+  }
+  for (const a of C.attributes || []) addAttribute(a, mod.id);
   // Centers: jokers/consumables/boosters/vouchers/backs/enhancements/editions/...
   for (const c of C.centers || []) {
     if (!c.key) throw new Error(`${mod.id}: center without key`);
     if (P_CENTERS[c.key] && !P_CENTERS[c.key].mod) throw new Error(`${mod.id}: ${c.key} collides with a base center`);
     own(c);
+    if (c.set && SET_ALIASES[c.set]) c.set = resolve_set(c.set);
+    if (c.soul_set && SET_ALIASES[c.soul_set]) c.soul_set = resolve_set(c.soul_set);
     c.config = c.config || {};
     c.unlocked = true; c.discovered = true;
     if (c.order === undefined) c.order = 10000 + Object.keys(P_CENTERS).length;
@@ -312,6 +369,7 @@ export function registerMod(mod) {
   for (const s of C.stakes || []) { own(s); P_STAKES[s.key] = s; }
   for (const t of C.consumable_types || []) {
     own(t);
+    if (SET_ALIASES[t.key]) t.key = resolve_set(t.key);
     t.rate_key = t.rate_key || t.key.toLowerCase() + '_rate';
     CONSUMABLE_TYPES[t.key] = t;
   }

@@ -741,7 +741,7 @@ function runBadgesPanel(rb) {
   const why = (r) => (r ? `<span class="rb-off">Broken: ${esc(r)}</span>` : '');
   const tname = TYPES.includes(rb.type) ? rb.type : null;
   el.appendChild(h('div', 'rb-row', rb.nuz ? `${badgePills({ nuz: true })} <span>Intact: never sell a joker; at most one new joker per shop (${Math.min(9, +rb.window_gains || 0)}/1 this shop)</span>` : `<b>Nuzlocke</b> ${why(rb.nuz_reason)}`));
-  el.appendChild(h('div', 'rb-row', rb.mono ? `${badgePills({ mono: tname || true })} <span>${tname ? 'Intact: start every round with only ' + tname + ' jokers' : 'The jokers you start your first round with set the type'}${rb.mono_at_risk ? ' <span class="rb-off">An off-type joker is in your row: sell it before the next round</span>' : ''}</span>` : `<b>Monotype</b> ${why(rb.mono_reason)}`));
+  el.appendChild(h('div', 'rb-row', rb.mono ? `${badgePills({ mono: tname || true })} <span>${tname ? 'Intact: start every round with only ' + tname + ' jokers (gained as ' + tname + ', or ' + tname + ' now via Tera)' : 'The jokers you start your first round with set the type'}${rb.mono_at_risk ? ' <span class="rb-off">An off-type joker is in your row: sell it (or Tera it to ' + (tname || 'the run’s type') + ') before the next round</span>' : ''}</span>` : `<b>Monotype</b> ${why(rb.mono_reason)}`));
   if (rb.earned) el.appendChild(h('div', 'rb-row', `<span class="won">★ Won</span> ${badgePills(cleanBadges({ nuz: rb.earned.nuz === true, mono: rb.earned.mono || null }) || {}) || '<span class="muted">no badges</span>'}`));
   el.appendChild(recordPanel());
   el.appendChild(btn('Achievements', 'green b-ri-ach', () => achievementsScreen()));

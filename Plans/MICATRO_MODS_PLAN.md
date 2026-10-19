@@ -140,10 +140,10 @@ Each step: gate → merge when it passes → next.
    for any mod that lacks them, and a final all-mods-on fuzz/perf pass (load time, snapshot size,
    spectator bandwidth) before calling the rebuild done.
    **Step 8 UI (2026-10-16):** one **Challenges** screen (main menu): Balatro's 20 (`micatro/data/challenges.js`,
-   played by `engine/challenge.js`) + every enabled mod's (Pokermon 7, Nacho 4, Pokermon+ 4, MoreFluff 1, BETMMA 5 —
+   played by `engine/challenge.js`) + every enabled mod's (Pokermon 7, Nacho 4, Pokermon+ 4, BETMMA 5 (MoreFluff 1.9.9999 dropped its one) —
    rules in each mod's `challenges.js`); a challenge is a normal run at stake 1 on the Challenge Deck, recorded by id in
    the recipe (`challenge`), posts no high score, earns no win stickers. **Sleeves** as deck variants
-   (`engine/sleeve.js`; Pokermon 10, Pokermon+ 5, MoreFluff 4 in each mod's `sleeves.js`, deck pairings as `alt`): New
+   (`engine/sleeve.js`; Pokermon 10, Pokermon+ 5 in each mod's `sleeves.js`, deck pairings as `alt`): New
    Run's sleeve row, recipe `sleeve`. **Deck skins** (cosmetic, `ui/skins.js`; Pokermon RBY/GSC, Bunco in each mod's
    `skins.js`): Options > Card skins, per player. **Pokermon UI** (`mods/pokermon/ui.js` through the mod UI seam
    `ui/modui.js`): type pills + Energy pips, the Pokédex (right-click / double-click / Dex / P / Run Info tab),
@@ -226,6 +226,19 @@ silently change every old run that is resumed or watched. Each recipe now record
 3. Re-record the seeded mod tests and fuzz baselines in the same PR, naming the version in the fixture.
 4. Tests: `micatro/tests/modpin_test.mjs` (engine), `overworld/tests/micatro_mod_version_pin_test.mjs`
    (browser + server); add the upgrade's own renamed / removed keys to its mod test.
+
+## 10. More Fluff 1.9.9999 — batch A (2026-10-19)
+The owner's call: port the 1.9.9999 rewrite (its LICENSE file was deleted upstream on 2026-03-06; the manifest still
+says `allow_redistribution: true`; nothing in the tree forbids porting). Pin `1.9.9999+r1`. Details, the retired-key
+table, art provenance and the follow-up batches: `micatro/mods/morefluff/PORTING.md`.
+- In: its 69 returning jokers (reworked), the 11 it retires to a hidden "Old Fluff" rarity (registered, never offered),
+  Colours (Gold now a Spectral), Rotarots + Merchant / Tycoon, the Superboss rework (pick your DX boss), 6 stakes +
+  3 stickers, the exile zone, the Purple Deck. Deleted keys (2 jokers, 2 decks, 4 sleeves, 2 packs, 2 tags, 1 challenge)
+  are retired keys in `js/mods/aliases.js`.
+- Kept at 1.5.6 until the pkseams merge: Tall Joker, Triangle (their reworks need attributes / scale_card).
+- Follow-ups: about 20 of the 81 new jokers have real art upstream (batch B1 + the Letter / Purple / rot pools); the
+  other ~61 are placeholder sketches and wait for art. Each batch bumps contentRev and re-records
+  `micatro/tests/fixtures/morefluff_<pin>_fingerprints.json` (`morefluff_fingerprint_test.mjs --record`).
 
 ## 11. What follows the player between devices (2026-10-19)
 

@@ -383,7 +383,8 @@ b { font-weight: normal; }
 .go-acts .btn { min-width: 190px; }
 
 /* ------------------------------------------- outside the stage (window px) */
-.watchers { position: fixed; right: max(12px, env(safe-area-inset-right)); top: max(58px, calc(env(safe-area-inset-top) + 50px)); z-index: 56; background: rgba(31,42,44,.9); color: #fff; font-family: 'm6x11', monospace; font-size: 18px; padding: 6px 10px 4px; border-radius: 10px; }
+.watchers { position: fixed; right: max(12px, env(safe-area-inset-right)); top: max(58px, calc(env(safe-area-inset-top) + 50px)); z-index: 56; background: rgba(31,42,44,.9); color: #fff; font-family: 'm6x11', monospace; font-size: 18px; padding: 6px 10px 4px; border-radius: 10px; white-space: nowrap; }
+@media (max-width: 600px), (max-height: 500px) { .watchers { font-size: 15px; padding: 4px 8px 2px; border-radius: 8px; } }
 #chat-wrap { position: fixed; z-index: 57; }
 
 /* no run on the table yet (main menu): hide the play UI */

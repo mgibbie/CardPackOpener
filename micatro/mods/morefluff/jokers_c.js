@@ -1,38 +1,29 @@
 /**
- * More Fluff jokers, part C (27): Recycling, Virtual Joker, Wild Draw Four, Yucky Rat, All I Can't Do,
- * Blood Pact, Book Move ("Treasure Map" in the Lua), Brass Joker, Bowling Ball, Card Buffer Advanced,
- * Complexity Creep, Flesh Prison, Grep ("Jester" in the Lua), Huge Joker, Hyperjimbo, Jankman, Mashup
- * Album, Pixel Joker, Rainbow Joker, Rose-Tinted Glasses, The Solo, Top 10 Jokers From 1 To 10, Wide
- * Joker, Triangle, Marigold, Less Fluff and the Token-rarity "Oops! All 5s" (oopsallfives).
- * Ported from `mods off/MoreFluff-main/jokers/<file>.lua`; numbers from data.js (the mod's own).
+ * More Fluff jokers, part C (26): Recycling, Virtual Joker, Wild Draw Four, Yucky Rat, All I Can't Do,
+ * Blood Pact, Book Move ("Treasure Map" in the 1.5.6 Lua), Brass Joker, Bowling Ball, Card Buffer Advanced,
+ * Flesh Prison, grep, Huge Joker, Hyperjimbo, Jankman, Mashup Album, Pixel Joker, Rainbow Joker,
+ * Rose-Tinted Glasses, The Solo, Top 10 Jokers From 1 To 10, Wide Joker, Triangle, Marigold, Less Fluff and the
+ * Token-rarity "Oops! All 5s" (oopsallfives).
+ * Ported from More Fluff 1.9.9999 src/jokers/<file>.lua (numbers from data.js, the mod's own); Virtual Joker, Wild
+ * Draw Four, Flesh Prison, Mashup Album and Rose-Tinted Glasses are retired upstream to the hidden "Old Fluff"
+ * rarity (still registered, never in a shop: see index.js). Triangle keeps its 1.5.6 behaviour for now (legacy.js).
+ * Complexity Creep was deleted in 1.9.9999 (its key is a retired card: js/mods/aliases.js).
  * Cryptid's `context.forcetrigger` branches are left out (Cryptid isn't part of Micatro).
  *
  * Lua -> Micatro:
- *  - Hyperjimbo's mf_before_cards context (lovely/before_scoring_ctx.toml) -> the `modify_scoring` hook,
- *    step 'before_cards'; without Talisman the mod itself uses X chips^(chips^0.04 - 1), i.e.
- *    chips -> chips^(chips^0.04) (its "^^1.04" tetration approximation) — used here.
- *  - Wide Joker returns {emult: 1.14} (^1.14 Mult; the engine applies ^). Equal to the mod's own
- *    non-Talisman fallback Xmult_mod = mult^0.14.
+ *  - Hyperjimbo's context.initial_scoring_step (1.5.6: mf_before_cards, lovely/before_scoring_ctx.toml) -> the
+ *    `modify_scoring` hook, step 'before_cards'; without Talisman the mod itself uses chips -> chips^(chips^0.04)
+ *    (its "^^1.04" tetration approximation) — used here.
+ *  - Wide Joker returns {emult: 1.14} (^1.14 Mult; the engine applies ^) = the mod's own non-Talisman fallback.
  *  - All I Can't Do: SMODS.debuff_card(c, true/false, 'allicantdo') -> ability.debuff_sources.allicantdo
  *    + a debuff recalculation; the Game:update_round_eval wrap that clears it on deck cards -> the
  *    `evaluate_round` hook (adds no cash-out rows).
- *  - "Modded" (Jankman, Less Fluff) = a joker from any mod (center.mod); vanilla = base-game joker.
- *    Jankman's Lua vanilla list leaves out Jolly Joker — and its text says "(and also Jolly Joker)",
- *    so Jolly Joker counts, as written.
- *  - Brass Joker's `upgraded` is an undeclared global never reset (it only gated an unused string):
- *    harmless, kept out.
+ *  - "Modded" (Jankman, Less Fluff) = a joker from any mod (center.mod; the Lua's center.original_mod).
+ *    Jankman's text says "(and also Jolly Joker)", so Jolly Joker counts, as written (1.5.6 port fix, kept).
+ *  - SMODS.scale_card (All I Can't Do, Yucky Rat, The Solo, Mashup Album, Less Fluff) -> util.scale_card.
  *
- * INTENDED-DESIGN FIXES (each pinned in micatro/tests/mods/morefluff_jokers_c_test.mjs):
- *  1. Complexity Creep's description: for a "1 in N chance" gate the Lua passed an undeclared
- *     `demoninator` (nil) and an undeclared `card` to SMODS.get_probability_vars, with the base numerator
- *     already multiplied by G.GAME.probabilities.normal (so it would be doubled twice). The text showed
- *     "1 in nil". It shows the real roll's odds: "#num# in N" (num = 1 x probability modifiers).
- *  2. Complexity Creep's "Creates a Tarot/Planet" popup called localize{message = ...} (a table with no
- *     type -> no text). It shows +1 Tarot / +1 Planet.
- *  3. (port) Complexity Creep's "when a card is sold" / "when shop is rerolled" effects: SMODS's
- *     calculate_effect pays the money those return; Micatro's sell / reroll passes ignore joker returns, so
- *     those two triggers settle their effects (money + popups) themselves.
- *  4. Less Fluff's "X#1#" popup used the variable key 'x_mult' (not a key: no text); it uses a_xmult.
+ * INTENDED-DESIGN FIXES (pinned in micatro/tests/mods/morefluff_jokers_c_test.mjs):
+ *  4. Less Fluff's "X#1#" popup used the variable key 'x_mult' (not a key: no text); it uses a_xmult (1.9.9999 too).
  */
 import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
@@ -41,8 +32,7 @@ import {
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import { get_poker_hand_info, joker_retriggers } from '../../js/engine/run.js';
-import { MOD_LOC } from '../../js/mods/registry.js';
-import { joker, room, say, remove_joker, has_enh, progressbar } from './util.js';
+import { joker, room, say, remove_joker, has_enh, progressbar, scale_card, is_colour } from './util.js';
 
 const centers = [];
 /** info_queue entry for a center with its description vars (its own loc_vars, or a base joker's config.extra). */
@@ -134,8 +124,8 @@ J('yuckyrat', {
       }
       for (const other of cards) G.E_MANAGER.add_event(() => { other.set_ability(P_CENTERS.m_mf_yucky); });
       if (gain > 0) {
-        e.x_mult += gain;
-        return { message: axmult(e.x_mult), colour: 'RED' };
+        e.scale_by = gain;
+        scale_card(card, { ref_table: e, ref_value: 'x_mult', scalar_value: 'scale_by', message_key: 'a_xmult' });
       }
     }
   },
@@ -161,8 +151,8 @@ J('allicantdo', {
       let mod = 0;
       for (const c of G.play.cards) if (c.debuff) mod += e.x_mult_mod;
       if (mod > 0) {
-        e.x_mult += mod;
-        return { message: 'X' + e.x_mult + ' Mult', colour: 'MULT' };
+        e.scale_by = mod;
+        scale_card(card, { ref_table: e, ref_value: 'x_mult', scalar_value: 'scale_by', message_key: 'a_xmult' });
       }
     }
     if (context.cardarea === G.jokers && context.joker_main) return { xmult: e.x_mult };
@@ -171,7 +161,7 @@ J('allicantdo', {
 
 // ------------------------------------------------------------------ Blood Pact
 J('bloodpact', {
-  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra] }),
+  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.xmult] }),
   calculate(self, card, context) {
     if (context.cardarea === G.jokers && context.joker_main && context.full_hand) {
       let non_hearts = 0;
@@ -182,7 +172,7 @@ J('bloodpact', {
           card.gone = true;
           return { message: localize('k_extinct_ex') };
         }
-      } else return { message: axmult(card.ability.extra), Xmult_mod: card.ability.extra };
+      } else return { xmult: card.ability.extra.xmult };
     }
   },
 });
@@ -255,153 +245,8 @@ J('cba', {
     if (context.retrigger_joker_check && !context.retrigger_joker) {
       let retrigger_card = null;
       for (const j of G.jokers.cards) if (j.edition) { retrigger_card = j; break; }
-      if (retrigger_card && retrigger_card === context.other_card) return { message: localize('k_again_ex'), repetitions: 1, card };
+      if (retrigger_card && retrigger_card === context.other_card && context.other_card !== card) return { message: localize('k_again_ex'), repetitions: 1, card };
     }
-  },
-});
-
-// ------------------------------------------------------------------ Complexity Creep
-const CC_SCORING = [
-  ...Array(10).fill(['plusmult', 1, 9, 1, 'cc_plusmult']),
-  ...Array(10).fill(['pluschips', 10, 190, 1, 'cc_pluschips']),
-  ...Array(5).fill(['xmult', 1, 20, 0.1, 'cc_xmult']),
-  ...Array(5).fill(['xchips', 1, 20, 0.1, 'cc_xchips']),
-  ['emult', 1, 25, 0.01, 'cc_emult'],
-  ['echips', 1, 25, 0.01, 'cc_echips'],
-  ...Array(5).fill(['dollars', 1, 3, 1, 'cc_dollars']),
-  ...Array(2).fill(['swapchipmult', 0, 0, 0, 'cc_swapchipmult']),
-  ...Array(5).fill(['createtarot', 0, 0, 0, 'cc_createtarot']),
-  ...Array(5).fill(['createplanet', 0, 0, 0, 'cc_createplanet']),
-  ['copyconsumeable', 0, 0, 0, 'cc_copyconsumeable'],
-];
-const CC_ODDS = ['odds', [2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 10, 100], 'cc_mf_odds'];
-const CC_GATES = [['handtype', ['Two Pair', 'Three of a Kind', 'Straight Flush', 'Full House', 'Flush Five', 'High Card', 'Pair'], 'cc_mf_handtype'], CC_ODDS];
-const CC_TRIGGERS = [
-  ['cardscored', ['chicken jockey'], 'cc_mf_card_trigger'],
-  ...Array(3).fill(['firstscored', ['chicken jockey'], 'cc_mf_first_card_trigger']),
-  ...Array(2).fill(['facescored', ['chicken jockey'], 'cc_mf_face_card_trigger']),
-];
-const CC_OTHER = [
-  ...Array(5).fill(['dollars', 1, 3, 1, 'cc_dollars']),
-  ...Array(5).fill(['createtarot', 0, 0, 0, 'cc_createtarot']),
-  ...Array(5).fill(['createplanet', 0, 0, 0, 'cc_createplanet']),
-  ['copyconsumeable', 0, 0, 0, 'cc_copyconsumeable'],
-];
-const CC_OTHER_TRIGGERS = [['endofround', ['chicken jockey'], 'cc_mf_endofround'], ['cardsold', ['chicken jockey'], 'cc_mf_cardsold'], ['shoproll', ['chicken jockey'], 'cc_mf_shoproll']];
-/** grow_complexity_creep(effects): effect = [effect, value, trigger, trigger_value, gate, gate_value, loc, gate_loc, trigger_loc] (Lua 1..9). */
-export function grow_complexity_creep(effects) {
-  const effect = [null, null, null, null, null, null, null, null, null];
-  const scoring_trigger = pseudorandom('ccreep_grow') < 0.8;
-  const pool = scoring_trigger ? CC_SCORING : CC_OTHER;
-  const [chosen] = pseudorandom_element(pool, pseudoseed('ccreep_grow'));
-  pseudorandom('ccreep_grow'); // value_roll (unused, still rolled)
-  const value = chosen[1] + Math.floor(pseudorandom('ccreep_grow') * (chosen[2] + 1)) * chosen[3];
-  effect[0] = chosen[0]; effect[1] = value; effect[6] = chosen[4];
-  if (pseudorandom('ccreep_grow') < 0.3) {
-    const [gate] = pseudorandom_element(scoring_trigger ? CC_GATES : [CC_ODDS], pseudoseed('ccreep_grow'));
-    const [gate_value] = pseudorandom_element(gate[1], pseudoseed('ccreep_grow'));
-    effect[4] = gate[0]; effect[5] = gate_value; effect[7] = gate[2];
-  }
-  if (!scoring_trigger || pseudorandom('ccreep_grow') < 0.3) {
-    const [trigger] = pseudorandom_element(scoring_trigger ? CC_TRIGGERS : CC_OTHER_TRIGGERS, pseudoseed('ccreep_grow'));
-    const [trigger_value] = pseudorandom_element(trigger[1], pseudoseed('ccreep_grow'));
-    effect[2] = trigger[0]; effect[3] = trigger_value; effect[8] = trigger[2];
-  } else {
-    effect[2] = 'joker'; effect[8] = 'cc_mf_joker_trigger';
-  }
-  effects.push(effect);
-}
-const CC_EVAL = {
-  plusmult: (e) => ({ mult: e[1] }),
-  pluschips: (e) => ({ chips: e[1] }),
-  xmult: (e) => ({ xmult: e[1] }),
-  xchips: (e) => ({ xchips: e[1] }),
-  emult: (e) => ({ emult: e[1] }),
-  echips: (e) => ({ echips: e[1] }),
-  dollars: (e) => ({ dollars: e[1] }),
-  swapchipmult: () => ({ swap: true }),
-  createtarot: () => { make_consumable('Tarot', 'ccr'); return { message: localize('k_plus_tarot'), colour: 'PURPLE' }; }, // fix 2
-  createplanet: () => { make_consumable('Planet', 'ccr'); return { message: localize('k_plus_planet'), colour: 'BLUE' }; }, // fix 2
-  copyconsumeable: () => {
-    if (!G.consumeables.cards[0]) return undefined;
-    G.E_MANAGER.add_event(() => {
-      const [src] = pseudorandom_element(G.consumeables.cards, pseudoseed('perkeo'));
-      if (!src) return;
-      const c = copy_card(src, null);
-      c.set_edition({ negative: true }, true);
-      c.add_to_deck();
-      G.consumeables.emplace(c);
-    });
-    return { message: localize('k_duplicated_ex') };
-  },
-};
-const CC_GUARD = {
-  handtype: (context, e) => !!(context.poker_hands && context.poker_hands[e[5]] && context.poker_hands[e[5]].length),
-  odds: (context, e) => probability_roll('complexitycreep_odds', 'seed', 1, e[5], 'ccreep'),
-};
-/** localize{type='variable', key, vars}[1] for the mod's v_dictionary lines. */
-function vline(key, vars) {
-  const v = MOD_LOC.misc.v_dictionary && MOD_LOC.misc.v_dictionary[key];
-  const s = Array.isArray(v) ? v[0] : v;
-  if (!s) return '';
-  return s.replace(/#(\d+)#/g, (m, n) => (vars[n - 1] !== undefined && vars[n - 1] !== null ? String(vars[n - 1]) : m));
-}
-J('complexitycreep', {
-  set_ability(self, card) {
-    card.ability.effects = [];
-    if (G.GAME && G.GAME.pseudorandom) grow_complexity_creep(card.ability.effects);
-  },
-  loc_vars(self, iq, card) {
-    for (const e of card.ability.effects || []) {
-      let numerator = 1, denominator = e[5];
-      if (e[7] === 'cc_mf_odds') [numerator, denominator] = probability_vars(card, 1, e[5], 'ccreep'); // fix 1
-      const v = [e[1], e[3], denominator, numerator];
-      const thunk = e[7] ? vline(e[7], v) : '';
-      const thunk2 = e[8] ? vline(e[8], v) : '';
-      iq.push({ key: e[6] + (e[7] ? '_if' : ''), set: 'ComplexityCreep', vars: [e[1], thunk2, thunk] });
-    }
-    return { vars: [] };
-  },
-  calculate(self, card, context) {
-    if (context.setting_blind && context.blind && context.blind.boss && !context.blueprint) {
-      grow_complexity_creep(card.ability.effects);
-      say(card, localize('k_effect_added_ex'), 'PURPLE');
-    }
-    const list = [];
-    const guard = (e) => (e[4] ? CC_GUARD[e[4]](context, e) : true);
-    const run = (e) => { const r = CC_EVAL[e[0]](e); if (r) list.push(r); };
-    for (const e of card.ability.effects || []) {
-      const t = e[2];
-      if (t === 'joker') {
-        if (context.cardarea === G.jokers && context.joker_main && guard(e)) run(e);
-      } else if (t === 'cardscored' || t === 'firstscored' || t === 'facescored') {
-        if (context.individual && context.cardarea === G.play) {
-          let g = guard(e);
-          if (t === 'firstscored' && context.other_card !== context.scoring_hand[0]) g = false;
-          if (t === 'facescored' && !context.other_card.is_face()) g = false;
-          if (g) run(e);
-        }
-      } else if (t === 'endofround') {
-        if (eor(context) && guard(e)) run(e);
-      } else if (t === 'cardsold') {
-        if (context.selling_card && guard(e)) run(e);
-      } else if (t === 'shoproll') {
-        if (context.reroll_shop && guard(e)) run(e);
-      }
-    }
-    if (!list.length) return undefined;
-    if (context.selling_card || context.reroll_shop) {
-      // fix 3: Micatro's sell / reroll passes ignore joker returns — settle the effects here.
-      for (const r of list) {
-        if (r.message) say(card, r.message, r.colour);
-        if (r.dollars) { ease_dollars(r.dollars); card_eval_status_text(card, 'dollars', r.dollars); }
-      }
-      return undefined;
-    }
-    const root = list[0];
-    let add = root;
-    for (let i = 1; i < list.length; i++) { add.extra = list[i]; add = list[i]; }
-    return root;
   },
 });
 
@@ -413,11 +258,11 @@ J('fleshprison', {
       card.gone = false;
       G.GAME.blind.chips = BN.mul(G.GAME.blind.chips, card.ability.extra.boss_size);
       G.GAME.blind.chip_text = number_format(G.GAME.blind.chips);
-      G.E_MANAGER.add_event(() => { say(card, 'Good luck!'); });
+      say(card, 'X' + card.ability.extra.boss_size + ' Blind Size'); // (1.9.9999 returns {xblindsize = 5})
     }
     if (eor(context) && !context.blueprint && G.GAME.blind.boss && !card.gone) {
       G.E_MANAGER.add_event(() => {
-        const c = create_card(null, G.consumeables, null, null, null, null, 'c_soul', 'sup');
+        const c = create_card(null, G.consumeables, null, null, null, null, 'c_soul', undefined); // (SMODS.add_card)
         c.set_edition({ negative: true }, true);
         c.add_to_deck();
         G.consumeables.emplace(c);
@@ -438,7 +283,8 @@ J('grep', {
       // table.sort(..., b matches and a doesn't): matching cards go to the end = the top of the deck.
       G.deck.cards.sort((a, b) => (m(a) === m(b) ? 0 : m(a) ? 1 : -1));
       G.deck.set_ranks();
-      return { message: localize('k_searched_ex') };
+      const found = G.deck.cards.filter(m).length;
+      return { message: localize({ type: 'variable', key: 'a_searched', vars: [found] }) };
     }
   },
 });
@@ -481,9 +327,9 @@ J('mashupalbum', {
     const e = card.ability.extra;
     if (!context.repetition && !context.other_joker && context.cardarea === G.jokers && context.before && context.poker_hands.Flush.length) {
       const h_card = context.poker_hands.Flush[0][0];
-      if (h_card.is_suit('Hearts') || h_card.is_suit('Diamonds')) { e.mult += 4; return { message: localize('k_upgrade_ex'), card, colour: 'RED' }; }
-      e.chips += 15;
-      return { message: localize('k_upgrade_ex'), card, colour: 'CHIPS' };
+      if (h_card.is_suit('Hearts') || h_card.is_suit('Diamonds')) scale_card(card, { ref_table: e, ref_value: 'mult', scalar_value: 'mult_gain' });
+      else scale_card(card, { ref_table: e, ref_value: 'chips', scalar_value: 'chips_gain' });
+      return undefined;
     }
     if (context.cardarea === G.jokers && context.joker_main) {
       if (e.mult > 0 && e.chips > 0) {
@@ -510,8 +356,8 @@ J('pixeljoker', {
 J('rainbowjoker', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra] }),
   calculate(self, card, context) {
-    if (context.other_consumeable && context.other_consumeable.ability.set === 'Colour') {
-      return { message: axmult(card.ability.extra), Xmult_mod: card.ability.extra };
+    if (context.other_consumeable && is_colour(context.other_consumeable)) {
+      return { xmult: card.ability.extra };
     }
   },
 });
@@ -532,8 +378,8 @@ J('the_solo', {
   calculate(self, card, context) {
     const e = card.ability.extra;
     if (context.before && context.full_hand && context.cardarea === G.jokers && !context.blueprint && context.full_hand.length === 1) {
-      e.x_mult += e.x_mult_gain;
-      return { message: axmult(e.x_mult) };
+      scale_card(card, { ref_table: e, ref_value: 'x_mult', scalar_value: 'x_mult_gain', message_key: 'a_xmult' });
+      return undefined;
     }
     if (context.cardarea === G.jokers && context.joker_main) return { message: axmult(e.x_mult), Xmult_mod: e.x_mult };
   },
@@ -594,14 +440,14 @@ J('lessfluff', {
       for (const other of G.jokers.cards.slice()) {
         if (other.getting_sliced) continue;
         const c = other.config.center;
-        if (!c.mod || c.key === 'j_mf_lessfluff') continue; // the Lua's "safe" list: every base joker + Less Fluff
-        gained += e.x_mult_per;
+        if (!c.mod || other === card) continue; // (1.9.9999: every modded joker but itself — another Less Fluff too)
+        gained += 1;
         other.getting_sliced = true;
         G.E_MANAGER.add_event(() => { other.start_dissolve(); });
       }
       if (gained > 0) {
-        e.x_mult += gained;
-        return { message: axmult(e.x_mult), colour: 'RED' }; // fix 4
+        for (let i = 0; i < gained; i++) scale_card(card, { ref_table: e, ref_value: 'x_mult', scalar_value: 'x_mult_per' });
+        return { message: axmult(e.x_mult), colour: 'RED' }; // fix 4 (fixed upstream too)
       }
     }
   },

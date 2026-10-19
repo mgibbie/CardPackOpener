@@ -21,6 +21,7 @@
  * marked `unported: true` and never enters a pool, so a partially ported mod stays playable.
  */
 import { registerMod } from '../../js/mods/registry.js';
+import { POKE_ATTRIBUTES, pokemon_attributes } from './systems/attributes.js';
 import { G } from '../../js/engine/core.js';
 import DATA from './data.js';
 import { DEFS, PORTED_FILES } from './defs.js';
@@ -221,6 +222,7 @@ function jokerCenter(data_item, file) {
   if (c.ptype) { if (isTable(c.config.extra)) c.config.extra.ptype = c.ptype; else c.config.extra = { ptype: c.ptype }; }
   if (c.item_req) { if (isTable(c.config.extra)) c.config.extra.item_req = c.item_req; else c.config.extra = { item_req: c.item_req }; }
   if (c.evo_list) { if (isTable(c.config.extra)) c.config.extra.evo_list = c.evo_list; else c.config.extra = { evo_list: c.evo_list }; }
+  c.attributes = pokemon_attributes(c); // (load_pokemon: <type>_type, stage_<stage>, pokemon — Steamodded attribute pools)
   jokerSprite(item, c);
   laterArt(c);
   c.set_badges = poke_set_type_badge;
@@ -269,6 +271,7 @@ export function addon_pokemon_center(data_item, def, { prefix, file, sprites, at
   if (c.ptype) { if (isTable(c.config.extra)) c.config.extra.ptype = c.ptype; else c.config.extra = { ptype: c.ptype }; }
   if (c.item_req) { if (isTable(c.config.extra)) c.config.extra.item_req = c.item_req; else c.config.extra = { item_req: c.item_req }; }
   if (c.evo_list) { if (isTable(c.config.extra)) c.config.extra.evo_list = c.evo_list; else c.config.extra = { evo_list: c.evo_list }; }
+  c.attributes = pokemon_attributes(c);
   if (atlas) { c.atlas = atlas; c.poke_custom_atlas = true; } else { jokerSprite(item, c, sprites); c.poke_no_custom_atlas = true; }
   c.set_badges = poke_set_type_badge;
   if (def) Object.assign(c, behaviourOf(def));
@@ -486,6 +489,9 @@ export const POKERMON = registerMod({
   // recorded on the old rules then warn before they re-simulate. 1 = the 2026-10-18/19 house rules (Deino /
   // Zweilous "contains", Energy + Transformation targeting, Nuzlocke / Monotype).
   contentRev: 1,
+  // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
+  // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
+  smods_seams: true,
   by: 'InertSteak & contributors (rebuilt for Micatro)',
   badge_colour: '#ED533A',
   description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies.',
@@ -518,6 +524,10 @@ export const POKERMON = registerMod({
     seals,
     stickers,
     consumable_types,
+    // Pokermon 3.9.1 renamed its sets Energy -> poke_energy, Item -> poke_item: the old names stay canonical and the new
+    // ones resolve to them (create_card, pools, CONSUMABLE_TYPES, loc, and 3.9.1 data whose set is the new name).
+    set_aliases: { poke_energy: 'Energy', poke_item: 'Item' },
+    attributes: POKE_ATTRIBUTES, // (pokeconstants.lua's SMODS.Attribute list; systems/attributes.js)
     rarities: [
       { key: 'poke_safari', name: 'Safari', weight: 0, badge_colour: '#F2C74E' },
       { key: 'poke_mega', name: 'Mega', weight: 0, badge_colour: '#E8578E' },

@@ -130,7 +130,7 @@ ok(!G.GAME.challenge && G.GAME.selected_back_key === 'b_red', 'an unknown challe
 await loadMods(['pokermon', 'nacho', 'pokermonplus', 'morefluff', 'betmma']);
 const all = CH.allChallenges();
 const byMod = (m) => all.filter((c) => c.mod === m).length;
-ok(byMod('pokermon') === 7 && byMod('nacho') === 4 && byMod('pokermonplus') === 4 && byMod('morefluff') === 1 && byMod('betmma') === 5, 'mod challenges: Pokermon 7, Nacho 4, Pokermon+ 4, MoreFluff 1, BETMMA 5', ['pokermon', 'nacho', 'pokermonplus', 'morefluff', 'betmma'].map(byMod));
+ok(byMod('pokermon') === 7 && byMod('nacho') === 4 && byMod('pokermonplus') === 4 && byMod('morefluff') === 0 && byMod('betmma') === 5, 'mod challenges: Pokermon 7, Nacho 4, Pokermon+ 4, MoreFluff 0 (1.9.9999 dropped Better Balatro II), BETMMA 5', ['pokermon', 'nacho', 'pokermonplus', 'morefluff', 'betmma'].map(byMod));
 ok(all.every((c) => c.name && c.name !== c.id), 'every challenge has a name', all.filter((c) => !c.name || c.name === c.id).map((c) => c.id));
 for (const c of all.filter((x) => x.mod)) {
   const s = start(c.id, [c.mod]);
@@ -200,10 +200,9 @@ start('c_sonfive_balls_of_patience', ['pokermonplus']);
   ok(!bad.length, 'every challenge key resolves (' + all.length + ' challenges)', bad);
 }
 
-// MoreFluff's Better Balatro II: Superboss on from the start, scaling 4 + 4
-start('c_mf_superboss_always', ['morefluff']);
-ok(G.GAME.superboss_active === true && G.GAME.modifiers.scaling === 4 && G.GAME.modifiers.bonus_scaling === 4 && G.GAME.dollars === 14, 'Better Balatro II: Superboss active, scaling 4 + 4, $14');
-ok(G.GAME.round_resets.blind_choices.Small === 'bl_mf_bigger_blind', 'Better Balatro II: the first ante already has the Superboss blinds', G.GAME.round_resets.blind_choices);
+// MoreFluff 1.9.9999 has no challenge: a recipe naming its old Better Balatro II starts a plain run
+newRun({ seed: 'BB2', challenge: 'c_mf_superboss_always', mods: ['morefluff'] }); G.E_MANAGER.flush();
+ok(!G.GAME.challenge && !G.GAME.mf_superboss_active, 'the retired c_mf_superboss_always is ignored');
 
 // BETMMA: Gotta Go Fast's blind table; Overpowered Boss halves base chips + mult on every boss (The Flint: a quarter)
 start('c_betmma_gottagofast', ['betmma']);
@@ -231,7 +230,7 @@ ok(get_blind_amount(2) === 800 && !ACTIVE.includes(CH.CHALLENGE_ID), 'BETMMA wit
 
 // ------------------------------------------------------------- sleeves
 const sleeves = SL.allSleeves();
-ok(sleeves.filter((s) => s.mod === 'pokermon').length === 10 && sleeves.filter((s) => s.mod === 'pokermonplus').length === 5 && sleeves.filter((s) => s.mod === 'morefluff').length === 4, 'sleeves: Pokermon 10, Pokermon+ 5, MoreFluff 4');
+ok(sleeves.filter((s) => s.mod === 'pokermon').length === 10 && sleeves.filter((s) => s.mod === 'pokermonplus').length === 5 && sleeves.filter((s) => s.mod === 'morefluff').length === 0, 'sleeves: Pokermon 10, Pokermon+ 5, MoreFluff 0 (1.9.9999 dropped its 4)');
 for (const sl of sleeves) {
   const s = new Session();
   s.start({ seed: 'SLV', back: 'b_blue', sleeve: sl.key, mods: [sl.mod] });
@@ -258,14 +257,9 @@ sleeveRun('sleeve_sonfive_propheticsleeve', 'b_sonfive_propheticdeck', ['pokermo
 ok(G.GAME.scry_amount === 6 && toView().sleeve.alt === true, 'Prophetic Sleeve + Prophetic Deck: the alt (Foresight 6)', G.GAME.scry_amount);
 sleeveRun('sleeve_sonfive_virtuoussleeve', 'b_sonfive_virtuousdeck', ['pokermonplus']);
 ok(G.GAME.used_vouchers.v_hieroglyph, 'Virtuous Sleeve + Virtuous Deck: Hieroglyph');
-sleeveRun('sleeve_mf_grosmichel', 'b_red', ['morefluff']);
-ok(jokers().join() === 'j_gros_michel', 'Gros Michel Sleeve: a Gros Michel');
+// (MoreFluff 1.9.9999: its sleeves and the Gros Michel / Blasphemous decks are gone — a recipe naming them starts plain)
 sleeveRun('sleeve_mf_grosmichel', 'b_mf_grosmichel', ['morefluff']);
-ok(jokers().join() === 'j_cavendish', 'Gros Michel Sleeve + Gros Michel Deck: only a Cavendish (the deck skips its own)', jokers());
-newRun({ seed: 'GM', back: 'b_mf_grosmichel', mods: ['morefluff'] }); G.E_MANAGER.flush();
-ok(jokers().join() === 'j_gros_michel', 'Gros Michel Deck alone still gives its Gros Michel');
-sleeveRun('sleeve_mf_blasphemy', 'b_mf_blasphemy', ['morefluff']);
-ok(G.jokers.cards.length === 1 && !G.jokers.cards[0].ability.eternal && G.jokers.cards[0].edition.negative, 'Blasphemous Sleeve + deck: one Negative, non-Eternal Blasphemy');
+ok(!jokers().length && !G.GAME.selected_sleeve && G.GAME.selected_back_key === 'b_red', 'retired MoreFluff sleeve + deck: a plain Red Deck run', [jokers(), G.GAME.selected_back_key]);
 // the vending sleeve's Voucher Tag after an odd ante's boss
 sleeveRun('sleeve_poke_vendingsleeve', 'b_red', ['pokermon']);
 act({ type: 'select_blind' }); clearHand();
