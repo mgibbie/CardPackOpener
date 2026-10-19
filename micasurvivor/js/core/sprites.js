@@ -16,6 +16,26 @@ G.Sprites = (() => {
 
   function meta(dex) { return G.SPRITE_META[dex] || null; }
 
+  /**
+   * (Lote B1b) Escala del arte. Las hojas de respaldo (src "follow", tools/micasurvivor/follow_sprites.py: los
+   * sprites de seguidor del overworld) son más pequeñas que las de Mundo Misterioso: "k" las lleva al tamaño de
+   * sus vecinos. Las de SpriteCollab no tienen k (1).
+   */
+  function artScale(dex) { const m = meta(dex); return (m && m.k) || 1; }
+
+  /** Fila de la hoja para la dirección 0..7: las de respaldo tienen 4 filas y "dm" dice cuál toca a cada una. */
+  function rowOf(dex, dir, m) {
+    const pm = meta(dex);
+    return pm && pm.dm ? (pm.dm[dir] || 0) : Math.min(dir || 0, m.r - 1);
+  }
+
+  /**
+   * (Lote B1c) ¿Se dibuja en espejo en la dirección 0..7? Las hojas de respaldo de combate (src "battle",
+   * tools/micasurvivor/battle_sprites.py) sólo tienen el frente (mirando a la izquierda) y la espalda: "fx" dice en
+   * qué direcciones se voltea en horizontal, alrededor del ancla. Las demás no tienen fx (nunca).
+   */
+  function flipOf(dex, dir) { const pm = meta(dex); return !!(pm && pm.fx && pm.fx[dir || 0]); }
+
   /** ¿Flota en su sprite? (tools/hover_flags.py) Pasa por encima de rocas y agua. */
   function hovers(dex) { const m = meta(dex); return !!(m && m.hv); }
 
@@ -95,7 +115,7 @@ G.Sprites = (() => {
     }
     if (sheets.size >= MAX_SHEETS) evict(now);
     s = { ready: false, failed: false, img: new Image(), tries: 0, retryAt: 0, at: now,
-          src: `assets/pokemon/${dex}/${shiny ? 's/' : ''}${name}.png` };
+          src: `assets/pokemon/${dex}/${m && m.src ? m.src + '/' : ''}${shiny ? 's/' : ''}${name}.png` };
     s.img.crossOrigin = 'anonymous';   // MicaSurvivor: sheets 301 to magepunk-micasurvivor.pages.dev (CORS)
     s.img.onload = () => { s.ready = true; };
     s.img.onerror = () => { s.failed = true; s.retryAt = performance.now() + 1000 * Math.min(8, 2 ** s.tries++); };
@@ -127,14 +147,14 @@ G.Sprites = (() => {
   /** Radio de colisión aproximado a partir del tamaño del sprite. */
   function bodyRadius(dex, scale = 1) {
     const m = animMeta(dex, 'Idle');
-    const w = m ? m.w : 32;
+    const w = m ? m.w * artScale(dex) : 32;
     return G.U.clamp(w * 0.22, 5, 26) * PX * scale;
   }
 
   /** Alto visual aproximado (para barras de vida y números de daño). */
   function bodyHeight(dex, scale = 1) {
     const m = animMeta(dex, 'Idle');
-    return (m ? m.ay : 24) * PX * scale;
+    return (m ? m.ay * artScale(dex) : 24) * PX * scale;
   }
 
   /** Sombra elíptica bajo los pies, tamaño según el ShadowSize de PMD. */
@@ -231,7 +251,7 @@ G.Sprites = (() => {
     draw(ctx, x, y, opts = {}) {
       let m = animMeta(this.dex, this.cur, this.shiny);
       let s = sheet(this.dex, this.cur, this.shiny);
-      const k = PX * this.scale;
+      const k = PX * this.scale * artScale(this.dex);
       if (s && !s.ready) {
         // Mientras carga esta animación, enseña Idle si ya está.
         const idle = sheet(this.dex, 'Idle', this.shiny);
@@ -244,7 +264,7 @@ G.Sprites = (() => {
         ctx.beginPath(); ctx.arc(x, y - 12 * k, 8 * k, 0, 6.2832); ctx.fill();
         return;
       }
-      const row = Math.min(this.dir, m.r - 1);
+      const row = rowOf(this.dex, this.dir, m);
       const alpha = opts.alpha == null ? 1 : opts.alpha;
       if (alpha <= 0) return;
       const sx = Math.min(frame, m.n - 1) * m.w, sy = row * m.h;
@@ -252,8 +272,12 @@ G.Sprites = (() => {
       // (FALLBACK de tools/micasurvivor/fetch_sprites.py): andando, dan saltitos de 2 px para no deslizarse
       // quietos. Ninguno de los 966 originales tiene un Walk de un fotograma, así que a ellos no les cambia nada.
       const bob = m.n === 1 && this.cur === 'Walk' && !this.once ? Math.round(Math.abs(Math.sin(this.clock * 9)) * 2 * k) : 0;
-      const dx = Math.round(x - m.ax * k), dy = Math.round(y - m.ay * k) - bob;
+      let dx = Math.round(x - m.ax * k);
+      const dy = Math.round(y - m.ay * k) - bob;
       const prev = ctx.globalAlpha;
+      // (Lote B1c) espejo horizontal alrededor del ancla (las hojas de combate: el frente mira a la izquierda)
+      const flip = flipOf(this.dex, this.dir);
+      if (flip) { const ox = Math.round(x); ctx.save(); ctx.translate(ox, 0); ctx.scale(-1, 1); dx -= ox; }
       if (alpha < 1) ctx.globalAlpha = prev * alpha;
       // Destello: blanco entero (enemigos) o medio blanco encima (tu Pokémon).
       if (!opts.flash || opts.softFlash) ctx.drawImage(s.img, sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
@@ -262,9 +286,10 @@ G.Sprites = (() => {
         ctx.drawImage(white(s.img), sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
       }
       ctx.globalAlpha = prev;
+      if (flip) ctx.restore();
     }
   }
 
-  return { PX, meta, hasShiny, hovers, white, animMeta, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
+  return { PX, meta, hasShiny, hovers, white, animMeta, artScale, rowOf, flipOf, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
            drawShadow, Animator, ANIMS, get sheetCount() { return sheets.size; } };
 })();

@@ -125,6 +125,39 @@ uso **no comercial** y con atribución a sus artistas.
 | YoukaiMinori | <@91001329228464128> | 252, 253 |
 | ◥θ┴θ◤ | DC:<@215638650434617345> | 157, 445, 501, 504, 505, 566, 577, 595, 627, 650, 651, 658, 661, 676, 684, 707, 724, 726, 728, 729, 730, 761, 763, 790, 823, 870, 872, 907, 991 |
 
+## Sprites de respaldo (lote B1b)
+
+Los Pokémon que todavía no tienen hoja en SpriteCollab usan sus sprites de *seguidor* del overworld de
+Magepunk (4 direcciones, 4 fotogramas de andar; recortados, reordenados y escalados por
+`tools/micasurvivor/follow_sprites.py`, sin dibujar nada). Vienen del paquete "Following Pokémon" del
+proyecto de Pokémon Essentials **PokemonZero2024** (Zerokid; `Graphics/Characters/Followers` y
+`Followers shiny`), sprites de estilo HGSS. Su `credits.txt` atribuye los sprites de Pokémon del overworld
+a **Neo-Spriteman** (<https://www.pokecommunity.com/showthread.php?t=250115>) y no nombra a cada artista
+de los de Gen 5–8. Pokémon © Nintendo / Creatures Inc. / GAME FREAK.
+
+| Fuente | Sprites (nº de Pokédex) |
+|---|---|
+| PokemonZero2024, Followers | 514, 516, 520, 522, 523, 538, 558, 564, 565, 591, 592, 616, 626, 668, 732, 735, 756, 765, 837, 838, 839, 866, 878, 893 |
+| PokemonZero2024, Followers shiny | 514, 516, 520, 522, 523, 538, 558, 564, 565, 591, 592, 616, 626, 668, 732, 735, 756, 765, 837, 838, 839, 866, 878, 893 |
+
+## Sprites de respaldo (lote B1c)
+
+Los Pokémon que no tienen hoja en SpriteCollab ni sprite de seguidor usan los sprites de *combate* del
+overworld de Magepunk (`overworld/data/pokemon/`): el frente para andar (en espejo según hacia dónde van) y la
+espalda para ir hacia arriba; recortados, escalados y reordenados por `tools/micasurvivor/battle_sprites.py`,
+sin dibujar nada. El frente es el dibujo que Pokémon Showdown sirve como sprite de Pokédex
+(<https://play.pokemonshowdown.com/sprites/dex/>), en mayor tamaño; llegó con el juego de escritorio de
+Magepunk y el repositorio no anota su autor. Las espaldas son del paquete de Pokémon Essentials
+**PokemonZero2024** (Zerokid; `Graphics/Pokemon/Back`) y, las de los tres últimos, de **PokeAPI/sprites**
+(<https://github.com/PokeAPI/sprites>, `sprites/pokemon/back/`). Sin shiny: el juego de combate no tiene
+versión shiny de estos dibujos. Pokémon © Nintendo / Creatures Inc. / GAME FREAK.
+
+| Fuente | Sprites (nº de Pokédex) |
+|---|---|
+| Combate del overworld, frente | 931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023 |
+| Espalda: PokemonZero2024, Back | 931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002 |
+| Espalda: PokeAPI/sprites, back | 1014, 1022, 1023 |
+
 ## Datos
 
 Stats base y nombres en español: [PokeAPI](https://pokeapi.co/),

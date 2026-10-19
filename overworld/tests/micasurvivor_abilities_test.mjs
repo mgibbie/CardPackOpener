@@ -1,7 +1,7 @@
 // micasurvivor_abilities_test.mjs — MicaSurvivor M5 batch 2 ("Abilities"): the 54 passive abilities of
 // the Godot Android port by JayElDragon (poke-survivor: abilities.gd + its hooks in main.gd), one per
 // Pokémon, driven headlessly in a real run (window.G is global; the run is paused and stepped by hand):
-//   - data: 54 abilities, every one of the 983 Pokémon (966 + batch B1's 17) has one (the port's per-dex table), every
+//   - data: 54 abilities, every one of the 1025 Pokémon (966 + batch B1's 17 + batch B1b's 24 + batch B1c's 18) has one (the port's per-dex table), every
 //     `fx` key is handled, and every ability measurably changes something (no silent no-ops)
 //   - each family with the port's numbers: Blaze/Torrent/Overgrow/Swarm +35 % below 40 % HP; flat
 //     damage / speed / XP / coins / crit / magnet / cooldown / regen / damage taken; weather speed
@@ -29,6 +29,9 @@ import puppeteer from 'puppeteer-core';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
+// (B1c) MAGEPUNK_ASSET_ROOT=<checkout>: serve the gitignored micasurvivor/assets/ and overworld/data/ from that checkout
+// (read only; a git worktree has neither), as micasurvivor_pokedex_test does
+const AROOT = process.env.MAGEPUNK_ASSET_ROOT ? path.resolve(process.env.MAGEPUNK_ASSET_ROOT) : ROOT;
 const CHROME = process.env.CHROME || [
 	'C:/Program Files/Google/Chrome/Application/chrome.exe',
 	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -47,7 +50,7 @@ const server = http.createServer((req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}'); return; }
 	const f = u.endsWith('/') ? u + 'index.html' : u;
-	fs.readFile(path.join(ROOT, f), (e, d) => {
+	fs.readFile(path.join(/^\/(micasurvivor\/assets|overworld\/data)\//.test(f) ? AROOT : ROOT, f), (e, d) => {
 		if (e) { res.writeHead(404); res.end('nf'); return; }
 		res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d);
 	});
@@ -199,7 +202,7 @@ try {
 			return { n: ids.length, dex: G.DEX.length, noAb, unhandled, unused: ids.filter(i => !used.has(i)), sample };
 		});
 		A(r.n === 54, `54 abilities (${r.n})`);
-		A(r.dex === 983 && r.noAb.length === 0, `every one of the ${r.dex} Pokémon has a defined ability`, JSON.stringify(r.noAb.slice(0, 20)));
+		A(r.dex === 1025 && r.noAb.length === 0, `every one of the ${r.dex} Pokémon has a defined ability`, JSON.stringify(r.noAb.slice(0, 20)));
 		A(r.unhandled.length === 0, 'every fx key of the port is handled', JSON.stringify(r.unhandled));
 		A(JSON.stringify(r.sample) === JSON.stringify({ 1: 'overgrow', 4: 'blaze', 7: 'torrent', 25: 'static', 143: 'limber', 292: 'wonderguard', 792: 'multiscale', 800: 'solidrock', 1024: 'protean' }),
 			'the port\'s per-dex table (Bulbasaur Overgrow, Pikachu Static, Snorlax Limber, Shedinja Wonder Guard, Lunala Multiscale, Necrozma Solid Rock...)', JSON.stringify(r.sample));

@@ -870,7 +870,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 
 | Batch | Scope | Depends on |
 |---|---|---|
-| **D0a. Determinism harness** (no gameplay change) | `G.Game.debugStep(n, dt)` fixed-step entry; a puppeteer page-wide seeded `Math.random`; scripted input; per-second state hashes + draw counter; **golden fixtures recorded** for Normal, Daily, Boss Rush, Tower, Team and local co-op, plus a base replay fixture | — |
+| **D0a. Determinism harness** (no gameplay change) — **BUILT 2026-10-19** (`overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs`, fixtures in `overworld/tests/fixtures/micasurvivor_golden/`, README "DLC D0a: base-unchanged harness") | `G.Game.debugStep(n, dt)` fixed-step entry; a puppeteer page-wide seeded `Math.random`; scripted input; per-second state hashes + draw counter; **golden fixtures recorded** for Normal, Daily, Boss Rush, Tower, Team and local co-op, plus a base replay fixture | — |
 | **D0b. DLC toggle and plumbing** | Settings → Content switch (in the DLC blob + a localStorage mirror); `ruleset`/`dv` through `Modes.plan/begin`; `core/hooks.js` seams with base code moved unchanged; `G.DLCLoader` (ordered script injection); `micasurvivordlc:<user>` blob + `micasurvivor-dlc-save-get/-put`; `micasurvivor_dlc` board with Micatro-style enforcement; `rs`/`dv` on the lobby, `start`, replay header/meta allow-list and spectate snapshots, with join/watch version gates; an empty Expedition tab; **the base-unchanged test against the D0a fixtures** + table freeze + save/replay/lobby round-trips | D0a |
 | **D1. Terrain layers** | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
 | **D2. Movement verbs** | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
@@ -1042,4 +1042,11 @@ changes the base game's enemy pool.
   Idle + Walk, 8 with only a one-frame Idle, 4 only in an alternate-form folder), now in the game: **983**. The
   other **42** have no sheet at all and wait for the owner's call on a fallback (see `micasurvivor/README.md`,
   "Batch B1").
+- **B1b status (2026-10-19, built, not merged):** the owner chose fallbacks from images we already have. The 24
+  Gen 5–8 ones now use their overworld follower sprites (re-packed, scaled; `tools/micasurvivor/follow_sprites.py`):
+  **1007**. The 18 Gen 9 ones were to use SpriteCollab portraits, transparent ones only; all their portraits have
+  an opaque background, so they stay pending (`micasurvivor/README.md`, "Batch B1b").
+- **B1c status (2026-10-19, built, not merged):** the owner chose the 18 Gen 9 ones' transparent battle sprites
+  (front mirrored for facing, back for Up; `tools/micasurvivor/battle_sprites.py`): **1025**, nothing pending
+  (`micasurvivor/README.md`, "Batch B1c").
 - **Mega sprites:** the Legends Z-A Megas also need Mega sheets for the League (part of D4c).

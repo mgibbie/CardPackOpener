@@ -188,6 +188,22 @@ Fire **every** joker of the file through real plays (`act`) and every evolution 
 exact numbers. Run: `node micatro/tests/mods/pokejokers_NN_test.mjs`, then
 `node overworld/tests/micatro_engine_test.mjs` (all engine + mod suites + a Pokermon fuzz).
 
+## Art
+
+The art is Pokermon's own (gitignored `assets/2x`, deployed to the magepunk-micatromods Pages project with
+`npm run deploy-micatro-mods`). No card is left on a placeholder sheet (`micatro/tests/mods/no_placeholder_art_test.mjs`).
+Cards Pokermon 3.2.1 shipped on `placeholder_*` and where their art comes from:
+
+- **Rotom Dex** (`j_poke_rotomdex`): Pokermon 3.9.1, `assets/2x/Basic Series/AtlasJokersBasicOthers.png` cell {0,4}
+  (artists InertSteak, Catzzadilla), saved unchanged as `Basic Series/AtlasJokersBasicOthers-391.png` (atlas `AtlasJokersBasicOthers391`).
+- **Stadium Deck / Mega Deck** and **Stadium Sleeve / Mega Sleeve**: Pokermon 3.9.1, `assets/2x/Basic Series/AtlasDecksBasic.png`
+  cells {8,0} {9,0} / {8,1} {9,1}, saved unchanged as `Basic Series/AtlasDecksBasic-391.png` (atlas `AtlasDecksBasic391`).
+- **The Jirachi wish cards** (`c_poke_fake_banker` / `_booster` / `_power` / `_negging` / `_copy` / `_fixer`): already shipped in 3.2.1:
+  martz.lua names `AtlasJokersSeriesAGen03` (Series A, artist PrincessRoxie), which the port hadn't registered.
+
+Source: https://github.com/InertSteak/Pokermon (tag 3.9.1); the files' git blob SHAs match the tag's.
+Micatro-made art (not Pokermon's): `hisuian_qwilfish.png` / `hisuian_qwilfishShiny.png`.
+
 ## Status
 
 **Complete (2026-10-15)** — every Pokermon 3.2.1 content file is ported and tested:

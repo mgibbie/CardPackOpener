@@ -20,7 +20,10 @@ B1 "complete the Pokédex" (Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md, owner
   - the meta of Pokémon NOT fetched in this call is kept from the existing
     sprites-meta.js (upstream merged from its tools/cache/, which we don't
     have for the original 966), so fetching a range never drops the others;
-  - the cache lives in tools/micasurvivor/.cache/ (gitignored).
+  - the cache lives in tools/micasurvivor/.cache/ (gitignored);
+  - (B1b) rows with a "src" (follow_sprites.py's fallback sheets) don't count as
+    already there: once SpriteCollab has a sheet, this fetches it and the real
+    row replaces the fallback.
 
     python tools/micasurvivor/fetch_sprites.py              # everything (1-1025)
     python tools/micasurvivor/fetch_sprites.py 514 1025     # one dex range
@@ -57,7 +60,10 @@ RAW = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master'
 BASE = RAW + '/sprite'
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'micasurvivor')
-OUT_ASSETS = os.path.join(ROOT, 'assets', 'pokemon')
+# (B1c) The sheets are gitignored (micasurvivor/assets/), so a git worktree has none: MAGEPUNK_ASSET_ROOT names the
+# checkout that holds them (its micasurvivor/assets/ and overworld/data/), e.g. the main checkout.
+ASSET_ROOT = os.environ.get('MAGEPUNK_ASSET_ROOT') or os.path.dirname(ROOT)
+OUT_ASSETS = os.path.join(ASSET_ROOT, 'micasurvivor', 'assets', 'pokemon')
 OUT_META = os.path.join(ROOT, 'js', 'data', 'sprites-meta.js')
 CACHE = os.path.join(HERE, '.cache', 'sprites')
 
@@ -317,8 +323,11 @@ def main():
 
     # Pokémon already in sprites-meta.js are kept as they are (their sheets are published and never
     # change: a new sheet gets a new path), unless --refresh is given.
+    # (B1b) A FALLBACK row ("src": follow_sprites.py's overworld follower sheets) does not count: when
+    # SpriteCollab gets a real sheet for that Pokémon, this fetches it and the real row replaces the fallback
+    # (the real sheets live in {dex}/, the fallback ones in {dex}/follow/, so no published file changes).
     if '--refresh' not in args:
-        have = set(read_existing()[1])
+        have = {d for d, raw in read_existing()[1].items() if '"src":' not in raw}
         kept = [d for d in wanted if d in have]
         wanted = [d for d in wanted if d not in have]
         if kept:
@@ -357,7 +366,7 @@ def main():
     head, rows, nl = read_existing()
     for dex, m in metas.items():
         old = json.loads(rows[dex]) if dex in rows else {}
-        if old.get('hv'):
+        if old.get('hv') and not old.get('src'):      # (B1b) a fallback row's flag isn't about this sheet
             m = dict(m, hv=1)
         rows[dex] = json.dumps(m, separators=(',', ':'))
 

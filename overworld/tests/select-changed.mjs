@@ -36,6 +36,13 @@ export const CORE = [
 	// (the gate's own files are not here: a quick run exercises them directly,
 	// and a helper like owsource.mjs selects the suites that import it)
 ];
+// suites a PATH always selects, whatever its diff names. MicaSurvivor DLC D0a: the "base unchanged" golden runs
+// (micasurvivor_dlc_base_unchanged_test.mjs) guard every base mode, so any micasurvivor/** change runs them, and so
+// does a server change whose diff (its lines or its hunk headers) touches the MicaSurvivor / msurv actions.
+export const BY_PATH = [
+	{ re: /^micasurvivor\//, suites: ['micasurvivor_dlc_base_unchanged_test.mjs'], why: 'MicaSurvivor changed: the DLC base-unchanged golden runs' },
+	{ re: /^(server|functions)\//, diff: /micasurvivor|msurv/i, suites: ['micasurvivor_dlc_base_unchanged_test.mjs'], why: 'the MicaSurvivor server actions changed: the DLC base-unchanged golden runs' },
+];
 // never affects a suite
 const IGNORE = [/\.(md|txt|png|jpg|jpeg|gif|webp|svg|ico|wav|mp3|ogg)$/i, /^Plans\//, /^wiki\//, /^\.github\//, /^docs?\//];
 // identifiers too generic to select on
@@ -133,6 +140,7 @@ export function selectSuites({ base, files: filesIn, diffFor, contentFor, suiteF
 			for (const [s, t] of texts) if (imp.test(t)) pick(s, `imports ${m[1]}`);
 			continue;
 		}
+		for (const r of BY_PATH) if (r.re.test(f) && (!r.diff || r.diff.test(getDiff(f)))) for (const s of r.suites) pick(s, r.why);
 		const toks = /(^|\/)cards\.json$/.test(f) ? changedCardIds(content(f, 'old'), content(f, 'new')) : tokensOf(getDiff(f), f);
 		for (const tok of toks) {
 			const re = new RegExp(`(^|[^\\w$-])${tok.replace(/[$]/g, '\\$')}([^\\w$-]|$)`);

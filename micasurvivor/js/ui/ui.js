@@ -232,7 +232,7 @@ G.UI = (() => {
 
       // Escala entera para que los píxeles queden nítidos.
       const m = G.Sprites.animMeta(s.dex, 'Idle');
-      const ay = m ? m.ay : 24;
+      const ay = m ? m.ay * G.Sprites.artScale(s.dex) : 24;   // (B1b) las hojas de respaldo llevan su escala
       let k = s.opts.scale || 2;
       if (s.opts.hero) k = Math.max(1, Math.min(k, Math.floor(cv.height * 0.8 / ay)));
       s.a.scale = k / G.Sprites.PX;
