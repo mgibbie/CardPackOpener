@@ -7,9 +7,12 @@ import {
 
 const FILE = 'pokemon/pokejokers_22.lua';
 
-/** Deino / Zweilous: XMult on Three of a Kind, counting the hands toward evolution. */
+/** Deino / Zweilous: XMult on a hand containing a Three of a Kind, counting the hands toward evolution.
+ *  House rule (owner, 2026-10-18): the Lua checks scoring_name === 'Three of a Kind' (an exact one), so a Full
+ *  House never triggered; here any hand that contains one does (text updated in index.js). */
 function deino_calc(self, card, context, key) {
-  if (context.cardarea === G.jokers && context.scoring_hand && context.scoring_name === 'Three of a Kind' && context.joker_main) {
+  if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && context.poker_hands
+    && context.poker_hands['Three of a Kind'] && context.poker_hands['Three of a Kind'].length) {
     if (!context.blueprint) card.ability.extra.hand_played = card.ability.extra.hand_played + 1;
     // (Lua colour G.C.mult — lowercase, nil — so the default popup colour.)
     return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), Xmult_mod: card.ability.extra.Xmult };

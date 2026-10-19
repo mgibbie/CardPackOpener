@@ -377,6 +377,13 @@ for (const f of DATA.groups.stickers) for (const item of listOf(f)) {
   // The Jirachi tag (tags1.lua: no_collection, no loc entry — it showed its raw key while on the HUD).
   const TAG = (DATA.loc.descriptions.Tag = DATA.loc.descriptions.Tag || {});
   if (!TAG.tag_poke_jirachi_tag) TAG.tag_poke_jirachi_tag = { name: 'Jirachi Tag', text: ["Jirachi grants a wish:", 'opens a free {C:attention}Wish Pack{}', 'when the next Blind is chosen'] };
+  // House rule (owner, 2026-10-18): Deino / Zweilous trigger on any hand that CONTAINS a Three of a Kind
+  // (Full House, Four / Five of a Kind…), not only an exact one. The behaviour is in pokejokers_22.js deino_calc.
+  const JOKER = DATA.loc.descriptions.Joker;
+  for (const k of ['j_poke_deino', 'j_poke_zweilous']) {
+    const t = JOKER[k] && JOKER[k].text;
+    if (t && t[1] === 'is a {C:attention}Three of a Kind{}') t[1] = 'contains a {C:attention}Three of a Kind{}';
+  }
 }
 
 const consumable_types = [];
