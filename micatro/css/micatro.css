@@ -730,3 +730,5 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .ri-rb .rb-off { color: #fe8a80; }
 .ri-deck { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; margin-bottom: 8px; }
 .ri-back { width: 54px; height: 72px; flex: 0 0 54px; }
+.rb-toast.warn { background: #6b5a2a; box-shadow: 0 5px 0 #463a18; }
+.rb-pill.rb-risk { outline: 3px dashed #fda200; outline-offset: 1px; }

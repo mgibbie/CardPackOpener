@@ -734,7 +734,7 @@ function runBadgesPanel(rb) {
   const why = (r) => (r ? `<span class="rb-off">Broken: ${esc(r)}</span>` : '');
   const tname = TYPES.includes(rb.type) ? rb.type : null;
   el.appendChild(h('div', 'rb-row', rb.nuz ? `${badgePills({ nuz: true })} <span>Intact: never sell a joker; at most one new joker per shop (${Math.min(9, +rb.window_gains || 0)}/1 this shop)</span>` : `<b>Nuzlocke</b> ${why(rb.nuz_reason)}`));
-  el.appendChild(h('div', 'rb-row', rb.mono ? `${badgePills({ mono: tname || true })} <span>${tname ? 'Intact: gain only ' + tname + ' jokers' : 'Your first joker sets the type'}</span>` : `<b>Monotype</b> ${why(rb.mono_reason)}`));
+  el.appendChild(h('div', 'rb-row', rb.mono ? `${badgePills({ mono: tname || true })} <span>${tname ? 'Intact: start every round with only ' + tname + ' jokers' : 'The jokers you start your first round with set the type'}${rb.mono_at_risk ? ' <span class="rb-off">An off-type joker is in your row: sell it before the next round</span>' : ''}</span>` : `<b>Monotype</b> ${why(rb.mono_reason)}`));
   if (rb.earned) el.appendChild(h('div', 'rb-row', `<span class="won">★ Won</span> ${badgePills(cleanBadges({ nuz: rb.earned.nuz === true, mono: rb.earned.mono || null }) || {}) || '<span class="muted">no badges</span>'}`));
   el.appendChild(recordPanel());
   el.appendChild(btn('Achievements', 'green b-ri-ach', () => achievementsScreen()));
@@ -778,7 +778,7 @@ export function achievementsScreen(tab = 'ach') {
     } else {
       body.appendChild(recordPanel());
     }
-    body.appendChild(h('div', 'rec-note', 'Pokermon runs only. A Nuzlocke never sells a joker and gains at most one new joker per shop (from one blind start to the next); a Monotype gains only jokers of one Pokémon type. Win the run with either one intact to earn it. Seeded and challenge runs do not count.'));
+    body.appendChild(h('div', 'rec-note', 'Pokermon runs only. A Nuzlocke never sells a joker and gains at most one new joker per shop (from one blind start to the next); a Monotype starts every round with jokers of only one Pokémon type. Win the run with either one intact to earn it. Seeded and challenge runs do not count.'));
   };
   for (const [k, label] of [['ach', 'Achievements'], ['rec', 'Record']]) {
     const b = btn(label, 'red tab b-ach-' + k, () => show(k)); b.dataset.k = k; tabs.appendChild(b);

@@ -4,7 +4,8 @@
 //   1. the live HUD badges ("Nuzlocke", "Monotype" -> "Monotype: <Type>" once a joker locks it) appear in a
 //      Pokermon run and fit portrait 390x664, desktop 1280x800 and landscape 844x390 without overlapping the
 //      HUD's controls, the tags, the joker/consumable rows, the controls or the deck
-//   2. breaking one: the badge disappears and a toast says why ("Monotype broken: Water joker in a Fire run",
+//   2. breaking one: the badge disappears and a toast says why ("Monotype broken: started a round with Squirtle (Water)
+//      in a Lightning run" — Monotype is checked when a blind starts; the shop warns first and the pill is marked at risk,
 //      "Nuzlocke broken: sold Charmander"); Run Info's Badges tab explains it
 //   3. a won run (a real engine win): the win screen shows the badges earned, the achievement unlock toasts
 //      show, the leaderboard row carries the tag ({nuz, mono} stored on the board), the run history (Replays)
@@ -15,7 +16,8 @@
 //      deck select and in Run Info — and a deck with only a plain win shows the plain stake sticker
 //   7. Pikachu (poke): a Pokermon win with both badges broken gives its jokers AND its deck the Pikachu sticker
 //      (ranked below Aipom, above the plain sticker); a vanilla win records no poke
-// (owner rule 2026-10-18: a non-Pokémon joker breaks BOTH badges — one toast, two lines)
+// (owner rules 2026-10-18: gaining a non-Pokémon joker breaks the Nuzlocke at once; Monotype only breaks when a round
+//  starts with an off-type or non-Pokémon joker in the row)
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides), like micatro_pack_hand_items_test.mjs.
 // Covers micatro/js/ui/progress.js, micatro/js/ui/board.js (renderRunBadges, runBadgeToast), micatro/js/ui/screens.js
@@ -201,7 +203,10 @@ try {
 	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype"]', 'a Pokermon run shows "Nuzlocke" and "Monotype" on the HUD', JSON.stringify(await pills(dA)));
 	await toShop(dA);
 	await buy(dA, 'j_poke_pikachu');
-	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype: Lightning"]', 'the first joker locks the type: "Monotype: Lightning"', JSON.stringify(await pills(dA)));
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype"]', 'a bought joker locks nothing yet: still "Monotype"', JSON.stringify(await pills(dA)));
+	await act(dA, { type: 'next_round' });
+	await toShop(dA);
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype: Lightning"]', 'the first blind started with Pikachu locks the type: "Monotype: Lightning"', JSON.stringify(await pills(dA)));
 	// some tags too, so the portrait row's right side is occupied
 	await dA.page.evaluate(async () => {
 		const { G } = await import('/micatro/js/engine/core.js'); const { Tag, add_tag } = await import('/micatro/js/engine/tag.js');
@@ -219,11 +224,15 @@ try {
 	await dA.page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 });
 
 	// ===== 2. breaking them =====
-	await act(dA, { type: 'next_round' });
-	await toShop(dA);
 	await buy(dA, 'j_poke_squirtle');
-	A(JSON.stringify(await pills(dA)) === '["Nuzlocke"]', 'a Water joker in a Lightning run: the Monotype badge disappears', JSON.stringify(await pills(dA)));
-	A(/^Monotype broken: Water joker in a Lightning run$/.test(await rbToast(dA)), 'a toast says why ("Monotype broken: Water joker in a Lightning run")', await rbToast(dA));
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype: Lightning"]', 'buying a Water joker in a Lightning run breaks nothing yet', JSON.stringify(await pills(dA)));
+	A(await rbToast(dA) === 'Sell off-type jokers before the next round to keep Monotype', 'the shop warns (gently) instead', await rbToast(dA));
+	A(await dA.page.evaluate(() => !!document.querySelector('.rb-toast.warn') && !!document.querySelector('.rb-pill.rb-mono.rb-risk')), 'the warning toast is the gentle style and the Monotype pill is marked at risk');
+	await shot(dA, 'monotype_warning.png');
+	await act(dA, { type: 'next_round' });
+	await act(dA, { type: 'select_blind' });
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke"]', 'a round started with the Water joker: the Monotype badge disappears', JSON.stringify(await pills(dA)));
+	A(await rbToast(dA) === 'Monotype broken: started a round with Squirtle (Water) in a Lightning run', 'a toast says why ("...started a round with Squirtle (Water) in a Lightning run")', await rbToast(dA));
 	await shot(dA, 'break_toast_monotype.png');
 	const pika = await dA.page.evaluate(() => window.__micatro.view().areas.jokers.find((c) => c.center === 'j_poke_pikachu').id);
 	await act(dA, { type: 'sell', id: pika });
@@ -235,15 +244,18 @@ try {
 	await dA.page.evaluate(() => document.querySelector('.b-ri-badges').click());
 	await sleep(300);
 	const ri = await dA.page.evaluate(() => document.querySelector('.ri-rb') && document.querySelector('.ri-rb').textContent);
-	A(/Broken: sold Pikachu/.test(ri || '') && /Broken: Water joker in a Lightning run/.test(ri || ''), "Run Info's Badges tab explains both breaks", ri);
+	A(/Broken: sold Pikachu/.test(ri || '') && /Broken: started a round with Squirtle \(Water\) in a Lightning run/.test(ri || ''), "Run Info's Badges tab explains both breaks", ri);
 	await dA.page.evaluate(() => { const b = document.querySelector('.ri-modal .b-back'); if (b) b.click(); });
-	// a non-Pokémon joker breaks both at once
+	// a non-Pokémon joker: the Nuzlocke breaks on gaining it; the Monotype when a round starts with it
 	await pokeRun(dA);
 	await toShop(dA);
 	await buy(dA, 'j_joker');
-	A((await pills(dA)).length === 0, 'a non-Pokémon joker: both badges disappear');
-	A(await rbToast(dA) === 'Nuzlocke broken: gained a non-Pokémon joker (Joker)\nMonotype broken: gained a non-Pokémon joker (Joker)', 'the toast gives both reasons (two lines)', JSON.stringify(await rbToast(dA)));
+	A(JSON.stringify(await pills(dA)) === '["Monotype"]', 'a non-Pokémon joker: the Nuzlocke badge disappears at once', JSON.stringify(await pills(dA)));
+	A(await rbToast(dA) === 'Nuzlocke broken: gained a non-Pokémon joker (Joker)\nSell off-type jokers before the next round to keep Monotype', 'the toast gives the break and the Monotype warning (two lines)', JSON.stringify(await rbToast(dA)));
 	await shot(dA, 'break_toast_non_pokemon.png');
+	await act(dA, { type: 'next_round' });
+	await act(dA, { type: 'select_blind' });
+	A((await pills(dA)).length === 0 && await rbToast(dA) === 'Monotype broken: started a round with Joker (no type)', 'kept into a round, it breaks the Monotype', await rbToast(dA));
 
 	// ===== 3. a won run =====
 	await pokeRun(dA);

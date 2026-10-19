@@ -56,11 +56,11 @@ toShop();
 const w1 = RB().window;
 let r = buy('j_poke_charmander');
 ok(r.ok && RB().nuz && RB().window_gains === 1, 'buy 1 in a shop: still a Nuzlocke', RB());
-ok(RB().type === 'Fire', 'the first joker locks Monotype to its type (Fire)', RB().type);
+ok(RB().type === null, 'Monotype does not lock on a buy (only at a blind start)', RB().type);
 r = buy('j_poke_vulpix');
 ok(!RB().nuz && /2nd new joker this shop/.test(RB().nuz_reason) && RB().window === w1, 'buy 2 in one shop: Nuzlocke broken', RB());
 ok(badgeEvents(r).length === 1 && badgeEvents(r)[0].badge === 'nuz', 'the break emits one run_badge event (the toast)', badgeEvents(r));
-ok(RB().mono && RB().type === 'Fire', 'two Fire jokers: still Monotype');
+ok(RB().mono, 'two Fire jokers: still Monotype');
 ok(RV().nuz === false && RV().mono === true && RV().nuz_reason === RB().nuz_reason, 'the view carries the status + reason');
 
 // one per window, over several windows
@@ -170,64 +170,105 @@ buy('j_poke_charmander');
 joker('j_poke_charmander').start_dissolve(); // (perishable expiry / fainting go this way)
 ok(RB().nuz, 'start_dissolve (destroyed) is not a sell');
 
-// ======================================================== Monotype
+// ======================================================== Monotype (checked only when a blind starts)
+const warns = (r) => (r.events || []).filter((e) => e.type === 'run_badge_warn');
+fresh();
+toShop(); r = buy('j_poke_squirtle');
+ok(RB().type === null && RB().mono && joker('j_poke_squirtle').ability.rb_type === 'Water', 'buying a joker stores its gained type (Water) but locks nothing yet', [RB().type, joker('j_poke_squirtle').ability.rb_type]);
+nextShop();
+ok(RB().type === 'Water' && RB().mono, 'the first blind started with a joker locks the type (Water)', RB());
+buy('j_poke_psyduck');
+nextShop();
+ok(RB().mono, 'another Water joker kept into a round: still Monotype');
+// an off-type joker sold before the blind: intact
+r = buy('j_poke_charmander');
+ok(RB().mono && warns(r).length === 1 && /Sell off-type jokers/.test(warns(r)[0].text), 'buying an off-type joker does not break it; the shop warns once', warns(r));
+ok(RV().mono_at_risk === true, 'the view flags the Monotype as at risk');
+r = act({ type: 'reroll_shop' });
+ok(warns(r).length === 0, '... once per shop (a reroll does not repeat it)');
+r = act({ type: 'sell', id: joker('j_poke_charmander').sort_id });
+ok(RB().mono && RV().mono_at_risk === false, 'sold before the blind: no longer at risk', RV());
+ok(!RB().nuz, '(a sell still breaks the Nuzlocke, as intended)');
+nextShop();
+ok(RB().mono && RB().type === 'Water', 'off-type joker sold before the blind: Monotype intact', RB());
+// kept into the round: broken at the blind start
 fresh();
 toShop(); buy('j_poke_squirtle');
-ok(RB().type === 'Water' && RB().mono, 'Monotype locks to the first joker (Water)');
-nextShop(); buy('j_poke_psyduck');
-ok(RB().mono, 'another Water joker: still Monotype');
-nextShop(); r = buy('j_poke_charmander');
-ok(!RB().mono && RB().mono_reason === 'Fire joker in a Water run', 'a Fire joker in a Water run breaks it', RB().mono_reason);
-ok(badgeEvents(r).some((e) => e.badge === 'mono'), 'the Monotype break emits its event');
-ok(RB().nuz, '(one per window: still a Nuzlocke)');
+nextShop(); buy('j_poke_charmander');
+ok(RB().mono, 'an off-type joker in the row: not broken yet');
+act({ type: 'next_round' });
+r = act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && RB().mono_reason === 'started a round with Charmander (Fire) in a Water run', 'kept into the round: broken at the blind start', RB().mono_reason);
+ok(badgeEvents(r).some((e) => e.badge === 'mono'), 'the Monotype break emits its event (the toast)');
+// the first lock: every joker in the row must share one type
+fresh();
+toShop(); buy('j_poke_squirtle');
+act({ type: 'next_round' });
+{
+  const c = create_card('Joker', G.jokers, null, null, null, null, 'j_poke_charmander');
+  c.add_to_deck(); G.jokers.emplace(c);
+}
+act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && /^started a round with Charmander \(Fire\) in a Water run$/.test(RB().mono_reason), 'two types in the row at the first lock: broken', RB().mono_reason);
 
+// non-Pokémon jokers: the Nuzlocke breaks on gaining one; the Monotype only if it's kept into a round
 fresh();
 toShop(); r = buy('j_joker');
-ok(!RB().mono && RB().mono_reason === 'gained a non-Pokémon joker (Joker)' && RB().type === null, 'a vanilla joker (no type) breaks Monotype', RB());
-ok(!RB().nuz && RB().nuz_reason === 'gained a non-Pokémon joker (Joker)', '... and the Nuzlocke too (owner rule: a non-Pokémon joker breaks both)', RB());
-ok(badgeEvents(r).map((e) => e.badge).join() === 'nuz,mono', 'one buy, two break events (two toast lines)', badgeEvents(r));
+ok(!RB().nuz && RB().nuz_reason === 'gained a non-Pokémon joker (Joker)', 'gaining a non-Pokémon joker breaks the Nuzlocke at once', RB());
+ok(RB().mono && warns(r).length === 1, '... but not the Monotype (a warning instead)', RB());
+act({ type: 'next_round' });
+act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && RB().mono_reason === 'started a round with Joker (no type)', 'a non-Pokémon joker kept into a round breaks the Monotype', RB().mono_reason);
 fresh();
-toShop(); buy('j_poke_charmander');
-nextShop(); buy('j_joker');
-ok(!RB().mono && !RB().nuz && RB().mono_reason === 'gained a non-Pokémon joker (Joker)', 'a vanilla joker after the lock breaks both too', RB());
-// a non-Pokémon joker made by a card (Judgement / Riff-raff style: create_card into the joker row) breaks both
+toShop(); buy('j_joker');
+act({ type: 'sell', id: joker('j_joker').sort_id });
+nextShop(); buy('j_poke_charmander');
+nextShop();
+ok(RB().mono && RB().type === 'Fire', 'a non-Pokémon joker sold before the blind: Monotype intact (Fire)', RB());
+// a non-Pokémon joker made by a card mid-round (Judgement / Riff-raff style) breaks the Nuzlocke at once
 fresh();
 act({ type: 'select_blind' }); clearHand();
 {
   const c = create_card('Joker', G.jokers, null, null, null, null, 'j_mime');
   c.add_to_deck(); G.jokers.emplace(c);
-  ok(!RB().nuz && !RB().mono && /non-Pokémon joker \(Mime\)/.test(RB().nuz_reason), 'a created non-Pokémon joker (any means) breaks both', RB());
+  ok(!RB().nuz && /non-Pokémon joker \(Mime\)/.test(RB().nuz_reason) && RB().mono, 'a created non-Pokémon joker (any means) breaks the Nuzlocke; the Monotype waits for the next blind', RB());
 }
-// evolution into ANOTHER type doesn't break Monotype: only what you gain counts
+
+// evolution into ANOTHER type doesn't break Monotype: a joker counts as the type it had when gained
 fresh();
 toShop(); buy('j_poke_ursaring');
+nextShop();
 ok(RB().type === 'Colorless', 'Ursaring locks Colorless');
 {
   const c = joker('j_poke_ursaring');
   poke_evolve(c, 'j_poke_ursaluna', true);
   G.E_MANAGER.flush();
-  ok(keyOf(c) === 'j_poke_ursaluna' && RB().mono && RB().type === 'Colorless' && RB().nuz, 'Ursaring -> Ursaluna (Earth): Monotype intact, still locked Colorless', RB());
-  nextShop(); buy('j_poke_teddiursa');
-  ok(RB().mono, 'another Colorless joker afterwards: fine');
-  nextShop(); buy('j_poke_sandshrew');
-  ok(!RB().mono && RB().mono_reason === 'Earth joker in a Colorless run', 'but GAINING an Earth joker breaks it (the lock never moved)', RB().mono_reason);
+  ok(keyOf(c) === 'j_poke_ursaluna' && c.ability.rb_type === 'Colorless', 'Ursaring -> Ursaluna (Earth): it keeps its gained type (Colorless)', c.ability.rb_type);
+  buy('j_poke_teddiursa');
+  nextShop();
+  ok(RB().mono && RB().type === 'Colorless' && RB().nuz, 'Ursaluna (now Earth) starts the next round: Monotype intact', RB());
+  buy('j_poke_sandshrew');
+  act({ type: 'next_round' });
+  act({ type: 'select_blind' }); clearHand();
+  ok(!RB().mono && RB().mono_reason === 'started a round with Sandshrew (Earth) in a Colorless run', 'but an Earth joker GAINED and kept breaks it (the lock never moved)', RB().mono_reason);
 }
 
 fresh();
 toShop(); buy('j_poke_charmander');
-apply_type_sticker(joker('j_poke_charmander'), 'Water'); // a later Tera change
-ok(RB().mono && RB().type === 'Fire', 'a later Tera type change does not break Monotype (or move the lock)', RB());
-nextShop(); buy('j_poke_growlithe');
-ok(RB().mono, 'another Fire joker after the Tera change: still Monotype');
-// a joker that arrives already Tera'd counts as its Tera type
 nextShop();
+apply_type_sticker(joker('j_poke_charmander'), 'Water'); // a later Tera change
+buy('j_poke_growlithe');
+nextShop();
+ok(RB().mono && RB().type === 'Fire', 'a later Tera type change does not break Monotype (or move the lock)', RB());
+// a joker that arrives already Tera'd counts as its Tera type
 {
   const c = create_card('Joker', G.shop_jokers, null, null, null, null, 'j_poke_squirtle');
   apply_type_sticker(c, 'Fire');
   G.shop_jokers.emplace(c);
   G.GAME.dollars = 1000;
   act({ type: 'buy', id: c.sort_id });
-  ok(RB().mono, 'a Squirtle with a Fire Tera sticker is Fire at the moment of gaining', RB());
+  nextShop();
+  ok(RB().mono && c.ability.rb_type === 'Fire', 'a Squirtle with a Fire Tera sticker counts as Fire (its type when gained)', RB());
 }
 
 // ======================================================== the win
@@ -287,7 +328,8 @@ ok(G.GAME.won && RV().eligible === false && RV().earned === undefined, 'a seeded
   const s = new Session();
   s.start({ customDeck: { name: 'Two Types', mods: ['pokermon'], jokers: [{ key: 'j_poke_charmander' }, { key: 'j_poke_squirtle' }] } });
   ok(G.jokers.cards.length === 2 && RB().gains === 2 && RB().window_gains === 0, 'starting jokers don\'t use the first window\'s one', RB());
-  ok(RB().nuz && !RB().mono && RB().mono_reason === 'Water joker in a Fire run', 'starting jokers are type-checked for Monotype', RB());
+  ok(RB().nuz && RB().mono, 'two starting types: nothing broken before the first blind', RB());
+  ok(s.act({ type: 'select_blind' }).ok && !RB().mono && RB().mono_reason === 'started a round with Squirtle (Water) in a Fire run', 'starting jokers are type-checked at the first blind start', RB());
   const id = G.jokers.cards[0].sort_id;
   ok(s.act({ type: 'sell', id }).ok && !RB().nuz, 'sold a starting joker: broken');
   const live = JSON.stringify(RB());

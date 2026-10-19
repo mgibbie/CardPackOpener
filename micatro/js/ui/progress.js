@@ -20,7 +20,7 @@ const DARK_TEXT = new Set(['lightning', 'colorless']);
 export const GOLD_STAKE = 8;
 export const ACHIEVEMENTS = [
   { id: 'first_nuzlocke', name: 'Nuzlocke', desc: 'Win a Pokermon run as a Nuzlocke: never sell a joker, and gain at most one new joker per shop.' },
-  { id: 'first_monotype', name: 'Monotype', desc: 'Win a Pokermon run gaining only jokers of one Pokémon type.' },
+  { id: 'first_monotype', name: 'Monotype', desc: 'Win a Pokermon run starting every round with jokers of only one Pokémon type.' },
   { id: 'monotype_all', name: 'Type Master', desc: 'Win a Monotype run with every one of the 12 types.' },
   { id: 'nuzlocke_monotype', name: 'Purist', desc: 'Win a run that is a Nuzlocke and a Monotype at once.' },
   { id: 'nuzlocke_gold', name: 'Golden Nuzlocke', desc: 'Win a Nuzlocke at Gold Stake.' },

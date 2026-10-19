@@ -598,7 +598,7 @@ export class Board {
     const el = this.H.rbadges;
     const rb = v && v.run_badges;
     const show = !!(rb && rb.eligible && (rb.nuz || rb.mono));
-    const key = show ? [rb.nuz ? 1 : 0, rb.mono ? 1 : 0, rb.type || '', rb.won ? 1 : 0].join('|') : '';
+    const key = show ? [rb.nuz ? 1 : 0, rb.mono ? 1 : 0, rb.type || '', rb.won ? 1 : 0, rb.mono_at_risk ? 1 : 0].join('|') : '';
     this.hudEl.classList.toggle('has-rb', show);
     if (key === this._rbKey) return;
     this._rbKey = key;
@@ -613,13 +613,23 @@ export class Board {
       const b = h('span', 'rb-pill rb-mono');
       b.textContent = rb.type ? 'Monotype: ' + rb.type : 'Monotype'; // (text: a spectated view is someone else's data)
       if (rb.type) { b.style.background = /^#[0-9a-f]{3,8}$/i.test(rb.colour || '') ? rb.colour : '#7a8a8d'; if (/^(lightning|colorless)$/i.test(rb.type)) b.style.color = '#2a3436'; }
-      b.title = rb.type ? `Monotype: gain only ${rb.type} jokers. Win the run to earn it.` : 'Monotype: your first joker sets the type; gain only jokers of that type.';
+      b.title = rb.type ? `Monotype: start every round with only ${rb.type} jokers. Win the run to earn it.` : 'Monotype: the jokers you start your first round with set the type; start every round with only that type.';
+      // (an off-type joker in the row: it breaks at the next blind unless it goes first)
+      if (rb.mono_at_risk) { b.classList.add('rb-risk'); b.title += ' An off-type joker is in your row: sell it before the next round.'; }
       el.appendChild(b);
     }
   }
   /** A badge just broke (the engine's run_badge event): a toast that says why. */
-  runBadgeToast(ev) {
+  runBadgeToast(ev, warn) {
     const t = this.rbToastEl;
+    t.classList.toggle('warn', !!warn); // (a gentle warning: an off-type joker would break Monotype at the next blind)
+    if (warn) {
+      // (right after a break from the same gain — a non-Pokémon joker ends the Nuzlocke — it joins as a second line)
+      const join = ev.seq != null && this._rbSeq != null && ev.seq === this._rbSeq + 1 && t.textContent;
+      t.textContent = join ? t.textContent + '\n' + String(ev.text || '') : String(ev.text || '');
+      if (join) t.classList.remove('warn');
+      this._rbSeq = null; t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); return;
+    }
     const line = (ev.badge === 'nuz' ? 'Nuzlocke' : 'Monotype') + ' broken: ' + (ev.reason || '');
     // (one gain can break both — a non-Pokémon joker: the second break joins the toast as a second line)
     // (consecutive engine events = the same gain)
@@ -1436,6 +1446,7 @@ export class Board {
       case 'not_allowed': this.attn('Not Allowed!', '#fe5f55'); sound.play('cancel'); return 0.6;
       case 'no_space': this.toast('No space!'); return 0.2;
       case 'run_badge': this.runBadgeToast(ev); return 0.3;
+      case 'run_badge_warn': this.runBadgeToast(ev, true); return 0.2;
       case 'win': sound.play('win'); this.attn('You Win!', '#f3b958'); return 0.9;
       case 'game_over': sound.play('gong', 0.8, 0.6); return 0.4;
       case 'round_eval': sound.play('timpani', 1, 0.4); return 0.2;

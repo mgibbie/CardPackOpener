@@ -393,6 +393,7 @@ const hooks = {
   // (Nuzlocke / Monotype run badges: systems/runbadges.js)
   blind_on_deck: RB.blind_on_deck,
   new_round: RB.new_round,
+  shop_start: RB.shop_start,
   emplace: RB.emplace,
   sell_card: RB.sell_card,
   pool_filter,
