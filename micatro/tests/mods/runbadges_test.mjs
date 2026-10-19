@@ -4,12 +4,12 @@
 //   node micatro/tests/mods/runbadges_test.mjs
 import { T, start, hand, add, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { create_card } from '../../js/engine/core.js';
-import { newRun } from '../../js/engine/run.js';
+import { newRun, get_poker_hand_info } from '../../js/engine/run.js';
 import { toView } from '../../js/engine/view.js';
 import { Session } from '../../js/engine/session.js';
 import { allChallenges } from '../../js/engine/challenge.js';
 import { poke_evolve } from '../../mods/pokermon/systems/evolution.js';
-import { apply_type_sticker } from '../../mods/pokermon/systems/types.js';
+import { apply_type_sticker, get_type } from '../../mods/pokermon/systems/types.js';
 import { playRun } from '../replay_bot.mjs';
 
 const { ok, done } = T();
@@ -19,8 +19,7 @@ const badgeEvents = (r) => (r.events || []).filter((e) => e.type === 'run_badge'
 
 /** An unseeded Pokermon run waiting at the first blind select (eligible for the badges). */
 function fresh() {
-  // A fixed seed: unseeded, ~1 run in 75 rolled a Mystery Egg from the Top-up tag and broke the badge counts (flaky).
-  newRun({ back: 'b_red', mods: ['pokermon'], seed: 'RUNBADGE', seeded: false });
+  newRun({ seed: 'RBFRESH1', seeded: false, back: 'b_red', mods: ['pokermon'] }); // (a fixed seed, still unseeded: eligible)
   G.FORCE_BOSS = 'bl_wall'; G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; // (as poke_helpers.start: a harmless boss)
 }
 /** Put a joker for sale in the shop and buy it -> the act result. */
@@ -270,6 +269,144 @@ ok(RB().mono && RB().type === 'Fire', 'a later Tera type change does not break M
   act({ type: 'buy', id: c.sort_id });
   nextShop();
   ok(RB().mono && c.ability.rb_type === 'Fire', 'a Squirtle with a Fire Tera sticker counts as Fire (its type when gained)', RB());
+}
+
+// ---- owner rule 2026-10-19 (tester Kyle, a Dragon run): a joker MATCHES the run's type by its gained type OR its
+// current type (a Tera sticker included); a copy (Ankh, Invisible Joker) inherits its source's gained type
+/** Use Ankh on the joker row (one joker in it: that one is copied) -> [act result, the new copy]. */
+function ankh() {
+  const before = G.jokers.cards.slice();
+  const a = add('c_ankh');
+  const res = act({ type: 'use', id: a.sort_id });
+  G.E_MANAGER.flush();
+  return [res, G.jokers.cards.find((c) => !before.includes(c))];
+}
+/** A Dragon-locked run in the shop: Dratini bought, a round started with it. */
+function dragonRun() {
+  fresh();
+  toShop(); buy('j_poke_dratini');
+  nextShop();
+  ok(RB().type === 'Dragon' && RB().mono, 'Dratini locks Dragon', RB());
+}
+// (a) a Dark joker gained, then Tera'd to Dragon: it counts as Dragon (its current type)
+dragonRun();
+buy('j_poke_sneasel');
+{
+  const c = joker('j_poke_sneasel');
+  ok(c.ability.rb_type === 'Dark', '(a) Sneasel was gained Dark', c.ability.rb_type);
+  apply_type_sticker(c, 'Dragon');
+  ok(RV().mono_at_risk === false, '(a) Tera\'d to Dragon: no longer at risk', RV());
+  nextShop();
+  ok(RB().mono && RB().type === 'Dragon', '(a) a Dark joker Tera\'d to Dragon starts a Dragon round: Monotype intact', RB());
+}
+// (b) an Ankh copy of a Tera-Dragon joker keeps its Tera and counts as Dragon
+dragonRun();
+buy('j_poke_sneasel');
+apply_type_sticker(joker('j_poke_sneasel'), 'Dragon');
+joker('j_poke_dratini').start_dissolve(); G.E_MANAGER.flush(); // (only the Sneasel left: Ankh copies it)
+nextShop();
+{
+  const src = joker('j_poke_sneasel');
+  const [res, cp] = ankh();
+  ok(res.ok && cp && keyOf(cp) === 'j_poke_sneasel' && G.jokers.cards.length === 2, '(b) Ankh copied the Sneasel', res.error);
+  ok(cp && cp.ability.dragon_sticker === true && cp.ability.dark_sticker === false && cp.ability.extra.ptype === 'Dragon', '(b) the copy keeps the Dragon Tera sticker (copy_card copies the ability)', cp && [cp.ability.dragon_sticker, cp.ability.extra.ptype]);
+  ok(cp && cp.ability.rb_type === src.ability.rb_type, '(b) the copy inherits its source\'s gained type', cp && [cp.ability.rb_type, src.ability.rb_type]);
+  ok(RV().mono_at_risk === false, '(b) the copy is not at risk');
+  nextShop();
+  ok(RB().mono && RB().type === 'Dragon', '(b) an Ankh copy of a Tera-Dragon joker: Monotype intact', RB());
+}
+// (b2) Kyle's screenshot: a Dragonite Tera'd Dark, copied by Ankh, the original re-Tera'd Earth: both still Dragon (gained)
+fresh();
+toShop(); buy('j_poke_dragonite');
+nextShop();
+{
+  const src = joker('j_poke_dragonite');
+  apply_type_sticker(src, 'Dark');
+  const [res, cp] = ankh();
+  ok(res.ok && cp && cp.ability.dark_sticker === true, '(b2) the copy keeps the source\'s Dark Tera exactly', res.error);
+  apply_type_sticker(src, 'Earth');
+  ok(src.ability.earth_sticker && cp && !cp.ability.earth_sticker && cp.ability.dark_sticker, '(b2) original Earth Tera, copy Dark Tera');
+  ok(cp && cp.ability.rb_type === 'Dragon', '(b2) the copy inherits the gained type Dragon (not its Tera at copy time)', cp && cp.ability.rb_type);
+  nextShop();
+  ok(RB().mono && RB().type === 'Dragon', '(b2) two Dragonites with Earth / Dark Teras start a Dragon round: Monotype intact', RB());
+}
+// (c) evolution into another type stays safe (Ursaring -> Ursaluna above); so does an off-type Tera on an on-type joker
+dragonRun();
+apply_type_sticker(joker('j_poke_dratini'), 'Fire');
+nextShop();
+ok(RB().mono, '(c) a Dragon joker Tera\'d Fire still matches by its gained type', RB());
+// (d) an off-type joker with no matching Tera breaks it (an off-type Tera doesn't help)
+dragonRun();
+buy('j_poke_sneasel');
+apply_type_sticker(joker('j_poke_sneasel'), 'Fire');
+ok(RV().mono_at_risk === true, '(d) a Dark joker Tera\'d Fire in a Dragon run is at risk');
+act({ type: 'next_round' });
+act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && RB().mono_reason === 'started a round with Sneasel (Dark/Fire) in a Dragon run', '(d) off-type both ways: broken', RB().mono_reason);
+// (e) a non-Pokémon joker still breaks it
+dragonRun();
+buy('j_joker');
+act({ type: 'next_round' });
+act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && RB().mono_reason === 'started a round with Joker (no type)', '(e) a non-Pokémon joker kept into a round: broken', RB().mono_reason);
+// (f) the first lock, jokers matching by different routes
+fresh();
+toShop(); buy('j_poke_sneasel'); // (gained Dark ...)
+apply_type_sticker(joker('j_poke_sneasel'), 'Dragon'); // (... now Dragon)
+act({ type: 'next_round' });
+{ const c = create_card('Joker', G.jokers, null, null, null, null, 'j_poke_dratini'); c.add_to_deck(); G.jokers.emplace(c); }
+act({ type: 'select_blind' }); clearHand();
+ok(RB().mono && RB().type === 'Dragon', '(f) Sneasel (gained Dark, Tera Dragon) + Dratini: the one shared type, Dragon, locks', RB());
+fresh();
+toShop(); buy('j_poke_sneasel');
+apply_type_sticker(joker('j_poke_sneasel'), 'Dragon');
+nextShop();
+ok(RB().mono && RB().type === 'Dark', '(f) a lone joker matching two types locks its gained type (Dark)', RB());
+fresh();
+toShop(); buy('j_poke_sneasel');
+apply_type_sticker(joker('j_poke_sneasel'), 'Fire'); // Dark / Fire
+act({ type: 'next_round' });
+{ const c = create_card('Joker', G.jokers, null, null, null, null, 'j_poke_squirtle'); c.add_to_deck(); G.jokers.emplace(c); apply_type_sticker(c, 'Grass'); } // Water / Grass
+act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && RB().mono_reason === 'started a round with Squirtle (Water/Grass) in a Dark run', '(f) no type shared by the row at the first lock: broken', RB().mono_reason);
+// (g) a resumed recipe (Kyle's Continue): a Dragonite Tera'd off-type + its Ankh copy, saved mid-shop, re-simulated
+{
+  const bestHand = () => {
+    const cards = G.hand.cards; let best = null, bs = -1; const n = Math.min(cards.length, 10);
+    for (let mask = 1; mask < (1 << n); mask++) {
+      let bits = 0; for (let m = mask; m; m &= m - 1) bits++;
+      if (bits > 5) continue;
+      const sel = cards.filter((_, i) => mask & (1 << i));
+      const info = get_poker_hand_info(sel); if (info.text === 'NULL') continue;
+      const h = G.GAME.hands[info.text];
+      const sc = (h.chips + info.scoring_hand.reduce((a, c) => a + c.get_chip_bonus(), 0)) * h.mult;
+      if (sc > bs) { bs = sc; best = sel; }
+    }
+    return best.map((c) => c.sort_id);
+  };
+  let s = null, tera = null;
+  for (let i = 0; i < 30 && !s; i++) {
+    const t = new Session();
+    t.start({ customDeck: { name: 'Kyle', mods: ['pokermon'], jokers: [{ key: 'j_poke_dragonite' }], consumables: [{ key: 'c_poke_teraorb' }, { key: 'c_ankh' }] } });
+    const orb = G.consumeables.cards.find((c) => keyOf(c) === 'c_poke_teraorb');
+    if (orb && orb.ability.extra.change_to_type !== 'Dragon') { s = t; tera = orb.ability.extra.change_to_type; }
+  }
+  ok(s && G.jokers.cards.length === 1, '(g) a run with Dragonite and a non-Dragon Tera Orb (' + tera + ')');
+  const orb = G.consumeables.cards.find((c) => keyOf(c) === 'c_poke_teraorb');
+  ok(s.act({ type: 'use', id: orb.sort_id }).ok && get_type(G.jokers.cards[0]) === tera, '(g) Tera Orb: Dragonite is now ' + tera, get_type(G.jokers.cards[0]));
+  ok(s.act({ type: 'select_blind' }).ok && RB().type === 'Dragon' && RB().mono, '(g) Dragonite (gained Dragon) locks Dragon at the first blind', RB());
+  const ak = G.consumeables.cards.find((c) => keyOf(c) === 'c_ankh');
+  ok(s.act({ type: 'use', id: ak.sort_id }).ok && G.jokers.cards.length === 2, '(g) Ankh copied it mid-round');
+  const cp = G.jokers.cards[1];
+  ok(cp && get_type(cp) === tera && cp.ability.rb_type === 'Dragon', '(g) the copy: ' + tera + ' Tera, gained type Dragon', cp && [get_type(cp), cp.ability.rb_type]);
+  for (let i = 0; i < 8 && G.STATE === STATES.SELECTING_HAND; i++) { s.act({ type: 'highlight', ids: bestHand() }); s.act({ type: 'play' }); }
+  ok(G.STATE === STATES.ROUND_EVAL && s.act({ type: 'cash_out' }).ok && G.STATE === STATES.SHOP, '(g) the blind won by played hands, cashed out: in the shop', G.STATE);
+  const live = JSON.stringify(RB());
+  ok(RB().mono && RV().mono_at_risk === false, '(g) live, in the shop: Monotype intact, not at risk', RB());
+  Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
+  ok(JSON.stringify(RB()) === live && RB().mono && G.STATE === STATES.SHOP && G.jokers.cards.length === 2, '(g) resumed (fromRecipe) in the shop: Monotype intact', [live, JSON.stringify(RB())]);
+  ok(act({ type: 'next_round' }).ok && act({ type: 'select_blind' }).ok, '(g) the resumed run starts the next blind');
+  ok(RB().mono && RB().type === 'Dragon', '(g) ... with Monotype still intact (Dragon)', RB());
 }
 
 // ======================================================== the win

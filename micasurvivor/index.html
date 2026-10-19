@@ -447,6 +447,9 @@
     <div class="row between"><h2 id="modes-title">Elige un modo</h2><button class="btn small ghost" data-back>Volver</button></div>
     <div id="modes-main">
       <div class="modes-list" id="modes-list"></div>
+      <!-- MicaSurvivor (DLC D0b): the Expedition modes (js/systems/expedition.js); "Coming soon" until a batch turns one on -->
+      <h3 class="modes-h" id="modes-exp-h">Expedición</h3>
+      <div class="modes-list" id="modes-exp"></div>
       <h3 class="modes-h">Modificadores (todos los modos menos Diario y Fiesta): +25% de monedas por cada uno activo</h3>
       <div class="modes-mods" id="modes-mods"></div>
     </div>
@@ -610,6 +613,7 @@
 <!-- datos generados -->
 <!-- scripts:begin -->
 <script defer src="js/core/util.js"></script>
+<script defer src="js/core/hooks.js"></script> <!-- MicaSurvivor (DLC D0b): named seams for the Expedition modes -->
 <script defer src="js/core/i18n.js"></script>
 <script defer src="js/data/lang-en.js"></script>
 <script defer src="js/core/settings.js"></script>
@@ -662,6 +666,7 @@
 <script defer src="js/systems/dmglog.js"></script> <!-- MicaSurvivor (M5 batch 11): damage per source -->
 <script defer src="js/systems/zmoves.js"></script> <!-- MicaSurvivor (M5): Z-moves -->
 <script defer src="js/systems/dynamax.js"></script> <!-- MicaSurvivor (M5): Dynamax + raid dens -->
+<script defer src="js/systems/expedition.js"></script> <!-- MicaSurvivor (DLC D0b): the Expedition modes' registry + lazy loader (js/expedition/* is loaded only when an Expedition mode starts) -->
 <script defer src="js/systems/modes.js"></script> <!-- MicaSurvivor (M5 batch 6): quick modes + modifiers -->
 <script defer src="js/systems/team.js"></script> <!-- MicaSurvivor (M5 batch 7): team mode -->
 <script defer src="js/systems/localcoop.js"></script> <!-- MicaSurvivor (M5 batch 12a): local co-op partner -->

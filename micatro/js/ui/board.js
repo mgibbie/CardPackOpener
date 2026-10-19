@@ -636,9 +636,9 @@ export class Board {
       const b = h('span', 'rb-pill rb-mono');
       b.textContent = rb.type ? 'Monotype: ' + rb.type : 'Monotype'; // (text: a spectated view is someone else's data)
       if (rb.type) { b.style.background = /^#[0-9a-f]{3,8}$/i.test(rb.colour || '') ? rb.colour : '#7a8a8d'; if (/^(lightning|colorless)$/i.test(rb.type)) b.style.color = '#2a3436'; }
-      b.title = rb.type ? `Monotype: start every round with only ${rb.type} jokers. Win the run to earn it.` : 'Monotype: the jokers you start your first round with set the type; start every round with only that type.';
+      b.title = rb.type ? `Monotype: start every round with only ${rb.type} jokers (by the type each was gained as, or its current / Tera type). Win the run to earn it.` : 'Monotype: the jokers you start your first round with set the type; start every round with only that type.';
       // (an off-type joker in the row: it breaks at the next blind unless it goes first)
-      if (rb.mono_at_risk) { b.classList.add('rb-risk'); b.title += ' An off-type joker is in your row: sell it before the next round.'; }
+      if (rb.mono_at_risk) { b.classList.add('rb-risk'); b.title += ' An off-type joker is in your row: sell it (or Tera it to the run’s type) before the next round.'; }
       el.appendChild(b);
     }
   }
@@ -864,7 +864,7 @@ export class Board {
     const name = packName(kind, v.state);
     const hd = h('div', 'pack-head', `<div class="pack-name">${esc(name)}</div><div class="pack-choose">Choose <b>${v.pack_choices || 1}</b></div>`);
     const sk = h('button', 'btn grey b-skip-pack', 'Skip'); sk.type = 'button';
-    sk.disabled = this.readOnly || this.locked;
+    sk.disabled = this.readOnly || this.locked || !!v.pack_no_skip; // (view.pack_no_skip: a mod pack that can't be skipped)
     sk.addEventListener('click', () => this.act({ type: 'skip_booster' }, 'button'));
     hd.appendChild(sk);
     // Mod pack buttons (view.mod_buttons with where 'pack'; e.g. BETMMA's Recycle Area discard)

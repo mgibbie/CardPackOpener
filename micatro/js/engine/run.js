@@ -2122,6 +2122,8 @@ function applyAction(a) {
     }
     case 'skip_booster': {
       can(inPack(), 'no pack open');
+      // (a G.FUNCS.can_skip_booster wrap: MoreFluff's Superboss Pack can't be skipped)
+      can(!(ACTIVE_MODS.length && firstHook('can_skip_booster') === false), "this pack can't be skipped");
       for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ skipping_booster: true }));
       if (ACTIVE_MODS.length) callHook('skip_booster'); // (a G.FUNCS.skip_booster wrap: a custom deck's money for skipping)
       end_consumeable();

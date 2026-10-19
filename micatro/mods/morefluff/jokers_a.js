@@ -1,7 +1,11 @@
 /**
- * More Fluff — jokers, part A (28): the commons, the "spire" uncommons and the first uncommons of
- * MoreFluff.lua's joker list. Each is a line-for-line port of jokers/<slug>.lua (numbers from data.js).
- * Cryptid's context.forcetrigger branches are left out (no Cryptid in Micatro).
+ * More Fluff 1.9.9999 — jokers, part A (28): the commons, the "spire" uncommons and the first uncommons of
+ * the 1.5.6 joker list. Each is a line-for-line port of src/jokers/<slug>.lua (numbers from data.js).
+ * Cryptid's context.forcetrigger branches are left out (no Cryptid in Micatro). Coupon Catalogue is retired
+ * upstream to the hidden "Old Fluff" rarity; Cartomancer! keeps its pre-turned 1.5.6 art (legacy.js).
+ * 1.9.9999 changes ported here: Lollipop (extra.xmult, scale_card), Lucky Charm (text order, money return), MS Paint
+ * (+3 hand size from blind select), Philosophical (extra.slots, slots change in an event), Expansion Pack (SMODS.add_card:
+ * no key_append), Dropkick ("+1 Hand "), Blade Dance (first hand drawn), Bad Legal Defence (returned message).
  *
  * Port notes (Micatro equivalents, not behaviour changes):
  *  - Basepaul Card: the Lua gives X12.5 when the PROFILE name contains "paul"; Micatro has no Balatro
@@ -24,7 +28,7 @@ import {
   G, P_CENTERS, P_CARDS, create_card, create_playing_card, ease_dollars, ease_discard, ease_hands_played,
   probability_roll, probability_vars, pseudorandom_element, pseudoseed, localize, juice_card, card_eval_status_text,
 } from '../../js/engine/core.js';
-import { joker, find, has, room, say, remove_joker, modded_begin, modded_end, RANKS, SUITS_T } from './util.js';
+import { joker, find, has, room, say, remove_joker, modded_begin, modded_end, scale_card, RANKS, SUITS_T } from './util.js';
 
 /** The main (non-individual, non-repetition) end_of_round pass for jokers. */
 const eor = (ctx) => ctx.end_of_round && !ctx.individual && !ctx.repetition && (ctx.cardarea === undefined || ctx.cardarea === G.jokers);
@@ -70,14 +74,14 @@ J('expansion_pack', {
       modded_begin();
       G.E_MANAGER.add_event(() => {
         for (let i = 1; i <= jokers_to_create; i++) {
-          const n_card = create_card('Joker', G.jokers, null, null, null, null, null, 'exp');
+          const n_card = create_card('Joker', G.jokers, null, null, null, null, null, undefined); // (SMODS.add_card: no key_append)
           n_card.add_to_deck();
           G.jokers.emplace(n_card);
           G.GAME.joker_buffer = 0;
         }
         modded_end();
       });
-      card_eval_status_text(ctx.blueprint_card || card, 'extra', null, null, null, { message: localize('k_plus_joker'), colour: 'BLUE' });
+      return { message: localize('k_plus_joker'), colour: 'BLUE' };
     }
   },
 });
@@ -115,17 +119,16 @@ J('jester', {
 
 // Lollipop
 J('lollipop', {
-  loc_vars: (s, iq, card) => ({ vars: [card.ability.x_mult, card.ability.extra] }),
+  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.xmult, card.ability.extra.xmult_per] }),
   calculate(s, card, ctx) {
     if (ctx.end_of_round && !ctx.individual && !ctx.repetition && !ctx.blueprint && !ctx.retrigger_joker) {
-      if (card.ability.x_mult - card.ability.extra <= 1.01) {
+      scale_card(card, { ref_table: card.ability.extra, ref_value: 'xmult', scalar_value: 'xmult_per', operation: '-', message_key: 'a_xmult_minus', message_colour: 'PURPLE' });
+      if (card.ability.extra.xmult <= 1.01) {
         remove_joker(card);
         return { message: localize('k_eaten_ex'), colour: 'FILTER' };
       }
-      card.ability.x_mult = card.ability.x_mult - card.ability.extra;
-      return { message: localize({ type: 'variable', key: 'a_xmult_minus', vars: [card.ability.extra] }), colour: 'RED' };
     } else if (ctx.cardarea === G.jokers && ctx.joker_main) {
-      return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.x_mult] }), Xmult_mod: card.ability.x_mult };
+      return { xmult: card.ability.extra.xmult };
     }
   },
 });
@@ -136,14 +139,13 @@ J('luckycharm', {
     const e = card.ability.extra;
     const [n1, d1] = probability_vars(card, 1, e.mult_chance, 'luckycharm_mult');
     const [n2, d2] = probability_vars(card, 1, e.money_chance, 'luckycharm_money');
-    return { vars: [n1, e.mult, d1, e.money, d2, n2] };
+    return { vars: [n1, d1, e.mult, n2, d2, e.money] };
   },
   calculate(s, card, ctx) {
     const e = card.ability.extra;
     if (ctx.end_of_round && !ctx.individual && !ctx.repetition && !ctx.blueprint) {
       if (probability_roll(card, 'lucky_charm_money', 1, e.money_chance, 'lucky_charm_money')) {
-        ease_dollars(e.money);
-        return { message: localize('$') + e.money, colour: 'MONEY', remove: true, card };
+        return { dollars: e.money };
       }
     }
     if (ctx.cardarea === G.jokers && ctx.joker_main) {
@@ -158,22 +160,22 @@ J('luckycharm', {
 J('mspaint', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra] }),
   calculate(s, card, ctx) {
-    if (ctx.first_hand_drawn && !ctx.blueprint && card.ability.h_size === 0) {
+    if (ctx.setting_blind && !ctx.blueprint && card.ability.h_size === 0) {
       card.ability.h_size = card.ability.h_size + card.ability.extra;
-      G.hand.change_size(card.ability.extra); // (draws the cards too, see header)
+      G.hand.change_size(card.ability.extra);
     }
     if (ctx.after && !ctx.blueprint && card.ability.h_size !== 0 && ctx.cardarea === G.jokers) {
-      G.hand.change_size(-card.ability.extra);
-      card.ability.h_size = 0;
+      G.E_MANAGER.add_event(() => { G.hand.change_size(-card.ability.extra); card.ability.h_size = 0; });
     }
   },
 });
 
 // Philosophical Joker
 J('philosophical', {
-  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra] }),
-  add_to_deck(s, card) { G.jokers.config.card_limit = G.jokers.config.card_limit + card.ability.extra; },
-  remove_from_deck(s, card) { G.jokers.config.card_limit = G.jokers.config.card_limit - card.ability.extra; },
+  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.slots] }),
+  // (1.9.9999 changes the slot count in an event)
+  add_to_deck(s, card) { G.E_MANAGER.add_event(() => { G.jokers.config.card_limit = G.jokers.config.card_limit + card.ability.extra.slots; }); },
+  remove_from_deck(s, card) { G.E_MANAGER.add_event(() => { G.jokers.config.card_limit = G.jokers.config.card_limit - card.ability.extra.slots; }); },
 });
 
 // Simplified Joker
@@ -234,11 +236,9 @@ J('unregisteredhypercam', {
 J('dropkick', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.hands] }),
   calculate(s, card, ctx) {
-    if (ctx.setting_blind) card.ability.extra.current_triggers = 0;
     if (ctx.after && ctx.cardarea === G.jokers && ctx.poker_hands && next(ctx.poker_hands.Straight)) {
-      card.ability.extra.current_triggers = card.ability.extra.current_triggers + 1;
       ease_hands_played(card.ability.extra.hands);
-      say(ctx.blueprint_card || card, '+' + card.ability.extra.hands + ' Hand');
+      return { message: localize({ type: 'variable', key: 'a_plus_hand', vars: [card.ability.extra.hands] }), colour: 'BLUE' };
     }
   },
 });
@@ -247,7 +247,7 @@ J('dropkick', {
 J('bladedance', {
   loc_vars: (s, iq, card) => { iq.push({ key: 'm_steel', set: 'Enhanced', vars: [P_CENTERS.m_steel.config.h_x_mult] }); return { vars: [card.ability.extra] }; },
   calculate(s, card, ctx) {
-    if (ctx.setting_blind && !card.getting_sliced && !(ctx.blueprint_card || card).getting_sliced) {
+    if (ctx.first_hand_drawn && !card.getting_sliced && !(ctx.blueprint_card || card).getting_sliced) {
       G.E_MANAGER.add_event(() => {
         const cards = [];
         for (let i = 1; i <= card.ability.extra; i++) {
@@ -312,7 +312,7 @@ J('badlegaldefence', {
           G.consumeables.emplace(n_card);
           G.GAME.consumeable_buffer = 0;
         });
-        say(card, localize('k_death_caps'), 'PURPLE');
+        return { message: localize('k_death_caps'), colour: 'PURPLE' };
       }
     }
   },
@@ -464,7 +464,7 @@ export const hooks = {
   },
   /** G.FUNCS.check_for_buy_space / can_select_card: a Philosophical Joker always fits. */
   buy_space(card) {
-    if (card.ability.name === 'Philosophical Joker' && card.ability.extra >= 1) return true;
+    if (card.ability.name === 'Philosophical Joker' && card.ability.extra && card.ability.extra.slots >= 1) return true;
     return undefined;
   },
 };

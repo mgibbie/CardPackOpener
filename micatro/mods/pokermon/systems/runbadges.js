@@ -20,15 +20,23 @@
  * Ditto's transformation and Tera / type changes are the SAME card (Pokermon's poke_evolve swaps the center
  * in place), so they are not new jokers. Starting jokers (a custom deck's) don't use the first window's one.
  *
- * Monotype (owner rule 2026-10-18, revised) — checked ONLY when a blind starts (new_round), never when a joker
- * is gained: buying a wrong-type or non-Pokémon joker is fine if it's gone (sold, used up) before the next blind.
- *   * Each joker's type is the one it had WHEN GAINED (Pokermon's get_type then: a Tera sticker, else ptype),
- *     stored on the card as ability.rb_type ('Fire' ..., 'none' for no type, 'any' for a wildcard Tera like
- *     Nacho's Stellar). Evolving into another type (Ursaring -> Ursaluna) and later Tera changes never change it.
- *   * The type LOCKS at the first blind start with at least one (typed) joker in the row; every joker there must
- *     share it. At every later blind start every joker must have the locked type. A joker with no type in the
- *     row at a blind start breaks it ("started a round with Joker (no type)"); so does another type ("started a
- *     round with Charmander (Fire) in a Water run").
+ * Monotype (owner rule 2026-10-18, revised 2026-10-19) — checked ONLY when a blind starts (new_round), never when
+ * a joker is gained: buying a wrong-type or non-Pokémon joker is fine if it's gone (sold, used up) before the next blind.
+ *   * Each joker's GAINED type is the one it had when gained (Pokermon's get_type then: a Tera sticker, else
+ *     ptype), stored on the card as ability.rb_type ('Fire' ..., 'none' for no type, 'any' for a wildcard Tera
+ *     like Nacho's Stellar). Evolution and later Tera changes never change it. A COPY (Ankh, Invisible Joker:
+ *     copy_card, which copies the ability table, Tera sticker included) inherits its source's gained type: it is
+ *     the same Pokémon for Monotype (it is still a new joker for the Nuzlocke).
+ *   * A joker MATCHES a type when its gained type OR its current type (get_type now: a Tera sticker, else ptype)
+ *     is that type; a wildcard Tera (gained or current) matches every type. So evolving into another type is
+ *     safe (the gained type), and Tera-ing a joker to the run’s type makes it count (the current type).
+ *   * The type LOCKS at the first blind start with at least one (typed) joker in the row: the first type that
+ *     EVERY joker there matches, trying each joker's gained type left to right, then each one's current type
+ *     left to right (so a gained type wins a tie). At every later blind start every joker must match the locked
+ *     type. A joker with no type either way breaks it ("started a round with Joker (no type)"); so does one
+ *     matching neither way ("started a round with Charmander (Fire) in a Water run"; "(Dark/Fire)" when its
+ *     gained and current types differ). With no shared type at the first lock, the reason names the first joker
+ *     that misses the first candidate type.
  *   * A shop with an off-type joker in the row shows a warning once (event run_badge_warn).
  *   * Zero jokers at every blind start: no lock, so no Monotype win.
  *
@@ -84,7 +92,9 @@ export const runbadge_hooks = {
       if (s.window_gains > 1) brk(s, 'nuz', `2nd new joker this shop (${name})`);
     }
     const t = gained_type(card);
-    card.ability.rb_type = t; // (the type it had when gained: what the Monotype checks read; saved with the card)
+    // (the type it had when gained: what the Monotype checks read; saved with the card. A copy_card copy arrives with
+    //  its source's ability, rb_type included: it keeps that, the source's gained type — owner rule 2026-10-19)
+    if (!card.ability.rb_type) card.ability.rb_type = t;
     // (owner rule 2026-10-18: gaining a joker without a Pokémon type breaks the Nuzlocke at once)
     if (t === 'none') brk(s, 'nuz', `gained a non-Pokémon joker (${name})`);
     if (G.STATE === G.STATES.SHOP || (G.STATES && [G.STATES.BUFFOON_PACK, G.STATES.MOD_PACK, G.STATES.MOD_PACK_HAND, G.STATES.TAROT_PACK, G.STATES.SPECTRAL_PACK, G.STATES.STANDARD_PACK, G.STATES.PLANET_PACK].includes(G.STATE))) mono_warn();
@@ -105,29 +115,41 @@ function gained_type(card) {
 /** The type a joker counts as: the one stored when it was gained (a joker that predates the tracker: now). */
 const rb_type = (card) => (card.ability && card.ability.rb_type) || gained_type(card);
 const row_jokers = () => (G.jokers ? G.jokers.cards.filter((c) => c.ability && c.ability.set === 'Joker') : []);
-/** The first joker in the row that would break Monotype at a blind start now (null: none would). -> {card, t, lock} */
-function off_type() {
-  const s = st();
-  let lock = s.type;
-  for (const c of row_jokers()) {
-    const t = rb_type(c);
-    if (t === 'any') continue;
-    if (t === 'none') return { card: c, t, lock };
-    if (!lock) { lock = t; continue; }
-    if (t !== lock) return { card: c, t, lock };
-  }
-  return null;
+/** Does a joker match type t at a blind start? Its gained OR its current type (a wildcard either way: any type). */
+const matches = (c, t) => { const g = rb_type(c), n = gained_type(c); return g === 'any' || n === 'any' || g === t || n === t; };
+/** The types a joker shows in a break reason: 'Fire', 'Dark/Fire' (gained/current) or 'none'. */
+function type_label(c) {
+  const ts = [rb_type(c), gained_type(c)].filter((x, i, a) => x !== 'none' && x !== 'any' && a.indexOf(x) === i);
+  return ts.length ? ts.join('/') : 'none';
 }
+/** The Monotype verdict for the row now -> {lock, bad: {card, t} | null}. lock: the locked type, or (before the
+ *  first lock) the type the row would lock (null: no typed joker). */
+function mono_state() {
+  const s = st(), row = row_jokers();
+  let lock = s.type;
+  if (!lock) {
+    const cands = [];
+    for (const c of row) { const x = rb_type(c); if (POKETYPES.includes(x) && !cands.includes(x)) cands.push(x); }
+    for (const c of row) { const x = gained_type(c); if (POKETYPES.includes(x) && !cands.includes(x)) cands.push(x); }
+    lock = cands.find((t) => row.every((c) => matches(c, t))) || cands[0] || null;
+  }
+  for (const c of row) {
+    if (!matches(c, lock)) return { lock, bad: { card: c, t: type_label(c) } }; // (no lock: only a wildcard matches)
+  }
+  return { lock, bad: null };
+}
+/** The first joker in the row that would break Monotype at a blind start now (null: none would). -> {card, t, lock} */
+function off_type() { const m = mono_state(); return m.bad ? { ...m.bad, lock: m.lock } : null; }
 function mono_check(s) {
   if (!s.mono) return;
-  const bad = off_type();
-  if (bad) {
-    const name = joker_name(bad.card);
-    brk(s, 'mono', bad.t === 'none' ? `started a round with ${name} (no type)` : `started a round with ${name} (${bad.t}) in a ${bad.lock} run`);
+  const m = mono_state();
+  if (m.bad) {
+    const name = joker_name(m.bad.card);
+    brk(s, 'mono', m.bad.t === 'none' ? `started a round with ${name} (no type)` : `started a round with ${name} (${m.bad.t}) in a ${m.lock} run`);
     return;
   }
   // the first blind start with a typed joker locks the type
-  if (!s.type) { const c = row_jokers().find((x) => rb_type(x) !== 'any'); if (c) s.type = rb_type(c); }
+  if (!s.type && m.lock) s.type = m.lock;
 }
 function mono_warn() {
   const s = st();

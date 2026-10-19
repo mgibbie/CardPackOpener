@@ -1070,6 +1070,8 @@ export function ease_ante(mod) {
     const f = calculate_seam({ modify_ante: mod, ante_end: SEAM_STATE.ante_end }, 'modify_ante');
     if (f.modify !== undefined && f.modify !== null && f.modify !== false) mod = f.modify;
   }
+  // (a Lua ease_ante wrap that changes the step: MoreFluff's Superboss freezes the ante, Final Stake holds it)
+  if (ACTIVE_MODS.length) mod = reduceHook('ease_ante_mod', mod);
   if (ACTIVE_MODS.length) callHook('ease_ante', mod);
   G.E_MANAGER.add_event(() => {
     G.GAME.round_resets.ante += mod || 0;

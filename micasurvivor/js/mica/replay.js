@@ -65,6 +65,9 @@ G.Replay = (() => {
       // the encoder's memory of the previous frame
       P: null, C: null, S: '', E: { m: new Map(), v: new Map() }, Kp: { m: new Map(), v: new Map() }, M: '', t: 0
     };
+    // DLC D0b: an Expedition run's header gains its content version (dv) and map / difficulty (js/expedition/core.js);
+    // a base run's is unchanged (no listener, or one that leaves base runs alone)
+    rec.h = G.Hooks.reduce('replay.header', rec.h);
     sample();
   }
 
@@ -313,6 +316,7 @@ G.Replay = (() => {
     rec = null;
     const meta = { dex: r.h.dex, shiny: !!r.h.shiny, mon: r.h.mon, mode: r.h.m, time: Math.floor(sum.time || 0), level: sum.level | 0, kills: sum.kills | 0,
                    bosses: sum.bosses | 0, dead: !!sum.dead, coop: r.h.coop, frames: r.frames.length };
+    if (r.h.dv != null) { meta.dv = r.h.dv; meta.map = r.h.map; meta.diff = r.h.diff; }   // (DLC D0b: an Expedition run only)
     const h = Object.assign({}, r.h, { end: sum, at: r.started });
     const entry = { rid: r.rid, when: r.started, meta, code: null, id: null };
     entry.ready = (async () => {

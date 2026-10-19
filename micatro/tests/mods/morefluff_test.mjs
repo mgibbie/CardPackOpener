@@ -1,14 +1,15 @@
-// More Fluff (micatro/mods/morefluff): off -> nothing; on -> every Colour card (incl. charging over real
+// More Fluff 1.9.9999 (micatro/mods/morefluff): off -> nothing; on -> every Colour card (incl. charging over real
 // rounds), every 45° Rotarot, every pack, voucher, tag, enhancement, deck and blind fired through real act()
-// plays with the mod's exact numbers; the Superboss mode (The Ticket -> Bigger Blind / boss / DX boss -> win);
-// Modded packs offer only jokers from ACTIVE mods; describe() leaves no #n# unfilled. The 83 jokers are in
-// morefluff_jokers_{a,b,c}_test.mjs.
+// plays with the mod's exact numbers; the Superboss mode (The Ticket -> a Superboss Pack -> Bigger Blind / boss /
+// the DX boss you picked -> win); Modded packs offer only jokers from ACTIVE mods; describe() leaves no #n# unfilled.
+// The jokers are in morefluff_jokers_{a,b,c}_test.mjs; stakes, stickers, exile and the retired keys in
+// morefluff_199_test.mjs.
 //   node micatro/tests/mods/morefluff_test.mjs
 import {
   start, clearHand, hand, add, clearJokers, clearConsumables, play, discard, winRound, nextRound, toShop, msgs, tot, filled,
   ok, near, flush, done, G, P_CENTERS, P_CARDS, act, STATES,
 } from './morefluff_helpers.mjs';
-import { P_CENTER_POOLS, P_JOKER_RARITY_POOLS, P_BLINDS, P_TAGS, add_joker, get_blind_amount, create_card, Card, create_playing_card } from '../../js/engine/core.js';
+import { P_CENTER_POOLS, P_JOKER_RARITY_POOLS, P_BLINDS, P_TAGS, add_joker, get_blind_amount, create_card, Card, create_playing_card, ease_ante } from '../../js/engine/core.js';
 import { newRun } from '../../js/engine/run.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import { describe, describeCenter, describeBlind, describeTag, describeBack } from '../../js/engine/describe.js';
@@ -37,14 +38,19 @@ const setsIn = (area) => area.cards.map((c) => c.ability.set);
 
 // ===================================================================== on: registration
 start('MFON');
-ok(STATUS.jokers.length === 83 && STATUS.colours.length === 17 && STATUS.rotarots.length === 22 && STATUS.boosters.length === 16
-  && STATUS.vouchers.length === 3 && STATUS.enhancements.length === 8 && STATUS.decks.length === 4 && STATUS.tags.length === 4 && STATUS.blinds.length === 16,
-'content counts: 83 jokers / 17 Colour / 22 Rotarot / 16 packs / 3 vouchers / 8 enhancements / 4 decks / 4 tags / 16 blinds', STATUS);
+ok(STATUS.version === '1.9.9999' && MODS.morefluff.version === '1.9.9999' && MODS.morefluff.contentRev === 1, 'More Fluff 1.9.9999, contentRev 1');
+ok(STATUS.jokers.length === 81 && STATUS.active_jokers.length === 69 && STATUS.retired_jokers.length === 11 && STATUS.colours.length === 16
+  && STATUS.spectrals.length === 1 && STATUS.rotarots.length === 22 && STATUS.boosters.length === 16 && STATUS.vouchers.length === 5
+  && STATUS.enhancements.length === 8 && STATUS.decks.length === 3 && STATUS.tags.length === 2 && STATUS.blinds.length === 16
+  && STATUS.superboss_tokens.length === 15 && STATUS.stakes.length === 6 && STATUS.stickers.length === 3,
+'content counts: 81 jokers (69 active, 11 retired, 1 token) / 16 Colour + Gold / 22 Rotarot / 16 packs / 5 vouchers / 8 enhancements / 3 decks / 2 tags / 16 blinds / 15 tokens / 6 stakes / 3 stickers', STATUS);
 ok(CONSUMABLE_TYPES.Colour.shop_rate === 1 && CONSUMABLE_TYPES.Rotarot.shop_rate === 2 && G.GAME.colour_rate === 1 && G.GAME.rotarot_rate === 2, 'Colour / Rotarot shop rates 1 / 2');
-ok(P_CENTER_POOLS.Colour.length === 17 && P_CENTER_POOLS.Rotarot.length === 22, 'Colour / Rotarot pools');
+ok(P_CENTER_POOLS.Colour.length === 16 && P_CENTER_POOLS.Rotarot.length === 22, 'Colour / Rotarot pools');
 ok(RARITIES.mf_token && RARITIES.mf_token.weight === 0 && P_JOKER_RARITY_POOLS.mf_token.length === 1, 'Token rarity (weight 0) holds Oops! All 5s');
-ok(P_CENTERS.c_mf_new_gold.hidden && !P_CENTER_POOLS.Colour.filter((c) => !c.hidden).some((c) => c.key === 'c_mf_new_gold'), 'Gold is a hidden (soul-like) Colour');
-ok(ATLASES.mf_jokers.src.endsWith('/morefluff/assets/2x/mf_jokers_refresh.png') && ATLASES.mf_rotarots.px === 107 && ATLASES.mf_blinds.frames === 21, 'atlases (refreshed joker art, 107px rotarots, animated blinds)');
+ok(RARITIES.mf_oldfluff && RARITIES.mf_oldfluff.weight === 0 && P_JOKER_RARITY_POOLS.mf_oldfluff.length === 11, 'the "Old Fluff" rarity (weight 0) holds the 11 retired jokers');
+ok(P_CENTERS.c_mf_new_gold.set === 'Spectral' && P_CENTERS.c_mf_new_gold.hidden && P_CENTERS.c_mf_new_gold.soul_set === 'Colour' && P_CENTERS.c_mf_new_gold.is_colour, 'Gold is a hidden Spectral that rolls in Colour packs and charges like a Colour card');
+ok(ATLASES.mf_jokers.src.endsWith('/morefluff/assets/2x/1.9.9999/mf_jokers.png') && ATLASES.mf_jokers_156.src.endsWith('/morefluff/assets/2x/mf_jokers_refresh.png')
+  && ATLASES.mf_rotarots.px === 107 && ATLASES.mf_blinds.frames === 21, 'atlases (1.9.9999 joker sheet, the 1.5.6 one for retired art, 107px rotarots, animated blinds)');
 ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/morefluff/assets/sounds/music_duelzone.ogg') && SOUNDS.mf_treethree, 'mod sounds registered');
 {
   // every description is filled
@@ -54,7 +60,6 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   for (const k of STATUS.tags) { const d = describeTag(k); if (!d.lines.length || d.lines.some((l) => /#\d+#/.test(l))) bad.push(k); }
   for (const k of STATUS.blinds.filter((b) => b !== 'bl_mf_bigger_blind')) { const d = describeBlind(k); if (!d.lines.length) bad.push(k); }
   ok(!bad.length, 'describe(): every Colour / Rotarot / pack / voucher / enhancement / deck / tag / blind text is filled', bad);
-  ok(describeTag('tag_mf_clutch').lines.join(' ').includes('X4'), 'Clutch Tag: X4 Mult text');
   ok(describeBlind('bl_mf_bigger_blind').type === 'Small', 'Bigger Blind describes as a Small blind');
 }
 
@@ -64,16 +69,16 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   clearConsumables();
   // ---- charging over real rounds: Crimson (3 rounds/level), Deep Blue (1), Black (4)
   const crim = cons('c_mf_crimson'), deep = cons('c_mf_deepblue');
-  ok(crim.ability.val === 0 && crim.ability.upgrade_rounds === 3 && deep.ability.upgrade_rounds === 1, 'Colour config from the mod');
+  ok(crim.ability.val === 0 && crim.ability.upgrade_rounds === 3 && deep.ability.upgrade_rounds === 2 && deep.ability.chips_per === 20, 'Colour config from the mod (1.9.9999: Deep Blue 2 rounds a level)');
   ok(!crim.can_use_consumeable() || crim.ability.val === 0, 'fresh Colour has val 0');
   winRound();
-  ok(G.STATE === STATES.ROUND_EVAL && crim.ability.partial_rounds === 1 && crim.ability.val === 0 && deep.ability.val === 1 && deep.ability.partial_rounds === 0, 'one round: Crimson 1/3, Deep Blue +1', [crim.ability, deep.ability]);
+  ok(G.STATE === STATES.ROUND_EVAL && crim.ability.partial_rounds === 1 && crim.ability.val === 0 && deep.ability.val === 0 && deep.ability.partial_rounds === 1, 'one round: Crimson 1/3, Deep Blue 1/2', [crim.ability, deep.ability]);
   act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
   winRound();
-  ok(crim.ability.partial_rounds === 2 && deep.ability.val === 2, 'two rounds');
+  ok(crim.ability.partial_rounds === 2 && deep.ability.val === 1, 'two rounds');
   act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
   const r3 = winRound();
-  ok(crim.ability.val === 1 && crim.ability.partial_rounds === 0 && deep.ability.val === 3, 'three rounds: Crimson levels up to 1', crim.ability);
+  ok(crim.ability.val === 1 && crim.ability.partial_rounds === 0 && deep.ability.val === 1 && deep.ability.partial_rounds === 1, 'three rounds: Crimson levels up to 1', crim.ability);
   ok(msgs(r3.events).includes('Upgrade!'), 'Upgrade! popup');
   act({ type: 'cash_out' });
   ok(G.STATE === STATES.SHOP, 'in the shop');
@@ -85,10 +90,13 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   // ---- Crimson: val Rare Tags
   const tags0 = G.GAME.tags.length;
   ok(useC(crim).ok && G.GAME.tags.length === tags0 + 1 && G.GAME.tags[G.GAME.tags.length - 1].key === 'tag_rare', 'Crimson (val 1): +1 Rare Tag', G.GAME.tags.map((t) => t.key));
-  // ---- Deep Blue (val 3): 3 non-Spade hand cards become Spades
+  // ---- Deep Blue (val 1, 1.9.9999): a random hand card gets +20 Chips for good (no suit change)
   act({ type: 'select_blind' }); clearHand();
   const h = hand(['H_2', 'H_3', 'D_4', 'C_5', 'S_6']);
-  ok(useC(deep).ok && h.filter((c) => c.base.suit === 'Spades').length === 4, 'Deep Blue (val 3): three cards turn Spades', h.map((c) => c.base.suit));
+  ok(useC(deep).ok && h.reduce((n, c) => n + (c.ability.perma_bonus || 0), 0) === 20 && h.filter((c) => c.base.suit === 'Spades').length === 1, 'Deep Blue (val 1): +20 perma Chips on a hand card', h.map((c) => c.ability.perma_bonus));
+  const boosted = h.find((c) => c.ability.perma_bonus === 20);
+  const rb = play([boosted]);
+  ok(rb.total.chips === 5 + boosted.base.nominal + 20, 'the +20 Chips score with the card', tot(rb));
 }
 {
   // direct charging rules: Paint Roller adds a round 1 in 2; Yellow gains $8 sell value per level
@@ -156,14 +164,26 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   const d0 = G.GAME.dollars, pc = G.playing_cards.length;
   useC(br);
   ok(G.hand.cards.length === 2 && G.playing_cards.length === pc - 2 && G.GAME.dollars === d0 + 4, 'Brown (val 2): 2 hand cards destroyed, +$4', [G.hand.cards.length, G.GAME.dollars - d0]);
-  // suit colours
-  for (const [key, suit] of [['c_mf_seaweed', 'Clubs'], ['c_mf_red', 'Hearts'], ['c_mf_orange', 'Diamonds']]) {
-    clearHand();
-    const hh = hand(['S_2', 'S_3', 'S_4']);
-    useC(make(key, 2));
-    ok(hh.filter((c) => c.base.suit === suit).length === 2, `${key}: 2 cards turn ${suit}`);
-  }
-  ok(!make('c_mf_red', 1).can_use_consumeable() === (G.hand.cards.length <= 1), 'suit Colours need 2+ hand cards');
+  // 1.9.9999 reworks: Red / Orange give a random hand card a permanent bonus per val; Seaweed random enhancements
+  clearHand(); clearJokers();
+  let hh = hand(['S_2', 'S_3', 'S_4']);
+  useC(make('c_mf_red', 2));
+  ok(hh.reduce((n, c) => n + (c.ability.perma_mult || 0), 0) === 8 && hh.every((c) => c.base.suit === 'Spades'), 'Red (val 2): +4 perma Mult twice, no suit change', hh.map((c) => c.ability.perma_mult));
+  const rm = hh.find((c) => c.ability.perma_mult); const rmv = rm.ability.perma_mult;
+  let rr0 = play([rm]);
+  ok(rr0.total.mult === 1 + rmv, 'perma Mult scores', tot(rr0));
+  clearHand();
+  hh = hand(['S_2', 'S_3', 'S_4']);
+  useC(make('c_mf_orange', 1));
+  const ro = hh.find((c) => c.ability.perma_repetitions === 1);
+  ok(ro && hh.filter((c) => c.ability.perma_repetitions).length === 1, 'Orange (val 1): a hand card retriggers once more for good');
+  rr0 = play([ro]);
+  ok(rr0.total.chips === 5 + ro.base.nominal * 2, 'perma retrigger: the card scores twice', tot(rr0));
+  clearHand();
+  hh = hand(['S_2', 'S_3', 'S_4']);
+  useC(make('c_mf_seaweed', 2));
+  ok(hh.filter((c) => c.ability.set === 'Enhanced').length === 2 && hh.every((c) => !P_CENTERS[c.config.center.key].replace_base_card), 'Seaweed (val 2): 2 hand cards get a random (non-replacing) enhancement', hh.map((c) => c.config.center.key));
+  ok(make('c_mf_red', 1).can_use_consumeable() === (G.hand.cards.length >= 1), 'Red / Orange / Seaweed need a hand card');
 }
 
 // ===================================================================== Colour packs, Painter's Tag, vouchers
@@ -264,21 +284,22 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   // Star / Moon / Sun / World: 3 Enhanced cards of the suit into the hand during a round
   for (const [key, suit] of [['c_mf_rot_star', 'Diamonds'], ['c_mf_rot_moon', 'Clubs'], ['c_mf_rot_sun', 'Hearts'], ['c_mf_rot_world', 'Spades']]) {
     clearHand();
+    ok(!cons(key).can_use_consumeable(), `${key}: needs a hand card (1.9.9999)`);
+    clearConsumables();
+    const keep = hand(['S_2'])[0];
     const pc = G.playing_cards.length;
     useC(cons(key));
-    ok(G.hand.cards.length === 3 && G.hand.cards.every((c) => c.base.suit === suit && c.ability.set === 'Enhanced' && c.config.center.key !== 'm_stone') && G.playing_cards.length === pc + 3, `${key}: 3 Enhanced ${suit} into the hand`);
+    const made = G.hand.cards.filter((c) => c !== keep);
+    ok(made.length === 3 && made.every((c) => c.base.suit === suit && c.ability.set === 'Enhanced' && c.config.center.key !== 'm_stone') && G.playing_cards.length === pc + 3, `${key}: 3 Enhanced ${suit} into the hand`);
   }
   // Judgement: a NON-vanilla joker
   clearJokers();
   for (let i = 0; i < 5; i++) { useC(cons('c_mf_rot_judgement')); }
   ok(G.jokers.cards.length === 5 && G.jokers.cards.every((j) => j.config.center.mod), 'Judgement: only modded jokers', G.jokers.cards.map((j) => j.config.center.key));
   ok(!(G.GAME.mf_modded_only > 0), 'the modded-only window closes');
-  // FIX: suit cards used outside a round go into the deck (the Lua's G.STATE test never saw BLIND_SELECT)
+  // (1.9.9999: the suit Rotarots need a hand, so the 1.5.6 port's fix for using them at blind select is moot)
   winRound(); act({ type: 'cash_out' }); act({ type: 'next_round' });
-  ok(G.STATE === STATES.BLIND_SELECT, 'at blind select');
-  const deck0 = G.deck.cards.length, hand0 = G.hand.cards.length;
-  useC(cons('c_mf_rot_star'));
-  ok(G.deck.cards.length === deck0 + 3 && G.hand.cards.length === hand0, 'fix: Star used at blind select puts its cards in the deck', [G.deck.cards.length - deck0, G.hand.cards.length]);
+  ok(G.STATE === STATES.BLIND_SELECT && !cons('c_mf_rot_star').can_use_consumeable(), 'Star cannot be used at blind select (no hand)');
 }
 {
   // Rotarot packs (draw the hand) + Rotarot Tag
@@ -350,35 +371,24 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
 
 // ===================================================================== decks
 {
-  newRun({ seed: 'MFDK1', back: 'b_mf_grosmichel', mods: ['morefluff'] }); flush();
-  ok(G.jokers.cards.length === 1 && G.jokers.cards[0].config.center.key === 'j_gros_michel', 'Gros Michel Deck');
   newRun({ seed: 'MFDK2', back: 'b_mf_philosophical', mods: ['morefluff'] }); flush();
   ok(G.jokers.cards.length === 5 && G.jokers.cards.every((j) => j.config.center.key === 'j_mf_philosophical') && G.jokers.config.card_limit === 10, 'Philosophical Deck: 5 Philosophical Jokers (+5 slots)', G.jokers.config.card_limit);
+  // (the Gros Michel / Blasphemous decks are gone in 1.9.9999: a recipe naming one plays on the Red Deck)
   newRun({ seed: 'MFDK3', back: 'b_mf_blasphemy', mods: ['morefluff'] }); flush();
-  const bj = G.jokers.cards[0];
-  ok(bj && bj.config.center.key === 'j_mf_blasphemy' && bj.edition.negative && bj.ability.eternal, 'Blasphemous Deck: Negative Eternal Blasphemy');
+  ok(G.GAME.selected_back_key === 'b_red' && !G.jokers.cards.length, 'retired b_mf_blasphemy: falls back to Red');
   newRun({ seed: 'MFDK4', back: 'b_mf_rainbow', mods: [] });
   ok(G.GAME.selected_back_key === 'b_red', 'off: a More Fluff deck falls back to Red');
 }
 
-// ===================================================================== tags: Modded, Clutch
+// ===================================================================== Modded packs (1.9.9999: Repack's only)
 {
-  start('MFTAG');
-  // Clutch: X4 Mult for every hand of the next blind, then gone at cash-out
-  add_tag(new Tag('tag_mf_clutch'));
-  let r = play(hand(['S_A']));
-  ok(r.total.mult === 4 && r.total.chips === 16, 'Clutch Tag: X4 Mult', tot(r));
-  r = play(hand(['S_A']));
-  ok(r.total.mult === 4, 'Clutch Tag: every hand of the blind');
-  winRound();
-  act({ type: 'cash_out' });
-  ok(!G.GAME.tags.some((t) => t.key === 'tag_mf_clutch'), 'Clutch Tag used up after the round');
-  // Modded Tag: a free Jumbo Modded Pack of modded jokers
-  act({ type: 'next_round' });
-  add_tag(new Tag('tag_mf_moddedpack'));
-  G.GAME.tags[G.GAME.tags.length - 1].apply_to_run({ type: 'new_blind_choice' });
-  flush();
-  ok(G.GAME.pack_center === 'p_mf_modded_jumbo_1' && G.pack_cards.cards.length === 4 && G.pack_cards.cards.every((c) => c.ability.set === 'Joker' && c.config.center.mod), 'Modded Tag: free Jumbo Modded Pack, modded jokers');
+  start('MFTAG', { noBlind: true });
+  ok(!P_TAGS.tag_mf_clutch && !P_TAGS.tag_mf_moddedpack && !P_CENTERS.p_mf_modded_jumbo_1, 'the Clutch / Modded tags and the Jumbo / Mega Modded packs are gone');
+  ok(P_CENTERS.p_mf_modded_normal_1.weight === 0 && P_CENTERS.p_mf_modded_normal_2.weight === 0, 'Modded packs never roll in a shop (weight 0)');
+  G.GAME.dollars = 100; G.STATE = STATES.SHOP;
+  const mp = new Card(P_CARDS.empty, P_CENTERS.p_mf_modded_normal_1);
+  G.shop_booster.emplace(mp);
+  ok(act({ type: 'buy', id: mp.sort_id }).ok && G.pack_cards.cards.length === 3 && G.pack_cards.cards.every((c) => c.ability.set === 'Joker' && c.config.center.mod), 'a Modded Pack: 3 modded jokers', G.pack_cards.cards.length);
   ok(toView().music === 'mf_music_modded', 'Modded pack music');
 }
 {
@@ -387,7 +397,7 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   newRun({ seed: 'MFMOD', back: 'b_red', mods: ['morefluff', 'milatro'] }); flush();
   const seen = new Set(); let base = 0;
   for (let i = 0; i < 300; i++) {
-    for (const key of ['p_mf_modded_normal_1', 'p_mf_modded_normal_2', 'p_mf_modded_jumbo_1', 'p_mf_modded_mega_1']) {
+    for (const key of ['p_mf_modded_normal_1', 'p_mf_modded_normal_2']) {
       const c = P_CENTERS[key].create_card();
       if (!c.config.center.mod) base++;
       seen.add(c.config.center.mod);
@@ -397,9 +407,9 @@ ok(SOUNDS.mf_music_colourpack && SOUNDS.mf_music_duelzone.src.endsWith('/moreflu
   ok(base === 0, 'fix: Modded packs never offer a base-game joker (the Lua lists missed Jolly Joker)', base);
   ok(seen.has('morefluff') && seen.has('milatro') && seen.size === 2, 'Modded packs mix every active mod', [...seen]);
   ok(!(G.GAME.mf_modded_only > 0) && P_CENTER_POOLS.Joker.some((c) => !c.mod), 'the shop still sells base jokers');
-  for (const key of ['p_mf_modded_normal_1', 'p_mf_modded_jumbo_1', 'p_mf_modded_mega_1']) {
+  for (const key of ['p_mf_modded_normal_1', 'p_mf_modded_normal_2']) {
     const cfg = P_CENTERS[key].config;
-    ok(cfg.modded_pack && P_CENTERS[key].cost === { p_mf_modded_normal_1: 6, p_mf_modded_jumbo_1: 10, p_mf_modded_mega_1: 14 }[key], `${key}: cost / config`);
+    ok(cfg.modded_pack && cfg.extra === 3 && P_CENTERS[key].cost === 8, `${key}: cost 8, 3 cards (1.9.9999)`);
   }
 }
 
@@ -490,14 +500,25 @@ const fight = (key, seed) => {
   winRound(); act({ type: 'cash_out' });
   ok(G.GAME.round_resets.ante === 2 && G.STATE === STATES.SHOP, 'shop of ante 2 (= win ante)');
   const ticket = G.shop_vouchers.cards.find((c) => c.config.center.key === 'v_mf_superboss_ticket');
-  ok(ticket && ticket.cost === -10, 'The Ticket is in the shop for $-10', ticket && ticket.cost);
+  ok(ticket && ticket.cost === 0, 'The Ticket is in the shop, free (1.9.9999)', ticket && ticket.cost);
   const d0 = G.GAME.dollars;
   ok(act({ type: 'buy', id: ticket.sort_id }).ok, 'buy The Ticket');
   flush();
   const rr = G.GAME.round_resets;
-  ok(G.GAME.dollars === d0 + 10 && G.GAME.superboss_active && G.GAME.modifiers.scaling === 4, 'Ticket: +$10, Superboss on, scaling 1 -> 4', [G.GAME.dollars - d0, G.GAME.modifiers.scaling]);
+  ok(G.GAME.dollars === d0 && G.GAME.mf_superboss_active && G.GAME.modifiers.scaling === 4, 'Ticket: free, Superboss on, scaling 1 -> 4', [G.GAME.dollars - d0, G.GAME.modifiers.scaling]);
+  ok(G.GAME.pack_center === 'p_mf_superboss_normal_1' && G.pack_cards.cards.length === 3 && G.pack_cards.cards.every((c) => c.ability.set === 'SuperbossToken') && G.GAME.pack_choices === 1, 'a Superboss Pack opens: choose 1 of 3 DX tokens', G.pack_cards.cards.map((c) => c.config.center.key));
+  ok(!act({ type: 'skip_booster' }).ok && toView().pack_no_skip, 'the Superboss Pack cannot be skipped');
+  ok(rr.blind_choices.Boss === 'bl_mf_violet_vessel_dx', 'Violet Vessel DX until a token is picked');
+  const tok = G.pack_cards.cards[1];
+  const tv = toView().areas.pack_cards.find((x) => x.id === tok.sort_id);
+  ok(tv && tv.blind_card && tv.blind_card.key === tok.config.center.config.blind, 'a token is drawn as its DX boss chip');
+  ok(act({ type: 'use', id: tok.sort_id }).ok, 'pick a token');
+  flush();
+  ok(G.STATE === STATES.SHOP && rr.blind_choices.Boss === tok.config.center.config.blind, 'the picked DX boss fills the Boss slot, back in the shop', rr.blind_choices.Boss);
   ok(rr.blind_choices.Small === 'bl_mf_bigger_blind' && P_BLINDS[rr.blind_choices.Big].boss && P_BLINDS[rr.blind_choices.Boss].debuff.superboss, 'Superboss blinds: Bigger / boss / DX', rr.blind_choices);
   ok(toView().music === 'mf_music_duelzone', 'DUEL ZONE plays');
+  ease_ante(1); flush();
+  ok(rr.ante === 2, 'the ante cannot move while Superboss is on (ease_ante buzzes)', rr.ante);
   act({ type: 'next_round' });
   ok(!act({ type: 'skip_blind' }).ok, 'no skipping during Superboss');
   act({ type: 'select_blind' }); clearHand();
@@ -516,10 +537,9 @@ const fight = (key, seed) => {
   winRound();
   flush();
   ok(G.GAME.won && rr.ante === 3, 'beating the DX boss of the win ante wins the run (and ends the ante)');
-  ok(!G.GAME.superboss_active && G.GAME.modifiers.scaling === 1 && rr.blind_choices.Small === 'bl_small' && rr.blind_choices.Big === 'bl_big', 'Superboss ends: scaling back, blinds back');
+  ok(!G.GAME.mf_superboss_active && G.GAME.modifiers.scaling === 1 && rr.blind_choices.Small === 'bl_small' && rr.blind_choices.Big === 'bl_big', 'Superboss ends: scaling back, blinds back');
   act({ type: 'cash_out' });
   ok(!G.shop_vouchers.cards.some((c) => c.config.center.key === 'v_mf_superboss_ticket'), 'no Ticket past the win ante');
-  ok(STATUS.challenges[0] === 'c_mf_superboss_always', 'challenge data registered');
 }
 
 // ===================================================================== temporary cards (Blade Dance)

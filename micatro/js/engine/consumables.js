@@ -470,6 +470,8 @@ Card.prototype.use_consumeable = function (area, copier) {
 
 // --------------------------------------------------- Card:can_use_consumeable
 Card.prototype.can_use_consumeable = function (any_state, skip_check) {
+  // (a Lua Card:can_use_consumeable wrap that says yes outright: MoreFluff's Suspended sticker)
+  if (ACTIVE_MODS.length && firstHook('can_use_consumeable', this) === true) return true;
   if (!skip_check && ((G.play && G.play.cards.length > 0) ||
       (G.GAME.STOP_USE && G.GAME.STOP_USE > 0))) return false;
   if (this.config.center.mod && this.config.center.can_use) return !!this.config.center.can_use(this.config.center, this, any_state);

@@ -21,8 +21,21 @@ export const MOD_ALIASES = {
   // Pokermon 3.9.1 renamed the Chartreuse Chamber blind (Plans/MICATRO_MODS_UPGRADES.md). Dormant until the
   // 3.9.1 data batch registers bl_poke_iridescent_hacker and drops bl_poke_cgoose.
   pokermon: { renamed: { bl_poke_cgoose: 'bl_poke_iridescent_hacker' }, removed: [], names: {} },
-  // More Fluff 1.9.9999: 12 jokers retire upstream and 2 are deleted — filled in by that port.
-  morefluff: { renamed: {}, removed: [], names: {} },
+  // More Fluff 1.9.9999 (mods/morefluff): what the rewrite deleted. (Its 11 RETIRED jokers — the hidden "Old Fluff"
+  // rarity — stay registered, so their keys still load as cards; only the deleted ones are listed here.)
+  morefluff: {
+    renamed: {},
+    removed: ['j_mf_complexitycreep', 'j_mf_lightningstrikesthrice', 'b_mf_grosmichel', 'b_mf_blasphemy',
+      'sleeve_mf_grosmichel', 'sleeve_mf_philosophical', 'sleeve_mf_rainbow', 'sleeve_mf_blasphemy',
+      'p_mf_modded_jumbo_1', 'p_mf_modded_mega_1', 'tag_mf_moddedpack', 'tag_mf_clutch', 'c_mf_superboss_always'],
+    names: {
+      j_mf_complexitycreep: 'Complexity Creep', j_mf_lightningstrikesthrice: 'Lightning Strikes Thrice',
+      b_mf_grosmichel: 'Gros Michel Deck', b_mf_blasphemy: 'Blasphemous Deck',
+      sleeve_mf_grosmichel: 'Gros Michel Sleeve', sleeve_mf_philosophical: 'Philosophical Sleeve', sleeve_mf_rainbow: 'Rainbow Sleeve',
+      sleeve_mf_blasphemy: 'Blasphemous Sleeve', p_mf_modded_jumbo_1: 'Jumbo Modded Pack', p_mf_modded_mega_1: 'Mega Modded Pack',
+      tag_mf_moddedpack: 'Modded Tag', tag_mf_clutch: 'Clutch Tag', c_mf_superboss_always: 'Better Balatro II',
+    },
+  },
 };
 
 const KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
