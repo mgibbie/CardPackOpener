@@ -19,7 +19,8 @@ const badgeEvents = (r) => (r.events || []).filter((e) => e.type === 'run_badge'
 
 /** An unseeded Pokermon run waiting at the first blind select (eligible for the badges). */
 function fresh() {
-  newRun({ back: 'b_red', mods: ['pokermon'] });
+  // A fixed seed: unseeded, ~1 run in 75 rolled a Mystery Egg from the Top-up tag and broke the badge counts (flaky).
+  newRun({ back: 'b_red', mods: ['pokermon'], seed: 'RUNBADGE', seeded: false });
   G.FORCE_BOSS = 'bl_wall'; G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; // (as poke_helpers.start: a harmless boss)
 }
 /** Put a joker for sale in the shop and buy it -> the act result. */

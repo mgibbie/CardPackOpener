@@ -46,6 +46,10 @@ alignment, sounds — sounds/visuals become `emit`/`play_sound` calls).
   `calculate_reroll_cost`, `get_new_boss`, `get_next_tag_key`,
   `get_next_voucher_key`, `get_blind_amount`, `set_consumeable_usage`,
   `copy_table`, `next` (Lua table non-empty test), `SUITS`, `math_random`.
+- smods.js has the Steamodded APIs Pokermon 3.9.1 brought in (mods/pokermon/PORTING.md "Steamodded seams"):
+  `scale_card` / `reset_card`, `poll_object` (+ the `object_weights` optional feature's routes), attributes
+  (`get_attribute_pool`, `has_attribute`), and `calculate_seam(context, name)` for the opt-in SMODS contexts
+  (setting_ability, money_altered, drawing_cards, debuff_card, ...: only mods with `smods_seams: true` get them).
 - run.js has `STATES`, `HANDLIST`, `draw_from_deck_to_hand`, `draw_from_hand_to_deck`,
   `draw_from_play_to_hand`, `change_shop_size`, `create_card_for_shop`,
   `use_card`, `end_consumeable`, `reroll_boss`, `get_poker_hand_info`,

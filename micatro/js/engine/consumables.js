@@ -24,6 +24,7 @@ import {
 } from './core.js';
 import { callHook, reduceHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
+import { wanted, calculate_seam, SEAM_STATE } from './smods.js';
 
 // ----------------------------------------------------- misc_functions.lua
 /** stop_use(): block consumable use until the queue has drained ~7 events. */
@@ -551,6 +552,7 @@ Card.prototype.open = function () {
     // choices stay as they are, and it isn't paid for or exploded again (Shell Game lovely patches 4-10).
     const reopen = !!this.reopening;
     const mc = this.config.center;
+    if (ACTIVE_MODS.length) SEAM_STATE.booster = mc; // (Steamodded's booster_obj: the ending_booster context's booster)
     if (!reopen) {
       stop_use();
       G.STATE_COMPLETE = false;
@@ -611,6 +613,12 @@ Card.prototype.open = function () {
         for (let i = 1; i <= _size; i++) {
           // A mod may supply a base-game pack's card (Nacho's Oranguru: Standard packs of your commonest rank).
           let card = ACTIVE_MODS.length && !mc.mod ? (firstHook('pack_card', this, i) || null) : null;
+          // Steamodded's create_booster_card context: a listener's {booster_create_flags = {...}} makes this card.
+          let seam_card = false;
+          if (!card && ACTIVE_MODS.length && wanted('create_booster_card')) {
+            const f = calculate_seam({ create_booster_card: true, booster: this, index: i }, 'create_booster_card');
+            if (f.booster_create_flags) { card = card_from_spec({ ...f.booster_create_flags, skip_materialize: true }); seam_card = !!card; }
+          }
           if (card) { /* mod-supplied */ } else if (this.ability.name.includes('Arcana')) {
             if (G.GAME.used_vouchers.v_omen_globe && pseudorandom('omen_globe') > 0.8) {
               card = create_card('Spectral', G.pack_cards, null, null, true, true, null, 'ar2');
@@ -656,8 +664,10 @@ Card.prototype.open = function () {
           } else if (this.ability.name.includes('Buffoon')) {
             card = create_card('Joker', G.pack_cards, null, null, true, true, null, 'buf');
           }
-          if (mc.mod && mc.create_card) card = card_from_spec(mc.create_card(mc, this, i));
+          if (mc.mod && mc.create_card && !seam_card) card = card_from_spec(mc.create_card(mc, this, i));
           if (ACTIVE_MODS.length) callHook('pack_card_created', this, card, i); // (Bunco's Lamination / Supercoating)
+          // Steamodded's modify_booster_card context {booster, card, index}
+          if (ACTIVE_MODS.length && wanted('modify_booster_card')) calculate_seam({ modify_booster_card: true, booster: this, card, index: i }, 'modify_booster_card');
           emit('materialize', { card: card.sort_id });
           pack_cards[i - 1] = card;
         }
