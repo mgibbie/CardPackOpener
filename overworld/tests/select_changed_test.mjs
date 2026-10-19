@@ -15,6 +15,7 @@ const SUITES = {
 	'duels_tribes_x_test.mjs': "byId.duels_brewster_the_brutal.tribe",
 	'helper_user_test.mjs': "import { overworldSource } from './owsource.mjs'",
 	'unrelated_test.mjs': "nothing to see here",
+	'micasurvivor_dlc_base_unchanged_test.mjs': "golden runs of the base modes",
 	...Object.fromEntries(SMOKE.map(s => [s, "localStorage.setItem('magepunk_mp_token_v1', 't')"])),
 };
 const base = {
@@ -67,6 +68,21 @@ const nonSmoke = r => picked(r).filter(s => !SMOKE.includes(s));
 	A(r.suites.has('duels_tribes_x_test.mjs') && r.battlecards, 'a changed card selects the suites naming it, and the Battlecards suite runs');
 	A(r.suites.has('boardhand_test.mjs'), 'a Battlecards change selects the suites that load Battlecards');
 	A(!r.suites.has('unrelated_test.mjs'), '...and nothing unrelated');
+}
+// MicaSurvivor DLC D0a: any micasurvivor/** source change, or a server change touching the msurv / micasurvivor
+// actions, runs the base-unchanged golden test (whatever names the diff touches)
+{
+	const G = 'micasurvivor_dlc_base_unchanged_test.mjs';
+	const r = run(['micasurvivor/js/systems/spawner.js'], { 'micasurvivor/js/systems/spawner.js': '+	x = 1;' });
+	A(r.suites.has(G) && /MicaSurvivor/.test(r.suites.get(G)[0]), 'a micasurvivor/** change selects the DLC base-unchanged golden test', JSON.stringify(nonSmoke(r)));
+	const r2 = run(['server/mp.mjs'], { 'server/mp.mjs': "@@ -2309,1 +2309,1 @@ export async function handle(\n+		if (action === 'msurv-lobby-create') { rs = body.rs;" });
+	A(r2.suites.has(G), 'a server change touching an msurv action selects it');
+	const r3 = run(['functions/api/mp.mjs'], { 'functions/api/mp.mjs': "@@ -10 +10 @@\n+	if (action === 'micasurvivor-save-put') {" });
+	A(r3.suites.has(G), '...and so does one touching a micasurvivor-* action');
+	const r4 = run(['server/mp.mjs'], { 'server/mp.mjs': "@@ -1 +1 @@\n+	if (action === 'ow-save') {" });
+	A(!r4.suites.has(G), 'a server change elsewhere does not');
+	const r5 = run(['micasurvivor/README.md', 'overworld/ow_x.js'], { 'overworld/ow_x.js': '+	y = 2;' });
+	A(!r5.suites.has(G), 'nor does the MicaSurvivor README or an overworld change');
 }
 // core files fall back to the full gate
 {

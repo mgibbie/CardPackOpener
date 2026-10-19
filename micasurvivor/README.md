@@ -1229,8 +1229,77 @@ summary card with Watch again / Back to menu. An unknown or expired id: "This re
   damage numbers, broken crates, weather particles, the Judgment cinematic. A replay doesn't record the foes' facing
   or animations.
 
+## DLC D0a: base-unchanged harness
+
+The Expedition DLC (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`) adds new modes, and the existing modes must stay
+exactly as they are. Batch D0a is the proof: a deterministic harness and recorded golden runs of every base mode.
+Every later DLC batch re-runs them and must match.
+
+**Run it:** `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (about 30 s). The quick gate
+(`run-all.mjs --changed`) selects it for any `micasurvivor/**` change, and for a `server/` or `functions/` change
+whose diff touches the `micasurvivor-*` / `msurv-*` actions (`BY_PATH` in `overworld/tests/select-changed.mjs`).
+
+**What it runs:** Normal, Daily, Boss Rush, Tower, Team and local Co-op, each in a fresh browser context.
+- **The profile:** a fixed guest save, set in localStorage before boot. It has 5 Pokémon, all fully upgraded so
+  the runs last. The device id and the 1280×720 viewport are fixed too (the viewport sets the camera, and the
+  camera sets where enemies spawn).
+- **Up to 120 s of sim per mode,** or until the player falls: Normal ~112 s, Daily ~74 s, Boss Rush ~49 s.
+- **Fixtures:** `overworld/tests/fixtures/micasurvivor_golden/<mode>.json`, ~110 KB in all. Each holds:
+  - a per-second hash of the player, the enemies, the pickups, the projectiles and the rest (clock, state,
+    biome, the co-op partner, the team), plus their counts;
+  - the `Math.random` draw count;
+  - the spawn log;
+  - the kill / XP / coin totals;
+  - the final save (timestamps normalised to `<ts>`).
+- **The replay:** `replay.json` is the Normal run's 12c replay. The test checks that the run records the same
+  replay again, and that the fixture replay plays through the replay player (`G.WatchUI`) to the same final
+  frame hash.
+
+**The game-side hook:** `G.Game.debugStep(n, dt)` (`js/game.js`). It does what `frame()` does to move the
+game, n times with a fixed dt: keys, `update`, the replay player, the level-up / choice tick and the replay
+recorder. It skips rendering, the real clock, the pad, the network and `requestAnimationFrame`. Like the other
+`debug*` hooks it marks the run as tampered, so it never reaches the ranking. Nothing calls it outside the test.
+
+**Determinism lives in the test, not the game:**
+- **Randomness:** before any page script runs, the test swaps in a seeded, counting `Math.random`, a seeded
+  `crypto.getRandomValues` (the replay id) and a virtual clock. `performance.now` and `Date` run on that
+  clock: a fixed day, and exactly dt per step once the sim starts. The game reads the clock in the sim itself:
+  the pathing line-of-sight throttle, Focus Sash, achievement checks and timestamps.
+- **No real frames:** `requestAnimationFrame` is frozen once the sim starts.
+- **No interleaving:** each mode's whole sim runs inside one synchronous `page.evaluate`, so no timer,
+  network reply or asset load can run in the middle. Sprite loading doesn't affect the sim: the test still
+  passes with 70 % of the images and fonts failing to load.
+- **Silenced sound:** `G.Audio.sfx` and `music` are no-ops, because sound effects draw `Math.random` only where
+  an audio device exists.
+- **Input:** it goes through the game's own layer, as `KeyboardEvent`s on `window` read by `G.Input`. The
+  player keeps away from nearby enemies, and otherwise walks for 1 s and stands for 1.5 s. Digit1 takes the
+  first card of any level-up, bond, item or Tower screen.
+
+**When it fails:** it prints the first second and the field that diverged, then the first difference in the
+spawn log, the totals and the save. For example:
+
+```
+FAIL: normal: per-second hashes ... match (112 s)
+      second 3: enemies (e) diverged: fixture 5e090c14 vs now 874764e6 · also differing that second: nothing else
+FAIL: normal: the spawn log matches (185 spawns)
+      first difference at spawns[7][1] [t*100, dex, boss, den, maxHp]: fixture 837 vs now 751
+```
+
+A DLC batch that fails it has changed a base mode. Find out what changed, and don't re-record. To dig in, run
+`ONLY=<mode> TRACE=1` to print the HP, position and enemy count each second.
+
+**Re-recording (`--record`):** only for a deliberate change to a base mode, such as a balance pass, the
+Pokédex growing or a new base mechanic. Run `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs
+--record`, review the fixture diff, and say in the PR why the base changed. The fixtures record the 1007-entry
+Pokédex of batches B1/B1b. The fixture JSON is written with LF line endings.
+
+**Not covered:** what `render()` does (the harness never draws, and draws by the renderer don't shift the
+stream), sound, online co-op and the network.
+
 ## Tests
 
+- `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
+  mode (see "DLC D0a: base-unchanged harness" above); `--record` only for a deliberate base change.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.
