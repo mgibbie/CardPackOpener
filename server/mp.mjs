@@ -228,6 +228,27 @@ async function unpackCapped(code, max) {
 		return new TextDecoder('utf-8', { fatal: true }).decode(out);
 	} catch { return null; }
 }
+// MICATRO mod version pins (micatro/js/mods/pins.js): {modId: pin}, a pin being the mod's version plus
+// '+r<contentRev>' ('3.2.1+r1', '1.0 (old-API)'). Size-capped; a malformed entry is dropped (meta) or the
+// whole recipe refused (micatro-replay-put's recipe check).
+const MICATRO_PIN_MODS = 32;
+const MICATRO_MOD_ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
+const MICATRO_PIN_RE = /^[A-Za-z0-9 ._+()-]{1,40}$/;
+// -> a clean {id: pin} (null when `loose` is false and anything is malformed)
+function cleanModVersions(v, loose = true) {
+	if (v == null) return {};
+	if (typeof v !== 'object' || Array.isArray(v)) return loose ? {} : null;
+	const out = {};
+	const keys = Object.keys(v);
+	if (keys.length > MICATRO_PIN_MODS && !loose) return null;
+	for (const k of keys) {
+		const p = v[k];
+		if (!MICATRO_MOD_ID_RE.test(k) || k === '__proto__' || typeof p !== 'string' || !MICATRO_PIN_RE.test(p)) { if (loose) continue; return null; }
+		if (Object.keys(out).length >= MICATRO_PIN_MODS) break;
+		out[k] = p;
+	}
+	return out;
+}
 // a micatro replay's display meta — ALLOW-LISTED (it is shown in a public viewer)
 function cleanReplayMeta(m) {
 	m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
@@ -245,6 +266,9 @@ function cleanReplayMeta(m) {
 		customDeck: str(m.customDeck, 32), seed: str(m.seed, 16),
 		actions: int(m.actions, 0, MICATRO_REPLAY_ACTIONS), finalSeq: int(m.finalSeq, 0, 1e9),
 		checksum: str(m.checksum, 64), engineVersion: int(m.engineVersion, 0, 1e6),
+		// the mod versions + engine rules rev it was recorded on; pinAssumed: a pre-pin recipe read as the legacy table
+		modVersions: cleanModVersions(m.modVersions), engineRev: int(m.engineRev, 0, 1e6),
+		...(typeof m.pinAssumed === 'string' && /^[A-Za-z0-9:._-]{1,24}$/.test(m.pinAssumed) ? { pinAssumed: m.pinAssumed } : {}),
 		...(m.won && cleanRunBadges(m.badges) && (cleanRunBadges(m.badges).nuz || cleanRunBadges(m.badges).mono) ? { badges: cleanRunBadges(m.badges) } : {}),
 	};
 }
@@ -1830,7 +1854,7 @@ export default async function handler(req, env) {
 	// upload a finished MICATRO run's replay → its id (the leaderboard row + share link point at it).
 	// {code, meta, id?}: with `id` naming one of YOUR replays the row is overwritten in place — a win's
 	// replay grows to cover the Endless run that followed, and the board's link stays valid.
-	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000}.
+	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?}.
 	if (action === 'micatro-replay-put') {
 		const code = String(body.code || '');
 		if (code.length > MICATRO_REPLAY_MAX) return json({ error: 'replay too large', max: MICATRO_REPLAY_MAX }, 413);
@@ -1839,7 +1863,10 @@ export default async function handler(req, env) {
 		let recipe = null;
 		try { recipe = text ? JSON.parse(text) : null; } catch { recipe = null; }
 		if (!recipe || typeof recipe !== 'object' || Array.isArray(recipe) || typeof recipe.v !== 'number' || typeof recipe.seed !== 'string' || !recipe.seed
-			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')) return json({ error: 'not a run recipe' }, 400);
+			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')
+			// version pins (optional: older recipes have none) must be well-formed
+			|| (recipe.modVersions !== undefined && !cleanModVersions(recipe.modVersions, false))
+			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))) return json({ error: 'not a run recipe' }, 400);
 		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
 		const meta = cleanReplayMeta(body.meta);
 		let id = null;

@@ -22,11 +22,19 @@
 //   * Guests keep localStorage only ('...:guest'). The first account that signs in on that browser takes the
 //     guest record once (merge by max; 'micatro_joker_wins_guest_carried' remembers it — like MicaSurvivor's
 //     guest carry-over), so another account signing in later never inherits it.
-//   * A viewer's own record (spectators / replays draw theirs, and a replay or a spectated win records nothing).
+//   * A spectator / replay viewer sees the WATCHED player's stickers, never their own: the published view carries
+//     the player's records for the cards on the table and the deck (view.win_stickers, main.js publisher), and a
+//     replay's recipe carries them for the jokers seen during the run (recipe.win_stickers). setStickerSource() makes
+//     every sticker drawn on that page come from that map (an old snapshot / replay without one: the viewer's own).
+//     It never touches the viewer's own record, and a replay or a spectated win records nothing.
 //   * Like Balatro, seeded and challenge runs earn no stickers (win_game skips set_joker_win).
 //   * Collection-style screens (the Pokédex, the Challenges screen) always show them; on the table they show
 //     while Options > "Stake stickers" is on (Balatro's "Display stickers"; on by default here, since Micatro
 //     has no collection screen to see them in otherwise).
+//   * Mod upgrades (mods/aliases.js): a sticker stored under a key the mod RENAMED counts for the new key (read-time:
+//     the stored record is never rewritten, so the account's max-merge is untouched); one under a REMOVED key
+//     stays stored and is listed greyed out as a "retired card" (retiredStickers), never dropped.
+import { aliasesOf, isRetired, retiredName } from '../mods/aliases.js';
 export const STICKER_NAMES = ['White', 'Red', 'Green', 'Black', 'Blue', 'Purple', 'Orange', 'Gold'];
 /** stickers.png cells (game.lua G.shared_stickers). */
 export const STICKER_POS = {
@@ -205,10 +213,28 @@ export function recordWin(ev) {
   }
   return n;
 }
+/** A key's stored record merged with its renamed-from keys' (max per category), or undefined. */
+function recordOf(centerKey, from = wins) {
+  if (!centerKey) return undefined;
+  const olds = aliasesOf(centerKey);
+  if (!olds.length) return from[centerKey];
+  let out = null;
+  for (const k of [centerKey, ...olds]) {
+    const r = from[k];
+    if (!r) continue;
+    out = out || {};
+    for (const c of Object.keys(r)) if ((out[c] || 0) < r[c]) out[c] = r[c];
+  }
+  return out || undefined;
+}
 /** This joker's full record: {win?, poke?, nuz?, mono?, both?} (a copy; {} when it has none). */
-export const winRecord = (centerKey) => ({ ...((centerKey && wins[centerKey]) || {}) });
+export const winRecord = (centerKey) => ({ ...(recordOf(centerKey) || {}) });
 /** The highest stake level this joker has won on, in any category (0 = none). */
-export const winLevel = (centerKey) => { const r = centerKey && wins[centerKey]; return r ? Math.max(0, ...Object.values(r)) : 0; };
+export const winLevel = (centerKey) => { const r = recordOf(centerKey); return r ? Math.max(0, ...Object.values(r)) : 0; };
+/** Stickers kept on RETIRED cards (a mod upgrade removed them): [{key, name, sticker}] — listed greyed out. */
+export function retiredStickers() {
+  return Object.keys(wins).filter((k) => isRetired(k)).sort().map((k) => ({ key: k, name: retiredName(k), sticker: stickerFor(wins[k]) }));
+}
 /** Which sticker a record shows: both > mono > nuz > poke > win (null when none). Pure (tests use it). */
 export function stickerFor(rec) {
   const r = normRecord(rec);
@@ -225,7 +251,37 @@ export function stickerFor(rec) {
 /** The sticker to draw on this joker (stickerFor), or null. `collection`: always (else only with the option on). */
 export function winStickerInfo(centerKey, collection) {
   if (!collection && !show) return null;
-  return stickerFor(centerKey && wins[centerKey]);
+  return stickerFor(recordOf(centerKey, source || wins));
+}
+
+// ---------------------------------------------------------------- a watched player's stickers
+let source = null;     // spectating / a replay: the player's {key: {cat: level}} (null: this viewer's own record)
+let sourceJson = 'null';
+/**
+ * Draw the stickers from `map` (the watched player's records: a spectated view's win_stickers, a replay's
+ * recipe.win_stickers) instead of this viewer's own; null / not an object = back to the own record. Cleaned like
+ * a stored record; only redraws when it changed. The viewer's own record (and its storage) is never touched.
+ */
+export function setStickerSource(map) {
+  const next = map && typeof map === 'object' && !Array.isArray(map) ? cleanWins(map) : null;
+  const json = next ? JSON.stringify(next) : 'null';
+  if (json === sourceJson) return;
+  source = next; sourceJson = json;
+  bump();
+}
+export const stickerSource = () => (source ? JSON.parse(sourceJson) : null);
+/**
+ * This player's records for `keys` (the jokers and deck back on the table / seen in a run), compact: only keys
+ * with a record — {key: {win?, poke?, nuz?, mono?, both?}}. What the publisher / a replay sends viewers.
+ */
+export function stickerMap(keys) {
+  const out = {};
+  for (const k of keys || []) {
+    if (typeof k !== 'string' || !KEY_RE.test(k) || k === '__proto__' || out[k]) continue;
+    const r = wins[k];
+    if (r && Object.keys(r).length) out[k] = { ...r };
+  }
+  return out;
 }
 /** The stake name of the sticker this joker shows, or null. `collection`: always (else only with the option on). */
 export function winSticker(centerKey, collection) {

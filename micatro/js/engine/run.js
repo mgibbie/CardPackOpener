@@ -25,6 +25,7 @@ import { quantum_enhancements } from './core.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
+import { resolveCardKey } from '../mods/registry.js';
 import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS, feature } from '../mods/registry.js';
 import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
@@ -210,6 +211,10 @@ function check_hand_lock() {}
 // --------------------------------------------------------------- new run
 export function newRun(args = {}) {
   for (const k of Object.keys(G)) delete G[k];
+  // A recipe's keys a mod upgrade renamed (mods/aliases.js) -> their new keys (a key still registered is kept).
+  args = { ...args };
+  for (const f of ['back', 'sleeve']) if (typeof args[f] === 'string') args[f] = resolveCardKey(args[f]);
+  if (typeof args.stake === 'string' && isNaN(Number(args.stake))) args.stake = resolveCardKey(args.stake);
   G.STATES = STATES;
   G.E_MANAGER = E_MANAGER;
   E_MANAGER.queue.length = 0;

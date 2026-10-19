@@ -20,7 +20,8 @@ import { esc } from './markup.js';
 import { sound } from './sound.js';
 import * as CD from '../engine/customdeck.js';
 import { P_CENTERS, P_TAGS, P_BLINDS, P_CARDS, P_CENTER_POOLS } from '../engine/core.js';
-import { MOD_LOC, CONSUMABLE_TYPES } from '../mods/registry.js';
+import { MOD_LOC, CONSUMABLE_TYPES, isRetiredKey } from '../mods/registry.js';
+import { retiredName } from '../mods/aliases.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn, k) => {
@@ -98,7 +99,7 @@ export async function deleteDeck(net, id) { return mutate(net, (decks) => decks.
 /** Display name of any center / tag / blind key. */
 function nameOf(key) {
   const c = P_CENTERS[key] || P_TAGS[key] || P_BLINDS[key];
-  if (!c) return key;
+  if (!c) return isRetiredKey(key) ? retiredName(key) : key;   // (a card a mod update removed: mods/aliases.js)
   const set = P_TAGS[key] ? 'Tag' : P_BLINDS[key] ? 'Blind' : c.set;
   const base = LOC.descriptions[set] && LOC.descriptions[set][key];
   const mod = MOD_LOC.descriptions[set] && MOD_LOC.descriptions[set][key];
@@ -519,11 +520,12 @@ export function openEditor(entry, o, refresh) {
       for (let i = 0; i < items.length; i++) {
         const it = items[i];
         const key = typeof it === 'string' ? it : it.key;
-        const r = h('div', 'cd-item');
+        const retired = isRetiredKey(key);   // removed by a mod update: kept, greyed out, skipped in play
+        const r = h('div', 'cd-item' + (retired ? ' retired' : ''));
         r.dataset.item = kind + ':' + key;
         r.appendChild(itemThumb(key, 'cd-ithumb'));
         const mid = h('div', 'cd-item-mid');
-        mid.appendChild(h('div', 'cd-item-n', esc(nameOf(key)) + (P_CENTERS[key] || P_TAGS[key] ? '' : ' <span class="red">(not available)</span>')));
+        mid.appendChild(h('div', 'cd-item-n', esc(nameOf(key)) + (P_CENTERS[key] || P_TAGS[key] ? '' : retired ? ' <span class="retired-tag">(retired card)</span>' : ' <span class="red">(not available)</span>')));
         if (rowFn) rowFn(mid, it, i);
         r.appendChild(mid);
         r.appendChild(btn('✕', 'red cd-x', () => { items.splice(i, 1); change(); }, `rm:${kind}:${i}`));
@@ -558,7 +560,7 @@ export function openEditor(entry, o, refresh) {
       const list = draft.bans[k];
       const w = h('div', 'cd-wrap');
       list.forEach((key, i) => {
-        const b = btn(esc(nameOf(key)) + ' ✕', 'grey cd-chip cd-ban', () => { list.splice(i, 1); change(); }, `unban:${k}:${i}`);
+        const b = btn(esc(nameOf(key)) + (isRetiredKey(key) ? ' <small>(retired)</small>' : '') + ' ✕', 'grey cd-chip cd-ban' + (isRetiredKey(key) ? ' retired' : ''), () => { list.splice(i, 1); change(); }, `unban:${k}:${i}`);
         w.appendChild(b);
       });
       if (!list.length) w.appendChild(h('span', 'muted', 'None'));

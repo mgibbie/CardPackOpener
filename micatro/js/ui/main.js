@@ -35,6 +35,17 @@ let overHandled = false, winShown = false;
 let runReplay = null;   // this run's replay once it finished: {localId, local, serverId, upload: Promise<serverId|null>}
 let replayCtrl = null;  // MODE 'replay': the viewer (ui/replayview.js)
 let Stickers = null;    // ui/stickers.js (the jokers' win stickers), once loaded
+const seenJokers = new Set(); // this run's jokers seen so far (+ their sticker keys): a replay carries their stickers
+/** The sticker keys a view shows: every joker's (its key, and a Pokermon disguise's own win_key) and the deck back. */
+function stickerKeys(view, into = new Set()) {
+  for (const list of Object.values((view && view.areas) || {})) for (const c of list || []) {
+    if (!c || c.set !== 'Joker') continue;
+    if (c.center) into.add(c.center);
+    if (c.win_key) into.add(c.win_key);
+  }
+  if (view && view.back) into.add(view.back);
+  return into;
+}
 let Progress = null;    // ui/progress.js (the Nuzlocke / Monotype record + achievements), once loaded
 
 const stage = document.getElementById('stage');
@@ -47,7 +58,9 @@ async function loadEngine() {
   // challenges (Balatro's + the mods') and deck sleeves: the lists + their screen text
   let CH = null;
   try { CH = { ...(await import('../engine/challenge.js')), ...(await import('../engine/sleeve.js')) }; } catch (e) { console.warn('micatro: challenges unavailable', e); }
-  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION };
+  // mod version pins (resume prompt, replay banner)
+  const PN = await import('../mods/pins.js');
+  return { Session: S.Session, pokerInfo: R.pokerInfo, G: R.G, describeBack, RP, CH, INSTANT_ACTIONS: S.INSTANT_ACTIONS, viewChecksum: S.viewChecksum, ENGINE_VERSION: S.ENGINE_VERSION, pins: PN };
 }
 // ------------------------------------------------------------------- mods
 /** The mods manifest + loader (micatro/js/mods/index.js). Imported once; never throws. */
@@ -132,6 +145,7 @@ function onAction(a) {
   record(r.events);
   currentView = view;
   player.push(view, r.events);
+  stickerKeys(view, seenJokers);
   afterAct(view, r.events);
   return r;
 }
@@ -192,6 +206,12 @@ async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions
   const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions, ...cd } : { seed, back, stake, ...cd });
   beginRun(evs);
 }
+/**
+ * Resume the saved run. Its recipe re-simulates from the start, so when a mod (or the engine's rules) changed
+ * since it was recorded (mods/pins.js pinDiff) the player is asked first: Continue anyway (rebuilt on the new
+ * rules and re-pinned to them) or Abandon run. Neither ever happens silently, and both keep a backup of the
+ * save first (Session.backupSaved). Back leaves the save untouched.
+ */
 async function continueRun() {
   const rec = Engine.Session.saved();
   if (!rec) { UI.mainMenu(menuOpts()); return; }
@@ -201,8 +221,37 @@ async function continueRun() {
     if (r.missing.length) board.toast(`Mod no longer available: ${r.missing.join(', ')}`);
     else if (!r.ok) board.toast('A mod failed to load');
   }
-  try { session = Engine.Session.fromRecipe(rec); } catch (e) { console.error(e); Engine.Session.clearSaved(); board.toast('Could not resume that run'); UI.mainMenu(menuOpts()); return; }
-  beginRun([]);
+  const abandon = (why) => {
+    Engine.Session.backupSaved(why);
+    Engine.Session.clearSaved();
+    board.toast('Run abandoned');
+    UI.mainMenu(menuOpts());
+  };
+  const resume = (repin) => {
+    try { session = Engine.Session.fromRecipe(rec, { repin }); } catch (e) {
+      console.error(e);
+      // (never wiped without asking: the save stays until the player abandons it)
+      UI.resumePrompt({ title: 'Could not resume', html: '<p>This run could not be rebuilt on this version of Micatro.</p><p>You can abandon it, or go back and keep it for now.</p>', onAbandon: () => abandon('resume failed: ' + (e && e.message)) });
+      return;
+    }
+    if (repin) { session.save(); }
+    beginRun([]);
+    const st = session.stoppedAt;
+    if (st) board.toast(`The run was rebuilt up to move ${st.index} of ${st.total} on the current rules`);
+    else if (repin) board.toast('Resumed on the updated rules');
+  };
+  const diff = Engine.pins ? Engine.pins.pinDiff(rec) : [];
+  if (!diff.length) { resume(false); return; }
+  const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const changes = diff.map((d) => `<li><b>${esc(d.engine ? d.name + ' engine' : d.name)}</b> ${esc(d.engine ? d.recorded : Engine.pins.pinLabel(d.recorded))} → ${esc(d.current == null ? 'not available' : d.engine ? d.current : Engine.pins.pinLabel(d.current))}</li>`).join('');
+  const one = diff.length === 1 && !diff[0].engine;
+  UI.resumePrompt({
+    title: one ? 'Mod updated' : 'Updated since this run started',
+    html: `<p>${one ? 'A mod this run uses was updated' : 'This run was started on an older version'} since you started it:</p><ul class="rz-diff">${changes}</ul>` +
+      '<p>Resuming replays your moves on the new rules, so the run may play differently from how you left it, or stop partway.</p>',
+    onContinue: () => { Engine.Session.backupSaved('continue: ' + Engine.pins.diffText(diff)); resume(true); },
+    onAbandon: () => abandon('abandon: ' + Engine.pins.diffText(diff)),
+  });
 }
 function beginRun(events) {
   UI.closeAll();
@@ -210,6 +259,7 @@ function beginRun(events) {
   allEvents.length = 0; pendingPublish = [];
   record(events);
   currentView = viewOf();
+  seenJokers.clear(); stickerKeys(currentView, seenJokers);
   player.lastSeq = 0;
   player.push(currentView, [], { jump: true });
   sound.play('whoosh', 1, 0.6);
@@ -223,7 +273,10 @@ function startPublishing() {
   publisher = net.startPublisher(
     () => {
       if (!currentView) return null;
-      const snap = { view: currentView, events: pendingPublish.slice(-PUBLISH_CAP) };
+      // (the player's win stickers for the jokers and deck on the table: spectators draw these, not their own;
+      // a win updates the record, so the next push shows the new stickers)
+      const view = Stickers ? { ...currentView, win_stickers: Stickers.stickerMap([...stickerKeys(currentView)]) } : currentView;
+      const snap = { view, events: pendingPublish.slice(-PUBLISH_CAP) };
       pendingPublish = [];
       return snap;
     },
@@ -269,6 +322,8 @@ function recordReplay(view) {
   if (!RP || !session || !session.recipe) return null;
   try {
     const recipe = JSON.parse(JSON.stringify(session.recipe));
+    // the player's win stickers for the jokers seen in the run and the deck: the replay draws these, not the viewer's
+    if (Stickers) recipe.win_stickers = Stickers.stickerMap([...stickerKeys(view, seenJokers)]);
     const meta = RP.buildMeta(recipe, view, { username: myName() });
     const entry = RP.save(recipe, meta);
     const localId = RP.localId(recipe);
@@ -456,6 +511,8 @@ function startSpectating() {
     onSnapshot(snap, meta) {
       if (!snap || !snap.view) return;
       spectatorMods(snap.view.mods);
+      // the runner's stickers (view.win_stickers); an older runner's snapshot without them: this viewer's own
+      if (Stickers) Stickers.setStickerSource(snap.view.win_stickers || null);
       currentView = snap.view;
       record(snap.events || []);
       player.ingest(snap.view, snap.events || []);

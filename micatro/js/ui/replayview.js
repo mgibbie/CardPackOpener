@@ -12,6 +12,8 @@
 //   blind ticks + ante marks · "Ante N" chips · action counter · Exit
 //   keys: Space play/pause · ←/→ step · Home/End · controller: LB/RB step · secondary play/pause
 //   (the bar's buttons are pad stops too, ui/pad.js)
+import { setStickerSource } from './stickers.js';
+
 const STEP_PAUSE = { instant: 0.22, move: 0.38 };   // seconds (at 1×) after an action before the next
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -48,6 +50,9 @@ export async function startReplay(ctx) {
     if (!recipe) return fail('That replay is damaged and cannot be played.');
     meta = d.meta || {}; by = d.by || ''; serverId = spec;
   }
+  // the player's win stickers as they were when the run was recorded (recipe.win_stickers); an older replay
+  // without them: this viewer's own. The viewer's own record is never changed.
+  setStickerSource(recipe.win_stickers || null);
   const needMods = [...new Set([...(recipe.mods || []), ...((recipe.customDeck && Array.isArray(recipe.customDeck.mods)) ? recipe.customDeck.mods : [])])];
   if (needMods.length) {
     board.setBanner(`${backLink}<span class="spec-status">Loading mods…</span>`);
@@ -55,6 +60,13 @@ export async function startReplay(ctx) {
     if (r.missing && r.missing.length) return fail(`This run used mods this site no longer has: ${esc(r.missing.join(', '))}`);
     if (!r.ok) return fail('A mod this run used failed to load.');
   }
+
+  // ---------------------------------------------------------------- version pins
+  // A replay recorded on other mod / engine versions (mods/pins.js) still plays, with a warning up front;
+  // a recipe from before pins is read as the versions of the day pins landed.
+  const P = Engine.pins || null;
+  const pinDiff = P ? P.pinDiff(recipe) : [];
+  const pinWarning = pinDiff.length ? P.replayWarning(pinDiff) : '';
 
   // ---------------------------------------------------------------- the stepper
   let st, scan;
@@ -66,7 +78,8 @@ export async function startReplay(ctx) {
   const isMoveEnd = (j) => j === 0 || j >= total || !INSTANT.has(recipe.actions[j - 1].type);
   const who = by ? `<b>${esc(by)}</b>'s run` : 'Run replay';
   const deck = recipe.customDeck ? esc(recipe.customDeck.name || 'Custom deck') : '';
-  board.setBanner(`${backLink}<span class="watching">▶ ${who}</span><span class="spec-status">${deck ? deck + ' · ' : ''}Seed <b>${esc(recipe.seed)}</b></span>`);
+  board.setBanner(`${backLink}<span class="watching">▶ ${who}</span><span class="spec-status">${deck ? deck + ' · ' : ''}Seed <b>${esc(recipe.seed)}</b></span>` +
+    (pinWarning ? `<span class="spec-status mod-pin-warn" title="${esc(P.diffText(pinDiff))}">⚠ ${esc(pinWarning)}</span>` : ''));
 
   // ---------------------------------------------------------------- the bar
   const bar = h('div', 'replay-bar');
@@ -156,9 +169,12 @@ export async function startReplay(ctx) {
     playing = false;
     const v = nowView();
     if (st.error) {
-      showNotice(`${OLDER_NOTICE}. (It stops at move ${st.error.index + 1} of ${total}.)`);
+      // a desync: the move is not possible on the current rules — stop here, say so (never hang)
+      showNotice(pinDiff.length
+        ? `Playback stopped at move ${st.error.index + 1} of ${total}: that move isn't possible on the current rules (${P.diffText(pinDiff)}).`
+        : `${OLDER_NOTICE}. (It stops at move ${st.error.index + 1} of ${total}.)`);
     } else if (meta.checksum && Engine.viewChecksum(v) !== meta.checksum) {
-      showNotice(OLDER_NOTICE + '.');
+      showNotice(pinDiff.length ? `The run played out differently on the current rules (${P.diffText(pinDiff)}).` : OLDER_NOTICE + '.');
     } else {
       const best = ctx.fmt ? ctx.fmt(v.stats && v.stats.best_hand) : String((v.stats && v.stats.best_hand) || 0);
       showNotice(`End of the run — ${v.won ? (v.endless ? 'won, then Endless to ante ' + v.ante : 'won!') : 'game over at ante ' + v.ante} · best hand ${best}`);
@@ -275,7 +291,7 @@ export async function startReplay(ctx) {
   poke();
   // (defineProperties, not Object.assign: the getters must stay live)
   Object.defineProperties(ctrl, Object.getOwnPropertyDescriptors({
-    ready: true, total, scan, recipe, meta, by, serverId, localId,
+    ready: true, total, scan, recipe, meta, by, serverId, localId, pinDiff, pinWarning,
     get index() { return st.index; }, get playing() { return playing; }, get speed() { return speed; }, get ended() { return ended; }, get notice() { return notice; },
     play, pause, toggle, seekTo, stepForward, stepBack, setSpeed, stepper: st, bar,
   }));

@@ -5,7 +5,7 @@
 import { CardSprite, modAtlasesOf } from './cardsprite.js';
 import { cellEl, drawCell, drawModCell, CENTERS, CARDS, BLINDS, TAGS, LOC, onModAtlas, MODREG, modType, cssColour, isConsumableSet } from './assets.js';
 import { backgroundFor } from './gl.js';
-import { markup, fmt, esc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
+import { markup, fmt, esc, titleHtml, isPlayingDesc, describePlaying, describeCenterFallback, BADGE_COL } from './markup.js';
 import { isNumeric, isBig } from '../engine/bignum.js';
 import { sound } from './sound.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
@@ -104,7 +104,8 @@ export class Board {
     // a joker earned a win sticker (or the option changed): recompose the jokers
     onWinStickers(() => { for (const s of this.sprites.values()) if (s.d && !s.d.front) { s.vkey = ''; s.setData(s.d); } });
     onWinStickers(() => this.renderDeckStack()); // (the deck pile's sticker)
-    const loop = () => { this.frame(); requestAnimationFrame(loop); };
+    // (the next frame is asked for first: an exception in one frame must not stop the table for the rest of the run)
+    const loop = () => { requestAnimationFrame(loop); this.frame(); };
     requestAnimationFrame(loop);
   }
 
@@ -1171,8 +1172,12 @@ export class Board {
     const body = (lines0, colours) => (lines0 || []).map((l) => (l === '' ? '<div class="tip-gap"></div>' : `<div>${markup(l, colours)}</div>`)).join('');
     const lines = body(desc.lines, desc.colours);
     const info = (desc.info || []).filter((x) => x && (x.lines || []).length).slice(0, 3)
-      .map((x) => `<div class="tip-info"><div class="ti-name">${esc(x.name || '')}</div><div class="tip-body">${body(x.lines)}</div></div>`).join('');
-    this.tip.innerHTML = `<div class="tip-main"><div class="tip-name">${esc(desc.name || (d && d.name) || '')}</div>${lines ? `<div class="tip-body">${lines}</div>` : ''}${extra}${badges ? `<div class="tip-badges">${badges}</div>` : ''}${modB ? `<div class="tip-modbadges">${modB}</div>` : ''}</div>${info}`;
+      .map((x) => `<div class="tip-info"><div class="ti-name">${titleHtml(x.name || '', x.colours)}</div><div class="tip-body">${body(x.lines)}</div></div>`).join('');
+    // the title runs through markup like the body: a playing card's is " {C:light_black}6 of {V:1}Hearts " (Balatro's
+    // loc playing_card), drawn on a white pill like Balatro's card_h_popup (it was escaped, so the codes showed)
+    const pc = isPlayingDesc(desc);
+    const title = titleHtml(desc.name || (d && d.name) || '', desc.name_colours || desc.colours);
+    this.tip.innerHTML = `<div class="tip-main"><div class="tip-name${pc ? ' pc' : ''}">${pc ? `<span class="tip-pc">${title}</span>` : title}</div>${lines ? `<div class="tip-body">${lines}</div>` : ''}${extra}${badges ? `<div class="tip-badges">${badges}</div>` : ''}${modB ? `<div class="tip-modbadges">${modB}</div>` : ''}</div>${info}`;
     this.tip.style.display = '';
   }
   placeTip(x, y, area, btns) {
@@ -1542,7 +1547,10 @@ export class Board {
     const dt = Math.min(0.05, t - this.now);
     this.now = t;
     this.bg.draw(t, dt);
-    for (const s of this.sprites.values()) s.frame(t, dt);
+    // (one card's frame failing skips that card this frame, not every card after it)
+    for (const s of this.sprites.values()) {
+      try { s.frame(t, dt); } catch (e) { if (!this._frameErr) { this._frameErr = true; console.warn('micatro: card frame failed:', e); } }
+    }
     // animated blind chips (21 frames per row at ~10fps)
     const f = Math.floor(t * 10) % 21;
     if (f !== this._chipFrame) {

@@ -302,12 +302,24 @@ export class CardFX {
   constructor(w, h) {
     this.w = w; this.h = h;
     this.ok = false;
+    // bumped when the context is lost or restored: card sprites repaint (ui/cardsprite.js frame)
+    this.gen = 0;
     try {
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       const gl = c.getContext('webgl', { premultipliedAlpha: false, alpha: true, antialias: false, preserveDrawingBuffer: true });
       if (!gl) throw new Error('no webgl');
       this.canvas = c; this.gl = gl;
+      // A lost context (an iPhone under memory pressure, a GPU reset) draws nothing: every card rendered through
+      // it would show an empty face. Cards fall back to their plain composed face until it is restored.
+      c.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.ok = false; this.gen++; });
+      c.addEventListener('webglcontextrestored', () => { this.setup(); this.gen++; });
+      this.setup();
+    } catch (e) { this.ok = false; }
+  }
+  setup() {
+    const gl = this.gl;
+    try {
       this.progs = {};
       for (const [k, src] of Object.entries(FX)) this.progs[k] = compile(gl, VS, PRE + src);
       quad(gl);
@@ -317,6 +329,8 @@ export class CardFX {
       this.ok = true;
     } catch (e) { this.ok = false; }
   }
+  /** Can it draw right now? (false without WebGL, and while the context is lost) */
+  usable() { return this.ok && !(this.gl && this.gl.isContextLost && this.gl.isContextLost()); }
   texFor(src) {
     const gl = this.gl;
     let rec = this.tex.get(src);
@@ -354,7 +368,7 @@ export class CardFX {
    */
   render(src, dst, opts) {
     const ctx = dst.getContext('2d');
-    if (!this.ok) {
+    if (!this.usable()) {
       ctx.clearRect(0, 0, dst.width, dst.height);
       ctx.globalAlpha = 1 - (opts.dissolve || 0);
       ctx.drawImage(src, 0, 0);

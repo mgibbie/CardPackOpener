@@ -29,7 +29,7 @@ import {
   level_up_hand, card_eval_status_text, localize, emit, P_CARDS_LIST, probability_roll, get_pack, play_sound,
 } from './core.js';
 import * as B from './bignum.js';
-import { registerMod, centerActive } from '../mods/registry.js';
+import { registerMod, centerActive, resolveCardKey } from '../mods/registry.js';
 import { Tag, add_tag } from './tag.js';
 
 export const CUSTOM_DECK_ID = 'customdeck';
@@ -262,7 +262,8 @@ const clampNum = (v, min, max, def, step) => {
   return Math.round(n * 100) / 100;
 };
 const cleanStr = (s, n) => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
-const cleanKey = (k) => (typeof k === 'string' && KEY_RE.test(k) ? k : null);
+// (a key a mod upgrade renamed resolves to its new key: mods/aliases.js; a removed one stays, and is skipped in play)
+const cleanKey = (k) => (typeof k === 'string' && KEY_RE.test(k) ? resolveCardKey(k) : null);
 const cleanEdition = (e) => {
   if (!e || e === 'none' || e === 'None') return null;
   const s = String(e).toLowerCase();
@@ -283,7 +284,8 @@ export function validateDeck(raw) {
   const out = { v: CUSTOM_DECK_VERSION };
   out.name = cleanStr(d.name, LIMITS.name) || 'Custom Deck';
   out.desc = cleanStr(d.desc, LIMITS.desc);
-  out.back = cleanKey(d.back) && /^b_/.test(d.back) ? d.back : 'b_red';
+  const bk = cleanKey(d.back);
+  out.back = bk && /^b_/.test(bk) ? bk : 'b_red';
   out.mods = [...new Set((Array.isArray(d.mods) ? d.mods : []).filter((m) => typeof m === 'string' && /^[a-z0-9_-]{1,32}$/.test(m) && m !== CUSTOM_DECK_ID))].slice(0, LIMITS.mods);
   const p = d.params && typeof d.params === 'object' ? d.params : {};
   out.params = {};
@@ -298,7 +300,8 @@ export function validateDeck(raw) {
       if (!a) continue;
       const front = cleanKey(a[0]);
       if (!front || !front.includes('_')) continue;
-      const enh = cleanKey(a[1]) && /^m_/.test(a[1]) ? a[1] : 0;
+      const ek = cleanKey(a[1]);
+      const enh = ek && /^m_/.test(ek) ? ek : 0;
       const ed = cleanEdition(a[2]);
       const seal = cleanSeal(a[3]);
       const n = Math.min(count(a[4], LIMITS.cards), LIMITS.cards - total);
