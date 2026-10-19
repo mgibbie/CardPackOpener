@@ -170,6 +170,7 @@ G.Sprites = (() => {
       this.hold = false;       // se queda en el último fotograma (Faint)
       this.done = false;
       this.dir = 0;
+      this.clock = 0;          // segundos desde que se creó (el saltito de los Walk de un fotograma)
       // Las hojas se cargan al dibujarse por primera vez; la run las precarga
       // todas con preload() para que no parpadeen al primer ataque.
     }
@@ -206,6 +207,7 @@ G.Sprites = (() => {
     }
 
     update(dt) {
+      this.clock += dt * this.speed;
       const m = animMeta(this.dex, this.cur, this.shiny);
       if (!m || this.done) return;
       this.t += dt * 60 * this.speed;
@@ -246,7 +248,11 @@ G.Sprites = (() => {
       const alpha = opts.alpha == null ? 1 : opts.alpha;
       if (alpha <= 0) return;
       const sx = Math.min(frame, m.n - 1) * m.w, sy = row * m.h;
-      const dx = Math.round(x - m.ax * k), dy = Math.round(y - m.ay * k);
+      // (Lote B1) Algunos Pokémon sólo tienen en SpriteCollab un Idle de un fotograma, que también hace de Walk
+      // (FALLBACK de tools/micasurvivor/fetch_sprites.py): andando, dan saltitos de 2 px para no deslizarse
+      // quietos. Ninguno de los 966 originales tiene un Walk de un fotograma, así que a ellos no les cambia nada.
+      const bob = m.n === 1 && this.cur === 'Walk' && !this.once ? Math.round(Math.abs(Math.sin(this.clock * 9)) * 2 * k) : 0;
+      const dx = Math.round(x - m.ax * k), dy = Math.round(y - m.ay * k) - bob;
       const prev = ctx.globalAlpha;
       if (alpha < 1) ctx.globalAlpha = prev * alpha;
       // Destello: blanco entero (enemigos) o medio blanco encima (tu Pokémon).

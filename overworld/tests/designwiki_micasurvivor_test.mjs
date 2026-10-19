@@ -7,7 +7,7 @@
 //        node tools/micasurvivor/gen_designwiki.mjs
 //   2. Every #/micasurvivor route renders in headless Chrome with no console errors: the overview
 //      (how to play, the Pewter Museum cabinet, accounts + leaderboard, the controller table, the
-//      credits / PolyForm Noncommercial notice, the Game modes of M5 batch 6), all 966 Pokémon with their ability (+ the filter,
+//      credits / PolyForm Noncommercial notice, the Game modes of M5 batch 6), all 983 Pokémon with their ability (+ the filter,
 //      also by ability), the abilities list, every move, every
 //      item and upgrade; the sidebar links them; the phone layout (390 px) has no horizontal overflow.
 //   node overworld/tests/designwiki_micasurvivor_test.mjs
@@ -34,7 +34,7 @@ const { build } = await import(pathToFileURL(path.join(ROOT, 'tools/micasurvivor
 const fresh = build();
 const W = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/micasurvivor.json'), 'utf8'));
 A(JSON.stringify(fresh) === JSON.stringify(W), 'micasurvivor.json matches the game data', 'regen: node tools/micasurvivor/gen_designwiki.mjs');
-A(W.pokemon.length === 966 && W.counts.pokemon === 966 && W.starters.length === 29 && W.moves.length >= 60 && W.items.length >= 10 && W.upgrades.length >= 10, 'counts: 966 Pokémon, 29 starters, the moves, items and upgrades', JSON.stringify(W.counts));
+A(W.pokemon.length === 983 && W.counts.pokemon === 983 && W.starters.length === 29 && W.moves.length >= 60 && W.items.length >= 10 && W.upgrades.length >= 10, 'counts: 983 Pokémon, 29 starters, the moves, items and upgrades', JSON.stringify(W.counts));
 A(W.moves.find(m => m.id === 'ember')?.name === 'Ember' && W.items.find(i => i.id === 'leftovers')?.name === 'Leftovers' && W.upgrades.find(u => u.id === 'hp')?.name === 'Vitality', 'names are in English (the game translates from Spanish)');
 A(W.moves.find(m => m.id === 'flamethrower')?.evo?.name === 'Overheat', 'move evolutions are listed (Flamethrower -> Overheat)');
 // MicaSurvivor M5 batch 3: 26 items (15 from the Android port) and 17 upgrades (+Caliber, TM, Second Chance, Backpack)
@@ -42,7 +42,7 @@ A(W.counts.items === 26 && W.counts.upgrades === 17 && W.items.find(i => i.id ==
 // MicaSurvivor M5 batch 2: abilities
 const ABI = new Map((W.abilities || []).map(a => [a.id, a]));
 A(W.counts.abilities === 54 && ABI.size === 54 && W.abilities.every(a => a.name && a.desc && !/[¡¿ñáíóú]/.test(a.desc.replace(/Poké/g, ''))), '54 abilities, each with an English name and description', JSON.stringify(W.counts));
-A(W.pokemon.every(p => ABI.has(p[6])) && W.abilities.reduce((s, a) => s + a.pokemon, 0) === 966, 'every Pokémon has its ability (the counts add up to 966)');
+A(W.pokemon.every(p => ABI.has(p[6])) && W.abilities.reduce((s, a) => s + a.pokemon, 0) === 983, 'every Pokémon has its ability (the counts add up to 983)');
 A(W.pokemon.find(p => p[0] === 4)[6] === 'blaze' && ABI.get('blaze').name === 'Blaze' && ABI.get('sturdy').desc === 'A hit that would KO you leaves you at 1 HP (every 90 s).', 'Charmander has Blaze; Sturdy is described with the port\'s numbers');
 
 // MicaSurvivor M5 batch 5: Dynamax + raid dens
@@ -89,10 +89,10 @@ A(DP.fov && DP.fov.min === 100 && DP.fov.max === 200 && DP.fov.step === 5 && DP.
 	'display from display.js + minimap.js: the port\'s field of view (100-200, 165), Screen size (60-140, 100) and minimap numbers, in English', JSON.stringify(DP).slice(0, 300));
 // MicaSurvivor M5 batch 11: achievements, missions, titles, the damage breakdown, the Lexicon and the trainer card
 const GO = W.goals || {};
-A(GO.achievements && GO.achievements.total === 223 && GO.achievements.types === 54 && JSON.stringify(GO.achievements.cats.map(c => c.key)) === '["coleccion","supervivencia","combate","tipos","grietas","legendarios","modos","otros"]'
+A(GO.achievements && GO.achievements.total === 226 && GO.achievements.types === 54 && JSON.stringify(GO.achievements.cats.map(c => c.key)) === '["coleccion","supervivencia","combate","tipos","grietas","legendarios","modos","otros"]'
 	&& GO.achievements.cats[3].name === 'By type' && GO.achievements.bosses.length === 7 && GO.achievements.bosses.find(b => b.id === 'boss1000').title === 'King of bosses'
 	&& JSON.stringify(GO.achievements.byType.map(t => t.goal)) === '[250,1000,5000]' && GO.achievements.byType[0].name === 'X-type tracker',
-	'goals from achievements.js: 223 achievements, the "By type" category in its place, the 7 boss ones (King of bosses), the per-type tiers 250 / 1,000 / 5,000', JSON.stringify(GO.achievements || {}).slice(0, 300));
+	'goals from achievements.js: 226 achievements (223 + the 3 new legendaries of batch B1), the "By type" category in its place, the 7 boss ones (King of bosses), the per-type tiers 250 / 1,000 / 5,000', JSON.stringify(GO.achievements || {}).slice(0, 300));
 A(Array.isArray(GO.missions) && GO.missions.filter(m => m.period === 'daily').length === 17 && GO.missions.filter(m => m.period === 'weekly').length === 13
 	&& GO.missions.find(m => m.id === 'mDaily').text === 'Play the Daily Challenge' && GO.missions.find(m => m.id === 'wMods').text === 'Survive 6 / 8 minutes with 3 or more modifiers'
 	&& GO.missions.every(m => !/[¡¿ñáíóú]/.test(m.text.replace(/Pokémon/g, ''))),
@@ -145,7 +145,7 @@ try {
 	A(/Online co-op with friends/.test(ov.text) && /Up to 4 players over the internet/.test(ov.text) && /Play with friends/.test(ov.text) && /Waiting for/.test(ov.text) && /1 update a second instead of 15/.test(ov.text) && /30 relay minutes per day/.test(ov.text) && /Relay time is used up for today/.test(ov.text)
 		&& /only the host’s friends can join/.test(ov.text) && /4 players: foes appear ×3\.25, enemy HP ×1\.9, experience ×0\.357/.test(ov.text) && !/coming later/i.test(ov.text)
 		&& await page.$$eval('#content .ms-online tbody tr', r => r.length) === 9, 'overview: Online co-op with friends (getting together, upstream\'s rules, the relay; M5 batch 12b), no "coming later"');
-	A(/Goals, titles, Lexicon and trainer card/.test(ov.text) && /223 achievements in 8 categories/.test(ov.text) && /King of bosses/.test(ov.text) && /Play the Daily Challenge/.test(ov.text) && /After a run: damage and defeats/.test(ov.text) && /View my trainer card/.test(ov.text)
+	A(/Goals, titles, Lexicon and trainer card/.test(ov.text) && /226 achievements in 8 categories/.test(ov.text) && /King of bosses/.test(ov.text) && /Play the Daily Challenge/.test(ov.text) && /After a run: damage and defeats/.test(ov.text) && /View my trainer card/.test(ov.text)
 		&& await page.$$eval('#content .ms-daily tbody tr', r => r.length) === 17 && await page.$$eval('#content .ms-weekly tbody tr', r => r.length) === 13 && await page.$$eval('#content .ms-achcats tbody tr', r => r.length) === 8 && await page.$$eval('#content .ms-status tbody tr', r => r.length) === 7,
 		'overview: Goals (8 achievement categories, the boss / per-type table, 17 daily + 13 weekly missions, titles, the damage breakdown, the Lexicon’s 7 statuses, the trainer card; M5 batch 11)');
 	A(/Display/.test(ov.text) && /Minimap/.test(ov.text) && /Field of view/.test(ov.text) && /100–200 % in steps of 5 \(165 %\)/.test(ov.text) && /Interface size/.test(ov.text) && /60–140 % in steps of 5 \(100 %\)/.test(ov.text)
@@ -163,7 +163,7 @@ try {
 		'overview: Difficulty and biomes (adaptive difficulty, the Challenge %, the 3-biome table, the 4-row support caps table; M5 batch 9)');
 	A(await page.$eval('#sidebar a.active', a => a.getAttribute('href')) === '#/micasurvivor', 'nav: Overview is active');
 
-	await go('micasurvivor/pokemon', '.ms-pokemon tbody tr', 966);
+	await go('micasurvivor/pokemon', '.ms-pokemon tbody tr', 983);
 	await go('micasurvivor/pokemon', '.ms-abilities tbody tr', 54);
 	A(await page.$$eval('#content .ms-pokemon tbody tr', r => /Blaze/.test(r[3].textContent) && r.every(x => x.querySelector('.ms-ab'))), 'pokemon: every row shows its ability (Charmander: Blaze)');
 	A(await page.$$eval('#content .ms-starter', s => s.length) === 29, 'pokemon: the 29 starters');

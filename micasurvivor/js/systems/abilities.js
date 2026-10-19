@@ -150,7 +150,7 @@ G.Abilities = (() => {
       fx: {dmg: 0.08, spd: 0.04} },
   };
 
-  // Pokémon (nº de la Pokédex) -> habilidad (abilities.gd BY_DEX; 966 entradas).
+  // Pokémon (nº de la Pokédex) -> habilidad (abilities.gd BY_DEX; 966 entradas + las 17 del lote B1).
   const BY_DEX = {
     1:'overgrow',2:'overgrow',3:'overgrow',4:'blaze',5:'blaze',6:'blaze',7:'torrent',8:'torrent',9:'torrent',10:'battlearmor',11:'regenerator',12:'compoundeyes',
     13:'battlearmor',14:'regenerator',15:'swarm',16:'compoundeyes',17:'compoundeyes',18:'compoundeyes',19:'runaway',20:'runaway',21:'compoundeyes',22:'compoundeyes',23:'intimidate',24:'intimidate',
@@ -232,7 +232,11 @@ G.Abilities = (() => {
     969:'poisonpoint',970:'poisonpoint',971:'pickup',972:'sandrush',974:'thickfat',975:'thickfat',976:'moldbreaker',977:'battlearmor',978:'protean',979:'innerfocus',980:'poisonpoint',981:'regenerator',
     982:'luck',983:'defiant',984:'moldbreaker',985:'moldbreaker',987:'moldbreaker',988:'moldbreaker',989:'moldbreaker',991:'moldbreaker',992:'moldbreaker',994:'moldbreaker',995:'moldbreaker',996:'flashfire',
     997:'flashfire',998:'flashfire',1000:'furcoat',1004:'moldbreaker',1005:'moldbreaker',1006:'moldbreaker',1007:'drought',1009:'moldbreaker',1010:'moldbreaker',1011:'intimidate',1012:'regenerator',1013:'regenerator',
-    1015:'poisonpoint',1016:'poisonpoint',1017:'defiant',1018:'furcoat',1019:'intimidate',1024:'protean'
+    1015:'poisonpoint',1016:'poisonpoint',1017:'defiant',1018:'furcoat',1019:'intimidate',1024:'protean',
+    // (MicaSurvivor lote B1, 2026-10-19: los 17 Pokémon que completan la Pokédex. El port no los tiene: cada uno
+    //  lleva la habilidad de su familia si la tabla la tiene, y si no la más parecida a la suya de las 54.)
+    593:'waterabsorb',618:'static',683:'regenerator',733:'compoundeyes',865:'defiant',870:'battlearmor',879:'guts',929:'earlybird',945:'poisonpoint',948:'effectspore',990:'moldbreaker',999:'pickup',
+    1003:'moldbreaker',1008:'megalauncher',1020:'moldbreaker',1021:'moldbreaker',1025:'poisonpoint'
   };
 
   const DEFAULT = 'protean';

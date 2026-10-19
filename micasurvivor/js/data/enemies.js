@@ -56,7 +56,8 @@ G.Enemies = (() => {
   const H = (d, s) => G.U.hash(d, 7, s);
 
   // Personalidades fijas de algunos Pokémon.
-  const HEAL = new Set([35, 36, 113, 173, 183, 184, 242, 301, 440, 531, 594, 700, 764, 858]);
+  // (Lote B1: + Aromatisse, 683, de habilidad Alma Cura)
+  const HEAL = new Set([35, 36, 113, 173, 183, 184, 242, 301, 440, 531, 594, 683, 700, 764, 858]);
   const SHIELD = new Set([95, 122, 208, 213, 227, 306, 375, 410, 411, 436, 437, 439, 476, 703]);
   const BOMB = new Set([74, 75, 76, 100, 101, 102, 109, 110, 337, 338, 343, 344]);
   // Invocador -> Pokémon de su manada.
