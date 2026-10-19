@@ -174,6 +174,20 @@ b { font-weight: normal; }
 .banner a { color: #9fd3ff; text-decoration: none; }
 .banner .watching b { color: var(--attn); }
 .spec-status { color: #cfe; font-size: 24px; }
+/* a replay recorded on other mod versions (mods/pins.js): warned up front, still plays */
+.banner:has(.mod-pin-warn) { flex-wrap: wrap; justify-content: center; row-gap: 8px; max-width: min(1000px, calc(100vw - 24px)); }
+.banner .mod-pin-warn { flex: 1 1 100%; color: #ffd9d6; background: rgba(254,95,85,.25); border-radius: 10px; padding: 4px 12px 2px; font-size: 20px; white-space: normal; text-align: center; line-height: 1.2; }
+
+/* the resume prompt (a mod changed since the run started) */
+.resume-prompt { display: flex; flex-direction: column; gap: 14px; max-width: 760px; font-size: 26px; text-align: left; }
+.resume-prompt p { margin: 0; }
+.rz-diff { margin: 0; padding-left: 28px; color: var(--attn); }
+.rz-acts { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+/* retired cards (a mod update removed them): kept, greyed out */
+.cd-item.retired, .cd-chip.retired, .retired-card { opacity: .55; filter: grayscale(1); }
+.retired-tag { color: #9aa7a9; font-size: 20px; }
+.rec-retired { display: flex; flex-direction: column; gap: 4px; font-size: 22px; }
+.retired-card small { color: #9aa7a9; }
 
 /* tooltip */
 .tip { position: absolute; left: 0; top: 0; z-index: 50; pointer-events: none; display: flex; gap: 8px; align-items: flex-start; max-width: 600px; }

@@ -11,6 +11,7 @@
 // Nothing here may break the game or the live run save: every storage call is wrapped, and a full
 // storage evicts the oldest replays (never the live run, `micatro_run_v1`).
 import { viewChecksum } from './engine/session.js';
+import { recordedPins, PIN_DATE } from './mods/pins.js';
 
 export const STORE_KEY = 'micatro_replays_v1';
 export const LOCAL_MAX = 10;
@@ -83,10 +84,18 @@ export function buildMeta(recipe, view, { username = null, engineVersion = recip
     actions: recipe && recipe.actions ? recipe.actions.length : 0,
     finalSeq: v.seq | 0, checksum: viewChecksum(v),
     engineVersion: engineVersion | 0,
+    // the versions it was recorded on (mods/pins.js): {modId: '3.2.1+r1'} + the engine's rules rev; a recipe from
+    // before pins carries the legacy assumption (pinAssumed)
+    ...metaPins(recipe),
     username: username || null,
     started: (recipe && recipe.started) || 0,
     ...(runBadges(v) ? { badges: runBadges(v) } : {}),
   };
+}
+function metaPins(recipe) {
+  if (!recipe) return {};
+  const p = recordedPins(recipe);
+  return { modVersions: p.modVersions, engineRev: p.engineRev, ...(p.assumed ? { pinAssumed: String(recipe.pinAssumed || 'legacy:' + PIN_DATE).slice(0, 24) } : {}) };
 }
 /** A won Pokermon run's Nuzlocke / Monotype badges (view.run_badges.earned) as {nuz?: true, mono?: 'fire'}, or null. */
 function runBadges(v) {

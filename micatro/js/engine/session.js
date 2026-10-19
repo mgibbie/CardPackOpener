@@ -7,9 +7,14 @@
 import { G } from './core.js';
 import { newRun, act } from './run.js';
 import { toView } from './view.js';
+import { stampRecipe, recordLegacyAssumption, pinDiff, repin } from '../mods/pins.js';
 
+// The recipe FORMAT version (a saved run with another `v` is not offered). Not the rules: those are pinned per
+// run in recipe.modVersions / recipe.engineRev (mods/pins.js ENGINE_CONTENT_REV) — bumping this would drop saves.
 export const ENGINE_VERSION = 1;
+export { ENGINE_CONTENT_REV } from '../mods/pins.js';
 const SAVE_KEY = 'micatro_run_v1';
+const BACKUP_KEY = 'micatro_run_backup_v1';
 
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
@@ -23,6 +28,8 @@ export class Session {
     // A challenge (engine/challenge.js, played at stake 1) / a deck sleeve (engine/sleeve.js): by id.
     if (G.GAME.challenge) { this.recipe.challenge = G.GAME.challenge; this.recipe.stake = G.GAME.stake; }
     if (G.GAME.selected_sleeve) this.recipe.sleeve = G.GAME.selected_sleeve;
+    // the versions this run plays on: each active mod's version + contentRev, and the engine's (mods/pins.js)
+    stampRecipe(this.recipe);
     this.events = G.ui_events.splice(0);
     this.save();
     return this.events;
@@ -42,19 +49,32 @@ export class Session {
   view() { return toView(); }
   get over() { return !!(G.GAME && G.GAME.over); }
 
-  /** Rebuild from a recipe. Stops at the first action the engine rejects. */
-  static fromRecipe(recipe) {
+  /**
+   * Rebuild from a recipe. Stops at the first action the engine rejects (s.stoppedAt = {index, total}).
+   * A recipe from before version pins gets the legacy assumption written in (mods/pins.js). `repin`: the
+   * player chose "Continue anyway" on a version mismatch — the recipe is re-pinned to the current versions
+   * (the old pins are kept in recipe.repinned).
+   */
+  static fromRecipe(recipe, { repin: doRepin = false } = {}) {
     const s = new Session();
     newRun({ seed: recipe.seed, back: recipe.back, stake: recipe.stake, mods: recipe.mods || [], modOptions: recipe.modOptions || {}, customDeck: recipe.customDeck || null, challenge: recipe.challenge || null, sleeve: recipe.sleeve || null });
     s.recipe = { ...recipe, actions: [] };
-    for (const a of recipe.actions || []) {
-      const r = act(a);
-      if (!r.ok) break;
-      s.recipe.actions.push(a);
+    recordLegacyAssumption(s.recipe);
+    const all = recipe.actions || [];
+    s.stoppedAt = null;
+    for (let i = 0; i < all.length; i++) {
+      let r;
+      try { r = act(all[i]); } catch (e) { r = { ok: false, error: 'engine error: ' + (e && e.message) }; }
+      if (!r.ok) { s.stoppedAt = { index: i, total: all.length, error: r.error || 'rejected' }; break; }
+      s.recipe.actions.push(all[i]);
     }
+    if (doRepin) repin(s.recipe, s.recipe.actions.length);
     G.ui_events.length = 0;
     return s;
   }
+
+  /** What changed since this recipe was recorded: [{id, name, recorded, current}] (mods/pins.js pinDiff). */
+  static pinDiff(recipe) { return pinDiff(recipe); }
 
   /** A step-by-step player for a finished run's recipe (the replay viewer). See ReplayStepper. */
   static stepper(recipe) { return new ReplayStepper(recipe); }
@@ -75,6 +95,19 @@ export class Session {
     return null;
   }
   static clearSaved() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ } }
+  /**
+   * Keep a copy of the saved run before it is abandoned or re-pinned (owner rule: never wipe a save
+   * without a backup). One slot: {recipe, reason, when}.
+   */
+  static backupSaved(reason) {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      localStorage.setItem(BACKUP_KEY, JSON.stringify({ recipe: JSON.parse(raw), reason: String(reason || ''), when: Date.now() }));
+      return true;
+    } catch (e) { return false; }
+  }
+  static savedBackup() { try { return JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null'); } catch (e) { return null; } }
 }
 
 // ------------------------------------------------------------------ replays

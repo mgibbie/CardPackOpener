@@ -482,6 +482,10 @@ export const POKERMON = registerMod({
   name: 'Pokermon',
   prefix: 'poke',
   version: '3.2.1',
+  // Our behaviour counter (mods/pins.js): bump it with every change to how Pokermon plays — saved runs and replays
+  // recorded on the old rules then warn before they re-simulate. 1 = the 2026-10-18/19 house rules (Deino /
+  // Zweilous "contains", Energy + Transformation targeting, Nuzlocke / Monotype).
+  contentRev: 1,
   by: 'InertSteak & contributors (rebuilt for Micatro)',
   badge_colour: '#ED533A',
   description: 'Pokémon jokers that evolve, Energy and Item cards, Tera types, Megas and shinies.',
