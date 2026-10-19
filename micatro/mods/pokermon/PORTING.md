@@ -91,6 +91,15 @@ defineJokers({
 | `if pokermon_config.detailed_tooltips then` | `if (detailed())` |
 | `G.jokers.highlighted` (items/energy "selected joker") | same — set by the `use` action's `joker_targets` |
 | `G.scry_view` | `G.scry_view` (cards = the real top-of-deck cards; see systems/scry.js) |
+| `SMODS.scale_card(card, {ref_value, scalar_value, operation, message_key, message_colour, ...})` | `scale_card(card, {...})` -> `[new value, change]` (Lua's first return is `[0]`); `G.C.MULT` -> `'MULT'` |
+| `SMODS.reset_card(card, {ref_value, reset_value, ...})` | `reset_card(card, {...})` |
+| `SMODS.poll_object{type, attributes, union, rarity, filter, key_append, ...}` | `poll_object({...})` (same args; returns the key) |
+| `SMODS.add_card{set = 'Joker', attributes = {'stage_basic'}, rarity = false}` | `add_card({...})` / `smods_create_card({...})` (`attributes` + no key -> `poll_object`) |
+| `SMODS.get_attribute_pool(a)`, `SMODS.has_attribute(obj, a)`, `card:has_attribute(a)`, `SMODS.add_attribute` | `get_attribute_pool(a)`, `has_attribute(center, a)`, `card_has_attribute(card, a)`, `add_attribute` |
+| `attributes = {"mult", "round_evo"}` on a joker | the same field (an array) on the definition / data item; `<type>_type`, `stage_<stage>`, `pokemon` are added for you |
+| set `'poke_energy'` / `'poke_item'` (3.9.1 names) | either name works: `create_card('poke_item', ...)`, `P_CENTER_POOLS.poke_item`; compare sets with `is_set(card, 'poke_item')`, not `===` |
+| the globals `mult` / `hand_chips` in a `context.modify_hand` handler | `context.mult` / `context.hand_chips` (read back after the handlers) |
+| `SMODS.calculate_effect(effect, card)` | `calculate_effect(effect, card)` |
 
 ### Contexts
 
@@ -112,10 +121,40 @@ Micatro fires the vanilla contexts plus these Steamodded ones (mod cards only wh
 | `hand_drawn`* (array of drawn cards) | after each draw while facing a blind | `poke_draw_one()` re-fires it |
 | `poke_evolved`* (+`card`, `from`, `to`) | after a non-mega evolution | for add-ons (Nacho) |
 
+**Steamodded contexts added for 3.9.1** (batch 4, `js/engine/smods.js`). They reach only mods that opt in with
+`registerMod({smods_seams: true})` — Pokermon does — and only the objects whose `calculate` reads them
+(`context.<name>`; or list them in `smods_contexts: [...]` / `'*'` on the definition, e.g. for a helper that reads
+the context). Answers merge like Steamodded's flags (last one wins) and feed the next listener's context.
+
+| context | when | answer |
+|---|---|---|
+| `setting_ability` (+`old`, `new` center keys, `other_card`, `unchanged`) | a card's set_ability (not initial; not in the shop / a booster unless a consumable is being used) | — |
+| `money_altered` (+`amount`, `initial`, `from_shop`, `from_consumeable`, `from_scoring`, `from_cashout`) | every ease_dollars | — |
+| `modify_ante` (= the step, +`ante_end`) then `ante_change` (= the step, +`ante_end`) | every ease_ante; `ante_end` when the boss was beaten | `{modify = n}` changes the step |
+| `drawing_cards` (+`amount`) | before a draw to hand (after The Serpent) | `{cards_to_draw = n}` / `{modify = n}` |
+| `debuff_card` (= the card; `ignore_debuff`) | Blind:debuff_card | `{debuff = true}` / `{prevent_debuff = true}` |
+| `debuff_hand` (+`full_hand`, `scoring_hand`, `poker_hands`, `scoring_name`, `check`) | Blind:debuff_hand, after the blind | `{debuff = true, debuff_text}` / `{prevent_debuff = true}` |
+| `modify_scoring_hand` (+`other_card`, `full_hand`, `scoring_hand`, `in_scoring`) | per played card, before scoring (and in debuff_hand) | `{add_to_hand = true}` / `{remove_from_hand = true}` |
+| `stay_flipped` (+`to_area`, `from_area`, `other_card`) | every draw_card (Blind:stay_flipped) | `{stay_flipped}` / `{prevent_stay_flipped}` / `{modify = {to_area}}` (the card goes there instead) |
+| `modify_hand` (+`poker_hands`, `scoring_name`, `scoring_hand`, `full_hand`, `mult`, `hand_chips`) | after the blind's modify_hand | change `context.mult` / `context.hand_chips` |
+| `modify_booster_card` (+`booster`, `card`, `index`) / `create_booster_card` (+`booster`, `index`) | each card of an opened pack | create: `{booster_create_flags = {set, key, ...}}` |
+| `ending_booster` (+`booster` = the pack's center) | a pack closes (picked out or skipped) | — |
+| `modify_final_cashout` (+`amount`) | the cash-out total | `{modify = n}`: +n, on its own row |
+| `poker_hand_changed` (+`card` = the source, `scoring_name`, `old_level`/`new_level`, `old_parameters`/`new_parameters`) | every level_up_hand | `{level_up = true, level_up_hand}` |
+| `playing_card_end_of_round` (a flag on the held-card end_of_round pass) | end of round, held cards' mod enhancement / seal | — |
+| `scaling_card` / `resetting_card` (the scale_card / reset_card args) | SMODS.scale_card / reset_card | `{override_value}`, `{override_scalar}`, `{override_message}`, `{post}` |
+| `modify_weights` (+`pool`, `pool_types`, `args`) | every SMODS.poll_object | set `context.pool[key].weight` (0 = never) |
+| `create_shop_card` / `modify_shop_card` | the object_weights shop roll | `{shop_create_flags = {...}}` |
+
+**Blind:calculate**: a mod blind's `calculate(self, blind, context)` (SMODS.Blind) runs for setting_blind,
+first_hand_drawn, press_play (and every `calculate_context` context), before, pre_discard, end_of_round (main) and the
+contexts above — even while disabled, like Steamodded (the blind checks `blind.disabled`). Not yet for the per-card
+scoring contexts (individual / repetition): add them when a blind needs them.
+
 Not available yet (add a **generic** engine seam + registry HOOKS entry when a joker needs one, and
 list it in your report): `mod_probability` /
 `fix_probability`, `main_scoring`, `final_scoring_step` for jokers, `post_trigger`,
-`other_consumeable`, `round_eval`, `setting_ability`, `other_drawn` outside poke_draw_one,
+`other_consumeable`, `round_eval`, `other_drawn` outside poke_draw_one,
 `poke_load` (resume is a replay — no load hook needed), sprite/UI functions (`set_sprites`, `generate_ui`, `draw`: UI's job;
 expose data through `systems/anim.js` instead).
 
@@ -214,6 +253,50 @@ stickers and the shiny edition. One test file per source file in `micatro/tests/
 
 Not yet: challenges, sleeves, deck skins (plan step 8), and `emergy` (Cryptid-only in the Lua).
 Intended-design fixes are noted in comments at each site (search "intended").
+
+## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
+
+Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). Ours is 3.2.1 (really commit
+87fb499, 2025-11-01), pinned `3.2.1+r1` (Plans/MICATRO_MODS_PLAN.md §9).
+
+| batch | what | status |
+|---|---|---|
+| 0 | mod-version pin + key aliases | done (merged) |
+| 1 | placeholder art from 3.9.1 sheets | done (see Art) |
+| **4** | **engine seams** (below) | **done 2026-10-19** — no behaviour change, `contentRev` stays 1 |
+| 5 | data re-extract (rarities, costs, configs, gates, `attributes`, cgoose -> iridescent_hacker), 39 changed + 21 new atlases | next |
+| 6–17 | reworks, Hazard/Seed, new jokers, Megas, blinds/stake/challenges | after 5 |
+
+### Steamodded seams for 3.9.1 (batch 4)
+Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
+blind.js / consumables.js; registry: `ATTRIBUTES`, `SET_ALIASES` / `resolve_set` / `is_set`, `registryVersion`.
+Pokermon: `smods_seams: true`, `set_aliases`, `attributes` (systems/attributes.js), api.js exports. Tests:
+`micatro/tests/mods/smods_seams_test.mjs` (synthetic mods fire each seam through the real engine flow).
+
+- **SMODS.scale_card / reset_card** (smods src/utils.lua): the scaling_card / resetting_card contexts, the operation
+  (`+` / `X` / `-` / a function), the message (default "Upgrade!" / "Reset"), `post` effects. 116 calls in 3.9.1.
+- **Attributes** (src/game_objects/attributes.lua; Pokermon functions/pokeconstants.lua + apifunctions.lua):
+  Steamodded's 80 built-in attributes are vendored (`js/engine/smods_attributes.js`, generated by
+  `tools/micatro/gen_smods_attributes.cjs`); mods add theirs with `content.attributes`; objects declare theirs with
+  `attributes: [...]`. Every Pokémon center now carries `<type>_type`, `stage_<stage>`, `pokemon` (load_pokemon).
+  Pools hold this run's objects only. 3.9.1's `chance_mod` (on one joker) is registered nowhere upstream either: ignored.
+- **SMODS.poll_object** (src/utils/weights.lua): pools by type / attributes (intersection, or `union`) / an explicit
+  pool, rarity poll for attribute pools, `filter`, object weights (`weight`, `get_weight(self, w, args)`, boosters
+  x10, the vanilla editions' Steamodded weights), `modify_weights`, the base-rate chance (Seal 2%, Edition 4%, Enhanced
+  40%). One deviation: a pool whose every entry is UNAVAILABLE returns undefined after 1000 tries (Lua spins forever).
+- **object_weights optional feature** (lovely/weights.toml + overrides): with an active mod's
+  `optional_features: {object_weights: true}`, create_card's key, poll_edition, get_next_tag_key, get_pack,
+  get_new_boss, get_next_voucher_key and the shop roll (`SMODS.create_shop_card` + `poll_object_type`) go through
+  poll_object. **Pokermon 3.9.1 turns this on** (pokermon.lua line 9): doing so is a behaviour change for every
+  Pokermon run (bump `contentRev`), so it is NOT on yet. `poll_seal_weighted` / `poll_enhancement_weighted` are the
+  object_weights SMODS.poll_seal / poll_enhancement (our local copies in mart2.js / zberryjuice.js / pokejokers_03.js
+  are the pre-weights ones).
+- **New contexts** (src/overrides.lua, lovely/better_calc.toml, booster.toml, blind.toml, utils.lua): the table under
+  Contexts above, plus Blind:calculate.
+- **Set aliases** `poke_energy` -> `Energy`, `poke_item` -> `Item`: the old names stay canonical (no change to
+  rate keys `energy_rate` / `item_rate`, loc sets, views or saves); 3.9.1 code and data using the new names work.
+- Already there before batch 4: quantum enhancements (`check_enhancement`, Onix line), `joker_type_destroyed`,
+  `press_play` for jokers, `SMODS.debuff_card`.
 
 ## Add-on extension points (for Pokermon add-ons: Nacho's Pokermon Dip, Pokermon+)
 

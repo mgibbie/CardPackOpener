@@ -15,7 +15,9 @@
 
 import DATA from '../../data/balatro_data.js';
 import * as B from './bignum.js';
-import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits, RARITIES } from '../mods/registry.js';
+import { callHook, reduceHook, firstHook, activeConsumableTypes, CONSUMABLE_TYPES, MOD_LOC, ACTIVE as ACTIVE_MODS, centerActive, activeModEditions, MOD_SUITS, activeModSuits, RARITIES, resolve_set, SET_ALIASES } from '../mods/registry.js';
+// (Steamodded seams for Pokermon 3.9.1 — opt-in contexts and the object_weights routes; all no-ops unless a mod uses them)
+import { wanted, calculate_seam, object_weights, poll_object, SEAM_STATE } from './smods.js';
 
 export const G = {};
 
@@ -418,10 +420,11 @@ export class CardArea {
     if (this.cards.length < this.config.card_limit || this === G.deck || this === G.hand) {
       const card = area.remove_card(undefined, discarded_only);
       if (card) {
-        let sf = G.GAME && G.GAME.blind && G.GAME.blind.stay_flipped(this, card);
+        let sf = G.GAME && G.GAME.blind && G.GAME.blind.stay_flipped(this, card, area);
         if (this === G.hand && G.GAME.modifiers.flipped_cards) {
           if (pseudorandom(pseudoseed('flipped_card')) < 1 / G.GAME.modifiers.flipped_cards) sf = true;
         }
+        if (SEAM_STATE.to_area) { const dest = SEAM_STATE.to_area; SEAM_STATE.to_area = undefined; dest.emplace(card, undefined, sf); return true; } // (SMODS.to_area)
         this.emplace(card, undefined, sf);
         if (this === G.hand && area === G.deck && G.drawn_cards) G.drawn_cards.push(card); // SMODS.drawn_cards
         if (ACTIVE_MODS.length && this === G.hand && area === G.deck) callHook('drawn_to_hand', card); // (custom decks: rank up on draw)
@@ -548,6 +551,10 @@ export class Card {
     if (was_added_to_deck && !this.debuff) this.add_to_deck();
     if (!initial && G.GAME.blind) G.GAME.blind.debuff_card(this);
     if (!initial) emit('card_changed', { card: this.sort_id });
+    // Steamodded's setting_ability context (not in a booster or the shop unless a consumable is being used).
+    if (!initial && old_center && smods && wanted('setting_ability') && (!SEAM_STATE.in_pack_or_shop() || G.TAROT_INTERRUPT)) {
+      calculate_seam({ setting_ability: true, old: old_center.key, new: this.config.center_key, other_card: this, unchanged: old_center.key === this.config.center.key }, 'setting_ability');
+    }
   }
 
   set_cost() {
@@ -1010,9 +1017,18 @@ export function find_joker(name, non_debuff) {
 export function ease_dollars(mod, instant) {
   // Mods may change the amount (BETMMA's Gold Round Up) and react to it (Piggy Bank), like Lua wraps.
   const orig = mod;
+  const initial = G.GAME.dollars;
   if (ACTIVE_MODS.length) mod = reduceHook('ease_dollars', mod, instant);
   queue_ease_dollars(mod, instant);
   if (ACTIVE_MODS.length) callHook('dollars_eased', orig, instant);
+  // Steamodded's money_altered context (fired at the call, like SMODS's ease_dollars wrap; the change may still be queued)
+  if (ACTIVE_MODS.length && wanted('money_altered')) {
+    calculate_seam({
+      money_altered: true, amount: mod, initial,
+      from_shop: SEAM_STATE.in_pack_or_shop() || undefined, from_consumeable: SEAM_STATE.is('PLAY_TAROT') || undefined,
+      from_scoring: SEAM_STATE.is('HAND_PLAYED') || undefined, from_cashout: SEAM_STATE.money_from_cashout || undefined,
+    }, 'money_altered');
+  }
 }
 function queue_ease_dollars(mod, instant) {
   const _mod = () => {
@@ -1049,6 +1065,11 @@ export function ease_hands_played(mod, instant) {
   if (instant) _mod(); else G.E_MANAGER.add_event(_mod);
 }
 export function ease_ante(mod) {
+  // Steamodded's modify_ante (a listener may return {modify = n}) and ante_change contexts; ante_end = the boss was beaten
+  if (ACTIVE_MODS.length && wanted('modify_ante')) {
+    const f = calculate_seam({ modify_ante: mod, ante_end: SEAM_STATE.ante_end }, 'modify_ante');
+    if (f.modify !== undefined && f.modify !== null && f.modify !== false) mod = f.modify;
+  }
   // (a Lua ease_ante wrap that changes the step: MoreFluff's Superboss freezes the ante, Final Stake holds it)
   if (ACTIVE_MODS.length) mod = reduceHook('ease_ante_mod', mod);
   if (ACTIVE_MODS.length) callHook('ease_ante', mod);
@@ -1057,6 +1078,7 @@ export function ease_ante(mod) {
     G.GAME.stats.furthest_ante = Math.max(G.GAME.stats.furthest_ante || 0, G.GAME.round_resets.ante);
     emit('ante', { mod, total: G.GAME.round_resets.ante });
   });
+  if (ACTIVE_MODS.length && wanted('ante_change')) calculate_seam({ ante_change: mod, ante_end: SEAM_STATE.ante_end }, 'ante_change');
 }
 export function ease_round(mod) {
   G.E_MANAGER.add_event(() => {
@@ -1087,10 +1109,11 @@ export function draw_card(from, to, percent, dir, sort, card, _delay, mute, stay
     if (card) {
       if (from) card = from.remove_card(card);
       if (card) {
-        let sf = G.GAME && G.GAME.blind && G.GAME.blind.stay_flipped(to, card);
+        let sf = G.GAME && G.GAME.blind && G.GAME.blind.stay_flipped(to, card, from);
         if (G.GAME.modifiers.flipped_cards && to === G.hand) {
           if (pseudorandom(pseudoseed('flipped_card')) < 1 / G.GAME.modifiers.flipped_cards) sf = true;
         }
+        if (SEAM_STATE.to_area) { to = SEAM_STATE.to_area; SEAM_STATE.to_area = undefined; } // (SMODS.to_area)
         to.emplace(card, undefined, sf);
         if (to === G.hand && from === G.deck && G.drawn_cards) G.drawn_cards.push(card); // SMODS.drawn_cards
       }
@@ -1105,11 +1128,19 @@ export function level_up_hand(card, hand, instant, amount) {
   amount = amount === undefined ? 1 : amount;
   if (callHook('level_up_hand', card, hand, amount).includes(false)) return;
   const h = G.GAME.hands[hand];
+  const old = { level: h.level, chips: h.chips, mult: h.mult };
   h.level = Math.max(0, h.level + amount);
   h.mult = Math.max(h.s_mult + h.l_mult * (h.level - 1), 1);
   h.chips = Math.max(h.s_chips + h.l_chips * (h.level - 1), 0);
   emit('level_up', { hand, level: h.level, chips: h.chips, mult: h.mult, card: card && card.sort_id, instant: !!instant });
   if (ACTIVE_MODS.length) callHook('hand_leveled', card, hand, amount);
+  // Steamodded's poker_hand_changed context (SMODS.upgrade_poker_hands, which level_up_hand runs through)
+  if (ACTIVE_MODS.length && wanted('poker_hand_changed')) {
+    calculate_seam({
+      card, poker_hand_changed: true, scoring_name: hand, old_level: old.level, new_level: h.level,
+      old_parameters: { chips: old.chips, mult: old.mult }, new_parameters: { chips: h.chips, mult: h.mult },
+    }, 'poker_hand_changed');
+  }
 }
 
 /**
@@ -1294,7 +1325,11 @@ export function has_quantum_enhancement(card, key) {
 export function enhancement_pool() {
   return (P_CENTER_POOLS.Enhanced || []).filter((v) => !(v.in_pool && !v.in_pool(v, { type: 'Enhanced' })));
 }
+/** SMODS.poll_object_allow_duplicates (only poll_object's Booster pools set it): pools ignore used_jokers. */
+let poll_allow_dup = false;
+export function set_poll_allow_duplicates(v) { poll_allow_dup = !!v; }
 export function get_current_pool(_type, _rarity, _legendary, _append) {
+  if (SET_ALIASES[_type]) _type = resolve_set(_type); // (Pokermon 3.9.1's poke_energy / poke_item)
   const _pool = [];
   let _starting_pool, _pool_key = '', _pool_size = 0;
   if (_type === 'Joker') {
@@ -1323,10 +1358,12 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     _pool_key = _type + (_append || '');
   }
   // (a custom deck may allow duplicates: Deck Creator's allow_duplicate_jokers)
-  const showman = find_joker('Showman').length > 0 || (ACTIVE_MODS.length > 0 && callHook('pool_duplicates', _type).includes(true));
+  const showman = poll_allow_dup || find_joker('Showman').length > 0 || (ACTIVE_MODS.length > 0 && callHook('pool_duplicates', _type).includes(true));
   for (const v of _starting_pool) {
     let add = false;
     if (_type === 'Enhanced') add = true;
+    // (SMODS: the Edition pool — only SMODS.poll_object asks for it — holds the shop editions)
+    else if (_type === 'Edition') add = !!(v.mod ? v.in_shop : ['e_foil', 'e_holo', 'e_polychrome', 'e_negative'].includes(v.key));
     else if (_type === 'Demo') add = !!(v.pos && v.config);
     else if (_type === 'Tag') {
       if ((!v.requires || (P_CENTERS[v.requires] && P_CENTERS[v.requires].discovered)) && (!v.min_ante || v.min_ante <= G.GAME.round_resets.ante)) add = true;
@@ -1364,6 +1401,7 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
     else if (_type === 'Spectral') _pool.push('c_incantation');
     else if (_type === 'Voucher') _pool.push('v_blank');
     else if (_type === 'Tag') _pool.push('tag_handy');
+    else if (_type === 'Edition') _pool.push('e_foil');
     else if (CONSUMABLE_TYPES[_type] && CONSUMABLE_TYPES[_type].default) _pool.push(CONSUMABLE_TYPES[_type].default);
     else _pool.push(reduceHook('empty_pool_default', 'j_joker', _type));
   }
@@ -1407,6 +1445,12 @@ export function edition_key_of(edition) {
 export function poll_edition(_key, _mod, _no_neg, _guaranteed) {
   // A mod may replace the whole poll (Milatro's Rigged Wheel): an edition table, or null for none.
   if (ACTIVE_MODS.length) { const h = firstHook('poll_edition', _key, _mod, _no_neg, _guaranteed); if (h !== undefined) return h; }
+  // Steamodded object_weights: the edition is SMODS.poll_object's (its key -> the edition table)
+  if (object_weights()) {
+    const _options = (_key === 'wheel_of_fortune' || _key === 'aura') ? ['e_negative', 'e_polychrome', 'e_holo', 'e_foil'] : undefined;
+    const k = poll_object({ type: 'Edition', seed: _key, guaranteed: _guaranteed, pool: _options, no_negative: _no_neg, mod: _mod });
+    return k && k !== 'e_base' ? { [k.slice(2)]: true } : null;
+  }
   // Steamodded's weighted poll_edition, used only when an active mod adds a shop edition
   // (so vanilla runs keep the exact vanilla thresholds). Vanilla weights: foil 20, holo 14,
   // polychrome 3, negative 3; non-guaranteed polls pad the total so 96% stay editionless.
@@ -1458,6 +1502,7 @@ function poll_edition_weighted(_key, _mod, _no_neg, _guaranteed, modEds) {
 
 export function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append) {
   area = area || G.jokers;
+  if (SET_ALIASES[_type]) _type = resolve_set(_type); // (Pokermon 3.9.1's poke_energy / poke_item)
   // A mod may change what is made before anything rolls (AutumnCircus' Collector's Deck: every consumable is an Oddity).
   if (ACTIVE_MODS.length) { const o = firstHook('create_card_type', _type, forced_key, area, key_append); if (o) { _type = o[0]; forced_key = o[1]; } }
   let center = P_CENTERS.b_red;
@@ -1486,6 +1531,8 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     }
   }
   if (_type === 'Base') forced_key = 'c_base';
+  // Steamodded object_weights: the key comes from SMODS.poll_object (weighted, modify_weights)
+  if (!forced_key && object_weights()) forced_key = poll_object({ type: _type, guaranteed: true, rarities: legendary ? ['Legendary'] : (_rarity !== undefined && _rarity !== null && _rarity !== false) ? [_rarity] : undefined, append: key_append });
   if (forced_key && !G.GAME.banned_keys[forced_key]) {
     center = P_CENTERS[forced_key];
     _type = center.set !== 'Default' ? center.set : _type;
@@ -1498,7 +1545,7 @@ export function create_card(_type, area, legendary, _rarity, skip_materialize, s
     while (c === 'UNAVAILABLE') { it++; [c] = pseudorandom_element(_pool, pseudoseed(_pool_key + '_resample' + it)); }
     center = P_CENTERS[c];
   }
-  const front = (_type === 'Base' || _type === 'Enhanced') ? pseudorandom_element(P_CARDS_LIST(), pseudoseed('front' + (key_append || '') + G.GAME.round_resets.ante))[0] : undefined;
+  const front = (_type === 'Base' || _type === 'Enhanced') ? (SEAM_STATE.create_front || pseudorandom_element(P_CARDS_LIST(), pseudoseed('front' + (key_append || '') + G.GAME.round_resets.ante))[0]) : undefined;
   const card = new Card(front, center, { discover: area === G.jokers || area === G.consumeables });
   if (_type === 'Joker') {
     // (Bunco: a joker with one of its stickers never gets Eternal here — block_eternal)
@@ -1629,6 +1676,11 @@ export function get_new_boss() {
     return b;
   }
   if (G.FORCE_BOSS) return G.FORCE_BOSS;
+  if (object_weights()) { // (Steamodded object_weights: SMODS.poll_object over SMODS.create_blind_pool)
+    const b = poll_object({ type: 'Blind', blind_type: 'boss', seed: 'boss' });
+    G.GAME.bosses_used[b] = (G.GAME.bosses_used[b] || 0) + 1;
+    return b;
+  }
   const eligible = {};
   const a1 = Math.max(1, ante);
   for (const [k, v] of Object.entries(P_BLINDS)) {
@@ -1654,6 +1706,7 @@ export function get_new_boss() {
 export function get_next_voucher_key(_from_tag) {
   // A mod may pick the voucher itself (BETMMA: voucher rarity + weighted fusions, voucher packs' pools).
   if (ACTIVE_MODS.length) { const k = firstHook('next_voucher_key', _from_tag); if (k !== undefined) return k; }
+  if (object_weights()) return poll_object({ type: 'Voucher' });
   let [_pool, _pool_key] = get_current_pool('Voucher');
   if (_from_tag) _pool_key = 'Voucher_fromtag';
   let [center] = pseudorandom_element(_pool, pseudoseed(_pool_key));
@@ -1663,6 +1716,7 @@ export function get_next_voucher_key(_from_tag) {
 }
 export function get_next_tag_key(append) {
   if (G.FORCE_TAG) return G.FORCE_TAG;
+  if (object_weights()) return poll_object({ type: 'Tag', append });
   const [_pool, _pool_key] = get_current_pool('Tag', null, null, append);
   let [tag] = pseudorandom_element(_pool, pseudoseed(_pool_key));
   let it = 1;
@@ -1673,6 +1727,19 @@ export function get_pack(_key, _type) {
   if (!G.GAME.first_shop_buffoon && !G.GAME.banned_keys.p_buffoon_normal_1) {
     G.GAME.first_shop_buffoon = true;
     return P_CENTERS['p_buffoon_normal_' + math_random(1, 2)];
+  }
+  if (object_weights()) { // (Steamodded object_weights: SMODS.poll_object over the Booster pool, `kind` filtered)
+    const k = poll_object({
+      type: 'Booster', seed: (_key || 'pack_generic') + G.GAME.round_resets.ante,
+      filter: _type ? (pool) => {
+        let all_unavailable = true;
+        for (const v of pool) { if (!P_CENTERS[v.key] || P_CENTERS[v.key].kind !== _type) v.key = 'UNAVAILABLE'; else all_unavailable = false; }
+        if (all_unavailable) pool.push({ key: 'p_buffoon_normal_1', type: 'Booster' });
+        return pool;
+      } : undefined,
+    });
+    const pc = P_CENTERS[k];
+    return ACTIVE_MODS.length ? reduceHook('get_pack', pc, _key, _type) : pc;
   }
   let cume = 0, it = 0, center;
   // Lua `v.weight or 1` (a weight of 0 stays 0); mod packs may also refuse via in_pool.

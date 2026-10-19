@@ -17,7 +17,15 @@ export {
   draw_from_deck_to_hand, end_consumeable, STATES,
 } from '../../js/engine/run.js';
 export { change_voucher_limit } from '../../js/engine/run.js';
-export { opt } from '../../js/mods/registry.js';
+export { opt, is_set, resolve_set, feature } from '../../js/mods/registry.js';
+// Steamodded APIs Pokermon 3.9.1 uses (engine seams, js/engine/smods.js): SMODS.scale_card / reset_card, SMODS.poll_object,
+// attributes, SMODS.calculate_effect, and the object_weights polls.
+export {
+  scale_card, reset_card, additive_scaling, multiplicative_scaling, poll_object, poll_object_type, get_attribute_pool,
+  has_attribute, card_has_attribute, add_attribute, calculate_effect, merge_defaults, merge_lists, intersect_lists,
+  poll_seal_weighted, poll_enhancement_weighted, object_weights, calculate_seam,
+} from '../../js/engine/smods.js';
+export { pokemon_attributes } from './systems/attributes.js';
 
 export * from './defs.js';
 export * from './systems/utils.js';
