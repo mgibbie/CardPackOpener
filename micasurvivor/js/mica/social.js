@@ -102,7 +102,8 @@ G.Social = (() => {
       if (!name) continue;
       const st = String(f.status || '');
       next.set(name, { uid: name, name, status: 'ok', online: !!f.online, play: !!f.online && st === 'micasurvivor:run',
-                       here: !!f.online && st.startsWith('micasurvivor'), seen: 0 });
+                       here: !!f.online && st.startsWith('micasurvivor'), seen: 0,
+                       where: st === 'micasurvivor:run' && f.region && f.region !== 'MicaSurvivor' ? String(f.region).slice(0, 48) : '' });   // (M5 lote 12c: what their run is, for "Live now")
     }
     friends = next;
     emit('friends'); emit('presence');

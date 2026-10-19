@@ -152,6 +152,10 @@ each with tests and the matching controller action wired into js/core/pad.js onc
         affecting it (like Micatro's friend spectating).
       - Replays: a finished run is saved and shared as a full replay link, recorded as a snapshot
         stream (the game is real-time, so it can't re-simulate like Micatro), with size caps.
+      *(built 2026-10-19, branch `feat/micasurvivor-m5-b12c`; README → "Batch 12c: Spectating and replays". Live:
+      friends only, a snapshot a second only while someone watches (an unwatched run writes ~0.2 rows a minute: its
+      "in a run" beacon), `live-friends` kind `micasurvivor`, Watch on `/micasurvivor/?watch=<user>`. Replays: a
+      delta-encoded snapshot every 0.5 s of run time, shared as `/msr/<id>` (public, 30 days, 10 per player, ≤ 1.2 MB; a busy 30-min run packs to 679 KB))*
 13. ~~**9 more languages** (Godot %s -> {x} converter; CJK fonts).~~
    *(dropped by the owner, 2026-10-18: MicaSurvivor stays English and Spanish only)*
 Not ported: Android-only parts (APK updater, notch insets beyond CSS env(), save codes, keep-awake).

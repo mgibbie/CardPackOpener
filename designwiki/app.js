@@ -2527,6 +2527,8 @@ async function micasurvivorView() {
     ...(D.modes ? [msModesSection(D.modes)] : []),
     // MicaSurvivor M5 batch 12b: online co-op with friends (micasurvivor/js/net/coop.js, js/mica/social.js, js/mica/online.js)
     ...(D.online ? [msOnlineSection(D.online)] : []),
+    // MicaSurvivor M5 batch 12c: watching a friend live and run replays (micasurvivor/js/mica/spectate.js, js/mica/replay.js, js/ui/watch-ui.js)
+    ...(D.spectate ? [msSpectateSection(D.spectate)] : []),
     // MicaSurvivor M5 batch 9: adaptive difficulty, biome spawns, support caps (micasurvivor/js/systems/adaptive.js, js/data/enemies.js)
     ...(D.difficulty ? [msDifficultySection(D.difficulty)] : []),
     // MicaSurvivor M5 batch 10: the minimap, the field of view and the UI scale (micasurvivor/js/core/display.js, js/ui/minimap.js)
@@ -2540,7 +2542,9 @@ async function micasurvivorView() {
         h('li', null, h('b', null, 'Your account: '), 'logged into Magepunk, you play as your Magepunk user and your progress (collection, coins, upgrades, records) is saved to your account — on any device. Guests keep a save in their browser; the first time a guest logs in, the game offers once to bring that progress into the account.'),
         h('li', null, h('b', null, 'Leaderboard: '), 'the menu’s Leaderboard ranks logged-in players by their ', h('b', null, 'best survival time'), ' in a solo run (ties: more foes defeated), with their level and partner. Runs under 2 minutes don’t count (nor do group runs).'),
         // MicaSurvivor M5 batch 12b: online co-op with friends
-        h('li', null, h('b', null, 'Friends: '), 'with your Magepunk account, play online with up to 3 of your Magepunk friends (see Online co-op below). Guests are asked to sign in.'))),
+        h('li', null, h('b', null, 'Friends: '), 'with your Magepunk account, play online with up to 3 of your Magepunk friends (see Online co-op below). Guests are asked to sign in.'),
+        // MicaSurvivor M5 batch 12c: watching a friend live, run replays
+        h('li', null, h('b', null, 'Watching: '), 'a friend in a run shows as live (“Watch”) in MicaSurvivor’s Friends screen, the Battlecards “Live now” hub, the site’s top bar and the overworld friends menu; it opens ', h('code', null, '/micasurvivor/?watch=<username>'), '. A shared replay opens from its link for anyone, account or not (see Watching and replays below).'))),
     mcSection('Controls', 'Keyboard, mouse, touch and controller all work.',
       h('h3', { class: 'mc-h3' }, 'Keyboard'),
       msTable(['Key', 'Action'], [
@@ -2648,6 +2652,23 @@ function msOnlineSection(O) {
     h('p', null, 'Browsers connect directly to the host (WebRTC, like a video call: players can see each other’s IP address), negotiated through the Magepunk server and public STUN only. When two browsers can’t connect directly (some routers and mobile data), the pair falls back to a relay through the Magepunk server (“' + viaServer + '”): ' + O.rateRelay + ' update' + (O.rateRelay === 1 ? '' : 's') + ' a second instead of ' + O.rateDirect + ', so it is choppier (partners and enemies glide between updates). The relay is capped: one write every ' + O.relay.min + ' ms per player at most, ' + kb(O.relay.msg) + ' per message, ' + O.relay.window + ' unacknowledged messages and ' + kb(O.relay.row) + ' per player, and a player silent for ' + O.relay.stale + ' s is gone.'),
     // MicaSurvivor M5 batch 12b (owner, 2026-10-18: "slow relay + time cap")
     h('p', null, 'Each host gets ' + O.relay.daily + ' relay minutes per day (UTC), across all their lobbies: a minute counts once when anyone in the lobby used the relay during it. The lobby warns ahead while a pair is on the relay (“' + leftEg + '”). When they run out: “' + usedUp + '” A relayed guest’s run ends with its rewards saved and the host carries on; pairs connected directly are not affected.'));
+}
+// MicaSurvivor M5 batch 12c: watching a friend live and shareable run replays; the numbers come from
+// js/mica/spectate.js, js/mica/replay.js and server/mp.mjs (MSURV_* / SPEC_*)
+function msSpectateSection(S) {
+  const R = S.replay, kb = n => Math.round(n / 1000) + ' KB';
+  const [watching, live, leave, liveNow, share, watchReplay, copied, choosing, again] = S.strings;
+  return mcSection('Watching and replays', 'Watch a friend’s run as it happens, and share a whole run as a replay anyone can open. Read-only: nothing a viewer presses reaches the run.',
+    msTable(['', 'How it works'], [
+      [h('b', null, 'Watch a friend'), 'Friends only, both ways (checked by the server). A friend in a run is listed under “' + liveNow + '” in MicaSurvivor’s Friends screen (and as live on the rest of Magepunk); “Watch” opens their run on your screen: “' + watching + ' … ' + live + '”, with “' + leave + '” (or Esc) back to the menu.'],
+      [h('b', null, 'What you see'), 'The game’s own view of their run: their Pokémon (position, facing, animation, HP, level and XP, moves, held items), the foes within ' + S.near + ' px (bosses within ' + S.bossNear + ', up to ' + S.maxEnemies + '), the pickups, the clock, biome, rift arena and mode, the HUD and minimap, their co-op partners (online or the local one, with its HP), their Z-move / Dynamax state, and when they are choosing (“' + choosing + '”). Their attacks are drawn as harmless copies.'],
+      [h('b', null, 'Smoothness'), 'A snapshot comes about every ' + S.publish + ' s; everything glides between the last two, so the view runs about a second behind.'],
+      [h('b', null, 'Cost'), 'Nothing is sent while nobody watches: the player’s game only checks for watchers every ' + S.check + ' s, and the server keeps a small “in a run” note refreshed every ' + S.beacon + ' minutes (it lapses after ' + S.live + ' minutes without one). While someone watches, one snapshot (at most ' + kb(S.snapshot) + ') a second; each viewer checks in every ' + S.heartbeat + ' s and counts as watching for ' + S.window + ' s. Past ' + S.daily + ' watched minutes a day (UTC), one snapshot every ' + S.slow + ' s. At most ' + S.cap + ' viewers per run.'],
+      [h('b', null, 'Co-op groups'), 'Every member of an online group publishes their own view, so a group can be watched through any member; the live list names the group.'],
+      [h('b', null, 'Replays'), 'Every run is recorded as it goes (a snapshot every ' + R.every + ' s of run time, positions to ' + R.quantum + ' px, only what changed, plus the level-ups, cards picked, bosses, Z-moves, Dynamax and the faint), without changing the run. The last ' + R.local + ' runs are kept in your browser.'],
+      [h('b', null, 'Sharing'), 'The run summary’s “' + share + '” uploads it and copies a short link (/msr/<id>: “' + copied + '”); “' + watchReplay + '” plays it right there. If the upload fails it stays in your browser to retry (also from Friends → your recent runs). Up to ' + kb(R.max) + ' packed (gzip), ' + R.frames.toLocaleString('en') + ' frames; each player keeps their ' + R.perUser + ' latest shared replays, each for ' + R.days + ' days. Opening a link needs no account.'],
+      [h('b', null, 'The player'), 'Play / pause (Space), speed 1× · 2× · 4×, a seek bar with marks for bosses, Z-moves and Dynamax, and the run’s summary at the end (“' + again + '”).'],
+    ], 'ms-spectate'));
 }
 function msTableInline(rows) {
   return h('span', null, rows.filter(r => r.players > 1).map(r => r.players + ' players: foes appear ×' + r.spawn + ', enemy HP ×' + r.hp + ', experience ×' + r.xp).join(' · ') + ' (bosses also ×1.4 HP in a group).');

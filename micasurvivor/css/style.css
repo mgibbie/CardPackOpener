@@ -1131,3 +1131,55 @@ html.ui-scaled body.touch .scr button, html.ui-scaled body.touch .scr .chip, htm
   .tcard-cells b { font-size: 15px; }
   .lex-grid, .ach-grid, .title-list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 }
+
+/* ---------- MicaSurvivor (M5 batch 12c): watching a friend live / a replay ---------- */
+#watch-bar {
+  position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); z-index: 25;
+  display: flex; align-items: center; gap: 8px; max-width: min(460px, calc(100vw - 20px));
+  padding: 5px 6px 5px 10px; border-radius: 10px; background: rgba(8,14,32,.82); border: 2px solid rgba(244,248,255,.35);
+  font-size: 14px; text-shadow: 1px 1px 0 var(--shadow);
+}
+#watch-bar .wb-t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#watch-bar .wb-eye img { display: block; }
+#watch-bar .wb-live { background: var(--red); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 5px; letter-spacing: .5px; }
+#watch-bar .wb-n { color: var(--muted); font-size: 12px; white-space: nowrap; }
+#watch-bar .wb-n:empty { display: none; }
+#watch-bar .btn.small { padding: 3px 10px; font-size: 13px; flex: 0 0 auto; }
+#watch-ctrl {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 25;
+  display: flex; align-items: center; gap: 6px; width: min(760px, calc(100vw - 20px));
+  padding: 5px 10px; border-radius: 10px; background: rgba(8,14,32,.85); border: 2px solid rgba(244,248,255,.3);
+}
+#watch-ctrl .btn.small { padding: 3px 9px; font-size: 13px; min-width: 34px; flex: 0 0 auto; }
+#watch-ctrl .wc-sp.on { background: var(--gold); color: #1a1406; text-shadow: none; border-color: var(--gold); }
+#watch-ctrl .wc-seek { position: relative; flex: 1 1 auto; min-width: 80px; height: 22px; display: flex; align-items: center; }
+#watch-ctrl input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; margin: 0; position: relative; z-index: 1; background: transparent; height: 22px; cursor: pointer; }
+#watch-ctrl input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(244,248,255,.28); }
+#watch-ctrl input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(244,248,255,.28); }
+#watch-ctrl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -4px; border-radius: 4px; background: var(--gold); border: 2px solid #1a1406; }
+#watch-ctrl input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 4px; background: var(--gold); border: 2px solid #1a1406; }
+#watch-ctrl .wc-marks { position: absolute; left: 7px; right: 7px; top: 0; bottom: 0; pointer-events: none; }
+#watch-ctrl .wm { position: absolute; top: 2px; width: 2px; height: 6px; margin-left: -1px; border-radius: 1px; background: #ff5f6d; }
+#watch-ctrl .wm-bk { background: #ffd23f; }
+#watch-ctrl .wm-z, #watch-ctrl .wm-dx { background: #c47bff; top: auto; bottom: 2px; }
+#watch-ctrl .wc-time { font-size: 13px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; }
+#scr-watch-end .box { width: min(460px, 100%); }
+#scr-watch-end .stats b { font-size: 19px; }
+/* the run summary's "Share replay" */
+.over-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
+.over-share .field { flex: 1 1 100%; font-size: 13px; padding: 5px 8px; user-select: text; text-align: center; }
+.over-share .share-msg { flex: 1 1 100%; font-size: 12px; color: var(--muted); text-align: center; }
+.over-share .share-msg:empty { display: none; }
+/* the friends screen: live now + your recent replays */
+.fr-live, .fr-replays { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.fr-live:empty, .fr-replays:empty { display: none; }
+.fr-h { margin: 6px 0 2px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.fr-h.hidden { display: none; }
+.fr-row .live-badge { background: var(--red); color: #fff; font-size: 11px; padding: 0 5px; border-radius: 4px; }
+@media (max-height: 520px) {
+  #watch-bar { top: 6px; right: 6px; font-size: 12px; padding: 3px 4px 3px 8px; }
+  #watch-ctrl { bottom: 4px; padding: 3px 8px; }
+  #scr-watch-end .box { padding: 10px 14px; }
+  #scr-watch-end .stats { margin: 6px 0 8px; gap: 5px; }
+  #scr-watch-end .stats > div { padding: 4px 8px; }
+}

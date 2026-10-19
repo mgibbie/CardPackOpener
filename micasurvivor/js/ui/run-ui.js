@@ -172,6 +172,11 @@ G.RunUI = (() => {
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>
         <div class="caught-row" id="over-caught"></div></div>` : ''}
       ${r.record ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de tiempo!</div>' : ''}
+      ${r.replay ? `<div style="grid-column:1/-1" class="over-share" id="over-share-box">
+        <button class="btn small gold" type="button" id="over-share">${G.Icons.html('eye', 14)} Compartir repetición</button>
+        <button class="btn small ghost" type="button" id="over-watch">Ver repetición</button>
+        <input class="field hidden" id="over-link" readonly translate="no" aria-label="Enlace de la repetición">
+        <span class="share-msg" id="over-share-msg"></span></div>` : ''}
       ${askSupport(r) ? `<div class="support-ask" id="over-ask" style="grid-column:1/-1">
         <button class="x" type="button" aria-label="Cerrar">×</button>
         <p>¿Te está gustando PokéSurvivor? Lo hago yo solo y los servidores cuestan dinero. Si quieres, puedes ayudarme a mantenerlo en línea.</p>
@@ -180,6 +185,7 @@ G.RunUI = (() => {
     const ask = $('over-ask');
     if (ask) ask.querySelector('.x').onclick = () => ask.remove();
     $('btn-again').onclick = onBack;
+    if (r.replay) wireShare(r.replay, onBack);
     if (r.caught && r.caught.length) {
       const row = $('over-caught');
       for (const c of r.caught) {
@@ -190,6 +196,48 @@ G.RunUI = (() => {
       }
     }
     G.UI.show('scr-over');
+  }
+
+  /**
+   * MicaSurvivor (M5 lote 12c): "Compartir repetición" sube la repetición (js/mica/replay.js share) y copia el enlace;
+   * si falla, se queda guardada en este navegador y el botón pasa a "Reintentar". "Ver repetición" la reproduce aquí.
+   */
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; } catch (e) { /* the old way */ }
+    try { const el = $('over-link'); el.classList.remove('hidden'); el.value = t; el.select(); return document.execCommand('copy'); } catch (e) { return false; }
+  }
+  function wireShare(entry, onBack) {
+    const btn = $('over-share'), msg = $('over-share-msg'), link = $('over-link');
+    const ERR = { login: 'Inicia sesión en Magepunk para compartir repeticiones.', big: 'Esta repetición es demasiado grande para compartirla.',
+                  offline: 'Sin conexión. Se ha guardado en este navegador: inténtalo otra vez.', server: 'No se pudo subir. Se ha guardado en este navegador: inténtalo otra vez.',
+                  missing: 'No se encuentra la repetición.' };
+    btn.disabled = true;
+    msg.textContent = 'Preparando la repetición…';
+    (entry.ready || Promise.resolve(entry)).then(() => { btn.disabled = false; msg.textContent = ''; }).catch(() => { msg.textContent = ERR.missing; });
+    btn.onclick = async () => {
+      btn.disabled = true;
+      msg.textContent = 'Subiendo…';
+      await entry.ready;
+      const r = await G.Replay.share(entry.rid);
+      btn.disabled = false;
+      if (!r.ok) {
+        msg.textContent = ERR[r.error] || ERR.server;
+        if (r.error !== 'login' && r.error !== 'big') btn.textContent = G.T('Reintentar');
+        G.Audio.sfx('error');
+        return;
+      }
+      link.value = r.link;
+      link.classList.remove('hidden');
+      btn.innerHTML = G.Icons.html('eye', 14) + ' ' + G.T('Copiar enlace');
+      const ok = await copyText(r.link);
+      msg.textContent = ok ? '¡Enlace copiado!' : 'Copia el enlace de arriba.';
+      G.Audio.sfx('confirm');
+    };
+    $('over-watch').onclick = async () => {
+      await entry.ready;
+      G.UI.hide('scr-over');
+      G.WatchUI.playLocal(entry, () => onBack());
+    };
   }
 
   /** El número corto del port (menu.gd _fmt_n): 12.3k, 1.2M. */

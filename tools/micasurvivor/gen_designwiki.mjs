@@ -10,7 +10,8 @@
 //   js/data/missions.js + js/systems/dmglog.js + js/ui/lexicon-ui.js (achievements, missions, titles, the damage
 //   breakdown, the Lexicon and the trainer card, M5 batch 11), js/systems/localcoop.js (Co-op Mode, the local partner,
 //   M5 batch 12a), js/net/coop.js + js/entities/player.js + server/mp.mjs's MSURV_* limits (online co-op with friends,
-//   M5 batch 12b) (+ lang-en.js for the English
+//   M5 batch 12b), js/mica/spectate.js + js/mica/replay.js + server/mp.mjs's spectating / replay limits (watching a
+//   friend live and run replays, M5 batch 12c) (+ lang-en.js for the English
 //   names: the game is written in Spanish and translated on the fly, js/core/i18n.js).
 // The scripts are loaded in a sandbox with a stub browser; nothing is copied by hand.
 //   node tools/micasurvivor/gen_designwiki.mjs           (write)
@@ -40,7 +41,7 @@ export function build() {
 	sandbox.window = sandbox;
 	sandbox.confirm = noop; sandbox.alert = noop;
 	vm.createContext(sandbox);
-	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/localcoop.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js', 'entities/player.js', 'mica/online.js', 'net/net.js', 'net/coop.js']) {
+	for (const f of ['core/util.js', 'core/i18n.js', 'data/lang-en.js', 'data/pokedex.js', 'data/types.js', 'data/moves.js', 'data/starters.js', 'data/items.js', 'data/upgrades.js', 'systems/abilities.js', 'systems/zmoves.js', 'systems/dynamax.js', 'systems/modes.js', 'systems/team.js', 'systems/localcoop.js', 'systems/bossrush.js', 'systems/tower.js', 'systems/adaptive.js', 'data/enemies.js', 'world/tiles.js', 'core/display.js', 'ui/minimap.js', 'data/sprites-meta.js', 'data/missions.js', 'data/achievements.js', 'systems/dmglog.js', 'ui/lexicon-ui.js', 'entities/player.js', 'mica/online.js', 'mica/spectate.js', 'mica/replay.js', 'net/net.js', 'net/coop.js']) {
 		if (f === 'ui/lexicon-ui.js') sandbox.G.UI = sandbox.G.UI || { $: () => null };   // (only its data tables are read)
 		vm.runInContext(fs.readFileSync(path.join(JS, f), 'utf8'), sandbox, { filename: f });
 	}
@@ -142,11 +143,23 @@ export function build() {
 		signal: { row: lim('SIGNAL_MAX'), window: lim('SIGNAL_WINDOW') },
 		strings: ['Jugar con amigos', 'Estoy listo', 'Conectado (por servidor)', 'Inicia sesión para jugar con amigos', 'Relé: quedan 12 min hoy', CO.BUDGET_MSG].map(T),
 	};
+	// (M5 batch 12c: watching a friend live and run replays: the client's cadence (spectate.js / replay.js) and the server's limits)
+	const SP = G.Spectate.K, RP = G.Replay.K;
+	const top = k => { const m = new RegExp('const ' + k + ' = ([0-9_]+);').exec(sv); if (!m) throw new Error(k + ' not found'); return Number(m[1].replace(/_/g, '')); };
+	const days = (/\['msurvreplay:', (\d+) \* 24 \* HR\]/.exec(sv) || [])[1];
+	if (!days) throw new Error('msurvreplay: GC not found');
+	const spectate = {
+		publish: SP.PUB_MS / 1000, check: SP.CHECK_MS / 1000, slow: SP.SLOW_MS / 1000, poll: SP.POLL_MS / 1000, near: SP.NEAR, bossNear: SP.BOSS_NEAR, maxEnemies: SP.MAX_E,
+		beacon: lim('LIVE_BEAT_MS') / 60000, live: lim('LIVE_TTL_MS') / 60000, stale: lim('STATE_STALE_MS') / 1000, floor: lim('STATE_MIN_MS'), daily: lim('SPEC_DAILY_MIN'),
+		snapshot: lim('SNAPSHOT_MAX'), window: top('SPEC_WINDOW_MS') / 1000, cap: top('SPEC_CAP'), heartbeat: top('SPEC_BEAT_MS') / 1000,
+		replay: { every: RP.REC_DT, quantum: RP.Q, local: RP.LOCAL_MAX, max: lim('REPLAY_MAX'), frames: lim('REPLAY_FRAMES'), perUser: lim('REPLAY_PER_USER'), days: Number(days) },
+		strings: ['Viendo a', 'EN DIRECTO', 'Dejar de ver', 'En directo ahora', 'Compartir repetición', 'Ver repetición', '¡Enlace copiado!', 'Está eligiendo una mejora…', 'Ver otra vez'].map(T),
+	};
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
 		source: 'micasurvivor/js/data (tools/micasurvivor/gen_designwiki.mjs)',
 		counts: { pokemon: pokemon.length, legendaries: pokemon.filter(p => p[5]).length, starters: starters.length, moves: moves.length, items: items.length, upgrades: upgrades.length, abilities: abilities.length, zmoves: zmoves.length },
-		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, goals, online, items, upgrades, abilities, pokemon,
+		starters, moves, zmoves, zrules, dynrules, modes, difficulty, display, goals, online, spectate, items, upgrades, abilities, pokemon,
 	};
 }
 

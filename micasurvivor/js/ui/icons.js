@@ -26,6 +26,10 @@ G.Icons = (() => {
     phone: { pal: { b: '#2c519f', s: '#9fd8ff', w: '#e6f4ff' }, rows: [
       '...kkkkkk...', '...kbbbbk...', '...kssssk...', '...kswssk...', '...kssssk...', '...kssssk...',
       '...kssssk...', '...kssssk...', '...kssssk...', '...kbbbbk...', '...kbwwbk...', '...kkkkkk...'] },
+    // MicaSurvivor (M5 lote 12c): ver a un amigo en directo / una repetición.
+    eye: { pal: { w: '#e6f4ff', b: '#4fb0ff', d: '#1d3f7a' }, rows: [
+      '............', '............', '....kkkk....', '..kkwwwwkk..', '.kwwwbbwwwk.', 'kwwwbddbwwwk',
+      'kwwwbddbwwwk', '.kwwwbbwwwk.', '..kkwwwwkk..', '....kkkk....', '............', '............'] },
     // Banderita: reportar una marca del ranking.
     flag: { pal: { r: '#ff5f6d', w: '#c9cfdc' }, rows: [
       '.kk.........', '.kwkkkkkk...', '.kwkrrrrrk..', '.kwkrrrrrrk.', '.kwkrrrrrk..', '.kwkrrrrk...',

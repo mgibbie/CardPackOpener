@@ -1045,6 +1045,116 @@ replay can record them (the relay sends them at 1 a second). `G.Net.snapshot()` 
 state as plain data; the lobby row (`msurvlobby:<id>`, with `start`) and the presence status `micasurvivor:run` say who
 is in a group run (for "live now").
 
+### Batch 12c: Spectating and replays
+
+Watch a friend's run live, read-only, and share a whole run as a replay link anyone can open. Not upstream (upstream
+has neither). `js/mica/spectate.js` (`G.Spectate`: the snapshot, the live publisher and the watcher's poll),
+`js/mica/replay.js` (`G.Replay`: the recorder, its codec, the local store, sharing and the reader),
+`js/ui/watch-ui.js` (`G.WatchUI`: the read-only renderer for both, the banner, the replay controls and the end card),
+`js/game.js` (the `'watch'` state, the hooks at run start / each frame / run end, `?watch=` / `?replay=` at boot),
+`js/ui/run-ui.js` (Share replay), `js/ui/social-ui.js` (Live now, your recent runs), `js/ui/hud.js` / `js/ui/minimap.js`
+(a watched player's HUD without its controls; partners on the minimap), and in the site: `server/mp.mjs`,
+`site/livewatch.js`, `site/topbar.js`, `overworld/ow_screens.js`, `battlecards/start.html`, `_redirects`.
+
+**Watching a friend.** Friends only, both ways (the server reads both friend lists). A friend in a run is listed:
+
+- in MicaSurvivor's Friends screen under **Live now** (with what they play, "Pikachu · Boss Rush" or "Pikachu · co-op
+  with bob"), with **Watch**;
+- on the rest of Magepunk: `live-friends` (the Battlecards "Live now" hub) has a new kind `micasurvivor`, and the
+  `friends` action reports a friend in a run as online with status `micasurvivor:run` (so the top bar's Friends tab and
+  the overworld friends menu offer Watch). All of them route through `site/livewatch.js` to
+  `/micasurvivor/?watch=<username>`.
+
+The view is the game's own canvas: the run's world (its seed, biome and rift arena), their Pokémon and partners as
+puppets (`G.Player` / `G.EnemyMgr.addRemote` copies that never think), the foes and pickups, harmless ghost copies of
+their attacks (like a co-op partner's), their HUD (HP, level, XP, clock, "Challenge: N%", moves, held items, boss bar;
+no touch / pad controls or hints) and minimap, plus a line on the right for what the HUD leaves out for a watched
+player: Z-move ("Z-Move: Fire · ready / in use! / used"), Dynamax, Team Mode, each partner's HP ("Eevee · AI · 51%"),
+and in the middle "Choosing an upgrade…" (or "Choosing…", "Paused", "Fainted: revives in N s"). Events arrive as the
+game's banner ("Level 5! · Flamethrower Lv. 2", "A boss appears: Onix!", "Z-Move!"). A banner top right says
+"Watching alice · LIVE" (and "Watching: 3" with company) with **Leave** (or Esc). Nothing the viewer presses reaches the
+run: in the `'watch'` state the game reads only Esc (and Space in a replay). When their run ends the viewer gets the
+summary card ("alice's run has ended": Pokémon, time, level, defeated, bosses, moves). Online co-op groups can be
+watched through any member: each member publishes their own view (its partners included).
+
+**Snapshots.** `G.Spectate.snap()` (≈0.08 ms): your Pokémon `p` (position, facing, animation, HP, max HP, flags: fainted /
+walking / Dynamax / down in Co-op Mode / in the sky), `lv` level / XP, `k` `bo` `co` kills / bosses / coins, `mv` moves
+(+ evolved), `ac`, `it` items, `lu` the level-up (1) or another choice (2) or pause (3) open, `ds` the Dynamax scale, `z`
+Z-move, `dy` Dynamax, `tm` Team Mode, `ar` the rift arena, `wx` weather, `ad` the adaptive challenge, `mt` partners
+(online: name, colour; local: its controller AI / P2, the HP it has while you are down, and `dn` the seconds until you
+revive), `e` foes within 720 (bosses within 1600, the nearest 80: id, species, position, HP %, max HP, boss / shiny /
+burn / poison / shield / den flags, animation + facing), `pk` pickups within 520 (24 special, 40 XP orbs), the clock `t`,
+seed `sd`, biome `b`, mode `m`, and the events / defeated foes since the last one. A live snapshot is 2-6 KB.
+
+**Server (live).** All behind the login gate, rate-limited per account (30 / 10 s each):
+
+| Action | What it does |
+|---|---|
+| `publish-micasurvivor` {run, label, mode, dex, group, over, seq, snapshot?} | The player's client, every 10 s WITHOUT a snapshot (a watcher check: it only READS), every 1 s WITH one while somebody watches (the answer's `watchers`), once more at the end (`over`, the summary in the snapshot) and a keepalive "over" on `pagehide`. A player with no friends writes nothing at all. |
+| `micasurvivor-state` {username, seq} | A friend's poll (1 s): `{waiting}` (live, no snapshot yet), the snapshot, `{unchanged}` for the same seq, `{over}` (+ the summary when a watcher saw the end), `{live:false}`. Spectator cap 10 (403 `full`). |
+
+| Row | Written | Life |
+|---|---|---|
+| `msurvlive:<user>` {run, ts, since, label, mode, dex, group, over} — the "in a run" beacon | at the start, the end, a mode / group change, else every 5 min | live for 6 min after its last write (a dead tab lapses); GC 6 h |
+| `msurvstate:<user>` {run, seq, ts, snap, label, mode, group, over, watchers} | only while a friend's heartbeat is fresh; ≤ 1 per 900 ms (1 per 5 s past 60 watched minutes a day) | a viewer waits once it is 20 s old; GC 1 h |
+| `msurvspec:<user>:<viewer>` (ms) — a viewer's heartbeat | by the viewer's poll, at most every 4 s, only while the run is live | counts as watching for 12 s; GC 1 h |
+| `msurvspecbudget:<user>:<YYYYMMDD>` {rev, used, last} — watched minutes per UTC day | once per watched minute (compare-and-set) | GC 48 h |
+
+**Replays.** Every run is recorded from the start (`G.Replay.observe` in the game loop: a time check each frame, a
+snapshot every 0.5 s of RUN time, so pauses and level-up screens take no room), delta-encoded as it goes: frame =
+[dt, your Pokémon's differences, the counters' differences, the slow state when it changed, the foes' table, the
+pickups' table, the partners when they moved]. Positions are quantized (your Pokémon to 2 world units, the rest to 4);
+in the entity tables ids are delta-coded, every entity is predicted to repeat its last step, and only the fields that
+differ from that are written (id + a bit mask + the corrections), so a foe walking straight on costs nothing; foes'
+facing is not recorded (they face where they walk). Events ride beside the frames (`lv` level-up, `mv` a move learned or
+levelled = the card picked, `xe` a move evolved, `bs` / `bk` a boss appears / is beaten, `z` Z-move, `dx` Dynamax, `dd`
+fainted, `bi` biome, `ar` rift arena) and which foes that vanished died (they play their Faint). At the end the stream is
+gzipped ('G1.' + base64url, the Micatro replays' format; 'R1.' raw fallback) and kept in this browser
+(`micasurvivor_replays_v1`, the last 3 runs, the oldest dropped if storage is full).
+
+The run summary has **Share replay** (uploads it, shows the short link `/msr/<id>` and copies it: "Link copied!") and
+**Watch replay** (plays it right there). A failed upload says so ("Couldn't upload it. It's saved in this browser: try
+again.") and the button becomes Retry; a retry sends the same `rid`, so the server returns the first id instead of
+storing it twice. Friends → **Your recent runs** lists the local ones with Watch / Share (Copy link once shared). Guests
+can watch their own; sharing needs a login.
+
+| Action / row | |
+|---|---|
+| `micasurvivor-replay-put` {code, meta, rid} (login, 20 a minute) | validates the code (G1. / R1., ≤ 1.2 MB packed, unpacked under 8 MB — a gzip bomb stops there — `{v:1, h, f:[arrays] ≤ 30,000, ev?}`), allow-lists the meta (Pokémon, mode, time, level, kills, bosses, fainted, co-op names, frames counted by the server); writes `msurvreplay:<8 hex>` {code, meta, by, when} and the player's list `msurvreplays:<user>` {ids:[{id, when, rid}]} |
+| per-player cap | 10 shared replays: the 11th deletes the oldest (only if that row is the player's own: `by` is checked) |
+| `micasurvivor-replay-get` {id} | PUBLIC (no login, above the auth gate like `replay-playlist-get` / `micatro-replay-get`, the same per-IP limit) |
+| `micasurvivor-replay-list` | your stored replays with their meta |
+| life | `msurvreplay:` 30 days (GC, like `mreplay:`), `msurvreplays:` 60 days |
+| link | `/msr/<id>` → `/micasurvivor/?replay=<id>` (302 in `_redirects`) |
+
+The player is the same renderer: play / pause (Space), 1× · 2× · 4×, a seek bar (decoded from a checkpoint every 40
+frames: a seek costs ~0.3 ms) with marks for bosses, Z-moves and Dynamax, "Replay of alice", and at the end the run's
+summary card with Watch again / Back to menu. An unknown or expired id: "This replay doesn't exist or has expired
+(replays are kept for 30 days)."
+
+**Cost (D1 row writes; measured in `micasurvivor_spectate_test.mjs` / a 30-minute run):**
+
+| What | Writes |
+|---|---|
+| A run nobody watches | the beacon: 1 at the start + 1 every 5 min + 1 at the end (**~0.2 a minute**; 1 in the test's 6.7 s). The watcher checks are reads. Friendless or guest: 0 |
+| A watched run | **~76 a minute per run with one viewer**: 60 snapshots + 15 heartbeats + 1 watched-minute row (measured 80/min); +15 a minute per extra viewer. Past 60 watched minutes a day: 12 snapshots a minute |
+| Watching (the viewer) | ~15 heartbeats a minute (reads otherwise) |
+| Sharing a replay | **2 rows** (the replay + the list; +1 delete when the 11th evicts the oldest) |
+
+**Sizes and speed** (measured with a 30-minute Normal run, real spawns, an invulnerable bot, the clock sped up ×8, ~65 foes in range from minute 5 on): 3,668 frames, 2,084 KB of JSON, **679 KB packed** (≈ 22 KB a minute; the first encoding, without the prediction and with foes’ facing at 2 px, was 858 KB). The cap is therefore **1.2 MB** packed (about 50 minutes of a busy run; a longer one stays watchable in the browser but is "too big to share"). Packing takes ~140 ms at the end of the run; seeking ~0.7 ms. The recorder costs **0.045 ms per frame** on average (a snapshot every 0.5 s: 0.16 ms average, 0.7 ms at most; 0.008 ms per frame in the e2e test’s quiet run), well under the 0.5 ms budget, and it reads nothing random and changes nothing in the run.
+
+**Deviations, and why:**
+- Discovery uses its own beacon, not presence: an unwatched solo run writes no presence (12b made those polls
+  read-only), and a presence row lasts 90 s. The beacon is refreshed every 5 minutes, so a closed tab can stay "live"
+  for up to 6 minutes (the `pagehide` keepalive usually ends it at once); Watch then shows "alice isn't playing right
+  now."
+- The view runs about a second behind the player (it glides between the last two snapshots).
+- Keys are `msurvreplay:` / `msurvreplays:` rather than `msurv_replay:`: the store's prefix scans and the GC use LIKE,
+  where `_` is a wildcard.
+- Not shown to a viewer: projectiles exactly as fired (ghost copies of the active moves are drawn instead), floating
+  damage numbers, broken crates, weather particles, the Judgment cinematic. A replay doesn't record the foes' facing
+  or animations.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
@@ -1223,6 +1333,22 @@ is in a group run (for "live now").
   for smoothing), joining by touch and getting ready by pad, the host quitting: "The host has ended the game", back in
   the reopened lobby; then a second run whose relay minutes run out: the guest's run ends with the used-up message and
   its rewards, the host plays on and is told why, the lobby says it and keeps Start off); a guest told to sign in (and making no co-op request); no Spanish in the DOM, toasts or canvas.
+- `node overworld/tests/micasurvivor_spectate_server_test.mjs` (M5 batch 12c): the real handler over sqlite:
+  publishing (login, a friendless player writes nothing, the beacon at the start / every 5 min / on a group change /
+  at the end, NO snapshot row without a fresh watcher, the 900 ms floor, the 60 watched minutes a day, caps and
+  validation), watching (friends both ways, a non-friend and a one-way friend refused with no write, waiting / snapshot
+  / unchanged / over / stale / not live, the 4 s heartbeat, the 10-viewer cap, `_` in names), `live-friends` /
+  `friends`, the TTLs and GC prefixes, replays (put / public get with no token above the auth gate, packed / unpacked /
+  frame caps, validation, the meta allow-list, a retried upload, the 10-per-player cap that never deletes another
+  player's row, the list) and no cross-user writes.
+- `node overworld/tests/micasurvivor_spectate_test.mjs` (M5 batch 12c): the real handler behind a static server and
+  separate browser contexts: the replay codec round-trip; alice's unwatched run (1 write: the beacon); bob sees her
+  under "Live now", watches, and his view follows her position, enemies (species / position / HP), HP, level, the
+  level-up screen and its banner, at 844x390 too; the write cost while watched; bob's keys and clicks do nothing to her
+  run; the recorder's per-frame cost; her run ends (his summary card); she shares the replay (the link copied, 2
+  writes, a retry stores nothing), carl with no account opens it, seeks, plays at 1× / 4×, pauses, reaches the summary;
+  an unknown id; her recent runs; a non-friend refused; a local co-op run and an online co-op group (watched through
+  the guest) watched; Esc back to the menu; no Spanish (DOM and canvas).
   In CI the WebRTC part runs with `--disable-features=WebRtcHideLocalIpsWithMdns` (real localhost host candidates)
   and `window.__msurvNet = {ice: []}`; the relay part with `{noRtc: true}`.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

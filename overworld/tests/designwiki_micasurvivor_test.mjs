@@ -69,6 +69,14 @@ A(ON.max === 4 && ON.rateDirect === 15 && ON.rateRelay === 1 && ON.stall === 2.5
 A(JSON.stringify(ON.lobby) === JSON.stringify({ idle: 60, runIdle: 600, member: 45, invite: 180 }) && JSON.stringify(ON.relay) === JSON.stringify({ min: 1000, msg: 16000, row: 64000, window: 30, stale: 30, daily: 30 })
 	&& JSON.stringify(ON.signal) === JSON.stringify({ row: 24000, window: 48 }) && JSON.stringify(ON.strings) === JSON.stringify(['Play with friends', "I'm ready", 'Connected (via server)', 'Sign in to play with friends', 'Relay: 12 min left today', "Relay time is used up for today; players who can't connect directly can't continue. Direct connections still work."]),
 	'...and the server\'s limits from mp.mjs (lobby 60 s, invite 3 min, relay ≥ 1000 ms / 16 KB / 64 KB / 30 messages / 30 s, 30 relay minutes a day per host), in English', JSON.stringify([ON.lobby, ON.relay, ON.signal]));
+// MicaSurvivor M5 batch 12c: watching a friend live + run replays (spectate.js / replay.js cadence, the server's limits)
+const SPC = W.spectate || {};
+A(SPC.publish === 1 && SPC.check === 10 && SPC.slow === 5 && SPC.poll === 1 && SPC.beacon === 5 && SPC.live === 6 && SPC.stale === 20 && SPC.floor === 900 && SPC.daily === 60
+	&& SPC.snapshot === 24000 && SPC.window === 12 && SPC.cap === 10 && SPC.heartbeat === 4 && SPC.near === 720 && SPC.maxEnemies === 80,
+	'spectating from spectate.js + mp.mjs: a snapshot a second only while watched, a watcher check every 10 s, the beacon every 5 min (live 6), 900 ms floor, 60 watched min a day, 24 KB, 10 viewers', JSON.stringify(SPC).slice(0, 300));
+A(JSON.stringify(SPC.replay) === JSON.stringify({ every: 0.5, quantum: 2, local: 3, max: 1200000, frames: 30000, perUser: 10, days: 30 })
+	&& JSON.stringify(SPC.strings) === JSON.stringify(['Watching', 'LIVE', 'Leave', 'Live now', 'Share replay', 'Watch replay', 'Link copied!', 'Choosing an upgrade…', 'Watch again']),
+	'...replays from replay.js + mp.mjs (every 0.5 s, 2 px, 3 kept locally, 1.2 MB, 30,000 frames, 10 per player, 30 days), in English', JSON.stringify(SPC.replay));
 // MicaSurvivor M5 batch 8: Boss Rush and the Floor Tower
 A(MO.rush && MO.rush.first === 5 && MO.rush.rest === 8 && MO.rush.legEvery === 3 && MO.rush.biome === 150 && MO.rush.hp.base === 1400 && MO.rush.hp.grow === 1.27, 'Boss Rush from bossrush.js: 5 s, 8 s between bosses, a legendary every third, 150 s biomes, HP 1400 x 1.27^i', JSON.stringify(MO.rush));
 A(MO.tower && MO.tower.floors === 30 && MO.tower.bossAt === 50 && MO.tower.maxRisks === 6 && MO.tower.risks.length === 15 && MO.tower.legends.length === 4 && MO.tower.relicsMax === 6 && MO.tower.risks.every(r => r.name && r.desc && !/[¡¿ñáíóú]/.test(r.name + r.desc)) && MO.tower.risks[0].name === 'Frenzy' && MO.tower.legends[0].name === 'Time mastery',
@@ -128,7 +136,11 @@ try {
 	A(ov.play && ov.art === 96, 'overview: the play link and the tile art', JSON.stringify({ play: ov.play, art: ov.art }));
 	A(/How to play/.test(ov.text) && /Pewter Museum/.test(ov.text) && /best survival time/.test(ov.text) && /Magepunk/.test(ov.text), 'overview: how to play, the Pewter Museum cabinet, accounts + the leaderboard');
 	A(/Required Notice: Copyright 2026 JPTER78 \(https:\/\/github\.com\/JPTER78\/pokesurvivor\)/.test(ov.text) && /PolyForm Noncommercial/.test(ov.text) && /CC BY-NC 4\.0/.test(ov.text) && /JayElDragon/.test(ov.text) && /never gets ads, paid items/.test(ov.text), 'overview: credits + the licence notice (Required Notice, PolyForm NC, CC BY-NC, JayElDragon, never sold)');
-	A(ov.tables === 14 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, online co-op, biomes, support, display, achievement (2), mission (2) and status tables, the keyboard and controller tables');
+	A(ov.tables === 15 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, online co-op, watching / replays, biomes, support, display, achievement (2), mission (2) and status tables, the keyboard and controller tables');
+	// MicaSurvivor M5 batch 12c: watching a friend live and run replays
+	A(/Watching and replays/.test(ov.text) && /Live now/.test(ov.text) && /Watching … LIVE/.test(ov.text) && /checks for watchers every 10 s/.test(ov.text) && /Share replay/.test(ov.text) && /\/msr\/<id>/.test(ov.text)
+		&& /1× · 2× · 4×/.test(ov.text) && /each for 30 days/.test(ov.text) && /\/micasurvivor\/\?watch=<username>/.test(ov.text)
+		&& await page.$$eval('#content .ms-spectate tbody tr', r => r.length) === 8, 'overview: Watching and replays (live list, what you see, cost, co-op groups, recording, sharing, the player; M5 batch 12c)');
 	// MicaSurvivor M5 batch 12b: online co-op with friends
 	A(/Online co-op with friends/.test(ov.text) && /Up to 4 players over the internet/.test(ov.text) && /Play with friends/.test(ov.text) && /Waiting for/.test(ov.text) && /1 update a second instead of 15/.test(ov.text) && /30 relay minutes per day/.test(ov.text) && /Relay time is used up for today/.test(ov.text)
 		&& /only the host’s friends can join/.test(ov.text) && /4 players: foes appear ×3\.25, enemy HP ×1\.9, experience ×0\.357/.test(ov.text) && !/coming later/i.test(ov.text)
