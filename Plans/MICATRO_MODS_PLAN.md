@@ -148,7 +148,8 @@ Each step: gate → merge when it passes → next.
    `skins.js`): Options > Card skins, per player. **Pokermon UI** (`mods/pokermon/ui.js` through the mod UI seam
    `ui/modui.js`): type pills + Energy pips, the Pokédex (right-click / double-click / Dex / P / Run Info tab),
    shiny / evolution / Zorua shaders, Zorua's disguise, the Unown swarm animation. **Win stickers** per joker
-   (`ui/stickers.js`, from the engine's `win` event). Tests: `micatro/tests/challenges_test.mjs`,
+   (`ui/stickers.js`, from the engine's `win` event; saved on the account in `micatro_stickers:<user>`, merged by max,
+   localStorage as the offline cache; guests keep them in the browser). Tests: `micatro/tests/challenges_test.mjs`,
    `overworld/tests/micatro_challenges_ui_test.mjs`, `overworld/tests/micatro_winstickers_test.mjs`.
 
 ## 8. Run replays (2026-10-16)

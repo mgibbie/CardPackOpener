@@ -10,7 +10,7 @@ import { isNumeric, isBig } from '../engine/bignum.js';
 import { sound } from './sound.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { onSkins } from './skins.js';
-import { onWinStickers, winSticker } from './stickers.js';
+import { onWinStickers, winStickerInfo } from './stickers.js';
 
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
 const PACK_STATES = ['TAROT_PACK', 'PLANET_PACK', 'SPECTRAL_PACK', 'STANDARD_PACK', 'BUFFOON_PACK', 'MOD_PACK', 'MOD_PACK_HAND'];
@@ -1065,9 +1065,11 @@ export class Board {
     this.tipSig = JSON.stringify(desc);
     const d = this.data.get(s.id) || s.d;
     // its win sticker, explained (Balatro: info_queue <colour>_sticker)
-    const st = d && d.set === 'Joker' && d.facing !== 'back' ? winSticker(d.center) : null;
-    const sd = st && LOC.descriptions.Other[st.toLowerCase() + '_sticker'];
-    if (sd) desc = { ...desc, info: [...(desc.info || []), { key: st.toLowerCase() + '_sticker', name: sd.name, lines: sd.text }] };
+    // (a Pokermon run's special sticker: "Nuzlocke win — Gold Stake")
+    const st = d && d.set === 'Joker' && d.facing !== 'back' ? winStickerInfo(d.win_key || d.center) : null;
+    const sd = st && !st.special && LOC.descriptions.Other[st.stake.toLowerCase() + '_sticker'];
+    if (sd) desc = { ...desc, info: [...(desc.info || []), { key: st.stake.toLowerCase() + '_sticker', name: sd.name, lines: sd.text }] };
+    else if (st && st.special) desc = { ...desc, info: [...(desc.info || []), { key: 'win_sticker_' + st.category, name: st.label, lines: ['Used this Joker to win a', '{C:attention}' + st.label.replace(/ win — .*/, '') + '{} run on', '{C:attention}' + st.stake + ' Stake{} difficulty', '{C:inactive}(' + st.special.pokemon + ' sticker)'] }] };
     let extra = '';
     if (d.perish_tally != null && d.perishable) extra += `<div class="tip-note">Perishable: ${d.perish_tally} rounds left</div>`;
     this.renderTip(desc, d, extra);

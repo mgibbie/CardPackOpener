@@ -234,6 +234,22 @@ export async function saveDecks(decks, rev = 0) {
 	catch { return { error: 'offline' }; }
 }
 
+// The jokers' win (stake) stickers live on the account for a signed-in player (one durable row,
+// `micatro_stickers:<user>` = {v:1, wins: {jokerKey: level 1..8}, rev, updatedAt}); ui/stickers.js keeps a
+// localStorage copy as the offline cache. A put MERGES on the server (max per key) and returns the merged map.
+//   fetchStickers() -> {wins, rev} | {error}
+//   saveStickers(wins, {keepalive}) -> {ok, wins, rev} | {error}
+export async function fetchStickers() {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-stickers-get', {}); return d && !d.error && d.wins && typeof d.wins === 'object' && !Array.isArray(d.wins) ? { wins: d.wins, rev: d.rev || 0 } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function saveStickers(wins, { keepalive = false } = {}) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-stickers-put', { wins }, keepalive ? { keepalive: true } : {}); return d && d.ok && d.wins && typeof d.wins === 'object' && !Array.isArray(d.wins) ? d : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+
 // ---------------------------------------------------------------- run replays
 // A finished run's replay (micatro/js/replays.js packs the recipe). Upload needs an account; READING
 // one is public (a share link opens logged-out too).

@@ -512,7 +512,9 @@ async function boot() {
   import('./skins.js').then((m) => m.initSkins(myName())).catch((e) => console.warn('micatro: skins unavailable', e));
   // the jokers' win stickers: this player's record (ui/stickers.js)
   Stickers = await import('./stickers.js').catch(() => null);
-  if (Stickers) Stickers.initWinStickers(myName());
+  // signed in: saved on the account (net.js fetchStickers / saveStickers; localStorage is the offline cache);
+  // a guest: this browser only
+  if (Stickers) Stickers.initWinStickers(myName(), loggedIn() && net.fetchStickers ? { fetch: () => net.fetchStickers(), push: (w, o) => net.saveStickers(w, o) } : null);
   player = new Player(board);
   UI.initScreens(stage);
   if (Engine && Engine.describeBack) UI.setBackDescriber(Engine.describeBack);

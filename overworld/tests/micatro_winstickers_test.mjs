@@ -82,7 +82,7 @@ try {
 	A(ev && ev.stake === 2 && ev.jokers.includes('j_joker') && ev.jokers.includes('j_poke_ivysaur') && ev.jokers.includes('j_poke_bulbasaur'), 'the engine reports the win with the jokers (and the previous evolution)', JSON.stringify(ev));
 	await waitFor(() => page.evaluate(() => !!document.querySelector('.go-modal')), 10000);
 	const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
-	A(stored.j_joker === 2 && stored.j_poke_ivysaur === 2 && stored.j_poke_bulbasaur === 2, 'the win is stored per player: joker key -> highest stake (Red = 2)', JSON.stringify(stored));
+	A(stored.j_joker?.win === 2 && stored.j_poke_ivysaur?.win === 2 && stored.j_poke_bulbasaur?.win === 2, 'the win is stored per player: joker key -> {win: highest stake} (Red = 2)', JSON.stringify(stored));
 
 	// 2. a new run: the Joker wears the Red sticker, the tooltip says so; Options can hide it
 	await page.evaluate(() => { const b = document.querySelector('.go-modal .b-newrun'); if (b) b.click(); document.querySelectorAll('.modal .b-back').forEach((x) => x.click()); });
@@ -138,11 +138,11 @@ try {
 	// 4. a lower stake never downgrades; a seeded run records nothing
 	await winRun({ stake: 1, jokers: ['j_joker', 'j_greedy_joker'] });
 	let st = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
-	A(st.j_joker === 2 && st.j_greedy_joker === 1, 'a White win keeps the Joker\'s Red and gives Greedy Joker White', JSON.stringify(st));
+	A(st.j_joker?.win === 2 && st.j_greedy_joker?.win === 1, 'a White win keeps the Joker\'s Red and gives Greedy Joker White', JSON.stringify(st));
 	await page.evaluate(() => document.querySelectorAll('.modal').forEach(() => { const b = document.querySelector('.go-modal .b-newrun'); if (b) b.click(); }));
 	await winRun({ stake: 8, seed: 'SEEDED1', jokers: ['j_joker', 'j_lusty_joker'] });
 	st = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
-	A(st.j_joker === 2 && !st.j_lusty_joker, 'a seeded run\'s win records no stickers', JSON.stringify(st));
+	A(st.j_joker?.win === 2 && !st.j_lusty_joker, 'a seeded run\'s win records no stickers', JSON.stringify(st));
 	A(errors.length === 0, 'no console errors', errors.join(' | '));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));
