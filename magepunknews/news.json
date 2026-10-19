@@ -1,5 +1,5 @@
 {
-	"generated": "2026-10-16",
+	"generated": "2026-10-19",
 	"micatroAtlas": {
 		"Joker": {
 			"src": "/micatro/assets/textures/Jokers.png",
@@ -214,6 +214,362 @@
 	},
 	"entries": [
 		{
+			"sha": "f3342a7",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor B1c: the last 18 Gen 9 Pokémon from battle sprites (all 1025)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b06ef8f",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor DLC D0a: determinism harness + golden fixtures for the base modes",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "03bde91",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: no Pokermon card uses placeholder art",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d418f4f",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor B1b: 24 more Pokémon from follower sprites (1007)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a2faa4f",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor B1: 17 more Pokémon (983); the rest await art",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "75880bd",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor: modifier runs don't rank; Tower/Rush skip the Judgment ruins; DLC study",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0339b33",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 12c: live spectating + shareable full-run replays",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "db97538",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: Energy works from Buy & Use and the slot; leftmost valid target",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "971d48d",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: Deino/Zweilous trigger on any hand containing a Three of a Kind",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "757d524",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: account win stickers + Pokermon Nuzlocke/Monotype runs, achievements, deck stickers",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0cd83f8",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: mod enhancements explain themselves; never roll in_pool:false ones",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8fa6cf8",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: draw mod seals on cards and show their tooltips",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6356df8",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: show Pokermon's Foresight (scry) cards above the deck",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8de11ee",
+			"date": "2026-10-18",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 12b: online co-op with friends",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b2d0743",
+			"date": "2026-10-18",
+			"kind": "patch",
+			"title": "Controllers work for everyone: drop the sign-in gate",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f031271",
+			"date": "2026-10-18",
+			"kind": "patch",
+			"title": "Micatro: show a card's new enhancement/seal/edition the moment it changes",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "76b3c96",
+			"date": "2026-10-18",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 12a: local co-op partner; controllers for guests",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4a2f587",
+			"date": "2026-10-18",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 11: achievements, missions, titles, Lexicon, trainer card",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "10e1ec0",
+			"date": "2026-10-18",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 10: minimap, field of view, UI scale",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e70f918",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 9: adaptive difficulty, biome spawns, support caps",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3d95b4d",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "Micatro: shop buttons above Safari's bar + pack items fixes",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1b5a906",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 8: Boss Rush + Floor Tower",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ab32b80",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 7: team mode",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f42c9aa",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor: English names for the 14 Paradox Pokémon",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "aaecdd0",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 6: quick modes, modifiers + in-run card ban",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "46e910e",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 5: Dynamax + raid dens",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "dbe12c8",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 4: Z-moves (18 types)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6408264",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 3: 15 items, carry two, 4 upgrades",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8d8da67",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 2: 54 abilities",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "fec0474",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M5 batch 1: status effects, type kills, Hypnosis/Dream Eater, alt evolutions, knockback, Calibre",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "efff4d5",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor: personality trait names in English",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "24230a6",
+			"date": "2026-10-17",
+			"kind": "micasurvivor",
+			"title": "MicaSurvivor M3: landing tile, Pewter Museum cabinet, accounts, leaderboard, wiki + news",
+			"body": "",
+			"cards": [],
+			"micasurvivorLaunch": {
+				"title": "MicaSurvivor",
+				"play": "/micasurvivor/",
+				"wiki": "/designwiki/#/micasurvivor",
+				"blurb": "Survive the Pokémon hordes with your partner — based on PokéSurvivor by JPTER78. Play it from the home page or the arcade cabinet in the Pewter Museum; logged-in players save to their Magepunk account and race for the best survival time on the leaderboard.",
+				"counts": {
+					"Pokémon": 966,
+					"Starters": 29,
+					"Moves": 64,
+					"Held items": 11
+				}
+			}
+		},
+		{
+			"sha": "402f205",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M2: controller support",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "322cc3f",
+			"date": "2026-10-17",
+			"kind": "patch",
+			"title": "MicaSurvivor M1: PokéSurvivor ported as-is (offline) at /micasurvivor/",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c1772db",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Micatro: tooltips never cover a card's Sell/Dex buttons; no {br} filler text",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2d9c47e",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Tester bug reports (Remy): Cerulean Gym pool, run results surviving stale local copies",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ccb027c",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Overworld: tester bug reports (Sudowoodo/Artisan Cave, stale ticker, revived battle)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ecdb44f",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Fakemon walking sprites: Sakurovix's real walk sheet",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1d953db",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Fakemon battle sprites: real backs or mirrored fronts, sharp Ransei fronts",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "06696bb",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Real back sprites for #1011-#1025 (Dipplin..Pecharunt)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f33648c",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Sharp battle sprites (90 species + Gen-9 backs), wiki tile art/paging/search, Pokermon+ ban fix",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0561b1c",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Alt-form sprites everywhere + Micatro Mods wiki section",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "67ce768",
+			"date": "2026-10-16",
+			"kind": "patch",
+			"title": "Micatro step 8: challenges, sleeves, skins, Pokédex, win stickers, mod wiki + news, polish",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "79173f0",
 			"date": "2026-10-16",
 			"kind": "micatro",
@@ -254,126 +610,26 @@
 		{
 			"sha": "d54690b",
 			"date": "2026-10-16",
-			"kind": "micatro",
+			"kind": "patch",
 			"title": "Micatro mods: AutumnMoodMechanics + The Autumn Circus",
 			"body": "",
-			"cards": [],
-			"micatroMods": [
-				{
-					"id": "autumnmood",
-					"name": "AutumnMoodMechanics",
-					"launch": {
-						"Booster": 8,
-						"Tag": 2
-					},
-					"total": 10
-				},
-				{
-					"id": "autumncircus",
-					"name": "Þe Autumn Circus",
-					"launch": {
-						"Enhancement": 4,
-						"Edition": 1,
-						"Booster": 1,
-						"Voucher": 12,
-						"Deck": 9,
-						"Joker": 73,
-						"Oddity": 29,
-						"Tarot": 11,
-						"Planet": 10,
-						"Spectral": 19,
-						"Rotarot": 8,
-						"Colour": 1,
-						"Tag": 2,
-						"Boss Blind": 2,
-						"Stake": 1,
-						"Stamp": 10
-					},
-					"total": 193
-				}
-			]
+			"cards": []
 		},
 		{
 			"sha": "741cd5d",
 			"date": "2026-10-16",
-			"kind": "micatro",
+			"kind": "patch",
 			"title": "Micatro mods: Bunco + Reverie; mod stakes selectable",
 			"body": "",
-			"cards": [],
-			"micatroMods": [
-				{
-					"id": "bunco",
-					"name": "Bunco",
-					"launch": {
-						"Edition": 2,
-						"Joker": 80,
-						"Tarot": 6,
-						"Planet": 4,
-						"Spectral": 2,
-						"Polymino": 8,
-						"Booster": 8,
-						"Voucher": 12,
-						"Deck": 2,
-						"Enhancement": 2,
-						"Tag": 16,
-						"Boss Blind": 25,
-						"Stake": 3
-					},
-					"total": 170
-				},
-				{
-					"id": "reverie",
-					"name": "Reverie",
-					"launch": {
-						"Cine": 22,
-						"Spectral": 1,
-						"Joker": 1,
-						"Booster": 9,
-						"Voucher": 2,
-						"Deck": 2,
-						"Tag": 2
-					},
-					"total": 39
-				}
-			]
+			"cards": []
 		},
 		{
 			"sha": "febb37d",
 			"date": "2026-10-15",
-			"kind": "micatro",
+			"kind": "patch",
 			"title": "Micatro mods: More Fluff + Betmma Vouchers",
 			"body": "",
-			"cards": [],
-			"micatroMods": [
-				{
-					"id": "morefluff",
-					"name": "More Fluff",
-					"launch": {
-						"Joker": 83,
-						"Colour": 17,
-						"Booster": 16,
-						"Voucher": 3,
-						"Rotarot": 22,
-						"Enhancement": 8,
-						"Deck": 4,
-						"Tag": 4,
-						"Blind": 1,
-						"Boss Blind": 15
-					},
-					"total": 173
-				},
-				{
-					"id": "betmma",
-					"name": "Betmma Vouchers",
-					"launch": {
-						"Voucher": 82,
-						"Joker": 11,
-						"Edition": 2,
-						"Booster": 3
-					},
-					"total": 98
-				}
-			]
+			"cards": []
 		},
 		{
 			"sha": "01fbc2d",
@@ -499,9 +755,10 @@
 						"Joker": 18,
 						"Item": 1,
 						"Deck": 5,
-						"Stake": 1
+						"Stake": 1,
+						"Challenge": 4
 					},
-					"total": 25
+					"total": 29
 				}
 			]
 		},
