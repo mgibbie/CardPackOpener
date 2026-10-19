@@ -31,6 +31,7 @@ local function capture(kind) return function(t) if type(t) == 'table' then t.__k
 local smods = setmetatable({}, {__index = function(t, k)
   local v = setmetatable({}, {__call = function(self, t) return capture(k)(t) end, __index = function(s, kk)
     if kk == 'take_ownership' then return function(key, t) if type(t)=='table' then t.__take_ownership = key end return capture(k)(t) end end
+    if kk == 'extend' then return function(self, base) local mt = {__index = base} mt.__call = function(_, t) if type(t)=='table' then for bk, bv in pairs(base) do if t[bk] == nil then t[bk] = bv end end end return capture(k)(t) end return setmetatable({}, mt) end end
     if kk == 'new' then return function(self, ...) local a = {...}; local t = {name = a[1], key = a[2], config = a[3], pos = a[4], loc_txt = a[5], cost = a[6]}; return capture(k)(t) end end
     return mkstub('SMODS.'..k..'.'..kk) end})
   rawset(t, k, v) return v end})
@@ -43,6 +44,7 @@ function HEX(h) return '#'..tostring(h) end
 function localize(k) return k end
 G = mkstub('G')
 G.C = setmetatable({}, {__index = function(t,k) return '#COLOUR_'..tostring(k) end})
+for _, k in ipairs({'SECONDARY_SET', 'SET', 'SUITS', 'RARITY', 'UI', 'BOOSTER', 'EDITION', 'TAROT'}) do rawset(G.C, k, {}) end
 G.ARGS = {LOC_COLOURS = {}}
 pokermon = {}
 setmetatable(_G, {__index = function(t, k) local s = mkstub(k) rawset(t, k, s) return s end})
@@ -112,7 +114,8 @@ for (const [group, globs] of Object.entries(spec.files || {})) {
   const files = globs.flatMap((g) => (g.endsWith('/') ? walk(g.slice(0, -1)) : [g]));
   for (const f of files) {
     try {
-      run(L, `RET = (function() ${readLua(f)} end)()`, f);
+      run(L, `RET = (function() ${readLua(f)}
+ end)()`, f);
       lua.lua_pop(L, 1);
       const ret = evalJSON(L, 'RET');
       result.groups[group].push({ file: f, ret });
@@ -124,7 +127,8 @@ for (const g of spec.globals || []) {
   try { result.globals[g] = evalJSON(L, g); } catch (e) { result.errors.push('global ' + g + ': ' + e.message); }
 }
 if (spec.loc) {
-  try { run(L, `LOC = (function() ${readLua(spec.loc)} end)()`, spec.loc); lua.lua_pop(L, 1); result.loc = evalJSON(L, 'LOC'); }
+  try { run(L, `LOC = (function() ${readLua(spec.loc)}
+ end)()`, spec.loc); lua.lua_pop(L, 1); result.loc = evalJSON(L, 'LOC'); }
   catch (e) { result.errors.push('loc: ' + e.message); }
 }
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

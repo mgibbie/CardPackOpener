@@ -1,21 +1,28 @@
-// More Fluff — the Colour consumable type (other/colours.lua): 17 base cards that sit in the consumable
-// slots and CHARGE: every round a Colour card gains a round (Paint Roller / Paint Can may add more), and each
-// `upgrade_rounds` rounds its value `val` goes up; using it does its effect `val` times. Colour cards are
-// TAKEN from packs (never used there). 4 Colour packs, Painter's Tag, Paint Roller / Colour Theory vouchers.
-// Charging happens once per won round, at the round evaluation (Game:update_round_eval ->
-// colour_end_of_round_effects), here the evaluate_round hook.
+// More Fluff 1.9.9999 — the Colour consumable type (src/colours.lua): 16 Colour cards that sit in the consumable
+// slots and CHARGE — every round a Colour card gains a round (Paint Roller / Paint Can may add more) and each
+// `upgrade_rounds` rounds its value `val` goes up; using it does its effect `val` times. Colour cards are TAKEN from
+// packs (never used there). Gold (c_mf_new_gold) is now a hidden SPECTRAL that charges like a Colour card
+// (is_colour) and turns up in Colour packs like The Soul (soul_set = Colour). 4 Colour packs, the Colour Tag
+// (Painter's Tag), Paint Roller / Colour Theory vouchers.
+//
+// 1.9.9999 reworks (from 1.5.6): Deep Blue, Red and Orange no longer change suits — each use gives a random hand
+// card +20 Chips / +4 Mult / a retrigger for good (perma_bonus / perma_mult / perma_repetitions); Seaweed gives
+// random hand cards a random enhancement; Black needs 5 rounds a level, Deep Blue / Seaweed / Red 2, Orange 4.
+// Charging happens once per won round (mod calculate, end_of_round): here the evaluate_round hook.
+// PORT NOTE: Deep Blue / Red / Orange pick their card with pseudorandom_element(G.hand.cards, rng_seed) where
+// rng_seed is an undefined global (nil: Lua math.random, unseeded); seeded here by the card's key.
 import {
   G, P_CENTERS, create_card, card_eval_status_text, localize, play_sound, pseudorandom, pseudorandom_element,
-  pseudoseed, probability_vars, probability_roll, ease_dollars,
+  pseudoseed, pseudoshuffle, probability_vars, probability_roll, ease_dollars,
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
-import { DATA, find, progressbar } from './util.js';
-import { track_last, destroy_random_hand, open_free_pack } from './rotarots.js';
+import { DATA, find, progressbar, is_colour, poll_enhancement, destroy_cards } from './util.js';
+import { track_last, open_free_pack } from './rotarots.js';
 
 /** trigger_colour_end_of_round(card): one round for this Colour card (+1 per Paint Roller / Paint Can hit). */
 export function trigger_colour_end_of_round(card) {
   if (card.ability.mf_halted) return false;
-  if (card.ability.set !== 'Colour') return undefined;
+  if (!is_colour(card)) return undefined;
   let base_count = 1;
   if (G.GAME.used_vouchers.v_mf_paintroller && probability_roll(P_CENTERS.v_mf_paintroller, 'paintroller', 1, 2, 'paintroller')) base_count += 1;
   for (const jkr of find('j_mf_paintcan')) if (probability_roll(jkr, 'paintcan', 1, jkr.ability.extra.odds, 'paintcan')) base_count += 1;
@@ -45,73 +52,81 @@ export function colour_end_of_round_effects() {
 /** n_random_colour_rounds(n, seed): Pink — a round each for n random held Colour cards. */
 export function n_random_colour_rounds(n, seed) {
   for (let i = 0; i < n; i++) {
-    const pool = G.consumeables.cards.filter((v) => v.ability.set === 'Colour');
+    const pool = G.consumeables.cards.filter((v) => is_colour(v));
     if (!pool.length) break;
     const [c] = pseudorandom_element(pool, pseudoseed(seed || 'pink'));
     trigger_colour_end_of_round(c);
   }
 }
 
-const colour = (key, def) => {
-  const s = DATA.consumables.find((c) => c.key === key && c.set === 'Colour');
-  return {
-    key: 'c_mf_' + key, set: 'Colour', name: s.name, consumeable: true, cost: s.cost, pos: s.pos, atlas: 'mf_colours',
-    hidden: s.hidden || undefined, config: JSON.parse(JSON.stringify(s.config)),
+/** FLUFF.Colour(def): a center from data.js plus the Colour base behaviour (loc_vars / set_ability / can_use / use). */
+const colour = (key, def = {}) => {
+  const s = DATA.consumables.find((c) => c.key === key && c.is_colour);
+  const set = s.set || 'Colour';
+  const center = {
+    key: 'c_mf_' + key, set, name: s.name, consumeable: true, cost: s.cost, pos: s.pos, atlas: 'mf_colours',
+    hidden: s.hidden || undefined, soul_set: s.soul_set, is_colour: true, config: JSON.parse(JSON.stringify(s.config)),
+    set_ability(self, card) {
+      card.ability.val = card.ability.val || 0;
+      card.ability.partial_rounds = card.ability.partial_rounds || 0;
+    },
     loc_vars(self, iq, card) {
-      const a = card && card.ability && card.ability.upgrade_rounds !== undefined ? card.ability : self.config;
+      const a = card && card.ability && card.ability.upgrade_rounds !== undefined ? card.ability : { ...self.config, val: 0, partial_rounds: 0 };
       const [v, m] = progressbar(a.partial_rounds, a.upgrade_rounds);
       if (def.info) def.info(iq);
-      return { vars: [a.val, v, m, a.upgrade_rounds, ...(def.extra_vars ? def.extra_vars(a) : [])] };
+      return { vars: [a.val || 0, v, m, a.upgrade_rounds, ...(def.extra_vars ? def.extra_vars(a) : [])] };
     },
-    // Taken from a pack, never used there (the Lua replaces the pack's Use button with TAKE).
-    can_use: (self, card) => card.area !== G.pack_cards && def.can_use(card),
-    use(self, card, area, copier) { track_last(card); def.use(card, copier || card); },
+    // Taken from a pack, never used there (Colour packs' cards are select_card = consumeables).
+    can_use(self, card) {
+      if (card.area === G.pack_cards) return false;
+      if (def.can_use) return !!def.can_use(card);
+      const a = card.ability;
+      if (a.suit || a.enhancement) return G.hand.cards.length >= 1;
+      return !!(a.tag || a.create_set || a.create_key);
+    },
+    use(self, card, area, copier) {
+      if (!self.hidden) track_last(card);
+      if (def.use) { def.use(card, copier || card); return; }
+      const a = card.ability;
+      if (a.tag) {
+        for (let i = 0; i < a.val; i++) G.E_MANAGER.add_event(() => { add_tag(new Tag(a.tag)); play_sound('generic1', 0.9, 0.8); play_sound('holo1', 1.2, 0.4); });
+      }
+      if (a.create_set || a.create_key) {
+        // SMODS.add_card{set / key, edition = 'e_negative'} (no key_append; the set's own area)
+        for (let i = 0; i < a.val; i++) {
+          G.E_MANAGER.add_event(() => {
+            play_sound('timpani');
+            const n = create_card(a.create_set || null, G.consumeables, null, null, null, null, a.create_key || null, undefined);
+            n.set_edition({ negative: true }, true);
+            n.add_to_deck();
+            (n.ability.set === 'Joker' ? G.jokers : G.consumeables).emplace(n);
+            card.juice_up(0.3, 0.5);
+          });
+        }
+      }
+      if (def.colour_effect) for (let i = 0; i < a.val; i++) def.colour_effect(card);
+    },
   };
+  return center;
 };
-const repeat_event = (card, fn) => { for (let i = 0; i < card.ability.val; i++) G.E_MANAGER.add_event(fn); };
-/** Deep Blue / Seaweed / Red / Orange: `val` random hand cards not of the suit become it. */
-const suit_colour = (key, suit, seed) => colour(key, {
-  can_use: () => G.hand.cards.length > 1,
-  use(card) {
-    const blacklist = new Set();
-    for (let i = 0; i < card.ability.val; i++) {
-      const pool = G.hand.cards.filter((v) => !v.is_suit(suit) && !blacklist.has(v));
-      if (!pool.length) break;
-      const [c] = pseudorandom_element(pool, pseudoseed(seed));
-      blacklist.add(c);
-      G.E_MANAGER.add_event(() => { c.flip(); play_sound('card1', 1); });
-      G.E_MANAGER.add_event(() => { c.flip(); play_sound('tarot2'); c.change_suit(suit); });
-      card.juice_up(0.3, 0.5);
-    }
-  },
-});
-const tag_colour = (key, tag_type) => colour(key, {
-  can_use: () => true,
-  use(card) { repeat_event(card, () => { add_tag(new Tag(tag_type)); play_sound('generic1', 0.9, 0.8); play_sound('holo1', 1.2, 0.4); }); },
-});
-/** White / Blue / Lilac / Peach / Gold / Green: `val` Negative copies of a type (or a forced key). */
-const make_colour = (key, set, seed, forced, area) => colour(key, {
-  can_use: () => true,
-  info: forced === 'j_mf_oopsallfives' ? (iq) => iq.push({ key: forced, set: 'Joker' }) : undefined,
-  use(card) {
-    repeat_event(card, () => {
-      play_sound('timpani');
-      const n = create_card(set, G.consumeables, null, null, null, null, forced || null, seed);
-      n.add_to_deck();
-      n.set_edition({ negative: true }, true);
-      (area === 'jokers' ? G.jokers : G.consumeables).emplace(n);
-      card.juice_up(0.3, 0.5);
-    });
+/** Deep Blue / Red / Orange: a random hand card gains a permanent bonus (each use of `val` picks again). */
+const perma_colour = (key, stat, per) => colour(key, {
+  can_use: () => G.hand.cards.length >= 1,
+  extra_vars: per ? (a) => [a[per]] : undefined,
+  colour_effect(card) {
+    const [c] = pseudorandom_element(G.hand.cards, pseudoseed(key));
+    if (!c) return;
+    c.ability[stat] = (c.ability[stat] || 0) + (per ? card.ability[per] : 1);
+    G.E_MANAGER.add_event(() => { play_sound(stat === 'perma_mult' ? 'multhit1' : stat === 'perma_bonus' ? 'chips1' : 'tarot2', 1, 0.6); c.juice_up(0.3, 0.3); });
   },
 });
 
 export const centers = [
   colour('black', {
-    // FIX (intended design): the Lua's can_use tested `v.edition.egative` (a typo, always nil), so Black was
-    // usable with only Negative jokers and then did nothing. It needs a joker that isn't Negative yet.
+    // (the 1.5.6 `v.edition.egative` typo is fixed upstream: it needs a joker that isn't Negative yet)
     can_use: () => G.jokers.cards.some((v) => v.ability.set === 'Joker' && (!v.edition || !v.edition.negative)),
-    use(card) {
-      repeat_event(card, () => {
+    colour_effect(card) {
+      G.E_MANAGER.add_event(() => {
         const temp = G.jokers.cards.filter((v) => v.ability.set === 'Joker' && !v.edition);
         const backup = G.jokers.cards.filter((v) => v.ability.set === 'Joker' && v.edition && !v.edition.negative);
         const pool = temp.length ? temp : backup;
@@ -122,29 +137,48 @@ export const centers = [
       });
     },
   }),
-  suit_colour('deepblue', 'Spades', 'deepblue'),
-  tag_colour('crimson', 'tag_rare'),
-  suit_colour('seaweed', 'Clubs', 'seaweed'),
+  perma_colour('deepblue', 'perma_bonus', 'chips_per'),
+  colour('crimson'),
+  colour('seaweed', {
+    can_use: () => G.hand.cards.length >= 1,
+    use(card) {
+      const blacklist = new Set();
+      for (let i = 0; i < card.ability.val; i++) {
+        const pool = G.hand.cards.filter((v) => !blacklist.has(v));
+        if (!pool.length) break;
+        const [c] = pseudorandom_element(pool, pseudoseed('c_mf_seaweed'));
+        blacklist.add(c);
+        const enh = poll_enhancement({ key: 'mf_seaweed', guaranteed: true, no_replace: true });
+        G.E_MANAGER.add_event(() => { c.flip(); play_sound('card1', 1); c.juice_up(0.3, 0.3); });
+        G.E_MANAGER.add_event(() => { if (enh) c.set_ability(P_CENTERS[enh]); play_sound('tarot2'); c.flip(); });
+        card.juice_up(0.3, 0.5);
+      }
+    },
+  }),
   colour('brown', {
-    can_use: () => G.hand.cards.length > 1,
+    can_use: () => G.hand.cards.length >= 1,
     extra_vars: (a) => [a.cash_per],
     use(card) {
-      destroy_random_hand(card.ability.val, card);
+      const temp = G.hand.cards.slice().sort((a, b) => (a.playing_card || 0) - (b.playing_card || 0));
+      pseudoshuffle(temp, pseudoseed('brown'));
+      const doomed = temp.slice(0, Math.min(temp.length, card.ability.val));
+      G.E_MANAGER.add_event(() => { play_sound('tarot1'); card.juice_up(0.3, 0.5); });
+      G.E_MANAGER.add_event(() => { destroy_cards(doomed); });
       ease_dollars(card.ability.cash_per * card.ability.val);
     },
   }),
-  tag_colour('grey', 'tag_double'),
-  tag_colour('silver', 'tag_polychrome'),
-  make_colour('white', 'Colour', 'white'),
-  suit_colour('red', 'Hearts', 'red'),
-  suit_colour('orange', 'Diamonds', 'orange'),
-  colour('yellow', { can_use: () => false, extra_vars: (a) => [a.value_per], use() {} }),
-  make_colour('green', null, 'sup', 'j_mf_oopsallfives', 'jokers'),
-  make_colour('blue', 'Planet', 'blue'),
-  make_colour('lilac', 'Tarot', 'blue'),
+  colour('grey'),
+  colour('silver'),
+  colour('white'),
+  perma_colour('red', 'perma_mult', 'mult_per'),
+  perma_colour('orange', 'perma_repetitions', null),
+  colour('yellow', { extra_vars: (a) => [a.value_per] }),
+  colour('green', { info: (iq) => iq.push({ key: 'j_mf_oopsallfives', set: 'Joker', vars: [1] }) }),
+  colour('blue'),
+  colour('lilac'),
   colour('pink', { can_use: () => true, use(card) { n_random_colour_rounds(card.ability.val); } }),
-  make_colour('peach', 'Rotarot', 'peach'),
-  make_colour('new_gold', null, 'sup', 'c_soul'),
+  colour('peach'),
+  colour('new_gold', { info: (iq) => iq.push({ key: 'c_soul', set: 'Spectral', vars: [] }) }),
 ];
 
 // ------------------------------------------------------------- packs / tag / vouchers
@@ -152,7 +186,7 @@ const PACK = (key) => {
   const s = DATA.boosters.find((b) => b.key === key);
   return {
     key: 'p_mf_' + key, set: 'Booster', name: s.key, kind: 'Colour', cost: s.cost, weight: s.weight, pos: s.pos, atlas: 'mf_packs',
-    config: JSON.parse(JSON.stringify(s.config)),
+    config: JSON.parse(JSON.stringify(s.config)), group_key: 'k_colour_pack',
     loc_vars: (self, iq, card) => ({ vars: [self.config.choose, (card && card.ability && card.ability.extra) ?? self.config.extra] }),
     create_card() {
       const n = create_card('Colour', G.pack_cards, null, null, true, true, null, 'mf_colour');
@@ -188,11 +222,17 @@ export const tags = [{
 export const consumable_types = [{ key: 'Colour', name: 'Colour', shop_rate: 1, default: 'c_mf_deepblue', primary_colour: '#4f6367', secondary_colour: '#4f6367' }];
 
 export const hooks = {
-  /** Game:update_round_eval -> colour_end_of_round_effects (once per won round). */
+  /** mod calculate end_of_round -> colour_end_of_round_effects (once per won round). */
   evaluate_round() { colour_end_of_round_effects(); return undefined; },
-  /** G.FUNCS.reserve_card: a Colour card in a pack is TAKEN into the consumable slots. */
-  can_reserve: (card) => (card.ability.set === 'Colour' ? true : undefined),
+  /** Colour cards (and Gold) in a pack are TAKEN into the consumable slots (select_card = consumeables). */
+  can_reserve: (card) => (is_colour(card) ? true : undefined),
   view_card(card, v) {
-    if (card.area === G.pack_cards && card.ability.set === 'Colour') { v.no_use = true; v.reserve = true; v.reserve_label = localize('b_take'); }
+    if (card.area === G.pack_cards && is_colour(card)) { v.no_use = true; v.reserve = true; v.reserve_label = localize('b_take'); }
+  },
+  /** Steamodded perma_repetitions (Orange): a playing card retriggers that many more times, scored or held. */
+  card_repetitions(card, context) {
+    const n = card.ability && card.ability.perma_repetitions;
+    if (!n || n <= 0 || !(context.cardarea === G.play || context.cardarea === G.hand)) return undefined;
+    return { message: localize('k_again_ex'), repetitions: n, card };
   },
 };

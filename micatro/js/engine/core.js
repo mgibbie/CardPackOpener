@@ -1049,6 +1049,8 @@ export function ease_hands_played(mod, instant) {
   if (instant) _mod(); else G.E_MANAGER.add_event(_mod);
 }
 export function ease_ante(mod) {
+  // (a Lua ease_ante wrap that changes the step: MoreFluff's Superboss freezes the ante, Final Stake holds it)
+  if (ACTIVE_MODS.length) mod = reduceHook('ease_ante_mod', mod);
   if (ACTIVE_MODS.length) callHook('ease_ante', mod);
   G.E_MANAGER.add_event(() => {
     G.GAME.round_resets.ante += mod || 0;
