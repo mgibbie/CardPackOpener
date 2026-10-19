@@ -144,7 +144,7 @@ const seal_spectral = (seal, info) => ({
   },
 });
 defs.obituary = seal_spectral('poke_pink_seal', 'poke_pink_seal_seal');
-defs.revenant = seal_spectral('poke_silver', 'poke_silver');
+defs.revenant = seal_spectral('poke_silver', 'poke_silver_seal');
 
 // Nightmare: destroy the selected typed joker, create 2 Negative Energies of its type.
 defs.nightmare = {

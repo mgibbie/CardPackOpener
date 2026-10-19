@@ -42,7 +42,9 @@ export function composeFace(ctx, d, backKey, opts) {
     // (a deck skin the player chose for this suit draws instead — ui/skins.js, cosmetic only)
     if (d.front_atlas && !(center && center.name === 'Stone Card')) { if (!drawSkinFront(ctx, d, null, FACE_W, FACE_H)) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H); }
     else if (d.front && CARDS[d.front] && !(center && center.name === 'Stone Card')) { if (!drawSkinFront(ctx, d, CARDS[d.front].pos, FACE_W, FACE_H)) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H); }
-    if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
+    // (a mod seal — Pokermon's Pink / Silver — draws its cell from the mod's atlas: engine/view.js seal_atlas / seal_pos)
+    if (d.seal && d.seal_atlas) drawModCell(ctx, d.seal_atlas, d.seal_pos, 0, 0, FACE_W, FACE_H);
+    else if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
   } else if (modCard) {
     if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
   } else if (center) {
@@ -85,6 +87,7 @@ export function modAtlasesOf(d) {
   const out = [];
   if (d.atlas) out.push(d.atlas);
   if (d.front_atlas) out.push(d.front_atlas);
+  if (d.seal_atlas) out.push(d.seal_atlas);
   if (d.blind_card && d.blind_card.atlas) out.push(d.blind_card.atlas);
   if (d.group) out.push('bunco_link');
   for (const st of d.mod_stickers || []) out.push(st.atlas);

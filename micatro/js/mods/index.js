@@ -1,7 +1,7 @@
 // Every mod Micatro ships, loaded on demand (a mod's code and data only
 // download when a run enables it). Order = default display order.
 import { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC, resolveMods } from './registry.js';
-import { P_CENTERS, P_STAKES } from '../engine/core.js';
+import { P_CENTERS, P_STAKES, P_SEALS } from '../engine/core.js';
 
 export const AVAILABLE = [
   // { id, name, by, requires: [ids], description?, size?, load: () => import('./<id>/index.js') }
@@ -121,10 +121,12 @@ export async function loadMods(ids) {
 // the registry plus dependency bookkeeping over AVAILABLE (which is known
 // before any mod module has downloaded).
 
-export { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES };
+export { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC };
 
 /** A registered center (mod or base) by key — e.g. a mod deck's art. */
 export const centerByKey = (key) => P_CENTERS[key] || null;
+/** A registered seal by key (a mod's seal: its badge colour for a playing card's tooltip). */
+export const sealByKey = (key) => P_SEALS[key] || null;
 /**
  * Decks the given (loaded) mods add, for the New Run picker — honouring a deck's required mod
  * option (`mod_option` / Pokermon's `poke_option`, e.g. its legacy decks).

@@ -14,7 +14,7 @@
 //   describeBack(key)     -> {name, key, lines}
 
 import {
-  G, P_CENTERS, P_BLINDS, P_TAGS, LOC, localize, get_blind_amount, number_format,
+  G, P_CENTERS, P_BLINDS, P_TAGS, P_SEALS, LOC, localize, get_blind_amount, number_format,
 } from './core.js';
 import * as B from './bignum.js';
 import { MOD_LOC, MODS, RARITIES, callHook, reduceHook } from '../mods/registry.js';
@@ -58,6 +58,10 @@ function desc(set, key) {
 }
 function desc_lines(set, key, vars) { const d = desc(set, key); return d ? fill(d.text, vars) : []; }
 const SEAL_KEY = (seal) => String(seal).toLowerCase() + '_seal';
+/** A mod's seal (SMODS.Seal: Pokermon's Pink / Silver) behind a seal badge key ('poke_silver_seal'), else null. */
+const MOD_SEAL = (badge_key) => { const s = /_seal$/.test(badge_key) && P_SEALS[badge_key.slice(0, -5)]; return s && s.mod ? s : null; };
+/** A badge; a mod seal's carries its badge_colour (SMODS.Seal badge_colour). */
+const seal_badge = (key) => { const b = badge(key), s = MOD_SEAL(key); if (s && s.badge_colour) b.colour = s.badge_colour; return b; };
 const RARITY_KEY = [null, 'common', 'uncommon', 'rare', 'legendary'];
 
 function badge(key) {
@@ -393,6 +397,8 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
       if (v === 'negative') info_queue.push(P_CENTERS.e_negative);
       if (v === 'negative_consumable') info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } });
       if (v === 'gold_seal' || v === 'blue_seal' || v === 'red_seal' || v === 'purple_seal' || v === 'eternal' || v === 'pinned_left') info_queue.push({ key: v, set: 'Other' });
+      // (SMODS generate_card_ui: a mod seal's badge queues the seal's own tooltip, descriptions.Other.<key>_seal)
+      else if (MOD_SEAL(v) && desc('Other', v)) info_queue.push({ key: v, set: 'Other' });
       if (v === 'perishable') info_queue.push({ key: 'perishable', set: 'Other', vars: [G.GAME.perishable_rounds || 1, (specific_vars && specific_vars.perish_tally !== undefined) ? specific_vars.perish_tally : G.GAME.perishable_rounds] });
       if (v === 'rental') info_queue.push({ key: 'rental', set: 'Other', vars: [G.GAME.rental_rate || 1] });
     }
@@ -465,7 +471,7 @@ function describe0(card) {
   if (card.debuff) out_badges.push({ key: 'debuffed', label: (desc('Other', 'debuffed_default') || {}).name || 'Debuffed' });
   if (card_type === 'Joker') out_badges.push(badge(RARITY_KEY[center.rarity] || 'common'));
   else if (card_type !== 'Default' && card_type !== 'None') out_badges.push(set_badge(center));
-  for (const b of badges) out_badges.push(badge(b === 'negative_consumable' ? 'negative' : b));
+  for (const b of badges) out_badges.push(seal_badge(b === 'negative_consumable' ? 'negative' : b));
   for (const b of out_badges) if (b.key === 'perishable') b.tally = a.perish_tally;
 
   return {
@@ -621,6 +627,7 @@ function describe_mod(card, center) {
   const info_queue = [];
   let r = {};
   try { r = (center.loc_vars && center.loc_vars(center, info_queue, card)) || {}; } catch (e) { r = {}; }
+  if (card.seal && MOD_SEAL(SEAL_KEY(card.seal)) && desc('Other', SEAL_KEY(card.seal))) info_queue.push({ key: SEAL_KEY(card.seal), set: 'Other' });
   const set = r.set || center.set;
   const key = r.key || center.key;
   // (SMODS.Booster keeps its text in descriptions.Other: Pokermon's packs, Autumn Circus's Option Select)
@@ -651,7 +658,7 @@ function describe_mod(card, center) {
     badges.push(rar ? { key: rar.key, label: rar.name || rar.key, colour: rar.badge_colour } : badge(RARITY_KEY[center.rarity] || 'common'));
   } else if (center.set !== 'Default') badges.push(set_badge(center));
   if (card.edition && card.edition.type) badges.push(badge(card.edition.type === 'holo' ? 'holographic' : card.edition.type));
-  if (card.seal) badges.push(badge(SEAL_KEY(card.seal)));
+  if (card.seal) badges.push(seal_badge(SEAL_KEY(card.seal)));
   const a = card.ability || {};
   if (a.eternal) badges.push(badge('eternal'));
   if (a.perishable) badges.push({ ...badge('perishable'), tally: a.perish_tally });

@@ -1,6 +1,6 @@
 // Balatro description markup -> HTML.  "{C:mult}+4{} Mult", "{X:mult,C:white} X2 {}",
 // "{s:0.8}", "{C:attention,T:tag_double}..." ({T:}/{E:}/{V:} are accepted and ignored).
-import { CENTERS, LOC, CARDS, modType, cssColour, modFont } from './assets.js';
+import { CENTERS, LOC, CARDS, MODREG, modType, cssColour, modFont } from './assets.js';
 import { isBig, from as bigFrom, formatBig } from '../engine/bignum.js';
 
 export const COL = {
@@ -114,8 +114,12 @@ export function describePlaying(cv) {
     if (ed) { extra(ed[0], ed[1] ? [ed[1]] : []); badges.push(ed[0]); }
   }
   if (cv.seal) {
-    const s = D.Other[cv.seal.toLowerCase() + '_seal'];
-    if (s) { extra(s.name, s.text); badges.push(s.name); }
+    // (a mod seal — Pokermon's Pink / Silver — has its text in the mod's loc, Other.<key>_seal like SMODS, and its badge colour)
+    const k = cv.seal.toLowerCase() + '_seal';
+    const MO = (MODREG.loc.descriptions || {}).Other || {};
+    const s = D.Other[k] || MO[k];
+    const ms = !D.Other[k] && MODREG.seal(cv.seal);
+    if (s) { extra(s.name, s.text); badges.push(ms && ms.badge_colour ? { key: k, label: s.name, colour: ms.badge_colour } : s.name); }
   }
   // lines a mod adds to a playing card's tooltip (view_card mod_lines: Bunco's linked group, mod editions)
   if (cv.mod_lines && cv.mod_lines.length) { lines.push(''); lines.push(...cv.mod_lines); }
