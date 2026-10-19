@@ -435,7 +435,8 @@ const hooks = {
   },
   view_card,
   view(view, cardView) {
-    if (G.scry_view && scry_visible()) view.areas.scry = scry_view.cards.map((c) => cardView(c));
+    // (face up, as the Lua's copies are: copy_card makes a fresh front-facing card)
+    if (G.scry_view && scry_visible()) view.areas.scry = scry_view.cards.map((c) => { const v = cardView(c); delete v.facing; delete v.hl; return v; });
     view.poke = { scry_amount: G.GAME.scry_amount || 0, energies_used: G.GAME.energies_used || 0 };
   },
 };

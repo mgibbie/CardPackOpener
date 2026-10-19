@@ -12,7 +12,8 @@ import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { onSkins } from './skins.js';
 import { onWinStickers, winSticker } from './stickers.js';
 
-const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
+// 'scry': Pokermon's scry view (view.areas.scry, the next cards to be drawn), shown face up above the deck.
+const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards', 'scry'];
 const PACK_STATES = ['TAROT_PACK', 'PLANET_PACK', 'SPECTRAL_PACK', 'STANDARD_PACK', 'BUFFOON_PACK', 'MOD_PACK', 'MOD_PACK_HAND'];
 // packs that show (and target) your hand: Arcana, Spectral and draw_hand mod packs
 const HAND_PACK_STATES = ['TAROT_PACK', 'SPECTRAL_PACK', 'MOD_PACK_HAND'];
@@ -301,7 +302,7 @@ export class Board {
   deckPos() { return { x: this.R.deck.x, y: this.R.deck.y }; }
 
   rowTargets(ids, rect, opt = {}) {
-    const n = ids.length, cw = this.cw;
+    const n = ids.length, cw = opt.cw || this.cw;
     if (!n) return [];
     const maxGap = cw * (opt.gap || 1.08);
     const step = n > 1 ? Math.min(maxGap, (rect.w - cw) / (n - 1)) : 0;
@@ -354,6 +355,11 @@ export class Board {
       const ids = this.areas[k];
       this.rowTargets(ids, R[k], { z: k === 'jokers' ? 300 : 320, gap: 1.06 }).forEach((t, i) => { if (this.sel === ids[i] || (k === 'jokers' && this.jsel === ids[i])) t.y += this.mode === 'portrait' ? 10 : 14; set(ids[i], t); });
     }
+    const scryIds = this.areas.scry;
+    if (scryIds.length) {
+      const r = this.scryRect();
+      this.rowTargets(scryIds, r, { z: 60, gap: 1.0, scale: r.s, cw: this.cw * r.s, fan: { rot: 0.06, droop: 6 * r.s } }).forEach((t, i) => set(scryIds[i], t));
+    }
     this.modAreas.forEach((a, i) => {
       const ids = this.areas[a.key] || [], r = this.modAreaRect(i);
       this.rowTargets(ids, r, { z: 150, gap: 1.0, scale: r.s }).forEach((t, j) => { if (this.sel === ids[j]) t.y += 10; set(ids[j], t); });
@@ -402,6 +408,22 @@ export class Board {
       }
     }
     this.placeModAreas();
+  }
+  /**
+   * Pokermon's scry view (functions/uifunctions.lua create_scry_cardarea): a 2-card-wide area sitting on top of
+   * the deck pile, its cards at 0.7 scale, laid out like the hand. Landscape: right above the deck, in the column
+   * right of the hand. Portrait: the deck sits beside Play / Discard with the hand right above it, so the view
+   * goes in the band between the played cards and the hand, at the deck's (right) end. It compresses with more cards.
+   */
+  scryRect() {
+    const R = this.R;
+    if (this.mode === 'landscape') {
+      const s = 0.7, deckTop = R.deck.y - this.ch / 2, ch = this.ch * s;
+      return { x: this.W - 16 - 176, y: deckTop - 10 - ch, w: 176, h: ch, s };
+    }
+    const top = R.play.y + R.play.h + 8, bottom = R.hand.y - 6;
+    const s = Math.max(0.45, Math.min(0.7, (bottom - top) / this.ch)), ch = this.ch * s;
+    return { x: 708 - 250, y: bottom - ch, w: 250, h: ch, s };
   }
   /** Slot rect of the i-th mod area: right of the play area under the consumables (landscape), smaller cards in portrait.
    *  It starts below the consumables' "n/limit" counter (that label sits 8px under the area and is ~32px tall), so the
@@ -509,7 +531,7 @@ export class Board {
     this.attachCard(s);
     this.layout();
     if (instant) { s.place(s.tgt.x, s.tgt.y, s.tgt.r, s.tgt.s); }
-    else if (area === 'hand' || area === 'play') {
+    else if (area === 'hand' || area === 'play' || area === 'scry') {
       const p = this.deckPos(); s.place(p.x, p.y, 0.1, 1);
       if (d.facing !== 'back') { s.setData({ ...d, facing: 'back' }); s.startFlip(d, 0.3 / Math.max(1, this.speed * 0.7)); }
     }
@@ -1031,6 +1053,11 @@ export class Board {
     const v = this.view;
     if (!v) return;
     if (this.readOnly) { this.showCardTip(s, true); return; }
+    if (s.area === 'scry') {
+      // (look, don't touch: Pokermon's scry copies can't be hovered or dragged — a tap shows what the card is)
+      if (this.tipFor === s.id) this.hideTip(); else this.showCardTip(s, true);
+      return;
+    }
     if (s.area === 'hand') {
       if (this.locked) return;
       if (v.state === 'SELECTING_HAND' || HAND_PACK_STATES.includes(v.state)) {
@@ -1145,7 +1172,8 @@ export class Board {
   popup(id, text, colour, kind) {
     const s = this.sprites.get(id);
     let x, y, below = false;
-    if (s) { x = s.T.x; below = s.area === 'jokers' || s.area === 'consumeables'; y = below ? s.T.y + this.ch * 0.5 + 6 : s.T.y - this.ch * 0.5 - 8; }
+    // (a smaller card — the scry view, a mod area — gets its popup at its own top / bottom edge)
+    if (s) { const hh = this.ch * 0.5 * (s.tgt.s || 1); x = s.T.x; below = s.area === 'jokers' || s.area === 'consumeables'; y = below ? s.T.y + hh + 6 : s.T.y - hh - 8; }
     else { x = this.R.play.x + this.R.play.w / 2; y = this.R.play.y; }
     const p = h('div', 'popup' + (below ? ' below' : '') + (kind ? ' ' + kind : ''));
     p.textContent = text;
