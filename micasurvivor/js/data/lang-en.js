@@ -407,6 +407,9 @@ G.I18n.add({
   'Estoy listo': 'I\'m ready', 'Ya no estoy listo': 'I\'m not ready', 'Cambiar Pokémon': 'Change Pokémon',
   'Pulsa "Estoy listo" cuando quieras empezar.': 'Press "I\'m ready" when you want to start.', 'Esperando a que todos estén listos…': 'Waiting for everyone to be ready…',
   'Alguien juega por el servidor (sin conexión directa): irá algo más a saltos.': 'Someone is playing through the server (no direct connection): it will be a bit choppier.',
+  'Relé: quedan {x} min hoy': 'Relay: {x} min left today',
+  'Se ha agotado el tiempo de relé de hoy: quien no puede conectarse directamente no puede seguir. Las conexiones directas siguen funcionando.':
+    'Relay time is used up for today; players who can\'t connect directly can\'t continue. Direct connections still work.',
   'No se pudo empezar.': 'Couldn\'t start.', '{x} te invita a jugar en su sala · abre el menú para unirte': '{x} invites you to their lobby · open the menu to join',
 
   // ---------------- ranking ----------------

@@ -104,7 +104,12 @@ const MSURV_SIGNAL_WINDOW = 48;            // signals kept per recipient
 const MSURV_RELAY_MSG_MAX = 16_000;        // one relayed game message
 const MSURV_RELAY_MAX = 64_000;            // one sender's relay row (its unacknowledged window to everyone)
 const MSURV_RELAY_WINDOW = 30;             // unacknowledged messages kept per recipient (~10 s at 3 Hz)
-const MSURV_RELAY_MIN_MS = +process.env.MSURV_RELAY_MIN_MS || 250;        // HARD floor between one sender's relay writes (<= 4 writes/s)
+const MSURV_RELAY_MIN_MS = +process.env.MSURV_RELAY_MIN_MS || 1000;       // HARD floor between one sender's relay writes (<= 1 write/s: owner, 2026-10-18)
+// The relay's daily allowance per HOST (owner, 2026-10-18: "slow relay + time cap"): a UTC minute counts once if any
+// relay write happened in one of that host's lobbies during it; past the cap, relay pushes / pulls in the host's
+// lobbies are refused (403 {budget:true}) until the next UTC day. Direct (WebRTC) play never touches it.
+//   msurvrelaybudget:<host>:<YYYYMMDD>   {rev, used, last}   (compare-and-set on rev; swept after 2 days)
+const MSURV_RELAY_DAILY_MIN = 30;
 const MSURV_RELAY_STALE_MS = 30_000;       // a relay row this old is ignored (its sender is gone)
 // MICASURVIVOR leaderboard (run-score mode 'micasurvivor'): best survival time, solo.
 const MICASURVIVOR_MAX_TIME = 4 * 3600; // seconds; a longer "run" is refused, not clamped onto the board
@@ -213,13 +218,13 @@ const RATE_LIMITS = {
 	// MicaSurvivor cloud save: the client debounces (purchases ~3s, run end, else ~30s) — a brake on floods
 	'micasurvivor-save-put': [30, 60_000], 'micasurvivor-save-get': [30, 60_000],
 	// MicaSurvivor online co-op (M5 batch 12b): the lobby polls ~1/2s, signalling ~1/s while a pair
-	// connects, the relay fallback ~3/s per player (each push is ALSO hard-floored at
+	// connects, the relay fallback ~1/s per player (each push is ALSO hard-floored at
 	// MSURV_RELAY_MIN_MS per sender by its own row's timestamp, so isolates can't multiply it)
 	'msurv-lobby-create': [10, 60_000], 'msurv-lobby-join': [20, 60_000], 'msurv-lobby-leave': [20, 60_000],
 	'msurv-lobby-update': [60, 60_000], 'msurv-lobby-poll': [30, 10_000],
 	'msurv-invite': [20, 60_000], 'msurv-invites': [20, 60_000], 'msurv-invite-decline': [20, 60_000],
 	'msurv-signal-put': [40, 10_000], 'msurv-signal-poll': [30, 10_000],
-	'msurv-relay-push': [45, 10_000], 'msurv-relay-pull': [45, 10_000],
+	'msurv-relay-push': [15, 10_000], 'msurv-relay-pull': [15, 10_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -268,6 +273,7 @@ const GC_TABLE = [
 	// (MSURV_* below: a lobby whose host stopped polling is closed, an invite lasts 3 min, a relay
 	// row is ignored after 30 s); these sweeps only reclaim the rows of lobbies nobody closed.
 	['msurvsig:', 1 * HR], ['msurvrelay:', 1 * HR], ['msurvinv:', 1 * HR], ['msurvlobby:', 12 * HR],
+	['msurvrelaybudget:', 48 * HR], // the relay's daily minutes per host (msurvrelaybudget:<host>:<YYYYMMDD>)
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -1986,7 +1992,8 @@ export default async function handler(req, env) {
 	// relay fallback (see the MSURV_* constants for the rows and their lives). Every row written
 	// here is an EXACT key derived from the token's user and a lobby it belongs to.
 	if (action.startsWith('msurv-')) {
-		const now = Date.now();
+		// (globalThis.__msurvClock: an injectable clock for the tests, which run this handler in-process; never set live)
+		const now = typeof globalThis.__msurvClock === 'function' ? globalThis.__msurvClock() : Date.now();
 		const myFriends = Array.isArray(user.friends) ? user.friends : [];
 		const LKEY = id => 'msurvlobby:' + id;
 		const SKEY = (id, who) => 'msurvsig:' + id + ':' + who;
@@ -2049,6 +2056,23 @@ export default async function handler(req, env) {
 			return { out };
 		};
 		const sinceOf = (who) => { const s = body.since && Number(body.since[who]); return Number.isFinite(s) ? s : -1; };
+		// the relay's daily minutes for a host (UTC day; a minute counts once)
+		const BKEY = host => 'msurvrelaybudget:' + host + ':' + new Date(now).toISOString().slice(0, 10).replace(/-/g, '');
+		const minute = Math.floor(now / 60_000);
+		const budgetOf = async host => (await store.get(BKEY(host))) || { rev: 0, used: 0, last: -1 };
+		const relayLeft = b => Math.max(0, MSURV_RELAY_DAILY_MIN - (b.used || 0));
+		const budgetOut = b => (b.used || 0) >= MSURV_RELAY_DAILY_MIN && b.last !== minute;
+		// count this minute (once, whoever writes first: compare-and-set, re-read on a lost race)
+		const spendMinute = async host => {
+			for (let i = 0; i < 5; i++) {
+				const b = await budgetOf(host);
+				if (b.last === minute) return true;
+				if (budgetOut(b)) return false;
+				if (await store.setIfRev(BKEY(host), { rev: (b.rev || 0) + 1, used: (b.used || 0) + 1, last: minute, updated_at: now }, b.rev || 0)) return true;
+			}
+			return true;   // (contended: someone else just counted this minute)
+		};
+		const BUDGET_ERR = { error: 'relay time used up for today', budget: true, max: MSURV_RELAY_DAILY_MIN };
 
 		// ---- lobbies ----
 		if (action === 'msurv-lobby-create') {
@@ -2106,8 +2130,9 @@ export default async function handler(req, env) {
 				if (r.error) return json({ closed: true, removed: true });
 				lb = r.lb;
 			}
-			if (body.v != null && Number(body.v) === (lb.rev || 0)) return json({ unchanged: true, v: lb.rev || 0 });
-			return json({ lobby: view(lb) });
+			const left = relayLeft(await budgetOf(lb.host));   // (the lobby's warning: "Relay: N min left today")
+			if (body.v != null && Number(body.v) === (lb.rev || 0)) return json({ unchanged: true, v: lb.rev || 0, relayLeft: left });
+			return json({ lobby: view(lb), relayLeft: left });
 		}
 		if (action === 'msurv-lobby-update') {
 			if (!okId) return json({ error: 'bad lobby id' }, 400);
@@ -2224,6 +2249,8 @@ export default async function handler(req, env) {
 		if (action === 'msurv-relay-push' || action === 'msurv-relay-pull') {
 			const g = await myLobby();
 			if (g.error) return fail(g);
+			// the host's daily relay minutes: used up -> refused (pushes AND pulls), until the next UTC day
+			if (budgetOut(await budgetOf(g.lb.host))) return json(BUDGET_ERR, 403);
 			const pre = 'msurvrelay:' + id + ':';
 			const rows = new Map((await store.list(pre)).filter(x => x.key.startsWith(pre)).map(x => [x.key.slice(pre.length), x.value]));
 			if (action === 'msurv-relay-push') {
@@ -2235,6 +2262,7 @@ export default async function handler(req, env) {
 				for (const [who, s] of Object.entries(body.ack || {})) if (who !== username && member(g.lb, who) && Number.isSafeInteger(s)) ack[who] = s;
 				const row = { ts: now, to: w.out, ack };
 				if (JSON.stringify(row).length > MSURV_RELAY_MAX) return json({ error: 'relay window too large', max: MSURV_RELAY_MAX }, 413);
+				if (!(await spendMinute(g.lb.host))) return json(BUDGET_ERR, 403);
 				await store.setJSON(RKEY(id, username), row);
 			}
 			const msgs = {}, acks = {}, age = {};
@@ -2247,7 +2275,7 @@ export default async function handler(req, env) {
 				if (list.length) msgs[m.name] = list;
 				if (row.ack && Number.isSafeInteger(row.ack[username])) acks[m.name] = row.ack[username];
 			}
-			return json({ msgs, acks, age, members: g.lb.members.map(m => m.name), started: !!g.lb.start });
+			return json({ msgs, acks, age, members: g.lb.members.map(m => m.name), started: !!g.lb.start, relayLeft: relayLeft(await budgetOf(g.lb.host)) });
 		}
 		return json({ error: 'unknown action' }, 400);
 	}

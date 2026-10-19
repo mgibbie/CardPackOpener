@@ -2616,7 +2616,7 @@ function msModesSection(M) {
 // runs the enemies), on Magepunk accounts; the numbers come from js/net/coop.js and server/mp.mjs (MSURV_*)
 function msOnlineSection(O) {
   const pct = v => Math.round(v * 100) + ' %', kb = n => Math.round(n / 1000) + ' KB';
-  const [play, ready, viaServer, signIn] = O.strings;
+  const [play, ready, viaServer, signIn, leftEg, usedUp] = O.strings;
   return mcSection('Online co-op with friends', 'Up to ' + O.max + ' players over the internet, each on their own device: upstream PokéSurvivor’s group runs, on Magepunk accounts and friends.',
     h('h3', { class: 'mc-h3' }, 'Getting together'),
     h('ol', { class: 'mc-list' },
@@ -2637,7 +2637,9 @@ function msOnlineSection(O) {
       [h('b', null, 'Leaving'), 'A guest who leaves (or closes the tab) is removed and the others go on. If the host leaves, the run ends for everyone, with their rewards saved; afterwards the lobby reopens.'],
     ], 'ms-online'),
     h('h3', { class: 'mc-h3' }, 'Connection'),
-    h('p', null, 'Browsers connect directly to the host (WebRTC, like a video call: players can see each other’s IP address), negotiated through the Magepunk server and public STUN only. When two browsers can’t connect directly (some routers and mobile data), the pair falls back to a relay through the Magepunk server (“' + viaServer + '”): ' + O.rateRelay + ' updates a second instead of ' + O.rateDirect + ', so it is a bit choppier. The relay is capped: one write every ' + O.relay.min + ' ms per player at most, ' + kb(O.relay.msg) + ' per message, ' + O.relay.window + ' unacknowledged messages and ' + kb(O.relay.row) + ' per player, and a player silent for ' + O.relay.stale + ' s is gone.'));
+    h('p', null, 'Browsers connect directly to the host (WebRTC, like a video call: players can see each other’s IP address), negotiated through the Magepunk server and public STUN only. When two browsers can’t connect directly (some routers and mobile data), the pair falls back to a relay through the Magepunk server (“' + viaServer + '”): ' + O.rateRelay + ' update' + (O.rateRelay === 1 ? '' : 's') + ' a second instead of ' + O.rateDirect + ', so it is choppier (partners and enemies glide between updates). The relay is capped: one write every ' + O.relay.min + ' ms per player at most, ' + kb(O.relay.msg) + ' per message, ' + O.relay.window + ' unacknowledged messages and ' + kb(O.relay.row) + ' per player, and a player silent for ' + O.relay.stale + ' s is gone.'),
+    // MicaSurvivor M5 batch 12b (owner, 2026-10-18: "slow relay + time cap")
+    h('p', null, 'Each host gets ' + O.relay.daily + ' relay minutes per day (UTC), across all their lobbies: a minute counts once when anyone in the lobby used the relay during it. The lobby warns ahead while a pair is on the relay (“' + leftEg + '”). When they run out: “' + usedUp + '” A relayed guest’s run ends with its rewards saved and the host carries on; pairs connected directly are not affected.'));
 }
 function msTableInline(rows) {
   return h('span', null, rows.filter(r => r.players > 1).map(r => r.players + ' players: foes appear ×' + r.spawn + ', enemy HP ×' + r.hp + ', experience ×' + r.xp).join(' · ') + ' (bosses also ×1.4 HP in a group).');

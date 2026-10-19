@@ -63,12 +63,12 @@ A(MO.coop && MO.coop.speed === 118 && MO.coop.follow === 150 && MO.coop.engage =
 	'Co-op Mode from localcoop.js: speed 118, follow 150 / engage 120 / seek 240, leash 520, 0.22 deadzone, ×0.8 damage, ×1.15 cooldown, -20 % coins, 20 s to revive at half HP', JSON.stringify(MO.coop));
 // MicaSurvivor M5 batch 12b: online co-op with friends (upstream's group rules from coop.js, the server's limits from mp.mjs)
 const ON = W.online || {};
-A(ON.max === 4 && ON.rateDirect === 15 && ON.rateRelay === 3 && ON.stall === 2.5 && ON.revive === 3 && ON.colors.length === 4
+A(ON.max === 4 && ON.rateDirect === 15 && ON.rateRelay === 1 && ON.stall === 2.5 && ON.revive === 3 && ON.colors.length === 4
 	&& JSON.stringify(ON.scale[3]) === JSON.stringify({ players: 4, spawn: 3.25, hp: 1.9, xp: 0.357 }) && ON.scale[1].spawn === 1.75 && ON.scale[1].hp === 1.3,
-	'online co-op from coop.js: 4 players, 15 / 3 messages a second (direct / relay), ×(1 + 0.75 per extra) foes, ×(1 + 0.3) HP, experience / (1 + 0.6 per extra), 3 s revive', JSON.stringify(ON).slice(0, 300));
-A(JSON.stringify(ON.lobby) === JSON.stringify({ idle: 60, runIdle: 600, member: 45, invite: 180 }) && JSON.stringify(ON.relay) === JSON.stringify({ min: 250, msg: 16000, row: 64000, window: 30, stale: 30 })
-	&& JSON.stringify(ON.signal) === JSON.stringify({ row: 24000, window: 48 }) && JSON.stringify(ON.strings) === JSON.stringify(['Play with friends', "I'm ready", 'Connected (via server)', 'Sign in to play with friends']),
-	'...and the server\'s limits from mp.mjs (lobby 60 s, invite 3 min, relay ≥ 250 ms / 16 KB / 64 KB / 30 messages / 30 s), in English', JSON.stringify([ON.lobby, ON.relay, ON.signal]));
+	'online co-op from coop.js: 4 players, 15 / 1 messages a second (direct / relay), ×(1 + 0.75 per extra) foes, ×(1 + 0.3) HP, experience / (1 + 0.6 per extra), 3 s revive', JSON.stringify(ON).slice(0, 300));
+A(JSON.stringify(ON.lobby) === JSON.stringify({ idle: 60, runIdle: 600, member: 45, invite: 180 }) && JSON.stringify(ON.relay) === JSON.stringify({ min: 1000, msg: 16000, row: 64000, window: 30, stale: 30, daily: 30 })
+	&& JSON.stringify(ON.signal) === JSON.stringify({ row: 24000, window: 48 }) && JSON.stringify(ON.strings) === JSON.stringify(['Play with friends', "I'm ready", 'Connected (via server)', 'Sign in to play with friends', 'Relay: 12 min left today', "Relay time is used up for today; players who can't connect directly can't continue. Direct connections still work."]),
+	'...and the server\'s limits from mp.mjs (lobby 60 s, invite 3 min, relay ≥ 1000 ms / 16 KB / 64 KB / 30 messages / 30 s, 30 relay minutes a day per host), in English', JSON.stringify([ON.lobby, ON.relay, ON.signal]));
 // MicaSurvivor M5 batch 8: Boss Rush and the Floor Tower
 A(MO.rush && MO.rush.first === 5 && MO.rush.rest === 8 && MO.rush.legEvery === 3 && MO.rush.biome === 150 && MO.rush.hp.base === 1400 && MO.rush.hp.grow === 1.27, 'Boss Rush from bossrush.js: 5 s, 8 s between bosses, a legendary every third, 150 s biomes, HP 1400 x 1.27^i', JSON.stringify(MO.rush));
 A(MO.tower && MO.tower.floors === 30 && MO.tower.bossAt === 50 && MO.tower.maxRisks === 6 && MO.tower.risks.length === 15 && MO.tower.legends.length === 4 && MO.tower.relicsMax === 6 && MO.tower.risks.every(r => r.name && r.desc && !/[¡¿ñáíóú]/.test(r.name + r.desc)) && MO.tower.risks[0].name === 'Frenzy' && MO.tower.legends[0].name === 'Time mastery',
@@ -130,7 +130,7 @@ try {
 	A(/Required Notice: Copyright 2026 JPTER78 \(https:\/\/github\.com\/JPTER78\/pokesurvivor\)/.test(ov.text) && /PolyForm Noncommercial/.test(ov.text) && /CC BY-NC 4\.0/.test(ov.text) && /JayElDragon/.test(ov.text) && /never gets ads, paid items/.test(ov.text), 'overview: credits + the licence notice (Required Notice, PolyForm NC, CC BY-NC, JayElDragon, never sold)');
 	A(ov.tables === 14 && /Nintendo/.test(ov.text), 'overview: the modes, pacts, modifiers, online co-op, biomes, support, display, achievement (2), mission (2) and status tables, the keyboard and controller tables');
 	// MicaSurvivor M5 batch 12b: online co-op with friends
-	A(/Online co-op with friends/.test(ov.text) && /Up to 4 players over the internet/.test(ov.text) && /Play with friends/.test(ov.text) && /Waiting for/.test(ov.text) && /3 updates a second instead of 15/.test(ov.text)
+	A(/Online co-op with friends/.test(ov.text) && /Up to 4 players over the internet/.test(ov.text) && /Play with friends/.test(ov.text) && /Waiting for/.test(ov.text) && /1 update a second instead of 15/.test(ov.text) && /30 relay minutes per day/.test(ov.text) && /Relay time is used up for today/.test(ov.text)
 		&& /only the host’s friends can join/.test(ov.text) && /4 players: foes appear ×3\.25, enemy HP ×1\.9, experience ×0\.357/.test(ov.text) && !/coming later/i.test(ov.text)
 		&& await page.$$eval('#content .ms-online tbody tr', r => r.length) === 9, 'overview: Online co-op with friends (getting together, upstream\'s rules, the relay; M5 batch 12b), no "coming later"');
 	A(/Goals, titles, Lexicon and trainer card/.test(ov.text) && /223 achievements in 8 categories/.test(ov.text) && /King of bosses/.test(ov.text) && /Play the Daily Challenge/.test(ov.text) && /After a run: damage and defeats/.test(ov.text) && /View my trainer card/.test(ov.text)

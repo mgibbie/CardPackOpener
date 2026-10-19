@@ -248,6 +248,8 @@ G.Social = (() => {
     lobbyBusy = false;
     if (!room || room.id !== id) return;
     if (r.ok && r.body.closed) { closedRoom(); return; }
+    // (M5 batch 12b: the host's relay minutes left today, for the lobby's warning)
+    if (r.ok && r.body.relayLeft != null && r.body.relayLeft !== G.MicaNet.relayLeft) { G.MicaNet.relayLeft = r.body.relayLeft; if (!r.body.lobby) emit('room'); }
     if (r.ok && r.body.lobby) applyLobby(r.body.lobby);
   }
 

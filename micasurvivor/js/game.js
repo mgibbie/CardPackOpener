@@ -258,7 +258,8 @@ G.Game = (() => {
     },
     // MicaSurvivor (M5 batch 12b): the host is gone (not just out of the run): out of its lobby too, so the
     // summary leads to the menu instead of a lobby nobody hosts. endRun saves your rewards as always.
-    lost(msg) { G.UI.toast(msg, 3600); G.Spawner.say('', 0, true); if (G.Social.room && !G.Social.room.isHost) G.Social.leaveRoom(); endRun(false); },
+    // (the relay's minutes used up: the host is still there, so you stay in the lobby)
+    lost(msg, keepRoom) { G.UI.toast(msg, keepRoom ? 6000 : 3600); G.Spawner.say('', 0, true); if (!keepRoom && G.Social.room && !G.Social.room.isHost) G.Social.leaveRoom(); endRun(false); },
     item(id) { offerItem(id); },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */

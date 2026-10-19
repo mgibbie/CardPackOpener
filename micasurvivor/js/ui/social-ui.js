@@ -283,12 +283,18 @@
       rb.classList.toggle('gold', !(mine && mine.ready));
       rb.classList.toggle('ghost', !!(mine && mine.ready));
       const relay = ms.some(m => m.uid !== G.Social.uid && G.Net.mode(room.isHost ? m.uid : room.host) === 'relay');
-      $('lobby-note').textContent = !room.isHost ? (mine && mine.ready ? 'Cuando el anfitrión empiece, entraréis todos a la vez.' : 'Pulsa "Estoy listo" cuando quieras empezar.')
+      const budgetOut = G.Net.budgetOut;
+      const base = !room.isHost ? (mine && mine.ready ? 'Cuando el anfitrión empiece, entraréis todos a la vez.' : 'Pulsa "Estoy listo" cuando quieras empezar.')
         : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
+        : budgetOut && failed ? ''
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
         : connecting ? 'Conectando con tus amigos…'
         : unready ? 'Esperando a que todos estén listos…'
         : relay ? 'Alguien juega por el servidor (sin conexión directa): irá algo más a saltos.' : 'La partida empieza para todos a la vez.';
+      // MicaSurvivor (M5 batch 12b): the relay's daily minutes (the host's), warned ahead while a pair is on it
+      const left = G.MicaNet.relayLeft;
+      const line = budgetOut ? G.Coop.BUDGET_MSG : relay && left != null ? 'Relé: quedan ' + left + ' min hoy' : '';
+      $('lobby-note').innerHTML = (base ? esc(base) : '') + (line ? (base ? '<br>' : '') + '<b class="relay-left' + (budgetOut || left < 6 ? ' low' : '') + '">' + esc(line) + '</b>' : '');
     }
 
     // MicaSurvivor (M5 batch 12b): the server checks everyone is ready and stores the seed and the

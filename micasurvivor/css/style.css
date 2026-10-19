@@ -520,6 +520,9 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .lob-card .conn { font-size: 12px; color: var(--green); }
 .lob-card .conn.wait { color: var(--gold); }
 .lob-card.empty { border-style: dashed; border-color: rgba(244,248,255,.18); color: var(--muted); }
+/* MicaSurvivor (M5 batch 12b): the relay's minutes left today (gold; red when nearly or fully used up) */
+#lobby-note .relay-left { color: var(--gold); }
+#lobby-note .relay-left.low { color: #ff8a96; }
 
 .invite-pop {
   /* MicaSurvivor (M5 batch 12b): bottom LEFT, so it never covers the menu's last items (upstream: right) */

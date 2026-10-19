@@ -145,7 +145,8 @@ each with tests and the matching controller action wired into js/core/pad.js onc
       - Signalling goes through `/api/mp` with Magepunk accounts and friends: invite from the
         friends list, a lobby, and a relay fallback when peers can't connect directly.
       - Mode, modifier and team rules follow upstream's group runs.
-      *(built 2026-10-18, branch `feat/micasurvivor-m5-b12b`; README → "Batch 12b: Online co-op")*
+      *(built 2026-10-18, branch `feat/micasurvivor-m5-b12b`; README → "Batch 12b: Online co-op". Owner, 2026-10-18:
+      "slow relay + time cap": the relay runs at 1 update a second, 30 relay minutes per host per UTC day)*
     - **12c. Spectate + replays:**
       - Live: a friend's run shows as "live now", and you can watch it in real time without
         affecting it (like Micatro's friend spectating).

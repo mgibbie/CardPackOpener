@@ -54,6 +54,12 @@ buildSync({
 	banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" }, logLevel: 'silent',
 });
 const { default: handler } = await import(pathToFileURL(bundle).href);
+// the msurv actions' injectable clock (server/mp.mjs reads globalThis.__msurvClock): a virtual time the test moves by
+// hand, so the 1000 ms relay floor, the per-minute relay budget and the UTC day can be crossed without waiting
+let VT = Date.now();
+globalThis.__msurvClock = () => VT;
+const NOW = () => VT;
+const tick = ms => { VT += ms; };
 
 let ipN = 0;
 const raw = async (action, body = {}, token) => {
@@ -127,7 +133,7 @@ try {
 	A(W() === w0, 'a second poll within a minute writes nothing (presence at most once a minute)');
 	// prefix scans: al_ce's invites are not alxce's (the `_` in the LIKE pattern matches any character)
 	await al('msurv-invite', { id, to: 'carl' });
-	sqlite.prepare("INSERT INTO mp_store (key, value, updated_at) VALUES ('msurvinv:carl:alxce', ?, unixepoch())").run(JSON.stringify({ id, host: 'alxce', at: Date.now() }));
+	sqlite.prepare("INSERT INTO mp_store (key, value, updated_at) VALUES ('msurvinv:carl:alxce', ?, unixepoch())").run(JSON.stringify({ id, host: 'alxce', at: NOW() }));
 	const ci = await carl('msurv-invites', { quiet: 1 });
 	A(ci.body.invites.length === 1 && ci.body.invites[0].from === 'al_ce', 'an invite row that does not match its lobby (a forged host) is not shown', JSON.stringify(ci.body));
 	A(!row('msurvinv:carl:alxce'), '...and is cleaned up (exact key)');
@@ -177,10 +183,10 @@ try {
 	A((await frank('msurv-lobby-join', { id, dex: 1 })).status === 409, 'nobody joins a started lobby');
 	// a started lobby keeps members who do not poll (they are in the run)
 	{
-		const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'dora').seen = Date.now() - 10 * 60_000; setRow('msurvlobby:' + id, lb);
+		const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'dora').seen = NOW() - 10 * 60_000; setRow('msurvlobby:' + id, lb);
 		await carl('msurv-lobby-update', { id, dex: 7 });
 		A(row('msurvlobby:' + id).members.some(m => m.name === 'dora'), 'in a run, a guest who is not polling the lobby stays in it');
-		const l2 = row('msurvlobby:' + id); l2.members.find(m => m.name === 'dora').seen = Date.now(); setRow('msurvlobby:' + id, l2);
+		const l2 = row('msurvlobby:' + id); l2.members.find(m => m.name === 'dora').seen = NOW(); setRow('msurvlobby:' + id, l2);
 	}
 
 	// ===== 4. signalling =====
@@ -218,34 +224,34 @@ try {
 	// ===== 5. relay =====
 	w0 = W();
 	const rp = await bob('msurv-relay-push', { id, to: { al_ce: [[5001, { k: 'f', p: [1, 2, 3] }]] }, ack: {}, since: {} });
-	A(rp.status === 200 && writes.slice(w0).join() === 'msurvrelay:' + id + ':bob', 'a relay push writes exactly ONE row, the sender\'s own', writes.slice(w0).join(','));
+	A(rp.status === 200 && writes.slice(w0).filter(k => !k.startsWith('msurvrelaybudget:al_ce:')).join() === 'msurvrelay:' + id + ':bob', 'a relay push writes ONE row, the sender\'s own (+ the host\'s relay-minute row once a minute)', writes.slice(w0).join(','));
 	const fast = await bob('msurv-relay-push', { id, to: { al_ce: [[5002, { k: 'f' }]] }, ack: {}, since: {} });
-	A(fast.status === 429 && fast.body.wait > 0 && row('msurvrelay:' + id + ':bob').to.al_ce.length === 1, 'a second push within 250 ms is refused (429): ≤ 4 relay writes a second per sender', JSON.stringify(fast.body));
+	A(fast.status === 429 && fast.body.wait > 0 && row('msurvrelay:' + id + ':bob').to.al_ce.length === 1, 'a second push within 1000 ms is refused (429): ≤ 1 relay write a second per sender', JSON.stringify(fast.body));
 	const ap = await al('msurv-relay-pull', { since: {}, id });
 	A(ap.status === 200 && ap.body.msgs.bob && ap.body.msgs.bob[0][1].k === 'f' && ap.body.age.bob >= 0, 'the host pulls the guest\'s relayed message', JSON.stringify(ap.body));
 	A(!(await carl('msurv-relay-pull', { since: {}, id })).body.msgs.bob, 'a message to the host is not readable by another guest');
-	await sleep(260);
+	tick(1100);
 	await al('msurv-relay-push', { id, to: { bob: [[9001, { k: 'f', t: 1 }]] }, ack: { bob: 5001 }, since: { bob: 5001 } });
 	const bpull = await bob('msurv-relay-pull', { since: {}, id });
 	A(bpull.body.acks.al_ce === 5001 && bpull.body.msgs.al_ce[0][0] === 9001, 'acks come back to the sender (it drops what was received)', JSON.stringify(bpull.body));
-	await sleep(260);
+	tick(1100);
 	A((await bob('msurv-relay-push', { id, to: { al_ce: [[6000, { pad: 'x'.repeat(16_100) }]] } })).status === 413, 'a relayed message over 16 KB is refused (413)');
-	await sleep(260);
+	tick(1100);
 	A((await bob('msurv-relay-push', { id, to: { al_ce: Array.from({ length: 31 }, (_, i) => [6000 + i, { k: 'f' }]) } })).status === 400, 'more than 30 unacknowledged messages to one peer are refused (400)');
-	await sleep(260);
+	tick(1100);
 	const bigRow = await al('msurv-relay-push', { id, to: Object.fromEntries(['bob', 'carl', 'dora'].map(n => [n, Array.from({ length: 2 }, (_, i) => [7000 + i, { pad: 'y'.repeat(12_000) }])])) });
 	A(bigRow.status === 413 && /window/.test(bigRow.body.error), 'a sender\'s whole relay row over 64 KB is refused (413)', JSON.stringify(bigRow.body));
-	await sleep(260);
+	tick(1100);
 	A((await bob('msurv-relay-push', { id, to: { eve: [[1, {}]] } })).status === 403, 'relay messages only go to members (403)');
 	A((await eve('msurv-relay-pull', { since: {}, id })).status === 403 && !row('msurvrelay:' + id + ':eve'), 'a non-member cannot relay in this lobby');
 	// a stale row (its sender's tab is gone) is ignored
-	{ const r = row('msurvrelay:' + id + ':bob'); r.ts = Date.now() - 31_000; setRow('msurvrelay:' + id + ':bob', r); }
+	{ const r = row('msurvrelay:' + id + ':bob'); r.ts = NOW() - 31_000; setRow('msurvrelay:' + id + ':bob', r); }
 	const stale = await al('msurv-relay-pull', { since: {}, id });
 	A(!stale.body.msgs.bob && stale.body.age.bob === undefined, 'a relay row older than 30 s is ignored (its sender is gone)', JSON.stringify(stale.body));
-	// the per-account rate limit (45 per 10 s) on top of the per-row floor
+	// the per-account rate limit (15 per 10 s) on top of the per-row floor
 	let limited = 0;
-	for (let i = 0; i < 50; i++) if ((await dora('msurv-relay-pull', { since: {}, id })).status === 429) limited++;
-	A(limited >= 4, 'relay polls are rate-limited per account (429 past 45 in 10 s)', 'limited ' + limited);
+	for (let i = 0; i < 20; i++) if ((await dora('msurv-relay-pull', { since: {}, id })).status === 429) limited++;
+	A(limited >= 4, 'relay polls are rate-limited per account (429 past 15 in 10 s)', 'limited ' + limited);
 
 	// ===== reopen after a run =====
 	const ro = await al('msurv-lobby-update', { id, open: true });
@@ -253,7 +259,7 @@ try {
 
 	// ===== leaving =====
 	await dora('msurv-signal-put', { id, to: { al_ce: [[1, offer]] } });
-	await sleep(260);
+	tick(1100);
 	await dora('msurv-relay-push', { id, to: { al_ce: [[1, { k: 'f' }]] } }).catch(() => {});
 	w0 = W();
 	const dl = await dora('msurv-lobby-leave', { id });
@@ -262,32 +268,32 @@ try {
 
 	// ===== 2. lifetimes =====
 	// a waiting guest who stopped polling is dropped on the next change
-	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'carl').seen = Date.now() - 46_000; setRow('msurvlobby:' + id, lb); }
+	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'carl').seen = NOW() - 46_000; setRow('msurvlobby:' + id, lb); }
 	await bob('msurv-lobby-update', { id, ready: true });
 	A(!row('msurvlobby:' + id).members.some(m => m.name === 'carl'), 'a waiting guest silent for 45 s is dropped from the lobby');
 	A((await carl('msurv-lobby-poll', { id })).body.removed, '...and their poll says so');
 	// an invite older than 3 minutes is gone
 	await al('msurv-invite', { id, to: 'frank' });
-	{ const r = row('msurvinv:frank:al_ce'); r.at = Date.now() - 3 * 60_000 - 1000; setRow('msurvinv:frank:al_ce', r); }
+	{ const r = row('msurvinv:frank:al_ce'); r.at = NOW() - 3 * 60_000 - 1000; setRow('msurvinv:frank:al_ce', r); }
 	const fi = await frank('msurv-invites', { quiet: 1 });
 	A(fi.body.invites.length === 0 && !row('msurvinv:frank:al_ce'), 'an invite expires after 3 minutes (and its row is deleted)');
 	// the host stopped polling: a waiting lobby is closed after 60 s
 	await al('msurv-invite', { id, to: 'carl' });
-	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'al_ce').seen = Date.now() - 61_000; setRow('msurvlobby:' + id, lb); }
+	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'al_ce').seen = NOW() - 61_000; setRow('msurvlobby:' + id, lb); }
 	A((await bob('msurv-lobby-poll', { id })).body.closed, 'a waiting lobby whose host stopped polling for 60 s is closed (TTL)');
 	A((await frank('msurv-lobby-join', { id, dex: 1 })).status === 404, '...nobody can join it');
 	A((await carl('msurv-invites', { quiet: 1 })).body.invites.length === 0, '...and its invites are not shown');
 	A((await bob('msurv-relay-pull', { since: {}, id })).body.closed, '...and its relay is closed');
-	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'al_ce').seen = Date.now(); setRow('msurvlobby:' + id, lb); }
+	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'al_ce').seen = NOW(); setRow('msurvlobby:' + id, lb); }
 	// a started lobby lives longer (the host keeps it alive every ~2 min in a run)
-	{ const lb = row('msurvlobby:' + id); lb.start = { seed: 1, at: Date.now(), members: [] }; lb.members.find(m => m.name === 'al_ce').seen = Date.now() - 5 * 60_000; setRow('msurvlobby:' + id, lb); }
+	{ const lb = row('msurvlobby:' + id); lb.start = { seed: 1, at: NOW(), members: [] }; lb.members.find(m => m.name === 'al_ce').seen = NOW() - 5 * 60_000; setRow('msurvlobby:' + id, lb); }
 	A(!(await bob('msurv-lobby-poll', { id })).body.closed, 'a STARTED lobby survives 5 min without a host poll');
-	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'al_ce').seen = Date.now() - 11 * 60_000; setRow('msurvlobby:' + id, lb); }
+	{ const lb = row('msurvlobby:' + id); lb.members.find(m => m.name === 'al_ce').seen = NOW() - 11 * 60_000; setRow('msurvlobby:' + id, lb); }
 	A((await bob('msurv-lobby-poll', { id })).body.closed, '...but not 11 min');
-	{ const lb = row('msurvlobby:' + id); lb.start = null; lb.members.find(m => m.name === 'al_ce').seen = Date.now(); setRow('msurvlobby:' + id, lb); }
+	{ const lb = row('msurvlobby:' + id); lb.start = null; lb.members.find(m => m.name === 'al_ce').seen = NOW(); setRow('msurvlobby:' + id, lb); }
 
 	// the host leaving deletes everything of the lobby (exact keys)
-	await sleep(260);
+	tick(1100);
 	await bob('msurv-relay-push', { id, to: { al_ce: [[8000, { k: 'f' }]] } });
 	await bob('msurv-signal-put', { id, to: { al_ce: [[8000, offer]] } });
 	await al('msurv-invite', { id, to: 'frank' });
@@ -295,15 +301,78 @@ try {
 	w0 = W();
 	const hl = await al('msurv-lobby-leave', { id });
 	A(hl.body.closed && !row('msurvlobby:' + id) && !keys('msurvsig:' + id).length && !keys('msurvrelay:' + id).length && !row('msurvinv:frank:al_ce'),
-		'the host leaving deletes the lobby, every member\'s signalling / relay row and its invites', keys('msurv').join(','));
+		'the host leaving deletes the lobby, every member\'s signalling / relay row and its invites', keys('msurv').filter(k => !k.startsWith('msurvrelaybudget:')).join(','));
 	A(writes.slice(w0).every(k => k.endsWith(id) || k.includes(':' + id + ':') || k === 'msurvinv:frank:al_ce' || k === 'msurvinv:carl:al_ce' || k === 'msurvinv:bob:al_ce'), 'exact keys only, all of this lobby', writes.slice(w0).join(','));
+	A(!!keys('msurvrelaybudget:al_ce:').length, '...the host\'s relay minutes of the day are kept (they are per host, not per lobby)');
 	A(!!row('msurvlobby:' + id2) && !!row('msurvsig:' + id2 + ':eve'), 'the other lobby is untouched');
 	A((await bob('msurv-lobby-poll', { id })).body.closed, 'the guests learn the lobby is closed');
+
+	// ===== 6. the relay's daily minutes per host (owner 2026-10-18: "slow relay + time cap") =====
+	{
+		const day = t => new Date(t).toISOString().slice(0, 10).replace(/-/g, '');
+		const BK = host => 'msurvrelaybudget:' + host + ':' + day(VT);
+		// a fresh, started lobby of al_ce's with bob and frank; the clock at the start of a minute
+		VT = (Math.floor(VT / 60_000) + 1) * 60_000 + 1000;
+		const L = (await al('msurv-lobby-create', { dex: 6 })).body.lobby.id;
+		for (const g of [bob, frank]) { await g('msurv-lobby-join', { id: L, dex: 1 }); await g('msurv-lobby-update', { id: L, ready: true }); }
+		await al('msurv-lobby-update', { id: L, start: { seed: 1 } });
+		const fresh = () => { const lb = row('msurvlobby:' + L); for (const m of lb.members) m.seen = VT; sqlite.prepare('UPDATE mp_store SET value = ? WHERE key = ?').run(JSON.stringify(lb), 'msurvlobby:' + L); };
+		sqlite.prepare('DELETE FROM mp_store WHERE key LIKE ?').run('msurvrelaybudget:al_ce:%');   // (the earlier sections' relay minutes: start from 0)
+		const push = (who, extra = {}) => who('msurv-relay-push', { id: L, to: {}, ack: {}, since: {}, ...extra });
+		const used = () => (row(BK('al_ce')) || {}).used || 0;
+		A((await push(bob)).status === 200 && used() === 1 && row(BK('al_ce')).last === Math.floor(VT / 60_000), 'the first relay write of a minute counts it: msurvrelaybudget:<host>:<YYYYMMDD> used 1');
+		tick(1100); await push(al); tick(1100); await push(frank);
+		A(used() === 1, 'more relay writes in the SAME minute (by anyone in the lobby) do not count again');
+		const pl0 = (await al('msurv-lobby-poll', { id: L })).body;
+		A(pl0.relayLeft === 29, 'the lobby poll says the minutes left today (29)', JSON.stringify(pl0.relayLeft));
+		// minute by minute up to the cap: the users rotate so the per-account limit (real time) is never the one hit
+		const who = [al, bob, frank];
+		let ok = true;
+		for (let i = 2; i <= 30; i++) { await sleep(450); tick(60_000); fresh(); const r = await push(who[i % 3]); if (r.status !== 200) { ok = false; console.log('   minute', i, r.status, JSON.stringify(r.body)); break; } }
+		A(ok && used() === 30, 'each minute with a relay write counts once: 30 minutes used', 'used ' + used());
+		await sleep(1500); tick(20_000);
+		A((await push(bob)).status === 200, 'the 30th minute itself runs to its end');
+		tick(60_000); fresh();
+		let w0b = W();
+		const cut = await push(frank);
+		A(cut.status === 403 && cut.body.budget && /used up/.test(cut.body.error) && cut.body.max === 30 && used() === 30 && W() === w0b,
+			'past 30 minutes the relay push is refused (403 {budget}) and NOTHING is written', JSON.stringify(cut));
+		const cutPull = await bob('msurv-relay-pull', { id: L, since: {} });
+		A(cutPull.status === 403 && cutPull.body.budget, '...and so is the pull (the relay stops for this host today)', JSON.stringify(cutPull.body));
+		const pl1 = (await al('msurv-lobby-poll', { id: L })).body;
+		A(pl1.relayLeft === 0 && !pl1.closed, 'the lobby itself goes on, and says 0 minutes left', JSON.stringify(pl1));
+		// direct play is not affected: lobby, signalling (the WebRTC negotiation) all still work
+		const sig = await bob('msurv-signal-put', { id: L, to: { al_ce: [[1, { c: {} }]] } });
+		const sigp = await al('msurv-signal-poll', { id: L, since: {} });
+		const upd = await bob('msurv-lobby-update', { id: L, dex: 4 });
+		A(sig.status === 200 && sigp.status === 200 && sigp.body.msgs.bob && upd.status === 200, 'direct play is unaffected: signalling and the lobby still work');
+		// ...across ALL of the host's lobbies
+		await al('msurv-lobby-update', { id: L, open: true });
+		const L2 = (await al('msurv-lobby-create', { dex: 6 })).body.lobby.id;
+		await bob('msurv-lobby-join', { id: L2, dex: 1 });
+		A((await bob('msurv-relay-pull', { id: L2, since: {} })).status === 403, 'a new lobby of the same host is out of relay minutes too (per host, not per lobby)');
+		// per host: another host's lobby still relays
+		const e2 = await eve('msurv-relay-push', { id: id2, to: {}, ack: {}, since: {} });
+		{ const lb = row('msurvlobby:' + id2); for (const m of lb.members) m.seen = VT; sqlite.prepare('UPDATE mp_store SET value = ? WHERE key = ?').run(JSON.stringify(lb), 'msurvlobby:' + id2); }
+		const e3 = await eve('msurv-relay-push', { id: id2, to: {}, ack: {}, since: {} });
+		A(e3.status === 200 && (row(BK('alxce')) || {}).used === 1, 'another host\'s lobby still relays (its own budget: 1 minute used)', JSON.stringify([e2.status, e3.status, e3.body]));
+		// per day: the next UTC day starts again from 30
+		const next = (Math.floor(VT / 86_400_000) + 1) * 86_400_000 + 5000;
+		VT = next;
+		{ const lb = row('msurvlobby:' + L2); for (const m of lb.members) m.seen = VT; sqlite.prepare('UPDATE mp_store SET value = ? WHERE key = ?').run(JSON.stringify(lb), 'msurvlobby:' + L2); }
+		await sleep(1500);
+		const nd = await bob('msurv-relay-push', { id: L2, to: {}, ack: {}, since: {} });
+		A(nd.status === 200 && (row(BK('al_ce')) || {}).used === 1 && nd.body.relayLeft === 29, 'the next UTC day the host has 30 minutes again (a new row per day)', JSON.stringify([nd.status, row(BK('al_ce'))]));
+		const keysB = keys('msurvrelaybudget:al_ce:').filter(k => k.startsWith('msurvrelaybudget:al_ce:'));   // (LIKE's _ also matches alxce)
+		A(keysB.length === 2 && keysB.every(k => /^msurvrelaybudget:al_ce:\d{8}$/.test(k)), 'one exact row per host per day', keysB.join(','));
+	}
 
 	// ===== static: GC + rate limits =====
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	A(/\['msurvsig:', 1 \* HR\], \['msurvrelay:', 1 \* HR\], \['msurvinv:', 1 \* HR\], \['msurvlobby:', 12 \* HR\]/.test(sv), 'every msurv* prefix is swept by the GC');
-	A(/'msurv-relay-push': \[45, 10_000\]/.test(sv) && /MSURV_RELAY_MIN_MS = \+process\.env\.MSURV_RELAY_MIN_MS \|\| 250/.test(sv), 'the relay\'s limits: 45 per 10 s per account, ≥ 250 ms between one sender\'s writes');
+	A(/'msurv-relay-push': \[15, 10_000\]/.test(sv) && /MSURV_RELAY_MIN_MS = \+process\.env\.MSURV_RELAY_MIN_MS \|\| 1000/.test(sv) && /const MSURV_RELAY_DAILY_MIN = 30;/.test(sv),
+		'the relay\'s limits: 15 per 10 s per account, ≥ 1000 ms between one sender\'s writes, 30 minutes a day per host (a constant)');
+	A(/\['msurvrelaybudget:', 48 \* HR\]/.test(sv), 'the relay budget rows are swept after 2 days');
 	A(sv.indexOf("action.startsWith('msurv-')") > sv.indexOf("return json({ error: 'not logged in' }, 401)"), 'the msurv-* actions are all behind the login gate');
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack || e));

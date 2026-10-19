@@ -981,14 +981,28 @@ Start needs everyone ready and connected. Everything works by mouse, touch and p
 - *Relay* (`msurvrelay:<id>:<from>`): the fallback when a pair has no data channel after 9 s (12 s for the guest), or
   when the channel dies (`disconnected` for 4 s). Each sender's row holds its unacknowledged messages per peer (≤ 30, 16
   KB each, 64 KB per row); receivers ack by seq in their own pushes; a push also returns what is waiting for you, so
-  one request a tick does both. At upstream's slow rate (3 a second). Hard caps: one write per 250 ms per sender
-  (checked against the sender's own row, so it holds across isolates; 429), 45 requests per 10 s per account, rows
-  older than 30 s ignored (that peer is gone: dropped like a closed channel), swept after 1 h. A pair that later gets
-  its channel moves back to it.
+  one request a tick does both. **1 update a second** (owner, 2026-10-18: "slow relay + time cap"; upstream: 3), and
+  partners and enemies glide between updates (their velocity is led for up to 1.1 s and eased; a guest only shows
+  "waiting for the host" after 7 s on the relay instead of 2.5). Hard caps: one write per 1000 ms per sender (checked
+  against the sender's own row, so it holds across isolates; 429), 15 requests per 10 s per account, rows older than
+  30 s ignored (that peer is gone: dropped like a closed channel), swept after 1 h. In the lobby the relay only reads
+  (nothing to send; the lobby poll says who is there); keep-alives (every 5 s) and the 20 s silence rule apply in a
+  run. A pair that later gets its channel moves back to it.
+- *The relay's daily minutes* (`msurvrelaybudget:<host>:<YYYYMMDD>`, `MSURV_RELAY_DAILY_MIN = 30` in `server/mp.mjs`):
+  each host gets 30 relay minutes per UTC day, across all their lobbies. A minute counts once, when the first relay
+  write of that minute lands in one of the host's lobbies (a compare-and-set on the row, so two players can't count it
+  twice). The lobby poll and every relay answer carry the minutes left; while a pair is on the relay the lobby warns
+  "Relay: 12 min left today" (red under 6). Used up: relay pushes and pulls in that host's lobbies answer 403
+  `{budget: true}` and write nothing; a relayed guest's run ends with its rewards saved and the toast "Relay time is
+  used up for today; players who can't connect directly can't continue. Direct connections still work." (it stays in
+  the lobby); the host is told the same and plays on with anyone connected directly; in the lobby that pair shows "Could
+  not connect" with the same message, and Start stays off for it. Direct (WebRTC) pairs never touch it. A new UTC day
+  starts a new row. Swept after 2 days.
 - *Who reads what*: every msurv action is behind the login gate; signalling and relay check that the lobby is live and
   that you are in it, and only return the part addressed to you, so nobody reads another lobby (or another member's
   mail). Every row written is an exact key of the caller or its own lobby.
-- *Ephemeral prefixes* (GC table): `msurvsig:` and `msurvrelay:` and `msurvinv:` 1 h, `msurvlobby:` 12 h.
+- *Ephemeral prefixes* (GC table): `msurvsig:` and `msurvrelay:` and `msurvinv:` 1 h, `msurvlobby:` 12 h,
+  `msurvrelaybudget:` 48 h.
 
 **D1 write budget** (rows written; the site's D1 is on the free plan's 100,000 rows a day):
 
@@ -997,14 +1011,14 @@ Start needs everyone ready and connected. Everything works by mouse, touch and p
 | A run over WebRTC (direct) | 0 per message. Signalling: ~2-4 batched puts per side per pair, once. Then only the host's keep-alive (1 per 2 min) and presence (≤ 1 a minute per player) |
 | Lobby | create 1; join 1 + the used invite; ready 1; start 1; each member's `seen` ≤ 4 a minute while on the lobby screen; an invite 3 (invite row, bell message, lobby) |
 | Menus | presence ≤ 1 a minute per signed-in player with friends; invite polls are reads |
-| **A relay game** | about 3 rows a second per player on the relay (measured: 5.7 a second for 2 players): **2 players ≈ 340 a minute (≈ 20,000 an hour); 4 players all on the relay ≈ 720 a minute (≈ 43,000 an hour)**. Hard ceiling 4 a second per player (960 a minute for 4). Requests: the same count (one request does push + pull) |
+| **A relay game** (1 a second) | at most 1 row a second per player on the relay, plus the host's minute row once a minute (measured: 1.7-1.8 a second for 2 players): **2 players ≤ 120 a minute (≤ ~7,260 an hour); 4 players all on the relay ≤ 240 a minute (≤ ~14,460 an hour)**. Requests: about the same count (one request does push + pull) |
+| **Worst case per host per day** | the 30-minute cap: **4 players ≤ 30 × 240 + 30 = 7,230 rows** (~7 % of the daily 100,000); 2 players ≤ 3,630 |
 
-Plainly: **the relay is expensive on the free plan.** One hour of a 4-player game in which every guest is on the relay
-uses ~43 % of the whole site's daily D1 write quota (and ~43,000 of the 100,000 daily Functions requests); about 2.3
-hours of it, or ~5 hours of a 2-player relay game, would use it all. A game over WebRTC costs almost nothing. Most
-pairs connect directly (STUN works for most home networks); the relay is only for the pairs that can't (symmetric NAT,
-some mobile data). Options for the owner: keep it; lower `RATE_SLOW` (e.g. 1 a second: a third of the cost, choppier);
-cap relay minutes per lobby; or switch `ALLOW_RELAY` off (upstream's state before 12b: those pairs can't play).
+At 3 a second (12b as first built) one hour of a 4-player all-relay game was ~43,000 rows. The owner chose "slow relay
++ time cap" (2026-10-18): a third of the rate and 30 minutes per host per day, so one host's relay can use at most ~7 %
+of the site's daily write quota; ~14 hosts maxing it out on the same day would use it all. A game over WebRTC costs
+almost nothing, and most pairs connect directly (STUN works for most home networks); the relay is only for the pairs
+that can't (symmetric NAT, some mobile data).
 
 **Deviations, and why:**
 - Firebase → `/api/mp` polling (no sockets on the site): the nickname screen is unused (your Magepunk username is your
@@ -1013,6 +1027,8 @@ cap relay minutes per lobby; or switch `ALLOW_RELAY` off (upstream's state befor
 - A **ready** step: the server refuses the start until every guest is ready (upstream: the host starts any time).
 - The start is also stored on the server (guests read it from the lobby) besides upstream's `start` message.
 - A pair still connecting sends nothing over the relay (upstream relayed everything): no D1 write is spent on it.
+- The relay runs at 1 a second (upstream: 3) with smoothing for relayed partners and enemies, and has a daily cap of
+  30 minutes per host (owner's choice, 2026-10-18, for the D1 write budget).
 - `'disconnected'` for 4 s moves a pair to the relay, where a silent peer is dropped after 20 s (upstream waited for
   `'failed'`, ~30 s); a guest who loses the host leaves the lobby too (it would wait for a host that is gone).
 - On `pagehide`, a co-op player says goodbye (upstream's `leave()`) and leaves the lobby.
@@ -1025,7 +1041,7 @@ alternative evolutions in the ghost replay are still not synced (as noted in bat
 
 **For 12c (spectate + replays):** the host's frames already carry the full state every time (players, nearby enemies
 with HP / animation / status, team XP / level / clock, who is choosing): a spectator can be fed host frames, and a
-replay can record them at the relay's 3 a second. `G.Net.snapshot()` and `G.MicaNet.snapshot()` give the connection
+replay can record them (the relay sends them at 1 a second). `G.Net.snapshot()` and `G.MicaNet.snapshot()` give the connection
 state as plain data; the lobby row (`msurvlobby:<id>`, with `start`) and the presence status `micasurvivor:run` say who
 is in a group run (for "live now").
 
@@ -1189,7 +1205,10 @@ is in a group run (for "live now").
   presence once a minute, an unchanged poll writing nothing); invites (friends only, host only, the bell message
   once, a forged invite row ignored, `_` in usernames not matching other users' rows); signalling (one row per sender,
   only your part, `since`, the 24 KB / 48 caps, members only, no access across lobbies); the relay (one row per push,
-  the 250 ms floor, the 16 KB / 30 / 64 KB caps, acks, members only, stale rows ignored, the per-account rate limit);
+  the 1000 ms floor, the 16 KB / 30 / 64 KB caps, acks, members only, stale rows ignored, the per-account rate limit);
+  the relay's daily minutes on an injectable clock (`globalThis.__msurvClock`): a minute counted once whoever writes,
+  30 minutes then 403 {budget} for pushes and pulls with nothing written, the lobby's minutes left, signalling and the
+  lobby (direct play) unaffected, per host across its lobbies (another host still relays), a new UTC day a new row;
   the GC prefixes and the login gate.
 - `node overworld/tests/micasurvivor_online_test.mjs` (M5 batch 12b): the real handler behind a static server and
   three signed-in friends in separate browser contexts (+ two more for the relay, + a guest): Friends (presence, "You
@@ -1199,9 +1218,11 @@ is in a group run (for "live now").
   host, the team's kills, the shared level-up and its wait ("Waiting for bob and carl…") releasing for all; a guest
   closing the tab (the host goes on: "carl left the game"); the host's renderer crashing (the guest's run ends: "Lost
   connection to the host.", rewards saved locally and in the account, back to the menu); the relay with WebRTC off
-  (falls back, "Connected (via server)", positions and a kill over the relay, ≤ ~3 writes a second per player,
-  joining by touch and getting ready by pad, the host quitting: "The host has ended the game", back in the reopened
-  lobby); a guest told to sign in (and making no co-op request); no Spanish in the DOM, toasts or canvas.
+  (falls back, "Connected (via server)", "Relay: 30 min left today" for host and guest, positions and a kill over the
+  relay at 1 update a second (≤ ~1 write a second per player, the minute row once a minute, relayed partners marked
+  for smoothing), joining by touch and getting ready by pad, the host quitting: "The host has ended the game", back in
+  the reopened lobby; then a second run whose relay minutes run out: the guest's run ends with the used-up message and
+  its rewards, the host plays on and is told why, the lobby says it and keeps Start off); a guest told to sign in (and making no co-op request); no Spanish in the DOM, toasts or canvas.
   In CI the WebRTC part runs with `--disable-features=WebRtcHideLocalIpsWithMdns` (real localhost host candidates)
   and `window.__msurvNet = {ice: []}`; the relay part with `{noRtc: true}`.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

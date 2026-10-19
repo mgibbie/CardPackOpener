@@ -11,9 +11,13 @@
  *               data). Each player's row holds its UNACKNOWLEDGED messages to each relay peer (at most
  *               RELAY_WINDOW of them, RELAY_BUDGET bytes); the receivers ack by seq in their own pushes, and
  *               a push returns what is waiting for you, so one request a tick does both. At most one push
- *               every RELAY_MS (the server's floor is 250 ms per sender); with nothing to send, a pull, and a
- *               keep-alive push every RELAY_BEAT_MS so the others know you're still there. A relay peer whose
- *               row is older than RELAY_LOST_MS is gone (its tab closed): net.js drops it.
+ *               every RELAY_MS (the server's floor is 1000 ms per sender: the relay runs at 1 a second, owner
+ *               2026-10-18); with nothing to send, a pull. IN A RUN, a keep-alive push every RELAY_BEAT_MS so
+ *               the others know you're still there, and a relay peer whose row is older than lostMs is gone (its
+ *               tab closed): net.js drops it. In the lobby nothing is written (the lobby poll says who is there).
+ *               The host's relay minutes per UTC day are capped by the server (MSURV_RELAY_DAILY_MIN): past it,
+ *               the relay answers 403 {budget}, and net.js ends what only the relay carried (h.budget()).
+ *               `relayLeft` is the minutes left today, from the lobby poll and every relay answer.
  *
  * Test hooks (window.__msurvNet, set before the page loads): {noRtc: true} skips WebRTC (relay only),
  * {ice: [...]} replaces the public STUN list, {lostMs, directMs} shorten the timeouts.
@@ -24,7 +28,8 @@
 G.MicaNet = (() => {
   const hook = () => window.__msurvNet || {};
   const SIG_POLL_MS = 1000, SIG_FLUSH_MS = 200, SIG_WINDOW = 40;
-  const RELAY_MS = 340, RELAY_BEAT_MS = 5000, RELAY_WINDOW = 30, RELAY_BUDGET = 48000;
+  const RELAY_MS = 1050, RELAY_BEAT_MS = 5000, RELAY_WINDOW = 30, RELAY_BUDGET = 48000;
+  const inRun = () => !!(G.Coop && G.Coop.active);
   const lostMs = () => +hook().lostMs || 20000;
 
   let id = null, me = null, h = null, gen = 0;
@@ -88,6 +93,7 @@ G.MicaNet = (() => {
   const relayPeers = new Map();      // uid -> { since: when it became a relay peer }
   const rOut = new Map();            // to -> [[seq, msg]...] not yet acknowledged
   let rSince = {}, rSeq = Date.now(), rPushedSeq = 0, rAckSent = '', rLastPush = 0, rTimer = 0, rBusy = false;
+  let runSince = 0, relayLeft = null, budgetOut = false;
   const heard = new Map();           // uid -> last time its row was fresh
 
   function relayPeer(u, on) {
@@ -120,7 +126,9 @@ G.MicaNet = (() => {
     const my = gen, now = Date.now();
     const newest = Math.max(0, ...[...rOut.values()].map(l => l.length ? l[l.length - 1][0] : 0));
     const ackKey = JSON.stringify(rSince);
-    const push = newest > rPushedSeq || ackKey !== rAckSent || now - rLastPush >= RELAY_BEAT_MS;
+    // (the run started: the peers' silence is measured from now on, not from the quiet lobby)
+    if (inRun() && !runSince) runSince = now; else if (!inRun()) runSince = 0;
+    const push = newest > rPushedSeq || (ackKey !== rAckSent && inRun()) || (inRun() && now - rLastPush >= RELAY_BEAT_MS);
     const to = {};
     for (const [u, list] of rOut) if (relayPeers.has(u) && list.length) to[u] = list;
     rBusy = true;
@@ -136,8 +144,17 @@ G.MicaNet = (() => {
     rBusy = false;
     if (my !== gen) return;
     if (r.body && r.body.closed) { gone(); return; }
+    // the host's relay minutes are used up for today: the relay stops (direct pairs are not affected)
+    if (r.status === 403 && r.body && r.body.budget) {
+      budgetOut = true; relayLeft = 0;
+      const peers = [...relayPeers.keys()];
+      relayPeers.clear(); rOut.clear(); heard.clear();
+      try { h.budget(peers); } catch (e) { console.warn(e); }
+      return;
+    }
     if (r.ok) {
       const b = r.body;
+      if (b.relayLeft != null) relayLeft = b.relayLeft;
       for (const [from, list] of Object.entries(b.msgs || {})) {
         for (const [seq, msg] of list.sort((a, c) => a[0] - c[0])) {
           if (seq <= (rSince[from] || -1)) continue;
@@ -154,7 +171,8 @@ G.MicaNet = (() => {
       const t = Date.now();
       for (const [u, age] of Object.entries(b.age || {})) heard.set(u, t - age);
       for (const [u, p] of relayPeers) {
-        const last = Math.max(heard.get(u) || 0, p.since);
+        if (!inRun()) continue;   // (in the lobby nobody writes: the lobby poll says who is there)
+        const last = Math.max(heard.get(u) || 0, p.since, runSince);
         if (t - last > lostMs()) { relayPeers.delete(u); rOut.delete(u); heard.delete(u); try { h.lost(u); } catch (e) { console.warn(e); } }
       }
     }
@@ -177,15 +195,19 @@ G.MicaNet = (() => {
     sigFlushT = sigPollT = rTimer = 0; sigBusy = rBusy = false; sigWant = false;
     sigOut.clear(); sigSince = {};
     relayPeers.clear(); rOut.clear(); rSince = {}; heard.clear(); rPushedSeq = 0; rAckSent = ''; rLastPush = 0;
+    runSince = 0; budgetOut = false; relayLeft = null;
     id = null; me = null; h = null;
   }
 
   return {
     open, close, signal, resetSignals, wantSignals, relayPeer, relay, stats,
     get id() { return id; },
+    /** The host's relay minutes left today (null = not known yet), and whether they ran out. */
+    get relayLeft() { return relayLeft; }, set relayLeft(v) { if (v != null) relayLeft = v; },
+    get budgetOut() { return budgetOut; },
     /** For 12c (spectating / replays) and tests: the transport's state as plain data. */
     snapshot() {
-      return { id, me, relayPeers: [...relayPeers.keys()], polling: sigWant, out: Object.fromEntries([...rOut].map(([u, l]) => [u, l.length])), stats: Object.assign({}, stats) };
+      return { id, me, relayPeers: [...relayPeers.keys()], polling: sigWant, relayLeft, budgetOut, out: Object.fromEntries([...rOut].map(([u, l]) => [u, l.length])), stats: Object.assign({}, stats) };
     }
   };
 })();

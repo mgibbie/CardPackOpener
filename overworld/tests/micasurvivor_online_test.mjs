@@ -402,6 +402,9 @@ try {
 	A(await waitFor(() => dave.E(() => G.Social.room.members.every(m => m.ready) && !document.getElementById('lobby-start').disabled), 8000), 'erin is ready by PAD: the host can start');
 	await erin.E(() => { window.__pads[0] = null; });
 	A(/through the server/.test(await dave.text('#lobby-note')), 'the host is told someone plays through the server', await dave.text('#lobby-note'));
+	// the relay's daily minutes (30 a day per host), warned ahead in the lobby, to the host and the relayed guest
+	A(await waitFor(async () => /Relay: 30 min left today/.test(await dave.text('#lobby-note')), 6000), 'the host\'s lobby warns "Relay: 30 min left today"', await dave.text('#lobby-note'));
+	A(await waitFor(async () => /Relay: 30 min left today/.test(await erin.text('#lobby-note')), 6000), '...and so does the relayed guest\'s', await erin.text('#lobby-note'));
 	await dave.shot('m5b12b_lobby_relay.png');
 	await dave.page.click('#lobby-start');
 	A(await waitFor(async () => (await Promise.all([dave, erin].map(p => p.E(() => G.Game.state === 'playing' && G.Coop.active)))).every(Boolean), 15000), 'the relay pair starts a run');
@@ -424,7 +427,9 @@ try {
 	const relayW = writes.slice(w0).filter(w => w.k.startsWith('msurvrelay:')).length;
 	const perSec = relayW / span;
 	console.log(`   relay: ${relayW} row writes in ${span.toFixed(1)} s = ${perSec.toFixed(2)}/s for 2 players`);
-	A(perSec > 1 && perSec <= 2 * 3.3, 'the relay writes at most ~3 rows a second per player (2 players: ≤ 6.6/s)', perSec.toFixed(2));
+	A(perSec > 0.8 && perSec <= 2 * 1.1, 'the relay runs at 1 update a second: ≤ ~1 row a second per player (2 players: ≤ 2.2/s)', perSec.toFixed(2));
+	A(writes.slice(w0).filter(w => w.k.startsWith('msurvrelaybudget:dave:')).length <= Math.ceil(span / 60) + 1, 'the host\'s relay minutes are written at most once a minute');
+	A(await erin.E(() => { const m = G.Coop.mate('dave'); return !!m && m.pl.net.slow === true; }), 'relayed partners glide: their state is marked slow (velocity lead + easing between 1-a-second updates)');
 	A(writes.slice(w0).every(w => !w.k.startsWith('msurvsig:')), 'no signalling writes once the pair is on the relay');
 	await dave.shot('m5b12b_relay_run_host.png');
 	await erin.shot('m5b12b_relay_run_guest.png');
@@ -441,6 +446,43 @@ try {
 	A(await waitFor(() => dave.visible('scr-lobby'), 8000) && await waitFor(() => erin.visible('scr-lobby'), 8000), 'after the run both are back in the lobby');
 	A(await waitFor(() => dave.E(() => G.Social.room.open && !G.Social.room.start), 5000) && await waitFor(async () => /Not ready/.test(await dave.text('#lobby-members')), 6000), 'the host\'s lobby is open again, the guest back to "not ready"');
 	A((row('msurvlobby:' + (await dave.E(() => G.Social.room.id))) || {}).open === true, '...on the server too');
+
+	// ===================== the relay's daily minutes run out mid-run =====================
+	await erin.page.click('#lobby-ready');
+	await waitFor(() => dave.E(() => G.Social.room.members.every(m => m.ready) && !document.getElementById('lobby-start').disabled), 10000);
+	await dave.page.click('#lobby-start');
+	A(await waitFor(async () => (await Promise.all([dave, erin].map(p => p.E(() => G.Game.state === 'playing' && G.Coop.active)))).every(Boolean), 15000), 'a second relay run starts');
+	await calm(dave); await calm(erin);
+	await erin.E(() => { window.__toasts.length = 0; });
+	await dave.E(() => { G.Game.player.coins += 40; });
+	await waitFor(() => erin.E(() => G.Game.player.coins >= 40), 5000);
+	const eb = await erin.E(() => ({ coins: G.DB.save.coins, runs: G.DB.save.stats.runs }));
+	// the host's 30 minutes of today are used up (as if they had been played): the server row, exact key
+	const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+	sqlite.prepare("INSERT OR REPLACE INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch())").run('msurvrelaybudget:dave:' + today, JSON.stringify({ rev: 99, used: 30, last: -1 }));
+	A(await waitFor(() => erin.visible('scr-over'), 15000), 'the relay minutes run out: the relayed guest\'s run ends (the run-over screen)');
+	const usedUp = "Relay time is used up for today; players who can't connect directly can't continue. Direct connections still work.";
+	A(await erin.E(m => window.__toasts.some(t => t === m), usedUp), 'the guest is told: "' + usedUp + '"', JSON.stringify(await erin.E(() => window.__toasts)));
+	await sleep(600);
+	await erin.shot('m5b12b_relay_used_up_guest.png');
+	const ea = await erin.E(() => ({ coins: G.DB.save.coins, runs: G.DB.save.stats.runs }));
+	A(ea.runs === eb.runs + 1 && ea.coins > eb.coins, 'its rewards are saved (as when the host is lost)', JSON.stringify([eb, ea]));
+	A(await waitFor(() => dave.E(() => { const m = G.Coop.mate('erin'); return G.Game.state === 'playing' && !!m && !m.connected; }), 8000), 'the host goes on alone (the relayed guest is out)');
+	A(await dave.E(m => window.__toasts.some(t => t === m), usedUp), '...and is told why', JSON.stringify(await dave.E(() => window.__toasts)));
+	await sleep(400);
+	await dave.shot('m5b12b_relay_used_up_host.png');
+	await dave.page.keyboard.press('Escape');
+	await waitFor(() => dave.visible('scr-pause'), 3000);
+	await dave.page.click('#btn-quit');
+	await waitFor(() => dave.visible('scr-over'), 8000);
+	await dave.E(() => document.getElementById('btn-again').click());
+	await erin.E(() => document.getElementById('btn-again').click());
+	A(await waitFor(() => dave.visible('scr-lobby'), 8000) && await waitFor(() => erin.visible('scr-lobby'), 8000), 'both back in the lobby');
+	A(await waitFor(async () => (await dave.text('#lobby-note')).includes(usedUp), 10000), 'the lobby says the relay time is used up', await dave.text('#lobby-note'));
+	A(await dave.E(() => document.getElementById('lobby-start').disabled), '...and Start stays off for the pair that only has the relay');
+	A((await spanish(dave, '#scr-lobby')).length === 0, 'no Spanish in that lobby', JSON.stringify(await spanish(dave, '#scr-lobby')));
+	await sleep(300);
+	await dave.shot('m5b12b_relay_used_up_lobby.png');
 
 	// ===================== a guest (no account) =====================
 	const gctx = await browser.createBrowserContext();

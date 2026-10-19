@@ -138,9 +138,9 @@ export function build() {
 		max: lim('MAX'), colors: CO.COLORS, rateDirect: CO.K.rateDirect, rateRelay: CO.K.rateRelay, stall: CO.K.stall, revive: G.Player.REVIVE_TIME,
 		scale: [1, 2, 3, 4].map(n => ({ players: n, spawn: CO.scaleRate(n), hp: CO.scaleHp(n), xp: Math.round(1000 / (1 + 0.6 * (n - 1))) / 1000 })),
 		lobby: { idle: lim('LOBBY_IDLE_MS') / 1000, runIdle: lim('RUN_IDLE_MS') / 1000, member: lim('MEMBER_IDLE_MS') / 1000, invite: lim('INVITE_TTL_MS') / 1000 },
-		relay: { min: lim('RELAY_MIN_MS'), msg: lim('RELAY_MSG_MAX'), row: lim('RELAY_MAX'), window: lim('RELAY_WINDOW'), stale: lim('RELAY_STALE_MS') / 1000 },
+		relay: { min: lim('RELAY_MIN_MS'), msg: lim('RELAY_MSG_MAX'), row: lim('RELAY_MAX'), window: lim('RELAY_WINDOW'), stale: lim('RELAY_STALE_MS') / 1000, daily: lim('RELAY_DAILY_MIN') },
 		signal: { row: lim('SIGNAL_MAX'), window: lim('SIGNAL_WINDOW') },
-		strings: ['Jugar con amigos', 'Estoy listo', 'Conectado (por servidor)', 'Inicia sesión para jugar con amigos'].map(T),
+		strings: ['Jugar con amigos', 'Estoy listo', 'Conectado (por servidor)', 'Inicia sesión para jugar con amigos', 'Relé: quedan 12 min hoy', CO.BUDGET_MSG].map(T),
 	};
 	const abilities = G.Abilities.list().map(a => ({ id: a.id, name: T(a.name), desc: T(a.desc), pokemon: pokemon.filter(p => p[6] === a.id).length }));
 	return {
