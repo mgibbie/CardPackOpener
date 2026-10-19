@@ -122,6 +122,9 @@ export const HOOKS = [
   'ease_dollars',       // (mod, instant) -> mod: the amount ease_dollars will apply
   'dollars_eased',      // (mod, instant) ease_dollars(mod) was called (the original amount; its event may be queued)
   'ease_ante',          // (mod) ease_ante was called
+  'ease_ante_mod',      // (mod) -> mod: the step ease_ante will apply (before 'ease_ante'; MoreFluff's Superboss / Final Stake)
+  'can_use_consumeable', // (card) -> true: this consumable can be used whatever its own check says (MoreFluff's Suspended sticker)
+  'can_skip_booster',   // () -> false: the open pack can't be skipped (the skip_booster action refuses; MoreFluff's Superboss Pack)
   'hand_leveled',       // (card, hand, amount) level_up_hand leveled a hand
   'blind_amount',       // (amount, ante) -> get_blind_amount's value
   'mod_chips',          // (chips) -> chips (mod_chips, before the vanilla cap)

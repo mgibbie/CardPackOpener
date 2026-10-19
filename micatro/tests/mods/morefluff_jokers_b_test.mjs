@@ -14,7 +14,8 @@ const sure = () => { G.GAME.probabilities.normal = 1000; }; // every "1 in n" hi
 const rows = () => (G.GAME.round_eval ? G.GAME.round_eval.rows : []);
 const consumables = (set) => G.consumeables.cards.filter((c) => !set || c.ability.set === set);
 
-ok(JOKERS_B.length === 28, '28 jokers in part B', JOKERS_B.length);
+ok(JOKERS_B.length === 27, '27 jokers in part B (Lightning Strikes Thrice is gone in 1.9.9999)', JOKERS_B.length);
+ok(!P_CENTERS.j_mf_lightningstrikesthrice, 'Lightning Strikes Thrice is not registered');
 
 // ------------------------------------------------------------------ describe(): every #n# filled
 start('MFB_DESC');
@@ -81,7 +82,7 @@ start('MFB_CARROT');
 {
   const j = add(J('goldencarrot'));
   const r = play(hand(['S_2']));
-  ok(j.ability.extra.gain === 9 && msgs(r.events).includes('$9'), 'Golden Carrot: -$1 per hand played', j.ability.extra);
+  ok(j.ability.extra.gain === 9 && msgs(r.events).includes('-$1'), 'Golden Carrot: -$1 per hand played (SMODS.scale_card "-$1")', [j.ability.extra, msgs(r.events)]);
   winRound();
   const row = rows().find((x) => x.center === J('goldencarrot'));
   ok(row && row.dollars === 8, 'Golden Carrot: pays its value at end of round', rows());
@@ -154,9 +155,11 @@ start('MFB_JUNK');
   toShop();
   ok(G.shop_vouchers.cards.length === 2, 'Junk Mail: an extra voucher in the shop', G.shop_vouchers.cards.length);
   const extra = G.shop_vouchers.cards[1];
-  const base = Math.max(1, Math.floor((extra.base_cost + 0.5)));
-  ok(extra.cost === Math.floor(base * 1.5 + 0.5) && extra.bonus_cost === base * 0.5, 'Junk Mail: it costs X1.5', [extra.cost, extra.base_cost, extra.bonus_cost]);
+  ok(extra.base_cost === P_CENTERS[extra.config.center.key].cost * 1.5 && extra.cost === Math.floor(extra.base_cost + 0.5), 'Junk Mail: its base cost X1.5', [extra.cost, extra.base_cost]);
   ok(G.shop_vouchers.cards[0].cost === G.shop_vouchers.cards[0].base_cost, 'Junk Mail: the round voucher keeps its price');
+  act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
+  toShop();
+  ok(G.shop_vouchers.cards.length === 2, 'Junk Mail: once per shop (re-armed at the end of the round)', G.shop_vouchers.cards.length);
 }
 
 // ------------------------------------------------------------------ One Slip Too Late
@@ -169,8 +172,6 @@ start('MFB_SLIP');
   ok(r2.total.mult === 4, 'One Slip Too Late: second hand, 2 scoring cards -> X2', tot(r2));
   const r3 = play(hand(['S_K', 'H_K']));
   ok(r3.total.mult === 2, 'One Slip Too Late: third hand needs 3 scoring cards', tot(r3));
-  toShop();
-  ok(G.GAME.current_round.hands_played === 0, 'onesliptoolate.toml: hands_played is 0 after cash out');
 }
 
 // ------------------------------------------------------------------ I Sip Toner Soup
@@ -188,27 +189,14 @@ start('MFB_UNPL');
 {
   add(J('unpleasantcard'));
   const r = play(hand(['H_A', 'S_A']));
-  ok(r.total.total === Math.floor(32 * 2.7 * 2), 'Unpleasant Card: X2.7 Chips', tot(r));
+  ok(r.total.total === Math.floor(32 * 2.067 * 2), 'Unpleasant Card: X2.067 Chips (1.9.9999)', tot(r));
   toShop();
   G.GAME.dollars = 100;
   const pack = G.shop_booster.cards[0];
   const rb = act({ type: 'buy', id: pack.sort_id });
-  ok(rb.ok && G.STATE === STATES.SHOP && G.pack_cards.cards.length === 0, 'Unpleasant Card: an opened pack is skipped at once', [rb.ok, G.STATE]);
+  ok(rb.ok && G.pack_cards.cards.length === 1 && G.GAME.pack_choices === 1, 'Unpleasant Card (1.9.9999): an opened pack holds 1 card, choose 1', [rb.ok, G.pack_cards.cards.length, G.GAME.pack_choices]);
 }
 
-// ------------------------------------------------------------------ Lightning Strikes Thrice
-start('MFB_LST');
-{
-  add(J('lightningstrikesthrice'));
-  const road = add('j_hit_the_road');
-  const r = discard(hand(['S_J']));
-  ok(road.ability.x_mult === 2.5, 'Lightning Strikes Thrice: a discard effect happens 2 more times (Hit the Road X1.5 -> X2.5)', road.ability.x_mult);
-  ok(msgs(r.events).filter((m) => m === 'Again!').length >= 2, 'LST: Again! x2', msgs(r.events));
-  G.consumeables.config.card_limit = 5;
-  const p = hand(['S_3'])[0]; p.set_seal('Purple', true);
-  discard([p]);
-  ok(consumables('Tarot').length === 3, 'Lightning Strikes Thrice: a Purple Seal discard makes 3 Tarots', consumables().length);
-}
 
 // ------------------------------------------------------------------ Loaded Disk
 start('MFB_DISK');
@@ -247,9 +235,9 @@ start('MFB_SAP');
 {
   const s = add(J('sapling'));
   const r = winRound();
-  ok(s.ability.extra.c_rounds === 1 && msgs(r.events).includes('1/9'), 'Sapling: counts rounds', msgs(r.events));
+  ok(s.ability.extra.c_rounds === 1 && msgs(r.events).includes('1/6'), 'Sapling: counts rounds (1.9.9999: 6)', msgs(r.events));
   act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
-  s.ability.extra.c_rounds = 9;
+  s.ability.extra.c_rounds = 6;
   nextRound(); // -> boss (The Wall)
   ok(G.GAME.blind.boss && G.GAME.round_resets.ante === 1, 'Sapling: at the Boss Blind');
   const ante = G.GAME.round_resets.ante, d0 = G.GAME.dollars;
@@ -268,7 +256,7 @@ start('MFB_SAP2');
 {
   const s = add(J('sapling'));
   act({ type: 'sell', id: s.sort_id });
-  ok(G.STATE === STATES.SELECTING_HAND, 'Sapling: does nothing before 9 rounds', G.STATE);
+  ok(G.STATE === STATES.SELECTING_HAND, 'Sapling: does nothing before 6 rounds', G.STATE);
 }
 
 // ------------------------------------------------------------------ Snake
@@ -280,6 +268,11 @@ start('MFB_SNAKE');
   act({ type: 'highlight', ids: [G.hand.cards[0].sort_id] });
   act({ type: 'discard' });
   ok(G.hand.cards.length === before - 1 + 3, 'Snake: after a discard, draw exactly 3 (over the hand size)', G.hand.cards.length);
+  add(J('snake'));
+  const b2 = G.hand.cards.length;
+  act({ type: 'highlight', ids: [G.hand.cards[0].sort_id] });
+  act({ type: 'discard' });
+  ok(G.hand.cards.length === b2 - 1 + 6, 'Snake (1.9.9999): two Snakes draw 3 + 3', G.hand.cards.length);
 }
 
 // ------------------------------------------------------------------ Big Win

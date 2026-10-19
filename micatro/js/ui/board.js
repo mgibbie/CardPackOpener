@@ -864,7 +864,7 @@ export class Board {
     const name = packName(kind, v.state);
     const hd = h('div', 'pack-head', `<div class="pack-name">${esc(name)}</div><div class="pack-choose">Choose <b>${v.pack_choices || 1}</b></div>`);
     const sk = h('button', 'btn grey b-skip-pack', 'Skip'); sk.type = 'button';
-    sk.disabled = this.readOnly || this.locked;
+    sk.disabled = this.readOnly || this.locked || !!v.pack_no_skip; // (view.pack_no_skip: a mod pack that can't be skipped)
     sk.addEventListener('click', () => this.act({ type: 'skip_booster' }, 'button'));
     hd.appendChild(sk);
     // Mod pack buttons (view.mod_buttons with where 'pack'; e.g. BETMMA's Recycle Area discard)
