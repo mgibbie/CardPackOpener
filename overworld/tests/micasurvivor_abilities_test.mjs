@@ -1,7 +1,7 @@
 // micasurvivor_abilities_test.mjs — MicaSurvivor M5 batch 2 ("Abilities"): the 54 passive abilities of
 // the Godot Android port by JayElDragon (poke-survivor: abilities.gd + its hooks in main.gd), one per
 // Pokémon, driven headlessly in a real run (window.G is global; the run is paused and stepped by hand):
-//   - data: 54 abilities, every one of the 966 Pokémon has one (the port's per-dex table), every
+//   - data: 54 abilities, every one of the 983 Pokémon (966 + batch B1's 17) has one (the port's per-dex table), every
 //     `fx` key is handled, and every ability measurably changes something (no silent no-ops)
 //   - each family with the port's numbers: Blaze/Torrent/Overgrow/Swarm +35 % below 40 % HP; flat
 //     damage / speed / XP / coins / crit / magnet / cooldown / regen / damage taken; weather speed
@@ -199,7 +199,7 @@ try {
 			return { n: ids.length, dex: G.DEX.length, noAb, unhandled, unused: ids.filter(i => !used.has(i)), sample };
 		});
 		A(r.n === 54, `54 abilities (${r.n})`);
-		A(r.dex === 966 && r.noAb.length === 0, `every one of the ${r.dex} Pokémon has a defined ability`, JSON.stringify(r.noAb.slice(0, 20)));
+		A(r.dex === 983 && r.noAb.length === 0, `every one of the ${r.dex} Pokémon has a defined ability`, JSON.stringify(r.noAb.slice(0, 20)));
 		A(r.unhandled.length === 0, 'every fx key of the port is handled', JSON.stringify(r.unhandled));
 		A(JSON.stringify(r.sample) === JSON.stringify({ 1: 'overgrow', 4: 'blaze', 7: 'torrent', 25: 'static', 143: 'limber', 292: 'wonderguard', 792: 'multiscale', 800: 'solidrock', 1024: 'protean' }),
 			'the port\'s per-dex table (Bulbasaur Overgrow, Pikachu Static, Snorlax Limber, Shedinja Wonder Guard, Lunala Multiscale, Necrozma Solid Rock...)', JSON.stringify(r.sample));

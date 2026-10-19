@@ -34,7 +34,7 @@ the page works from `/micasurvivor/`.
 
 ## Assets (not in git)
 
-`assets/pokemon/<dex>/` (13,481 files, ~104 MB) is **gitignored**. On the live site
+`assets/pokemon/<dex>/` (13,699 files, ~105 MB) is **gitignored**. On the live site
 `_redirects` sends `/micasurvivor/assets/*` with a 301 to `https://magepunk-micasurvivor.pages.dev/`,
 which is a separate Pages project. Sheets load with `crossOrigin = 'anonymous'`, and the staged
 `_headers` adds `Access-Control-Allow-Origin: *`.
@@ -44,6 +44,39 @@ which is a separate Pages project. Sheets load with `crossOrigin = 'anonymous'`,
   which copies `micasurvivor/assets` into `.micasurvivor/` and writes `_headers`, then deploys
   from inside `.micasurvivor` so the site's functions aren't bundled.
 - The small essentials are tracked in git: `fonts/` (Pixelify, ~100 KB), `icons/`, `favicon.ico`.
+
+## Batch B1: the complete Pokédex (2026-10-19)
+
+The owner's decision (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`, "Update (owner, 2026-10-19)"): all 1025
+canon Pokémon can be enemies in every mode. The game shipped with 966: upstream's `fetch_pokedex.py` only took
+Pokémon whose SpriteCollab entry had all three of Idle, Walk and Attack. B1 vendors upstream's generators into
+`tools/micasurvivor/` (they were left out with upstream's `tools/`) and extends them:
+
+- `fetch_sprites.py` takes a Pokémon when its folder has ANY of Idle / Walk / Attack; upstream's own FALLBACK
+  table fills the rest (Walk <- Idle, Attack <- Strike / Swing / Shoot / Idle, Hurt <- Cringe / Idle...). Four
+  species use an alternate-form folder (`FORMS`): Falinks (the Brass), Gimmighoul (Roaming), Ting-Lu (the full
+  sheet SpriteCollab files as "Temp") and Miraidon (Low-Power Mode). It keeps every row already in
+  `sprites-meta.js` (`--refresh` re-fetches), so published sheets never change.
+- `hover_flags.py` is upstream's, re-run: it reproduces the 966 rows byte for byte.
+- `fetch_pokedex.py` lists exactly the Pokémon in `sprites-meta.js`; the stat formula and rarity are upstream's,
+  and re-running it reproduces the 966 rows byte for byte.
+- `fetch_credits.py --only <dexes>` merges the new sheets' artists into `CREDITS.md` (the existing rows stay as
+  they were when those sheets were downloaded).
+
+Result: **983 Pokémon** (+17): Jellicent, Stunfisk, Aromatisse, Toucannon, Sirfetch'd, Falinks, Copperajah,
+Dolliv, Grafaiai, Toedscool, Iron Treads, Gimmighoul, Ting-Lu, Miraidon, Gouging Fire, Raging Bolt, Pecharunt.
+They follow the existing rules: tiers by BST, Paradox like the other Paradox (Iron Treads rarity 4; Gouging Fire
+and Raging Bolt rarity 5, boss-only), Ting-Lu / Miraidon / Pecharunt legendary (rifts, Judgment, Tower). Each has
+an ability (`abilities.js`), English names where the Spanish one differs (`lang-en.js`), and Aromatisse is a
+healer (`enemies.js`). Eight of them only have a one-frame Idle on SpriteCollab, used for every animation; when
+they walk they hop 2 px (`js/core/sprites.js`; none of the 966 has a one-frame Walk).
+
+**Pending the owner's call (42, no SpriteCollab sheet at all):** 514, 516, 520, 522, 523, 538, 558, 564, 565, 591,
+592, 616, 626, 668, 732, 735, 756, 765, 837, 838, 839, 866, 878, 893, 931, 942, 943, 944, 947, 949, 950, 954, 956,
+962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023. They are not in `pokedex.js` (nothing can spawn them);
+`overworld/tests/micasurvivor_pokedex_test.mjs` lists them as `PENDING_ART`.
+
+Deploy order: the new sheets first (`npm run deploy-micasurvivor`), then merge the code, or the new Pokémon 404.
 
 ## Saves
 
@@ -264,7 +297,7 @@ partner's alternative evolution in the ghost replay, are not synced.
 
 Every Pokémon has one **passive ability** (`js/systems/abilities.js`, `G.Abilities`; port
 `abilities.gd` and its hooks in `main.gd`). There are 54 abilities. The per-dex table is the
-port's own: all 966 Pokémon are listed, and the port's fallback (Protean) is never needed. The
+port's own: all 966 Pokémon are listed, plus the 17 of batch B1, and the port's fallback (Protean) is never needed. The
 numbers are the port's:
 
 | Family | Abilities | Effect |
@@ -830,7 +863,7 @@ before batches 6-8; diffing the port's full lists against ours left exactly this
 
 | | Port | We had | Added |
 |---|---|---|---|
-| Achievements | 82 + 54 per type + one per legendary (223 here) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
+| Achievements | 82 + 54 per type + one per legendary (226 here since B1) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
 | Daily missions | 17 | 13 | `mDaily`, `mMods`, `mType`, `mRifts` |
 | Weekly missions | 13 | 9 | `wDailyCh`, `wType`, `wRifts`, `wMods` |
 | Titles | 36 (one per achievement that gives one) | 34 | "Verdugo de jefes" (500 bosses), "Rey de los jefes" (1,000) |
@@ -867,7 +900,7 @@ scrolls past 5 rows.
 **Lexicon** (main menu → Lexicon; mouse, touch, pad). The port's five tabs: Items ("✔ Found" / "Not found yet" and
 "Items: n / 26 found"), Moves (by type, "Evolves into: …"), Status (the port's 7 texts), Abilities, Z-Moves &
 Dynamax (the rule, the Dynamax entry left pending in batch 5, each Z with "Defeat 250 X-type Pokémon: n/250" or
-"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 966, by generation; yours with their sprite, the
+"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 983 since B1, by generation; yours with their sprite, the
 others as silhouettes), Modes (the 8 modes with your records, the Tower and Boss Rush included, the 6 modifiers,
 adaptive difficulty) and the Floor Tower (relics, the rest cards, the 15 + 4 pacts and the boss log that was only
 on the fail screen). Every card opens an entry with its full text and data; Close, Esc, B or a tap outside closes
@@ -876,7 +909,7 @@ stats); nothing new is stored.
 
 **Trainer card** (Profile → "View my trainer card"; `menu.gd` `_show_card`): your display name, your title (or
 "(no title)"), your Pokémon and your 3 favourites, and the port's 9 cells: Runs, Best time, Best level, Defeated,
-Bosses, Chests, Pokémon (n / 966), Achievements (n / 223), Time played (new stat `stats.totalTime`, seconds,
+Bosses, Chests, Pokémon (n / 983), Achievements (n / 226), Time played (new stat `stats.totalTime`, seconds,
 max-merged like every stat). Below, "Records by mode". View only, like the port: no share or export, and nothing
 from the account but the name other players already see.
 
@@ -1354,4 +1387,8 @@ summary card with Watch again / Back to menu. An unknown or expired id: "This re
   the guest) watched; Esc back to the menu; no Spanish (DOM and canvas).
   In CI the WebRTC part runs with `--disable-features=WebRtcHideLocalIpsWithMdns` (real localhost host candidates)
   and `window.__msurvNet = {ice: []}`; the relay part with `{noRtc: true}`.
+- `node overworld/tests/micasurvivor_pokedex_test.mjs` (batch B1): every dex 1..1025 is in the game or pending art,
+  every sheet of every Pokémon on disk with its meta's geometry, the 17 new ones loading in the browser, spawning
+  in a normal run (forced into the cast), as bosses, the legendaries as rift bosses, their Lexicon entries and
+  English names.
 - Set `MICASURVIVOR_SHOTS=<dir>` to save screenshots.

@@ -1038,4 +1038,8 @@ changes the base game's enemy pool.
 - **Planned as a base-game batch, "B1: complete the Pokédex", before the DLC content.** It covers the 59 sprite
   sheets (SpriteCollab first, then a fallback pipeline for any missing), plus Pokédex data, enemy-pool and biome
   entries. The base-unchanged golden test is re-recorded once, on purpose, for this batch only.
+- **B1 status (2026-10-19, built, not merged):** SpriteCollab has usable sheets for **17** of the 59 (5 with
+  Idle + Walk, 8 with only a one-frame Idle, 4 only in an alternate-form folder), now in the game: **983**. The
+  other **42** have no sheet at all and wait for the owner's call on a fallback (see `micasurvivor/README.md`,
+  "Batch B1").
 - **Mega sprites:** the Legends Z-A Megas also need Mega sheets for the League (part of D4c).

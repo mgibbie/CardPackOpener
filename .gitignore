@@ -27,3 +27,7 @@ micatro/mods/*/assets/
 # MicaSurvivor sprites: deployed to their own Pages project (magepunk-micasurvivor), see micasurvivor/README.md
 micasurvivor/assets/
 .micasurvivor/
+
+# MicaSurvivor generators cache (tools/micasurvivor/fetch_sprites.py)
+tools/micasurvivor/.cache/
+tools/micasurvivor/__pycache__/
