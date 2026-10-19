@@ -368,18 +368,28 @@ try {
 				check(`${it} ${via}: only a vanilla Joker and a capped Fire -> refused`, trial(it, set, ['j_joker', F2[0]], null, via, cap(1)), 'refused');
 			}
 			// Transformation — OWNER HOUSE RULE (the Lua takes the plain leftmost joker): the picked joker if it
-			// can act on it (else refused), else the leftmost Pokémon that can still evolve, skipping non-Pokémon
-			// and fully evolved ones; none -> refused, nothing consumed or charged
+			// can act on it (else refused), else the leftmost one it can act on, in row order. "Can act on" = a
+			// Pokémon that can still evolve OR can take Energy: a fully evolved, uncapped Charizard is a target
+			// for the Energy alone; a fully evolved AND capped one, or a non-Pokémon, is skipped / refused
 			{
 				const it = 'c_poke_transformation', set = 'Spectral';
 				const row = ['j_joker', 'j_poke_charizard', 'j_poke_bulbasaur', 'j_poke_charmander'];
+				const capCz = (r) => { r[1].ability.extra.energy_count = 3; };
 				const tr = (keys, pick, opts) => trial(it, set, keys, pick, via, opts);
-				check(`${it} ${via}: nothing picked, [Joker, Charizard, Bulbasaur, Charmander] -> leftmost valid (Bulbasaur)`, tr(row, null, { staleTarget: 1 }), 2);
+				// -> what happened to joker i: [key, energy]
+				const cz = (i) => { const j = G.jokers.cards[i]; return j ? [j.config.center.key, (j.ability.extra.energy_count || 0) + (j.ability.extra.c_energy_count || 0)] : null; };
+				const czCheck = (name, keys, pick, opts, i, want) => {
+					const r = tr(keys, pick, opts); const got = cz(i);
+					out.push({ name, good: r.ok && r.changed.length === 1 && r.changed[0] === i && JSON.stringify(got) === JSON.stringify(want), got: JSON.stringify({ ok: r.ok, err: r.err, changed: r.changed, got }) });
+				};
+				czCheck(`${it} ${via}: nothing picked, [Joker, Charizard (uncapped), Bulbasaur, Charmander] -> Charizard +1 Energy, no evolution`, row, null, { staleTarget: 0 }, 1, ['j_poke_charizard', 1]);
+				czCheck(`${it} ${via}: fully evolved uncapped Charizard picked -> +1 Energy, no evolution`, row, 1, { staleTarget: 0 }, 1, ['j_poke_charizard', 1]);
+				check(`${it} ${via}: nothing picked, Charizard capped -> skips it to Bulbasaur`, tr(row, null, { prep: capCz }), 2);
 				check(`${it} ${via}: nothing picked, a Basic leftmost -> it`, tr(['j_poke_charmander', 'j_joker', 'j_poke_bulbasaur'], null, { staleTarget: 1 }), 0);
-				check(`${it} ${via}: Charmander picked -> it`, tr(row, 3, { staleTarget: 1 }), 3);
-				check(`${it} ${via}: fully evolved Charizard picked -> refused`, tr(row, 1), 'refused');
+				check(`${it} ${via}: Charmander picked -> it`, tr(row, 3, { staleTarget: 0 }), 3);
+				check(`${it} ${via}: fully evolved capped Charizard picked -> refused`, tr(row, 1, { prep: capCz }), 'refused');
 				check(`${it} ${via}: vanilla Joker picked -> refused`, tr(row, 0), 'refused');
-				check(`${it} ${via}: only a Joker and Charizard -> refused`, tr(['j_joker', 'j_poke_charizard'], null), 'refused');
+				check(`${it} ${via}: only a Joker and a capped Charizard -> refused`, tr(['j_joker', 'j_poke_charizard'], null, { prep: capCz }), 'refused');
 			}
 			{
 				// the evolved card is really the highest stage (Charmander -> Charizard) and was energized

@@ -7,6 +7,7 @@ import {
   energy_max, energy_increase, type_sticker_applied, get_highest_evo, can_evolve_to_highest, poke_evolve,
   megastone_can_use, megastone_use, megastone_remove_from_deck, megastone_in_pool, card_eval_status_text,
   increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards, MEGASTONE_RESET,
+  can_increase_energy, energy_values,
 } from '../api.js';
 
 const FILE = 'consumables/mart1.lua';
@@ -43,9 +44,18 @@ const energy_card = {
     return highlighted_energy_use(self, card, area, copier);
   },
 };
+// (Transformation's targeting: the OWNER HOUSE RULE at its definition below)
+const ENERGY_FIELDS = Object.keys(energy_values);
+/** Transformation's use would energize it: a stage or a Tera sticker, a field energize() grows, under its limit. */
+const transformation_can_energize = (c) => {
+  const ex = c.ability.extra;
+  if (!(c.config.center.stage || type_sticker_applied(c))) return false;
+  return ENERGY_FIELDS.some((f) => typeof ex[f] === 'number') && can_increase_energy(c);
+};
 const transformation_ok = (c) => {
   const ex = c && c.ability && c.ability.extra;
-  return !!(ex && typeof ex === 'object' && ex.ptype && !c.config.center.aux_poke && can_evolve_to_highest(c));
+  if (!(ex && typeof ex === 'object' && ex.ptype && !c.config.center.aux_poke)) return false;
+  return can_evolve_to_highest(c) || transformation_can_energize(c);
 };
 function transformation_target() {
   if (G.jokers.highlighted && G.jokers.highlighted.length === 1) return transformation_ok(G.jokers.highlighted[0]) ? G.jokers.highlighted[0] : undefined;
@@ -75,10 +85,13 @@ const defs = {
 
   // OWNER HOUSE RULE (not the Lua): Transformation targets like the Energy cards — the picked
   // joker if it can act on it (a picked one it can't act on refuses the card), else the LEFTMOST
-  // joker it can act on; none -> refused (nothing consumed or charged). "Can act on" = a Pokémon
-  // (ptype, not an aux form) that can still evolve to a higher stage (get_highest_evo). The Lua
-  // (mart1.lua) takes the plain leftmost joker and only checks it is a Pokémon, so a fully
-  // evolved or non-Pokémon leftmost joker blocked it or got just the Energy.
+  // joker it can act on, in row order; none -> refused (nothing consumed or charged). "Can act on"
+  // = a Pokémon (ptype, not an aux form) that EITHER can still evolve to a higher stage
+  // (get_highest_evo) OR can take Energy (energizable and under its Energy limit) — so a fully
+  // evolved, uncapped Pokémon is a target for the Energy alone, and only a fully evolved AND
+  // capped Pokémon, or a non-Pokémon joker, is skipped / refused. The Lua (mart1.lua) takes the
+  // plain leftmost joker and only checks it is a Pokémon, so a non-Pokémon leftmost joker blocked
+  // it and a capped, fully evolved one wasted it.
   transformation: {
     loc_vars: energy_card.loc_vars,
     can_use(self, card) { return !!transformation_target(); },
