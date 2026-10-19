@@ -1,12 +1,20 @@
-// More Fluff — the "45 Degree Rotated Tarot" consumable type (other/rotarots.lua): 22 cards, 8 packs,
-// the Rotarot Tag. The Fool remembers the last Rotarot / Colour card used (lovely/rot_fool.toml:
-// G.GAME.last_rot_tarot_colour, set two events after G.FUNCS.use_card like last_tarot_planet).
+// More Fluff 1.9.9999 — the "45 Degree Rotated Tarot" consumable type (src/rotarots.lua): 22 cards, 8 packs, the
+// Rotarot Tag, and (new) the Rotarot Merchant / Tycoon vouchers. The Fool remembers the last Rotarot / Colour card
+// used (misc.lua's G.FUNCS.use_card wrap: G.GAME.last_rot_tarot_colour, set an event after the use, never for a
+// hidden card). The Soul! (c_mf_rot_soul, a hidden Spectral that makes a "rot" legendary) comes with those jokers.
+// ART: 1.9.9999 draws upright 71x95 sprites turned 45 degrees in the engine (mf_rotate_by); Micatro has no turned
+// sprites, so the cards and packs keep the 1.5.6 pre-turned sheets of the same art (mf_rotarots 107px /
+// mf_rotarotpacks 106px: the cells are re-indexed from 1.9.9999's 10-wide grid to the old 8-wide one).
 import {
   G, P_CENTERS, P_CARDS, P_CENTER_POOLS, enhancement_pool, create_card, create_playing_card, copy_card, localize, play_sound, attention_text,
   pseudorandom_element, pseudoseed, pseudoshuffle, probability_vars, probability_roll, ease_dollars, emit,
 } from '../../js/engine/core.js';
 import { use_card } from '../../js/engine/run.js';
 import { DATA, RANKS, change_base, modded_begin, modded_end, center_card } from './util.js';
+import { unpleasant } from './jokers_b.js';
+
+/** A 1.9.9999 rotarot cell (10 per row) -> its cell in the 1.5.6 pre-turned sheet (8 per row). */
+const old_cell = (p) => { const i = p.y * 10 + p.x; return { x: i % 8, y: Math.floor(i / 8) }; };
 
 /** lovely/rot_fool.toml: any Rotarot or Colour card used becomes the 45° Fool's target. */
 export function track_last(card) {
@@ -31,7 +39,7 @@ function convert(card, used) {
 const rot = (key, def) => {
   const s = DATA.consumables.find((c) => c.key === key);
   return {
-    key: 'c_mf_' + key, set: 'Rotarot', name: s.name, consumeable: true, cost: s.cost, pos: s.pos, atlas: 'mf_rotarots',
+    key: 'c_mf_' + key, set: 'Rotarot', name: s.name, consumeable: true, cost: s.cost, pos: old_cell(s.pos), atlas: 'mf_rotarots',
     config: JSON.parse(JSON.stringify(s.config || {})), ...def,
     use(self, card, area, copier) { track_last(card); def.use(self, card, area, copier); },
   };
@@ -83,7 +91,7 @@ function suit_cards(card, copier) {
   });
 }
 const suit = (key) => rot(key, {
-  can_use: () => true,
+  can_use: () => G.hand.cards.length >= 1, // (1.9.9999: needs a hand)
   loc_vars: (s, iq, card) => ({ vars: [card.ability ? card.ability.val : s.config.val] }),
   use: (s, card, area, copier) => suit_cards(card, copier),
 });
@@ -229,9 +237,9 @@ export const centers = [
     loc_vars: () => ({ vars: [] }),
     use(s, card, area, copier) {
       const used = copier || card;
-      modded_begin(); // (the Lua's temp_ban_joker of the vanilla list)
+      modded_begin(); // (SMODS.add_card's filter: jokers with an original_mod only)
       G.E_MANAGER.add_event(() => {
-        const n = create_card('Joker', G.jokers, null, null, null, null, null, 'exp');
+        const n = create_card('Joker', G.jokers, null, null, null, null, null, undefined);
         n.add_to_deck();
         G.jokers.emplace(n);
         used.juice_up(0.3, 0.5);
@@ -248,8 +256,10 @@ const PACK = (key) => {
   const s = DATA.boosters.find((b) => b.key === key);
   return {
     key: 'p_mf_' + key, set: 'Booster', name: s.key, kind: 'Rotarot', draw_hand: true, cost: s.cost, weight: s.weight,
-    pos: s.pos, atlas: 'mf_rotarotpacks', config: JSON.parse(JSON.stringify(s.config)),
+    pos: { x: s.pos.x, y: s.pos.y - 2 }, atlas: 'mf_rotarotpacks', config: JSON.parse(JSON.stringify(s.config)), group_key: 'k_rotarot_pack',
     loc_vars: (self, iq, card) => ({ vars: [self.config.choose, (card && card.ability && card.ability.extra) ?? self.config.extra] }),
+    // Rotarot Merchant / Tycoon (context.modify_weights): each multiplies the Rotarot packs' weight by 3.
+    get_weight: (self) => self.weight * merchant_mult(),
     create_card: () => ({ set: 'Rotarot', area: G.pack_cards, skip_materialize: true, soulable: true, key_append: 'mf_rotarot' }),
   };
 };
@@ -275,5 +285,28 @@ export const tags = [{
   },
 }];
 
+// ---------------------------------------------------------------- Rotarot Merchant / Tycoon (1.9.9999)
+const merchants = () => ['v_mf_rotarot_merchant', 'v_mf_rotarot_tycoon'].filter((k) => G.GAME && G.GAME.used_vouchers && G.GAME.used_vouchers[k]);
+const merchant_mult = () => merchants().reduce((m, k) => m * P_CENTERS[k].config.extra.odds_mult, 1);
+const voucher = (key) => {
+  const s = DATA.vouchers.find((v) => v.key === key);
+  return {
+    key: 'v_mf_' + key, set: 'Voucher', name: 'v_mf_' + key, cost: 10, available: true, pos: s.pos, atlas: 'mf_vouchers',
+    config: JSON.parse(JSON.stringify(s.config)), requires: s.requires,
+  };
+};
+centers.push(
+  { ...voucher('rotarot_merchant'), loc_vars: (self) => ({ vars: [self.config.extra.odds_mult] }) },
+  { ...voucher('rotarot_tycoon'), loc_vars: (self) => ({ vars: [self.config.extra.odds_mult * P_CENTERS.v_mf_rotarot_merchant.config.extra.odds_mult] }) },
+);
+
 export const consumable_types = [{ key: 'Rotarot', name: '45 Degree Rotated Tarot', shop_rate: 2, default: 'c_mf_rot_strength', primary_colour: '#8e73d9', secondary_colour: '#8e73d9' }];
-export const hooks = {};
+export const hooks = {
+  /** Rotarot Merchant / Tycoon (context.open_booster): an opened Rotarot pack holds 1 more card each. Then
+   *  unpleasantcard.toml: with an Unpleasant Card every pack holds 1 card, choose 1 (it patches Card:open itself). */
+  pack_size(n, card) {
+    if (card && card.config.center.kind === 'Rotarot') n += merchants().length;
+    return unpleasant() ? 1 : n;
+  },
+  pack_choices: (n) => (unpleasant() ? 1 : n),
+};

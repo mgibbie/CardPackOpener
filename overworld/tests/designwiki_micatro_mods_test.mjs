@@ -142,7 +142,7 @@ const rarItems = Object.values(files).flatMap(F => F.sections.filter(x => x.id =
 A(rarItems.length >= 5 && rarItems.every(r => r.art && r.art.length && Object.values(files).some(F => F.sections.some(x => x.id === 'jokers' && x.items.some(j => j.rarity === r.name && JSON.stringify(j.art) === JSON.stringify(r.art))))), 'every mod rarity shows one of its own jokers', rarItems.filter(r => !r.art).map(r => r.key).join(','));
 const chItems = Object.values(files).flatMap(F => F.sections.filter(x => x.id === 'challenges').flatMap(x => x.items));
 const KEYRE = /\b(?:j|c|v|p|tag|bl|b|m|e)_[a-z0-9]+(?:_[a-z0-9]+)*\b/;
-A(chItems.length >= 21 && chItems.every(c => c.art && c.art.length), 'every mod challenge shows its deck');
+A(chItems.length >= 20 && chItems.every(c => c.art && c.art.length), 'every mod challenge shows its deck');
 A(chItems.every(c => !KEYRE.test(JSON.stringify([c.name, c.lines, c.info]))), 'mod challenges: no raw keys in their text', chItems.map(c => JSON.stringify([c.name, c.lines, c.info]).match(KEYRE)).filter(Boolean).map(m => m[0]).join(','));
 const bop = chItems.find(c => c.key === 'c_sonfive_balls_of_patience');
 A(bop && bop.info.some(i => i.name === 'Banned' && i.lines.some(l => /Tags: .*Holographic Tag/.test(l))), 'Balls of Patience: bans the Holographic Tag (by name)', JSON.stringify(bop && bop.info));
@@ -230,7 +230,7 @@ try {
 	const allJ = [...itemsOf('jokers')];
 	await open('micatro-mods/jokers', '[data-key]', 60);
 	const drawn = () => page.$$eval('#content [data-key]', e => e.length);
-	A(await drawn() === 60 && await page.$eval('#content .mm-pager', e => !e.hidden && /Showing 60 of 882/.test(e.textContent.replace(/,/g, ''))), `jokers: the first 60 of ${allJ.length} drawn, with a pager`, await drawn());
+	A(await drawn() === 60 && await page.$eval('#content .mm-pager', (e, n) => !e.hidden && e.textContent.replace(/,/g, '').includes('Showing 60 of ' + n), allJ.length), `jokers: the first 60 of ${allJ.length} drawn, with a pager`, await drawn());
 	await page.click('#content .mm-pager .mm-more:not(.mm-all)').catch(() => {});
 	A(await drawn() === 120, 'jokers: Show more draws 60 more', await drawn());
 	await page.$eval('#content .mm-pager', e => e.scrollIntoView()).catch(() => {});

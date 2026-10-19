@@ -8,11 +8,12 @@
 import {
   G, P_BLINDS, LOC, emit, card_eval_status_text, play_sound, attention_text, localize,
   pseudoseed, pseudorandom, pseudorandom_element, ease_discard, ease_hands_played, ease_dollars,
-  level_up_hand, get_blind_amount, number_format, copy_table, probability_roll,
+  level_up_hand, get_blind_amount, number_format, copy_table, probability_roll, mod_mult, mod_chips, find_joker,
 } from './core.js';
 import * as B from './bignum.js';
-import { draw_from_deck_to_hand, discard_cards_from_highlighted } from './run.js';
+import { draw_from_deck_to_hand, discard_cards_from_highlighted, get_poker_hand_info } from './run.js';
 import { firstHook, callHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
+import { wanted, calculate_seam, modify_scoring_hand, SEAM_STATE } from './smods.js';
 
 /** Lua's `vars = {}` survives the data export as `{}` — normalise to an array. */
 const as_list = (v) => (Array.isArray(v) ? v : []);
@@ -525,6 +526,76 @@ export class Blind {
     this.set_text();
     return this;
   }
+}
+
+// ---------------------------------------------------------------- Steamodded Blind wraps
+// (src/overrides.lua: Blind:debuff_card / debuff_hand / stay_flipped / modify_hand fire their SMODS contexts.)
+// Each is a no-op unless an active mod listens to that context (smods.js wanted()).
+{
+  const base_debuff_card = Blind.prototype.debuff_card;
+  /** debuff_card context: a listener's {debuff = true} / {prevent_debuff = true} decides before the blind's own rule. */
+  Blind.prototype.debuff_card = function (card, from_blind) {
+    if (ACTIVE_MODS.length && wanted('debuff_card')) {
+      const flags = calculate_seam({ debuff_card: card, ignore_debuff: true }, 'debuff_card');
+      if (flags.prevent_debuff) { if (card.debuff) card.set_debuff(false); return; }
+      if (flags.debuff) { if (!card.debuff) card.set_debuff(true); return; }
+    }
+    return base_debuff_card.call(this, card, from_blind);
+  };
+
+  const base_debuff_hand = Blind.prototype.debuff_hand;
+  /**
+   * debuff_hand context (the SMODS one, after the blind's own rule): {full_hand, scoring_hand (after the
+   * modify_scoring_hand pass), poker_hands, scoring_name, check}; {prevent_debuff} -> false, {debuff, debuff_text} ->
+   * true (the text and its source in SEAM_STATE.debuff_text / hand_debuff_source, like SMODS.debuff_text).
+   */
+  Blind.prototype.debuff_hand = function (cards, hand, handname, check) {
+    const ret = base_debuff_hand.call(this, cards, hand, handname, check);
+    if (!ACTIVE_MODS.length || !wanted('debuff_hand')) return ret;
+    SEAM_STATE.hand_debuff_source = undefined;
+    let scoring = get_poker_hand_info(cards).scoring_hand.filter(Boolean);
+    const splash = find_joker('Splash').length > 0;
+    scoring = cards.filter((c) => splash || scoring.includes(c) || c.ability.effect === 'Stone Card' || c.config.center.always_scores);
+    const final_scoring_hand = wanted('modify_scoring_hand') ? modify_scoring_hand(cards, scoring) : scoring;
+    const flags = calculate_seam({ debuff_hand: true, full_hand: cards, scoring_hand: final_scoring_hand, poker_hands: hand, scoring_name: handname, check }, 'debuff_hand');
+    if (flags.prevent_debuff) return false;
+    if (flags.debuff) {
+      SEAM_STATE.debuff_text = flags.debuff_text;
+      SEAM_STATE.hand_debuff_source = flags.debuff_source;
+      return true;
+    }
+    SEAM_STATE.debuff_text = undefined;
+    return ret;
+  };
+
+  const base_stay_flipped = Blind.prototype.stay_flipped;
+  /**
+   * stay_flipped context {to_area, from_area, other_card} (also the card's own mod enhancement / seal): a listener's
+   * {stay_flipped} / {prevent_stay_flipped} overrides the blind; {modify = {to_area}} sends the card to that area
+   * instead (SMODS.to_area, read by draw_card / draw_card_from).
+   */
+  Blind.prototype.stay_flipped = function (area, card, from_area) {
+    const ret = base_stay_flipped.call(this, area, card, from_area);
+    if (!ACTIVE_MODS.length || !wanted('stay_flipped')) return ret;
+    const flags = calculate_seam({ to_area: area, from_area, other_card: card, stay_flipped: true }, 'stay_flipped', { self_card: card });
+    if (flags.modify && flags.modify.to_area) SEAM_STATE.to_area = flags.modify.to_area;
+    if (flags.prevent_stay_flipped) return false;
+    if (flags.stay_flipped) return true;
+    return ret;
+  };
+
+  const base_modify_hand = Blind.prototype.modify_hand;
+  /**
+   * modify_hand context, after the blind's own modify_hand: the Lua listeners change the globals `mult` /
+   * `hand_chips`; here they change context.mult / context.hand_chips. -> [mult, hand_chips, modded].
+   */
+  Blind.prototype.modify_hand = function (cards, poker_hands, text, mult, hand_chips, scoring_hand) {
+    const r = base_modify_hand.call(this, cards, poker_hands, text, mult, hand_chips, scoring_hand);
+    if (!ACTIVE_MODS.length || !wanted('modify_hand')) return r;
+    const ctx = { modify_hand: true, poker_hands, scoring_name: text, scoring_hand, full_hand: cards, mult: mod_mult(r[0]), hand_chips: mod_chips(r[1]) };
+    const flags = calculate_seam(ctx, 'modify_hand');
+    return [mod_mult(ctx.mult), mod_chips(ctx.hand_chips), r[2] || flags.effects.length > 0];
+  };
 }
 
 /** localize{type='raw_descriptions', set='Blind', key, vars} -> array of filled lines (or undefined). */

@@ -41,6 +41,7 @@ const server = http.createServer(async (req, res) => {
 		let out = { ok: true, state: STATE };
 		if (body.action === 'run-leaderboard') out = { top: [], you: null };
 		else if (body.action === 'chat-get') out = { messages: [] };
+		else if (body.action === 'publish-micatro') out = { ok: true, watchers: 2, watcherNames: ['bob', 'carol'] }; // (the run is watched: the "2 watching" chip)
 		res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out)); return;
 	}
 	const f = u.endsWith('/') ? u + 'index.html' : u;
@@ -177,6 +178,27 @@ try {
 			if (id === boosterId) await shot(`shop ${nm}`);
 		}
 		await page.touchscreen.tap(5, Math.round(size[2] * 0.3)); await sleep(200); // deselect
+	}
+
+	// ---- the "2 watching" chip (a watched run) never covers the HUD (bug 2026-10-19: in portrait it sat on the Round
+	// score box) nor the settings / bell buttons, and stays on screen, at every size (+ a desktop-sized window)
+	for (const size of [...SIZES, ['wide 1600x900', 1600, 900, null]]) {
+		await setSize(size);
+		const r = await page.evaluate(() => {
+			const w = document.getElementById('watchers');
+			if (!w || getComputedStyle(w).display === 'none') return { shown: false };
+			const a = w.getBoundingClientRect(), hits = [];
+			for (const el of document.querySelectorAll('.hud, .hud-score, .hud-stats .btn, #mp-topbar, #mp-topbar .tb-mini')) {
+				const b = el.getBoundingClientRect();
+				if (b.width < 2 || b.height < 2) continue;
+				if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) hits.push(`${(el.id || el.className).toString().slice(0, 30)} [${[b.left, b.top, b.right, b.bottom].map(Math.round)}]`);
+			}
+			const on = a.left >= 0 && a.top >= 0 && a.right <= innerWidth && a.bottom <= innerHeight;
+			return { shown: true, text: w.textContent, rect: [a.left, a.top, a.right, a.bottom].map(Math.round), hits, on };
+		});
+		A(r.shown && /2 watching/.test(r.text), `${size[0]}: the watched run shows "2 watching"`, JSON.stringify(r));
+		A(r.shown && r.on && !r.hits.length, `${size[0]}: the watching chip covers no HUD box / button and is on screen`, JSON.stringify(r));
+		await shot(`watching ${size[0]}`);
 	}
 
 	// ---- open the pack (via its button) and check its controls at every size

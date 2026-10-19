@@ -77,6 +77,11 @@ G.ModesUI = (() => {
         <button class="btn mode-sub" id="modes-team-pick">${G.Icons.html('ball', 18)} Elegir equipo (hasta 3)</button></div>`
         : card('team', M.ICON.team, M.NAME.team, ['Necesitas al menos 2 Pokémon para formar un equipo.']),
     ].join('');
+    // DLC D0b: the Expedition group (js/systems/expedition.js): "Coming soon" (reachable, not startable) until enabled
+    const X = G.Expedition;
+    $('modes-exp-h').textContent = X.MODES.some(X.enabled) ? 'Expedición' : 'Expedición · modos nuevos (próximamente)';
+    $('modes-exp').innerHTML = X.MODES.map(expCard).join('');
+    $('modes-exp').querySelectorAll('[data-exp]').forEach(b => { b.onclick = () => start(b.dataset.exp); });
     $('modes-mods').innerHTML = M.MOD_IDS.map(id => {
       const on = p.mods.includes(id), m = M.MOD[id];
       return `<button class="mod-tog${on ? ' on' : ''}" data-mod="${id}" aria-pressed="${on}" data-sfx="select">
@@ -92,6 +97,15 @@ G.ModesUI = (() => {
     $('modes-mods').querySelectorAll('[data-mod]').forEach(b => { b.onclick = () => { M.toggleMod(b.dataset.mod); render(); }; });
   }
 
+  /** DLC D0b: an Expedition mode's card; one not playable yet says "Próximamente" and is aria-disabled (the pad still
+   *  reaches it: a press says so instead of starting). */
+  function expCard(id) {
+    const X = G.Expedition, on = X.enabled(id);
+    return `<button class="mode-card${on ? '' : ' soon'}" data-exp="${id}"${on ? ' data-sfx="confirm"' : ' aria-disabled="true"'}>
+      <span class="mode-ico">${G.Icons.html(X.ICON[id], 36)}</span>
+      <span class="mode-txt"><b>${X.NAME[id]}</b><small><span>${X.DESC[id]}</span>${on ? '' : '<span class="soon-tag">Próximamente</span>'}</small></span></button>`;
+  }
+
   /** La tarjeta de la Torre (+ "Piso inicial: N" con algún punto de control desbloqueado). */
   function towerCard(s) {
     const T = G.Tower, cps = T.checkpoints(s);
@@ -102,6 +116,8 @@ G.ModesUI = (() => {
   }
 
   function start(mode) {
+    // DLC D0b: an Expedition mode not playable yet: "coming soon" (G.Flow.play says the same)
+    if (G.Expedition.isExp(mode) && !G.Expedition.enabled(mode)) { G.UI.toast('La Expedición llegará pronto.'); G.Audio.sfx('error'); return; }
     if (G.Social.room) { G.LobbyUI.open(); return; }   // en una sala: la partida en grupo (siempre normal)
     // M5 lote 7 (menu.gd 1657): sin 2 Pokémon el Modo Equipo no empieza
     if (mode === 'team' && !G.Team.unlocked()) { G.UI.toast('Consigue otro Pokémon primero'); G.Audio.sfx('error'); return; }

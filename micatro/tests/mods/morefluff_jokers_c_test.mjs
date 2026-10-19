@@ -1,4 +1,4 @@
-// More Fluff jokers, part C (micatro/mods/morefluff/jokers_c.js): all 27 fired through real act() plays with
+// More Fluff jokers, part C (micatro/mods/morefluff/jokers_c.js, 1.9.9999): all 26 fired through real act() plays with
 // the mod's numbers, every describe() filled, and one test per intended-design fix (see the module header).
 //   node micatro/tests/mods/morefluff_jokers_c_test.mjs
 import {
@@ -8,15 +8,18 @@ import {
 import { P_JOKER_RARITY_POOLS, P_CENTER_POOLS, P_BLINDS, probability_vars, get_blind_amount, add_joker } from '../../js/engine/core.js';
 import { describe } from '../../js/engine/describe.js';
 
-const KEYS = 'recycling virtual wilddrawfour yuckyrat allicantdo bloodpact bookmove brass bowlingball cba complexitycreep fleshprison grep hugejoker hyperjimbo jankman mashupalbum pixeljoker rainbowjoker rosetinted the_solo top10 widejoker triangle marigold lessfluff oopsallfives'.split(' ').map((k) => 'j_mf_' + k);
+const KEYS = 'recycling virtual wilddrawfour yuckyrat allicantdo bloodpact bookmove brass bowlingball cba fleshprison grep hugejoker hyperjimbo jankman mashupalbum pixeljoker rainbowjoker rosetinted the_solo top10 widejoker triangle marigold lessfluff oopsallfives'.split(' ').map((k) => 'j_mf_' + k);
 const S2 = () => play(hand(['S_2']));
 
 // ------------------------------------------------------------- registration / text
 start('MFC0');
-ok(KEYS.every((k) => P_CENTERS[k] && P_CENTERS[k].mod === 'morefluff'), 'all 27 registered');
-ok(KEYS.filter((k) => k !== 'j_mf_oopsallfives').every((k) => P_CENTER_POOLS.Joker.includes(P_CENTERS[k])), 'in the joker pool');
+ok(KEYS.every((k) => P_CENTERS[k] && P_CENTERS[k].mod === 'morefluff'), 'all 26 registered');
+const RET = ['j_mf_virtual', 'j_mf_wilddrawfour', 'j_mf_fleshprison', 'j_mf_mashupalbum', 'j_mf_rosetinted'];
+ok(KEYS.filter((k) => k !== 'j_mf_oopsallfives' && !RET.includes(k)).every((k) => [1, 2, 3, 4].some((r) => P_JOKER_RARITY_POOLS[r].includes(P_CENTERS[k]))), 'the active ones in the rarity pools');
+ok(RET.every((k) => P_CENTERS[k].rarity === 'mf_oldfluff' && P_JOKER_RARITY_POOLS.mf_oldfluff.includes(P_CENTERS[k]) && ![1, 2, 3, 4].some((r) => P_JOKER_RARITY_POOLS[r].includes(P_CENTERS[k]))), '1.9.9999 retires Virtual / Wild Draw Four / Flesh Prison / Mashup Album / Rose-Tinted Glasses to Old Fluff');
+ok(RET.every((k) => P_CENTERS[k].atlas === 'mf_jokers_156'), 'the retired jokers keep their 1.5.6 art (1.9.9999: placeholder sketches)');
 ok(![1, 2, 3, 4].some((r) => P_JOKER_RARITY_POOLS[r].includes(P_CENTERS.j_mf_oopsallfives)) && P_CENTERS.j_mf_oopsallfives.rarity === 'mf_token', 'Token rarity: never rolled from 1-4');
-ok(P_CENTERS.j_mf_triangle.rarity === 4 && P_CENTERS.j_mf_marigold.rarity === 4 && P_CENTERS.j_mf_brass.enhancement_gate === 'm_mf_brass' && P_CENTERS.j_mf_wilddrawfour.enhancement_gate === 'm_wild', 'rarities / gates from the Lua');
+ok(P_CENTERS.j_mf_triangle.rarity === 4 && P_CENTERS.j_mf_marigold.rarity === 4 && P_CENTERS.j_mf_brass.enhancement_gate === 'm_mf_brass' && !P_CENTERS.j_mf_wilddrawfour.enhancement_gate, 'rarities / gates from the Lua (1.9.9999: Wild Draw Four ungated)');
 for (const k of KEYS) { const j = add(k); const d = describe(j); ok(filled(d) && d.lines.length > 0, 'describe filled ' + k, d.lines); j.remove(); }
 flush();
 
@@ -124,9 +127,9 @@ flush();
   let r = S2();
   ok(r.total.total === 35, 'Brass Joker with no retriggers: plain', tot(r));
   G.GAME.probabilities.normal = 3; // 3 in 3: every Brass Card breaks
-  play(hand(['S_5', 'H_5'], 'm_mf_brass'));
+  play(hand(['S_5', 'H_5', 'D_5'], 'm_mf_brass'));
   G.GAME.probabilities.normal = 1;
-  ok(br.ability.retriggers === 1 && br.ability.partial_rounds === 0, 'two Brass Cards destroyed: +1 retrigger', br.ability);
+  ok(br.ability.upgrade_rounds === 3 && br.ability.retriggers === 1 && br.ability.partial_rounds === 0, 'three Brass Cards destroyed (1.9.9999: 3 a level): +1 retrigger', br.ability);
   r = S2();
   ok(r.total.chips === 7 && r.total.mult === 9 && r.total.total === 63 && msgs(r.events).includes('Again!'), 'retriggers the joker to its right', tot(r));
   ok(/Currently {C:attention}1{/.test(describe(br).lines.join(' ')), 'describe shows the retriggers');
@@ -161,70 +164,10 @@ flush();
   ok(r.total.mult === 23 && r.total.total === 161 && msgs(r.events).includes('Again!'), 'CBA retriggers the first editioned joker', tot(r));
 }
 
-// ------------------------------------------------------------- Complexity Creep
+// ------------------------------------------------------------- Complexity Creep (deleted in 1.9.9999)
 {
   start('MFC11');
-  const cc = add('j_mf_complexitycreep');
-  ok(cc.ability.effects.length === 1 && cc.ability.effects[0].length === 9 && typeof cc.ability.effects[0][0] === 'string', 'spawns with one random effect', cc.ability.effects);
-  const E = (eff, val, trig, gate, gv, loc, gloc, tloc) => [eff, val, trig || 'joker', null, gate || null, gv ?? null, loc || 'cc_' + eff, gloc || null, tloc || 'cc_mf_joker_trigger'];
-  cc.ability.effects = [E('plusmult', 5), E('xmult', 2)];
-  let r = S2();
-  ok(r.total.chips === 7 && r.total.mult === 12 && r.total.total === 84, '+5 Mult then X2 (chained extra)', tot(r));
-  cc.ability.effects = [E('pluschips', 10), E('xchips', 2), E('swapchipmult', 0)];
-  r = S2();
-  ok(r.total.chips === 1 && r.total.mult === 34, '+10 Chips, X2 Chips, swap', tot(r));
-  cc.ability.effects = [E('emult', 2), E('echips', 2)];
-  add('j_joker');
-  G.jokers.cards.reverse(); // Joker first: mult 5 then ^2
-  r = S2();
-  ok(r.total.chips === 49 && r.total.mult === 25, '^2 Mult and ^2 Chips', tot(r));
-  clearJokers();
-  const cc2 = add('j_mf_complexitycreep');
-  cc2.ability.effects = [E('plusmult', 3, 'joker', 'handtype', 'Pair', 'cc_plusmult', 'cc_mf_handtype')];
-  ok(S2().total.mult === 1, 'handtype gate: not on High Card');
-  ok(play(hand(['S_2', 'H_2'])).total.mult === 5, 'handtype gate: on a Pair');
-  cc2.ability.effects = [E('dollars', 2, 'cardscored', null, null, 'cc_dollars', null, 'cc_mf_card_trigger')];
-  let d0 = G.GAME.dollars; play(hand(['S_2', 'H_2']));
-  ok(G.GAME.dollars === d0 + 4, '$2 per scored card', G.GAME.dollars - d0);
-  cc2.ability.effects = [E('plusmult', 4, 'firstscored', null, null, 'cc_plusmult', null, 'cc_mf_first_card_trigger'), E('plusmult', 10, 'facescored', null, null, 'cc_plusmult', null, 'cc_mf_face_card_trigger')];
-  r = play(hand(['S_K', 'H_K']));
-  ok(r.total.mult === 2 + 4 + 20, 'first scored +4, faces +10 each', tot(r));
-  cc2.ability.effects = [E('plusmult', 7, 'joker', 'odds', 4, 'cc_plusmult', 'cc_mf_odds')];
-  G.GAME.probabilities.normal = 4;
-  ok(S2().total.mult === 8, 'odds gate fires on a hit');
-  G.GAME.probabilities.normal = 1;
-  // fix 1: the odds line shows the real odds ("1 in 4"), not "1 in nil"
-  const info = describe(cc2).info.map((i) => i.lines.join(' ')).join(' | ');
-  ok(info.includes('if a 1 in 4 chance passes') && info.includes('+7'), 'fix 1: odds text', info);
-  ok(filled(describe(cc2)), 'describe filled');
-  // fix 2: create-a-Tarot popup text
-  clearConsumables();
-  cc2.ability.effects = [E('createtarot', 0)];
-  r = S2(); flush();
-  ok(G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Tarot' && msgs(r.events).includes('+1 Tarot'), 'fix 2: +1 Tarot (popup + card)', msgs(r.events));
-  // end of round: a Planet
-  clearConsumables();
-  cc2.ability.effects = [E('createplanet', 0, 'endofround', null, null, 'cc_createplanet', null, 'cc_mf_endofround')];
-  winRound(); flush();
-  ok(G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Planet', 'end of round: a Planet');
-  act({ type: 'cash_out' });
-  // fix 3: card-sold money is paid
-  cc2.ability.effects = [E('plusmult', 1, 'cardsold', null, null, 'cc_plusmult', null, 'cc_mf_cardsold'), E('dollars', 3, 'cardsold', null, null, 'cc_dollars', null, 'cc_mf_cardsold')];
-  const j = add('j_joker');
-  d0 = G.GAME.dollars;
-  act({ type: 'sell', id: j.sort_id });
-  ok(G.GAME.dollars === d0 + 3 + j.sell_cost, 'fix 3: $3 when a card is sold', G.GAME.dollars - d0);
-  cc2.ability.effects = [E('dollars', 2, 'shoproll', null, null, 'cc_dollars', null, 'cc_mf_shoproll')];
-  G.GAME.dollars = 50;
-  act({ type: 'reroll_shop' });
-  ok(G.GAME.dollars === 50 - 5 + 2, '$2 on reroll', G.GAME.dollars);
-  // grows on a Boss blind
-  act({ type: 'next_round' });
-  G.GAME.round_resets.blind_states.Small = 'Skipped'; G.GAME.round_resets.blind_states.Big = 'Skipped';
-  G.GAME.round_resets.blind_states.Boss = 'Select'; G.GAME.blind_on_deck = 'Boss';
-  const n0 = cc2.ability.effects.length;
-  const rr = act({ type: 'select_blind' });
-  ok(cc2.ability.effects.length === n0 + 1 && msgs(rr.events).includes('Effect added!'), 'Boss blind: a new effect', cc2.ability.effects.length);
+  ok(!P_CENTERS.j_mf_complexitycreep, 'Complexity Creep is not registered (a retired key: aliases.js)');
 }
 
 // ------------------------------------------------------------- Flesh Prison
@@ -248,7 +191,7 @@ flush();
   const r = discard([c]);
   const match = (x) => x.get_id() === 14 || x.base.suit === 'Spades';
   const n = G.deck.cards.filter(match).length;
-  ok(n > 0 && G.deck.cards.slice(-n).every(match) && msgs(r.events).includes('Searched!'), 'Grep: matching rank/suit on top of the deck');
+  ok(n > 0 && G.deck.cards.slice(-n).every(match) && msgs(r.events).some((m) => /^Found \d+$/.test(m)), 'Grep: matching rank/suit on top of the deck ("Found n")', msgs(r.events));
   const top = G.hand.cards.filter((x) => x.sort_id !== c.sort_id);
   ok(top.length && top.every(match), 'the redraw comes from them', top.map((x) => x.config.card.key));
 }
@@ -364,10 +307,10 @@ flush();
   start('MFC24', { noBlind: true });
   add('j_joker'); const lf = add('j_mf_lessfluff'); const tri = add('j_mf_triangle'); const lf2 = add('j_mf_lessfluff');
   const r = act({ type: 'select_blind' }); flush(); clearHand();
-  ok(!G.jokers.cards.includes(tri) && G.jokers.cards.includes(lf2) && G.jokers.cards.length === 3, 'Less Fluff destroys other modded jokers (not base ones, not Less Fluff)');
-  ok(near(lf.ability.extra.x_mult, 1.2) && near(lf2.ability.extra.x_mult, 1), 'X0.2 per joker destroyed (the 2nd finds none left)');
-  ok(msgs(r.events).includes('X1.2 Mult'), 'fix 4: popup X1.2 Mult', msgs(r.events));
-  ok(S2().total.total === 42, 'scores X1.2');
+  ok(!G.jokers.cards.includes(tri) && !G.jokers.cards.includes(lf2) && G.jokers.cards.length === 2, 'Less Fluff (1.9.9999) destroys every other modded joker — another Less Fluff too — not base ones');
+  ok(near(lf.ability.extra.x_mult, 1.4), 'X0.2 per joker destroyed', lf.ability.extra.x_mult);
+  ok(msgs(r.events).includes('X1.4 Mult'), 'fix 4: popup X1.4 Mult', msgs(r.events));
+  ok(S2().total.total === 49, 'scores X1.4');
 }
 
 // ------------------------------------------------------------- Oops! All 5s

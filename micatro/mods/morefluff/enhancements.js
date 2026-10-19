@@ -1,4 +1,6 @@
-// More Fluff — the 8 enhancements of other/enhancers.lua (made by the 45 Degree Rotated Tarot cards).
+// More Fluff 1.9.9999 — the 8 enhancements of src/modifiers.lua (made by the 45 Degree Rotated Tarot cards).
+// (1.9.9999 drops Gemstone's weight 4: it rolls at the default 5. Its other two, Power and Ransom Note, belong to
+// the Halt / Ransom Note jokers and come with them.)
 //   Monus  +10 Chips per level of the played hand      Cult     +1 Mult per level of the played hand
 //   Styled gains a random Seal when drawn to hand       Brass    retriggers 2 more times; 1 in 3 to break
 //   Teal   X1.5 Chips while held in hand                Gemstone +$3 when scored; no rank or suit; always scores
@@ -11,7 +13,7 @@ import { DATA, poll_seal } from './util.js';
 
 const enh = (key, def = {}) => {
   const s = DATA.enhancements.find((e) => e.key === key);
-  const { key: _k, ...rest } = s;
+  const { key: _k, fns: _f, ...rest } = s;
   return { ...JSON.parse(JSON.stringify(rest)), key: 'm_mf_' + key, set: 'Enhanced', name: 'm_mf_' + key, ...def }; // (SMODS: name = key)
 };
 const level = () => G.GAME.hands[get_poker_hand_info(G.play.cards).text].level;

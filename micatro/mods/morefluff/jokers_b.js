@@ -1,22 +1,25 @@
 /**
- * More Fluff — jokers, part B (28): Cue Ball, Flint and Steel, Gemstone Joker, Globe, Golden Carrot,
+ * More Fluff 1.9.9999 — jokers, part B (27): Cue Ball, Flint and Steel, Gemstone Joker, Globe, Golden Carrot,
  * Hall of Mirrors, Impostor, Joke Merge Valley, Friend Inside Me, Junk Mail, One Slip Too Late,
- * I Sip Toner Soup, Unpleasant Card, Lightning Strikes Thrice, Loaded Disk, Missing Joker, Paint Can,
- * Passing Balatro in 5 Minutes, Fast-Growing Sapling, Snake, Big Win, Style Meter, Stone Joker Joker,
- * Sudoku, Tall Joker, Teacup, Teal Joker, the way home.
- * Each is ported from `jokers/<file>.lua` (Cryptid's `context.forcetrigger` branches are dropped: no Cryptid).
+ * I Sip Toner Soup, Unpleasant Card, Loaded Disk, Missing Joker, Paint Can, Passing Balatro in 5 Minutes,
+ * Fast-Growing Sapling, Snake, Big Win, Style Meter, Stone Joker Joker, Sudoku, Tall Joker, Teacup, Teal Joker,
+ * the way home. Each is ported from src/jokers/<file>.lua (Cryptid's `context.forcetrigger` branches are dropped).
+ * Flint and Steel, Hall of Mirrors, Impostor, Toner Soup and Sudoku are retired upstream to the hidden "Old Fluff"
+ * rarity; Tall Joker keeps its 1.5.6 behaviour for now (legacy.js). Lightning Strikes Thrice was deleted.
+ * 1.9.9999 changes ported here: Golden Carrot / Teacup scale through SMODS.scale_card; Junk Mail (starting_shop,
+ * base cost X1.5, once a round, no Blueprint); Unpleasant Card (X2.067 Chips, every pack holds 1 card choose 1);
+ * Snake (copies add up); Sapling (6 rounds); Big Win ("Again!!"); Friend Inside Me / Missing Joker texts; Joke Merge
+ * Valley (rankless cards never merge, more perma stats).
  *
  * Lovely patches / Lua wraps as hooks:
- *   junkmail.toml         -> voucher_add('after_tags') + set_cost (Card.bonus_cost: the voucher costs X1.5)
- *   snake.toml            -> draw_hand_space (after a play or discard, draw exactly 3)
- *   unpleasantcard.toml   -> booster_open (the opened pack is skipped at once, like G.FUNCS.skip_booster)
- *   retrigger_seal_ctx    -> seal_retriggers (Lightning Strikes Thrice retriggers a Purple Seal's discard)
- *   tree_three.toml / onesliptoolate.toml -> new_round / shop_start resets (G.GAME.mf_tree_three,
- *                            current_round.hands_played = 0 at cash out)
+ *   (junk mail)           -> voucher_add('after_tags'): the extra voucher, its base_cost X1.5
+ *   snake.toml            -> draw_hand_space (after a play or discard, draw the Snakes' draws added up)
+ *   unpleasantcard.toml   -> pack_size / pack_choices (rotarots.js composes it last: 1 card, choose 1)
+ *   tree_three.toml       -> new_round / shop_start resets (G.GAME.mf_tree_three)
  *   Game:update_round_eval (Missing Joker turns back) -> evaluate_round (no rows)
  *
  * INTENDED-DESIGN FIXES (each pinned in micatro/tests/mods/morefluff_jokers_b_test.mjs):
- *  1. Fast-Growing Sapling: selling it called G.GAME.blind:defeat() itself before the round ended, so the
+ *  1. (fixed upstream too in 1.9.9999) Fast-Growing Sapling: selling it called G.GAME.blind:defeat() itself before the round ended, so the
  *     blind was already cleared when end_round ran — on a Boss Blind the ante never advanced (a boss beaten
  *     with TREE(3) could never win the run at ante 8), the blind paid no reward, and a disable/defeat effect
  *     ran twice (The Manacle gave its hand size back twice). The round now ends normally with the score set
@@ -32,7 +35,7 @@ import {
   probability_vars, ease_hands_played, level_up_hand, localize, play_sound, get_next_voucher_key, emit,
 } from '../../js/engine/core.js';
 import { get_poker_hand_info, end_consumeable, STATES } from '../../js/engine/run.js';
-import { joker, find, has, room, say, has_enh, has_no_rank, remove_joker } from './util.js';
+import { joker, find, has, room, say, has_enh, has_no_rank, remove_joker, scale_card, progressbar } from './util.js';
 
 const J = [];
 const add = (slug, def) => { J.push(joker(slug, def)); };
@@ -137,12 +140,11 @@ add('goldencarrot', {
   calculate(s, card, ctx) {
     if (ctx.cardarea === G.jokers && ctx.after && !ctx.blueprint && !card.gone) {
       const e = card.ability.extra;
-      if (e.gain - e.loss <= 0) {
+      scale_card(card, { ref_table: e, ref_value: 'gain', scalar_value: 'loss', operation: '-', message_key: 'a_minus_dollars' });
+      if (e.gain <= 0) {
         remove_joker(card);
         return { message: localize('k_eaten_ex'), colour: 'MONEY' };
       }
-      e.gain = e.gain - e.loss;
-      return { message: '$' + e.gain, colour: 'MONEY' };
     }
   },
   calc_dollar_bonus(s, card) {
@@ -158,11 +160,12 @@ add('hallofmirrors', {
     if (ctx.individual && ctx.cardarea === G.play && ctx.other_card.get_id() === 6 && !ctx.blueprint) {
       card.ability.h_size = card.ability.h_size + card.ability.extra;
       G.hand.change_size(card.ability.extra);
-      return { extra: { focus: card, message: localize('k_upgrade_ex') }, card, colour: 'MONEY' };
+      return { message: localize('k_upgrade_ex'), card };
     }
     if (ctx.end_of_round && !ctx.blueprint && !ctx.repetition && !ctx.individual) {
       G.hand.change_size(-card.ability.h_size);
       card.ability.h_size = 0;
+      return { message: localize('k_reset'), colour: 'RED' };
     }
   },
 });
@@ -183,8 +186,11 @@ add('impostor', {
 });
 
 // ------------------------------------------------------------------ Joke Merge Valley
+// (1.9.9999 also merges perma_repetitions and Steamodded's score / blind-size stats; SpectraLib's slib_* stats are
+//  left out: no SpectraLib here)
 const MERGE_STATS = ['perma_bonus', 'perma_mult', 'perma_x_chips', 'perma_x_mult', 'perma_h_chips', 'perma_h_mult',
-  'perma_h_x_chips', 'perma_h_x_mult', 'perma_p_dollars', 'perma_h_dollars'];
+  'perma_h_x_chips', 'perma_h_x_mult', 'perma_p_dollars', 'perma_h_dollars', 'perma_repetitions', 'perma_score', 'perma_h_score',
+  'perma_x_score', 'perma_h_x_score', 'perma_blind_size', 'perma_h_blind_size', 'perma_x_blind_size', 'perma_h_x_blind_size'];
 add('farmmerge', {
   calculate(s, card, ctx) {
     // (Steamodded's pre_discard context is a joker-row context: cardarea G.jokers)
@@ -194,7 +200,7 @@ add('farmmerge', {
     const stats = Object.fromEntries(MERGE_STATS.map((k) => [k, 0]));
     let enhancement = null, edition = null, seal = null;
     for (const v of ctx.full_hand) {
-      if (v.base.value !== last.base.value) return undefined;
+      if (v.base.value !== last.base.value || has_no_rank(v)) return undefined; // (1.9.9999: rankless cards never merge)
       for (const k of MERGE_STATS) stats[k] += v.ability[k] || 0;
       if (v !== last) stats.perma_bonus += v.base.nominal;
       if (v.config.center !== P_CENTERS.c_base) enhancement = v.config.center;
@@ -230,7 +236,7 @@ add('friendinsideme', {
         if (sold.edition) n.set_edition({ [sold.edition.type]: true });
         n.add_to_deck();
         G.jokers.emplace(n);
-        return { message: 'Friend!' };
+        return { message: localize('k_friend_ex') };
       }
     }
     if (end_main(ctx) && !ctx.blueprint && G.GAME.blind.boss) {
@@ -241,29 +247,28 @@ add('friendinsideme', {
 });
 
 // ------------------------------------------------------------------ Junk Mail
+// 1.9.9999: context.starting_shop (once a round: `triggered`, cleared at the end of the round) ->
+// SMODS.add_voucher_to_shop() with its base_cost X1.5 (1.5.6's bonus_cost lovely patch is gone). Not Blueprint-compatible.
 add('junkmail', {
-  loc_vars: (s, iq, card) => ({ vars: [card.ability.val_mult] }),
+  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.val_mult] }),
+  calculate(s, card, ctx) {
+    if (ctx.end_of_round && !ctx.blueprint) card.ability.triggered = undefined;
+  },
 });
 function junkmail_vouchers() {
   for (const card of find('j_mf_junkmail')) {
+    if (card.ability.triggered) continue;
+    card.ability.triggered = true;
     const key = get_next_voucher_key(true);
     G.shop_vouchers.config.card_limit = G.shop_vouchers.config.card_limit + 1;
     const nc = new Card(P_CARDS.empty, P_CENTERS[key], { bypass_discovery_center: true, bypass_discovery_ui: true });
     nc.shop_voucher = true;
-    nc.bonus_cost = nc.cost * (card.ability.val_mult - 1);
+    nc.base_cost = nc.base_cost * card.ability.extra.val_mult;
     nc.set_cost();
     G.shop_vouchers.emplace(nc);
     emit('materialize', { card: nc.sort_id });
     say(card, localize('k_plus_voucher'));
   }
-}
-/** junkmail.toml: Card:set_cost adds `self.bonus_cost` to extra_cost before the cost is computed. */
-function bonus_cost(card) {
-  if (!card.bonus_cost) return;
-  card.extra_cost += card.bonus_cost;
-  card.cost = Math.max(1, Math.floor((card.base_cost + card.extra_cost + 0.5) * (100 - G.GAME.discount_percent) / 100));
-  if (card.ability.rental) card.cost = 1;
-  card.sell_cost = Math.max(1, Math.floor(card.cost / 2)) + (card.ability.extra_value || 0);
 }
 
 // ------------------------------------------------------------------ One Slip Too Late
@@ -281,7 +286,7 @@ add('tonersoup', {
     if (ctx.cardarea === G.jokers && ctx.before && room()) {
       G.GAME.consumeable_buffer += 1;
       G.E_MANAGER.add_event(() => {
-        const c = create_card('Tarot', G.consumeables, null, null, null, null, null, 'sup');
+        const c = create_card('Tarot', G.consumeables, null, null, null, null, null, undefined); // (1.9.9999: SMODS.add_card{set='Tarot'})
         c.add_to_deck();
         G.consumeables.emplace(c);
         G.GAME.consumeable_buffer = 0;
@@ -301,41 +306,8 @@ add('unpleasantcard', {
     if (main(ctx)) return { xchips: card.ability.extra.x_chips };
   },
 });
-const PACK = [STATES.TAROT_PACK, STATES.PLANET_PACK, STATES.SPECTRAL_PACK, STATES.STANDARD_PACK, STATES.BUFFOON_PACK, STATES.MOD_PACK, STATES.MOD_PACK_HAND];
-/** unpleasantcard.toml (SMODS Booster update_pack): with Unpleasant Card, an opened pack skips itself. */
-function unpleasant_skip() {
-  if (!has('j_mf_unpleasantcard')) return;
-  let tries = 0;
-  const check = () => {
-    // (the Lua checks every frame: wait for the pack's STOP_USE to clear)
-    if (G.GAME.STOP_USE && G.GAME.STOP_USE > 0 && tries++ < 50) { G.E_MANAGER.add_event(check); return; }
-    if (!PACK.includes(G.STATE) || !(G.pack_cards && G.pack_cards.cards.length)) return;
-    // G.FUNCS.skip_booster
-    for (const j of G.jokers.cards.slice()) j.calculate_joker({ skipping_booster: true });
-    end_consumeable();
-  };
-  G.E_MANAGER.add_event(check);
-}
-
-// ------------------------------------------------------------------ Lightning Strikes Thrice
-add('lightningstrikesthrice', {
-  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.retriggers] }),
-  calculate(s, card, ctx) {
-    if (ctx.retrigger_joker_check && !ctx.retrigger_joker && ctx.other_context && ctx.other_context.discard) {
-      return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
-    }
-  },
-});
-/** retrigger_seal_ctx.toml: jokers answering mf_seal_repetition retrigger a seal (here: a discard). */
-function lst_seal_retriggers(seal_card, context) {
-  if (!context.discard) return undefined;
-  const out = [];
-  for (const j of G.jokers.cards) {
-    if (j.debuff || j.config.center.key !== 'j_mf_lightningstrikesthrice') continue;
-    out.push({ card: j, ret: { message: localize('k_again_ex'), repetitions: j.ability.extra.retriggers, card: j } });
-  }
-  return out.length ? out : undefined;
-}
+/** unpleasantcard.toml (1.9.9999, Card:open): with an Unpleasant Card, every opened pack holds 1 card, choose 1. */
+export const unpleasant = () => !!(G.jokers && G.jokers.cards.some((j) => j.config.center.key === 'j_mf_unpleasantcard'));
 
 // ------------------------------------------------------------------ Loaded Disk
 add('loadeddisk', {
@@ -369,7 +341,7 @@ add('missingjoker', {
       const [elem] = pseudorandom_element(pool, pseudoseed('missingjoker'));
       card.set_ability(P_CENTERS[elem]);
       (G.GAME.mf_missingjoker_revert = G.GAME.mf_missingjoker_revert || []).push(card.sort_id);
-      return { message: 'Transformed!', colour: 'DARK_EDITION' };
+      return { message: localize('k_transformed_ex'), colour: 'DARK_EDITION' };
     }
   },
 });
@@ -419,11 +391,10 @@ add('passando', {
 });
 
 // ------------------------------------------------------------------ Fast-Growing Sapling
-const sap_bar = (val, max) => (max > 12 ? [val, '/' + max] : ['#'.repeat(val), '#'.repeat(Math.max(0, max - val))]);
 add('sapling', {
   loc_vars(s, iq, card) {
     const e = card.ability.extra;
-    const [val, max] = sap_bar(Math.min(e.c_rounds, e.rounds), e.rounds);
+    const [val, max] = progressbar(Math.min(e.c_rounds, e.rounds), e.rounds);
     return { vars: [val, max, e.rounds, e.c_rounds] };
   },
   calculate(s, card, ctx) {
@@ -450,11 +421,12 @@ add('sapling', {
 add('snake', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra] }),
 });
-/** snake.toml: after a play or discard, each Snake sets the draw to min(#deck, 3). */
+/** snake.toml (1.9.9999): after a play or discard, draw min(#deck, every Snake's draw added up). */
 function snake_space(n) {
   if (G.STATE !== STATES.DRAW_TO_HAND || !(G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0)) return undefined;
-  for (const j of find('j_mf_snake')) n = Math.min(G.deck.cards.length, j.ability.extra);
-  return n;
+  let count = 0;
+  for (const j of find('j_mf_snake')) count += j.ability.extra;
+  return count !== 0 ? Math.min(G.deck.cards.length, count) : n;
 }
 
 // ------------------------------------------------------------------ Big Win
@@ -463,7 +435,7 @@ add('slotmachine', {
   calculate(s, card, ctx) {
     if (ctx.repetition && ctx.other_card && ctx.other_card.get_id() === 7) {
       if (probability_roll(card, 'slotmachine', 1, card.ability.extra.odds, 'slotmachine')) {
-        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+        return { message: localize('k_again_ex_ex'), repetitions: card.ability.extra.retriggers, card };
       }
     }
   },
@@ -539,12 +511,12 @@ add('teacup', {
       say(ctx.blueprint_card || card, localize('k_upgrade_ex'));
       level_up_hand(ctx.blueprint_card || card, text, null, 1);
       if (!ctx.blueprint && !ctx.retrigger_joker) {
-        if (card.ability.extra - 1 <= 0) {
+        // (1.9.9999: SMODS.scale_card(ref_table = ability, 'extra', '-') — its default "Upgrade!" popup, as upstream)
+        scale_card(card, { ref_table: card.ability, ref_value: 'extra', operation: '-' });
+        if (card.ability.extra <= 0) {
           remove_joker(card);
           return { message: localize('k_drank_ex'), colour: 'FILTER' };
         }
-        card.ability.extra = card.ability.extra - 1;
-        return { message: card.ability.extra + '', colour: 'FILTER' };
       }
     }
   },
@@ -579,13 +551,12 @@ export const centers = J;
 export const JOKERS_B = J.map((c) => c.key);
 export const hooks = {
   voucher_add(phase) { if (phase === 'after_tags') junkmail_vouchers(); },
-  set_cost: bonus_cost,
   draw_hand_space: snake_space,
-  booster_open: unpleasant_skip,
-  seal_retriggers: lst_seal_retriggers,
+
   evaluate_round() { missingjoker_revert(); return undefined; },
   new_round() { G.GAME.mf_tree_three = false; },
-  // tree_three / onesliptoolate patches at cash out (ease_chips(0)): the shop opens right after.
-  shop_start() { if (G.STATE === STATES.SHOP && !G.shop_populated) { G.GAME.mf_tree_three = false; G.GAME.current_round.hands_played = 0; } },
+  // tree_three.toml at cash out (ease_chips(0)): the shop opens right after. (1.9.9999 dropped onesliptoolate.toml,
+  // 1.5.6's reset of hands_played at cash out.)
+  shop_start() { if (G.STATE === STATES.SHOP && !G.shop_populated) G.GAME.mf_tree_three = false; },
   view(v) { if (G.GAME && G.GAME.mf_tree_three) v.chips_text = 'TREE(3)'; },
 };

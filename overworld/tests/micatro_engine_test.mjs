@@ -3,7 +3,7 @@
 // (micatro/tests/mods/*_test.mjs) and fuzz passes with Pokermon on and with every mod on, so the gate covers the
 // engine and the mods. No browser, no server.
 // Covers micatro/js/engine: core.js run.js jokers.js consumables.js blind.js tag.js
-// back.js describe.js view.js session.js customdeck.js (custom decks: micatro/tests/customdeck_test.mjs), micatro/data/balatro_data.js, micatro/js/mods/registry.js
+// back.js describe.js view.js session.js smods.js smods_attributes.js customdeck.js (custom decks: micatro/tests/customdeck_test.mjs), micatro/data/balatro_data.js, micatro/js/mods/registry.js
 // challenge.js sleeve.js micatro/data/challenges.js (challenges + sleeves: micatro/tests/challenges_test.mjs — apply_challenge, challenge_protos,
 // challengeInfo, prepareChallenge, sleeveInfo, prepareSleeve, apply_sleeve; mods/*/challenges.js, mods/*/sleeves.js)
 // and micatro/mods/pokermon (index.js defs.js api.js data.js systems/ jokers/ consumables/

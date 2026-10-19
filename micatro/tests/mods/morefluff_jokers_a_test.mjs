@@ -81,8 +81,8 @@ const hc = (k = 'S_2') => play(hand([k]));
 { // Lollipop: X1.75, -X0.15 per round, eaten at <= 1.01
   start('MFA8'); const j = add('j_mf_lollipop');
   const r = hc(); ok(near(r.total.mult, 1.75), 'Lollipop X1.75', tot(r));
-  nextRound(); ok(near(j.ability.x_mult, 1.6), 'Lollipop -0.15 per round', j.ability.x_mult);
-  j.ability.x_mult = 1.15; nextRound(); ok(!G.jokers.cards.includes(j), 'Lollipop eaten');
+  const rr = (nextRound(), G.jokers.cards.includes(j)); ok(rr && near(j.ability.extra.xmult, 1.6), 'Lollipop -0.15 per round (1.9.9999: ability.extra.xmult)', j.ability.extra);
+  j.ability.extra.xmult = 1.15; nextRound(); ok(!G.jokers.cards.includes(j), 'Lollipop eaten');
 }
 { // Lucky Charm: 1 in 3 +20 mult, 1 in 8 $20 at end of round
   start('MFA9'); add('j_mf_luckycharm'); G.GAME.probabilities.normal = 1000;
@@ -92,13 +92,13 @@ const hc = (k = 'S_2') => play(hand([k]));
   start('MFA9b'); add('j_mf_luckycharm'); G.GAME.probabilities.normal = 0;
   ok(hc().total.mult === 1, 'Lucky Charm misses');
 }
-{ // MS Paint Joker: +4 hand size for the first hand
+{ // MS Paint Joker (1.9.9999): +3 hand size from blind select until the first hand is played
   start('MFA10', { noBlind: true }); add('j_mf_mspaint');
   act({ type: 'select_blind' });
-  ok(G.hand.config.card_limit === 12 && G.hand.cards.length === 12, 'MS Paint +4 hand size, 12 drawn', [G.hand.config.card_limit, G.hand.cards.length]);
+  ok(G.hand.config.card_limit === 11 && G.hand.cards.length === 11, 'MS Paint +3 hand size, 11 drawn', [G.hand.config.card_limit, G.hand.cards.length]);
   G.GAME.blind.chips = 1e15; G.GAME.current_round.hands_left = 3;
   act({ type: 'highlight', ids: [G.hand.cards[0].sort_id] }); act({ type: 'play' });
-  ok(G.hand.config.card_limit === 8 && G.hand.cards.length === 11, 'MS Paint back to 8 after the hand (the 11 held stay)', [G.hand.config.card_limit, G.hand.cards.length]);
+  ok(G.hand.config.card_limit === 8 && G.hand.cards.length === 10, 'MS Paint back to 8 after the hand (the 10 held stay)', [G.hand.config.card_limit, G.hand.cards.length]);
 }
 { // Philosophical Joker: +1 joker slot; always fits
   start('MFA11'); const lim = G.jokers.config.card_limit; const j = add('j_mf_philosophical');
@@ -141,7 +141,8 @@ const hc = (k = 'S_2') => play(hand([k]));
   start('MFA16'); add('j_mf_dropkick');
   G.GAME.current_round.hands_left = 3;
   play(hand(['S_2', 'H_3', 'D_4', 'C_5', 'S_6']), { left: 3 });
-  ok(G.GAME.current_round.hands_left === 3, 'Dropkick: straight played, hand given back', G.GAME.current_round.hands_left);
+  const dk = play(hand(['S_2', 'H_3', 'D_4', 'C_5', 'S_6']), { left: 3 });
+  ok(G.GAME.current_round.hands_left === 3 && msgs(dk.events).includes('+1 Hand '), 'Dropkick: straight played, hand given back ("+1 Hand ")', [G.GAME.current_round.hands_left, msgs(dk.events)]);
   play(hand(['S_2']), { left: 3 }); ok(G.GAME.current_round.hands_left === 2, 'no straight: no hand');
 }
 { // Blade Dance: 2 temporary Steel cards when blind selected

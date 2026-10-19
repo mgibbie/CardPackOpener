@@ -52,7 +52,7 @@ G.Spectate = (() => {
     const g = G.Game, pl = g && g.player;
     if (!pl) return null;
     const st = g.state;
-    const s = {
+    let s = {
       v: 1, t: Math.round(g.st.time * 10), sd: G.World.seed, b: G.World.biome, m: g.mode,
       me: [pl.dex, pl.shiny ? 1 : 0],
       p: [r1(pl.x), r1(pl.y), pl.anim.dir | 0, animIdx(pl.anim), Math.ceil(Math.max(0, pl.hp)), r1(pl.maxHp),
@@ -119,6 +119,7 @@ G.Spectate = (() => {
       if (o.kind === 'item') { const j = items.indexOf(o.value); k = j < 0 ? 8 : 100 + j; }
       return [o.id, k, r1(o.x), r1(o.y)];
     }).sort((a, b) => a[0] - b[0]);
+    s = G.Hooks.reduce('spectate.snap', s);   // (DLC D0b: an Expedition run adds its dv; a base snapshot is unchanged)
     if (extra) Object.assign(s, extra);
     stats.snapMs += performance.now() - t0; stats.snaps++;
     return s;
@@ -144,7 +145,8 @@ G.Spectate = (() => {
   }
 
   // (the label is shown on the site's friends lists, which are in English)
-  const MODE_EN = { daily: 'Daily Challenge', rush: 'Boss Rush', party: 'Party Mode', coop: 'Co-op Mode', tower: 'Floor Tower', rifts: 'Rift Time Attack', type: 'Survival by Type', team: 'Team Mode' };
+  const MODE_EN = { daily: 'Daily Challenge', rush: 'Boss Rush', party: 'Party Mode', coop: 'Co-op Mode', tower: 'Floor Tower', rifts: 'Rift Time Attack', type: 'Survival by Type', team: 'Team Mode',
+    'exp-classic': 'Expedition · Classic', 'exp-survival': 'Expedition · Survival', 'exp-league': 'Expedition · League' };   // (DLC D0b)
   function labelNow() {
     const pl = G.Game.player;
     const mon = pl ? pl.mon.name : '';

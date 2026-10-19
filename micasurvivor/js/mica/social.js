@@ -188,6 +188,7 @@ G.Social = (() => {
     if (/at least one/.test(e)) return 'Necesitas al menos un amigo en la sala.';
     if (/already in/.test(e)) return 'Ya está en tu sala.';
     if (/slow down/.test(e)) return 'Demasiado deprisa: espera un momento.';
+    if (/out of date/.test(e)) return 'Tu juego no está actualizado: recarga la página.';   // (DLC D0b: an Expedition lobby of another version)
     return 'No se pudo entrar en la sala.';
   }
 
@@ -198,6 +199,7 @@ G.Social = (() => {
     const members = lb.members.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny, ready: !!m.ready }))
       .sort((a, b) => (a.uid === lb.host ? -1 : b.uid === lb.host ? 1 : 0));
     room = { id: lb.id, host: lb.host, isHost: lb.host === uid, open: !!lb.open, v: lb.v, members, start: lb.start || null,
+             mode: lb.mode || null, dv: lb.dv == null ? null : lb.dv,   // (DLC D0b: an Expedition lobby's mode + content version; base: null)
              invited: lb.invited || (was && was.id === lb.id ? was.invited : []) };
     lobbyAt = Date.now();
     emit('room');
@@ -209,9 +211,11 @@ G.Social = (() => {
     }
   }
 
-  async function createRoom() {
+  /** opts (DLC D0b): {mode: 'exp-…'} for an Expedition lobby (it carries this build's content version, dv); none = base. */
+  async function createRoom(opts) {
     if (room) return room;
-    const r = await call('msurv-lobby-create', memberInfo());
+    const X = G.Expedition, exp = opts && X && X.isExp(opts.mode);
+    const r = await call('msurv-lobby-create', exp ? Object.assign(memberInfo(), { mode: opts.mode, dv: X.DV }) : memberInfo());
     if (!r.ok || !r.body.lobby) return null;
     applyLobby(r.body.lobby);
     return room;
@@ -220,7 +224,8 @@ G.Social = (() => {
   async function joinRoom(id) {
     if (room && room.id === id) return { ok: true };
     if (room) await leaveRoom();
-    const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo()));
+    // (DLC D0b: dv = this build's Expedition content version; the server refuses an Expedition lobby of another one)
+    const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo(), G.Expedition ? { dv: G.Expedition.DV } : {}));
     if (!r.ok || !r.body.lobby) return { ok: false, error: errText(r) };
     applyLobby(r.body.lobby);
     return { ok: true };

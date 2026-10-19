@@ -21,6 +21,7 @@ import { playing_card_joker_effects } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
 import { change_booster_limit as smods_change_booster_limit } from '../../../js/engine/run.js';
 import { opt } from '../../../js/mods/registry.js';
+import { poll_object } from '../../../js/engine/smods.js';
 
 export const MOD_ID = 'pokermon';
 /** Pokermon config option for the current run (pokermon_config.<key> in the Lua). */
@@ -94,6 +95,8 @@ export function change_base(card, suit, rank) {
  * soulable, key_append, stickers}) — the table-argument card factory Pokermon uses.
  */
 export function smods_create_card(t) {
+  // Steamodded: `attributes` and no key -> the key is SMODS.poll_object's (Pokermon 3.9.1's Poké Balls / Stage tags)
+  if (!t.key && t.attributes) { t.append = t.key_append; t.key = poll_object(t); }
   const playing = t.set === 'Base' || t.set === 'Enhanced';
   // SMODS: playing cards (set Base / Enhanced) default to G.hand.
   const area = t.area || (playing ? G.hand : t.set === 'Joker' ? G.jokers : G.consumeables);

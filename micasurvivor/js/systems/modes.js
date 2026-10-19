@@ -136,6 +136,13 @@ G.Modes = (() => {
   /** Cómo será una partida de `mode` (sin empezarla). */
   function plan(mode = 'normal', s = save()) {
     const p = prefs(s);
+    // DLC D0b: an Expedition mode (js/systems/expedition.js) once a batch turns it on: its own map / difficulty and the
+    // Expedition content version (dv); no modifiers. Until then (D0b: all "Coming soon") it plans a normal run.
+    const X = G.Expedition;
+    if (X && X.isExp(mode)) {
+      if (X.enabled(mode)) { const at = X.pick(); return { mode, mods: [], type: null, dex: null, seed: 0, dv: X.DV, map: at.map, diff: at.diff }; }
+      mode = 'normal';
+    }
     if (!LIST.includes(mode)) mode = 'normal';
     if (mode === 'daily') {
       const seed = dailySeed();
@@ -155,11 +162,13 @@ G.Modes = (() => {
     run = Object.assign({ mode: 'normal', mods: [], type: null, dex: null, seed: 0, team: null }, cfg || {});
     riftsWon = 0; timeUp = false; nh = null;
     if (G.Game) G.Game.mode = run.mode;
-    if (G.Progress) G.Progress.off = run.mode === 'party';
+    if (G.Progress) G.Progress.off = run.mode === 'party' || isExp();   // (DLC D0b: an Expedition run never ticks the base save's goals)
     return run;
   }
   const has = id => run.mods.includes(id);
   const is = m => run.mode === m;
+  /** DLC D0b: is this an Expedition run (mode 'exp-…', js/systems/expedition.js)? */
+  const isExp = () => !!(G.Expedition && G.Expedition.isExp(run.mode));
 
   /** Los modificadores en un enemigo (main.gd 3146-3152: todos, también jefes, legendarios y guaridas). */
   function enemyAdded(e) {
@@ -190,7 +199,7 @@ G.Modes = (() => {
   /** Modo Fiesta: no se puede morir (main.gd 1861). */
   const noDeath = () => run.mode === 'party';
   /** ¿Se guarda algo de esta partida? (no en la Fiesta) */
-  const saves = () => run.mode !== 'party';
+  const saves = () => run.mode !== 'party' && !isExp();   // (DLC D0b: nor an Expedition run: its progress has its own save)
 
   // ---------- Contrarreloj de grietas ----------
   const rifts = () => run.mode === 'rifts';
@@ -262,7 +271,7 @@ G.Modes = (() => {
   const typeDoneCount = (s = save()) => Object.keys((s && s.typeDone) || {}).filter(t => TYPES.includes(t)).length;
 
   /** El nombre del modo ('' en la partida normal); en la Supervivencia, con el tipo. */
-  function title() { return run.mode === 'normal' ? '' : NAME[run.mode] + (run.mode === 'type' ? ' · ' + G.U.TYPE_NAME[run.type] : ''); }
+  function title() { return run.mode === 'normal' ? '' : (NAME[run.mode] || (isExp() ? G.Expedition.NAME[run.mode] : run.mode)) + (run.mode === 'type' ? ' · ' + G.U.TYPE_NAME[run.type] : ''); }
   /** Nombre del modo y sus modificadores, para la pausa ('' en una partida normal sin nada). */
   function label() {
     const parts = run.mode === 'normal' ? [] : [title()];
@@ -301,9 +310,9 @@ G.Modes = (() => {
     LIST, NAME, ICON, MOD_IDS, MOD, K, TYPES, RIFTS, COINS, TYPE_DONE_MIN, PARTY_DEX,
     dailySeed, dailyDex, dailyMod, dailyBest, rng, seeded,
     prefs, toggleMod, cycleType, setParty,
-    plan, begin, has, is, enemyAdded, spawnK, onlyType, startPlayer, resetHeal, healTick, noDeath, saves,
+    plan, begin, has, is, isExp, enemyAdded, spawnK, onlyType, startPlayer, resetHeal, healTick, noDeath, saves,
     rifts, riftWon, checkTime, timeLeft, finish, typeDoneCount, title, label, mergeDaily, sanitize,
-    get run() { return run; }, get mode() { return run.mode; }, get mods() { return run.mods.slice(); },
+    get run() { return run; }, get mode() { return run.mode; }, get dv() { return run.dv == null ? null : run.dv; }, get mods() { return run.mods.slice(); },
     get riftsWon() { return riftsWon; }, get timeUp() { return timeUp; }
   };
 })();

@@ -71,8 +71,8 @@ export const AVAILABLE = [
     load: () => import('../../mods/omertadeck/index.js'),
   },
   {
-    id: 'morefluff', name: 'More Fluff', size: '~3 MB art + music', by: 'notmario & contributors (rebuilt for Micatro)', requires: [],
-    description: '83 jokers, Colour cards that charge up over rounds, Rotarot cards, new enhancements and decks, and DX Superboss blinds for after you win.',
+    id: 'morefluff', name: 'More Fluff', size: '~3 MB art + music', by: 'notmario and contributors (1.9.9999, rebuilt for Micatro)', requires: [],
+    description: '69 jokers, Colour cards that charge up over rounds, Rotarot cards, new enhancements and decks, six harder stakes, and DX Superboss blinds you pick at the winning ante.',
     load: () => import('../../mods/morefluff/index.js'),
   },
   {

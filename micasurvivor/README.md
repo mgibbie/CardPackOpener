@@ -1334,10 +1334,117 @@ Pokédex of batch B1c (re-recorded then: the 18 new enemies change every mode's 
 **Not covered:** what `render()` does (the harness never draws, and draws by the renderer don't shift the
 stream), sound, online co-op and the network.
 
+## DLC D0b: Expedition plumbing
+
+Expedition is a set of new modes picked on "Choose a mode", like Tower or Boss Rush. There is no on/off switch
+(owner, 2026-10-19), and the existing modes play exactly as before. D0b is the plumbing only, with no gameplay yet:
+every Expedition mode says "Coming soon".
+
+**The mode select:** an **Expedition** group sits between the base modes and the modifiers, with Classic, Survival
+and League (`js/systems/expedition.js` `MODES`).
+- Each card is `aria-disabled` but not `[disabled]`, so mouse, touch and pad all reach it. Pressing one says
+  "Expedition is coming soon." and starts nothing.
+- The gate is also in `G.Flow.play`, and `G.Modes.plan()` plans a disabled Expedition mode as a normal run.
+- A later batch turns a mode on with `G.Expedition.ENABLED.add('exp-classic')`. `plan()` then returns
+  `{mode, dv, map, diff}` with no modifiers, and `G.Flow.play` loads the Expedition code before `startRun`.
+
+**What a base page loads:** only `js/core/hooks.js` and `js/systems/expedition.js` (the registry, the loader and the
+version gates). The Expedition code itself, `js/expedition/save.js` then `core.js`, is injected by
+`G.Expedition.load()`.
+- Only starting an Expedition mode calls `load()`. A base boot or a base run never fetches it (the plumbing test
+  checks the network log).
+- `load()` runs once, and a failure can be retried. It checks that the loaded code is this build's `dv`, so a stale
+  cache is refused.
+
+**The seams** (`js/core/hooks.js`, `G.Hooks.on / call / reduce / first`): Expedition code reaches the base game only
+through these four. With no listener, a seam returns its input unchanged. A listener that throws is logged and skipped.
+Every Expedition listener leaves base runs alone.
+
+| Seam | Where | What the Expedition does with it |
+|---|---|---|
+| `run.start` | `game.js` `startRun`, after setup | notes the run's `{mode, dv, map, diff}` |
+| `run.end` | `game.js` `endRun`, Expedition runs only (reduce over the run-over lines) | records the run in the Expedition save; a clean solo run's mark goes to the Expedition board |
+| `replay.header` | `replay.js` `begin` | adds `dv`, `map` and `diff` to the header |
+| `spectate.snap` | `spectate.js` `snap()` | adds `dv` to each live or replay snapshot |
+
+**An Expedition run never writes the base save.** `endRun` gives it its own early branch, like the Party's: no coins,
+stats, missions or base board. `G.Modes.saves()` is false and `G.Progress` is off. Pokémonedas stay the base game's
+(owner decision #4). `G.Expedition.wallet.earn / spend / balance` go through the base save, but nothing calls them yet:
+D9 and D10 pay the runs.
+
+**The freeze:** `load()` first deep-freezes `G.Moves`, `G.Items` (and its item order `LIST` / `BY`), `G.Upgrades`,
+`G.Enemies`, `G.DEX` and `G.DEX_BY`.
+- Only plain objects and arrays are frozen: 2,455 objects, a one-time 2–20 ms.
+- From then on, any write throws in strict code (the Expedition files are `'use strict'`) and changes nothing.
+- It happens only in a page that loaded the Expedition code. A base page is never frozen.
+- Measured cost, the same seeded Normal run frozen and not: the sim's per-step time is within noise (×1.01–1.17
+  between runs). A tight read loop over the tables is about ×1.24 slower (7 ms per 2 million reads).
+
+**The Expedition save** (`js/expedition/save.js`, `G.ExpSave`) is separate from the base save.
+- **Signed in:** the server row is `micasurvivorexp:<user>`, through `micasurvivor-exp-save-get` / `-put`
+  (`server/mp.mjs`). The browser keeps a copy in `micasurvivorexp_save.mp:<user>` and its rev in
+  `micasurvivorexp_rev.mp:<user>`.
+- **A put** is compare-and-set on `rev`. A stale put gets 409 with the stored save, merges it and retries. On the
+  current rev the server also merges the put into what it holds, so a put can add progress but never take any away.
+- **The blob** is `{v, counters:{name: n}, sets:{name: [id]}}`, and the merge never loses progress: the max of each
+  counter, the union of each set. So a counter is a level or a record. Anything spendable is two counters (earned,
+  spent).
+- **Limits:** 2,000 counters, 200 sets of up to 5,000 ids, 200 KB. The server refuses an unknown top-level field,
+  `coins` included.
+- **Guests:** localStorage `micasurvivorexp_save.guest` only, with no request. The first time the Expedition opens
+  signed in in that browser, the guest progress is merged into the account once (`micasurvivorexp_migrated.guest`).
+  The guest copy is kept. Because the merge can't lose anything, there is no question to ask, unlike the base save's
+  carry-over.
+- The base row `micasurvivor:<user>` is never read or written by any of this.
+
+**Boards:** `run-score` / `run-leaderboard` with mode `micasurvivor_expedition` and `{expMode, dv, map, diff}`.
+- There is one board per map and difficulty, `runboard:micasurvivor_expedition:<map>:<diff>`, built server-side from
+  allow-listed maps (`viridian`, `mtmoon`, `cerulean`) and difficulties (`normal`, `hard`, `nightmare`).
+- It ranks by score, then time. D0b's score is the time survived; D9 brings the formula.
+- Your best per board is `runBest['micasurvivor_expedition:<map>:<diff>']`.
+- Enforcement follows `micatro_modded`: a `micasurvivor` score that carries any Expedition field is refused (400), and
+  an Expedition score without them is refused. The base board stays pure.
+- The client side is `G.Exp.submitScore` / `G.Exp.leaderboard(map, diff)`. A board screen comes in D9.
+
+**Version fields:** `G.Expedition.DV = 1` (an integer; bump it whenever Expedition content changes what a run or a
+snapshot means).
+- **Runs:** every Expedition run carries `G.Modes.run = {mode: 'exp-…', dv, map, diff}`.
+- **Replays and spectating:** the replay header and meta, and every live snapshot, carry `dv` (and `map` / `diff`).
+  The server's replay-meta allow-list and the live beacon accept `exp-…` modes and `dv`.
+- **Watching:** a replay or live run whose `dv` is missing, unknown or newer, or whose mode this build doesn't know,
+  plays with a notice: "This replay is from a newer version of Expedition: reload the page to watch it properly."
+- **Co-op lobbies** (12b): `G.Social.createRoom({mode})` makes an Expedition lobby whose row, view and start carry
+  `mode` and `dv`. A join sends the client's `dv`. An Expedition lobby refuses any other `dv`, or none (409, nothing
+  written), and the client says "Your game is out of date: reload." `G.Flow.startCoop` refuses a mismatched start
+  too.
+- **Base runs, replays and lobbies carry none of these fields**, so every existing replay and lobby stays valid.
+
+**Base unchanged:** the D0a test passes against its fixtures as recorded, with no re-record. So does
+`micasurvivor_expedition_forceload_test.mjs`, which runs the same unchanged D0a test with the Expedition code loaded
+and frozen in every page before its base sim. Loading the Expedition doesn't leak into the base modes.
+
+**Not yet (later batches):**
+- any playable Expedition mode, its map / difficulty pickers and the board screen (D3, D9);
+- starting an Expedition co-op run (the lobby carries the fields; `startRun` for a group is still base);
+- loading the Expedition renderer for an Expedition replay (D1);
+- paying runs through `wallet` (D9 / D10);
+- the Expedition entries in the Lexicon and Goals.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
   mode (see "DLC D0a: base-unchanged harness" above); `--record` only for a deliberate base change.
+- `node overworld/tests/micasurvivor_expedition_forceload_test.mjs` (DLC D0b): the same unchanged D0a test with the
+  Expedition code force-loaded (and the base tables frozen) in every page before its base sim; it must still match the
+  D0a fixtures.
+- `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
+  lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly
+  save.js + core.js once); the Expedition group by mouse, touch (844x390) and pad, "Coming soon", starting nothing; the
+  freeze throwing on 14 kinds of write and changing nothing, its cost, and the sim's cost frozen vs not; the Expedition
+  save's round trip, a 409 merge with another device, a lower counter not going back, a guest's local progress carried
+  into the account once; the Expedition board vs the base board; an Expedition run's mode / dv on the run, snapshot,
+  replay header, meta and shared row, with the base save byte-equal; the newer-dv notices for replays and live runs;
+  the lobby's dv gate (join and start) and a base lobby unchanged; no Spanish in English.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

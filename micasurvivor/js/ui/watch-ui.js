@@ -23,6 +23,7 @@ G.WatchUI = (() => {
   const MATE_COL = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8'];
 
   let mode = null;         // null | 'live' | 'replay'
+  let notice = '';         // DLC D0b: the "newer Expedition version" notice shown for this view ('' = none)
   let who = '', title = '', onLeave = null;
   let pl = null, dexNow = 0;
   const mates = new Map(); // name -> { p: G.Player, from, to, kind, ctrl }
@@ -336,7 +337,7 @@ G.WatchUI = (() => {
     G.Spectate.unwatch();
     A = B = null; pl = null; dexNow = 0; mates.clear(); ents.clear(); movesKey = '';
     worldSeed = null; worldBiome = -1; arenaKey = '';
-    rd = null; T = 0; idx = 0; playing = true; speed = 1; done = false; ended = null; status = 'wait'; info = {};
+    rd = null; T = 0; idx = 0; playing = true; speed = 1; done = false; ended = null; status = 'wait'; info = {}; notice = '';
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.World.setArena(null);
   }
@@ -365,6 +366,8 @@ G.WatchUI = (() => {
     G.Spectate.watch(user, {
       snapshot(s, b) {
         stats.snaps++;
+        // DLC D0b: a run of an unknown / newer Expedition version (dv): still shown, with a notice (once)
+        if (!notice && G.Expedition && G.Expedition.viewNotice(s.m, s.dv)) { notice = 'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
         info = b;
         const now = performance.now();
         // the publisher's clock (ms) between this snapshot and the last one, kept between 0.4 and 3 s
@@ -399,6 +402,8 @@ G.WatchUI = (() => {
     bar(name ? esc(G.T('Repetición de')) + ' <b translate="no">' + esc(name) + '</b>' : esc(G.T('Repetición')), false);
     buildCtrl();
     T = 0; idx = -1; playing = true; speed = 1; evAt = 0; done = false;
+    // DLC D0b: a replay of an unknown / newer Expedition version (dv) still plays, with a notice
+    if (G.Expedition && G.Expedition.viewNotice(reader.h.m, reader.h.dv)) { notice = 'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
     seekTo(0, true);
   }
 
@@ -560,7 +565,7 @@ G.WatchUI = (() => {
     pending, boot, watchLive, playReplay, playLocal, leave, tick, keys, drawables, drawOverlay, hudH, mateList, stats,
     togglePlay, setSpeed, seek(t) { if (rd) { T = G.U.clamp(t, 0, rd.duration); done = false; hideEnd(); seekTo(T, true); ctrlTick(); } },
     get mode() { return mode; }, get time() { return timeNow; }, get who() { return who; }, get status() { return status; },
-    get playing() { return playing; }, get speed() { return speed; }, get T() { return T; }, get reader() { return rd; },
+    get notice() { return notice; }, get playing() { return playing; }, get speed() { return speed; }, get T() { return T; }, get reader() { return rd; },
     get player() { return pl; }, get frame() { return A; }, get done() { return done; }
   };
 })();
