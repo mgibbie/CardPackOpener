@@ -637,6 +637,7 @@ async function addFriend(raw) {
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
 //   factory:<label>    → a Battle Frontier run (spectate in the Overworld)
 //   micatro:<label>    → a Micatro run (spectate on /micatro/); routing: site/livewatch.js
+//   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
 	const st = f.status || '';
@@ -650,6 +651,7 @@ function friendActivity(f) {
 	}
 	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: 'in the ' + (f.region || st.slice('factory:'.length) || 'Battle Frontier') };
 	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: micatroActivityLabel(f.region || st.slice('micatro:'.length)) };
+	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: 'in a MicaSurvivor run' + (f.region && !/^micasurvivor$/i.test(f.region) ? ' · ' + f.region : '') };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }

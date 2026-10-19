@@ -525,6 +525,10 @@ try {
 	const act = LW.activityFromStatus('micatro:Ante 3', 'Ante 3 · Boss');
 	A(act.live && act.kind === 'micatro' && act.label === 'Ante 3 · Boss', 'activityFromStatus understands micatro:');
 	A(LW.micatroActivityLabel('Ante 3') === 'Playing Micatro — Ante 3' && LW.micatroActivityLabel('') === 'Playing Micatro', 'the friend activity label reads "Playing Micatro — Ante 3"');
+	// MicaSurvivor (M5 batch 12c): a run is watched on /micasurvivor/?watch=<user>
+	A(LW.watchHref({ username: 'amy', kind: 'micasurvivor' }) === '/micasurvivor/?watch=amy' && LW.watchHref({ username: 'amy', status: 'micasurvivor:run' }) === '/micasurvivor/?watch=amy', 'micasurvivor → /micasurvivor/?watch=<user> (live-friends kind or presence status)');
+	const ms = LW.activityFromStatus('micasurvivor:run', 'Pikachu');
+	A(ms.live && ms.kind === 'micasurvivor' && ms.label === 'Playing MicaSurvivor — Pikachu' && !LW.activityFromStatus('micasurvivor', 'MicaSurvivor').live && LW.micasurvivorActivityLabel('MicaSurvivor') === 'Playing MicaSurvivor', 'activityFromStatus understands micasurvivor:run (not the menus / lobby)');
 
 	const hub = fs.readFileSync(path.join(ROOT, 'battlecards/start.html'), 'utf8');
 	const live = hub.slice(hub.indexOf('async function refreshLive'), hub.indexOf('refreshLive();'));
@@ -536,6 +540,9 @@ try {
 	const scr = fs.readFileSync(path.join(ROOT, 'overworld/ow_screens.js'), 'utf8');
 	const blk = scr.slice(scr.indexOf("startsWith('micatro:')"), scr.indexOf("startsWith('micatro:')") + 500);
 	A(blk.length > 50 && /watchHref\(\{ username: f\.username, kind: 'micatro' \}\)/.test(blk) && /saveParty\(S\.party\); savePos\(\)/.test(blk), 'the Overworld friends menu offers to watch a micatro friend (saving first)');
+	const mblk = scr.slice(scr.indexOf("=== 'micasurvivor:run'"), scr.indexOf("=== 'micasurvivor:run'") + 500);
+	A(mblk.length > 50 && /watchHref\(\{ username: f\.username, kind: 'micasurvivor' \}\)/.test(mblk) && /saveParty\(S\.party\); savePos\(\)/.test(mblk), '...and a MicaSurvivor friend (saving first)');
+	A(/micasurvivorActivityLabel/.test(live) && /micasurvivor: '/.test(hub), 'the Live now hub labels MicaSurvivor runs (and gives them an icon)');
 
 	// the arcade cabinet
 	const arc = fs.readFileSync(path.join(ROOT, 'overworld/arcade.js'), 'utf8');

@@ -12,7 +12,8 @@ G.UI = (() => {
                    'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-goals', 'scr-bond', 'scr-mod',
                    'scr-modes',    // MicaSurvivor (M5 lote 6)
                    'scr-tower',    // MicaSurvivor (M5 lote 8): descanso y pactos de la Torre
-                   'scr-lexicon']; // MicaSurvivor (M5 lote 11): el Léxico
+                   'scr-lexicon',  // MicaSurvivor (M5 lote 11): el Léxico
+                   'scr-watch-end']; // MicaSurvivor (M5 lote 12c): el final de una partida que mirabas / de una repetición
 
   function show(id, keepMenu = false) {
     for (const s of SCREENS) if (s !== id && !(keepMenu && s === 'scr-menu')) $(s).classList.add('hidden');

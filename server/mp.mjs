@@ -134,6 +134,63 @@ const MSURV_RELAY_MIN_MS = +process.env.MSURV_RELAY_MIN_MS || 1000;       // HAR
 //   msurvrelaybudget:<host>:<YYYYMMDD>   {rev, used, last}   (compare-and-set on rev; swept after 2 days)
 const MSURV_RELAY_DAILY_MIN = 30;
 const MSURV_RELAY_STALE_MS = 30_000;       // a relay row this old is ignored (its sender is gone)
+// MICASURVIVOR live spectating (M5 batch 12c): friends watch a run read-only, by polling, and it costs ~0 D1
+// writes while nobody watches. Rows (every one written only by its owner, at an exact key):
+//   msurvlive:<user>          {run, ts, label, mode, dex, group, over}: the "in a run" beacon. Written when a run
+//                             starts / ends / changes mode or group, else only every MSURV_LIVE_BEAT_MS (an
+//                             unwatched run: ~0.2 writes a minute). Live while younger than MSURV_LIVE_TTL_MS.
+//   msurvstate:<user>         {run, seq, ts, snap, label, mode, over, watchers, watcherNames}: the latest snapshot,
+//                             written ONLY while someone watches (<= 1 a second, 1 per 5 s past the daily minutes)
+//   msurvspec:<user>:<viewer> a watcher's heartbeat (ms), rewritten at most every SPEC_BEAT_MS; the publisher's
+//                             watcher check (publish-micasurvivor with no snapshot, every ~10 s) only READS these
+//   msurvspecbudget:<user>:<YYYYMMDD>  {rev, used, last}: watched minutes per publisher per UTC day (a minute
+//                             counts once; compare-and-set like the relay budget)
+const MSURV_LIVE_BEAT_MS = 5 * 60_000;
+const MSURV_LIVE_TTL_MS = 6 * 60_000;
+const MSURV_STATE_STALE_MS = 20_000;       // no snapshot in this long -> waiting (the beacon still says live)
+const MSURV_STATE_MIN_MS = +process.env.MSURV_STATE_MIN_MS || 900;   // HARD floor between one publisher's snapshot writes
+const MSURV_STATE_SLOW_MS = 5000;          // ...past MSURV_SPEC_DAILY_MIN watched minutes today
+const MSURV_SPEC_DAILY_MIN = 60;
+const MSURV_SNAPSHOT_MAX = 24_000;         // one serialized snapshot (a busy late-game screen is ~4-6 KB)
+// MICASURVIVOR run replays (M5 batch 12c): a finished run as delta-encoded snapshots, packed like the Micatro
+// replays ('G1.' gzip / 'R1.' raw, base64url). PUBLIC to read by link (micasurvivor-replay-get, above the auth gate).
+//   msurvreplay:<8 hex>       {code, meta, by, when}   (30-day GC, like mreplay:)
+//   msurvreplays:<user>       {ids:[{id, when}]}: the player's own stored replays, newest first; past
+//                             MSURV_REPLAY_PER_USER the oldest is deleted (only if it is the player's own row)
+// (No '_' in these prefixes: the store's prefix scans and sweeps use LIKE, where '_' is a wildcard.)
+const MSURV_REPLAY_MAX = 1_200_000;        // the packed code (measured: a busy 30-min run, ~65 foes on screen, packs to 679 KB)
+const MSURV_REPLAY_UNPACKED = 8_000_000;   // gunzip stops here
+const MSURV_REPLAY_FRAMES = 30_000;        // frames in one replay (4 h at 2 a second)
+const MSURV_REPLAY_PER_USER = 10;
+const msurvNow = () => (typeof globalThis.__msurvClock === 'function' ? globalThis.__msurvClock() : Date.now());
+// the "in a run" beacon of `who` -> the row if live (fresh and not over), else null
+async function msurvLiveOf(store, who, now) {
+	const b = await store.get('msurvlive:' + who);
+	return b && !b.over && now - (+b.ts || 0) < MSURV_LIVE_TTL_MS ? b : null;
+}
+// who is watching `who`'s MicaSurvivor run right now (a startsWith filter: '_' in a name is a LIKE wildcard)
+async function msurvWatchers(store, who, now) {
+	const prefix = 'msurvspec:' + who + ':';
+	const out = [];
+	for (const r of await store.list(prefix)) {
+		if (!r.key.startsWith(prefix)) continue;
+		if (now - (+r.value || 0) < SPEC_WINDOW_MS) out.push({ name: r.key.slice(prefix.length), t: +r.value || 0 });
+		else out.push({ name: r.key.slice(prefix.length), t: +r.value || 0, stale: true });
+	}
+	return out;
+}
+// a replay's display meta — ALLOW-LISTED (shown in a public viewer)
+function cleanMsurvReplayMeta(m) {
+	m = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+	const str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').slice(0, n).trim();
+	const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v)) || 0));
+	return {
+		dex: int(m.dex, 0, 2000), shiny: !!m.shiny, mon: str(m.mon, 32), mode: /^[a-z]{1,12}$/.test(String(m.mode)) ? m.mode : 'normal',
+		time: int(m.time, 0, 4 * 3600), level: int(m.level, 0, 9999), kills: int(m.kills, 0, 1e8), bosses: int(m.bosses, 0, 1e5),
+		dead: !!m.dead, coop: (Array.isArray(m.coop) ? m.coop : []).map(x => str(x, 40)).filter(x => /^[a-z0-9_.-]{1,40}$/.test(x)).slice(0, 4),
+		frames: int(m.frames, 0, MSURV_REPLAY_FRAMES),
+	};
+}
 // MICASURVIVOR leaderboard (run-score mode 'micasurvivor'): best survival time, solo.
 const MICASURVIVOR_MAX_TIME = 4 * 3600; // seconds; a longer "run" is refused, not clamped onto the board
 // MICATRO run replays: a FINISHED run's recipe {v, seed, back, stake, mods, modOptions, customDeck?,
@@ -294,6 +351,10 @@ const RATE_LIMITS = {
 	'msurv-invite': [20, 60_000], 'msurv-invites': [20, 60_000], 'msurv-invite-decline': [20, 60_000],
 	'msurv-signal-put': [40, 10_000], 'msurv-signal-poll': [30, 10_000],
 	'msurv-relay-push': [15, 10_000], 'msurv-relay-pull': [15, 10_000],
+	// MicaSurvivor spectating + replays (M5 batch 12c): a watched run publishes ~1/s (an unwatched one checks for
+	// watchers every ~10 s), a watcher polls ~1/s; a replay upload is one per finished run (and its retries)
+	'publish-micasurvivor': [30, 10_000], 'micasurvivor-state': [30, 10_000],
+	'micasurvivor-replay-put': [20, 60_000], 'micasurvivor-replay-list': [20, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
@@ -343,6 +404,11 @@ const GC_TABLE = [
 	// row is ignored after 30 s); these sweeps only reclaim the rows of lobbies nobody closed.
 	['msurvsig:', 1 * HR], ['msurvrelay:', 1 * HR], ['msurvinv:', 1 * HR], ['msurvlobby:', 12 * HR],
 	['msurvrelaybudget:', 48 * HR], // the relay's daily minutes per host (msurvrelaybudget:<host>:<YYYYMMDD>)
+	// MicaSurvivor spectating + replays (M5 batch 12c): the beacon, the snapshot and the heartbeats have far shorter
+	// LOGICAL lives (MSURV_LIVE_TTL_MS, MSURV_STATE_STALE_MS, SPEC_WINDOW_MS); these sweeps only reclaim the rows
+	['msurvstate:', 1 * HR], ['msurvspec:', 1 * HR], ['msurvlive:', 6 * HR], ['msurvspecbudget:', 48 * HR],
+	['msurvreplay:', 30 * 24 * HR], // a MicaSurvivor run replay — a month, like the Micatro ones
+	['msurvreplays:', 60 * 24 * HR], // the per-player replay index (self-heals against swept replays on read)
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -1093,6 +1159,16 @@ export default async function handler(req, env) {
 		const id = String(body.id || '');
 		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
 		const rec = await store.get('mreplay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+	}
+
+	// public read of a MICASURVIVOR run replay (/micasurvivor/?replay=<id>, /msr/<id>) — the same guard as replay-get
+	if (action === 'micasurvivor-replay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('msurvreplay:' + id);
 		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
 		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
 	}
@@ -1852,8 +1928,12 @@ export default async function handler(req, env) {
 	// in parallel — sequential strong-consistency reads made this the slowest call
 	// in the presence loop and stretched ghost-update latency
 	if (action === 'friends') {
+		const mnow = msurvNow();
 		const list = await Promise.all(user.friends.map(async (f) => {
-			const [fu, p] = await Promise.all([store.get(f), store.get('presence:' + f)]);
+			const [fu, p0, ml] = await Promise.all([store.get(f), store.get('presence:' + f), msurvLiveOf(store, f, mnow)]);
+			// MicaSurvivor (M5 batch 12c): a friend in a MicaSurvivor run (its beacon) is online and watchable, even
+			// when an unwatched solo run has written no presence for a while
+			const p = ml ? { x: 0, y: 0, facing: 'down', ...(p0 || {}), lastSeen: Date.now(), status: 'micasurvivor:run', region: ml.label || 'MicaSurvivor', map: (p0 && p0.map) || '' } : p0;
 			const online = p && Date.now() - p.lastSeen < ONLINE_MS;
 			return {
 				username: f, friendCode: fu?.friendCode || '',
@@ -2458,13 +2538,153 @@ export default async function handler(req, env) {
 		return json({ ...ms, watchers, watcherNames });
 	}
 
+	// ---------- MICASURVIVOR live spectating + replays (M5 batch 12c; the rows are listed at MSURV_LIVE_BEAT_MS) ----------
+	// publish-micasurvivor {run, label, mode, dex, group?, over?, snapshot?}: the player's client calls it every ~10 s
+	// WITHOUT a snapshot (a watcher check that only reads, and refreshes the beacon when it is due), and every ~1 s WITH
+	// one while someone watches. The snapshot row is written only when a friend's heartbeat is fresh, so an unwatched
+	// run writes nothing but its beacon (start, end, every MSURV_LIVE_BEAT_MS).
+	if (action === 'publish-micasurvivor') {
+		const now = msurvNow();
+		const NAME_RE = /^[a-z0-9_.-]{1,40}$/;
+		const run = String(body.run || '');
+		if (!/^[0-9a-f]{8,16}$/.test(run)) return json({ error: 'bad run id' }, 400);
+		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
+		const mode = /^[a-z]{1,12}$/.test(String(body.mode)) ? String(body.mode) : 'normal';
+		const dex = Math.max(0, Math.min(2000, Math.floor(+body.dex) || 0));
+		const group = Array.isArray(body.group) ? [...new Set(body.group.map(x => String(x).toLowerCase()).filter(x => NAME_RE.test(x)))].slice(0, MSURV_MAX) : [];
+		const over = !!body.over;
+		const hasSnap = body.snapshot != null;
+		if (hasSnap && (typeof body.snapshot !== 'object' || Array.isArray(body.snapshot))) return json({ error: 'bad snapshot' }, 400);
+		if (hasSnap && JSON.stringify(body.snapshot).length > MSURV_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: MSURV_SNAPSHOT_MAX }, 413);
+		const friends = Array.isArray(user.friends) ? user.friends : [];
+		const wrote = { live: false, state: false };
+		// no friends: nobody can watch, so nothing is written (or even scanned)
+		if (!friends.length) return json({ ok: true, watchers: 0, watcherNames: [], wrote, every: 0 });
+		const prev = await store.get('msurvlive:' + username);
+		const same = !!prev && prev.run === run;
+		const gk = group.join(',');
+		const due = same
+			? (over ? !prev.over : !prev.over && (prev.mode !== mode || (prev.group || []).join(',') !== gk || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
+			: !over;
+		if (due) {
+			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over });
+			wrote.live = true;
+		}
+		const ws = (await msurvWatchers(store, username, now)).filter(w => !w.stale && friends.includes(w.name));
+		const watcherNames = ws.map(w => w.name).slice(0, SPEC_CAP);
+		let slow = false, every = MSURV_STATE_MIN_MS;
+		if (hasSnap && watcherNames.length) {
+			// the watched minutes today (a UTC minute counts once): past the allowance, one snapshot per 5 s
+			const BK = 'msurvspecbudget:' + username + ':' + new Date(now).toISOString().slice(0, 10).replace(/-/g, '');
+			const minute = Math.floor(now / 60_000);
+			const b = (await store.get(BK)) || { rev: 0, used: 0, last: -1 };
+			if (b.last !== minute) {
+				if ((b.used || 0) >= MSURV_SPEC_DAILY_MIN) slow = true;
+				else await store.setIfRev(BK, { rev: (b.rev || 0) + 1, used: (b.used || 0) + 1, last: minute }, b.rev || 0);
+			}
+			if (slow) every = MSURV_STATE_SLOW_MS;
+			const st = await store.get('msurvstate:' + username);
+			if (!over && st && st.run === run && now - (+st.ts || 0) < every) {
+				return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, slow, every, wait: every - (now - st.ts) });
+			}
+			const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
+			await store.setJSON('msurvstate:' + username, { run, seq, ts: now, snap: body.snapshot, label, mode, group, over, watchers: watcherNames.length, watcherNames });
+			wrote.state = true;
+		}
+		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, slow, every });
+	}
+
+	// a friend reads a MicaSurvivor run's latest snapshot (read-only spectating; both must have each other as friends).
+	// Heartbeats msurvspec:<who>:<me> (at most every SPEC_BEAT_MS) only while the run is live.
+	if (action === 'micasurvivor-state') {
+		const now = msurvNow();
+		const who = String(body.username || '').trim().toLowerCase();
+		if (!who || who === username || !(user.friends || []).includes(who)) return json({ error: 'not your friend' }, 403);
+		const them = await store.get(who);
+		if (!them || !Array.isArray(them.friends) || !them.friends.includes(username)) return json({ error: 'not your friend' }, 403);
+		const [b, st] = await Promise.all([store.get('msurvlive:' + who), store.get('msurvstate:' + who)]);
+		const sameRun = !!b && !!st && st.run === b.run;
+		const head = { label: (b && b.label) || '', mode: (b && b.mode) || 'normal', dex: (b && b.dex) || 0, group: (b && b.group) || [], run: (b && b.run) || null };
+		const same = body.seq != null && sameRun && Number(body.seq) === st.seq;
+		// the run is over: its last snapshot (with the summary) if a watcher saw it end, else just "it ended"
+		if (b && b.over) {
+			if (sameRun && st.over) return json({ ...head, live: false, over: true, seq: st.seq, ...(same ? { unchanged: true } : { snapshot: st.snap }) });
+			return json({ ...head, live: false, over: true, snapshot: null });
+		}
+		if (!b || now - (+b.ts || 0) >= MSURV_LIVE_TTL_MS) return json({ live: false, snapshot: null });
+		const ws = await msurvWatchers(store, who, now);
+		const active = ws.filter(w => !w.stale).map(w => w.name);
+		if (!active.includes(username) && active.length >= SPEC_CAP) return json({ ...head, live: true, snapshot: null, full: true, max: SPEC_CAP }, 403);
+		const mine = ws.find(w => w.name === username);
+		if (!mine || now - mine.t >= SPEC_BEAT_MS) await store.setJSON('msurvspec:' + who + ':' + username, now);
+		if (!active.includes(username)) active.push(username);
+		const watchers = active.length, watcherNames = active.slice(0, SPEC_CAP);
+		if (!sameRun || now - (+st.ts || 0) >= MSURV_STATE_STALE_MS) return json({ ...head, live: true, waiting: true, snapshot: null, watchers, watcherNames });
+		if (same) return json({ ...head, live: true, unchanged: true, seq: st.seq, over: !!st.over, watchers, watcherNames });
+		return json({ ...head, live: true, seq: st.seq, over: !!st.over, snapshot: st.snap, age: now - st.ts, watchers, watcherNames });
+	}
+
+	// upload a finished MicaSurvivor run's replay -> its id (the share link /micasurvivor/?replay=<id> or /msr/<id>).
+	// {code, meta, rid?}: `rid` is the client's own id for that replay, so a retried upload returns the first id instead
+	// of storing it twice. Validates the packed stream (unpacked under a cap): {v:1, h:{...}, f:[frames], ev?:[events]}.
+	if (action === 'micasurvivor-replay-put') {
+		const now = msurvNow();
+		const code = String(body.code || '');
+		if (code.length > MSURV_REPLAY_MAX) return json({ error: 'replay too large', max: MSURV_REPLAY_MAX }, 413);
+		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		const rid = /^[0-9a-f]{8,16}$/.test(String(body.rid || '')) ? String(body.rid) : '';
+		const IKEY = 'msurvreplays:' + username;
+		const idx = (await store.get(IKEY)) || { ids: [] };
+		const list = Array.isArray(idx.ids) ? idx.ids.filter(e => e && REPLAY_ID_RE.test(String(e.id))) : [];
+		if (rid) { const dup = list.find(e => e.rid === rid); if (dup && (await store.get('msurvreplay:' + dup.id))) return json({ ok: true, id: dup.id, again: true }); }
+		const text = await unpackCapped(code, MSURV_REPLAY_UNPACKED);
+		let r = null;
+		try { r = text ? JSON.parse(text) : null; } catch { r = null; }
+		if (!r || typeof r !== 'object' || Array.isArray(r) || r.v !== 1 || !r.h || typeof r.h !== 'object' || Array.isArray(r.h)
+			|| !Array.isArray(r.f) || !r.f.length || !r.f.every(x => Array.isArray(x)) || (r.ev != null && !Array.isArray(r.ev))) return json({ error: 'not a run replay' }, 400);
+		if (r.f.length > MSURV_REPLAY_FRAMES) return json({ error: 'too many frames', max: MSURV_REPLAY_FRAMES }, 413);
+		const meta = { ...cleanMsurvReplayMeta(body.meta), frames: r.f.length };
+		let id = null;
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('msurvreplay:' + id))) break; }
+		await store.setJSON('msurvreplay:' + id, { code, meta, by: username, when: now });
+		const next = [{ id, when: now, ...(rid ? { rid } : {}) }, ...list.filter(e => e.id !== id)];
+		const evicted = [];
+		for (const e of next.slice(MSURV_REPLAY_PER_USER)) {
+			const old = await store.get('msurvreplay:' + e.id);
+			if (old && old.by === username) { await store.delete('msurvreplay:' + e.id); evicted.push(e.id); }   // only your own row
+		}
+		await store.setJSON(IKEY, { ids: next.slice(0, MSURV_REPLAY_PER_USER) });
+		return json({ ok: true, id, evicted, max: MSURV_REPLAY_PER_USER });
+	}
+	// your stored replays (newest first), with their display meta
+	if (action === 'micasurvivor-replay-list') {
+		const idx = (await store.get('msurvreplays:' + username)) || { ids: [] };
+		const out = [];
+		for (const e of (Array.isArray(idx.ids) ? idx.ids : []).slice(0, MSURV_REPLAY_PER_USER)) {
+			if (!e || !REPLAY_ID_RE.test(String(e.id))) continue;
+			const rec = await store.get('msurvreplay:' + e.id);
+			if (rec && rec.by === username) out.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta || {} });
+		}
+		return json({ replays: out, max: MSURV_REPLAY_PER_USER });
+	}
+
 	// "Live now" hub: which friends are in a watchable game right now, with the mode
 	// + live watcher count. Read-only — reading cardstate:<f> here does NOT write a
 	// heartbeat, so browsing the hub never counts you as watching anyone.
 	if (action === 'live-friends') {
 		const now = Date.now();
 		const live = [];
+		const mnow = msurvNow();
 		for (const f of user.friends) {
+			// a MicaSurvivor run (M5 batch 12c): its beacon says so, whatever the presence row says (an unwatched
+			// solo run writes no presence); the watcher count comes from its snapshot row, when there is one
+			const ml = await msurvLiveOf(store, f, mnow);
+			if (ml) {
+				const ms = await store.get('msurvstate:' + f);
+				const w = ms && ms.run === ml.run && mnow - (+ms.ts || 0) < MSURV_STATE_STALE_MS ? ms.watchers || 0 : 0;
+				live.push({ username: f, kind: 'micasurvivor', mode: 'micasurvivor', label: ml.label || 'MicaSurvivor', group: ml.group || [], dex: ml.dex || 0, watchers: w, full: w >= SPEC_CAP });
+				continue;
+			}
 			const p = await store.get('presence:' + f);
 			if (!p || now - p.lastSeen >= ONLINE_MS) continue;
 			const st = p.status || '';

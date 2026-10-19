@@ -7,7 +7,8 @@
  *                                          └─ Gacha
  *
  * Estados del bucle: 'ui' (menús, con el mundo de fondo), 'playing',
- * 'levelup', 'paused', 'over'.
+ * 'levelup', 'paused', 'over'; MicaSurvivor (M5 lote 12c): 'watch' (viendo a un amigo en directo o una
+ * repetición, js/ui/watch-ui.js: sólo se dibuja, no se juega).
  *
  * Cooperativo (G.Coop.active): el anfitrión lleva enemigos, objetos y
  * experiencia; cada uno su Pokémon. La pausa no para el juego, las cartas de
@@ -24,7 +25,7 @@ G.Game = (() => {
   // MicaSurvivor (M5 lote 4): modo de la partida ('tower', la Torre del lote 8: sin Movimientos Z ni Dynamax).
   let runMode = 'normal';
 
-  const st = { get time() { return time; } };
+  const st = { get time() { return state === 'watch' && G.WatchUI ? G.WatchUI.time : time; } };
 
   // ---------------- arranque ----------------
 
@@ -142,6 +143,9 @@ G.Game = (() => {
     deathT = 0;
 
     state = 'playing';
+    // MicaSurvivor (M5 lote 12c): la repetición se graba desde aquí, y tus amigos pueden verte en directo
+    G.Replay.begin();
+    G.Spectate.runStarted();
   }
 
   /** Lo que se sortea al montar la partida (en el Diario, con la semilla del día). */
@@ -324,6 +328,11 @@ G.Game = (() => {
     const team = coop ? G.Coop.members.slice() : [];
     if (G.Coop.active) G.Coop.end();
     if (coop) G.Social.setPlaying(false);
+    // MicaSurvivor (M5 lote 12c): se cierra la repetición y se avisa a quien te esté mirando (antes de desmontar el compañero)
+    const recSum = { time: Math.floor(time), level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, dead: !!dead,
+                     moves: pl.moves.map(m => [m.id, m.lvl]), mode: runMode };
+    const replay = G.Replay.finish(recSum);
+    G.Spectate.runEnded(recSum);
     state = 'over';
     G.LocalCoop.end();   // MicaSurvivor (M5 lote 12a)
     G.Audio.music(null);
@@ -335,7 +344,7 @@ G.Game = (() => {
       G.Progress.off = false;
       G.RunUI.showOver({
         dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
-        moves: pl.moves, caught: [], modeLines: [G.Modes.NAME.party, 'No se guarda progreso'], breakdown: '',
+        moves: pl.moves, caught: [], modeLines: [G.Modes.NAME.party, 'No se guarda progreso'], breakdown: '', replay,
         dmg: G.DmgLog.summary(pl.moves)   // (M5 lote 11: el port también lo enseña en la Fiesta, menu.gd 1801)
       }, () => { pl = null; G.Flow.afterRun(); });
       return;
@@ -391,7 +400,7 @@ G.Game = (() => {
       title: G.Tower.won ? '¡TORRE COMPLETA!' : null,   // (M5 lote 8, main.gd _tower_win)
       dead: dead && !timeUp, timeUp, rifts: G.Modes.rifts() ? G.Modes.riftsWon : null, modeLines: md.lines,
       time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
-      moves: pl.moves, caught,
+      moves: pl.moves, caught, replay,   // (M5 lote 12c: la repetición de la partida, para compartirla)
       dmg: G.DmgLog.summary(pl.moves),   // MicaSurvivor (M5 lote 11): daño y derrotas por fuente (main.gd 768-781 / 858)
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (pl.coinMul > 1 ? ` · ×${pl.coinMul.toFixed(2)} Fortuna` : '') +
@@ -608,6 +617,8 @@ G.Game = (() => {
 
   function handleKeys() {
     if (G.SettingsUI.isOpen) { if (G.Input.tap('escape')) G.SettingsUI.close(); return; }
+    // MicaSurvivor (M5 lote 12c): viendo una partida, nada de lo que pulses llega a ella (Esc sale; Espacio pausa una repetición)
+    if (state === 'watch') { G.WatchUI.keys(); return; }
     // La Sentencia de Arceus: Espacio, Intro o Esc saltan la animación (si se puede).
     if (G.Judgment.cinematic && state === 'playing') {
       if (['space', 'enter', 'escape'].some(k => G.Input.tap(k))) G.Judgment.skip();
@@ -705,10 +716,13 @@ G.Game = (() => {
     handleKeys();
 
     if (state === 'playing') update(dt);
+    else if (state === 'watch') G.WatchUI.tick(Math.min(1 / 30, real));   // MicaSurvivor (M5 lote 12c)
     else if (state === 'levelup' || state === 'choice') G.Team.tick(Math.min(1 / 30, real));   // (M5 lote 7: como en el port)
     else if (pl && state !== 'ui') { G.FX.update(dt * 0.25); pl.anim.update(dt * 0.25); }
     // La red se atiende siempre (también con las cartas de nivel abiertas).
     if (G.Coop.active && pl && state !== 'ui' && state !== 'over') G.Coop.tick(dt);
+    // MicaSurvivor (M5 lote 12c): la grabación (una foto cada 0,5 s de partida) y la emisión en directo (si alguien mira)
+    if (pl && state !== 'ui' && state !== 'over' && state !== 'watch') { G.Replay.observe(frameDt, state === 'playing'); G.Spectate.tick(); }
 
     if (pl && state !== 'ui') render(); else Backdrop.render(ctx, w, h, dpr, dt);
     G.UI.tick(dt);
@@ -865,7 +879,8 @@ G.Game = (() => {
     ctx.save();
     ctx.scale(G.Camera.scale, G.Camera.scale);
     G.Camera.apply(ctx);
-    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl, ...G.LocalCoop.drawables(pl)]);   // (M5 lote 12a: el compañero)
+    drawScene(G.Camera, state === 'watch' ? G.WatchUI.drawables()   // (M5 lote 12c: los muñecos de la partida que miras)
+      : G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl, ...G.LocalCoop.drawables(pl)]);   // (M5 lote 12a: el compañero)
     G.Projectiles.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
@@ -887,10 +902,17 @@ G.Game = (() => {
     }
     G.ZMoves.drawDim(ctx, w, h);    // MicaSurvivor (M5 lote 4): la pantalla se oscurece durante el Z
     if (!G.Judgment.cinematic) G.Dynamax.drawOverlay(ctx, w, h);   // MicaSurvivor (M5 lote 5): borde rojo, tiempo y cartel
+    if (state === 'watch') {
+      // MicaSurvivor (M5 lote 12c): el HUD de quien miras (sin sus controles) y lo que el HUD no dice de él
+      G.HUD.draw(ctx, w, G.WatchUI.hudH(h), pl, st);
+      G.Touch.clearButtons();
+      G.WatchUI.drawOverlay(ctx, w, h);
+    } else {
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
     G.ZMoves.drawCine(ctx, w, h);
     G.Judgment.drawOverlay(ctx, w, h);
     G.Touch.draw(ctx);
+    }
     if (G.Settings.get('fps')) {
       ctx.save();
       ctx.font = '700 11px Pixelify, monospace';
@@ -1015,8 +1037,28 @@ G.Game = (() => {
   function choiceStart() { if (state === 'playing' || state === 'held') state = 'choice'; }
   function choiceEnd() { if (state === 'choice') { state = holdBy.length ? 'held' : 'playing'; afterLevelUp(); } }
 
+  /*
+   * MicaSurvivor (M5 lote 12c): viendo una partida (js/ui/watch-ui.js). El estado 'watch' sólo dibuja: nada se
+   * actualiza aquí (ni enemigos, ni objetos, ni reloj); los muñecos los mueve G.WatchUI con las fotos que llegan.
+   */
+  function watchEnter() {
+    if (state !== 'ui' && state !== 'over' && state !== 'watch') quitRun();
+    holdBy = []; awayBy = null;
+    pl = null; time = 0; pendingLevels = 0;
+    G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
+    G.Spawner.say('', 0, true);
+    state = 'watch';
+  }
+  function watchExit() {
+    if (state !== 'watch') return;
+    pl = null;
+    state = 'ui';
+    Backdrop.restore();
+  }
+
   return {
     init, startRun, everyone, levelXp, flash, offerBond, offerItem, grantLevels, choiceStart, choiceEnd, endRun,
+    watchEnter, watchExit, watchPlayer(p) { if (state === 'watch') pl = p; },   // MicaSurvivor (M5 lote 12c)
     get pendingLevels() { return pendingLevels; },
     /** Para pruebas: recoge un objeto del suelo como si lo tocaras (monedas, objetos...). */
     debugCollect(p) { onCollect(p); },
@@ -1051,6 +1093,12 @@ G.Flow = {
     G.DB.ready().then(restored => {
       document.getElementById('boot').classList.add('hidden');
       G.MicaUI.decorate();   // MicaSurvivor (M3): Magepunk login button / way back / leaderboard label
+      // MicaSurvivor (M5 lote 12c): un enlace ?watch=<amigo> o ?replay=<id> abre directamente la vista (sin pasar por
+      // el menú); al salir, el arranque de siempre.
+      if (G.WatchUI && G.WatchUI.pending) {
+        G.WatchUI.boot(() => this.tapToStart(() => { if (restored) this.afterLogin(); else this.toLogin(); }));
+        return;
+      }
       // En otra tarea: crear el sonido para comprobarlo cuesta ~60 ms y no debe bloquear la carga.
       setTimeout(() => this.tapToStart(() => { if (restored) this.afterLogin(); else this.toLogin(); }), 0);
     });

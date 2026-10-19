@@ -110,6 +110,8 @@
         const rank = f => f.status === 'in' ? 0 : f.status === 'ok' ? (f.online ? (f.play ? 2 : 1) : 3) : 4;
         return rank(a) - rank(b) || a.name.localeCompare(b.name);
       });
+      renderLive(list);
+      renderReplays();
       const box = $('fr-list');
       box.innerHTML = '';
       if (!list.length) {
@@ -143,6 +145,55 @@
           }
           // (MicaSurvivor 12b: friends are managed on Magepunk; no Remove here)
         }
+        box.appendChild(el);
+      }
+    }
+
+    /**
+     * MicaSurvivor (M5 lote 12c): "En directo ahora": los amigos que están en una partida (su baliza en el servidor,
+     * también en solitario), con "Ver" (js/ui/watch-ui.js). Un grupo online se puede ver desde cualquiera de ellos.
+     */
+    function renderLive(list) {
+      const box = $('fr-live');
+      const live = list.filter(f => f.status === 'ok' && f.play && f.uid !== G.Social.uid);
+      $('fr-live-h').classList.toggle('hidden', !live.length);
+      box.innerHTML = '';
+      for (const f of live) {
+        const el = document.createElement('div');
+        el.className = 'fr-row';
+        el.innerHTML = `<i class="dot play"></i><b translate="no">${esc(f.name)}</b><span class="live-badge">${esc(G.T('EN DIRECTO'))}</span>`
+          + `<span class="st" translate="no">${esc(f.where || '')}</span><span class="grow"></span>`;
+        const b = document.createElement('button');
+        b.className = 'btn small gold'; b.type = 'button';
+        b.innerHTML = G.Icons.html('eye', 14) + ' ' + esc(G.T('Ver'));
+        b.dataset.watch = f.uid;
+        b.onclick = () => G.WatchUI.watchLive(f.uid, () => open());
+        el.appendChild(b);
+        box.appendChild(el);
+      }
+    }
+    /** MicaSurvivor (M5 lote 12c): las últimas partidas guardadas en este navegador: verlas o compartirlas. */
+    function renderReplays() {
+      const box = $('fr-replays');
+      const list = G.Replay.local();
+      $('fr-replays-h').classList.toggle('hidden', !list.length);
+      box.innerHTML = '';
+      for (const e of list) {
+        const m = e.meta || {}, mon = G.DEX_BY[m.dex];
+        const el = document.createElement('div');
+        el.className = 'fr-row';
+        el.innerHTML = `<b translate="no">${esc(mon ? mon.name : '?')}</b><span class="st">${esc(G.T('Nv.'))} ${m.level | 0} · ${G.U.mmss(m.time || 0)} · ${(m.kills || 0).toLocaleString('en')} ${esc(G.T('derrotados'))}</span><span class="grow"></span>`;
+        const mk = (txt, cls, fn) => { const b = document.createElement('button'); b.className = 'btn small ' + cls; b.type = 'button'; b.textContent = G.T(txt); b.onclick = fn; el.appendChild(b); return b; };
+        mk('Ver', 'ghost', () => G.WatchUI.playLocal(e, () => open()));
+        const sh = mk(e.id ? 'Copiar enlace' : 'Compartir', 'gold', async () => {
+          sh.disabled = true;
+          const r = await G.Replay.share(e.rid);
+          sh.disabled = false;
+          if (!r.ok) { msg(r.error === 'login' ? 'Inicia sesión en Magepunk para compartir repeticiones.' : 'No se pudo subir. Inténtalo otra vez.', true); return; }
+          e.id = r.id;
+          sh.textContent = G.T('Copiar enlace');
+          try { await navigator.clipboard.writeText(r.link); msg('¡Enlace copiado! ' + r.link); } catch (err) { msg(r.link); }
+        });
         box.appendChild(el);
       }
     }

@@ -34,7 +34,7 @@ G.Minimap = (() => {
   function shown() {
     const g = G.Game, pl = g && g.player;
     if (!G.Display || !G.Display.minimapOn() || !pl || pl.dead) return false;
-    if (g.state !== 'playing' && g.state !== 'held') return false;
+    if (g.state !== 'playing' && g.state !== 'held' && g.state !== 'watch') return false;   // (M5 lote 12c: también viendo una partida)
     if (G.Rift && G.Rift.inArena) return false;
     if (G.Judgment && G.Judgment.active) return false;
     return true;
@@ -224,6 +224,14 @@ G.Minimap = (() => {
       for (const m of G.Coop.mates) {
         if (!m.connected || !m.pl) continue;
         const q = edge(pt(m.pl.x, m.pl.y, pl));
+        circle(ctx, q.x, q.y, 6, '#ffffff'); circle(ctx, q.x, q.y, 4.5, m.color || '#5fe08a');
+        rec('mate', q);
+      }
+    }
+    // MicaSurvivor (M5 lote 12c): los compañeros de la partida que miras (en directo o en una repetición)
+    if (G.Game && G.Game.state === 'watch' && G.WatchUI) {
+      for (const m of G.WatchUI.mateList()) {
+        const q = edge(pt(m.x, m.y, pl));
         circle(ctx, q.x, q.y, 6, '#ffffff'); circle(ctx, q.x, q.y, 4.5, m.color || '#5fe08a');
         rec('mate', q);
       }

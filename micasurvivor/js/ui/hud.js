@@ -49,7 +49,9 @@ G.HUD = (() => {
     ctx.textBaseline = 'alphabetic';
     G.Touch.clearButtons();
     G.Touch.scaleButtons(k);
-    const touch = G.Touch.active;
+    // MicaSurvivor (M5 lote 12c): viendo la partida de otro, su HUD sin los controles (ni pausa, ni pistas, ni botones)
+    const watching = !!G.Game && G.Game.state === 'watch';
+    const touch = G.Touch.active && !watching;
 
     // ---------- barra de experiencia (borde superior) ----------
     const xpF = pl.xp / pl.xpNext;
@@ -146,7 +148,7 @@ G.HUD = (() => {
     }
     // MicaSurvivor (M5 lote 9, main.gd 8708-8710): el "Reto: N%" de la dificultad adaptativa bajo el reloj (sólo
     // en la partida normal con el ajuste encendido): verde por debajo de 100, dorado en 100, naranja por encima.
-    const adPct = G.Adaptive.pct();
+    const adPct = watching ? (G.WatchUI.frame && G.WatchUI.frame.ad) || 0 : G.Adaptive.pct();   // (M5 lote 12c: el de quien miras)
     if (adPct > 0) {
       ctx.font = F(800, 11);
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)';
@@ -439,7 +441,7 @@ G.HUD = (() => {
 
     mark('moves', sx, sy - 6 - 18, totalW, S + 6 + 18);
     // MicaSurvivor (M2): with a controller, its prev / next move buttons either side of the bar.
-    const padOn = G.Pad && G.Pad.mode === 'pad';
+    const padOn = G.Pad && G.Pad.mode === 'pad' && !watching;
     if (padOn && n > 1) {
       G.Pad.drawGlyph(ctx, 'prev', sx - S - 18 - 32, sy + S / 2 - 13, 26);
       G.Pad.drawGlyph(ctx, 'next', sx + totalW + 6, sy + S / 2 - 13, 26);
@@ -513,8 +515,9 @@ G.HUD = (() => {
     if (touch && G.Settings.get('stickMode') === 'fixed') { const b = G.Touch.stickBase(W, H), r = G.Touch.R(); mark('stick', (b.x - r) / k, (b.y - r) / k, 2 * r / k, 2 * r / k); }
 
     // pista de controles
-    if (st.time < 14) mark('hint', w / 2 - Math.min(w, 620) / 2, h - 16, Math.min(w, 620), 16);
-    if (st.time < 14 && G.Pad && G.Pad.mode === 'pad') padHint(ctx, w, h);   // MicaSurvivor (M2)
+    if (st.time < 14 && !watching) mark('hint', w / 2 - Math.min(w, 620) / 2, h - 16, Math.min(w, 620), 16);
+    if (watching) { /* (M5 lote 12c: sin pistas de controles) */ }
+    else if (st.time < 14 && G.Pad && G.Pad.mode === 'pad') padHint(ctx, w, h);   // MicaSurvivor (M2)
     else if (st.time < 14) {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';

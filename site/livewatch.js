@@ -7,7 +7,8 @@
 // Two shapes come in:
 //   - a `live-friends` entry: { username, kind, matchId?, label? }
 //   - a presence row (friends / presence actions): { username, status, region }
-//     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label>
+//     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label> | micasurvivor:run
+//     (a MicaSurvivor run, M5 batch 12c: the server's `friends` marks a friend in one by its run beacon)
 
 // what a presence status means → { live, kind, matchId?, mode?, label }
 export function activityFromStatus(status, region) {
@@ -16,6 +17,7 @@ export function activityFromStatus(status, region) {
 	if (st.startsWith('card:')) return { live: true, kind: 'card', mode: st.slice('card:'.length), label: region || '' };
 	if (st.startsWith('factory:')) return { live: true, kind: 'factory', label: region || st.slice('factory:'.length) || 'BATTLE FRONTIER' };
 	if (st.startsWith('micatro:')) return { live: true, kind: 'micatro', label: region || st.slice('micatro:'.length) };
+	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: micasurvivorActivityLabel(region) };
 	return { live: false, kind: null, label: '' };
 }
 
@@ -23,6 +25,12 @@ export function activityFromStatus(status, region) {
 export function micatroActivityLabel(label) {
 	const l = String(label || '').trim();
 	return 'Playing Micatro' + (l && !/^micatro$/i.test(l) ? ' — ' + l : '');
+}
+
+// "Playing MicaSurvivor — Pikachu" (the label is the runner's Pokémon / mode / co-op group)
+export function micasurvivorActivityLabel(label) {
+	const l = String(label || '').trim();
+	return 'Playing MicaSurvivor' + (l && !/^micasurvivor$/i.test(l) ? ' — ' + l : '');
 }
 
 // the spectator URL for a live friend, or null when there's nothing to open
@@ -38,5 +46,6 @@ export function watchHref(f) {
 	if (kind === 'card') return '/battlecards/?spectate=' + u + '&mp=1';
 	if (kind === 'factory') return '/overworld/?watchfactory=' + u + '&mp=1';
 	if (kind === 'micatro') return '/micatro/?spectate=' + u;
+	if (kind === 'micasurvivor') return '/micasurvivor/?watch=' + u;
 	return null;
 }

@@ -308,7 +308,12 @@
       <button class="btn gold" type="submit" data-sfx="confirm">Añadir amigo</button>
     </form>
     <p id="fr-msg" class="note"></p>
+    <!-- MicaSurvivor (M5 batch 12c): friends in a run right now (Watch), and your recent runs' replays -->
+    <h3 class="fr-h hidden" id="fr-live-h">En directo ahora</h3>
+    <div id="fr-live" class="fr-live"></div>
     <div id="fr-list" class="fr-list"></div>
+    <h3 class="fr-h hidden" id="fr-replays-h">Tus últimas partidas</h3>
+    <div id="fr-replays" class="fr-replays"></div>
   </div>
 </section>
 
@@ -573,6 +578,21 @@
   </div>
 </section>
 
+<!-- MicaSurvivor (M5 batch 12c): watching a friend live / a replay (js/ui/watch-ui.js) -->
+<div id="watch-bar" class="hidden"></div>
+<div id="watch-ctrl" class="hidden"></div>
+<section id="scr-watch-end" class="scr dim hidden">
+  <div class="box center">
+    <h2 id="watch-end-title">Fin de la repetición</h2>
+    <div id="watch-end-body"></div>
+    <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
+      <button id="watch-again" class="btn gold hidden" type="button">Ver otra vez</button>
+      <button id="watch-login" class="btn gold hidden" type="button">Entrar con Magepunk</button>
+      <button id="watch-back" class="btn" type="button">Volver al menú</button>
+    </div>
+  </div>
+</section>
+
 <section id="scr-over" class="scr dim hidden">
   <div class="box center" style="width:min(480px,100%)">
     <h2 id="over-title">Has caído…</h2>
@@ -647,6 +667,8 @@
 <script defer src="js/net/social.js"></script>
 <script defer src="js/mica/social.js"></script> <!-- MicaSurvivor (M5 batch 12b): friends, lobbies and invites on Magepunk accounts -->
 <script defer src="js/mica/online.js"></script> <!-- MicaSurvivor (M5 batch 12b): co-op signalling + relay over /api/mp -->
+<script defer src="js/mica/spectate.js"></script> <!-- MicaSurvivor (M5 batch 12c): live spectating of a friend -->
+<script defer src="js/mica/replay.js"></script> <!-- MicaSurvivor (M5 batch 12c): full-run replays -->
 <script defer src="js/net/net.js"></script>
 <script defer src="js/net/coop.js"></script>
 <script defer src="js/net/ranking.js"></script>
@@ -655,6 +677,7 @@
 <script defer src="js/ui/ui.js"></script>
 <script defer src="js/ui/hud.js"></script>
 <script defer src="js/ui/minimap.js"></script> <!-- MicaSurvivor (M5 batch 10): the minimap -->
+<script defer src="js/ui/watch-ui.js"></script> <!-- MicaSurvivor (M5 batch 12c): the spectator view + replay player -->
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>

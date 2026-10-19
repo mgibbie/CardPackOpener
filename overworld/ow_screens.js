@@ -30,7 +30,7 @@ import {
 	MP_ON,
 } from './main.js';
 import { askText } from '../site/osk.js';
-import { watchHref, micatroActivityLabel } from '../site/livewatch.js';
+import { watchHref, micatroActivityLabel, micasurvivorActivityLabel } from '../site/livewatch.js';
 
 // ---------- in-game NPC trades ----------
 // One flow for both dialects (see trades.js for why they broke differently).
@@ -610,6 +610,15 @@ export function friendAction(f) {
 	if ((f.status || '').startsWith('micatro:')) {
 		const href = watchHref({ username: f.username, kind: 'micatro' });
 		const act = micatroActivityLabel(f.region || f.status.slice('micatro:'.length)).toUpperCase();
+		dialog.open(`${f.username}: ${act}!\n\nZ = Watch   X = Cancel`, (declined) => {
+			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
+		});
+		return;
+	}
+	// friend is in a MICASURVIVOR run (/micasurvivor/, M5 batch 12c) → offer to watch it live
+	if ((f.status || '') === 'micasurvivor:run') {
+		const href = watchHref({ username: f.username, kind: 'micasurvivor' });
+		const act = micasurvivorActivityLabel(f.region).toUpperCase();
 		dialog.open(`${f.username}: ${act}!\n\nZ = Watch   X = Cancel`, (declined) => {
 			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
 		});
