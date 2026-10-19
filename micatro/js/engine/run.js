@@ -279,7 +279,9 @@ export function newRun(args = {}) {
   G.playing_cards = [];
 
   G.GAME.pseudorandom.seed = (args.seed || random_string(8, Math.random())).toUpperCase();
-  G.GAME.seeded = !!args.seed;
+  // (a SEEDED run is one the player typed a seed for: no win stickers / run badges, like Balatro. A run rebuilt
+  //  from its recipe — resume, replay — always passes the seed, so it says which it was with `seeded`.)
+  G.GAME.seeded = typeof args.seeded === 'boolean' ? args.seeded : !!args.seed;
   G.GAME.pseudorandom.hashed_seed = pseudohash(G.GAME.pseudorandom.seed);
 
   G.GAME.blind = new Blind();
