@@ -16,9 +16,16 @@
 //   - English: the official English names (overworld/data/species_index.json when present)
 // Screenshots (MICASURVIVOR_SHOTS=<dir>): new enemies on screen (Gen 5, Paradox), a legendary as the rift boss,
 // and a new Pokémon's Lexicon entry.
+// Batch B1b (owner's call: fallbacks from images we already have): 24 of the 42 (Gen 5–8) now have sheets made from
+// their overworld follower sprites (tools/micasurvivor/follow_sprites.py, "src":"follow" in sprites-meta.js, in
+// assets/pokemon/{dex}/follow/): the same data / sheet / spawn / Lexicon / English checks, plus: their rows (k, dm,
+// 4 rows), drawn in a run at their neighbours' size (sampled pixels) and facing the way they walk (the Left row is
+// the Right one mirrored), Zarude as a rift legendary boss. The 18 Gen 9 stay pending (PENDING_ART): their only
+// SpriteCollab art is portraits with an opaque background, and they have no follower sprite.
+// Screenshots: follower-based enemies next to SpriteCollab ones (b1b_*.png) and a Lexicon entry.
 // Covers micasurvivor/js/data/pokedex.js, js/data/sprites-meta.js, js/data/enemies.js, js/systems/abilities.js,
 // js/core/sprites.js, js/data/lang-en.js, micasurvivor/CREDITS.md, tools/micasurvivor/fetch_sprites.py,
-// tools/micasurvivor/fetch_pokedex.py.
+// tools/micasurvivor/fetch_pokedex.py, tools/micasurvivor/follow_sprites.py, js/ui/ui.js, js/ui/minimap.js.
 //   node overworld/tests/micasurvivor_pokedex_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -52,8 +59,17 @@ const NEW = {
 };
 const NEW_DEX = Object.keys(NEW).map(Number);
 const NEW_LEG = [1003, 1008, 1025];
-export const PENDING_ART = [514, 516, 520, 522, 523, 538, 558, 564, 565, 591, 592, 616, 626, 668, 732, 735, 756, 765, 837, 838, 839, 866,
-	878, 893, 931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023];
+// ---- batch B1b: the 24 with a fallback sheet made from their overworld follower sprites
+const FOLLOW = {
+	514: 'Simisear', 516: 'Simipour', 520: 'Tranquill', 522: 'Blitzle', 523: 'Zebstrika', 538: 'Throh', 558: 'Crustle', 564: 'Tirtouga',
+	565: 'Carracosta', 591: 'Amoonguss', 592: 'Frillish', 616: 'Shelmet', 626: 'Bouffalant', 668: 'Pyroar', 732: 'Trumbeak', 735: 'Gumshoos',
+	756: 'Shiinotic', 765: 'Oranguru', 837: 'Rolycoly', 838: 'Carkol', 839: 'Coalossal', 866: 'Mr. Rime', 878: 'Cufant', 893: 'Zarude',
+};
+const FOLLOW_DEX = Object.keys(FOLLOW).map(Number);
+const FOLLOW_LEG = [893];
+// Still pending (18, Gen 9): no SpriteCollab sheet, no follower sprite, and every SpriteCollab portrait of theirs
+// (all emotions) is a 40x40 bust on an opaque background, so the portrait fallback (transparent ones only) has none.
+export const PENDING_ART = [931, 942, 943, 944, 947, 949, 950, 954, 956, 962, 973, 986, 993, 1001, 1002, 1014, 1022, 1023];
 const GEN_END = [151, 251, 386, 493, 649, 721, 809, 905, 1025];
 const genOf = d => GEN_END.findIndex(e => d <= e) + 1;
 
@@ -65,11 +81,11 @@ for (const f of ['js/data/pokedex.js', 'js/data/sprites-meta.js']) vm.runInConte
 	const have = new Set(G.DEX.map(p => p.dex)), pend = new Set(PENDING_ART);
 	const missing = [], both = [];
 	for (let d = 1; d <= 1025; d++) { if (!have.has(d) && !pend.has(d)) missing.push(d); if (have.has(d) && pend.has(d)) both.push(d); }
-	A(missing.length === 0 && both.length === 0 && G.DEX.length === 983 && PENDING_ART.length === 42 && G.DEX.length + PENDING_ART.length === 1025,
+	A(missing.length === 0 && both.length === 0 && G.DEX.length === 1007 && PENDING_ART.length === 18 && G.DEX.length + PENDING_ART.length === 1025,
 		`every dex 1..1025 is in the game (${G.DEX.length}) or pending art with the owner (${PENDING_ART.length}), never both`, JSON.stringify({ missing: missing.slice(0, 10), both }));
 	const noMeta = G.DEX.filter(p => !G.SPRITE_META[p.dex]).map(p => p.dex), orphan = Object.keys(G.SPRITE_META).map(Number).filter(d => !have.has(d));
 	A(noMeta.length === 0 && orphan.length === 0, 'the Pokédex and sprites-meta.js list exactly the same Pokémon (fetch_pokedex.py follows fetch_sprites.py)', JSON.stringify({ noMeta, orphan }));
-	A(NEW_DEX.every(d => have.has(d)) && PENDING_ART.every(d => !G.SPRITE_META[d]), 'the 17 new Pokémon are in; none of the 42 pending has sprite meta (so nothing spawns them)');
+	A(NEW_DEX.every(d => have.has(d)) && PENDING_ART.every(d => !G.SPRITE_META[d]), 'the 17 new Pokémon are in; none of the 18 pending has sprite meta (so nothing spawns them)');
 	const rar = p => (p.leg || p.bst >= 580 ? 5 : p.bst >= 495 ? 4 : p.bst >= 410 ? 3 : p.bst >= 320 ? 2 : 1);
 	const bad = NEW_DEX.map(d => G.DEX_BY[d]).filter(p => p.gen !== genOf(p.dex) || p.rarity !== rar(p) || !!p.leg !== NEW_LEG.includes(p.dex) || p.starter
 		|| !(p.hp > 70 && p.spd > 78 && p.atk > 0.7) || !p.types.length);
@@ -87,6 +103,26 @@ for (const f of ['js/data/pokedex.js', 'js/data/sprites-meta.js']) vm.runInConte
 	// one-frame Walk sheets (the partial ones the FALLBACK table filled from a one-frame Idle) are only new Pokémon
 	const oneWalk = Object.entries(G.SPRITE_META).filter(([, m]) => m.a.Walk && m.a.Walk.n === 1).map(([d]) => +d);
 	A(oneWalk.length === 8 && oneWalk.every(d => NEW_DEX.includes(d)), `the one-frame Walk sheets (which get the walking hop) are all new ones (${oneWalk.join(', ')}), so the 966 draw as before`);
+
+	// ---- B1b: the 24 follower-based rows
+	const fol = Object.entries(G.SPRITE_META).filter(([, m]) => m.src).map(([d]) => +d);
+	A(JSON.stringify(fol) === JSON.stringify(FOLLOW_DEX) && FOLLOW_DEX.every(d => G.SPRITE_META[d].src === 'follow' && G.DEX_BY[d]),
+		`exactly the 24 B1b Pokémon have a fallback row (src "follow") and a Pokédex row; the other ${Object.keys(G.SPRITE_META).length - 24} are SpriteCollab's`, JSON.stringify(fol));
+	const badRow = FOLLOW_DEX.filter(d => {
+		const m = G.SPRITE_META[d], I = m.a.Idle, W = m.a.Walk;
+		return !(m.k >= 1 && m.k <= 1.6) || JSON.stringify(m.dm) !== '[0,1,1,1,2,3,3,3]' || JSON.stringify(Object.keys(m.a)) !== '["Idle","Walk"]'
+			|| I.r !== 4 || W.r !== 4 || I.n !== 1 || W.n !== 4 || I.w !== W.w || I.h !== W.h || I.ay !== W.ay || W.ay >= W.h || !(m.s >= 0 && m.s <= 2) || m.sh !== 1;
+	});
+	A(badRow.length === 0, 'each: Idle (1 frame) + Walk (4 frames), 4 rows mapped from the 8 directions by dm (diagonals take the side view), art scale k 1..1.6, a shiny (the pack\'s Followers shiny)', JSON.stringify(badRow));
+	A(G.SPRITE_META[592].hv === 1 && FOLLOW_DEX.filter(d => G.SPRITE_META[d].hv).length === 1, 'Frillish floats like Jellicent; the other 23 walk (their families do)');
+	const fbad = FOLLOW_DEX.map(d => G.DEX_BY[d]).filter(p => p.gen !== genOf(p.dex) || p.rarity !== rar(p) || !!p.leg !== FOLLOW_LEG.includes(p.dex) || p.starter
+		|| !(p.hp > 70 && p.spd > 78 && p.atk > 0.7) || !p.types.length);
+	A(fbad.length === 0 && G.DEX_BY[893].leg && G.DEX_BY[893].rarity === 5, 'the 24 rows: generation, rarity by the BST rule, Zarude mythical (leg), not starters, game stats', JSON.stringify(fbad));
+	const sec = credits.split(/\r?\n/), at = sec.indexOf('## Sprites de respaldo (lote B1b)');
+	const fRows = at < 0 ? [] : sec.slice(at).filter(l => /^\| PokemonZero2024/.test(l)).map(l => l.split('|')[2].split(',').map(x => +x.trim()));
+	A(fRows.length === 2 && FOLLOW_DEX.every(d => fRows[0].includes(d) && fRows[1].includes(d)) && /Neo-Spriteman/.test(credits),
+		'CREDITS.md credits the follower sprites (PokemonZero2024 Followers / Followers shiny, its credited overworld artist) for all 24', JSON.stringify(fRows.map(r => r.length)));
+	A(rows.length > 100 && credits.includes('| CHUNSOFT | https://www.spike-chunsoft.com/ | 1, 2, 3,'), 'the SpriteCollab artist table is still there as it was');
 }
 
 // ================= 2. every sheet on disk: present, PNG, the meta's geometry =================
@@ -101,7 +137,7 @@ else {
 	let files = 0; const bad = [];
 	for (const [d, m] of Object.entries(G.SPRITE_META)) {
 		const check = (anim, g, shiny) => {
-			const f = path.join(MS, 'assets/pokemon', d, shiny ? 's' : '', anim + '.png');
+			const f = path.join(MS, 'assets/pokemon', d, m.src || '', shiny ? 's' : '', anim + '.png');
 			if (!fs.existsSync(f)) { bad.push(`${d}/${shiny ? 's/' : ''}${anim} missing`); return; }
 			files++;
 			const s = pngSize(f);
@@ -114,8 +150,8 @@ else {
 	A(bad.length === 0 && files > 13000, `every sheet of the ${Object.keys(G.SPRITE_META).length} Pokémon is on disk with its meta's geometry (${files} PNGs, normal + shiny)`, JSON.stringify(bad.slice(0, 10)));
 	// the 17 new: the whole image data inflates (a broken download would not)
 	const broken = [];
-	for (const d of NEW_DEX) {
-		const dir = path.join(MS, 'assets/pokemon', String(d));
+	for (const d of [...NEW_DEX, ...FOLLOW_DEX]) {
+		const dir = path.join(MS, 'assets/pokemon', String(d), G.SPRITE_META[d].src || '');
 		for (const f of [...fs.readdirSync(dir).filter(x => x.endsWith('.png')), ...(fs.existsSync(path.join(dir, 's')) ? fs.readdirSync(path.join(dir, 's')).map(x => 's/' + x) : [])]) {
 			const s = pngSize(path.join(dir, f));
 			const idat = []; let o = 8;
@@ -123,8 +159,10 @@ else {
 			try { if (!zlib.inflateSync(Buffer.concat(idat)).length) broken.push(d + '/' + f); } catch { broken.push(d + '/' + f); }
 		}
 	}
-	A(broken.length === 0, 'every PNG of the 17 new Pokémon inflates completely', JSON.stringify(broken));
-	A(PENDING_ART.every(d => !fs.existsSync(path.join(MS, 'assets/pokemon', String(d)))), 'no asset folder for the 42 pending (nothing half-made is published)');
+	A(broken.length === 0, 'every PNG of the 17 new Pokémon and the 24 follower-based ones inflates completely', JSON.stringify(broken));
+	const fFiles = FOLLOW_DEX.reduce((n, d) => n + ['Idle', 'Walk', 's/Idle', 's/Walk'].filter(a => fs.existsSync(path.join(MS, 'assets/pokemon', String(d), 'follow', a + '.png'))).length, 0);
+	A(fFiles === 96 && FOLLOW_DEX.every(d => !fs.existsSync(path.join(MS, 'assets/pokemon', String(d), 'Idle.png'))), `the 24 fallback sets are in {dex}/follow/ (${fFiles} files), leaving {dex}/ free for a real sheet later`);
+	A(PENDING_ART.every(d => !fs.existsSync(path.join(MS, 'assets/pokemon', String(d)))), 'no asset folder for the 18 pending (nothing half-made is published)');
 }
 
 // ================= 3+. in the browser =================
@@ -189,9 +227,10 @@ try {
 
 	// ---- English names and abilities
 	{
-		const r = await E(NEW => Object.keys(NEW).map(d => { const p = G.DEX_BY[d]; return [+d, p && G.I18n.t(p.name), G.Abilities.BY_DEX[d] || null, !!(G.Abilities.FX[G.Abilities.BY_DEX[d]])]; }), NEW);
-		const wrong = r.filter(([d, en]) => en !== NEW[d]);
-		A(wrong.length === 0, 'the 17 show their official English names (Iron Treads, Gouging Fire, Raging Bolt, Sirfetch\u2019d...)', JSON.stringify(wrong));
+		const ALL = { ...NEW, ...FOLLOW };
+		const r = await E(NEW => Object.keys(NEW).map(d => { const p = G.DEX_BY[d]; return [+d, p && G.I18n.t(p.name), G.Abilities.BY_DEX[d] || null, !!(G.Abilities.FX[G.Abilities.BY_DEX[d]])]; }), ALL);
+		const wrong = r.filter(([d, en]) => en !== ALL[d]);
+		A(wrong.length === 0 && r.length === 41, 'the 17 + 24 show their official English names (Iron Treads, Gouging Fire, Raging Bolt, Sirfetch\u2019d, Mr. Rime...)', JSON.stringify(wrong));
 		const idxFile = path.join(ROOT, 'overworld/data/species_index.json');
 		if (fs.existsSync(idxFile)) {
 			const idx = JSON.parse(fs.readFileSync(idxFile, 'utf8')), official = {};
@@ -200,7 +239,9 @@ try {
 			A(off.length === 0, 'and they match overworld/data/species_index.json', JSON.stringify(off.map(([d, en]) => [d, en, official[d]])));
 		}
 		const noAb = r.filter(x => !x[2] || !x[3]);
-		A(noAb.length === 0, 'each new Pokémon has a defined ability (abilities.js BY_DEX)', JSON.stringify(noAb));
+		A(noAb.length === 0, 'each new Pokémon (B1 and B1b) has a defined ability (abilities.js BY_DEX)', JSON.stringify(noAb));
+		const fam = await E(() => [[514, 513], [592, 593], [591, 590], [878, 879], [732, 733], [866, 122]].map(([d, f]) => G.Abilities.BY_DEX[d] === G.Abilities.BY_DEX[f]));
+		A(fam.every(Boolean), 'B1b abilities follow B1\'s rule: the family\'s where the table has it (Simisear/Pansear, Frillish/Jellicent, Cufant/Copperajah, Mr. Rime/Mr. Mime...)', JSON.stringify(fam));
 		const wild = await E(() => G.I18n.t('¡{x} salvaje apareció!'.replace('{x}', G.DEX_BY[990].name)));
 		A(wild === 'A wild Iron Treads appeared!', `the wild-encounter notice uses the English name ("${wild}")`);
 	}
@@ -227,6 +268,26 @@ try {
 			return out;
 		}, NEW_DEX);
 		A(r.bad.length === 0 && r.n >= 17 * 7 + 16 * 7, `every sheet of the 17 new Pokémon loads in the browser and its first frame decodes to pixels (${r.n} sheets, normal + shiny)`, JSON.stringify(r.bad.slice(0, 8)));
+		// B1b: through the game's own loader (G.Sprites.sheet picks {dex}/follow/), every row of every frame has pixels
+		const f = await E(async (FOLLOW_DEX) => {
+			const out = { n: 0, bad: [], srcs: new Set() };
+			const cv = document.createElement('canvas'), x = cv.getContext('2d', { willReadFrequently: true });
+			for (const d of FOLLOW_DEX) for (const shiny of [false, true]) for (const anim of ['Idle', 'Walk']) {
+				const s = G.Sprites.sheet(d, anim, shiny), g = G.Sprites.animMeta(d, anim, shiny);
+				out.srcs.add(s.src.replace(/\d+/, 'N'));
+				try { await s.img.decode(); } catch { out.bad.push(d + '/' + anim + (shiny ? '/s' : '') + ' failed'); continue; }
+				for (let row = 0; row < g.r; row++) for (let fr = 0; fr < g.n; fr++) {
+					cv.width = g.w; cv.height = g.h; x.clearRect(0, 0, g.w, g.h); x.drawImage(s.img, fr * g.w, row * g.h, g.w, g.h, 0, 0, g.w, g.h);
+					const px = x.getImageData(0, 0, g.w, g.h).data; let on = 0; for (let i = 3; i < px.length; i += 4) if (px[i] > 40) on++;
+					if (on < 20) out.bad.push(`${d}/${anim}${shiny ? '/s' : ''} row ${row} frame ${fr}: ${on}px`);
+				}
+				out.n++;
+			}
+			out.srcs = [...out.srcs].sort();
+			return out;
+		}, FOLLOW_DEX);
+		A(f.bad.length === 0 && f.n === 96 && JSON.stringify(f.srcs) === '["assets/pokemon/N/follow/Idle.png","assets/pokemon/N/follow/Walk.png","assets/pokemon/N/follow/s/Idle.png","assets/pokemon/N/follow/s/Walk.png"]',
+			`the 24 fallback sets load through G.Sprites.sheet from {dex}/follow/ (normal + shiny) and every row and frame decodes to pixels (${f.n} sheets)`, JSON.stringify({ bad: f.bad.slice(0, 6), srcs: f.srcs }));
 	}
 
 	// ---- a normal run: each new non-legendary is a real candidate, and really spawns
@@ -256,8 +317,7 @@ try {
 		};
 	});
 	A(await E(() => __T.start('normal')) === 'normal', 'a normal run starts');
-	{
-		const r = await E((NEW_DEX, NEW_LEG) => {
+	const SPAWN_CHECK = (NEW_DEX, NEW_LEG) => {
 			const out = [];
 			const T = G.Enemies.TIERS;
 			for (const d of NEW_DEX) {
@@ -291,7 +351,9 @@ try {
 			G.EnemyMgr.clear();
 			G.Enemies.rollRun();
 			return out;
-		}, NEW_DEX, NEW_LEG);
+	};
+	{
+		const r = await E(SPAWN_CHECK, NEW_DEX, NEW_LEG);
 		const reg = r.filter(x => x.tiers.length), bossOnly = r.filter(x => !x.tiers.length);
 		A(reg.length === 12 && reg.every(x => x.cast && x.inBag && x.spawned), `the ${reg.length} new regular enemies are tier candidates of a normal run, join its cast through the hooks, sit in its spawn bag and really spawn`, JSON.stringify(r));
 		A(bossOnly.map(x => x.d).join() === '1020,1021' && bossOnly.every(x => x.boss && x.bossSpawned), 'Gouging Fire and Raging Bolt (rarity 5, not legendary) are boss-only, like Walking Wake: they come as a normal run\'s bosses', JSON.stringify(bossOnly));
@@ -299,6 +361,16 @@ try {
 		A([865, 879, 990, 1020, 1021].every(d => asBoss.includes(d)) && r.filter(x => x.boss).every(x => x.bossSpawned), `the boss-eligible new ones spawn as bosses (${asBoss.join(', ')})`);
 		const beh = Object.fromEntries(r.map(x => [x.d, x.beh]));
 		A(beh[683] === 'healer' && beh[879] === 'tank' && beh[990] === 'zoner', 'roles fit: Aromatisse heals (its Healer ability), Copperajah tanks, Iron Treads lays zones', JSON.stringify(beh));
+	}
+	// B1b: the 23 follower-based non-legendaries the same way
+	{
+		const r = await E(SPAWN_CHECK, FOLLOW_DEX, FOLLOW_LEG);
+		const reg = r.filter(x => x.tiers.length);
+		A(r.length === 23 && reg.length === 23 && reg.every(x => x.cast && x.inBag && x.spawned), `the ${reg.length} follower-based regular enemies are tier candidates of a normal run, join its cast through the hooks, sit in its spawn bag and really spawn`, JSON.stringify(r.filter(x => !(x.cast && x.inBag && x.spawned))));
+		const asBoss = r.filter(x => x.boss);
+		A(asBoss.length >= 5 && asBoss.every(x => x.bossSpawned), `the boss-eligible ones spawn as bosses (${asBoss.map(x => x.d).join(', ')})`, JSON.stringify(asBoss));
+		const beh = Object.fromEntries(r.map(x => [x.d, x.beh]));
+		A(beh[866] === 'shielder', 'Mr. Rime shields its allies like Mr. Mime and Mime Jr.', JSON.stringify(beh));
 	}
 
 	// ---- drawn on screen: several new enemies around the player, walking with their own sheets
@@ -337,10 +409,81 @@ try {
 		await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); G.EnemyMgr.clear(); });
 	}
 
+	// ---- B1b: follower-based enemies drawn in a run: real pixels, their neighbours' size, facing the way they walk
+	{
+		await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); });
+		await E(() => __T.start('normal'));
+		const r = await E(async () => {
+			G.Spawner.update = () => {}; G.Events.update = () => {};
+			G.EnemyMgr.clear();
+			const pl = G.Game.player;
+			const mk = (d, x, y) => { const p = G.DEX_BY[d]; const e = new G.Enemy({ dex: d, name: p.name, behavior: 'chase', hp: 500, spd: 14, dmg: 0, xp: 1 }, x, y, { hp: 1, spd: 1, dmg: 1 }); G.EnemyMgr.add(e); return e; };
+			await G.Sprites.preload([514, 515, 513, 731, 732, 733, 878, 879, 839, 892], 8000);
+			// one Simisear left of the player (walks right), one right of it (walks left)
+			const L = mk(514, pl.x - 300, pl.y), R = mk(514, pl.x + 300, pl.y);
+			G.Game.togglePause(); await new Promise(res => setTimeout(res, 700)); G.Game.togglePause();
+			// the facing the chase code gives them (dirFromAngle towards the player): set from where they stand, so trees on
+			// their path (the pathing steers round them) don't make the check depend on the map
+			for (const e of [L, R]) { e.x = pl.x + (e === L ? -200 : 200); e.y = pl.y; e.anim.dir = G.Sprites.dirFromAngle(Math.atan2(pl.y - e.y, pl.x - e.x)); }
+			const snap = (e, full) => {
+				const cv = document.createElement('canvas'); cv.width = 240; cv.height = 240;
+				const x = cv.getContext('2d', { willReadFrequently: true }); x.imageSmoothingEnabled = false;
+				if (full) { x.translate(120 - e.x, 200 - e.y); e.draw(x); } else { const f = e.anim.frame; e.anim.frame = 0; e.anim.draw(x, 120, 200); e.anim.frame = f; }
+				const d = x.getImageData(0, 0, 240, 240).data, m = new Uint8Array(240 * 240);
+				let on = 0, y0 = 240, y1 = -1;
+				for (let i = 0; i < m.length; i++) if (d[i * 4 + 3] > 200) { m[i] = 1; on++; const y = (i / 240) | 0; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+				return { on, h: y1 - y0 + 1, m };
+			};
+			const iou = (a, b, flip) => { let i = 0, u = 0; for (let y = 0; y < 240; y++) for (let x = 0; x < 240; x++) { const p = a[y * 240 + x], q = b[y * 240 + (flip ? 239 - x : x)]; if (p && q) i++; if (p || q) u++; } return u ? i / u : 0; };
+			const fl = snap(L, true), fr = snap(R, true);
+			const sl = snap(L), sr = snap(R);
+			const wm = G.Sprites.animMeta(514, 'Walk');
+			const out = { dirL: L.anim.dir, dirR: R.anim.dir, rowL: G.Sprites.rowOf(514, L.anim.dir, wm), rowR: G.Sprites.rowOf(514, R.anim.dir, wm),
+				base: L.anim.base, onL: fl.on, onR: fr.on, mirror: +iou(sl.m, sr.m, true).toFixed(2), same: +iou(sl.m, sr.m, false).toFixed(2) };
+			// size: drawn height (frame 0, facing down) next to its SpriteCollab neighbours
+			const H = {};
+			for (const d of [513, 514, 515, 731, 732, 733, 878, 879, 839, 892]) { const e = mk(d, pl.x, pl.y - 400); e.anim.dir = 0; e.anim.loop('Walk'); H[d] = snap(e).h; }
+			out.H = H;
+			G.EnemyMgr.clear();
+			return out;
+		});
+		A(r.base === 'Walk' && r.onL > 150 && r.onR > 150, `a follower-based enemy (Simisear) walks in a run and is drawn with real pixels (${r.onL} / ${r.onR} opaque px)`, JSON.stringify(r));
+		A([1, 2, 3].includes(r.dirL) && [5, 6, 7].includes(r.dirR) && r.rowL === 1 && r.rowR === 3, `it faces the way it walks: heading right it uses the sheet's Right row, heading left the Left row (dirs ${r.dirL} / ${r.dirR})`, JSON.stringify(r));
+		A(r.mirror > 0.6 && r.mirror > r.same + 0.1, `facing flips: the left-walking one is the right-walking one mirrored (overlap mirrored ${r.mirror} vs as is ${r.same})`, JSON.stringify(r));
+		const H = r.H, near = (a, b) => H[a] >= H[b] * 0.8 && H[a] <= H[b] * 1.25;
+		A(near(514, 515) && H[732] > H[731] && H[732] <= H[733] * 1.15 && H[878] < H[879] && H[839] > H[514],
+			`drawn at their neighbours' size: Simisear ~ Simisage (${H[514]} / ${H[515]} px), Trumbeak between Pikipek and Toucannon (${H[731]} < ${H[732]} ~ ${H[733]}), Cufant under Copperajah (${H[878]} < ${H[879]}), Coalossal bigger than Simisear`, JSON.stringify(H));
+		if (SHOTS) {
+			// close-ups: follower-based ones next to their SpriteCollab neighbours, walking
+			for (const [name, ids] of [['b1b_simisear_simipour_vs_simisage_pansear.png', [513, 514, 515, 516]], ['b1b_pikipek_trumbeak_toucannon.png', [731, 732, 733]],
+				['b1b_cufant_copperajah_coalossal_zarude.png', [878, 879, 839, 893]], ['b1b_frillish_jellicent_mrrime_mrmime.png', [592, 593, 866, 122]]]) {
+				await E(async ids => {
+					G.EnemyMgr.clear(); const pl = G.Game.player;
+					await G.Sprites.preload(ids, 8000);
+					ids.forEach((d, i) => { const p = G.DEX_BY[d]; const e = new G.Enemy({ dex: d, name: p.name, behavior: 'chase', hp: 500, spd: 8, dmg: 0, xp: 1 }, pl.x - 180 + i * 120, pl.y - 90, { hp: 1, spd: 1, dmg: 1 }); G.EnemyMgr.add(e); });
+					if (G.Game.state !== 'playing') G.Game.togglePause();
+				}, ids);
+				await sleep(700);
+				await shot(name);
+				await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); });
+			}
+			// a crowd of all 24 around the player
+			await E(async FOLLOW_DEX => {
+				G.EnemyMgr.clear(); const pl = G.Game.player;
+				await G.Sprites.preload(FOLLOW_DEX, 8000);
+				FOLLOW_DEX.forEach((d, i) => { const p = G.DEX_BY[d], a = (i / FOLLOW_DEX.length) * Math.PI * 2; G.EnemyMgr.add(new G.Enemy({ dex: d, name: p.name, behavior: 'chase', hp: 500, spd: 14, dmg: 0, xp: 1 }, pl.x + Math.cos(a) * 250, pl.y + Math.sin(a) * 160, { hp: 1, spd: 1, dmg: 1 })); });
+				if (G.Game.state !== 'playing') G.Game.togglePause();
+			}, FOLLOW_DEX);
+			await sleep(900);
+			await shot('b1b_all_24_follower_enemies.png');
+			await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); G.EnemyMgr.clear(); });
+		}
+	}
+
 	// ---- each new legendary is the rift's legendary boss in its arena (a fresh run each; Miraidon last, for the screenshot)
 	{
 		const all = [];
-		for (const d of [1003, 1025, 1008]) {
+		for (const d of [1003, 1025, 893, 1008]) {
 			await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); });
 			await E(() => __T.start('normal'));
 			all.push(await E(async d => {
@@ -361,10 +504,10 @@ try {
 		}
 		if (SHOTS) { await E(() => { const e = G.EnemyMgr.all().find(x => x.legend), pl = G.Game.player; if (e) { pl.x = e.x; pl.y = e.y + 70; } if (G.Game.state !== 'playing') G.Game.togglePause(); }); await sleep(600); await shot('b1_legendary_miraidon_rift_boss.png'); await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); }); }
 		const bad = all.filter(x => !x.inPool || !x.arena || !x.legend || x.dex !== x.d || !x.boss || !x.types.includes(x.type));
-		A(all.length === 3 && bad.length === 0, 'Ting-Lu, Miraidon and Pecharunt are in the rift\'s legendary pool and each comes as the arena\'s legendary boss (an arena of one of its types)', JSON.stringify(all));
-		A(all.every(x => x.drawn), 'each is drawn in the arena with its own sheets (Miraidon: Low-Power Mode; Ting-Lu: the full "Temp" sheet)', JSON.stringify(all.map(x => [x.d, x.drawn])));
-		const ach = await E(legs => legs.map(d => !!G.AchDefs.LIST.find(a => a.dex === d)), NEW_LEG);
-		A(ach.every(Boolean), 'each new legendary gets its "defeat" achievement like the others (achievements.js)', JSON.stringify(ach));
+		A(all.length === 4 && bad.length === 0, 'Ting-Lu, Miraidon, Pecharunt and (B1b) Zarude are in the rift\'s legendary pool and each comes as the arena\'s legendary boss (an arena of one of its types)', JSON.stringify(all));
+		A(all.every(x => x.drawn), 'each is drawn in the arena with its own sheets (Miraidon: Low-Power Mode; Ting-Lu: the full "Temp" sheet; Zarude: its follower sheet)', JSON.stringify(all.map(x => [x.d, x.drawn])));
+		const ach = await E(legs => legs.map(d => !!G.AchDefs.LIST.find(a => a.dex === d)), [...NEW_LEG, ...FOLLOW_LEG]);
+		A(ach.every(Boolean), 'each new legendary (Zarude too) gets its "defeat" achievement like the others (achievements.js)', JSON.stringify(ach));
 	}
 
 	// ---- the Lexicon: each new Pokémon's entry opens, in English
@@ -372,9 +515,10 @@ try {
 		await E(() => { if (G.Game.state === 'playing') G.Game.togglePause(); G.Game.quit(); G.UI.hideAll(); G.MenuUI.open(); });
 		await sleep(300);
 		// (one of them owned, so its entry shows the sprite rather than the silhouette)
-		await E(() => { G.DB.save.owned[1020] = { at: Date.now(), from: 'gacha' }; G.LexiconUI.open('p'); }); await sleep(250);
+		await E(() => { G.DB.save.owned[1020] = { at: Date.now(), from: 'gacha' }; G.DB.save.owned[839] = { at: Date.now(), from: 'gacha' }; G.LexiconUI.open('p'); }); await sleep(250);
 		const res = [];
-		for (const d of NEW_DEX) {
+		const ALL = { ...NEW, ...FOLLOW };
+		for (const d of [...NEW_DEX, ...FOLLOW_DEX]) {
 			const g = G.DEX_BY[d].gen;
 			await E(g => { const b = document.querySelector(`#lex-body .lex-gens [data-gen="${g}"]`); if (b) b.click(); }, g); await sleep(120);
 			res.push(await E(async d => {
@@ -386,12 +530,13 @@ try {
 				return out;
 			}, d));
 			if (d === 1020) await shot('b1_lexicon_gouging_fire.png');
+			if (d === 839) await shot('b1b_lexicon_coalossal.png');
 			await E(() => { const b = document.getElementById('lexpop-close'); if (b) b.click(); });
 		}
-		const bad = res.filter(x => !x.card || !x.shown || x.key !== 'p:' + x.d || x.h !== NEW[x.d] || !/Ability/.test(x.text) || /[¡¿ñ]|Habilidad|Rareza/.test(x.text));
-		A(bad.length === 0, 'the Lexicon entry of each of the 17 opens, titled with its English name, in English', JSON.stringify(bad.slice(0, 4).map(x => [x.d, x.card, x.shown, x.key, x.h])));
+		const bad = res.filter(x => !x.card || !x.shown || x.key !== 'p:' + x.d || x.h !== ALL[x.d] || !/Ability/.test(x.text) || /[¡¿ñ]|Habilidad|Rareza/.test(x.text));
+		A(bad.length === 0 && res.length === 41, 'the Lexicon entry of each of the 17 + 24 opens, titled with its English name, in English', JSON.stringify(bad.slice(0, 4).map(x => [x.d, x.card, x.shown, x.key, x.h])));
 		const cnt = await E(() => { const L = G.LexiconUI, g0 = L.gen; let n = 0; for (let g = 1; g <= 9; g++) { L.gen = g; n += L.entries('p').length; } L.gen = g0; return n; });
-		A(cnt === 983, `the Lexicon lists all ${cnt} Pokémon`);
+		A(cnt === 1007, `the Lexicon lists all ${cnt} Pokémon`);
 	}
 
 	const missing = notFound.filter(u => !(u.startsWith('/micasurvivor/assets/') && !ASSETS));

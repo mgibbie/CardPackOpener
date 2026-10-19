@@ -478,7 +478,7 @@ G.I18n.add({
   'Puedes borrar tu cuenta cuando quieras (se borran también tu apodo, tus amigos y tus marcas):': 'You can delete your account whenever you want (your nickname, friends and records are deleted too):',
   'Borrar mi cuenta y mi partida': 'Delete my account and my game',
   'MicaSurvivor necesita JavaScript para funcionar. Actívalo para jugar.': 'MicaSurvivor needs JavaScript to work. Please enable it to play.',
-  'Fan game gratuito de supervivencia con 983 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.': 'A free survival fan game with 983 Pokémon from all 9 regions: choose your partner, survive the hordes, evolve your moves, take on legendaries and play co-op with up to 4 friends.',
+  'Fan game gratuito de supervivencia con 1007 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.': 'A free survival fan game with 1007 Pokémon from all 9 regions: choose your partner, survive the hordes, evolve your moves, take on legendaries and play co-op with up to 4 friends.',
   'Guía del juego': 'Game guide',
   // donaciones
   'Apoyar': 'Support', 'Apoyar el proyecto': 'Support the project', 'Donar en Ko-fi': 'Donate on Ko-fi', 'Más información': 'More info',
