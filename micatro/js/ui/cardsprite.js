@@ -13,7 +13,21 @@ export const FACE_W = 142, FACE_H = 190;
 let FX = null;
 const fx = () => (FX || (FX = new CardFX(FACE_W, FACE_H)));
 
-const noGL = () => !fx().ok;
+const noGL = () => !fx().usable();
+
+// A card face must always draw. Its optional layers (seal, stickers, a win sticker, a mod's overlay) each draw
+// inside layer(): one that throws (a sticker sprite that won't decode, a mod's bad cell) is skipped and
+// logged once per layer, instead of aborting the compose and leaving the card blank.
+const warned = new Set();
+export function warnOnce(what, e) {
+  if (warned.has(what)) return;
+  warned.add(what);
+  try { console.warn('micatro: card face ' + what + ' failed:', e && e.message ? e.message : e); } catch (_) { /* no console */ }
+}
+const d0 = (d) => 'card ' + (d && (d.center || d.front || d.id));
+function layer(what, fn) {
+  try { fn(); } catch (e) { warnOnce(what, e); }
+}
 
 /** opts.collection: a collection-style view (the Pokédex, Challenges): win stickers always show. */
 export function composeFace(ctx, d, backKey, opts) {
@@ -34,6 +48,15 @@ export function composeFace(ctx, d, backKey, opts) {
   // A mod's "blind card" (Bunco's Blind Packs): the blind's chip, square in the card's place.
   if (d.blind_card) { drawBlindCard(ctx, d.blind_card); return; }
   const modCard = !!(d.mod || d.atlas);
+  try { composeBase(ctx, d, backKey, center, modCard); } catch (e) {
+    // (the card's own art failed: a stand-in face, never a blank one)
+    warnOnce('art', e);
+    layer('placeholder', () => { ctx.clearRect(0, 0, FACE_W, FACE_H); placeholderFace(ctx, d, false); });
+  }
+  composeOverlays(ctx, d, center, modCard, opts);
+}
+/** The card itself: its art, a playing card's rank / suit (the seal is an overlay: composeOverlays). */
+function composeBase(ctx, d, backKey, center, modCard) {
   const isPlaying = !!d.front || (center && (center.set === 'Default' || center.set === 'Enhanced')) || (modCard && (d.set === 'Default' || d.set === 'Enhanced'));
   if (isPlaying) {
     // a mod enhancement draws its own base; the rank/suit goes on top as usual
@@ -45,9 +68,6 @@ export function composeFace(ctx, d, backKey, opts) {
     const noBase = (center && center.name === 'Stone Card') || !!(d.enh && d.enh.replace);
     if (d.front_atlas && !noBase) { if (!drawSkinFront(ctx, d, null, FACE_W, FACE_H)) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H); }
     else if (d.front && CARDS[d.front] && !noBase) { if (!drawSkinFront(ctx, d, CARDS[d.front].pos, FACE_W, FACE_H)) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H); }
-    // (a mod seal — Pokermon's Pink / Silver — draws its cell from the mod's atlas: engine/view.js seal_atlas / seal_pos)
-    if (d.seal && d.seal_atlas) drawModCell(ctx, d.seal_atlas, d.seal_pos, 0, 0, FACE_W, FACE_H);
-    else if (d.seal && SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
   } else if (modCard) {
     if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
   } else if (center) {
@@ -55,24 +75,46 @@ export function composeFace(ctx, d, backKey, opts) {
   } else {
     drawBack(ctx, backKey);
   }
-  if (d.eternal) drawCell(ctx, 'stickers', STICKER_POS.eternal, 0, 0, FACE_W, FACE_H);
+}
+/** The optional layers over the card, each on its own (layer): one failing never takes the card or the rest. */
+function composeOverlays(ctx, d, center, modCard, opts) {
+  const isPlaying = !!d.front || (center && (center.set === 'Default' || center.set === 'Enhanced')) || (modCard && (d.set === 'Default' || d.set === 'Enhanced'));
+  // (a mod seal — Pokermon's Pink / Silver — draws its cell from the mod's atlas: engine/view.js seal_atlas / seal_pos)
+  if (isPlaying && d.seal) layer('seal', () => {
+    if (d.seal_atlas) drawModCell(ctx, d.seal_atlas, d.seal_pos, 0, 0, FACE_W, FACE_H);
+    else if (SEAL_POS[d.seal]) drawCell(ctx, 'centers', SEAL_POS[d.seal], 0, 0, FACE_W, FACE_H);
+  });
+  if (d.eternal) layer('eternal sticker', () => drawCell(ctx, 'stickers', STICKER_POS.eternal, 0, 0, FACE_W, FACE_H));
   // mod stickers (view_card mod_stickers: [{atlas, pos}]) and a linked group's chain (view_card group: Bunco)
-  for (const st of d.mod_stickers || []) drawModCell(ctx, st.atlas, st.pos, 0, 0, FACE_W, FACE_H);
-  if (d.group) drawModCell(ctx, 'bunco_link', { x: (d.group - 1) % 5, y: 0 }, 0, 0, FACE_W, FACE_H);
-  if (d.perishable) drawCell(ctx, 'stickers', STICKER_POS.perishable, 0, 0, FACE_W, FACE_H);
-  if (d.rental) drawCell(ctx, 'stickers', STICKER_POS.rental, 0, 0, FACE_W, FACE_H);
+  for (const st of d.mod_stickers || []) layer('mod sticker ' + (st && st.atlas), () => drawModCell(ctx, st.atlas, st.pos, 0, 0, FACE_W, FACE_H));
+  if (d.group) layer('link', () => drawModCell(ctx, 'bunco_link', { x: (d.group - 1) % 5, y: 0 }, 0, 0, FACE_W, FACE_H));
+  if (d.perishable) layer('perishable sticker', () => drawCell(ctx, 'stickers', STICKER_POS.perishable, 0, 0, FACE_W, FACE_H));
+  if (d.rental) layer('rental sticker', () => drawCell(ctx, 'stickers', STICKER_POS.rental, 0, 0, FACE_W, FACE_H));
   // the joker's win sticker: the highest stake this player has won with it (ui/stickers.js; Balatro's sticker_run),
   // or a Pokermon run's special one (Nuzlocke Aipom / Monotype Ambipom / both Arceus, ringed in its stake's colour)
-  if ((center && center.set === 'Joker') || (modCard && d.set === 'Joker')) {
+  if ((center && center.set === 'Joker') || (modCard && d.set === 'Joker')) layer('win sticker', () => {
     const st = winStickerInfo(d.win_key || d.center, opts && opts.collection);
-    if (st && st.special) drawSpecialSticker(ctx, st);
-    else if (st) drawCell(ctx, 'stickers', WIN_POS[st.stake], 0, 0, FACE_W, FACE_H);
-  }
-  if (d.debuff && noGL()) {
+    if (st && st.special) {
+      // (its own save/restore is skipped when its sprite throws: the context's state is put back here)
+      ctx.save();
+      try { drawSpecialSticker(ctx, st); } finally { ctx.restore(); }
+    } else if (st && WIN_POS[st.stake]) drawCell(ctx, 'stickers', WIN_POS[st.stake], 0, 0, FACE_W, FACE_H);
+  });
+  if (d.debuff && noGL()) layer('debuff', () => {
     ctx.fillStyle = 'rgba(200,40,40,.35)'; ctx.fillRect(0, 0, FACE_W, FACE_H);
     ctx.strokeStyle = 'rgba(255,60,60,.9)'; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.moveTo(10, 10); ctx.lineTo(FACE_W - 10, FACE_H - 10); ctx.moveTo(FACE_W - 10, 10); ctx.lineTo(10, FACE_H - 10); ctx.stroke();
-  }
+  });
+}
+/** Did a compose leave the face empty? (a face-up card always draws something; a row through the middle is
+ *  enough: every face — art, placeholder, tag square, blind chip — covers it). A canvas that can't be read is
+ *  taken as drawn. */
+export function faceLooksBlank(ctx) {
+  try {
+    const px = ctx.getImageData(0, FACE_H >> 1, FACE_W, 1).data;
+    for (let i = 3; i < px.length; i += 4) if (px[i] !== 0) return false;
+    return true;
+  } catch (e) { return false; }
 }
 /** A tag cell (base 'tags' atlas, or a mod atlas) as a square centred on the card face. */
 function drawTagCell(ctx, atlas, pos, size) {
@@ -157,6 +199,9 @@ export class CardSprite {
     this.inner.appendChild(this.face);
     el.appendChild(this.shadow); el.appendChild(this.inner);
     this.base = document.createElement('canvas'); this.base.width = FACE_W; this.base.height = FACE_H; this.base._ver = 0;
+    this.bctx = this.base.getContext('2d');
+    this.blank = null;   // {at, n}: the last compose drew nothing — retried from frame()
+    this.fxGen = -1;
     this.T = { x: 0, y: 0, r: 0, s: 1, o: 1 };
     this.tgt = { x: 0, y: 0, r: 0, s: 1, o: 1 };
     this.z = 0;
@@ -188,8 +233,7 @@ export class CardSprite {
     this.vkey = k;
     this.fd = fd;
     this.animIdx = -1;
-    composeFace(this.base.getContext('2d'), fd, this.board.backKey);
-    this.base._ver++;
+    this.compose(fd);
     this.drawStatic();
     this.setDeco(deco);
     const soul = soulLayer(fd);
@@ -202,6 +246,22 @@ export class CardSprite {
     this.el.classList.toggle('is-mod', !!this.d.mod);
     this.el.classList.toggle('is-tag', !!this.d.tag_card);
     this.el.classList.toggle('wee', this.d.center === 'j_wee');
+  }
+  /** Compose the face into the base canvas. It never throws, and a compose that drew nothing (a face-up card
+   *  whose art wasn't drawable just then: an atlas image the browser couldn't decode under memory pressure, an
+   *  iPhone in a long Pokermon run) is retried from frame() with a backoff, instead of staying blank for the rest
+   *  of the run (the face is cached by vkey, so nothing else would redraw it). */
+  compose(fd) {
+    const ctx = this.bctx || this.base.getContext('2d');
+    try { composeFace(ctx, fd, this.board.backKey); } catch (e) { warnOnce('compose', e); }
+    this.base._ver++;
+    // (checked for mod art only: a mod atlas is the image that can be "loaded" yet draw nothing — Pokermon's
+    // 4260x13110 joker sheet on an iPhone; the base atlases are small, and a read-back per compose isn't free)
+    if (fd.facing !== 'back' && modAtlasesOf(fd).length && faceLooksBlank(ctx)) {
+      const n = this.blank ? this.blank.n + 1 : 0;
+      this.blank = { at: (this.board.now || 0) + Math.min(4, 0.25 * Math.pow(2, n)), n };
+      if (n === 0) warnOnce('art (drew nothing; retrying)', d0(fd));
+    } else this.blank = null;
   }
   /** A mod UI's DOM decorations over the face (Pokermon's type pill + energy pips). */
   setDeco(deco) {
@@ -218,7 +278,7 @@ export class CardSprite {
     this.animIdx = idx;
     const fpr = a.fpr || a.frames;
     const pos = { x: idx % fpr, y: Math.floor(idx / fpr) };
-    composeFace(this.base.getContext('2d'), { ...this.fd, atlas: a.atlas || this.fd.atlas, pos }, this.board.backKey);
+    try { composeFace(this.bctx || this.base.getContext('2d'), { ...this.fd, atlas: a.atlas || this.fd.atlas, pos }, this.board.backKey); } catch (e) { warnOnce('animation frame', e); }
     this.base._ver++;
     if (!this.needsFx() || noGL()) this.drawStatic();
     if (this.soul && a.soulAtlas) {
@@ -273,12 +333,18 @@ export class CardSprite {
     if (this.flipAnim) {
       const F = this.flipAnim, p = Math.min(1, (now - F.start) / F.dur);
       sx = Math.abs(Math.cos(Math.PI * p));
-      if (p >= 0.5 && !F.swapped) { F.swapped = true; this.setData(F.data); }
+      if (p >= 0.5 && !F.swapped) { F.swapped = true; try { this.setData(F.data); } catch (e) { warnOnce('flip', e); } }
       if (p >= 1) {
         this.flipAnim = null;
         if (this.flipNext) { const N = this.flipNext; this.flipNext = null; this.startFlip(N.data, N.dur); }
       }
     }
+    // a compose that drew nothing: try again (backoff up to 4 s) until the art draws
+    if (this.blank && now >= this.blank.at && !this.flipAnim) { const fd = this.fd || this.d; this.compose(fd); this.drawStatic(); }
+    // the card shaders' WebGL context was lost or came back: repaint from the composed face (a lost context
+    // renders nothing, so every edition / dissolving card would otherwise stay blank)
+    const gen = fx().gen;
+    if (gen !== this.fxGen) { const was = this.fxGen; this.fxGen = gen; if (was !== -1) { this.lastFx = 0; if (noGL()) this.drawStatic(); } }
     // ambient sway + hover tilt (Balatro's tilt_var)
     const amb = this.hover ? 0 : 0.012 * Math.sin(now * 1.3 + this.phase);
     this.tilt.x += (this.tilt.tx - this.tilt.x) * Math.min(1, dt * 12);
@@ -303,7 +369,7 @@ export class CardSprite {
       const D = this.dissolve;
       let p = Math.min(1, (now - D.start) / D.dur);
       const amt = D.reverse ? 1 - p : p;
-      fx().render(this.base, this.face, { edition: this.d.facing !== 'back' ? this.d.edition : null, debuff: this.d.debuff, dissolve: amt, t: now, fx: [now / 28 + this.tilt.y * 0.02, now], extra: this.extra });
+      this.renderFx({ edition: this.d.facing !== 'back' ? this.d.edition : null, debuff: this.d.debuff, dissolve: amt, t: now, fx: [now / 28 + this.tilt.y * 0.02, now], extra: this.extra });
       if (p >= 1) {
         const cb = D.cb; this.dissolve = null;
         if (D.reverse) this.drawStatic();
@@ -311,7 +377,16 @@ export class CardSprite {
       }
     } else if (this.needsFx() && !noGL() && now - this.lastFx > (this.board.lowFx ? 0.08 : 0.033)) {
       this.lastFx = now;
-      fx().render(this.base, this.face, { edition: this.d.edition, debuff: this.d.debuff, dissolve: 0, t: now, fx: [now / 28 + (this.tilt.x + this.tilt.y) * 0.03 + T.r * 3, now], extra: this.extra });
+      this.renderFx({ edition: this.d.edition, debuff: this.d.debuff, dissolve: 0, t: now, fx: [now / 28 + (this.tilt.x + this.tilt.y) * 0.03 + T.r * 3, now], extra: this.extra });
+    }
+  }
+  /** The face through the card shaders; a shader pass that throws draws the plain face instead (never none). */
+  renderFx(opts) {
+    try { fx().render(this.base, this.face, opts); } catch (e) {
+      warnOnce('shader', e);
+      const c = this.face.getContext('2d');
+      c.clearRect(0, 0, FACE_W, FACE_H);
+      c.globalAlpha = 1 - (opts.dissolve || 0); c.drawImage(this.base, 0, 0); c.globalAlpha = 1;
     }
   }
   /** Glass shatter: shards fly apart from the card's spot (Canvas2D overlay). */
