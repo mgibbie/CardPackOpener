@@ -3,7 +3,7 @@
 import {
   G, P_CENTERS, localize, play_sound, ease_dollars, level_up_hand, update_hand_text, card_eval_status_text,
   create_card, poll_edition, pseudorandom, pseudoseed, pseudorandom_element,
-  defineConsumables, cfg, energy_max, energy_increase, type_sticker_applied, poke_convert_cards_to,
+  defineConsumables, cfg, energy_max, energy_increase, type_sticker_applied, poke_convert_cards_to, can_increase_energy, energy_values,
   pseudorandom_probability, get_probability_vars,
 } from '../api.js';
 import { get_current_pool, P_SEALS } from '../../../js/engine/core.js';
@@ -50,25 +50,42 @@ function poll_seal(args = {}) {
 
 const juice = (def) => ({ in_pool() { return false; }, ...def });
 
+/**
+ * OWNER HOUSE RULE (not the Lua): Berry Juice Energy targets like every other Energy card —
+ * the picked joker if it can take it (a picked one that can't refuses the card), else the
+ * LEFTMOST joker that can take it, skipping non-Pokémon and capped ones; none -> refused.
+ * The Lua (zberryjuice.lua) takes the plain leftmost joker and only checks it is a Pokémon,
+ * so a capped or non-Pokémon leftmost joker wasted it or blocked it.
+ * "Can take it" = a Pokémon (ptype) energize() can grow (a stage or a Tera sticker, a field in
+ * energy_values) that is under its Energy limit.
+ */
+const ENERGY_FIELDS = Object.keys(energy_values);
+function juice_energy_ok(c) {
+  const ex = c && c.ability && c.ability.extra;
+  if (!ex || typeof ex !== 'object' || !ex.ptype) return false;
+  if (!((c.config && c.config.center.stage) || type_sticker_applied(c))) return false;
+  if (!ENERGY_FIELDS.some((f) => typeof ex[f] === 'number')) return false;
+  return can_increase_energy(c);
+}
+function juice_energy_target() {
+  if (G.jokers.highlighted && G.jokers.highlighted.length === 1) return juice_energy_ok(G.jokers.highlighted[0]) ? G.jokers.highlighted[0] : undefined;
+  return (G.jokers.cards || []).find(juice_energy_ok);
+}
+
 defineConsumables({
   berry_juice: juice({ loc_vars() {} }),
 
-  // Energy: Energize the selected / leftmost Pokémon (and lose interest this round, like Double Rainbow).
+  // Energy: Energize the selected / leftmost valid Pokémon (owner house rule above; and lose interest
+  // this round, like Double Rainbow).
   berry_juice_energy: juice({
     loc_vars(self, info_queue) {
       info_queue.push({ set: 'Other', key: 'energize' });
       return { vars: [cfg('unlimited_energy') ? localize('poke_unlimited_energy') : energy_max + (G.GAME.energy_plus || 0)] };
     },
-    can_use() {
-      let choice;
-      if (G.jokers.highlighted && G.jokers.highlighted.length === 1) choice = G.jokers.highlighted[0];
-      else if (G.jokers.cards && G.jokers.cards.length > 0) choice = G.jokers.cards[0];
-      else return false;
-      const ex = choice.ability && choice.ability.extra;
-      return !!(ex && typeof ex === 'object' && ex.ptype);
-    },
+    can_use() { return !!juice_energy_target(); },
     use() {
-      const choice = G.jokers.highlighted && G.jokers.highlighted.length === 1 ? G.jokers.highlighted[0] : G.jokers.cards[0];
+      const choice = juice_energy_target();
+      if (!choice) return;
       play_sound('poke_energy_use', 1, 0.5);
       if (choice.config && choice.config.center.stage && !type_sticker_applied(choice)) energy_increase(choice, choice.ability.extra.ptype);
       else if (type_sticker_applied(choice)) energy_increase(choice, type_sticker_applied(choice));

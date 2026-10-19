@@ -1684,6 +1684,19 @@ function reroll_shop() {
   if (ACTIVE_MODS.length) callHook('reroll_shop'); // (Lua G.FUNCS.reroll_shop wraps: BETMMA's 4D Boosters / 4D Vouchers / Reroll Aisle)
 }
 
+/**
+ * G.jokers.highlighted = exactly the joker(s) the UI has picked for this Use (joker_targets; none
+ * when absent). Only a Use / Buy & Use reads it, so it is set fresh on each one: a pick left over
+ * from an earlier Use (refused, or picked then un-picked) must not aim a later Energy / item at a
+ * joker the player no longer has selected (a tester's Grass Energy was refused on Buy & Use and
+ * from the slot with no joker picked, and worked only once the Grass joker was picked).
+ */
+function set_joker_targets(ids) {
+  G.jokers.highlighted.length = 0;
+  for (const j of G.jokers.cards) j.highlighted = false;
+  for (const id of ids || []) { const t = find_card(id); if (t && t.area === G.jokers) G.jokers.add_to_highlighted(t); }
+}
+
 function buy_from_shop(c1, use) {
   if (!use && !check_for_buy_space(c1)) return false;
   G.E_MANAGER.add_event(() => {
@@ -1967,7 +1980,7 @@ function applyAction(a) {
       }
       // joker_targets: the highlighted joker some mod consumables act on (Pokermon energy /
       // evolution items: "use on the selected joker"). Base-game consumables never read it.
-      if (a.joker_targets) { G.jokers.highlighted.length = 0; for (const j of G.jokers.cards) j.highlighted = false; for (const id of a.joker_targets) { const t = find_card(id); if (t && t.area === G.jokers) G.jokers.add_to_highlighted(t); } }
+      set_joker_targets(a.joker_targets);
       if (c.area === G.pack_cards) {
         can(inPack(), 'no pack open');
         // A mod may decide whether this pack card can be taken (Reverie: Cine cards / Crazy Lucky picks need a free slot).
@@ -2017,6 +2030,7 @@ function applyAction(a) {
       if (c.area === G.shop_vouchers || c.ability.set === 'Voucher') { use_card(c); break; } // (a voucher in a shop slot: mods' Voucher Tycoon)
       // (a booster in any shop slot opens: Reverie's Cine shops stock packs in the card / voucher slots)
       if (c.area === G.shop_booster || c.ability.set === 'Booster') { use_card(c); break; }
+      if (a.use) set_joker_targets(a.joker_targets); // (Buy & Use acts on the picked joker too, as in Balatro)
       if (a.use) can(c.ability.consumeable && c.can_use_consumeable(), 'cannot use now');
       buy_from_shop(c, !!a.use);
       break;

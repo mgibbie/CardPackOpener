@@ -274,6 +274,17 @@ export function poke_get_family_list(name) {
 
 /** Highest stage of the card's line (ignoring megas / aux forms); random among branches. */
 export function get_highest_evo(card) {
+  const evos = highest_evo_options(card);
+  if (!evos) return false;
+  if (evos.length === 1) return evos[0];
+  return pseudorandom_element(evos, pseudoseed('highest'))[0];
+}
+
+/** Whether get_highest_evo would evolve this card (no RNG drawn: safe inside a can_use). */
+export function can_evolve_to_highest(card) { return !!highest_evo_options(card); }
+
+/** get_highest_evo's candidates (the highest-stage forms of the line), or false when there are none. */
+function highest_evo_options(card) {
   const name = nameOf(card);
   const prefix = 'j_' + (card.config.center.poke_custom_prefix || 'poke') + '_';
   let found_family = null;
@@ -294,8 +305,7 @@ export function get_highest_evo(card) {
     const evo_name = fname(found_family[max - 1]);
     if (P_CENTERS[prefix + evo_name] && max_stage === P_CENTERS[prefix + evo_name].stage) { evos.push(evo_name); max = max - 1; } else break;
   }
-  if (evos.length === 1) return evos[0];
-  return pseudorandom_element(evos, pseudoseed('highest'))[0];
+  return evos;
 }
 
 export function get_previous_from_mega(name, prefix, full_key) {
