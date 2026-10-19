@@ -951,6 +951,9 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 .mode-group .mode-card { flex: 1; }
 .mode-sub { font-size: 14px; padding: 4px 12px; display: flex; gap: 8px; align-items: center; justify-content: center; }
 .modes-h { font-size: 15px; color: var(--gold); margin: 12px 0 6px; }
+/* MicaSurvivor (DLC D0b): an Expedition mode not playable yet ("Coming soon": reachable, not startable) */
+.mode-card.soon { opacity: .62; cursor: default; }
+.mode-card.soon .soon-tag { color: var(--gold); font-weight: bold; letter-spacing: .5px; }
 .modes-mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 8px; }
 .mod-tog {
   appearance: none; cursor: pointer; text-align: left; color: inherit; font: inherit;
