@@ -166,12 +166,12 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   start('VOLT');
   const v = add('j_poke_voltorb');
   let r = play(hand(['S_A']));
-  ok(r.total.mult === 2 && v.debuff && v.ability.fainted === G.GAME.round, 'voltorb: X2 then faints (debuffed)', { t: r.total, d: v.debuff });
+  ok(r.total.mult === 1.75 && v.debuff && v.ability.fainted === G.GAME.round, 'voltorb: X1.75 then faints (debuffed)' + ' (Pokermon 3.9.1 data)', { t: r.total, d: v.debuff });
   r = play(hand(['S_A']));
   ok(r.total.mult === 1, 'voltorb: fainted for the rest of the round', r.total);
   winRound(); nextRound();
   r = play(hand(['S_A']));
-  ok(r.total.mult === 2, 'voltorb: back the next round', r.total);
+  ok(r.total.mult === 1.75, 'voltorb: back the next round', r.total);
 }
 {
   start('VOLT2');
@@ -188,7 +188,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   add('j_poke_electrode');
   const d0 = G.GAME.dollars;
   const r = play(hand(['S_A']));
-  ok(r.total.mult === 2.5 && G.GAME.dollars === d0 + 3, 'electrode: X2.5 and $3, then faints', { t: r.total, d: G.GAME.dollars - d0 });
+  ok(r.total.mult === 2.25 && G.GAME.dollars === d0 + 3, 'electrode: X2.25 and $3, then faints' + ' (Pokermon 3.9.1 data)', { t: r.total, d: G.GAME.dollars - d0 });
 }
 
 // ---------------------------------------------------------------- Exeggcute / Exeggutor

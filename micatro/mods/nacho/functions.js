@@ -177,7 +177,7 @@ export function calc_boss_trigger(context) {
     } else if ((context.press_play || context.pre_discard) && boss_name === 'The Serpent' && G.hand.highlighted.length > 3) {
       B.serpentcheck = true;
     } else if (context.press_play) {
-      // The Hook, The Tooth, Crimson Heart, Cerulean Bell, Chartreuse Chamber (cgoose)
+      // The Hook, The Tooth, Crimson Heart, Cerulean Bell, Chartreuse Chamber (cgoose; Pokermon 3.9.1: bl_poke_iridescent_hacker)
       let jokdebuff = false;
       for (const j of G.jokers.cards) if (j.debuff) { jokdebuff = true; break; }
       let forcedselection = false;
@@ -188,7 +188,7 @@ export function calc_boss_trigger(context) {
       }
       if ((boss_name === 'The Hook' && (G.hand.cards.length - G.hand.highlighted.length) > 0)
         || boss_name === 'The Tooth'
-        || ((boss_name === 'Crimson Heart' || boss_name === 'bl_poke_cgoose' || boss_name === 'cgoose') && jokdebuff)
+        || ((boss_name === 'Crimson Heart' || boss_name === 'bl_poke_cgoose' || boss_name === 'cgoose' || boss_name === 'bl_poke_iridescent_hacker') && jokdebuff)
         || (boss_name === 'Cerulean Bell' && forcedselection)) {
         B.nametracker = undefined;
         return true;

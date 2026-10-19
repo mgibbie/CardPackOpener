@@ -15,7 +15,7 @@ ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_C
 ok(STATUS.PORTED_FILES['pokemon/pokejokers_13.lua'].length === 14, 'defs: 14 from pokejokers_13.lua');
 ok(['jirachi_banker', 'jirachi_booster', 'jirachi_power', 'jirachi_invis', 'jirachi_fixer', 'jirachi_copy', 'jirachi_negging'].every((n) => P_CENTERS['j_poke_' + n].in_pool(P_CENTERS['j_poke_' + n]) === false),
   'the Jirachi wish forms never appear in a pool');
-ok(P_CENTERS.j_poke_jirachi_copy.config.extra.ptype === 'Metal' && P_CENTERS.j_poke_jirachi_copy.stage === 'Legendary' && P_CENTERS.j_poke_jirachi_copy.atlas === 'poke_AtlasJokersBasicGen03',
+ok(P_CENTERS.j_poke_jirachi_copy.config.extra.ptype === 'Metal' && P_CENTERS.j_poke_jirachi_copy.stage === 'Legendary' && P_CENTERS.j_poke_jirachi_copy.atlas === 'poke_AtlasJokersBasicGen03391', // (the 3.9.1 Gen03 sheet: index.js to391)
   'jirachi_copy: full static definition (type, stage, art)');
 
 // ---------------------------------------------------------------- Snorunt / Glalie / Froslass

@@ -289,7 +289,7 @@ export const POKE_UI = {
       const disguised = sprite.area !== 'jokers' || (sprite.fd && sprite.fd !== d);
       const own = P_CENTERS[d.center];
       if (disguised && own) {
-        const src = spriteCanvas(isShiny(d) ? 'poke_AtlasJokersBasicNatdexShiny' : 'poke_AtlasJokersBasicNatdex', own.pos);
+        const src = spriteCanvas(isShiny(d) ? 'poke_AtlasJokersBasicNatdexShiny391' : 'poke_AtlasJokersBasicNatdex391', own.pos); // (Zorua / Zoroark: the 3.9.1 Natdex sheet, index.js to391)
         if (src) out.push({ key: 'poke_zorua', fs: ZORUA_FS, src, u: { zorua: [fx0, now] } });
       }
     }

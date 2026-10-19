@@ -85,14 +85,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length === 25, 'defs: 25 fro
   const j = add('j_poke_larvitar');
   const fh = hand(['S_A', 'H_A', 'D_A', 'S_K', 'H_K']);
   let r = play(fh);
-  ok(r.total.chips === 40 + 53 && fh.every((c) => c.ability.perma_bonus === 8) && j.ability.extra.full_houses === 1, 'larvitar: Full House cards gain +8 chips', [r.total, fh.map((c) => c.ability.perma_bonus)]);
+  ok(r.total.chips === 40 + 53 && fh.every((c) => c.ability.perma_bonus === 10) && j.ability.extra.full_houses === 1, 'larvitar: Full House cards gain +10 chips' + ' (Pokermon 3.9.1 data)', [r.total, fh.map((c) => c.ability.perma_bonus)]);
   j.ability.extra.full_houses = 6;
   winRound();
   ok(key(j) === 'j_poke_pupitar' && j.ability.extra.full_houses === 0, 'larvitar -> pupitar after 6 Full Houses', [key(j), j.ability.extra]);
   nextRound();
   const fh2 = hand(['S_A', 'H_A', 'D_A', 'S_K', 'H_K']);
   play(fh2);
-  ok(fh2.every((c) => c.ability.perma_bonus === 12), 'pupitar: +12 chips', fh2.map((c) => c.ability.perma_bonus));
+  ok(fh2.every((c) => c.ability.perma_bonus === 15), 'pupitar: +15 chips' + ' (Pokermon 3.9.1 data)', fh2.map((c) => c.ability.perma_bonus));
   j.ability.extra.full_houses = 8;
   winRound();
   ok(key(j) === 'j_poke_tyranitar', 'pupitar -> tyranitar after 8 Full Houses', key(j));

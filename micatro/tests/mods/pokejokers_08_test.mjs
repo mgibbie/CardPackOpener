@@ -150,13 +150,13 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
   const r = play(hand(['S_A']));
   ok(r.total.mult === 13, 'teddiursa scores +12 Mult', r.total);
   winRound();
-  ok(key(j) === 'j_poke_ursaring' && j.ability.extra.mult === 12 && j.ability.extra.mult_mod === 3, 'teddiursa -> ursaring keeps its Mult', j.ability.extra);
+  ok(key(j) === 'j_poke_ursaring' && j.ability.extra.mult === 12 && j.ability.extra.mult_mod === 2, 'teddiursa -> ursaring keeps its Mult (Ursaring +2 per skip (Pokermon 3.9.1 data))', j.ability.extra);
   act({ type: 'cash_out' });
   const b = G.shop_booster.cards[0];
   act({ type: 'buy', id: b.sort_id });
   const n0 = G.consumeables.cards.length;
   act({ type: 'skip_booster' });
-  ok(j.ability.extra.mult === 15 && G.consumeables.cards.length === n0 + 1 && G.consumeables.cards[n0].ability.set === 'Item', 'ursaring: +3 Mult and an Item per skip', [j.ability.extra.mult, G.consumeables.cards.map(key)]);
+  ok(j.ability.extra.mult === 14 && G.consumeables.cards.length === n0 + 1 && G.consumeables.cards[n0].ability.set === 'Item', 'ursaring: +2 Mult and an Item per skip' + ' (Pokermon 3.9.1 data)', [j.ability.extra.mult, G.consumeables.cards.map(key)]);
   for (const c of G.consumeables.cards.slice()) c.remove();
   const ms = add('c_poke_moonstone');
   ok(act({ type: 'use', id: ms.sort_id, joker_targets: [j.sort_id] }).ok && j.ability.extra.evolve === true, 'moon stone marks ursaring');
