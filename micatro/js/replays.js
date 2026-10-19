@@ -85,7 +85,14 @@ export function buildMeta(recipe, view, { username = null, engineVersion = recip
     engineVersion: engineVersion | 0,
     username: username || null,
     started: (recipe && recipe.started) || 0,
+    ...(runBadges(v) ? { badges: runBadges(v) } : {}),
   };
+}
+/** A won Pokermon run's Nuzlocke / Monotype badges (view.run_badges.earned) as {nuz?: true, mono?: 'fire'}, or null. */
+function runBadges(v) {
+  const e = v && v.run_badges && v.run_badges.earned;
+  if (!e || (!e.nuz && !e.mono)) return null;
+  return { ...(e.nuz ? { nuz: true } : {}), ...(e.mono ? { mono: String(e.mono).toLowerCase() } : {}) };
 }
 
 /** A run's local replay id: stable for the whole run, so a win's replay is extended (not duplicated)

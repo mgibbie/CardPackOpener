@@ -1,0 +1,335 @@
+// micatro_nuzlocke_test.mjs — Pokermon's Nuzlocke / Monotype run badges in the browser, end to end: the REAL
+// account handler (server/mp.mjs, bundled like the dev server) over an in-memory sqlite D1 stand-in behind a
+// static server, headless Chrome (separate browser contexts = separate devices):
+//   1. the live HUD badges ("Nuzlocke", "Monotype" -> "Monotype: <Type>" once a joker locks it) appear in a
+//      Pokermon run and fit portrait 390x664, desktop 1280x800 and landscape 844x390 without overlapping the
+//      HUD's controls, the tags, the joker/consumable rows, the controls or the deck
+//   2. breaking one: the badge disappears and a toast says why ("Monotype broken: Water joker in a Fire run",
+//      "Nuzlocke broken: sold Charmander"); Run Info's Badges tab explains it
+//   3. a won run (a real engine win): the win screen shows the badges earned, the achievement unlock toasts
+//      show, the leaderboard row carries the tag ({nuz, mono} stored on the board), the run history (Replays)
+//      shows them, and the Achievements screen lists the unlocks + the record (Fire beaten)
+//   4. the account record syncs to a second browser context; a guest's record merges into an account
+//   5. a run without Pokermon shows nothing (no badges, no Badges tab)
+//   6. deck stickers: the won run's deck (b_red) gets the Arceus sticker (both) — on the deck pile, in the New Run
+//      deck select and in Run Info — and a deck with only a plain win shows the plain stake sticker
+// (owner rule 2026-10-18: a non-Pokémon joker breaks BOTH badges — one toast, two lines)
+// Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
+// (MICATRO_MAIN overrides), like micatro_pack_hand_items_test.mjs.
+// Covers micatro/js/ui/progress.js, micatro/js/ui/board.js (renderRunBadges, runBadgeToast), micatro/js/ui/screens.js
+// (achievementsScreen, the win screen / leaderboard / replays badges), micatro/js/ui/main.js, micatro/js/net.js,
+// micatro/mods/pokermon/systems/runbadges.js.
+//   node overworld/tests/micatro_nuzlocke_test.mjs   [SHOTS=<dir> saves screenshots]
+import fs from 'fs';
+import os from 'os';
+import http from 'http';
+import path from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { DatabaseSync } from 'node:sqlite';
+import { buildSync } from 'esbuild';
+import puppeteer from 'puppeteer-core';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, '../../');
+const MAIN = process.env.MICATRO_MAIN || path.resolve(ROOT, '../..');
+const CHROME = process.env.CHROME || [
+	'C:/Program Files/Google/Chrome/Application/chrome.exe',
+	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+	'/opt/chrome/chrome',
+].find(p => fs.existsSync(p));
+const PORT = 9547;
+const SHOTS = process.env.SHOTS || '';
+if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
+let pass = 0, fail = 0;
+const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(150); } return false; }
+
+// ---------- the real handler over sqlite ----------
+const sqlite = new DatabaseSync(':memory:');
+sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');
+const MP_DB = {
+	prepare(sql) {
+		const stmt = sqlite.prepare(sql);
+		const bound = [];
+		const api = {
+			bind(...args) { bound.length = 0; bound.push(...args); return api; },
+			async first() { return stmt.get(...bound) ?? null; },
+			async run() { return stmt.run(...bound); },
+			async all() { return { results: stmt.all(...bound) }; },
+		};
+		return api;
+	},
+};
+const row = (k) => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get(k); return r ? JSON.parse(r.value) : null; };
+const bundle = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mp-micatro-nuz-')), 'mp.bundle.mjs');
+buildSync({
+	entryPoints: [path.join(ROOT, 'server/mp.mjs')], bundle: true, platform: 'node', format: 'esm', outfile: bundle,
+	banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" }, logLevel: 'silent',
+});
+const { default: handler } = await import(pathToFileURL(bundle).href);
+let ipN = 0;
+const call = async (action, body = {}, token) => {
+	const req = new Request('http://localhost/api/mp', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json', 'cf-connecting-ip': '10.9.' + (1 + (ipN >> 8 & 0xff)) + '.' + (1 + (ipN++ & 0xff)), ...(token ? { authorization: 'Bearer ' + token } : {}) },
+		body: JSON.stringify({ action, ...body }),
+	});
+	return (await handler(req, { MP_DB })).json();
+};
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ogg': 'audio/ogg', '.ttf': 'font/ttf', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.fs': 'text/plain' };
+const server = http.createServer(async (req, res) => {
+	const u = decodeURIComponent(req.url.split('?')[0]);
+	if (u === '/api/mp') {
+		let raw = ''; for await (const c of req) raw += c;
+		const ip = '10.10.0.' + (req.socket.remotePort % 250 + 1);
+		const request = new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}) }, body: raw });
+		try { const r = await handler(request, { MP_DB }); res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(await r.text()); }
+		catch (e) { res.writeHead(500); res.end(JSON.stringify({ error: String(e) })); }
+		return;
+	}
+	const f = u.endsWith('/') ? u + 'index.html' : u;
+	const send = (d) => { res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); };
+	const nf = () => { res.writeHead(404); res.end('nf'); };
+	fs.readFile(path.join(ROOT, f), (e, d) => {
+		if (!e) return send(d);
+		if (!f.startsWith('/micatro/mods/') || path.resolve(MAIN) === ROOT || f.includes('..')) return nf();
+		fs.readFile(path.join(MAIN, f), (e2, d2) => (e2 ? nf() : send(d2)));
+	});
+});
+await new Promise(r => server.listen(PORT, r));
+
+const tokens = {};
+for (const n of ['nuzzy', 'nuzguest']) tokens[n] = (await call('register', { username: n, password: 'nuzlocke-e2e-pass' })).token;
+A(tokens.nuzzy && tokens.nuzguest, 'real accounts registered');
+const stateOf = async (n) => (await call('state', {}, tokens[n])).state;
+
+let browser;
+try {
+	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+	const device = async (name, vp = { width: 1280, height: 800 }) => {
+		const ctx = await browser.createBrowserContext();
+		const page = await ctx.newPage();
+		await page.setViewport({ ...vp, deviceScaleFactor: 1 });
+		const errors = [];
+		page.on('pageerror', e => errors.push(name + ' pageerr: ' + e.message));
+		await page.goto(`http://localhost:${PORT}/micatro/nothing.txt`);
+		await page.evaluate(() => { localStorage.setItem('micatro_speed', '4'); localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0'); });
+		return { ctx, page, errors, name };
+	};
+	const boot = async (d, who, seed = {}) => {
+		const st = who ? await stateOf(who) : null;
+		await d.page.evaluate((tok, st, seed) => {
+			if (tok) { localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }
+			else { localStorage.removeItem('magepunk_mp_token_v1'); localStorage.removeItem('magepunk_mp_state_v1'); }
+			localStorage.removeItem('micatro_run_v1');
+			for (const [k, v] of Object.entries(seed)) localStorage.setItem(k, JSON.stringify(v));
+		}, who ? tokens[who] : null, st, seed);
+		await d.page.goto(`http://localhost:${PORT}/micatro/`, { waitUntil: 'domcontentloaded' });
+		return waitFor(() => d.page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 40000);
+	};
+	const idle = (d) => waitFor(() => d.page.evaluate(() => window.__micatro.idle()), 30000);
+	const act = async (d, a) => { await idle(d); const r = await d.page.evaluate((a) => window.__micatro.act(a), a); await idle(d); return r; };
+	const shot = async (d, name) => { if (SHOTS) await d.page.screenshot({ path: path.join(SHOTS, name) }); };
+	const pokeRun = async (d) => {
+		await d.page.evaluate(async () => { await window.__micatro.loadMods(['pokermon']); await window.__micatro.newRun({ back: 'b_red', mods: ['pokermon'] }); });
+		await waitFor(() => d.page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 40000);
+	};
+	/** In the shop: put a joker up for sale and buy it through the game (the board gets the events). */
+	const buy = async (d, key) => {
+		const id = await d.page.evaluate(async (key) => {
+			const { G, create_card } = await import('/micatro/js/engine/core.js');
+			const c = create_card('Joker', G.shop_jokers, null, null, null, null, key);
+			G.shop_jokers.emplace(c); G.GAME.dollars = 1000;
+			return c.sort_id;
+		}, key);
+		return act(d, { type: 'buy', id });
+	};
+	/** Blind select -> win the blind (forced chips) -> cash out -> the shop. */
+	const toShop = async (d) => {
+		await act(d, { type: 'select_blind' });
+		const ids = await d.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
+		await act(d, { type: 'highlight', ids });
+		await act(d, { type: 'play' });
+		await act(d, { type: 'cash_out' });
+	};
+	const pills = (d) => d.page.evaluate(() => [...document.querySelectorAll('.hud.has-rb .hud-rbadges .rb-pill')].filter((e) => e.offsetParent).map((e) => e.textContent));
+	const rbToast = (d) => d.page.evaluate(() => { const t = document.querySelector('.rb-toast'); return t && t.classList.contains('show') ? t.textContent : ''; });
+	/** Overlap check: the badges vs every HUD control / board area that's showing. -> {ok, badges, hits, offscreen} */
+	const fit = (d) => d.page.evaluate(() => {
+		const R = (e) => e.getBoundingClientRect();
+		const bEl = document.querySelector('.hud-rbadges');
+		const b = R(bEl);
+		const pill = [...bEl.querySelectorAll('.rb-pill')].map(R);
+		const hit = (r) => r.width > 0 && r.height > 0 && b.left < r.right - 0.5 && b.right > r.left + 0.5 && b.top < r.bottom - 0.5 && b.bottom > r.top + 0.5;
+		const portrait = document.getElementById('stage').classList.contains('portrait');
+		const sels = ['.hud-blind', '.hud-score', '.hud-hand', '.hud-stats', '.hs-btns .btn', '.hud-tags .tag-ico', '.area-box', '.controls', '.deck-pile', '.area-lbl'];
+		if (portrait) sels.push('.hud');
+		const hits = [];
+		for (const s of sels) for (const e of document.querySelectorAll(s)) if (e.offsetParent && hit(R(e))) hits.push(s);
+		const vw = innerWidth, vh = innerHeight;
+		const offscreen = pill.some((p) => p.left < 0 || p.top < 0 || p.right > vw + 0.5 || p.bottom > vh + 0.5);
+		const hud = R(document.querySelector('.hud'));
+		const insideHud = b.left >= hud.left - 0.5 && b.right <= hud.right + 0.5 && b.top >= hud.top - 0.5 && b.bottom <= hud.bottom + 0.5;
+		return { ok: !hits.length && !offscreen && pill.length > 0 && (portrait || insideHud), hits, offscreen, portrait, insideHud, n: pill.length, b: [b.left, b.top, b.width, b.height].map(Math.round) };
+	});
+
+	// ===== 1. live badges in a Pokermon run =====
+	const dA = await device('A');
+	A(await boot(dA, 'nuzzy'), 'device A: signed in, game ready');
+	await pokeRun(dA);
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype"]', 'a Pokermon run shows "Nuzlocke" and "Monotype" on the HUD', JSON.stringify(await pills(dA)));
+	await toShop(dA);
+	await buy(dA, 'j_poke_pikachu');
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke","Monotype: Lightning"]', 'the first joker locks the type: "Monotype: Lightning"', JSON.stringify(await pills(dA)));
+	// some tags too, so the portrait row's right side is occupied
+	await dA.page.evaluate(async () => {
+		const { G } = await import('/micatro/js/engine/core.js'); const { Tag, add_tag } = await import('/micatro/js/engine/tag.js');
+		for (const k of ['tag_double', 'tag_economy', 'tag_d_six']) add_tag(new Tag(k));
+		window.__micatro.board.update && 0; void G;
+	});
+	await act(dA, { type: 'reorder', area: 'jokers', ids: await dA.page.evaluate(() => window.__micatro.view().areas.jokers.map((c) => c.id)) }); // (a no-op action: the board redraws the tags)
+	for (const [w, h, name] of [[390, 664, 'portrait'], [1280, 800, 'desktop'], [844, 390, 'landscape']]) {
+		await dA.page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
+		await sleep(500);
+		const f = await fit(dA);
+		A(f.ok && f.n === 2, `the badges fit ${name} ${w}x${h} without overlapping the HUD controls`, JSON.stringify(f));
+		await shot(dA, `live_${name}_${w}x${h}.png`);
+	}
+	await dA.page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 });
+
+	// ===== 2. breaking them =====
+	await act(dA, { type: 'next_round' });
+	await toShop(dA);
+	await buy(dA, 'j_poke_squirtle');
+	A(JSON.stringify(await pills(dA)) === '["Nuzlocke"]', 'a Water joker in a Lightning run: the Monotype badge disappears', JSON.stringify(await pills(dA)));
+	A(/^Monotype broken: Water joker in a Lightning run$/.test(await rbToast(dA)), 'a toast says why ("Monotype broken: Water joker in a Lightning run")', await rbToast(dA));
+	await shot(dA, 'break_toast_monotype.png');
+	const pika = await dA.page.evaluate(() => window.__micatro.view().areas.jokers.find((c) => c.center === 'j_poke_pikachu').id);
+	await act(dA, { type: 'sell', id: pika });
+	A((await pills(dA)).length === 0 && !(await dA.page.evaluate(() => document.querySelector('.hud').classList.contains('has-rb'))), 'selling a joker: the Nuzlocke badge disappears too');
+	A(/^Nuzlocke broken: sold Pikachu$/.test(await rbToast(dA)), 'a toast says why ("Nuzlocke broken: sold Pikachu")', await rbToast(dA));
+	await shot(dA, 'break_toast_nuzlocke.png');
+	await dA.page.evaluate(() => document.querySelector('.b-runinfo').click());
+	await sleep(300);
+	await dA.page.evaluate(() => document.querySelector('.b-ri-badges').click());
+	await sleep(300);
+	const ri = await dA.page.evaluate(() => document.querySelector('.ri-rb') && document.querySelector('.ri-rb').textContent);
+	A(/Broken: sold Pikachu/.test(ri || '') && /Broken: Water joker in a Lightning run/.test(ri || ''), "Run Info's Badges tab explains both breaks", ri);
+	await dA.page.evaluate(() => { const b = document.querySelector('.ri-modal .b-back'); if (b) b.click(); });
+	// a non-Pokémon joker breaks both at once
+	await pokeRun(dA);
+	await toShop(dA);
+	await buy(dA, 'j_joker');
+	A((await pills(dA)).length === 0, 'a non-Pokémon joker: both badges disappear');
+	A(await rbToast(dA) === 'Nuzlocke broken: gained a non-Pokémon joker (Joker)\nMonotype broken: gained a non-Pokémon joker (Joker)', 'the toast gives both reasons (two lines)', JSON.stringify(await rbToast(dA)));
+	await shot(dA, 'break_toast_non_pokemon.png');
+
+	// ===== 3. a won run =====
+	await pokeRun(dA);
+	await dA.page.evaluate(async () => {
+		const { G, add_joker } = await import('/micatro/js/engine/core.js');
+		add_joker('j_poke_charmander'); // (the first window's one joker: Fire)
+		G.E_MANAGER.flush();
+		G.GAME.round_resets.ante = G.GAME.win_ante;
+	});
+	for (let b = 0; b < 3; b++) {
+		await act(dA, { type: 'select_blind' });
+		const ids = await dA.page.evaluate(async () => { const { G } = await import('/micatro/js/engine/core.js'); G.GAME.chips = G.GAME.blind.chips; return [G.hand.cards[0].sort_id]; });
+		await act(dA, { type: 'highlight', ids });
+		await act(dA, { type: 'play' });
+		if (b < 2) { await act(dA, { type: 'cash_out' }); await act(dA, { type: 'next_round' }); }
+	}
+	A(await waitFor(() => dA.page.evaluate(() => !!document.querySelector('.go-modal .go-badges')), 15000), 'the win screen shows a "Badges earned" row');
+	const goB = await dA.page.evaluate(() => [...document.querySelectorAll('.go-badges .rb-pill')].map((e) => e.textContent));
+	A(JSON.stringify(goB) === '["Nuzlocke","Monotype: Fire"]', 'the win screen lists Nuzlocke + Monotype: Fire', JSON.stringify(goB));
+	A(await waitFor(() => dA.page.evaluate(() => !!document.querySelector('.ach-toast')), 8000), 'an achievement unlock toast shows');
+	const t1 = await dA.page.evaluate(() => document.querySelector('.ach-toast').textContent);
+	A(/Achievement unlocked/.test(t1) && /Nuzlocke/.test(t1), 'the toast names the achievement', t1);
+	await shot(dA, 'win_screen_achievement_toast.png');
+	const prog = await dA.page.evaluate(() => window.__micatro.progress.getProgress());
+	A(prog.nuz === 1 && prog.mono.fire === 1 && prog.both === 1 && prog.ach.first_nuzlocke && prog.ach.first_monotype && prog.ach.nuzlocke_monotype && !prog.ach.nuzlocke_gold && !prog.ach.monotype_all, 'the record: 1 Nuzlocke, Fire beaten, 1 both; 3 achievements (not Gold, not all types)', JSON.stringify(prog));
+	A(await waitFor(() => { const r = row('micatro_progress:nuzzy'); return r && r.progress.nuz === 1 && r.progress.mono.fire === 1 && r.progress.ach.nuzlocke_monotype; }, 15000), 'the record is saved on the account (micatro_progress:nuzzy)', JSON.stringify(row('micatro_progress:nuzzy')));
+	A(await waitFor(() => { const b = row('runboard:micatro_modded') || []; const e = b.find((x) => x.name === 'nuzzy'); return e && e.badges && e.badges.nuz === true && e.badges.mono === 'fire'; }, 20000), 'the leaderboard row stores the badges {nuz, mono:"fire"}', JSON.stringify(row('runboard:micatro_modded')));
+	const stk = await dA.page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winRecord('j_poke_charmander'));
+	A(stk.win >= 1 && stk.nuz >= 1 && stk.mono >= 1 && stk.both >= 1, 'the win stickers got the categories (win, nuz, mono, both) for the run\'s jokers', JSON.stringify(stk));
+	const deckRec = await dA.page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winRecord('b_red'));
+	A(deckRec.win === 1 && deckRec.nuz === 1 && deckRec.mono === 1 && deckRec.both === 1, 'the deck (b_red) is recorded with the same categories', JSON.stringify(deckRec));
+	A(await waitFor(() => dA.page.evaluate(() => { const c = document.querySelector('.deck-stack canvas:last-child'); return c && c.dataset.sticker === 'both:White'; }), 5000), 'the deck pile wears the Arceus sticker (White ring)', await dA.page.evaluate(() => document.querySelector('.deck-stack canvas:last-child').dataset.sticker));
+	await waitFor(() => dA.page.evaluate(() => !document.querySelector('.ach-toast')), 15000);
+	// the leaderboard (from the win screen)
+	await dA.page.evaluate(() => [...document.querySelectorAll('.go-acts .btn')].find((b) => /Leader/.test(b.textContent)).click());
+	A(await waitFor(() => dA.page.evaluate(() => !!document.querySelector('.lb-row:not(.lb-h) .rb-pill')), 10000), 'the leaderboard row shows the tag');
+	const lbT = await dA.page.evaluate(() => [...document.querySelectorAll('.lb-row.me .rb-pill')].map((e) => e.textContent));
+	A(JSON.stringify(lbT) === '["Nuz","Fire"]', 'the row tag reads Nuz + Fire', JSON.stringify(lbT));
+	await sleep(700);
+	await shot(dA, 'leaderboard_row.png');
+	await dA.page.evaluate(() => document.querySelector('.lb-modal .b-back').click());
+	// the run history + achievements screen (from the main menu)
+	await dA.page.evaluate(() => document.querySelector('.go-modal .b-mainmenu').click());
+	await sleep(400);
+	await dA.page.evaluate(() => document.querySelector('.b-replays').click());
+	await sleep(400);
+	const rp = await dA.page.evaluate(() => { const r = document.querySelector('.rp-row .rp-badges'); return r ? [...r.querySelectorAll('.rb-pill')].map((e) => e.textContent) : null; });
+	A(JSON.stringify(rp) === '["Nuzlocke","Monotype: Fire"]', 'the run history (Replays) shows the badges', JSON.stringify(rp));
+	await dA.page.evaluate(() => document.querySelector('.rp-modal .b-back').click());
+	await dA.page.evaluate(() => document.querySelector('.b-achievements').click());
+	await sleep(400);
+	const on = await dA.page.evaluate(() => [...document.querySelectorAll('.ach-row.on')].map((e) => e.dataset.id));
+	const all = await dA.page.evaluate(() => document.querySelectorAll('.ach-row').length);
+	A(all === 5 && JSON.stringify(on) === '["first_nuzlocke","first_monotype","nuzlocke_monotype"]', 'the Achievements screen lists all 5, with the 3 unlocked', JSON.stringify([all, on]));
+	await shot(dA, 'achievements_screen.png');
+	await dA.page.evaluate(() => document.querySelector('.b-ach-rec').click());
+	await sleep(300);
+	const rec = await dA.page.evaluate(() => ({ nuz: document.querySelector('.rec-nuz').textContent, both: document.querySelector('.rec-both').textContent, fire: !document.querySelector('.rec-type[data-type="Fire"]').classList.contains('off'), water: !document.querySelector('.rec-type[data-type="Water"]').classList.contains('off') }));
+	A(rec.nuz === '1' && rec.both === '1' && rec.fire && !rec.water, 'the Record tab: 1 Nuzlocke win, 1 both, Fire beaten (Water not)', JSON.stringify(rec));
+	await shot(dA, 'record_screen.png');
+	await dA.page.evaluate(() => document.querySelector('.ach-modal .b-back').click());
+	// deck select: b_red (Arceus) and a deck with only a plain Green win
+	await dA.page.evaluate(() => localStorage.setItem('micatro_newrun', JSON.stringify({ back: 'b_red', stake: 1 })));
+	await dA.page.evaluate(() => document.querySelector('.b-menu-play').click());
+	await sleep(600);
+	A((await dA.page.evaluate(() => document.querySelector('.nr-back') && document.querySelector('.nr-back').dataset.sticker)) === 'both:White', 'New Run deck select: the Red Deck shows its Arceus sticker');
+	await sleep(400);
+	await shot(dA, 'deck_select_arceus.png');
+	await dA.page.evaluate(() => { const b = [...document.querySelectorAll('.modal .b-back')].pop(); b.click(); });
+	await dA.page.evaluate(async () => { const M = await import('/micatro/js/ui/stickers.js'); M.recordWin({ jokers: ['b_blue'], stake: 3 }); localStorage.setItem('micatro_newrun', JSON.stringify({ back: 'b_blue', stake: 1 })); });
+	await dA.page.evaluate(() => document.querySelector('.b-menu-play').click());
+	await sleep(600);
+	A((await dA.page.evaluate(() => document.querySelector('.nr-back') && document.querySelector('.nr-back').dataset.sticker)) === 'win:Green', 'a deck with a plain Green win shows the plain stake sticker');
+	await shot(dA, 'deck_select_plain.png');
+	await dA.page.evaluate(() => { const b = [...document.querySelectorAll('.modal .b-back')].pop(); b.click(); });
+
+	// ===== 4. the record on a second device; a guest's record carried into an account =====
+	const dB = await device('B');
+	A(await boot(dB, 'nuzzy'), 'device B: same account, empty storage');
+	A(await waitFor(() => dB.page.evaluate(() => { const p = window.__micatro.progress && window.__micatro.progress.getProgress(); return p && p.nuz === 1 && p.mono.fire === 1 && !!p.ach.nuzlocke_monotype; }), 15000), 'device B gets the record + achievements from the account');
+	await dB.page.evaluate(() => document.querySelector('.b-achievements').click());
+	await sleep(400);
+	A((await dB.page.evaluate(() => document.querySelectorAll('.ach-row.on').length)) === 3, "device B's Achievements screen shows the 3 unlocks");
+	const dC = await device('C');
+	A(await boot(dC, 'nuzguest', { 'micatro_progress_v1:guest': { v: 1, nuz: 2, nuzStake: 8, both: 0, mono: { water: 1 }, ach: { first_nuzlocke: 1000, nuzlocke_gold: 2000 } } }), 'device C: a guest record in storage, then signed in');
+	A(await waitFor(() => { const r = row('micatro_progress:nuzguest'); return r && r.progress.nuz === 2 && r.progress.nuzStake === 8 && r.progress.mono.water === 1 && r.progress.ach.nuzlocke_gold === 2000; }, 15000), "the guest's record merges into the account on sign-in", JSON.stringify(row('micatro_progress:nuzguest')));
+	A(await waitFor(() => dC.page.evaluate(() => localStorage.getItem('micatro_progress_v1:guest') === null), 5000), '... and the guest copy is cleared (it now belongs to that account)');
+
+	// ===== 5. no Pokermon: nothing =====
+	await dA.page.evaluate(() => window.__micatro.newRun({ back: 'b_red' }));
+	await waitFor(() => dA.page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 40000);
+	const van = await dA.page.evaluate(() => ({ rb: window.__micatro.view().run_badges, has: document.querySelector('.hud').classList.contains('has-rb'), n: document.querySelectorAll('.hud-rbadges .rb-pill').length }));
+	A(van.rb === undefined && !van.has && van.n === 0, 'a run without Pokermon shows no badges', JSON.stringify(van));
+	await dA.page.evaluate(() => document.querySelector('.b-runinfo').click());
+	await sleep(300);
+	A(!(await dA.page.evaluate(() => !!document.querySelector('.b-ri-badges'))), 'and Run Info has no Badges tab');
+	A((await dA.page.evaluate(() => { const c = document.querySelector('.ri-deck .ri-back'); return c && c.dataset.sticker; })) === 'both:White', 'Run Info shows the deck with its win sticker');
+	await shot(dA, 'runinfo_deck_sticker.png');
+	await shot(dA, 'vanilla_run_no_badges.png');
+
+	for (const d of [dA, dB, dC]) A(!d.errors.length, d.name + ': no page errors', d.errors.slice(0, 3).join(' | '));
+} catch (e) {
+	fail++; console.log('FAIL: threw ' + (e && e.stack || e));
+} finally {
+	if (browser) await browser.close().catch(() => {});
+	server.close();
+}
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

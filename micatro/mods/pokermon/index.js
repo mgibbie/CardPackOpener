@@ -85,6 +85,7 @@ import { SLEEVES } from './sleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg } from './systems/utils.js';
 import { family_win_keys } from './systems/evolution.js';
+import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 
 /**
  * Where the mod's art lives: <base>/<path as in the mod's assets/2x folder>. Production
@@ -387,8 +388,13 @@ for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
 
 // --------------------------------------------------------------------- hooks
 const hooks = {
-  init_game_object,
+  init_game_object(GAME) { init_game_object(GAME); RB.init_game_object(GAME); },
   start_run() { install_scry(); },
+  // (Nuzlocke / Monotype run badges: systems/runbadges.js)
+  blind_on_deck: RB.blind_on_deck,
+  new_round: RB.new_round,
+  emplace: RB.emplace,
+  sell_card: RB.sell_card,
   pool_filter,
   create_card: rules.create_card,
   set_cost: rules.set_cost,
@@ -437,6 +443,7 @@ const hooks = {
   view(view, cardView) {
     if (G.scry_view && scry_visible()) view.areas.scry = scry_view.cards.map((c) => cardView(c));
     view.poke = { scry_amount: G.GAME.scry_amount || 0, energies_used: G.GAME.energies_used || 0 };
+    view.run_badges = runbadge_view();
   },
 };
 

@@ -10,7 +10,8 @@ import { isNumeric, isBig } from '../engine/bignum.js';
 import { sound } from './sound.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { onSkins } from './skins.js';
-import { onWinStickers, winSticker } from './stickers.js';
+import { onWinStickers, winStickerInfo } from './stickers.js';
+import { stickDeckCanvas } from './decksticker.js';
 
 const VISIBLE = ['hand', 'play', 'jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'];
 const PACK_STATES = ['TAROT_PACK', 'PLANET_PACK', 'SPECTRAL_PACK', 'STANDARD_PACK', 'BUFFOON_PACK', 'MOD_PACK', 'MOD_PACK_HAND'];
@@ -101,6 +102,7 @@ export class Board {
     onSkins(() => { for (const s of this.sprites.values()) if (s.d && s.d.front) { s.vkey = ''; s.setData(s.d); } });
     // a joker earned a win sticker (or the option changed): recompose the jokers
     onWinStickers(() => { for (const s of this.sprites.values()) if (s.d && !s.d.front) { s.vkey = ''; s.setData(s.d); } });
+    onWinStickers(() => this.renderDeckStack()); // (the deck pile's sticker)
     const loop = () => { this.frame(); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
   }
@@ -138,14 +140,15 @@ export class Board {
           <div class="stat s-round"><div class="stat-l">Round</div><div class="stat-v orange">0</div></div>
         </div>
       </div>
-      <div class="hud-tags"></div>`;
+      <div class="hud-tags"></div>
+      <div class="hud-rbadges" aria-live="polite"></div>`;
     st.appendChild(this.hudEl);
     const $ = (s) => this.hudEl.querySelector(s);
     this.H = {
       blind: $('.hud-blind'), bName: $('.hb-name'), bChip: $('.hb-chip'), bTarget: $('.hb-target'), bReward: $('.hb-reward .money'),
       bDesc: $('.hb-desc'), bInfo: $('.hb-info'), score: $('.hs-num'), hand: $('.hh-hand'), lvl: $('.hh-lvl'), chips: $('.hh-chips'), mult: $('.hh-mult'),
       hands: $('.s-hands .stat-v'), discards: $('.s-discards .stat-v'), dollars: $('.s-dollars .stat-v'), ante: $('.ante-n'), anteW: $('.ante-w'),
-      round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'),
+      round: $('.s-round .stat-v'), tags: $('.hud-tags'), handBox: $('.hud-hand'), rbadges: $('.hud-rbadges'),
     };
     $('.b-runinfo').addEventListener('click', () => { sound.play('button'); this.opts.onMenu && this.opts.onMenu('runinfo'); });
     $('.b-options').addEventListener('click', () => { sound.play('button'); this.opts.onMenu && this.opts.onMenu('options'); });
@@ -186,6 +189,7 @@ export class Board {
     this.attention = h('div', 'attention'); st.appendChild(this.attention);
     this.tip = h('div', 'tip'); this.tip.style.display = 'none'; st.appendChild(this.tip);
     this.toastEl = h('div', 'toast'); st.appendChild(this.toastEl);
+    this.rbToastEl = h('div', 'rb-toast'); st.appendChild(this.rbToastEl); // (a Nuzlocke / Monotype break)
     this.banner = h('div', 'banner'); this.banner.style.display = 'none'; st.appendChild(this.banner);
 
     // deck stack visuals
@@ -229,6 +233,8 @@ export class Board {
       c.style.transform = `translate(${-i * 3}px,${-i * 3}px)`;
       st.appendChild(c);
     }
+    // the top card wears the deck's win sticker (while Options > "Stake stickers" is on, like the jokers')
+    if (this.backKey && st.lastChild) stickDeckCanvas(st.lastChild, this.backKey, false);
   }
 
   // ----------------------------------------------------------------- layout
@@ -586,8 +592,44 @@ export class Board {
       H.bDesc.innerHTML = b.boss && desc ? (desc.lines || []).map((l) => markup(l)).join('<br>') + (b.disabled ? '<br><span style="color:#4bc292">Disabled</span>' : '') : '';
     }
   }
+  /** Pokermon's live Nuzlocke / Monotype badges (view.run_badges: only a Pokermon run's view has it; hidden when
+   *  the run isn't eligible — seeded / challenge). A broken badge disappears (its toast says why). */
+  renderRunBadges(v) {
+    const el = this.H.rbadges;
+    const rb = v && v.run_badges;
+    const show = !!(rb && rb.eligible && (rb.nuz || rb.mono));
+    const key = show ? [rb.nuz ? 1 : 0, rb.mono ? 1 : 0, rb.type || '', rb.won ? 1 : 0].join('|') : '';
+    this.hudEl.classList.toggle('has-rb', show);
+    if (key === this._rbKey) return;
+    this._rbKey = key;
+    el.innerHTML = '';
+    if (!show) return;
+    if (rb.nuz) {
+      const b = h('span', 'rb-pill rb-nuz', 'Nuzlocke');
+      b.title = 'Nuzlocke: never sell a joker, and gain at most one new joker per shop. Win the run to earn it.';
+      el.appendChild(b);
+    }
+    if (rb.mono) {
+      const b = h('span', 'rb-pill rb-mono');
+      b.textContent = rb.type ? 'Monotype: ' + rb.type : 'Monotype'; // (text: a spectated view is someone else's data)
+      if (rb.type) { b.style.background = /^#[0-9a-f]{3,8}$/i.test(rb.colour || '') ? rb.colour : '#7a8a8d'; if (/^(lightning|colorless)$/i.test(rb.type)) b.style.color = '#2a3436'; }
+      b.title = rb.type ? `Monotype: gain only ${rb.type} jokers. Win the run to earn it.` : 'Monotype: your first joker sets the type; gain only jokers of that type.';
+      el.appendChild(b);
+    }
+  }
+  /** A badge just broke (the engine's run_badge event): a toast that says why. */
+  runBadgeToast(ev) {
+    const t = this.rbToastEl;
+    const line = (ev.badge === 'nuz' ? 'Nuzlocke' : 'Monotype') + ' broken: ' + (ev.reason || '');
+    // (one gain can break both — a non-Pokémon joker: the second break joins the toast as a second line)
+    // (consecutive engine events = the same gain)
+    t.textContent = ev.seq != null && this._rbSeq != null && ev.seq === this._rbSeq + 1 && t.textContent ? t.textContent + '\n' + line : line;
+    this._rbSeq = ev.seq;
+    t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
+  }
   renderTagsEtc(v) {
     const H = this.H;
+    this.renderRunBadges(v);
     // tags
     const tags = v.tags || [];
     const key = tags.map((t) => t.key).join(',');
@@ -1065,9 +1107,11 @@ export class Board {
     this.tipSig = JSON.stringify(desc);
     const d = this.data.get(s.id) || s.d;
     // its win sticker, explained (Balatro: info_queue <colour>_sticker)
-    const st = d && d.set === 'Joker' && d.facing !== 'back' ? winSticker(d.center) : null;
-    const sd = st && LOC.descriptions.Other[st.toLowerCase() + '_sticker'];
-    if (sd) desc = { ...desc, info: [...(desc.info || []), { key: st.toLowerCase() + '_sticker', name: sd.name, lines: sd.text }] };
+    // (a Pokermon run's special sticker: "Nuzlocke win — Gold Stake")
+    const st = d && d.set === 'Joker' && d.facing !== 'back' ? winStickerInfo(d.win_key || d.center) : null;
+    const sd = st && !st.special && LOC.descriptions.Other[st.stake.toLowerCase() + '_sticker'];
+    if (sd) desc = { ...desc, info: [...(desc.info || []), { key: st.stake.toLowerCase() + '_sticker', name: sd.name, lines: sd.text }] };
+    else if (st && st.special) desc = { ...desc, info: [...(desc.info || []), { key: 'win_sticker_' + st.category, name: st.label, lines: ['Used this Joker to win a', '{C:attention}' + st.label.replace(/ win — .*/, '') + '{} run on', '{C:attention}' + st.stake + ' Stake{} difficulty', '{C:inactive}(' + st.special.pokemon + ' sticker)'] }] };
     let extra = '';
     if (d.perish_tally != null && d.perishable) extra += `<div class="tip-note">Perishable: ${d.perish_tally} rounds left</div>`;
     this.renderTip(desc, d, extra);
@@ -1391,6 +1435,7 @@ export class Board {
       case 'blind_juice': this.bump(this.H.blind); return 0;
       case 'not_allowed': this.attn('Not Allowed!', '#fe5f55'); sound.play('cancel'); return 0.6;
       case 'no_space': this.toast('No space!'); return 0.2;
+      case 'run_badge': this.runBadgeToast(ev); return 0.3;
       case 'win': sound.play('win'); this.attn('You Win!', '#f3b958'); return 0.9;
       case 'game_over': sound.play('gong', 0.8, 0.6); return 0.4;
       case 'round_eval': sound.play('timpani', 1, 0.4); return 0.2;

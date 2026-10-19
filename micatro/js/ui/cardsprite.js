@@ -7,7 +7,7 @@ import { drawCell, centerAtlas, CENTERS, CARDS, TAGS, SEAL_POS, STICKER_POS, SOU
 import { CardFX } from './gl.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { drawSkinFront, skinVer } from './skins.js';
-import { winSticker, STICKER_POS as WIN_POS, stickerVer } from './stickers.js';
+import { winStickerInfo, drawSpecialSticker, STICKER_POS as WIN_POS, stickerVer } from './stickers.js';
 
 export const FACE_W = 142, FACE_H = 190;
 let FX = null;
@@ -56,10 +56,12 @@ export function composeFace(ctx, d, backKey, opts) {
   if (d.group) drawModCell(ctx, 'bunco_link', { x: (d.group - 1) % 5, y: 0 }, 0, 0, FACE_W, FACE_H);
   if (d.perishable) drawCell(ctx, 'stickers', STICKER_POS.perishable, 0, 0, FACE_W, FACE_H);
   if (d.rental) drawCell(ctx, 'stickers', STICKER_POS.rental, 0, 0, FACE_W, FACE_H);
-  // the joker's win sticker: the highest stake this player has won with it (ui/stickers.js; Balatro's sticker_run)
+  // the joker's win sticker: the highest stake this player has won with it (ui/stickers.js; Balatro's sticker_run),
+  // or a Pokermon run's special one (Nuzlocke Aipom / Monotype Ambipom / both Arceus, ringed in its stake's colour)
   if ((center && center.set === 'Joker') || (modCard && d.set === 'Joker')) {
-    const st = winSticker(d.win_key || d.center, opts && opts.collection);
-    if (st) drawCell(ctx, 'stickers', WIN_POS[st], 0, 0, FACE_W, FACE_H);
+    const st = winStickerInfo(d.win_key || d.center, opts && opts.collection);
+    if (st && st.special) drawSpecialSticker(ctx, st);
+    else if (st) drawCell(ctx, 'stickers', WIN_POS[st.stake], 0, 0, FACE_W, FACE_H);
   }
   if (d.debuff && noGL()) {
     ctx.fillStyle = 'rgba(200,40,40,.35)'; ctx.fillRect(0, 0, FACE_W, FACE_H);
