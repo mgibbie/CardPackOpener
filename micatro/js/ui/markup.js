@@ -52,6 +52,18 @@ export function markup(line, colours) {
   return out;
 }
 
+/**
+ * A tooltip title -> HTML. A title can carry markup like any text line: a playing card's name is Balatro's
+ * loc playing_card, " {C:light_black}#1# of {V:1}#2# " (engine/describe.js, ui/describePlaying), with the suit's
+ * colour as {V:1}. It went into the title escaped, so a Standard Pack card read "{C:light_black}6 of {V:1}Hearts".
+ */
+export function titleHtml(name, colours) {
+  const s = String(name == null ? '' : name).trim();
+  return s.includes('{') ? markup(s, colours) : esc(s);
+}
+/** Is this tooltip a playing card's? (Balatro's card_h_popup draws a playing card's name on a white pill.) */
+export const isPlayingDesc = (desc) => !!desc && (desc.set === 'Default' || desc.set === 'Enhanced' || !!desc.playing);
+
 /** {C:<mod consumable type>} — the type's colour (Reverie's {C:cine}, More Fluff's Colour cards). */
 function typeColour(v) {
   const t = modType(v);
@@ -93,10 +105,12 @@ export function describePlaying(cv) {
   const D = LOC.descriptions;
   const enh = cv.enh; // a mod enhancement (engine/view.js cardView)
   const noBase = center.name === 'Stone Card' || !!(enh && enh.replace);
-  const name = cv.facing === 'back' ? '???' : (enh && enh.replace ? enh.name : center.name === 'Stone Card' ? 'Stone Card' : `${RANK_NAME[front.value] || front.value} of ${front.suit}`);
+  // (Balatro's loc playing_card name: " {C:light_black}#1# of {V:1}#2# ", the suit in its colour — ui titleHtml)
+  const name = cv.facing === 'back' ? '???' : (enh && enh.replace ? enh.name : center.name === 'Stone Card' ? 'Stone Card' : `{C:light_black}${RANK_NAME[front.value] || front.value} of {V:1}${front.suit}`);
+  const name_colours = [cv.front_value ? cv.front_suit : front.suit]; // (the title's {V:1}; the body keeps none)
   const lines = [];
   const badges = [];
-  if (cv.facing === 'back') return { name, lines: ['{C:inactive}Face down'], badges };
+  if (cv.facing === 'back') return { name, lines: ['{C:inactive}Face down'], badges, playing: true };
   if (!noBase) lines.push(`{C:chips}+${NOMINAL[front.value] || 0}{} chips`);
   const cfg = center.config || {};
   const extra = (title, l) => { lines.push(''); lines.push(`{C:attention}${title}`); lines.push(...l); };
@@ -127,7 +141,7 @@ export function describePlaying(cv) {
   // lines a mod adds to a playing card's tooltip (view_card mod_lines: Bunco's linked group, mod editions)
   if (cv.mod_lines && cv.mod_lines.length) { lines.push(''); lines.push(...cv.mod_lines); }
   if (cv.debuff) { lines.push(''); lines.push('{C:red}Debuffed'); }
-  return { name, lines, badges };
+  return { name, lines, badges, name_colours, playing: true };
 }
 
 /** Fallback when describe.js isn't available: localized text, #n# unfilled. */

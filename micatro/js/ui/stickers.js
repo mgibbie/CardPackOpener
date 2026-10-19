@@ -22,7 +22,11 @@
 //   * Guests keep localStorage only ('...:guest'). The first account that signs in on that browser takes the
 //     guest record once (merge by max; 'micatro_joker_wins_guest_carried' remembers it — like MicaSurvivor's
 //     guest carry-over), so another account signing in later never inherits it.
-//   * A viewer's own record (spectators / replays draw theirs, and a replay or a spectated win records nothing).
+//   * A spectator / replay viewer sees the WATCHED player's stickers, never their own: the published view carries
+//     the player's records for the cards on the table and the deck (view.win_stickers, main.js publisher), and a
+//     replay's recipe carries them for the jokers seen during the run (recipe.win_stickers). setStickerSource() makes
+//     every sticker drawn on that page come from that map (an old snapshot / replay without one: the viewer's own).
+//     It never touches the viewer's own record, and a replay or a spectated win records nothing.
 //   * Like Balatro, seeded and challenge runs earn no stickers (win_game skips set_joker_win).
 //   * Collection-style screens (the Pokédex, the Challenges screen) always show them; on the table they show
 //     while Options > "Stake stickers" is on (Balatro's "Display stickers"; on by default here, since Micatro
@@ -210,13 +214,13 @@ export function recordWin(ev) {
   return n;
 }
 /** A key's stored record merged with its renamed-from keys' (max per category), or undefined. */
-function recordOf(centerKey) {
+function recordOf(centerKey, from = wins) {
   if (!centerKey) return undefined;
   const olds = aliasesOf(centerKey);
-  if (!olds.length) return wins[centerKey];
+  if (!olds.length) return from[centerKey];
   let out = null;
   for (const k of [centerKey, ...olds]) {
-    const r = wins[k];
+    const r = from[k];
     if (!r) continue;
     out = out || {};
     for (const c of Object.keys(r)) if ((out[c] || 0) < r[c]) out[c] = r[c];
@@ -247,7 +251,37 @@ export function stickerFor(rec) {
 /** The sticker to draw on this joker (stickerFor), or null. `collection`: always (else only with the option on). */
 export function winStickerInfo(centerKey, collection) {
   if (!collection && !show) return null;
-  return stickerFor(recordOf(centerKey));
+  return stickerFor(recordOf(centerKey, source || wins));
+}
+
+// ---------------------------------------------------------------- a watched player's stickers
+let source = null;     // spectating / a replay: the player's {key: {cat: level}} (null: this viewer's own record)
+let sourceJson = 'null';
+/**
+ * Draw the stickers from `map` (the watched player's records: a spectated view's win_stickers, a replay's
+ * recipe.win_stickers) instead of this viewer's own; null / not an object = back to the own record. Cleaned like
+ * a stored record; only redraws when it changed. The viewer's own record (and its storage) is never touched.
+ */
+export function setStickerSource(map) {
+  const next = map && typeof map === 'object' && !Array.isArray(map) ? cleanWins(map) : null;
+  const json = next ? JSON.stringify(next) : 'null';
+  if (json === sourceJson) return;
+  source = next; sourceJson = json;
+  bump();
+}
+export const stickerSource = () => (source ? JSON.parse(sourceJson) : null);
+/**
+ * This player's records for `keys` (the jokers and deck back on the table / seen in a run), compact: only keys
+ * with a record — {key: {win?, poke?, nuz?, mono?, both?}}. What the publisher / a replay sends viewers.
+ */
+export function stickerMap(keys) {
+  const out = {};
+  for (const k of keys || []) {
+    if (typeof k !== 'string' || !KEY_RE.test(k) || k === '__proto__' || out[k]) continue;
+    const r = wins[k];
+    if (r && Object.keys(r).length) out[k] = { ...r };
+  }
+  return out;
 }
 /** The stake name of the sticker this joker shows, or null. `collection`: always (else only with the option on). */
 export function winSticker(centerKey, collection) {

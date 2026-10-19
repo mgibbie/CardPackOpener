@@ -29,6 +29,13 @@ G.Sprites = (() => {
     return pm && pm.dm ? (pm.dm[dir] || 0) : Math.min(dir || 0, m.r - 1);
   }
 
+  /**
+   * (Lote B1c) ¿Se dibuja en espejo en la dirección 0..7? Las hojas de respaldo de combate (src "battle",
+   * tools/micasurvivor/battle_sprites.py) sólo tienen el frente (mirando a la izquierda) y la espalda: "fx" dice en
+   * qué direcciones se voltea en horizontal, alrededor del ancla. Las demás no tienen fx (nunca).
+   */
+  function flipOf(dex, dir) { const pm = meta(dex); return !!(pm && pm.fx && pm.fx[dir || 0]); }
+
   /** ¿Flota en su sprite? (tools/hover_flags.py) Pasa por encima de rocas y agua. */
   function hovers(dex) { const m = meta(dex); return !!(m && m.hv); }
 
@@ -265,8 +272,12 @@ G.Sprites = (() => {
       // (FALLBACK de tools/micasurvivor/fetch_sprites.py): andando, dan saltitos de 2 px para no deslizarse
       // quietos. Ninguno de los 966 originales tiene un Walk de un fotograma, así que a ellos no les cambia nada.
       const bob = m.n === 1 && this.cur === 'Walk' && !this.once ? Math.round(Math.abs(Math.sin(this.clock * 9)) * 2 * k) : 0;
-      const dx = Math.round(x - m.ax * k), dy = Math.round(y - m.ay * k) - bob;
+      let dx = Math.round(x - m.ax * k);
+      const dy = Math.round(y - m.ay * k) - bob;
       const prev = ctx.globalAlpha;
+      // (Lote B1c) espejo horizontal alrededor del ancla (las hojas de combate: el frente mira a la izquierda)
+      const flip = flipOf(this.dex, this.dir);
+      if (flip) { const ox = Math.round(x); ctx.save(); ctx.translate(ox, 0); ctx.scale(-1, 1); dx -= ox; }
       if (alpha < 1) ctx.globalAlpha = prev * alpha;
       // Destello: blanco entero (enemigos) o medio blanco encima (tu Pokémon).
       if (!opts.flash || opts.softFlash) ctx.drawImage(s.img, sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
@@ -275,9 +286,10 @@ G.Sprites = (() => {
         ctx.drawImage(white(s.img), sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
       }
       ctx.globalAlpha = prev;
+      if (flip) ctx.restore();
     }
   }
 
-  return { PX, meta, hasShiny, hovers, white, animMeta, artScale, rowOf, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
+  return { PX, meta, hasShiny, hovers, white, animMeta, artScale, rowOf, flipOf, sheet, preload, dirFromAngle, bodyRadius, bodyHeight,
            drawShadow, Animator, ANIMS, get sheetCount() { return sheets.size; } };
 })();

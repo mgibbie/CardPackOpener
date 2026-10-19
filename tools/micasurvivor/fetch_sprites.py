@@ -60,7 +60,10 @@ RAW = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master'
 BASE = RAW + '/sprite'
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'micasurvivor')
-OUT_ASSETS = os.path.join(ROOT, 'assets', 'pokemon')
+# (B1c) The sheets are gitignored (micasurvivor/assets/), so a git worktree has none: MAGEPUNK_ASSET_ROOT names the
+# checkout that holds them (its micasurvivor/assets/ and overworld/data/), e.g. the main checkout.
+ASSET_ROOT = os.environ.get('MAGEPUNK_ASSET_ROOT') or os.path.dirname(ROOT)
+OUT_ASSETS = os.path.join(ASSET_ROOT, 'micasurvivor', 'assets', 'pokemon')
 OUT_META = os.path.join(ROOT, 'js', 'data', 'sprites-meta.js')
 CACHE = os.path.join(HERE, '.cache', 'sprites')
 

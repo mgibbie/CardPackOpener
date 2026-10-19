@@ -12,6 +12,8 @@
 //   blind ticks + ante marks · "Ante N" chips · action counter · Exit
 //   keys: Space play/pause · ←/→ step · Home/End · controller: LB/RB step · secondary play/pause
 //   (the bar's buttons are pad stops too, ui/pad.js)
+import { setStickerSource } from './stickers.js';
+
 const STEP_PAUSE = { instant: 0.22, move: 0.38 };   // seconds (at 1×) after an action before the next
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -48,6 +50,9 @@ export async function startReplay(ctx) {
     if (!recipe) return fail('That replay is damaged and cannot be played.');
     meta = d.meta || {}; by = d.by || ''; serverId = spec;
   }
+  // the player's win stickers as they were when the run was recorded (recipe.win_stickers); an older replay
+  // without them: this viewer's own. The viewer's own record is never changed.
+  setStickerSource(recipe.win_stickers || null);
   const needMods = [...new Set([...(recipe.mods || []), ...((recipe.customDeck && Array.isArray(recipe.customDeck.mods)) ? recipe.customDeck.mods : [])])];
   if (needMods.length) {
     board.setBanner(`${backLink}<span class="spec-status">Loading mods…</span>`);

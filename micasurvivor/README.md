@@ -116,6 +116,42 @@ follower sprite either. They stay out of `pokedex.js`, listed as `PENDING_ART` i
 
 Deploy order again: `npm run deploy-micasurvivor` (the 96 new files in `{dex}/follow/`) before the merge.
 
+## Batch B1c: fallback sheets from the overworld battle sprites (2026-10-19)
+
+The owner's call on the last 18 (Gen 9: no SpriteCollab sheet, no follower sprite): use their transparent battle
+sprites, `overworld/data/pokemon/` (crop, scale, re-pack; nothing drawn; the motion is runtime transforms only).
+
+- `tools/micasurvivor/battle_sprites.py` writes `assets/pokemon/{dex}/battle/Idle.png` and `Walk.png` (the same
+  one-frame sheet) and a row with `"src":"battle"`. **2 rows**: the battle FRONT (a big smooth drawing, facing the
+  viewer's left) and the BACK (`-b`, 96 px pixel art: the PokemonZero2024 pack's for 931–1002, PokeAPI's for 1014 /
+  1022 / 1023). `"dm"` sends straight Up to the back and every other direction to the front; the new `"fx"` says
+  which directions draw it mirrored (everything with a rightward part), applied around the ground anchor by
+  `js/core/sprites.js` (`flipOf`; the minimap icon too). Walking, the one-frame Walk gets B1's 2 px hop; Attack /
+  Hurt / ... play Idle (`animName`) with the usual hurt flash.
+- Size: the front is scaled down (premultiplied Lanczos, edge alpha snapped at 128 so it reads as pixel art) to its
+  on-field height: its visible height times the median PMD-Walk / battle-front height ratio of the 15 Pokémon most
+  alike in front height and real height, among the 109 that have a SpriteCollab sheet and a big battle front of the
+  same kind; `s` is their median shadow. The back keeps the pack's own back / front height relation. No `k`: the
+  sheet is at PMD pixel scale already. Rabsca, Bombirdier and Iron Jugulis float (`hv`, airborne pictures).
+- **No shiny**: the battle set has no shiny pictures (the Essentials pack's "shiny" files for these are copies or a
+  different drawing), so the rows have no `sh` and a shiny roll shows the normal sheet.
+- **Better art wins**: `fetch_sprites.py` ignores any `src` row, so a SpriteCollab sheet replaces this one
+  (`--only <dex>`); `follow_sprites.py` also replaces a `battle` row when a follower sprite turns up;
+  `battle_sprites.py` skips a Pokémon either of them covers and says which to run. Each lives in its own folder.
+- The gitignored dirs are not in a git worktree: `MAGEPUNK_ASSET_ROOT=<checkout>` makes the generators (and the
+  Pokédex test's static server) read `micasurvivor/assets/` and `overworld/data/` from that checkout.
+- Pokédex rows from `fetch_pokedex.py` (+18, nothing else changed); abilities by B1's rule (`abilities.js`);
+  English names for the 4 Paradox whose Spanish name differs (`lang-en.js`); Brute Bonnet and Iron Jugulis like
+  Iron Thorns (rarity 4), Iron Boulder and Iron Crown like Walking Wake (rarity 5, boss-only); Wo-Chien, Chien-Pao
+  and Okidogi legendary (rifts, Judgment, Tower, their achievements: 230). Credits: "Sprites de respaldo (lote
+  B1c)" in `CREDITS.md`, written by the generator.
+
+Result: **1025 Pokémon, the whole Pokédex** (+18): Squawkabilly, Maschiff, Mabosstiff, Shroodle, Brambleghast,
+Toedscruel, Klawf, Rabsca, Espathra, Bombirdier, Flamigo, Brute Bonnet, Iron Jugulis, Wo-Chien, Chien-Pao,
+Okidogi, Iron Boulder, Iron Crown. Nothing is pending.
+
+Deploy order again: `npm run deploy-micasurvivor` (the 36 new files in `{dex}/battle/`) before the merge.
+
 ## Saves
 
 Every localStorage key starts with `micasurvivor_` (upstream used `ps.`). A guest's save is
@@ -901,7 +937,7 @@ before batches 6-8; diffing the port's full lists against ours left exactly this
 
 | | Port | We had | Added |
 |---|---|---|---|
-| Achievements | 82 + 54 per type + one per legendary (227 here since B1b) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
+| Achievements | 82 + 54 per type + one per legendary (230 here since B1c) | 165 | 58: `boss10`, `boss250`, `boss500`, `boss1000` and the 54 "Por tipo" ones |
 | Daily missions | 17 | 13 | `mDaily`, `mMods`, `mType`, `mRifts` |
 | Weekly missions | 13 | 9 | `wDailyCh`, `wType`, `wRifts`, `wMods` |
 | Titles | 36 (one per achievement that gives one) | 34 | "Verdugo de jefes" (500 bosses), "Rey de los jefes" (1,000) |
@@ -938,7 +974,7 @@ scrolls past 5 rows.
 **Lexicon** (main menu → Lexicon; mouse, touch, pad). The port's five tabs: Items ("✔ Found" / "Not found yet" and
 "Items: n / 26 found"), Moves (by type, "Evolves into: …"), Status (the port's 7 texts), Abilities, Z-Moves &
 Dynamax (the rule, the Dynamax entry left pending in batch 5, each Z with "Defeat 250 X-type Pokémon: n/250" or
-"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 1007 since B1b, by generation; yours with their sprite, the
+"Unlocked"). Then, as the plan asks: raid dens, Pokémon (all 1025 since B1c, by generation; yours with their sprite, the
 others as silhouettes), Modes (the 8 modes with your records, the Tower and Boss Rush included, the 6 modifiers,
 adaptive difficulty) and the Floor Tower (relics, the rest cards, the 15 + 4 pacts and the boss log that was only
 on the fail screen). Every card opens an entry with its full text and data; Close, Esc, B or a tap outside closes
@@ -947,7 +983,7 @@ stats); nothing new is stored.
 
 **Trainer card** (Profile → "View my trainer card"; `menu.gd` `_show_card`): your display name, your title (or
 "(no title)"), your Pokémon and your 3 favourites, and the port's 9 cells: Runs, Best time, Best level, Defeated,
-Bosses, Chests, Pokémon (n / 1007), Achievements (n / 227), Time played (new stat `stats.totalTime`, seconds,
+Bosses, Chests, Pokémon (n / 1025), Achievements (n / 230), Time played (new stat `stats.totalTime`, seconds,
 max-merged like every stat). Below, "Records by mode". View only, like the port: no share or export, and nothing
 from the account but the name other players already see.
 
@@ -1229,8 +1265,79 @@ summary card with Watch again / Back to menu. An unknown or expired id: "This re
   damage numbers, broken crates, weather particles, the Judgment cinematic. A replay doesn't record the foes' facing
   or animations.
 
+## DLC D0a: base-unchanged harness
+
+The Expedition DLC (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`) adds new modes, and the existing modes must stay
+exactly as they are. Batch D0a is the proof: a deterministic harness and recorded golden runs of every base mode.
+Every later DLC batch re-runs them and must match.
+
+**Run it:** `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (about 30 s). The quick gate
+(`run-all.mjs --changed`) selects it for any `micasurvivor/**` change, and for a `server/` or `functions/` change
+whose diff touches the `micasurvivor-*` / `msurv-*` actions (`BY_PATH` in `overworld/tests/select-changed.mjs`).
+
+**What it runs:** Normal, Daily, Boss Rush, Tower, Team and local Co-op, each in a fresh browser context.
+- **The profile:** a fixed guest save, set in localStorage before boot. It has 5 Pokémon, all fully upgraded so
+  the runs last. The device id and the 1280×720 viewport are fixed too (the viewport sets the camera, and the
+  camera sets where enemies spawn).
+- **Up to 120 s of sim per mode,** or until the player falls: Normal ~112 s, Daily ~74 s, Boss Rush ~49 s.
+- **Fixtures:** `overworld/tests/fixtures/micasurvivor_golden/<mode>.json`, ~110 KB in all. Each holds:
+  - a per-second hash of the player, the enemies, the pickups, the projectiles and the rest (clock, state,
+    biome, the co-op partner, the team), plus their counts;
+  - the `Math.random` draw count;
+  - the spawn log;
+  - the kill / XP / coin totals;
+  - the final save (timestamps normalised to `<ts>`).
+- **The replay:** `replay.json` is the Normal run's 12c replay. The test checks that the run records the same
+  replay again, and that the fixture replay plays through the replay player (`G.WatchUI`) to the same final
+  frame hash.
+
+**The game-side hook:** `G.Game.debugStep(n, dt)` (`js/game.js`). It does what `frame()` does to move the
+game, n times with a fixed dt: keys, `update`, the replay player, the level-up / choice tick and the replay
+recorder. It skips rendering, the real clock, the pad, the network and `requestAnimationFrame`. Like the other
+`debug*` hooks it marks the run as tampered, so it never reaches the ranking. Nothing calls it outside the test.
+
+**Determinism lives in the test, not the game:**
+- **Randomness:** before any page script runs, the test swaps in a seeded, counting `Math.random`, a seeded
+  `crypto.getRandomValues` (the replay id) and a virtual clock. `performance.now` and `Date` run on that
+  clock: a fixed day, and exactly dt per step once the sim starts. The game reads the clock in the sim itself:
+  the pathing line-of-sight throttle, Focus Sash, achievement checks and timestamps.
+- **No real frames:** `requestAnimationFrame` is frozen once the sim starts.
+- **No interleaving:** each mode's whole sim runs inside one synchronous `page.evaluate`, so no timer,
+  network reply or asset load can run in the middle. Sprite loading doesn't affect the sim: the test still
+  passes with 70 % of the images and fonts failing to load.
+- **Silenced sound:** `G.Audio.sfx` and `music` are no-ops, because sound effects draw `Math.random` only where
+  an audio device exists.
+- **Input:** it goes through the game's own layer, as `KeyboardEvent`s on `window` read by `G.Input`. The
+  player keeps away from nearby enemies, and otherwise walks for 1 s and stands for 1.5 s. Digit1 takes the
+  first card of any level-up, bond, item or Tower screen.
+
+**When it fails:** it prints the first second and the field that diverged, then the first difference in the
+spawn log, the totals and the save. For example:
+
+```
+FAIL: normal: per-second hashes ... match (112 s)
+      second 3: enemies (e) diverged: fixture 5e090c14 vs now 874764e6 · also differing that second: nothing else
+FAIL: normal: the spawn log matches (185 spawns)
+      first difference at spawns[7][1] [t*100, dex, boss, den, maxHp]: fixture 837 vs now 751
+```
+
+A DLC batch that fails it has changed a base mode. Find out what changed, and don't re-record. To dig in, run
+`ONLY=<mode> TRACE=1` to print the HP, position and enemy count each second.
+
+**Re-recording (`--record`):** only for a deliberate change to a base mode, such as a balance pass, the
+Pokédex growing or a new base mechanic. Run `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs
+--record`, review the fixture diff, and say in the PR why the base changed. The fixtures record the 1025-entry
+Pokédex of batch B1c (re-recorded then: the 18 new enemies change every mode's enemy pool; first recorded on the
+1007 of B1/B1b). The fixture JSON is written with LF line endings. In a git worktree (no gitignored assets) add
+`MAGEPUNK_ASSET_ROOT=<main checkout>` so the static server finds `micasurvivor/assets/` and `overworld/data/`.
+
+**Not covered:** what `render()` does (the harness never draws, and draws by the renderer don't shift the
+stream), sound, online co-op and the network.
+
 ## Tests
 
+- `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
+  mode (see "DLC D0a: base-unchanged harness" above); `--record` only for a deliberate base change.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.
