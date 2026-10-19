@@ -367,11 +367,25 @@ try {
 				check(`${it} ${via}: capped Fire picked -> refused`, trial(it, set, keys, 1, via, cap(1)), 'refused');
 				check(`${it} ${via}: only a vanilla Joker and a capped Fire -> refused`, trial(it, set, ['j_joker', F2[0]], null, via, cap(1)), 'refused');
 			}
-			// Transformation (Lua; the coordinator is asking the owner): the picked joker, else the LEFTMOST one — refused when it isn't a Pokémon
-			for (const [it, set] of [['c_poke_transformation', 'Spectral']]) {
-				check(`${it} ${via}: nothing picked -> leftmost (a Pokemon)`, trial(it, set, [F2[0], 'j_joker', G2[0]], null, via, { staleTarget: 1 }), 0);
-				check(`${it} ${via}: Grass picked -> it`, trial(it, set, keys, 2, via, { staleTarget: 0 }), 2);
-				check(`${it} ${via}: leftmost is no Pokemon, nothing picked -> refused (Lua)`, trial(it, set, keys, null, via), 'refused');
+			// Transformation — OWNER HOUSE RULE (the Lua takes the plain leftmost joker): the picked joker if it
+			// can act on it (else refused), else the leftmost Pokémon that can still evolve, skipping non-Pokémon
+			// and fully evolved ones; none -> refused, nothing consumed or charged
+			{
+				const it = 'c_poke_transformation', set = 'Spectral';
+				const row = ['j_joker', 'j_poke_charizard', 'j_poke_bulbasaur', 'j_poke_charmander'];
+				const tr = (keys, pick, opts) => trial(it, set, keys, pick, via, opts);
+				check(`${it} ${via}: nothing picked, [Joker, Charizard, Bulbasaur, Charmander] -> leftmost valid (Bulbasaur)`, tr(row, null, { staleTarget: 1 }), 2);
+				check(`${it} ${via}: nothing picked, a Basic leftmost -> it`, tr(['j_poke_charmander', 'j_joker', 'j_poke_bulbasaur'], null, { staleTarget: 1 }), 0);
+				check(`${it} ${via}: Charmander picked -> it`, tr(row, 3, { staleTarget: 1 }), 3);
+				check(`${it} ${via}: fully evolved Charizard picked -> refused`, tr(row, 1), 'refused');
+				check(`${it} ${via}: vanilla Joker picked -> refused`, tr(row, 0), 'refused');
+				check(`${it} ${via}: only a Joker and Charizard -> refused`, tr(['j_joker', 'j_poke_charizard'], null), 'refused');
+			}
+			{
+				// the evolved card is really the highest stage (Charmander -> Charizard) and was energized
+				const r = trial('c_poke_transformation', 'Spectral', ['j_joker', 'j_poke_charmander'], null, via);
+				const j = G.jokers.cards[1];
+				out.push({ name: `c_poke_transformation ${via}: Charmander becomes Charizard with 1 Energy`, good: r.ok && j && j.config.center.key === 'j_poke_charizard' && (j.ability.extra.energy_count || 0) === 1, got: JSON.stringify({ ok: r.ok, k: j && j.config.center.key, e: j && j.ability.extra.energy_count }) });
 			}
 			// Tera Orb / Leftovers / Dragon Scale: the picked joker, else the leftmost (any joker)
 			for (const [it, set] of [['c_poke_teraorb', 'Item'], ['c_poke_leftovers', 'Item'], ['c_poke_dragonscale', 'Item']]) {

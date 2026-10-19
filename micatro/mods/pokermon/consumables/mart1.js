@@ -4,7 +4,7 @@
 import {
   G, localize, play_sound, delay, defineConsumables, cfg, set_spoon_item,
   create_random_poke_joker, energy_can_use, highlighted_energy_can_use, energy_use, highlighted_energy_use,
-  energy_max, energy_increase, type_sticker_applied, get_highest_evo, poke_evolve,
+  energy_max, energy_increase, type_sticker_applied, get_highest_evo, can_evolve_to_highest, poke_evolve,
   megastone_can_use, megastone_use, megastone_remove_from_deck, megastone_in_pool, card_eval_status_text,
   increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards, MEGASTONE_RESET,
 } from '../api.js';
@@ -43,6 +43,14 @@ const energy_card = {
     return highlighted_energy_use(self, card, area, copier);
   },
 };
+const transformation_ok = (c) => {
+  const ex = c && c.ability && c.ability.extra;
+  return !!(ex && typeof ex === 'object' && ex.ptype && !c.config.center.aux_poke && can_evolve_to_highest(c));
+};
+function transformation_target() {
+  if (G.jokers.highlighted && G.jokers.highlighted.length === 1) return transformation_ok(G.jokers.highlighted[0]) ? G.jokers.highlighted[0] : undefined;
+  return (G.jokers.cards || []).find(transformation_ok);
+}
 const ENERGIES = ['grass', 'fire', 'water', 'lightning', 'psychic', 'fighting', 'colorless', 'darkness', 'metal', 'fairy', 'dragon', 'earth'];
 
 const defs = {
@@ -65,18 +73,18 @@ const defs = {
     },
   },
 
+  // OWNER HOUSE RULE (not the Lua): Transformation targets like the Energy cards — the picked
+  // joker if it can act on it (a picked one it can't act on refuses the card), else the LEFTMOST
+  // joker it can act on; none -> refused (nothing consumed or charged). "Can act on" = a Pokémon
+  // (ptype, not an aux form) that can still evolve to a higher stage (get_highest_evo). The Lua
+  // (mart1.lua) takes the plain leftmost joker and only checks it is a Pokémon, so a fully
+  // evolved or non-Pokémon leftmost joker blocked it or got just the Energy.
   transformation: {
     loc_vars: energy_card.loc_vars,
-    can_use(self, card) {
-      let choice;
-      if (G.jokers.highlighted && G.jokers.highlighted.length === 1) choice = G.jokers.highlighted[0];
-      else if (G.jokers.cards && G.jokers.cards.length > 0) choice = G.jokers.cards[0];
-      else return false;
-      const ex = choice.ability && choice.ability.extra;
-      return !!(ex && typeof ex === 'object' && ex.ptype && !choice.config.center.aux_poke);
-    },
+    can_use(self, card) { return !!transformation_target(); },
     use(self, card) {
-      const choice = G.jokers.highlighted && G.jokers.highlighted.length === 1 ? G.jokers.highlighted[0] : G.jokers.cards[0];
+      const choice = transformation_target();
+      if (!choice) return;
       if (choice.config && choice.config.center.stage && !type_sticker_applied(choice)) energy_increase(choice, choice.ability.extra.ptype);
       else if (type_sticker_applied(choice)) energy_increase(choice, type_sticker_applied(choice));
       const highest = get_highest_evo(choice);
