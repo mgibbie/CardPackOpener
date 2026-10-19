@@ -898,10 +898,9 @@ export class Board {
   act(a, snd) {
     if (this.readOnly || this.locked) return;
     if (a.type === 'use' || a.type === 'sell' || a.type === 'buy') a = { ...a };
-    if (a.type === 'use') {
-      a.targets = this.handHighlighted();
-      if (this.jsel != null && this.areas.jokers.includes(this.jsel) && this.jsel !== a.id) a.joker_targets = [this.jsel];
-    }
+    if (a.type === 'use') a.targets = this.handHighlighted();
+    // the picked joker goes with every Use, Buy & Use included (Pokermon's Energy / items act on it)
+    if ((a.type === 'use' || (a.type === 'buy' && a.use)) && this.jsel != null && this.areas.jokers.includes(this.jsel) && this.jsel !== a.id) a.joker_targets = [this.jsel];
     if (snd) sound.play(snd);
     const r = this.opts.onAction ? this.opts.onAction(a) : null;
     if (r && !r.ok && r.error) {
@@ -1044,6 +1043,10 @@ export class Board {
     if (['jokers', 'consumeables', 'shop_jokers', 'shop_vouchers', 'shop_booster', 'pack_cards'].includes(s.area) || this.modArea(s.area)) {
       sound.play('cardSlide1', 1.1, 0.6);
       const prev = this.sel;
+      // tapping the picked joker again while a consumable is chosen un-picks it (Balatro's highlight
+      // toggle), leaving the consumable chosen: it used to re-pick it, so a joker tapped just to read
+      // it could not be let go of, and the Energy then aimed at it
+      if (s.area === 'jokers' && this.jsel === s.id && this.sel !== s.id) { this.jsel = null; this.refreshSelection(); return; }
       this.sel = this.sel === s.id ? null : s.id;
       if (s.area === 'jokers') this.jsel = this.sel === s.id ? s.id : null; // (other areas leave the joker picked)
       this.syncSel(prev);

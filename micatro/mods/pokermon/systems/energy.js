@@ -236,8 +236,8 @@ export function energy_use(self, card, area, copier) {
   for (const v of G.jokers.cards) {
     let viable = false;
     if (applied || !energy_matches(v, self.etype, true)) continue;
-    if (isTable(v.ability.extra)) { if (can_increase_energy(v) && hasEnergyField(v.ability.extra)) viable = true; }
-    else if (typeof v.ability.extra === 'number' || plainScoring(v.ability)) { if (can_increase_energy(v)) viable = true; }
+    if (isTable(v.ability.extra)) { if (can_increase_energy(v, self.etype) && hasEnergyField(v.ability.extra)) viable = true; }
+    else if (typeof v.ability.extra === 'number' || plainScoring(v.ability)) { if (can_increase_energy(v, self.etype)) viable = true; }
     if (viable) { increment_energy(v, self.etype); applied = true; }
   }
 }
@@ -253,8 +253,8 @@ export function highlighted_energy_use(self, card, area, copier) {
   set_spoon_item(card);
   if (!energy_matches(choice, self.etype, true)) return;
   let viable = false;
-  if (isTable(choice.ability.extra)) { if (can_increase_energy(choice) && hasEnergyField(choice.ability.extra)) viable = true; }
-  else if (typeof choice.ability.extra === 'number' || plainScoring(choice.ability)) { if (can_increase_energy(choice)) viable = true; }
+  if (isTable(choice.ability.extra)) { if (can_increase_energy(choice, self.etype) && hasEnergyField(choice.ability.extra)) viable = true; }
+  else if (typeof choice.ability.extra === 'number' || plainScoring(choice.ability)) { if (can_increase_energy(choice, self.etype)) viable = true; }
   if (viable) increment_energy(choice, self.etype);
 }
 
