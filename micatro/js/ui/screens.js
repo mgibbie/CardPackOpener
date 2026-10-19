@@ -7,7 +7,9 @@ import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
 import { all as modAll } from './modui.js';
 import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
-import { stickersShown, setStickersShown } from './stickers.js';
+import { stickersShown, setStickersShown, onWinStickers } from './stickers.js';
+import { stickDeckCanvas } from './decksticker.js';
+import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins } from './progress.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', (e) => { sound.play('button'); fn(e); }); return b; };
@@ -55,6 +57,7 @@ export function mainMenu(o) {
   bar.appendChild(btn('How to<br>play', 'red big b-howto', () => howTo()));
   if (o.replays) bar.appendChild(btn('Replays', 'orange big b-replays', () => replaysList(o.replays)));
   if (o.challenges) bar.appendChild(btn('Chal&shy;lenges', 'red big b-challenges', () => challengesScreen(o)));
+  bar.appendChild(btn('Achieve&shy;ments', 'green big b-achievements', () => achievementsScreen()));
   el.appendChild(bar);
   const foot = h('div', 'menu-foot');
   foot.appendChild(h('a', 'back-link', o.direct ? '← Back to the overworld' : '← Magepunk'));
@@ -270,6 +273,8 @@ export function newRunScreen(o) {
     o.onNew(mods.length ? { back, stake, seed, mods, modOptions, ...cdeck } : { back, stake, seed, ...cdeck });
   });
   el.appendChild(play);
+  // (a special sticker's sprite arriving, or a sync bringing new ones: redraw the deck)
+  const offStk = onWinStickers(() => { if (!el.isConnected) { offStk(); return; } draw(); });
   function draw() {
     drawS();
     const b = backs[bi];
@@ -278,11 +283,13 @@ export function newRunScreen(o) {
       // a mod deck: its own atlas cell (redrawn when the art arrives)
       const c = document.createElement('canvas');
       c.className = 'nr-back'; c.width = 142; c.height = 190;
-      const paint = () => { const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); if (!drawModCell(ctx, b.atlas, b.pos, 0, 0, c.width, c.height)) drawCell(ctx, 'centers', { x: 0, y: 2 }, 0, 0, c.width, c.height); };
+      const paint = () => { const ctx = c.getContext('2d'); ctx.clearRect(0, 0, c.width, c.height); if (!drawModCell(ctx, b.atlas, b.pos, 0, 0, c.width, c.height)) drawCell(ctx, 'centers', { x: 0, y: 2 }, 0, 0, c.width, c.height); stickDeckCanvas(c, b.key); };
       paint();
       const off = onModAtlas((name) => { if (name === b.atlas) { paint(); off(); } });
       deckView.appendChild(c);
     } else deckView.appendChild(cellEl('centers', b.pos, 'nr-back'));
+    // the deck's win sticker (the highest stake won with it; Arceus / Ambipom / Aipom for Pokermon's badges)
+    if (!b.mod) stickDeckCanvas(deckView.lastChild, b.key);
     const d = backDesc(b.key);
     deckInfo.innerHTML = `<div class="nr-name">${esc(d.name || b.name)}</div><div class="nr-desc">${(d.lines || []).map(markup).join('<br>')}</div>`;
     if (csel) {
@@ -343,7 +350,9 @@ export async function leaderboard(net, highlight, opts = {}) {
             (x.customDeck ? `<span class="lb-cdeck">Custom deck: ${esc(x.customDeck)}</span>` : '');
           // the row's run replay (a whole run, re-simulated in the viewer) — a ▶ beside the name
           const rp = typeof x.replay === 'string' && /^[a-f0-9]{8,20}$/.test(x.replay) ? `<a class="lb-replay b-lb-replay" href="/micatro/?replay=${x.replay}" title="Watch this run" aria-label="Watch ${esc(user)}'s run">▶</a>` : '';
-          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
+          // a won Pokermon run's Nuzlocke / Monotype tag (client-reported, like the score)
+          const rbs = lbBadges(x.badges);
+          return `<div class="lb-row${hl && hl === user ? ' me' : ''}${mods ? ' modded' : ''}"><span>${x.rank || i + 1}</span><span>${rp}${esc(user)}${x.won ? ' <span class="won">★</span>' : ''}${rbs}${mods}</span><span class="chips">${lbScore(x)}</span><span>${x.ante || ''}</span><span>${esc(back)}${x.stake > 1 ? ' · ' + x.stake : ''}</span></div>`;
         }).join('');
       body.innerHTML = '';
       body.appendChild(tbl);
@@ -467,6 +476,25 @@ export function runInfo(view) {
       try { t.render(body, modApi()); } catch (e) { console.warn('micatro: mod tab', e); body.innerHTML = '<div class="muted">Unavailable.</div>'; }
     });
     b.dataset.k = 'modui:' + t.key; tabs.appendChild(b);
+  }
+  // Pokermon runs: the live Nuzlocke / Monotype status + this player's record
+  if (view.run_badges) {
+    const b = btn('Badges', 'red tab b-ri-badges', () => {
+      for (const x of tabs.children) x.classList.toggle('on', x === b);
+      body.innerHTML = '';
+      body.appendChild(runBadgesPanel(view.run_badges));
+    });
+    b.dataset.k = 'badges'; tabs.appendChild(b);
+  }
+  // the deck (+ its win sticker, like Balatro's deck select)
+  if (view.back && !view.custom_deck && !view.challenge) {
+    const dk = h('div', 'ri-deck'); // (not .ri-mods: tests and styles read the first .ri-mods as the mods row)
+    const cv = cardCanvas({ facing: 'back' }, 'ri-back', view.back);
+    dk.appendChild(cv);
+    const st = stickDeckCanvas(cv, view.back);
+    const bn = (CENTERS[view.back] || MODREG.center(view.back) || {}).name || view.back;
+    dk.appendChild(h('span', '', `<span class="muted">Deck</span> <b class="attn">${esc(bn)}</b>${st ? ' <span class="muted">· ' + esc(st.label) + '</span>' : ''}`));
+    el.appendChild(dk);
   }
   if (view.challenge) el.appendChild(h('div', 'ri-mods ri-challenge', `<span class="muted">Challenge</span> <b class="attn">${esc(view.challenge.name)}</b>`));
   if (view.sleeve) el.appendChild(h('div', 'ri-mods ri-sleeve', `<span class="muted">Sleeve</span> <b class="attn">${esc(view.sleeve.name)}</b>`));
@@ -645,6 +673,9 @@ export function gameOver(view, o) {
   if (!won && view.blind && view.blind.name) rows.push(['Defeated by', esc(view.blind.name)]);
   const tbl = h('div', 'go-stats', rows.map(([a, b]) => `<div class="go-row"><span>${a}</span><span>${b}</span></div>`).join(''));
   el.appendChild(tbl);
+  // Pokermon: the Nuzlocke / Monotype badges this win earned (view.run_badges.earned)
+  const earned = won && view.run_badges && view.run_badges.earned;
+  if (earned && (earned.nuz || earned.mono)) el.appendChild(h('div', 'go-badges', `<span class="muted">Badges earned</span> ${badgePills({ nuz: earned.nuz, mono: earned.mono })}`));
   const rank = h('div', 'go-rank');
   el.appendChild(rank);
   if (o.rankPromise) o.rankPromise.then((r) => { if (r && r.rank) rank.innerHTML = `Leaderboard rank <b class="attn">#${r.rank}</b>`; else if (r && r.ok) rank.innerHTML = 'Score posted!'; }).catch(() => {});
@@ -688,6 +719,74 @@ export async function copyText(text) {
   } catch (e) { return false; }
 }
 
+// ------------------------------------------------- Pokermon run badges + achievements
+/** A board row / replay meta's badges {nuz, mono:'fire'} -> clean (unknown types dropped). */
+function cleanBadges(b) {
+  if (!b || typeof b !== 'object') return null;
+  const t = typeof b.mono === 'string' ? TYPES.find((x) => x.toLowerCase() === b.mono.toLowerCase()) : null;
+  return b.nuz === true || t ? { nuz: b.nuz === true, mono: t || null } : null;
+}
+function lbBadges(b) { const c = cleanBadges(b); return c ? badgePills(c, { short: true, cls: 'rb-sm' }) : ''; }
+/** Run Info's Badges tab: the run's live status, then the record. */
+function runBadgesPanel(rb) {
+  const el = h('div', 'ri-rb');
+  if (!rb.eligible) el.appendChild(h('div', 'rb-row muted', 'Seeded and challenge runs earn no badges.'));
+  const why = (r) => (r ? `<span class="rb-off">Broken: ${esc(r)}</span>` : '');
+  const tname = TYPES.includes(rb.type) ? rb.type : null;
+  el.appendChild(h('div', 'rb-row', rb.nuz ? `${badgePills({ nuz: true })} <span>Intact: never sell a joker; at most one new joker per shop (${Math.min(9, +rb.window_gains || 0)}/1 this shop)</span>` : `<b>Nuzlocke</b> ${why(rb.nuz_reason)}`));
+  el.appendChild(h('div', 'rb-row', rb.mono ? `${badgePills({ mono: tname || true })} <span>${tname ? 'Intact: start every round with only ' + tname + ' jokers' : 'The jokers you start your first round with set the type'}${rb.mono_at_risk ? ' <span class="rb-off">An off-type joker is in your row: sell it before the next round</span>' : ''}</span>` : `<b>Monotype</b> ${why(rb.mono_reason)}`));
+  if (rb.earned) el.appendChild(h('div', 'rb-row', `<span class="won">★ Won</span> ${badgePills(cleanBadges({ nuz: rb.earned.nuz === true, mono: rb.earned.mono || null }) || {}) || '<span class="muted">no badges</span>'}`));
+  el.appendChild(recordPanel());
+  el.appendChild(btn('Achievements', 'green b-ri-ach', () => achievementsScreen()));
+  return el;
+}
+/** The account's record: Nuzlocke wins, Monotype wins per type (12), Nuzlocke + Monotype. */
+function recordPanel() {
+  const p = getProgress();
+  const el = h('div', 'rec');
+  el.style.display = 'flex'; el.style.flexDirection = 'column'; el.style.gap = '10px';
+  el.appendChild(h('div', 'rec-sum',
+    `<div class="rec-stat"><b class="rec-nuz">${p.nuz || 0}</b><span>Nuzlocke wins</span></div>` +
+    `<div class="rec-stat"><b class="rec-mono">${monoWins(p)}</b><span>Monotype wins · ${typesBeaten(p).length}/12 types</span></div>` +
+    `<div class="rec-stat"><b class="rec-both">${p.both || 0}</b><span>Nuzlocke + Monotype</span></div>`));
+  el.appendChild(h('div', 'rec-types', TYPES.map((t) => {
+    const n = (p.mono || {})[t.toLowerCase()] || 0;
+    return `<div class="rec-type${n ? '' : ' off'}" data-type="${t}" style="${typeStyle(t)}">${t}<small>${n ? n + ' win' + (n === 1 ? '' : 's') : '-'}</small></div>`;
+  }).join('')));
+  return el;
+}
+/** The Achievements screen (main menu, Run Info's Badges tab): the list + the record. */
+export function achievementsScreen(tab = 'ach') {
+  const el = h('div', 'ach-screen');
+  const tabs = h('div', 'tabs');
+  const body = h('div', 'tab-body');
+  el.append(tabs, body);
+  const show = (k) => {
+    for (const b of tabs.children) b.classList.toggle('on', b.dataset.k === k);
+    body.innerHTML = '';
+    const p = getProgress();
+    if (k === 'ach') {
+      const list = h('div', 'ach-list');
+      for (const a of ACHIEVEMENTS) {
+        const ts = (p.ach || {})[a.id];
+        const when = ts ? `<div class="ach-when">Unlocked ${esc(new Date(ts).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }))}</div>` : '';
+        const row = h('div', 'ach-row' + (ts ? ' on' : ''), `<div class="ach-ico">${ts ? '★' : '?'}</div><div><div class="ach-name">${esc(a.name)}</div><div class="ach-desc">${esc(a.desc)}</div>${when}</div>`);
+        row.dataset.id = a.id;
+        list.appendChild(row);
+      }
+      body.appendChild(list);
+    } else {
+      body.appendChild(recordPanel());
+    }
+    body.appendChild(h('div', 'rec-note', 'Pokermon runs only. A Nuzlocke never sells a joker and gains at most one new joker per shop (from one blind start to the next); a Monotype starts every round with jokers of only one Pokémon type. Win the run with either one intact to earn it. Seeded and challenge runs do not count.'));
+  };
+  for (const [k, label] of [['ach', 'Achievements'], ['rec', 'Record']]) {
+    const b = btn(label, 'red tab b-ach-' + k, () => show(k)); b.dataset.k = k; tabs.appendChild(b);
+  }
+  show(tab);
+  modal(el, { title: 'Achievements', cls: 'ach-modal' });
+}
+
 // ------------------------------------------------------------- replays
 // The main menu's Replays: this device's last 10 FINISHED runs (whole runs — there are no per-round
 // replays). api: {list() -> [{id, serverId?, meta, when, recipe}], watch(e), remove(e), link(e) -> url|null, loggedIn}
@@ -710,6 +809,7 @@ export function replaysList(api) {
       row.appendChild(h('div', 'rp-info',
         `<div class="rp-top"><span class="chips">${fmt(m.score || 0)}</span> <span class="muted">best hand</span></div>` +
         `<div class="rp-sub">${res} · Ante <b class="attn">${m.ante || 1}</b> · ${backName}${m.stake > 1 ? ' · stake ' + esc(m.stake) : ''} · <span class="muted">${esc(when)} · ${m.actions || (e.recipe && e.recipe.actions ? e.recipe.actions.length : 0)} moves</span></div>` +
+        (lbBadges(m.badges) ? `<div class="rp-badges">${badgePills(cleanBadges(m.badges))}</div>` : '') +
         (Array.isArray(m.mods) && m.mods.length ? `<div class="rp-mods">${modBadges(m.mods)}</div>` : '')));
       const acts = h('div', 'rp-acts');
       acts.appendChild(btn('▶', 'green rp-watch b-rp-watch', () => api.watch(e)));

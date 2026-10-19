@@ -82,7 +82,8 @@ try {
 	A(ev && ev.stake === 2 && ev.jokers.includes('j_joker') && ev.jokers.includes('j_poke_ivysaur') && ev.jokers.includes('j_poke_bulbasaur'), 'the engine reports the win with the jokers (and the previous evolution)', JSON.stringify(ev));
 	await waitFor(() => page.evaluate(() => !!document.querySelector('.go-modal')), 10000);
 	const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
-	A(stored.j_joker === 2 && stored.j_poke_ivysaur === 2 && stored.j_poke_bulbasaur === 2, 'the win is stored per player: joker key -> highest stake (Red = 2)', JSON.stringify(stored));
+	A(stored.j_joker?.win === 2 && stored.j_poke_ivysaur?.win === 2 && stored.j_poke_bulbasaur?.win === 2, 'the win is stored per player: joker key -> {win: highest stake} (Red = 2)', JSON.stringify(stored));
+	A(stored.j_joker?.poke === 2 && stored.j_poke_bulbasaur?.poke === 2, '... and, a Pokermon run, the poke category too (the Pikachu sticker)', JSON.stringify(stored.j_joker));
 
 	// 2. a new run: the Joker wears the Red sticker, the tooltip says so; Options can hide it
 	await page.evaluate(() => { const b = document.querySelector('.go-modal .b-newrun'); if (b) b.click(); document.querySelectorAll('.modal .b-back').forEach((x) => x.click()); });
@@ -100,11 +101,15 @@ try {
 		for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s && s.d.center === center) { const c = s.base.getContext('2d'); return [...c.getImageData(100, 4, 40, 40).data].reduce((a, x) => a + x, 0); } }
 		return null;
 	}, center);
+	// (the Pikachu sprite loads on first use: wait for it, so the before/after pixels compare the finished sticker)
+	await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).specialImage('pikachu'));
+	await waitFor(() => page.evaluate(async () => !!(await import('/micatro/js/ui/stickers.js')).specialImage('pikachu')), 8000);
+	await sleep(400);
 	const withSticker = await px('j_joker');
 	const sticker = await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winSticker('j_joker'));
-	A(sticker === 'Red', 'the Joker has the Red Stake sticker', sticker);
+	A(sticker === 'Red', 'the Joker has a Red Stake sticker (a Pokermon win: the Red-ringed Pikachu)', sticker);
 	const tip = await page.evaluate(() => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s.d.center === 'j_joker') b.showCardTip(s, true); } return b.tip.textContent; });
-	A(/Red Sticker/.test(tip) && /to win on/.test(tip), 'its tooltip explains the sticker', tip.slice(0, 160));
+	A(/Pokermon win — Red Stake/.test(tip) && /Pikachu sticker/.test(tip), 'its tooltip explains the sticker', tip.slice(0, 160));
 	A(!(await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winSticker('j_greedy_joker'))), 'a joker never won with has none');
 	await page.evaluate(() => document.querySelector('.b-options').click());
 	await waitFor(() => page.evaluate(() => [...document.querySelectorAll('.opt-l')].some((x) => /Stake stickers/.test(x.textContent))), 5000);
@@ -114,7 +119,10 @@ try {
 	A(withSticker != null && without != null && withSticker !== without, 'the sticker is drawn on the card (Options > Stake stickers Off removes it)', JSON.stringify([withSticker, without]));
 	await page.evaluate(() => { const r = [...document.querySelectorAll('.opt-row')].find((x) => /Stake stickers/.test(x.textContent)); [...r.querySelectorAll('.btn')].find((b) => b.textContent === 'On').click(); document.querySelector('.opt-modal .b-back').click(); });
 	await sleep(300);
-	A(await px('j_joker') === withSticker, 'and On brings it back');
+	// (approximately: a special sticker's ring is antialiased, and a re-compose can shift its edge pixels by a hair)
+	const same = (v) => v != null && Math.abs(v - withSticker) <= withSticker * 0.005 && Math.abs(v - without) > Math.abs(v - withSticker);
+	await waitFor(async () => same(await px('j_joker')), 3000);
+	A(same(await px('j_joker')), 'and On brings it back', JSON.stringify([withSticker, without, await px('j_joker')]));
 
 	// 3. the Pokédex (a collection view) shows Bulbasaur's sticker
 	await page.evaluate(() => window.__micatro.newRun({ mods: ['pokermon'] }));
@@ -138,11 +146,11 @@ try {
 	// 4. a lower stake never downgrades; a seeded run records nothing
 	await winRun({ stake: 1, jokers: ['j_joker', 'j_greedy_joker'] });
 	let st = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
-	A(st.j_joker === 2 && st.j_greedy_joker === 1, 'a White win keeps the Joker\'s Red and gives Greedy Joker White', JSON.stringify(st));
+	A(st.j_joker?.win === 2 && st.j_greedy_joker?.win === 1, 'a White win keeps the Joker\'s Red and gives Greedy Joker White', JSON.stringify(st));
 	await page.evaluate(() => document.querySelectorAll('.modal').forEach(() => { const b = document.querySelector('.go-modal .b-newrun'); if (b) b.click(); }));
 	await winRun({ stake: 8, seed: 'SEEDED1', jokers: ['j_joker', 'j_lusty_joker'] });
 	st = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
-	A(st.j_joker === 2 && !st.j_lusty_joker, 'a seeded run\'s win records no stickers', JSON.stringify(st));
+	A(st.j_joker?.win === 2 && !st.j_lusty_joker, 'a seeded run\'s win records no stickers', JSON.stringify(st));
 	A(errors.length === 0, 'no console errors', errors.join(' | '));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));

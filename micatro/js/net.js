@@ -190,7 +190,8 @@ export function modList(mods) {
 // submitScore({score, ante, seed, back, stake, won, mods}) → {ok, better, best, rank} | {error}
 // A run with mods posts to the separate Modded board (mode 'micatro_modded') with its mod list.
 // A run with a CUSTOM DECK (the deck editor) is modded too: customDeck = the deck's name.
-export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null } = {}) {
+// badges: a won Pokermon run's {nuz:true, mono:'fire'} (ui/progress.js wireBadges) — client-reported, shape-checked by the server.
+export async function submitScore({ score, ante = 0, seed = '', back = '', stake = 0, won = false, mods = [], customDeck = '', replay = null, badges = null } = {}) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
 	const s = wireScore(score);
 	if (s == null) return { error: 'bad score' };
@@ -200,6 +201,7 @@ export async function submitScore({ score, ante = 0, seed = '', back = '', stake
 	if (ml.length) body.mods = ml;
 	if (cd) body.customDeck = cd;
 	if (replay && /^[a-f0-9]{8,20}$/.test(String(replay))) body.replay = String(replay); // the run's replay: the board row links to it
+	if (won && badges && typeof badges === 'object' && (badges.nuz || badges.mono)) body.badges = { ...(badges.nuz ? { nuz: true } : {}), ...(badges.mono ? { mono: String(badges.mono) } : {}) };
 	try { return await MP.call('run-score', body); }
 	catch (e) { return { error: 'offline' }; }
 }
@@ -234,6 +236,22 @@ export async function saveDecks(decks, rev = 0) {
 	catch { return { error: 'offline' }; }
 }
 
+// The jokers' win (stake) stickers live on the account for a signed-in player (one durable row,
+// `micatro_stickers:<user>` = {v:1, wins: {jokerKey: level 1..8}, rev, updatedAt}); ui/stickers.js keeps a
+// localStorage copy as the offline cache. A put MERGES on the server (max per key) and returns the merged map.
+//   fetchStickers() -> {wins, rev} | {error}
+//   saveStickers(wins, {keepalive}) -> {ok, wins, rev} | {error}
+export async function fetchStickers() {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-stickers-get', {}); return d && !d.error && d.wins && typeof d.wins === 'object' && !Array.isArray(d.wins) ? { wins: d.wins, rev: d.rev || 0 } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function saveStickers(wins, { keepalive = false } = {}) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-stickers-put', { wins }, keepalive ? { keepalive: true } : {}); return d && d.ok && d.wins && typeof d.wins === 'object' && !Array.isArray(d.wins) ? d : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+
 // ---------------------------------------------------------------- run replays
 // A finished run's replay (micatro/js/replays.js packs the recipe). Upload needs an account; READING
 // one is public (a share link opens logged-out too).
@@ -249,5 +267,21 @@ export async function uploadReplay({ code, meta = {}, id = null } = {}) {
 export async function fetchReplay(id) {
 	if (!/^[a-f0-9]{8,20}$/.test(String(id || ''))) return { error: 'bad id' };
 	try { const d = await MP.call('micatro-replay-get', { id: String(id) }); return d && d.code ? d : { error: (d && d.error) || 'not found' }; }
+	catch { return { error: 'offline' }; }
+}
+
+// ---------------------------------------------------------------- Nuzlocke / Monotype record
+// The record + achievements (ui/progress.js), account-saved in the row micatro_progress:<user>. The server MERGES a
+// put (counts: max; types / achievements: union) and returns the merged record, so nothing goes backwards.
+//   fetchProgress() → {progress} | {error}
+//   saveProgress(progress) → {ok, progress} | {error}
+export async function fetchProgress() {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { const d = await MP.call('micatro-progress-get', {}); return d && d.progress ? { progress: d.progress } : { error: (d && d.error) || 'bad response' }; }
+	catch { return { error: 'offline' }; }
+}
+export async function saveProgress(progress) {
+	if (!isLoggedIn()) return { error: 'not logged in' };
+	try { return (await MP.call('micatro-progress-put', { progress })) || { error: 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }

@@ -73,9 +73,32 @@ const MICATRO_REFRESH_MS = 20_000;  // an unchanged keep-alive rewrites the stat
 const MICATRO_PRESENCE_MS = 30_000; // ...and the presence row only past this age (ONLINE_MS is 90s)
 const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is rewritten at most this often (< SPEC_WINDOW_MS)
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
+const MICATRO_PROGRESS_BYTES = 4000;      // the Nuzlocke / Monotype record + achievements (a few hundred bytes in practice)
 const MICATRO_DECKS_MAX = 30;           // decks per player
 const MICATRO_DECK_BYTES = 66_000;      // one serialized deck definition (the client caps a definition at 64 KB)
 const MICATRO_DECKS_BYTES = 400_000;    // the whole row
+// MICATRO per-joker win (stake) stickers (micatro/js/ui/stickers.js): one durable row per player,
+// `micatro_stickers:<user>` = {v:2, wins: {jokerKey: {win, poke, nuz, mono, both}}, rev, updatedAt}, each category the
+// highest stake level 1..8 won at (win = any win; poke = a win with Pokermon on; nuz = Nuzlocke; mono = Monotype; both = the two together).
+// The older flat form {jokerKey: level} means {win: level}. A put MERGES (max per key and category), so a stale
+// device can never lower or drop a sticker.
+const MICATRO_STICKERS_MAX = 5000;        // joker keys per player (vanilla + every mod is well under 2000)
+const MICATRO_STICKERS_BYTES = 700_000;   // one serialized `wins` map (5000 64-char keys x 4 categories is ~525 KB)
+const MICATRO_STICKER_KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
+const MICATRO_STICKER_CATS = ['win', 'poke', 'nuz', 'mono', 'both'];
+const stickerLevel = (v) => (Number.isInteger(v) && v >= 1 && v <= 8 ? v : 0);
+// one joker's record, either form -> {cat: level}; null when it is not a valid, non-empty record
+// (`loose`: skip a bad category instead of refusing the record — for rows already stored)
+function stickerRecord(v, loose = false) {
+	if (typeof v === 'number') return stickerLevel(v) ? { win: v } : null;
+	if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+	const out = {};
+	for (const k of Object.keys(v)) {
+		if (!MICATRO_STICKER_CATS.includes(k) || !stickerLevel(v[k])) { if (loose) continue; return null; }
+		out[k] = v[k];
+	}
+	return Object.keys(out).length ? out : null;
+}
 // MICASURVIVOR (/micasurvivor/, the PokéSurvivor port) cloud save: one row per player,
 // `micasurvivor:<user>` = {rev, save, updated_at}. The client keeps a localStorage copy
 // (cache/offline) and writes with compare-and-set on `rev`: a stale put gets 409 + the
@@ -165,7 +188,49 @@ function cleanReplayMeta(m) {
 		customDeck: str(m.customDeck, 32), seed: str(m.seed, 16),
 		actions: int(m.actions, 0, MICATRO_REPLAY_ACTIONS), finalSeq: int(m.finalSeq, 0, 1e9),
 		checksum: str(m.checksum, 64), engineVersion: int(m.engineVersion, 0, 1e6),
+		...(m.won && cleanRunBadges(m.badges) && (cleanRunBadges(m.badges).nuz || cleanRunBadges(m.badges).mono) ? { badges: cleanRunBadges(m.badges) } : {}),
 	};
+}
+// MICATRO Pokermon run badges + the per-account record (Nuzlocke / Monotype; micatro/js/ui/progress.js).
+// Client-reported (like scores): only the SHAPE is validated. The 12 Pokermon types, lowercase.
+const MICATRO_TYPES = ['grass', 'fire', 'water', 'lightning', 'psychic', 'fighting', 'colorless', 'dark', 'metal', 'fairy', 'dragon', 'earth'];
+const MICATRO_ACH_MAX = 64;
+/** A run row's badges {nuz?: true, mono?: '<type>'} -> the clean object, or null for a bad shape. */
+function cleanRunBadges(b) {
+	if (!b || typeof b !== 'object' || Array.isArray(b)) return null;
+	for (const k of Object.keys(b)) if (k !== 'nuz' && k !== 'mono') return null;
+	const out = {};
+	if (b.nuz != null) { if (typeof b.nuz !== 'boolean') return null; if (b.nuz) out.nuz = true; }
+	if (b.mono != null && b.mono !== false) { if (typeof b.mono !== 'string' || !MICATRO_TYPES.includes(b.mono)) return null; out.mono = b.mono; }
+	return out;
+}
+const emptyMicatroProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: {}, ach: {} });
+/** An incoming record -> clean {v, nuz, nuzStake, both, mono: {type: wins}, ach: {id: ts}}, or null for a bad shape. */
+function cleanMicatroProgress(p) {
+	if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+	const count = (v, hi = 1e7) => (v == null ? 0 : Number.isInteger(v) && v >= 0 && v <= hi ? v : NaN);
+	const out = emptyMicatroProgress();
+	for (const k of ['nuz', 'nuzStake', 'both']) { out[k] = count(p[k], k === 'nuzStake' ? 99 : 1e7); if (Number.isNaN(out[k])) return null; }
+	if (p.mono != null) {
+		if (typeof p.mono !== 'object' || Array.isArray(p.mono)) return null;
+		for (const [t, n] of Object.entries(p.mono)) { const c = count(n); if (!MICATRO_TYPES.includes(t) || Number.isNaN(c)) return null; if (c) out.mono[t] = c; }
+	}
+	if (p.ach != null) {
+		if (typeof p.ach !== 'object' || Array.isArray(p.ach)) return null;
+		const ids = Object.keys(p.ach);
+		if (ids.length > MICATRO_ACH_MAX) return null;
+		for (const id of ids) { const ts = p.ach[id]; if (!/^[a-z0-9_]{1,32}$/.test(id) || !Number.isInteger(ts) || ts <= 0 || ts > 1e13) return null; out.ach[id] = ts; }
+	}
+	return out;
+}
+/** a + b, never backwards: counts take the max, types / achievements the union (an achievement keeps its earliest time). */
+function mergeMicatroProgress(a, b) {
+	const out = emptyMicatroProgress();
+	for (const k of ['nuz', 'nuzStake', 'both']) out[k] = Math.max(+a[k] || 0, +b[k] || 0);
+	for (const t of MICATRO_TYPES) { const n = Math.max(+(a.mono || {})[t] || 0, +(b.mono || {})[t] || 0); if (n) out.mono[t] = n; }
+	const ids = [...new Set([...Object.keys(a.ach || {}), ...Object.keys(b.ach || {})])].sort().slice(0, MICATRO_ACH_MAX);
+	for (const id of ids) { const x = (a.ach || {})[id], y = (b.ach || {})[id]; out.ach[id] = x && y ? Math.min(x, y) : x || y; }
+	return out;
 }
 // MICATRO big-number scores (any run past 1e308, sent as text "1.234e450"). The game's scale
 // tops out at 9.99e999: an exponent >= 1000 is "naneinf" (-> {naneinf:true}, stored like Infinity).
@@ -214,6 +279,10 @@ const RATE_LIMITS = {
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	'micatro-decks-put': [20, 60_000], // saving custom decks (the deck editor) — deliberate edits, never hot
+	// win stickers: a load per page boot + a debounced push per won run (and its retries) — never hot
+	'micatro-stickers-get': [30, 60_000], 'micatro-stickers-put': [30, 60_000],
+	// the Nuzlocke / Monotype record + achievements: read at boot / sign-in, written after a win (merged, never backwards)
+	'micatro-progress-get': [30, 60_000], 'micatro-progress-put': [20, 60_000],
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
 	// MicaSurvivor cloud save: the client debounces (purchases ~3s, run end, else ~30s) — a brake on floods
 	'micasurvivor-save-put': [30, 60_000], 'micasurvivor-save-get': [30, 60_000],
@@ -1569,6 +1638,13 @@ export default async function handler(req, env) {
 			};
 			if (mode === 'micatro_modded') run.mods = modList;
 			if (customDeck) run.customDeck = customDeck;
+			// Pokermon run badges ({nuz:true, mono:'fire'}): CLIENT-REPORTED like the score itself — the server can't
+			// re-check a run, so only the shape is validated. Only a won run carries them; a bad shape is refused.
+			if (body.badges != null) {
+				const bd = cleanRunBadges(body.badges);
+				if (!bd) return json({ error: 'bad badges' }, 400);
+				if (run.won && (bd.nuz || bd.mono)) run.badges = bd;
+			}
 			// the run's replay (micatro-replay-put): only a well-formed id of a replay THIS player uploaded
 			const rid = String(body.replay ?? '');
 			if (REPLAY_ID_RE.test(rid)) { const rr = await store.get('mreplay:' + rid); if (rr && rr.by === username) run.replay = rid; }
@@ -1963,6 +2039,81 @@ export default async function handler(req, env) {
 		const rev = (prev.rev || 0) + 1;
 		await store.setJSON(key, { rev, decks, updated_at: Date.now() });
 		return json({ ok: true, rev, count: decks.length });
+	}
+
+	// MICATRO win stickers (micatro/js/ui/stickers.js): exact key `micatro_stickers:<username>`, durable.
+	// get -> {v:2, wins: {key: {cat: level}}, rev}. put {wins} (either form per key: {cat: level} or a flat
+	// level = {win}) MERGES server-side: each key and category keeps max(stored, incoming), so a stale or racing
+	// device never lowers or drops a sticker; written with compare-and-set on `rev` (re-merged on a lost race)
+	// and only when something rose. -> {ok, wins (the merged map), rev, changed}.
+	const storedStickers = (row) => {
+		const out = Object.create(null);
+		const had = row && row.wins && typeof row.wins === 'object' && !Array.isArray(row.wins) ? row.wins : {};
+		for (const k of Object.keys(had)) {
+			if (!MICATRO_STICKER_KEY_RE.test(k) || k === '__proto__') continue;
+			const r = stickerRecord(had[k], true); // read leniently: a bad category is dropped, not the joker
+			if (r) out[k] = r;
+		}
+		return out;
+	};
+	if (action === 'micatro-stickers-get') {
+		const row = await store.get('micatro_stickers:' + username);
+		return json({ v: 2, wins: storedStickers(row), rev: (row && row.rev) || 0 });
+	}
+	if (action === 'micatro-stickers-put') {
+		const inc = body.wins;
+		if (!inc || typeof inc !== 'object' || Array.isArray(inc)) return json({ error: 'wins must be an object' }, 400);
+		if (JSON.stringify(inc).length > MICATRO_STICKERS_BYTES) return json({ error: 'too much sticker data', max: MICATRO_STICKERS_BYTES }, 413);
+		const keys = Object.keys(inc);
+		if (keys.length > MICATRO_STICKERS_MAX) return json({ error: `at most ${MICATRO_STICKERS_MAX} jokers`, max: MICATRO_STICKERS_MAX }, 413);
+		const incoming = Object.create(null);
+		for (const k of keys) {
+			const r = MICATRO_STICKER_KEY_RE.test(k) && k !== '__proto__' ? stickerRecord(inc[k]) : null;
+			if (!r) return json({ error: 'bad sticker entry' }, 400);
+			incoming[k] = r;
+		}
+		const key = 'micatro_stickers:' + username;
+		for (let attempt = 0; attempt < 5; attempt++) {
+			const prev = await store.get(key);
+			const rev = (prev && prev.rev) || 0;
+			const merged = storedStickers(prev);
+			let changed = !!prev && prev.v !== 2; // an older flat row is rewritten in the new form
+			for (const k of keys) {
+				const cur = merged[k] || (merged[k] = {});
+				for (const c of Object.keys(incoming[k])) if (!(cur[c] >= incoming[k][c])) { cur[c] = incoming[k][c]; changed = true; }
+			}
+			if (!changed) return json({ ok: true, wins: merged, rev, changed: false });
+			if (Object.keys(merged).length > MICATRO_STICKERS_MAX) return json({ error: `at most ${MICATRO_STICKERS_MAX} jokers`, max: MICATRO_STICKERS_MAX }, 413);
+			if (await store.setIfRev(key, { v: 2, wins: merged, rev: rev + 1, updatedAt: Date.now() }, rev)) return json({ ok: true, wins: merged, rev: rev + 1, changed: true });
+		}
+		return json({ error: 'busy, retry' }, 503); // five lost races in a row: the client retries
+	}
+
+	// MICATRO Nuzlocke / Monotype record + achievements (micatro/js/ui/progress.js): one row per player,
+	// exactly `micatro_progress:<username>` = {rev, progress, updated_at}. put {progress} MERGES into the row so
+	// nothing goes backwards (counts: max; types / achievements: union, earliest time kept) and returns the
+	// merged record. Client-reported, like run scores. The write is a compare-and-set on rev (retried), so
+	// two devices pushing at once can't lose each other's wins.
+	if (action === 'micatro-progress-get') {
+		const row = await store.get('micatro_progress:' + username);
+		return json({ progress: mergeMicatroProgress(emptyMicatroProgress(), (row && row.progress) || {}) });
+	}
+	if (action === 'micatro-progress-put') {
+		let text;
+		try { text = JSON.stringify(body.progress); } catch { text = ''; }
+		if (!text || text.length > MICATRO_PROGRESS_BYTES) return json({ error: 'progress too large', max: MICATRO_PROGRESS_BYTES }, 413);
+		const inc = cleanMicatroProgress(body.progress);
+		if (!inc) return json({ error: 'not a progress record' }, 400);
+		const key = 'micatro_progress:' + username;
+		for (let i = 0; i < 4; i++) {
+			const row = await store.get(key);
+			const prev = mergeMicatroProgress(emptyMicatroProgress(), (row && row.progress) || {});
+			const merged = mergeMicatroProgress(prev, inc);
+			if (JSON.stringify(merged) === JSON.stringify(prev) && row) return json({ ok: true, progress: merged, wrote: false });
+			const rev = ((row && row.rev) || 0);
+			if (await store.setIfRev(key, { rev: rev + 1, progress: merged, updated_at: Date.now() }, rev)) return json({ ok: true, progress: merged, wrote: true });
+		}
+		return json({ error: 'busy, retry' }, 409);
 	}
 
 	// MICASURVIVOR cloud save (micasurvivor/js/core/db.js, Magepunk mode). Exact key

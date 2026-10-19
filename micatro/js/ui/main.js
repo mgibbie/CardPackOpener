@@ -35,6 +35,7 @@ let overHandled = false, winShown = false;
 let runReplay = null;   // this run's replay once it finished: {localId, local, serverId, upload: Promise<serverId|null>}
 let replayCtrl = null;  // MODE 'replay': the viewer (ui/replayview.js)
 let Stickers = null;    // ui/stickers.js (the jokers' win stickers), once loaded
+let Progress = null;    // ui/progress.js (the Nuzlocke / Monotype record + achievements), once loaded
 
 const stage = document.getElementById('stage');
 
@@ -144,7 +145,19 @@ function afterAct(view, events) {
   // Balatro's set_joker_win: the run's jokers (+ a mod's extra keys) earn this stake's sticker — not in a
   // seeded or a challenge run (win_game skips it). Only the player's own live run records (never a replay).
   const winEv = (events || []).find((e) => e.type === 'win');
-  if (winEv && Stickers && !view.challenge && !(Engine && Engine.G && Engine.G.GAME && Engine.G.GAME.seeded)) Stickers.recordWin(winEv);
+  // Pokermon's Nuzlocke / Monotype badges (view.run_badges.earned: only an eligible run's win — not seeded, not a
+  // challenge) go into this player's record and may unlock achievements; the win stickers get their categories.
+  const earned = winEv && view.run_badges && view.run_badges.earned;
+  // The win stickers: categories ['win', 'poke'? (a Pokermon run), 'nuz'?, 'mono'?, 'both'?] (stickers.js recordWin({jokers, stake, categories}): Pikachu / Aipom /
+  // Ambipom / Arceus over the stake sticker). The joker list is the engine's win event's (joker_win_keys, with previous evolutions).
+  // The deck earns its sticker too (its back key joins the list; Balatro's deck stake stickers) — not a custom deck's
+  // neutral back. Seeded and challenge runs earn none.
+  const deckKey = view.back && !view.custom_deck && /^[A-Za-z0-9_]{1,64}$/.test(view.back) ? view.back : null;
+  if (winEv && Stickers && !view.challenge && !(Engine && Engine.G && Engine.G.GAME && Engine.G.GAME.seeded)) Stickers.recordWin({ ...winEv, jokers: [...(winEv.jokers || []), ...(deckKey ? [deckKey] : [])], categories: Progress ? Progress.winCategories(earned, (view.mods || []).includes('pokermon')) : ['win'] });
+  if (earned && Progress) {
+    const unlocked = Progress.recordRunWin(earned, view.stake);
+    if (unlocked.length) Progress.achievementToast(stage, unlocked);
+  }
   if (won && !winShown) {
     winShown = true;
     whenIdle(() => showWin(view));
@@ -242,7 +255,8 @@ function chatWrap() {
 function submit(view, won, replay) {
   if (!loggedIn() || !net.submitScore) return null;
   if (view.challenge) return null; // (Balatro: challenge runs post no high scores — the replay is still kept)
-  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}) });
+  const badges = won && Progress && view.run_badges ? Progress.wireBadges(view.run_badges.earned) : null; // (Pokermon: the row's Nuzlocke / Monotype tag)
+  return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}), ...(badges ? { badges } : {}) });
 }
 /**
  * The run just finished (game over, or the win): keep its WHOLE-RUN replay. Saved locally (the last 10
@@ -328,6 +342,7 @@ function menuOpts() {
     onNew: (o) => startRun(o), onContinue: () => continueRun(),
     replays: replaysApi(), me: myName(),
     challenges: challengesApi(), sleeves: sleevesApi(),
+    progress: Progress,
   };
 }
 /** The Challenges screen: Balatro's 20 + the enabled mods' (their modules load first). */
@@ -512,7 +527,12 @@ async function boot() {
   import('./skins.js').then((m) => m.initSkins(myName())).catch((e) => console.warn('micatro: skins unavailable', e));
   // the jokers' win stickers: this player's record (ui/stickers.js)
   Stickers = await import('./stickers.js').catch(() => null);
-  if (Stickers) Stickers.initWinStickers(myName());
+  // signed in: saved on the account (net.js fetchStickers / saveStickers; localStorage is the offline cache);
+  // a guest: this browser only
+  if (Stickers) Stickers.initWinStickers(myName(), loggedIn() && net.fetchStickers ? { fetch: () => net.fetchStickers(), push: (w, o) => net.saveStickers(w, o) } : null);
+  // the Nuzlocke / Monotype record + achievements: this player's, synced with the account (ui/progress.js)
+  Progress = await import('./progress.js').catch(() => null);
+  if (Progress) Progress.initProgress(loggedIn() ? myName() : null, net);
   player = new Player(board);
   UI.initScreens(stage);
   if (Engine && Engine.describeBack) UI.setBackDescriber(Engine.describeBack);
@@ -533,6 +553,7 @@ async function boot() {
     board, player,
     newRun: (o) => startRun(o || {}),
     get replay() { return replayCtrl; },
+    get progress() { return Progress; },
     ready: true,
   };
   if (MODE === 'spectate') { startSpectating(); return; }
