@@ -2,12 +2,13 @@
 // Each mirrors its deck (backs/backs1.js): Trainer, Luminous, Telekinetic, Amped, Future, Stadium,
 // Mega, Vending, and (pokemon_legacy only, like the Lua's slist) Obituary / Revenant.
 // `config` goes through the same handling as a deck (vouchers, consumables); `apply` / `calculate`
-// are the Lua's. Art: AtlasDecksBasic row 1 (Stadium / Mega use placeholder_sleeve, as shipped).
+// are the Lua's. Art: AtlasDecksBasic row 1 (Stadium / Mega: 3.2.1 shipped placeholder_sleeve; their art is
+// Pokermon 3.9.1's, AtlasDecksBasic {8,1} / {9,1}, registered as AtlasDecksBasic391 in index.js).
 import { G, P_CENTERS, localize, play_sound, create_card, change_shop_size } from './api.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 
 const MOD = 'pokermon';
-const DECKS = 'poke_AtlasDecksBasic', PLACEHOLDER = 'poke_placeholder_sleeve';
+const DECKS = 'poke_AtlasDecksBasic', DECKS_391 = 'poke_AtlasDecksBasic391';
 const name_text = (set, key) => localize({ type: 'name_text', set, key });
 
 /** sleeve.lua init(): after the deck (and sleeve) apply, every playing card gets poke_force_seal. */
@@ -51,7 +52,7 @@ export const SLEEVES = [
     loc_vars: (self) => ({ vars: [self.config.scry] }),
     apply(self) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + self.config.scry; },
   }),
-  sleeve('stadiumsleeve', 'Stadium Sleeve', { x: 0, y: 0 }, PLACEHOLDER, {
+  sleeve('stadiumsleeve', 'Stadium Sleeve', { x: 8, y: 1 }, DECKS_391, {
     loc_vars: () => ({ vars: [] }),
     apply() {
       G.E_MANAGER.add_event(() => {
@@ -70,7 +71,7 @@ export const SLEEVES = [
       });
     },
   }),
-  sleeve('megasleeve', 'Mega Sleeve', { x: 0, y: 0 }, PLACEHOLDER, {
+  sleeve('megasleeve', 'Mega Sleeve', { x: 9, y: 1 }, DECKS_391, {
     config: { vouchers: ['v_reroll_surplus', 'v_reroll_glut'], consumables: ['c_poke_megastone'], shop_size: 1 },
     loc_vars: (self) => ({ vars: [localize('megastone_variable'), name_text('Voucher', 'v_reroll_surplus'), name_text('Voucher', 'v_reroll_glut'), self.config.shop_size] }),
     apply(self) { G.E_MANAGER.add_event(() => { change_shop_size(-self.config.shop_size); }); },

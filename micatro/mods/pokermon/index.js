@@ -121,6 +121,12 @@ const ATLAS_FILES = {
   j_poke_unown_swarm_shiny: ['j_poke_unown_swarm_shiny.png', 290, 285],
   j_poke_unown_swarm_soul: ['j_poke_unown_swarm_soul.png', 290, 285],
   j_poke_unown_swarm_shiny_soul: ['j_poke_unown_swarm_shiny_soul.png', 290, 285],
+  // martz.lua's Jirachi wish cards (c_poke_fake_*) name this Series A sheet; it ships with 3.2.1 but wasn't registered.
+  AtlasJokersSeriesAGen03: ['Series A/AtlasJokersSeriesAGen03.png'],
+  // Art Pokermon 3.2.1 shipped as placeholders and a later release (3.9.1, InertSteak/Pokermon assets/2x/Basic Series)
+  // drew: the 3.9.1 sheets, unchanged, saved beside the 3.2.1 ones (see LATER_ART below and PORTING.md "Art").
+  AtlasJokersBasicOthers391: ['Basic Series/AtlasJokersBasicOthers-391.png'],
+  AtlasDecksBasic391: ['Basic Series/AtlasDecksBasic-391.png'],
 };
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) {
   ATLAS_FILES['AtlasJokersBasic' + g] = ['Basic Series/AtlasJokersBasic' + g + '.png'];
@@ -130,6 +136,17 @@ const atlases = {};
 for (const [name, [path, px = 71, py = 95, frames]] of Object.entries(ATLAS_FILES)) {
   atlases['poke_' + name] = { src: art(path), px, py, ...(frames ? { frames } : {}) };
 }
+/**
+ * Centers 3.2.1 drew with a placeholder sheet whose art a later Pokermon release added (3.9.1: zotherjokers.lua
+ * rotomdex pos {0,4} atlas "others"; backs1.lua stadiumdeck / megadeck AtlasDecksBasic {8,0} / {9,0}). Applied
+ * after the 3.2.1 atlas is resolved; the sleeves' twins are in sleeves.js.
+ */
+const LATER_ART = {
+  j_poke_rotomdex: { atlas: 'poke_AtlasJokersBasicOthers391', pos: { x: 0, y: 4 } },
+  b_poke_stadiumdeck: { atlas: 'poke_AtlasDecksBasic391', pos: { x: 8, y: 0 } },
+  b_poke_megadeck: { atlas: 'poke_AtlasDecksBasic391', pos: { x: 9, y: 0 } },
+};
+const laterArt = (c) => { const a = LATER_ART[c.key]; if (a) { c.atlas = a.atlas; c.pos = { ...a.pos }; } };
 /** A data atlas name -> the registered (prefixed) atlas, or a placeholder. */
 const atlasName = (a, fallback = 'placeholder_joker') => ('poke_' + (ATLAS_FILES[a] ? a : fallback));
 
@@ -205,6 +222,7 @@ function jokerCenter(data_item, file) {
   if (c.item_req) { if (isTable(c.config.extra)) c.config.extra.item_req = c.item_req; else c.config.extra = { item_req: c.item_req }; }
   if (c.evo_list) { if (isTable(c.config.extra)) c.config.extra.evo_list = c.evo_list; else c.config.extra = { evo_list: c.evo_list }; }
   jokerSprite(item, c);
+  laterArt(c);
   c.set_badges = poke_set_type_badge;
   if (def) {
     Object.assign(c, behaviourOf(def));
@@ -306,6 +324,7 @@ function simpleCenter(kind, prefix, set, data_item, file) {
   c.poke_file = file;
   c.config = c.config || {};
   if (item.atlas) c.atlas = atlasName(item.atlas, set === 'Back' ? 'placeholder_deck' : 'placeholder_item');
+  laterArt(c);
   if (def) Object.assign(c, behaviourOf(def));
   else { c.unported = true; c.in_pool = UNPORTED_POOL; if (set === 'Enhanced') c.skip_pool = true; UNPORTED[kind].push(c.key); }
   return c;
