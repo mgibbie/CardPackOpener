@@ -36,11 +36,11 @@ G.BossRush = (() => {
 
   let on = false, i = 0, rest = FIRST, biomeOff = 0;
 
-  /** Al empezar (game.js startRun): bioma al azar (main.gd 441-445). */
+  /** Al empezar (game.js startRun): bioma al azar (main.gd 441-445), nunca las Ruinas del Juicio (G.Tiles.CYCLE). */
   function begin() {
     on = !!G.Game && G.Game.mode === 'rush';
     i = 0; rest = FIRST;
-    biomeOff = on ? Math.floor(Math.random() * G.Tiles.BIOMES.length) : 0;
+    biomeOff = on ? Math.floor(Math.random() * G.Tiles.CYCLE.length) : 0;   // (una posición en G.Tiles.CYCLE)
     return on;
   }
 
@@ -89,7 +89,7 @@ G.BossRush = (() => {
   }
 
   /** El bioma (main.gd 4705: cada 150 s, desde el del principio). */
-  const biomeAt = t => Math.floor(t / BIOME_EVERY) + biomeOff;
+  const biomeAt = t => G.Tiles.cycleBiome(Math.floor(t / BIOME_EVERY) + biomeOff);
 
   /** Al acabar (main.gd 795-798 / 847-849): stats y líneas del resumen. */
   function finish(S, bosses) {

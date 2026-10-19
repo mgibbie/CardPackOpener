@@ -728,6 +728,45 @@ try {
 		await E(() => document.querySelector('#scr-goals [data-back]') && document.querySelector('#scr-goals [data-back]').click());
 	}
 
+	// ================= 13. the leaderboards take plain Normal runs only (base-board fix) =================
+	// A Normal run with a modifier must reach neither ranking: upstream's (G.Ranking.submitSolo / submitGroup) nor the
+	// Magepunk run board (G.MicaUI.runEnded); a plain Normal run still reaches both. The runs are real and short (no
+	// debug clock, so the anti-tamper clean() passes); the spies stand in for the network.
+	if (!ONLY.length || ONLY.includes('13')) {
+		const ranked = async (mods) => {
+			await E(m => { G.Modes.prefs().mods = m; }, mods);
+			const started = await startMode('normal');
+			await E(() => {
+				const R = G.Ranking, U = G.MicaUI;
+				window.__boards = { solo: 0, group: 0, mica: 0 };
+				window.__spied = { solo: R.submitSolo, group: R.submitGroup, mica: U.runEnded };
+				R.submitSolo = () => { window.__boards.solo++; return null; };
+				R.submitGroup = () => { window.__boards.group++; return null; };
+				U.runEnded = () => { window.__boards.mica++; return null; };
+				const pl = G.Game.player; if (pl) pl.invuln = 1e9;
+			});
+			await sleep(1500);
+			const r = await E(() => {
+				const mods = G.Modes.mods, t = G.Game.st.time;
+				if (G.Game.state === 'playing') { G.Game.togglePause(); G.UI.hide('scr-pause'); }
+				G.Game.quit();
+				const sp = window.__spied;
+				G.Ranking.submitSolo = sp.solo; G.Ranking.submitGroup = sp.group; G.MicaUI.runEnded = sp.mica;
+				return { mods, t, boards: window.__boards, over: document.getElementById('scr-over').innerText.slice(0, 400) };
+			});
+			r.started = started;
+			await toMenu();
+			return r;
+		};
+		const withMod = await ranked(['fast']);
+		A(withMod.started && JSON.stringify(withMod.mods) === '["fast"]' && withMod.boards.solo === 0 && withMod.boards.group === 0 && withMod.boards.mica === 0,
+			'a Normal run with a modifier (Fast) submits to neither leaderboard: no G.Ranking.submitSolo / submitGroup, no G.MicaUI.runEnded', JSON.stringify(withMod));
+		A(!/leaderboard/i.test(withMod.over), 'its run summary claims no leaderboard record', withMod.over);
+		const plain = await ranked([]);
+		A(plain.started && plain.mods.length === 0 && plain.boards.solo === 1 && plain.boards.group === 0 && plain.boards.mica === 1,
+			'a plain Normal run (no modifiers) still submits: G.Ranking.submitSolo once and G.MicaUI.runEnded once', JSON.stringify(plain));
+	}
+
 	A(errors.length === 0, 'no console errors', errors.slice(0, 5).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

@@ -175,6 +175,28 @@ try {
 		});
 		A(JSON.stringify(r.k) === JSON.stringify({ first: 5, rest: 8, warn: 4, biome: 150, leg: 3, hp: { base: 1400, grow: 1.27, k: 1.35 }, dmg: { base: 34, step: 5, max: 150, k: 1.2, shot: 0.55 }, bst: { lo: 490, step: 14, max: 640, span: 110, fallback: 480 }, t: 60, xp: 1.25, shot: { cd: 1.1, range: 260 } }),
 			'the port\'s numbers: first boss at 5 s, 8 s between, warned in the last 4 s, a biome every 150 s, a legendary every third, HP 1400 x 1.27^i x 1.35, damage min(150, 34 + 5i) x 1.2, BST 490 + 14i (+110)', JSON.stringify(r.k));
+		// base-board fix: the start biome and the 150 s cycle skip the Judgment ruins (Arceus's arena), like the port
+		// (tileworld.gd 58-78: count() leaves "judgment" out). 10,000 random starts through the real begin() /
+		// biomeAt(), each followed for two whole laps of the cycle (as G.World.setBiome wraps it).
+		const rs = await E(() => {
+			const T = G.Tiles, R = G.BossRush, n = T.BIOMES.length, ruins = T.ARENA + T.ARENA_TYPES.indexOf('judgment');
+			const wrap = b => ((b % n) + n) % n;
+			const m0 = G.Game.mode;
+			G.Game.mode = 'rush';
+			const starts = new Set();
+			let hits = 0, bad = 0, steps = 0;
+			try {
+				for (let k = 0; k < 10000; k++) {
+					if (!R.begin()) { bad++; continue; }
+					const b0 = wrap(R.biomeAt(0));
+					starts.add(b0);
+					for (let s = 0; s <= 2 * n; s++) { steps++; if (wrap(R.biomeAt(s * R.BIOME_EVERY + 1)) === ruins) hits++; }
+				}
+			} finally { G.Game.mode = m0; R.begin(); }
+			return { n, ruins, bad, steps, hits, starts: [...starts].sort((a, b) => a - b), ruinsStart: starts.has(ruins) };
+		});
+		A(rs.bad === 0 && rs.hits === 0 && !rs.ruinsStart && rs.steps === 10000 * (2 * rs.n + 1), 'Boss Rush: 10,000 random starts and their 150 s cycles never land on the Judgment ruins biome (base-board fix)', JSON.stringify(rs));
+		A(rs.starts.length === rs.n - 1, 'Boss Rush: every other biome can still be the start (the same spread, minus the ruins)', JSON.stringify(rs.starts));
 		A(r.list.includes('rush') && r.name === 'Boss Rush' && r.icon === 'm_rush' && r.iconOk, 'a "Boss Rush" mode with its port icon (icons.gd m_rush)', JSON.stringify([r.list, r.name]));
 		A(JSON.stringify(r.ach) === JSON.stringify([['rush3', 1, 3, { coins: 400, t1: 3 }, '', 15], ['rush6', 2, 6, { coins: 1200, t10: 1 }, '', 15], ['rush10', 3, 10, { coins: 3000, t1: 2, t10: 2 }, '', 15],
 			['rush15', 3, 15, { coins: 6000, t1: 3, t10: 4 }, 'Rey del Rush', 15], ['rushRuns25', 2, 25, { coins: 1500, t10: 1 }, '', 25]]), 'the 5 Rush achievements of progress.gd 113-117 (rushBest 3 / 6 / 10 / 15, rushRuns 25) with the port\'s rewards and the "Rush King" title', JSON.stringify(r.ach));
@@ -266,7 +288,7 @@ try {
 		await E(() => document.querySelector('#modes-list [data-mode=rush]').click());
 		A(await waitFor(() => E(() => G.Game.state === 'playing' && G.Game.mode === 'rush'), 15000), 'a click on the card starts the Boss Rush (with the Tough modifier)');
 		await safe();
-		const r0 = await E(() => ({ on: G.BossRush.on, rest: G.BossRush.rest, off: G.BossRush.biomeOff, biome: G.World.biomeName(), want: G.Tiles.BIOMES[G.BossRush.biomeOff % G.Tiles.BIOMES.length].name, n: G.EnemyMgr.count, mods: G.Modes.mods }));
+		const r0 = await E(() => ({ on: G.BossRush.on, rest: G.BossRush.rest, off: G.BossRush.biomeOff, biome: G.World.biomeName(), want: G.Tiles.BIOMES.filter((_, i) => i !== G.Tiles.ARENA + G.Tiles.ARENA_TYPES.indexOf('judgment'))[G.BossRush.biomeOff]?.name, n: G.EnemyMgr.count, mods: G.Modes.mods }));
 		A(r0.on && r0.rest > 4 && r0.rest <= 5 && r0.biome === r0.want && r0.n === 0 && JSON.stringify(r0.mods) === '["tank"]', 'the Rush starts with nobody around, 5 s before the first boss, in a random biome (main.gd 441-445 / 577)', JSON.stringify(r0));
 		await sleep(1800);
 		const w = await E(() => ({ says: window.__says.slice(), n: G.EnemyMgr.count, rest: G.BossRush.rest }));
@@ -301,7 +323,7 @@ try {
 		// no rifts / Judgment / events even late in the run; the biome every 150 s
 		const late = await E(() => { G.Game.debugTime(1850); G.BossRush.debugRest(30); return { checkT: G.Rift.checkT }; });
 		await sleep(1500);
-		const late2 = await E(() => ({ checkT: G.Rift.checkT, rift: !!G.Rift.rift, judge: G.Judgment.active, ev: G.Events.current, biome: G.World.biomeName(), want: G.Tiles.BIOMES[(Math.floor(G.Game.st.time / 150) + G.BossRush.biomeOff) % G.Tiles.BIOMES.length].name }));
+		const late2 = await E(() => ({ checkT: G.Rift.checkT, rift: !!G.Rift.rift, judge: G.Judgment.active, ev: G.Events.current, biome: G.World.biomeName(), want: ((c, k) => c[k % c.length])(G.Tiles.BIOMES.filter((_, i) => i !== G.Tiles.ARENA + G.Tiles.ARENA_TYPES.indexOf('judgment')), Math.floor(G.Game.st.time / 150) + G.BossRush.biomeOff).name }));
 		A(late2.checkT === late.checkT && !late2.rift && !late2.judge && !late2.ev, 'past minute 30: no rift checks, no Judgment of Arceus, no events (main.gd 1007 / 3249 / 5863)', JSON.stringify([late, late2]));
 		A(late2.biome === late2.want, 'the biome changes every 150 s from the random start (main.gd 4705)', JSON.stringify(late2));
 		// boss 2 at t = 60: scale x1.1

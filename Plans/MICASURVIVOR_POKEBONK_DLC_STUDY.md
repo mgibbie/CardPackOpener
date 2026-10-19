@@ -1,0 +1,1041 @@
+# MicaSurvivor × PokéBonk: design study and DLC plan
+
+> **Owner request (2026-10-19).** Players like **PokéBonk** (Charcher, pokebonk.com) more than
+> PokéSurvivor, the game MicaSurvivor is ported from. Study what PokéBonk does and pick what to pull
+> into a **MicaSurvivor DLC**. MicaSurvivor keeps its own 2D pixel style, and the owner has
+> permission.
+>
+> **Method.** This study is design only: systems, rules, numbers, progression and UX flow. Every
+> part of the DLC is reimplemented in MicaSurvivor's code and art. **None of PokéBonk's code, models,
+> textures, UI art or music comes into the repo**, and this document cites numbers instead of
+> pasting code.
+>
+> **Sources.**
+> - The shipped client, build `mvekcp7c`, v0.7.3 (2026-10-19): `index.html`, the 1.47 MB `main` bundle, the shared
+>   `news` chunk (patch notes plus the game's data tables), and the es→en string map. The game is
+>   authored in Spanish, like PokéSurvivor.
+> - Public pages: pokebonk.org (guides, updates, the Season 2 roadmap), the Dexerto article
+>   (2026-10-18), and community posts.
+> - Numbers marked *(bundle)* are read from the client. Everything else is marked as coming from the web.
+
+---
+
+## 0. TL;DR
+
+PokéBonk is a **"Megabonk with Kanto Pokémon"**: a 3D, browser-based survivors-like. Its Pokémon
+are the same PMD SpriteCollab billboards MicaSurvivor uses, standing in a stylised voxel-ish 3D world.
+Players do not prefer it for the 3D graphics alone. The reasons that carry over to 2D are:
+
+1. **A run you can win.**
+   - PokéBonk: a map has 3 zones of up to 10 minutes. You wake the zone's guardian when you are
+     ready, and beating it opens a portal; a legendary shrine waits at the end.
+   - PokéSurvivor/MicaSurvivor: every Normal run ends in Arceus's Judgment at 30:00. Arceus can't
+     be beaten, so every run ends in death.
+2. **Movement verbs.** Jump, double-jump, slide, glide (Flying types), wall-climb (Fighting/Bug/
+   Ghost), surf (Water) and bounce mushrooms on terraced terrain.
+3. **Evolving mid-run.** Your Charmander becomes Charizard during the run. Fully evolved
+   Pokémon get "Maturity" at Lv 24/44 instead. Each species has its own 4-move kit and a
+   **signature Ultimate** charged by play.
+4. **Catching to build your roster.** Each Pokémon has a challenge. When you complete it, the
+   Pokémon appears in your next run; weaken it and throw a Poké Ball, and it joins your
+   **League**, the playable roster.
+   - MicaSurvivor's roster comes from a ticket gacha.
+5. **A dense, readable in-run economy.**
+   - ₽ drops buy Poké Ball "chests".
+   - Meowth's shop raises its prices as you buy.
+   - Unown altars are stand-in-the-circle charge zones.
+   - Cursed and greed risk/reward altars, Alphas you can recruit, 102 items in 5 rarities, and
+     elemental reactions.
+6. **Competitive structure.**
+   - Normal, Hard and Nightmare difficulty tiers.
+   - Time-attack splits and medals.
+   - Weekly leaderboard seasons per map, tier, mode and species, plus clans.
+
+**Recommendation.** Build an on/off DLC, working title **"MicaSurvivor: Expedition"**.
+- It adds a new **Expedition** run structure on bounded, terraced 2D maps, with:
+  - 2D-native verticality: ledges, ramps, hop, slide and bounce pads.
+  - In-run evolution and signature Ultimates.
+  - A catch-to-unlock **League** roster.
+  - A ₽ economy with chests, shops and altars.
+  - Rarity-rolled level-ups, difficulty tiers, a Survival (endless) mode, and separate DLC
+    leaderboards.
+- **Batch D0 (D0a + D0b)** comes before any content:
+  - a determinism harness and golden fixtures;
+  - the toggle and plumbing;
+  - a test proving that with the DLC off, MicaSurvivor plays byte-identically to today.
+
+  §5.0 covers the architecture: switch, saves, co-op, replays and boards.
+
+---
+
+## 1. What PokéBonk is
+
+| Aspect | PokéBonk (v0.7.3) |
+|---|---|
+| Genre and presentation | 3D survivors-like (three.js). Toon-shaded terraced terrain with props and day-phase lighting. Pokémon are **2D PMD sprite billboards** with 8-direction sheets (`pmd` asset pack), the same family MicaSurvivor uses. Free, in the browser, on desktop and mobile. 9 UI languages. |
+| Credits | The game credits "Megabonk (vedinad) and the survivors-likes; pokesurvivor (community)" *(bundle)*. |
+| Controls | WASD/stick to move, mouse/right stick for the camera. Space jumps (hold to glide), Shift/LT slides, E interacts, R/RT casts the Ultimate. Right-click locks a target, Q toggles auto/manual aim (manual aims along the camera). T toggles auto-run, M opens the big map, Tab shows the build. Full pad support with rebinding. Optional auto-Ultimate (Y). |
+| Attacking | Every move auto-fires on its cooldown at the nearest enemy (or along the camera in manual aim). The player only moves, jumps, slides, interacts and casts the Ultimate. |
+| Run: **Classic** | Pick a map (Season 1 ships 2 of 6 defined) and a tier (Normal, Hard, Nightmare). The map is 3 **zones**, plus a 4th **shrine** zone on maps that have one.<br>In each zone you level up, open Poké Balls and do events, then wake the **guardian** at its altar. Beating it opens a **portal** to the next zone.<br>At 10:00 in a zone the **FINAL SWARM** starts: ×6 spawns, and enemy HP ×4 and damage ×2 every minute.<br>Zone 3 (or the shrine) ends in a **legendary** fight (forest: Mew; desert: Moltres). Winning completes the map.<br>A normal clear takes roughly 15–30 min. Time-attack medal targets are Gold < 20:00 and Champion < 14:30 on Normal (§2.13). |
+| Run: **Survival** | Endless, one per map. A milestone boss every 5 min, and every 3rd one a legendary. **Mewtwo at minute 45.**<br>Phases at 12 and 24 min. "Deep wounds" (healing falls a little each minute) from minute 30, "Endless Night" (enemies get stronger every minute) from minute 45.<br>Pacts trade a boon for a bane. A migration portal moves you to new lands. Hostile terrain: mud, brambles, quicksand and burning ground. |
+| Meta-progression | **Account** with trainer name + password, no email; guests by default.<br>**Stardust** (★) currency: earned from daily and weekly tasks, achievements, map clears and season prizes, scaled by tier. Spent in the **Lab** on 19 permanent upgrades and on buying 35 items into the drop pool.<br>The **League** (playable roster) is unlocked by challenges plus an in-run capture.<br>The **Research Notebook** gives avatars and frames. **Shiny** milestones give small permanent perks. Weekly **seasons** with medals, titles and clan prizes. |
+| Social | Friends, a mailbox, and **clans**: 2,000★ to found one; clan points come from members' runs; seasonal clan prizes. Per-Pokémon leaderboards with titles such as «Pikachu Master».<br>No co-op yet; the roadmap puts co-op "shortly after Season 2".<br>Anti-cheat: server heartbeats every 15 s with plausibility checks, and 47 accounts banned on 2026-10-18. |
+| Monetization | **None found.** No ads, purchases or donation links in the client, and the creator calls it a non-profit fan project.<br>The ad trackers people mention are on third-party *guide* sites, not the game.<br>MicaSurvivor's rule still applies: never ads, paid items or anything sold. |
+| Age | Very new: public on 2026-10-15, and Patch #7 came out on 2026-10-18. It changes daily, so its numbers below are a snapshot. |
+
+**Season 2** (roadmap, web): 2 new maps, new and reworked bosses, **Mega Evolutions**,
+achievements and new items. **No Gen 2.** Co-op "shortly after Season 2". No date.
+- The client already defines 6 maps. Season 1 enables only `forest` and `desert` (`maxDex: 151`).
+- The next two are likely Lavender Tower and Volcano Island, then Celestial Glacier and Storm
+  Coast. Each unlocks by beating the previous map's guardian.
+
+---
+
+## 2. Systems inventory (with the numbers from the bundle)
+
+### 2.1 Starters, roster ("League") and evolution
+- **Playable roster: 79 League members** *(bundle)*: 17 common, 36 uncommon, 21 rare and 5
+  legendary (Articuno, Zapdos, Moltres, Mewtwo and Mew). Only the base of each family is listed.
+  - All 151 Kanto Pokémon appear as **enemies**, guardians and evolutions.
+  - Advertising "all 151" means the dex, not 151 playable starts.
+- **Starters:** Bulbasaur ("Healer"), Charmander ("Fiery Assault") and Squirtle ("Defender").
+  - Their challenge is to finish 2 runs, so they are effectively free.
+- **Every member has:**
+  - a role name;
+  - a **class passive** with stat mods plus a scripted effect, e.g. Iron Fist "every 3 s an auto-punch at the
+    nearest enemy within 4 m, punches +20%";
+  - a fixed **4-move kit**;
+  - a rank (common to legendary);
+  - a **challenge**.
+- **Challenge examples:**
+  - Pidgey: finish 4 runs.
+  - Pikachu: 10,000 KOs in rain.
+  - Snorlax: 30 League members + eat 500 berries.
+  - Mewtwo: 60 members + catch the 3 birds + win the desert on Hard.
+  - Mew: catch the other 78.
+- **Unlock flow:** challenge complete → in your next Classic run a "wild X appeared!" encounter
+  spawns 50–120 s into a zone.
+  - The encounter has 0.8× HP (common), 1.6× (rare) or 5× (legendary).
+  - It flees after 150 s (240 s for a legendary).
+  - Weaken it, then throw a Poké Ball (3 shake pips, a capture cinematic) → it joins the League.
+  - Mewtwo instead **invades** zone 2 or 3 at 70–150 s, with a psychic barrier and a 60 s fight.
+- **Kit unlocks:** kit moves unlock at levels **1, 2, 4 and 7**.
+  - Level-up can also offer other moves the line learns (real learnsets, by level).
+  - It can also offer moves from **other League members of your type**: owning more Pokémon
+    widens every build.
+  - Mew's passive draws from every move of power ≥ 60.
+- **Evolution:**
+  - Happens **in-run, at the level-up**, using the real evolution levels (stones mapped to a level).
+  - Overrides: Caterpie/Weedle at Lv 8/36, Magikarp at 40, fossils at 40.
+  - Eevee **branches** at Lv 36, and you choose Vaporeon, Jolteon or Flareon.
+  - Evolving restores HP (to ≥50% plus 30% of max), raises base stats and upgrades the Ultimate tier.
+  - Pokémon that can't evolve further get **Maturity** at Lv 24 and 44: +12% damage and HP, and the
+    next Ultimate tier.
+- **Stats from base stats:**
+  - HP = 70 + 45·f(hp).
+  - Armor = 6·f(def) + 3·f(spd).
+  - Speed = 0.92 + 0.12·f(spe).
+  - Physical/special multipliers = 0.82 + 0.2·f(atk/spa).
+  - Base crit 5% / ×1.75.
+  - Pickup range 6.
+- **XP to next level:** 8 + 5.5·L + L^1.8.
+
+### 2.2 Movement and verticality (the "Bonk")
+| Verb | Rule *(bundle)* |
+|---|---|
+| Walk | Base speed 6.3 m/s × the speed stat. Ground acceleration ~70/s. Air control capped at 1.7× walking speed. |
+| Jump | Launch velocity 11·√(jumpHeight), gravity 30. Apex ≈ **2.0 m**. |
+| Extra jumps | Each extra jump is 0.92× the first. Sources: Air Balloon (+1 and +15% height), Silver Wing, the Wind pact, and the Hitmonlee, Pidgey-line, Aerodactyl and Dragonite passives. |
+| Slide | Shift/LT, only on the ground: **0.55 s** at 1.9× speed, **0.9 s** cooldown. Shed Shell makes it 0.54 s cooldown + i-frames. |
+| Glide | Flying types (or floaters) hold Jump: falling speed is capped at 2 m/s. |
+| Climb | Fighting, Bug and Ghost types (and Magneton's "Iron Body") walk up cliff faces (upward speed 7.5). |
+| Water | **Surf** for Water types (1.35× speed on deep water). Others swim at 0.7× or wade at 0.85×. |
+| Step-up | You walk up rises of ≤ 0.6 m. Anything higher needs a jump, a ramp, a climb or a pad. |
+| Terrain | Seeded heightfield of **terraces**: 4–5 levels per map, **4.6 m** per level (more than two jumps, so plateaus are real barriers).<br>2 spiral **massifs** per map (mountains with a ramp wound 2.3 turns). Plateaus are always connected by ≤ 0.9 m slopes (a flood-fill guarantees it).<br>Ponds with lily pads, cliffs with overhanging grass. Maps are 340–360 m wide. |
+| Bounce mushroom | An interactable that launches you along a 0.85 s arc to a set landing spot (usually up a terrace), with a 25 s cooldown. |
+| Height mechanics | Aerodactyl: +25% damage while airborne. Dragonite: a shockwave when landing from high up. Rock Slide: telegraphed circles you must leave. Enemy "Flocks" fly over terrain. Auto-unstick if you're trapped 3 s. |
+
+### 2.3 Moves and auto-fire
+- **Moves come from data:** every real Pokémon move in `moves.json` is mapped to one of **25
+  archetypes** by its type, power, class, ailment and priority, with ~60 hand overrides.
+- **Scaling from the real move:**
+  - Damage × clamp(0.72 + power/260, 0.85, 1.3).
+  - Cooldown × clamp(0.88 + (power−60)/500, 0.85, 1.15), and ×0.85 for priority moves.
+  - Status chance = ailment chance × 1.6 (15–80%). Moves without an ailment get their type's default status at 12%.
+- **The 25 archetypes** (damage / cooldown in seconds):
+
+  | Archetype | Dmg / cd | Archetype | Dmg / cd | Archetype | Dmg / cd |
+  |---|---|---|---|---|---|
+  | bolt | 13 / 1.0 | orb | 15 / 1.5 | lob | 20 / 1.9 |
+  | barrage | 5×4 / 1.15 | homing | 9×2 / 1.25 | beam | 7 / 2.2 (pierce) |
+  | cone | 3.2 / 2.0 | nova | 22 / 2.6 | aura | 4.5 / 0.45 |
+  | orbit | 9×2 / 5.5 | strike | 17 / 0.95 | dash | 20 / 2.3 |
+  | chain | 13×3 / 1.4 | smite | 24×2 / 1.7 | meteor | 45 / 4.0 |
+  | boomerang | 14 / 1.7 | trap | 30×2 / 2.6 | vortex | 34 / 3.6 |
+  | wave | 15 / 2.4 | trail | 6 / 0.28 | drain | 10 / 1.3 |
+  | spin | 9 / 0.8 | weather | 32 s cd, 14 s duration | buff | 14 s cd, 6 s duration |
+  | random (Metronome) | turns into a League move | | | | |
+
+- **Move slots:** 3 to start; the 4th is a Lab upgrade costing 1,500★.
+- **Move levels:** **max level 8**. Each level adds +8% damage, plus **2 random stat rolls**
+  from that archetype's list (3 rolls at Epic or better).
+- **Roll sizes**, scaled by the rarity multiplier m:
+  - dmg +22%·m;
+  - cooldown −min(25%, 8%·m);
+  - +1 projectile (+2 at Epic or better);
+  - +15%·m area or speed;
+  - +20%·m duration;
+  - +5%·m crit;
+  - +25%·m status chance.
+- **Weather moves** (Rain Dance, Sunny Day, Sandstorm, Hail) change the run's weather:
+  - Rain: Water and Electric +, Fire −.
+  - Sun: Fire and Grass +, Water −.
+  - Sand: Rock, Ground and Steel +.
+  - Hail: Ice +.
+  - Mist: Ghost and Dark +.
+  - Ash: Fire and Dragon +, Ice −.
+- **18 buff moves** (Swords Dance, Dragon Dance and others) give a temporary +damage, attack-speed and speed boost.
+- **Type statuses:** every type has a default status.
+  - Fire: burn. Water: wet. Electric: paralysis. Ice: chill → freeze.
+  - Grass: root. Psychic: confusion. Ghost: curse. Dark: heal-block.
+  - Fairy: charm. Rock and Ground: stun.
+- **Elemental reactions** (0.25 s cooldown each):
+
+  | Combo | Name | Effect |
+  |---|---|---|
+  | Wet + Electric | Electrocuted | ×1.5, and chains to up to 12 other wet foes within 9 m (paralysis 60%) |
+  | Burn + Water | Steam | ×1.4, and confuses and roots within 6 m |
+  | Burn + Grass/Flying | Inferno | Spreads burn within 7 m |
+  | Frozen + Fighting/Rock/Steel | Wreckage | ×2.6 |
+  | Poison + Fire | Poison Gas | — |
+  | Psychic | Psychic Meltdown | Combo with a Psychic hit |
+  | Dragon | Dragon Rage | Combo with a Dragon hit |
+
+  - 3 chill stacks (or 1 on a wet target) freeze for 1.6 s.
+
+### 2.4 Ultimates
+- **Signature Ultimates:** 63 species have a scripted one, named per evolution tier.
+  - Examples: Charmander "Rising Blaze → Blast Burn → Giga Blaze"; Zapdos's "Legendary Storm";
+    Ditto copies a random League member's Ultimate; Mew chains 1–3 copies.
+  - The rest use a **type Ultimate** ("its own will arrive with its generation block").
+- **Charge** (0 → 1):
+  - **Passive fill: full in 95 s.**
+  - Per kill +0.004, from a refilling bucket capped at 0.024 (so mass kills can't spam it).
+  - Elite +0.03, Alpha or Totem +0.08, Boss +0.2.
+  - Damage taken × 0.35.
+  - Lunar Blessing ×1.3, Soul Dew ×1.4.
+- **Cast:** R, RT or auto. Base damage 40 × (1 + 0.1·level) × (1 + 0.15·tier), with area scaling as
+  √(area).
+  - **I-frames for the whole cast + 0.6 s**, a 0.32 s hit-stop and a portrait cut-in.
+  - Tier = evolution stage + Maturity (0–2).
+
+### 2.5 Level-up offers, rarity, reroll/skip/banish
+- **3 cards per level** (4 with the 3,000★ "Fourth option" Lab upgrade). The kinds are:
+  - a **new move**: kit moves are weighted ×3; it can come from your line's learnset or from
+    other League members' kits;
+  - a **move level-up**: two offers per owned move;
+  - a **new vitamin** or a **vitamin level-up**.
+- A move card is always pulled to the front. When everything is maxed, a level gives
+  "**Training**": a small permanent stat bonus with diminishing returns, at least ⅓ of the first.
+- **21 vitamins** (max level 10, **3 slots**, +1/+2 from the Lab):
+  - Protein/Calcium +10% phys/spec; Iron +5 armor; Zinc +12 regenerating shield; Carbos +7% speed;
+    HP Up +18; PP Up +0.5 projectile; Ether +8% attack speed; Dire Hit +5% crit;
+    X Speed +12% projectile speed; X Defense +3.5% evasion.
+  - Also status chance, area, duration, regen, ₽, XP, luck, lifesteal and pickup range.
+  - **Cursed Incense:** +12% difficulty per level, in exchange for +6% XP and ₽.
+- **Rarity:** Common, Uncommon, Rare, Epic, Legendary, which multiply the card's values by
+  ×1, ×1.2, ×1.45, ×1.75 and ×2.1.
+- **Rarity roll:**
+  - Base weights 70 / 24 / 5 / 0.9 / 0.12.
+  - Luck a = luck/100: Uncommon ×(1+0.5a), Rare ×(1+a)², Epic ×(1+a)³, Legendary ×(1+a)⁴.
+  - The higher tiers are **gated by "power"** = level + luck/8 + 12·(zone−1): Rare ramps in from power
+    3→10, Epic 8→18, Legendary 14→26.
+- **Run tools:** **Refresh (reroll) 2, Skip 2 and Banish 1** per run.
+  - Each gets +1 per Lab level (max 6 each).
+  - Skip pays ₽: max(10·zone, 20% of a Poké Ball's price).
+  - Banish removes a move or vitamin for the rest of the run.
+  - A pre-run **Archive** (+3 slots per Lab level) keeps chosen items out of the pool.
+
+### 2.6 Items (relics)
+- **102 items**:
+  - 34 common, including the 18 type boosters at +30% to their type and +3% overall;
+  - 24 uncommon, 18 rare, 15 epic and 11 legendary.
+- **Caps:** many items have a stack cap (e.g. Stick ×4, Revive ×2). Since 0.5.3, bonuses of the same
+  stat **add** instead of multiplying, which caps long-run inflation.
+- **Common examples:**
+  - Life Orb +30% damage / −10% HP; Choice Band/Specs +35%, −8% attack speed; Choice Scarf.
+  - Expert Belt +30% super-effective.
+  - Focus Band: 15% to survive at 1 HP, every 20 s.
+  - Stick: 3% chance of ×8 damage ("Bonk!").
+  - Razor Fang executes non-bosses below 8%.
+  - Shell Bell, Big Root, Rocky Helmet (thorns 25).
+  - Light Clay +20% duration, Air Balloon (+1 jump), Metronome (up to +40% while untouched).
+- **Epic and Legendary examples:**
+  - Electirizer: a bolt on 3 foes every 2.5 s.
+  - Sun Stone: a solar strike every 6 s.
+  - Lustrous Orb: a pulling rift every 8 s.
+  - Adamant Orb: stops time on hit, every 20 s.
+  - Rainbow Wing: revive in flames once per zone.
+  - Master Ball: +25% damage, and guarantees a wild capture.
+  - Max Revive: revive at 60%.
+- **Unlocking:** 35 of the items start locked. Each is revealed by a counter goal (e.g. "Dodge 200
+  hits" → Shed Shell) and then **bought with Stardust** (150–3,500★) into the drop pool.
+- **Pre-run boosts:** Rare Candy (+2 levels), Lucky Egg (+25% XP), Amulet Coin (+50% ₽),
+  Honey (+1 Alpha per zone), Dawn Stone (a guaranteed shiny in zone 1), Master Ball (a guaranteed
+  first capture).
+  - They come from tasks, max 9 of each.
+
+### 2.7 Interactables, the economy and NPCs
+- **₽ (PokéDollars):** 0.2 ₽ per KO (×gold stat).
+- **Rewards:** Rock Smash gold rocks give 6–14 ₽ × zone. Berries heal 50%.
+
+| Interactable | Rule *(bundle)* |
+|---|---|
+| **Poké Ball (paid "chest")** | Costs 18 ₽ × 1.22^(0.65·bought). Big Nugget gives −8% per stack (to −40%), and luck up to −25%. Gives an item, a pick of 3 from 0.7.0. |
+| Free Poké Ball / cursed Poké Ball | The cursed one is free, but gives +5% difficulty and a ghost ambush of 4 + 2·zone. 2 items with 40%·luck chance. |
+| **Meowth's shop** | Shows up and leaves after a while, with a stock refresh. Prices rise ×1.15–2 per purchase beyond a free allowance of 2 + ⌊balls/3⌋ ("market heat"; buying too much without opening balls costs more). |
+| **Unown altar** (blessing) | Stand in the circle to charge it; leaving drains it. 4 tiers: 8/14/22/35 s charge, radii 6–4.5 m. Rewards: 3 offers pick 1, up to Golden: 4 offers pick 2. Epic and Golden tiers summon waves of the horde while charging; Golden is sealed for the first 90 s. |
+| Comet shard | A 10 s charge altar that burns out if ignored. |
+| Challenge altar | Summons a wave; clear it for a Great Ball (a free item ball). |
+| Cursed altar | A rare item for +15% enemies and +difficulty. |
+| Gengar greed altar | More difficulty, XP and loot. |
+| Ditto | Clones one of your items (never a maxed one). |
+| Hypno | Makes you forget a move or vitamin. |
+| Snorlax | A blessing or ₽. |
+| Magnemite | Pulls in all the XP. |
+| Cage | 20 + 10·zone ₽ frees a Pokémon: +25 research and +50% of a level's XP. |
+| Slot machine | ₽ per spin, for items. A bad roll spawns Voltorb or Electrode. |
+| Guardian altar | Wakes the zone boss when you choose. The hint says "first level up and open the balls". |
+| Shrine and portal | The 4th zone and the legendary fight; the portal goes to the next zone. |
+
+Survival respawns used interactables after 120–240 s, depending on kind.
+
+### 2.8 Enemies, waves and scaling
+- **Enemy pool:** each map has primary types, "late" types (mixed in after 4:00) and
+  **residents**, families tied to the map.
+  - Zone 1 spawns base forms, zone 2 middle stages, zone 3 final stages.
+  - Spawn cards are weighted: a newly drawn card gets ×1.4 and older ones decay ×0.85.
+- **Budget** (by effective time t in minutes):
+  - Spawn credits per second = 0.7 + 0.014t + 0.5(t/60)^1.75, × (1 + 0.35·(zone−1)).
+  - A card costs 1 + BST/220.
+  - Concurrent cap = (10 + 0.65t + 4.5(t/60)²) × (1 + 0.6·(zone−1)), up to **500/900/1,400** by
+    graphics quality.
+  - Each zone starts its clock 0, 75 or 150 s ahead.
+- **HP:** (1 + 0.3t + c·t²) × [1, 5.5, 13, 20] by zone.
+- **Damage:** (1 + 0.13t) × [1, 2, 3.1, 3.4] by zone.
+- **Speed:** up to ×1.3.
+- **Zone timeline** (zone 1; later zones arrive earlier):
+  - a new spawn card each ~60 s;
+  - **Alphas** at 150, 330 and 480 s;
+  - a swarm or stampede at 235 s, a swarm at 390 s, a stampede at 520 s;
+  - elite waves at 330 and 450 s;
+  - **Totems** at 290 and 420 s and a **Summoner** at 360 s;
+  - 1–2 random events.
+  - Hard and Nightmare pull events 15/30 s earlier and add a totem at 510 s.
+- **Event types:**
+  - **Swarm:** a 40–82 ring of foes.
+  - **Stampede:** a 30–58 herd that charges in a line.
+  - **Flock:** fliers crossing the map.
+  - **Rock Slide:** 14 telegraphed boulders.
+  - **Elite wave.**
+- **Totem Pokémon:** an aura that calls its allies.
+- **Summoner:** a stationary miniboss that calls minions until it leaves.
+- **Alphas:** giant elites. Weaken one and it **faints**, giving 8 s to throw a **Friend Ball**.
+  - It then fights for you this run as a **Support Alpha**: 2 slots, 3 with the Lab.
+  - Each gives a type perk, e.g. Fire +15% status damage, Rock +15 HP, Fairy +8 luck.
+  - If you don't recruit it, it drops a prize.
+- **Shinies:** 8% chance per zone (+ luck/1,000), ×1.5 with the Shiny Charm.
+  - The shiny roams and flees after 120 s (150 s with the charm).
+- **Anti-idle:** in Survival from 5:00, staying within 12 m of one spot (or not moving) for 20 s
+  starts a **Siege**: your damage falls toward 30% and flocks hunt you.
+
+### 2.9 Bosses
+- **Guardians:** one per zone, chosen from 3 per zone per map.
+  - Forest: Scyther, Raichu or Golduck; then Pinsir, Primeape or Persian; then Nidoking,
+    Rapidash or Arcanine.
+- **Totems and Summoners** have per-zone pools.
+- **Boss HP** = max(the curve, **your measured DPS × a target time**): guardians 40/50/60 s by zone,
+  legendaries 60 s, × (1 + 0.15·tier).
+  - So a boss is never a 2-second melt or a 10-minute slog.
+  - "Exhaustion" after the target time makes it take more and more damage.
+- **Patterns:** slams, ring, charge, volley and wave; legendaries add spiral, meteor and hostile
+  pools.
+  - Phases at 66% and 33% HP, with speed and damage ×1, ×1.12 and ×1.3, barriers and escorts
+    (+0/+1/+2 by tier).
+
+### 2.10 Map objectives
+- Clear 3 zones by beating each guardian, then the legendary (or the shrine's), and leave through
+  the portal.
+- Optional goals: open all the balls (the minimap marks what's left once the guardian falls),
+  charge altars, catch the League encounter and any shiny, and recruit Alphas.
+- Fog-of-war map: since 0.6.0 the map shows only what you have seen.
+
+### 2.11 Difficulty tiers
+Normal, Hard and Nightmare. Some tiers unlock through map clears and challenges, e.g. "Win the Forest on Hard".
+
+| Multiplier | Normal | Hard | Nightmare |
+|---|---|---|---|
+| Enemy HP | ×1 | ×1.4 | ×1.9 |
+| Enemy damage | ×1 | ×1.42 | ×1.96 |
+| Enemy speed | ×1 | ×1.08 | ×1.16 |
+| Enemy amount | ×1 | ×1.3 | ×1.6 |
+| Concurrent cap | ×1 | ×1.15 | ×1.3 |
+| Elite share | 0 | +4% | +8% |
+| Event size | ×1 | ×1.2 | ×1.4 |
+| Events earlier | — | 15 s | 30 s |
+| Telegraph time | ×1 | ×0.92 | ×0.85 |
+| Boss escorts | 0 | 1 | 2 |
+| XP | ×1 | ×1.15 | ×1.3 |
+| Stardust | ×1 | ×1.75 | ×2.5 |
+| Score | ×1 | ×1.5 | ×2 |
+
+### 2.12 Scoring
+- **Classic** = (2·KOs + 3·seconds + damage/200 + 1,500·(zone−1) + 800·bosses + 6,000 if won) × (1 + 0.5·tier).
+- **Survival** = 2·KOs + 4·seconds + damage/200 + 800·bosses + 2,000·legendaries.
+
+### 2.13 Leaderboards and seasons
+- **Boards:**
+  - KOs · Global, and Survival · Global: 100 places each.
+  - Per map × tier: **KOs** and **Time attack**, 50 places each.
+  - Survival per map.
+  - **Per Pokémon**, for both Classic and Survival.
+  - Clans.
+- **Seasons:** 7-day leaderboard seasons, started automatically on 2026-10-12. Break windows count only toward the all-time record.
+- **Season prizes:**
+
+  | Place | Medal | Global board ★ | Map board ★ |
+  |---|---|---|---|
+  | #51–100 | Top 100 | 100 | 0 |
+  | #26–50 | Top 50 | 180 | 100 |
+  | #11–25 | Top 25 | 300 | 180 |
+  | #4–10 | Top 10 | 500 | 300 |
+  | #2–3 | Elite | 900 | 600 |
+  | #1 | Master | 1,500 | 1,000 |
+
+  - #1 on a Pokémon board earns a title: «X Master», or «X Legend» in Survival.
+- **Time-attack medals** (Normal; ×(1 + 0.08·tier); +3 min on maps with a shrine):
+
+  | Medal | Clear time |
+  |---|---|
+  | Bronze | Finish |
+  | Silver | < 27:00 |
+  | Gold | < 20:00 |
+  | Champion | < 14:30 |
+
+- Each zone records **splits** against your personal best.
+
+### 2.14 Meta-progression ("Lab", tasks, achievements, research, shinies)
+- **Lab (19 upgrades, paid in ★):**
+  - 4th move slot (1,500).
+  - Vitamin slots (1,200 / 3,000).
+  - Refresh, Skip and Banish (+1 each, up to 6).
+  - Fourth option (3,000).
+  - Training +4% damage ×8; Stamina +8 HP ×8; Agility +2.5% speed ×6.
+  - Study +5% XP; Trading +8% ₽; Fortune +5 luck; Magnetism; Leftovers; Shell +2 armor.
+  - Revive (start with a Max Revive, 5,000).
+  - Research +25%.
+  - Support team (+1 Alpha slot, 3,500).
+  - Archive.
+  - Price formula: round(base × growth^level / 5) × 5.
+- **Tasks:**
+  - 3 daily tasks (60, 100, 160★) plus a completion bonus of 50★ × streak (up to 5) and a boost item.
+  - 3 weekly tasks (300, 450, 700★) plus 500★ and 3 boosts.
+  - One reroll.
+- **Achievements:** 27 (50–1,500★).
+- **Research Notebook:** every KO adds research to that family: 1, elite 2, Summoner 4,
+  Alpha/Totem 5, boss 10, cage 25. A finished family unlocks the Pokémon as an **avatar**. Lab
+  Research gives +25% per level.
+- **Shiny perks** by number of shinies caught:
+  - 2: +3 luck.
+  - 4: +4% XP.
+  - 6: **Shiny Charm**.
+  - 10: +3% damage.
+  - 15: your shiny partner starts at Bond 2 (+20% damage).
+  - Shiny skins are cosmetic.
+
+### 2.15 UX and onboarding
+- Contextual first-run tips (ball, altar, shop, guardian, Alpha, portal, level-up) for the first 3 runs.
+- A Lab guide.
+- A move sheet and glossary, and a "check your build" (Tab) view while picking.
+- A run damage breakdown: moves, Ultimate, items, Alphas.
+- Splits, a big map, a north-up minimap, auto-run, auto-Ultimate, "hide my attacks", and FX
+  opacity.
+- Run recovery after a crash or connection loss.
+
+---
+
+## 3. What players seem to like more than PokéSurvivor
+
+PokéBonk has been public for four days, so community evidence is thin.
+- Direct evidence:
+  - patch notes;
+  - the Dexerto article;
+  - guide sites;
+  - a few posts, including a Threads post: "played PokeSurvivor for two days and stopped, then found the
+    more fun PokéBonk".
+- The rest is inferred from what the game puts first.
+
+| Likely driver | Evidence | Applies in 2D? |
+|---|---|---|
+| **Winning a run.** Authored zones, a boss you trigger yourself, a portal and a final legendary | The objective structure; map clears and medals; "Regional champion" achievements. PokéSurvivor's runs always end in Arceus's Judgment | **Yes. Highest value** |
+| **Moving with intent.** Jump, slide, glide, climb, surf, bounce pads, terraces | Dexerto's headline ("turns Kanto into Megabonk"); the game's tagline; many items and passives touch jumps | **Yes, rebuilt as ledges, hop and pads** (§5.2) |
+| **Evolving mid-run**, plus Maturity | Guides call the evolve-in-run feel (养成感, "raising" feel) the core appeal; the cinematic evolution | **Yes** |
+| **A signature Ultimate per Pokémon** | 63 scripted Ultimates; an Ultimate-ready toast, a cut-in and an auto toggle | **Yes. Reuse the Z-move visuals as the type fallback** |
+| **Catching Pokémon to grow the roster** instead of a gacha | The League challenges; a capture cinematic; Support Alphas; shinies | **Yes, as a DLC-only roster** |
+| **Decisions in the run** (₽, chests, shop, altars, curses) | Patch 5 rebuilt the economy; Patch 7 made Meowth's pricing smarter. Players argue about it | **Yes** |
+| **Build depth from real Pokémon data** (learnsets, 25 archetypes, rarities, reactions, weather) | 79 kits; moves from other League members; elemental reactions in tasks and achievements | **Yes, but sourcing moves/learnsets is a data job** |
+| **Competing** (tiers, weekly seasons, per-species boards, clans) | The cheat bans show how much players care about rankings | **Partly.** Magepunk boards plus friends; clans are open (Q9) |
+| The 3D look | Chinese-language Threads posts praise it; others prefer 2D | **No**, by owner rule. The 2D pixel style stays |
+| Pace and polish (patches every day, tips, run recovery) | 18 versions in 5 days | Already MicaSurvivor's habit |
+
+**Where PokéSurvivor/MicaSurvivor already wins:**
+- 966 Pokémon against 79;
+- online co-op exists today;
+- replays and spectating;
+- Z-moves and Dynamax;
+- Tower, Boss Rush and Team modes;
+- no account friction.
+
+The DLC should **add** PokéBonk's structure on top of these strengths, not replace them.
+
+---
+
+## 4. Gap analysis: PokéBonk system → MicaSurvivor today
+
+✅ has it · 🟡 partly has it · ❌ lacks it
+
+| PokéBonk system | MicaSurvivor | Notes |
+|---|---|---|
+| Bounded map with zones, a guardian altar, a portal and a win state | ❌ | Infinite chunked arena. Biome changes every 240 s; 5 timed bosses; ends in the unwinnable Judgment at 30:00 |
+| Final swarm (soft timer) | 🟡 | The Judgment is a hard death timer |
+| Terrain heights, ledges, ramps | ❌ | Flat tiles: floor, wall and liquid |
+| Jump / double jump | ❌ | — |
+| Slide / dodge | ❌ | The Dash move kind is an attack, not a movement verb |
+| Glide, climb, surf by type | 🟡 | Flying/ghost enemies ignore terrain; the player can't. Liquid only slows |
+| Bounce pads | ❌ | — |
+| In-run evolution | ❌ | Only moves evolve. Species are separate unlocks |
+| Per-species 4-move kit + class passive | 🟡 | 54 abilities (one per Pokémon); one starting move; level-up offers from a shared pool of 66 moves |
+| 25 move archetypes from real move data | 🟡 | 15 hand-authored kinds, 66 moves, a 4-step ladder (max level 5), move evolutions and bonds |
+| Signature Ultimate with a charge meter | 🟡 | 18 type Z-moves on a 240 s cooldown from level 15; Dynamax |
+| Card rarities (5) + luck | ❌ | Weighted cards, no rarity |
+| Reroll / Banish / Skip | 🟡 / 🟡 / ❌ | Reroll (free + upgrade); "Ban" for new-move cards; no skip |
+| Vitamins (stat cards with levels and slots) | 🟡 | 10 stat cards, no slots |
+| Items: 102, 5 rarities, stack caps, unlocks | 🟡 | 26 held items, 1–2 slots, equal drop odds |
+| ₽ in-run economy, paid chests, shop | ❌ | Coins are meta currency. Plain/locked chests are free; the treasure-thief event |
+| Charge-circle altars (Unown) | 🟡 | Altars give a one-use 25 s power; springs heal |
+| Risk/reward altars (cursed, greed), Ditto, Hypno, slots | ❌ | Traps exist |
+| Elemental reactions | ❌ | Statuses exist (freeze, paralysis, sleep, confusion, burn, poison, slow) |
+| Weather that buffs types | 🟡 | `systems/weather.js` (upstream) |
+| Alphas + Support Alphas (recruit) | 🟡 | Elites; the lost-Pokémon escort event; team mode with your own collection |
+| Totems / summoners / swarm / stampede / flock / rock slide | 🟡 | Type horde, golden hour, surges, summoner and thief behaviours |
+| Boss HP tuned to your DPS + exhaustion | ❌ | Fixed HP (1,400 → 16,000); a 28% Z-move cap |
+| Shiny encounters to catch | 🟡 | Shiny enemies at 1/4096; shinies come from the gacha |
+| Catch-to-unlock roster (League) | ❌ | Ticket gacha (9 banners, pity) |
+| Difficulty tiers | ❌ | 6 modifiers + adaptive difficulty |
+| Survival (endless), milestones, pacts | 🟡 | Tower pacts (15 + 4); Type Survival (10 min); no endless |
+| Score formula | 🟡 | Ranks by time, then kills |
+| Time attack + splits + medals | 🟡 | Rift Time Attack (8:00 countdown) |
+| Per-map / per-tier / per-species boards, weekly seasons | ❌ | One `micasurvivor` board |
+| Lab (meta upgrades) | ✅ | 17 per-Pokémon upgrades bought with coins |
+| Daily/weekly tasks | ✅ | 17 daily / 13 weekly missions |
+| Achievements | ✅ | 223 achievements, 36 titles |
+| Research → avatars | 🟡 | Lexicon, trainer card, titles |
+| Friends | ✅ | Magepunk friends |
+| Clans | ❌ | — |
+| Co-op | ✅ | PokéBonk lacks it. Local 12a + online 12b |
+| Spectating, replays | ✅ | PokéBonk lacks them (12c) |
+| Controller, rebinding | ✅ | — |
+| Tips, glossary, build view | 🟡 | Lexicon. No contextual first-run tips |
+
+---
+
+## 5. DLC proposal: "MicaSurvivor: Expedition"
+
+### 5.0 DLC architecture (owner requirements, 2026-10-19)
+
+The DLC is an **on/off switch, like Micatro's mods**. With it **OFF, MicaSurvivor plays exactly as
+it does today**: the same rules, numbers, RNG draws, spawns and saves. Everything below serves that
+guarantee.
+
+File references are as of `feat/micasurvivor-m5-b12c`. "mp.mjs" means `server/mp.mjs`, which
+`functions/api/mp.mjs` re-exports.
+
+**Precedent: Micatro mods.**
+- `micatro/js/mods/registry.js`:
+  - `registerMod` (:280) tags every piece of content with `o.mod = id`.
+  - `activateMods(ids, options)` (:367) runs per run and rebuilds the pools through `centerActive`.
+  - Named `HOOKS` (:38) are called through `callHook`/`reduceHook`/`firstHook` (:391-418).
+- `mods/index.js` lazy-`import()`s the `AVAILABLE` manifest.
+- The switch is a **global preference** (`localStorage 'micatro_mods'`, `ui/screens.js:998-1008`),
+  copied into each run's recipe (`engine/session.js:19`).
+- Boards: modded scores go to **`micatro_modded`**. The server enforces it (mp.mjs:1671-1686):
+  - a `micatro` score that carries mods is moved to the modded board;
+  - a `micatro_modded` score without mods is refused.
+
+  The DLC copies this pattern. The one difference is the save: Micatro keeps a single save slot;
+  the DLC gets its own.
+
+**MicaSurvivor facts that shape the design:**
+- Classic `<script defer>` globals (`G.X = (()=>{…})()`, `index.html:606-700`), not ES modules.
+- A variable time step (`game.js:706`, `dt = min(1/30, real)·speedK`).
+- About 130 unseeded `Math.random` calls in the sim. The only seeded path is `G.Modes.seeded`
+  (`modes.js:75-82`), and it wraps Daily's `setupRun` alone.
+- The save, lobby, frame and replay formats carry **no content or version field** today.
+
+#### 5.0.1 Where the switch lives and what it controls
+- **A global preference**, like `micatro_mods`: "Expedition DLC: On/Off" in **Settings →
+  Content**.
+  - It is stored in the DLC's own blob, plus a `micasurvivor_dlc` localStorage mirror for the
+    first paint. **It is not stored in the base save** (`save.*`), so toggling it can't change a
+    base save byte.
+  - Default **Off** until the owner flips it (Q1).
+- **Off:** no DLC script is even loaded. The menu, mode select, Lexicon and Goals are exactly
+  today's.
+- **On:** the mode select gains an **Expedition** tab with Classic, Survival and League, plus DLC
+  entries in the Lexicon and Goals.
+- **Which runs are DLC runs:** the **mode** decides, not the switch. Expedition modes run the DLC
+  ruleset. Every base mode stays base even with the switch on: Normal, Daily, Boss Rush, Tower,
+  Rift TA, Type Survival, Party, Team and Co-op.
+  - `G.Modes.plan()`/`begin()` (`modes.js:137/153`) gain a `ruleset` field: `'base'`, or
+    `'x@<dlcVer>'` for the DLC.
+  - The run carries it from `startRun` (`game.js:99`) to `endRun` (:324).
+- **Later option (Q2):** a per-run "Expedition flavour" modifier in base modes, e.g. hop and
+  slide in Normal. It would set `ruleset` and go to the DLC boards, never silently to base.
+
+#### 5.0.2 How content plugs in without touching base behaviour
+- **Code isolation:** all DLC code lives in `micasurvivor/js/dlc/*.js`, which defines `G.DLC.*`
+  and is **lazy-loaded** by a small `G.DLCLoader`. The loader injects `<script>` tags in order,
+  the classic-script version of Micatro's `import()`.
+  - Only three things trigger a load: the switch turning on, a DLC replay or spectate being opened,
+    or a DLC lobby being joined.
+  - DLC files have no side effects at load. They only register.
+- **Hooks with base defaults:** D0 adds `G.Hooks` (`core/hooks.js`), modelled on Micatro's
+  `callHook`/`reduceHook`/`firstHook`. Named seams:
+
+  | Seam | Base code it wraps |
+  |---|---|
+  | `world.gen` | `G.World.reset`/chunk gen |
+  | `player.verbs` | The player update |
+  | `levelup.offers` | `systems/levelup.js` |
+  | `spawner.timeline` | `systems/spawner.js` |
+  | `interact.kinds` | `systems/interact.js` |
+  | `hud.extra` | — |
+  | `net.frame`/`net.event` | `coop.js` `hostFrame` :201 / `applyHostEvent` :378 |
+  | `snap.write`/`snap.read` | `spectate.js` `snap()` :50, `replay.js` |
+  | `score.submit` | `account.js:94` |
+
+  - The base code path moves behind each seam **unchanged**, as its default.
+  - DLC overrides apply only when `run.ruleset !== 'base'`. They never read the global switch.
+- **Data overlays:** DLC data lives in `js/dlc/data/*` and goes into **new** registries
+  (`G.DLC.Items`, `G.DLC.Kits`, `G.DLC.Maps`), never into `G.Items`, `G.Moves` or `G.Upgrades`.
+  - This matters because the replay header indexes `G.Items.BY` (`replay.js:61`), so base tables
+    must keep their order.
+- **The run loop:** `update()` (`game.js:733`) calls `G.DLC.update(dt)` only for DLC runs, as one
+  `if` in a fixed spot. A base run never constructs a DLC object.
+- **RNG:** DLC runs use their own seeded stream (`G.DLC.rng`, mulberry32 from the run seed). This
+  keeps DLC terrain and timeline reproducible for co-op and replays.
+  - Base runs keep their current `Math.random` use. D0 does **not** reseed the base game: that would
+    change base behaviour.
+
+#### 5.0.3 Saves
+- **A separate DLC blob:** server row `micasurvivordlc:<user>`, through new actions
+  `micasurvivor-dlc-save-get/-put` that copy the compare-and-set pattern of mp.mjs:2203-2207. The
+  base `micasurvivor:<user>` row is never touched.
+  - Guests use localStorage `micasurvivor_dlc_save.<key>`.
+  - The blob has its own `VERSION`, `newSave`, `migrate`, `sanitize` and `merge`, mirroring
+    `core/db.js` (:30, :69-128, :256). It plugs in as one more delegate, like `Tower.merge`/
+    `LocalCoop.merge`, but **on its own blob**.
+- **Contents:** the switch, League members, research, DLC currency, Lab levels, item unlocks, map
+  and tier clears, medals, splits, DLC tasks and achievements.
+- **No DLC code writes the base save.** Toggling writes only the DLC blob. The DLC reads base data
+  (account name, shiny skins if Q5 allows) **read-only**.
+- **Uninstall-safe:** switching off leaves the DLC blob untouched, and switching on resumes it.
+- **Currency:** a separate "Expedition Stardust". No exchange with Pokémonedas in v1 (Q4).
+
+#### 5.0.4 Regression strategy: "base unchanged"
+**The constraint:** today a full-run "same seed → same outcome" test is impossible, because of the
+variable `dt` and the ~130 `Math.random` calls.
+
+**The fix:** D0 adds **test-only** determinism instead of reseeding the game.
+- **A sim harness** (`G.Game.debugStep(n, dt)`, next to `debugTime`/`debugSpeed` at
+  `game.js:1064`). It runs `update(fixedDt)` n times with no rAF.
+- The puppeteer test swaps `Math.random` for a seeded PRNG for the whole page, before boot, and
+  drives scripted input.
+- Production behaviour is unchanged: the harness is a debug entry point, like the existing
+  `debug*` hooks.
+
+**Golden-run test (`micasurvivor_dlc_base_unchanged_test.mjs`):**
+1. **D0a** lands the harness alone, with no DLC code, and records fixtures. For each of Normal,
+   Daily, Boss Rush, Tower and Team, and a local-co-op run, it records ~120 s of sim: a per-second
+   hash of the player, enemy, pickup and projectile state, the count of `Math.random` draws, the
+   spawn log, the kill/xp/coin totals and the final save blob.
+2. **D0b** adds the switch, hooks, loader and blob, and asserts the **same hashes and draw
+   counts** in three states:
+   - (a) switch Off, DLC scripts not loaded;
+   - (b) switch Off with the scripts force-loaded;
+   - (c) switch **On** with a base mode selected.
+
+   The fixtures come from D0a, so moving base code behind `G.Hooks` is proven to be a pure
+   refactor.
+3. **Base table freeze:** deep-freeze `G.Moves`, `G.Items`, `G.Upgrades`, `G.Enemies`, `G.DEX` and
+   the `G.Items.BY` order before the DLC loads. Any write throws.
+4. **Saves:** load a fixture base save, toggle On/Off, play a DLC run, toggle again. The base blob
+   (and the `micasurvivor:<user>` server row in the server-test harness) must be byte-equal.
+5. **Replays:** a 12c base replay fixture plays to the same final frame hash with and without the
+   DLC loaded.
+6. **Co-op:** the `lobby_server` test proves a base lobby round-trips without the new fields.
+
+Every later D-batch re-runs this test. It is part of `run-all.mjs --changed` whenever
+`micasurvivor/**` or the msurv server actions change.
+
+#### 5.0.5 Multiplayer (local co-op 12a, online co-op 12b)
+**Lobby:**
+- `msurv-lobby-create` (mp.mjs:2309) stores `rs` (ruleset) and `dv` (the DLC content version:
+  semver plus a hash of the `js/dlc/data` build) on the `msurvlobby:<id>` row.
+- `msurv-lobby-update` puts both into `start = {seed, at, host, members, rs, dv}`.
+- `social.js` `memberInfo()` (:175) adds `{rs, dv}` per member.
+- Base lobbies omit the fields, which means base. Old clients still work.
+- Invites show a "DLC" badge.
+
+**Joining:**
+- `msurv-lobby-join` (:2318) refuses a join when `dv` mismatches. The client also checks `start`
+  in `coop.js:252` / `social.js:206`.
+- A member with the switch **Off** gets "Enable the Expedition DLC to join". It's one click: the
+  scripts load and the base save is untouched.
+- A **stale cache** (`dv` differs) gets "Refresh to update" with a reload button. Everyone is on the
+  web, so a reload always fixes it.
+
+**Host-authoritative frames** (`coop.js` `hostFrame` :201):
+- A DLC run adds an **`x` extension object** with its own `xv` schema number. Base frames
+  `{k:'f', t, lv, …, e:[…]}` stay byte-identical.
+- **Terrain is never streamed:** clients already rebuild the world from `seed`. DLC terrain is
+  rebuilt from `seed + zone` with `G.DLC.rng`.
+- Per frame:
+  - an extra column on each enemy row: z/layer + airborne;
+  - player hop, slide and glide state;
+  - interactables as `[id, kind, charge 0-255, used]`, sent only when changed;
+  - boss phase, Ultimate charge and cast;
+  - allies and Alphas;
+  - capture state.
+- **New reliable events** in `applyHostEvent` (:378): `xz` zone change/portal, `xe` evolution,
+  `xc` capture result, `xu` Ultimate cast, `xi` interactable used.
+- **Relay mode** (1 Hz): the per-frame `x` block shrinks to the players and bosses, and events stay
+  reliable.
+- **Rule:** each D-batch that adds DLC state must extend `x`, bump `xv`, and add a guest-render test
+  to `micasurvivor_online_test`.
+
+**Local co-op (12a):**
+- The DLC adds an "Expedition co-op" variant on top of `G.LocalCoop` (`localcoop.js:137/187`):
+  the mate gets hop and slide on the second pad.
+- The AI mate pathfinds through the DLC layer graph via the `player.verbs` and pathing hooks.
+- The base `'coop'` mode is unchanged.
+
+#### 5.0.6 Replays and spectating (12c)
+**Replays:**
+- The header (`replay.js` `begin` :61, `h = {v:1, …}`) gains optional `rs`, `dv` and `map`/`tier`,
+  plus an `xv` per frame stream. A header without `rs` is base, so every existing replay stays
+  valid.
+- Server changes: `cleanMsurvReplayMeta` (mp.mjs:176) is an **allow-list** and currently drops
+  unknown meta, so it must accept `rs`/`dv`/`map`/`tier`. `micasurvivor-replay-put` (:2630) keeps
+  `v===1` (the new fields are optional).
+- **Playback** (`watch-ui.js`, which today rebuilds the world from `s.sd`/`s.b` at :50-51):
+  - `rs` present → lazy-load the DLC renderer and rebuild terrain from seed + zone.
+  - A DLC replay recorded on an **older** `dv` plays through versioned `snap.read` handlers keyed by
+    `xv`. Readers keep the old schemas.
+  - A replay from a **newer** `dv` than the viewer's cached build shows "Refresh to watch".
+- **Size:** terrain costs nothing, since it comes from the seed. The `x` block adds ~5–10% per
+  snapshot.
+  - DLC replays must still fit 12c's **1.2 MB / 30k frames**, and live snapshots the **24 KB**
+    `publish-micasurvivor` cap (mp.mjs:2546).
+  - D11 measures a busy 30-min Expedition run and trims far-entity columns if needed.
+
+**Spectating** (`spectate.js` `snap()` :50, `v:1`):
+- Carries the same optional `rs`/`dv`/`x`, so spectators of a DLC run see ledges, pads, altars,
+  bosses and captures.
+- A viewer with the switch Off is offered the one-click enable, as for co-op.
+
+#### 5.0.7 Leaderboards
+- **A separate board family, like `micatro_modded`:** add `micasurvivor_dlc` to the run-score
+  whitelist (mp.mjs:1671) with Micatro-style enforcement:
+  - a `micasurvivor` score that carries `rs`/`dv` is refused;
+  - a `micasurvivor_dlc` score without them is refused.
+
+  The base `runboard:micasurvivor` stays pure.
+- **D0** ships one board: `runboard:micasurvivor_dlc`, Expedition Classic, by score.
+- **D9** adds sub-boards: `runboard:micasurvivor_dlc:<map>:<tier>:<ko|time>` and
+  `…:survival:<map>`, plus optional per-species boards (Q8). The key is built server-side from
+  validated fields, never sent by the client.
+- **Side note** (pre-existing, outside the DLC): the base board's gate is
+  `clean() && G.Modes.is('normal')` (`game.js:392`). It **doesn't exclude the 6 modifiers**, so
+  modded Normal runs reach `runboard:micasurvivor` today. That is worth a one-line base fix, but it
+  is the owner's call (Q14), because it changes base behaviour.
+
+### 5.1 What to adapt (ranked)
+
+| # | Element | Value | Effort | 2D translation |
+|---|---|---|---|---|
+| 1 | **Expedition run**: bounded map, 3 zones, guardian altar, portal, final swarm, legendary shrine, win state | ★★★ | M | A bounded tile map per zone (e.g. 120×120 tiles) instead of infinite chunks. The portal is a tile object, and zone transitions are a fade |
+| 2 | **Terrain layers and movement verbs**: hop, slide, glide, climb, surf, bounce pads | ★★★ | L | §5.2 |
+| 3 | **In-run evolution + Maturity** | ★★★ | M | PMD sheets for every stage are already hosted. Show a white-flash evolution cinematic in pixels |
+| 4 | **League**: per-species kit, passive and challenge; catch-to-unlock | ★★★ | L | A DLC-only roster of ~80 Kanto families (§5.4) |
+| 5 | **Signature Ultimates** with a charge meter | ★★☆ | L (content) | Reuse the 18 Z-move scripted effects as type Ultimates. Write signatures for starters, Pikachu, Eevee and legendaries first |
+| 6 | **Rarity-rolled level-ups** + vitamins + Skip/Banish | ★★☆ | S–M | Card frame colours; luck-gated power |
+| 7 | **₽ economy**: paid Poké Balls, Meowth shop with heat, Unown charge altars, risk altars, Ditto/Hypno | ★★☆ | M | Tile props + a minimap legend |
+| 8 | **Alphas + Support Alphas + capture** | ★★☆ | M | A scaled-up sprite (×1.6) with a red aura; a Friend Ball throw arc in pixels |
+| 9 | **Difficulty tiers + score + splits/medals + DLC boards** | ★★☆ | S–M | — |
+| 10 | **Survival (endless)** with milestones, pacts and siege | ★★☆ | M | Reuse the Tower pacts UI |
+| 11 | **Elemental reactions** and weather type boosts | ★☆☆ | S | Reaction pop-text + palette flashes |
+| 12 | **Boss HP from your DPS** + exhaustion | ★☆☆ | S | — |
+| 13 | **Learnset-driven move pool** (25 archetypes) | ★☆☆ | L (data) | Optional. Start with the hand-mapped kits of the League members (~320 moves) |
+
+### 5.2 Verticality from 3D to 2D pixel art
+
+MicaSurvivor is a top-down 3/4-view tile game, like the GBA Pokémon games, and that genre already
+has a vertical language: **ledges you hop down, cliffs, stairs, ramps, Surf and Fly**. Use it.
+
+| PokéBonk 3D | MicaSurvivor 2D (DLC) |
+|---|---|
+| Heightfield terraces, 4.6 m per level | A **per-tile height layer**, 0–3. A cliff face is drawn as a 1–2-tile wall strip along the south edge, the GBA look. The tile painter adds cliff-face, ledge-lip and stair/ramp tiles to each biome palette (drawn in code, like the current tiles) |
+| Step-up 0.6 m / slopes ≤ 0.9 m | **Ramps/stairs** are the only walkable way up. A connectivity flood-fill at generation guarantees every plateau is reachable (as PokéBonk does) |
+| Jump (apex 2 m) | **Hop**: a 0.45 s arc with the sprite lifted 0–12 px and the shadow left on the ground.<br>Airborne: you pass over ground enemies and hazards with no contact damage (i-frames from contact only, not projectiles). You can **hop down a ledge** (one-way, Pokémon style). You can't hop up a full layer |
+| Extra jumps (Air Balloon…) | The **2nd hop** in the air may **climb one layer**: with an extra-jump item, hopping into a cliff face mid-air lands you on top |
+| Slide (0.55 s, ×1.9, 0.9 s cd) | **Slide** with the same numbers (in tiles/s). A dust trail. Shed Shell-style i-frames come from an item |
+| Glide (Flying) | **Glide**: hold Hop to stretch the airtime to 1.2 s and cross gaps of up to 3 tiles (water, lava, chasms) |
+| Climb (Fighting/Bug/Ghost) | **Climb**: walk up cliff faces at 50% speed |
+| Surf (Water ×1.35) | **Surf**: Water types cross deep liquid tiles at ×1.35; others are blocked by deep water or slowed in shallows. This extends MicaSurvivor's liquid tiles |
+| Bounce mushroom (25 s cd, 0.85 s arc) | A **bounce pad** prop (a mushroom; a spring for the desert) that throws you along a set arc onto a higher layer, with squash/stretch on the sprite |
+| Airborne +25% damage / landing shockwave | Kept as item and passive effects ("land from a ledge → shockwave") |
+| Enemies path in 3D | Ground enemies path by layer through ramps (extend `systems/pathing.js` with a layer graph). Flying and Ghost enemies ignore layers, as MicaSurvivor already does |
+| Projectiles | Fly over layers. Cliffs don't block shots (keeps it readable); walls still do |
+| Camera | No change: top-down. Higher layers are not y-shifted; their height reads through the cliff faces and shadows |
+| Anti-camping on plateaus | Survival's **Siege**, plus "Flock" fliers and ranged elites keep plateau camping honest |
+
+The camera has no third dimension, so MicaSurvivor doesn't need PokéBonk's camera-relative manual
+aim. Keep MicaSurvivor's auto-fire plus the existing move-select keys.
+
+**New pad actions** (wired in `js/core/pad.js`, as M5 requires): Hop (A), Slide (RB), Interact (X)
+and Ultimate (RT). They are only bound in DLC runs, so base bindings don't change.
+
+### 5.3 Run structure and modes
+- **Expedition · Classic:**
+  - A map has 3 zones, plus a 4th shrine zone where the map has one. A bounded seeded map per
+    zone; the portal advances.
+  - Each zone has 10:00 before the **final swarm**, a timeline like §2.8 rescaled to
+    MicaSurvivor's enemy cap, and a **guardian altar**.
+  - Bosses: guardians (40/50/60 s DPS-tuned), then the legendary.
+  - Normal, Hard and Nightmare tiers unlock in sequence per map.
+- **Expedition · Survival:**
+  - Endless, on one map per run.
+  - A milestone boss every 5 min (a legendary every 3rd; an end-boss at 45:00 that doesn't end the
+    run).
+  - Phases at 12 and 24 min, wounds at 30, night at 45.
+  - Pacts every milestone: 9 boon/bane pacts, reusing `tower-ui.js`.
+  - Migration portal at 11:00. Hazards: mud, brambles, quicksand and burning ground. Siege.
+- **Expedition · League:** a roster screen with challenges, kits and Ultimates, the Lab, research,
+  tasks and boards.
+- **Launch maps (3):**
+
+  | Map | Types | Verticality | Legendary |
+  |---|---|---|---|
+  | **Viridian Forest** | grass/bug/normal/flying | Gentle terraces; ponds | Mew shrine |
+  | **Mt. Moon** | rock/ground/fairy | Cave ledges; heavy verticality | Clefable as a "guardian" |
+  | **Cerulean Cape** | water/electric/flying | Islands, surf and glide gaps | Zapdos |
+
+  - Desert, Lavender Tower and Seafoam/Volcano are post-launch maps (D12+).
+  - Map choice is Q6. Picking Magepunk-world locations (the cabinet is in Pewter) avoids mirroring PokéBonk's lineup.
+
+### 5.4 Content scope (v1)
+| Content | v1 target | Notes |
+|---|---|---|
+| League roster | ~80 Kanto families (starters + ~77) | Use MicaSurvivor's existing PMD sheets and its 54 abilities as the class-passive base. 4-move kit each |
+| Signature Ultimates | ~16: 3 starter lines, Pikachu, Eevee, Snorlax, Gengar, Gyarados, Dragonite, Lapras, Mewtwo, Mew, the 3 birds, Ditto | The rest use the type Ultimate (the Z-move effect, rescaled) |
+| Move archetypes | 15 existing + 8 new: lob, homing, barrage, smite, vortex, wave, spin, weather | The kit moves (~320) hand-mapped in `dlc/data/kits.js` |
+| Items | ~60 in 5 rarities, plus 18 type boosters | New pixel icons where the Android item set lacks them |
+| Vitamins | 21 | Pixel icons from items |
+| Interactables | ~12 | Poké Ball (paid/free/cursed), Meowth, Unown altar ×4 tiers, challenge, cursed and greed altars, Ditto, Hypno, gold rock, berries, bounce pad, cage |
+| Bosses | 9 guardians + 3 legendaries + totems/summoners per map | |
+| Maps | 3 | Plus 1 shrine zone |
+| Meta | DLC currency, ~15 Lab upgrades, ~25 item unlocks, research avatars, daily/weekly DLC tasks, ~30 DLC achievements | |
+| Boards | Map × tier (KO/time), Survival per map; per-species optional | |
+
+### 5.5 Batches and milestones
+
+Each batch is sized like an M5 batch: **one major system per PR**, one new `js/dlc/*.js` system of
+~300–1,200 lines plus UI. Each has:
+- its own README section, in the M5 shape: rules table, input, saved and merged, deviations, not yet;
+- a test file `overworld/tests/micasurvivor_dlc_<feature>_test.mjs`;
+- the pad action wired;
+- **the base-unchanged golden test (§5.0.4) passing**;
+- its own extension of the net/replay snapshot schema.
+
+| Batch | Scope | Depends on |
+|---|---|---|
+| **D0a. Determinism harness** (no gameplay change) | `G.Game.debugStep(n, dt)` fixed-step entry; a puppeteer page-wide seeded `Math.random`; scripted input; per-second state hashes + draw counter; **golden fixtures recorded** for Normal, Daily, Boss Rush, Tower, Team and local co-op, plus a base replay fixture | — |
+| **D0b. DLC toggle and plumbing** | Settings → Content switch (in the DLC blob + a localStorage mirror); `ruleset`/`dv` through `Modes.plan/begin`; `core/hooks.js` seams with base code moved unchanged; `G.DLCLoader` (ordered script injection); `micasurvivordlc:<user>` blob + `micasurvivor-dlc-save-get/-put`; `micasurvivor_dlc` board with Micatro-style enforcement; `rs`/`dv` on the lobby, `start`, replay header/meta allow-list and spectate snapshots, with join/watch version gates; an empty Expedition tab; **the base-unchanged test against the D0a fixtures** + table freeze + save/replay/lobby round-trips | D0a |
+| **D1. Terrain layers** | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
+| **D2. Movement verbs** | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
+| **D3. Expedition · Classic** | Zones, zone timeline (alphas, swarm, stampede, flock, rock slide, elite wave, totem, summoner), guardian altar, portal, final swarm, legendary shrine, victory screen, splits; boss HP from DPS + exhaustion; map 1 (Viridian Forest) | D2 |
+| **D4. League roster and evolution** | ~80 kits + passives, kit unlock levels 1/2/4/7, in-run evolution with branch choice (Eevee), Maturity at 24/44, stats from base stats; the 3 starters free | D3 |
+| **D5. Level-ups and items** | 5-rarity luck-gated cards, move levels to 8 with archetype stat rolls, 8 new archetypes, 21 vitamins + slots, Refresh/Skip/Banish; ~60 items with caps and additive same-stat stacking | D4 |
+| **D6. Ultimates** | Charge meter (95 s passive, kill bucket, elite/alpha/boss, hurt), cast i-frames, cut-in; type Ultimates from Z-move effects; 16 signature Ultimates by evolution tier; auto-Ultimate setting | D4 |
+| **D7. Economy and interactables** | ₽ drops, paid/free/cursed Poké Balls, Meowth with market heat, Unown altars ×4 tiers + comet, challenge/cursed/greed altars, Ditto, Hypno, gold rocks, berries, cage; minimap legend, fog of war; first-run tips | D5 |
+| **D8. Alphas, capture and shinies** | Alphas, faint window, Friend Ball, Support Alphas (2/3 slots) with type perks; League encounters (challenge → appear → weaken → catch); shiny encounters; capture cinematic; elemental reactions + weather boosts | D7 |
+| **D9. Tiers, score and boards** | Normal/Hard/Nightmare tables, tier unlocks per map, score formula, time-attack medals, DLC boards and the board UI; weekly season view (cosmetic prizes only) | D3 |
+| **D10. League meta** | DLC currency, Lab (~15 upgrades), item unlocks by counter goals, Archive, research → avatars and frames, DLC daily/weekly tasks, ~30 achievements, shiny perks | D8 |
+| **D11. Survival and MP hardening** | Endless mode (milestones, phases, pacts, siege, night, migration, hazards); full online co-op pass on DLC state, relay budget check, replay size check against 1.2 MB, spectator rendering | D9, D10 |
+| **D12. Maps 2–3** | Mt. Moon, Cerulean Cape: biome palettes, residents, guardians, totems, summoners, legendaries, bounce-pad variants | D11 |
+| D13+ (later) | More maps (desert, Lavender), more signature Ultimates, Mega Evolutions as a late-run power spike (Q10), per-species boards, clans (Q9) | — |
+
+**Milestones:**
+- **α** (D0–D3): a playable, winnable Expedition map with verticality, behind the switch, base
+  proven unchanged.
+- **β** (D4–D8): the full run loop with the League.
+- **1.0** (D9–D12): boards, meta, Survival and 3 maps.
+- **Launch:** owner playtest → flip the default (Q1).
+
+### 5.6 What NOT to take
+| Don't take | Why |
+|---|---|
+| Any PokéBonk code, models, textures, UI icons, portraits, music or its exact text | Our own reimplementation and art only; MicaSurvivor's 2D pixel style stays (owner) |
+| The 3D camera, free-look, FOV, camera-relative manual aim, depth fog, bloom/vignette post-processing, day-phase skyboxes | 3D-only. A top-down camera doesn't need them |
+| 1,000+ concurrent enemies | Canvas 2D and the co-op snapshot size can't afford them. Keep MicaSurvivor's cap family: raise to ~120–200 for the DLC only, measured with the perf tool |
+| Passwordless guest accounts, name/password signup, account deletion | Magepunk accounts already exist |
+| Anti-cheat auto-bans | Use the site's existing run validation; add plausibility checks per ruleset in D9. No auto-ban without owner review |
+| Slot machine | It's gambling with in-run ₽ only, but it's an owner call (Q7). Default: leave it out |
+| Paid anything, ads, donation prompts | MicaSurvivor licence rule (PolyForm NC + owner) |
+| More UI languages | Owner dropped them (MicaSurvivor stays English + Spanish) |
+| Replacing base systems (gacha, Z-moves, Dynamax, 966 roster) | The DLC is additive and toggleable; base stays as is |
+| Copying PokéBonk's maps one-for-one, or its 79-member list and challenge numbers verbatim | Pick our own maps (Q6) and tune our own numbers; the cited numbers are a starting reference, not a spec |
+| Mega Evolutions now | They're PokéBonk's unreleased Season 2; revisit after 1.0 (Q10) |
+
+---
+
+## 6. Open questions for the owner
+
+1. **Default of the switch:** Off for everyone at launch (opt-in beta), or On once 1.0 ships?
+2. **DLC-only modes, or also "DLC flavour" in base modes?** E.g. hop and slide in a Normal run.
+   - Proposed: Expedition modes only in v1; a per-run "DLC modifier" later, on DLC boards.
+3. **Roster:** a separate League roster (~80 Kanto, catch-to-unlock), or should DLC runs also
+   allow the base gacha collection?
+   - Proposed: League only, so challenges and captures matter.
+4. **Currency:** a separate "Expedition Stardust", or share the base Pokémonedas?
+   - Proposed: separate, with no exchange in v1.
+5. **Cosmetics crossover:** may DLC research avatars and shinies show on the base trainer card, and
+   base shiny skins in DLC runs (read-only)?
+6. **Maps:** Viridian Forest / Mt. Moon / Cerulean Cape as the 3 launch maps, or mirror PokéBonk's
+   Forest/Desert first?
+7. **Slot machine and other gambling-flavoured interactables:** include (in-run ₽ only) or skip?
+8. **Boards:** map × tier × (KO, time) + Survival per map is the default. Add per-species boards
+   and weekly seasons with cosmetic prizes too?
+9. **Clans:** a site-wide Magepunk feature (useful to Battlecards and Micatro too), a MicaSurvivor-only
+   feature, or skip?
+10. **Mega Evolution** as a late-run spike after 1.0: yes or no? (It isn't in PokéBonk yet either.)
+11. **Enemy density:** may the DLC raise the concurrent-enemy cap (base 64 → ~150–200 in DLC runs),
+    subject to the mobile perf check?
+12. **Data sourcing:** hand-map ~320 kit moves (v1), or import PokeAPI moves + learnsets for the
+    full archetype generator (bigger, enables "moves from other League members")?
+13. **Online co-op in DLC runs at α**, or only from D11 (solo + local co-op first)?
+14. **Base board side note:** today `game.js:392` lets Normal runs with the 6 modifiers onto
+    `runboard:micasurvivor`.
+    - Fix it in base (a behaviour change, so it is outside the DLC's "base unchanged" promise), or
+      leave it?
+
+## Owner decisions (2026-10-19)
+| # | Question | Decision |
+|---|---|---|
+| 1 | Toggle default | **Off until 1.0**, then defaults On |
+| 2 | Toggle scope | **New Expedition modes only**; base modes stay exactly as they are even with the DLC on |
+| 3 | Roster | **League roster only** (earned via challenges + capture) |
+| 4 | Currency | **Shared Pokémonedas** (DLC rewards balanced to match) |
+| 5 | Cosmetics | **Shared both ways** (shinies, titles, skins) |
+| 6 | Launch maps | **Viridian Forest, Mt. Moon, Cerulean Cape** |
+| 7 | Slot machine | **Yes, play money only** (in-run ₽, never real money) |
+| 8 | Boards | **Per map + difficulty** (no per-species, no weekly seasons for now) |
+| 9 | Clans | **Skip for now** |
+| 10 | Mega Evolution | **Include in 1.0** (add to the core batches) |
+| 11 | Enemy cap | **Raise it, scaled by device** (up to ~200 on desktop, lower on phones; frame-rate measured) |
+| 12 | Move kits | **Hand-picked** (~320 moves from our existing move set) |
+| 13 | Online co-op | **From the first playable**; every DLC system syncs over co-op as it's built |
+| 14 | Base board bug (modifier runs on the base board) | **Fix it** (separate base PR before the DLC) |
+| — | Base spawn density (batch 9) | **Keep the web's** (0.24 / ×0.4) |
+| — | Judgment ruins (batch 9) | **Tower floors and Rush starts skip it**, like the port (base PR) |
+| — | Order | **Base fixes PR first**, then DLC D0a |
+
+### Update (owner, 2026-10-19): no on/off switch
+The DLC is now just new **Expedition modes** that don't touch any other mode, so it does **not** need a global
+toggle. Players reach it by choosing an Expedition mode, like Tower or Boss Rush. That supersedes decision #1 and
+the "toggle" parts of the DLC architecture and of D0b. Still kept:
+- **Expedition boards:** separate leaderboards, per map and difficulty.
+- **Multiplayer, replays, spectating:** the lobby, replays and spectating carry the mode plus an Expedition content
+  version.
+- **Saves:** DLC progress (League, unlocks) is stored in its own save section, and the base save is never rewritten.
+- **D0a, lighter:** a test-only harness proving that existing modes are unchanged by the Expedition code (golden
+  fixtures per base mode). No game-code changes.
+- **D0b becomes "Expedition plumbing":**
+  - the mode registry entry and lazy-loaded Expedition code;
+  - the separate save section;
+  - the `micasurvivor_expedition` boards;
+  - the version fields.
+
+
+### Update (owner, 2026-10-19): the League roster is every family that evolves twice
+Not just Kanto: **every Pokémon family with three stages, across all 9 generations: 116 families** (from PokéAPI evolution chains).
+Each family is one League member, starting at its first stage and evolving mid-run (branches such as Ralts, Wurmple and Applin get a branch choice).
+**111 of 116** already have every stage in MicaSurvivor's sprite set.
+The other 5 need sprites added first (marked *): Mime Jr. (Mr. Rime #866), Pidove (Tranquill #520), Pikipek (Trumbeak/Toucannon #732-733), Rolycoly (whole line #837-839), Smoliv (Dolliv #929).
+
+| Gen | # | Families (* = sprites missing) |
+|---|---|---|
+| 1 | 22 | Bulbasaur, Charmander, Squirtle, Caterpie, Weedle, Pidgey, Nidoran F, Nidoran M, Zubat, Oddish, Mankey, Poliwag, Abra, Machop, Bellsprout, Geodude, Magnemite, Gastly, Rhyhorn, Horsea, Porygon, Dratini |
+| 2 | 14 | Chikorita, Cyndaquil, Totodile, Pichu, Cleffa, Igglybuff, Togepi, Mareep, Hoppip, Teddiursa, Swinub, Elekid, Magby, Larvitar |
+| 3 | 17 | Treecko, Torchic, Mudkip, Zigzagoon, Wurmple, Lotad, Seedot, Ralts, Slakoth, Whismur, Azurill, Aron, Trapinch, Duskull, Spheal, Bagon, Beldum |
+| 4 | 9 | Turtwig, Chimchar, Piplup, Starly, Shinx, Budew, Mime Jr*, Happiny, Gible |
+| 5 | 20 | Snivy, Tepig, Oshawott, Lillipup, Pidove*, Roggenrola, Timburr, Tympole, Sewaddle, Venipede, Sandile, Gothita, Solosis, Vanillite, Klink, Tynamo, Litwick, Axew, Pawniard, Deino |
+| 6 | 8 | Chespin, Fennekin, Froakie, Fletchling, Scatterbug, Flabebe, Honedge, Goomy |
+| 7 | 8 | Rowlet, Litten, Popplio, Pikipek*, Grubbin, Bounsweet, Jangmo O, Cosmog |
+| 8 | 10 | Grookey, Scorbunny, Sobble, Rookidee, Blipbug, Rolycoly*, Applin, Hatenna, Impidimp, Dreepy |
+| 9 | 8 | Sprigatito, Fuecoco, Quaxly, Pawmi, Smoliv*, Nacli, Tinkatink, Frigibax |
+
+Notes:
+- **Legendaries:** Cosmog's line is the only legendary that evolves twice (Cosmog > Cosmoem > Solgaleo/Lunala).
+- **Rarities and challenges:** roughly by final-stage base-stat total, with the starter trios free, as in PokéBonk.
+- **The plan's count changes:** ~80 Kanto families becomes **116 kits** (about 460 hand-picked moves), so D4 grows; split it into D4a (Gen 1-4) and D4b (Gen 5-9).
+
+### Update (owner, 2026-10-19): legendaries, Megas, and all 1025 as enemies
+**League roster = 249 entries.** Counts come from PokéAPI species data and evolution chains (`is_legendary`,
+`is_mythical`, `-mega` varieties):
+- **116** three-stage families (above).
+- **+ every legendary and mythical: 71 + 23 = 94.** Most aren't three-stage, so this adds 90 entries (Cosmog's line
+  is already in, and the 3 birds, Mewtwo, Mew, the Tapus, the Treasures of Ruin, the Paradox legendaries and so on
+  are new).
+- **+ everything that can Mega Evolve: 87 species,** including the Legends Z-A Megas (Raichu, Clefable,
+  Victreebel, Starmie, Meganium, Feraligatr, Chimecho, Staraptor, Emboar, Excadrill, Scolipede, Scrafty,
+  Eelektross, Chandelure, Golurk, Chesnaught, Delphox, Greninja, Pyroar, Floette, Meowstic, Malamar, Barbaracle,
+  Dragalge, Hawlucha, Zygarde, Crabominable, Golisopod, Drampa, Magearna, Zeraora, Falinks, Scovillain, Glimmora,
+  Tatsugiri, Baxcalibur, ...).
+  - 34 of them are already inside a three-stage family.
+  - 10 are legendary or mythical.
+  - So **43 new entries**, each its whole family, with Mega at the capable stage: Slowbro, Kangaskhan, Starmie,
+    Pinsir, Gyarados, Aerodactyl, Steelix, Scizor, Heracross, Skarmory, Houndoom, Sableye, Mawile, Medicham,
+    Manectric, Sharpedo, Camerupt, Altaria, Banette, Chimecho, Absol, Glalie, Lopunny, Lucario, Abomasnow,
+    Froslass, Excadrill, Audino, Scrafty, Golurk, Pyroar, Meowstic, Malamar, Barbaracle, Dragalge, Hawlucha,
+    Crabominable, Golisopod, Drampa, Falinks, Scovillain, Glimmora, Tatsugiri.
+- **Total: 116 + 90 + 43 = 249 League entries.** That is about 1,000 hand-picked kit moves, so D4 splits into
+  **D4a** (three-stage Gen 1–4), **D4b** (three-stage Gen 5–9), **D4c** (Mega families) and **D4d** (legendaries
+  and mythicals, each with a special challenge or encounter, PokéBonk-style).
+
+**Enemies: all 1025 Pokémon, in BOTH Expedition and the base modes.** This is an owner decision that deliberately
+changes the base game's enemy pool.
+- MicaSurvivor's data has **966**. The **59 missing** need PMD-style sprite sheets:
+  - Gen 5: Simisear, Simipour, Tranquill, Blitzle, Zebstrika, Throh, Crustle, Tirtouga, Carracosta, Amoonguss,
+    Frillish, Jellicent, Shelmet, Stunfisk, Bouffalant.
+  - Gen 6: Pyroar, Aromatisse.
+  - Gen 7: Trumbeak, Toucannon, Gumshoos, Shiinotic, Oranguru.
+  - Gen 8: Rolycoly, Carkol, Coalossal, Sirfetch'd, Mr. Rime, Falinks, Cufant, Copperajah, Zarude.
+  - Gen 9: Dolliv, Squawkabilly, Maschiff, Mabosstiff, Shroodle, Grafaiai, Brambleghast, Toedscool, Toedscruel,
+    Klawf, Rabsca, Espathra, Bombirdier, Flamigo, Brute Bonnet, Iron Treads, Iron Jugulis, Gimmighoul, Wo-Chien,
+    Chien-Pao, Ting-Lu, Miraidon, Okidogi, Gouging Fire, Raging Bolt, Iron Boulder, Iron Crown, Pecharunt.
+- **Planned as a base-game batch, "B1: complete the Pokédex", before the DLC content.** It covers the 59 sprite
+  sheets (SpriteCollab first, then a fallback pipeline for any missing), plus Pokédex data, enemy-pool and biome
+  entries. The base-unchanged golden test is re-recorded once, on purpose, for this batch only.
+- **Mega sprites:** the Legends Z-A Megas also need Mega sheets for the League (part of D4c).

@@ -134,7 +134,13 @@ G.Tiles = (() => {
     };
   }
   for (const t of ARENA_TYPES) BIOMES.push(arenaBiome(ARENA_THEMES[t]));
-  BIOMES[ARENA + ARENA_TYPES.indexOf('judgment')].name = ARENA_THEMES.judgment.name;
+  const JUDGMENT = ARENA + ARENA_TYPES.indexOf('judgment');
+  BIOMES[JUDGMENT].name = ARENA_THEMES.judgment.name;
+  // Los biomas que recorren el Rush de Jefes y la Torre: todos menos las Ruinas del Juicio (la arena de
+  // Arceus no es un bioma de paso), como el port (tileworld.gd 58-78: count() deja fuera "judgment").
+  const CYCLE = BIOMES.map((_, i) => i).filter(i => i !== JUDGMENT);
+  /** El bioma n-ésimo de ese recorrido (da la vuelta; admite negativos). */
+  const cycleBiome = n => CYCLE[((Math.floor(n) % CYCLE.length) + CYCLE.length) % CYCLE.length];
 
   // ---------------- utilidades de color / píxel ----------------
 
@@ -626,7 +632,7 @@ G.Tiles = (() => {
 
   function clearProps() { propCache.clear(); }
 
-  return { T, BIOMES, NORMAL, ARENA, ARENA_THEMES, ARENA_TYPES, paintChunk, propSprite, clearProps,
+  return { T, BIOMES, NORMAL, ARENA, ARENA_THEMES, ARENA_TYPES, JUDGMENT, CYCLE, cycleBiome, paintChunk, propSprite, clearProps,
            /** Índice de bioma de la arena de un tipo. */
            arenaBiome: type => ARENA + Math.max(0, ARENA_TYPES.indexOf(type)) };
 })();

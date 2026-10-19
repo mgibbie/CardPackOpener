@@ -88,8 +88,8 @@ player logged into Magepunk saves to their account (see "Magepunk (M3)").
 - **Log out / Delete account** stay hidden: a Magepunk player's account belongs to the site
   (Settings -> Account shows "Magepunk account", the username, and a link to Magepunk instead).
   Upstream's "What's new" stays hidden too (it is PokéSurvivor's own changelog).
-- **Leaderboard**: `run-score` mode `micasurvivor` on the site's run boards: a clean solo run of
-  2+ minutes (upstream's `MIN_T`, and its anti-tamper `clean()`) sends `{time, kills, level, dex,
+- **Leaderboard**: `run-score` mode `micasurvivor` on the site's run boards: a clean solo Normal run
+  with no modifiers of 2+ minutes (upstream's `MIN_T`, and its anti-tamper `clean()`) sends `{time, kills, level, dex,
   shiny}`; the board ranks by survival time, then kills; a time past 4 hours is refused. The menu's
   Ranking item opens the board (top 50 + your rank) in place of upstream's Firebase boards. Friends
   and co-op came in M5 batch 12b ("Batch 12b: Online co-op").
@@ -568,8 +568,9 @@ date (the newer date wins; the same date keeps the better time); `save.typeDone`
 - Daily determinism: the port seeds the whole run; here `Math.random` is seeded only while the run
   is set up (map, cast, bosses, moves), as the frame timing makes the rest differ anyway.
 - Party saves nothing at all; the port still counted a won legendary or a den during it.
-- Leaderboards (ours and Magepunk's) only take Normal runs: the other modes change the rules and
-  Party never ends.
+- Leaderboards (ours and Magepunk's) only take Normal runs with no modifiers on: the other modes and
+  the modifiers change the rules, and Party never ends. (Until the base-board fix a Normal run with
+  modifiers still ranked; the personal `mn` / `mb_` records and "New time record!" are unaffected.)
 - The HUD shows the mode and the modifier icons at the top right (the port shows none).
 - The run summary's "recogidas" and "Nv.3" were left in Spanish in English; translated now.
 
@@ -596,7 +597,7 @@ numbers are the port's.
 
 **Other modes:** modifiers apply (+0.25 coins each, no extra for the mode, the `mn` / `mb_` records
 count); Daily, Party and Survival by Type are other modes; online co-op runs stay Normal; leaderboards
-only take Normal runs.
+only take Normal runs with no modifiers.
 
 **HUD:** the team cards under your HP (name, HP, bar; gold border on the active one, dimmed during the
 cooldown, KO when down) and the round swap button with the next one's name, a red cooldown arc, and
@@ -646,12 +647,12 @@ Floor Tower, Rift Time Attack, Survival by Type, Team), by mouse, touch and pad.
 | Order | boss i (0-based): a legendary when i % 3 == 2 (any with sprites); else a non-legendary with base stat total in [lo, lo + 110], lo = min(640, 490 + 14 i) (fallback: any non-legendary of 480+) |
 | Scaling | HP 1400 x 1.27^i x 1.35, damage min(150, 34 + 5 i) x 1.2, shots 0.55 of that every 1.1 s (range 260), speed 40 + base speed / 2 (40-100); created as at second 60 i (HP and damage x (1 + 60 i / 600)); XP = your level's x 1.25 |
 | Between fights | each boss leaves its XP, coins and an item, plus a heal berry (30 % HP) and a magnet |
-| World | a random starting biome, then a new one every 150 s |
+| World | a random starting biome, then a new one every 150 s; never the Judgment ruins (`G.Tiles.CYCLE`) |
 | End | only by falling. Record = bosses beaten (`stats.rushBest`, "New record!"); `stats.rushRuns` |
 
 | Floor Tower | Port |
 |---|---|
-| Floors | 30. Each: waves for 50 s (the HUD: "Floor N / 30 · Boss in Xs", then "Boss!", "Pacts: N", "Thirst for victory +x%"), then its fixed boss ("Floor N: name"); beating it clears the floor and clears the floor's enemies. One biome per floor |
+| Floors | 30. Each: waves for 50 s (the HUD: "Floor N / 30 · Boss in Xs", then "Boss!", "Pacts: N", "Thirst for victory +x%"), then its fixed boss ("Floor N: name"); beating it clears the floor and clears the floor's enemies. One biome per floor (`G.Tower.biomeOf`), never the Judgment ruins |
 | Bosses | fixed per floor (seeded 7919 f + 31): a legendary every 5 floors, Eternatus on 25, Arceus on 30. HP 900 x 1.2^(min(f,15)-1) x 1.07^(f-15) x (1.8 + 3.2 clamp((f-5)/25)) x 1.35; damage min(120, 26 + 4.5 f) x 1.2; created at t = 15 f. Arceus has floor 30's HP plus floor 25's, x 1.25, and a last breath at 25 % (x1.1 speed, a wave of up to 14). From floor 11 the boss brings 3 + (f-10)/2 escorts |
 | Scaling | difficulty time 20 + 42 (f-1) + 14 max(0, f-10) + floor time; enemies x1.15 HP, x1.12 damage, x1.12 spawns (x1.06 more per floor past 10), x1.02 speed per floor past 10 (half for bosses); bosses x1.2 HP; surges from floor 11 (every max(16, 46 - 1.5 (f-10)) s, 8 + (f-10) enemies; during the boss too from 21); the cap +2 per floor past 20 (up to +20); XP x0.65 |
 | Adaptive | every 2 s: run upgrades (stat cards + move levels) and the Pokémon's permanent upgrades raise new enemies' HP (+1 % / +0.4 % each, up to x2; bosses up to x1.5) and damage (+0.4 % / +0.2 %, up to +40 %) |
@@ -669,7 +670,7 @@ is guarded against an accidental pick as it pops up). The game is paused while y
 
 **Other modes:** modifiers apply to both (+0.25 coins each, no extra for the mode, the `mn` / `mb_` records
 count). Daily, Party, Survival by Type and Team are other modes (the port's single mode switch); online
-co-op runs stay Normal; leaderboards only take Normal runs.
+co-op runs stay Normal; leaderboards only take Normal runs with no modifiers.
 
 **Achievements and missions** (`progress.gd`): Boss warm-up / Boss barrage / Boss crusher / Rush King (3 /
 6 / 10 / 15 bosses), Record hunter (25 Rushes); First floors / Climbing / Almost at the top / Climber (clear
@@ -692,8 +693,10 @@ valid checkpoint; a hand-edited record is cleaned (`sanitize`).
   cards; all are ported as such. The task's "relic picker" is the legendary card on the pact screen.
 - The fixed boss of each floor uses the web's seeded RNG (mulberry32) instead of Godot's, so the species on
   floors other than 25 and 30 differ from the Android build, but each floor is still always the same boss.
-- The Boss Rush biome offset and the Tower's floor biomes run through all of `G.Tiles.BIOMES` (3 normal + the
-  rift themes), as the port's `ground.count()` does.
+- The Boss Rush biome offset and the Tower's floor biomes run through `G.Tiles.CYCLE`: all of `G.Tiles.BIOMES`
+  (3 normal + the rift themes) except the Judgment ruins, as the port's `ground.count()` does (`tileworld.gd`
+  58-78 leaves "judgment" out). Before the base-board fix the web cycled through the ruins too (Tower floor 22,
+  1 Rush start in 22); floors 22-30 now map one biome earlier in the cycle than they used to.
 - Boss drops: the web never dropped the port's 1-in-3 x10 ticket from bosses; Rush and Tower bosses add only
   the port's heal berry and magnet, so the Rush (all bosses) does not become a ticket farm.
 - Spawning uses the web's spawn curve (its `DENSITY` and HP factors) with the Tower's multipliers on top.
@@ -756,8 +759,8 @@ port (arena biomes take the volcano's weather; they used to wrap to the forest's
   seeded set-up (map, cast, bosses, moves), and adaptive difficulty never applies to it.
 - "beach" and "sky" (and the beach list of 28 coast Pokémon) are in the port's tables but no biome of the port
   or of the web has those keys, so they never apply; they are kept as in the port.
-- The web counts all 22 biomes (the Judgment ruins included, batch 8), so a Tower floor or a Boss Rush start on
-  the ruins has no themed spawns; the port skips that biome.
+- The web has 22 biomes (the Judgment ruins included, batch 8); the Tower and Boss Rush skip the ruins like the
+  port (`G.Tiles.CYCLE`), so neither lands on that biome (it has no themed spawns).
 - Port-only numbers in this area that were not changed: the port's base spawn density (0.17, surges x0.28)
   against the web's (0.24, x0.4). Batch 8 kept the web's curve; changing it is a balance call for the owner.
 - "Challenge" sits one line lower than in the port: the web's biome / defeated / coins line is already there.
