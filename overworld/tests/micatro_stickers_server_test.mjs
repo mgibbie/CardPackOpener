@@ -12,6 +12,10 @@
 //   * the row is exactly `micatro_stickers:<user>` = {v:2, wins, rev, updatedAt}, durable (not in the GC table)
 //   * get round-trips it; one player never reads or writes another's (a `username` in the body is ignored)
 //   * both actions are rate-limited (429 past the table's ceiling)
+//   * REVOKED (an admin edit of the row): `revoked` {key: true | [cats] | {cats, at}} is kept verbatim by every put,
+//     returned by get and put, and strips those keys / categories from incoming (and stored) wins; re-earn rule: a
+//     category the put proves was earned after `at` (`earned` {key: {cat: ms}}) is accepted and its time kept in the
+//     row's `earned`; with no `at` the key stays blocked until the admin removes the revocation
 //   node overworld/tests/micatro_stickers_server_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -67,7 +71,7 @@ const reg = async (name) => { const r = await call('register', { username: name,
 const ownWrites = (from) => writes.slice(from).filter((k) => !k.startsWith('rl:') && !k.startsWith('gc:'));
 
 try {
-	for (const n of ['stkalice', 'stkbob', 'stkflood', 'stkfull', 'stkold']) await reg(n);
+	for (const n of ['stkalice', 'stkbob', 'stkflood', 'stkfull', 'stkold', 'stkrev', 'stkrev2']) await reg(n);
 	A(tokens.stkalice && tokens.stkbob && tokens.stkflood && tokens.stkfull && tokens.stkold, 'test accounts register');
 
 	// ----- auth -----
@@ -178,6 +182,55 @@ try {
 	let got429g = false; n = 0;
 	for (; n < 40 && !got429g; n++) got429g = (await raw('micatro-stickers-get', {}, tokens.stkflood)).status === 429;
 	A(got429g && n > 20, 'micatro-stickers-get is rate-limited (429 after a burst)', 'hits=' + n);
+
+	// ----- revoked stickers (the admin's `revoked` field on the row) -----
+	const at = Date.now() - 60_000;
+	const REV = { b_plasma: { cats: true, at }, j_half: ['nuz'], j_block: true };
+	sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 0)').run('micatro_stickers:stkrev', JSON.stringify({
+		v: 2, wins: { j_joker: { win: 3 }, j_half: { win: 2, nuz: 4 } }, rev: 7, updatedAt: at, revoked: REV,
+	}));
+	const rg = await call('micatro-stickers-get', {}, tokens.stkrev);
+	A(rg.revoked && JSON.stringify(rg.revoked.b_plasma) === JSON.stringify({ cats: ['win', 'poke', 'nuz', 'mono', 'both'], at }) && JSON.stringify(rg.revoked.j_half) === '{"cats":["nuz"],"at":null}' && rg.revoked.j_block.at === null,
+		'get returns `revoked` (normalized: {cats, at}; at null = no re-earn)', JSON.stringify(rg.revoked));
+	A(JSON.stringify(rg.wins.j_half) === '{"win":2}' && rg.wins.j_joker.win === 3, 'get hides a revoked category still in the stored wins (j_half nuz)', JSON.stringify(rg.wins));
+	w0 = writes.length;
+	const rp1 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 4, poke: 2 }, j_half: { win: 2, nuz: 5 }, j_block: { win: 8 }, j_mime: { win: 6 } } }, tokens.stkrev);
+	const rr1 = row('micatro_stickers:stkrev');
+	A(rp1.ok && !rp1.wins.b_plasma && !rr1.wins.b_plasma && !rr1.wins.j_block, 'a revoked key in a put is ignored (not stored, not returned)', JSON.stringify(rp1));
+	A(JSON.stringify(rr1.wins.j_half) === '{"win":2}', 'a partial (category) revocation: j_half keeps win, loses nuz (incoming and stored)', JSON.stringify(rr1.wins.j_half));
+	A(rr1.wins.j_mime.win === 6 && rr1.wins.j_joker.win === 3, 'everything else max-merges as before', JSON.stringify(rr1.wins));
+	A(JSON.stringify(rr1.revoked) === JSON.stringify(REV) && rr1.rev === 8, '`revoked` survives the put verbatim', JSON.stringify(rr1.revoked));
+	A(rp1.revoked && rp1.revoked.b_plasma && rp1.revoked.j_half && rp1.revoked.j_block, 'the put response returns `revoked`', JSON.stringify(rp1.revoked));
+	const rp2 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 4 } } }, tokens.stkrev);
+	A(rp2.ok && rp2.changed === false && !row('micatro_stickers:stkrev').wins.b_plasma && JSON.stringify(row('micatro_stickers:stkrev').revoked) === JSON.stringify(REV), 'a put of only the revoked key changes nothing (no write)', JSON.stringify(rp2));
+	// the re-earn rule: earned after `at` -> accepted; earned before (or none) -> stripped; no `at` -> blocked
+	const rp3 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 8, poke: 2 } }, earned: { b_plasma: { win: at - 1000 } } }, tokens.stkrev);
+	A(rp3.ok && !row('micatro_stickers:stkrev').wins.b_plasma, 'an earned time BEFORE the revocation does not lift it', JSON.stringify(row('micatro_stickers:stkrev').wins.b_plasma));
+	const t2 = Date.now() - 1000;
+	const rp4 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 2, poke: 2 } }, earned: { b_plasma: { win: t2 } } }, tokens.stkrev);
+	const rr4 = row('micatro_stickers:stkrev');
+	A(rp4.ok && rp4.changed && JSON.stringify(rr4.wins.b_plasma) === '{"win":2}' && rr4.earned.b_plasma.win === t2, 'a win earned AFTER the revocation sticks (only that category: poke had no newer time)', JSON.stringify([rr4.wins.b_plasma, rr4.earned]));
+	A(JSON.stringify(rr4.revoked) === JSON.stringify(REV) && rp4.earned && rp4.earned.b_plasma.win === t2, '...the revocation is still kept, and the response carries the earn time', JSON.stringify(rp4));
+	const rg2 = await call('micatro-stickers-get', {}, tokens.stkrev);
+	A(rg2.wins.b_plasma && rg2.wins.b_plasma.win === 2 && rg2.earned.b_plasma.win === t2, 'get returns the re-earned sticker and its time (so devices keep it)', JSON.stringify([rg2.wins.b_plasma, rg2.earned]));
+	const rp5 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 8 } } }, tokens.stkrev);
+	A(rp5.ok && row('micatro_stickers:stkrev').wins.b_plasma.win === 2, 'a stale device pushing the old (higher) level with no earn time cannot raise it', JSON.stringify(row('micatro_stickers:stkrev').wins.b_plasma));
+	const rp6 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 5 } }, earned: { b_plasma: { win: Date.now() } } }, tokens.stkrev);
+	A(rp6.ok && row('micatro_stickers:stkrev').wins.b_plasma.win === 5, 'a later re-earned higher win raises it as usual', JSON.stringify(row('micatro_stickers:stkrev').wins.b_plasma));
+	const fut = Date.now() + 86_400_000;
+	await call('micatro-stickers-put', { wins: { b_plasma: { win: 6 } }, earned: { b_plasma: { win: fut } } }, tokens.stkrev);
+	A(row('micatro_stickers:stkrev').earned.b_plasma.win <= Date.now(), 'an earn time in the future is capped at the server\'s now', row('micatro_stickers:stkrev').earned.b_plasma.win);
+	await call('micatro-stickers-put', { wins: { j_block: { win: 8 } }, earned: { j_block: { win: Date.now() } } }, tokens.stkrev);
+	A(!row('micatro_stickers:stkrev').wins.j_block, 'a revocation with no `at` blocks the key whatever the earn time (until the admin removes it)', JSON.stringify(row('micatro_stickers:stkrev').wins.j_block));
+	// the plain `true` form + a row with no stored wins for it; and a revocation the admin removed lets it back
+	sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 0)').run('micatro_stickers:stkrev2', JSON.stringify({ v: 2, wins: { b_plasma: { win: 7 } }, rev: 1, updatedAt: 1, revoked: { b_plasma: true } }));
+	const rq1 = await call('micatro-stickers-put', { wins: { j_joker: { win: 1 } } }, tokens.stkrev2);
+	A(rq1.ok && !row('micatro_stickers:stkrev2').wins.b_plasma && JSON.stringify(row('micatro_stickers:stkrev2').revoked) === '{"b_plasma":true}', 'a stored sticker the admin revoked (but left in wins) is dropped on the next write; `revoked` kept', JSON.stringify(row('micatro_stickers:stkrev2')));
+	const r2 = row('micatro_stickers:stkrev2'); delete r2.revoked;
+	sqlite.prepare('UPDATE mp_store SET value = ? WHERE key = ?').run(JSON.stringify(r2), 'micatro_stickers:stkrev2');
+	const rq2 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 3 } } }, tokens.stkrev2);
+	A(rq2.ok && row('micatro_stickers:stkrev2').wins.b_plasma.win === 3 && JSON.stringify(rq2.revoked) === '{}', 'once the admin removes the revocation the key max-merges normally again', JSON.stringify(rq2));
+	A(Object.keys(row('micatro_stickers:stkalice')).sort().join() === 'rev,updatedAt,v,wins', 'a row without revocations gains no `revoked` / `earned` fields');
 
 	// ----- source registration -----
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
