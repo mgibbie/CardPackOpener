@@ -18,7 +18,7 @@
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
  *                     random Tera type on jokers (Luminous deck: G.GAME.modifiers.apply_type)
  *   evaluate_round    Double Rainbow Energy's interest lockout ends (reset_no_interest)
- *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank, Wingull rank, Skitty type,
+ *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank, Bramblin rank, Wingull rank, Skitty type,
  *                     Bronzor card
  *   pack_size         extra_pocket_picks (+N cards in every pack)
  *   can_reserve       Pocket packs / G.GAME.poke_save_all / Megastone: pack cards can be saved
@@ -27,7 +27,7 @@
  * plus faint_baby_poke / volatile_active (Baby and volatile Pokémon position rules).
  */
 import { G, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
-import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_add_hazards, has_enhancement } from './utils.js';
+import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_add_hazards, has_enhancement, get_upgraded_pack_center } from './utils.js';
 import { apply_type_sticker, type_sticker_applied, get_type } from './types.js';
 import { energy_increase } from './energy.js';
 
@@ -239,12 +239,24 @@ export function reset_type(name, exclude_names) {
   }
   if (valid_types.length > 0) G.GAME.current_round[name] = pseudorandom_element(valid_types, pseudoseed(name + G.GAME.round_resets.ante))[0];
 }
+/**
+ * Pokermon 3.9.1's get_pack wrap (pokeutils.lua, Drampa; new-jokers sub-batch 15): with a Drampa, a shop pack is Jumbo or
+ * better (with a Mega Drampa, Mega: batch 16). (The engine's first-shop Buffoon pack is returned before the get_pack hook.)
+ */
+export function get_pack(center, _key) {
+  if (_key !== 'shop_pack' || !center) return undefined;
+  if (any(find_card('j_poke_mega_drampa'))) return get_upgraded_pack_center(center, 'mega') || center;
+  if (any(find_card('j_poke_drampa'))) return get_upgraded_pack_center(center, 'jumbo') || center;
+  return undefined;
+}
 /** SMODS.current_mod.reset_game_globals (pokermon.lua). */
 export function reset_game_globals(run_start) {
   reset_bulba_rank();
   reset_espeon_card();
   reset_gligar_suit();
   reset_sneasel_rank();
+  // (sub-batch 15) Bramblin / Brambleghast's rank (3.9.1 resets it before Wingull's; each has its own seed).
+  reset_rank('bramblincard');
   // Pokermon 3.9.1 (sub-batch 11): Wingull / Pelipper's rank, Skitty's (and Delcatty's) type of the round.
   reset_rank('wingullcard');
   reset_type('cattype', ['skitty', 'delcatty']);

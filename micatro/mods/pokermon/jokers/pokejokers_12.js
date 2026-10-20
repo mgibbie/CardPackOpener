@@ -373,7 +373,21 @@ defineJokers({
         for (const other_card of added) other_card.poke_zangoose_card = true;
         // The Lua's draws queue after the played cards' (press_play runs after Blind:press_play there; ours fires before
         // the played cards move): one event later, so they land after them in G.play.
-        if (added.length) G.E_MANAGER.add_event(() => { for (const other_card of added) draw_card(G.hand, G.play, 100, 'up', null, other_card); });
+        // Fix (new-jokers sub-batch 15, found by the all-mods fuzz): The Hook's press_play event runs between this and the draws
+        // and may pick the same held cards. It discards them, so they stay out (checked when each card would move). The Lua
+        // draws them anyway, leaving the card in G.play and G.discard at once.
+        if (added.length) {
+          G.E_MANAGER.add_event(() => {
+            for (const other_card of added) {
+              G.E_MANAGER.add_event(() => {
+                if (other_card.area !== G.hand || G.hand.highlighted.includes(other_card)) { other_card.poke_zangoose_card = undefined; return; }
+                // (draw_card's own body, run now: draw_card would queue one more event, after The Hook's discards)
+                const c = G.hand.remove_card(other_card);
+                if (c) G.play.emplace(c, undefined, G.GAME.blind && G.GAME.blind.stay_flipped(G.play, c, G.hand));
+              });
+            }
+          });
+        }
       }
       if (context.modify_scoring_hand && context.other_card.poke_zangoose_card) {
         context.other_card.poke_zangoose_card = undefined;

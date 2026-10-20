@@ -116,9 +116,7 @@ const ATLAS_FILES = {
   placeholder_deck: ['placeholder_deck.png'],
   placeholder_item: ['placeholder_item.png'],
   placeholder_sleeve: ['placeholder_sleeve.png'],
-  // Micatro-made (Pokermon never shipped Hisuian Qwilfish art): + its shiny twin, named like the Natdex sheets
-  hisuian_qwilfish: ['hisuian_qwilfish.png'],
-  hisuian_qwilfishShiny: ['hisuian_qwilfishShiny.png'],
+  // (Hisuian Qwilfish draws 3.9.1's card since new-jokers sub-batch 15: AtlasJokersBasicGen02 {2,5}; the Micatro-made card is retired)
   unergy: ['unergy.png'],
   unitem: ['unitem.png'],
   // (the Unown Swarm's strips: SWARM_STRIPS below, tiled)
@@ -548,6 +546,7 @@ const hooks = {
   pool_filter,
   create_card: rules.create_card,
   set_cost: rules.set_cost,
+  get_pack: rules.get_pack, // (Drampa: shop packs Jumbo or better)
   find_joker_alias: rules.find_joker_alias,
   straight_min: rules.straight_min,
   poker_hand_cards: rules.poker_hand_cards,
@@ -632,7 +631,10 @@ export const POKERMON = registerMod({
   // Bagon / Shelgon / Salamence, Deoxys, Budew, Roserade, Chingling, Bronzor / Bronzong, Gallade) join the pools; Kirlia -> Gallade
   // (Dawn Stone), Budew -> Roselia -> Roserade (Shiny Stone), Chingling -> Chimecho; the DNA Seal and the Meteorite; Bronzor's
   // card of the round.
-  contentRev: 11,
+  // 12 = new-jokers sub-batch 15: the 18 jokers of 3.9.1's pokejokers_18-32 (Munna / Musharna, the Klink and Axew lines,
+  // Bunnelby / Diggersby, Drampa, the Smoliv line, Bramblin / Brambleghast, Rellor / Rabsca) join the pools; Drampa's Jumbo packs;
+  // Hisuian Qwilfish draws 3.9.1's card; Steamodded counts every consumable set's usage (Rellor).
+  contentRev: 12,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

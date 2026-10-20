@@ -242,7 +242,8 @@ Cards Pokermon 3.2.1 shipped on `placeholder_*` and where their art comes from:
   martz.lua names `AtlasJokersSeriesAGen03` (Series A, artist PrincessRoxie), which the port hadn't registered.
 
 Source: https://github.com/InertSteak/Pokermon (tag 3.9.1); the files' git blob SHAs match the tag's.
-Micatro-made art (not Pokermon's): `hisuian_qwilfish.png` / `hisuian_qwilfishShiny.png`.
+Micatro-made art (not Pokermon's): `hisuian_qwilfish.png` / `hisuian_qwilfishShiny.png`, retired in new-jokers sub-batch 15 (3.9.1 ships the
+card: see that section).
 Since batch 5 Pokermon's own cards draw from the 3.9.1 sheets (`<name>-391.png`): see "3.9.1 art (batch 5)" below.
 
 ## Status
@@ -1234,16 +1235,114 @@ Bronzor; Legendary Deoxys (The Soul); Safari Huntail, Gorebyss, Shelgon, Salamen
     - `pokermon_content_test` (3 seals), `pokermon_391_data_test` (rev 11; the Meteorite has no 3.2.1 cell), `modpin_test` and
       `micatro_mod_version_pin_test` (rev 11).
 
+### New jokers, sub-batch 15 (pokejokers_18 / 20 / 21 / 22 / 26 / 31 / 32)
+Pinned **`3.9.1+r12`** (`contentRev: 12`). The **18 jokers 3.9.1 added** to `pokemon/pokejokers_18.lua` (Munna, Musharna), `_20` (Klink, Klang),
+`_21` (Klinklang, Axew, Fraxure, Haxorus), `_22` (Bunnelby, Diggersby), `_26` (Drampa), `_31` (Smoliv, Dolliv, Arboliva) and `_32` (Bramblin,
+Brambleghast, Rellor, Rabsca), built with the sub-batch 11 pipeline (spec `new_jokers` "15", `node tools/micatro/gen_pokermon_391_overlay.mjs
+<extract>`; the extract is unchanged). Each is in the pools by its rarity: Common Klink, Bunnelby, Smoliv, Bramblin, Rellor; Uncommon Axew;
+Rare Munna, Drampa; Safari the rest. The plan's 20 counted Hisuian Qwilfish and Overqwil too: both were already in the port (below).
+
+- **The jokers** (numbers from data391.js):
+  - **Munna** (jokers/pokejokers_18.js): +2 Foresight. When a hand is played (`before`), each Enhanced Foreseen card loses its
+    enhancement and Munna gains +X0.05 Mult for it; X Mult at `joker_main`. Evolves with a Moon Stone. The Lua strips the scry view's
+    copy and the real deck card; our scry view is the deck cards, so one `set_ability`.
+  - **Musharna**: when the Blind is selected, +2 Foresight this round per Psychic joker (itself included; taken back at end of round
+    or when sold); each Enhanced Foreseen card gives X Mult (Munna's, kept by `copy_scaled`).
+  - **Klink / Klang** (pokejokers_20.js): $1 for every 12 / 10 cards drawn during the Blind (`hand_drawn`); evolve after earning
+    $8 / $10. **Klinklang** (pokejokers_21.js): $1 and +X0.4 Mult for every 8 cards drawn; the X Mult resets at end of round.
+  - **Axew / Fraxure / Haxorus**: a Nature of 2 visible poker hands (set on creation; carried through evolution as `targets`).
+    In the `modify_hand` context their base Chips and Mult are doubled (Axew: the first Nature hand of the round; Fraxure: every one)
+    or tripled (Haxorus). Axew / Fraxure evolve after 7 Nature hands each. Haxorus's config `rounds` is read by nothing.
+  - **Bunnelby / Diggersby** (pokejokers_22.js): each drawn card whose rank is now gone from the deck (`find_playing_card`) gives
+    1 in 3 for a Tarot card (must have room), "Nope!" when the roll fails (`poke_nope`, 3.9.1 `pokermon.nope`). Bunnelby evolves after
+    4 Tarots. Diggersby also gains +2 Mult per hit, room or not; it rolls with Bunnelby's seed, as the Lua.
+  - **Drampa** (pokejokers_26.js): +1 Booster Pack in the shop (`change_booster_limit`). When it comes, the shop's packs become Jumbo
+    (`upgrade_all_shop_packs`). New shop packs roll Jumbo or better: 3.9.1's `get_pack` wrap is `systems/rules.js get_pack` (the
+    engine's `get_pack` hook). `get_upgraded_pack_center` never downgrades and keeps the art number when it can (else half, else 1).
+  - **Smoliv / Dolliv / Arboliva** (pokejokers_31.js): at end of round, +$2 sell value (`scale_card` on `ability.extra_value`, "Value Up!").
+    Smoliv: to itself. Dolliv: to itself and the adjacent Jokers. Arboliva: to every Joker and consumable, doubled for Grass jokers and
+    Grass Energy. Smoliv / Dolliv evolve at $12 / $22 sell value.
+  - **Bramblin / Brambleghast** (pokejokers_32.js): the second scoring card of the round's rank (`G.GAME.current_round.bramblincard`)
+    becomes a Seed card (Brambleghast's at level 0); once a round. Bramblin evolves after drawing 160 cards during Blinds. Brambleghast:
+    +1 growth level, +2 Chips per $1 you have.
+  - **Rellor / Rabsca**: +1 Mult per Item card used this run. Rellor evolves after using 5 Items. Rabsca: each Item used gives 1 in 4
+    for a Tarot card (must have room).
+- **Evolutions**: Munna -> Musharna (Moon Stone), Klink -> Klang -> Klinklang, Axew -> Fraxure -> Haxorus, Bunnelby -> Diggersby, Smoliv ->
+  Dolliv -> Arboliva, Bramblin -> Brambleghast, Rellor -> Rabsca. Families from 3.9.1: those 7 lines, and Drampa alone.
+- **Deferred** (`new_deferred`): Drampa's `megas = {mega_drampa}`. Mega Drampa is a 3.9.1 Mega (batch 16).
+  - Until then Drampa has no `megas`, so a Mega Stone doesn't target it. Its text names no Mega.
+  - `get_pack` already checks for a Mega Drampa; that check is inert until Mega Drampa exists.
+- **Hisuian Qwilfish / Overqwil**: 3.9.1 still writes both (commented out) and never registers them. The port has defined both in full
+  since 3.2.1, an intended-design deviation.
+  - **Art**: the plan said Hisuian Qwilfish had no upstream art. 3.9.1 has it: `pokespriteload.lua` puts it on the Gen 2 sheet
+    (`AtlasJokersBasicGen02-391.png` {2,5}, and its Shiny twin), vendored in batch 5.
+    - The port drew a Micatro-made card until now. It now draws 3.9.1's.
+    - The spec's new `unregistered_sprites` gives jokers that 3.9.1 writes but never registers their 3.9.1 sprite (`data391.js sprites`).
+    - The `poke_hisuian_qwilfish` atlases are unregistered. Overqwil already drew its 3.9.1 cell (Natdex {6,60}).
+  - Their 3.9.1 text and family are the same as 3.2.1's, and the behaviour matches the 3.9.1 code. Overqwil stays stage "One" (the Lua
+    says "Basic").
+  - **Reachable**: Hisuian Qwilfish is an Uncommon pool joker. It evolves into Overqwil at +80 Chips (`scaling_evo`).
+  - **Qwilfish does not evolve in 3.9.1**, so no Qwilfish -> Hisuian Qwilfish evolution is wired (it would be our own design):
+    - pokejokers_08.lua gives Qwilfish no `item_req` / `evo_list`;
+    - pokefamily.lua keeps `{hisuian_qwilfish, overqwil}` apart from it;
+    - `dex_order.lua` only lists the two in one Pokédex slot (a regional form).
+- **Seams / shared changes**:
+  - Engine `core.js set_consumeable_usage`: Steamodded's "tracking custom consumable usage".
+    - Every set other than Tarot / Planet / Spectral counts under `G.GAME.consumeable_usage_total[set:lower()]`.
+    - 3.9.1 reads `poke_item` (its set key); our canonical Item set counts as `item` (Rellor / Rabsca).
+    - Base-game consumables are only the three vanilla sets, so vanilla is unchanged.
+  - `systems/evolution.js copy_scaled_values`: 3.9.1 adds `Xmult_multi` to the scaled values an evolution keeps (Munna -> Musharna).
+  - `systems/utils.js`: `poke_nope`, `get_upgraded_pack_center`, `upgrade_shop_pack`, `upgrade_all_shop_packs` (3.9.1 pokeutils.lua).
+  - `systems/rules.js`: `get_pack` (Drampa); `reset_game_globals` adds `reset_rank('bramblincard')`, before Wingull's as in 3.9.1.
+    It has its own seed, so no other stream moves.
+  - Generator: `unregistered_sprites` (above).
+- **Deviations / kept quirks**:
+  - Axew's Nature: the Lua shuffles a `pairs()` list of `G.GAME.hands`, whose order is unspecified. Ours takes `G.GAME.hands` order, so the
+    pick is deterministic.
+  - Arboliva's Grass Energy check: the Lua compares `ability.name` to `"c_poke_grass_energy"` (Steamodded's name = key). Ours names the
+    center `grass_energy`, so it checks the center key.
+  - Drampa: the engine returns the run's first-shop Buffoon pack before the `get_pack` hook, so that one pack is not upgraded.
+    - This only matters with a Drampa already owned at the first shop. The Lua wraps all of `get_pack`.
+  - Klink / Klang / Klinklang's `ease_poke_dollars` pays at once (no `dollar_buffer`), as in the Lua.
+  - Bramblin's count of the round's rank goes past 2 in a hand with 3+ of it, and the third card is not a Seed. As in the Lua.
+- **Fix found by the all-mods fuzz** (Zangoose, sub-batch 13): with The Hook, `micatro_engine_test`'s all-mods fuzz left a card in two
+  areas. The new jokers changed the pools, so the fuzz reached the case. Zangoose picks 2 held cards at `press_play`; The Hook's event,
+  queued between that and Zangoose's draws, can discard the same cards. The Lua draws them anyway: the card ends up in G.play and
+  G.discard at once. Now each card is checked when it would move, and a card The Hook took (highlighted, or no longer in hand) stays
+  out. The test pins it: it fails without the fix.
+- **Add-ons**: neither Nacho 1.6.4 nor Pokermon+ ships any of these 20. Nacho 1.7.9's own Smoliv line is deprecated there in favour of
+  base (batch 18), so there is no family to unify.
+- **Art**: no new art files.
+  - Every new joker draws its 3.9.1 card from `AtlasJokersBasicNatdex-391.png` (and its Shiny twin), vendored in batch 5. Hisuian
+    Qwilfish draws `AtlasJokersBasicGen02-391.png` {2,5}.
+  - The test checks that each crop and its Shiny twin hold real, distinct pictures (Hisuian Qwilfish and Overqwil too).
+  - The retired Micatro-made `hisuian_qwilfish.png` / `hisuian_qwilfishShiny.png` stay in the gitignored assets; nothing names them.
+- **Tests**: `micatro/tests/mods/pokermon_391_new_15_test.mjs` gives 4 passed / 36 failed on origin/main (9a00cd8f), 5 / 36 on sub-batch 14
+  (04e5cfdd), and 136 / 0 here (135 / 1 with Zangoose's Hook fix reverted).
+  - It fires every joker through real plays and each evolution (above): Munna's Foreseen cards and Moon Stone, Musharna's Foresight
+    per Psychic joker, the Klink line's draws and payouts, the Axew line's doubled / tripled hands, Bunnelby / Diggersby's depleted draws
+    ("Nope!" too), Drampa in the shop (upgraded packs, the next shop's rolls, the extra slot, sold), the Smoliv line's sell values,
+    Bramblin's Seed card and rank of the round, Rellor / Rabsca with real Poke Balls (and a Tarot that doesn't count as an Item), and
+    Zangoose against The Hook.
+  - It also checks the overlay, the order, the pools (shop rarity pools, one per family, the Gen 5 option), the families, the deferred
+    Mega, the text, Hisuian Qwilfish's 3.9.1 card and its evolution, Qwilfish's lack of one, and the art.
+  - Count pins updated: `pokejokers_18` / `20` / `21` / `22` / `26` / `31` / `32_test` (13 / 13 / 13 / 5 / 2 / 10 / 11 defs),
+    `pokermon_391_data_test` / `modpin_test` / `micatro_mod_version_pin_test` (rev 12), `pokermon_391_new_14_test` (`new_deferred` holds
+    Drampa now), `smods_seams_test` (`modify_hand`), `engine_polish_test` (Hisuian Qwilfish's card).
+  - Re-run and passing: every `micatro/tests` Node suite (all mods) and `micatro_engine_test` (96 suites; fuzz vanilla 40 runs / 5937
+    actions, Pokermon 24 / 3646, all mods 16 / 3366).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
-- **New jokers** (sub-batches 11–15, 15b): sub-batches 11, 12, 13 and 14 done (above). `new_deferred` is empty (Kirlia -> Gallade, Roselia ->
-  Roserade and Budew -> Roselia came in with sub-batch 14). Still to add: 41 from 3.9.1 (20 other Pokémon: sub-batch 15, 11 Megas,
-  7 non-Pokémon, 3 April Fools) + 9 from upstream main (15b). (The 2 Jirachi wish forms the old tally counted were already in the port:
-  sub-batch 14.)
-- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
+- **New jokers** (sub-batches 11–15, 15b): sub-batches 11 to 15 done (above). `new_deferred` holds only Drampa's Mega (batch 16; Kirlia ->
+  Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14). Still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon,
+  3 April Fools) + 9 from upstream main (15b). (The 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the old tally counted were already
+  in the port: sub-batches 14 / 15.)
+- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory), Drampa (Mega Drampa: `new_deferred`). Shuckle's Mega Stone
+  (`c_poke_berry_juice_mega`, batch 6) with it.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist). (The DNA Seal and the
   Meteorite, once listed for it, came with Deoxys in sub-batch 14.)
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,

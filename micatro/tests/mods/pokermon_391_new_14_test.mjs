@@ -109,7 +109,8 @@ sec(() => {
   const dk = get_family_keys('deoxys');
   ok(dk.length === 4 && dk.every((k) => k.key === 'j_poke_deoxys') && dk.map((k) => k.form).join() === '4,1,2,3', 'family: Deoxys and its 3 formes (forms)', dk);
   // the deferrals are gone: Kirlia and Roselia have their stones back
-  ok(D391.new_deferred.length === 0, 'data391.js new_deferred is empty', D391.new_deferred);
+  // (sub-batch 15 defers only Drampa's Mega: batch 16)
+  ok(D391.new_deferred.every(([n]) => n === 'drampa'), 'data391.js new_deferred: none of these (only the Mega of Drampa, sub-batch 15)', D391.new_deferred);
   ok(C('kirlia').config.extra.item_req === 'dawnstone' && C('roselia').config.extra.item_req === 'shinystone', 'Kirlia: Dawn Stone, Roselia: Shiny Stone (item_req)');
   ok(JL0().j_poke_kirlia.text.some((l) => l.includes('Dawn Stone')) && JL0().j_poke_roselia.text.some((l) => l.includes('Shiny Stone')), 'and their stone lines in the text');
 });

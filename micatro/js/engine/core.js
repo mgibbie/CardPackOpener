@@ -1842,8 +1842,11 @@ export function set_consumeable_usage(card) {
       G.E_MANAGER.add_event(() => G.E_MANAGER.add_event(() => { G.GAME.last_tarot_planet = key; }));
     }
     if (card.config.center.set === 'Tarot') G.GAME.consumeable_usage_total.tarot = (G.GAME.consumeable_usage_total.tarot || 0) + 1;
-    if (card.config.center.set === 'Planet') G.GAME.consumeable_usage_total.planet = (G.GAME.consumeable_usage_total.planet || 0) + 1;
-    if (card.config.center.set === 'Spectral') G.GAME.consumeable_usage_total.spectral = (G.GAME.consumeable_usage_total.spectral || 0) + 1;
+    else if (card.config.center.set === 'Planet') G.GAME.consumeable_usage_total.planet = (G.GAME.consumeable_usage_total.planet || 0) + 1;
+    else if (card.config.center.set === 'Spectral') G.GAME.consumeable_usage_total.spectral = (G.GAME.consumeable_usage_total.spectral || 0) + 1;
+    // Steamodded (center.toml "tracking custom consumable usage"): every other set counts under its lower-cased name
+    // (Pokermon's Item -> `item`: Rellor / Rabsca). Base-game consumables are only the three sets above.
+    else if (card.config.center.set) { const k = card.config.center.set.toLowerCase(); G.GAME.consumeable_usage_total[k] = (G.GAME.consumeable_usage_total[k] || 0) + 1; }
     if (card.config.center.set === 'Tarot' || card.config.center.set === 'Planet') G.GAME.consumeable_usage_total.tarot_planet = (G.GAME.consumeable_usage_total.tarot_planet || 0) + 1;
     G.GAME.consumeable_usage_total.all = (G.GAME.consumeable_usage_total.all || 0) + 1;
   }

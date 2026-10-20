@@ -11,7 +11,7 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 
 const FILE_JOKERS = ['charcadet', 'armarouge', 'ceruledge', 'tinkatink', 'tinkatuff', 'tinkaton', 'wiglett'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 7 pokejokers_32 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_32.lua'].length === 7, 'defs: 7 from pokejokers_32.lua');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_32.lua'].length === 11, 'defs: 11 from pokejokers_32.lua (+ 4 new in 3.9.1, new-jokers sub-batch 15)');
 const debuffed = () => G.playing_cards.filter((c) => c.debuff).length;
 
 // ---------------------------------------------------------------- Charcadet -> Armarouge / Ceruledge

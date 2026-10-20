@@ -11,7 +11,7 @@ const key = (c) => c.config.center.key;
 
 const FILE_JOKERS = ['ursaluna', 'hisuian_qwilfish', 'overqwil', 'tarountula', 'spidops', 'fidough', 'dachsbun'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 7 pokejokers_31 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_31.lua'].length === 7, 'defs: 7 from pokejokers_31.lua');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_31.lua'].length === 10, 'defs: 10 from pokejokers_31.lua (+ 3 new in 3.9.1, new-jokers sub-batch 15)');
 ok(P_CENTERS.j_poke_hisuian_qwilfish.stage === 'Basic' && P_CENTERS.j_poke_overqwil.stage === 'One' && P_CENTERS.j_poke_overqwil.rarity === 'poke_safari',
   'hisuian qwilfish / overqwil registered (overqwil stage One)');
 const hazards = () => G.playing_cards.filter((c) => has_enhancement(c, 'm_poke_hazard')).length;

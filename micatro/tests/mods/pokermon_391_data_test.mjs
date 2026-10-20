@@ -5,7 +5,7 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 11 (pin '3.9.1+r11', new-jokers sub-batch 14; sub-batch 13 was r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 12 (pin '3.9.1+r12', new-jokers sub-batch 15; sub-batch 14 was r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
@@ -28,17 +28,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 11, 'Pokermon is version 3.9.1, contentRev 11', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r11', 'its pin is 3.9.1+r11', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 12, 'Pokermon is version 3.9.1, contentRev 12', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r12', 'its pin is 3.9.1+r12', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r11', 'a new run is pinned 3.9.1+r11', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r12', 'a new run is pinned 3.9.1+r12', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r11', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 11). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r12', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 12). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');

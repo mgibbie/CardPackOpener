@@ -15,7 +15,7 @@ import {
   G, P_CENTERS, P_CARDS, P_CARDS_LIST, Card, copy_table, emit, card_eval_status_text, play_sound, localize,
   pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, ease_dollars, draw_card,
   create_card as core_create_card, create_playing_card, poll_edition, find_joker, probability_vars, probability_roll,
-  quantum_enhancements, copy_card,
+  quantum_enhancements, copy_card, attention_text,
 } from '../../../js/engine/core.js';
 import { playing_card_joker_effects } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
@@ -673,4 +673,51 @@ export function change_discard_limit(mod) {
   const sp = G.GAME.starting_params;
   sp.discard_limit = (sp.discard_limit ?? 5) + mod;
   G.hand.config.highlighted_limit = Math.max(sp.discard_limit, sp.play_limit ?? 5, 5);
+}
+
+// ------------------------------------------- Pokermon 3.9.1 pokeutils.lua (new-jokers sub-batch 15)
+/** pokermon.nope(card): the "Nope!" of a failed roll (Bunnelby / Diggersby). */
+export function poke_nope(card) {
+  G.E_MANAGER.add_event(() => {
+    attention_text(localize('k_nope_ex'));
+    G.E_MANAGER.add_event(() => { play_sound('tarot2', 0.76, 0.4); });
+    play_sound('tarot2', 1, 0.4);
+    card.juice_up(0.3, 0.5);
+  });
+}
+/**
+ * pokermon.get_upgraded_pack_center(center, into, from) (Drampa): the same pack one size up ('normal' -> 'jumbo' -> 'mega';
+ * never down), the same art number when it exists, else half of it rounded up, else _1. Undefined when there is none.
+ */
+export function get_upgraded_pack_center(center, into, from) {
+  if (!center || !center.key) return undefined;
+  if (!from) {
+    for (const pack_type of ['normal', 'jumbo', 'mega']) {
+      if (pack_type === into) return undefined; // never downgrade packs
+      if (center.key.includes(pack_type)) { from = pack_type; break; }
+    }
+    if (!from) return undefined;
+  }
+  const m = /_(\d)$/.exec(center.key);
+  const pack_num = m ? Number(m[1]) : 1;
+  const upgraded_key = center.key.split(from).join(into);
+  if (upgraded_key === center.key) return undefined;
+  return P_CENTERS[upgraded_key]
+    || P_CENTERS[upgraded_key.replace(/_\d$/, '_' + Math.ceil(pack_num / 2))] // prefer to match down evenly
+    || P_CENTERS[upgraded_key.replace(/_\d$/, '_1')];
+}
+/** pokermon.upgrade_shop_pack(pack, into): a shop pack becomes its upgraded twin (same slot). */
+export function upgrade_shop_pack(pack, into) {
+  const old_center = pack.config.center;
+  const new_center = get_upgraded_pack_center(old_center, into);
+  if (new_center && new_center !== old_center) {
+    pack.set_ability(new_center, true);
+    pack.set_cost();
+    pack.juice_up();
+    emit('card_changed', { card: pack.sort_id });
+  }
+}
+/** pokermon.upgrade_all_shop_packs(into): every pack in the shop. */
+export function upgrade_all_shop_packs(into) {
+  if (G.shop_booster && G.shop_booster.cards) for (const pack of G.shop_booster.cards.slice()) upgrade_shop_pack(pack, into);
 }

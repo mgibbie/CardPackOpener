@@ -12,7 +12,8 @@
     "rework_deferred (batch 7+): 3.9.1 changes to jokers of rework_files that are ported WITHOUT one part, because that part belongs to other content not ported yet (a new joker, an enhancement, a booster); the joker itself is on 3.9.1. Names must be 3.2.1 jokers; copied to data391.js rework_deferred for the docs and tests, inert.",
     "batch 10: the Hazard layer / Seed card / Flower X2 landed; the 16 jokers that waited for them left rework_hold, and loc_extra pulls the 3.9.1 text of the new / changed non-joker content (enhancements, items, the Debris deck and sleeve, the Hazard Layer tooltip). Sets named by their 3.9.1 key (poke_item) are merged into our canonical set (Item) by index.js.",
     "batch 10b: the Unown rework landed (Unown, Unown Swarm, Ruins of Alph's Unown spawn, Unown's 3.9.1 card) with the Wish Pack (Jirachi): rework_hold and sprite_hold are empty; Ruins of Alph and Jirachi left rework_deferred.",
-    "new_jokers (new-jokers stack, sub-batch 11+): {sub_batch: [names]} of jokers 3.9.1 adds; each takes its whole 3.9.1 static data, sprite, Joker loc entry and family (data391.js new_jokers / families; behaviour in jokers/<file>.js). new_deferred: {name: {why, drop}}: a new joker ported without one part that belongs to a later sub-batch; drop = static fields left out until then (e.g. the item_req of an item evolution into a joker not ported yet), text_drop = the text lines naming that part."
+    "new_jokers (new-jokers stack, sub-batch 11+): {sub_batch: [names]} of jokers 3.9.1 adds; each takes its whole 3.9.1 static data, sprite, Joker loc entry and family (data391.js new_jokers / families; behaviour in jokers/<file>.js). new_deferred: {name: {why, drop}}: a new joker ported without one part that belongs to a later sub-batch; drop = static fields left out until then (e.g. the item_req of an item evolution into a joker not ported yet), text_drop = the text lines naming that part.",
+    "unregistered_sprites (sub-batch 15): jokers 3.9.1 writes (commented out) but never registers, which the port defines in full (Hisuian Qwilfish / Overqwil, as the 3.2.1 port did): they take only their 3.9.1 sprite (pokespriteload.lua lists them)."
   ],
   "rework_files": ["pokejokers_01", "pokejokers_02", "pokejokers_03", "pokejokers_04", "pokejokers_05", "pokejokers_06", "pokejokers_07", "pokejokers_08", "pokejokers_09", "pokejokers_10", "pokejokers_11", "pokejokers_12", "pokejokers_13", "pokejokers_14", "pokejokers_15", "pokejokers_16", "pokejokers_17", "pokejokers_18", "pokejokers_19", "pokejokers_20", "pokejokers_21", "pokejokers_22", "pokejokers_23", "pokejokers_24", "pokejokers_25", "pokejokers_26", "pokejokers_28", "pokejokers_30", "pokejokers_31", "pokejokers_32", "pokejokers_33", "pokejokers_34", "zotherjokers", "zmissingno"],
   "rework_hold": {},
@@ -28,9 +29,13 @@
     "11": ["wurmple", "silcoon", "beautifly", "cascoon", "dustox", "seedot", "nuzleaf", "shiftry", "taillow", "swellow", "wingull", "pelipper", "ralts", "kirlia", "gardevoir", "surskit", "masquerain", "slakoth", "vigoroth", "slaking", "nincada", "ninjask", "shedinja", "makuhita", "hariyama", "skitty"],
     "12": ["delcatty", "sableye", "meditite", "medicham", "plusle", "minun", "volbeat", "illumise", "roselia", "carvanha", "sharpedo", "wailmer", "wailord", "torkoal", "spinda"],
     "13": ["cacnea", "cacturne", "swablu", "altaria", "zangoose", "seviper", "corphish", "crawdaunt", "baltoy", "claydol", "lileep", "cradily", "anorith", "armaldo", "kecleon", "shuppet", "banette", "tropius", "chimecho"],
-    "14": ["clamperl", "huntail", "gorebyss", "relicanth", "bagon", "shelgon", "salamence", "deoxys", "budew", "roserade", "chingling", "bronzor", "bronzong", "gallade"]
+    "14": ["clamperl", "huntail", "gorebyss", "relicanth", "bagon", "shelgon", "salamence", "deoxys", "budew", "roserade", "chingling", "bronzor", "bronzong", "gallade"],
+    "15": ["munna", "musharna", "klink", "klang", "klinklang", "axew", "fraxure", "haxorus", "bunnelby", "diggersby", "drampa", "smoliv", "dolliv", "arboliva", "bramblin", "brambleghast", "rellor", "rabsca"]
   },
-  "new_deferred": {},
+  "new_deferred": {
+    "drampa": {"why": "3.9.1 gives Drampa megas = {mega_drampa}: Mega Drampa is a 3.9.1 Mega (batch 16). Until it lands Drampa has no megas (a Mega Stone doesn't target it)", "drop": ["megas"]}
+  },
+  "unregistered_sprites": ["hisuian_qwilfish", "overqwil"],
   "take_always": ["rarity", "cost", "perishable_compat", "eternal_compat", "enhancement_gate", "attributes"],
   "take": {},
   "reasons": {},

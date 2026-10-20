@@ -1,13 +1,37 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_32.lua (Pokédex 931-960: Charcadet -> Wiglett), 7 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_32.lua (Pokédex 931-960: Charcadet -> Wiglett), 7 jokers + 4 new in 3.9.1
+// (Bramblin / Brambleghast, Rellor / Rabsca: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers).
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
 // On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom_element, pseudoseed,
   defineJokers, type_tooltip, detailed, level_evo, item_evo, has_enhancement, pseudorandom_multi, poke_drain,
   smods_debuff_card,
+  scaling_evo, poke_change_growth_level, add_card, get_probability_vars, pseudorandom_probability,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_32.lua';
+// Bramblin / Brambleghast, Rellor / Rabsca (3.9.1, new-jokers sub-batch 15)
+/** The round's Bramblin rank (G.GAME.current_round.bramblincard, systems/rules.js reset_game_globals), localized. */
+const bramblin_rank = () => localize((G.GAME.current_round.bramblincard && G.GAME.current_round.bramblincard.rank) || 'Ace', 'ranks');
+/** `before`: the second scoring card of the round's rank (counted across the round's hands) becomes a Seed card. */
+function bramble_seed(card, context, level0) {
+  for (let i = 0; i < context.scoring_hand.length; i++) {
+    const sc = context.scoring_hand[i];
+    if (sc.get_id() === G.GAME.current_round.bramblincard.id) {
+      card.ability.extra.rank_scored = card.ability.extra.rank_scored + 1;
+      if (card.ability.extra.rank_scored === 2) {
+        sc.set_ability(P_CENTERS.m_poke_seed, null, true);
+        if (level0) sc.ability.extra.level = 0;
+        G.E_MANAGER.add_event(() => { sc.juice_up(); });
+        card.ability.extra.seed_added = card.ability.extra.seed_added + 1;
+        break;
+      }
+    }
+  }
+}
+/** Item cards used this run: Steamodded counts every consumable set in G.GAME.consumeable_usage_total[set:lower()]; 3.9.1
+ *  reads `poke_item` (its set key), our canonical Item set counts as `item`. */
+const items_used_run = () => (G.GAME.consumeable_usage_total && G.GAME.consumeable_usage_total.item) || 0;
 
 // ------------------------------------------------------------ shared bodies
 /**
@@ -211,6 +235,87 @@ defineJokers({
       const r = dig_calc(card, context, false);
       if (r) return r;
       return level_evo(self, card, context, 'j_poke_wugtrio');
+    },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 15)
+  // Bramblin 946: the second scoring card of the round's rank (bramblincard) becomes a Seed card; evolves after drawing
+  // 160 cards during Blinds.
+  bramblin: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push(P_CENTERS.m_poke_seed);
+      return { vars: [bramblin_rank(), Math.max(0, self.config.evo_rqmt - center.ability.extra.cards_drawn)] };
+    },
+    calculate(self, card, context) {
+      // (SMODS.drawn_cards = Micatro's context.hand_drawn, during the Blind)
+      if (context.hand_drawn && !context.blueprint) card.ability.extra.cards_drawn = card.ability.extra.cards_drawn + context.hand_drawn.length;
+      if (context.before && !context.blueprint && card.ability.extra.seed_added <= 0) bramble_seed(card, context, false);
+      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
+        card.ability.extra.rank_scored = 0;
+        card.ability.extra.seed_added = 0;
+      }
+      return scaling_evo(self, card, context, 'j_poke_brambleghast', card.ability.extra.cards_drawn, self.config.evo_rqmt);
+    },
+  },
+  // Brambleghast 947: +1 growth level; +2 Chips per $1 you have; the second scoring card of the round's rank becomes a
+  // Seed card (level 0).
+  brambleghast: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push(P_CENTERS.m_poke_seed);
+      info_queue.push({ set: 'Other', key: 'growth_level' });
+      return { vars: [center.ability.extra.chip_mod, center.ability.extra.chip_mod * Math.max(0, (G.GAME.dollars || 0) + (G.GAME.dollar_buffer || 0)),
+        bramblin_rank(), center.ability.extra.growth] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main) {
+        return { chips: card.ability.extra.chip_mod * Math.max(0, G.GAME.dollars + (G.GAME.dollar_buffer || 0)) };
+      }
+      if (context.before && !context.blueprint && card.ability.extra.seed_added <= 0) bramble_seed(card, context, true);
+      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
+        card.ability.extra.rank_scored = 0;
+        card.ability.extra.seed_added = 0;
+      }
+      return undefined;
+    },
+    add_to_deck(self, card) { poke_change_growth_level(card.ability.extra.growth); },
+    remove_from_deck(self, card) { poke_change_growth_level(-card.ability.extra.growth); },
+  },
+  // Rellor 953: +1 Mult per Item card used this run; evolves after using 5 Items.
+  rellor: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: [card.ability.extra.mult_mod, items_used_run() * card.ability.extra.mult_mod, Math.max(self.config.evo_rqmt - card.ability.extra.items_used, 0)] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main && items_used_run() > 0) return { mult: items_used_run() * card.ability.extra.mult_mod };
+      if (context.using_consumeable && !context.blueprint && context.consumeable.ability.set === 'Item') {
+        card.ability.extra.items_used = card.ability.extra.items_used + 1;
+        return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' } };
+      }
+      return scaling_evo(self, card, context, 'j_poke_rabsca', card.ability.extra.items_used, self.config.evo_rqmt);
+    },
+  },
+  // Rabsca 954: +1 Mult per Item card used this run; using an Item gives 1 in 4 for a Tarot card (must have room).
+  rabsca: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const [num, dem] = get_probability_vars(card, card.ability.extra.num, card.ability.extra.dem, 'rabsca');
+      return { vars: [card.ability.extra.mult_mod, items_used_run() * card.ability.extra.mult_mod, num, dem] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main && items_used_run() > 0) return { mult: items_used_run() * card.ability.extra.mult_mod };
+      if (context.using_consumeable && context.consumeable.ability.set === 'Item') {
+        if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+          if (pseudorandom_probability(card, 'rabsca', card.ability.extra.num, card.ability.extra.dem, 'rabsca')) {
+            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+            G.E_MANAGER.add_event(() => { add_card({ set: 'Tarot' }); G.GAME.consumeable_buffer = 0; });
+            card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_plus_tarot'), colour: 'PURPLE' });
+          }
+        }
+        return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' } };
+      }
+      return undefined;
     },
   },
 }, FILE);

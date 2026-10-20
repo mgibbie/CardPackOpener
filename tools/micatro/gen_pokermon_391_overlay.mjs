@@ -25,6 +25,8 @@
 //            Joker loc entries join `sprites` / `loc`. spec new_deferred {name: {why, drop?: [fields]}}: a new joker ported
 //            without one 3.9.1 part (e.g. an item evolution into a joker of a later sub-batch); `drop` removes those static
 //            fields and `text_drop` the text lines naming it until then (copied to data391.js new_deferred).
+//            spec unregistered_sprites (sub-batch 15): jokers 3.9.1 writes but never registers (Hisuian Qwilfish / Overqwil) also
+//            take their 3.9.1 sprite (the port defines the rest).
 //   families 3.9.1's families (functions/pokefamily.lua, the extract's `family` global) that hold a new joker, minus the
 //            names the port doesn't have yet (index.js adds them to systems/evolution.js `family`)
 // It fails when a value change of an existing config key, or a blueprint_compat flip, has no decision in the spec.
@@ -162,11 +164,14 @@ if (missing.length) { console.error('no decision (take it or give a reason in th
 const SPR = {};
 for (const s of (NEW.globals.PokemonSprites && NEW.globals.PokemonSprites.list) || []) SPR[s.name] = s;
 const sprites = {}, held = [];
-for (const name of [...Object.keys(BJ), ...Object.keys(new_jokers)]) {
+// unregistered_sprites (sub-batch 15): jokers 3.9.1 writes but never registers (the port defines them in full) take their sprite too
+const UNREG = SPEC.unregistered_sprites || [];
+for (const name of UNREG) if (BJ[name] || NJ[name] || !SPR[name]) throw new Error(`unregistered_sprites: '${name}' is registered by 3.9.1 or has no 3.9.1 sprite`);
+for (const name of [...Object.keys(BJ), ...Object.keys(new_jokers), ...UNREG]) {
   const s = SPR[name];
   if (!s) continue;
   if (SPEC.sprite_hold && SPEC.sprite_hold[name]) { held.push([name, SPEC.sprite_hold[name]]); continue; }
-  const g = typeof s.gen_atlas === 'number' ? s.gen_atlas : s.gen_atlas ? (BJ[name] ? BJ[name].it : new_jokers[name].item).gen : null;
+  const g = typeof s.gen_atlas === 'number' ? s.gen_atlas : s.gen_atlas ? (BJ[name] ? BJ[name].it : new_jokers[name] ? new_jokers[name].item : {}).gen : null;
   const atlas = g ? 'AtlasJokersBasicGen' + String(g).padStart(2, '0') : s.others_atlas ? 'AtlasJokersBasicOthers' : 'AtlasJokersBasicNatdex';
   const pos = Array.isArray(s.base.pos) ? s.base.pos[0] : s.base.pos;
   const e = { atlas, pos: { x: pos.x, y: pos.y } };

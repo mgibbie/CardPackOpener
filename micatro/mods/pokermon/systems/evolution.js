@@ -169,9 +169,10 @@ export function deck_seal_evo(self, card, context, forced_key, seal, percentage,
 }
 
 // --------------------------------------------------------------- the swap
-/** Which scaled extra values survive an evolution (mult/chips/Xmult/money with a *_mod, or copy_scaled). */
+/** Which scaled extra values survive an evolution (mult/chips/Xmult/Xmult_multi/money with a *_mod, or copy_scaled). */
 export function copy_scaled_values(card) {
-  const values = { mult: 0, chips: 0, Xmult: 0, money: 0 };
+  // (Pokermon 3.9.1 adds Xmult_multi: Munna's X Mult carries over to Musharna; new-jokers sub-batch 15)
+  const values = { mult: 0, chips: 0, Xmult: 0, Xmult_multi: 0, money: 0 };
   const ex = card.ability && card.ability.extra;
   if (isTable(ex)) {
     for (const l of Object.keys(values)) {
