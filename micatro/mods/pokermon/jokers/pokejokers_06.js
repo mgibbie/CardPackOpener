@@ -1,11 +1,13 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_06.lua (Pokédex 151-180: Mew -> Flaaffy), 30 jokers.
-// Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req, enhancement_gate) comes from data.js. See ../PORTING.md.
+// Pokermon 3.9.1 (batch 6) — pokemon/pokejokers_06.lua (Pokédex 151-180: Mew -> Flaaffy), 30 jokers.
+// Line-for-line port of the 3.9.1 behaviour (reworked: Crobat, Natu, Xatu, Sentret / Furret's text; Mew and the
+// baby Tarots via SMODS.add_card); static data (pos, config, rarity, cost, stage, ptype, gen, item_req,
+// enhancement_gate) comes from data.js + data391.js (the 3.9.1 config). See ../PORTING.md.
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
-  create_card, ease_discard, ease_hands_played, level_up_hand, update_hand_text,
+  ease_discard, ease_hands_played,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
   get_probability_vars, pseudorandom_probability, poke_total_chips, find_pokemon_type, faint_baby_poke,
+  add_card, P_CENTER_POOLS,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_06.lua';
@@ -90,7 +92,8 @@ function toto_calc(self, card, context, evo_key) {
 }
 /** Sentret / Furret: +mult_mod Mult when the hand type differs from the last one played. */
 function sentret_vars(center) {
-  return { vars: [center.ability.extra.mult, center.ability.extra.mult_mod, G.GAME && G.GAME.last_hand_played ? localize(G.GAME.last_hand_played, 'poker_hands') : localize('poke_none')] };
+  const abbr = center.ability.extra; // (3.9.1: the card's own last hand, not the run's)
+  return { vars: [abbr.mult, abbr.mult_mod, abbr.last_hand ? localize(abbr.last_hand, 'poker_hands') : localize('poke_none')] };
 }
 /** Hoothoot / Noctowl: scry cards give their chips. */
 function hoot_calc(card, context) {
@@ -130,10 +133,7 @@ function baby_calc(self, card, context) {
 /** Cleffa / Igglybuff: a Negative copy of `key` (Tarot) at the end of every round. */
 function baby_tarot(card, context, key) {
   if (context.end_of_round && !context.individual && !context.repetition && !card.debuff) {
-    const _card = create_card('Tarot', G.consumeables, null, null, null, null, key);
-    _card.set_edition({ negative: true }, true);
-    _card.add_to_deck();
-    G.consumeables.emplace(_card);
+    G.E_MANAGER.add_event(() => { add_card({ set: 'Tarot', key, edition: 'e_negative' }); });
   }
 }
 function baby_tarot_vars(self, info_queue, center, key) {
@@ -146,37 +146,20 @@ function baby_tarot_vars(self, info_queue, center, key) {
   return { vars: [center.ability.extra.Xmult_minus, center.ability.extra.rounds] };
 }
 /**
- * Natu / Xatu: Planet cards level their hand once more. The Lua keeps a snapshot of every
- * hand's level in the CENTER's config.levels (shared by every copy), re-taken after any
- * calculate in which a level changed; a Planet use levels each hand that differs from it.
+ * Natu / Xatu (3.9.1): when a Planet card levels a hand (Steamodded's poker_hand_changed), level it once more.
+ * (3.2.1 kept a snapshot of every hand's level on the center and re-levelled whatever differed.) The callers read
+ * context.poker_hand_changed themselves: the seam only calls a calculate whose own source names the context.
  */
-function natu_calc(self, card, context, leveler) {
-  if (context.using_consumeable && context.consumeable && context.consumeable.ability) {
-    if (context.consumeable.ability.set === 'Planet') {
-      for (const [hand, data] of Object.entries(G.GAME.hands)) {
-        if (self.config.levels[hand] !== data.level) {
-          update_hand_text({ sound: 'button', volume: 0.7, pitch: 0.8, delay: 0.3 }, { handname: localize(hand, 'poker_hands'), chips: G.GAME.hands[hand].chips, mult: G.GAME.hands[hand].mult, level: G.GAME.hands[hand].level });
-          level_up_hand(leveler, hand, null, card.ability.extra.level_amt);
-          update_hand_text({ sound: 'button', volume: 0.7, pitch: 1.1, delay: 0 }, { mult: 0, chips: 0, handname: '', level: '' });
-        }
-      }
-    }
+function natu_calc(context) {
+  if (context.card && context.card.ability && context.card.ability.set === 'Planet') {
+    return { level_up: true, level_up_hand: context.scoring_name };
   }
-  for (const [hand, data] of Object.entries(G.GAME.hands)) {
-    if (self.config.levels[hand] !== data.level) {
-      G.E_MANAGER.add_event(() => { natu_snapshot(self); });
-      break;
-    }
-  }
-}
-function natu_snapshot(self) {
-  if (!G.GAME || !G.GAME.hands) return;
-  for (const [hand, data] of Object.entries(G.GAME.hands)) self.config.levels[hand] = data.level;
+  return undefined;
 }
 /** Mareep line: +Xmult_mod per card added to the deck, -Xmult_minus per card destroyed. */
 function mareep_calc(card, context) {
   if (context.cardarea === G.jokers && context.scoring_hand) {
-    if (context.joker_main && card.ability.extra.Xmult > 0 && card.ability.extra.Xmult !== 1) {
+    if (context.joker_main && card.ability.extra.Xmult >= 0.01 && card.ability.extra.Xmult !== 1) {
       return { message: a_xmult(card.ability.extra.Xmult), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
     }
   }
@@ -204,12 +187,9 @@ defineJokers({
     calculate(self, card, context) {
       if (context.ending_shop) {
         if (pseudorandom('mew') < card.ability.extra.percent / 100) {
-          // create random joker
-          const _card = create_card('Joker', G.consumeables, null, null, null, null, null);
-          _card.set_edition({ negative: true }, true);
-          _card.add_to_deck();
-          G.jokers.emplace(_card);
-          card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_joker'), colour: 'BLUE' });
+          // create random joker (3.9.1: SMODS.add_card, key_append 'mew')
+          const joker = add_card({ set: 'Joker', edition: 'e_negative', key_append: 'mew' });
+          card_eval_status_text(joker, 'extra', null, null, null, { message: localize('k_plus_joker'), colour: 'BLUE' });
         } else {
           // create random consumable and apply negative
           const sets = [
@@ -218,12 +198,10 @@ defineJokers({
             { set: 'Item', message: localize('poke_plus_pokeitem'), colour: 'pink' },
           ];
           const creation = pseudorandom_element(sets, pseudoseed('mewcreate'))[0];
-          const _card = create_card(creation.set, G.consumeables, null, null, null, null, null);
-          _card.set_edition({ negative: true }, true);
-          _card.add_to_deck();
-          G.consumeables.emplace(_card);
-          card_eval_status_text(_card, 'extra', null, null, null, { message: creation.message, colour: creation.colour });
+          const consum = add_card({ set: creation.set, edition: 'e_negative', key_append: 'mew' });
+          card_eval_status_text(consum, 'extra', null, null, null, { message: creation.message, colour: creation.colour });
         }
+        card.juice_up();
       }
       return undefined;
     },
@@ -309,13 +287,14 @@ defineJokers({
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return sentret_vars(center); },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.before && !context.blueprint && card.ability.extra.last_hand !== context.scoring_name) {
-          card.ability.extra.last_hand = G.GAME.last_hand_played;
-          card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
-          return { message: localize('k_upgrade_ex'), colour: 'MULT' };
-        } else if (context.before && !context.blueprint && card.ability.extra.last_hand === context.scoring_name) {
+        if (context.before && !context.blueprint) {
+          if (card.ability.extra.last_hand !== context.scoring_name) {
+            card.ability.extra.last_hand = G.GAME.last_hand_played;
+            card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
+            return { message: localize('k_upgrade_ex'), colour: 'MULT' };
+          }
           card.ability.extra.mult = 0;
-          return { message: localize('k_reset'), card };
+          return { message: localize('k_reset') };
         }
         if (context.joker_main) {
           if (card.ability.extra.mult > 0) return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult_mod: card.ability.extra.mult };
@@ -403,39 +382,33 @@ defineJokers({
   crobat: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'bat_leech' });
       const ex = center.ability.extra;
       return { vars: [ex.mult, ex.mult_mod, ex.chips, ex.chip_mod, ex.Xmult, ex.Xmult_mod, ex.money, ex.money_mod] };
     },
     calculate(self, card, context) {
+      // 3.9.1: leech each scoring Enhancement (the card becomes a base card) and gain by its type:
+      // Bonus / Stone Chips, Steel / Glass / Flower XMult, Gold payout, any other Mult. (3.2.1 re-rolled them.)
       if (context.cardarea === G.jokers && context.before && !context.blueprint) {
         let m_count = 0, c_count = 0, x_count = 0, d_count = 0;
-        const enhanced = [];
         for (const v of context.scoring_hand) {
-          if (v.config.center !== P_CENTERS.c_base && !v.debuff) {
-            enhanced.push(v);
-            if (v.config.center === P_CENTERS.m_mult || v.config.center === P_CENTERS.m_wild) m_count = m_count + 1;
-            if (v.config.center === P_CENTERS.m_bonus || v.config.center === P_CENTERS.m_stone) c_count = c_count + 1;
-            if (v.config.center === P_CENTERS.m_steel || v.config.center === P_CENTERS.m_glass) x_count = x_count + 1;
-            if (v.config.center === P_CENTERS.m_gold || v.config.center === P_CENTERS.m_lucky) d_count = d_count + 1;
-            const enhancement_type = pseudorandom(pseudoseed('crobat'));
-            if (enhancement_type > 0.875) v.set_ability(P_CENTERS.m_bonus, null, true);
-            else if (enhancement_type > 0.75) v.set_ability(P_CENTERS.m_mult, null, true);
-            else if (enhancement_type > 0.625) v.set_ability(P_CENTERS.m_wild, null, true);
-            else if (enhancement_type > 0.50) v.set_ability(P_CENTERS.m_glass, null, true);
-            else if (enhancement_type > 0.375) v.set_ability(P_CENTERS.m_steel, null, true);
-            else if (enhancement_type > 0.25) v.set_ability(P_CENTERS.m_stone, null, true);
-            else if (enhancement_type > 0.125) v.set_ability(P_CENTERS.m_gold, null, true);
-            else v.set_ability(P_CENTERS.m_lucky, null, true);
-            G.E_MANAGER.add_event(() => { v.juice_up(); });
+          if (v.config.center !== P_CENTERS.c_base && !v.debuff && !v.vampired) {
+            v.vampired = true; // (one Crobat per card per hand)
+            const enh = v.config.center.key;
+            if (enh === 'm_bonus' || enh === 'm_stone') c_count = c_count + 1;
+            else if (enh === 'm_steel' || enh === 'm_glass' || enh === 'm_poke_flower') x_count = x_count + 1;
+            else if (enh === 'm_gold') d_count = d_count + 1;
+            else m_count = m_count + 1;
+            v.set_ability(P_CENTERS.c_base, null, true);
+            G.E_MANAGER.add_event(() => { v.juice_up(); v.vampired = undefined; });
           }
         }
-        if (enhanced.length > 0) {
-          const ex = card.ability.extra;
-          if (m_count > 0) ex.mult = ex.mult + ex.mult_mod * m_count;
-          if (c_count > 0) ex.chips = ex.chips + ex.chip_mod * c_count;
-          if (x_count > 0) ex.Xmult = ex.Xmult + ex.Xmult_mod * x_count;
-          if (d_count > 0) ex.money = ex.money + ex.money_mod * d_count;
-        }
+        const ex = card.ability.extra;
+        if (m_count > 0) ex.mult = ex.mult + ex.mult_mod * m_count;
+        if (c_count > 0) ex.chips = ex.chips + ex.chip_mod * c_count;
+        if (x_count > 0) ex.Xmult = ex.Xmult + ex.Xmult_mod * x_count;
+        if (d_count > 0) ex.money = ex.money + ex.money_mod * d_count;
+        if (m_count > 0 || c_count > 0 || x_count > 0 || d_count > 0) return { message: localize('poke_leech_life_ex') };
       }
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
         return { message: localize('poke_screech_ex'), colour: 'BLACK', mult_mod: card.ability.extra.mult, chip_mod: card.ability.extra.chips, Xmult_mod: card.ability.extra.Xmult };
@@ -556,21 +529,34 @@ defineJokers({
   // Natu 177
   natu: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.rounds] }; },
-    calculate(self, card, context) {
-      natu_calc(self, card, context, card);
-      return level_evo(self, card, context, 'j_poke_xatu');
-    },
-    // Lua set_sprites (runs whenever the card's ability is set): snapshot the hand levels.
-    set_ability(self) { natu_snapshot(self); },
+    calculate(self, card, context) { return (context.poker_hand_changed && natu_calc(context)) || level_evo(self, card, context, 'j_poke_xatu'); },
   },
-  // Xatu 178 (Celestial packs hold every Planet: systems/rules.js pack_size)
+  // Xatu 178
   xatu: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.level_amt] }; },
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [G.GAME && G.GAME.last_hand_played ? localize(G.GAME.last_hand_played, 'poker_hands') : localize('poke_none')] };
+    },
     calculate(self, card, context) {
-      natu_calc(self, card, context, context.blueprint_card || card);
+      if (context.poker_hand_changed) return natu_calc(context);
+      // 3.9.1: opening a Celestial Pack creates the Planet of your last played hand (must have room).
+      // (3.2.1: Celestial Packs held every Planet — that lovely patch is gone in 3.9.1.)
+      const booster = context.open_booster && (context.booster || (context.card && context.card.config.center));
+      if (booster && booster.kind === 'Celestial') {
+        if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+          G.E_MANAGER.add_event(() => {
+            if (G.GAME.last_hand_played) {
+              let _planet;
+              for (const planet_center of P_CENTER_POOLS.Planet) if (planet_center.config.hand_type === G.GAME.last_hand_played) _planet = planet_center.key;
+              if (_planet) add_card({ set: 'Planet', key: _planet });
+            }
+            G.GAME.consumeable_buffer = 0;
+          });
+        }
+      }
       return undefined;
     },
-    set_ability(self) { natu_snapshot(self); },
   },
   // Mareep 179
   mareep: {

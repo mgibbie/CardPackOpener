@@ -1,12 +1,13 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_03.lua (Pokédex 061-090: Poliwhirl -> Shellder), 33 jokers.
-// Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype, gen,
-// item_req, evo_list, megas) comes from data.js. See ../PORTING.md and pokejokers_01.js.
+// Pokermon 3.9.1 — pokemon/pokejokers_03.lua (Pokédex 061-090: Poliwhirl -> Shellder), 33 jokers.
+// Line-for-line port of the behaviour, on Pokermon 3.9.1 since batch 6 (PORTING.md "Pokermon 3.9.1 upgrade");
+// static data comes from data.js + data391.js (this file's jokers take their whole 3.9.1 config).
+// (3.9.1's new Mega Victreebel is not here: new Megas are a later batch.)
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
   create_card, ease_discard, ease_hands_played, juice_card_until, playing_card_joker_effects, delay, play_sound,
   STATES, defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
   get_probability_vars, pseudorandom_probability, has_enhancement, poke_is_even, poke_get_adjacent_jokers,
-  is_type, poke_change_poli_suit, smods_create_card, add_card, poke_add_shop_card, remove,
+  is_type, smods_create_card, add_card, poke_add_shop_card, remove, POKE_POOL_RULES,
 } from '../api.js';
 import { get_current_pool, P_SEALS } from '../../../js/engine/core.js';
 
@@ -15,22 +16,12 @@ const FILE = 'pokemon/pokejokers_03.lua';
 // ------------------------------------------------------------ shared bodies
 const SUITS_PLURAL = () => [localize('Spades', 'suits_plural'), localize('Hearts', 'suits_plural'), localize('Clubs', 'suits_plural'), localize('Diamonds', 'suits_plural')];
 const poli_suit = () => (G.GAME && G.GAME.poke_poli_suit) || 'Spades';
-/** Poliwhirl / Poliwrath: cycle the Poli suit on joker_main; `ret` is the scoring-suit card bonus. */
+/**
+ * Poliwhirl / Poliwrath: `ret` is the bonus of a scored card of the Poli suit (debuffed cards never score). The suit
+ * cycles after every scored hand in the mod-level calculate (3.9.1 pokermon.lua; systems/rules.js), not here.
+ */
 function poli_calc(card, context, ret) {
-  if (context.cardarea === G.jokers && context.scoring_hand) {
-    if (context.joker_main && !context.blueprint) {
-      poke_change_poli_suit();
-      G.GAME.poke_poli_suit_change_triggered = true;
-    }
-    if (context.after && G.GAME.poke_poli_suit_change_triggered) G.GAME.poke_poli_suit_change_triggered = false;
-  }
-  if (context.individual && !context.end_of_round && context.cardarea === G.play) {
-    const scoring_suit = G.GAME.poke_poli_suit || 'Spades';
-    if (context.other_card.is_suit(scoring_suit)) {
-      if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
-      return ret();
-    }
-  }
+  if (context.individual && context.cardarea === G.play && context.other_card.is_suit(G.GAME.poke_poli_suit || 'Spades')) return ret();
   return undefined;
 }
 /**
@@ -61,9 +52,20 @@ function abra_calc(card, context, seed, item_seed, forced, room_first) {
   return undefined;
 }
 const consumable_slot = {
-  add_to_deck(self, card) { G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit + card.ability.extra.card_limit; }); },
-  remove_from_deck(self, card) { G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit - card.ability.extra.card_limit; }); },
+  add_to_deck(self, card) { const limit = card.ability.extra.card_limit; G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit + limit; }); },
+  remove_from_deck(self, card) { const limit = card.ability.extra.card_limit; G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit - limit; }); },
 };
+/** pokermon.create_consumeable(key) (3.9.1 pokefunctions.lua): a consumable if there is room, "+1 ..." on it. */
+export function create_consumeable(key) {
+  if (!(G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit)) return undefined;
+  const set = P_CENTERS[key] && P_CENTERS[key].set;
+  const _card = create_card(set, G.consumeables, null, null, null, null, key);
+  _card.add_to_deck();
+  G.consumeables.emplace(_card);
+  const msg = { Tarot: 'k_plus_tarot', Planet: 'k_plus_planet', Spectral: 'k_plus_spectral', Item: 'poke_plus_pokeitem', Energy: 'poke_plus_pokeitem' }[set];
+  card_eval_status_text(_card, 'extra', null, null, null, { message: msg ? localize(msg) : '+1 ' + set, colour: set === 'Item' ? 'item' : set });
+  return _card;
+}
 /** Machop line: +hands, -discards. */
 const hands_for_discards = {
   add_to_deck(self, card, from_debuff) {
@@ -178,7 +180,7 @@ function seal_first(card, context, roll) {
     juice_card_until(card, evalf, true);
   }
 }
-const muk_mult = (card) => card.ability.extra.mult * (G.playing_cards.length - G.GAME.starting_deck_size);
+const muk_mult = (card) => card.ability.extra.mult_mod * (G.playing_cards.length - G.GAME.starting_deck_size);
 
 defineJokers({
   // Poliwhirl 061
@@ -242,7 +244,9 @@ defineJokers({
     },
     // (Lua reuses the 'alakazam' seed for both the odds and the Item/Tarot flip.)
     calculate(self, card, context) { return abra_calc(card, context, 'alakazam', 'alakazam', ['c_poke_twisted_spoon', 'c_fool'], false); },
-    ...consumable_slot,
+    add_to_deck: consumable_slot.add_to_deck,
+    // (3.9.1: Alakazam gives the slot back at once, not in an event)
+    remove_from_deck(self, card) { G.consumeables.config.card_limit = G.consumeables.config.card_limit - card.ability.extra.card_limit; },
   },
   // Mega Alakazam 065-1 (other_consumeable: the engine names consumables in the joker-on-card loop)
   mega_alakazam: {
@@ -305,18 +309,23 @@ defineJokers({
     },
     calculate(self, card, context) { return even_chips(card, context) || item_evo(self, card, context, 'j_poke_victreebel'); },
   },
-  // Victreebel 071
+  // Victreebel 071 (3.9.1: only the first retrigger_max even cards each round are retriggered)
   victreebel: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.chips] }; },
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      const ex = center.ability.extra;
+      return { vars: [ex.chips, ex.retrigger_max, Math.max(0, ex.retrigger_max - ex.round_retriggers)] };
+    },
     calculate(self, card, context) {
       const r = even_chips(card, context);
       if (r) return r;
-      if (context.repetition && context.cardarea === G.play && !context.other_card.debuff) {
-        const id = context.other_card.get_id();
-        if (id === 2 || id === 4 || id === 6 || id === 8 || id === 10) {
+      if (context.repetition && context.cardarea === G.play && !context.other_card.debuff && card.ability.extra.round_retriggers < card.ability.extra.retrigger_max) {
+        if (poke_is_even(context.other_card)) {
+          if (!context.blueprint) card.ability.extra.round_retriggers = card.ability.extra.round_retriggers + 1;
           return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
         }
       }
+      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) card.ability.extra.round_retriggers = 0;
       return undefined;
     },
   },
@@ -386,8 +395,8 @@ defineJokers({
         if (pseudorandom_probability(card, 'slowpoke', card.ability.extra.num, card.ability.extra.dem, 'slowpoke')) {
           const temp_card = { set: 'Joker', area: G.shop_jokers, key: 'j_poke_shell' };
           const _add_card = smods_create_card(temp_card);
+          _add_card.ability.couponed = true; // (3.9.1 pokermon.add_shop_card(add_card, card, is_free))
           poke_add_shop_card(_add_card, card);
-          _add_card.cost = 0;
         }
       }
       let evo = item_evo(self, card, context, 'j_poke_slowking');
@@ -426,14 +435,14 @@ defineJokers({
       const xmult_total = center.ability.extra.Xmult + center.ability.extra.hands_played * center.ability.extra.Xmult_mod;
       return { vars: [center.ability.extra.Xmult_mod, xmult_total] };
     },
+    // (3.9.1: the count goes up in `before` — no Blueprint guard, as upstream — and resets when a Boss Blind is beaten.)
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main) {
-          card.ability.extra.hands_played = card.ability.extra.hands_played + 1;
-          const xmult_total = card.ability.extra.Xmult + (card.ability.extra.hands_played * card.ability.extra.Xmult_mod);
-          return { message: localize({ type: 'variable', key: 'a_xmult', vars: [xmult_total] }), colour: 'XMULT', Xmult_mod: xmult_total };
-        }
-      } else if ((context.end_of_round && G.GAME.blind.boss) && !context.repetition && !context.individual && !context.blueprint) {
+      if (context.before) card.ability.extra.hands_played = card.ability.extra.hands_played + 1;
+      if (context.joker_main) {
+        const xmult_total = card.ability.extra.Xmult + card.ability.extra.hands_played * card.ability.extra.Xmult_mod;
+        return { message: localize({ type: 'variable', key: 'a_xmult', vars: [xmult_total] }), colour: 'XMULT', Xmult_mod: xmult_total };
+      }
+      if (context.end_of_round && context.game_over === false && context.main_eval && context.beat_boss && !context.blueprint) {
         card.ability.extra.hands_played = 0;
         return { message: localize('k_reset'), colour: 'RED' };
       }
@@ -456,6 +465,7 @@ defineJokers({
     set_ability(self, card, initial) {
       if (initial) card.set_edition({ negative: true }, true, true);
     },
+    // (3.9.1 in_pool -> false: only Slowpoke's shop roll makes one; the pool rule is at the end of this file)
   },
   // Magnemite 081
   magnemite: {
@@ -503,16 +513,7 @@ defineJokers({
       const [num, dem] = get_probability_vars(center, center.ability.extra.num ?? 1, center.ability.extra.dem, 'farfetchd');
       return { vars: [center.ability.extra.money, num, dem] };
     },
-    add_to_deck(self, card, from_debuff) {
-      if (!from_debuff && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-        const _card = create_card('Item', G.consumeables, null, null, null, null, 'c_poke_leek');
-        _card.add_to_deck();
-        G.consumeables.emplace(_card);
-        card_eval_status_text(_card, 'extra', null, null, null, { message: localize('poke_plus_pokeitem'), colour: 'FILTER' });
-        return true;
-      }
-      return undefined;
-    },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) create_consumeable('c_poke_leek'); },
     calculate(self, card, context) {
       if (context.using_consumeable) {
         // (Lua order: the roll happens first, so a Leek still consumes the 'farfetchd' seed.)
@@ -587,7 +588,7 @@ defineJokers({
   muk: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.mult, G.GAME.starting_deck_size, Math.max(0, (G.playing_cards ? (G.playing_cards.length - G.GAME.starting_deck_size) : 0) * center.ability.extra.mult)] };
+      return { vars: [center.ability.extra.mult_mod, G.GAME.starting_deck_size, Math.max(0, (G.playing_cards ? (G.playing_cards.length - G.GAME.starting_deck_size) : 0) * center.ability.extra.mult_mod)] };
     },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand) {
@@ -605,7 +606,7 @@ defineJokers({
           else target.start_dissolve();
         });
         delay(0.3);
-        for (const j of G.jokers.cards.slice()) j.calculate_joker({ remove_playing_cards: true, removed: [target] });
+        for (const j of G.jokers.cards.slice()) j.calculate_joker({ remove_playing_cards: true, removed: [target], poke_removed_at_end: true });
         card.juice_up();
       }
       return undefined;
@@ -617,7 +618,7 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_waterstone);
       const [num, dem] = get_probability_vars(center, center.ability.extra.num, center.ability.extra.dem, 'shellder');
-      return { vars: [num, dem] };
+      return { vars: [num, dem, center.ability.extra.retriggers] };
     },
     calculate(self, card, context) {
       if (context.repetition && context.cardarea === G.play && context.scoring_hand.length === 5) {
@@ -631,3 +632,6 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Shell (3.9.1 in_pool = false): never in a pool (shop, packs, Poke Balls); Slowpoke puts it in the shop itself.
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_shell' ? false : undefined));

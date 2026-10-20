@@ -331,7 +331,7 @@ ok(!avail('Item', null, 'c_poke_pokeball'), 'pokeballs option off removes the ba
   add('j_poke_pansage');
   ok(find_joker('Shortcut').length === 1, 'Pansage counts as Shortcut');
   add('j_poke_smeargle');
-  ok(create_playing_card({ front: P_CARDS.H_2 }).is_suit('Diamonds'), 'Smeargle counts as Smeared Joker');
+  ok(!create_playing_card({ front: P_CARDS.H_2 }).is_suit('Diamonds'), 'Smeargle no longer counts as Smeared Joker (Pokermon 3.9.1)');
 }
 {
   start('SPLASH');

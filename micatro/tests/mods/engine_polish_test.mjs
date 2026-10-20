@@ -6,7 +6,8 @@
 //      count them like Steamodded's fixes.toml (SMODS.has_enhancement).
 //   3. Pokermon jokers missing from data.js get their static data the same way as the rest.
 //   5. The Homelatro rarities use Homelatro's own weights / rules / strings.
-//   6. Pokermon seams: Xatu's all-planets Celestial packs; previous-evolution win stickers.
+//   6. Pokermon seams: Xatu's Celestial packs (3.9.1: their normal size again — the 3.2.1 all-planets patch is gone);
+//      previous-evolution win stickers.
 //   node micatro/tests/mods/engine_polish_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { localize, P_CENTER_POOLS, quantum_enhancements, find_joker } from '../../js/engine/core.js';
@@ -165,7 +166,7 @@ const key = (c) => c.config.center.key;
   ok(P.get_weight(P) === 0, 'every Player extinct: Player stops rolling');
 }
 
-// ------------------------------------------------------------------ 6a. Xatu: Celestial packs hold every Planet
+// ------------------------------------------------------------------ 6a. Xatu: Celestial packs (Pokermon 3.9.1 dropped the all-Planets patch)
 {
   start('POLISH_XATU', {}, { mods: ['pokermon'] });
   add('j_poke_xatu');
@@ -174,8 +175,8 @@ const key = (c) => c.config.center.key;
   G.shop_booster.cards[0].set_ability(P_CENTERS.p_celestial_normal_1, null, true);
   act({ type: 'buy', id: G.shop_booster.cards[0].sort_id });
   flush();
-  const got = G.pack_cards.cards.map(key), want = P_CENTER_POOLS.Planet.map((p) => p.key);
-  ok(got.join() === want.join(), 'Xatu: a Celestial pack holds every Planet, in pool order', { got, want });
+  const got = G.pack_cards.cards.map(key);
+  ok(got.length === 3 && got.every((k) => P_CENTER_POOLS.Planet.some((p) => p.key === k)), 'Xatu: a Celestial pack holds its normal 3 Planets, not every Planet (Pokermon 3.9.1)', got);
 }
 
 // ------------------------------------------------------------------ 6b. previous-evolution win stickers

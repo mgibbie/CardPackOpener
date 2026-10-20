@@ -1,12 +1,12 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_01.lua (Pokédex 001-030: Bulbasaur -> Nidorina), 36 jokers.
-// Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage,
-// ptype, gen, item_req, megas) comes from data.js. This file is the reference port the
-// other pokejokers_NN.js files copy — see ../PORTING.md.
+// Pokermon 3.9.1 — pokemon/pokejokers_01.lua (Pokédex 001-030: Bulbasaur -> Nidorina), 36 jokers.
+// Line-for-line port of the behaviour, on 3.9.1 since batch 6 (PORTING.md "Pokermon 3.9.1 upgrade"); static
+// data (pos, config, rarity, cost, stage, ptype, gen, item_req, megas) comes from data.js + data391.js
+// (config_all: the whole 3.9.1 config). This file is the reference port the other pokejokers_NN.js files copy.
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, ease_discard, ease_hands_played,
-  draw_card, create_card, copy_card, find_joker, juice_card_until, playing_card_joker_effects, delay,
-  defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
-  has_enhancement, getMega_by_position, find_card, any, RANKS, RANK_ID,
+  create_card, juice_card_until, defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo,
+  ease_poke_dollars, has_enhancement, getMega_by_position, find_card, any, RANKS, RANK_ID,
+  get_probability_vars, pseudorandom_probability, poke_convert_cards_to,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_01.lua';
@@ -14,14 +14,14 @@ const SUITS4 = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
 
 // ------------------------------------------------------------ shared bodies
 /** Bulbasaur line: $ for each held card of the round's rank (bulb1card). */
-function bulba_held(card, context, seed, more_roll) {
+function bulba_held(card, context, seed, more_roll, tally = true) {
   if (context.individual && context.cardarea === G.hand && context.other_card.get_id() === G.GAME.current_round.bulb1card.id) {
     if (!context.end_of_round && !context.before && !context.after) {
       if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
       let more = 0;
       if (more_roll) more = pseudorandom('bulba') < 0.50 ? 0 : 1;
       let earned = 0;
-      if (!context.blueprint) card.ability.extra.earned = card.ability.extra.earned + card.ability.extra.money_mod + more;
+      if (tally && !context.blueprint) card.ability.extra.earned = card.ability.extra.earned + card.ability.extra.money_mod + more;
       earned = earned + card.ability.extra.money_mod + more;
       earned = ease_poke_dollars(card, seed, earned);
       return { message: localize('$') + earned, colour: 'MONEY', card };
@@ -93,57 +93,36 @@ function pidgey_calc(card, context) {
   }
   return undefined;
 }
-/** Spearow / Fearow: after card_threshold scored cards, level up the next hand. */
-function spear_calc(card, context, fearow) {
+/**
+ * Spearow / Fearow (3.9.1): every card_threshold cards drawn during Blinds (Steamodded hand_drawn) arms the
+ * joker; the next played hand levels up (Blueprint copies the level up). Spearow evolves after evo_rqmt triggers.
+ */
+function spear_calc(card, context, spearow) {
+  const ex = card.ability.extra;
   if (context.first_hand_drawn && !context.blueprint) juice_card_until(card, () => card.ability.extra.upgrade === true, true);
-  if (context.cardarea === G.jokers && context.scoring_hand && !context.blueprint) {
-    if (context.before && card.ability.extra.upgrade) {
-      if (!fearow || card.ability.extra.cards_scored >= card.ability.extra.card_threshold) {
-        card.ability.extra.cards_scored = card.ability.extra.cards_scored - card.ability.extra.card_threshold;
-      }
-      card.ability.extra.upgrade = false;
-      return { card, level_up: true, message: localize('k_level_up_ex') };
+  if (context.before && ex.upgrade) {
+    if (!context.blueprint) {
+      G.E_MANAGER.add_event(() => {
+        card.ability.extra.upgrade = false;
+        if (spearow) card.ability.extra.triggers = card.ability.extra.triggers + 1;
+      });
     }
-    if (context.joker_main && !context.blueprint) {
-      card.ability.extra.cards_scored = card.ability.extra.cards_scored + context.scoring_hand.length;
-      if (card.ability.extra.cards_scored >= card.ability.extra.card_threshold && !card.ability.extra.upgrade) {
-        card.ability.extra.upgrade = true;
-        juice_card_until(card, () => card.ability.extra.upgrade === true, true);
-      }
+    return { card, level_up: true, message: localize('k_level_up_ex') };
+  }
+  if (context.hand_drawn && !context.blueprint) {
+    ex.cards_drawn = ex.cards_drawn + context.hand_drawn.length;
+    if (ex.cards_drawn >= ex.card_threshold) {
+      ex.upgrade = true;
+      juice_card_until(card, () => card.ability.extra.upgrade === true, true);
+      ex.cards_drawn = ex.cards_drawn % ex.card_threshold;
     }
   }
   return undefined;
 }
-/** Sandshrew line: copy the first `limit` shattered Glass cards each round into hand. */
-function sand_calc(self, card, context, limit) {
-  if (context.remove_playing_cards && card.ability.extra.glass_restored < limit && !context.blueprint) {
-    for (const v of context.removed) {
-      if (v.shattered && card.ability.extra.glass_restored < limit) {
-        G.E_MANAGER.add_event(() => {
-          const copy = copy_card(v, null, null, G.playing_card);
-          copy.add_to_deck();
-          G.deck.config.card_limit = G.deck.config.card_limit + 1;
-          G.playing_cards.push(copy);
-          G.hand.emplace(copy);
-          copy.start_materialize();
-          playing_card_joker_effects([copy]);
-        });
-        card.ability.extra.glass_restored = card.ability.extra.glass_restored + 1;
-      }
-    }
-    // (Lua: `card_to_copy` is never set, so no "Copied!" return here.)
-  }
-  if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-    return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chip_mod * card.ability.extra.sandshrew_tally] }), colour: 'CHIPS', chip_mod: card.ability.extra.chip_mod * card.ability.extra.sandshrew_tally };
-  }
-  if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
-    if (card.ability.extra.glass_restored > 0) {
-      card.ability.extra.glass_restored = 0;
-      card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_reset') });
-    }
-  }
-  return level_evo(self, card, context, 'j_poke_sandslash');
-}
+/** Sandshrew line: +chips per Glass card in the full deck (3.9.1: the shattered-Glass copy is gone). */
+const sand_chips = (card, context) => (context.cardarea === G.jokers && context.scoring_hand && context.joker_main
+  ? { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chip_mod * card.ability.extra.sandshrew_tally] }), colour: 'CHIPS', chip_mod: card.ability.extra.chip_mod * card.ability.extra.sandshrew_tally }
+  : undefined);
 function sand_update(self, card) {
   card.ability.extra.sandshrew_tally = 0;
   for (const v of G.playing_cards) if (has_enhancement(v, 'm_glass')) card.ability.extra.sandshrew_tally = card.ability.extra.sandshrew_tally + 1;
@@ -158,6 +137,8 @@ function nido_queen(card, context) {
   }
   return undefined;
 }
+/** Raichu: mult_mod per money_count dollars (incl. money still being paid out: G.GAME.dollar_buffer). */
+const raichu_mult = (ex) => ex.mult_mod * Math.floor((((G.GAME && G.GAME.dollars) || 0) + ((G.GAME && G.GAME.dollar_buffer) || 0)) / ex.money_count);
 const bulb_rank = () => localize((G.GAME && G.GAME.current_round.bulb1card && G.GAME.current_round.bulb1card.rank) || 'Ace', 'ranks');
 const mega_tip = (info_queue) => { if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' }); };
 
@@ -197,21 +178,13 @@ defineJokers({
       mega_tip(info_queue);
       return { vars: [center.ability.extra.money_mod, center.ability.extra.earned, center.ability.extra.h_size, bulb_rank()] };
     },
-    calculate(self, card, context) { return bulba_held(card, context, 'venu', false); },
+    calculate(self, card, context) { return bulba_held(card, context, 'venu', false, false); },
     ...hand_size,
   },
   // Mega Venusaur 003-1
   mega_venusaur: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.h_size] }; },
-    add_to_deck(self, card, from_debuff) {
-      G.hand.change_size(card.ability.extra.h_size);
-      if (!from_debuff && G.hand && G.hand.cards && G.hand.cards.length > 0) {
-        const hand_space = Math.min(G.deck.cards.length, card.ability.extra.h_size - 1);
-        delay(0.3);
-        for (let i = 1; i <= hand_space; i++) draw_card(G.deck, G.hand, i * 100 / hand_space, 'up', true);
-      }
-    },
-    remove_from_deck(self, card) { G.hand.change_size(-card.ability.extra.h_size); },
+    ...hand_size, // (3.9.1 no longer draws the extra cards at once)
   },
   // Charmander 004
   charmander: {
@@ -294,8 +267,7 @@ defineJokers({
       return { vars: [center.ability.extra.chips, center.ability.extra.hands, self.config.evo_rqmt, center.ability.extra.chip_mod] };
     },
     calculate(self, card, context) {
-      // Lua hard-codes 2 per hand here (not chip_mod).
-      const r = squirt_calc(card, context, 2);
+      const r = squirt_calc(card, context, card.ability.extra.chip_mod);
       if (r) return r;
       return scaling_evo(self, card, context, 'j_poke_blastoise', card.ability.extra.chips, self.config.evo_rqmt);
     },
@@ -306,7 +278,8 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       mega_tip(info_queue);
-      return { vars: [center.ability.extra.chips, center.ability.extra.chip_mod, center.ability.extra.hands] };
+      const ex = center.ability.extra;
+      return { vars: [ex.chips, ex.chip_mod, ex.hands, ex.chips + (ex.chip_mod * ((G.GAME && G.GAME.current_round && G.GAME.current_round.hands_left) || 0))] };
     },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
@@ -415,18 +388,20 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const ex = center.ability.extra;
-      return { vars: [ex.rounds, ex.card_threshold, Math.max(0, ex.card_threshold - ex.cards_scored), ex.upgrade ? '(' + localize('k_active_ex') + ')' : ''] };
+      return { vars: [Math.max(0, self.config.evo_rqmt - ex.triggers), ex.card_threshold, Math.max(0, ex.card_threshold - ex.cards_drawn), ex.upgrade ? '(' + localize('k_active_ex') + ')' : ''] };
     },
-    calculate(self, card, context) { return spear_calc(card, context, false) || level_evo(self, card, context, 'j_poke_fearow'); },
+    poke_custom_values_to_keep: ['upgrade'],
+    calculate(self, card, context) { return spear_calc(card, context, true) || scaling_evo(self, card, context, 'j_poke_fearow', card.ability.extra.triggers, self.config.evo_rqmt); },
   },
   // Fearow 022
   fearow: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const ex = center.ability.extra;
-      return { vars: [ex.card_threshold, Math.max(0, ex.card_threshold - ex.cards_scored), ex.upgrade ? '(' + localize('k_active_ex') + ')' : ''] };
+      return { vars: [ex.card_threshold, Math.max(0, ex.card_threshold - ex.cards_drawn), ex.upgrade ? '(' + localize('k_active_ex') + ')' : '', ex.d_size] };
     },
-    calculate(self, card, context) { return spear_calc(card, context, true); },
+    calculate(self, card, context) { return spear_calc(card, context, false); },
+    ...discards,
   },
   // Ekans 023
   ekans: {
@@ -472,29 +447,42 @@ defineJokers({
       return undefined;
     },
   },
-  // Pikachu 025
+  // Pikachu 025 (3.9.1: +Mult at $25+, $2 when a Blind is selected below it; no cash-out $)
   pikachu: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_thunderstone);
-      return { vars: [center.ability.extra.money] };
+      const ex = center.ability.extra;
+      return { vars: [ex.mult, ex.money, ex.money_threshold] };
     },
-    calc_dollar_bonus(self, card) { return ease_poke_dollars(card, 'pikachu', Math.min(10, G.jokers.cards.length * card.ability.extra.money), true); },
-    calculate(self, card, context) { return item_evo(self, card, context, 'j_poke_raichu'); },
+    calculate(self, card, context) {
+      if (context.setting_blind && G.GAME.dollars < card.ability.extra.money_threshold) {
+        card.juice_up();
+        ease_poke_dollars(card, 'pikachu', card.ability.extra.money);
+      }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && G.GAME.dollars >= card.ability.extra.money_threshold) {
+        return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.extra.mult] }), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      }
+      return item_evo(self, card, context, 'j_poke_raichu');
+    },
   },
-  // Raichu 026
+  // Raichu 026 (3.9.1: +mult_mod Mult per $money_count, earns interest when a Blind is selected)
   raichu: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      if (detailed() && !(center.edition && center.edition.negative)) info_queue.push(P_CENTERS.e_negative);
       const ex = center.ability.extra;
-      return { vars: [ex.money, Math.max(ex.threshold, ex.threshold + (ex.threshold * (find_joker('raichu').length - 1))), ex.money_limit] };
+      return { vars: [ex.mult_mod, ex.money_count, raichu_mult(ex), ex.money_threshold] };
     },
-    calc_dollar_bonus(self, card) {
-      const ex = card.ability.extra;
-      const turn_neg = G.GAME.dollars >= ex.threshold + (ex.threshold * (find_joker('raichu').length - 1)) && !(card.edition && card.edition.negative);
-      if (turn_neg) card.set_edition({ negative: true }, true);
-      return ease_poke_dollars(card, 'raichu', Math.min(ex.money_limit, G.jokers.cards.length * ex.money), true);
+    calculate(self, card, context) {
+      if (context.setting_blind) {
+        card.juice_up();
+        ease_poke_dollars(card, 'raichu', G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5));
+      }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        const m = raichu_mult(card.ability.extra);
+        if (m > 0) return { message: localize({ type: 'variable', key: 'a_mult', vars: [m] }), colour: 'MULT', mult_mod: m };
+      }
+      return undefined;
     },
   },
   // Sandshrew 027
@@ -503,21 +491,30 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.m_glass);
       const ex = center.ability.extra;
-      return { vars: [ex.rounds, ex.chip_mod, ex.chip_mod * ex.sandshrew_tally], colours: [ex.glass_restored !== 0 ? 'UI.TEXT_INACTIVE' : undefined] };
+      return { vars: [ex.rounds, ex.chip_mod, ex.chip_mod * ex.sandshrew_tally] };
     },
-    calculate(self, card, context) { return sand_calc(self, card, context, 1); },
+    calculate(self, card, context) { return sand_chips(card, context) || level_evo(self, card, context, 'j_poke_sandslash'); },
     update: sand_update,
   },
-  // Sandslash 028
+  // Sandslash 028 (3.9.1: each discarded Enhanced card has a 1 in 3 chance to become Glass)
   sandslash: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.m_glass);
       const ex = center.ability.extra;
-      return { vars: [ex.chip_mod, ex.chip_mod * ex.sandshrew_tally, ex.glass_limit, ex.glass_limit - ex.glass_restored], colours: [ex.glass_restored >= ex.glass_limit ? 'UI.TEXT_INACTIVE' : undefined] };
+      const [num, dem] = get_probability_vars(center, ex.num, ex.dem, 'sandslash');
+      return { vars: [ex.chip_mod, ex.chip_mod * ex.sandshrew_tally, num, dem] };
     },
-    // (Lua evolves Sandslash "into" itself via level_evo — a no-op without `rounds`.)
-    calculate(self, card, context) { return sand_calc(self, card, context, card.ability.extra.glass_limit); },
+    calculate(self, card, context) {
+      const r = sand_chips(card, context);
+      if (r) return r;
+      if (context.discard && context.other_card.config.center !== P_CENTERS.c_base && !context.blueprint) {
+        if (pseudorandom_probability(card, 'sandslash', card.ability.extra.num, card.ability.extra.dem, 'sandslash')) {
+          poke_convert_cards_to([context.other_card], { mod_conv: 'm_glass' });
+        }
+      }
+      return undefined;
+    },
     update: sand_update,
   },
   // Nidoran-F 029

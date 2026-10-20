@@ -185,7 +185,8 @@ export function poke_evolve(card, to_key, immediate, evolve_message, transformat
   return undefined;
 }
 
-const NAMES_TO_KEEP = ['targets', 'rank', 'id', 'cards_scored', 'upgrade', 'hazards_drawn', 'energy_count', 'c_energy_count', 'form', 'jack_target', 'jacks_discarded'];
+// (+ cards_drawn: 3.9.1 pokermon.get_values_to_keep — the Spearow line counts cards drawn.)
+const NAMES_TO_KEEP = ['targets', 'rank', 'id', 'cards_scored', 'cards_drawn', 'upgrade', 'hazards_drawn', 'energy_count', 'c_energy_count', 'form', 'jack_target', 'jacks_discarded'];
 
 /**
  * Add-on extension points (additive; empty = Pokermon unchanged), mirroring the lovely patches
@@ -228,10 +229,7 @@ export function poke_backend_evolve(card, to_key) {
   const values_to_keep = copy_scaled_values(card);
   if (isTable(card.ability.extra)) for (const k of names) values_to_keep[k] = card.ability.extra[k];
   if (lt(values_to_keep.hazards_drawn)) values_to_keep.hazards_drawn = values_to_keep.hazards_drawn % 2;
-  if (lt(values_to_keep.cards_scored) && values_to_keep.cards_scored >= 15 && card.config.center.name === 'spearow') {
-    values_to_keep.upgrade = true;
-    values_to_keep.cards_scored = values_to_keep.cards_scored - 15;
-  }
+  // (3.2.1's Spearow carry-over — 15+ cards scored arms Fearow — is gone: 3.9.1's Spearow line counts cards drawn.)
   if (card.config.center.poke_custom_values_to_keep) {
     for (const v of card.config.center.poke_custom_values_to_keep) custom_values_to_keep[v] = card.ability.extra[v];
     has_custom = true;
@@ -373,7 +371,11 @@ export function get_family_keys(cardname, custom_prefix, card) {
       else keys.push(pre + y);
     }
   }
-  if (cardname === 'smeargle' && card && card.ability.extra.copy_joker) keys.push(card.ability.extra.copy_joker.config.center_key);
+  // 3.9.1: Smeargle's family includes the joker it copies (center:get_copy).
+  if (cardname === 'smeargle' && card && card.config.center.get_copy) {
+    const copy = card.config.center.get_copy(card.config.center, card);
+    if (copy) keys.push(copy.config.center.key);
+  }
   if (cardname === 'ruins_of_alph' && card) for (const v of Object.values(card.ability.extra.forms || {})) keys.push({ key: 'j_poke_unown', form: v });
   const req = card && card.config && card.config.center && card.config.center.item_req;
   if (req) {

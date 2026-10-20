@@ -19,6 +19,8 @@
 // 3.9.1+r2) its moves no longer replay on the new numbers (the shops differ from move 523), so the page is served
 // micatro/mods/pokermon/data391.js with its joker data and sprites emptied: Pokermon plays the 3.2.1 numbers (the
 // renamed boss is the same boss), and the resume goes through the "Mod updated" prompt (3.2.1 -> 3.9.1, Continue anyway).
+// Since batch 6 (3.9.1+r3) pokejokers_01-08 play their 3.9.1 behaviour too, so the page also gets those 8 files as of the
+// batch-5 merge (git show aa4bfab2: their 3.2.1 behaviour; the fixture holds Kakuna, Butterfree, Parasect, Victreebel...).
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides). Covers micatro/js/engine/session.js (recipeSeeded), micatro/js/engine/run.js (newRun seeded),
 // micatro/js/ui/main.js, micatro/js/ui/progress.js (push retry, once per run), micatro/js/net.js,
@@ -30,6 +32,7 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
+import { execFileSync } from 'child_process';
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -92,6 +95,13 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 // (the fixture's rules: the 3.9.1 overlay without its joker numbers / sprites — see the header)
 const D391 = (await import(pathToFileURL(path.join(ROOT, 'micatro/mods/pokermon/data391.js')).href)).default;
 const DATA321 = 'export default ' + JSON.stringify({ ...D391, jokers: {}, sprites: {} }) + ';\n';
+// ... and pokejokers_01-08 before their 3.9.1 reworks (batch 6), from the batch-5 merge commit
+const PRE_B6 = 'aa4bfab21f5724e699bfcea17185216b1793019d';
+const JOKERS321 = {};
+for (let i = 1; i <= 8; i++) {
+	const p = `micatro/mods/pokermon/jokers/pokejokers_0${i}.js`;
+	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B6}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+}
 let prompted = 0;
 const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
@@ -110,6 +120,7 @@ const server = http.createServer(async (req, res) => {
 	}
 	const f = u.endsWith('/') ? u + 'index.html' : u;
 	if (f === '/micatro/mods/pokermon/data391.js') { res.writeHead(200, { 'content-type': 'text/javascript' }); res.end(DATA321); return; }
+	if (JOKERS321[f]) { res.writeHead(200, { 'content-type': 'text/javascript' }); res.end(JOKERS321[f]); return; }
 	const send = (d) => { res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); };
 	const nf = () => { res.writeHead(404); res.end('nf'); };
 	fs.readFile(path.join(ROOT, f), (e, d) => {

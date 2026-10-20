@@ -5,7 +5,9 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 2 (pin '3.9.1+r2'): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 3 (pin '3.9.1+r3', batch 6; batch 5 was r2): a 3.2.1 run / replay reads as changed
+//   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
+//   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
 //     3.9.1 sheet shows, at its new cell, the same picture its 3.2.1 cell showed (mean |diff| per channel <= 3,
 //     i.e. 3.9.1's touch-ups) — except the cards 3.9.1 redrew on purpose (listed). Streams the PNGs (crops only).
@@ -29,17 +31,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 2, 'Pokermon is version 3.9.1, contentRev 2', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r2', 'its pin is 3.9.1+r2', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 3, 'Pokermon is version 3.9.1, contentRev 3', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r3', 'its pin is 3.9.1+r3', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r2', 'a new run is pinned 3.9.1+r2', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r3', 'a new run is pinned 3.9.1+r3', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r2', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 2). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r3', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 3). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
@@ -47,8 +49,10 @@ ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still rea
 
 // ---------------------------------------------------------------- the overlay itself
 ok(D391.version === '3.9.1' && D391.counts.rarity === 41 && D391.counts.cost === 7 && D391.counts.enhancement_gate === 7, '3.9.1 overlay: 41 rarities, 7 costs, 7 gates', D391.counts);
-ok(D391.counts.config === 9 && D391.counts.blueprint_compat === 4 && D391.counts.attributes === 451, '... 9 config numbers, 4 blueprint flags', D391.counts);
-ok(D391.skipped.length > 200 && D391.skipped.every((s) => s.length === 5 && typeof s[4] === 'string' && s[4] && s[4] !== '?'), 'every skipped change has a reason', D391.skipped.filter((s) => !s[4] || s[4] === '?'));
+// (batch 6: the 4 taken config numbers of pokejokers_01-08 — Voltorb, Electrode, Primeape, Ursaring — now come with their whole
+// 3.9.1 config, config_all; so does Mega Pidgeot's blueprint flag)
+ok(D391.counts.config === 5 && D391.counts.attributes === 451, '... 5 config numbers outside the reworked files', D391.counts);
+ok(D391.skipped.length > 100 && D391.skipped.every((s) => s.length === 5 && typeof s[4] === 'string' && s[4] && s[4] !== '?'), 'every skipped change has a reason', D391.skipped.filter((s) => !s[4] || s[4] === '?'));
 
 // ---------------------------------------------------------------- rarities (mostly to Safari)
 const RAR = { raticate: 'poke_safari', fearow: 'poke_safari', sandslash: 'poke_safari', nidorina: 'poke_safari', golduck: 'poke_safari',
@@ -64,7 +68,7 @@ for (const [n, c] of Object.entries(COST)) ok(C(n).cost === c, `cost: ${n} $${c}
 
 // ---------------------------------------------------------------- compat flags
 ok(C('mega_pidgeot').blueprint_compat === true && C('pokedex').blueprint_compat === false && C('professor').blueprint_compat === false && C('treasure_eatery').blueprint_compat === false, 'blueprint_compat: Mega Pidgeot on; Pokédex / Professor / Treasure Eatery off');
-ok(C('mega_kangaskhan').blueprint_compat === false && C('spearow').blueprint_compat === false && C('onix').blueprint_compat === false, 'blueprint_compat of reworked jokers stays 3.2.1 (Mega Kangaskhan, Spearow, Onix)');
+ok(C('magmortar').blueprint_compat === false && C('vanillite').blueprint_compat === false && C('mega_steelix').blueprint_compat === true, 'blueprint_compat of jokers still on 3.2.1 stays 3.2.1 (Magmortar, Vanillite; Mega Steelix, held)');
 ok(C('wartortle').perishable_compat === false && C('zubat').perishable_compat === false && C('mareep').perishable_compat === false && C('treecko').perishable_compat === true, 'perishable_compat: Wartortle / Zubat / Mareep off, Treecko on');
 ok(C('mega_gengar').eternal_compat === true, 'eternal_compat: Mega Gengar on');
 ok(['xmult', 'volatile', 'round_evo', 'lightning_type', 'stage_basic', 'pokemon'].every((x) => C('voltorb').attributes.includes(x)) && C('bulbasaur').attributes.includes('starter'), 'the 3.9.1 attributes (+ the type / stage / pokemon ones of load_pokemon)', C('voltorb').attributes);
@@ -122,10 +126,10 @@ ok(C('kricketot').config.extra.money === 4 && C('kricketune').config.extra.money
 }
 ok(C('primeape').config.evo_rqmt === 29 && C('ursaring').config.extra.mult_mod === 2, 'config: Primeape evolves after 29 primes, Ursaring +2 per skipped pack');
 // skipped (reworks): the 3.2.1 numbers stay
-ok(C('spearow').config.extra.card_threshold === 20 && C('flareon').config.extra.Xmult_multi === 3 && C('qwilfish').config.extra.chip_mod === 25
-  && C('jirachi_power').config.extra.every === 3 && C('golbat').config.evo_rqmt === 20 && C('ursaluna').config.extra.mult_mod === 3,
+ok(C('glaceon').config.extra.dem === 4 && C('mega_steelix').config.extra.money === 1 && C('qwilfish').config.extra.chip_mod === 25
+  && C('jirachi_power').config.extra.every === 3 && C('vikavolt').config.extra.mult === 12 && C('ursaluna').config.extra.mult_mod === 3,
 'skipped config numbers (reworks / Hazard layer / Jirachi) keep their 3.2.1 values');
-ok(C('mankey').config.extra.chips === 5 && C('mankey').config.extra.chip_mod === undefined, 'renamed config keys are not taken (the ported logic reads the 3.2.1 keys)');
+ok(C('yanmega').config.extra.chips !== undefined && C('yanmega').config.extra.chip_mod === undefined, 'renamed config keys are not taken outside the reworked files (the ported logic reads the 3.2.1 keys)', C('yanmega').config.extra);
 
 // ---------------------------------------------------------------- house rules / kept fixes
 ok(/contains/.test(DATA.loc.descriptions.Joker.j_poke_deino.text[1]) && /contains/.test(DATA.loc.descriptions.Joker.j_poke_zweilous.text[1]), 'house rule: Deino / Zweilous "contains a Three of a Kind"');

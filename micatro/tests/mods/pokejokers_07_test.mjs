@@ -4,6 +4,7 @@
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { STATUS } from '../../mods/pokermon/index.js';
 import { is_type, type_sticker_applied } from '../../mods/pokermon/systems/types.js';
+import { has_enhancement, smods_debuff_card } from '../../mods/pokermon/systems/utils.js';
 
 const { ok, done } = T();
 const key = (c) => c.config.center.key;
@@ -93,6 +94,11 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
   b[0].set_ability(P_CENTERS.m_bonus, null, true);
   r = play(b);
   ok(r.total.mult === 2 * 4, 'azumarill: X4 with a Bonus + non-Bonus card', r.total);
+  const b2 = hand(['S_Q', 'H_Q']);
+  b2[0].set_ability(P_CENTERS.m_bonus, null, true);
+  smods_debuff_card(b2[0], true, 'test');
+  r = play(b2);
+  ok(r.total.mult === 2 * 2, 'azumarill: a debuffed Bonus card does not double it (Pokermon 3.9.1)', r.total);
 }
 
 // ---------------------------------------------------------------- Sudowoodo / Weird Tree
@@ -121,17 +127,21 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
 // ---------------------------------------------------------------- Politoed
 {
   start('POLI');
-  add('j_poke_politoed');
-  // 1 Water joker / 1 scoring card -> 1 retrigger. Suit Spades, then cycles to Hearts.
-  let r = play(hand(['S_A']));
-  ok(r.total.chips === 5 + 22 && r.total.mult === 1 + 14 && G.GAME.poke_poli_suit === 'Hearts', 'politoed: Spades +7 Mult, retriggered; suit cycles', [r.total, G.GAME.poke_poli_suit]);
+  const j = add('j_poke_politoed');
+  // (the suit is set before each hand: it cycles after every hand in Pokermon's mod-level calculate)
+  G.GAME.poke_poli_suit = 'Spades';
+  // 1 Water joker (itself): the FIRST scoring Spade is retriggered 1 + 1 times, the second not at all.
+  let r = play(hand(['S_A', 'S_A']));
+  ok(r.total.chips === 10 + 11 * 3 + 11 && r.total.mult === 2, 'politoed: first scoring Spade retriggered 1 + 1 Water times (Pokermon 3.9.1)', r.total);
+  G.GAME.poke_poli_suit = 'Hearts';
   r = play(hand(['S_A']));
-  ok(r.total.mult === 1, 'politoed: Spades no longer score', r.total);
-  ok(G.GAME.poke_poli_suit === 'Clubs', 'politoed: Hearts -> Clubs', G.GAME.poke_poli_suit);
+  ok(r.total.chips === 5 + 11, 'politoed: other suits are not retriggered (Pokermon 3.9.1)', r.total);
   const sq = add('j_poke_squirtle');
-  // 2 Water / 2 scoring Clubs (a Pair) -> 1 retrigger each.
-  r = play(hand(['C_A', 'C_A']));
-  ok(r.total.chips === 10 + 44 + sq.ability.extra.chips && r.total.mult === 2 + 28, 'politoed: retriggers split across the scoring cards', r.total);
+  G.GAME.poke_poli_suit = 'Clubs';
+  r = play(hand(['C_A']));
+  ok(r.total.chips === 5 + 11 * 4 + sq.ability.extra.chips && r.total.mult === 1, 'politoed: 2 Water jokers -> the first Club retriggered 3 times, no Mult (Pokermon 3.9.1)', r.total);
+  const lv = P_CENTERS.j_poke_politoed.loc_vars(P_CENTERS.j_poke_politoed, [], j);
+  ok(lv.vars[0] === 1 && lv.vars[6] === 3, 'politoed: text shows 1 retrigger, 3 in all (Pokermon 3.9.1)', lv.vars);
 }
 
 // ---------------------------------------------------------------- Hoppip line
@@ -264,15 +274,20 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
 // ---------------------------------------------------------------- Espeon
 {
   start('ESPEON');
-  add('j_poke_espeon');
-  const cr = G.GAME.current_round;
-  const c = SUIT[cr.espeon_suit] + '_' + CODE[cr.espeon_id];
-  const nominal = Math.min(cr.espeon_id, 10) + (cr.espeon_id === 14 ? 1 : 0);
-  let r = play(hand([c]));
-  ok(r.total.chips === 5 + 2 * nominal && near(r.total.mult, 1.2 * 1.2), 'espeon: the card of the round is retriggered, its suit gives X1.2', [c, r.total]);
-  const other = (cr.espeon_suit === 'Spades' ? 'H' : 'S') + '_' + (cr.espeon_id === 2 ? '3' : '2');
-  r = play(hand([other]));
-  ok(r.total.mult === 1, 'espeon: other suits/ranks do nothing', r.total);
+  const scry0 = G.GAME.scry_amount || 0;
+  const j = add('j_poke_espeon');
+  ok(G.GAME.scry_amount === scry0 + 2, 'espeon: +2 Foresight (Pokermon 3.9.1)', G.GAME.scry_amount);
+  const suit = G.GAME.current_round.espeon_suit;
+  // The top of the deck is its last card: put a card of the round's suit there, then one of another suit.
+  const toTop = (pred) => { const i = G.deck.cards.findIndex(pred); G.deck.cards.push(G.deck.cards.splice(i, 1)[0]); };
+  toTop((c) => c.base.suit === suit);
+  let r = play(hand([suit === 'Spades' ? 'H_2' : 'S_2']));
+  ok(near(r.total.mult, 2.5), 'espeon: X2.5 when the top card of the deck is the suit of the round (Pokermon 3.9.1)', [suit, r.total]);
+  toTop((c) => c.base.suit !== suit);
+  r = play(hand([SUIT[suit] + '_2']));
+  ok(r.total.mult === 1, 'espeon: nothing when the top card is another suit, even playing the suit (Pokermon 3.9.1)', r.total);
+  drop(j);
+  ok(G.GAME.scry_amount === scry0, 'espeon: Foresight removed with it (Pokermon 3.9.1)', G.GAME.scry_amount);
 }
 
 // ---------------------------------------------------------------- Umbreon
@@ -281,21 +296,27 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
   const j = add('j_poke_umbreon');
   ok(G.GAME.hands[j.ability.extra.hand_played] && G.GAME.hands[j.ability.extra.hand_played].visible, 'umbreon: picks a visible hand', j.ability.extra.hand_played);
   j.ability.extra.hand_played = 'Pair';
-  G.GAME.hands.Pair.level = 3;
-  for (const h of Object.keys(G.GAME.hands)) G.GAME.hands[h].played = 0;
-  G.GAME.hands.Flush.played = 4;
-  const fl = G.GAME.hands.Flush.level;
+  const lvl = G.GAME.hands.Pair.level;
+  const d = hand(['S_A']);
+  act({ type: 'highlight', ids: d.map((c) => c.sort_id) });
+  act({ type: 'discard' });
+  ok(G.GAME.hands.Pair.level === lvl + 1 && !G.playing_cards.includes(d[0]), 'umbreon: a 1-card first discard is destroyed and levels up its hand (Pokermon 3.9.1)', [G.GAME.hands.Pair.level, G.playing_cards.includes(d[0])]);
+  const d2 = hand(['S_K']);
+  act({ type: 'highlight', ids: d2.map((c) => c.sort_id) });
+  act({ type: 'discard' });
+  ok(G.GAME.hands.Pair.level === lvl + 1 && G.playing_cards.includes(d2[0]), 'umbreon: only the first discard of the round (Pokermon 3.9.1)', G.GAME.hands.Pair.level);
+  play(hand(['S_2']));
+  ok(j.ability.extra.hand_played === 'Two Pair', 'umbreon: hand cycles after scoring (Pokermon 3.9.1)', j.ability.extra.hand_played);
+}
+{
+  start('UMBRE2');
+  const j = add('j_poke_umbreon');
+  j.ability.extra.hand_played = 'Flush';
+  const lvl = G.GAME.hands.Flush.level;
   const d = hand(['S_A', 'H_A']);
   act({ type: 'highlight', ids: d.map((c) => c.sort_id) });
   act({ type: 'discard' });
-  ok(G.GAME.hands.Pair.level === 2 && G.GAME.hands.Flush.level === fl + 1, 'umbreon: discarding its hand moves a level to the most played hand', [G.GAME.hands.Pair.level, G.GAME.hands.Flush.level]);
-  G.GAME.hands.Pair.level = 1;
-  const d2 = hand(['S_K', 'H_K']);
-  act({ type: 'highlight', ids: d2.map((c) => c.sort_id) });
-  act({ type: 'discard' });
-  ok(G.GAME.hands.Pair.level === 1 && G.GAME.hands.Flush.level === fl + 1, 'umbreon: never below level 1', G.GAME.hands.Pair.level);
-  winRound();
-  ok(j.ability.extra.hand_played === 'Two Pair', 'umbreon: hand cycles each round', j.ability.extra.hand_played);
+  ok(G.GAME.hands.Flush.level === lvl && d.every((c) => G.playing_cards.includes(c)), 'umbreon: a 2-card first discard does nothing (Pokermon 3.9.1)', G.GAME.hands.Flush.level);
 }
 
 // ---------------------------------------------------------------- Murkrow
@@ -455,18 +476,26 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
 // ---------------------------------------------------------------- Steelix / Mega Steelix
 {
   start('STEEL');
-  add('j_poke_steelix');
+  const sx = add('j_poke_steelix');
   const st = hand(['H_4'], { center: 'm_stone' });
-  const p = hand(['S_A', 'H_A']);
-  play(p);
-  ok(key(p[0]) === 'm_steel' || key(p[1]) === 'm_steel', 'steelix: leftmost scoring card of the first hand becomes Steel', p.map(key));
-  ok(key(st[0]) === 'm_steel', 'steelix: held Stone cards become Steel', key(st[0]));
-  const p2 = hand(['S_K']);
-  play(p2);
-  ok(key(p2[0]) === 'c_base', 'steelix: only on the first hand', key(p2[0]));
+  ok(key(st[0]) === 'm_stone' && has_enhancement(st[0], 'm_steel'), 'steelix: Stone cards are also Steel (quantum) (Pokermon 3.9.1)', key(st[0]));
+  const p = hand(['S_A']);
+  const r = play(p);
+  ok(near(r.total.mult, 1.5) && key(p[0]) === 'c_base', 'steelix: a held Stone card gives Steel X1.5; played cards stay unenhanced (Pokermon 3.9.1)', r.total);
+  const deckStones = () => G.deck.cards.filter((c) => key(c) === 'm_stone').length;
+  clearHand();
+  const d0 = deckStones();
+  const tgt = hand(['S_K', 'D_4']);
+  tgt[1].set_ability(P_CENTERS.m_stone, null, true);
+  const hm = add('c_hanged_man');
+  act({ type: 'use', id: hm.sort_id, targets: tgt.map((c) => c.sort_id) });
+  G.E_MANAGER.flush();
+  ok(deckStones() === d0 + 1, 'steelix: destroying a non-Stone card adds a Stone card to the deck, a Stone card adds none (Pokermon 3.9.1)', [d0, deckStones()]);
+  drop(sx);
+  ok(!has_enhancement(st[0], 'm_steel'), 'steelix: the quantum Steel goes with it', key(st[0]));
 }
 {
-  start('MSTEEL');
+  start('MSTEEL'); // (held on its 3.2.1 behaviour: needs quantum Hazard scoring, batch 10)
   add('j_poke_mega_steelix');
   const st = hand(['S_4'], { center: 'm_steel' });
   play(hand(['S_A']));

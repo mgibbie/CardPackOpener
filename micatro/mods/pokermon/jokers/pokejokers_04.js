@@ -1,16 +1,15 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_04.lua (Pokédex 091-120: Cloyster -> Staryu), 32 jokers.
-// Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage,
-// ptype, gen, item_req, megas, volatile, enhancement_gate) comes from data.js.
-import * as BN from '../../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
+// Pokermon 3.9.1 — pokemon/pokejokers_04.lua (Pokédex 091-120: Cloyster -> Staryu), 32 jokers.
+// Line-for-line port of the behaviour, on Pokermon 3.9.1 since batch 6 (PORTING.md "Pokermon 3.9.1 upgrade");
+// static data comes from data.js + data391.js (this file's jokers take their whole 3.9.1 config).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
-  create_card, copy_card, juice_card_until, playing_card_joker_effects, play_sound,
+  copy_card, juice_card_until, playing_card_joker_effects, play_sound,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, type_evo, deck_enhance_evo,
   ease_poke_dollars, has_enhancement, find_joker, get_probability_vars, pseudorandom_probability,
-  volatile_active, remove,
+  volatile_active, remove, add_card,
 } from '../api.js';
-import { number_format } from '../../../js/engine/core.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
+import { create_consumeable } from './pokejokers_03.js';
 
 const FILE = 'pokemon/pokejokers_04.lua';
 
@@ -21,23 +20,25 @@ const negative_tip = (info_queue, center) => {
 const mega_tip = (info_queue) => { if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' }); };
 const volatile_tip = (info_queue, center) => { if (detailed()) info_queue.push({ set: 'Other', key: 'poke_volatile_' + center.ability.extra.volatile }); };
 
-/** Gastly / Haunter cash-out: a random other joker turns Negative and this one self-destructs. */
-function lick(self, card, seed, fallback_seed) {
-  let eligible_card;
-  if (G.jokers.cards.length > 0) {
-    const eligible_editionless_jokers = [];
-    for (const v of G.jokers.cards) if (v.ability.set === 'Joker' && v !== card && !v.gone) eligible_editionless_jokers.push(v);
-    if (eligible_editionless_jokers.length > 0) {
-      eligible_card = pseudorandom_element(eligible_editionless_jokers, pseudoseed(seed))[0];
-      eligible_card.set_edition({ negative: true }, true);
-    } else {
-      // (Lua: with no other joker this one itself may be picked.)
-      eligible_card = pseudorandom_element(G.jokers.cards, pseudoseed(fallback_seed))[0];
-      eligible_card.set_edition({ negative: true }, true);
-    }
-  }
+/**
+ * Lick (3.9.1 Gastly / Haunter / Gengar, context.round_eval): a random other joker (not one being destroyed) turns
+ * Negative. The engine has no joker round_eval context; calc_dollar_bonus runs at the same point (the cash-out).
+ */
+function lick_other(card, seed, ok) {
+  const eligible_jokers = G.jokers.cards.filter((c) => c.ability.set === 'Joker' && ok(c) && !c.getting_sliced && !c.gone);
+  if (eligible_jokers.length === 0) return undefined;
+  const selected_card = pseudorandom_element(eligible_jokers, pseudoseed(seed))[0];
+  G.E_MANAGER.add_event(() => selected_card.set_edition({ negative: true }, true));
+  card_eval_status_text(selected_card, 'extra', null, null, null, { message: localize('poke_lick_ex'), colour: 'PURPLE' });
+  return selected_card;
+}
+/** Gastly / Haunter: on the odds, lick another joker and self-destruct (3.9.1: nothing without another joker). */
+function lick(self, card, seed) {
+  if (!pseudorandom_probability(card, seed, card.ability.extra.num, card.ability.extra.dem, seed)) return;
+  const eligible = G.jokers.cards.filter((c) => c.ability.set === 'Joker' && c !== card && !c.getting_sliced && !c.gone);
+  if (eligible.length === 0) return;
   remove(self, card, {});
-  card_eval_status_text(eligible_card, 'extra', null, null, null, { message: localize('poke_lick_ex'), colour: 'PURPLE' });
+  lick_other(card, seed, (c) => c !== card);
 }
 /** Gengar's "picks a new number" roll. */
 function gengar_roll(card) {
@@ -74,9 +75,9 @@ function face_chips(card, context) {
   }
   return undefined;
 }
-/** Voltorb / Electrode: Explosion — the volatile joker faints for the round. */
-function explode(card, context) {
-  if (!context.blueprint) {
+/** Voltorb / Electrode / Koffing / Weezing: Explosion — the volatile joker faints for the round. */
+function explode(card, context, guard_blueprint = true) {
+  if (!guard_blueprint || !context.blueprint) {
     G.E_MANAGER.add_event(() => {
       card.ability.fainted = G.GAME.round;
       card.set_debuff();
@@ -92,10 +93,13 @@ function stone_bonus(card, context) {
   }
   return undefined;
 }
-/** Koffing / Weezing: halve the Boss Blind's requirement when sold. */
-function halve_boss() {
-  G.GAME.blind.chips = BN.div(G.GAME.blind.chips, 2);
-  G.GAME.blind.chip_text = number_format(G.GAME.blind.chips);
+/** Koffing / Weezing (3.9.1): Volatile Left — +Mult, then faint (no Blueprint guard upstream). */
+function volatile_mult(self, card, context) {
+  if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && volatile_active(self, card, card.ability.extra.volatile)) {
+    explode(card, context, false);
+    return { message: localize('poke_explosion_ex'), colour: 'MULT', mult_mod: card.ability.extra.mult };
+  }
+  return undefined;
 }
 /** Goldeen / Seaking: retrigger Gold cards held in hand. */
 function gold_retrigger(card, context) {
@@ -107,7 +111,7 @@ function gold_retrigger(card, context) {
   return undefined;
 }
 /** Thick Club count (Cubone / Marowak): held consumables + Thick Clubs (count double). */
-const club_count = () => ((G.consumeables && G.consumeables.cards.length) || 0) + find_joker('thickclub').length;
+const club_count = () => ((G.consumeables && G.consumeables.cards.filter((c) => c.ability.consumeable).length) || 0) + find_joker('thickclub').length;
 
 defineJokers({
   // Cloyster 091
@@ -115,7 +119,7 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const [num, dem] = get_probability_vars(center, center.ability.extra.num, center.ability.extra.dem, 'cloyster');
-      return { vars: [num, dem] };
+      return { vars: [num, dem, center.ability.extra.retriggers] };
     },
     calculate(self, card, context) {
       if (context.repetition && context.cardarea === G.play && context.scoring_hand.length === 5) {
@@ -136,14 +140,8 @@ defineJokers({
       const [num, dem] = get_probability_vars(center, center.ability.extra.num, center.ability.extra.dem, 'gastly');
       return { vars: [num, dem, center.ability.extra.rounds] };
     },
-    calculate(self, card, context) {
-      if (!card.gone) return level_evo(self, card, context, 'j_poke_haunter');
-      return undefined;
-    },
-    calc_dollar_bonus(self, card) {
-      if (pseudorandom_probability(card, 'gastly', card.ability.extra.num, card.ability.extra.dem, 'gastly')) lick(self, card, 'gastly', 'gastly');
-      return undefined;
-    },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_haunter'); },
+    calc_dollar_bonus(self, card) { lick(self, card, 'gastly'); return undefined; },
   },
   // Haunter 093
   haunter: {
@@ -154,16 +152,9 @@ defineJokers({
       const [num, dem] = get_probability_vars(center, center.ability.extra.num, center.ability.extra.dem, 'haunter');
       return { vars: [num, dem] };
     },
-    calculate(self, card, context) {
-      if (!card.gone) return item_evo(self, card, context, 'j_poke_gengar');
-      return undefined;
-    },
-    calc_dollar_bonus(self, card) {
-      if (pseudorandom_probability(card, 'haunter', card.ability.extra.num, card.ability.extra.dem, 'haunter') && !card.ability.extra.evolve) {
-        lick(self, card, 'haunter', 'gastly');
-      }
-      return undefined;
-    },
+    calculate(self, card, context) { return item_evo(self, card, context, 'j_poke_gengar'); },
+    // (3.9.1: no "unless evolving" check any more — the evolution has already happened at end of round)
+    calc_dollar_bonus(self, card) { lick(self, card, 'haunter'); return undefined; },
   },
   // Gengar 094
   gengar: {
@@ -174,15 +165,11 @@ defineJokers({
       return { vars: [center.ability.extra.gengar_rounds] };
     },
     calculate(self, card, context) {
-      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
+      if (context.end_of_round && context.game_over === false && context.main_eval && !context.blueprint) {
         card.ability.extra.gengar_rounds = card.ability.extra.gengar_rounds - 1;
-        if (card.ability.extra.gengar_rounds !== 0) {
-          card_eval_status_text(card, 'extra', null, null, null, { message: localize('poke_nasty_plot_ex'), colour: 'PURPLE' });
-        }
-        if (card.ability.extra.gengar_rounds === 0) {
-          card.ability.extra.trigger = true;
-          gengar_roll(card);
-        }
+        if (card.ability.extra.gengar_rounds > 0) return { message: localize('poke_nasty_plot_ex'), colour: 'PURPLE' };
+        card.ability.extra.trigger = true;
+        gengar_roll(card);
       }
       return undefined;
     },
@@ -192,15 +179,7 @@ defineJokers({
     calc_dollar_bonus(self, card) {
       if (card.ability.extra.trigger) {
         card.ability.extra.trigger = false;
-        if (G.jokers.cards.length > 0) {
-          const eligible_jokers = [];
-          for (const v of G.jokers.cards) if (v.ability.set === 'Joker' && v.ability.name !== 'gengar' && !v.gone) eligible_jokers.push(v);
-          if (eligible_jokers.length > 0) {
-            const eligible_card = pseudorandom_element(eligible_jokers, pseudoseed('gengar'))[0];
-            eligible_card.set_edition({ negative: true }, true);
-            card_eval_status_text(eligible_card, 'extra', null, null, null, { message: localize('poke_lick_ex'), colour: 'PURPLE' });
-          }
-        }
+        if (lick_other(card, 'gengar', (c) => c.ability.name !== 'gengar')) G.E_MANAGER.add_event(() => card.juice_up());
       }
       return undefined;
     },
@@ -230,15 +209,15 @@ defineJokers({
       if (detailed()) info_queue.push(P_CENTERS.m_stone);
       return undefined;
     },
+    // 3.9.1 (3.8.0 Onix line): each destroyed non-Stone playing card adds a Stone card to the deck.
     calculate(self, card, context) {
-      if (context.first_hand_drawn && !context.blueprint) {
-        juice_card_until(card, () => G.GAME.current_round.hands_played === 0, true);
-      }
-      if (context.before && context.cardarea === G.jokers && !context.blueprint) {
-        if (G.GAME.current_round.hands_played === 0) {
-          const target = context.scoring_hand[0];
-          target.set_ability(P_CENTERS.m_stone, null, true);
-          G.E_MANAGER.add_event(() => target.juice_up());
+      if (context.remove_playing_cards) {
+        for (const removed_card of context.removed) {
+          if (!has_enhancement(removed_card, 'm_stone')) {
+            const stone_card = add_card({ set: 'Base', enhancement: 'm_stone', area: G.deck });
+            playing_card_joker_effects([stone_card]);
+            card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_plus_stone'), colour: 'Enhanced' });
+          }
         }
       }
       return type_evo(self, card, context, 'j_poke_steelix', 'metal');
@@ -273,14 +252,7 @@ defineJokers({
     },
     calculate(self, card, context) { return planets_xmult(card, context); },
     update: planets_update,
-    add_to_deck(self, card, from_debuff) {
-      if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit && !from_debuff) {
-        const _card = create_card('Spectral', G.consumeables, null, null, null, null, 'c_trance');
-        _card.add_to_deck();
-        G.consumeables.emplace(_card);
-        card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
-      }
-    },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) create_consumeable('c_trance'); },
   },
   // Krabby 098
   krabby: {
@@ -395,18 +367,11 @@ defineJokers({
       const consumables_left = Math.max(0, self.config.evo_rqmt - card.ability.extra.consumables_used);
       return { vars: [card.ability.extra.mult, card.ability.extra.mult * club_count(), consumables_left] };
     },
-    add_to_deck(self, card, from_debuff) {
-      if (!from_debuff && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-        const _card = create_card('Item', G.consumeables, null, null, null, null, 'c_poke_thickclub');
-        _card.add_to_deck();
-        G.consumeables.emplace(_card);
-        card_eval_status_text(_card, 'extra', null, null, null, { message: localize('poke_plus_pokeitem'), colour: 'FILTER' });
-      }
-    },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) create_consumeable('c_poke_thickclub'); },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand) {
         if (context.joker_main) {
-          const count = G.consumeables.cards.length + find_joker('thickclub').length;
+          const count = club_count();
           if (count > 0) {
             return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.extra.mult * count] }), colour: 'MULT', mult_mod: card.ability.extra.mult * count };
           }
@@ -427,7 +392,7 @@ defineJokers({
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand) {
         if (context.joker_main) {
-          const count = G.consumeables.cards.length + find_joker('thickclub').length;
+          const count = club_count();
           if (count > 0) {
             const x = 1 + (card.ability.extra.Xmult_mod * count);
             return { message: localize({ type: 'variable', key: 'a_xmult', vars: [x] }), colour: 'XMULT', Xmult_mod: x };
@@ -437,10 +402,12 @@ defineJokers({
       return undefined;
     },
     add_to_deck(self, card) {
-      G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit + card.ability.extra.card_limit; });
+      const limit = card.ability.extra.card_limit;
+      G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit + limit; });
     },
     remove_from_deck(self, card) {
-      G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit - card.ability.extra.card_limit; });
+      const limit = card.ability.extra.card_limit;
+      G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit - limit; });
     },
   },
   // Hitmonlee 106
@@ -495,23 +462,27 @@ defineJokers({
       return scaling_evo(self, card, context, 'j_poke_lickilicky', card.ability.extra.jacks_played, self.config.evo_rqmt);
     },
   },
-  // Koffing 109
+  // Koffing 109 (3.9.1: Volatile Left +Mult; evolves after 2 rounds not debuffed)
   koffing: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.rounds] }; },
-    calculate(self, card, context) {
-      if (context.selling_self && !context.blueprint) {
-        if (G.GAME.blind && G.GAME.blind.get_type() === 'Boss') halve_boss();
-      }
-      return level_evo(self, card, context, 'j_poke_weezing');
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      volatile_tip(info_queue, center);
+      return { vars: [center.ability.extra.mult, center.ability.extra.rounds] };
     },
+    calculate(self, card, context) { return volatile_mult(self, card, context) || level_evo(self, card, context, 'j_poke_weezing'); },
   },
-  // Weezing 110
+  // Weezing 110 (3.9.1: Volatile Left +Mult; selling it disables the Boss Blind — no more halving)
   weezing: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return undefined; },
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      volatile_tip(info_queue, center);
+      return { vars: [center.ability.extra.mult] };
+    },
     calculate(self, card, context) {
+      const r = volatile_mult(self, card, context);
+      if (r) return r;
       if (context.selling_self && !context.blueprint) {
         if (G.GAME.blind && G.GAME.blind.get_type() === 'Boss') {
-          halve_boss();
           card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('ph_boss_disabled') });
           G.GAME.blind.disable();
         }
@@ -558,7 +529,7 @@ defineJokers({
       let deck_data = '';
       if (G.playing_cards) {
         let enhance_count = 0;
-        for (const v of G.playing_cards) if (has_enhancement(v, 'm_lucky')) enhance_count = enhance_count + 1;
+        for (const v of G.playing_cards) if (v.config.center.key === 'm_lucky') enhance_count = enhance_count + 1;
         deck_data = '[' + enhance_count + '/' + Math.ceil(G.playing_cards.length / 4) + '] ';
       }
       return { vars: [center.ability.extra.limit, center.ability.extra.triggers, deck_data] };
@@ -618,20 +589,19 @@ defineJokers({
   },
   // Kangaskhan 115
   kangaskhan: {
+    // (3.9.1: the interest-cap drawback is gone)
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       mega_tip(info_queue);
-      return { vars: [center.ability.extra.card_limit, center.ability.extra.interest_cap / 5] };
+      return { vars: [center.ability.extra.card_limit] };
     },
     add_to_deck(self, card) {
       const add = card.ability.extra.card_limit;
       G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit + add; });
-      G.GAME.interest_cap = G.GAME.interest_cap - card.ability.extra.interest_cap;
     },
     remove_from_deck(self, card) {
       const rem = card.ability.extra.card_limit;
       G.E_MANAGER.add_event(() => { G.consumeables.config.card_limit = G.consumeables.config.card_limit - rem; });
-      G.GAME.interest_cap = G.GAME.interest_cap + card.ability.extra.interest_cap;
     },
   },
   // Mega Kangaskhan 115-1
@@ -641,7 +611,8 @@ defineJokers({
       if (context.repetition && !context.end_of_round && context.cardarea === G.play) {
         return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
       }
-      if (context.using_consumeable) {
+      // (3.9.1: Blueprint copies it, so its own count is guarded)
+      if (context.using_consumeable && !context.blueprint) {
         card.ability.extra.consumeables_used = card.ability.extra.consumeables_used + 1;
         if (card.ability.extra.consumeables_used >= 2) {
           juice_card_until(card, (c) => (c.ability.extra.consumeables_used !== undefined && c.ability.extra.consumeables_used >= 2), true);
@@ -732,6 +703,8 @@ defineJokers({
       if (context.individual && context.cardarea === G.play && context.other_card.is_suit(card.ability.extra.suit)) {
         if (!context.end_of_round && !context.before && !context.after && !context.other_card.debuff) {
           // (Lua seeds the money roll with "starmie" here too.)
+          G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + card.ability.extra.money_mod;
+          G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
           const earned = ease_poke_dollars(card, 'starmie', card.ability.extra.money_mod, true);
           return { mult: card.ability.extra.mult, dollars: earned, card };
         }

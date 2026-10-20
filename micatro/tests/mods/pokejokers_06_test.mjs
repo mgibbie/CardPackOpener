@@ -1,5 +1,5 @@
 // Pokermon pokejokers_06 (Mew -> Flaaffy): every one of the 30 jokers fired through real plays
-// (act), plus each line's evolution.
+// (act), plus each line's evolution. On the Pokermon 3.9.1 behaviour (batch 6).
 //   node micatro/tests/mods/pokejokers_06_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { STATUS } from '../../mods/pokermon/index.js';
@@ -149,6 +149,8 @@ function localizeReset() { return 'Reset'; }
   ok(r.total.mult === 1 + 16, 'furret: same hand type does not reset', [r.total, j.ability.extra]);
   r = play(hand(['S_A', 'H_A']));
   ok(j.ability.extra.mult === 17 && r.total.mult === 2 + 17, 'furret: +1 on a new hand type', r.total);
+  G.GAME.last_hand_played = 'Flush';
+  ok(j.config.center.loc_vars(j.config.center, [], j).vars[2] === 'Pair', 'furret: the text shows its own last hand, not the run\'s (Pokermon 3.9.1)', j.config.center.loc_vars(j.config.center, [], j).vars);
 }
 
 // ---------------------------------------------------------------- Hoothoot / Noctowl
@@ -213,16 +215,22 @@ function localizeReset() { return 'Reset'; }
 {
   start('CROBAT');
   const j = add('j_poke_crobat');
-  G.GAME.probabilities.normal = 1e-9; // no Glass shatters / Lucky procs from the re-rolled enhancements
-  play(hand(['S_A'], { center: 'm_mult' }));
-  play(hand(['S_A'], { center: 'm_bonus' }));
-  play(hand(['S_A'], { center: 'm_glass' }));
-  play(hand(['S_A'], { center: 'm_gold' }));
+  G.GAME.probabilities.normal = 1e-9; // no Lucky procs
+  const leeched = [];
+  let lr;
+  for (const center of ['m_mult', 'm_bonus', 'm_glass', 'm_gold']) { const c = hand(['S_A'], { center }); leeched.push(c[0]); lr = play(c); }
   const ex = j.ability.extra;
   ok(ex.mult === 2 && ex.chips === 15 && near(ex.Xmult, 1.1) && ex.money === 1, 'crobat: gains per enhancement scored', ex);
-  const played = hand(['D_K'], { center: 'm_steel' });
-  play(played);
-  ok(played[0].config.center.key !== 'c_base', 'crobat: scored enhanced cards are re-enhanced', key(played[0]));
+  ok(leeched.every((c) => key(c) === 'c_base'), 'crobat: leeches the Enhancement (the card becomes a base card) (Pokermon 3.9.1)', leeched.map(key));
+  ok(statusMsgs(lr.events).some((m) => /leech/i.test(m)), 'crobat: "Leech!" (Pokermon 3.9.1)', statusMsgs(lr.events));
+  const four = hand(['S_K', 'H_K', 'D_K', 'C_K']);
+  four[0].set_ability(P_CENTERS.m_lucky); four[1].set_ability(P_CENTERS.m_wild); four[2].set_ability(P_CENTERS.m_steel); four[3].set_ability(P_CENTERS.m_stone);
+  play(four);
+  ok(ex.mult === 2 + 2 * 2 && near(ex.Xmult, 1.2) && ex.chips === 30 && ex.money === 1, 'crobat: Lucky / Wild -> Mult, Steel -> XMult, Stone -> Chips (Pokermon 3.9.1)', ex);
+  const before = { ...ex };
+  play(hand(['S_Q']));
+  ok(ex.mult === before.mult && ex.chips === before.chips, 'crobat: base cards give nothing (Pokermon 3.9.1)', ex);
+  ex.mult = 2; ex.chips = 15; ex.Xmult = 1.1; ex.money = 1;
   const r = play(hand(['S_K']));
   ok(r.total.chips === 15 + 15 && near(r.total.mult, (1 + 2) * j.ability.extra.Xmult), 'crobat: +Chips +Mult XMult on every hand', [r.total, j.ability.extra]);
   ok(statusMsgs(r.events).some((m) => /Skree/i.test(m)), 'crobat: "Skree!" (poke_screech_ex)', statusMsgs(r.events));
@@ -335,13 +343,17 @@ function localizeReset() { return 'Reset'; }
   const merc = add('c_mercury');
   const l0 = G.GAME.hands.Pair.level;
   ok(act({ type: 'use', id: merc.sort_id }).ok, 'mercury used');
-  ok(G.GAME.hands.Pair.level === l0 + 2, 'natu: a Planet gives an extra level', G.GAME.hands.Pair.level);
+  ok(G.GAME.hands.Pair.level === l0 + 2, 'natu: a Planet levels its hand an extra time (Pokermon 3.9.1 poker_hand_changed)', G.GAME.hands.Pair.level);
   const hc = G.GAME.hands['High Card'].level;
   play(hand(['S_A']));
   ok(G.GAME.hands['High Card'].level === hc, 'natu: no level outside Planets', G.GAME.hands['High Card'].level);
   const merc2 = add('c_mercury');
   act({ type: 'use', id: merc2.sort_id });
-  ok(G.GAME.hands.Pair.level === l0 + 4 && G.GAME.hands['High Card'].level === hc, 'natu: the snapshot only re-levels the planet hand', [G.GAME.hands.Pair.level, G.GAME.hands['High Card'].level]);
+  ok(G.GAME.hands.Pair.level === l0 + 4 && G.GAME.hands['High Card'].level === hc, 'natu: only the planet\'s hand (Pokermon 3.9.1)', [G.GAME.hands.Pair.level, G.GAME.hands['High Card'].level]);
+  const bh = add('c_black_hole');
+  const pl = G.GAME.hands.Pair.level;
+  act({ type: 'use', id: bh.sort_id });
+  ok(G.GAME.hands.Pair.level === pl + 1, 'natu: a Spectral (Black Hole) gets no extra level (Pokermon 3.9.1)', G.GAME.hands.Pair.level);
   j.ability.extra.rounds = 1;
   winRound();
   ok(key(j) === 'j_poke_xatu', 'natu -> xatu', key(j));
@@ -349,7 +361,22 @@ function localizeReset() { return 'Reset'; }
   const venus = add('c_venus');
   const t0 = G.GAME.hands['Three of a Kind'].level;
   act({ type: 'use', id: venus.sort_id });
-  ok(G.GAME.hands['Three of a Kind'].level === t0 + 2, 'xatu: a Planet gives an extra level', G.GAME.hands['Three of a Kind'].level);
+  ok(G.GAME.hands['Three of a Kind'].level === t0 + 2, 'xatu: a Planet levels its hand an extra time (Pokermon 3.9.1)', G.GAME.hands['Three of a Kind'].level);
+}
+{
+  start('XATU');
+  const j = add('j_poke_xatu');
+  winRound(); act({ type: 'cash_out' });
+  G.GAME.last_hand_played = 'Pair';
+  ok(j.config.center.loc_vars(j.config.center, [], j).vars[0] === 'Pair', 'xatu: the text shows the last played hand (Pokermon 3.9.1)', j.config.center.loc_vars(j.config.center, [], j).vars);
+  const n0 = G.consumeables.cards.length;
+  const pack = G.shop_booster.cards[0];
+  pack.set_ability(P_CENTERS.p_celestial_normal_1);
+  G.GAME.dollars = 100;
+  act({ type: 'buy', id: pack.sort_id });
+  G.E_MANAGER.flush();
+  const made = G.consumeables.cards.slice(n0).map(key);
+  ok(made.length === 1 && made[0] === 'c_mercury', 'xatu: opening a Celestial Pack creates the last hand\'s Planet (Pokermon 3.9.1)', made);
 }
 
 // ---------------------------------------------------------------- Mareep / Flaaffy

@@ -32,7 +32,7 @@ import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js'
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
-import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults } from './smods.js';
+import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate } from './smods.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -1333,6 +1333,8 @@ function evaluate_play() {
       if (t > 1) { effects = eval_card(j, { ...actx, retrigger_joker: true }); if (!effects.jokers) break; } // (Steamodded joker retriggers)
     }
   }
+  // Steamodded: the mod-level calculate gets `after` too (opted-in mods whose hook reads it — Pokermon 3.9.1's Poli suit).
+  if (ACTIVE_MODS.length) mod_calculate({ cardarea: G.jokers, ...base_ctx(), after: true }, 'after');
   G.E_MANAGER.add_event(() => {
     if (G.GAME.modifiers.debuff_played_cards) for (const v of scoring_hand) v.ability.perma_debuff = true;
   });

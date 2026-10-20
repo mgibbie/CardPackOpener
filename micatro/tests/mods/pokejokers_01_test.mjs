@@ -62,6 +62,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 36, 'defs: 36 fro
   const before = G.hand.config.card_limit;
   add('j_poke_mega_venusaur');
   ok(G.hand.config.card_limit === before + 4, 'mega venusaur +4 hand size', G.hand.config.card_limit);
+  ok(G.hand.cards.length === 2 + 4, 'mega venusaur: the hand fills to the new size once (no extra draw of its own) (Pokermon 3.9.1)', G.hand.cards.length);
 }
 
 // ---------------------------------------------------------------- Charmander line
@@ -133,6 +134,8 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 36, 'defs: 36 fro
   const r2 = play(hand(['S_A']));
   // chips + 25 * 4 hands left (+16 base)
   ok(r2.total.chips === 16 + j.ability.extra.chips + 25 * 4, 'blastoise: chips + 25 per hand left', r2.total);
+  const bv = P_CENTERS.j_poke_blastoise.loc_vars(P_CENTERS.j_poke_blastoise, [], j).vars;
+  ok(bv[3] === j.ability.extra.chips + 25 * G.GAME.current_round.hands_left, 'blastoise tooltip shows the current total (Pokermon 3.9.1)', bv);
   const h = G.GAME.round_resets.hands;
   add('j_poke_mega_blastoise');
   ok(G.GAME.round_resets.hands === h + 3, 'mega blastoise +3 hands', G.GAME.round_resets.hands);
@@ -219,25 +222,34 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 36, 'defs: 36 fro
 {
   start('SPEAR');
   const j = add('j_poke_spearow');
-  j.ability.extra.cards_scored = 19;
-  play(hand(['S_A']));
-  ok(j.ability.extra.upgrade === true && j.ability.extra.cards_scored === 20, 'spearow: armed after 20 scored cards', j.ability.extra);
+  j.ability.extra.cards_drawn = 25;
+  play(hand(['S_A'])); // the hand refills: 8 cards drawn during the Blind
+  ok(j.ability.extra.upgrade === true && j.ability.extra.cards_drawn === 3, 'spearow: armed after drawing 30 cards, the rest carries (Pokermon 3.9.1)', j.ability.extra);
   const lvl = G.GAME.hands['High Card'].level;
+  clearHand();
   play(hand(['S_K']));
-  ok(G.GAME.hands['High Card'].level === lvl + 1 && j.ability.extra.upgrade === false && j.ability.extra.cards_scored === 1, 'spearow: next hand levels up', { lvl: G.GAME.hands['High Card'].level, ex: j.ability.extra });
-  j.ability.extra.rounds = 1;
-  j.ability.extra.cards_scored = 16;
+  ok(G.GAME.hands['High Card'].level === lvl + 1 && j.ability.extra.upgrade === false && j.ability.extra.triggers === 1, 'spearow: next hand levels up, counts a trigger (Pokermon 3.9.1)', { lvl: G.GAME.hands['High Card'].level, ex: j.ability.extra });
+  // Blueprint copies the level up now (blueprint_compat true).
+  const bp = add('j_blueprint');
+  G.jokers.cards.splice(G.jokers.cards.indexOf(bp), 1); G.jokers.cards.unshift(bp);
+  j.ability.extra.upgrade = true;
+  clearHand();
+  play(hand(['S_Q']));
+  ok(G.GAME.hands['High Card'].level === lvl + 3 && j.ability.extra.triggers === 2, 'spearow: Blueprint copies the level up (Pokermon 3.9.1)', [G.GAME.hands['High Card'].level, j.ability.extra]);
+  G.jokers.cards.splice(G.jokers.cards.indexOf(bp), 1); bp.remove();
+  j.ability.extra.upgrade = true; // the winning hand is the 3rd trigger
+  const d0 = G.GAME.round_resets.discards;
   winRound();
-  // Lua quirk kept: the 15+ carry sets upgrade=true, but Fearow's own upgrade=false is falsy so
-  // only the leftover count (17 - 15 = 2) carries over.
-  ok(key(j) === 'j_poke_fearow' && j.ability.extra.upgrade === false && j.ability.extra.cards_scored === 2, 'spearow -> fearow carries the leftover count', j.ability.extra);
+  ok(key(j) === 'j_poke_fearow', 'spearow -> fearow after 3 triggers (Pokermon 3.9.1)', [key(j), j.ability.extra]);
+  ok(G.GAME.round_resets.discards === d0 + 1, 'fearow +1 discard (Pokermon 3.9.1)', G.GAME.round_resets.discards - d0);
   nextRound();
-  j.ability.extra.cards_scored = 14;
-  play(hand(['S_A', 'H_A']));
-  ok(j.ability.extra.upgrade === true, 'fearow: armed at 15 scored', j.ability.extra);
+  j.ability.extra.cards_drawn = 29;
+  play(hand(['S_A']));
+  ok(j.ability.extra.upgrade === true, 'fearow: armed after drawing 30 cards (Pokermon 3.9.1)', j.ability.extra);
   const lp = G.GAME.hands['High Card'].level;
+  clearHand();
   play(hand(['S_K']));
-  ok(G.GAME.hands['High Card'].level === lp + 1 && j.ability.extra.cards_scored === 2, 'fearow: levels up the next hand', [G.GAME.hands['High Card'].level, j.ability.extra]);
+  ok(G.GAME.hands['High Card'].level === lp + 1 && j.ability.extra.upgrade === false, 'fearow: levels up the next hand (Pokermon 3.9.1)', [G.GAME.hands['High Card'].level, j.ability.extra]);
 }
 
 // ---------------------------------------------------------------- Ekans / Arbok
@@ -262,26 +274,36 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 36, 'defs: 36 fro
 
 // ---------------------------------------------------------------- Pikachu / Raichu
 {
-  start('PIKA');
+  start('PIKA', {}, { noBlind: true });
   const p = add('j_poke_pikachu');
-  add('j_poke_caterpie');
+  G.GAME.dollars = 10;
+  act({ type: 'select_blind' }); clearHand();
+  ok(G.GAME.dollars === 12, 'pikachu: $2 when a Blind is selected under $25 (Pokermon 3.9.1)', G.GAME.dollars);
+  let r = play(hand(['S_A']));
+  ok(r.total.mult === 1, 'pikachu: no Mult under $25 (Pokermon 3.9.1)', r.total);
+  G.GAME.dollars = 25;
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 10, 'pikachu: +10 Mult at $25 or more (Pokermon 3.9.1)', r.total);
   winRound();
-  const row = G.GAME.round_eval.rows.find((x) => x.center === 'j_poke_pikachu');
-  ok(row && row.dollars === 2, 'pikachu: $1 per joker at cash-out', row);
+  ok(!G.GAME.round_eval.rows.find((x) => x.center === 'j_poke_pikachu'), 'pikachu: no cash-out money (Pokermon 3.9.1)', G.GAME.round_eval.rows);
   // Thunder Stone on Pikachu (highlighted joker) -> Raichu at the end of the round.
   act({ type: 'cash_out' });
   const ts = add('c_poke_thunderstone');
   ok(act({ type: 'use', id: ts.sort_id, joker_targets: [p.sort_id] }).ok, 'thunder stone usable on Pikachu');
   ok(p.ability.extra.evolve === true, 'thunder stone marks pikachu to evolve');
-  act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
+  act({ type: 'next_round' });
+  G.GAME.dollars = 30; // >= 25: no Pikachu money
+  act({ type: 'select_blind' }); clearHand();
+  ok(G.GAME.dollars === 30, 'pikachu: nothing at $25+', G.GAME.dollars);
   winRound();
   ok(key(p) === 'j_poke_raichu', 'pikachu -> raichu with a Thunder Stone', key(p));
-  const row2 = G.GAME.round_eval.rows.find((x) => x.center === 'j_poke_raichu');
-  ok(row2 && row2.dollars === 4, 'raichu: $2 per joker', row2);
-  act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
-  G.GAME.dollars = 200;
-  winRound();
-  ok(p.edition && p.edition.negative, 'raichu turns Negative at $120+', p.edition);
+  act({ type: 'cash_out' }); act({ type: 'next_round' });
+  G.GAME.dollars = 37;
+  act({ type: 'select_blind' }); clearHand();
+  ok(G.GAME.dollars === 37 + 5, 'raichu: earns interest when a Blind is selected ($37 -> $5, the $25 cap) (Pokermon 3.9.1)', G.GAME.dollars);
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 4 * 4, 'raichu: +4 Mult per $10 ($44 -> +16) (Pokermon 3.9.1)', r.total);
+  ok(!(p.edition && p.edition.negative), 'raichu no longer turns Negative (Pokermon 3.9.1)', p.edition);
 }
 
 // ---------------------------------------------------------------- Sandshrew / Sandslash
@@ -291,21 +313,24 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 36, 'defs: 36 fro
   const glass = hand(['S_A', 'H_A'], { center: 'm_glass' });
   let r = play([glass[0]]);
   ok(r.total.chips === 5 + 11 + 25 * 2, 'sandshrew: +25 chips per Glass card in deck', r.total);
-  // Shatter a glass card: guaranteed by odds.
-  G.GAME.probabilities.normal = 1000;
-  const before = G.playing_cards.length;
-  clearHand();
-  const g2 = hand(['D_A'], { center: 'm_glass' });
-  r = play(g2);
-  ok(j.ability.extra.glass_restored === 1 && G.playing_cards.length === before + 1 && G.hand.cards.some((c) => c.config.center.key === 'm_glass' && c.base.suit === 'Diamonds'),
-    'sandshrew: copies the first shattered Glass card into hand', { gr: j.ability.extra.glass_restored, n: G.playing_cards.length - before });
-  G.GAME.probabilities.normal = 1;
-  for (let i = 0; i < 5; i++) { winRound(); if (i < 4) nextRound(); }
-  ok(key(j) === 'j_poke_sandslash' && j.ability.extra.glass_restored === 0, 'sandshrew -> sandslash after 5 rounds (restores reset)', [key(j), j.ability.extra]);
+  for (let i = 0; i < 4; i++) { winRound(); if (i < 3) nextRound(); }
+  ok(key(j) === 'j_poke_sandslash', 'sandshrew -> sandslash after 4 rounds (Pokermon 3.9.1)', [key(j), j.ability.extra]);
   nextRound();
   const ng = G.playing_cards.filter((c) => c.config.center.key === 'm_glass').length;
   r = play(hand(['S_K']));
   ok(r.total.chips === 15 + 40 * ng, 'sandslash: +40 per Glass card', { r: r.total, ng });
+  // Discarded Enhanced cards may become Glass (1 in 3; odds forced); unenhanced ones never.
+  G.GAME.probabilities.normal = 1000;
+  clearHand();
+  const bonus = hand(['D_5'], { center: 'm_bonus' })[0];
+  const plain = hand(['C_5'])[0];
+  act({ type: 'highlight', ids: [bonus.sort_id, plain.sort_id] });
+  act({ type: 'discard' });
+  G.E_MANAGER.flush();
+  ok(bonus.config.center.key === 'm_glass' && plain.config.center.key === 'c_base', 'sandslash: a discarded Enhanced card becomes Glass (Pokermon 3.9.1)', [bonus.config.center.key, plain.config.center.key]);
+  G.GAME.probabilities.normal = 1;
+  const v = P_CENTERS.j_poke_sandslash.loc_vars(P_CENTERS.j_poke_sandslash, [], j).vars;
+  ok(v[2] === 1 && v[3] === 3, 'sandslash tooltip: 1 in 3 (Pokermon 3.9.1)', v);
 }
 
 // ---------------------------------------------------------------- Nidoran F / Nidorina
