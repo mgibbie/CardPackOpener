@@ -7,7 +7,7 @@ import { drawCell, centerAtlas, CENTERS, CARDS, TAGS, SEAL_POS, STICKER_POS, SOU
 import { CardFX } from './gl.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { drawSkinFront, skinVer } from './skins.js';
-import { winStickerInfo, drawSpecialSticker, STICKER_POS as WIN_POS, stickerVer } from './stickers.js';
+import { winStickerInfo, drawSpecialSticker, drawOwnSticker, STICKER_POS as WIN_POS, stickerVer } from './stickers.js';
 
 export const FACE_W = 142, FACE_H = 190;
 let FX = null;
@@ -98,7 +98,7 @@ function composeOverlays(ctx, d, center, modCard, opts) {
       // (its own save/restore is skipped when its sprite throws: the context's state is put back here)
       ctx.save();
       try { drawSpecialSticker(ctx, st); } finally { ctx.restore(); }
-    } else if (st && WIN_POS[st.stake]) drawCell(ctx, 'stickers', WIN_POS[st.stake], 0, 0, FACE_W, FACE_H);
+    } else if (st && !drawOwnSticker(ctx, st, FACE_W, FACE_H) && WIN_POS[st.stake]) drawCell(ctx, 'stickers', WIN_POS[st.stake], 0, 0, FACE_W, FACE_H);   // (Elite: its own art)
   });
   if (d.debuff && noGL()) layer('debuff', () => {
     ctx.fillStyle = 'rgba(200,40,40,.35)'; ctx.fillRect(0, 0, FACE_W, FACE_H);

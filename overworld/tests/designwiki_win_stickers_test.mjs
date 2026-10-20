@@ -5,7 +5,9 @@
 // the stake level, the old flat record format, revocations (with the re-earn rule), base jokers and decks and a mod's
 // jokers and decks. A mock /api/mp serves the `micatro-stickers-get` row (the revoked keys deliberately NOT stripped,
 // so the client's own handling is what's tested) and records every call: the wiki only ever reads.
-// Signed out: nothing is fetched or drawn, and no console errors.
+// Signed out: nothing is fetched or drawn, and no console errors. ELITE (level 9): a plain level-9 record draws Pokermon
+// 3.9.1's Elite sticker art (winstickers/elite.png, pixel for pixel), a special one the Elite (#ba8514) ring; the wiki asks
+// the server for level 9 (`maxLevel: 9`; else an old client's answer shows 9 as Gold).
 //   node overworld/tests/designwiki_win_stickers_test.mjs
 //   (WSTK_SHOTS=<dir>: also saves desktop + phone screenshots of the jokers page with stickers)
 import http from 'http';
@@ -45,12 +47,16 @@ const WINS = {
 	b_blue: { nuz: 7 },                           // a deck, special: Aipom, Orange
 	j_poke_bulbasaur: { mono: 5 },                // a mod joker: Ambipom, Blue
 	b_poke_pokemondeck: { win: 8 },               // a mod deck: Gold
+	j_crazy: { win: 9 },                          // ELITE (level 9): the plain Elite sticker (its own art)
+	j_crafty: { win: 9, poke: 9 },                // ELITE Pikachu: the Elite ring
+	b_green: { win: 9 },                          // an Elite deck
 };
 const REVOKED = { j_jolly: true, j_zany: ['nuz'], j_mad: { cats: true, at: 1000 } };
 const EARNED = { j_mad: { win: 2000 } };
 const WANT = {
 	j_joker: 'win:Green', j_droll: 'win:Purple', j_greedy_joker: 'poke:White', j_lusty_joker: 'nuz:Red',
 	j_wrathful_joker: 'mono:Black', j_gluttenous_joker: 'both:Purple', j_zany: 'win:Blue', j_mad: 'win:Black',
+	j_crazy: 'win:Elite', j_crafty: 'poke:Elite',
 };
 const calls = [];
 
@@ -59,7 +65,7 @@ const server = http.createServer(async (req, res) => {
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
 		let b = {}; try { b = JSON.parse(raw); } catch { }
-		calls.push({ action: b.action, auth: req.headers.authorization || '' });
+		calls.push({ action: b.action, auth: req.headers.authorization || '', maxLevel: b.maxLevel });
 		res.writeHead(200, { 'content-type': 'application/json' });
 		if (b.action === 'micatro-stickers-get') res.end(JSON.stringify({ v: 2, wins: WINS, rev: 3, revoked: REVOKED, earned: EARNED }));
 		else res.end(JSON.stringify({ ok: true }));
@@ -126,11 +132,13 @@ try {
 		const out = { w: cv.width, h: cv.height, sameBox: Math.abs(a.left - b.left) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5, label: cv.title, opaque: 0 };
 		for (let i = 3; i < px.length; i += 4) if (px[i]) out.opaque++;
 		if (cat === 'win') {
-			// the plain sticker = the game's stickers.png cell, pixel for pixel
-			const im = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = '/micatro/assets/textures/stickers.png'; });
+			// the plain sticker = the game's stickers.png cell, pixel for pixel (Elite: its own art, winstickers/elite.png)
+			const own = S.STICKER_IMG && S.STICKER_IMG[stake];
+			const im = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = own ? '/micatro/assets/textures/winstickers/' + own + '.png' : '/micatro/assets/textures/stickers.png'; });
 			const ref = document.createElement('canvas'); ref.width = 142; ref.height = 190;
-			const p = S.STICKER_POS[stake];
+			const p = own ? { x: 0, y: 0 } : S.STICKER_POS[stake];
 			ref.getContext('2d').drawImage(im, p.x * 142, p.y * 190, 142, 190, 0, 0, 142, 190);
+			out.own = own || null;
 			const rp = ref.getContext('2d').getImageData(0, 0, 142, 190).data;
 			let diff = 0; for (let i = 0; i < rp.length; i++) if (Math.abs(rp[i] - px[i]) > 2) diff++;
 			out.cellDiff = diff;
@@ -166,6 +174,19 @@ try {
 	}
 	const zany = await probe('j_zany');
 	A(zany && zany.cellDiff === 0, 'a revoked category falls back to the next one (zany: its plain Blue)');
+	// ELITE (level 9)
+	const elite = await probe('j_crazy');
+	A(elite && elite.own === 'elite' && elite.cellDiff === 0 && elite.opaque > 200 && elite.sameBox, 'Elite (level 9): Pokermon\'s Elite sticker art (winstickers/elite.png), pixel for pixel', JSON.stringify(elite && { own: elite.own, diff: elite.cellDiff, opaque: elite.opaque }));
+	A(elite && /Elite Stake/.test(elite.label), 'Elite: labelled "Elite Stake"', elite && elite.label);
+	const elitePika = await probe('j_crafty');
+	A(elitePika && elitePika.img === 'pikachu' && elitePika.ringOk && elitePika.sprite > 20, 'an Elite Pikachu: the ring in the Elite colour (#ba8514)', JSON.stringify(elitePika && { ring: elitePika.ring, sprite: elitePika.sprite }));
+	if (SHOTS) {
+		fs.mkdirSync(SHOTS, { recursive: true });
+		for (const k of ['j_crazy', 'j_crafty']) {
+			const t = await page.$(`#content .mc-tile[data-key="${k}"]`);
+			if (t) { await t.scrollIntoView(); await new Promise(r => setTimeout(r, 300)); await t.screenshot({ path: path.join(SHOTS, 'wiki_elite_' + k + '.png') }); }
+		}
+	}
 
 	// the note + toggle
 	const noteTxt = await page.$eval('#content .mc-wstk-note', n => n.textContent).catch(() => '');
@@ -194,7 +215,9 @@ try {
 	await page.goto(`http://localhost:${PORT}/designwiki/index.html#/micatro/decks`, { waitUntil: 'networkidle0' });
 	A(await stickersOn(2), 'decks page: stickers drawn');
 	const decks = await shown();
-	A(decks.b_red === 'win:Red' && decks.b_blue === 'nuz:Orange' && Object.keys(decks).length === 2, 'Red Deck: Red; Blue Deck: an Orange Aipom; no others', JSON.stringify(decks));
+	A(decks.b_red === 'win:Red' && decks.b_blue === 'nuz:Orange' && decks.b_green === 'win:Elite' && Object.keys(decks).length === 3, 'Red Deck: Red; Blue Deck: an Orange Aipom; Green Deck: Elite; no others', JSON.stringify(decks));
+	const green = await probe('b_green');
+	A(green && green.own === 'elite' && green.cellDiff === 0 && green.sameBox, 'Green Deck: the Elite sticker art over the deck sprite', JSON.stringify(green && { own: green.own, diff: green.cellDiff }));
 	const red = await probe('b_red');
 	A(red && red.cellDiff === 0 && red.sameBox, 'Red Deck: the Red stickers.png cell over the deck sprite');
 	await new Promise(r => setTimeout(r, 300));
@@ -215,6 +238,7 @@ try {
 
 	// the wiki only READS the account
 	A(calls.length >= 1 && calls.every(c => c.action === 'micatro-stickers-get' && c.auth === 'Bearer stk-token'), 'signed in: only micatro-stickers-get, with the account token', JSON.stringify(calls.map(c => c.action)));
+	A(calls.every(c => c.maxLevel === 9), 'the wiki asks for level 9 (maxLevel: 9: it draws Elite)', JSON.stringify(calls.map(c => c.maxLevel)));
 	A(errors.length === 0, 'signed in: no console errors', errors.join(' | '));
 	await ctx.close();
 } catch (e) {

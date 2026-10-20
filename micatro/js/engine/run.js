@@ -389,6 +389,18 @@ export function mod_stake_chain(key, depth = 0) {
   return { level, chain };
 }
 
+/**
+ * The win-sticker level this run earns (the 'win' event's `sticker_level`; ui/stickers.js recordWin): the stake level,
+ * raised to the highest `sticker_level` a stake in the run's mod-stake chain declares — Pokermon's / Nacho's Elite
+ * declare 9 (their own Elite sticker), while a mod stake that declares none records the level it plays at (Gold, 8).
+ */
+export function win_sticker_level() {
+  let lv = G.GAME.stake || 1;
+  const ms = G.GAME.stake_key ? mod_stake_chain(G.GAME.stake_key) : null;
+  for (const s of (ms && ms.chain) || []) if (Number.isInteger(s.sticker_level) && s.sticker_level > lv) lv = s.sticker_level;
+  return lv;
+}
+
 // ---------------------------------------------------------- state events
 /** A deck can start a run if it's base content, or its mod is on (and any option it needs, e.g. Pokermon's legacy decks). */
 export function backAvailable(c) {
@@ -527,7 +539,7 @@ function end_round() {
     }
     if (game_won && !G.GAME.win_notified) {
       G.GAME.win_notified = true;
-      G.E_MANAGER.add_event(() => { G.GAME.won = true; emit('win', { ante: G.GAME.round_resets.ante, stake: G.GAME.stake, jokers: joker_win_keys() }); });
+      G.E_MANAGER.add_event(() => { G.GAME.won = true; emit('win', { ante: G.GAME.round_resets.ante, stake: G.GAME.stake, sticker_level: win_sticker_level(), jokers: joker_win_keys() }); });
     }
     for (let i = 0; i < G.hand.cards.length; i++) {
       const hc = G.hand.cards[i];

@@ -4,7 +4,7 @@
 // none), with the same categories and priority: Arceus (Nuzlocke + Monotype) > Ambipom (Monotype) > Aipom
 // (Nuzlocke) > Pikachu (any Pokermon win) > the plain stake sticker, a special one in a ring of its stake's colour.
 // Drawn on the deck back in the New Run deck select, Run Info and the deck pile on the table.
-import { winStickerInfo, drawSpecialSticker, STICKER_POS } from './stickers.js';
+import { winStickerInfo, drawSpecialSticker, drawOwnSticker, STICKER_POS } from './stickers.js';
 import { drawCell } from './assets.js';
 import { FACE_W, FACE_H } from './cardsprite.js';
 
@@ -19,7 +19,7 @@ export function drawDeckSticker(ctx, backKey, x = 0, y = 0, w = FACE_W, h = FACE
   ctx.translate(x, y);
   ctx.scale(w / FACE_W, h / FACE_H);
   if (st.special) drawSpecialSticker(ctx, st);
-  else if (STICKER_POS[st.stake]) drawCell(ctx, 'stickers', STICKER_POS[st.stake], 0, 0, FACE_W, FACE_H);
+  else if (!drawOwnSticker(ctx, st, FACE_W, FACE_H) && STICKER_POS[st.stake]) drawCell(ctx, 'stickers', STICKER_POS[st.stake], 0, 0, FACE_W, FACE_H);
   ctx.restore();
   return st;
 }

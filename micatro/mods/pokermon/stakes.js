@@ -2,8 +2,9 @@
 //   Elite Stake: applies every stake up to Gold (a mod stake above Gold: the engine plays it at Gold's level 8 plus its own
 //   modifiers, js/engine/run.js mod_stake_chain), +2 win ante, and G.GAME.modifiers.poke_elite4: the last 4 antes before the
 //   (raised) win ante draw Showdown Boss Blinds. Art: elite_stake.png (chip) / elite_stake_sticker.png (3.9.1, vendored in batch 5).
-//   Win stickers: like every mod stake (Nacho's Elite, Pokermon+'s Lilac, MoreFluff's), a win on it records the Gold sticker
-//   (js/ui/stickers.js: levels 1..8; PORTING.md "Batch 17" says why there is no 9th level). Nacho's own Elite stake (the same
+//   Win stickers: `sticker_level: 9` — a win on it records the ELITE sticker (level 9; 3.9.1 draws its own Elite sticker, art
+//   elite_stake_sticker.png -> micatro/assets/textures/winstickers/elite.png), not Gold: js/engine/run.js win_sticker_level,
+//   js/ui/stickers.js, server/mp.mjs stickerLevel 1..9 (PORTING.md "Batch 17"). Nacho's own Elite stake (the same
 //   rules, before Nacho 1.7.9 re-keyed it to this one) stays registered for old recipes but leaves the New Run picker while this
 //   one is there (`superseded_by` on Nacho's, js/mods/index.js modStakes: Pokermon precedence).
 import { G } from '../../js/engine/core.js';
@@ -23,6 +24,7 @@ export const ELITE_STAKE = {
   sticker_atlas: 'poke_elite_stake_sticker',
   colour: '#ba8514',
   shiny: true,
+  sticker_level: 9,   // the Elite win sticker (run.js win_sticker_level)
   poke_file: 'stakes/stakes.lua',
 };
 

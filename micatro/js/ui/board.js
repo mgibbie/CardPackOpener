@@ -10,7 +10,7 @@ import { isNumeric, isBig } from '../engine/bignum.js';
 import { sound } from './sound.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { onSkins } from './skins.js';
-import { onWinStickers, winStickerInfo } from './stickers.js';
+import { onWinStickers, winStickerInfo, STICKER_TEXT } from './stickers.js';
 import { stickDeckCanvas } from './decksticker.js';
 
 // 'scry': Pokermon's scry view (view.areas.scry, the next cards to be drawn), shown face up above the deck.
@@ -1200,7 +1200,7 @@ export class Board {
     // its win sticker, explained (Balatro: info_queue <colour>_sticker)
     // (a Pokermon run's special sticker: "Nuzlocke win — Gold Stake")
     const st = d && d.set === 'Joker' && d.facing !== 'back' ? winStickerInfo(d.win_key || d.center) : null;
-    const sd = st && !st.special && LOC.descriptions.Other[st.stake.toLowerCase() + '_sticker'];
+    const sd = st && !st.special && (LOC.descriptions.Other[st.stake.toLowerCase() + '_sticker'] || STICKER_TEXT[st.stake]);   // (Elite: Pokermon's text)
     if (sd) desc = { ...desc, info: [...(desc.info || []), { key: st.stake.toLowerCase() + '_sticker', name: sd.name, lines: sd.text }] };
     else if (st && st.special) desc = { ...desc, info: [...(desc.info || []), { key: 'win_sticker_' + st.category, name: st.label, lines: ['Used this Joker to win a', '{C:attention}' + st.label.replace(/ win — .*/, '') + '{} run on', '{C:attention}' + st.stake + ' Stake{} difficulty', '{C:inactive}(' + st.special.pokemon + ' sticker)'] }] };
     let extra = '';

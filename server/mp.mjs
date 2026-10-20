@@ -79,7 +79,8 @@ const MICATRO_DECK_BYTES = 66_000;      // one serialized deck definition (the c
 const MICATRO_DECKS_BYTES = 400_000;    // the whole row
 // MICATRO per-joker win (stake) stickers (micatro/js/ui/stickers.js): one durable row per player,
 // `micatro_stickers:<user>` = {v:2, wins: {jokerKey: {win, poke, nuz, mono, both}}, rev, updatedAt}, each category the
-// highest stake level 1..8 won at (win = any win; poke = a win with Pokermon on; nuz = Nuzlocke; mono = Monotype; both = the two together).
+// highest stake level 1..9 won at (win = any win; poke = a win with Pokermon on; nuz = Nuzlocke; mono = Monotype; both = the two together;
+// 9 = Elite, Pokermon's / Nacho's Elite stake: stickers.js MAX_LEVEL).
 // The older flat form {jokerKey: level} means {win: level}. A put MERGES (max per key and category), so a stale
 // device can never lower or drop a sticker.
 // REVOKING a sticker granted by mistake (an admin edit of the row in D1; no client action adds one): the row's
@@ -89,6 +90,10 @@ const MICATRO_DECKS_BYTES = 400_000;    // the whole row
 // it back. RE-EARN rule: with `at` (epoch ms), a category the put proves was earned AFTER `at` (its `earned`
 // {key: {cat: ms}} time, which recordWin stamps) is accepted again, and the row's `earned` keeps that time so the
 // revocation never strips it later; without `at`, the key is blocked until the admin removes the revocation.
+// OLD CLIENTS and level 9: a client before the Elite sticker drops a record level it doesn't know (stickers.js levelOf 1..8), so a
+// stored 9 would vanish from its view and its own 8 would look "ahead" of the account forever (a push every 1.5 s until the rate
+// limit). A current client sends `maxLevel: 9`; to any other, get / put ANSWER with each 9 shown as 8 (Gold) — the row keeps the 9,
+// and the old client's 8 never lowers it (max-merge).
 const MICATRO_STICKERS_MAX = 5000;        // joker keys per player (vanilla + every mod is well under 2000)
 const MICATRO_STICKERS_BYTES = 700_000;   // one serialized `wins` map (5000 64-char keys x 4 categories is ~525 KB)
 const MICATRO_STICKER_KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
@@ -106,7 +111,17 @@ const MICATRO_CHALLENGE_ID_RE = /^[A-Za-z0-9_.-]{1,64}$/;
 const MICATRO_RUN_BYTES = 700_000;        // one serialized recipe
 const MICATRO_RUN_ENDED = 10;             // finished-run tombstones kept
 const MICATRO_RUN_OUTCOMES = ['won', 'lost', 'abandoned', 'replaced'];
-const stickerLevel = (v) => (Number.isInteger(v) && v >= 1 && v <= 8 ? v : 0);
+const MICATRO_STICKER_LEVEL_MAX = 9;      // 9 = Elite
+const stickerLevel = (v) => (Number.isInteger(v) && v >= 1 && v <= MICATRO_STICKER_LEVEL_MAX ? v : 0);
+// the `wins` an answer carries: a copy with every level above `max` shown as `max` (an old client's Gold for Elite)
+function stickersFor(wins, max) {
+	if (max >= MICATRO_STICKER_LEVEL_MAX) return wins;
+	const out = {};
+	for (const k of Object.keys(wins)) { out[k] = {}; for (const c of Object.keys(wins[k])) out[k][c] = Math.min(wins[k][c], max); }
+	return out;
+}
+// the highest level the asking client knows (a body's `maxLevel`; none = an old client: 8)
+const stickerClientMax = (b) => (b && Number.isInteger(b.maxLevel) && b.maxLevel >= MICATRO_STICKER_LEVEL_MAX ? MICATRO_STICKER_LEVEL_MAX : 8);
 // one joker's record, either form -> {cat: level}; null when it is not a valid, non-empty record
 // (`loose`: skip a bad category instead of refusing the record — for rows already stored)
 function stickerRecord(v, loose = false) {
@@ -2382,7 +2397,7 @@ export default async function handler(req, env) {
 		const revoked = stickerRevocations(row && row.revoked), earned = stickerEarned(row && row.earned, revoked);
 		const wins = storedStickers(row);
 		stripRevokedStickers(wins, revoked, earned);
-		return json({ v: 2, wins, rev: (row && row.rev) || 0, revoked, earned });
+		return json({ v: 2, wins: stickersFor(wins, stickerClientMax(body)), rev: (row && row.rev) || 0, revoked, earned });
 	}
 	if (action === 'micatro-stickers-put') {
 		const inc = body.wins;
@@ -2420,12 +2435,12 @@ export default async function handler(req, env) {
 					if (!(cur[c] >= incoming[k][c])) { cur[c] = incoming[k][c]; changed = true; }
 				}
 			}
-			if (!changed) return json({ ok: true, wins: merged, rev, changed: false, revoked, earned });
+			if (!changed) return json({ ok: true, wins: stickersFor(merged, stickerClientMax(body)), rev, changed: false, revoked, earned });
 			if (Object.keys(merged).length > MICATRO_STICKERS_MAX) return json({ error: `at most ${MICATRO_STICKERS_MAX} jokers`, max: MICATRO_STICKERS_MAX }, 413);
 			const next = { v: 2, wins: merged, rev: rev + 1, updatedAt: now };
 			if (prev && prev.revoked !== undefined) next.revoked = prev.revoked; // the admin's field, kept verbatim
 			if (Object.keys(earned).length) next.earned = earned;
-			if (await store.setIfRev(key, next, rev)) return json({ ok: true, wins: merged, rev: rev + 1, changed: true, revoked, earned });
+			if (await store.setIfRev(key, next, rev)) return json({ ok: true, wins: stickersFor(merged, stickerClientMax(body)), rev: rev + 1, changed: true, revoked, earned });
 		}
 		return json({ error: 'busy, retry' }, 503); // five lost races in a row: the client retries
 	}

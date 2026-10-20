@@ -4,7 +4,10 @@
 // Pokermon's previous-evolution keys) stores every joker key -> the highest stake won, per player; the jokers then
 // wear the stake's sticker (stickers.png cell; pixels change), the tooltip explains it (Balatro's <colour>_sticker),
 // the Pokédex (a collection view) shows it too; the Options toggle hides it on the table; a lower-stake win never
-// downgrades it; a seeded run records nothing (Balatro's win_game).
+// downgrades it; a seeded run records nothing (Balatro's win_game). ELITE (level 9): a real win on Pokermon's Elite stake
+// records 9 (the win event's sticker_level), its jokers wear the Pikachu sticker in the Elite (#ba8514) ring, and a plain
+// level-9 record draws Pokermon 3.9.1's own Elite sticker art (winstickers/elite.png) with its tooltip
+// (screenshot: $ELITE_SHOT, if set).
 //   node overworld/tests/micatro_winstickers_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -72,6 +75,7 @@ try {
 			for (const k of keys) add_joker(k);
 			G.E_MANAGER.flush();
 			G.GAME.round_resets.ante = G.GAME.win_ante;
+			G.GAME.round_resets.blind_choices.Boss = 'bl_wall';   // (a plain boss: the Elite stake's last antes are showdowns)
 		}, opts.jokers || []);
 		const act = async (a) => { await idle(); const r = await page.evaluate((a) => window.__micatro.act(a), a); await idle(); return r; };
 		for (let b = 0; b < 3; b++) {
@@ -159,6 +163,39 @@ try {
 	await winRun({ stake: 8, seed: 'SEEDED1', jokers: ['j_joker', 'j_lusty_joker'] });
 	st = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
 	A(st.j_joker?.win === 2 && !st.j_lusty_joker, 'a seeded run\'s win records no stickers', JSON.stringify(st));
+
+	// 5. ELITE (level 9): a real win on Pokermon's Elite stake
+	await page.evaluate(() => document.querySelectorAll('.modal').forEach(() => { const b = document.querySelector('.go-modal .b-newrun'); if (b) b.click(); }));
+	const eev = await winRun({ stake: 'stake_poke_elite', mods: ['pokermon'], jokers: ['j_scholar'] });
+	A(eev && eev.stake === 8 && eev.sticker_level === 9 && eev.jokers.includes('j_scholar'), 'an Elite-stake win: the engine reports sticker_level 9 (it plays at Gold\'s level 8)', JSON.stringify(eev));
+	st = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_joker_wins_v1:stickerer') || '{}'));
+	A(st.j_scholar?.win === 9 && st.j_scholar?.poke === 9 && st.b_red?.win === 9, 'it records level 9 (Elite) in each category of the win (and on the deck)', JSON.stringify([st.j_scholar, st.b_red]));
+	// a plain level-9 record (no special category) for a second joker: Pokermon 3.9.1's Elite sticker art
+	await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).recordWin({ jokers: ['j_mime'], stake: 8, sticker_level: 9, categories: ['win'] }));
+	await page.evaluate(() => document.querySelectorAll('.modal').forEach(() => { const b = document.querySelector('.go-modal .b-newrun'); if (b) b.click(); }));
+	await page.evaluate(() => window.__micatro.newRun({ stake: 1 }));
+	await waitFor(() => page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 20000);
+	await page.evaluate(async () => { const { G, add_joker } = await import('/micatro/js/engine/core.js'); add_joker('j_scholar'); add_joker('j_mime'); add_joker('j_joker'); G.E_MANAGER.flush(); });
+	await idle();
+	await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
+	await idle();
+	await page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).specialImage('pikachu'));
+	await sleep(800);
+	const face = (center, x, y, w, h) => page.evaluate((center, x, y, w, h) => {
+		const b = window.__micatro.board;
+		for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s && s.d.center === center) { const c = s.base.getContext('2d'); const k = s.base.width / 142; return [...c.getImageData(Math.round(x * k), Math.round(y * k), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k))).data]; } }
+		return null;
+	}, center, x, y, w, h);
+	const einfo = await page.evaluate(async () => { const S = await import('/micatro/js/ui/stickers.js'); const a = S.winStickerInfo('j_scholar'), b = S.winStickerInfo('j_mime'); return [a.category, a.stake, a.colour, b.category, b.stake]; });
+	A(einfo.join() === 'poke,Elite,#ba8514,win,Elite', 'Scholar (an Elite Pokermon win) wears the Elite Pikachu, Mime the plain Elite sticker', einfo.join());
+	const ring = await face('j_scholar', 111, 30 - 17, 1, 1);
+	A(ring && Math.abs(ring[0] - 0xba) < 12 && Math.abs(ring[1] - 0x85) < 12 && Math.abs(ring[2] - 0x14) < 12, 'the Pikachu sticker\'s ring is the Elite colour #ba8514 on the card', JSON.stringify(ring && ring.slice(0, 4)));
+	const yellow = (d) => { let n = 0; for (let i = 0; d && i < d.length; i += 4) if (d[i] > 235 && d[i + 1] > 220 && d[i + 2] < 70 && d[i + 3] > 200) n++; return n; };
+	const chip = await face('j_mime', 92, 12, 38, 38), redChip = await face('j_joker', 92, 12, 38, 38);
+	A(yellow(chip) > 60 && yellow(redChip) < 10, 'the plain level-9 sticker is drawn with the Elite art (its bright-yellow star chip; the Red-stake Joker has none)', JSON.stringify([yellow(chip), yellow(redChip)]));
+	const etip = await page.evaluate(() => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s.d.center === 'j_mime') b.showCardTip(s, true); } return b.tip.textContent; });
+	A(/Elite Sticker/.test(etip) && /win on\s*Elite/.test(etip), 'its tooltip: the Elite Sticker', etip.slice(0, 200));
+	if (process.env.ELITE_SHOT) await page.screenshot({ path: process.env.ELITE_SHOT });
 	A(errors.length === 0, 'no console errors', errors.join(' | '));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));
