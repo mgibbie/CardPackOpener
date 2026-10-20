@@ -33,6 +33,12 @@ function next() {
   clearHand();
 }
 const evolveNow = (j) => { winRound(); return key(j); };
+/**
+ * Add-on dedupe (Pokermon precedence, Pokermon PORTING.md "Add-on dedupe"): Nacho's Ralts / Swablu / Bagon lines are Pokermon's
+ * now, so they evolve into Pokermon's jokers (addon_dedupe_test). Their legacy definitions still work (saves / replays): the
+ * line tests swap the evolved card for the next legacy Nacho stage to keep firing each one.
+ */
+const legacy = (j, k) => { j.remove(); return add(k); };
 const level = (h, n) => { G.GAME.hands[h].level += n; };
 const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [], joker_targets });
 
@@ -86,7 +92,7 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
   ok(!threw, 'deck_rank_evo flat path runs (the Lua compared an undefined `_count` and errored)', threw && threw.message);
   ok(r && 'message' in r, 'deck_rank_evo flat: 24 cards >= 9 >= 20 -> evolves', r);
   G.E_MANAGER.flush();
-  ok(key(j) === 'j_nacho_shelgon', 'deck_rank_evo flat -> Shelgon', key(j));
+  ok(key(j) === 'j_poke_shelgon', 'deck_rank_evo flat -> Shelgon (Pokermon’s: add-on dedupe)', key(j));
   const r2 = N.deck_rank_evo(P_CENTERS.j_nacho_shelgon, j, { end_of_round: true }, 'j_nacho_salamence', 9, undefined, 25);
   ok(r2 === undefined, 'deck_rank_evo flat below the threshold: no evolution');
 }
@@ -196,26 +202,28 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
 // =================================================================== Ralts line
 {
   start('RALTS');
-  const j = add('j_nacho_ralts');
+  let j = add('j_nacho_ralts');
   level('Flush', 2); level('Pair', 1);
   let r = play(hand(['S_A']));
   ok(r.total.chips === 16 && r.total.mult === 1 + 3, 'Ralts: +1 Mult per level above 1 (3)', r.total);
   ok(j.ability.extra.rounds === 4, 'Ralts: 4 rounds', j.ability.extra.rounds);
   j.ability.extra.rounds = 1;
-  ok(evolveNow(j) === 'j_nacho_kirlia', 'Ralts -> Kirlia after its rounds', key(j));
+  ok(evolveNow(j) === 'j_poke_kirlia', 'Ralts -> (Pokermon’s) Kirlia after its rounds', key(j));
   next();
+  j = legacy(j, 'j_nacho_kirlia');
   r = play(hand(['S_A']));
   ok(r.total.mult === 1 + 2 * 3, 'Kirlia: +2 Mult per level above 1', r.total);
   j.ability.extra.rounds = 1;
-  ok(evolveNow(j) === 'j_nacho_gardevoir', 'Kirlia -> Gardevoir after its rounds', key(j));
+  ok(evolveNow(j) === 'j_poke_gardevoir', 'Kirlia -> (Pokermon’s) Gardevoir after its rounds', key(j));
   next();
+  j = legacy(j, 'j_nacho_gardevoir');
   r = play(hand(['S_A']));
   ok(near(r.total.mult, 1 * (1 + 0.1 * 3)), 'Gardevoir: X(1 + 0.1 per level above 1)', r.total);
   const stone = add('c_poke_megastone');
   use(stone, [j.sort_id]);
   G.E_MANAGER.flush();
   ok(key(j) === 'j_nacho_mega_gardevoir', 'Gardevoir -> Mega Gardevoir (Megastone)', key(j));
-  const bh = G.consumeables.cards.find((c) => key(c) === 'c_black_hole');
+  const bh = G.consumeables.cards.find((c) => key(c) === 'c_black_hole' && c.edition); // (Pokermon's Gardevoir came holding a plain one)
   ok(bh && bh.edition && bh.edition.negative, 'Mega Gardevoir: a Negative Black Hole on entry');
   const tags0 = G.GAME.tags.length;
   const pl = add('c_pluto');
@@ -228,12 +236,13 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
 }
 {
   start('KIRLIA_ITEM');
-  const j = add('j_nacho_kirlia');
+  let j = add('j_nacho_kirlia');
   const ds = add('c_poke_dawnstone');
   use(ds, [j.sort_id]);
   ok(j.ability.extra.evolve, 'Dawn Stone marks Kirlia');
-  ok(evolveNow(j) === 'j_nacho_gallade', 'Kirlia + Dawn Stone -> Gallade', key(j));
+  ok(evolveNow(j) === 'j_poke_gallade', 'Kirlia + Dawn Stone -> (Pokermon’s) Gallade', key(j));
   next();
+  j = legacy(j, 'j_nacho_gallade');
   const stone = add('c_poke_megastone');
   use(stone, [j.sort_id]);
   G.E_MANAGER.flush();
@@ -241,19 +250,20 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
   next();
   use(stone, [j.sort_id]);
   G.E_MANAGER.flush();
-  ok(key(j) === 'j_nacho_gallade', 'Mega Gallade -> back to Gallade', key(j));
+  ok(key(j) === 'j_poke_gallade', 'Mega Gallade -> back to Gallade (Pokermon’s)', key(j));
 }
 
 // =================================================================== Swablu line
 {
   start('SWABLU');
-  const j = add('j_nacho_swablu');
+  let j = add('j_nacho_swablu');
   winRound();
   const row = G.GAME.round_eval.rows.find((x) => x.center === 'j_nacho_swablu');
   ok(row && row.dollars === 4, 'Swablu: $1 per 9 in the deck (4)', row);
   act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
   j.ability.extra.rounds = 1;
-  ok(evolveNow(j) === 'j_nacho_altaria', 'Swablu -> Altaria', key(j));
+  ok(evolveNow(j) === 'j_poke_altaria', 'Swablu -> (Pokermon’s) Altaria', key(j));
+  j = legacy(j, 'j_nacho_altaria');
   G.playing_cards.find((c) => c.get_id() === 9).set_ability(P_CENTERS.m_bonus);
   next();
   winRound();
@@ -272,7 +282,7 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
 // =================================================================== Bagon line
 {
   start('BAGON');
-  const j = add('j_nacho_bagon');
+  let j = add('j_nacho_bagon');
   const held = hand(['D_5', 'D_7']);
   const r = play(hand(['S_K', 'H_K', 'S_4', 'H_4']));
   // Two Pair level 1: 20 chips x 2; K K 4 4 scored: mult += 10/3 + 10/3 + 4/3 + 4/3
@@ -282,15 +292,17 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
   ok(r2.total.mult === 1, 'Bagon: nothing outside Two Pair', r2.total);
   // Evolve: 57% of the deck >= 9.
   for (const c of G.playing_cards.slice(0, 20)) N.change_base(c, null, 'King');
-  ok(evolveNow(j) === 'j_nacho_shelgon', 'Bagon -> Shelgon at 57% high ranks', key(j));
+  ok(evolveNow(j) === 'j_poke_shelgon', 'Bagon -> (Pokermon’s) Shelgon at 57% high ranks', key(j));
   next();
+  j = legacy(j, 'j_nacho_shelgon');
   const held2 = hand(['D_2', 'D_5', 'D_7']);
   const r3 = play(hand(['S_K', 'H_K', 'S_4', 'H_4']));
   ok(near(r3.total.mult, 2 + (10 + 10 + 4 + 4) / 2), 'Shelgon: rank/2 Mult', r3.total);
   ok(held2.map((c) => c.base.value).join() === '2,6,8', 'Shelgon: the two rightmost held cards rise', held2.map((c) => c.base.value));
   for (const c of G.playing_cards) N.change_base(c, null, 'King');
-  ok(evolveNow(j) === 'j_nacho_salamence', 'Shelgon -> Salamence at 75%', key(j));
+  ok(evolveNow(j) === 'j_poke_salamence', 'Shelgon -> (Pokermon’s) Salamence at 75%', key(j));
   next();
+  j = legacy(j, 'j_nacho_salamence');
   for (const c of G.playing_cards) N.change_base(c, null, '4');
   N.change_base(G.playing_cards[0], null, 'Ace');
   const tp = hand(['S_K', 'H_K', 'S_4', 'H_4']);
@@ -401,7 +413,7 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
 // =================================================================== Audino (+ the level_evo patch, poke_evolved)
 {
   start('AUDINO');
-  const ralts = add('j_nacho_ralts');
+  let ralts = add('j_nacho_ralts');
   const au = add('j_nacho_audino');
   const r0 = play(hand(['S_A']));
   ok(r0.total.mult === 1, 'Audino: X1 to start', r0.total);
@@ -411,12 +423,13 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
   next();
   winRound(); // 2 -> 0: evolves
   G.E_MANAGER.flush();
-  ok(key(ralts) === 'j_nacho_kirlia', 'with Audino, Ralts evolves after 2 rounds', key(ralts));
+  ok(key(ralts) === 'j_poke_kirlia', 'with Audino, Ralts evolves after 2 rounds (into Pokermon’s Kirlia)', key(ralts));
   ok(near(au.ability.extra.Xmult, 1.25), 'Audino: +X0.25 when a Pokémon evolves (poke_evolved)', au.ability.extra.Xmult);
   next();
   const r1 = play(hand(['S_A']));
   ok(near(r1.total.mult, 1.25), 'Audino: X1.25', r1.total);
   au.debuff = true;
+  ralts = legacy(ralts, 'j_nacho_ralts'); // (Pokermon's Kirlia evolves by Planets: a legacy Ralts counts rounds)
   ralts.ability.extra.rounds = 4;
   winRound();
   ok(ralts.ability.extra.rounds === 3, 'a debuffed Audino gives no extra step', ralts.ability.extra.rounds);
@@ -632,14 +645,16 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
   p.ability.extra.rounds = 1;
   winRound();
   G.E_MANAGER.flush();
-  ok(key(p) === 'j_nacho_passimian' && p.ability.received_key === 'j_nacho_kirlia', 'Passimian receives the evolved ability (stays Passimian)', p.ability.received_key);
+  // (add-on dedupe: the evolved ability is Pokermon's Kirlia now — +8 Mult per Energized joker and held Planet)
+  ok(key(p) === 'j_nacho_passimian' && p.ability.received_key === 'j_poke_kirlia', 'Passimian receives the evolved ability (stays Passimian)', p.ability.received_key);
   next();
+  add('c_pluto');
   r = play(hand(['S_A']));
-  ok(r.total.mult === 1 + 2 * 2, 'Passimian (Kirlia): +2 Mult per level', r.total);
+  ok(r.total.mult === 1 + 8, 'Passimian (Kirlia): +8 Mult per held Planet', r.total);
   // Energy scales the received card's base values (Fighting Energy: Passimian is Fighting).
   const mm = p.ability.extra.mult_mod;
   use(add('c_poke_fighting_energy'), [p.sort_id]);
-  ok(near(p.ability.extra.mult_mod, mm + P_CENTERS.j_nacho_kirlia.config.extra.mult_mod * 0.2), 'Energy on Passimian scales the received Kirlia base', p.ability.extra.mult_mod);
+  ok(near(p.ability.extra.mult_mod, mm + P_CENTERS.j_poke_kirlia.config.extra.mult_mod * 0.2), 'Energy on Passimian scales the received Kirlia base', p.ability.extra.mult_mod);
   act({ type: 'sell', id: p.sort_id });
   ok(G.jokers.config.card_limit === lim, 'selling Passimian gives the edition slot back');
 }

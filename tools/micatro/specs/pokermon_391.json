@@ -1,5 +1,5 @@
 {
-  "comment": "Pokermon 3.9.1 (InertSteak/Pokermon tag 3.9.1): the static data the 3.9.1 overlay (tools/micatro/gen_pokermon_391_overlay.mjs) is built from. 3.9.1 moved its helpers under pokermon.* namespaces (pokermon.sprites, pokermon.energy, ...): the prelude makes any pokermon.<x> a callable, indexable stub so the files load.",
+  "comment": "Pokermon 3.9.1 (InertSteak/Pokermon tag 3.9.1): the static data the 3.9.1 overlay (tools/micatro/gen_pokermon_391_overlay.mjs) is built from. 3.9.1 moved its helpers under pokermon.* namespaces (pokermon.sprites, pokermon.energy, ...): the prelude makes any pokermon.<x> a callable, indexable stub so the files load. `family` (sub-batch 11): 3.9.1 keeps its family list local (functions/pokefamily.lua), so it is read through pokermon.get_family_list, one entry per family, in PokemonSprites order.",
   "prelude": "local mt = {} mt.__index = function(t, k) local v = setmetatable({}, mt) rawset(t, k, v) return v end mt.__call = function() return nil end setmetatable(pokermon, mt)",
   "run_first": ["functions/pokeconstants.lua", "functions/pokefunctions.lua", "functions/pokespriteload.lua", "functions/energyfunctions.lua", "functions/pokefamily.lua"],
   "files": {
@@ -17,6 +17,6 @@
     "backs": ["backs/"],
     "challenges": ["challenges/"]
   },
-  "globals": ["PokemonSprites", "energy_values", "energy_max"],
+  "globals": ["PokemonSprites", "energy_values", "energy_max", {"name": "family", "expr": "(function() local r, seen = {}, {} for _, s in ipairs(PokemonSprites.list) do local f = pokermon.get_family_list(s.name) if #f > 0 and not seen[f] then seen[f] = true r[#r + 1] = f end end return r end)()"}],
   "loc": "localization/en-us.lua"
 }

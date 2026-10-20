@@ -1,4 +1,5 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_16.lua (Pokédex 451-480: Mantyke -> the Rotom forms), 24 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_16.lua (Pokédex 451-480: Mantyke -> the Rotom forms), 24 jokers + 1 new in 3.9.1
+// (Gallade, Kirlia's Dawn Stone evolution: at the end, new-jokers sub-batch 14; static data: data391.js new_jokers).
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, enhancement_gate) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
@@ -10,7 +11,7 @@ import {
   create_card, copy_card, poll_edition, juice_card_until, play_sound, math_random, all_cards,
   defineJokers, type_tooltip, detailed, level_evo, faint_baby_poke, find_pokemon_type, is_type, has_enhancement,
   ease_poke_dollars, get_probability_vars, pseudorandom_probability, poke_add_shop_card, poke_convert_cards_to,
-  poke_vary_rank, juice_flip_table, add_card, POKE_POOL_RULES,
+  poke_vary_rank, juice_flip_table, add_card, POKE_POOL_RULES, get_total_energy, create_consumeable, energy_max,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { P_TAGS } from '../../../js/engine/core.js';
@@ -20,6 +21,8 @@ const FILE = 'pokemon/pokejokers_16.lua';
 
 const end_of_round = (context) => context.end_of_round && !context.individual && !context.repetition;
 const room = () => G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit;
+/** Gallade: Jokers with e_level+ Energy (3.9.1 pokermon.energy.get_total_energy). */
+const gallade_energized = (e_level) => (G.jokers ? G.jokers.cards.filter((v) => get_total_energy(v) >= e_level).length : 0);
 /** $ paid during scoring (Pokermon 3.9.1): G.GAME.dollar_buffer holds it until the event queue runs. */
 function buffered_dollars(card, seed, amount) {
   G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + amount;
@@ -601,6 +604,26 @@ defineJokers({
       }
       rotom_item(card, context);
       return undefined;
+    },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 14)
+  // Gallade 475 (Kirlia's Dawn Stone evolution): X(1 + 0.5 per Joker with 2+ Energy); comes holding a Double Rainbow Energy.
+  gallade: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) {
+        info_queue.push({ set: 'Spectral', key: 'c_poke_double_rainbow_energy', vars: [energy_max + (G.GAME.energy_plus || 0)] });
+        info_queue.push({ set: 'Other', key: 'holding', vars: ['Double Rainbow Energy'] });
+      }
+      const total = 1 + center.ability.extra.Xmult_mod * gallade_energized(center.ability.extra.e_level);
+      return { vars: [center.ability.extra.Xmult_mod, total, center.ability.extra.e_level] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main) return { Xmult: 1 + card.ability.extra.Xmult_mod * gallade_energized(card.ability.extra.e_level) };
+      return undefined;
+    },
+    add_to_deck(self, card, from_debuff) {
+      if (!from_debuff) create_consumeable('c_poke_double_rainbow_energy');
     },
   },
 }, FILE);

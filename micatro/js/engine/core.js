@@ -512,6 +512,8 @@ export class Card {
       perma_mult: prev && prev.perma_mult ? prev.perma_mult : undefined,
       perma_x_mult: prev && prev.perma_x_mult ? prev.perma_x_mult : undefined,
     };
+    // SMODS perma_h_dollars (Pokermon 3.9.1's DNA Seal copies with a Defense Deoxys) persists too; only set when a card has it.
+    if (prev && prev.perma_h_dollars) this.ability.perma_h_dollars = prev.perma_h_dollars;
     this.ability.bonus = ((prev && prev.bonus) || 0) + (c.bonus || 0);
     if (center.consumeable) this.ability.consumeable = c;
     if (smods && prev) {
@@ -804,6 +806,8 @@ export class Card {
     if (this.debuff) return {};
     const ret = {};
     if (this.ability.h_dollars > 0) { ret.h_dollars = this.ability.h_dollars; ret.card = this; }
+    // SMODS get_h_dollars: + ability.perma_h_dollars (absent in the base game: Pokermon 3.9.1's DNA Seal sets it).
+    if (this.ability.perma_h_dollars > 0) { ret.h_dollars = (ret.h_dollars || 0) + this.ability.perma_h_dollars; ret.card = this; }
     // Steamodded quantum enhancements: an extra Gold enhancement pays too (Nacho's Carbink).
     if (ACTIVE_MODS.length) {
       for (const k of quantum_enhancements(this)) {
@@ -1838,8 +1842,11 @@ export function set_consumeable_usage(card) {
       G.E_MANAGER.add_event(() => G.E_MANAGER.add_event(() => { G.GAME.last_tarot_planet = key; }));
     }
     if (card.config.center.set === 'Tarot') G.GAME.consumeable_usage_total.tarot = (G.GAME.consumeable_usage_total.tarot || 0) + 1;
-    if (card.config.center.set === 'Planet') G.GAME.consumeable_usage_total.planet = (G.GAME.consumeable_usage_total.planet || 0) + 1;
-    if (card.config.center.set === 'Spectral') G.GAME.consumeable_usage_total.spectral = (G.GAME.consumeable_usage_total.spectral || 0) + 1;
+    else if (card.config.center.set === 'Planet') G.GAME.consumeable_usage_total.planet = (G.GAME.consumeable_usage_total.planet || 0) + 1;
+    else if (card.config.center.set === 'Spectral') G.GAME.consumeable_usage_total.spectral = (G.GAME.consumeable_usage_total.spectral || 0) + 1;
+    // Steamodded (center.toml "tracking custom consumable usage"): every other set counts under its lower-cased name
+    // (Pokermon's Item -> `item`: Rellor / Rabsca). Base-game consumables are only the three sets above.
+    else if (card.config.center.set) { const k = card.config.center.set.toLowerCase(); G.GAME.consumeable_usage_total[k] = (G.GAME.consumeable_usage_total[k] || 0) + 1; }
     if (card.config.center.set === 'Tarot' || card.config.center.set === 'Planet') G.GAME.consumeable_usage_total.tarot_planet = (G.GAME.consumeable_usage_total.tarot_planet || 0) + 1;
     G.GAME.consumeable_usage_total.all = (G.GAME.consumeable_usage_total.all || 0) + 1;
   }

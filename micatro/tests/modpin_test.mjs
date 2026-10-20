@@ -31,17 +31,17 @@ const ok = (c, m, x) => { if (c) pass++; else { fail++; console.log('FAIL', m, x
 
 // ---------------------------------------------------------------- pins in the recipe
 ok(ENGINE_CONTENT_REV === PINS.ENGINE_CONTENT_REV && ENGINE_CONTENT_REV >= 1, 'session re-exports the engine content rev');
-// Pokermon's pin (batch 10b of the 3.9.1 upgrade: version 3.9.1, contentRev 7 — 6 / 5 / 4 / 3 were batches 10 / 8 / 7 / 6, rev 2 batch 5's 3.9.1 data, rev 1 the
+// Pokermon's pin (new-jokers sub-batch 15b of the 3.9.1 upgrade, the 9 jokers from upstream main: version still 3.9.1, contentRev 13 — 12 / 11 / 10 / 9 / 8 / 7 / 6 / 5 / 4 / 3 were sub-batches 15 / 14 / 13 / 12 / 11 / batches 10b / 10 / 8 / 7 / 6, rev 2 batch 5's 3.9.1 data, rev 1 the
 // 2026-10-18/19 house rules).
-const PK = '3.9.1+r7';
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 7, 'Pokermon declares version 3.9.1, contentRev 7 (batch 10b: the Unown rework / Wish Pack)');
+const PK = '3.9.1+r13';
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 13, 'Pokermon declares version 3.9.1, contentRev 13 (new-jokers sub-batch 15b)');
 ok(PINS.pinOf('3.2.1', 1) === '3.2.1+r1' && PINS.pinOf('3.2.1') === '3.2.1' && PINS.pinOf('1.0 (old-API)', 0) === '1.0 (old-API)', 'pinOf: version + "+r<rev>" only when a rev is set');
 ok(PINS.pinLabel('3.2.1+r2') === '3.2.1 (rev 2)' && PINS.pinLabel('3.9.1') === '3.9.1', 'pinLabel reads a pin for people');
 
 const s = new Session();
 s.start({ seed: 'PIN1', mods: ['nacho'] });   // nacho requires pokermon
 ok(s.recipe.mods.includes('pokermon') && s.recipe.mods.includes('nacho'), 'the run activates nacho + its requirement');
-ok(s.recipe.modVersions && s.recipe.modVersions.pokermon === PK && s.recipe.modVersions.nacho === MODS.nacho.version, 'the recipe pins every active mod (requirements included)', s.recipe.modVersions);
+ok(s.recipe.modVersions && s.recipe.modVersions.pokermon === PK && s.recipe.modVersions.nacho === '1.6.4+r1', 'the recipe pins every active mod (requirements included; Nacho 1.6.4+r1: the add-on dedupe)', s.recipe.modVersions);
 ok(s.recipe.engineRev === ENGINE_CONTENT_REV, 'the recipe pins the engine rules rev');
 const saved = JSON.parse(mem.get('micatro_run_v1'));
 ok(saved.modVersions.pokermon === PK && saved.engineRev === ENGINE_CONTENT_REV, 'the saved run (localStorage) carries the pins');
@@ -57,10 +57,10 @@ ok(meta.modVersions && meta.modVersions.pokermon === PK && meta.engineRev === EN
 // ---------------------------------------------------------------- mismatch
 const bumped = JSON.parse(JSON.stringify(saved));
 const was = MODS.pokermon.contentRev;
-MODS.pokermon.contentRev = 8;
+MODS.pokermon.contentRev = 14;
 let d = Session.pinDiff(bumped);
-ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r8' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 7); current 3.9.1 (rev 8). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r14' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 13); current 3.9.1 (rev 14). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
 MODS.pokermon.contentRev = was;
 const oldVer = { ...bumped, modVersions: { ...bumped.modVersions, pokermon: '3.2.1' } };
 const vwas = MODS.pokermon.version; MODS.pokermon.contentRev = 0;
@@ -73,9 +73,9 @@ d = Session.pinDiff({ ...saved, mods: [...saved.mods, 'gonemod'], modVersions: {
 ok(d.length === 1 && d[0].id === 'gonemod' && d[0].current === null, 'a mod the site no longer has is reported (current: null)', d);
 
 // re-pin ("Continue anyway")
-MODS.pokermon.contentRev = 7;
+MODS.pokermon.contentRev = 13;
 const cont = Session.fromRecipe(run.recipe, { repin: true });
-ok(cont.recipe.modVersions.pokermon === '3.9.1+r7' && Session.pinDiff(cont.recipe).length === 0, '"Continue anyway" re-pins the run to the current versions');
+ok(cont.recipe.modVersions.pokermon === '3.9.1+r13' && Session.pinDiff(cont.recipe).length === 0, '"Continue anyway" re-pins the run to the current versions');
 ok(Array.isArray(cont.recipe.repinned) && cont.recipe.repinned[0].from.pokermon === PK && cont.recipe.repinned[0].at === run.recipe.actions.length, 'the old pins are kept in recipe.repinned (with the move it switched at)', cont.recipe.repinned);
 MODS.pokermon.contentRev = was;
 
@@ -86,8 +86,8 @@ const lp = PINS.recordedPins(legacy);
 ok(lp.assumed && lp.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lp.engineRev === PINS.LEGACY_ENGINE_REV, 'a recipe without pins reads as the legacy table', lp);
 // (the legacy table is the 2026-10-19 versions: Pokermon 3.2.1+r1 — since the 3.9.1 data batch a pre-pin Pokermon run differs)
 d = Session.pinDiff(legacy);
-ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === PK, 'a legacy Pokermon recipe now differs (3.2.1+r1 -> 3.9.1+r7): the resume prompt / replay banner', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 7). Playback may differ.', '... naming both', PINS.replayWarning(d));
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === PK, 'a legacy Pokermon recipe now differs (3.2.1+r1 -> 3.9.1+r13): the resume prompt / replay banner', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 13). Playback may differ.', '... naming both', PINS.replayWarning(d));
 ok(Object.isFrozen(PINS.LEGACY_MOD_VERSIONS) && PINS.PIN_DATE === '2026-10-19', 'the legacy table is frozen and dated');
 const lr = Session.fromRecipe(legacy);
 ok(lr.recipe.pinAssumed === 'legacy:2026-10-19' && lr.recipe.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lr.recipe.actions.length === legacy.actions.length && !lr.stoppedAt, 'resuming a legacy recipe records the assumption and rebuilds every move', lr.recipe.pinAssumed);

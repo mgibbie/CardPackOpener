@@ -139,7 +139,8 @@ function pickable(kind, modSet) {
   const by = (a, b) => (a.mod ? 1 : 0) - (b.mod ? 1 : 0) || (a.order || 0) - (b.order || 0);
   const consumableSets = new Set(['Tarot', 'Planet', 'Spectral', ...Object.keys(CONSUMABLE_TYPES)]);
   let list;
-  if (kind === 'joker') list = centers.filter((c) => c.set === 'Joker' && ok(c) && !c.unported);
+  // (poke_replaced_by: an add-on duplicate of a Pokermon joker — Pokermon precedence; a deck that holds one still loads it.)
+  if (kind === 'joker') list = centers.filter((c) => c.set === 'Joker' && ok(c) && !c.unported && !c.poke_replaced_by);
   else if (kind === 'consumable') list = centers.filter((c) => c.consumeable && consumableSets.has(c.set) && ok(c) && !c.unported);
   else if (kind === 'voucher') list = centers.filter((c) => c.set === 'Voucher' && ok(c) && !c.unported);
   else if (kind === 'booster') list = centers.filter((c) => c.set === 'Booster' && ok(c) && !c.unported);

@@ -7,7 +7,7 @@ const { ok, done } = T();
 const key = (c) => c.config.center.key;
 const NAMES = ['elgyem', 'beheeyem', 'litwick', 'lampent', 'chandelure', 'golett', 'golurk', 'pawniard', 'bisharp'];
 ok(NAMES.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 9 pokejokers_21 jokers ported');
-ok((STATUS.PORTED_FILES['pokemon/pokejokers_21.lua'] || []).length === 9, 'defs: 9 from pokejokers_21.lua');
+ok((STATUS.PORTED_FILES['pokemon/pokejokers_21.lua'] || []).length === 14, 'defs: 14 from pokejokers_21.lua (+ 4 new in 3.9.1, new-jokers sub-batch 15; + Cryogonal from upstream main, 15b)');
 const rounds = (n) => { for (let i = 0; i < n; i++) { winRound(); if (i < n - 1) nextRound(); } };
 const close = (a, b) => Math.abs(a - b) < 1e-9;
 

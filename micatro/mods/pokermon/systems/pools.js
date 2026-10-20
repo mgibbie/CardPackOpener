@@ -19,6 +19,7 @@ import { G, P_CENTERS, find_joker, pseudorandom_element, pseudoseed } from '../.
 import { cfg, smods_create_card } from './utils.js';
 import { centerActive } from '../../../js/mods/registry.js';
 import { family } from './evolution.js';
+import { replaced_by } from './precedence.js';
 
 const fname = (y) => (y && typeof y === 'object' ? y.key : y);
 const nameOf = (c) => (!c.name && c.ability && c.ability.name) ? c.ability.name : (c.name || 'bulbasaur');
@@ -37,6 +38,9 @@ function held_names() {
  * A rule must only answer for its own mod's centers (Pokermon+'s per-line toggles do).
  */
 export const POKE_POOL_RULES = [];
+// Add-on dedupe (precedence.js): an add-on duplicate of a Pokermon joker is never picked (the random-Pokémon picks call
+// pokemon_in_pool directly, not the center's in_pool).
+POKE_POOL_RULES.push((self) => (self && replaced_by(self) ? false : undefined));
 
 /** Steamodded / Pokermon pool rule for a Pokémon center. */
 export function pokemon_in_pool(self) {

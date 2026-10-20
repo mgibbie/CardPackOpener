@@ -7,7 +7,7 @@ const { ok, done } = T();
 const key = (c) => c.config.center.key;
 const close = (a, b) => Math.abs(a - b) < 1e-9;
 ok(['deino', 'zweilous', 'hydreigon'].every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 3 pokejokers_22 jokers ported');
-ok((STATUS.PORTED_FILES['pokemon/pokejokers_22.lua'] || []).length === 3, 'defs: 3 from pokejokers_22.lua');
+ok((STATUS.PORTED_FILES['pokemon/pokejokers_22.lua'] || []).length === 5, 'defs: 5 from pokejokers_22.lua (+ 2 new in 3.9.1, new-jokers sub-batch 15)');
 
 start('DEINO');
 const j = add('j_poke_deino');

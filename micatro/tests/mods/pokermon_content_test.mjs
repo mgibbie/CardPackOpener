@@ -34,7 +34,7 @@ function toShop() { winRound(); act({ type: 'cash_out' }); }
   ok(files['consumables/mart2.lua'].length === 19 && files['consumables/mart3.lua'].length === 5 && files['consumables/martz.lua'].length === 7, 'mart2 19 / mart3 5 / martz 7');
   ok(files['consumables/zberryjuice.lua'].length === 7 && files['consumables/zmachine.lua'].length === 5, 'zberryjuice 7 / zmachine 5');
   ok(files['boosters/packs1.lua'].length === 10 && files['vouchers/pokevouchers.lua'].length === 4 && files['backs/backs1.lua'].length === 11, 'packs 10 / vouchers 4 / backs 11 (+ the 3.9.1 Debris deck)');
-  ok(files['tags/tags1.lua'].length === 6 && files['blinds/pokebossblind.lua'].length === 1 && files['seals/seals1.lua'].length === 2 && files['enhancements/enhancement1.lua'].length === 3, 'tags 6 / blind 1 / seals 2 / enhancements 3 (+ the 3.9.1 Seed)');
+  ok(files['tags/tags1.lua'].length === 6 && files['blinds/pokebossblind.lua'].length === 1 && files['seals/seals1.lua'].length === 3 && files['enhancements/enhancement1.lua'].length === 3, 'tags 6 / blind 1 / seals 3 (+ the 3.9.1 DNA Seal) / enhancements 3 (+ the 3.9.1 Seed)');
   ok(files['consumables/03_mart_items.lua'].join() === 'miracleseed' && files['consumables/04_mart_rare.lua'].join() === 'heavyboots', '3.9.1 Items: Miracle Seed, Heavy-Duty Boots');
 }
 

@@ -16,11 +16,14 @@
 //     which Micatro doesn't ship (the Basic sprite is static), so they stay still as in the mod's default.
 //     The swarm draws 3.9.1's one-row strips, tiled (index.js SWARM_STRIPS), cropped to the card.
 //   * Unown's form (3.9.1 set_sprites): the letter floats over the plain Unown card as its soul layer.
+//   * Kecleon's type (3.9.1 set_sprites): the card of the type it took from the joker to its right (Gen 3 sheet).
 import { P_CENTERS } from './api.js';
 import { MOD_LOC } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
+import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES, DEOXYS_SOULS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -186,7 +189,10 @@ export function familyOf(d) {
   try { keys = get_family_keys(c.name, c.poke_custom_prefix, fake); } catch (e) { keys = [d.center]; }
   const out = [], seen = new Set();
   for (const k of keys) {
-    const key = typeof k === 'object' && k ? k.key : k;
+    let key = typeof k === 'object' && k ? k.key : k;
+    // Add-on dedupe (precedence.js): a replaced add-on duplicate shows as Pokermon's card, and a Mega only an add-on has
+    // (Nacho's Mega Gardevoir in Pokermon's Ralts line) as the add-on's. The card you opened it on is always itself.
+    if (key !== d.center) key = family_display_key(key);
     if (!key || seen.has(key) || !P_CENTERS[key]) continue;
     seen.add(key);
     out.push(key);
@@ -264,6 +270,12 @@ export const POKE_UI = {
       if (tgt.mod) return { ...d, atlas: tgt.atlas, pos: tgt.pos, soul_pos: withUnownForm(tgt).soul_pos, win_key: d.center };
       return { ...d, mod: undefined, atlas: undefined, pos: undefined, soul_pos: undefined, center: tgt.center, poke_disguise: true, win_key: d.center };
     }
+    // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
+    const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
+    if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
+    // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card
+    const ds = d.center === 'j_poke_deoxys' && p && DEOXYS_SOULS[p.form];
+    if (ds) return { ...d, soul_pos: ds };
     // Unown: its form's letter floats over the card
     const u = withUnownForm(d);
     return u === d ? null : u;

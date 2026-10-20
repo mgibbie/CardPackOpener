@@ -1,4 +1,5 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_18.lua (Pokédex 511-530: Pansage -> Excadrill), 11 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_18.lua (Pokédex 511-530: Pansage -> Excadrill), 11 jokers + 2 new in 3.9.1
+// (Munna / Musharna: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers).
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
 // On Pokermon 3.9.1 behaviour since batch 8, the Roggenrola line (the Hazard layer) since batch 10.
 // The Pansage / Pansear / Panpour lines' Shortcut / Four Fingers / Pareidolia effects are
@@ -8,6 +9,7 @@ import {
   defineJokers, type_tooltip, detailed, scaling_evo, item_evo,
   has_enhancement, has_no_rank, pseudorandom_probability, get_probability_vars,
   hazard_layer, hazard_level_tip, poke_create_treasure, create_card,
+  scale_card, find_pokemon_type,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_18.lua';
@@ -236,6 +238,71 @@ defineJokers({
         }
       }
       return undefined;
+    },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 15)
+  // Munna 517: +2 Foresight. When a hand is played, each Enhanced Foreseen card loses its enhancement and Munna gains
+  // +X0.05 Mult for it. Evolves with a Moon Stone (Musharna keeps its X Mult: copy_scaled).
+  // (The Lua strips both the scry view's copy and the real deck card; our scry view IS the deck cards: one set_ability.)
+  munna: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.Xmult_mod, center.ability.extra.scry] };
+    },
+    calculate(self, card, context) {
+      if (context.before) {
+        let eaten = 0;
+        for (const v of G.scry_view ? G.scry_view.cards : []) {
+          if (v.config.center !== P_CENTERS.c_base && !v.debuff && !v.vampired) {
+            v.vampired = true;
+            eaten = eaten + 1;
+            v.set_ability(P_CENTERS.c_base, null, true);
+            G.E_MANAGER.add_event(() => { v.juice_up(); v.vampired = undefined; });
+          }
+        }
+        if (eaten > 0) {
+          scale_card(card, {
+            ref_value: 'Xmult_multi', scalar_value: 'Xmult_mod',
+            operation: (ref_table, ref_value, initial, change) => { ref_table[ref_value] = initial + (change * eaten); },
+            no_message: true,
+          });
+        }
+      }
+      if (context.joker_main) return { Xmult: card.ability.extra.Xmult_multi };
+      return item_evo(self, card, context, 'j_poke_musharna');
+    },
+    add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry; },
+    remove_from_deck(self, card) { G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry); },
+  },
+  // Musharna 518: when the Blind is selected, +2 Foresight this round per Psychic joker; each Enhanced Foreseen card gives
+  // X Mult (inherited from Munna).
+  musharna: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.scry] };
+    },
+    calculate(self, card, context) {
+      if (context.setting_blind) {
+        const psy_count = find_pokemon_type('Psychic').length;
+        if (psy_count > 0) {
+          G.GAME.scry_amount = (G.GAME.scry_amount || 0) + (psy_count * card.ability.extra.scry);
+          card.ability.extra.scry_added = card.ability.extra.scry_added + (psy_count * card.ability.extra.scry);
+          card.juice_up();
+        }
+      }
+      if (context.end_of_round && !context.individual && !context.repetition) {
+        G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry_added);
+        card.ability.extra.scry_added = 0;
+      }
+      if (context.individual && context.cardarea === G.scry_view && context.other_card.config.center !== P_CENTERS.c_base && !context.end_of_round && !context.other_card.debuff) {
+        return { x_mult: card.ability.extra.Xmult_multi };
+      }
+      return undefined;
+    },
+    remove_from_deck(self, card, from_debuff) {
+      if (!from_debuff && card.ability.extra.scry_added > 0) {
+        G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry_added);
+      }
     },
   },
 }, FILE);

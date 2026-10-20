@@ -10,7 +10,7 @@ const { ok, done } = T();
 const key = (c) => c.config.center.key;
 const NAMES = ['zoroark', 'gothita', 'gothorita', 'gothitelle', 'vanillite', 'vanillish', 'vanilluxe', 'frillish', 'jellicent', 'ferroseed', 'ferrothorn'];
 ok(NAMES.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 11 pokejokers_20 jokers ported');
-ok((STATUS.PORTED_FILES['pokemon/pokejokers_20.lua'] || []).length === 11, 'defs: 11 from pokejokers_20.lua');
+ok((STATUS.PORTED_FILES['pokemon/pokejokers_20.lua'] || []).length === 13, 'defs: 13 from pokejokers_20.lua (+ 2 new in 3.9.1, new-jokers sub-batch 15)');
 const rounds = (n) => { for (let i = 0; i < n; i++) { winRound(); if (i < n - 1) nextRound(); } };
 function discard(cards) { act({ type: 'highlight', ids: cards.map((c) => c.sort_id) }); return act({ type: 'discard' }); }
 

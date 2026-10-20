@@ -19,7 +19,8 @@ function lastHand(cards) {
 
 const FILE_JOKERS = ['feebas', 'milotic', 'duskull', 'dusclops', 'absol', 'wynaut'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 6 pokejokers_12 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_12.lua'].length === 6, 'defs: 6 from pokejokers_12.lua');
+// (+ 19 new in 3.9.1: new-jokers sub-batch 13, pokermon_391_new_13_test.mjs)
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_12.lua'].length === 25, 'defs: 25 from pokejokers_12.lua (6 + 19 new in 3.9.1)');
 
 // ---------------------------------------------------------------- Feebas / Milotic
 {

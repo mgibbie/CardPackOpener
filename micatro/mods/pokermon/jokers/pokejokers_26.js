@@ -1,10 +1,13 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_26.lua (Pokédex 751-780: Mimikyu), 1 joker.
+// Pokermon 3.9.1 — pokemon/pokejokers_26.lua (Pokédex 751-780: Mimikyu, Drampa), 1 joker + 1 new in 3.9.1
+// (Drampa: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers).
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
 // On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 // The busted-disguise sprite (broke_pos) is view data: `ability.extra.disguise_broken` (3.9.1; 3.2.1 saves carry
 // `disguise === false`, which systems/anim.js still reads).
 import * as BN from '../../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
-import { G, localize, play_sound, defineJokers, type_tooltip } from '../api.js';
+import {
+  G, localize, play_sound, defineJokers, type_tooltip, upgrade_all_shop_packs, change_booster_limit,
+} from '../api.js';
 
 const FILE = 'pokemon/pokejokers_26.lua';
 
@@ -43,6 +46,22 @@ defineJokers({
     },
     add_to_deck(self, card, from_debuff) {
       if (!from_debuff) { card.ability.extra.disguise_broken = undefined; card.ability.extra.disguise = undefined; }
+    },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 15)
+  // Drampa 780: +1 Booster Pack in the shop; shop packs are always Jumbo or better (the packs already there upgrade now, new
+  // ones through the get_pack hook: systems/rules.js). Its Mega (megas = {mega_drampa}) waits for the Megas batch (16).
+  drampa: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: [card.ability.extra.boosters] };
+    },
+    add_to_deck(self, card) {
+      G.E_MANAGER.add_event(() => { upgrade_all_shop_packs('jumbo'); });
+      change_booster_limit(card.ability.extra.boosters);
+    },
+    remove_from_deck(self, card) {
+      change_booster_limit(-card.ability.extra.boosters);
     },
   },
 }, FILE);

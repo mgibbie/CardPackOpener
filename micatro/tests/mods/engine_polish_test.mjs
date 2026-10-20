@@ -14,9 +14,6 @@ import { localize, P_CENTER_POOLS, quantum_enhancements, find_joker } from '../.
 import { loadMods, AVAILABLE, MODS, ATLASES } from '../../js/mods/index.js';
 import { RARITIES } from '../../mods/autumncircus/index.js';
 import { is_type } from '../../mods/pokermon/systems/types.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { family_win_keys } from '../../mods/pokermon/systems/evolution.js';
 
 const { ok, done } = T();
@@ -135,17 +132,10 @@ const key = (c) => c.config.center.key;
   const bad = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && c.mod === 'pokermon' && !ATLASES[c.atlas]).map((c) => c.key + ':' + c.atlas);
   ok(bad.length === 0, 'every Pokermon joker names a registered atlas', bad);
   ok(ov.atlas === 'poke_AtlasJokersBasicNatdex391' && ov.pos.x === 6 && ov.pos.y === 60, 'Overqwil: its Natdex sprite (PokemonSprites; the 3.9.1 sheet), like every other joker', [ov.atlas, ov.pos]);
-  // Pokermon never shipped Hisuian Qwilfish art: Micatro's own card (real Hisuian sprite in Pokermon's
-  // Dark-type frame) + a shiny twin, instead of the placeholder
-  ok(hq.atlas === 'poke_hisuian_qwilfish' && hq.pos.x === 0 && hq.pos.y === 0 && ATLASES.poke_hisuian_qwilfish && /hisuian_qwilfish\.png$/.test(ATLASES.poke_hisuian_qwilfish.src)
-    && ATLASES.poke_hisuian_qwilfishShiny && /hisuian_qwilfishShiny\.png$/.test(ATLASES.poke_hisuian_qwilfishShiny.src), 'Hisuian Qwilfish: its own card art (+ shiny), not the placeholder', [hq.atlas, hq.pos]);
-  {
-    const art = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../mods/pokermon/assets/2x/hisuian_qwilfish.png');
-    if (fs.existsSync(art)) { // mod art is gitignored (deployed separately): check it when present
-      const b = fs.readFileSync(art);
-      ok(b.readUInt32BE(16) === 142 && b.readUInt32BE(20) === 190, 'Hisuian Qwilfish art is one 2x card cell (142x190)', [b.readUInt32BE(16), b.readUInt32BE(20)]);
-    }
-  }
+  // Hisuian Qwilfish: 3.9.1's card (pokespriteload.lua: the Gen 2 sheet {2,5}; new-jokers sub-batch 15). The Micatro-made
+  // card (3.2.1 had no Hisuian Qwilfish art) is retired; its shiny is the sheet's Shiny twin, like every joker.
+  ok(hq.atlas === 'poke_AtlasJokersBasicGen02391' && hq.pos.x === 2 && hq.pos.y === 5 && !ATLASES.poke_hisuian_qwilfish && ATLASES.poke_AtlasJokersBasicGen02Shiny391,
+    'Hisuian Qwilfish: its 3.9.1 card (+ the Shiny twin sheet), not the placeholder', [hq.atlas, hq.pos]);
   start('POLISH_QWIL', {}, { mods: ALL });
   const q = add('j_poke_hisuian_qwilfish');
   ok(is_type(q, 'Dark'), 'Hisuian Qwilfish is a Dark type in play');

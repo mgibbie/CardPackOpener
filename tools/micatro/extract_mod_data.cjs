@@ -6,7 +6,7 @@
 //
 //   NODE_PATH=<dir containing fengari> node tools/micatro/extract_mod_data.cjs <modDir> <outFile.js> [spec.json]
 //
-// spec (optional JSON): { "files": {"<group>": ["glob-ish relative paths"...]}, "globals": ["pokermon.family", ...],
+// spec (optional JSON): { "files": {"<group>": ["glob-ish relative paths"...]}, "globals": ["pokermon.family", {"name", "expr"}, ...],
 //                         "loc": "localization/en-us.lua", "run_first": ["functions/x.lua", ...],
 //                         "prelude": "<Lua run before run_first, e.g. namespace tables a newer mod version expects>" }
 const fs = require('fs'), path = require('path');
@@ -125,8 +125,11 @@ for (const [group, globs] of Object.entries(spec.files || {})) {
   }
 }
 try { result.captured = evalJSON(L, 'CAPTURED'); } catch (e) { result.errors.push('captured: ' + e.message); }
+// A global is a Lua expression named by itself, or {name, expr} (e.g. data a newer mod keeps in a local table, read
+// through the accessor the mod exposes).
 for (const g of spec.globals || []) {
-  try { result.globals[g] = evalJSON(L, g); } catch (e) { result.errors.push('global ' + g + ': ' + e.message); }
+  const [name, expr] = typeof g === 'string' ? [g, g] : [g.name, g.expr];
+  try { result.globals[name] = evalJSON(L, expr); } catch (e) { result.errors.push('global ' + name + ': ' + e.message); }
 }
 if (spec.loc) {
   try { run(L, `LOC = (function() ${readLua(spec.loc)}
