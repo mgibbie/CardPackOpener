@@ -28,7 +28,8 @@ const inRange = DATA.groups.jokers.filter((f) => RANGE.test(f.file)).flatMap((f)
 const RW_ALL = D391.reworked || [], RW = RW_ALL.filter((n) => inRange.includes(n));
 const RH = (D391.rework_hold || []).filter(([n]) => inRange.includes(n));
 // (batch 10 took Qwilfish, Skarmory, Mega Steelix, Bellossom and the Hoppip line off hold: pokermon_391_hazard_test.mjs)
-const HOLDS = ['unown'];
+// (batch 10b: Unown, the last hold, is reworked — the Unown rework)
+const HOLDS = [];
 
 // ---------------------------------------------------------------- the overlay + version
 // (contentRev 3 since batch 6; later batches bump it: batch 7 is 4, pokermon_391_reworks_b_test.mjs)
@@ -36,7 +37,7 @@ ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 3 && PINS.mo
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
 ok(RW.length === inRange.length - HOLDS.length && inRange.length === 263,
   `reworked: every joker of pokejokers_01-08 but the ${HOLDS.length} holds (Pokermon 3.9.1)`, [RW && RW.length, inRange.length]);
-ok(HOLDS.every((n) => !RW.includes(n)) && RH.map(([n]) => n).sort().join() === HOLDS.slice().sort().join(), 'the holds: Unown only (since batch 10)', RH);
+ok(HOLDS.every((n) => !RW.includes(n)) && RH.map(([n]) => n).sort().join() === HOLDS.slice().sort().join(), 'the holds: none (since batch 10b; Unown was the last)', RH);
 {
   const LATER = /(pokejokers_(09|1\d|2\d|3\d)|zotherjokers|zmissingno)\.lua$/; // batches 7 and 8
   const later = DATA.groups.jokers.filter((f) => LATER.test(f.file)).flatMap((f) => (Array.isArray(f.ret.list) ? f.ret.list : []).map((it) => it.name));

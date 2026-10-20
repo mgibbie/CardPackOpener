@@ -33,8 +33,9 @@ const sec = (f) => { try { f(); } catch (e) { ok(false, 'section threw: ' + (e &
 const safe = (f) => { try { return f(); } catch (e) { return undefined; } };
 
 // ------------------------------------------------------------------ the overlay / pin
-ok(MODS.pokermon.contentRev === 6 && PINS.modPin('pokermon') === '3.9.1+r6', 'Pokermon contentRev 6 (pin 3.9.1+r6)', PINS.modPin('pokermon'));
-ok((D391.rework_hold || []).map(([n]) => n).sort().join() === 'unown,unown_swarm', 'rework_hold: only Unown / Unown Swarm are left (the Unown rework)', D391.rework_hold);
+// (contentRev 6 since batch 10; batch 10b, the Unown rework, is 7 and empties rework_hold: pokermon_391_unown_wish_test.mjs)
+ok(MODS.pokermon.contentRev >= 6 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 6+ (pin 3.9.1+r6 since batch 10)', PINS.modPin('pokermon'));
+ok((D391.rework_hold || []).every(([n]) => n === 'unown' || n === 'unown_swarm'), 'rework_hold: no Hazard joker left (only the Unown rework held, until batch 10b)', D391.rework_hold);
 ok(UNHELD.every((n) => D391.reworked.includes(n)), 'the 16 Hazard / Seed / quantum jokers are reworked (3.9.1 data + text)', UNHELD.filter((n) => !D391.reworked.includes(n)));
 const deferred = Object.fromEntries(D391.rework_deferred || []);
 ok(!deferred.shaymin && !deferred.shaymin_sky && /mega_skarmory/.test(deferred.skarmory || ''), 'deferred: Shaymin\'s Flower part is done; Skarmory waits only for Mega Skarmory');

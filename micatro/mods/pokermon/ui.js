@@ -14,6 +14,8 @@
 //   * Animated sprites (pokeanimations.lua AnimatedPokemon): the Unown swarm's 36-frame sheet (+ its soul
 //     layer, shiny sheets too) and Bird Energy's; Voltorb / Electrode animate only on their Series A art,
 //     which Micatro doesn't ship (the Basic sprite is static), so they stay still as in the mod's default.
+//     The swarm draws 3.9.1's one-row strips, tiled (index.js SWARM_STRIPS), cropped to the card.
+//   * Unown's form (3.9.1 set_sprites): the letter floats over the plain Unown card as its soul layer.
 import { P_CENTERS } from './api.js';
 import { MOD_LOC } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
@@ -137,6 +139,21 @@ function copyable(o) {
   if (o.mod && o.atlas) { const big = /unown_swarm/.test(o.atlas); return !big; }
   return true;
 }
+/**
+ * Unown's form (3.9.1 pokejokers_07.lua set_sprites, batch 10b): the card is the plain frame ({0,0} of its Gen 2 sheet)
+ * and its floating sprite is the form's letter — A..I {1..9,0}, J..S {0..9,1}, T..Z, !, ? {0..8,2}.
+ */
+const UNOWN_FORMS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'ZEx', 'ZQu'];
+export function unownSoul(form) {
+  const i = UNOWN_FORMS.indexOf(form);
+  if (i < 0) return null;
+  return { x: (i + 1) % 10, y: Math.floor((i + 1) / 10) };
+}
+/** A card view with Unown's form as its soul layer (others unchanged). */
+const withUnownForm = (o) => {
+  const s = o && o.center === 'j_poke_unown' && o.poke && unownSoul(o.poke.form);
+  return s ? { ...o, soul_pos: s } : o;
+};
 function zoruaActive(d) { return !d.debuff && !(d.center === 'j_poke_zorua' && d.poke && d.poke.active === false); }
 /** What a disguised Zorua / Zoroark copies in the joker row: the rightmost joker (not itself), or null. */
 function zoruaTarget(d, ctx) {
@@ -244,10 +261,12 @@ export const POKE_UI = {
     }
     const tgt = zoruaTarget(d, ctx);
     if (tgt) {
-      if (tgt.mod) return { ...d, atlas: tgt.atlas, pos: tgt.pos, soul_pos: tgt.soul_pos, win_key: d.center };
+      if (tgt.mod) return { ...d, atlas: tgt.atlas, pos: tgt.pos, soul_pos: withUnownForm(tgt).soul_pos, win_key: d.center };
       return { ...d, mod: undefined, atlas: undefined, pos: undefined, soul_pos: undefined, center: tgt.center, poke_disguise: true, win_key: d.center };
     }
-    return null;
+    // Unown: its form's letter floats over the card
+    const u = withUnownForm(d);
+    return u === d ? null : u;
   },
   anim(d) {
     const a = d && d.poke && d.poke.anim;

@@ -386,7 +386,7 @@ All are byte-identical to upstream main.
 | 5 | **DONE** (see "Batch 5" below) — Pokermon 3.9.1 data re-extract: rarities, costs, configs, gates, the cgoose → iridescent_hacker alias; refresh test expectations; vendor the 39 changed + 21 new atlases | M | 4 |
 | 6–8 | **DONE** (#773 files 01–08, #774 09–17, batch 8 18–34 + zother/zmissingno): 435 existing jokers on 3.9.1, 18 held (see "Batches 6–8" below) | 3 × L | 5 |
 | 10 | **DONE** (see "Batch 10" below) — Pokermon Hazard layer rework + Seed enhancement, Miracle Seed, Heavy Boots, Debris deck and sleeve (3.9.1's `diceydeck`: "Dicey" and "Debris" are one deck), Flower ×2 — 16 jokers un-held (11 Hazard jokers, Mega Steelix via a quantum seam, Bellossom/Hoppip line), Shaymin's Flower part | L | 5 |
-| 10b | NOT DONE (left after batch 10) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
+| 10b | **DONE** (see "Batch 10b" below) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art, the swarm strips tiled) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
 | 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file | 5 × L | 5 |
 | 15b | **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Port from upstream main at a pinned commit (bump `version` to that tag/commit) | M | 11–15 |
 | 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice | M | 5 |
@@ -504,7 +504,7 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 | Waits on | Held on 3.2.1 | On 3.9.1, one part deferred |
 |---|---|---|
 | ~~Batch 10 (Hazard / Seed / Flower)~~ DONE | — (all 16 un-held) | — (Shaymin done) |
-| Batch 10b (Unown + Wish Pack) | Unown, Unown Swarm | Ruins of Alph, Jirachi |
+| ~~Batch 10b (Unown + Wish Pack)~~ DONE | — (Unown, Unown Swarm reworked) | — (Ruins of Alph, Jirachi done) |
 | Batch 16 (Megas) | — | Lucario (Mega Lucario), Skarmory (Mega Skarmory) |
 | Batch 17 (non-Pokémon jokers) | — | Rival, Mystery Egg |
 | Kept by design | — | Porygon-Z's Energy counter |
@@ -521,4 +521,24 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 - Engine seams (opted-in mods only; vanilla / Pokermon / all-mods fuzz and More Fluff fingerprints identical on the seam-only diff):
   `first_hand_drawn` at mod level; `quantum_mod_calculate` (a quantum MOD enhancement's own end-of-round calculate).
 - Deviations / left: Heavy-Duty Boots spawn as a hidden Item (object_weights still off); the Debris sleeve's alt on the Debris deck (needs
-  a playing-card `card_limit` seam); batch 10b (Unown rework + Wish Pack) not done.
+  a playing-card `card_limit` seam); batch 10b (Unown rework + Wish Pack) followed (below).
+
+## Batch 10b — Pokermon Unown rework + Wish Pack: DONE (2026-10-20, branch `feat/micatro-pokermon-391-unown-wish`)
+- Pin **3.9.1+r7** (`contentRev` 7; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "The Unown rework and the
+  Wish Pack (batch 10b)".
+- Unown / Unown Swarm reworked (never in a pool; `SMODS.destroy_cards`; 3.9.1 config / text / attributes): spec `rework_hold` and
+  `sprite_hold` are empty, so every existing Pokermon joker is on 3.9.1. Ruins of Alph makes its Unown by `SMODS.add_card` (Negative).
+- Ruins of Alph's "three free Unown": 3.9.1 followed. The batch-8 guard (cost / sell value zeroed by hand) is dropped, because the
+  exploit cannot happen: an Unown always sells for $0 through the set_cost rule both versions have (3.9.1 lovely/poke_utils.toml,
+  our rules.js). Fired by the new test.
+- Art: Unown on its 3.9.1 card, with its form letter drawn as the soul layer. The Unown Swarm's 3.9.1 strips (20880 px) are split into
+  tiles <= 8192 px by `tools/micatro/split_pokermon_unown_swarm.mjs`; the sprite lookup (`js/ui/assets.js` `modCellRect`) picks the
+  tile and crops to the card. 12 new gitignored files: `micatro/mods/pokermon/assets/2x/j_poke_unown_swarm[_shiny][_soul]-391-t{0,1,2}.png`
+  (deploy with `npm run deploy-micatro-mods` before merging).
+- Wish Pack: 3 offers, each a different wish of the 5 (`used_wishes`, seed `jirachi<i>`; no Master Ball). Wishes are `change_form`
+  ("Transformed!") and name their form in the tooltip. Jirachi's deferred part is done.
+- Tests: `micatro/tests/mods/pokermon_391_unown_wish_test.mjs` (26 passed / 35 failed on origin/main, 61 / 0 here).
+- Left on purpose: the Swarm's glued playing-card front (cosmetic; 3.9.1 draws it with a seeded random card inside the renderer).
+  Still pending across the 3.9.1 rework of existing content: Mega Lucario / Mega Skarmory (batch 16), Rival's chain + the Oologist
+  (batch 17), Porygon-Z's counter (kept by design), the Debris sleeve's alt (a playing-card `card_limit` seam), object_weights
+  (items batch), Pink Seal 1-in-3 (challenges, batch 17).

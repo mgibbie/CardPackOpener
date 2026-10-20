@@ -37,7 +37,7 @@ ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 4 && PINS.mo
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
 ok(inRange.length === 97 && RW.length === 97, 'reworked: every joker of pokejokers_09-17, no holds (Pokermon 3.9.1)', [RW.length, inRange.length]);
 ok(!(D391.rework_hold || []).some(([n]) => inRange.includes(n)), 'nothing of 09-17 is held on 3.2.1');
-ok((D391.rework_deferred || []).map(([n]) => n).filter((n) => inRange.includes(n)).sort().join() === 'jirachi,lucario,porygonz', 'rework_deferred (09-17): Lucario (Mega), Jirachi (Wish Pack), Porygon-Z (usage counter) — Shaymin’s Flower part landed in batch 10', D391.rework_deferred);
+ok((D391.rework_deferred || []).map(([n]) => n).filter((n) => inRange.includes(n)).sort().join() === 'lucario,porygonz', 'rework_deferred (09-17): Lucario (Mega), Porygon-Z (usage counter) — Shaymin’s Flower part landed in batch 10, Jirachi’s Wish Pack in 10b', D391.rework_deferred);
 ok(C('treecko').config.evo_rqmt === 16 && C('treecko').config.extra.triggers === 0 && C('treecko').config.extra.num === undefined && C('treecko').perishable_compat !== false,
   'a reworked joker takes its whole 3.9.1 config and flags (Treecko: 16 triggers, no coin flip, Perishable allowed) (Pokermon 3.9.1)', C('treecko').config);
 ok(C('mega_camerupt').config.extra.Xmult_mod === 0.5 && C('yanmega').config.extra.mult_mod === 6 && C('glaceon').config.extra.retriggers === 1 && C('jirachi_power').config.extra.every === 2

@@ -10,27 +10,21 @@
     "rework_hold: jokers of rework_files still on their 3.2.1 behaviour (with the reason; their static data goes through take / reasons as before).",
     "loc_extra: other 3.9.1 loc entries the reworked jokers show, as Set.key (Other.<tooltip>, dictionary.<word>, v_dictionary.<word>).",
     "rework_deferred (batch 7+): 3.9.1 changes to jokers of rework_files that are ported WITHOUT one part, because that part belongs to other content not ported yet (a new joker, an enhancement, a booster); the joker itself is on 3.9.1. Names must be 3.2.1 jokers; copied to data391.js rework_deferred for the docs and tests, inert.",
-    "batch 10: the Hazard layer / Seed card / Flower X2 landed; the 16 jokers that waited for them left rework_hold, and loc_extra pulls the 3.9.1 text of the new / changed non-joker content (enhancements, items, the Debris deck and sleeve, the Hazard Layer tooltip). Sets named by their 3.9.1 key (poke_item) are merged into our canonical set (Item) by index.js."
+    "batch 10: the Hazard layer / Seed card / Flower X2 landed; the 16 jokers that waited for them left rework_hold, and loc_extra pulls the 3.9.1 text of the new / changed non-joker content (enhancements, items, the Debris deck and sleeve, the Hazard Layer tooltip). Sets named by their 3.9.1 key (poke_item) are merged into our canonical set (Item) by index.js.",
+    "batch 10b: the Unown rework landed (Unown, Unown Swarm, Ruins of Alph's Unown spawn, Unown's 3.9.1 card) with the Wish Pack (Jirachi): rework_hold and sprite_hold are empty; Ruins of Alph and Jirachi left rework_deferred."
   ],
   "rework_files": ["pokejokers_01", "pokejokers_02", "pokejokers_03", "pokejokers_04", "pokejokers_05", "pokejokers_06", "pokejokers_07", "pokejokers_08", "pokejokers_09", "pokejokers_10", "pokejokers_11", "pokejokers_12", "pokejokers_13", "pokejokers_14", "pokejokers_15", "pokejokers_16", "pokejokers_17", "pokejokers_18", "pokejokers_19", "pokejokers_20", "pokejokers_21", "pokejokers_22", "pokejokers_23", "pokejokers_24", "pokejokers_25", "pokejokers_26", "pokejokers_28", "pokejokers_30", "pokejokers_31", "pokejokers_32", "pokejokers_33", "pokejokers_34", "zotherjokers", "zmissingno"],
-  "rework_hold": {
-    "unown": "Unown rework (3.9.1 Unown swarm: new card art, forms and badge)",
-    "unown_swarm": "the Unown rework (with Unown, batch 6): 3.9.1 redraws the Swarm (a glued playing-card front, soul atlas j_poke_unown_swarm_soul, display_size) and takes it out of the pool"
-  },
+  "rework_hold": {},
   "rework_deferred": {
     "lucario": "3.9.1 adds megas = {mega_lucario}: Mega Lucario is a new 3.9.1 joker (new-jokers batch); Lucario has no Mega until then",
     "skarmory": "3.9.1 adds megas = {mega_skarmory}: Mega Skarmory is a new 3.9.1 joker (the Megas batch, 16); Skarmory has no Mega until then. The Hazard layer part (hazard_level / hazard_max) is on 3.9.1 since batch 10",
-    "jirachi": "the 3.9.1 Wish Pack (3 random unused wishes; packs1.lua) and change_form wishes wait for the boosters batch; the wish forms themselves (banker / booster / power / invis / fixer) are on 3.9.1",
     "porygonz": "3.9.1 reads G.GAME.consumeable_usage_total.poke_energy (Steamodded counts every set); ours keeps G.GAME.energies_used (every Energy used), like batch 6 kept the renamed poke_energy_plus / poke_scry_amount state",
     "rival": "3.9.1's Rival chain: a beaten Rival (G.GAME.poke_rival_defeated) opens Bitter Rival, then Champion — both new 3.9.1 jokers (new-jokers batch); until then a beaten Rival just leaves the pool. The Rival itself is on 3.9.1",
-    "mystery_egg": "3.9.1 gates the hatch speed-ups (a Fire Energy held, a Flame Body / Magma Armor neighbour) behind the Oologist, a new 3.9.1 joker (new-jokers batch): until it is ported they never apply. The egg itself (poll_object pick, in-place hatch) is on 3.9.1",
-    "ruins_of_alph": "3.9.1 makes its three Negative Unown by SMODS.add_card and no longer zeroes their cost / sell value; ours keeps them free with no sell value until the Unown rework (Unown and Unown Swarm are held), so each blind's three Unown can't be sold for $2 apiece. The rewards (Safari joker from the Joker pool, Duplicated! then the copy) are on 3.9.1"
+    "mystery_egg": "3.9.1 gates the hatch speed-ups (a Fire Energy held, a Flame Body / Magma Armor neighbour) behind the Oologist, a new 3.9.1 joker (new-jokers batch): until it is ported they never apply. The egg itself (poll_object pick, in-place hatch) is on 3.9.1"
   },
   "loc_extra": ["Other.bat_leech", "dictionary.poke_leech_life_ex", "dictionary.poke_wish_ex", "Enhanced.m_poke_hazard", "Enhanced.m_poke_seed", "Enhanced.m_poke_flower", "Other.hazard_level", "Other.growth_level", "poke_item.c_poke_miracleseed", "poke_item.c_poke_heavyboots", "Back.b_poke_diceydeck", "Sleeve.sleeve_poke_diceysleeve", "dictionary.poke_hazards_in_deck", "dictionary.k_poke_hazard_layer", "dictionary.k_poke_time", "dictionary.k_poke_times", "dictionary.poke_sticky_web_ex"],
   "take_always": ["rarity", "cost", "perishable_compat", "eternal_compat", "enhancement_gate", "attributes"],
   "take": {},
   "reasons": {},
-  "sprite_hold": {
-    "unown": "3.9.1 redrew Unown's card for the Unown rework (another frame and badge); our Unown is the 3.2.1 one"
-  }
+  "sprite_hold": {}
 }

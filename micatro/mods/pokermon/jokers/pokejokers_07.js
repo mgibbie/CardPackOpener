@@ -1,10 +1,10 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_07.lua (Pokédex 181-210: Ampharos -> Granbull), 33 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, megas, volatile, custom_pool_func) comes from data.js + data391.js. See ../PORTING.md.
-// On Pokermon 3.9.1 behaviour since batch 6, except Unown (held for the Unown rework). Bellossom and the Hoppip line
-// (Seed cards) and Mega Steelix (quantum Hazard) came off hold in batch 10.
+// On Pokermon 3.9.1 behaviour since batch 6. Bellossom and the Hoppip line (Seed cards) and Mega Steelix (quantum Hazard)
+// came off hold in batch 10, Unown (the Unown rework) in batch 10b.
 // Rules that live in systems: Aipom's 3-card straights/flushes (rules.js straight_min /
-// flush_min), Unown's $0 sell value (rules.js set_cost), Unown's form (anim.js view data).
+// flush_min), Unown's $0 sell value (rules.js set_cost), Unown's form (anim.js view data, drawn by ui.js).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, poll_edition,
   ease_discard, ease_hands_played, level_up_hand, juice_card_until, next,
@@ -12,7 +12,7 @@ import {
   get_probability_vars, pseudorandom_probability, find_pokemon_type, has_enhancement, poke_is_odd,
   is_type, apply_type_sticker, find_other_poke_or_energy_type, find_card, any,
   poke_convert_cards_to, remove, volatile_active, get_poke_target_card_ranks, add_target_cards_to_vars,
-  change_play_limit, change_discard_limit, has_no_rank, add_card, playing_card_joker_effects,
+  change_play_limit, change_discard_limit, has_no_rank, add_card, playing_card_joker_effects, destroy_joker, POKE_POOL_RULES,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_07.lua';
@@ -506,16 +506,19 @@ defineJokers({
             return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult_mod: card.ability.extra.mult };
           }
         }
+        // (3.9.1: SMODS.destroy_cards(card, nil, nil, true) — pinched out; Ruins of Alph's `after` still finds it this hand)
         if (context.after && card.ability.extra.triggered && any(find_card('j_poke_ruins_of_alph')) && !context.blueprint) {
-          G.E_MANAGER.add_event(() => { remove(self, card, context); });
+          destroy_joker(card);
         }
       }
       if (context.end_of_round && !context.individual && !context.repetition) {
-        G.E_MANAGER.add_event(() => { remove(self, card, context); });
-        card_eval_status_text(card, 'extra', null, null, null, { message: localize('poke_flees_ex') });
+        destroy_joker(card);
+        return { message: localize('poke_flees_ex') };
       }
       return undefined;
     },
+    // Pokermon 3.9.1: never in a pool (in_pool false; Ruins of Alph makes them). The rule is POKE_POOL_RULES below:
+    // load_pokemon's pokemon_in_pool replaces a joker's own in_pool here.
     set_ability(self, card, initial) {
       if (initial) {
         let form = 'A';
@@ -535,9 +538,14 @@ defineJokers({
         }
         if (forms.length > 0) form = pseudorandom_element(forms, pseudoseed('unown'))[0];
         card.ability.extra.form = form;
-        // (set_sprites: the form is exposed to the UI through systems/anim.js view data.)
-        card.ability.extra.targets = get_poke_target_card_ranks('unown', 1, card.ability.extra.targets);
+        // (set_sprites: the form reaches the UI through systems/anim.js view data; ui.js draws its letter as the soul.
+        // 3.9.1 also makes a collection Unown Negative: the collection draws centers, not cards — nothing to do.)
+        self.set_nature(self, card);
       }
+    },
+    // 3.9.1 set_nature (the Nature rank)
+    set_nature(self, card) {
+      card.ability.extra.targets = get_poke_target_card_ranks('unown', 1, card.ability.extra.targets);
     },
   },
   // Wobbuffet 202
@@ -741,3 +749,6 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Pokermon 3.9.1 (batch 10b): Unown is never in a pool (its in_pool returns false; Ruins of Alph makes them).
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_unown' ? false : undefined));

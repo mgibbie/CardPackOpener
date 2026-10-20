@@ -121,10 +121,7 @@ const ATLAS_FILES = {
   hisuian_qwilfishShiny: ['hisuian_qwilfishShiny.png'],
   unergy: ['unergy.png'],
   unitem: ['unitem.png'],
-  j_poke_unown_swarm: ['j_poke_unown_swarm.png', 290, 285],
-  j_poke_unown_swarm_shiny: ['j_poke_unown_swarm_shiny.png', 290, 285],
-  j_poke_unown_swarm_soul: ['j_poke_unown_swarm_soul.png', 290, 285],
-  j_poke_unown_swarm_shiny_soul: ['j_poke_unown_swarm_shiny_soul.png', 290, 285],
+  // (the Unown Swarm's strips: SWARM_STRIPS below, tiled)
   // martz.lua's Jirachi wish cards (c_poke_fake_*) name this Series A sheet; it ships with 3.2.1 but wasn't registered.
   AtlasJokersSeriesAGen03: ['Series A/AtlasJokersSeriesAGen03.png'],
   // Pokermon 3.9.1's boss blind sheet (21 frames per row, like the 3.2.1 one; the renamed Iridescent Hacker is row 25).
@@ -141,14 +138,14 @@ for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 
  * below): 3.9.1 re-laid some sheets, so jokers take their cell from data391.js sprites (3.9.1 pokespriteload.lua), every
  * other card keeps its cell (3.9.1 kept those). The 3.2.1 sheets stay registered: the add-ons (Nacho, Pokermon+) still
  * draw their cells from them until their own upgrades, and so do the held cards (TO391_HOLD). Checked crop by crop:
- * micatro/tests/mods/pokermon_391_data_test.mjs. (3.9.1's re-laid animation strips — the Unown swarm, Bird Energy —
- * and its Series A sheets are vendored but not used: the same frames, or art the port doesn't show.)
+ * micatro/tests/mods/pokermon_391_data_test.mjs. (3.9.1's re-laid Bird Energy strip and its Series A sheets are vendored
+ * but not used: the same frames, or art the port doesn't show. The Unown Swarm draws 3.9.1's strips since batch 10b: below.)
  */
 const SHEETS_391 = ['AtlasConsumablesBasic', 'AtlasDecksBasic', 'AtlasEnhancementsBasic', 'AtlasStickersBasic'];
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) SHEETS_391.push('AtlasJokersBasic' + g, 'AtlasJokersBasic' + g + 'Shiny');
 for (const n of SHEETS_391) ATLAS_FILES[n + '391'] = ['Basic Series/' + n + '-391.png'];
 SHEETS_391.push('AtlasBossblinds');
-/** Cards that keep their 3.2.1 sheet (data391.js sprite_hold: Unown's 3.9.1 card is the reworked one). */
+/** Cards that keep their 3.2.1 sheet (data391.js sprite_hold; empty since batch 10b, when Unown took its 3.9.1 card). */
 const TO391_HOLD = new Set(D391.sprite_hold.map(([name]) => 'j_poke_' + name));
 /** A Pokermon card's 3.2.1 sheet -> its 3.9.1 twin. */
 const to391 = (c) => {
@@ -159,6 +156,25 @@ const to391 = (c) => {
 const atlases = {};
 for (const [name, [path, px = 71, py = 95, frames]] of Object.entries(ATLAS_FILES)) {
   atlases['poke_' + name] = { src: art(path), px, py, ...(frames ? { frames } : {}) };
+}
+/**
+ * The Unown Swarm (batch 10b): Pokermon 3.9.1's animation strips (pokesprites.lua: 290 x 285 cells, 36 frames in ONE row,
+ * 20880 px wide at 2x, past the 16384 px texture limit of many GPUs) split into tiles of SWARM_TILE_COLS frames (8120 px)
+ * by tools/micatro/split_pokermon_unown_swarm.mjs: '<strip>-391-t<n>.png', registered as 'poke_<strip>_t<n>'. The strip's
+ * own atlas has no src: its `tiles` + `tile_cols` make the sprite lookup (js/ui/assets.js modCellRect) pick the tile, and
+ * its `crop` draws only the card — the Lua's display_size 290/3 x 285/3 with set_alignment x = (37 / 3) / 71: the card is
+ * the 213 x 285 px at x 37 of each cell (3x a 71 x 95 card). The flying Unown outside the card are cut off.
+ * (3.2.1's 12 x 3 sheets hold the same 36 frames, pixel for pixel; they stay vendored, unused.)
+ */
+const SWARM_STRIPS = ['j_poke_unown_swarm', 'j_poke_unown_swarm_shiny', 'j_poke_unown_swarm_soul', 'j_poke_unown_swarm_shiny_soul'];
+export const SWARM_TILE_COLS = 14;
+for (const strip of SWARM_STRIPS) {
+  const tiles = [];
+  for (let t = 0; t * SWARM_TILE_COLS < 36; t++) {
+    atlases['poke_' + strip + '_t' + t] = { src: art(strip + '-391-t' + t + '.png'), px: 290, py: 285 };
+    tiles.push('poke_' + strip + '_t' + t);
+  }
+  atlases['poke_' + strip] = { px: 290, py: 285, frames: 36, tiles, tile_cols: SWARM_TILE_COLS, crop: { x: 37, y: 0, w: 213, h: 285 } };
 }
 /**
  * Centers 3.2.1 drew with a placeholder sheet whose art a later Pokermon release added (3.9.1: zotherjokers.lua
@@ -172,7 +188,7 @@ const LATER_ART = {
 };
 const laterArt = (c) => { const a = LATER_ART[c.key]; if (a) { c.atlas = a.atlas; c.pos = { ...a.pos }; } };
 /** A data atlas name -> the registered (prefixed) atlas, or a placeholder. */
-const atlasName = (a, fallback = 'placeholder_joker') => ('poke_' + (ATLAS_FILES[a] ? a : fallback));
+const atlasName = (a, fallback = 'placeholder_joker') => ('poke_' + (ATLAS_FILES[a] || SWARM_STRIPS.includes(a) ? a : fallback));
 
 // ------------------------------------------------------------------ helpers
 const FN = '__fn';
@@ -580,10 +596,12 @@ export const POKERMON = registerMod({
   // 3 = batch 6, pokejokers_01-08 on their 3.9.1 behaviour (data391.js reworked: whole config, flags, loc text).
   // 4 = batch 7, pokejokers_09-17 on their 3.9.1 behaviour (Gen-3 starters, Celebi, Jirachi forms, Leafeon / Glaceon...).
   // 5 = batch 8, pokejokers_18-34 + zotherjokers / zmissingno on their 3.9.1 behaviour (Vanillite line, Zorua, Sylveon,
-  // Pumpkaboo, Kingambit, Gimmighoul / Gholdengo, Rival, Mystery Egg...; Hazard jokers and Unown Swarm held).
+  // Pumpkaboo, Kingambit, Gimmighoul / Gholdengo, Rival, Mystery Egg...; Hazard jokers and Unown Swarm held then).
   // 6 = batch 10, the Hazard layer (run-wide hazard_level, Hazard 1 in 3), the Seed card, Flower X2 (X3 with Shaymin),
   // Miracle Seed, Heavy-Duty Boots, the Debris deck / sleeve; the 16 Hazard / Seed / quantum jokers off hold.
-  contentRev: 6,
+  // 7 = batch 10b, the Unown rework (Unown / Unown Swarm never in a pool, SMODS.destroy_cards, Ruins of Alph's Unown by
+  // SMODS.add_card, Unown's 3.9.1 card) and the Wish Pack (3 random unused wishes, no Master Ball; change_form wishes).
+  contentRev: 7,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

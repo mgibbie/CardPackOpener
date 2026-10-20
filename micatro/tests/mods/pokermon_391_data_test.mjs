@@ -5,7 +5,7 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 6 (pin '3.9.1+r6', batch 10; batch 8 was r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 7 (pin '3.9.1+r7', batch 10b; batch 10 was r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
@@ -31,17 +31,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 6, 'Pokermon is version 3.9.1, contentRev 6', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r6', 'its pin is 3.9.1+r6', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 7, 'Pokermon is version 3.9.1, contentRev 7', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r7', 'its pin is 3.9.1+r7', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r6', 'a new run is pinned 3.9.1+r6', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r7', 'a new run is pinned 3.9.1+r7', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r6', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 6). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r7', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 7). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
@@ -53,8 +53,8 @@ ok(D391.version === '3.9.1' && D391.counts.rarity === 41 && D391.counts.cost ===
 // 3.9.1 config, config_all; so does Mega Pidgeot's blueprint flag)
 // (batch 7: Larvitar, Pupitar and Kricketot - pokejokers_09/14 - likewise; batch 8: the last two, Grubbin and Charjabug)
 ok(!D391.counts.config && D391.counts.attributes === 451, '... no config number taken outside the reworked files any more (batch 8)', D391.counts);
-// (batch 10: the Hazard / Seed / quantum holds left; only Unown's format-only change is skipped now)
-ok(D391.skipped.length >= 1 && D391.skipped.every((s) => s.length === 5 && typeof s[4] === 'string' && s[4] && s[4] !== '?'), 'every skipped change has a reason', D391.skipped.filter((s) => !s[4] || s[4] === '?'));
+// (batch 10: the Hazard / Seed / quantum holds left; batch 10b: Unown (its format-only change) too — nothing is skipped now)
+ok(D391.skipped.length === 0 && D391.skipped.every((s) => s.length === 5 && typeof s[4] === 'string' && s[4] && s[4] !== '?'), 'every skipped change has a reason', D391.skipped.filter((s) => !s[4] || s[4] === '?'));
 
 // ---------------------------------------------------------------- rarities (mostly to Safari)
 const RAR = { raticate: 'poke_safari', fearow: 'poke_safari', sandslash: 'poke_safari', nidorina: 'poke_safari', golduck: 'poke_safari',
@@ -268,8 +268,9 @@ else {
   }
   const px = {};
   for (const [file, rects] of Object.entries(want)) Object.assign(px, await crops(path.join(ART, file), rects));
-  // 3.9.1 redrew these on purpose: Flower's card (the Seed / Flower rework art), the renamed boss's chip (a new boss).
-  const REDRAWN = new Set(['m_poke_flower', 'bl_poke_iridescent_hacker']);
+  // 3.9.1 redrew these on purpose: Flower's card (the Seed / Flower rework art), the renamed boss's chip (a new boss), and
+  // Unown's card (the Unown rework, batch 10b: another frame and badge; its letters, the soul cells, are unchanged).
+  const REDRAWN = new Set(['m_poke_flower', 'bl_poke_iridescent_hacker', 'j_poke_unown']);
   const same = [], touched = [], differ = [], outside = [];
   for (const c of cards) {
     const a = px[c.key + '|old'], b = px[c.key + '|new'];
@@ -290,8 +291,8 @@ else {
     if (!c) continue;
     ok(same.includes(c.key) || touched.some((s) => s.startsWith(c.key + ' ')), `moved by 3.9.1: ${n} (${c.atlas} ${c.pos.x},${c.pos.y}) shows its 3.2.1 picture`);
   }
-  // Held on the 3.2.1 sheet: Unown (3.9.1's card is the reworked one); the add-ons keep the 3.2.1 sheets.
-  ok(C('unown').atlas === 'poke_AtlasJokersBasicGen02', 'Unown keeps its 3.2.1 card', C('unown').atlas);
+  // Unown is on its 3.9.1 card since batch 10b (the Unown rework); the add-ons keep the 3.2.1 sheets.
+  ok(C('unown').atlas === 'poke_AtlasJokersBasicGen02391', 'Unown: its 3.9.1 card (batch 10b)', C('unown').atlas);
   ok(C('rotomdex').atlas === 'poke_AtlasJokersBasicOthers391' && P_CENTERS.b_poke_stadiumdeck.atlas === 'poke_AtlasDecksBasic391' && P_CENTERS.c_poke_fake_banker.atlas === 'poke_AtlasJokersSeriesAGen03', 'the batch-1 placeholder art is kept (Rotom Dex, decks, Jirachi wishes)');
 }
 
