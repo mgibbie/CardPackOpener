@@ -15,7 +15,7 @@ import {
   G, P_CENTERS, P_CARDS, P_CARDS_LIST, Card, copy_table, emit, card_eval_status_text, play_sound, localize,
   pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, ease_dollars, draw_card,
   create_card as core_create_card, create_playing_card, poll_edition, find_joker, probability_vars, probability_roll,
-  quantum_enhancements,
+  quantum_enhancements, copy_card,
 } from '../../../js/engine/core.js';
 import { playing_card_joker_effects } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
@@ -134,6 +134,61 @@ export function add_card(t) {
   return card;
 }
 
+/**
+ * SMODS.add_to_deck(card, {area, playing_card, set}): add a made card to the run (a playing card joins G.playing_cards and
+ * defaults to the hand; a consumable to G.consumeables; else the joker row). (Pokermon 3.9.1 helpers, batch 8.)
+ */
+export function smods_add_to_deck(card, args = {}) {
+  const is_playing = !!(card.playing_card || args.playing_card || args.set === 'Base' || args.set === 'Enhanced'
+    || card.ability.set === 'Default' || card.ability.set === 'Enhanced');
+  let area = args.area;
+  if (is_playing) {
+    if (!card.playing_card && !args.playing_card) G.playing_card = (G.playing_card || 0) + 1;
+    card.playing_card = args.playing_card || card.playing_card || G.playing_card;
+    area = area || G.hand;
+  }
+  if (!area && ['Tarot', 'Planet', 'Spectral', 'Energy', 'Item'].includes(card.ability.set)) area = G.consumeables;
+  card.add_to_deck();
+  if (is_playing) {
+    G.deck.config.card_limit = G.deck.config.card_limit + 1;
+    G.playing_cards.push(card);
+  }
+  (area || G.jokers).emplace(card);
+  return card;
+}
+/** SMODS.copy_card(card, {area, playing_card, new_card, card_scale, strip_edition, no_add}) (smods src/utils.lua). */
+export function smods_copy_card(card, args = {}) {
+  let playing_card;
+  if (args.playing_card !== false) playing_card = args.playing_card || (card.playing_card ? G.playing_card : undefined);
+  const copy = copy_card(card, args.new_card, args.card_scale, playing_card, args.strip_edition);
+  if (args.new_card || args.no_add) return copy;
+  return smods_add_to_deck(copy, { area: args.area || card.area, playing_card });
+}
+const CONSUMEABLE_MSG = { Tarot: 'k_plus_tarot', Planet: 'k_plus_planet', Spectral: 'k_plus_spectral', Item: 'poke_plus_pokeitem', Energy: 'poke_plus_pokeitem' };
+/**
+ * pokermon.create_consumeable(args | key, in_event, message_card) (3.9.1 functions/pokefunctions.lua): with room (or a
+ * Negative one), make it — in an event holding a consumeable_buffer slot when in_event — and pop "+1 Tarot" etc. on
+ * message_card (or the card). -> the card, or undefined without room.
+ */
+export function create_consumeable(args, in_event, message_card) {
+  if (typeof args === 'string') args = { key: args };
+  if (!(G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit || args.edition === 'e_negative')) return undefined;
+  args.set = args.set || (P_CENTERS[args.key] && P_CENTERS[args.key].set);
+  args.skip_materialize = true;
+  const card = smods_create_card({ ...args, area: G.consumeables });
+  const set = card.ability.set;
+  if (in_event) {
+    G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+    G.E_MANAGER.add_event(() => {
+      smods_add_to_deck(card, { area: G.consumeables });
+      G.GAME.consumeable_buffer = 0;
+    });
+  } else smods_add_to_deck(card, { area: G.consumeables });
+  const k = CONSUMEABLE_MSG[set];
+  card_eval_status_text(message_card || card, 'extra', null, null, null, { message: k ? localize(k) : '+1 ' + set, colour: set });
+  return card;
+}
+
 // ---------------------------------------------------------- pokeutils.lua
 export function pseudorandom_multi(args) {
   // Args: array(table), amt(num), seed(string), add_con(function), mod_func(function)
@@ -169,9 +224,11 @@ export function poke_add_card(add_card, card, area) {
   return { message: localize('k_copied_ex'), colour: 'CHIPS', card, playing_cards_created: [true] };
 }
 
-export function poke_add_shop_card(add_card, card) {
+export function poke_add_shop_card(add_card, card, is_free) {
   if (G.GAME.shop.joker_max === 1) G.shop_jokers.config.card_limit = G.GAME.shop.joker_max + 1;
   G.shop_jokers.emplace(add_card);
+  // (3.9.1 pokermon.add_shop_card's is_free: the card is couponed, so set_cost makes it free.)
+  if (is_free) add_card.ability.couponed = true;
   add_card.start_materialize();
   add_card.set_cost();
   card.juice_up();
@@ -365,6 +422,18 @@ export function remove(self, card, context, check_shiny, skip_joker_type_destroy
     card.remove();
   });
   card.gone = true;
+  return true;
+}
+
+/**
+ * SMODS.destroy_cards(card, nil, nil, true) on a joker (Pokermon 3.9.1's self-destructs: the Vanillite line, Jelly Donut,
+ * Treasure Eatery, Rival): an Eternal card is kept (SMODS.is_eternal), otherwise it is marked getting_sliced and
+ * pinched out (`remove`). -> whether it goes.
+ */
+export function destroy_joker(card) {
+  if (!card || card.gone || card.getting_sliced || (card.ability && card.ability.eternal)) return false;
+  card.getting_sliced = true;
+  remove(null, card, {});
   return true;
 }
 

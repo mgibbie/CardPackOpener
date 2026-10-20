@@ -45,8 +45,8 @@ export function view_card(card, v) {
     if (typeof ex.active === 'boolean' && (c.key === 'j_poke_zorua' || c.key === 'j_poke_zoroark')) p.active = ex.active;
     // Zorua / Zoroark Illusion: drawn (and described) as this Pokémon outside the joker row.
     if (ex.hidden_key && card.area !== G.jokers) p.illusion = ex.hidden_key;
-    // Mimikyu: the busted-disguise sprite (center.broke_pos).
-    if (ex.disguise === false && c.broke_pos) p.broke_pos = c.broke_pos;
+    // Mimikyu: the busted-disguise sprite (center.broke_pos): 3.9.1 `disguise_broken`, or a 3.2.1 card's `disguise === false`.
+    if ((ex.disguise_broken || ex.disguise === false) && c.broke_pos) p.broke_pos = c.broke_pos;
   }
   if (c.megas) p.megas = c.megas.slice();
   if (card.ability.fainted !== undefined && G.GAME && card.ability.fainted === G.GAME.round) p.fainted = true;

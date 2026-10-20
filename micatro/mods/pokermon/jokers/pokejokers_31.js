@@ -1,8 +1,9 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_31.lua (Pokédex 901-930: Ursaluna -> Dachsbun), 5 jokers,
+// Pokermon 3.9.1 — pokemon/pokejokers_31.lua (Pokédex 901-930: Ursaluna -> Dachsbun), 5 jokers,
 // plus Hisuian Qwilfish / Overqwil, which the Lua writes (commented out) but never registers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8, except Tarountula / Spidops (held on 3.2.1: the Hazard layer, batch 10).
 import {
-  G, P_CENTERS, localize, card_eval_status_text, create_card, juice_card_until,
+  G, P_CENTERS, localize, card_eval_status_text, create_card, juice_card_until, poll_edition, add_card,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, has_enhancement, find_pokemon_type,
   poke_add_hazards, poke_set_hazards, poke_next_highest_rank, poke_lowest_rank,
 } from '../api.js';
@@ -70,18 +71,18 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       if (detailed()) {
         if (!center.edition || (center.edition && !center.edition.polychrome)) info_queue.push(P_CENTERS.e_polychrome);
+        if (!center.edition || (center.edition && !center.edition.foil)) info_queue.push(P_CENTERS.e_foil);
+        if (!center.edition || (center.edition && !center.edition.holo)) info_queue.push(P_CENTERS.e_holo);
       }
       return { vars: [center.ability.extra.mult, center.ability.extra.mult_mod] };
     },
     calculate(self, card, context) {
       if (context.skipping_booster) {
         if (!context.blueprint) card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
-        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
+        card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
+        // Pokermon 3.9.1: the Item gets a random Foil / Holographic / Polychrome edition (was always Polychrome).
         if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-          const _card = create_card('Item', G.consumeables, null, null, null, null, null);
-          _card.set_edition({ polychrome: true }, true);
-          _card.add_to_deck();
-          G.consumeables.emplace(_card);
+          add_card({ set: 'Item', key_append: 'luna', edition: poll_edition('aura', null, true, true) });
         }
       }
       if (context.cardarea === G.jokers && context.scoring_hand) {

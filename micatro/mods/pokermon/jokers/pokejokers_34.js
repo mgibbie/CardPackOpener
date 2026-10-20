@@ -1,9 +1,10 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_34.lua (Pokédex 991-1020: Gimmighoul -> Gholdengo), 3 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_34.lua (Pokédex 991-1020: Gimmighoul -> Gholdengo), 3 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 import {
-  G, P_CENTERS, localize, pseudorandom, juice_card_until,
-  defineJokers, type_tooltip, detailed, scaling_evo, has_enhancement, ease_poke_dollars,
-  smods_create_card, poke_add_shop_card, remove,
+  G, P_CENTERS, localize, pseudorandom,
+  defineJokers, type_tooltip, detailed, scaling_evo, has_enhancement, ease_poke_dollars, scale_card, multiplicative_scaling,
+  smods_create_card, poke_add_shop_card, remove, POKE_POOL_RULES,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_34.lua';
@@ -19,34 +20,20 @@ defineJokers({
     calculate(self, card, context) {
       if (context.individual && !context.end_of_round && context.cardarea === G.play && has_enhancement(context.other_card, 'm_gold')) {
         const earned = ease_poke_dollars(card, 'gimmi', card.ability.extra.money, true);
-        return { dollars: earned, card };
+        // Pokermon 3.9.1: the $ goes into dollar_buffer (Gholdengo, Raichu-style readers see it before it lands).
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + earned;
+        return { dollars: earned, card, func() { G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; }); } };
       }
       // Lua: `G.shop_jokers and G.shop_jokers.cards` — the shop row only exists while the shop is open.
+      // (3.9.1: the Roaming Gimmighoul comes Negative and couponed.)
       if (context.skipping_booster && G.shop_open && G.shop_jokers && G.shop_jokers.cards) {
-        const new_card = smods_create_card({ set: 'Joker', area: G.shop_jokers, key: 'j_poke_gimmighoulr' });
-        new_card.set_edition({ negative: true }, true);
-        poke_add_shop_card(new_card, card);
-        new_card.cost = 0;
+        const new_card = smods_create_card({ set: 'Joker', area: G.shop_jokers, key: 'j_poke_gimmighoulr', edition: 'e_negative' });
+        poke_add_shop_card(new_card, card, true);
       }
+      // Pokermon 3.9.1: every money change is counted through Steamodded's money_altered context (3.2.1 diffed the
+      // money in update() every frame).
+      if (context.money_altered) card.ability.extra.money_seen = card.ability.extra.money_seen + Math.abs(context.amount);
       return scaling_evo(self, card, context, 'j_poke_gholdengo', card.ability.extra.money_seen, card.ability.extra.money_goal);
-    },
-    set_ability(self, card, initial) {
-      if (initial && G.GAME && G.GAME.dollars !== undefined) card.ability.extra.previous_money = G.GAME.dollars;
-    },
-    // Lua runs this every frame; Micatro runs mod update() before every calculate and after every
-    // change of money (ease_dollars), so each earn / spend is seen on its own.
-    update(self, card) {
-      if (!G.GAME || G.GAME.dollars === undefined) return;
-      if (card.ability.extra.previous_money === undefined) card.ability.extra.previous_money = 0;
-      const money_diff = Math.abs(G.GAME.dollars - card.ability.extra.previous_money);
-      if (money_diff > 0) {
-        card.ability.extra.money_seen = card.ability.extra.money_seen + money_diff;
-        card.ability.extra.previous_money = G.GAME.dollars;
-      }
-      if (card.ability.extra.money_seen >= card.ability.extra.money_goal && !card.ability.extra.juiced) {
-        card.ability.extra.juiced = true;
-        juice_card_until(card, (c) => !c.removed && !G.RESET_JIGGLES, true);
-      }
     },
   },
   // Gimmighoul (Roaming form): pays out a random amount when obtained, then leaves.
@@ -69,6 +56,7 @@ defineJokers({
       ease_poke_dollars(card, 'gimmir', amount_earned);
       remove(self, card, {});
     },
+    // (3.9.1: never in a pool — POKE_POOL_RULES below.)
     set_ability(self, card, initial) {
       if (initial) card.set_edition({ negative: true }, true, true);
     },
@@ -79,23 +67,32 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.Xmult, center.ability.extra.money_minus, center.ability.extra.Xmult_multi] };
     },
+    // Pokermon 3.9.1: a scored Gold card pays $money_minus for XXmult_multi while the money plus dollar_buffer covers it
+    // (3.2.1 tracked a future_dollars copy from `before`); nothing at X1; resets to Xmult1.
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.before) card.ability.extra.future_dollars = G.GAME.dollars;
-        if (context.joker_main) return { message: localize('poke_make_it_rain'), colour: 'MONEY', Xmult_mod: card.ability.extra.Xmult };
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && card.ability.extra.Xmult > 1) {
+        return { message: localize('poke_make_it_rain'), colour: 'MONEY', Xmult_mod: card.ability.extra.Xmult };
       }
       if (context.individual && !context.end_of_round && context.cardarea === G.play && has_enhancement(context.other_card, 'm_gold')) {
-        card.ability.extra.future_dollars = card.ability.extra.future_dollars - card.ability.extra.money_minus;
-        if (card.ability.extra.future_dollars >= 0) {
-          card.ability.extra.Xmult = card.ability.extra.Xmult * card.ability.extra.Xmult_multi;
-          return { dollars: -card.ability.extra.money_minus, card };
+        const buffer = G.GAME.dollar_buffer || 0, money_minus = card.ability.extra.money_minus;
+        if ((G.GAME.dollars || 0) + buffer - money_minus >= 0) {
+          scale_card(card, {
+            ref_value: 'Xmult', scalar_value: 'Xmult_multi', no_message: true,
+            operation: (t, k, initial, scalar) => multiplicative_scaling(t, k, initial, scalar),
+          });
+          G.GAME.dollar_buffer = buffer - money_minus;
+          G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+          return { dollars: -money_minus, card };
         }
       }
       if (context.end_of_round && !context.individual && !context.repetition) {
-        card.ability.extra.Xmult = card.ability.extra.oXmult;
+        card.ability.extra.Xmult = card.ability.extra.Xmult1;
         return { message: localize('k_reset'), colour: 'RED' };
       }
       return undefined;
     },
   },
 }, FILE);
+
+// Pokermon 3.9.1: the Roaming Gimmighoul is never in a pool.
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_gimmighoulr' ? false : undefined));

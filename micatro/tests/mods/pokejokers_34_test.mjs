@@ -16,7 +16,9 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_34.lua'].length === 3, 'defs: 3 from 
 {
   start('GIMMIGHOUL');
   const j = add('j_poke_gimmighoul');
-  ok(j.ability.extra.previous_money === G.GAME.dollars && j.ability.extra.money_seen === 0, 'gimmighoul: remembers the money it was made with');
+  ok(j.ability.extra.previous_money === undefined && j.ability.extra.money_seen === 0, 'gimmighoul: no previous_money snapshot — it counts through Steamodded money_altered (Pokermon 3.9.1)');
+  G.GAME.dollars = G.GAME.dollars + 40; // a direct change (no ease_dollars) is not a money_altered event
+  ok(j.ability.extra.money_seen === 0, 'gimmighoul: only ease_dollars changes count (money_altered) (Pokermon 3.9.1)', j.ability.extra.money_seen);
   let seen = 0;
   const track = (res) => { for (const e of res.events) if (e.type === 'dollars') seen += Math.abs(e.mod); return res; };
   const d0 = G.GAME.dollars;
@@ -27,7 +29,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_34.lua'].length === 3, 'defs: 3 from 
   track(act({ type: 'cash_out' }));
   ok(j.ability.extra.money_seen === seen && seen > 6, 'gimmighoul: counts the cash-out too', [j.ability.extra.money_seen, seen]);
   // Spending counts as well (each change on its own: earning $X then spending $Y counts X + Y).
-  G.GAME.dollars = 50; j.ability.extra.previous_money = 50; j.ability.extra.money_seen = 0;
+  G.GAME.dollars = 50; j.ability.extra.money_seen = 0;
   const pack = G.shop_booster.cards[0];
   const cost = pack.cost;
   act({ type: 'buy', id: pack.sort_id });

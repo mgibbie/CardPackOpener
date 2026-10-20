@@ -93,12 +93,14 @@ export function pool_filter(v /* center */, _type) {
 }
 
 /**
- * get_random_poke_key(pseed, stage, pokerarity, area, poketype, exclude_keys): a random
- * Pokémon key obeying the pool rules (never megas / aux forms / banned / held).
+ * get_random_poke_key(pseed, stage, pokerarity, area, poketype, exclude_keys, exclude_types): a random
+ * Pokémon key obeying the pool rules (never megas / aux forms / banned / held). exclude_types (a type, a list
+ * or a set) is 3.9.1's (batch 8: Zorua / Zoroark's illusions skip Dark); the rest is the 3.2.1 pool.
  */
-export function get_random_poke_key(pseed, stage, pokerarity, area, poketype, exclude_keys) {
+export function get_random_poke_key(pseed, stage, pokerarity, area, poketype, exclude_keys, exclude_types) {
   const poke_keys = [];
   exclude_keys = exclude_keys || {};
+  const ex_types = to_set(exclude_types);
   if (typeof pokerarity === 'string') {
     const r = pokerarity.toLowerCase();
     if (r === 'common') pokerarity = 1; else if (r === 'uncommon') pokerarity = 2; else if (r === 'rare') pokerarity = 3;
@@ -111,13 +113,27 @@ export function get_random_poke_key(pseed, stage, pokerarity, area, poketype, ex
     if (stage && v.stage !== stage) continue;
     if (pokerarity && v.rarity !== pokerarity) continue;
     if (!get_gen_allowed(v) || (poketype && poketype !== v.ptype) || !pokemon_in_pool(v) || v.aux_poke || v.rarity === 'poke_mega') continue;
-    if (exclude_keys[v.key] || G.GAME.banned_keys[v.key]) continue;
+    if (exclude_keys[v.key] || G.GAME.banned_keys[v.key] || ex_types[v.ptype]) continue;
     let no_dup = true;
     if (G.jokers && G.jokers.cards && !find_joker('Showman').length) for (const m of G.jokers.cards) if (v.key === m.config.center_key) no_dup = false;
     if (no_dup) poke_keys.push(v.key);
   }
   if (poke_keys.length) return pseudorandom_element(poke_keys, pseudoseed(pseed))[0];
   return 'j_poke_caterpie';
+}
+
+/** pokermon.convert_to_set: a value, a list or a set -> a set ({} for nothing). */
+function to_set(x) {
+  if (!x) return {};
+  if (typeof x === 'string') return { [x]: true };
+  if (Array.isArray(x)) return Object.fromEntries(x.map((v) => [v, true]));
+  return x;
+}
+/** pokermon.get_random_poke_key_options({key_append | seed, stage, rarity, type, exclude_keys, exclude_types}) (3.9.1). */
+export function get_random_poke_key_options(options) {
+  const pseed = options.seed || options.pseed || options.key_append;
+  return get_random_poke_key(pseed, options.stage || options.pokestage, options.rarity || options.pokerarity, null,
+    options.type || options.poketype, to_set(options.exclude_keys), options.exclude_types);
 }
 
 export function create_random_poke_joker(pseed, stage, pokerarity, area, poketype) {

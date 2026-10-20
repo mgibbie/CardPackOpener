@@ -29,6 +29,9 @@ import puppeteer from 'puppeteer-core';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
+// Mod art is gitignored: in a worktree missing it, /micatro/mods/** falls back (read-only) to the main
+// checkout two levels up (MICATRO_MAIN overrides).
+const MAIN = process.env.MICATRO_MAIN || path.resolve(ROOT, '../..');
 const CHROME = process.env.CHROME || [
 	'C:/Program Files/Google/Chrome/Application/chrome.exe',
 	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -66,7 +69,13 @@ const server = http.createServer(async (req, res) => {
 		res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out)); return;
 	}
 	const f = u.endsWith('/') ? u + 'index.html' : u;
-	fs.readFile(path.join(ROOT, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
+	const send = (d) => { res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); };
+	const nf = () => { res.writeHead(404); res.end('nf'); };
+	fs.readFile(path.join(ROOT, f), (e, d) => {
+		if (!e) return send(d);
+		if (!f.startsWith('/micatro/mods/') || path.resolve(MAIN) === ROOT || f.includes('..')) return nf();
+		fs.readFile(path.join(MAIN, f), (e2, d2) => (e2 ? nf() : send(d2)));
+	});
 });
 await new Promise(r => server.listen(PORT, r));
 
@@ -93,6 +102,9 @@ try {
 		}, STATE, mods);
 		await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
+		// __micatro.ready comes BEFORE the main menu: boot first reads the account's run in progress (ui/runsync.js,
+		// up to 3 s) so the menu's Continue is right, then draws it. Wait for the menu itself (not when spectating).
+		if (!/spectate=/.test(url)) await waitFor(() => page.evaluate(() => !!document.querySelector('.menu-modal .menu-bar')), 30000);
 		return { page, errors, ctx };
 	};
 	const idle = (page) => waitFor(() => page.evaluate(() => window.__micatro.idle()), 30000);
@@ -262,7 +274,10 @@ try {
 		await page.evaluate(() => { const b = window.__micatro.board; for (const id of b.areas.jokers) { const s = b.sprites.get(id); if (s.d.center === 'j_poke_bulbasaur') s.el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); } });
 		A(await waitFor(() => page.evaluate(() => document.querySelectorAll('.dex-modal .dex-card').length === 4), 5000), 'right-click opens the Pokédex with the family (Bulbasaur, Ivysaur, Venusaur, Mega Venusaur)', await page.evaluate(() => [...document.querySelectorAll('.dex-card')].map((x) => x.dataset.key).join()));
 		// a Mega's sprite is its soul layer: the Pokédex card must draw it, not just the rainbow background
-		const megaSoul = await page.evaluate(async () => {
+		// (the Mega's 3.9.1 sheet may still be loading when the Pokédex opens: the card redraws when it lands, so poll)
+		let megaSoul = null;
+		const megaOk = (m) => m && m.vsSoul === 0 && m.vsBare > 500;
+		await waitFor(async () => megaOk(megaSoul = await page.evaluate(async () => {
 			const { composeFace, soulLayer, drawSoul } = await import('/micatro/js/ui/cardsprite.js');
 			const cv = document.querySelector('.dex-card[data-key="j_poke_mega_venusaur"] canvas');
 			if (!cv) return null;
@@ -277,8 +292,8 @@ try {
 			const got = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
 			const diff = (y) => { let n = 0; for (let i = 0; i < got.length; i += 4) if (got[i] !== y[i] || got[i + 1] !== y[i + 1] || got[i + 2] !== y[i + 2]) n++; return n; };
 			return { vsSoul: diff(draw(true)), vsBare: diff(draw(false)) };
-		});
-		A(megaSoul && megaSoul.vsSoul === 0 && megaSoul.vsBare > 500, "the Pokédex draws Mega Venusaur's sprite (its soul layer), not only the background", JSON.stringify(megaSoul));
+		})), 10000);
+		A(megaOk(megaSoul), "the Pokédex draws Mega Venusaur's sprite (its soul layer), not only the background", JSON.stringify(megaSoul));
 		await page.evaluate(() => document.querySelector('.dex-card[data-key="j_poke_venusaur"]').click());
 		A(await page.evaluate(() => /Venusaur/.test(document.querySelector('.dex-name').textContent) && /Grass/.test(document.querySelector('.dex-badges').textContent)), 'picking a family member shows its card text and type');
 		A(await padHas(page, '.dex-card'), 'the controller can reach the Pokédex cards');

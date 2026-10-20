@@ -1,15 +1,16 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_20.lua (Pokédex 571-600: Zoroark -> Ferrothorn), 11 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_20.lua (Pokédex 571-600: Zoroark -> Ferrothorn), 11 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8, except Ferroseed / Ferrothorn (held on 3.2.1: the Hazard layer, batch 10).
 // The Gothita line's Planet / Celestial discounts live in systems/rules.js (set_cost hook).
 // Ferroseed / Ferrothorn use Steamodded's quantum enhancements (check_enhancement context,
 // core.js quantum_enhancements + has_enhancement in systems/utils.js).
 import {
-  G, P_CENTERS, localize, emit, play_sound, all_cards,
-  defineJokers, type_tooltip, detailed, level_evo, scaling_evo, ease_poke_dollars,
-  volatile_active, has_enhancement, get_random_poke_key,
+  G, P_CENTERS, localize, play_sound, all_cards,
+  defineJokers, type_tooltip, detailed, level_evo, scaling_evo, ease_poke_dollars, scale_card, destroy_joker,
+  volatile_active, has_enhancement, get_random_poke_key_options,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
-import { illusion_copy, illusion_update, illusion_set_ability } from './pokejokers_19.js';
+import { illusion_copy, illusion_update, illusion_set_ability, illusion_add_to_deck } from './pokejokers_19.js';
 
 const FILE = 'pokemon/pokejokers_20.lua';
 
@@ -19,34 +20,24 @@ const goth_costs = {
   add_to_deck() { G.E_MANAGER.add_event(() => { for (const v of all_cards()) if (v.set_cost) v.set_cost(); }); },
   remove_from_deck() { G.E_MANAGER.add_event(() => { for (const v of all_cards()) if (v.set_cost) v.set_cost(); }); },
 };
-/** The melt animation + removal (Lua removes `self` — the center — from G.jokers; the card is meant). */
-function melt(card) {
-  G.E_MANAGER.add_event(() => {
-    play_sound('tarot1');
-    card.juice_up(0.3, 0.4);
-    G.E_MANAGER.add_event(() => {
-      emit('dissolve', { card: card.sort_id, reason: 'eaten' });
-      G.jokers.remove_card(card);
-      card.remove();
-    });
-  });
-}
-/** Vanillite / Vanillish: +chips while leftmost (volatile), -chips_minus after each triggered hand. */
-function vanilla_calc(self, card, context) {
-  if (context.cardarea === G.jokers && context.scoring_hand && !context.blueprint) {
-    if (context.joker_main && volatile_active(self, card, card.ability.extra.volatile)) {
-      card.ability.extra.triggered = true;
-      return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chips] }), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+/**
+ * Vanillite line (3.9.1): +chips while leftmost (volatile; Vanilluxe has no side, so always), -chips_minus after each
+ * triggered hand (SMODS.scale_card '-'); at 0 it melts (SMODS.destroy_cards: an Eternal one stays) and `on_melt` runs.
+ * Blueprint-compatible now: a copy scores the chips (the triggered flag and the melt stay the original's).
+ */
+function vanilla_calc(self, card, context, on_melt) {
+  if (context.joker_main && volatile_active(self, card, card.ability.extra.volatile)) {
+    card.ability.extra.triggered = true;
+    return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chips] }), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+  }
+  if (context.after && card.ability.extra.triggered && !context.blueprint) {
+    card.ability.extra.triggered = false;
+    if (card.ability.extra.chips - card.ability.extra.chips_minus <= 0) {
+      destroy_joker(card);
+      if (on_melt) on_melt();
+      return { message: localize('k_melted_ex'), colour: 'CHIPS' };
     }
-    if (card.ability.extra.triggered && context.after && !context.blueprint) {
-      card.ability.extra.triggered = false;
-      if (card.ability.extra.chips - card.ability.extra.chips_minus <= 0) {
-        melt(card);
-        return { message: localize('k_melted_ex'), colour: 'CHIPS' };
-      }
-      card.ability.extra.chips = card.ability.extra.chips - card.ability.extra.chips_minus;
-      return { message: localize({ type: 'variable', key: 'a_chips_minus', vars: [card.ability.extra.chips_minus] }), colour: 'CHIPS' };
-    }
+    scale_card(card, { ref_value: 'chips', scalar_value: 'chips_minus', operation: '-', message_key: 'a_chips_minus', message_colour: 'CHIPS' });
   }
   return undefined;
 }
@@ -70,33 +61,33 @@ function ferro_tips(info_queue) {
   }
 }
 /**
- * Frillish line. SMODS gives the discard context cardarea = G.jokers; Micatro's discard
- * context has no cardarea, so the discard branch is checked outside the cardarea test.
+ * Frillish line (3.9.1: SMODS.scale_card; Jellicent doubles the gain for a King or Queen). SMODS gives the discard context
+ * cardarea = G.jokers; Micatro's discard context has no cardarea, so the discard branch is checked outside the cardarea test.
  */
 function frill_discard(card, context, by_rank) {
   if (context.discard && !context.blueprint && context.other_card.is_face()) {
     const card_id = context.other_card.get_id();
-    if (by_rank && (card_id === 12 || card_id === 13)) card.ability.extra.chips = card.ability.extra.chips + (card.ability.extra.chip_mod * 2);
-    else card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod;
-    return { message: localize('k_upgrade_ex'), colour: 'CHIPS', delay: 0.45 };
+    scale_card(card, {
+      ref_value: 'chips', scalar_value: 'chip_mod', message_colour: 'CHIPS', message_delay: 0.45,
+      operation: (t, k, initial, modifier) => { t[k] = initial + modifier * (by_rank && (card_id === 12 || card_id === 13) ? 2 : 1); },
+    });
+    return true;
   }
-  return undefined;
+  return false;
 }
 
 defineJokers({
   // Zoroark 571
   zoroark: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [] }; },
-    calculate(self, card, context) {
-      const c = illusion_copy(card, context);
-      if (c && c.ret) return c.ret;
-      return undefined;
-    },
-    set_ability(self, card) { illusion_set_ability(self, card, () => get_random_poke_key('zoroark', null, 'poke_safari', null, null, { j_poke_zoroark: true })); },
+    calculate(self, card, context) { return illusion_copy(card, context); },
+    set_ability(self, card) { illusion_set_ability(self, card, () => get_random_poke_key_options({ key_append: 'zoroark', rarity: 'poke_safari', exclude_types: 'Dark' })); },
+    add_to_deck: illusion_add_to_deck,
     update(self, card) { illusion_update(card); },
   },
   // Gothita 574
   gothita: {
+    knockoff_pseudol: true,
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.rounds] }; },
     calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_gothorita'); },
     ...goth_costs,
@@ -124,10 +115,7 @@ defineJokers({
   // Vanillish 583
   vanillish: {
     loc_vars: vanilla_vars,
-    calculate(self, card, context) {
-      if (context.first_hand_drawn) card.ability.extra.level_up = true;
-      return vanilla_calc(self, card, context) || level_evo(self, card, context, 'j_poke_vanilluxe');
-    },
+    calculate(self, card, context) { return vanilla_calc(self, card, context) || level_evo(self, card, context, 'j_poke_vanilluxe'); },
   },
   // Vanilluxe 584
   vanilluxe: {
@@ -136,22 +124,11 @@ defineJokers({
       return { vars: [center.ability.extra.chips, center.ability.extra.chips_minus, center.ability.extra.tags] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand && !context.blueprint) {
-        if (context.joker_main) {
-          return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chips] }), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
-        }
-        if (context.after && !context.blueprint) {
-          if (card.ability.extra.chips - card.ability.extra.chips_minus <= 0) {
-            melt(card);
-            G.E_MANAGER.add_event(() => { play_sound('generic1'); play_sound('holo1'); });
-            for (let i = 1; i <= card.ability.extra.tags; i++) G.E_MANAGER.add_event(() => add_tag(new Tag('tag_double')));
-            return { message: localize('k_melted_ex'), colour: 'CHIPS' };
-          }
-          card.ability.extra.chips = card.ability.extra.chips - card.ability.extra.chips_minus;
-          return { message: localize({ type: 'variable', key: 'a_chips_minus', vars: [card.ability.extra.chips_minus] }), colour: 'CHIPS' };
-        }
-      }
-      return undefined;
+      return vanilla_calc(self, card, context, () => G.E_MANAGER.add_event(() => {
+        for (let i = 1; i <= card.ability.extra.tags; i++) add_tag(new Tag('tag_double'));
+        play_sound('generic1');
+        play_sound('holo1');
+      }));
     },
   },
   // Frillish 592
@@ -161,8 +138,7 @@ defineJokers({
       return { vars: [center.ability.extra.chips, center.ability.extra.chip_mod, self.config.evo_rqmt] };
     },
     calculate(self, card, context) {
-      const d = frill_discard(card, context, false);
-      if (d) return d;
+      if (frill_discard(card, context, false)) return undefined;
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && card.ability.extra.chips > 0) {
         return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chips] }), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
       }
@@ -173,8 +149,7 @@ defineJokers({
   jellicent: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.chips, center.ability.extra.chip_mod] }; },
     calculate(self, card, context) {
-      const d = frill_discard(card, context, true);
-      if (d) return d;
+      if (frill_discard(card, context, true)) return undefined;
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
         return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chips] }), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
       }

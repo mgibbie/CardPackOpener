@@ -1,9 +1,10 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_25.lua (Pokédex 721-750: Grubbin -> Lycanroc), 7 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_25.lua (Pokédex 721-750: Grubbin -> Lycanroc), 7 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 import {
   G, P_CENTERS, localize, ease_hands_played, ease_discard,
   defineJokers, type_tooltip, detailed, level_evo, item_evo, scaling_evo,
-  find_pokemon_type, is_type, poke_is_even, poke_is_odd,
+  find_pokemon_type, poke_is_even, poke_is_odd,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_25.lua';
@@ -42,15 +43,15 @@ defineJokers({
   vikavolt: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      let count = find_pokemon_type('Lightning').length;
-      if (is_type(center, 'Lightning')) count = count - 1;
-      return { vars: [center.ability.extra.Xmult, Math.max(1, 1 + center.ability.extra.Xmult * count), center.ability.extra.mult] };
+      const count = find_pokemon_type('Lightning').length;
+      return { vars: [center.ability.extra.Xmult, Math.max(1, 1 + center.ability.extra.Xmult * count)] };
     },
+    // Pokermon 3.9.1: X(1 + Xmult x every Lightning Joker, itself included — 3.2.1 counted the others), no +Mult, and
+    // nothing at X1. (The Lua popup has no colour: the default.)
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-        let count = find_pokemon_type('Lightning').length;
-        if (is_type(card, 'Lightning')) count = count - 1;
-        return { message: localize('poke_thunder_ex'), colour: 'XMULT', Xmult_mod: Math.max(1, 1 + card.ability.extra.Xmult * count), mult_mod: card.ability.extra.mult };
+        const xmult = 1 + card.ability.extra.Xmult * find_pokemon_type('Lightning').length;
+        if (xmult > 1) return { message: localize('poke_thunder_ex'), Xmult_mod: xmult };
       }
       return undefined;
     },
@@ -63,8 +64,9 @@ defineJokers({
     },
     calculate(self, card, context) {
       if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.is_face()) {
-        if (poke_is_even(context.other_card) && card.ability.extra.even_to_score > 0) card.ability.extra.even_to_score = card.ability.extra.even_to_score - 1;
-        if (poke_is_odd(context.other_card) && card.ability.extra.odd_to_score > 0) card.ability.extra.odd_to_score = card.ability.extra.odd_to_score - 1;
+        // (Pokermon 3.9.1: Blueprint no longer counts toward the evolution.)
+        if (poke_is_even(context.other_card) && card.ability.extra.even_to_score > 0 && !context.blueprint) card.ability.extra.even_to_score = card.ability.extra.even_to_score - 1;
+        if (poke_is_odd(context.other_card) && card.ability.extra.odd_to_score > 0 && !context.blueprint) card.ability.extra.odd_to_score = card.ability.extra.odd_to_score - 1;
         return { mult: card.ability.extra.mult, card };
       }
       const ex = card.ability.extra, rq = self.config.evo_rqmt;
@@ -125,18 +127,9 @@ defineJokers({
           if (poke_is_even(c) && !first_even) first_even = c;
           if (poke_is_odd(c) && !first_odd) first_odd = c;
         }
-        if (context.other_card === first_even && !card.ability.extra.even_triggered) {
-          card.ability.extra.even_triggered = true;
-          return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
-        }
-        if (context.other_card === first_odd && !card.ability.extra.odd_triggered) {
-          card.ability.extra.odd_triggered = true;
-          return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
-        }
-      }
-      if (context.end_of_round && !context.individual && !context.repetition) {
-        card.ability.extra.even_triggered = undefined;
-        card.ability.extra.odd_triggered = undefined;
+        // Pokermon 3.9.1: every hand (it was once per round).
+        if (context.other_card === first_even) return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+        if (context.other_card === first_odd) return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
       }
       return undefined;
     },

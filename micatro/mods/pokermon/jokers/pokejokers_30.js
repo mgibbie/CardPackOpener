@@ -1,15 +1,19 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_30.lua (Pokédex 871-900: Dreepy -> Kleavor), 6 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_30.lua (Pokédex 871-900: Dreepy -> Kleavor), 6 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 import {
   G, P_CENTERS, localize, card_eval_status_text, play_sound, delay, pseudoseed, pseudorandom_element,
   create_playing_card, poll_edition, find_joker, juice_card_until, P_CARDS_LIST,
-  defineJokers, type_tooltip, detailed, scaling_evo, smods_create_card, juice_flip_hand, has_no_suit,
+  defineJokers, type_tooltip, detailed, scaling_evo, smods_create_card, juice_flip_hand, has_no_suit, POKE_POOL_RULES,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_30.lua';
 
 // ------------------------------------------------------------ shared bodies
-/** Dreepy / Dreepy Dart: when sold, +$money sell value to every joker and hand -> suit. */
+/**
+ * Dreepy / Dreepy Dart: when sold, +$money sell value to every joker and every held card -> the suit of the leftmost held
+ * card (Pokermon 3.9.1; 3.2.1 turned them into Spades), unless that card has no suit.
+ */
 function dreepy_sell(card, context) {
   for (const v of G.jokers.cards) {
     if (v.set_cost) {
@@ -18,11 +22,15 @@ function dreepy_sell(card, context) {
     }
   }
   if (G.hand && G.hand.cards && G.hand.cards.length > 0) {
-    juice_flip_hand(card);
-    for (let i = 0; i < G.hand.cards.length; i++) {
-      G.E_MANAGER.add_event(() => { if (G.hand.cards[i]) G.hand.cards[i].change_suit(card.ability.extra.suit); });
+    const first_card = G.hand.cards[0];
+    if (!has_no_suit(first_card)) {
+      const suit = first_card.base.suit;
+      juice_flip_hand(card);
+      for (let i = 0; i < G.hand.cards.length; i++) {
+        G.E_MANAGER.add_event(() => { if (G.hand.cards[i]) G.hand.cards[i].change_suit(suit); });
+      }
+      juice_flip_hand(card, true);
     }
-    juice_flip_hand(card, true);
   }
 }
 /** Drakloak / Dragapult update(): total sell value of every joker in the row. */
@@ -47,7 +55,7 @@ defineJokers({
   dreepy: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.money, localize(center.ability.extra.suit, 'suits_plural')] };
+      return { vars: [center.ability.extra.money] };
     },
     calculate(self, card, context) {
       if (context.selling_self && !context.blueprint) {
@@ -126,7 +134,7 @@ defineJokers({
   dreepy_dart: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.money, localize(center.ability.extra.suit, 'suits_plural')] };
+      return { vars: [center.ability.extra.money] };
     },
     calculate(self, card, context) {
       if (context.selling_self && !context.blueprint) dreepy_sell(card, context);
@@ -171,8 +179,10 @@ defineJokers({
       }
       return undefined;
     },
-    add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry; },
-    remove_from_deck(self, card) { G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry); },
+    // Pokermon 3.9.1: the Foresight gained this round (scry_added) comes and goes with it too (a debuff / re-add mid-round).
+    // (3.9.1 renamed G.GAME.scry_amount -> poke_scry_amount; ours keeps the old name, as batch 6.)
+    add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry + Math.max(0, card.ability.extra.scry_added || 0); },
+    remove_from_deck(self, card) { G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - (card.ability.extra.scry + Math.max(0, card.ability.extra.scry_added || 0))); },
   },
   // Kleavor 900
   kleavor: {
@@ -225,3 +235,6 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Pokermon 3.9.1: Dreepy Dart (Dragapult's ammunition) is never in a pool.
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_dreepy_dart' ? false : undefined));

@@ -95,16 +95,22 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_33.lua'].length === 5, 'defs: 5 from 
   // Make the played King the only one in the deck.
   for (const c of G.playing_cards) if (c.get_id() === 13) c.set_base(P_CARDS[c.base.suit[0] + '_2']);
   j.ability.extra.Xmult = 4;
+  ok(j.config.center.loc_vars(j.config.center, [], j).vars.join() === '4,2', 'kingambit: its text shows the half X Mult (Pokermon 3.9.1)', j.config.center.loc_vars(j.config.center, [], j).vars);
   r = play(hand(['S_5', 'H_5', 'D_K']));
+  // Pokermon 3.9.1: the only King must be HELD — played, it does nothing per card.
+  ok(r.total.chips === 10 + 10 && near(r.total.mult, 2 * 4), 'kingambit: the only King played -> nothing per card (Pokermon 3.9.1)', r.total);
+  clearHand();
+  for (const c of G.playing_cards) if (c.get_id() === 13) c.set_base(P_CARDS[c.base.suit[0] + '_2']); // (the King just played too)
+  hand(['D_K']); // the deck's only King, held
+  r = play(hand(['S_5', 'H_5']));
   // Pair of 5s: each scored nonface card X(4/2), then X4.
-  ok(r.total.chips === 10 + 10 && near(r.total.mult, 2 * 2 * 2 * 4), 'kingambit: only King played -> nonface cards give half its XMult', r.total);
+  ok(r.total.chips === 10 + 10 && near(r.total.mult, 2 * 2 * 2 * 4), 'kingambit: the only King held -> played nonface cards give half its XMult (Pokermon 3.9.1)', r.total);
   j.ability.extra.Xmult = 2;
-  r = play(hand(['S_5', 'H_5', 'D_K']));
+  r = play(hand(['S_5', 'H_5']));
   ok(near(r.total.mult, 2 * 2), 'kingambit: half of X2 is X1 -> no card XMult', r.total);
   j.ability.extra.Xmult = 4;
-  clearHand();
   hand(['C_K']); // a second King in the deck (held)
-  r = play(hand(['S_5', 'H_5', 'D_K']));
+  r = play(hand(['S_5', 'H_5']));
   ok(near(r.total.mult, 2 * 4), 'kingambit: two Kings in the deck -> nothing per card', r.total);
 }
 

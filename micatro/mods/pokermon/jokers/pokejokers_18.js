@@ -1,12 +1,13 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_18.lua (Pokédex 511-530: Pansage -> Excadrill), 11 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_18.lua (Pokédex 511-530: Pansage -> Excadrill), 11 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8, except the Roggenrola line (held on 3.2.1: the Hazard layer, batch 10).
 // The Pansage / Pansear / Panpour lines' Shortcut / Four Fingers / Pareidolia effects are
 // find_joker aliases in systems/rules.js (find_joker_alias).
 import {
   G, P_CENTERS, localize, card_eval_status_text, juice_card_until,
   defineJokers, type_tooltip, detailed, scaling_evo, item_evo,
   has_enhancement, has_no_rank, pseudorandom_probability, get_probability_vars,
-  poke_set_hazards, poke_remove_card, poke_create_treasure, create_card,
+  poke_set_hazards, poke_create_treasure, create_card,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_18.lua';
@@ -29,6 +30,7 @@ function hazard_tips(info_queue, abbr) {
 defineJokers({
   // Pansage 511
   pansage: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       info_queue.push({ set: 'Joker', key: 'j_shortcut', config: {} });
@@ -65,6 +67,7 @@ defineJokers({
   },
   // Pansear 513
   pansear: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       info_queue.push({ set: 'Joker', key: 'j_four_fingers', config: {} });
@@ -84,38 +87,28 @@ defineJokers({
     },
     calculate(self, card, context) {
       if (context.first_hand_drawn) juice_card_until(card, () => G.GAME.current_round.hands_played === 0, true);
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main && (context.poker_hands.Straight.length || context.poker_hands.Flush.length) && G.GAME.current_round.hands_played === 0) {
-          card.ability.extra.destroy = true;
-          if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
-            return {
-              extra: {
-                focus: card, message: localize('k_plus_tarot'), colour: 'PURPLE',
-                func() {
-                  G.E_MANAGER.add_event(() => {
-                    const _card = create_card('Tarot', G.consumeables, null, null, null, null, 'c_empress');
-                    _card.add_to_deck();
-                    G.consumeables.emplace(_card);
-                    G.GAME.consumeable_buffer = 0;
-                  });
-                },
-              },
-            };
-          }
+      // Pokermon 3.9.1: a first hand containing a Straight or a Flush makes The Empress at `before` (with room) and its
+      // unscored cards are destroyed in the destroy_card pass (cardarea 'unscored': remove_playing_cards listeners see it).
+      if (context.poker_hands && G.GAME.current_round.hands_played === 0
+        && (context.poker_hands.Straight.length || context.poker_hands.Flush.length)) {
+        if (context.before && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+          G.E_MANAGER.add_event(() => {
+            const _card = create_card('Tarot', G.consumeables, null, null, null, null, 'c_empress');
+            _card.add_to_deck();
+            G.consumeables.emplace(_card);
+            G.GAME.consumeable_buffer = 0;
+          });
+          return { message: localize('k_plus_tarot'), colour: 'PURPLE' };
         }
-        if (context.after && card.ability.extra.destroy && !context.blueprint) {
-          card.ability.extra.destroy = undefined;
-          for (const v of context.full_hand) {
-            if (!context.scoring_hand.includes(v)) poke_remove_card(v, card);
-          }
-        }
+        if (context.destroy_card && context.cardarea === 'unscored' && !context.blueprint) return { remove: true };
       }
       return undefined;
     },
   },
   // Panpour 515
   panpour: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       info_queue.push({ set: 'Joker', key: 'j_pareidolia', config: {} });

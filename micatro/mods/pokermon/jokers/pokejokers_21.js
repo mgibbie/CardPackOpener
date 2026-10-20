@@ -1,9 +1,10 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_21.lua (Pokédex 601-630: Elgyem -> Bisharp), 9 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_21.lua (Pokédex 601-630: Elgyem -> Bisharp), 9 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8, except Golett / Golurk (held on 3.2.1: the Hazard layer, batch 10).
 import {
   G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card, localize, card_eval_status_text, juice_card_until,
   pseudorandom_element, pseudoseed, create_card,
-  defineJokers, type_tooltip, detailed, scaling_evo, item_evo, level_evo,
+  defineJokers, type_tooltip, detailed, scaling_evo, item_evo, level_evo, scale_card,
   poke_get_adjacent_jokers, poke_drain, poke_set_hazards, has_enhancement,
   pseudorandom_probability, get_probability_vars,
 } from '../api.js';
@@ -53,6 +54,13 @@ function golem_held(card, context, seed) {
 }
 const xmult_main = (card, context) => (context.cardarea === G.jokers && context.scoring_hand && context.joker_main
   ? { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult } : undefined);
+/** Pawniard / Bisharp (3.9.1): +Xmult_mod XMult per destroyed face card (SMODS.scale_card, the total in the popup). */
+function face_scale(card, face_cards) {
+  scale_card(card, {
+    ref_value: 'Xmult', scalar_value: 'Xmult_mod', message_key: 'a_xmult', message_colour: 'XMULT',
+    operation: (t, k, initial, modifier) => { t[k] = initial + modifier * face_cards; },
+  });
+}
 const sell_mult = (card, context) => (context.cardarea === G.jokers && context.scoring_hand && context.joker_main
   ? { message: localize({ type: 'variable', key: 'a_mult', vars: [card.sell_cost] }), colour: 'MULT', mult_mod: card.sell_cost } : undefined);
 
@@ -88,7 +96,8 @@ defineJokers({
     },
     calculate(self, card, context) {
       elgyem_planet(card, context);
-      if (context.open_booster) {
+      // Pokermon 3.9.1: Blueprint no longer counts the Boosters.
+      if (context.open_booster && !context.blueprint) {
         let added = false, telescope_in_shop = false, observatory_in_shop = false;
         const uv = G.GAME.used_vouchers;
         // (Lua `G.shop_vouchers and G.shop_vouchers.cards`: the shop's voucher row exists — i.e. the shop is open.)
@@ -154,7 +163,8 @@ defineJokers({
     calculate(self, card, context) {
       const r = sell_mult(card, context);
       if (r) return r;
-      if (context.other_joker && context.other_joker.config && context.other_joker.sell_cost < 2 && context.other_joker.ability.set === 'Joker' && !context.post_trigger) {
+      // Pokermon 3.9.1: any joker worth less than $2 (no post_trigger / set checks).
+      if (context.other_joker && context.other_joker.sell_cost < 2) {
         const other = context.other_joker;
         G.E_MANAGER.add_event(() => other.juice_up(0.5, 0.5));
         return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult_multi] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_multi };
@@ -202,10 +212,7 @@ defineJokers({
       if (context.remove_playing_cards && !context.blueprint) {
         let face_cards = 0;
         for (const removed_card of context.removed) if (removed_card.is_face()) face_cards = face_cards + 1;
-        if (face_cards > 0) {
-          card.ability.extra.Xmult = card.ability.extra.Xmult + face_cards * card.ability.extra.Xmult_mod;
-          return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'XMULT' };
-        }
+        if (face_cards > 0) face_scale(card, face_cards);
       }
       const r = xmult_main(card, context);
       if (r) return r;
@@ -226,19 +233,15 @@ defineJokers({
           if (removed_card.is_face()) face_cards = face_cards + 1;
           if (removed_card.get_id() === 13) card.ability.extra.kings_destroyed = card.ability.extra.kings_destroyed + 1;
         }
-        if (face_cards > 0) {
-          card.ability.extra.Xmult = card.ability.extra.Xmult + face_cards * card.ability.extra.Xmult_mod;
-          return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'XMULT' };
-        }
+        if (face_cards > 0) face_scale(card, face_cards);
       }
       const r = xmult_main(card, context);
       if (r) return r;
-      if (context.final_scoring_step && context.full_hand.length === 1 && context.full_hand[0].is_face() && G.GAME.current_round.hands_played === 0 && !context.blueprint) {
-        context.full_hand[0].bisharp_remove = card;
+      // Pokermon 3.9.1: the lone face card of a first hand is destroyed straight from the destroy_card pass (no
+      // final_scoring_step marker).
+      if (context.destroy_card && context.full_hand.length === 1 && context.destroy_card === context.full_hand[0] && context.full_hand[0].is_face()
+        && G.GAME.current_round.hands_played === 0 && !context.blueprint) {
         card.juice_up();
-      }
-      if (context.destroy_card && context.destroy_card.bisharp_remove === card && !context.blueprint) {
-        context.destroy_card.to_be_removed_by = undefined;
         return { remove: true };
       }
       return scaling_evo(self, card, context, 'j_poke_kingambit', card.ability.extra.kings_destroyed, self.config.evo_rqmt);

@@ -1,21 +1,26 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_22.lua (Pokédex 631-660: Deino -> Hydreigon), 3 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_22.lua (Pokédex 631-660: Deino -> Hydreigon), 3 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file; the Deino / Zweilous house rule stays).
 import {
-  G, localize, card_eval_status_text,
-  defineJokers, type_tooltip, scaling_evo, poke_remove_card,
+  G, localize,
+  defineJokers, type_tooltip, scaling_evo, scale_card,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_22.lua';
 
+const has_three = (context) => context.poker_hands && context.poker_hands['Three of a Kind'] && context.poker_hands['Three of a Kind'].length;
+
 /** Deino / Zweilous: XMult on a hand containing a Three of a Kind, counting the hands toward evolution.
  *  House rule (owner, 2026-10-18): the Lua checks scoring_name === 'Three of a Kind' (an exact one), so a Full
- *  House never triggered; here any hand that contains one does (text updated in index.js). */
+ *  House never triggered; here any hand that contains one does (text updated in index.js).
+ *  Pokermon 3.9.1: the hand is counted at `before` (not Blueprint), the XMult comes at joker_main. */
 function deino_calc(self, card, context, key) {
-  if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && context.poker_hands
-    && context.poker_hands['Three of a Kind'] && context.poker_hands['Three of a Kind'].length) {
-    if (!context.blueprint) card.ability.extra.hand_played = card.ability.extra.hand_played + 1;
-    // (Lua colour G.C.mult — lowercase, nil — so the default popup colour.)
-    return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), Xmult_mod: card.ability.extra.Xmult };
+  if (has_three(context)) {
+    if (context.before && context.cardarea === G.jokers && !context.blueprint) card.ability.extra.hand_played = card.ability.extra.hand_played + 1;
+    if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+      // (Lua colour G.C.mult — lowercase, nil — so the default popup colour.)
+      return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), Xmult_mod: card.ability.extra.Xmult };
+    }
   }
   return scaling_evo(self, card, context, key, card.ability.extra.hand_played, self.config.evo_rqmt);
 }
@@ -39,21 +44,15 @@ defineJokers({
   hydreigon: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.Xmult, center.ability.extra.Xmult_mod] }; },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main) {
-          return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
-        }
-        if (context.after && context.scoring_name === 'Three of a Kind' && !context.blueprint) {
-          for (const v of context.full_hand.slice()) {
-            if (!context.scoring_hand.includes(v)) poke_remove_card(v, card);
-          }
-        }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      }
+      // Pokermon 3.9.1: a Three of a Kind's unscored cards are destroyed in the destroy_card pass (cardarea 'unscored').
+      if (context.destroy_card && context.scoring_name === 'Three of a Kind' && !context.blueprint && context.cardarea === 'unscored') {
+        return { remove: true };
       }
       if (context.remove_playing_cards && !context.blueprint) {
-        for (let i = 0; i < context.removed.length; i++) {
-          card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_mod;
-          card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
-        }
+        for (let i = 0; i < context.removed.length; i++) scale_card(card, { ref_value: 'Xmult', scalar_value: 'Xmult_mod' });
       }
       return undefined;
     },

@@ -43,6 +43,12 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
   ok(j.ability.extra.boosters_to_open === 9, 'beheeyem: resets to 9', j.ability.extra.boosters_to_open);
   ok(hadTele || (G.shop_vouchers.cards.length === v0 + 1 && G.shop_vouchers.cards.some((c) => key(c) === 'v_telescope')), 'beheeyem: Telescope added to the shop', G.shop_vouchers.cards.map(key));
   act({ type: 'skip_booster' });
+  // Pokermon 3.9.1: a Blueprint copy no longer counts the Boosters.
+  const bp = add('j_blueprint');
+  act({ type: 'reorder', area: 'jokers', ids: [bp.sort_id, j.sort_id] });
+  const left = j.ability.extra.boosters_to_open;
+  bp.calculate_joker({ open_booster: true, card: b });
+  ok(j.ability.extra.boosters_to_open === left, 'beheeyem: Blueprint does not count Boosters (Pokermon 3.9.1)', [left, j.ability.extra.boosters_to_open]);
 }
 
 // ------------------------------------------------------------- Litwick line
@@ -135,7 +141,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
   const hm = add('c_hanged_man');
   const faces = hand(['S_K', 'H_Q']);
   act({ type: 'use', id: hm.sort_id, targets: faces.map((c) => c.sort_id) });
-  ok(close(j.ability.extra.Xmult, 1.5), 'pawniard: +X0.25 per destroyed face card', j.ability.extra.Xmult);
+  ok(close(j.ability.extra.Xmult, 1.5), 'pawniard: +X0.25 per destroyed face card (SMODS.scale_card) (Pokermon 3.9.1)', j.ability.extra.Xmult);
   clearHand();
   r = play(hand(['S_A']));
   ok(close(r.total.mult, 1.5), 'pawniard: scores its XMult', r.total);
@@ -145,7 +151,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
   nextRound();
   const [k] = hand(['S_K']);
   r = play([k]);
-  ok(!G.playing_cards.includes(k), 'bisharp: a lone face card as the first hand is destroyed');
+  ok(!G.playing_cards.includes(k), 'bisharp: a lone face card as the first hand is destroyed straight from the destroy_card pass (Pokermon 3.9.1)');
   ok(close(j.ability.extra.Xmult, 2.25) && j.ability.extra.kings_destroyed === 1, 'bisharp: gains X0.25, counts the King', j.ability.extra);
   ok(close(r.total.mult, 2), 'bisharp: scored X2 before the gain', r.total);
   const [k2] = hand(['H_K']);

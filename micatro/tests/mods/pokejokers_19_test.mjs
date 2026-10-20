@@ -2,6 +2,7 @@
 // (act), plus every evolution.   node micatro/tests/mods/pokejokers_19_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { STATUS } from '../../mods/pokermon/index.js';
+import { create_card } from '../../js/engine/core.js';
 
 const { ok, done } = T();
 const key = (c) => c.config.center.key;
@@ -66,8 +67,13 @@ ok((STATUS.PORTED_FILES['pokemon/pokejokers_19.lua'] || []).length === 3, 'defs:
 // ------------------------------------------------------------- Zorua / Zoroark
 {
   start('ZORUA');
+  // Outside the joker row (a shop card) it shows an Illusion: a Common, non-Dark Pokémon; it drops once owned.
+  const s = create_card('Joker', G.shop_jokers, null, null, null, null, 'j_poke_zorua');
+  const ill = P_CENTERS[s.ability.extra.hidden_key];
+  ok(ill && ill.stage && ill.rarity === 1 && ill.ptype !== 'Dark' && s.ability.dark_sticker === true,
+    'zorua: a shop Zorua shows an Illusion — a Common, non-Dark Pokémon — and has a Dark Tera sticker (Pokermon 3.9.1)', s.ability.extra.hidden_key);
   const z = add('j_poke_zorua');
-  ok(typeof z.ability.extra.hidden_key === 'string' && P_CENTERS[z.ability.extra.hidden_key].stage, 'zorua: picks an Illusion disguise', z.ability.extra.hidden_key);
+  ok(z.ability.extra.hidden_key === undefined, 'zorua: the Illusion drops once it joins the joker row (Pokermon 3.9.1)', z.ability.extra.hidden_key);
   ok(z.ability.dark_sticker === true, 'zorua: Dark Tera sticker');
   add('j_joker');
   let r = play(hand(['S_A']));

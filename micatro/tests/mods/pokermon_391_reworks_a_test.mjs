@@ -37,9 +37,9 @@ ok(RW.length === inRange.length - HOLDS.length && inRange.length === 263,
   `reworked: every joker of pokejokers_01-08 but the ${HOLDS.length} holds (Pokermon 3.9.1)`, [RW && RW.length, inRange.length]);
 ok(HOLDS.every((n) => !RW.includes(n)) && RH.map(([n]) => n).sort().join() === HOLDS.slice().sort().join(), 'the holds: Hazard layer (Qwilfish, Skarmory), Unown, Mega Steelix (quantum Hazard), the Seed jokers', RH);
 {
-  const LATER = /pokejokers_(09|1[0-7])\.lua$/; // batch 7
-  const later = DATA.groups.jokers.filter((f) => LATER.test(f.file)).flatMap((f) => f.ret.list.map((it) => it.name));
-  ok(RW_ALL.every((n) => inRange.includes(n) || later.includes(n)), 'nothing outside pokejokers_01-08 (batch 6) and 09-17 (batch 7) is reworked yet', RW_ALL.filter((n) => !inRange.includes(n) && !later.includes(n)));
+  const LATER = /(pokejokers_(09|1\d|2\d|3\d)|zotherjokers|zmissingno)\.lua$/; // batches 7 and 8
+  const later = DATA.groups.jokers.filter((f) => LATER.test(f.file)).flatMap((f) => (Array.isArray(f.ret.list) ? f.ret.list : []).map((it) => it.name));
+  ok(RW_ALL.every((n) => inRange.includes(n) || later.includes(n)), 'nothing outside pokejokers_01-08 (batch 6), 09-17 (batch 7) and 18-34 / zotherjokers / zmissingno (batch 8) is reworked', RW_ALL.filter((n) => !inRange.includes(n) && !later.includes(n)));
 }
 ok(C('spearow').config.evo_rqmt === 3 && C('spearow').config.extra.card_threshold === 30 && C('spearow').config.extra.cards_scored === undefined && C('spearow').blueprint_compat === true,
   'a reworked joker takes its whole 3.9.1 config and flags (Spearow: 30 cards drawn, evolves after 3 triggers) (Pokermon 3.9.1)', C('spearow').config);

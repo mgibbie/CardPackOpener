@@ -158,8 +158,9 @@ await loadMods(AVAILABLE.map((m) => m.id));
   ok(SEAM_CONTEXTS.every((n) => !wanted(n)), 'vanilla run: no seam context is wanted');
   newRun({ seed: 'SEAM_ALL', back: 'b_red', mods: AVAILABLE.map((m) => m.id) });
   // (3.2.1-era content reads none; Bunco's own stay_flipped is not opted in. Pokermon's 3.9.1 reworks read theirs: batch 6
-  // Golduck setting_ability, Natu / Xatu poker_hand_changed; batch 7 Jirachi Banker modify_final_cashout.)
-  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,modify_final_cashout,poker_hand_changed', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
+  // Golduck setting_ability, Natu / Xatu poker_hand_changed; batch 7 Jirachi Banker modify_final_cashout; batch 8 Gimmighoul
+  // money_altered.)
+  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,money_altered,modify_final_cashout,poker_hand_changed', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
   fresh('SEAM_GATE');
   ok(wanted('money_altered') && wanted('setting_ability') && wanted('modify_weights') && wanted('resetting_card') && !wanted('create_shop_card'), 'seamtest on: exactly the contexts its code reads are wanted');
   fresh('SEAM_GATE2', ['seamtest', 'seamoff']);

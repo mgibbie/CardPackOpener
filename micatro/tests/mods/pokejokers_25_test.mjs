@@ -38,11 +38,11 @@ const rounds = (n) => { for (let i = 0; i < n; i++) { winRound(); if (i < n - 1)
   ok(key(j) === 'j_poke_vikavolt', 'charjabug -> vikavolt with a Thunder Stone', key(j));
   nextRound();
   r = play(hand(['S_A']));
-  ok(r.total.mult === 1 + 12, 'vikavolt: +12 Mult, X1 alone', r.total);
+  ok(close(r.total.mult, 1.5), 'vikavolt: alone it counts itself, X1.5 and no +Mult (Pokermon 3.9.1)', r.total);
   add('j_poke_pikachu'); add('j_poke_pikachu');
   G.GAME.dollars = 0;
   r = play(hand(['S_A']));
-  ok(close(r.total.mult, 13 * 2.5), 'vikavolt: X(1 + 0.75 per other Lightning joker)', r.total);
+  ok(close(r.total.mult, 2.5), 'vikavolt: X(1 + 0.5 per Lightning joker, itself included) (Pokermon 3.9.1)', r.total);
 }
 
 // ------------------------------------------------------------- Rockruff + Lycanroc
@@ -104,7 +104,7 @@ function rockruffTo(seed, even, odd) {
   let r = play(hand(['S_2', 'H_2', 'S_3', 'H_3']));
   ok(r.total.chips === 30 + 5 && r.total.mult === 2 + 4 * 6, 'lycanroc dusk: +4 per non-face card, first even and first odd retriggered', r.total);
   r = play(hand(['D_2', 'C_2', 'D_3', 'C_3']));
-  ok(r.total.chips === 30 && r.total.mult === 2 + 16, 'lycanroc dusk: retriggers once per round', r.total);
+  ok(r.total.chips === 35 && r.total.mult === 2 + 24, 'lycanroc dusk: retriggers every hand, not once per round (Pokermon 3.9.1)', r.total);
   winRound(); nextRound();
   r = play(hand(['S_2', 'H_2', 'S_3', 'H_3']));
   ok(r.total.chips === 35, 'lycanroc dusk: again next round', r.total);

@@ -23,7 +23,7 @@ import { calculate_context } from '../../../js/engine/run.js';
 import DATA from '../data.js';
 import { find_card, any, cfg } from './utils.js';
 import { type_sticker_applied, wildcard_type } from './types.js';
-import { energize } from './energy.js';
+import { energize, energy_increase } from './energy.js';
 import { get_random_poke_key } from './pools.js';
 
 /** pokermon.family — each entry a list of names or {key, form} tables. Add-ons may push. */
@@ -168,16 +168,20 @@ export function copy_scaled_values(card) {
  * (the Lua returns nil — calculate() wraps it as {message = nil}). Randomizer challenge:
  * G.GAME.modifiers.apply_randomizer swaps the target for a random Pokémon.
  */
-export function poke_evolve(card, to_key, immediate, evolve_message, transformation) {
+/**
+ * pokermon.evolve(card, to_key, immediate, evolve_message, transformation, energize_amount): energize_amount (3.9.1,
+ * batch 8: the Mystery Egg hatches through it) adds that many Energy (type 'Trans') after the swap.
+ */
+export function poke_evolve(card, to_key, immediate, evolve_message, transformation, energize_amount) {
   if (G.GAME.modifiers.apply_randomizer && !transformation) to_key = get_random_poke_key('randomizer');
   for (const f of EVOLVE_INTERCEPTS) if (f.immediate && f.immediate(card, to_key)) immediate = true;
-  if (immediate) { poke_backend_evolve(card, to_key); return undefined; }
+  if (immediate) { poke_backend_evolve(card, to_key, energize_amount); return undefined; }
   G.E_MANAGER.add_event(() => {
     if (card.evolution_timer || P_CENTERS[to_key] === card.config.center || card.removed) return;
     card.evolution_timer = 0;
     const from = card.config.center.key;
     emit('poke_evolve', { card: card.sort_id, from, to: to_key });
-    poke_backend_evolve(card, to_key);
+    poke_backend_evolve(card, to_key, energize_amount);
     card.evolution_timer = undefined;
     play_sound('tarot1');
     card_eval_status_text(card, 'extra', null, null, null, { message: evolve_message || localize('poke_evolve_success'), colour: 'FILTER', instant: true });
@@ -207,7 +211,7 @@ export const POST_EVOLVE = [];
  */
 export const EVOLVE_INTERCEPTS = [];
 
-export function poke_backend_evolve(card, to_key) {
+export function poke_backend_evolve(card, to_key, energize_amount) {
   for (const f of EVOLVE_INTERCEPTS) if (f.backend && f.backend(card, to_key)) return;
   const custom_values_to_keep = {};
   let has_custom = false;
@@ -243,20 +247,21 @@ export function poke_backend_evolve(card, to_key) {
   const ex = card.ability.extra;
   if (isTable(ex)) {
     for (const [k, v] of Object.entries(values_to_keep)) {
+      // (Lua pairs() never yields a nil value: a kept name the old card lacks — the Mystery Egg hatching in place has no
+      // `targets` — leaves the new card's own value alone. Batch 8: 3.2.1's JS port deleted it.)
+      if (v === undefined || v === null) continue;
       if (lt(ex[k]) || k === 'energy_count' || k === 'c_energy_count' || EVO_KEEP.includes(k)) {
         if (typeof ex[k] !== 'number' || (typeof v === 'number' && v > ex[k]) || k === 'form' || k === 'jack_target') {
-          if (v === undefined || v === null) delete ex[k]; else ex[k] = v; // Lua: assigning nil removes the key
+          ex[k] = v;
         }
       }
     }
-    if (to_key === 'j_poke_gourgeist') {
-      const m = { 0: 2, 1: 5, 2: 8, 3: 11 }[ex.form];
-      if (m !== undefined) ex.money = m;
-    }
+    // (3.2.1 set Gourgeist's payout from its size here — $2 / $5 / $8 / $11; 3.9.1 dropped it: config money at every size.)
     if (lt(ex.energy_count) || lt(ex.c_energy_count)) energize(card, null, true, true);
   }
   if (has_custom) for (const [k, v] of Object.entries(custom_values_to_keep)) card.ability.extra[k] = v;
   for (const f of POST_EVOLVE) f(card, old_key, to_key);
+  if (energize_amount) for (let i = 0; i < energize_amount; i++) energy_increase(card, 'Trans');
   if (card.edition && card.edition.poke_shiny) play_sound('poke_e_shiny', 1, 0.2);
   card.juice_up();
   // SMODS PR #611 workaround: forget used_jokers keys no card holds any more.

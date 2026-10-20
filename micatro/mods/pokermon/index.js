@@ -565,7 +565,9 @@ export const POKERMON = registerMod({
   // (rarities, costs, compat flags, enhancement gates, 9 config numbers, the cgoose -> iridescent_hacker rename).
   // 3 = batch 6, pokejokers_01-08 on their 3.9.1 behaviour (data391.js reworked: whole config, flags, loc text).
   // 4 = batch 7, pokejokers_09-17 on their 3.9.1 behaviour (Gen-3 starters, Celebi, Jirachi forms, Leafeon / Glaceon...).
-  contentRev: 4,
+  // 5 = batch 8, pokejokers_18-34 + zotherjokers / zmissingno on their 3.9.1 behaviour (Vanillite line, Zorua, Sylveon,
+  // Pumpkaboo, Kingambit, Gimmighoul / Gholdengo, Rival, Mystery Egg...; Hazard jokers and Unown Swarm held).
+  contentRev: 5,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

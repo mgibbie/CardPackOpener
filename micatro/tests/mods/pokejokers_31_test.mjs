@@ -27,13 +27,14 @@ const hazards = () => G.playing_cards.filter((c) => has_enhancement(c, 'm_poke_h
   const pack = G.shop_booster.cards[0];
   ok(act({ type: 'buy', id: pack.sort_id }).ok, 'bought a pack');
   ok(act({ type: 'skip_booster' }).ok, 'skipped the pack');
-  ok(j.ability.extra.mult === 3, 'ursaluna: +3 Mult per skipped pack', j.ability.extra.mult);
+  ok(j.ability.extra.mult === 2, 'ursaluna: +2 Mult per skipped pack (Pokermon 3.9.1 mult_mod)', j.ability.extra.mult);
   const item = G.consumeables.cards[0];
-  ok(item && item.ability.set === 'Item' && item.edition && item.edition.polychrome, 'ursaluna: Polychrome Item on skip', item && [item.ability.set, item.edition]);
+  ok(item && item.ability.set === 'Item' && item.edition && (item.edition.foil || item.edition.holo || item.edition.polychrome) && !item.edition.negative, 'ursaluna: a Foil / Holographic / Polychrome Item on skip (Pokermon 3.9.1)', item && [item.ability.set, item.edition]);
   act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
   r = play(hand(['S_A']));
-  // (1 + 3) Mult, then the Polychrome Item's X1.5 (consumable editions score like jokers').
-  ok(r.total.mult === 6, 'ursaluna: +3 Mult scored', r.total);
+  // (1 + 2) Mult, then the Item's edition (consumable editions score like jokers'): Foil +50 Chips / Holo +10 Mult / Poly X1.5.
+  const e = item.edition;
+  ok(r.total.mult === (e.holo ? 13 : e.polychrome ? 4.5 : 3) && r.total.chips === 16 + (e.foil ? 50 : 0), 'ursaluna: +2 Mult scored (Pokermon 3.9.1)', r.total);
 }
 
 // ---------------------------------------------------------------- Hisuian Qwilfish -> Overqwil
