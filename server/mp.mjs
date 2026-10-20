@@ -410,16 +410,21 @@ function cleanRunBadges(b) {
 	if (b.mono != null && b.mono !== false) { if (typeof b.mono !== 'string' || !MICATRO_TYPES.includes(b.mono)) return null; out.mono = b.mono; }
 	return out;
 }
-const emptyMicatroProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: {}, ach: {} });
-/** An incoming record -> clean {v, nuz, nuzStake, both, mono: {type: wins}, ach: {id: ts}}, or null for a bad shape. */
+// The per-type maps {type: n}: mono (Monotype wins), monoStake (the best stake won as that Monotype), bothMono
+// (Nuzlocke + Monotype wins of that type), bothStake (the best stake of those). The *Stake maps hold a level <= 99.
+// (monoStake / bothMono / bothStake came later: an older client never sends them, and the merge keeps them.)
+const MICATRO_TYPE_MAPS = ['mono', 'monoStake', 'bothMono', 'bothStake'];
+const emptyMicatroProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: {}, ach: {}, monoStake: {}, bothMono: {}, bothStake: {} });
+/** An incoming record -> clean {v, nuz, nuzStake, both, mono, ach: {id: ts}, monoStake, bothMono, bothStake}, or null for a bad shape. */
 function cleanMicatroProgress(p) {
 	if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
 	const count = (v, hi = 1e7) => (v == null ? 0 : Number.isInteger(v) && v >= 0 && v <= hi ? v : NaN);
 	const out = emptyMicatroProgress();
 	for (const k of ['nuz', 'nuzStake', 'both']) { out[k] = count(p[k], k === 'nuzStake' ? 99 : 1e7); if (Number.isNaN(out[k])) return null; }
-	if (p.mono != null) {
-		if (typeof p.mono !== 'object' || Array.isArray(p.mono)) return null;
-		for (const [t, n] of Object.entries(p.mono)) { const c = count(n); if (!MICATRO_TYPES.includes(t) || Number.isNaN(c)) return null; if (c) out.mono[t] = c; }
+	for (const m of MICATRO_TYPE_MAPS) {
+		if (p[m] == null) continue;
+		if (typeof p[m] !== 'object' || Array.isArray(p[m])) return null;
+		for (const [t, n] of Object.entries(p[m])) { const c = count(n, m.endsWith('Stake') ? 99 : 1e7); if (!MICATRO_TYPES.includes(t) || Number.isNaN(c)) return null; if (c) out[m][t] = c; }
 	}
 	if (p.ach != null) {
 		if (typeof p.ach !== 'object' || Array.isArray(p.ach)) return null;
@@ -433,10 +438,36 @@ function cleanMicatroProgress(p) {
 function mergeMicatroProgress(a, b) {
 	const out = emptyMicatroProgress();
 	for (const k of ['nuz', 'nuzStake', 'both']) out[k] = Math.max(+a[k] || 0, +b[k] || 0);
-	for (const t of MICATRO_TYPES) { const n = Math.max(+(a.mono || {})[t] || 0, +(b.mono || {})[t] || 0); if (n) out.mono[t] = n; }
+	for (const m of MICATRO_TYPE_MAPS) for (const t of MICATRO_TYPES) { const n = Math.max(+(a[m] || {})[t] || 0, +(b[m] || {})[t] || 0); if (n) out[m][t] = n; }
 	const ids = [...new Set([...Object.keys(a.ach || {}), ...Object.keys(b.ach || {})])].sort().slice(0, MICATRO_ACH_MAX);
 	for (const id of ids) { const x = (a.ach || {})[id], y = (b.ach || {})[id]; out.ach[id] = x && y ? Math.min(x, y) : x || y; }
 	return out;
+}
+/**
+ * READ-TIME backfill of the per-type fields for a record from before they existed (nothing stored is rewritten):
+ * the player's own saved run replays (`mreplay:<id>`, one per run, meta {won, stake, badges: {nuz?, mono?}} — the same
+ * client-reported badges the record itself came from) give, per Monotype type, the best stake won and how many of those
+ * wins were also a Nuzlocke. `runs`: [{stake, badges}]. Returns the derived {monoStake, bothMono, bothStake} (a record
+ * shape the max-merge folds in), or null when there is nothing to add.
+ */
+function micatroProgressFromRuns(runs) {
+	const out = { monoStake: {}, bothMono: {}, bothStake: {} };
+	let any = false;
+	for (const r of runs || []) {
+		const b = cleanRunBadges(r && r.badges);
+		if (!b || !b.mono) continue;
+		const lv = Math.min(99, Math.max(1, Math.floor(Number(r.stake)) || 1));
+		out.monoStake[b.mono] = Math.max(out.monoStake[b.mono] || 0, lv);
+		if (b.nuz) { out.bothMono[b.mono] = (out.bothMono[b.mono] || 0) + 1; out.bothStake[b.mono] = Math.max(out.bothStake[b.mono] || 0, lv); }
+		any = true;
+	}
+	return any ? out : null;
+}
+/** Does this (merged) record lack per-type data it should have (a Monotype type without a stake, or fewer typed
+ *  Nuzlocke + Monotype wins than the total)? Only then does micatro-progress-get look at the replays. */
+function micatroProgressNeedsBackfill(p) {
+	const placed = Object.values(p.bothMono || {}).reduce((a, n) => a + (+n || 0), 0);
+	return (p.both || 0) > placed || Object.keys(p.mono || {}).some((t) => !(p.monoStake || {})[t]);
 }
 // MICATRO big-number scores (any run past 1e308, sent as text "1.234e450"). The game's scale
 // tops out at 9.99e999: an exponent >= 1000 is "naneinf" (-> {naneinf:true}, stored like Infinity).
@@ -818,6 +849,16 @@ function userStore(db) {
 		},
 		delete: async (k) => {
 			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
+		},
+		// A player's won Micatro run replays that carry badges: [{stake, badges}] (the per-type record backfill,
+		// micatro-progress-get). A key-range scan of mreplay: rows (30-day GC), only the two small fields read out.
+		micatroReplayBadges: async (username) => {
+			const res = await db.prepare(
+				"SELECT json_extract(value, '$.meta.stake') AS stake, json_extract(value, '$.meta.badges') AS badges FROM mp_store " +
+				"WHERE key >= 'mreplay:' AND key < 'mreplay;' AND json_extract(value, '$.by') = ? AND json_extract(value, '$.meta.won') " +
+				"AND json_extract(value, '$.meta.badges') IS NOT NULL"
+			).bind(username).all();
+			return (res.results || []).map(r => { let badges = null; try { badges = typeof r.badges === 'string' ? JSON.parse(r.badges) : r.badges; } catch { badges = null; } return { stake: r.stake, badges }; });
 		},
 		// prefix scan, ordered by key — for per-item queues (each row a separate key)
 		// that must survive concurrent writers. Callers use controlled prefixes with
@@ -2394,9 +2435,19 @@ export default async function handler(req, env) {
 	// nothing goes backwards (counts: max; types / achievements: union, earliest time kept) and returns the
 	// merged record. Client-reported, like run scores. The write is a compare-and-set on rev (retried), so
 	// two devices pushing at once can't lose each other's wins.
+	// A record from before the per-type fields (monoStake / bothMono / bothStake) is backfilled at READ time from the
+	// player's replays (micatroProgressFromRuns): returned merged, never written here (the client keeps it like any
+	// other device's record, and its normal put max-merges it in).
 	if (action === 'micatro-progress-get') {
 		const row = await store.get('micatro_progress:' + username);
-		return json({ progress: mergeMicatroProgress(emptyMicatroProgress(), (row && row.progress) || {}) });
+		let progress = mergeMicatroProgress(emptyMicatroProgress(), (row && row.progress) || {});
+		if (micatroProgressNeedsBackfill(progress)) {
+			try {
+				const derived = micatroProgressFromRuns(await store.micatroReplayBadges(username));
+				if (derived) progress = mergeMicatroProgress(progress, derived);
+			} catch { /* the backfill is best-effort: the stored record still reads */ }
+		}
+		return json({ progress });
 	}
 	if (action === 'micatro-progress-put') {
 		let text;

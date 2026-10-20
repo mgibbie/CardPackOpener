@@ -1,7 +1,11 @@
 // Nuzlocke / Monotype record + Micatro's achievements (the engine side: mods/pokermon/systems/runbadges.js).
 // A Pokermon run that is WON while still a Nuzlocke and/or a Monotype adds to this player's record:
 //   {v:1, nuz: Nuzlocke wins, nuzStake: the highest stake won as a Nuzlocke, both: Nuzlocke+Monotype wins,
-//    mono: {fire: wins, ...} (the 12 Pokermon types, lowercase), ach: {achievement id: first unlock time}}
+//    mono: {fire: wins, ...} (the 12 Pokermon types, lowercase), ach: {achievement id: first unlock time},
+//    monoStake: {fire: the highest stake won as a Fire Monotype}, bothMono: {fire: Nuzlocke + Fire Monotype wins},
+//    bothStake: {fire: the highest stake won as a Nuzlocke + Fire Monotype}}
+//   (the per-type fields came later: a record from before them is backfilled at READ time by the server, from the
+//    player's saved replays' badges — micatro-progress-get — and merged in like any other device's record)
 // and may unlock an achievement (a toast, and the Achievements screen lists them).
 //   * Stored per player in localStorage ('micatro_progress_v1:<user>'), try/catch.
 //   * Signed in, it is ACCOUNT-SAVED: micatro-progress-get / -put (server/mp.mjs, row micatro_progress:<user>).
@@ -29,14 +33,19 @@ export const ACHIEVEMENTS = [
   { id: 'nuzlocke_gold', name: 'Golden Nuzlocke', desc: 'Win a Nuzlocke at Gold Stake.' },
 ];
 
-export const emptyProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: {}, ach: {} });
+export const emptyProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: {}, ach: {}, monoStake: {}, bothMono: {}, bothStake: {} });
+/** The per-type maps ({type: n}); the *Stake ones hold a stake level (<= 99), the others win counts. */
+export const TYPE_MAPS = ['mono', 'monoStake', 'bothMono', 'bothStake'];
 const cnt = (v) => (Number.isInteger(v) && v > 0 ? v : 0);
+const stakeLv = (stake) => Math.min(99, Math.max(1, Math.floor(+stake || 1)));
 /** a + b, never backwards (the server's mergeMicatroProgress does the same). */
 export function mergeProgress(a, b) {
   a = a || {}; b = b || {};
   const out = emptyProgress();
   for (const k of ['nuz', 'nuzStake', 'both']) out[k] = Math.max(cnt(a[k]), cnt(b[k]));
-  for (const t of TYPES) { const k = t.toLowerCase(); const n = Math.max(cnt((a.mono || {})[k]), cnt((b.mono || {})[k])); if (n) out.mono[k] = n; }
+  for (const m of TYPE_MAPS) {
+    for (const t of TYPES) { const k = t.toLowerCase(); const n = Math.max(cnt((a[m] || {})[k]), cnt((b[m] || {})[k])); if (n) out[m][k] = n; }
+  }
   const ids = [...new Set([...Object.keys(a.ach || {}), ...Object.keys(b.ach || {})])].filter((id) => /^[a-z0-9_]{1,32}$/.test(id)).sort().slice(0, 64);
   for (const id of ids) {
     const x = cnt((a.ach || {})[id]), y = cnt((b.ach || {})[id]);
@@ -66,6 +75,28 @@ export function onProgress(cb) { listeners.add(cb); return () => listeners.delet
 /** Monotype types beaten (capitalised), in TYPES order. */
 export const typesBeaten = (p = progress) => TYPES.filter((t) => cnt((p.mono || {})[t.toLowerCase()]) > 0);
 export const monoWins = (p = progress) => Object.values(p.mono || {}).reduce((a, n) => a + cnt(n), 0);
+/**
+ * One type's Record-screen sticker: {category: 'both' (a Nuzlocke + Monotype win: Arceus) | 'mono' (Monotype only:
+ * Ambipom) | null, level: the best stake in that category (1 when only the count is known), mono, both: win counts}.
+ */
+export function typeRecord(type, p = progress) {
+  const k = String(type || '').toLowerCase();
+  const mono = cnt((p.mono || {})[k]), both = cnt((p.bothMono || {})[k]);
+  if (both) return { category: 'both', level: Math.max(1, cnt((p.bothStake || {})[k])), mono, both };
+  if (mono) return { category: 'mono', level: Math.max(1, cnt((p.monoStake || {})[k])), mono, both };
+  return { category: null, level: 0, mono, both };
+}
+/** The three totals' stickers: {nuz, mono, both} -> the best stake level in each (0 = none won). */
+export function totalLevels(p = progress) {
+  const best = (m) => Math.max(0, ...Object.values(p[m] || {}).map(cnt));
+  return {
+    nuz: cnt(p.nuz) ? Math.max(1, cnt(p.nuzStake)) : 0,
+    mono: monoWins(p) ? Math.max(1, best('monoStake')) : 0,
+    both: cnt(p.both) ? Math.max(1, best('bothStake')) : 0,
+  };
+}
+/** Types with a Monotype win but no Nuzlocke + Monotype win yet (capitalised, TYPES order). */
+export const typesMissingBoth = (p = progress) => TYPES.filter((t) => typeRecord(t, p).category === 'mono');
 
 /** Load this player's record (+ sync with the account when signed in). netApi: {isLoggedIn, fetchProgress, saveProgress}. */
 export function initProgress(username, netApi) {
@@ -164,9 +195,10 @@ export function recordRunWin(earned, stake, now = Date.now(), runId = null) {
   markRun(runId);
   const p = mergeProgress(progress, {});
   const mono = earned.mono && TYPES.includes(earned.mono) ? earned.mono.toLowerCase() : null;
-  if (earned.nuz) { p.nuz += 1; p.nuzStake = Math.max(p.nuzStake, Math.min(99, Math.max(1, Math.floor(+stake || 1)))); }
-  if (mono) p.mono[mono] = cnt(p.mono[mono]) + 1;
-  if (earned.nuz && mono) p.both += 1;
+  const lv = stakeLv(stake);
+  if (earned.nuz) { p.nuz += 1; p.nuzStake = Math.max(p.nuzStake, lv); }
+  if (mono) { p.mono[mono] = cnt(p.mono[mono]) + 1; p.monoStake[mono] = Math.max(cnt(p.monoStake[mono]), lv); }
+  if (earned.nuz && mono) { p.both += 1; p.bothMono[mono] = cnt(p.bothMono[mono]) + 1; p.bothStake[mono] = Math.max(cnt(p.bothStake[mono]), lv); }
   const unlocked = [];
   for (const id of earnedIds(p)) if (!p.ach[id]) { p.ach[id] = now; unlocked.push(ACHIEVEMENTS.find((a) => a.id === id)); }
   progress = p; writeLocal(); bump(); push();
