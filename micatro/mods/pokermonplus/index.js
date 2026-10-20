@@ -50,7 +50,7 @@ import PDATA from '../pokermon/data.js';
 import DATA from './data.js';
 import {
   add_family, poke_set_type_badge, pokemon_in_pool, POKE_POOL_RULES, ENERGY_OVERRIDES, ENERGY_LIMIT_BONUS,
-  EVO_KEEP, POST_EVOLVE, mark_precedence,
+  EVO_KEEP, POST_EVOLVE, mark_precedence, replaced_by,
 } from '../pokermon/api.js';
 import { MOD_ID, set_debuff, void_energy_override, energy_plus_of, sonfive_base_evo_name } from './src/functions.js';
 import { weakened_in_shop, weakened_after_evolve, lilac_stake, weakened_sticker, WEAKENED } from './src/stakes.js';
@@ -278,7 +278,10 @@ export const POKERMONPLUS = registerMod({
   description: 'Pokémon add-on: Darkrai, Croagunk, Meltan, Garganacl and more, the Timer Ball, five new decks, negative Energy and the Lilac stake.',
   // config.lua's per-line toggles (all on: see fix 1) + the Timer Ball toggle (settings.lua "Extra").
   options: {
-    nincada: OPT(true, 'Nincada line'),
+    // Hidden while base Pokermon supersedes the whole line (always: Pokermon+ requires Pokermon; PORTING.md "Add-on
+    // dedupe"): the toggle only gates Pokermon+'s own Nincada / Ninjask / Shedinja, which are out of every pool anyway,
+    // so it would do nothing. The value stays stored and read (a saved selection / recipe with nincada: false loads).
+    nincada: { ...OPT(true, 'Nincada line'), hidden: () => ['j_sonfive_nincada', 'j_sonfive_ninjask', 'j_sonfive_shedinja'].every((k) => replaced_by(k)) },
     croagunk: OPT(true, 'Croagunk line'),
     darkrai: OPT(true, 'Darkrai'),
     vullaby: OPT(true, 'Vullaby line'),
