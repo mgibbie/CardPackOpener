@@ -1,10 +1,11 @@
 /**
- * Pokermon 3.2.1 (InertSteak & contributors), rebuilt natively for Micatro.
+ * Pokermon (InertSteak & contributors), rebuilt natively for Micatro: the 3.2.1 port, moving to 3.9.1 in batches
+ * (Plans/MICATRO_MODS_UPGRADES.md; PORTING.md "Pokermon 3.9.1 upgrade").
  *
  * No Steamodded layer: content is built from the mod's own static data (data.js, extracted
- * from its Lua) merged with behaviour ported to JS (jokers/, consumables/, boosters/, via
- * defs.js), and Pokermon's rule changes are Micatro engine hooks (systems/). Toggleable per
- * run like every Micatro mod: off = gone.
+ * from its 3.2.1 Lua, + data391.js: the 3.9.1 static data taken so far, generated) merged with behaviour
+ * ported to JS (jokers/, consumables/, boosters/, via defs.js), and Pokermon's rule changes are Micatro
+ * engine hooks (systems/). Toggleable per run like every Micatro mod: off = gone.
  *
  *   systems/types.js      Pokémon types + Tera stickers, type badges/colours
  *   systems/evolution.js  level / scaling / item / type / deck evolutions, in-place swap, families
@@ -24,6 +25,7 @@ import { registerMod } from '../../js/mods/registry.js';
 import { POKE_ATTRIBUTES, pokemon_attributes } from './systems/attributes.js';
 import { G } from '../../js/engine/core.js';
 import DATA from './data.js';
+import D391 from './data391.js';
 import { DEFS, PORTED_FILES } from './defs.js';
 
 // Behaviour (each file registers through defs.js on import).
@@ -124,15 +126,35 @@ const ATLAS_FILES = {
   j_poke_unown_swarm_shiny_soul: ['j_poke_unown_swarm_shiny_soul.png', 290, 285],
   // martz.lua's Jirachi wish cards (c_poke_fake_*) name this Series A sheet; it ships with 3.2.1 but wasn't registered.
   AtlasJokersSeriesAGen03: ['Series A/AtlasJokersSeriesAGen03.png'],
-  // Art Pokermon 3.2.1 shipped as placeholders and a later release (3.9.1, InertSteak/Pokermon assets/2x/Basic Series)
-  // drew: the 3.9.1 sheets, unchanged, saved beside the 3.2.1 ones (see LATER_ART below and PORTING.md "Art").
-  AtlasJokersBasicOthers391: ['Basic Series/AtlasJokersBasicOthers-391.png'],
-  AtlasDecksBasic391: ['Basic Series/AtlasDecksBasic-391.png'],
+  // Pokermon 3.9.1's boss blind sheet (21 frames per row, like the 3.2.1 one; the renamed Iridescent Hacker is row 25).
+  AtlasBossblinds391: ['AtlasBossblinds-391.png', 34, 34, 21],
 };
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) {
   ATLAS_FILES['AtlasJokersBasic' + g] = ['Basic Series/AtlasJokersBasic' + g + '.png'];
   ATLAS_FILES['AtlasJokersBasic' + g + 'Shiny'] = ['Basic Series/AtlasJokersBasic' + g + 'Shiny.png'];
 }
+/**
+ * Pokermon 3.9.1's sheets (InertSteak/Pokermon tag 3.9.1, assets/2x/Basic Series), saved unchanged beside the 3.2.1 ones
+ * as '<name>-391.png' and registered as '<name>391' (batch 1 already used two of them: AtlasJokersBasicOthers391 for
+ * Rotom Dex, AtlasDecksBasic391 for the Stadium / Mega decks — LATER_ART). Pokermon's OWN cards draw from them (to391
+ * below): 3.9.1 re-laid some sheets, so jokers take their cell from data391.js sprites (3.9.1 pokespriteload.lua), every
+ * other card keeps its cell (3.9.1 kept those). The 3.2.1 sheets stay registered: the add-ons (Nacho, Pokermon+) still
+ * draw their cells from them until their own upgrades, and so do the held cards (TO391_HOLD). Checked crop by crop:
+ * micatro/tests/mods/pokermon_391_data_test.mjs. (3.9.1's re-laid animation strips — the Unown swarm, Bird Energy —
+ * and its Series A sheets are vendored but not used: the same frames, or art the port doesn't show.)
+ */
+const SHEETS_391 = ['AtlasConsumablesBasic', 'AtlasDecksBasic', 'AtlasEnhancementsBasic', 'AtlasStickersBasic'];
+for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) SHEETS_391.push('AtlasJokersBasic' + g, 'AtlasJokersBasic' + g + 'Shiny');
+for (const n of SHEETS_391) ATLAS_FILES[n + '391'] = ['Basic Series/' + n + '-391.png'];
+SHEETS_391.push('AtlasBossblinds');
+/** Cards that keep their 3.2.1 sheet (data391.js sprite_hold: Unown's 3.9.1 card is the reworked one). */
+const TO391_HOLD = new Set(D391.sprite_hold.map(([name]) => 'j_poke_' + name));
+/** A Pokermon card's 3.2.1 sheet -> its 3.9.1 twin. */
+const to391 = (c) => {
+  const m = /^poke_(.+)$/.exec(c.atlas || '');
+  if (m && SHEETS_391.includes(m[1]) && !TO391_HOLD.has(c.key)) c.atlas = 'poke_' + m[1] + '391';
+  return c;
+};
 const atlases = {};
 for (const [name, [path, px = 71, py = 95, frames]] of Object.entries(ATLAS_FILES)) {
   atlases['poke_' + name] = { src: art(path), px, py, ...(frames ? { frames } : {}) };
@@ -183,7 +205,21 @@ const behaviourOf = (def) => {
 const withStatic = (item, def) => (def ? { ...item, ...staticOf(def) } : item);
 const SPRITES = DATA.globals.PokemonSprites;
 
-/** pokespriteload.lua poke_load_atlas + poke_load_sprites (Basic sheet, base art). */
+/**
+ * Pokermon's own jokers: 3.9.1's sprite (data391.js: the sheet + cell of pokespriteload.lua 3.9.1, resolved; the
+ * sheet becomes its 391 twin in to391). A list of positions = a multi-sprite Pokémon: Micatro shows the first.
+ */
+function jokerSprite391(item, c) {
+  const s = D391.sprites[item.name];
+  if (!s) return false;
+  c.atlas = 'poke_' + s.atlas;
+  c.pos = { ...s.pos };
+  if (s.soul_pos) c.soul_pos = { ...s.soul_pos };
+  if (s.multi) c.poke_multi_sprite = true;
+  return true;
+}
+
+/** pokespriteload.lua poke_load_atlas + poke_load_sprites (Basic sheet, base art; 3.2.1 — the add-ons' path). */
 function jokerSprite(item, c, extra_sprites) {
   const info = (extra_sprites && extra_sprites[item.name]) || SPRITES[item.name];
   if (!info) { c.atlas = atlasName(item.atlas); return; }
@@ -204,8 +240,31 @@ const UNPORTED_POOL = () => false;
 const PORTED = { jokers: [], consumables: [], boosters: [] };
 const UNPORTED = { jokers: [], consumables: [], boosters: [], vouchers: [], backs: [], tags: [], blinds: [], seals: [], enhancements: [] };
 
+// ------------------------------------------------------------ 3.9.1 static data
+/** data.js item + the 3.9.1 changes taken for it (data391.js jokers: rarity, cost, compat flags, gates, config paths). */
+function with391(data_item) {
+  const o = D391.jokers[data_item.name];
+  if (!o) return data_item;
+  const item = { ...data_item };
+  for (const [k, v] of Object.entries(o)) {
+    if (k === 'config') continue;
+    if (v === null) delete item[k]; else item[k] = v;
+  }
+  if (o.config) {
+    item.config = JSON.parse(JSON.stringify(item.config || {}));
+    for (const [p, v] of Object.entries(o.config)) {
+      const ks = p.split('.');
+      let t = item.config;
+      for (const k of ks.slice(0, -1)) t = isTable(t[k]) ? t[k] : (t[k] = {});
+      t[ks[ks.length - 1]] = v;
+    }
+  }
+  return item;
+}
+
 // -------------------------------------------------------------------- jokers
-function jokerCenter(data_item, file) {
+function jokerCenter(data_item0, file) {
+  const data_item = with391(data_item0);
   const def = DEFS.jokers[data_item.name];
   const item = withStatic(data_item, def);
   const c = stripFns(item);
@@ -223,8 +282,9 @@ function jokerCenter(data_item, file) {
   if (c.item_req) { if (isTable(c.config.extra)) c.config.extra.item_req = c.item_req; else c.config.extra = { item_req: c.item_req }; }
   if (c.evo_list) { if (isTable(c.config.extra)) c.config.extra.evo_list = c.evo_list; else c.config.extra = { evo_list: c.evo_list }; }
   c.attributes = pokemon_attributes(c); // (load_pokemon: <type>_type, stage_<stage>, pokemon — Steamodded attribute pools)
-  jokerSprite(item, c);
+  if (TO391_HOLD.has(c.key) || !jokerSprite391(item, c)) jokerSprite(item, c);
   laterArt(c);
+  to391(c);
   c.set_badges = poke_set_type_badge;
   if (def) {
     Object.assign(c, behaviourOf(def));
@@ -293,6 +353,7 @@ function consumableCenter(data_item, file) {
   c.cost = c.cost ?? 3;
   c.config = c.config || {};
   c.atlas = atlasName(item.atlas, 'placeholder_item');
+  to391(c);
   if (c.hidden) { c.soul_set = c.soul_set || 'Spectral'; c.soul_rate = c.soul_rate ?? 0.003; }
   if (def) { Object.assign(c, behaviourOf(def)); PORTED.consumables.push(c.key); }
   else { c.unported = true; UNPORTED.consumables.push(c.key); }
@@ -328,6 +389,7 @@ function simpleCenter(kind, prefix, set, data_item, file) {
   c.config = c.config || {};
   if (item.atlas) c.atlas = atlasName(item.atlas, set === 'Back' ? 'placeholder_deck' : 'placeholder_item');
   laterArt(c);
+  to391(c);
   if (def) Object.assign(c, behaviourOf(def));
   else { c.unported = true; c.in_pool = UNPORTED_POOL; if (set === 'Enhanced') c.skip_pool = true; UNPORTED[kind].push(c.key); }
   return c;
@@ -363,7 +425,7 @@ for (const f of DATA.groups.enhancements) for (const item of listOf(f)) centers.
 // The Shiny edition (behaviour in systems/shiny.js).
 {
   const item = listOf(DATA.groups.editions[0])[0];
-  centers.push({ ...stripFns(item), ...shiny_edition, atlas: 'poke_AtlasJokersBasicNatdexShiny', poke_file: DATA.groups.editions[0].file });
+  centers.push({ ...stripFns(item), ...shiny_edition, atlas: 'poke_AtlasJokersBasicNatdexShiny391', poke_file: DATA.groups.editions[0].file });
 }
 
 const tags = [];
@@ -373,7 +435,13 @@ for (const f of DATA.groups.tags) for (const item of listOf(f)) {
   tags.push(c);
 }
 const blinds = [];
-for (const f of DATA.groups.blinds) for (const item of listOf(f)) {
+// Pokermon 3.9.1 renamed the showdown boss bl_poke_cgoose (Chartreuse Chamber) -> bl_poke_iridescent_hacker (Iridescent
+// Hacker, new art + colour; data391.js blinds). Our behaviour (blinds/pokebossblind.js) moves to the new key; the old key
+// still resolves (js/mods/aliases.js renamed: stored recipes, stickers and decks read it as the new one).
+for (const [k, d] of Object.entries(DATA.loc.descriptions)) if (D391.loc[k]) Object.assign(d, D391.loc[k]);
+for (const f of DATA.groups.blinds) for (const item0 of listOf(f)) {
+  const ren = D391.blinds[item0.key];
+  const item = ren ? { ...item0, ...ren } : item0;
   const c = simpleCenter('blinds', 'bl_poke_', 'Blind', item, f.file);
   c.name = item.name || c.key;
   blinds.push(c);
@@ -386,7 +454,7 @@ for (const f of DATA.groups.seals) for (const item of listOf(f)) {
 
 const stickers = [];
 for (const f of DATA.groups.stickers) for (const item of listOf(f)) {
-  stickers.push({ ...stripFns(item), atlas: 'poke_AtlasStickersBasic', label: 'Tera', type: item.key.replace('_sticker', '') });
+  stickers.push({ ...stripFns(item), atlas: 'poke_AtlasStickersBasic391', label: 'Tera', type: item.key.replace('_sticker', '') });
 }
 // The Tera stickers' own text: en-us.lua has it commented out (so they showed none); the author's entries were
 // {name = "Type", text = {"{X:grass,C:white}Grass{}"}} — restored here, plus the type's tooltip below it.
@@ -484,11 +552,14 @@ export const POKERMON = registerMod({
   id: 'pokermon',
   name: 'Pokermon',
   prefix: 'poke',
-  version: '3.2.1',
+  // Pokermon 3.9.1 in batches (PORTING.md "Pokermon 3.9.1 upgrade"): the content is still the 3.2.1 port plus the
+  // 3.9.1 static data taken so far (data391.js) — the reworks and new content come in the later batches.
+  version: '3.9.1',
   // Our behaviour counter (mods/pins.js): bump it with every change to how Pokermon plays — saved runs and replays
   // recorded on the old rules then warn before they re-simulate. 1 = the 2026-10-18/19 house rules (Deino /
-  // Zweilous "contains", Energy + Transformation targeting, Nuzlocke / Monotype).
-  contentRev: 1,
+  // Zweilous "contains", Energy + Transformation targeting, Nuzlocke / Monotype). 2 = batch 5, the 3.9.1 data
+  // (rarities, costs, compat flags, enhancement gates, 9 config numbers, the cgoose -> iridescent_hacker rename).
+  contentRev: 2,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

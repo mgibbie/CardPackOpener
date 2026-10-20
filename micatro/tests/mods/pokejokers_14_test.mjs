@@ -52,7 +52,7 @@ const toShop = () => { winRound(); act({ type: 'cash_out' }); };
   const j = add('j_poke_kricketot');
   let d0 = G.GAME.dollars;
   let r = play(hand(['S_2', 'H_5', 'D_8', 'C_J']));
-  ok(G.GAME.dollars === d0 + 5 && statusMsgs(r.events).includes('$5'), 'kricketot: $5 for exactly 4 cards of 4 suits', G.GAME.dollars - d0);
+  ok(G.GAME.dollars === d0 + 4 && statusMsgs(r.events).includes('$4'), 'kricketot: $4 for exactly 4 cards of 4 suits' + ' (Pokermon 3.9.1 data)', G.GAME.dollars - d0);
   d0 = G.GAME.dollars;
   play(hand(['S_2', 'H_5', 'D_8', 'D_J']));
   play(hand(['S_2', 'H_5', 'D_8', 'C_J', 'C_3']));

@@ -133,7 +133,7 @@ const key = (c) => c.config.center.key;
   ok(ov.config.extra.ptype === 'Dark' && hq.config.extra.ptype === 'Dark' && jc.config.extra.ptype === 'Metal', 'undata\'d jokers: ptype in config.extra like data.js jokers', [ov.config.extra, hq.config.extra]);
   const bad = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && c.mod === 'pokermon' && !ATLASES[c.atlas]).map((c) => c.key + ':' + c.atlas);
   ok(bad.length === 0, 'every Pokermon joker names a registered atlas', bad);
-  ok(ov.atlas === 'poke_AtlasJokersBasicNatdex' && ov.pos.x === 6 && ov.pos.y === 60, 'Overqwil: its Natdex sprite (PokemonSprites), like every other joker', [ov.atlas, ov.pos]);
+  ok(ov.atlas === 'poke_AtlasJokersBasicNatdex391' && ov.pos.x === 6 && ov.pos.y === 60, 'Overqwil: its Natdex sprite (PokemonSprites; the 3.9.1 sheet), like every other joker', [ov.atlas, ov.pos]);
   // Pokermon never shipped Hisuian Qwilfish art: Micatro's own card (real Hisuian sprite in Pokermon's
   // Dark-type frame) + a shiny twin, instead of the placeholder
   ok(hq.atlas === 'poke_hisuian_qwilfish' && hq.pos.x === 0 && hq.pos.y === 0 && ATLASES.poke_hisuian_qwilfish && /hisuian_qwilfish\.png$/.test(ATLASES.poke_hisuian_qwilfish.src)
