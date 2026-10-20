@@ -27,7 +27,7 @@
  * plus faint_baby_poke / volatile_active (Baby and volatile Pokémon position rules).
  */
 import { G, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
-import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_add_hazards, has_enhancement, get_upgraded_pack_center } from './utils.js';
+import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_change_beat, poke_add_hazards, has_enhancement, get_upgraded_pack_center } from './utils.js';
 import { apply_type_sticker, type_sticker_applied, get_type } from './types.js';
 import { energy_increase } from './energy.js';
 
@@ -307,7 +307,8 @@ export function can_reserve(card) {
 export function calculate(context) {
   // Pokermon 3.9.1 (pokermon.lua SMODS.current_mod.calculate): the Poliwag line's suit cycles after every scored hand,
   // with or without a Poli joker (the engine passes `after` here: js/engine/smods.js mod_calculate).
-  if (context.after) poke_change_poli_suit();
+  // Upstream main (after 3.9.1, sub-batch 15b): the Lotad line's beat (2 / 4 cards) swaps there too (pokermon.change_beat).
+  if (context.after) { poke_change_poli_suit(); poke_change_beat(); }
   // Leafeon (3.9.1): count Lucky cards that successfully triggered this round (run-wide, Leafeon or not); reset at the
   // end of the round. (The engine passes `individual` / `end_of_round` here too: smods.js MOD_VANILLA_CONTEXTS.)
   if (context.individual && context.cardarea === G.play && context.other_card && context.other_card.lucky_trigger) {

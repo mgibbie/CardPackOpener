@@ -1,5 +1,6 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_21.lua (Pokédex 601-630: Klinklang -> Bisharp), 9 jokers + 4 new in 3.9.1
-// (Klinklang, the Axew line: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers).
+// (Klinklang, the Axew line: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers)
+// + Cryogonal, from upstream main after 3.9.1 (new-jokers sub-batch 15b: at the end; upstream: main).
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
 // On Pokermon 3.9.1 behaviour since batch 8, Golett / Golurk (the Hazard layer) since batch 10.
 import {
@@ -346,5 +347,29 @@ defineJokers({
       return undefined;
     },
     set_ability(self, card, initial) { if (initial) axew_set_nature(card, 'haxorus'); },
+  },
+  // ---------------------------------------------------------------- upstream main, after 3.9.1 (new-jokers sub-batch 15b)
+  // Cryogonal 615: scoring face cards become Glass cards before scoring.
+  cryogonal: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push(P_CENTERS.m_glass);
+      return { vars: [] };
+    },
+    calculate(self, card, context) {
+      if (context.before && !context.blueprint) {
+        let faces = 0;
+        for (const scored_card of context.scoring_hand) {
+          if (scored_card.is_face()) {
+            faces = faces + 1;
+            scored_card.set_ability(P_CENTERS.m_glass, null, true);
+            G.E_MANAGER.add_event(() => { scored_card.juice_up(); });
+          }
+        }
+        // (upstream's 'Gem_glass' is in no localization file: Balatro shows "ERROR", our localize the key. Kept: PORTING.md.)
+        if (faces > 0) return { message: localize('Gem_glass'), colour: 'MONEY' };
+      }
+      return undefined;
+    },
   },
 }, FILE);

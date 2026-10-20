@@ -606,6 +606,8 @@ export const POKERMON = registerMod({
   // Pokermon 3.9.1 in batches (PORTING.md "Pokermon 3.9.1 upgrade"): the content is still the 3.2.1 port plus the
   // 3.9.1 static data taken so far (data391.js) + the reworked files (batch 6: pokejokers_01-08) — the other reworks
   // and the new content come in the later batches.
+  // (Sub-batch 15b took 9 jokers from upstream main, "3.9.1-1016a", but nothing else from it: the version stays the 3.9.1 tag and
+  // contentRev counts them. The pin reads "3.9.1 (rev 13)"; PORTING.md "New jokers, sub-batch 15b".)
   version: '3.9.1',
   // Our behaviour counter (mods/pins.js): bump it with every change to how Pokermon plays — saved runs and replays
   // recorded on the old rules then warn before they re-simulate. 1 = the 2026-10-18/19 house rules (Deino /
@@ -634,7 +636,10 @@ export const POKERMON = registerMod({
   // 12 = new-jokers sub-batch 15: the 18 jokers of 3.9.1's pokejokers_18-32 (Munna / Musharna, the Klink and Axew lines,
   // Bunnelby / Diggersby, Drampa, the Smoliv line, Bramblin / Brambleghast, Rellor / Rabsca) join the pools; Drampa's Jumbo packs;
   // Hisuian Qwilfish draws 3.9.1's card; Steamodded counts every consumable set's usage (Rellor).
-  contentRev: 12,
+  // 13 = new-jokers sub-batch 15b: 9 jokers upstream added on main after 3.9.1 (InertSteak/Pokermon main @ af0b656, "3.9.1-1016a":
+  // Lotad / Lombre / Ludicolo, Mawile, Electrike / Manectric, Cryogonal, Greavard / Houndstone) join the pools; the Lotad line's
+  // beat (G.GAME.poke_beat 2 <-> 4 after every hand). `version` stays '3.9.1': only those 9 jokers come from main (PORTING.md).
+  contentRev: 13,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

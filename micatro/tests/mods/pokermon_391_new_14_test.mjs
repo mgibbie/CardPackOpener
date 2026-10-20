@@ -82,7 +82,9 @@ sec(() => {
 sec(() => {
   // Their place in the joker list: 3.9.1's file order.
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
-  const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
+  // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
+  const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
+  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('glalie', 'clamperl') && after('clamperl', 'huntail') && after('gorebyss', 'relicanth') && after('relicanth', 'luvdisc') && after('luvdisc', 'bagon')
     && after('salamence', 'beldum') && after('jirachi_fixer', 'deoxys') && after('kricketune', 'budew') && after('roserade', 'buizel')
     && after('honchkrow', 'chingling') && after('bronzong', 'bonsly') && after('porygonz', 'gallade') && after('gallade', 'probopass'), 'inserted in 3.9.1 file order');

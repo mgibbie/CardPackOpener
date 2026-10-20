@@ -1,4 +1,5 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_09.lua (Pokédex 241-269: Miltank -> Dustox), 25 jokers + 5 new in 3.9.1.
+// Pokermon 3.9.1 — pokemon/pokejokers_09.lua (Pokédex 241-269: Miltank -> Dustox), 25 jokers + 5 new in 3.9.1
+// + Lotad, from upstream main after 3.9.1 (new-jokers sub-batch 15b: at the end; data391.js new_jokers, upstream: main).
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, megas) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
@@ -711,5 +712,23 @@ defineJokers({
       return undefined;
     },
     set_ability: nature_suit('dustox', 'Spades', ['Spades', 'Clubs']),
+  },
+  // ---------------------------------------------------------------- upstream main, after 3.9.1 (new-jokers sub-batch 15b)
+  // Lotad 270: $1 or $2 (a coin flip) when the played hand has exactly the beat's number of cards (G.GAME.poke_beat: 2, then
+  // 4, swapping after every scored hand: systems/rules.js calculate); evolves into Lombre in 4 rounds.
+  lotad: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.money, center.ability.extra.money + 1, center.ability.extra.rounds, (G.GAME && G.GAME.poke_beat) || 2] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main && context.full_hand.length === (G.GAME.poke_beat || 2)) {
+        const more = pseudorandom('lotad') < 0.5 ? 0 : 1;
+        const earned = ease_poke_dollars(card, 'lotad', card.ability.extra.money + more, true);
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + earned;
+        return { dollars: earned, func() { G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; }); } };
+      }
+      return level_evo(self, card, context, 'j_poke_lombre');
+    },
   },
 }, FILE);

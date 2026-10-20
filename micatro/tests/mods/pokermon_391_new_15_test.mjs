@@ -53,7 +53,7 @@ ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_p
   const F = STATUS.PORTED_FILES;
   const n = (f) => (F['pokemon/' + f + '.lua'] || []).length;
   const got = ['18', '20', '21', '22', '26', '31', '32'].map((f) => n('pokejokers_' + f));
-  ok(got.join() === '13,13,13,5,2,10,11', 'defs: 13 / 13 / 13 / 5 / 2 / 10 / 11 from pokejokers_18 / 20 / 21 / 22 / 26 / 31 / 32.lua', got);
+  ok(got.join() === '13,13,14,5,2,10,11', 'defs: 13 / 13 / 14 / 5 / 2 / 10 / 11 from pokejokers_18 / 20 / 21 / 22 / 26 / 31 / 32.lua (21: + Cryogonal from upstream main, sub-batch 15b)', got);
 }
 sec(() => {
   // Static data straight from 3.9.1 (never retyped): rarity / cost / stage / type.
@@ -78,7 +78,9 @@ sec(() => {
 sec(() => {
   // Their place in the joker list: 3.9.1's file order.
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
-  const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
+  // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
+  const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
+  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('simipour', 'munna') && after('munna', 'musharna') && after('musharna', 'roggenrola') && after('ferrothorn', 'klink')
     && after('klink', 'klang') && after('klang', 'klinklang') && after('klinklang', 'elgyem') && after('chandelure', 'axew')
     && after('haxorus', 'golett') && after('hydreigon', 'bunnelby') && after('bunnelby', 'diggersby') && after('mimikyu', 'drampa')

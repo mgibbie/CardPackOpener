@@ -50,6 +50,14 @@ for (let i = 9; i <= 17; i++) {
 	const p = `micatro/mods/pokermon/jokers/pokejokers_${String(i).padStart(2, '0')}.js`;
 	JOKERS_PRE_B7['/' + p] = execFileSync('git', ['show', `${PRE_B7}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 }
+// (new-jokers sub-batch 15b put Cryogonal (Rare) and Greavard (Uncommon) in pokejokers_21 / 33, which changed the fixture's shop
+// rolls: those 2 files are served as they were before the new-jokers stack (the merge of batch 10b, 9a00cd8f), so the jokers they add
+// stay unported for the fixture, as the 09-17 ones do)
+const PRE_NEW = '9a00cd8fd24bf351586417957c1471dc36b403df';
+for (const i of [21, 33]) {
+	const p = `micatro/mods/pokermon/jokers/pokejokers_${i}.js`;
+	JOKERS_PRE_B7['/' + p] = execFileSync('git', ['show', `${PRE_NEW}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+}
 // ---------- the real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');

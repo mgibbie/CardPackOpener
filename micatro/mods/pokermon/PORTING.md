@@ -1332,16 +1332,155 @@ Rare Munna, Drampa; Safari the rest. The plan's 20 counted Hisuian Qwilfish and 
   - Re-run and passing: every `micatro/tests` Node suite (all mods) and `micatro_engine_test` (96 suites; fuzz vanilla 40 runs / 5937
     actions, Pokermon 24 / 3646, all mods 16 / 3366).
 
+### New jokers, sub-batch 15b (upstream main, after 3.9.1)
+Pinned **`3.9.1+r13`** (`contentRev: 13`). The last sub-batch of the new-jokers stack: the **9 jokers upstream added on its `main` branch after
+the 3.9.1 release**. They are Lotad / Lombre / Ludicolo, Mawile, Electrike / Manectric, Cryogonal and Greavard / Houndstone. The source is
+InertSteak/Pokermon (GPL-3.0) **main @ `af0b656cb1d871d541b643b85d97d40caaf0c4b7`** (2026-10-19, "Added Solrock/Lunatone";
+`Pokermon.json` version **"3.9.1-1016a"**). That is the newest main commit, and all 9 are in it. Their code is the same as at the plan's
+2042690 (2026-10-17): the only later commit adds Solrock / Lunatone. Each is in the pools by its rarity:
+- Common: Lotad, and Electrike (only with a Gold card in the deck: `enhancement_gate`).
+- Uncommon: Mawile, Greavard.
+- Rare: Cryogonal.
+- Safari: Lombre, Ludicolo, Manectric, Houndstone.
+
+- **How they come in** (the sub-batch 11 pipeline, plus a second extract):
+  - Extract the main tree with the same extractor and spec:
+    `NODE_PATH=<fengari> node tools/micatro/extract_mod_data.cjs <Pokermon main @ af0b656> <tmp>/pokermon_main.js tools/micatro/specs/pokermon_391.json`.
+  - Then `node tools/micatro/gen_pokermon_391_overlay.mjs <tmp>/pokermon391.js <tmp>/pokermon_main.js`.
+  - The spec's new **`upstream_main`** `{repo, commit, version, date, new_jokers {"15b": [names]}}` names the jokers to take.
+  - From main the generator reads **only those jokers**: the whole static item, the Joker loc entry, the pokespriteload.lua sprite, the
+    family and the file order (`after`). They join `data391.js new_jokers` marked `upstream: 'main'`, and `data391.js upstream_main` records
+    the pin.
+  - The generator refuses a name that 3.9.1 already has, one missing from main, and one listed twice.
+  - Everything else still comes from the 3.9.1 extract.
+- **The version**: `version` stays **'3.9.1'**, and `contentRev` 13 counts the 9 jokers. Why:
+  - The pin is `version + '+r' + contentRev`, and `pinLabel` shows "3.9.1 (rev 13)".
+  - Moving to "3.9.1-1016a" would claim all of main, but we take 9 jokers and none of main's other changes (below).
+  - The prompt would also read "Pokermon 3.9.1 (rev 12) → 3.9.1-1016a (rev 13)", which suggests two different releases.
+  - Bumping contentRev alone still changes the pin, so the "Mod updated" prompt and the replay banner fire for every run or replay
+    recorded at rev ≤ 12, as with every other sub-batch. Their wording stays readable: "Pokermon 3.9.1 (rev 12) → 3.9.1 (rev 13)".
+  - The upstream commit is in data391.js (`upstream_main`), its `source` line, and here. `LEGACY_MOD_VERSIONS` is untouched.
+- **The jokers** (numbers from data391.js; behaviour line for line from main):
+  - **Lotad / Lombre / Ludicolo** (jokers/pokejokers_09.js, _10.js), "the beat":
+    - The jokers pay when the played hand has exactly `G.GAME.poke_beat` cards (unset = 2). Main's `pokermon.change_beat` swaps the beat
+      2 <-> 4 after every scored hand, from the mod's own calculate (`after`, next to the Poli suit): `systems/utils.js poke_change_beat`,
+      called by `systems/rules.js calculate`.
+    - Lotad: $1 or $2 (a coin flip, seed 'lotad'); evolves into Lombre in 4 rounds.
+    - Lombre: $2 (its money fractions roll with Lotad's seed, as the Lua); evolves into Ludicolo with a Water Stone.
+    - Ludicolo: +1 Energy Limit (main's `poke_energy_plus` is our `energy_plus`), and an Energy card (must have room).
+    - Lotad / Lombre pay through `dollar_buffer`, as Wingull does.
+  - **Mawile** (pokejokers_11.js): a first hand of the round of exactly 1 card puts a Steel copy of it in hand (`before`, `poke_add_card`)
+    and destroys the played card after scoring (`final_scoring_step` marks it, `destroy_card` removes it). It jiggles until the round's
+    first hand.
+  - **Electrike / Manectric**:
+    - Electrike: each scored Gold card earns $3; evolves after scoring 15 Gold cards.
+    - Manectric: each scored Gold card earns $4. The first Gold card of the scoring hand comes back to hand after scoring (`before` marks it;
+      the `stay_flipped` context's `modify.to_area`, as Claydol's).
+  - **Cryogonal** (pokejokers_21.js): scoring face cards become Glass cards before scoring.
+  - **Greavard / Houndstone** (pokejokers_33.js): a played card whose rank is depleted (none left in the deck: `get_depleted`) or that has
+    no rank is retriggered once. Greavard evolves in 5 rounds. Houndstone: +2 discard selection limit (`change_discard_limit`; it unhighlights
+    the hand when it leaves, as the Houndour line's limit does).
+- **Evolutions**: Lotad -> Lombre -> Ludicolo (Water Stone), Electrike -> Manectric, Greavard -> Houndstone. Families from main's
+  pokefamily.lua: those 3 lines. Mawile and Cryogonal stand alone.
+- **Megas**: there is nothing to defer. Upstream main has **no** Mega Mawile or Mega Manectric joker: only their pokespriteload.lua
+  sprites (`AtlasJokersBasicGen03` {10,4} / {4,5}, with souls) and dex_order entries. Mawile and Manectric have no `megas` field.
+  - Unlike Drampa's, nothing is dropped (`new_deferred` holds only Drampa).
+  - When upstream writes those Megas, they belong with batch 16. The Gen 3 sheet cells are already vendored (batch 5).
+- **Seams / shared changes** (only the small shared code these jokers need):
+  - `systems/utils.js poke_change_beat`, and `systems/rules.js calculate` calls it.
+  - `systems/attributes.js`: main's new `deplete` attribute (Greavard / Houndstone). Main's other new key, `draw`, waits for its jokers.
+  - The spec's `loc_extra` adds `Other.depleted`, the Greavard / Houndstone tooltip. It also fixes Relicanth's (sub-batch 14), which named the
+    key with no text behind it.
+  - Generator: `upstream_main` and the second extract (above).
+- **Deviations / kept quirks**:
+  - **Cryogonal's message** is `localize('Gem_glass')`, a key in no upstream localization file. Balatro shows "ERROR"; our localize returns
+    the key ("Gem_glass"). It is kept as in the Lua, as an upstream bug. A fix (e.g. "Glass!") would be our own text.
+  - **Mawile** fires a second `playing_card_added` with `cards = { card_copied }`, a name the Lua never sets, so the list is empty.
+    `poke_add_card` has already told the jokers about the copy. So a joker that counts every `playing_card_added` (without reading `cards`)
+    counts the copy twice, as in the Lua. Ours goes through `calculate_context`, which reaches mod jokers; vanilla Hologram reads `cards[1]`,
+    so it is unaffected either way.
+  - Mawile sets `to_be_removed_by = nil` on the card it destroys, as in the Lua. Ludicolo's inline `loc_txt` matches its en-us entry, which is
+    the one used.
+  - Electrike's text counts down with `max(0, 15 - scored)`. A Blueprint copy of Electrike pays but does not count, as in the Lua.
+- **Add-ons**: no overlap.
+  - Neither our Nacho 1.6.4 nor our Pokermon+ 1.0.3 ships any of these 9 (or a Mega of them).
+  - Neither does upstream's newest: NachosPokermonDip main @ 904ae39 ("1.7.9-5", 2026-10-19), PokermonPlus main @ 52c7416 ("1.2.0-261018a").
+  - No family to unify, nothing for the dedupe step.
+- **Art**: **no new art files**.
+  - Main changed no asset since 3.9.1 (`git diff --stat 3.9.1 af0b656 -- assets` is empty). The 9 cards were already drawn on the 3.9.1
+    sheets vendored in batch 5: `AtlasJokersBasicNatdex-391.png` and `AtlasJokersBasicNatdexShiny-391.png`.
+  - Cells: Lotad {28,17}, Lombre {0,18}, Ludicolo {2,18}, Mawile {4,20}, Electrike {16,20}, Manectric {18,20}, Cryogonal {28,40},
+    Greavard {20,64}, Houndstone {22,64}.
+  - The test checks that each crop and its Shiny twin are real, distinct pictures. A crop sheet showed all 18 as finished upstream cards.
+  - `tools/micatro/compose_pokermon_joker_art.mjs` (new) applies the owner's rule for a joker with **no** upstream art. None of these 9
+    needs it, so it is not wired in.
+    - **How it builds a card:**
+      - Frame and scene: the per-pixel majority of sibling cells with the same frame and scene. It skips cells whose dot pattern is offset,
+        and pulls in extra votes from same-scene cards on the sheet.
+      - Name: drawn in upstream's own banner font, extracted from 822 cards.
+      - Pokémon: the site's battle sprite (`overworld/data/pokemon/<species_index sprite>`), trimmed and scaled by a whole number
+        (nearest-neighbour). It is placed by measurements from 65 real cards and given a 1 px dark outline (`--no-outline` turns it off).
+      - Shiny: the Shiny sheet's frame, with the sprite through battle.js's `hue-rotate(150deg) saturate(1.3)`.
+    - **Output:** `<name>.png` / `<name>Shiny.png` (142x190). It never overwrites a file without `--force` and refuses the asset folders.
+    - **Proof:** Lotad, with its own cell excluded from the inputs. The frame and name match upstream; the Pokémon reads softer than a
+      hand-pixelled sprite, and the Shiny colours are the battle filter's, not upstream's. Always look at the result before shipping one.
+- **Known upstream drift** (main 3.9.1..af0b656, **not taken**; for a future rebase onto a main release):
+  - **New jokers**: Solrock / Lunatone (af0b656).
+  - **Fixes / tweaks to jokers we have**:
+    - Togetic's Lucky gate (83b332f), Crobat's scoring sound (5277b5f), Espeon's suit check (da5d801).
+    - Bidoof blueprint-incompatible (81cad63), Mega Blastoise's hands (3b3b9da).
+    - Magmortar's scaling off The Hook (3acb8e9), Porygon-Z's Bird Energy (d21827a).
+    - Beheeyem / Sharpedo (5272470), Zangoose (7cb74ce), the Bunnelby line refactor (39c33f5), Pumpkaboo line sanity check (60b1981).
+    - Attributes on the remaining jokers (374b0bc), e.g. Surskit / Masquerain.
+  - **Systems**:
+    - The Silver Seal refactor (7ba51bb) and its `pokermon.draw_cards` / `discard_cards` helpers + lovely patch (2ce6bc7).
+    - The Seed card refactor and its pack visual fix (cda94e9, ca769c6), Minor Item update (c9b80b0), Leftovers not hidden (ef4cb61).
+    - Drain fixes: `nominal_drain` in `total_chips`, no drain on Stone cards (33ba3aa).
+    - `create_consumeable`: no consumable buffer for a Negative.
+    - `backend_evolve` floating sprite / memory leak (807b731) and evo-item jiggle eval (2042690), the `draw` attribute.
+  - **Text and other files**: en-us text size standardisation (58d2f88), the Vanillite line banned from Nuzlocke (a37379f), the Series A
+    alt-art music checks (68b18e2), Thunderstore files (fbb5ef5).
+- **Tests**: `micatro/tests/mods/pokermon_391_new_15b_test.mjs` gives **3 passed / 25 failed** on origin/main (9a00cd8f) and on sub-batch 15
+  (8baee622), and **92 / 0** here.
+  - It fires every joker through real plays:
+    - the beat swapping after every hand; Lotad / Lombre paying on and off the beat; Ludicolo's Energy (with and without room) and its
+      Energy Limit;
+    - Mawile's Steel copy and the destroyed original (first hand only, 1 card only);
+    - Electrike's $3 pops; Manectric's $4 and the Gold card back in hand;
+    - Cryogonal's Glass faces (scoring only);
+    - Greavard's retriggers (depleted rank, Stone card); Houndstone's 7-card discard and limit.
+  - It fires every evolution: Lotad -> Lombre, Lombre -> Ludicolo with a real Water Stone, Electrike -> Manectric, Greavard -> Houndstone.
+  - It also checks the overlay and pin, the version label, the order, the pools (shop rarity pools, the Gold gate, one per family,
+    the Gen 9 option), the families, the absent Megas, the text and the art.
+  - Count pins updated:
+    - `pokejokers_09` / `10` / `11` / `21` / `33_test` (31 / 27 / 24 / 14 / 7 defs); `pokermon_391_new_11` / `12` / `15_test` (their defs).
+    - `pokermon_391_new_11`–`15_test`'s 3.9.1 order checks skip the main jokers between two 3.9.1 neighbours. For example, the Lotad line now
+      sits between Dustox and Seedot, and Electrike / Manectric between Medicham and Plusle.
+    - `pokermon_391_data_test`, `modpin_test` and `micatro_mod_version_pin_test` (rev 13).
+  - **Fixture shim**: `micatro_runsync_test`'s Pokermon fixture diverged at move 58 ("nothing to cash out"), because Cryogonal (Rare) and
+    Greavard (Uncommon) changed its shop rolls. The test now also serves `pokejokers_21.js` / `_33.js` as of 9a00cd8f (the merge before
+    the stack), so those jokers stay unported for the fixture, as the 09-17 ones already were. With that it passes 81 / 0 (it was 76 / 5).
+    `micatro_resume_win_badges` needed nothing.
+  - Re-run and passing:
+    - every `micatro/tests` Node suite;
+    - `micatro_engine_test` (97 suites; fuzz: vanilla 40 runs / 5937 actions, Pokermon 24 / 4248, all mods 16 / 3076);
+    - `micatro_runsync_server`;
+    - in the browser, one at a time: `designwiki_micatro_mods` (295 / 0, wiki data regenerated), `micatro_mod_version_pin` (47 / 0),
+      `micatro_resume_win_badges` (28 / 0) and `micatro_runsync` (81 / 0).
+  - A browser screenshot showed all 9 in the joker row on their upstream cards (Shiny Ludicolo / Manectric / Houndstone).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
-- **New jokers** (sub-batches 11–15, 15b): sub-batches 11 to 15 done (above). `new_deferred` holds only Drampa's Mega (batch 16; Kirlia ->
-  Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14). Still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon,
-  3 April Fools) + 9 from upstream main (15b). (The 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the old tally counted were already
+- **New jokers** (sub-batches 11–15, 15b): all done (above): 101 jokers (26 + 15 + 19 + 14 + 18 from 3.9.1, 9 from upstream main in 15b).
+  `new_deferred` holds only Drampa's Mega (batch 16; Kirlia -> Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14).
+  Still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon, 3 April Fools), and whatever a later rebase onto upstream main brings (sub-batch 15b
+  lists the drift: Solrock / Lunatone so far). (The 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the old tally counted were already
   in the port: sub-batches 14 / 15.)
-- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory), Drampa (Mega Drampa: `new_deferred`). Shuckle's Mega Stone
+- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory), Drampa (Mega Drampa: `new_deferred`). Mega Mawile / Mega
+  Manectric: upstream main has their sprites but no jokers yet (sub-batch 15b); they come when upstream writes them. Shuckle's Mega Stone
   (`c_poke_berry_juice_mega`, batch 6) with it.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist). (The DNA Seal and the
   Meteorite, once listed for it, came with Deoxys in sub-batch 14.)

@@ -545,6 +545,14 @@ export function poke_change_poli_suit() {
     G.GAME.poke_poli_suit = suits[(i + 1) % suits.length];
   } else G.GAME.poke_poli_suit = 'Hearts';
 }
+/**
+ * Lotad line: the hand size it pays on, G.GAME.poke_beat, swaps 2 <-> 4 after every scored hand (upstream main pokermon.change_beat,
+ * after 3.9.1: sub-batch 15b; unset = 2, the first swap makes it 4). Called with the Poli suit from systems/rules.js calculate.
+ */
+export function poke_change_beat() {
+  if (G.GAME.poke_beat) G.GAME.poke_beat = G.GAME.poke_beat === 2 ? 4 : 2;
+  else G.GAME.poke_beat = 4;
+}
 
 /** G.C colour names Pokermon returns (kept as strings; the renderer maps them). */
 export const C = {

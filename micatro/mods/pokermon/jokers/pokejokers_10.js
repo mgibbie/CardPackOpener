@@ -3,6 +3,7 @@
 // gen, item_req) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 // The 21 jokers 3.9.1 added to this file are at the end (new-jokers sub-batch 11; static data: data391.js new_jokers).
+// + Lombre / Ludicolo, from upstream main after 3.9.1 (new-jokers sub-batch 15b: at the end; upstream: main, where they open the file).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, ease_discard, ease_hands_played, create_card,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, faint_baby_poke,
@@ -569,6 +570,57 @@ defineJokers({
         const ok = other_joker && is_type(other_joker, skitty_type()) && other_joker.config.center.blueprint_compat;
         card.ability.blueprint_compat = ok ? 'compatible' : 'incompatible';
       }
+    },
+  },
+  // ---------------------------------------------------------------- upstream main, after 3.9.1 (new-jokers sub-batch 15b)
+  // Lombre 271: $2 when the played hand has exactly the beat's number of cards (Lotad's G.GAME.poke_beat); evolves into
+  // Ludicolo with a Water Stone.
+  lombre: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.money, (G.GAME && G.GAME.poke_beat) || 2] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main && context.full_hand.length === (G.GAME.poke_beat || 2)) {
+        // (the Lua rolls its money fractions with Lotad's seed)
+        const earned = ease_poke_dollars(card, 'lotad', card.ability.extra.money, true);
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + earned;
+        return { dollars: earned, func() { G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; }); } };
+      }
+      return item_evo(self, card, context, 'j_poke_ludicolo');
+    },
+  },
+  // Ludicolo 272: +1 Energy Limit; an Energy card (must have room) when the played hand has exactly the beat's number of cards.
+  ludicolo: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.energy_limit, (G.GAME && G.GAME.poke_beat) || 2] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main && context.full_hand.length === (G.GAME.poke_beat || 2)) {
+        return {
+          extra: {
+            focus: card, message: localize('poke_plus_energy'), colour: 'pink',
+            func() {
+              if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+                G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+                G.E_MANAGER.add_event(() => {
+                  add_card({ set: 'Energy' });
+                  G.GAME.consumeable_buffer = 0;
+                });
+              }
+            },
+          },
+        };
+      }
+      return undefined;
+    },
+    // (3.9.1's G.GAME.poke_energy_plus is our energy_plus: PORTING.md "kept state names")
+    add_to_deck(self, card) {
+      G.GAME.energy_plus = G.GAME.energy_plus === undefined ? card.ability.extra.energy_limit : G.GAME.energy_plus + card.ability.extra.energy_limit;
+    },
+    remove_from_deck(self, card) {
+      G.GAME.energy_plus = G.GAME.energy_plus === undefined ? 0 : G.GAME.energy_plus - card.ability.extra.energy_limit;
     },
   },
 }, FILE);

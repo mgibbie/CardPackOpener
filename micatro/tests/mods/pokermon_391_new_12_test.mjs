@@ -40,7 +40,7 @@ ok(MODS.pokermon.contentRev >= 9 && PINS.modPin('pokermon') === '3.9.1+r' + MODS
 const NJ = Object.fromEntries(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.sub_batch === '12'));
 ok(JSON.stringify(Object.keys(NJ)) === JSON.stringify(NEW), 'data391.js new_jokers (sub-batch 12): the 15 of 3.9.1 pokejokers_11, in file order', Object.keys(NJ));
 ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'every new joker is registered and ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'] && STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length === 21, 'defs: 21 from pokejokers_11.lua', STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'] && STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'] && STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length === 24, 'defs: 24 from pokejokers_11.lua (+ Mawile / Electrike / Manectric from upstream main, sub-batch 15b)', STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'] && STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length);
 sec(() => {
   // Static data straight from 3.9.1 (never retyped): spot checks of rarity / cost / stage / type / config.
   const want = {
@@ -60,7 +60,9 @@ sec(() => {
 sec(() => {
   // Their place in the joker list: 3.9.1's file order.
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
-  const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
+  // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
+  const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
+  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('skitty', 'delcatty') && after('delcatty', 'sableye') && after('sableye', 'aron') && after('aggron', 'meditite') && after('minun', 'volbeat')
     && after('wailord', 'numel') && after('mega_camerupt', 'torkoal') && after('torkoal', 'spinda'), 'inserted in 3.9.1 file order');
 });

@@ -3,12 +3,14 @@
 // gen, megas, enhancement_gate) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 // The 15 jokers 3.9.1 added to this file are at the end (new-jokers sub-batch 12; static data: data391.js new_jokers).
+// + Mawile, Electrike / Manectric, from upstream main after 3.9.1 (new-jokers sub-batch 15b: at the end; upstream: main).
 import {
   G, P_CENTERS, localize, card_eval_status_text, juice_card_until,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, has_enhancement,
   play_sound, math_random, pseudorandom_element, pseudoseed, all_cards, scale_card, calculate_effect, add_card, create_consumeable,
   find_card, find_pokemon_type, is_type, energize, ease_poke_dollars, poke_is_odd, find_playing_card, get_depleted, get_enhancements,
   get_target_card_enhancements, get_poke_target_card_ranks, add_target_cards_to_vars,
+  copy_card, poke_add_card, calculate_context,
 } from '../api.js';
 import { blueprint_effect } from './pokejokers_08.js';
 
@@ -531,6 +533,81 @@ defineJokers({
     },
     add_to_deck(self, card, from_debuff) {
       if (!from_debuff) create_consumeable('c_wheel_of_fortune');
+    },
+  },
+  // ---------------------------------------------------------------- upstream main, after 3.9.1 (new-jokers sub-batch 15b)
+  // Mawile 303: a first hand of the round of exactly 1 card puts a Steel copy of it in hand (before scoring) and destroys the
+  // played card after scoring. (Its Mega is not a joker upstream: PORTING.md.)
+  mawile: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      if (detailed()) info_queue.push(P_CENTERS.m_steel);
+      return { vars: [card.ability.extra.copy] };
+    },
+    calculate(self, card, context) {
+      if (context.first_hand_drawn && !context.blueprint) {
+        juice_card_until(card, () => G.GAME.current_round.hands_played === 0 && !G.RESET_JIGGLES, true);
+      }
+      if (context.before && context.full_hand.length === 1 && G.GAME.current_round.hands_played === 0) {
+        G.playing_card = (G.playing_card || 0) + 1;
+        const copy = copy_card(context.full_hand[0], null, null, G.playing_card);
+        copy.set_ability(P_CENTERS.m_steel, null, true);
+        poke_add_card(copy, card);
+        return {
+          message: localize('k_copied_ex'), colour: 'CHIPS',
+          // (the Lua passes `cards = { card_copied }`, a name it never sets: an empty list. poke_add_card already told the
+          // jokers about the copy, so a joker that counts every playing_card_added counts this one too, as in the Lua.)
+          func() { G.E_MANAGER.add_event(() => { calculate_context({ playing_card_added: true, cards: [] }); }); },
+        };
+      }
+      if (context.final_scoring_step && context.full_hand.length === 1 && G.GAME.current_round.hands_played === 0 && !context.blueprint) {
+        context.full_hand[0].mawile_remove = card;
+        card.juice_up();
+      }
+      if (context.destroy_card && context.destroy_card.mawile_remove === card && !context.blueprint) {
+        context.destroy_card.to_be_removed_by = undefined;
+        return { remove: true };
+      }
+      return undefined;
+    },
+  },
+  // Electrike 309: each scored Gold card earns $3; evolves into Manectric after scoring 15 Gold cards.
+  electrike: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.money_mod, Math.max(0, self.config.evo_rqmt - center.ability.extra.scored)] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && has_enhancement(context.other_card, 'm_gold')) {
+        if (!context.blueprint) card.ability.extra.scored = card.ability.extra.scored + 1;
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + card.ability.extra.money_mod;
+        return { dollars: card.ability.extra.money_mod, func() { G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; }); } };
+      }
+      return scaling_evo(self, card, context, 'j_poke_manectric', card.ability.extra.scored, self.config.evo_rqmt);
+    },
+  },
+  // Manectric 310: each scored Gold card earns $4; the first Gold card of the scoring hand comes back to hand after scoring
+  // (the stay_flipped context's modify.to_area, as Claydol). (Its Mega is not a joker upstream: PORTING.md.)
+  manectric: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.money_mod] };
+    },
+    calculate(self, card, context) {
+      if (context.before) {
+        for (const c of context.scoring_hand) {
+          if (has_enhancement(c, 'm_gold')) { c.poke_manectric_return = true; break; }
+        }
+      }
+      if (context.individual && context.cardarea === G.play && has_enhancement(context.other_card, 'm_gold')) {
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + card.ability.extra.money_mod;
+        return { dollars: card.ability.extra.money_mod, func() { G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; }); } };
+      }
+      if (context.stay_flipped && context.from_area === G.play && context.other_card.poke_manectric_return) {
+        context.other_card.poke_manectric_return = undefined;
+        return { modify: { to_area: G.hand } };
+      }
+      return undefined;
     },
   },
 }, FILE);

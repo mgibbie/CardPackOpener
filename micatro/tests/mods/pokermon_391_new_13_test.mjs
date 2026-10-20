@@ -69,7 +69,9 @@ sec(() => {
 sec(() => {
   // Their place in the joker list: 3.9.1's file order (its `list`: Kecleon after Milotic, Shuppet after Dusclops).
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
-  const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
+  // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
+  const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
+  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('spinda', 'cacnea') && after('cacturne', 'swablu') && after('armaldo', 'feebas') && after('milotic', 'kecleon') && after('kecleon', 'duskull')
     && after('dusclops', 'shuppet') && after('banette', 'tropius') && after('chimecho', 'absol'), 'inserted in 3.9.1 file order');
 });

@@ -67,7 +67,7 @@ The mods with no licence file were already ported on the same basis, so the upgr
 | 3.8.0 | 2026-06-13 | **Elite Stake**; Mega Lucario; Eevee and Jirachi/wish reworks; Onix line uses quantum enhancements; Flower ×3 → ×2 |
 | 3.9.0 | 2026-09-13 | Legends ZA Megas for Gens 1–2; 11 more lines; globals moved under a `pokermon.*` namespace |
 | 3.9.1 | 2026-09-18 | Soul items use object weights; the "Pokeballs allowed" option is removed |
-| main | to 2026-10-17 | +9 jokers (Lotad, Greavard and Electrike lines, Cryogonal, Mawile) |
+| main | to 2026-10-19 | +9 jokers (Lotad, Greavard and Electrike lines, Cryogonal, Mawile: ported in sub-batch 15b at af0b656); Solrock / Lunatone (2026-10-19, not taken) |
 
 **New content (baseline → 3.9.1).**
 - **Jokers: 452 → 561 (+109).** No joker key was removed or renamed.
@@ -388,7 +388,7 @@ All are byte-identical to upstream main.
 | 10 | **DONE** (see "Batch 10" below) — Pokermon Hazard layer rework + Seed enhancement, Miracle Seed, Heavy Boots, Debris deck and sleeve (3.9.1's `diceydeck`: "Dicey" and "Debris" are one deck), Flower ×2 — 16 jokers un-held (11 Hazard jokers, Mega Steelix via a quantum seam, Bellossom/Hoppip line), Shaymin's Flower part | L | 5 |
 | 10b | **DONE** (see "Batch 10b" below) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art, the swarm strips tiled) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
 | 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); **12 DONE** (the 15 of pokejokers_11, below); **13 DONE** (the 19 of pokejokers_12, below); **14 DONE** (the 14 of pokejokers_13–16, below); **15 DONE** (the 18 of pokejokers_18–32, below) | 5 × L | 5 |
-| 15b | **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Port from upstream main at a pinned commit (bump `version` to that tag/commit) | M | 11–15 |
+| 15b | **DONE** (see "New jokers, sub-batch 15b" below) — **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Ported from upstream main pinned at af0b656 ("3.9.1-1016a"); `version` stays 3.9.1, contentRev 13 counts them (see below why) | M | 11–15 |
 | 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice | M | 5 |
 | 17 | Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), ~~DNA seal~~, `starterq`, ~~Meteorite/Deoxys~~ (both done in new-jokers sub-batch 14), 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
 | 18 | Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks | M | 17 |
@@ -509,7 +509,7 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 | Batch 17 (non-Pokémon jokers) | — | Rival, Mystery Egg |
 | Kept by design | — | Porygon-Z's Energy counter |
 
-- New jokers still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon, 3 April Fools) + 9 from upstream main (batch 15b). (117 before sub-batch 11, which added 26; sub-batch 12 added 15, sub-batch 13 19, sub-batch 14 14, sub-batch 15 18; the 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the tally counted were already in the port.)
+- New jokers still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon, 3 April Fools). The 9 from upstream main came in sub-batch 15b. (117 before sub-batch 11, which added 26; sub-batch 12 added 15, sub-batch 13 19, sub-batch 14 14, sub-batch 15 18, sub-batch 15b 9 from main; the 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the tally counted were already in the port.)
 - New jokers ported without one part (`new_deferred`): Drampa (its `megas`: Mega Drampa, batch 16). (Skitty -> Delcatty: done in sub-batch 12; Kirlia -> Gallade, Roselia -> Roserade, Budew -> Roselia: sub-batch 14.)
 
 ## Batch 10 — Pokermon Hazard layer, Seed, Flower ×2, Debris deck: DONE (2026-10-20, branch `feat/micatro-pokermon-391-hazard-seed`)
@@ -614,3 +614,63 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 - Fix found by the all-mods fuzz: Zangoose (sub-batch 13) + The Hook could leave a card in two areas; a card The Hook discards is no longer
   added to the hand.
 - Tests: `micatro/tests/mods/pokermon_391_new_15_test.mjs` (4 passed / 36 failed on origin/main, 5 / 36 on sub-batch 14, 136 / 0 here).
+
+## New jokers, sub-batch 15b — Pokermon upstream main (post-3.9.1) +9: DONE (2026-10-20, branch `feat/micatro-pokermon-391-new-jokers`)
+- Pin **3.9.1+r13** (`contentRev` 13; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "New jokers, sub-batch 15b".
+- **Source**: InertSteak/Pokermon main @ **`af0b656cb1d871d541b643b85d97d40caaf0c4b7`** (2026-10-19; `Pokermon.json` "3.9.1-1016a"). That
+  is the newest main commit, and all 9 are in it. The 9 are unchanged since the plan's 2042690 (2026-10-17): the only later commit adds
+  Solrock / Lunatone, which is not taken.
+- **9 jokers**, in the pools by rarity: Lotad, Lombre, Ludicolo, Mawile, Electrike, Manectric, Cryogonal, Greavard, Houndstone.
+  - Evolutions: Lotad -> Lombre -> Ludicolo (Water Stone), Electrike -> Manectric, Greavard -> Houndstone.
+  - Shared: the Lotad line's beat (2 <-> 4 cards after every hand), main's `deplete` attribute, and `Other.depleted` (which also gives
+    Relicanth's tooltip its text).
+- **Pipeline**: a second extract (the main tree) and a spec `upstream_main` section. The generator takes ONLY the listed jokers from main
+  (data, text, sprite, family, order); the rest of main is listed as drift in PORTING.md for a future rebase.
+- **Version**: kept at `'3.9.1'`, with contentRev 13. The prompt / banner read "Pokermon 3.9.1 (rev 12) → 3.9.1 (rev 13)". "3.9.1-1016a"
+  would claim main's ~40 other changes, which we don't take.
+- **Megas**: none to defer. Upstream has no Mega Mawile / Mega Manectric joker yet, only sprites.
+- **Add-ons**: no overlap. Our Nacho 1.6.4 / Pokermon+ 1.0.3 and upstream's newest (Nacho 1.7.9-5, Pokermon+ 1.2.0-261018a) ship none of
+  the 9 or their Megas, so there is nothing for the dedupe step.
+- **Art**: no new files. All 9 (and Shiny) are drawn on the batch-5 `AtlasJokersBasicNatdex[Shiny]-391.png`; main changed no asset.
+  `tools/micatro/compose_pokermon_joker_art.mjs` (new) builds a card for a joker with no upstream art (sibling frame + battle sprite +
+  Shiny filter). It was proven on one scratch sample and is not wired in.
+- **Tests**: `micatro/tests/mods/pokermon_391_new_15b_test.mjs` (3 passed / 25 failed on origin/main and on sub-batch 15, 92 / 0 here).
+  Fixture shim: `micatro_runsync_test` serves pokejokers_21 / 33 as of 9a00cd8f (Cryogonal / Greavard changed its fixture's shop rolls).
+  Engine suite 97 / 0 (fuzz vanilla / Pokermon / all mods ok); browser: designwiki_micatro_mods, mod_version_pin, resume_win_badges, runsync all pass.
+
+## Checkpoint 1 ready — the new-jokers stack (sub-batches 11–15b), 2026-10-20
+Branch `feat/micatro-pokermon-391-new-jokers` (worktree `.worktrees/pknew`), one commit per sub-batch. Next: ONE full gate, then merge
+when the owner says.
+- **Jokers added: 101**.
+  - 92 that 3.9.1 added: sub-batch 11 26 (files 09 / 10), 12 15 (file 11), 13 19 (file 12), 14 14 (files 13–16), 15 18 (files 18–32).
+  - 9 from upstream main (15b).
+  - Plus, outside the 101: the DNA Seal and the Meteorite (sub-batch 14); Hisuian Qwilfish now on its 3.9.1 card (15).
+  - All of them are in the pools by rarity, with evolutions wired both ways.
+  - Pin: **3.9.1+r13** (r7 → r13 over the stack, one rev per sub-batch; `LEGACY_MOD_VERSIONS` never touched).
+- **Engine changes** (`micatro/js`, all inert in vanilla runs):
+  - Sub-batch 13:
+    - `run.js get_poker_hand_info`: a `poker_hand_cards` hook (`registry.js`; Zangoose).
+    - `jokers.js`: the food jokers' removal goes through SMODS.destroy_cards with mods on, so `joker_type_destroyed` fires (Tropius).
+  - Sub-batch 14:
+    - `run.js reroll_shop`: mod consumables see `reroll_shop` (the Meteorite).
+    - `core.js`: Steamodded's `perma_h_dollars` (the DNA Seal).
+  - Sub-batch 15: `core.js set_consumeable_usage` counts every consumable set (`consumeable_usage_total.item`: Rellor).
+  - Sub-batches 11, 12 and 15b: none (mod-side only).
+  - Mod-side shared code (`micatro/mods/pokermon/systems/*`):
+    - rules.js: per-round cards (Wingull, Skitty, Bronzor, Bramblin), duplicate-rank Straights, `set_cost` (Minun / Chimecho), `get_pack`
+      (Drampa), the Lotad beat.
+    - utils.js: the 3.9.1 helpers each joker needs.
+  - Tools: the overlay generator's `new_jokers` / `families` / `new_deferred` / `unregistered_sprites` / `upstream_main`; the extractor's
+    `{name, expr}` globals.
+  - Design wiki: tiled atlases (`gen_designwiki_mods.mjs`, `designwiki/app.js`), data regenerated.
+- **Art files to deploy across the whole stack: none.**
+  - Every new card is on the 3.9.1 sheets vendored and deployed in batch 5 (`AtlasJokersBasic{Natdex,Gen02,Gen03}[Shiny]-391.png`,
+    `AtlasConsumablesBasic-391.png`, `AtlasStickersBasic-391.png`).
+  - No file was added to `micatro/mods/pokermon/assets/2x/` by sub-batches 11–15b.
+  - The retired `hisuian_qwilfish[Shiny].png` stay in the gitignored assets, unused.
+  - The art composer's sample output is in a scratch folder only.
+- **Still open after the stack**:
+  - Batch 16: the Megas (Drampa's deferred; Mawile / Manectric have none upstream yet).
+  - Batch 17: the non-Pokémon jokers and April Fools.
+  - The upstream-main drift (PORTING.md "Known upstream drift").
+  - The add-on dedupe step (Nacho's Ralts / Swablu / Bagon / Bronzor / Smoliv lines, Pokermon+'s Nincada line; none for 15b's 9).
