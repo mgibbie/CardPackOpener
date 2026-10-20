@@ -3735,7 +3735,7 @@ window.addEventListener('hashchange', route);
       const d = res.ok ? await res.json() : null;
       if (!d || d.error || !d.wins || typeof d.wins !== 'object' || Array.isArray(d.wins)) return;
       S = await import('../micatro/js/ui/stickers.js' + CB);
-      S.setStickerSource(S.withoutRevoked(d.wins, d.revoked, d.earned));
+      S.setStickerSource(S.withoutRevoked(d.wins, d.revoked, d.earned), d.revoked);
       try { user = String((JSON.parse(localStorage.getItem(STATE_KEY) || 'null') || {}).username || ''); } catch (e) { user = ''; }
       document.body.classList.toggle('mc-wstk-off', isOff());
       sheet = new Image();
