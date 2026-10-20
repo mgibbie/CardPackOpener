@@ -25,6 +25,16 @@ export const ANIMATED = {
   c_poke_bird_energy: { frames_per_row: 18, frames: 36, fps: 15 },
 };
 
+/**
+ * Kecleon's card per type (3.9.1 pokejokers_12.lua set_sprites: its poke_lookup_atlas = the Gen 3 sheet, pokespriteload.lua
+ * lookup_gen_atlas 3). Colorless (or a type without a cell) is its own Natdex card. Drawn by ui.js face() (+ the Shiny shader).
+ */
+export const KECLEON_ATLAS = 'poke_AtlasJokersBasicGen03391';
+export const KECLEON_SPRITES = {
+  Dark: { x: 6, y: 0 }, Dragon: { x: 8, y: 0 }, Earth: { x: 10, y: 0 }, Fairy: { x: 0, y: 1 }, Fighting: { x: 2, y: 1 },
+  Fire: { x: 4, y: 1 }, Grass: { x: 6, y: 1 }, Lightning: { x: 8, y: 1 }, Metal: { x: 10, y: 1 }, Psychic: { x: 0, y: 2 }, Water: { x: 2, y: 2 },
+};
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

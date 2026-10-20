@@ -744,6 +744,8 @@ function evaluate_mod_hands(results, hand) {
 const HAND_ORDER = ['Flush Five', 'Flush House', 'Five of a Kind', 'Straight Flush', 'Four of a Kind', 'Full House', 'Flush', 'Straight', 'Three of a Kind', 'Two Pair', 'Pair', 'High Card'];
 /** -> {text, disp_text, poker_hands, scoring_hand} */
 export function get_poker_hand_info(_cards) {
+  // (a mod may leave cards out of the hand's evaluation: Pokermon 3.9.1's Zangoose cards, its G.FUNCS.get_poker_hand_info wrap)
+  if (ACTIVE_MODS.length) _cards = reduceHook('poker_hand_cards', _cards);
   const poker_hands = evaluate_poker_hand(_cards);
   let scoring_hand = [], text = 'NULL';
   // (with mod hands, the run's hand list orders them; it is HAND_ORDER otherwise)

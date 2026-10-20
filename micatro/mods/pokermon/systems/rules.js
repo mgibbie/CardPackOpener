@@ -13,7 +13,7 @@
  *   set_debuff        debufffunctions.lua: fainted Baby Pokémon stay debuffed for the rest of
  *                     the round; Gholdengo can't be debuffed, Tangrowth protects Wild Cards,
  *                     Tentacruel protects 10s
- *   set_cost          Minun ($1 off Jokers, Boosters, consumables), Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
+ *   set_cost          Minun ($1 off Jokers, Boosters, consumables), Chimecho (free Vouchers), Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
  *                     sell value at least $1, Unown sells for $0
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
  *                     random Tera type on jokers (Luminous deck: G.GAME.modifiers.apply_type)
@@ -125,6 +125,12 @@ export function volatile_active(self, card, direction) {
   return active;
 }
 
+/**
+ * poker_hand_cards: 3.9.1's G.FUNCS.get_poker_hand_info wrap (pokermon.lua) — the cards Zangoose added to a played hand
+ * (poke_zangoose_card) don't change the poker hand; its modify_scoring_hand answer makes them score.
+ */
+export const poker_hand_cards = (cards) => (cards.some((c) => c.poke_zangoose_card) ? cards.filter((c) => !c.poke_zangoose_card) : undefined);
+
 // ------------------------------------------------------------------ costs
 export function set_cost(card) {
   const a = card.ability;
@@ -141,6 +147,8 @@ export function set_cost(card) {
       const rd = find_joker('rotomdex').length;
       if (r || rd) { card.cost = Math.max(0, card.cost - r); card.cost = Math.max(0, card.cost - (G.GAME.rotom_discount || 0) * rd); changed = true; }
     }
+    // Pokermon 3.9.1 (the same patch): Vouchers are free with Chimecho.
+    if (a.set === 'Voucher' && find_joker('chimecho').length) { card.cost = 0; changed = true; }
     if (a.set === 'Planet' || (a.set === 'Booster' && String(a.name).includes('Celestial'))) {
       const g1 = find_joker('gothita').length, g2 = find_joker('gothorita').length, g3 = find_joker('gothitelle').length;
       if (g1) { card.cost = Math.max(0, card.cost - 2 * g1); changed = true; }

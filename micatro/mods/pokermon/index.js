@@ -529,6 +529,9 @@ for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
 }
 
 // --------------------------------------------------------------------- hooks
+/** Kecleon's update for every Kecleon in the joker row (its type follows the joker to its right). */
+// (through its center: the 3.2.1 test fixtures serve an older joker file)
+const sync_kecleon = () => { if (G.jokers) for (const c of G.jokers.cards.slice()) { const mc = c.config.center; if (mc.key === 'j_poke_kecleon' && mc.update) mc.update(mc, c); } };
 const hooks = {
   init_game_object(GAME) { init_game_object(GAME); RB.init_game_object(GAME); },
   start_run() { install_scry(); },
@@ -536,13 +539,16 @@ const hooks = {
   blind_on_deck: RB.blind_on_deck,
   new_round: RB.new_round,
   shop_start: RB.shop_start,
-  emplace: RB.emplace,
+  // (Kecleon takes the type of the joker to its right: its Lua update runs every frame; ours also when the joker row changes)
+  emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
+  reordered(area) { if (area === G.jokers) sync_kecleon(); },
   sell_card: RB.sell_card,
   pool_filter,
   create_card: rules.create_card,
   set_cost: rules.set_cost,
   find_joker_alias: rules.find_joker_alias,
   straight_min: rules.straight_min,
+  poker_hand_cards: rules.poker_hand_cards,
   flush_min: rules.flush_min,
   splash: rules.splash,
   is_face: rules.is_face,
@@ -554,7 +560,7 @@ const hooks = {
   can_reserve: rules.can_reserve,
   calculate: rules.calculate,
   add_to_deck: shiny_hooks.add_to_deck,
-  card_removed: shiny_hooks.card_removed,
+  card_removed(card) { const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
   end_round: shiny_hooks.end_round,
   edition_weight(w, type) {
@@ -617,7 +623,10 @@ export const POKERMON = registerMod({
   // 9 = new-jokers sub-batch 12: the 15 jokers of 3.9.1's pokejokers_11 (Delcatty, Sableye, Meditite / Medicham, Plusle, Minun,
   // Volbeat, Illumise, Roselia, Carvanha / Sharpedo, Wailmer / Wailord, Torkoal, Spinda) join the pools; Skitty -> Delcatty (Moon
   // Stone); Minun's $1 shop discount.
-  contentRev: 9,
+  // 10 = new-jokers sub-batch 13: the 19 jokers of 3.9.1's pokejokers_12 (Cacnea / Cacturne, Swablu / Altaria, Zangoose,
+  // Seviper, Corphish / Crawdaunt, Baltoy / Claydol, Lileep / Cradily, Anorith / Armaldo, Kecleon, Shuppet / Banette, Tropius,
+  // Chimecho) join the pools; Chimecho's free Vouchers; an extinct food joker fires joker_type_destroyed (SMODS.destroy_cards).
+  contentRev: 10,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

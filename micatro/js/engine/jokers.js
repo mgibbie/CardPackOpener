@@ -17,7 +17,7 @@ import {
   create_card, create_playing_card, copy_card, probability_roll, quantum_enhancements, has_quantum_enhancement, mod_context_effect,
 } from './core.js';
 import * as B from './bignum.js';
-import { get_poker_hand_info } from './run.js';
+import { get_poker_hand_info, calculate_context } from './run.js';
 import { Tag, add_tag } from './tag.js';
 import { firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 
@@ -109,8 +109,17 @@ export function update_joker_tallies() {
   if (G.jokers) for (const c of G.jokers.cards) if (c.ability.set === 'Joker') c.update_joker();
 }
 
-/** The repeated "eaten / melted / drank / extinct" removal events. */
+/**
+ * The repeated "eaten / melted / drank / extinct" removal events. Steamodded (better_calc.toml) sends these through
+ * SMODS.destroy_cards: with mods on, the joker is `getting_sliced` and joker_type_destroyed fires first (Pokermon 3.9.1's
+ * Tropius counts it); a {no_destroy} answer keeps it. No-op in vanilla runs.
+ */
 function food_remove(self) {
+  if (ACTIVE_MODS.length) {
+    self.getting_sliced = true;
+    const flags = calculate_context({ joker_type_destroyed: true, card: self });
+    if (flags.some(([, e]) => e && e.no_destroy)) { self.getting_sliced = undefined; return; }
+  }
   G.E_MANAGER.add_event(() => {
     play_sound('tarot1');
     self.juice_up(0.3, 0.4);

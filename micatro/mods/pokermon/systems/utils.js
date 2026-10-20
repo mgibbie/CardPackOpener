@@ -101,6 +101,8 @@ export function smods_create_card(t) {
   // SMODS: playing cards (set Base / Enhanced) default to G.hand.
   const area = t.area || (playing ? G.hand : t.set === 'Joker' ? G.jokers : G.consumeables);
   const card = core_create_card(t.set || (t.key && P_CENTERS[t.key] && P_CENTERS[t.key].set) || 'Joker', area, t.legendary, t.rarity, t.skip_materialize, t.soulable, t.key || undefined, t.key_append);
+  // (SMODS: a playing card's `rank` / `suit` fix its front; the rest of it is rolled)
+  if (playing && (t.rank || t.suit)) change_base(card, t.suit, t.rank);
   if (t.no_edition && card.edition) card.set_edition(null, true, true);
   if (t.edition) card.set_edition(t.edition, true, true);
   if (t.enhancement) card.set_ability(P_CENTERS[t.enhancement]);
@@ -132,6 +134,13 @@ export function add_card(t) {
   card.add_to_deck();
   (t.area || (playing ? G.hand : card.ability.set === 'Joker' ? G.jokers : G.consumeables)).emplace(card);
   return card;
+}
+
+/** pokermon.add_playing_card(t, no_joker_effect) (3.9.1 pokeutils.lua): SMODS.add_card + the playing_card_added effects. */
+export function add_playing_card(t, no_joker_effect) {
+  const playing_card = add_card(t);
+  if (!no_joker_effect) playing_card_joker_effects([playing_card]);
+  return playing_card;
 }
 
 /**

@@ -16,11 +16,13 @@
 //     which Micatro doesn't ship (the Basic sprite is static), so they stay still as in the mod's default.
 //     The swarm draws 3.9.1's one-row strips, tiled (index.js SWARM_STRIPS), cropped to the card.
 //   * Unown's form (3.9.1 set_sprites): the letter floats over the plain Unown card as its soul layer.
+//   * Kecleon's type (3.9.1 set_sprites): the card of the type it took from the joker to its right (Gen 3 sheet).
 import { P_CENTERS } from './api.js';
 import { MOD_LOC } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { TYPE_COLOURS } from './systems/types.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -264,6 +266,9 @@ export const POKE_UI = {
       if (tgt.mod) return { ...d, atlas: tgt.atlas, pos: tgt.pos, soul_pos: withUnownForm(tgt).soul_pos, win_key: d.center };
       return { ...d, mod: undefined, atlas: undefined, pos: undefined, soul_pos: undefined, center: tgt.center, poke_disguise: true, win_key: d.center };
     }
+    // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
+    const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
+    if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
     // Unown: its form's letter floats over the card
     const u = withUnownForm(d);
     return u === d ? null : u;

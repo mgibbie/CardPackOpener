@@ -1057,13 +1057,94 @@ Mult card in the deck: `enhancement_gate`); Safari Delcatty, Medicham, Sharpedo,
   - Count pins updated: `pokejokers_11_test` (21 defs), `pokermon_391_new_11_test` (rev 8+, its own 26, Skitty's deferral gone),
     `pokermon_391_data_test` / `modpin_test` / `micatro_mod_version_pin_test` (rev 9), `smods_seams_test`.
 
+### New jokers, sub-batch 13 (pokejokers_12)
+Pinned **`3.9.1+r10`** (`contentRev: 10`). The **19 jokers 3.9.1 added** to `pokemon/pokejokers_12.lua`, built with the sub-batch 11 pipeline
+(spec `new_jokers` "13", `node tools/micatro/gen_pokermon_391_overlay.mjs <extract>`; the extract is unchanged). Each is in the pools by its
+rarity: Common Swablu, Corphish, Baltoy; Uncommon Cacnea, Lileep, Anorith, Kecleon, Shuppet, Tropius; Rare Zangoose, Seviper; Safari
+Cacturne, Altaria, Crawdaunt, Claydol, Cradily, Armaldo, Banette, Chimecho (only with a Glass card in the deck: `enhancement_gate`).
+They follow 3.9.1's `list` order: Kecleon after Milotic, Shuppet / Banette / Tropius / Chimecho after Dusclops.
+
+- **The jokers** (jokers/pokejokers_12.js; numbers from data391.js):
+  - **Cacnea / Cacturne**: +1 Hazard layer (`hazard_layer`); $3 / $5 for each destroyed playing card (`remove_playing_cards`). Cacnea evolves
+    in 5 rounds. Cacturne destroys the Hazard cards of the round's first hand after scoring (`destroying_card`).
+  - **Swablu / Altaria**: +2 / +3 Chips per 9 drawn during the Blind (`hand_drawn` = SMODS.drawn_cards). Swablu evolves at +36. Altaria pays
+    $1 per 9 at 1 in 3, sure with another Dragon joker (`dollar_buffer`).
+  - **Zangoose**: when a hand is played (`press_play`), 2 random held cards join it ("Crush Claw!") and score (`modify_scoring_hand`
+    add_to_hand); they never change the poker hand (below).
+  - **Seviper**: a played or discarded hand of exactly 3 cards gives +1 hand size this round (`temp_handsize`).
+  - **Corphish / Crawdaunt**: a Nature of 3 ranks (set on creation; Crawdaunt rolls with Corphish's seed, as the Lua). Corphish: +1 Mult once
+    when the played hand holds an unscored Nature card, evolves at +10. Crawdaunt: +1 per unscored Nature card.
+  - **Baltoy / Claydol**: +1 Hazard layer; +1-6 / +1-8 Chips (seed 'baltoy') per discarded Hazard card. Baltoy evolves at +40. Claydol:
+    1 in 3 for a discarded Hazard card to come back to hand (marked in `pre_discard`, sent back by the `stay_flipped` context's
+    `modify.to_area`). The Lua's DynaText `main_start` ("+1 Hazard Layer", "+1-6 Chips for each") is two static `main_start` lines.
+  - **Lileep / Cradily** (Ancient 8s): 1+ +1 hand size this round; 2+ +$1 / $2 sell value to itself and every consumable; 3+ each held card
+    +10 / +20 Chips (`h_chips`). Lileep evolves after 5 3+ hands. Cradily 4+: $ equal to the highest consumable sell value.
+  - **Anorith / Armaldo** (Ancient 7s): 1+ +7 / +11 Mult; 2+ 1 in 4 to add a 7 (Armaldo: an Enhanced 7) to the deck; 3+ destroy a random
+    deck card above 7 (seed 'anorith', `poke_remove_card`). Anorith evolves after 5. Armaldo 4+: X(1 + 0.1 per Enhanced 7 in the full deck)
+    ("X Scissor!").
+  - **Kecleon**: takes the type of the joker to its right (Colorless with none) as a type sticker; X2 Mult with 3+ jokers of its type
+    (itself included). Its Lua `update` runs every frame; ours runs before every calculate (as every mod joker's) and also when the joker
+    row changes (index.js hooks `emplace`, `reordered`, `card_removed`).
+  - **Shuppet / Banette**: +3 Mult when a Joker is sold during the Blind. Shuppet evolves at +18. Banette: +1 Joker slot, -1 hand.
+  - **Tropius**: a Gros Michel (Cavendish at `cavendish_chance`) at end of round once per ante, must have room; ready again when the ante
+    ends (`ante_change` + `ante_end`). +X0.5 Mult per Joker destroyed (`joker_type_destroyed`); a destroyed Gros Michel adds 20% Cavendish chance.
+  - **Chimecho**: Vouchers in the shop are free (3.9.1's lovely cost patch: `systems/rules.js set_cost`; it reprices every card when it comes
+    and goes). The first 2 Glass cards destroyed each round come back to hand as copies (to the deck when removed at end of round).
+- **Evolutions**: Cacnea -> Cacturne, Swablu -> Altaria, Corphish -> Crawdaunt, Baltoy -> Claydol, Lileep -> Cradily, Anorith -> Armaldo,
+  Shuppet -> Banette. Families from 3.9.1: those 7 lines, and Chimecho alone until Chingling lands (pokejokers_15, sub-batch 14: Chingling
+  evolves into Chimecho by rounds; nothing to defer on Chimecho's side).
+- **Fossils**: 3.9.1 has no fossil item or pack for Lileep / Anorith. They are plain Uncommon pool jokers, as Omanyte / Kabuto are.
+  Nothing to port.
+- **Seams / shared changes**:
+  - Engine `run.js get_poker_hand_info`: a new `poker_hand_cards` hook (registry.js). Pokermon's (`rules.js poker_hand_cards`) is 3.9.1's
+    `G.FUNCS.get_poker_hand_info` wrap: it leaves the cards Zangoose added (`poke_zangoose_card`) out of the poker hand.
+  - Engine `jokers.js food_remove`: Steamodded (better_calc.toml) sends the food jokers' removal (Gros Michel, Cavendish, Ice Cream, Popcorn,
+    Ramen, Seltzer, Turtle Bean) through `SMODS.destroy_cards`. With mods on, the joker is now `getting_sliced` and `joker_type_destroyed`
+    fires first; a `{no_destroy}` answer keeps it. Vanilla runs: no change. (Tropius counts an extinct Gros Michel.)
+  - `systems/utils.js`: `add_playing_card` (3.9.1 pokeutils), and `smods_create_card` takes a playing card's `rank` / `suit`.
+  - `systems/rules.js set_cost`: Chimecho's free Vouchers.
+  - `ui.js face()`: Kecleon's card (below).
+  - The spec's `loc_extra` adds poke_baltoy_text, k_poke_chips and poke_crush_claw_ex.
+- **Deviations / kept quirks**:
+  - Altaria's Dragon bonus adds `chip_mod_extra`, which its config doesn't have: + 0, as in the Lua.
+  - Chimecho's "Copied!" return waits on a `card_to_copy` the Lua never sets: no message, as in the Lua.
+  - Zangoose's added cards land after the played ones in G.play, as in the Lua (our `press_play` fires before the played cards move; the
+    draws are queued one event later).
+  - Banette's `remove_from_deck` gives the hand back even when debuffed (no `from_debuff` check), as in the Lua.
+  - Kecleon's `SMODS.recalc_debuff` is `card.set_debuff()`.
+- **Add-ons**: Nacho / Pokermon+ ship none of these 19 jokers.
+- **Art**: every new joker draws its 3.9.1 card from `AtlasJokersBasicNatdex-391.png` (and its Shiny twin), vendored in batch 5. No new
+  art files. The test checks each crop and its Shiny twin hold a real picture.
+  - **Kecleon** (3.9.1 `set_sprites`, pokespriteload `lookup_gen_atlas = 3`): its type cards are on the Gen 3 sheet
+    (`AtlasJokersBasicGen03-391.png`: Dark {6,0} ... Water {2,2}). `ui.js face()` draws the card of the type it holds (the table: `systems/anim.js KECLEON_SPRITES`, not the joker file, which the 3.2.1 fixtures of `micatro_resume_win_badges` / `micatro_runsync` serve old); Colorless is its own
+    Natdex card. A Shiny one draws it under the Shiny shader, as every Shiny. The test checks all 11 cells are real, distinct pictures.
+  - **Baltoy / Claydol, Series A**: 3.9.1 lists `AtlasJokersSeriesABaltoy` / `Claydol` (32-frame animations, + Shiny) as their **Series A
+    alternate** (`alts.AtlasJokersSeriesA.anim_atlas`), not their base art. 3.9.1 picks the series per profile
+    (`pokemon_spritesheet_atlas`, default "SeriesA"; the collection can toggle it per card). The port shows the Basic series for every
+    joker and has no series option (batch 5), so like every other Series A alt (Zangoose and Seviper have one too) they stay vendored,
+    unused. Wiring them = a port-wide Series A option (an art batch), not a per-joker change. The `...Future` sheets are not named by 3.9.1.
+- **Tests**: `micatro/tests/mods/pokermon_391_new_13_test.mjs` gives 0 passed / 31 failed on origin/main (9a00cd8f) and on sub-batch 12
+  (91e0fb70), and 138 / 0 here.
+  - It fires every joker through real plays and each evolution (above), Zangoose's unchanged poker hand, Claydol's return to hand, Kecleon's
+    type through add / sell / reorder and its card, Tropius with an extinct Gros Michel and a Ceremonial Dagger slice, Chimecho's prices.
+  - It also checks the overlay, the order, the pools (shop rarity pools, the Glass gate, one per family, the Gen 3 option), the families,
+    the text and the art.
+  - Count pins updated: `pokejokers_12_test` (25 defs), `pokermon_391_data_test` / `modpin_test` / `micatro_mod_version_pin_test` (rev 10),
+    `smods_seams_test` (`modify_scoring_hand`, `ante_change` and `stay_flipped` are now read: Zangoose, Tropius, Claydol).
+  - Re-run and passing: every `micatro/tests` Node suite (all mods), `micatro_engine_test` (94 suites; fuzz Pokermon 24 runs / 3932 actions,
+    all mods 16 / 3346), and in the browser `micatro_mod_version_pin`, `micatro_resume_win_badges`, `micatro_runsync`,
+    `designwiki_micatro_mods` (295 / 0; wiki data regenerated). `micatro_runsync` serves the pre-batch-7 joker files with the current
+    `index.js` / `ui.js`, so neither may import from a joker file (Kecleon's table is in `systems/anim.js`; index.js reaches its update
+    through the center). No fixture shim change.
+  - A browser screenshot showed all 19 in the joker row on their 3.9.1 cards (Shiny Altaria / Claydol / Chimecho), Kecleon on its Fire card.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
-- **New jokers** (sub-batches 11–15, 15b): sub-batches 11 and 12 done (above). `new_deferred`: Kirlia -> Gallade and Roselia -> Roserade
-  (+ Budew -> Roselia), all sub-batch 14. Still to add: 76 from 3.9.1 (29 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms,
+- **New jokers** (sub-batches 11–15, 15b): sub-batches 11, 12 and 13 done (above). `new_deferred`: Kirlia -> Gallade and Roselia -> Roserade
+  (+ Budew -> Roselia), all sub-batch 14. Still to add: 57 from 3.9.1 (10 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms,
   7 non-Pokémon, 3 April Fools) + 9 from upstream main (15b).
 - **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist).
@@ -1086,7 +1167,7 @@ on 3.9.1 but one part):
   batch 10b). Still on 3.2.1 sheets: the add-ons (Nacho, Pokermon+:
   some of their cells changed in 3.9.1 — e.g. Hisuian Sliggoo / Goodra, Naclstack, Garganacl — so they move with their own
   upgrades); the batch-1 art (Rotom Dex, the Stadium / Mega decks and sleeves, the Jirachi wishes) is unchanged.
-- Vendored but not mapped: the Series A sheets (the port shows Basic art), 3.9.1's re-laid Bird Energy strip (the same frames in
+- Vendored but not mapped: the Series A sheets (the port shows Basic art; 3.9.1's alternate series, see sub-batch 13 for Baltoy / Claydol), 3.9.1's re-laid Bird Energy strip (the same frames in
   one row; the Unown swarm's 20880 px strips are drawn since batch 10b, split into tiles), `smeargle_logo`, and the new
   files no existing card names (TitleCard, GMaxClouds, capture_disc, elite_stake*, miror_budicolo, placeholder_blind,
   poke_logo_alt / _multi, shiny_*, the Series A Baltoy / Bellsprout / Claydol sheets).

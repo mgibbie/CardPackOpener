@@ -387,7 +387,7 @@ All are byte-identical to upstream main.
 | 6–8 | **DONE** (#773 files 01–08, #774 09–17, batch 8 18–34 + zother/zmissingno): 435 existing jokers on 3.9.1, 18 held (see "Batches 6–8" below) | 3 × L | 5 |
 | 10 | **DONE** (see "Batch 10" below) — Pokermon Hazard layer rework + Seed enhancement, Miracle Seed, Heavy Boots, Debris deck and sleeve (3.9.1's `diceydeck`: "Dicey" and "Debris" are one deck), Flower ×2 — 16 jokers un-held (11 Hazard jokers, Mega Steelix via a quantum seam, Bellossom/Hoppip line), Shaymin's Flower part | L | 5 |
 | 10b | **DONE** (see "Batch 10b" below) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art, the swarm strips tiled) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
-| 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); **12 DONE** (the 15 of pokejokers_11, below); 13 = file 12, 14 = files 13–16, 15 = files 18–32 | 5 × L | 5 |
+| 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); **12 DONE** (the 15 of pokejokers_11, below); **13 DONE** (the 19 of pokejokers_12, below); 14 = files 13–16, 15 = files 18–32 | 5 × L | 5 |
 | 15b | **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Port from upstream main at a pinned commit (bump `version` to that tag/commit) | M | 11–15 |
 | 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice | M | 5 |
 | 17 | Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), DNA seal, `starterq`, Meteorite/Deoxys, 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
@@ -509,7 +509,7 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 | Batch 17 (non-Pokémon jokers) | — | Rival, Mystery Egg |
 | Kept by design | — | Porygon-Z's Energy counter |
 
-- New jokers still to add: 76 from 3.9.1 (29 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms, 7 non-Pokémon, 3 April Fools) + 9 from upstream main (batch 15b). (117 before sub-batch 11, which added 26; sub-batch 12 added 15.)
+- New jokers still to add: 57 from 3.9.1 (10 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms, 7 non-Pokémon, 3 April Fools) + 9 from upstream main (batch 15b). (117 before sub-batch 11, which added 26; sub-batch 12 added 15, sub-batch 13 19.)
 - New jokers ported without one part (`new_deferred`): Kirlia -> Gallade, Roselia -> Roserade (+ Budew -> Roselia), all sub-batch 14. (Skitty -> Delcatty: done in sub-batch 12.)
 
 ## Batch 10 — Pokermon Hazard layer, Seed, Flower ×2, Debris deck: DONE (2026-10-20, branch `feat/micatro-pokermon-391-hazard-seed`)
@@ -572,3 +572,16 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 - Design wiki: `designwiki_micatro_mods_test`'s sprite-cell check (failing on the Unown Swarm since batch 10b) fixed. The generator emits the
   tiled atlas; the wiki's `mcSprite` picks the tile and crop as `modCellRect` does. Regenerated.
 - Tests: `micatro/tests/mods/pokermon_391_new_12_test.mjs` (0 passed / 30 failed on origin/main, 119 / 0 here).
+
+## New jokers, sub-batch 13 — Pokermon 3.9.1 pokejokers_12: DONE (2026-10-20, branch `feat/micatro-pokermon-391-new-jokers`)
+- Pin **3.9.1+r10** (`contentRev` 10; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "New jokers, sub-batch 13".
+- 19 jokers, in the pools by rarity: Cacnea, Cacturne, Swablu, Altaria, Zangoose, Seviper, Corphish, Crawdaunt, Baltoy, Claydol, Lileep,
+  Cradily, Anorith, Armaldo, Kecleon, Shuppet, Banette, Tropius, Chimecho. Built with the sub-batch 11 pipeline (spec `new_jokers` "13").
+- Evolutions: Cacnea, Swablu, Corphish, Baltoy, Lileep, Anorith, Shuppet lines. Chimecho's family waits for Chingling (sub-batch 14). Nothing deferred.
+- Seams: engine `poker_hand_cards` hook (Zangoose's added cards don't change the poker hand); food jokers' removal fires
+  `joker_type_destroyed` with mods on (SMODS.destroy_cards; Tropius); Chimecho's free Vouchers (`rules.js set_cost`); `add_playing_card`,
+  `rank` / `suit` in `smods_create_card`; Kecleon's type follows the joker row (hooks) and its card is drawn by `ui.js face()`.
+- Fossils: 3.9.1 has no fossil item / pack: Lileep and Anorith are plain Uncommon pool jokers. Nothing to port.
+- Art: Natdex cells vendored in batch 5; Kecleon's 11 type cards on the Gen 3 sheet. No new files. The Series A Baltoy / Claydol animations
+  are 3.9.1's alternate series (picked per profile), not base art: unused like every Series A alt (a port-wide option, an art batch).
+- Tests: `micatro/tests/mods/pokermon_391_new_13_test.mjs` (0 passed / 31 failed on origin/main, 138 / 0 here).
