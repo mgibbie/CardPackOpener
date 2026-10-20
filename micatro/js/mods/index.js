@@ -182,11 +182,16 @@ export function dependentsOf(id, ids) {
   return out;
 }
 
-/** Declared options of a REGISTERED mod: [{key, default, label, type, choices}]. */
+/**
+ * Declared options of a REGISTERED mod: [{key, default, label, type, choices}] — the ones a player can set: an option
+ * declared `hidden: true` (or `hidden: () => true`) is left out (not shown, not listed on the wiki). Its value is
+ * still stored and read as before (activateMods fills its default), so nothing that reads it breaks.
+ */
+export const optionHidden = (o) => !!(o && (typeof o.hidden === 'function' ? o.hidden() : o.hidden));
 export function modOptionList(id) {
   const m = MODS[id];
   if (!m || !m.options) return [];
-  return Object.entries(m.options).map(([key, o]) => {
+  return Object.entries(m.options).filter(([, o]) => !optionHidden(o)).map(([key, o]) => {
     o = o || {};
     const type = o.type || (Array.isArray(o.choices) ? 'choice' : typeof o.default === 'boolean' ? 'bool' : 'value');
     return { key, default: o.default, label: o.label || key.replace(/_/g, ' '), type, choices: Array.isArray(o.choices) ? o.choices : null };

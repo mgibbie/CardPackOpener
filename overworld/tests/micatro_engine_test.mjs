@@ -7,7 +7,8 @@
 // challenge.js sleeve.js micatro/data/challenges.js (challenges + sleeves: micatro/tests/challenges_test.mjs — apply_challenge, challenge_protos,
 // challengeInfo, prepareChallenge, sleeveInfo, prepareSleeve, apply_sleeve; mods/*/challenges.js, mods/*/sleeves.js)
 // and micatro/mods/pokermon (index.js defs.js api.js data.js data391.js systems/ jokers/ consumables/
-// boosters/), micatro/mods/pokermonplus (index.js data.js src/) — named here so `run-all.mjs --changed` selects this suite when any of them change.
+// boosters/), micatro/mods/pokermonplus (index.js data.js src/), micatro/js/mods/superseded.js + tools/micatro/gen_superseded.mjs
+// (the add-on dedupe's sticker merge: micatro/tests/mods/addon_sticker_merge_test.mjs) — named here so `run-all.mjs --changed` selects this suite when any of them change.
 //   node overworld/tests/micatro_engine_test.mjs
 import { spawnSync } from 'child_process';
 import fs from 'fs';

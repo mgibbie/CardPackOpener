@@ -363,7 +363,8 @@ function startPublishing() {
       if (!currentView) return null;
       // (the player's win stickers for the jokers and deck on the table: spectators draw these, not their own;
       // a win updates the record, so the next push shows the new stickers)
-      const view = Stickers ? { ...currentView, win_stickers: Stickers.stickerMap([...stickerKeys(currentView)]) } : currentView;
+      // (+ win_stickers_revoked: the revocations of Pokermon twins among them, nearly always absent — stickers.js "Superseded")
+      const view = Stickers ? withStickers({ ...currentView }, [...stickerKeys(currentView)]) : currentView;
       const snap = { view, events: pendingPublish.slice(-PUBLISH_CAP) };
       pendingPublish = [];
       return snap;
@@ -415,6 +416,14 @@ function submit(view, won, replay) {
   const badges = won && Progress && view.run_badges ? Progress.wireBadges(view.run_badges.earned) : null; // (Pokermon: the row's Nuzlocke / Monotype tag)
   return net.submitScore({ score: (view.stats && view.stats.best_hand) || 0, ante: view.ante, seed: view.seed, back: view.back, stake: view.stake, won: !!won, mods: view.mods || [], customDeck: view.custom_deck ? view.custom_deck.name : '', ...(replay ? { replay } : {}), ...(badges ? { badges } : {}) });
 }
+/** Put the player's win stickers for `keys` on `o` (a published view / a replay recipe): win_stickers, and
+ * win_stickers_revoked only when a Pokermon twin among them has a revocation (stickers.js "Superseded add-on jokers"). */
+function withStickers(o, keys) {
+  o.win_stickers = Stickers.stickerMap(keys);
+  const rv = Stickers.stickerRevokedMap ? Stickers.stickerRevokedMap(keys) : {};
+  if (Object.keys(rv).length) o.win_stickers_revoked = rv;
+  return o;
+}
 /**
  * The run just finished (game over, or the win): keep its WHOLE-RUN replay. Saved locally (the last 10
  * runs) and, signed in, uploaded — the score is posted only after, with the replay's id, so the board
@@ -427,7 +436,7 @@ function recordReplay(view) {
   try {
     const recipe = JSON.parse(JSON.stringify(session.recipe));
     // the player's win stickers for the jokers seen in the run and the deck: the replay draws these, not the viewer's
-    if (Stickers) recipe.win_stickers = Stickers.stickerMap([...stickerKeys(view, seenJokers)]);
+    if (Stickers) withStickers(recipe, [...stickerKeys(view, seenJokers)]);
     const meta = RP.buildMeta(recipe, view, { username: myName() });
     const entry = RP.save(recipe, meta);
     const localId = RP.localId(recipe);
@@ -680,7 +689,7 @@ function startSpectating() {
       if (!snap || !snap.view) return;
       spectatorMods(snap.view.mods);
       // the runner's stickers (view.win_stickers); an older runner's snapshot without them: this viewer's own
-      if (Stickers) Stickers.setStickerSource(snap.view.win_stickers || null);
+      if (Stickers) Stickers.setStickerSource(snap.view.win_stickers || null, snap.view.win_stickers_revoked || null);
       currentView = snap.view;
       record(snap.events || []);
       player.ingest(snap.view, snap.events || []);
