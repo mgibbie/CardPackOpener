@@ -1,6 +1,7 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_05.lua (Pokédex 121-150: Starmie -> Mega Mewtwo Y), 36 jokers.
-// Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage,
-// ptype, gen, item_req, evo_list, megas, volatile, custom_pool_func) comes from data.js.
+// Pokermon 3.9.1 (batch 6) — pokemon/pokejokers_05.lua (Pokédex 121-150: Starmie -> Mega Mewtwo Y), 36 jokers.
+// Line-for-line port of the 3.9.1 behaviour (reworked: Magmar, Lapras, Ditto, Eevee, Vaporeon, Jolteon, Flareon,
+// Aerodactyl, Snorlax, Mewtwo; Jynx's copies are announced); static data (pos, config, rarity, cost, stage, ptype,
+// gen, item_req, evo_list, megas, volatile, custom_pool_func) comes from data.js + data391.js (the 3.9.1 config).
 // Magikarp's "every played card scores" (Splash) rule lives in systems/rules.js (splash hook).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
@@ -9,7 +10,7 @@ import {
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, type_evo, ease_poke_dollars,
   has_enhancement, find_joker, find_card, any, get_probability_vars, pseudorandom_probability, volatile_active,
   remove, poke_evolve, apply_type_sticker, type_sticker_applied, energy_increase, poke_convert_cards_to,
-  smods_create_card, poke_add_shop_card,
+  smods_create_card, poke_add_shop_card, can_evolve_to_highest, POKE_POOL_RULES,
 } from '../api.js';
 import { calculate_reroll_cost } from '../../../js/engine/core.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
@@ -29,6 +30,8 @@ const room = () => G.consumeables.cards.length + G.GAME.consumeable_buffer < G.c
 function star_calc(card, context) {
   if (context.individual && context.cardarea === G.play && context.other_card.is_suit(card.ability.extra.suit)) {
     if (!context.end_of_round && !context.before && !context.after && !context.other_card.debuff) {
+      G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + card.ability.extra.money_mod;
+      G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
       const earned = ease_poke_dollars(card, 'starmie', card.ability.extra.money_mod, true);
       return { mult: card.ability.extra.mult, dollars: earned, card };
     }
@@ -86,6 +89,17 @@ function kabuto_perma(card, context) {
     }
   }
   return undefined;
+}
+/**
+ * pokermon.get_highest_evo(v) as Eevee asks it (3.9.1): can this Pokémon still evolve? A stage with a next one
+ * (POKE_STAGES: Baby / Basic / One / Legendary) whose line has a higher form. (No RNG drawn: 3.9.1 rolls the
+ * branch it would pick, which only matters for the pick, not for the yes / no.)
+ */
+const EVO_STAGES = new Set(['Baby', 'Basic', 'One', 'Legendary']);
+function eevee_can_evolve() {
+  let n = 0;
+  if (G.jokers && G.jokers.cards) for (const v of G.jokers.cards) if (EVO_STAGES.has(v.config.center.stage) && can_evolve_to_highest(v)) n = n + 1;
+  return n;
 }
 /** Dratini / Dragonair: +mult_mod per hand of `size` cards or fewer. */
 function dratini_calc(card, context) {
@@ -178,22 +192,21 @@ defineJokers({
           const cards_added = [];
           for (const v of context.cards) {
             if (v && typeof v === 'object') {
-              if (v.jynx) v.jynx = undefined;
+              // (3.9.1: the mark clears in an event, so every Jynx still sees it while the copies are announced)
+              if (v.jynx) G.E_MANAGER.add_event(() => { v.jynx = undefined; });
               else {
                 const copy = copy_card(v, null, null, G.playing_card);
                 copy.add_to_deck();
                 G.deck.config.card_limit = G.deck.config.card_limit + 1;
                 G.playing_cards.push(copy);
                 G.deck.emplace(copy);
-                card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_copied_ex') });
+                card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_copied_ex') });
                 copy.jynx = true;
-                // Lua: `cards_added[#cards_added] = copy` writes index 0, which ipairs never sees,
-                // so the copies are NOT re-announced (that is also what stops two Jynx from
-                // duplicating each other's copies forever) — kept as written.
+                cards_added.push(copy); // (3.9.1 fixed `cards_added[#cards_added]`: the copies are announced)
               }
             }
           }
-          playing_card_joker_effects(cards_added);
+          if (cards_added.length > 0) playing_card_joker_effects(cards_added);
         }
       }
       if (context.setting_blind) {
@@ -235,16 +248,13 @@ defineJokers({
     },
     calculate(self, card, context) {
       if (context.first_hand_drawn && !context.blueprint) {
-        card.ability.extra.remove_triggered = false;
-        juice_card_until(card, () => G.GAME.current_round.discards_used === 0 && !card.ability.extra.remove_triggered, true);
+        juice_card_until(card, () => G.GAME.current_round.discards_used === 0, true);
       }
-      if (context.discard && !context.blueprint) {
-        if (G.GAME.current_round.discards_used === 0 && context.full_hand && context.full_hand.length === 1 && !card.ability.extra.remove_triggered) {
-          card.ability.extra.remove_triggered = true;
-          card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
-          card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
-          return { remove: true };
-        }
+      // 3.9.1: no once-per-round flag (the first discard is the one with discards_used 0)
+      if (context.discard && !context.blueprint && G.GAME.current_round.discards_used === 0 && context.full_hand.length === 1) {
+        card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
+        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
+        return { remove: true };
       }
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) return a_mult(card);
       return item_evo(self, card, context, 'j_poke_magmortar');
@@ -371,6 +381,8 @@ defineJokers({
           G.STATE_COMPLETE = false;
           G.GAME.current_round.used_packs = {};
           G.GAME.current_round.reroll_cost_increase = 0;
+          // 3.9.1: the shop's free rerolls reset too (round_resets.free_rerolls; + Chaos the Clown, like run.js)
+          G.GAME.current_round.free_rerolls = find_joker('Chaos the Clown').length + (G.GAME.round_resets.free_rerolls || 0);
           calculate_reroll_cost(true);
         });
       }
@@ -406,6 +418,7 @@ defineJokers({
       return undefined;
     },
     in_pool(self) {
+      if (find_joker('Showman').length > 0) return true; // (3.9.1 SMODS.showman)
       if (G.jokers && G.jokers.cards && G.jokers.cards.length > 0) {
         for (const v of G.jokers.cards) if (v.ability.perishable) return false;
       }
@@ -417,22 +430,34 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push({ set: 'Other', key: 'eeveelution' });
-      return { vars: [center.ability.extra.Xmult] };
+      return { vars: [center.ability.extra.mult_mod, center.ability.extra.mult_mod * eevee_can_evolve()] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) return a_xmult(card.ability.extra.Xmult);
+      // 3.9.1: +mult_mod Mult for each Joker you have that can evolve (itself included)
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        const can_evolve = eevee_can_evolve();
+        if (can_evolve > 0) {
+          const m = card.ability.extra.mult_mod * can_evolve;
+          return { message: localize({ type: 'variable', key: 'a_mult', vars: [m] }), colour: 'MULT', mult_mod: m };
+        }
+      }
       return item_evo(self, card, context, undefined);
     },
   },
   // Vaporeon 134
   vaporeon: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.chips] }; },
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push(P_CENTERS.m_bonus);
+      return { vars: [center.ability.extra.chip_mod] };
+    },
     calculate(self, card, context) {
-      if (context.individual && context.cardarea === G.play) {
-        let bonus = card.ability.extra.chips;
-        if (has_enhancement(context.other_card, 'm_bonus')) bonus = bonus * 2;
-        context.other_card.ability.perma_bonus = (context.other_card.ability.perma_bonus || 0) + bonus;
-        return { message: localize('k_upgrade_ex'), colour: 'CHIPS' };
+      // 3.9.1: when a Bonus card scores, every card in the poker hand permanently gains +chip_mod Chips
+      if (context.individual && context.cardarea === G.play && has_enhancement(context.other_card, 'm_bonus')) {
+        for (const scoring_card of context.scoring_hand) {
+          scoring_card.ability.perma_bonus = (scoring_card.ability.perma_bonus || 0) + card.ability.extra.chip_mod;
+          card_eval_status_text(scoring_card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
+        }
       }
       return undefined;
     },
@@ -446,6 +471,7 @@ defineJokers({
     },
     calculate(self, card, context) {
       if (context.discard && has_enhancement(context.other_card, 'm_gold')) {
+        if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED' }; // (3.9.1)
         const earned = ease_poke_dollars(card, 'jolteon', card.ability.extra.money, true);
         G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + earned;
         return {
@@ -460,15 +486,18 @@ defineJokers({
   },
   // Flareon 136
   flareon: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.Xmult_multi] }; },
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push(P_CENTERS.m_mult);
+      return { vars: [center.ability.extra.Xmult_multi] };
+    },
     calculate(self, card, context) {
-      if (context.individual && context.cardarea === G.hand && !context.end_of_round) {
-        let first_mult;
-        for (const c of G.hand.cards) if (has_enhancement(c, 'm_mult')) { first_mult = c; break; }
-        if (context.other_card === first_mult) {
-          if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
-          return { x_mult: card.ability.extra.Xmult_multi, card };
-        }
+      // 3.9.1: the last 2 scoring Mult cards give XMult when scored (was: the first Mult card held)
+      if (context.individual && context.cardarea === G.play && !context.end_of_round) {
+        const mult_cards = context.scoring_hand.filter((c) => has_enhancement(c, 'm_mult'));
+        const last_mult = mult_cards[mult_cards.length - 1];
+        const second_to_last_mult = mult_cards.length > 1 ? mult_cards[mult_cards.length - 2] : undefined;
+        if (context.other_card === last_mult || context.other_card === second_to_last_mult) return { x_mult: card.ability.extra.Xmult_multi, card };
       }
       return undefined;
     },
@@ -620,7 +649,6 @@ defineJokers({
       return { vars: [localize(center.ability.extra.rank, 'ranks'), center.ability.extra.Xmult, center.ability.extra.Xmult_mod] };
     },
     calculate(self, card, context) {
-      if (context.first_hand_drawn && !context.blueprint) card.ability.extra.Xmult_original = card.ability.extra.Xmult;
       if (context.before) {
         const aces = count_id(context.scoring_hand, 14);
         const third_level = aces > 2;
@@ -638,7 +666,7 @@ defineJokers({
         if (first_level) return a_xmult(card.ability.extra.Xmult);
       }
       if (!context.repetition && !context.individual && context.end_of_round && !context.blueprint) {
-        card.ability.extra.Xmult = card.ability.extra.Xmult_original;
+        card.ability.extra.Xmult = card.ability.extra.Xmult1; // (3.9.1: back to the base, was the round-start value)
         return { message: localize('k_reset'), colour: 'RED' };
       }
       return undefined;
@@ -687,7 +715,7 @@ defineJokers({
       if (context.cardarea === G.jokers && context.scoring_hand) {
         if (context.joker_main && card.ability.extra.Xmult > 1) return a_xmult(card.ability.extra.Xmult);
       } else if (!context.repetition && !context.individual && context.end_of_round && !context.blueprint) {
-        const count = find_joker('leftovers');
+        const count = find_card('c_poke_leftovers');
         if (count.length > 0) {
           card.ability.extra.Xmult = card.ability.extra.Xmult + (card.ability.extra.Xmult_mod * count.length);
           return { message: localize('k_upgrade_ex'), colour: 'RED' };
@@ -785,7 +813,7 @@ defineJokers({
     calculate(self, card, context) {
       if ((context.end_of_round && G.GAME.blind.boss) && !context.repetition && !context.individual && !context.blueprint) {
         const leftmost = G.jokers.cards[0];
-        if (leftmost !== card) {
+        if (leftmost !== card && !leftmost.getting_sliced) {
           card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_duplicated_ex') });
           const chosen_joker = G.jokers.cards[0];
           if ((G.jokers.cards.length - 1 < G.jokers.config.card_limit && !leftmost.ability.eternal) || (G.jokers.cards.length < G.jokers.config.card_limit && leftmost.ability.eternal)) {
@@ -863,3 +891,6 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Tauros (Herd) (3.9.1 in_pool = false): never in a pool; Tauros puts it in the shop itself.
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_taurosh' ? false : undefined));

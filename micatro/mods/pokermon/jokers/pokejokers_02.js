@@ -1,11 +1,11 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_02.lua (Pokédex 031-060: Nidoqueen -> Poliwag), 30 jokers.
-// Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype, gen,
-// item_req, evo_list) comes from data.js. See ../PORTING.md and pokejokers_01.js.
+// Pokermon 3.9.1 — pokemon/pokejokers_02.lua (Pokédex 031-060: Nidoqueen -> Poliwag), 30 jokers.
+// Line-for-line port of the behaviour, on 3.9.1 since batch 6; static data (pos, config, rarity, cost, stage,
+// ptype, gen, item_req, evo_list) comes from data.js + data391.js. See ../PORTING.md and pokejokers_01.js.
+// (3.9.1's mega_clefable is new content: not here yet.)
 import {
-  G, P_CENTERS, localize, card_eval_status_text, pseudorandom, create_card,
+  G, P_CENTERS, localize, card_eval_status_text, pseudorandom, create_card, scale_card,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
-  get_probability_vars, pseudorandom_probability, poke_is_odd, poke_total_chips, poke_convert_cards_to,
-  poke_change_poli_suit,
+  get_probability_vars, pseudorandom_probability, poke_is_odd, poke_total_chips,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_02.lua';
@@ -57,17 +57,25 @@ function nine_tarot(card, context, seed) {
   }
   return undefined;
 }
-/** Oddish / Gloom: scored odd cards give mult or mult2 (coin flip). */
+/** Oddish / Gloom: scored odd cards give mult, mult1 or mult2 (a third each, 3.9.1). */
 function odd_mult(card, context, seed) {
   if (context.individual && context.cardarea === G.play && !context.other_card.debuff) {
     if (poke_is_odd(context.other_card)) {
       let value;
-      if (pseudorandom(seed) < 0.50) value = card.ability.extra.mult;
+      const random = pseudorandom(seed);
+      if (random < 1 / 3) value = card.ability.extra.mult;
+      else if (random < 2 / 3) value = card.ability.extra.mult1;
       else value = card.ability.extra.mult2;
       return { mult: value, card };
     }
   }
   return undefined;
+}
+/** Zubat line: strip a scoring card's Enhancement (vampired: once per hand). */
+function eat_enhancement(v) {
+  v.vampired = true;
+  v.set_ability(P_CENTERS.c_base, null, true);
+  G.E_MANAGER.add_event(() => { v.juice_up(); v.vampired = undefined; });
 }
 /** Venonat / Venomoth: +plus_odds to every listed probability's numerator. */
 function plus_odds(card, context) {
@@ -101,12 +109,11 @@ function dig_calc(card, context, xmult) {
 function lucky_money(card, context) {
   if (context.individual && context.cardarea === G.play && context.other_card.lucky_trigger && card.ability.extra.triggers < card.ability.extra.limit && !context.blueprint) {
     card.ability.extra.triggers = card.ability.extra.triggers + 1;
-    card.ability.extra.money = card.ability.extra.money + card.ability.extra.money_mod;
-    card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MONEY' });
+    scale_card(card, { ref_value: 'money', scalar_value: 'money_mod', message_colour: 'MONEY' });
   }
   if (!context.repetition && !context.individual && context.end_of_round) card.ability.extra.triggers = 0;
 }
-/** Psyduck / Golduck: a lone face card played earns money. */
+/** Psyduck / Golduck: the played hand is exactly one face card. */
 const lone_face = (context) => context.cardarea === G.jokers && context.scoring_hand && context.full_hand && context.full_hand.length === 1 && context.scoring_hand[0] && context.scoring_hand[0].is_face();
 /** Mankey / Primeape: scored prime ranks (2, 3, 5, 7). */
 const is_prime = (c) => c.get_id() === 2 || c.get_id() === 3 || c.get_id() === 5 || c.get_id() === 7;
@@ -187,6 +194,7 @@ defineJokers({
   },
   // Vulpix 037
   vulpix: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_firestone);
@@ -250,76 +258,58 @@ defineJokers({
       return undefined;
     },
   },
-  // Zubat 041
+  // Zubat 041 (3.9.1: eats the Enhancement of the first scoring Enhanced card, +mult_mod Mult when it does)
   zubat: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.mult, center.ability.extra.mult_mod, self.config.evo_rqmt] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.before) {
-          let enhanced = 0;
-          for (const v of context.scoring_hand) if (v.config.center !== P_CENTERS.c_base) enhanced = enhanced + 1;
-          if (enhanced > 0 && !context.blueprint) {
-            card.ability.extra.mult = card.ability.extra.mult + (card.ability.extra.mult_mod * enhanced);
-            return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.extra.mult_mod * enhanced] }), colour: 'MULT' };
-          }
+      if (context.before && !context.blueprint) {
+        const v = context.scoring_hand.find((c) => c.config.center !== P_CENTERS.c_base);
+        if (v && !v.debuff && !v.vampired) {
+          eat_enhancement(v);
+          scale_card(card, { ref_value: 'mult', scalar_value: 'mult_mod', message_key: 'a_mult', message_colour: 'MULT' });
         }
-        if (context.joker_main && card.ability.extra.mult > 0) {
-          return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.extra.mult] }), colour: 'MULT', mult_mod: card.ability.extra.mult };
-        }
+      }
+      if (context.joker_main && card.ability.extra.mult > 0) {
+        return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.extra.mult] }), colour: 'MULT', mult_mod: card.ability.extra.mult };
       }
       return scaling_evo(self, card, context, 'j_poke_golbat', card.ability.extra.mult, self.config.evo_rqmt);
     },
   },
-  // Golbat 042
+  // Golbat 042 (3.9.1: +mult_mod Mult per Enhancement eaten; the chips / XMult / money halves are gone)
   golbat: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
-      const eating_left = Math.max(0, self.config.evo_rqmt - ex.eaten);
-      return { vars: [ex.mult, ex.mult_mod, ex.chips, ex.chip_mod, ex.Xmult, ex.Xmult_mod, ex.money, ex.money_mod, eating_left] };
+      return { vars: [ex.mult, ex.mult_mod, Math.max(0, self.config.evo_rqmt - ex.eaten)] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.before && !context.blueprint) {
-        let m_count = 0, c_count = 0, x_count = 0, d_count = 0;
-        const enhanced = [];
+      if (context.before && !context.blueprint) {
+        let m_count = 0;
         for (const v of context.scoring_hand) {
           if (v.config.center !== P_CENTERS.c_base && !v.debuff && !v.vampired) {
-            enhanced.push(v);
-            v.vampired = true;
-            if (v.config.center === P_CENTERS.m_mult || v.config.center === P_CENTERS.m_wild) m_count = m_count + 1;
-            if (v.config.center === P_CENTERS.m_bonus || v.config.center === P_CENTERS.m_stone) c_count = c_count + 1;
-            if (v.config.center === P_CENTERS.m_steel || v.config.center === P_CENTERS.m_glass) x_count = x_count + 1;
-            if (v.config.center === P_CENTERS.m_gold || v.config.center === P_CENTERS.m_lucky) d_count = d_count + 1;
-            v.set_ability(P_CENTERS.c_base, null, true);
-            G.E_MANAGER.add_event(() => { v.juice_up(); v.vampired = undefined; });
+            m_count = m_count + 1;
+            eat_enhancement(v);
             card.ability.extra.eaten = card.ability.extra.eaten + 1;
           }
         }
-        if (enhanced.length > 0) {
-          if (m_count > 0) card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod * m_count;
-          if (c_count > 0) card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod * c_count;
-          if (x_count > 0) card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_mod * x_count;
-          if (d_count > 0) card.ability.extra.money = card.ability.extra.money + card.ability.extra.money_mod * d_count;
+        if (m_count > 0) {
+          scale_card(card, { ref_value: 'mult', scalar_value: 'mult_mod', message_colour: 'MULT',
+            operation: (t, k, initial, change) => { t[k] = initial + change * m_count; } });
         }
       }
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main) {
-          return { message: localize('poke_screech_ex'), colour: 'BLACK', mult_mod: card.ability.extra.mult, chip_mod: card.ability.extra.chips, Xmult_mod: card.ability.extra.Xmult };
-        }
+      if (context.joker_main && card.ability.extra.mult > 0) {
+        return { message: localize('poke_screech_ex'), colour: 'MULT', mult_mod: card.ability.extra.mult };
       }
       return scaling_evo(self, card, context, 'j_poke_crobat', card.ability.extra.eaten, self.config.evo_rqmt);
-    },
-    calc_dollar_bonus(self, card) {
-      if (card.ability.extra.money > 0) return ease_poke_dollars(card, 'Golbat', card.ability.extra.money, true);
-      return undefined;
     },
   },
   // Oddish 043
   oddish: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.mult, center.ability.extra.mult2, center.ability.extra.rounds] }; },
+    knockoff_starter: true,
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); const ex = center.ability.extra; return { vars: [ex.mult, ex.mult2, ex.rounds, ex.mult1] }; },
     calculate(self, card, context) { return odd_mult(card, context, 'oddish') || level_evo(self, card, context, 'j_poke_gloom'); },
   },
   // Gloom 044
@@ -327,18 +317,21 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_leafstone, P_CENTERS.c_poke_sunstone);
-      return { vars: [center.ability.extra.mult, center.ability.extra.mult2] };
+      return { vars: [center.ability.extra.mult, center.ability.extra.mult2, center.ability.extra.mult1] };
     },
     calculate(self, card, context) { return odd_mult(card, context, 'gloom') || item_evo(self, card, context); },
   },
   // Vileplume 045
   vileplume: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.mult] }; },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); const ex = center.ability.extra; return { vars: [ex.Xmult_multi, ex.mult, ex.Xmult_multi2] }; },
     calculate(self, card, context) {
       if (context.individual && context.cardarea === G.play && !context.other_card.debuff) {
         if (poke_is_odd(context.other_card)) {
-          if (pseudorandom('vileplume') < 0.50) return { x_mult: card.ability.extra.Xmult_multi, card };
-          return { mult: card.ability.extra.mult, card };
+          // 3.9.1: +mult, X(Xmult_multi2) or X(Xmult_multi), a third each.
+          const random = pseudorandom('vileplume');
+          if (random < 1 / 3) return { mult: card.ability.extra.mult, card };
+          if (random < 2 / 3) return { x_mult: card.ability.extra.Xmult_multi2, card };
+          return { x_mult: card.ability.extra.Xmult_multi, card };
         }
       }
       return undefined;
@@ -370,7 +363,7 @@ defineJokers({
             card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
             return { message: localize('k_upgrade_ex'), colour: 'MULT' };
           } else if (context.before && card.ability.extra.mult > 0) {
-            card.ability.extra.mult = card.ability.extra.mult - card.ability.extra.mult_mod2;
+            card.ability.extra.mult = Math.max(0, card.ability.extra.mult - card.ability.extra.mult_mod2); // (3.9.1: floors at 0)
             return { message: localize({ type: 'variable', key: 'a_mult_minus', vars: [card.ability.extra.mult_mod2] }), colour: 'RED', card };
           }
         }
@@ -426,6 +419,7 @@ defineJokers({
   },
   // Psyduck 054
   psyduck: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.money, center.ability.extra.rounds] }; },
     calculate(self, card, context) {
       if (context.joker_main && lone_face(context)) {
@@ -439,25 +433,26 @@ defineJokers({
   golduck: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.money] }; },
     calculate(self, card, context) {
+      // 3.9.1: earn $money whenever any card becomes Gold (Steamodded setting_ability), the lone face included.
+      if (context.setting_ability && !context.unchanged && context.new === 'm_gold') {
+        const earned = ease_poke_dollars(card, 'golduck', card.ability.extra.money);
+        return { message: '$' + earned, colour: 'MONEY' };
+      }
       if (context.before && lone_face(context)) {
         const face = context.scoring_hand[0];
         face.set_ability(P_CENTERS.m_gold, null, true);
         G.E_MANAGER.add_event(() => { face.juice_up(); });
         return { message: localize('k_gold'), colour: 'MONEY', card };
       }
-      if (context.joker_main && lone_face(context)) {
-        const earned = ease_poke_dollars(card, 'golduck', card.ability.extra.money);
-        return { message: '$' + earned, colour: 'MONEY' };
-      }
       return undefined;
     },
   },
   // Mankey 056
   mankey: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.mult, center.ability.extra.chips, center.ability.extra.rounds] }; },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.mult_mod, center.ability.extra.chip_mod, center.ability.extra.rounds] }; },
     calculate(self, card, context) {
       if (context.individual && context.cardarea === G.play && !context.other_card.debuff && is_prime(context.other_card)) {
-        return { chips: card.ability.extra.chips, mult: card.ability.extra.mult, card };
+        return { chips: card.ability.extra.chip_mod, mult: card.ability.extra.mult_mod, card };
       }
       return level_evo(self, card, context, 'j_poke_primeape');
     },
@@ -467,18 +462,19 @@ defineJokers({
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const primes_left = Math.max(0, self.config.evo_rqmt - card.ability.extra.primes_played);
-      return { vars: [card.ability.extra.mult, card.ability.extra.chips, primes_left] };
+      return { vars: [card.ability.extra.mult_mod, card.ability.extra.chip_mod, primes_left] };
     },
     calculate(self, card, context) {
       if (context.individual && context.cardarea === G.play && !context.other_card.debuff && is_prime(context.other_card)) {
         card.ability.extra.primes_played = card.ability.extra.primes_played + 1;
-        return { chips: card.ability.extra.chips, mult: card.ability.extra.mult, card };
+        return { chips: card.ability.extra.chip_mod, mult: card.ability.extra.mult_mod, card };
       }
       return scaling_evo(self, card, context, 'j_poke_annihilape', card.ability.extra.primes_played, self.config.evo_rqmt);
     },
   },
   // Growlithe 058
   growlithe: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_firestone);
@@ -499,41 +495,32 @@ defineJokers({
       return { vars: [center.ability.extra.Xmult] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.before && context.poker_hands.Flush.length) {
-          const target = [];
-          for (const v of context.scoring_hand) {
-            if (v.config.center === P_CENTERS.c_base) { target.push(v); break; }
-          }
-          poke_convert_cards_to(target, { mod_conv: 'm_mult' }, true, true);
+      if (context.poker_hands && !context.poker_hands.Flush.length) return undefined;
+      // 3.9.1: the first unenhanced scoring card becomes Mult (no longer copied by Blueprint).
+      if (context.before && !context.blueprint) {
+        const v = context.scoring_hand.find((c) => c.config.center_key === 'c_base');
+        if (v) {
+          v.set_ability(P_CENTERS.m_mult, null, true);
+          G.E_MANAGER.add_event(() => { v.juice_up(); });
         }
-        if (context.joker_main && context.poker_hands.Flush.length) {
-          return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'MULT', Xmult_mod: card.ability.extra.Xmult };
-        }
+      }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'MULT', Xmult_mod: card.ability.extra.Xmult };
       }
       return undefined;
     },
   },
   // Poliwag 060
   poliwag: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.mult, center.ability.extra.rounds, localize(poli_suit(), 'suits_singular'), ...SUITS_PLURAL()], colours: ['SUITS.' + poli_suit()] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main && !context.blueprint) {
-          poke_change_poli_suit();
-          G.GAME.poke_poli_suit_change_triggered = true;
-        }
-        if (context.after && G.GAME.poke_poli_suit_change_triggered) G.GAME.poke_poli_suit_change_triggered = false;
-      }
-      if (context.individual && !context.end_of_round && context.cardarea === G.play) {
-        const scoring_suit = G.GAME.poke_poli_suit || 'Spades';
-        if (context.other_card.is_suit(scoring_suit)) {
-          if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
-          return { mult: card.ability.extra.mult, card };
-        }
+      // (3.9.1: the suit cycles after every scored hand in the mod-level calculate — systems/rules.js — not here.)
+      if (context.individual && context.cardarea === G.play && !context.other_card.debuff && context.other_card.is_suit(poli_suit())) {
+        return { mult: card.ability.extra.mult, card };
       }
       return level_evo(self, card, context, 'j_poke_poliwhirl');
     },

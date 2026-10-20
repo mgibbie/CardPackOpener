@@ -1,5 +1,5 @@
 // Pokermon pokejokers_05 (Starmie -> Mega Mewtwo Y): every one of the 36 jokers fired through
-// real plays (act), plus each line's evolution (Eevee's 8 branches included).
+// real plays (act), plus each line's evolution (Eevee's 8 branches included). On the Pokermon 3.9.1 behaviour (batch 6).
 //   node micatro/tests/mods/pokejokers_05_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { STATUS } from '../../mods/pokermon/index.js';
@@ -90,6 +90,28 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   winRound(); act({ type: 'cash_out' });
   ok(G.hand.config.card_limit === hs, 'jynx: hand size bonus ends with the round', G.hand.config.card_limit);
 }
+{
+  start('JYNX2');
+  add('j_poke_jynx');
+  const mareep = add('j_poke_mareep');
+  const [t] = hand(['S_A']);
+  const n0 = G.playing_cards.length;
+  const cr = add('c_cryptid');
+  act({ type: 'use', id: cr.sort_id, targets: [t.sort_id] });
+  G.E_MANAGER.flush();
+  ok(G.playing_cards.length === n0 + 4 && near(mareep.ability.extra.Xmult, 1.2), 'jynx: its copies are announced as added cards, so Mareep scales twice (Pokermon 3.9.1)', { n: G.playing_cards.length - n0, x: mareep.ability.extra.Xmult });
+  ok(G.playing_cards.every((c) => !c.jynx), 'jynx: the copies\' mark clears after the announcement (Pokermon 3.9.1)');
+}
+{
+  start('JYNX3');
+  add('j_poke_jynx'); add('j_poke_jynx');
+  const [t] = hand(['S_A']);
+  const n0 = G.playing_cards.length;
+  const cr = add('c_cryptid');
+  act({ type: 'use', id: cr.sort_id, targets: [t.sort_id] });
+  G.E_MANAGER.flush();
+  ok(G.playing_cards.length === n0 + 6, 'jynx: two Jynx copy the 2 new cards once each, never each other\'s copies (Pokermon 3.9.1)', G.playing_cards.length - n0);
+}
 
 // ---------------------------------------------------------------- Electabuzz
 {
@@ -132,6 +154,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   m.ability.extra.evolve = true;
   winRound();
   ok(key(m) === 'j_poke_magmortar', 'magmar -> magmortar with a Linking Cord', key(m));
+}
+{
+  start('MAGMAR2');
+  add('j_blueprint');
+  const m = add('j_poke_magmar');
+  m.ability.extra.mult = 4;
+  const r = play(hand(['S_A']));
+  ok(P_CENTERS.j_poke_magmar.blueprint_compat === true && r.total.mult === 1 + 4 + 4, 'magmar: Blueprint copies its Mult (Pokermon 3.9.1)', r.total);
 }
 
 // ---------------------------------------------------------------- Pinsir / Mega Pinsir
@@ -205,7 +235,12 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
 {
   start('LAPRAS', {}, { noBlind: true });
   const l = add('j_poke_lapras');
+  G.GAME.round_resets.free_rerolls = 1;
+  G.GAME.current_round.free_rerolls = 0;
   act({ type: 'skip_blind' });
+  G.E_MANAGER.flush();
+  ok(G.GAME.current_round.free_rerolls === 1, 'lapras: the skip shop resets its free rerolls (Pokermon 3.9.1)', G.GAME.current_round.free_rerolls);
+  G.GAME.round_resets.free_rerolls = 0;
   ok(G.STATE === STATES.SHOP && G.GAME.lapras_skip === true && G.shop_jokers.cards.length > 0, 'lapras: skipping a blind visits the shop', G.STATE);
   act({ type: 'next_round' });
   ok(G.GAME.lapras_skip === undefined && G.STATE === STATES.BLIND_SELECT && G.GAME.blind_on_deck === 'Big', 'lapras: back to the next blind after the shop', [G.STATE, G.GAME.blind_on_deck]);
@@ -222,6 +257,9 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   const d = add('j_poke_ditto');
   j.ability.perishable = true;
   ok(P_CENTERS.j_poke_ditto.in_pool(P_CENTERS.j_poke_ditto) === false, 'ditto: out of pool with a Perishable joker');
+  const sh = add('j_ring_master');
+  ok(P_CENTERS.j_poke_ditto.in_pool(P_CENTERS.j_poke_ditto) === true, 'ditto: Showman keeps it in pool even with a Perishable joker (Pokermon 3.9.1)');
+  sh.remove(); G.E_MANAGER.flush();
   j.ability.perishable = undefined;
   winRound(); act({ type: 'cash_out' });
   const w = act({ type: 'next_round' });
@@ -232,9 +270,16 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
 // ---------------------------------------------------------------- Eevee + eeveelutions
 {
   start('EEVEE');
-  add('j_poke_eevee');
-  const r = play(hand(['S_A']));
-  ok(r.total.mult === 1.33, 'eevee: X1.33', r.total);
+  const eevee = add('j_poke_eevee');
+  let r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 4, 'eevee: +4 Mult per Joker that can evolve, itself included (Pokermon 3.9.1)', r.total);
+  const bulba = add('j_poke_bulbasaur');
+  add('j_joker'); add('j_poke_vaporeon'); add('j_poke_mega_venusaur');
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 4 * 2 + 4, 'eevee: Bulbasaur counts; a plain Joker, a final stage and a Mega don\'t (Pokermon 3.9.1)', r.total);
+  ok(eevee.config.center.loc_vars(eevee.config.center, [], eevee).vars.join() === '4,8', 'eevee: text shows +4 per and the current +8 (Pokermon 3.9.1)', eevee.config.center.loc_vars(eevee.config.center, [], eevee).vars);
+  bulba.remove(); G.E_MANAGER.flush();
+  for (const c of G.jokers.cards.slice()) if (c !== eevee) { c.remove(); G.E_MANAGER.flush(); }
   const branches = { waterstone: 'vaporeon', thunderstone: 'jolteon', firestone: 'flareon', sunstone: 'espeon', moonstone: 'umbreon', leafstone: 'leafeon', icestone: 'glaceon', shinystone: 'sylveon' };
   G.jokers.config.card_limit = 20;
   const ev = {};
@@ -247,10 +292,15 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   add('j_poke_vaporeon');
   const [a] = hand(['S_A']);
   play([a]);
-  ok(a.ability.perma_bonus === 4, 'vaporeon: scored cards gain +4 chips permanently', a.ability.perma_bonus);
+  ok(!a.ability.perma_bonus, 'vaporeon: nothing without a scoring Bonus card (Pokermon 3.9.1)', a.ability.perma_bonus);
   const [b] = hand(['S_K'], { center: 'm_bonus' });
-  play([b]);
-  ok(b.ability.perma_bonus === 8, 'vaporeon: doubled for Bonus cards', b.ability.perma_bonus);
+  const [c] = hand(['H_K']);
+  play([b, c]);
+  ok(b.ability.perma_bonus === 4 && c.ability.perma_bonus === 4, 'vaporeon: a scoring Bonus card gives every card in the hand +4 Chips permanently (Pokermon 3.9.1)', [b.ability.perma_bonus, c.ability.perma_bonus]);
+  const [d, e] = hand(['S_Q', 'H_Q'], { center: 'm_bonus' });
+  const [f] = hand(['D_Q']);
+  play([d, e, f]);
+  ok(d.ability.perma_bonus === 8 && f.ability.perma_bonus === 8, 'vaporeon: once per scoring Bonus card (Pokermon 3.9.1)', [d.ability.perma_bonus, f.ability.perma_bonus]);
 }
 {
   start('JOLT');
@@ -266,13 +316,23 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   act({ type: 'highlight', ids: [k.sort_id] });
   act({ type: 'discard' });
   ok(G.GAME.dollars === d1, 'jolteon: nothing for other cards', G.GAME.dollars - d1);
+  const [g2] = hand(['H_A'], { center: 'm_gold' });
+  g2.debuff = true;
+  const d2 = G.GAME.dollars;
+  act({ type: 'highlight', ids: [g2.sort_id] });
+  const w = act({ type: 'discard' });
+  ok(G.GAME.dollars === d2 && statusMsgs(w.events).includes('Debuffed'), 'jolteon: a debuffed Gold card pays nothing (Pokermon 3.9.1)', { d: G.GAME.dollars - d2, m: statusMsgs(w.events) });
 }
 {
   start('FLARE');
   add('j_poke_flareon');
   hand(['S_K', 'S_Q'], { center: 'm_mult' });
-  const r = play(hand(['S_A']));
-  ok(r.total.mult === 3, 'flareon: X3 for the first Mult card held', r.total);
+  let r = play(hand(['S_A']));
+  ok(r.total.mult === 1, 'flareon: Mult cards held do nothing (Pokermon 3.9.1)', r.total);
+  clearHand();
+  r = play(hand(['S_A', 'H_A', 'D_A'], { center: 'm_mult' }));
+  // Three of a Kind (3 Mult): +4, then +4 X2, then +4 X2 — the last 2 Mult cards
+  ok(r.total.mult === ((3 + 4 + 4) * 2 + 4) * 2, 'flareon: the last 2 scoring Mult cards give X2 (Pokermon 3.9.1)', r.total);
 }
 
 // ---------------------------------------------------------------- Porygon
@@ -353,7 +413,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   r = play(hand(['S_A', 'H_A', 'D_A', 'C_A']));
   ok(j.ability.extra.Xmult === 7, 'aerodactyl: four Aces -> +0.5 then double', j.ability.extra.Xmult);
   const w = winRound();
-  ok(j.ability.extra.Xmult === 2 && statusMsgs(w.events).includes('Reset'), 'aerodactyl: resets at end of round', j.ability.extra.Xmult);
+  ok(j.ability.extra.Xmult === 2 && statusMsgs(w.events).includes('Reset'), 'aerodactyl: resets to Xmult1 at end of round (Pokermon 3.9.1)', j.ability.extra.Xmult);
 }
 {
   start('MAERO');
@@ -453,6 +513,15 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 fro
   ok(mega_for(m) === 'j_poke_mega_mewtwo_x', 'mewtwo: leftmost -> Mega Mewtwo X');
   G.jokers.cards.sort((a, b) => (a === m ? 1 : b === m ? -1 : 0));
   ok(mega_for(m) === 'j_poke_mega_mewtwo_y', 'mewtwo: rightmost -> Mega Mewtwo Y');
+}
+{
+  start('MEWTWO2');
+  const joker = add('j_joker');
+  add('j_poke_mewtwo');
+  nextRound(); nextRound();
+  joker.getting_sliced = true;
+  winRound();
+  ok(G.jokers.cards.filter((c) => key(c) === 'j_joker').length === 1 && G.jokers.cards.includes(joker), 'mewtwo: skips a leftmost Joker that is already being destroyed (Pokermon 3.9.1)', G.jokers.cards.map(key));
 }
 {
   start('MEWTWOX');

@@ -29,6 +29,7 @@ const rounds = (n) => { for (let i = 0; i < n; i++) { winRound(); if (i < n - 1)
   r = play(hand(['S_A']));
   ok(r.total.mult === 1 + 7, 'charjabug: +7 per Lightning joker (itself)' + ' (Pokermon 3.9.1 data)', r.total);
   const p2 = add('j_poke_pikachu');
+  G.GAME.dollars = 0; // (Pikachu, Pokermon 3.9.1: +10 Mult at $25 or more — kept off: it stands in for any Lightning joker here)
   r = play(hand(['S_A']));
   ok(r.total.mult === 1 + 14, 'charjabug: two Lightning jokers -> +14', r.total);
   p2.remove();
@@ -39,6 +40,7 @@ const rounds = (n) => { for (let i = 0; i < n; i++) { winRound(); if (i < n - 1)
   r = play(hand(['S_A']));
   ok(r.total.mult === 1 + 12, 'vikavolt: +12 Mult, X1 alone', r.total);
   add('j_poke_pikachu'); add('j_poke_pikachu');
+  G.GAME.dollars = 0;
   r = play(hand(['S_A']));
   ok(close(r.total.mult, 13 * 2.5), 'vikavolt: X(1 + 0.75 per other Lightning joker)', r.total);
 }

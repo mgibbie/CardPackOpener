@@ -208,6 +208,28 @@ export function calculate_seam(context, name, opts = {}) {
 }
 
 /**
+ * Steamodded's mod-level calculate (SMODS.current_mod.calculate) for a VANILLA context: SMODS calls it in every
+ * calculate_context, after the cards. The engine's hooks.calculate only gets the SMODS-only contexts (run.js
+ * calculate_context), so a vanilla context listed here reaches an opted-in mod's hooks.calculate only when its source reads
+ * `.<name>` (Pokermon 3.9.1 cycles the Poliwag line's suit at `context.after`). Effects show like calculate_effect.
+ */
+export const MOD_VANILLA_CONTEXTS = ['after'];
+const MOD_READS = new WeakMap();
+export function mod_calculate(context, name) {
+  if (!ACTIVE_MODS.length) return;
+  for (const id of ACTIVE_MODS) {
+    const m = MODS[id];
+    const f = m.smods_seams && m.hooks && m.hooks.calculate;
+    if (typeof f !== 'function') continue;
+    let r = MOD_READS.get(f);
+    if (!r) { const src = String(f); r = new Set(MOD_VANILLA_CONTEXTS.filter((n) => new RegExp('\\.\\s*' + n + '\\b(?!\\s*\\()').test(src))); MOD_READS.set(f, r); }
+    if (!r.has(name)) continue;
+    const eff = f(context);
+    if (eff && typeof eff === 'object') calculate_effect(eff, null, context);
+  }
+}
+
+/**
  * Steamodded Blind:calculate for the vanilla contexts: the blind on deck's prototype `calculate(self, blind, context)`
  * (SMODS.Blind calculate — Pokermon 3.9.1's boss blinds), called even while disabled (the blind checks
  * blind.disabled itself), like SMODS. -> its effect (shown like calculate_effect, no card), or undefined.

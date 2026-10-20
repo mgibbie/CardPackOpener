@@ -31,9 +31,10 @@ const ok = (c, m, x) => { if (c) pass++; else { fail++; console.log('FAIL', m, x
 
 // ---------------------------------------------------------------- pins in the recipe
 ok(ENGINE_CONTENT_REV === PINS.ENGINE_CONTENT_REV && ENGINE_CONTENT_REV >= 1, 'session re-exports the engine content rev');
-// Pokermon's pin (batch 5 of the 3.9.1 upgrade: version 3.9.1, contentRev 2 — rev 1 was the 2026-10-18/19 house rules).
-const PK = '3.9.1+r2';
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 2, 'Pokermon declares version 3.9.1, contentRev 2 (the 3.9.1 data)');
+// Pokermon's pin (batch 6 of the 3.9.1 upgrade: version 3.9.1, contentRev 3 — rev 2 was batch 5's 3.9.1 data, rev 1 the
+// 2026-10-18/19 house rules).
+const PK = '3.9.1+r3';
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 3, 'Pokermon declares version 3.9.1, contentRev 3 (the 01-08 joker reworks)');
 ok(PINS.pinOf('3.2.1', 1) === '3.2.1+r1' && PINS.pinOf('3.2.1') === '3.2.1' && PINS.pinOf('1.0 (old-API)', 0) === '1.0 (old-API)', 'pinOf: version + "+r<rev>" only when a rev is set');
 ok(PINS.pinLabel('3.2.1+r2') === '3.2.1 (rev 2)' && PINS.pinLabel('3.9.1') === '3.9.1', 'pinLabel reads a pin for people');
 
@@ -56,10 +57,10 @@ ok(meta.modVersions && meta.modVersions.pokermon === PK && meta.engineRev === EN
 // ---------------------------------------------------------------- mismatch
 const bumped = JSON.parse(JSON.stringify(saved));
 const was = MODS.pokermon.contentRev;
-MODS.pokermon.contentRev = 3;
+MODS.pokermon.contentRev = 4;
 let d = Session.pinDiff(bumped);
-ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r3' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 2); current 3.9.1 (rev 3). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r4' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 3); current 3.9.1 (rev 4). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
 MODS.pokermon.contentRev = was;
 const oldVer = { ...bumped, modVersions: { ...bumped.modVersions, pokermon: '3.2.1' } };
 const vwas = MODS.pokermon.version; MODS.pokermon.contentRev = 0;
@@ -85,8 +86,8 @@ const lp = PINS.recordedPins(legacy);
 ok(lp.assumed && lp.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lp.engineRev === PINS.LEGACY_ENGINE_REV, 'a recipe without pins reads as the legacy table', lp);
 // (the legacy table is the 2026-10-19 versions: Pokermon 3.2.1+r1 — since the 3.9.1 data batch a pre-pin Pokermon run differs)
 d = Session.pinDiff(legacy);
-ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === PK, 'a legacy Pokermon recipe now differs (3.2.1+r1 -> 3.9.1+r2): the resume prompt / replay banner', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 2). Playback may differ.', '... naming both', PINS.replayWarning(d));
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === PK, 'a legacy Pokermon recipe now differs (3.2.1+r1 -> 3.9.1+r3): the resume prompt / replay banner', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 3). Playback may differ.', '... naming both', PINS.replayWarning(d));
 ok(Object.isFrozen(PINS.LEGACY_MOD_VERSIONS) && PINS.PIN_DATE === '2026-10-19', 'the legacy table is frozen and dated');
 const lr = Session.fromRecipe(legacy);
 ok(lr.recipe.pinAssumed === 'legacy:2026-10-19' && lr.recipe.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lr.recipe.actions.length === legacy.actions.length && !lr.stoppedAt, 'resuming a legacy recipe records the assumption and rebuilds every move', lr.recipe.pinAssumed);

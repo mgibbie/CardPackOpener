@@ -13,7 +13,9 @@
 //   sprites  {name: {atlas, pos, soul_pos?, multi?}} 3.9.1's PokemonSprites (pokespriteload.lua) for every joker data.js
 //            has, resolved to the sheet name (pokermon.sprites.get_atlas_string), minus sprite_hold
 //   blinds   the renamed blind (bl_poke_cgoose -> bl_poke_iridescent_hacker) with 3.9.1's look (pos, boss_colour)
-//   loc      the 3.9.1 loc entries those need
+//   loc      the 3.9.1 loc entries those need (+ the reworked jokers' Joker entries and the spec's loc_extra)
+//   reworked the jokers on their 3.9.1 behaviour (spec rework_files minus rework_hold): config_all = the whole 3.9.1
+//            config, every compat flag, the loc entry
 //   skipped  every 3.9.1 change to an existing joker's static data that is NOT taken, with the reason
 // It fails when a value change of an existing config key, or a blueprint_compat flip, has no decision in the spec.
 import fs from 'fs';
@@ -45,10 +47,29 @@ const counts = {};
 const count = (k) => { counts[k] = (counts[k] || 0) + 1; };
 const put = (name, field, value) => { (jokers[name] || (jokers[name] = {}))[field] = value; };
 const skip = (name, field, from, to, reason) => skipped.push([name, field, from === undefined ? null : from, to === undefined ? null : to, reason]);
+// Reworked files (batch 6+): every existing joker of a file in rework_files is on its 3.9.1 behaviour (ported by hand in
+// jokers/<file>.js), so it takes ALL of its 3.9.1 static data: the whole config (config_all: replaces data.js's), every
+// compat flag, and its 3.9.1 loc entry. rework_hold: jokers of those files still on 3.2.1 (they go through take / reasons).
+const reworkFiles = new Set(SPEC.rework_files || []), reworkHold = SPEC.rework_hold || {};
+for (const name of Object.keys(reworkHold)) if (!BJ[name]) throw new Error(`rework_hold: '${name}' is not a 3.2.1 joker`);
+const BLOC = (BASE.loc && BASE.loc.descriptions) || {}, NLOC = NEW.loc.descriptions;
+const reworked = [], jokerLoc = {};
 for (const [name, { it: a, file }] of Object.entries(BJ)) {
   const n = NJ[name];
   if (!n) { skip(name, '*', null, null, 'not in 3.9.1'); continue; }
   const b = n.it;
+  if (reworkFiles.has(file.replace('pokemon/', '').replace('.lua', '')) && !reworkHold[name]) {
+    reworked.push(name);
+    for (const f of ['rarity', 'cost', 'blueprint_compat', 'perishable_compat', 'eternal_compat', 'enhancement_gate', 'attributes']) {
+      if (J(eff(f, a[f])) === J(eff(f, b[f]))) continue;
+      put(name, f, b[f] === undefined ? null : b[f]); count(f);
+    }
+    if (J(a.config || {}) !== J(b.config || {})) { put(name, 'config_all', b.config || {}); count('config_all'); }
+    const key = 'j_poke_' + name, nl = NLOC.Joker && NLOC.Joker[key];
+    if (!nl) throw new Error(`3.9.1 en-us has no ${key}`);
+    if (J(nl) !== J(BLOC.Joker && BLOC.Joker[key])) { jokerLoc[key] = nl; count('loc'); }
+    continue;
+  }
   const tk = new Set(take[name] || []);
   const why = (dflt) => (reasons[name] ? reasons[name] + ` (${file.replace('pokemon/', '').replace('.lua', '')})` : dflt);
   for (const f of ['rarity', 'cost', 'blueprint_compat', 'perishable_compat', 'eternal_compat', 'enhancement_gate', 'attributes']) {
@@ -99,11 +120,20 @@ if (!hacker) throw new Error('3.9.1 has no iridescent_hacker blind');
 const blinds = { cgoose: { key: 'iridescent_hacker', boss_colour: hacker.boss_colour, pos: hacker.pos, atlas: hacker.atlas } };
 const loc = { Blind: { bl_poke_iridescent_hacker: NEW.loc.descriptions.Blind.bl_poke_iridescent_hacker } };
 if (!loc.Blind.bl_poke_iridescent_hacker) throw new Error('3.9.1 en-us has no bl_poke_iridescent_hacker');
+if (Object.keys(jokerLoc).length) loc.Joker = jokerLoc;
+// loc_extra: other 3.9.1 loc entries the reworked jokers show ("Set.key": tooltips, alt texts, dictionary words).
+for (const p of SPEC.loc_extra || []) {
+  const [set, ...rest] = p.split('.'), key = rest.join('.');
+  const src = set === 'dictionary' || set === 'v_dictionary' ? NEW.loc.misc && NEW.loc.misc[set] : NLOC[set];
+  if (!src || src[key] === undefined) throw new Error(`loc_extra: 3.9.1 en-us has no ${p}`);
+  (loc[set] || (loc[set] = {}))[key] = src[key];
+}
 
 const out = {
   version: '3.9.1',
   source: 'InertSteak/Pokermon tag 3.9.1 (GPL-3.0)',
   counts: { ...counts, jokers_changed: Object.keys(jokers).length, sprites: Object.keys(sprites).length, skipped: skipped.length },
+  reworked: reworked.sort(), rework_hold: Object.entries(reworkHold),
   jokers, sprites, sprite_hold: held, blinds, loc, skipped,
 };
 const json = JSON.stringify(out);

@@ -19,14 +19,14 @@
  *   evaluate_round    Jirachi (banker) doubles the cash-out; Double Rainbow Energy's interest
  *                     lockout ends (reset_no_interest)
  *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank
- *   pack_size         extra_pocket_picks (+N cards in every pack); Xatu: Celestial packs hold
- *                     every Planet
+ *   pack_size         extra_pocket_picks (+N cards in every pack)
  *   can_reserve       Pocket packs / G.GAME.poke_save_all / Megastone: pack cards can be saved
- *   calculate         Garbodor's per-ante discard counter (post_discard)
+ *   calculate         the Poli suit (after every scored hand, 3.9.1); Garbodor's per-ante discard counter
+ *                     (post_discard)
  * plus faint_baby_poke / volatile_active (Baby and volatile Pokémon position rules).
  */
-import { G, P_CENTER_POOLS, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed, create_card as core_create_card } from '../../../js/engine/core.js';
-import { find_card, any, has_no_rank, has_no_suit, applies_splash } from './utils.js';
+import { G, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
+import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit } from './utils.js';
 import { apply_type_sticker, type_sticker_applied } from './types.js';
 import { energy_increase } from './energy.js';
 
@@ -35,7 +35,7 @@ const ALIASES = {
   'Four Fingers': ['pansear', 'simisear'],
   Pareidolia: ['panpour', 'simipour'],
   Shortcut: ['pansage', 'simisage'],
-  'Smeared Joker': ['smeargle'],
+  // (3.2.1's Smeargle-as-Smeared-Joker is gone in 3.9.1: Smeargle only copies its sketched joker.)
 };
 export function find_joker_alias(name, non_debuff) {
   const names = ALIASES[name];
@@ -193,22 +193,11 @@ export function reset_game_globals(run_start) {
 }
 
 // ------------------------------------------------------------------ packs
+// (3.2.1's lovely "Xatu Make All Planets Appear" — a Celestial pack held every Planet with Xatu out — is gone in
+// 3.9.1: Xatu now makes the last hand's Planet when a Celestial pack opens, pokejokers_06.js.)
 export function pack_size(n, card) {
-  if (String(card.ability.name).includes('Celestial') && find_joker('xatu').length) return P_CENTER_POOLS.Planet.length;
   if (G.GAME.extra_pocket_picks && G.GAME.extra_pocket_picks > 0) return n + G.GAME.extra_pocket_picks;
   return undefined;
-}
-
-/**
- * lovely.toml "Xatu Make All Planets Appear" (patches the base Celestial pack's create_card): with Xatu out, card i
- * of a Celestial pack is the i-th Planet of the pool (pack_size above makes the pack hold all of them), ahead of
- * Telescope. Mod packs keep their own create_card (the engine only asks this for base-game boosters).
- */
-export function pack_card(booster, i) {
-  if (!String(booster.ability.name).includes('Celestial') || !find_joker('xatu').length) return undefined;
-  const planet = P_CENTER_POOLS.Planet[i - 1];
-  if (!planet) return undefined;
-  return core_create_card('Planet', G.pack_cards, null, null, true, true, planet.key, 'pl1');
 }
 
 export function can_reserve(card) {
@@ -221,8 +210,11 @@ export function can_reserve(card) {
 }
 
 // --------------------------------------------------------- mod contexts
-/** Mod-level calculate: Garbodor's discards-this-ante counter (lovely "Garbodor functionality"). */
+/** Mod-level calculate: the Poli suit; Garbodor's discards-this-ante counter (lovely "Garbodor functionality"). */
 export function calculate(context) {
+  // Pokermon 3.9.1 (pokermon.lua SMODS.current_mod.calculate): the Poliwag line's suit cycles after every scored hand,
+  // with or without a Poli joker (the engine passes `after` here: js/engine/smods.js mod_calculate).
+  if (context.after) poke_change_poli_suit();
   if (context.post_discard) {
     // The Lua bumps the counter where discards_used goes up and zeroes it when the ante changes.
     if (G.GAME.poke_ante_of_discards !== G.GAME.round_resets.ante) { G.GAME.poke_ante_discards_used = 0; G.GAME.poke_ante_of_discards = G.GAME.round_resets.ante; }

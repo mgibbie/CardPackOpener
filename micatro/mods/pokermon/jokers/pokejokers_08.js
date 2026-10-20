@@ -1,14 +1,15 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_08.lua (Pokédex 211-240: Qwilfish -> Magby), 33 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_08.lua (Pokédex 211-240: Qwilfish -> Magby), 33 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req, megas) comes from data.js. See ../PORTING.md.
+// gen, item_req, megas) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 6, except the held ones (the Hazard layer, batch 10): Qwilfish and
+// Skarmory keep their 3.2.1 behaviour and data. Shuckle's Mega Stone -> Mega Berry Juice waits for that juice.
 import {
-  G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle,
-  ease_discard, create_card, copy_card, poll_edition, juice_card_until, playing_card_joker_effects, delay, play_sound,
+  G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
+  ease_discard, create_card, copy_card, poll_edition, juice_card_until, playing_card_joker_effects, play_sound,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars, has_enhancement, has_no_suit,
-  get_probability_vars, pseudorandom_probability, poke_set_hazards, poke_remove_card, create_random_poke_joker,
-  matching_energy, poke_evolve, faint_baby_poke, smods_create_card,
+  get_probability_vars, pseudorandom_probability, poke_set_hazards, poke_remove_card,
+  matching_energy, poke_evolve, faint_baby_poke, smods_create_card, add_card, find_pokemon_type, change_discard_limit,
 } from '../api.js';
-import { discard_cards_from_highlighted } from '../../../js/engine/run.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 
 const FILE = 'pokemon/pokejokers_08.lua';
@@ -29,29 +30,29 @@ const hazard_tip = (info_queue, abbr) => {
   info_queue.push(P_CENTERS.m_poke_hazard);
 };
 
-/** Slugma / Magcargo: every `hand_reset` hands, +chip_mod chips and destroy the leftmost held card. */
+/** Slugma / Magcargo (Pokermon 3.9.1): Loyalty Card's count — every `every + 1` hands played since the card
+ *  was made, +chip_mod chips and destroy the first held card after scoring. */
+const lua_mod = (a, n) => ((a % n) + n) % n;
 function slug_calc(card, context) {
-  if (context.first_hand_drawn && card.ability.extra.hands === 1) {
-    juice_card_until(card, (c) => c.ability.extra.hands <= 1 && !G.RESET_JIGGLES, true);
-  }
-  if (context.cardarea === G.jokers && context.scoring_hand) {
-    if (context.before && !context.blueprint) {
-      card.ability.extra.hands = card.ability.extra.hands - 1;
-      if (card.ability.extra.hands === 1) juice_card_until(card, (c) => c.ability.extra.hands <= 1 && !G.RESET_JIGGLES, true);
-      if (card.ability.extra.hands === 0) {
-        if (G.hand && G.hand.cards && G.hand.cards[0]) card.ability.extra.remove = true;
-        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod;
-        card.ability.extra.hands = card.ability.extra.hand_reset;
+  if (context.before) {
+    const ex = card.ability.extra;
+    ex.loyalty_remaining = lua_mod(ex.every - 1 - (G.GAME.hands_played - (card.ability.hands_played_at_create || 0)), ex.every + 1);
+    if (!context.blueprint) {
+      if (ex.loyalty_remaining === 0) juice_card_until(card, (c) => c.ability.extra.loyalty_remaining === 0 && !G.RESET_JIGGLES, true);
+      if (ex.loyalty_remaining === ex.every) {
+        if (G.hand.cards[0]) ex.remove = true;
+        ex.chips = ex.chips + ex.chip_mod;
       }
     }
-    if (context.after && card.ability.extra.remove && !context.blueprint) {
-      card.ability.extra.remove = false;
-      poke_remove_card(G.hand.cards[0], card);
-    }
+  }
+  if (context.after && card.ability.extra.remove && !context.blueprint) {
+    card.ability.extra.remove = false;
+    poke_remove_card(G.hand.cards[0], card);
   }
   if (context.joker_main) return { message: a_chips(card.ability.extra.chips), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
   return undefined;
 }
+const loyalty_text = (ex) => localize({ type: 'variable', key: ex.loyalty_remaining === 0 ? 'loyalty_active' : 'loyalty_inactive', vars: [ex.loyalty_remaining] });
 
 /** Swinub / Piloswine: the first scoring card gives mult per Stone/Glass card scored. */
 function stoneglass_mult(card, context) {
@@ -63,47 +64,22 @@ function stoneglass_mult(card, context) {
   return undefined;
 }
 
-/** Houndour / Houndoom / Mega Houndoom: after a discard, discard `n` (or all) more random held cards. */
-function hound_post_discard(card, n) {
-  G.E_MANAGER.add_event(() => {
-    card.ability.extra.active = false;
-    const targets = [];
-    let selected = null;
-    for (let i = 0; i < G.hand.cards.length; i++) {
-      if (G.hand.cards[i] && !G.hand.cards[i].ability.discarded) targets.push(G.hand.cards[i]);
-    }
-    if (n !== undefined) pseudoshuffle(targets, pseudoseed('houndour'));
-    if (targets.length > 0) {
-      const count = n !== undefined ? Math.min(targets.length, n) : targets.length;
-      const old_limit = G.hand.config.highlighted_limit;
-      if (n === undefined) G.hand.config.highlighted_limit = targets.length;
-      for (let i = 0; i < count; i++) {
-        G.hand.add_to_highlighted(targets[i], true);
-        selected = true;
-        play_sound('card1', 1);
-      }
-      if (selected) {
-        delay(0.2);
-        discard_cards_from_highlighted(true);
-      }
-      for (let i = 0; i < count; i++) G.hand.remove_from_highlighted(targets[i], true);
-      if (n === undefined) G.hand.config.highlighted_limit = old_limit;
-    }
-  });
-}
-function hound_calc(card, context, n) {
-  if (context.pre_discard && context.full_hand && context.full_hand.length > 0 && !context.hook && !context.blueprint) {
-    if (card.ability.extra.active) card.ability.extra.active = false;
-    else if (context.full_hand.length > 3) card.ability.extra.active = true;
-  }
+/** Houndour / Houndoom (Pokermon 3.9.1): discarded cards permanently gain +mult_mod Mult; +limit discard
+ *  selection limit while held (the 3.2.1 extra auto-discards are gone). */
+function hound_calc(card, context) {
   if (context.discard && context.other_card) {
     context.other_card.ability.perma_mult = (context.other_card.ability.perma_mult || 0) + card.ability.extra.mult_mod;
     card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'RED' });
   }
-  if (context.post_discard && card.ability.extra.active && !context.recursive && !context.blueprint) hound_post_discard(card, n);
-  if (context.end_of_round && !context.individual && !context.repetition) card.ability.extra.active = false;
   return undefined;
 }
+const discard_limit = {
+  add_to_deck(self, card) { change_discard_limit(card.ability.extra.limit); },
+  remove_from_deck(self, card) {
+    change_discard_limit(-card.ability.extra.limit);
+    if (!G.GAME.before_play_buffer) G.hand.unhighlight_all();
+  },
+};
 
 /** Phanpy / Donphan: X grows on 5-card scoring hands, resets otherwise. */
 function phanpy_calc(card, context) {
@@ -143,9 +119,20 @@ function baby_tag_evo(self, card, context, key, tag) {
   return evo;
 }
 
-/** Smeargle's copied joker lives on the card (a Card reference can't sit in ability.extra:
- *  ability tables are deep-copied and serialised). Lua: card.ability.extra.copy_joker. */
-const smeargle_target = (card) => card.smeargle_copy_joker;
+/** SMODS.blueprint_effect(copier, copied_card, context) (smods src/utils.lua). */
+function blueprint_effect(copier, copied_card, context) {
+  if (!copied_card || copied_card === copier || copied_card.debuff || context.no_blueprint || !copied_card.config.center.blueprint_compat) return undefined;
+  if ((context.blueprint || 0) > G.jokers.cards.length) return undefined;
+  const old_blueprint = context.blueprint, old_blueprint_card = context.blueprint_card;
+  context.blueprint = (context.blueprint || 0) + 1;
+  context.blueprint_card = context.blueprint_card || copier;
+  const eff_card = context.blueprint_card;
+  const ret = copied_card.calculate_joker(context);
+  context.blueprint = old_blueprint;
+  context.blueprint_card = old_blueprint_card;
+  if (ret) { ret.card = eff_card; return ret; }
+  return undefined;
+}
 
 defineJokers({
   // Qwilfish 211
@@ -222,7 +209,9 @@ defineJokers({
         }
         card.ability.extra.selected = true;
       }
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+      // (Pokermon 3.9.1: only once it has something to give)
+      const ex = card.ability.extra;
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && (ex.mult > 0 || ex.scizor_chips > 0 || ex.scizor_Xmult > 1)) {
         return {
           message: localize('poke_x_scissor_ex'), colour: 'metal',
           mult_mod: card.ability.extra.mult, chip_mod: card.ability.extra.scizor_chips, Xmult_mod: card.ability.extra.scizor_Xmult,
@@ -361,11 +350,10 @@ defineJokers({
     calculate(self, card, context) {
       if (context.skipping_booster) {
         if (!context.blueprint) card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
-        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
+        // (Pokermon 3.9.1: the message shows on the copying card; the Item rolls with key_append 'ursa')
+        card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
         if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-          const _card = create_card('Item', G.consumeables, null, null, null, null, null);
-          _card.add_to_deck();
-          G.consumeables.emplace(_card);
+          add_card({ set: 'Item', key_append: 'ursa' });
         }
       }
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && card.ability.extra.mult > 0) {
@@ -378,7 +366,8 @@ defineJokers({
   slugma: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.chips, center.ability.extra.chip_mod, self.config.evo_rqmt, center.ability.extra.hands] };
+      const ex = center.ability.extra;
+      return { vars: [ex.chips, ex.chip_mod, self.config.evo_rqmt, ex.every + 1, loyalty_text(ex)] };
     },
     calculate(self, card, context) {
       const r = slug_calc(card, context);
@@ -390,7 +379,8 @@ defineJokers({
   magcargo: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.chips, center.ability.extra.chip_mod, center.ability.extra.hands] };
+      const ex = center.ability.extra;
+      return { vars: [ex.chips, ex.chip_mod, ex.every + 1, loyalty_text(ex)] };
     },
     calculate(self, card, context) { return slug_calc(card, context); },
   },
@@ -439,39 +429,32 @@ defineJokers({
       return undefined;
     },
   },
-  // Corsola 222
+  // Corsola 222 (Pokermon 3.9.1: when the Blind is selected, +mult_mod Mult per Water joker, then a Basic Water joker)
   corsola: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push({ set: 'Other', key: 'basic' });
-      return { vars: [center.ability.extra.mult_mod, center.ability.extra.mult_mod * center.ability.extra.corsola_tally] };
-    },
-    update(self, card) {
-      if (G.playing_cards) {
-        card.ability.extra.corsola_tally = 0;
-        for (const v of G.playing_cards) if (!is_base(v)) card.ability.extra.corsola_tally = card.ability.extra.corsola_tally + 1;
-      }
+      return { vars: [center.ability.extra.mult_mod, center.ability.extra.mult] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-        let enhanced = 0;
-        for (const v of context.scoring_hand) if (!is_base(v)) enhanced = enhanced + 1;
-        if (enhanced === 5) {
-          if ((G.jokers.cards.length + G.GAME.joker_buffer) < G.jokers.config.card_limit) {
-            G.GAME.joker_buffer = G.GAME.joker_buffer + 1;
-            G.E_MANAGER.add_event(() => {
-              G.GAME.joker_buffer = 0;
-              play_sound('timpani');
-              const _card = create_random_poke_joker('corsola', 'Basic', null, null, 'Water');
-              _card.add_to_deck();
-              G.jokers.emplace(_card);
-            });
-          }
+      if (context.setting_blind) {
+        if (!context.blueprint) {
+          card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod * find_pokemon_type('Water').length;
+          card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
         }
-        if (card.ability.extra.corsola_tally > 0) {
-          const m = card.ability.extra.mult_mod * card.ability.extra.corsola_tally;
-          return { message: a_mult(m), colour: 'MULT', mult_mod: m };
+        if ((G.jokers.cards.length + G.GAME.joker_buffer) < G.jokers.config.card_limit) {
+          G.GAME.joker_buffer = G.GAME.joker_buffer + 1;
+          G.E_MANAGER.add_event(() => {
+            G.GAME.joker_buffer = 0;
+            play_sound('timpani');
+            // (SMODS.add_card with attributes: a SMODS.poll_object pick, any rarity)
+            add_card({ set: 'Joker', attributes: ['stage_basic', 'water_type'], rarity: false, key_append: 'corsola' });
+          });
+          return { message: localize('k_plus_joker'), colour: 'BLUE' };
         }
+      }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && card.ability.extra.mult > 0) {
+        return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult_mod: card.ability.extra.mult };
       }
       return undefined;
     },
@@ -596,21 +579,24 @@ defineJokers({
   houndour: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.mult_mod, center.ability.extra.rounds, center.ability.extra.discards] };
+      return { vars: [center.ability.extra.mult_mod, center.ability.extra.rounds, center.ability.extra.limit] };
     },
     calculate(self, card, context) {
-      hound_calc(card, context, card.ability.extra.discards);
+      hound_calc(card, context);
       return level_evo(self, card, context, 'j_poke_houndoom');
     },
+    ...discard_limit,
   },
   // Houndoom 229
   houndoom: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); mega_tip(info_queue); return { vars: [center.ability.extra.mult_mod] }; },
-    calculate(self, card, context) { return hound_calc(card, context, undefined); },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.mult_mod, center.ability.extra.limit] }; },
+    calculate(self, card, context) { return hound_calc(card, context); },
+    ...discard_limit,
   },
-  // Mega Houndoom 229-1
+  // Mega Houndoom 229-1 (Pokermon 3.9.1: +limit discard selection limit instead of discarding the whole hand;
+  // resets to the fixed Xmult1)
   mega_houndoom: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.Xmult, center.ability.extra.Xmult_mod] }; },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.Xmult, center.ability.extra.Xmult_mod, center.ability.extra.limit] }; },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
         return { message: a_xmult(card.ability.extra.Xmult), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
@@ -619,14 +605,13 @@ defineJokers({
         card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_mod;
         return { message: localize('k_upgrade_ex'), colour: 'XMULT' };
       }
-      if (context.post_discard && !context.recursive && !context.blueprint) hound_post_discard(card, undefined);
-      if (context.first_hand_drawn) card.ability.extra.oXmult = card.ability.extra.Xmult;
       if (!context.repetition && !context.individual && context.end_of_round && !context.blueprint) {
-        card.ability.extra.Xmult = card.ability.extra.oXmult;
+        card.ability.extra.Xmult = card.ability.extra.Xmult1;
         return { message: localize('k_reset'), colour: 'RED' };
       }
       return undefined;
     },
+    ...discard_limit,
   },
   // Kingdra 230
   kingdra: {
@@ -645,7 +630,8 @@ defineJokers({
           card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
         }
       }
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+      // (Pokermon 3.9.1: only once it has something to give)
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main && (card.ability.extra.mult > 0 || card.ability.extra.Xmult > 1)) {
         return { message: localize('poke_twister_ex'), colour: 'XMULT', mult_mod: card.ability.extra.mult, Xmult_mod: card.ability.extra.Xmult };
       }
       return undefined;
@@ -720,65 +706,61 @@ defineJokers({
     add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry; },
     remove_from_deck(self, card) { G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry); },
   },
-  // Smeargle 235
+  // Smeargle 235 (Pokermon 3.9.1: Sketch — when the Blind is selected it copies the Blueprint-compatible joker to its
+  // right and keeps copying THAT joker wherever it moves, until it is sold / destroyed or another is sketched;
+  // no more Smeared Joker)
   smeargle: {
-    loc_vars(self, info_queue, center) {
-      type_tooltip(self, info_queue, center);
-      if (detailed()) {
-        info_queue.push({ set: 'Joker', key: 'j_smeared', config: {} });
-        info_queue.push({ set: 'Other', key: 'sketch', vars: [] });
-      }
-      // (generate_ui: the copied joker's tooltip + the compatible/incompatible badge.)
-      const copy = smeargle_target(center);
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      if (detailed()) info_queue.push({ set: 'Other', key: 'sketch' });
+      if (!(card.area && card.area === G.jokers)) return { vars: [] };
+      const copy = self.get_copy(self, card);
       if (copy) info_queue.push({ set: 'Joker', key: copy.config.center.key, name: copy.config.center.name });
       return { vars: [] };
     },
-    calculate(self, card, context) {
-      if (context.setting_blind && card.ability.blueprint_compat === 'compatible' && G.jokers.cards[G.jokers.cards.length - 1] !== card && !card.getting_sliced) {
-        let found_pos = 0; // 1-based like the Lua
-        for (let i = 1; i <= G.jokers.cards.length; i++) if (G.jokers.cards[i - 1] === card) found_pos = i + 1;
-        if (G.jokers.cards[found_pos - 1]) {
-          card.smeargle_copy_joker = G.jokers.cards[found_pos - 1];
-          card.ability.extra.copy_pos = found_pos;
-        }
-        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_copied_ex') });
+    /** The sketched joker (a Card reference lives on the card: ability tables are serialised), found again by its
+     *  unique_val (ability.extra.copy_val) when the reference is gone; a sketch of a Smeargle follows its sketch. */
+    get_copy(self, card) {
+      const sk = card.sketched_joker;
+      if (sk && !sk.removed) {
+        if (sk.sketched_joker && !sk.sketched_joker.removed) return self.get_copy(self, sk);
+        return sk;
       }
-      const other_joker = card.ability.extra.copy_pos > 0 ? G.jokers.cards[card.ability.extra.copy_pos - 1] : undefined;
-      if (other_joker && other_joker !== card && !context.no_blueprint) {
-        context.blueprint = (context.blueprint || 0) + 1;
-        context.blueprint_card = context.blueprint_card || card;
-        if (context.blueprint > G.jokers.cards.length + 1) return undefined;
-        const other_joker_ret = other_joker.calculate_joker(context);
-        context.blueprint = undefined;
-        const eff_card = context.blueprint_card || card;
-        context.blueprint_card = undefined;
-        if (other_joker_ret) {
-          other_joker_ret.card = eff_card;
-          other_joker_ret.colour = 'BLACK';
-          return other_joker_ret;
+      if (card.ability.extra.copy_val !== undefined && card.ability.extra.copy_val !== null) {
+        for (const v of G.jokers.cards) {
+          if (v.unique_val === card.ability.extra.copy_val) { card.sketched_joker = v; return v; }
         }
+        card.ability.extra.copy_val = undefined;
+      }
+      return undefined;
+    },
+    calculate(self, card, context) {
+      if (context.setting_blind && !context.blueprint && !card.getting_sliced) {
+        const found_pos = G.jokers.cards.indexOf(card);
+        if (found_pos >= 0) {
+          const other_joker = G.jokers.cards[found_pos + 1];
+          if (other_joker && other_joker.config.center.blueprint_compat) {
+            card.sketched_joker = other_joker;
+            card.ability.extra.copy_val = other_joker.unique_val;
+            card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_copied_ex') });
+          }
+        }
+      }
+      const copy = self.get_copy(self, card);
+      if (copy) {
+        const ret = blueprint_effect(card, copy, context);
+        if (ret) ret.colour = 'BLACK';
+        return ret;
       }
       return undefined;
     },
     update(self, card) {
-      const at = (pos) => (pos > 0 ? G.jokers.cards[pos - 1] : undefined);
-      if (card.smeargle_copy_joker && card.smeargle_copy_joker !== at(card.ability.extra.copy_pos)) {
-        let found = null;
-        for (let i = 1; i <= G.jokers.cards.length; i++) {
-          if (card.smeargle_copy_joker === G.jokers.cards[i - 1]) { card.ability.extra.copy_pos = i; found = true; break; }
-        }
-        if (!found) { card.smeargle_copy_joker = undefined; card.ability.extra.copy_pos = 0; }
-      }
-      // Resume (Lua `load` -> has_loaded): re-resolve the copied joker from copy_pos.
-      if (!card.smeargle_copy_joker && card.ability.extra.copy_pos > 0) card.smeargle_copy_joker = at(card.ability.extra.copy_pos);
+      // (the compatible / incompatible badge: the joker to the right, pokermon.ui.blueprint_compat)
       if (G.jokers && card.area === G.jokers) {
-        let found_pos = 0;
-        for (let i = 1; i <= G.jokers.cards.length; i++) if (G.jokers.cards[i - 1] === card) found_pos = i + 1;
-        const right_joker = at(found_pos);
+        const right_joker = G.jokers.cards[G.jokers.cards.indexOf(card) + 1];
         card.ability.blueprint_compat = (right_joker && right_joker !== card && !right_joker.debuff && right_joker.config.center.blueprint_compat && 'compatible') || 'incompatible';
       }
     },
-    add_to_deck(self, card) { card.smeargle_copy_joker = undefined; },
   },
   // Tyrogue 236
   tyrogue: {
@@ -788,13 +770,19 @@ defineJokers({
       return { vars: [center.ability.extra.Xmult_minus, center.ability.extra.rounds] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main) {
-          faint_baby_poke(self, card, context);
-          return { message: a_xmult(card.ability.extra.Xmult_minus), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_minus };
-        }
-        if (context.after && !context.blueprint && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && context.full_hand && context.full_hand.length === 5) {
+      if (context.first_hand_drawn && !context.blueprint) {
+        juice_card_until(card, () => G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && !G.RESET_JIGGLES, true);
+      }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        faint_baby_poke(self, card, context);
+        return { message: a_xmult(card.ability.extra.Xmult_minus), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_minus };
+      }
+      // (Pokermon 3.9.1: the first-hand copy happens before scoring; a first 5-card discard marks its random card
+      //  at pre_discard and destroys that one)
+      if (G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && !context.blueprint) {
+        if (context.before && context.full_hand && context.full_hand.length === 5) {
           const [target] = pseudorandom_element(context.full_hand, pseudoseed('tyrogue'));
+          G.playing_card = (G.playing_card || 0) + 1;
           const copy = copy_card(target, null, null, G.playing_card);
           copy.add_to_deck();
           G.deck.config.card_limit = G.deck.config.card_limit + 1;
@@ -804,15 +792,14 @@ defineJokers({
           playing_card_joker_effects([copy]);
           return { message: localize('k_copied_ex'), colour: 'CHIPS', card, playing_cards_created: [true] };
         }
-      }
-      if (context.discard && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && context.full_hand && context.full_hand.length === 5) {
-        // (Lua keeps the Card itself in ability.extra; Micatro keeps its sort_id — ability tables are serialised.)
-        if (!card.ability.extra.destroyed_card) card.ability.extra.destroyed_card = pseudorandom_element(context.full_hand, pseudoseed('tyrogue'))[0].sort_id;
-        if (context.other_card.sort_id === card.ability.extra.destroyed_card) return { delay: 0.45, remove: true, card };
-      }
-      if (context.first_hand_drawn && !context.blueprint) {
-        card.ability.extra.destroyed_card = undefined;
-        juice_card_until(card, () => G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && !G.RESET_JIGGLES, true);
+        if (context.pre_discard && context.full_hand && context.full_hand.length === 5 && !context.hook) {
+          const [random_card] = pseudorandom_element(context.full_hand, pseudoseed('tyrogue'));
+          random_card.poke_tyrogue_destroy = true;
+        }
+        if (context.discard && context.other_card.poke_tyrogue_destroy) {
+          context.other_card.poke_tyrogue_destroy = undefined;
+          return { remove: true };
+        }
       }
       let forced_key;
       if (G.playing_cards.length > G.GAME.starting_deck_size) forced_key = 'j_poke_hitmonchan';

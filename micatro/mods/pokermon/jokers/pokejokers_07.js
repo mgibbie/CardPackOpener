@@ -1,16 +1,19 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_07.lua (Pokédex 181-210: Ampharos -> Granbull), 33 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_07.lua (Pokédex 181-210: Ampharos -> Granbull), 33 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req, megas, volatile, custom_pool_func) comes from data.js. See ../PORTING.md.
+// gen, item_req, megas, volatile, custom_pool_func) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 6, except the held ones (their 3.9.1 rework needs a later
+// batch's system; they keep their 3.2.1 behaviour and data): Unown, Bellossom and the Hoppip line
+// (Seed cards), Mega Steelix (quantum Hazard).
 // Rules that live in systems: Aipom's 3-card straights/flushes (rules.js straight_min /
 // flush_min), Unown's $0 sell value (rules.js set_cost), Unown's form (anim.js view data).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, poll_edition,
-  ease_discard, ease_hands_played, level_up_hand, juice_card_until, next, get_poker_hand_info,
+  ease_discard, ease_hands_played, level_up_hand, juice_card_until, next,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
   get_probability_vars, pseudorandom_probability, find_pokemon_type, has_enhancement, poke_is_odd,
-  is_type, apply_type_sticker, find_other_poke_or_energy_type, find_card, any, poke_change_poli_suit,
+  is_type, apply_type_sticker, find_other_poke_or_energy_type, find_card, any,
   poke_convert_cards_to, remove, volatile_active, get_poke_target_card_ranks, add_target_cards_to_vars,
-  change_play_limit, change_discard_limit,
+  change_play_limit, change_discard_limit, has_no_rank, add_card, playing_card_joker_effects,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_07.lua';
@@ -181,8 +184,9 @@ defineJokers({
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
         let Xmult = card.ability.extra.Xmult;
         let bonus, unbonus;
+        // (Pokermon 3.9.1: a debuffed Bonus card counts as non-Bonus.)
         for (const v of context.scoring_hand) {
-          if (has_enhancement(v, 'm_bonus')) bonus = true;
+          if (has_enhancement(v, 'm_bonus') && !v.debuff) bonus = true;
           else unbonus = true;
         }
         if (bonus && unbonus) Xmult = Xmult * 2;
@@ -222,42 +226,24 @@ defineJokers({
       return !(any(find_card('j_poke_sudowoodo')) || any(find_card('j_poke_bonsly')));
     },
   },
-  // Politoed 186
+  // Politoed 186 (Pokermon 3.9.1: retriggers the first scoring card of the suit 1 + Water-count times; the
+  // suit cycles after every hand in Pokermon's mod-level calculate, not here)
   politoed: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const suit = (G.GAME && G.GAME.poke_poli_suit) || 'Spades';
       return {
-        vars: [center.ability.extra.mult, localize(suit, 'suits_singular'), localize('Spades', 'suits_plural'), localize('Hearts', 'suits_plural'),
-          localize('Clubs', 'suits_plural'), localize('Diamonds', 'suits_plural'), find_pokemon_type('Water').length],
+        vars: [center.ability.extra.retriggers, localize(suit, 'suits_singular'), localize('Spades', 'suits_plural'), localize('Hearts', 'suits_plural'),
+          localize('Clubs', 'suits_plural'), localize('Diamonds', 'suits_plural'), center.ability.extra.retriggers + find_pokemon_type('Water').length],
         colours: [suit],
       };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main && !context.blueprint) {
-          poke_change_poli_suit();
-          G.GAME.poke_poli_suit_change_triggered = true;
-        }
-        if (context.after && G.GAME.poke_poli_suit_change_triggered) G.GAME.poke_poli_suit_change_triggered = false;
-      }
-      if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
+      if (context.repetition && context.cardarea === G.play) {
         const scoring_suit = G.GAME.poke_poli_suit || 'Spades';
-        if (context.other_card.is_suit(scoring_suit)) return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult: card.ability.extra.mult, card };
-      }
-      if (context.repetition && !context.end_of_round && context.cardarea === G.play) {
-        const scoring_suit = G.GAME.poke_poli_suit || 'Spades';
-        if (context.other_card.is_suit(scoring_suit)) {
-          const total = find_pokemon_type('Water').length;
-          const cards = context.scoring_hand.length;
-          let pos;
-          for (let i = 1; i <= context.scoring_hand.length; i++) {
-            if (context.scoring_hand[i - 1] === context.other_card) { pos = i; break; }
-          }
-          let retriggers = Math.floor(total / cards);
-          const remainder = total % cards;
-          if (pos <= remainder) retriggers = retriggers + 1;
-          return { message: localize('k_again_ex'), repetitions: retriggers, card };
+        const first_suit = context.scoring_hand.find((c) => c.is_suit(scoring_suit));
+        if (first_suit && first_suit === context.other_card) {
+          return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers + find_pokemon_type('Water').length, card };
         }
       }
       return undefined;
@@ -341,17 +327,18 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       const ex = center.ability.extra;
       const [num, dem] = get_probability_vars(center, ex.num, ex.dem, 'yanma');
-      return { vars: [ex.mult, ex.chips, ex.mult2, ex.chips2, num, dem, Math.max(0, self.config.evo_rqmt - ex.scored)] };
+      return { vars: [ex.mult_mod, ex.chip_mod, ex.mult_mod2, ex.chip_mod2, num, dem, Math.max(0, self.config.evo_rqmt - ex.scored)] };
     },
     calculate(self, card, context) {
       if (context.individual && !context.end_of_round && context.cardarea === G.play) {
         if (context.other_card.get_id() === 3 || context.other_card.get_id() === 6) {
           if (!context.blueprint) card.ability.extra.scored = card.ability.extra.scored + 1;
-          let Mult = card.ability.extra.mult;
-          let Chips = card.ability.extra.chips;
+          // (Pokermon 3.9.1 renamed the keys: mult / chips / mult2 / chips2 -> *_mod / *_mod2)
+          let Mult = card.ability.extra.mult_mod;
+          let Chips = card.ability.extra.chip_mod;
           if (pseudorandom_probability(card, 'yanma', card.ability.extra.num, card.ability.extra.dem, 'yanma')) {
-            Mult = card.ability.extra.mult2;
-            Chips = card.ability.extra.chips2;
+            Mult = card.ability.extra.mult_mod2;
+            Chips = card.ability.extra.chip_mod2;
           }
           return { mult: Mult, chips: Chips, card };
         }
@@ -375,34 +362,39 @@ defineJokers({
     },
     calculate(self, card, context) { return quag_calc(card, context) || level_evo(self, card, context, 'j_poke_quagsire'); },
   },
-  // Espeon 196
+  // Espeon 196 (Pokermon 3.9.1: +2 Foresight, X2.5 Mult if the top card of the deck is the round's suit)
   espeon: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'scry_cards' });
       const cr = (G.GAME && G.GAME.current_round) || {};
       return {
-        vars: [center.ability.extra.retriggers, center.ability.extra.Xmult_multi, localize(cr.espeon_rank || 'Ace', 'ranks'), localize(cr.espeon_suit || 'Spades', 'suits_singular')],
+        vars: [center.ability.extra.scry, center.ability.extra.Xmult, localize(cr.espeon_suit || 'Spades', 'suits_singular')],
         colours: [cr.espeon_suit || 'Spades'],
       };
     },
     calculate(self, card, context) {
-      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(G.GAME.current_round.espeon_suit)) {
-        return { x_mult: card.ability.extra.Xmult_multi, card };
-      }
-      if (context.repetition && context.cardarea === G.play && !context.end_of_round && context.other_card.get_id() === G.GAME.current_round.espeon_id) {
-        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      // (the top of the deck is its last card: systems/scry.js)
+      if (context.joker_main && G.deck.cards.length > 0 && G.deck.cards[G.deck.cards.length - 1].is_suit(G.GAME.current_round.espeon_suit)) {
+        return { message: a_xmult(card.ability.extra.Xmult), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
       }
       return undefined;
     },
+    add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry; },
+    remove_from_deck(self, card) { G.GAME.scry_amount = Math.max(0, (G.GAME.scry_amount || 0) - card.ability.extra.scry); },
   },
-  // Umbreon 197
+  // Umbreon 197 (Pokermon 3.9.1: a first discard of exactly 1 card destroys it and levels up the hand; the hand
+  // cycles after each scored hand)
   umbreon: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.hand_played ? localize(center.ability.extra.hand_played, 'poker_hands') : localize('poke_none')] };
     },
     calculate(self, card, context) {
-      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
+      if (context.first_hand_drawn) {
+        juice_card_until(card, () => G.GAME.current_round.discards_used === 0 && !G.RESET_JIGGLES, true);
+      }
+      if (context.after && !context.blueprint) {
         // cycle hand_name
         const vis = visible_hands();
         for (let j = 0; j < vis.length; j++) {
@@ -412,26 +404,10 @@ defineJokers({
           }
         }
       }
-      if (context.pre_discard && !context.blueprint && !context.hook) {
-        const { text } = get_poker_hand_info(G.hand.highlighted);
-        const can_level = G.GAME.hands[card.ability.extra.hand_played].level > 1;
-        if (can_level && G.GAME.hands[card.ability.extra.hand_played] === G.GAME.hands[text]) {
-          level_up_hand(card, card.ability.extra.hand_played, null, -1);
-          let highest_played = 0;
-          let highest_hands = [];
-          for (const [handname, values] of Object.entries(G.GAME.hands)) {
-            if (values.visible) {
-              if (values.played > highest_played) {
-                highest_hands = [handname];
-                highest_played = values.played;
-              } else if (values.played === highest_played) {
-                highest_hands.push(handname);
-              }
-            }
-          }
-          const target = pseudorandom_element(highest_hands, pseudoseed('umbreon'))[0];
-          return { level_up: true, level_up_hand: target };
-        }
+      if (context.discard && G.GAME.current_round.discards_used <= 0 && context.full_hand.length === 1 && !context.blueprint && !context.hook) {
+        const hand = card.ability.extra.hand_played;
+        // (SMODS levels up `level_up_hand` from the return; the engine's discard pass runs `func`)
+        return { remove: true, delay: 0.45, func() { if (G.GAME.hands[hand]) level_up_hand(card, hand, null, 1); } };
       }
       return undefined;
     },
@@ -457,7 +433,7 @@ defineJokers({
   slowking: {
     loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.Xmult_multi2] }; },
     calculate(self, card, context) {
-      if (context.first_hand_drawn) card.ability.extra.oXmult = card.ability.extra.Xmult_multi;
+      // (Pokermon 3.9.1: resets to the fixed Xmult_multi1 instead of a first-hand snapshot)
       if (context.cardarea === G.jokers && context.scoring_hand) {
         if (context.before && !context.blueprint) {
           card.ability.extra.Xmult_multi = card.ability.extra.Xmult_multi + card.ability.extra.Xmult_multi2;
@@ -468,7 +444,7 @@ defineJokers({
         return { x_mult: card.ability.extra.Xmult_multi, colour: 'RED', card };
       }
       if (!context.repetition && !context.individual && context.end_of_round && !context.blueprint) {
-        card.ability.extra.Xmult_multi = card.ability.extra.oXmult;
+        card.ability.extra.Xmult_multi = card.ability.extra.Xmult_multi1;
         return { message: localize('k_reset'), colour: 'RED' };
       }
       return undefined;
@@ -682,36 +658,37 @@ defineJokers({
       return item_evo(self, card, context, 'j_poke_gliscor');
     },
   },
-  // Steelix 208
+  // Steelix 208 (Pokermon 3.9.1: a destroyed non-Stone card adds a Stone card to the deck; Stone cards are also
+  // Steel — a quantum enhancement)
   steelix: {
+    quantum_enhancements: true, // answers check_enhancement (core.js quantum_enhancements)
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) {
         info_queue.push(P_CENTERS.m_stone);
         info_queue.push(P_CENTERS.m_steel);
-        info_queue.push({ set: 'Other', key: 'mega_poke' });
       }
       return undefined;
     },
     calculate(self, card, context) {
-      if (context.first_hand_drawn && !context.blueprint) {
-        juice_card_until(card, () => G.GAME.current_round.hands_played === 0 && !G.RESET_JIGGLES, true);
-      }
-      if (context.before && context.cardarea === G.jokers && !context.blueprint) {
-        if (G.GAME.current_round.hands_played === 0) {
-          const c = context.scoring_hand[0];
-          c.set_ability(P_CENTERS.m_steel, null, true);
-          G.E_MANAGER.add_event(() => { c.juice_up(); });
+      if (context.remove_playing_cards) {
+        for (const removed_card of context.removed) {
+          if (!has_enhancement(removed_card, 'm_stone')) {
+            const stone_card = add_card({ set: 'Base', enhancement: 'm_stone', area: G.deck, key_append: 'steelix' });
+            playing_card_joker_effects([stone_card]);
+            card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_plus_stone'), colour: 'secondary_set' });
+          }
         }
       }
-      if (context.individual && context.cardarea === G.hand && has_enhancement(context.other_card, 'm_stone') && !context.blueprint) {
-        context.other_card.set_ability(P_CENTERS.m_steel, null, true);
-        return { message: localize('poke_iron_tail_ex'), colour: 'metal', card };
+      if (context.check_enhancement) {
+        if (has_enhancement(context.other_card, 'm_stone')) return { m_steel: true };
       }
       return undefined;
     },
   },
-  // Mega Steelix 208-1
+  // Mega Steelix 208-1 — HELD on 3.2.1 (spec rework_hold): 3.9.1 makes Stone cards also Steel and Hazard (quantum)
+  // and retriggers held cards per 4 no-rank cards; a quantum enhancement's own calculate (Hazard's end-of-round
+  // destroy) needs core scoring support -> with the Hazard layer (batch 10).
   mega_steelix: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);

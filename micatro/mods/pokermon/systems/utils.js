@@ -419,15 +419,16 @@ export function poke_draw_one() {
   }));
 }
 
-/** Politoed line: cycle G.GAME.poke_poli_suit Spades -> Hearts -> Clubs -> Diamonds. */
+/**
+ * Poliwag line: cycle G.GAME.poke_poli_suit Spades -> Hearts -> Clubs -> Diamonds (3.9.1 pokermon.change_poli_suit;
+ * the mod-level calculate calls it after every scored hand: systems/rules.js calculate).
+ */
 export function poke_change_poli_suit() {
-  if (!G.GAME.poke_poli_suit_change_triggered) {
-    const suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
-    if (G.GAME.poke_poli_suit) {
-      const i = suits.indexOf(G.GAME.poke_poli_suit);
-      G.GAME.poke_poli_suit = suits[(i + 1) % suits.length];
-    } else G.GAME.poke_poli_suit = 'Hearts';
-  }
+  const suits = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+  if (G.GAME.poke_poli_suit) {
+    const i = suits.indexOf(G.GAME.poke_poli_suit);
+    G.GAME.poke_poli_suit = suits[(i + 1) % suits.length];
+  } else G.GAME.poke_poli_suit = 'Hearts';
 }
 
 /** G.C colour names Pokermon returns (kept as strings; the renderer maps them). */

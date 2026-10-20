@@ -49,6 +49,18 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 33, 'defs: 33 fro
   winRound();
   ok(key(j) === 'j_poke_politoed', "poliwhirl + King's Rock -> politoed", key(j));
 }
+{
+  // Pokermon 3.9.1: the Poli suit cycles once after each scored hand (pokermon.lua mod calculate, context.after),
+  // however many Poli jokers there are (3.2.1 cycled it in each one's joker_main).
+  start('POLI2');
+  add('j_poke_poliwhirl'); add('j_poke_poliwrath');
+  G.GAME.poke_poli_suit = 'Clubs';
+  const r = play(hand(['C_5']));
+  ok(G.GAME.poke_poli_suit === 'Diamonds', 'poli suit: one step per hand with two Poli jokers (Pokermon 3.9.1)', G.GAME.poke_poli_suit);
+  ok(near(r.total.mult, (1 + 6 + 3) * 1.3), 'poli suit: the Clubs card scored before the change (Pokermon 3.9.1)', r.total);
+  play(hand(['S_2']));
+  ok(G.GAME.poke_poli_suit === 'Spades', 'poli suit: Diamonds -> Spades next hand (Pokermon 3.9.1)', G.GAME.poke_poli_suit);
+}
 
 // ---------------------------------------------------------------- Abra line
 {
@@ -86,7 +98,9 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 33, 'defs: 33 fro
   G.GAME.probabilities.normal = 2;
   play(hand(['S_2'])); play(hand(['S_3'])); play(hand(['S_4']));
   ok(G.consumeables.cards.length === 2 && G.consumeables.cards.every((c) => ['c_poke_twisted_spoon', 'c_fool'].includes(key(c))), 'alakazam: Twisted Spoon or The Fool', G.consumeables.cards.map(key));
-  j.remove(); G.E_MANAGER.flush();
+  j.remove();
+  ok(G.consumeables.config.card_limit === lim, 'alakazam removed: slot back at once (Pokermon 3.9.1)', G.consumeables.config.card_limit);
+  G.E_MANAGER.flush();
   ok(G.consumeables.config.card_limit === lim, 'alakazam removed: slot back', G.consumeables.config.card_limit);
 }
 {
@@ -145,9 +159,18 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 33, 'defs: 33 fro
   ok(key(j) === 'j_poke_victreebel', 'weepinbell + Leaf Stone -> victreebel', key(j));
   nextRound();
   r = play(hand(['S_2', 'H_2']));
-  ok(r.total.chips === 10 + 2 * (2 + 16) * 2, 'victreebel: +16 chips per even card, and evens retrigger', r.total);
+  ok(r.total.chips === 10 + 2 * (2 + 24) * 2, 'victreebel: +24 chips per even card, and evens retrigger (Pokermon 3.9.1)', r.total);
+  ok(j.ability.extra.round_retriggers === 2 && P_CENTERS.j_poke_victreebel.loc_vars(P_CENTERS.j_poke_victreebel, [], j).vars.join() === '24,4,2',
+    'victreebel: 2 of its 4 retriggers used this round (Pokermon 3.9.1)', [j.ability.extra]);
   r = play(hand(['S_A']));
   ok(r.total.chips === 16, 'victreebel: Aces neither', r.total);
+  // 5 evens, 2 retriggers left: only the first 2 scored cards come again.
+  r = play(hand(['S_2', 'S_4', 'S_6', 'S_8', 'S_T']));
+  ok(r.total.chips === 35 + (2 + 24) * 2 + (4 + 24) * 2 + (6 + 24) + (8 + 24) + (10 + 24), 'victreebel: only the first 4 even cards each round retrigger (Pokermon 3.9.1)', r.total);
+  winRound(); nextRound();
+  ok(j.ability.extra.round_retriggers === 0, 'victreebel: the count resets at end of round (Pokermon 3.9.1)', j.ability.extra);
+  r = play(hand(['S_2', 'S_4', 'S_6', 'S_8', 'S_T']));
+  ok(r.total.chips === 35 + (2 + 24) * 2 + (4 + 24) * 2 + (6 + 24) * 2 + (8 + 24) * 2 + (10 + 24), 'victreebel: 4 retriggers again next round (Pokermon 3.9.1)', r.total);
 }
 
 // ---------------------------------------------------------------- Tentacool / Tentacruel
@@ -219,6 +242,8 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 33, 'defs: 33 fro
   act({ type: 'reroll_shop' });
   const shell = G.shop_jokers.cards.find((c) => key(c) === 'j_poke_shell');
   ok(shell && shell.cost === 0 && shell.edition && shell.edition.negative, 'slowpoke: reroll adds a free Negative Shell', G.shop_jokers.cards.map((c) => [key(c), c.cost]));
+  ok(shell.ability.couponed === true, 'slowpoke: the Shell is couponed, so it stays free (Pokermon 3.9.1)', shell.ability.couponed);
+  ok(P_CENTERS.j_poke_shell.in_pool(P_CENTERS.j_poke_shell) === false, 'shell: never in a pool (Pokermon 3.9.1 in_pool)', P_CENTERS.j_poke_shell.in_pool(P_CENTERS.j_poke_shell));
   G.GAME.probabilities.normal = 1;
   ok(act({ type: 'buy', id: shell.sort_id }).ok, 'buy the shell');
   G.E_MANAGER.flush();
@@ -257,7 +282,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 33, 'defs: 33 fro
   r = play(hand(['S_A']));
   ok(near(r.total.mult, 2), 'mega slowbro: X2 after 2 hands', r.total);
   winRound(); // small blind: no reset
-  ok(j.ability.extra.hands_played === 3, 'mega slowbro: count kept past a non-boss blind', j.ability.extra.hands_played);
+  ok(j.ability.extra.hands_played === 3, 'mega slowbro: counts each hand in before, kept past a non-boss blind (Pokermon 3.9.1)', j.ability.extra.hands_played);
   nextRound(); winRound(); nextRound();
   ok(G.GAME.blind.boss, 'boss blind');
   winRound();
@@ -361,7 +386,8 @@ ok(!!e[0].seal && ['Gold', 'Red', 'Blue', 'Purple', 'poke_pink_seal', 'poke_silv
   nextRound();
   const over = G.playing_cards.length + 1 - G.GAME.starting_deck_size;
   r = play(hand(['S_A']));
-  ok(r.total.mult === 1 + 3 * over, 'muk: +3 Mult per card over the starting size', [r.total, over]);
+  ok(r.total.mult === 1 + 2 * over, 'muk: +2 Mult per card over the starting size (Pokermon 3.9.1 mult_mod)', [r.total, over]);
+  ok(P_CENTERS.j_poke_muk.loc_vars(P_CENTERS.j_poke_muk, [], j).vars[0] === 2, 'muk tooltip: +2 (Pokermon 3.9.1)');
   const before = G.playing_cards.slice();
   const n1 = G.playing_cards.length;
   winRound();
@@ -380,6 +406,7 @@ ok(!!e[0].seal && ['Gold', 'Red', 'Blue', 'Purple', 'poke_pink_seal', 'poke_silv
   ok(r.total.chips === 35 + 30 * 2, 'shellder: every card of a 5-card hand retriggers (odds)', r.total);
   r = play(hand(['S_2', 'H_2']));
   ok(r.total.chips === 14, 'shellder: not for smaller hands', r.total);
+  ok(P_CENTERS.j_poke_shellder.loc_vars(P_CENTERS.j_poke_shellder, [], j).vars[2] === 1, 'shellder tooltip: retriggers 1 additional time (Pokermon 3.9.1)');
   G.GAME.probabilities.normal = 1;
   j.ability.extra.evolve = true; // Water Stone
   winRound();

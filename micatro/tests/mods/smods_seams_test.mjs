@@ -8,7 +8,8 @@
 //   3. SMODS.scale_card / SMODS.reset_card (+ scaling_card overrides, post);
 //   4. attributes (Steamodded's built-ins, mod attributes, aliases, Pokermon's type / stage pools);
 //   5. SMODS.poll_object (weights, modify_weights, filter, attributes, union) and the object_weights routes;
-//   6. the poke_energy / poke_item set aliases.
+//   6. the poke_energy / poke_item set aliases;
+//   7. the mod-level calculate on a vanilla context (`after`: SMODS.current_mod.calculate; Pokermon 3.9.1's Poli suit).
 //   node micatro/tests/mods/smods_seams_test.mjs
 import { T, hand, clearHand, winRound, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
 import {
@@ -99,6 +100,7 @@ registerMod({
     calculate(context) {
       if (context.modify_weights && ANS.zero_weight) { const w = context.pool[ANS.zero_weight]; if (w) w.weight = 0; }
       if (context.money_altered) LOG.push(['hook:money_altered', context.amount]);
+      if (context.after) { LOG.push(['hook:after', context.scoring_name, G.play.cards.length]); if (ANS.after_func) return { func() { LOG.push(['hook:after_func']); } }; }
       return undefined;
     },
   },
@@ -114,6 +116,7 @@ registerMod({
     blinds: [{ key: 'bl_so_boss', name: 'The Deaf', dollars: 5, mult: 2, vars: [], debuff: {}, boss: { min: 1, max: 10 }, pos: { x: 0, y: 0 },
       calculate(self, blind, context) { LOG.push(['DEAF-BLIND', Object.keys(context).join()]); } }],
   },
+  hooks: { calculate(context) { if (context.after) LOG.push(['DEAF-HOOK', 'after']); return undefined; } },
 });
 
 /** A fresh run with these mods, blind selected (the Small slot may hold a test blind), empty hand. */
@@ -147,7 +150,9 @@ await loadMods(AVAILABLE.map((m) => m.id));
   newRun({ seed: 'SEAM_VAN', back: 'b_red' });
   ok(SEAM_CONTEXTS.every((n) => !wanted(n)), 'vanilla run: no seam context is wanted');
   newRun({ seed: 'SEAM_ALL', back: 'b_red', mods: AVAILABLE.map((m) => m.id) });
-  ok(SEAM_CONTEXTS.every((n) => !wanted(n)), 'every shipped mod on: no seam context is wanted (3.2.1-era content reads none; Bunco\'s own stay_flipped is not opted in)', SEAM_CONTEXTS.filter((n) => wanted(n)));
+  // (3.2.1-era content reads none; Bunco's own stay_flipped is not opted in. Pokermon's 3.9.1 reworks read theirs: batch 6
+  // Golduck setting_ability, Natu / Xatu poker_hand_changed.)
+  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,poker_hand_changed', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
   fresh('SEAM_GATE');
   ok(wanted('money_altered') && wanted('setting_ability') && wanted('modify_weights') && wanted('resetting_card') && !wanted('create_shop_card'), 'seamtest on: exactly the contexts its code reads are wanted');
   fresh('SEAM_GATE2', ['seamtest', 'seamoff']);
@@ -471,6 +476,23 @@ registerMod({
   registerMod({ id: 'seamalias', name: 'Seam Alias', prefix: 'sa', requires: ['pokermon'],
     content: { centers: [{ key: 'c_sa_thing', set: 'poke_item', name: 'Thing', consumeable: true, cost: 1, pos: { x: 0, y: 0 }, config: {}, hidden: true, soul_set: 'poke_energy' }] } });
   ok(P_CENTERS.c_sa_thing.set === 'Item' && P_CENTERS.c_sa_thing.soul_set === 'Energy', 'a center registered with set "poke_item" is filed under Item (soul_set too)');
+}
+
+// ================================================================== 7. mod-level calculate on `after` (batch 6)
+{
+  fresh('SEAM_AFTER', ['seamtest', 'seamoff']);
+  ANS.after_func = true;
+  const [a] = hand(['S_A']);
+  act({ type: 'highlight', ids: [a.sort_id] });
+  act({ type: 'play' }); flush();
+  ok(seen('hook:after').length === 1 && seen('hook:after')[0][1] === 'High Card', 'after: the hooks.calculate of an opted-in mod that reads it hears it once per scored hand', seen('hook:after'));
+  ok(seen('hook:after_func').length === 1, 'after: its returned effect runs (calculate_effect: func)', LOG);
+  ok(seen('DEAF-HOOK').length === 0, 'after: a mod that did not opt in (smods_seams) never gets it at mod level', seen('DEAF-HOOK'));
+  clearLog();
+  const [b] = hand(['S_K']);
+  act({ type: 'highlight', ids: [b.sort_id] });
+  act({ type: 'discard' }); flush();
+  ok(seen('hook:after').length === 0, 'after: not on a discard');
 }
 
 done();

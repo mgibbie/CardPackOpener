@@ -139,10 +139,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
 {
   start('ZUBAT');
   const j = add('j_poke_zubat');
-  let r = play(hand(['S_2', 'H_2'], { center: 'm_bonus' }));
-  ok(j.ability.extra.mult === 2 && r.total.mult === 2 + 2, 'zubat: +1 Mult per enhanced scoring card', [j.ability.extra.mult, r.total]);
+  const b = hand(['S_2', 'H_2'], { center: 'm_bonus' });
+  let r = play(b);
+  // Pokermon 3.9.1: only the first scoring Enhanced card is eaten (+2 Mult), the second keeps its Bonus.
+  ok(j.ability.extra.mult === 2 && key(b[0]) === 'c_base' && key(b[1]) === 'm_bonus', 'zubat: eats the first Enhanced card, +2 Mult (Pokermon 3.9.1)', [j.ability.extra.mult, b.map(key)]);
+  ok(r.total.chips === 10 + 4 + 30 && r.total.mult === 2 + 2, 'zubat: the eaten card scores as a base card (Pokermon 3.9.1)', r.total);
+  ok(statusMsgs(r.events).includes('+2 Mult'), 'zubat: "+2 Mult" (Pokermon 3.9.1)', statusMsgs(r.events));
   r = play(hand(['S_5']));
-  ok(j.ability.extra.mult === 2 && r.total.mult === 1 + 2, 'zubat: keeps its Mult', r.total);
+  ok(j.ability.extra.mult === 2 && r.total.mult === 1 + 2, 'zubat: keeps its Mult, no gain without an Enhanced card', r.total);
   j.ability.extra.mult = 12;
   winRound();
   ok(key(j) === 'j_poke_golbat' && j.ability.extra.mult === 12, 'zubat -> golbat at 12 Mult (Mult carried)', [key(j), j.ability.extra.mult]);
@@ -156,19 +160,23 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
   ok(m.every((c) => key(c) === 'c_base') && j.ability.extra.mult === 4 && j.ability.extra.eaten === 2, 'golbat: eats Mult cards (+2 Mult each)', j.ability.extra);
   ok(r.total.chips === 14 && r.total.mult === 2 + 4, 'golbat: scores its Mult', r.total);
   ok(statusMsgs(r.events).includes('Skree!'), 'golbat: "Skree!"', statusMsgs(r.events));
+  // Pokermon 3.9.1: every Enhancement eaten gives +2 Mult (the chips / XMult / money halves are gone).
   play(hand(['S_3', 'H_3'], { center: 'm_bonus' }));
   play(hand(['S_4', 'H_4'], { center: 'm_glass' }));
   play(hand(['S_5', 'H_5'], { center: 'm_gold' }));
-  ok(j.ability.extra.chips === 30 && near(j.ability.extra.Xmult, 1.2) && j.ability.extra.money === 2 && j.ability.extra.eaten === 8, 'golbat: Bonus -> chips, Glass -> Xmult, Gold -> money', j.ability.extra);
+  ok(j.ability.extra.mult === 16 && j.ability.extra.eaten === 8 && j.ability.extra.chips === undefined, 'golbat: +2 Mult for any Enhancement eaten (Pokermon 3.9.1)', j.ability.extra);
   r = play(hand(['S_A']));
-  ok(r.total.chips === 16 + 30 && near(r.total.mult, (1 + 4) * 1.2), 'golbat: +Mult, +Chips and XMult together', r.total);
+  ok(r.total.chips === 16 && r.total.mult === 1 + 16, 'golbat: only +Mult (Pokermon 3.9.1)', r.total);
   winRound();
-  const row = G.GAME.round_eval.rows.find((x) => x.center === 'j_poke_golbat');
-  ok(row && row.dollars === 2, 'golbat: $2 at cash-out', row);
+  ok(!G.GAME.round_eval.rows.find((x) => x.center === 'j_poke_golbat'), 'golbat: no cash-out money (Pokermon 3.9.1)', G.GAME.round_eval.rows);
   nextRound();
-  j.ability.extra.eaten = 20;
+  j.ability.extra.eaten = 15;
   winRound();
-  ok(key(j) === 'j_poke_crobat', 'golbat -> crobat after eating 20', key(j));
+  ok(key(j) === 'j_poke_golbat', 'golbat: not yet at 15 eaten (Pokermon 3.9.1)', key(j));
+  nextRound();
+  j.ability.extra.eaten = 16;
+  winRound();
+  ok(key(j) === 'j_poke_crobat', 'golbat -> crobat after eating 16 (Pokermon 3.9.1)', key(j));
 }
 
 // ---------------------------------------------------------------- Oddish line
@@ -176,22 +184,24 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
   start('ODD');
   const j = add('j_poke_oddish');
   let r = play(hand(['S_3']));
-  ok(r.total.mult === 2 || r.total.mult === 6, 'oddish: +1 or +5 Mult per scored odd card', r.total);
+  const seen0 = new Set([r.total.mult]);
+  for (let i = 0; i < 20; i++) seen0.add(play(hand(['S_3'])).total.mult);
+  ok([...seen0].every((m) => m === 2 || m === 4 || m === 6) && seen0.size === 3, 'oddish: +1, +3 or +5 Mult per scored odd card (Pokermon 3.9.1)', [...seen0]);
   r = play(hand(['S_4']));
   ok(r.total.mult === 1, 'oddish: nothing for even cards', r.total);
-  rounds(5);
-  ok(key(j) === 'j_poke_gloom', 'oddish -> gloom after 5 rounds', key(j));
+  rounds(4);
+  ok(key(j) === 'j_poke_gloom', 'oddish -> gloom after 4 rounds (Pokermon 3.9.1)', key(j));
   nextRound();
   const seen = new Set();
-  for (let i = 0; i < 12; i++) seen.add(play(hand(['S_A'])).total.mult);
-  ok([...seen].every((m) => m === 4 || m === 8) && seen.size === 2, 'gloom: +3 or +7 Mult per odd card', [...seen]);
+  for (let i = 0; i < 20; i++) seen.add(play(hand(['S_A'])).total.mult);
+  ok([...seen].every((m) => m === 4 || m === 6 || m === 8) && seen.size === 3, 'gloom: +3, +5 or +7 Mult per odd card (Pokermon 3.9.1)', [...seen]);
   j.ability.extra.evolve = 'leafstone';
   winRound();
   ok(key(j) === 'j_poke_vileplume', 'gloom + Leaf Stone -> vileplume', key(j));
   nextRound();
   const seen2 = new Set();
-  for (let i = 0; i < 12; i++) seen2.add(play(hand(['S_7'])).total.mult);
-  ok([...seen2].every((m) => m === 1.5 || m === 8) && seen2.size === 2, 'vileplume: X1.5 or +7 Mult per odd card', [...seen2]);
+  for (let i = 0; i < 20; i++) seen2.add(play(hand(['S_7'])).total.mult);
+  ok([...seen2].every((m) => m === 1.5 || m === 1.3 || m === 8) && seen2.size === 3, 'vileplume: +7, X1.3 or X1.5 Mult per odd card (Pokermon 3.9.1)', [...seen2]);
 }
 {
   start('GLOOM2');
@@ -218,6 +228,9 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
   r = play(hand(['S_2']));
   ok(j.ability.extra.mult === 9 && r.total.mult === 1 + 9, 'parasect: -2 Mult on other hands', r.total);
   ok(statusMsgs(r.events).includes('-2 Mult'), 'parasect: "-2 Mult"', statusMsgs(r.events));
+  j.ability.extra.mult = 1;
+  play(hand(['S_2']));
+  ok(j.ability.extra.mult === 0, 'parasect: the loss floors at 0 Mult (Pokermon 3.9.1)', j.ability.extra.mult);
 }
 
 // ---------------------------------------------------------------- Diglett / Dugtrio
@@ -282,6 +295,17 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
   const f = hand(['S_Q']);
   r = play(f);
   ok(G.GAME.dollars === d0 + 3 && key(f[0]) === 'm_gold', 'golduck: lone face -> Gold card and $3', [G.GAME.dollars - d0, key(f[0])]);
+  // Pokermon 3.9.1: $3 whenever ANY card becomes Gold (Steamodded setting_ability), not only its own.
+  clearHand();
+  const c = hand(['D_4'])[0];
+  d0 = G.GAME.dollars;
+  c.set_ability(P_CENTERS.m_gold);
+  G.E_MANAGER.flush();
+  ok(G.GAME.dollars === d0 + 3, 'golduck: $3 when any card becomes Gold (Pokermon 3.9.1)', G.GAME.dollars - d0);
+  d0 = G.GAME.dollars;
+  c.set_ability(P_CENTERS.m_bonus);
+  G.E_MANAGER.flush();
+  ok(G.GAME.dollars === d0, 'golduck: nothing for other Enhancements', G.GAME.dollars - d0);
 }
 
 // ---------------------------------------------------------------- Mankey / Primeape
@@ -321,6 +345,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
   r = play(f);
   ok(key(f[0]) === 'm_mult' && f.slice(1).every((c) => key(c) === 'c_base'), 'arcanine: first base card of a Flush becomes a Mult card', f.map(key));
   ok(r.total.chips === 65 && r.total.mult === (4 + 4) * 1.5, 'arcanine: X1.5 on a Flush (Mult card scores)', r.total);
+  // Pokermon 3.9.1: Blueprint copies the XMult but no longer converts a second card.
+  const bp = add('j_blueprint');
+  G.jokers.cards.splice(G.jokers.cards.indexOf(bp), 1); G.jokers.cards.unshift(bp);
+  clearHand();
+  const f2 = hand(['H_2', 'H_4', 'H_6', 'H_8', 'H_T']);
+  r = play(f2);
+  ok(f2.filter((c) => key(c) === 'm_mult').length === 1, 'arcanine: Blueprint does not convert a second card (Pokermon 3.9.1)', f2.map(key));
+  ok(r.total.mult === (4 + 4) * 1.5 * 1.5, 'arcanine: Blueprint copies the X1.5', r.total);
 }
 
 // ---------------------------------------------------------------- Poliwag

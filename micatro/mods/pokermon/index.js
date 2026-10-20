@@ -241,15 +241,18 @@ const PORTED = { jokers: [], consumables: [], boosters: [] };
 const UNPORTED = { jokers: [], consumables: [], boosters: [], vouchers: [], backs: [], tags: [], blinds: [], seals: [], enhancements: [] };
 
 // ------------------------------------------------------------ 3.9.1 static data
-/** data.js item + the 3.9.1 changes taken for it (data391.js jokers: rarity, cost, compat flags, gates, config paths). */
+/** data.js item + the 3.9.1 changes taken for it (data391.js jokers: rarity, cost, compat flags, gates, config paths, or
+ * the whole config for a reworked joker). */
 function with391(data_item) {
   const o = D391.jokers[data_item.name];
   if (!o) return data_item;
   const item = { ...data_item };
   for (const [k, v] of Object.entries(o)) {
-    if (k === 'config') continue;
+    if (k === 'config' || k === 'config_all') continue;
     if (v === null) delete item[k]; else item[k] = v;
   }
+  // A reworked joker (batch 6+: its file is on 3.9.1) takes its whole 3.9.1 config.
+  if (o.config_all) item.config = JSON.parse(JSON.stringify(o.config_all));
   if (o.config) {
     item.config = JSON.parse(JSON.stringify(item.config || {}));
     for (const [p, v] of Object.entries(o.config)) {
@@ -439,6 +442,7 @@ const blinds = [];
 // Hacker, new art + colour; data391.js blinds). Our behaviour (blinds/pokebossblind.js) moves to the new key; the old key
 // still resolves (js/mods/aliases.js renamed: stored recipes, stickers and decks read it as the new one).
 for (const [k, d] of Object.entries(DATA.loc.descriptions)) if (D391.loc[k]) Object.assign(d, D391.loc[k]);
+for (const k of ['dictionary', 'v_dictionary']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
 for (const f of DATA.groups.blinds) for (const item0 of listOf(f)) {
   const ren = D391.blinds[item0.key];
   const item = ren ? { ...item0, ...ren } : item0;
@@ -505,7 +509,6 @@ const hooks = {
   evaluate_round: rules.evaluate_round,
   reset_game_globals: rules.reset_game_globals,
   pack_size: rules.pack_size,
-  pack_card: rules.pack_card,
   joker_win_keys: family_win_keys,
   can_reserve: rules.can_reserve,
   calculate: rules.calculate,
@@ -553,13 +556,15 @@ export const POKERMON = registerMod({
   name: 'Pokermon',
   prefix: 'poke',
   // Pokermon 3.9.1 in batches (PORTING.md "Pokermon 3.9.1 upgrade"): the content is still the 3.2.1 port plus the
-  // 3.9.1 static data taken so far (data391.js) — the reworks and new content come in the later batches.
+  // 3.9.1 static data taken so far (data391.js) + the reworked files (batch 6: pokejokers_01-08) — the other reworks
+  // and the new content come in the later batches.
   version: '3.9.1',
   // Our behaviour counter (mods/pins.js): bump it with every change to how Pokermon plays — saved runs and replays
   // recorded on the old rules then warn before they re-simulate. 1 = the 2026-10-18/19 house rules (Deino /
   // Zweilous "contains", Energy + Transformation targeting, Nuzlocke / Monotype). 2 = batch 5, the 3.9.1 data
   // (rarities, costs, compat flags, enhancement gates, 9 config numbers, the cgoose -> iridescent_hacker rename).
-  contentRev: 2,
+  // 3 = batch 6, pokejokers_01-08 on their 3.9.1 behaviour (data391.js reworked: whole config, flags, loc text).
+  contentRev: 3,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

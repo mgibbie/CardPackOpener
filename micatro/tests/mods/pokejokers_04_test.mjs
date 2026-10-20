@@ -41,6 +41,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   prob(1000);
   r = play(hand(['S_2', 'H_2', 'D_4', 'C_4']));
   ok(r.total.chips === 20 + 12, 'cloyster: nothing with only 4 scoring cards', r.total);
+  ok(P_CENTERS.j_poke_cloyster.loc_vars(P_CENTERS.j_poke_cloyster, [], G.jokers.cards[0]).vars[2] === 1, 'cloyster tooltip: retriggers 1 additional time (Pokermon 3.9.1)');
 }
 
 // ---------------------------------------------------------------- Gastly line
@@ -60,6 +61,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   ok(other.edition && other.edition.negative, 'gastly: a random other joker turns Negative at cash-out', other.edition);
   ok(g.gone && !G.jokers.cards.includes(g), 'gastly: self-destructs after licking');
   ok(statusMsgs(w.events).includes('Lick!'), 'gastly: "Lick!"', statusMsgs(w.events));
+}
+{
+  // Pokermon 3.9.1: with no other joker to lick, Gastly does nothing (3.2.1 licked itself and still self-destructed).
+  start('GASTLY3');
+  const g = add('j_poke_gastly');
+  prob(1000);
+  winRound();
+  ok(G.jokers.cards.includes(g) && !g.gone && !(g.edition && g.edition.negative), 'gastly: stays when there is no other joker (Pokermon 3.9.1)', [g.gone, g.edition]);
 }
 {
   start('HAUNT');
@@ -111,14 +120,29 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
 
 // ---------------------------------------------------------------- Onix
 {
+  // Pokermon 3.9.1 (3.8.0 Onix line): each destroyed non-Stone card adds a Stone card to the deck.
   start('ONIX');
   const j = add('j_poke_onix');
+  const stones = () => G.playing_cards.filter((c) => key(c) === 'm_stone').length;
   const [a] = hand(['S_A']);
-  let r = play([a]);
-  ok(key(a) === 'm_stone' && r.total.chips === 5 + 50, 'onix: first hand turns the first scoring card to Stone', { k: key(a), t: r.total });
-  const [k] = hand(['S_K']);
-  r = play([k]);
-  ok(key(k) === 'c_base' && r.total.chips === 15, 'onix: only the first hand of the round', r.total);
+  const [st] = hand(['S_K'], { center: 'm_stone' });
+  const n0 = G.playing_cards.length, s0 = stones(), d0 = G.deck.cards.length;
+  const hm = add('c_hanged_man');
+  ok(act({ type: 'use', id: hm.sort_id, targets: [a.sort_id, st.sort_id] }).ok, 'use The Hanged Man on a plain card and a Stone card');
+  G.E_MANAGER.flush();
+  ok(!G.playing_cards.includes(a) && !G.playing_cards.includes(st), 'both cards destroyed');
+  ok(stones() === s0 - 1 + 1 && G.playing_cards.length === n0 - 2 + 1 && G.deck.cards.length === d0 + 1,
+    'onix: +1 Stone card in the deck for the destroyed non-Stone card only (Pokermon 3.9.1)', { s: stones() - s0, n: G.playing_cards.length - n0, d: G.deck.cards.length - d0 });
+  let r = play(hand(['S_A']));
+  ok(r.total.chips === 16, 'onix: no longer turns the first scored card to Stone (Pokermon 3.9.1)', r.total);
+  // Blueprint copies it now (blueprint_compat, Pokermon 3.9.1)
+  const bp = add('j_blueprint');
+  G.jokers.cards.splice(G.jokers.cards.indexOf(bp), 1); G.jokers.cards.unshift(bp);
+  const [b] = hand(['D_5']);
+  const s1 = stones();
+  const hm2 = add('c_hanged_man');
+  act({ type: 'use', id: hm2.sort_id, targets: [b.sort_id] }); G.E_MANAGER.flush();
+  ok(stones() === s1 + 2, 'onix + Blueprint: 2 Stone cards per destroyed card (Pokermon 3.9.1)', stones() - s1);
   j.ability.metal_sticker = true;
   winRound();
   ok(key(j) === 'j_poke_steelix', 'onix -> steelix with a Metal sticker', key(j));
@@ -275,28 +299,37 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   ok(key(j) === 'j_poke_lickilicky', 'lickitung -> lickilicky at 15 Jacks', key(j));
 }
 
-// ---------------------------------------------------------------- Koffing / Weezing
+// ---------------------------------------------------------------- Koffing / Weezing (Pokermon 3.9.1: Volatile Left)
 {
   start('KOFF');
+  const k = add('j_poke_koffing');
+  let r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 12 && k.debuff && k.ability.fainted === G.GAME.round, 'koffing: Volatile Left +12 Mult, then faints (Pokermon 3.9.1)', { t: r.total, d: k.debuff });
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1, 'koffing: fainted for the rest of the round (Pokermon 3.9.1)', r.total);
+  start('KOFF1');
+  add('j_joker');
   const j = add('j_poke_koffing');
-  for (let i = 0; i < 4; i++) { winRound(); if (i < 3) nextRound(); }
-  ok(key(j) === 'j_poke_weezing', 'koffing -> weezing after 4 rounds', key(j));
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 4 && !j.debuff, 'koffing: inert unless leftmost (Pokermon 3.9.1)', r.total);
+  for (let i = 0; i < 2; i++) { winRound(); if (i < 1) nextRound(); }
+  ok(key(j) === 'j_poke_weezing', 'koffing -> weezing after 2 rounds (Pokermon 3.9.1)', key(j));
+  nextRound();
+  G.jokers.cards.reverse(); // Weezing leftmost
+  r = play(hand(['S_A']));
+  ok(r.total.mult === (1 + 18) + 4 && j.debuff, 'weezing: Volatile Left +18 Mult, then faints (Pokermon 3.9.1)', { t: r.total, d: j.debuff });
 }
 {
   start('KOFF2');
-  const k = add('j_poke_koffing');
-  const ch0 = G.GAME.blind.chips;
-  act({ type: 'sell', id: k.sort_id });
-  ok(G.GAME.blind.chips === ch0, 'koffing: no effect outside a Boss Blind', G.GAME.blind.chips);
   nextRound(); nextRound(); // Big, then the Boss
-  const k2 = add('j_poke_koffing');
+  const k = add('j_poke_koffing');
   const ch = G.GAME.blind.chips;
-  act({ type: 'sell', id: k2.sort_id });
-  ok(G.GAME.blind.get_type() === 'Boss' && G.GAME.blind.chips === ch / 2 && !G.GAME.blind.disabled, 'koffing: selling halves the Boss Blind', [ch, G.GAME.blind.chips]);
+  act({ type: 'sell', id: k.sort_id });
+  ok(G.GAME.blind.get_type() === 'Boss' && G.GAME.blind.chips === ch && !G.GAME.blind.disabled, 'koffing: selling no longer halves the Boss Blind (Pokermon 3.9.1)', [ch, G.GAME.blind.chips]);
   const w = add('j_poke_weezing');
   act({ type: 'sell', id: w.sort_id });
-  // (The Wall's own disable() halves its size once more, as in vanilla.)
-  ok(G.GAME.blind.chips === ch / 8 && G.GAME.blind.disabled, 'weezing: selling halves and disables the Boss Blind', [G.GAME.blind.chips, G.GAME.blind.disabled]);
+  // (The Wall's own disable() halves its size, as in vanilla; Weezing no longer halves it first.)
+  ok(G.GAME.blind.chips === ch / 2 && G.GAME.blind.disabled, 'weezing: selling disables the Boss Blind, no halving (Pokermon 3.9.1)', [G.GAME.blind.name, G.GAME.blind.chips, G.GAME.blind.disabled]);
 }
 
 // ---------------------------------------------------------------- Rhyhorn / Rhydon
@@ -362,7 +395,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   start('KANGA');
   const lim = G.consumeables.config.card_limit, cap = G.GAME.interest_cap;
   const k = add('j_poke_kangaskhan');
-  ok(G.consumeables.config.card_limit === lim + 2 && G.GAME.interest_cap === cap - 5, 'kangaskhan: +2 consumable slots, -$5 interest cap', [G.consumeables.config.card_limit, G.GAME.interest_cap]);
+  ok(G.consumeables.config.card_limit === lim + 2 && G.GAME.interest_cap === cap, 'kangaskhan: +2 consumable slots, no interest cap drawback (Pokermon 3.9.1)', [G.consumeables.config.card_limit, G.GAME.interest_cap]);
   act({ type: 'sell', id: k.sort_id });
   G.E_MANAGER.flush();
   ok(G.consumeables.config.card_limit === lim && G.GAME.interest_cap === cap, 'kangaskhan: restored when sold', [G.consumeables.config.card_limit, G.GAME.interest_cap]);
@@ -381,6 +414,17 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_04.lua'].length === 32, 'defs: 32 fro
   const n2 = G.GAME.tags.length;
   winRound();
   ok(G.GAME.tags.length === n2, 'mega kangaskhan: no tag without 2 consumables');
+}
+{
+  // Pokermon 3.9.1: Blueprint copies Mega Kangaskhan's retriggers, but not its consumable count.
+  start('MKANGA2');
+  const bp = add('j_blueprint');
+  const k = add('j_poke_mega_kangaskhan');
+  ok(G.jokers.cards[0] === bp, 'blueprint left of mega kangaskhan');
+  const r = play(hand(['S_A']));
+  ok(r.total.chips === 5 + 11 * 3, 'mega kangaskhan + Blueprint: every played card retriggered twice (Pokermon 3.9.1)', r.total);
+  const c = add('c_pluto'); act({ type: 'use', id: c.sort_id });
+  ok(k.ability.extra.consumeables_used === 1, 'mega kangaskhan + Blueprint: one consumable counts once (Pokermon 3.9.1)', k.ability.extra.consumeables_used);
 }
 
 // ---------------------------------------------------------------- Horsea / Seadra

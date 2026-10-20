@@ -49,13 +49,17 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
 {
   start('SCIZ');
   const s = add('j_poke_scizor');
+  const r0 = play(hand(['S_A']));
+  ok(r0.total.mult === 1 && !statusMsgs(r0.events).includes(localize('poke_x_scissor_ex')), 'scizor: nothing to give yet, no X-Scissor (Pokermon 3.9.1)', r0.total);
+  clearHand();
   const common = add('j_joker');
   nextRound();
   ok(common.removed && !G.jokers.cards.includes(common) && s.ability.extra.mult === 4 && !s.edition, 'scizor slices a common joker: +4 Mult, no edition', [s.ability.extra, s.edition]);
-  add('j_poke_corsola', 'polychrome');
+  // (Dunsparce: a Rare that does nothing when the Blind is selected)
+  add('j_poke_dunsparce', 'polychrome');
   nextRound();
   ok(s.edition && s.edition.polychrome && s.ability.extra.mult === 8, 'scizor slices a rare: takes its polychrome', [s.edition, s.ability.extra]);
-  add('j_poke_corsola', 'foil');
+  add('j_poke_dunsparce', 'foil');
   nextRound();
   ok(s.edition && s.edition.foil && near(s.ability.extra.scizor_Xmult, 1.5) && s.ability.extra.mult === 12, 'scizor: banks its old polychrome X1.5, now foil', [s.edition, s.ability.extra]);
   const r = play(hand(['S_A']));
@@ -170,14 +174,18 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
   start('SLUG');
   const j = add('j_poke_slugma');
   for (let i = 0; i < 3; i++) { clearHand(); play(hand(['S_A'])); }
-  ok(j.ability.extra.hands === 1 && j.ability.extra.chips === 0, 'slugma counts down its hands', j.ability.extra);
+  ok(j.ability.extra.loyalty_remaining === 0 && j.ability.extra.chips === 0, 'slugma counts its hands like Loyalty Card (Pokermon 3.9.1)', j.ability.extra);
+  let lv = P_CENTERS.j_poke_slugma.loc_vars(P_CENTERS.j_poke_slugma, [], j);
+  ok(lv.vars[3] === 4 && lv.vars[4] === localize({ type: 'variable', key: 'loyalty_active', vars: [0] }), 'slugma: text "every 4 hands", Active! (Pokermon 3.9.1)', lv.vars);
   clearHand();
   const [held] = hand(['D_3']);
   const r = play(hand(['S_A']));
-  ok(r.total.chips === 16 + 12 && j.ability.extra.hands === 4 && !G.playing_cards.includes(held), 'slugma: every 4th hand +12 chips and burns the leftmost held card', [r.total, j.ability.extra, G.playing_cards.includes(held)]);
+  ok(r.total.chips === 16 + 12 && j.ability.extra.loyalty_remaining === 3 && !G.playing_cards.includes(held), 'slugma: every 4th hand +12 chips and burns the first held card (Pokermon 3.9.1)', [r.total, j.ability.extra, G.playing_cards.includes(held)]);
+  lv = P_CENTERS.j_poke_slugma.loc_vars(P_CENTERS.j_poke_slugma, [], j);
+  ok(lv.vars[4] === localize({ type: 'variable', key: 'loyalty_inactive', vars: [3] }), 'slugma: text "3 remaining" (Pokermon 3.9.1)', lv.vars);
   j.ability.extra.chips = 60;
   winRound();
-  ok(key(j) === 'j_poke_magcargo' && j.ability.extra.chips === 60 && j.ability.extra.hands === 3, 'slugma -> magcargo at 60 chips', j.ability.extra);
+  ok(key(j) === 'j_poke_magcargo' && j.ability.extra.chips === 60 && j.ability.extra.every === 2, 'slugma -> magcargo at 60 chips', j.ability.extra);
   nextRound();
   for (let i = 0; i < 2; i++) { clearHand(); play(hand(['S_A'])); }
   clearHand();
@@ -216,13 +224,22 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
 // ---------------------------------------------------------------- Corsola
 {
   start('CORS');
-  add('j_poke_corsola');
-  const base_enh = G.playing_cards.filter((c) => c.config.center !== P_CENTERS.c_base).length;
-  const cards = hand(['S_2', 'H_3', 'D_4', 'C_5', 'S_6'], { center: 'm_bonus' });
-  const tally = base_enh + 5;
-  const r = play(cards);
-  ok(r.total.chips === 30 + 20 + 150 && r.total.mult === 4 + 3 * tally, 'corsola: +3 Mult per enhanced card in the deck', [r.total, tally]);
-  ok(G.jokers.cards.length === 2 && G.jokers.cards[1].config.center.ptype === 'Water' && G.jokers.cards[1].config.center.stage === 'Basic', 'corsola: 5 enhanced scoring cards make a Basic Water Pokémon', G.jokers.cards.map(key));
+  const j = add('j_poke_corsola');
+  add('j_poke_squirtle');
+  let r = play(hand(['S_A']));
+  ok(r.total.mult === 1 && j.ability.extra.mult === 0, 'corsola: starts at +0 Mult (Pokermon 3.9.1)', r.total);
+  winRound();
+  nextRound();
+  const made = G.jokers.cards[2];
+  ok(j.ability.extra.mult === 2 && G.jokers.cards.length === 3 && made.config.center.ptype === 'Water' && made.config.center.stage === 'Basic',
+    'corsola: Blind selected -> +1 Mult per Water joker (2), then a Basic Water joker (Pokermon 3.9.1)', [j.ability.extra, G.jokers.cards.map(key)]);
+  clearHand();
+  r = play(hand(['S_A']));
+  ok(r.total.mult >= 1 + 2, 'corsola: scores its Mult (Pokermon 3.9.1)', r.total);
+  G.jokers.config.card_limit = 3;
+  winRound();
+  nextRound();
+  ok(j.ability.extra.mult === 2 + 3 && G.jokers.cards.length === 3, 'corsola: 3 Water jokers -> +3; no room, no joker (Pokermon 3.9.1)', [j.ability.extra.mult, G.jokers.cards.length]);
 }
 
 // ---------------------------------------------------------------- Remoraid / Octillery
@@ -295,34 +312,41 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
 // ---------------------------------------------------------------- Houndour / Houndoom / Mega Houndoom
 {
   start('HOUND');
+  const lim0 = G.GAME.starting_params.discard_limit ?? 5;
   const j = add('j_poke_houndour');
+  ok(G.GAME.starting_params.discard_limit === lim0 + 1, 'houndour: +1 discard selection limit (Pokermon 3.9.1)', G.GAME.starting_params.discard_limit);
   const hc = hand(['S_2', 'S_3', 'S_4', 'S_5', 'H_7', 'H_8', 'H_9', 'H_T']);
   const dl = G.GAME.current_round.discards_left;
-  act({ type: 'highlight', ids: hc.slice(0, 4).map((c) => c.sort_id) });
+  act({ type: 'highlight', ids: hc.slice(0, 6).map((c) => c.sort_id) });
   act({ type: 'discard' });
-  ok(G.discard.cards.length === 6 && G.GAME.current_round.discards_left === dl - 1, 'houndour: a 4-card discard discards 2 more held cards', [G.discard.cards.length, G.GAME.current_round.discards_left]);
-  ok(G.discard.cards.every((c) => c.ability.perma_mult === 1), 'houndour: discarded cards gain +1 permanent Mult', G.discard.cards.map((c) => c.ability.perma_mult));
+  ok(G.discard.cards.length === 6 && G.GAME.current_round.discards_left === dl - 1, 'houndour: a 6-card discard, no extra cards discarded (Pokermon 3.9.1)', [G.discard.cards.length, G.GAME.current_round.discards_left]);
+  ok(G.discard.cards.every((c) => c.ability.perma_mult === 2), 'houndour: discarded cards gain +2 permanent Mult (Pokermon 3.9.1)', G.discard.cards.map((c) => c.ability.perma_mult));
   clearHand();
   const [pm] = hand(['S_A']);
   pm.ability.perma_mult = 3;
   const r = play([pm]);
   ok(r.total.mult === 1 + 3, 'perma_mult scores (SMODS)', r.total);
-  winRound(); for (let i = 0; i < 4; i++) { nextRound(); winRound(); }
-  ok(key(j) === 'j_poke_houndoom', 'houndour -> houndoom after 5 rounds', key(j));
+  winRound(); for (let i = 0; i < 3; i++) { nextRound(); winRound(); }
+  ok(key(j) === 'j_poke_houndoom', 'houndour -> houndoom after 4 rounds (Pokermon 3.9.1)', key(j));
+  ok(G.GAME.starting_params.discard_limit === lim0 + 3, 'houndoom: +3 discard selection limit (Pokermon 3.9.1)', G.GAME.starting_params.discard_limit);
   nextRound();
   const hd = hand(['S_2', 'S_3', 'S_4', 'S_5', 'H_7', 'H_8', 'H_9', 'H_T']);
   const n0 = G.discard.cards.length;
   act({ type: 'highlight', ids: hd.slice(0, 4).map((c) => c.sort_id) });
   act({ type: 'discard' });
-  ok(G.discard.cards.length === n0 + 8 && hd.every((c) => c.ability.perma_mult === 2), 'houndoom: discards the whole hand, +2 permanent Mult each', [G.discard.cards.length - n0, hd.map((c) => c.ability.perma_mult)]);
+  ok(G.discard.cards.length === n0 + 4 && hd.slice(0, 4).every((c) => c.ability.perma_mult === 2) && !hd[4].ability.perma_mult, 'houndoom: discards only the chosen cards, +2 permanent Mult each (Pokermon 3.9.1)', [G.discard.cards.length - n0, hd.map((c) => c.ability.perma_mult)]);
+  j.remove_from_deck(); G.jokers.remove_card(j); j.remove();
+  ok(G.GAME.starting_params.discard_limit === lim0, 'houndoom: limit restored when it leaves (Pokermon 3.9.1)', G.GAME.starting_params.discard_limit);
 }
 {
   start('MHOUND');
+  const lim0 = G.GAME.starting_params.discard_limit ?? 5;
   const j = add('j_poke_mega_houndoom');
+  ok(G.GAME.starting_params.discard_limit === lim0 + 3, 'mega houndoom: +3 discard selection limit (Pokermon 3.9.1)', G.GAME.starting_params.discard_limit);
   const hc = hand(['S_2', 'S_3', 'H_7', 'H_8']);
   act({ type: 'highlight', ids: [hc[0].sort_id] });
   act({ type: 'discard' });
-  ok(j.ability.extra.Xmult === 3 && G.discard.cards.length === 4, 'mega houndoom: X+2 per discard, discards the whole hand', [j.ability.extra.Xmult, G.discard.cards.length]);
+  ok(j.ability.extra.Xmult === 3 && G.discard.cards.length === 1, 'mega houndoom: X+2 per discard, discards only the chosen card (Pokermon 3.9.1)', [j.ability.extra.Xmult, G.discard.cards.length]);
   clearHand();
   const r = play(hand(['S_A']));
   ok(r.total.mult === 3, 'mega houndoom: X3', r.total);
@@ -334,6 +358,9 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
 {
   start('KINGD');
   const j = add('j_poke_kingdra');
+  const r0 = play(hand(['S_A']));
+  ok(!statusMsgs(r0.events).includes(localize('poke_twister_ex')), 'kingdra: nothing to give yet, no Twister (Pokermon 3.9.1)', statusMsgs(r0.events));
+  clearHand();
   hand(['S_K']);
   let r = play(hand(['H_6']));
   ok(near(r.total.mult, 1.05) && near(j.ability.extra.Xmult, 1.05), 'kingdra: scored 6 with a King held -> X+0.05', r.total);
@@ -406,16 +433,38 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
 {
   start('SMEAR');
   const s = add('j_poke_smeargle');
-  add('j_poke_caterpie');
+  const cat = add('j_poke_caterpie');
   nextRound();
-  ok(s.smeargle_copy_joker === G.jokers.cards[1] && s.ability.extra.copy_pos === 2, 'smeargle sketches the joker to its right', s.ability.extra);
+  ok(P_CENTERS.j_poke_smeargle.get_copy(P_CENTERS.j_poke_smeargle, s) === cat && s.ability.extra.copy_val === cat.unique_val, 'smeargle sketches the joker to its right (Pokermon 3.9.1)', s.ability.extra);
   let r = play(hand(['S_A']));
   ok(r.total.mult === 1 + 3 + 3, 'smeargle copies caterpie (+3 Mult)', r.total);
   // The sketch sticks even after the copied joker moves.
-  act({ type: 'reorder', area: 'jokers', ids: [G.jokers.cards[1].sort_id, s.sort_id] });
+  act({ type: 'reorder', area: 'jokers', ids: [cat.sort_id, s.sort_id] });
   clearHand();
   r = play(hand(['S_A']));
-  ok(r.total.mult === 7 && s.ability.extra.copy_pos === 1, 'smeargle keeps its sketch after a reorder', [r.total, s.ability.extra]);
+  ok(r.total.mult === 7, 'smeargle keeps its sketch after a reorder (Pokermon 3.9.1)', r.total);
+  // A lost reference is found again by unique_val (copy_val).
+  s.sketched_joker = undefined;
+  ok(P_CENTERS.j_poke_smeargle.get_copy(P_CENTERS.j_poke_smeargle, s) === cat, 'smeargle: the sketch is found again by its unique_val (Pokermon 3.9.1)');
+  // Blueprint-compatible now: a Blueprint to its left copies the sketch too.
+  ok(P_CENTERS.j_poke_smeargle.blueprint_compat === true, 'smeargle: Blueprint-compatible (Pokermon 3.9.1)');
+  const bp = add('j_blueprint');
+  act({ type: 'reorder', area: 'jokers', ids: [cat.sort_id, bp.sort_id, s.sort_id] });
+  clearHand();
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 3 + 3 + 3, 'smeargle: Blueprint -> Smeargle -> Caterpie (Pokermon 3.9.1)', r.total);
+  // Once the sketched joker is gone, the sketch is lost.
+  cat.remove_from_deck(); G.jokers.remove_card(cat); cat.remove();
+  clearHand();
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 && P_CENTERS.j_poke_smeargle.get_copy(P_CENTERS.j_poke_smeargle, s) === undefined, 'smeargle: the sketch ends with the sketched joker (Pokermon 3.9.1)', r.total);
+}
+{
+  start('SMEAR2');
+  const s = add('j_poke_smeargle');
+  add('j_poke_delibird'); // not Blueprint-compatible
+  nextRound();
+  ok(P_CENTERS.j_poke_smeargle.get_copy(P_CENTERS.j_poke_smeargle, s) === undefined, 'smeargle: does not sketch a Blueprint-incompatible joker (Pokermon 3.9.1)');
 }
 
 // ---------------------------------------------------------------- Tyrogue / Hitmontop
@@ -426,6 +475,8 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
   const five = hand(['S_2', 'H_5', 'D_8', 'C_J', 'S_K']);
   const r = play(five);
   ok(G.playing_cards.length === n0 + 6 && near(r.total.mult, 0.5), 'tyrogue: X0.5, first 5-card hand copies a card', [G.playing_cards.length - n0, r.total]);
+  const copy = G.playing_cards[G.playing_cards.length - 1];
+  ok(G.hand.cards.includes(copy) && !five.includes(copy), 'tyrogue: the copy goes to the hand (Pokermon 3.9.1)');
   start('TYRO2');
   const j2 = add('j_poke_tyrogue');
   const d5 = hand(['S_2', 'H_5', 'D_8', 'C_J', 'S_K']);
