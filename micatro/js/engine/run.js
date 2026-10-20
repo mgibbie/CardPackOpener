@@ -238,6 +238,9 @@ export function newRun(args = {}) {
   const chal = !cdeck && args.challenge ? findChallenge(args.challenge) : null;
   const sleeve0 = !cdeck && !chal && args.sleeve ? findSleeve(args.sleeve) : null;
   if (chal) args = { ...args, stake: 1 };
+  // A daily challenge (challenge.js daily_seed): the date the UI passed picks the seed, which the recipe then records (a resume /
+  // replay passes that seed back, not the date). Not a player-chosen seed.
+  if (chal && chal.daily_seed && typeof args.daily === 'string' && /^\d{8}$/.test(args.daily)) args = { ...args, seed: chal.daily_seed(args.daily), seeded: false };
   if (chal || sleeve0) { prepareChallenge(chal); prepareSleeve(sleeveFor(sleeve0, args.back)); }
   const runMods = (ids) => (chal ? [...ids, ...challengeMods(chal), CHALLENGE_ID] : sleeve0 ? [...ids, sleeve0.mod, SLEEVE_ID] : ids);
   // Mods first: they decide what the pools contain and may adjust the game object.

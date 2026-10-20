@@ -130,7 +130,7 @@ ok(!G.GAME.challenge && G.GAME.selected_back_key === 'b_red', 'an unknown challe
 await loadMods(['pokermon', 'nacho', 'pokermonplus', 'morefluff', 'betmma']);
 const all = CH.allChallenges();
 const byMod = (m) => all.filter((c) => c.mod === m).length;
-ok(byMod('pokermon') === 7 && byMod('nacho') === 4 && byMod('pokermonplus') === 4 && byMod('morefluff') === 0 && byMod('betmma') === 5, 'mod challenges: Pokermon 7, Nacho 4, Pokermon+ 4, MoreFluff 0 (1.9.9999 dropped Better Balatro II), BETMMA 5', ['pokermon', 'nacho', 'pokermonplus', 'morefluff', 'betmma'].map(byMod));
+ok(byMod('pokermon') === 12 && byMod('nacho') === 4 && byMod('pokermonplus') === 4 && byMod('morefluff') === 0 && byMod('betmma') === 5, 'mod challenges: Pokermon 12 (3.9.1: +5), Nacho 4, Pokermon+ 4, MoreFluff 0 (1.9.9999 dropped Better Balatro II), BETMMA 5', ['pokermon', 'nacho', 'pokermonplus', 'morefluff', 'betmma'].map(byMod));
 ok(all.every((c) => c.name && c.name !== c.id), 'every challenge has a name', all.filter((c) => !c.name || c.name === c.id).map((c) => c.id));
 for (const c of all.filter((x) => x.mod)) {
   const s = start(c.id, [c.mod]);
@@ -158,7 +158,7 @@ act({ type: 'next_round' });
   ok(G.jokers.config.card_limit === lim0 + 5, 'Nuzlocke: at most +5 slots', G.jokers.config.card_limit);
 }
 start('c_poke_randomizer', ['pokermon']);
-ok(G.GAME.modifiers.apply_randomizer === true, 'Randomizer: apply_randomizer on');
+ok(G.GAME.modifiers.poke_apply_randomizer === true, 'Randomizer: poke_apply_randomizer on (3.9.1 renamed the rule)');
 start('c_poke_goodasgold', ['pokermon']);
 ok(G.playing_cards.every((c) => c.config.center.key === 'm_gold') && G.hand.config.card_limit === 6, 'Good As Gold: every card Gold, hand size 6');
 start('c_poke_hammertime', ['pokermon']);

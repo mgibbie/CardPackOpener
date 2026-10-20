@@ -5,6 +5,7 @@ import {
   create_card, poll_edition, pseudorandom, pseudoseed, pseudorandom_element,
   defineConsumables, cfg, energy_max, energy_increase, type_sticker_applied, poke_convert_cards_to, can_increase_energy, energy_values,
   pseudorandom_probability, get_probability_vars, poke_evolve, mega_for, mega_juice_target,
+  object_weights, poll_seal_weighted,
 } from '../api.js';
 import { get_current_pool, P_SEALS } from '../../../js/engine/core.js';
 import { HANDLIST } from '../../../js/engine/run.js';
@@ -21,6 +22,8 @@ const has_room = () => G.consumeables.cards.length + G.GAME.consumeable_buffer <
 
 /** SMODS.poll_seal({guaranteed, key, mod, type_key, options}) — weighted seal roll (4% base rate). */
 function poll_seal(args = {}) {
+  // (Pokermon 3.9.1 turns Steamodded's object_weights on: SMODS.poll_seal is then SMODS.poll_object over the Seal set. Batch 17.)
+  if (object_weights()) return poll_seal_weighted(args);
   let key = args.key || 'stdseal';
   const mod = args.mod || 1;
   const options = args.options || get_current_pool('Seal')[0];

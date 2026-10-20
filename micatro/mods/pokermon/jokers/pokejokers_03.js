@@ -8,6 +8,7 @@ import {
   STATES, defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
   get_probability_vars, pseudorandom_probability, has_enhancement, poke_is_even, poke_get_adjacent_jokers,
   is_type, smods_create_card, add_card, poke_add_shop_card, remove, POKE_POOL_RULES,
+  object_weights, poll_seal_weighted,
 } from '../api.js';
 import { get_current_pool, P_SEALS } from '../../../js/engine/core.js';
 
@@ -135,6 +136,8 @@ function first_faces_mult(card, context, n) {
  * options = the current Seal pool (vanilla seals + any ported mod seals).
  */
 function poll_seal(args) {
+  // (Pokermon 3.9.1 turns Steamodded's object_weights on: SMODS.poll_seal is then SMODS.poll_object over the Seal set. Batch 17.)
+  if (object_weights()) return poll_seal_weighted(args || {});
   args = args || {};
   let key = args.key || 'stdseal';
   const mod = args.mod || 1;

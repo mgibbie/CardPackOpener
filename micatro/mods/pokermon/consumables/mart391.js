@@ -4,9 +4,9 @@
 //   consumables/04_mart_rare.lua   Heavy-Duty Boots (reusable held item): until the end of the round every Hazard card
 //                                  probability is 0 (fix_probability, identifier 'hazard'); once per round.
 // Spawning: 3.9.1 gives the "Soul items" (Leftovers 3, Heavy-Duty Boots 2, ...) object weights in the Item pool
-// (optional_features.object_weights). Our port keeps 3.2.1's soul path for them (object_weights is not on: PORTING.md batch
-// 5), so the Boots are a hidden Item like Leftovers, at 2/3 of Leftovers' soul_rate (its 3.9.1 weight 2 vs Leftovers' 3),
-// and only while the Hazard layer is up (3.9.1 in_pool). Its floating sprite hiding while used is cosmetic.
+// (optional_features.object_weights, on since batch 17): the Boots are an ordinary Item of weight 2 (batch 10 made them a hidden
+// soul Item while object_weights was off: that deviation is gone), only while the Hazard layer is up (3.9.1 in_pool). Its
+// floating sprite hiding while used is cosmetic.
 import {
   G, P_CENTERS, localize, card_eval_status_text, defineConsumables, set_spoon_item, juice_flip, poke_unhighlight_cards,
   find_card, pseudoshuffle, pseudoseed, play_sound, poke_remove_card,
@@ -50,10 +50,7 @@ defineConsumables({
     config: { extra: { usable: true, hazard_off: false } },
     unlocked: true,
     discovered: true,
-    // (the soul path, as Leftovers: see the header)
-    hidden: true,
-    soul_set: 'Item',
-    soul_rate: 0.025 * 2 / 3,
+    weight: 2, // (3.9.1: its pool weight under object_weights; see the header)
     loc_vars(self, info_queue) { info_queue.push({ set: 'Other', key: 'endless' }); return { vars: [] }; },
     can_use(self, card) {
       if (PACKS().includes(G.STATE) && G.consumeables.cards.length + G.GAME.consumeable_buffer >= G.consumeables.config.card_limit && card.area === G.pack_cards) return false;

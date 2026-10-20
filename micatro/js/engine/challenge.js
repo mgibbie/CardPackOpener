@@ -41,6 +41,9 @@ export function normalize(c, mod = null) {
     deck: c.deck && typeof c.deck === 'object' && !Array.isArray(c.deck) ? c.deck : { type: 'Challenge Deck' },
     restrictions: { banned_cards: list(rs.banned_cards), banned_tags: list(rs.banned_tags), banned_other: list(rs.banned_other) },
     hooks: c.hooks || null, apply: typeof c.apply === 'function' ? c.apply : null,
+    // A DAILY challenge (Pokermon 3.9.1's Mystery Dungeon): date 'DDMMYYYY' -> the run's seed. The UI passes today's date at the
+    // start (newRun `daily`); the engine never reads the clock, and the recipe's seed carries the day.
+    daily_seed: typeof c.daily_seed === 'function' ? c.daily_seed : null,
     requires: list(c.requires),
   };
 }
@@ -203,7 +206,9 @@ export function challengeInfo(ch) {
   const banned_cards = rs.banned_cards.filter((b) => b && b.id).map((b) => cardOf(b.id));
   const tagLoc = (k) => (LOC.descriptions.Tag && LOC.descriptions.Tag[k]) || (MOD_LOC.descriptions.Tag && MOD_LOC.descriptions.Tag[k]);
   const banned_tags = rs.banned_tags.filter((b) => b && b.id).map((b) => ({ key: b.id, name: (tagLoc(b.id) && tagLoc(b.id).name) || (P_TAGS[b.id] && P_TAGS[b.id].name) || b.id }));
-  const banned_other = rs.banned_other.filter((b) => b && b.id).map((b) => ({ key: b.id, type: b.type || 'blind', name: (P_BLINDS[b.id] && P_BLINDS[b.id].name) || b.id }));
+  // (a mod blind's `name` is its key, as in Steamodded: its shown name is its loc entry's)
+  const blindLoc = (k) => { const d = (LOC.descriptions.Blind && LOC.descriptions.Blind[k]) || (MOD_LOC.descriptions.Blind && MOD_LOC.descriptions.Blind[k]); return d && d.name; };
+  const banned_other = rs.banned_other.filter((b) => b && b.id).map((b) => ({ key: b.id, type: b.type || 'blind', name: blindLoc(b.id) || (P_BLINDS[b.id] && P_BLINDS[b.id].name) || b.id }));
   // the deck: its cards (as Balatro builds them) and a short make-up
   const std = [];
   for (const s of ['S', 'H', 'C', 'D']) for (const r of ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']) std.push({ s, r });

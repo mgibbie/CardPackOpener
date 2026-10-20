@@ -141,6 +141,10 @@ for (const f of DATA.groups.stakes) {
     Object.defineProperty(s, 'applied_stakes', { enumerable: true, get() { const l = lilac(); return l && isActive('pokermonplus') ? [l.key] : ['gold']; } });
     Object.defineProperty(s, 'above_stake', { enumerable: true, get() { return s.applied_stakes[0]; } });
     s.mod_option = 'customStakes';
+    // Pokermon 3.9.1 ships the same Elite stake (stake_poke_elite; Nacho 1.7.9 re-keys to it, batch 18): base Pokermon wins, so
+    // this one leaves the New Run picker while Pokermon's is listed (js/mods/index.js modStakes); it stays registered, so a
+    // recipe naming it still plays it.
+    s.superseded_by = 'stake_poke_elite';
     // modifiers(): +2 win ante, and the last 4 antes are showdown bosses (systems.js boss_eligible)
     // (customStakes off = the Lua never registers the stake: no Elite rules even if its key is passed.)
     s.modifiers = () => { if (!opt(NACHO_ID, 'customStakes')) return; G.GAME.win_ante = G.GAME.win_ante + 2; G.GAME.modifiers.elite4 = true; };

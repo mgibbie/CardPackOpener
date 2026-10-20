@@ -208,7 +208,12 @@ function whenIdle(fn) {
 }
 
 // --------------------------------------------------------------- run setup
-async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null } = {}) {
+/** Today's UTC date as DDMMYYYY (3.9.1's os.date("!%d%m%Y")): a daily challenge's day. */
+function utcDayStamp(now = new Date()) {
+  const p = (n, w = 2) => String(n).padStart(w, '0');
+  return p(now.getUTCDate()) + p(now.getUTCMonth() + 1) + p(now.getUTCFullYear(), 4);
+}
+async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null, daily = null } = {}) {
   stopPublishing();
   // a custom deck (the deck editor) brings the mods its content needs
   const needMods = [...new Set([...(mods || []), ...((customDeck && Array.isArray(customDeck.mods)) ? customDeck.mods : [])])];
@@ -221,7 +226,7 @@ async function startRun({ seed, back = 'b_red', stake = 1, mods = [], modOptions
   session = new Engine.Session();
   const cd = customDeck ? { customDeck } : {};
   // a challenge (by id: the recipe replays it) or a deck sleeve
-  if (challenge) cd.challenge = challenge;
+  if (challenge) { cd.challenge = challenge; if (daily) cd.daily = daily; }
   else if (sleeve && !customDeck) cd.sleeve = sleeve;
   const evs = session.start(mods && mods.length ? { seed, back, stake, mods, modOptions, ...cd } : { seed, back, stake, ...cd });
   beginRun(evs, { fresh: true });
@@ -531,7 +536,8 @@ function challengesApi() {
       return CH.allChallenges().filter((c) => !c.mod || on.has(c.mod)).map((c) => ({ ...c, info: CH.challengeInfo(c) }));
     },
     done: () => UI.challengeDone(myName()),
-    start: (ch, mods, modOptions) => startRun({ challenge: ch.id, mods, modOptions, back: 'b_challenge', stake: 1 }),
+    // (a daily challenge — Pokermon's Mystery Dungeon — gets today's UTC date, DDMMYYYY: its seed; the engine never reads the clock)
+    start: (ch, mods, modOptions) => startRun({ challenge: ch.id, mods, modOptions, back: 'b_challenge', stake: 1, daily: ch.daily_seed ? utcDayStamp() : null }),
   };
 }
 /** New Run's sleeve picker: the sleeves of the selected (loaded) mods, honouring a sleeve's mod option. */

@@ -28,8 +28,11 @@
  */
 import { G, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
 import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_change_beat, poke_add_hazards, has_enhancement, get_upgraded_pack_center } from './utils.js';
-import { apply_type_sticker, type_sticker_applied, get_type } from './types.js';
-import { energy_increase } from './energy.js';
+import { apply_type_sticker, type_sticker_applied, get_type, is_type } from './types.js';
+import { get_poker_hand_info } from '../../../js/engine/run.js';
+import { add_card } from './utils.js';
+import { Tag, add_tag } from '../../../js/engine/tag.js';
+import { energy_increase, matching_energy } from './energy.js';
 
 // ------------------------------------------------------------ aliases
 const ALIASES = {
@@ -177,6 +180,11 @@ export function create_card(card, _type) {
 // modify_final_cashout context now multiplies the payout, jokers/pokejokers_13.js.)
 export function evaluate_round() {
   if (G.GAME.modifiers.reset_no_interest) G.GAME.modifiers.no_interest = undefined;
+  // The Mystery Dungeon challenge on the Vending deck's effect (3.9.1 pokermon.lua: poke_vending, batch 17): a Voucher Tag after
+  // each odd Ante's Boss, as the Vending deck's own cash-out (backs/backs1.js).
+  if (G.GAME.modifiers.poke_vending && G.GAME.last_blind && G.GAME.last_blind.boss && ((G.GAME.round_resets.ante - 1) % 2 === 1)) {
+    G.E_MANAGER.add_event(() => { add_tag(new Tag('tag_voucher')); });
+  }
   // 3.9.1 "Enhance bonus" (lovely gameplay_functions.toml, the Debris deck / sleeve): $N per playing card with the
   // modifier's enhancement in the full deck. (Lua puts the row after the discards row; ours comes last - same total.)
   const m = G.GAME.modifiers;
@@ -251,6 +259,8 @@ export function get_pack(center, _key) {
 }
 /** SMODS.current_mod.reset_game_globals (pokermon.lua). */
 export function reset_game_globals(run_start) {
+  // Safety First (3.9.1 pokermon.lua reset_game_globals, batch 17): no Energy cards in the shop
+  if (run_start && G.GAME.modifiers.poke_no_energy) G.GAME.energy_rate = 0;
   reset_bulba_rank();
   reset_espeon_card();
   reset_gligar_suit();
@@ -304,6 +314,12 @@ export function can_reserve(card) {
 
 // --------------------------------------------------------- mod contexts
 /** Mod-level calculate: the Poli suit; Garbodor's discards-this-ante counter (lovely "Garbodor functionality"). */
+/** The Obituary Sleeve's alt: a Negative Energy matching this card's type (none for a typeless card). */
+export function obituary_energy(card) {
+  const key = matching_energy(card, true);
+  if (key) add_card({ key, edition: 'e_negative' });
+}
+
 export function calculate(context) {
   // Pokermon 3.9.1 (pokermon.lua SMODS.current_mod.calculate): the Poliwag line's suit cycles after every scored hand,
   // with or without a Poli joker (the engine passes `after` here: js/engine/smods.js mod_calculate).
@@ -325,6 +341,42 @@ export function calculate(context) {
     // The Lua bumps the counter where discards_used goes up and zeroes it when the ante changes.
     if (G.GAME.poke_ante_of_discards !== G.GAME.round_resets.ante) { G.GAME.poke_ante_discards_used = 0; G.GAME.poke_ante_of_discards = G.GAME.round_resets.ante; }
     G.GAME.poke_ante_discards_used = (G.GAME.poke_ante_discards_used || 0) + 1;
+  }
+  // object_weights (3.9.1, batch 17): Jirachi's negative_edition_rate on the Edition poll's weights — pokermon.lua's e_negative /
+  // e_polychrome get_weight overrides (+3 per step to Negative, the same off Polychrome down to its base 3). (3.9.1's
+  // pokermon.modify_pool — weight 0 for what pokermon.remove_from_pool rules out — is pools.js pool_filter, which already
+  // keeps those out of get_current_pool, the pool every poll_object draws from: the same picks.)
+  if (context.modify_weights && context.pool) {
+    const r = (G.GAME.negative_edition_rate || 1) - 1;
+    if (r) {
+      const neg = context.pool.e_negative, poly = context.pool.e_polychrome;
+      if (neg) neg.weight = neg.weight + r * 3;
+      if (poly) poly.weight = Math.max(3, poly.weight - r * 3);
+    }
+  }
+  // The Obituary Sleeve's alt (3.9.1 sleeve.lua, batch 17): a destroyed joker makes a Negative Energy of its type (selling: index.js).
+  if (G.GAME.modifiers.poke_obituary_alt && context.joker_type_destroyed && context.card) obituary_energy(context.card);
+  // The challenges' rules (3.9.1 pokermon.lua, batch 17):
+  // Imposter Syndrome: every non-Colorless joker is debuffed.
+  if (G.GAME.modifiers.poke_noncolorless && context.debuff_card && context.debuff_card.area === G.jokers && !is_type(context.debuff_card, 'Colorless')) {
+    return { debuff: true };
+  }
+  // Imposter Syndrome: a Ditto for every Boss Blind beaten (with room).
+  if (G.GAME.modifiers.poke_add_ditto && context.end_of_round && context.game_over === false && context.main_eval && context.beat_boss) {
+    if ((G.jokers.cards.length + G.GAME.joker_buffer) < G.jokers.config.card_limit) {
+      G.GAME.joker_buffer = G.GAME.joker_buffer + 1;
+      G.E_MANAGER.add_event(() => {
+        G.GAME.joker_buffer = 0;
+        add_card({ set: 'Joker', key: 'j_poke_ditto', no_edition: true });
+      });
+    }
+  }
+  // Mean Look: a hand that the Foreseen cards (the scry view) also make is debuffed — "Must play an Unforeseen hand".
+  if (context.debuff_hand && G.GAME.modifiers.poke_unforeseen_hand) {
+    const ph = get_poker_hand_info(G.scry_view ? G.scry_view.cards : []).poker_hands;
+    if (ph[context.scoring_name] && ph[context.scoring_name].length) {
+      return { debuff: true, debuff_text: localize({ type: 'variable', key: 'poke_unforeseen_debuff', vars: [context.scoring_name] }) };
+    }
   }
   return undefined;
 }

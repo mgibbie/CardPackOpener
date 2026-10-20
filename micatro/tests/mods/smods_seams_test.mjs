@@ -172,7 +172,8 @@ await loadMods(AVAILABLE.map((m) => m.id));
   // (drawing_cards: Swellow, new-jokers sub-batch 11; modify_booster_card: Wailord, sub-batch 12; modify_scoring_hand: Zangoose,
   // ante_change: Tropius, stay_flipped: Claydol, sub-batch 13; ending_booster: Clamperl / Huntail / Gorebyss, sub-batch 14;
   // modify_hand: Axew / Fraxure / Haxorus, sub-batch 15)
-  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,modify_scoring_hand,money_altered,ante_change,modify_booster_card,drawing_cards,stay_flipped,modify_hand,ending_booster,modify_final_cashout,poker_hand_changed,playing_card_end_of_round', 'every shipped mod on: only the seam contexts the Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
+  // (batch 17: debuff_card / debuff_hand — the boss blinds' and the challenges' rules; modify_weights — object_weights' Edition weights)
+  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,modify_scoring_hand,money_altered,ante_change,modify_booster_card,drawing_cards,debuff_card,debuff_hand,stay_flipped,modify_hand,ending_booster,modify_final_cashout,poker_hand_changed,playing_card_end_of_round,modify_weights', 'every shipped mod on: only the seam contexts the Pokermon 3.9.1 content reads are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
   fresh('SEAM_GATE');
   ok(wanted('money_altered') && wanted('setting_ability') && wanted('modify_weights') && wanted('resetting_card') && !wanted('create_shop_card'), 'seamtest on: exactly the contexts its code reads are wanted');
   fresh('SEAM_GATE2', ['seamtest', 'seamoff']);

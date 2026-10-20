@@ -5,7 +5,8 @@
 // no_rank / no_suit / replace_base_card / always_scores and enhancement `calculate` are engine seams (core.js get_id /
 // is_suit / get_chip_bonus / mod_card_calculate, run.js scoring + end_of_round). A quantum Hazard (Mega Steelix's Stone
 // cards) rolls its destroy too: js/engine/smods.js quantum_mod_calculate.
-// (April Fools' Ludicolo card — 3.9.1 registers it only with pokemon_aprilfools — is not ported.)
+// The April Fools Ludicolo card (batch 17; 3.9.1 registers it only with pokemon_aprilfools, ours always, never in a pool): what
+// Miror Budicolo turns into (jokers/zzzapril_fools.js). No rank or suit, replaces the base card, always scores: "Ludicolo!".
 import {
   G, P_CENTERS, localize, ease_dollars, defineEnhancements, pseudorandom_probability, get_probability_vars,
   poke_remove_card, poke_suit_check, find_card, any,
@@ -86,5 +87,24 @@ defineEnhancements({
       }
       return undefined;
     },
+  },
+  // Ludicolo (3.9.1 April Fools; art: the Miror Budicolo animation's first frame, miror_budicolo.png). data.js has no such
+  // enhancement: its static data in full. (Its music track — the Miror B. theme while one is held — is not ported.)
+  ludicolo: {
+    key: 'ludicolo',
+    atlas: 'miror_budicolo',
+    pos: { x: 0, y: 0 },
+    config: {},
+    no_rank: true,
+    no_suit: true,
+    replace_base_card: true,
+    always_scores: true,
+    weight: 0,
+    loc_vars() { return { vars: [] }; },
+    calculate(self, card, context) {
+      if (context.main_scoring && context.cardarea === G.play) return { message: localize('poke_ludicolo_ex'), sound: 'poke_ludicolo_cry' };
+      return undefined;
+    },
+    in_pool() { return false; },
   },
 }, FILE);

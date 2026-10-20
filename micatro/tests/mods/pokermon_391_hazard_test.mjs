@@ -99,7 +99,8 @@ sec(() => {
   const r = winRound(hand(['H_9']));
   ok(hz.every((c) => G.playing_cards.includes(c)), 'Boots: no Hazard is destroyed this round');
   ok(boots.ability.extra.usable && !boots.ability.extra.hazard_off && statusMsgs(r.events).includes('Reset'), 'Boots: usable again next round', boots.ability.extra);
-  ok(!P_CENTERS.c_poke_heavyboots.in_pool() && P_CENTERS.c_poke_heavyboots.hidden && P_CENTERS.c_poke_heavyboots.soul_set === 'Item', 'Boots: a hidden Item, only in the pool with a Hazard layer');
+  // (batch 17: object_weights is on — the Boots are an ordinary Item of pool weight 2, not a hidden soul Item any more)
+  ok(!P_CENTERS.c_poke_heavyboots.in_pool() && !P_CENTERS.c_poke_heavyboots.hidden && P_CENTERS.c_poke_heavyboots.weight === 2, 'Boots: an Item of weight 2, only in the pool with a Hazard layer');
   add('j_poke_qwilfish');
   ok(P_CENTERS.c_poke_heavyboots.in_pool(), '... which Qwilfish gives');
 });

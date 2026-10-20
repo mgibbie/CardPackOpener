@@ -26,8 +26,9 @@ export const recipeSeeded = (recipe) => !!(recipe && recipe.seeded === true);
 export class Session {
   constructor() { this.recipe = null; this.events = []; }
 
-  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null } = {}) {
-    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve });
+  start({ seed, back = 'b_red', stake = 1, mods = [], modOptions = {}, customDeck = null, challenge = null, sleeve = null, daily = null } = {}) {
+    // (`daily`: today's date for a daily challenge — Pokermon's Mystery Dungeon — passed by the UI; it becomes the recorded seed)
+    newRun({ seed, back, stake, mods, modOptions, customDeck, challenge, sleeve, daily });
     this.recipe = { v: ENGINE_VERSION, seed: G.GAME.pseudorandom.seed, back, stake, mods: G.GAME.mods.slice(), modOptions: G.GAME.mod_options, actions: [], started: Date.now() };
     // (every recipe carries a seed — the random one too — so whether the PLAYER chose it is recorded: a resumed or
     //  replayed run must not turn into a seeded one, which earns no win stickers / Nuzlocke / Monotype)

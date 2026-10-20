@@ -11,6 +11,7 @@ import {
   defineJokers, type_tooltip, detailed, level_evo, scaling_evo, faint_baby_poke, is_type, get_probability_vars, pseudorandom_probability,
   add_card,
   POKE_POOL_RULES,
+  object_weights, poll_enhancement_weighted,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_15.lua';
@@ -41,6 +42,8 @@ const scry = {
  * enhancement roll (each option weighs its center's weight, 5 by default).
  */
 function poll_enhancement(args = {}) {
+  // (Pokermon 3.9.1 turns Steamodded's object_weights on: SMODS.poll_enhancement is then SMODS.poll_object over the Enhanced set. Batch 17.)
+  if (object_weights()) return poll_enhancement_weighted(args);
   let key = args.key || 'std_enhance';
   const mod = args.mod || 1;
   const guaranteed = args.guaranteed || false;

@@ -131,10 +131,14 @@ export const sealByKey = (key) => P_SEALS[key] || null;
  * Decks the given (loaded) mods add, for the New Run picker — honouring a deck's required mod
  * option (`mod_option` / Pokermon's `poke_option`, e.g. its legacy decks).
  */
-/** Stakes the given (loaded) mods add, for the New Run picker (shown after the 8 base stakes). */
+/**
+ * Stakes the given (loaded) mods add, for the New Run picker (shown after the 8 base stakes). A stake another mod's stake took
+ * over (`superseded_by`: Nacho's Elite -> Pokermon 3.9.1's) is left out while that one is listed; it stays registered.
+ */
 export function modStakes(ids) {
   const on = new Set(withRequirements(ids || []));
-  return Object.values(P_STAKES).filter((s) => s.mod && on.has(s.mod))
+  const listed = (s) => s && s.mod && on.has(s.mod);
+  return Object.values(P_STAKES).filter((s) => listed(s) && !listed(P_STAKES[s.superseded_by]))
     .map((s) => ({ ...s, text: (MOD_LOC.descriptions.Stake || {})[s.key] || null }));
 }
 export function modBacks(ids, options = {}) {

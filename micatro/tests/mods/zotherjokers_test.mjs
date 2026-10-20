@@ -11,7 +11,7 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 
 const FILE_JOKERS = ['pokedex', 'rotomdex', 'everstone', 'tall_grass', 'jelly_donut', 'treasure_eatery', 'mystery_egg', 'rival', 'ruins_of_alph', 'unown_swarm', 'professor', 'billion_lions'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 12 zotherjokers ported');
-ok(STATUS.PORTED_FILES['pokemon/zotherjokers.lua'].length === 12, 'defs: 12 from zotherjokers.lua');
+ok(STATUS.PORTED_FILES['pokemon/zotherjokers.lua'].length === 19, 'defs: 19 from zotherjokers.lua (+ batch 17: Rage Candy Bar, Bitter Rival, Champion, Imposter Professor, Oologist, Daycare, Repel)');
 const toShop = () => { winRound(); if (G.STATE === STATES.ROUND_EVAL) act({ type: 'cash_out' }); };
 const toBlind = () => { act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand(); };
 

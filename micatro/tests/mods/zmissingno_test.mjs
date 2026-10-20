@@ -43,7 +43,8 @@ ok(P_CENTERS.j_poke_missingno.config.extra.ptype === 'Bird' && P_CENTERS.j_poke_
     const t0 = G.GAME.tags.length;
     winRound();
     made += G.GAME.tags.length - t0;
-    if (G.STATE === 8) { act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); }
+    // (a Charm / Meteor / ... tag opens its pack at the next blind choice: skip it first — batch 17's object_weights rolls other tags)
+    if (G.STATE === 8) { act({ type: 'cash_out' }); act({ type: 'next_round' }); for (let k = 0; k < 4 && act({ type: 'skip_booster' }).ok; k++); act({ type: 'select_blind' }); }
   }
   ok(made >= 6, 'missingno: tags every round', made);
 }

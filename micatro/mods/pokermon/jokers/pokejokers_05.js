@@ -11,6 +11,7 @@ import {
   has_enhancement, find_joker, find_card, any, get_probability_vars, pseudorandom_probability, volatile_active,
   remove, poke_evolve, apply_type_sticker, type_sticker_applied, energy_increase, poke_convert_cards_to,
   smods_create_card, poke_add_shop_card, can_evolve_to_highest, POKE_POOL_RULES,
+  object_weights, poll_seal_weighted,
 } from '../api.js';
 import { calculate_reroll_cost } from '../../../js/engine/core.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
@@ -45,6 +46,8 @@ function star_calc(card, context) {
  * pool (unported / their in_pool says no) are skipped, like get_current_pool's UNAVAILABLE.
  */
 export function poll_seal_guaranteed() { // (also Spidops, pokejokers_31.js)
+  // (Pokermon 3.9.1 turns Steamodded's object_weights on: SMODS.poll_seal is then SMODS.poll_object over the Seal set. Batch 17.)
+  if (object_weights()) return poll_seal_weighted({ guaranteed: true });
   const available = [];
   let type_weight = 0;
   for (const v of P_CENTER_POOLS.Seal || []) {

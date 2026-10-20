@@ -4,7 +4,7 @@
 // `config` goes through the same handling as a deck (vouchers, consumables); `apply` / `calculate`
 // are the Lua's. Art: AtlasDecksBasic row 1, from Pokermon 3.9.1's sheet (AtlasDecksBasic391 in index.js; the same cells
 // as 3.2.1's — Stadium / Mega: 3.2.1 shipped placeholder_sleeve, their art is 3.9.1's {8,1} / {9,1}).
-import { G, P_CENTERS, localize, play_sound, create_card, change_shop_size } from './api.js';
+import { G, P_CENTERS, localize, play_sound, create_card, change_shop_size, get_probability_vars } from './api.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import { debris_apply } from './backs/backs1.js';
 
@@ -26,15 +26,43 @@ export const SLEEVES = [
     config: { vouchers: ['v_poke_goodrod'], consumables: ['c_poke_pokeball'] },
     loc_vars: () => ({ vars: [localize('goodrod_variable'), localize('pokeball_variable')] }),
   }),
+  // Obituary Sleeve: every card has a Pink Seal. Its 3.9.1 alt on the Obituary Deck (batch 17): Pink Seals have a 1 in 3 chance
+  // to fall off after triggering (G.GAME.modifiers.poke_pink_seal_selfdestruct: seals/seals1.js), and a joker sold or destroyed
+  // makes a Negative Energy of its type (poke_obituary_alt: systems/rules.js calculate + index.js sell_card).
   sleeve('obituarysleeve', 'Obituary Sleeve', { x: 2, y: 1 }, DECKS, {
     mod_option: 'pokemon_legacy',
+    config: { num: 1, dem: 3 },
     loc_vars: () => ({ vars: [localize('pinkseal_variable')] }),
     apply() { G.GAME.modifiers.poke_force_seal = 'poke_pink_seal'; force_seal_event(); },
+    alt: {
+      deck: 'b_poke_obituarydeck',
+      config: { num: 1, dem: 3 },
+      loc_vars: (self) => ({ vars: get_probability_vars(null, self.config.num, self.config.dem, 'poke_pink_seal_selfdestruct') }),
+      apply() {
+        G.GAME.modifiers.poke_force_seal = 'poke_pink_seal';
+        G.GAME.modifiers.poke_pink_seal_selfdestruct = true;
+        G.GAME.modifiers.poke_obituary_alt = true;
+        force_seal_event();
+      },
+    },
   }),
+  // Revenant Sleeve: every card has a Silver Seal. Its 3.9.1 alt on the Revenant Deck (batch 17): +3 consumable slots, and Pocket
+  // Packs never appear in the shop (poke_no_pocket_packs: their pool weight is 0 under object_weights — index.js; 3.9.1's
+  // override also returns 1 for every Pocket Pack, the Megas' 0.25 included, until the game restarts: that quirk is not kept).
   sleeve('revenantsleeve', 'Revenant Sleeve', { x: 5, y: 1 }, DECKS, {
     mod_option: 'pokemon_legacy',
     loc_vars: () => ({ vars: [localize('silverseal_variable')] }),
     apply() { G.GAME.modifiers.poke_force_seal = 'poke_silver'; force_seal_event(); },
+    alt: {
+      deck: 'b_poke_revenantdeck',
+      config: { consumable_slot: 3 },
+      loc_vars: (self) => ({ vars: [self.config.consumable_slot] }),
+      apply() {
+        G.GAME.modifiers.poke_force_seal = 'poke_silver';
+        G.GAME.modifiers.poke_no_pocket_packs = true;
+        force_seal_event();
+      },
+    },
   }),
   sleeve('luminoussleeve', 'Luminous Sleeve', { x: 1, y: 1 }, DECKS, {
     loc_vars: () => ({ vars: [] }),

@@ -195,7 +195,8 @@ export function copy_scaled_values(card) {
  * batch 8: the Mystery Egg hatches through it) adds that many Energy (type 'Trans') after the swap.
  */
 export function poke_evolve(card, to_key, immediate, evolve_message, transformation, energize_amount) {
-  if (G.GAME.modifiers.apply_randomizer && !transformation) to_key = get_random_poke_key('randomizer');
+  // (3.9.1 renamed the Randomizer challenge's rule poke_apply_randomizer; a 3.2.1 run's apply_randomizer still counts)
+  if ((G.GAME.modifiers.poke_apply_randomizer || G.GAME.modifiers.apply_randomizer) && !transformation) to_key = get_random_poke_key('randomizer');
   // Add-on dedupe (precedence.js): an evolution into an add-on duplicate of a Pokermon joker gives Pokermon's.
   to_key = precedence_key(to_key);
   for (const f of EVOLVE_INTERCEPTS) if (f.immediate && f.immediate(card, to_key)) immediate = true;
