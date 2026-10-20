@@ -387,7 +387,7 @@ All are byte-identical to upstream main.
 | 6–8 | **DONE** (#773 files 01–08, #774 09–17, batch 8 18–34 + zother/zmissingno): 435 existing jokers on 3.9.1, 18 held (see "Batches 6–8" below) | 3 × L | 5 |
 | 10 | **DONE** (see "Batch 10" below) — Pokermon Hazard layer rework + Seed enhancement, Miracle Seed, Heavy Boots, Debris deck and sleeve (3.9.1's `diceydeck`: "Dicey" and "Debris" are one deck), Flower ×2 — 16 jokers un-held (11 Hazard jokers, Mega Steelix via a quantum seam, Bellossom/Hoppip line), Shaymin's Flower part | L | 5 |
 | 10b | **DONE** (see "Batch 10b" below) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art, the swarm strips tiled) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
-| 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); 12 = file 11, 13 = file 12, 14 = files 13–16, 15 = files 18–32 | 5 × L | 5 |
+| 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); **12 DONE** (the 15 of pokejokers_11, below); 13 = file 12, 14 = files 13–16, 15 = files 18–32 | 5 × L | 5 |
 | 15b | **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Port from upstream main at a pinned commit (bump `version` to that tag/commit) | M | 11–15 |
 | 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice | M | 5 |
 | 17 | Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), DNA seal, `starterq`, Meteorite/Deoxys, 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
@@ -509,8 +509,8 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 | Batch 17 (non-Pokémon jokers) | — | Rival, Mystery Egg |
 | Kept by design | — | Porygon-Z's Energy counter |
 
-- New jokers still to add: 91 from 3.9.1 (44 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms, 7 non-Pokémon, 3 April Fools) + 9 from upstream main (batch 15b). (117 before sub-batch 11, which added 26.)
-- New jokers ported without one part (`new_deferred`): Kirlia -> Gallade (sub-batch 14), Skitty -> Delcatty (sub-batch 12).
+- New jokers still to add: 76 from 3.9.1 (29 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms, 7 non-Pokémon, 3 April Fools) + 9 from upstream main (batch 15b). (117 before sub-batch 11, which added 26; sub-batch 12 added 15.)
+- New jokers ported without one part (`new_deferred`): Kirlia -> Gallade, Roselia -> Roserade (+ Budew -> Roselia), all sub-batch 14. (Skitty -> Delcatty: done in sub-batch 12.)
 
 ## Batch 10 — Pokermon Hazard layer, Seed, Flower ×2, Debris deck: DONE (2026-10-20, branch `feat/micatro-pokermon-391-hazard-seed`)
 - Pin **3.9.1+r6** (`contentRev` 6; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "The Hazard layer,
@@ -556,6 +556,19 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 - Shared: Wingull's rank and Skitty's type per round, duplicate-rank Straights (Surskit / Masquerain), `get_target_card_suit`,
   `get_consumeables`. An add-on family overlapping a 3.9.1 family joins it (3.9.1 `add_to_family`): Nacho's Ralts line, Pokermon+'s
   Nincada line.
-- Deferred: Kirlia -> Gallade (sub-batch 14), Skitty -> Delcatty (sub-batch 12). Their item_req and stone text wait with them.
+- Deferred: Kirlia -> Gallade (sub-batch 14), Skitty -> Delcatty (sub-batch 12, done there). Their item_req and stone text wait with them.
 - Art: their 3.9.1 cells on the Natdex sheets vendored in batch 5. No new files.
 - Tests: `micatro/tests/mods/pokermon_391_new_11_test.mjs` (5 passed / 45 failed on origin/main, 176 / 0 here).
+
+## New jokers, sub-batch 12 — Pokermon 3.9.1 pokejokers_11: DONE (2026-10-20, branch `feat/micatro-pokermon-391-new-jokers`)
+- Pin **3.9.1+r9** (`contentRev` 9; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "New jokers, sub-batch 12".
+- 15 jokers, in the pools by rarity: Delcatty, Sableye, Meditite, Medicham, Plusle, Minun, Volbeat, Illumise, Roselia, Carvanha, Sharpedo,
+  Wailmer, Wailord, Torkoal, Spinda. Built with the sub-batch 11 pipeline (spec `new_jokers` "12", regenerated `data391.js`).
+- Skitty -> Delcatty (Moon Stone) is on: sub-batch 11's deferral dropped. Meditite -> Medicham, Carvanha -> Sharpedo, Wailmer -> Wailord.
+- Deferred: Roselia -> Roserade (Shiny Stone) and Budew -> Roselia, sub-batch 14. Roselia's item_req and stone text wait with them.
+- Shared: Minun's $1 shop discount (`rules.js set_cost`), `get_target_card_enhancements` / `find_playing_card` / `get_depleted` /
+  `get_enhancements`; Wailord reads `modify_booster_card`. Not ported: Wailord's 1.2x `display_size` (the card frame is fixed).
+- Art: their 3.9.1 cells on the Natdex sheets vendored in batch 5. No new files.
+- Design wiki: `designwiki_micatro_mods_test`'s sprite-cell check (failing on the Unown Swarm since batch 10b) fixed. The generator emits the
+  tiled atlas; the wiki's `mcSprite` picks the tile and crop as `modCellRect` does. Regenerated.
+- Tests: `micatro/tests/mods/pokermon_391_new_12_test.mjs` (0 passed / 30 failed on origin/main, 119 / 0 here).

@@ -614,7 +614,10 @@ export const POKERMON = registerMod({
   // SMODS.add_card, Unown's 3.9.1 card) and the Wish Pack (3 random unused wishes, no Master Ball; change_form wishes).
   // 8 = new-jokers sub-batch 11: the 26 jokers of 3.9.1's pokejokers_09 / 10 (Wurmple, Seedot, Taillow, Wingull, Ralts, Surskit,
   // Slakoth, Nincada, Makuhita lines, Skitty) join the pools; Wingull's rank / Skitty's type per round; duplicate-rank Straights.
-  contentRev: 8,
+  // 9 = new-jokers sub-batch 12: the 15 jokers of 3.9.1's pokejokers_11 (Delcatty, Sableye, Meditite / Medicham, Plusle, Minun,
+  // Volbeat, Illumise, Roselia, Carvanha / Sharpedo, Wailmer / Wailord, Torkoal, Spinda) join the pools; Skitty -> Delcatty (Moon
+  // Stone); Minun's $1 shop discount.
+  contentRev: 9,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

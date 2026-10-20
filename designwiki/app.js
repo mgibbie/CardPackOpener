@@ -1552,7 +1552,19 @@ function mcSprite(layers, cls, scale = 1, title) {
   const [, , , cw, ch] = MC_ATLAS[layers[layers.length - 1][0]];
   const img = [], bp = [], bs = [];
   for (const [atlas, pos] of layers) {
-    const [file, aw, ah, w, hh] = MC_ATLAS[atlas];
+    const [file0, aw0, ah0, w, hh, tiled] = MC_ATLAS[atlas];
+    if (tiled) {
+      // a tiled mod atlas (Pokermon's Unown Swarm strips), as the game's modCellRect: the cell's tile, then only its crop,
+      // scaled to fill the card (w x hh)
+      const x0 = pos.x || 0, t = Math.floor(x0 / tiled.tile_cols), T = MC_ATLAS['@' + tiled.tiles[t]];
+      if (!T) continue;
+      const [file, aw, ah] = T, zx = w / tiled.crop.w * scale, zy = hh / tiled.crop.h * scale;
+      img.push(`url("${file}")`);
+      bp.push(`${-((x0 - t * tiled.tile_cols) * tiled.cell[0] + tiled.crop.x) * zx}px ${-((pos.y || 0) * tiled.cell[1] + tiled.crop.y) * zy}px`);
+      bs.push(aw ? `${aw * zx}px ${ah * zy}px` : 'auto');
+      continue;
+    }
+    const file = file0, aw = aw0, ah = ah0;
     img.push(`url("${/^(\/|https?:)/.test(file) ? file : MC_TEX + file}")`); // (a mod atlas: its own absolute src)
     bp.push(`${-(pos.x || 0) * w * scale}px ${-(pos.y || 0) * hh * scale}px`);
     bs.push(aw ? `${aw * scale}px ${ah * scale}px` : `auto`); // (a mod atlas without a known pixel size: natural 2x size)
@@ -1927,7 +1939,7 @@ let mcModsPromise = null;
 const mcModPromises = {};
 function loadMicatroMods() {
   if (!mcModsPromise) mcModsPromise = fetch('data/micatro_mods.json' + CB).then(r => { if (!r.ok) throw new Error('micatro_mods.json ' + r.status); return r.json(); })
-    .then(D => { for (const [name, a] of Object.entries(D.atlases || {})) MC_ATLAS['@' + name] = [a.src, a.w, a.h, a.cw, a.ch]; return D; });
+    .then(D => { for (const [name, a] of Object.entries(D.atlases || {})) MC_ATLAS['@' + name] = [a.src, a.w, a.h, a.cw, a.ch, a.tiles ? a : null]; return D; });
   return mcModsPromise;
 }
 function loadMicatroMod(id) {

@@ -37,8 +37,9 @@ const sec = (fn) => { try { fn(); } catch (e) { ok(false, 'threw: ' + String(e &
 const discard = (cards) => { act({ type: 'highlight', ids: cards.map((c) => c.sort_id) }); return act({ type: 'discard' }); };
 
 // ------------------------------------------------------------------- the overlay
-ok(MODS.pokermon.contentRev === 8 && PINS.modPin('pokermon') === '3.9.1+r8', 'Pokermon contentRev 8 (pin 3.9.1+r8)', PINS.modPin('pokermon'));
-const NJ = D391.new_jokers || {};
+ok(MODS.pokermon.contentRev >= 8 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 8+ (pin 3.9.1+r8+)', PINS.modPin('pokermon'));
+// (later sub-batches add their own: this one checks its 26)
+const NJ = Object.fromEntries(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.sub_batch === '11'));
 ok(JSON.stringify(Object.keys(NJ)) === JSON.stringify(NEW), 'data391.js new_jokers: the 26 of 3.9.1 pokejokers_09 / 10, in file order', Object.keys(NJ));
 ok(NEW.every((n) => NJ[n] && NJ[n].sub_batch === '11'), 'all from sub-batch 11');
 ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'every new joker is registered and ported');
@@ -84,13 +85,13 @@ sec(() => {
   ok(JL.j_poke_dustox.text.some((l) => l.includes('held in hand')) && JL.j_poke_shedinja.name === 'Shedinja', 'the 3.9.1 entries');
 });
 sec(() => {
-  // Deferred: Kirlia -> Gallade (sub-batch 14), Skitty -> Delcatty (sub-batch 12)
+  // Deferred: Kirlia -> Gallade (sub-batch 14). (Skitty -> Delcatty came with sub-batch 12: pokermon_391_new_12_test.)
   const JL = MODS.pokermon.content.loc.descriptions.Joker;
   const def = Object.fromEntries(D391.new_deferred.map(([n, why, drop]) => [n, drop]));
-  ok(JSON.stringify(def) === JSON.stringify({ kirlia: ['item_req'], skitty: ['item_req'] }), 'new_deferred: kirlia, skitty (item_req)', def);
-  ok(C('kirlia').item_req === undefined && C('kirlia').config.extra.item_req === undefined && C('skitty').config.extra.item_req === undefined, 'no item_req until the target exists');
-  ok(!JL.j_poke_kirlia.text.some((l) => l.includes('Dawn Stone')) && !JL.j_poke_skitty.text.some((l) => l.includes('Moon Stone')), 'nor the stone line in their text');
-  ok(!P_CENTERS.j_poke_gallade && !P_CENTERS.j_poke_delcatty, 'Gallade / Delcatty not registered yet');
+  ok(JSON.stringify(def.kirlia) === JSON.stringify(['item_req']) && !def.skitty, 'new_deferred: kirlia (item_req); skitty no more', def);
+  ok(C('kirlia').item_req === undefined && C('kirlia').config.extra.item_req === undefined, 'no item_req until the target exists');
+  ok(!JL.j_poke_kirlia.text.some((l) => l.includes('Dawn Stone')), 'nor the stone line in its text');
+  ok(!P_CENTERS.j_poke_gallade, 'Gallade not registered yet');
 });
 sec(() => {
   // Families (3.9.1 functions/pokefamily.lua), minus jokers not ported yet
@@ -98,7 +99,7 @@ sec(() => {
   ok(JSON.stringify(poke_get_family_list('wurmple')) === JSON.stringify(['wurmple', 'silcoon', 'beautifly', 'cascoon', 'dustox']), 'family: the Wurmple line (branching)');
   const rk = get_family_keys('kirlia');
   ok(rk.includes('j_poke_gardevoir') && rk.includes('j_poke_ralts') && !rk.includes('j_poke_gallade'), 'family: Ralts line without Gallade (yet)', rk);
-  ok(JSON.stringify(poke_get_family_list('skitty')) === JSON.stringify(['skitty']), 'family: Skitty alone until Delcatty');
+  ok(poke_get_family_list('skitty')[0] === 'skitty', 'family: Skitty', poke_get_family_list('skitty'));
 });
 sec(() => {
   // Pools: in_pool (pokemon_in_pool) + the pool_filter hook (one per family, the Gen 3 option); in P_CENTER_POOLS in 3.9.1 order
@@ -526,9 +527,7 @@ sec(() => {
   ok(r2.total.mult === 5, 'skitty: not another type', r2.total);
   C('skitty').update(C('skitty'), j);
   ok(j.ability.blueprint_compat === 'incompatible', 'skitty: the incompatible badge');
-  j.ability.extra.evolve = true; // (Delcatty, its Moon Stone evolution, isn't ported yet: inert)
   winRound();
-  ok(key(j) === 'j_poke_skitty', 'skitty: no Delcatty yet');
   ok(G.GAME.current_round.cattype === 'Fire', 'cattype: reset to a held joker\'s type (Skitty excluded)', G.GAME.current_round.cattype);
 });
 

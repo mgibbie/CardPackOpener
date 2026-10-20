@@ -13,7 +13,7 @@
  *   set_debuff        debufffunctions.lua: fainted Baby Pokémon stay debuffed for the rest of
  *                     the round; Gholdengo can't be debuffed, Tangrowth protects Wild Cards,
  *                     Tentacruel protects 10s
- *   set_cost          Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
+ *   set_cost          Minun ($1 off Jokers, Boosters, consumables), Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
  *                     sell value at least $1, Unown sells for $0
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
  *                     random Tera type on jokers (Luminous deck: G.GAME.modifiers.apply_type)
@@ -131,6 +131,11 @@ export function set_cost(card) {
   const couponed = card.area && a.couponed && (card.area === G.shop_jokers || card.area === G.shop_booster);
   let changed = false;
   if (!couponed && !a.rental) {
+    // Pokermon 3.9.1 (lovely poke_utils.toml): every Joker, Booster and consumable costs $1 less per Minun.
+    if (a.set === 'Joker' || a.set === 'Booster' || a.consumeable) {
+      const m = find_joker('minun').length;
+      if (m) { card.cost = Math.max(0, card.cost - m); changed = true; }
+    }
     if (a.set === 'Booster') {
       const r = find_joker('rotom').length;
       const rd = find_joker('rotomdex').length;

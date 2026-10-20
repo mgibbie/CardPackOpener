@@ -620,6 +620,38 @@ export function get_consumeables(set) {
   return out;
 }
 
+/**
+ * Pokermon 3.9.1 pokermon.get_target_card_enhancements(seed, num, options) (pokefunctions.lua; Spinda's Enhance Nature):
+ * `num` distinct enhancement keys, each picked from what's left of `options` (default the 7 base enhancements).
+ */
+export function get_target_card_enhancements(seed, num, options) {
+  const enhancements = [];
+  const enhance_options = options || ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm_steel', 'm_gold', 'm_lucky'];
+  for (let i = 1; i <= num; i++) {
+    const [enhancement] = pseudorandom_element(enhance_options, pseudoseed(seed));
+    enhancements.push(enhancement);
+    const j = enhance_options.indexOf(enhancement);
+    if (j >= 0) enhance_options.splice(j, 1);
+  }
+  return enhancements;
+}
+/** Pokermon 3.9.1 pokermon.find_playing_card(findFunc, findArea) (pokeutils.lua): the cards of findArea (default the deck) that match. */
+export function find_playing_card(findFunc, findArea) {
+  return (findArea || G.deck.cards).filter((v) => findFunc(v));
+}
+/** Pokermon 3.9.1 pokermon.get_depleted(find_func) (pokeutils.lua): no card left in the deck matches (false outside a round). */
+export function get_depleted(find_func) {
+  if (!G.deck || !G.deck.cards) return false;
+  return !G.deck.cards.some((v) => find_func(v));
+}
+/** SMODS.get_enhancements(card): the card's enhancement keys, its own (an Enhanced center) and its quantum ones. */
+export function get_enhancements(card) {
+  const out = [];
+  if (card.config.center.set === 'Enhanced') out.push(card.config.center.key);
+  for (const k of quantum_enhancements(card)) if (!out.includes(k)) out.push(k);
+  return out;
+}
+
 // ------------------------------------------- SMODS hand-limit API (src/utils.lua)
 /** SMODS.change_play_limit(mod): most cards a played hand may hold (the 'play' action checks it). */
 export function change_play_limit(mod) {

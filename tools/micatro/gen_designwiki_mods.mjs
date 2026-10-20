@@ -69,6 +69,21 @@ for (const [name, a] of Object.entries(REG.ATLASES)) {
   const sz = /^https?:/.test(a.src) ? null : pngSize(path.join(ROOT, rel));
   ATLASES[name] = { mod: a.mod, src: a.src, cw: a.px * 2, ch: a.py * 2, ...(sz ? { w: sz.w, h: sz.h } : {}), ...(a.frames ? { frames: a.frames } : {}) };
 }
+// Tiled atlases (Pokermon's Unown Swarm strips, batch 10b): no src of their own. As the game's sprite lookup
+// (micatro/js/ui/assets.js modCellRect) does, a cell x is drawn from tile floor(x / tile_cols) at x - t * tile_cols,
+// and only `crop` of the cell, filling a card. The wiki (designwiki/app.js mcSprite) resolves the same: the entry keeps
+// the tile list, the cell size, the crop (2x px) and the card it fills (cw / ch). A tile whose PNG isn't on this disk
+// (mod art is gitignored) gets its size from the strip: one row of its frames.
+for (const [name, a] of Object.entries(REG.ATLASES)) {
+  if (!a || a.src || !Array.isArray(a.tiles) || !a.tile_cols) continue;
+  const cw = a.px * 2, ch = a.py * 2;
+  a.tiles.forEach((t, i) => {
+    const T = ATLASES[t];
+    if (T && !T.w) { T.w = Math.max(1, Math.min(a.tile_cols, (a.frames || a.tile_cols) - i * a.tile_cols)) * cw; T.h = ch; }
+  });
+  const crop = a.crop ? { x: a.crop.x * 2, y: a.crop.y * 2, w: a.crop.w * 2, h: a.crop.h * 2 } : { x: 0, y: 0, w: cw, h: ch };
+  ATLASES[name] = { mod: a.mod, tiles: a.tiles, tile_cols: a.tile_cols, cell: [cw, ch], crop, cw: 142, ch: 190, ...(a.frames ? { frames: a.frames } : {}) };
+}
 // deck skins (mods/<id>/skins.js: plain data, cosmetic; micatro/js/ui/skins.js draws them): each palette
 // sheet is an atlas of 2x card cells — J / Q / K in a row, or (a whole-deck resprite) the 8BitDeck layout
 const SKINS = [];
@@ -90,7 +105,9 @@ const layer = (atlas, pos, fallback) => {
 const centerArt = (c) => {
   const base = layer(c.atlas, c.pos, VANILLA[c.set] || 'centers');
   if (!base) return null;
-  const soul = c.soul_pos ? layer(c.atlas, c.soul_pos, VANILLA[c.set] || 'centers') : null;
+  // (a tiled strip's soul is its own '<atlas>_soul' strip, as the game's animation draws it: Pokermon ui.js anim)
+  const soulAtlas = c.atlas && ATLASES[c.atlas] && ATLASES[c.atlas].tiles && ATLASES[c.atlas + '_soul'] ? c.atlas + '_soul' : c.atlas;
+  const soul = c.soul_pos ? layer(soulAtlas, c.soul_pos, VANILLA[c.set] || 'centers') : null;
   return soul ? [soul, base] : [base];
 };
 

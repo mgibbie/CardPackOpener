@@ -11,7 +11,8 @@ const gone = (c) => !G.playing_cards.includes(c);
 const FILE_JOKERS = ['aron', 'lairon', 'aggron', 'numel', 'camerupt', 'mega_camerupt'];
 ok(P_CENTERS.j_poke_numel.config.extra && P_CENTERS.j_poke_mega_camerupt.config.extra.Xmult_mod === 0.5 && P_CENTERS.j_poke_mega_camerupt.config.extra.Xmult_multi === undefined, 'mega camerupt: Xmult_multi renamed Xmult_mod (Pokermon 3.9.1)');
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 6 pokejokers_11 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length === 6, 'defs: 6 from pokejokers_11.lua');
+// (+ 15 new in 3.9.1: new-jokers sub-batch 12, pokermon_391_new_12_test.mjs)
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length === 21, 'defs: 21 from pokejokers_11.lua (6 + 15 new in 3.9.1)');
 
 // ---------------------------------------------------------------- Aron line
 {

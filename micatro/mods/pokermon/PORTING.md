@@ -947,7 +947,7 @@ every Pokermon joker (pokemon_in_pool, one per family, the Gen 3 option, enhance
   - `systems/utils.js`: `get_target_card_suit`, `get_consumeables` (3.9.1 pokefunctions / pokeutils).
 - **Deferred** (`new_deferred`):
   - Kirlia -> **Gallade** (Dawn Stone): Gallade is in upstream pokejokers_16, sub-batch 14.
-  - Skitty -> **Delcatty** (Moon Stone): Delcatty is in pokejokers_11, sub-batch 12.
+  - Skitty -> **Delcatty** (Moon Stone): Delcatty is in pokejokers_11, sub-batch 12. **Done there** (below).
   - Until then Kirlia and Skitty have no `item_req` and no stone line in their text. A stone doesn't target them, and their
     `item_evo` calls are inert (`can_evolve` needs the target center). The code needs no change when those jokers land: drop the
     spec entries and regenerate.
@@ -972,7 +972,7 @@ every Pokermon joker (pokemon_in_pool, one per family, the Gen 3 option, enhance
   In play a Shiny one draws its normal card under the Shiny shader, like every Pokermon joker. A browser screenshot showed 12 of them
   (a Shiny Shedinja and Skitty) on their 3.9.1 cards.
 - **Design wiki** regenerated (`node tools/micatro/gen_designwiki.mjs`: `designwiki/data/micatro_mods*.json`).
-  - `designwiki_micatro_mods_test` still fails one check: "every card's sprite cell matches its atlas pos" for the Unown Swarm. That
+  - (Fixed in sub-batch 12, below.) `designwiki_micatro_mods_test` still failed one check: "every card's sprite cell matches its atlas pos" for the Unown Swarm. That
     comes from batch 10b, not this sub-batch: its tiled atlas has no `src`, so the wiki generator draws no art for it.
   - On origin/main the same check fails on Unown: the wiki was not regenerated after 10b.
 - **Tests**: `micatro/tests/mods/pokermon_391_new_11_test.mjs` gives 5 passed / 45 failed on origin/main (9a00cd8f) and 176 / 0 here.
@@ -988,14 +988,83 @@ every Pokermon joker (pokemon_in_pool, one per family, the Gen 3 option, enhance
     fixtures are served the pre-batch-10 index.js and the old joker files, so the new jokers never enter them; no shim change.
     `micatro_mod_assets` and `micatro_replay` pass too.
 
+### New jokers, sub-batch 12 (pokejokers_11)
+Pinned **`3.9.1+r9`** (`contentRev: 9`). The **15 jokers 3.9.1 added** to `pokemon/pokejokers_11.lua`, built with the sub-batch 11 pipeline
+(spec `new_jokers` "12", `node tools/micatro/gen_pokermon_391_overlay.mjs <extract>`; the extract is unchanged). Each is in the pools by its
+rarity: Common Meditite, Plusle, Minun, Illumise, Wailmer; Uncommon Volbeat, Roselia, Carvanha, Spinda; Rare Sableye, Torkoal (only with a
+Mult card in the deck: `enhancement_gate`); Safari Delcatty, Medicham, Sharpedo, Wailord.
+
+- **The jokers** (jokers/pokejokers_11.js; numbers from data391.js):
+  - **Delcatty** (Skitty's Moon Stone evolution): copies the joker to its right when that joker is of the round's type (`cattype`), with
+    +1 Energy. The copy runs on a stand-in of the joker's ability: reads fall through to the real one (the Lua's `__index` metatables), the
+    stand-in is energized (`energize`, silent), writes stay on it. `gone` is set meanwhile, as in the Lua, so the copied joker can't evolve.
+    The badge is Skitty's.
+  - **Sableye**: +X0.5 when a drawn card depletes an enhancement from the deck (none of it left), once per enhancement a round; resets at
+    end of round. Quantum enhancements count (`get_enhancements`).
+  - **Meditite / Medicham**: +7 / +12 Mult per empty consumable slot with 0 discards left. Meditite evolves in 5 rounds. Medicham also
+    applies Sixth Sense: a lone 6 as the first hand is destroyed in the `destroy_card` pass for a Spectral card (must have room).
+  - **Plusle**: +2 Mult per Joker and consumable (SMODS `get_card_areas('jokers')` = jokers + consumables); each Minun gives X2.5
+    (`other_joker`).
+  - **Minun**: every Joker, Booster and consumable costs $1 less per Minun (3.9.1's lovely cost patch, here `systems/rules.js set_cost`;
+    Minun reprices every card when it comes and goes). $10 at end of round per Plusle (`calc_dollar_bonus`).
+  - **Volbeat**: +6 Chips per Planet card used, or +X0.08 Mult instead with another Grass joker. **Illumise**: a Planet card per Grass joker
+    (itself included) when the Blind is selected, as room allows.
+  - **Roselia**: the round's first scoring card is retriggered twice if Odd, else it becomes a Seed card.
+  - **Carvanha / Sharpedo**: slice the joker to their right at Blind select (Ceremonial Dagger's rules: not Eternal). X2 / X3 on a poker hand
+    already played this round. Carvanha evolves after 3 jokers. Sharpedo makes a Spectral card per slice (must have room).
+  - **Wailmer / Wailord**: +6 / +10 Chips per Club left in the deck; Wailmer evolves in 5 rounds. Wailord turns Standard Pack cards into Clubs
+    (`modify_booster_card`).
+  - **Torkoal**: each played Mult card retriggers once per discard left.
+  - **Spinda**: comes holding a Wheel of Fortune. Its Nature (set on creation): 3 ranks and 3 enhancements. A scored card of a Nature rank
+    becomes a random Nature enhancement before scoring ("Teeter Dance!").
+- **Evolutions**: Skitty -> Delcatty with a Moon Stone (sub-batch 11's deferral is dropped: Skitty has its `item_req` and Moon Stone line
+  again; its `item_evo` call needed no change). Meditite -> Medicham, Carvanha -> Sharpedo, Wailmer -> Wailord. Families from 3.9.1:
+  Skitty / Delcatty, Meditite / Medicham, Carvanha / Sharpedo, Wailmer / Wailord, Roselia.
+- **Deferred** (`new_deferred`): Roselia -> **Roserade** (Shiny Stone) and Budew -> Roselia. Budew and Roserade are in upstream
+  pokejokers_14 (sub-batch 14). Until then Roselia has no `item_req` and no Shiny Stone line, its family is Roselia alone, and its
+  `item_evo` call is inert. Nothing to change when they land: drop the spec entry and regenerate.
+- **Shared changes**:
+  - `systems/utils.js`: 3.9.1's `get_target_card_enhancements`, `find_playing_card`, `get_depleted`, and SMODS `get_enhancements`.
+  - `systems/rules.js set_cost`: Minun.
+  - The spec's `loc_extra` adds Other.deplete, poke_teeter_dance_ex and the poke_m_* enhancement names (Spinda's text).
+  - `smods_seams_test`: `modify_booster_card` is now read (by Wailord).
+- **Deviations / kept quirks**:
+  - Wailord's `display_size` (1.2x a card) is not ported: the card frame is fixed. Its art is its normal cell.
+  - Medicham's "+1 Spectral" pops through `card_eval_status_text`. SMODS shows a `destroy_card` return's message, but our destroy pass
+    reads only `remove`.
+  - Medicham's text vars hold its (missing) `rounds` at #2#, as the Lua's do; the text never shows #2#.
+  - Delcatty energizes the stand-in once per `energy_buff` (ours takes one Energy a call; 3.9.1 passes the amount). With 1 it's the same.
+  - Delcatty puts back the copied joker's `gone` as it was (the Lua sets nil).
+  - Our copies never evolve anyway: `can_evolve` refuses a Blueprint context.
+  - Spinda's Nature tooltip is our 3.2.1 "Nature" entry (vars 'rank'), as the other Nature jokers.
+- **Add-ons**: Nacho / Pokermon+ ship none of these 15 jokers.
+- **Art**: every new joker draws its 3.9.1 card from `AtlasJokersBasicNatdex-391.png` (and its Shiny twin), vendored in batch 5. No new
+  art files. The test checks each crop and its Shiny twin hold a real picture; a browser screenshot showed them in the joker row.
+- **Design wiki**: `designwiki_micatro_mods_test`'s sprite-cell check failed on the Unown Swarm since batch 10b. Its tiled atlas has no
+  `src`, so the generator drew no art.
+  - Fixed: `tools/micatro/gen_designwiki_mods.mjs` emits the tiled atlas (tiles, tile_cols, cell, crop, the card it fills), and gives
+    each tile its size from the strip when the PNG isn't on disk. The Swarm's soul layer is its `_soul` strip, as the game's animation
+    draws it.
+  - `designwiki/app.js mcSprite` resolves a tiled cell as `modCellRect` does: the tile `floor(x / tile_cols)`, `x - t * tile_cols`, and
+    the crop scaled to fill the card.
+  - Regenerated (`node tools/micatro/gen_designwiki.mjs`); `index.html` cache-bust `?v=20261020pk12`.
+- **Tests**: `micatro/tests/mods/pokermon_391_new_12_test.mjs` gives 0 passed / 30 failed on origin/main (9a00cd8f) and on sub-batch 11
+  (0 / 33), and 119 / 0 here.
+  - It fires every joker through real plays and each evolution: Skitty -> Delcatty (a real Moon Stone), Meditite -> Medicham,
+    Carvanha -> Sharpedo, Wailmer -> Wailord, and the inert Roselia -> Roserade.
+  - It also checks the overlay, the order, the pools (shop rarity pools, the Mult gate, one per family, the Gen 3 option), the families,
+    the deferred part, Minun's prices and payout, Wailord's Standard Pack and the art.
+  - Count pins updated: `pokejokers_11_test` (21 defs), `pokermon_391_new_11_test` (rev 8+, its own 26, Skitty's deferral gone),
+    `pokermon_391_data_test` / `modpin_test` / `micatro_mod_version_pin_test` (rev 9), `smods_seams_test`.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
-- **New jokers** (sub-batches 11–15, 15b): sub-batch 11 done (above). Its `new_deferred`: Kirlia -> Gallade (sub-batch 14), Skitty ->
-  Delcatty (sub-batch 12). Still to add: 91 from 3.9.1 (44 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms, 7 non-Pokémon,
-  3 April Fools) + 9 from upstream main (15b).
+- **New jokers** (sub-batches 11–15, 15b): sub-batches 11 and 12 done (above). `new_deferred`: Kirlia -> Gallade and Roselia -> Roserade
+  (+ Budew -> Roselia), all sub-batch 14. Still to add: 76 from 3.9.1 (29 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms,
+  7 non-Pokémon, 3 April Fools) + 9 from upstream main (15b).
 - **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist).
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,
