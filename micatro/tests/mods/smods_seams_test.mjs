@@ -14,7 +14,7 @@
 //      destroy_card pass over UNSCORED played cards for an opted-in mod's jokers without the 'unscored' feature
 //      (Pokermon 3.9.1's Dusclops); SMODS.add_booster_to_shop (Jirachi Booster).
 //   node micatro/tests/mods/smods_seams_test.mjs
-import { T, hand, clearHand, winRound, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
+import { T, hand, clearHand, winRound, play, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
 import {
   P_CENTER_POOLS, P_BLINDS, P_TAGS, Card, add_joker, create_card, ease_dollars, ease_ante, localize, poll_edition,
   get_next_tag_key, get_new_boss, get_pack, get_next_voucher_key,
@@ -91,6 +91,9 @@ registerMod({
         calculate(self, card, context) {
           if (context.end_of_round && context.cardarea === G.hand && context.playing_card_end_of_round) LOG.push(['playing_card_end_of_round', card.base.value]);
         } },
+      // batch 10: a joker that makes Stone cards ALSO Seam Seed cards (quantum) — the quantum enhancement's own calculate runs
+      { key: 'j_st_quantum', set: 'Joker', name: 'Seam Quantum', rarity: 1, cost: 1, pos: { x: 0, y: 0 }, config: {}, quantum_enhancements: true,
+        calculate(self, card, context) { if (context.check_enhancement && context.other_card.config.center.key === 'm_stone') return { m_st_seed: true }; } },
       { key: 'j_st_plain', set: 'Joker', name: 'Seam Plain', rarity: 1, cost: 1, pos: { x: 0, y: 0 }, config: { extra: { mult: 2, mult_mod: 3, xm: 2 } } },
     ],
     blinds: [
@@ -107,6 +110,7 @@ registerMod({
       if (context.after) { LOG.push(['hook:after', context.scoring_name, G.play.cards.length]); if (ANS.after_func) return { func() { LOG.push(['hook:after_func']); } }; }
       if (context.individual && context.cardarea === G.play) LOG.push(['hook:individual', context.other_card.base.value, !!context.other_card.lucky_trigger]);
       if (context.end_of_round && context.main_eval) LOG.push(['hook:end_of_round', !!context.beat_boss, context.game_over]);
+      if (context.first_hand_drawn) LOG.push(['hook:first_hand_drawn', G.hand.cards.length]);
       return undefined;
     },
   },
@@ -119,11 +123,16 @@ registerMod({
       calculate(self, card, context) {
         if (context.money_altered || context.setting_ability || context.drawing_cards || context.stay_flipped) LOG.push(['DEAF', Object.keys(context).join()]);
         if (context.cardarea === 'unscored') { LOG.push(['DEAF-UNSCORED']); return { remove: true }; }
-      } }],
+      } },
+    // (batch 10) a quantum mod enhancement of a mod that did NOT opt in: its own calculate must never run as a quantum
+    { key: 'j_so_quantum', set: 'Joker', name: 'Deaf Quantum', rarity: 1, cost: 1, pos: { x: 0, y: 0 }, config: {}, quantum_enhancements: true,
+      calculate(self, card, context) { if (context.check_enhancement && context.other_card.config.center.key === 'm_stone') return { m_so_mark: true }; } },
+    { key: 'm_so_mark', set: 'Enhanced', name: 'Deaf Mark', pos: { x: 0, y: 0 }, config: {},
+      calculate(self, card, context) { if (context.end_of_round && context.extra_enhancement) LOG.push(['DEAF-QUANTUM']); } }],
     blinds: [{ key: 'bl_so_boss', name: 'The Deaf', dollars: 5, mult: 2, vars: [], debuff: {}, boss: { min: 1, max: 10 }, pos: { x: 0, y: 0 },
       calculate(self, blind, context) { LOG.push(['DEAF-BLIND', Object.keys(context).join()]); } }],
   },
-  hooks: { calculate(context) { if (context.after || context.individual || context.end_of_round) LOG.push(['DEAF-HOOK', 'after']); return undefined; } },
+  hooks: { calculate(context) { if (context.after || context.individual || context.end_of_round || context.first_hand_drawn) LOG.push(['DEAF-HOOK', 'after']); return undefined; } },
 });
 
 /** A fresh run with these mods, blind selected (the Small slot may hold a test blind), empty hand. */
@@ -159,8 +168,8 @@ await loadMods(AVAILABLE.map((m) => m.id));
   newRun({ seed: 'SEAM_ALL', back: 'b_red', mods: AVAILABLE.map((m) => m.id) });
   // (3.2.1-era content reads none; Bunco's own stay_flipped is not opted in. Pokermon's 3.9.1 reworks read theirs: batch 6
   // Golduck setting_ability, Natu / Xatu poker_hand_changed; batch 7 Jirachi Banker modify_final_cashout; batch 8 Gimmighoul
-  // money_altered.)
-  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,money_altered,modify_final_cashout,poker_hand_changed', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
+  // money_altered; batch 10 the Hazard card playing_card_end_of_round.)
+  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,money_altered,modify_final_cashout,poker_hand_changed,playing_card_end_of_round', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
   fresh('SEAM_GATE');
   ok(wanted('money_altered') && wanted('setting_ability') && wanted('modify_weights') && wanted('resetting_card') && !wanted('create_shop_card'), 'seamtest on: exactly the contexts its code reads are wanted');
   fresh('SEAM_GATE2', ['seamtest', 'seamoff']);
@@ -522,6 +531,25 @@ registerMod({
   clearLog();
   winRound();
   ok(seen('hook:end_of_round').length === 1 && seen('hook:end_of_round')[0][2] === false, 'end_of_round: heard once at mod level (main_eval, not game over)', seen('hook:end_of_round'));
+}
+// ================================================================== 9. batch 10: first_hand_drawn at mod level; a quantum MOD enhancement's own calculate
+{
+  fresh('SEAM_FHD', ['seamtest', 'seamoff'], { noSelect: true });
+  act({ type: 'select_blind' }); flush();
+  ok(seen('hook:first_hand_drawn').length === 1, 'first_hand_drawn: an opted-in mod hooks.calculate hears it once (with the jokers: the draw is still queued, so an effect it queues lands after it)', seen('hook:first_hand_drawn'));
+  ok(seen('DEAF-HOOK').length === 0, 'first_hand_drawn: a mod that did not opt in never gets it at mod level');
+  clearHand(); clearLog();
+  play(hand(['S_2']));
+  ok(seen('hook:first_hand_drawn').length === 0, 'first_hand_drawn: not on later draws');
+}
+{
+  fresh('SEAM_QNT', ['seamtest', 'seamoff']);
+  add_joker('j_st_quantum'); add_joker('j_so_quantum'); flush();
+  hand(['S_5', 'H_6'], { center: 'm_stone' });
+  hand(['D_9'], { center: 'm_st_seed' });
+  winRound(hand(['C_2']));
+  ok(seen('playing_card_end_of_round').map((e) => e[1]).sort().join() === '5,6,9', 'quantum: held Stone cards made Seam Seed run its OWN end_of_round calculate (+ the real Seed card)', seen('playing_card_end_of_round'));
+  ok(seen('DEAF-QUANTUM').length === 0, 'quantum: a not-opted-in mod quantum enhancement is never calculated');
 }
 {
   fresh('SEAM_UNSC', ['seamtest', 'seamoff']);

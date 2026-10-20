@@ -121,7 +121,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
   G.GAME.probabilities.normal = 1;
   const h0 = G.playing_cards.filter((c) => key(c) === 'm_poke_hazard').length;
   nextRound();
-  ok(G.playing_cards.filter((c) => key(c) === 'm_poke_hazard').length === h0 + 4, 'golett: 4 Hazards at blind select');
+  ok(G.GAME.poke_hazard_level === 1 && G.playing_cards.filter((c) => key(c) === 'm_poke_hazard').length === h0 + 1, 'golett: +1 Hazard layer -> 1 Hazard dealt with the first hand (Pokermon 3.9.1)');
   winRound();
   rounds(4);
   ok(key(j) === 'j_poke_golurk', 'golett -> golurk after 5 rounds', key(j));
@@ -129,7 +129,7 @@ const close = (a, b) => Math.abs(a - b) < 1e-9;
   G.GAME.probabilities.normal = 1e-9;
   hand(['S_2'], { center: 'm_poke_hazard' });
   r = play(hand(['S_A']));
-  ok(close(r.total.mult, 1.4), 'golurk: X1.4 per held Hazard', r.total);
+  ok(close(r.total.mult, 1.3), 'golurk: X1.3 per held Hazard (Pokermon 3.9.1)', r.total);
 }
 
 // ------------------------------------------------------------- Pawniard / Bisharp

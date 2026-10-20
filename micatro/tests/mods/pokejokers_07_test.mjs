@@ -55,25 +55,27 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
 {
   start('BELLO');
   add('j_poke_bellossom');
-  let wild = 0, plus = 0;
-  for (let i = 0; i < 8; i++) {
+  let wild = 0, seed = 0, plus = 0;
+  for (let i = 0; i < 12; i++) {
     const c = hand(['S_3']);
     const r = play(c);
-    const became = key(c[0]) === 'm_wild';
-    if (became) { wild++; ok(r.total.mult === 1 && r.total.chips === 8, 'bellossom: odd card became Wild (no Mult)', r.total); }
-    else { plus++; ok(r.total.mult === 8 && r.total.chips === 8, 'bellossom: odd card gives +7 Mult', r.total); }
+    const became = key(c[0]) !== 'c_base';
+    if (became) {
+      if (key(c[0]) === 'm_wild') wild++; else if (key(c[0]) === 'm_poke_seed') seed++;
+      ok((key(c[0]) === 'm_wild' || key(c[0]) === 'm_poke_seed') && r.total.mult === 1, 'bellossom: odd card became Wild or Seed (no Mult) (Pokermon 3.9.1)', [key(c[0]), r.total]);
+    } else { plus++; ok(r.total.mult === 8 && r.total.chips === 8, 'bellossom: odd card gives +7 Mult', r.total); }
   }
-  ok(wild > 0 && plus > 0, 'bellossom: both outcomes happen (coin flip)', [wild, plus]);
+  ok(wild > 0 && seed > 0 && plus > 0, 'bellossom: every outcome happens (Wild / Seed / +Mult)', [wild, seed, plus]);
   const r = play(hand(['S_2']));
   ok(r.total.mult === 1, 'bellossom: even ranks do nothing', r.total);
-  // Already Wild + converted -> gains an aura edition (Foil / Holo / Polychrome).
+  // Already enhanced (3.9.1: any enhancement) + picked -> gains an aura edition (Foil / Holo / Polychrome), keeps its enhancement.
   let got = false;
   for (let i = 0; i < 10 && !got; i++) {
     const c = hand(['S_5'], { center: 'm_wild' });
     play(c);
     if (c[0].edition) got = c[0].edition.foil || c[0].edition.holo || c[0].edition.polychrome;
   }
-  ok(got, 'bellossom: a Wild odd card gets Foil / Holo / Polychrome');
+  ok(got, 'bellossom: an enhanced odd card gets Foil / Holo / Polychrome');
 }
 
 // ---------------------------------------------------------------- Marill / Azumarill
@@ -156,7 +158,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
   const d = hand(['S_2', 'S_4', 'S_6', 'S_8']);
   act({ type: 'highlight', ids: d.map((c) => c.sort_id) });
   const res = act({ type: 'discard' });
-  ok(d.filter((c) => key(c) === 'm_wild').length === 3, 'skiploom: the first 3 discarded cards become Wild', d.map(key));
+  ok(d.filter((c) => key(c) === 'm_poke_seed').length === 3, 'skiploom: the first 3 discarded cards become Seed cards (Pokermon 3.9.1)', d.map(key));
   ok(!G.jokers.cards.includes(j) && G.hand.config.card_limit === 8, 'skiploom: hops away after the discard', [G.jokers.cards.map(key), G.hand.config.card_limit]);
   ok(statusMsgs(res.events).some((m) => /Skip/i.test(m)), 'skiploom: "Skip!"', statusMsgs(res.events));
 }
@@ -166,14 +168,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
   const d = hand(['S_2', 'S_4', 'S_6']);
   act({ type: 'highlight', ids: d.map((c) => c.sort_id) });
   act({ type: 'discard' });
-  ok(d.filter((c) => key(c) === 'm_wild').length === 2 && !G.jokers.cards.includes(j), 'hoppip: first 2 discarded become Wild, then it leaves', d.map(key));
+  ok(d.filter((c) => key(c) === 'm_poke_seed').length === 2 && !G.jokers.cards.includes(j), 'hoppip: first 2 discarded become Seed cards, then it leaves (Pokermon 3.9.1)', d.map(key));
   const k = add('j_poke_jumpluff');
   ok(G.hand.config.card_limit === 11, 'jumpluff +3 hand size', G.hand.config.card_limit);
   clearHand();
   const d2 = hand(['H_2', 'H_4', 'H_6', 'H_8', 'H_T']);
   act({ type: 'highlight', ids: d2.map((c) => c.sort_id) });
   act({ type: 'discard' });
-  ok(d2.every((c) => key(c) === 'm_wild') && !G.jokers.cards.includes(k), 'jumpluff: every discarded card becomes Wild', d2.map(key));
+  ok(d2.every((c) => key(c) === 'm_poke_seed') && !G.jokers.cards.includes(k), 'jumpluff: every discarded card becomes a Seed card (Pokermon 3.9.1)', d2.map(key));
 }
 
 // ---------------------------------------------------------------- Aipom
@@ -495,15 +497,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_07.lua'].length === 33, 'defs: 33 fro
   ok(!has_enhancement(st[0], 'm_steel'), 'steelix: the quantum Steel goes with it', key(st[0]));
 }
 {
-  start('MSTEEL'); // (held on its 3.2.1 behaviour: needs quantum Hazard scoring, batch 10)
+  start('MSTEEL'); // (Pokermon 3.9.1, batch 10: Stone cards are also Steel and Hazard; the quantum Hazard destroy is in pokermon_391_hazard_test)
   add('j_poke_mega_steelix');
-  const st = hand(['S_4'], { center: 'm_steel' });
-  play(hand(['S_A']));
-  ok(st[0].base.suit === 'Diamonds' && key(st[0]) === 'c_base', 'mega steelix: held non-Diamond Steel -> Diamond, enhancement lost', [st[0].base.suit, key(st[0])]);
+  const st = hand(['S_4', 'S_5', 'S_6', 'S_7'], { center: 'm_stone' });
+  ok(st.every((c) => has_enhancement(c, 'm_steel') && has_enhancement(c, 'm_poke_hazard')), 'mega steelix: Stone cards are also Steel and Hazard (Pokermon 3.9.1)');
+  const r = play(hand(['S_A']));
+  ok(Math.abs(r.total.mult - 1.5 ** 8) < 1e-9, 'mega steelix: 4 no-rank cards held -> every held card retriggers once (X1.5 Steel x8)', r.total);
   winRound();
-  const n = G.playing_cards.filter((c) => c.is_suit('Diamonds')).length;
-  const row = G.GAME.round_eval.rows.find((x) => x.center === 'j_poke_mega_steelix');
-  ok(row && row.dollars === n, 'mega steelix: $1 per Diamond in the deck', [row, n]);
+  ok(!G.GAME.round_eval.rows.some((x) => x.center === 'j_poke_mega_steelix'), 'mega steelix: no more $ per Diamond (3.2.1)');
 }
 
 // ---------------------------------------------------------------- Snubbull / Granbull

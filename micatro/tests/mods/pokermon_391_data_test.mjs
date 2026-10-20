@@ -5,7 +5,7 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 5 (pin '3.9.1+r5', batch 8; batch 7 was r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 6 (pin '3.9.1+r6', batch 10; batch 8 was r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
@@ -31,17 +31,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 5, 'Pokermon is version 3.9.1, contentRev 5', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r5', 'its pin is 3.9.1+r5', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 6, 'Pokermon is version 3.9.1, contentRev 6', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r6', 'its pin is 3.9.1+r6', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r5', 'a new run is pinned 3.9.1+r5', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r6', 'a new run is pinned 3.9.1+r6', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r5', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 5). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r6', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 6). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
@@ -53,7 +53,8 @@ ok(D391.version === '3.9.1' && D391.counts.rarity === 41 && D391.counts.cost ===
 // 3.9.1 config, config_all; so does Mega Pidgeot's blueprint flag)
 // (batch 7: Larvitar, Pupitar and Kricketot - pokejokers_09/14 - likewise; batch 8: the last two, Grubbin and Charjabug)
 ok(!D391.counts.config && D391.counts.attributes === 451, '... no config number taken outside the reworked files any more (batch 8)', D391.counts);
-ok(D391.skipped.length >= 30 && D391.skipped.every((s) => s.length === 5 && typeof s[4] === 'string' && s[4] && s[4] !== '?'), 'every skipped change has a reason', D391.skipped.filter((s) => !s[4] || s[4] === '?'));
+// (batch 10: the Hazard / Seed / quantum holds left; only Unown's format-only change is skipped now)
+ok(D391.skipped.length >= 1 && D391.skipped.every((s) => s.length === 5 && typeof s[4] === 'string' && s[4] && s[4] !== '?'), 'every skipped change has a reason', D391.skipped.filter((s) => !s[4] || s[4] === '?'));
 
 // ---------------------------------------------------------------- rarities (mostly to Safari)
 const RAR = { raticate: 'poke_safari', fearow: 'poke_safari', sandslash: 'poke_safari', nidorina: 'poke_safari', golduck: 'poke_safari',
@@ -69,7 +70,7 @@ for (const [n, c] of Object.entries(COST)) ok(C(n).cost === c, `cost: ${n} $${c}
 
 // ---------------------------------------------------------------- compat flags
 ok(C('mega_pidgeot').blueprint_compat === true && C('pokedex').blueprint_compat === false && C('professor').blueprint_compat === false && C('treasure_eatery').blueprint_compat === false, 'blueprint_compat: Mega Pidgeot on; Pokédex / Professor / Treasure Eatery off');
-ok(C('spidops').blueprint_compat === true && C('mega_steelix').blueprint_compat === true, 'blueprint_compat of jokers still on 3.2.1 stays 3.2.1 (Spidops, Mega Steelix: held)');
+ok(C('spidops').blueprint_compat === false && C('mega_steelix').blueprint_compat === false, 'blueprint_compat: Spidops / Mega Steelix take their 3.9.1 flag (reworked since batch 10)');
 ok(C('vanillite').blueprint_compat === true, 'Vanillite (pokejokers_20, batch 8) takes its 3.9.1 flag');
 ok(C('magmortar').blueprint_compat === true, 'Magmortar (pokejokers_16, batch 7) takes its 3.9.1 flag');
 ok(C('wartortle').perishable_compat === false && C('zubat').perishable_compat === false && C('mareep').perishable_compat === false && C('treecko').perishable_compat === true, 'perishable_compat: Wartortle / Zubat / Mareep off, Treecko on');
@@ -131,10 +132,11 @@ ok(C('primeape').config.evo_rqmt === 29 && C('ursaring').config.extra.mult_mod =
 // skipped (reworks): the 3.2.1 numbers stay
 // (Glaceon and Jirachi Power are reworked since batch 7: their 3.9.1 numbers are pokermon_391_reworks_b_test.mjs's)
 // (Vikavolt, Ursaluna and Annihilape are reworked since batch 8: their 3.9.1 numbers are pokermon_391_reworks_c_test.mjs's)
-ok(C('mega_steelix').config.extra.money === 1 && C('qwilfish').config.extra.chip_mod === 25
-  && C('roggenrola').config.extra.mult_mod === 4 && C('golurk').config.extra.Xmult_multi === 1.4 && C('tarountula').config.extra.rounds === 3,
-'skipped config numbers (held: the Hazard layer) keep their 3.2.1 values');
-ok(C('spidops').config.extra.h_max === 8 && C('spidops').config.extra.card_goal === undefined, 'renamed / dropped config keys are not taken for a held joker (the ported logic reads the 3.2.1 keys)', C('spidops').config.extra);
+// (batch 10: the Hazard layer jokers left the holds; their whole 3.9.1 configs are taken — pokermon_391_hazard_test.mjs)
+ok(C('mega_steelix').config.extra.stone_held === 4 && C('qwilfish').config.extra.chip_mod === 15
+  && C('roggenrola').config.extra.mult_mod === 5 && C('golurk').config.extra.Xmult_multi === 1.3 && C('tarountula').config.extra.rounds === 4,
+'the former Hazard holds take their 3.9.1 numbers (batch 10)');
+ok(C('spidops').config.extra.card_goal === 8 && C('spidops').config.extra.h_max === undefined, 'Spidops: its 3.9.1 config replaces the 3.2.1 one', C('spidops').config.extra);
 
 // ---------------------------------------------------------------- house rules / kept fixes
 ok(/contains/.test(DATA.loc.descriptions.Joker.j_poke_deino.text[1]) && /contains/.test(DATA.loc.descriptions.Joker.j_poke_zweilous.text[1]), 'house rule: Deino / Zweilous "contains a Three of a Kind"');
@@ -251,7 +253,9 @@ else {
     return { atlas: c.atlas.replace(/391$/, ''), pos: c.pos };
   };
   const C2 = MODS.pokermon.content;
-  const cards = [...C2.centers, ...C2.blinds, ...C2.stickers, ...MODS.pokermon.sleeves].filter((c) => /391$/.test(c.atlas || '') && c.pos && !/AtlasJokersBasicOthers391|AtlasDecksBasic391/.test(c.atlas) || ['j_poke_rival', 'b_poke_pokemondeck'].includes(c.key));
+  // (content 3.9.1 adds — batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card — has no 3.2.1 cell to compare)
+  const NEW_391 = new Set(['c_poke_miracleseed', 'c_poke_heavyboots', 'm_poke_seed']);
+  const cards = [...C2.centers, ...C2.blinds, ...C2.stickers, ...MODS.pokermon.sleeves].filter((c) => !NEW_391.has(c.key) && (/391$/.test(c.atlas || '') && c.pos && !/AtlasJokersBasicOthers391|AtlasDecksBasic391/.test(c.atlas) || ['j_poke_rival', 'b_poke_pokemondeck'].includes(c.key)));
   const fileOf = (a) => decodeURIComponent(ATLASES[a].src).replace(/^.*\/assets\/2x\//, '');
   const cell = (a, pos) => { const A = ATLASES[a], cw = (A.px || 71) * 2, chh = (A.py || 95) * 2; return [pos.x * cw, pos.y * chh, cw, chh]; };
   const want = {}; // file -> rects

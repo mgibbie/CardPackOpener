@@ -4,10 +4,12 @@
 // Ball + 2 Twisted Spoons), Amped (Energy Search + Double Rainbow Energy), Future (+4 Foresight:
 // G.GAME.scry_amount, systems/scry.js), Stadium (+8 enhanced cards), Mega (Reroll Surplus + Glut,
 // a Megastone, -1 shop slot), Vending (a Voucher Tag after each odd Ante's Boss), and the legacy
-// Obituary / Revenant (every card has a Pink / Silver seal; only with pokemon_legacy).
+// Obituary / Revenant (every card has a Pink / Silver seal; only with pokemon_legacy). Pokermon 3.9.1 (batch 10) adds the
+// Debris deck (key diceydeck: +1 Hazard layer and limit, +1 hand size, $1 per Hazard card in the full deck at cash-out
+// (systems/rules.js evaluate_round), no interest), whose static data data.js (3.2.1) lacks: it is given here in full.
 // Vouchers / consumables in `config` are applied by the vanilla Back.apply_to_run; `apply` /
 // `calculate` run through Micatro's mod-back seams (engine/back.js).
-import { G, P_CENTERS, localize, play_sound, create_card, defineBacks, change_shop_size } from '../api.js';
+import { G, P_CENTERS, localize, play_sound, create_card, defineBacks, change_shop_size, poke_change_hazard_max, poke_change_hazard_level } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 
 const FILE = 'backs/backs1.lua';
@@ -87,4 +89,30 @@ defineBacks({
       }
     },
   },
+  // Debris Deck (3.9.1 backs1.lua diceydeck; art Catzzadilla, AtlasDecksBasic {10,0})
+  diceydeck: {
+    key: 'diceydeck',
+    name: 'diceydeck',
+    atlas: 'AtlasDecksBasic',
+    pos: { x: 10, y: 0 },
+    artist: 'Catzzadilla',
+    order: 27,
+    unlocked: true,
+    discovered: true,
+    config: { no_interest: true, hazard_layer: 1, hazard_layer_max: 1, h_size: 1, money: 1 },
+    loc_vars(self) { return { vars: [self.config.hazard_layer, self.config.hazard_layer_max, self.config.h_size, self.config.money] }; },
+    apply(self) {
+      G.E_MANAGER.add_event(() => { debris_apply(self.config); });
+    },
+  },
 }, FILE);
+
+/** The Debris deck / sleeve (3.9.1): the Hazard layer and its limit up, hand size up, $ per Hazard card at cash-out. */
+export function debris_apply(cfg) {
+  poke_change_hazard_max(cfg.hazard_layer_max);
+  poke_change_hazard_level(cfg.hazard_layer);
+  G.hand.change_size(cfg.h_size);
+  G.GAME.modifiers.poke_enhance_bonus = 'm_poke_hazard';
+  G.GAME.modifiers.poke_money_per_enhancement = cfg.money;
+  G.GAME.modifiers.poke_enhance_bonus_text = localize('poke_hazards_in_deck');
+}

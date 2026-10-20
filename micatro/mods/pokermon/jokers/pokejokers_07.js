@@ -1,9 +1,8 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_07.lua (Pokédex 181-210: Ampharos -> Granbull), 33 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, megas, volatile, custom_pool_func) comes from data.js + data391.js. See ../PORTING.md.
-// On Pokermon 3.9.1 behaviour since batch 6, except the held ones (their 3.9.1 rework needs a later
-// batch's system; they keep their 3.2.1 behaviour and data): Unown, Bellossom and the Hoppip line
-// (Seed cards), Mega Steelix (quantum Hazard).
+// On Pokermon 3.9.1 behaviour since batch 6, except Unown (held for the Unown rework). Bellossom and the Hoppip line
+// (Seed cards) and Mega Steelix (quantum Hazard) came off hold in batch 10.
 // Rules that live in systems: Aipom's 3-card straights/flushes (rules.js straight_min /
 // flush_min), Unown's $0 sell value (rules.js set_cost), Unown's form (anim.js view data).
 import {
@@ -29,11 +28,11 @@ const hand_size = {
 const ALL_HANDS = ['High Card', 'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush', 'Five of a Kind', 'Flush House', 'Flush Five'];
 const visible_hands = () => ALL_HANDS.filter((h) => G.GAME.hands[h] && G.GAME.hands[h].visible);
 
-/** Hoppip line: on discard, the first `n` discarded cards (all when n is undefined) become Wild; it hops away. */
+/** Hoppip line (3.9.1): on discard, the first `n` discarded cards (all when n is undefined) become Seed cards; it hops away. */
 function hop_calc(self, card, context, n, msg) {
   if (context.pre_discard && context.full_hand && context.full_hand.length > 0 && !context.hook) {
     const target = (n === undefined ? context.full_hand : context.full_hand.slice(0, n)).filter((v) => v);
-    poke_convert_cards_to(target, { mod_conv: 'm_wild' });
+    poke_convert_cards_to(target, { mod_conv: 'm_poke_seed' });
     G.E_MANAGER.add_event(() => { remove(self, card, context, true); });
     return { message: localize(msg) };
   }
@@ -41,7 +40,7 @@ function hop_calc(self, card, context, n, msg) {
 }
 function hop_vars(self, info_queue, center, with_rounds) {
   type_tooltip(self, info_queue, center);
-  if (detailed()) info_queue.push(P_CENTERS.m_wild);
+  if (detailed()) info_queue.push(P_CENTERS.m_poke_seed);
   return { vars: with_rounds ? [center.ability.extra.h_size, center.ability.extra.rounds] : [center.ability.extra.h_size] };
 }
 /** Wooper / Quagsire: +mult, -mult_mod per face card left in the deck. */
@@ -120,6 +119,7 @@ defineJokers({
         if (!center.edition || !center.edition.foil) info_queue.push(P_CENTERS.e_foil);
         if (!center.edition || !center.edition.holo) info_queue.push(P_CENTERS.e_holo);
         info_queue.push(P_CENTERS.m_wild);
+        info_queue.push(P_CENTERS.m_poke_seed); // (the Lua pushes G.P_CENTERS.m_seed, a typo: nil)
       }
       return { vars: [center.ability.extra.mult] };
     },
@@ -128,14 +128,18 @@ defineJokers({
         const odds = [];
         for (const v of context.scoring_hand) {
           const upgrade = pseudorandom(pseudoseed('bellossom'));
-          if (poke_is_odd(v) && upgrade > 0.50 && !v.edition) {
+          // (3.9.1) an odd card: an Enhanced one gets an edition (if it has none); a base one becomes Wild or Seed
+          if (poke_is_odd(v) && upgrade > 0.50 && !(v.config.center !== P_CENTERS.c_base && v.edition)) {
             odds.push(v);
-            if (v.ability.name === 'Wild Card' && !v.edition) {
+            if (v.config.center !== P_CENTERS.c_base && !v.edition) {
               const edition = poll_edition('aura', null, true, true);
               v.set_edition(edition, true, true);
             }
-            v.set_ability(P_CENTERS.m_wild, null, true);
-            G.E_MANAGER.add_event(() => { v.juice_up(); });
+            if (v.config.center === P_CENTERS.c_base) {
+              const enhancement = pseudorandom_element(['m_wild', 'm_poke_seed'], pseudorandom(pseudoseed('wildorseed')))[0];
+              v.set_ability(P_CENTERS[enhancement], null, true);
+              G.E_MANAGER.add_event(() => { v.juice_up(); });
+            }
           } else {
             v.bellossom_score = true;
           }
@@ -686,27 +690,31 @@ defineJokers({
       return undefined;
     },
   },
-  // Mega Steelix 208-1 — HELD on 3.2.1 (spec rework_hold): 3.9.1 makes Stone cards also Steel and Hazard (quantum)
-  // and retriggers held cards per 4 no-rank cards; a quantum enhancement's own calculate (Hazard's end-of-round
-  // destroy) needs core scoring support -> with the Hazard layer (batch 10).
+  // Mega Steelix 208-1 (3.9.1): Stone cards are also Steel and Hazard cards (quantum: a held Stone card rolls Hazard's
+  // end-of-round destroy, js/engine/smods.js quantum_mod_calculate); held cards retrigger once per 4 no-rank cards held.
   mega_steelix: {
+    quantum_enhancements: true, // answers check_enhancement (core.js quantum_enhancements)
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.money, localize(center.ability.extra.suit, 'suits_singular'), localize(center.ability.extra.suit, 'suits_plural')] };
+      if (detailed()) {
+        info_queue.push(P_CENTERS.m_stone);
+        info_queue.push(P_CENTERS.m_steel);
+        info_queue.push(P_CENTERS.m_poke_hazard);
+      }
+      return { vars: [center.ability.extra.stone_held] };
     },
     calculate(self, card, context) {
-      if (context.individual && context.cardarea === G.hand && has_enhancement(context.other_card, 'm_steel')
-        && !context.other_card.is_suit(card.ability.extra.suit) && !context.blueprint) {
-        context.other_card.change_suit(card.ability.extra.suit);
-        context.other_card.set_ability(P_CENTERS.c_base, null, true);
-        return { message: localize('poke_autotomize_ex'), colour: 'metal', card };
+      if (context.check_enhancement) {
+        if (has_enhancement(context.other_card, 'm_stone')) return { m_steel: true, m_poke_hazard: true };
+      }
+      if (context.repetition && context.cardarea === G.hand && context.card_effects
+        && ((context.card_effects[0] && Object.keys(context.card_effects[0]).length) || context.card_effects.length > 1)) {
+        let stone = 0;
+        for (const c of G.hand.cards) if (has_no_rank(c)) stone = stone + 1;
+        const retriggers = Math.floor(stone / card.ability.extra.stone_held);
+        if (retriggers > 0) return { message: localize('k_again_ex'), repetitions: retriggers, card };
       }
       return undefined;
-    },
-    calc_dollar_bonus(self, card) {
-      let diamond_tally = 0;
-      for (const playing_card of G.playing_cards) if (playing_card.is_suit(card.ability.extra.suit)) diamond_tally = diamond_tally + 1;
-      return diamond_tally > 0 ? card.ability.extra.money * diamond_tally : undefined;
     },
   },
   // Snubbull 209

@@ -1,6 +1,7 @@
 // Pokermon non-joker content: every consumable (mart1/2/3, martz, zberryjuice, zmachine), both
 // non-Pocket packs, the 4 vouchers, the 10 decks, the 6 tags, the Iridescent Hacker (was Chartreuse Chamber) boss, the Hazard /
-// Flower enhancements and the Pink / Silver seals — each fired through real actions.
+// Flower enhancements and the Pink / Silver seals — each fired through real actions. (Batch 10's 3.9.1 additions — Seed,
+// Miracle Seed, Heavy-Duty Boots, the Debris deck — are fired in pokermon_391_hazard_test.mjs.)
 //   node micatro/tests/mods/pokermon_content_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
 import { P_BLINDS, P_TAGS, Card, get_new_boss, get_current_pool, create_card } from '../../js/engine/core.js';
@@ -32,8 +33,9 @@ function toShop() { winRound(); act({ type: 'cash_out' }); }
   ok(files['consumables/mart1.lua'].length === 23, 'mart1: 23 (all but Cryptid-only emergy)', files['consumables/mart1.lua'].length);
   ok(files['consumables/mart2.lua'].length === 19 && files['consumables/mart3.lua'].length === 5 && files['consumables/martz.lua'].length === 7, 'mart2 19 / mart3 5 / martz 7');
   ok(files['consumables/zberryjuice.lua'].length === 7 && files['consumables/zmachine.lua'].length === 5, 'zberryjuice 7 / zmachine 5');
-  ok(files['boosters/packs1.lua'].length === 10 && files['vouchers/pokevouchers.lua'].length === 4 && files['backs/backs1.lua'].length === 10, 'packs 10 / vouchers 4 / backs 10');
-  ok(files['tags/tags1.lua'].length === 6 && files['blinds/pokebossblind.lua'].length === 1 && files['seals/seals1.lua'].length === 2 && files['enhancements/enhancement1.lua'].length === 2, 'tags 6 / blind 1 / seals 2 / enhancements 2');
+  ok(files['boosters/packs1.lua'].length === 10 && files['vouchers/pokevouchers.lua'].length === 4 && files['backs/backs1.lua'].length === 11, 'packs 10 / vouchers 4 / backs 11 (+ the 3.9.1 Debris deck)');
+  ok(files['tags/tags1.lua'].length === 6 && files['blinds/pokebossblind.lua'].length === 1 && files['seals/seals1.lua'].length === 2 && files['enhancements/enhancement1.lua'].length === 3, 'tags 6 / blind 1 / seals 2 / enhancements 3 (+ the 3.9.1 Seed)');
+  ok(files['consumables/03_mart_items.lua'].join() === 'miracleseed' && files['consumables/04_mart_rare.lua'].join() === 'heavyboots', '3.9.1 Items: Miracle Seed, Heavy-Duty Boots');
 }
 
 // ================================================================ mart1 leftovers
@@ -528,9 +530,9 @@ const deckRun = (back, seed, opts = {}) => { newRun({ seed, back, mods: ['pokerm
   ok(sh && sh.cards.includes(hz.sort_id) && r.total.chips === 10 + 14, 'Hazard always scores (in the scoring hand, adds no chips)', [sh && sh.cards.length, r.total]);
   clearHand();
   const hzs = hand(['S_2', 'S_3', 'S_4'], { center: 'm_poke_hazard' });
-  G.GAME.probabilities.normal = 6;
+  G.GAME.probabilities.normal = 3;
   winRound(hand(['H_9']));
-  ok(hzs.every((c) => !G.playing_cards.includes(c)), 'Hazards held at end of round: 1 in 6 (x6) destroyed');
+  ok(hzs.every((c) => !G.playing_cards.includes(c)), 'Hazards held at end of round: 1 in 3 (x3) destroyed (Pokermon 3.9.1)');
   G.GAME.probabilities.normal = 1;
 }
 {
@@ -538,7 +540,7 @@ const deckRun = (back, seed, opts = {}) => { newRun({ seed, back, mods: ['pokerm
   const [fl] = hand(['H_2'], { center: 'm_poke_flower' });
   const others = hand(['S_3', 'D_4', 'C_5', 'S_6']);
   const r = play([fl, ...others]);
-  ok(r.total.mult === 4 * 3 && r.events.some((e) => e.type === 'status' && e.card === fl.sort_id && e.eval_type === 'x_mult' && e.amt === 3), 'Flower: X3 Mult with 4 suits (Straight)', r.total);
+  ok(r.total.mult === 4 * 2 && r.events.some((e) => e.type === 'status' && e.card === fl.sort_id && e.eval_type === 'x_mult' && e.amt === 2), 'Flower: X2 Mult with 4 suits (Straight) (Pokermon 3.9.1)', r.total);
   clearHand();
   const [fl2] = hand(['H_2'], { center: 'm_poke_flower' });
   const r2 = play([fl2, ...hand(['H_3', 'D_4', 'C_5', 'H_6'])]);

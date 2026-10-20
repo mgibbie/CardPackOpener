@@ -18,7 +18,7 @@
 import {
   G, P_CENTERS, P_TAGS, P_BLINDS, P_SEALS, P_STAKES, P_CARDS, pseudorandom, pseudoseed, localize,
   card_eval_status_text, get_current_pool, has_quantum_enhancement, level_up_hand, mod_effect_tail, find_joker,
-  mod_card_calculate, set_poll_allow_duplicates,
+  mod_card_calculate, set_poll_allow_duplicates, quantum_enhancements,
 } from './core.js';
 import { ACTIVE as ACTIVE_MODS, MODS, RARITIES, CONSUMABLE_TYPES, ATTRIBUTES, centerActive, feature, registryVersion, callHook, firstHook } from '../mods/registry.js';
 
@@ -214,8 +214,9 @@ export function calculate_seam(context, name, opts = {}) {
  * `.<name>` (Pokermon 3.9.1 cycles the Poliwag line's suit at `context.after`). Effects show like calculate_effect.
  */
 // (individual: each scored card in play, after the jokers' individual effects, once per repetition; end_of_round: the
-// main end_of_round pass, after the jokers / consumables / blind - Pokermon 3.9.1's Leafeon Lucky-trigger counter.)
-export const MOD_VANILLA_CONTEXTS = ['after', 'individual', 'end_of_round'];
+// main end_of_round pass, after the jokers / consumables / blind - Pokermon 3.9.1's Leafeon Lucky-trigger counter;
+// first_hand_drawn: after the jokers' and the blind's - Pokermon 3.9.1's Hazard layer deals its Hazard cards then.)
+export const MOD_VANILLA_CONTEXTS = ['after', 'individual', 'end_of_round', 'first_hand_drawn'];
 const MOD_READS = new WeakMap();
 export function mod_calculate(context, name) {
   if (!ACTIVE_MODS.length) return;
@@ -228,6 +229,24 @@ export function mod_calculate(context, name) {
     if (!r.has(name)) continue;
     const eff = f(context);
     if (eff && typeof eff === 'object') calculate_effect(eff, null, context);
+  }
+}
+
+/**
+ * Steamodded's quantum enhancements calculate AS those enhancements (SMODS.calculate_quantum_enhancements: the card is
+ * evaluated once more per extra enhancement). core.js already scores a quantum enhancement's config numbers; this runs a
+ * quantum MOD enhancement's own `calculate` on the held-card end_of_round pass (run.js end_round) — Pokermon 3.9.1's Mega
+ * Steelix makes Stone cards also Hazard cards, so a held Stone card rolls Hazard's 1 in 3 end-of-round destroy.
+ * Only an enhancement of a mod that opted in (`smods_seams`) is run, and only while such a mod is active: with no
+ * opted-in mod (vanilla, Bunco, MoreFluff, ...) this returns before asking anything. The context gains
+ * `extra_enhancement` (the key), as SMODS sets it. The card's own enhancement is never its own quantum (core.js).
+ */
+export function quantum_mod_calculate(card, context) {
+  if (!ACTIVE_MODS.length || !card || card.debuff || card.removed || !ACTIVE_MODS.some((id) => seam_mod(id))) return;
+  for (const k of quantum_enhancements(card)) {
+    const qc = P_CENTERS[k];
+    if (!qc || !qc.mod || typeof qc.calculate !== 'function' || !seam_mod(qc.mod) || !centerActive(qc)) continue;
+    qc.calculate(qc, card, { ...context, extra_enhancement: k });
   }
 }
 

@@ -27,7 +27,8 @@ const inRange = DATA.groups.jokers.filter((f) => RANGE.test(f.file)).flatMap((f)
 // (batch 7 reworked pokejokers_09-17 too: this test covers batch 6's range; pokermon_391_reworks_b_test.mjs the rest)
 const RW_ALL = D391.reworked || [], RW = RW_ALL.filter((n) => inRange.includes(n));
 const RH = (D391.rework_hold || []).filter(([n]) => inRange.includes(n));
-const HOLDS = ['qwilfish', 'skarmory', 'unown', 'mega_steelix', 'bellossom', 'hoppip', 'skiploom', 'jumpluff'];
+// (batch 10 took Qwilfish, Skarmory, Mega Steelix, Bellossom and the Hoppip line off hold: pokermon_391_hazard_test.mjs)
+const HOLDS = ['unown'];
 
 // ---------------------------------------------------------------- the overlay + version
 // (contentRev 3 since batch 6; later batches bump it: batch 7 is 4, pokermon_391_reworks_b_test.mjs)
@@ -35,7 +36,7 @@ ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 3 && PINS.mo
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
 ok(RW.length === inRange.length - HOLDS.length && inRange.length === 263,
   `reworked: every joker of pokejokers_01-08 but the ${HOLDS.length} holds (Pokermon 3.9.1)`, [RW && RW.length, inRange.length]);
-ok(HOLDS.every((n) => !RW.includes(n)) && RH.map(([n]) => n).sort().join() === HOLDS.slice().sort().join(), 'the holds: Hazard layer (Qwilfish, Skarmory), Unown, Mega Steelix (quantum Hazard), the Seed jokers', RH);
+ok(HOLDS.every((n) => !RW.includes(n)) && RH.map(([n]) => n).sort().join() === HOLDS.slice().sort().join(), 'the holds: Unown only (since batch 10)', RH);
 {
   const LATER = /(pokejokers_(09|1\d|2\d|3\d)|zotherjokers|zmissingno)\.lua$/; // batches 7 and 8
   const later = DATA.groups.jokers.filter((f) => LATER.test(f.file)).flatMap((f) => (Array.isArray(f.ret.list) ? f.ret.list : []).map((it) => it.name));
@@ -197,15 +198,16 @@ ok(DATA.loc.descriptions.Other.bat_leech && DATA.loc.misc.dictionary.poke_leech_
 ok(C('taurosh').in_pool(C('taurosh')) === false && C('shell').in_pool(C('shell')) === false, 'Tauros (Herd) and Shell are never in a pool (Pokermon 3.9.1 in_pool)');
 
 // ---------------------------------------------------------------- holds + house rules / kept fixes
-ok(C('mega_steelix').config.extra.suit === 'Diamonds' && C('mega_steelix').config.extra.money === 1 && /full deck/.test(JOKER_LOC.j_poke_mega_steelix.text.join(' ')), 'held: Mega Steelix keeps its 3.2.1 data and text (quantum Hazard waits for batch 10)');
+// (batch 10: the former holds take their 3.9.1 data and text)
+ok(C('mega_steelix').config.extra.stone_held === 4 && /Hazard/.test(JOKER_LOC.j_poke_mega_steelix.text.join(' ')), 'Mega Steelix: its 3.9.1 data and text (batch 10)');
 {
   start('RW391MSTL');
   add('j_poke_mega_steelix');
   const [st] = hand(['S_4'], { center: 'm_steel' });
   play(hand(['S_A']));
-  ok(st.base.suit === 'Diamonds', 'held: Mega Steelix still turns held Steel cards into Diamonds (3.2.1)', st.base.suit);
+  ok(st.base.suit === 'Spades' && st.config.center.key === 'm_steel', 'Mega Steelix no longer turns held Steel cards into Diamonds (3.2.1 rule gone)', st.base.suit);
 }
-ok(!/Seed/.test(JOKER_LOC.j_poke_hoppip.text.join(' ')) && C('qwilfish').config.extra.chip_mod === 25, 'held: the Hoppip line keeps its 3.2.1 text (no Seed cards yet); Qwilfish its 3.2.1 numbers');
+ok(/Seed/.test(JOKER_LOC.j_poke_hoppip.text.join(' ')) && C('qwilfish').config.extra.chip_mod === 15, 'the Hoppip line shows its 3.9.1 Seed text; Qwilfish its 3.9.1 numbers (batch 10)');
 ok(/contains/.test(JOKER_LOC.j_poke_deino.text[1]), 'house rule: Deino "contains a Three of a Kind"');
 {
   start('RW391ARBO');

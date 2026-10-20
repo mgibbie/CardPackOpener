@@ -343,21 +343,58 @@ export function poke_stabilize_chip_drain(card) {
   card.ability.perma_bonus = Math.max(card.ability.perma_bonus || 0, -card.ability.bonus);
 }
 
-/** Add ratio-based (1 per `ratio` non-hazard cards) or flat Hazard cards to the deck. */
-export function poke_add_hazards(ratio, flat) {
+/**
+ * pokermon.add_hazards(ratio, flat, area) (3.9.1 pokeutils.lua): add ratio-based (1 per `ratio` non-Hazard cards) or flat
+ * Hazard cards to `area` (default the deck; the Hazard layer deals them into the hand). Fronts roll 'hazards' (3.9.1).
+ */
+export function poke_add_hazards(ratio, flat, area) {
   const hazards = [];
   flat = flat || 0;
+  area = area || G.deck;
   let count = G.playing_cards.length;
   for (const v of G.playing_cards) if (has_enhancement(v, 'm_poke_hazard')) count--;
   const to_add = ratio ? Math.floor(count / ratio) : flat;
   for (let i = 1; i <= to_add; i++) {
-    const c = create_playing_card({ front: pseudorandom_element(P_CARDS_LIST(), pseudoseed('qwilfish'))[0], center: P_CENTERS.m_poke_hazard }, G.deck);
+    const c = create_playing_card({ front: pseudorandom_element(P_CARDS_LIST(), pseudoseed('hazards'))[0], center: P_CENTERS.m_poke_hazard }, area);
     hazards.push(c);
     if (G.GAME.blind) G.GAME.blind.debuff_card(c);
   }
   playing_card_joker_effects(hazards);
 }
 
+// ---- The Hazard layer (Pokermon 3.6.0+, 3.9.1 pokeutils.lua): a run-wide level, capped by a run-wide max (default 3).
+// When the first hand of a round is drawn, min(max, level) Hazard cards are dealt into the hand (systems/rules.js
+// calculate). Jokers raise the level (and Skarmory the max) while they are in the deck; the Debris deck / sleeve too.
+export function poke_change_hazard_max(mod) {
+  G.GAME.poke_hazard_max = (G.GAME.poke_hazard_max ?? 3) + mod;
+}
+export function poke_change_hazard_level(mod) {
+  G.GAME.poke_hazard_level = (G.GAME.poke_hazard_level ?? 0) + mod;
+}
+/** pokermon.get_hazard_level_vars(): [current (capped), max] for the Hazard Layer tooltip. */
+export function poke_get_hazard_level_vars() {
+  const max = G.GAME.poke_hazard_max ?? 3;
+  return [Math.min(max, G.GAME.poke_hazard_level ?? 0), max];
+}
+/** The Hazard Layer tooltip (3.9.1: {set = 'Other', key = 'hazard_level', vars = get_hazard_level_vars()}). */
+export const hazard_level_tip = () => ({ set: 'Other', key: 'hazard_level', vars: poke_get_hazard_level_vars() });
+/** pokermon.change_growth_level: extra times a Seed card grows when scored. */
+export function poke_change_growth_level(mod) {
+  G.GAME.poke_growth_level = (G.GAME.poke_growth_level ?? 0) + mod;
+}
+/** add_to_deck / remove_from_deck of every 3.9.1 Hazard joker: its `hazard_level` (+ `hazard_max`) while it is owned. */
+export const hazard_layer = {
+  add_to_deck(self, card) {
+    if (card.ability.extra.hazard_max) poke_change_hazard_max(card.ability.extra.hazard_max);
+    poke_change_hazard_level(card.ability.extra.hazard_level);
+  },
+  remove_from_deck(self, card) {
+    if (card.ability.extra.hazard_max) poke_change_hazard_max(-card.ability.extra.hazard_max);
+    poke_change_hazard_level(-card.ability.extra.hazard_level);
+  },
+};
+
+/** pokermon.set_hazards (3.2.1's per-joker Hazards; no 3.9.1 content calls it since the Hazard layer, batch 10). */
 export function poke_set_hazards(amount) {
   for (let i = 1; i <= amount; i++) {
     const valid = G.deck.cards.filter((v) => v.config.center === P_CENTERS.c_base);

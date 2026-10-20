@@ -1,13 +1,13 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_18.lua (Pokédex 511-530: Pansage -> Excadrill), 11 jokers.
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
-// On Pokermon 3.9.1 behaviour since batch 8, except the Roggenrola line (held on 3.2.1: the Hazard layer, batch 10).
+// On Pokermon 3.9.1 behaviour since batch 8, the Roggenrola line (the Hazard layer) since batch 10.
 // The Pansage / Pansear / Panpour lines' Shortcut / Four Fingers / Pareidolia effects are
 // find_joker aliases in systems/rules.js (find_joker_alias).
 import {
   G, P_CENTERS, localize, card_eval_status_text, juice_card_until,
   defineJokers, type_tooltip, detailed, scaling_evo, item_evo,
   has_enhancement, has_no_rank, pseudorandom_probability, get_probability_vars,
-  poke_set_hazards, poke_create_treasure, create_card,
+  hazard_layer, hazard_level_tip, poke_create_treasure, create_card,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_18.lua';
@@ -22,8 +22,9 @@ function rock_held(card, context, count) {
   }
   return undefined;
 }
-function hazard_tips(info_queue, abbr) {
-  info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [abbr.hazards] });
+/** The Hazard layer jokers' tooltips (3.9.1): the Hazard Layer (current / max) and the Hazard card. */
+function hazard_tips(info_queue) {
+  info_queue.push(hazard_level_tip());
   info_queue.push(P_CENTERS.m_poke_hazard);
 }
 
@@ -147,42 +148,41 @@ defineJokers({
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      hazard_tips(info_queue, abbr);
-      return { vars: [abbr.hazards, abbr.mult_mod, Math.max(0, self.config.evo_rqmt - abbr.hazard_triggered)] };
+      hazard_tips(info_queue);
+      return { vars: [abbr.hazard_level, abbr.mult_mod, Math.max(0, self.config.evo_rqmt - abbr.hazard_triggered)] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       const r = rock_held(card, context, true);
       if (r) return r;
       return scaling_evo(self, card, context, 'j_poke_boldore', card.ability.extra.hazard_triggered, self.config.evo_rqmt);
     },
+    ...hazard_layer,
   },
   // Boldore 525
   boldore: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      hazard_tips(info_queue, abbr);
+      hazard_tips(info_queue);
       if (detailed()) info_queue.push(P_CENTERS.c_poke_linkcable);
-      return { vars: [abbr.hazards, abbr.mult_mod] };
+      return { vars: [abbr.hazard_level, abbr.mult_mod] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       const r = rock_held(card, context, false);
       if (r) return r;
       return item_evo(self, card, context, 'j_poke_gigalith');
     },
+    ...hazard_layer,
   },
   // Gigalith 526
   gigalith: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      hazard_tips(info_queue, abbr);
-      return { vars: [abbr.hazards, abbr.mult_mod] };
+      hazard_tips(info_queue);
+      return { vars: [abbr.hazard_level, abbr.mult_mod] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       const r = rock_held(card, context, false);
       if (r) return r;
       if (context.repetition && context.cardarea === G.hand && context.card_effects
@@ -191,6 +191,7 @@ defineJokers({
       }
       return undefined;
     },
+    ...hazard_layer,
   },
   // Drilbur 529
   drilbur: {

@@ -6,6 +6,7 @@
 // as 3.2.1's — Stadium / Mega: 3.2.1 shipped placeholder_sleeve, their art is 3.9.1's {8,1} / {9,1}).
 import { G, P_CENTERS, localize, play_sound, create_card, change_shop_size } from './api.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
+import { debris_apply } from './backs/backs1.js';
 
 const MOD = 'pokermon';
 const DECKS = 'poke_AtlasDecksBasic391', DECKS_391 = DECKS;
@@ -87,5 +88,14 @@ export const SLEEVES = [
         });
       }
     },
+  }),
+  // Debris Sleeve (3.9.1 sleeve.lua diceysleeve, AtlasDecksBasic {10,1}): as the Debris deck. Its alt with the Debris deck
+  // (3.9.1: G.GAME.modifiers.poke_negative_hazards — every Hazard card carries card_limit +1, i.e. +1 hand size while
+  // held) needs a playing-card card_limit seam the engine doesn't have: NOT registered, so on the Debris deck the sleeve
+  // plays its own effect (one more layer and limit, +1 hand size). Deferred, with the playing-card card_limit seam.
+  sleeve('diceysleeve', 'Debris Sleeve', { x: 10, y: 1 }, DECKS, {
+    config: { no_interest: true, hazard_layer: 1, hazard_layer_max: 1, h_size: 1, money: 1 },
+    loc_vars: (self) => ({ vars: [self.config.hazard_layer, self.config.hazard_layer_max, self.config.h_size, self.config.money] }),
+    apply(self) { G.E_MANAGER.add_event(() => { debris_apply(self.config); }); },
   }),
 ];

@@ -1,13 +1,13 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_20.lua (Pokédex 571-600: Zoroark -> Ferrothorn), 11 jokers.
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
-// On Pokermon 3.9.1 behaviour since batch 8, except Ferroseed / Ferrothorn (held on 3.2.1: the Hazard layer, batch 10).
+// On Pokermon 3.9.1 behaviour since batch 8, Ferroseed / Ferrothorn (the Hazard layer) since batch 10.
 // The Gothita line's Planet / Celestial discounts live in systems/rules.js (set_cost hook).
 // Ferroseed / Ferrothorn use Steamodded's quantum enhancements (check_enhancement context,
 // core.js quantum_enhancements + has_enhancement in systems/utils.js).
 import {
   G, P_CENTERS, localize, play_sound, all_cards,
   defineJokers, type_tooltip, detailed, level_evo, scaling_evo, ease_poke_dollars, scale_card, destroy_joker,
-  volatile_active, has_enhancement, get_random_poke_key_options,
+  volatile_active, has_enhancement, get_random_poke_key_options, hazard_layer, hazard_level_tip,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { illusion_copy, illusion_update, illusion_set_ability, illusion_add_to_deck } from './pokejokers_19.js';
@@ -58,6 +58,7 @@ function ferro_tips(info_queue) {
     info_queue.push(P_CENTERS.m_wild);
     info_queue.push(P_CENTERS.m_steel);
     info_queue.push(P_CENTERS.m_poke_hazard);
+    info_queue.push(hazard_level_tip());
   }
 }
 /**
@@ -159,13 +160,14 @@ defineJokers({
   // Ferroseed 597
   ferroseed: {
     quantum_enhancements: true, // answers check_enhancement (core.js quantum_enhancements)
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); ferro_tips(info_queue); return { vars: [center.ability.extra.rounds] }; },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); ferro_tips(info_queue); return { vars: [center.ability.extra.rounds, center.ability.extra.hazard_level] }; },
     calculate(self, card, context) { return ferro_check(context) || level_evo(self, card, context, 'j_poke_ferrothorn'); },
+    ...hazard_layer,
   },
   // Ferrothorn 598
   ferrothorn: {
     quantum_enhancements: true,
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); ferro_tips(info_queue); return { vars: [] }; },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); ferro_tips(info_queue); return { vars: [center.ability.extra.hazard_level] }; },
     calculate(self, card, context) {
       const q = ferro_check(context);
       if (q) return q;
@@ -180,5 +182,6 @@ defineJokers({
       }
       return undefined;
     },
+    ...hazard_layer,
   },
 }, FILE);

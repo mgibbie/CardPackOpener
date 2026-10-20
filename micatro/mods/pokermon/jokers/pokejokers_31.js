@@ -1,12 +1,13 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_31.lua (Pokédex 901-930: Ursaluna -> Dachsbun), 5 jokers,
 // plus Hisuian Qwilfish / Overqwil, which the Lua writes (commented out) but never registers.
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
-// On Pokermon 3.9.1 behaviour since batch 8, except Tarountula / Spidops (held on 3.2.1: the Hazard layer, batch 10).
+// On Pokermon 3.9.1 behaviour since batch 8, Tarountula / Spidops (the Hazard layer) since batch 10.
 import {
   G, P_CENTERS, localize, card_eval_status_text, create_card, juice_card_until, poll_edition, add_card,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, has_enhancement, find_pokemon_type,
-  poke_add_hazards, poke_set_hazards, poke_next_highest_rank, poke_lowest_rank,
+  poke_add_hazards, poke_next_highest_rank, poke_lowest_rank, hazard_layer, hazard_level_tip,
 } from '../api.js';
+import { poll_seal_guaranteed } from './pokejokers_05.js';
 
 const FILE = 'pokemon/pokejokers_31.lua';
 
@@ -159,48 +160,48 @@ defineJokers({
       return undefined;
     },
   },
-  // Tarountula 917
+  // Tarountula 917 (3.9.1): +1 Hazard layer, +1 hand size.
   tarountula: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [abbr.hazards] });
+      info_queue.push(hazard_level_tip());
       info_queue.push(P_CENTERS.m_poke_hazard);
-      return { vars: [abbr.hazards, abbr.rounds, abbr.h_size] };
+      return { vars: [abbr.hazard_level, abbr.rounds, abbr.h_size] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       return level_evo(self, card, context, 'j_poke_spidops');
     },
-    ...hand_size,
+    add_to_deck(self, card, from_debuff) { hand_size.add_to_deck(self, card); hazard_layer.add_to_deck(self, card, from_debuff); },
+    remove_from_deck(self, card, from_debuff) { hand_size.remove_from_deck(self, card); hazard_layer.remove_from_deck(self, card, from_debuff); },
   },
-  // Spidops 918
+  // Spidops 918 (3.9.1): +1 Hazard layer, +2 hand size; every 8th playing card added to the deck gets a random seal
+  // ("Sticky Web!"; SMODS.poll_seal{guaranteed = true}). Not Blueprint-compatible.
   spidops: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [abbr.hazards] });
+      info_queue.push(hazard_level_tip());
       info_queue.push(P_CENTERS.m_poke_hazard);
-      return { vars: [abbr.hazards, abbr.h_size, abbr.h_max, abbr.h_total] };
+      return { vars: [abbr.hazard_level, abbr.h_size, abbr.card_goal, Math.max(0, abbr.card_goal - abbr.cards_added)] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
-      if (context.joker_main && context.cardarea === G.jokers && G.GAME.current_round.hands_played === 0 && !context.blueprint) {
-        let all_hazards = true;
-        for (const v of context.full_hand) if (!has_enhancement(v, 'm_poke_hazard')) all_hazards = false;
-        if (all_hazards) {
-          const size_up = card.ability.extra.h_size * context.scoring_hand.length;
-          card_eval_status_text(card, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_handsize', vars: [size_up] }) });
-          G.hand.change_size(size_up);
-          G.GAME.round_resets.temp_handsize = (G.GAME.round_resets.temp_handsize || 0) + size_up;
+      if (context.playing_card_added && !card.getting_sliced && context.cards && !context.blueprint) {
+        if (Array.isArray(context.cards) && context.cards.length > 0) {
+          for (const v of context.cards) {
+            card.ability.extra.cards_added = card.ability.extra.cards_added + 1;
+            if (card.ability.extra.cards_added === card.ability.extra.card_goal) {
+              card_eval_status_text(card, 'extra', null, null, null, { message: localize('poke_sticky_web_ex') });
+              v.set_seal(poll_seal_guaranteed(), true);
+              card.ability.extra.cards_added = 0;
+            }
+          }
         }
-      }
-      if (context.first_hand_drawn && !context.blueprint) {
-        juice_card_until(card, () => G.GAME.current_round.hands_played === 0 && !G.RESET_JIGGLES, true);
       }
       return undefined;
     },
-    ...hand_size,
+    add_to_deck(self, card, from_debuff) { hand_size.add_to_deck(self, card); hazard_layer.add_to_deck(self, card, from_debuff); },
+    remove_from_deck(self, card, from_debuff) { hand_size.remove_from_deck(self, card); hazard_layer.remove_from_deck(self, card, from_debuff); },
   },
   // Fidough 926
   fidough: {

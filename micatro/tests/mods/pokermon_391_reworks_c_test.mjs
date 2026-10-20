@@ -30,17 +30,18 @@ const inRange = DATA.groups.jokers.filter((f) => RANGE.test(f.file)).flatMap((f)
 const RW = (D391.reworked || []).filter((n) => inRange.includes(n));
 /** One fired block: a throw (old code without the 3.9.1 hook) counts as a failure and the rest still runs. */
 const blk = (fn) => { try { fn(); } catch (e) { ok(false, 'block threw: ' + e.message); } };
-const HOLD = ['roggenrola', 'boldore', 'gigalith', 'golett', 'golurk', 'ferroseed', 'ferrothorn', 'tarountula', 'spidops', 'unown_swarm'];
+// (batch 10 took the 9 Hazard jokers off hold: pokermon_391_hazard_test.mjs)
+const HOLD = ['unown_swarm'];
 
 // ---------------------------------------------------------------- the overlay + version
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 5 && PINS.modPin('pokermon') === '3.9.1+r5', 'Pokermon 3.9.1, contentRev 5 (pin 3.9.1+r5)', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 5 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon 3.9.1, contentRev 5+ (pin 3.9.1+r5 since batch 8; r6 batch 10)', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
-ok(inRange.length === 93 && RW.length === 93 - HOLD.length && HOLD.every((n) => !RW.includes(n)), 'reworked: every joker of pokejokers_18-34 / zotherjokers / zmissingno but the 10 holds (Pokermon 3.9.1)', [RW.length, inRange.length]);
+ok(inRange.length === 93 && RW.length === 93 - HOLD.length && HOLD.every((n) => !RW.includes(n)), 'reworked: every joker of pokejokers_18-34 / zotherjokers / zmissingno but the Unown Swarm hold (Pokermon 3.9.1)', [RW.length, inRange.length]);
 const holds = (D391.rework_hold || []).filter(([n]) => inRange.includes(n));
 ok(holds.map(([n]) => n).sort().join() === HOLD.slice().sort().join() && holds.every(([n, why]) => n === 'unown_swarm' ? /Unown rework/.test(why) : /Hazard layer/.test(why)),
-  'rework_hold: the 9 Hazard jokers (batch 10) and Unown Swarm (the Unown rework), each with its reason', holds);
+  'rework_hold: Unown Swarm (the Unown rework) with its reason (the Hazard jokers left in batch 10)', holds);
 const DEF = (D391.rework_deferred || []).map(([n]) => n);
-ok(['rival', 'mystery_egg', 'ruins_of_alph'].every((n) => DEF.includes(n)) && DEF.length === 8, 'rework_deferred: + Rival (Bitter Rival / Champion), Mystery Egg (Oologist), Ruins of Alph (Unown spawn)', DEF);
+ok(['rival', 'mystery_egg', 'ruins_of_alph'].every((n) => DEF.includes(n)) && DEF.length === 7, 'rework_deferred: + Rival (Bitter Rival / Champion), Mystery Egg (Oologist), Ruins of Alph (Unown spawn)', DEF);
 ok(C('garbodor').config.extra.active === false && C('vikavolt').config.extra.mult === undefined && C('vikavolt').config.extra.Xmult === 0.5
   && C('annihilape').config.extra.mult_mod === 5 && C('gholdengo').config.extra.Xmult1 === 1 && C('everstone').config.extra.Xmult_multi2 === 1.5
   && C('rival').config.extra.money === 15 && C('mimikyu').config.extra.disguise === undefined && C('dreepy').config.extra.suit === undefined,
@@ -52,8 +53,8 @@ ok(/after skipping/.test(JOKER_LOC.j_poke_rival.text.join(' ')) && /held/.test(J
   && /leftmost card's/.test(JOKER_LOC.j_poke_dreepy.text.join(' ')), 'reworked jokers show their 3.9.1 text (Rival, Kingambit, Sylveon, Dreepy)');
 ok(JOKER_LOC.j_poke_pumpkaboo_large && /Jacks/.test(JOKER_LOC.j_poke_gourgeist_large.text.join(' ')) && /poke_psychic/.test(JOKER_LOC.j_poke_gourgeist_large.text.join(' ')),
   'Pumpkaboo / Gourgeist take their 3.9.1 per-size entries (the generator reads a form-keyed joker\'s forms)');
-ok(/hazards/i.test(JOKER_LOC.j_poke_roggenrola.text.join(' ')) && !D391.loc.Joker.j_poke_roggenrola && C('roggenrola').config.extra.hazards === 4,
-  'a held joker keeps its 3.2.1 text and config (Roggenrola: 4 Hazards, no hazard_level)', C('roggenrola').config);
+ok(/hazard layer/i.test(JOKER_LOC.j_poke_roggenrola.text.join(' ')) && D391.loc.Joker.j_poke_roggenrola && C('roggenrola').config.extra.hazard_level === 1 && C('roggenrola').config.extra.hazards === undefined,
+  'a former Hazard hold takes its 3.9.1 text and config (Roggenrola: hazard_level, batch 10)', C('roggenrola').config);
 blk(() => {
   start('RW391C_LOC');
   const bad = [];
@@ -330,12 +331,12 @@ blk(() => {
   ok(c && key(c) === 'c_cryptid' && API.create_consumeable('c_cryptid') === undefined, 'seam: create_consumeable (3.9.1 pokermon.create_consumeable) needs room');
 });
 
-// ---------------------------------------------------------------- the holds stay on 3.2.1
+// ---------------------------------------------------------------- the former holds: the Hazard layer (batch 10)
 blk(() => {
   start('RW391C_HOLD', {}, { noBlind: true });
   add('j_poke_roggenrola');
   act({ type: 'select_blind' });
-  ok(G.playing_cards.some((c) => c.config.center.key === 'm_poke_hazard'), 'held: Roggenrola still deals its 3.2.1 Hazard cards at blind select (the Hazard layer is batch 10)');
+  ok(G.hand.cards.filter((c) => c.config.center.key === 'm_poke_hazard').length === 1, 'Roggenrola: +1 Hazard layer -> 1 Hazard card dealt into the first hand (batch 10)');
 });
 
 done();

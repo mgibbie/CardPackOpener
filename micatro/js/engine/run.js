@@ -32,7 +32,7 @@ import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js'
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
-import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod } from './smods.js';
+import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate } from './smods.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -154,7 +154,11 @@ const STATE_HANDLERS = {
       if (draw_from_deck_to_hand(null)) return;
       if (G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && G.GAME.facing_blind) {
         for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ first_hand_drawn: true }));
-        if (ACTIVE_MODS.length) blind_calculate({ first_hand_drawn: true });
+        if (ACTIVE_MODS.length) {
+          blind_calculate({ first_hand_drawn: true });
+          // (SMODS: the mod-level calculate after the cards and the blind; an opted-in mod whose hook reads it)
+          mod_calculate({ first_hand_drawn: true }, 'first_hand_drawn');
+        }
       }
       // Steamodded's hand_drawn context (mod cards only): the cards this draw brought in
       // (queued so it runs after the draw events above).
@@ -487,7 +491,12 @@ function end_round() {
       // Held playing cards' MOD enhancements / seals see end_of_round too (Pokermon's Hazard); Steamodded marks this
       // pass playing_card_end_of_round (Pokermon 3.9.1's Seed enhancement checks it).
       const pceor = wanted('playing_card_end_of_round') || undefined;
-      for (const hc of G.hand.cards.slice()) mod_card_calculate(hc, { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss, ...(pceor ? { playing_card_end_of_round: true } : {}) });
+      for (const hc of G.hand.cards.slice()) {
+        const hctx = { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss, ...(pceor ? { playing_card_end_of_round: true } : {}) };
+        mod_card_calculate(hc, hctx);
+        // ... and a quantum MOD enhancement's own calculate (opted-in mods only: smods.js quantum_mod_calculate)
+        quantum_mod_calculate(hc, hctx);
+      }
       callHook('end_round');
     }
     // A mod may say which blind slot this was ('Small' | 'Big' | 'Boss'): only the Boss slot wins / ends
