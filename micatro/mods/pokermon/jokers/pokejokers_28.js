@@ -1,5 +1,6 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_28.lua (Pokédex 811-840: Nickit -> Boltund), 4 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_28.lua (Pokédex 811-840: Nickit -> Boltund), 4 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8 (no holds; 3.9.1 changed only text / refactors here).
 import {
   G, localize, defineJokers, type_tooltip, level_evo, ease_poke_dollars,
 } from '../api.js';

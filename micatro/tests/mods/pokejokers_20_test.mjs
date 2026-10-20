@@ -3,6 +3,7 @@
 //   node micatro/tests/mods/pokejokers_20_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act } from './poke_helpers.mjs';
 import { STATUS } from '../../mods/pokermon/index.js';
+import { create_card } from '../../js/engine/core.js';
 import { has_enhancement } from '../../mods/pokermon/api.js';
 
 const { ok, done } = T();
@@ -16,8 +17,11 @@ function discard(cards) { act({ type: 'highlight', ids: cards.map((c) => c.sort_
 // ------------------------------------------------------------- Zoroark (static)
 {
   start('ZOROARK');
+  const s = create_card('Joker', G.shop_jokers, null, null, null, null, 'j_poke_zoroark');
+  const ill = P_CENTERS[s.ability.extra.hidden_key];
+  ok(ill && ill.rarity === 'poke_safari' && ill.ptype !== 'Dark', 'zoroark: a shop Zoroark shows a Safari, non-Dark Illusion (never itself) (Pokermon 3.9.1)', s.ability.extra.hidden_key);
   const z = add('j_poke_zoroark');
-  ok(typeof z.ability.extra.hidden_key === 'string' && z.ability.extra.hidden_key !== 'j_poke_zoroark', 'zoroark: Illusion disguise (never itself)', z.ability.extra.hidden_key);
+  ok(z.ability.extra.hidden_key === undefined, 'zoroark: no Illusion in the joker row (Pokermon 3.9.1)');
   add('j_joker');
   const r = play(hand(['S_A']));
   ok(r.total.mult === 9, 'zoroark: copies the rightmost joker', r.total);
@@ -85,6 +89,22 @@ function discard(cards) { act({ type: 'highlight', ids: cards.map((c) => c.sort_
   const t0 = G.GAME.tags.length;
   r2 = play(hand(['S_K']));
   ok(!G.jokers.cards.includes(j) && G.GAME.tags.length === t0 + 2 && G.GAME.tags.slice(-2).every((t) => t.key === 'tag_double'), 'vanilluxe: melts into 2 Double Tags', G.GAME.tags.map((t) => t.key));
+}
+{
+  // Pokermon 3.9.1: the Vanillite line is Blueprint-compatible (a copy scores the chips; the melt count is the original's).
+  start('VANILLA_BP');
+  const bp = add('j_blueprint');
+  const j = add('j_poke_vanilluxe');
+  void bp;
+  const r = play(hand(['S_A']));
+  ok(r.total.chips === 16 + 140 + 140 && j.ability.extra.chips === 130, 'vanilluxe: Blueprint copies its +140 Chips, it loses 10 once (Pokermon 3.9.1)', { t: r.total, c: j.ability.extra.chips });
+  // An Eternal Vanillite stays when it would melt (SMODS.destroy_cards keeps Eternal cards).
+  start('VANILLA_ETERNAL');
+  const v = add('j_poke_vanillite');
+  v.ability.eternal = true;
+  v.ability.extra.chips = 10;
+  const r2 = play(hand(['S_A']));
+  ok(G.jokers.cards.includes(v) && statusMsgs(r2.events).some((m) => /Melted/i.test(m)), 'vanillite: an Eternal one says "Melted!" but stays (SMODS.destroy_cards) (Pokermon 3.9.1)', statusMsgs(r2.events));
 }
 
 // ------------------------------------------------------------- Frillish / Jellicent

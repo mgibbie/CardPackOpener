@@ -11,7 +11,7 @@
     "loc_extra: other 3.9.1 loc entries the reworked jokers show, as Set.key (Other.<tooltip>, dictionary.<word>, v_dictionary.<word>).",
     "rework_deferred (batch 7+): 3.9.1 changes to jokers of rework_files that are ported WITHOUT one part, because that part belongs to other content not ported yet (a new joker, an enhancement, a booster); the joker itself is on 3.9.1. Names must be 3.2.1 jokers; copied to data391.js rework_deferred for the docs and tests, inert."
   ],
-  "rework_files": ["pokejokers_01", "pokejokers_02", "pokejokers_03", "pokejokers_04", "pokejokers_05", "pokejokers_06", "pokejokers_07", "pokejokers_08", "pokejokers_09", "pokejokers_10", "pokejokers_11", "pokejokers_12", "pokejokers_13", "pokejokers_14", "pokejokers_15", "pokejokers_16", "pokejokers_17"],
+  "rework_files": ["pokejokers_01", "pokejokers_02", "pokejokers_03", "pokejokers_04", "pokejokers_05", "pokejokers_06", "pokejokers_07", "pokejokers_08", "pokejokers_09", "pokejokers_10", "pokejokers_11", "pokejokers_12", "pokejokers_13", "pokejokers_14", "pokejokers_15", "pokejokers_16", "pokejokers_17", "pokejokers_18", "pokejokers_19", "pokejokers_20", "pokejokers_21", "pokejokers_22", "pokejokers_23", "pokejokers_24", "pokejokers_25", "pokejokers_26", "pokejokers_28", "pokejokers_30", "pokejokers_31", "pokejokers_32", "pokejokers_33", "pokejokers_34", "zotherjokers", "zmissingno"],
   "rework_hold": {
     "qwilfish": "Hazard layer rework (batch 10): hazard_level replaces the per-joker hazard ratio",
     "skarmory": "Hazard layer rework (batch 10), Mega Skarmory",
@@ -20,24 +20,31 @@
     "bellossom": "3.9.1 needs the Seed enhancement (m_poke_seed, batch 10)",
     "hoppip": "3.9.1 needs the Seed enhancement (m_poke_seed, batch 10)",
     "skiploom": "3.9.1 needs the Seed enhancement (m_poke_seed, batch 10)",
-    "jumpluff": "3.9.1 needs the Seed enhancement (m_poke_seed, batch 10)"
+    "jumpluff": "3.9.1 needs the Seed enhancement (m_poke_seed, batch 10)",
+    "roggenrola": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level); mult_mod / evo_rqmt retuned with it",
+    "boldore": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level)",
+    "gigalith": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level)",
+    "golett": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level)",
+    "golurk": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level); Xmult_multi 1.4 -> 1.3 with it",
+    "ferroseed": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level) (its only 3.9.1 change)",
+    "ferrothorn": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level) (its only 3.9.1 change)",
+    "tarountula": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level)",
+    "spidops": "Hazard layer rework (batch 10): 3.9.1 drops the per-joker Hazard ratio (setting_blind poke_set_hazards) for the run-wide hazard_level (add_to_deck / remove_from_deck pokermon.change_hazard_level); its 3.9.1 rule (every 8th playing card added gets a random Seal; +2 hand size) replaces the all-Hazard first hand",
+    "unown_swarm": "the Unown rework (with Unown, batch 6): 3.9.1 redraws the Swarm (a glued playing-card front, soul atlas j_poke_unown_swarm_soul, display_size) and takes it out of the pool"
   },
   "rework_deferred": {
     "lucario": "3.9.1 adds megas = {mega_lucario}: Mega Lucario is a new 3.9.1 joker (new-jokers batch); Lucario has no Mega until then",
     "shaymin": "3.9.1 text 'Flower cards give X3 Mult instead of X2': the Flower enhancement's own 3.9.1 change (X2, X3 with a Shaymin; Roserade's 3-suit rule) waits for the enhancements batch (10, with the Seed card); our Flower is X3 always, so Shaymin's effect is the same",
     "shaymin_sky": "as Shaymin: the Flower enhancement's X2 / X3 rule waits for batch 10",
     "jirachi": "the 3.9.1 Wish Pack (3 random unused wishes; packs1.lua) and change_form wishes wait for the boosters batch; the wish forms themselves (banker / booster / power / invis / fixer) are on 3.9.1",
-    "porygonz": "3.9.1 reads G.GAME.consumeable_usage_total.poke_energy (Steamodded counts every set); ours keeps G.GAME.energies_used (every Energy used), like batch 6 kept the renamed poke_energy_plus / poke_scry_amount state"
+    "porygonz": "3.9.1 reads G.GAME.consumeable_usage_total.poke_energy (Steamodded counts every set); ours keeps G.GAME.energies_used (every Energy used), like batch 6 kept the renamed poke_energy_plus / poke_scry_amount state",
+    "rival": "3.9.1's Rival chain: a beaten Rival (G.GAME.poke_rival_defeated) opens Bitter Rival, then Champion — both new 3.9.1 jokers (new-jokers batch); until then a beaten Rival just leaves the pool. The Rival itself is on 3.9.1",
+    "mystery_egg": "3.9.1 gates the hatch speed-ups (a Fire Energy held, a Flame Body / Magma Armor neighbour) behind the Oologist, a new 3.9.1 joker (new-jokers batch): until it is ported they never apply. The egg itself (poll_object pick, in-place hatch) is on 3.9.1",
+    "ruins_of_alph": "3.9.1 makes its three Negative Unown by SMODS.add_card and no longer zeroes their cost / sell value; ours keeps them free with no sell value until the Unown rework (Unown and Unown Swarm are held), so each blind's three Unown can't be sold for $2 apiece. The rewards (Safari joker from the Joker pool, Duplicated! then the copy) are on 3.9.1"
   },
   "loc_extra": ["Other.bat_leech", "dictionary.poke_leech_life_ex", "dictionary.poke_wish_ex"],
   "take_always": ["rarity", "cost", "perishable_compat", "eternal_compat", "enhancement_gate", "attributes"],
-  "take": {
-    "grubbin": ["config.extra.rounds"],
-    "charjabug": ["config.extra.mult"],
-    "pokedex": ["blueprint_compat"],
-    "professor": ["blueprint_compat"],
-    "treasure_eatery": ["blueprint_compat"]
-  },
+  "take": {},
   "reasons": {
     "mega_steelix": "rework: Stone cards held instead of Diamonds $ (held: quantum Hazard, batch 10)",
     "qwilfish": "Hazard layer rework (batch 10): hazard_level replaces the per-joker hazard ratio",
@@ -46,14 +53,8 @@
     "boldore": "Hazard layer rework (batch 10)",
     "gigalith": "Hazard layer rework (batch 10)",
     "golurk": "Hazard layer rework (batch 10)",
-    "vanillite": "rework with the flag (scale_card / destroy rewrite; the line's Blueprint behaviour changes)",
-    "vanillish": "rework with the flag (Vanillite line)",
-    "vanilluxe": "rework with the flag (Vanillite line)",
-    "vikavolt": "rework: no self-count, the +Mult half was removed",
-    "ursaluna": "calculate changed (the Item's edition is a random aura edition, not Polychrome)",
     "tarountula": "Hazard layer rework (batch 10)",
-    "spidops": "rework: cards-added goal + Hazard layer",
-    "rival": "rework (3.6.0 Rival): forms / money"
+    "spidops": "rework: cards-added goal + Hazard layer"
   },
   "sprite_hold": {
     "unown": "3.9.1 redrew Unown's card for the Unown rework (another frame and badge); our Unown is the 3.2.1 one"

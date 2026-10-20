@@ -28,7 +28,7 @@ function lastHand(cards, blind_chips) {
   // Last hand: 16 + 80 = 96 chips x1 -> 96 of a 150 blind = 64% -> saved.
   clearHand();
   lastHand(hand(['S_A']), 150);
-  ok(G.STATE !== STATES.GAME_OVER && G.GAME.saved_by === 'j_poke_mimikyu' && j.ability.extra.disguise === false, 'mimikyu: saved at >= 50% of the blind', [G.STATE, G.GAME.saved_by, j.ability.extra]);
+  ok(G.STATE !== STATES.GAME_OVER && G.GAME.saved_by === 'j_poke_mimikyu' && j.ability.extra.disguise_broken === true, 'mimikyu: saved at >= 50% of the blind; disguise_broken set (Pokermon 3.9.1 key)', [G.STATE, G.GAME.saved_by, j.ability.extra]);
   act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
   lastHand(hand(['S_A']), 150);
   ok(G.STATE === STATES.GAME_OVER, 'mimikyu: the disguise only works once', G.STATE);
@@ -42,12 +42,15 @@ function lastHand(cards, blind_chips) {
 {
   start('MIMIKYU3');
   const j = add('j_poke_mimikyu');
-  j.ability.extra.disguise = false;
+  j.ability.extra.disguise_broken = true;
   j.remove_from_deck(); j.added_to_deck = false; j.add_to_deck();
-  ok(j.ability.extra.disguise === true, 'mimikyu: disguise restored when added to the deck');
-  j.ability.extra.disguise = false;
+  ok(!j.ability.extra.disguise_broken, 'mimikyu: disguise restored when added to the deck (Pokermon 3.9.1 key)');
+  j.ability.extra.disguise_broken = true;
   j.remove_from_deck(true); j.added_to_deck = false; j.add_to_deck(true);
-  ok(j.ability.extra.disguise === false, 'mimikyu: not on un-debuff');
+  ok(j.ability.extra.disguise_broken === true, 'mimikyu: not on un-debuff');
+  // A 3.2.1 card from a resumed run (disguise: false) still reads as broken.
+  j.ability.extra.disguise_broken = undefined; j.ability.extra.disguise = false;
+  ok(/broken/i.test(String(j.config.center.loc_vars(j.config.center, [], j).vars[2])), 'mimikyu: a 3.2.1 card\'s disguise === false still reads as broken', j.config.center.loc_vars(j.config.center, [], j).vars);
 }
 
 done();

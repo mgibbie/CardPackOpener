@@ -1,17 +1,20 @@
-// Pokermon 3.2.1 — pokemon/zotherjokers.lua (non-Pokédex jokers), 12 jokers: Pokédex, Rotom Dex,
+// Pokermon 3.9.1 — pokemon/zotherjokers.lua (non-Pokédex jokers), 12 jokers: Pokédex, Rotom Dex,
 // Everstone, Tall Grass, Jelly Donut, Treasure Eatery, Mystery Egg, Rival, Ruins of Alph,
 // Unown Swarm, Professor, A Billion Lions (only offered with the pokemon_aprilfools option —
-// see index.js). Line-for-line port of the behaviour; static data comes from data.js.
+// see index.js; 3.9.1 moved it to zzzapril_fools.lua, unchanged). Line-for-line port of the behaviour; static data
+// comes from data.js + data391.js. On Pokermon 3.9.1 behaviour since batch 8, except Unown Swarm (held on 3.2.1 with
+// Unown: the Unown rework). 3.9.1's new jokers here (Bitter Rival, Champion, Oologist, Daycare, Rage Candy Bar,
+// Repel, the Imposter Professor) are not ported yet (new-jokers batch).
 //
 // Everstone blocks evolution (see can_evolve); Pokédex lifts the one-per-family pool rule
 // (see pokemon_in_pool / poke_family_present).
-import * as BN from '../../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, play_sound, delay,
   create_card, copy_card, all_cards, juice_card_until, change_booster_limit,
   defineJokers, type_tooltip, get_type, has_type, type_sticker_applied, apply_type_sticker,
-  get_probability_vars, pseudorandom_probability, create_random_poke_joker, smods_create_card, find_card,
-  poke_get_adjacent_jokers, energy_increase, remove, get_gen_allowed, pokemon_in_pool, ease_poke_dollars,
+  get_probability_vars, pseudorandom_probability, smods_create_card, find_card, add_card, has_enhancement,
+  poke_get_adjacent_jokers, ease_poke_dollars, scale_card, destroy_joker, poke_evolve, poll_object, POKE_POOL_RULES,
+  poke_is_in_collection,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 
@@ -33,17 +36,6 @@ function rotomdex_update() {
     G.GAME.rotom_discount = type_amount;
     for (const v of all_cards()) if (v.set_cost) v.set_cost();
   }
-}
-/** Jelly Donut / Treasure Eatery: the "eaten" / "closed" self-removal (two nested events like the Lua). */
-function self_remove(card) {
-  G.E_MANAGER.add_event(() => {
-    play_sound('tarot1');
-    card.juice_up(0.3, 0.4);
-    G.E_MANAGER.add_event(() => {
-      G.jokers.remove_card(card);
-      card.remove();
-    });
-  });
 }
 /** zotherjokers.lua is_egg_helper: adjacent Pokémon with Flame Body / Magma Armor / Steam Engine. */
 const EGG_HELPERS = ['rolycoly', 'carkol', 'coalossal', 'slugma', 'magcargo', 'camerupt', 'magby', 'magmar', 'magmortar',
@@ -84,12 +76,17 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       info_queue.push({ set: 'Other', key: 'basic' });
       info_queue.push({ set: 'Other', key: 'baby' });
-      return { vars: [center.ability.extra.Xmult_multi] };
+      return { vars: [center.ability.extra.Xmult_multi, center.ability.extra.Xmult_multi2] };
     },
+    // Pokermon 3.9.1: Basic Pokémon give X1.5 (Xmult_multi2), Baby Pokémon X1.75 (Xmult_multi).
     calculate(self, card, context) {
       if (context.other_joker && context.other_joker.config && (context.other_joker.config.center.stage === 'Basic' || context.other_joker.config.center.stage === 'Baby')) {
-        G.E_MANAGER.add_event(() => context.other_joker.juice_up(0.5, 0.5));
-        return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult_multi] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_multi };
+        const Xmult = context.other_joker.config.center.stage === 'Basic' ? card.ability.extra.Xmult_multi2 : card.ability.extra.Xmult_multi;
+        if (Xmult > 1) {
+          const other = context.other_joker;
+          G.E_MANAGER.add_event(() => other.juice_up(0.5, 0.5));
+          return { message: localize({ type: 'variable', key: 'a_xmult', vars: [Xmult] }), colour: 'XMULT', Xmult_mod: Xmult };
+        }
       }
       return undefined;
     },
@@ -104,16 +101,15 @@ defineJokers({
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand) {
         if (context.before && (G.jokers.cards.length + G.GAME.joker_buffer) < G.jokers.config.card_limit) {
-          let has_wild = false;
-          for (const v of context.scoring_hand) if (v.ability.name === 'Wild Card') { has_wild = true; break; }
+          // Pokermon 3.9.1: a Wild card counts by has_enhancement (quantum Wild too); the joker is SMODS.add_card from the
+          // 'pokemon' attribute pool at Common rarity (3.2.1: get_random_poke_key's Common Pokémon).
+          const has_wild = context.scoring_hand.some((c) => has_enhancement(c, 'm_wild'));
           if (has_wild || pseudorandom_probability(card, 'tall_grass', card.ability.extra.num, card.ability.extra.dem, 'tall_grass')) {
             G.GAME.joker_buffer = G.GAME.joker_buffer + 1;
             G.E_MANAGER.add_event(() => {
               G.GAME.joker_buffer = 0;
               play_sound('timpani');
-              const _card = create_random_poke_joker('tallgrass', null, 'common');
-              _card.add_to_deck();
-              G.jokers.emplace(_card);
+              add_card({ set: 'Joker', attributes: ['pokemon'], rarity: 1, key_append: 'tallgrass' });
             });
             delay(0.6);
           }
@@ -130,18 +126,21 @@ defineJokers({
     },
     calculate(self, card, context) {
       if (context.setting_blind) {
-        card.ability.extra.rounds = card.ability.extra.rounds - 1;
+        // Pokermon 3.9.1: Blueprint makes an Energy but doesn't eat a round; the Energy holds a consumeable_buffer slot
+        // until its event; the Donut goes by SMODS.destroy_cards (an Eternal one stays).
+        if (!context.blueprint) card.ability.extra.rounds = card.ability.extra.rounds - 1;
         if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-          const _card = create_card('Energy', G.pack_cards, null, null, true, true, 'c_poke_colorless_energy', null);
-          _card.add_to_deck();
-          G.consumeables.emplace(_card);
-          G.GAME.consumeable_buffer = 0;
+          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+          G.E_MANAGER.add_event(() => {
+            add_card({ set: 'Energy', key: 'c_poke_colorless_energy' });
+            G.GAME.consumeable_buffer = 0;
+          });
           card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'Energy!', colour: 'pink' });
         } else {
           card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'No Room!', colour: 'MULT' });
         }
         if (card.ability.extra.rounds <= 0) {
-          self_remove(card);
+          destroy_joker(card);
           return { message: localize('k_eaten_ex'), colour: 'RED' };
         }
       }
@@ -156,18 +155,19 @@ defineJokers({
       return { vars: [center.ability.extra.rounds] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) {
+      // (Pokermon 3.9.1: not Blueprint-compatible any more; it closes by SMODS.destroy_cards.)
+      if (context.setting_blind && !context.blueprint) {
         card.ability.extra.rounds = card.ability.extra.rounds - 1;
         if (G.jokers && G.jokers.cards && G.jokers.cards.length > 1) {
           const last = G.jokers.cards[G.jokers.cards.length - 1];
-          if (has_type(last)) {
+          if (get_type(last)) {
             apply_type_sticker(G.jokers.cards[0], get_type(last));
             card.juice_up();
             card_eval_status_text(G.jokers.cards[0], 'extra', null, null, null, { message: localize('poke_tera_ex'), colour: 'Spectral' });
           }
         }
         if (card.ability.extra.rounds <= 0) {
-          self_remove(card);
+          destroy_joker(card);
           return { message: localize('poke_closed_ex'), colour: 'RED' };
         }
       }
@@ -178,7 +178,6 @@ defineJokers({
   mystery_egg: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      info_queue.push({ set: 'Other', key: 'poke_egg_tip' });
       info_queue.push({ set: 'Other', key: 'basic' });
       info_queue.push({ set: 'Other', key: 'baby' });
       info_queue.push({ set: 'Other', key: 'energize' });
@@ -190,102 +189,70 @@ defineJokers({
         const adjacent_jokers = poke_get_adjacent_jokers(card);
         for (let i = 0; i < adjacent_jokers.length; i++) if (is_egg_helper(adjacent_jokers[i])) adjacent = adjacent + 1;
         card.ability.extra.rounds = card.ability.extra.rounds - 1;
-        const fire = find_card('c_poke_fire_energy').length;
-        if ((adjacent + fire) > 0 && pseudorandom('egg') < (adjacent + fire) / 4) {
-          card.ability.extra.rounds = card.ability.extra.rounds - 1;
+        // Pokermon 3.9.1: the hatch speed-ups (a Fire Energy held / a Flame Body neighbour) need an Oologist (a new 3.9.1
+        // joker, not ported yet: so, for now, never).
+        if (find_card('j_poke_oologist').length) {
+          const fire = find_card('c_poke_fire_energy').length;
+          if ((adjacent + fire) > 0 && pseudorandom('egg') < (adjacent + fire) / 4) {
+            card.ability.extra.rounds = card.ability.extra.rounds - 1;
+          }
+          card.ability.extra.rounds = card.ability.extra.rounds - adjacent / 4;
         }
-        card.ability.extra.rounds = card.ability.extra.rounds - adjacent / 4;
-        if (card.ability.extra.rounds <= 1) juice_card_until(card, (c) => !c.removed, true);
+        if (card.ability.extra.rounds <= 1) juice_card_until(card, (c) => c.ability.extra.rounds !== undefined && c.ability.extra.rounds <= 1, true);
+        // Pokermon 3.9.1: it hatches IN PLACE — pokermon.evolve(card, key, nil, "Crack!", transformation, 1 Energy) keeps its
+        // slot, edition and stickers (3.2.1 made a new card at the end of the row) and energizes it once.
         if (card.ability.extra.rounds <= 0) {
-          card.ability.extra.rounds = 99;
-          G.E_MANAGER.add_event(() => {
-            // if edition is nil, it'll try again for an edition
-            const _card = smods_create_card({ set: 'Joker', area: G.jokers, key: card.ability.extra.key, edition: card.edition || undefined });
-            energy_increase(_card, 'Trans');
-            _card.add_to_deck();
-            if (card.edition && card.edition.poke_shiny) change_booster_limit(-1);
-            remove(self, card, context);
-            // (Lua: G.jokers:emplace(_card, loc) — a numeric location isn't 'front', so it is appended.)
-            G.jokers.emplace(_card);
-          });
-          return { message: localize('poke_crack_ex') };
+          poke_evolve(card, card.ability.extra.key, null, localize('poke_crack_ex'), true, 1);
+          return undefined;
         }
         return { message: localize('poke_shake_ex') };
       }
       return undefined;
     },
+    // Pokermon 3.9.1: the hatchling is SMODS.poll_object over the 'stage_baby' / 'stage_basic' attribute pools (union, any
+    // rarity, seed 'egg'), keeping Common / Uncommon / Rare ones (3.2.1: an even draw over the registered Basics / Babies).
     set_ability(self, card, initial) {
-      if (initial) {
-        const prefix_config = 'j_' + (card.config.center.poke_custom_prefix ? card.config.center.poke_custom_prefix : 'poke') + '_';
-        const poke_keys = [];
-        // (Lua: pairs(G.P_CENTERS); Micatro walks the registration order. Unported (inert) Pokémon are skipped.)
-        for (const v of Object.values(P_CENTERS)) {
-          if (v.key.startsWith(prefix_config) && get_gen_allowed(v) && !v.aux_poke && !v.unported && pokemon_in_pool(v) && v.stage && typeof v.rarity === 'number') {
-            if ((v.stage === 'Baby' || v.stage === 'Basic') && v.rarity !== 4) poke_keys.push({ key: v.key, rarity: v.rarity });
-          }
-        }
-        let poke_key = { key: 'j_poke_rhyhorn', rarity: 2 };
-        if (poke_keys.length > 0) poke_key = pseudorandom_element(poke_keys, pseudoseed('egg'))[0];
+      if (initial && G.playing_cards && !poke_is_in_collection(card)) {
+        const VANILLA = { Common: 1, Uncommon: 2, Rare: 3, Legendary: 4 };
+        const poke_key = poll_object({
+          type: 'Joker', attributes: ['stage_baby', 'stage_basic'], union: true, rarity: false, key_append: 'egg', append: 'egg',
+          filter: (pool) => {
+            for (const v of pool) {
+              const center = P_CENTERS[v.key] || {};
+              const rarity = VANILLA[center.rarity] || center.rarity;
+              if (!(rarity === 1 || rarity === 2 || rarity === 3)) v.key = 'UNAVAILABLE';
+            }
+            return pool;
+          },
+        });
+        const center = P_CENTERS[poke_key] || P_CENTERS.j_poke_rhyhorn;
         // common hatches in 2 turns, uncommon in 2 or 3, rare in 3
-        if (poke_key.rarity === 1) card.ability.extra.rounds = 2;
-        else if (poke_key.rarity === 2) {
+        if (center.rarity === 1) card.ability.extra.rounds = 2;
+        else if (center.rarity === 2) {
           card.ability.extra.rounds = 2;
           if (pseudorandom('regg') > 0.50) card.ability.extra.rounds = card.ability.extra.rounds + 1;
-        } else if (poke_key.rarity === 3) card.ability.extra.rounds = 3;
-        card.ability.extra.key = poke_key.key;
+        } else card.ability.extra.rounds = 3;
+        card.ability.extra.key = center.key;
       }
     },
   },
-  // Rival (-> Bitter Rival -> Champion as G.GAME.rival_losses grows)
+  // Rival (Pokermon 3.6.0+ rework): no Mult; each skipped Blind raises the payout by $money_mod; when a Boss Blind is
+  // beaten it self-destructs and pays $money, and never comes back to the pool (G.GAME.poke_rival_defeated). 3.9.1 then
+  // offers Bitter Rival, then Champion — new jokers, not ported yet (rework_deferred).
   rival: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      let mult = card.ability.extra.mult;
-      let money = 5;
-      let alt_key;
-      if (card.ability.extra.form === 1) {
-        alt_key = 'j_poke_bitter_rival';
-        mult = card.ability.extra.mult * 2;
-        money = 10;
-      } else if (card.ability.extra.form > 1) {
-        alt_key = 'j_poke_champion';
-        mult = card.ability.extra.Xmult;
-        money = 25;
-      }
-      const percent = (2 ** card.ability.extra.form) + 1;
-      return { vars: [mult, money, percent], key: alt_key };
+      return { vars: [card.ability.extra.money, card.ability.extra.money_mod] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main) {
-          if (card.ability.extra.form > 1) {
-            return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Xmult] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
-          }
-          const mult = card.ability.extra.mult * (card.ability.extra.form === 0 ? 1 : 2);
-          return { message: localize({ type: 'variable', key: 'a_mult', vars: [mult] }), colour: 'MULT', mult_mod: mult };
-        }
-      }
-      if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) {
-        let beaten = false;
-        if (!G.GAME.chips || !G.GAME.blind.chips || card.ability.extra.form === undefined) return undefined;
-        if (BN.gte(BN.div(G.GAME.chips, G.GAME.blind.chips), (2 ** card.ability.extra.form) + 1)) beaten = true;
-        if (beaten) {
-          G.GAME.rival_losses = G.GAME.rival_losses + 1;
-          let money = 5;
-          if (card.ability.extra.form === 1) money = 10;
-          else if (card.ability.extra.form > 1) money = 25;
-          ease_poke_dollars(card, 'rival', money);
-          G.E_MANAGER.add_event(() => { remove(self, card, context, true); });
-          return { message: localize('poke_smell_ya') };
-        }
+      if (context.skip_blind) scale_card(card, { ref_value: 'money', scalar_value: 'money_mod', message_colour: 'MONEY' });
+      if (context.end_of_round && context.game_over === false && context.main_eval && context.beat_boss) {
+        G.GAME.poke_rival_defeated = true;
+        ease_poke_dollars(card, 'rival', card.ability.extra.money);
+        destroy_joker(card);
+        return { message: localize('poke_smell_ya') };
       }
       return undefined;
-    },
-    set_ability(self, card, initial) {
-      if (initial) {
-        G.GAME.rival_losses = G.GAME.rival_losses || 0;
-        card.ability.extra.form = G.GAME.rival_losses;
-      }
     },
   },
   // Ruins of Alph: 3 Negative Unown each blind; merges triggered Unown; sell for a reward.
@@ -309,7 +276,7 @@ defineJokers({
           let added = false;
           for (const v of unowns) {
             if (v.ability.extra.triggered && !v.ability.extra.merged) {
-              card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
+              scale_card(card, { ref_value: 'mult', scalar_value: 'mult_mod', no_message: true });
               card.ability.extra.merged = card.ability.extra.merged + 1;
               v.ability.extra.merged = true;
               // (the Lua {} comes out of data.js as an object: it is a list of Unown forms)
@@ -322,8 +289,11 @@ defineJokers({
         }
       }
       if (context.setting_blind && !context.blueprint) {
-        for (let i = 1; i <= 3; i++) {
-          G.E_MANAGER.add_event(() => {
+        // (3.9.1 makes the three in one event by SMODS.add_card and no longer zeroes their cost / sell value. Kept: they
+        // stay free with no sell value — Unown is held on 3.2.1 for the Unown rework, and without the zeroing each
+        // blind's three Unowns would sell for $2 apiece; the Unown rework batch decides.)
+        G.E_MANAGER.add_event(() => {
+          for (let i = 1; i <= 3; i++) {
             const new_card = smods_create_card({ set: 'Joker', area: G.jokers, key: 'j_poke_unown' });
             new_card.set_edition({ negative: true }, true);
             new_card.cost = 0;
@@ -331,37 +301,36 @@ defineJokers({
             new_card.add_to_deck();
             G.jokers.emplace(new_card);
             new_card.start_materialize();
-          });
-        }
+          }
+        });
       }
       if (context.selling_self && !context.blueprint) {
-        let reward_card = null;
         if (card.ability.extra.merged >= 28) {
-          reward_card = smods_create_card({ set: 'Joker', area: G.jokers, key: 'j_poke_unown_swarm' });
-          const _card = create_card('Spectral', G.consumeables, null, null, null, null, 'c_soul');
-          _card.add_to_deck();
-          G.consumeables.emplace(_card);
-          card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
+          add_card({ set: 'Joker', key: 'j_poke_unown_swarm' });
+          const soul = add_card({ set: 'Spectral', key: 'c_soul' });
+          card_eval_status_text(soul, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
         } else if (card.ability.extra.merged >= 20) {
-          reward_card = smods_create_card({ set: 'Joker', area: G.jokers, key: 'j_brainstorm' });
+          add_card({ set: 'Joker', key: 'j_brainstorm' });
         } else if (card.ability.extra.merged >= 10) {
           const jokers = [];
           for (let i = 0; i < G.jokers.cards.length; i++) if (G.jokers.cards[i] !== card) jokers.push(G.jokers.cards[i]);
           if (jokers.length > 0) {
-            // (SMODS's pseudorandom_element turns the string seed into pseudoseed('alph').)
-            const [chosen_joker] = pseudorandom_element(jokers, pseudoseed('alph'));
-            reward_card = copy_card(chosen_joker, null, null, null, !!(chosen_joker.edition && chosen_joker.edition.negative));
-            card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_duplicated_ex') });
-          } else {
-            card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_no_other_jokers') });
+            // (3.9.1: the "Duplicated!" message first, then the copy, like Invisible Joker.)
+            return {
+              message: localize('k_duplicated_ex'),
+              func() {
+                // (SMODS's pseudorandom_element turns the string seed into pseudoseed('alph').)
+                const [chosen_joker] = pseudorandom_element(jokers, pseudoseed('alph'));
+                const copy = copy_card(chosen_joker, null, null, null, !!(chosen_joker.edition && chosen_joker.edition.negative));
+                copy.add_to_deck();
+                G.jokers.emplace(copy);
+              },
+            };
           }
+          return { message: localize('k_no_other_jokers') };
         } else if (card.ability.extra.merged >= 5) {
-          reward_card = create_random_poke_joker('alph', null, 'poke_safari', G.jokers);
-        }
-        if (reward_card) {
-          reward_card.add_to_deck();
-          G.jokers.emplace(reward_card);
-          reward_card.start_materialize();
+          // Pokermon 3.9.1: a random Safari joker from the Joker pool (SMODS.add_card; 3.2.1: get_random_poke_key).
+          add_card({ set: 'Joker', rarity: 'poke_safari', key_append: 'alph' });
         }
       }
       return undefined;
@@ -444,3 +413,6 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Pokermon 3.9.1: once beaten, the Rival never comes back to the pool.
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_rival' && G.GAME && G.GAME.poke_rival_defeated ? false : undefined));

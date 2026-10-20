@@ -1263,9 +1263,10 @@ function evaluate_play() {
     for (const sc of scoring_hand) {
       let destroyed = null;
       for (const j of G.jokers.cards) {
-        // Mod jokers also get Steamodded's destroy_card form (cardarea G.play; {remove = true} destroys).
+        // Mod jokers also get Steamodded's destroy_card form (cardarea G.play; {remove = true} destroys), with
+        // SMODS.calculate_destroying_cards' scoring_name / poker_hands (Pokermon 3.9.1 Simisear / Hydreigon read them).
         if (j.config.center.mod) {
-          const r = j.calculate_joker({ destroying_card: sc, destroy_card: sc, cardarea: G.play, full_hand: G.play.cards, scoring_hand });
+          const r = j.calculate_joker({ ...base_ctx(), destroying_card: sc, destroy_card: sc, cardarea: G.play });
           destroyed = r && (r === true || r.remove) ? r : null;
         } else destroyed = j.calculate_joker({ destroying_card: sc, full_hand: G.play.cards });
         if (destroyed) break;
@@ -1295,7 +1296,7 @@ function evaluate_play() {
         let destroyed = false;
         for (const j of G.jokers.cards) {
           if (!unscored_destroy(j)) continue;
-          const r = j.calculate_joker({ destroy_card: uc, cardarea: 'unscored', full_hand: G.play.cards, scoring_hand });
+          const r = j.calculate_joker({ ...base_ctx(), destroy_card: uc, cardarea: 'unscored' });
           if (r && (r === true || r.remove)) { destroyed = true; break; }
         }
         if (destroyed) { uc.destroyed = true; cards_destroyed.push(uc); }

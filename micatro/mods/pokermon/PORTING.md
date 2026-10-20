@@ -259,7 +259,7 @@ Intended-design fixes are noted in comments at each site (search "intended").
 ## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
-87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, **`3.9.1+r4`** since batch 7
+87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, **`3.9.1+r5`** since batch 8
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -270,7 +270,8 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 | **5** | **data re-extract** (rarities, costs, configs, gates, `attributes`, cgoose -> iridescent_hacker), 39 changed + 21 new atlases (below) | **done 2026-10-19** — `3.9.1+r2` |
 | **6** | **joker reworks, pokejokers_01–08** (Gen 1 + Gen 2: 255 jokers on 3.9.1, 8 held; below) | **done 2026-10-19** — `3.9.1+r3` |
 | **7** | **joker reworks, pokejokers_09–17** (Gen 3 + Gen 4: 97 jokers on 3.9.1, none held; below) | **done 2026-10-19** — `3.9.1+r4` |
-| 8–17 | reworks 18+, Hazard/Seed, new jokers, Megas, blinds/stake/challenges | after 7 |
+| **8** | **joker reworks, pokejokers_18–34 + zotherjokers / zmissingno** (Gen 5–9 and the non-Pokédex jokers: 83 on 3.9.1, 10 held; below) | **done 2026-10-19** — `3.9.1+r5` |
+| 10–17 | Hazard/Seed, new jokers, Megas, non-Pokémon jokers / blinds / stake / challenges | after 8 (batch 9 folded into 6–8) |
 
 ### Steamodded seams for 3.9.1 (batch 4)
 Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
@@ -350,8 +351,8 @@ replay from before reads as `3.2.1+r1`: the resume prompt / the replay banner). 
     `pokermon.modify_pool` and the Safari / Mega `get_weight`s, and it re-rolls every shop and pack of every Pokermon run (also
     with other mods on). Later, with the items batch.
 - **Skipped static data** (each 3.9.1 change to an existing joker that is not taken, with the reason; generated from
-  `data391.js` `skipped`; as of batch 7, which took everything for pokejokers_01-17 but its holds). Reworks wait for their
-  batch (8–9 by file, 10 Hazard layer):
+  `data391.js` `skipped`; as of batch 8, which took everything for pokejokers_01-34, zotherjokers and zmissingno but its
+  holds). The holds wait for batch 10 (the Hazard layer):
 
   - **mega_steelix** — rework: Stone cards held instead of Diamonds $ (held: quantum Hazard, batch 10) (pokejokers_07): blueprint_compat true → false; money 1 → -; stone_held - → 4; suit Diamonds → -
   - **qwilfish** — Hazard layer rework (batch 10): hazard_level replaces the per-joker hazard ratio (pokejokers_08): chip_mod 25 → 15; hazard_level - → 1; hazards 4 → -
@@ -359,18 +360,12 @@ replay from before reads as `3.2.1+r1`: the resume prompt / the replay banner). 
   - **roggenrola** — Hazard layer rework (batch 10) (pokejokers_18): evo_rqmt 25 → 10; hazard_level - → 1; hazards 4 → -; mult_mod 4 → 5
   - **boldore** — Hazard layer rework (batch 10) (pokejokers_18): hazard_level - → 1; hazards 4 → -; mult_mod 8 → 10
   - **gigalith** — Hazard layer rework (batch 10) (pokejokers_18): hazard_level - → 1; hazards 4 → -; mult_mod 6 → 7
-  - **vanillite** — rework with the flag (scale_card / destroy rewrite; the line's Blueprint behaviour changes) (pokejokers_20): blueprint_compat false → true
-  - **vanillish** — rework with the flag (Vanillite line) (pokejokers_20): blueprint_compat false → true
-  - **vanilluxe** — rework with the flag (Vanillite line) (pokejokers_20): blueprint_compat false → true
   - **golurk** — Hazard layer rework (batch 10) (pokejokers_21): Xmult_multi 1.4 → 1.3; hazard_level - → 1; hazards 4 → -
-  - **vikavolt** — rework: no self-count, the +Mult half was removed (pokejokers_25): Xmult 0.75 → 0.5; mult 12 → -
-  - **ursaluna** — calculate changed (the Item's edition is a random aura edition, not Polychrome) (pokejokers_31): mult_mod 3 → 2
   - **tarountula** — Hazard layer rework (batch 10) (pokejokers_31): hazard_level - → 1; hazards 4 → -; rounds 3 → 4
   - **spidops** — rework: cards-added goal + Hazard layer (pokejokers_31): blueprint_compat true → false; card_goal - → 8; cards_added - → 0; h_max 8 → -; h_size 1 → 2; h_total 0 → -; hazard_level - → 1; hazards 4 → -
-  - **rival** — rework (3.6.0 Rival): forms / money (zotherjokers): blueprint_compat true → false; Xmult 3 → -; form 0 → -; money - → 15; money_mod - → 10; mult 10 → -
 
-  - *new key: only the 3.9.1 logic reads it* (8): garbodor (active); ferroseed (hazard_level); ferrothorn (hazard_level); golett (hazard_level); annihilape (chip_mod, mult_mod); gholdengo (Xmult1); everstone (Xmult_multi2)
-  - *key dropped by 3.9.1: the ported 3.2.1 logic still reads it* (8): golett (hazards); mimikyu (disguise); dreepy (suit); annihilape (chips, mult); gimmighoul (previous_money); gholdengo (future_dollars, oXmult)
+  - *new key: only the 3.9.1 logic reads it* (3): ferroseed (hazard_level); ferrothorn (hazard_level); golett (hazard_level)
+  - *key dropped by 3.9.1: the ported 3.2.1 logic still reads it* (1): golett (hazards)
   - *format only (a string id became a number): no change* (1): unown (targets)
 
 ### Joker reworks, pokejokers_01–08 (batch 6)
@@ -599,6 +594,163 @@ enhancement's own effects.
     X3 and the jokers that left the "still 3.2.1" lists.
   - `micatro_resume_win_badges` and `micatro_runsync` (both replay a 3.2.1 fixture) are served pokejokers_09-17 as of the
     batch-6 merge (e295b8b7). The runsync fixture's opening Poke Ball otherwise rolls another Basic: the Rotom forms left the pool.
+
+### Joker reworks, pokejokers_18–34 + zotherjokers / zmissingno (batch 8)
+Pinned **`3.9.1+r5`** (`contentRev: 5`). Every existing joker of `pokemon/pokejokers_18.lua`–`34.lua` (27, 29 and 35 hold no 3.2.1
+joker), `zotherjokers.lua` and `zmissingno.lua` (93: Pansage -> Gholdengo, the non-Pokédex jokers, MissingNo.) is on its
+**3.9.1 behaviour** (jokers/pokejokers_18–34.js, zotherjokers.js, zmissingno.js, ported from the 3.9.1 Lua against our 87fb499
+baseline) and takes **all** its 3.9.1 static data, except the 10 holds. With it every existing Pokermon joker file is reworked
+(435 jokers on 3.9.1, 18 held).
+
+- **How**: as batches 6 / 7 — `rework_files` now lists 01–34 + zotherjokers + zmissingno, `data391.js` regenerated. Counts
+  (whole overlay): 78 whole configs, 254 texts, 23 blueprint flags; batch 8 added 12 / 50 / 4. The spec's stale `take` (Grubbin,
+  Charjabug, Pokédex, Professor, Treasure Eatery) and `reasons` (the Vanillite line, Vikavolt, Ursaluna, Rival) are gone.
+  - Generator: Pumpkaboo / Gourgeist have no Joker loc entry of their own (`loc_vars` always names a size); a reworked joker
+    without one now takes its forms' entries (`j_poke_<name>_<form>`, minus other jokers' keys).
+  - A Billion Lions moved to 3.9.1's `zzzapril_fools.lua` (only registered on April 1) with the same behaviour: it takes its
+    3.9.1 text; ours stays behind the `pokemon_aprilfools` option.
+- **Holds (10)**, each with its reason in the spec:
+  - The Hazard jokers — Roggenrola / Boldore / Gigalith, Golett / Golurk, Ferroseed / Ferrothorn, Tarountula / Spidops: 3.9.1
+    drops the per-joker Hazard ratio (`setting_blind` `poke_set_hazards`) for the run-wide `hazard_level` (add_to_deck /
+    remove_from_deck `change_hazard_level`) — the Hazard layer, batch 10. Ferroseed / Ferrothorn's only 3.9.1 change is that
+    `hazard_level`; Spidops' 3.9.1 rule (every 8th playing card added gets a random Seal; +2 hand size) comes with it.
+  - Unown Swarm: the Unown rework (with Unown, held since batch 6): 3.9.1 redraws it (a glued playing-card front, its own soul
+    atlas, `display_size`) and takes it out of the pool.
+- **`rework_deferred`** (new this batch):
+  - Rival: a beaten Rival opens Bitter Rival, then Champion — new 3.9.1 jokers (batch 17). Until then a beaten Rival just
+    leaves the pool.
+  - Mystery Egg: the hatch speed-ups (a held Fire Energy, a Flame Body / Magma Armor neighbour) need the Oologist, a new 3.9.1
+    joker (batch 17). Until it is ported they never apply (the egg checks `find_card('j_poke_oologist')`, as the Lua).
+  - Ruins of Alph: 3.9.1 makes its three Negative Unown by `SMODS.add_card` and no longer zeroes their cost / sell value. Ours
+    keeps them free with no sell value until the Unown rework, so each blind's three Unown can't be sold for $2 apiece.
+- **Reworked** (behaviour, by file; the rest changed only text / numbers / flags / refactors, or nothing):
+  - **18**
+    - Simisear: a first hand containing a Straight or Flush makes The Empress at `before` (with room). Its unscored cards are
+      destroyed in the **destroy_card pass** (`cardarea 'unscored'`): remove_playing_cards listeners (Hydreigon, Pawniard)
+      see them.
+    - Pansage / Pansear / Panpour: `knockoff_starter`.
+  - **19**
+    - Trubbish: the Chips gain and the trigger count move from the cash-out to end of round; it evolves through
+      `scaling_evo`. The cash-out only pays the $.
+    - Garbodor: a Boss beaten with no discard used this ante arms `active`; the Garbage Tag comes with the cash-out
+      (`calc_dollar_bonus`).
+    - Zorua / Zoroark: `SMODS.blueprint_effect` (only a Blueprint-compatible, undebuffed rightmost joker; 3.2.1 copied anything).
+      - The Illusion is picked only outside the joker row (`get_random_poke_key_options`: Common / Safari, `exclude_types`
+        Dark) and dropped in `add_to_deck`; the Dark sticker likewise only outside the row.
+      - Zorua: what the copied joker does at `after` is not returned (it is revealed instead); it resets only once revealed, in
+        the main end-of-round pass of a won round.
+  - **20**
+    - Vanillite / Vanillish / Vanilluxe: Blueprint-compatible (a copy scores the chips; the melt count is the original's).
+      `scale_card` '-', and the melt is `SMODS.destroy_cards` (an Eternal one stays). Vanillish's unused `level_up` flag is gone.
+    - Frillish / Jellicent: `scale_card` (Jellicent's King / Queen doubling as its operation).
+    - Gothita: `knockoff_pseudol` (declared; nothing reads it yet, like `knockoff_starter`).
+  - **21**
+    - Beheeyem: Blueprint no longer counts the Boosters.
+    - Chandelure: any joker worth less than $2 (no `post_trigger` / set checks).
+    - Pawniard / Bisharp: `scale_card`. Bisharp destroys the lone face card of a first hand straight from the destroy_card pass
+      (no `final_scoring_step` marker).
+  - **22**
+    - Deino / Zweilous: the hand is counted at `before` (not Blueprint), the XMult comes at `joker_main`. The **house rule
+      stays**: any hand *containing* a Three of a Kind (3.9.1's text "if poker hand is a Three of a Kind" is rewritten to
+      "contains" by index.js, as before).
+    - Hydreigon: a Three of a Kind's unscored cards are destroyed in the destroy_card pass; `scale_card` per destroyed card.
+  - **24**
+    - Sylveon (Eevee line): when the round begins, a Foil / Holographic / Polychrome copy of a random deck card joins the hand
+      (`SMODS.copy_card` into G.hand). Blueprint-compatible. (3.2.1: a lone unenhanced first-hand card got the edition.)
+    - Pumpkaboo / Gourgeist: at `pre_discard` every undebuffed Jack counts; the one that reaches the target is marked
+      (per joker, `unique_val`) and makes a Spectral as it is discarded (`create_consumeable`). Pumpkaboo carries
+      `jack_target` / `jacks_discarded` into Gourgeist (`poke_custom_values_to_keep`).
+    - Gourgeist: pays its config $6 at every size. 3.2.1's $2 / $5 / $8 / $11 by size is gone from set_ability **and** from
+      `poke_backend_evolve`.
+  - **25**
+    - Vikavolt: X(1 + 0.5 x every Lightning Joker, itself included), no +Mult, nothing at X1.
+    - Rockruff: Blueprint doesn't count toward the evolution.
+    - Lycanroc Dusk: retriggers its first even / odd card on every hand (was once per round).
+  - **26**: Mimikyu: `disguise_broken` (was `disguise = false`; a 3.2.1 card's `disguise === false` still reads as broken, and
+    systems/anim.js shows broke_pos for either).
+  - **30**
+    - Dreepy / Dreepy Dart: sold, the hand takes the suit of the leftmost held card (not Spades), unless it has no suit.
+    - Dreepy Dart: never in a pool (`POKE_POOL_RULES`).
+    - Wyrdeer: add_to_deck / remove_from_deck also move the Foresight it gained this round (`scry_added`).
+  - **31**: Ursaluna: the Item gets a random Foil / Holo / Polychrome edition (`poll_edition('aura')`, key_append 'luna').
+  - **32**: Tinkatink line: debuff source `'<name>' .. unique_val`, and the reset clears only that source (3.2.1's `'reset'`
+    wiped every source on every playing card: another Tinka's, a Boss's).
+  - **33**
+    - Kingambit: the deck's only King must be **held** in hand (was: in the played hand); its text shows the half XMult.
+    - Annihilape: `chip_mod` / `mult_mod` (renamed keys).
+    - Farigiraf: `create_consumeable('c_cryptid')`.
+  - **34**
+    - Gimmighoul: counts every money change through Steamodded's `money_altered` context (3.2.1 diffed `G.GAME.dollars` in
+      `update()`; `previous_money` is gone). Its Gold-card $ goes into `dollar_buffer`. The Roaming form comes Negative and
+      couponed (free) and is never in a pool.
+    - Gholdengo: a scored Gold card pays $3 for XX1.5 while `dollars + dollar_buffer` covers it (3.2.1 kept a `future_dollars`
+      copy from `before`); nothing at X1; resets to `Xmult1`; `enhancement_gate` Gold.
+  - **zotherjokers**
+    - Everstone: Basic Pokémon X1.5 (`Xmult_multi2`), Baby X1.75.
+    - Tall Grass: has_enhancement Wild (quantum too); the joker is `SMODS.add_card` from the `pokemon` attribute pool, Common.
+    - Jelly Donut: Blueprint makes an Energy but eats no round; the Energy holds a `consumeable_buffer` slot; `destroy_cards`.
+    - Treasure Eatery: not Blueprint-compatible; `get_type`; `destroy_cards`.
+    - Mystery Egg: its Pokémon is `SMODS.poll_object` over the `stage_baby` / `stage_basic` attribute pools (union, any rarity,
+      seed 'egg', Common–Rare kept). It hatches **in place** through `poke_evolve(card, key, nil, "CRACK!", true, 1)` (slot,
+      edition, stickers kept; 1 Energy). Not Perishable / Rental.
+    - Rival (the 3.6.0 rework): no Mult and no forms. Each skipped Blind raises the payout by $10 (`skip_blind`,
+      `scale_card`); a beaten Boss pays it ($15+), "Smell Ya Later!", self-destructs and sets `G.GAME.poke_rival_defeated`
+      (out of the pool for good). Not Blueprint-compatible; $5.
+    - Ruins of Alph: `scale_card`; selling with 10+ merged says "Duplicated!" first, then copies; 5+ merged is
+      `SMODS.add_card` of a random Safari joker from the Joker pool. (The Unown spawn: deferred, above.)
+    - Pokédex / Professor: their 3.9.1 Blueprint flags (taken since batch 5).
+  - **zmissingno**: MissingNo.'s tags are `SMODS.poll_object` picks from the Tag pool (in_pool / min_ante rules) minus the
+    Boss Tag, in the main end-of-round pass. An Orbital Tag with no blind's hand picks a visible hand (seed 'orbital', as
+    Steamodded's tag.toml). The "Bird" tooltip is gone.
+- **New engine seams** (js/engine/run.js): the mod jokers' destroy_card contexts — scored (`cardarea G.play`) and unscored —
+  now carry `scoring_name` / `poker_hands` (`base_ctx()`), as `SMODS.calculate_destroying_cards` passes them (Simisear,
+  Hydreigon read them).
+- **Shared changes** (Pokermon systems):
+  - utils.js: `destroy_joker` (SMODS.destroy_cards on a joker: Eternal kept, `getting_sliced`, pinched out), `create_consumeable`
+    (3.9.1 `pokermon.create_consumeable`), `smods_copy_card` / `smods_add_to_deck` (SMODS.copy_card / add_to_deck), and
+    `poke_add_shop_card(add, card, is_free)` (couponed).
+  - pools.js: `get_random_poke_key(..., exclude_types)` and `get_random_poke_key_options`. The rest of the pool is the 3.2.1 one.
+  - evolution.js: `poke_evolve` / `poke_backend_evolve` take `energize_amount` (Energy of type 'Trans' after the swap).
+    - A kept value the old card lacks no longer deletes the new card's own: Lua's `pairs` never yields a nil. The fuzz found
+      an egg-hatched Treecko losing its Nature targets.
+    - The Gourgeist payout-by-size override is gone (above).
+  - systems/anim.js: Mimikyu's `disguise_broken`.
+- **Kept** (house rules and fixes over upstream):
+  - Deino / Zweilous "contains a Three of a Kind" (behaviour in pokejokers_22.js, text in index.js).
+  - No "+0" / "X1" popups where the port had a guard (Trubbish / Garbodor / Frillish / Ursaluna / Ruins of Alph chips or Mult > 0,
+    Armarouge / Ceruledge Xmult > 1), as batch 6 kept Zubat's / Parasect's.
+  - Every "intended-design" comment in 18–34 / zotherjokers (Hisuian Qwilfish / Overqwil stay registered).
+- **Deviations / later**
+  - Zorua's "Reset" is shown with `card_eval_status_text` and its level count still runs that round. The Lua returns early,
+    but 3.9.1 counts levels in its later `evolution` context; ours counts at end of round (the batch-6 timing deviation).
+  - Old state names stay: `rotom_discount` (3.9.1 `poke_rotom_discount`), `scry_amount` (`poke_scry_amount`).
+  - Mimikyu's "Saved by Mimikyu" line is the engine's (`G.GAME.saved_by`); 3.9.1's `poke_saved_by` string is not taken.
+  - Kleavor's Stone card keeps `create_playing_card` (3.9.1 `SMODS.add_card` Enhanced: the same card, another front draw).
+- **Tests**:
+  - `pokejokers_18`–`34_test.mjs`, `zotherjokers_test.mjs` and `zmissingno_test.mjs` fire the reworks, marked "(Pokermon 3.9.1)".
+  - `pokermon_391_reworks_c_test.mjs` covers the overlay (83 reworked, 10 held, the deferred list), the loc_vars of every
+    reworked joker, one or more fired reworks per file, the new seams, the egg-into-Treecko regression, the holds and the
+    house rule. It gives 20 passed / 28 failed on origin/main and 50 / 0 here.
+  - `pokermon_391_data_test.mjs`, `pokermon_391_reworks_a` / `_b_test.mjs`, `pokermon_systems_test.mjs` and `smods_seams_test.mjs`
+    follow the new rev, Everstone's X1.5 and Gimmighoul's `money_altered`.
+  - `micatro_resume_win_badges` (replays a 3.2.1 fixture) is also served pokejokers_18-34 / zotherjokers / zmissingno as of
+    the batch-7 merge (a7b29c1b); `micatro_runsync`, `micatro_mod_version_pin`, `micatro_replay` and `micatro_nuzlocke` pass as they are.
+
+### Pending from the 3.9.1 joker rework (after batch 8)
+Every existing joker file is done. What waits, across batches 6–8, by the batch it waits on (`rework_hold` = still on 3.2.1,
+`rework_deferred` = on 3.9.1 but one part):
+- **Batch 10** (the Hazard layer, the Seed enhancement, Flower X2 / X3)
+  - Held, the Hazard layer: Qwilfish, Skarmory, Roggenrola, Boldore, Gigalith, Golett, Golurk, Ferroseed, Ferrothorn, Tarountula,
+    Spidops.
+  - Held, a quantum enhancement's own effects (core scoring): Mega Steelix (Stone cards also Hazard).
+  - Held, the Seed enhancement: Bellossom, Hoppip, Skiploom, Jumpluff.
+  - Deferred, the Flower enhancement's X2 / X3 rule: Shaymin, Shaymin Sky.
+- **Batch 16** (Megas): deferred Lucario (Mega Lucario). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
+- **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist).
+- **The Unown rework** (not yet in the plan's table): held Unown, Unown Swarm; deferred Ruins of Alph's Unown spawn.
+- **The boosters / Wish Pack** (not yet in the plan's table): deferred Jirachi (the 3.9.1 Wish Pack, `change_form` wishes).
+- **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,
+  `extra_pocket_picks`, `negative_edition_rate`, `rotom_discount`).
 
 ### 3.9.1 art (batch 5)
 - Vendored into the gitignored `assets/2x` (deployed with `npm run deploy-micatro-mods`): the **39** sheets 3.9.1 changed,

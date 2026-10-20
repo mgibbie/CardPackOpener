@@ -1,14 +1,13 @@
-// Pokermon 3.2.1 — pokemon/zmissingno.lua (MissingNo., ptype "Bird"), 1 joker.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/zmissingno.lua (MissingNo., ptype "Bird"), 1 joker.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8.
 // (The Lua's commented-out missingnocalc table — random mult/chips/money/... effects — is dead code.)
 import {
   G, pseudorandom, pseudoseed, pseudorandom_element, play_sound, create_card, copy_card,
-  defineJokers,
+  defineJokers, poll_object,
 } from '../api.js';
-import { P_TAGS } from '../../../js/engine/core.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { HANDLIST } from '../../../js/engine/run.js';
-import { centerActive } from '../../../js/mods/registry.js';
 
 const FILE = 'pokemon/zmissingno.lua';
 const mseed = 'missingno';
@@ -16,28 +15,25 @@ const mseed = 'missingno';
 defineJokers({
   // MissingNo.
   missingno: {
+    // (3.9.1 dropped the "Bird" type tooltip.)
     loc_vars(self, info_queue, center) {
-      info_queue.push({ set: 'Other', key: 'Bird' });
       return { vars: [center.ability.extra.tags_created] };
     },
     calculate(self, card, context) {
-      if (context.end_of_round && !context.individual && !context.repetition) {
+      // Pokermon 3.9.1: the main end-of-round pass (main_eval); each tag is SMODS.poll_object's pick from the Tag pool
+      // (its in_pool rules and weights) minus the Boss Tag — 3.2.1 drew evenly from every registered tag.
+      if (context.end_of_round && context.main_eval) {
         const more = pseudorandom('bulba') > 0.90 ? 1 : 0;
         for (let i = 1; i <= card.ability.extra.tags_created + more; i++) {
           G.E_MANAGER.add_event(() => {
-            // Lua: pairs(G.P_TAGS) minus the Boss Tag. Micatro walks the registered tags in order and
-            // leaves out tags of inactive mods / unported (inert) tags, which would do nothing.
-            const tags = [];
-            for (const v of Object.values(P_TAGS)) {
-              if (v.key !== 'tag_boss' && centerActive(v) && !v.unported) tags.push(v);
-            }
-            const [temp_tag] = pseudorandom_element(tags, pseudoseed(mseed));
-            const tag = new Tag(temp_tag.key);
-            if (tag.key === 'tag_orbital') {
-              // (pairs(G.GAME.hands) in the Lua — the fixed hand order here.)
+            const key = poll_object({ type: 'Tag', seed: mseed, filter: (pool) => pool.filter((v) => (v && typeof v === 'object' ? v.key : v) !== 'tag_boss') });
+            if (!key) return;
+            const tag = new Tag(key);
+            if (tag.key === 'tag_orbital' && G.GAME.hands[tag.ability.orbital_hand] === undefined) {
+              // (Steamodded lovely/tag.toml: an Orbital Tag with no blind's hand picks a visible hand, seed 'orbital'.)
               const _poker_hands = [];
               for (const k of HANDLIST) if (G.GAME.hands[k].visible) _poker_hands.push(k);
-              tag.ability.orbital_hand = pseudorandom_element(_poker_hands, pseudoseed(mseed))[0];
+              tag.ability.orbital_hand = pseudorandom_element(_poker_hands, pseudoseed('orbital'))[0];
             }
             add_tag(tag);
             play_sound('generic1', 0.9, 0.8);

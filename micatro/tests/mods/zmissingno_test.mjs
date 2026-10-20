@@ -47,5 +47,18 @@ ok(P_CENTERS.j_poke_missingno.config.extra.ptype === 'Bird' && P_CENTERS.j_poke_
   }
   ok(made >= 6, 'missingno: tags every round', made);
 }
+{
+  // Pokermon 3.9.1: each tag is SMODS.poll_object's pick from the Tag POOL (its in_pool / min_ante rules), not an even draw
+  // over every registered tag: at ante 1 no ante-2 tag (Negative, Standard, Meteor, Buffoon, Handy, Garbage, Ethereal,
+  // Top-up, Orbital) ever comes.
+  start('MISSINGNO3');
+  const j = add('j_poke_missingno');
+  G.GAME.round_resets.ante = 1;
+  const ANTE2 = ['tag_negative', 'tag_standard', 'tag_meteor', 'tag_buffoon', 'tag_handy', 'tag_garbage', 'tag_ethereal', 'tag_top_up', 'tag_orbital'];
+  const t0 = G.GAME.tags.length;
+  for (let i = 0; i < 15; i++) { j.calculate_joker({ end_of_round: true, main_eval: true, game_over: false }); G.E_MANAGER.flush(); }
+  const got = G.GAME.tags.slice(t0).map((t) => t.key);
+  ok(got.length >= 30 && !got.some((k) => ANTE2.includes(k) || k === 'tag_boss'), 'missingno: tags come from the ante-1 Tag pool (Pokermon 3.9.1)', got.filter((k) => ANTE2.includes(k)));
+}
 
 done();

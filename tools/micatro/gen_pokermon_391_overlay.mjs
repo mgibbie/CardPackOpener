@@ -73,8 +73,11 @@ for (const [name, { it: a, file }] of Object.entries(BJ)) {
     }
     if (J(a.config || {}) !== J(b.config || {})) { put(name, 'config_all', b.config || {}); count('config_all'); }
     const key = 'j_poke_' + name, nl = NLOC.Joker && NLOC.Joker[key];
-    if (!nl) throw new Error(`3.9.1 en-us has no ${key}`);
-    if (J(nl) !== J(BLOC.Joker && BLOC.Joker[key])) { jokerLoc[key] = nl; count('loc'); }
+    // A joker whose loc_vars always names a form entry (Pumpkaboo / Gourgeist: j_poke_<name>_<form>, batch 8) has no
+    // entry of its own: it takes its forms' entries (keys key_*, minus other jokers' own keys).
+    const forms = nl ? [key] : Object.keys((NLOC.Joker) || {}).filter((k) => k.startsWith(key + '_') && !NJ[k.slice(7)]);
+    if (!forms.length) throw new Error(`3.9.1 en-us has no ${key}`);
+    for (const k of forms) if (J(NLOC.Joker[k]) !== J(BLOC.Joker && BLOC.Joker[k])) { jokerLoc[k] = NLOC.Joker[k]; count('loc'); }
     continue;
   }
   const tk = new Set(take[name] || []);

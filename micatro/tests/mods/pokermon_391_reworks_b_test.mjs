@@ -33,11 +33,11 @@ const RW = (D391.reworked || []).filter((n) => inRange.includes(n));
 const CODE = { 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: 'T', 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
 
 // ---------------------------------------------------------------- the overlay + version
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 4 && PINS.modPin('pokermon') === '3.9.1+r4', 'Pokermon 3.9.1, contentRev 4 (pin 3.9.1+r4)', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 4 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon 3.9.1, contentRev 4 or later (batch 8: 5)', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
 ok(inRange.length === 97 && RW.length === 97, 'reworked: every joker of pokejokers_09-17, no holds (Pokermon 3.9.1)', [RW.length, inRange.length]);
 ok(!(D391.rework_hold || []).some(([n]) => inRange.includes(n)), 'nothing of 09-17 is held on 3.2.1');
-ok((D391.rework_deferred || []).map(([n]) => n).sort().join() === 'jirachi,lucario,porygonz,shaymin,shaymin_sky', 'rework_deferred: Lucario (Mega), Shaymin x2 (Flower X2/X3), Jirachi (Wish Pack), Porygon-Z (usage counter)', D391.rework_deferred);
+ok((D391.rework_deferred || []).map(([n]) => n).filter((n) => inRange.includes(n)).sort().join() === 'jirachi,lucario,porygonz,shaymin,shaymin_sky', 'rework_deferred (09-17): Lucario (Mega), Shaymin x2 (Flower X2/X3), Jirachi (Wish Pack), Porygon-Z (usage counter)', D391.rework_deferred);
 ok(C('treecko').config.evo_rqmt === 16 && C('treecko').config.extra.triggers === 0 && C('treecko').config.extra.num === undefined && C('treecko').perishable_compat !== false,
   'a reworked joker takes its whole 3.9.1 config and flags (Treecko: 16 triggers, no coin flip, Perishable allowed) (Pokermon 3.9.1)', C('treecko').config);
 ok(C('mega_camerupt').config.extra.Xmult_mod === 0.5 && C('yanmega').config.extra.mult_mod === 6 && C('glaceon').config.extra.retriggers === 1 && C('jirachi_power').config.extra.every === 2

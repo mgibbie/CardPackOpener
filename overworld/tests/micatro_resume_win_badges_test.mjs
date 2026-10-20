@@ -23,6 +23,8 @@
 // batch-5 merge (git show aa4bfab2: their 3.2.1 behaviour; the fixture holds Kakuna, Butterfree, Parasect, Victreebel...).
 // Since batch 7 (3.9.1+r4) pokejokers_09-17 do too, so the page gets those 9 files as of the batch-6 merge (git show
 // e295b8b7: their 3.2.1 behaviour; the fixture holds Shroomish and Breloom).
+// Since batch 8 (3.9.1+r5) pokejokers_18-34, zotherjokers and zmissingno do too, so the page gets those files as of the
+// batch-7 merge (git show a7b29c1b: their 3.2.1 behaviour).
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides). Covers micatro/js/engine/session.js (recipeSeeded), micatro/js/engine/run.js (newRun seeded),
 // micatro/js/ui/main.js, micatro/js/ui/progress.js (push retry, once per run), micatro/js/net.js,
@@ -109,6 +111,12 @@ const PRE_B7 = 'e295b8b7c7aa3fb38b3d65658a54bf92cb125ac8';
 for (let i = 9; i <= 17; i++) {
 	const p = `micatro/mods/pokermon/jokers/pokejokers_${String(i).padStart(2, '0')}.js`;
 	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B7}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+}
+// ... and pokejokers_18-34 / zotherjokers / zmissingno before theirs (batch 8), from the batch-7 merge commit
+const PRE_B8 = 'a7b29c1b5e42b619085d6d5494e7e5bcd15dd2bf';
+for (const n of ['18', '19', '20', '21', '22', '23', '24', '25', '26', '28', '30', '31', '32', '33', '34'].map((i) => 'pokejokers_' + i).concat(['zotherjokers', 'zmissingno'])) {
+	const p = `micatro/mods/pokermon/jokers/${n}.js`;
+	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B8}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 }
 let prompted = 0;
 const server = http.createServer(async (req, res) => {

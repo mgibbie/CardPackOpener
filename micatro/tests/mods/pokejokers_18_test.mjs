@@ -60,12 +60,13 @@ const hazards = (area) => area.cards.filter((c) => c.config.center.key === 'm_po
   const cards = hand(['S_2', 'S_5', 'S_8', 'S_K', 'H_3']);
   const n0 = G.playing_cards.length;
   const r2 = play(cards);
-  ok(G.consumeables.cards.length === 1 && key(G.consumeables.cards[0]) === 'c_empress', 'simisear: first-hand flush makes The Empress', G.consumeables.cards.map(key));
-  ok(G.playing_cards.length === n0 - 1 && !G.playing_cards.includes(cards[4]), 'simisear: the unscored card is destroyed', G.playing_cards.length - n0);
+  ok(G.consumeables.cards.length === 1 && key(G.consumeables.cards[0]) === 'c_empress', 'simisear: first-hand flush makes The Empress at before (Pokermon 3.9.1)', G.consumeables.cards.map(key));
+  ok(G.playing_cards.length === n0 - 1 && !G.playing_cards.includes(cards[4]), 'simisear: the unscored card is destroyed in the destroy_card pass (Pokermon 3.9.1)', G.playing_cards.length - n0);
   ok(statusMsgs(r2.events).some((m) => /Tarot/.test(m)), 'simisear: "+1 Tarot"', statusMsgs(r2.events));
   const c2 = hand(['D_2', 'D_5', 'D_8', 'D_K', 'H_4']);
   play(c2);
   ok(G.consumeables.cards.length === 1 && G.playing_cards.includes(c2[4]), 'simisear: only the first hand of the round');
+  ok(['pansage', 'pansear', 'panpour'].every((n) => P_CENTERS['j_poke_' + n].knockoff_starter === true) && !P_CENTERS.j_poke_simisear.knockoff_starter, 'the Pansage / Pansear / Panpour are knockoff starters (Pokermon 3.9.1 flag)');
 }
 
 // ------------------------------------------------------------- Panpour / Simipour

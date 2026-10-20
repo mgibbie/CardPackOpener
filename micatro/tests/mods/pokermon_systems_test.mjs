@@ -202,8 +202,8 @@ ok(!avail('Item', null, 'c_poke_pokeball'), 'pokeballs option off removes the ba
   const c = add('j_poke_caterpie');
   add('j_poke_everstone');
   const r = play(hand(['S_A']));
-  // High card 16 chips; caterpie +3 -> 4; everstone X1.75 on a Basic -> 7
-  ok(near(r.total.mult, 4 * 1.75), 'everstone: X1.75 per Basic', r.total);
+  // High card 16 chips; caterpie +3 -> 4; everstone X1.5 on a Basic -> 6 (Pokermon 3.9.1: Basic X1.5, Baby X1.75)
+  ok(near(r.total.mult, 4 * 1.5), 'everstone: X1.5 per Basic (Pokermon 3.9.1)', r.total);
   winRound(); nextRound(); winRound();
   ok(key(c) === 'j_poke_caterpie' && c.ability.extra.rounds === 0, 'everstone blocks the evolution (countdown still runs)', [key(c), c.ability.extra.rounds]);
 }

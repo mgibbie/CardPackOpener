@@ -23,7 +23,16 @@ const SF = ['S_2', 'S_3', 'S_4', 'S_5', 'S_6']; // Straight Flush: 100 + 20 chip
   const r = act({ type: 'sell', id: j.sort_id });
   ok(r.ok && y.sell_cost === ysell + 1, 'dreepy sold: +$1 sell value to every joker', [ysell, y.sell_cost]);
   ok(G.GAME.dollars === d0 + jsell + 1, 'dreepy sells for its value +1', G.GAME.dollars - d0);
-  ok(G.hand.cards.length === 3 && G.hand.cards.every((c) => c.base.suit === 'Spades'), 'dreepy sold: hand turns to Spades', G.hand.cards.map((c) => c.base.suit));
+  ok(G.hand.cards.length === 3 && G.hand.cards.every((c) => c.base.suit === G.hand.cards[0].base.suit) && G.hand.cards[0].base.suit !== 'Spades',
+    'dreepy sold: the hand turns to the leftmost held card\'s suit (not Spades) (Pokermon 3.9.1)', G.hand.cards.map((c) => c.base.suit));
+}
+{
+  // A suitless leftmost card (Stone): no conversion (Pokermon 3.9.1).
+  start('DREEPY_STONE');
+  const j = add('j_poke_dreepy');
+  hand(['H_2'], { center: 'm_stone' }); hand(['D_K', 'C_9']);
+  act({ type: 'sell', id: j.sort_id });
+  ok(G.hand.cards.map((c) => c.base.suit).join() === 'Hearts,Diamonds,Clubs', 'dreepy sold: a Stone leftmost card converts nothing (Pokermon 3.9.1)', G.hand.cards.map((c) => c.base.suit));
 }
 {
   start('DREEPY2');
@@ -77,7 +86,8 @@ const SF = ['S_2', 'S_3', 'S_4', 'S_5', 'S_6']; // Straight Flush: 100 + 20 chip
   hand(['H_2', 'D_3']);
   const before = j.sell_cost;
   act({ type: 'sell', id: darts[0].sort_id });
-  ok(j.sell_cost === before + 1 && G.hand.cards.every((c) => c.base.suit === 'Spades'), 'dreepy dart sold: +$1 sell value, hand -> Spades', [before, j.sell_cost]);
+  ok(j.sell_cost === before + 1 && G.hand.cards.every((c) => c.base.suit === 'Hearts'), 'dreepy dart sold: +$1 sell value, hand -> the leftmost card\'s suit (Pokermon 3.9.1)', [before, j.sell_cost, G.hand.cards.map((c) => c.base.suit)]);
+  ok(P_CENTERS.j_poke_dreepy_dart.in_pool(P_CENTERS.j_poke_dreepy_dart) === false, 'dreepy dart: never in a pool (Pokermon 3.9.1)');
 }
 
 // ---------------------------------------------------------------- Wyrdeer
@@ -92,6 +102,11 @@ const SF = ['S_2', 'S_3', 'S_4', 'S_5', 'S_6']; // Straight Flush: 100 + 20 chip
   const r = play(hand(['S_A']));
   ok(G.GAME.scry_amount === 3 && j.ability.extra.scry_added === 1, 'wyrdeer: +1 Foresight per hand', G.GAME.scry_amount);
   ok(r.total.mult === 1 + 2 * best.base.nominal, 'wyrdeer: double the highest foreseen rank as Mult', [r.total, best.base.value]);
+  // Pokermon 3.9.1: leaving / rejoining mid-round takes the Foresight gained this round with it.
+  j.remove_from_deck(true);
+  ok(G.GAME.scry_amount === 0, 'wyrdeer: removed mid-round takes its +2 and this round\'s +1 (Pokermon 3.9.1)', G.GAME.scry_amount);
+  j.add_to_deck(true);
+  ok(G.GAME.scry_amount === 3, 'wyrdeer: re-added mid-round brings them back (Pokermon 3.9.1)', G.GAME.scry_amount);
   winRound();
   ok(G.GAME.scry_amount === 2 && j.ability.extra.scry_added === 0, 'wyrdeer: Foresight resets at end of round', G.GAME.scry_amount);
   nextRound();

@@ -22,7 +22,12 @@ const toBlind = () => { act({ type: 'next_round' }); act({ type: 'select_blind' 
   const y = add('j_poke_yamper');
   y.ability.extra.rounds = 1;
   const r = play(hand(['S_A']));
-  ok(near(r.total.mult, 1.75), 'everstone: Basic joker X1.75', r.total);
+  ok(near(r.total.mult, 1.5), 'everstone: a Basic joker X1.5 (Pokermon 3.9.1 Xmult_multi2)', r.total);
+  const baby = add('j_poke_pichu');
+  const ev = G.jokers.cards[0];
+  const ret = ev.calculate_joker({ other_joker: baby });
+  ok(baby.config.center.stage === 'Baby' && ret && near(ret.Xmult_mod, 1.75), 'everstone: a Baby joker X1.75 (Pokermon 3.9.1)', ret);
+  baby.remove(); G.jokers.remove_card(baby);
   winRound();
   ok(key(y) === 'j_poke_yamper', 'everstone: no evolution');
   add('j_poke_pokedex');
@@ -94,53 +99,56 @@ const toBlind = () => { act({ type: 'next_round' }); act({ type: 'select_blind' 
   ok(j.ability.extra.rounds === rounds - 1 && statusMsgs(w.events).length >= 1, 'mystery egg: shakes', j.ability.extra.rounds);
   for (let i = 0; i < 3 && G.jokers.cards.includes(j); i++) { nextRound(); w = winRound(); }
   const hatched = G.jokers.cards.find((c) => key(c) === target);
-  ok(!G.jokers.cards.includes(j) && hatched, 'mystery egg hatches into its Pokémon', G.jokers.cards.map(key));
+  ok(hatched === j && G.jokers.cards.length === 1, 'mystery egg hatches IN PLACE into its Pokémon (pokermon.evolve) (Pokermon 3.9.1)', G.jokers.cards.map(key));
   ok(hatched && (hatched.ability.extra.energy_count || 0) === 1, 'mystery egg: the hatchling is Energized', hatched && hatched.ability.extra);
 }
 {
-  // An adjacent Flame Body / Magma Armor Pokémon speeds it up.
+  // Pokermon 3.9.1: a Flame Body / Magma Armor neighbour (or a Fire Energy) only speeds it up with an Oologist — a new
+  // 3.9.1 joker, not ported yet: so no speed-up.
   start('EGG2');
   const j = add('j_poke_mystery_egg');
   add('j_poke_charcadet');
   j.ability.extra.rounds = 3;
   winRound();
-  ok(j.ability.extra.rounds === 3 - 1 - 0.25 || j.ability.extra.rounds === 3 - 2 - 0.25, 'mystery egg: a hatching helper next to it', j.ability.extra.rounds);
+  ok(j.ability.extra.rounds === 2, 'mystery egg: a hatching helper alone no longer speeds it up (needs an Oologist) (Pokermon 3.9.1)', j.ability.extra.rounds);
+}
+{
+  // Pokermon 3.9.1: the edition and slot stay through the hatch.
+  start('EGG3');
+  add('j_joker');
+  const j = add('j_poke_mystery_egg');
+  j.set_edition({ holo: true }, true, true);
+  add('j_joker');
+  j.ability.extra.rounds = 1;
+  winRound();
+  ok(G.jokers.cards[1] === j && !!j.config.center.stage && !!(j.edition && j.edition.holo),
+    'mystery egg: the hatchling keeps its slot and edition (Pokermon 3.9.1)', [G.jokers.cards.map(key), j.edition]);
 }
 
 // ---------------------------------------------------------------- Rival
 {
-  start('RIVAL');
+  // Pokermon 3.9.1 Rival (the 3.6.0 rework): no Mult; +$10 payout per skipped Blind; beaten Boss -> pays and leaves.
+  start('RIVAL', {}, { noBlind: true });
   const j = add('j_poke_rival');
-  ok(j.ability.extra.form === 0 && G.GAME.rival_losses === 0, 'rival: form 0');
+  ok(j.ability.extra.money === 15 && j.ability.extra.money_mod === 10 && j.ability.extra.form === undefined, 'rival: $15 payout, +$10 per skip, no forms (Pokermon 3.9.1)', j.ability.extra);
+  ok(P_CENTERS.j_poke_rival.blueprint_compat === false, 'rival: not Blueprint-compatible (Pokermon 3.9.1)');
+  act({ type: 'skip_blind' });
+  ok(j.ability.extra.money === 25, 'rival: skipping a Blind raises the payout by $10 (Pokermon 3.9.1)', j.ability.extra.money);
+  if (G.STATE !== STATES.BLIND_SELECT) act({ type: 'skip_booster' }); // (the skip's Tag may open a pack)
+  act({ type: 'select_blind' }); clearHand();
   let r = play(hand(['S_A']));
-  ok(r.total.mult === 11, 'rival: +10 Mult', r.total);
+  ok(r.total.mult === 1, 'rival: no Mult any more (Pokermon 3.9.1)', r.total);
   winRound();
-  ok(G.jokers.cards.includes(j), 'rival: a close win does not beat it');
-  nextRound();
+  ok(G.jokers.cards.includes(j) && !G.GAME.poke_rival_defeated, 'rival: a non-Boss Blind does not beat it (Pokermon 3.9.1)');
+  act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
+  ok(G.GAME.blind.boss, 'boss blind selected');
   const d0 = G.GAME.dollars;
-  G.GAME.chips = G.GAME.blind.chips * 2;
-  clearHand();
-  const w = play(hand(['S_2']), { keepChips: true });
-  ok(G.GAME.rival_losses === 1 && !G.jokers.cards.includes(j) && statusMsgs(w.events).length >= 1, 'rival: 2X the blind -> smell ya later', G.GAME.rival_losses);
-  ok(G.GAME.dollars - d0 >= 5, 'rival: pays $5');
-  act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
-  const b = add('j_poke_rival');
-  ok(b.ability.extra.form === 1 && P_CENTERS.j_poke_rival.loc_vars(P_CENTERS.j_poke_rival, [], b).key === 'j_poke_bitter_rival', 'rival: comes back as Bitter Rival');
-  r = play(hand(['S_A']));
-  ok(r.total.mult === 21, 'bitter rival: +20 Mult', r.total);
-  G.GAME.chips = G.GAME.blind.chips * 2;
-  clearHand();
-  play(hand(['S_2']), { keepChips: true });
-  ok(G.jokers.cards.includes(b), 'bitter rival: needs 3X the blind');
-  act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
-  G.GAME.chips = G.GAME.blind.chips * 3;
-  clearHand();
-  play(hand(['S_2']), { keepChips: true });
-  ok(!G.jokers.cards.includes(b) && G.GAME.rival_losses === 2, 'bitter rival beaten at 3X');
-  act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
-  add('j_poke_rival');
-  r = play(hand(['S_A']));
-  ok(r.total.mult === 3, 'champion: X3 Mult', r.total);
+  const w = winRound();
+  ok(!G.jokers.cards.includes(j) && G.GAME.poke_rival_defeated === true && statusMsgs(w.events).includes('Smell Ya Later!'), 'rival: a beaten Boss -> "Smell Ya Later!", it leaves (Pokermon 3.9.1)', statusMsgs(w.events));
+  ok(G.GAME.dollars - d0 === 25, 'rival: pays its $25 payout (Pokermon 3.9.1)', G.GAME.dollars - d0);
+  ok(P_CENTERS.j_poke_rival.in_pool(P_CENTERS.j_poke_rival) === false, 'rival: never back in the pool once beaten (Pokermon 3.9.1; Bitter Rival / Champion are new, not ported)');
+  r = add('j_poke_rival');
+  ok(P_CENTERS.j_poke_rival.loc_vars(P_CENTERS.j_poke_rival, [], r).key === undefined, 'rival: no Bitter Rival / Champion alt text (Pokermon 3.9.1)');
 }
 
 // ---------------------------------------------------------------- Ruins of Alph + Unown Swarm

@@ -1,5 +1,6 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_32.lua (Pokédex 931-960: Charcadet -> Wiglett), 7 jokers.
-// Line-for-line port of the behaviour; static data comes from data.js (see ../PORTING.md).
+// Pokermon 3.9.1 — pokemon/pokejokers_32.lua (Pokédex 931-960: Charcadet -> Wiglett), 7 jokers.
+// Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
+// On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom_element, pseudoseed,
   defineJokers, type_tooltip, detailed, level_evo, item_evo, has_enhancement, pseudorandom_multi, poke_drain,
@@ -9,11 +10,16 @@ import {
 const FILE = 'pokemon/pokejokers_32.lua';
 
 // ------------------------------------------------------------ shared bodies
-/** Tinkatink line: debuff N non-Steel cards on blind select, +mult per played card, reset at round end. */
+/**
+ * Tinkatink line: debuff N non-Steel cards on blind select, +mult per played card, lift them at round end.
+ * Pokermon 3.9.1: the debuff source is '<name><unique_val>' and the lift clears only that source (3.2.1's 'reset' wiped
+ * every source on every playing card — another Tinka's, a Boss's).
+ */
+const tinka_src = (card) => card.config.center.name + card.unique_val;
 function tinka_calc(card, context, seed) {
   if (context.setting_blind) {
     const add = (v) => !has_enhancement(v, 'm_steel');
-    const modify = (v) => smods_debuff_card(v, true, card);
+    const modify = (v) => smods_debuff_card(v, true, seed + card.unique_val);
     pseudorandom_multi({ array: G.playing_cards, amt: card.ability.extra.cards_debuffed, seed, add_con: add, mod_func: modify });
   }
   if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
@@ -23,13 +29,13 @@ function tinka_calc(card, context, seed) {
 }
 function tinka_reset(card, context) {
   if (context.end_of_round && !context.individual && !context.repetition) {
-    for (const v of G.playing_cards) smods_debuff_card(v, 'reset', card);
+    for (const v of G.playing_cards) smods_debuff_card(v, false, tinka_src(card));
   }
 }
 const tinka_remove = {
   remove_from_deck(self, card, from_debuff) {
     if (!from_debuff || (from_debuff && card.ability.perishable && card.ability.perish_tally === 0)) {
-      for (const v of G.playing_cards) smods_debuff_card(v, 'reset', card);
+      for (const v of G.playing_cards) smods_debuff_card(v, false, tinka_src(card));
     }
   },
 };
@@ -143,6 +149,7 @@ defineJokers({
   },
   // Tinkatink 957
   tinkatink: {
+    knockoff_pseudol: true,
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       if (detailed()) info_queue.push(P_CENTERS.m_steel);

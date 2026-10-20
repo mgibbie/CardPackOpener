@@ -70,7 +70,13 @@ const debuffed = () => G.playing_cards.filter((c) => c.debuff).length;
   clearHand();
   let r = play(hand(['S_A', 'H_A']));
   ok(r.total.mult === 2 + 10, 'tinkatink: +5 Mult per played card', r.total);
+  // Pokermon 3.9.1: its debuffs carry its own source ('tinkatink' + unique_val) and the reset lifts only those.
+  const other = G.playing_cards[0];
+  other.ability.debuff_sources = { ...(other.ability.debuff_sources || {}), someone_else: true };
+  ok(G.playing_cards.some((c) => c.ability.debuff_sources && c.ability.debuff_sources['tinkatink' + j.unique_val]), 'tinkatink: debuff source "tinkatink<unique_val>" (Pokermon 3.9.1)');
   winRound();
+  ok(other.ability.debuff_sources && other.ability.debuff_sources.someone_else === true, 'tinkatink: its reset keeps other debuff sources (3.2.1 wiped them all) (Pokermon 3.9.1)', other.ability.debuff_sources);
+  delete other.ability.debuff_sources.someone_else; other.set_debuff();
   if (G.STATE === STATES.ROUND_EVAL) act({ type: 'cash_out' });
   act({ type: 'next_round' });
   ok(G.playing_cards.every((c) => !c.ability.debuff_sources || !Object.keys(c.ability.debuff_sources).length), 'tinkatink: debuffs reset at end of round');
