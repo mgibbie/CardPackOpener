@@ -345,7 +345,9 @@ function toShop() { winRound(); act({ type: 'cash_out' }); }
   start('WISHPACK');
   toShop();
   ok(buyPack('p_poke_pokepack_wish_pack').ok && G.STATE === STATES.MOD_PACK && G.GAME.pack_choices === 1, 'Wish Pack opens (choose 1)');
-  ok(G.pack_cards.cards.map(key).join() === 'c_poke_fake_banker,c_poke_fake_booster,c_poke_fake_power,c_poke_fake_copy,c_poke_fake_fixer,c_poke_fake_masterball', 'Wish Pack: the 6 wishes in order', G.pack_cards.cards.map(key));
+  // (Pokermon 3.9.1, batch 10b: 3 different wishes of 5 — no Master Ball; 3.2.1 showed all 6 in order)
+  const WISH5 = ['c_poke_fake_banker', 'c_poke_fake_booster', 'c_poke_fake_power', 'c_poke_fake_copy', 'c_poke_fake_fixer'];
+  ok(G.pack_cards.cards.length === 3 && new Set(G.pack_cards.cards.map(key)).size === 3 && G.pack_cards.cards.every((c) => WISH5.includes(key(c))), 'Wish Pack: 3 different wishes of the 5', G.pack_cards.cards.map(key));
   ok(!act({ type: 'reserve', id: G.pack_cards.cards[0].sort_id }).ok, 'wishes cannot be saved');
 }
 {
@@ -469,8 +471,10 @@ const deckRun = (back, seed, opts = {}) => { newRun({ seed, back, mods: ['pokerm
   const jt2 = new Tag('tag_poke_jirachi_tag'); add_tag(jt2);
   ok(jt2.apply_to_run({ type: 'new_blind_choice' }) === true, 'Jirachi Tag fires');
   pump();
-  ok(G.GAME.pack_center === 'p_poke_pokepack_wish_pack' && G.pack_cards.cards.length === 6 && !G.GAME.tags.includes(jt2), 'with Jirachi: the Wish Pack opens', G.GAME.pack_center);
-  ok(act({ type: 'use', id: G.pack_cards.cards[0].sort_id }).ok && key(G.jokers.cards[0]) === 'j_poke_jirachi_banker', 'pick a wish: Jirachi transforms', key(G.jokers.cards[0]));
+  ok(G.GAME.pack_center === 'p_poke_pokepack_wish_pack' && G.pack_cards.cards.length === 3 && !G.GAME.tags.includes(jt2), 'with Jirachi: the Wish Pack opens (3 wishes)', G.GAME.pack_center);
+  const FORM = { c_poke_fake_banker: 'j_poke_jirachi_banker', c_poke_fake_booster: 'j_poke_jirachi_booster', c_poke_fake_power: 'j_poke_jirachi_power', c_poke_fake_copy: 'j_poke_jirachi_invis', c_poke_fake_fixer: 'j_poke_jirachi_fixer' };
+  const picked = key(G.pack_cards.cards[0]);
+  ok(act({ type: 'use', id: G.pack_cards.cards[0].sort_id }).ok && key(G.jokers.cards[0]) === FORM[picked], 'pick a wish: Jirachi transforms', [picked, key(G.jokers.cards[0])]);
 }
 {
   start('STAG', {}, { noBlind: true });

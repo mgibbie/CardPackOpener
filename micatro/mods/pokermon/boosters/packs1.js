@@ -1,4 +1,4 @@
-// Pokermon 3.2.1 — boosters/packs1.lua: the 8 Pocket packs (Energy + Items, hand drawn,
+// Pokermon 3.2.1 (the Wish Pack: 3.9.1) — boosters/packs1.lua: the 8 Pocket packs (Energy + Items, hand drawn,
 // cards can be saved — the 'reserve' action), the Wish Pack (Jirachi's wishes, from the Jirachi
 // Tag) and the Starter Pack (from the Starter Tag). Wish / Starter have weight 0: never in a shop.
 import {
@@ -85,14 +85,23 @@ export function starter_lists() {
   return L;
 }
 
-const WISHES = ['c_poke_fake_banker', 'c_poke_fake_booster', 'c_poke_fake_power', 'c_poke_fake_copy', 'c_poke_fake_fixer', 'c_poke_fake_masterball'];
+// Pokermon 3.9.1 (batch 10b): the Master Ball wish left the pack (its card, c_poke_fake_masterball, still works).
+const WISHES = ['c_poke_fake_banker', 'c_poke_fake_booster', 'c_poke_fake_power', 'c_poke_fake_copy', 'c_poke_fake_fixer'];
 
 defineBoosters({
-  // Wish Pack: Jirachi's 6 wishes, choose 1.
+  // Wish Pack (Pokermon 3.9.1, batch 10b): 3 of Jirachi's 5 wishes, all different, choose 1. used_wishes is the pack's own
+  // list (its config, copied onto the pack card): each slot rolls among the wishes this pack hasn't offered yet.
   pokepack_wish_pack: {
+    config: { extra: 3, choose: 1, used_wishes: [] },
     create_card(self, card, i) {
       G.GAME.pack_choices = 1; // force pack_choices to 1
-      const temp_card = { area: G.pack_cards, key: WISHES[(i - 1) % 6], no_edition: true, skip_materialize: true };
+      if (!Array.isArray(card.ability.used_wishes)) card.ability.used_wishes = [];
+      const possible_wishes = WISHES.filter((k) => !card.ability.used_wishes.includes(k));
+      // (a pack bigger than 5 — a booster-size modifier — runs out: the Lua's nil key becomes The Judgement below)
+      const seed = pseudoseed('jirachi' + i);
+      const [random_wish] = possible_wishes.length ? pseudorandom_element(possible_wishes, seed) : [];
+      if (random_wish) card.ability.used_wishes.push(random_wish);
+      const temp_card = { area: G.pack_cards, key: random_wish, no_edition: true, skip_materialize: true };
       if (!P_CENTERS[temp_card.key]) temp_card.key = 'c_judgement';
       return smods_create_card(temp_card);
     },

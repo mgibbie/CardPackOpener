@@ -119,28 +119,71 @@ const modImgs = new Map();          // atlas name -> {img, state: 'loading'|'ok'
 const modListeners = new Set();
 /** cb(atlasName) whenever a mod atlas finishes loading (or fails). Returns an unsubscribe. */
 export function onModAtlas(cb) { modListeners.add(cb); return () => modListeners.delete(cb); }
+/**
+ * A TILED mod atlas ({tiles: [atlas names], tile_cols, px, py, crop?}, no src): one long row of cells split over several
+ * images, each `tile_cols` cells wide — Pokermon's Unown Swarm, whose 3.9.1 strip (36 frames, 20880 px) is past the
+ * 16384 px texture limit of many GPUs. Its state is its tiles' (all loaded = 'ok'), and listeners hear its name whenever
+ * one of its tiles finishes loading.
+ */
+const tileParents = new Map();      // tile atlas name -> [tiled atlas names]
+function tiledState(name, a) {
+  let any = 'ok';
+  for (const t of a.tiles) {
+    if (!tileParents.has(t)) tileParents.set(t, []);
+    if (!tileParents.get(t).includes(name)) tileParents.get(t).push(name);
+    const st = modAtlasState(t);
+    if (st === 'missing') any = 'missing';
+    else if (st === 'loading' && any === 'ok') any = 'loading';
+  }
+  return any;
+}
 /** 'ok' | 'loading' | 'missing' — kicks off the load on first ask. */
 export function modAtlasState(name) {
   const a = MODREG.atlases[name];
+  if (a && a.tiles) return tiledState(name, a);
   if (!a || !a.src) return 'missing';
   let e = modImgs.get(name);
   if (!e) {
     e = { img: new Image(), state: 'loading' };
     modImgs.set(name, e);
     e.img.crossOrigin = 'anonymous';
-    const done = (st) => { e.state = st; for (const cb of modListeners) { try { cb(name); } catch (err) { /* ignore */ } } };
+    const done = (st) => {
+      e.state = st;
+      const names = [name, ...(tileParents.get(name) || [])];
+      for (const cb of modListeners) for (const n of names) { try { cb(n); } catch (err) { /* ignore */ } }
+    };
     e.img.onload = () => done('ok');
     e.img.onerror = () => { console.warn('micatro: mod atlas failed to load: ' + name); done('error'); };
     e.img.src = a.src;
   }
   return e.state === 'ok' ? 'ok' : e.state === 'error' ? 'missing' : 'loading';
 }
+/**
+ * Where a mod atlas cell is: {atlas (the image's atlas: a tile of a tiled atlas), sx, sy, sw, sh} in that image's pixels
+ * (2x), or null. `frame` is added to pos.x (an animated row). A tiled atlas maps cell x to tile floor(x / tile_cols),
+ * column x % tile_cols; an atlas `crop` {x, y, w, h} (1x px inside the cell) takes only that part of the cell.
+ */
+export function modCellRect(atlas, pos, frame = 0) {
+  const a = MODREG.atlases[atlas];
+  if (!a || !pos) return null;
+  let x = (pos.x || 0) + frame, y = pos.y || 0, img = atlas;
+  if (a.tiles) {
+    const t = Math.floor(x / a.tile_cols);
+    if (t < 0 || t >= a.tiles.length) return null;
+    img = a.tiles[t];
+    x -= t * a.tile_cols;
+  }
+  const cw = a.px * S, ch = a.py * S, c = a.crop;
+  if (c) return { atlas: img, sx: x * cw + c.x * S, sy: y * ch + c.y * S, sw: c.w * S, sh: c.h * S };
+  return { atlas: img, sx: x * cw, sy: y * ch, sw: cw, sh: ch };
+}
 /** Draw one cell of a mod atlas; false when the art isn't (yet) available. */
 export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
-  if (!pos || modAtlasState(atlas) !== 'ok') return false;
-  const a = MODREG.atlases[atlas], im = modImgs.get(atlas).img;
-  const sw = a.px * S, sh = a.py * S;
-  try { ctx.drawImage(im, ((pos.x || 0) + frame) * sw, (pos.y || 0) * sh, sw, sh, dx, dy, dw ?? sw, dh ?? sh); } catch (e) { return false; }
+  if (!pos) return false;
+  const r = modCellRect(atlas, pos, frame);
+  if (!r || modAtlasState(r.atlas) !== 'ok') { if (r && r.atlas !== atlas) modAtlasState(atlas); return false; }
+  const im = modImgs.get(r.atlas).img;
+  try { ctx.drawImage(im, r.sx, r.sy, r.sw, r.sh, dx, dy, dw ?? r.sw, dh ?? r.sh); } catch (e) { return false; }
   return true;
 }
 /**

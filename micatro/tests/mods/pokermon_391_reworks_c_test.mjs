@@ -31,17 +31,18 @@ const RW = (D391.reworked || []).filter((n) => inRange.includes(n));
 /** One fired block: a throw (old code without the 3.9.1 hook) counts as a failure and the rest still runs. */
 const blk = (fn) => { try { fn(); } catch (e) { ok(false, 'block threw: ' + e.message); } };
 // (batch 10 took the 9 Hazard jokers off hold: pokermon_391_hazard_test.mjs)
-const HOLD = ['unown_swarm'];
+// (batch 10b: the Unown Swarm, the last hold here, is reworked — the Unown rework)
+const HOLD = [];
 
 // ---------------------------------------------------------------- the overlay + version
 ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 5 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon 3.9.1, contentRev 5+ (pin 3.9.1+r5 since batch 8; r6 batch 10)', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
-ok(inRange.length === 93 && RW.length === 93 - HOLD.length && HOLD.every((n) => !RW.includes(n)), 'reworked: every joker of pokejokers_18-34 / zotherjokers / zmissingno but the Unown Swarm hold (Pokermon 3.9.1)', [RW.length, inRange.length]);
+ok(inRange.length === 93 && RW.length === 93 - HOLD.length && HOLD.every((n) => !RW.includes(n)), 'reworked: every joker of pokejokers_18-34 / zotherjokers / zmissingno (Pokermon 3.9.1; the Unown Swarm since batch 10b)', [RW.length, inRange.length]);
 const holds = (D391.rework_hold || []).filter(([n]) => inRange.includes(n));
 ok(holds.map(([n]) => n).sort().join() === HOLD.slice().sort().join() && holds.every(([n, why]) => n === 'unown_swarm' ? /Unown rework/.test(why) : /Hazard layer/.test(why)),
-  'rework_hold: Unown Swarm (the Unown rework) with its reason (the Hazard jokers left in batch 10)', holds);
+  'rework_hold: none here (the Hazard jokers left in batch 10, the Unown Swarm in 10b)', holds);
 const DEF = (D391.rework_deferred || []).map(([n]) => n);
-ok(['rival', 'mystery_egg', 'ruins_of_alph'].every((n) => DEF.includes(n)) && DEF.length === 7, 'rework_deferred: + Rival (Bitter Rival / Champion), Mystery Egg (Oologist), Ruins of Alph (Unown spawn)', DEF);
+ok(['rival', 'mystery_egg'].every((n) => DEF.includes(n)) && !DEF.includes('ruins_of_alph') && DEF.length === 5, 'rework_deferred: + Rival (Bitter Rival / Champion), Mystery Egg (Oologist); Ruins of Alph\'s Unown spawn done in batch 10b', DEF);
 ok(C('garbodor').config.extra.active === false && C('vikavolt').config.extra.mult === undefined && C('vikavolt').config.extra.Xmult === 0.5
   && C('annihilape').config.extra.mult_mod === 5 && C('gholdengo').config.extra.Xmult1 === 1 && C('everstone').config.extra.Xmult_multi2 === 1.5
   && C('rival').config.extra.money === 15 && C('mimikyu').config.extra.disguise === undefined && C('dreepy').config.extra.suit === undefined,
@@ -312,7 +313,7 @@ blk(() => {
   add('j_poke_ruins_of_alph');
   act({ type: 'select_blind' });
   const un = G.jokers.cards.filter((c) => key(c) === 'j_poke_unown');
-  ok(un.length === 3 && un.every((c) => c.edition && c.edition.negative && c.sell_cost === 0), 'deferred: Ruins of Alph\'s three Negative Unown stay free with no sell value until the Unown rework', un.map((c) => c.sell_cost));
+  ok(un.length === 3 && un.every((c) => c.edition && c.edition.negative && c.sell_cost === 0), 'Ruins of Alph\'s three Negative Unown (SMODS.add_card since batch 10b) sell for $0', un.map((c) => c.sell_cost));
 });
 blk(() => {
   start('RW391C_MISS');

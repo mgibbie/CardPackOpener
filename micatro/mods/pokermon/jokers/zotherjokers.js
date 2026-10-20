@@ -2,8 +2,8 @@
 // Everstone, Tall Grass, Jelly Donut, Treasure Eatery, Mystery Egg, Rival, Ruins of Alph,
 // Unown Swarm, Professor, A Billion Lions (only offered with the pokemon_aprilfools option —
 // see index.js; 3.9.1 moved it to zzzapril_fools.lua, unchanged). Line-for-line port of the behaviour; static data
-// comes from data.js + data391.js. On Pokermon 3.9.1 behaviour since batch 8, except Unown Swarm (held on 3.2.1 with
-// Unown: the Unown rework). 3.9.1's new jokers here (Bitter Rival, Champion, Oologist, Daycare, Rage Candy Bar,
+// comes from data.js + data391.js. On Pokermon 3.9.1 behaviour since batch 8; Unown Swarm and Ruins of Alph's Unown spawn
+// since batch 10b (the Unown rework). 3.9.1's new jokers here (Bitter Rival, Champion, Oologist, Daycare, Rage Candy Bar,
 // Repel, the Imposter Professor) are not ported yet (new-jokers batch).
 //
 // Everstone blocks evolution (see can_evolve); Pokédex lifts the one-per-family pool rule
@@ -289,19 +289,11 @@ defineJokers({
         }
       }
       if (context.setting_blind && !context.blueprint) {
-        // (3.9.1 makes the three in one event by SMODS.add_card and no longer zeroes their cost / sell value. Kept: they
-        // stay free with no sell value — Unown is held on 3.2.1 for the Unown rework, and without the zeroing each
-        // blind's three Unowns would sell for $2 apiece; the Unown rework batch decides.)
+        // Pokermon 3.9.1 (batch 10b): three Negative Unown by SMODS.add_card. Their cost is no longer zeroed; they still
+        // sell for $0 — the Unown set_cost rule (3.9.1 lovely/poke_utils.toml, here rules.js set_cost), so selling the
+        // three each blind pays nothing.
         G.E_MANAGER.add_event(() => {
-          for (let i = 1; i <= 3; i++) {
-            const new_card = smods_create_card({ set: 'Joker', area: G.jokers, key: 'j_poke_unown' });
-            new_card.set_edition({ negative: true }, true);
-            new_card.cost = 0;
-            new_card.sell_cost = 0;
-            new_card.add_to_deck();
-            G.jokers.emplace(new_card);
-            new_card.start_materialize();
-          }
+          for (let i = 1; i <= 3; i++) add_card({ set: 'Joker', key: 'j_poke_unown', edition: 'e_negative' });
         });
       }
       if (context.selling_self && !context.blueprint) {
@@ -345,11 +337,16 @@ defineJokers({
     calculate(self, card, context) {
       if (context.other_joker && (context.other_joker.config.center.rarity === 4 || context.other_joker.config.center.rarity === 'Legendary')) {
         G.E_MANAGER.add_event(() => context.other_joker.juice_up(0.5, 0.5));
-        return { message: localize('poke_hidden_power_ex'), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_multi, mult_mod: card.ability.extra.mult };
+        // (3.9.1 drops the XMULT colour for sound 'multhit2'; the engine plays no per-effect sound, so the colour stays)
+        return { message: localize('poke_hidden_power_ex'), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_multi, mult_mod: card.ability.extra.mult, sound: 'multhit2' };
       }
       return undefined;
     },
-    // (Lua's update / set_sprites / soul draw only animate the sprite — the renderer's job.)
+    // Pokermon 3.9.1 (batch 10b): never in a pool (in_pool false: only Ruins of Alph's 28-Unown reward makes it) —
+    // POKE_POOL_RULES below. Its sprite (3.9.1 atlas + soul_atlas strips, display_size 290/3 x 285/3, set_alignment)
+    // is the renderer's: index.js SWARM_STRIPS. Not ported (cosmetic): the glued playing-card front 3.9.1 draws beside
+    // it (its draw() makes a random Base card with SMODS.create_card — a pseudorandom draw from the run's seed inside the
+    // renderer, which a deterministic replay can't have) and the stickers drawn on that front (pokedraw.lua).
   },
   // Professor: after 2 rounds, sell for a Starter Tag.
   // (Its Lua in_pool is never used: load_pokemon replaces it with pokemon_in_pool, as here.)
@@ -416,3 +413,5 @@ defineJokers({
 
 // Pokermon 3.9.1: once beaten, the Rival never comes back to the pool.
 POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_rival' && G.GAME && G.GAME.poke_rival_defeated ? false : undefined));
+// Pokermon 3.9.1 (batch 10b): the Unown Swarm is never in a pool (in_pool false).
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_unown_swarm' ? false : undefined));

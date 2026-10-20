@@ -259,7 +259,7 @@ Intended-design fixes are noted in comments at each site (search "intended").
 ## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
-87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, **`3.9.1+r6`** since batch 10
+87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, **`3.9.1+r7`** since batch 10b
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -272,7 +272,8 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 | **7** | **joker reworks, pokejokers_09–17** (Gen 3 + Gen 4: 97 jokers on 3.9.1, none held; below) | **done 2026-10-19** — `3.9.1+r4` |
 | **8** | **joker reworks, pokejokers_18–34 + zotherjokers / zmissingno** (Gen 5–9 and the non-Pokédex jokers: 83 on 3.9.1, 10 held; below) | **done 2026-10-19** — `3.9.1+r5` |
 | **10** | **the Hazard layer, Seed / Miracle Seed / Heavy-Duty Boots, Flower X2, the Debris deck + sleeve; 16 jokers off hold** (below) | **done 2026-10-20** — `3.9.1+r6` |
-| 10b–17 | Unown rework + Wish Pack, new jokers, Megas, non-Pokémon jokers / blinds / stake / challenges | after 10 (batch 9 folded into 6–8) |
+| **10b** | **the Unown rework (Unown, Unown Swarm, Ruins of Alph's Unown, 3.9.1 Unown art, tiled swarm strips) + the Wish Pack (3 unused wishes, change_form)** (below) | **done 2026-10-20** — `3.9.1+r7` |
+| 11–17 | new jokers, Megas, non-Pokémon jokers / blinds / stake / challenges | after 10b (batch 9 folded into 6–8) |
 
 ### Steamodded seams for 3.9.1 (batch 4)
 Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
@@ -624,6 +625,7 @@ baseline) and takes **all** its 3.9.1 static data, except the 10 holds. With it 
     joker (batch 17). Until it is ported they never apply (the egg checks `find_card('j_poke_oologist')`, as the Lua).
   - Ruins of Alph: 3.9.1 makes its three Negative Unown by `SMODS.add_card` and no longer zeroes their cost / sell value. Ours
     keeps them free with no sell value until the Unown rework, so each blind's three Unown can't be sold for $2 apiece.
+    (Batch 10b: done, and the guard was not needed: an Unown always sells for $0, below.)
 - **Reworked** (behaviour, by file; the rest changed only text / numbers / flags / refactors, or nothing):
   - **18**
     - Simisear: a first hand containing a Straight or Flush makes The Empress at `before` (with room). Its unscored cards are
@@ -698,7 +700,7 @@ baseline) and takes **all** its 3.9.1 static data, except the 10 holds. With it 
       `scale_card`); a beaten Boss pays it ($15+), "Smell Ya Later!", self-destructs and sets `G.GAME.poke_rival_defeated`
       (out of the pool for good). Not Blueprint-compatible; $5.
     - Ruins of Alph: `scale_card`; selling with 10+ merged says "Duplicated!" first, then copies; 5+ merged is
-      `SMODS.add_card` of a random Safari joker from the Joker pool. (The Unown spawn: deferred, above.)
+      `SMODS.add_card` of a random Safari joker from the Joker pool. (The Unown spawn: deferred, above; done in batch 10b.)
     - Pokédex / Professor: their 3.9.1 Blueprint flags (taken since batch 5).
   - **zmissingno**: MissingNo.'s tags are `SMODS.poll_object` picks from the Tag pool (in_pool / min_ante rules) minus the
     Boss Tag, in the main end-of-round pass. An Orbital Tag with no blind's hand picks a visible hand (seed 'orbital', as
@@ -812,14 +814,69 @@ Debris deck / sleeve, and the 16 jokers that waited for them, all ported from th
   deck (cash-out row) and sleeve, and `hazards_on`. `pokejokers_07/08/18/21/31_test.mjs`, `pokermon_391_data` / `_reworks_a` / `_b` /
   `_c`, `pokermon_content_test.mjs` and `challenges_test.mjs` follow the 3.9.1 behaviour.
 
-### Pending from the 3.9.1 joker rework (after batch 10)
-Every existing joker file is done. What waits, across batches 6–8, by the batch it waits on (`rework_hold` = still on 3.2.1,
-`rework_deferred` = on 3.9.1 but one part):
+### The Unown rework and the Wish Pack (batch 10b)
+Pinned **`3.9.1+r7`** (`contentRev: 7`). The last two holds (Unown, Unown Swarm) and two deferred parts (Ruins of Alph's Unown
+spawn, Jirachi's Wish Pack) are on 3.9.1: spec `rework_hold` and `sprite_hold` are empty, `rework_deferred` lost Ruins of Alph and
+Jirachi; `data391.js` regenerated (91 whole configs, 271 texts, 25 flags, 452 sprites, nothing skipped).
+
+- **Unown** (jokers/pokejokers_07.js; 3.9.1 pokejokers_07.lua):
+  - Never in a pool (3.9.1 `in_pool` false, even with Showman; `POKE_POOL_RULES`, since our load_pokemon replaces a joker's own
+    `in_pool`). 3.2.1 let it into the Safari shop pool.
+  - Self-destructs through `SMODS.destroy_cards` (`destroy_joker`) after it triggers with Ruins of Alph (Ruins' `after` still finds
+    it that hand and merges it) and at end of round, returning "Fled!".
+  - `set_nature` (the Nature rank) split out of `set_ability`; the 3.9.1 config (numeric target id), text ("self destructs") and
+    attributes. The collection's Negative Unown is not ported (the collection draws centers, not cards).
+- **Ruins of Alph** (jokers/zotherjokers.js): the three Negative Unown each Blind are `SMODS.add_card({key = 'j_poke_unown',
+  edition = 'e_negative'})`, as 3.9.1. Their cost is no longer zeroed by hand.
+  - **The "$2 per blind" exploit is moot, so no house rule.** Batch 8 kept the Unown at $0 cost and $0 sell value by hand so each
+    blind's three Unown could not be sold. But both 3.2.1 and 3.9.1 patch `Card:set_cost` so an Unown always sells for **$0**
+    (3.9.1 lovely/poke_utils.toml `if self.ability.name == "unown" then self.sell_cost = 0 end`; ours rules.js `set_cost`, which
+    every `set_cost` / `set_edition` runs). `pokermon_391_unown_wish_test.mjs` sells one: it pays nothing. Only `cost` now follows
+    3.9.1 (5 + Negative), and nothing buys an Unown (never in a pool).
+- **Unown Swarm** (zotherjokers.js): never in a pool (3.9.1 `in_pool` false; `POKE_POOL_RULES`). Its effect is unchanged (each
+  Legendary joker gives +28 Mult and X2.8). 3.9.1's `sound = 'multhit2'` is carried but the engine plays no per-effect sound, so
+  the XMULT colour stays.
+  - Not ported (cosmetic): the glued playing-card front 3.9.1 draws beside the swarm. Its `draw` makes a random Base card with
+    `SMODS.create_card` inside the renderer, a pseudorandom draw that a deterministic replay can't have. The stickers drawn on
+    that front (pokedraw.lua `unown_stickers`) go with it.
+- **The art**:
+  - Unown takes its 3.9.1 card: AtlasJokersBasicGen02 391 {0,0}, a redrawn frame and badge (the crop check lists it as the third
+    on-purpose redraw). Its form letter (3.9.1 `set_sprites`: A..I {1..9,0}, J..S {0..9,1}, T..Z, !, ? {0..8,2}) is the soul layer:
+    ui.js `face()` reads the view's `poke.form` (also for a Zorua copying an Unown). 3.2.1's port always showed "A".
+  - Unown Swarm: 3.9.1's strips (36 frames of 290 x 285 in one row, 20880 px wide at 2x, past the 16384 px texture limit of many
+    GPUs) are split by **`tools/micatro/split_pokermon_unown_swarm.mjs`** into tiles of 14 frames (8120 / 8120 / 4640 px):
+    `j_poke_unown_swarm[_shiny][_soul]-391-t0..t2.png` (12 files, gitignored, beside the strips; the script never overwrites a tile
+    that differs). index.js registers each tile (`poke_<strip>_t<n>`) and the strip's atlas as `{tiles, tile_cols: 14, crop}`.
+    `js/ui/assets.js` `modCellRect` (new) maps a frame to its tile and column; `drawModCell` uses it, and a tiled atlas's load state
+    / load listeners follow its tiles. `crop` {37, 0, 213, 285} draws only the card (3.9.1's `display_size` 290/3 x 285/3 with
+    `set_alignment` x 37/3/71), so the swarm no longer draws squashed into the card. The flying Unown outside the card are cut off.
+    `ANIMATED.j_poke_unown_swarm.frames_per_row` is 36. The 3.2.1 12 x 3 sheets hold the same 36 frames pixel for pixel; they stay
+    vendored, unused.
+- **The Wish Pack** (boosters/packs1.js; 3.9.1 packs1.lua): `config {extra = 3, choose = 1, used_wishes = {}}`. Each slot rolls
+  (`pseudoseed('jirachi' .. i)`) among the wishes this pack hasn't offered yet: 3 different wishes of banker / booster / power /
+  copy / fixer. The Master Ball wish left the pack. Its card, `c_poke_fake_masterball`, still works if made otherwise.
+- **Jirachi's wishes** (consumables/martz.js; 3.9.1 07_mart_jirachi.lua): a wish is `pokermon.change_form` ("Transformed!", no
+  randomizer swap; 3.2.1 called `poke_evolve` as a transformation: "Evolved!"). Each card names the form it grants in its tooltip
+  (3.9.1 info_queue; the Master Ball wish names the Master Ball). Jirachi's `rework_deferred` entry is gone.
+- **Tests**:
+  - `pokermon_391_unown_wish_test.mjs` (new) gives 26 passed / 35 failed on origin/main (ecb39fd3) and 61 / 0 here. It fires the
+    overlay and pin, the pool rule (Showman too), Unown's trigger / destroy / "Fled!", the Ruins spawn (Negative, distinct forms,
+    $0 sale, merge + destroy, the next blind skipping merged forms), the Swarm's effect, Unown's form cells, the swarm tiles
+    (frame -> tile / column / crop; the shiny + soul strips), and the Wish Pack (3 distinct of 5 over 6 seeds, seeded, change_form,
+    tooltips, the Master Ball card).
+  - Updated for rev 7 and the empty holds: `modpin_test.mjs`, `pokermon_391_data` (Unown on its 3.9.1 card, redrawn on purpose;
+    nothing skipped), `_hazard`, `_reworks_a` / `_b` / `_c` and `pokermon_content_test.mjs` (3 wishes; the pick maps to its form).
+  - Browser: `micatro_mod_version_pin` follows rev 7. `micatro_resume_win_badges` (its fixture is served the pre-rework
+    pokejokers_07 / zotherjokers already), `micatro_runsync`, `micatro_replay`, `micatro_mod_assets` and `micatro_challenges_ui` pass as
+    they are. A screenshot showed Unown A / K / ? / ! (one Shiny) and a plain + Shiny Unown Swarm animating from all 12 tiles.
+
+### Pending from the 3.9.1 joker rework (after batch 10b)
+Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
+on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
+- **Batch 10b**: done (above). Nothing waits.
 - **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist).
-- **Batch 10b** (the Unown rework + the Wish Pack; not done with batch 10): held Unown, Unown Swarm; deferred Ruins of Alph's Unown
-  spawn and Jirachi (the 3.9.1 Wish Pack, `change_form` wishes).
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,
   `extra_pocket_picks`, `negative_edition_rate`, `rotom_discount`).
 
@@ -835,11 +892,12 @@ Every existing joker file is done. What waits, across batches 6–8, by the batc
 - Checked crop by crop (`micatro/tests/mods/pokermon_391_data_test.mjs`, streaming both PNGs): of 520 cards, 496 show the
   identical picture, 22 a 3.9.1 touch-up (mean |diff| <= 3: Bibarel, Master Ball, the Berry Juices, ...), and 2 were redrawn on
   purpose (the Flower enhancement, and the renamed boss's new chip).
-- Held on 3.2.1 sheets: **Unown** (3.9.1's card is the reworked one: another frame and badge); the add-ons (Nacho, Pokermon+:
+- Held on 3.2.1 sheets until batch 10b: **Unown** (3.9.1's card is the reworked one: another frame and badge; on its 3.9.1 card since
+  batch 10b). Still on 3.2.1 sheets: the add-ons (Nacho, Pokermon+:
   some of their cells changed in 3.9.1 — e.g. Hisuian Sliggoo / Goodra, Naclstack, Garganacl — so they move with their own
   upgrades); the batch-1 art (Rotom Dex, the Stadium / Mega decks and sleeves, the Jirachi wishes) is unchanged.
-- Vendored but not mapped: the Series A sheets (the port shows Basic art), 3.9.1's re-laid animation strips (the Unown swarm —
-  20880 px wide, past common GPU texture limits — and Bird Energy: the same frames in one row), `smeargle_logo`, and the new
+- Vendored but not mapped: the Series A sheets (the port shows Basic art), 3.9.1's re-laid Bird Energy strip (the same frames in
+  one row; the Unown swarm's 20880 px strips are drawn since batch 10b, split into tiles), `smeargle_logo`, and the new
   files no existing card names (TitleCard, GMaxClouds, capture_disc, elite_stake*, miror_budicolo, placeholder_blind,
   poke_logo_alt / _multi, shiny_*, the Series A Baltoy / Bellsprout / Claydol sheets).
 
