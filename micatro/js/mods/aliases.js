@@ -18,8 +18,8 @@
 
 /** The per-mod alias tables. Upgrade batches add to these (one entry per renamed / removed key). */
 export const MOD_ALIASES = {
-  // Pokermon 3.9.1 renamed the Chartreuse Chamber blind (Plans/MICATRO_MODS_UPGRADES.md). Dormant until the
-  // 3.9.1 data batch registers bl_poke_iridescent_hacker and drops bl_poke_cgoose.
+  // Pokermon 3.9.1 renamed the Chartreuse Chamber blind (Plans/MICATRO_MODS_UPGRADES.md). Active since the 3.9.1 data
+  // batch (batch 5), which registers bl_poke_iridescent_hacker and no longer registers bl_poke_cgoose.
   pokermon: { renamed: { bl_poke_cgoose: 'bl_poke_iridescent_hacker' }, removed: [], names: {} },
   // More Fluff 1.9.9999 (mods/morefluff): what the rewrite deleted. (Its 11 RETIRED jokers — the hidden "Old Fluff"
   // rarity — stay registered, so their keys still load as cards; only the deleted ones are listed here.)

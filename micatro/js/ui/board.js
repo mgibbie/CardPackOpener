@@ -207,6 +207,19 @@ export class Board {
       if (d && d.facing !== 'back' && modFirst('cardContext', d, this.uiApi())) { e.preventDefault(); this.hideTip(); }
     };
     this.layer.addEventListener('contextmenu', ctxCard);
+    // Desktop: a right-click anywhere on the board lets go of every chosen card (the hand's picks and the picked
+    // joker / consumable) and keeps the browser's menu away — unless a mod's card action took it just above
+    // (ctxCard: Pokermon's Pokédex). Only a MOUSE right-click: a touch long-press (Android fires contextmenu
+    // for it) stays the card's tooltip, and iOS never fires one.
+    let lastDownType = 'mouse';
+    addEventListener('pointerdown', (e) => { lastDownType = e.pointerType || 'mouse'; }, true);
+    this.stage.addEventListener('contextmenu', (e) => {
+      if (e.defaultPrevented || this.readOnly) return;
+      if ((e.pointerType || lastDownType) !== 'mouse') return;
+      if (e.target.closest && e.target.closest('.modal-layer, input, textarea, a, .tip')) return;
+      e.preventDefault();
+      this.clearSelection();
+    });
     this.layer.addEventListener('dblclick', ctxCard);
     // iPhone: a quick second tap on a card zoomed the page into it (a tester's cousin). Cards keep
     // touch-action:none for dragging, which Safari doesn't take as "no double-tap zoom", so cancel the
@@ -967,6 +980,30 @@ export class Board {
       if (d && d.select_action && this.opts.onAction) this.opts.onAction({ ...d.select_action, on: id === this.sel });
     }
   }
+  /** Is the hand pickable now (choosing a hand, or a pack that deals the hand: Arcana / Spectral / a mod's)? */
+  handSelectable() { const v = this.view; return !!v && (v.state === 'SELECTING_HAND' || HAND_PACK_STATES.includes(v.state)); }
+  /**
+   * Keyboard 1–9 / 0: the nth card (0-based) is tapped — the hand's while it is pickable (toggles it), else in a
+   * pack without a hand the pack's (picks it, showing its Select / Use button). -> whether a card was there.
+   */
+  keyPick(n) {
+    if (this.readOnly || !this.view) return false;
+    const list = this.handSelectable() ? this.areas.hand : PACK_STATES.includes(this.view.state) ? this.areas.pack_cards : null;
+    const s = list && list[n] != null ? this.sprites.get(list[n]) : null;
+    if (!s || s.leaving) return false;
+    this.clickCard(s, 'mouse');
+    return true;
+  }
+  /** Let go of every chosen card: the hand's picks and the picked joker / consumable / shop card (right-click). */
+  clearSelection() {
+    if (this.readOnly) return false;
+    let any = false;
+    if (this.sel != null || this.jsel != null) { const prev = this.sel; this.sel = null; this.jsel = null; this.syncSel(prev); this.refreshSelection(); any = true; }
+    this.hideTip();
+    if (!this.locked && this.handSelectable() && this.handHighlighted().length && this.opts.onAction) { this.opts.onAction({ type: 'highlight', ids: [] }); any = true; }
+    if (any) sound.play('cardSlide2', 1, 0.6);
+    return any;
+  }
   handHighlighted() { return this.areas.hand.filter((id) => { const d = this.data.get(id); return d && d.hl; }); }
   positionCardButtons() { /* buttons live inside the card element; nothing to do */ }
 
@@ -1033,6 +1070,7 @@ export class Board {
   onDown(e) {
     const el = e.target.closest('.card');
     if (!el || e.target.closest('.card-btns')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // (a right-click lets go of the picks: never picks a card)
     const id = +el.dataset.id;
     const s = this.sprites.get(id);
     if (!s || s.leaving) return;

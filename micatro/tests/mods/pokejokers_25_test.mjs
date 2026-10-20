@@ -22,13 +22,15 @@ const rounds = (n) => { for (let i = 0; i < n; i++) { winRound(); if (i < n - 1)
   ok(r.total.mult === 10, 'grubbin: X3 (+9) with a Lightning joker', r.total);
   p.remove();
   rounds(3);
-  ok(key(j) === 'j_poke_charjabug', 'grubbin -> charjabug after 3 rounds', key(j));
+  ok(key(j) === 'j_poke_grubbin', 'grubbin: not yet after 3 rounds' + ' (Pokermon 3.9.1 data)', key(j));
+  nextRound(); winRound();
+  ok(key(j) === 'j_poke_charjabug', 'grubbin -> charjabug after 4 rounds' + ' (Pokermon 3.9.1 data)', key(j));
   nextRound();
   r = play(hand(['S_A']));
-  ok(r.total.mult === 1 + 9, 'charjabug: +9 per Lightning joker (itself)', r.total);
+  ok(r.total.mult === 1 + 7, 'charjabug: +7 per Lightning joker (itself)' + ' (Pokermon 3.9.1 data)', r.total);
   const p2 = add('j_poke_pikachu');
   r = play(hand(['S_A']));
-  ok(r.total.mult === 1 + 18, 'charjabug: two Lightning jokers -> +18', r.total);
+  ok(r.total.mult === 1 + 14, 'charjabug: two Lightning jokers -> +14', r.total);
   p2.remove();
   j.ability.extra.evolve = true;
   winRound();

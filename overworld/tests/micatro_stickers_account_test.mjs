@@ -13,6 +13,10 @@
 //      and is retried until it lands
 //   5. guest -> sign-in: a guest's stickers move into the first account that signs in on that browser
 //   6. switching accounts: another account on that browser inherits nothing (and the server row stays clean)
+//   7. revoked: the admin's `revoked` on the row ({b_plasma: {cats: true, at}}, {j_half: ['nuz']}) makes a device
+//      holding those stickers drop them on load and never push them back (the row stays without them; the
+//      others are untouched); a NEW win of the revoked key after `at` sticks (re-earn rule), and a stale
+//      device still holding the old, higher level drops it and takes the re-earned one
 //   node overworld/tests/micatro_stickers_account_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -81,7 +85,8 @@ const server = http.createServer(async (req, res) => {
 		let raw = ''; for await (const c of req) raw += c;
 		let action = ''; try { action = JSON.parse(raw).action || ''; } catch { }
 		if (/^micatro-stickers-/.test(action)) {
-			stickerCalls.push({ action, failed: failStickers, auth: !!req.headers.authorization });
+			let body = {}; try { body = JSON.parse(raw); } catch { }
+			stickerCalls.push({ action, failed: failStickers, auth: !!req.headers.authorization, wins: body.wins || null, earned: body.earned || null });
 			if (failStickers) { res.writeHead(500, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'boom' })); return; }
 		}
 		const ip = '10.8.0.' + (req.socket.remotePort % 250 + 1);
@@ -98,7 +103,7 @@ const server = http.createServer(async (req, res) => {
 await new Promise(r => server.listen(PORT, r));
 
 const tokens = {};
-for (const n of ['stka', 'stkcarol', 'stkdave']) tokens[n] = (await call('register', { username: n, password: 'stickers-e2e-pass' })).token;
+for (const n of ['stka', 'stkcarol', 'stkdave', 'stkrev']) tokens[n] = (await call('register', { username: n, password: 'stickers-e2e-pass' })).token;
 A(tokens.stka && tokens.stkcarol && tokens.stkdave, 'three real accounts registered');
 const stateOf = async (n) => (await call('state', {}, tokens[n])).state;
 
@@ -237,7 +242,44 @@ try {
 	A(await sticker(devG, 'j_scholar') === 'Green' && !(await sticker(devG, 'j_mime')), 'carol has hers and not dave\'s');
 	const errs = [...devG.errors];
 	await devG.ctx.close();
-	A(errs.length === 0 && devA.errors.length === 0 && devB.errors.length === 0, 'no page errors', [...devA.errors, ...devB.errors, ...errs].join(' | '));
+
+	// ===== 7. revoked stickers (an admin edit of the row) =====
+	const revAt = Date.now() - 60_000;
+	sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 0)').run('micatro_stickers:stkrev', JSON.stringify({
+		v: 2, wins: { j_joker: { win: 3 } }, rev: 1, updatedAt: revAt,
+		revoked: { b_plasma: { cats: true, at: revAt }, j_half: ['nuz'] },
+	}));
+	const devR = await device('R');
+	const cR = stickerCalls.length;
+	A(await boot(devR, 'stkrev', { 'micatro_joker_wins_v1:stkrev': { b_plasma: { win: 4, poke: 2 }, j_half: { win: 2, nuz: 5 }, j_joker: { win: 3 }, j_mime: { win: 6 } } }) && await settled(devR),
+		'device R: signed in holding b_plasma (revoked) + j_half nuz (category revoked) locally; synced');
+	A(!(await sticker(devR, 'b_plasma')) && !(await local(devR, 'stkrev')).b_plasma, 'the revoked key is dropped on load (record and local cache)', JSON.stringify(await local(devR, 'stkrev')));
+	A(JSON.stringify(await S(devR, (M) => M.winRecord('j_half'))) === '{"win":2}' && JSON.stringify((await local(devR, 'stkrev')).j_half) === '{"win":2}', 'a category revocation drops only that category (j_half keeps win)', JSON.stringify((await local(devR, 'stkrev')).j_half));
+	A(await waitFor(() => W('stkrev', 'j_mime') === 6 && W('stkrev', 'j_half') === 2, 15000), 'the other stickers still move to the account', JSON.stringify(serverWins('stkrev')));
+	const putsR = stickerCalls.slice(cR).filter((c) => c.action === 'micatro-stickers-put');
+	A(putsR.length >= 1 && putsR.every((c) => c.wins && !c.wins.b_plasma && !(c.wins.j_half && c.wins.j_half.nuz)), 'no put ever carried the revoked sticker back', JSON.stringify(putsR.map((c) => c.wins)));
+	{
+		const r = row('micatro_stickers:stkrev');
+		A(!r.wins.b_plasma && !r.wins.j_half.nuz && r.wins.j_joker.win === 3 && JSON.stringify(r.revoked) === JSON.stringify({ b_plasma: { cats: true, at: revAt }, j_half: ['nuz'] }),
+			'the row stays without it, others untouched, and `revoked` is kept verbatim', JSON.stringify(r));
+	}
+	A(await boot(devR, 'stkrev') && await settled(devR) && !(await sticker(devR, 'b_plasma')) && !serverWins('stkrev').b_plasma, 'a reload does not bring it back');
+	// re-earn: a NEW win of b_plasma after the revocation sticks
+	A(await S(devR, (M) => M.recordWin({ jokers: ['b_plasma'], stake: 2 })) === 1, 'device R wins again with b_plasma (Red) after the revocation');
+	A(await waitFor(() => W('stkrev', 'b_plasma') === 2, 15000) && await settled(devR), 'the re-earned sticker reaches the account', JSON.stringify(serverWins('stkrev')));
+	A(row('micatro_stickers:stkrev').earned?.b_plasma?.win > revAt && row('micatro_stickers:stkrev').revoked?.b_plasma, 'the row records when it was re-earned (and still holds the revocation)', JSON.stringify(row('micatro_stickers:stkrev')));
+	A(await boot(devR, 'stkrev') && await settled(devR) && await sticker(devR, 'b_plasma') === 'Red', 'after a reload device R still shows it');
+	const rErrs = [...devR.errors];
+	await devR.ctx.close();
+	// a stale device still holding the OLD (higher) level drops it and takes the re-earned one
+	const devS = await device('S');
+	const cS = stickerCalls.length;
+	A(await boot(devS, 'stkrev', { 'micatro_joker_wins_v1:stkrev': { b_plasma: { win: 8 } } }) && await settled(devS), 'device S: signed in holding the old Gold b_plasma');
+	A(await sticker(devS, 'b_plasma') === 'Red' && W('stkrev', 'b_plasma') === 2, 'it drops the old Gold and shows the re-earned Red (the account keeps Red)', JSON.stringify([await sticker(devS, 'b_plasma'), serverWins('stkrev').b_plasma]));
+	A(stickerCalls.slice(cS).filter((c) => c.action === 'micatro-stickers-put').every((c) => !(c.wins && c.wins.b_plasma && c.wins.b_plasma.win === 8)), 'and never pushed the Gold back');
+	rErrs.push(...devS.errors);
+	await devS.ctx.close();
+	A(errs.length === 0 && rErrs.length === 0 && devA.errors.length === 0 && devB.errors.length === 0, 'no page errors', [...devA.errors, ...devB.errors, ...errs, ...rErrs].join(' | '));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));
 } finally {

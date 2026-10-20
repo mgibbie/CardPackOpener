@@ -82,6 +82,13 @@ const MICATRO_DECKS_BYTES = 400_000;    // the whole row
 // highest stake level 1..8 won at (win = any win; poke = a win with Pokermon on; nuz = Nuzlocke; mono = Monotype; both = the two together).
 // The older flat form {jokerKey: level} means {win: level}. A put MERGES (max per key and category), so a stale
 // device can never lower or drop a sticker.
+// REVOKING a sticker granted by mistake (an admin edit of the row in D1; no client action adds one): the row's
+// optional `revoked` = {jokerKey: true | [cats] | {cats: true | [cats], at: ms}} (true = every category). Each put
+// keeps it verbatim and strips those keys / categories from the incoming wins (and from the stored ones) before
+// merging, and get / put return it, so a device still holding the sticker drops it (stickers.js) instead of pushing
+// it back. RE-EARN rule: with `at` (epoch ms), a category the put proves was earned AFTER `at` (its `earned`
+// {key: {cat: ms}} time, which recordWin stamps) is accepted again, and the row's `earned` keeps that time so the
+// revocation never strips it later; without `at`, the key is blocked until the admin removes the revocation.
 const MICATRO_STICKERS_MAX = 5000;        // joker keys per player (vanilla + every mod is well under 2000)
 const MICATRO_STICKERS_BYTES = 700_000;   // one serialized `wins` map (5000 64-char keys x 4 categories is ~525 KB)
 const MICATRO_STICKER_KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
@@ -111,6 +118,49 @@ function stickerRecord(v, loose = false) {
 		out[k] = v[k];
 	}
 	return Object.keys(out).length ? out : null;
+}
+// the row's admin `revoked` field -> {key: {cats: [cat...], at: ms | null}} (null: blocked until removed); junk ignored
+function stickerRevocations(rv) {
+	const out = Object.create(null);
+	if (!rv || typeof rv !== 'object' || Array.isArray(rv)) return out;
+	for (const k of Object.keys(rv)) {
+		if (!MICATRO_STICKER_KEY_RE.test(k) || k === '__proto__') continue;
+		let v = rv[k], at = null;
+		if (v && typeof v === 'object' && !Array.isArray(v)) {
+			if (Number.isFinite(v.at) && v.at > 0) at = Math.floor(v.at);
+			v = 'cats' in v ? v.cats : true;
+		}
+		const cats = v === true ? MICATRO_STICKER_CATS.slice() : Array.isArray(v) ? MICATRO_STICKER_CATS.filter((c) => v.includes(c)) : [];
+		if (cats.length) out[k] = { cats, at };
+	}
+	return out;
+}
+// earned times {key: {cat: ms}}, kept only for revoked keys / categories (capped at `cap`, the server's now)
+function stickerEarned(m, revs, cap = Infinity) {
+	const out = Object.create(null);
+	if (!m || typeof m !== 'object' || Array.isArray(m)) return out;
+	for (const k of Object.keys(revs)) {
+		const r = Object.prototype.hasOwnProperty.call(m, k) ? m[k] : null;
+		if (!r || typeof r !== 'object' || Array.isArray(r)) continue;
+		for (const c of revs[k].cats) {
+			const t = r[c];
+			if (Number.isFinite(t) && t > 0) (out[k] || (out[k] = {}))[c] = Math.min(Math.floor(t), cap);
+		}
+	}
+	return out;
+}
+// was (key, cat) earned after its revocation? (never, when the revocation has no `at`)
+const stickerReEarned = (revs, earned, k, c) => revs[k].at != null && ((earned[k] && earned[k][c]) || 0) > revs[k].at;
+// drop the revoked keys / categories (not re-earned) from a {key: {cat: level}} map; returns how many were dropped
+function stripRevokedStickers(wins, revs, earned) {
+	let n = 0;
+	for (const k of Object.keys(revs)) {
+		const cur = wins[k];
+		if (!cur) continue;
+		for (const c of revs[k].cats) if (cur[c] && !stickerReEarned(revs, earned, k, c)) { delete cur[c]; n++; }
+		if (!Object.keys(cur).length) delete wins[k];
+	}
+	return n;
 }
 // MICASURVIVOR (/micasurvivor/, the PokéSurvivor port) cloud save: one row per player,
 // `micasurvivor:<user>` = {rev, save, updated_at}. The client keeps a localStorage copy
@@ -2273,7 +2323,9 @@ export default async function handler(req, env) {
 	// get -> {v:2, wins: {key: {cat: level}}, rev}. put {wins} (either form per key: {cat: level} or a flat
 	// level = {win}) MERGES server-side: each key and category keeps max(stored, incoming), so a stale or racing
 	// device never lowers or drops a sticker; written with compare-and-set on `rev` (re-merged on a lost race)
-	// and only when something rose. -> {ok, wins (the merged map), rev, changed}.
+	// and only when something rose. -> {ok, wins (the merged map), rev, changed}. Both also return `revoked` (the
+	// admin's revocations, normalized: {key: {cats, at}}) and `earned` (re-earn times for revoked keys); a put may
+	// carry `earned` {key: {cat: ms}} for revoked keys (see MICATRO_STICKERS_MAX above).
 	const storedStickers = (row) => {
 		const out = Object.create(null);
 		const had = row && row.wins && typeof row.wins === 'object' && !Array.isArray(row.wins) ? row.wins : {};
@@ -2286,7 +2338,10 @@ export default async function handler(req, env) {
 	};
 	if (action === 'micatro-stickers-get') {
 		const row = await store.get('micatro_stickers:' + username);
-		return json({ v: 2, wins: storedStickers(row), rev: (row && row.rev) || 0 });
+		const revoked = stickerRevocations(row && row.revoked), earned = stickerEarned(row && row.earned, revoked);
+		const wins = storedStickers(row);
+		stripRevokedStickers(wins, revoked, earned);
+		return json({ v: 2, wins, rev: (row && row.rev) || 0, revoked, earned });
 	}
 	if (action === 'micatro-stickers-put') {
 		const inc = body.wins;
@@ -2305,14 +2360,31 @@ export default async function handler(req, env) {
 			const prev = await store.get(key);
 			const rev = (prev && prev.rev) || 0;
 			const merged = storedStickers(prev);
-			let changed = !!prev && prev.v !== 2; // an older flat row is rewritten in the new form
+			const now = Date.now();
+			const revoked = stickerRevocations(prev && prev.revoked), earned = stickerEarned(prev && prev.earned, revoked);
+			const incEarned = stickerEarned(body.earned, revoked, now);
+			// an older flat row is rewritten in the new form; a stored sticker the admin revoked is dropped
+			const dropped = stripRevokedStickers(merged, revoked, earned);
+			let changed = (!!prev && prev.v !== 2) || dropped > 0;
 			for (const k of keys) {
-				const cur = merged[k] || (merged[k] = {});
-				for (const c of Object.keys(incoming[k])) if (!(cur[c] >= incoming[k][c])) { cur[c] = incoming[k][c]; changed = true; }
+				let cur = merged[k];
+				for (const c of Object.keys(incoming[k])) {
+					if (revoked[k] && revoked[k].cats.includes(c)) {
+						// revoked: only a win earned after the revocation counts (its time is kept so it sticks)
+						if (!stickerReEarned(revoked, incEarned, k, c)) continue;
+						const t = incEarned[k][c];
+						if (!(earned[k] && earned[k][c] >= t)) { (earned[k] || (earned[k] = {}))[c] = t; changed = true; }
+					}
+					if (!cur) cur = merged[k] = {};
+					if (!(cur[c] >= incoming[k][c])) { cur[c] = incoming[k][c]; changed = true; }
+				}
 			}
-			if (!changed) return json({ ok: true, wins: merged, rev, changed: false });
+			if (!changed) return json({ ok: true, wins: merged, rev, changed: false, revoked, earned });
 			if (Object.keys(merged).length > MICATRO_STICKERS_MAX) return json({ error: `at most ${MICATRO_STICKERS_MAX} jokers`, max: MICATRO_STICKERS_MAX }, 413);
-			if (await store.setIfRev(key, { v: 2, wins: merged, rev: rev + 1, updatedAt: Date.now() }, rev)) return json({ ok: true, wins: merged, rev: rev + 1, changed: true });
+			const next = { v: 2, wins: merged, rev: rev + 1, updatedAt: now };
+			if (prev && prev.revoked !== undefined) next.revoked = prev.revoked; // the admin's field, kept verbatim
+			if (Object.keys(earned).length) next.earned = earned;
+			if (await store.setIfRev(key, next, rev)) return json({ ok: true, wins: merged, rev: rev + 1, changed: true, revoked, earned });
 		}
 		return json({ error: 'busy, retry' }, 503); // five lost races in a row: the client retries
 	}

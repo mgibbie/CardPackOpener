@@ -31,17 +31,19 @@ const ok = (c, m, x) => { if (c) pass++; else { fail++; console.log('FAIL', m, x
 
 // ---------------------------------------------------------------- pins in the recipe
 ok(ENGINE_CONTENT_REV === PINS.ENGINE_CONTENT_REV && ENGINE_CONTENT_REV >= 1, 'session re-exports the engine content rev');
-ok(MODS.pokermon.contentRev === 1, 'Pokermon declares contentRev 1 (the 2026-10-18/19 house rules)');
+// Pokermon's pin (batch 5 of the 3.9.1 upgrade: version 3.9.1, contentRev 2 — rev 1 was the 2026-10-18/19 house rules).
+const PK = '3.9.1+r2';
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 2, 'Pokermon declares version 3.9.1, contentRev 2 (the 3.9.1 data)');
 ok(PINS.pinOf('3.2.1', 1) === '3.2.1+r1' && PINS.pinOf('3.2.1') === '3.2.1' && PINS.pinOf('1.0 (old-API)', 0) === '1.0 (old-API)', 'pinOf: version + "+r<rev>" only when a rev is set');
 ok(PINS.pinLabel('3.2.1+r2') === '3.2.1 (rev 2)' && PINS.pinLabel('3.9.1') === '3.9.1', 'pinLabel reads a pin for people');
 
 const s = new Session();
 s.start({ seed: 'PIN1', mods: ['nacho'] });   // nacho requires pokermon
 ok(s.recipe.mods.includes('pokermon') && s.recipe.mods.includes('nacho'), 'the run activates nacho + its requirement');
-ok(s.recipe.modVersions && s.recipe.modVersions.pokermon === '3.2.1+r1' && s.recipe.modVersions.nacho === MODS.nacho.version, 'the recipe pins every active mod (requirements included)', s.recipe.modVersions);
+ok(s.recipe.modVersions && s.recipe.modVersions.pokermon === PK && s.recipe.modVersions.nacho === MODS.nacho.version, 'the recipe pins every active mod (requirements included)', s.recipe.modVersions);
 ok(s.recipe.engineRev === ENGINE_CONTENT_REV, 'the recipe pins the engine rules rev');
 const saved = JSON.parse(mem.get('micatro_run_v1'));
-ok(saved.modVersions.pokermon === '3.2.1+r1' && saved.engineRev === ENGINE_CONTENT_REV, 'the saved run (localStorage) carries the pins');
+ok(saved.modVersions.pokermon === PK && saved.engineRev === ENGINE_CONTENT_REV, 'the saved run (localStorage) carries the pins');
 ok(Session.pinDiff(saved).length === 0, 'a freshly saved run has no version difference');
 const van = new Session(); van.start({ seed: 'PIN2' });
 ok(JSON.stringify(van.recipe.modVersions) === '{}' && van.recipe.engineRev === ENGINE_CONTENT_REV, 'a vanilla run pins only the engine');
@@ -49,18 +51,18 @@ ok(JSON.stringify(van.recipe.modVersions) === '{}' && van.recipe.engineRev === E
 // a replay's meta
 const run = playRun({ seed: 'PINRUN', back: 'b_red', stake: 1, mods: ['pokermon'] }, { seed: 3, maxSteps: 120 });
 const meta = RP.buildMeta(run.recipe, run.finalView, { username: 't' });
-ok(meta.modVersions && meta.modVersions.pokermon === '3.2.1+r1' && meta.engineRev === ENGINE_CONTENT_REV && !('pinAssumed' in meta), 'buildMeta copies the pins into the replay meta', meta);
+ok(meta.modVersions && meta.modVersions.pokermon === PK && meta.engineRev === ENGINE_CONTENT_REV && !('pinAssumed' in meta), 'buildMeta copies the pins into the replay meta', meta);
 
 // ---------------------------------------------------------------- mismatch
 const bumped = JSON.parse(JSON.stringify(saved));
 const was = MODS.pokermon.contentRev;
-MODS.pokermon.contentRev = 2;
+MODS.pokermon.contentRev = 3;
 let d = Session.pinDiff(bumped);
-ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === '3.2.1+r2' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
-ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.2.1 (rev 2). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === PK && d[0].current === '3.9.1+r3' && d[0].name === 'Pokermon', 'a bumped contentRev is a difference', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.9.1 (rev 2); current 3.9.1 (rev 3). Playback may differ.', 'the replay warning names both', PINS.replayWarning(d));
 MODS.pokermon.contentRev = was;
 const oldVer = { ...bumped, modVersions: { ...bumped.modVersions, pokermon: '3.2.1' } };
-const vwas = MODS.pokermon.version; MODS.pokermon.version = '3.9.1'; MODS.pokermon.contentRev = 0;
+const vwas = MODS.pokermon.version; MODS.pokermon.contentRev = 0;
 d = Session.pinDiff(oldVer);
 ok(d.length === 1 && PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1; current 3.9.1. Playback may differ.', 'an upstream version change reads "Recorded with Pokermon 3.2.1; current 3.9.1"', PINS.replayWarning(d));
 MODS.pokermon.version = vwas; MODS.pokermon.contentRev = was;
@@ -70,10 +72,10 @@ d = Session.pinDiff({ ...saved, mods: [...saved.mods, 'gonemod'], modVersions: {
 ok(d.length === 1 && d[0].id === 'gonemod' && d[0].current === null, 'a mod the site no longer has is reported (current: null)', d);
 
 // re-pin ("Continue anyway")
-MODS.pokermon.contentRev = 2;
+MODS.pokermon.contentRev = 3;
 const cont = Session.fromRecipe(run.recipe, { repin: true });
-ok(cont.recipe.modVersions.pokermon === '3.2.1+r2' && Session.pinDiff(cont.recipe).length === 0, '"Continue anyway" re-pins the run to the current versions');
-ok(Array.isArray(cont.recipe.repinned) && cont.recipe.repinned[0].from.pokermon === '3.2.1+r1' && cont.recipe.repinned[0].at === run.recipe.actions.length, 'the old pins are kept in recipe.repinned (with the move it switched at)', cont.recipe.repinned);
+ok(cont.recipe.modVersions.pokermon === '3.9.1+r3' && Session.pinDiff(cont.recipe).length === 0, '"Continue anyway" re-pins the run to the current versions');
+ok(Array.isArray(cont.recipe.repinned) && cont.recipe.repinned[0].from.pokermon === PK && cont.recipe.repinned[0].at === run.recipe.actions.length, 'the old pins are kept in recipe.repinned (with the move it switched at)', cont.recipe.repinned);
 MODS.pokermon.contentRev = was;
 
 // ---------------------------------------------------------------- legacy (no pins)
@@ -81,7 +83,10 @@ const legacy = JSON.parse(JSON.stringify(run.recipe));
 delete legacy.modVersions; delete legacy.engineRev;
 const lp = PINS.recordedPins(legacy);
 ok(lp.assumed && lp.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lp.engineRev === PINS.LEGACY_ENGINE_REV, 'a recipe without pins reads as the legacy table', lp);
-ok(Session.pinDiff(legacy).length === 0, 'a legacy recipe loads as today (the legacy table is today\'s versions)');
+// (the legacy table is the 2026-10-19 versions: Pokermon 3.2.1+r1 — since the 3.9.1 data batch a pre-pin Pokermon run differs)
+d = Session.pinDiff(legacy);
+ok(d.length === 1 && d[0].id === 'pokermon' && d[0].recorded === '3.2.1+r1' && d[0].current === PK, 'a legacy Pokermon recipe now differs (3.2.1+r1 -> 3.9.1+r2): the resume prompt / replay banner', d);
+ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 2). Playback may differ.', '... naming both', PINS.replayWarning(d));
 ok(Object.isFrozen(PINS.LEGACY_MOD_VERSIONS) && PINS.PIN_DATE === '2026-10-19', 'the legacy table is frozen and dated');
 const lr = Session.fromRecipe(legacy);
 ok(lr.recipe.pinAssumed === 'legacy:2026-10-19' && lr.recipe.modVersions.pokermon === PINS.LEGACY_MOD_VERSIONS.pokermon && lr.recipe.actions.length === legacy.actions.length && !lr.stoppedAt, 'resuming a legacy recipe records the assumption and rebuilds every move', lr.recipe.pinAssumed);
@@ -113,8 +118,9 @@ registerMod({
 });
 ok(PINS.modPin('pintest') === '2.0+r3', 'a mod\'s pin is version + contentRev');
 ok(resolveCardKey('b_pt_old') === 'b_pt_new' && resolveCardKey('j_pt_old') === 'j_pt_new' && resolveCardKey('j_joker') === 'j_joker', 'a renamed key resolves to its new key; others are untouched');
-ok(P_BLINDS.bl_poke_cgoose && resolveCardKey('bl_poke_cgoose') === 'bl_poke_cgoose' && AL.isRenamed('bl_poke_cgoose'), 'the seeded Pokermon rename (cgoose -> iridescent_hacker) stays dormant while cgoose is registered');
-ok(AL.resolveKey('bl_poke_cgoose') === 'bl_poke_iridescent_hacker' && AL.aliasesOf('bl_poke_iridescent_hacker').includes('bl_poke_cgoose'), '... and resolves once it is gone (the stickers of the old key count for the new one)');
+// Pokermon 3.9.1's rename (cgoose -> iridescent_hacker): seeded dormant with the pin, active since the 3.9.1 data batch
+ok(!P_BLINDS.bl_poke_cgoose && P_BLINDS.bl_poke_iridescent_hacker && resolveCardKey('bl_poke_cgoose') === 'bl_poke_iridescent_hacker' && AL.isRenamed('bl_poke_cgoose'), 'the Pokermon rename (cgoose -> iridescent_hacker) is active: the old key resolves to the registered new one');
+ok(AL.resolveKey('bl_poke_cgoose') === 'bl_poke_iridescent_hacker' && AL.aliasesOf('bl_poke_iridescent_hacker').includes('bl_poke_cgoose'), '... (the stickers of the old key count for the new one)');
 ok(isRetiredKey('j_pt_gone') && !isRetiredKey('j_pt_new') && AL.retiredName('j_pt_gone') === 'Gone Joker' && !keyKnown('j_pt_gone'), 'a removed key is retired (with its display name)');
 // a saved run whose back was renamed
 newRun({ seed: 'AL1', back: 'b_pt_old', mods: ['pintest'] });

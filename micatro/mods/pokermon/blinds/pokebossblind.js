@@ -1,4 +1,7 @@
-// Pokermon 3.2.1 — blinds/pokebossblind.lua: Cyber Goose? (bl_poke_cgoose), a showdown boss
+// Pokermon 3.2.1 — blinds/pokebossblind.lua: Chartreuse Chamber (bl_poke_cgoose), a showdown boss
+// — renamed by Pokermon 3.9.1 to Iridescent Hacker, bl_poke_iridescent_hacker (registered under that key since
+// batch 5, with 3.9.1's art and colour; the old key resolves through js/mods/aliases.js). The behaviour is still
+// the 3.2.1 one ported here (3.9.1 rewrote it on its debuff_card context: a later batch). The boss:
 // (ante 8+, x2 blind, $8). It picks 1-3 Pokémon types when set and re-picks them every hand
 // played; after each draw it debuffs every joker of those types (and lifts the others).
 // Hooks run through Micatro's mod-blind seams (engine/blind.js) as (prototype, Blind instance).
@@ -27,7 +30,7 @@ export function goose_disable(disabled, card, btypes) {
 }
 
 defineBlinds({
-  cgoose: {
+  iridescent_hacker: {
     // Intended-design fix: the Lua keeps ptypes / disabled on the shared prototype (self.config), so
     // a goose disabled once (Chicot, Luchador) stayed disabled for every later goose until a
     // restart. Per-fight state lives on the Blind instance here (blind.poke_ptypes, blind.disabled).

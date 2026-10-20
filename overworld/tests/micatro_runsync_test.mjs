@@ -325,6 +325,13 @@ try {
 	const bkA3 = await backup(devA);
 	A(bkA3 && bkA3.id === runX.id && bkA3.n === runX.n, 'A\'s X is backed up', JSON.stringify(bkA3));
 
+	// ===== 5b. a hold-R restart (keyboard) ends the account's run too, so no other device offers it again =====
+	const mark5 = apiCalls.length;
+	await devA.page.keyboard.down('r'); await sleep(1400); await devA.page.keyboard.up('r');
+	A(await waitFor(async () => (await local(devA)) && (await local(devA)).id !== runY.id, 15000), 'A holds R: a new run starts', JSON.stringify(await local(devA)));
+	A(await waitFor(() => (runRow('rsync').ended || []).some((e) => e.id === runY.id && e.outcome === 'abandoned'), 15000), 'the restarted run is ended on the account ("abandoned" tombstone)', JSON.stringify({ run: runRow('rsync').run && runRow('rsync').run.id, ended: runRow('rsync').ended, calls: apiCalls.slice(mark5).map((c) => c.action) }));
+	A(!(runRow('rsync').run && runRow('rsync').run.id === runY.id), 'and the account no longer holds it', JSON.stringify(runRow('rsync').run && runRow('rsync').run.id));
+
 	// ===== 6. challenges completed on A show on B =====
 	await devA.page.evaluate(async () => { (await import('/micatro/js/ui/screens.js')).markChallengeDone('rsync', 'c_omelette_1'); });
 	A(await waitFor(() => (row('micatro_challenges:rsync') || { done: {} }).done.c_omelette_1 > 0, 15000), 'a challenge completed on A reaches the account', JSON.stringify(row('micatro_challenges:rsync')));

@@ -15,6 +15,10 @@
 //      badges {mono: 'grass'}; the leaderboard row carries the tag
 //   3. Endless Mode, then a reload + Continue (the won run resumed): still eligible, and the win is NOT counted again
 //   4. a run the player typed a seed for stays seeded after a resume (no badges, no stickers)
+// The fixture was recorded on Pokermon 3.2.1 (no pins: read as 3.2.1+r1). Since the 3.9.1 data batch (Pokermon
+// 3.9.1+r2) its moves no longer replay on the new numbers (the shops differ from move 523), so the page is served
+// micatro/mods/pokermon/data391.js with its joker data and sprites emptied: Pokermon plays the 3.2.1 numbers (the
+// renamed boss is the same boss), and the resume goes through the "Mod updated" prompt (3.2.1 -> 3.9.1, Continue anyway).
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides). Covers micatro/js/engine/session.js (recipeSeeded), micatro/js/engine/run.js (newRun seeded),
 // micatro/js/ui/main.js, micatro/js/ui/progress.js (push retry, once per run), micatro/js/net.js,
@@ -85,6 +89,10 @@ const call = async (action, body = {}, token) => {
 // a flaky network for the progress push: the next N micatro-progress-put calls fail (a 503), then it works again
 let failProgressPuts = 0, progressPutsFailed = 0, progressPuts = 0;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ogg': 'audio/ogg', '.ttf': 'font/ttf', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.fs': 'text/plain' };
+// (the fixture's rules: the 3.9.1 overlay without its joker numbers / sprites — see the header)
+const D391 = (await import(pathToFileURL(path.join(ROOT, 'micatro/mods/pokermon/data391.js')).href)).default;
+const DATA321 = 'export default ' + JSON.stringify({ ...D391, jokers: {}, sprites: {} }) + ';\n';
+let prompted = 0;
 const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
@@ -101,6 +109,7 @@ const server = http.createServer(async (req, res) => {
 		return;
 	}
 	const f = u.endsWith('/') ? u + 'index.html' : u;
+	if (f === '/micatro/mods/pokermon/data391.js') { res.writeHead(200, { 'content-type': 'text/javascript' }); res.end(DATA321); return; }
 	const send = (d) => { res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); };
 	const nf = () => { res.writeHead(404); res.end('nf'); };
 	fs.readFile(path.join(ROOT, f), (e, d) => {
@@ -139,7 +148,7 @@ try {
 	const continueRun = async () => {
 		await page.evaluate(() => document.querySelector('.b-continue').click());
 		await waitFor(() => page.evaluate(() => !!document.querySelector('.b-resume-continue') || (!!window.__micatro.session && !!window.__micatro.view())), 40000);
-		if (await page.evaluate(() => !!document.querySelector('.b-resume-continue'))) await page.evaluate(() => document.querySelector('.b-resume-continue').click());
+		if (await page.evaluate(() => !!document.querySelector('.b-resume-continue'))) { prompted++; await page.evaluate(() => document.querySelector('.b-resume-continue').click()); }
 		await waitFor(() => page.evaluate(() => !!window.__micatro.session && !!window.__micatro.view() && window.__micatro.idle()), 60000);
 	};
 	const pills = () => page.evaluate(() => [...document.querySelectorAll('.hud.has-rb .hud-rbadges .rb-pill')].filter((e) => e.offsetParent).map((e) => e.textContent));
@@ -148,6 +157,7 @@ try {
 	// ===== 1. resume the saved run (Continue) before the last boss blind =====
 	A(await boot(), 'signed in; the main menu offers Continue');
 	await continueRun();
+	A(prompted === 1, 'the run recorded on Pokermon 3.2.1 asks first ("Mod updated": Continue anyway)', String(prompted));
 	const v0 = await page.evaluate(() => { const v = window.__micatro.view(); return { ante: v.ante, round: v.round, state: v.state, rb: v.run_badges }; });
 	A(v0.ante === 8 && v0.round === 23 && v0.state === 'BLIND_SELECT', 'the run resumed at ante 8, before the boss blind', JSON.stringify(v0));
 	A(v0.rb && v0.rb.eligible === true && v0.rb.mono === true && v0.rb.type === 'Grass' && v0.rb.nuz === false, 'the resumed run is still eligible: Monotype Grass intact, Nuzlocke broken (a sale)', JSON.stringify(v0.rb));

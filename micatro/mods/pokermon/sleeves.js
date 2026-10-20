@@ -2,13 +2,13 @@
 // Each mirrors its deck (backs/backs1.js): Trainer, Luminous, Telekinetic, Amped, Future, Stadium,
 // Mega, Vending, and (pokemon_legacy only, like the Lua's slist) Obituary / Revenant.
 // `config` goes through the same handling as a deck (vouchers, consumables); `apply` / `calculate`
-// are the Lua's. Art: AtlasDecksBasic row 1 (Stadium / Mega: 3.2.1 shipped placeholder_sleeve; their art is
-// Pokermon 3.9.1's, AtlasDecksBasic {8,1} / {9,1}, registered as AtlasDecksBasic391 in index.js).
+// are the Lua's. Art: AtlasDecksBasic row 1, from Pokermon 3.9.1's sheet (AtlasDecksBasic391 in index.js; the same cells
+// as 3.2.1's — Stadium / Mega: 3.2.1 shipped placeholder_sleeve, their art is 3.9.1's {8,1} / {9,1}).
 import { G, P_CENTERS, localize, play_sound, create_card, change_shop_size } from './api.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 
 const MOD = 'pokermon';
-const DECKS = 'poke_AtlasDecksBasic', DECKS_391 = 'poke_AtlasDecksBasic391';
+const DECKS = 'poke_AtlasDecksBasic391', DECKS_391 = DECKS;
 const name_text = (set, key) => localize({ type: 'name_text', set, key });
 
 /** sleeve.lua init(): after the deck (and sleeve) apply, every playing card gets poke_force_seal. */

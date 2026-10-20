@@ -297,9 +297,12 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 fro
   nextRound();
   r = play(hand(['S_7', 'H_7', 'D_7']));
   ok(r.total.chips === 30 + 21 + 21 && r.total.mult === 3 + 15 && j.ability.extra.primes_played === 3, 'primeape: +7 chips +5 Mult per prime, counted', [r.total, j.ability.extra]);
-  j.ability.extra.primes_played = 25;
-  winRound();
-  ok(key(j) === 'j_poke_annihilape', 'primeape -> annihilape after 25 primes', key(j));
+  j.ability.extra.primes_played = 27;
+  winRound(); // (the winning 2 is a prime: 28)
+  ok(key(j) === 'j_poke_primeape', 'primeape: not yet at 28 primes' + ' (Pokermon 3.9.1 data)', key(j));
+  nextRound();
+  winRound(); // (29)
+  ok(key(j) === 'j_poke_annihilape', 'primeape -> annihilape after 29 primes' + ' (Pokermon 3.9.1 data)', key(j));
 }
 
 // ---------------------------------------------------------------- Growlithe / Arcanine

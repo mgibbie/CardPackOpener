@@ -1,5 +1,5 @@
 // Pokermon non-joker content: every consumable (mart1/2/3, martz, zberryjuice, zmachine), both
-// non-Pocket packs, the 4 vouchers, the 10 decks, the 6 tags, the Cyber Goose? boss, the Hazard /
+// non-Pocket packs, the 4 vouchers, the 10 decks, the 6 tags, the Iridescent Hacker (was Chartreuse Chamber) boss, the Hazard /
 // Flower enhancements and the Pink / Silver seals — each fired through real actions.
 //   node micatro/tests/mods/pokermon_content_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
@@ -482,28 +482,28 @@ const deckRun = (back, seed, opts = {}) => { newRun({ seed, back, mods: ['pokerm
   ok(G.GAME.pack_center === 'p_poke_pokepack_starter_pack' && G.pack_cards.cards.length === 4, 'Starter Tag: a free Starter Pack', G.GAME.pack_center);
 }
 
-// ================================================================ Cyber Goose? boss
+// ================================================================ the Chartreuse Chamber boss (bl_poke_cgoose; Pokermon 3.9.1: Iridescent Hacker, bl_poke_iridescent_hacker)
 {
   start('GOOSE', {}, { noBlind: true });
-  const gb = P_BLINDS.bl_poke_cgoose;
-  ok(gb.boss.showdown && gb.mult === 2 && gb.dollars === 8, 'Cyber Goose?: showdown boss, x2, $8');
+  const gb = P_BLINDS.bl_poke_iridescent_hacker;
+  ok(gb.boss.showdown && gb.mult === 2 && gb.dollars === 8, 'Iridescent Hacker (was Chartreuse Chamber): showdown boss, x2, $8');
   G.FORCE_BOSS = undefined;
   G.GAME.round_resets.ante = 8;
-  for (const k of Object.keys(G.GAME.bosses_used)) G.GAME.bosses_used[k] = k === 'bl_poke_cgoose' ? 0 : 99;
-  ok(get_new_boss() === 'bl_poke_cgoose', 'eligible at ante 8');
+  for (const k of Object.keys(G.GAME.bosses_used)) G.GAME.bosses_used[k] = k === 'bl_poke_iridescent_hacker' ? 0 : 99;
+  ok(get_new_boss() === 'bl_poke_iridescent_hacker', 'eligible at ante 8');
   G.GAME.round_resets.ante = 1;
   const ts = new Set();
   for (let i = 0; i < 40; i++) { const t = determine_type(); ok(t.length >= 1 && t.length <= 3 && t.every((x) => P.POKETYPES.includes(x)), 'determine_type: 1-3 types', t); t.forEach((x) => ts.add(x)); }
   ok(ts.size > 3, 'types vary');
   // Fight it.
-  G.FORCE_BOSS = 'bl_poke_cgoose';
-  G.GAME.round_resets.blind_choices.Boss = 'bl_poke_cgoose';
+  G.FORCE_BOSS = 'bl_poke_iridescent_hacker';
+  G.GAME.round_resets.blind_choices.Boss = 'bl_poke_iridescent_hacker';
   const ch = add('j_poke_charmander');
   const sq = add('j_poke_squirtle');
   const jk = add('j_joker');
   P.apply_type_sticker(jk, 'Grass');
   act({ type: 'select_blind' }); clearHand(); nextRound(); clearHand(); nextRound();
-  ok(G.GAME.blind.config.blind.key === 'bl_poke_cgoose' && Array.isArray(G.GAME.blind.poke_ptypes), 'goose fight: types picked at set_blind', G.GAME.blind.poke_ptypes);
+  ok(G.GAME.blind.config.blind.key === 'bl_poke_iridescent_hacker' && Array.isArray(G.GAME.blind.poke_ptypes), 'goose fight: types picked at set_blind', G.GAME.blind.poke_ptypes);
   const pt = () => G.GAME.blind.poke_ptypes;
   const want = (c) => pt().includes(c === jk ? 'Grass' : c.ability.extra.ptype);
   ok([ch, sq, jk].every((c) => !!c.debuff === want(c)), 'first draw: jokers of the goose types are debuffed', [pt(), ch.debuff, sq.debuff, jk.debuff]);

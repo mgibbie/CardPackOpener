@@ -242,9 +242,7 @@ async function continueRun() {
     else if (!r.ok) board.toast('A mod failed to load');
   }
   const abandon = (why) => {
-    Engine.Session.backupSaved(why);
-    Engine.Session.clearSaved();
-    if (RunSync) RunSync.endedRun('abandoned', rec);
+    abandonSaved(why, rec);
     board.toast('Run abandoned');
     showMenu();
   };
@@ -273,6 +271,31 @@ async function continueRun() {
     onContinue: () => { Engine.Session.backupSaved('continue: ' + Engine.pins.diffText(diff)); resume(true); },
     onAbandon: () => abandon('abandon: ' + Engine.pins.diffText(diff)),
   });
+}
+/** The saved run is given up (abandoned, or restarted with R): a backup first (owner rule: never wipe a save
+ *  without one — Session.backupSaved, micatro_run_backup_v1), then the save goes, and the account's run slot
+ *  hears it ended (RunSync), so another device doesn't offer it again. */
+function abandonSaved(why, rec = Engine.Session.saved()) {
+  Engine.Session.backupSaved(why);
+  Engine.Session.clearSaved();
+  if (RunSync && rec) RunSync.endedRun('abandoned', rec);
+}
+/**
+ * Hold R: start this run over (Balatro's restart) — the same deck, stake, mods + their options, custom deck,
+ * sleeve and challenge, on a new random seed. A seeded run keeps its seed (Balatro: a seeded run restarts on
+ * it), so it stays seeded; any other restart is unseeded, so its wins earn stickers and badges as usual.
+ * The run left behind goes the abandon way (a backup first).
+ */
+function restartRun() {
+  const r = session && session.recipe;
+  if (MODE !== 'normal' || !r) return;
+  const o = { back: r.back || 'b_red', stake: r.stake == null ? 1 : r.stake, mods: r.mods || [], modOptions: r.modOptions || {} };
+  if (r.customDeck) o.customDeck = r.customDeck;
+  if (r.challenge) o.challenge = r.challenge;
+  if (r.sleeve) o.sleeve = r.sleeve;
+  if (r.seeded === true) o.seed = r.seed;
+  abandonSaved('restart (hold R)');
+  return startRun(o);
 }
 function beginRun(events, { fresh = false } = {}) {
   UI.closeAll();
@@ -556,22 +579,79 @@ function onMenu(what) {
 }
 
 // ---------------------------------------------------------------- keyboard
+// R is a tap AND a hold (Balatro): a quick tap sorts the hand by rank / rerolls the shop; held ~1 s it restarts
+// the run (a "Restarting…" bar fills; let go early to cancel). The tap's action waits for the key-up, and runs
+// only on a quick release, so a hold never also sorts or rerolls.
+const R_TAP_MS = 250, R_HOLD_MS = 1000, R_BAR_MS = 150;
+let rHold = null; // {t0, raf, el, done}
+/** Can R restart now: a live run of the player's own, nothing open over the table. */
+const canRestart = () => MODE === 'normal' && !!(session && session.recipe && !session.over && board.view && !board.view.over) && !UI.modalOpen();
+function rBar(frac) {
+  let el = rHold.el;
+  if (!el) {
+    el = rHold.el = document.createElement('div');
+    el.className = 'restart-hold';
+    el.innerHTML = '<div class="rh-label">Restarting…</div><div class="rh-track"><div class="rh-fill"></div></div>';
+    stage.appendChild(el);
+  }
+  el.querySelector('.rh-fill').style.width = Math.round(Math.min(1, frac) * 100) + '%';
+}
+function endRHold() {
+  if (!rHold) return null;
+  const h = rHold; rHold = null;
+  cancelAnimationFrame(h.raf);
+  if (h.el) h.el.remove();
+  return h;
+}
+function startRHold() {
+  rHold = { t0: performance.now(), raf: 0, el: null, done: false };
+  const tick = () => {
+    const h = rHold;
+    if (!h || h.done) return;
+    if (!canRestart()) { endRHold(); return; } // (something opened over the table: no restart, no tap)
+    const t = performance.now() - h.t0;
+    if (t >= R_HOLD_MS) { h.done = true; endRHold(); Promise.resolve(restartRun()).catch((err) => console.error('micatro: restart failed', err)); return; }
+    if (t >= R_BAR_MS) rBar((t - R_BAR_MS) / (R_HOLD_MS - R_BAR_MS));
+    h.raf = requestAnimationFrame(tick);
+  };
+  rHold.raf = requestAnimationFrame(tick);
+}
+function onKeyUp(e) {
+  if ((e.key || '').toLowerCase() !== 'r' || !rHold) return;
+  const h = endRHold();
+  if (h && !h.done && performance.now() - h.t0 < R_TAP_MS) stateKey('r');
+}
 function onKey(e) {
   if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
   if (e.key === 'Escape') { if (UI.modalOpen()) { if (!document.querySelector('.menu-modal, .go-modal')) UI.closeModal(); } else onMenu('options'); return; }
   if (UI.modalOpen() || MODE !== 'normal' || !board.view) return;
-  const v = board.view, k = e.key.toLowerCase();
-  const click = (sel) => { const b = stage.querySelector(sel); if (b && !b.disabled && b.offsetParent) { b.click(); return true; } return false; };
+  const k = e.key.toLowerCase();
   if (k === 'v') return onMenu('deck');
   // P: a mod's card view for the selected joker (Pokermon's Pokédex: its SMODS.Keybind "openPokedex")
   if (k === 'p' && board.sel != null) { const d = board.data.get(board.sel); if (d && modFirst('cardContext', d, UI.modApi())) return; }
   if (k === 'i') return onMenu('runinfo');
+  if (k === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && canRestart()) {
+    // (the tap's sort / reroll waits for the key-up: onKeyUp; auto-repeat keydowns are the same hold)
+    e.preventDefault();
+    if (!rHold && !e.repeat) startRHold();
+    return;
+  }
+  stateKey(k);
+  if (k === ' ' || k === 'enter') e.preventDefault();
+}
+/** The keys that act on what's on the table now. */
+function stateKey(k) {
+  const v = board.view;
+  if (!v || MODE !== 'normal' || UI.modalOpen()) return;
+  const click = (sel) => { const b = stage.querySelector(sel); if (b && !b.disabled && b.offsetParent) { b.click(); return true; } return false; };
+  // 1–9, 0: the nth card (0 = the 10th) — the hand's while it can be picked (also in Arcana / Spectral / a mod's
+  // hand packs), else a pack's own cards; again on a picked card lets it go
+  if (/^[0-9]$/.test(k)) { if (player.idle()) board.keyPick(k === '0' ? 9 : +k - 1); return; }
   if (v.state === 'SELECTING_HAND') {
     if (k === 'enter' || k === 'p') click('.b-play');
     else if (k === 'd' || k === 'delete' || k === 'backspace') click('.b-discard');
     else if (k === 'r') click('.b-rank');
     else if (k === 's') click('.b-suit');
-    else if (/^[1-9]$/.test(k)) { const id = board.areas.hand[+k - 1]; if (id != null && player.idle()) { sound.play('cardSlide1', 1, 0.6); onAction({ type: 'highlight', id }); } }
     else if (k === 'escape' || k === 'c') onAction({ type: 'highlight', ids: [] });
   } else if (v.state === 'BLIND_SELECT') {
     if (k === 'enter' || k === ' ') click('.b-select');
@@ -583,8 +663,8 @@ function onKey(e) {
     else if (k === 'r') click('.b-reroll');
   } else if (/_PACK(_HAND)?$/.test(v.state)) {
     if (k === 's' || k === 'escape') click('.b-skip-pack');
+    else if (k === 'c' && board.handSelectable()) onAction({ type: 'highlight', ids: [] });
   }
-  if (k === ' ' || k === 'enter') e.preventDefault();
 }
 
 // ---------------------------------------------------------------- spectate
@@ -686,6 +766,8 @@ async function boot() {
   UI.setModsApi(modsApi());
   document.body.classList.add('mode-' + MODE);
   addEventListener('keydown', onKey);
+  addEventListener('keyup', onKeyUp);
+  addEventListener('blur', () => endRHold()); // (the key-up may never come: no tap, no restart)
   // (replay: LB/RB step, secondary plays/pauses — the controller drives the viewer)
   const padReplay = MODE === 'replay' ? { toggle: () => replayCtrl && replayCtrl.toggle && replayCtrl.toggle(), step: (d) => replayCtrl && replayCtrl.ready && (d < 0 ? replayCtrl.stepBack() : replayCtrl.stepForward()) } : null;
   try { pad = initPad({ board, stage, UI, readOnly: MODE !== 'normal', onMenu, mainMenu: () => showMenu(), replay: padReplay }); } catch (e) { console.warn('micatro: controller support unavailable', e); }

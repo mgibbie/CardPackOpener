@@ -492,7 +492,7 @@ ok(!avail('Item', null, 'c_poke_pokeball'), 'pokeballs option off removes the ba
   const jv = v.areas.jokers[0];
   ok(jv.poke && jv.poke.ptype === 'Fire' && jv.poke.energy === 1 && jv.poke.stage === 'Basic', 'card view: type / energy / stage', jv.poke);
   ok(jv.desc.name === 'Charmander' && jv.desc.lines.some((l) => /discard/.test(l)) && jv.desc.info.some((i) => i.key === 'energy'), 'description from Pokermon loc + energy tooltip', jv.desc);
-  ok(jv.atlas === 'poke_AtlasJokersBasicNatdex' && jv.pos.x === 6, 'Natdex art cell', [jv.atlas, jv.pos]);
+  ok(jv.atlas === 'poke_AtlasJokersBasicNatdex391' && jv.pos.x === 6, 'Natdex art cell (the 3.9.1 sheet)', [jv.atlas, jv.pos]);
   const cat = add('j_poke_caterpie');
   ok(toView().areas.jokers[1].poke.rounds === 2, 'level-evo countdown in the view');
 }

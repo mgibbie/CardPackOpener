@@ -19,6 +19,12 @@
 //     browser before they were saved on the account move to it once, and local data is never deleted; a win
 //     updates the cache at once and is pushed (debounced, retried with backoff on failure). The server merges
 //     by max too, so a stale or second device can never lower or drop a sticker.
+//   * REVOKED stickers (one granted by mistake): the only way a sticker leaves. The admin adds `revoked` to the account
+//     row (server/mp.mjs; {key: true | [cats] | {cats, at}}); the server strips those from every put and returns them,
+//     and this browser deletes them from its record (applyRevoked: before it merges the account's, on load and after
+//     every push), so it never pushes them back. Re-earn: recordWin stamps each category's earn time
+//     ('micatro_joker_earned_v1:<user>'); a category earned AFTER the revocation's `at` is kept here and pushed with
+//     its time (`earned`, for revoked keys only), and the server accepts it. Without `at` the key stays revoked.
 //   * Guests keep localStorage only ('...:guest'). The first account that signs in on that browser takes the
 //     guest record once (merge by max; 'micatro_joker_wins_guest_carried' remembers it — like MicaSurvivor's
 //     guest carry-over), so another account signing in later never inherits it.
@@ -66,9 +72,12 @@ let user = 'guest';
 let wins = Object.create(null);   // {jokerKey: {win?, poke?, nuz?, mono?, both?}}
 let show = true;
 let sess = null;         // the account sync for the current user (null: a guest / no account API)
+let earned = Object.create(null);   // {jokerKey: {cat: ms}} when each category was last won here (the re-earn rule)
+let revoked = Object.create(null);  // the account's revocations, last seen: {jokerKey: {cats: [cat], at: ms | null}}
 export let stickerVer = 0;
 const listeners = new Set();
 const keyFor = (u) => 'micatro_joker_wins_v1:' + u;
+const earnedKeyFor = (u) => 'micatro_joker_earned_v1:' + u;
 const key = () => keyFor(user);
 const bump = () => { stickerVer++; for (const cb of listeners) { try { cb(); } catch (e) { /* ignore */ } } };
 const levelOf = (v) => (Number.isInteger(v) && v >= 1 && v <= 8 ? v : 0);
@@ -93,6 +102,64 @@ export function cleanWins(m) {
 }
 function readLocal(u) { try { return cleanWins(JSON.parse(localStorage.getItem(keyFor(u)) || '{}')); } catch (e) { return Object.create(null); } }
 function saveLocal() { try { localStorage.setItem(key(), JSON.stringify(wins)); return true; } catch (e) { return false; /* not remembered */ } }
+/** {key: {cat: ms}} cleaned (positive finite times, known keys and categories). */
+function cleanEarned(m) {
+  const out = Object.create(null);
+  if (!m || typeof m !== 'object' || Array.isArray(m)) return out;
+  for (const k of Object.keys(m)) {
+    if (!KEY_RE.test(k) || k === '__proto__' || !m[k] || typeof m[k] !== 'object') continue;
+    for (const c of CATEGORIES) { const t = m[k][c]; if (Number.isFinite(t) && t > 0) (out[k] || (out[k] = {}))[c] = Math.floor(t); }
+  }
+  return out;
+}
+function readEarned(u) { try { return cleanEarned(JSON.parse(localStorage.getItem(earnedKeyFor(u)) || '{}')); } catch (e) { return Object.create(null); } }
+function saveEarned() { try { localStorage.setItem(earnedKeyFor(user), JSON.stringify(earned)); } catch (e) { /* not remembered */ } }
+function mergeEarned(m) {
+  const c = cleanEarned(m);
+  for (const k of Object.keys(c)) for (const cat of Object.keys(c[k])) if (((earned[k] && earned[k][cat]) || 0) < c[k][cat]) (earned[k] || (earned[k] = {}))[cat] = c[k][cat];
+}
+/** The server's `revoked` ({key: {cats, at}}; also the admin forms true | [cats]) -> {key: {cats, at: ms | null}}. */
+export function cleanRevoked(m) {
+  const out = Object.create(null);
+  if (!m || typeof m !== 'object' || Array.isArray(m)) return out;
+  for (const k of Object.keys(m)) {
+    if (!KEY_RE.test(k) || k === '__proto__') continue;
+    let v = m[k], at = null;
+    if (v && typeof v === 'object' && !Array.isArray(v)) { if (Number.isFinite(v.at) && v.at > 0) at = Math.floor(v.at); v = 'cats' in v ? v.cats : true; }
+    const cats = v === true ? CATEGORIES.slice() : Array.isArray(v) ? CATEGORIES.filter((c) => v.includes(c)) : [];
+    if (cats.length) out[k] = { cats, at };
+  }
+  return out;
+}
+/**
+ * The account revoked these (`rv`, the server's `revoked`): delete them from this browser's record, except a
+ * category won here after the revocation (its earn time > `at`), and remember the list. Saves and redraws when
+ * something went. Returns how many categories were dropped.
+ */
+function applyRevoked(rv) {
+  revoked = cleanRevoked(rv);
+  let n = 0;
+  for (const k of Object.keys(revoked)) {
+    const { cats, at } = revoked[k];
+    const cur = wins[k];
+    for (const c of cats) {
+      const t = (earned[k] && earned[k][c]) || 0;
+      if (at != null && t > at) continue;   // re-earned after the revocation: it stays
+      if (cur && cur[c]) { delete cur[c]; n++; }
+      if (earned[k]) delete earned[k][c];
+    }
+    if (cur && !Object.keys(cur).length) delete wins[k];
+    if (earned[k] && !Object.keys(earned[k]).length) delete earned[k];
+  }
+  if (n) { saveLocal(); saveEarned(); bump(); }
+  return n;
+}
+/** The earn times a push carries: only for revoked keys (what the server's re-earn check needs). */
+function earnedForPush() {
+  const out = {};
+  for (const k of Object.keys(revoked)) if (earned[k]) out[k] = { ...earned[k] };
+  return out;
+}
 /** Raise `wins` to `m` (max per key and category). Returns how many jokers rose. */
 function mergeIn(m) {
   let n = 0;
@@ -122,6 +189,8 @@ export function initWinStickers(username, account) {
   sess = null;
   user = (username && String(username)) || 'guest';
   wins = readLocal(user);
+  earned = readEarned(user);
+  revoked = Object.create(null);
   try { const s = localStorage.getItem(SHOW_KEY); show = s == null ? true : s === '1'; } catch (e) { show = true; }
   if (user !== 'guest' && account && typeof account.fetch === 'function' && typeof account.push === 'function') {
     // a guest record in this browser moves to the FIRST account that signs in here, once (never deleted)
@@ -130,6 +199,8 @@ export function initWinStickers(username, account) {
         const g = readLocal('guest');
         if (Object.keys(g).length) {
           mergeIn(g);
+          mergeEarned(readEarned('guest'));
+          saveEarned();
           if (saveLocal()) localStorage.setItem(GUEST_CARRIED_KEY, JSON.stringify({ to: user, at: Date.now() }));
         }
       }
@@ -155,15 +226,19 @@ async function sync(s) {
       const r = await s.account.fetch();
       if (s.dead) return;
       if (!r || r.error || !r.wins) throw new Error('fetch');
+      applyRevoked(r.revoked);   // first: a revoked sticker held here goes (then the account's record merges in)
+      mergeEarned(r.earned); saveEarned();
       if (mergeIn(r.wins)) { saveLocal(); bump(); }
       s.synced = true;
       if (ahead(r.wins)) s.dirty = true;   // this browser has stickers the account lacks: move them there
     }
     if (s.dirty) {
       s.dirty = false;
-      const r = await s.account.push(copyWins());
+      const r = await s.account.push(copyWins(), { earned: earnedForPush() });
       if (s.dead) return;
       if (!r || r.error || !r.wins) { s.dirty = true; throw new Error('push'); }
+      applyRevoked(r.revoked);
+      mergeEarned(r.earned); saveEarned();
       if (mergeIn(r.wins)) { saveLocal(); bump(); }
       if (ahead(r.wins)) s.dirty = true;   // a win landed while this push was in flight
     }
@@ -176,12 +251,12 @@ async function sync(s) {
   if (s.dirty || s.again) schedule(s, s.dirty ? PUSH_DEBOUNCE_MS : 0);
 }
 /** Debug / tests: the account sync's state for the current player (null for a guest). */
-export const stickerSyncState = () => (sess ? { user, synced: sess.synced, dirty: sess.dirty, inflight: sess.inflight, attempts: sess.attempts } : null);
+export const stickerSyncState = () => (sess ? { user, synced: sess.synced, dirty: sess.dirty, inflight: sess.inflight, attempts: sess.attempts, revoked: Object.keys(revoked) } : null);
 // leaving the page with an unsent win: one last keepalive push (the next load re-syncs anyway); back online: retry now
 try {
   addEventListener('pagehide', () => {
     const s = sess;
-    if (s && !s.dead && s.dirty && !s.inflight) { try { s.account.push(copyWins(), { keepalive: true }); } catch (e) { /* ignore */ } }
+    if (s && !s.dead && s.dirty && !s.inflight) { try { s.account.push(copyWins(), { keepalive: true, earned: earnedForPush() }); } catch (e) { /* ignore */ } }
   });
   addEventListener('online', () => { const s = sess; if (s && !s.dead && (s.dirty || !s.synced)) { s.backoff = RETRY_MIN_MS; schedule(s, 0); } });
 } catch (e) { /* no window */ }
@@ -198,14 +273,20 @@ export function recordWin(ev) {
   const lv = Math.min(8, Math.max(1, Math.floor(Number(ev.stake) || 1)));
   let cats = Array.isArray(ev.categories) ? [...new Set(ev.categories.filter((c) => CATEGORIES.includes(c)))] : [];
   if (!cats.length) cats = ['win'];
-  let n = 0;
+  let n = 0, stamped = false;
+  const now = Date.now();
   for (const k of ev.jokers) {
     if (typeof k !== 'string' || !KEY_RE.test(k) || k === '__proto__') continue;
     const cur = wins[k] || {};
     let rose = false;
-    for (const c of cats) if ((cur[c] || 0) < lv) { cur[c] = lv; rose = true; }
+    for (const c of cats) {
+      if ((cur[c] || 0) > lv) continue;   // a higher level stays as it was won (and when)
+      if ((cur[c] || 0) < lv) { cur[c] = lv; rose = true; }
+      (earned[k] || (earned[k] = {}))[c] = now; stamped = true;   // the re-earn rule's time: a revocation before it can't strip it
+    }
     if (rose) { wins[k] = cur; n++; }
   }
+  if (stamped) saveEarned();
   if (n) {
     saveLocal();
     bump();

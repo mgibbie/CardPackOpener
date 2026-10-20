@@ -7,7 +7,8 @@
 //   NODE_PATH=<dir containing fengari> node tools/micatro/extract_mod_data.cjs <modDir> <outFile.js> [spec.json]
 //
 // spec (optional JSON): { "files": {"<group>": ["glob-ish relative paths"...]}, "globals": ["pokermon.family", ...],
-//                         "loc": "localization/en-us.lua", "run_first": ["functions/x.lua", ...] }
+//                         "loc": "localization/en-us.lua", "run_first": ["functions/x.lua", ...],
+//                         "prelude": "<Lua run before run_first, e.g. namespace tables a newer mod version expects>" }
 const fs = require('fs'), path = require('path');
 const { lua, lauxlib, lualib, to_luastring, to_jsstring } = require('fengari');
 
@@ -81,6 +82,7 @@ return enc
 function newState() {
   const L = lauxlib.luaL_newstate(); lualib.luaL_openlibs(L);
   run(L, PRELUDE, 'prelude');
+  if (spec.prelude) { run(L, spec.prelude, 'spec prelude'); lua.lua_pop(L, 1); }
   return L;
 }
 function run(L, code, name) {
