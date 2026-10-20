@@ -138,22 +138,39 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length === 25, 'defs: 25 fro
   ok(G.consumeables.cards.length === 0 && j.ability.extra.used === 1, 'ho-oh: once per round', G.consumeables.cards.map(key));
   nextRound();
   ok(j.ability.extra.used === 0, 'ho-oh: resets on blind select');
+  add('j_poke_bulbasaur'); // something to energize
+  const bird = add('c_poke_bird_energy');
+  ok(act({ type: 'use', id: bird.sort_id }).ok, 'used Bird Energy');
+  ok(G.consumeables.cards.length === 1 && key(G.consumeables.cards[0]) === 'c_poke_double_rainbow_energy' && G.consumeables.cards[0].edition.polychrome,
+    'ho-oh: a used Bird Energy comes back as a Polychrome Double Rainbow Energy (Pokermon 3.9.1)', G.consumeables.cards.map(key));
 }
 
-// ---------------------------------------------------------------- Celebi
+// ---------------------------------------------------------------- Celebi (Pokermon 3.9.1)
 {
   start('CELEBI', {}, { noBlind: true });
   const j = add('j_poke_celebi');
-  ok(G.GAME.celebi_skips === 1, 'celebi: first ante back after 1 skip');
+  ok(!G.GAME.poke_celebi_skips && j.config.center.loc_vars(j.config.center, [], j).vars[0] === 1, 'celebi: first ante back after 1 skip (Pokermon 3.9.1)');
   const ante = G.GAME.round_resets.ante;
   act({ type: 'skip_blind' });
-  ok(G.GAME.round_resets.ante === ante - 1 && G.GAME.celebi_skips === 2 && j.ability.extra.skip_count === 0, 'celebi: skipping winds the ante back', [G.GAME.round_resets.ante, G.GAME.celebi_skips]);
+  ok(G.GAME.round_resets.ante === ante - 1 && G.GAME.poke_celebi_skips === 2 && j.ability.extra.skip_count === 0, 'celebi: skipping winds the ante back (Pokermon 3.9.1)', [G.GAME.round_resets.ante, G.GAME.poke_celebi_skips]);
   if (G.STATE !== STATES.BLIND_SELECT) act({ type: 'skip_booster' }); // the skip's tag opened a pack
   ok(act({ type: 'skip_blind' }).ok, 'skipped the Big Blind');
   ok(G.GAME.round_resets.ante === ante - 1 && j.ability.extra.skip_count === 1, 'celebi: now needs 2 skips', [G.GAME.round_resets.ante, j.ability.extra.skip_count]);
+  if (G.STATE !== STATES.BLIND_SELECT) act({ type: 'skip_booster' });
+  act({ type: 'select_blind' });
+  const r = play(hand(['S_A']));
+  ok(near(r.total.mult, 1 + G.GAME.round * 0.05) && G.GAME.round >= 1, 'celebi: X(1 + 0.05 per round played) Mult (Pokermon 3.9.1)', [r.total, G.GAME.round]);
+}
+{
+  start('CELEBI2', {}, { noBlind: true });
+  const j = add('j_poke_celebi');
+  const bp = add('j_blueprint');
+  G.jokers.remove_card(bp); G.jokers.cards.unshift(bp); bp.area = G.jokers;
+  act({ type: 'skip_blind' });
+  ok(G.GAME.poke_celebi_skips === 2 && j.ability.extra.skip_count === 0, 'celebi: Blueprint does not count the skip twice (Pokermon 3.9.1)', [G.GAME.poke_celebi_skips, j.ability.extra.skip_count]);
 }
 
-// ---------------------------------------------------------------- Treecko / Grovyle / Sceptile
+// ---------------------------------------------------------------- Treecko / Grovyle / Sceptile (Pokermon 3.9.1 starters)
 {
   start('TREE');
   const h = G.hand.config.card_limit;
@@ -161,72 +178,72 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length === 25, 'defs: 25 fro
   ok(G.hand.config.card_limit === h + 1, 'treecko +1 hand size');
   const tg = j.ability.extra.targets;
   ok(tg.length === 3 && tg.every((t) => typeof t.id === 'number') && tg[0].id < tg[1].id, 'treecko: 3 random target ranks', tg);
-  G.GAME.probabilities.normal = 2;
   const d0 = G.GAME.dollars;
-  play(hand(['S_' + CODE[tg[0].id]]));
-  ok(G.GAME.dollars === d0 + 1 && j.ability.extra.money_earned === 1, 'treecko: $1 per scored target rank (1 in 2)', G.GAME.dollars - d0);
+  play(hand(['S_' + CODE[tg[0].id], 'H_' + CODE[tg[0].id]]));
+  ok(G.GAME.dollars === d0 + 2 && j.ability.extra.triggers === 2, 'treecko: always $1 per scored Nature card, counts triggers (Pokermon 3.9.1)', [G.GAME.dollars - d0, j.ability.extra.triggers]);
   clearHand();
   const d1 = G.GAME.dollars;
   play(hand(['S_' + nonTarget(j)]));
   ok(G.GAME.dollars === d1, 'treecko: nothing for other ranks');
-  G.GAME.probabilities.normal = 1;
-  j.ability.extra.money_earned = 16;
+  j.ability.extra.triggers = 16;
   winRound();
-  ok(key(j) === 'j_poke_grovyle' && JSON.stringify(j.ability.extra.targets) === JSON.stringify(tg), 'treecko -> grovyle keeps its targets', [key(j), j.ability.extra.targets]);
+  ok(key(j) === 'j_poke_grovyle' && JSON.stringify(j.ability.extra.targets) === JSON.stringify(tg) && j.ability.extra.triggers === 0, 'treecko -> grovyle after 16 triggers, keeps its targets (Pokermon 3.9.1)', [key(j), j.ability.extra]);
   nextRound();
-  add('j_poke_bulbasaur'); // another Grass: always pays
   const d2 = G.GAME.dollars;
-  play(hand(['S_' + CODE[tg[1].id], 'H_' + CODE[tg[1].id]]));
-  ok(G.GAME.dollars === d2 + 4, 'grovyle: $2 per target with another Grass', G.GAME.dollars - d2);
-  j.ability.extra.money_earned = 32;
+  play(hand(['S_' + CODE[tg[1].id], 'H_' + CODE[tg[1].id], 'D_' + CODE[tg[1].id], 'C_' + CODE[tg[1].id]]));
+  const g = G.GAME.dollars - d2;
+  ok(g >= 4 && g <= 8 && j.ability.extra.triggers === 4, 'grovyle: $1 or $2 per scored Nature card (Pokermon 3.9.1)', [g, j.ability.extra.triggers]);
+  j.ability.extra.triggers = 16;
   winRound();
-  ok(key(j) === 'j_poke_sceptile', 'grovyle -> sceptile', key(j));
+  ok(key(j) === 'j_poke_sceptile', 'grovyle -> sceptile after 16 triggers (Pokermon 3.9.1)', key(j));
   nextRound();
+  add('j_poke_bulbasaur'); // another Grass Joker
+  add('c_poke_grass_energy'); // energy no longer counts
   const d3 = G.GAME.dollars;
   play(hand(['S_' + CODE[tg[2].id]]));
-  ok(G.GAME.dollars === d3 + 3 && j.ability.extra.money_earned === 3, 'sceptile: $2 +1 per other Grass per target', G.GAME.dollars - d3);
+  ok(G.GAME.dollars === d3 + 3 && j.ability.extra.money_earned === 3, 'sceptile: $2 +1 per OTHER Grass Joker (no Energy) per Nature card (Pokermon 3.9.1)', G.GAME.dollars - d3);
   ok(G.hand.config.card_limit === h + 2, 'hand size kept across the line (+bulbasaur)', G.hand.config.card_limit);
 }
 
-// ---------------------------------------------------------------- Torchic / Combusken / Blaziken
+// ---------------------------------------------------------------- Torchic / Combusken / Blaziken (Pokermon 3.9.1 starters)
 {
   start('TORCH');
   const dd = G.GAME.round_resets.discards;
   const j = add('j_poke_torchic');
   ok(G.GAME.round_resets.discards === dd + 1, 'torchic +1 discard');
   const tg = j.ability.extra.targets;
-  const dc = hand(['S_' + CODE[tg[0].id], 'H_' + CODE[tg[1].id], 'S_' + nonTarget(j)]);
-  act({ type: 'highlight', ids: dc.map((c) => c.sort_id) });
-  act({ type: 'discard' });
-  ok(j.ability.extra.cards_discarded === 2, 'torchic: counts discarded target ranks', j.ability.extra.cards_discarded);
-  clearHand();
-  let r = play(hand(['S_A']));
-  ok(r.total.mult === 1 + 2 && j.ability.extra.mult_earned === 2, 'torchic: +1 Mult per target discarded', r.total);
-  j.ability.extra.mult_earned = 60;
+  let r = play(hand(['S_' + CODE[tg[0].id], 'H_' + CODE[tg[0].id]]));
+  ok(r.total.mult === 2 + 5 + 5 && j.ability.extra.triggers === 2, 'torchic: +5 Mult per scored Nature card (Pokermon 3.9.1)', [r.total, j.ability.extra.triggers]);
+  j.ability.extra.triggers = 16;
   winRound();
-  ok(key(j) === 'j_poke_combusken' && j.ability.extra.cards_discarded === 0, 'torchic -> combusken (round count reset)', [key(j), j.ability.extra]);
+  ok(key(j) === 'j_poke_combusken' && j.ability.extra.triggers === 0, 'torchic -> combusken after 16 triggers (Pokermon 3.9.1)', [key(j), j.ability.extra]);
   nextRound();
-  add('j_poke_charmander'); // Fire: +2 per discard
-  const dc2 = hand(['S_' + CODE[tg[2].id]]);
-  act({ type: 'highlight', ids: dc2.map((c) => c.sort_id) });
-  act({ type: 'discard' });
-  clearHand();
-  r = play(hand(['S_A']));
-  ok(j.ability.extra.cards_discarded === 2 && r.total.mult === 1 + 4, 'combusken: +2 per target discarded with another Fire, x2 Mult', [j.ability.extra, r.total]);
-  j.ability.extra.mult_earned = 150;
+  r = play(hand(['S_' + CODE[tg[1].id]]));
+  ok(r.total.mult === 1 + 8, 'combusken: +8 Mult per scored Nature card (Pokermon 3.9.1)', r.total);
+  j.ability.extra.triggers = 16;
   winRound();
   ok(key(j) === 'j_poke_blaziken', 'combusken -> blaziken', key(j));
   nextRound();
-  const dc3 = hand(['S_' + CODE[tg[0].id], 'D_' + CODE[tg[0].id]]);
-  act({ type: 'highlight', ids: dc3.map((c) => c.sort_id) });
-  act({ type: 'discard' });
-  clearHand();
-  r = play(hand(['S_A']));
-  // 2 discarded * (blaziken + charmander = 2 Fire): +1*2*2 = 4 Mult, X(1 + 0.15*2*2) = X1.6
-  ok(near(r.total.mult, (1 + 4) * 1.6), 'blaziken: +Mult and X per discard per Fire/Fighting', r.total);
+  const ch = add('j_poke_charmander'); // a Fire Joker
+  const discardN = (n) => {
+    const dc = hand(Array.from({ length: n }, (_, i) => ['S_', 'H_', 'D_', 'C_', 'S_'][i] + CODE[tg[i % 3].id]));
+    act({ type: 'highlight', ids: dc.map((c) => c.sort_id) });
+    act({ type: 'discard' });
+    clearHand();
+  };
+  discardN(4);
+  ok(j.ability.extra.cards_discarded === 4, 'blaziken: counts discarded Nature cards', j.ability.extra.cards_discarded);
+  r = play(hand(['S_' + nonTarget(j)]));
+  ok(r.total.mult === 1 + ch.ability.extra.mult, 'blaziken: no X Mult below 5 discarded (Pokermon 3.9.1)', r.total);
+  discardN(1);
+  r = play(hand(['S_' + CODE[tg[0].id]]));
+  // +10 (Nature card), then Charmander's +Mult, then X1.5 for Charmander and X1.5 for Blaziken itself (both Fire)
+  ok(near(r.total.mult, (1 + 10 + ch.ability.extra.mult) * 1.5 * 1.5), 'blaziken: each Fire/Fighting Joker X1.5 after 5 Nature discards (Pokermon 3.9.1)', r.total);
+  winRound();
+  ok(j.ability.extra.cards_discarded === 0, 'blaziken: resets at end of round');
 }
 
-// ---------------------------------------------------------------- Mudkip / Marshtomp / Swampert
+// ---------------------------------------------------------------- Mudkip / Marshtomp / Swampert (Pokermon 3.9.1 starters)
 {
   start('MUDK');
   const hh = G.GAME.round_resets.hands;
@@ -234,22 +251,33 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length === 25, 'defs: 25 fro
   ok(G.GAME.round_resets.hands === hh + 1, 'mudkip +1 hand');
   const tg = j.ability.extra.targets;
   const c0 = CODE[tg[0].id];
+  add('j_poke_squirtle'); // another Water: no longer doubles
   let r = play(hand(['S_' + c0]));
   const nom = hand(['C_' + c0])[0].base.nominal; clearHand();
-  ok(r.total.chips === 5 + nom + 20 && j.ability.extra.chips_earned === 20, 'mudkip: +20 chips per scored target', r.total);
-  j.ability.extra.chips_earned = 400;
+  const sq = G.jokers.cards[1].ability.extra.chips;
+  ok(r.total.chips === 5 + nom + 30 + sq && j.ability.extra.triggers === 1, 'mudkip: +30 Chips per scored Nature card (Pokermon 3.9.1)', r.total);
+  j.ability.extra.triggers = 16;
   winRound();
-  ok(key(j) === 'j_poke_marshtomp', 'mudkip -> marshtomp', key(j));
+  ok(key(j) === 'j_poke_marshtomp', 'mudkip -> marshtomp after 16 triggers (Pokermon 3.9.1)', key(j));
   nextRound();
-  add('j_poke_squirtle');
   r = play(hand(['S_' + c0]));
-  ok(r.total.chips === 5 + nom + 60 + G.jokers.cards[1].ability.extra.chips, 'marshtomp: +30 x2 with another Water (+ squirtle)', r.total);
-  j.ability.extra.chips_earned = 960;
+  ok(r.total.chips === 5 + nom + 50 + G.jokers.cards[1].ability.extra.chips, 'marshtomp: +50 Chips per scored Nature card (Pokermon 3.9.1)', r.total);
+  j.ability.extra.triggers = 16;
   winRound();
   ok(key(j) === 'j_poke_swampert', 'marshtomp -> swampert', key(j));
   nextRound();
   r = play(hand(['S_' + c0]));
-  ok(r.total.chips === 5 + nom + 40 + 20 + G.jokers.cards[1].ability.extra.chips && j.ability.extra.chips_earned === 60, 'swampert: +40 +20 per other Water/Earth', r.total);
+  ok(r.total.chips === 5 + nom + 60 + G.jokers.cards[1].ability.extra.chips, 'swampert: +60 Chips per scored Nature card (Pokermon 3.9.1)', r.total);
+  clearHand();
+  // 5 scoring Nature cards (a Flush of the target ranks) -> a Tarot per 2 Water/Earth Jokers (Swampert + Squirtle = 1)
+  for (const c of G.consumeables.cards.slice()) c.remove();
+  play(hand(['H_' + CODE[tg[0].id], 'H_' + CODE[tg[1].id], 'H_' + CODE[tg[2].id], 'H_' + CODE[tg[0].id], 'H_' + CODE[tg[1].id]]));
+  ok(G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Tarot', 'swampert: 5 Nature cards scored -> 1 Tarot per 2 Water Jokers (Pokermon 3.9.1)', G.consumeables.cards.map(key));
+  G.jokers.cards[1].remove();
+  clearHand();
+  for (const c of G.consumeables.cards.slice()) c.remove();
+  play(hand(['H_' + CODE[tg[0].id], 'H_' + CODE[tg[1].id], 'H_' + CODE[tg[2].id], 'H_' + CODE[tg[0].id], 'H_' + CODE[tg[1].id]]));
+  ok(G.consumeables.cards.length === 0, 'swampert: no Tarot with fewer than 2 Water/Earth Jokers (Pokermon 3.9.1)', G.consumeables.cards.map(key));
 }
 
 // ---------------------------------------------------------------- Poochyena / Mightyena

@@ -9,6 +9,7 @@ const key = (c) => c.config.center.key;
 const gone = (c) => !G.playing_cards.includes(c);
 
 const FILE_JOKERS = ['aron', 'lairon', 'aggron', 'numel', 'camerupt', 'mega_camerupt'];
+ok(P_CENTERS.j_poke_numel.config.extra && P_CENTERS.j_poke_mega_camerupt.config.extra.Xmult_mod === 0.5 && P_CENTERS.j_poke_mega_camerupt.config.extra.Xmult_multi === undefined, 'mega camerupt: Xmult_multi renamed Xmult_mod (Pokermon 3.9.1)');
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 6 pokejokers_11 jokers ported');
 ok(STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length === 6, 'defs: 6 from pokejokers_11.lua');
 
@@ -76,7 +77,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_11.lua'].length === 6, 'defs: 6 from 
   ok(r.total.mult === 1 && j.ability.extra.Xmult === 1, 'mega camerupt: nothing without Mult cards', r.total);
   r = play(hand(['S_A', 'H_A'], { center: 'm_mult' }));
   // Pair 32 chips; 2 + 4 + 4 = 10 Mult, then X(1 + 0.5 * 2)
-  ok(r.total.chips === 32 && r.total.mult === 20 && j.ability.extra.Xmult === 2, 'mega camerupt: +X0.5 per Mult card scored', r.total);
+  ok(r.total.chips === 32 && r.total.mult === 20 && j.ability.extra.Xmult === 2, 'mega camerupt: +X0.5 (Xmult_mod) per Mult card scored (Pokermon 3.9.1)', r.total);
   winRound();
   ok(j.ability.extra.Xmult === 1, 'mega camerupt resets at end of round', j.ability.extra.Xmult);
 }

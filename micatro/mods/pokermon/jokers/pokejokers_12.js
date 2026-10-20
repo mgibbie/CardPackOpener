@@ -1,9 +1,10 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_12.lua (Pokédex 331-360: Feebas -> Wynaut), 6 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_12.lua (Pokédex 331-360: Feebas -> Wynaut), 6 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req) comes from data.js. See ../PORTING.md.
+// gen, item_req) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
   G, P_CENTERS, localize, card_eval_status_text, create_card,
-  defineJokers, type_tooltip, detailed, level_evo, item_evo, faint_baby_poke, poke_same_suit, poke_remove_card, add_card,
+  defineJokers, type_tooltip, detailed, level_evo, item_evo, faint_baby_poke, poke_same_suit, add_card,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_12.lua';
@@ -84,19 +85,19 @@ defineJokers({
     calculate(self, card, context) {
       const r = dusk_retrigger(card, context);
       if (r) return r;
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.after && G.GAME.current_round.hands_left === 0 && (context.full_hand.length - context.scoring_hand.length) === 1 && !context.blueprint) {
-          for (const v of context.full_hand) {
-            if (!context.scoring_hand.includes(v)) {
-              poke_remove_card(v, card);
-              G.E_MANAGER.add_event(() => {
-                const _card = add_card({ set: 'Spectral' });
-                card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
-              });
-              break;
-            }
-          }
+      // Pokermon 3.9.1: the single unscored card of the final hand is destroyed in the destroy_card pass (cardarea
+      // 'unscored', so the destroy is seen by remove_playing_cards listeners) and the Spectral needs consumable room.
+      if (context.destroy_card && context.cardarea === 'unscored' && !context.blueprint
+        && G.GAME.current_round.hands_left === 0 && (context.full_hand.length - context.scoring_hand.length) === 1) {
+        if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+          G.E_MANAGER.add_event(() => {
+            const spectral = add_card({ set: 'Spectral' });
+            card_eval_status_text(spectral, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
+            G.GAME.consumeable_buffer = 0;
+          });
         }
+        return { remove: true };
       }
       return item_evo(self, card, context, 'j_poke_dusknoir');
     },

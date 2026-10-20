@@ -13,6 +13,10 @@
 //      account that already has a run, the player is asked instead
 // Screenshots (the cross-device Continue and the two-runs prompt, desktop + phone) go to $SHOTS when set.
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout (MICATRO_MAIN).
+// The moves come from a Pokermon fixture recorded before the 3.9.1 joker reworks of pokejokers_09-17 (batch 7, 3.9.1+r4):
+// 3.9.1 keeps the Rotom forms (and Lucario without an editioned card) out of the pools, so the fixture's opening Poke Ball
+// rolls another Basic. The page is served those 9 files as of the batch-6 merge (git show e295b8b7), like
+// micatro_resume_win_badges_test.mjs.
 //   node overworld/tests/micatro_runsync_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -20,6 +24,7 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
+import { execFileSync } from 'child_process';
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -38,6 +43,13 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(150); } return false; }
 
+// (the fixture's rules: pokejokers_09-17 before their 3.9.1 reworks, from the batch-6 merge commit — see the header)
+const PRE_B7 = 'e295b8b7c7aa3fb38b3d65658a54bf92cb125ac8';
+const JOKERS_PRE_B7 = {};
+for (let i = 9; i <= 17; i++) {
+	const p = `micatro/mods/pokermon/jokers/pokejokers_${String(i).padStart(2, '0')}.js`;
+	JOKERS_PRE_B7['/' + p] = execFileSync('git', ['show', `${PRE_B7}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+}
 // ---------- the real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');
@@ -90,6 +102,7 @@ const server = http.createServer(async (req, res) => {
 		return;
 	}
 	const f = u.endsWith('/') ? u + 'index.html' : u;
+	if (JOKERS_PRE_B7[f]) { res.writeHead(200, { 'content-type': 'text/javascript' }); res.end(JOKERS_PRE_B7[f]); return; }
 	const send = (d) => { res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); };
 	const nf = () => { res.writeHead(404); res.end('nf'); };
 	fs.readFile(path.join(ROOT, f), (e, d) => {

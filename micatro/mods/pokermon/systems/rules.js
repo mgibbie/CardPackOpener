@@ -16,8 +16,7 @@
  *                     sell value at least $1, Unown sells for $0
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
  *                     random Tera type on jokers (Luminous deck: G.GAME.modifiers.apply_type)
- *   evaluate_round    Jirachi (banker) doubles the cash-out; Double Rainbow Energy's interest
- *                     lockout ends (reset_no_interest)
+ *   evaluate_round    Double Rainbow Energy's interest lockout ends (reset_no_interest)
  *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank
  *   pack_size         extra_pocket_picks (+N cards in every pack)
  *   can_reserve       Pocket packs / G.GAME.poke_save_all / Megastone: pack cards can be saved
@@ -141,17 +140,11 @@ export function create_card(card, _type) {
 }
 
 // --------------------------------------------------------------- cash-out
-export function evaluate_round(rows) {
-  const out = [];
-  let dollars = 0;
-  for (const r of rows) dollars += r.dollars || 0;
-  const jirachis = find_joker('jirachi_banker');
-  jirachis.forEach((j, i) => {
-    out.push({ name: 'joker_jirachi' + (i + 1), dollars, bonus: true, card: j.sort_id, center: j.config.center.key });
-    dollars = dollars + dollars;
-  });
+// (Jirachi Banker's cash-out: Pokermon 3.9.1 dropped the lovely "Jirachi Double Payout" patch; the joker's own
+// modify_final_cashout context now multiplies the payout, jokers/pokejokers_13.js.)
+export function evaluate_round() {
   if (G.GAME.modifiers.reset_no_interest) G.GAME.modifiers.no_interest = undefined;
-  return out.length ? out : undefined;
+  return undefined;
 }
 
 // --------------------------------------------------------- per-round resets
@@ -215,6 +208,12 @@ export function calculate(context) {
   // Pokermon 3.9.1 (pokermon.lua SMODS.current_mod.calculate): the Poliwag line's suit cycles after every scored hand,
   // with or without a Poli joker (the engine passes `after` here: js/engine/smods.js mod_calculate).
   if (context.after) poke_change_poli_suit();
+  // Leafeon (3.9.1): count Lucky cards that successfully triggered this round (run-wide, Leafeon or not); reset at the
+  // end of the round. (The engine passes `individual` / `end_of_round` here too: smods.js MOD_VANILLA_CONTEXTS.)
+  if (context.individual && context.cardarea === G.play && context.other_card && context.other_card.lucky_trigger) {
+    G.GAME.poke_lucky_triggers = (G.GAME.poke_lucky_triggers || 0) + 1;
+  }
+  if (context.end_of_round && context.main_eval) G.GAME.poke_lucky_triggers = 0;
   if (context.post_discard) {
     // The Lua bumps the counter where discards_used goes up and zeroes it when the ante changes.
     if (G.GAME.poke_ante_of_discards !== G.GAME.round_resets.ante) { G.GAME.poke_ante_discards_used = 0; G.GAME.poke_ante_of_discards = G.GAME.round_resets.ante; }

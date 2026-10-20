@@ -10,13 +10,16 @@
 //   5. SMODS.poll_object (weights, modify_weights, filter, attributes, union) and the object_weights routes;
 //   6. the poke_energy / poke_item set aliases;
 //   7. the mod-level calculate on a vanilla context (`after`: SMODS.current_mod.calculate; Pokermon 3.9.1's Poli suit).
+//   8. batch 7: the mod-level calculate on `individual` / `end_of_round` (Pokermon 3.9.1's Leafeon counter); the
+//      destroy_card pass over UNSCORED played cards for an opted-in mod's jokers without the 'unscored' feature
+//      (Pokermon 3.9.1's Dusclops); SMODS.add_booster_to_shop (Jirachi Booster).
 //   node micatro/tests/mods/smods_seams_test.mjs
 import { T, hand, clearHand, winRound, G, P_CENTERS, P_CARDS, act, STATES } from './poke_helpers.mjs';
 import {
   P_CENTER_POOLS, P_BLINDS, P_TAGS, Card, add_joker, create_card, ease_dollars, ease_ante, localize, poll_edition,
   get_next_tag_key, get_new_boss, get_pack, get_next_voucher_key,
 } from '../../js/engine/core.js';
-import { newRun } from '../../js/engine/run.js';
+import { newRun, add_booster_to_shop } from '../../js/engine/run.js';
 import { registerMod, CONSUMABLE_TYPES, ATTRIBUTES, is_set, resolve_set } from '../../js/mods/registry.js';
 import {
   wanted, SEAM_CONTEXTS, scale_card, reset_card, poll_object, get_attribute_pool, has_attribute, card_has_attribute,
@@ -79,6 +82,7 @@ registerMod({
             LOG.push(['poker_hand_changed', context.scoring_name, context.old_level, context.new_level, context.card && context.card.ability.set]);
             if (ANS.natu && context.card && context.card.ability && context.card.ability.set === 'Planet') return { level_up: true, level_up_hand: context.scoring_name };
           }
+          if (context.destroy_card && context.cardarea === 'unscored') { LOG.push(['destroy_unscored', context.destroy_card.base.value]); if (ANS.destroy_unscored) return { remove: true }; }
           if (context.scaling_card && ANS.scaling && context.card !== card) return ANS.scaling(context);
           if (context.resetting_card && ANS.resetting) return ANS.resetting(context);
           return undefined;
@@ -101,6 +105,8 @@ registerMod({
       if (context.modify_weights && ANS.zero_weight) { const w = context.pool[ANS.zero_weight]; if (w) w.weight = 0; }
       if (context.money_altered) LOG.push(['hook:money_altered', context.amount]);
       if (context.after) { LOG.push(['hook:after', context.scoring_name, G.play.cards.length]); if (ANS.after_func) return { func() { LOG.push(['hook:after_func']); } }; }
+      if (context.individual && context.cardarea === G.play) LOG.push(['hook:individual', context.other_card.base.value, !!context.other_card.lucky_trigger]);
+      if (context.end_of_round && context.main_eval) LOG.push(['hook:end_of_round', !!context.beat_boss, context.game_over]);
       return undefined;
     },
   },
@@ -112,11 +118,12 @@ registerMod({
     centers: [{ key: 'j_so_deaf', set: 'Joker', name: 'Seam Deaf', rarity: 1, cost: 1, pos: { x: 0, y: 0 }, config: {},
       calculate(self, card, context) {
         if (context.money_altered || context.setting_ability || context.drawing_cards || context.stay_flipped) LOG.push(['DEAF', Object.keys(context).join()]);
+        if (context.cardarea === 'unscored') { LOG.push(['DEAF-UNSCORED']); return { remove: true }; }
       } }],
     blinds: [{ key: 'bl_so_boss', name: 'The Deaf', dollars: 5, mult: 2, vars: [], debuff: {}, boss: { min: 1, max: 10 }, pos: { x: 0, y: 0 },
       calculate(self, blind, context) { LOG.push(['DEAF-BLIND', Object.keys(context).join()]); } }],
   },
-  hooks: { calculate(context) { if (context.after) LOG.push(['DEAF-HOOK', 'after']); return undefined; } },
+  hooks: { calculate(context) { if (context.after || context.individual || context.end_of_round) LOG.push(['DEAF-HOOK', 'after']); return undefined; } },
 });
 
 /** A fresh run with these mods, blind selected (the Small slot may hold a test blind), empty hand. */
@@ -151,8 +158,8 @@ await loadMods(AVAILABLE.map((m) => m.id));
   ok(SEAM_CONTEXTS.every((n) => !wanted(n)), 'vanilla run: no seam context is wanted');
   newRun({ seed: 'SEAM_ALL', back: 'b_red', mods: AVAILABLE.map((m) => m.id) });
   // (3.2.1-era content reads none; Bunco's own stay_flipped is not opted in. Pokermon's 3.9.1 reworks read theirs: batch 6
-  // Golduck setting_ability, Natu / Xatu poker_hand_changed.)
-  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,poker_hand_changed', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
+  // Golduck setting_ability, Natu / Xatu poker_hand_changed; batch 7 Jirachi Banker modify_final_cashout.)
+  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,modify_final_cashout,poker_hand_changed', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
   fresh('SEAM_GATE');
   ok(wanted('money_altered') && wanted('setting_ability') && wanted('modify_weights') && wanted('resetting_card') && !wanted('create_shop_card'), 'seamtest on: exactly the contexts its code reads are wanted');
   fresh('SEAM_GATE2', ['seamtest', 'seamoff']);
@@ -493,6 +500,52 @@ registerMod({
   act({ type: 'highlight', ids: [b.sort_id] });
   act({ type: 'discard' }); flush();
   ok(seen('hook:after').length === 0, 'after: not on a discard');
+}
+
+// ================================================================== 8. batch 7: individual / end_of_round at mod level, unscored destroys, add_booster_to_shop
+{
+  fresh('SEAM_IND', ['seamtest', 'seamoff']);
+  G.GAME.blind.chips = 1e15; // (no early win)
+  const cards = hand(['S_A', 'H_A', 'D_7']);
+  act({ type: 'highlight', ids: cards.map((c) => c.sort_id) });
+  act({ type: 'play' }); flush();
+  ok(seen('hook:individual').map((e) => e[1]).join() === 'Ace,Ace', 'individual: the hooks.calculate of an opted-in mod hears each SCORED card (once each)', seen('hook:individual'));
+  ok(seen('DEAF-HOOK').length === 0, 'individual: a mod that did not opt in never gets it at mod level');
+  clearLog();
+  G.GAME.probabilities.normal = 1000;
+  const [l] = hand(['S_K'], { center: 'm_lucky' });
+  act({ type: 'highlight', ids: [l.sort_id] });
+  act({ type: 'play' }); flush();
+  G.GAME.probabilities.normal = 1;
+  ok(seen('hook:individual').length === 1 && seen('hook:individual')[0][2] === true, 'individual: the card\'s lucky_trigger is still set when the mod hears it (Pokermon 3.9.1 Leafeon)', seen('hook:individual'));
+  clearLog();
+  winRound();
+  ok(seen('hook:end_of_round').length === 1 && seen('hook:end_of_round')[0][2] === false, 'end_of_round: heard once at mod level (main_eval, not game over)', seen('hook:end_of_round'));
+}
+{
+  fresh('SEAM_UNSC', ['seamtest', 'seamoff']);
+  listener();
+  add_joker('j_so_deaf');
+  ANS.destroy_unscored = true;
+  const [a, b, k] = hand(['S_A', 'H_A', 'D_7']);
+  const n0 = G.playing_cards.length;
+  act({ type: 'highlight', ids: [a.sort_id, b.sort_id, k.sort_id] });
+  act({ type: 'play' }); flush();
+  ok(seen('destroy_unscored').map((e) => e[1]).join() === '7' && !G.playing_cards.includes(k) && G.playing_cards.length === n0 - 1,
+    'unscored: an opted-in mod\'s joker is asked about the unscored card and may destroy it (no \'unscored\' feature)', [seen('destroy_unscored'), G.playing_cards.length - n0]);
+  ok(seen('DEAF-UNSCORED').length === 0, 'unscored: a joker of a mod that did not opt in is not asked');
+}
+{
+  fresh('SEAM_ADDB', ['seamtest']);
+  winRound();
+  act({ type: 'cash_out' });
+  const n0 = G.shop_booster.cards.length;
+  const c = add_booster_to_shop();
+  const k = add_booster_to_shop('p_arcana_normal_1');
+  ok(G.shop_booster.cards.length === n0 + 2 && c.ability.set === 'Booster' && k.config.center.key === 'p_arcana_normal_1' && k.ability.booster_pos === n0 + 2,
+    'add_booster_to_shop: a random shop pack, or the given one, at the end of the shop row', G.shop_booster.cards.map((x) => x.config.center.key));
+  G.GAME.dollars = 100;
+  ok(act({ type: 'buy', id: k.sort_id }).ok, '... and it can be bought / opened');
 }
 
 done();

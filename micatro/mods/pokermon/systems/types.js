@@ -57,12 +57,15 @@ export function type_sticker_applied(card) {
 
 const extraTable = (card) => card && card.ability && card.ability.extra && typeof card.ability.extra === 'object' ? card.ability.extra : null;
 
-/** Jokers of a type (by ptype or Tera sticker). */
-export function find_pokemon_type(target_type) {
+/** Jokers of a type (by ptype or Tera sticker). 3.9.1 pokermon.find_pokemon_type(target_type, exclude_card, exclude_name):
+ *  the optional args leave out one card / every joker of one name (3.9.1's "other <type> Jokers"). */
+export function find_pokemon_type(target_type, exclude_card, exclude_name) {
   const found = [];
   if (G.jokers && G.jokers.cards) {
     for (const v of G.jokers.cards) {
       const ex = extraTable(v);
+      if (exclude_card && v === exclude_card) continue;
+      if (exclude_name && v.ability && v.ability.name === exclude_name) continue;
       if (v.ability && ((ex && target_type === ex.ptype) || wildcard_type(v) || v.ability[String(target_type).toLowerCase() + '_sticker'])) found.push(v);
     }
   }

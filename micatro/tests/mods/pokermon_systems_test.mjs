@@ -409,9 +409,10 @@ ok(!avail('Item', null, 'c_poke_pokeball'), 'pokeballs option off removes the ba
   add('j_poke_jirachi_banker');
   winRound();
   const rows = G.GAME.round_eval.rows;
-  const jr = rows.find((r) => r.name === 'joker_jirachi1');
+  // (Pokermon 3.9.1: the joker's own modify_final_cashout, X3, replaced the "Jirachi Double Payout" lovely patch)
+  const jr = rows.find((r) => r.name === 'cashout_mod1');
   const before = rows.filter((r) => r !== jr).reduce((n, r) => n + (r.dollars || 0), 0);
-  ok(jr && jr.dollars === before && G.GAME.round_eval.total === before * 2, 'Jirachi doubles the cash-out', { jr, total: G.GAME.round_eval.total, before });
+  ok(jr && jr.dollars === before * 2 && G.GAME.round_eval.total === before * 3 && !rows.some((r) => r.name === 'joker_jirachi1'), 'Jirachi Banker triples the cash-out (Pokermon 3.9.1)', { jr, total: G.GAME.round_eval.total, before });
   G.GAME.modifiers.no_interest = true; G.GAME.modifiers.reset_no_interest = true;
   act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand(); winRound();
   ok(!G.GAME.modifiers.no_interest, 'Double Rainbow interest lockout lifts after a cash-out');

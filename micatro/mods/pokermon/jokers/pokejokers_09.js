@@ -1,12 +1,14 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_09.lua (Pokédex 241-264: Miltank -> Linoone), 25 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_09.lua (Pokédex 241-264: Miltank -> Linoone), 25 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req, megas) comes from data.js. See ../PORTING.md.
+// gen, item_req, megas) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
-  G, P_CENTERS, localize, card_eval_status_text, pseudoseed, pseudorandom_element, pseudoshuffle, ease_discard,
+  G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, ease_discard,
   ease_hands_played, ease_ante, create_card, copy_card, juice_card_until, playing_card_joker_effects, delay,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, ease_poke_dollars, find_pokemon_type,
   find_other_poke_or_energy_type, get_probability_vars, pseudorandom_probability, poke_get_rank, poke_total_chips,
   change_base, juice_flip_table, generate_pickup_item_key, get_poke_target_card_ranks, add_target_cards_to_vars,
+  is_type, add_card,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_09.lua';
@@ -36,83 +38,58 @@ const hands = {
   },
   remove_from_deck(self, card) {
     G.GAME.round_resets.hands = G.GAME.round_resets.hands - card.ability.extra.hands;
+    // 3.9.1 pokermon.ease_hands_played(-hands): the same clamp (+ G.poke_hands_buffer, which nothing here sets).
     const to_decrease = Math.min(G.GAME.current_round.hands_left - 1, card.ability.extra.hands);
     if (to_decrease > 0) ease_hands_played(-to_decrease);
   },
 };
 
-/** Treecko / Grovyle: $ per scored target rank (a coin flip, or always with another Grass). */
-function treecko_calc(self, card, context, prob_seed, key, evo_key) {
-  if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
-    let earn = false;
-    if (find_other_poke_or_energy_type(card, 'Grass') > 0) earn = true;
-    if (pseudorandom_probability(card, prob_seed, card.ability.extra.num, card.ability.extra.dem, key) || earn) {
-      for (const t of card.ability.extra.targets) {
-        if (context.other_card.get_id() === t.id) {
-          const earned = ease_poke_dollars(card, 'grovyle', card.ability.extra.money_mod, true);
-          if (!context.blueprint) card.ability.extra.money_earned = card.ability.extra.money_earned + earned;
-          return { dollars: earned, card };
-        }
-      }
-    }
-  }
-  return scaling_evo(self, card, context, evo_key, card.ability.extra.money_earned, self.config.evo_rqmt);
+// Pokermon 3.9.1 (3.7.0 Gen-3 starter rework): every Basic / Stage 1 starter triggers on scored Nature cards and
+// evolves after 16 triggers (Blueprint's triggers don't count); no more "other Grass / Fire / Water card" boosts.
+const is_scored_nature = (card, context) => context.individual && !context.end_of_round && context.cardarea === G.play
+  && !context.other_card.debuff && is_target(card, context.other_card);
+const count_trigger = (card, context) => { if (!context.blueprint) card.ability.extra.triggers = card.ability.extra.triggers + 1; };
+/** $ paid during scoring: G.GAME.dollar_buffer holds it until the event queue runs (Raichu-style readers see it). */
+function buffered_dollars(card, seed, amount) {
+  G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + amount;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  return ease_poke_dollars(card, seed, amount, true);
 }
-function treecko_vars(self, card, key) {
-  const money_left = Math.max(0, self.config.evo_rqmt - card.ability.extra.money_earned);
-  const [num, dem] = get_probability_vars(card, card.ability.extra.num, card.ability.extra.dem, key);
-  const card_vars = [card.ability.extra.money_mod, money_left, card.ability.extra.h_size, num, dem];
+const starter_vars = (self, card, mod, extra) => {
+  const triggers_left = Math.max(0, self.config.evo_rqmt - card.ability.extra.triggers);
+  const card_vars = [mod, triggers_left, ...extra];
   add_target_cards_to_vars(card_vars, card.ability.extra.targets);
   return { vars: card_vars };
+};
+
+/** Treecko: $money_mod per scored Nature card. Grovyle: $money_mod or $money_mod + 1 (a coin flip, 'grovyle'). */
+function treecko_calc(self, card, context, evo_key, coin) {
+  if (is_scored_nature(card, context)) {
+    const more = coin ? (pseudorandom('grovyle') < 0.50 ? 0 : 1) : 0;
+    // (Lua seeds both with "grovyle".)
+    const earned = buffered_dollars(card, 'grovyle', card.ability.extra.money_mod + more);
+    count_trigger(card, context);
+    return { dollars: earned, card };
+  }
+  return scaling_evo(self, card, context, evo_key, card.ability.extra.triggers, self.config.evo_rqmt);
 }
 
-/** Torchic / Combusken: +mult per discarded target rank this round (x2 with Fire/Fighting). */
-function torchic_calc(self, card, context, evo_key, msg_plus) {
-  if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-    const mult = card.ability.extra.mult * card.ability.extra.cards_discarded;
-    card.ability.extra.mult_earned = card.ability.extra.mult_earned + mult;
-    return { message: a_mult(mult), colour: 'MULT', mult_mod: mult };
+/** Torchic / Combusken: +mult_mod Mult per scored Nature card. */
+function torchic_calc(self, card, context, evo_key) {
+  if (is_scored_nature(card, context)) {
+    count_trigger(card, context);
+    return { mult: card.ability.extra.mult_mod, card };
   }
-  if (context.discard && !context.other_card.debuff && !context.blueprint) {
-    if (is_target(card, context.other_card)) {
-      let discard_plus = 1;
-      if (find_other_poke_or_energy_type(card, 'Fire') > 0 || find_other_poke_or_energy_type(card, 'Fighting') > 0) discard_plus = 2;
-      card.ability.extra.cards_discarded = card.ability.extra.cards_discarded + discard_plus;
-      return { message: a_mult(msg_plus ? discard_plus : card.ability.extra.mult), colour: 'RED', delay: 0.45, card };
-    }
-  }
-  if (context.end_of_round && !context.individual && !context.repetition) {
-    card.ability.extra.cards_discarded = 0;
-    card.juice_up();
-    card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_reset') });
-  }
-  return scaling_evo(self, card, context, evo_key, card.ability.extra.mult_earned, self.config.evo_rqmt);
+  return scaling_evo(self, card, context, evo_key, card.ability.extra.triggers, self.config.evo_rqmt);
 }
-function torchic_vars(self, card) {
-  const mult_left = Math.max(0, self.config.evo_rqmt - card.ability.extra.mult_earned);
-  const card_vars = [card.ability.extra.mult, mult_left, card.ability.extra.d_size, card.ability.extra.mult * card.ability.extra.cards_discarded];
-  add_target_cards_to_vars(card_vars, card.ability.extra.targets);
-  return { vars: card_vars };
-}
-const blaze_count = (card) => find_other_poke_or_energy_type(card, 'Fire', true) + find_other_poke_or_energy_type(card, 'Fighting', true);
 
-/** Mudkip / Marshtomp: +chips per scored target rank (x2 with Water/Earth). */
+/** Mudkip / Marshtomp: +chip_mod Chips per scored Nature card. */
 function mudkip_calc(self, card, context, evo_key) {
-  if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
-    let chips = card.ability.extra.chips;
-    if (find_other_poke_or_energy_type(card, 'Water') > 0 || find_other_poke_or_energy_type(card, 'Earth') > 0) chips = chips * 2;
-    if (is_target(card, context.other_card)) {
-      card.ability.extra.chips_earned = card.ability.extra.chips_earned + chips;
-      return { chips, card };
-    }
+  if (is_scored_nature(card, context)) {
+    count_trigger(card, context);
+    return { chips: card.ability.extra.chip_mod, card };
   }
-  return scaling_evo(self, card, context, evo_key, card.ability.extra.chips_earned, self.config.evo_rqmt);
-}
-function mudkip_vars(self, card) {
-  const chips_left = Math.max(0, self.config.evo_rqmt - card.ability.extra.chips_earned);
-  const card_vars = [card.ability.extra.chips, chips_left, card.ability.extra.hands];
-  add_target_cards_to_vars(card_vars, card.ability.extra.targets);
-  return { vars: card_vars };
+  return scaling_evo(self, card, context, evo_key, card.ability.extra.triggers, self.config.evo_rqmt);
 }
 
 /** Larvitar / Pupitar: scored cards of a Full House gain permanent chips. */
@@ -369,11 +346,17 @@ defineJokers({
         if (!context.blueprint) card.ability.extra.used = card.ability.extra.used + 1;
         if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
           const used = context.consumeable;
+          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
           G.E_MANAGER.add_event(() => {
-            const copy = copy_card(used);
+            // Pokermon 3.9.1: a used Bird Energy comes back as a Double Rainbow Energy. (Lua tests
+            // consumeable.label == "bird_energy"; the intent is the Bird Energy card.)
+            const copy = used.config.center.key === 'c_poke_bird_energy'
+              ? create_card('Spectral', G.consumeables, null, null, null, null, 'c_poke_double_rainbow_energy')
+              : copy_card(used);
             copy.set_edition({ polychrome: true });
             copy.add_to_deck();
             G.consumeables.emplace(copy);
+            G.GAME.consumeable_buffer = 0;
           });
           card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_duplicated_ex') });
         }
@@ -389,47 +372,45 @@ defineJokers({
   celebi: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      const skips = (G.GAME && G.GAME.celebi_skips) || 1;
-      return { vars: [skips, card.ability.extra.reward, skips - card.ability.extra.skip_count] };
+      const skips = (G.GAME && G.GAME.poke_celebi_skips) || 1;
+      const round = (G.GAME && G.GAME.round) || 0;
+      return { vars: [skips, card.ability.extra.reward, skips - card.ability.extra.skip_count, card.ability.extra.Xmult_mod, 1 + (round * card.ability.extra.Xmult_mod)] };
     },
     calculate(self, card, context) {
-      if (context.skip_blind) {
+      // Pokermon 3.9.1: -1 Ante every N skips (N grows by 1 each time, run-wide G.GAME.poke_celebi_skips; Blueprint doesn't
+      // count skips) and X(1 + rounds played x Xmult_mod) Mult.
+      if (context.skip_blind && !context.blueprint) {
         card.juice_up(0.1);
         card.ability.extra.skip_count = card.ability.extra.skip_count + 1;
-        if (card.ability.extra.skip_count >= G.GAME.celebi_skips) {
+        if (card.ability.extra.skip_count >= (G.GAME.poke_celebi_skips || 1)) {
           ease_ante(-card.ability.extra.reward);
           G.GAME.round_resets.blind_ante = G.GAME.round_resets.blind_ante || G.GAME.round_resets.ante;
           G.GAME.round_resets.blind_ante = G.GAME.round_resets.blind_ante - card.ability.extra.reward;
-          G.E_MANAGER.add_event(() => {
-            if (!G.GAME.celebi_triggered) {
-              G.GAME.celebi_skips = G.GAME.celebi_skips + 1;
-              G.GAME.celebi_triggered = true;
-            }
-            card.ability.extra.skip_count = 0;
-          });
-        } else {
-          G.GAME.celebi_triggered = false;
+          G.GAME.poke_celebi_skips = (G.GAME.poke_celebi_skips || 1) + 1;
+          card.ability.extra.skip_count = 0;
         }
       }
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        const Xmult = 1 + (G.GAME.round * card.ability.extra.Xmult_mod);
+        return { message: a_xmult(Xmult), colour: 'XMULT', Xmult_mod: Xmult };
+      }
       return undefined;
-    },
-    set_ability(self, card) {
-      if (!G.GAME) return;
-      G.GAME.celebi_skips = G.GAME.celebi_skips || 1;
-      G.GAME.celebi_triggered = false;
     },
   },
   // Treecko 252
   treecko: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return treecko_vars(self, card, 'treecko'); },
-    calculate(self, card, context) { return treecko_calc(self, card, context, 'treecko', 'treecko', 'j_poke_grovyle'); },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return starter_vars(self, card, card.ability.extra.money_mod, [card.ability.extra.h_size]); },
+    calculate(self, card, context) { return treecko_calc(self, card, context, 'j_poke_grovyle', false); },
     ...hand_size,
     set_ability: nature_targets('treecko'),
   },
   // Grovyle 253
   grovyle: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return treecko_vars(self, card, 'grovyle'); },
-    calculate(self, card, context) { return treecko_calc(self, card, context, 'seed', 'grovyle', 'j_poke_sceptile'); },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); nature_tip(info_queue);
+      return starter_vars(self, card, card.ability.extra.money_mod, [card.ability.extra.h_size, card.ability.extra.money_mod + 1]);
+    },
+    calculate(self, card, context) { return treecko_calc(self, card, context, 'j_poke_sceptile', true); },
     ...hand_size,
     set_ability: nature_targets('grovyle'),
   },
@@ -439,17 +420,16 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       nature_tip(info_queue);
       const ex = center.ability.extra;
-      const card_vars = [ex.money_mod, ex.money_earned, ex.h_size, ex.money_mod + (find_other_poke_or_energy_type(center, 'Grass') * ex.money_increase), ex.money_increase];
+      const card_vars = [ex.money_mod, ex.money_earned, ex.h_size, ex.money_mod + (find_pokemon_type('Grass', center).length * ex.money_increase), ex.money_increase];
       add_target_cards_to_vars(card_vars, ex.targets);
       return { vars: card_vars };
     },
     calculate(self, card, context) {
-      if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
-        if (is_target(card, context.other_card)) {
-          const earned = ease_poke_dollars(card, 'sceptile', card.ability.extra.money_mod + (find_other_poke_or_energy_type(card, 'Grass') * card.ability.extra.money_increase), true);
-          card.ability.extra.money_earned = card.ability.extra.money_earned + earned;
-          return { dollars: earned, card };
-        }
+      // Pokermon 3.9.1: + money_increase per OTHER Grass Joker (energy cards no longer count).
+      if (is_scored_nature(card, context)) {
+        const earned = buffered_dollars(card, 'sceptile', card.ability.extra.money_mod + (find_pokemon_type('Grass', card).length * card.ability.extra.money_increase));
+        card.ability.extra.money_earned = card.ability.extra.money_earned + earned;
+        return { dollars: earned, card };
       }
       return undefined;
     },
@@ -458,16 +438,15 @@ defineJokers({
   },
   // Torchic 255
   torchic: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return torchic_vars(self, card); },
-    calculate(self, card, context) { return torchic_calc(self, card, context, 'j_poke_combusken', true); },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return starter_vars(self, card, card.ability.extra.mult_mod, [card.ability.extra.d_size]); },
+    calculate(self, card, context) { return torchic_calc(self, card, context, 'j_poke_combusken'); },
     ...discards,
     set_ability: nature_targets('torchic'),
   },
   // Combusken 256
   combusken: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return torchic_vars(self, card); },
-    // (Lua: Combusken's discard popup shows its per-card mult, not the +1/+2 it actually adds.)
-    calculate(self, card, context) { return torchic_calc(self, card, context, 'j_poke_blaziken', false); },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return starter_vars(self, card, card.ability.extra.mult_mod, [card.ability.extra.d_size]); },
+    calculate(self, card, context) { return torchic_calc(self, card, context, 'j_poke_blaziken'); },
     ...discards,
     set_ability: nature_targets('combusken'),
   },
@@ -477,25 +456,26 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       nature_tip(info_queue);
       const ex = center.ability.extra;
-      const n = blaze_count(center);
-      const mult = ex.mult * ex.cards_discarded * n;
-      const Xmult = 1 + ex.Xmult * ex.cards_discarded * n;
-      const card_vars = [ex.Xmult, ex.d_size, Xmult, ex.mult, mult];
+      const card_vars = [ex.mult_mod, ex.Xmult_multi, ex.d_size, ex.discard_target, Math.max(0, ex.discard_target - ex.cards_discarded)];
       add_target_cards_to_vars(card_vars, ex.targets);
       return { vars: card_vars };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-        const n = blaze_count(card);
-        const mult = card.ability.extra.mult * card.ability.extra.cards_discarded * n;
-        const Xmult = 1 + card.ability.extra.Xmult * card.ability.extra.cards_discarded * n;
-        return { message: localize('poke_blazekick_ex'), colour: 'MULT', Xmult_mod: Xmult, mult_mod: mult };
-      }
+      // Pokermon 3.9.1: scored Nature cards +mult_mod Mult; after discard_target Nature cards discarded this round,
+      // each Fire or Fighting Joker gives X Xmult_multi.
+      if (is_scored_nature(card, context)) return { mult: card.ability.extra.mult_mod, card };
       if (context.discard && !context.other_card.debuff && !context.blueprint) {
         if (is_target(card, context.other_card)) {
           card.ability.extra.cards_discarded = card.ability.extra.cards_discarded + 1;
-          return { message: localize('k_upgrade_ex'), colour: 'RED', delay: 0.45, card };
+          if (card.ability.extra.cards_discarded >= card.ability.extra.discard_target && !card.ability.extra.juiced) {
+            card.ability.extra.juiced = true;
+            juice_card_until(card, (c) => c.ability.extra.cards_discarded >= c.ability.extra.discard_target && !G.RESET_JIGGLES, true);
+          }
         }
+      }
+      if (context.other_joker && (is_type(context.other_joker, 'Fire') || is_type(context.other_joker, 'Fighting'))
+        && card.ability.extra.cards_discarded >= card.ability.extra.discard_target) {
+        return { message: a_xmult(card.ability.extra.Xmult_multi), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult_multi };
       }
       if (context.end_of_round && !context.individual && !context.repetition) {
         card.ability.extra.cards_discarded = 0;
@@ -509,14 +489,14 @@ defineJokers({
   },
   // Mudkip 258
   mudkip: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return mudkip_vars(self, card); },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return starter_vars(self, card, card.ability.extra.chip_mod, [card.ability.extra.hands]); },
     calculate(self, card, context) { return mudkip_calc(self, card, context, 'j_poke_marshtomp'); },
     ...hands,
     set_ability: nature_targets('mudkip'),
   },
   // Marshtomp 259
   marshtomp: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return mudkip_vars(self, card); },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); nature_tip(info_queue); return starter_vars(self, card, card.ability.extra.chip_mod, [card.ability.extra.hands]); },
     calculate(self, card, context) { return mudkip_calc(self, card, context, 'j_poke_swampert'); },
     ...hands,
     set_ability: nature_targets('marshtomp'),
@@ -527,17 +507,37 @@ defineJokers({
       type_tooltip(self, info_queue, center);
       nature_tip(info_queue);
       const ex = center.ability.extra;
-      const card_vars = [ex.chips, ex.chips_earned, ex.hands, ex.chips + ex.chip_mod * (find_other_poke_or_energy_type(center, 'Water') + find_other_poke_or_energy_type(center, 'Earth')), ex.chip_mod];
+      const card_vars = [ex.chip_mod, ex.hands, ex.nature_target];
       add_target_cards_to_vars(card_vars, ex.targets);
       return { vars: card_vars };
     },
     calculate(self, card, context) {
-      if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
-        // (Lua tests the counts for truthiness — always true, 0 included — so this always applies.)
-        const chips = card.ability.extra.chips + card.ability.extra.chip_mod * (find_other_poke_or_energy_type(card, 'Water') + find_other_poke_or_energy_type(card, 'Earth'));
-        if (is_target(card, context.other_card)) {
-          card.ability.extra.chips_earned = card.ability.extra.chips_earned + chips;
-          return { chips, card };
+      if (is_scored_nature(card, context)) return { chips: card.ability.extra.chip_mod, card };
+      // Pokermon 3.9.1: a hand with 5 scoring Nature cards creates a Tarot per 2 Water / Earth Jokers (itself included).
+      if (context.joker_main) {
+        let nature_count = 0;
+        for (const c of context.scoring_hand) if (is_target(card, c)) nature_count = nature_count + 1;
+        // (Lua compares with a literal 5, not nature_target.)
+        if (nature_count >= 5) {
+          const create_number = Math.floor((find_pokemon_type('Water').length + find_pokemon_type('Earth').length) / 2);
+          if (create_number > 0) {
+            return {
+              extra: {
+                focus: card, message: localize('k_plus_tarot'), colour: 'PURPLE',
+                func() {
+                  for (let i = 0; i < create_number; i++) {
+                    if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+                      G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+                      G.E_MANAGER.add_event(() => {
+                        add_card({ set: 'Tarot' });
+                        G.GAME.consumeable_buffer = 0;
+                      });
+                    }
+                  }
+                },
+              },
+            };
+          }
         }
       }
       return undefined;

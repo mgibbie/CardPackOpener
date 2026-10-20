@@ -213,7 +213,9 @@ export function calculate_seam(context, name, opts = {}) {
  * calculate_context), so a vanilla context listed here reaches an opted-in mod's hooks.calculate only when its source reads
  * `.<name>` (Pokermon 3.9.1 cycles the Poliwag line's suit at `context.after`). Effects show like calculate_effect.
  */
-export const MOD_VANILLA_CONTEXTS = ['after'];
+// (individual: each scored card in play, after the jokers' individual effects, once per repetition; end_of_round: the
+// main end_of_round pass, after the jokers / consumables / blind - Pokermon 3.9.1's Leafeon Lucky-trigger counter.)
+export const MOD_VANILLA_CONTEXTS = ['after', 'individual', 'end_of_round'];
 const MOD_READS = new WeakMap();
 export function mod_calculate(context, name) {
   if (!ACTIVE_MODS.length) return;

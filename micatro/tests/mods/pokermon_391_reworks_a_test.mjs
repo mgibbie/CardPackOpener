@@ -24,16 +24,23 @@ const near = (a, b) => Math.abs(a - b) < 1e-6;
 const JOKER_LOC = DATA.loc.descriptions.Joker;
 const RANGE = /pokejokers_0[1-8]\.lua$/;
 const inRange = DATA.groups.jokers.filter((f) => RANGE.test(f.file)).flatMap((f) => f.ret.list.map((it) => it.name));
-const RW = D391.reworked || [], RH = D391.rework_hold || [];
+// (batch 7 reworked pokejokers_09-17 too: this test covers batch 6's range; pokermon_391_reworks_b_test.mjs the rest)
+const RW_ALL = D391.reworked || [], RW = RW_ALL.filter((n) => inRange.includes(n));
+const RH = (D391.rework_hold || []).filter(([n]) => inRange.includes(n));
 const HOLDS = ['qwilfish', 'skarmory', 'unown', 'mega_steelix', 'bellossom', 'hoppip', 'skiploom', 'jumpluff'];
 
 // ---------------------------------------------------------------- the overlay + version
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 3 && PINS.modPin('pokermon') === '3.9.1+r3', 'Pokermon 3.9.1, contentRev 3 (pin 3.9.1+r3)', PINS.modPin('pokermon'));
+// (contentRev 3 since batch 6; later batches bump it: batch 7 is 4, pokermon_391_reworks_b_test.mjs)
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 3 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon 3.9.1, contentRev 3+ (pin 3.9.1+r3 since batch 6)', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
 ok(RW.length === inRange.length - HOLDS.length && inRange.length === 263,
   `reworked: every joker of pokejokers_01-08 but the ${HOLDS.length} holds (Pokermon 3.9.1)`, [RW && RW.length, inRange.length]);
 ok(HOLDS.every((n) => !RW.includes(n)) && RH.map(([n]) => n).sort().join() === HOLDS.slice().sort().join(), 'the holds: Hazard layer (Qwilfish, Skarmory), Unown, Mega Steelix (quantum Hazard), the Seed jokers', RH);
-ok(RW.every((n) => inRange.includes(n)), 'nothing outside pokejokers_01-08 is reworked yet');
+{
+  const LATER = /pokejokers_(09|1[0-7])\.lua$/; // batch 7
+  const later = DATA.groups.jokers.filter((f) => LATER.test(f.file)).flatMap((f) => f.ret.list.map((it) => it.name));
+  ok(RW_ALL.every((n) => inRange.includes(n) || later.includes(n)), 'nothing outside pokejokers_01-08 (batch 6) and 09-17 (batch 7) is reworked yet', RW_ALL.filter((n) => !inRange.includes(n) && !later.includes(n)));
+}
 ok(C('spearow').config.evo_rqmt === 3 && C('spearow').config.extra.card_threshold === 30 && C('spearow').config.extra.cards_scored === undefined && C('spearow').blueprint_compat === true,
   'a reworked joker takes its whole 3.9.1 config and flags (Spearow: 30 cards drawn, evolves after 3 triggers) (Pokermon 3.9.1)', C('spearow').config);
 ok(C('golbat').config.evo_rqmt === 16 && C('flareon').config.extra.Xmult_multi === 2 && C('mankey').config.extra.mult_mod !== undefined && C('mankey').config.extra.mult === undefined,

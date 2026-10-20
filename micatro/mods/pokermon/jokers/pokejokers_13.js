@@ -1,15 +1,20 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_13.lua (Pokédex 361-390: Snorunt -> Jirachi), 12 jokers
+// Pokermon 3.9.1 — pokemon/pokejokers_13.lua (Pokédex 361-390: Snorunt -> Jirachi), 12 jokers
 // + the two Jirachi forms the Lua writes but never registers (jirachi_copy, jirachi_negging).
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req) comes from data.js. See ../PORTING.md.
+// gen, item_req) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
   G, P_CENTERS, localize, card_eval_status_text, ease_dollars, create_card, copy_card, poll_edition, juice_card_until,
-  change_booster_limit, defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, energize, poke_total_chips, remove,
+  pseudorandom_element, pseudoseed, add_booster_to_shop, add_card, get_total_energy,
+  defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, energize, poke_total_chips, remove,
 } from '../api.js';
+import { blueprint_effect } from './pokejokers_08.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 
 const FILE = 'pokemon/pokejokers_13.lua';
 const not_in_pool = () => false;
+/** Jirachi (Invis): how many Jokers hold Energy (3.9.1 pokermon.energy.get_total_energy(v) > 0). */
+const energized_count = () => (G.jokers ? G.jokers.cards.filter((v) => get_total_energy(v) > 0).length : 0);
 
 /** Snorunt / Glalie / Froslass: go `debt` dollars into the red. */
 const debt = {
@@ -145,48 +150,76 @@ defineJokers({
       return undefined;
     },
   },
-  // (Double end-of-round payout: systems/rules.js evaluate_round, the lovely "Jirachi Double Payout" patch.)
+  // Pokermon 3.9.1 (3.8.0 Jirachi rework): the wish forms below. (The Wish Pack's own 3.9.1 changes - 3 random unused
+  // wishes - wait with the boosters; the forms are self-contained jokers.)
+  // Banker: X3 cash-out through the modify_final_cashout context ({modify = amount * 2}); 3.9.1 dropped the lovely
+  // "Jirachi Double Payout" patch (our rules.evaluate_round no longer doubles).
   jirachi_banker: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      return { vars: [] };
+      return { vars: [card.ability.extra.multiply] };
+    },
+    calculate(self, card, context) {
+      if (context.modify_final_cashout && !context.blueprint) return { modify: context.amount * 2 };
+      return undefined;
     },
     in_pool: not_in_pool,
   },
+  // Booster: +1 card in every pack (G.GAME.extra_pocket_picks; 3.9.1 names it poke_extra_picks) and the first
+  // reroll_max rerolls of each shop add a Booster to the shop (no more extra Booster slot).
   jirachi_booster: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      return { vars: [] };
+      const ex = card.ability.extra;
+      return { vars: [ex.reroll_max, Math.max(ex.reroll_max - ex.rerolls, 0), ex.bonus_choices] };
+    },
+    calculate(self, card, context) {
+      if (context.reroll_shop && card.ability.extra.rerolls < card.ability.extra.reroll_max) {
+        if (!context.blueprint) card.ability.extra.rerolls = card.ability.extra.rerolls + 1;
+        card.juice_up();
+        add_booster_to_shop();
+        return { message: localize('poke_wish_ex'), colour: 'PURPLE' };
+      }
+      if (context.ending_shop && !context.blueprint) {
+        card.ability.extra.rerolls = 0;
+        return { message: localize('k_reset') };
+      }
+      return undefined;
     },
     add_to_deck(self, card) {
-      change_booster_limit(card.ability.extra.bonus_packs);
       G.GAME.extra_pocket_picks = (G.GAME.extra_pocket_picks || 0) + card.ability.extra.bonus_choices;
     },
     remove_from_deck(self, card) {
-      change_booster_limit(-card.ability.extra.bonus_packs);
       G.GAME.extra_pocket_picks = (G.GAME.extra_pocket_picks || 0) - card.ability.extra.bonus_choices;
     },
     in_pool: not_in_pool,
   },
+  // Invis ("copy" wish): Blueprint of the Joker to the right while energy_target+ Jokers are Energized
+  // (no more copy-and-self-destruct at Blind select).
   jirachi_invis: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      return { vars: [] };
+      return { vars: [card.ability.extra.energy_target, energized_count()] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind && !context.blueprint) {
-        let other_joker = null;
-        for (let i = 0; i < G.jokers.cards.length; i++) if (G.jokers.cards[i] === card) other_joker = G.jokers.cards[i + 1];
-        if (other_joker) {
-          const copy = copy_card(other_joker, null, null, null, !!(other_joker.edition && other_joker.edition.negative));
-          card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_duplicated_ex') });
-          copy.add_to_deck();
-          G.jokers.emplace(copy);
-          copy.start_materialize();
-          remove(self, card, context);
+      const found_pos = G.jokers.cards.indexOf(card);
+      if (found_pos >= 0) {
+        const other_joker = G.jokers.cards[found_pos + 1];
+        if (other_joker && energized_count() >= card.ability.extra.energy_target) {
+          const ret = blueprint_effect(card, other_joker, context);
+          if (ret) ret.colour = 'BLUE';
+          return ret;
         }
       }
       return undefined;
+    },
+    update(self, card) {
+      // (the compatible / incompatible badge: pokermon.ui.blueprint_compat(energized >= target and other_joker))
+      if (G.jokers && card.area === G.jokers) {
+        const other_joker = G.jokers.cards[G.jokers.cards.indexOf(card) + 1];
+        const ok = energized_count() >= card.ability.extra.energy_target && other_joker && other_joker !== card && other_joker.config.center.blueprint_compat;
+        card.ability.blueprint_compat = ok ? 'compatible' : 'incompatible';
+      }
     },
     in_pool: not_in_pool,
   },
@@ -266,51 +299,68 @@ defineJokers({
     },
     in_pool: not_in_pool,
   },
+  // Power: played cards X2 every 3rd hand played (Loyalty Card's count from when it became this form).
   jirachi_power: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       return {
-        vars: [card.ability.extra.Xmult_multi, card.ability.extra.every,
+        vars: [card.ability.extra.Xmult_multi, card.ability.extra.every + 1,
           localize({ type: 'variable', key: (card.ability.extra.loyalty_remaining === 0 ? 'loyalty_active' : 'loyalty_inactive'), vars: [card.ability.extra.loyalty_remaining] })],
       };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.after) {
-          if (card.ability.extra.loyalty_remaining === 0) card.ability.extra.loyalty_remaining = card.ability.extra.every;
-          card.ability.extra.loyalty_remaining = card.ability.extra.loyalty_remaining - 1;
-          if (card.ability.extra.loyalty_remaining === 0) juice_card_until(card, (c) => c.ability.extra.loyalty_remaining === 0 && !G.RESET_JIGGLES, true);
+      if (context.before) {
+        const m = card.ability.extra.every + 1;
+        const n = card.ability.extra.every - 1 - (G.GAME.hands_played - card.ability.hands_played_at_create);
+        card.ability.extra.loyalty_remaining = ((n % m) + m) % m; // (Lua % floors)
+        if (!context.blueprint && card.ability.extra.loyalty_remaining === 0) {
+          juice_card_until(card, (c) => c.ability.extra.loyalty_remaining === 0 && !G.RESET_JIGGLES, true);
         }
       }
-      if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.other_card.debuff) {
-        if (card.ability.extra.loyalty_remaining === 0) return { x_mult: card.ability.extra.Xmult_multi, card };
+      // (3.9.1 drops the "not debuffed" check: a debuffed played card never reaches context.individual anyway.)
+      if (context.individual && !context.end_of_round && context.cardarea === G.play) {
+        if (card.ability.extra.loyalty_remaining === card.ability.extra.every) return { x_mult: card.ability.extra.Xmult_multi, card };
       }
       return undefined;
     },
     in_pool: not_in_pool,
   },
+  // Fixer: a 1-card first discard is destroyed and makes a Death, Cryptid or Metal Coat (if there is room); no more
+  // edition on a 1-card first hand.
   jirachi_fixer: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
+      if (detailed()) {
+        info_queue.push(P_CENTERS.c_death);
+        info_queue.push(P_CENTERS.c_cryptid);
+        info_queue.push(P_CENTERS.c_poke_metalcoat);
+      }
       return { vars: [] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.before && G.GAME.current_round.hands_played === 0 && context.full_hand && context.full_hand.length === 1) {
-          if (!context.scoring_hand[0].edition) {
-            const edition = poll_edition('aura', null, true, true);
-            context.scoring_hand[0].set_edition(edition, true, true);
+      if (context.discard && G.GAME.current_round.discards_used === 0 && context.full_hand && context.full_hand.length === 1) {
+        const create_function = () => {
+          if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
+            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+            G.E_MANAGER.add_event(() => {
+              const cons = [
+                { set: 'Tarot', message: localize('k_plus_tarot'), colour: 'PURPLE', key: 'c_death' },
+                { set: 'Spectral', message: localize('k_plus_spectral'), colour: 'Spectral', key: 'c_cryptid' },
+                { set: 'Item', message: localize('poke_plus_pokeitem'), colour: 'item', key: 'c_poke_metalcoat' },
+              ];
+              const [con] = pseudorandom_element(cons, pseudoseed('jirachi_fixer'));
+              const added = add_card({ set: con.set, key: con.key, key_append: 'jirachi_fixer' });
+              card_eval_status_text(added, 'extra', null, null, null, { message: con.message, colour: con.colour });
+              G.GAME.consumeable_buffer = 0;
+            });
           }
-        }
+        };
+        // (Lua's popup says "+1 Tarot" whichever card it makes.)
+        return { delay: 0.45, remove: true, card, extra: { focus: card, message: localize('k_plus_tarot'), colour: 'PURPLE', func: create_function } };
       }
-      if (context.discard && G.GAME.current_round.discards_used === 0 && context.full_hand && context.full_hand.length === 1 && context.other_card && !card.ability.extra.triggered) {
-        card.ability.extra.triggered = true;
-        return { delay: 0.45, remove: true, card };
+      if (context.first_hand_drawn) {
+        juice_card_until(card, () => G.GAME.current_round.discards_used === 0 && !G.RESET_JIGGLES, true);
       }
-      if (context.first_hand_drawn && !context.blueprint) {
-        juice_card_until(card, (c) => (G.GAME.current_round.hands_played === 0 || G.GAME.current_round.discards_used === 0) && !G.RESET_JIGGLES && !c.ability.extra.triggered, true);
-      }
-      if (context.end_of_round && !context.individual && !context.repetition) card.ability.extra.triggered = undefined;
       return undefined;
     },
     in_pool: not_in_pool,
