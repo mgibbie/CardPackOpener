@@ -148,6 +148,9 @@ for (const f of DATA.groups.stakes) {
     // modifiers(): +2 win ante, and the last 4 antes are showdown bosses (systems.js boss_eligible)
     // (customStakes off = the Lua never registers the stake: no Elite rules even if its key is passed.)
     s.modifiers = () => { if (!opt(NACHO_ID, 'customStakes')) return; G.GAME.win_ante = G.GAME.win_ante + 2; G.GAME.modifiers.elite4 = true; };
+    // a win on it records the Elite sticker (level 9, like Pokermon's: js/engine/run.js win_sticker_level) — only while its rules
+    // apply (customStakes off: a plain Gold run, Gold sticker)
+    Object.defineProperty(s, 'sticker_level', { enumerable: true, get() { return opt(NACHO_ID, 'customStakes') ? 9 : undefined; } });
     stakes.push(s);
   }
 }

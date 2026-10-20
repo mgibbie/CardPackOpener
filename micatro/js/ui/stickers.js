@@ -2,7 +2,12 @@
 // in it — and, with Pokermon's previous_evo_stickers, a Pokémon's earlier stages (the engine's `win` event
 // lists the keys: run.js joker_win_keys) — with the highest stake it has won on. The joker then wears that
 // stake's sticker (stickers.png: White, Red, Green, Black, Blue, Purple, Orange, Gold) and its tooltip says so.
-//   * Per CATEGORY of win: {jokerKey: {win, poke, nuz, mono, both}}, each the highest stake level (1..8) won at:
+//   * Level 9 = ELITE (Pokermon 3.9.1's separate Elite sticker, its own art: winstickers/elite.png, cut from the vendored
+//     elite_stake_sticker.png). A mod stake plays at Gold's level 8, so the engine's win event carries `sticker_level` — the
+//     highest `sticker_level` a stake in the run's stake chain DECLARES (Pokermon's and Nacho's Elite: 9; run.js
+//     win_sticker_level), else the stake level. Any other mod stake (Lilac, MoreFluff's) still records Gold. Elite wins from
+//     before level 9 existed were recorded as Gold and can't be told apart: no backfill.
+//   * Per CATEGORY of win: {jokerKey: {win, poke, nuz, mono, both}}, each the highest stake level (1..9) won at:
 //       win  — any win (the plain stake sticker)
 //       nuz  — a Nuzlocke run             -> an Aipom sticker
 //       mono — a Monotype run             -> an Ambipom sticker
@@ -49,16 +54,26 @@
 //     passed to setStickerSource), so its own merge of a legacy card on the same table can't bring a revoked one back.
 import { aliasesOf, isRetired, retiredName } from '../mods/aliases.js';
 import { supersededBy, supersededFrom } from '../mods/superseded.js';
-export const STICKER_NAMES = ['White', 'Red', 'Green', 'Black', 'Blue', 'Purple', 'Orange', 'Gold'];
+export const STICKER_NAMES = ['White', 'Red', 'Green', 'Black', 'Blue', 'Purple', 'Orange', 'Gold', 'Elite'];
+/** The highest sticker level (9 = Elite). The server's stickerLevel (server/mp.mjs) accepts the same range. */
+export const MAX_LEVEL = STICKER_NAMES.length;
 /** stickers.png cells (game.lua G.shared_stickers). */
 export const STICKER_POS = {
   White: { x: 1, y: 0 }, Red: { x: 2, y: 0 }, Green: { x: 3, y: 0 }, Black: { x: 0, y: 1 },
   Blue: { x: 4, y: 0 }, Purple: { x: 1, y: 1 }, Orange: { x: 2, y: 1 }, Gold: { x: 3, y: 1 },
 };
-/** Balatro's stake colours (globals.lua G.C.STAKES: WHITE, RED, GREEN, BLACK, BLUE, PURPLE, ORANGE, GOLD). */
+/** Balatro's stake colours (globals.lua G.C.STAKES: WHITE, RED, GREEN, BLACK, BLUE, PURPLE, ORANGE, GOLD), and Pokermon
+ *  3.9.1's Elite stake colour (stakes/stakes.lua: HEX("ba8514"), the bronze of its sticker's chip). */
 export const STAKE_COLOURS = {
   White: '#ffffff', Red: '#fe5f55', Green: '#4bc292', Black: '#374244',
-  Blue: '#009dff', Purple: '#8867a5', Orange: '#fda200', Gold: '#eac058',
+  Blue: '#009dff', Purple: '#8867a5', Orange: '#fda200', Gold: '#eac058', Elite: '#ba8514',
+};
+/** Stakes whose plain sticker is its own card-face overlay (micatro/assets/textures/winstickers/<img>.png, 142x190 like a
+ *  stickers.png cell) instead of a stickers.png cell. Drawn by drawOwnSticker. */
+export const STICKER_IMG = { Elite: 'elite' };
+/** Tooltip text for a stake sticker Balatro's localization lacks (Pokermon 3.9.1 en-us.lua poke_elite_sticker). */
+export const STICKER_TEXT = {
+  Elite: { name: 'Elite Sticker', text: ['Used this {C:attention}Joker{}', 'to win on {C:attention}Elite{}', '{C:attention}Stake{} difficulty'] },
 };
 /** The win categories, and which one a joker shows (first earned wins). */
 export const CATEGORIES = ['win', 'poke', 'nuz', 'mono', 'both'];
@@ -88,7 +103,7 @@ const keyFor = (u) => 'micatro_joker_wins_v1:' + u;
 const earnedKeyFor = (u) => 'micatro_joker_earned_v1:' + u;
 const key = () => keyFor(user);
 const bump = () => { stickerVer++; for (const cb of listeners) { try { cb(); } catch (e) { /* ignore */ } } };
-const levelOf = (v) => (Number.isInteger(v) && v >= 1 && v <= 8 ? v : 0);
+const levelOf = (v) => (Number.isInteger(v) && v >= 1 && v <= MAX_LEVEL ? v : 0);
 /** One joker's record in either format -> {cat: level} (the old flat level = {win}); null when empty. */
 export function normRecord(v) {
   if (typeof v === 'number') { const lv = levelOf(v); return lv ? { win: lv } : null; }
@@ -286,15 +301,24 @@ try {
 } catch (e) { /* no window */ }
 
 export function onWinStickers(cb) { listeners.add(cb); return () => listeners.delete(cb); }
-/** A stake level (1..8; a mod stake's higher level counts as Gold) -> its sticker name. */
-export const stickerName = (level) => (level > 0 ? STICKER_NAMES[Math.min(8, Math.max(1, Math.floor(level))) - 1] : null);
+/** A sticker level (1..9; anything higher counts as the top one) -> its sticker name. */
+export const stickerName = (level) => (level > 0 ? STICKER_NAMES[Math.min(MAX_LEVEL, Math.max(1, Math.floor(level))) - 1] : null);
 /**
- * The win event ({jokers: [keys], stake, categories?: ['win', 'poke', 'nuz', 'mono', 'both']}) -> stored (each listed
- * category raised to this stake). Returns how many jokers improved.
+ * The level a win event records: its `sticker_level` (run.js win_sticker_level: 9 for an Elite stake) when it has one,
+ * else its stake level clamped to Gold (8; a mod stake's own level never reaches Elite by itself).
+ */
+export function winEventLevel(ev) {
+  const sl = Math.floor(Number(ev && ev.sticker_level));
+  if (sl >= 1) return Math.min(MAX_LEVEL, sl);
+  return Math.min(8, Math.max(1, Math.floor(Number(ev && ev.stake) || 1)));
+}
+/**
+ * The win event ({jokers: [keys], stake, sticker_level?, categories?: ['win', 'poke', 'nuz', 'mono', 'both']}) -> stored
+ * (each listed category raised to its level, winEventLevel). Returns how many jokers improved.
  */
 export function recordWin(ev) {
   if (!ev || !Array.isArray(ev.jokers)) return 0;
-  const lv = Math.min(8, Math.max(1, Math.floor(Number(ev.stake) || 1)));
+  const lv = winEventLevel(ev);
   let cats = Array.isArray(ev.categories) ? [...new Set(ev.categories.filter((c) => CATEGORIES.includes(c)))] : [];
   if (!cats.length) cats = ['win'];
   let n = 0, stamped = false;
@@ -437,6 +461,31 @@ export function specialImage(name) {
     e.img.src = new URL('../../assets/textures/winstickers/' + name + '.png', import.meta.url).href;
   }
   return e.ok ? e.img : null;
+}
+// ---------------------------------------------------------------- a stake's own sticker art (Elite)
+const ownImgs = {};
+function ownImage(name) {
+  if (!name || typeof Image === 'undefined') return null;
+  let e = ownImgs[name];
+  if (!e) {
+    e = ownImgs[name] = { img: new Image(), ok: false };
+    e.img.onload = () => { e.ok = true; bump(); };
+    e.img.onerror = () => { console.warn('micatro: missing win-sticker art ' + name); };
+    e.img.src = new URL('../../assets/textures/winstickers/' + name + '.png', import.meta.url).href;
+  }
+  return e.ok ? e.img : null;
+}
+/**
+ * A plain sticker whose stake has its own art (STICKER_IMG: Elite): draw it over a card face at (0, 0, w, h) of `ctx`.
+ * Returns true when the stake HAS its own art (drawn, or still loading — the load redraws through onWinStickers), so
+ * the caller skips stickers.png; false for every other sticker (the caller draws its stickers.png cell).
+ */
+export function drawOwnSticker(ctx, info, w = 142, h = 190) {
+  const name = info && !info.special ? STICKER_IMG[info.stake] : null;
+  if (!name) return false;
+  const im = ownImage(name);
+  if (im) ctx.drawImage(im, 0, 0, im.width, im.height, 0, 0, w, h);
+  return true;
 }
 /** The stake sticker's spot on a 142x190 card face (stickers.png puts the chip at about (111, 30), r 18). */
 export const SPECIAL_SPOT = { x: 111, y: 30, r: 21 };

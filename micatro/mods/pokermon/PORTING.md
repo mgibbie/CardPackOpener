@@ -1742,9 +1742,17 @@ spec keys `new_jokers` "17", `sprite_extra`; new outputs `consumable_spawn`, `ch
   `boss_eligible` hook; ordinary bosses keep their `min`). Art: elite_stake.png (the chip) / elite_stake_sticker.png. It is a **mod
   stake**, not a 9th level: the engine plays it at Gold's level 8 plus its modifiers (run.js mod_stake_chain) and records its key in
   the recipe (`stake: 'stake_poke_elite'`), so the leaderboard, replays and run badges see it like Nacho's Elite / Pokermon+'s Lilac /
-  MoreFluff's stakes. **Win stickers record Gold for it** (stickers.js "a mod stake's higher level counts as Gold"; levels 1..8; no
-  server change): 3.9.1 shows its own Elite sticker, which would need a 9th level in stickers.js and `stickerLevel` (server/mp.mjs) —
-  left out on purpose, see "3.9.1 upgrade complete". **Precedence**: Nacho 1.6.4 ships the same Elite stake (`stake_nacho_elite_stake`;
+  MoreFluff's stakes. **Win stickers: the ELITE sticker, level 9** (owner-approved follow-up, branch `feat/micatro-elite-sticker`;
+  first shipped as Gold): the stake declares `sticker_level: 9` (Nacho's Elite too, while its customStakes option is on), the engine's
+  `win` event carries `sticker_level` (run.js `win_sticker_level`: the highest a stake in the run's chain declares, else the stake
+  level), and stickers.js records it (levels 1..9; `STICKER_NAMES[8] = 'Elite'`, colour #ba8514 = 3.9.1's Elite stake colour for the
+  Pikachu / Aipom / Ambipom / Arceus rings). The plain level-9 sticker is 3.9.1's own art (elite_stake_sticker.png cell 0, copied
+  to the git-tracked `micatro/assets/textures/winstickers/elite.png`; `drawOwnSticker`: in game, decks, spectate, replays, the
+  wiki), its tooltip 3.9.1's `poke_elite_sticker` text. Note an Elite win always has Pokermon on, so its jokers show the Pikachu
+  sticker in the Elite ring; the plain art shows where no special category beats it. Server: `stickerLevel` 1..9, max-merge /
+  revocation / re-earn unchanged; an OLD client (no `maxLevel: 9` in its get / put) is answered with 9 shown as 8 (Gold), so it
+  neither loses the sticker nor push-loops. Elite wins from before this were recorded as Gold and can't be told apart: no backfill.
+  Mod stakes that declare nothing (Lilac, MoreFluff's) still record Gold. **Precedence**: Nacho 1.6.4 ships the same Elite stake (`stake_nacho_elite_stake`;
   Nacho 1.7.9 re-keys to Pokermon's, batch 18); ours wins: Nacho's has `superseded_by` and leaves the New Run picker
   (js/mods/index.js modStakes) but stays registered, so a recipe naming it still plays.
 - **The challenges** (challenges.js; data391.js `challenges`, the whole 3.9.1 list): the 7 old ones take 3.9.1's changes (The Mirror
@@ -1860,7 +1868,7 @@ What remains intentionally different from upstream 3.9.1:
   packs1.js keeps the 3.2.1 slots; only Safety First's Energy slot is 3.9.1); the **Debris Sleeve's alt** (needs a playing-card
   `card_limit` seam); other mods' poll_seal copies under Pokermon's object_weights (above); the Mega Mawile / Mega Manectric sprites
   upstream main has without jokers; upstream main's drift after af0b656 (sub-batch 15b: Solrock / Lunatone ...).
-- **Win stickers on Elite**: Gold, like every mod stake (no 9th sticker level; that needs stickers.js + server `stickerLevel`).
+- **Win stickers on Elite**: DONE as a follow-up: the 9th level, Elite (see "The Elite stake" above). Earlier Elite wins stay Gold.
 - **Cosmetic only**: animations (`do_evolution_anim`, set_sprites tricks), music / cries (Miror B., Ludicolo, Voltorb Flip), the
   Mystery Dungeon back, the Unown Swarm's glued playing-card front, floating sprites hiding while an item is used, joker displays.
 
