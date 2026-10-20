@@ -1,4 +1,4 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_01.lua (Pokédex 001-030: Bulbasaur -> Nidorina), 36 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_01.lua (Pokédex 001-030: Bulbasaur -> Nidorina), 36 jokers + 2 new 3.9.1 Megas (Mega Raichu X / Y, batch 16).
 // Line-for-line port of the behaviour, on 3.9.1 since batch 6 (PORTING.md "Pokermon 3.9.1 upgrade"); static
 // data (pos, config, rarity, cost, stage, ptype, gen, item_req, megas) comes from data.js + data391.js
 // (config_all: the whole 3.9.1 config). This file is the reference port the other pokejokers_NN.js files copy.
@@ -470,6 +470,8 @@ defineJokers({
   raichu: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      mega_tip(info_queue);
+      if (detailed() && any(find_card('c_poke_megastone'))) info_queue.push({ set: 'Other', key: 'split_mega', vars: ['Mega Raichu X', 'Mega Raichu Y'] });
       const ex = center.ability.extra;
       return { vars: [ex.mult_mod, ex.money_count, raichu_mult(ex), ex.money_threshold] };
     },
@@ -479,6 +481,37 @@ defineJokers({
         ease_poke_dollars(card, 'raichu', G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5));
       }
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        const m = raichu_mult(card.ability.extra);
+        if (m > 0) return { message: localize({ type: 'variable', key: 'a_mult', vars: [m] }), colour: 'MULT', mult_mod: m };
+      }
+      return undefined;
+    },
+    // 3.9.1 megas = {mega_raichu_x, mega_raichu_y} (batch 16): the X / Y pick is Charizard's (leftmost X, rightmost Y, else random).
+    getMega: getMega_by_position,
+  },
+  // Mega Raichu X 026-1 (3.9.1, batch 16): +$25 interest cap while held; each hand earns the interest you'd get now.
+  mega_raichu_x: {
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.interest_cap / 5] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) {
+        const earned = ease_poke_dollars(card, 'raichu', G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5), true);
+        return { card, dollars: earned };
+      }
+      return undefined;
+    },
+    // (the Lua adds / removes a flat 25, not the config's interest_cap)
+    add_to_deck() { G.GAME.interest_cap = G.GAME.interest_cap + 25; },
+    remove_from_deck() { G.GAME.interest_cap = G.GAME.interest_cap - 25; },
+  },
+  // Mega Raichu Y 026-2 (3.9.1, batch 16): +mult_mod Mult per $money_count you have (Raichu's, per $1).
+  mega_raichu_y: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      const ex = center.ability.extra;
+      return { vars: [ex.mult_mod, ex.money_count, raichu_mult(ex)] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main) {
         const m = raichu_mult(card.ability.extra);
         if (m > 0) return { message: localize({ type: 'variable', key: 'a_mult', vars: [m] }), colour: 'MULT', mult_mod: m };
       }

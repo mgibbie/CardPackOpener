@@ -5,7 +5,7 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 13 (pin '3.9.1+r13', new-jokers sub-batch 15b; sub-batch 15 was r12, sub-batch 14 r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 14 (pin '3.9.1+r14', batch 16 (the Megas); sub-batch 15b was r13, sub-batch 15 was r12, sub-batch 14 r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
@@ -28,17 +28,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 13, 'Pokermon is version 3.9.1, contentRev 13', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r13', 'its pin is 3.9.1+r13', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 14, 'Pokermon is version 3.9.1, contentRev 14', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r14', 'its pin is 3.9.1+r14', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r13', 'a new run is pinned 3.9.1+r13', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r14', 'a new run is pinned 3.9.1+r14', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r13', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 13). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r14', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 14). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
@@ -189,8 +189,9 @@ else {
   const C2 = MODS.pokermon.content;
   // (content 3.9.1 adds — batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card — has no 3.2.1 cell to compare)
   // (and the jokers 3.9.1 adds, new-jokers stack: data391.js new_jokers — pokermon_391_new_<sub>_test.mjs checks their art; and
-  // the Meteorite, sub-batch 14, whose 3.2.1 cell is empty: pokermon_391_new_14_test.mjs checks it)
-  const NEW_391 = new Set(['c_poke_miracleseed', 'c_poke_heavyboots', 'm_poke_seed', 'c_poke_meteorite', ...Object.keys(D391.new_jokers || {}).map((n) => 'j_poke_' + n)]);
+  // the Meteorite, sub-batch 14, whose 3.2.1 cell is empty: pokermon_391_new_14_test.mjs checks it; the Mega Berry Juice, batch 16:
+  // pokermon_391_megas_test.mjs)
+  const NEW_391 = new Set(['c_poke_miracleseed', 'c_poke_heavyboots', 'm_poke_seed', 'c_poke_meteorite', 'c_poke_berry_juice_mega', ...Object.keys(D391.new_jokers || {}).map((n) => 'j_poke_' + n)]);
   const cards = [...C2.centers, ...C2.blinds, ...C2.stickers, ...MODS.pokermon.sleeves].filter((c) => !NEW_391.has(c.key) && (/391$/.test(c.atlas || '') && c.pos && !/AtlasJokersBasicOthers391|AtlasDecksBasic391/.test(c.atlas) || ['j_poke_rival', 'b_poke_pokemondeck'].includes(c.key)));
   const fileOf = (a) => decodeURIComponent(ATLASES[a].src).replace(/^.*\/assets\/2x\//, '');
   const cell = (a, pos) => { const A = ATLASES[a], cw = (A.px || 71) * 2, chh = (A.py || 95) * 2; return [pos.x * cw, pos.y * chh, cw, chh]; };

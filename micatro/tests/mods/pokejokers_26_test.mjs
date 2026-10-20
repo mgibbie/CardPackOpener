@@ -5,7 +5,7 @@ import { STATUS } from '../../mods/pokermon/index.js';
 
 const { ok, done } = T();
 ok(STATUS.PORTED.jokers.includes('j_poke_mimikyu') && !P_CENTERS.j_poke_mimikyu.unported, 'mimikyu ported');
-ok((STATUS.PORTED_FILES['pokemon/pokejokers_26.lua'] || []).length === 2, 'defs: 2 from pokejokers_26.lua (+ 1 new in 3.9.1, new-jokers sub-batch 15)');
+ok((STATUS.PORTED_FILES['pokemon/pokejokers_26.lua'] || []).length === 3, 'defs: 3 from pokejokers_26.lua (+ Drampa, new-jokers sub-batch 15, + Mega Drampa, batch 16)');
 
 /** Play the round's last hand without winning: total chips land at `frac` of the blind. */
 function lastHand(cards, blind_chips) {

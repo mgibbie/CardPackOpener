@@ -389,7 +389,7 @@ All are byte-identical to upstream main.
 | 10b | **DONE** (see "Batch 10b" below) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art, the swarm strips tiled) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
 | 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); **12 DONE** (the 15 of pokejokers_11, below); **13 DONE** (the 19 of pokejokers_12, below); **14 DONE** (the 14 of pokejokers_13–16, below); **15 DONE** (the 18 of pokejokers_18–32, below) | 5 × L | 5 |
 | 15b | **DONE** (see "New jokers, sub-batch 15b" below) — **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Ported from upstream main pinned at af0b656 ("3.9.1-1016a"); `version` stays 3.9.1, contentRev 13 counts them (see below why) | M | 11–15 |
-| 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice. **Keep the add-on dedupe rule** (checkpoint 1 below; PORTING.md "Add-on dedupe"): a base Mega whose name an add-on Mega has makes the add-on's a duplicate automatically (`precedence.js replaced_by`); re-run `addon_dedupe_test`, and update its inventory if a new duplicate appears | M | 5 |
+| 16 | **DONE** (see "Batch 16" below) — Pokermon 12 Megas (11 new: Mega Steelix was already ported) + Mega Stone `unique_val` + Mega Berry Juice + the Mega sleeve's `poke_infinite_megastone`. **Keep the add-on dedupe rule** (checkpoint 1 below; PORTING.md "Add-on dedupe"): a base Mega whose name an add-on Mega has makes the add-on's a duplicate automatically (`precedence.js replaced_by`); re-run `addon_dedupe_test`, and update its inventory if a new duplicate appears | M | 5 |
 | 17 | Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), ~~DNA seal~~, `starterq`, ~~Meteorite/Deoxys~~ (both done in new-jokers sub-batch 14), 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
 | 18 | Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks. **Keep the add-on dedupe rule**: our 9 Nacho duplicates are already out of play as registered legacy definitions (checkpoint 1); when 1.7.9 drops the keys, choose `renamed` aliases (`aliases.js`) vs keeping the legacy definitions. Nacho's Megas re-keyed to `j_poke_*` there replace ours only if base registers them. Its 40 new jokers go through `mark_precedence` like the rest; Pokermon+ 1.2.0 (batch 20) too | M | 17 |
 | 19 | Nacho 40 new jokers | L | 18 |
@@ -505,12 +505,12 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 |---|---|---|
 | ~~Batch 10 (Hazard / Seed / Flower)~~ DONE | — (all 16 un-held) | — (Shaymin done) |
 | ~~Batch 10b (Unown + Wish Pack)~~ DONE | — (Unown, Unown Swarm reworked) | — (Ruins of Alph, Jirachi done) |
-| Batch 16 (Megas) | — | Lucario (Mega Lucario), Skarmory (Mega Skarmory), Drampa (Mega Drampa: `new_deferred`) |
+| ~~Batch 16 (Megas)~~ DONE | — | — (Mega Lucario, Mega Skarmory, Mega Drampa all landed) |
 | Batch 17 (non-Pokémon jokers) | — | Rival, Mystery Egg |
 | Kept by design | — | Porygon-Z's Energy counter |
 
-- New jokers still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon, 3 April Fools). The 9 from upstream main came in sub-batch 15b. (117 before sub-batch 11, which added 26; sub-batch 12 added 15, sub-batch 13 19, sub-batch 14 14, sub-batch 15 18, sub-batch 15b 9 from main; the 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the tally counted were already in the port.)
-- New jokers ported without one part (`new_deferred`): Drampa (its `megas`: Mega Drampa, batch 16). (Skitty -> Delcatty: done in sub-batch 12; Kirlia -> Gallade, Roselia -> Roserade, Budew -> Roselia: sub-batch 14.)
+- New jokers still to add: 10 from 3.9.1 (7 non-Pokémon, 3 April Fools: batch 17). The 9 from upstream main came in sub-batch 15b; the 11 Megas in batch 16. (117 before sub-batch 11, which added 26; sub-batch 12 added 15, sub-batch 13 19, sub-batch 14 14, sub-batch 15 18, sub-batch 15b 9 from main, batch 16 11 Megas; the 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the tally counted were already in the port.)
+- New jokers ported without one part (`new_deferred`): none (Drampa's Mega came with batch 16). (Skitty -> Delcatty: done in sub-batch 12; Kirlia -> Gallade, Roselia -> Roserade, Budew -> Roselia: sub-batch 14.)
 
 ## Batch 10 — Pokermon Hazard layer, Seed, Flower ×2, Debris deck: DONE (2026-10-20, branch `feat/micatro-pokermon-391-hazard-seed`)
 - Pin **3.9.1+r6** (`contentRev` 6; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "The Hazard layer,
@@ -540,7 +540,7 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
   ("Transformed!") and name their form in the tooltip. Jirachi's deferred part is done.
 - Tests: `micatro/tests/mods/pokermon_391_unown_wish_test.mjs` (26 passed / 35 failed on origin/main, 61 / 0 here).
 - Left on purpose: the Swarm's glued playing-card front (cosmetic; 3.9.1 draws it with a seeded random card inside the renderer).
-  Still pending across the 3.9.1 rework of existing content: Mega Lucario / Mega Skarmory (batch 16), Rival's chain + the Oologist
+  Still pending across the 3.9.1 rework of existing content: ~~Mega Lucario / Mega Skarmory (batch 16)~~ done, Rival's chain + the Oologist
   (batch 17), Porygon-Z's counter (kept by design), the Debris sleeve's alt (a playing-card `card_limit` seam), object_weights
   (items batch), Pink Seal 1-in-3 (challenges, batch 17).
 
@@ -670,7 +670,7 @@ when the owner says.
   - The retired `hisuian_qwilfish[Shiny].png` stay in the gitignored assets, unused.
   - The art composer's sample output is in a scratch folder only.
 - **Still open after the stack**:
-  - Batch 16: the Megas (Drampa's deferred; Mawile / Manectric have none upstream yet).
+  - ~~Batch 16: the Megas~~: **done** (below; checkpoint 2).
   - Batch 17: the non-Pokémon jokers and April Fools.
   - The upstream-main drift (PORTING.md "Known upstream drift").
   - ~~The add-on dedupe step~~: **done** (below). Our Nacho 1.6.4 has no Bronzor / Smoliv line (those are 1.7.9's).
@@ -694,3 +694,27 @@ precedence)".
   plays as before. `LEGACY_MOD_VERSIONS` is untouched.
 - Test `micatro/tests/mods/addon_dedupe_test.mjs`: 55 / 34 failed before (371428ce), 121 / 0 after. `nacho_test`, `pokermonplus_test`,
   `modpin_test` and `designwiki_micatro_mods_test` were updated for it.
+
+## Batch 16 — Pokermon Megas: DONE (2026-10-20, branch `feat/micatro-pokermon-391-checkpoint2`)
+- Pin **3.9.1+r14** (`contentRev` 14; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "The Megas (batch 16)".
+- **11 Megas** (the plan's 12 counted Mega Steelix, ported since 3.2.1): Mega Raichu X and Y, Clefable, Victreebel, Starmie, Dragonite,
+  Meganium, Feraligatr, Skarmory, Lucario, Drampa. Rarity `poke_mega` (never in a pool), 3.9.1 data / text / sprites.
+  - Each base form links its Mega(s). The generator takes a reworked joker's 3.9.1 `megas` and checks every Mega is registered.
+  - Raichu picks X / Y like Charizard and Mewtwo: leftmost X, rightmost Y, random in between.
+  - Un-deferred: Lucario and Skarmory (`rework_deferred`), Drampa (`new_deferred`, now empty).
+- **Mega Stone, 3.9.1**: `used_on` = the Mega's `unique_val`. A used stone targets only its own Mega. A stone whose Mega is gone forgets it at
+  end of round. Reverting says "Reverted".
+  - Old saves: a resume or replay re-simulates, so nothing stores a stone's ability. A 3.2.1-shaped `used_on` (a center key) still
+    resolves at read time and is never rewritten.
+- **Items / modifiers**: the Mega Berry Juice (Shuckle slicing a Mega Stone). `poke_infinite_megastone`: the Mega Sleeve's alt on the Mega
+  Deck. The Mega Deck and Sleeve also gain 3.9.1's Crystal Ball.
+- **Upstream main** (af0b656): still no Mega Mawile / Mega Manectric joker, only sprites, so they are left out.
+- **Precedence**: no Nacho / Pokermon+ joker is one of these Megas (by name or display name), so the duplicate set stays 12.
+- **Art**: no new files. All 11 (card + soul, and Shiny) are on the batch-5 Gen01 / 02 / 04 / 07 `-391` sheets; the juice is
+  `AtlasConsumablesBasic-391` {7,7}.
+- **Tests**: `micatro/tests/mods/pokermon_391_megas_test.mjs` (10 passed / 55 failed on origin/main 2acf967b, 108 / 0 here). Updated:
+  count pins, rev 14, `addon_dedupe_test` / `nacho_test` / `pokermon_systems_test` (`used_on` = `unique_val`), and the deferral checks.
+  Engine suite 100 / 0 (fuzz vanilla / Pokermon / all mods ok); browser: resume_win_badges, runsync (no shim needed), mod_version_pin,
+  designwiki_micatro_mods all pass; wiki data regenerated.
+- **Pending tally after batch 16**: new jokers still to add, 10 from 3.9.1 (7 non-Pokémon, 3 April Fools: batch 17); `new_deferred` empty;
+  `rework_deferred` holds Porygon-Z (kept by design), Rival, and the Mystery Egg (batch 17).

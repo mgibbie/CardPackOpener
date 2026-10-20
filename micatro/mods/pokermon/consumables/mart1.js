@@ -6,8 +6,8 @@ import {
   create_random_poke_joker, energy_can_use, highlighted_energy_can_use, energy_use, highlighted_energy_use,
   energy_max, energy_increase, type_sticker_applied, get_highest_evo, can_evolve_to_highest, poke_evolve,
   megastone_can_use, megastone_use, megastone_remove_from_deck, megastone_in_pool, card_eval_status_text,
-  increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards, MEGASTONE_RESET,
-  can_increase_energy, energy_values,
+  increment_energy, matching_energy, has_type, remove, create_card, poke_unhighlight_cards,
+  can_increase_energy, energy_values, megastone_mega, megastone_end_of_round,
 } from '../api.js';
 
 const FILE = 'consumables/mart1.lua';
@@ -108,28 +108,25 @@ const defs = {
     },
   },
 
+  // Pokermon 3.9.1 (batch 16, 02_mart_spectral.lua): used_on = the Mega's unique_val; no "Restriction" tooltip with the
+  // poke_infinite_megastone modifier; the stone forgets a Mega that is gone at end of round (systems/items.js).
   megastone: {
     loc_vars(self, info_queue, center) {
       info_queue.push({ set: 'Other', key: 'endless' });
-      info_queue.push({ set: 'Other', key: 'mega_rule' });
-      if (center && center.ability && center.ability.extra.used_on) {
-        info_queue.push({ set: 'Other', key: 'mega_used_on', vars: [localize({ type: 'name_text', set: 'Joker', key: center.ability.extra.used_on })] });
-      }
+      if (!G.GAME.modifiers.poke_infinite_megastone) info_queue.push({ set: 'Other', key: 'mega_rule' });
+      const joker = center && center.ability ? megastone_mega(center) : undefined;
+      if (joker) info_queue.push({ set: 'Other', key: 'mega_used_on', vars: [localize({ type: 'name_text', set: 'Joker', key: joker.config.center.key })] });
       return { vars: [] };
     },
     can_use(self, card) { return megastone_can_use(card); },
     use(self, card) { megastone_use(card); },
     calculate(self, card, context) {
-      if (context.end_of_round && !card.ability.extra.usable) {
-        card.ability.extra.usable = true;
-        for (const f of MEGASTONE_RESET) f(card);
-        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_reset') });
-      }
+      if (context.end_of_round) megastone_end_of_round(card);
       return undefined;
     },
     keep_on_use() { return true; },
     in_pool() { return megastone_in_pool(); },
-    add_to_deck(self, card) { card.ability.extra.used_on = undefined; card.ability.extra.usable = true; },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) card.ability.extra.used_on = undefined; card.ability.extra.usable = true; },
     remove_from_deck(self, card) { megastone_remove_from_deck(card); },
   },
 };

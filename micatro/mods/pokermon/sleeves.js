@@ -1,6 +1,6 @@
 // Pokermon 3.2.1 — sleeves/sleeve.lua: the CardSleeves sleeves (deck variants, engine/sleeve.js).
 // Each mirrors its deck (backs/backs1.js): Trainer, Luminous, Telekinetic, Amped, Future, Stadium,
-// Mega, Vending, and (pokemon_legacy only, like the Lua's slist) Obituary / Revenant.
+// Mega (3.9.1: + Crystal Ball, and its Mega Deck alt), Vending, and (pokemon_legacy only, like the Lua's slist) Obituary / Revenant.
 // `config` goes through the same handling as a deck (vouchers, consumables); `apply` / `calculate`
 // are the Lua's. Art: AtlasDecksBasic row 1, from Pokermon 3.9.1's sheet (AtlasDecksBasic391 in index.js; the same cells
 // as 3.2.1's — Stadium / Mega: 3.2.1 shipped placeholder_sleeve, their art is 3.9.1's {8,1} / {9,1}).
@@ -72,10 +72,18 @@ export const SLEEVES = [
       });
     },
   }),
+  // Mega Sleeve (3.9.1, batch 16: + the Crystal Ball voucher; on the Mega Deck its alt: no vouchers / stone / slot, and
+  // G.GAME.modifiers.poke_infinite_megastone, so Mega Evolution is no longer 1 Joker per Mega Stone: systems/items.js)
   sleeve('megasleeve', 'Mega Sleeve', { x: 9, y: 1 }, DECKS_391, {
-    config: { vouchers: ['v_reroll_surplus', 'v_reroll_glut'], consumables: ['c_poke_megastone'], shop_size: 1 },
-    loc_vars: (self) => ({ vars: [localize('megastone_variable'), name_text('Voucher', 'v_reroll_surplus'), name_text('Voucher', 'v_reroll_glut'), self.config.shop_size] }),
+    config: { vouchers: ['v_reroll_surplus', 'v_reroll_glut', 'v_crystal_ball'], consumables: ['c_poke_megastone'], shop_size: 1 },
+    loc_vars: (self) => ({ vars: [localize('megastone_variable'), name_text('Voucher', 'v_reroll_surplus'), name_text('Voucher', 'v_reroll_glut'), self.config.shop_size, name_text('Voucher', 'v_crystal_ball')] }),
     apply(self) { G.E_MANAGER.add_event(() => { change_shop_size(-self.config.shop_size); }); },
+    alt: {
+      deck: 'b_poke_megadeck',
+      config: {},
+      loc_vars: () => ({ vars: [localize('megastone_variable')] }),
+      apply() { G.GAME.modifiers.poke_infinite_megastone = true; },
+    },
   }),
   sleeve('vendingsleeve', 'Vending Sleeve', { x: 7, y: 1 }, DECKS, {
     loc_vars: () => ({ vars: [name_text('Tag', 'tag_voucher')] }),

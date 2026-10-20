@@ -1,7 +1,7 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_03.lua (Pokédex 061-090: Poliwhirl -> Shellder), 33 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_03.lua (Pokédex 061-090: Poliwhirl -> Shellder), 33 jokers + 1 new 3.9.1 Mega (Mega Victreebel, batch 16).
 // Line-for-line port of the behaviour, on Pokermon 3.9.1 since batch 6 (PORTING.md "Pokermon 3.9.1 upgrade");
 // static data comes from data.js + data391.js (this file's jokers take their whole 3.9.1 config).
-// (3.9.1's new Mega Victreebel is not here: new Megas are a later batch.)
+// Mega Victreebel (3.9.1's new Mega): batch 16.
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
   create_card, ease_discard, ease_hands_played, juice_card_until, playing_card_joker_effects, delay, play_sound,
@@ -313,6 +313,7 @@ defineJokers({
   victreebel: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' });
       const ex = center.ability.extra;
       return { vars: [ex.chips, ex.retrigger_max, Math.max(0, ex.retrigger_max - ex.round_retriggers)] };
     },
@@ -328,6 +329,29 @@ defineJokers({
       if (context.end_of_round && !context.individual && !context.repetition && !context.blueprint) card.ability.extra.round_retriggers = 0;
       return undefined;
     },
+  },
+  // Mega Victreebel 071-1 (3.9.1, batch 16): retriggers every played even card, and every Purple Seal card (both: twice);
+  // comes holding a Medium.
+  mega_victreebel: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) {
+        info_queue.push({ set: 'Other', key: 'holding', vars: ['Medium'] });
+        info_queue.push({ set: 'Spectral', key: 'c_medium' });
+        info_queue.push({ key: 'purple_seal', set: 'Other' });
+      }
+      return { vars: [center.ability.extra.retriggers] };
+    },
+    calculate(self, card, context) {
+      if (context.repetition && context.cardarea === G.play && !context.other_card.debuff) {
+        let retriggers = 0;
+        if (poke_is_even(context.other_card)) retriggers = retriggers + card.ability.extra.retriggers;
+        if (context.other_card.seal && context.other_card.seal === 'Purple') retriggers = retriggers + card.ability.extra.retriggers;
+        if (retriggers > 0) return { message: localize('k_again_ex'), repetitions: retriggers, card };
+      }
+      return undefined;
+    },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) create_consumeable('c_medium'); },
   },
   // Tentacool 072
   tentacool: {

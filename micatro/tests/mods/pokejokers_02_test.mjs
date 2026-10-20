@@ -17,7 +17,7 @@ const FILE_JOKERS = ['nidoqueen', 'nidoranm', 'nidorino', 'nidoking', 'clefairy'
   'psyduck', 'golduck', 'mankey', 'primeape', 'growlithe', 'arcanine', 'poliwag'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 30 pokejokers_02 jokers ported',
   FILE_JOKERS.filter((n) => P_CENTERS['j_poke_' + n].unported));
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 30, 'defs: 30 from pokejokers_02.lua', STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length === 31, 'defs: 31 from pokejokers_02.lua (30 + Mega Clefable, batch 16)', STATUS.PORTED_FILES['pokemon/pokejokers_02.lua'].length);
 
 // ---------------------------------------------------------------- Nidoran-M line + Nidoqueen
 {

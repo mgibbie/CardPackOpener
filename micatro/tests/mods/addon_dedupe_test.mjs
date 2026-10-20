@@ -182,7 +182,8 @@ sec('megas', () => {
     ok(P.megastone_can_use(stone), nm + ': the Mega Stone can be used on Pokermon\'s ' + nm);
     use(stone, [j.sort_id]);
     ok(key(j) === mega, 'Mega Stone on j_poke_' + nm + ' -> ' + mega, key(j));
-    ok(stone.ability.extra.used_on === mega, nm + ': the stone remembers the Mega', stone.ability.extra.used_on);
+    // (Pokermon 3.9.1, batch 16: the stone remembers the Mega's card, its unique_val)
+    ok(stone.ability.extra.used_on === j.unique_val && P.megastone_mega(stone) === j, nm + ': the stone remembers the Mega', stone.ability.extra.used_on);
     // devolve: the next round the stone reverts it — to Pokermon's joker, never Nacho's
     winRound(); act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand(); flush();
     use(stone, [j.sort_id]);

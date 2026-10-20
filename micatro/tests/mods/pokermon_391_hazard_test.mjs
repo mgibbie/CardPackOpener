@@ -38,7 +38,8 @@ ok(MODS.pokermon.contentRev >= 6 && PINS.modPin('pokermon') === '3.9.1+r' + MODS
 ok((D391.rework_hold || []).every(([n]) => n === 'unown' || n === 'unown_swarm'), 'rework_hold: no Hazard joker left (only the Unown rework held, until batch 10b)', D391.rework_hold);
 ok(UNHELD.every((n) => D391.reworked.includes(n)), 'the 16 Hazard / Seed / quantum jokers are reworked (3.9.1 data + text)', UNHELD.filter((n) => !D391.reworked.includes(n)));
 const deferred = Object.fromEntries(D391.rework_deferred || []);
-ok(!deferred.shaymin && !deferred.shaymin_sky && /mega_skarmory/.test(deferred.skarmory || ''), 'deferred: Shaymin\'s Flower part is done; Skarmory waits only for Mega Skarmory');
+// (batch 16: Mega Skarmory landed, so Skarmory left rework_deferred too)
+ok(!deferred.shaymin && !deferred.shaymin_sky && !deferred.skarmory, 'deferred: Shaymin\'s Flower part is done; Skarmory\'s Mega too (batch 16)', deferred.skarmory);
 ok(HAZARD_JOKERS.every((n) => P_CENTERS['j_poke_' + n].config.extra.hazard_level === 1), 'every Hazard joker has hazard_level 1 (3.9.1 config)');
 ok(P_CENTERS.j_poke_skarmory.config.extra.hazard_max === 1 && P_CENTERS.j_poke_mega_steelix.config.extra.stone_held === 4, 'Skarmory hazard_max 1, Mega Steelix stone_held 4');
 

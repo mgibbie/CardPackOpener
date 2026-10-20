@@ -247,7 +247,8 @@ ok(!avail('Item', null, 'c_poke_pokeball'), 'pokeballs option off removes the ba
   ok(act({ type: 'use', id: ms.sort_id }).ok, 'use megastone');
   ok(key(v) === 'j_poke_mega_venusaur' && ms.area === G.consumeables, 'mega evolution; the stone stays (keep_on_use)', [key(v), ms.area && ms.area.name]);
   ok(G.hand.config.card_limit === hs - 1 + 4, 'mega venusaur hand size replaces venusaur\'s', G.hand.config.card_limit);
-  ok(ms.ability.extra.used_on === 'j_poke_mega_venusaur' && !ms.ability.extra.usable && !ms.can_use_consumeable(), 'once per round');
+  // (Pokermon 3.9.1, batch 16: used_on is the Mega's card, its unique_val)
+  ok(ms.ability.extra.used_on === v.unique_val && !ms.ability.extra.usable && !ms.can_use_consumeable(), 'once per round', ms.ability.extra.used_on);
   winRound();
   ok(ms.ability.extra.usable === true, 'usable again after the round');
   act({ type: 'cash_out' });

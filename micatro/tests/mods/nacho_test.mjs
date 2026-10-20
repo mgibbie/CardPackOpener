@@ -694,7 +694,8 @@ const use = (c, joker_targets) => act({ type: 'use', id: c.sort_id, targets: [],
   const stone = add('c_poke_megastone');
   use(stone, [g.sort_id]);
   G.E_MANAGER.flush();
-  ok(key(g) === 'j_nacho_mega_gallade' && stone.ability.extra.used_on === 'j_nacho_mega_gallade', 'mega made');
+  // (Pokermon 3.9.1, batch 16: the stone remembers the Mega's card, its unique_val)
+  ok(key(g) === 'j_nacho_mega_gallade' && stone.ability.extra.used_on === g.unique_val, 'mega made', stone.ability.extra.used_on);
   act({ type: 'sell', id: g.sort_id });
   G.E_MANAGER.flush();
   ok(p.ability.received_key === 'j_nacho_mega_gallade' && p.ability.name === 'mega_gallade', 'Passimian holds Mega Gallade');

@@ -639,7 +639,11 @@ export const POKERMON = registerMod({
   // 13 = new-jokers sub-batch 15b: 9 jokers upstream added on main after 3.9.1 (InertSteak/Pokermon main @ af0b656, "3.9.1-1016a":
   // Lotad / Lombre / Ludicolo, Mawile, Electrike / Manectric, Cryogonal, Greavard / Houndstone) join the pools; the Lotad line's
   // beat (G.GAME.poke_beat 2 <-> 4 after every hand). `version` stays '3.9.1': only those 9 jokers come from main (PORTING.md).
-  contentRev: 13,
+  // 14 = batch 16, the Megas: 3.9.1's 11 new Megas (Raichu X / Y, Clefable, Victreebel, Starmie, Dragonite, Meganium, Feraligatr,
+  // Skarmory, Lucario, Drampa) and their bases' Mega links; the Mega Stone remembers its Mega's card (unique_val) and frees itself
+  // when that Mega is gone; Shuckle's Mega Berry Juice; the Mega Deck / Sleeve's Crystal Ball and the sleeve's Mega Deck alt
+  // (poke_infinite_megastone).
+  contentRev: 14,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

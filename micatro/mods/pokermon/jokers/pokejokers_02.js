@@ -1,7 +1,7 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_02.lua (Pokédex 031-060: Nidoqueen -> Poliwag), 30 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_02.lua (Pokédex 031-060: Nidoqueen -> Poliwag), 30 jokers + 1 new 3.9.1 Mega (Mega Clefable, batch 16).
 // Line-for-line port of the behaviour, on 3.9.1 since batch 6; static data (pos, config, rarity, cost, stage,
 // ptype, gen, item_req, evo_list) comes from data.js + data391.js. See ../PORTING.md and pokejokers_01.js.
-// (3.9.1's mega_clefable is new content: not here yet.)
+// Mega Clefable (3.9.1's new Mega): batch 16.
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, create_card, scale_card,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
@@ -9,6 +9,7 @@ import {
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_02.lua';
+const mega_tip = (info_queue) => { if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' }); };
 
 // ------------------------------------------------------------ shared bodies
 const hand_size = {
@@ -167,6 +168,7 @@ defineJokers({
   clefable: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      mega_tip(info_queue);
       const ex = center.ability.extra;
       return { vars: [ex.mult_mod, localize(ex.suit, 'suits_singular'), ex.mult_mod * ex.clubs_scored, 5 * ex.mult_mod] };
     },
@@ -188,6 +190,37 @@ defineJokers({
           card.ability.extra.clubs_scored = 0;
           card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_reset') });
         }
+      }
+      return undefined;
+    },
+  },
+  // Mega Clefable 036-1 (3.9.1, batch 16): +X0.03 per Club drawn this round (scale_card); scoring Clubs give that X Mult
+  // (1 + the gain). Resets at end of round.
+  mega_clefable: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      const ex = center.ability.extra;
+      return { vars: [ex.Xmult_multi, ex.Xmult_multi1 + ex.Xmult_multi2] };
+    },
+    calculate(self, card, context) {
+      if (context.hand_drawn && !context.blueprint) {
+        // (SMODS.drawn_cards = the cards of this draw: our hand_drawn context holds them)
+        const club_count = context.hand_drawn.filter((c) => c.is_suit('Clubs')).length;
+        if (club_count > 0) {
+          scale_card(card, {
+            ref_value: 'Xmult_multi1',
+            scalar_value: 'Xmult_multi',
+            operation: (ref_table, ref_value, initial, change) => { ref_table[ref_value] = initial + change * club_count; },
+            message_colour: 'MULT',
+          });
+        }
+      }
+      if (context.individual && context.cardarea === G.play && context.other_card.is_suit('Clubs')) {
+        return { Xmult: card.ability.extra.Xmult_multi1 + card.ability.extra.Xmult_multi2 };
+      }
+      if (context.end_of_round && context.game_over === false && context.main_eval && !context.blueprint) {
+        card.ability.extra.Xmult_multi1 = 0;
+        return { message: localize('k_reset') };
       }
       return undefined;
     },

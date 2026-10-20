@@ -24,7 +24,7 @@ const FILE_JOKERS = ['poliwhirl', 'poliwrath', 'abra', 'kadabra', 'alakazam', 'm
   'magnemite', 'magneton', 'farfetchd', 'doduo', 'dodrio', 'seel', 'dewgong', 'grimer', 'muk', 'shellder'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 33 pokejokers_03 jokers ported',
   FILE_JOKERS.filter((n) => P_CENTERS['j_poke_' + n].unported));
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 33, 'defs: 33 from pokejokers_03.lua', STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length === 34, 'defs: 34 from pokejokers_03.lua (33 + Mega Victreebel, batch 16)', STATUS.PORTED_FILES['pokemon/pokejokers_03.lua'].length);
 
 // ---------------------------------------------------------------- Poliwhirl / Poliwrath
 {

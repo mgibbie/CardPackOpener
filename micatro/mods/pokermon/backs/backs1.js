@@ -70,10 +70,13 @@ defineBacks({
       });
     },
   },
+  // Mega Deck (3.9.1, batch 16: + the Crystal Ball voucher; 3.9.1 text)
   megadeck: {
+    config: { vouchers: ['v_reroll_surplus', 'v_reroll_glut', 'v_crystal_ball'], consumables: ['c_poke_megastone'], shop_size: 1 },
     loc_vars(self) {
       return { vars: [localize('megastone_variable'), localize({ type: 'name_text', key: 'v_reroll_surplus', set: 'Voucher' }),
-        localize({ type: 'name_text', key: 'v_reroll_glut', set: 'Voucher' }), self.config.shop_size] };
+        localize({ type: 'name_text', key: 'v_reroll_glut', set: 'Voucher' }), self.config.shop_size,
+        localize({ type: 'name_text', key: 'v_crystal_ball', set: 'Voucher' })] };
     },
     apply(self) { G.E_MANAGER.add_event(() => { change_shop_size(-self.config.shop_size); }); },
   },

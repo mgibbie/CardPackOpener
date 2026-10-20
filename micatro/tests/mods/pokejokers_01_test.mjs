@@ -13,7 +13,7 @@ const FILE_JOKERS = ['bulbasaur', 'ivysaur', 'venusaur', 'mega_venusaur', 'charm
   'pidgey', 'pidgeotto', 'pidgeot', 'mega_pidgeot', 'rattata', 'raticate', 'spearow', 'fearow', 'ekans', 'arbok', 'pikachu', 'raichu',
   'sandshrew', 'sandslash', 'nidoranf', 'nidorina'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 36 pokejokers_01 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 36, 'defs: 36 from pokejokers_01.lua', STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length === 38, 'defs: 38 from pokejokers_01.lua (36 + Mega Raichu X / Y, batch 16)', STATUS.PORTED_FILES['pokemon/pokejokers_01.lua'].length);
 
 // ---------------------------------------------------------------- Bulbasaur line
 {

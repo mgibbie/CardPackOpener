@@ -260,7 +260,7 @@ Intended-design fixes are noted in comments at each site (search "intended").
 ## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
-87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, **`3.9.1+r8`** since new-jokers sub-batch 11
+87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, **`3.9.1+r14`** since batch 16 (the Megas)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -275,7 +275,9 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 | **10** | **the Hazard layer, Seed / Miracle Seed / Heavy-Duty Boots, Flower X2, the Debris deck + sleeve; 16 jokers off hold** (below) | **done 2026-10-20** — `3.9.1+r6` |
 | **10b** | **the Unown rework (Unown, Unown Swarm, Ruins of Alph's Unown, 3.9.1 Unown art, tiled swarm strips) + the Wish Pack (3 unused wishes, change_form)** (below) | **done 2026-10-20** — `3.9.1+r7` |
 | **11** | **new jokers, sub-batch 11: the 26 of 3.9.1's pokejokers_09 / 10 (Wurmple, Seedot, Taillow, Wingull, Ralts, Surskit, Slakoth, Nincada, Makuhita lines, Skitty)** (below) | **done 2026-10-20** — `3.9.1+r8` |
-| 12–17 | new jokers (sub-batches 12–15, 15b), Megas, non-Pokémon jokers / blinds / stake / challenges | after 11 (batch 9 folded into 6–8) |
+| 12–15b | new jokers (sub-batches 12–15, 15b; below) | **done 2026-10-20** — `3.9.1+r9` … `3.9.1+r13` |
+| **16** | **the Megas: 11 new Megas, the Mega Stone's 3.9.1 rules (`unique_val`), the Mega Berry Juice, the Mega Deck / Sleeve (below)** | **done 2026-10-20** — `3.9.1+r14` |
+| 17 | non-Pokémon jokers / blinds / stake / challenges | after 16 (batch 9 folded into 6–8) |
 
 ### Steamodded seams for 3.9.1 (batch 4)
 Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
@@ -1588,19 +1590,107 @@ Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change show
     whole key, one with `at`, and the re-earn by a new legacy win, pushed); a watched player's map with and without their
     revocations; the hidden Nincada option (its value still read).
 
+### The Megas (batch 16)
+Pinned **`3.9.1+r14`** (`contentRev: 14`). The **11 Megas 3.9.1 adds**, with the Mega Stone's 3.9.1 rules, the Mega Berry Juice and the Mega
+Deck / Sleeve changes. The plan's "12 Megas" counted Mega Steelix, which the port has had since 3.2.1 (on 3.9.1 since batch 10).
+
+- **How they come in** (the sub-batch 11 pipeline):
+  - The spec's `new_jokers` "16" lists the 11 Megas. The 3.9.1 extract is unchanged:
+    `node tools/micatro/gen_pokermon_391_overlay.mjs <3.9.1 extract> <main extract>`.
+  - Each Mega takes its whole 3.9.1 static data, sprite and text, and is inserted after its base (3.9.1's file order).
+  - **The Mega links**: the generator now takes a reworked joker's 3.9.1 `megas` list (`data391.js jokers[name].megas`; 9 of them: Raichu,
+    Clefable, Victreebel, Starmie, Dragonite, Meganium, Feraligatr, Skarmory, Lucario). Drampa's comes back with its whole item now that
+    `new_deferred` is empty.
+    - The generator fails when a `megas` entry names a joker the port doesn't register.
+    - Lucario and Skarmory left `rework_deferred`.
+- **The Megas** (rarity `poke_mega`: never in a pool; reached with a Mega Stone or the Mega Berry Juice; numbers from data391.js):
+  - **Mega Raichu X** (jokers/pokejokers_01.js): +$25 interest cap while held. Each hand earns the interest you would get now (`dollars`).
+  - **Mega Raichu Y**: +1 Mult per $1 you have.
+  - **Raichu's X / Y choice**: Charizard's and Mewtwo's rule (`getMega_by_position`): the leftmost Raichu becomes X, the rightmost Y, one in
+    between picks at random. Raichu shows the "XY Mega" tooltip while a Mega Stone is held.
+  - **Mega Clefable** (_02): +X0.03 per Club drawn this round (`scale_card` on the `hand_drawn` cards). Each scoring Club gives X(1 + that).
+    Resets at end of round.
+  - **Mega Victreebel** (_03): every played even card is retriggered, and every Purple Seal card (both: twice). Comes holding a Medium.
+  - **Mega Starmie** (_05): in a 2-card hand, each scoring Diamond gives X2.5 and $5 (`dollar_buffer`).
+  - **Mega Dragonite**: +55 Mult. A 1-card final hand is retriggered once per card held in hand.
+  - **Mega Meganium** (_06): the first held card of each suit earns $2, and is retriggered if it did anything (so it pays twice).
+    `systems/utils.js get_first_of_each_suit` ports 3.9.1's suit matching (a Wild card gives way to a plain card of its suit).
+  - **Mega Feraligatr**: +15 Chips per played card this round (`before`). Each Dragon joker gives those Chips (`other_joker`). Resets at
+    end of round. Comes holding a Dragon Scale.
+  - **Mega Skarmory** (_08): +1 Hazard layer and limit (as Skarmory). Each scoring Hazard card gives X(1 + 1 per held Steel or Gold card).
+  - **Mega Lucario** (_15): with 3+ different editions among the cards held in hand, every held card gives X1.6.
+  - **Mega Drampa** (_26): +1 Booster Pack in the shop and +1 choice in every pack; shop packs are always Mega (the `get_pack` hook already
+    checked for it). It changes `extra_boosters` directly, so mega evolving from Drampa doesn't stock an extra pack.
+- **The Mega Stone, 3.9.1** (`systems/items.js`, consumables/mart1.js):
+  - **`used_on` is the Mega's card**: its `unique_val`, not its center key. So two Mega Clefables are told apart, and selling a stone reverts
+    its own Mega, never the twin.
+  - **A used stone targets only its own Mega** (3.9.1 `get_mega_target`), to revert it. Before, it could Mega Evolve a second joker.
+  - **At every end of round a stone whose Mega is gone forgets it** (sold, destroyed, reverted another way) and is free again.
+  - Reverting says "Reverted" (3.9.1 `pokermon.devolve`). The tooltip names the Mega the stone made.
+  - Kept: the house rule "the highlighted joker if it qualifies, else the leftmost that does" (3.9.1 stops at a highlighted joker that
+    doesn't); the pack / shop checks; Nacho's `addon_megas`.
+  - **Old saves**: nothing stores a stone's ability (a resume or replay re-simulates its recorded actions under the current rules), so no
+    save holds a `used_on`. A `used_on` in the 3.2.1 shape (a center key, a string: an add-on's or a test's) is **migrated at read time**:
+    `megastone_made` / `megastone_mega` match it as "the first Mega of that key". Nothing rewrites it.
+  - **`poke_infinite_megastone`**: the Mega Sleeve on the Mega Deck (its 3.9.1 alt). Every joker with a Mega and every Mega is a target; the
+    stone remembers nothing (`used_on = false`); no "Restriction" tooltip.
+- **The Mega Berry Juice** (consumables/zberryjuice.js, 3.9.1 06_mart_berry.lua; `AtlasConsumablesBasic-391` {7,7}):
+  - Shuckle slicing a Mega Stone gives it (the other consumables still give their flavour). It Mega Evolves the highlighted (else the
+    leftmost) joker that has a Mega, for good: no stone remembers it. Never in a pool.
+  - The Lua's `can_use` calls `get_mega`, which rolls the X / Y seed for a joker in the middle of the row. Ours only checks that a target
+    exists, so the seed is rolled once, on use.
+- **The Mega Deck / Sleeve** (backs/backs1.js, sleeves.js): 3.9.1 adds the **Crystal Ball** to both, with the 3.9.1 texts. The sleeve's alt
+  on the Mega Deck (no vouchers, stone or shop slot) sets `poke_infinite_megastone` (engine `sleeve.js` `alt`).
+- **Base forms**: Raichu, Clefable, Victreebel, Starmie, Dragonite, Meganium, Feraligatr, Skarmory, Lucario and Drampa show the "Mega
+  Evolution" tooltip (3.9.1 `add_mega_evolution_tooltip`, with detailed tooltips on).
+- **Upstream main Megas**: re-checked at the pinned af0b656. `pokespriteload.lua` has Mega Mawile / Mega Manectric sprites
+  (`AtlasJokersBasicGen03` {10,4} / {4,5}) and `dex_order.lua` lists them. No joker defines them, so they are left out. Mawile and Manectric
+  have no `megas`.
+- **Precedence**: no add-on ships one of these 11 Megas. The dedupe step's script check (every Nacho / Pokermon+ joker by `name` and by
+  display name) finds none, and `replaced_by` marks none of them, nor any add-on Mega. The duplicate set stays the same 12. Nacho's Megas
+  (Gardevoir, Gallade, Altaria, Salamence, Audino) are other species. Had Nacho shipped one, `replaced_by` would have taken it out of play
+  and the Mega Stone on Pokermon's base would give Pokermon's (`megas` comes before `addon_megas`).
+- **Add-ons**: Nacho's Passimian reset hook (`MEGASTONE_RESET`, mods/nacho/systems.js) also matches the card's `unique_val`. 3.9.1's own
+  end-of-round check frees that stone anyway: a Passimian is not a `poke_mega` card.
+- **Art**: **no new art files**. Every Mega draws its 3.9.1 card from the Gen sheets vendored in batch 5 (`AtlasJokersBasicGen01/02/04/07-391.png`,
+  with a soul layer, and their Shiny twins).
+  - Cells: Raichu X {2,9}, Y {4,9}, Clefable {6,9}, Victreebel {8,9}, Starmie {10,9}, Dragonite {12,9} (Gen 1); Meganium {0,6}, Feraligatr
+    {2,6}, Skarmory {4,6} (Gen 2); Lucario {6,6} (Gen 4); Drampa {2,6} (Gen 7). Each soul is the cell to its right.
+  - The test checks each card, soul and Shiny crop, and the juice. A browser screenshot showed them in the joker row.
+- **Deviations / kept quirks**:
+  - Mega Raichu X adds and removes a flat $25 of interest cap, not its config's `interest_cap` (as the Lua).
+  - Mega Skarmory has `gen = 1` in 3.9.1. Its sprite names the Gen 2 sheet, so only the Pokédex-generation option reads it: it is a Mega,
+    never in a pool.
+  - Mega Meganium's `func` (the `dollar_buffer` reset) is queued from `calculate`; the held-card loop reads no `func`.
+  - `get_first_of_each_suit` walks the 4 suits in Steamodded's order (the Lua: `pairs(SMODS.Suits)`, no fixed order).
+- **Tests**: `micatro/tests/mods/pokermon_391_megas_test.mjs` gives **10 passed / 55 failed** on origin/main (2acf967b) and ****108 / 0**** here.
+  - It fires every Mega through a real Mega Stone: Raichu X / Y by position, the interest cap and its revert, Clefable's Club scaling and
+    reset, Victreebel's even / Purple Seal retriggers, Starmie's 2-card Diamonds, Dragonite's last-hand retriggers, Meganium's held $,
+    Feraligatr's Dragon Chips and Dragon Scale, Skarmory's Hazard X Mult and its revert, Lucario's 3 editions, Drampa's shop and packs.
+  - The Mega Stone: `used_on` = `unique_val`, two Mega Clefables, selling a stone, a Mega sold, a legacy `used_on`, and the infinite
+    modifier on the Mega Deck + Sleeve. Also the Mega Berry Juice from Shuckle, the Crystal Ball, the overlay, the order, the text, the pools,
+    precedence with Nacho + Pokermon+, and the art.
+  - Updated for the `unique_val`: `addon_dedupe_test` and `nacho_test` (Passimian). Count pins: `pokejokers_01` / `02` / `03` /
+    `05` / `06` / `08` / `15` / `26_test` (38 / 31 / 34 / 38 / 32 / 34 / 16 / 3 defs), `pokermon_391_new_14` / `_15_test` (defs; Drampa's Mega no longer
+    deferred), `pokermon_391_reworks_b` / `_c` and `_hazard_test` (`rework_deferred`), `pokermon_systems_test`, `pokermon_391_data_test` (rev 14;
+    the juice has no 3.2.1 cell), `modpin_test` and `micatro_mod_version_pin_test` (rev 14).
+  - Re-run and passing: every `micatro/tests` Node suite (all mods), `micatro_engine_test` (100 suites; fuzz: vanilla 40 runs / 5937 actions,
+    Pokermon 24 / 4387, all mods 16 / 3172), and in the browser, one at a time: `micatro_resume_win_badges` (28 / 0), `micatro_runsync`
+    (81 / 0; no fixture shim needed: Megas never enter a pool), `micatro_mod_version_pin` (47 / 0) and `designwiki_micatro_mods` (296 / 0, wiki
+    data regenerated).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
 - **New jokers** (sub-batches 11–15, 15b): all done (above): 101 jokers (26 + 15 + 19 + 14 + 18 from 3.9.1, 9 from upstream main in 15b).
-  `new_deferred` holds only Drampa's Mega (batch 16; Kirlia -> Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14).
-  Still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon, 3 April Fools), and whatever a later rebase onto upstream main brings (sub-batch 15b
+  `new_deferred` is empty since batch 16 (Drampa's Mega; Kirlia -> Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14).
+  Still to add: 10 from 3.9.1 (7 non-Pokémon, 3 April Fools: batch 17; the 11 Megas came in batch 16), and whatever a later rebase onto upstream main brings (sub-batch 15b
   lists the drift: Solrock / Lunatone so far). (The 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the old tally counted were already
   in the port: sub-batches 14 / 15.)
-- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory), Drampa (Mega Drampa: `new_deferred`). Mega Mawile / Mega
-  Manectric: upstream main has their sprites but no jokers yet (sub-batch 15b); they come when upstream writes them. Shuckle's Mega Stone
-  (`c_poke_berry_juice_mega`, batch 6) with it.
+- **Batch 16** (Megas): done ("The Megas (batch 16)" above): Mega Lucario, Mega Skarmory, Mega Drampa and Shuckle's Mega Berry Juice. Mega
+  Mawile / Mega Manectric: upstream main (af0b656) has their sprites but no jokers; they come when upstream writes them.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist). (The DNA Seal and the
   Meteorite, once listed for it, came with Deoxys in sub-batch 14.)
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,

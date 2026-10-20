@@ -1,4 +1,4 @@
-// Pokermon 3.9.1 (batch 6) — pokemon/pokejokers_05.lua (Pokédex 121-150: Starmie -> Mega Mewtwo Y), 36 jokers.
+// Pokermon 3.9.1 (batch 6) — pokemon/pokejokers_05.lua (Pokédex 121-150: Starmie -> Mega Mewtwo Y), 36 jokers + 2 new 3.9.1 Megas (Mega Starmie / Dragonite, batch 16).
 // Line-for-line port of the 3.9.1 behaviour (reworked: Magmar, Lapras, Ditto, Eevee, Vaporeon, Jolteon, Flareon,
 // Aerodactyl, Snorlax, Mewtwo; Jynx's copies are announced); static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, evo_list, megas, volatile, custom_pool_func) comes from data.js + data391.js (the 3.9.1 config).
@@ -117,9 +117,29 @@ defineJokers({
   starmie: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      mega_tip(info_queue);
       return { vars: [center.ability.extra.mult, center.ability.extra.money_mod, localize(center.ability.extra.suit, 'suits_singular')] };
     },
     calculate(self, card, context) { return star_calc(card, context); },
+  },
+  // Mega Starmie 121-1 (3.9.1, batch 16): in a 2-card hand, each scoring Diamond gives X2.5 Mult and $5.
+  mega_starmie: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      const ex = center.ability.extra;
+      return { vars: [ex.Xmult_multi, ex.money_mod, localize(ex.suit, 'suits_plural')] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && context.full_hand.length === 2 && context.other_card.is_suit(card.ability.extra.suit)) {
+        if (!context.end_of_round && !context.before && !context.after && !context.other_card.debuff) {
+          G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + card.ability.extra.money_mod;
+          G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+          const earned = ease_poke_dollars(card, 'starmie', card.ability.extra.money_mod, true);
+          return { xmult: card.ability.extra.Xmult_multi, dollars: earned, card };
+        }
+      }
+      return undefined;
+    },
   },
   // Mr Mime 122
   mrmime: {
@@ -789,11 +809,22 @@ defineJokers({
   },
   // Dragonite 149
   dragonite: {
-    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.mult, center.ability.extra.retriggers] }; },
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); mega_tip(info_queue); return { vars: [center.ability.extra.mult, center.ability.extra.retriggers] }; },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) return a_mult(card);
       if (context.repetition && context.cardarea === G.play && context.scoring_hand && context.full_hand && context.full_hand.length === 1) {
         return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return undefined;
+    },
+  },
+  // Mega Dragonite 149-1 (3.9.1, batch 16): +55 Mult; a 1-card final hand is retriggered once per card held in hand.
+  mega_dragonite: {
+    loc_vars(self, info_queue, center) { type_tooltip(self, info_queue, center); return { vars: [center.ability.extra.mult, center.ability.extra.retriggers] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { mult: card.ability.extra.mult };
+      if (context.repetition && context.cardarea === G.play && context.full_hand.length === 1 && G.GAME.current_round.hands_left === 0) {
+        return { repetitions: G.hand.cards.length };
       }
       return undefined;
     },
