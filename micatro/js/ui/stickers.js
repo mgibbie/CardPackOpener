@@ -40,7 +40,15 @@
 //   * Mod upgrades (mods/aliases.js): a sticker stored under a key the mod RENAMED counts for the new key (read-time:
 //     the stored record is never rewritten, so the account's max-merge is untouched); one under a REMOVED key
 //     stays stored and is listed greyed out as a "retired card" (retiredStickers), never dropped.
+//   * Superseded add-on jokers (mods/superseded.js; Pokermon PORTING.md "Add-on dedupe"): a legacy Nacho / Pokermon+ key
+//     that base Pokermon took over (j_nacho_ralts -> j_poke_ralts) keeps its own record, and that record also counts
+//     toward its Pokermon twin when READ (max per category; nothing stored is rewritten) — except a category revoked on
+//     the twin: a revocation of j_poke_ralts stays one whatever j_nacho_ralts holds. A NEW win with a legacy card is
+//     recorded on both keys (recordWin), so the twin's own record, its earn time (the re-earn rule) and the account row
+//     carry it. A spectator / replay gets the merged records (stickerMap) plus the twins' revocations (stickerRevokedMap,
+//     passed to setStickerSource), so its own merge of a legacy card on the same table can't bring a revoked one back.
 import { aliasesOf, isRetired, retiredName } from '../mods/aliases.js';
+import { supersededBy, supersededFrom } from '../mods/superseded.js';
 export const STICKER_NAMES = ['White', 'Red', 'Green', 'Black', 'Blue', 'Purple', 'Orange', 'Gold'];
 /** stickers.png cells (game.lua G.shared_stickers). */
 export const STICKER_POS = {
@@ -291,7 +299,9 @@ export function recordWin(ev) {
   if (!cats.length) cats = ['win'];
   let n = 0, stamped = false;
   const now = Date.now();
-  for (const k of ev.jokers) {
+  // a superseded legacy add-on joker wins for its Pokermon twin too (both keep a record: see the header)
+  const keys = [...new Set(ev.jokers.flatMap((k) => (supersededBy(k) ? [k, supersededBy(k)] : [k])))];
+  for (const k of keys) {
     if (typeof k !== 'string' || !KEY_RE.test(k) || k === '__proto__') continue;
     const cur = wins[k] || {};
     let rose = false;
@@ -310,19 +320,24 @@ export function recordWin(ev) {
   }
   return n;
 }
-/** A key's stored record merged with its renamed-from keys' (max per category), or undefined. */
-function recordOf(centerKey, from = wins) {
+/**
+ * A key's stored record merged (max per category) with its renamed-from keys' and with the legacy add-on keys it
+ * supersedes (minus the categories `rv` — the revocations that apply to `from` — revokes on it), or undefined.
+ */
+function recordOf(centerKey, from = wins, rv = revoked) {
   if (!centerKey) return undefined;
-  const olds = aliasesOf(centerKey);
-  if (!olds.length) return from[centerKey];
+  const olds = aliasesOf(centerKey), legacy = supersededFrom(centerKey);
+  if (!olds.length && !legacy.length) return from[centerKey];
   let out = null;
-  for (const k of [centerKey, ...olds]) {
-    const r = from[k];
-    if (!r) continue;
+  const raise = (r, skip) => {
+    if (!r) return;
     out = out || {};
-    for (const c of Object.keys(r)) if ((out[c] || 0) < r[c]) out[c] = r[c];
-  }
-  return out || undefined;
+    for (const c of Object.keys(r)) if (!(skip && skip.includes(c)) && (out[c] || 0) < r[c]) out[c] = r[c];
+  };
+  for (const k of [centerKey, ...olds]) raise(from[k]);
+  const no = rv && rv[centerKey] ? rv[centerKey].cats : null;   // revoked on the twin: a legacy win can't restore it
+  for (const k of legacy) for (const l of [k, ...aliasesOf(k)]) raise(from[l], no);
+  return out && Object.keys(out).length ? out : undefined;
 }
 /** This joker's full record: {win?, poke?, nuz?, mono?, both?} (a copy; {} when it has none). */
 export const winRecord = (centerKey) => ({ ...(recordOf(centerKey) || {}) });
@@ -348,35 +363,51 @@ export function stickerFor(rec) {
 /** The sticker to draw on this joker (stickerFor), or null. `collection`: always (else only with the option on). */
 export function winStickerInfo(centerKey, collection) {
   if (!collection && !show) return null;
-  return stickerFor(recordOf(centerKey, source || wins));
+  return source ? stickerFor(recordOf(centerKey, source, sourceRevoked)) : stickerFor(recordOf(centerKey));
 }
 
 // ---------------------------------------------------------------- a watched player's stickers
 let source = null;     // spectating / a replay: the player's {key: {cat: level}} (null: this viewer's own record)
+let sourceRevoked = Object.create(null);   // that player's revocations (only the superseded merge reads them)
 let sourceJson = 'null';
 /**
  * Draw the stickers from `map` (the watched player's records: a spectated view's win_stickers, a replay's
  * recipe.win_stickers) instead of this viewer's own; null / not an object = back to the own record. Cleaned like
  * a stored record; only redraws when it changed. The viewer's own record (and its storage) is never touched.
+ * `revoked` (optional; the server's `revoked` format, or stickerRevokedMap's): that player's revocations, so a legacy
+ * add-on key's record never brings back a category revoked on its Pokermon twin (the superseded merge, recordOf).
  */
-export function setStickerSource(map) {
+export function setStickerSource(map, revoked = null) {
   const next = map && typeof map === 'object' && !Array.isArray(map) ? cleanWins(map) : null;
-  const json = next ? JSON.stringify(next) : 'null';
+  const rv = next ? cleanRevoked(revoked) : Object.create(null);
+  const json = next ? JSON.stringify([next, rv]) : 'null';
   if (json === sourceJson) return;
-  source = next; sourceJson = json;
+  source = next; sourceRevoked = rv; sourceJson = json;
   bump();
 }
-export const stickerSource = () => (source ? JSON.parse(sourceJson) : null);
+export const stickerSource = () => (source ? JSON.parse(sourceJson)[0] : null);
 /**
  * This player's records for `keys` (the jokers and deck back on the table / seen in a run), compact: only keys
- * with a record — {key: {win?, poke?, nuz?, mono?, both?}}. What the publisher / a replay sends viewers.
+ * with a record — {key: {win?, poke?, nuz?, mono?, both?}}, each as it READS here (recordOf: renamed-from and
+ * superseded legacy keys merged in, revocations respected). What the publisher / a replay sends viewers.
  */
 export function stickerMap(keys) {
   const out = {};
   for (const k of keys || []) {
     if (typeof k !== 'string' || !KEY_RE.test(k) || k === '__proto__' || out[k]) continue;
-    const r = wins[k];
+    const r = recordOf(k);
     if (r && Object.keys(r).length) out[k] = { ...r };
+  }
+  return out;
+}
+/**
+ * This player's revocations of the superseding (Pokermon twin) keys among `keys` ({key: {cats, at}}; nearly always
+ * {}): sent with stickerMap, so a viewer's merge of a legacy card on the same table respects them (setStickerSource).
+ */
+export function stickerRevokedMap(keys) {
+  const out = {};
+  for (const k of keys || []) {
+    if (typeof k === 'string' && revoked[k] && supersededFrom(k).length) out[k] = { cats: revoked[k].cats.slice(), at: revoked[k].at };
   }
   return out;
 }

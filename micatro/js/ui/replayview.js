@@ -52,7 +52,7 @@ export async function startReplay(ctx) {
   }
   // the player's win stickers as they were when the run was recorded (recipe.win_stickers); an older replay
   // without them: this viewer's own. The viewer's own record is never changed.
-  setStickerSource(recipe.win_stickers || null);
+  setStickerSource(recipe.win_stickers || null, recipe.win_stickers_revoked || null);
   const needMods = [...new Set([...(recipe.mods || []), ...((recipe.customDeck && Array.isArray(recipe.customDeck.mods)) ? recipe.customDeck.mods : [])])];
   if (needMods.length) {
     board.setBanner(`${backLink}<span class="spec-status">Loading mods…</span>`);

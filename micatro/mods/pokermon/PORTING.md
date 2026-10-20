@@ -1513,7 +1513,7 @@ Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change show
     fits a key that still loads and plays, so no alias entry.
   - A save, replay, custom deck or challenge that holds the key re-simulates with it (the test replays a custom-deck recipe with
     `j_nacho_ralts` and fires it).
-  - A win sticker on it still shows its own name, text and art.
+  - A win sticker on it still shows its own name, text and art (and counts toward Pokermon's twin: follow-up 4 below).
   - Pokermon+'s Wonder Guard challenge still starts with its eternal `j_sonfive_shedinja` (its rule is built around that card).
   - When Nacho 1.7.9 (batch 18) deletes the keys upstream, that batch decides between `renamed` aliases and keeping these legacy
     definitions.
@@ -1524,6 +1524,44 @@ Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change show
     and descriptions name what Pokermon took over. The data is regenerated; `designwiki_micatro_mods_test` skips them in its
     registered set and checks that none is listed.
   - The deck editor's joker pickers skip them. A deck that already holds one still loads.
+- **Follow-ups (owner calls, 2026-10-20)**:
+  1. An owned legacy duplicate evolves into Pokermon's card (as above). Kept.
+  2. The Wonder Guard challenge keeps Pokermon+'s own Shedinja (as above). Kept.
+  3. **Pokermon+'s "Nincada line" option is hidden.** It only gated Pokermon+'s Nincada / Ninjask / Shedinja, which are out of
+     every pool anyway, so it did nothing. The option is declared `hidden: () => <the three are replaced_by>` (always true:
+     Pokermon+ requires Pokermon). `modOptionList` (js/mods/index.js, with `optionHidden`) leaves a hidden option out, so the
+     Mods panel, the "Active mods" box and the design wiki (regenerated) don't list it. The value is still declared, filled
+     with its default by `activateMods` and read by `opt()`: a saved selection or recipe with `nincada: false` loads as before.
+  4. **Win stickers merge at read time.** A sticker stored on a legacy key counts toward its Pokermon twin: a Nacho Ralts win
+     is a Ralts win.
+     - The map is `micatro/js/mods/superseded.js` (`SUPERSEDED`, `supersededBy`, `supersededFrom`): a static table GENERATED
+       from the same detection (`node tools/micatro/gen_superseded.mjs`, which loads every shipped mod and keeps each key
+       `replaced_by` returns). Static because `stickers.js` runs where no mod loads (the design wiki, a spectator before the
+       mods arrive) and has no engine imports. `addon_sticker_merge_test` fails when the table drifts (`--check` too).
+     - `stickers.js` `recordOf` (behind `winRecord`, `winLevel`, `winStickerInfo`: the joker in game, the collection / Pokédex)
+       max-merges, per category, the legacy keys' records into the twin's (the renamed-alias merge already
+       worked this way). Only one way: the legacy key keeps showing its own record.
+     - Nothing stored changes: no migration, no row rewritten, the account's max-merge untouched.
+     - **Revocations still win**: a category revoked on the twin (the account's `revoked`) is never filled from a legacy
+       key, whatever the legacy key holds. The legacy key's own (unrevoked) sticker stays.
+     - **Spectate / replays**: `stickerMap` sends each key's MERGED record (so a player holding Pokermon's Ralts shows their
+       old Nacho Ralts win). `stickerRevokedMap` adds the revocations of the twins on the table (`view.win_stickers_revoked`,
+       `recipe.win_stickers_revoked`, nearly always absent), and `setStickerSource(map, revoked)` respects them when the
+       viewer merges a legacy card on the same table. An older snapshot / replay (raw records) is merged on the viewer.
+     - **Recording: on both keys** (`recordWin`). A win holding `j_nacho_kirlia` raises `j_nacho_kirlia` and `j_poke_kirlia`.
+       Why both, not "map to the twin only": the legacy card keeps its own history (it still names, draws and wears its
+       sticker), and the twin's own record gets the win WITH its earn time, so the re-earn rule works unchanged (a win
+       after a revocation's `at` is stamped on the twin, pushed with `earned`, and the server accepts it). Mapping only
+       would leave the legacy card you won with bare. The read-time merge alone can't do the re-earn (it skips revoked
+       categories), and a merge read-only would never reach the account row.
+     - Server: nothing changes. No server code reads the sticker rows to decide anything (the badges come from the run,
+       not from stickers); `micatro-stickers-get / -put` store and merge raw keys as before.
+     - The design wiki branch (`feat/designwiki-win-stickers`) draws the signed-in player's stickers via
+       `setStickerSource(withoutRevoked(row.wins, row.revoked, row.earned))`: it gets the merge with no change. To keep a
+       revoked twin category from coming back on a page that also shows the legacy card, it should pass the revocations:
+       `setStickerSource(map, row.revoked)`. `withoutRevoked` / `revokeFrom` touch `applyRevoked`, which this change
+       doesn't: no textual conflict expected (both edit the header comment and the section around `setStickerSource` /
+       `stickerMap` only on this side).
 - **Kept Nacho behaviour fixed**: Nacho's Altaria rule ("9s can't be debuffed") used `find_joker('altaria')`, which matches by name and
   so also fired for Pokermon's Altaria. It is Nacho's Altaria only now (key check). On main there is no Pokermon Altaria: no change
   there.
@@ -1543,6 +1581,12 @@ Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change show
     - `pokermonplus_test`: Nincada -> Pokermon's Ninjask + Shedinja; the line is out of the pools.
     - `modpin_test`: Nacho `1.6.4+r1`.
     - `designwiki_micatro_mods_test`.
+  - **Follow-ups 3 + 4**: `micatro/tests/mods/addon_sticker_merge_test.mjs` gives **10 passed / 19 failed** on 54bdebde (this
+    section's checkpoint) and **38 / 0** here: the static table = the detection; a legacy Nacho Ralts win shows on Pokermon's
+    Ralts (in game and in the collection); max per category; the legacy key keeps its own record; nothing stored is
+    rewritten; `stickerMap`; a new legacy win recorded on both keys with the twin's earn time; revocations (a category, a
+    whole key, one with `at`, and the re-earn by a new legacy win, pushed); a watched player's map with and without their
+    revocations; the hidden Nincada option (its value still read).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
