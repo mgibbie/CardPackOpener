@@ -55,7 +55,9 @@ const flush = () => G.E_MANAGER.flush();
   ok(pool.length === 18, 'on: all 18 in the joker pool', pool.length);
   // Fix 1 — the shipped mod loaded NONE (src/pokemon.lua needed sonfive_config.customJokers).
   const inPool = (k) => P_CENTERS[k].in_pool(P_CENTERS[k]);
-  for (const k of ['j_sonfive_nincada', 'j_sonfive_croagunk', 'j_sonfive_vullaby', 'j_sonfive_meltan', 'j_sonfive_stonjourner', 'j_sonfive_lechonk', 'j_sonfive_nacli', 'j_sonfive_darkrai']) {
+  // (add-on dedupe: the Nincada line is Pokermon's now — never in a pool, addon_dedupe_test)
+  ok(!inPool('j_sonfive_nincada') && !inPool('j_sonfive_ninjask'), 'add-on dedupe: Pokermon+’s Nincada line is out of the pools (Pokermon’s own)');
+  for (const k of ['j_sonfive_croagunk', 'j_sonfive_vullaby', 'j_sonfive_meltan', 'j_sonfive_stonjourner', 'j_sonfive_lechonk', 'j_sonfive_nacli', 'j_sonfive_darkrai']) {
     ok(inPool(k), 'fix 1: ' + k + ' can appear (on by default, Croagunk & Vullaby included)');
   }
   ok(!inPool('j_sonfive_shedinja') && !inPool('j_sonfive_melmetal'), 'Shedinja / Melmetal never in a pool (evolution-only)');
@@ -90,14 +92,18 @@ const flush = () => G.E_MANAGER.flush();
 // ======================================================================= Nincada line
 {
   start('NIN');
-  const n = add('j_sonfive_nincada');
+  let n = add('j_sonfive_nincada');
   const r = play(hand(['S_2']));
   const base = 5 + 2; // High Card 5 chips + the 2
   ok((r.total.chips === base + 45 && r.total.mult === 1) || (r.total.chips === base && r.total.mult === 1 + 3), 'nincada: +45 Chips or +3 Mult', r.total);
   for (let i = 0; i < 5; i++) nextRound();
   flush();
-  ok(key(n) === 'j_sonfive_ninjask', 'nincada -> ninjask after 5 rounds', key(n));
-  ok(G.jokers.cards.some((c) => key(c) === 'j_sonfive_shedinja'), 'evolving leaves a Shedinja (room in the row)');
+  // (add-on dedupe: the evolution and its Shedinja are Pokermon's now; the legacy Ninjask / Shedinja keep working — swapped in)
+  ok(key(n) === 'j_poke_ninjask', 'nincada -> (Pokermon’s) ninjask after 5 rounds', key(n));
+  ok(G.jokers.cards.some((c) => key(c) === 'j_poke_shedinja'), 'evolving leaves a (Pokermon’s) Shedinja (room in the row)');
+  for (const c of G.jokers.cards.slice()) c.remove();
+  n = add('j_sonfive_ninjask');
+  add('j_sonfive_shedinja');
   const r2 = play(hand(['S_2']));
   ok(r2.total.chips === base + 90 && r2.total.mult === 1 + 5, 'ninjask: +90 Chips +5 Mult', r2.total);
   // Speed Boost after each Boss Blind: +1 Energy's worth, no limit, no Energy count.

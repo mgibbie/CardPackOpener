@@ -113,7 +113,9 @@ const centerArt = (c) => {
 
 // ------------------------------------------------------------------ items
 const modOf = (o) => o && o.mod;
-const ownCenters = (id, set) => Object.values(P_CENTERS).filter((c) => c.mod === id && c.set === set && !c.unported).sort((a, b) => (a.order || 0) - (b.order || 0));
+// (poke_replaced_by: an add-on duplicate of a Pokermon joker is out of play — Pokermon precedence, PORTING.md "Add-on dedupe" —
+// so it gets no entry of its own; the add-on's features line names what Pokermon took over.)
+const ownCenters = (id, set) => Object.values(P_CENTERS).filter((c) => c.mod === id && c.set === set && !c.unported && !c.poke_replaced_by).sort((a, b) => (a.order || 0) - (b.order || 0));
 const RARITY = { 1: ['Common', '#009dff'], 2: ['Uncommon', '#35a97c'], 3: ['Rare', '#fe5f55'], 4: ['Legendary', '#b26cbb'] };
 const badgeList = (d, skip) => (d && d.badges || []).filter((b) => b && b.key !== 'mod' && !(skip || []).includes(b.key))
   .map((b) => ({ label: plainName(b.label || b.key), colour: css(b.colour) || null })).filter((b) => b.label);
@@ -172,7 +174,7 @@ function consumableItem(c, mod) {
 
 /** A rarity's art: its first joker (own mod first, then any mod's), so the rarity rows and the Joker Rarities cover show one. */
 function rarityArt(key) {
-  const js = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && c.rarity === key && !c.unported).sort((a, b) => (a.mod === RAR_MOD(key) ? 0 : 1) - (b.mod === RAR_MOD(key) ? 0 : 1) || (a.order || 0) - (b.order || 0));
+  const js = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && c.rarity === key && !c.unported && !c.poke_replaced_by).sort((a, b) => (a.mod === RAR_MOD(key) ? 0 : 1) - (b.mod === RAR_MOD(key) ? 0 : 1) || (a.order || 0) - (b.order || 0));
   for (const j of js) { const art = centerArt(j); if (art) return art; }
   return null;
 }
@@ -379,8 +381,8 @@ function notPortedOf(id) {
 // What each mod's systems are (curated; the content tables below are generated).
 const SYSTEMS = {
   pokermon: ['Pokémon types on every joker, with Tera stickers that change a joker’s type', 'Evolution: jokers evolve by level (rounds held), by scaling, with evolution items or by deck make-up; an Everstone stops it', 'Energy cards energize a joker’s numbers (type-matched; Colorless gives half), up to a per-joker limit', 'Shiny edition (+1 booster slot in the shop while you own one) and Mega evolutions via the Megastone', 'Safari and Mega joker rarities; family-aware pools, a generation filter and a “Pokémon only” option', 'Items (Poké Balls, evolution stones, held items) as a consumable type, and the scry view (the top of your deck scores like held cards)'],
-  nacho: ['More Pokémon lines built on Pokermon’s evolution / energy / type machinery', 'The Stellar type', 'The Elite Four stake', 'A per-evolution-line toggle for every line'],
-  pokermonplus: ['Nine more Pokémon lines on Pokermon’s machinery', 'Negative Energy (the Void deck) and weather effects (sandstorm, hail, rain, sun)', 'The Timer Ball item, five decks, the Lilac stake and the Weakened sticker'],
+  nacho: ['More Pokémon lines built on Pokermon’s evolution / energy / type machinery', 'The Stellar type', 'The Elite Four stake', 'A per-evolution-line toggle for every line', 'Its Ralts, Swablu and Bagon lines are base Pokermon’s now (Pokermon wins any duplicate): its Mega Gardevoir, Mega Gallade, Mega Altaria and Mega Salamence come from Pokermon’s Gardevoir, Gallade, Altaria and Salamence with a Mega Stone'],
+  pokermonplus: ['Eight more Pokémon lines on Pokermon’s machinery (its Nincada line is base Pokermon’s now: Pokermon wins any duplicate)', 'Negative Energy (the Void deck) and weather effects (sandstorm, hail, rain, sun)', 'The Timer Ball item, five decks, the Lilac stake and the Weakened sticker'],
   riskofjesters: ['Risk of Rain jokers in a vanilla style', 'The Temporary sticker (a copied joker breaks at the end of the round)', 'Printers: bigger boosters (+1 card, +1 choice)', 'Boss blinds incl. two showdowns'],
   sylviesilly: ['Moons: Planet cards that give every card of a suit +5 Chips, or buff an enhancement for the rest of the run', 'Themed booster packs (Suits, Bonus, Fortune)', 'Seal vouchers for Standard packs, four decks and six bosses'],
   milatro: ['30 jokers (no new systems)'],

@@ -21,6 +21,7 @@ import { P_CENTERS } from './api.js';
 import { MOD_LOC } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
+import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, DEOXYS_SOULS } from './systems/anim.js';
 
@@ -188,7 +189,10 @@ export function familyOf(d) {
   try { keys = get_family_keys(c.name, c.poke_custom_prefix, fake); } catch (e) { keys = [d.center]; }
   const out = [], seen = new Set();
   for (const k of keys) {
-    const key = typeof k === 'object' && k ? k.key : k;
+    let key = typeof k === 'object' && k ? k.key : k;
+    // Add-on dedupe (precedence.js): a replaced add-on duplicate shows as Pokermon's card, and a Mega only an add-on has
+    // (Nacho's Mega Gardevoir in Pokermon's Ralts line) as the add-on's. The card you opened it on is always itself.
+    if (key !== d.center) key = family_display_key(key);
     if (!key || seen.has(key) || !P_CENTERS[key]) continue;
     seen.add(key);
     out.push(key);

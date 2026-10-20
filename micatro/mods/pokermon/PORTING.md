@@ -966,7 +966,8 @@ every Pokermon joker (pokemon_in_pool, one per family, the Gen 3 option, enhance
 - **Add-ons**:
   - Nacho 1.6.4 ships its own `j_nacho_ralts` / `kirlia` / `gardevoir` / `gallade`. Pokermon+ ships `j_pokeplus_nincada` /
     `ninjask` / `shedinja`.
-  - They stay separate jokers (other keys) and share the 3.9.1 family (above).
+  - They stay separate jokers (other keys) and share the 3.9.1 family (above). (Since the add-on dedupe, below: they are out of play,
+    Pokermon's win.)
   - Nacho 1.7.9's deprecation of jokers now in base is batch 18; Pokermon+ 1.2.0's dropped jokers are batch 20.
 - **Art**: every new joker draws its 3.9.1 card from `AtlasJokersBasicNatdex-391.png` (and `...NatdexShiny-391.png`), vendored in batch 5.
   No new art files. The test checks each crop and its Shiny twin hold a real picture.
@@ -1469,6 +1470,80 @@ InertSteak/Pokermon (GPL-3.0) **main @ `af0b656cb1d871d541b643b85d97d40caaf0c4b7
       `micatro_resume_win_badges` (28 / 0) and `micatro_runsync` (81 / 0).
   - A browser screenshot showed all 9 in the joker row on their upstream cards (Shiny Ludicolo / Manectric / Houndstone).
 
+### Add-on dedupe (Pokermon precedence)
+Owner rule (2026-10-20): **base Pokermon wins any conflict** with Nacho's Pokermon Dip or Pokermon+. The last step before checkpoint 1.
+Pins: **Nacho `1.6.4+r1`**, **Pokermon+ `1.0.3-251101e+r1`** (both declare `contentRev: 1` now; `LEGACY_MOD_VERSIONS` untouched).
+Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change shows only with an add-on on, and that add-on's pin moves.
+
+- **The duplicates** (a script check of every registered joker of the three mods, by `name` and by display name; the test keeps it):
+  exactly 12.
+  - Nacho: `j_nacho_ralts`, `kirlia`, `gardevoir`, `gallade`, `swablu`, `altaria`, `bagon`, `shelgon`, `salamence`.
+  - Pokermon+: `j_sonfive_nincada`, `ninjask`, `shedinja`.
+  - Nothing else: Nacho and Pokermon+ share no joker.
+  - Distinct forms stay, with nothing to dedupe: Nacho's Galarian Meowth, Hisuian Sneasel / Zorua / Zoroark / Sliggoo / Goodra.
+  - Nacho's Megas stay too (Mega Gardevoir / Gallade / Altaria / Salamence / Audino): base Pokermon has none of them.
+- **The rule** (`systems/precedence.js`): an add-on joker is a duplicate when Pokermon registers a ported joker of the same `name`
+  (`replaced_by`). It is detected, not listed, so batch 16 (Megas) and batch 18 (Nacho 1.7.9) keep applying the rule with no new
+  table. If Pokermon gets its own `mega_gardevoir`, Nacho's becomes a duplicate too.
+- **Out of play**:
+  - `mark_precedence(centers)`: each add-on calls it on its centers before `registerMod`. It stamps `poke_replaced_by` (static, so
+    the wiki generator and the deck editor read it without importing Pokermon). It wraps `in_pool` to false, so the engine's pools
+    never offer a duplicate: shops, Buffoon packs, rarity Tags, create_card.
+  - `pools.js` puts a `POKE_POOL_RULES` entry first: the random-Pokémon picks call `pokemon_in_pool` directly (Poké Balls, Zorua,
+    Transformation, the randomizer...).
+  - A Showman / Pokédex held doesn't lift it (the rules run before those).
+  - Why not `centerActive` / `mod_option` (Nacho's line toggles)? They would turn an OWNED duplicate off mid-run. The duplicates stay
+    active centers: an owned one keeps scoring as it did.
+- **Evolutions retarget** (`precedence_key`):
+  - `poke_evolve` and `poke_backend_evolve` (the funnel for level / item / scaling / deck evolutions, the Rare Candy's highest evo,
+    devolution) swap a duplicate target for Pokermon's key. So a legacy `j_nacho_ralts` evolves into `j_poke_kirlia`, a Kirlia with a
+    Dawn Stone into `j_poke_gallade`, Bagon into `j_poke_shelgon`, and Pokermon+'s Nincada into `j_poke_ninjask`.
+  - Pokermon+'s Nincada leaves Pokermon's Shedinja (its `smods_create_card` key goes through `precedence_key`).
+  - Nacho's Passimian receives the evolved ability, now Pokermon's (`EVOLVE_INTERCEPTS` sees the retargeted key).
+  - `family_win_keys` maps its keys the same way, so the earlier-stage win stickers a legacy card earns go to Pokermon's jokers.
+  - The family lists were already unified (sub-batch 11: the add-on `add_family` joins the 3.9.1 family). They are unchanged.
+- **Megas carry over** (`addon_megas`, items.js): a Pokermon joker that replaced an add-on joker gets that joker's active Megas.
+  - So a Mega Stone on Pokermon's Gardevoir / Gallade / Altaria / Salamence gives `j_nacho_mega_*`, exactly as from Nacho's.
+  - The Mega Stone pool, the target pick and `used_on` read it (`hasMegas`).
+  - Two such Megas would pick at random with seed `megastone_<name>`, as `mega_for` does.
+  - Nacho's Ralts / Swablu / Bagon line toggles still gate their Megas.
+  - The Mega devolves through `get_previous_evo` (`j_nacho_gardevoir`), retargeted to Pokermon's Gardevoir.
+- **Kept registered (legacy definitions, not aliases)**:
+  - `mods/aliases.js` `renamed` only acts once the old key is NOT registered. `removed` greys the key out as a "retired card". Neither
+    fits a key that still loads and plays, so no alias entry.
+  - A save, replay, custom deck or challenge that holds the key re-simulates with it (the test replays a custom-deck recipe with
+    `j_nacho_ralts` and fires it).
+  - A win sticker on it still shows its own name, text and art.
+  - Pokermon+'s Wonder Guard challenge still starts with its eternal `j_sonfive_shedinja` (its rule is built around that card).
+  - When Nacho 1.7.9 (batch 18) deletes the keys upstream, that batch decides between `renamed` aliases and keeping these legacy
+    definitions.
+- **Collection / Pokédex / wiki / editor**:
+  - The Pokédex family view shows Pokermon's card for a duplicate and, for a Mega only the add-on has, the add-on's card (Pokermon's
+    Ralts line shows Nacho's Mega Gardevoir / Mega Gallade). The card you opened it on is always itself (`family_display_key`).
+  - The design wiki lists no duplicate (`ownCenters` and rarity art skip `poke_replaced_by`). The Nacho / Pokermon+ feature lines
+    and descriptions name what Pokermon took over. The data is regenerated; `designwiki_micatro_mods_test` skips them in its
+    registered set and checks that none is listed.
+  - The deck editor's joker pickers skip them. A deck that already holds one still loads.
+- **Kept Nacho behaviour fixed**: Nacho's Altaria rule ("9s can't be debuffed") used `find_joker('altaria')`, which matches by name and
+  so also fired for Pokermon's Altaria. It is Nacho's Altaria only now (key check). On main there is no Pokermon Altaria: no change
+  there.
+- **Tests**: `micatro/tests/mods/addon_dedupe_test.mjs` gives **55 passed / 34 failed** on the branch before this step (371428ce, sub-batch
+  15b), and **121 / 0** here.
+  - The inventory.
+  - 24 seeded runs × every rarity × create_card / get_current_pool / get_random_poke_key (stages × types, with Showman / Pokédex
+    held), plus real shops rerolled: no duplicate ever, and at least 8 of their Pokermon twins seen.
+  - Every legacy line's evolution, the Shedinja, the evolve funnel and the unified families.
+  - The Mega Stone on each of the 4 (and back), with Nacho off, and with Nacho's Ralts line off.
+  - A custom-deck recipe with `j_nacho_ralts` + `j_sonfive_shedinja` replayed and fired, and the Wonder Guard challenge.
+  - Names, text, art, aliases and stickers of every duplicate.
+  - The Pokédex view and the pins.
+  - Updated for the new behaviour:
+    - `nacho_test`: the lines evolve into Pokermon's, and each legacy stage is swapped in to keep firing it. Audino / Passimian receive
+      Pokermon's Kirlia.
+    - `pokermonplus_test`: Nincada -> Pokermon's Ninjask + Shedinja; the line is out of the pools.
+    - `modpin_test`: Nacho `1.6.4+r1`.
+    - `designwiki_micatro_mods_test`.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
@@ -1522,3 +1597,6 @@ and every registered handler must check that its own mod is active for the run.
 - evolution.js: `LEVEL_EVO_EXTRA` (extra level_evo steps), `EVOLVE_INTERCEPTS` (immediate / handle
   an evolution yourself), `EVO_KEEP`, `POST_EVOLVE`; `poke_evolved` context for every non-mega evolution.
 - pools.js: `POKE_POOL_RULES`. utils.js: `FIND_CARD_EXTRA`, `BEFORE_REMOVE`. items.js: `MEGASTONE_RESET`.
+- precedence.js ("Add-on dedupe (Pokermon precedence)" above): `mark_precedence(centers)` before `registerMod` (Pokermon wins:
+  a same-name add-on joker is out of play but stays registered), `replaced_by`, `precedence_key` (use it for any add-on key you
+  create or evolve into), `addon_megas`, `family_display_key`.

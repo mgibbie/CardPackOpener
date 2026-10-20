@@ -61,7 +61,8 @@ export function parse_highlighted() {
 export function set_debuff(card) {
   if (!on()) return undefined;
   if (card.ability.name === 'mega_gallade') return 'prevent_debuff';
-  if (card.base && card.base.id !== undefined && card.get_id() === 9 && find_joker('altaria').length) return 'prevent_debuff';
+  // (Nacho's Altaria only: find_joker('altaria') also matched Pokermon's own Altaria, which has no such rule — add-on dedupe.)
+  if (card.base && card.base.id !== undefined && card.get_id() === 9 && find_joker('altaria').some((c) => c.config.center.key === 'j_nacho_altaria')) return 'prevent_debuff';
   return undefined;
 }
 

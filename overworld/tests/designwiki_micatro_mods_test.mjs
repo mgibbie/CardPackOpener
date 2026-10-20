@@ -74,7 +74,8 @@ A(navMicatro.length > 0 && !/micatro-mods|micatro\/mod/.test(navMicatro), 'sideb
 function registered(id) {
 	const out = new Map();
 	const put = (o, keyOverride) => out.set(keyOverride || o.key, o);
-	for (const c of Object.values(core.P_CENTERS)) if (c.mod === id && !c.unported && !['Shader', 'Other', 'Default'].includes(c.set)) put(c);
+	// (poke_replaced_by: an add-on duplicate of a Pokermon joker — Pokermon precedence — is out of play and gets no entry)
+	for (const c of Object.values(core.P_CENTERS)) if (c.mod === id && !c.unported && !c.poke_replaced_by && !['Shader', 'Other', 'Default'].includes(c.set)) put(c);
 	for (const T of [core.P_TAGS, core.P_BLINDS, core.P_STAKES, core.P_SEALS, REG.STICKERS, REG.MOD_SUITS, REG.MOD_POKER_HANDS, REG.RARITIES, ASPECTS]) for (const o of Object.values(T)) if (o.mod === id) put(o);
 	for (const c of (REG.MODS[id].challenges || [])) if (c && typeof c === 'object' && (c.key || c.id)) put(c, c.key || c.id);
 	for (const sl of (REG.MODS[id].sleeves || [])) if (sl && sl.key) put(sl);
@@ -108,6 +109,12 @@ for (const m of IDX.AVAILABLE) {
 	counts.push(m.id + ' ' + listed.size);
 }
 console.log('     items per mod: ' + counts.join(', ') + ` (total ${totalItems})`);
+// add-on dedupe (Pokermon PORTING.md "Add-on dedupe"): Nacho's / Pokermon+'s duplicates of Pokermon jokers are not listed
+{
+	const dupes = Object.values(core.P_CENTERS).filter(c => c.poke_replaced_by).map(c => c.key);
+	const listedAll = new Set(Object.values(files).filter(Boolean).flatMap(F => F.sections.flatMap(x => x.items.map(i => i.key))));
+	A(dupes.length === 12 && !dupes.some(k => listedAll.has(k)), `add-on dedupe: the ${dupes.length} add-on duplicates of Pokermon jokers get no entry`, dupes.filter(k => listedAll.has(k)).join(','));
+}
 A(SKINS.length >= 16 && Object.values(files).some(F => F && F.sections.some(x => x.id === 'sleeves')) && Object.values(files).some(F => F && F.sections.some(x => x.id === 'skins')), `sleeves and the ${SKINS.length} deck skins are listed`);
 // categories: every mod section in exactly one, counts add up (overview tiles + category pages read these)
 const catOf = {};

@@ -50,7 +50,7 @@ import PDATA from '../pokermon/data.js';
 import DATA from './data.js';
 import {
   add_family, poke_set_type_badge, pokemon_in_pool, POKE_POOL_RULES, ENERGY_OVERRIDES, ENERGY_LIMIT_BONUS,
-  EVO_KEEP, POST_EVOLVE,
+  EVO_KEEP, POST_EVOLVE, mark_precedence,
 } from '../pokermon/api.js';
 import { MOD_ID, set_debuff, void_energy_override, energy_plus_of, sonfive_base_evo_name } from './src/functions.js';
 import { weakened_in_shop, weakened_after_evolve, lilac_stake, weakened_sticker, WEAKENED } from './src/stakes.js';
@@ -151,6 +151,10 @@ for (const f of DATA.groups.jokers) {
   if (fam.length > 1) families.push(fam);
 }
 for (const fam of families) add_family(fam);
+// Add-on dedupe (Pokermon precedence; pokermon/systems/precedence.js): Nincada, Ninjask and Shedinja are Pokermon's own now.
+// Pokermon+'s stay registered (legacy definitions: saves, replays, stickers and the Wonder Guard challenge resolve; an owned
+// one keeps working) but are out of every pool, and their evolutions give Pokermon's joker.
+export const REPLACED = mark_precedence(centers);
 
 /** The per-evolution-line toggles (config.lua), scoped to this mod's own Pokémon. */
 POKE_POOL_RULES.push((center) => {
@@ -264,10 +268,14 @@ export const POKERMONPLUS = registerMod({
   name: "Sonfive's Pokermon+",
   prefix: PREFIX,
   version: '1.0.3-251101e',
+  // Our behaviour counter (mods/pins.js; the pin reads "1.0.3-251101e (rev 1)"). 1 = the add-on dedupe (Pokermon precedence,
+  // Pokermon PORTING.md "Add-on dedupe"): the Nincada line is Pokermon's (Pokermon+'s out of the pools; its evolution and the
+  // Shedinja it leaves give Pokermon's).
+  contentRev: 1,
   by: 'Sonfive, with marcavis, Kek & MyDude (rebuilt for Micatro)',
   badge_colour: '#87DEFF',
   requires: ['pokermon'],
-  description: 'Pokémon add-on: Nincada, Darkrai, Meltan, Garganacl and more, the Timer Ball, five new decks, negative Energy and the Lilac stake.',
+  description: 'Pokémon add-on: Darkrai, Croagunk, Meltan, Garganacl and more, the Timer Ball, five new decks, negative Energy and the Lilac stake.',
   // config.lua's per-line toggles (all on: see fix 1) + the Timer Ball toggle (settings.lua "Extra").
   options: {
     nincada: OPT(true, 'Nincada line'),

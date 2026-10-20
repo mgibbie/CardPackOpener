@@ -1,7 +1,7 @@
 // Pokermon+ — src/pokemon/290_nincada_line.lua: Nincada, Ninjask, Shedinja.
 import {
   G, localize, pseudorandom, type_tooltip, level_evo, smods_create_card, ease_poke_dollars,
-  get_poke_target_card_ranks, add_target_cards_to_vars, remove, STATES,
+  get_poke_target_card_ranks, add_target_cards_to_vars, remove, STATES, precedence_key,
 } from '../../../pokermon/api.js';
 import { energy_shift } from '../functions.js';
 
@@ -19,10 +19,11 @@ export default {
         return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.extra.mult] }), colour: 'MULT', mult_mod: card.ability.extra.mult };
       }
       const evo = level_evo(self, card, context, 'j_sonfive_ninjask');
-      // Shedinja appears in the empty shell when Nincada evolves (if there's room).
+      // Shedinja appears in the empty shell when Nincada evolves (if there's room). (Add-on dedupe: Pokermon's Shedinja
+      // now — precedence_key — as the evolution itself gives Pokermon's Ninjask.)
       if (evo && typeof evo === 'object' && G.jokers && G.jokers.cards.length < G.jokers.config.card_limit && !context.blueprint) {
         G.E_MANAGER.add_event(() => {
-          const new_card = smods_create_card({ set: 'Joker', area: G.jokers, key: 'j_sonfive_shedinja', no_edition: true });
+          const new_card = smods_create_card({ set: 'Joker', area: G.jokers, key: precedence_key('j_sonfive_shedinja'), no_edition: true });
           new_card.add_to_deck();
           G.jokers.emplace(new_card);
         });

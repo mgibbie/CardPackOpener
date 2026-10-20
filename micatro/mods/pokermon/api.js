@@ -34,5 +34,6 @@ export * from './systems/energy.js';
 export * from './systems/evolution.js';
 export * from './systems/pools.js';
 export * from './systems/items.js';
+export * from './systems/precedence.js';
 export { faint_baby_poke, volatile_active, reset_bulba_rank, reset_espeon_card, reset_gligar_suit, reset_sneasel_rank } from './systems/rules.js';
 export { scry_view } from './systems/scry.js';

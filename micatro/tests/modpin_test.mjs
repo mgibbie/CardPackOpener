@@ -41,7 +41,7 @@ ok(PINS.pinLabel('3.2.1+r2') === '3.2.1 (rev 2)' && PINS.pinLabel('3.9.1') === '
 const s = new Session();
 s.start({ seed: 'PIN1', mods: ['nacho'] });   // nacho requires pokermon
 ok(s.recipe.mods.includes('pokermon') && s.recipe.mods.includes('nacho'), 'the run activates nacho + its requirement');
-ok(s.recipe.modVersions && s.recipe.modVersions.pokermon === PK && s.recipe.modVersions.nacho === MODS.nacho.version, 'the recipe pins every active mod (requirements included)', s.recipe.modVersions);
+ok(s.recipe.modVersions && s.recipe.modVersions.pokermon === PK && s.recipe.modVersions.nacho === '1.6.4+r1', 'the recipe pins every active mod (requirements included; Nacho 1.6.4+r1: the add-on dedupe)', s.recipe.modVersions);
 ok(s.recipe.engineRev === ENGINE_CONTENT_REV, 'the recipe pins the engine rules rev');
 const saved = JSON.parse(mem.get('micatro_run_v1'));
 ok(saved.modVersions.pokermon === PK && saved.engineRev === ENGINE_CONTENT_REV, 'the saved run (localStorage) carries the pins');

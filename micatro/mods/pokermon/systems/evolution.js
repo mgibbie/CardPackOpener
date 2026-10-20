@@ -25,6 +25,7 @@ import { find_card, any, cfg } from './utils.js';
 import { type_sticker_applied, wildcard_type } from './types.js';
 import { energize, energy_increase } from './energy.js';
 import { get_random_poke_key } from './pools.js';
+import { precedence_key } from './precedence.js';
 
 /** pokermon.family — each entry a list of names or {key, form} tables. Add-ons may push. */
 export const family = DATA.globals['pokermon.family'].map((f) => f.slice());
@@ -195,6 +196,8 @@ export function copy_scaled_values(card) {
  */
 export function poke_evolve(card, to_key, immediate, evolve_message, transformation, energize_amount) {
   if (G.GAME.modifiers.apply_randomizer && !transformation) to_key = get_random_poke_key('randomizer');
+  // Add-on dedupe (precedence.js): an evolution into an add-on duplicate of a Pokermon joker gives Pokermon's.
+  to_key = precedence_key(to_key);
   for (const f of EVOLVE_INTERCEPTS) if (f.immediate && f.immediate(card, to_key)) immediate = true;
   if (immediate) { poke_backend_evolve(card, to_key, energize_amount); return undefined; }
   G.E_MANAGER.add_event(() => {
@@ -233,6 +236,7 @@ export const POST_EVOLVE = [];
 export const EVOLVE_INTERCEPTS = [];
 
 export function poke_backend_evolve(card, to_key, energize_amount) {
+  to_key = precedence_key(to_key); // (add-on dedupe, as poke_evolve)
   for (const f of EVOLVE_INTERCEPTS) if (f.backend && f.backend(card, to_key)) return;
   const custom_values_to_keep = {};
   let has_custom = false;
@@ -442,7 +446,9 @@ export function family_win_keys(card) {
         (c.stage === 'Legendary' && prev && P.stage === prev_stage) || // (i.e. Meltan, Cosmog, Terapagos)
         (P.set === 'Joker' && P.aux_poke === true && P.stage === c.stage) || // forms (same stage: Jirachi, Rotom)
         (P.set === 'Joker' && P.auto_sticker === true)) {
-      if (v !== c.key && !out.includes(v)) out.push(v);
+      // (add-on dedupe: a replaced add-on key's win goes to Pokermon's joker — precedence.js)
+      const w = precedence_key(v);
+      if (w !== c.key && !out.includes(w)) out.push(w);
     }
   }
   return out;

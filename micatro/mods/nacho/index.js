@@ -24,7 +24,7 @@ import { G, P_STAKES } from '../../js/engine/core.js';
 import DATA from './data.js';
 import { NACHO_DEFS, NACHO_FILES, NACHO_ID } from './defs.js';
 import { addon_pokemon_center } from '../pokermon/index.js';
-import { add_family, POKE_POOL_RULES } from '../pokermon/api.js';
+import { add_family, POKE_POOL_RULES, mark_precedence } from '../pokermon/api.js';
 
 import './pokemon/0280_ralts.js';
 import './pokemon/0333_swablu.js';
@@ -120,6 +120,11 @@ for (const f of DATA.groups.jokers) {
 // Pokermon's random-Pokémon picks (Poké Balls, Zorua's disguise, Transformation, ...) walk every
 // registered center: keep Nacho's out while the mod or the line is off.
 POKE_POOL_RULES.push((c) => (c.mod === NACHO_ID && !centerActive(c) ? false : undefined));
+// Add-on dedupe (Pokermon precedence; pokermon/systems/precedence.js): Ralts, Kirlia, Gardevoir, Gallade, Swablu, Altaria,
+// Bagon, Shelgon and Salamence are Pokermon's own now. Nacho's stay registered (legacy definitions: saves, replays and
+// stickers resolve; an owned one keeps working) but are out of every pool; their evolutions give Pokermon's joker, and
+// Nacho's four Megas are reached from Pokermon's Gardevoir / Gallade / Altaria / Salamence with a Mega Stone.
+export const REPLACED = mark_precedence(centers);
 
 // ------------------------------------------------------------------ stake, sticker, challenges
 const stakes = [];
@@ -177,10 +182,14 @@ export const NACHO = registerMod({
   name: "Nacho's Pokermon Dip",
   prefix: 'nacho',
   version: '1.6.4',
+  // Our behaviour counter (mods/pins.js; the pin reads "1.6.4 (rev 1)"). 1 = the add-on dedupe (Pokermon precedence, Pokermon
+  // PORTING.md "Add-on dedupe"): the Ralts / Swablu / Bagon lines are Pokermon's (Nacho's out of the pools, their evolutions give
+  // Pokermon's), the four Megas come from Pokermon's Gardevoir / Gallade / Altaria / Salamence; Altaria's 9s rule is Nacho's only.
+  contentRev: 1,
   by: 'Eternalnacho & contributors (rebuilt for Micatro)',
   badge_colour: '#E9B800',
   requires: ['pokermon'],
-  description: 'More Pokémon for Pokermon (Sinnoh starters, Ralts, Bagon, Goomy, Terapagos...), the Stellar type and the Elite Four stake.',
+  description: 'More Pokémon for Pokermon (Sinnoh starters, Goomy, Terapagos, Megas for Pokermon’s Gardevoir, Gallade, Altaria and Salamence...), the Stellar type and the Elite Four stake.',
   options,
   content: { centers, stakes, stickers, atlases, loc },
   hooks,

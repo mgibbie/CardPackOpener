@@ -389,9 +389,9 @@ All are byte-identical to upstream main.
 | 10b | **DONE** (see "Batch 10b" below) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art, the swarm strips tiled) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
 | 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file. **11 DONE** (see "New jokers, sub-batch 11" below: the 26 of pokejokers_09 / 10); **12 DONE** (the 15 of pokejokers_11, below); **13 DONE** (the 19 of pokejokers_12, below); **14 DONE** (the 14 of pokejokers_13–16, below); **15 DONE** (the 18 of pokejokers_18–32, below) | 5 × L | 5 |
 | 15b | **DONE** (see "New jokers, sub-batch 15b" below) — **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Ported from upstream main pinned at af0b656 ("3.9.1-1016a"); `version` stays 3.9.1, contentRev 13 counts them (see below why) | M | 11–15 |
-| 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice | M | 5 |
+| 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice. **Keep the add-on dedupe rule** (checkpoint 1 below; PORTING.md "Add-on dedupe"): a base Mega whose name an add-on Mega has makes the add-on's a duplicate automatically (`precedence.js replaced_by`); re-run `addon_dedupe_test`, and update its inventory if a new duplicate appears | M | 5 |
 | 17 | Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), ~~DNA seal~~, `starterq`, ~~Meteorite/Deoxys~~ (both done in new-jokers sub-batch 14), 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
-| 18 | Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks | M | 17 |
+| 18 | Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks. **Keep the add-on dedupe rule**: our 9 Nacho duplicates are already out of play as registered legacy definitions (checkpoint 1); when 1.7.9 drops the keys, choose `renamed` aliases (`aliases.js`) vs keeping the legacy definitions. Nacho's Megas re-keyed to `j_poke_*` there replace ours only if base registers them. Its 40 new jokers go through `mark_precedence` like the rest; Pokermon+ 1.2.0 (batch 20) too | M | 17 |
 | 19 | Nacho 40 new jokers | L | 18 |
 | 20 | Pokermon+ 1.2.0: 12 jokers, deck reworks, legacy defs for the 7 dropped | M | 17 |
 | 21 | Bunco fork balance/timing changes (gated) | S/M | 0 |
@@ -673,4 +673,24 @@ when the owner says.
   - Batch 16: the Megas (Drampa's deferred; Mawile / Manectric have none upstream yet).
   - Batch 17: the non-Pokémon jokers and April Fools.
   - The upstream-main drift (PORTING.md "Known upstream drift").
-  - The add-on dedupe step (Nacho's Ralts / Swablu / Bagon / Bronzor / Smoliv lines, Pokermon+'s Nincada line; none for 15b's 9).
+  - ~~The add-on dedupe step~~: **done** (below). Our Nacho 1.6.4 has no Bronzor / Smoliv line (those are 1.7.9's).
+
+### Add-on dedupe (Pokermon precedence) — the last step before checkpoint 1: DONE (2026-10-20)
+Owner rule: base Pokermon wins any conflict with Nacho / Pokermon+. Details: `micatro/mods/pokermon/PORTING.md` "Add-on dedupe (Pokermon
+precedence)".
+- **Duplicates: exactly 12.** A script check of every registered joker of the three mods, by name and display name, found no others.
+  - Nacho: Ralts, Kirlia, Gardevoir, Gallade, Swablu, Altaria, Bagon, Shelgon, Salamence (9 jokers, not the 10 §2.3 counts).
+  - Pokermon+: Nincada, Ninjask, Shedinja.
+  - Regional forms (Galarian Meowth, the Hisuian ones) and Nacho's Megas are distinct cards, so they stay.
+- **Mechanism**: `micatro/mods/pokermon/systems/precedence.js`. An add-on joker with a Pokermon joker's name is detected, not listed.
+  - Out of every pool: `mark_precedence` wraps its `in_pool`, and a first `POKE_POOL_RULES` entry covers the random-Pokémon picks.
+  - Its key stays registered and active, so an owned one keeps working.
+  - Every evolution into it retargets to Pokermon's key (`poke_evolve` / `poke_backend_evolve`), as does Pokermon+'s Shedinja shell.
+  - Pokermon's Gardevoir / Gallade / Altaria / Salamence reach Nacho's Megas with a Mega Stone (`addon_megas`), and devolve back.
+  - The Pokédex, the design wiki and the deck editor's pickers skip the duplicates.
+- **Legacy definitions, no aliases**: `aliases.js` only acts on unregistered keys. Saves, replays, custom decks, stickers and Pokermon+'s
+  Wonder Guard challenge (its eternal Shedinja) resolve to the old key, which still plays.
+- Pins: **Nacho `1.6.4+r1`**, **Pokermon+ `1.0.3-251101e+r1`** (first `contentRev` for both). Pokermon stays `3.9.1+r13`: alone it
+  plays as before. `LEGACY_MOD_VERSIONS` is untouched.
+- Test `micatro/tests/mods/addon_dedupe_test.mjs`: 55 / 34 failed before (371428ce), 121 / 0 after. `nacho_test`, `pokermonplus_test`,
+  `modpin_test` and `designwiki_micatro_mods_test` were updated for it.
