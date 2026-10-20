@@ -1,0 +1,41 @@
+// Pokermon 3.9.1 — stakes/stakes.lua (batch 17): the Elite stake, and pokermon.lua's SMODS.is_showdown_ante override.
+//   Elite Stake: applies every stake up to Gold (a mod stake above Gold: the engine plays it at Gold's level 8 plus its own
+//   modifiers, js/engine/run.js mod_stake_chain), +2 win ante, and G.GAME.modifiers.poke_elite4: the last 4 antes before the
+//   (raised) win ante draw Showdown Boss Blinds. Art: elite_stake.png (chip) / elite_stake_sticker.png (3.9.1, vendored in batch 5).
+//   Win stickers: like every mod stake (Nacho's Elite, Pokermon+'s Lilac, MoreFluff's), a win on it records the Gold sticker
+//   (js/ui/stickers.js: levels 1..8; PORTING.md "Batch 17" says why there is no 9th level). Nacho's own Elite stake (the same
+//   rules, before Nacho 1.7.9 re-keyed it to this one) stays registered for old recipes but leaves the New Run picker while this
+//   one is there (`superseded_by` on Nacho's, js/mods/index.js modStakes: Pokermon precedence).
+import { G } from '../../js/engine/core.js';
+
+export const ELITE_STAKE = {
+  key: 'stake_poke_elite',
+  name: 'Elite Stake',
+  applied_stakes: ['gold'],
+  above_stake: 'gold',
+  modifiers() {
+    G.GAME.win_ante = G.GAME.win_ante + 2;
+    G.GAME.modifiers.poke_elite4 = true;
+  },
+  pos: { x: 0, y: 0 },
+  sticker_pos: { x: 0, y: 0 },
+  atlas: 'poke_elite_stake',
+  sticker_atlas: 'poke_elite_stake_sticker',
+  colour: '#ba8514',
+  shiny: true,
+  poke_file: 'stakes/stakes.lua',
+};
+
+/**
+ * pokermon.lua's SMODS.is_showdown_ante: with poke_elite4, every ante > 0 whose `ante % win_ante >= win_ante - 3` is a showdown
+ * ante too (win ante 10: antes 7, 8, 9 and 10; then 17-20, ...). A showdown ante draws only showdown bosses, every other ante
+ * only the others (a boss's `min` still applies), as Steamodded's create_blind_pool. The boss_eligible hook (core.js
+ * get_new_boss / smods.js boss_eligible_map); undefined = the base rule (no Elite stake).
+ */
+export function elite_boss_eligible(ok, v, ante) {
+  if (!G.GAME || !G.GAME.modifiers || !G.GAME.modifiers.poke_elite4) return undefined;
+  const w = G.GAME.win_ante;
+  const showdown = ante > 0 && (ante % w >= w - 3 || ante % w === 0);
+  if (v.boss.showdown) return showdown && ante >= 2;
+  return !showdown && v.boss.min <= Math.max(1, ante);
+}

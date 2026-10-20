@@ -5,6 +5,7 @@
 import { G, P_CENTERS, P_CARDS, Card, emit, math_random, defineTags, create_random_poke_joker } from '../api.js';
 import { use_card } from '../../../js/engine/run.js';
 import { starter_lists } from '../boosters/packs1.js';
+// (3.9.1, batch 17: + the Starter Tag...?, which only the Imposter Professor makes)
 
 const FILE = 'tags/tags1.lua';
 
@@ -125,5 +126,30 @@ defineTags({
       // could never appear; it is in the pool whenever every Starter Pack slot has a candidate.
       return true;
     },
+  },
+  // Starter Tag...? (3.9.1 tags1.lua starterq_tag): a free Starter Pack...?. Never in a pool. data.js (3.2.1) has no such
+  // tag: its static data in full.
+  starterq_tag: {
+    object_type: 'Tag',
+    atlas: 'AtlasTags',
+    name: 'starterq_tag',
+    order: 28,
+    pos: { x: 4, y: 0 },
+    config: { type: 'new_blind_choice' },
+    key: 'starterq_tag',
+    discovered: true,
+    min_ante: 2,
+    no_collection: true,
+    poke_file: FILE,
+    loc_vars(self, info_queue) { info_queue.push({ set: 'Other', key: 'p_poke_pokepack_starterq_pack', specific_vars: [1, 4] }); },
+    apply(self, tag, context) {
+      if (context && context.type === 'new_blind_choice') {
+        tag.yep('+', 'Spectral', () => { open_free_pack('p_poke_pokepack_starterq_pack'); return true; });
+        tag.triggered = true;
+        return true;
+      }
+      return undefined;
+    },
+    in_pool() { return false; },
   },
 }, FILE);

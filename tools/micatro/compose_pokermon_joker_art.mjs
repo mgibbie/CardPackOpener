@@ -33,7 +33,13 @@
 //                ('auto') every card on the siblings' sheets whose art window matches the siblings' empty background
 //                is added too; '--bg none' turns that off, '--bg auto,Gen03:1,2' combines both
 //   --exclude    cells the auto background scan must never use (e.g. the real card, when testing against it)
-//   --label      text for the name banner (default: --name with a capital first letter)
+//   --label      text for the name banner (default: --name with a capital first letter); --label "" draws none (the Others sheet's
+//                white JOKER cards have no banner)
+//   --base Sheet:x,y --clear x0,y0,x1,y1   instead of --siblings: the frame is that one card with the box (logical pixels) cleared
+//                to its most common colour (an Others-sheet white JOKER card minus its picture; batch 17)
+//   --key-corner the sprite's corner colour is transparent (an icon saved without alpha, e.g. rage_candy_bar.png)
+//   --sprite     a sprite PNG to use instead of --species' battle sprite (batch 17: Rage Candy Bar / Repel from overworld/item_icons;
+//                1 / 2 / 4 / 8-bit palette PNGs are read too)
 //   --out        output dir (default: <os tmpdir>/pokermon_joker_art); refuses asset / data folders
 //   --force      overwrite existing outputs (default: refuse)
 //   --no-outline leave out the 1px selective dark outline (each edge pixel's colour x 0.3) drawn round the sprite;
@@ -113,10 +119,12 @@ export function decode(file) {
     else if (type === 'IEND') break;
     p += 12 + len;
   }
-  if (depth !== 8 || inter !== 0 || ![2, 3, 6].includes(ctype)) throw new Error(`${file}: unsupported PNG (depth ${depth}, type ${ctype}, interlace ${inter})`);
+  // (8-bit RGB / RGBA / palette, and 1 / 2 / 4-bit palette: the overworld's GBA item icons are 4-bit)
+  const okDepth = depth === 8 || (ctype === 3 && [1, 2, 4].includes(depth));
+  if (!okDepth || inter !== 0 || ![2, 3, 6].includes(ctype)) throw new Error(`${file}: unsupported PNG (depth ${depth}, type ${ctype}, interlace ${inter})`);
   const bpp = ctype === 6 ? 4 : ctype === 2 ? 3 : 1;
   const raw = zlib.inflateSync(Buffer.concat(idat));
-  const stride = w * bpp, px = Buffer.alloc(stride * h);
+  const stride = depth === 8 ? w * bpp : Math.ceil(w * depth / 8), px = Buffer.alloc(stride * h);
   for (let y = 0; y < h; y++) {
     const f = raw[y * (stride + 1)], line = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
     for (let x = 0; x < stride; x++) {
@@ -128,10 +136,15 @@ export function decode(file) {
     }
   }
   const rgba = Buffer.alloc(w * h * 4);
+  const index = (i) => {
+    if (depth === 8) return px[i];
+    const y = Math.floor(i / w), x = i % w, per = 8 / depth, byte = px[y * stride + Math.floor(x / per)];
+    return (byte >> (8 - depth * (x % per + 1))) & ((1 << depth) - 1);
+  };
   for (let i = 0; i < w * h; i++) {
     if (ctype === 6) px.copy(rgba, i * 4, i * 4, i * 4 + 4);
     else if (ctype === 2) { px.copy(rgba, i * 4, i * 3, i * 3 + 3); rgba[i * 4 + 3] = 255; }
-    else { const k = px[i]; rgba[i * 4] = pal[k * 3]; rgba[i * 4 + 1] = pal[k * 3 + 1]; rgba[i * 4 + 2] = pal[k * 3 + 2]; rgba[i * 4 + 3] = trns && k < trns.length ? trns[k] : 255; }
+    else { const k = index(i); rgba[i * 4] = pal[k * 3]; rgba[i * 4 + 1] = pal[k * 3 + 1]; rgba[i * 4 + 2] = pal[k * 3 + 2]; rgba[i * 4 + 3] = trns && k < trns.length ? trns[k] : 255; }
   }
   return { w, h, rgba };
 }
@@ -300,6 +313,7 @@ export function findBackgroundCells(sheets, sibs, skip = new Set(), min = 0.5) {
 // ---- name, sprite, compositing ----------------------------------------------------------------------------------------
 /** Draw `text` in the upstream name font: glyph grey with a white 8-neighbour outline. */
 export function drawName(img, text) {
+  if (!text) return; // (an Others-sheet card has no name banner: --label "")
   const glyph = new Uint8Array(LW * LH);
   let x = NAME.x;
   for (const ch of text) {
@@ -339,8 +353,8 @@ export function hueRotateSaturate(rgba, deg = 150, sat = 1.3) {
 }
 
 /** Battle sprite trimmed to the bounding box of its pixels with alpha >= threshold. */
-export function loadSprite(file, threshold = 128) {
-  const s = decode(file);
+export function loadSprite(file, threshold = 128, key_corner = false) {
+  const s = key_corner ? keyCorner(decode(file)) : decode(file);
   let x0 = s.w, y0 = s.h, x1 = -1, y1 = -1;
   for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (s.rgba[(y * s.w + x) * 4 + 3] >= threshold) {
     if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
@@ -408,10 +422,32 @@ export function parseCells(s) {
   return out;
 }
 
+/**
+ * A frame from ONE card with a box of it cleared to the box's most common colour (batch 17: the Others sheet's plain white JOKER
+ * cards have no name banner and too few siblings for the per-pixel mode: Rage Candy Bar / Repel take the Everstone-like rock card,
+ * Others {8,0}, minus its rock). `box` = [x0, y0, x1, y1] in logical (71 x 95) pixels, inclusive.
+ */
+export function clearedFrame(cell, box) {
+  const [x0, y0, x1, y1] = box;
+  const counts = new Map();
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const v = cell[y * LW + x]; counts.set(v, (counts.get(v) || 0) + 1); }
+  let bgv = 0, n = -1;
+  for (const [v, c] of counts) if (c > n) { n = c; bgv = v; }
+  const out = cell.slice();
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) out[y * LW + x] = bgv;
+  return out;
+}
+/** A sprite without an alpha channel (a GBA icon): its corner colour becomes transparent (--key-corner). */
+export function keyCorner(spr) {
+  const c = spr.rgba.readUInt32LE(0);
+  for (let i = 0; i < spr.w * spr.h; i++) if (spr.rgba.readUInt32LE(i * 4) === c) spr.rgba[i * 4 + 3] = 0;
+  return spr;
+}
+
 /** Compose one joker: returns { normal, shiny } as 142 x 190 RGBA buffers plus a report. */
-export function compose({ label, spriteFile, siblings, bg = [], autoBg = true, exclude = [], assets, scale = null, threshold = 128, outline = true }) {
+export function compose({ label, spriteFile, siblings, bg = [], autoBg = true, exclude = [], assets, scale = null, threshold = 128, outline = true, base = null, clear = null, key_corner = false }) {
   const report = {};
-  const spr0 = loadSprite(spriteFile, threshold);
+  const spr0 = key_corner ? loadSprite(spriteFile, threshold, true) : loadSprite(spriteFile, threshold);
   const k = scale ?? pickScale(spr0.w, spr0.h);
   report.sprite = `${path.basename(spriteFile)} trimmed ${spr0.w}x${spr0.h}, scale ${k > 0 ? 'x' + k : '1/' + -k}`;
   const out = {};
@@ -422,6 +458,18 @@ export function compose({ label, spriteFile, siblings, bg = [], autoBg = true, e
       if (!cell) throw new Error(`${c.sheet}${suf}:${c.x},${c.y} is an empty cell`);
       return cell;
     });
+    if (base) {
+      // (--base / --clear: one card, its art box cleared — no sibling mode)
+      const [bc] = cells([base]);
+      const frame = clearedFrame(bc, clear);
+      drawName(frame, label);
+      let spr = scaleNearest(spr0, k);
+      if (variant === 'shiny') spr = { ...spr, rgba: hueRotateSaturate(spr.rgba) };
+      const at = placeSprite(frame, spr, threshold, outline);
+      report[variant] = { base: `${base.sheet}${suf}:${base.x},${base.y}`, cleared: clear.join(','), spriteAt: `${at.left},${at.top} ${spr.w}x${spr.h}` };
+      out[variant] = toPhysical(frame);
+      continue;
+    }
     const sibs = cells(siblings), bgs = cells(bg);
     const sheets = [...new Set(siblings.map((c) => c.sheet + suf))].map((n) => loadSheet(assets, n));
     if (autoBg) {
@@ -458,7 +506,7 @@ function parseArgs(argv) {
     const m = argv[i].match(/^--([\w-]+)(?:=(.*))?$/);
     if (!m) throw new Error(`unexpected argument ${argv[i]}`);
     if (m[2] !== undefined) a[m[1]] = m[2];
-    else if (['force', 'no-outline'].includes(m[1])) a[m[1]] = true;
+    else if (['force', 'no-outline', 'key-corner'].includes(m[1])) a[m[1]] = true;
     else a[m[1]] = argv[++i];
   }
   return a;
@@ -466,7 +514,7 @@ function parseArgs(argv) {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 function main() {
   const a = parseArgs(process.argv.slice(2));
-  if (!a.name || !a.siblings) {
+  if (!a.name || (!a.siblings && !a.base)) {
     console.error('usage: node tools/micatro/compose_pokermon_joker_art.mjs --name <joker> --siblings Sheet:x,y,Sheet:x,y,Sheet:x,y [--species key] [--bg auto|none|cells] [--exclude cells] [--label text] [--out dir] [--force] [--no-outline] [--scale k] [--alpha-threshold n] [--assets dir] [--data dir]');
     process.exit(2);
   }
@@ -478,17 +526,27 @@ function main() {
     throw new Error(`refusing to write into a game asset folder: ${outDir}`);
   }
   const siblings = parseCells(a.siblings), bg = parseCells(a.bg), exclude = parseCells(a.exclude), autoBg = a.bg == null || /(^|,)\s*auto\s*(,|$)/.test(a.bg);
-  if (siblings.length < 3) throw new Error('need 3 or more --siblings cells (Sheet:x,y)');
-  const species = (a.species || a.name).toLowerCase();
-  const idx = JSON.parse(fs.readFileSync(path.join(data, 'species_index.json'), 'utf8'));
-  const entry = idx[species];
-  if (!entry?.sprite) throw new Error(`species "${species}" has no sprite in ${path.join(data, 'species_index.json')}`);
-  const label = a.label || a.name.charAt(0).toUpperCase() + a.name.slice(1);
+  const base = a.base ? parseCells(a.base)[0] : null;
+  const clear = a.clear ? a.clear.split(',').map(Number) : null;
+  if (base && !(clear && clear.length === 4 && clear.every(Number.isInteger))) throw new Error('--base needs --clear x0,y0,x1,y1 (logical pixels)');
+  if (!base && siblings.length < 3) throw new Error('need 3 or more --siblings cells (Sheet:x,y)');
+  // --sprite <png>: any sprite file instead of a species' battle sprite (a non-Pokemon joker: an overworld item icon, overworld/item_icons)
+  let spriteFile;
+  if (a.sprite) spriteFile = path.resolve(a.sprite);
+  else {
+    const species = (a.species || a.name).toLowerCase();
+    const idx = JSON.parse(fs.readFileSync(path.join(data, 'species_index.json'), 'utf8'));
+    const entry = idx[species];
+    if (!entry?.sprite) throw new Error(`species "${species}" has no sprite in ${path.join(data, 'species_index.json')}`);
+    spriteFile = path.join(data, 'pokemon', entry.sprite);
+  }
+  const label = a.label !== undefined ? a.label : a.name.charAt(0).toUpperCase() + a.name.slice(1);
   const files = { normal: path.join(outDir, `${a.name}.png`), shiny: path.join(outDir, `${a.name}Shiny.png`) };
   for (const f of Object.values(files)) if (fs.existsSync(f) && !a.force) throw new Error(`${f} exists (pass --force to overwrite)`);
   const res = compose({
-    label, spriteFile: path.join(data, 'pokemon', entry.sprite), siblings, bg, autoBg, exclude, assets,
+    label, spriteFile, siblings, bg, autoBg, exclude, assets,
     scale: a.scale != null ? parseInt(a.scale, 10) : null, threshold: a['alpha-threshold'] != null ? +a['alpha-threshold'] : 128, outline: !a['no-outline'],
+    base, clear, key_corner: !!a['key-corner'],
   });
   fs.mkdirSync(outDir, { recursive: true });
   for (const v of ['normal', 'shiny']) { fs.writeFileSync(files[v], encode(CELL_W, CELL_H, res[v])); console.log('wrote', files[v]); }

@@ -57,7 +57,7 @@ ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_p
 {
   const F = STATUS.PORTED_FILES;
   const n = (f) => (F['pokemon/' + f + '.lua'] || []).length;
-  ok(n('pokejokers_13') === 22 && n('pokejokers_14') === 8 && n('pokejokers_15') === 15 && n('pokejokers_16') === 25, 'defs: 22 / 8 / 15 / 25 from pokejokers_13 / 14 / 15 / 16.lua', [n('pokejokers_13'), n('pokejokers_14'), n('pokejokers_15'), n('pokejokers_16')]);
+  ok(n('pokejokers_13') === 22 && n('pokejokers_14') === 8 && n('pokejokers_15') === 16 && n('pokejokers_16') === 25, 'defs: 22 / 8 / 16 / 25 from pokejokers_13 / 14 / 15 / 16.lua (15: + Mega Lucario, batch 16)', [n('pokejokers_13'), n('pokejokers_14'), n('pokejokers_15'), n('pokejokers_16')]);
 }
 sec(() => {
   // Static data straight from 3.9.1 (never retyped): rarity / cost / stage / type.

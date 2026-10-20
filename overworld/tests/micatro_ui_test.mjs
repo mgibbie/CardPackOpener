@@ -146,7 +146,8 @@ try {
 	{
 		const { page, errors, ctx } = await open({ url: '/micatro/' });
 		await page.evaluate(BOT);
-		A(await page.evaluate(() => window.__micatro.mode === 'normal' && !!document.querySelector('.main-menu .b-menu-play')), 'the main menu shows with a Play button');
+		// (the menu draws a moment after `ready`: boot waits up to 3 s for the account's run first — run sync)
+		A(await waitFor(() => page.evaluate(() => window.__micatro.mode === 'normal' && !!document.querySelector('.main-menu .b-menu-play')), 15000), 'the main menu shows with a Play button');
 		A(await page.evaluate(() => !!document.querySelector('script[src="/site/topbar.js"]') && document.querySelector('meta[name="mp-topbar"]').content === 'compact'), 'the page carries the compact site topbar');
 
 		// New Run: seeded via the setup screen

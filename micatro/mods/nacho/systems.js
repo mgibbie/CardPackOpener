@@ -70,7 +70,11 @@ BEFORE_REMOVE.push((card, skip) => {
 });
 MEGASTONE_RESET.push((stone) => {
   if (!on()) return;
-  for (const v of G.jokers.cards) if (v.ability && v.ability.received_key && v.ability.received_key === stone.ability.extra.used_on) stone.ability.extra.used_on = undefined;
+  // (Pokermon 3.9.1, batch 16: used_on is the Mega's unique_val, so the Passimian that received the Mega is the card it
+  // names; a 3.2.1-shaped used_on, a center key, still matches the received key. 3.9.1's own end-of-round check frees the
+  // stone too: a Passimian is no poke_mega card.)
+  const u = stone.ability.extra.used_on;
+  for (const v of G.jokers.cards) if (v.ability && v.ability.received_key && (v.ability.received_key === u || v.unique_val === u)) stone.ability.extra.used_on = undefined;
 });
 
 // ------------------------------------------------------- NachosAnimatedPokemon

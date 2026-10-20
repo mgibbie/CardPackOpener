@@ -88,8 +88,12 @@ export function toView() {
       tag: k !== 'Boss' && rr.blind_tags ? rr.blind_tags[k] : undefined,
       tagDesc: k !== 'Boss' && rr.blind_tags && rr.blind_tags[k] ? safe(() => describeTag({ key: rr.blind_tags[k] })) : undefined,
       colour: pb.boss_colour, pos: pb.pos,
+      // (a mod blind's chip is on its mod's own atlas: Pokermon's boss sheet, Bunco's ...)
+      atlas: pb.mod && pb.atlas ? pb.atlas : undefined,
       desc: safe(() => bigDesc(describeBlind(key))),
     };
+    // (a mod blind's `name` is its key, as Steamodded's: what the board shows is its loc name)
+    if (pb.mod && choices[k].desc && choices[k].desc.name) choices[k].label = choices[k].desc.name;
   }
   const view = {
     v: VIEW_VERSION,
@@ -112,6 +116,7 @@ export function toView() {
     blind: b && b.config && b.config.blind && b.name ? {
       key: b.config.blind.key, name: b.name, chips: J(b.chips), dollars: b.dollars, boss: !!b.boss,
       disabled: !!b.disabled, colour: b.config.blind.boss_colour, pos: b.config.blind.pos,
+      atlas: b.config.blind.mod && b.config.blind.atlas ? b.config.blind.atlas : undefined,
       desc: safe(() => bigDesc(describeBlind(b.config.blind.key, b))),
     } : bigBlind(GM.round_eval && GM.round_eval.blind) || null,
     blind_on_deck: GM.blind_on_deck,

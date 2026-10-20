@@ -10,7 +10,8 @@
  *   - Megastone (Spectral, keep_on_use): mega-evolves a joker that has `megas`, or
  *     reverts a mega to its base form; once per round (usable resets at end of round);
  *     remembers `used_on` so only one mega exists per stone; selling/losing the stone
- *     devolves its mega. Charizard/Mewtwo pick X/Y by position (getMega).
+ *     devolves its mega. Charizard/Mewtwo/Raichu pick X/Y by position (getMega). 3.9.1 (batch 16): used_on = the
+ *     Mega's unique_val; the poke_infinite_megastone modifier (see the megas section).
  *   - Held items (Leftovers, Leek, ...) are keep_on_use consumables: the engine's
  *     keep_on_use seam keeps them in the consumable slots after use.
  */
@@ -131,14 +132,45 @@ export function poke_create_treasure(card, seed, megastone) {
 }
 
 // ---------------------------------------------------------------- megas
-/** A joker the Megastone may target (has megas, or is a mega), skipping debuffed would-be megas. */
-// (+ add-on dedupe: a Pokermon joker that replaced an add-on duplicate has that joker's Megas — precedence.js addon_megas.)
+// Pokermon 3.9.1 (batch 16; consumables/02_mart_spectral.lua megastone, functions/pokefunctions.lua get_mega):
+//   - `used_on` is the Mega's card (its `unique_val`), not a center key: two Megas of one species are told apart, and a
+//     stone that made a Mega only ever reverts THAT card. While it has made one it targets nothing else.
+//   - At every end of round a stone whose Mega is gone (sold, destroyed, reverted elsewhere) forgets it.
+//   - G.GAME.modifiers.poke_infinite_megastone (the Mega Sleeve on the Mega Deck): no restriction (any joker with a Mega,
+//     any Mega); the stone remembers nothing.
+//   - Read-time migration: a `used_on` holding a center key (the 3.2.1 shape, a string) still finds its Mega: the first
+//     Mega of that key. Nothing rewrites it (saves are replays and keep their recorded actions).
+// (+ add-on dedupe: a Pokermon joker that replaced an add-on duplicate has that joker's Megas: precedence.js addon_megas.)
 const hasMegas = (c) => !!(c.megas || addon_megas(c).length);
-const megaTarget = (poke) => (hasMegas(poke.config.center) || poke.config.center.rarity === 'poke_mega') && !(poke.debuff && hasMegas(poke.config.center));
+const isMega = (joker) => joker.config.center.rarity === 'poke_mega';
+const infinite = () => !!(G.GAME && G.GAME.modifiers && G.GAME.modifiers.poke_infinite_megastone);
+const unset = (u) => u === undefined || u === null || u === false;
 
-export function megastone_target() {
-  if (G.jokers.highlighted && G.jokers.highlighted.length === 1 && megaTarget(G.jokers.highlighted[0])) return G.jokers.highlighted[0];
-  for (const poke of G.jokers.cards) if (megaTarget(poke)) return poke;
+/** Is this joker the Mega the stone's `used_on` names? (unique_val; a 3.2.1-shaped center key matches by key.) */
+export function megastone_made(stone, joker) {
+  const u = stone && stone.ability && stone.ability.extra && stone.ability.extra.used_on;
+  if (unset(u) || !isMega(joker)) return false;
+  return typeof u === 'string' ? joker.config.center.key === u : joker.unique_val === u;
+}
+/** The Mega this stone made, if it is still on the row (3.9.1 pokermon.find_card on unique_val). */
+export function megastone_mega(stone) {
+  if (!(G.jokers && G.jokers.cards)) return undefined;
+  return G.jokers.cards.find((joker) => megastone_made(stone, joker));
+}
+
+/** 3.9.1 get_mega_target's test: a free stone takes a joker with a Mega; a used one only its own Mega back. */
+function megaTarget(stone, joker) {
+  const free = !stone || unset(stone.ability.extra.used_on);
+  return (free && hasMegas(joker.config.center) && !joker.debuff)
+    || megastone_made(stone, joker)
+    || (infinite() && ((hasMegas(joker.config.center) && !joker.debuff) || isMega(joker)));
+}
+
+/** The stone's target: the highlighted joker if it qualifies, else the leftmost that does (house rule; 3.9.1's
+ *  find_leftmost_or_highlighted stops at a highlighted joker that doesn't). `stone` undefined = a free stone. */
+export function megastone_target(stone) {
+  if (G.jokers.highlighted && G.jokers.highlighted.length === 1 && megaTarget(stone, G.jokers.highlighted[0])) return G.jokers.highlighted[0];
+  for (const poke of G.jokers.cards) if (megaTarget(stone, poke)) return poke;
   return undefined;
 }
 
@@ -158,7 +190,7 @@ export function mega_for(target) {
   return 'j_' + (c.poke_custom_prefix || 'poke') + '_' + mega;
 }
 
-/** Leftmost = first mega, rightmost = second, middle = random (Charizard / Mewtwo). */
+/** Leftmost = first mega, rightmost = second, middle = random (Charizard / Mewtwo / Raichu). */
 export function getMega_by_position(self, card) {
   let mega;
   G.jokers.cards.forEach((v, i) => {
@@ -172,24 +204,25 @@ export function getMega_by_position(self, card) {
 /**
  * Add-on extension point (additive; empty = Pokermon unchanged): fn(stone) run when a used
  * Megastone resets at end of round, before its "Reset" message (Nacho: a Passimian holding the
- * mega's ability frees the stone — its lovely patch on mart1.lua).
+ * mega's ability frees the stone; its lovely patch on mart1.lua).
  */
 export const MEGASTONE_RESET = [];
 
 /** Megastone.use: mega-evolve (or revert) the target. */
 export function megastone_use(stone) {
-  const target = megastone_target();
+  const target = megastone_target(stone);
   if (!target) return;
-  let forced_key;
   if (hasMegas(target.config.center)) {
-    forced_key = mega_for(target);
-    stone.ability.extra.used_on = forced_key;
+    const forced_key = mega_for(target);
+    // (Lua: `not infinite and target.unique_val`, which is false with the modifier)
+    stone.ability.extra.used_on = infinite() ? false : target.unique_val;
+    poke_evolve(target, forced_key);
   } else {
-    forced_key = get_previous_evo(target, true);
+    const forced_key = get_previous_evo(target, true);
     stone.ability.extra.used_on = undefined;
+    poke_evolve(target, forced_key, undefined, localize('poke_devolve_success')); // (pokermon.devolve: "Reverted")
   }
   stone.ability.extra.usable = false;
-  poke_evolve(target, forced_key);
 }
 
 export function megastone_can_use(stone) {
@@ -198,24 +231,34 @@ export function megastone_can_use(stone) {
   if (stone.area === G.shop_jokers) return false;
   if (!(G.jokers && G.jokers.cards) || G.jokers.cards.length === 0) return false;
   if (!stone.ability.extra.usable) return false;
-  const target = megastone_target();
-  if (!target) return false;
-  if (stone.ability.extra.used_on && target.config.center.key !== stone.ability.extra.used_on && any(find_card(stone.ability.extra.used_on))) return false;
-  return true;
+  return !!megastone_target(stone);
+}
+
+/** End of round: a stone whose Mega is gone forgets it; a used stone is usable again ("Reset"). */
+export function megastone_end_of_round(stone) {
+  if (!megastone_mega(stone)) stone.ability.extra.used_on = undefined;
+  if (!stone.ability.extra.usable) {
+    stone.ability.extra.usable = true;
+    for (const f of MEGASTONE_RESET) f(stone);
+    card_eval_status_text(stone, 'extra', null, null, null, { message: localize('k_reset') });
+  }
 }
 
 /** Losing the Megastone devolves the mega it made. */
 export function megastone_remove_from_deck(stone) {
-  const used_on = stone.ability.extra.used_on;
-  if (used_on && any(find_card(used_on))) {
-    for (const v of G.jokers.cards) {
-      if (v.config.center.key === used_on) { poke_evolve(v, get_previous_evo(v, true)); break; }
-    }
-  }
+  const target = megastone_mega(stone);
+  if (target) poke_evolve(target, get_previous_evo(target, true));
 }
 
 export function megastone_in_pool() {
   if (G.jokers && G.jokers.cards) for (const poke of G.jokers.cards) if (hasMegas(poke.config.center)) return true;
   return false;
+}
+
+/** Mega Berry Juice (3.9.1 06_mart_berry.lua): a joker with a Mega (highlighted, else the leftmost; not debuffed). */
+export function mega_juice_target() {
+  const ok = (joker) => hasMegas(joker.config.center) && !joker.debuff;
+  if (G.jokers.highlighted && G.jokers.highlighted.length === 1 && ok(G.jokers.highlighted[0])) return G.jokers.highlighted[0];
+  return G.jokers.cards.find(ok);
 }
 

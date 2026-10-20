@@ -1,4 +1,4 @@
-// Pokermon 3.9.1 (batch 6) — pokemon/pokejokers_06.lua (Pokédex 151-180: Mew -> Flaaffy), 30 jokers.
+// Pokermon 3.9.1 (batch 6) — pokemon/pokejokers_06.lua (Pokédex 151-180: Mew -> Flaaffy), 30 jokers + 2 new 3.9.1 Megas (Mega Meganium / Feraligatr, batch 16).
 // Line-for-line port of the 3.9.1 behaviour (reworked: Crobat, Natu, Xatu, Sentret / Furret's text; Mew and the
 // baby Tarots via SMODS.add_card); static data (pos, config, rarity, cost, stage, ptype, gen, item_req,
 // enhancement_gate) comes from data.js + data391.js (the 3.9.1 config). See ../PORTING.md.
@@ -7,10 +7,11 @@ import {
   ease_discard, ease_hands_played,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars,
   get_probability_vars, pseudorandom_probability, poke_total_chips, find_pokemon_type, faint_baby_poke,
-  add_card, P_CENTER_POOLS,
+  add_card, P_CENTER_POOLS, is_type, create_consumeable, get_first_of_each_suit,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_06.lua';
+const mega_tip = (info_queue) => { if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' }); };
 
 // ------------------------------------------------------------ shared bodies
 const hand_size = {
@@ -220,9 +221,29 @@ defineJokers({
   },
   // Meganium 154 (every held card pays)
   meganium: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.h_size, card.ability.extra.money] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); mega_tip(info_queue); return { vars: [card.ability.extra.h_size, card.ability.extra.money] }; },
     calculate(self, card, context) { return chiko_calc(card, context, 0); },
     ...hand_size,
+  },
+  // Mega Meganium 154-1 (3.9.1, batch 16): the first held card of each suit earns $2 and, if it did anything, is retriggered.
+  mega_meganium: {
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.money_mod, card.ability.extra.retriggers] }; },
+    calculate(self, card, context) {
+      const first_of_suit = (c) => Object.values(get_first_of_each_suit(G.hand.cards)).includes(c);
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round && first_of_suit(context.other_card)) {
+        const earned = ease_poke_dollars(card, 'mega meganium', card.ability.extra.money_mod, true);
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + earned;
+        // (the Lua's `func` queues the buffer reset; the held-card loop reads no `func`, so it is queued here)
+        G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+        return { dollars: earned };
+      }
+      if (context.repetition && context.cardarea === G.hand && context.card_effects
+          && ((context.card_effects[0] && Object.keys(context.card_effects[0]).length > 0) || context.card_effects.length > 1)
+          && first_of_suit(context.other_card)) {
+        return { repetitions: card.ability.extra.retriggers };
+      }
+      return undefined;
+    },
   },
   // Cyndaquil 155
   cyndaquil: {
@@ -278,9 +299,37 @@ defineJokers({
   },
   // Feraligatr 160
   feraligatr: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.hands, card.ability.extra.chip_mod, card.ability.extra.chips] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); mega_tip(info_queue); return { vars: [card.ability.extra.hands, card.ability.extra.chip_mod, card.ability.extra.chips] }; },
     calculate(self, card, context) { return toto_calc(self, card, context, null); },
     ...hands,
+  },
+  // Mega Feraligatr 160-1 (3.9.1, batch 16): +15 Chips per played card (this round); each Dragon joker gives those Chips;
+  // comes holding a Dragon Scale.
+  mega_feraligatr: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      if (detailed()) {
+        info_queue.push({ set: 'Other', key: 'holding', vars: ['Dragon Scale'] });
+        info_queue.push(P_CENTERS.c_poke_dragonscale);
+      }
+      return { vars: [card.ability.extra.chip_mod, card.ability.extra.chips] };
+    },
+    calculate(self, card, context) {
+      if (context.before && !context.blueprint) {
+        card.ability.extra.chips = card.ability.extra.chips + (card.ability.extra.chip_mod * context.full_hand.length);
+        return { message: localize('k_upgrade_ex'), colour: 'CHIPS' };
+      }
+      if (context.other_joker && is_type(context.other_joker, 'Dragon') && card.ability.extra.chips > 0) {
+        G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
+        return { chips: card.ability.extra.chips };
+      }
+      if (!context.repetition && !context.individual && context.end_of_round && !context.blueprint) {
+        card.ability.extra.chips = 0;
+        return { message: localize('k_reset'), colour: 'CHIPS' };
+      }
+      return undefined;
+    },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) create_consumeable('c_poke_dragonscale'); },
   },
   // Sentret 161
   sentret: {

@@ -42,7 +42,7 @@ const holds = (D391.rework_hold || []).filter(([n]) => inRange.includes(n));
 ok(holds.map(([n]) => n).sort().join() === HOLD.slice().sort().join() && holds.every(([n, why]) => n === 'unown_swarm' ? /Unown rework/.test(why) : /Hazard layer/.test(why)),
   'rework_hold: none here (the Hazard jokers left in batch 10, the Unown Swarm in 10b)', holds);
 const DEF = (D391.rework_deferred || []).map(([n]) => n);
-ok(['rival', 'mystery_egg'].every((n) => DEF.includes(n)) && !DEF.includes('ruins_of_alph') && DEF.length === 5, 'rework_deferred: + Rival (Bitter Rival / Champion), Mystery Egg (Oologist); Ruins of Alph\'s Unown spawn done in batch 10b', DEF);
+ok(DEF.join() === 'porygonz', 'rework_deferred: only Porygon-Z (kept by design); Ruins of Alph done in batch 10b, Lucario / Skarmory in batch 16, Rival (Bitter Rival / Champion) and Mystery Egg (Oologist) in batch 17', DEF);
 ok(C('garbodor').config.extra.active === false && C('vikavolt').config.extra.mult === undefined && C('vikavolt').config.extra.Xmult === 0.5
   && C('annihilape').config.extra.mult_mod === 5 && C('gholdengo').config.extra.Xmult1 === 1 && C('everstone').config.extra.Xmult_multi2 === 1.5
   && C('rival').config.extra.money === 15 && C('mimikyu').config.extra.disguise === undefined && C('dreepy').config.extra.suit === undefined,

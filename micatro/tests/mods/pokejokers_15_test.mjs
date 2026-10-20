@@ -18,7 +18,7 @@ function toTop(id) {
 
 const FILE_JOKERS = ['ambipom', 'buneary', 'lopunny', 'mega_lopunny', 'mismagius', 'honchkrow', 'bonsly', 'mimejr', 'happiny', 'munchlax', 'riolu', 'lucario'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 12 pokejokers_15 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_15.lua'].length === 15, 'defs: 15 from pokejokers_15.lua (12 + 3 new in 3.9.1: new-jokers sub-batch 14)');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_15.lua'].length === 16, 'defs: 16 from pokejokers_15.lua (12 + 3 new in 3.9.1: new-jokers sub-batch 14; + Mega Lucario, batch 16)');
 
 // ---------------------------------------------------------------- Ambipom
 {

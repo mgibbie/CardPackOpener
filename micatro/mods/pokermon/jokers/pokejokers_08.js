@@ -1,8 +1,8 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_08.lua (Pokédex 211-240: Qwilfish -> Magby), 33 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_08.lua (Pokédex 211-240: Qwilfish -> Magby), 33 jokers + 1 new 3.9.1 Mega (Mega Skarmory, batch 16).
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, megas) comes from data.js + data391.js. See ../PORTING.md.
-// On Pokermon 3.9.1 behaviour since batch 6; Qwilfish and Skarmory (the Hazard layer) since batch 10 (Skarmory's Mega
-// waits for the Megas batch). Shuckle's Mega Stone -> Mega Berry Juice waits for that juice.
+// On Pokermon 3.9.1 behaviour since batch 6; Qwilfish and Skarmory (the Hazard layer) since batch 10. Mega Skarmory and
+// Shuckle's Mega Stone -> Mega Berry Juice: batch 16 (the Megas).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
   ease_discard, create_card, copy_card, poll_edition, juice_card_until, playing_card_joker_effects, play_sound,
@@ -253,7 +253,9 @@ defineJokers({
             card.juice_up(0.8, 0.8);
             sliced_card.start_dissolve();
             play_sound('slice1', 0.96);
-            const _card = create_card('Item', G.consumeables, null, null, null, null, juice_list[sliced_card.config.center.set] || 'c_poke_berry_juice_mystery');
+            // (3.9.1: a sliced Mega Stone gives the Mega Berry Juice — batch 16)
+            const key = sliced_card.config.center.key === 'c_poke_megastone' ? 'c_poke_berry_juice_mega' : (juice_list[sliced_card.config.center.set] || 'c_poke_berry_juice_mystery');
+            const _card = create_card('Item', G.consumeables, null, null, null, null, key);
             _card.add_to_deck();
             G.consumeables.emplace(_card);
             card_eval_status_text(_card, 'extra', null, null, null, { message: localize('poke_plus_pokeitem'), colour: 'FILTER' });
@@ -545,11 +547,11 @@ defineJokers({
       return undefined;
     },
   },
-  // Skarmory 227 (3.9.1): +1 Hazard layer and limit; XMult per held Hazard / Steel card. (megas = {mega_skarmory}: the
-  // Megas batch.)
+  // Skarmory 227 (3.9.1): +1 Hazard layer and limit; XMult per held Hazard / Steel card. (megas = {mega_skarmory}: batch 16.)
   skarmory: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
+      if (detailed()) mega_tip(info_queue);
       const abbr = card.ability.extra;
       hazard_tip(info_queue);
       if (detailed()) info_queue.push(P_CENTERS.m_steel);
@@ -566,6 +568,29 @@ defineJokers({
           for (const c of G.hand.cards) if (has_enhancement(c, 'm_poke_hazard') || has_enhancement(c, 'm_steel')) hazard_count = hazard_count + 1;
         }
         const Xmult = 1 + card.ability.extra.Xmult_mod * hazard_count;
+        if (Xmult > 1) return { Xmult };
+      }
+      return undefined;
+    },
+    ...hazard_layer,
+  },
+  // Mega Skarmory 227-1 (3.9.1, batch 16): +1 Hazard layer and limit; each scoring Hazard card gives X(1 + 1 per held Steel or
+  // Gold card).
+  mega_skarmory: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      hazard_tip(info_queue);
+      if (detailed()) { info_queue.push(P_CENTERS.m_steel); info_queue.push(P_CENTERS.m_gold); }
+      let gold_or_steel_count = 0;
+      if (G.hand && G.hand.cards) {
+        gold_or_steel_count = G.hand.cards.filter((c) => (has_enhancement(c, 'm_steel') || has_enhancement(c, 'm_gold')) && !c.highlighted).length;
+      }
+      return { vars: [card.ability.extra.hazard_level, card.ability.extra.Xmult_multi, 1 + (gold_or_steel_count * card.ability.extra.Xmult_multi)] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && has_enhancement(context.other_card, 'm_poke_hazard')) {
+        const gold_or_steel_count = G.hand.cards.filter((c) => has_enhancement(c, 'm_steel') || has_enhancement(c, 'm_gold')).length;
+        const Xmult = 1 + gold_or_steel_count * card.ability.extra.Xmult_multi;
         if (Xmult > 1) return { Xmult };
       }
       return undefined;

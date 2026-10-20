@@ -656,6 +656,37 @@ export function get_target_card_enhancements(seed, num, options) {
 export function find_playing_card(findFunc, findArea) {
   return (findArea || G.deck.cards).filter((v) => findFunc(v));
 }
+/**
+ * pokermon.get_first_of_each_suit(cards) (3.9.1 pokeutils.lua; Mega Meganium): left to right, each card claims a suit it has
+ * that is free, or bumps the claimant of one of its suits to another suit that one has (an augmenting path), so Wild cards
+ * don't block the plain cards after them. -> {suit: card}. The Lua walks `pairs(SMODS.Suits)` (no fixed order); ours walks
+ * the 4 suits in Steamodded's registration order, so the pick is deterministic.
+ */
+export function get_first_of_each_suit(cards) {
+  const SUIT_ORDER = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+  const claimed_suits = {};
+  let suits_left = SUIT_ORDER.length;
+  const can_assign_suit = (card, checked_suits) => {
+    for (const suit of SUIT_ORDER) {
+      if (card.is_suit(suit) && !checked_suits[suit]) {
+        checked_suits[suit] = true;
+        if (!claimed_suits[suit] || can_assign_suit(claimed_suits[suit], checked_suits)) {
+          claimed_suits[suit] = card;
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  for (const card of cards) {
+    if (can_assign_suit(card, {})) {
+      suits_left = suits_left - 1;
+      if (suits_left <= 0) break;
+    }
+  }
+  return claimed_suits;
+}
+
 /** Pokermon 3.9.1 pokermon.get_depleted(find_func) (pokeutils.lua): no card left in the deck matches (false outside a round). */
 export function get_depleted(find_func) {
   if (!G.deck || !G.deck.cards) return false;

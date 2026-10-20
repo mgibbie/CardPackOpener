@@ -33,8 +33,9 @@ function toShop() { winRound(); act({ type: 'cash_out' }); }
   ok(files['consumables/mart1.lua'].length === 23, 'mart1: 23 (all but Cryptid-only emergy)', files['consumables/mart1.lua'].length);
   ok(files['consumables/mart2.lua'].length === 19 && files['consumables/mart3.lua'].length === 5 && files['consumables/martz.lua'].length === 7, 'mart2 19 / mart3 5 / martz 7');
   ok(files['consumables/zberryjuice.lua'].length === 7 && files['consumables/zmachine.lua'].length === 5, 'zberryjuice 7 / zmachine 5');
-  ok(files['boosters/packs1.lua'].length === 10 && files['vouchers/pokevouchers.lua'].length === 4 && files['backs/backs1.lua'].length === 11, 'packs 10 / vouchers 4 / backs 11 (+ the 3.9.1 Debris deck)');
-  ok(files['tags/tags1.lua'].length === 6 && files['blinds/pokebossblind.lua'].length === 1 && files['seals/seals1.lua'].length === 3 && files['enhancements/enhancement1.lua'].length === 3, 'tags 6 / blind 1 / seals 3 (+ the 3.9.1 DNA Seal) / enhancements 3 (+ the 3.9.1 Seed)');
+  ok(files['boosters/packs1.lua'].length === 11 && files['vouchers/pokevouchers.lua'].length === 4 && files['backs/backs1.lua'].length === 11, 'packs 11 (+ the 3.9.1 Starter Pack...?) / vouchers 4 / backs 11 (+ the 3.9.1 Debris deck)');
+  ok(files['tags/tags1.lua'].length === 7 && files['blinds/pokebossblind.lua'].length === 6 && files['seals/seals1.lua'].length === 3 && files['enhancements/enhancement1.lua'].length === 4,
+    'tags 7 (+ the 3.9.1 Starter Tag...?) / blinds 6 (+ the 3.9.1 five) / seals 3 (+ the 3.9.1 DNA Seal) / enhancements 4 (+ the 3.9.1 Seed and Ludicolo)');
   ok(files['consumables/03_mart_items.lua'].join() === 'miracleseed' && files['consumables/04_mart_rare.lua'].join() === 'heavyboots', '3.9.1 Items: Miracle Seed, Heavy-Duty Boots');
 }
 
@@ -395,7 +396,8 @@ const deckRun = (back, seed, opts = {}) => { newRun({ seed, back, mods: ['pokerm
 {
   deckRun('b_poke_pokemondeck', 'D1');
   ok(G.GAME.used_vouchers.v_poke_goodrod && G.GAME.extra_pocket_picks === 1 && consKeys().join() === 'c_poke_pokeball', 'Trainer Deck: Good Rod + a Poké Ball', consKeys());
-  ok(P_CENTERS.b_poke_pokemondeck.poke_option === 'pokeballs' && P_CENTERS.b_poke_obituarydeck.poke_option === 'pokemon_legacy', 'option-gated decks are flagged');
+  // (3.9.1, batch 17: the Trainer Deck is no longer gated by the pokeballs option; the legacy decks still are)
+  ok(P_CENTERS.b_poke_pokemondeck.poke_option === undefined && P_CENTERS.b_poke_obituarydeck.poke_option === 'pokemon_legacy', 'option-gated decks are flagged');
   deckRun('b_poke_luminousdeck', 'D2');
   ok(G.GAME.modifiers.apply_type, 'Luminous: apply_type');
   const j = create_card('Joker', G.jokers, null, null, null, null, 'j_poke_charmander');
@@ -509,8 +511,9 @@ const deckRun = (back, seed, opts = {}) => { newRun({ seed, back, mods: ['pokerm
   const jk = add('j_joker');
   P.apply_type_sticker(jk, 'Grass');
   act({ type: 'select_blind' }); clearHand(); nextRound(); clearHand(); nextRound();
-  ok(G.GAME.blind.config.blind.key === 'bl_poke_iridescent_hacker' && Array.isArray(G.GAME.blind.poke_ptypes), 'goose fight: types picked at set_blind', G.GAME.blind.poke_ptypes);
-  const pt = () => G.GAME.blind.poke_ptypes;
+  // (batch 17: 3.9.1's own Hacker — blind.effect.ptypes, the debuff_card context)
+  ok(G.GAME.blind.config.blind.key === 'bl_poke_iridescent_hacker' && Array.isArray(G.GAME.blind.effect && G.GAME.blind.effect.ptypes), 'goose fight: types picked at set_blind', G.GAME.blind.effect);
+  const pt = () => G.GAME.blind.effect.ptypes;
   const want = (c) => pt().includes(c === jk ? 'Grass' : c.ability.extra.ptype);
   ok([ch, sq, jk].every((c) => !!c.debuff === want(c)), 'first draw: jokers of the goose types are debuffed', [pt(), ch.debuff, sq.debuff, jk.debuff]);
   for (let i = 0; i < 4; i++) {

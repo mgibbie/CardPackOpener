@@ -31,7 +31,7 @@ import { DEFS, PORTED_FILES } from './defs.js';
 // Behaviour (each file registers through defs.js on import).
 import './jokers/pokejokers_01.js';
 import './backs/backs1.js';
-import './blinds/pokebossblind.js';
+import { BLIND_HUD_VARS } from './blinds/pokebossblind.js';
 import './consumables/mart3.js';
 import './consumables/martz.js';
 import './consumables/mart391.js';
@@ -77,6 +77,7 @@ import './jokers/zotherjokers.js';
 import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
+import './jokers/zzzapril_fools.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -90,6 +91,8 @@ import { POKE_UI } from './ui.js';
 import { cfg } from './systems/utils.js';
 import { family_win_keys, set_family } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
+import { ELITE_STAKE, elite_boss_eligible } from './stakes.js';
+import { capture_disc_action, APRIL_FOOLS } from './jokers/zzzapril_fools.js';
 
 /**
  * Where the mod's art lives: <base>/<path as in the mod's assets/2x folder>. Production
@@ -124,6 +127,18 @@ const ATLAS_FILES = {
   AtlasJokersSeriesAGen03: ['Series A/AtlasJokersSeriesAGen03.png'],
   // Pokermon 3.9.1's boss blind sheet (21 frames per row, like the 3.2.1 one; the renamed Iridescent Hacker is row 25).
   AtlasBossblinds391: ['AtlasBossblinds-391.png', 34, 34, 21],
+  // Batch 17 (3.9.1 pokesprites.lua / stakes.lua, vendored in batch 5): the April Fools Miror Budicolo (4-frame animation; the
+  // Ludicolo card m_poke_ludicolo uses it too) and Capture Disc, and the Elite stake's chip and win sticker.
+  miror_budicolo: ['miror_budicolo.png'],
+  miror_budicolo_shiny: ['shiny_miror_budicolo.png'],
+  capture_disc: ['capture_disc.png'],
+  elite_stake: ['elite_stake.png', 29, 29],
+  elite_stake_sticker: ['elite_stake_sticker.png'],
+  // Micatro-composed cards (owner rule: no placeholders; 3.9.1 draws placeholder_joker for both): Rage Candy Bar (data391.js
+  // sprite_extra) and Repel (never registered upstream), by tools/micatro/compose_pokermon_joker_art.mjs from the Others sheet's
+  // white JOKER card and the overworld item icons (PORTING.md "Batch 17").
+  rage_candy_bar: ['rage_candy_bar.png'],
+  repel: ['repel.png'],
 };
 for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex', 'Others']) {
   ATLAS_FILES['AtlasJokersBasic' + g] = ['Basic Series/AtlasJokersBasic' + g + '.png'];
@@ -316,8 +331,9 @@ function jokerCenter(data_item0, file) {
   if (c.unported) c.in_pool = UNPORTED_POOL;
   else if (item.custom_pool_func) c.in_pool = own_pool;
   else c.in_pool = (self) => pokemon_in_pool(self);
-  // Joke content (Billion Lions) only with pokemon_aprilfools.
-  if (item.name === 'billion_lions') { const p = c.in_pool; c.in_pool = (self) => !!cfg('pokemon_aprilfools') && (!p || p(self)); }
+  // Joke content (zzzapril_fools.lua: Billion Lions, and since batch 17 Spiclops, Miror Budicolo, Capture Disc) only with
+  // pokemon_aprilfools: 3.9.1 registers them only then; ours stay registered (collection, saves) and are offered only then.
+  if (APRIL_FOOLS.has(item.name)) { const p = c.in_pool; c.in_pool = (self) => !!cfg('pokemon_aprilfools') && (!p || p(self)); c.poke_aprilfools = true; }
   return c;
 }
 
@@ -361,7 +377,13 @@ export function addon_pokemon_center(data_item, def, { prefix, file, sprites, at
 }
 
 // ---------------------------------------------------------------- consumables
-function consumableCenter(data_item, file) {
+function consumableCenter(data_item0, file) {
+  // Pokermon 3.9.1's spawn fields (batch 17, object_weights: data391.js consumable_spawn): the Soul items' pool weights (Great
+  // Ball 3, Leftovers 3, Tera Orb 5, Leek / Thick Club 1); Great Ball and Thick Club no longer hidden; Ultra Ball / Mega Stone soul
+  // rates. null = the field is gone (a still-hidden card then takes Steamodded's soul defaults below: Leftovers).
+  const sp = D391.consumable_spawn && D391.consumable_spawn[data_item0.name];
+  const data_item = sp ? { ...data_item0 } : data_item0;
+  if (sp) for (const [k, v] of Object.entries(sp)) { if (v === null) delete data_item[k]; else data_item[k] = v; }
   const def = DEFS.consumables[data_item.name];
   const item = withStatic(data_item, def);
   const c = stripFns(item);
@@ -394,6 +416,8 @@ function boosterCenter(data_item, file) {
   c.config = c.config || {};
   if (def) { Object.assign(c, behaviourOf(def)); PORTED.boosters.push(c.key); }
   else { c.unported = true; c.skip_pool = true; UNPORTED.boosters.push(c.key); }
+  // The Revenant Sleeve's alt (3.9.1, batch 17): Pocket Packs (kind poke_energy = our 'Energy') weigh 0 under object_weights.
+  if (c.kind === 'Energy' && !c.get_weight) c.get_weight = (self, w) => ((G.GAME && G.GAME.modifiers && G.GAME.modifiers.poke_no_pocket_packs) ? 0 : w);
   return c;
 }
 
@@ -444,13 +468,14 @@ const dataKeys = (g) => new Set(DATA.groups[g].flatMap((f) => listOf(f).map((it)
 const newDefs = (kind, g) => { const have = dataKeys(g); return Object.entries(DEFS[kind]).filter(([k]) => !have.has(k)).map(([k, def]) => ({ item: { key: def.key || k, name: def.name || k }, file: def.poke_file })); };
 for (const { item, file } of newDefs('consumables', 'consumables')) centers.push(consumableCenter(item, file));
 for (const f of DATA.groups.boosters) for (const item of listOf(f)) centers.push(boosterCenter(item, f.file));
+// (3.9.1's Starter Pack...?: batch 17; boosters/packs1.js carries its static data)
+for (const { item, file } of newDefs('boosters', 'boosters')) centers.push(boosterCenter(item, file));
 for (const f of DATA.groups.vouchers) for (const item of listOf(f)) centers.push(simpleCenter('vouchers', 'v_poke_', 'Voucher', item, f.file));
 for (const f of DATA.groups.backs) {
   for (const item of listOf(f)) {
     const c = simpleCenter('backs', 'b_poke_', 'Back', item, f.file);
     if (c.name === 'revenanteck') c.name = 'revenantdeck'; // intended-design fix: the Lua's typo
-    // backs1.lua registers these only with an option on.
-    if (item.key === 'pokemondeck') c.poke_option = 'pokeballs';
+    // backs1.lua registers these only with an option on (3.9.1: the legacy decks; the Trainer Deck's pokeballs gate is gone, batch 17).
     if (item.key === 'obituarydeck' || item.key === 'revenantdeck') c.poke_option = 'pokemon_legacy';
     centers.push(c);
   }
@@ -470,6 +495,8 @@ for (const f of DATA.groups.tags) for (const item of listOf(f)) {
   c.name = item.name || c.key;
   tags.push(c);
 }
+// (3.9.1's Starter Tag...?: batch 17; tags/tags1.js carries its static data)
+for (const { item, file } of newDefs('tags', 'tags')) { const c = simpleCenter('tags', 'tag_poke_', 'Tag', item, file); c.name = item.name || c.key; tags.push(c); }
 const blinds = [];
 // Pokermon 3.9.1 renamed the showdown boss bl_poke_cgoose (Chartreuse Chamber) -> bl_poke_iridescent_hacker (Iridescent
 // Hacker, new art + colour; data391.js blinds). Our behaviour (blinds/pokebossblind.js) moves to the new key; the old key
@@ -481,13 +508,37 @@ for (const [k, d] of Object.entries(D391.loc)) {
   const set = LOC_SET[k] || k;
   Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 }
-for (const k of ['dictionary', 'v_dictionary', 'labels']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
+for (const k of ['dictionary', 'v_dictionary', 'labels', 'v_text', 'challenge_names']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
+// The challenges' rule texts (batch 17): 3.9.1 renamed two rule ids but kept their texts' old keys (Safety First's poke_no_energy,
+// Randomizer's poke_apply_randomizer); Mystery Dungeon's "Resets at <time>" is the viewer's local time of UTC midnight (3.9.1
+// prints os.date("%I:%M %p", 0) when the mod loads; the extract froze the extractor's).
+{
+  const VT = DATA.loc.misc.v_text = DATA.loc.misc.v_text || {};
+  if (VT.ch_c_no_energy && !VT.ch_c_poke_no_energy) VT.ch_c_poke_no_energy = VT.ch_c_no_energy;
+  if (VT.ch_c_apply_randomizer && !VT.ch_c_poke_apply_randomizer) VT.ch_c_poke_apply_randomizer = VT.ch_c_apply_randomizer;
+  if (VT.ch_c_poke_mystery_dungeon3) {
+    let t = null;
+    try { t = new Date(0).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); } catch (e) { t = null; }
+    if (t) VT.ch_c_poke_mystery_dungeon3 = VT.ch_c_poke_mystery_dungeon3.map((l) => l.replace(/\{C:attention\}[^{]*\{\}/, '{C:attention}' + t + '{}'));
+  }
+}
 for (const f of DATA.groups.blinds) for (const item0 of listOf(f)) {
   const ren = D391.blinds[item0.key];
   const item = ren ? { ...item0, ...ren } : item0;
   const c = simpleCenter('blinds', 'bl_poke_', 'Blind', item, f.file);
   c.name = item.name || c.key;
   blinds.push(c);
+}
+// 3.9.1's five new boss blinds (batch 17: The Mirror, The Rocket, The Star, Gray Godfather, White Executive): blinds/pokebossblind.js
+// carries their static data (3.9.1's order: before the Iridescent Hacker). The renamed boss is not new.
+{
+  const renamed = new Set(Object.values(D391.blinds).map((r) => r.key));
+  const fresh = newDefs('blinds', 'blinds').filter(({ item }) => !renamed.has(item.key));
+  const at = blinds.findIndex((b) => b.key === 'bl_poke_iridescent_hacker');
+  // (their `name` is the full key, as Steamodded names a mod blind — like the Hacker's; the loc entry has the shown name)
+  const made = fresh.map(({ item, file }) => { const c = simpleCenter('blinds', 'bl_poke_', 'Blind', item, file); c.name = c.key; return c; });
+  blinds.splice(at < 0 ? blinds.length : at, 0, ...made);
+  for (const c of made) if (BLIND_HUD_VARS[c.key]) Object.defineProperty(c, 'vars', { get: () => BLIND_HUD_VARS[c.key](c), enumerable: false });
 }
 const seals = [];
 for (const f of DATA.groups.seals) for (const item of listOf(f)) {
@@ -534,6 +585,10 @@ for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
 const sync_kecleon = () => { if (G.jokers) for (const c of G.jokers.cards.slice()) { const mc = c.config.center; if (mc.key === 'j_poke_kecleon' && mc.update) mc.update(mc, c); } };
 const hooks = {
   init_game_object(GAME) { init_game_object(GAME); RB.init_game_object(GAME); },
+  // The Elite stake's showdown antes (3.9.1 pokermon.lua SMODS.is_showdown_ante: the last 4 antes before the raised win ante).
+  boss_eligible: elite_boss_eligible,
+  // Capture Disc (3.9.1 April Fools): the board turns a drag of it into this action (its shake distance), so replays hold it.
+  action: capture_disc_action,
   start_run() { install_scry(); },
   // (Nuzlocke / Monotype run badges: systems/runbadges.js)
   blind_on_deck: RB.blind_on_deck,
@@ -542,7 +597,12 @@ const hooks = {
   // (Kecleon takes the type of the joker to its right: its Lua update runs every frame; ours also when the joker row changes)
   emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
   reordered(area) { if (area === G.jokers) sync_kecleon(); },
-  sell_card: RB.sell_card,
+  sell_card(card, ...rest) {
+    const r = RB.sell_card(card, ...rest);
+    // (the Obituary Sleeve's alt, batch 17: a sold joker makes a Negative Energy of its type; systems/rules.js)
+    if (G.GAME && G.GAME.modifiers && G.GAME.modifiers.poke_obituary_alt) rules.obituary_energy(card);
+    return r;
+  },
   pool_filter,
   create_card: rules.create_card,
   set_cost: rules.set_cost,
@@ -639,7 +699,21 @@ export const POKERMON = registerMod({
   // 13 = new-jokers sub-batch 15b: 9 jokers upstream added on main after 3.9.1 (InertSteak/Pokermon main @ af0b656, "3.9.1-1016a":
   // Lotad / Lombre / Ludicolo, Mawile, Electrike / Manectric, Cryogonal, Greavard / Houndstone) join the pools; the Lotad line's
   // beat (G.GAME.poke_beat 2 <-> 4 after every hand). `version` stays '3.9.1': only those 9 jokers come from main (PORTING.md).
-  contentRev: 13,
+  // 14 = batch 16, the Megas: 3.9.1's 11 new Megas (Raichu X / Y, Clefable, Victreebel, Starmie, Dragonite, Meganium, Feraligatr,
+  // Skarmory, Lucario, Drampa) and their bases' Mega links; the Mega Stone remembers its Mega's card (unique_val) and frees itself
+  // when that Mega is gone; Shuckle's Mega Berry Juice; the Mega Deck / Sleeve's Crystal Ball and the sleeve's Mega Deck alt
+  // (poke_infinite_megastone).
+  // 15 = batch 17, the last of the 3.9.1 upgrade: the non-Pokédex jokers (Rage Candy Bar, Bitter Rival / Champion after the Rival,
+  // the Imposter Professor + Starter Pack...? / Tag...?, Daycare, Oologist + the Mystery Egg's hatch speed-ups, Repel), the April
+  // Fools jokers behind pokemon_aprilfools (Spiclops, Miror Budicolo + the Ludicolo card, Capture Disc), the 5 boss blinds +
+  // 3.9.1's own Iridescent Hacker, the Elite stake, the 5 challenges (+ 3.9.1's changes to the 7 old ones), the Obituary / Revenant
+  // sleeves' alts (Pink Seal 1 in 3), the Professors' 3.9.1 pool rule, and Steamodded object_weights on (3.9.1's
+  // optional_features: the Soul items' weights, pokermon.modify_pool, the Shiny / Negative weights).
+  contentRev: 15,
+  // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
+  // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
+  // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
+  optional_features: { object_weights: true },
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,
@@ -672,6 +746,7 @@ export const POKERMON = registerMod({
     centers,
     tags,
     blinds,
+    stakes: [ELITE_STAKE],
     seals,
     stickers,
     consumable_types,

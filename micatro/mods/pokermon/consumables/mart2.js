@@ -10,6 +10,7 @@ import {
   pseudorandom_probability, get_probability_vars, poke_unhighlight_cards, poke_remove_card,
   poke_vary_rank, poke_total_chips, poke_add_card, change_base, juice_flip, juice_flip_hand,
   apply_type_sticker, type_sticker_applied, is_type, energy_increase, POKETYPES, any,
+  object_weights, poll_enhancement_weighted,
 } from '../api.js';
 import { get_current_pool } from '../../../js/engine/core.js';
 
@@ -31,6 +32,8 @@ const nope = (card) => G.E_MANAGER.add_event(() => { attention_text(localize('k_
  * (weight 5 each by default, a 40% base rate unless guaranteed). -> center key or undefined.
  */
 function poll_enhancement(args = {}) {
+  // (Pokermon 3.9.1 turns Steamodded's object_weights on: SMODS.poll_enhancement is then SMODS.poll_object over the Enhanced set. Batch 17.)
+  if (object_weights()) return poll_enhancement_weighted(args);
   let key = args.key || 'std_enhance';
   const mod = args.mod || 1;
   const options = args.options || get_current_pool('Enhanced')[0];
@@ -432,7 +435,8 @@ defineConsumables({
       card_eval_status_text(choice, 'extra', null, null, null, { message: localize('poke_dragon_ex'), colour: 'dragon' });
       for (let i = 1; i <= 3; i++) {
         if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-          const card_type = pseudorandom(pseudoseed('dragonscale')) > 0.50 ? 'Item' : 'Energy';
+          // (3.9.1, batch 17: with Safety First's poke_no_energy always an Item, and no roll)
+          const card_type = (G.GAME.modifiers.poke_no_energy || pseudorandom(pseudoseed('dragonscale')) > 0.50) ? 'Item' : 'Energy';
           const _card = create_card(card_type, G.consumeables, null, null, null, null, null);
           _card.add_to_deck();
           G.consumeables.emplace(_card);

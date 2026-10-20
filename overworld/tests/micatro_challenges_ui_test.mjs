@@ -178,7 +178,7 @@ try {
 	{
 		const { page, errors, ctx } = await open({ mods: ['pokermon', 'betmma'] });
 		await click(page, '.b-challenges');
-		A(await waitFor(() => page.evaluate(() => document.querySelectorAll('.ch-item').length === 32), 60000), 'with Pokermon + BETMMA on: 20 + 7 + 5 challenges', await page.evaluate(() => document.querySelectorAll('.ch-item').length));
+		A(await waitFor(() => page.evaluate(() => document.querySelectorAll('.ch-item').length === 37), 60000), 'with Pokermon + BETMMA on: 20 + 12 (Pokermon 3.9.1) + 5 challenges', await page.evaluate(() => document.querySelectorAll('.ch-item').length));
 		const groups = await page.evaluate(() => [...document.querySelectorAll('.ch-group')].map((g) => g.textContent));
 		A(groups.join('|') === 'Balatro|Pokermon|Betmma Vouchers', 'mod challenges are grouped under their mod badges', groups.join('|'));
 		await click(page, '[data-ch="c_poke_nuzlocke"]');

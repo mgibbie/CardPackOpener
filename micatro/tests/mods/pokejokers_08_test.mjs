@@ -25,7 +25,7 @@ const FILE_JOKERS = ['qwilfish', 'scizor', 'mega_scizor', 'shuckle', 'heracross'
   'smoochum', 'elekid', 'magby'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 33 pokejokers_08 jokers ported',
   FILE_JOKERS.filter((n) => P_CENTERS['j_poke_' + n].unported));
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 from pokejokers_08.lua', STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 34, 'defs: 34 from pokejokers_08.lua (33 + Mega Skarmory, batch 16)', STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length);
 
 // ---------------------------------------------------------------- Qwilfish
 {

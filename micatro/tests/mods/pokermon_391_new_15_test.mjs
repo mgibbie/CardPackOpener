@@ -53,7 +53,7 @@ ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_p
   const F = STATUS.PORTED_FILES;
   const n = (f) => (F['pokemon/' + f + '.lua'] || []).length;
   const got = ['18', '20', '21', '22', '26', '31', '32'].map((f) => n('pokejokers_' + f));
-  ok(got.join() === '13,13,14,5,2,10,11', 'defs: 13 / 13 / 14 / 5 / 2 / 10 / 11 from pokejokers_18 / 20 / 21 / 22 / 26 / 31 / 32.lua (21: + Cryogonal from upstream main, sub-batch 15b)', got);
+  ok(got.join() === '13,13,14,5,3,10,11', 'defs: 13 / 13 / 14 / 5 / 3 / 10 / 11 from pokejokers_18 / 20 / 21 / 22 / 26 / 31 / 32.lua (21: + Cryogonal from upstream main, sub-batch 15b; 26: + Mega Drampa, batch 16)', got);
 }
 sec(() => {
   // Static data straight from 3.9.1 (never retyped): rarity / cost / stage / type.
@@ -108,8 +108,9 @@ sec(() => {
     && fam('bramblin') === '["bramblin","brambleghast"]' && fam('rabsca') === '["rellor","rabsca"]', 'families: the 7 lines');
   ok(fam('overqwil') === '["hisuian_qwilfish","overqwil"]' && fam('qwilfish') === '["qwilfish"]' || poke_get_family_list('qwilfish').length <= 1,
     'families: Hisuian Qwilfish / Overqwil; Qwilfish alone (3.9.1 gives it no evolution)', [poke_get_family_list('overqwil'), poke_get_family_list('qwilfish')]);
-  ok(D391.new_deferred.length === 1 && D391.new_deferred[0][0] === 'drampa' && D391.new_deferred[0][2].join() === 'megas' && C('drampa').megas === undefined,
-    'new_deferred: Drampa without its megas (Mega Drampa is batch 16)', D391.new_deferred);
+  // (batch 16: Mega Drampa landed, so Drampa has its 3.9.1 megas and new_deferred is empty)
+  ok(D391.new_deferred.length === 0 && JSON.stringify(C('drampa').megas) === '["mega_drampa"]',
+    'new_deferred: empty; Drampa links Mega Drampa (batch 16)', [D391.new_deferred, C('drampa').megas]);
   ok(!C('qwilfish').config.extra.item_req && !C('qwilfish').evo_list && !C('qwilfish').megas, 'Qwilfish: no evolution in 3.9.1 (no item_req / evo_list)');
 });
 sec(() => {

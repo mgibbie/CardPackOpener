@@ -613,7 +613,7 @@ export class Board {
       H.bChip.innerHTML = ''; H.bInfo.style.visibility = 'hidden'; H.bDesc.innerHTML = '';
       this.chipAnim = null;
     } else {
-      H.bName.textContent = b.name;
+      H.bName.textContent = (b.desc && b.desc.name && b.atlas ? b.desc.name : b.name); // (a mod blind: its loc name, not its key)
       H.bInfo.style.visibility = '';
       H.bTarget.textContent = fmt(b.chips);
       H.bReward.textContent = b.dollars > 0 ? '$'.repeat(Math.min(b.dollars, 8)) + '+' : '';
@@ -622,7 +622,7 @@ export class Board {
         H.bChip.innerHTML = '';
         const c = document.createElement('canvas'); c.width = 68; c.height = 68; c.className = 'blind-chip';
         H.bChip.appendChild(c);
-        this.chipAnim = { key: b.key, canvas: c, pos: b.pos || (BLINDS[b.key] && BLINDS[b.key].pos) };
+        this.chipAnim = { key: b.key, canvas: c, pos: b.pos || (BLINDS[b.key] && BLINDS[b.key].pos), atlas: b.atlas };
       }
       const desc = b.desc;
       H.bDesc.innerHTML = b.boss && desc ? (desc.lines || []).map((l) => markup(l)).join('<br>') + (b.disabled ? '<br><span style="color:#4bc292">Disabled</span>' : '') : '';
@@ -763,9 +763,10 @@ export class Board {
       } else head.innerHTML = `<div class="blind-state">${esc({ Upcoming: 'Upcoming', Defeated: 'Defeated', Skipped: 'Skipped', Current: 'Current' }[c.state] || c.state)}</div>`;
       col.appendChild(head);
       const body = h('div', 'blind-body');
-      body.innerHTML = `<div class="blind-name">${esc(c.name)}</div>`;
+      body.innerHTML = `<div class="blind-name">${esc(c.label || c.name)}</div>`; // (label: a mod blind's loc name)
       const chip = document.createElement('canvas'); chip.width = 68; chip.height = 68; chip.className = 'blind-chip big';
       chip._pos = c.pos || (BLINDS[c.key] && BLINDS[c.key].pos);
+      chip._atlas = c.atlas;
       body.appendChild(chip);
       if (k === 'Boss' && c.desc) body.appendChild(h('div', 'blind-desc', (c.desc.lines || []).map(markup).join('<br>')));
       body.appendChild(h('div', 'blind-req', `<div class="req-l">Score at least</div><div class="req-v"><span class="chip-ico"></span>${fmt(c.chips)}</div>`));
@@ -1101,11 +1102,21 @@ export class Board {
         (area !== 'hand' || this.view.state === 'SELECTING_HAND' || PACK_STATES.includes(this.view.state));
       if (reorderable) {
         this.drag = { id: P.id, area, start: this.areas[area].slice(), dx: s.T.x - P.x0, dy: s.T.y - P.y0 };
+        // A card whose mod tracks its drags (view `drag_tracked` = the action to send: Pokermon's Capture Disc) records each
+        // move's distance in Balatro's units (a card is G.CARD_W = 2.4 * 35 / 41 wide), sent as one action when the drag ends.
+        const dv = this.data.get(P.id) || s.d;
+        if (dv && dv.drag_tracked && !this.readOnly) this.drag.track = { type: dv.drag_tracked, segs: [], x: p.x, y: p.y };
         s.dragging = true; s.z = 999; this.hideTip();
         if (P.long) s.hover = false;
       }
     }
     if (this.drag && this.drag.id === P.id) {
+      const tr = this.drag.track;
+      if (tr) {
+        const d = Math.hypot(p.x - tr.x, p.y - tr.y) * (2.4 * 35 / 41) / this.cw;
+        tr.x = p.x; tr.y = p.y;
+        if (d > 0 && tr.segs.length < 4000) tr.segs.push(Math.round(d * 1000) / 1000);
+      }
       s.tgt.x = p.x + this.drag.dx; s.tgt.y = p.y + this.drag.dy; s.tgt.r = 0;
       s.el.style.zIndex = 999;
       // live re-slot among siblings
@@ -1126,6 +1137,7 @@ export class Board {
     if (this.drag && this.drag.id === P.id) {
       const D = this.drag; this.drag = null;
       if (s) s.dragging = false;
+      if (!cancel && D.track && D.track.segs.length && this.opts.onAction) this.opts.onAction({ type: D.track.type, id: D.id, segs: D.track.segs });
       const now = this.areas[D.area];
       if (!cancel && now.join() !== D.start.join()) {
         sound.play('cardSlide2');
@@ -1593,9 +1605,15 @@ export class Board {
     const f = Math.floor(t * 10) % 21;
     if (f !== this._chipFrame) {
       this._chipFrame = f;
-      const draw = (c, pos) => { if (!c || !pos) return; const x = c.getContext('2d'); x.clearRect(0, 0, 68, 68); drawCell(x, 'blind_chips', { x: 0, y: pos.y }, 0, 0, 68, 68, f); };
-      if (this.chipAnim) draw(this.chipAnim.canvas, this.chipAnim.pos);
-      for (const c of this.overlay.querySelectorAll('canvas.blind-chip')) draw(c, c._pos);
+      // (a mod blind's chip comes from its mod's atlas — the same 21-frame rows — once that atlas has loaded)
+      const draw = (c, pos, atlas) => {
+        if (!c || !pos) return;
+        const x = c.getContext('2d'); x.clearRect(0, 0, 68, 68);
+        if (atlas && MODREG.atlases && MODREG.atlases[atlas]) drawModCell(x, atlas, { x: 0, y: pos.y }, 0, 0, 68, 68, f);
+        else drawCell(x, 'blind_chips', { x: 0, y: pos.y }, 0, 0, 68, 68, f); // (an atlas the registry doesn't know: the base sheet, as before)
+      };
+      if (this.chipAnim) draw(this.chipAnim.canvas, this.chipAnim.pos, this.chipAnim.atlas);
+      for (const c of this.overlay.querySelectorAll('canvas.blind-chip')) draw(c, c._pos, c._atlas);
       if (this.shopSign && this.shopSign.isConnected) { const x = this.shopSign.getContext('2d'); x.clearRect(0, 0, 226, 114); drawCell(x, 'shop_sign', { x: 0, y: 0 }, 0, 0, 226, 114, Math.floor(t * 4) % 4); }
     }
     if (this.tipFor != null && typeof this.tipFor === 'number') {

@@ -23,6 +23,9 @@ export const ANIMATED = {
   j_poke_voltorb: { shiny_offset: 1, frames_per_row: 11, frames: 11, fps: 11 },
   j_poke_electrode: { shiny_offset: 1, frames_per_row: 13, frames: 13, fps: 13 },
   c_poke_bird_energy: { frames_per_row: 18, frames: 36, fps: 15 },
+  // Miror Budicolo (3.9.1 April Fools, batch 17): pokesprites.lua's 4-frame, 8 fps strip (and its Shiny twin), atlas
+  // poke_miror_budicolo / poke_miror_budicolo_shiny (index.js).
+  j_poke_miror_budicolo: { native: true, atlas: 'miror_budicolo', frames_per_row: 4, frames: 4, fps: 8 },
 };
 
 /**
@@ -39,6 +42,9 @@ export const KECLEON_SPRITES = {
  * Deoxys's forme (3.9.1 pokejokers_13.lua set_sprites, sub-batch 14): its floating sprite on the Gen 3 sheet by extra.form —
  * 1 Attack {5,3}, 2 Defense {7,3}, 3 Speed {9,3}; Normal (4) is its own soul {3,3}. Drawn by ui.js face().
  */
+/** The Imposter Professor's unmasked card (3.9.1 zotherjokers.lua set_sprites: form 1 -> Others {8,1}; batch 17). */
+export const IMPOSTER_REVEALED = { x: 8, y: 1 };
+
 export const DEOXYS_SOULS = { 1: { x: 5, y: 3 }, 2: { x: 7, y: 3 }, 3: { x: 9, y: 3 } };
 
 export function view_card(card, v) {
@@ -71,6 +77,8 @@ export function view_card(card, v) {
   if (card.ability.fainted !== undefined && G.GAME && card.ability.fainted === G.GAME.round) p.fainted = true;
   if (card.edition && card.edition.poke_shiny) p.shiny = true;
   const an = ANIMATED[c.key];
-  if (an) p.anim = { frames: an.frames, frames_per_row: an.frames_per_row, fps: an.fps, soul: !!an.soul, atlas: an.native ? c.key : undefined, size: an.size };
+  if (an) p.anim = { frames: an.frames, frames_per_row: an.frames_per_row, fps: an.fps, soul: !!an.soul, atlas: an.native ? (an.atlas || c.key) : undefined, size: an.size };
+  // Capture Disc (3.9.1 April Fools): the board reports its drags (the 'poke_capture_disc_drag' action, jokers/zzzapril_fools.js)
+  if (c.key === 'j_poke_capture_disc') v.drag_tracked = 'poke_capture_disc_drag';
   v.poke = p;
 }

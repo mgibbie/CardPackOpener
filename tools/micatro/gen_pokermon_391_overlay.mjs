@@ -8,7 +8,7 @@
 //         tools/micatro/specs/pokermon_391_overlay.json)
 //
 // What it emits (index.js applies it before building the centers):
-//   jokers   {name: {rarity, cost, blueprint_compat, perishable_compat, eternal_compat, enhancement_gate, attributes, config: {path: value}}}
+//   jokers   {name: {rarity, cost, blueprint_compat, perishable_compat, eternal_compat, enhancement_gate, attributes, megas, config: {path: value}}}
 //            only the changes the spec takes (take_always fields for every joker, `take` paths per joker)
 //   sprites  {name: {atlas, pos, soul_pos?, multi?}} 3.9.1's PokemonSprites (pokespriteload.lua) for every joker data.js
 //            has, resolved to the sheet name (pokermon.sprites.get_atlas_string), minus sprite_hold
@@ -27,11 +27,17 @@
 //            fields and `text_drop` the text lines naming it until then (copied to data391.js new_deferred).
 //            spec unregistered_sprites (sub-batch 15): jokers 3.9.1 writes but never registers (Hisuian Qwilfish / Overqwil) also
 //            take their 3.9.1 sprite (the port defines the rest).
+//            spec sprite_extra (batch 17): {name: {atlas, pos, why}} a new joker whose card is not on a PokemonSprites sheet: its own
+//            atlas (3.9.1 pokesprites.lua: Miror Budicolo, Capture Disc) or a Micatro-composed card (Rage Candy Bar: 3.9.1 draws
+//            placeholder_joker); index.js registers those atlases.
 //   upstream_main (sub-batch 15b: spec upstream_main {repo, commit, version, date, new_jokers {sub_batch: [names]}}) a few
 //            jokers upstream added on main AFTER 3.9.1, from a second extract (the main tree at that commit, same extractor):
 //            each joins new_jokers (+ upstream: 'main') with main's static data, Joker loc entry, sprite, family and file
 //            order. Nothing else is read from main. data391.js upstream_main records the pin.
 //              node tools/micatro/gen_pokermon_391_overlay.mjs <tmp>/pokermon391.js <tmp>/pokermon_main.js
+//   consumable_spawn (batch 17) {name: {hidden, soul_set, soul_rate, weight}} the 3.2.1 consumables whose spawn fields 3.9.1
+//            changed (object_weights: the Soul items' pool weights); null = gone in 3.9.1
+//   challenges (batch 17) 3.9.1's challenge list, whole (pokechallenges.lua: functions as "__fn")
 //   families 3.9.1's families (functions/pokefamily.lua, the extract's `family` global) that hold a new joker, minus the
 //            names the port doesn't have yet (index.js adds them to systems/evolution.js `family`)
 // It fails when a value change of an existing config key, or a blueprint_compat flip, has no decision in the spec.
@@ -85,11 +91,15 @@ for (const [name, { it: a, file }] of Object.entries(BJ)) {
   const b = n.it;
   if (reworkFiles.has(file.replace('pokemon/', '').replace('.lua', '')) && !reworkHold[name]) {
     reworked.push(name);
-    for (const f of ['rarity', 'cost', 'blueprint_compat', 'perishable_compat', 'eternal_compat', 'enhancement_gate', 'attributes']) {
+    // (batch 17: + the knock-off starter flags 3.9.1 added, which its Starter Pack...? and Imposter Professor read)
+    for (const f of ['rarity', 'cost', 'blueprint_compat', 'perishable_compat', 'eternal_compat', 'enhancement_gate', 'attributes', 'knockoff_starter', 'knockoff_pseudol']) {
       if (J(eff(f, a[f])) === J(eff(f, b[f]))) continue;
       put(name, f, b[f] === undefined ? null : b[f]); count(f);
     }
     if (J(a.config || {}) !== J(b.config || {})) { put(name, 'config_all', b.config || {}); count('config_all'); }
+    // batch 16: a reworked joker takes its 3.9.1 Mega list (`megas`), checked below against the registered jokers (a Mega
+    // the port doesn't have yet would make the Mega Stone target a joker it can't evolve)
+    if (J(a.megas) !== J(b.megas)) { put(name, 'megas', b.megas === undefined ? null : b.megas); count('megas'); }
     const key = 'j_poke_' + name, nl = NLOC.Joker && NLOC.Joker[key];
     // A joker whose loc_vars always names a form entry (Pumpkaboo / Gourgeist: j_poke_<name>_<form>, batch 8) has no
     // entry of its own: it takes its forms' entries (keys key_*, minus other jokers' own keys).
@@ -218,7 +228,11 @@ for (const name of UNREG) if (BJ[name] || NJ[name] || !SPR[name]) throw new Erro
 // (an upstream_main joker takes main's pokespriteload.lua entry)
 const MSPR = {};
 for (const s of (MAIN && MAIN.globals.PokemonSprites && MAIN.globals.PokemonSprites.list) || []) MSPR[s.name] = s;
+// sprite_extra (batch 17): a new joker drawn from its own atlas, or a composed card (no PokemonSprites entry upstream)
+const SX = SPEC.sprite_extra || {};
+for (const name of Object.keys(SX)) if (!new_jokers[name] || SPR[name]) throw new Error(`sprite_extra: '${name}' is not a new joker without a 3.9.1 PokemonSprites entry`);
 for (const name of [...Object.keys(BJ), ...Object.keys(new_jokers), ...UNREG]) {
+  if (SX[name]) { sprites[name] = { atlas: SX[name].atlas, pos: { ...SX[name].pos }, extra: true }; continue; }
   const s = mainNames.has(name) ? MSPR[name] : SPR[name];
   if (!s) continue;
   if (SPEC.sprite_hold && SPEC.sprite_hold[name]) { held.push([name, SPEC.sprite_hold[name]]); continue; }
@@ -239,13 +253,38 @@ const blinds = { cgoose: { key: 'iridescent_hacker', boss_colour: hacker.boss_co
 const loc = { Blind: { bl_poke_iridescent_hacker: NEW.loc.descriptions.Blind.bl_poke_iridescent_hacker } };
 if (!loc.Blind.bl_poke_iridescent_hacker) throw new Error('3.9.1 en-us has no bl_poke_iridescent_hacker');
 if (Object.keys(jokerLoc).length) loc.Joker = jokerLoc;
+// (batch 17: + v_text (challenge rules) and challenge_names)
+const MISC_SETS = ['dictionary', 'v_dictionary', 'labels', 'v_text', 'challenge_names'];
 // loc_extra: other 3.9.1 loc entries the reworked jokers show ("Set.key": tooltips, alt texts, dictionary words).
 for (const p of SPEC.loc_extra || []) {
   const [set, ...rest] = p.split('.'), key = rest.join('.');
-  const src = set === 'dictionary' || set === 'v_dictionary' || set === 'labels' ? NEW.loc.misc && NEW.loc.misc[set] : NLOC[set];
+  const src = MISC_SETS.includes(set) ? NEW.loc.misc && NEW.loc.misc[set] : NLOC[set];
   if (!src || src[key] === undefined) throw new Error(`loc_extra: 3.9.1 en-us has no ${p}`);
   (loc[set] || (loc[set] = {}))[key] = src[key];
 }
+
+// ---- consumable_spawn (batch 17: 3.9.1 turns Steamodded's object_weights on, "Soul items use object weights"): every 3.2.1
+// consumable whose spawn fields changed (hidden, soul_set, soul_rate, the pool weight); null = the field is gone in 3.9.1
+// (a hidden one then takes Steamodded's defaults: soul_set Spectral, soul_rate 0.003). Set names in our canonical form.
+const SPAWN = ['hidden', 'soul_set', 'soul_rate', 'weight'];
+const SET_CANON = { poke_item: 'Item', poke_energy: 'Energy' };
+const canonSet = (v) => (typeof v === 'string' && SET_CANON[v]) || v;
+const BC = items(BASE, 'consumables'), NC = items(NEW, 'consumables');
+const consumable_spawn = {};
+for (const [name, { it: a }] of Object.entries(BC)) {
+  const b = NC[name] && NC[name].it;
+  if (!b) continue;
+  for (const f of SPAWN) {
+    const va = f === 'soul_set' ? canonSet(a[f]) : a[f], vb = f === 'soul_set' ? canonSet(b[f]) : b[f];
+    if (J(va) === J(vb)) continue;
+    (consumable_spawn[name] || (consumable_spawn[name] = {}))[f] = vb === undefined ? null : vb;
+  }
+}
+counts.consumable_spawn = Object.keys(consumable_spawn).length;
+// ---- challenges (batch 17): 3.9.1's whole challenges/pokechallenges.lua list (the 7 of 3.2.1, changed, + 5 new), "__fn" markers
+// kept (mod/pokermon/challenges.js ports the functions: Mystery Dungeon's and Mean Look's apply)
+const challenges = (NEW.groups.challenges || []).flatMap((f) => listOf(f).map((c) => JSON.parse(JSON.stringify(c))));
+counts.challenges = challenges.length;
 
 const out = {
   version: '3.9.1',
@@ -253,13 +292,15 @@ const out = {
   counts: { ...counts, jokers_changed: Object.keys(jokers).length, sprites: Object.keys(sprites).length, skipped: skipped.length },
   reworked: reworked.sort(), rework_hold: Object.entries(reworkHold), rework_deferred: Object.entries(reworkDeferred),
   jokers, sprites, sprite_hold: held, blinds, loc, skipped,
-  new_jokers, new_deferred: Object.entries(newDeferred).map(([n, d]) => [n, d.why, d.drop || []]), families,
+  new_jokers, new_deferred: Object.entries(newDeferred).map(([n, d]) => [n, d.why, d.drop || []]), families, consumable_spawn, challenges,
 };
 if (mainNames.size) {
   out.upstream_main = { repo: UM.repo, commit: UM.commit, version: UM.version, date: UM.date, jokers: [...mainNames.keys()] };
   out.source += `; + ${mainNames.size} jokers from ${UM.repo} main @ ${String(UM.commit).slice(0, 7)} (${UM.version})`;
 }
 for (const name of Object.keys(new_jokers)) if (!sprites[name]) throw new Error(`3.9.1 has no sprite for the new joker '${name}'`);
+for (const [name, o] of Object.entries(jokers)) for (const m of o.megas || []) if (!BJ[m] && !new_jokers[m]) throw new Error(`megas: ${name}'s Mega '${m}' is not a registered joker (add it to new_jokers)`);
+for (const [name, { item }] of Object.entries(new_jokers)) for (const m of item.megas || []) if (!BJ[m] && !new_jokers[m]) throw new Error(`megas: ${name}'s Mega '${m}' is not a registered joker (add it to new_jokers or new_deferred drop)`);
 const json = JSON.stringify(out);
 fs.writeFileSync(OUT, '// GENERATED by tools/micatro/gen_pokermon_391_overlay.mjs from the Pokermon 3.9.1 extract + tools/micatro/specs/pokermon_391_overlay.json.\r\n'
   + '// Never edit: change the spec and regenerate. Applied by index.js on top of data.js (3.2.1).\r\nexport default ' + json + ';\r\n');

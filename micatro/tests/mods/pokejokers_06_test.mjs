@@ -14,7 +14,7 @@ const FILE_JOKERS = ['mew', 'chikorita', 'bayleef', 'meganium', 'cyndaquil', 'qu
   'igglybuff', 'togepi', 'togetic', 'natu', 'xatu', 'mareep', 'flaaffy'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 30 pokejokers_06 jokers ported',
   FILE_JOKERS.filter((n) => !STATUS.PORTED.jokers.includes('j_poke_' + n)));
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_06.lua'].length === 30, 'defs: 30 from pokejokers_06.lua', STATUS.PORTED_FILES['pokemon/pokejokers_06.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_06.lua'].length === 32, 'defs: 32 from pokejokers_06.lua (30 + Mega Meganium / Feraligatr, batch 16)', STATUS.PORTED_FILES['pokemon/pokejokers_06.lua'].length);
 
 /** Win the round with `held` cards left in hand (they see the end-of-round held pass). */
 function winHolding(held) {

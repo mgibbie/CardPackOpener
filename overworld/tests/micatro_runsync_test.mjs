@@ -58,6 +58,14 @@ for (const i of [21, 33]) {
 	const p = `micatro/mods/pokermon/jokers/pokejokers_${i}.js`;
 	JOKERS_PRE_B7['/' + p] = execFileSync('git', ['show', `${PRE_NEW}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 }
+// (batch 17, the last of the 3.9.1 upgrade, turned Steamodded's object_weights on — every shop / pack / tag / boss roll goes through
+// SMODS.poll_object — and put new jokers and boss blinds in the pools: the fixture's shops differ. Every Pokermon file batch 17
+// changed is served as it was at batch 16 (8a94bcfe); the files it added are not imported by that index.js.)
+const PRE_B17 = '8a94bcfef20161007015fa0f676148b10d94dfa2';
+for (const p of execFileSync('git', ['diff', '--name-only', PRE_B17, '--', 'micatro/mods/pokermon'], { cwd: ROOT, encoding: 'utf8' }).split(/\r?\n/)) {
+	if (!/\.js$/.test(p) || JOKERS_PRE_B7['/' + p]) continue;
+	try { JOKERS_PRE_B7['/' + p] = execFileSync('git', ['show', `${PRE_B17}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'ignore'] }); } catch { /* added by batch 17 */ }
+}
 // ---------- the real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');

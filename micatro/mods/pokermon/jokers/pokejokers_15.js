@@ -1,4 +1,4 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_15.lua (Pokédex 421-450: Ambipom -> Lucario), 12 jokers + 3 new in 3.9.1.
+// Pokermon 3.9.1 — pokemon/pokejokers_15.lua (Pokédex 421-450: Ambipom -> Lucario), 12 jokers + 4 new in 3.9.1 (Mega Lucario: batch 16, after Lucario).
 // The 3 jokers 3.9.1 added to this file (Chingling, Bronzor, Bronzong) are at the end (new-jokers sub-batch 14; static data:
 // data391.js new_jokers). Bronzor's card of the round: systems/rules.js reset_bronzo_card.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
@@ -11,6 +11,7 @@ import {
   defineJokers, type_tooltip, detailed, level_evo, scaling_evo, faint_baby_poke, is_type, get_probability_vars, pseudorandom_probability,
   add_card,
   POKE_POOL_RULES,
+  object_weights, poll_enhancement_weighted,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_15.lua';
@@ -41,6 +42,8 @@ const scry = {
  * enhancement roll (each option weighs its center's weight, 5 by default).
  */
 function poll_enhancement(args = {}) {
+  // (Pokermon 3.9.1 turns Steamodded's object_weights on: SMODS.poll_enhancement is then SMODS.poll_object over the Enhanced set. Batch 17.)
+  if (object_weights()) return poll_enhancement_weighted(args);
   let key = args.key || 'std_enhance';
   const mod = args.mod || 1;
   const guaranteed = args.guaranteed || false;
@@ -318,17 +321,39 @@ defineJokers({
       return level_evo(self, card, context, 'j_poke_lucario');
     },
   },
-  // Lucario 448 (Pokermon 3.9.1: only in the pool while a playing card has an edition - POKE_POOL_RULES below; its
-  // 3.9.1 Mega, mega_lucario, is a new joker: not here yet)
+  // Lucario 448 (Pokermon 3.9.1: only in the pool while a playing card has an edition - POKE_POOL_RULES below; megas =
+  // {mega_lucario}, batch 16)
   lucario: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' });
       return { vars: [center.ability.extra.Xmult_multi] };
     },
     calculate(self, card, context) {
       if (context.individual && context.cardarea === G.hand && context.other_card.edition && !context.end_of_round) {
         if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
         return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
+  // Mega Lucario 448-1 (3.9.1, batch 16): with 3+ different editions among the cards held in hand, every held card gives X1.6.
+  mega_lucario: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.Xmult_multi] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round) {
+        const edition = {};
+        let count = 0;
+        for (const c of G.hand.cards) {
+          if (c.edition && !edition[c.edition.type]) { edition[c.edition.type] = true; count = count + 1; }
+        }
+        if (count >= 3) {
+          if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
+          return { x_mult: card.ability.extra.Xmult_multi, card };
+        }
       }
       return undefined;
     },

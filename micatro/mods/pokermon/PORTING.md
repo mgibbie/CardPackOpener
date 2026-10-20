@@ -260,7 +260,8 @@ Intended-design fixes are noted in comments at each site (search "intended").
 ## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
-87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, **`3.9.1+r8`** since new-jokers sub-batch 11
+87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), **`3.9.1+r15`** since batch 17 (the last: the
+upgrade is complete, see "Pokermon 3.9.1 upgrade: complete")
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -275,7 +276,9 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 | **10** | **the Hazard layer, Seed / Miracle Seed / Heavy-Duty Boots, Flower X2, the Debris deck + sleeve; 16 jokers off hold** (below) | **done 2026-10-20** — `3.9.1+r6` |
 | **10b** | **the Unown rework (Unown, Unown Swarm, Ruins of Alph's Unown, 3.9.1 Unown art, tiled swarm strips) + the Wish Pack (3 unused wishes, change_form)** (below) | **done 2026-10-20** — `3.9.1+r7` |
 | **11** | **new jokers, sub-batch 11: the 26 of 3.9.1's pokejokers_09 / 10 (Wurmple, Seedot, Taillow, Wingull, Ralts, Surskit, Slakoth, Nincada, Makuhita lines, Skitty)** (below) | **done 2026-10-20** — `3.9.1+r8` |
-| 12–17 | new jokers (sub-batches 12–15, 15b), Megas, non-Pokémon jokers / blinds / stake / challenges | after 11 (batch 9 folded into 6–8) |
+| 12–15b | new jokers (sub-batches 12–15, 15b; below) | **done 2026-10-20** — `3.9.1+r9` … `3.9.1+r13` |
+| **16** | **the Megas: 11 new Megas, the Mega Stone's 3.9.1 rules (`unique_val`), the Mega Berry Juice, the Mega Deck / Sleeve (below)** | **done 2026-10-20** — `3.9.1+r14` |
+| **17** | **the non-Pokédex jokers (Rival chain, Oologist, Imposter Professor + Starter Pack...?), April Fools (option-gated), the 5 boss blinds + 3.9.1's Iridescent Hacker, the Elite stake, the 12 challenges, the Obituary / Revenant sleeve alts (Pink Seal 1 in 3), object_weights (below)** | **done 2026-10-20** — `3.9.1+r15`; **upgrade complete** |
 
 ### Steamodded seams for 3.9.1 (batch 4)
 Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
@@ -770,7 +773,7 @@ Debris deck / sleeve, and the 16 jokers that waited for them, all ported from th
   - Miracle Seed (03_mart_items.lua): 1 selected card becomes a Seed card.
   - Heavy-Duty Boots (04_mart_rare.lua; reusable, once per round): until end of round every Hazard probability is 0 (answers
     `fix_probability` for identifier `'hazard'`; the reset is queued, so this round's held Hazards roll at 0).
-    Deviation: 3.9.1 spawns it through object weights (weight 2 in the Item pool), which is not on in our port (batch 5). Ours is a
+    Deviation (retired in batch 17, when object_weights came on: now an Item of weight 2): 3.9.1 spawns it through object weights (weight 2 in the Item pool), which is not on in our port (batch 5). Ours is a
     hidden Item like Leftovers (soul_set Item) at 2/3 of Leftovers' soul_rate (weight 2 vs 3), and only while the Hazard layer is up
     (3.9.1 in_pool). Hiding its floating sprite while used is cosmetic, not ported.
   - Up-Grade (mart2.js): the Seed card joins its options (3.9.1).
@@ -1588,21 +1591,293 @@ Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change show
     whole key, one with `at`, and the re-earn by a new legacy win, pushed); a watched player's map with and without their
     revocations; the hidden Nincada option (its value still read).
 
+### The Megas (batch 16)
+Pinned **`3.9.1+r14`** (`contentRev: 14`). The **11 Megas 3.9.1 adds**, with the Mega Stone's 3.9.1 rules, the Mega Berry Juice and the Mega
+Deck / Sleeve changes. The plan's "12 Megas" counted Mega Steelix, which the port has had since 3.2.1 (on 3.9.1 since batch 10).
+
+- **How they come in** (the sub-batch 11 pipeline):
+  - The spec's `new_jokers` "16" lists the 11 Megas. The 3.9.1 extract is unchanged:
+    `node tools/micatro/gen_pokermon_391_overlay.mjs <3.9.1 extract> <main extract>`.
+  - Each Mega takes its whole 3.9.1 static data, sprite and text, and is inserted after its base (3.9.1's file order).
+  - **The Mega links**: the generator now takes a reworked joker's 3.9.1 `megas` list (`data391.js jokers[name].megas`; 9 of them: Raichu,
+    Clefable, Victreebel, Starmie, Dragonite, Meganium, Feraligatr, Skarmory, Lucario). Drampa's comes back with its whole item now that
+    `new_deferred` is empty.
+    - The generator fails when a `megas` entry names a joker the port doesn't register.
+    - Lucario and Skarmory left `rework_deferred`.
+- **The Megas** (rarity `poke_mega`: never in a pool; reached with a Mega Stone or the Mega Berry Juice; numbers from data391.js):
+  - **Mega Raichu X** (jokers/pokejokers_01.js): +$25 interest cap while held. Each hand earns the interest you would get now (`dollars`).
+  - **Mega Raichu Y**: +1 Mult per $1 you have.
+  - **Raichu's X / Y choice**: Charizard's and Mewtwo's rule (`getMega_by_position`): the leftmost Raichu becomes X, the rightmost Y, one in
+    between picks at random. Raichu shows the "XY Mega" tooltip while a Mega Stone is held.
+  - **Mega Clefable** (_02): +X0.03 per Club drawn this round (`scale_card` on the `hand_drawn` cards). Each scoring Club gives X(1 + that).
+    Resets at end of round.
+  - **Mega Victreebel** (_03): every played even card is retriggered, and every Purple Seal card (both: twice). Comes holding a Medium.
+  - **Mega Starmie** (_05): in a 2-card hand, each scoring Diamond gives X2.5 and $5 (`dollar_buffer`).
+  - **Mega Dragonite**: +55 Mult. A 1-card final hand is retriggered once per card held in hand.
+  - **Mega Meganium** (_06): the first held card of each suit earns $2, and is retriggered if it did anything (so it pays twice).
+    `systems/utils.js get_first_of_each_suit` ports 3.9.1's suit matching (a Wild card gives way to a plain card of its suit).
+  - **Mega Feraligatr**: +15 Chips per played card this round (`before`). Each Dragon joker gives those Chips (`other_joker`). Resets at
+    end of round. Comes holding a Dragon Scale.
+  - **Mega Skarmory** (_08): +1 Hazard layer and limit (as Skarmory). Each scoring Hazard card gives X(1 + 1 per held Steel or Gold card).
+  - **Mega Lucario** (_15): with 3+ different editions among the cards held in hand, every held card gives X1.6.
+  - **Mega Drampa** (_26): +1 Booster Pack in the shop and +1 choice in every pack; shop packs are always Mega (the `get_pack` hook already
+    checked for it). It changes `extra_boosters` directly, so mega evolving from Drampa doesn't stock an extra pack.
+- **The Mega Stone, 3.9.1** (`systems/items.js`, consumables/mart1.js):
+  - **`used_on` is the Mega's card**: its `unique_val`, not its center key. So two Mega Clefables are told apart, and selling a stone reverts
+    its own Mega, never the twin.
+  - **A used stone targets only its own Mega** (3.9.1 `get_mega_target`), to revert it. Before, it could Mega Evolve a second joker.
+  - **At every end of round a stone whose Mega is gone forgets it** (sold, destroyed, reverted another way) and is free again.
+  - Reverting says "Reverted" (3.9.1 `pokermon.devolve`). The tooltip names the Mega the stone made.
+  - Kept: the house rule "the highlighted joker if it qualifies, else the leftmost that does" (3.9.1 stops at a highlighted joker that
+    doesn't); the pack / shop checks; Nacho's `addon_megas`.
+  - **Old saves**: nothing stores a stone's ability (a resume or replay re-simulates its recorded actions under the current rules), so no
+    save holds a `used_on`. A `used_on` in the 3.2.1 shape (a center key, a string: an add-on's or a test's) is **migrated at read time**:
+    `megastone_made` / `megastone_mega` match it as "the first Mega of that key". Nothing rewrites it.
+  - **`poke_infinite_megastone`**: the Mega Sleeve on the Mega Deck (its 3.9.1 alt). Every joker with a Mega and every Mega is a target; the
+    stone remembers nothing (`used_on = false`); no "Restriction" tooltip.
+- **The Mega Berry Juice** (consumables/zberryjuice.js, 3.9.1 06_mart_berry.lua; `AtlasConsumablesBasic-391` {7,7}):
+  - Shuckle slicing a Mega Stone gives it (the other consumables still give their flavour). It Mega Evolves the highlighted (else the
+    leftmost) joker that has a Mega, for good: no stone remembers it. Never in a pool.
+  - The Lua's `can_use` calls `get_mega`, which rolls the X / Y seed for a joker in the middle of the row. Ours only checks that a target
+    exists, so the seed is rolled once, on use.
+- **The Mega Deck / Sleeve** (backs/backs1.js, sleeves.js): 3.9.1 adds the **Crystal Ball** to both, with the 3.9.1 texts. The sleeve's alt
+  on the Mega Deck (no vouchers, stone or shop slot) sets `poke_infinite_megastone` (engine `sleeve.js` `alt`).
+- **Base forms**: Raichu, Clefable, Victreebel, Starmie, Dragonite, Meganium, Feraligatr, Skarmory, Lucario and Drampa show the "Mega
+  Evolution" tooltip (3.9.1 `add_mega_evolution_tooltip`, with detailed tooltips on).
+- **Upstream main Megas**: re-checked at the pinned af0b656. `pokespriteload.lua` has Mega Mawile / Mega Manectric sprites
+  (`AtlasJokersBasicGen03` {10,4} / {4,5}) and `dex_order.lua` lists them. No joker defines them, so they are left out. Mawile and Manectric
+  have no `megas`.
+- **Precedence**: no add-on ships one of these 11 Megas. The dedupe step's script check (every Nacho / Pokermon+ joker by `name` and by
+  display name) finds none, and `replaced_by` marks none of them, nor any add-on Mega. The duplicate set stays the same 12. Nacho's Megas
+  (Gardevoir, Gallade, Altaria, Salamence, Audino) are other species. Had Nacho shipped one, `replaced_by` would have taken it out of play
+  and the Mega Stone on Pokermon's base would give Pokermon's (`megas` comes before `addon_megas`).
+- **Add-ons**: Nacho's Passimian reset hook (`MEGASTONE_RESET`, mods/nacho/systems.js) also matches the card's `unique_val`. 3.9.1's own
+  end-of-round check frees that stone anyway: a Passimian is not a `poke_mega` card.
+- **Art**: **no new art files**. Every Mega draws its 3.9.1 card from the Gen sheets vendored in batch 5 (`AtlasJokersBasicGen01/02/04/07-391.png`,
+  with a soul layer, and their Shiny twins).
+  - Cells: Raichu X {2,9}, Y {4,9}, Clefable {6,9}, Victreebel {8,9}, Starmie {10,9}, Dragonite {12,9} (Gen 1); Meganium {0,6}, Feraligatr
+    {2,6}, Skarmory {4,6} (Gen 2); Lucario {6,6} (Gen 4); Drampa {2,6} (Gen 7). Each soul is the cell to its right.
+  - The test checks each card, soul and Shiny crop, and the juice. A browser screenshot showed them in the joker row.
+- **Deviations / kept quirks**:
+  - Mega Raichu X adds and removes a flat $25 of interest cap, not its config's `interest_cap` (as the Lua).
+  - Mega Skarmory has `gen = 1` in 3.9.1. Its sprite names the Gen 2 sheet, so only the Pokédex-generation option reads it: it is a Mega,
+    never in a pool.
+  - Mega Meganium's `func` (the `dollar_buffer` reset) is queued from `calculate`; the held-card loop reads no `func`.
+  - `get_first_of_each_suit` walks the 4 suits in Steamodded's order (the Lua: `pairs(SMODS.Suits)`, no fixed order).
+- **Tests**: `micatro/tests/mods/pokermon_391_megas_test.mjs` gives **10 passed / 55 failed** on origin/main (2acf967b) and ****108 / 0**** here.
+  - It fires every Mega through a real Mega Stone: Raichu X / Y by position, the interest cap and its revert, Clefable's Club scaling and
+    reset, Victreebel's even / Purple Seal retriggers, Starmie's 2-card Diamonds, Dragonite's last-hand retriggers, Meganium's held $,
+    Feraligatr's Dragon Chips and Dragon Scale, Skarmory's Hazard X Mult and its revert, Lucario's 3 editions, Drampa's shop and packs.
+  - The Mega Stone: `used_on` = `unique_val`, two Mega Clefables, selling a stone, a Mega sold, a legacy `used_on`, and the infinite
+    modifier on the Mega Deck + Sleeve. Also the Mega Berry Juice from Shuckle, the Crystal Ball, the overlay, the order, the text, the pools,
+    precedence with Nacho + Pokermon+, and the art.
+  - Updated for the `unique_val`: `addon_dedupe_test` and `nacho_test` (Passimian). Count pins: `pokejokers_01` / `02` / `03` /
+    `05` / `06` / `08` / `15` / `26_test` (38 / 31 / 34 / 38 / 32 / 34 / 16 / 3 defs), `pokermon_391_new_14` / `_15_test` (defs; Drampa's Mega no longer
+    deferred), `pokermon_391_reworks_b` / `_c` and `_hazard_test` (`rework_deferred`), `pokermon_systems_test`, `pokermon_391_data_test` (rev 14;
+    the juice has no 3.2.1 cell), `modpin_test` and `micatro_mod_version_pin_test` (rev 14).
+  - Re-run and passing: every `micatro/tests` Node suite (all mods), `micatro_engine_test` (100 suites; fuzz: vanilla 40 runs / 5937 actions,
+    Pokermon 24 / 4387, all mods 16 / 3172), and in the browser, one at a time: `micatro_resume_win_badges` (28 / 0), `micatro_runsync`
+    (81 / 0; no fixture shim needed: Megas never enter a pool), `micatro_mod_version_pin` (47 / 0) and `designwiki_micatro_mods` (296 / 0, wiki
+    data regenerated).
+
+### Batch 17: the non-Pokédex jokers, April Fools, blinds, Elite, challenges, object_weights
+Pinned **`3.9.1+r15`** (`contentRev: 15`). The last batch of the upgrade: everything 3.9.1 adds that is not a Pokémon joker, the
+deferred Rival chain and Oologist, and Steamodded's `object_weights`. The 3.9.1 extract is unchanged; `data391.js` regenerated (new
+spec keys `new_jokers` "17", `sprite_extra`; new outputs `consumable_spawn`, `challenges`; reworked jokers also take 3.9.1's
+`knockoff_starter` / `knockoff_pseudol` flags; `loc_extra` reads `v_text` / `challenge_names` too).
+
+- **The non-Pokédex jokers** (jokers/zotherjokers.js; 3.9.1 zotherjokers.lua):
+  - **Rage Candy Bar** (Uncommon, $6): the first hand of each round destroys the top 2 cards of the deck (SMODS.destroy_cards); eaten
+    after 3 such hands. 3.9.1 draws it with `placeholder_joker`: ours is a **composed** card (below).
+  - **Bitter Rival** (Common, $5; Others {2,2}): the Rival's twin, $25 + $20 per skipped Blind; offered once the Rival is beaten
+    (`poke_rival_defeated`), until it is beaten too (`poke_bitter_rival_defeated`).
+  - **Champion** (Common, $5; Others {4,2}): X(1 + 0.2 per Blind skipped this run); a Speed Tag (`tag_skip`) per Boss beaten. Offered
+    once Bitter Rival is beaten. **The Rival chain** is done: 3.9.1's family `rival, bitter_rival, champion` (data391.js families),
+    the in_pool rules are `POKE_POOL_RULES` (the family rule still keeps a member out while one is owned / seen, as 3.9.1's
+    family_present; a destroyed Rival clears `used_jokers`).
+  - **Imposter Professor** (Uncommon, $5; Others {6,1}, unmasked {8,1} once owned: `form` 1, ui.js face()): after 2 rounds, selling it
+    makes a **rental** Pokédex and a **Starter Tag...?**. Offered only while every Starter Pack...? slot has a candidate (3.9.1
+    in_pool). **The Professor's own 3.9.1 / 3.2.1 in_pool** (every Starter Pack slot has a candidate) was never ported: added with it.
+  - **Oologist** (Uncommon, $7; Others {4,4}): after 3 rounds, selling it makes a Negative Mystery Egg, one more per 3 more rounds.
+    **The Mystery Egg's hatch speed-ups** (a held Fire Energy / a Flame Body neighbour: an extra round on a roll, and adjacent / 4)
+    now apply while an Oologist is owned (the egg already checked for it).
+  - **Daycare** (Rare, $8; Others {2,4}): sold between 2 breedable Pokémon (not Baby, line not Legendary), a Mystery Egg (3 rounds) of
+    one neighbour's lowest stage (`get_lowest_evo`). Intended-design fix: a parent whose lowest-stage key isn't registered (a
+    non-Pokémon picked as the parent) makes no egg (the Lua's egg would hatch into a missing key). An add-on duplicate's line hatches
+    Pokermon's joker (`precedence_key`). Its `update` only labels the Blueprint box in the Lua's UI: not ported.
+  - **Repel**: sold, it disables the current Boss Blind (Luchador's check) and makes a D6 Tag. **3.9.1 writes it but never registers
+    it** (not in zotherjokers.lua's `jlist`): ours is registered in full (collection, wiki) and **never offered** (`in_pool` false),
+    as upstream. Composed card too.
+- **The April Fools jokers** (jokers/zzzapril_fools.js; 3.9.1 zzzapril_fools.lua) — **the gate is an OPTION, not a date**: 3.9.1
+  registers the file's list only with `pokermon_config.pokemon_aprilfools` (default off); nothing in 3.9.1 reads the clock for them.
+  Ours are always registered and offered only with the same option (`pokemon_aprilfools`, "Joke content": the centers' in_pool and
+  `POKE_POOL_RULES`, so no random Pokémon pick rolls them either — that also closes the gap for A Billion Lions).
+  - **Spiclops** (Uncommon, $10, "Legendary" badge; Others {6,4}): +1 Hazard layer, +4 hand size; a random Seal on every 8th playing
+    card added; at Blind select + hand size equal to the Hazard level and -1 discard; a first hand of only Hazard cards + hand size
+    per card; a Blue Seal on every third Hazard held at end of round; a Planet of your most played hand per 2 Hazards drawn.
+  - **Miror Budicolo** ("Ludicolo", a Water Basic, $1): added, it becomes a **Ludicolo playing card** in the deck and leaves the joker
+    row. The card (`m_poke_ludicolo`, enhancements/enhancement1.js): no rank or suit, replaces the base card, always scores,
+    "Ludicolo!". Art: miror_budicolo.png's 4-frame animation (8 fps; its Shiny strip for a Shiny one). Its music track is not ported.
+  - **Capture Disc** ($4): +1 Mult each time it is **shaken**, reset at end of round. The Lua counts the card's drag distance on
+    every drag frame (25 game units x its current Mult per point). That is the player's input, so here it is an **action**: the board
+    (js/ui/board.js) records the drag's per-move distances in Balatro units (a card = G.CARD_W = 2.4 x 35 / 41 wide) and sends
+    `{type: 'poke_capture_disc_drag', id, segs}` when the drag ends (the view's `drag_tracked`); the mod's `action` hook applies them
+    frame by frame as the Lua's card.drag. Recorded in the recipe, so replays / resumes / spectators rebuild it exactly.
+  - (A Billion Lions: unchanged, jokers/zotherjokers.js.)
+- **The Starter Pack...? and Tag...?** (boosters/packs1.js, tags/tags1.js): a knock-off Grass / Fire / Water starter, Bidoof / Yamper and
+  a knock-off pseudo-legendary (3.9.1's `knockoff_starter` / `knockoff_pseudol` flags, now taken for every reworked joker: Bellsprout,
+  Ponyta, Slowpoke, Mareep, Hoppip, Sunkern, Wooper, Slugma were missing). Never in a shop / pool; only the Imposter Professor's tag
+  opens it. Art: AtlasBoosterpacksBasic {4,1} (as the Starter Pack), AtlasTags {4,0}.
+- **The five boss blinds** (blinds/pokebossblind.js, all on SMODS.Blind `calculate`; AtlasBossblinds-391 rows 1-4 and 24):
+  The Mirror (ante 3+: the rightmost joker becomes Ditto when the first hand is drawn; an Eternal one loses Eternal), The Rocket
+  (ante 2+: with $25+ every card is drawn face down — `stay_flipped`), The Star (ante 3+: one random type per hand, its jokers
+  debuffed — `debuff_card` + the `drawing_cards` re-check), Gray Godfather (showdown: -$5 per hand / discard; in debt, a random
+  non-Eternal joker is destroyed), White Executive (showdown: as many random cards debuffed as your jokers' + consumables' total sell
+  value, source 'white_executive', lifted at end of round / disable). 3.9.1's order (before the Hacker). Their `#1#` HUD numbers are
+  live getters (`BLIND_HUD_VARS`). 3.9.1 also writes The Magma and The Aqua but never registers them: not ported.
+- **3.9.1's own Iridescent Hacker**: batch 5 kept 3.2.1's Chartreuse Chamber logic under the new key; now 3.9.1's — `debuff_card`,
+  `pick_random_types`, `blind.effect.ptypes`, Pokermon `is_type` (a Tera sticker / wildcard counts; 3.2.1 read the base ptype first).
+- **The Elite stake** (stakes.js; 3.9.1 stakes/stakes.lua + pokermon.lua's SMODS.is_showdown_ante): applies every stake up to Gold, +2
+  win ante, `poke_elite4`: antes > 0 with `ante % win_ante >= win_ante - 3` (7, 8, 9 and 10; 17-20 ...) draw showdown bosses (the
+  `boss_eligible` hook; ordinary bosses keep their `min`). Art: elite_stake.png (the chip) / elite_stake_sticker.png. It is a **mod
+  stake**, not a 9th level: the engine plays it at Gold's level 8 plus its modifiers (run.js mod_stake_chain) and records its key in
+  the recipe (`stake: 'stake_poke_elite'`), so the leaderboard, replays and run badges see it like Nacho's Elite / Pokermon+'s Lilac /
+  MoreFluff's stakes. **Win stickers record Gold for it** (stickers.js "a mod stake's higher level counts as Gold"; levels 1..8; no
+  server change): 3.9.1 shows its own Elite sticker, which would need a 9th level in stickers.js and `stickerLevel` (server/mp.mjs) —
+  left out on purpose, see "3.9.1 upgrade complete". **Precedence**: Nacho 1.6.4 ships the same Elite stake (`stake_nacho_elite_stake`;
+  Nacho 1.7.9 re-keys to Pokermon's, batch 18); ours wins: Nacho's has `superseded_by` and leaves the New Run picker
+  (js/mods/index.js modStakes) but stays registered, so a recipe naming it still plays.
+- **The challenges** (challenges.js; data391.js `challenges`, the whole 3.9.1 list): the 7 old ones take 3.9.1's changes (The Mirror
+  banned from all but Randomizer; Good As Gold also bans Verdant Leaf; colours; Randomizer's rule renamed `poke_apply_randomizer` —
+  systems/evolution.js reads both names), plus:
+  - **Delibird Dilemma**: an Eternal Delibird; no blind reward, extra-hand money or interest; Seed Money / Money Tree / To the Moon /
+    Rocket / Satellite banned.
+  - **Safety First**: an all-Hazard Challenge Deck; Eternal Mudkip, Roggenrola, Bronzor; no shop jokers; **no Energy**
+    (`poke_no_energy`: the shop's energy_rate 0 at run start — rules.js reset_game_globals; a Pocket Pack's Energy slot holds an
+    Item; the Dragon Scale makes Items only); +3 joker slots; a long ban list.
+  - **Mystery Dungeon** (the daily): a random Pokermon deck's effect (3.9.1's 9 non-legacy decks; the Vending deck's through
+    `poke_vending`, rules.js evaluate_round) and an Eternal random joker. **Determinism**: 3.9.1 sets the run's seed to "poke_" +
+    today's UTC date (lovely/daily_challenge.toml, `os.date("!%d%m%Y")`) and picks the deck with it. Here the **engine never reads the
+    clock**: the UI passes today's UTC date at the start (`daily`, js/ui/main.js utcDayStamp), newRun turns it into the run's seed
+    `POKE_DDMMYYYY` (challenge.js `daily_seed`; not a player seed), the recipe records that seed, and the deck pick reads the date
+    back from the seed. A resume, replay or spectator rebuilds that day's run on any day; no recipe / server field was added.
+    The rule text "Resets at <time>" shows the viewer's local time of UTC midnight (3.9.1 froze the loader's). The deck's back
+    drawn over the Challenge Deck (pokedraw.lua) is cosmetic: `G.GAME.poke_mystery_dungeon_deck_key` is recorded, not drawn.
+  - **Imposter Syndrome**: a Ditto; every non-Colorless joker debuffed (`poke_noncolorless`: the mod-level `debuff_card`); a Ditto
+    per Boss beaten, with room (`poke_add_ditto`); The Star / Iridescent Hacker banned.
+  - **Mean Look**: +7 Foresight (`scry_amount`), 4 discards; a hand the Foreseen cards also make is debuffed, "<hand> is Foreseen"
+    (`poke_unforeseen_hand`: the mod-level `debuff_hand`, `get_poker_hand_info` of the scry view).
+  - Two rule texts keep their 3.2.1 keys in 3.9.1's loc (ch_c_no_energy, ch_c_apply_randomizer): aliased for the renamed ids.
+- **The Pink Seal 1 in 3**: not a challenge rule — 3.9.1's **Obituary Sleeve alt** on the Obituary Deck (legacy content,
+  `pokemon_legacy`): Pink Seals have a 1 in 3 chance to fall off after triggering (`poke_pink_seal_selfdestruct`,
+  seals/seals1.js) and a joker sold or destroyed makes a Negative Energy of its type (`poke_obituary_alt`: rules.js
+  joker_type_destroyed + index.js sell_card). The **Revenant Sleeve alt** on the Revenant Deck: +3 consumable slots and no Pocket Packs
+  (`poke_no_pocket_packs`: their pool weight is 0; 3.9.1's override also returns 1 for every Pocket Pack, the Megas' 0.25 included,
+  until a restart — that quirk is not kept). The Pink and Silver Seals themselves move to 3.9.1 (the consumable slot is claimed when
+  the seal triggers, `consumeable_buffer`; SMODS.add_card).
+- **object_weights is on** (3.9.1 pokermon.lua `optional_features = {quantum_enhancements, object_weights}`): create_card's key, the
+  shop roll, tags, packs, bosses and vouchers go through SMODS.poll_object (js/engine/smods.js, batch 4), **and Pokermon's own
+  SMODS.poll_seal / poll_enhancement copies** (mart2, zberryjuice, pokejokers_03 / 05 / 15) become poll_object over the Seal / Enhanced
+  set, as Steamodded's do with the feature on.
+  - **The Soul items' weights** (data391.js `consumable_spawn`, from the extract): Great Ball weight 3 (no longer a hidden Tarot soul),
+    Tera Orb 5, Thick Club 1 (no longer hidden), Leek 1, Heavy-Duty Boots 2 (**batch 10's deviation is retired**: an ordinary Item, only
+    with a Hazard layer), every other Item 10 (Steamodded's default); Ultra Ball soul 0.008 (was 0.01), Mega Stone 0.006 (0.005).
+    **Leftovers stays `hidden` in 3.9.1** with its soul fields removed, so it is a Spectral soul card at Steamodded's default 0.003 and
+    never in the Item pool — faithful, though it looks like an upstream slip (the changelog says the Soul items use weights).
+  - Jirachi's `negative_edition_rate` on the Edition poll: pokermon.lua's e_negative / e_polychrome get_weight overrides, as a
+    `modify_weights` listener in the mod-level calculate (+3 per step to Negative, the same off Polychrome down to 3).
+  - `pokermon.modify_pool` (weight 0 for what `remove_from_pool` rules out: the family / gen / hazards rules) is pools.js `pool_filter`,
+    which already keeps those out of `get_current_pool`, the pool poll_object draws from: the same picks.
+- **The Trainer Deck** is no longer gated by the `pokeballs` option (3.9.1 backs1.lua registers it always).
+- **Engine seams** (generic, no-ops for vanilla / other mods):
+  - challenge.js `daily_seed` + run.js / session.js `daily` (a daily challenge's date -> its seed; the UI passes it).
+  - js/mods/index.js modStakes: a stake's `superseded_by` (another mod's stake took it over) keeps it off the picker.
+  - js/ui/board.js: a card view's `drag_tracked` makes the board send that action with the drag's per-move distances.
+  - **Mod blind chips** (js/engine/view.js + js/ui/board.js): the blind-select columns and the HUD drew every blind's chip from the base
+    sheet at its row (a mod blind showed a vanilla chip: the renamed Hacker's row 25 was Crimson Heart's) and showed a mod blind's
+    `name`, which is its key as in Steamodded. The view now carries a mod blind's `atlas` (and `label`, its loc name): its own chip
+    animates from that atlas (21-frame rows, as SMODS), and the board shows the loc name. Fixes Bunco's / AutumnCircus' blinds too.
+  - js/engine/challenge.js challengeInfo: a banned mod blind is listed by its loc name (not its key).
+  - tools/micatro/compose_pokermon_joker_art.mjs: `--sprite` (any sprite file: an overworld item icon), `--label ""` (no banner),
+    `--base Sheet:x,y --clear x0,y0,x1,y1` (one card with its picture box cleared: the Others sheet's white JOKER cards),
+    `--key-corner` (an icon saved without alpha), and 1 / 2 / 4-bit palette PNGs.
+- **Art**:
+  - Vendored in batch 5 and now used: `AtlasJokersBasicOthers-391.png` (Bitter Rival {2,2}, Champion {4,2}, Imposter Professor {6,1} /
+    {8,1}, Daycare {2,4}, Oologist {4,4}, Spiclops {6,4}), `miror_budicolo.png` / `shiny_miror_budicolo.png` (4 frames), `capture_disc.png`,
+    `AtlasBossblinds-391.png` (rows 1-4, 24), `elite_stake.png`, `elite_stake_sticker.png`. (`shiny_capture_disc.png` is not needed:
+    a Shiny joker is the Shiny shader over its card.)
+  - **Composed** (owner rule: no placeholders; 3.9.1 has none), by `tools/micatro/compose_pokermon_joker_art.mjs`, new files in the main
+    checkout's gitignored `micatro/mods/pokermon/assets/2x/`: **`rage_candy_bar.png`** and **`repel.png`** — the Others sheet's white JOKER
+    card (Others {8,0} with its rock cleared, box 15,18 - 56,78) + the overworld's GBA item icon (`overworld/item_icons/rage_candy_bar.png`
+    with `--key-corner`, `repel.png`), x2 nearest-neighbour, centred and bottom-anchored like upstream:
+    `node tools/micatro/compose_pokermon_joker_art.mjs --name rage_candy_bar --sprite overworld/item_icons/rage_candy_bar.png --key-corner --label "" --base Others:8,0 --clear 15,18,56,78 --no-outline`
+    (Repel: the same without `--key-corner`). Deploy with `npm run deploy-micatro-mods` before merging.
+- **Deviations / kept quirks**: Spiclops' "Legendary" badge is its stage badge (no set_card_type_badge); Capture Disc counts the board's
+  pointer moves (the Lua counts frames: both depend on the input's sampling); the Ludicolo card's Miror B. music and cry, the Daycare's
+  Blueprint label and the Mystery Dungeon back are cosmetic and not ported; Gray Godfather's debt check uses `dollars + dollar_buffer -
+  5` like the Lua (ease_dollars is queued, as there).
+- **Add-ons**: Nacho's Elite stake is superseded (above); no Nacho / Pokermon+ joker duplicates a batch-17 joker (precedence.js finds none).
+  Other mods' own SMODS.poll_seal / poll_enhancement copies (Bunco, MoreFluff, Nacho, AutumnCircus) keep their pre-weights path when
+  they share a run with Pokermon (Steamodded's feature is global: theirs would switch too) — left for their own upgrades.
+- **Tests**: `micatro/tests/mods/pokermon_391_batch17_test.mjs` gives **8 passed / 56 failed** on origin/main (2acf967b) and
+  **150 / 0** here. It fires every new joker (Rage Candy Bar's top-of-deck destroy and "Eaten!", the Rival -> Bitter Rival -> Champion
+  chain through real skips and Boss wins, Champion's X Mult and Speed Tag, the Imposter Professor's rental Pokédex + Starter Tag...?
+  opening its pack, the Oologist's eggs and the egg speed-ups with / without it, Daycare, Repel on a Boss, Spiclops, Miror Budicolo's
+  Ludicolo card, Capture Disc's drag action), every blind (The Mirror, The Rocket face down / up, The Star and the Hacker re-picks, Gray
+  Godfather's -$5 and the debt destroy, White Executive's debuffs), the Elite stake (Gold rules, win ante 10, the showdown antes, the
+  picker with / without Nacho, the recipe key), each challenge's setup and rules (Mystery Dungeon: the daily seed from a passed date, the
+  same day = the same run, a replay from the recipe), object_weights (the weights, Leftovers, the Item pool with / without a Hazard
+  layer, the Edition weights, the Revenant alt), the Obituary alt's Pink Seal and Energy, the overlay and the art.
+  - Updated: `pokermon_391_data_test` (rev 15; the Hacker's `blind.effect`; the new blinds have no 3.2.1 cell),
+    `pokermon_content_test` (packs 11, tags 7, blinds 6, enhancements 4; the Trainer Deck's gate; the Hacker), `pokermon_391_hazard_test`
+    (the Boots' weight), `pokermon_391_reworks_c_test` (`rework_deferred`), `zotherjokers_test` (19 defs), `smods_seams_test` (+ debuff_card,
+    debuff_hand, modify_weights wanted), `zmissingno_test` (skips a tag's pack: object_weights rolls other tags), `challenges_test`
+    (12 Pokermon challenges, `poke_apply_randomizer`), `modpin_test` / `micatro_mod_version_pin_test` (rev 15), `micatro_challenges_ui_test` (37 challenges with
+    Pokermon + BETMMA). `micatro_runsync_test` replays its 3.2.1 fixture: object_weights and the new pool content change its shops, so
+    every Pokermon file batch 17 changed is served to it as of batch 16 (commit 8a94bcfe, like its earlier shims).
+  - Re-run and passing: every Pokermon / Nacho / Pokermon+ / addon Node suite, `micatro_engine_test` (101 suites; fuzz vanilla 40 runs /
+    5937 actions, Pokermon 24 / 3869, all mods 16 / 2587), and in the browser, one at a time: `micatro_resume_win_badges` (28 / 0),
+    `micatro_runsync` (81 / 0), `micatro_mod_version_pin` (47 / 0), `micatro_challenges_ui` (55 / 0), `micatro_winstickers` (12 / 0) and
+    `micatro_winstickers_categories` (33 / 0), `designwiki_micatro_mods` (296 / 0, wiki data regenerated). No `server/` change.
+
+### Pokermon 3.9.1 upgrade: complete
+With batch 17 every 3.9.1 content file is ported: 435 reworked jokers and 121 new ones (data391.js `new_jokers`: 112 from 3.9.1 — 92 in
+sub-batches 11-15, 11 Megas, 9 in batch 17 — and 9 from upstream main in sub-batch 15b) plus Repel; the Megas, the Hazard layer / Seed / Flower, the Unown
+rework, the Wish Pack, every item, seal, enhancement, deck, sleeve, tag, pack, blind, the Elite stake, the 12 challenges and object_weights.
+`rework_hold`, `sprite_hold`, `new_deferred` and `skipped` are empty; `rework_deferred` holds only Porygon-Z (by design). Pinned `3.9.1+r15`.
+
+What remains intentionally different from upstream 3.9.1:
+- **House rules / intended-design fixes** (owner): Deino / Zweilous "contains a Three of a Kind"; Energy + Transformation targeting
+  (leftmost valid / the highlighted joker); Nuzlocke / Monotype run badges; Jirachi Copy / Negging and Hisuian Qwilfish / Overqwil
+  registered (3.9.1 writes them but doesn't register them) — and now Repel (registered, never offered); every "intended-design" comment
+  (search "intended"), e.g. the Starter Tag's in_pool, the Daycare's missing-key guard.
+- **Kept by design**: Porygon-Z's `energies_used` counter and the old state names (`energy_plus`, `scry_amount`, `extra_pocket_picks`,
+  `negative_edition_rate`, `rotom_discount`).
+- **Engine shape**: the timing deviations of batch 6 (evolutions at end of round, not 3.9.1's later `evolution` context); `modify_pool`
+  as `pool_filter` (same picks); bosses picked by the lovely-path eligibility (showdowns ignore `min`) rather than create_blind_pool's
+  min / max (which would keep vanilla's showdowns, min 10, out of ante 8); the soul roll is the engine's per-card one.
+- **Not ported yet / left**: the **Pocket Packs' 3.9.1 contents** (create_item with `poll_evo_item`, soulable Items, per-pack seeds:
+  packs1.js keeps the 3.2.1 slots; only Safety First's Energy slot is 3.9.1); the **Debris Sleeve's alt** (needs a playing-card
+  `card_limit` seam); other mods' poll_seal copies under Pokermon's object_weights (above); the Mega Mawile / Mega Manectric sprites
+  upstream main has without jokers; upstream main's drift after af0b656 (sub-batch 15b: Solrock / Lunatone ...).
+- **Win stickers on Elite**: Gold, like every mod stake (no 9th sticker level; that needs stickers.js + server `stickerLevel`).
+- **Cosmetic only**: animations (`do_evolution_anim`, set_sprites tricks), music / cries (Miror B., Ludicolo, Voltorb Flip), the
+  Mystery Dungeon back, the Unown Swarm's glued playing-card front, floating sprites hiding while an item is used, joker displays.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
 - **New jokers** (sub-batches 11–15, 15b): all done (above): 101 jokers (26 + 15 + 19 + 14 + 18 from 3.9.1, 9 from upstream main in 15b).
-  `new_deferred` holds only Drampa's Mega (batch 16; Kirlia -> Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14).
-  Still to add: 21 from 3.9.1 (11 Megas, 7 non-Pokémon, 3 April Fools), and whatever a later rebase onto upstream main brings (sub-batch 15b
+  `new_deferred` is empty since batch 16 (Drampa's Mega; Kirlia -> Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14).
+  Still to add from 3.9.1: none (batch 17 added the 6 non-Pokémon + 3 April Fools jokers and Repel; the 11 Megas came in batch 16); only whatever a later rebase onto upstream main brings (sub-batch 15b
   lists the drift: Solrock / Lunatone so far). (The 2 Jirachi wish forms and Hisuian Qwilfish / Overqwil the old tally counted were already
   in the port: sub-batches 14 / 15.)
-- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory), Drampa (Mega Drampa: `new_deferred`). Mega Mawile / Mega
-  Manectric: upstream main has their sprites but no jokers yet (sub-batch 15b); they come when upstream writes them. Shuckle's Mega Stone
-  (`c_poke_berry_juice_mega`, batch 6) with it.
-- **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist). (The DNA Seal and the
-  Meteorite, once listed for it, came with Deoxys in sub-batch 14.)
+- **Batch 16** (Megas): done ("The Megas (batch 16)" above): Mega Lucario, Mega Skarmory, Mega Drampa and Shuckle's Mega Berry Juice. Mega
+  Mawile / Mega Manectric: upstream main (af0b656) has their sprites but no jokers; they come when upstream writes them.
+- **Batch 17**: done ("Batch 17" above): Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist) are complete. (The DNA Seal and the
+  Meteorite came with Deoxys in sub-batch 14.) Nothing of 3.9.1 waits any more: see "Pokermon 3.9.1 upgrade: complete".
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,
   `extra_pocket_picks`, `negative_edition_rate`, `rotom_discount`).
 

@@ -16,7 +16,7 @@ const FILE_JOKERS = ['starmie', 'mrmime', 'scyther', 'jynx', 'electabuzz', 'magm
   'mega_gyarados', 'lapras', 'ditto', 'eevee', 'vaporeon', 'jolteon', 'flareon', 'porygon', 'omanyte', 'omastar', 'kabuto', 'kabutops', 'aerodactyl',
   'mega_aerodactyl', 'snorlax', 'articuno', 'zapdos', 'moltres', 'dratini', 'dragonair', 'dragonite', 'mewtwo', 'mega_mewtwo_x', 'mega_mewtwo_y'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 36 pokejokers_05 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 36, 'defs: 36 from pokejokers_05.lua', STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length);
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length === 38, 'defs: 38 from pokejokers_05.lua (36 + Mega Starmie / Dragonite, batch 16)', STATUS.PORTED_FILES['pokemon/pokejokers_05.lua'].length);
 {
   start('LOC5');
   const bad = [];
