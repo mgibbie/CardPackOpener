@@ -3668,6 +3668,88 @@ window.addEventListener('hashchange', route);
   window.addEventListener('hashchange', () => setNav(false));
 })();
 
+// ---- Micatro win stickers on the wiki's joker and deck cards (the signed-in player's own) ----
+// The game's own sticker logic and art (micatro/js/ui/stickers.js: priority Arceus both > Ambipom mono > Aipom nuz
+// > Pikachu poke > the plain stake sticker, its stake level, revocations, renamed-key aliases) drawn over every joker
+// (j_*) and deck (b_*) card on the #/micatro and #/micatro-mods pages, at the game's spot and scale (a 142x190 card
+// face, scaled to the sprite). The record is the account row (/api/mp micatro-stickers-get, the same token as /micatro);
+// that API only returns the caller's OWN row, so there is no ?stickers=<user>. Signed out: nothing is fetched or drawn.
+// A note under the page heading says whose stickers they are and toggles them (remembered per browser).
+(function micatroWinStickers() {
+  const TOKEN_KEY = 'magepunk_mp_token_v1', STATE_KEY = 'magepunk_mp_state_v1', OFF_KEY = 'designwiki_mc_stickers_off';
+  const FACE_W = 142, FACE_H = 190;
+  const CARD_RE = /^[jb]_[A-Za-z0-9_]{1,62}$/;
+  let started = false, S = null, user = '', sheet = null;
+  const token = () => { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
+  const isOff = () => { try { return localStorage.getItem(OFF_KEY) === '1'; } catch (e) { return false; } };
+  const setOff = off => { try { localStorage.setItem(OFF_KEY, off ? '1' : '0'); } catch (e) { /* not remembered */ } document.body.classList.toggle('mc-wstk-off', off); };
+  /** Draw (or clear) one card tile's sticker: a canvas over its sprite. */
+  function paint(tile) {
+    const key = tile.dataset.key, spr = tile.querySelector('.mc-art > .mc-spr');
+    if (!spr) return;
+    let cv = spr.querySelector(':scope > .mc-winstk');
+    const st = CARD_RE.test(key) ? S.winStickerInfo(key, true) : null;
+    if (!st) { if (cv) cv.remove(); delete tile.dataset.sticker; return; }
+    if (!cv) {
+      cv = document.createElement('canvas');
+      cv.className = 'mc-winstk'; cv.width = FACE_W; cv.height = FACE_H;
+      spr.classList.add('mc-haswstk');
+      spr.append(cv);
+    }
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, FACE_W, FACE_H);
+    if (st.special) { ctx.save(); try { S.drawSpecialSticker(ctx, st); } finally { ctx.restore(); } }
+    else if (S.STICKER_POS[st.stake] && sheet && sheet.complete && sheet.naturalWidth) {
+      // stickers.png (2x): 5 x 3 cells of one card face each, as the game's drawCell('stickers', ...)
+      const p = S.STICKER_POS[st.stake], cw = sheet.naturalWidth / 5, ch = sheet.naturalHeight / 3;
+      ctx.drawImage(sheet, p.x * cw, p.y * ch, cw, ch, 0, 0, FACE_W, FACE_H);
+    }
+    tile.dataset.sticker = cv.dataset.sticker = st.category + ':' + st.stake;
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', st.label); cv.title = st.label;
+  }
+  function note() {
+    if (content.querySelector('.mc-wstk-note')) return;
+    const n = content.querySelectorAll('[data-sticker]').length;
+    if (!n) return;
+    const btn = h('button', { type: 'button', class: 'mc-wstk-btn' });
+    const label = () => { btn.textContent = isOff() ? 'Show' : 'Hide'; };
+    btn.onclick = () => { setOff(!isOff()); label(); };
+    label();
+    const el = h('p', { class: 'mc-wstk-note muted' }, 'Showing ' + (user ? user + '’s' : 'your') + ' Micatro win stickers. ', btn);
+    const head = content.querySelector('.gallery-heading');
+    if (head) head.after(el); else content.prepend(el);
+  }
+  function paintAll(force) {
+    for (const t of content.querySelectorAll('.mc-tile[data-key]')) {
+      if (!force && t.dataset.wstk) continue;
+      t.dataset.wstk = '1';
+      try { paint(t); } catch (e) { /* one card never breaks the page */ }
+    }
+    note();
+  }
+  async function start() {
+    if (started || !/^#\/micatro/.test(location.hash) || !token()) return;
+    started = true;
+    try {
+      const res = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token() }, body: JSON.stringify({ action: 'micatro-stickers-get' }) });
+      const d = res.ok ? await res.json() : null;
+      if (!d || d.error || !d.wins || typeof d.wins !== 'object' || Array.isArray(d.wins)) return;
+      S = await import('../micatro/js/ui/stickers.js' + CB);
+      S.setStickerSource(S.withoutRevoked(d.wins, d.revoked, d.earned));
+      try { user = String((JSON.parse(localStorage.getItem(STATE_KEY) || 'null') || {}).username || ''); } catch (e) { user = ''; }
+      document.body.classList.toggle('mc-wstk-off', isOff());
+      sheet = new Image();
+      sheet.onload = () => paintAll(true);
+      sheet.src = MC_TEX + 'stickers.png';
+      S.onWinStickers(() => paintAll(true)); // (a special sticker's Pokémon sprite arrived)
+      new MutationObserver(() => paintAll(false)).observe(content, { childList: true, subtree: true });
+      paintAll(true);
+    } catch (e) { /* offline / no account API here: no stickers */ }
+  }
+  window.addEventListener('hashchange', start);
+  start();
+})();
+
 (async function init() {
   try {
     const [pk, mv, ab, rg, tm, bc] = await Promise.all(['pokemon', 'moves', 'abilities', 'regions', 'tms', 'battlecards']

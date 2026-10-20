@@ -138,21 +138,37 @@ export function cleanRevoked(m) {
  */
 function applyRevoked(rv) {
   revoked = cleanRevoked(rv);
-  let n = 0;
-  for (const k of Object.keys(revoked)) {
-    const { cats, at } = revoked[k];
-    const cur = wins[k];
-    for (const c of cats) {
-      const t = (earned[k] && earned[k][c]) || 0;
-      if (at != null && t > at) continue;   // re-earned after the revocation: it stays
-      if (cur && cur[c]) { delete cur[c]; n++; }
-      if (earned[k]) delete earned[k][c];
-    }
-    if (cur && !Object.keys(cur).length) delete wins[k];
-    if (earned[k] && !Object.keys(earned[k]).length) delete earned[k];
-  }
+  const n = revokeFrom(wins, earned, revoked);
   if (n) { saveLocal(); saveEarned(); bump(); }
   return n;
+}
+/** Delete the cleaned revocations `rv` from a {key: {cat: level}} record `w` and its earn times `e` (in place), except a
+ * category earned after the revocation's `at`. Returns how many categories went. */
+function revokeFrom(w, e, rv) {
+  let n = 0;
+  for (const k of Object.keys(rv)) {
+    const { cats, at } = rv[k];
+    const cur = w[k];
+    for (const c of cats) {
+      const t = (e[k] && e[k][c]) || 0;
+      if (at != null && t > at) continue;   // re-earned after the revocation: it stays
+      if (cur && cur[c]) { delete cur[c]; n++; }
+      if (e[k]) delete e[k][c];
+    }
+    if (cur && !Object.keys(cur).length) delete w[k];
+    if (e[k] && !Object.keys(e[k]).length) delete e[k];
+  }
+  return n;
+}
+/**
+ * A stored / received record (an account row's `wins`, either format) with its revocations applied, as this browser
+ * applies them (the re-earn rule included): a clean copy, the input untouched. For read-only viewers of a record
+ * (the design wiki's Micatro pages draw the signed-in player's stickers with it + setStickerSource).
+ */
+export function withoutRevoked(m, rv, earnedMap) {
+  const w = cleanWins(m);
+  revokeFrom(w, cleanEarned(earnedMap), cleanRevoked(rv));
+  return w;
 }
 /** The earn times a push carries: only for revoked keys (what the server's re-earn check needs). */
 function earnedForPush() {

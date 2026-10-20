@@ -450,3 +450,9 @@ a.mc-pill { text-decoration: none; }
 .ms-starters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
 .ms-starter { background: #fff; border: 1px solid #e1e6f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
 .ms-filter { padding: 6px 10px; border: 1px solid #c9d2e3; border-radius: 6px; font: inherit; width: min(320px, 100%); }
+/* Micatro win stickers (app.js micatroWinStickers): the signed-in player's sticker over a joker / deck sprite */
+.mc-spr.mc-haswstk { position: relative; }
+.mc-winstk { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.mc-wstk-off .mc-winstk { display: none; }
+.mc-wstk-note { margin: 0 0 10px; font-size: 13px; }
+.mc-wstk-btn { margin-left: 6px; padding: 2px 10px; font-size: 12px; }
