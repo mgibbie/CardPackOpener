@@ -33,14 +33,14 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
   const j = add('j_poke_qwilfish');
   const h0 = hazards();
   nextRound();
-  ok(hazards() === h0 + 4, 'qwilfish: 4 hazard cards set when the blind is selected', [h0, hazards()]);
+  ok(G.GAME.poke_hazard_level === 1 && hazards() === h0 + 1, 'qwilfish: +1 Hazard layer -> 1 Hazard card dealt with the first hand (Pokermon 3.9.1)', [h0, hazards()]);
   G.GAME.probabilities.normal = 1000;
   let r = play(hand(['S_A'], { center: 'm_glass' }));
-  ok(r.total.chips === 16 && j.ability.extra.chips === 25, 'qwilfish: +25 chips when an enhanced card is destroyed', [r.total, j.ability.extra.chips]);
+  ok(r.total.chips === 16 && j.ability.extra.chips === 15, 'qwilfish: +15 chips when an enhanced card is destroyed (Pokermon 3.9.1)', [r.total, j.ability.extra.chips]);
   G.GAME.probabilities.normal = 1;
   clearHand();
   r = play(hand(['S_K']));
-  ok(r.total.chips === 15 + 25, 'qwilfish: scores its chips', r.total);
+  ok(r.total.chips === 15 + 15, 'qwilfish: scores its chips', r.total);
   // poke_remove_card of a plain card: no gain.
   clearHand();
 }
@@ -302,11 +302,11 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_08.lua'].length === 33, 'defs: 33 fro
   add('j_poke_skarmory');
   const h0 = hazards();
   nextRound();
-  ok(hazards() === h0 + 4, 'skarmory: sets 4 hazards', [h0, hazards()]);
+  ok(G.GAME.poke_hazard_level === 1 && G.GAME.poke_hazard_max === 4 && hazards() === h0 + 1, 'skarmory: +1 Hazard layer and limit (Pokermon 3.9.1)', [h0, hazards()]);
   hand(['S_K', 'H_K'], { center: 'm_steel' });
   const r = play(hand(['S_A']));
-  // steel X1.5 X1.5 = 2.25, then skarmory X(1 + 0.5 * 2)
-  ok(near(r.total.mult, 2.25 * 2), 'skarmory: X0.5 per held Steel/Hazard card', r.total);
+  // steel X1.5 X1.5 = 2.25, then skarmory X(1 + 0.4 * 2)
+  ok(near(r.total.mult, 2.25 * 1.8), 'skarmory: X0.4 per held Steel/Hazard card (Pokermon 3.9.1)', r.total);
 }
 
 // ---------------------------------------------------------------- Houndour / Houndoom / Mega Houndoom

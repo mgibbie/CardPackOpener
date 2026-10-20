@@ -1,11 +1,11 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_21.lua (Pokédex 601-630: Elgyem -> Bisharp), 9 jokers.
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
-// On Pokermon 3.9.1 behaviour since batch 8, except Golett / Golurk (held on 3.2.1: the Hazard layer, batch 10).
+// On Pokermon 3.9.1 behaviour since batch 8, Golett / Golurk (the Hazard layer) since batch 10.
 import {
   G, P_CENTERS, P_CARDS, P_CENTER_POOLS, Card, localize, card_eval_status_text, juice_card_until,
   pseudorandom_element, pseudoseed, create_card,
   defineJokers, type_tooltip, detailed, scaling_evo, item_evo, level_evo, scale_card,
-  poke_get_adjacent_jokers, poke_drain, poke_set_hazards, has_enhancement,
+  poke_get_adjacent_jokers, poke_drain, has_enhancement, hazard_layer, hazard_level_tip,
   pseudorandom_probability, get_probability_vars,
 } from '../api.js';
 
@@ -177,30 +177,30 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const abbr = center.ability.extra;
-      info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [abbr.hazards] });
+      info_queue.push(hazard_level_tip());
       info_queue.push(P_CENTERS.m_poke_hazard);
       const [num, dem] = get_probability_vars(center, abbr.num, abbr.dem, 'golett');
-      return { vars: [abbr.hazards, abbr.Xmult_multi, abbr.rounds, num, dem] };
+      return { vars: [abbr.hazard_level, abbr.Xmult_multi, abbr.rounds, num, dem] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       return golem_held(card, context, 'golett') || level_evo(self, card, context, 'j_poke_golurk');
     },
+    ...hazard_layer,
   },
   // Golurk 623
   golurk: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const abbr = center.ability.extra;
-      info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [abbr.hazards] });
+      info_queue.push(hazard_level_tip());
       info_queue.push(P_CENTERS.m_poke_hazard);
       const [num, dem] = get_probability_vars(center, abbr.num, abbr.dem, 'golurk');
-      return { vars: [abbr.hazards, abbr.Xmult_multi, num, dem] };
+      return { vars: [abbr.hazard_level, abbr.Xmult_multi, num, dem] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       return golem_held(card, context, 'golurk');
     },
+    ...hazard_layer,
   },
   // Pawniard 624
   pawniard: {

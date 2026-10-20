@@ -259,7 +259,7 @@ Intended-design fixes are noted in comments at each site (search "intended").
 ## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
-87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, **`3.9.1+r5`** since batch 8
+87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, **`3.9.1+r6`** since batch 10
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -271,7 +271,8 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 | **6** | **joker reworks, pokejokers_01–08** (Gen 1 + Gen 2: 255 jokers on 3.9.1, 8 held; below) | **done 2026-10-19** — `3.9.1+r3` |
 | **7** | **joker reworks, pokejokers_09–17** (Gen 3 + Gen 4: 97 jokers on 3.9.1, none held; below) | **done 2026-10-19** — `3.9.1+r4` |
 | **8** | **joker reworks, pokejokers_18–34 + zotherjokers / zmissingno** (Gen 5–9 and the non-Pokédex jokers: 83 on 3.9.1, 10 held; below) | **done 2026-10-19** — `3.9.1+r5` |
-| 10–17 | Hazard/Seed, new jokers, Megas, non-Pokémon jokers / blinds / stake / challenges | after 8 (batch 9 folded into 6–8) |
+| **10** | **the Hazard layer, Seed / Miracle Seed / Heavy-Duty Boots, Flower X2, the Debris deck + sleeve; 16 jokers off hold** (below) | **done 2026-10-20** — `3.9.1+r6` |
+| 10b–17 | Unown rework + Wish Pack, new jokers, Megas, non-Pokémon jokers / blinds / stake / challenges | after 10 (batch 9 folded into 6–8) |
 
 ### Steamodded seams for 3.9.1 (batch 4)
 Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
@@ -736,19 +737,89 @@ baseline) and takes **all** its 3.9.1 static data, except the 10 holds. With it 
   - `micatro_resume_win_badges` (replays a 3.2.1 fixture) is also served pokejokers_18-34 / zotherjokers / zmissingno as of
     the batch-7 merge (a7b29c1b); `micatro_runsync`, `micatro_mod_version_pin`, `micatro_replay` and `micatro_nuzlocke` pass as they are.
 
-### Pending from the 3.9.1 joker rework (after batch 8)
+### The Hazard layer, Seed and Flower (batch 10)
+Pinned **`3.9.1+r6`** (`contentRev: 6`). Pokermon 3.6.0's Hazard rework, the Seed card and its items, 3.8.0's Flower X2, the 3.6.1
+Debris deck / sleeve, and the 16 jokers that waited for them, all ported from the 3.9.1 Lua.
+
+- **The Hazard layer** (3.9.1 pokeutils.lua / pokermon.lua; systems/utils.js, systems/rules.js):
+  - `G.GAME.poke_hazard_level` (run-wide, default 0) and `G.GAME.poke_hazard_max` (default 3): `poke_change_hazard_level`,
+    `poke_change_hazard_max`, `poke_get_hazard_level_vars` (+ `hazard_level_tip()`, the "Hazard Layer" tooltip: current / max),
+    `poke_change_growth_level`. `hazard_layer` is the shared add_to_deck / remove_from_deck of every Hazard joker (`hazard_level`,
+    + `hazard_max` for Skarmory), so a debuff, a sale or an evolution moves the layer as SMODS does.
+  - When the first hand of a round is drawn, Pokermon's mod-level calculate deals min(max, level) Hazard cards **into the hand**
+    (`poke_add_hazards(nil, n, G.hand)`: new playing cards, so the deck grows; `playing_card_added` fires). Engine seam:
+    `first_hand_drawn` joins `MOD_VANILLA_CONTEXTS` (below).
+  - `poke_add_hazards(ratio, flat, area)` takes 3.9.1's area and its front seed `'hazards'` (3.2.1 rolled `'qwilfish'`; Hisuian
+    Qwilfish / Overqwil, which still add ratio Hazards to the deck, follow). `poke_set_hazards` (3.2.1's per-joker Hazards) stays
+    exported; no content calls it any more.
+  - `hazards_on = false` keeps every joker with the 3.9.1 `hazards` attribute out of the pools (3.9.1 `remove_from_pool`; 3.2.1's
+    `hazard_poke` flag still counts, for add-ons). Ferroseed / Ferrothorn / Mega Steelix newly count.
+- **Enhancements** (enhancements/enhancement1.js, now 3.9.1):
+  - Hazard: 1 in 3 (was 1 in 6), destroyed when held at end of round (`playing_card_end_of_round`).
+  - Seed (new; AtlasEnhancementsBasic {1,0}, art MyDude_YT; in the Enhanced pool, weight 5): +1 level (+ the growth level) each time
+    it scores ("Upgrade!"); at 5 it becomes a Flower card and pays $15. Its art follows the level (`get_pos`: cells 2-6, as the Lua's
+    set_sprites).
+  - Flower: `Xmult_flower` 2 when the scoring hand has 4 suits (3 with Roserade, a new 3.9.1 joker not ported yet); +1 with Shaymin or
+    Shaymin Sky. A 3.2.1 Flower card (`extra.Xmult` 3) reads the center's 2.
+- **Items** (consumables/mart391.js; 3.2.1's data.js has neither, so their definitions carry the whole static data and index.js
+  builds them after data.js's — the same for the Seed card and the Debris deck):
+  - Miracle Seed (03_mart_items.lua): 1 selected card becomes a Seed card.
+  - Heavy-Duty Boots (04_mart_rare.lua; reusable, once per round): until end of round every Hazard probability is 0 (answers
+    `fix_probability` for identifier `'hazard'`; the reset is queued, so this round's held Hazards roll at 0).
+    Deviation: 3.9.1 spawns it through object weights (weight 2 in the Item pool), which is not on in our port (batch 5). Ours is a
+    hidden Item like Leftovers (soul_set Item) at 2/3 of Leftovers' soul_rate (weight 2 vs 3), and only while the Hazard layer is up
+    (3.9.1 in_pool). Hiding its floating sprite while used is cosmetic, not ported.
+  - Up-Grade (mart2.js): the Seed card joins its options (3.9.1).
+  - Loc: `loc_extra` pulls the 3.9.1 entries; 3.9.1's `poke_item` set merges into our canonical `Item` (index.js).
+- **The Debris deck and sleeve** (3.9.1 keys `diceydeck` / `diceysleeve`, shown as "Debris": the plan's "Dicey" and "Debris" are the
+  same deck). AtlasDecksBasic (3.9.1, vendored in batch 5) {10,0} / {10,1}. +1 Hazard layer and limit, +1 hand size, no interest, and
+  $1 per Hazard card in the full deck at cash-out (3.9.1's lovely "Enhance bonus" row: `G.GAME.modifiers.poke_money_per_enhancement`,
+  rules.js evaluate_round; ours is the last row, the Lua's comes after the discards row: same total).
+  - **Deferred**: the sleeve's alt on the Debris deck (3.9.1 `poke_negative_hazards`: every Hazard card has `card_limit` +1, i.e.
+    +1 hand size while held) needs a playing-card `card_limit` engine seam. It is not registered, so on the Debris deck the sleeve
+    plays its own effect.
+- **Off hold** (spec `rework_hold` is now only Unown / Unown Swarm; `data391.js` regenerated: 90 whole configs, 270 texts, 25 flags):
+  - Qwilfish: +1 Hazard layer; +15 Chips (`scale_card`) per enhanced card destroyed.
+  - Skarmory: +1 Hazard layer and limit; X0.4 per held Hazard / Steel card. `rework_deferred`: Mega Skarmory (batch 16).
+  - Roggenrola (+5 Mult per held no-rank card, evolves after 10) / Boldore (+10) / Gigalith (+7, retriggered): +1 layer each.
+  - Golett (X1.2) / Golurk (X1.3) per held Hazard (or a 1 in 4 / 1 in 3 roll): +1 layer each.
+  - Ferroseed / Ferrothorn: Wild and Hazard cards are also Steel (unchanged); +1 layer each.
+  - Tarountula (+1 hand size) / Spidops (+2 hand size; every 8th playing card added gets a random seal, "Sticky Web!";
+    `poll_seal_guaranteed` is now exported from pokejokers_05.js; not Blueprint-compatible): +1 layer each.
+  - Mega Steelix: Stone cards are also Steel **and Hazard** (quantum, `check_enhancement`); held cards retrigger once per 4 no-rank
+    cards held. The 3.2.1 Diamonds / $ rule is gone. Its Hazard part's end-of-round destroy needed the new seam below.
+  - Bellossom: an odd card (coin flip) that is base becomes Wild **or Seed**; one already enhanced gets Foil / Holo / Polychrome
+    (seed 'wildorseed'). (The Lua's info_queue names `m_seed`, a typo: ours shows the Seed card.)
+  - Hoppip / Skiploom / Jumpluff: the discarded cards become **Seed** cards (were Wild).
+  - Shaymin / Shaymin Sky: their deferred Flower part is the Flower enhancement above (`rework_deferred` no longer lists them).
+- **New engine seams** (js/engine; opted-in mods only):
+  - `first_hand_drawn` at mod level (`MOD_VANILLA_CONTEXTS` + run.js, after the jokers' and the blind's).
+  - **Quantum enhancements' own effects**: `smods.js quantum_mod_calculate(card, context)`, called on the held-card end_of_round pass
+    (run.js end_round) after the card's own enhancement. Each quantum enhancement that is a MOD center with a `calculate`, of a mod
+    that opted in (`smods_seams`), runs that calculate (context + `extra_enhancement`), as SMODS.calculate_quantum_enhancements does.
+    It returns at once unless an opted-in mod is active. Only this pass: a quantum mod enhancement's main-scoring effects are not
+    run (nothing needs them; core.js still scores a quantum enhancement's config numbers).
+  - Fuzz proof (the seam-only diff, before any content change), identical to origin/main: vanilla 40 runs / 5937 actions / max ante 13
+    / 10 wins; Pokermon 24 / 3824 / 13 / 6; all mods 16 / 3065 / 13 / 7 (same mod activity); More Fluff fingerprints 7/7.
+    `smods_seams_test.mjs` section 9 fires both seams with synthetic mods (a non-opted-in mod's quantum enhancement never runs).
+- **Add-ons**: Nacho's Carbink (no-rank cards are also Gold) works with dealt Hazards as before; no Nacho / Pokermon+ joker used the
+  per-joker Hazards. Pokermon+'s loc has a "Hazardous Deck" entry, but its data registers no such deck: nothing to adapt.
+- **Not ported**: 3.9.1's April Fools Ludicolo card (`m_poke_ludicolo`, only with pokemon_aprilfools) and the April Fools Spidops form
+  (zzzapril_fools.lua).
+- **Tests**: `pokermon_391_hazard_test.mjs` (new; 9 passed / 49 failed on origin/main, 70 / 0 here) fires the layer (dealt into the
+  hand, capped by the limit, raised / lowered by owning / selling, the tooltip), Hazard 1 in 3 and its destroy, the Boots, the quantum
+  Hazard (Mega Steelix), Seed growth / Flower / $15, the growth level, Miracle Seed, Flower X2 / X3, every un-held joker, the Debris
+  deck (cash-out row) and sleeve, and `hazards_on`. `pokejokers_07/08/18/21/31_test.mjs`, `pokermon_391_data` / `_reworks_a` / `_b` /
+  `_c`, `pokermon_content_test.mjs` and `challenges_test.mjs` follow the 3.9.1 behaviour.
+
+### Pending from the 3.9.1 joker rework (after batch 10)
 Every existing joker file is done. What waits, across batches 6–8, by the batch it waits on (`rework_hold` = still on 3.2.1,
 `rework_deferred` = on 3.9.1 but one part):
-- **Batch 10** (the Hazard layer, the Seed enhancement, Flower X2 / X3)
-  - Held, the Hazard layer: Qwilfish, Skarmory, Roggenrola, Boldore, Gigalith, Golett, Golurk, Ferroseed, Ferrothorn, Tarountula,
-    Spidops.
-  - Held, a quantum enhancement's own effects (core scoring): Mega Steelix (Stone cards also Hazard).
-  - Held, the Seed enhancement: Bellossom, Hoppip, Skiploom, Jumpluff.
-  - Deferred, the Flower enhancement's X2 / X3 rule: Shaymin, Shaymin Sky.
-- **Batch 16** (Megas): deferred Lucario (Mega Lucario). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
+- **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
+- **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
 - **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist).
-- **The Unown rework** (not yet in the plan's table): held Unown, Unown Swarm; deferred Ruins of Alph's Unown spawn.
-- **The boosters / Wish Pack** (not yet in the plan's table): deferred Jirachi (the 3.9.1 Wish Pack, `change_form` wishes).
+- **Batch 10b** (the Unown rework + the Wish Pack; not done with batch 10): held Unown, Unown Swarm; deferred Ruins of Alph's Unown
+  spawn and Jirachi (the 3.9.1 Wish Pack, `change_form` wishes).
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,
   `extra_pocket_picks`, `negative_edition_rate`, `rotom_discount`).
 

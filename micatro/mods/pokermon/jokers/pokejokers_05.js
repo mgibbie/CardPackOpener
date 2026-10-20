@@ -44,7 +44,7 @@ function star_calc(card, context) {
  * otherwise) from the current Seal pool, seeded 'stdsealtype<ante>'. Seals that aren't in
  * pool (unported / their in_pool says no) are skipped, like get_current_pool's UNAVAILABLE.
  */
-function poll_seal_guaranteed() {
+export function poll_seal_guaranteed() { // (also Spidops, pokejokers_31.js)
   const available = [];
   let type_weight = 0;
   for (const v of P_CENTER_POOLS.Seal || []) {

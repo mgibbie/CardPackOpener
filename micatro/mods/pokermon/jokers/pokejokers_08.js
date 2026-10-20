@@ -1,13 +1,13 @@
 // Pokermon 3.9.1 — pokemon/pokejokers_08.lua (Pokédex 211-240: Qwilfish -> Magby), 33 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, megas) comes from data.js + data391.js. See ../PORTING.md.
-// On Pokermon 3.9.1 behaviour since batch 6, except the held ones (the Hazard layer, batch 10): Qwilfish and
-// Skarmory keep their 3.2.1 behaviour and data. Shuckle's Mega Stone -> Mega Berry Juice waits for that juice.
+// On Pokermon 3.9.1 behaviour since batch 6; Qwilfish and Skarmory (the Hazard layer) since batch 10 (Skarmory's Mega
+// waits for the Megas batch). Shuckle's Mega Stone -> Mega Berry Juice waits for that juice.
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element,
   ease_discard, create_card, copy_card, poll_edition, juice_card_until, playing_card_joker_effects, play_sound,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, ease_poke_dollars, has_enhancement, has_no_suit,
-  get_probability_vars, pseudorandom_probability, poke_set_hazards, poke_remove_card,
+  get_probability_vars, pseudorandom_probability, poke_remove_card, scale_card, hazard_layer, hazard_level_tip,
   matching_energy, poke_evolve, faint_baby_poke, smods_create_card, add_card, find_pokemon_type, change_discard_limit,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
@@ -25,8 +25,9 @@ const a_chips = (c) => localize({ type: 'variable', key: 'a_chips', vars: [c] })
 const a_xmult = (x) => localize({ type: 'variable', key: 'a_xmult', vars: [x] });
 const faint = (card) => G.E_MANAGER.add_event(() => { card.ability.fainted = G.GAME.round; card.set_debuff(); });
 
-const hazard_tip = (info_queue, abbr) => {
-  info_queue.push({ set: 'Other', key: 'poke_hazards', vars: [abbr.hazards] });
+/** The Hazard layer jokers' tooltips (3.9.1): the Hazard Layer (current / max) and the Hazard card. */
+const hazard_tip = (info_queue) => {
+  info_queue.push(hazard_level_tip());
   info_queue.push(P_CENTERS.m_poke_hazard);
 };
 
@@ -135,29 +136,24 @@ export function blueprint_effect(copier, copied_card, context) {
 }
 
 defineJokers({
-  // Qwilfish 211
+  // Qwilfish 211 (3.9.1): +1 Hazard layer; +chip_mod Chips whenever an enhanced playing card is destroyed.
   qwilfish: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      hazard_tip(info_queue, abbr);
-      return { vars: [abbr.hazards, abbr.chip_mod, abbr.chips] };
+      hazard_tip(info_queue);
+      return { vars: [abbr.hazard_level, abbr.chip_mod, abbr.chips] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-        return { message: a_chips(card.ability.extra.chips), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
-      }
+      if (context.joker_main) return { chips: card.ability.extra.chips };
       if (context.remove_playing_cards && !context.blueprint) {
         for (const removed_card of context.removed) {
-          if (!is_base(removed_card)) {
-            card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.chip_mod;
-            card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'CHIPS' });
-          }
+          if (!is_base(removed_card)) scale_card(card, { ref_value: 'chips', scalar_value: 'chip_mod', message_colour: 'CHIPS' });
         }
       }
       return undefined;
     },
+    ...hazard_layer,
   },
   // Scizor 212
   scizor: {
@@ -549,31 +545,32 @@ defineJokers({
       return undefined;
     },
   },
-  // Skarmory 227
+  // Skarmory 227 (3.9.1): +1 Hazard layer and limit; XMult per held Hazard / Steel card. (megas = {mega_skarmory}: the
+  // Megas batch.)
   skarmory: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const abbr = card.ability.extra;
-      hazard_tip(info_queue, abbr);
+      hazard_tip(info_queue);
       if (detailed()) info_queue.push(P_CENTERS.m_steel);
       let hazard_count = 0;
       if (G.hand && G.hand.cards && G.hand.cards.length > 0) {
         for (const c of G.hand.cards) if (has_enhancement(c, 'm_poke_hazard') || has_enhancement(c, 'm_steel')) hazard_count = hazard_count + 1;
       }
-      return { vars: [abbr.hazards, abbr.Xmult_mod, 1 + abbr.Xmult_mod * hazard_count] };
+      return { vars: [abbr.hazard_level, abbr.Xmult_mod, 1 + abbr.Xmult_mod * hazard_count, abbr.hazard_max] };
     },
     calculate(self, card, context) {
-      if (context.setting_blind) poke_set_hazards(card.ability.extra.hazards);
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
         let hazard_count = 0;
         if (G.hand && G.hand.cards && G.hand.cards.length > 0) {
           for (const c of G.hand.cards) if (has_enhancement(c, 'm_poke_hazard') || has_enhancement(c, 'm_steel')) hazard_count = hazard_count + 1;
         }
         const Xmult = 1 + card.ability.extra.Xmult_mod * hazard_count;
-        if (Xmult > 1) return { message: a_xmult(Xmult), colour: 'XMULT', Xmult_mod: Xmult };
+        if (Xmult > 1) return { Xmult };
       }
       return undefined;
     },
+    ...hazard_layer,
   },
   // Houndour 228
   houndour: {

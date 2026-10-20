@@ -476,7 +476,8 @@ defineConsumables({
     use(self, card, area, copier) {
       set_spoon_item(card);
       if (G.hand.highlighted.length >= self.config.min_highlighted) {
-        const enhancement = poll_enhancement({ options: ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm_steel', 'm_gold', 'm_lucky'], guaranteed: true });
+        // (3.9.1 03_mart_items.lua: the Seed card joined the options, batch 10)
+        const enhancement = poll_enhancement({ options: ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm_steel', 'm_gold', 'm_lucky', 'm_poke_seed'], guaranteed: true });
         juice_flip(card);
         for (const c of G.hand.highlighted) c.set_ability(P_CENTERS[enhancement], null, true);
         juice_flip(card, true);

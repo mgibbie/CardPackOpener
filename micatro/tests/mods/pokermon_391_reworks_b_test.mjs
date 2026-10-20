@@ -37,7 +37,7 @@ ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 4 && PINS.mo
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy pin is untouched');
 ok(inRange.length === 97 && RW.length === 97, 'reworked: every joker of pokejokers_09-17, no holds (Pokermon 3.9.1)', [RW.length, inRange.length]);
 ok(!(D391.rework_hold || []).some(([n]) => inRange.includes(n)), 'nothing of 09-17 is held on 3.2.1');
-ok((D391.rework_deferred || []).map(([n]) => n).filter((n) => inRange.includes(n)).sort().join() === 'jirachi,lucario,porygonz,shaymin,shaymin_sky', 'rework_deferred (09-17): Lucario (Mega), Shaymin x2 (Flower X2/X3), Jirachi (Wish Pack), Porygon-Z (usage counter)', D391.rework_deferred);
+ok((D391.rework_deferred || []).map(([n]) => n).filter((n) => inRange.includes(n)).sort().join() === 'jirachi,lucario,porygonz', 'rework_deferred (09-17): Lucario (Mega), Jirachi (Wish Pack), Porygon-Z (usage counter) — Shaymin’s Flower part landed in batch 10', D391.rework_deferred);
 ok(C('treecko').config.evo_rqmt === 16 && C('treecko').config.extra.triggers === 0 && C('treecko').config.extra.num === undefined && C('treecko').perishable_compat !== false,
   'a reworked joker takes its whole 3.9.1 config and flags (Treecko: 16 triggers, no coin flip, Perishable allowed) (Pokermon 3.9.1)', C('treecko').config);
 ok(C('mega_camerupt').config.extra.Xmult_mod === 0.5 && C('yanmega').config.extra.mult_mod === 6 && C('glaceon').config.extra.retriggers === 1 && C('jirachi_power').config.extra.every === 2
@@ -261,7 +261,7 @@ ok(['rotomh', 'rotomw', 'rotomf', 'rotomfan', 'rotomm'].every((n) => C(n).in_poo
 
 // ---------------------------------------------------------------- deferred parts + house rules
 ok(!(C('lucario').megas || []).includes('mega_lucario') && !P_CENTERS.j_poke_mega_lucario, 'deferred: no Mega Lucario yet (a new 3.9.1 joker)');
-ok(P_CENTERS.m_poke_flower && JSON.stringify(P_CENTERS.m_poke_flower.config).includes('3'), 'deferred: the Flower enhancement keeps its 3.2.1 X3 (its 3.9.1 X2 / X3 rule waits for batch 10)', P_CENTERS.m_poke_flower && P_CENTERS.m_poke_flower.config);
+ok(P_CENTERS.m_poke_flower && P_CENTERS.m_poke_flower.config.Xmult_flower === 2, 'the Flower enhancement is on its 3.9.1 X2 (X3 with Shaymin) since batch 10', P_CENTERS.m_poke_flower && P_CENTERS.m_poke_flower.config);
 ok(/contains/.test(JOKER_LOC.j_poke_deino.text[1]), 'house rule: Deino "contains a Three of a Kind" (pokejokers_21, untouched)');
 ok(!!C('jirachi_copy') && !!C('jirachi_negging'), 'kept: the two written-but-unregistered Jirachi forms stay defined (intended-design fix)');
 

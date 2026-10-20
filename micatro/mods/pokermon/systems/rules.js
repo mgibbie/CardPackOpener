@@ -25,7 +25,7 @@
  * plus faint_baby_poke / volatile_active (Baby and volatile Pokémon position rules).
  */
 import { G, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
-import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit } from './utils.js';
+import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_add_hazards, has_enhancement } from './utils.js';
 import { apply_type_sticker, type_sticker_applied } from './types.js';
 import { energy_increase } from './energy.js';
 
@@ -144,6 +144,14 @@ export function create_card(card, _type) {
 // modify_final_cashout context now multiplies the payout, jokers/pokejokers_13.js.)
 export function evaluate_round() {
   if (G.GAME.modifiers.reset_no_interest) G.GAME.modifiers.no_interest = undefined;
+  // 3.9.1 "Enhance bonus" (lovely gameplay_functions.toml, the Debris deck / sleeve): $N per playing card with the
+  // modifier's enhancement in the full deck. (Lua puts the row after the discards row; ours comes last - same total.)
+  const m = G.GAME.modifiers;
+  if (m.poke_money_per_enhancement) {
+    let tally = 0;
+    for (const c of G.playing_cards) if (has_enhancement(c, m.poke_enhance_bonus)) tally = tally + 1;
+    if (tally > 0) return { name: `${tally} ${m.poke_enhance_bonus_text || localize('poke_hazards_in_deck')}`, dollars: tally * m.poke_money_per_enhancement, disp: tally, bonus: true, poke_enhance_bonus: m.poke_enhance_bonus };
+  }
   return undefined;
 }
 
@@ -214,6 +222,12 @@ export function calculate(context) {
     G.GAME.poke_lucky_triggers = (G.GAME.poke_lucky_triggers || 0) + 1;
   }
   if (context.end_of_round && context.main_eval) G.GAME.poke_lucky_triggers = 0;
+  // The Hazard layer (3.9.1): when the first hand of a round is drawn, min(max, level) Hazard cards join the hand
+  // (the engine passes first_hand_drawn here after the jokers and the blind: smods.js MOD_VANILLA_CONTEXTS).
+  if (context.first_hand_drawn && G.GAME.poke_hazard_level && G.GAME.poke_hazard_level > 0) {
+    const hazards = Math.min(G.GAME.poke_hazard_max ?? 3, G.GAME.poke_hazard_level);
+    G.E_MANAGER.add_event(() => { poke_add_hazards(undefined, hazards, G.hand); });
+  }
   if (context.post_discard) {
     // The Lua bumps the counter where discards_used goes up and zeroes it when the ante changes.
     if (G.GAME.poke_ante_of_discards !== G.GAME.round_resets.ante) { G.GAME.poke_ante_discards_used = 0; G.GAME.poke_ante_of_discards = G.GAME.round_resets.ante; }

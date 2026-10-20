@@ -87,7 +87,8 @@ export function pool_filter(v /* center */, _type) {
   if (v.set !== 'Joker') return undefined;
   if (!v.stage && cfg('pokemon_only')) return false;
   if (v.stage && !get_gen_allowed(v)) return false;
-  if (v.stage && cfg('hazards_on') === false && v.hazard_poke) return false;
+  // (3.9.1 pokermon.remove_from_pool: the 'hazards' attribute; 3.2.1's hazard_poke flag still counts for add-ons)
+  if (v.stage && cfg('hazards_on') === false && (v.hazard_poke || (Array.isArray(v.attributes) && v.attributes.includes('hazards')))) return false;
   if (v.stage && poke_family_present(v)) return false;
   return undefined;
 }

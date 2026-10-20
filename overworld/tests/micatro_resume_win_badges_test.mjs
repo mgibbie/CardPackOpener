@@ -25,6 +25,8 @@
 // e295b8b7: their 3.2.1 behaviour; the fixture holds Shroomish and Breloom).
 // Since batch 8 (3.9.1+r5) pokejokers_18-34, zotherjokers and zmissingno do too, so the page gets those files as of the
 // batch-7 merge (git show a7b29c1b: their 3.2.1 behaviour).
+// Since batch 10 (3.9.1+r6: the Hazard layer, the Seed card in the pools) the page also gets index.js, enhancement1.js and
+// mart2.js as of the batch-8 merge (git show 94347e16).
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides). Covers micatro/js/engine/session.js (recipeSeeded), micatro/js/engine/run.js (newRun seeded),
 // micatro/js/ui/main.js, micatro/js/ui/progress.js (push retry, once per run), micatro/js/net.js,
@@ -117,6 +119,13 @@ const PRE_B8 = 'a7b29c1b5e42b619085d6d5494e7e5bcd15dd2bf';
 for (const n of ['18', '19', '20', '21', '22', '23', '24', '25', '26', '28', '30', '31', '32', '33', '34'].map((i) => 'pokejokers_' + i).concat(['zotherjokers', 'zmissingno'])) {
 	const p = `micatro/mods/pokermon/jokers/${n}.js`;
 	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B8}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+}
+// ... and the content batch 10 changed (the Hazard layer / Seed card / Flower X2; new Items and the Seed card in the pools: the
+// Enhanced and Item rolls differ) as of the batch-8 merge (3.9.1+r5): its index.js (no Miracle Seed / Heavy-Duty Boots / Seed card
+// / Debris deck registered), the 3.2.1 Hazard / Flower enhancements, and Up-Grade without the Seed option
+const PRE_B10 = '94347e16fd6a5de788d0c51c8860b8f534ca10e3';
+for (const p of ['micatro/mods/pokermon/index.js', 'micatro/mods/pokermon/enhancements/enhancement1.js', 'micatro/mods/pokermon/consumables/mart2.js']) {
+	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B10}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 }
 let prompted = 0;
 const server = http.createServer(async (req, res) => {

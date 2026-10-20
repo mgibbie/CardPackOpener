@@ -385,8 +385,8 @@ All are byte-identical to upstream main.
 | 4 | Pokermon engine seams: `scale_card`, Attributes + attribute pools, `poll_object` weights, new contexts, `poke_energy`/`poke_item` set aliases | M | 0 |
 | 5 | **DONE** (see "Batch 5" below) — Pokermon 3.9.1 data re-extract: rarities, costs, configs, gates, the cgoose → iridescent_hacker alias; refresh test expectations; vendor the 39 changed + 21 new atlases | M | 4 |
 | 6–8 | **DONE** (#773 files 01–08, #774 09–17, batch 8 18–34 + zother/zmissingno): 435 existing jokers on 3.9.1, 18 held (see "Batches 6–8" below) | 3 × L | 5 |
-| 10 | Pokermon Hazard layer rework + Seed enhancement, Miracle Seed, Heavy Boots, Debris/Dicey deck and sleeve, Flower ×2 — then un-hold the 13 Hazard jokers, Mega Steelix (quantum effects), Bellossom/Hoppip line, Shaymin | L | 5 |
-| 10b | Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
+| 10 | **DONE** (see "Batch 10" below) — Pokermon Hazard layer rework + Seed enhancement, Miracle Seed, Heavy Boots, Debris deck and sleeve (3.9.1's `diceydeck`: "Dicey" and "Debris" are one deck), Flower ×2 — 16 jokers un-held (11 Hazard jokers, Mega Steelix via a quantum seam, Bellossom/Hoppip line), Shaymin's Flower part | L | 5 |
+| 10b | NOT DONE (left after batch 10) — Pokermon **Unown rework** (Unown, Unown Swarm, Ruins of Alph free-Unown rule; 3.9.1 Unown art) + **Wish Pack** 6 → 3 unused wishes (Jirachi) | M | 5 |
 | 11–15 | Pokermon new jokers: 68 Gen 3 + 15 others, by Lua file | 5 × L | 5 |
 | 15b | **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Port from upstream main at a pinned commit (bump `version` to that tag/commit) | M | 11–15 |
 | 16 | Pokermon 12 Megas + Mega Stone `unique_val` + Mega Berry Juice | M | 5 |
@@ -503,10 +503,22 @@ skipped list: `micatro/mods/pokermon/PORTING.md` "3.9.1 static data for the exis
 
 | Waits on | Held on 3.2.1 | On 3.9.1, one part deferred |
 |---|---|---|
-| Batch 10 (Hazard / Seed / Flower) | Qwilfish, Skarmory, Roggenrola line, Golett/Golurk, Ferroseed/Ferrothorn, Tarountula/Spidops, Mega Steelix, Bellossom, Hoppip line | Shaymin, Shaymin Sky |
+| ~~Batch 10 (Hazard / Seed / Flower)~~ DONE | — (all 16 un-held) | — (Shaymin done) |
 | Batch 10b (Unown + Wish Pack) | Unown, Unown Swarm | Ruins of Alph, Jirachi |
-| Batch 16 (Megas) | — | Lucario (Mega Lucario) |
+| Batch 16 (Megas) | — | Lucario (Mega Lucario), Skarmory (Mega Skarmory) |
 | Batch 17 (non-Pokémon jokers) | — | Rival, Mystery Egg |
 | Kept by design | — | Porygon-Z's Energy counter |
 
 - New jokers still to add: 117 from 3.9.1 (70 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms, 7 non-Pokémon, 3 April Fools) + 9 from upstream main (batch 15b).
+
+## Batch 10 — Pokermon Hazard layer, Seed, Flower ×2, Debris deck: DONE (2026-10-20, branch `feat/micatro-pokermon-391-hazard-seed`)
+- Pin **3.9.1+r6** (`contentRev` 6; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "The Hazard layer,
+  Seed and Flower (batch 10)".
+- The run-wide Hazard layer (level / limit 3; min(limit, level) Hazards dealt into the first hand of each round), Hazard 1 in 3, the Seed
+  card, Miracle Seed, Heavy-Duty Boots, Flower ×2 (×3 with Shaymin), the Debris deck + sleeve ($1 per Hazard, no interest).
+- Un-held (16): Qwilfish, Skarmory, Roggenrola, Boldore, Gigalith, Golett, Golurk, Ferroseed, Ferrothorn, Tarountula, Spidops, Mega Steelix,
+  Bellossom, Hoppip, Skiploom, Jumpluff; Shaymin / Shaymin Sky's Flower part done.
+- Engine seams (opted-in mods only; vanilla / Pokermon / all-mods fuzz and More Fluff fingerprints identical on the seam-only diff):
+  `first_hand_drawn` at mod level; `quantum_mod_calculate` (a quantum MOD enhancement's own end-of-round calculate).
+- Deviations / left: Heavy-Duty Boots spawn as a hidden Item (object_weights still off); the Debris sleeve's alt on the Debris deck (needs
+  a playing-card `card_limit` seam); batch 10b (Unown rework + Wish Pack) not done.

@@ -2,6 +2,7 @@
 // every joker fired through real plays (act), plus each evolution.
 //   node micatro/tests/mods/pokejokers_31_test.mjs
 import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
+import { playing_card_joker_effects } from '../../js/engine/jokers.js';
 import { STATUS } from '../../mods/pokermon/index.js';
 import { has_enhancement } from '../../mods/pokermon/systems/utils.js';
 
@@ -74,28 +75,21 @@ const hazards = () => G.playing_cards.filter((c) => has_enhancement(c, 'm_poke_h
   const j = add('j_poke_tarountula');
   ok(G.hand.config.card_limit === 9, 'tarountula: +1 hand size');
   act({ type: 'select_blind' });
-  ok(hazards() === 4 && G.playing_cards.length === 52, 'tarountula: 4 deck cards become Hazards', hazards());
+  ok(G.GAME.poke_hazard_level === 1 && hazards() === 1 && G.playing_cards.length === 53 && G.hand.cards.filter((c) => has_enhancement(c, 'm_poke_hazard')).length === 1, 'tarountula: +1 Hazard layer -> 1 Hazard dealt into the first hand (Pokermon 3.9.1)', hazards());
   clearHand();
   j.ability.extra.rounds = 1;
   winRound();
-  ok(key(j) === 'j_poke_spidops' && G.hand.config.card_limit === 9, 'tarountula evolves into spidops (hand size kept)', [key(j), G.hand.config.card_limit]);
+  ok(key(j) === 'j_poke_spidops' && G.hand.config.card_limit === 10 && G.GAME.poke_hazard_level === 1, 'tarountula evolves into spidops (+2 hand size, layer kept) (Pokermon 3.9.1)', [key(j), G.hand.config.card_limit]);
 }
 {
   start('SPIDOPS');
   const j = add('j_poke_spidops');
-  ok(G.hand.config.card_limit === 9, 'spidops: +1 hand size');
-  const hz = hand(['S_A', 'H_K'], { center: 'm_poke_hazard' });
-  const r = play(hz);
-  const sh = r.events.find((e) => e.type === 'scoring_hand').cards.length;
-  ok(G.hand.config.card_limit === 9 + sh && G.GAME.round_resets.temp_handsize === sh, 'spidops: first hand all Hazards -> +1 hand size per scoring card this round', [G.hand.config.card_limit, sh]);
-  play(hand(['S_2'], { center: 'm_poke_hazard' }));
-  ok(G.hand.config.card_limit === 9 + sh, 'spidops: only the first hand counts');
-  winRound(); act({ type: 'cash_out' });
-  ok(G.hand.config.card_limit === 9, 'spidops: bonus hand size ends with the round', G.hand.config.card_limit);
-  nextRound();
-  play(hand(['S_A', 'H_A']));
-  ok(G.hand.config.card_limit === 9, 'spidops: non-Hazard first hand -> nothing');
-  ok(j.ability.extra.hazards === 4, 'spidops data');
+  ok(G.hand.config.card_limit === 10 && G.GAME.poke_hazard_level === 1, 'spidops: +2 hand size, +1 Hazard layer (Pokermon 3.9.1)');
+  // every 8th playing card added gets a random seal ("Sticky Web!")
+  const added = [];
+  for (let i = 0; i < 8; i++) { const c = hand(['S_' + (2 + i)])[0]; added.push(c); playing_card_joker_effects([c]); }
+  ok(added.slice(0, 7).every((c) => !c.seal) && added[7].seal && j.ability.extra.cards_added === 0, 'spidops: the 8th card added gets a seal', added.map((c) => c.seal || '-'));
+  ok(j.ability.extra.card_goal === 8 && P_CENTERS.j_poke_spidops.blueprint_compat === false, 'spidops data (3.9.1)');
 }
 
 // ---------------------------------------------------------------- Fidough -> Dachsbun

@@ -34,6 +34,7 @@ import './backs/backs1.js';
 import './blinds/pokebossblind.js';
 import './consumables/mart3.js';
 import './consumables/martz.js';
+import './consumables/mart391.js';
 import './consumables/zberryjuice.js';
 import './consumables/zmachine.js';
 import './enhancements/enhancement1.js';
@@ -412,6 +413,11 @@ for (const [name, def] of Object.entries(DEFS.jokers)) {
   centers.push(jokerCenter({ name }, def.poke_file));
 }
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
+// Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
+// deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
+const dataKeys = (g) => new Set(DATA.groups[g].flatMap((f) => listOf(f).map((it) => it.key || it.name)));
+const newDefs = (kind, g) => { const have = dataKeys(g); return Object.entries(DEFS[kind]).filter(([k]) => !have.has(k)).map(([k, def]) => ({ item: { key: def.key || k, name: def.name || k }, file: def.poke_file })); };
+for (const { item, file } of newDefs('consumables', 'consumables')) centers.push(consumableCenter(item, file));
 for (const f of DATA.groups.boosters) for (const item of listOf(f)) centers.push(boosterCenter(item, f.file));
 for (const f of DATA.groups.vouchers) for (const item of listOf(f)) centers.push(simpleCenter('vouchers', 'v_poke_', 'Voucher', item, f.file));
 for (const f of DATA.groups.backs) {
@@ -424,7 +430,9 @@ for (const f of DATA.groups.backs) {
     centers.push(c);
   }
 }
+for (const { item, file } of newDefs('backs', 'backs')) centers.push(simpleCenter('backs', 'b_poke_', 'Back', item, file));
 for (const f of DATA.groups.enhancements) for (const item of listOf(f)) centers.push(simpleCenter('enhancements', 'm_poke_', 'Enhanced', item, f.file));
+for (const { item, file } of newDefs('enhancements', 'enhancements')) centers.push(simpleCenter('enhancements', 'm_poke_', 'Enhanced', item, file));
 // The Shiny edition (behaviour in systems/shiny.js).
 {
   const item = listOf(DATA.groups.editions[0])[0];
@@ -441,7 +449,13 @@ const blinds = [];
 // Pokermon 3.9.1 renamed the showdown boss bl_poke_cgoose (Chartreuse Chamber) -> bl_poke_iridescent_hacker (Iridescent
 // Hacker, new art + colour; data391.js blinds). Our behaviour (blinds/pokebossblind.js) moves to the new key; the old key
 // still resolves (js/mods/aliases.js renamed: stored recipes, stickers and decks read it as the new one).
-for (const [k, d] of Object.entries(DATA.loc.descriptions)) if (D391.loc[k]) Object.assign(d, D391.loc[k]);
+// (3.9.1 names its consumable sets poke_item / poke_energy: their entries go to our canonical Item / Energy sets)
+const LOC_SET = { poke_item: 'Item', poke_energy: 'Energy' };
+for (const [k, d] of Object.entries(D391.loc)) {
+  if (k === 'dictionary' || k === 'v_dictionary') continue;
+  const set = LOC_SET[k] || k;
+  Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+}
 for (const k of ['dictionary', 'v_dictionary']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
 for (const f of DATA.groups.blinds) for (const item0 of listOf(f)) {
   const ren = D391.blinds[item0.key];
@@ -567,7 +581,9 @@ export const POKERMON = registerMod({
   // 4 = batch 7, pokejokers_09-17 on their 3.9.1 behaviour (Gen-3 starters, Celebi, Jirachi forms, Leafeon / Glaceon...).
   // 5 = batch 8, pokejokers_18-34 + zotherjokers / zmissingno on their 3.9.1 behaviour (Vanillite line, Zorua, Sylveon,
   // Pumpkaboo, Kingambit, Gimmighoul / Gholdengo, Rival, Mystery Egg...; Hazard jokers and Unown Swarm held).
-  contentRev: 5,
+  // 6 = batch 10, the Hazard layer (run-wide hazard_level, Hazard 1 in 3), the Seed card, Flower X2 (X3 with Shaymin),
+  // Miracle Seed, Heavy-Duty Boots, the Debris deck / sleeve; the 16 Hazard / Seed / quantum jokers off hold.
+  contentRev: 6,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

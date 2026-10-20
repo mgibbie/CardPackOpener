@@ -95,23 +95,23 @@ const hazards = (area) => area.cards.filter((c) => c.config.center.key === 'm_po
   const j = add('j_poke_roggenrola');
   hand(['S_2', 'H_3'], { center: 'm_stone' });
   const r = play(hand(['S_A']));
-  // High card 16 chips; 2 held Stone cards x +4 Mult
-  ok(r.total.mult === 1 + 8 && j.ability.extra.hazard_triggered === 2, 'roggenrola: +4 Mult per held Stone card', { t: r.total, h: j.ability.extra.hazard_triggered });
+  // High card 16 chips; 2 held Stone cards x +5 Mult
+  ok(r.total.mult === 1 + 10 && j.ability.extra.hazard_triggered === 2, 'roggenrola: +5 Mult per held Stone card (Pokermon 3.9.1)', { t: r.total, h: j.ability.extra.hazard_triggered });
   const h0 = hazards(G.deck) + hazards(G.hand);
   nextRound();
-  ok(hazards(G.deck) + hazards(G.hand) + hazards(G.discard) === h0 + 4, 'roggenrola: 4 Hazard cards set at blind select', hazards(G.deck));
+  ok(G.GAME.poke_hazard_level === 1 && hazards(G.deck) + hazards(G.hand) + hazards(G.discard) === h0 + 1, 'roggenrola: +1 Hazard layer -> 1 Hazard card dealt with the first hand (Pokermon 3.9.1)', hazards(G.deck));
   clearHand();
   hand(['D_4'], { center: 'm_poke_hazard' });
   const r1 = play(hand(['S_A']));
-  ok(r1.total.mult === 5, 'roggenrola: a held Hazard card (no rank) gives +4 Mult', r1.total);
-  j.ability.extra.hazard_triggered = 25;
+  ok(r1.total.mult === 6, 'roggenrola: a held Hazard card (no rank) gives +5 Mult', r1.total);
+  j.ability.extra.hazard_triggered = 10;
   winRound();
-  ok(key(j) === 'j_poke_boldore', 'roggenrola -> boldore after 25 triggers', key(j));
+  ok(key(j) === 'j_poke_boldore', 'roggenrola -> boldore after 10 triggers (Pokermon 3.9.1)', key(j));
   nextRound();
   clearHand();
   hand(['S_2'], { center: 'm_stone' });
   const r2 = play(hand(['S_A']));
-  ok(r2.total.mult === 9, 'boldore: +8 Mult per held Stone', r2.total);
+  ok(r2.total.mult === 11, 'boldore: +10 Mult per held Stone (Pokermon 3.9.1)', r2.total);
   useItem(j, 'c_poke_linkcable');
   winRound();
   ok(key(j) === 'j_poke_gigalith', 'boldore -> gigalith with a Link Cable', key(j));
@@ -119,8 +119,8 @@ const hazards = (area) => area.cards.filter((c) => c.config.center.key === 'm_po
   clearHand();
   hand(['S_2', 'H_3'], { center: 'm_stone' });
   const r3 = play(hand(['S_A']));
-  // 2 held Stones x +6, each retriggered once -> +24
-  ok(r3.total.mult === 1 + 24, 'gigalith: +6 per held Stone, retriggered', r3.total);
+  // 2 held Stones x +7, each retriggered once -> +28
+  ok(r3.total.mult === 1 + 28, 'gigalith: +7 per held Stone, retriggered (Pokermon 3.9.1)', r3.total);
   ok(statusMsgs(r3.events).includes('Again!'), 'gigalith: "Again!"', statusMsgs(r3.events));
   clearHand();
   hand(['S_4']);
