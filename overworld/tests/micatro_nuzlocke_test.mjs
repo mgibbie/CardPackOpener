@@ -362,6 +362,9 @@ try {
 	const dB = await device('B');
 	A(await boot(dB, 'nuzzy'), 'device B: same account, empty storage');
 	A(await waitFor(() => dB.page.evaluate(() => { const p = window.__micatro.progress && window.__micatro.progress.getProgress(); return p && p.nuz === 1 && p.mono.fire === 1 && !!p.ach.nuzlocke_monotype; }), 15000), 'device B gets the record + achievements from the account');
+	// (window.__micatro.ready is set BEFORE the menu draws: boot first waits up to 3 s for the account's run, ui/runsync.js —
+	// the record can arrive in that window, so wait for the menu itself, like micatro_runsync_test)
+	A(await waitFor(() => dB.page.evaluate(() => !!document.querySelector('.menu-modal .b-achievements')), 15000), 'device B: the main menu is up');
 	await dB.page.evaluate(() => document.querySelector('.b-achievements').click());
 	await sleep(400);
 	A((await dB.page.evaluate(() => document.querySelectorAll('.ach-row.on').length)) === 3, "device B's Achievements screen shows the 3 unlocks");
