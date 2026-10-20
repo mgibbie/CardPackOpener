@@ -19,6 +19,14 @@
 //   rework_deferred  [name, why] (spec rework_deferred, batch 7+): reworked jokers ported without one 3.9.1 part that
 //            belongs to other content not ported yet (inert: for the docs and tests)
 //   skipped  every 3.9.1 change to an existing joker's static data that is NOT taken, with the reason
+//   new_jokers (new-jokers stack, sub-batch 11+: spec new_jokers {sub_batch: [names]}) jokers 3.9.1 adds, with their whole
+//            3.9.1 static data: {name: {item, file, after, sub_batch}} (item = the 3.9.1 item, "__fn" markers kept; `after` =
+//            the joker before it in 3.9.1's file order that the port has: index.js inserts it there). Their sprites and
+//            Joker loc entries join `sprites` / `loc`. spec new_deferred {name: {why, drop?: [fields]}}: a new joker ported
+//            without one 3.9.1 part (e.g. an item evolution into a joker of a later sub-batch); `drop` removes those static
+//            fields and `text_drop` the text lines naming it until then (copied to data391.js new_deferred).
+//   families 3.9.1's families (functions/pokefamily.lua, the extract's `family` global) that hold a new joker, minus the
+//            names the port doesn't have yet (index.js adds them to systems/evolution.js `family`)
 // It fails when a value change of an existing config key, or a blueprint_compat flip, has no decision in the spec.
 import fs from 'fs';
 import path from 'path';
@@ -104,17 +112,61 @@ for (const [name, { it: a, file }] of Object.entries(BJ)) {
   }
 }
 for (const name of Object.keys(take)) if (!BJ[name]) throw new Error(`take: '${name}' is not a 3.2.1 joker`);
+
+// ---- new jokers (the new-jokers stack): the whole 3.9.1 static data of the jokers the spec lists
+const NEWSPEC = SPEC.new_jokers || {}, newDeferred = SPEC.new_deferred || {};
+const newNames = new Map();
+for (const [sub, names] of Object.entries(NEWSPEC)) for (const name of names) {
+  if (BJ[name]) throw new Error(`new_jokers: '${name}' is a 3.2.1 joker`);
+  if (!NJ[name]) throw new Error(`new_jokers: 3.9.1 has no joker '${name}'`);
+  if (newNames.has(name)) throw new Error(`new_jokers: '${name}' listed twice`);
+  newNames.set(name, sub);
+}
+for (const name of Object.keys(newDeferred)) if (!newNames.has(name)) throw new Error(`new_deferred: '${name}' is not in new_jokers`);
+const new_jokers = {};
+{
+  let prev = null;
+  for (const f of NEW.groups.jokers || []) for (const it of listOf(f)) {
+    const name = it.name || it.key;
+    if (newNames.has(name)) {
+      const item = JSON.parse(JSON.stringify(it));
+      for (const k of (newDeferred[name] && newDeferred[name].drop) || []) delete item[k];
+      new_jokers[name] = { item, file: f.file, after: prev, sub_batch: newNames.get(name) };
+      const key = 'j_poke_' + name;
+      if (!NLOC.Joker || !NLOC.Joker[key]) throw new Error(`3.9.1 en-us has no ${key}`);
+      const loc = JSON.parse(JSON.stringify(NLOC.Joker[key]));
+      // new_deferred text_drop: the text lines naming the deferred part (e.g. "(Evolves with a Dawn Stone)") wait with it
+      for (const t of (newDeferred[name] && newDeferred[name].text_drop) || []) {
+        const n = loc.text.length;
+        loc.text = loc.text.filter((l) => !l.includes(t));
+        if (loc.text.length !== n - 1) throw new Error(`new_deferred ${name}: text_drop '${t}' must match exactly one line`);
+      }
+      jokerLoc[key] = loc; count('new_loc');
+    }
+    if (BJ[name] || newNames.has(name)) prev = name;
+  }
+}
+counts.new_jokers = Object.keys(new_jokers).length;
+// 3.9.1 families holding a new joker, minus the names the port doesn't have yet (later sub-batches add them back)
+const families = [];
+const have = (n) => BJ[n] || newNames.has(n);
+for (const fam of (NEW.globals.family || [])) {
+  const names = fam.map((y) => (typeof y === 'string' ? y : y.key));
+  if (!names.some((n) => newNames.has(n))) continue;
+  families.push(fam.filter((y) => have(typeof y === 'string' ? y : y.key)));
+}
+if (newNames.size && !(NEW.globals.family || []).length) throw new Error('the 3.9.1 extract has no family global (specs/pokermon_391.json)');
 if (missing.length) { console.error('no decision (take it or give a reason in the spec):\n  ' + missing.join('\n  ')); process.exit(1); }
 
 // ---- sprites (3.9.1 functions/pokespriteload.lua; get_atlas_string: gen_atlas is the gen number now)
 const SPR = {};
 for (const s of (NEW.globals.PokemonSprites && NEW.globals.PokemonSprites.list) || []) SPR[s.name] = s;
 const sprites = {}, held = [];
-for (const name of Object.keys(BJ)) {
+for (const name of [...Object.keys(BJ), ...Object.keys(new_jokers)]) {
   const s = SPR[name];
   if (!s) continue;
   if (SPEC.sprite_hold && SPEC.sprite_hold[name]) { held.push([name, SPEC.sprite_hold[name]]); continue; }
-  const g = typeof s.gen_atlas === 'number' ? s.gen_atlas : s.gen_atlas ? BJ[name].it.gen : null;
+  const g = typeof s.gen_atlas === 'number' ? s.gen_atlas : s.gen_atlas ? (BJ[name] ? BJ[name].it : new_jokers[name].item).gen : null;
   const atlas = g ? 'AtlasJokersBasicGen' + String(g).padStart(2, '0') : s.others_atlas ? 'AtlasJokersBasicOthers' : 'AtlasJokersBasicNatdex';
   const pos = Array.isArray(s.base.pos) ? s.base.pos[0] : s.base.pos;
   const e = { atlas, pos: { x: pos.x, y: pos.y } };
@@ -145,7 +197,9 @@ const out = {
   counts: { ...counts, jokers_changed: Object.keys(jokers).length, sprites: Object.keys(sprites).length, skipped: skipped.length },
   reworked: reworked.sort(), rework_hold: Object.entries(reworkHold), rework_deferred: Object.entries(reworkDeferred),
   jokers, sprites, sprite_hold: held, blinds, loc, skipped,
+  new_jokers, new_deferred: Object.entries(newDeferred).map(([n, d]) => [n, d.why, d.drop || []]), families,
 };
+for (const name of Object.keys(new_jokers)) if (!sprites[name]) throw new Error(`3.9.1 has no sprite for the new joker '${name}'`);
 const json = JSON.stringify(out);
 fs.writeFileSync(OUT, '// GENERATED by tools/micatro/gen_pokermon_391_overlay.mjs from the Pokermon 3.9.1 extract + tools/micatro/specs/pokermon_391_overlay.json.\r\n'
   + '// Never edit: change the spec and regenerate. Applied by index.js on top of data.js (3.2.1).\r\nexport default ' + json + ';\r\n');

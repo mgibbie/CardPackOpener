@@ -88,7 +88,7 @@ import { CHALLENGES } from './challenges.js';
 import { SLEEVES } from './sleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg } from './systems/utils.js';
-import { family_win_keys } from './systems/evolution.js';
+import { family_win_keys, set_family } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 
 /**
@@ -419,6 +419,17 @@ function simpleCenter(kind, prefix, set, data_item, file) {
 const centers = [];
 const dataJokerNames = new Set();
 for (const f of DATA.groups.jokers) for (const item of listOf(f)) { dataJokerNames.add(item.name); centers.push(jokerCenter(item, f.file)); }
+// Jokers Pokermon 3.9.1 adds (the new-jokers stack, sub-batch 11+: data391.js new_jokers): built from their whole 3.9.1
+// static data + the definition in jokers/<file>.js, each inserted after the joker before it in 3.9.1's file order (so
+// the pools and the collection follow 3.9.1's order); their 3.9.1 families replace / join the 3.2.1 family table.
+for (const [name, { item, file, after }] of Object.entries(D391.new_jokers || {})) {
+  dataJokerNames.add(name);
+  const c = jokerCenter(item, file);
+  const at = centers.findIndex((x) => x.key === 'j_poke_' + after);
+  if (at < 0) throw new Error(`pokermon: new joker '${name}' comes after '${after}', which isn't registered`);
+  centers.splice(at + 1, 0, c);
+}
+for (const f of D391.families || []) set_family(f);
 // Jokers the 3.2.1 Lua writes but never returns from its file (e.g. Jirachi's copy / negging forms,
 // Hisuian Qwilfish / Overqwil) aren't in data.js: a port defines them in full — static fields (pos, config,
 // rarity, cost, stage, ptype, gen, atlas as the Lua names it, ...) plus behaviour — and jokerCenter builds
@@ -601,7 +612,9 @@ export const POKERMON = registerMod({
   // Miracle Seed, Heavy-Duty Boots, the Debris deck / sleeve; the 16 Hazard / Seed / quantum jokers off hold.
   // 7 = batch 10b, the Unown rework (Unown / Unown Swarm never in a pool, SMODS.destroy_cards, Ruins of Alph's Unown by
   // SMODS.add_card, Unown's 3.9.1 card) and the Wish Pack (3 random unused wishes, no Master Ball; change_form wishes).
-  contentRev: 7,
+  // 8 = new-jokers sub-batch 11: the 26 jokers of 3.9.1's pokejokers_09 / 10 (Wurmple, Seedot, Taillow, Wingull, Ralts, Surskit,
+  // Slakoth, Nincada, Makuhita lines, Skitty) join the pools; Wingull's rank / Skitty's type per round; duplicate-rank Straights.
+  contentRev: 8,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

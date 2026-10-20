@@ -17,7 +17,8 @@ const FILE_JOKERS = ['miltank', 'blissey', 'raikou', 'entei', 'suicune', 'larvit
   'poochyena', 'mightyena', 'zigzagoon', 'linoone'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 25 pokejokers_09 jokers ported',
   FILE_JOKERS.filter((n) => P_CENTERS['j_poke_' + n].unported));
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length === 25, 'defs: 25 from pokejokers_09.lua', STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length);
+// (+ the Wurmple line, new in 3.9.1: new-jokers sub-batch 11, pokermon_391_new_11_test.mjs)
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length === 30, 'defs: 30 from pokejokers_09.lua (25 + 5 new in 3.9.1)', STATUS.PORTED_FILES['pokemon/pokejokers_09.lua'].length);
 
 // ---------------------------------------------------------------- Miltank
 {

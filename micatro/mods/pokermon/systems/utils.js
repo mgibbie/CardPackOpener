@@ -585,6 +585,40 @@ export function get_poke_target_card_ranks(seed, num, _default, use_deck) {
 export function add_target_cards_to_vars(vars, targets) {
   for (const t of targets) vars.push(localize(t.value || 'Ace', 'ranks'));
 }
+/**
+ * Pokermon 3.9.1 pokermon.get_target_card_suit(seed, use_deck, default, limit_suits) (pokefunctions.lua; the Wurmple
+ * line's Nature): [{suit}] — the suit of a random deck card of an allowed suit (not suitless, not Wild), else the
+ * default; without use_deck a random allowed suit. (limit_suits omitted = SMODS.Suits: the four base suits here.)
+ */
+export function get_target_card_suit(seed, use_deck, _default, limit_suits) {
+  const suit = _default || 'Spades';
+  const allowed_suits = Array.isArray(limit_suits) ? limit_suits : ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+  const valid_cards = [];
+  if (!G.playing_cards) return [{ suit }];
+  if (use_deck) {
+    for (const v of G.playing_cards) {
+      if (!has_no_suit(v) && !has_any_suit(v)) {
+        for (const y of allowed_suits) if (v.is_suit(y)) { valid_cards.push(v); break; }
+      }
+    }
+    if (valid_cards.length > 0) {
+      const [picked] = pseudorandom_element(valid_cards, pseudoseed(seed));
+      return [{ suit: picked.base.suit }];
+    }
+    return [{ suit }];
+  }
+  const [picked] = pseudorandom_element(allowed_suits, pseudoseed(seed));
+  return [{ suit: picked }];
+}
+/** Pokermon 3.9.1 pokermon.get_consumeables(set) (pokeutils.lua): the consumables held (joker + consumable areas). */
+export function get_consumeables(set) {
+  const out = [];
+  if (!G.jokers || !G.consumeables) return out;
+  for (const area of [G.jokers, G.consumeables]) {
+    for (const v of area.cards) if (v.ability.consumeable && !(set && v.ability.set !== set)) out.push(v);
+  }
+  return out;
+}
 
 // ------------------------------------------- SMODS hand-limit API (src/utils.lua)
 /** SMODS.change_play_limit(mod): most cards a played hand may hold (the 'play' action checks it). */

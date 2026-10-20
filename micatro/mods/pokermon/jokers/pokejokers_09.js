@@ -1,14 +1,15 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_09.lua (Pokédex 241-264: Miltank -> Linoone), 25 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_09.lua (Pokédex 241-269: Miltank -> Dustox), 25 jokers + 5 new in 3.9.1.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, item_req, megas) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
+// + the Wurmple line, new in 3.9.1 (new-jokers sub-batch 11): static data from data391.js new_jokers.
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, ease_discard,
   ease_hands_played, ease_ante, create_card, copy_card, juice_card_until, playing_card_joker_effects, delay,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, ease_poke_dollars, find_pokemon_type,
   find_other_poke_or_energy_type, get_probability_vars, pseudorandom_probability, poke_get_rank, poke_total_chips,
   change_base, juice_flip_table, generate_pickup_item_key, get_poke_target_card_ranks, add_target_cards_to_vars,
-  is_type, add_card,
+  is_type, add_card, get_target_card_suit, level_up_hand,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_09.lua';
@@ -588,5 +589,127 @@ defineJokers({
       }
       return undefined;
     },
+  },
+}, FILE);
+// ---------------------------------------------------- the Wurmple line (3.9.1: new-jokers sub-batch 11)
+// Their Nature is a SUIT (pokermon.get_target_card_suit: a random deck card's suit among the allowed ones, set on
+// creation; `targets` is carried through evolution). Wurmple evolves into Silcoon (Hearts / Diamonds) or Cascoon
+// (Spades / Clubs) after scoring 5 Nature cards; Silcoon / Cascoon after 15.
+const suit_tip = (info_queue) => { if (detailed()) info_queue.push({ set: 'Other', key: 'nature', vars: ['suit'] }); };
+const nature_suit = (seed, _default, suits) => function set_ability(self, card, initial) {
+  if (initial) card.ability.extra.targets = get_target_card_suit(seed, true, _default, suits);
+};
+const target_suit = (card) => card.ability.extra.targets[0].suit;
+/** individual + G.play: a scored card of the Nature suit (3.9.1 checks neither debuff nor, past Wurmple, Blueprint). */
+const counts_nature = (card, context) => context.individual && !context.end_of_round && context.cardarea === G.play
+  && context.other_card.is_suit(target_suit(card));
+const a_chips = (c) => localize({ type: 'variable', key: 'a_chips', vars: [c] });
+
+defineJokers({
+  // Wurmple 265: +Mult or +Chips (a coin flip each hand).
+  wurmple: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      suit_tip(info_queue);
+      const ex = center.ability.extra;
+      const unknown = ex.nature_scored <= 0;
+      const suit_colours = unknown ? ['UI.TEXT_INACTIVE'] : [ex.targets[0].suit || 'Spades'];
+      const suits_message = unknown ? '??? ' + localize('poke_suit') : localize(ex.targets[0].suit, 'suits_plural');
+      return { vars: [ex.mult, ex.chips, Math.max(0, self.config.evo_rqmt - ex.nature_scored), suits_message], colours: suit_colours };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        if (pseudorandom('wurmple') < 0.50) return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult_mod: card.ability.extra.mult };
+        return { message: a_chips(card.ability.extra.chips), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      }
+      if (counts_nature(card, context) && !context.blueprint) card.ability.extra.nature_scored = card.ability.extra.nature_scored + 1;
+      const suit = target_suit(card);
+      if (suit === 'Hearts' || suit === 'Diamonds') return scaling_evo(self, card, context, 'j_poke_silcoon', card.ability.extra.nature_scored, self.config.evo_rqmt);
+      if (suit === 'Spades' || suit === 'Clubs') return scaling_evo(self, card, context, 'j_poke_cascoon', card.ability.extra.nature_scored, self.config.evo_rqmt);
+      return undefined;
+    },
+    set_ability: nature_suit('wurmple', 'Spades', ['Spades', 'Hearts', 'Diamonds', 'Clubs']),
+  },
+  // Silcoon 266
+  silcoon: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      suit_tip(info_queue);
+      const ex = center.ability.extra;
+      return { vars: [ex.mult, localize(ex.targets[0].suit, 'suits_plural'), Math.max(0, self.config.evo_rqmt - ex.nature_scored)], colours: [ex.targets[0].suit || 'Hearts'] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      }
+      // (3.9.1 has no `not context.blueprint` here: a Blueprint copy counts too. Ported as is.)
+      if (counts_nature(card, context)) card.ability.extra.nature_scored = card.ability.extra.nature_scored + 1;
+      return scaling_evo(self, card, context, 'j_poke_beautifly', card.ability.extra.nature_scored, self.config.evo_rqmt);
+    },
+    set_ability: nature_suit('silcoon', 'Hearts', ['Hearts', 'Diamonds']),
+  },
+  // Beautifly 267: a scoring Nature card -> 1 in 3 to level up Flush (before scoring).
+  beautifly: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      suit_tip(info_queue);
+      const ex = center.ability.extra;
+      const [num, dem] = get_probability_vars(center, ex.num, ex.dem, 'beautifly');
+      return { vars: [ex.mult, localize(ex.targets[0].suit, 'suits_plural'), num, dem], colours: [ex.targets[0].suit || 'Hearts'] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand) {
+        if (context.before) {
+          let has_nature = false;
+          for (const v of context.scoring_hand) if (v.is_suit(target_suit(card))) has_nature = true;
+          if (has_nature && pseudorandom_probability(card, 'beautifly', card.ability.extra.num, card.ability.extra.dem, 'beautifly')) {
+            // SMODS.upgrade_poker_hands({hands = {'Flush'}, from = context.blueprint_card or card, instant = instant})
+            const instant = context.scoring_name !== 'Flush';
+            level_up_hand(context.blueprint_card || card, 'Flush', instant);
+            if (instant) return { message: localize('k_upgrade_ex') };
+          }
+        }
+        if (context.joker_main) return { message: a_mult(card.ability.extra.mult), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      }
+      return undefined;
+    },
+    set_ability: nature_suit('beautifly', 'Hearts', ['Hearts', 'Diamonds']),
+  },
+  // Cascoon 268
+  cascoon: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      suit_tip(info_queue);
+      const ex = center.ability.extra;
+      return { vars: [ex.chips, localize(ex.targets[0].suit, 'suits_plural'), Math.max(0, self.config.evo_rqmt - ex.nature_scored)], colours: [ex.targets[0].suit || 'Spades'] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        return { message: a_chips(card.ability.extra.chips), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      }
+      // (as Silcoon: a Blueprint copy counts too)
+      if (counts_nature(card, context)) card.ability.extra.nature_scored = card.ability.extra.nature_scored + 1;
+      return scaling_evo(self, card, context, 'j_poke_dustox', card.ability.extra.nature_scored, self.config.evo_rqmt);
+    },
+    set_ability: nature_suit('cascoon', 'Spades', ['Spades', 'Clubs']),
+  },
+  // Dustox 269: +Chips; X3 Mult too if every card held in hand is of the Nature suit.
+  dustox: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      suit_tip(info_queue);
+      const ex = center.ability.extra;
+      return { vars: [ex.chips, localize(ex.targets[0].suit, 'suits_plural'), ex.Xmult], colours: [ex.targets[0].suit || 'Spades'] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        let all_nature = true;
+        for (const v of G.hand.cards) if (!v.is_suit(target_suit(card))) all_nature = false;
+        if (all_nature) return { message: localize('poke_bug_buzz_ex'), chip_mod: card.ability.extra.chips, Xmult_mod: card.ability.extra.Xmult, sound: 'multhit2' };
+        return { chips: card.ability.extra.chips };
+      }
+      return undefined;
+    },
+    set_ability: nature_suit('dustox', 'Spades', ['Spades', 'Clubs']),
   },
 }, FILE);

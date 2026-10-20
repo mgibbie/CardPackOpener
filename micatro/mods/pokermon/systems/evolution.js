@@ -31,7 +31,27 @@ export const family = DATA.globals['pokermon.family'].map((f) => f.slice());
 export const extended_family = JSON.parse(JSON.stringify(DATA.globals.extended_family));
 const fname = (y) => (y && typeof y === 'object' ? y.key : y);
 /** pokermon.add_family */
-export function add_family(f) { family.push(f); }
+export function add_family(f) {
+  // An add-on family that shares a member with a 3.9.1 family (set_family): 3.9.1's pokermon.add_family
+  // (= add_to_family, functions/pokefamily.lua) appends the missing members to that family instead of adding a second
+  // one under the same names (Nacho's Ralts line, Pokermon+'s Nincada line). Other families: 3.2.1's push.
+  const names = new Set(f.map(fname));
+  const into = family.find((v) => FAMILY_391.has(v) && v.some((y) => names.has(fname(y))));
+  if (!into) { family.push(f); return; }
+  for (const y of f) if (!into.some((z) => fname(z) === fname(y))) into.push(y);
+}
+const FAMILY_391 = new Set();
+/**
+ * A Pokermon 3.9.1 family (data391.js families, the new-jokers stack): replaces the 3.2.1 family that shares a member
+ * (3.9.1 may extend one: Budew / Roserade join Roselia), else is added.
+ */
+export function set_family(f) {
+  const names = new Set(f.map(fname));
+  const i = family.findIndex((v) => v.some((y) => names.has(fname(y))));
+  const fam = f.slice();
+  FAMILY_391.add(fam);
+  if (i >= 0) family[i] = fam; else family.push(fam);
+}
 
 const isTable = (x) => x !== null && typeof x === 'object';
 /** Lua truthiness: only nil/false are falsy (0 and '' are truthy). */

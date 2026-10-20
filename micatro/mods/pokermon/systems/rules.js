@@ -5,7 +5,8 @@
  *   find_joker_alias  Pansear/Simisear = Four Fingers, Panpour/Simipour = Pareidolia,
  *                     Pansage/Simisage = Shortcut, Smeargle = Smeared Joker
  *                     (lovely "Shortcut Pareidolia Four Fingers effects", pokermon.lua:442-463)
- *   straight_min /    Aipom (or Ambipom on a 3-card hand): 3-card straights and flushes
+ *   straight_min /    Aipom (or Ambipom on a 3-card hand): 3-card straights and flushes; Surskit / Masquerain:
+ *                     straights with duplicate ranks (3.9.1)
  *   flush_min         (pokermon.lua PokerHandPart _straight / get_flush)
  *   splash            Magikarp / Feebas / Luvdisc: every played card scores (applies_splash)
  *   is_face           Probopass: Stone Cards are face cards
@@ -17,7 +18,7 @@
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
  *                     random Tera type on jokers (Luminous deck: G.GAME.modifiers.apply_type)
  *   evaluate_round    Double Rainbow Energy's interest lockout ends (reset_no_interest)
- *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank
+ *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank, Wingull rank, Skitty type
  *   pack_size         extra_pocket_picks (+N cards in every pack)
  *   can_reserve       Pocket packs / G.GAME.poke_save_all / Megastone: pack cards can be saved
  *   calculate         the Poli suit (after every scored hand, 3.9.1); Garbodor's per-ante discard counter
@@ -26,7 +27,7 @@
  */
 import { G, P_CENTERS, find_joker, card_eval_status_text, localize, pseudorandom_element, pseudoseed } from '../../../js/engine/core.js';
 import { find_card, any, has_no_rank, has_no_suit, applies_splash, poke_change_poli_suit, poke_add_hazards, has_enhancement } from './utils.js';
-import { apply_type_sticker, type_sticker_applied } from './types.js';
+import { apply_type_sticker, type_sticker_applied, get_type } from './types.js';
 import { energy_increase } from './energy.js';
 
 // ------------------------------------------------------------ aliases
@@ -49,7 +50,25 @@ export function find_joker_alias(name, non_debuff) {
 
 // ---------------------------------------------------- poker hand parts
 const aipom = (hand) => any(find_card('j_poke_aipom')) || (hand.length === 3 && any(find_card('j_poke_ambipom')));
-export const straight_min = (n, hand) => (aipom(hand) ? 3 : undefined);
+/** get_X_same(num, hand) count: ranks (positive ids) held by exactly `num` cards of the hand. */
+function x_same(num, hand) {
+  const by_id = {};
+  for (const c of hand) { const id = c.get_id(); if (id > 0) by_id[id] = (by_id[id] || 0) + 1; }
+  return Object.values(by_id).filter((n) => n === num).length;
+}
+/**
+ * pokeutils.lua's `_straight` PokerHandPart (3.9.1): Aipom (or Ambipom on a 3-card hand) -> 3; Surskit / Masquerain
+ * (3.9.1, sub-batch 11) lower it by every duplicate (a pair -1, three -2, four -3, five -4), never below 2; then
+ * min(that, SMODS.four_fingers) — `n` is the engine's 5, or 4 with Four Fingers.
+ */
+export const straight_min = (n, hand) => {
+  const surskit = any(find_card('j_poke_surskit')) || any(find_card('j_poke_masquerain'));
+  if (!surskit) return aipom(hand) ? 3 : undefined;
+  let min = aipom(hand) ? 3 : 5;
+  min = min - x_same(2, hand) - x_same(3, hand) * 2 - x_same(4, hand) * 3 - x_same(5, hand) * 4;
+  min = Math.max(2, min);
+  return Math.min(min, n);
+};
 export const flush_min = (n, hand) => (aipom(hand) ? Math.min(n, 3) : undefined);
 export const splash = () => (applies_splash() ? true : undefined);
 export function is_face(card, base) {
@@ -185,12 +204,36 @@ export function reset_sneasel_rank() {
     G.GAME.current_round.sneaselcard.id = c.base.id;
   }
 }
+/** Pokermon 3.9.1 pokermon.reset_rank(name) (pokefunctions.lua): a random ranked deck card's rank, seed name..ante. */
+export function reset_rank(name) {
+  G.GAME.current_round[name] = { rank: 'Ace' };
+  const valid = G.playing_cards.filter((v) => !has_no_rank(v));
+  if (valid[0]) {
+    const [c] = pseudorandom_element(valid, pseudoseed(name + G.GAME.round_resets.ante));
+    G.GAME.current_round[name].rank = c.base.value;
+    G.GAME.current_round[name].id = c.base.id;
+  }
+}
+/** Pokermon 3.9.1 pokermon.reset_type(name, exclude_names): the type of a random typed joker (not the excluded ones). */
+export function reset_type(name, exclude_names) {
+  G.GAME.current_round[name] = 'Grass';
+  const valid_types = [];
+  for (const v of (G.jokers ? G.jokers.cards : [])) {
+    if (exclude_names.includes(v.ability.name)) continue;
+    const t = get_type(v);
+    if (t) valid_types.push(t);
+  }
+  if (valid_types.length > 0) G.GAME.current_round[name] = pseudorandom_element(valid_types, pseudoseed(name + G.GAME.round_resets.ante))[0];
+}
 /** SMODS.current_mod.reset_game_globals (pokermon.lua). */
 export function reset_game_globals(run_start) {
   reset_bulba_rank();
   reset_espeon_card();
   reset_gligar_suit();
   reset_sneasel_rank();
+  // Pokermon 3.9.1 (sub-batch 11): Wingull / Pelipper's rank, Skitty's (and Delcatty's) type of the round.
+  reset_rank('wingullcard');
+  reset_type('cattype', ['skitty', 'delcatty']);
 }
 
 // ------------------------------------------------------------------ packs

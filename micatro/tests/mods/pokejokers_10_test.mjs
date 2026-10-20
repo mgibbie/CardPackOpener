@@ -9,7 +9,8 @@ const key = (c) => c.config.center.key;
 
 const FILE_JOKERS = ['shroomish', 'breloom', 'azurill', 'nosepass'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 4 pokejokers_10 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_10.lua'].length === 4, 'defs: 4 from pokejokers_10.lua');
+// (+ 21 new in 3.9.1: new-jokers sub-batch 11, pokermon_391_new_11_test.mjs)
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_10.lua'].length === 25, 'defs: 25 from pokejokers_10.lua (4 + 21 new in 3.9.1)');
 
 // ---------------------------------------------------------------- Shroomish / Breloom
 /** Select the blind with the joker in play; -> which bonus it rolled. */

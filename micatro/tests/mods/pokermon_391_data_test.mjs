@@ -5,21 +5,18 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 7 (pin '3.9.1+r7', batch 10b; batch 10 was r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 8 (pin '3.9.1+r8', new-jokers sub-batch 11; batch 10b was r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
 //     3.9.1 sheet shows, at its new cell, the same picture its 3.2.1 cell showed (mean |diff| per channel <= 3,
 //     i.e. 3.9.1's touch-ups) — except the cards 3.9.1 redrew on purpose (listed). Streams the PNGs (crops only).
 //   node micatro/tests/mods/pokermon_391_data_test.mjs
-import fs from 'fs';
 import path from 'path';
-import zlib from 'zlib';
-import { execFileSync } from 'child_process';
-import { fileURLToPath } from 'url';
 import { T, start, hand, add, play, winRound, nextRound, clearHand, G, P_CENTERS, act } from './poke_helpers.mjs';
 import { P_BLINDS, get_new_boss } from '../../js/engine/core.js';
 import { MODS, ATLASES } from '../../js/mods/registry.js';
+import { ART, crops } from './poke_art_helpers.mjs';
 import * as PINS from '../../js/mods/pins.js';
 import * as AL from '../../js/mods/aliases.js';
 import { Session } from '../../js/engine/session.js';
@@ -31,17 +28,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 7, 'Pokermon is version 3.9.1, contentRev 7', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r7', 'its pin is 3.9.1+r7', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 8, 'Pokermon is version 3.9.1, contentRev 8', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r8', 'its pin is 3.9.1+r8', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r7', 'a new run is pinned 3.9.1+r7', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r8', 'a new run is pinned 3.9.1+r8', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r7', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 7). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r8', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 8). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
@@ -168,70 +165,7 @@ ok(P_CENTERS.b_poke_revenantdeck && !P_CENTERS.b_poke_revenanteck, 'kept fix: th
 }
 
 // ---------------------------------------------------------------- art: the 3.9.1 sheets
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../');
-const roots = [ROOT];
-if (process.env.MICATRO_MAIN) roots.push(path.resolve(process.env.MICATRO_MAIN));
-try {
-  const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-  roots.push(path.dirname(common));
-} catch { /* not a git checkout */ }
-const ART = roots.map((r) => path.join(r, 'micatro/mods/pokermon/assets/2x')).find((d) => fs.existsSync(path.join(d, 'Basic Series/AtlasJokersBasicGen01-391.png')));
-
-/** Stream a PNG (8-bit RGBA / RGB / palette, non-interlaced) and cut these rects out of it: {id: [x, y, w, h]} -> {id: RGBA}. */
-async function crops(file, rects) {
-  const buf = fs.readFileSync(file);
-  let p = 8, w, h, ctype, pal = null, trns = null;
-  const idat = [];
-  while (p < buf.length) {
-    const len = buf.readUInt32BE(p), type = buf.toString('latin1', p + 4, p + 8), d = buf.subarray(p + 8, p + 8 + len);
-    if (type === 'IHDR') { w = d.readUInt32BE(0); h = d.readUInt32BE(4); ctype = d[9]; if (d[8] !== 8 || d[12] !== 0 || ![2, 3, 6].includes(ctype)) throw new Error(file + ': unsupported PNG'); }
-    else if (type === 'PLTE') pal = d; else if (type === 'tRNS') trns = d; else if (type === 'IDAT') idat.push(d); else if (type === 'IEND') break;
-    p += 12 + len;
-  }
-  const bpp = ctype === 6 ? 4 : ctype === 2 ? 3 : 1, stride = w * bpp;
-  const out = {};
-  for (const [id, [x, y, cw, ch]] of Object.entries(rects)) out[id] = { x, y, cw, ch, px: new Uint8Array(cw * ch * 4), inside: x + cw <= w && y + ch <= h };
-  let prev = new Uint8Array(stride), cur = new Uint8Array(stride), row = 0, fill = -1, ftype = 0;
-  const pending = [];
-  const onRow = () => {
-    for (const r of Object.values(out)) {
-      if (!r.inside || row < r.y || row >= r.y + r.ch) continue;
-      const o = (row - r.y) * r.cw * 4;
-      for (let i = 0; i < r.cw; i++) {
-        const s = (r.x + i) * bpp;
-        let R, Gc, B, A;
-        if (bpp === 1) { const k = cur[s]; R = pal[k * 3]; Gc = pal[k * 3 + 1]; B = pal[k * 3 + 2]; A = trns && k < trns.length ? trns[k] : 255; }
-        else { R = cur[s]; Gc = cur[s + 1]; B = cur[s + 2]; A = bpp === 4 ? cur[s + 3] : 255; }
-        r.px.set([R, Gc, B, A], o + i * 4);
-      }
-    }
-  };
-  await new Promise((resolve, reject) => {
-    const inf = zlib.createInflate();
-    inf.on('data', (chunk) => {
-      for (let i = 0; i < chunk.length && row < h; i++) {
-        const v = chunk[i];
-        if (fill < 0) { ftype = v; fill = 0; continue; }
-        const a = fill >= bpp ? cur[fill - bpp] : 0, b = prev[fill], c = fill >= bpp ? prev[fill - bpp] : 0;
-        let val;
-        switch (ftype) {
-          case 0: val = v; break;
-          case 1: val = v + a; break;
-          case 2: val = v + b; break;
-          case 3: val = v + ((a + b) >> 1); break;
-          default: { const pa = Math.abs(b - c), pb = Math.abs(a - c), pc = Math.abs(a + b - 2 * c); val = v + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c); }
-        }
-        cur[fill++] = val & 255;
-        if (fill === stride) { onRow(); const t = prev; prev = cur; cur = t; fill = -1; row++; }
-      }
-    });
-    inf.on('end', resolve); inf.on('error', reject);
-    for (const d of idat) inf.write(d);
-    inf.end();
-    void pending;
-  });
-  return out;
-}
+// (ART, crops: poke_art_helpers.mjs)
 const meanDiff = (a, b) => { let s = 0; for (let i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]); return s / a.length; };
 
 if (!ART) console.log('(Pokermon art not on disk: the 3.9.1 crop checks are skipped)');
@@ -254,7 +188,8 @@ else {
   };
   const C2 = MODS.pokermon.content;
   // (content 3.9.1 adds — batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card — has no 3.2.1 cell to compare)
-  const NEW_391 = new Set(['c_poke_miracleseed', 'c_poke_heavyboots', 'm_poke_seed']);
+  // (and the jokers 3.9.1 adds, new-jokers stack: data391.js new_jokers — pokermon_391_new_<sub>_test.mjs checks their art)
+  const NEW_391 = new Set(['c_poke_miracleseed', 'c_poke_heavyboots', 'm_poke_seed', ...Object.keys(D391.new_jokers || {}).map((n) => 'j_poke_' + n)]);
   const cards = [...C2.centers, ...C2.blinds, ...C2.stickers, ...MODS.pokermon.sleeves].filter((c) => !NEW_391.has(c.key) && (/391$/.test(c.atlas || '') && c.pos && !/AtlasJokersBasicOthers391|AtlasDecksBasic391/.test(c.atlas) || ['j_poke_rival', 'b_poke_pokemondeck'].includes(c.key)));
   const fileOf = (a) => decodeURIComponent(ATLASES[a].src).replace(/^.*\/assets\/2x\//, '');
   const cell = (a, pos) => { const A = ATLASES[a], cw = (A.px || 71) * 2, chh = (A.py || 95) * 2; return [pos.x * cw, pos.y * chh, cw, chh]; };
