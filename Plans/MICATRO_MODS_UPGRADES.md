@@ -728,10 +728,13 @@ precedence)".
   (`poke_capture_disc_drag`, the board's drag distances), so replays stay exact.
 - **Blinds**: The Mirror, The Rocket, The Star, Gray Godfather, White Executive, and 3.9.1's own Iridescent Hacker logic (SMODS.Blind
   `calculate`: debuff_card, stay_flipped, drawing_cards).
-- **Elite stake**: a mod stake over Gold (+2 win ante, the last 4 antes showdowns). The engine plays mod stakes at level 8, so win stickers
-  record **Gold** for it, as for Nacho's Elite / Lilac / MoreFluff's stakes: **no `stickerLevel` / stickers.js / server change**. The
+- **Elite stake**: a mod stake over Gold (+2 win ante, the last 4 antes showdowns). The engine plays mod stakes at level 8. The
   recipe and leaderboard keep its key. Nacho's own Elite stake (`stake_nacho_elite_stake`) is superseded: off the New Run picker, still
-  registered. (Upstream draws its own Elite sticker; a 9th sticker level would need stickers.js + server/mp.mjs `stickerLevel`: not done.)
+  registered. **Win stickers: level 9 = Elite** (owner-approved follow-up, branch `feat/micatro-elite-sticker`): a stake declares
+  `sticker_level` (Pokermon's and Nacho's Elite: 9), the win event carries it, stickers.js levels 1..9 with 3.9.1's Elite sticker art
+  and colour (#ba8514), server `stickerLevel` 1..9; old clients (no `maxLevel: 9`) are answered with 9 as Gold. Earlier Elite wins were
+  recorded as Gold and can't be told apart: no backfill. Other mod stakes (Lilac, MoreFluff's) still record Gold.
+  Tests: micatro/tests/mods/elite_sticker_test.mjs, micatro_stickers_server_test, micatro_winstickers_test, designwiki_win_stickers_test.
 - **Challenges**: Delibird Dilemma, Safety First (`poke_no_energy`), Mystery Dungeon, Imposter Syndrome, Mean Look; the 7 old ones take
   3.9.1's changes. **Mystery Dungeon's daily seed**: the UI passes today's UTC date at the start, newRun makes it the run's seed
   (`POKE_DDMMYYYY`), the recipe records the seed; the engine reads no clock, so replays / resumes are exact on any day.

@@ -3711,6 +3711,7 @@ window.addEventListener('hashchange', route);
     const ctx = cv.getContext('2d');
     ctx.clearRect(0, 0, FACE_W, FACE_H);
     if (st.special) { ctx.save(); try { S.drawSpecialSticker(ctx, st); } finally { ctx.restore(); } }
+    else if (S.drawOwnSticker && S.drawOwnSticker(ctx, st, FACE_W, FACE_H)) { /* a stake with its own art (Elite, level 9) */ }
     else if (S.STICKER_POS[st.stake] && sheet && sheet.complete && sheet.naturalWidth) {
       // stickers.png (2x): 5 x 3 cells of one card face each, as the game's drawCell('stickers', ...)
       const p = S.STICKER_POS[st.stake], cw = sheet.naturalWidth / 5, ch = sheet.naturalHeight / 3;
@@ -3743,7 +3744,7 @@ window.addEventListener('hashchange', route);
     if (started || !/^#\/micatro/.test(location.hash) || !token()) return;
     started = true;
     try {
-      const res = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token() }, body: JSON.stringify({ action: 'micatro-stickers-get' }) });
+      const res = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token() }, body: JSON.stringify({ action: 'micatro-stickers-get', maxLevel: 9 }) });
       const d = res.ok ? await res.json() : null;
       if (!d || d.error || !d.wins || typeof d.wins !== 'object' || Array.isArray(d.wins)) return;
       S = await import('../micatro/js/ui/stickers.js' + CB);

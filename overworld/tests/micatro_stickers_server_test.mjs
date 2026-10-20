@@ -3,10 +3,10 @@
 // The REAL handler (bundled like the dev server) over an in-memory sqlite D1 stand-in:
 //   * both actions need a login (401 without a token)
 //   * the record is per joker AND per category: {jokerKey: {win, poke, nuz, mono, both}} (win = any win, poke = a Pokermon win, nuz = a
-//     Nuzlocke run, mono = Monotype, both = the two together), each the highest stake level 1..8; the old
+//     Nuzlocke run, mono = Monotype, both = the two together), each the highest stake level 1..9 (9 = Elite); the old
 //     flat form {jokerKey: level} means {win: level} (in a put, and in a row already stored)
 //   * put validates: `wins` must be an object; keys /^[A-Za-z0-9_]{1,64}$/; known categories only; levels
-//     integer 1..8; at most 5000 keys and ~700 KB — bad entries / oversize payloads are refused, write nothing
+//     integer 1..9; at most 5000 keys and ~700 KB — bad entries / oversize payloads are refused, write nothing
 //   * put MERGES server-side: max(stored, incoming) per key and category — a stale put never lowers or
 //     drops a sticker; a put that raises nothing writes no row; concurrent puts both land
 //   * the row is exactly `micatro_stickers:<user>` = {v:2, wins, rev, updatedAt}, durable (not in the GC table)
@@ -16,6 +16,10 @@
 //     returned by get and put, and strips those keys / categories from incoming (and stored) wins; re-earn rule: a
 //     category the put proves was earned after `at` (`earned` {key: {cat: ms}}) is accepted and its time kept in the
 //     row's `earned`; with no `at` the key stays blocked until the admin removes the revocation
+//   * ELITE (level 9, Pokermon's / Nacho's Elite stake): stored and max-merged like any level; a later put of <= 8 (a current
+//     client's lower win, or an OLD client's) never lowers it; revocation and re-earn work on it. A client that sends
+//     `maxLevel: 9` reads 9s; any other (an old client, which drops levels it doesn't know) is ANSWERED with 9 shown as 8
+//     (Gold) — the row keeps the 9 — so its own 8 never looks ahead of the account (no push loop)
 //   node overworld/tests/micatro_stickers_server_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -71,7 +75,7 @@ const reg = async (name) => { const r = await call('register', { username: name,
 const ownWrites = (from) => writes.slice(from).filter((k) => !k.startsWith('rl:') && !k.startsWith('gc:'));
 
 try {
-	for (const n of ['stkalice', 'stkbob', 'stkflood', 'stkfull', 'stkold', 'stkrev', 'stkrev2']) await reg(n);
+	for (const n of ['stkalice', 'stkbob', 'stkflood', 'stkfull', 'stkold', 'stkrev', 'stkrev2', 'stkelite', 'stkelrev']) await reg(n);
 	A(tokens.stkalice && tokens.stkbob && tokens.stkflood && tokens.stkfull && tokens.stkold, 'test accounts register');
 
 	// ----- auth -----
@@ -93,7 +97,7 @@ try {
 		[{ wins: { ['k' + 'x'.repeat(64)]: { win: 2 } } }, 'a 65-char key'],
 		[{ wins: { '': { win: 2 } } }, 'an empty key'],
 		[{ wins: { j_joker: { win: 0 } } }, 'level 0'],
-		[{ wins: { j_joker: { nuz: 9 } } }, 'level 9'],
+		[{ wins: { j_joker: { nuz: 10 } } }, 'level 10'],
 		[{ wins: { j_joker: { mono: 2.5 } } }, 'a fractional level'],
 		[{ wins: { j_joker: { win: '3' } } }, 'a string level'],
 		[{ wins: { j_joker: { both: -1 } } }, 'a negative level'],
@@ -101,7 +105,7 @@ try {
 		[{ wins: { j_joker: { win: 2, shiny: 3 } } }, 'an unknown category'],
 		[{ wins: { j_joker: {} } }, 'an empty record'],
 		[{ wins: { j_joker: [2] } }, 'a record as a list'],
-		[{ wins: { j_joker: 9 } }, 'a flat (old-format) level 9'],
+		[{ wins: { j_joker: 10 } }, 'a flat (old-format) level 10'],
 		[{ wins: { j_joker: { win: 2 }, j_bad: { win: 12 } } }, 'one bad entry among good ones'],
 	];
 	let w0 = writes.length;
@@ -166,7 +170,7 @@ try {
 	A(pk2.ok && pk2.changed === false && row('micatro_stickers:stkalice').wins.j_pika.poke === 5, 'a lower poke never lowers it (max-merge)', JSON.stringify(pk2.wins && pk2.wins.j_pika));
 	const pk3 = await call('micatro-stickers-put', { wins: { j_pika: { poke: 8 } } }, tokens.stkalice);
 	A(pk3.ok && pk3.changed === true && row('micatro_stickers:stkalice').wins.j_pika.poke === 8 && row('micatro_stickers:stkalice').wins.j_pika.win === 2, 'a higher poke raises it (and leaves win alone)', JSON.stringify(row('micatro_stickers:stkalice').wins.j_pika));
-	A((await raw('micatro-stickers-put', { wins: { j_pika: { poke: 9 } } }, tokens.stkalice)).status === 400, 'a poke level outside 1..8 is refused');
+	A((await raw('micatro-stickers-put', { wins: { j_pika: { poke: 10 } } }, tokens.stkalice)).status === 400, 'a poke level outside 1..9 is refused');
 
 	// ----- no cross-user access -----
 	const gb = await call('micatro-stickers-get', { username: 'stkalice' }, tokens.stkbob);
@@ -231,6 +235,42 @@ try {
 	const rq2 = await call('micatro-stickers-put', { wins: { b_plasma: { win: 3 } } }, tokens.stkrev2);
 	A(rq2.ok && row('micatro_stickers:stkrev2').wins.b_plasma.win === 3 && JSON.stringify(rq2.revoked) === '{}', 'once the admin removes the revocation the key max-merges normally again', JSON.stringify(rq2));
 	A(Object.keys(row('micatro_stickers:stkalice')).sort().join() === 'rev,updatedAt,v,wins', 'a row without revocations gains no `revoked` / `earned` fields');
+
+	// ----- ELITE: level 9 -----
+	const NEW = { maxLevel: 9 };   // what a current client (net.js) sends
+	const all = (w) => Object.values(w || {}).flatMap((r) => Object.values(r));
+	const e1 = await raw('micatro-stickers-put', { ...NEW, wins: { j_poke_pikachu: { win: 9, poke: 9 }, b_red: { win: 9 }, j_flat: 9 } }, tokens.stkelite);
+	const re1 = row('micatro_stickers:stkelite');
+	A(e1.status === 200 && e1.body?.ok && JSON.stringify(re1?.wins?.j_poke_pikachu) === '{"win":9,"poke":9}' && re1?.wins?.b_red?.win === 9 && JSON.stringify(re1?.wins?.j_flat) === '{"win":9}',
+		'an Elite put (level 9) is accepted and stored as 9 (record and flat forms, jokers and a deck back)', JSON.stringify([e1, re1 && re1?.wins]));
+	A(e1.body?.wins && e1.body?.wins?.j_poke_pikachu?.win === 9 && e1.body?.wins?.b_red?.win === 9, '...and a current client (maxLevel 9) gets the 9s back', JSON.stringify(e1.body?.wins));
+	const e2 = await call('micatro-stickers-put', { ...NEW, wins: { j_poke_pikachu: { win: 8, poke: 3, nuz: 9 }, b_red: { win: 1 } } }, tokens.stkelite);
+	const re2 = row('micatro_stickers:stkelite');
+	A(e2?.ok && JSON.stringify(re2?.wins?.j_poke_pikachu) === '{"win":9,"poke":9,"nuz":9}' && re2?.wins?.b_red?.win === 9, 'a later put of <= 8 never lowers a stored 9 (a new category still joins)', JSON.stringify(re2?.wins));
+	w0 = writes.length;
+	const e3 = await raw('micatro-stickers-put', { wins: { j_poke_pikachu: { win: 8, poke: 8, nuz: 8 }, b_red: { win: 8 }, j_flat: { win: 8 } } }, tokens.stkelite);
+	const re3 = row('micatro_stickers:stkelite');
+	A(e3.status === 200 && e3.body.changed === false && ownWrites(w0).length === 0 && re3?.wins?.j_poke_pikachu?.win === 9 && re3?.wins?.b_red?.win === 9 && re3?.wins?.j_flat?.win === 9,
+		'an OLD client (no maxLevel) pushing Gold (8) never lowers the 9s and writes nothing (max-merge)', JSON.stringify([e3.body.changed, re3?.wins]));
+	A(all(e3.body?.wins).length > 0 && all(e3.body?.wins).every((v) => v <= 8) && e3.body?.wins?.j_poke_pikachu?.win === 8 && e3.body?.wins?.b_red?.win === 8,
+		'...and its answer shows each 9 as 8 (Gold), so its 8 is never "ahead" of the account (no push loop)', JSON.stringify(e3.body?.wins));
+	const eg8 = await call('micatro-stickers-get', {}, tokens.stkelite), eg9 = await call('micatro-stickers-get', NEW, tokens.stkelite);
+	A(all(eg8?.wins).every((v) => v <= 8) && eg8?.wins?.j_flat?.win === 8 && JSON.stringify(eg9?.wins?.j_poke_pikachu) === '{"win":9,"poke":9,"nuz":9}' && eg9?.wins?.j_flat?.win === 9,
+		'get: an old client reads Gold (8), a current one (maxLevel 9) reads Elite (9)', JSON.stringify([eg8?.wins, eg9?.wins]));
+	A(row('micatro_stickers:stkelite')?.wins?.j_poke_pikachu?.win === 9, 'the row still holds 9 after the old client’s reads and puts');
+	// revocation of a 9 (category and whole key), and re-earning it
+	const eat = Date.now() - 60_000;
+	sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 0)').run('micatro_stickers:stkelrev', JSON.stringify({
+		v: 2, wins: { j_el: { win: 9, both: 9 }, j_el2: { win: 9 }, j_keep: { win: 9 } }, rev: 2, updatedAt: eat, revoked: { j_el: { cats: ['both'], at: eat }, j_el2: true },
+	}));
+	const ev1 = await call('micatro-stickers-get', NEW, tokens.stkelrev);
+	A(JSON.stringify(ev1?.wins?.j_el) === '{"win":9}' && !ev1?.wins?.j_el2 && ev1?.wins?.j_keep?.win === 9, 'get hides revoked 9s (a category, a whole key); the rest stays 9', JSON.stringify(ev1?.wins));
+	const ev2 = await call('micatro-stickers-put', { ...NEW, wins: { j_el: { both: 9 }, j_el2: { win: 9 } } }, tokens.stkelrev);
+	const rev2 = row('micatro_stickers:stkelrev');
+	A(ev2?.ok && JSON.stringify(rev2?.wins?.j_el) === '{"win":9}' && !rev2?.wins?.j_el2 && rev2?.wins?.j_keep?.win === 9, 'a put of a revoked 9 is stripped (stored ones dropped too)', JSON.stringify(rev2?.wins));
+	const et = Date.now() - 1000;
+	const ev3 = await call('micatro-stickers-put', { ...NEW, wins: { j_el: { both: 9 } }, earned: { j_el: { both: et } } }, tokens.stkelrev);
+	A(ev3?.ok && row('micatro_stickers:stkelrev')?.wins?.j_el?.both === 9 && row('micatro_stickers:stkelrev')?.earned?.j_el?.both === et, 'an Elite win earned AFTER the revocation is accepted as 9 (re-earn rule)', JSON.stringify(row('micatro_stickers:stkelrev')));
 
 	// ----- source registration -----
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
