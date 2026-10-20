@@ -88,17 +88,18 @@ sec(() => {
   // Deferred: Kirlia -> Gallade (sub-batch 14). (Skitty -> Delcatty came with sub-batch 12: pokermon_391_new_12_test.)
   const JL = MODS.pokermon.content.loc.descriptions.Joker;
   const def = Object.fromEntries(D391.new_deferred.map(([n, why, drop]) => [n, drop]));
-  ok(JSON.stringify(def.kirlia) === JSON.stringify(['item_req']) && !def.skitty, 'new_deferred: kirlia (item_req); skitty no more', def);
-  ok(C('kirlia').item_req === undefined && C('kirlia').config.extra.item_req === undefined, 'no item_req until the target exists');
-  ok(!JL.j_poke_kirlia.text.some((l) => l.includes('Dawn Stone')), 'nor the stone line in its text');
-  ok(!P_CENTERS.j_poke_gallade, 'Gallade not registered yet');
+  // (Kirlia -> Gallade came back in sub-batch 14, Skitty -> Delcatty in 12: pokermon_391_new_14_test.mjs fires the Dawn Stone)
+  ok(!def.kirlia && !def.skitty, 'new_deferred: kirlia (since sub-batch 14) and skitty no more', def);
+  ok(C('kirlia').config.extra.item_req === 'dawnstone', 'Kirlia has its Dawn Stone item_req again');
+  ok(JL.j_poke_kirlia.text.some((l) => l.includes('Dawn Stone')), 'and the stone line in its text');
+  ok(!!P_CENTERS.j_poke_gallade, 'Gallade is registered (sub-batch 14)');
 });
 sec(() => {
   // Families (3.9.1 functions/pokefamily.lua), minus jokers not ported yet
   ok(JSON.stringify(poke_get_family_list('nincada')) === JSON.stringify(['nincada', 'ninjask', 'shedinja']), 'family: nincada / ninjask / shedinja');
   ok(JSON.stringify(poke_get_family_list('wurmple')) === JSON.stringify(['wurmple', 'silcoon', 'beautifly', 'cascoon', 'dustox']), 'family: the Wurmple line (branching)');
   const rk = get_family_keys('kirlia');
-  ok(rk.includes('j_poke_gardevoir') && rk.includes('j_poke_ralts') && !rk.includes('j_poke_gallade'), 'family: Ralts line without Gallade (yet)', rk);
+  ok(rk.includes('j_poke_gardevoir') && rk.includes('j_poke_ralts') && rk.includes('j_poke_gallade'), 'family: the Ralts line with Gallade (sub-batch 14)', rk);
   ok(poke_get_family_list('skitty')[0] === 'skitty', 'family: Skitty', poke_get_family_list('skitty'));
 });
 sec(() => {
@@ -329,9 +330,9 @@ sec(() => {
   j.ability.extra.planets_used = 14;
   act({ type: 'use', id: p.sort_id });
   ok(j.ability.extra.planets_used === 15, 'kirlia: counts Planets used', j.ability.extra.planets_used);
-  j.ability.extra.evolve = true; // (Gallade, its Dawn Stone evolution, isn't ported yet: inert)
+  // (its Dawn Stone evolution, Gallade since sub-batch 14, is pokermon_391_new_14_test.mjs's)
   winRound();
-  ok(key(j) === 'j_poke_gardevoir', 'kirlia -> gardevoir after 15 Planets (not Gallade)', key(j));
+  ok(key(j) === 'j_poke_gardevoir', 'kirlia -> gardevoir after 15 Planets', key(j));
   ok(G.consumeables.cards.some((c) => key(c) === 'c_black_hole'), 'gardevoir (evolved): holding a Black Hole');
 });
 sec(() => {
@@ -537,7 +538,8 @@ sec(() => {
 await import('../../mods/nacho/index.js');
 await import('../../mods/pokermonplus/index.js');
 sec(() => {
-  ok(JSON.stringify(poke_get_family_list('ralts')) === JSON.stringify(['ralts', 'kirlia', 'gardevoir', 'mega_gardevoir', 'gallade', 'mega_gallade']), 'the Nacho Ralts line joins the 3.9.1 family', poke_get_family_list('ralts'));
+  // (Gallade is in the 3.9.1 family since sub-batch 14; Nacho adds its Megas)
+  ok(JSON.stringify(poke_get_family_list('ralts')) === JSON.stringify(['ralts', 'kirlia', 'gardevoir', 'gallade', 'mega_gardevoir', 'mega_gallade']), 'the Nacho Ralts line joins the 3.9.1 family', poke_get_family_list('ralts'));
   ok(JSON.stringify(poke_get_family_list('nincada')) === JSON.stringify(['nincada', 'ninjask', 'shedinja']), 'the Pokermon+ Nincada line is the same family', poke_get_family_list('nincada'));
   ok(family.filter((f) => f.some((y) => ['ralts', 'nincada'].includes(y.key || y))).length === 2, 'one family each');
   ok(get_family_keys('kirlia', 'nacho').includes('j_nacho_gallade'), 'the Nacho Kirlia still finds its Gallade');

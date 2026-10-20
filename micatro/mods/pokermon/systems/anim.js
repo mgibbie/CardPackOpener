@@ -35,6 +35,12 @@ export const KECLEON_SPRITES = {
   Fire: { x: 4, y: 1 }, Grass: { x: 6, y: 1 }, Lightning: { x: 8, y: 1 }, Metal: { x: 10, y: 1 }, Psychic: { x: 0, y: 2 }, Water: { x: 2, y: 2 },
 };
 
+/**
+ * Deoxys's forme (3.9.1 pokejokers_13.lua set_sprites, sub-batch 14): its floating sprite on the Gen 3 sheet by extra.form —
+ * 1 Attack {5,3}, 2 Defense {7,3}, 3 Speed {9,3}; Normal (4) is its own soul {3,3}. Drawn by ui.js face().
+ */
+export const DEOXYS_SOULS = { 1: { x: 5, y: 3 }, 2: { x: 7, y: 3 }, 3: { x: 9, y: 3 } };
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

@@ -22,7 +22,7 @@ import { MOD_LOC } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { TYPE_COLOURS } from './systems/types.js';
-import { KECLEON_ATLAS, KECLEON_SPRITES } from './systems/anim.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES, DEOXYS_SOULS } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -269,6 +269,9 @@ export const POKE_UI = {
     // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
     const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
     if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
+    // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card
+    const ds = d.center === 'j_poke_deoxys' && p && DEOXYS_SOULS[p.form];
+    if (ds) return { ...d, soul_pos: ds };
     // Unown: its form's letter floats over the card
     const u = withUnownForm(d);
     return u === d ? null : u;

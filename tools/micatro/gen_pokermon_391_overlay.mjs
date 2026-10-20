@@ -186,7 +186,7 @@ if (Object.keys(jokerLoc).length) loc.Joker = jokerLoc;
 // loc_extra: other 3.9.1 loc entries the reworked jokers show ("Set.key": tooltips, alt texts, dictionary words).
 for (const p of SPEC.loc_extra || []) {
   const [set, ...rest] = p.split('.'), key = rest.join('.');
-  const src = set === 'dictionary' || set === 'v_dictionary' ? NEW.loc.misc && NEW.loc.misc[set] : NLOC[set];
+  const src = set === 'dictionary' || set === 'v_dictionary' || set === 'labels' ? NEW.loc.misc && NEW.loc.misc[set] : NLOC[set];
   if (!src || src[key] === undefined) throw new Error(`loc_extra: 3.9.1 en-us has no ${p}`);
   (loc[set] || (loc[set] = {}))[key] = src[key];
 }

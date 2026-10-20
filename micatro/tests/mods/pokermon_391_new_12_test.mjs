@@ -3,7 +3,7 @@
 // Wailmer / Wailord, Torkoal, Spinda), every one fired through real plays (act), and each evolution.
 //   - the overlay: data391.js new_jokers / new_deferred / families, the 3.9.1 static data, text, order and pools; contentRev 9
 //   - each joker's main effect; Skitty -> Delcatty (Moon Stone, deferred in sub-batch 11), Meditite -> Medicham,
-//     Carvanha -> Sharpedo, Wailmer -> Wailord; the deferred Roselia -> Roserade; Minun's shop discount
+//     Carvanha -> Sharpedo, Wailmer -> Wailord; (Roselia -> Roserade: switched on in sub-batch 14); Minun's shop discount
 //   - the art: every new joker's 3.9.1 cell (and its Shiny twin) holds a real picture (needs the gitignored art: MICATRO_MAIN)
 //   node micatro/tests/mods/pokermon_391_new_12_test.mjs
 import path from 'path';
@@ -83,9 +83,10 @@ sec(() => {
   // Deferred: Roselia -> Roserade (Shiny Stone) and Budew -> Roselia: sub-batch 14
   const JL = MODS.pokermon.content.loc.descriptions.Joker;
   const def = Object.fromEntries(D391.new_deferred.map(([n, why, drop]) => [n, drop]));
-  ok(JSON.stringify(def.roselia) === JSON.stringify(['item_req']) && !def.skitty, 'new_deferred: roselia (item_req); skitty no more', def);
-  ok(C('roselia').config.extra.item_req === undefined && !JL.j_poke_roselia.text.some((l) => l.includes('Shiny Stone')), 'roselia: no item_req / Shiny Stone line until Roserade exists');
-  ok(!P_CENTERS.j_poke_roserade && !P_CENTERS.j_poke_budew, 'Budew / Roserade not registered yet');
+  // (came back in sub-batch 14: pokermon_391_new_14_test.mjs fires the Shiny Stone)
+  ok(!def.roselia && !def.skitty, 'new_deferred: roselia (since sub-batch 14) and skitty no more', def);
+  ok(C('roselia').config.extra.item_req === 'shinystone' && JL.j_poke_roselia.text.some((l) => l.includes('Shiny Stone')), 'roselia: its Shiny Stone item_req and line again (Roserade exists)');
+  ok(!!P_CENTERS.j_poke_roserade && !!P_CENTERS.j_poke_budew, 'Budew / Roserade are registered (sub-batch 14)');
 });
 sec(() => {
   // Families (3.9.1 functions/pokefamily.lua), minus jokers not ported yet
@@ -93,7 +94,7 @@ sec(() => {
   ok(JSON.stringify(poke_get_family_list('medicham')) === JSON.stringify(['meditite', 'medicham'])
     && JSON.stringify(poke_get_family_list('carvanha')) === JSON.stringify(['carvanha', 'sharpedo'])
     && JSON.stringify(poke_get_family_list('wailord')) === JSON.stringify(['wailmer', 'wailord']), 'families: Meditite, Carvanha, Wailmer lines');
-  ok(JSON.stringify(poke_get_family_list('roselia')) === JSON.stringify(['roselia']) && !get_family_keys('roselia').includes('j_poke_roserade'), 'family: Roselia without Budew / Roserade (yet)', poke_get_family_list('roselia'));
+  ok(JSON.stringify(poke_get_family_list('roselia')) === JSON.stringify(['budew', 'roselia', 'roserade']) && get_family_keys('roselia').includes('j_poke_roserade'), 'family: Budew / Roselia / Roserade (sub-batch 14)', poke_get_family_list('roselia'));
 });
 sec(() => {
   // Pools: in_pool (pokemon_in_pool) + pool_filter (one per family, the Gen 3 option); the shop's rarity pools
@@ -301,9 +302,9 @@ sec(() => {
   const [k] = hand(['S_K']);
   play([k]);
   ok(key(k) === 'm_poke_seed', 'roselia: an Even first card becomes a Seed card', key(k));
-  j2.ability.extra.evolve = true; // (a Shiny Stone: Roserade isn't ported yet, inert)
+  // (its Shiny Stone evolution into Roserade, sub-batch 14, is pokermon_391_new_14_test.mjs's)
   winRound();
-  ok(key(j2) === 'j_poke_roselia', 'roselia: no Roserade yet', key(j2));
+  ok(key(j2) === 'j_poke_roselia', 'roselia: no evolution without a Shiny Stone', key(j2));
   void j;
 });
 

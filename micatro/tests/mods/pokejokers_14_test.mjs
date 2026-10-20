@@ -9,7 +9,7 @@ const key = (c) => c.config.center.key;
 
 const FILE_JOKERS = ['bidoof', 'bibarel', 'kricketot', 'kricketune', 'buizel', 'floatzel'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 6 pokejokers_14 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_14.lua'].length === 6, 'defs: 6 from pokejokers_14.lua');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_14.lua'].length === 8, 'defs: 8 from pokejokers_14.lua (6 + 2 new in 3.9.1: new-jokers sub-batch 14)');
 
 /** Win, cash out -> shop. */
 const toShop = () => { winRound(); act({ type: 'cash_out' }); };

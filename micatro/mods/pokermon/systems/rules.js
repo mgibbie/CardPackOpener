@@ -18,7 +18,8 @@
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
  *                     random Tera type on jokers (Luminous deck: G.GAME.modifiers.apply_type)
  *   evaluate_round    Double Rainbow Energy's interest lockout ends (reset_no_interest)
- *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank, Wingull rank, Skitty type
+ *   reset_game_globals  per-round Bulbasaur rank, Espeon card, Gligar suit, Sneasel rank, Wingull rank, Skitty type,
+ *                     Bronzor card
  *   pack_size         extra_pocket_picks (+N cards in every pack)
  *   can_reserve       Pocket packs / G.GAME.poke_save_all / Megastone: pack cards can be saved
  *   calculate         the Poli suit (after every scored hand, 3.9.1); Garbodor's per-ante discard counter
@@ -247,6 +248,27 @@ export function reset_game_globals(run_start) {
   // Pokermon 3.9.1 (sub-batch 11): Wingull / Pelipper's rank, Skitty's (and Delcatty's) type of the round.
   reset_rank('wingullcard');
   reset_type('cattype', ['skitty', 'delcatty']);
+  // (sub-batch 14) Bronzor / Bronzong's card of the round.
+  reset_bronzo_card();
+}
+
+/**
+ * pokermon.reset_bronzo_card (3.9.1 pokefunctions.lua): the rank and suit of a random playing card that has both (seed
+ * 'bronzo' .. ante); Ace of Spades without one.
+ */
+export function reset_bronzo_card() {
+  const cr = G.GAME.current_round;
+  cr.bronzo_rank = 'Ace';
+  cr.bronzo_id = 14;
+  cr.bronzo_suit = 'Spades';
+  const valid = (G.playing_cards || []).filter((c) => !has_no_suit(c) && !has_no_rank(c));
+  if (!valid.length) return;
+  const [bronzo_card] = pseudorandom_element(valid, pseudoseed('bronzo' + G.GAME.round_resets.ante));
+  if (bronzo_card) {
+    cr.bronzo_rank = bronzo_card.base.value;
+    cr.bronzo_id = bronzo_card.base.id;
+    cr.bronzo_suit = bronzo_card.base.suit;
+  }
 }
 
 // ------------------------------------------------------------------ packs
@@ -263,6 +285,8 @@ export function can_reserve(card) {
   if (label.includes('Pocket')) return true;
   if (G.GAME.poke_save_all && !label.includes('Wish')) return true;
   if (card.ability.name === 'megastone') return true;
+  // (3.9.1 pokermon.can_save_consumable: or card.config.center.saveable -- the Meteorite, sub-batch 14)
+  if (card.config.center.saveable) return true;
   return undefined;
 }
 

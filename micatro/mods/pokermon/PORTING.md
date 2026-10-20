@@ -1138,16 +1138,114 @@ They follow 3.9.1's `list` order: Kecleon after Milotic, Shuppet / Banette / Tro
     through the center). No fixture shim change.
   - A browser screenshot showed all 19 in the joker row on their 3.9.1 cards (Shiny Altaria / Claydol / Chimecho), Kecleon on its Fire card.
 
+### New jokers, sub-batch 14 (pokejokers_13 / 14 / 15 / 16)
+Pinned **`3.9.1+r11`** (`contentRev: 11`). The **14 jokers 3.9.1 added** to `pokemon/pokejokers_13.lua` (Clamperl, Huntail, Gorebyss,
+Relicanth, Bagon, Shelgon, Salamence, Deoxys), `pokejokers_14.lua` (Budew, Roserade), `pokejokers_15.lua` (Chingling, Bronzor, Bronzong) and
+`pokejokers_16.lua` (Gallade), built with the sub-batch 11 pipeline (spec `new_jokers` "14", `node tools/micatro/gen_pokermon_391_overlay.mjs
+<extract>`; the extract is unchanged). Each is in the pools by its rarity: Common Budew; Uncommon Bagon; Rare Clamperl, Relicanth, Chingling,
+Bronzor; Legendary Deoxys (The Soul); Safari Huntail, Gorebyss, Shelgon, Salamence, Roserade, Bronzong, Gallade.
+
+- **The jokers** (numbers from data391.js):
+  - **Clamperl / Huntail / Gorebyss** (jokers/pokejokers_13.js): +4 hand size while a Booster pack is open (`open_booster` to `ending_booster`;
+    given back if the joker leaves mid-pack). Clamperl comes with an Ethereal Tag. Huntail: a Tarot or Item **sold** in a pack gives +X0.1 Mult
+    and destroys a random held card. Gorebyss: a Tarot or Item **used** in a pack gives +X0.15 Mult.
+    - "In a pack": 3.9.1 lists the vanilla pack states and SMODS_BOOSTER_OPENED, which Steamodded uses for every pack. Ours checks every pack
+      state (Buffoon packs included).
+  - **Relicanth** (Ancient 4s): 1+ the rightmost scoring card +40 Chips; 2+ and $4 (`dollar_buffer`); 3+ the bottom deck card that isn't a 4
+    becomes Stone; 4+ X(1 + 0.75 per depleted rank). The ranks are our 13 (3.9.1 walks SMODS.Ranks; no mod adds a rank to Pokermon runs).
+  - **Bagon / Shelgon / Salamence**: +3 / +3 / +5 Mult per Straight played this run. Bagon -1 and Shelgon -2 hand size. Bagon evolves after 5
+    scored Straights; a scored Straight takes a round off Shelgon's 8. Salamence: +1 hand size this round per 5 Straights played, at Blind select.
+  - **Deoxys** (Legendary): the first discard of a round, if exactly 1 card, gets a **DNA Seal**. Its forme (`extra.form`: 1 Attack,
+    2 Defense, 3 Speed, 4 Normal) comes from the **Meteorite** (below); the formes have their own 3.9.1 texts (`loc_vars` `key`).
+  - **Budew** (Baby; jokers/pokejokers_14.js): X0.75 Mult, a Negative Miracle Seed at end of round, evolves into Roselia in 2 rounds.
+  - **Roserade**: the first scoring card of every hand, if Odd, is retriggered twice. With a Roserade the **Flower** card scores with 3 suits
+    instead of 4 (batch 10's rule in enhancements/enhancement1.js, dormant until now; the test fires it).
+  - **Chingling** (Baby; jokers/pokejokers_15.js): X0.75 Mult, a Negative Justice at end of round, evolves into Chimecho in 2 rounds.
+  - **Bronzor / Bronzong**: scored cards of the round's suit give X1.3. Bronzor evolves after 10 scored cards of the round's rank; Bronzong
+    retriggers them once. The round's card: `systems/rules.js reset_bronzo_card` (3.9.1 pokefunctions.lua: a random playing card with a rank
+    and a suit, seed 'bronzo' .. ante; Ace of Spades without one), run from `reset_game_globals`.
+  - **Gallade** (jokers/pokejokers_16.js): X(1 + 0.5 per Joker with 2+ Energy, itself included); comes holding a Double Rainbow Energy (also
+    when Kirlia evolves into it).
+- **Evolutions**: Clamperl -> Gorebyss (Link Cable, `item_req`) or Huntail (a Link Cable sold), Bagon -> Shelgon -> Salamence, Budew ->
+  Roselia, Chingling -> Chimecho, Bronzor -> Bronzong. Families from 3.9.1: those lines, and Deoxys with its formes (`{key, form}` entries).
+- **The deferred evolutions are on** (spec `new_deferred` is empty): Kirlia -> **Gallade** with a Dawn Stone (sub-batch 11) and Roselia ->
+  **Roserade** with a Shiny Stone (sub-batch 12) have their `item_req` and stone text back; their `item_evo` calls needed no change. The
+  test uses the real stones. Budew -> Roselia and Chingling -> Chimecho complete those families (Chimecho was alone since sub-batch 13).
+  - **Nacho's Ralts line**: Nacho's `add_family` joins the 3.9.1 family, now `ralts, kirlia, gardevoir, gallade, mega_gardevoir, mega_gallade`.
+    `get_highest_evo` (the Rare Candy / Master Ball path) skips the Megas and needs the last name as a registered joker. For a Pokermon
+    Ralts with Nacho on, that was `j_poke_gallade`, missing until now, so it resolved to nothing. Now Gallade or Gardevoir, as for Nacho's own
+    Ralts (`j_nacho_gallade` / `j_nacho_gardevoir`).
+- **Ported here, not in batch 17** (both small and self-contained):
+  - **The DNA Seal** (seals/seals1.js, 3.9.1 seals1.lua; index.js now builds new seals after data.js's): a played hand of exactly 1 card with
+    it makes a Sealless copy of that card in hand ("Copied!", `playing_card_added`). Each Deoxys in a forme adds to the copy, permanently:
+    Attack +X0.25 Mult (`perma_x_mult`), Defense +$2 held at end of round (`perma_h_dollars`), Speed +40 Chips (`perma_bonus`). Never in a pool.
+  - **The Meteorite** (consumables/mart391.js, 3.9.1 05_mart_specific.lua): a reusable Spectral held item. Using it destroys 1 random card
+    left in the deck (seed 'meteor') and turns the selected (else the leftmost) Deoxys into its forme. The forme cycles Attack -> Defense ->
+    Speed -> Normal on every shop reroll, and it is usable again at the end of the round. It is a hidden Planet soul card (`soul_rate` 0.2)
+    while you have a Deoxys (3.9.1 `in_pool`), and a pack lets you keep it (`saveable`).
+  - Deoxys's forme floats over its card (3.9.1 `set_sprites`: the Gen 3 sheet's {5,3} / {7,3} / {9,3}; Normal is its own {3,3}).
+    `ui.js face()` draws it from `systems/anim.js DEOXYS_SOULS`, not from the joker file: the 3.2.1 fixtures serve an old one.
+- **Jirachi's Copy / Negging forms**: both were already in the port. The original 3.2.1 port defined `jirachi_copy` and `jirachi_negging` in full (an
+  intended-design fix: the owner wants them live). 3.9.1 still writes both and never registers them: they are not in pokejokers_13's `list`
+  nor in its Jirachi family. Checked against 3.9.1: the same config and behaviour (3.9.1's `poke_negative_edition_rate` is our
+  `negative_edition_rate`), and they now take 3.9.1's text (spec `loc_extra`).
+  - **The Wish Pack is unchanged**, because 3.9.1's doesn't offer them either. Its 5 wishes are banker / booster / power / copy / fixer.
+    3.9.1's "copy" wish (`c_poke_fake_copy`) grants **Jirachi Invis**, not `jirachi_copy`. `c_poke_fake_negging` is registered but not in the
+    pack's list; in 3.9.1 its `change_form` targets the unregistered `jirachi_negging`, so it does nothing there. Ours works, because the port
+    registers the form. The test fires both forms and checks the pack offers neither.
+- **Seams / shared changes**:
+  - Engine `run.js reroll_shop`: with mods on, mod consumables see `reroll_shop` too, as Steamodded's calculate_context does (the Meteorite).
+    Base-game consumables don't calculate, so vanilla runs are unchanged.
+  - Engine `core.js`: Steamodded's `perma_h_dollars`. It is added to a held card's end-of-round dollars (`get_h_dollars`) and kept through
+    `set_ability` like `perma_x_mult`. Only a mod sets it, so vanilla is unchanged.
+  - `systems/rules.js`: `reset_bronzo_card`; `can_reserve` keeps a `saveable` consumable from a pack (3.9.1 `can_save_consumable`). That
+    covers the Meteorite; the Megastone already had its own name check.
+  - Generator (`tools/micatro/gen_pokermon_391_overlay.mjs`) and index.js: `loc_extra` can name `labels` entries (the DNA Seal's badge).
+  - The spec's `loc_extra` adds the Deoxys forme texts, the Jirachi Copy / Negging texts, Other.poke_dna_seal_seal, Other.holding_other,
+    Spectral.c_poke_meteorite, the four `poke_*_forme` words and labels.poke_dna_seal_seal.
+- **Deviations / kept quirks**:
+  - Shelgon's rounds count down at end of round and on scored Straights (`level_evo`), as the Lua; ours evolves at end of round (batch 6
+    timing).
+  - Clamperl's Ethereal Tag fires at the next `new_blind_choice`: the end of a pack, or the next Blind select. That is the engine's Tag
+    timing, the same as an Ethereal Tag from a skipped Blind.
+  - The Meteorite's floating sprite hiding while used, the DNA Seal's shader draw and `do_evolution_anim` are cosmetic: a "Transformed!"
+    status shows instead. Relicanth's `fossil_generate_ui` layout is not ported, as Lileep's (plain text lines).
+  - The DNA Seal adds `perma_x_mult` / `perma_h_dollars` from 0: Steamodded starts every card at 0, so the Lua's `or 1` never applies (as
+    Spinarak's perma_x_mult, batch 7).
+- **Add-ons**: Nacho ships its own Gallade line (see above). Neither Nacho nor Pokermon+ ships the others.
+- **Art**: no new art files.
+  - Every new joker draws its 3.9.1 card from the batch-5 sheets: `AtlasJokersBasicNatdex-391.png` and its Shiny twin, and Deoxys
+    `AtlasJokersBasicGen03-391.png` {2,3} with soul {3,3}.
+  - The Meteorite uses `AtlasConsumablesBasic-391.png` {5,7} with soul {6,7}; its 3.2.1 cell is empty, so `pokermon_391_data_test` skips it.
+  - The DNA Seal uses `AtlasStickersBasic-391.png` {6,1}.
+  - The test checks each joker crop and its Shiny twin, Deoxys's 4 forme souls (distinct), the Meteorite and the DNA Seal.
+- **Tests**: `micatro/tests/mods/pokermon_391_new_14_test.mjs` gives 6 passed / 41 failed on origin/main (9a00cd8f), 7 / 46 on sub-batch 13
+  (dfadc6d6), and 145 / 0 here.
+  - It fires every joker through real plays (packs opened and skipped, Tarots sold / used in packs, Straights, Blind select, discards), and
+    every evolution with the real items (Link Cable, Dawn Stone, Shiny Stone).
+  - It also fires the Flower + Roserade rule, the DNA Seal's copy and each forme's bonus, the Meteorite (reroll, use, reset, its tooltip
+    and sprite), Bronzor's card of the round, Jirachi Copy / Negging and the Wish Pack, and Nacho's Ralts `get_highest_evo`.
+  - It checks the overlay, the order, the pools (shop rarity pools, Legendary, one per family, the Gen 3 option), the families, the text and
+    the art.
+  - Updated for rev 11 and the dropped deferrals:
+    - `pokermon_391_new_11_test` (Kirlia's Dawn Stone is back, Gallade is in the family, Nacho's family order) and `pokermon_391_new_12_test`
+      (Roselia's Shiny Stone, Budew / Roserade in the family).
+    - `pokermon_391_new_13_test` (Chingling / Chimecho), `pokejokers_13` / `14` / `15` / `16_test` (22 / 8 / 15 / 25 defs).
+    - `pokermon_content_test` (3 seals), `pokermon_391_data_test` (rev 11; the Meteorite has no 3.2.1 cell), `modpin_test` and
+      `micatro_mod_version_pin_test` (rev 11).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
 - **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
 - **Batch 10b**: done (above). Nothing waits.
-- **New jokers** (sub-batches 11–15, 15b): sub-batches 11, 12 and 13 done (above). `new_deferred`: Kirlia -> Gallade and Roselia -> Roserade
-  (+ Budew -> Roselia), all sub-batch 14. Still to add: 57 from 3.9.1 (10 Gen 3, 24 other Pokémon, 11 Megas, 2 Jirachi wish forms,
-  7 non-Pokémon, 3 April Fools) + 9 from upstream main (15b).
+- **New jokers** (sub-batches 11–15, 15b): sub-batches 11, 12, 13 and 14 done (above). `new_deferred` is empty (Kirlia -> Gallade, Roselia ->
+  Roserade and Budew -> Roselia came in with sub-batch 14). Still to add: 41 from 3.9.1 (20 other Pokémon: sub-batch 15, 11 Megas,
+  7 non-Pokémon, 3 April Fools) + 9 from upstream main (15b). (The 2 Jirachi wish forms the old tally counted were already in the port:
+  sub-batch 14.)
 - **Batch 16** (Megas): deferred Lucario (Mega Lucario), Skarmory (Mega Skarmory). Shuckle's Mega Stone (`c_poke_berry_juice_mega`, batch 6) with it.
-- **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist).
+- **Batch 17** (non-Pokémon jokers): deferred Rival (Bitter Rival, Champion) and Mystery Egg (the Oologist). (The DNA Seal and the
+  Meteorite, once listed for it, came with Deoxys in sub-batch 14.)
 - **Kept by design** (no batch): Porygon-Z's `energies_used` counter, and the old state names (`energy_plus`, `scry_amount`,
   `extra_pocket_picks`, `negative_edition_rate`, `rotom_discount`).
 

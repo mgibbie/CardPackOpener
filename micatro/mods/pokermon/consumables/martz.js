@@ -26,7 +26,8 @@ function wish(key, shows) {
       for (const jirachi of G.jokers.cards) {
         if ((jirachi.name || jirachi.ability.name) === 'jirachi') {
           const to = typeof key === 'function' ? key() : key;
-          // (a form that isn't registered — jirachi_negging until pokejokers_13 defines it — fizzles)
+          // (a form that isn't registered fizzles: in 3.9.1 itself jirachi_negging is never registered, so its wish does
+          // nothing there; ours registers it, jokers/pokejokers_13.js)
           if (P_CENTERS[to]) change_form(jirachi, to, null, null);
           return;
         }
@@ -40,8 +41,8 @@ defineConsumables({
   fake_banker: wish('j_poke_jirachi_banker', 'j_poke_jirachi_banker'),
   fake_booster: wish('j_poke_jirachi_booster', 'j_poke_jirachi_booster'),
   fake_power: wish('j_poke_jirachi_power', 'j_poke_jirachi_power'),
-  // j_poke_jirachi_negging is written but never registered (pokejokers_13 plan); the card isn't in the Wish Pack either
-  // (3.9.1 gives it no info_queue entry).
+  // j_poke_jirachi_negging is written but never registered by the Lua (ours registers it: jokers/pokejokers_13.js); the card
+  // isn't in the Wish Pack (3.9.1 neither), and 3.9.1 gives it no info_queue entry.
   fake_negging: wish('j_poke_jirachi_negging'),
   fake_copy: wish('j_poke_jirachi_invis', 'j_poke_jirachi_invis'),
   fake_fixer: wish('j_poke_jirachi_fixer', 'j_poke_jirachi_fixer'),

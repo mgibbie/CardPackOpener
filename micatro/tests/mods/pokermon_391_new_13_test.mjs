@@ -94,7 +94,7 @@ sec(() => {
   ok(fam('cacturne') === '["cacnea","cacturne"]' && fam('swablu') === '["swablu","altaria"]' && fam('crawdaunt') === '["corphish","crawdaunt"]'
     && fam('claydol') === '["baltoy","claydol"]' && fam('lileep') === '["lileep","cradily"]' && fam('armaldo') === '["anorith","armaldo"]'
     && fam('banette') === '["shuppet","banette"]', 'families: the 7 lines');
-  ok(fam('chimecho') === '["chimecho"]', 'family: Chimecho without Chingling (yet)', poke_get_family_list('chimecho'));
+  ok(fam('chimecho') === '["chingling","chimecho"]', 'family: Chingling / Chimecho (Chingling: sub-batch 14)', poke_get_family_list('chimecho'));
 });
 sec(() => {
   // Pools: in_pool + pool_filter; the shop's rarity pools

@@ -479,11 +479,11 @@ const blinds = [];
 // (3.9.1 names its consumable sets poke_item / poke_energy: their entries go to our canonical Item / Energy sets)
 const LOC_SET = { poke_item: 'Item', poke_energy: 'Energy' };
 for (const [k, d] of Object.entries(D391.loc)) {
-  if (k === 'dictionary' || k === 'v_dictionary') continue;
+  if (k === 'dictionary' || k === 'v_dictionary' || k === 'labels') continue;
   const set = LOC_SET[k] || k;
   Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 }
-for (const k of ['dictionary', 'v_dictionary']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
+for (const k of ['dictionary', 'v_dictionary', 'labels']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
 for (const f of DATA.groups.blinds) for (const item0 of listOf(f)) {
   const ren = D391.blinds[item0.key];
   const item = ren ? { ...item0, ...ren } : item0;
@@ -496,6 +496,8 @@ for (const f of DATA.groups.seals) for (const item of listOf(f)) {
   const c = simpleCenter('seals', 'poke_', 'Seal', item, f.file);
   seals.push(c);
 }
+// (3.9.1's DNA Seal, Deoxys's: new-jokers sub-batch 14; seals/seals1.js carries its static data)
+for (const { item, file } of newDefs('seals', 'seals')) seals.push(simpleCenter('seals', 'poke_', 'Seal', item, file));
 
 const stickers = [];
 for (const f of DATA.groups.stickers) for (const item of listOf(f)) {
@@ -626,7 +628,11 @@ export const POKERMON = registerMod({
   // 10 = new-jokers sub-batch 13: the 19 jokers of 3.9.1's pokejokers_12 (Cacnea / Cacturne, Swablu / Altaria, Zangoose,
   // Seviper, Corphish / Crawdaunt, Baltoy / Claydol, Lileep / Cradily, Anorith / Armaldo, Kecleon, Shuppet / Banette, Tropius,
   // Chimecho) join the pools; Chimecho's free Vouchers; an extinct food joker fires joker_type_destroyed (SMODS.destroy_cards).
-  contentRev: 10,
+  // 11 = new-jokers sub-batch 14: the 14 jokers of 3.9.1's pokejokers_13-16 (Clamperl / Huntail / Gorebyss, Relicanth,
+  // Bagon / Shelgon / Salamence, Deoxys, Budew, Roserade, Chingling, Bronzor / Bronzong, Gallade) join the pools; Kirlia -> Gallade
+  // (Dawn Stone), Budew -> Roselia -> Roserade (Shiny Stone), Chingling -> Chimecho; the DNA Seal and the Meteorite; Bronzor's
+  // card of the round.
+  contentRev: 11,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

@@ -1775,7 +1775,15 @@ function reroll_shop() {
     emit('shop_rerolled', {});
   });
   G.E_MANAGER.add_event(() => {
-    G.E_MANAGER.add_event(() => { for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ reroll_shop: true })); });
+    G.E_MANAGER.add_event(() => {
+      for (const j of G.jokers.cards.slice()) mod_context_effect(j, j.calculate_joker({ reroll_shop: true }));
+      // Steamodded: mod consumables see reroll_shop too (Pokermon 3.9.1's Meteorite cycles its forme); base-game ones don't calculate.
+      if (ACTIVE_MODS.length) {
+        for (const c of G.consumeables.cards.slice()) {
+          if (c.config.center.mod && c.config.center.calculate) mod_context_effect(c, c.calculate_joker({ reroll_shop: true }));
+        }
+      }
+    });
   });
   if (ACTIVE_MODS.length) callHook('reroll_shop'); // (Lua G.FUNCS.reroll_shop wraps: BETMMA's 4D Boosters / 4D Vouchers / Reroll Aisle)
 }
