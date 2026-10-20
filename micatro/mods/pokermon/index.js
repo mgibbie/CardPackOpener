@@ -88,7 +88,7 @@ import { CHALLENGES } from './challenges.js';
 import { SLEEVES } from './sleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg } from './systems/utils.js';
-import { family_win_keys } from './systems/evolution.js';
+import { family_win_keys, set_family } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 
 /**
@@ -116,9 +116,7 @@ const ATLAS_FILES = {
   placeholder_deck: ['placeholder_deck.png'],
   placeholder_item: ['placeholder_item.png'],
   placeholder_sleeve: ['placeholder_sleeve.png'],
-  // Micatro-made (Pokermon never shipped Hisuian Qwilfish art): + its shiny twin, named like the Natdex sheets
-  hisuian_qwilfish: ['hisuian_qwilfish.png'],
-  hisuian_qwilfishShiny: ['hisuian_qwilfishShiny.png'],
+  // (Hisuian Qwilfish draws 3.9.1's card since new-jokers sub-batch 15: AtlasJokersBasicGen02 {2,5}; the Micatro-made card is retired)
   unergy: ['unergy.png'],
   unitem: ['unitem.png'],
   // (the Unown Swarm's strips: SWARM_STRIPS below, tiled)
@@ -419,6 +417,17 @@ function simpleCenter(kind, prefix, set, data_item, file) {
 const centers = [];
 const dataJokerNames = new Set();
 for (const f of DATA.groups.jokers) for (const item of listOf(f)) { dataJokerNames.add(item.name); centers.push(jokerCenter(item, f.file)); }
+// Jokers Pokermon 3.9.1 adds (the new-jokers stack, sub-batch 11+: data391.js new_jokers): built from their whole 3.9.1
+// static data + the definition in jokers/<file>.js, each inserted after the joker before it in 3.9.1's file order (so
+// the pools and the collection follow 3.9.1's order); their 3.9.1 families replace / join the 3.2.1 family table.
+for (const [name, { item, file, after }] of Object.entries(D391.new_jokers || {})) {
+  dataJokerNames.add(name);
+  const c = jokerCenter(item, file);
+  const at = centers.findIndex((x) => x.key === 'j_poke_' + after);
+  if (at < 0) throw new Error(`pokermon: new joker '${name}' comes after '${after}', which isn't registered`);
+  centers.splice(at + 1, 0, c);
+}
+for (const f of D391.families || []) set_family(f);
 // Jokers the 3.2.1 Lua writes but never returns from its file (e.g. Jirachi's copy / negging forms,
 // Hisuian Qwilfish / Overqwil) aren't in data.js: a port defines them in full — static fields (pos, config,
 // rarity, cost, stage, ptype, gen, atlas as the Lua names it, ...) plus behaviour — and jokerCenter builds
@@ -468,11 +477,11 @@ const blinds = [];
 // (3.9.1 names its consumable sets poke_item / poke_energy: their entries go to our canonical Item / Energy sets)
 const LOC_SET = { poke_item: 'Item', poke_energy: 'Energy' };
 for (const [k, d] of Object.entries(D391.loc)) {
-  if (k === 'dictionary' || k === 'v_dictionary') continue;
+  if (k === 'dictionary' || k === 'v_dictionary' || k === 'labels') continue;
   const set = LOC_SET[k] || k;
   Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 }
-for (const k of ['dictionary', 'v_dictionary']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
+for (const k of ['dictionary', 'v_dictionary', 'labels']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
 for (const f of DATA.groups.blinds) for (const item0 of listOf(f)) {
   const ren = D391.blinds[item0.key];
   const item = ren ? { ...item0, ...ren } : item0;
@@ -485,6 +494,8 @@ for (const f of DATA.groups.seals) for (const item of listOf(f)) {
   const c = simpleCenter('seals', 'poke_', 'Seal', item, f.file);
   seals.push(c);
 }
+// (3.9.1's DNA Seal, Deoxys's: new-jokers sub-batch 14; seals/seals1.js carries its static data)
+for (const { item, file } of newDefs('seals', 'seals')) seals.push(simpleCenter('seals', 'poke_', 'Seal', item, file));
 
 const stickers = [];
 for (const f of DATA.groups.stickers) for (const item of listOf(f)) {
@@ -518,6 +529,9 @@ for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
 }
 
 // --------------------------------------------------------------------- hooks
+/** Kecleon's update for every Kecleon in the joker row (its type follows the joker to its right). */
+// (through its center: the 3.2.1 test fixtures serve an older joker file)
+const sync_kecleon = () => { if (G.jokers) for (const c of G.jokers.cards.slice()) { const mc = c.config.center; if (mc.key === 'j_poke_kecleon' && mc.update) mc.update(mc, c); } };
 const hooks = {
   init_game_object(GAME) { init_game_object(GAME); RB.init_game_object(GAME); },
   start_run() { install_scry(); },
@@ -525,13 +539,17 @@ const hooks = {
   blind_on_deck: RB.blind_on_deck,
   new_round: RB.new_round,
   shop_start: RB.shop_start,
-  emplace: RB.emplace,
+  // (Kecleon takes the type of the joker to its right: its Lua update runs every frame; ours also when the joker row changes)
+  emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
+  reordered(area) { if (area === G.jokers) sync_kecleon(); },
   sell_card: RB.sell_card,
   pool_filter,
   create_card: rules.create_card,
   set_cost: rules.set_cost,
+  get_pack: rules.get_pack, // (Drampa: shop packs Jumbo or better)
   find_joker_alias: rules.find_joker_alias,
   straight_min: rules.straight_min,
+  poker_hand_cards: rules.poker_hand_cards,
   flush_min: rules.flush_min,
   splash: rules.splash,
   is_face: rules.is_face,
@@ -543,7 +561,7 @@ const hooks = {
   can_reserve: rules.can_reserve,
   calculate: rules.calculate,
   add_to_deck: shiny_hooks.add_to_deck,
-  card_removed: shiny_hooks.card_removed,
+  card_removed(card) { const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
   end_round: shiny_hooks.end_round,
   edition_weight(w, type) {
@@ -588,6 +606,8 @@ export const POKERMON = registerMod({
   // Pokermon 3.9.1 in batches (PORTING.md "Pokermon 3.9.1 upgrade"): the content is still the 3.2.1 port plus the
   // 3.9.1 static data taken so far (data391.js) + the reworked files (batch 6: pokejokers_01-08) — the other reworks
   // and the new content come in the later batches.
+  // (Sub-batch 15b took 9 jokers from upstream main, "3.9.1-1016a", but nothing else from it: the version stays the 3.9.1 tag and
+  // contentRev counts them. The pin reads "3.9.1 (rev 13)"; PORTING.md "New jokers, sub-batch 15b".)
   version: '3.9.1',
   // Our behaviour counter (mods/pins.js): bump it with every change to how Pokermon plays — saved runs and replays
   // recorded on the old rules then warn before they re-simulate. 1 = the 2026-10-18/19 house rules (Deino /
@@ -601,7 +621,25 @@ export const POKERMON = registerMod({
   // Miracle Seed, Heavy-Duty Boots, the Debris deck / sleeve; the 16 Hazard / Seed / quantum jokers off hold.
   // 7 = batch 10b, the Unown rework (Unown / Unown Swarm never in a pool, SMODS.destroy_cards, Ruins of Alph's Unown by
   // SMODS.add_card, Unown's 3.9.1 card) and the Wish Pack (3 random unused wishes, no Master Ball; change_form wishes).
-  contentRev: 7,
+  // 8 = new-jokers sub-batch 11: the 26 jokers of 3.9.1's pokejokers_09 / 10 (Wurmple, Seedot, Taillow, Wingull, Ralts, Surskit,
+  // Slakoth, Nincada, Makuhita lines, Skitty) join the pools; Wingull's rank / Skitty's type per round; duplicate-rank Straights.
+  // 9 = new-jokers sub-batch 12: the 15 jokers of 3.9.1's pokejokers_11 (Delcatty, Sableye, Meditite / Medicham, Plusle, Minun,
+  // Volbeat, Illumise, Roselia, Carvanha / Sharpedo, Wailmer / Wailord, Torkoal, Spinda) join the pools; Skitty -> Delcatty (Moon
+  // Stone); Minun's $1 shop discount.
+  // 10 = new-jokers sub-batch 13: the 19 jokers of 3.9.1's pokejokers_12 (Cacnea / Cacturne, Swablu / Altaria, Zangoose,
+  // Seviper, Corphish / Crawdaunt, Baltoy / Claydol, Lileep / Cradily, Anorith / Armaldo, Kecleon, Shuppet / Banette, Tropius,
+  // Chimecho) join the pools; Chimecho's free Vouchers; an extinct food joker fires joker_type_destroyed (SMODS.destroy_cards).
+  // 11 = new-jokers sub-batch 14: the 14 jokers of 3.9.1's pokejokers_13-16 (Clamperl / Huntail / Gorebyss, Relicanth,
+  // Bagon / Shelgon / Salamence, Deoxys, Budew, Roserade, Chingling, Bronzor / Bronzong, Gallade) join the pools; Kirlia -> Gallade
+  // (Dawn Stone), Budew -> Roselia -> Roserade (Shiny Stone), Chingling -> Chimecho; the DNA Seal and the Meteorite; Bronzor's
+  // card of the round.
+  // 12 = new-jokers sub-batch 15: the 18 jokers of 3.9.1's pokejokers_18-32 (Munna / Musharna, the Klink and Axew lines,
+  // Bunnelby / Diggersby, Drampa, the Smoliv line, Bramblin / Brambleghast, Rellor / Rabsca) join the pools; Drampa's Jumbo packs;
+  // Hisuian Qwilfish draws 3.9.1's card; Steamodded counts every consumable set's usage (Rellor).
+  // 13 = new-jokers sub-batch 15b: 9 jokers upstream added on main after 3.9.1 (InertSteak/Pokermon main @ af0b656, "3.9.1-1016a":
+  // Lotad / Lombre / Ludicolo, Mawile, Electrike / Manectric, Cryogonal, Greavard / Houndstone) join the pools; the Lotad line's
+  // beat (G.GAME.poke_beat 2 <-> 4 after every hand). `version` stays '3.9.1': only those 9 jokers come from main (PORTING.md).
+  contentRev: 13,
   // Pokermon 3.9.1's Steamodded contexts (setting_ability, money_altered, drawing_cards, scaling_card, ...) and
   // Blind:calculate reach this mod's content (js/engine/smods.js). 3.2.1 content reads none of them: no change.
   smods_seams: true,

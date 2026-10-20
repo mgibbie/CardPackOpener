@@ -9,7 +9,7 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 
 const FILE_JOKERS = ['wugtrio', 'annihilape', 'farigiraf', 'dudunsparce', 'kingambit'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 5 pokejokers_33 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_33.lua'].length === 5, 'defs: 5 from pokejokers_33.lua');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_33.lua'].length === 7, 'defs: 7 from pokejokers_33.lua (+ Greavard / Houndstone from upstream main, sub-batch 15b)');
 
 // ---------------------------------------------------------------- Wugtrio
 {

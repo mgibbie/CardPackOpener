@@ -19,7 +19,7 @@ const toShop = () => { winRound(); act({ type: 'cash_out' }); };
 const FILE_JOKERS = ['mantyke', 'weavile', 'magnezone', 'lickilicky', 'rhyperior', 'tangrowth', 'electivire', 'magmortar', 'togekiss', 'yanmega',
   'leafeon', 'glaceon', 'gliscor', 'mamoswine', 'porygonz', 'probopass', 'dusknoir', 'froslass', 'rotom', 'rotomh', 'rotomw', 'rotomf', 'rotomfan', 'rotomm'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 24 pokejokers_16 jokers ported');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 24, 'defs: 24 from pokejokers_16.lua');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 25, 'defs: 25 from pokejokers_16.lua (24 + 1 new in 3.9.1: new-jokers sub-batch 14)');
 
 // ---------------------------------------------------------------- Mantyke
 {

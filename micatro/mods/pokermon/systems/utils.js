@@ -15,7 +15,7 @@ import {
   G, P_CENTERS, P_CARDS, P_CARDS_LIST, Card, copy_table, emit, card_eval_status_text, play_sound, localize,
   pseudorandom, pseudoseed, pseudorandom_element, pseudoshuffle, ease_dollars, draw_card,
   create_card as core_create_card, create_playing_card, poll_edition, find_joker, probability_vars, probability_roll,
-  quantum_enhancements, copy_card,
+  quantum_enhancements, copy_card, attention_text,
 } from '../../../js/engine/core.js';
 import { playing_card_joker_effects } from '../../../js/engine/jokers.js';
 import { calculate_context } from '../../../js/engine/run.js';
@@ -101,6 +101,8 @@ export function smods_create_card(t) {
   // SMODS: playing cards (set Base / Enhanced) default to G.hand.
   const area = t.area || (playing ? G.hand : t.set === 'Joker' ? G.jokers : G.consumeables);
   const card = core_create_card(t.set || (t.key && P_CENTERS[t.key] && P_CENTERS[t.key].set) || 'Joker', area, t.legendary, t.rarity, t.skip_materialize, t.soulable, t.key || undefined, t.key_append);
+  // (SMODS: a playing card's `rank` / `suit` fix its front; the rest of it is rolled)
+  if (playing && (t.rank || t.suit)) change_base(card, t.suit, t.rank);
   if (t.no_edition && card.edition) card.set_edition(null, true, true);
   if (t.edition) card.set_edition(t.edition, true, true);
   if (t.enhancement) card.set_ability(P_CENTERS[t.enhancement]);
@@ -132,6 +134,13 @@ export function add_card(t) {
   card.add_to_deck();
   (t.area || (playing ? G.hand : card.ability.set === 'Joker' ? G.jokers : G.consumeables)).emplace(card);
   return card;
+}
+
+/** pokermon.add_playing_card(t, no_joker_effect) (3.9.1 pokeutils.lua): SMODS.add_card + the playing_card_added effects. */
+export function add_playing_card(t, no_joker_effect) {
+  const playing_card = add_card(t);
+  if (!no_joker_effect) playing_card_joker_effects([playing_card]);
+  return playing_card;
 }
 
 /**
@@ -536,6 +545,14 @@ export function poke_change_poli_suit() {
     G.GAME.poke_poli_suit = suits[(i + 1) % suits.length];
   } else G.GAME.poke_poli_suit = 'Hearts';
 }
+/**
+ * Lotad line: the hand size it pays on, G.GAME.poke_beat, swaps 2 <-> 4 after every scored hand (upstream main pokermon.change_beat,
+ * after 3.9.1: sub-batch 15b; unset = 2, the first swap makes it 4). Called with the Poli suit from systems/rules.js calculate.
+ */
+export function poke_change_beat() {
+  if (G.GAME.poke_beat) G.GAME.poke_beat = G.GAME.poke_beat === 2 ? 4 : 2;
+  else G.GAME.poke_beat = 4;
+}
 
 /** G.C colour names Pokermon returns (kept as strings; the renderer maps them). */
 export const C = {
@@ -585,6 +602,72 @@ export function get_poke_target_card_ranks(seed, num, _default, use_deck) {
 export function add_target_cards_to_vars(vars, targets) {
   for (const t of targets) vars.push(localize(t.value || 'Ace', 'ranks'));
 }
+/**
+ * Pokermon 3.9.1 pokermon.get_target_card_suit(seed, use_deck, default, limit_suits) (pokefunctions.lua; the Wurmple
+ * line's Nature): [{suit}] — the suit of a random deck card of an allowed suit (not suitless, not Wild), else the
+ * default; without use_deck a random allowed suit. (limit_suits omitted = SMODS.Suits: the four base suits here.)
+ */
+export function get_target_card_suit(seed, use_deck, _default, limit_suits) {
+  const suit = _default || 'Spades';
+  const allowed_suits = Array.isArray(limit_suits) ? limit_suits : ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+  const valid_cards = [];
+  if (!G.playing_cards) return [{ suit }];
+  if (use_deck) {
+    for (const v of G.playing_cards) {
+      if (!has_no_suit(v) && !has_any_suit(v)) {
+        for (const y of allowed_suits) if (v.is_suit(y)) { valid_cards.push(v); break; }
+      }
+    }
+    if (valid_cards.length > 0) {
+      const [picked] = pseudorandom_element(valid_cards, pseudoseed(seed));
+      return [{ suit: picked.base.suit }];
+    }
+    return [{ suit }];
+  }
+  const [picked] = pseudorandom_element(allowed_suits, pseudoseed(seed));
+  return [{ suit: picked }];
+}
+/** Pokermon 3.9.1 pokermon.get_consumeables(set) (pokeutils.lua): the consumables held (joker + consumable areas). */
+export function get_consumeables(set) {
+  const out = [];
+  if (!G.jokers || !G.consumeables) return out;
+  for (const area of [G.jokers, G.consumeables]) {
+    for (const v of area.cards) if (v.ability.consumeable && !(set && v.ability.set !== set)) out.push(v);
+  }
+  return out;
+}
+
+/**
+ * Pokermon 3.9.1 pokermon.get_target_card_enhancements(seed, num, options) (pokefunctions.lua; Spinda's Enhance Nature):
+ * `num` distinct enhancement keys, each picked from what's left of `options` (default the 7 base enhancements).
+ */
+export function get_target_card_enhancements(seed, num, options) {
+  const enhancements = [];
+  const enhance_options = options || ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm_steel', 'm_gold', 'm_lucky'];
+  for (let i = 1; i <= num; i++) {
+    const [enhancement] = pseudorandom_element(enhance_options, pseudoseed(seed));
+    enhancements.push(enhancement);
+    const j = enhance_options.indexOf(enhancement);
+    if (j >= 0) enhance_options.splice(j, 1);
+  }
+  return enhancements;
+}
+/** Pokermon 3.9.1 pokermon.find_playing_card(findFunc, findArea) (pokeutils.lua): the cards of findArea (default the deck) that match. */
+export function find_playing_card(findFunc, findArea) {
+  return (findArea || G.deck.cards).filter((v) => findFunc(v));
+}
+/** Pokermon 3.9.1 pokermon.get_depleted(find_func) (pokeutils.lua): no card left in the deck matches (false outside a round). */
+export function get_depleted(find_func) {
+  if (!G.deck || !G.deck.cards) return false;
+  return !G.deck.cards.some((v) => find_func(v));
+}
+/** SMODS.get_enhancements(card): the card's enhancement keys, its own (an Enhanced center) and its quantum ones. */
+export function get_enhancements(card) {
+  const out = [];
+  if (card.config.center.set === 'Enhanced') out.push(card.config.center.key);
+  for (const k of quantum_enhancements(card)) if (!out.includes(k)) out.push(k);
+  return out;
+}
 
 // ------------------------------------------- SMODS hand-limit API (src/utils.lua)
 /** SMODS.change_play_limit(mod): most cards a played hand may hold (the 'play' action checks it). */
@@ -598,4 +681,51 @@ export function change_discard_limit(mod) {
   const sp = G.GAME.starting_params;
   sp.discard_limit = (sp.discard_limit ?? 5) + mod;
   G.hand.config.highlighted_limit = Math.max(sp.discard_limit, sp.play_limit ?? 5, 5);
+}
+
+// ------------------------------------------- Pokermon 3.9.1 pokeutils.lua (new-jokers sub-batch 15)
+/** pokermon.nope(card): the "Nope!" of a failed roll (Bunnelby / Diggersby). */
+export function poke_nope(card) {
+  G.E_MANAGER.add_event(() => {
+    attention_text(localize('k_nope_ex'));
+    G.E_MANAGER.add_event(() => { play_sound('tarot2', 0.76, 0.4); });
+    play_sound('tarot2', 1, 0.4);
+    card.juice_up(0.3, 0.5);
+  });
+}
+/**
+ * pokermon.get_upgraded_pack_center(center, into, from) (Drampa): the same pack one size up ('normal' -> 'jumbo' -> 'mega';
+ * never down), the same art number when it exists, else half of it rounded up, else _1. Undefined when there is none.
+ */
+export function get_upgraded_pack_center(center, into, from) {
+  if (!center || !center.key) return undefined;
+  if (!from) {
+    for (const pack_type of ['normal', 'jumbo', 'mega']) {
+      if (pack_type === into) return undefined; // never downgrade packs
+      if (center.key.includes(pack_type)) { from = pack_type; break; }
+    }
+    if (!from) return undefined;
+  }
+  const m = /_(\d)$/.exec(center.key);
+  const pack_num = m ? Number(m[1]) : 1;
+  const upgraded_key = center.key.split(from).join(into);
+  if (upgraded_key === center.key) return undefined;
+  return P_CENTERS[upgraded_key]
+    || P_CENTERS[upgraded_key.replace(/_\d$/, '_' + Math.ceil(pack_num / 2))] // prefer to match down evenly
+    || P_CENTERS[upgraded_key.replace(/_\d$/, '_1')];
+}
+/** pokermon.upgrade_shop_pack(pack, into): a shop pack becomes its upgraded twin (same slot). */
+export function upgrade_shop_pack(pack, into) {
+  const old_center = pack.config.center;
+  const new_center = get_upgraded_pack_center(old_center, into);
+  if (new_center && new_center !== old_center) {
+    pack.set_ability(new_center, true);
+    pack.set_cost();
+    pack.juice_up();
+    emit('card_changed', { card: pack.sort_id });
+  }
+}
+/** pokermon.upgrade_all_shop_packs(into): every pack in the shop. */
+export function upgrade_all_shop_packs(into) {
+  if (G.shop_booster && G.shop_booster.cards) for (const pack of G.shop_booster.cards.slice()) upgrade_shop_pack(pack, into);
 }

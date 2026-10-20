@@ -28,7 +28,8 @@ const sec = (f) => { try { f(); } catch (e) { ok(false, 'section threw: ' + (e &
 const asyncSec = async (f) => { try { await f(); } catch (e) { ok(false, 'section threw: ' + (e && e.message)); } };
 
 // ------------------------------------------------------------------ the overlay / pin
-ok(MODS.pokermon.contentRev === 7 && PINS.modPin('pokermon') === '3.9.1+r7', 'Pokermon contentRev 7 (pin 3.9.1+r7)', PINS.modPin('pokermon'));
+// (contentRev 7 since batch 10b; the new-jokers stack bumps it: sub-batch 11 is 8, pokermon_391_new_11_test.mjs)
+ok(MODS.pokermon.contentRev >= 7 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 7+ (pin 3.9.1+r7 since batch 10b)', PINS.modPin('pokermon'));
 ok((D391.rework_hold || []).length === 0, 'rework_hold is empty: Unown / Unown Swarm are reworked', D391.rework_hold);
 ok(['unown', 'unown_swarm', 'ruins_of_alph', 'jirachi'].every((n) => D391.reworked.includes(n)), 'Unown, Unown Swarm, Ruins of Alph, Jirachi are on 3.9.1');
 const deferred = Object.fromEntries(D391.rework_deferred || []);

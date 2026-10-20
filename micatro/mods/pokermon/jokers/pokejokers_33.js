@@ -1,15 +1,27 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_33.lua (Pokédex 961-990: Wugtrio -> Kingambit), 5 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_33.lua (Pokédex 961-990: Wugtrio -> Kingambit), 5 jokers + 2 from upstream main
+// after 3.9.1 (Greavard / Houndstone: at the end, new-jokers sub-batch 15b; static data: data391.js new_jokers, upstream: main).
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
 // On Pokermon 3.9.1 behaviour since batch 8 (no holds in this file).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, play_sound,
   change_shop_size, change_booster_limit, change_voucher_limit,
   defineJokers, type_tooltip, detailed, create_consumeable,
+  level_evo, change_discard_limit, get_depleted, has_no_rank,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { dig_calc } from './pokejokers_32.js';
 
 const FILE = 'pokemon/pokejokers_33.lua';
+
+/** Greavard / Houndstone (upstream main, sub-batch 15b): a played card whose rank is depleted from the deck, or with no rank, is retriggered. */
+function grave_retrigger(card, context) {
+  if (context.repetition && !context.end_of_round && context.cardarea === G.play) {
+    if (get_depleted((deck_card) => deck_card.get_id() === context.other_card.get_id()) || has_no_rank(context.other_card)) {
+      return { repetitions: card.ability.extra.retriggers };
+    }
+  }
+  return undefined;
+}
 
 defineJokers({
   // Wugtrio 961
@@ -142,6 +154,37 @@ defineJokers({
         }
       }
       return undefined;
+    },
+  },
+  // ---------------------------------------------------------------- upstream main, after 3.9.1 (new-jokers sub-batch 15b)
+  // Greavard 971: retriggers each played card whose rank is depleted (none left in the deck) or that has no rank; evolves into
+  // Houndstone in 5 rounds.
+  greavard: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push({ set: 'Other', key: 'depleted' });
+      return { vars: [center.ability.extra.retriggers, center.ability.extra.rounds] };
+    },
+    calculate(self, card, context) {
+      const r = grave_retrigger(card, context);
+      if (r) return r;
+      return level_evo(self, card, context, 'j_poke_houndstone');
+    },
+  },
+  // Houndstone 972: Greavard's retriggers; +2 discard selection limit.
+  houndstone: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push({ set: 'Other', key: 'depleted' });
+      return { vars: [center.ability.extra.retriggers, center.ability.extra.limit] };
+    },
+    calculate(self, card, context) {
+      return grave_retrigger(card, context);
+    },
+    add_to_deck(self, card) { change_discard_limit(card.ability.extra.limit); },
+    remove_from_deck(self, card) {
+      change_discard_limit(-card.ability.extra.limit);
+      if (!G.GAME.before_play_buffer) G.hand.unhighlight_all();
     },
   },
 }, FILE);

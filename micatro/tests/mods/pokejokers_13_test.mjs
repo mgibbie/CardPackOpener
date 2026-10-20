@@ -12,7 +12,7 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 const FILE_JOKERS = ['snorunt', 'glalie', 'luvdisc', 'beldum', 'metang', 'metagross', 'jirachi', 'jirachi_banker', 'jirachi_booster',
   'jirachi_power', 'jirachi_invis', 'jirachi_fixer', 'jirachi_copy', 'jirachi_negging'];
 ok(FILE_JOKERS.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 14 pokejokers_13 jokers ported (incl. jirachi_copy / jirachi_negging)');
-ok(STATUS.PORTED_FILES['pokemon/pokejokers_13.lua'].length === 14, 'defs: 14 from pokejokers_13.lua');
+ok(STATUS.PORTED_FILES['pokemon/pokejokers_13.lua'].length === 22, 'defs: 22 from pokejokers_13.lua (14 + 8 new in 3.9.1: new-jokers sub-batch 14)');
 ok(['jirachi_banker', 'jirachi_booster', 'jirachi_power', 'jirachi_invis', 'jirachi_fixer', 'jirachi_copy', 'jirachi_negging'].every((n) => P_CENTERS['j_poke_' + n].in_pool(P_CENTERS['j_poke_' + n]) === false),
   'the Jirachi wish forms never appear in a pool');
 ok(P_CENTERS.j_poke_jirachi_copy.config.extra.ptype === 'Metal' && P_CENTERS.j_poke_jirachi_copy.stage === 'Legendary' && P_CENTERS.j_poke_jirachi_copy.atlas === 'poke_AtlasJokersBasicGen03391', // (the 3.9.1 Gen03 sheet: index.js to391)

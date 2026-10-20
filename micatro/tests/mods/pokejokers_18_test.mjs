@@ -8,7 +8,7 @@ const { ok, done } = T();
 const key = (c) => c.config.center.key;
 const NAMES = ['pansage', 'simisage', 'pansear', 'simisear', 'panpour', 'simipour', 'roggenrola', 'boldore', 'gigalith', 'drilbur', 'excadrill'];
 ok(NAMES.every((n) => STATUS.PORTED.jokers.includes('j_poke_' + n) && !P_CENTERS['j_poke_' + n].unported), 'all 11 pokejokers_18 jokers ported');
-ok((STATUS.PORTED_FILES['pokemon/pokejokers_18.lua'] || []).length === 11, 'defs: 11 from pokejokers_18.lua');
+ok((STATUS.PORTED_FILES['pokemon/pokejokers_18.lua'] || []).length === 13, 'defs: 13 from pokejokers_18.lua (+ 2 new in 3.9.1, new-jokers sub-batch 15)');
 
 /** Use an evolution item on `j` (falls back to the item's own flag when the item isn't ported). */
 function useItem(j, item) {

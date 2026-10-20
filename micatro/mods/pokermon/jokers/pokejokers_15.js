@@ -1,4 +1,6 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_15.lua (Pokédex 421-450: Ambipom -> Lucario), 12 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_15.lua (Pokédex 421-450: Ambipom -> Lucario), 12 jokers + 3 new in 3.9.1.
+// The 3 jokers 3.9.1 added to this file (Chingling, Bronzor, Bronzong) are at the end (new-jokers sub-batch 14; static data:
+// data391.js new_jokers). Bronzor's card of the round: systems/rules.js reset_bronzo_card.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen, megas) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
@@ -6,7 +8,8 @@
 import {
   G, P_CENTERS, P_CARDS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, create_card,
   create_playing_card, playing_card_joker_effects, get_poker_hand_info,
-  defineJokers, type_tooltip, detailed, level_evo, faint_baby_poke, is_type, get_probability_vars, pseudorandom_probability,
+  defineJokers, type_tooltip, detailed, level_evo, scaling_evo, faint_baby_poke, is_type, get_probability_vars, pseudorandom_probability,
+  add_card,
   POKE_POOL_RULES,
 } from '../api.js';
 
@@ -23,6 +26,11 @@ function baby_xmult(self, card, context) {
   return undefined;
 }
 const end_of_round = (card, context) => context.end_of_round && !context.individual && !context.repetition && !card.debuff;
+/** Bronzor / Bronzong: the round's card (systems/rules.js reset_bronzo_card; Ace of Spades before one is picked). */
+const bronzo_round = () => (G.GAME && G.GAME.current_round) || {};
+const bronzo_rank = () => localize(bronzo_round().bronzo_rank || 'Ace', 'ranks');
+const bronzo_suit_key = () => bronzo_round().bronzo_suit || 'Spades';
+const bronzo_suit = () => localize(bronzo_suit_key(), 'suits_singular');
 /** Lopunny / Mega Lopunny: look at the top `scry` cards of the deck. */
 const scry = {
   add_to_deck(self, card) { G.GAME.scry_amount = (G.GAME.scry_amount || 0) + card.ability.extra.scry; },
@@ -321,6 +329,61 @@ defineJokers({
       if (context.individual && context.cardarea === G.hand && context.other_card.edition && !context.end_of_round) {
         if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
         return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 14)
+  // Chingling 433 (Baby): X0.75 Mult (faints unless only Babies are to its right); a Negative Justice at end of round;
+  // evolves into Chimecho in 2 rounds.
+  chingling: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'baby' });
+      if (detailed()) {
+        info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } });
+        info_queue.push(P_CENTERS.c_justice);
+      }
+      return { vars: [center.ability.extra.Xmult_minus, center.ability.extra.rounds] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        faint_baby_poke(self, card, context);
+        return { Xmult: card.ability.extra.Xmult_minus };
+      }
+      if (end_of_round(card, context)) {
+        G.E_MANAGER.add_event(() => { add_card({ set: 'Tarot', key: 'c_justice', edition: 'e_negative' }); });
+      }
+      return level_evo(self, card, context, 'j_poke_chimecho');
+    },
+  },
+  // Bronzor 436: scored cards of the round's suit give X1.3 Mult; evolves after 10 scored cards of the round's rank.
+  bronzor: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      const abbr = center.ability.extra;
+      return { vars: [abbr.Xmult_multi, bronzo_rank(), bronzo_suit(), Math.max(0, self.config.evo_rqmt - abbr.scored)], colours: ['SUITS.' + bronzo_suit_key()] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round) {
+        if (context.other_card.get_id() === G.GAME.current_round.bronzo_id) card.ability.extra.scored = card.ability.extra.scored + 1;
+        if (context.other_card.is_suit(G.GAME.current_round.bronzo_suit)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      return scaling_evo(self, card, context, 'j_poke_bronzong', card.ability.extra.scored, self.config.evo_rqmt);
+    },
+  },
+  // Bronzong 437: scored cards of the round's suit give X1.3 Mult; scored cards of the round's rank retrigger once.
+  bronzong: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      return { vars: [center.ability.extra.retriggers, center.ability.extra.Xmult_multi, bronzo_rank(), bronzo_suit()], colours: ['SUITS.' + bronzo_suit_key()] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(G.GAME.current_round.bronzo_suit)) {
+        return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      if (context.repetition && context.cardarea === G.play && !context.end_of_round && context.other_card.get_id() === G.GAME.current_round.bronzo_id) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
       }
       return undefined;
     },

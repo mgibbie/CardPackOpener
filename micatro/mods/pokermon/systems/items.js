@@ -19,6 +19,7 @@ import { juice_card_until } from '../../../js/engine/jokers.js';
 import { find_card, any, add_card } from './utils.js';
 import { poke_evolve, get_previous_evo } from './evolution.js';
 import { ease_poke_dollars } from './energy.js';
+import { addon_megas } from './precedence.js';
 
 const isTable = (x) => x !== null && typeof x === 'object';
 
@@ -131,7 +132,9 @@ export function poke_create_treasure(card, seed, megastone) {
 
 // ---------------------------------------------------------------- megas
 /** A joker the Megastone may target (has megas, or is a mega), skipping debuffed would-be megas. */
-const megaTarget = (poke) => (poke.config.center.megas || poke.config.center.rarity === 'poke_mega') && !(poke.debuff && poke.config.center.megas);
+// (+ add-on dedupe: a Pokermon joker that replaced an add-on duplicate has that joker's Megas — precedence.js addon_megas.)
+const hasMegas = (c) => !!(c.megas || addon_megas(c).length);
+const megaTarget = (poke) => (hasMegas(poke.config.center) || poke.config.center.rarity === 'poke_mega') && !(poke.debuff && hasMegas(poke.config.center));
 
 export function megastone_target() {
   if (G.jokers.highlighted && G.jokers.highlighted.length === 1 && megaTarget(G.jokers.highlighted[0])) return G.jokers.highlighted[0];
@@ -142,6 +145,11 @@ export function megastone_target() {
 /** Which mega a joker becomes (getMega: Charizard X leftmost / Y rightmost / random in between). */
 export function mega_for(target) {
   const c = target.config.center;
+  if (!c.megas) {
+    // An add-on's Megas of the duplicate this joker replaced (Nacho's Mega Gardevoir from Pokermon's Gardevoir): full keys.
+    const keys = addon_megas(c);
+    return keys.length > 1 ? pseudorandom_element(keys, pseudoseed('megastone_' + c.name))[0] : keys[0];
+  }
   let mega = c.megas[0];
   if (c.megas.length > 1) {
     if (c.getMega) mega = c.getMega(c, target);
@@ -173,7 +181,7 @@ export function megastone_use(stone) {
   const target = megastone_target();
   if (!target) return;
   let forced_key;
-  if (target.config.center.megas) {
+  if (hasMegas(target.config.center)) {
     forced_key = mega_for(target);
     stone.ability.extra.used_on = forced_key;
   } else {
@@ -207,7 +215,7 @@ export function megastone_remove_from_deck(stone) {
 }
 
 export function megastone_in_pool() {
-  if (G.jokers && G.jokers.cards) for (const poke of G.jokers.cards) if (poke.config.center.megas) return true;
+  if (G.jokers && G.jokers.cards) for (const poke of G.jokers.cards) if (hasMegas(poke.config.center)) return true;
   return false;
 }
 

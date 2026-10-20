@@ -76,7 +76,7 @@ defineEnhancements({
     in_pool() { return false; },
     calculate(self, card, context) {
       if (context.main_scoring && context.cardarea === G.play) {
-        // Roserade (a new 3.9.1 joker, not ported yet): 3 suits are enough.
+        // With Roserade (a new 3.9.1 joker, new-jokers sub-batch 14) 3 suits are enough.
         const suit_number = any(find_card('j_poke_roserade')) ? 3 : 4;
         if (poke_suit_check(context.scoring_hand, suit_number)) {
           let extra = 0;

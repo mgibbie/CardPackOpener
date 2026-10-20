@@ -1,4 +1,5 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_20.lua (Pokédex 571-600: Zoroark -> Ferrothorn), 11 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_20.lua (Pokédex 571-600: Zoroark -> Klang), 11 jokers + 2 new in 3.9.1
+// (Klink / Klang: at the end, new-jokers sub-batch 15; static data: data391.js new_jokers).
 // Line-for-line port of the behaviour; static data comes from data.js + data391.js (see ../PORTING.md).
 // On Pokermon 3.9.1 behaviour since batch 8, Ferroseed / Ferrothorn (the Hazard layer) since batch 10.
 // The Gothita line's Planet / Celestial discounts live in systems/rules.js (set_cost hook).
@@ -15,6 +16,25 @@ import { illusion_copy, illusion_update, illusion_set_ability, illusion_add_to_d
 const FILE = 'pokemon/pokejokers_20.lua';
 
 // ------------------------------------------------------------ shared bodies
+/** Klink / Klang text: $, cards per payout, cards left [n], $ left to evolve. */
+const klink_vars = (self, card) => {
+  const abbr = card.ability.extra;
+  return [abbr.money, abbr.to_draw, Math.max(0, abbr.to_draw - abbr.drawn), Math.max(self.config.evo_rqmt - abbr.totalEarned, 0)];
+};
+/** Klink / Klang (3.9.1, new-jokers sub-batch 15): count the cards drawn during the Blind (SMODS.drawn_cards = Micatro's
+ *  context.hand_drawn); every to_draw of them pays $money, counted toward evolution. */
+function klink_draw(card, context, seed) {
+  if (context.hand_drawn && !context.blueprint) {
+    card.ability.extra.drawn = card.ability.extra.drawn + context.hand_drawn.length;
+    if (card.ability.extra.drawn >= card.ability.extra.to_draw) {
+      const earned = ease_poke_dollars(card, seed, card.ability.extra.money * Math.floor(card.ability.extra.drawn / card.ability.extra.to_draw));
+      card.ability.extra.drawn = card.ability.extra.drawn % card.ability.extra.to_draw;
+      card.ability.extra.totalEarned = card.ability.extra.totalEarned + earned;
+      return { message: '$' + earned, colour: 'MONEY' };
+    }
+  }
+  return undefined;
+}
 /** Gothita line: re-run set_cost on every card (planet discounts change). */
 const goth_costs = {
   add_to_deck() { G.E_MANAGER.add_event(() => { for (const v of all_cards()) if (v.set_cost) v.set_cost(); }); },
@@ -183,5 +203,30 @@ defineJokers({
       return undefined;
     },
     ...hazard_layer,
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 15)
+  // Klink 599: $1 for every 12 cards drawn during the Blind; evolves after earning $8.
+  klink: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: klink_vars(self, card) };
+    },
+    calculate(self, card, context) {
+      const r = klink_draw(card, context, 'klink');
+      if (r) return r;
+      return scaling_evo(self, card, context, 'j_poke_klang', card.ability.extra.totalEarned, self.config.evo_rqmt);
+    },
+  },
+  // Klang 600: $1 for every 10 cards drawn during the Blind; evolves after earning $10.
+  klang: {
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: klink_vars(self, card) };
+    },
+    calculate(self, card, context) {
+      const r = klink_draw(card, context, 'klang');
+      if (r) return r;
+      return scaling_evo(self, card, context, 'j_poke_klinklang', card.ability.extra.totalEarned, self.config.evo_rqmt);
+    },
   },
 }, FILE);

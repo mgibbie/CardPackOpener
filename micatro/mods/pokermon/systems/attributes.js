@@ -14,6 +14,8 @@ export const POKE_ATTRIBUTES = [
   'round_evo', 'scaling_evo', 'item_evo', 'type_evo', 'trigger_evo', 'condition_evo',
   'starter', 'holding', 'item', 'types', 'volatile', 'energy', 'energy_count', 'energy_limit', 'ancient', 'foresight',
   'baby', 'nature', 'hazards', 'applies', 'drain',
+  // (upstream main after 3.9.1, sub-batch 15b: Greavard / Houndstone declare it; main's other new key, 'draw', waits for its jokers)
+  'deplete',
 ].map((key) => ({ key }));
 
 /**

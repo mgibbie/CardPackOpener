@@ -107,6 +107,7 @@ export const HOOKS = [
   'add_to_deck',        // (card, from_debuff) Card:add_to_deck ran (after the center's own add_to_deck)
   'empty_pool_default', // (key, _type) -> fallback center key for an empty pool
   'straight_min',       // (n, hand) -> min cards for a straight (vanilla 5, Four Fingers 4)
+  'poker_hand_cards',   // (cards) -> the cards get_poker_hand_info evaluates (Pokermon's Zangoose leaves its added cards out)
   'flush_min',          // (n, hand) -> min cards for a flush
   'flush_suits',        // (suits, hand) -> suits a flush can be made of
   'reset_game_globals', // (initial) per-round resets (vanilla: idol/mail/ancient/castle cards)

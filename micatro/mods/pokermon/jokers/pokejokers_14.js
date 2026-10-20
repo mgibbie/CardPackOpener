@@ -1,11 +1,13 @@
-// Pokermon 3.9.1 — pokemon/pokejokers_14.lua (Pokédex 391-420: Bidoof -> Floatzel), 6 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_14.lua (Pokédex 391-420: Bidoof -> Floatzel), 6 jokers + 2 new in 3.9.1.
+// The 2 jokers 3.9.1 added to this file (Budew, Roserade) are at the end (new-jokers sub-batch 14; static data: data391.js
+// new_jokers). Roserade also lets the Flower card score with 3 suits (enhancements/enhancement1.js).
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
 // gen) comes from data.js + data391.js. See ../PORTING.md.
 // On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
-  G, localize, create_card,
-  defineJokers, type_tooltip, scaling_evo, level_evo, ease_poke_dollars, poke_suit_check,
-  get_probability_vars, pseudorandom_probability,
+  G, P_CENTERS, localize, create_card,
+  defineJokers, type_tooltip, detailed, scaling_evo, level_evo, ease_poke_dollars, poke_suit_check,
+  get_probability_vars, pseudorandom_probability, faint_baby_poke, add_card, poke_is_odd,
 } from '../api.js';
 import { calculate_reroll_cost } from '../../../js/engine/core.js';
 
@@ -142,5 +144,43 @@ defineJokers({
       return { vars: [center.ability.extra.chips] };
     },
     calculate(self, card, context) { return buizel_calc(card, context); },
+  },
+  // ---------------------------------------------------------------- new in 3.9.1 (new-jokers sub-batch 14)
+  // Budew 406 (Baby): X0.75 Mult (faints unless only Babies are to its right); a Negative Miracle Seed at end of round;
+  // evolves into Roselia in 2 rounds.
+  budew: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'baby' });
+      if (detailed()) {
+        info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } });
+        info_queue.push(P_CENTERS.c_poke_miracleseed);
+      }
+      return { vars: [center.ability.extra.Xmult_minus, center.ability.extra.rounds] };
+    },
+    calculate(self, card, context) {
+      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
+        faint_baby_poke(self, card, context);
+        return { Xmult: card.ability.extra.Xmult_minus };
+      }
+      if (context.end_of_round && !context.individual && !context.repetition && !card.debuff) {
+        G.E_MANAGER.add_event(() => { add_card({ set: 'Item', key: 'c_poke_miracleseed', edition: 'e_negative' }); });
+      }
+      return level_evo(self, card, context, 'j_poke_roselia');
+    },
+  },
+  // Roserade 407 (Roselia's Shiny Stone evolution): the first scoring card of every hand, if Odd, is retriggered twice.
+  roserade: {
+    loc_vars(self, info_queue, center) {
+      type_tooltip(self, info_queue, center);
+      info_queue.push(P_CENTERS.m_poke_flower);
+      return { vars: [center.ability.extra.retriggers] };
+    },
+    calculate(self, card, context) {
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && context.other_card === context.scoring_hand[0] && poke_is_odd(context.other_card)) {
+        return { repetitions: card.ability.extra.retriggers };
+      }
+      return undefined;
+    },
   },
 }, FILE);

@@ -169,7 +169,10 @@ await loadMods(AVAILABLE.map((m) => m.id));
   // (3.2.1-era content reads none; Bunco's own stay_flipped is not opted in. Pokermon's 3.9.1 reworks read theirs: batch 6
   // Golduck setting_ability, Natu / Xatu poker_hand_changed; batch 7 Jirachi Banker modify_final_cashout; batch 8 Gimmighoul
   // money_altered; batch 10 the Hazard card playing_card_end_of_round.)
-  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,money_altered,modify_final_cashout,poker_hand_changed,playing_card_end_of_round', 'every shipped mod on: only the seam contexts the reworked Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
+  // (drawing_cards: Swellow, new-jokers sub-batch 11; modify_booster_card: Wailord, sub-batch 12; modify_scoring_hand: Zangoose,
+  // ante_change: Tropius, stay_flipped: Claydol, sub-batch 13; ending_booster: Clamperl / Huntail / Gorebyss, sub-batch 14;
+  // modify_hand: Axew / Fraxure / Haxorus, sub-batch 15)
+  ok(SEAM_CONTEXTS.filter((n) => wanted(n)).join() === 'setting_ability,modify_scoring_hand,money_altered,ante_change,modify_booster_card,drawing_cards,stay_flipped,modify_hand,ending_booster,modify_final_cashout,poker_hand_changed,playing_card_end_of_round', 'every shipped mod on: only the seam contexts the Pokermon 3.9.1 jokers read are wanted', SEAM_CONTEXTS.filter((n) => wanted(n)));
   fresh('SEAM_GATE');
   ok(wanted('money_altered') && wanted('setting_ability') && wanted('modify_weights') && wanted('resetting_card') && !wanted('create_shop_card'), 'seamtest on: exactly the contexts its code reads are wanted');
   fresh('SEAM_GATE2', ['seamtest', 'seamoff']);
