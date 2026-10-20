@@ -1,7 +1,7 @@
 // Pokermon pokejokers_14 (Bidoof -> Floatzel): every joker fired through real plays (act),
 // plus each evolution.
 //   node micatro/tests/mods/pokejokers_14_test.mjs
-import { T, start, hand, add, play, winRound, nextRound, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
+import { T, start, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { STATUS } from '../../mods/pokermon/index.js';
 
 const { ok, done } = T();
@@ -63,8 +63,14 @@ const toShop = () => { winRound(); act({ type: 'cash_out' }); };
   G.GAME.probabilities.normal = 1000;
   d0 = G.GAME.dollars;
   r = play(hand(['S_2', 'H_5', 'D_8', 'C_J']));
-  ok(G.GAME.dollars === d0 + 5 && G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Tarot', 'kricketune: $5 and (1 in 2) a Tarot', G.consumeables.cards.map(key));
+  ok(G.GAME.dollars === d0 + 4 && G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Tarot', 'kricketune: $4 and (1 in 2) a Tarot (Pokermon 3.9.1)', G.consumeables.cards.map(key));
   ok(statusMsgs(r.events).includes('+1 Tarot'), 'kricketune: "+1 Tarot" popup', statusMsgs(r.events));
+  G.consumeables.config.card_limit = 1;
+  clearHand();
+  d0 = G.GAME.dollars;
+  r = play(hand(['S_3', 'H_6', 'D_9', 'C_Q']));
+  ok(G.GAME.dollars === d0 + 4 && G.consumeables.cards.length === 1 && G.GAME.consumeable_buffer === 0 && statusMsgs(r.events).includes('$4') && !statusMsgs(r.events).includes('+1 Tarot'), 'kricketune: no Tarot without room, still $4 (Pokermon 3.9.1)', [G.consumeables.cards.map(key), statusMsgs(r.events)]);
+  G.consumeables.config.card_limit = 2;
   G.GAME.probabilities.normal = 1;
 }
 

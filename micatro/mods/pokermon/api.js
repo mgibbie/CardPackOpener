@@ -14,7 +14,7 @@ export {
 export { juice_card_until, playing_card_joker_effects } from '../../js/engine/jokers.js';
 export {
   get_poker_hand_info, evaluate_poker_hand, calculate_context, change_booster_limit, change_shop_size,
-  draw_from_deck_to_hand, end_consumeable, STATES,
+  draw_from_deck_to_hand, end_consumeable, STATES, add_booster_to_shop,
 } from '../../js/engine/run.js';
 export { change_voucher_limit } from '../../js/engine/run.js';
 export { opt, is_set, resolve_set, feature } from '../../js/mods/registry.js';

@@ -1,6 +1,7 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_14.lua (Pokédex 391-420: Bidoof -> Floatzel), 6 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_14.lua (Pokédex 391-420: Bidoof -> Floatzel), 6 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen) comes from data.js. See ../PORTING.md.
+// gen) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
   G, localize, create_card,
   defineJokers, type_tooltip, scaling_evo, level_evo, ease_poke_dollars, poke_suit_check,
@@ -95,7 +96,9 @@ defineJokers({
         if (context.joker_main && context.full_hand.length === 4) {
           if (poke_suit_check(context.full_hand, 4)) {
             const earned = ease_poke_dollars(card, 'kriketune', card.ability.extra.money);
-            if (pseudorandom_probability(card, 'kriketune', card.ability.extra.num, card.ability.extra.dem, 'kriketune')) {
+            // Pokermon 3.9.1: the Tarot needs consumable room (a full row still pays the $).
+            if (pseudorandom_probability(card, 'kriketune', card.ability.extra.num, card.ability.extra.dem, 'kriketune')
+              && G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
               G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
               return {
                 message: '$' + earned,

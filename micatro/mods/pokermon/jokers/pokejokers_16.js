@@ -1,6 +1,7 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_16.lua (Pokédex 451-480: Mantyke -> the Rotom forms), 24 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_16.lua (Pokédex 451-480: Mantyke -> the Rotom forms), 24 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, enhancement_gate) comes from data.js. See ../PORTING.md.
+// gen, enhancement_gate) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 // Also elsewhere: Rotom's Booster discount (systems/rules.js set_cost), Probopass's Stone = face
 // (rules.js is_face), Tangrowth's Wild-card debuff protection (rules.js set_debuff); the Rotom
 // forms are swapped by the machine items (consumables/zmachine).
@@ -9,7 +10,7 @@ import {
   create_card, copy_card, poll_edition, juice_card_until, play_sound, math_random, all_cards,
   defineJokers, type_tooltip, detailed, level_evo, faint_baby_poke, find_pokemon_type, is_type, has_enhancement,
   ease_poke_dollars, get_probability_vars, pseudorandom_probability, poke_add_shop_card, poke_convert_cards_to,
-  poke_vary_rank, juice_flip_table,
+  poke_vary_rank, juice_flip_table, add_card, POKE_POOL_RULES,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { P_TAGS } from '../../../js/engine/core.js';
@@ -19,6 +20,12 @@ const FILE = 'pokemon/pokejokers_16.lua';
 
 const end_of_round = (context) => context.end_of_round && !context.individual && !context.repetition;
 const room = () => G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit;
+/** $ paid during scoring (Pokermon 3.9.1): G.GAME.dollar_buffer holds it until the event queue runs. */
+function buffered_dollars(card, seed, amount) {
+  G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + amount;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  return ease_poke_dollars(card, seed, amount, true);
+}
 
 /** Every Rotom form: 1 in 2 chance to create an Item when a Booster Pack is opened (must have room). */
 function rotom_item(card, context) {
@@ -245,26 +252,21 @@ defineJokers({
       return { vars: [center.ability.extra.mult, center.ability.extra.mult_mod, center.ability.extra.Xmult, center.ability.extra.Xmult_mod] };
     },
     calculate(self, card, context) {
+      // Pokermon 3.9.1: Blueprint-compatible (it copies the score); no remove_triggered flag; scores only once it has gained.
       if (context.first_hand_drawn && !context.blueprint) {
-        card.ability.extra.remove_triggered = false;
-        juice_card_until(card, () => G.GAME.current_round.discards_used === 0 && !G.RESET_JIGGLES && !card.ability.extra.remove_triggered, true);
+        juice_card_until(card, () => G.GAME.current_round.discards_used === 0 && !G.RESET_JIGGLES, true);
       }
       if (context.pre_discard && !context.blueprint) {
         card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_mod;
-        card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
+        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'XMULT' });
       }
-      if (context.discard && !context.blueprint) {
-        if (G.GAME.current_round.discards_used === 0 && context.full_hand && context.full_hand.length === 1 && !card.ability.extra.remove_triggered) {
-          card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
-          card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
-          card.ability.extra.remove_triggered = true;
-          return { remove: true };
-        }
+      if (context.discard && !context.blueprint && G.GAME.current_round.discards_used === 0 && context.full_hand.length === 1) {
+        card.ability.extra.mult = card.ability.extra.mult + card.ability.extra.mult_mod;
+        card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'MULT' });
+        return { remove: true };
       }
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.joker_main) {
-          return { message: localize('poke_fire_blast_ex'), colour: 'XMULT', mult_mod: card.ability.extra.mult, Xmult_mod: card.ability.extra.Xmult };
-        }
+      if (context.joker_main && (card.ability.extra.mult > 0 || card.ability.extra.Xmult > 1)) {
+        return { message: localize('poke_fire_blast_ex'), colour: 'XMULT', mult_mod: card.ability.extra.mult, Xmult_mod: card.ability.extra.Xmult };
       }
       return undefined;
     },
@@ -300,12 +302,13 @@ defineJokers({
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       const [num, dem] = get_probability_vars(center, center.ability.extra.num, center.ability.extra.dem, 'yanmega');
-      return { vars: [center.ability.extra.mult, center.ability.extra.chips, num, dem] };
+      return { vars: [center.ability.extra.mult_mod, center.ability.extra.chip_mod, num, dem] };
     },
     calculate(self, card, context) {
       if (context.individual && !context.end_of_round && context.cardarea === G.play) {
         if (context.other_card.get_id() === 3 || context.other_card.get_id() === 6) {
-          return { mult: card.ability.extra.mult, chips: card.ability.extra.chips, card };
+          // (Pokermon 3.9.1 renamed mult / chips to mult_mod / chip_mod)
+          return { mult: card.ability.extra.mult_mod, chips: card.ability.extra.chip_mod, card };
         }
       }
       if (context.repetition && !context.end_of_round && context.cardarea === G.play) {
@@ -320,45 +323,31 @@ defineJokers({
   },
   // Leafeon 470
   leafeon: {
+    // Pokermon 3.9.1 (Eevee line rework): no hand size; triples every listed probability's numerator once a Lucky card
+    // has successfully triggered this round (G.GAME.poke_lucky_triggers, counted by the mod calculate: systems/rules.js).
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.h_size, center.ability.extra.h_mod, center.ability.extra.h_size_limit] };
+      if (detailed()) info_queue.push(P_CENTERS.m_lucky);
+      return { vars: [] };
     },
     calculate(self, card, context) {
-      if (context.cardarea === G.jokers && context.scoring_hand) {
-        if (context.before && card.ability.extra.h_size > 0) {
-          card.ability.extra.h_size = card.ability.extra.h_size - card.ability.extra.h_mod;
-          G.hand.change_size(-card.ability.extra.h_mod);
-          return { message: localize({ type: 'variable', key: 'a_handsize_minus', vars: [card.ability.extra.h_mod] }), colour: 'FILTER' };
-        }
-      }
-      if (context.individual && context.cardarea === G.play && context.other_card.lucky_trigger && card.ability.extra.h_size < card.ability.extra.h_size_limit) {
-        card.ability.extra.h_size = card.ability.extra.h_size + card.ability.extra.h_mod;
-        G.hand.change_size(card.ability.extra.h_mod);
-        return { message: localize({ type: 'variable', key: 'a_handsize', vars: [card.ability.extra.h_mod] }), colour: 'FILTER' };
+      if (context.mod_probability && G.GAME.poke_lucky_triggers && G.GAME.poke_lucky_triggers > 0 && !context.blueprint) {
+        return { numerator: context.numerator * 3 };
       }
       return undefined;
     },
-    add_to_deck(self, card) { G.hand.change_size(card.ability.extra.h_size); },
-    remove_from_deck(self, card) { G.hand.change_size(-card.ability.extra.h_size); },
   },
   // Glaceon 471
   glaceon: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      const [num, dem] = get_probability_vars(center, center.ability.extra.num, center.ability.extra.dem, 'glaceon');
-      return { vars: [num, dem] };
+      if (detailed()) info_queue.push(P_CENTERS.m_glass);
+      return { vars: [] };
     },
+    // Pokermon 3.9.1 (Eevee line rework): retrigger every played Glass card (no more Glass copies in the shop).
     calculate(self, card, context) {
-      if (context.reroll_shop && !context.blueprint) {
-        if (pseudorandom_probability(card, 'glaceon', card.ability.extra.num, card.ability.extra.dem, 'glaceon')) {
-          const card_to_copy = pseudorandom_element(G.deck.cards, pseudoseed('deckglaceon'))[0];
-          if (card_to_copy) {
-            const copy = copy_card(card_to_copy, null, null, G.playing_card);
-            copy.set_ability(P_CENTERS.m_glass, null, true);
-            poke_add_shop_card(copy, card);
-          }
-        }
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && has_enhancement(context.other_card, 'm_glass')) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
       }
       return undefined;
     },
@@ -403,11 +392,11 @@ defineJokers({
           let stoneglass = 0;
           for (const v of context.scoring_hand) if (stone_or_glass(v)) stoneglass = stoneglass + 1;
           if (stoneglass > 0) {
-            if (earn) return { mult: card.ability.extra.mult * stoneglass, dollars: ease_poke_dollars(card, '2mamoswine', card.ability.extra.money, true), card };
+            if (earn) return { mult: card.ability.extra.mult * stoneglass, dollars: buffered_dollars(card, '2mamoswine', card.ability.extra.money), card };
             return { mult: card.ability.extra.mult * stoneglass, card };
           }
         } else if (earn) {
-          return { dollars: ease_poke_dollars(card, '2mamoswine', card.ability.extra.money, true), card };
+          return { dollars: buffered_dollars(card, '2mamoswine', card.ability.extra.money), card };
         }
       }
       return undefined;
@@ -427,16 +416,15 @@ defineJokers({
         }
       }
       if (context.using_consumeable && context.consumeable.ability.set === 'Energy' && room()) {
-        let energy_key;
-        if (pseudorandom('porygonz') < 0.05) energy_key = 'c_poke_bird_energy';
+        // Pokermon 3.9.1: the Bird Energy roll is 1 in 256, and its key is then unused (Lua: SMODS.add_card{set =
+        // 'poke_energy'}), so a random Energy is always made; the roll still draws from 'porygonz'.
+        pseudorandom('porygonz');
         G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
         G.E_MANAGER.add_event(() => {
-          const _card = create_card('Energy', G.consumeables, null, null, null, null, energy_key, 'pory');
-          _card.add_to_deck();
-          G.consumeables.emplace(_card);
+          add_card({ set: 'Energy' });
           G.GAME.consumeable_buffer = 0;
         });
-        card_eval_status_text(card, 'extra', null, null, null, { message: localize('poke_plus_energy'), colour: 'pink' });
+        card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('poke_plus_energy'), colour: 'pink' });
       }
       return undefined;
     },
@@ -616,3 +604,7 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Pokermon 3.9.1: the Rotom forms are never in a pool (only the machines make them).
+const ROTOM_FORMS = ['j_poke_rotomh', 'j_poke_rotomw', 'j_poke_rotomf', 'j_poke_rotomfan', 'j_poke_rotomm'];
+POKE_POOL_RULES.push((self) => (self && ROTOM_FORMS.includes(self.key) ? false : undefined));

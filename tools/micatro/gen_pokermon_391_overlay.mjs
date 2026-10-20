@@ -16,6 +16,8 @@
 //   loc      the 3.9.1 loc entries those need (+ the reworked jokers' Joker entries and the spec's loc_extra)
 //   reworked the jokers on their 3.9.1 behaviour (spec rework_files minus rework_hold): config_all = the whole 3.9.1
 //            config, every compat flag, the loc entry
+//   rework_deferred  [name, why] (spec rework_deferred, batch 7+): reworked jokers ported without one 3.9.1 part that
+//            belongs to other content not ported yet (inert: for the docs and tests)
 //   skipped  every 3.9.1 change to an existing joker's static data that is NOT taken, with the reason
 // It fails when a value change of an existing config key, or a blueprint_compat flip, has no decision in the spec.
 import fs from 'fs';
@@ -52,6 +54,11 @@ const skip = (name, field, from, to, reason) => skipped.push([name, field, from 
 // compat flag, and its 3.9.1 loc entry. rework_hold: jokers of those files still on 3.2.1 (they go through take / reasons).
 const reworkFiles = new Set(SPEC.rework_files || []), reworkHold = SPEC.rework_hold || {};
 for (const name of Object.keys(reworkHold)) if (!BJ[name]) throw new Error(`rework_hold: '${name}' is not a 3.2.1 joker`);
+const reworkDeferred = SPEC.rework_deferred || {};
+for (const name of Object.keys(reworkDeferred)) {
+  if (!BJ[name]) throw new Error(`rework_deferred: '${name}' is not a 3.2.1 joker`);
+  if (reworkHold[name] || !reworkFiles.has(BJ[name].file.replace('pokemon/', '').replace('.lua', ''))) throw new Error(`rework_deferred: '${name}' is not reworked`);
+}
 const BLOC = (BASE.loc && BASE.loc.descriptions) || {}, NLOC = NEW.loc.descriptions;
 const reworked = [], jokerLoc = {};
 for (const [name, { it: a, file }] of Object.entries(BJ)) {
@@ -133,7 +140,7 @@ const out = {
   version: '3.9.1',
   source: 'InertSteak/Pokermon tag 3.9.1 (GPL-3.0)',
   counts: { ...counts, jokers_changed: Object.keys(jokers).length, sprites: Object.keys(sprites).length, skipped: skipped.length },
-  reworked: reworked.sort(), rework_hold: Object.entries(reworkHold),
+  reworked: reworked.sort(), rework_hold: Object.entries(reworkHold), rework_deferred: Object.entries(reworkDeferred),
   jokers, sprites, sprite_hold: held, blinds, loc, skipped,
 };
 const json = JSON.stringify(out);

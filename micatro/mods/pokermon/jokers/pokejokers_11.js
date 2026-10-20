@@ -1,6 +1,7 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_11.lua (Pokédex 301-330: Aron -> Mega Camerupt), 6 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_11.lua (Pokédex 301-330: Aron -> Mega Camerupt), 6 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, megas, enhancement_gate) comes from data.js. See ../PORTING.md.
+// gen, megas, enhancement_gate) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
   G, P_CENTERS, localize, card_eval_status_text, juice_card_until,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, has_enhancement,
@@ -94,6 +95,7 @@ defineJokers({
   },
   // Numel 322
   numel: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.Xmult, center.ability.extra.rounds, center.ability.extra.score_goal, Math.max(0, center.ability.extra.score_goal - center.ability.extra.cards_scored)] };
@@ -108,6 +110,7 @@ defineJokers({
   camerupt: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      if (detailed()) info_queue.push(P_CENTERS.m_mult);
       return { vars: [center.ability.extra.Xmult, center.ability.extra.score_goal, Math.max(0, center.ability.extra.score_goal - center.ability.extra.cards_scored)] };
     },
     calculate(self, card, context) { return numel_calc(card, context, true); },
@@ -116,7 +119,8 @@ defineJokers({
   mega_camerupt: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      return { vars: [center.ability.extra.Xmult, center.ability.extra.Xmult_multi] };
+      if (detailed()) info_queue.push(P_CENTERS.m_mult);
+      return { vars: [center.ability.extra.Xmult, center.ability.extra.Xmult_mod] };
     },
     calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand) {
@@ -125,7 +129,8 @@ defineJokers({
         }
       }
       if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.blueprint && has_enhancement(context.other_card, 'm_mult')) {
-        card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_multi;
+        // Pokermon 3.9.1: the gain is Xmult_mod (was Xmult_multi).
+        card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_mod;
         card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'XMULT' });
       }
       if (context.end_of_round && !context.individual && !context.repetition) {

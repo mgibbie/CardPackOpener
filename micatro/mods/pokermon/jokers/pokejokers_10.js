@@ -1,6 +1,7 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_10.lua (Pokédex 271-300: Shroomish -> Nosepass), 4 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_10.lua (Pokédex 271-300: Shroomish -> Nosepass), 4 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, item_req) comes from data.js. See ../PORTING.md.
+// gen, item_req) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, ease_discard, ease_hands_played, create_card,
   defineJokers, type_tooltip, detailed, scaling_evo, level_evo, item_evo, faint_baby_poke,
@@ -31,6 +32,7 @@ function shroom_blind(card, context) {
 defineJokers({
   // Shroomish 285
   shroomish: {
+    knockoff_starter: true,
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
       return { vars: [center.ability.extra.hands, center.ability.extra.d_size, center.ability.extra.h_size, Math.max(0, self.config.evo_rqmt - center.ability.extra.boss_defeated)] };

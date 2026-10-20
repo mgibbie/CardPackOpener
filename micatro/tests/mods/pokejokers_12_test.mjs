@@ -61,6 +61,18 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_12.lua'].length === 6, 'defs: 6 from 
   ok(r.total.chips === 60 + 24, 'dusclops: retriggers the first 4', r.total);
   ok(!G.playing_cards.includes(k[0]) && G.playing_cards.length === n0 + 4, 'dusclops: destroys the single unscored card', G.playing_cards.length - n0);
   ok(G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Spectral', 'dusclops: ... and makes a Spectral card', G.consumeables.cards.map(key));
+  {
+    // Pokermon 3.9.1: destroyed in the destroy_card pass (remove_playing_cards sees it) and the Spectral needs room
+    const pooch = add('j_poke_poochyena');
+    G.consumeables.config.card_limit = 1; // full (the Spectral above)
+    nextRound();
+    const k2 = hand(['S_K']);
+    lastHand(hand(['S_3', 'H_3', 'D_3', 'C_3']).concat(k2));
+    ok(!G.playing_cards.includes(k2[0]) && pooch.ability.extra.mult === 2, 'dusclops: the unscored card is destroyed in the destroy pass, Poochyena counts it (Pokermon 3.9.1)', [G.playing_cards.includes(k2[0]), pooch.ability.extra.mult]);
+    ok(G.consumeables.cards.length === 1, 'dusclops: no Spectral without consumable room (Pokermon 3.9.1)', G.consumeables.cards.map(key));
+    pooch.remove();
+    G.consumeables.config.card_limit = 2;
+  }
   j.ability.extra.evolve = true; // (Linking Cord)
   nextRound();
   winRound();

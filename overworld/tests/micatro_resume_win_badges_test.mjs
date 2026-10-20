@@ -21,6 +21,8 @@
 // renamed boss is the same boss), and the resume goes through the "Mod updated" prompt (3.2.1 -> 3.9.1, Continue anyway).
 // Since batch 6 (3.9.1+r3) pokejokers_01-08 play their 3.9.1 behaviour too, so the page also gets those 8 files as of the
 // batch-5 merge (git show aa4bfab2: their 3.2.1 behaviour; the fixture holds Kakuna, Butterfree, Parasect, Victreebel...).
+// Since batch 7 (3.9.1+r4) pokejokers_09-17 do too, so the page gets those 9 files as of the batch-6 merge (git show
+// e295b8b7: their 3.2.1 behaviour; the fixture holds Shroomish and Breloom).
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
 // (MICATRO_MAIN overrides). Covers micatro/js/engine/session.js (recipeSeeded), micatro/js/engine/run.js (newRun seeded),
 // micatro/js/ui/main.js, micatro/js/ui/progress.js (push retry, once per run), micatro/js/net.js,
@@ -101,6 +103,12 @@ const JOKERS321 = {};
 for (let i = 1; i <= 8; i++) {
 	const p = `micatro/mods/pokermon/jokers/pokejokers_0${i}.js`;
 	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B6}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
+}
+// ... and pokejokers_09-17 before theirs (batch 7), from the batch-6 merge commit
+const PRE_B7 = 'e295b8b7c7aa3fb38b3d65658a54bf92cb125ac8';
+for (let i = 9; i <= 17; i++) {
+	const p = `micatro/mods/pokermon/jokers/pokejokers_${String(i).padStart(2, '0')}.js`;
+	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B7}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 }
 let prompted = 0;
 const server = http.createServer(async (req, res) => {

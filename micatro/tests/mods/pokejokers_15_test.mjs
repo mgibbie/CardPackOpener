@@ -172,5 +172,20 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_15.lua'].length === 12, 'defs: 12 fro
   const r2 = play(hand(['S_A']));
   ok(near(r2.total.mult, 1.69), 'lucario: X1.3 per editioned card held', r2.total);
 }
+{
+  // Pokermon 3.9.1: Lucario is only in the pool while some playing card has an edition (and it is Rare, not Safari).
+  start('LUCPOOL');
+  const C = P_CENTERS.j_poke_lucario;
+  for (const c of G.playing_cards) c.edition = null;
+  ok(C.in_pool(C) === false, 'lucario: not in the pool without an editioned playing card (Pokermon 3.9.1)');
+  G.playing_cards[0].set_edition({ foil: true }, true);
+  ok(C.in_pool(C) !== false && C.rarity === 3, 'lucario: in the pool once a playing card has an edition, Rare (Pokermon 3.9.1)', C.rarity);
+  // Lopunny / Mega Lopunny show the Foresight tooltip (Pokermon 3.9.1)
+  for (const k of ['j_poke_lopunny', 'j_poke_mega_lopunny']) {
+    const iq = [];
+    P_CENTERS[k].loc_vars(P_CENTERS[k], iq, { ability: { extra: { ...P_CENTERS[k].config.extra } } });
+    ok(iq.some((x) => x && x.key === 'scry_cards') && !iq.some((x) => x && x.key === 'mega_poke'), k + ': Foresight tooltip (Pokermon 3.9.1)', iq.map((x) => x && x.key));
+  }
+}
 
 done();

@@ -1,6 +1,7 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_17.lua (Pokédex 481-510: Shaymin), 2 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_17.lua (Pokédex 481-510: Shaymin), 2 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen) comes from data.js. See ../PORTING.md.
+// gen) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 import {
   G, P_CENTERS, localize, juice_card_until,
   defineJokers, type_tooltip, detailed, scaling_evo, has_enhancement,

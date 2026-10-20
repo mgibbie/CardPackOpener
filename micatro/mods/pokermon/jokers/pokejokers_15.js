@@ -1,11 +1,13 @@
-// Pokermon 3.2.1 — pokemon/pokejokers_15.lua (Pokédex 421-450: Ambipom -> Lucario), 12 jokers.
+// Pokermon 3.9.1 — pokemon/pokejokers_15.lua (Pokédex 421-450: Ambipom -> Lucario), 12 jokers.
 // Line-for-line port of the behaviour; static data (pos, config, rarity, cost, stage, ptype,
-// gen, megas) comes from data.js. See ../PORTING.md.
+// gen, megas) comes from data.js + data391.js. See ../PORTING.md.
+// On Pokermon 3.9.1 behaviour since batch 7 (no holds in this file; see PORTING.md for the parts that wait).
 // Ambipom's 3-card Flushes / Straights live in systems/rules.js (straight_min / flush_min).
 import {
   G, P_CENTERS, P_CARDS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, create_card,
   create_playing_card, playing_card_joker_effects, get_poker_hand_info,
   defineJokers, type_tooltip, detailed, level_evo, faint_baby_poke, is_type, get_probability_vars, pseudorandom_probability,
+  POKE_POOL_RULES,
 } from '../api.js';
 
 const FILE = 'pokemon/pokejokers_15.lua';
@@ -90,7 +92,7 @@ defineJokers({
   lopunny: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
-      if (detailed()) info_queue.push({ set: 'Other', key: 'mega_poke' });
+      info_queue.push({ set: 'Other', key: 'scry_cards' }); // (Pokermon 3.9.1: the Foresight tooltip, not the Mega one)
       return { vars: [center.ability.extra.mult, center.ability.extra.Xmult, center.ability.extra.scry] };
     },
     calculate(self, card, context) {
@@ -119,6 +121,7 @@ defineJokers({
   mega_lopunny: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
+      info_queue.push({ set: 'Other', key: 'scry_cards' });
       let hand = localize('poke_none');
       if (G.scry_view && G.scry_view.cards && G.scry_view.cards.length > 0) hand = get_poker_hand_info(G.scry_view.cards).text;
       return { vars: [center.ability.extra.scry, hand] };
@@ -307,7 +310,8 @@ defineJokers({
       return level_evo(self, card, context, 'j_poke_lucario');
     },
   },
-  // Lucario 448
+  // Lucario 448 (Pokermon 3.9.1: only in the pool while a playing card has an edition - POKE_POOL_RULES below; its
+  // 3.9.1 Mega, mega_lucario, is a new joker: not here yet)
   lucario: {
     loc_vars(self, info_queue, center) {
       type_tooltip(self, info_queue, center);
@@ -322,3 +326,6 @@ defineJokers({
     },
   },
 }, FILE);
+
+// Pokermon 3.9.1 Lucario in_pool: some playing card has an edition.
+POKE_POOL_RULES.push((self) => (self && self.key === 'j_poke_lucario' && !(G.playing_cards && G.playing_cards.some((v) => v.edition)) ? false : undefined));

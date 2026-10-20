@@ -116,31 +116,52 @@ ok(P_CENTERS.j_poke_jirachi_copy.config.extra.ptype === 'Metal' && P_CENTERS.j_p
   ok(key(j) === 'j_poke_jirachi_banker', 'jirachi -> jirachi_banker from its wish', key(j));
 }
 {
-  // Banker: doubles the end-of-round payout.
+  // Banker (Pokermon 3.9.1): X3 the end-of-round payout (modify_final_cashout: +2x the payout as its own row).
   start('BANKER');
   add('j_poke_jirachi_banker');
   winRound();
   const rows = G.GAME.round_eval.rows;
-  const jr = rows.find((x) => x.name === 'joker_jirachi1');
+  const jr = rows.find((x) => x.name === 'cashout_mod1');
   const before = rows.filter((x) => x !== jr).reduce((n, x) => n + (x.dollars || 0), 0);
-  ok(jr && jr.dollars === before && before > 0, 'jirachi_banker: a cash-out row doubling the payout', rows);
+  ok(jr && jr.dollars === 2 * before && before > 0 && G.GAME.round_eval.total === 3 * before, 'jirachi_banker: X3 payout at end of round (Pokermon 3.9.1)', rows);
+  ok(!rows.some((x) => x.name === 'joker_jirachi1'), 'jirachi_banker: no more doubling row (Pokermon 3.9.1)');
 }
 {
+  // Booster (Pokermon 3.9.1): +1 card per pack; the first 3 rerolls of each shop add a Booster; no extra slot.
   start('BOOSTER');
   const p0 = G.GAME.extra_pocket_picks || 0, b0 = G.GAME.modifiers.extra_boosters || 0;
   const j = add('j_poke_jirachi_booster');
-  ok(G.GAME.extra_pocket_picks === p0 + 1 && (G.GAME.modifiers.extra_boosters || 0) === b0 + 1, 'jirachi_booster: +1 booster slot, +1 card per pack', [G.GAME.extra_pocket_picks, G.GAME.modifiers.extra_boosters]);
+  ok(G.GAME.extra_pocket_picks === p0 + 1 && (G.GAME.modifiers.extra_boosters || 0) === b0, 'jirachi_booster: +1 card per pack, no booster slot (Pokermon 3.9.1)', [G.GAME.extra_pocket_picks, G.GAME.modifiers.extra_boosters]);
+  winRound();
+  act({ type: 'cash_out' });
+  ok(G.STATE === STATES.SHOP, 'in the shop');
+  const n0 = G.shop_booster.cards.length;
+  G.GAME.dollars = 100;
+  for (let i = 0; i < 4; i++) act({ type: 'reroll_shop' });
+  ok(G.shop_booster.cards.length === n0 + 3 && j.ability.extra.rerolls === 3, 'jirachi_booster: the first 3 rerolls each add a Booster to the shop (Pokermon 3.9.1)', [G.shop_booster.cards.length - n0, j.ability.extra.rerolls]);
+  act({ type: 'next_round' });
+  ok(j.ability.extra.rerolls === 0, 'jirachi_booster: resets when the shop ends (Pokermon 3.9.1)', j.ability.extra.rerolls);
   j.remove();
   ok(G.GAME.extra_pocket_picks === p0 && (G.GAME.modifiers.extra_boosters || 0) === b0, 'jirachi_booster removed: back to normal');
 }
 {
-  start('INVIS', {}, { noBlind: true });
+  // Invis (Pokermon 3.9.1): copies the Joker to its right while 3+ Jokers are Energized.
+  start('INVIS');
   const inv = add('j_poke_jirachi_invis');
-  add('j_poke_beldum', 'negative');
-  act({ type: 'select_blind' }); clearHand();
-  const keys = G.jokers.cards.map(key);
-  ok(keys.length === 2 && keys.every((k) => k === 'j_poke_beldum') && !G.jokers.cards.includes(inv), 'jirachi_invis: copies the joker to its right, then leaves', keys);
-  ok(G.jokers.cards.filter((c) => c.edition && c.edition.negative).length === 1, 'jirachi_invis: the copy is not Negative');
+  const cat = add('j_poke_caterpie');
+  let r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 3 && G.jokers.cards.includes(inv), 'jirachi_invis: nothing with fewer than 3 Energized Jokers, and stays (Pokermon 3.9.1)', r.total);
+  inv.config.center.update(inv.config.center, inv);
+  ok(inv.ability.blueprint_compat === 'incompatible', 'jirachi_invis: incompatible marker below 3 Energized');
+  const w1 = add('j_poke_weedle'), w2 = add('j_poke_weedle');
+  for (const c of [cat, w1, w2]) c.ability.extra.energy_count = 1;
+  ok(inv.config.center.loc_vars(inv.config.center, [], inv).vars[1] === 3, 'jirachi_invis: counts 3 Energized Jokers');
+  clearHand();
+  const m = cat.ability.extra.mult;
+  r = play(hand(['S_A']));
+  ok(r.total.mult === 1 + 2 * m, 'jirachi_invis: copies the Caterpie to its right (Pokermon 3.9.1)', [r.total, m]);
+  inv.config.center.update(inv.config.center, inv);
+  ok(inv.ability.blueprint_compat === 'compatible', 'jirachi_invis: compatible marker with 3 Energized (Pokermon 3.9.1)');
 }
 {
   start('COPY');
@@ -172,27 +193,34 @@ ok(P_CENTERS.j_poke_jirachi_copy.config.extra.ptype === 'Metal' && P_CENTERS.j_p
   ok(r.total.mult === 2 && j.ability.extra.loyalty_remaining === 0, 'jirachi_power: hand 2, armed', [r.total, j.ability.extra]);
   r = play(hand(['S_Q', 'H_Q']));
   ok(r.total.mult === 2 * 2 * 2 && j.ability.extra.loyalty_remaining === 2, 'jirachi_power: every 3rd hand each scored card X2', [r.total, j.ability.extra]);
+  ok(j.ability.extra.every === 2 && j.config.center.loc_vars(j.config.center, [], j).vars[1] === 3, 'jirachi_power: every = 2, shown as every 3 hands (Pokermon 3.9.1)', j.ability.extra);
+  r = play(hand(['S_J', 'H_J']));
+  ok(r.total.mult === 2 && j.ability.extra.loyalty_remaining === 1, 'jirachi_power: hand 4, nothing (Pokermon 3.9.1 Loyalty count)', [r.total, j.ability.extra]);
 }
 {
+  // Fixer (Pokermon 3.9.1): a 1-card first discard is destroyed and makes a Death / Cryptid / Metal Coat (if room).
   start('FIXER');
-  const j = add('j_poke_jirachi_fixer');
+  add('j_poke_jirachi_fixer');
   const one = hand(['S_A']);
   play(one);
-  ok(one[0].edition && (one[0].edition.foil || one[0].edition.holo || one[0].edition.polychrome), 'jirachi_fixer: first hand of 1 card gets an edition', one[0].edition);
-  const two = hand(['S_K']);
-  play(two);
-  ok(!two[0].edition, 'jirachi_fixer: only the first hand');
+  ok(!one[0].edition, 'jirachi_fixer: no edition on a 1-card first hand any more (Pokermon 3.9.1)', one[0].edition);
   const d = hand(['H_5']);
   hand(['H_6', 'H_7']);
   act({ type: 'highlight', ids: [d[0].sort_id] });
   act({ type: 'discard' });
-  ok(!G.playing_cards.includes(d[0]) && j.ability.extra.triggered === true, 'jirachi_fixer: first discard of 1 card is destroyed');
+  ok(!G.playing_cards.includes(d[0]), 'jirachi_fixer: first discard of 1 card is destroyed');
+  const made = G.consumeables.cards.map(key);
+  ok(made.length === 1 && ['c_death', 'c_cryptid', 'c_poke_metalcoat'].includes(made[0]), 'jirachi_fixer: ... and makes a Death, Cryptid or Metal Coat (Pokermon 3.9.1)', made);
   const d2 = G.hand.cards[0];
   act({ type: 'highlight', ids: [d2.sort_id] });
   act({ type: 'discard' });
-  ok(G.playing_cards.includes(d2), 'jirachi_fixer: only the first discard');
-  winRound();
-  ok(j.ability.extra.triggered === undefined, 'jirachi_fixer: resets at end of round');
+  ok(G.playing_cards.includes(d2) && G.consumeables.cards.length === 1, 'jirachi_fixer: only the first discard');
+  winRound(); nextRound();
+  G.consumeables.config.card_limit = 1;
+  const d3 = hand(['C_9']);
+  act({ type: 'highlight', ids: [d3[0].sort_id] });
+  act({ type: 'discard' });
+  ok(!G.playing_cards.includes(d3[0]) && G.consumeables.cards.length === 1, 'jirachi_fixer: next round again; nothing made without room (Pokermon 3.9.1)', G.consumeables.cards.map(key));
 }
 
 done();

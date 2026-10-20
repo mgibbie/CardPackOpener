@@ -32,7 +32,7 @@ import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js'
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
-import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate } from './smods.js';
+import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod } from './smods.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -483,6 +483,7 @@ function end_round() {
         if (ev) { card_eval_status_text(c, 'jokers', null, null, null, ev); mod_effect_tail(c, ev, { dollars: true }); }
       }
       blind_calculate({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss });
+      mod_calculate({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss }, 'end_of_round');
       // Held playing cards' MOD enhancements / seals see end_of_round too (Pokermon's Hazard); Steamodded marks this
       // pass playing_card_end_of_round (Pokermon 3.9.1's Seed enhancement checks it).
       const pceor = wanted('playing_card_end_of_round') || undefined;
@@ -1026,6 +1027,8 @@ function evaluate_play() {
             for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
           }
         }
+        // (SMODS: the mod-level calculate sees each card's individual context too, after the jokers; Pokermon 3.9.1's Leafeon)
+        if (ACTIVE_MODS.length) mod_calculate({ cardarea: G.play, ...base_ctx(), other_card: sc, individual: true }, 'individual');
         sc.lucky_trigger = undefined;
         for (const ef of effects) {
           if (ef.chips) { if (ef.card) juice_card(ef.card); hand_chips = mod_chips(B.add(hand_chips, ef.chips)); card_eval_status_text(sc, 'chips', ef.chips); emit('hand_text', { chips: hand_chips }); }
@@ -1282,13 +1285,16 @@ function evaluate_play() {
         cards_destroyed.push(sc);
       }
     }
-    // (SMODS 'unscored': mod jokers may destroy played cards that didn't score - cardarea 'unscored')
-    if (unscored_on) {
+    // (SMODS 'unscored': mod jokers may destroy played cards that didn't score - cardarea 'unscored'.
+    // SMODS.calculate_destroying_cards asks every joker about every played card, the feature on or not; here a
+    // seam mod's jokers (`smods_seams`, Pokermon 3.9.1's Dusclops) are asked without it too.)
+    const unscored_destroy = (j) => j.config.center.mod && (unscored_on || seam_mod(j.config.center.mod));
+    if (unscored_on || (ACTIVE_MODS.length && G.jokers.cards.some(unscored_destroy))) {
       for (const uc of G.play.cards) {
         if (scoring_hand.includes(uc)) continue;
         let destroyed = false;
         for (const j of G.jokers.cards) {
-          if (!j.config.center.mod) continue;
+          if (!unscored_destroy(j)) continue;
           const r = j.calculate_joker({ destroy_card: uc, cardarea: 'unscored', full_hand: G.play.cards, scoring_hand });
           if (r && (r === true || r.remove)) { destroyed = true; break; }
         }
@@ -1522,12 +1528,16 @@ function update_shop() {
 export function change_booster_limit(mod) {
   G.GAME.modifiers.extra_boosters = (G.GAME.modifiers.extra_boosters || 0) + mod;
   if (mod > 0 && G.shop_open && G.STATE === STATES.SHOP) {
-    for (let i = 0; i < mod; i++) {
-      const card = new Card(P_CARDS.empty, get_pack('shop_pack'));
-      card.ability.booster_pos = G.shop_booster.cards.length + 1;
-      G.shop_booster.emplace(card);
-    }
+    for (let i = 0; i < mod; i++) add_booster_to_shop();
   }
+}
+/** Steamodded's SMODS.add_booster_to_shop(key?): one more pack in the open shop (a random shop pack without a key). */
+export function add_booster_to_shop(key) {
+  if (key && !P_CENTERS[key]) throw new Error('Invalid booster key: ' + key);
+  const card = new Card(P_CARDS.empty, key ? P_CENTERS[key] : get_pack('shop_pack'));
+  card.ability.booster_pos = G.shop_booster.cards.length + 1;
+  G.shop_booster.emplace(card);
+  return card;
 }
 
 /**

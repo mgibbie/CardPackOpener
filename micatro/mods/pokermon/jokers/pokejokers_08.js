@@ -120,7 +120,7 @@ function baby_tag_evo(self, card, context, key, tag) {
 }
 
 /** SMODS.blueprint_effect(copier, copied_card, context) (smods src/utils.lua). */
-function blueprint_effect(copier, copied_card, context) {
+export function blueprint_effect(copier, copied_card, context) {
   if (!copied_card || copied_card === copier || copied_card.debuff || context.no_blueprint || !copied_card.config.center.blueprint_compat) return undefined;
   if ((context.blueprint || 0) > G.jokers.cards.length) return undefined;
   const old_blueprint = context.blueprint, old_blueprint_card = context.blueprint_card;

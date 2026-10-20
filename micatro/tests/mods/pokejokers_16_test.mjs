@@ -134,6 +134,18 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 24, 'defs: 24 fro
   clearHand();
   const r = play(hand(['S_A']));
   ok(near(r.total.mult, 3 * 1.1) && statusMsgs(r.events).some((m) => /Fire Blast/i.test(m)), 'magmortar: +Mult and X Mult', [r.total, statusMsgs(r.events)]);
+  // Pokermon 3.9.1: Blueprint-compatible
+  const bp = add('j_blueprint');
+  G.jokers.remove_card(bp); G.jokers.cards.unshift(bp); bp.area = G.jokers;
+  clearHand();
+  const r2 = play(hand(['S_A']));
+  ok(P_CENTERS.j_poke_magmortar.blueprint_compat === true && near(r2.total.mult, ((1 + 2) * 1.1 + 2) * 1.1), 'magmortar: Blueprint copies its +Mult and X Mult (Pokermon 3.9.1)', r2.total);
+}
+{
+  start('MAGMOR2');
+  add('j_poke_magmortar');
+  const r = play(hand(['S_A']));
+  ok(r.total.mult === 1 && !statusMsgs(r.events).some((m) => /Fire Blast/i.test(m)), 'magmortar: no Fire Blast before it has gained anything (Pokermon 3.9.1)', statusMsgs(r.events));
 }
 
 // ---------------------------------------------------------------- Togekiss
@@ -158,7 +170,7 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 24, 'defs: 24 fro
   add('j_poke_yanmega');
   G.GAME.probabilities.normal = 0;
   let r = play(hand(['S_3']));
-  ok(r.total.chips === 5 + 3 + 12 && r.total.mult === 1 + 6, 'yanmega: 3s and 6s give +12 chips +6 Mult', r.total);
+  ok(r.total.chips === 5 + 3 + 12 && r.total.mult === 1 + 6, 'yanmega: 3s and 6s give +12 chips +6 Mult (chip_mod / mult_mod, Pokermon 3.9.1)', r.total);
   G.GAME.probabilities.normal = 1000;
   r = play(hand(['S_6']));
   ok(r.total.chips === 5 + 2 * (6 + 12) && r.total.mult === 1 + 12, 'yanmega: 1 in 3 retrigger', r.total);
@@ -169,32 +181,36 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 24, 'defs: 24 fro
 
 // ---------------------------------------------------------------- Leafeon / Glaceon / Gliscor / Mamoswine
 {
+  // Pokermon 3.9.1 Leafeon: no hand size; triples every listed probability once a Lucky card triggered this round.
   start('LEAFEON');
   const h0 = G.hand.config.card_limit;
-  const j = add('j_poke_leafeon');
-  ok(G.hand.config.card_limit === h0 + 7, 'leafeon: +7 hand size', G.hand.config.card_limit);
+  add('j_poke_leafeon');
+  ok(G.hand.config.card_limit === h0, 'leafeon: no hand size any more (Pokermon 3.9.1)', G.hand.config.card_limit - h0);
+  ok(probability_vars(null, 1, 6).join() === '1,6', 'leafeon: listed probabilities untouched before a Lucky trigger (Pokermon 3.9.1)', probability_vars(null, 1, 6));
   play(hand(['S_A']));
-  ok(G.hand.config.card_limit === h0 + 6 && j.ability.extra.h_size === 6, 'leafeon: -1 per hand played', G.hand.config.card_limit);
+  ok(!G.GAME.poke_lucky_triggers, 'leafeon: a plain card is no Lucky trigger');
   G.GAME.probabilities.normal = 1000;
   play(hand(['S_K'], { center: 'm_lucky' }));
-  ok(G.hand.config.card_limit === h0 + 6 && j.ability.extra.h_size === 6, 'leafeon: +1 when a Lucky card triggers', G.hand.config.card_limit);
   G.GAME.probabilities.normal = 1;
-  j.remove(); G.E_MANAGER.flush();
-  ok(G.hand.config.card_limit === h0, 'leafeon removed: hand size back', G.hand.config.card_limit - h0);
+  ok(G.GAME.poke_lucky_triggers >= 1 && probability_vars(null, 1, 6).join() === '3,6', 'leafeon: 1 in 6 -> 3 in 6 after a Lucky card triggered (Pokermon 3.9.1)', [G.GAME.poke_lucky_triggers, probability_vars(null, 1, 6)]);
+  winRound();
+  ok(G.GAME.poke_lucky_triggers === 0 && probability_vars(null, 1, 6).join() === '1,6', 'leafeon: resets at end of round (Pokermon 3.9.1)', G.GAME.poke_lucky_triggers);
 }
 {
+  // Pokermon 3.9.1 Glaceon: retrigger every played Glass card (no Glass copies in the shop).
   start('GLACEON');
   add('j_poke_glaceon');
+  G.GAME.probabilities.normal = 0; // (no Glass breaks)
+  const r = play(hand(['S_A'], { center: 'm_glass' }).concat(hand(['H_2'])));
+  ok(r.total.chips === 5 + 11 * 2 && r.total.mult === 1 * 2 * 2, 'glaceon: Glass cards retrigger (Pokermon 3.9.1)', r.total);
+  G.GAME.probabilities.normal = 1;
   toShop();
   const n0 = G.shop_jokers.cards.length;
   G.GAME.dollars = 100;
   G.GAME.probabilities.normal = 1000;
   act({ type: 'reroll_shop' });
-  const glass = G.shop_jokers.cards.filter((c) => key(c) === 'm_glass');
-  ok(glass.length === 1 && G.shop_jokers.cards.length === n0 + 1, 'glaceon: a Glass copy of a deck card in the shop', G.shop_jokers.cards.map(key));
   G.GAME.probabilities.normal = 1;
-  const pc = G.playing_cards.length;
-  ok(act({ type: 'buy', id: glass[0].sort_id }).ok && G.playing_cards.length === pc + 1, 'glaceon: the copy can be bought into the deck');
+  ok(G.shop_jokers.cards.length === n0 && !G.shop_jokers.cards.some((c) => key(c) === 'm_glass'), 'glaceon: no Glass copy in the shop any more (Pokermon 3.9.1)', G.shop_jokers.cards.map(key));
 }
 {
   start('GLISCOR');
@@ -232,7 +248,20 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 24, 'defs: 24 fro
   const e = add('c_poke_colorless_energy');
   ok(act({ type: 'use', id: e.sort_id, joker_targets: [j.sort_id] }).ok, 'energy used on porygon-z');
   ok(G.GAME.energies_used === 1 && G.consumeables.cards.length === 1 && G.consumeables.cards[0].ability.set === 'Energy', 'porygon-z: makes an Energy when one is used', G.consumeables.cards.map(key));
+  {
+    // Pokermon 3.9.1: never a Bird Energy (the 1 in 256 roll's key is unused), even when the roll hits
+    let birds = 0;
+    for (let i = 0; i < 40; i++) {
+      for (const c of G.consumeables.cards.slice()) c.remove();
+      const e2 = add('c_poke_colorless_energy');
+      act({ type: 'use', id: e2.sort_id, joker_targets: [j.sort_id] });
+      birds += G.consumeables.cards.filter((c) => key(c) === 'c_poke_bird_energy').length;
+    }
+    ok(birds === 0, 'porygon-z: makes a random Energy, never a Bird Energy (Pokermon 3.9.1)', birds);
+    for (const c of G.consumeables.cards.slice()) c.remove();
+  }
   G.GAME.energies_used = 5;
+  for (const c of G.consumeables.cards.slice()) c.remove();
   r = play(hand(['S_A']));
   // (the Colorless Energy also energized its own Xmult_mod: 0.1 -> 0.12)
   ok(j.ability.extra.Xmult_mod > 0.1 && near(r.total.mult, 1 + 5 * j.ability.extra.Xmult_mod), 'porygon-z: X0.1 (energized) per Energy used this run', [r.total, j.ability.extra.Xmult_mod]);
@@ -257,6 +286,8 @@ ok(STATUS.PORTED_FILES['pokemon/pokejokers_16.lua'].length === 24, 'defs: 24 fro
 }
 
 // ---------------------------------------------------------------- Rotom forms
+ok(['rotomh', 'rotomw', 'rotomf', 'rotomfan', 'rotomm'].every((n) => P_CENTERS['j_poke_' + n].in_pool(P_CENTERS['j_poke_' + n]) === false),
+  'the Rotom forms are never in a pool (Pokermon 3.9.1)');
 {
   start('ROTOM');
   toShop();
