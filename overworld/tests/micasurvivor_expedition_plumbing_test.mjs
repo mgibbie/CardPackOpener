@@ -2,7 +2,8 @@
 // server handler (server/mp.mjs bundled like the dev server, over sqlite) behind a static server, headless Chrome, one
 // browser context per device. No gameplay yet: D0b ships the Expedition modes as "Coming soon".
 //   1. lazy loading: a base boot (guest and signed in) and a base run never fetch js/expedition/* (the network log) and
-//      make no Expedition request; G.Expedition.load() fetches its two scripts once, in order, and attaches the seams
+//      make no Expedition request; G.Expedition.load() fetches its scripts once, in order (D1: save.js, terrain.js,
+//      core.js), and attaches the seams
 //   2. the mode select: an "Expedition" group with Classic / Survival / League, "Coming soon", aria-disabled; reached
 //      and pressed by mouse, touch (844x390) and pad (synthetic Gamepad API): each says "coming soon" and starts nothing
 //   3. the freeze: before load the base tables are writable; after it every write to G.Moves / G.Items (and its item
@@ -216,7 +217,7 @@ try {
 			movesFrozen: Object.isFrozen(G.Moves), scripts: document.querySelectorAll('script[data-expedition]').length }));
 		A(st.X === 'object' && !st.loaded && st.frozen === null && st.exp === 'undefined' && st.save === 'undefined' && st.scripts === 0 && !st.movesFrozen,
 			'base boot: the registry is there (G.Expedition) but no Expedition code ran: no G.Exp / G.ExpSave, nothing frozen', JSON.stringify(st));
-		A(st.seams.join(',') === '0,0,0,0', 'base boot: no listener on any seam (run.start, run.end, replay.header, spectate.snap)', st.seams.join(','));
+		A(st.seams.length >= 4 && st.seams.every(n => n === 0), 'base boot: no listener on any seam (run.start, run.end, replay.header, spectate.snap; D1: net.frame)', st.seams.join(','));
 		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && st.on.length === 0 && st.dv === 1, 'the registry: Classic / Survival / League, none enabled yet (D0b), content version 1', JSON.stringify(st));
 		A(d.expFetches().length === 0, 'the network log: a base boot fetches nothing from js/expedition/', d.expFetches().join(' '));
 		// a base run: still nothing, and its run / replay / snapshot carry no dv
@@ -289,9 +290,10 @@ try {
 				seams: G.Hooks.SEAMS.map(s => G.Hooks.count(s)), scripts: [...document.querySelectorAll('script[data-expedition]')].map(s => s.getAttribute('src')), who: G.ExpSave.who };
 		});
 		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === 1, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv 1, initialised', JSON.stringify(ld));
-		A(JSON.stringify(ld.scripts) === '["js/expedition/save.js","js/expedition/core.js"]' && d.expFetches().length === 2 && /save\.js$/.test(d.expFetches()[0]) && /core\.js$/.test(d.expFetches()[1]),
-			'the network log: exactly js/expedition/save.js then core.js, once', d.expFetches().join(' '));
-		A(ld.seams.join(',') === '1,1,1,1', 'the Expedition attaches to every seam once', ld.seams.join(','));
+		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/core.js'];   // (D1 added terrain.js)
+		A(JSON.stringify(ld.scripts) === JSON.stringify(SCR) && d.expFetches().length === SCR.length && SCR.every((s, i) => d.expFetches()[i].endsWith(s)),
+			'the network log: exactly js/expedition/save.js, terrain.js then core.js, once', d.expFetches().join(' '));
+		A(ld.seams.length >= 4 && ld.seams.every(n => n === 1), 'the Expedition attaches to every seam once', ld.seams.join(','));
 		console.log(`     freeze: ${ld.frozen.objects} objects in ${ld.frozen.ms} ms (load ${ld.ms} ms)`);
 		A(ld.frozen.objects > 1000 && ld.frozen.ms < 200, `the freeze is a one-time cost (${ld.frozen.objects} objects, ${ld.frozen.ms} ms)`);
 		const fz = await d.E(() => {

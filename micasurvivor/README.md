@@ -1426,9 +1426,85 @@ and frozen in every page before its base sim. Loading the Expedition doesn't lea
 **Not yet (later batches):**
 - any playable Expedition mode, its map / difficulty pickers and the board screen (D3, D9);
 - starting an Expedition co-op run (the lobby carries the fields; `startRun` for a group is still base);
-- loading the Expedition renderer for an Expedition replay (D1);
+- loading the Expedition renderer for an Expedition replay (D1: done, see below);
 - paying runs through `wallet` (D9 / D10);
 - the Expedition entries in the Lexicon and Goals.
+
+## DLC D1: terrain layers
+
+An Expedition run plays on a **bounded zone with heights**, the GBA look of Pokémon's ledges and stairs
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 5.2). It is Expedition-only: base modes never get a zone, and the D0a
+fixtures pass unchanged. The modes are still "Coming soon" (D3 turns Classic on); tests use
+`G.Expedition.debugEnable('exp-classic')`.
+
+**The zone** (`js/expedition/terrain.js`, `G.ExpTerrain`): 120 × 120 tiles centred on the world origin. Outside it is
+rock, drawn by the base wall painter.
+- Every tile has a height 0–3. Neighbouring tiles differ by at most 1, and no plateau is smaller than 14 tiles.
+- A cliff is the edge between two heights. A **ramp** (stairs) joins its tile's level with the one above.
+- Rock outcrops sit on flat ground, and ponds on low flat ground. Trees, rocks and tall grass come from the generator.
+- The spawn is a flat clearing (radius 7) at the origin.
+
+**The generator:** `G.ExpTerrain.generate({seed, map, zone})`.
+- It takes the run's world seed, the map (`viridian`, `mtmoon`, `cerulean`, each with its own profile) and the zone
+  number.
+- It draws only from its own stream, `G.DLC.rng` (mulberry32), never `Math.random`. The same three inputs always give
+  the same zone, byte for byte (`zone.hash`, FNV-1a over every grid).
+- Steps: three octaves of value noise cut into 4 levels, the clearing, smoothing (no 1-tile ridges or trenches, steps of
+  1, small plateaus merged), outcrops and ponds. Land or water cut off by them becomes rock.
+- Then **ramps until a flood-fill from the spawn reaches every walkable tile**, with stairs going up to the north
+  preferred. More ramps go along long cliffs, one per ~34 tiles of cliff, at least 12 tiles apart.
+- Solid props (trees, rocks) only go on a flat 3 × 3 with no other solid prop next to them, so no prop can ever cut a
+  path.
+- About 50–120 ms per zone, once per zone.
+- `G.ExpTerrain.custom(spec)` builds a zone from explicit grids (the tests; later, hand-made shrines).
+
+**Layers:** `zone.mask(tx, ty)` holds one bit per level a tile joins. A plain tile at height h is `1 << h`, a ramp is
+`(1 << h) | (1 << (h + 1))`, and a wall is 0. Two tiles connect when their masks share a bit.
+- **Collision** (`js/world/world.js`, `collideZone`):
+  - Each walking entity keeps the mask of its last good tile (`zMask`) and where that was (`zLx`, `zLy`).
+  - A tile of another layer blocks it like a wall: you can't walk up a cliff or step off one (hop-down is D2).
+  - A single step that carries the centre straight across an edge (a dash, a knock-back, a jumper's landing) puts the
+    entity back on its last good spot.
+  - `entity.layer` is the height it stands at (h, or h + 0.5 on a ramp). This is the per-entity z that D2's verbs will
+    use.
+- **Pathing** (`js/systems/pathing.js`): the BFS field stores each cell's mask and only joins cells that share a bit.
+  Ground enemies go round a cliff to its ramp. The straight-line shortcut also has to follow the layers.
+- **Flying, ghost and boss enemies** never collide, so they ignore the terrain as before.
+- **Projectiles** fly over cliffs. Only walls stop them, as before.
+- Without a zone, every one of these branches is skipped.
+
+**Drawing:** the code tile painter (`zone.paint`, run by `chunkImage` over the base chunk) adds, in the biome's own
+palette and with no image assets:
+- a height tint (low ground ×0.9, up to ×1.17 on top);
+- a 6-row rock face on the south edge of a higher tile, and ledge lips and side edges on the other sides;
+- drop shadows on the low side;
+- stairs on ramps.
+
+**Minimap:** `zone.mini` shades it by height (darker low, lighter high). Cliff faces are dark and ramps are sandy.
+`G.Minimap.colorAt(tx, ty)` is the test hook.
+
+**The `x` block v1** `{xv: 1, m: map, z: zone, th: terrain hash}`: terrain is never streamed.
+- An Expedition run's live and replay snapshots carry it (the `spectate.snap` seam; the replay keeps it in its slow
+  state). So do its co-op host frames, through a new `net.frame` seam in `coop.js` `hostFrame`.
+- A replay viewer, a live spectator (`watch-ui.js` `world()`) and a co-op guest (`coop.js` `onHostFrame`) rebuild the
+  zone with `G.Expedition.viewZone(seed, x)`. It loads the Expedition code if needed, generates the zone from
+  seed + x (`G.Exp.applyX`), checks the hash, and does this once per seed and zone.
+- An unknown `xv` is ignored. A base snapshot or frame has no `x`, so nothing runs.
+- `G.Expedition.DV` stays 1: no Expedition run could be played before D1 (every mode is "Coming soon").
+
+**What changed in base files:** each change is one `if` on the zone, or on the `x` block.
+- `world.js`: `setZone`, `zone`, `maskAt`, `layerAt`, the zone branches in `terrainRaw`, `placeProps` and `collide`, and
+  the painter call. `reset()` drops the zone.
+- `pathing.js`, `minimap.js`, `watch-ui.js` and `coop.js`.
+- `replay.js`: `slowOf` keeps `x`.
+- `hooks.js`: the `net.frame` seam.
+- `expedition.js`: `terrain.js` in `SCRIPTS`, and `viewZone`.
+
+**Not yet:**
+- the movement verbs (hop down a ledge, slide, the extra hop up one layer, glide, climb, surf, bounce pads: D2);
+- the zone timeline, guardian and portal to zone 2 (D3: `G.Exp.enterZone(n)` already builds any zone);
+- per-map biome palettes for Mt. Moon and Cerulean (D12; the run still cycles the base biomes every 4 minutes);
+- the per-enemy z / airborne column in the `x` block (D2).
 
 ## Tests
 
@@ -1445,6 +1521,13 @@ and frozen in every page before its base sim. Loading the Expedition doesn't lea
   into the account once; the Expedition board vs the base board; an Expedition run's mode / dv on the run, snapshot,
   replay header, meta and shared row, with the base save byte-equal; the newer-dv notices for replays and live runs;
   the lobby's dv gate (join and start) and a base lobby unchanged; no Spanish in English.
+- `node overworld/tests/micasurvivor_expedition_terrain_test.mjs` (DLC D1): the generator's determinism (same
+  seed + map + zone, no `Math.random`), heights and steps, every walkable tile reachable (the game's own
+  `walkable` + `maskAt`, on the run's zone and 45 others, with props as walls too), the player blocked by a cliff and
+  up / down a ramp, a ground enemy going round to the ramp (and never up without one), a flyer straight over, the
+  minimap shading, the `x` block on snapshots, host frames and the replay, a fresh page rebuilding the same zone as
+  replay viewer, live spectator and co-op guest, a later Normal run without a zone, and the painted zone at desktop
+  and phone size (`SHOTS=<dir>` saves screenshots).
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

@@ -29,7 +29,7 @@ G.WatchUI = (() => {
   const mates = new Map(); // name -> { p: G.Player, from, to, kind, ctrl }
   const ents = new Map();  // enemy id -> { fx, fy, tx, ty }
   let A = null, B = null;  // the frame being shown and the next one
-  let timeNow = 0, worldSeed = null, worldBiome = -1, arenaKey = '';
+  let timeNow = 0, worldSeed = null, worldBiome = -1, arenaKey = '', zoneKey = '';
   let movesKey = '', castT = new Map();
   // live
   let arriveAt = 0, interval = 1000, lastW = 0, status = 'wait', ended = null, info = {};
@@ -52,6 +52,10 @@ G.WatchUI = (() => {
     if (s.b != null && s.b !== worldBiome) { G.World.setBiome(s.b, worldBiome < 0); worldBiome = s.b; }
     const ak = s.ar ? s.ar.join(',') : '';
     if (ak !== arenaKey) { arenaKey = ak; G.World.setArena(s.ar ? { tx: s.ar[0], ty: s.ar[1], r: s.ar[2], type: s.ar[3] } : null); }
+    // DLC D1: an Expedition run's terrain is rebuilt here from the seed + its `x` block (map, zone), never streamed
+    // (G.Expedition.viewZone loads the Expedition code first if needed). A base snapshot has no `x`: nothing happens.
+    const zk = s.x ? [s.sd, s.x.xv, s.x.m, s.x.z].join(':') : '';
+    if (zk !== zoneKey) { zoneKey = zk; if (G.Expedition) G.Expedition.viewZone(s.sd, s.x || null); }
   }
 
   function setMoves(s) {
@@ -336,7 +340,7 @@ G.WatchUI = (() => {
   function reset() {
     G.Spectate.unwatch();
     A = B = null; pl = null; dexNow = 0; mates.clear(); ents.clear(); movesKey = '';
-    worldSeed = null; worldBiome = -1; arenaKey = '';
+    worldSeed = null; worldBiome = -1; arenaKey = ''; zoneKey = '';
     rd = null; T = 0; idx = 0; playing = true; speed = 1; done = false; ended = null; status = 'wait'; info = {}; notice = '';
     G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear(); G.Minimap.reset();
     G.World.setArena(null);
