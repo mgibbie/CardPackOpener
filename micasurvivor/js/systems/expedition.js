@@ -18,6 +18,10 @@
  *                                G.Enemies, G.DEX / G.DEX_BY: once Expedition code is in the page, a write to a base
  *                                table throws (in strict code; Expedition files are 'use strict'). Only plain objects
  *                                and arrays are frozen (functions, Sets, Maps are left alone).
+ *   viewZone(seed, x)            DLC D1: a viewer (replay, spectator) or co-op guest rebuilds an Expedition zone from the
+ *                                run's world seed + the `x` block {xv, m, z, th} of its snapshots / host frames (the
+ *                                terrain is never streamed), loading the Expedition code first if needed; x = null
+ *                                drops the zone. A base run's snapshots and frames have no `x`, so this never runs.
  *   lobbyOk(dv) / replayOk(dv)   the version gates: a co-op lobby needs the SAME dv (else "your game is out of date:
  *                                reload"); a replay / live run with an unknown or newer dv plays with a notice.
  *   wallet                       Pokémonedas are SHARED with the base game (owner): Expedition earns and spends them
@@ -55,7 +59,7 @@ G.Expedition = (() => {
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
   const ENABLED = new Set();   // D0b: every Expedition mode is "Coming soon"
-  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/core.js'];
+  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/core.js'];   // (D1: terrain.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
@@ -120,6 +124,19 @@ G.Expedition = (() => {
     return loading;
   }
 
+  // ---------------- DLC D1: rebuilding a zone for a viewer / guest ----------------
+  let zoneWant = '';
+  /** Rebuild (once per seed + zone) the zone a snapshot / host frame's `x` block names. -> a Promise of its hash or null */
+  function viewZone(seed, x) {
+    const key = x ? [seed, x.xv, x.m, x.z].join(':') : '';
+    if (key === zoneWant && (!x || (G.World.zone && G.World.zone.seed === (seed | 0)))) return Promise.resolve(G.World.zone ? G.World.zone.hash : null);
+    zoneWant = key;
+    if (!x) { if (G.World.zone) G.World.setZone(null); return Promise.resolve(null); }
+    const go = () => (zoneWant === key && G.Exp && G.Exp.applyX ? G.Exp.applyX(seed, x) : null);
+    if (loaded) return Promise.resolve(go());
+    return load().then(go, e => { console.warn(e); zoneWant = ''; return null; });
+  }
+
   // ---------------- version gates ----------------
   const dvOk = dv => Number.isInteger(dv) && dv >= 1 && dv <= 9999;
   /** A co-op lobby / start: base (no dv) always joins; an Expedition one needs exactly this build's dv. */
@@ -154,7 +171,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS,
-    isExp, enabled, pick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet,
+    isExp, enabled, pick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

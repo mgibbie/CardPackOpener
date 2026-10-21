@@ -153,7 +153,8 @@ G.Replay = (() => {
   }
   function slowOf(s) {
     const o = { b: s.b, m: s.m, mv: s.mv, ac: s.ac, it: s.it, lu: s.lu };
-    for (const k of ['ds', 'z', 'dy', 'tm', 'ar', 'wx', 'dn', 'cr', 'ad']) if (s[k] !== undefined) o[k] = s[k];
+    // (DLC D1: 'x', an Expedition run's terrain block {xv, m, z, th}; a base snapshot has none, so its frames don't change)
+    for (const k of ['ds', 'z', 'dy', 'tm', 'ar', 'wx', 'dn', 'cr', 'ad', 'x']) if (s[k] !== undefined) o[k] = s[k];
     return o;
   }
   function encode(s, kd) {
