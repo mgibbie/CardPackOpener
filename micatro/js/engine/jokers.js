@@ -15,6 +15,7 @@ import {
   pseudorandom, pseudoseed, pseudorandom_element, next,
   ease_dollars, ease_discard, ease_hands_played, draw_card, level_up_hand, update_hand_text, delay,
   create_card, create_playing_card, copy_card, probability_roll, quantum_enhancements, has_quantum_enhancement, mod_context_effect,
+  set_actor, with_actor,
 } from './core.js';
 import * as B from './bignum.js';
 import { get_poker_hand_info, calculate_context } from './run.js';
@@ -1761,3 +1762,24 @@ Card.prototype.calculate_joker = function (context) {
   }
   return undefined;
 };
+
+// The acting card (core.js acting_card): a joker's calculation runs as that joker, and so do the post-effect funcs it
+// returns (SMODS's {func}, which the scoring code calls after this returns: Ruins of Alph's copy), and the events either
+// queues (E_MANAGER.add_event carries it). A Blueprint / Brainstorm copy calls the copied joker's calculate_joker, so
+// inside it the copied joker is the acting card.
+const calculate_joker_raw = Card.prototype.calculate_joker;
+Card.prototype.calculate_joker = function (context) {
+  const prev = set_actor(this);
+  try { return bind_actor(calculate_joker_raw.call(this, context), this); } finally { set_actor(prev); }
+};
+function bind_actor(r, card) {
+  for (let e = r, n = 0; e && typeof e === 'object' && n < 16; e = e.extra, n++) {
+    const f = e.func;
+    if (typeof f === 'function' && !f.actor_bound) {
+      const bound = function (...a) { return with_actor(card, () => f.apply(this, a)); };
+      bound.actor_bound = true;
+      e.func = bound;
+    }
+  }
+  return r;
+}

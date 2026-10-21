@@ -7,7 +7,7 @@
 import {
   G, P_TAGS, P_CENTERS, P_CARDS, P_JOKER_RARITY_POOLS, Card, emit, play_sound, attention_text, localize,
   pseudoseed, pseudorandom_element, math_random, copy_table, create_card, ease_dollars,
-  level_up_hand, update_hand_text, calculate_reroll_cost, get_next_voucher_key,
+  level_up_hand, update_hand_text, calculate_reroll_cost, get_next_voucher_key, with_actor,
 } from './core.js';
 import { use_card, reroll_boss, HANDLIST } from './run.js';
 import { callHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
@@ -380,6 +380,13 @@ export class Tag {
 }
 
 /** UI_definitions.lua add_tag — existing tags see it (Double Tag) before it joins the list. */
+// A tag's effect is its own, never the acting card's that made it (core.js acting_card): a Top-up Tag from a joker's
+// add_tag applies at once, and its Commons are the tag's.
+{
+  const apply_raw = Tag.prototype.apply_to_run;
+  Tag.prototype.apply_to_run = function (_context) { return with_actor(null, () => apply_raw.call(this, _context)); };
+}
+
 export function add_tag(_tag) {
   // A mod may swap the new tag (Bunco's Pin Collector: Double Tags arrive as Triple Tags).
   if (ACTIVE_MODS.length) { const r = firstHook('add_tag', _tag); if (r) _tag = r; }

@@ -3,7 +3,7 @@
 // the win's earned badges, seeded / challenge eligibility, non-Pokermon runs, and save/resume.
 //   node micatro/tests/mods/runbadges_test.mjs
 import { T, start, hand, add, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
-import { create_card } from '../../js/engine/core.js';
+import { create_card, copy_card } from '../../js/engine/core.js';
 import { newRun, get_poker_hand_info } from '../../js/engine/run.js';
 import { toView } from '../../js/engine/view.js';
 import { Session } from '../../js/engine/session.js';
@@ -11,6 +11,7 @@ import { allChallenges } from '../../js/engine/challenge.js';
 import { poke_evolve } from '../../mods/pokermon/systems/evolution.js';
 import { apply_type_sticker, get_type } from '../../mods/pokermon/systems/types.js';
 import { playRun } from '../replay_bot.mjs';
+import '../../mods/nacho/index.js'; // (Mega Audino's Mystery Egg)
 
 const { ok, done } = T();
 const RB = () => G.GAME.run_badges;
@@ -484,6 +485,144 @@ ok(!RB().mono && RB().mono_reason === 'started a round with Squirtle (Water/Gras
   ok(JSON.stringify(RB()) === live && RB().mono && G.STATE === STATES.SHOP && G.jokers.cards.length === 2, '(g) resumed (fromRecipe) in the shop: Monotype intact', [live, JSON.stringify(RB())]);
   ok(act({ type: 'next_round' }).ok && act({ type: 'select_blind' }).ok, '(g) the resumed run starts the next blind');
   ok(RB().mono && RB().type === 'Dragon', '(g) ... with Monotype still intact (Dragon)', RB());
+}
+
+// ======================================================== made by a Pokémon (owner rule 2026-10-21)
+// A joker MADE BY A POKÉMON JOKER'S OWN EFFECT is not the player's gain (no Nuzlocke window use, no non-Pokémon break),
+// and one without a type counts as its maker's type for the Monotype (tester Jack's Grass run: his Tropius's Gros
+// Michel broke both). Jokers made by non-Pokémon effects (Riff-raff, consumables, tags) are unchanged.
+const newJokers = (before) => G.jokers.cards.filter((c) => !before.has(c));
+/** Tropius's end-of-round banana in a Grass run (Tropius + Bulbasaur) -> the banana (or null). */
+function tropiusBanana() {
+  fresh();
+  toShop(); buy('j_poke_tropius');
+  nextShop(); buy('j_poke_bulbasaur');
+  act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
+  ok(RB().type === 'Grass' && RB().mono && RB().nuz, '(tropius) Tropius + Bulbasaur: a Grass run, both intact', RB());
+  joker('j_poke_tropius').ability.extra.active = true;
+  const before = new Set(G.jokers.cards), gains = RB().gains, wg = RB().window_gains;
+  winRound();
+  const made = newJokers(before);
+  ok(made.length === 1 && ['j_gros_michel', 'j_cavendish'].includes(keyOf(made[0])), '(tropius) Tropius made a banana at end of round: ' + made.map(keyOf), made.map(keyOf));
+  ok(RB().nuz && RB().gains === gains && RB().window_gains === wg, '(tropius) the banana is not a Nuzlocke gain: intact, window unchanged', RB());
+  return made[0] || null;
+}
+{
+  const b = tropiusBanana();
+  ok(b && b.ability.rb_type === 'Grass' && b.ability.rb_made_by === 'j_poke_tropius', '(tropius) the banana is gained as Grass, made by Tropius', b && [b.ability.rb_type, b.ability.rb_made_by]);
+  act({ type: 'cash_out' });
+  ok(RV().mono_at_risk === false, '(tropius) in the shop: Monotype not at risk', RV());
+  nextShop();
+  ok(joker(keyOf(b)) && RB().mono && RB().type === 'Grass' && RB().nuz, '(tropius) the next round begins with the banana: Grass Monotype + Nuzlocke intact', RB());
+  // a copy of the banana the player makes (Ankh-style): a new joker for the Nuzlocke, Grass by the copy rule
+  const wg = RB().window_gains;
+  const cp = copy_card(b); cp.add_to_deck(); G.jokers.emplace(cp);
+  ok(cp.ability.rb_type === 'Grass' && cp.ability.rb_made_by === undefined && RB().window_gains === wg + 1 && RB().nuz, '(tropius) a copy of the banana: Grass (copy rule), a gain, not a non-Pokémon one', [cp.ability.rb_type, cp.ability.rb_made_by, RB()]);
+}
+// a BOUGHT Gros Michel still breaks both
+fresh();
+toShop(); buy('j_poke_tropius');
+joker('j_poke_tropius').ability.extra.active = false; // (no banana of its own this time)
+nextShop();
+{
+  const before = new Set(G.jokers.cards);
+  buy('j_gros_michel');
+  const gm = newJokers(before)[0];
+  ok(!RB().nuz && RB().nuz_reason === 'gained a non-Pokémon joker (Gros Michel)', '(bought banana) a bought Gros Michel breaks the Nuzlocke', RB());
+  ok(gm && keyOf(gm) === 'j_gros_michel' && gm.ability.rb_type === 'none' && gm.ability.rb_made_by === undefined, '(bought banana) ... and is gained typeless', gm && gm.ability);
+}
+act({ type: 'next_round' }); act({ type: 'select_blind' }); clearHand();
+ok(!RB().mono && RB().mono_reason === 'started a round with Gros Michel (no type)', '(bought banana) ... and the Monotype at the next round', RB().mono_reason);
+// a Riff-raff Common (a non-Pokémon joker's effect, even a Grass Tera'd one's) is still a gain and breaks the Monotype
+fresh();
+toShop(); buy('j_poke_bulbasaur');
+nextShop(); buy('j_riff_raff', 'Grass');
+G.jokers.config.card_limit = 3;
+act({ type: 'next_round' });
+{
+  const before = new Set(G.jokers.cards);
+  act({ type: 'select_blind' });
+  const made = newJokers(before);
+  ok(made.length === 1 && made[0].ability.rb_made_by === undefined && made[0].ability.rb_type !== 'Grass', '(riff-raff) its Common is not Pokémon-made: ' + made.map((c) => keyOf(c) + ':' + c.ability.rb_type), made.map((c) => c.ability));
+  ok(RB().window_gains === 1 && RB().gains === 3, '(riff-raff) the Common is a Nuzlocke gain (the window one)', RB());
+  ok(!RB().mono, '(riff-raff) ... and the Monotype that round', RB().mono_reason);
+}
+// a Pokémon-made joker survives save / resume with its tag (a Session run: only real actions replay)
+{
+  let s = null, b = null;
+  for (let i = 0; i < 20 && !b; i++) {
+    s = new Session();
+    s.start({ customDeck: { name: 'Banana', mods: ['pokermon'], jokers: [{ key: 'j_poke_tropius' }] } });
+    s.act({ type: 'select_blind' });
+    for (let k = 0; k < 8 && G.STATE === STATES.SELECTING_HAND; k++) {
+      // (the best hand by brute force: a Small Blind of ante 1 falls to it)
+      const cards = G.hand.cards; let best = null, bs = -1; const n = Math.min(cards.length, 10);
+      for (let mask = 1; mask < (1 << n); mask++) {
+        let bits = 0; for (let m = mask; m; m &= m - 1) bits++;
+        if (bits > 5) continue;
+        const sel = cards.filter((_, j) => mask & (1 << j));
+        const info = get_poker_hand_info(sel); if (info.text === 'NULL') continue;
+        const h = G.GAME.hands[info.text];
+        const sc = (h.chips + info.scoring_hand.reduce((a, c) => a + c.get_chip_bonus(), 0)) * h.mult;
+        if (sc > bs) { bs = sc; best = sel; }
+      }
+      s.act({ type: 'highlight', ids: best.map((c) => c.sort_id) }); s.act({ type: 'play' });
+    }
+    b = G.STATE === STATES.ROUND_EVAL ? G.jokers.cards.find((c) => c.ability.rb_made_by === 'j_poke_tropius') : null;
+  }
+  ok(b && b.ability.rb_type === 'Grass' && RB().nuz, '(resume) a Session run: Tropius made a Grass banana at end of round', b && b.ability);
+  if (b) {
+    const live = JSON.stringify(RB()), key = keyOf(b);
+    Session.fromRecipe(JSON.parse(JSON.stringify(s.recipe)));
+    const b2 = G.jokers.cards.find((c) => keyOf(c) === key);
+    ok(b2 && b2.ability.rb_type === 'Grass' && b2.ability.rb_made_by === 'j_poke_tropius' && JSON.stringify(RB()) === live, '(resume) resumed (fromRecipe): the banana keeps Grass + made by Tropius, same badge state', [b2 && b2.ability, live, JSON.stringify(RB())]);
+    const st = Session.stepper(JSON.parse(JSON.stringify(s.recipe)));
+    st.seek(st.total);
+    ok(st.view().run_badges.nuz === true && st.view().run_badges.mono === true, '(resume) the replay shows both intact', st.view().run_badges);
+  }
+}
+// the other Pokémon creators: each one's effect fired the way the game does (calculate_joker / its dollar bonus), and
+// the events it queued run
+/** In a fresh run's shop with `extra` + the maker in the row: fire(maker) until it makes a joker -> the jokers made. */
+function makeWith(makerKey, fire, extra = [], mods) {
+  if (mods) { newRun({ seed: 'RBFRESH1', seeded: false, back: 'b_red', mods }); G.FORCE_BOSS = 'bl_wall'; G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; } else fresh();
+  toShop();
+  for (const k of [...extra, makerKey]) { const c = create_card('Joker', G.jokers, null, null, null, null, k); c.add_to_deck(); G.jokers.emplace(c); }
+  G.jokers.config.card_limit = 8;
+  RB().nuz = true; RB().nuz_reason = ''; RB().window_gains = 0; // (the setup's own gains don't matter here)
+  const maker = joker(makerKey), before = new Set(G.jokers.cards), gains = RB().gains;
+  for (let i = 0; i < 300 && !newJokers(before).length; i++) { fire(maker); G.E_MANAGER.flush(); }
+  const made = newJokers(before);
+  const mt = maker.ability.rb_type;
+  ok(made.length > 0, `(made by) ${makerKey} made ${made.map(keyOf).join(', ')}`);
+  for (const c of made) {
+    const own = c.ability.extra && typeof c.ability.extra === 'object' && c.ability.extra.ptype;
+    ok(c.ability.rb_made_by === makerKey, `(made by) ${keyOf(c)} is tagged made by ${makerKey}`, c.ability.rb_made_by);
+    if (!own && makerKey !== 'j_poke_mewtwo') ok(c.ability.rb_type === mt, `(made by) typeless ${keyOf(c)} is gained as its maker's ${mt}`, c.ability.rb_type);
+  }
+  ok(RB().nuz && RB().window_gains === 0 && RB().gains === gains, `(made by) ${makerKey}'s jokers: no Nuzlocke gain`, RB());
+  return made;
+}
+makeWith('j_poke_delibird', (m) => m.calculate_dollar_bonus()); // (its Gift Card: a 15% roll of the dollar bonus)
+makeWith('j_poke_mew', (m) => { m.ability.extra.percent = 100; m.calculate_joker({ ending_shop: true }); });
+{
+  const made = makeWith('j_poke_corsola', (m) => m.calculate_joker({ setting_blind: true }));
+  ok(made.every((c) => get_type(c) === 'Water' && c.ability.rb_type === 'Water'), '(made by) Corsola\'s Pokémon keeps its own type (Water)', made.map((c) => c.ability.rb_type));
+}
+makeWith('j_poke_dragapult', (m) => m.calculate_joker({ cardarea: G.jokers, scoring_hand: [], joker_main: true, poker_hands: { 'Straight Flush': [[]] } }));
+{
+  const made = makeWith('j_poke_mewtwo', (m) => { G.GAME.blind.boss = true; m.calculate_joker({ end_of_round: true }); }, ['j_poke_bulbasaur']);
+  ok(made.length === 1 && keyOf(made[0]) === 'j_poke_bulbasaur' && made[0].ability.rb_type === 'Grass', '(made by) Mewtwo\'s copy keeps its source\'s type (the copy rule)', made.map((c) => c.ability.rb_type));
+}
+// (Nacho 1.7.9 Mega Audino: a Daycare egg of an adjacent parent when a Boss Blind is beaten)
+makeWith('j_nacho_mega_audino', (m) => { m.calculate_joker({ end_of_round: true, beat_boss: true, game_over: false }); }, ['j_poke_bulbasaur'], ['pokermon', 'nacho']);
+// a Tropius banana by a Blueprint copy is still Tropius's effect
+{
+  const made = makeWith('j_poke_tropius', (m) => {
+    m.ability.extra.active = true;
+    joker('j_blueprint').calculate_joker({ end_of_round: true, main_eval: true });
+  }, ['j_blueprint']);
+  ok(made.length >= 1 && made.every((c) => c.ability.rb_type === 'Grass'), '(made by) a Blueprint-copied Tropius banana: Grass', made.map((c) => c.ability.rb_type));
 }
 
 // ======================================================== the win

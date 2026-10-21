@@ -218,10 +218,33 @@ export function random_string(length, seed) {
 }
 
 // ------------------------------------------------------------ event manager
+// ------------------------------------------------------------ the acting card
+// The card whose OWN effect is running now: a joker's calculate_joker / calculate_dollar_bonus, its mod center's
+// add_to_deck / remove_from_deck, and the post-effect funcs its calculate returned (Card.prototype.calculate_joker
+// binds them). An event carries the acting card of the moment it was queued (E_MANAGER.add_event), so a card made in a
+// joker's queued event (Tropius's banana) still knows its maker. Using a consumable and a tag applying run with no
+// acting card: those are their own effects, not the joker's. Read-only bookkeeping: nothing in the game's rules reads
+// it (Pokermon's run badges do: mods/pokermon/systems/runbadges.js), so it changes no run.
+let actingCard = null;
+/** -> the card whose effect is running now (null: a player action, a consumable, a tag, the engine itself). */
+export function acting_card() { return actingCard; }
+/** Make `card` the acting card (null: none) -> the previous one, for the caller to restore (a hot path's with_actor). */
+export function set_actor(card) { const prev = actingCard; actingCard = card || null; return prev; }
+/** Run fn with `card` as the acting card (null: none), restoring the previous one after. */
+export function with_actor(card, fn) {
+  const prev = actingCard;
+  actingCard = card || null;
+  try { return fn(); } finally { actingCard = prev; }
+}
+
 /** Synchronous stand-in for Balatro's G.E_MANAGER. */
 export const E_MANAGER = {
   queue: [],
-  add_event(fn, front) { if (front) this.queue.unshift(fn); else this.queue.push(fn); },
+  add_event(fn, front) {
+    // (the event runs with the acting card it was queued under, or none: see acting_card)
+    const actor = actingCard, ev = () => with_actor(actor, fn);
+    if (front) this.queue.unshift(ev); else this.queue.push(ev);
+  },
   flush() {
     let guard = 0;
     while (this.queue.length) {
@@ -692,7 +715,7 @@ export class Card {
     callHook('add_to_deck', this, from_debuff);
     if (this.ability.set === 'Enhanced' || this.ability.set === 'Default') return;
     // Steamodded center API: a mod center's own add_to_deck runs before the vanilla effects.
-    if (this.config.center.mod && this.config.center.add_to_deck) this.config.center.add_to_deck(this.config.center, this, from_debuff);
+    if (this.config.center.mod && this.config.center.add_to_deck) with_actor(this, () => this.config.center.add_to_deck(this.config.center, this, from_debuff));
     const n = this.ability.name;
     if (this.ability.h_size !== 0) G.hand.change_size(this.ability.h_size);
     if (this.ability.d_size > 0) { G.GAME.round_resets.discards += this.ability.d_size; ease_discard(this.ability.d_size); }
@@ -718,7 +741,7 @@ export class Card {
     if (!this.added_to_deck) return;
     this.added_to_deck = false;
     if (ACTIVE_MODS.length) callHook('remove_from_deck', this, from_debuff);
-    if (this.config.center.mod && this.config.center.remove_from_deck) this.config.center.remove_from_deck(this.config.center, this, from_debuff);
+    if (this.config.center.mod && this.config.center.remove_from_deck) with_actor(this, () => this.config.center.remove_from_deck(this.config.center, this, from_debuff));
     const n = this.ability.name;
     if (this.ability.h_size !== 0) G.hand.change_size(-this.ability.h_size);
     if (this.ability.d_size > 0) { G.GAME.round_resets.discards -= this.ability.d_size; ease_discard(-this.ability.d_size); }
@@ -943,7 +966,7 @@ export class Card {
   }
   calculate_dollar_bonus() {
     if (this.debuff) return undefined;
-    if (this.config.center.mod) return this.config.center.calc_dollar_bonus ? this.config.center.calc_dollar_bonus(this.config.center, this) : undefined;
+    if (this.config.center.mod) return this.config.center.calc_dollar_bonus ? with_actor(this, () => this.config.center.calc_dollar_bonus(this.config.center, this)) : undefined;
     if (this.ability.set === 'Joker') {
       const n = this.ability.name;
       if (n === 'Golden Joker') return this.ability.extra;

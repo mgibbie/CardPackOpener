@@ -21,6 +21,7 @@ import {
   ease_dollars, ease_discard, ease_hands_played, ease_ante, level_up_hand,
   create_card, create_playing_card, copy_card, poll_edition, all_cards, next,
   set_consumeable_usage, check_for_unlock, inc_career_stat, probability_roll, has_quantum_enhancement, mod_context_effect,
+  with_actor,
 } from './core.js';
 import { callHook, reduceHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
@@ -467,6 +468,12 @@ Card.prototype.use_consumeable = function (area, copier) {
     }
   }
 };
+// A consumable's effect is its own, never the acting card's (core.js acting_card): Judgement / Wraith / The Soul make
+// their jokers themselves, even when a joker's effect is what used it.
+{
+  const use_raw = Card.prototype.use_consumeable;
+  Card.prototype.use_consumeable = function (area, copier) { return with_actor(null, () => use_raw.call(this, area, copier)); };
+}
 
 // --------------------------------------------------- Card:can_use_consumeable
 Card.prototype.can_use_consumeable = function (any_state, skip_check) {
