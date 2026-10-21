@@ -58,10 +58,23 @@ export function ensurePersonality(mon, rng = Math.random) {
 	mon.personality = ((Math.floor(rng() * 0x10000) << 16) | Math.floor(rng() * 0x10000)) >>> 0;
 	return true;
 }
+// the Mirage value as of `today` WITHOUT writing anything: the stored value
+// stepped once per day since VAR_DAYS. ISO_RANDOMIZE2 steps compose, so this is
+// exactly what updatePerDay would store if it ran now — which lets a LOAD (boot,
+// a setup re-run) answer the question while the save stays byte-identical, and
+// the next real map entry folds the same steps in for good. An unseeded save
+// (VAR_DAYS 0, from before this existed) reads its stored value (0) as is.
+export function mirageRndAsOf(today = localDay()) {
+	let rnd = getMirageRnd();
+	const days = Story.getVar('VAR_DAYS') | 0;
+	if (!days || today <= days) return rnd;
+	for (let i = 0; i < today - days; i++) rnd = isoRandomize2(rnd);
+	return rnd;
+}
 // time_events.c IsMirageIslandPresent: any occupied party slot counts (the GBA
-// reads MON_DATA_SPECIES, so an egg would too)
-export function isMirageIslandPresent(party) {
-	const rnd = getMirageRnd() >>> 16;
+// reads MON_DATA_SPECIES, so an egg would too). `value` defaults to the stored one.
+export function isMirageIslandPresent(party, value = getMirageRnd()) {
+	const rnd = value >>> 16;
 	return (party || []).some(m => m && Number.isInteger(m.personality) && (m.personality & 0xFFFF) === rnd);
 }
 

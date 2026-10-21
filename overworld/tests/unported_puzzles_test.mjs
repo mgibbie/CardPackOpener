@@ -322,10 +322,21 @@ try {
 		}
 		{
 			// a day passed: the value steps once (ISO_RANDOMIZE2); a mon with no
-			// personality gets one, saved
+			// personality gets one, saved — on a real entry. Booting INTO Route 130
+			// (loading the game) must leave the save byte-identical (owsync: a load
+			// that writes reads as a same-revision divergence on the next sync).
 			const { page, ctx } = await boot({ map: 'Route130', x: 30, y: 20, party: [LEAD()], vars: { VAR_DAYS: today() - 1, VAR_MIRAGE_RND_H: 0x0102, VAR_MIRAGE_RND_L: 0x0304 } });
-			const r = await page.evaluate(() => {
+			const atBoot = await page.evaluate(() => {
+				const S = window.__ow.Story;
+				const p = JSON.parse(localStorage.getItem('magepunk_party_v1'))[0];
+				return { h: S.getVar('VAR_MIRAGE_RND_H'), l: S.getVar('VAR_MIRAGE_RND_L'), days: S.getVar('VAR_DAYS'), pers: p.personality ?? null };
+			});
+			A(atBoot.h === 0x0102 && atBoot.l === 0x0304 && atBoot.days === today() - 1 && atBoot.pers === null,
+				'3. loading the game on Route 130 writes nothing (no day step, no personality roll)', JSON.stringify(atBoot));
+			const r = await page.evaluate(async () => {
 				const O = window.__ow, S = O.Story;
+				await O.moveToMap('Route130', 30, 20);
+				await new Promise(r => setTimeout(r, 400));
 				const p = JSON.parse(localStorage.getItem('magepunk_party_v1'))[0];
 				return { h: S.getVar('VAR_MIRAGE_RND_H'), l: S.getVar('VAR_MIRAGE_RND_L'), days: S.getVar('VAR_DAYS'), shoal: !!S.getFlag('FLAG_SYS_SHOAL_ITEM'), pers: p.personality };
 			});

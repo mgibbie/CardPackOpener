@@ -140,7 +140,7 @@ export async function refreshMapContent(label) {
 	// for an ON_FRAME auto-cutscene now that the map is set up. Guard the ported
 	// plot triggers: a throwing story script must not break map entry itself
 	// (the map is already loaded + loading cleared above).
-	await runMapSetupScripts(false);
+	await runMapSetupScripts(false, { travel: true });
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a post-battle beat that was won before the game could run it (see above)
 	S.postBattleCatchUpArmed = true;   // fired by the tick once the screen is free (see there)

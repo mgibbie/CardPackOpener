@@ -50,7 +50,7 @@ import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { unownPuzzleSpecial } from './unown_puzzle.js';
 import { checkRelicanthWailord, shouldDoBrailleRegicePuzzle } from './braille_puzzles.js';
-import { ensurePersonality, isMirageIslandPresent, updatePerDay, updateShoalTideFlag } from './time_events.js';
+import { ensurePersonality, isMirageIslandPresent, mirageRndAsOf, updatePerDay, updateShoalTideFlag } from './time_events.js';
 import { setInvisibleMirageTowerMetatiles, setMirageTowerVisibility } from './mirage.js';
 import { setIcefallCaveCrackedIceMetatiles } from './icefall_ice.js';
 import * as RotatingGates from './rotating_gates.js';
@@ -375,11 +375,24 @@ function returnShuckie() {
 // ENGINE_GOT_SHUCKIE_TODAY is one of Crystal's daily flags: it lapses at midnight
 // ...and Emerald's once-a-day update (clock.c UpdatePerDay, time_events.js): the
 // Mirage Island value steps, the SHOAL items come due. The GBA runs it on every
-// map load too (DoTimeBasedEvents).
-function expireDailyFlags() {
+// map load (DoTimeBasedEvents) — here only on a map you TRAVEL into, never on the
+// boot load or a setup re-run. On the GBA those writes are free: nothing is saved
+// until you save. Here every story write is the save, so running it on boot would
+// change (and re-revision) the save merely by OPENING the game — on a pre-existing
+// save it seeds VAR_DAYS and a random Mirage value on every device that loads it,
+// and the hydration that just matched the server then reads the next sync as a
+// same-revision divergence. Deferring it loses nothing: the day steps compose
+// (updateMirageRnd steps every day passed at once), the Mirage check reads the
+// value as of today without storing it (mirageRndAsOf), and the SHOAL items are
+// only ever read by the hermit, who runs the update himself.
+function expireDailyFlags(travel) {
 	if (Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY') && Story.getVar('VAR_MP_SHUCKIE_DAY') !== localDay()) Story.clearFlag('ENGINE_GOT_SHUCKIE_TODAY');
-	updatePerDay();
+	if (travel) updatePerDay();
 }
+// what the current setup pass is: 'travel' (a map entered by moving), 'load' (the
+// boot load / a setup re-run, which must leave the save untouched) or null (not in
+// a setup pass: a script the player started)
+let _setupMode = null;
 // a special that holds its script (its `waitstate`) for `ms`, then runs `then`.
 // Resumes only the script that asked: a setup script that hit it was stopped.
 function specialWait(ms, then) {
@@ -460,8 +473,9 @@ export function applyRestedSceneOutcomes(mapName) {
 	}
 }
 
-export async function runMapSetupScripts(isBoot) {
-	expireDailyFlags();
+export async function runMapSetupScripts(isBoot, opts) {
+	const travel = !isBoot && !!(opts && opts.travel);
+	expireDailyFlags(travel);
 	syncRocketTakeover();             // the Radio Tower takeover's flags + 5F scene, before this map's coord events read them
 	world.restoreLockedCells();      // a reloaded map starts from its layout's doors, as the GBA's does
 	const evs = world.current?.map?.object_events || [];
@@ -472,6 +486,10 @@ export async function runMapSetupScripts(isBoot) {
 	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
 	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
+		_setupMode = travel ? 'travel' : 'load';
+		try { runSetupPass(); } finally { _setupMode = null; }
+	};
+	const runSetupPass = () => {
 		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runChamberWallScene(); } catch (e) { console.warn('[plot] chamber wall scene failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
@@ -1239,8 +1257,12 @@ export function runSpecial(name, store, op) {
 		case 'RotatingGate_InitPuzzle': RotatingGates.initPuzzle(Story, world.current?.name); return;
 		case 'RotatingGate_InitPuzzleAndGraphics': return;
 		// MIRAGE ISLAND (Route 130's ON_TRANSITION; time_events.js). A mon that never
-		// had a personality value gets one here, saved with the party.
+		// had a personality value gets one here, saved with the party — on a real
+		// entry. The boot load (or a setup re-run) answers read-only: the value as of
+		// today, and a mon with no personality yet simply can't match. Rolling one
+		// there would change the save just by opening the game on Route 130.
 		case 'IsMirageIslandPresent': {
+			if (_setupMode === 'load') return set(isMirageIslandPresent(S.party, mirageRndAsOf()) ? 1 : 0);
 			updatePerDay();
 			let rolled = false;
 			for (const m of S.party || []) rolled = ensurePersonality(m) || rolled;
