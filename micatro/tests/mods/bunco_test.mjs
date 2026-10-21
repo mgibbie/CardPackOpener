@@ -79,7 +79,8 @@ function require_pool_has(type, prefix) {
 // ================================================================ hands
 {
   start('HANDS');
-  ok(HANDLIST.slice(0, 13).join('|') === 'bunc_Spectrum Five|bunc_Deal|Flush Five|bunc_Spectrum House|Flush House|Five of a Kind|bunc_Straight Spectrum|Straight Flush|Four of a Kind|bunc_Spectrum|Full House|Flush|Straight', 'hand order (mult*chips, above_hand)', HANDLIST);
+  // (5.4.8b: The Deal's above_hand is Spectrum Five)
+  ok(HANDLIST.slice(0, 13).join('|') === 'bunc_Deal|bunc_Spectrum Five|Flush Five|bunc_Spectrum House|Flush House|Five of a Kind|bunc_Straight Spectrum|Straight Flush|Four of a Kind|bunc_Spectrum|Full House|Flush|Straight', 'hand order (mult*chips, above_hand)', HANDLIST);
   for (const k of ['bunc_Spectrum', 'bunc_Straight Spectrum', 'bunc_Spectrum House', 'bunc_Spectrum Five', 'bunc_Deal']) ok(G.GAME.hands[k] && G.GAME.hands[k].visible === false, k + ' starts hidden');
   const H = G.GAME.hands;
   ok(H.bunc_Spectrum.chips === 50 && H.bunc_Spectrum.mult === 6 && H.bunc_Spectrum.l_chips === 20 && H.bunc_Spectrum.l_mult === 2, 'Spectrum 50 x 6 (+20/+2)');

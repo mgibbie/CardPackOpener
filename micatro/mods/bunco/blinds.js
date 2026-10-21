@@ -16,7 +16,7 @@ import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded r
 import { G, number_format, math_random, get_blind_amount, localize, ease_dollars } from '../../js/engine/core.js';
 import { get_poker_hand_info, HANDLIST, discard_cards_from_highlighted } from '../../js/engine/run.js';
 import { add_tag, Tag } from '../../js/engine/tag.js';
-import { data_of, event, big_juice, RANK_LIST, FLEURONS, HALBERDS } from './util.js';
+import { data_of, event, big_juice, RANK_LIST, FLEURONS, HALBERDS, has_no_rank, has_no_suit } from './util.js';
 
 const on = (key) => G.GAME.blind && G.GAME.blind.name === key && !G.GAME.blind.disabled;
 const first_hand = () => G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0;
@@ -41,7 +41,8 @@ export const blinds = [
   blind('tine', {
     loc_vars: () => ({ vars: [localize(G.GAME.current_round.most_played_rank, 'ranks')] }),
     collection_loc_vars: () => ({ vars: [localize('bunc_most_played_rank')] }),
-    debuff_card: (self, b, card) => card.config.center.key !== 'm_stone' && card.base.value === G.GAME.current_round.most_played_rank,
+    // (5.4.8b: any rankless card is spared, not only Stone Cards)
+    debuff_card: (self, b, card) => !has_no_rank(card) && card.base.value === G.GAME.current_round.most_played_rank,
   }),
   blind('swing', {
     defeat() { G.GAME.Swing = false; },
@@ -50,7 +51,8 @@ export const blinds = [
   }),
   blind('miser', { defeat(self, b) { if (!b.disabled) G.GAME.Miser = true; } }),
   blind('gate'),
-  blind('flame', { debuff_card: (self, b, card) => card.config.center.key !== 'c_base' }),
+  // (5.4.8b: never a consumable — only Enhanced playing cards)
+  blind('flame', { debuff_card: (self, b, card) => card.area !== G.consumeables && card.config.center.set === 'Enhanced' }),
   blind('mask', {
     loc_vars: () => ({ vars: [localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands'), localize(G.GAME.current_round.least_played_poker_hand, 'poker_hands')] }),
     collection_loc_vars: () => ({ vars: [localize('ph_most_played'), localize('bunc_least_played_hand')] }),
@@ -136,8 +138,11 @@ export const blinds = [
         for (const j of G.jokers.cards) { b.debuff_card(j); big_juice(j); }
         b.wiggle();
       }
-      if (!b.disabled && G.GAME.current_round.hands_played > 0) b.disable();
+      // (5.4.8b timing: disabled once a hand has been PLAYED this blind — a flag set at press_play, cleared at defeat)
+      if (!b.disabled && G.GAME.bunc_bl_prince_flag) b.disable();
     },
+    press_play() { G.GAME.bunc_bl_prince_flag = true; },
+    defeat() { G.GAME.bunc_bl_prince_flag = undefined; },
   }),
   blind('depths', {
     press_play(self, b) {
@@ -157,8 +162,9 @@ export const blinds = [
   }),
   // ---- finishers
   blind('final_crown', {
-    debuff_card: (self, b, card) => ['Spades', 'Hearts', 'Clubs', 'Diamonds'].includes(card.base.suit) && card.ability.name !== 'Stone Card',
-    in_pool: () => (G.playing_cards || []).filter((v) => (v.base.suit === FLEURONS || v.base.suit === HALBERDS) && v.ability.name !== 'Stone Card').length >= 10,
+    // (5.4.8b: any suitless card, not only Stone Cards)
+    debuff_card: (self, b, card) => ['Spades', 'Hearts', 'Clubs', 'Diamonds'].includes(card.base.suit) && !has_no_suit(card),
+    in_pool: () => (G.playing_cards || []).filter((v) => (v.base.suit === FLEURONS || v.base.suit === HALBERDS) && !has_no_suit(v)).length >= 10,
   }),
   blind('final_trident', {
     set_blind(self, b) {
@@ -167,7 +173,7 @@ export const blinds = [
     },
     disable: restore,
   }),
-  blind('final_tower', { debuff_card: (self, b, card) => !card.ability.played_this_ante }),
+  blind('final_tower', { debuff_card: (self, b, card) => card.area !== G.consumeables && !card.ability.played_this_ante }), // (5.4.8b: not consumables)
   blind('final_dagger'),
   blind('final_shield', {
     set_blind(self, b) {

@@ -44,13 +44,20 @@ export function spectrum_part(hand) {
   const suits = {};
   for (const v of SUIT_BUFFER) suits[v] = 1;
   if (hand.length < 5) return [];
+  // (5.4.8b "Fix spectrum detection when playing 6+ cards": up to #hand - 5 cards may add no new suit)
+  let extraCardsAllowed = hand.length - 5;
   const nonwilds = [];
   for (const card of hand) {
     const cardsuits = [];
     for (const v of SUIT_BUFFER) if (card.is_suit(v, null, true)) cardsuits.push(v);
-    if (cardsuits.length === 0) return [];
-    if (cardsuits.length === 1) {
-      if (suits[cardsuits[0]] === 0) return [];
+    if (cardsuits.length === 0) {
+      if (extraCardsAllowed <= 0) return [];
+      extraCardsAllowed--;
+    } else if (cardsuits.length === 1) {
+      if (suits[cardsuits[0]] === 0) {
+        if (extraCardsAllowed <= 0) return [];
+        extraCardsAllowed--;
+      }
       suits[cardsuits[0]] = 0;
     } else if (cardsuits.length < 5) nonwilds.push(cardsuits);
   }
@@ -68,17 +75,21 @@ export function spectrum_part(hand) {
   };
   return isSpectrum(0, suits) ? [hand] : [];
 }
-/** SMODS.PokerHandPart 'bunc_deal' (Bunco.lua ~6208): the hand's ranks are exactly a Registration Plate's. */
+/**
+ * SMODS.PokerHandPart 'bunc_deal' (5.4.8b): 5+ cards, every card one of a Registration Plate's ranks and at least as many
+ * of each rank as the Plate names (5.1 wanted the exact 5: a 6-card hand was never a Deal). Unlike 5.4.8b, a Plate that
+ * doesn't match moves on to the next Plate (the fork returns from the whole part on the first mismatch).
+ */
 export function deal_part(hand) {
+  if (hand.length < 5) return [];
   const count = (list) => { const m = new Map(); for (const v of list) m.set(v, (m.get(v) || 0) + 1); return m; };
-  const count1 = count(hand.map((c) => c.get_id()));
   const deals = [];
-  if (G.jokers) for (const v of G.jokers.cards) if (v.config.center.key === 'j_bunc_registration_plate') deals.push(v.ability.extra.ranks || []);
+  if (G.jokers) for (const v of G.jokers.cards) if (v.config.center.key === 'j_bunc_registration_plate' && !v.debuff) deals.push(v.ability.extra.ranks || []);
   for (const deal of deals) {
-    const count2 = count(deal);
-    let equal = true;
-    for (const [k, n] of count1) if (count2.get(k) !== n) { equal = false; break; }
-    if (equal) for (const [k, n] of count2) if (count1.get(k) !== n) { equal = false; break; }
+    const deal_count = count(deal);
+    const hand_count = count(hand.map((c) => c.get_id()).filter((id) => deal_count.has(id)));
+    let equal = hand.every((c) => deal_count.has(c.get_id()));
+    if (equal) for (const [k, n] of deal_count) if ((hand_count.get(k) || 0) < n) { equal = false; break; }
     if (equal) {
       const self = G.GAME.hands.bunc_Deal;
       self.chips = 0; self.mult = 0; self.level = 0;
@@ -110,7 +121,7 @@ export const poker_hands = [
   { key: 'bunc_Spectrum Five', above_hand: 'Flush Five', visible: false, chips: 180, mult: 18, l_chips: 55, l_mult: 3,
     example: [['S_7', true], ['D_7', true], ['bunc_FLEURON_7', true], ['H_7', true], ['C_7', true]],
     evaluate: (parts) => (!next(parts._5) || !next(parts.bunc_spectrum) ? [] : [merge_lists(parts._5, parts.bunc_spectrum)]) },
-  { key: 'bunc_Deal', above_hand: 'Flush Five', visible: false, chips: 0, mult: 0, l_chips: 0, l_mult: 0, example: [],
+  { key: 'bunc_Deal', above_hand: 'bunc_Spectrum Five', visible: false, no_collection: true, chips: 0, mult: 0, l_chips: 0, l_mult: 0, example: [],
     evaluate: (parts) => parts.bunc_deal },
 ];
 
@@ -205,11 +216,12 @@ function draw_linked() {
         if (card.ability.group && card.ability.group.id === group.id) cards_from_groups.push(card);
       }
     }
-    let drawn = false;
     cards_from_groups.forEach((card, i) => {
-      if (G.deck.cards.includes(card)) { draw_card(G.deck, G.hand, (i + 1) * 100 / cards_from_groups.length, 'up', true, card); drawn = true; }
+      if (G.deck.cards.includes(card)) { draw_card(G.deck, G.hand, (i + 1) * 100 / cards_from_groups.length, 'up', true, card); }
     });
-    if (groups.length && drawn && G.jokers) {
+    // (5.4.8b: Games Collector hears of every group that reaches the hand — counted once per group per round by the
+    // joker — not only when a card had to be pulled from the deck; 5.1 re-counted every group in hand on each pull)
+    if (groups.length && G.jokers) {
       for (const v of G.jokers.cards.slice()) if (v.config.center.key === 'j_bunc_games_collector' && !v.debuff) v.calculate_joker({ groups_drawn: groups });
     }
   });

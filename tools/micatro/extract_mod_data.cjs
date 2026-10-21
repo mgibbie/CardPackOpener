@@ -39,6 +39,7 @@ local smods = setmetatable({}, {__index = function(t, k)
 SMODS = smods
 SMODS.current_mod = setmetatable({config = {}}, {__index = function(t,k) return mkstub('current_mod.'..k) end})
 SMODS.Mods = setmetatable({}, {__index = function() return nil end})
+SMODS.find_mod = function() return {} end -- next(SMODS.find_mod('x')) is nil: no other mod loaded (Bunco fork 5.4.8b)
 SMODS.load_file = function() return function() return {} end end
 NFS = setmetatable({}, {__index = function() return function() return {} end end})
 function HEX(h) return '#'..tostring(h) end
