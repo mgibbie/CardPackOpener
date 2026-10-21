@@ -61,7 +61,7 @@ try {
 	A((await api('bug-add', { text: 'hi' }, stranger)).error, 'someone who is not a playtester is refused');
 	// 2026-10-02: Remy's bot signed in as remytest and read the bare refusal as a broken button
 	A(/signed in as bugstranger/.test((await api('bug-mine', {}, stranger)).error || ''), '...and the refusal names the account they are signed in as');
-	A(/'instinctloretest0918,remygl,remytest'/.test(fs.readFileSync(path.join(ROOT, 'server', 'mp.mjs'), 'utf8')), 'the default reporters are Instinct, Muse and remytest (the account Remy\'s bot uses)');
+	A(/'instinctloretest0918,remygl,remytest,instinctgauntlet'/.test(fs.readFileSync(path.join(ROOT, 'server', 'mp.mjs'), 'utf8')), 'the default reporters are Instinct, Muse and remytest (the account Remy\'s bot uses)');
 	A((await api('bug-list', {}, tester)).error === 'owner only', 'only the owner can list the review queue');
 	const list = (await api('bug-list', {}, owner)).bugs || [];
 	const b = list.find(x => x.id === added.id);
