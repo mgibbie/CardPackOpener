@@ -12,7 +12,7 @@ import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded r
 import { G, P_CENTERS, P_CARDS, Card, emit, play_sound, mod_chips, mod_mult, pseudorandom, pseudoseed, pseudorandom_element } from '../../js/engine/core.js';
 import { use_card } from '../../js/engine/run.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
-import { data_of, SEED, enable_exotics, FLEURONS, HALBERDS, big_juice } from './util.js';
+import { data_of, SEED, enable_exotics, FLEURONS, HALBERDS, big_juice, has_any_suit } from './util.js';
 import { apply_sticker } from './stickers.js';
 
 /** Tag:instayep(message, colour, func): shown at once; the tag hides, runs func and goes. */
@@ -70,7 +70,7 @@ const sticker_tag = (slug, eligible, set, info) => tag(slug, {
   apply(self, t, ctx) {
     if (ctx.type !== self.config.type) return undefined;
     const card = ctx.card;
-    if (card && card.ability.set === 'Joker' && eligible(card.ability)) {
+    if (card && card.ability.set === 'Joker' && eligible(card.ability, card)) {
       t.yep('+', 'RED', () => { set(card); big_juice(card); card.set_cost(); return true; });
       t.triggered = true;
     }
@@ -82,10 +82,11 @@ const no_bunco_sticker = (a) => !a.bunc_scattering && !a.bunc_hindered && !a.bun
 export const tags = [
   tag('breaking', {
     apply(self, t, ctx) {
-      if (ctx.type !== self.config.type) return undefined;
+      // (5.4.8b: also on 'immediate' — the reworked Luchador, sold during a Boss Blind, disables it right away)
+      if (ctx.type !== self.config.type && ctx.type !== 'immediate') return undefined;
       if (G.GAME.blind && G.GAME.blind.boss && !G.GAME.blind.disabled) {
         t.yep('+', 'BLUE', () => true);
-        G.GAME.blind.disable();
+        G.E_MANAGER.add_event(() => { G.GAME.blind.disable(); });
         t.triggered = true;
         return true;
       }
@@ -133,7 +134,7 @@ export const tags = [
         if (G.pack_cards && G.pack_cards.cards[0]) {
           enable_exotics();
           for (const v of G.pack_cards.cards) {
-            if ((!v.is_suit(FLEURONS) && !v.is_suit(HALBERDS)) || v.config.center === P_CENTERS.m_wild) {
+            if ((!v.is_suit(FLEURONS) && !v.is_suit(HALBERDS)) || has_any_suit(v)) { // (5.4.8b: SMODS.has_any_suit)
               v.change_suit(pseudorandom_element([FLEURONS, HALBERDS], pseudoseed('filigree' + SEED()))[0]);
             }
           }
@@ -144,8 +145,10 @@ export const tags = [
     },
     in_pool: () => !!(G.GAME && G.GAME.Exotic),
   }),
-  sticker_tag('eternal', (a) => !a.eternal && !a.perishable, (c) => c.set_eternal(true), () => ({ key: 'eternal', set: 'Other' })),
-  sticker_tag('perishable', (a) => !a.perishable && !a.eternal, (c) => c.set_perishable(true), () => ({ key: 'perishable', set: 'Other', vars: [G.GAME.perishable_rounds || 1, G.GAME.perishable_rounds || 1] })),
+  // (5.4.8b: Eternal never on a Scattering / Hindered joker or one that can't be Eternal, Perishable never on one that can't
+  // be Perishable — the tag then waits for the next shop joker instead of being used up for nothing)
+  sticker_tag('eternal', (a, c) => !a.eternal && !a.perishable && !a.bunc_scattering && !a.bunc_hindered && !!c.config.center.eternal_compat, (c) => c.set_eternal(true), () => ({ key: 'eternal', set: 'Other' })),
+  sticker_tag('perishable', (a, c) => !a.perishable && !a.eternal && !!c.config.center.perishable_compat, (c) => c.set_perishable(true), () => ({ key: 'perishable', set: 'Other', vars: [G.GAME.perishable_rounds || 1, G.GAME.perishable_rounds || 1] })),
   sticker_tag('scattering', (a) => no_bunco_sticker(a) && !a.eternal, (c) => apply_sticker('bunc_scattering', c, true), () => ({ key: 'bunc_scattering', set: 'Other' })),
   sticker_tag('hindered', (a) => no_bunco_sticker(a) && !a.eternal, (c) => apply_sticker('bunc_hindered', c, true), () => ({ key: 'bunc_hindered', set: 'Other' })),
   sticker_tag('reactive', (a) => no_bunco_sticker(a), (c) => apply_sticker('bunc_reactive', c, true), () => ({ key: 'bunc_reactive', set: 'Other' })),

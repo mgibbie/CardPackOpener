@@ -35,7 +35,14 @@ export const hooks = {
     const n = card.ability.name;
     if (n === 'Luchador') {
       if (card.debuff) return null;
-      if (context.selling_self) G.E_MANAGER.add_event(() => { add_tag(new Tag('tag_bunc_breaking')); play_sound('generic1', 0.9, 0.8); play_sound('holo1', 1.2, 0.4); });
+      if (context.selling_self) {
+        G.E_MANAGER.add_event(() => {
+          add_tag(new Tag('tag_bunc_breaking')); play_sound('generic1', 0.9, 0.8); play_sound('holo1', 1.2, 0.4);
+          // (5.4.8b "breaking tag now triggers when luchador sells": the immediate tags run, so a Breaking Tag gained
+          // during a Boss Blind disables it now, as the vanilla Luchador would)
+          G.E_MANAGER.add_event(() => { for (const t of G.GAME.tags.slice()) t.apply_to_run({ type: 'immediate' }); });
+        });
+      }
       return null;
     }
     if (n === 'Red Card' && context.skipping_booster) {
