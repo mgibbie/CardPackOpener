@@ -111,6 +111,7 @@ G.WatchUI = (() => {
         o.p.tagColor = m[9] === 'l' ? (G.LocalCoop && G.LocalCoop.COLOR) || '#9ad0ff' : MATE_COL[m[10] | 0] || '#fff';
         mates.set(name, o);
       }
+      o.raw = m[0];   // (DLC D2: its name in the x block's air rows)
       const nb = (B.mt || []).find(x => x[0] === m[0] && x[9] === m[9]) || m;
       o.from = ex ? [m[3], m[4]] : [o.p.x, o.p.y]; o.to = [nb[3], nb[4]];
       o.p.hp = m[5]; o.p.maxHp = m[6] || 1; o.kind = m[9]; o.ctrl = m[10];
@@ -169,6 +170,9 @@ G.WatchUI = (() => {
       else { o.x = k[2]; o.y = k[3]; want.delete(o.id); }
     }
     for (const k of want.values()) { const [kind, value] = G.Spectate.pickupKind(k[1]); G.Pickups.addRemote(k[0], kind, k[2], k[3], value); }
+    // DLC D2: an Expedition snapshot's airborne state (hops, glides, bounce pads, slides, surf) on the puppets (x.a).
+    // A base snapshot has no `x`: nothing happens.
+    if (a.x && G.Exp && G.Exp.viewAir) G.Exp.viewAir(a, pl, mates);
     timeNow = a.t / 10;
   }
 

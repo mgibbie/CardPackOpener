@@ -25,7 +25,8 @@
  * MicaSurvivor (DLC D1): an Expedition run sets a ZONE (setZone, js/expedition/terrain.js): a bounded map with a
  * height per tile, cliffs and ramps. Its tiles come from the zone, collide() keeps each walker on its layer
  * (collideZone), the painter adds the cliffs and stairs, and maskAt / layerAt answer pathing and D2. Base modes never
- * set a zone, so none of that runs for them.
+ * set a zone, so none of that runs for them. (DLC D2: collideZone also applies the player's movement verbs, through
+ * js/expedition/verbs.js: deep water, airborne levels, climbing.)
  *
  * Coordenadas: (x, y) de una entidad = sus PIES, en el plano del suelo.
  * Los chunks se separan en DATOS (baratos, siempre) e IMAGEN (horneada a
@@ -378,13 +379,26 @@ G.World = (() => {
     const r = e.r;
     let hit = false;
     if (e.zId !== zone.id || e.zMask == null) { e.zId = zone.id; e.zMask = maskAt(tileOf(e.x), tileOf(e.y)) || 1; e.zLx = e.x; e.zLy = e.y; }
-    let cur = maskAt(tileOf(e.x), tileOf(e.y));
-    if (!(cur & e.zMask)) { e.x = e.zLx; e.y = e.zLy; hit = true; cur = maskAt(tileOf(e.x), tileOf(e.y)); }
-    if (!cur) cur = e.zMask;   // (inside a wall: pushed out against its own layer)
+    // DLC D2: the player's movement verbs (js/expedition/verbs.js): its own tile rule (deep water: surfers only), while
+    // airborne every level up to its air's top (a hop drops off a ledge; the extra hop reaches one level up), and a
+    // climber's one level up or down. Enemies have no verbs: they keep D1's rule exactly (V = null).
+    const V = e.xverbs && G.ExpVerbs ? G.ExpVerbs : null;
+    const mk = V ? (tx, ty) => V.pass(e, tx, ty) : maskAt;
+    const air = V && e.air ? V.airMask(e) : 0;
+    let cur;
+    if (air) {
+      cur = air;
+      if (!(mk(tileOf(e.x), tileOf(e.y)) & cur)) { e.x = e.aLx; e.y = e.aLy; hit = true; }
+    } else {
+      cur = mk(tileOf(e.x), tileOf(e.y));
+      if (!(cur & (V ? V.reach(e, e.zMask) : e.zMask))) { e.x = e.zLx; e.y = e.zLy; hit = true; cur = mk(tileOf(e.x), tileOf(e.y)); }
+      if (!cur) cur = e.zMask;   // (inside a wall: pushed out against its own layer)
+      if (V) cur = V.reach(e, cur);
+    }
     for (let pass = 0; pass < 2; pass++) {
       const t0x = tileOf(e.x - r), t1x = tileOf(e.x + r), t0y = tileOf(e.y - r), t1y = tileOf(e.y + r);
       for (let ty = t0y; ty <= t1y; ty++) for (let tx = t0x; tx <= t1x; tx++) {
-        if (!(maskAt(tx, ty) & cur)) {
+        if (!(mk(tx, ty) & cur)) {
           const bx0 = tx * TS, by0 = ty * TS, bx1 = bx0 + TS, by1 = by0 + TS;
           const qx = G.U.clamp(e.x, bx0, bx1), qy = G.U.clamp(e.y, by0, by1);
           const dx = e.x - qx, dy = e.y - qy, d2 = dx * dx + dy * dy;
@@ -404,7 +418,13 @@ G.World = (() => {
         }
       }
     }
-    const now = maskAt(tileOf(e.x), tileOf(e.y));
+    const now = mk(tileOf(e.x), tileOf(e.y));
+    if (air) {
+      // (airborne: the last good spot in the air; the layer is the air's until the landing, verbs.js after())
+      if (now & cur) { e.aLx = e.x; e.aLy = e.y; } else { e.x = e.aLx; e.y = e.aLy; hit = true; }
+      e.layer = e.air.top;
+      return hit;
+    }
     if (now & cur) { e.zMask = now; e.zLx = e.x; e.zLy = e.y; }
     else { e.x = e.zLx; e.y = e.zLy; hit = true; }
     e.layer = zone.layer(tileOf(e.x), tileOf(e.y));

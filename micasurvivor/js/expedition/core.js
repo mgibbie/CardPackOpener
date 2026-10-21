@@ -20,12 +20,25 @@
  *                   a spectator rebuild the zone: js/ui/watch-ui.js -> G.Expedition.viewZone -> applyX)
  *   net.frame       each co-op host frame carries the same `x` (a guest rebuilds from its start seed: js/net/coop.js)
  *   applyX(seed, x) the rebuild: the same zone from the same seed + x (its hash checked against x.th)
+ *
+ * D2 (movement verbs, js/expedition/verbs.js): the `x` block is v2, {xv: 2, m, z, th, a}. `a` is the airborne state:
+ *   a.p   the player's air row (G.ExpVerbs.row: [lift, verb, layer x2, phase cs, airtime cs, hops]): in a snapshot the
+ *         watched player's, in a co-op GUEST's frame to the host the guest's own
+ *   a.q   the co-op players' rows: in a host frame {uid: row} (the host and every other guest), in a snapshot
+ *         {name: row} (the partners, airborne / using a verb only)
+ *   a.e   airborne enemies (a jumper mid-leap), flat [id, lift, id, lift, ...] (their layer is the zone's under them)
+ *   The replay keeps {xv, m, z, th} in its slow state and `a` in a frame field of its own (js/mica/replay.js), so a hop
+ *   costs a few bytes, not a slow-state rewrite. A v1 block (no `a`) still loads: terrain, everyone on the ground.
+ *   viewAir(s, pl, mates)   a replay / spectator view shows a snapshot's `a` (js/ui/watch-ui.js)
+ *   hostAir(x, mateOf)      a co-op guest shows the host frame's `a` (js/net/coop.js onHostFrame)
+ *   guestAir(m, x)          the host keeps a guest's own row (js/net/coop.js onClientFrame), for its frames and snapshots
  */
 G.Exp = (() => {
   const dv = 1;   // this file's content version: G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 1;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const XV = 2;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2];   // the schemas applyX / viewAir read (v1: D1's terrain only)
   const expRun = () => G.Modes.isExp();
 
   function init() {
@@ -43,11 +56,13 @@ G.Exp = (() => {
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) s.x = x; }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); s.x = x; } }
       return s;
     });
-    G.Hooks.on('net.frame', f => {
-      if (expRun()) { const x = xblock(); if (x) f.x = x; }
+    // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
+    // Expedition one on its side yet (co-op starts are still base), so a guest goes by the zone the host gave it.)
+    G.Hooks.on('net.frame', (f, m) => {
+      if (expRun() || (!m && G.World.zone)) { const x = xblock(); if (x) { x.a = m ? airHost(m) : airGuest(); f.x = x; } }
       return f;
     });
     G.Hooks.on('run.end', (out, sum) => {
@@ -70,14 +85,91 @@ G.Exp = (() => {
     if (cur) { cur.zone = z; cur.th = zone.hash; }
     return zone;
   }
-  /** The `x` block v1 of the current zone: {xv, m, z, th} (null outside a zone). Terrain itself is never sent. */
+  /** The `x` block of the current zone: {xv, m, z, th} (null outside a zone; D2 adds `a`). Terrain is never sent. */
   function xblock() {
     const zn = G.World.zone;
     return zn && zn.map ? { xv: XV, m: zn.map, z: zn.zone, th: zn.hash } : null;
   }
+
+  // ---------------- D2: the airborne state in the `x` block ----------------
+  const V = () => G.ExpVerbs;
+  const NEAR = 720;
+  /** Airborne enemies near (x, y): flat [id, lift, ...] (enemies only leave the ground by leaping). */
+  function airEnemies(x, y) {
+    const out = [];
+    for (const e of G.EnemyMgr.all()) {
+      if (e.dead || !(e.jumpLift > 0.5) || G.U.dist2(e.x, e.y, x, y) > NEAR * NEAR) continue;
+      out.push(e.id, Math.round(e.jumpLift));
+    }
+    return out;
+  }
+  const busy = r => r && (r[0] > 0 || r[1] > 0);
+  /** A snapshot's `a`: the player's row, its co-op partners' (by name, only those in the air / using a verb). */
+  function airSnap() {
+    const pl = G.Game.player;
+    if (!pl) return {};
+    const a = { p: V().row(pl) };
+    if (G.Coop && G.Coop.active) {
+      const q = {};
+      for (const m of G.Coop.mates) if (m.connected && busy(m.xrow)) q[m.name] = m.xrow;
+      if (Object.keys(q).length) a.q = q;
+    }
+    const e = airEnemies(pl.x, pl.y);
+    if (e.length) a.e = e;
+    return a;
+  }
+  /** A host frame's `a` for guest m: every player's row by uid (the host's own, the other guests'), airborne enemies near m. */
+  function airHost(m) {
+    const pl = G.Game.player, q = {};
+    if (pl && G.Net && G.Net.uid) q[G.Net.uid] = V().row(pl);
+    for (const o of G.Coop.mates) if (o.connected && o.uid !== m.uid && o.xrow) q[o.uid] = o.xrow;
+    const a = { q };
+    const e = airEnemies(m.pl ? m.pl.x : 0, m.pl ? m.pl.y : 0);
+    if (e.length) a.e = e;
+    return a;
+  }
+  /** A guest's own frame to the host: its row. */
+  function airGuest() { const pl = G.Game.player; return pl ? { p: V().row(pl) } : {}; }
+
+  const lifted = new Set();
+  /** Airborne enemies (a flat [id, lift] list) on their copies; the ones no longer listed come down. */
+  function liftEnemies(list) {
+    const now = new Set();
+    for (let i = 0; i + 1 < (list || []).length; i += 2) {
+      const e = G.EnemyMgr.get(list[i]);
+      if (!e || !e.remote) continue;
+      e.jumpLift = list[i + 1]; now.add(e.id);
+    }
+    for (const id of lifted) if (!now.has(id)) { const e = G.EnemyMgr.get(id); if (e && e.remote) e.jumpLift = 0; }
+    lifted.clear();
+    for (const id of now) lifted.add(id);
+  }
+  /** A replay / spectator view: snapshot s's `a` on the watched player, its partners (mates: name -> {p}) and enemies. */
+  function viewAir(s, pl, mates) {
+    const x = s && s.x, a = x && READS.includes(x.xv) && x.xv >= 2 ? x.a || {} : null;
+    if (pl) V().applyRow(pl, a && a.p);
+    if (mates) for (const [name, o] of mates) V().applyRow(o.p, a && a.q ? a.q[o.raw || name] : null);
+    liftEnemies(a && a.e);
+    return !!a;
+  }
+  /** A co-op guest: the host frame's `a` (rows by uid: mateOf(uid) -> that player's puppet, or null). */
+  function hostAir(x, mateOf) {
+    if (!x || !READS.includes(x.xv)) return false;
+    const a = x.xv >= 2 && x.a ? x.a : {};
+    for (const u in a.q || {}) { const p = mateOf(u); if (p) V().applyRow(p, a.q[u]); }
+    liftEnemies(a.e);
+    return true;
+  }
+  /** The host: a guest's frame `x` -> its row, kept on the mate (m.xrow) and shown on its puppet. */
+  function guestAir(m, x) {
+    if (!m || !x || !READS.includes(x.xv)) return;
+    m.xrow = x.xv >= 2 && x.a && Array.isArray(x.a.p) ? x.a.p : null;
+    if (m.pl) V().applyRow(m.pl, m.xrow);
+  }
+
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {
-    if (!x || x.xv !== XV || !G.ExpTerrain.MAPS.includes(x.m)) { if (x) console.warn('[Exp] unknown terrain block', x); return null; }
+    if (!x || !READS.includes(x.xv) || !G.ExpTerrain.MAPS.includes(x.m)) { if (x) console.warn('[Exp] unknown terrain block', x); return null; }
     if ((G.World.seed | 0) !== (seed | 0)) return null;   // (the view has moved on to another run)
     const zone = G.ExpTerrain.generate({ seed, map: x.m, zone: x.z });
     if (x.th && zone.hash !== x.th) console.warn('[Exp] terrain rebuild differs from the host (' + zone.hash + ' vs ' + x.th + ')');
@@ -118,5 +210,6 @@ G.Exp = (() => {
     return { top: d.body.top || [], you: d.body.you || null };
   }
 
-  return { dv, XV, init, submitScore, leaderboard, record, enterZone, xblock, applyX, get run() { return cur; }, get inited() { return inited; } };
+  return { dv, XV, READS, init, submitScore, leaderboard, record, enterZone, xblock, applyX, viewAir, hostAir, guestAir,
+    get run() { return cur; }, get inited() { return inited; } };
 })();
