@@ -614,7 +614,8 @@ makeWith('j_poke_dragapult', (m) => m.calculate_joker({ cardarea: G.jokers, scor
   const made = makeWith('j_poke_mewtwo', (m) => { G.GAME.blind.boss = true; m.calculate_joker({ end_of_round: true }); }, ['j_poke_bulbasaur']);
   ok(made.length === 1 && keyOf(made[0]) === 'j_poke_bulbasaur' && made[0].ability.rb_type === 'Grass', '(made by) Mewtwo\'s copy keeps its source\'s type (the copy rule)', made.map((c) => c.ability.rb_type));
 }
-makeWith('j_nacho_mega_audino', (m) => m.calculate_joker({ end_of_round: true, game_over: false }), [], ['pokermon', 'nacho']);
+// (Nacho 1.7.9 Mega Audino: a Daycare egg of an adjacent parent when a Boss Blind is beaten)
+makeWith('j_nacho_mega_audino', (m) => { m.calculate_joker({ end_of_round: true, beat_boss: true, game_over: false }); }, ['j_poke_bulbasaur'], ['pokermon', 'nacho']);
 // a Tropius banana by a Blueprint copy is still Tropius's effect
 {
   const made = makeWith('j_poke_tropius', (m) => {
