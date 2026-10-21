@@ -324,6 +324,9 @@ export function ruinsWordTalk() {
 
 // MIRAGE TOWER: take ONE fossil and the other sinks with the tower's rumble —
 // it resurfaces in the DESERT UNDERPASS. The FOSSIL MANIAC revives any fossil.
+// LEGACY: the native stand-in for the decomp's own fossil scripts, which run now
+// that the tower's specials are ported (mirage.js). No zone reaches these any
+// more; a save that chose through them is carried over by reconcileMirageFossils.
 export function fossilPick(which) {
 	const ev = miscEvents();
 	if (ev.mirage) { dialog.open('Only crumbled sandstone remains here.'); return; }
@@ -384,21 +387,22 @@ export function generatorTalk() {
 		dialog.open('KA-CHUNK. The hum dies to a whisper.\n\nA voice crackles from the intercom:\n"WAHAHA! That racket\'s finally done! WATTSON\nowes you one — take what\'s in the console!"\n\nYou found a THUNDERSTONE!');
 	});
 }
-// fossil markers: the pried spots draw a small ammonite swirl until taken
-export function drawFossilSpots(ctx, camX, camY) {
-	const here = world.current?.name;
+// A save that took its Mirage Tower fossil through the native stand-in (above)
+// has it in miscEvents, not in the decomp's flags. Carry it over once, so the
+// tower stays gone and the Underpass fossil is the other one: the tower's event
+// is over (VAR_MIRAGE_TOWER_STATE 3, no collapse scene replayed), both tower
+// fossils are gone, and the Underpass one is there until it was taken.
+export function reconcileMirageFossils() {
 	const ev = miscEvents();
-	const spots = [];
-	if (here === 'MirageTower_4F' && !ev.mirage) spots.push([5, 4], [7, 4]);
-	if (here === 'DesertUnderpass' && ev.mirage && !ev.underpass) spots.push([132, 10]);
-	for (const [tx, ty] of spots) {
-		const x = tx * META - camX, y = ty * META - camY;
-		ctx.fillStyle = '#c9b28a';
-		ctx.fillRect(x + 3, y + 3, 10, 10);
-		ctx.fillStyle = '#8a7350';
-		ctx.fillRect(x + 5, y + 5, 6, 6);
-		ctx.fillStyle = '#c9b28a';
-		ctx.fillRect(x + 7, y + 7, 2, 2);
-	}
+	if (ev.mirage !== 'root' && ev.mirage !== 'claw') return false;
+	if (Story.getFlag('FLAG_CHOSE_ROOT_FOSSIL') || Story.getFlag('FLAG_CHOSE_CLAW_FOSSIL')) return false;
+	Story.setFlag(ev.mirage === 'root' ? 'FLAG_CHOSE_ROOT_FOSSIL' : 'FLAG_CHOSE_CLAW_FOSSIL');
+	Story.setFlag('FLAG_HIDE_MIRAGE_TOWER_ROOT_FOSSIL');
+	Story.setFlag('FLAG_HIDE_MIRAGE_TOWER_CLAW_FOSSIL');
+	if (!Story.getVar('VAR_MIRAGE_TOWER_STATE')) Story.setVar('VAR_MIRAGE_TOWER_STATE', 3);
+	if (ev.underpass) Story.setFlag('FLAG_HIDE_DESERT_UNDERPASS_FOSSIL');
+	else Story.clearFlag('FLAG_HIDE_DESERT_UNDERPASS_FOSSIL');
+	console.info('[mirage] carried the native fossil choice over:', ev.mirage, ev.underpass ? '(underpass taken)' : '');
+	return true;
 }
 

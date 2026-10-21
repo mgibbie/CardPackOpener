@@ -15,6 +15,7 @@ import * as Dex from './pokedex.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
+import { SHOAL_ITEM_FLAGS, resetShoalItemsIfDue, updatePerDay } from './time_events.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { offerNickname } from './ow_screens.js';
 import { whiteOut } from './ow_places.js';
@@ -289,10 +290,21 @@ export function drawSocial(W, H) {
 // underwater outright. The high-tide map shipped as a layout-only shell (no
 // warps, even in the decomp — events live on the low map), so its warps are
 // injected at load and arrival is re-placed by hand. SHOAL SALT × 4 and SHOAL
-// SHELL × 4 hide at the classic dig spots (once per save — no respawn timers),
-// and the hermit at the entrance trades 4 + 4 for his SHELL BELL.
-const SHOAL_KEY = 'magepunk_shoal_v1';
+// SHELL × 4 hide at the classic dig spots, and the hermit at the entrance trades
+// 4 + 4 for his SHELL BELL.
+//
+// THE TIDE is the hour's (shoalTide) until you walk in from Route 125: then the
+// entrance room's ON_TRANSITION (`special UpdateShoalTideFlag`, time_events.js)
+// latches it in FLAG_SYS_SHOAL_TIDE, which also lays the entrance room's high-tide
+// layout, and it holds until you leave the cave, as on the GBA (shoalTideHere).
+// THE ITEMS are Emerald's: each spot's FLAG_RECEIVED_SHOAL_* (time_events.js
+// SHOAL_ITEM_FLAGS), the piles drawn by the rooms' ON_LOAD until dug; a new day sets
+// FLAG_SYS_SHOAL_ITEM, and the next time you talk to the hermit he puts all eight
+// back (ResetShoalItems). Before, a spot stayed dug for the whole save.
+const SHOAL_KEY = 'magepunk_shoal_v1';   // the pre-flag record: still written, read as "dug"
 export const shoalTide = () => { const h = Clock.hour(); return (h >= 3 && h < 9) || (h >= 15 && h < 21) ? 'low' : 'high'; };
+// the tide inside the cave: latched on the way in from outdoors (S.shoalTideLatched)
+export const shoalTideHere = () => S.shoalTideLatched ? (Story.getFlag('FLAG_SYS_SHOAL_TIDE') ? 'high' : 'low') : shoalTide();
 // which dig spot yields what, by map:x,y (the decomp's ShoalSalt1-4/ShoalShell1-4)
 const SHOAL_ITEM_AT = {
 	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:31,8': 'shoalsalt', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:14,26': 'shoalsalt',
@@ -314,7 +326,7 @@ const SHOAL_INNER_WARPS = [
 let shoalArrival = null; // set by shoalWarp: where to stand after the shell map loads
 // warp overrides: high tide floods the deep rooms and swaps the Inner Room
 export function shoalWarp(w) {
-	if (shoalTide() === 'low') return null;
+	if (shoalTideHere() === 'low') return null;
 	if (/SHOAL_CAVE_LOW_TIDE_(STAIRS|LOWER|ICE)_ROOM$/.test(w.dest_map)) {
 		dialog.open('Seawater surges through the passage!\n\nThe way down is underwater until the tide\ngoes out. (Low tide: 3-9 and 15-21.)');
 		return 'blocked';
@@ -329,11 +341,30 @@ export function shoalWarp(w) {
 	return null;
 }
 export function shoalFixup(label) {
+	if (!/^ShoalCave_/.test(label || '')) S.shoalTideLatched = false;   // out of the cave: the tide is the hour's again
 	if (label !== 'ShoalCave_HighTideInnerRoom') { shoalArrival = null; return; }
 	for (const wv of SHOAL_INNER_WARPS) {
 		if (!world.warps.some(x => x.x === wv.x && x.y === wv.y)) world.warps.push({ ...wv });
 	}
 	if (shoalArrival) { player.setTile(shoalArrival[0], shoalArrival[1]); shoalArrival = null; }
+	// the shell has no scripts: lay the SHELL stones not yet taken, as the low room's
+	// ON_LOAD does (ShoalCave_LowTideInnerRoom_EventScript_SetShoalItemMetatiles3..6)
+	for (const [key, flag] of Object.entries(SHOAL_ITEM_FLAGS)) {
+		if (!/SHELL/.test(flag) || !key.startsWith('MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:') || shoalDug(key)) continue;
+		const [x, y] = key.split(':')[1].split(',').map(Number);
+		world.setMetatile(x, y, METATILE_SHOAL_STONE_LARGE, true);
+	}
+}
+const METATILE_SHOAL_PILE_SMALL = 0x35A;                                        // METATILE_Cave_ShoalCave_DirtPile_Small
+const METATILE_SHOAL_STONE_LARGE = 0x359, METATILE_SHOAL_STONE_SMALL = 0x35B;   // METATILE_Cave_ShoalCave_BlueStone_*
+// a spot is dug while its flag is set; a dig from before the flags counts once
+function shoalDug(key) {
+	const flag = SHOAL_ITEM_FLAGS[key];
+	if (!flag) return false;
+	if (Story.getFlag(flag)) return true;
+	const st = safeLoad(SHOAL_KEY, { taken: {} });
+	if (st.taken?.[key]) { Story.setFlag(flag); return true; }
+	return false;
 }
 export function shoalDig() {
 	// the high-tide Inner Room is the low one flooded: one set of spots, one record
@@ -341,15 +372,25 @@ export function shoalDig() {
 	const key = `${room}:${player.tx + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[0])},${player.ty + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[1])}`;
 	const item = SHOAL_ITEM_AT[key];
 	if (!item) { dialog.open('Just wet cave rock.'); return; }
+	if (shoalDug(key)) { dialog.open('You already dug everything out of this spot.'); return; }
 	const st = safeLoad(SHOAL_KEY, { taken: {} });
-	if (st.taken[key]) { dialog.open('You already dug everything out of this spot.'); return; }
+	st.taken = st.taken || {};
 	st.taken[key] = 1;
 	safeSave(SHOAL_KEY, st);
+	Story.setFlag(SHOAL_ITEM_FLAGS[key]);
+	// the pile / stone goes small and walkable, as the decomp's ShoalSalt / ShoalShell scripts
+	{
+		const [x, y] = key.split(':')[1].split(',').map(Number);
+		world.setMetatile(x, y, item === 'shoalsalt' ? METATILE_SHOAL_PILE_SMALL : METATILE_SHOAL_STONE_SMALL, false);
+	}
 	Bag.addItem(item, 1);
 	sfx('item_get');
 	dialog.open(`Buried in the ${item === 'shoalsalt' ? 'briny sand' : 'shallows'}...\n\nYou dug up a ${Bag.ITEMS[item].name}!`);
 }
 export function shoalHermitTalk() {
+	// `dotimebasedevents`, then ResetShoalItems once a day has passed
+	updatePerDay();
+	if (resetShoalItemsIfDue()) { const st = safeLoad(SHOAL_KEY, { taken: {} }); st.taken = {}; safeSave(SHOAL_KEY, st); }
 	const salt = Bag.count('shoalsalt'), shell = Bag.count('shoalshell');
 	if (salt >= 4 && shell >= 4) {
 		dialog.open(`HERMIT: Ooh! ${salt} SHOAL SALT and ${shell} SHOAL SHELL!\nWith 4 of each I can craft my masterpiece.\n\nShall I?   Z = Yes   X = No`, declined => {

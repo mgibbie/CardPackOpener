@@ -187,7 +187,7 @@ export function useWateringItem(id) {
 	// there is no yield for the water to raise — but the pail is not ignored
 	if (id === 'wailmerpail') {
 		const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
-		const tree = (items.trees || []).find(tr => tr.tx === player.tx + dx && tr.ty === player.ty + dy);
+		const tree = (items.liveTrees?.() || items.trees || []).find(tr => tr.tx === player.tx + dx && tr.ty === player.ty + dy);
 		if (tree) { bagMenu.open = false; dialog.open(`You watered the ${tree.name.toUpperCase()} tree.\n\nIt looks refreshed!`); return true; }
 	}
 	sfx('ui_denied');

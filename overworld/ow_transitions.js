@@ -16,7 +16,7 @@ import { POS_KEY, savePos } from './ow_input.js';
 import { checkAwakeningTrigger } from './ow_legendaries.js';
 import { hillPrepFloor } from './ow_minigames.js';
 import { syncMapBgm } from './ow_music.js';
-import { checkSafariGate, noteOutdoor } from './ow_places.js';
+import { checkSafariGate, noteOutdoor, reconcileMirageFossils } from './ow_places.js';
 import { playerRegion } from './ow_progression.js';
 import { showAreaBanner } from './ow_render.js';
 import { S } from './ow_state.js';
@@ -101,6 +101,7 @@ export function applyMapFixups(label, { boot = false } = {}) {
 	shoalFixup(label);
 	silphDoorsApply(label);
 	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
+	try { reconcileMirageFossils(); } catch (e) { console.warn('[mirage] fossil carry-over failed', e); }
 }
 export async function refreshMapContent(label) {
 	await syncRegionToMap(world.current.name);   // before anything below reads the region
@@ -277,7 +278,9 @@ export async function warpTo(mapId, destWarpId, destX, destY) {
 	}
 	if (await refuseJohKanto(file)) return;
 	sfx('door');
-	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
+	// mapType: the map you warped from (Emerald's GetLastUsedWarpMapType: Shoal
+	// Cave's tide only turns when you come in from outdoors)
+	const source = { name: world.current.name, tx: player.tx, ty: player.ty, mapType: world.current.map?.map_type || null };
 	// the door being used, for the arrival rule below
 	const srcMapId = world.current.map?.id, srcWarp = world.warps.findIndex(w => w.x === player.tx && w.y === player.ty);
 	await fadeTo(1);             // dip to black as the door opens (fades in below)
