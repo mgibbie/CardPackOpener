@@ -25,7 +25,7 @@ import { quantum_enhancements } from './core.js';
 import { Tag, add_tag } from './tag.js';
 import { Back } from './back.js';
 import './jokers.js';
-import { resolveCardKey } from '../mods/registry.js';
+import { resolveCardKey, MODS } from '../mods/registry.js';
 import { activateMods, callHook, reduceHook, firstHook, hasHook, activeConsumableTypes, ACTIVE as ACTIVE_MODS, allOptions, activeModHands, activeModHandParts, MOD_SUITS, feature } from '../mods/registry.js';
 import './consumables.js';
 import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js';
@@ -942,6 +942,7 @@ for (const m of ['start_dissolve', 'shatter']) {
  */
 export function joker_retriggers(card, context) {
   if (!ACTIVE_MODS.length || context.retrigger_joker || context.retrigger_joker_check) return 0;
+  post_trigger(card, context);
   let n = 0;
   for (const j of G.jokers.cards) {
     const c = j.config.center;
@@ -953,7 +954,29 @@ export function joker_retriggers(card, context) {
   }
   // (a mod's own retriggers for this joker: AutumnCircus' Sock and Buskin Stamp)
   n = reduceHook('joker_retriggers', n, card, context);
+  for (let t = 0; t < n; t++) post_trigger(card, context); // (each retrigger is a trigger too)
   return n;
+}
+/**
+ * Steamodded's post_trigger context (optional feature post_trigger): after a joker's effect triggers, mod jokers whose
+ * calculate reads post_trigger (and whose mod turns the feature on) see {post_trigger, other_card, other_context};
+ * their effects apply (More Fluff's Lettergem J: -$0.5). Called where joker_retriggers is (a joker that just triggered).
+ */
+function post_trigger(card, context) {
+  if (!feature('post_trigger')) return;
+  for (const j of G.jokers.cards) {
+    const c = j.config.center;
+    if (j === card || !c.mod || !c.calculate || j.debuff || !(MODS[c.mod].optional_features || {}).post_trigger) continue;
+    if (c._post === undefined) c._post = /\.\s*post_trigger\b/.test(String(c.calculate)) && !/!\s*context\.post_trigger/.test(String(c.calculate));
+    if (!c._post) continue;
+    mod_context_effect(j, j.calculate_joker({ post_trigger: true, other_card: card, other_context: context }));
+  }
+}
+/** A joker's per-card (individual) effect, through the eval_card_result hook (a mod changing amounts: More Fluff's Apple Friends / Lettergem X). */
+function ind_effect(j, ctx) {
+  const ev = j.calculate_joker(ctx);
+  if (ev && ACTIVE_MODS.length) callHook('eval_card_result', j, ctx, { jokers: ev });
+  return ev;
 }
 
 // -------------------------------------------------------- evaluate_play
@@ -978,6 +1001,9 @@ function evaluate_play() {
   scoring_hand.sort((a, b) => G.play.cards.indexOf(a) - G.play.cards.indexOf(b));
   // Steamodded's modify_scoring_hand context: a listener may add a played card to the scoring hand or take one out.
   if (ACTIVE_MODS.length && wanted('modify_scoring_hand')) scoring_hand = modify_scoring_hand(G.play.cards, scoring_hand, true);
+  // Steamodded's "adding to hand effects" target: a mod may add cards (put in play by it) to the scoring hand, after the
+  // played ones (More Fluff's Royal Decree: a King and a Queen).
+  if (ACTIVE_MODS.length) for (const c of [].concat(...callHook('add_to_scoring_hand', scoring_hand))) if (c && !scoring_hand.includes(c)) scoring_hand.push(c);
   emit('scoring_hand', { cards: scoring_hand.map((c) => c.sort_id), hand: text, disp: disp_text });
 
   let mult, hand_chips;
@@ -1046,11 +1072,11 @@ function evaluate_play() {
         const effects = [eval_card(sc, { cardarea: G.play, full_hand: G.play.cards, scoring_hand, poker_hand: text })];
         for (const j of G.jokers.cards) {
           const ictx = { cardarea: G.play, ...base_ctx(), other_card: sc, individual: true };
-          const ev = j.calculate_joker(ictx);
+          const ev = ind_effect(j, ictx);
           if (ev) {
             effects.push(ev);
             // Steamodded joker retriggers: a mod joker may make this joker's per-card effect happen again.
-            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
+            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = ind_effect(j, { ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
           }
         }
         // (SMODS: the mod-level calculate sees each card's individual context too, after the jokers; Pokermon 3.9.1's Leafeon)
@@ -1106,10 +1132,10 @@ function evaluate_play() {
         for (const e of callHook('unscored_card', uc, { ...uctx(), main_scoring: true })) for (const x of [].concat(e)) if (x) effects.push(x);
         for (const j of G.jokers.cards) {
           const ictx = { ...uctx(), other_card: uc, individual: true };
-          const ev = j.calculate_joker(ictx);
+          const ev = ind_effect(j, ictx);
           if (ev) {
             effects.push(ev);
-            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
+            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = ind_effect(j, { ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
           }
         }
         for (const ef of effects) [hand_chips, mult] = smods_effect(ef, uc, hand_chips, mult);
@@ -1138,10 +1164,10 @@ function evaluate_play() {
         const effects = [eval_card(hc, { cardarea: G.hand, ...base_ctx() })];
         for (const j of G.jokers.cards) {
           const ictx = { cardarea: G.hand, ...base_ctx(), other_card: hc, individual: true };
-          const ev = j.calculate_joker(ictx);
+          const ev = ind_effect(j, ictx);
           if (ev) {
             effects.push(ev);
-            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = j.calculate_joker({ ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
+            for (let t = joker_retriggers(j, ictx); t > 0; t--) { const ev2 = ind_effect(j, { ...ictx, retrigger_joker: true }); if (ev2) effects.push(ev2); }
           }
         }
         if (reps[r] === 1) {
@@ -1302,6 +1328,8 @@ function evaluate_play() {
         const ms = mod_card_calculate(sc, { destroy_card: sc, destroying_card: sc, cardarea: G.play, full_hand: G.play.cards, scoring_hand });
         if (ms && ((ms.enhancement && (ms.enhancement === true || ms.enhancement.remove)) || (ms.seal && (ms.seal === true || ms.seal.remove)))) destroyed = true;
       }
+      // (a mod's own calculate destroy_card: More Fluff's Royal Decree cards)
+      if (ACTIVE_MODS.length && !destroyed && callHook('destroy_card', sc, base_ctx()).includes(true)) destroyed = true;
       if (sc.ability.name === 'Glass Card' && !sc.debuff && probability_roll(sc, 'glass', 1, sc.ability.extra)) destroyed = true;
       // Steamodded quantum enhancements: a card that is also Glass (Pokermon's Tinkaton: Steel cards)
       // rolls the Glass break too (SMODS runs m_glass's destroy_card on the quantum ability).

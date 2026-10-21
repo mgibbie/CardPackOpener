@@ -254,10 +254,45 @@ table, art provenance and the follow-up batches: `micatro/mods/morefluff/PORTING
   Colours (Gold now a Spectral), Rotarots + Merchant / Tycoon, the Superboss rework (pick your DX boss), 6 stakes +
   3 stickers, the exile zone, the Purple Deck. Deleted keys (2 jokers, 2 decks, 4 sleeves, 2 packs, 2 tags, 1 challenge)
   are retired keys in `js/mods/aliases.js`.
-- Kept at 1.5.6 until the pkseams merge: Tall Joker, Triangle (their reworks need attributes / scale_card).
+- Kept at 1.5.6 until the pkseams merge: Tall Joker, Triangle (their reworks need attributes / scale_card). Done in batch B.
 - Follow-ups: about 20 of the 81 new jokers have real art upstream (batch B1 + the Letter / Purple / rot pools); the
   other ~61 are placeholder sketches and wait for art. Each batch bumps contentRev and re-records
   `micatro/tests/fixtures/morefluff_<pin>_fingerprints.json` (`morefluff_fingerprint_test.mjs --record`).
+
+### 10b. More Fluff 1.9.9999 — batch B (2026-10-20, branch `feat/micatro-morefluff-batch-b`)
+Pin **`1.9.9999+r2`** (`contentRev` 2; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/morefluff/PORTING.md` "Batch B".
+- **After the pkseams merge:**
+  - object_weights is on: every More Fluff run rolls through SMODS.poll_object. With Pokermon it is the same single flag,
+    and the two mods' weight hooks apply to each other's pools.
+  - `util.scale_card` is the engine's `scale_card`, and the base game's 27 scaling jokers route through it while a
+    listener is active.
+  - More Fluff's attributes are registered.
+  - Tall Joker's and Triangle's 1.9.9999 reworks.
+- **B1:** 13 new jokers with real art (Dinner, Forge, Doubled Scale, Bouncer, Jokes for Minecrafters, Apple Friends, Gem
+  Alert, Gentlemelon, Joker Reacts, Retrigger Joker, Alchemy Joker, Jimbo the Mind Sculptor, John Balatro?), the
+  Planeswalker loyalty system, and the Fish / Forge Residue / John Balatro jokers.
+- **B2:** the 26 Letter jokers and the 3 Purple jokers. They are registered but never offered: as in 1.9.9999, only the
+  Old Deck and Bonus Sheet roll their rarities, and both are blocked. The Old Deck stays out because its other 29 Old
+  Fluff jokers are sketches.
+- **B3:** the 7 rot legendaries, the prepared-card system, their 7 Spectral cards, and The Soul! (in Rotarot packs).
+  - The Spectral cards are placeholders upstream: their art is composed by `tools/micatro/stage_morefluff_batch_b_art.mjs`
+    in the style of More Fluff's Gold card.
+  - The legendaries and The Soul! are pre-turned by the same tool.
+- **Engine seams** (no-ops without a mod using them):
+  - the per-context `smods_seams` list;
+  - `calc_scaling`;
+  - `vscale`;
+  - `<rarity>_mod` rarity weights;
+  - `eval_card_result`;
+  - `post_trigger`;
+  - `add_to_scoring_hand` and `destroy_card`;
+  - board `mod_actions[].disabled` and tooltip pictures.
+- **Art** (gitignored; deploy with `npm run deploy-micatro-mods` before merging): 8 PNGs under
+  `micatro/mods/morefluff/assets/2x/1.9.9999/` and `assets/sounds/1.9.9999/g.ogg`.
+- **Tests:** `micatro/tests/mods/morefluff_batch_b_test.mjs` (234 checks; on origin/main 11 pass, 46 fail). The More Fluff
+  fingerprints were re-recorded at `+r2`, with the bot seeds re-picked.
+- **Still out:** the 61 placeholder-sketch jokers (listed in PORTING.md), the Old and Spellchaser's decks, the Nemesis
+  pack / tag, the Cryptic edition, and the Power / Ransom Note enhancements.
 
 ## 11. What follows the player between devices (2026-10-19)
 

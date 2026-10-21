@@ -20,6 +20,22 @@ import * as B from './bignum.js';
 import { get_poker_hand_info, calculate_context } from './run.js';
 import { Tag, add_tag } from './tag.js';
 import { firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
+import { wanted, scale_card } from './smods.js';
+
+/**
+ * Steamodded routes the vanilla jokers' scaling through SMODS.scale_card (smods lovely/scaling.toml: Ceremonial Dagger,
+ * Flash Card, Red Card, Spare Trousers, Ride the Bus, Egg, Runner, Square, Castle, Wee, Ice Cream, Madness,
+ * Constellation, Campfire, Lucky Cat, Obelisk, Hit the Road, Green Joker, Vampire, Hologram, Rocket, Turtle Bean,
+ * Popcorn, Ramen, Yorick, Canio, Glass Joker), so a scaling_card listener (More Fluff 1.9.9999's Triangle / Doubled
+ * Scale) can change the scalar. Only while some active joker listens: then this scales (operation '+' / '-' / a
+ * function, the scalar times `factor`) and returns true; otherwise it returns false and the caller's own vanilla line
+ * runs, unchanged. The jokers keep their own vanilla popups (computed after the scaling).
+ */
+function vscale(card, ref_table, ref_value, scalar_table, scalar_value, factor, operation) {
+  if (!ACTIVE_MODS.length || !wanted('scaling_card')) return false;
+  scale_card(card, { ref_table, ref_value, scalar_table: scalar_table || undefined, scalar_value, scalar_factor: factor, operation: operation || '+', no_message: true });
+  return true;
+}
 
 // G.C colours, kept as plain strings so returned tables stay serialisable.
 const C = {
@@ -260,7 +276,7 @@ Card.prototype.calculate_joker = function (context) {
       }
     } else if (context.selling_card) {
       if (this.ability.name === 'Campfire' && !context.blueprint) {
-        this.ability.x_mult = this.ability.x_mult + this.ability.extra;
+        if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra;
         G.E_MANAGER.add_event(() => {
           card_eval_status_text(self, 'extra', null, null, null, { message: localize('k_upgrade_ex') });
         });
@@ -268,7 +284,7 @@ Card.prototype.calculate_joker = function (context) {
       return undefined;
     } else if (context.reroll_shop) {
       if (this.ability.name === 'Flash Card' && !context.blueprint) {
-        this.ability.mult = this.ability.mult + this.ability.extra;
+        if (!vscale(this, this.ability, 'mult', null, 'extra', 1)) this.ability.mult = this.ability.mult + this.ability.extra;
         G.E_MANAGER.add_event(() => {
           card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_mult', vars: [self.ability.mult] }), colour: C.MULT });
         });
@@ -301,7 +317,7 @@ Card.prototype.calculate_joker = function (context) {
       return undefined;
     } else if (context.skipping_booster) {
       if (this.ability.name === 'Red Card' && !context.blueprint) {
-        this.ability.mult = this.ability.mult + this.ability.extra;
+        if (!vscale(this, this.ability, 'mult', null, 'extra', 1)) this.ability.mult = this.ability.mult + this.ability.extra;
         G.E_MANAGER.add_event(() => {
           card_eval_status_text(self, 'extra', null, null, null, {
             message: localize({ type: 'variable', key: 'a_mult', vars: [self.ability.extra] }),
@@ -315,7 +331,7 @@ Card.prototype.calculate_joker = function (context) {
     } else if (context.playing_card_added && !this.getting_sliced) {
       if (this.ability.name === 'Hologram' && !context.blueprint &&
           context.cards && context.cards[0]) {
-        this.ability.x_mult = this.ability.x_mult + context.cards.length * this.ability.extra;
+        if (!vscale(this, this.ability, 'x_mult', null, 'extra', context.cards.length)) this.ability.x_mult = this.ability.x_mult + context.cards.length * this.ability.extra;
         card_eval_status_text(this, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [this.ability.x_mult] }) });
       }
     } else if (context.first_hand_drawn) {
@@ -357,7 +373,7 @@ Card.prototype.calculate_joker = function (context) {
         });
       }
       if (this.ability.name === 'Madness' && !context.blueprint && !context.blind.boss) {
-        this.ability.x_mult = this.ability.x_mult + this.ability.extra;
+        if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra;
         const destructable_jokers = [];
         for (let i = 0; i < G.jokers.cards.length; i++) {
           const j = G.jokers.cards[i];
@@ -420,7 +436,7 @@ Card.prototype.calculate_joker = function (context) {
           G.GAME.joker_buffer = G.GAME.joker_buffer - 1;
           G.E_MANAGER.add_event(() => {
             G.GAME.joker_buffer = 0;
-            self.ability.mult = self.ability.mult + sliced_card.sell_cost * 2;
+            if (!vscale(self, self.ability, 'mult', sliced_card, 'sell_cost', 2)) self.ability.mult = self.ability.mult + sliced_card.sell_cost * 2;
             self.juice_up(0.8, 0.8);
             sliced_card.start_dissolve();
             play_sound('slice1');
@@ -471,7 +487,7 @@ Card.prototype.calculate_joker = function (context) {
         if (faces > 0) {
           G.E_MANAGER.add_event(() => {
             G.E_MANAGER.add_event(() => {
-              self.ability.caino_xmult = self.ability.caino_xmult + faces * self.ability.extra;
+              if (!vscale(self, self.ability, 'caino_xmult', null, 'extra', faces)) self.ability.caino_xmult = self.ability.caino_xmult + faces * self.ability.extra;
             });
             card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [self.ability.caino_xmult + faces * self.ability.extra] }) });
           });
@@ -486,7 +502,7 @@ Card.prototype.calculate_joker = function (context) {
         if (glasses > 0) {
           G.E_MANAGER.add_event(() => {
             G.E_MANAGER.add_event(() => {
-              self.ability.x_mult = self.ability.x_mult + self.ability.extra * glasses;
+              if (!vscale(self, self.ability, 'x_mult', null, 'extra', glasses)) self.ability.x_mult = self.ability.x_mult + self.ability.extra * glasses;
             });
             card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [self.ability.x_mult + self.ability.extra * glasses] }) });
           });
@@ -500,7 +516,7 @@ Card.prototype.calculate_joker = function (context) {
           if (val.is_face()) face_cards = face_cards + 1;
         }
         if (face_cards > 0) {
-          this.ability.caino_xmult = this.ability.caino_xmult + face_cards * this.ability.extra;
+          if (!vscale(this, this.ability, 'caino_xmult', null, 'extra', face_cards)) this.ability.caino_xmult = this.ability.caino_xmult + face_cards * this.ability.extra;
           G.E_MANAGER.add_event(() => {
             card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [self.ability.caino_xmult] }) });
           });
@@ -516,7 +532,7 @@ Card.prototype.calculate_joker = function (context) {
         if (glass_cards > 0) {
           G.E_MANAGER.add_event(() => {
             G.E_MANAGER.add_event(() => {
-              self.ability.x_mult = self.ability.x_mult + self.ability.extra * glass_cards;
+              if (!vscale(self, self.ability, 'x_mult', null, 'extra', glass_cards)) self.ability.x_mult = self.ability.x_mult + self.ability.extra * glass_cards;
             });
             card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [self.ability.x_mult + self.ability.extra * glass_cards] }) });
           });
@@ -530,7 +546,7 @@ Card.prototype.calculate_joker = function (context) {
           if (val.ability.name === 'Glass Card' || has_quantum_enhancement(val, 'm_glass')) shattered_glass = shattered_glass + 1;
         }
         if (shattered_glass > 0) {
-          this.ability.x_mult = this.ability.x_mult + this.ability.extra * shattered_glass;
+          if (!vscale(this, this.ability, 'x_mult', null, 'extra', shattered_glass)) this.ability.x_mult = this.ability.x_mult + this.ability.extra * shattered_glass;
           G.E_MANAGER.add_event(() => {
             card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [self.ability.x_mult] }) });
           });
@@ -543,7 +559,7 @@ Card.prototype.calculate_joker = function (context) {
         });
       }
       if (this.ability.name === 'Constellation' && !context.blueprint && context.consumeable.ability.set === 'Planet') {
-        this.ability.x_mult = this.ability.x_mult + this.ability.extra;
+        if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra;
         G.E_MANAGER.add_event(() => {
           card_eval_status_text(self, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [self.ability.x_mult] }) });
         });
@@ -580,7 +596,7 @@ Card.prototype.calculate_joker = function (context) {
             colour: C.FILTER,
           };
         } else {
-          this.ability.x_mult = this.ability.x_mult - this.ability.extra;
+          if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1, '-')) this.ability.x_mult = this.ability.x_mult - this.ability.extra;
           return {
             delay: 0.2,
             message: localize({ type: 'variable', key: 'a_xmult_minus', vars: [this.ability.extra] }),
@@ -591,7 +607,7 @@ Card.prototype.calculate_joker = function (context) {
       if (this.ability.name === 'Yorick' && !context.blueprint) {
         if (this.ability.yorick_discards <= 1) {
           this.ability.yorick_discards = this.ability.extra.discards;
-          this.ability.x_mult = this.ability.x_mult + this.ability.extra.xmult;
+          if (!vscale(this, this.ability, 'x_mult', this.ability.extra, 'xmult', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra.xmult;
           return {
             delay: 0.2,
             message: localize({ type: 'variable', key: 'a_xmult', vars: [this.ability.x_mult] }),
@@ -617,7 +633,7 @@ Card.prototype.calculate_joker = function (context) {
       if (this.ability.name === 'Castle' &&
           !context.other_card.debuff &&
           context.other_card.is_suit(G.GAME.current_round.castle_card.suit) && !context.blueprint) {
-        this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
+        if (!vscale(this, this.ability.extra, 'chips', null, 'chip_mod', 1)) this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
         return {
           message: localize('k_upgrade_ex'),
           card: this,
@@ -637,7 +653,7 @@ Card.prototype.calculate_joker = function (context) {
       if (this.ability.name === 'Hit the Road' &&
           !context.other_card.debuff &&
           context.other_card.get_id() === 11 && !context.blueprint) {
-        this.ability.x_mult = this.ability.x_mult + this.ability.extra;
+        if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra;
         return {
           message: localize({ type: 'variable', key: 'a_xmult', vars: [this.ability.x_mult] }),
           colour: C.RED,
@@ -647,7 +663,7 @@ Card.prototype.calculate_joker = function (context) {
       }
       if (this.ability.name === 'Green Joker' && !context.blueprint && context.other_card === context.full_hand[context.full_hand.length - 1]) {
         const prev_mult = this.ability.mult;
-        this.ability.mult = Math.max(0, this.ability.mult - this.ability.extra.discard_sub);
+        if (!vscale(this, this.ability, 'mult', this.ability.extra, 'discard_sub', 1, (t, k, a, c) => { t[k] = Math.max(0, a - c); })) this.ability.mult = Math.max(0, this.ability.mult - this.ability.extra.discard_sub);
         if (this.ability.mult !== prev_mult) {
           return {
             message: localize({ type: 'variable', key: 'a_mult_minus', vars: [this.ability.extra.discard_sub] }),
@@ -694,7 +710,7 @@ Card.prototype.calculate_joker = function (context) {
           };
         }
         if (this.ability.name === 'Rocket' && G.GAME.blind.boss) {
-          this.ability.extra.dollars = this.ability.extra.dollars + this.ability.extra.increase;
+          if (!vscale(this, this.ability.extra, 'dollars', null, 'increase', 1)) this.ability.extra.dollars = this.ability.extra.dollars + this.ability.extra.increase;
           return {
             message: localize('k_upgrade_ex'),
             colour: C.MONEY,
@@ -708,8 +724,11 @@ Card.prototype.calculate_joker = function (context) {
               colour: C.FILTER,
             };
           } else {
-            this.ability.extra.h_size = this.ability.extra.h_size - this.ability.extra.h_mod;
-            G.hand.change_size(-this.ability.extra.h_mod);
+            // (Steamodded: the hand shrinks by the scaled change too)
+            if (!vscale(this, this.ability.extra, 'h_size', null, 'h_mod', 1, (t, k, a, c) => { t[k] = a - c; G.hand.change_size(-c); })) {
+              this.ability.extra.h_size = this.ability.extra.h_size - this.ability.extra.h_mod;
+              G.hand.change_size(-this.ability.extra.h_mod);
+            }
             return {
               message: localize({ type: 'variable', key: 'a_handsize_minus', vars: [this.ability.extra.h_mod] }),
               colour: C.FILTER,
@@ -735,7 +754,7 @@ Card.prototype.calculate_joker = function (context) {
               colour: C.RED,
             };
           } else {
-            this.ability.mult = this.ability.mult - this.ability.extra;
+            if (!vscale(this, this.ability, 'mult', null, 'extra', 1, '-')) this.ability.mult = this.ability.mult - this.ability.extra;
             return {
               message: localize({ type: 'variable', key: 'a_mult_minus', vars: [this.ability.extra] }),
               colour: C.MULT,
@@ -753,7 +772,7 @@ Card.prototype.calculate_joker = function (context) {
           };
         }
         if (this.ability.name === 'Egg') {
-          this.ability.extra_value = this.ability.extra_value + this.ability.extra;
+          if (!vscale(this, this.ability, 'extra_value', null, 'extra', 1)) this.ability.extra_value = this.ability.extra_value + this.ability.extra;
           this.set_cost();
           return {
             message: localize('k_val_up'),
@@ -825,7 +844,7 @@ Card.prototype.calculate_joker = function (context) {
           };
         }
         if (this.ability.name === 'Lucky Cat' && context.other_card.lucky_trigger && !context.blueprint) {
-          this.ability.x_mult = this.ability.x_mult + this.ability.extra;
+          if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra;
           return {
             extra: { focus: this, message: localize('k_upgrade_ex'), colour: C.MULT },
             card: this,
@@ -833,7 +852,7 @@ Card.prototype.calculate_joker = function (context) {
         }
         if (this.ability.name === 'Wee Joker' &&
             context.other_card.get_id() === 2 && !context.blueprint) {
-          this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
+          if (!vscale(this, this.ability.extra, 'chips', null, 'chip_mod', 1)) this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
 
           return {
             extra: { focus: this, message: localize('k_upgrade_ex') },
@@ -1155,7 +1174,7 @@ Card.prototype.calculate_joker = function (context) {
       if (context.cardarea === G.jokers) {
         if (context.before) {
           if (this.ability.name === 'Spare Trousers' && (next(context.poker_hands['Two Pair']) || next(context.poker_hands['Full House'])) && !context.blueprint) {
-            this.ability.mult = this.ability.mult + this.ability.extra;
+            if (!vscale(this, this.ability, 'mult', null, 'extra', 1)) this.ability.mult = this.ability.mult + this.ability.extra;
             return {
               message: localize('k_upgrade_ex'),
               colour: C.RED,
@@ -1170,7 +1189,7 @@ Card.prototype.calculate_joker = function (context) {
             };
           }
           if (this.ability.name === 'Square Joker' && context.full_hand.length === 4 && !context.blueprint) {
-            this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
+            if (!vscale(this, this.ability.extra, 'chips', null, 'chip_mod', 1)) this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
             return {
               message: localize('k_upgrade_ex'),
               colour: C.CHIPS,
@@ -1178,7 +1197,7 @@ Card.prototype.calculate_joker = function (context) {
             };
           }
           if (this.ability.name === 'Runner' && next(context.poker_hands['Straight']) && !context.blueprint) {
-            this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
+            if (!vscale(this, this.ability.extra, 'chips', null, 'chip_mod', 1)) this.ability.extra.chips = this.ability.extra.chips + this.ability.extra.chip_mod;
             return {
               message: localize('k_upgrade_ex'),
               colour: C.CHIPS,
@@ -1217,7 +1236,7 @@ Card.prototype.calculate_joker = function (context) {
             }
 
             if (enhanced.length > 0) {
-              this.ability.x_mult = this.ability.x_mult + this.ability.extra * enhanced.length;
+              if (!vscale(this, this.ability, 'x_mult', null, 'extra', enhanced.length)) this.ability.x_mult = this.ability.x_mult + this.ability.extra * enhanced.length;
               return {
                 message: localize({ type: 'variable', key: 'a_xmult', vars: [this.ability.x_mult] }),
                 colour: C.MULT,
@@ -1268,7 +1287,7 @@ Card.prototype.calculate_joker = function (context) {
                 };
               }
             } else {
-              this.ability.mult = this.ability.mult + this.ability.extra;
+              if (!vscale(this, this.ability, 'mult', null, 'extra', 1)) this.ability.mult = this.ability.mult + this.ability.extra;
             }
           }
           if (this.ability.name === 'Obelisk' && !context.blueprint) {
@@ -1286,11 +1305,11 @@ Card.prototype.calculate_joker = function (context) {
                 };
               }
             } else {
-              this.ability.x_mult = this.ability.x_mult + this.ability.extra;
+              if (!vscale(this, this.ability, 'x_mult', null, 'extra', 1)) this.ability.x_mult = this.ability.x_mult + this.ability.extra;
             }
           }
           if (this.ability.name === 'Green Joker' && !context.blueprint) {
-            this.ability.mult = this.ability.mult + this.ability.extra.hand_add;
+            if (!vscale(this, this.ability, 'mult', this.ability.extra, 'hand_add', 1)) this.ability.mult = this.ability.mult + this.ability.extra.hand_add;
             return {
               card: this,
               message: localize({ type: 'variable', key: 'a_mult', vars: [this.ability.extra.hand_add] }),
@@ -1305,7 +1324,7 @@ Card.prototype.calculate_joker = function (context) {
                 colour: C.CHIPS,
               };
             } else {
-              this.ability.extra.chips = this.ability.extra.chips - this.ability.extra.chip_mod;
+              if (!vscale(this, this.ability.extra, 'chips', null, 'chip_mod', 1, '-')) this.ability.extra.chips = this.ability.extra.chips - this.ability.extra.chip_mod;
               return {
                 message: localize({ type: 'variable', key: 'a_chips_minus', vars: [this.ability.extra.chip_mod] }),
                 colour: C.CHIPS,

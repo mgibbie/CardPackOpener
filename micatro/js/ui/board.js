@@ -929,6 +929,7 @@ export class Board {
       b.addEventListener('pointerdown', (e) => e.stopPropagation());
       b.addEventListener('click', (e) => { e.stopPropagation(); this.act(action, snd); });
       wrap.appendChild(b);
+      return b;
     };
     const consumable = isConsumableSet(d.set);
     if (s.area === 'jokers' || s.area === 'consumeables') {
@@ -958,8 +959,9 @@ export class Board {
       if (d.reserve) add(d.reserve_label || 'Save', 'green buy', { type: 'reserve', id: s.id }, 'button');
       wrap.classList.add('below');
     } else if (!(d.mod_actions && d.mod_actions.length) && !(hasModUI() && modAll('cardActions', d).length)) return null;
-    // Mod card actions (view_card's mod_actions: [{label, action}]; e.g. BETMMA's Vanish, Balatro Mobile's moves)
-    for (const ma of d.mod_actions || []) add(esc(ma.label), 'blue modact', ma.action, 'button');
+    // Mod card actions (view_card's mod_actions: [{label, action, disabled?, cls?}]; e.g. BETMMA's Vanish, Balatro Mobile's
+    // moves, More Fluff's Planeswalker loyalty abilities — greyed out while they can't be used)
+    for (const ma of d.mod_actions || []) { const b = add(esc(ma.label), (ma.cls || 'blue') + ' modact', ma.action, 'button'); if (ma.disabled) b.disabled = true; }
     // Mod UI buttons (client-only, ui/modui.js cardActions: Pokermon's Pokédex)
     if (hasModUI() && d.facing !== 'back') for (const a of modAll('cardActions', d)) {
       const b = h('button', 'btn modui ' + (a.cls || 'blue'), esc(a.label)); b.type = 'button';
@@ -1219,8 +1221,17 @@ export class Board {
     }).join('');
     // the mod badge sits small under the card-type badges (Steamodded style)
     const modB = all.filter(isMod).map((b) => `<span class="badge mod-badge" style="background:${cssColour(b.colour || b.color) || '#4f6367'}">${esc(b.label || b.mod || 'Mod')}</span>`).join('');
-    const body = (lines0, colours) => (lines0 || []).map((l) => (l === '' ? '<div class="tip-gap"></div>' : `<div>${markup(l, colours)}</div>`)).join('');
-    const lines = body(desc.lines, desc.colours);
+    const body = (lines0, colours, imgs) => (lines0 || []).map((l, i) => {
+      // a mod's picture in place of a line (desc.imgs [{at, src, w, h, frames, fps}]: More Fluff's Lettergem D / G / Z draw
+      // an animated sprite there — SMODS generate_ui); a 2x horizontal strip of `frames` w x h frames
+      const im = imgs && imgs.find((x) => x.at === i);
+      if (im) {
+        const k = Math.min(2, 320 / im.w), w = Math.round(im.w * k), h = Math.round(im.h * k), n = im.frames || 1;
+        return `<div class="tip-img" style="width:${w}px;height:${h}px;margin:2px auto;background:url('${esc(im.src)}') 0 0/${w * n}px ${h}px no-repeat;image-rendering:pixelated;--tw:${-w * n}px;${n > 1 ? `animation:mf-tipimg ${(n / (im.fps || 10)).toFixed(2)}s steps(${n}) infinite` : ''}"></div>`;
+      }
+      return l === '' ? '<div class="tip-gap"></div>' : `<div>${markup(l, colours)}</div>`;
+    }).join('');
+    const lines = body(desc.lines, desc.colours, desc.imgs);
     const info = (desc.info || []).filter((x) => x && (x.lines || []).length).slice(0, 3)
       .map((x) => `<div class="tip-info"><div class="ti-name">${titleHtml(x.name || '', x.colours)}</div><div class="tip-body">${body(x.lines)}</div></div>`).join('');
     // the title runs through markup like the body: a playing card's is " {C:light_black}6 of {V:1}Hearts " (Balatro's

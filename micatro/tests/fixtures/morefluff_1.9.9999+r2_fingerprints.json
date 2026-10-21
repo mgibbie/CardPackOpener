@@ -1,0 +1,41 @@
+{
+ "pin": "1.9.9999+r2",
+ "note": "recorded by morefluff_fingerprint_test.mjs --record",
+ "runs": {
+  "red": {
+   "actions": 90,
+   "frames": 91,
+   "hash": "16945bb5dce8af1e9d178b53"
+  },
+  "purple deck": {
+   "actions": 54,
+   "frames": 55,
+   "hash": "4cd994f80004f23ab301955a"
+  },
+  "rainbow deck": {
+   "actions": 119,
+   "frames": 120,
+   "hash": "949d7041c984e0b24eae0cf6"
+  },
+  "philosophical deck": {
+   "actions": 132,
+   "frames": 133,
+   "hash": "d1509a86dcc2c50a563a9487"
+  },
+  "pink stake": {
+   "actions": 95,
+   "frames": 96,
+   "hash": "532f2544fb078fd42f646940"
+  },
+  "ultramarine stake": {
+   "actions": 123,
+   "frames": 124,
+   "hash": "98afd895ceb4db922fb2c801"
+  },
+  "final stake": {
+   "actions": 123,
+   "frames": 124,
+   "hash": "98afd895ceb4db922fb2c801"
+  }
+ }
+}

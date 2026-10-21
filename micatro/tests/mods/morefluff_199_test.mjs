@@ -1,5 +1,5 @@
 // More Fluff 1.9.9999 — what the upgrade from 1.5.6 brings beyond the jokers (micatro/mods/morefluff):
-//   * the version pin (1.9.9999+r1) and the retired / removed keys (js/mods/aliases.js): a recipe naming a deleted
+//   * the version pin (1.9.9999+r2) and the retired / removed keys (js/mods/aliases.js): a recipe naming a deleted
 //     deck / sleeve / joker still loads, the deleted keys read as "retired cards" with their names, the 11 retired
 //     jokers stay registered (hidden "Old Fluff" rarity, never offered)
 //   * the 6 stakes and their stickers (Pink, Steel/Heavy, Zodiac, Hot/Potato, Ultramarine/Suspended, Final)
@@ -26,13 +26,13 @@ const run = (opts) => { newRun({ mods: ['morefluff'], back: 'b_red', ...opts });
 
 // ===================================================================== version pin + keys
 {
-  ok(modPin('morefluff') === '1.9.9999+r1' && LEGACY_MOD_VERSIONS.morefluff === '1.5.6', 'pin 1.9.9999+r1 (pre-pin recipes read as 1.5.6)', modPin('morefluff'));
+  ok(modPin('morefluff') === '1.9.9999+r2' && LEGACY_MOD_VERSIONS.morefluff === '1.5.6', 'pin 1.9.9999+r2 (pre-pin recipes read as 1.5.6)', modPin('morefluff'));
   const s = new Session();
   s.start({ seed: 'MF199PIN', mods: ['morefluff'] });
-  ok(s.recipe.modVersions.morefluff === '1.9.9999+r1', 'a new run records the pin', s.recipe.modVersions);
+  ok(s.recipe.modVersions.morefluff === '1.9.9999+r2', 'a new run records the pin', s.recipe.modVersions);
   const old = { v: 1, seed: 'X', back: 'b_red', stake: 1, mods: ['morefluff'], actions: [] };
   const d = pinDiff(old);
-  ok(d.length === 1 && d[0].id === 'morefluff' && d[0].recorded === '1.5.6' && d[0].current === '1.9.9999+r1', 'a pre-pin MoreFluff recipe shows the 1.5.6 -> 1.9.9999 change', d);
+  ok(d.length === 1 && d[0].id === 'morefluff' && d[0].recorded === '1.5.6' && d[0].current === '1.9.9999+r2', 'a pre-pin MoreFluff recipe shows the 1.5.6 -> 1.9.9999 change', d);
   // the deleted keys: retired cards (named), never registered; nothing renamed
   const removed = ['j_mf_complexitycreep', 'j_mf_lightningstrikesthrice', 'b_mf_grosmichel', 'b_mf_blasphemy', 'sleeve_mf_grosmichel', 'sleeve_mf_philosophical',
     'sleeve_mf_rainbow', 'sleeve_mf_blasphemy', 'p_mf_modded_jumbo_1', 'p_mf_modded_mega_1', 'tag_mf_moddedpack', 'tag_mf_clutch'];

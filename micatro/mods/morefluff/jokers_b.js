@@ -36,6 +36,7 @@ import {
 } from '../../js/engine/core.js';
 import { get_poker_hand_info, end_consumeable, STATES } from '../../js/engine/run.js';
 import { joker, find, has, room, say, has_enh, has_no_rank, remove_joker, scale_card, progressbar } from './util.js';
+import { has_attribute } from '../../js/engine/smods.js';
 
 const J = [];
 const add = (slug, def) => { J.push(joker(slug, def)); };
@@ -497,9 +498,19 @@ add('sudoku', {
 });
 
 // ------------------------------------------------------------------ Tall Joker
+// 1.9.9999: +44 Mult only while no OTHER joker has the mult / xmult / emult / hypermult attribute (FLUFF.has_attribute:
+// Steamodded's built-in attribute pools + every mod center's own `attributes`). Its art: the base game's Jimbo, as
+// 1.9.9999 draws it (no atlas; its tall `display_size` isn't ported: Micatro's card frame is fixed).
+const MULT_ATTRS = ['mult', 'xmult', 'emult', 'hypermult'];
 add('talljoker', {
+  atlas: 'mf_vanilla_jokers', pos: { x: 0, y: 0 },
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.mult] }),
-  calculate(s, card, ctx) { if (main(ctx)) return { mult: card.ability.extra.mult }; },
+  calculate(s, card, ctx) {
+    if (ctx.joker_main) {
+      const other = G.jokers.cards.some((o) => o !== card && MULT_ATTRS.some((a) => has_attribute(o.config.center, a)));
+      if (!other) return { mult: card.ability.extra.mult };
+    }
+  },
 });
 
 // ------------------------------------------------------------------ Teacup
