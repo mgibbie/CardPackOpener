@@ -112,11 +112,22 @@ export const FETCH_HEADER_MS = 12000, FETCH_IDLE_MS = 10000, FETCH_RETRY_MS = [4
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 // how long a map arrival waits for its neighbours before going ahead without the slow ones
 export const CONNECTION_WAIT_MS = 6000;
+// The fetch layer's last sign of life: a request starting (a retry included),
+// headers, a chunk of body, an end. ow_loop's load watchdog measures a load's
+// SILENCE from here. It used to count from the load's start, 20 s flat, while one
+// stalled request alone costs FETCH_HEADER_MS (12 s) before its retry — so two
+// stalls in a row, on a link that then recovered, fired "Loading got stuck" at 20 s
+// and the load landed anyway at ~26 s, moving the player after the HUD said they
+// had stayed (Sky Pillar 5F -> Top, bug:1792549744340, 2026-10-21).
+let netPulseAt = -Infinity;
+const netPulse = () => { netPulseAt = typeof performance !== 'undefined' ? performance.now() : Date.now(); };
+export const netActivityAt = () => netPulseAt;
 // fetch url and read its whole body as bytes, aborting only on silence
 async function fetchBytesOnce(url) {
 	const ac = typeof AbortController === 'function' ? new AbortController() : null;
+	netPulse();
 	let timer = setTimeout(() => ac && ac.abort(), FETCH_HEADER_MS);
-	const kick = () => { clearTimeout(timer); timer = setTimeout(() => ac && ac.abort(), FETCH_IDLE_MS); };
+	const kick = () => { netPulse(); clearTimeout(timer); timer = setTimeout(() => ac && ac.abort(), FETCH_IDLE_MS); };
 	try {
 		const r = await fetch(url, ac ? { signal: ac.signal } : undefined);
 		if (!r.ok) {
@@ -141,7 +152,7 @@ async function fetchBytesOnce(url) {
 	} catch (e) {
 		if (e && e.name === 'AbortError') { const t = new Error(`timed out ${url}`); t.stalled = true; throw t; }
 		throw e;
-	} finally { clearTimeout(timer); }
+	} finally { clearTimeout(timer); netPulse(); }
 }
 async function fetchResilient(url, parse) {
 	let lastErr = null;

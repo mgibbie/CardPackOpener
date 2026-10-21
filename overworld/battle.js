@@ -3332,13 +3332,17 @@ export class Battle {
 
 	// Disable/Encore/Taunt/Torment restrictions, shared by the menu and the AI
 	moveUsable(mon, m, side) {
+		// mid-rampage you get no say (same shape as Encore), and the rampage runs on
+		// at 0 PP: Gen 3 skips action selection for a STATUS2_MULTIPLETURNS mon and
+		// ppreduce simply finds nothing to take (battle_main.c / battle_script_commands.c).
+		// pp<=0 used to be checked first, so a lock whose move ran dry refused EVERY
+		// move and the turn never resolved (tester bug 2026-10-20/21).
+		if (mon.lockMove && mon.moves?.some(x => x.id === mon.lockMove)) return m.id === mon.lockMove;
 		if (m.pp <= 0) return false;
 		if (this.itemFx(mon)?.assaultVest && this.data.moves[m.id]?.category === 'Status') return false;
 		if (mon.choiceLock && this.itemFx(mon)?.choice && m.id !== mon.choiceLock) return false;
 		if (mon.disabledMove === m.id) return false;
 		if (mon.encoreMove && m.id !== mon.encoreMove) return false;
-		// mid-rampage you get no say — same shape as Encore
-		if (mon.lockMove && m.id !== mon.lockMove) return false;
 		// GORILLA TACTICS locks you in like a Choice item, without the item
 		if (mon.choiceLock && this.abilityOf(mon) === 'gorillatactics' && m.id !== mon.choiceLock) return false;
 		if (mon.tauntTurns > 0 && (this.data.moves[m.id]?.category === 'Status')) return false;
@@ -4054,8 +4058,15 @@ export class Battle {
 			if (k === 'z' || k === 'Enter') {
 				if (a.menuIdx === 0) {
 					const who = a.double ? this.chooser() : a.me;
+					// RAMPAGE (Outrage/Thrash/Petal Dance/Uproar): the locked move is the
+					// only choice, so FIGHT uses it straight away, PP or not, as Gen 3 does
+					const locked = who.lockMove && who.moves.find(m => m.id === who.lockMove);
+					if (locked) {
+						if (a.double) this.planMove(locked);
+						else this.startQueue(() => this.resolveTurn(locked));
+					}
 					// out of PP everywhere: Struggle instead of a dead menu
-					if (who.moves.every(m => m.pp <= 0)) {
+					else if (who.moves.every(m => m.pp <= 0)) {
 						if (a.double) this.planMove(STRUGGLE());
 						else {
 							this.startQueue(() => {

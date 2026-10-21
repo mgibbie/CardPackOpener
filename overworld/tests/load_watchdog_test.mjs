@@ -10,6 +10,12 @@
 //   b) a destination that 500s once -> the retry loads it and the warp completes
 //   c) the watchdog itself (a load wedged some other way) -> fade back to 0 and
 //      walking works, not just `loading` cleared
+//   d) 2026-10-21 (Instinct, Sky Pillar 5F -> Top, bug:1792549744340): a link that
+//      STALLS twice and then answers. Each stall costs FETCH_HEADER_MS (12 s) before
+//      the retry, so the watchdog's flat 20 s fired "Loading got stuck" mid-retry —
+//      and the load landed anyway ~6 s later. The watchdog now times silence from
+//      the fetch layer's last sign of life: the warp completes, no false alarm.
+//      (a) therefore runs to the fetch layer's own give-up (~54 s), not the watchdog.
 //
 //   node overworld/tests/load_watchdog_test.mjs
 import fs from 'fs';
@@ -48,6 +54,7 @@ const server = http.createServer(async (req, res) => {
 	hits[base] = (hits[base] || 0) + 1;
 	if (mode[base] === 'hang') return;                              // never answer
 	if (mode[base] === '500once' && hits[base] === 1) { res.writeHead(500); return res.end('boom'); }
+	if (mode[base] === 'stall2' && hits[base] <= 2) return;        // two silent attempts, then an answer
 	fs.readFile(path.join(ROOT, u), (e, d) => {
 		if (e) { res.writeHead(404); res.end('nf'); return; }
 		const t = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png' }[path.extname(u)] || 'application/octet-stream';
@@ -89,12 +96,35 @@ try {
 	const t0 = Date.now();
 	await page.evaluate(() => { window.__ow.warpTo('MAP_PALLET_TOWN_RIVALS_HOUSE', 0); });
 	let s = null;
-	for (let i = 0; i < 300; i++) { s = await st(); if (!s.loading && s.alpha < 0.01 && s.target < 0.01 && Date.now() - t0 > 1500) break; await sleep(100); }
+	for (let i = 0; i < 800; i++) { s = await st(); if (!s.loading && s.alpha < 0.01 && s.target < 0.01 && Date.now() - t0 > 1500) break; await sleep(100); }
 	const took = Date.now() - t0;
 	A(s.map === 'PalletTown' && s.alpha < 0.01 && s.target < 0.01 && !s.loading, 'a) a hung destination: back on the old map, no black fade, not loading', JSON.stringify(s) + ' after ' + took + 'ms');
-	A(took < 25000, 'a) ...within the fetch timeout (no endless black screen)', took + 'ms');
+	A(took < 65000, "a) ...within the fetch layer's retry budget (no endless black screen)", took + 'ms');
 	A(await canWalk(), 'a) ...and the player can walk');
 	A((hits['PalletTown_RivalsHouse_map.json'] || 0) >= 2, 'a) the fetch was retried before giving up', String(hits['PalletTown_RivalsHouse_map.json']));
+
+	// ===== d) two stalls, then the destination answers: no false alarm =====
+	{
+		await sleep(600);
+		mode['PalletTown_PlayersHouse_1F_map.json'] = 'stall2';
+		const huds = new Set();
+		const t1 = Date.now();
+		await page.evaluate(() => { window.__ow.warpTo('MAP_PALLET_TOWN_PLAYERS_HOUSE_1F', 0); });
+		let d = null;
+		for (let i = 0; i < 450; i++) {
+			d = await st();
+			huds.add(await page.evaluate(() => document.getElementById('hud')?.textContent || ''));
+			if (d.map === 'PalletTown_PlayersHouse_1F' && !d.loading && d.alpha < 0.01) break;
+			await sleep(100);
+		}
+		const took1 = Date.now() - t1;
+		A(d.map === 'PalletTown_PlayersHouse_1F' && !d.loading && (hits['PalletTown_PlayersHouse_1F_map.json'] || 0) >= 3,
+			'd) two stalled attempts then an answer: the warp completes (after ' + took1 + 'ms)', JSON.stringify(d) + ' hits ' + hits['PalletTown_PlayersHouse_1F_map.json']);
+		A(took1 > 20000 && ![...huds].some(h => /Loading got stuck/.test(h)), 'd) ...past the old 20 s mark, and the watchdog never cried "Loading got stuck"', JSON.stringify([...huds]));
+		await page.evaluate(() => window.__ow.moveToMap('PalletTown', 10, 10));
+		for (let i = 0; i < 100 && (await st()).map !== 'PalletTown'; i++) await sleep(100);
+		await sleep(600);
+	}
 
 	// ===== b) the destination 500s once =====
 	mode['PalletTown_ProfessorOaksLab_map.json'] = '500once';

@@ -13,8 +13,12 @@
 // re-inserts a `multichoice` op into our transpiled label: right after the
 // question's msg, else just before the first VAR_RESULT branch.
 //   -> overworld/multichoice_data.json { patches: { <stem>: { <label>: ops } }, shared: { <label>: ops } }
+// The same aligner restores the other dropped commands listed in RESTORE below
+// (the buffer* family, checkmoney, the trainer-flag branches, ...). 2026-10-21:
+// + bufferstdstring (kind 'std'; events.js STD_STRINGS), the Route 22/23 badge
+// guards' "{STR_VAR_1}" (bug:1792441645341); 36 more buffer ops, 30 label copies.
 //
-//   node tools/gen_multichoice.mjs
+//   node tools/gen_multichoice.mjs   (MAGEPUNK_REF=<Magepunk66/Reference> from a worktree)
 import fs from 'fs';
 import path from 'path';
 
@@ -81,7 +85,10 @@ const unapplied = [];
 // the {STR_VAR_1}" (2026-10-02: the Dojo gift printed a blank name)
 const BUFFER_KINDS = { bufferspeciesname: 'species', bufferitemname: 'item', bufferitemnameplural: 'itemplural', buffernumberstring: 'number', buffermovename: 'move',
 	// the lead Pokémon's species (Slateport's Effort Ribbon woman, 2026-10-08)
-	bufferleadmonspeciesname: 'leadspecies' };
+	bufferleadmonspeciesname: 'leadspecies',
+	// FireRed's fixed strings (gStdStringPtrs): the Route 22/23 badge guards buffer
+	// their badge's name ("You can pass here only if you have the {STR_VAR_1}.")
+	bufferstdstring: 'std' };
 // `getpartysize` + `giveegg`: the Lavaridge egg woman (2026-10-07) checked a
 // stale VAR_RESULT against PARTY_SIZE and set her flag without handing over the egg
 // the TRAINER FLAG questions and writes: `goto_if_defeated TRAINER_X, label` and its

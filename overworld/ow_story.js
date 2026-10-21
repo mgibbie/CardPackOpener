@@ -34,7 +34,7 @@ import { openRadio } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
-import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu } from './ow_menukeys.js';
+import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu, seagallopSpawn } from './ow_menukeys.js';
 import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, hideResolvedLegendaryObjects, refreshFollower } from './ow_follower.js';
@@ -1135,6 +1135,13 @@ export function runSpecial(name, store, op) {
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
 		// a Sevii harbor's SEAGALLOP sailor (events.js stubs seagallop.inc's menus onto this)
 		case 'SeagallopMenu': openSeagallopMenu(); return;
+		// DoSeagallopFerryScene's destination: aim MAP_DYNAMIC at VAR_0x8006's harbor
+		// tile for EventScript_SetSail's warp (events.js); 0 = no such crossing
+		case 'SeagallopSetSail': {
+			const d = seagallopSpawn(Story.getVar('VAR_0x8006'));
+			if (d) S.dynamicWarp = { map: d.map, warp: null, x: d.x, y: d.y };
+			set(d ? 1 : 0); return;
+		}
 		// Slateport's EFFORT RIBBON woman (field_specials.c): the lead (GetLeadMonIndex:
 		// the first non-egg) gets it once its EVs total MAX_TOTAL_EVS (510). None of the
 		// three was handled, so the EV check read 0 and nobody ever got it (2026-10-08).
