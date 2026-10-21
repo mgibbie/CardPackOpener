@@ -1,67 +1,60 @@
-// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0863_perrserker.lua: Galarian Meowth, Perrserker.
-// Perrserker's "retriggers if all Jokers are Metal" is a Steamodded joker retrigger
-// (retrigger_joker_check; the engine's joker_retriggers seam).
-import { G, P_CENTERS, localize, next, has_enhancement, defineNacho, type_tooltip, scaling_evo, is_type, poke_get_adjacent_jokers } from '../api.js';
+// Nacho's Pokermon Dip 1.7.9 — src/pokemon/0863_perrserker.lua: Galarian Meowth, Perrserker.
+// 1.7.9 rework: a played hand with a Steel card gives every other Metal joker +1 / +2 Energy (pokermon.energy.modify, silent:
+// ../dip.js modify_energy) — taken back at end of round (Meowth) / after the hand (Perrserker). Galarian Meowth evolves after
+// 15 scored Steel cards (scaling_evo). Common $5 / Safari $10; both need a Steel card in the deck (enhancement_gate). 1.6.4
+// retriggered held Steel cards and gave Metal jokers X Mult.
+import { G, P_CENTERS, localize, defineNacho, type_tooltip, scaling_evo, find_pokemon_type, get_type, main_eval } from '../api.js';
+import { con, modify_energy, is_energizable } from '../dip.js';
 
 const FILE = 'src/pokemon/0863_perrserker.lua';
-const card_did_something = (context) => next(context.card_effects[0] || {}) || context.card_effects.length > 1;
+
+/** +amount Energy (of its own type) on every other energizable Metal joker. */
+function charge_metals(card, amount) {
+  for (const j of find_pokemon_type('Metal', card)) if (is_energizable(j)) modify_energy(j, get_type(j), amount, true);
+}
+const loc = (self, info_queue, card, extra) => {
+  type_tooltip(self, info_queue, card);
+  info_queue.push({ set: 'Other', key: 'energize' });
+  info_queue.push(P_CENTERS.m_steel);
+  return { vars: extra };
+};
+function steel_hand(card, context) {
+  if (context.before && context.scoring_hand && context.scoring_hand.some((c) => con.is_steel(c))) {
+    charge_metals(card, card.ability.extra.e_amount);
+    card.ability.extra.raised = card.ability.extra.raised + 1;
+    return { message: localize('poke_energized_ex'), colour: 'metal' };
+  }
+  return undefined;
+}
+function take_back(card) {
+  charge_metals(card, -card.ability.extra.e_amount * card.ability.extra.raised);
+  card.ability.extra.raised = 0;
+  return { message: localize('k_reset'), colour: 'metal' };
+}
 
 defineNacho({
-  // Galarian Meowth 52-2: retrigger the first two held Steel cards; evolves with Metal on both sides
+  // Galarian Meowth 52-2
   galarian_meowth: {
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      info_queue.push(P_CENTERS.m_steel);
-      return { vars: [card.ability.extra.retriggers] };
+      const ex = card.ability.extra;
+      return loc(self, info_queue, card, [ex.e_amount, Math.max(0, self.config.evo_rqmt - ex.steel_scored)]);
     },
     calculate(self, card, context) {
-      if (context.before && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) {
-        card.ability.extra.counter = 0;
-        return {};
-      }
-      if (context.repetition && context.cardarea === G.hand && context.card_effects && card_did_something(context)
-        && has_enhancement(context.other_card, 'm_steel') && card.ability.extra.counter < 2) {
-        if (!context.blueprint && !context.retrigger_joker) card.ability.extra.counter = card.ability.extra.counter + 1;
-        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
-      }
-      return scaling_evo(self, card, context, 'j_nacho_perrserker', card.ability.extra.metals, self.config.evo_rqmt);
-    },
-    update(self, card) {
-      if (card.area === G.jokers) {
-        let metals = 0;
-        for (const j of poke_get_adjacent_jokers(card)) if (is_type(j, 'Metal')) metals = metals + 1;
-        card.ability.extra.metals = metals;
-      }
+      const ex = card.ability.extra;
+      const r = steel_hand(card, context);
+      if (r) return r;
+      if (context.individual && !context.end_of_round && context.cardarea === G.play && !context.blueprint && con.is_steel(context.other_card)) ex.steel_scored = ex.steel_scored + 1;
+      if (context.end_of_round && main_eval(context) && !context.individual && !context.repetition && ex.raised > 0) return take_back(card);
+      return scaling_evo(self, card, context, 'j_nacho_perrserker', ex.steel_scored, self.config.evo_rqmt);
     },
   },
   // Perrserker 863
   perrserker: {
-    loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      info_queue.push(P_CENTERS.m_steel);
-      return { vars: [card.ability.extra.Ymult] };
-    },
+    loc_vars(self, info_queue, card) { return loc(self, info_queue, card, [card.ability.extra.e_amount]); },
     calculate(self, card, context) {
-      if (context.before && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) {
-        card.ability.extra.counter = 0;
-        return {};
-      }
-      if (context.repetition && context.cardarea === G.hand && context.card_effects && card_did_something(context) && has_enhancement(context.other_card, 'm_steel')) {
-        if (!context.blueprint && !context.retrigger_joker) card.ability.extra.counter = card.ability.extra.counter + 1;
-        if (card.ability.extra.counter > 3) return undefined;
-        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
-      }
-      if (context.other_joker && is_type(context.other_joker, 'Metal')) {
-        G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
-        return { message: localize({ type: 'variable', key: 'a_xmult', vars: [card.ability.extra.Ymult] }), colour: 'XMULT', Xmult_mod: card.ability.extra.Ymult, message_card: context.other_joker };
-      }
-      if (context.retrigger_joker_check && !context.retrigger_joker) {
-        let metals = 0;
-        for (const v of G.jokers.cards) if (is_type(v, 'Metal')) metals = metals + 1;
-        if (metals === G.jokers.cards.length && context.other_card.ability && context.other_card === card) {
-          return { message: localize('k_again_ex'), colour: 'BLACK', repetitions: 1, card };
-        }
-      }
+      const r = steel_hand(card, context);
+      if (r) return r;
+      if (context.after && main_eval(context) && card.ability.extra.raised > 0) return take_back(card);
       return undefined;
     },
   },

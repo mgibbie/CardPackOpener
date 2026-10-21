@@ -169,7 +169,7 @@ export function placeholderFace(ctx, d, loading) {
 /** Which floating "soul" layer a card has (legendaries, The Soul, Hologram, mod soul_pos). */
 export function soulLayer(d) {
   if (d.facing === 'back') return null;
-  if (d.soul_pos && d.atlas) return { mod: true, atlas: d.atlas, pos: d.soul_pos };
+  if (d.soul_pos && (d.soul_atlas || d.atlas)) return { mod: true, atlas: d.soul_atlas || d.atlas, pos: d.soul_pos };
   const c = CENTERS[d.center];
   if (!c) return null;
   if (c.soul_pos) return { atlas: 'Joker', pos: c.soul_pos };
@@ -278,9 +278,12 @@ export class CardSprite {
     this.animIdx = idx;
     const fpr = a.fpr || a.frames;
     const pos = { x: idx % fpr, y: Math.floor(idx / fpr) };
-    try { composeFace(this.bctx || this.base.getContext('2d'), { ...this.fd, atlas: a.atlas || this.fd.atlas, pos }, this.board.backKey); } catch (e) { warnOnce('animation frame', e); }
-    this.base._ver++;
-    if (!this.needsFx() || noGL()) this.drawStatic();
+    // (a soul-only animation — Nacho 1.7.9's Terapagos-Stellar — leaves the card itself as it is)
+    if (!a.soulOnly) {
+      try { composeFace(this.bctx || this.base.getContext('2d'), { ...this.fd, atlas: a.atlas || this.fd.atlas, pos }, this.board.backKey); } catch (e) { warnOnce('animation frame', e); }
+      this.base._ver++;
+      if (!this.needsFx() || noGL()) this.drawStatic();
+    }
     if (this.soul && a.soulAtlas) {
       const sc = this.soul.getContext('2d'); sc.clearRect(0, 0, FACE_W, FACE_H);
       drawModCell(sc, a.soulAtlas, pos, 0, 0, FACE_W, FACE_H);

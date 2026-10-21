@@ -65,12 +65,13 @@ await sec('engine', () => {
   ok(gold.w && gold.w.stake === 8 && gold.w.sticker_level === 8, 'a won Gold-stake run: sticker_level 8', gold);
   const white = winOn(1, []);
   ok(white.w && white.w.sticker_level === 1, 'a won White-stake run (no mods): sticker_level 1', white);
+  // Nacho 1.7.9 (batch 18) re-keyed its Elite stake to Pokermon's: stake_nacho_elite_stake is a `renamed` alias
   const nk = 'stake_nacho_elite_stake';
-  ok(!!P_STAKES[nk], "Nacho's Elite stake is still registered", Object.keys(P_STAKES).filter((k) => /elite/.test(k)));
+  ok(!P_STAKES[nk] && P_STAKES.stake_poke_elite, "Nacho's Elite stake is no longer registered (an alias of Pokermon's)", Object.keys(P_STAKES).filter((k) => /elite/.test(k)));
   const ne = winOn(nk, ['pokermon', 'nacho']);
-  ok(ne.w && ne.w.stake === 8 && ne.w.sticker_level === 9, "a won run on Nacho's (superseded) Elite stake: sticker_level 9", ne);
+  ok(ne.w && ne.w.stake === 8 && ne.w.sticker_level === 9, "a won run recorded on Nacho's old Elite key plays Pokermon's Elite: sticker_level 9", ne);
   const off = winOn(nk, ['pokermon', 'nacho'], { nacho: { customStakes: false } });
-  ok(off.w && off.w.sticker_level === 8, "Nacho's Elite with its customStakes option off (no Elite rules): Gold, 8", off);
+  ok(off.w && off.w.sticker_level === 9, "...even with Nacho 1.6.4's old customStakes option off (1.7.9 has no such option): 9", off);
   const lilac = Object.keys(P_STAKES).find((k) => /lilac_stake$/.test(k));
   ok(!!lilac, "Pokermon+'s Lilac stake is registered");
   if (lilac) {

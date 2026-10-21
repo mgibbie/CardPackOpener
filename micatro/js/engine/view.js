@@ -30,6 +30,7 @@ export function cardView(c, withDesc) {
     v.atlas = (ctr.get_atlas && ctr.get_atlas(ctr, c)) || ctr.atlas;
     v.pos = (ctr.get_pos && ctr.get_pos(ctr, c)) || ctr.pos;
     if (ctr.soul_pos) v.soul_pos = ctr.soul_pos;
+    if (ctr.soul_atlas) v.soul_atlas = ctr.soul_atlas; // (a soul on its own atlas: Nacho 1.7.9's Terapagos-Stellar)
   }
   if (c.edition && c.edition.type) v.edition = c.edition.type;
   if (c.seal) {

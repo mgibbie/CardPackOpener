@@ -12,7 +12,7 @@ export const AVAILABLE = [
   },
   {
     id: 'nacho', name: "Nacho's Pokermon Dip", size: '~0.3 MB art', by: 'Eternalnacho (rebuilt for Micatro)', requires: ['pokermon'],
-    description: 'More Pokémon for Pokermon (Sinnoh starters, Goomy, Terapagos, Megas for Pokermon’s Gardevoir, Gallade, Altaria and Salamence...), the Stellar type and the Elite Four stake.',
+    description: 'More Pokémon for Pokermon (the Sinnoh starters, fossils, Applin, Frigibax, Terapagos...), Megas for Pokermon’s Gardevoir, Altaria and Gallade, the apples, the Ancient Pack and the Stellar type.',
     load: () => import('../../mods/nacho/index.js'),
   },
   {
@@ -133,7 +133,8 @@ export const sealByKey = (key) => P_SEALS[key] || null;
  */
 /**
  * Stakes the given (loaded) mods add, for the New Run picker (shown after the 8 base stakes). A stake another mod's stake took
- * over (`superseded_by`: Nacho's Elite -> Pokermon 3.9.1's) is left out while that one is listed; it stays registered.
+ * over (`superseded_by`) is left out while that one is listed; it stays registered. (Nacho 1.6.4's Elite used it; Nacho 1.7.9
+ * re-keyed its stake to Pokermon's, js/mods/aliases.js.)
  */
 export function modStakes(ids) {
   const on = new Set(withRequirements(ids || []));

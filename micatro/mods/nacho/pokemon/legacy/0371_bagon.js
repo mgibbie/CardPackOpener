@@ -1,7 +1,11 @@
+// LEGACY definition (batch 18, Nacho 1.7.9; ../../PORTING.md "Legacy definitions"): 1.7.9 retired this line (deprecated/,
+// can_load = false) because base Pokermon owns it. Its 1.6.4 behaviour stays registered for saves, replays, custom decks and
+// win stickers: out of every pool, evolving into Pokermon's jokers (Pokermon precedence).
+// (1.7.9 also DROPPED Mega Salamence: legacy too, no longer reached by a Mega Stone — ../../index.js.)
 // Nacho's Pokermon Dip 1.6.4 — src/pokemon/0371_bagon.lua: Bagon, Shelgon, Salamence, Mega Salamence.
 import {
-  G, localize, play_sound, delay, defineNacho, type_tooltip, deck_rank_evo, change_base, rank_next,
-} from '../api.js';
+  G, localize, play_sound, delay, defineNachoLegacy, type_tooltip, deck_rank_evo, change_base, rank_next,
+} from '../../api.js';
 
 const FILE = 'src/pokemon/0371_bagon.lua';
 
@@ -48,7 +52,7 @@ function bagon_calc(self, card, context, held, div, forced_key, pct) {
   return deck_rank_evo(self, card, context, forced_key, 9, pct);
 }
 
-defineNacho({
+defineNachoLegacy({
   // Bagon 371
   bagon: {
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [deck_data(9, 16)] }; },

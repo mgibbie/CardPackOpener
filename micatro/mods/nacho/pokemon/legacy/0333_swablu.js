@@ -1,6 +1,9 @@
-// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0333_swablu.lua: Swablu, Altaria, Mega Altaria.
-// (Altaria's "9s can't be debuffed" is the mod's set_debuff rule: ../functions.js.)
-import { G, P_CENTERS, poll_edition, defineNacho, type_tooltip, level_evo, ease_poke_dollars } from '../api.js';
+// LEGACY definition (batch 18, Nacho 1.7.9; ../../PORTING.md "Legacy definitions"): 1.7.9 retired this line (deprecated/,
+// can_load = false) because base Pokermon owns it. Its 1.6.4 behaviour stays registered for saves, replays, custom decks and
+// win stickers: out of every pool, evolving into Pokermon's jokers (Pokermon precedence).
+// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0333_swablu.lua: Swablu, Altaria (1.6.4's Mega Altaria: re-keyed, ../megas.js).
+// (Altaria's "9s can't be debuffed" is the mod's set_debuff rule: ../../functions.js.)
+import { G, P_CENTERS, poll_edition, defineNachoLegacy, type_tooltip, level_evo, ease_poke_dollars } from '../../api.js';
 
 const FILE = 'src/pokemon/0333_swablu.lua';
 
@@ -12,7 +15,7 @@ const altaria_nines = () => {
   return n;
 };
 
-defineNacho({
+defineNachoLegacy({
   // Swablu 333
   swablu: {
     loc_vars(self, info_queue, card) {
@@ -29,21 +32,5 @@ defineNacho({
       return { vars: [card.ability.extra.money, card.ability.extra.money * 2, card.ability.extra.money * altaria_nines()] };
     },
     calc_dollar_bonus(self, card) { return ease_poke_dollars(card, 'altaria', card.ability.extra.money * altaria_nines(), true); },
-  },
-  // Mega Altaria 334-1: each played 9 without an edition gets Foil / Holo / Polychrome
-  mega_altaria: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
-    calculate(self, card, context) {
-      if (context.before && context.cardarea === G.jokers && !context.blueprint) {
-        for (const v of G.play.cards) {
-          if (v.get_id() === 9 && !v.edition) {
-            const edition = poll_edition('aura', null, true, true);
-            v.set_edition(edition, true, true);
-            v.juice_up(0.3, 0.5);
-          }
-        }
-      }
-      return undefined;
-    },
   },
 }, FILE);

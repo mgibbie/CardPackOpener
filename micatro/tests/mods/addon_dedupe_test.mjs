@@ -5,11 +5,12 @@
 //   - pools: many seeded runs, every joker rarity (create_card, the shop, Buffoon packs, rarity Tags) and every random-Pokémon
 //     pick (get_random_poke_key: stages, types, Showman held) — no duplicate key, ever; the Pokermon twins still roll
 //   - evolutions retarget: a legacy add-on line evolves into Pokermon's (level, item, Rare Candy / highest evo, Pokermon+'s
-//     Shedinja); a Mega Stone on Pokermon's Gardevoir / Gallade / Altaria / Salamence gives Nacho's Mega, and it devolves back
+//     Shedinja); a Mega Stone on Pokermon's Gardevoir / Gallade / Altaria gives Nacho's Mega (re-keyed j_poke_mega_* since Nacho
+//     1.7.9, batch 18), and it devolves back; Pokermon's Salamence has none (1.7.9 dropped Mega Salamence)
 //   - legacy keys: a recipe (custom deck) holding j_nacho_ralts replays and the card works; Pokermon+'s Wonder Guard challenge
 //     still starts with its Shedinja; a removed key keeps its name / text / art, is not "retired", resolves to itself; win
 //     stickers it earns go to Pokermon's line
-//   - the Pokédex family view and the version pins (Nacho / Pokermon+ contentRev 1)
+//   - the Pokédex family view and the version pins (Nacho 1.7.9-5 rev 2 since batch 18 / Pokermon+ contentRev 1)
 //   node micatro/tests/mods/addon_dedupe_test.mjs
 import { T, hand, add, play, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { newRun } from '../../js/engine/run.js';
@@ -46,7 +47,8 @@ const DUPES = {
   j_nacho_bagon: 'j_poke_bagon', j_nacho_shelgon: 'j_poke_shelgon', j_nacho_salamence: 'j_poke_salamence',
   j_sonfive_nincada: 'j_poke_nincada', j_sonfive_ninjask: 'j_poke_ninjask', j_sonfive_shedinja: 'j_poke_shedinja',
 };
-const NACHO_MEGAS = { gardevoir: 'j_nacho_mega_gardevoir', gallade: 'j_nacho_mega_gallade', altaria: 'j_nacho_mega_altaria', salamence: 'j_nacho_mega_salamence' };
+// (Nacho 1.7.9, batch 18: the Megas are re-keyed into Pokermon's namespace — registered by Nacho — and Mega Salamence is dropped)
+const NACHO_MEGAS = { gardevoir: 'j_poke_mega_gardevoir', gallade: 'j_poke_mega_gallade', altaria: 'j_poke_mega_altaria' };
 
 // ===================================================================== the inventory (a script check of every registered joker)
 sec('inventory', () => {
@@ -66,7 +68,7 @@ sec('inventory', () => {
   const cross = Object.values(disp).filter((ks) => new Set(ks.map((k) => P_CENTERS[k].mod)).size > 1).flat().filter((k) => P_CENTERS[k].mod !== 'pokermon');
   ok(cross.every((k) => DUPES[k]) && cross.length === 12, 'by display name: the same 12', cross);
   // distinct forms stay: regional forms and the add-on Megas Pokermon doesn't have
-  for (const k of ['j_nacho_galarian_meowth', 'j_nacho_hisuian_sneasel', 'j_nacho_hisuian_zorua', 'j_nacho_hisuian_zoroark', ...Object.values(NACHO_MEGAS), 'j_nacho_mega_audino']) {
+  for (const k of ['j_nacho_galarian_meowth', 'j_nacho_hisuian_sneasel', 'j_nacho_hisuian_zorua', 'j_nacho_hisuian_zoroark', ...Object.values(NACHO_MEGAS), 'j_nacho_mega_salamence', 'j_nacho_mega_audino']) {
     ok(P_CENTERS[k] && !P.replaced_by(k) && !P_CENTERS[k].poke_replaced_by, k + ': a distinct form, not a duplicate');
   }
   for (const [k, v] of Object.entries(DUPES)) {
@@ -194,12 +196,17 @@ sec('megas', () => {
   add('j_poke_gardevoir');
   const st = add('c_poke_megastone');
   ok(!P.megastone_can_use(st) && !P.megastone_in_pool(), 'Nacho off: no Mega for Pokermon\'s Gardevoir');
-  // Nacho's Ralts line toggled off: its Megas are off too
-  newRun({ seed: 'DDMEGAOPT', back: 'b_red', mods: MODS3, modOptions: { nacho: { Ralts: false } } }); flush();
+  // Nacho's Mega Gardevoir toggled off (1.7.9: one option per Mega): no Mega for Pokermon's Gardevoir
+  newRun({ seed: 'DDMEGAOPT', back: 'b_red', mods: MODS3, modOptions: { nacho: { Mega_Gardevoir: false } } }); flush();
   act({ type: 'select_blind' }); clearHand();
   add('j_poke_gardevoir');
   const st2 = add('c_poke_megastone');
-  ok(!P.megastone_can_use(st2), 'Nacho\'s Ralts line off: no Mega Gardevoir');
+  ok(!P.megastone_can_use(st2), 'Nacho\'s Mega Gardevoir off: no Mega Gardevoir');
+  // Pokermon's Salamence: Nacho 1.7.9 dropped Mega Salamence — no Mega; the legacy key stays registered for old saves
+  start('DDMEGASAL');
+  add('j_poke_salamence');
+  const st3 = add('c_poke_megastone');
+  ok(!P.megastone_can_use(st3) && P_CENTERS.j_nacho_mega_salamence, 'Pokermon\'s Salamence: no Mega any more (j_nacho_mega_salamence: legacy)');
 });
 
 // ===================================================================== legacy keys still load
@@ -232,7 +239,7 @@ sec('names / stickers', () => {
   }
   // the win stickers a legacy card earns for its earlier stages go to Pokermon's line
   start('DDWIN', { noBlind: true });
-  const m = add('j_nacho_mega_gardevoir');
+  const m = add('j_poke_mega_gardevoir');
   const prev = P.family_win_keys(m);
   ok(!prev.some((k) => DUPES[k]), 'family win stickers from a Nacho Mega name no duplicate key', prev);
 });
@@ -242,11 +249,11 @@ sec('dex / pins', () => {
   start('DDDEX', { noBlind: true });
   {
     const f = familyOf({ center: 'j_poke_gardevoir' });
-    ok(f.includes('j_nacho_mega_gardevoir') && f.includes('j_nacho_mega_gallade') && !f.some((k) => DUPES[k]), 'Pokédex: Pokermon\'s Ralts line shows Nacho\'s Megas, no duplicate', f);
+    ok(f.includes('j_poke_mega_gardevoir') && f.includes('j_poke_mega_gallade') && !f.some((k) => DUPES[k]), 'Pokédex: Pokermon\'s Ralts line shows Nacho\'s (re-keyed) Megas, no duplicate', f);
     const g = familyOf({ center: 'j_nacho_ralts' });
     ok(g[0] === 'j_nacho_ralts' && g.includes('j_poke_kirlia') && !g.includes('j_nacho_kirlia'), 'Pokédex on a legacy card: itself, then Pokermon\'s line', g);
   }
-  ok(PINS.modPin('nacho') === '1.6.4+r1' && PINS.modPin('pokermonplus') === '1.0.3-251101e+r1', 'pins: Nacho 1.6.4+r1, Pokermon+ 1.0.3-251101e+r1', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
+  ok(PINS.modPin('nacho') === '1.7.9-5+r2' && PINS.modPin('pokermonplus') === '1.0.3-251101e+r1', 'pins: Nacho 1.7.9-5+r2 (batch 18), Pokermon+ 1.0.3-251101e+r1', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
   ok(PINS.LEGACY_MOD_VERSIONS.nacho === '1.6.4' && PINS.LEGACY_MOD_VERSIONS.pokermonplus === '1.0.3-251101e', 'LEGACY_MOD_VERSIONS untouched');
   const d = PINS.pinDiff({ mods: ['pokermon', 'nacho'], modVersions: { pokermon: PINS.modPin('pokermon'), nacho: '1.6.4' } });
   ok(d.length === 1 && d[0].id === 'nacho', 'a run recorded on Nacho 1.6.4 (rev 0) warns on resume', d);

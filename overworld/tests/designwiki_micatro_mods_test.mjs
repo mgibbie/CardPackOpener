@@ -74,8 +74,9 @@ A(navMicatro.length > 0 && !/micatro-mods|micatro\/mod/.test(navMicatro), 'sideb
 function registered(id) {
 	const out = new Map();
 	const put = (o, keyOverride) => out.set(keyOverride || o.key, o);
-	// (poke_replaced_by: an add-on duplicate of a Pokermon joker — Pokermon precedence — is out of play and gets no entry)
-	for (const c of Object.values(core.P_CENTERS)) if (c.mod === id && !c.unported && !c.poke_replaced_by && !['Shader', 'Other', 'Default'].includes(c.set)) put(c);
+	// (poke_replaced_by: an add-on duplicate of a Pokermon joker — Pokermon precedence — is out of play and gets no entry; nor does a
+	// `legacy` card a mod upgrade retired but keeps registered for old saves — Nacho 1.7.9's dropped Mega Salamence)
+	for (const c of Object.values(core.P_CENTERS)) if (c.mod === id && !c.unported && !c.poke_replaced_by && !c.legacy && !['Shader', 'Other', 'Default'].includes(c.set)) put(c);
 	for (const T of [core.P_TAGS, core.P_BLINDS, core.P_STAKES, core.P_SEALS, REG.STICKERS, REG.MOD_SUITS, REG.MOD_POKER_HANDS, REG.RARITIES, ASPECTS]) for (const o of Object.values(T)) if (o.mod === id) put(o);
 	for (const c of (REG.MODS[id].challenges || [])) if (c && typeof c === 'object' && (c.key || c.id)) put(c, c.key || c.id);
 	for (const sl of (REG.MODS[id].sleeves || [])) if (sl && sl.key) put(sl);

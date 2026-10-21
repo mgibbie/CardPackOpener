@@ -73,14 +73,11 @@ try {
 	A(bunco.every((e) => e.requires === 7 && e.records === 7), 'Bunco\'s Cyan / Pink / Magenta play at Orange (7): each opens on an Orange win', JSON.stringify(bunco.map((e) => [e.requires, e.records])));
 	A(bunco.every((e) => !U.stakeOpen(e, 6) && U.stakeOpen(e, 7)), '... locked on a Purple win');
 	for (const k of ['stake_sonfive_lilac_stake', 'stake_thac_culmination']) A(entry(k).requires === 8 && entry(k).records === 8, nameOf(entry(k).stake) + ': above Gold, opens on a Gold win');
-	// Nacho's Elite (left out while Pokermon's is listed): above Lilac / Gold either way, records Elite with its rules on
+	// Nacho's Elite: Nacho 1.7.9 (batch 18) re-keyed it to Pokermon's — no Nacho stake is registered; the old key is an alias
 	const { P_STAKES } = await import(W('engine/core.js'));
-	const nachoKey = Object.keys(P_STAKES).find((k) => /^stake_nacho_/.test(k));
-	const nacho = nachoKey && U.stakeLadder(base.concat([{ ...P_STAKES[nachoKey] }])).find((e) => e.stake.key === nachoKey);
-	A(nacho && nacho.requires === 8, 'Nacho\'s Elite (registered; listed only without Pokermon\'s) opens on a Gold win', nacho && JSON.stringify([nacho.requires, nacho.records]));
-	const lilac = entry('stake_sonfive_lilac_stake').stake;
-	const overLilac = nachoKey && U.stakeLadder(base.concat([lilac, { ...P_STAKES[nachoKey], above_stake: lilac.key, applied_stakes: [lilac.key] }])).find((e) => e.stake.key === nachoKey);
-	A(overLilac && overLilac.requires === 8 && overLilac.above === lilac, '... above Lilac (Pokermon+ on): a Lilac win (Gold level) opens it', overLilac && JSON.stringify([overLilac.requires, overLilac.above && overLilac.above.key]));
+	const { resolveCardKey } = await import(W('mods/registry.js'));
+	A(!Object.keys(P_STAKES).some((k) => /^stake_nacho_/.test(k)) && resolveCardKey('stake_nacho_elite_stake') === 'stake_poke_elite', 'Nacho registers no stake; stake_nacho_elite_stake resolves to Pokermon’s Elite', JSON.stringify(Object.keys(P_STAKES).filter((k) => /elite/.test(k))));
+	A(entry('stake_poke_elite').requires === 8, '... which opens on a Gold win');
 	// ---------- every stake records what the engine's win event records ----------
 	const { newRun, win_sticker_level } = await import(W('engine/run.js'));
 	const { G } = await import(W('engine/core.js'));

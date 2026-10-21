@@ -1,0 +1,37 @@
+{
+  "comment": "Nacho's Pokermon Dip 1.7.9-5 (Eternalnacho/NachosPokermonDip commit 904ae3979b8e3d18348c2b9c819c1692daf9d61e, 2026-10-19; Plans/MICATRO_MODS_UPGRADES.md batches 18-19): the static data micatro/mods/nacho/data179.js is generated from. 1.7.9 keeps its helpers under PkmnDip.* and calls Pokermon 3.9 through pokermon.* namespaces: the prelude makes pokermon.<x> a callable, indexable stub and PkmnDip.config answer true for every line (the files load whatever the player toggled; can_load / config_key / misc_config are read from each file return table). SMODS.find_mod returns no mod (Agarmons is absent: the G-Max files report can_load = false).",
+  "prelude": "SMODS.find_mod = function() return {} end local mt = {} mt.__index = function(t, k) local v = setmetatable({}, mt) rawset(t, k, v) return v end mt.__call = function() return nil end setmetatable(pokermon, mt) PkmnDip = { config = setmetatable({}, {__index = function() return true end}), config_list = { main = {} } }",
+  "run_first": [
+    "src/functions/a_misc.lua",
+    "src/functions/b_list_utils.lua",
+    "src/functions/calculation.lua",
+    "src/functions/conditions.lua",
+    "src/functions/effects.lua",
+    "src/functions/mod.lua",
+    "src/functions/pokedraw.lua"
+  ],
+  "files": {
+    "jokers": [
+      "src/pokemon/"
+    ],
+    "consumables": [
+      "src/consumables/"
+    ],
+    "boosters": [
+      "src/boosters/"
+    ],
+    "tags": [
+      "src/tags/"
+    ],
+    "stickers": [
+      "src/stickers/"
+    ],
+    "challenges": [
+      "src/challenges/"
+    ]
+  },
+  "globals": [
+    "PkmnDip"
+  ],
+  "loc": "localization/en-us.lua"
+}

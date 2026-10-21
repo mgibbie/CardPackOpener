@@ -285,6 +285,8 @@ export const POKE_UI = {
   anim(d) {
     const a = d && d.poke && d.poke.anim;
     if (!a) return null;
+    // a soul-only animation on full atlas names (an add-on's: Nacho 1.7.9's Terapagos-Stellar, its 13-frame soul strip)
+    if (a.soul_only) return { fps: a.fps, frames: a.frames, fpr: a.frames_per_row, soulOnly: true, soulAtlas: (isShiny(d) && a.shiny_atlas) || a.atlas };
     if (a.atlas) {
       const base = 'poke_' + a.atlas + (isShiny(d) ? '_shiny' : '');
       return { fps: a.fps, frames: a.frames, fpr: a.frames_per_row, atlas: base, soulAtlas: a.soul ? base + '_soul' : null };

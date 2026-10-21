@@ -1519,7 +1519,14 @@ Pokermon stays `3.9.1+r13`: alone, it plays exactly as before. Every change show
   - A win sticker on it still shows its own name, text and art (and counts toward Pokermon's twin: follow-up 4 below).
   - Pokermon+'s Wonder Guard challenge still starts with its eternal `j_sonfive_shedinja` (its rule is built around that card).
   - When Nacho 1.7.9 (batch 18) deletes the keys upstream, that batch decides between `renamed` aliases and keeping these legacy
-    definitions.
+    definitions. **Decided in batch 18: keep the legacy definitions** (micatro/mods/nacho/PORTING.md "Retired keys"): an alias
+    would swap an owned card's 1.6.4 behaviour for Pokermon's mid-save and drop the sticker merge's static table; the legacy
+    keys stay registered, out of every pool. Only the keys 1.7.9 RE-KEYED (Nacho's three Megas, its Elite stake) are aliases.
+- **Nacho 1.7.9 (batch 18)**: no 1.7.9 joker is a Pokermon joker (a script check by name, in `nacho_179_test`), so the duplicate
+  set stays 12. Nacho's Mega Gardevoir / Altaria / Gallade are re-keyed into Pokermon's namespace (`j_poke_mega_*`, registered by
+  Nacho) and attached to Pokermon's Gardevoir / Altaria / Gallade with `attach_mega` (below): `addon_megas` lists them while they
+  are active. 1.7.9 dropped Mega Salamence: Pokermon's Salamence has no Mega any more (the legacy `j_nacho_mega_salamence` stays
+  registered for old saves).
 - **Collection / Pokédex / wiki / editor**:
   - The Pokédex family view shows Pokermon's card for a duplicate and, for a Mega only the add-on has, the add-on's card (Pokermon's
     Ralts line shows Nacho's Mega Gardevoir / Mega Gallade). The card you opened it on is always itself (`family_display_key`).
@@ -1926,4 +1933,12 @@ and every registered handler must check that its own mod is active for the run.
 - pools.js: `POKE_POOL_RULES`. utils.js: `FIND_CARD_EXTRA`, `BEFORE_REMOVE`. items.js: `MEGASTONE_RESET`.
 - precedence.js ("Add-on dedupe (Pokermon precedence)" above): `mark_precedence(centers)` before `registerMod` (Pokermon wins:
   a same-name add-on joker is out of play but stays registered), `replaced_by`, `precedence_key` (use it for any add-on key you
-  create or evolve into), `addon_megas`, `family_display_key`.
+  create or evolve into), `addon_megas`, `family_display_key`, `attach_mega(base_key, mega_key)` (batch 18: an add-on Mega on a
+  Pokermon joker — Nacho 1.7.9's take_ownership `megas`; per run, only while the Mega is active).
+- evolution.js (batch 18): `EVO_OVERRIDES` (3.9.1 POKE_EVO_OVERRIDES lines an add-on appends: a branch's own highest / previous
+  evo inside a shared family — Nacho's Goomy line). Pokermon's own four lines are not seeded (unchanged behaviour).
+- items.js (batch 18): `generate_pickup_item_key`'s evolution item is `c_<the joker's poke_custom_prefix>_<item>` for a non-native
+  item (3.9.1 poll_evo_item; Nacho's apples). Pokermon's jokers only hold native items: unchanged.
+- anim.js / ui.js (batch 18): an `ANIMATED` entry may be `soul_only` with full atlas names (`atlas`, `shiny_atlas`): only the
+  floating sprite animates (Nacho 1.7.9's Terapagos-Stellar); a center's `soul_atlas` draws its soul from another atlas
+  (js/engine/view.js, js/ui/cardsprite.js).
