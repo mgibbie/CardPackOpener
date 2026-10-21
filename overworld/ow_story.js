@@ -372,7 +372,11 @@ function returnShuckie() {
 	saveParty(S.party);
 	return 2;
 }
-// ENGINE_GOT_SHUCKIE_TODAY is one of Crystal's daily flags: it lapses at midnight
+// THE ONCE-A-DAY UPDATE, on a map you TRAVEL into only: the daily flags of both
+// clocked games (time_events.js updateDailyFlags: Emerald's ClearDailyFlags and
+// Crystal's CheckDailyResetTimer, so the berry gifts, the LOTTERY ticket, the
+// move tutor, the Sunday TM, the CLEFAIRY dance, the phone rematches come back),
+// ENGINE_GOT_SHUCKIE_TODAY on its own loan day as before,
 // ...and Emerald's once-a-day update (clock.c UpdatePerDay, time_events.js): the
 // Mirage Island value steps, the SHOAL items come due. The GBA runs it on every
 // map load (DoTimeBasedEvents) — here only on a map you TRAVEL into, never on the
@@ -386,8 +390,9 @@ function returnShuckie() {
 // value as of today without storing it (mirageRndAsOf), and the SHOAL items are
 // only ever read by the hermit, who runs the update himself.
 function expireDailyFlags(travel) {
+	if (!travel) return;   // a LOAD writes nothing (the flags lapse on the first trip instead)
 	if (Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY') && Story.getVar('VAR_MP_SHUCKIE_DAY') !== localDay()) Story.clearFlag('ENGINE_GOT_SHUCKIE_TODAY');
-	if (travel) updatePerDay();
+	updatePerDay();   // + updateDailyFlags
 }
 // what the current setup pass is: 'travel' (a map entered by moving), 'load' (the
 // boot load / a setup re-run, which must leave the save untouched) or null (not in

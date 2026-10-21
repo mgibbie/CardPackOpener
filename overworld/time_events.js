@@ -78,8 +78,67 @@ export function isMirageIslandPresent(party, value = getMirageRnd()) {
 	return (party || []).some(m => m && Number.isInteger(m.personality) && (m.personality & 0xFFFF) === rnd);
 }
 
+// THE DAILY FLAGS. Each decomp keeps a block of flags that one real day wipes:
+//   EMERALD  event_data.c ClearDailyFlags memsets DAILY_FLAGS_START..DAILY_FLAGS_END
+//            (0x920-0x95F; the named ones below, the rest FLAG_UNUSED_0x9xx), run
+//            by UpdatePerDay. The berry gifts, the Lilycove LOTTERY ticket, the
+//            Secret Base owner battles, the Apprentice leaving.
+//   CRYSTAL  engine/overworld/time.asm CheckDailyResetTimer zeroes wDailyFlags1/2,
+//            wSwarmFlags, wDailyRematchFlags, wDailyPhoneItemFlags and
+//            wDailyPhoneTimeOfDayFlags once a day has passed (wDailyResetTimer).
+//            The port names them as the engine_flags.asm constants that live there.
+//   FIRERED  none: no RTC (DoTimeBasedEvents is commented out in scrcmd.c).
+// The port never cleared any of them, so every daily gift ran once per save.
+export const EMERALD_DAILY_FLAGS = [
+	'FLAG_DAILY_CONTEST_LOBBY_RECEIVED_BERRY', 'FLAG_DAILY_SECRET_BASE', 'FLAG_DAILY_PICKED_LOTO_TICKET',
+	'FLAG_DAILY_ROUTE_114_RECEIVED_BERRY', 'FLAG_DAILY_ROUTE_111_RECEIVED_BERRY', 'FLAG_DAILY_BERRY_MASTER_RECEIVED_BERRY',
+	'FLAG_DAILY_ROUTE_120_RECEIVED_BERRY', 'FLAG_DAILY_LILYCOVE_RECEIVED_BERRY', 'FLAG_DAILY_FLOWER_SHOP_RECEIVED_BERRY',
+	'FLAG_DAILY_BERRY_MASTERS_WIFE', 'FLAG_DAILY_SOOTOPOLIS_RECEIVED_BERRY', 'FLAG_DAILY_APPRENTICE_LEAVES',
+];
+const WEEKDAY_CALLS = ['JACK_MONDAY_MORNING', 'HUEY_WEDNESDAY_NIGHT', 'GAVEN_THURSDAY_MORNING', 'BETH_FRIDAY_AFTERNOON',
+	'JOSE_SATURDAY_NIGHT', 'REENA_SUNDAY_MORNING', 'JOEY_MONDAY_AFTERNOON', 'WADE_TUESDAY_NIGHT', 'RALPH_WEDNESDAY_MORNING',
+	'LIZ_THURSDAY_AFTERNOON', 'ANTHONY_FRIDAY_NIGHT', 'TODD_SATURDAY_MORNING', 'GINA_SUNDAY_AFTERNOON', 'ARNIE_TUESDAY_MORNING',
+	'ALAN_WEDNESDAY_AFTERNOON', 'DANA_THURSDAY_NIGHT', 'CHAD_FRIDAY_MORNING', 'TULLY_SUNDAY_NIGHT', 'BRENT_MONDAY_MORNING',
+	'TIFFANY_TUESDAY_AFTERNOON', 'VANCE_WEDNESDAY_NIGHT', 'WILTON_THURSDAY_MORNING', 'PARRY_FRIDAY_AFTERNOON', 'ERIN_SATURDAY_NIGHT'];
+const REMATCH_TRAINERS = WEEKDAY_CALLS.map(s => s.split('_')[0]);
+export const CRYSTAL_DAILY_FLAGS = [
+	// wDailyFlags1
+	'ENGINE_KURT_MAKING_BALLS', 'ENGINE_DAILY_BUG_CONTEST', 'ENGINE_QWILFISH_SWARM', 'ENGINE_TIME_CAPSULE',
+	'ENGINE_ALL_FRUIT_TREES', 'ENGINE_GOT_SHUCKIE_TODAY', 'ENGINE_GOLDENROD_UNDERGROUND_MERCHANT_CLOSED', 'ENGINE_FOUGHT_IN_TRAINER_HALL_TODAY',
+	// wDailyFlags2
+	'ENGINE_MT_MOON_SQUARE_CLEFAIRY', 'ENGINE_UNION_CAVE_LAPRAS', 'ENGINE_GOLDENROD_UNDERGROUND_GOT_HAIRCUT', 'ENGINE_GOLDENROD_DEPT_STORE_TM27_RETURN',
+	'ENGINE_DAISYS_GROOMING', 'ENGINE_INDIGO_PLATEAU_RIVAL_FIGHT', 'ENGINE_DAILY_MOVE_TUTOR', 'ENGINE_BUENAS_PASSWORD',
+	// wSwarmFlags
+	'ENGINE_BUENAS_PASSWORD_2', 'ENGINE_GOLDENROD_DEPT_STORE_SALE_IS_ON', 'ENGINE_DUNSPARCE_SWARM', 'ENGINE_YANMA_SWARM',
+	// wDailyRematchFlags
+	...REMATCH_TRAINERS.map(n => `ENGINE_${n}_READY_FOR_REMATCH`),
+	// wDailyPhoneItemFlags
+	'ENGINE_BEVERLY_HAS_NUGGET', 'ENGINE_JOSE_HAS_STAR_PIECE', 'ENGINE_WADE_HAS_ITEM', 'ENGINE_GINA_HAS_LEAF_STONE', 'ENGINE_ALAN_HAS_FIRE_STONE',
+	'ENGINE_DANA_HAS_THUNDERSTONE', 'ENGINE_DEREK_HAS_NUGGET', 'ENGINE_TULLY_HAS_WATER_STONE', 'ENGINE_TIFFANY_HAS_PINK_BOW', 'ENGINE_WILTON_HAS_ITEM',
+	// wDailyPhoneTimeOfDayFlags
+	...WEEKDAY_CALLS.map(s => `ENGINE_${s}`),
+];
+export const DAILY_FLAGS = [...EMERALD_DAILY_FLAGS, ...CRYSTAL_DAILY_FLAGS];
+export function clearDailyFlags() { for (const f of DAILY_FLAGS) Story.clearFlag(f); }
+// the day the daily flags were last wiped. Its own var, not VAR_DAYS: a save from
+// before this fix may already carry a VAR_DAYS of today (PR #793 seeded it) over
+// flags set days ago, and those must lapse on its first trip, not tomorrow. Unset
+// (a save from before this) counts as due. Once per day however many days were
+// missed (a wipe is a wipe); the clock going back does nothing, as UpdatePerDay.
+// Returns true when it wiped.
+export const DAILY_RESET_VAR = 'VAR_MP_DAILY_RESET_DAY';
+export function updateDailyFlags(today = localDay()) {
+	const last = Story.getVar(DAILY_RESET_VAR) | 0;
+	if (last && today <= last) return false;
+	clearDailyFlags();
+	Story.setVar(DAILY_RESET_VAR, today);
+	return true;
+}
+
 // clock.c UpdatePerDay: once per new day. Returns the days that passed (0: none).
+// (ClearDailyFlags rides along, on its own day marker: updateDailyFlags.)
 export function updatePerDay(today = localDay()) {
+	updateDailyFlags(today);
 	const days = Story.getVar('VAR_DAYS') | 0;
 	if (!days) {
 		Story.setVar('VAR_DAYS', today);
