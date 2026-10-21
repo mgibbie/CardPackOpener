@@ -98,6 +98,16 @@ const MICATRO_STICKERS_MAX = 5000;        // joker keys per player (vanilla + ev
 const MICATRO_STICKERS_BYTES = 700_000;   // one serialized `wins` map (5000 64-char keys x 4 categories is ~525 KB)
 const MICATRO_STICKER_KEY_RE = /^[A-Za-z0-9_]{1,64}$/;
 const MICATRO_STICKER_CATS = ['win', 'poke', 'nuz', 'mono', 'both'];
+// MICATRO all-stakes allowance (owner decision 2026-10-20): these accounts have every stake open on every deck, whatever
+// their win stickers say (micatro/js/ui/stakeunlocks.js; everyone else unlocks per deck, Balatro's rule). Extra accounts
+// can be added with the MICATRO_ALL_STAKES env var (comma-separated). Server-side only: get / put ANSWER `allStakes: true`
+// for them; nothing a client sends sets it, and the row never stores it.
+const MICATRO_ALL_STAKES = ['kgib', 'jfost711', 'mgibbie'];
+const micatroAllStakes = (username) => {
+	const extra = (typeof process !== 'undefined' && process.env && process.env.MICATRO_ALL_STAKES) || '';
+	const list = [...MICATRO_ALL_STAKES, ...String(extra).split(',')].map(s => s.trim().toLowerCase()).filter(Boolean);
+	return !!username && list.includes(String(username).toLowerCase());
+};
 // MICATRO completed challenges (micatro/js/ui/challengesync.js): one durable row per player,
 // `micatro_challenges:<user>` = {v:1, done: {challengeId: first completion time}, rev, updatedAt}. A put MERGES
 // (union; the EARLIEST time per id), so a stale or second device can never un-complete a challenge.
@@ -2392,12 +2402,13 @@ export default async function handler(req, env) {
 		}
 		return out;
 	};
+	const allStakes = micatroAllStakes(username) ? { allStakes: true } : {};   // (MICATRO_ALL_STAKES: never from the body)
 	if (action === 'micatro-stickers-get') {
 		const row = await store.get('micatro_stickers:' + username);
 		const revoked = stickerRevocations(row && row.revoked), earned = stickerEarned(row && row.earned, revoked);
 		const wins = storedStickers(row);
 		stripRevokedStickers(wins, revoked, earned);
-		return json({ v: 2, wins: stickersFor(wins, stickerClientMax(body)), rev: (row && row.rev) || 0, revoked, earned });
+		return json({ v: 2, wins: stickersFor(wins, stickerClientMax(body)), rev: (row && row.rev) || 0, revoked, earned, ...allStakes });
 	}
 	if (action === 'micatro-stickers-put') {
 		const inc = body.wins;
@@ -2435,12 +2446,12 @@ export default async function handler(req, env) {
 					if (!(cur[c] >= incoming[k][c])) { cur[c] = incoming[k][c]; changed = true; }
 				}
 			}
-			if (!changed) return json({ ok: true, wins: stickersFor(merged, stickerClientMax(body)), rev, changed: false, revoked, earned });
+			if (!changed) return json({ ok: true, wins: stickersFor(merged, stickerClientMax(body)), rev, changed: false, revoked, earned, ...allStakes });
 			if (Object.keys(merged).length > MICATRO_STICKERS_MAX) return json({ error: `at most ${MICATRO_STICKERS_MAX} jokers`, max: MICATRO_STICKERS_MAX }, 413);
 			const next = { v: 2, wins: merged, rev: rev + 1, updatedAt: now };
 			if (prev && prev.revoked !== undefined) next.revoked = prev.revoked; // the admin's field, kept verbatim
 			if (Object.keys(earned).length) next.earned = earned;
-			if (await store.setIfRev(key, next, rev)) return json({ ok: true, wins: stickersFor(merged, stickerClientMax(body)), rev: rev + 1, changed: true, revoked, earned });
+			if (await store.setIfRev(key, next, rev)) return json({ ok: true, wins: stickersFor(merged, stickerClientMax(body)), rev: rev + 1, changed: true, revoked, earned, ...allStakes });
 		}
 		return json({ error: 'busy, retry' }, 503); // five lost races in a row: the client retries
 	}
