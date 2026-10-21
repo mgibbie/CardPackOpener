@@ -12,6 +12,11 @@
  *
  * Coste: R=28 casillas de radio → 57×57 = 3.249 casillas por jugador, cada
  * 0,35 s. Los enemigos fuera del campo (muy lejos) van en línea recta.
+ *
+ * MicaSurvivor (DLC D1): in an Expedition zone (G.World.zone) each cell holds its LAYER MASK (G.World.maskAt: a bit
+ * per height it joins, 0 = blocked) instead of 1, and a step only joins two cells whose masks share a bit: a ground
+ * enemy goes round a cliff and up or down its ramp. Without a zone (every base mode) the code below runs exactly as
+ * before (the `Z` branches are skipped).
  */
 G.Path = (() => {
   const R = 28, N = R * 2 + 1, EVERY = 0.35;
@@ -32,10 +37,14 @@ G.Path = (() => {
     dist.fill(UNSEEN);
     // Casillas transitables del área (se consultan una vez).
     const open = f.open || (f.open = new Uint8Array(N * N));
-    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) open[j * N + i] = G.World.walkable(ox + i, oy + j) ? 1 : 0;
+    const Z = !!G.World.zone;
+    f.z = Z;
+    if (Z) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) open[j * N + i] = G.World.walkable(ox + i, oy + j) ? G.World.maskAt(ox + i, oy + j) : 0;
+    else for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) open[j * N + i] = G.World.walkable(ox + i, oy + j) ? 1 : 0;
 
     const start = R * N + R;
-    open[start] = 1;                 // donde está el jugador siempre cuenta
+    if (Z) open[start] = open[start] || pl.zMask || 1;   // (DLC D1: the player's own layer)
+    else open[start] = 1;                 // donde está el jugador siempre cuenta
     dist[start] = 0;
     let head = 0, tail = 0;
     queue[tail++] = start;
@@ -47,12 +56,21 @@ G.Path = (() => {
         if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
         const n = ny * N + nx;
         if (!open[n] || dist[n] !== UNSEEN) continue;
+        if (Z) { if (!joins(open, c, n, cy * N + nx, ny * N + cx, k)) continue; }
         // Diagonal: las dos casillas de al lado tienen que estar libres.
-        if (k >= 4 && (!open[cy * N + nx] || !open[ny * N + cx])) continue;
+        else if (k >= 4 && (!open[cy * N + nx] || !open[ny * N + cx])) continue;
         dist[n] = d;
         queue[tail++] = n;
       }
     }
+  }
+
+  /** DLC D1: can a step go from cell c to cell n (k >= 4: a diagonal past the side cells a and b)? */
+  function joins(open, c, n, a, b, k, mc) {
+    const m = mc || open[c];
+    if (!(open[n] & m)) return false;
+    if (k < 4) return true;
+    return !!(open[a] & m) && !!(open[a] & open[n]) && !!(open[b] & m) && !!(open[b] & open[n]);
   }
 
   /** Recalcula los campos de los jugadores vivos (lo llama el anfitrión / solitario). */
@@ -79,23 +97,25 @@ G.Path = (() => {
     // Con vista despejada hasta el jugador, en línea recta (más natural).
     // Se comprueba cada 0,2 s por enemigo (es lo más caro).
     const now = performance.now();
-    if (!e.losAt || now - e.losAt > 200) { e.losAt = now; e.los = clearLine(f, e.x, e.y, pl.x, pl.y, e.r); }
+    if (!e.losAt || now - e.losAt > 200) { e.losAt = now; e.los = f.z ? clearLineZ(f, e.x, e.y, pl.x, pl.y, e.r) : clearLine(f, e.x, e.y, pl.x, pl.y, e.r); }
     if (e.los) return null;
     // Siguiente casilla del camino (la vecina con menos pasos, sin cortar esquinas).
     let bx = tx, by = ty, best = here;
+    const em = f.z ? (f.open[ty * N + tx] || e.zMask || 0) : 0;   // (DLC D1: the enemy's layer)
     for (let k = 0; k < 8; k++) {
       const x = tx + D8[k][0], y = ty + D8[k][1];
       if (x < 0 || y < 0 || x >= N || y >= N) continue;
       const v = f.dist[y * N + x];
       if (v >= best) continue;
-      if (k >= 4 && (!f.open[ty * N + x] || !f.open[y * N + tx])) continue;
+      if (f.z) { if (!joins(f.open, ty * N + tx, y * N + x, ty * N + x, y * N + tx, k, em)) continue; }
+      else if (k >= 4 && (!f.open[ty * N + x] || !f.open[y * N + tx])) continue;
       best = v; bx = x; by = y;
     }
     if (bx === tx && by === ty) return null;
     let gx = (f.ox + bx + 0.5) * TS, gy = (f.oy + by + 0.5) * TS;
     // Si va descentrado y el atajo hasta esa casilla roza un obstáculo,
     // primero al centro de la suya (así no se engancha en las esquinas).
-    if (!clearLine(f, e.x, e.y, gx, gy, e.r)) { gx = (f.ox + tx + 0.5) * TS; gy = (f.oy + ty + 0.5) * TS; }
+    if (!(f.z ? clearLineZ(f, e.x, e.y, gx, gy, e.r) : clearLine(f, e.x, e.y, gx, gy, e.r))) { gx = (f.ox + tx + 0.5) * TS; gy = (f.oy + ty + 0.5) * TS; }
     return G.U.norm(gx - e.x, gy - e.y);
   }
 
@@ -112,6 +132,29 @@ G.Path = (() => {
         const x = Math.floor((cx - uy * s) / TS) - f.ox, y = Math.floor((cy + ux * s) / TS) - f.oy;
         if (x < 0 || y < 0 || x >= N || y >= N) return false;
         if (!f.open[y * N + x]) return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * DLC D1: clearLine in a zone: along each of the three lines every next cell must share a layer bit with the one
+   * before it (so a straight line may go up a ramp, never over a cliff edge).
+   */
+  function clearLineZ(f, ax, ay, bx, by, r) {
+    const TS = G.World.TS;
+    const len = Math.hypot(bx - ax, by - ay);
+    if (len < 1) return true;
+    const ux = (bx - ax) / len, uy = (by - ay) / len;
+    const w = Math.min(r * 0.9, TS * 0.45), offs = [-w, 0, w], run = [0, 0, 0];
+    for (let d = 0; d <= len; d += TS * 0.4) {
+      const cx = ax + ux * d, cy = ay + uy * d;
+      for (let s = 0; s < 3; s++) {
+        const x = Math.floor((cx - uy * offs[s]) / TS) - f.ox, y = Math.floor((cy + ux * offs[s]) / TS) - f.oy;
+        if (x < 0 || y < 0 || x >= N || y >= N) return false;
+        const m = f.open[y * N + x];
+        if (!m || (run[s] && !(m & run[s]))) return false;
+        run[s] = m;
       }
     }
     return true;

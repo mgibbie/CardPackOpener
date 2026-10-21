@@ -212,7 +212,8 @@ G.Coop = (() => {
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
     f.ho = holdNames();
     if (waiting.size) f.lu = [levelSeq, levelNow];
-    return f;
+    // MicaSurvivor (DLC D1): an Expedition run's frames carry its `x` block (no listener / a base run: f unchanged)
+    return G.Hooks.reduce('net.frame', f, m);
   }
 
   function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
@@ -344,6 +345,9 @@ G.Coop = (() => {
     if (stalled) { stalled = false; updateAway(); }
     for (const ev of msg.ev || []) applyHostEvent(ev);
     if (msg.ja) G.Judgment.netApply(msg.ja);
+    // MicaSurvivor (DLC D1): the host's Expedition zone, rebuilt here from the run's seed + its `x` block (never streamed;
+    // the Expedition code is loaded first if needed). A base host sends no `x`.
+    if (msg.x && G.Expedition) G.Expedition.viewZone(G.World.seed, msg.x);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
     if (msg.ho) {
       const k = msg.ho.join('|');

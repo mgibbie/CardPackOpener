@@ -315,3 +315,28 @@ one run backup slot (`micatro_run_backup_v1`), the device id (`micatro_device_v1
 
 Tests: `overworld/tests/micatro_runsync_server_test.mjs` (server), `overworld/tests/micatro_runsync_test.mjs`
 (two browser contexts as two devices on one account).
+
+## 12. Per-deck stake unlocks (2026-10-20)
+
+Balatro's rule in the New Run picker (`micatro/js/ui/stakeunlocks.js`, used by `screens.js newRunScreen`): per deck, White is always
+open, and a win on that deck at stake N opens stake N+1 for that deck only.
+
+- **Source of truth:** the deck's existing win sticker (`stickers.js winRecord(backKey)`, row `micatro_stickers:<user>`). The deck's
+  best level is the max across `{win, poke, nuz, mono, both}` (1..9, 9 = Elite). Nothing new is stored, so every sticker already won
+  keeps its unlocks. A revoked deck sticker takes its unlocks with it; renamed / superseded keys merge as stickers already do.
+- **Mod stakes:** each has `records` (the level a win on it records: its play level from `applied_stakes`, raised by a declared
+  `sticker_level`, the same as `run.js win_sticker_level`) and `requires` (what a win on its `above_stake` records). Pokermon's
+  and Nacho's Elite need a Gold win. MoreFluff's six stakes all record Gold, so a Gold win opens all six: the sticker can't tell a
+  Pink win from a Gold one. Bunco's Cyan, Pink and Magenta play at Orange and open on an Orange win. Lilac and The Culmination need
+  a Gold win.
+- **Picker:** a locked stake shows greyed with a lock and "Win on <above stake> with this deck to unlock". Play is disabled, so the
+  controller skips it, and the info box is `aria-live`. A saved preference, a deck change or a sync that lands on a locked stake
+  falls back to the highest open base stake. A guest uses local stickers, and a seeded run follows the same unlocks.
+- **Custom decks** record no sticker, so a custom deck unlocks by its card back (`def.back`). Otherwise it would be stuck on White.
+- **Not gated:** a run in progress or resumed, Hold-R restart (same recipe), replays, spectating, challenges (their own stake) and
+  the `window.__micatro.newRun` debug API.
+- **All-stakes allowance (owner, 2026-10-20):** `server/mp.mjs MICATRO_ALL_STAKES = ['kgib', 'jfost711']`, which the
+  `MICATRO_ALL_STAKES` env var can extend. `micatro-stickers-get` and `-put` answer `allStakes: true` for these accounts. It is
+  held in memory only (`stickers.js allStakesAllowed`): never stored, never sent by a client, and never given to a guest.
+- Tests: `overworld/tests/micatro_stake_unlocks_test.mjs` (Node: the ladder over every real mod stake, the engine's recorded levels,
+  the sticker store, the server allowance) and `micatro_stake_unlocks_ui_test.mjs` (the picker, pad, resume and challenge).

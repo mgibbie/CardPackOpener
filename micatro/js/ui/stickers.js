@@ -52,6 +52,9 @@
 //     recorded on both keys (recordWin), so the twin's own record, its earn time (the re-earn rule) and the account row
 //     carry it. A spectator / replay gets the merged records (stickerMap) plus the twins' revocations (stickerRevokedMap,
 //     passed to setStickerSource), so its own merge of a legacy card on the same table can't bring a revoked one back.
+//   * Stake UNLOCKS (ui/stakeunlocks.js) read a deck's record here (winRecord(backKey)): no data of their own. The account's
+//     ALL-STAKES allowance (server/mp.mjs MICATRO_ALL_STAKES) arrives with the account fetch (`allStakes`) and lives in memory
+//     only (allStakesAllowed): never stored, so a guest / an offline load / another account on this browser never has it.
 import { aliasesOf, isRetired, retiredName } from '../mods/aliases.js';
 import { supersededBy, supersededFrom } from '../mods/superseded.js';
 export const STICKER_NAMES = ['White', 'Red', 'Green', 'Black', 'Blue', 'Purple', 'Orange', 'Gold', 'Elite'];
@@ -97,6 +100,7 @@ let show = true;
 let sess = null;         // the account sync for the current user (null: a guest / no account API)
 let earned = Object.create(null);   // {jokerKey: {cat: ms}} when each category was last won here (the re-earn rule)
 let revoked = Object.create(null);  // the account's revocations, last seen: {jokerKey: {cats: [cat], at: ms | null}}
+let allStakes = false;              // the account's all-stakes allowance, as the server last said (memory only: never stored)
 export let stickerVer = 0;
 const listeners = new Set();
 const keyFor = (u) => 'micatro_joker_wins_v1:' + u;
@@ -230,6 +234,7 @@ export function initWinStickers(username, account) {
   wins = readLocal(user);
   earned = readEarned(user);
   revoked = Object.create(null);
+  allStakes = false;
   try { const s = localStorage.getItem(SHOW_KEY); show = s == null ? true : s === '1'; } catch (e) { show = true; }
   if (user !== 'guest' && account && typeof account.fetch === 'function' && typeof account.push === 'function') {
     // a guest record in this browser moves to the FIRST account that signs in here, once (never deleted)
@@ -266,6 +271,7 @@ async function sync(s) {
       if (s.dead) return;
       if (!r || r.error || !r.wins) throw new Error('fetch');
       applyRevoked(r.revoked);   // first: a revoked sticker held here goes (then the account's record merges in)
+      setAllowance(r.allStakes === true);   // (the fetch is the authority: no flag = none)
       mergeEarned(r.earned); saveEarned();
       if (mergeIn(r.wins)) { saveLocal(); bump(); }
       s.synced = true;
@@ -277,6 +283,7 @@ async function sync(s) {
       if (s.dead) return;
       if (!r || r.error || !r.wins) { s.dirty = true; throw new Error('push'); }
       applyRevoked(r.revoked);
+      setAllowance(r.allStakes);
       mergeEarned(r.earned); saveEarned();
       if (mergeIn(r.wins)) { saveLocal(); bump(); }
       if (ahead(r.wins)) s.dirty = true;   // a win landed while this push was in flight
@@ -289,6 +296,14 @@ async function sync(s) {
   s.backoff = RETRY_MIN_MS;
   if (s.dirty || s.again) schedule(s, s.dirty ? PUSH_DEBOUNCE_MS : 0);
 }
+/** The server's all-stakes allowance for this account (a boolean in its answer; anything else leaves it as it was). */
+function setAllowance(v) {
+  if (typeof v !== 'boolean' || v === allStakes || !sess) return;
+  allStakes = v;
+  bump();
+}
+/** Does the signed-in account have every stake open on every deck (the server said so this session)? A guest: never. */
+export const allStakesAllowed = () => allStakes && user !== 'guest';
 /** Debug / tests: the account sync's state for the current player (null for a guest). */
 export const stickerSyncState = () => (sess ? { user, synced: sess.synced, dirty: sess.dirty, inflight: sess.inflight, attempts: sess.attempts, revoked: Object.keys(revoked) } : null);
 // leaving the page with an unsent win: one last keepalive push (the next load re-syncs anyway); back online: retry now

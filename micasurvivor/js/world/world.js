@@ -22,6 +22,11 @@
  *
  * Los Pokémon voladores, los fantasma y los jefes ignoran el terreno.
  *
+ * MicaSurvivor (DLC D1): an Expedition run sets a ZONE (setZone, js/expedition/terrain.js): a bounded map with a
+ * height per tile, cliffs and ramps. Its tiles come from the zone, collide() keeps each walker on its layer
+ * (collideZone), the painter adds the cliffs and stairs, and maskAt / layerAt answer pathing and D2. Base modes never
+ * set a zone, so none of that runs for them.
+ *
  * Coordenadas: (x, y) de una entidad = sus PIES, en el plano del suelo.
  * Los chunks se separan en DATOS (baratos, siempre) e IMAGEN (horneada a
  * resolución de arte y sólo para los visibles).
@@ -44,6 +49,9 @@ G.World = (() => {
   const MAX_IMAGES = 48, MAX_DATA = 400;
   const broken = new Set();                // props destruidos: "tx,ty"
   let nextPropId = 1;
+  // MicaSurvivor (DLC D1): an Expedition zone (js/expedition/terrain.js) or null. With null (every base mode) none of
+  // the zone branches below run: the base world is exactly as before.
+  let zone = null, zoneIds = 0;
 
   // ---------------- ruido ----------------
 
@@ -82,6 +90,7 @@ G.World = (() => {
       if (th.pools && ad < arena.r - 1.5 && fbm(tx / 3.2, ty / 3.2, seed + 37 + arena.tx) < th.pools) return LIQUID;
       return FLOOR;
     }
+    if (zone) return zone.terr(tx, ty);               // DLC D1: the Expedition zone (outside it, rock)
     const d = Math.hypot(tx, ty);
     if (d < 9) return FLOOR;                          // claro inicial
     const ramp = G.U.clamp((d - 9) / 8, 0, 1);       // aparición suave
@@ -141,6 +150,12 @@ G.World = (() => {
         else if (open && hh < (pr.tree || 0) + (pr.rock || 0)) at = 'rock';
         else if (hh > 1 - (pr.grass || 0)) at = 'grass';
         if (at) { const p = makeProp(at, tx, ty); c.props.push(p); if (p.solid) c.propAt.set(tx + ',' + ty, p); }
+        continue;
+      }
+      // DLC D1: in an Expedition zone the generator placed the props (none of them can cut a path)
+      if (zone) {
+        const zt = zone.propAt(tx, ty);
+        if (zt) { const p = makeProp(zt, tx, ty); c.props.push(p); if (p.solid) c.propAt.set(tx + ',' + ty, p); }
         continue;
       }
 
@@ -298,6 +313,7 @@ G.World = (() => {
    * Devuelve true si ha chocado con algo.
    */
   function collide(e) {
+    if (zone) return collideZone(e);   // DLC D1: layers (cliffs block, ramps join two levels)
     const r = e.r;
     let hit = false;
     for (let pass = 0; pass < 2; pass++) {
@@ -334,6 +350,64 @@ G.World = (() => {
         }
       }
     }
+    return hit;
+  }
+
+  // ---------------- DLC D1: the Expedition's terrain layers ----------------
+
+  /**
+   * The layers a tile joins, as bits (js/expedition/terrain.js zone.mask): 0 = a wall. Outside the zone (a rift
+   * arena, which has no heights) a non-wall tile is level 0. Without a zone: 1 for anything but a wall.
+   */
+  function maskAt(tx, ty) {
+    if (terrainAt(tx, ty) === WALL) return 0;
+    if (!zone) return 1;
+    return zone.inside(tx, ty) ? zone.mask(tx, ty) : 1;
+  }
+  /** The height an entity standing here is at (a ramp: half way), for D2's verbs; 0 without a zone. */
+  function layerAt(x, y) { return zone ? zone.layer(tileOf(x), tileOf(y)) : 0; }
+
+  /**
+   * collide() in a zone. Each walking entity keeps the mask of the last tile it stood on in (zMask) and where that was
+   * (zLx, zLy). A tile whose mask shares no bit with the tile under the entity blocks it like a wall (a cliff edge);
+   * a ramp tile shares a bit with both of its levels. If one step carried the entity's centre straight into a tile
+   * of another layer (a dash, a knock-back, a jumper's landing), it goes back to its last good spot. Props collide as
+   * in the base world. Flying / ghost enemies and bosses never call this (they ignore terrain, as before).
+   */
+  function collideZone(e) {
+    const r = e.r;
+    let hit = false;
+    if (e.zId !== zone.id || e.zMask == null) { e.zId = zone.id; e.zMask = maskAt(tileOf(e.x), tileOf(e.y)) || 1; e.zLx = e.x; e.zLy = e.y; }
+    let cur = maskAt(tileOf(e.x), tileOf(e.y));
+    if (!(cur & e.zMask)) { e.x = e.zLx; e.y = e.zLy; hit = true; cur = maskAt(tileOf(e.x), tileOf(e.y)); }
+    if (!cur) cur = e.zMask;   // (inside a wall: pushed out against its own layer)
+    for (let pass = 0; pass < 2; pass++) {
+      const t0x = tileOf(e.x - r), t1x = tileOf(e.x + r), t0y = tileOf(e.y - r), t1y = tileOf(e.y + r);
+      for (let ty = t0y; ty <= t1y; ty++) for (let tx = t0x; tx <= t1x; tx++) {
+        if (!(maskAt(tx, ty) & cur)) {
+          const bx0 = tx * TS, by0 = ty * TS, bx1 = bx0 + TS, by1 = by0 + TS;
+          const qx = G.U.clamp(e.x, bx0, bx1), qy = G.U.clamp(e.y, by0, by1);
+          const dx = e.x - qx, dy = e.y - qy, d2 = dx * dx + dy * dy;
+          if (d2 < r * r) {
+            hit = true;
+            if (d2 > 1e-6) { const d = Math.sqrt(d2); e.x += dx / d * (r - d); e.y += dy / d * (r - d); }
+            else {
+              const l = e.x - bx0, rr = bx1 - e.x, u = e.y - by0, b = by1 - e.y, m = Math.min(l, rr, u, b);
+              if (m === l) e.x = bx0 - r; else if (m === rr) e.x = bx1 + r; else if (m === u) e.y = by0 - r; else e.y = by1 + r;
+            }
+          }
+        }
+        const p = propAtTile(tx, ty);
+        if (p && p.solid) {
+          const dx = e.x - p.x, dy = e.y - p.y, min = r + p.r, d2 = dx * dx + dy * dy;
+          if (d2 < min * min) { hit = true; const d = Math.sqrt(d2) || 0.01; e.x = p.x + dx / d * min; e.y = p.y + dy / d * min; }
+        }
+      }
+    }
+    const now = maskAt(tileOf(e.x), tileOf(e.y));
+    if (now & cur) { e.zMask = now; e.zLx = e.x; e.zLy = e.y; }
+    else { e.x = e.zLx; e.y = e.zLy; hit = true; }
+    e.layer = zone.layer(tileOf(e.x), tileOf(e.y));
     return hit;
   }
 
@@ -437,6 +511,7 @@ G.World = (() => {
     const S = 6 * G.Tiles.T;
     const dirtField = (gx, gy) => fbm(gx / S, gy / S, seed + 303);
     img = G.Tiles.paintChunk(cx, cy, N, at, dirtField, bi, seed);
+    if (zone) zone.paint(img, cx * N, cy * N, N, bi);   // DLC D1: heights, cliffs, ledges and stairs over it
     if (cache.size > MAX_IMAGES) cache.delete(cache.keys().next().value);
     cache.set(k, img);
     return img;
@@ -566,6 +641,7 @@ G.World = (() => {
     seed = (s | 0) || 1;
     data.clear(); images.clear(); broken.clear();
     fade = null; arena = null;
+    zone = null;   // DLC D1: a new world has no Expedition zone until the Expedition sets one (setZone)
   }
 
   /**
@@ -617,6 +693,17 @@ G.World = (() => {
       }
     },
     get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawVignette,
-    get biome() { return biome; }
+    get biome() { return biome; },
+    /**
+     * MicaSurvivor (DLC D1): an Expedition zone (js/expedition/terrain.js; null = none, as in every base mode). The
+     * world forgets its chunks so they are rebuilt from the zone; entities re-learn their layer on their next collide.
+     */
+    setZone(z) {
+      zone = z || null;
+      if (zone) zone.id = ++zoneIds;
+      data.clear(); images.clear(); broken.clear();
+      if (fade) fade.images = new Map();
+    },
+    get zone() { return zone; }, maskAt, layerAt
   };
 })();

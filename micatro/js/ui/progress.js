@@ -25,12 +25,17 @@ export const TYPE_COLOURS = {
 };
 const DARK_TEXT = new Set(['lightning', 'colorless']);
 export const GOLD_STAKE = 8;
+/** Pokermon's Elite Stake (a mod stake above Gold): it PLAYS at Gold's level 8, but its win records level 9 (winLevel). */
+export const ELITE_STAKE = 9;
 export const ACHIEVEMENTS = [
   { id: 'first_nuzlocke', name: 'Nuzlocke', desc: 'Win a Pokermon run as a Nuzlocke: never sell a joker, and gain at most one new joker per shop.' },
   { id: 'first_monotype', name: 'Monotype', desc: 'Win a Pokermon run starting every round with jokers of only one Pokémon type.' },
   { id: 'monotype_all', name: 'Type Master', desc: 'Win a Monotype run with every one of the 12 types.' },
   { id: 'nuzlocke_monotype', name: 'Purist', desc: 'Win a run that is a Nuzlocke and a Monotype at once.' },
-  { id: 'nuzlocke_gold', name: 'Golden Nuzlocke', desc: 'Win a Nuzlocke at Gold Stake.' },
+  { id: 'nuzlocke_gold', name: 'Golden Nuzlocke', desc: 'Win a Nuzlocke at Gold Stake or higher.' },
+  { id: 'nuzlocke_monotype_gold', name: 'Golden Purist', desc: 'Win a run that is a Nuzlocke and a Monotype at once, at Gold Stake or higher.' },
+  { id: 'nuzlocke_elite', name: 'Elite Nuzlocke', desc: 'Win a Nuzlocke at Elite Stake.' },
+  { id: 'nuzlocke_monotype_elite', name: 'Elite Purist', desc: 'Win a run that is a Nuzlocke and a Monotype at once, at Elite Stake.' },
 ];
 
 export const emptyProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: {}, ach: {}, monoStake: {}, bothMono: {}, bothStake: {} });
@@ -38,6 +43,18 @@ export const emptyProgress = () => ({ v: 1, nuz: 0, nuzStake: 0, both: 0, mono: 
 export const TYPE_MAPS = ['mono', 'monoStake', 'bothMono', 'bothStake'];
 const cnt = (v) => (Number.isInteger(v) && v > 0 ? v : 0);
 const stakeLv = (stake) => Math.min(99, Math.max(1, Math.floor(+stake || 1)));
+/**
+ * The level a won run records — the same rule as the win stickers (ui/stickers.js winEventLevel): the engine's 'win'
+ * event's `sticker_level` (run.js win_sticker_level: 9 on an Elite stake, which itself plays at Gold's 8) when it has
+ * one, else its stake level. `ev`: the win event ({stake, sticker_level?}) or a bare stake level (an older caller).
+ */
+export function winLevel(ev) {
+  if (ev && typeof ev === 'object') {
+    const sl = Math.floor(Number(ev.sticker_level));
+    return sl >= 1 ? stakeLv(sl) : stakeLv(ev.stake);
+  }
+  return stakeLv(ev);
+}
 /** a + b, never backwards (the server's mergeMicatroProgress does the same). */
 export function mergeProgress(a, b) {
   a = a || {}; b = b || {};
@@ -98,15 +115,31 @@ export function totalLevels(p = progress) {
 /** Types with a Monotype win but no Nuzlocke + Monotype win yet (capitalised, TYPES order). */
 export const typesMissingBoth = (p = progress) => TYPES.filter((t) => typeRecord(t, p).category === 'mono');
 
-/** Load this player's record (+ sync with the account when signed in). netApi: {isLoggedIn, fetchProgress, saveProgress}. */
-export function initProgress(username, netApi) {
+/**
+ * Load this player's record (+ sync with the account when signed in). netApi: {isLoggedIn, fetchProgress, saveProgress}.
+ * `onUnlock(list)`: called with the achievements a record already qualifies for but had not unlocked (one added after
+ * the wins that earn it — Golden / Elite Purist, Elite Nuzlocke): they unlock RETROACTIVELY on load and on each sync.
+ */
+export function initProgress(username, netApi, { onUnlock = null } = {}) {
   clearTimeout(pushT); pushT = null; pushDirty = false; pushBackoff = RETRY_MIN_MS; pushGen++;
   user = (username && String(username)) || 'guest';
   net = netApi || null;
+  unlockCb = typeof onUnlock === 'function' ? onUnlock : null;
   progress = readLocal(user) || emptyProgress();
+  const got = catchUp();
+  if (got.length) writeLocal();
   bump();
+  announce(got);
   return sync();
 }
+let unlockCb = null;
+/** Unlock what the record has earned but not unlocked yet (an achievement newer than the wins) -> the new ones. */
+function catchUp(now = Date.now()) {
+  const got = [];
+  for (const id of earnedIds(progress)) if (!(progress.ach || {})[id]) { progress.ach[id] = now; got.push(ACHIEVEMENTS.find((a) => a.id === id)); }
+  return got.filter(Boolean);
+}
+const announce = (got) => { if (got.length && unlockCb) { try { unlockCb(got); } catch (e) { /* ignore */ } } };
 const signedIn = () => !!(net && net.isLoggedIn && net.isLoggedIn() && user !== 'guest');
 /** Pull the account's record, merge in this device's (and a guest's, once), push back if it grew. */
 export function sync() {
@@ -117,9 +150,10 @@ export function sync() {
       const r = await net.fetchProgress();
       if (!r || r.error) return progress;
       const guest = readLocal('guest');
-      const merged = mergeProgress(mergeProgress(r.progress, progress), guest);
-      const grew = !same(merged, r.progress);
-      progress = merged; writeLocal(); bump();
+      progress = mergeProgress(mergeProgress(r.progress, progress), guest);
+      const got = catchUp();   // (the account's record may qualify for an achievement this device never unlocked)
+      const grew = !same(progress, r.progress);
+      writeLocal(); bump(); announce(got);
       if (grew && net.saveProgress) {
         const w = await net.saveProgress(progress);
         if (w && w.progress) { progress = mergeProgress(progress, w.progress); writeLocal(); bump(); }
@@ -182,10 +216,15 @@ function earnedIds(p) {
   if (typesBeaten(p).length === TYPES.length) ids.push('monotype_all');
   if (cnt(p.both)) ids.push('nuzlocke_monotype');
   if (cnt(p.nuzStake) >= GOLD_STAKE) ids.push('nuzlocke_gold');
+  const bothBest = Math.max(0, ...Object.values(p.bothStake || {}).map(cnt));   // (the best Nuzlocke + Monotype stake, any type)
+  if (bothBest >= GOLD_STAKE) ids.push('nuzlocke_monotype_gold');
+  if (cnt(p.nuzStake) >= ELITE_STAKE) ids.push('nuzlocke_elite');
+  if (bothBest >= ELITE_STAKE) ids.push('nuzlocke_monotype_elite');
   return ids;
 }
 /**
  * A won run's badges (view.run_badges.earned = {nuz, mono: 'Fire' | null}) at this stake -> the record grows.
+ * `stake`: the engine's win event ({stake, sticker_level}: an Elite win records 9, winLevel) or a stake level.
  * `runId` (the run's replay id): a run already recorded in this browser is not counted again.
  * Returns the achievements this win unlocked (for the toast).
  */
@@ -195,7 +234,7 @@ export function recordRunWin(earned, stake, now = Date.now(), runId = null) {
   markRun(runId);
   const p = mergeProgress(progress, {});
   const mono = earned.mono && TYPES.includes(earned.mono) ? earned.mono.toLowerCase() : null;
-  const lv = stakeLv(stake);
+  const lv = winLevel(stake);
   if (earned.nuz) { p.nuz += 1; p.nuzStake = Math.max(p.nuzStake, lv); }
   if (mono) { p.mono[mono] = cnt(p.mono[mono]) + 1; p.monoStake[mono] = Math.max(cnt(p.monoStake[mono]), lv); }
   if (earned.nuz && mono) { p.both += 1; p.bothMono[mono] = cnt(p.bothMono[mono]) + 1; p.bothStake[mono] = Math.max(cnt(p.bothStake[mono]), lv); }

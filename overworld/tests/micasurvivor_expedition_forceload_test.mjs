@@ -25,8 +25,8 @@ const fails = out.split('\n').filter(l => l.startsWith('FAIL'));
 const only = (process.env.ONLY || '').split(',').filter(Boolean);
 const pages = (only.length || 6) + (!only.length || only.includes('normal') ? 1 : 0);   // a page per mode + the replay player
 for (const l of loads) console.log('     ' + l);
-A(okLoads.length === pages && loads.length === pages, `every D0a page loaded the Expedition code first (${okLoads.length} / ${pages}: freeze, js/expedition/save.js + core.js, all 4 seams attached)`, loads.filter(l => !l.startsWith('forceload: ok ')).join(' | '));
-A(okLoads.every(l => / seams 1\/1\/1\/1 /.test(l)), 'in each, the Expedition listens on run.start / run.end / replay.header / spectate.snap');
+A(okLoads.length === pages && loads.length === pages, `every D0a page loaded the Expedition code first (${okLoads.length} / ${pages}: freeze, js/expedition/*, every seam attached)`, loads.filter(l => !l.startsWith('forceload: ok ')).join(' | '));
+A(okLoads.length > 0 && okLoads.every(l => / seams 1(\/1){3,} /.test(l)), 'in each, the Expedition listens on every seam once (run.start / run.end / replay.header / spectate.snap; D1: net.frame)');
 A(r.status === 0 && sum && +sum[2] === 0 && +sum[1] > 0, `the UNCHANGED D0a golden runs still pass against the D0a fixtures (${sum ? sum[1] + ' passed, ' + sum[2] + ' failed' : 'no summary'})`, fails.slice(0, 6).join('\n      ') || out.slice(-600));
 console.log(`\n${pass} passed, ${fail} failed (${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 process.exit(fail ? 1 : 0);

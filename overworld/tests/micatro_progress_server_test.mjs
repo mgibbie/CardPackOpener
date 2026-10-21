@@ -11,6 +11,8 @@
 //      (which never sends them) or a stale device can't lower them; shape-checked; a record from before them is
 //      backfilled at READ time from the player's own won replays' badges (never written by the get); the client's
 //      recordRunWin records them and typeRecord picks the Record screen's sticker (Arceus / Ambipom / none)
+//   5. Golden Purist / Elite Nuzlocke / Elite Purist: an Elite win records level 9 (the win event's sticker_level, like the
+//      win stickers), a qualifying record unlocks them retroactively (on load + on sync), the server keeps the new ids
 //   node overworld/tests/micatro_progress_server_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -223,6 +225,51 @@ try {
 	} else A(false, 'progress.js exports typeRecord / typesMissingBoth / totalLevels');
 	const sm2 = await raw('micatro-progress-put', { progress: cp }, tokens.typer);
 	A(JSON.stringify(PG.mergeProgress(sm2.body.progress, {})) === JSON.stringify(PG.mergeProgress(PG.mergeProgress(lp, cp), {})) && (sm2.body.progress.bothMono || {}).fire === 2, 'the client and server merges agree on the per-type fields', JSON.stringify([sm2.body.progress, PG.mergeProgress(lp, cp)]));
+	// ===== 5. Golden Purist / Elite Nuzlocke / Elite Purist (Kyle 2026-10-20) + the Elite level =====
+	// An Elite stake PLAYS at Gold's 8 (view.stake / the win event's stake): its win is level 9 only through the win
+	// event's sticker_level (run.js win_sticker_level), which main.js now hands recordRunWin — the win stickers' rule.
+	const ids = (list) => (list || []).map((a) => a.id).sort().join();
+	const fresh = async (rec) => { localStorage._m = {}; if (rec) localStorage._m['micatro_progress_v1:guest'] = JSON.stringify(rec); return PG.initProgress('guest', null); };
+	A(PG.ACHIEVEMENTS.length === 8 && ['nuzlocke_monotype_gold', 'nuzlocke_elite', 'nuzlocke_monotype_elite'].every((id) => PG.ACHIEVEMENTS.some((a) => a.id === id && a.name && a.desc)), 'the 3 new achievements are listed (8 in all)', JSON.stringify(PG.ACHIEVEMENTS.map((a) => a.id)));
+	A(JSON.stringify(PG.ACHIEVEMENTS.filter((a) => /^nuzlocke_(monotype_gold|elite|monotype_elite)$/.test(a.id)).map((a) => a.name)) === '["Golden Purist","Elite Nuzlocke","Elite Purist"]', '... named Golden Purist, Elite Nuzlocke, Elite Purist');
+	A(typeof PG.winLevel === 'function' && PG.winLevel({ stake: 8, sticker_level: 9 }) === 9 && PG.winLevel({ stake: 8, sticker_level: 8 }) === 8 && PG.winLevel({ stake: 8 }) === 8 && PG.winLevel({ stake: 3, sticker_level: 3 }) === 3 && PG.winLevel(5) === 5 && PG.winLevel('stake_poke_elite') === 1, "winLevel: the win event's sticker_level (Elite 9; a mod stake that declares none, e.g. MoreFluff/Bunco, its Gold 8), else the stake");
+	await fresh();
+	const red = PG.recordRunWin({ nuz: true, mono: 'Fire' }, { stake: 2, sticker_level: 2 }, 2000, 'r-red');
+	A(!ids(red).includes('nuzlocke_monotype_gold') && ids(red) === 'first_monotype,first_nuzlocke,nuzlocke_monotype', 'a Red Stake Nuzlocke + Monotype win: Purist, not Golden Purist', ids(red));
+	const gold = PG.recordRunWin({ nuz: true, mono: 'Fire' }, { stake: 8, sticker_level: 8 }, 2001, 'r-gold');
+	A(ids(gold) === 'nuzlocke_gold,nuzlocke_monotype_gold', 'a Gold Stake Nuzlocke + Monotype win unlocks Golden Purist (+ Golden Nuzlocke), no Elite', ids(gold));
+	A(ids(PG.recordRunWin({ nuz: true, mono: 'Water' }, 8, 2002, 'r-gold2')) === '', '(a bare Gold stake level still works: nothing new)');
+	await fresh();
+	const eNuz = PG.recordRunWin({ nuz: true, mono: null }, { stake: 8, sticker_level: 9 }, 3000, 'r-elite');
+	A(PG.getProgress().nuzStake === 9, 'an Elite Stake Nuzlocke win records nuzStake 9 (not Gold 8)', JSON.stringify(PG.getProgress()));
+	A(ids(eNuz) === 'first_nuzlocke,nuzlocke_elite,nuzlocke_gold', '... and unlocks Elite Nuzlocke (+ Golden Nuzlocke), not Elite Purist', ids(eNuz));
+	const ePur = PG.recordRunWin({ nuz: true, mono: 'Dark' }, { stake: 8, sticker_level: 9 }, 3001, 'r-elite2');
+	const ep = PG.getProgress();
+	A(ep.bothStake.dark === 9 && ep.monoStake.dark === 9 && ids(ePur) === 'first_monotype,nuzlocke_monotype,nuzlocke_monotype_elite,nuzlocke_monotype_gold', 'an Elite Nuzlocke + Monotype win records Dark at 9 and unlocks Elite Purist + Golden Purist', JSON.stringify([ids(ePur), ep.bothStake]));
+	A(PG.totalLevels(ep).nuz === 9 && PG.totalLevels(ep).both === 9 && PG.typeRecord('Dark', ep).level === 9, "the Record screen's rings read level 9 (stickerName(9) = Elite)", JSON.stringify(PG.totalLevels(ep)));
+	// retroactive: a record that already qualifies unlocks them on load (no new win needed), once, with the toast callback
+	const retro = { v: 1, nuz: 4, nuzStake: 9, both: 2, mono: { fire: 2 }, monoStake: { fire: 8 }, bothMono: { fire: 2 }, bothStake: { fire: 8 }, ach: { first_nuzlocke: 10, first_monotype: 11, nuzlocke_monotype: 12, nuzlocke_gold: 13 } };
+	localStorage._m = { 'micatro_progress_v1:guest': JSON.stringify(retro) };
+	let toasted = null;
+	await PG.initProgress('guest', null, { onUnlock: (l) => { toasted = l; } });
+	const rp2 = PG.getProgress();
+	A(rp2.ach.nuzlocke_monotype_gold > 1e12 && rp2.ach.nuzlocke_elite > 1e12 && !rp2.ach.nuzlocke_monotype_elite && rp2.ach.first_nuzlocke === 10, 'an existing record unlocks Golden Purist + Elite Nuzlocke retroactively on load (not Elite Purist: its best both is Gold)', JSON.stringify(rp2.ach));
+	A(ids(toasted) === 'nuzlocke_elite,nuzlocke_monotype_gold', '... with the unlock toast', ids(toasted));
+	A(JSON.parse(localStorage._m['micatro_progress_v1:guest']).ach.nuzlocke_elite > 1e12, '... saved');
+	toasted = null;
+	await PG.initProgress('guest', null, { onUnlock: (l) => { toasted = l; } });
+	A(toasted === null, '... once (the next load unlocks nothing)');
+	// retroactive on the account's record too (a sync from the server): pushed back
+	let pushed = null;
+	localStorage._m = {};
+	await PG.initProgress('kyle', { isLoggedIn: () => true, fetchProgress: async () => ({ progress: { ...retro, nuzStake: 8, bothStake: { fire: 9 } } }), saveProgress: async (pr) => { pushed = pr; return { ok: true }; } }, { onUnlock: (l) => { toasted = l; } });
+	A(pushed && pushed.ach.nuzlocke_monotype_elite > 1e12 && pushed.ach.nuzlocke_monotype_gold > 1e12 && !pushed.ach.nuzlocke_elite && ids(toasted) === 'nuzlocke_monotype_elite,nuzlocke_monotype_gold', "the account's record unlocks them on sync and is pushed back", JSON.stringify([pushed && pushed.ach, ids(toasted)]));
+	const put = await raw('micatro-progress-put', { progress: pushed }, tokens.typer);
+	A(put.status === 200 && put.body.progress.ach.nuzlocke_monotype_elite > 1e12 && put.body.progress.ach.nuzlocke_monotype_gold > 1e12, 'the server accepts + keeps the new ids (no allow-list: the id shape check only)', JSON.stringify(put.body).slice(0, 300));
+	await PG.initProgress('guest', null);
+	// main.js hands recordRunWin the win event's sticker_level (not view.stake alone)
+	const mainSrc = fs.readFileSync(path.join(ROOT, 'micatro/js/ui/main.js'), 'utf8');
+	A(/recordRunWin\(earned, \{ stake: view\.stake, sticker_level: winEv\.sticker_level \}/.test(mainSrc), 'main.js records the win at its sticker level (winEv.sticker_level)');
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack || e));
 }
