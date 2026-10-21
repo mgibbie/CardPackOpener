@@ -35,7 +35,8 @@ G.LevelUp = (() => {
     const out = [];
 
     // --- movimientos nuevos ---
-    if (pl.slots.length < pl.maxMoves) {
+    // (MicaSurvivor DLC D4: an Expedition League run's kit owns the 4 slots, pl.xkit: no new-move cards. Base: never set.)
+    if (pl.slots.length < pl.maxMoves && !pl.xkit) {
       // Con 2 potenciadores ya no se ofrecen más: los buff no hacen daño y
       // llenar los 4 huecos con ellos deja la run sin salida.
       const buffs = pl.moves.filter(m => m.kind === 'buff').length;
@@ -114,6 +115,10 @@ G.LevelUp = (() => {
 
   /** Devuelve 3 cartas distintas, elegidas por peso. */
   function offer(pl, n = 3) {
+    // MicaSurvivor (DLC D4): the levelup.offer seam (js/core/hooks.js): an Expedition League run's kit moves, evolution
+    // and Maturity happen here, and a branch evolution's choice replaces the cards. No listener / a base run: undefined.
+    const pre = G.Hooks.first('levelup.offer', pl, n);
+    if (pre) return pre;
     const pool = candidates(pl);
     const picked = [];
     const used = new Set();
@@ -135,7 +140,8 @@ G.LevelUp = (() => {
       used.add(c.key);
       picked.push(c);
     }
-    return picked;
+    // (DLC D4: the levelup.cards seam: an Expedition League run's cards carry the level's news; a base run: unchanged)
+    return G.Hooks.reduce('levelup.cards', picked, pl);
   }
 
   return { offer, STATS };

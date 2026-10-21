@@ -21,9 +21,12 @@
  *   spectate.snap   js/mica/spectate.js snap(): each live / replay snapshot (the Expedition adds dv; D1: its `x` block)
  *   net.frame       DLC D1: js/net/coop.js hostFrame: reduce(frame, mate) -> each host frame (the Expedition adds `x`);
  *                   DLC D2: also a guest's frame to the host, reduce(frame, null) (an Expedition guest adds its air row)
+ *   levelup.offer   DLC D4: js/systems/levelup.js offer(pl, n), before any card is drawn: first(pl, n) -> cards to show
+ *                   instead (an Expedition League run's branch evolution), or undefined (the base cards)
+ *   levelup.cards   DLC D4: the end of offer: reduce(cards, pl) -> the cards (an Expedition League run adds `note`)
  */
 G.Hooks = (() => {
-  const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame'];
+  const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame', 'levelup.offer', 'levelup.cards'];
   const L = Object.create(null);
   for (const s of SEAMS) L[s] = [];
 

@@ -140,7 +140,8 @@ G.Modes = (() => {
     // Expedition content version (dv); no modifiers. Until then (D0b: all "Coming soon") it plans a normal run.
     const X = G.Expedition;
     if (X && X.isExp(mode)) {
-      if (X.enabled(mode)) { const at = X.pick(); return { mode, mods: [], type: null, dex: null, seed: 0, dv: X.DV, map: at.map, diff: at.diff }; }
+      // (DLC D4: dex = the League member you start with, js/expedition/league.js; loaded before startRun plans the run)
+      if (X.enabled(mode)) { const at = X.pick(); return { mode, mods: [], type: null, dex: G.ExpLeague ? G.ExpLeague.pickFor(mode) : null, seed: 0, dv: X.DV, map: at.map, diff: at.diff }; }
       mode = 'normal';
     }
     if (!LIST.includes(mode)) mode = 'normal';

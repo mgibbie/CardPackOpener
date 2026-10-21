@@ -82,19 +82,29 @@ G.RunUI = (() => {
     $('lvl-reroll').classList.toggle('hidden', left <= 0);
     const box = $('cards');
     box.innerHTML = '';
+    // MicaSurvivor (DLC D4): an Expedition League run's level news (a kit move, an evolution, Maturity) above the cards
+    // (list.note: only Expedition code sets it; a base run's cards have none)
+    let note = document.getElementById('lvl-note');
+    if (list.note && list.note.length) {
+      if (!note) { note = document.createElement('div'); note.id = 'lvl-note'; note.className = 'lvl-note'; box.parentNode.insertBefore(note, box); }
+      note.innerHTML = list.note.map(t => `<span>${t}</span>`).join('');
+      note.classList.remove('hidden');
+    } else if (note) note.classList.add('hidden');
     list.forEach((c, i) => {
       const el = document.createElement('div');
       el.className = 'card';
       const tag = c.type === 'new'
         ? `<span class="tag-chip" style="background:${c.color}">Nuevo · ${c.tag}</span>`
-        : c.type === 'up' || c.type === 'evo'
+        : c.type === 'up' || c.type === 'evo' || c.type === 'xevo'
           ? `<span class="tag-chip" style="background:${c.color}">${c.tag}</span>`
           : `<span class="tag-chip" style="background:${c.color === '#ffd23f' ? '#ffd23f' : '#9fb1c9'}">${c.tag}</span>`;
-      if (c.type === 'evo') el.classList.add('evo');
+      if (c.type === 'evo' || c.type === 'xevo') el.classList.add('evo');
       el.innerHTML =
         `<div class="ico" style="background:${c.color}33">${G.Icons.html(c.icon, 32)}</div>
          <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
          <div class="key"><span class="key-k">${i + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div>`;   // MicaSurvivor (M2): the pad's confirm glyph on the focused card
+      // (DLC D4: an Expedition evolution card shows the Pokémon it becomes, c.sprite)
+      if (c.sprite) { const ico = el.querySelector('.ico'); ico.innerHTML = ''; ico.classList.add('ico-mon'); ico.appendChild(G.UI.spriteCanvas(c.sprite, 56, 48, { scale: 1, shadow: true })); }
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
       el.onclick = () => pick(i);
       box.appendChild(el);
