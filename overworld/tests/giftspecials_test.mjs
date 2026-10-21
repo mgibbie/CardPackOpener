@@ -177,8 +177,11 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		await talk(2, 5, 'up');
 		A((await partyNow()).filter(m => m.s === 'shuckle').length === 1, 'talking again the same day does not lend a second one');
 		// a day later the daily flag lapses and Mania asks for him back
+		// (on a trip into the map: loading the game writes nothing, so a boot alone keeps it)
 		await page.evaluate(() => window.__ow.Story.setVar('VAR_MP_SHUCKIE_DAY', 1));
 		await boot('ManiasHouse', 2, 5);
+		A(await page.evaluate(() => window.__ow.Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY')), 'loading the game alone leaves ENGINE_GOT_SHUCKIE_TODAY as saved');
+		await page.evaluate(async () => { await window.__ow.moveToMap('ManiasHouse', 2, 5); await new Promise(r => setTimeout(r, 400)); });
 		A(!(await page.evaluate(() => window.__ow.Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY'))), 'ENGINE_GOT_SHUCKIE_TODAY lapses the next day');
 		await talk(2, 5, 'up');
 		const back = await page.evaluate(() => ({ took: !!window.__ow.Story.getFlag('EVENT_MANIA_TOOK_SHUCKIE_OR_LET_YOU_KEEP_HIM'), shu: window.__ow.party.filter(m => m.speciesId === 'shuckle').length }));
