@@ -662,6 +662,11 @@ export class Card {
     this.ability.rental = r; this.set_cost();
   }
   set_debuff(should_debuff) {
+    this.set_debuff_core(should_debuff);
+    // (a Lua Card:set_debuff wrap that runs after it on every path: Nacho 1.7.9's Turtonator arms Shell Trap on a debuff)
+    if (ACTIVE_MODS.length) callHook('debuff_set', this, should_debuff);
+  }
+  set_debuff_core(should_debuff) {
     // Steamodded mod.set_debuff (runs first): true debuffs, 'prevent_debuff' wins outright.
     for (const res of callHook('set_debuff', this, should_debuff)) {
       if (res === 'prevent_debuff') {
@@ -808,7 +813,11 @@ export class Card {
     return this.ability.x_mult;
   }
   get_chip_h_mult() { return this.debuff ? 0 : this.ability.h_mult; }
-  get_chip_h_x_mult() { return this.debuff ? 0 : this.ability.h_x_mult; }
+  get_chip_h_x_mult() {
+    if (this.debuff) return 0;
+    // (a mod may scale a held card's X Mult: Nacho 1.7.9's Dhelmise lends held Steel cards its Energy — its get_chip_h_x_mult wrap)
+    return ACTIVE_MODS.length ? reduceHook('chip_h_x_mult', this.ability.h_x_mult, this) : this.ability.h_x_mult;
+  }
   get_edition() {
     if (this.debuff) return undefined;
     // A mod edition with no scoring numbers (e.g. Pokermon's Shiny) scores nothing.

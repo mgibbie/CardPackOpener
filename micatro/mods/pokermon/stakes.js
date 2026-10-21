@@ -4,9 +4,8 @@
 //   (raised) win ante draw Showdown Boss Blinds. Art: elite_stake.png (chip) / elite_stake_sticker.png (3.9.1, vendored in batch 5).
 //   Win stickers: `sticker_level: 9` — a win on it records the ELITE sticker (level 9; 3.9.1 draws its own Elite sticker, art
 //   elite_stake_sticker.png -> micatro/assets/textures/winstickers/elite.png), not Gold: js/engine/run.js win_sticker_level,
-//   js/ui/stickers.js, server/mp.mjs stickerLevel 1..9 (PORTING.md "Batch 17"). Nacho's own Elite stake (the same
-//   rules, before Nacho 1.7.9 re-keyed it to this one) stays registered for old recipes but leaves the New Run picker while this
-//   one is there (`superseded_by` on Nacho's, js/mods/index.js modStakes: Pokermon precedence).
+//   js/ui/stickers.js, server/mp.mjs stickerLevel 1..9 (PORTING.md "Batch 17"). Nacho 1.7.9 (batch 18) re-keyed its own
+//   Elite stake to this one: stake_nacho_elite_stake is a `renamed` alias (Nacho's registerMod aliases), so old recipes play it.
 import { G } from '../../js/engine/core.js';
 
 export const ELITE_STAKE = {

@@ -149,9 +149,12 @@ export const HOOKS = [
   'apply_to_run',       // (self, center) Card:apply_to_run is about to apply a voucher (any voucher, before its effect)
   'redeem',             // (card, layer) Card:redeem is starting -> a function to run after it (or undefined)
   'set_ability',        // (card, center, old_center, initial) Card:set_ability ran (after the center's own set_ability)
+  'debuff_set',         // (card, should_debuff) Card:set_debuff ran (any path; Nacho 1.7.9's Turtonator: a debuff arms Shell Trap)
+  'held_card_evaluated', // (card, effects, phase) a held card's pass ran ('scoring' / 'end_of_round'; effects[0] = its own; Nacho's Dedenne)
   'chip_bonus',         // (ret, card) -> Card:get_chip_bonus's value
   'chip_mult',          // (ret, card) -> Card:get_chip_mult's value
   'chip_x_mult',        // (ret, card) -> Card:get_chip_x_mult's value
+  'chip_h_x_mult',      // (ret, card) -> Card:get_chip_h_x_mult's value (a held card's X Mult; Nacho 1.7.9's Dhelmise)
   'p_dollars',          // (ret, card) -> Card:get_p_dollars's value
   'card_repetitions',   // (card, context) -> [{message, repetitions, card}] the card's own extra retriggers (like a Red Seal)
   'eval_card',          // (card, context, ret) eval_card scored a played (G.play) / held (G.hand) card; may add to ret

@@ -77,7 +77,8 @@ export function view_card(card, v) {
   if (card.ability.fainted !== undefined && G.GAME && card.ability.fainted === G.GAME.round) p.fainted = true;
   if (card.edition && card.edition.poke_shiny) p.shiny = true;
   const an = ANIMATED[c.key];
-  if (an) p.anim = { frames: an.frames, frames_per_row: an.frames_per_row, fps: an.fps, soul: !!an.soul, atlas: an.native ? (an.atlas || c.key) : undefined, size: an.size };
+  if (an) p.anim = { frames: an.frames, frames_per_row: an.frames_per_row, fps: an.fps, soul: !!an.soul, atlas: an.native ? (an.atlas || c.key) : undefined, size: an.size,
+    ...(an.soul_only ? { soul_only: true, shiny_atlas: an.shiny_atlas } : {}) };
   // Capture Disc (3.9.1 April Fools): the board reports its drags (the 'poke_capture_disc_drag' action, jokers/zzzapril_fools.js)
   if (c.key === 'j_poke_capture_disc') v.drag_tracked = 'poke_capture_disc_drag';
   v.poke = p;

@@ -1,12 +1,14 @@
-// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0280_ralts.lua: Ralts, Kirlia, Gardevoir, Mega Gardevoir,
-// Gallade, Mega Gallade. Line-for-line port; static data comes from data.js.
-// Gallade's "Planet cards only level your most played hand" and Mega Gallade's "hands can't be
-// debuffed" / "most played hand's cards can't be debuffed" are lovely patches: see ../systems.js.
+// LEGACY definition (batch 18, Nacho 1.7.9; ../../PORTING.md "Legacy definitions"): 1.7.9 retired this line (deprecated/,
+// can_load = false) because base Pokermon owns it. Its 1.6.4 behaviour stays registered for saves, replays, custom decks and
+// win stickers: out of every pool, evolving into Pokermon's jokers (Pokermon precedence).
+// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0280_ralts.lua: Ralts, Kirlia, Gardevoir, Gallade. Line-for-line port; static data
+// comes from data.js (1.6.4). Gallade's "Planet cards only level your most played hand" is a lovely patch: see ../../systems.js.
+// (1.6.4's Mega Gardevoir / Mega Gallade are re-keyed in 1.7.9: j_poke_mega_gardevoir / j_poke_mega_gallade, ../megas.js.)
 // (The Lua's init() hides PokermonMaelmc's Ralts line when both mods load — no Maelmc here.)
 import {
   G, localize, card_eval_status_text, update_hand_text, level_up_hand, create_card, pseudorandom_element, pseudoseed,
-  defineNacho, type_tooltip, level_evo, item_evo, calc_most_played_hand, Tag, add_tag, play_sound,
-} from '../api.js';
+  defineNachoLegacy, type_tooltip, level_evo, item_evo, calc_most_played_hand, Tag, add_tag, play_sound,
+} from '../../api.js';
 
 const FILE = 'src/pokemon/0280_ralts.lua';
 
@@ -14,7 +16,7 @@ const FILE = 'src/pokemon/0280_ralts.lua';
 const levels_above_one = (per) => { let n = 0; for (const v of Object.values(G.GAME.hands)) n = n + (v.level - 1) * per; return n; };
 const visible_hands = () => G.handlist.filter((k) => G.GAME.hands[k].visible);
 
-defineNacho({
+defineNachoLegacy({
   // Ralts 280
   ralts: {
     loc_vars(self, info_queue, card) {
@@ -55,37 +57,6 @@ defineNacho({
       return undefined;
     },
   },
-  // Mega Gardevoir 282-1
-  mega_gardevoir: {
-    loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      info_queue.push({ key: 'tag_orbital', set: 'Tag', specific_vars: ['Random Hand', 3] });
-      return { vars: [card.ability.extra.blackhole_amount] };
-    },
-    calculate(self, card, context) {
-      // Create an Orbital Tag (random visible hand) on Planet use
-      if (context.using_consumeable && context.consumeable && context.consumeable.ability && context.consumeable.ability.set === 'Planet') {
-        const tag = new Tag('tag_orbital');
-        tag.ability.orbital_hand = pseudorandom_element(visible_hands(), pseudoseed('mega_gardevoir'))[0];
-        G.E_MANAGER.add_event(() => { add_tag(tag); play_sound('generic1'); play_sound('holo1'); });
-      }
-      // Held Planet cards without an edition become Polychrome at end of round
-      if (context.end_of_round && !context.blueprint) {
-        for (const v of G.consumeables.cards) if (v.ability.set === 'Planet' && !v.edition) v.set_edition({ polychrome: true }, true);
-      }
-      return undefined;
-    },
-    // A Negative Black Hole on entry
-    add_to_deck(self, card, from_debuff) {
-      if (!from_debuff) {
-        const _card = create_card('Spectral', G.consumeables, null, null, null, null, 'c_black_hole');
-        _card.set_edition({ negative: true }, true);
-        _card.add_to_deck();
-        G.consumeables.emplace(_card);
-        card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'SECONDARY_SET.Spectral' });
-      }
-    },
-  },
   // Gallade 475
   gallade: {
     loc_vars(self, info_queue, card) {
@@ -103,19 +74,6 @@ defineNacho({
         level_up_hand(context.blueprint_card || card, _hand, null, 1);
         update_hand_text({ sound: 'button', volume: 0.7, pitch: 1.1, delay: 0 }, { mult: 0, chips: 0, handname: '', level: '' });
       }
-      if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
-        return { xmult: 1 + card.ability.extra.Xmult_mod * G.GAME.hands[context.scoring_name].played, card };
-      }
-      return undefined;
-    },
-  },
-  // Mega Gallade 475-1
-  mega_gallade: {
-    loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      return { vars: [card.ability.extra.Xmult_mod] };
-    },
-    calculate(self, card, context) {
       if (context.cardarea === G.jokers && context.scoring_hand && context.joker_main) {
         return { xmult: 1 + card.ability.extra.Xmult_mod * G.GAME.hands[context.scoring_name].played, card };
       }

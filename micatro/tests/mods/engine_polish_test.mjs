@@ -105,14 +105,14 @@ const key = (c) => c.config.center.key;
   const r = play(hand(['S_2']));
   ok(sj.ability.steel_tally === 5 && Math.abs(r.total.mult - 2) < 1e-9, 'Steel Joker: 5 quantum Steel cards -> X2', [sj.ability.steel_tally, r.total]);
 }
-{ // Golden Ticket pays for a quantum Gold card (Nacho's Carbink: rankless cards are Gold)
+{ // Golden Ticket pays for a quantum Gold card (Nacho's Carbink: Hazard cards are Gold — Nacho 1.7.9; 1.6.4: rankless cards)
   start('POLISH_TICKET', {}, { mods: ALL });
   add('j_nacho_carbink');
   add('j_ticket');
   const d0 = G.GAME.dollars;
-  play(hand(['S_A'], { center: 'm_stone' }));
+  play(hand(['S_A'], { center: 'm_poke_hazard' }));
   flush();
-  ok(G.GAME.dollars - d0 === 4, 'Golden Ticket: a quantum Gold (Stone) card pays $4', G.GAME.dollars - d0);
+  ok(G.GAME.dollars - d0 === 4, 'Golden Ticket: a quantum Gold (Hazard) card pays $4', G.GAME.dollars - d0);
 }
 { // Glass Joker counts a quantum Glass card the Hanged Man destroys (Tinkaton: Steel cards are Glass)
   start('POLISH_GLASS', {}, { mods: ALL });

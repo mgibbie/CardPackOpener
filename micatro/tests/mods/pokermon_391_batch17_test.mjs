@@ -367,7 +367,8 @@ sec('elite stake', () => {
   const picker = modStakes(['pokermon']).map((x) => x.key);
   ok(picker.includes('stake_poke_elite'), 'the New Run picker lists it', picker);
   const withNacho = modStakes(['pokermon', 'nacho']).map((x) => x.key);
-  ok(withNacho.includes('stake_poke_elite') && !withNacho.includes('stake_nacho_elite_stake') && P_STAKES.stake_nacho_elite_stake, 'with Nacho: Pokermon\'s Elite wins (Nacho\'s stays registered, off the picker)', withNacho);
+  // (Nacho 1.7.9, batch 18: Nacho's Elite stake is no longer registered; stake_nacho_elite_stake is an alias of this one)
+  ok(withNacho.includes('stake_poke_elite') && !withNacho.includes('stake_nacho_elite_stake') && !P_STAKES.stake_nacho_elite_stake, 'with Nacho: the Pokermon Elite stake (Nacho 1.7.9 re-keyed its own to it)', withNacho);
   const sess = new Session();
   sess.start({ seed: 'B17_ELITE2', back: 'b_red', stake: 'stake_poke_elite', mods: ['pokermon'] });
   ok(sess.recipe.stake === 'stake_poke_elite', 'the recipe records the stake key (leaderboard / replays resolve it)', sess.recipe.stake);

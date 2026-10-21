@@ -1,46 +1,29 @@
-// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0704_goomy.lua: Goomy, Sliggoo, Goodra, Hisuian Sliggoo,
-// Hisuian Goodra.
-import {
-  G, localize, card_eval_status_text, create_card, next, has_enhancement, get_flush,
-  defineNacho, type_tooltip, scaling_evo, main_eval,
-} from '../api.js';
+// Nacho's Pokermon Dip 1.7.9 — src/pokemon/0704_goomy.lua: Goomy, Sliggoo, Goodra, Hisuian Sliggoo, Hisuian Goodra.
+// 1.7.9: the Flush and its suit are read when the hand is played (press_play, PkmnDip.calc.get_flush_suit: 'Any' for an
+// all-Wild Flush); every played or held card of that suit gains the perma bonus. Goodra's value is `Xmult_multi`. The Metal
+// Coats come through pokermon.create_consumeable. POKE_EVO_OVERRIDES: Sliggoo's highest evo is Goodra and Hisuian Sliggoo's is
+// Hisuian Goodra (../index.js adds the two lines to Pokermon's EVO_OVERRIDES).
+import { G, localize, has_enhancement, get_flush, defineNacho, type_tooltip, scaling_evo, main_eval, create_consumeable } from '../api.js';
+import { calc, con, utils } from '../dip.js';
 
 const FILE = 'src/pokemon/0704_goomy.lua';
 
-/** -> the Flush's suit (undefined when every flush card is Wild) and whether all are Wild. */
-function flush_suit(scoring_hand) {
-  const scoring_flush = get_flush(scoring_hand)[0];
-  if (!scoring_flush) return null;
-  let wildcount = 0, matching_suit;
-  for (const c of scoring_flush) {
-    if (has_enhancement(c, 'm_wild')) wildcount = wildcount + 1;
-    else matching_suit = c.base.suit;
+/** press_play: the played Flush (if any) and its suit; cleared after the hand. */
+function read_flush(card, context) {
+  const a = card.ability.extra;
+  if (context.press_play) {
+    a.scoring_flush = !!get_flush(G.hand.highlighted)[0];
+    a.matching_suit = a.scoring_flush ? calc.get_flush_suit(G.hand.highlighted) : undefined;
   }
-  return { all_wild: wildcount === scoring_flush.length, suit: matching_suit };
+  if (context.after) { a.scoring_flush = undefined; a.matching_suit = undefined; }
 }
-const unique_ranks = (scoring_hand) => new Set(scoring_hand.map((c) => c.get_id())).size;
-const upgrade = (card) => ({ extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, colour: 'MULT', card });
-/** first / second rank of a Flush House (the first two distinct ids among the scoring cards). */
-function fh_ranks(scoring_hand) {
-  let first_rank_id, first_rank, second_rank;
-  for (const sc of scoring_hand) {
-    if (first_rank === undefined && sc.get_id() > 0) { first_rank_id = sc.get_id(); first_rank = sc.base.nominal; }
-    else if (second_rank === undefined && sc.get_id() > 0 && sc.get_id() !== first_rank_id) second_rank = sc.base.nominal;
-  }
-  return [first_rank, second_rank];
-}
-function metal_coat() {
-  if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
-    const _card = create_card('Item', G.consumeables, null, null, null, null, 'c_poke_metalcoat');
-    _card.add_to_deck();
-    G.consumeables.emplace(_card);
-    card_eval_status_text(_card, 'extra', null, null, null, { message: localize('poke_plus_pokeitem'), colour: 'FILTER' });
-  }
-}
+const suit_ok = (a, c) => a.matching_suit === 'Any' || (a.matching_suit && c.is_suit(a.matching_suit));
+const unique_ranks = (scoring_hand) => utils.count_unique(scoring_hand, (c) => c.get_id());
+const upgrade = (card) => ({ extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, card });
 const pluralise = (n, one, many) => (n === 1 ? one : many);
 
 defineNacho({
-  // Goomy 704: a Flush gives played + held cards of its suit +1 perma Mult
+  // Goomy 704: in a Flush, played + held cards of its suit gain +1 perma Mult (6 Flushes: Sliggoo; 1 Flush House: Hisuian Sliggoo)
   goomy: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
@@ -48,24 +31,24 @@ defineNacho({
       return { vars: [card.ability.extra.mult_mod, Math.max(0, left), pluralise(left, 'Flush', 'Flushes')] };
     },
     calculate(self, card, context) {
-      if (context.before && main_eval(context)) {
-        if (context.scoring_name === 'Flush') { card.ability.extra.flushes = card.ability.extra.flushes + 1; return undefined; }
-        if (context.scoring_name === 'Flush House') { card.ability.extra.flush_houses = card.ability.extra.flush_houses + 1; return undefined; }
+      const a = card.ability.extra;
+      if (context.press_play) read_flush(card, context);
+      if (context.before && !context.blueprint) {
+        if (context.scoring_name === 'Flush') a.flushes = a.flushes + 1;
+        else if (context.scoring_name === 'Flush House') a.flush_houses = a.flush_houses + 1;
       }
-      if (context.individual && (context.cardarea === G.hand || context.cardarea === G.play) && !context.end_of_round) {
-        if (next(context.poker_hands.Flush)) {
-          const f = flush_suit(context.scoring_hand);
-          if (f && (f.all_wild || context.other_card.is_suit(f.suit))) {
-            context.other_card.ability.perma_mult = (context.other_card.ability.perma_mult || 0) + card.ability.extra.mult_mod;
-            return upgrade(card);
-          }
+      if (context.individual && con.played_or_held(context) && !context.end_of_round) {
+        if (context.poker_hands && context.poker_hands.Flush && context.poker_hands.Flush.length && a.scoring_flush && suit_ok(a, context.other_card)) {
+          context.other_card.ability.perma_mult = (context.other_card.ability.perma_mult || 0) + a.mult_mod;
+          return upgrade(card);
         }
       }
-      return scaling_evo(self, card, context, 'j_nacho_hisuian_sliggoo', card.ability.extra.flush_houses, self.config.evo_rqmt2)
-        || scaling_evo(self, card, context, 'j_nacho_sliggoo', card.ability.extra.flushes, self.config.evo_rqmt1);
+      if (context.after) read_flush(card, context);
+      return scaling_evo(self, card, context, 'j_nacho_hisuian_sliggoo', a.flush_houses, self.config.evo_rqmt2)
+        || scaling_evo(self, card, context, 'j_nacho_sliggoo', a.flushes, self.config.evo_rqmt1);
     },
   },
-  // Sliggoo 705: a Flush gives +1 perma Mult per unique scoring rank
+  // Sliggoo 705: a Flush gives its suit's played + held cards +1 perma Mult per unique scoring rank (8 Flushes: Goodra)
   sliggoo: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
@@ -73,35 +56,32 @@ defineNacho({
       return { vars: [card.ability.extra.mult_mod, Math.max(0, left), pluralise(left, 'Flush', 'Flushes')] };
     },
     calculate(self, card, context) {
-      if (context.before && main_eval(context) && context.scoring_name === 'Flush') { card.ability.extra.flushes = card.ability.extra.flushes + 1; return undefined; }
-      if (context.individual && (context.cardarea === G.hand || context.cardarea === G.play) && !context.end_of_round && context.scoring_name === 'Flush') {
-        const f = flush_suit(context.scoring_hand);
-        if (f && (f.all_wild || context.other_card.is_suit(f.suit))) {
-          context.other_card.ability.perma_mult = (context.other_card.ability.perma_mult || 0) + card.ability.extra.mult_mod * unique_ranks(context.scoring_hand);
-          return upgrade(card);
-        }
+      const a = card.ability.extra;
+      if (context.press_play) read_flush(card, context);
+      if (context.before && !context.blueprint && context.scoring_name === 'Flush') a.flushes = a.flushes + 1;
+      if (context.individual && context.scoring_name === 'Flush' && a.scoring_flush && con.played_or_held(context) && !context.end_of_round && suit_ok(a, context.other_card)) {
+        context.other_card.ability.perma_mult = (context.other_card.ability.perma_mult || 0) + a.mult_mod * unique_ranks(context.scoring_hand);
+        return upgrade(card);
       }
-      return scaling_evo(self, card, context, 'j_nacho_goodra', card.ability.extra.flushes, self.config.evo_rqmt);
+      if (context.after) read_flush(card, context);
+      return scaling_evo(self, card, context, 'j_nacho_goodra', a.flushes, self.config.evo_rqmt);
     },
   },
-  // Goodra 706: a Flush gives X0.02 perma Mult per unique scoring rank
+  // Goodra 706: a Flush gives its suit's played + held cards +X0.02 perma Mult per unique scoring rank
   goodra: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.Xmult_mod] }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.Xmult_multi] }; },
     calculate(self, card, context) {
-      // Intended-design fix: the Lua tests `context.cardarea == G.hand or G.play` — always true, so
-      // the perma XMult also reached Pokermon's scry cards; the author meant played + held cards
-      // (as Goomy / Sliggoo and the card text say).
-      if (context.individual && (context.cardarea === G.hand || context.cardarea === G.play) && !context.end_of_round && context.scoring_name === 'Flush') {
-        const f = flush_suit(context.scoring_hand);
-        if (f && (f.all_wild || context.other_card.is_suit(f.suit))) {
-          context.other_card.ability.perma_x_mult = (context.other_card.ability.perma_x_mult || 0) + card.ability.extra.Xmult_mod * unique_ranks(context.scoring_hand);
-          return upgrade(card);
-        }
+      const a = card.ability.extra;
+      if (context.press_play) read_flush(card, context);
+      if (context.individual && context.scoring_name === 'Flush' && a.scoring_flush && con.played_or_held(context) && !context.end_of_round && suit_ok(a, context.other_card)) {
+        context.other_card.ability.perma_x_mult = (context.other_card.ability.perma_x_mult || 0) + a.Xmult_multi * unique_ranks(context.scoring_hand);
+        return upgrade(card);
       }
+      if (context.after) read_flush(card, context);
       return undefined;
     },
   },
-  // Hisuian Sliggoo 705-1: a Flush House makes a Metal Coat (two when its ranks are > 6 apart)
+  // Hisuian Sliggoo 705-1: a Flush House makes a Metal Coat (two when its ranks are > 6 apart); 6 of them: Hisuian Goodra
   hisuian_sliggoo: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
@@ -109,26 +89,31 @@ defineNacho({
       return { vars: [Math.max(0, left), pluralise(left, 'Flush House', 'Flush Houses')] };
     },
     calculate(self, card, context) {
-      if (context.before && main_eval(context) && context.scoring_name === 'Flush House') { card.ability.extra.flush_houses = card.ability.extra.flush_houses + 1; return undefined; }
-      if (context.joker_main && context.scoring_name === 'Flush House') {
-        const [first_rank, second_rank] = fh_ranks(context.scoring_hand);
-        metal_coat();
-        if (Math.abs(second_rank - first_rank) > 6) metal_coat();
+      if (context.before && main_eval(context) && context.scoring_name === 'Flush House') {
+        if (!context.blueprint) card.ability.extra.flush_houses = card.ability.extra.flush_houses + 1;
+        create_consumeable('c_poke_metalcoat', true, card);
+        const [first_rank, second_rank] = calc.get_full_house(context.scoring_hand, 'nominal');
+        if (Math.abs(second_rank - first_rank) > 6) create_consumeable('c_poke_metalcoat', true, card);
       }
       return scaling_evo(self, card, context, 'j_nacho_hisuian_goodra', card.ability.extra.flush_houses, self.config.evo_rqmt);
     },
+    in_pool() { return G.GAME.hands['Flush House'].played > 0; },
   },
   // Hisuian Goodra 706-1: a Flush House makes a Metal Coat; held Steel cards give X(rank gap / 3)
   hisuian_goodra: {
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
     calculate(self, card, context) {
-      if (context.before && main_eval(context) && context.scoring_name === 'Flush House') metal_coat();
-      if (context.individual && context.cardarea === G.hand && !context.end_of_round && context.scoring_name === 'Flush House') {
-        const [first_rank, second_rank] = fh_ranks(context.scoring_hand);
-        card.ability.extra.Xmult = Math.abs(second_rank - first_rank) / 3;
-        if (has_enhancement(context.other_card, 'm_steel') && card.ability.extra.Xmult > 1) return { xmult: card.ability.extra.Xmult, card };
+      const a = card.ability.extra;
+      if (context.scoring_name === 'Flush House') {
+        if (context.before && main_eval(context)) create_consumeable('c_poke_metalcoat', true, card);
+        if (context.individual && context.cardarea === G.hand && !context.end_of_round) {
+          const [first_rank, second_rank] = calc.get_full_house(context.scoring_hand, 'nominal');
+          a.Xmult_steel = Math.abs(second_rank - first_rank) / 3;
+          if (a.Xmult_steel > 1 && has_enhancement(context.other_card, 'm_steel')) return { xmult: a.Xmult_steel };
+        }
       }
       return undefined;
     },
+    in_pool() { return G.GAME.hands['Flush House'].played > 0; },
   },
 }, FILE);
