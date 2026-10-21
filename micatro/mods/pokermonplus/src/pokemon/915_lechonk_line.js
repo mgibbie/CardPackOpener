@@ -1,46 +1,39 @@
-// Pokermon+ — src/pokemon/915_lechonk_line.lua: Lechonk, Oinkologne.
-// "Volatile Right": when a Blind is selected (and it's the rightmost non-volatile joker), all your
-// money goes into its sell value at 75% (Oinkologne 150%).
-// Intended-design fix: both are described as "Volatile Right" (and show Pokermon's
-// poke_volatile_right tooltip) but only carried `volatile` inside config.extra; Pokermon's
-// volatile rule reads the center's `volatile` flag, so other volatile jokers treated them as
-// ordinary jokers. The centers carry `volatile: true` (set in index.js).
-import { G, type_tooltip, scaling_evo, volatile_active, detailed } from '../../../pokermon/api.js';
+// Pokermon+ 1.2.0 — src/pokemon/915_lechonk_line.lua: Lechonk, Oinkologne (reworked in 1.2.0; now by Emma, Lechonk Uncommon).
+// At the end of each round the interest you would earn goes into the joker's sell value (Oinkologne: double), and while
+// either is held you earn no interest (the lovely patch on the cash out's interest row: index.js `no_interest` hook).
+// Lechonk evolves after 5 rounds (level_evo).
+// 1.0.3's "Volatile Right" piggy bank (all your money into the sell value when a Blind is selected) is gone.
+// (Talisman's to_number is not needed: Micatro's money is a plain number.)
+// Intended-design fix: the Lua returns from the banking step before level_evo, so a round that banked interest never counted
+// toward the evolution — Lechonk only evolved after 5 rounds with less than $5 ("Evolves after triggering 5 times" says the
+// opposite). Ours banks and counts the round.
+import { G, level_evo } from '../../../pokermon/api.js';
 
-function piggy_bank(self, card, context, count) {
-  const a = card.ability.extra;
-  if (G.GAME.dollars > 0 && context.setting_blind && !context.blueprint && volatile_active(self, card, a.volatile)) {
-    if (count) a.triggers = a.triggers + 1;
-    const earned = G.GAME.dollars;
-    card.ability.extra_value = (card.ability.extra_value || 0) + (a.percentage / 100 * earned);
-    card.set_cost();
-    return { dollars: a.reset - earned, card };
+/** G.GAME.interest_amount * min(floor($ / 5), cap / 5): what the cash out would pay as interest. */
+export const interest_now = () => G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5);
+
+function bank(card, context, mul) {
+  if (context.end_of_round && context.main_eval && !context.blueprint) {
+    const earned = interest_now();
+    if (earned > 0) {
+      card.ability.extra_value = (card.ability.extra_value || 0) + mul * earned;
+      card.set_cost();
+      return { card };
+    }
   }
   return undefined;
-}
-function loc(self, info_queue, card) {
-  type_tooltip(self, info_queue, card);
-  if (detailed()) info_queue.push({ set: 'Other', key: 'poke_volatile_' + card.ability.extra.volatile });
 }
 
 export default {
   lechonk: {
-    loc_vars(self, info_queue, card) {
-      loc(self, info_queue, card);
-      const a = card.ability.extra;
-      return { vars: [a.percentage, a.reset, a.evo_rqmt - a.triggers] };
-    },
+    loc_vars(self, info_queue, card) { return { vars: [card.ability.extra.rounds] }; },
     calculate(self, card, context) {
-      const r = piggy_bank(self, card, context, true);
-      if (r) return r;
-      return scaling_evo(self, card, context, 'j_sonfive_oinkologne', card.ability.extra.triggers, card.ability.extra.evo_rqmt);
+      const r = bank(card, context, 1);
+      return level_evo(self, card, context, 'j_sonfive_oinkologne') || r;
     },
   },
   oinkologne: {
-    loc_vars(self, info_queue, card) {
-      loc(self, info_queue, card);
-      return { vars: [card.ability.extra.percentage, card.ability.extra.reset] };
-    },
-    calculate(self, card, context) { return piggy_bank(self, card, context, false); },
+    loc_vars() { return { vars: [] }; },
+    calculate(self, card, context) { return bank(card, context, 2); },
   },
 };

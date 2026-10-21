@@ -1,13 +1,12 @@
-// Pokermon+ — src/pokemon/874_stonjourner_line.lua: Stonjourner.
+// Pokermon+ 1.2.0 — src/pokemon/874_stonjourner_line.lua: Stonjourner (1.2.0: can't be Perishable).
 // Adjacent jokers each give X(Xmult_multi); after 8 different (visible) poker hands it gains
 // +X0.25 and the list starts over.
-import { G, localize, juice_card, type_tooltip } from '../../../pokermon/api.js';
+import { G, localize, juice_card } from '../../../pokermon/api.js';
 import { unique_hand_tooltip, HAND_ORDER } from '../functions.js';
 
 export default {
   stonjourner: {
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
       unique_hand_tooltip(self, info_queue, card);
       const a = card.ability.extra;
       return { vars: [a.Xmult_multi, a.Xmult_mod, a.count || 0] };

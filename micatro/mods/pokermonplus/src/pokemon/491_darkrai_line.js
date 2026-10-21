@@ -1,99 +1,84 @@
-// Pokermon+ — src/pokemon/491_darkrai_line.lua: Darkrai.
+// Pokermon+ 1.2.0 — src/pokemon/491_darkrai_line.lua: Darkrai, Mega Darkrai.
 //
-// Every held Energy card counts as applied to each joker of its type (times the Darkrai held),
-// without using up Energy count or the limit: Darkrai re-syncs the difference whenever it
-// calculates and takes it all back when it leaves.
-// Intended-design fixes:
-//  - jokers whose `ability.extra` is a number (base-game jokers like Hiker) crashed the Lua
-//    (it indexed `extra.darkrai_applied` on a number), and a nil `extra` was replaced by {} which
-//    hid the joker's own mult/chips from energy_shift. The bookkeeping lives on `ability` for
-//    those jokers now and their `extra` is left alone.
-//  - remove_from_deck passed the lowercase Energy name ("colorless") as the type, so Colorless
-//    energy was taken back at full value instead of the half it was given at; the type is passed.
-import { G, P_CENTERS, localize, create_card, card_eval_status_text, find_joker, is_type, type_tooltip } from '../../../pokermon/api.js';
-import { energy_shift } from '../functions.js';
+// Darkrai (reworked in 1.2.0): it brings a Nightmare when it joins (1.0.3: one after every Boss Blind), and every Energy
+// card you HOLD counts as applied to each joker of its type (times the Darkrai you have), without moving the Energy count
+// or the limit. Each joker remembers how many it got (`darkrai_ecount`) and is energized by the difference whenever Darkrai
+// calculates; selling Darkrai takes it all back.
+// Mega Darkrai (new, a Mega Stone on Darkrai): each held Energy card gives X(Xmult_multi) Mult per joker of its type.
+//
+// Micatro shapes:
+//  - A base-game joker's `extra` may be a number (Hiker) or nil: the Lua indexed / replaced it (a crash, or a joker that lost
+//    its own numbers). Its count lives on `ability.sonfive_darkrai_ecount` there; `extra` is left alone.
+//  - remove_from_deck: the Lua cleared `extra.darkrai_ecount` on every joker even when `extra` was nil (a crash). Only the
+//    jokers that have a count are touched.
+//  - The 1.0.3 Nightmare after each Boss Blind is gone with the rework; the Void deck no longer gives one either (backs.js).
+import { G, P_CENTERS, localize, create_card, card_eval_status_text, find_card, is_type, get_type, find_pokemon_type } from '../../../pokermon/api.js';
+import { energize_amount, is_energizable } from '../functions.js';
 
-const ENERGIES = ['grass', 'fire', 'water', 'lightning', 'psychic', 'fighting', 'colorless', 'darkness', 'metal', 'fairy', 'dragon', 'earth'];
-const TYPES = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Colorless', 'Dark', 'Metal', 'Fairy', 'Dragon', 'Earth'];
 const isTable = (x) => x !== null && typeof x === 'object';
-
-/** Where a joker's Darkrai bookkeeping lives (extra for Pokémon-style jokers, ability otherwise). */
-function applied_of(joker) {
-  const holder = isTable(joker.ability.extra) ? joker.ability.extra : joker.ability;
-  if (!holder.darkrai_applied) holder.darkrai_applied = {};
-  return holder.darkrai_applied;
+const isEnergy = (c) => c && c.ability && (c.ability.set === 'Energy' || c.ability.set === 'poke_energy');
+const etypeOf = (c) => c.config.center.etype;
+const getCount = (j) => (isTable(j.ability.extra) ? j.ability.extra.darkrai_ecount : j.ability.sonfive_darkrai_ecount) || 0;
+function setCount(j, n) {
+  if (isTable(j.ability.extra)) j.ability.extra.darkrai_ecount = n;
+  else j.ability.sonfive_darkrai_ecount = n;
 }
 
-/** Nightmare after each Boss Blind (also the Void deck). */
-export function nightmare_after_boss(context) {
-  if (!context.repetition && !context.individual && context.end_of_round && G.GAME.last_blind && G.GAME.last_blind.boss) {
-    if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit && P_CENTERS.c_poke_nightmare) {
-      const _card = create_card('Spectral', G.consumeables, null, null, null, null, 'c_poke_nightmare');
-      _card.add_to_deck();
-      G.consumeables.emplace(_card);
-      card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
+/** add_to_deck: a Nightmare if there is room (not from a debuff). */
+function give_nightmare() {
+  if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit && P_CENTERS.c_poke_nightmare) {
+    const _card = create_card('Spectral', G.consumeables, null, null, null, null, 'c_poke_nightmare');
+    _card.add_to_deck();
+    G.consumeables.emplace(_card);
+    card_eval_status_text(_card, 'extra', null, null, null, { message: localize('k_plus_spectral'), colour: 'Spectral' });
+  }
+}
+
+/** Re-sync every joker to the held Energy of its type (Darkrai's calculate, any context). */
+export function darkrai_sync() {
+  if (!G.consumeables || !G.jokers) return;
+  const darkrai_count = find_card('j_sonfive_darkrai').length;
+  const energies = G.consumeables.cards.filter(isEnergy);
+  for (const joker of G.jokers.cards) {
+    let curr = 0;
+    for (const e of energies) if (is_type(joker, etypeOf(e))) curr += darkrai_count;
+    const prev = getCount(joker);
+    if (curr !== prev && is_energizable(joker)) {
+      energize_amount(joker, get_type(joker), curr - prev, true);
+      setCount(joker, curr);
     }
   }
 }
 
 export default {
   darkrai: {
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [] }; },
+    loc_vars(self, info_queue) {
+      info_queue.push({ set: 'Spectral', key: 'c_poke_nightmare' });
+      return { vars: [] };
+    },
+    add_to_deck(self, card, from_debuff) { if (!from_debuff) give_nightmare(); },
     calculate(self, card, context) {
-      nightmare_after_boss(context);
-      const a = card.ability.extra;
-      if (!context.blueprint) {
-        const darkrai_count = find_joker('darkrai').length;
-        if (!a.darkrai_applied_energy) a.darkrai_applied_energy = {};
-        // 1: the Energy each type should have from Darkrai.
-        for (const ek of ENERGIES) {
-          const desired = find_joker(ek + '_energy').length * darkrai_count;
-          a[ek] = desired;
-          a.darkrai_applied_energy[ek] = desired;
-        }
-        // 2: sync every joker to it.
-        for (const joker of G.jokers.cards) {
-          const applied = applied_of(joker);
-          const tableExtra = isTable(joker.ability.extra);
-          for (let i = 0; i < ENERGIES.length; i++) {
-            const ek = ENERGIES[i], tk = TYPES[i];
-            const desired = a.darkrai_applied_energy[ek] || 0;
-            const last_applied = applied[ek] || 0;
-            const current = tableExtra ? (joker.ability.extra[ek] || 0) : 0;
-            if (is_type(joker, tk)) {
-              if (desired !== last_applied) {
-                const diff = desired - last_applied;
-                if (tableExtra) joker.ability.extra[ek] = current + diff;
-                energy_shift(joker, diff, tk, false, true, false);
-                applied[ek] = desired;
-              }
-            } else if (last_applied > 0) {
-              // No longer this type: take back what Darkrai gave.
-              if (tableExtra) joker.ability.extra[ek] = current - last_applied;
-              energy_shift(joker, -last_applied, tk, false, true, false);
-              applied[ek] = 0;
-            }
-          }
-        }
-      }
+      if (!context.blueprint && G.consumeables) darkrai_sync();
       return undefined;
     },
-    remove_from_deck(self, card) {
-      const a = card.ability.extra;
+    remove_from_deck() {
       for (const joker of G.jokers.cards) {
-        const applied = applied_of(joker);
-        const tableExtra = isTable(joker.ability.extra);
-        for (let i = 0; i < ENERGIES.length; i++) {
-          const ek = ENERGIES[i];
-          const last_applied = applied[ek] || 0;
-          if (last_applied > 0) {
-            if (tableExtra) joker.ability.extra[ek] = (joker.ability.extra[ek] || 0) - last_applied;
-            energy_shift(joker, -last_applied, TYPES[i], false, true, false);
-            applied[ek] = 0;
-          }
-        }
+        const n = getCount(joker);
+        if (!n) continue;
+        energize_amount(joker, get_type(joker), -n, true);
+        setCount(joker, 0);
       }
-      a.darkrai_applied_energy = {};
+    },
+  },
+
+  mega_darkrai: {
+    loc_vars(self, info_queue, card) { return { vars: [card.ability.extra.Xmult_multi] }; },
+    calculate(self, card, context) {
+      if (context.other_consumeable && isEnergy(context.other_consumeable)) {
+        const Xmult = find_pokemon_type(etypeOf(context.other_consumeable)).length * card.ability.extra.Xmult_multi;
+        if (Xmult > 1) return { message: localize({ type: 'variable', key: 'a_xmult', vars: [Xmult] }), colour: 'XMULT', Xmult_mod: Xmult, message_card: context.other_consumeable };
+      }
+      return undefined;
     },
   },
 };

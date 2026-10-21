@@ -278,7 +278,7 @@ function sectionsFor(id) {
   add('challenges', 'Challenges', 'row', challenges.map((c) => challengeItem(c, id, IDX.modName, (k) => (P_CENTERS[k] ? centerArt(P_CENTERS[k]) : null))), 'Challenge runs this mod ships, played from the Challenges screen (main menu → Challenges) with the mod on.');
   // sleeves (CardSleeves deck variants, engine/sleeve.js): the New Run picker's own text, plus the
   // alternate effect a sleeve plays with its paired deck
-  add('sleeves', 'Sleeves', 'tile', (Array.isArray(mod.sleeves) ? mod.sleeves : []).filter((s) => s && s.key).map((s0) => {
+  add('sleeves', 'Sleeves', 'tile', (Array.isArray(mod.sleeves) ? mod.sleeves : []).filter((s) => s && s.key && !s.legacy).map((s0) => {
     const s = s0.mod ? s0 : { ...s0, mod: id };
     const d = SLV.sleeveInfo(s, null);
     const info = [];
@@ -383,7 +383,7 @@ function notPortedOf(id) {
 const SYSTEMS = {
   pokermon: ['Pokémon types on every joker, with Tera stickers that change a joker’s type', 'Evolution: jokers evolve by level (rounds held), by scaling, with evolution items or by deck make-up; an Everstone stops it', 'Energy cards energize a joker’s numbers (type-matched; Colorless gives half), up to a per-joker limit', 'Shiny edition (+1 booster slot in the shop while you own one) and Mega evolutions via the Megastone', 'Safari and Mega joker rarities; family-aware pools, a generation filter and a “Pokémon only” option', 'Items (Poké Balls, evolution stones, held items) as a consumable type, and the scry view (the top of your deck scores like held cards)'],
   nacho: ['More Pokémon lines built on Pokermon’s evolution / energy / type machinery (1.7.9: fossils, Applin, Frigibax, Solosis, Palafin and more)', 'The Stellar type', 'Megas for Pokermon’s Gardevoir, Altaria and Gallade (a Mega Stone)', 'The apples, the Ancient Pack and the Fossil Excavator’s Fossil Tag', 'A per-evolution-line toggle for every line', 'Its old Ralts, Swablu and Bagon lines are base Pokermon’s now (Pokermon wins any duplicate); its Elite stake is Pokermon’s'],
-  pokermonplus: ['Eight more Pokémon lines on Pokermon’s machinery (its Nincada line is base Pokermon’s now: Pokermon wins any duplicate)', 'Negative Energy (the Void deck) and weather effects (sandstorm, hail, rain, sun)', 'The Timer Ball item, five decks, the Lilac stake and the Weakened sticker'],
+  pokermonplus: ['1.2.0: thirteen Pokémon lines on Pokermon’s machinery (Heatran, Mega Darkrai, Minior, Archaludon, Grafaiai’s Nature...); the 1.0.3 lines it dropped stay as legacy cards, and its Nincada line is base Pokermon’s (Pokermon wins any duplicate)', 'Negative Energy (the Void deck), the per-joker Energy limit, Heatran’s forged cards and the Canari Plush / key items', 'The Timer Ball item, five decks (Pearlescent new), the Lilac stake and the Weakened sticker'],
   riskofjesters: ['Risk of Rain jokers in a vanilla style', 'The Temporary sticker (a copied joker breaks at the end of the round)', 'Printers: bigger boosters (+1 card, +1 choice)', 'Boss blinds incl. two showdowns'],
   sylviesilly: ['Moons: Planet cards that give every card of a suit +5 Chips, or buff an enhancement for the rest of the run', 'Themed booster packs (Suits, Bonus, Fortune)', 'Seal vouchers for Standard packs, four decks and six bosses'],
   milatro: ['30 jokers (no new systems)'],

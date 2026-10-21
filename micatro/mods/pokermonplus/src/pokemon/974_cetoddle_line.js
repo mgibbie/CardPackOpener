@@ -1,8 +1,9 @@
-// Pokermon+ — src/pokemon/974_cetoddle_line.lua: Cetoddle (evolves with an Ice Stone), Cetitan.
+// Pokermon+ 1.2.0 — src/pokemon/974_cetoddle_line.lua: Cetoddle (evolves with an Ice Stone), Cetitan.
 // Both grow like Glass Joker (shattered Glass Cards; The Hanged Man destroying Glass); Cetitan
-// scores double under "hail" (every card held in hand is Glass).
-import { G, localize, card_eval_status_text, has_enhancement, type_tooltip, item_evo } from '../../../pokermon/api.js';
-import { hail } from '../functions.js';
+// scores double under "hail" (every card held in hand is Glass). 1.2.0: the shatter growth is SMODS.scale_card
+// (scalar = glass cards x Xmult_mod), and neither can be Perishable.
+import { G, localize, card_eval_status_text, has_enhancement, item_evo, scale_card } from '../../../pokermon/api.js';
+import { all_held } from '../functions.js';
 
 /** Glass Joker's two growth paths, shared by both. -> a message table or undefined. */
 function glass_growth(card, context) {
@@ -11,7 +12,7 @@ function glass_growth(card, context) {
     const glass_cards = context.removed.filter((c) => c.shattered).length;
     if (glass_cards > 0) {
       G.E_MANAGER.add_event(() => {
-        G.E_MANAGER.add_event(() => { a.Xmult = a.Xmult + a.Xmult_mod * glass_cards; });
+        G.E_MANAGER.add_event(() => { scale_card(card, { ref_table: a, ref_value: 'Xmult', scalar_table: { count: glass_cards * a.Xmult_mod }, scalar_value: 'count', no_message: true }); });
         card_eval_status_text(card, 'extra', null, null, null, { message: localize({ type: 'variable', key: 'a_xmult', vars: [a.Xmult + a.Xmult_mod * glass_cards] }) });
       });
     }
@@ -31,7 +32,6 @@ function glass_growth(card, context) {
 export default {
   cetoddle: {
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
       return { vars: [card.ability.extra.Xmult_mod, card.ability.extra.Xmult] };
     },
     calculate(self, card, context) {
@@ -43,13 +43,12 @@ export default {
   },
   cetitan: {
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
       return { vars: [card.ability.extra.Xmult_mod, card.ability.extra.Xmult] };
     },
     calculate(self, card, context) {
       const g = glass_growth(card, context);
       if (g) return g;
-      if (context.joker_main) return { xmult: hail() ? card.ability.extra.Xmult * 2 : card.ability.extra.Xmult };
+      if (context.joker_main) return { xmult: all_held('m_glass') ? card.ability.extra.Xmult * 2 : card.ability.extra.Xmult };
       return undefined;
     },
   },

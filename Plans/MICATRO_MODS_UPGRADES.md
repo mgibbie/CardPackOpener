@@ -16,7 +16,7 @@ Scratch clones are under `%TEMP%/claude/` (`modres/`, `pkr/`, `bunco/`, `mf/`) a
 | Mod | Ours | Latest upstream | What's new | Effort | Rec. |
 |---|---|---|---|---|---|
 | **Pokermon** | 3.2.1 (really commit 87fb499, 2025-11-01, just before 3.5.0) | **3.9.1** (2026-09-18); main 3.9.1-1016a (2026-10-17) | +109 jokers (68 Gen 3, 12 Megas), 189 reworded or reworked jokers, 41 rarity shifts, Hazard rework, Seed enhancement, Elite stake, 5 boss blinds, 5 challenges, DNA seal, full art pass (no placeholders) | **XL** | **Upgrade, in batches** (version pin first) |
-| Pokermon+ | 1.0.3-251101e | 1.2.0-261018a (Thunderstore 1.2.4, 2026-10-18) | +12 jokers, −7 (moved to base or other add-ons), Pearlescent deck, Shiny/Void deck reworks, Quests (half disabled upstream) | M | Partial, **after** Pokermon 3.9 |
+| Pokermon+ | 1.0.3-251101e | 1.2.0-261018a (Thunderstore 1.2.4, 2026-10-18) | +12 jokers, −7 (moved to base or other add-ons), Pearlescent deck, Shiny/Void deck reworks, Quests (half disabled upstream) | M | **DONE** (batch 20, 2026-10-21: 1.2.0-261018a @ 52c7416, pin 1.2.0-261018a+r2) |
 | Nacho's Pokermon Dip | 1.6.4 | v1.7.9 (2026-07-27); main 1.7.9-5 | +40 jokers; 10 of ours **moved into base Pokermon** (key collisions); Elite stake moved to base; ~10 reworks | L | **DONE** (batches 18–19, 2026-10-21: 1.7.9-5 @ 904ae39, pin 1.7.9-5+r2) |
 | MoreFluff | 1.5.6+ (main b32b916, 2025-09-17) | 1.9.9999 (2026-09-06), a **full rewrite**; main still churning | 150 active jokers (81 new), 12 of ours retired to a hidden "Old Fluff" rarity, 2 deleted; new stakes, stickers, Attributes, exile, MTG Slivers, Pacts and Planeswalkers; 2x art dropped. **LICENSE deleted** | XL | **Hold**: licence question + unstable. Later, as a new `morefluff2` id |
 | Bunco | 5.1 (= Firch final) | Firch: 5.1 (abandoned). Community fork **jumbocarrot0 v5.4.8b** (2026-02-20) | No new content; ~20 behaviour fixes and tweaks, 2 edition cost changes, reworded text, art touch-ups | S/M | Partial (fixes) |
@@ -165,6 +165,8 @@ The mods with no licence file were already ported on the same basis, so the upgr
 placeholder gaps. Do it only behind a mod-version pin (§4).
 
 ### 2.2 Pokermon+ — 1.0.3 → 1.2.0-261018a (SonfiveTV/PokermonPlus, GPL-3.0)
+
+**DONE** in batch 20 (2026-10-21; "Batch 20" below, `micatro/mods/pokermonplus/PORTING.md` "1.2.0 upgrade").
 
 **Requirement:** Pokermon ≥3.8.1 (Thunderstore pins 3.9.1). It uses the `pokermon.*` namespace, so it **cannot
 be upgraded before base Pokermon.**
@@ -397,7 +399,7 @@ All are byte-identical to upstream main.
 | 17 | **DONE** (see "Batch 17" below; **the Pokermon 3.9.1 upgrade is complete**) — Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), ~~DNA seal~~, `starterq`, ~~Meteorite/Deoxys~~ (both done in new-jokers sub-batch 14), 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
 | 18 | **DONE** (see "Batches 18–19" below) — Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks. **Keep the add-on dedupe rule**: our 9 Nacho duplicates are already out of play as registered legacy definitions (checkpoint 1); when 1.7.9 drops the keys, choose `renamed` aliases (`aliases.js`) vs keeping the legacy definitions. Nacho's Megas re-keyed to `j_poke_*` there replace ours only if base registers them. Its 40 new jokers go through `mark_precedence` like the rest; Pokermon+ 1.2.0 (batch 20) too | M | 17 |
 | 19 | **DONE** (see "Batches 18–19" below) — Nacho 40 new jokers (31 load; 4 Toxic-Stall data-only; Impidimp / G-Max not loaded upstream) | L | 18 |
-| 20 | Pokermon+ 1.2.0: 12 jokers, deck reworks, legacy defs for the 7 dropped | M | 17 |
+| 20 | **DONE** (see "Batch 20" below) — Pokermon+ 1.2.0: 12 jokers, deck reworks, legacy defs for the 7 dropped | M | 17 |
 | 21 | Bunco fork balance/timing changes (gated) | S/M | 0 |
 | later | BETMMA Abilities/Spells; Olympus alt art; MoreFluff 2.x as `morefluff2` once licence and stability are settled | — | — |
 
@@ -791,3 +793,30 @@ cosmetic animations / music. Next in this plan: batch 18 (Nacho 1.7.9) and batch
   runsync, mod_version_pin, stake_unlocks_ui, designwiki_micatro_mods pass; wiki data regenerated.
 - **Pending tally after batches 18–19**: Nacho — nothing left from 1.7.9-5 but the cosmetic parts (Dip+BFP badge, better fossil UI,
   Tera Orb Stellar text, JokerDisplay). Next in this plan: batch 20 (Pokermon+ 1.2.0), batch 21 (Bunco fork balance).
+
+## Batch 20 — Pokermon+ 1.0.3 → 1.2.0-261018a: DONE (2026-10-21, branch `feat/micatro-pokermonplus-120`)
+- Upstream: SonfiveTV/PokermonPlus `main` @ **52c74167fbd2f98c4e1cf21eab1922ca3b993c2c** (2026-10-18, main.json 1.2.0-261018a). Pin
+  **1.2.0-261018a+r2** (`contentRev` 2; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermonplus/PORTING.md` "1.2.0 upgrade".
+- Data: `data120.js` (extractor + `tools/micatro/specs/pokermonplus_120.json`), `sprites120.js` (`tools/micatro/gen_pokermonplus_120_sprites.mjs`:
+  the 3.9.1 sheet cells). `data.js` (1.0.3) stays for the legacy definitions.
+- **+12 jokers**: Heatran (forged cards: Steamodded perma values), Mega Darkrai, Helioptile / Heliolisk, Minior (quantum Core), Duraludon /
+  Archaludon, Shroodle / Grafaiai (Nature, tag_triggered, the is_type rule), Canari Plush, Member Card, Mystery Box. **Reworks**: Darkrai,
+  Lechonk / Oinkologne, Melmetal, Nacli line, Cetoddle line, Stonjourner, Timer Ball. **Decks**: Pearlescent new, Shiny / Void reworked;
+  Void Sleeve reworked; Weakened sticker / Lilac flag reworked (e_limit_up).
+- **Legacy (the 7 dropped)**: Nincada, Ninjask, Shedinja, Croagunk, Toxicroak, Vullaby, Mandibuzz + the Prophetic deck and sleeve stay
+  registered with 1.0.3 behaviour, out of every pool and picker; no aliases, nothing `removed`. The hidden Nincada option is kept;
+  Croagunk / Vullaby options hidden too. **Wonder Guard**: 1.2.0 DELETED the challenge — kept and listed by the owner's ruling (its
+  eternal Shedinja is Pokermon+'s legacy one); hiding it is a one-line filter if wanted.
+- **Precedence**: no 1.2.0 species is a Pokermon joker; superseded.js unchanged (12). Not taken: the lovely patch re-parenting Pokermon's
+  Elite stake above Lilac (base Pokermon wins).
+- Not ported: Quests (upstream ships them empty), Saffron stake (empty), G-Max Duraludon (Agarmons), JokerDisplay.
+- Seams (inert without Pokermon+): run.js hook `no_interest`; Pokermon `IS_TYPE_RULES` (types.js, energy.js); `legacy` skipped by
+  modBacks / the sleeve picker / the wiki generator.
+- Art: all real (3.9.1 sheets + 1.2.0's own `other.png`); vendored (gitignored, main checkout; deploy before merging):
+  `micatro/mods/pokermonplus/assets/2x/{other,backs,stickers}-120.png`. Nothing composed.
+- Tests: `micatro/tests/mods/pokermonplus_120_test.mjs` **74 passed / 59 failed on origin/main (0199f756), 197 / 0 here**; `pokermonplus_test`
+  updated for 1.2.0 (116 / 0). Updated: addon_dedupe, addon_sticker_merge, br_lines, designwiki_micatro_mods (legacy sleeve). Engine suite
+  105 / 0 (fuzz Pokermon + all mods ok); browser: micatro_mod_version_pin 47 / 0, micatro_runsync 81 / 0, designwiki_micatro_mods 296 / 0;
+  wiki data regenerated.
+- **Pending tally after batch 20**: Pokermon+ — nothing left from 1.2.0-261018a but the disabled Quests, the empty Saffron stake, G-Max
+  Duraludon and JokerDisplay. Next in this plan: batch 21 (Bunco fork balance).

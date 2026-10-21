@@ -19,7 +19,7 @@
 import { G, card_eval_status_text, localize, play_sound, pseudorandom, pseudoseed, ease_dollars } from '../../../js/engine/core.js';
 import DATA from '../data.js';
 import { cfg, set_spoon_item } from './utils.js';
-import { has_type, type_sticker_applied, set_energy_max, energy_limit_bonus, wildcard_type } from './types.js';
+import { has_type, type_sticker_applied, set_energy_max, energy_limit_bonus, wildcard_type, IS_TYPE_RULES } from './types.js';
 
 export const energy_values = DATA.globals.energy_values;
 export const energy_max = DATA.globals.energy_max;
@@ -37,6 +37,8 @@ export function energy_matches(card, etype, include_colorless) {
     if (wildcard_type(card)) return true; // add-on wildcard Tera type (Nacho's Stellar) matches every Energy
     if ((a.extra.ptype && etype && a.extra.ptype === etype && !type_sticker_applied(card)) || a[String(etype).toLowerCase() + '_sticker']) return true;
     if (etype === 'Colorless' && (a.extra.ptype || type_sticker_applied(card)) && include_colorless) return true;
+    // (an add-on's is_type rule: Pokermon+'s Grafaiai — 3.9.1's energy_matches asks pokermon.is_type)
+    if (IS_TYPE_RULES.length && etype && IS_TYPE_RULES.some((f) => f(card, etype))) return true;
   } else if (a && (typeof a.extra === 'number' || plainScoring(a))) {
     if (a[String(etype).toLowerCase() + '_sticker']) return true;
     if (etype === 'Colorless' && type_sticker_applied(card) && include_colorless) return true;
