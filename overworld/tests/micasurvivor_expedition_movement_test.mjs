@@ -407,9 +407,9 @@ try {
 		return { x: s.x, hf: hf.x, gf: gf.x, ground: s2.x && s2.x.a, hash: G.World.zone.hash, size: JSON.stringify(s.x).length };
 	});
 	const xa = xb.x && xb.x.a && xb.x.a.p;
-	A(xb.x && xb.x.xv === 2 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash && xa && xa[0] > 10 && xa[1] === 1 && xa[3] > 0 && xa[4] === 45,
-		`a live snapshot mid-hop carries the x block v2 {xv: 2, m, z, th, a: {p: [lift ${xa && xa[0]}, verb 1 (hop), layer, phase, airtime 45 cs, hops]}} (${xb.size} chars)`, JSON.stringify(xb.x));
-	A(xb.hf && xb.hf.xv === 2 && xb.hf.a && xb.hf.a.q && xb.hf.a.q.alice && xb.hf.a.q.alice[0] > 10 && xb.gf && xb.gf.a && xb.gf.a.p && xb.gf.a.p[0] > 10,
+	A(xb.x && xb.x.xv === 3 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash && xa && xa[0] > 10 && xa[1] === 1 && xa[3] > 0 && xa[4] === 45,
+		`a live snapshot mid-hop carries the x block (v3 since D3) {xv: 3, m, z, th, a: {p: [lift ${xa && xa[0]}, verb 1 (hop), layer, phase, airtime 45 cs, hops]}} (${xb.size} chars)`, JSON.stringify(xb.x));
+	A(xb.hf && xb.hf.xv === 3 && xb.hf.a && xb.hf.a.q && xb.hf.a.q.alice && xb.hf.a.q.alice[0] > 10 && xb.gf && xb.gf.a && xb.gf.a.p && xb.gf.a.p[0] > 10,
 		'a co-op host frame carries every player\'s row by uid (the host\'s own), a guest\'s frame its own row', JSON.stringify([xb.hf, xb.gf]));
 	A(xb.ground && xb.ground.p && xb.ground.p[0] === 0 && xb.ground.p[1] === 0, 'back on the ground the row says so (lift 0, no verb)', JSON.stringify(xb.ground));
 

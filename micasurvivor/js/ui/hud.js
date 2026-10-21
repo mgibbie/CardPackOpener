@@ -140,6 +140,11 @@ G.HUD = (() => {
         ctx.fillStyle = '#ffd23f';
         const tl = new String(G.Tower.hudLine());   // eslint-disable-line no-new-wrappers
         ctx.fillText(tl, w / 2, 58);
+      } else if (G.World.zone && G.ExpClassic && G.ExpClassic.active()) {
+        // MicaSurvivor (DLC D3): an Expedition zone: zone, the final swarm's countdown and the objective (already translated)
+        ctx.font = F(800, 11);
+        ctx.fillStyle = G.ExpClassic.hudColor();
+        ctx.fillText(new String(G.ExpClassic.hudLine(pl, st)), w / 2, 58);   // eslint-disable-line no-new-wrappers
       } else {
         ctx.font = F(600, 10);
         ctx.fillStyle = '#8fa3c4';
@@ -159,7 +164,9 @@ G.HUD = (() => {
     {
       // (M5 lote 10) el bloque del centro: reloj, línea de debajo y el "Reto"
       ctx.font = F(600, 10);
-      const sub = G.Modes.rifts() || G.Tower.on ? 190 : ctx.measureText(G.I18n.t(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS')).width;
+      const xl = G.World.zone && G.ExpClassic && G.ExpClassic.active() ? G.ExpClassic.hudLine(pl, st) : null;   // (DLC D3)
+      if (xl) ctx.font = F(800, 11);
+      const sub = G.Modes.rifts() || G.Tower.on ? 190 : xl ? ctx.measureText(xl).width : ctx.measureText(G.I18n.t(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS')).width;
       const cw = Math.max(90, sub + 8);
       mark('clock', w / 2 - cw / 2, 18, cw, (adPct > 0 ? 76 : 62) - 18);
     }
@@ -309,6 +316,8 @@ G.HUD = (() => {
 
     // Eventos: cuenta atrás, flecha al Pokémon perdido / a la marca y a los duendes.
     G.Events.drawHud(ctx, w, h, pl, F);
+    // MicaSurvivor (DLC D3): the arrow to the altar / portal / shrine and a guardian's exhaustion (an Expedition zone only)
+    if (G.World.zone && G.ExpClassic) G.ExpClassic.drawHud(ctx, w, h, pl, st, F, mark);
 
     // Aviso propio al abrirse una grieta (no lo tapan los otros avisos).
     if (rift && rift.t < 4.5) {

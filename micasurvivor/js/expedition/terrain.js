@@ -46,7 +46,7 @@ G.DLC.rng = G.DLC.rng || function rng(seed) {
 };
 
 G.ExpTerrain = (() => {
-  const XV = 2;                 // the `x` block's schema: {xv, m, z, th} (D2: + `a`, the airborne state; v1 still read)
+  const XV = 3;                 // the `x` block's schema: {xv, m, z, th} (D2: + `a`, the airborne state; D3: + `c`, the timeline; v1 / v2 still read)
   const W = 120, H = 120;       // tiles per zone (5.1: "e.g. 120×120 tiles")
   const X0 = -W / 2, Y0 = -H / 2;
   const FLOOR = 0, WALL = 1, LIQUID = 2;

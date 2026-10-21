@@ -1,11 +1,14 @@
 // micasurvivor_expedition_plumbing_test.mjs — MicaSurvivor DLC D0b: the Expedition plumbing, end to end. The REAL
 // server handler (server/mp.mjs bundled like the dev server, over sqlite) behind a static server, headless Chrome, one
-// browser context per device. No gameplay yet: D0b ships the Expedition modes as "Coming soon".
+// browser context per device. D0b shipped the Expedition modes as "Coming soon"; since D3 Classic is playable (its own
+// suite: micasurvivor_expedition_classic_test.mjs), so here Survival and League are the "Coming soon" ones, and the
+// content version is DV (2 since D3).
 //   1. lazy loading: a base boot (guest and signed in) and a base run never fetch js/expedition/* (the network log) and
 //      make no Expedition request; G.Expedition.load() fetches its scripts once, in order (D1: save.js, terrain.js,
 //      D2: verbs.js, core.js), and attaches the seams
-//   2. the mode select: an "Expedition" group with Classic / Survival / League, "Coming soon", aria-disabled; reached
-//      and pressed by mouse, touch (844x390) and pad (synthetic Gamepad API): each says "coming soon" and starts nothing
+//   2. the mode select: an "Expedition" group with Classic / Survival / League; Survival and League "Coming soon",
+//      aria-disabled; reached and pressed by mouse, touch (844x390) and pad (synthetic Gamepad API): each says "coming soon"
+//      and starts nothing
 //   3. the freeze: before load the base tables are writable; after it every write to G.Moves / G.Items (and its item
 //      order) / G.Upgrades / G.Enemies / G.DEX / G.DEX_BY throws and changes nothing; its one-time cost and the sim's
 //      per-step cost frozen vs not (two seeded contexts) are measured and printed
@@ -28,6 +31,8 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
+
+const DV = 2;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -218,7 +223,7 @@ try {
 		A(st.X === 'object' && !st.loaded && st.frozen === null && st.exp === 'undefined' && st.save === 'undefined' && st.scripts === 0 && !st.movesFrozen,
 			'base boot: the registry is there (G.Expedition) but no Expedition code ran: no G.Exp / G.ExpSave, nothing frozen', JSON.stringify(st));
 		A(st.seams.length >= 4 && st.seams.every(n => n === 0), 'base boot: no listener on any seam (run.start, run.end, replay.header, spectate.snap; D1: net.frame)', st.seams.join(','));
-		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && st.on.length === 0 && st.dv === 1, 'the registry: Classic / Survival / League, none enabled yet (D0b), content version 1', JSON.stringify(st));
+		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic enabled (D3), content version ' + DV, JSON.stringify(st));
 		A(d.expFetches().length === 0, 'the network log: a base boot fetches nothing from js/expedition/', d.expFetches().join(' '));
 		// a base run: still nothing, and its run / replay / snapshot carry no dv
 		const base = await d.E(async () => {
@@ -248,15 +253,15 @@ try {
 			after: !!document.querySelector('#modes-list ~ #modes-exp-h ~ #modes-exp ~ .modes-h ~ #modes-mods'),
 		}));
 		A(ui.cards.map(c => c.id).join(',') === 'exp-classic,exp-survival,exp-league' && ui.after, 'the Expedition group: Classic, Survival, League, between the base modes and the modifiers', JSON.stringify(ui.cards.map(c => c.id)));
-		A(ui.cards.every(c => c.soon && c.aria === 'true' && !c.disabled), 'each is "Coming soon": aria-disabled, not [disabled] (so the pad still reaches it)', JSON.stringify(ui.cards));
-		A(/^Expedition · new modes \(coming soon\)$/.test(ui.h) && /^Expedition · Classic .*Coming soon$/.test(ui.cards[0].txt) && /Expedition · League/.test(ui.cards[2].txt), 'in English: "Expedition · new modes (coming soon)", "Expedition · Classic … Coming soon"', JSON.stringify([ui.h, ui.cards[0].txt]));
+		A(ui.cards.slice(1).every(c => c.soon && c.aria === 'true' && !c.disabled) && !ui.cards[0].soon && ui.cards[0].aria !== 'true', 'Survival and League are "Coming soon": aria-disabled, not [disabled] (so the pad still reaches them); Classic is playable', JSON.stringify(ui.cards));
+		A(/^Expedition$/.test(ui.h) && /^Expedition · Classic /.test(ui.cards[0].txt) && !/Coming soon/.test(ui.cards[0].txt) && /^Expedition · League .*Coming soon$/.test(ui.cards[2].txt), 'in English: "Expedition", "Expedition · League … Coming soon"', JSON.stringify([ui.h, ui.cards[0].txt, ui.cards[2].txt]));
 		const sp = await d.spanish('#modes-exp-h, #modes-exp');
 		A(!sp.length, 'no Spanish on the Expedition group', sp.join(', '));
 		// mouse
-		await d.page.click('#modes-exp [data-exp=exp-classic]');
+		await d.page.click('#modes-exp [data-exp=exp-league]');
 		await sleep(200);
 		let t = await d.toast();
-		A(t === 'Expedition is coming soon.' && await d.visible('scr-modes') && await d.E(() => G.Game.state === 'ui'), 'mouse: clicking Classic says "Expedition is coming soon." and starts nothing', t);
+		A(t === 'Expedition is coming soon.' && await d.visible('scr-modes') && await d.E(() => G.Game.state === 'ui'), 'mouse: clicking League says "Expedition is coming soon." and starts nothing', t);
 		// touch
 		await d.page.tap('#modes-exp [data-exp=exp-survival]');
 		await sleep(200);
@@ -289,10 +294,10 @@ try {
 			return { a, b, ms: Math.round(performance.now() - t0), loaded: G.Expedition.loaded, frozen: G.Expedition.frozen, init: G.Exp.inited, dv: G.Exp.dv,
 				seams: G.Hooks.SEAMS.map(s => G.Hooks.count(s)), scripts: [...document.querySelectorAll('script[data-expedition]')].map(s => s.getAttribute('src')), who: G.ExpSave.who };
 		});
-		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === 1, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv 1, initialised', JSON.stringify(ld));
-		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js)
+		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === DV, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv ' + DV + ', initialised', JSON.stringify(ld));
+		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js)
 		A(JSON.stringify(ld.scripts) === JSON.stringify(SCR) && d.expFetches().length === SCR.length && SCR.every((s, i) => d.expFetches()[i].endsWith(s)),
-			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js then core.js, once', d.expFetches().join(' '));
+			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js then core.js, once', d.expFetches().join(' '));
 		A(ld.seams.length >= 4 && ld.seams.every(n => n === 1), 'the Expedition attaches to every seam once', ld.seams.join(','));
 		console.log(`     freeze: ${ld.frozen.objects} objects in ${ld.frozen.ms} ms (load ${ld.ms} ms)`);
 		A(ld.frozen.objects > 1000 && ld.frozen.ms < 200, `the freeze is a one-time cost (${ld.frozen.objects} objects, ${ld.frozen.ms} ms)`);
@@ -422,9 +427,9 @@ try {
 			function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 			return out;
 		});
-		A(run.ok === true && run.R.mode === 'exp-classic' && run.R.dv === 1 && run.R.map === 'viridian' && run.R.diff === 'normal' && run.R.mods.length === 0, 'an Expedition run carries {mode: "exp-classic", dv: 1} (+ map, difficulty, no modifiers)', JSON.stringify(run.R));
-		A(run.snap.m === 'exp-classic' && run.snap.dv === 1, 'its live / replay snapshots carry mode + dv', JSON.stringify(run.snap));
-		A(run.h.m === 'exp-classic' && run.h.dv === 1 && run.h.map === 'viridian' && run.h.diff === 'normal' && run.meta.dv === 1 && run.meta.mode === 'exp-classic', 'its replay header and meta carry mode + dv (+ map, difficulty)', JSON.stringify([run.h, run.meta]));
+		A(run.ok === true && run.R.mode === 'exp-classic' && run.R.dv === DV && run.R.map === 'viridian' && run.R.diff === 'normal' && run.R.mods.length === 0, 'an Expedition run carries {mode: "exp-classic", dv: ' + DV + '} (+ map, difficulty, no modifiers)', JSON.stringify(run.R));
+		A(run.snap.m === 'exp-classic' && run.snap.dv === DV, 'its live / replay snapshots carry mode + dv', JSON.stringify(run.snap));
+		A(run.h.m === 'exp-classic' && run.h.dv === DV && run.h.map === 'viridian' && run.h.diff === 'normal' && run.meta.dv === DV && run.meta.mode === 'exp-classic', 'its replay header and meta carry mode + dv (+ map, difficulty)', JSON.stringify([run.h, run.meta]));
 		A(run.runs === 11 && run.runsC === 1, 'the run.end seam recorded it in the Expedition save (runs, runs per mode)', JSON.stringify([run.runs, run.runsC]));
 		A(/Expedition · Classic/.test(run.over) && run.title === 'Expedición · Clásico', 'its run-over screen names the mode (in English)', run.over.slice(0, 120));
 		const sOver = await d.spanish('#scr-over');
@@ -437,10 +442,10 @@ try {
 		// sharing it: the server's meta keeps mode + dv
 		const shared = await d.E(rid => G.Replay.share(rid), run.rid);
 		const sm = shared.id && row('msurvreplay:' + shared.id).meta;
-		A(shared.ok && sm && sm.mode === 'exp-classic' && sm.dv === 1 && sm.map === 'viridian', 'the shared replay row keeps mode + dv + map', JSON.stringify(sm));
+		A(shared.ok && sm && sm.mode === 'exp-classic' && sm.dv === DV && sm.map === 'viridian', 'the shared replay row keeps mode + dv + map', JSON.stringify(sm));
 
 		// replays and live runs of a newer dv: a notice; a known one and a base one: none
-		const notes = await d.E(async (code) => {
+		const notes = await d.E(async (code, DV) => {
 			const t = JSON.parse(await G.Replay.unpack(code));
 			const view = async (mut) => {
 				const d2 = JSON.parse(JSON.stringify(t)); mut(d2.h);
@@ -455,7 +460,7 @@ try {
 			};
 			const out = {
 				same: await view(() => {}),
-				newer: await view(h => { h.dv = 2; }),
+				newer: await view(h => { h.dv = DV + 1; }),
 				noDv: await view(h => { delete h.dv; }),
 				unknownMode: await view(h => { h.m = 'exp-future'; }),
 				base: await view(h => { h.m = 'normal'; delete h.dv; delete h.map; delete h.diff; }),
@@ -467,32 +472,32 @@ try {
 			G.Spectate.watch = real;
 			try { G.WatchUI.leave(); } catch (e) { /* fine */ }
 			return out;
-		}, run.code);
-		A(!notes.same.n && !notes.base.n, 'a replay of a known dv (1) or a base replay: no notice', JSON.stringify([notes.same, notes.base]));
-		A(notes.newer.n && notes.newer.toast === 'This replay is from a newer version of Expedition: reload the page to watch it properly.', 'a replay of a NEWER dv (2) plays with the notice (in English)', JSON.stringify(notes.newer));
+		}, run.code, DV);
+		A(!notes.same.n && !notes.base.n, 'a replay of a known dv (' + DV + ') or a base replay: no notice', JSON.stringify([notes.same, notes.base]));
+		A(notes.newer.n && notes.newer.toast === 'This replay is from a newer version of Expedition: reload the page to watch it properly.', 'a replay of a NEWER dv (' + (DV + 1) + ') plays with the notice (in English)', JSON.stringify(notes.newer));
 		A(notes.noDv.n && notes.unknownMode.n, 'an Expedition replay with no dv, or of a mode this build lacks: the notice too', JSON.stringify([notes.noDv.n, notes.unknownMode.n]));
 		A(notes.live && notes.live.n && notes.live.toast === 'This run is from a newer version of Expedition: reload the page to watch it properly.', 'a live run of a newer dv: the notice (in English)', JSON.stringify(notes.live));
 
 		// the co-op lobby: mode + dv, the join gate, the start gate
 		await d.E(() => G.Social.start());
-		const lx2 = await call('msurv-lobby-create', { dex: 25, mode: 'exp-classic', dv: 2 }, tokens.bob);
+		const lx2 = await call('msurv-lobby-create', { dex: 25, mode: 'exp-classic', dv: DV + 1 }, tokens.bob);
 		const j2 = await d.E(async id => { const r = await G.Social.joinRoom(id); return { ok: r.ok, err: r.error, en: G.T(r.error || ''), room: !!G.Social.room }; }, lx2.body.lobby.id);
-		A(!j2.ok && !j2.room && j2.en === 'Your game is out of date: reload.', 'joining an Expedition lobby of another dv (2) is refused: "Your game is out of date: reload."', JSON.stringify(j2));
+		A(!j2.ok && !j2.room && j2.en === 'Your game is out of date: reload.', 'joining an Expedition lobby of another dv (' + (DV + 1) + ') is refused: "Your game is out of date: reload."', JSON.stringify(j2));
 		A(row('msurvlobby:' + lx2.body.lobby.id).members.length === 1, '...and alice is not in it');
 		await call('msurv-lobby-leave', { id: lx2.body.lobby.id }, tokens.bob);
-		const lx1 = await call('msurv-lobby-create', { dex: 25, mode: 'exp-classic', dv: 1 }, tokens.bob);
+		const lx1 = await call('msurv-lobby-create', { dex: 25, mode: 'exp-classic', dv: DV }, tokens.bob);
 		const j1 = await d.E(async id => { const r = await G.Social.joinRoom(id); const R = G.Social.room; return { ok: r.ok, mode: R && R.mode, dv: R && R.dv }; }, lx1.body.lobby.id);
-		A(j1.ok && j1.mode === 'exp-classic' && j1.dv === 1, 'the same dv joins: the room carries mode + dv', JSON.stringify(j1));
-		const sg = await d.E(async () => {
+		A(j1.ok && j1.mode === 'exp-classic' && j1.dv === DV, 'the same dv joins: the room carries mode + dv', JSON.stringify(j1));
+		const sg = await d.E(async (DV) => {
 			const room = G.Social.room;
-			G.Flow.startCoop({ k: 'start', seed: 5, at: 1, host: room.host, members: [{ uid: 'bob' }, { uid: 'alice' }], mode: 'exp-classic', dv: 2 });
+			G.Flow.startCoop({ k: 'start', seed: 5, at: 1, host: room.host, members: [{ uid: 'bob' }, { uid: 'alice' }], mode: 'exp-classic', dv: DV + 1 });
 			await new Promise(r => setTimeout(r, 300));
 			return { st: G.Game.state, toast: (document.querySelector('.toast') || {}).innerText || '', room: !!G.Social.room };
-		});
+		}, DV);
 		A(sg.st === 'ui' && sg.toast === 'Your game is out of date: reload.' && !sg.room, 'a start of another dv is refused client-side (the toast, out of the lobby, no run)', JSON.stringify(sg));
 		await call('msurv-lobby-leave', { id: lx1.body.lobby.id }, tokens.bob);
 		const mine = await d.E(async () => { const r = await G.Social.createRoom({ mode: 'exp-classic' }); const out = { id: r && r.id, mode: r && r.mode, dv: r && r.dv }; await G.Social.leaveRoom(); return out; });
-		A(mine.mode === 'exp-classic' && mine.dv === 1, 'G.Social.createRoom({mode}) makes an Expedition lobby with this build\'s dv', JSON.stringify(mine));
+		A(mine.mode === 'exp-classic' && mine.dv === DV, 'G.Social.createRoom({mode}) makes an Expedition lobby with this build\'s dv', JSON.stringify(mine));
 		const lb0 = await call('msurv-lobby-create', { dex: 25 }, tokens.bob);
 		const jb = await d.E(async id => { const r = await G.Social.joinRoom(id); const R = G.Social.room; const out = { ok: r.ok, mode: R && R.mode, dv: R && R.dv }; await G.Social.leaveRoom(); return out; }, lb0.body.lobby.id);
 		A(jb.ok && jb.mode === null && jb.dv === null, 'a base lobby joins as before (no mode / dv)', JSON.stringify(jb));

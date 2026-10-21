@@ -32,22 +32,37 @@
  *   viewAir(s, pl, mates)   a replay / spectator view shows a snapshot's `a` (js/ui/watch-ui.js)
  *   hostAir(x, mateOf)      a co-op guest shows the host frame's `a` (js/net/coop.js onHostFrame)
  *   guestAir(m, x)          the host keeps a guest's own row (js/net/coop.js onClientFrame), for its frames and snapshots
+ *
+ * D3 (Expedition · Classic, js/expedition/classic.js): Classic is PLAYABLE, so the content version starts moving: dv 2
+ * (G.Expedition.DV; a dv-1 replay still plays: G.Expedition.replayOk). The `x` block is v3, {xv: 3, m, z, th, a, c}:
+ *   c     the zone's timeline state, from the host (G.ExpClassic.xblockC): zone start, phase (altar / guardian / portal /
+ *         legendary / won), altar charge, final swarm, events fired, difficulty, the special enemies (alphas, elites,
+ *         totems, summoners) and the boss's exhaustion. The plan itself (events, guardian, altar) is rebuilt from the seed
+ *         by every viewer (G.ExpClassic.plan / sitesOf), so it is never sent. Zone 4 is the hand-made shrine
+ *         (G.ExpClassic.build). The replay keeps c in its slow state (it changes a few times a minute).
+ *   The v1 / v2 readers are kept: no `c` = no timeline shown (terrain and air as before).
+ *   run.start       a Classic run's timeline starts (G.ExpClassic.begin); a base run drops any old one (reset)
+ *   run.end         the run-over screen gets the victory title, the map / difficulty and the zone splits against your best
+ *                   (G.ExpClassic.result), the save the splits, wins and best clear (G.ExpClassic.record), the board the
+ *                   Classic score (G.ExpClassic.score, the study's 2.12 formula until D9)
  */
 G.Exp = (() => {
-  const dv = 1;   // this file's content version: G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 2;   // this file's content version (D3: Classic playable): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 2;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
-  const READS = [1, 2];   // the schemas applyX / viewAir read (v1: D1's terrain only)
+  const XV = 3;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2, 3];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`)
+  const C = () => G.ExpClassic;
   const expRun = () => G.Modes.isExp();
 
   function init() {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) return;
+      if (!expRun()) { if (C()) C().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
+      if (cfg.mode === 'exp-classic' && C()) C().begin(cfg);   // (D3)
     });
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
@@ -56,17 +71,28 @@ G.Exp = (() => {
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); s.x = x; } }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; s.x = x; } }
       return s;
     });
     // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
     // Expedition one on its side yet (co-op starts are still base), so a guest goes by the zone the host gave it.)
     G.Hooks.on('net.frame', (f, m) => {
-      if (expRun() || (!m && G.World.zone)) { const x = xblock(); if (x) { x.a = m ? airHost(m) : airGuest(); f.x = x; } }
+      if (expRun() || (!m && G.World.zone)) {
+        const x = xblock();
+        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; f.x = x; }
+      }
       return f;
     });
     G.Hooks.on('run.end', (out, sum) => {
       if (!X.isExp(sum.mode)) return out;
+      // D3: the Classic run's outcome (read before it is recorded, so the splits compare with the old bests)
+      const res = sum.mode === 'exp-classic' && C() ? C().result() : null;
+      if (res) {
+        out.lines = out.lines.concat(res.lines);
+        out.title = res.title; out.splits = res.splits; out.won = res.won;
+        sum.score = C().score(sum); sum.won = res.won; sum.zone = res.zone;
+        C().record();
+      }
       record(sum);
       if (sum.clean && !sum.group) submitScore(sum);
       cur = null;
@@ -78,14 +104,15 @@ G.Exp = (() => {
   // ---------------- D1: the zone ----------------
   /** Generates zone `z` of this run's map from the world seed and puts it in the world (the player in its clearing). */
   function enterZone(z) {
-    const zone = G.ExpTerrain.generate({ seed: G.World.seed, map: (cur && cur.map) || G.Modes.run.map, zone: z });
+    const map = (cur && cur.map) || G.Modes.run.map;
+    const zone = C() ? C().build(G.World.seed, map, z) : G.ExpTerrain.generate({ seed: G.World.seed, map, zone: z });   // (D3: zone 4 = the shrine)
     G.World.setZone(zone);
     G.Path.clear();
     G.Minimap.reset();
     if (cur) { cur.zone = z; cur.th = zone.hash; }
     return zone;
   }
-  /** The `x` block of the current zone: {xv, m, z, th} (null outside a zone; D2 adds `a`). Terrain is never sent. */
+  /** The `x` block of the current zone: {xv, m, z, th} (null outside a zone; D2 adds `a`, D3 `c`). Terrain is never sent. */
   function xblock() {
     const zn = G.World.zone;
     return zn && zn.map ? { xv: XV, m: zn.map, z: zn.zone, th: zn.hash } : null;
@@ -150,6 +177,7 @@ G.Exp = (() => {
     if (pl) V().applyRow(pl, a && a.p);
     if (mates) for (const [name, o] of mates) V().applyRow(o.p, a && a.q ? a.q[o.raw || name] : null);
     liftEnemies(a && a.e);
+    if (C()) C().applyC(x && READS.includes(x.xv) && x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return !!a;
   }
   /** A co-op guest: the host frame's `a` (rows by uid: mateOf(uid) -> that player's puppet, or null). */
@@ -158,6 +186,7 @@ G.Exp = (() => {
     const a = x.xv >= 2 && x.a ? x.a : {};
     for (const u in a.q || {}) { const p = mateOf(u); if (p) V().applyRow(p, a.q[u]); }
     liftEnemies(a.e);
+    if (C()) C().applyC(x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return true;
   }
   /** The host: a guest's frame `x` -> its row, kept on the mate (m.xrow) and shown on its puppet. */
@@ -171,14 +200,14 @@ G.Exp = (() => {
   function applyX(seed, x) {
     if (!x || !READS.includes(x.xv) || !G.ExpTerrain.MAPS.includes(x.m)) { if (x) console.warn('[Exp] unknown terrain block', x); return null; }
     if ((G.World.seed | 0) !== (seed | 0)) return null;   // (the view has moved on to another run)
-    const zone = G.ExpTerrain.generate({ seed, map: x.m, zone: x.z });
+    const zone = C() ? C().build(seed, x.m, x.z) : G.ExpTerrain.generate({ seed, map: x.m, zone: x.z });   // (D3: zone 4 = the shrine)
     if (x.th && zone.hash !== x.th) console.warn('[Exp] terrain rebuild differs from the host (' + zone.hash + ' vs ' + x.th + ')');
     G.World.setZone(zone);
     G.Minimap.reset();
     return zone.hash;
   }
 
-  /** The run's progress into the Expedition save (never the base save). */
+  /** The run's progress into the Expedition save (never the base save). (D3: Classic's splits / wins: G.ExpClassic.record) */
   function record(sum) {
     const S = G.ExpSave;
     S.bump('runs');
@@ -188,8 +217,8 @@ G.Exp = (() => {
   }
 
   /**
-   * A mark on the Expedition board (per map + difficulty). D0b's score is the time survived (D9 brings the
-   * Expedition score formula). -> {ok, better, best, rank} | {error}
+   * A mark on the Expedition board (per map + difficulty). D0b's score is the time survived; D3's Classic runs send the
+   * study's Classic score (G.ExpClassic.score); D9 brings the boards' UI and the tiers. -> {ok, better, best, rank} | {error}
    */
   async function submitScore(m) {
     const A = G.MicaAccount;

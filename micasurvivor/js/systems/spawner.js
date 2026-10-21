@@ -120,6 +120,8 @@ G.Spawner = (() => {
     // su propio ritmo: ni los jefes de siempre, ni las oleadas, ni las mareas normales.
     if (G.BossRush && G.BossRush.on) { G.BossRush.update(dt, anchor()); return; }
     if (G.Tower && G.Tower.on) { G.Tower.update(dt, anchor); return; }
+    // MicaSurvivor (DLC D3): an Expedition run has its own zone timeline and trickle (js/expedition/classic.js)
+    if (G.Modes.isExp()) { if (G.ExpClassic) G.ExpClassic.update(dt, players, t); return; }
 
     // Precarga lo que va a salir en el próximo minuto.
     preloadT -= dt;
