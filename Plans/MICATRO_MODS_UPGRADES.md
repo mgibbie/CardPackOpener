@@ -19,10 +19,10 @@ Scratch clones are under `%TEMP%/claude/` (`modres/`, `pkr/`, `bunco/`, `mf/`) a
 | Pokermon+ | 1.0.3-251101e | 1.2.0-261018a (Thunderstore 1.2.4, 2026-10-18) | +12 jokers, −7 (moved to base or other add-ons), Pearlescent deck, Shiny/Void deck reworks, Quests (half disabled upstream) | M | **DONE** (batch 20, 2026-10-21: 1.2.0-261018a @ 52c7416, pin 1.2.0-261018a+r2) |
 | Nacho's Pokermon Dip | 1.6.4 | v1.7.9 (2026-07-27); main 1.7.9-5 | +40 jokers; 10 of ours **moved into base Pokermon** (key collisions); Elite stake moved to base; ~10 reworks | L | **DONE** (batches 18–19, 2026-10-21: 1.7.9-5 @ 904ae39, pin 1.7.9-5+r2) |
 | MoreFluff | 1.5.6+ (main b32b916, 2025-09-17) | 1.9.9999 (2026-09-06), a **full rewrite**; main still churning | 150 active jokers (81 new), 12 of ours retired to a hidden "Old Fluff" rarity, 2 deleted; new stakes, stickers, Attributes, exile, MTG Slivers, Pacts and Planeswalkers; 2x art dropped. **LICENSE deleted** | XL | **Hold**: licence question + unstable. Later, as a new `morefluff2` id |
-| Bunco | 5.1 (= Firch final) | Firch: 5.1 (abandoned). Community fork **jumbocarrot0 v5.4.8b** (2026-02-20) | No new content; ~20 behaviour fixes and tweaks, 2 edition cost changes, reworded text, art touch-ups | S/M | Partial (fixes) |
+| Bunco | 5.1 (= Firch final) | Firch: 5.1 (abandoned). Community fork **jumbocarrot0 v5.4.8b** (2026-02-20) | No new content; ~20 behaviour fixes and tweaks, 2 edition cost changes, reworded text, art touch-ups | S/M | **DONE** (batches 2 + 21, 2026-10-21: 5.4.8b @ 9643e85, pin 5.4.8b-JumboFork+r1) |
 | BETMMA | Vouchers 3.0.2.3 | same (byte-identical) | Nothing for the parts we ported. Sibling modules never ported: Abilities (28 + 4 vouchers), Spells (23 + 1 + 2) | — (new: L) | Up to date. Abilities/Spells optional new content |
-| Reverie | labelled "1.0 (old-API)", **really v1.2.6** | v1.2.6 (2024-07-25) is the latest release; main is 1.3.0 unreleased (2024-10-09) | main: SMODS-1.0 port, 2 sleeves, Jovial M (Cryptid only), Morsel food list +Bunco foods, coupon/Nopeus fixes | S | Partial (sleeves, food list, label) |
-| Inscrybed | 1.0 (old file) | LunaAstraCassiopeia/LunasBalatroMods (2024-10-12, MIT) | +1 joker (Mycologists); the author's own bug fixes and rebalance, which **differ from our intended-design fixes** | S | Partial (Mycologists; owner decides on balance) |
+| Reverie | labelled "1.0 (old-API)", **really v1.2.6** | v1.2.6 (2024-07-25) is the latest release; main is 1.3.0 unreleased (2024-10-09) | main: SMODS-1.0 port, 2 sleeves, Jovial M (Cryptid only), Morsel food list +Bunco foods, coupon/Nopeus fixes | S | **DONE** (batch 3, 2026-10-21: label 1.2.6, sleeves + Bunco foods from main @ 3728d64, pin 1.2.6+r1) |
+| Inscrybed | 1.0 (old file) | LunaAstraCassiopeia/LunasBalatroMods (2024-10-12, MIT) | +1 joker (Mycologists); the author's own bug fixes and rebalance, which **differ from our intended-design fixes** | S | **DONE** (batch 3, 2026-10-21: Mycologists @ 88b7c9c, pin 1.0+r1; rebalance not taken, owner rule) |
 | Milatro | 1.1.0 | 1.1.0 (identical); unreleased `v2-beta` branch (2.DEV.0, stale since 2025-06) | v2-beta: 60 jokers (30 new), 5 blinds, 5 consumables, 5 decks, 4 vouchers, 3 tags, 1 enhancement | (M) | Skip for now (unreleased, abandoned branch) |
 | MikasBalatro | 0.13.3 | 0.13.3 (identical; last real release 2024-05) | `development` branch: an unfinished SMODS-1.0 rewrite (13 of 60 jokers, 2024-12) | — | Up to date |
 | Risk of Jesters | 1.0.0 | identical (dvrp0, 2024-05) | — (lshtech fork is only an API port) | — | Up to date |
@@ -386,8 +386,8 @@ All are byte-identical to upstream main.
 |---|---|---|---|
 | 0 | **Mod-version pin in recipes** (§4) + fix Reverie's label to 1.2.6 | S | — |
 | 1 | Merge the placeholder-art branch (`fix/micatro-placeholder-art`, Pokermon 3.9.1 sheets) | S | — |
-| 2 | Bunco fork pure fixes (Spectrum 6+, Flame/Indigo consumables, rankless guards, Eternal/Breaking Tag, Registration Plate, Bounty Hunter sell) + extractor stub | S | 0 |
-| 3 | Reverie: 2 sleeves + Bunco foods in Morsel; Inscrybed: Mycologists | S | 0 |
+| 2 | **DONE** (see "Batches 2, 3, 21" below) — Bunco fork pure fixes (Spectrum 6+, Flame/Indigo consumables, rankless guards, Eternal/Breaking Tag, Registration Plate, Bounty Hunter sell) + extractor stub | S | 0 |
+| 3 | **DONE** (see "Batches 2, 3, 21" below) — Reverie: 2 sleeves + Bunco foods in Morsel; Inscrybed: Mycologists | S | 0 |
 | 4 | Pokermon engine seams: `scale_card`, Attributes + attribute pools, `poll_object` weights, new contexts, `poke_energy`/`poke_item` set aliases | M | 0 |
 | 5 | **DONE** (see "Batch 5" below) — Pokermon 3.9.1 data re-extract: rarities, costs, configs, gates, the cgoose → iridescent_hacker alias; refresh test expectations; vendor the 39 changed + 21 new atlases | M | 4 |
 | 6–8 | **DONE** (#773 files 01–08, #774 09–17, batch 8 18–34 + zother/zmissingno): 435 existing jokers on 3.9.1, 18 held (see "Batches 6–8" below) | 3 × L | 5 |
@@ -400,7 +400,7 @@ All are byte-identical to upstream main.
 | 18 | **DONE** (see "Batches 18–19" below) — Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks. **Keep the add-on dedupe rule**: our 9 Nacho duplicates are already out of play as registered legacy definitions (checkpoint 1); when 1.7.9 drops the keys, choose `renamed` aliases (`aliases.js`) vs keeping the legacy definitions. Nacho's Megas re-keyed to `j_poke_*` there replace ours only if base registers them. Its 40 new jokers go through `mark_precedence` like the rest; Pokermon+ 1.2.0 (batch 20) too | M | 17 |
 | 19 | **DONE** (see "Batches 18–19" below) — Nacho 40 new jokers (31 load; 4 Toxic-Stall data-only; Impidimp / G-Max not loaded upstream) | L | 18 |
 | 20 | **DONE** (see "Batch 20" below) — Pokermon+ 1.2.0: 12 jokers, deck reworks, legacy defs for the 7 dropped | M | 17 |
-| 21 | Bunco fork balance/timing changes (gated) | S/M | 0 |
+| 21 | **DONE** (see "Batches 2, 3, 21" below) — Bunco fork balance/timing changes (gated: by the version pin, no mod option) | S/M | 0 |
 | later | BETMMA Abilities/Spells; Olympus alt art; MoreFluff 2.x as `morefluff2` once licence and stability are settled | — | — |
 
 ## 4. Saves and replays across mod-version changes
@@ -820,3 +820,35 @@ cosmetic animations / music. Next in this plan: batch 18 (Nacho 1.7.9) and batch
   wiki data regenerated.
 - **Pending tally after batch 20**: Pokermon+ — nothing left from 1.2.0-261018a but the disabled Quests, the empty Saffron stake, G-Max
   Duraludon and JokerDisplay. Next in this plan: batch 21 (Bunco fork balance).
+
+## Batches 2, 3, 21 — Bunco 5.4.8b fork, Reverie 1.2.6 + 1.3.0 partial, Inscrybed Mycologists: DONE (2026-10-21, branch `feat/micatro-mod-catchups`)
+- **Bunco** (batches 2 + 21): jumbocarrot0/Bunco **v5.4.8b-JumboFork = 9643e85326f2ba796ae2b0e043e2e45ec5d0e953** (2026-02-20) on top
+  of Firch 5.1 (016e4cd). Pin **5.4.8b-JumboFork+r1** (`LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/bunco/PORTING.md`.
+  - Batch 2 taken: Spectrum 6+, The Flame / Indigo Tower spare consumables, rankless / suitless guards (7 jokers, The Tine,
+    Chartreuse Crown, Filigree), Eternal / Perishable Tag eligibility, Breaking Tag + Luchador immediate, Registration Plate debuff
+    re-roll, The Deal (5+ cards, 6-card Deals). Bounty Hunter sell: nothing to port (a fix of the fork's own rebuild).
+  - Batch 21 taken: Gameplan per adjacent joker, Conquest single pick + mark, Fingerprints (winning hand, no debuffed), Games
+    Collector once per group per round, Puzzle Board needs a selection, Dogs (rankless breaks), Vandalism via the stay_flipped
+    context (Blueprint copies roll; `smods_seams: ['stay_flipped']`), Domino neighbour filter, Prehistoric snapshots, The Prince
+    flag, Glitter +$3 / Fluorescent +$1, The Deal above Spectrum Five. Shop-only stickers: already so.
+  - **Gating: the version pin only, no mod option** (the pin gates resumes and replays; nothing asks for an option).
+  - Not copied: The Mask's always-false `in_pool`, The Deal's early return (fork bugs); the Fiendish / Bounty Hunter rebuild (sums
+    the answers of several copies: a bug — ours keeps the ordered walk). Kept ours: Sledgehammer, Dread, Knight, Juggalo, Loan
+    Shark, Pawn; Protester adopts the fork's (also skips debuffed discards).
+  - Port fix found: every Bunco joker is `perishable_compat` (Steamodded's default the port had missed).
+  - Text: 29 of the 37 reworded descriptions (the ones keeping their `#n#`). Art: the only changed sheets, under new names —
+    `micatro/mods/bunco/assets/2x/Jokers/Jokers-548b.png` (exotic Cassette / Crop Circles / Slothful variants) and
+    `.../Enhancements/Enhancements-548b.png` (lighter Cracker); the rest of the "101 touch-ups" are pixel-identical re-saves.
+  - Extractor: `SMODS.find_mod` stub in `tools/micatro/extract_mod_data.cjs` (the fork extracts; data.js hand-patched, see PORTING).
+- **Reverie** (batch 3): label **1.2.6** (byte-identical to the tag) + from main **3728d64** (1.3.0, 2024-10-10): the Filmstrip and
+  Stamp sleeves (+ `_alt`s and the Mega Stamp Tag `tag_rev_mega_stamp`), Bunco's Fondue / Starfruit in Morsel (+ the morseled
+  Fondue's second hand). Pin **1.2.6+r1**. Art: `micatro/mods/reverie/assets/2x/sleeves.png`. Details: `micatro/mods/reverie/PORTING.md`.
+- **Inscrybed** (batch 3): Mycologists from LunaAstraCassiopeia/LunasBalatroMods **88b7c9c** (2024-10-12). Pin **1.0+r1**; the
+  author's rebalance NOT taken (owner rule). Art: `micatro/mods/inscrybed/assets/2x/j_mycologist.png`. Details: `micatro/mods/inscrybed/PORTING.md`.
+- **Art to deploy before merging** (gitignored, main checkout): the 4 PNGs above.
+- Tests: `micatro/tests/mods/mod_catchups_test.mjs` **20 passed / 48 failed on origin/main (0199f756), 81 / 0 here**; updated
+  `bunco_test` (hand order) and `bunco_jokers_a_test` (Dogs + Stone). micatro_engine_test 105 / 0 (fuzz, all mods), modpin 38 / 0,
+  micatro_mod_version_pin 47 / 0, micatro_mods_ui 50 / 0, designwiki_micatro_mods 296 / 0 (wiki data regenerated).
+- **Pending tally after batches 2, 3, 21**: Bunco — the fork changes outside §2.5's list (PORTING.md "Not taken"); Reverie — nothing
+  from 1.3.0 that applies to Micatro (Jovial M needs Cryptid); Inscrybed — nothing (rebalance declined). Next in this plan: batch 20
+  (Pokermon+ 1.2.0); later: BETMMA Abilities / Spells, Olympus alt art.

@@ -48,7 +48,11 @@ import {
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import LOC from './loc.js';
-import { joker, find, say, forced_message, event, big_juice, SEED, HUGE, FLEURONS, HALBERDS } from './util.js';
+import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
+import {
+  joker, find, say, forced_message, event, big_juice, SEED, HUGE, FLEURONS, HALBERDS, has_no_rank, has_no_suit, has_any_suit,
+  exotic_in_pool,
+} from './util.js';
 
 export const centers = [];
 const J = (slug, def) => centers.push(joker(slug, def));
@@ -86,8 +90,12 @@ J('cassette', {
     info_queue.push({ set: 'Other', key: exotic ? 'bunc_dark_suits_exotic' : 'bunc_dark_suits' });
     return { key: s.key + '_b', main_end, vars };
   },
-  /** B side: the next atlas cell (Lua update / set_sprites: coordinate(1) / coordinate(2)). */
-  get_pos: (s, card) => (card && card.ability && card.ability.extra && card.ability.extra.side === 'B' ? { x: 1, y: 0 } : { x: 0, y: 0 }),
+  /** B side: the next atlas cell (Lua update / set_sprites: coordinate(1) / coordinate(2)); once exotics are on, 5.4.8b's
+   * exotic-suit art (cells 71 / 72, bunc_cassette_sprite_change). */
+  get_pos(s, card) {
+    const b = card && card.ability && card.ability.extra && card.ability.extra.side === 'B' ? 1 : 0;
+    return { x: b, y: exotic_in_pool() ? 7 : 0 };
+  },
   calculate(s, card, ctx) {
     if (ctx.pre_discard && !ctx.blueprint) card.flip();
     if (ctx.flip && !ctx.blueprint) {
@@ -139,21 +147,27 @@ J('voxel', {
 
 // Crop Circles
 J('crop_circles', {
+  /** 5.4.8b: the Fleurons art (cell 73) once exotics are on. */
+  get_pos: (s) => (exotic_in_pool() ? { x: 2, y: 7 } : s.pos),
   loc_vars(s, iq, card) {
     if (in_collection(card) || (G.GAME && G.GAME.Exotic)) return { key: s.key + '_exotic' };
     return {};
   },
   calculate(s, card, ctx) {
     if (ctx.individual && ctx.cardarea === G.play) {
+      // (5.4.8b: the suit part and the rank part are guarded separately — suitless / rankless cards, not only Stone)
       const oc = ctx.other_card;
-      if (oc.config.center !== P_CENTERS.m_stone) {
-        const id = oc.get_id();
-        const mid = id === 12 || id === 10 || id === 9 || id === 6;
-        if (oc.base.suit === FLEURONS) return { mult: id === 8 ? 6 : mid ? 5 : 4, card };
-        if (oc.base.suit === 'Clubs') return { mult: id === 8 ? 5 : mid ? 4 : 3, card };
-        if (id === 8) return { mult: 2, card };
-        if (mid) return { mult: 1, card };
+      let suit_mult = 0, rank_mult = 0;
+      if (!has_no_suit(oc)) {
+        if (oc.base.suit === FLEURONS) suit_mult += 4;
+        else if (oc.base.suit === 'Clubs') suit_mult += 3;
       }
+      if (!has_no_rank(oc)) {
+        const id = oc.get_id();
+        if (id === 8) rank_mult += 2;
+        else if (id === 12 || id === 10 || id === 9 || id === 6) rank_mult += 1;
+      }
+      if (suit_mult + rank_mult > 0) return { mult: suit_mult + rank_mult, card };
     }
   },
 });
@@ -201,19 +215,23 @@ J('dread', {
   },
 });
 
-// Prehistoric
+// Prehistoric (5.4.8b: remembers each scored card AS IT WAS — {rank, suit, has_any_suit} — not the card itself, so a
+// card changed later doesn't change the list; rankless or suitless cards are never remembered. A remembered Wild Card
+// matches any suit.)
 J('prehistoric', {
   config: { extra: { mult: 16, card_list: [] } },
   loc_vars: (s, iq, card) => ({ vars: [E(card).mult] }),
   calculate(s, card, ctx) {
     if (ctx.individual && ctx.cardarea === G.play) {
       const oc = ctx.other_card;
-      for (const v of E(card).card_list.map(deref)) {
-        if (v && v.get_id() === oc.get_id() && (v.is_suit(oc.base.suit) || oc.config.center === P_CENTERS.m_wild) && oc.config.center !== P_CENTERS.m_stone) {
+      for (const v of E(card).card_list) {
+        if (v && typeof v === 'object' && oc.get_id() === v.rank && (v.has_any_suit || oc.is_suit(v.suit))) {
           return { mult: E(card).mult, card };
         }
       }
-      if (!ctx.blueprint && oc.config.center !== P_CENTERS.m_stone) E(card).card_list.push(ref(oc));
+      if (!ctx.blueprint && !(has_no_suit(oc) || has_no_rank(oc))) {
+        E(card).card_list.push({ rank: oc.get_id(), suit: oc.base.suit, has_any_suit: has_any_suit(oc), ID: oc.unique_val });
+      }
     }
     if (ctx.end_of_round && !ctx.other_card) E(card).card_list = [];
   },
@@ -346,7 +364,9 @@ J('dogs_playing_poker', {
       let condition = true;
       if (ctx.scoring_hand) {
         for (const c of ctx.scoring_hand) {
-          if ((c.get_id() >= 6 || c.get_id() < 2) && c.config.center !== P_CENTERS.m_stone) condition = false;
+          // (5.4.8b: only 2-5 count, and a rankless card breaks it)
+          const id = c.get_id();
+          if (!(id === 2 || id === 3 || id === 4 || id === 5) || has_no_rank(c)) condition = false;
         }
       }
       if (condition) return { Xmult_mod: E(card).xmult, card, message: localize({ type: 'variable', key: 'a_xmult', vars: [E(card).xmult] }) };
@@ -429,17 +449,24 @@ J('doorhanger', { loc_vars: () => ({ vars: [] }) });
 J('fingerprints', {
   loc_vars: (s, iq, card) => ({ vars: [E(card).bonus] }),
   calculate(s, card, ctx) {
+    // (5.4.8b: only the hand that beats the blind marks its cards, debuffed cards are skipped, "Upgrade!" shows then)
     if (ctx.after && ctx.scoring_name !== undefined && ctx.scoring_hand && !ctx.blueprint) {
-      E(card).scoring_card_set = {};
-      for (const c of ctx.scoring_hand) E(card).scoring_card_set[c.unique_val] = true;
+      if (BN.gte(BN.add(G.GAME.chips, G.GAME.last_hand_total || 0), G.GAME.blind.chips)) {
+        E(card).scoring_card_set = {};
+        for (const c of ctx.scoring_hand) {
+          if (c.debuff) continue;
+          event(() => big_juice(c));
+          E(card).scoring_card_set[c.unique_val] = true;
+        }
+        forced_message(localize('k_upgrade_ex'), card, 'CHIPS', true);
+      }
     }
-    if (eor(ctx) && !ctx.blueprint) {
-      const set = E(card).scoring_card_set || {};
+    if (eor(ctx) && !ctx.blueprint && E(card).scoring_card_set) {
+      const set = E(card).scoring_card_set;
       for (const v of G.playing_cards) {
         if (set[v.unique_val]) v.ability.temporary_extra_chips = (v.ability.temporary_extra_chips || 0) + E(card).bonus;
       }
       E(card).scoring_card_set = undefined;
-      forced_message(localize('k_upgrade_ex'), card, 'CHIPS', true);
     }
   },
 });
@@ -452,9 +479,10 @@ J('zero_shapiro', {
   },
   calculate(s, card, ctx) {
     if (ctx.individual && ctx.cardarea === G.play) {
+      // (5.4.8b: Kings, Queens, Jacks or any rankless card — 5.1 named Stone Cards / id 0 only)
       const oc = ctx.other_card;
-      const v = oc.base.value;
-      if (oc.config.center.key === 'm_stone' || oc.get_id() === 0 || (isNaN(Number(v)) && v !== 'Ace')) {
+      const id = oc.get_id();
+      if (id === 11 || id === 12 || id === 13 || has_no_rank(oc)) {
         if (pseudorandom('zero_shapiro' + SEED()) < G.GAME.probabilities.normal / E(card).odds) {
           return {
             extra: {
@@ -510,7 +538,7 @@ function plate_roll(card) {
 J('registration_plate', {
   config: { extra: { combination: '', card_list: [], ranks: [] } },
   loc_vars: (s, iq, card) => ({ vars: [E(card).combination === '' ? '2, 3, 4, 5 ' + localize('bunc_word_and') + ' 6' : E(card).combination] }),
-  add_to_deck: (s, card) => plate_roll(card),
+  add_to_deck(s, card, from_debuff) { if (!from_debuff) plate_roll(card); }, // (5.4.8b: a debuff cycle keeps the ranks)
   calculate(s, card, ctx) {
     if (eor(ctx) && G.deck.cards.length !== 0) plate_roll(card);
   },

@@ -43,6 +43,7 @@ import { check_for_buy_space, STATES } from '../../js/engine/run.js';
 import { playing_card_joker_effects } from '../../js/engine/consumables.js';
 import {
   joker, find, say, event, forced_message, big_juice, exotic_in_pool, enable_exotics, link_cards, SEED, FLEURONS, HALBERDS,
+  has_no_rank, has_no_suit,
 } from './util.js';
 
 const nx = (t) => !!(t && t.length);
@@ -152,14 +153,15 @@ function domino_acquire(c) {
 J('domino', {
   calculate(s, card, ctx) {
     if ((ctx.buying_card || ctx.getting_booster_card) && ctx.pre_cardarea && !ctx.blueprint) {
+      // (5.4.8b: a neighbour is taken only if it is a card Domino can acquire — a consumable, a playing card or a
+      // joker, never a voucher / booster — and Domino juices only when it took one)
+      const takeable = (c) => !!(c.ability.consumeable || c.ability.set === 'Enhanced' || c.ability.set === 'Default' || c.ability.set === 'Joker');
       if (ctx.pre_card_pos) {
-        if (ctx.pre_card_left && ctx.pre_card_left.area !== G.consumeables) {
-          if (ctx.pre_card_left.area && check_for_buy_space(ctx.pre_card_left)) domino_acquire(ctx.pre_card_left);
-          big_juice(card);
-        }
-        if (ctx.pre_card_right && ctx.pre_card_right.area !== G.consumeables) {
-          if (ctx.pre_card_right.area && check_for_buy_space(ctx.pre_card_right)) domino_acquire(ctx.pre_card_right);
-          big_juice(card);
+        for (const nb of [ctx.pre_card_left, ctx.pre_card_right]) {
+          if (nb && nb.area !== G.consumeables && nb.area && check_for_buy_space(nb) && takeable(nb)) {
+            domino_acquire(nb);
+            big_juice(card);
+          }
         }
         if (PACK_STATES_LUA().includes(G.STATE) && ctx.pre_cardarea === G.pack_cards && ctx.pre_cardarea.cards.length === 0) G.GAME.pack_choices = 0;
       }
@@ -264,10 +266,20 @@ J('headache', {
 J('games_collector', {
   loc_vars(s, iq, card) { iq.push(LINKED); return { vars: [card.ability.extra.bonus, card.ability.extra.chips] }; },
   calculate(s, card, ctx) {
+    // (5.4.8b: +10 once per group per round — drawn_this_round, cleared at the end of the round)
     if (ctx.groups_drawn && !ctx.blueprint) {
-      for (const _ of ctx.groups_drawn) card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.bonus; // eslint-disable-line no-unused-vars
-      forced_message(localize('k_upgrade_ex'), card, 'CHIPS');
+      const seen = card.ability.extra.drawn_this_round = card.ability.extra.drawn_this_round || {};
+      let upgrade = false;
+      for (const g of ctx.groups_drawn) {
+        const id = g && typeof g === 'object' ? g.id : g;
+        if (seen[id]) continue;
+        seen[id] = true;
+        card.ability.extra.chips = card.ability.extra.chips + card.ability.extra.bonus;
+        upgrade = true;
+      }
+      if (upgrade) forced_message(localize('k_upgrade_ex'), card, 'CHIPS');
     }
+    if (ctx.end_of_round && !ctx.blueprint) card.ability.extra.drawn_this_round = {};
     if (ctx.joker_main && card.ability.extra.chips !== 0) {
       return { message: localize({ type: 'variable', key: 'a_chips', vars: [card.ability.extra.chips] }), chip_mod: card.ability.extra.chips, card };
     }
@@ -291,8 +303,8 @@ J('jumper', {
 // Stylophone
 const INSTRUMENT = { Spades: 'bunc_spade', Clubs: 'bunc_club', Hearts: 'bunc_heart', Diamonds: 'bunc_diamond', [FLEURONS]: 'bunc_fleuron', [HALBERDS]: 'bunc_halberd' };
 function play_stylophone(other_card) {
-  if (other_card.config.center !== P_CENTERS.m_stone) {
-    const instrument = INSTRUMENT[other_card.base.suit] || 'bunc_stone';
+  if (!has_no_rank(other_card)) {
+    const instrument = (!has_no_suit(other_card) && INSTRUMENT[other_card.base.suit]) || 'bunc_stone';
     event(() => play_sound(instrument, 2 ** (other_card.get_id() / 12), 2.0));
   } else event(() => play_sound('bunc_stone', 1.0, 2.0));
 }
@@ -300,7 +312,7 @@ J('stylophone', {
   calculate(s, card, ctx) {
     if (ctx.individual && ctx.cardarea === G.play) {
       play_stylophone(ctx.other_card);
-      if (ctx.other_card.config.center !== P_CENTERS.m_stone) return { mult: ctx.other_card.get_id() * card.ability.extra.x, card };
+      if (!has_no_rank(ctx.other_card)) return { mult: ctx.other_card.get_id() * card.ability.extra.x, card }; // (5.4.8b: any rankless card)
     }
     // (context.click — Card:click on a hand card — only juices and plays the note: cosmetic, skipped)
   },

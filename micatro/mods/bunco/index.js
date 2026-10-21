@@ -1,6 +1,7 @@
 /**
  * Bunco 5.1 (Firch, RENREN, Peas, minichibis, J.D., Guwahavel, Ciirulean & ejwu; Steamodded 1.0), rebuilt
- * natively for Micatro. Source: `Desktop/mods off/Bunco-main` — Bunco.lua (all the content), lovely.toml
+ * natively for Micatro, caught up to the jumbocarrot0 fork v5.4.8b (its fixes and balance changes: PORTING.md).
+ * Source: `Desktop/mods off/Bunco-main` — Bunco.lua (all the content), lovely.toml
  * (~160 patches), localization/default.lua, assets/. Keys keep the mod's prefix (`j_bunc_...`, `c_bunc_...`).
  * Static numbers come from data.js / loc.js (generated from the mod's own Lua by tools/micatro/extract_mod_data.cjs,
  * spec tools/micatro/specs/bunco.json); behaviour is ported by hand in the content modules:
@@ -81,10 +82,14 @@ for (const name of new Set(PARTS.flatMap((p) => Object.keys(p.hooks || {})))) {
   } else hooks[name] = (...a) => { let out; for (const f of fns) { const r = f(...a); if (out === undefined && r !== undefined) out = r; } return out; };
 }
 
+// The 5.4.8b sheets that differ from 5.1's (new names: the 5.1 files stay deployed for old clients): Jokers.png adds the
+// exotic Cassette / Crop Circles / Slothful cells (71-74; the jokers' get_pos), Enhancements.png the lighter Cracker Card.
+// (Every other 5.4.8b sheet is pixel-identical to 5.1's.)
+const ART_548B = { 'Jokers/Jokers.png': 'Jokers/Jokers-548b.png', 'Enhancements/Enhancements.png': 'Enhancements/Enhancements-548b.png' };
 const atlases = {};
 for (const a of Object.values(DATA.atlases)) {
   if (a.key === 'modicon' || /^bunco_skins_/.test(a.key)) continue; // (deck skins: a later phase)
-  atlases[a.key] = { src: ART + a.path, px: a.px, py: a.py, ...(a.frames ? { frames: a.frames } : {}) };
+  atlases[a.key] = { src: ART + (ART_548B[a.path] || a.path), px: a.px, py: a.py, ...(a.frames ? { frames: a.frames } : {}) };
 }
 const sounds = {};
 for (const s of Object.values(DATA.sounds)) sounds[s.key] = { src: SND + s.path, ...(s.key === 'bunc_music_virtual' ? { music: true } : {}) };
@@ -95,7 +100,14 @@ export const BUNCO = registerMod({
   id: MOD_ID,
   name: 'Bunco',
   prefix: 'bunc',
-  version: '5.1',
+  // jumbocarrot0/Bunco v5.4.8b-JumboFork (9643e85, 2026-02-20; Bunco.json "5.4.8b~JumboFork"): its fixes and balance /
+  // timing changes on top of Firch's 5.1 (PORTING.md "5.4.8b fork catch-up"). contentRev 1 = what is OURS on top:
+  // the port's own fixes the fork lacks (Sledgehammer, Dread, Knight, Juggalo), the fork bugs not copied (The Mask's
+  // in_pool, The Deal's early return, the Fiendish / Bounty Hunter summing), and Steamodded's perishable_compat default.
+  version: '5.4.8b-JumboFork',
+  contentRev: 1,
+  // (Vandalism listens to Steamodded's stay_flipped context, as in 5.4.8b; no other seam context)
+  smods_seams: ['stay_flipped'],
   by: 'Firch, RENREN, Peas, minichibis, J.D., Guwahavel, Ciirulean & ejwu (rebuilt for Micatro)',
   badge_colour: '#5C76A8',
   description: '80 jokers, two exotic suits (Fleurons, Halberds), Spectrum hands, Polymino cards that link cards together, Blind and Virtual packs, 25 blinds, 16 tags and more.',
