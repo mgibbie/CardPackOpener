@@ -102,7 +102,7 @@ const MICATRO_STICKER_CATS = ['win', 'poke', 'nuz', 'mono', 'both'];
 // their win stickers say (micatro/js/ui/stakeunlocks.js; everyone else unlocks per deck, Balatro's rule). Extra accounts
 // can be added with the MICATRO_ALL_STAKES env var (comma-separated). Server-side only: get / put ANSWER `allStakes: true`
 // for them; nothing a client sends sets it, and the row never stores it.
-const MICATRO_ALL_STAKES = ['kgib', 'jfost711'];
+const MICATRO_ALL_STAKES = ['kgib', 'jfost711', 'mgibbie'];
 const micatroAllStakes = (username) => {
 	const extra = (typeof process !== 'undefined' && process.env && process.env.MICATRO_ALL_STAKES) || '';
 	const list = [...MICATRO_ALL_STAKES, ...String(extra).split(',')].map(s => s.trim().toLowerCase()).filter(Boolean);
