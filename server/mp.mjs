@@ -1540,7 +1540,7 @@ export default async function handler(req, env) {
 
 	// ---------- Bug Report Review list (playtesters -> owner) ----------
 	// The to-do inbox's twin for BUGS (2026-10-01). The playtesters (MP_BUG_REPORTERS,
-	// default Instinct + Muse, and remytest — the account Remy's bot signs in with)
+	// default Instinct + Muse, remytest — the account Remy's bot signs in with, and instinctgauntlet — Instinct's second account)
 	// and the owner file reports from /bugs/, the in-game
 	// OPTIONS > REPORT A BUG, or straight at this API (Remy's bot). Each report is
 	// its OWN row ('bug:<ts>-<user>') — reports run to 10KB+ of markdown, and a
@@ -1549,7 +1549,7 @@ export default async function handler(req, env) {
 	// reads them, fixes, and marks them done. The reporter comes from the verified
 	// token, never the client.
 	if (action === 'bug-add' || action === 'bug-mine' || action === 'bug-list' || action === 'bug-done') {
-		const reporters = (process.env.MP_BUG_REPORTERS || 'instinctloretest0918,remygl,remytest').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+		const reporters = (process.env.MP_BUG_REPORTERS || 'instinctloretest0918,remygl,remytest,instinctgauntlet').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 		const canFile = isAdmin(username) || reporters.includes(username);
 		const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 		if (action === 'bug-add') {
