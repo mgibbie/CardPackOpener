@@ -49,6 +49,7 @@ import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { unownPuzzleSpecial } from './unown_puzzle.js';
+import { checkRelicanthWailord, shouldDoBrailleRegicePuzzle } from './braille_puzzles.js';
 import { startCrystalSlots } from './ow_crystalslots.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
 import { startCardFlip } from './minigames/cardflip/cardflip.js';
@@ -442,12 +443,14 @@ export function applyRestedSceneOutcomes(mapName) {
 
 export async function runMapSetupScripts(isBoot) {
 	expireDailyFlags();
-	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
 	syncRocketTakeover();             // the Radio Tower takeover's flags + 5F scene, before this map's coord events read them
 	world.restoreLockedCells();      // a reloaded map starts from its layout's doors, as the GBA's does
 	const evs = world.current?.map?.object_events || [];
 	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
 	const before = vis();
+	// after the snapshot: the objects it hides (Sky Pillar's sleeping RAYQUAZA) were
+	// loaded with the map, so the reload below must see the change
+	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
 	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
 		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
@@ -1293,6 +1296,16 @@ export function runSpecial(name, store, op) {
 			warpTo(dest, 0);
 			return;
 		}
+		// pokeemerald braille_puzzles.c (braille_puzzles.js). The Sealed Chamber's back
+		// wall asks for WAILORD first and RELICANTH last in the party, then opens the
+		// Regirock / Registeel tombs (FLAG_REGI_DOORS_OPENED); unhandled, it read 0 and
+		// the doors on Routes 111 and 120 never opened (bug:1792491766696). The shakes
+		// are camera-only. The Island Cave braille starts Regice's lap: the special
+		// marks the square you read it from (its result is unused by the script; the
+		// step hook in ow_fieldmoves.js opens the wall).
+		case 'CheckRelicanthWailord': return set(checkRelicanthWailord() ? 1 : 0);
+		case 'DoSealedChamberShakingEffect_Long': case 'DoSealedChamberShakingEffect_Short': return;
+		case 'ShouldDoBrailleRegicePuzzle': shouldDoBrailleRegicePuzzle(); return;
 		case 'SetSeenMon': case 'SetSeenMon2': return; // dex-see: numeric species, skipped
 		case 'DrawWholeMapView': case 'ShakeScreen': case 'SpawnCameraObject':
 		case 'RemoveCameraObject': case 'DisableMsgBoxWalkaway':

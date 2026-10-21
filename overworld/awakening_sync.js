@@ -17,8 +17,17 @@
 // every map setup, so a save already past the resolution heals on its next map load.
 import * as Story from './events.js';
 
+//
+// The SLEEPING RAYQUAZA at Sky Pillar Top (14,7) goes too. pokeemerald's
+// SkyPillar_Top_EventScript_AwakenRayquaza ends `removeobject LOCALID_RAYQUAZA_SLEEPING`
+// (which sets FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA); later the still RAYQUAZA you
+// battle appears at (14,6) — the native encounter here. The director's summit beat
+// (4 -> 5) is that fly-off, but nothing hid the object, and (14,7) is the only way
+// to (14,6): RAYQUAZA could never be reached (bug:1792549657877). From 5 on it is gone.
+export const RAYQUAZA_SLEEPING_HIDE = 'FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA';
 const AW = 'VAR_HOENN_AWAKENING', CITY = 'VAR_SOOTOPOLIS_CITY_STATE', PILLAR = 'VAR_SKY_PILLAR_STATE';
 export function reconcileAwakeningResolution() {
+	if ((Story.getVar(AW) || 0) >= 5 && !Story.getFlag(RAYQUAZA_SLEEPING_HIDE)) Story.setFlag(RAYQUAZA_SLEEPING_HIDE);
 	if ((Story.getVar(AW) || 0) < 6) return false;
 	let changed = false;
 	const city = Story.getVar(CITY) || 0;

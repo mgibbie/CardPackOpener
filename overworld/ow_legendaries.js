@@ -5,12 +5,12 @@ import * as Bag from './bag.js';
 import { META, drawOwMon, getImage } from './engine.js';
 import * as Story from './events.js';
 import { POSTGAME_LEGENDS } from './legendaries_postgame.js';
-import { battle, cutscene, world } from './ow_core.js';
+import { battle, cutscene, npcs, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import { leadMon } from './party.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { startCutscene } from './ow_scaling.js';
-import { reconcileAwakeningResolution } from './awakening_sync.js';
+import { RAYQUAZA_SLEEPING_HIDE, reconcileAwakeningResolution } from './awakening_sync.js';
 import { playerRegion } from './ow_progression.js';
 import { legendariesHere } from './ow_follower.js';
 import {
@@ -208,6 +208,12 @@ export function checkAwakeningTrigger() {
 			if (lay?.map?.[5]) world.setMetatile(14, 5, lay.map[5][14], false);
 		}
 		Story.setVar(AW_VAR, scene.next);
+		// the summit beat is RAYQUAZA flying off: its sleeping object leaves with it
+		// (AwakenRayquaza's removeobject), or it walls off the catch at (14,6)
+		if (scene.map === 'SkyPillar_Top') {
+			Story.setFlag(RAYQUAZA_SLEEPING_HIDE);
+			npcs.list = npcs.list.filter(n => !(n.ev && n.ev.flag === RAYQUAZA_SLEEPING_HIDE));
+		}
 		if (scene.resolve) { Story.clearFlag('FLAG_SYS_WEATHER_CTRL'); Story.clearFlag('FLAG_LEGENDARIES_IN_SOOTOPOLIS'); reconcileAwakeningResolution(); }
 	});
 }
