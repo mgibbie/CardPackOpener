@@ -24,8 +24,12 @@
  *                                faces on the south edge of a higher tile, ledge lips, side edges, drop shadows and
  *                                stairs, in the biome's own palette (no image assets)
  *   zone.mini(rgb, tx, ty)       the minimap shading by height (js/ui/minimap.js)
- *   zone.hash                    FNV-1a of the whole zone (heights, kinds, ramps, props): what the `x` block carries so
- *                                a viewer can check that its rebuild matches the host's
+ *   zone.hash                    FNV-1a of the whole zone (heights, kinds, ramps, props; D2: bounce pads): what the `x`
+ *                                block carries so a viewer can check that its rebuild matches the host's
+ *   zone.deep(tx, ty)            DLC D2: deep liquid (a liquid tile with liquid on all 4 sides): only a surfer (a Water type,
+ *                                js/expedition/verbs.js) or something airborne goes over it; the shallow rim only slows
+ *   zone.pads / padAt(tx, ty)    DLC D2: bounce pads [tx, ty, dir] at the foot of a cliff (a mushroom, painted in code):
+ *                                stepping on one throws you 2 tiles that way, onto the plateau above (verbs.js)
  * Flying and ghost (hovering) enemies and bosses ignore all of this, as they ignore walls today (they never collide).
  */
 G.DLC = G.DLC || {};
@@ -42,7 +46,7 @@ G.DLC.rng = G.DLC.rng || function rng(seed) {
 };
 
 G.ExpTerrain = (() => {
-  const XV = 1;                 // the `x` block's schema: {xv, m, z, th}
+  const XV = 2;                 // the `x` block's schema: {xv, m, z, th} (D2: + `a`, the airborne state; v1 still read)
   const W = 120, H = 120;       // tiles per zone (5.1: "e.g. 120×120 tiles")
   const X0 = -W / 2, Y0 = -H / 2;
   const FLOOR = 0, WALL = 1, LIQUID = 2;
@@ -92,9 +96,14 @@ G.ExpTerrain = (() => {
     const { w, h, x0, y0, hgt, kind, ramp, prop } = o;
     const idx = (tx, ty) => { const x = tx - x0, y = ty - y0; return x < 0 || y < 0 || x >= w || y >= h ? -1 : y * w + x; };
     const maskI = i => kind[i] === WALL ? 0 : ramp[i] ? (1 << hgt[i]) | (1 << Math.min(MAXH, hgt[i] + 1)) : 1 << hgt[i];
+    // DLC D2: the bounce pads, by tile ("tx,ty" -> [tx, ty, dir])
+    const pads = (o.pads || []).map(p => [p[0] | 0, p[1] | 0, p[2] | 0]), padMap = new Map(pads.map(p => [p[0] + ',' + p[1], p]));
+    const liq = (tx, ty) => { const i = idx(tx, ty); return i >= 0 && kind[i] === LIQUID; };
     const z = {
-      xv: XV, seed: o.seed, map: o.map, zone: o.zone, w, h, x0, y0, hgt, kind, ramp, prop, spawn: o.spawn,
+      xv: XV, seed: o.seed, map: o.map, zone: o.zone, w, h, x0, y0, hgt, kind, ramp, prop, spawn: o.spawn, pads,
       stats: o.stats || {}, painted: 0,
+      deep: (tx, ty) => liq(tx, ty) && liq(tx + 1, ty) && liq(tx - 1, ty) && liq(tx, ty + 1) && liq(tx, ty - 1),
+      padAt: (tx, ty) => padMap.get(tx + ',' + ty) || null,
       inside: (tx, ty) => idx(tx, ty) >= 0,
       terr(tx, ty) { const i = idx(tx, ty); return i < 0 ? WALL : kind[i]; },
       height(tx, ty) { const i = idx(tx, ty); return i < 0 ? 0 : hgt[i]; },
@@ -115,6 +124,7 @@ G.ExpTerrain = (() => {
     const add = v => { hh ^= v & 255; hh = Math.imul(hh, 0x01000193); };
     for (const a of [z.hgt, z.kind, z.ramp, z.prop]) for (let i = 0; i < a.length; i++) add(a[i]);
     add(z.w); add(z.h); add(z.x0); add(z.y0);
+    for (const p of z.pads) { add(p[0]); add(p[0] >> 8); add(p[1]); add(p[1] >> 8); add(p[2]); }   // (DLC D2; no pads: as D1)
     return (hh >>> 0).toString(16).padStart(8, '0');
   }
 
@@ -329,11 +339,48 @@ G.ExpTerrain = (() => {
       }
       if (grn(x, y) > P.grass && r > 0.3) { prop[i] = GRASS; grass++; }
     }
-    const zone = makeZone({ seed: opt.seed | 0, map, zone: zn, w, h, x0: X0, y0: Y0, hgt, kind, ramp, prop, spawn: [0, 0],
-      stats: { ramps, extra, trees, rocks, grass, ms: 0 } });
+    // 10) DLC D2: bounce pads at the foot of cliffs, from their own stream (so the grids above are exactly D1's)
+    const pads = placePads({ w, h, hgt, kind, ramp, prop, d2c }, G.DLC.rng(mix(zoneSeed(opt.seed, map, zn), 0xB0)), P.pads || 8);
+    const zone = makeZone({ seed: opt.seed | 0, map, zone: zn, w, h, x0: X0, y0: Y0, hgt, kind, ramp, prop, spawn: [0, 0], pads,
+      stats: { ramps, extra, trees, rocks, grass, pads: pads.length, ms: 0 } });
     zone.stats.ms = Math.round(((typeof performance !== 'undefined' ? performance : Date).now() - t0) * 10) / 10;
     return zone;
   }
+  /**
+   * DLC D2: bounce pads. A pad sits on flat ground at height h (no ramp, no prop) at the foot of a cliff: the next tile
+   * its way is at h + 1, and so is the one after it (where it throws you), both land with no ramp and no solid prop; the
+   * tile behind the pad is at h (you walk onto it). At most `max`, 14 tiles apart, none near the spawn clearing; pads
+   * facing north are preferred, like the ramps. -> [[tx, ty, dir]] in world tiles (dir: 1 N, 2 E, 3 S, 4 W)
+   */
+  function placePads(g, rng, max) {
+    const { w, h, hgt, kind, ramp, prop, d2c } = g;
+    const ok = i => kind[i] === FLOOR && !ramp[i] && prop[i] !== TREE && prop[i] !== ROCK;
+    const cand = [];
+    for (let i = 0; i < w * h; i++) {
+      if (!ok(i) || prop[i] || hgt[i] >= MAXH || d2c(i) <= SPAWN_R + 2) continue;
+      const x = i % w, y = (i / w) | 0;
+      for (let d = 1; d <= 4; d++) {
+        const [dx, dy] = DIRS[d - 1];
+        const at = k => { const xx = x + dx * k, yy = y + dy * k; return xx < 0 || yy < 0 || xx >= w || yy >= h ? -1 : yy * w + xx; };
+        const a = at(1), b = at(2), back = at(-1);
+        if (a < 0 || b < 0 || back < 0) continue;
+        if (!ok(a) || !ok(b) || hgt[a] !== hgt[i] + 1 || hgt[b] !== hgt[i] + 1) continue;
+        if (!ok(back) || hgt[back] !== hgt[i]) continue;
+        cand.push([i, d, d === 1 ? 3 : 1]);
+      }
+    }
+    // a weighted shuffle (north first), then spaced out
+    const keyed = cand.map(c => [rng() / c[2], c]).sort((p, q) => p[0] - q[0]);
+    const out = [];
+    for (const [, [i, d]] of keyed) {
+      if (out.length >= max) break;
+      const x = i % w, y = (i / w) | 0;
+      if (out.some(o => Math.max(Math.abs(o[0] - x), Math.abs(o[1] - y)) < 14)) continue;
+      out.push([x, y, d]);
+    }
+    return out.map(([x, y, d]) => [x + X0, y + Y0, d]);
+  }
+
   /** The mask queries alone (the generator's flood-fills run on the grids as they change). */
   function makeZoneLite(o) {
     const { w, h, x0, y0, hgt, kind, ramp } = o;
@@ -347,7 +394,7 @@ G.ExpTerrain = (() => {
 
   /**
    * A zone from explicit grids (tests, hand-made zones): {w, h, x0?, y0?, hgt: [..] | (x, y) => h, ramp?: same (0 / 1-4),
-   * kind?: same (0 floor, 1 wall, 2 liquid), prop?: same (0 / 1 tree / 2 rock / 3 grass)}
+   * kind?: same (0 floor, 1 wall, 2 liquid), prop?: same (0 / 1 tree / 2 rock / 3 grass), pads?: [[tx, ty, dir]] (D2)}
    */
   function custom(spec) {
     const w = spec.w | 0, h = spec.h | 0, n = w * h;
@@ -358,7 +405,8 @@ G.ExpTerrain = (() => {
     };
     return makeZone({ seed: spec.seed | 0, map: spec.map || 'custom', zone: spec.zone | 0, w, h,
       x0: spec.x0 != null ? spec.x0 | 0 : -(w >> 1), y0: spec.y0 != null ? spec.y0 | 0 : -(h >> 1),
-      hgt: grid(spec.hgt, MAXH), kind: grid(spec.kind, 2), ramp: grid(spec.ramp, 4), prop: grid(spec.prop, 3), spawn: [0, 0] });
+      hgt: grid(spec.hgt, MAXH), kind: grid(spec.kind, 2), ramp: grid(spec.ramp, 4), prop: grid(spec.prop, 3), spawn: [0, 0],
+      pads: spec.pads || [] });
   }
 
   /** Every walkable tile of a zone, and how many of them a flood-fill from the spawn reaches (the guarantee). */
@@ -459,10 +507,39 @@ G.ExpTerrain = (() => {
       if (higher(-1, 0)) for (let y = 0; y < TT; y++) for (let x = 0; x < 2; x++) set(ox + x, oy + y, scalePx(get(ox + x, oy + y), x === 0 ? 0.68 : 0.82));
       if (higher(1, 0)) for (let y = 0; y < TT; y++) for (let x = TT - 2; x < TT; x++) set(ox + x, oy + y, scalePx(get(ox + x, oy + y), x === TT - 1 ? 0.72 : 0.86));
     }
+    // 6) DLC D2: the bounce pads in this chunk: a mushroom (a spring where the liquid is lava), with an arrow its way
+    for (const p of z.pads) {
+      const i = p[0] - tx0, j = p[1] - ty0;
+      if (i < 0 || j < 0 || i >= n || j >= n) continue;
+      paintPad(set, i * TT, j * TT, TT, p[2], B.liquid === 'lava', C);
+    }
     ctx.putImageData(img, 0, 0);
     z.painted += tiles;
     return tiles;
   }
+  /** DLC D2: a bounce pad, pixel by pixel (art px, a 16 x 16 tile): a red cap with white spots, or a coiled spring. */
+  const PAD_RED = packRGB(214, 54, 64), PAD_DARK = packRGB(120, 24, 40), PAD_WHITE = packRGB(250, 246, 236), PAD_STEM = packRGB(236, 214, 170);
+  const PAD_STEEL = packRGB(180, 190, 204), PAD_STEEL2 = packRGB(96, 104, 124), PAD_ARROW = packRGB(255, 226, 92);
+  function paintPad(set, ox, oy, TT, dir, spring, C) {
+    const cx = TT / 2 - 0.5;
+    for (let y = 0; y < TT; y++) for (let x = 0; x < TT; x++) {
+      const dx = (x - cx) / 6.5, dy = (y - 7) / 4.2, d = dx * dx + dy * dy;
+      if (spring) {
+        if (d <= 1 && y <= 9) set(ox + x, oy + y, d > 0.7 ? PAD_STEEL2 : y < 6 ? PAD_STEEL : packRGB(206, 214, 226));
+        else if (y > 9 && y < 14 && Math.abs(x - cx) < 4.5) set(ox + x, oy + y, (y % 2) ? PAD_STEEL2 : PAD_STEEL);
+      } else if (d <= 1 && y <= 8) {
+        const spot = (Math.abs(x - 5) <= 1 && Math.abs(y - 5) <= 1) || (Math.abs(x - 10) <= 1 && Math.abs(y - 4) <= 1) || (x === 8 && y === 7);
+        set(ox + x, oy + y, d > 0.72 ? PAD_DARK : spot ? PAD_WHITE : PAD_RED);
+      } else if (y > 8 && y < 14 && Math.abs(x - cx) < 3) set(ox + x, oy + y, Math.abs(x - cx) > 2 ? C.edge : PAD_STEM);
+    }
+    // a chevron on the side it throws you
+    const [ax, ay] = DIRS[dir - 1];
+    for (let k = -2; k <= 2; k++) {
+      const bx = Math.round(cx + ax * (6 - Math.abs(k)) - ay * k), by = Math.round(7 + ay * (6 - Math.abs(k)) - ax * k);
+      set(ox + bx, oy + by, PAD_ARROW);
+    }
+  }
+
   /** Does the ramp at (tx, ty) go up towards (dx, dy)? (no cliff edge is drawn where a ramp meets its top) */
   function rampFaces(z, tx, ty, dx, dy) {
     const d = z.rampDir(tx, ty);

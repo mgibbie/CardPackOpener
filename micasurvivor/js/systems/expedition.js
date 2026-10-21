@@ -59,7 +59,7 @@ G.Expedition = (() => {
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
   const ENABLED = new Set();   // D0b: every Expedition mode is "Coming soon"
-  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/core.js'];   // (D1: terrain.js)
+  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

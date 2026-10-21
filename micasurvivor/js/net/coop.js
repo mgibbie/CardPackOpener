@@ -218,9 +218,13 @@ G.Coop = (() => {
 
   function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
 
+  /** A guest's frame to the host. (MicaSurvivor DLC D2: through the net.frame seam with no mate, so an Expedition guest adds
+   *  its airborne state; with no listener, or a base run, it is exactly the base frame.) */
+  function clientFrame() { return G.Hooks.reduce('net.frame', { k: 'f', p: myState(), ev: outEv }, null); }
+
   function flushClient(force) {
     if (!force && !outEv.length && flushT > 0) return;
-    G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
+    G.Net.toHost(clientFrame());
     outEv = [];
   }
 
@@ -240,7 +244,7 @@ G.Coop = (() => {
       flushT -= dt;
       if (flushT <= 0) {
         flushT = rateFor(hostUid);
-        G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
+        G.Net.toHost(clientFrame());
         outEv = [];
       }
     }
@@ -284,6 +288,9 @@ G.Coop = (() => {
     const m = mates.get(from);
     if (!m || !m.connected) return;
     if (msg.p) { m.state = msg.p; netState(m.pl, msg.p, G.Net.slow(from)); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
+    // MicaSurvivor (DLC D2): in an Expedition run a guest's frame carries its own airborne state (x.a.p): kept on the
+    // mate for the host's frames and snapshots, and shown on its puppet. A base guest sends no `x`.
+    if (msg.x && G.Exp && G.Exp.guestAir) G.Exp.guestAir(m, msg.x);
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
         case 'h': {
@@ -348,6 +355,8 @@ G.Coop = (() => {
     // MicaSurvivor (DLC D1): the host's Expedition zone, rebuilt here from the run's seed + its `x` block (never streamed;
     // the Expedition code is loaded first if needed). A base host sends no `x`.
     if (msg.x && G.Expedition) G.Expedition.viewZone(G.World.seed, msg.x);
+    // (DLC D2: and the players' airborne state, x.a, on their puppets here; enemies leaping)
+    if (msg.x && G.Exp && G.Exp.hostAir) G.Exp.hostAir(msg.x, u => { const m = mates.get(u); return m ? m.pl : null; });
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
     if (msg.ho) {
       const k = msg.ho.join('|');

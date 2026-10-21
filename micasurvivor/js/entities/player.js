@@ -446,13 +446,19 @@ G.Player = class Player {
     const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
     this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
     this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
+    // MicaSurvivor (DLC D2): in an Expedition zone the movement verbs (hop, glide, slide, climb, surf, bounce pads:
+    // js/expedition/verbs.js) shape this step, then land you. Base modes have no zone: none of this runs.
+    const verbs = G.World.zone && G.ExpVerbs ? G.ExpVerbs : null;
+    if (verbs) verbs.step(this, dt, ax, ay);
     this.x += this.svx * dt;
     this.y += this.svy * dt;
     G.World.collide(this);
+    if (verbs) verbs.after(this, dt);
     if (this.walking) this.moveAngle = Math.atan2(ay, ax);
 
     // --- terreno líquido ---
-    this.inLiquid = G.World.isLiquid(this.x, this.y);
+    // (DLC D2: airborne you are over the liquid, not in it; `air` only exists in an Expedition zone)
+    this.inLiquid = G.World.isLiquid(this.x, this.y) && !this.air;
     if (this.inLiquid) {
       const le = G.World.liquidEffect(this.mon.types);
       if (le.dmg) {
@@ -561,7 +567,13 @@ G.Player = class Player {
       ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.5, this.r * 0.6, 0, 0, 6.2832); ctx.stroke();
       ctx.restore();
     }
-    G.Sprites.drawShadow(ctx, this.dex, this.x, this.y, this.dynScale ? this.dynScale[0] : 1);   // (M5 lote 5: gigante con el Dynamax)
+    // MicaSurvivor (DLC D2): airborne (a hop, a glide, a bounce pad; or a puppet's row from a snapshot) the sprite is
+    // lifted and the shadow stays on the ground, smaller; a surfer's wake / a slide's dust under it. Only Expedition
+    // code sets `air` / `airRow` / `verb`: in base modes `lift` is 0 and nothing else is drawn.
+    const XV = (this.air || this.airRow || this.verb) && G.ExpVerbs ? G.ExpVerbs : null;
+    const lift = XV ? XV.lift(this) : 0;
+    if (XV) XV.drawUnder(ctx, this);
+    G.Sprites.drawShadow(ctx, this.dex, this.x, this.y, (this.dynScale ? this.dynScale[0] : 1) * (XV ? XV.shadowK(this) : 1));   // (M5 lote 5: gigante con el Dynamax)
     // Poder de altar: aro de su color latiendo bajo los pies.
     if (this.power && !this.dead) {
       ctx.save();
@@ -574,10 +586,10 @@ G.Player = class Player {
     // (Durante el Movimiento Z no parpadea: la invulnerabilidad es del Z.)
     const alpha = this.invuln > 0 && !this.dead && !(G.ZMoves && G.ZMoves.busy && !this.remote) ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
     // MicaSurvivor (M5 lote 5): Dynamax — el aura detrás y el sprite gigante (escala desde los pies).
-    const ds = this.dynScale;
+    const ds = this.dynScale || (XV && this.squash > 0 ? [1.2, 0.8] : null);   // (DLC D2: a bounce pad's squash)
     if (ds) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(ds[0], ds[1]); ctx.translate(-this.x, -this.y); }
     if (this.dyn && !this.dead) G.Dynamax.drawAura(ctx, this.x, this.y, this.bodyH, this.r * 1.8, performance.now() / 1000);
-    this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
     if (ds) ctx.restore();
 
     // Arcos de buff alrededor de los pies.
@@ -611,7 +623,7 @@ G.Player = class Player {
       ctx.save();
       ctx.font = '700 7px Pixelify,"Segoe UI",sans-serif';
       ctx.textAlign = 'center';
-      const y = this.y - this.bodyH - 8;
+      const y = this.y - this.bodyH - 8 - lift;
       ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.75)';
       ctx.strokeText(this.tag, this.x, y);
       ctx.fillStyle = this.dead ? '#ff8a96' : this.tagColor || '#fff';
