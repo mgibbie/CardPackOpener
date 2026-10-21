@@ -5,12 +5,18 @@
  * PokéBonk's jump / slide / glide / climb / surf / bounce pads, rebuilt as the GBA's ledges, Surf and Fly
  * (Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md 5.2):
  *
+ *   drop    walking off a ledge onto a tile ONE level lower needs no hop (js/world/world.js collideZone, ledgeDown): a
+ *           0.25 s fall, the sprite starting a cliff face (6 art px) up and falling onto the lower ground with the shadow
+ *           already there, carried just clear of the edge. You are airborne for it (pl.air.kind 'drop') but it is free
+ *           movement, so it gives NO contact i-frames (js/systems/combat.js). Hop during the fall: a normal first hop
+ *           from the lower level. Walking UP a cliff is still blocked (a ledge is one-way); ramps go both ways.
  *   hop     Space / A (the pad's confirm) / the HOP button: a 0.45 s arc, the sprite lifted up to 12 art px with the shadow
  *           left on the ground. Airborne you pass over ground enemies (no contact damage: i-frames from CONTACT only,
- *           projectiles still hit) and over deep water, and you can drop off a ledge onto ANY lower level (one way,
- *           Pokémon style: you land on the level of the tile under you). You can't hop up a level.
- *   2nd hop pressing hop again in the air (once: K.EXTRA_HOPS): a new arc that also reaches ONE level above the take-off
- *           level, so hopping into a cliff face lands you on top. Never two levels.
+ *           projectiles still hit) and over deep water, you can drop off a ledge onto ANY lower level (you land on the
+ *           level of the tile under you), and you reach ONE level above the take-off: hopping into a cliff face lands
+ *           you on top of it.
+ *   2nd hop pressing hop again in the air (once: K.EXTRA_HOPS): a new arc (more airtime) that reaches one level higher
+ *           still, TWO above the take-off. Never three: a third press does nothing.
  *   glide   Flying types: hold hop past the top of the arc and the airtime stretches to 1.2 s (gaps of ~3 tiles: water,
  *           and the chasms of later maps). Let go and you drop.
  *   slide   Shift / B (the pad's cancel) / the SLIDE button: 0.55 s at x1.9 the way you move (or face), then 0.9 s of
@@ -28,13 +34,14 @@
  *   js/entities/player.js update   step() before the move (input, arcs, slide, surf / climb speed, pads) and after()
  *                                  once collided (the landing); airborne you are not "in" liquid
  *   js/world/world.js collideZone  pass() (deep water), airMask() (every level up to the air's top) and reach() (a
- *                                  climber's one level up or down) instead of the bare layer mask, for the player only
- *   js/systems/combat.js           no contact damage from ground enemies while airborne
+ *                                  climber's one level up or down) instead of the bare layer mask, for the player only;
+ *                                  drop() when it walks off a ledge (G.World.ledgeDown, the one-way rule enemies share)
+ *   js/systems/combat.js           no contact damage from ground enemies while airborne (not during a drop)
  *   js/core/pad.js gameplay        confirm -> hop, cancel -> slide; held('confirm') for glide
  *   js/ui/hud.js                   drawButtons(): the HOP and SLIDE buttons (touch, mouse, and their key / pad glyphs)
  *   js/entities/player.js draw     lift() and drawUnder(): the sprite in the air, a smaller shadow, the wake / dust
- * Snapshots: row(p) is the per-player air row of the `x` block v2 (js/expedition/core.js), applyRow() shows one on a
- * puppet (a co-op mate, a replay or a live spectator's view).
+ * Snapshots: row(p) is the per-player air row of the `x` block (v2+, js/expedition/core.js), applyRow() shows one on a
+ * puppet (a co-op mate, a replay or a live spectator's view), a drop included.
  */
 G.I18n.add({
   'Saltar': 'Hop', 'Deslizarse': 'Slide', 'Planear': 'Glide', 'Escalar': 'Climb', 'Surf': 'Surf',
@@ -48,12 +55,14 @@ G.ExpVerbs = (() => {
     SLIDE_T: 0.55, SLIDE_K: 1.9, SLIDE_CD: 0.9,
     CLIMB_K: 0.5, SURF_K: 1.35,
     PAD_T: 0.85, PAD_H: 56, PAD_D: 2, PAD_CD: 0.5,
-    EXTRA_HOPS: 1                      // hops in the air after the first (D5's items may change it per player)
+    EXTRA_HOPS: 1,                     // hops in the air after the first (D5's items may change it per player)
+    HOP_UP: 1, EXTRA_UP: 1, MAX_UP: 2, // levels above the take-off: a hop reaches 1, each extra hop adds 1, never above 2
+    DROP_T: 0.25, DROP_H: 12, DROP_ARC: 4   // walking off a ledge: the fall's time, its start lift (a 6-row cliff face), a little arc
   };
   const TYPES = { glide: ['flying'], surf: ['water'], climb: ['fighting', 'bug', 'ghost'] };
   // the verb a snapshot row carries (0: none)
-  const CODE = { hop: 1, glide: 2, bounce: 3, slide: 4, surf: 5, climb: 6, fall: 2 };
-  const NAME = [null, 'hop', 'glide', 'bounce', 'slide', 'surf', 'climb'];
+  const CODE = { hop: 1, glide: 2, bounce: 3, slide: 4, surf: 5, climb: 6, fall: 2, drop: 7 };
+  const NAME = [null, 'hop', 'glide', 'bounce', 'slide', 'surf', 'climb', 'drop'];
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
   const TS = () => G.World.TS;
   const tileOf = v => Math.floor(v / G.World.TS);
@@ -116,13 +125,27 @@ G.ExpVerbs = (() => {
     const u = G.U.clamp((a.t - a.t0) / Math.max(1e-3, a.dur - a.t0), 0, 1);
     if (a.kind === 'glide') return a.l0 * (1 - u * u * u);
     if (a.kind === 'fall') return a.l0 * (1 - u);
+    if (a.kind === 'drop') return dropLift(u);
     return a.l0 * (1 - u) + Math.sin(u * Math.PI) * a.h;
   }
 
+  /** A walking-down fall's lift at u (0..1 of its time): from a cliff face's height down to the ground, with a little arc. */
+  const dropLift = u => K.DROP_H * (1 - u * u) + Math.sin(u * Math.PI) * K.DROP_ARC;
+
   function hop(pl) {
     const a = pl.air;
+    if (a && a.kind === 'drop') {
+      // a hop during the fall off a ledge: the first hop, from the level you are dropping to
+      a.l0 = liftOf(a); a.kind = 'hop'; a.t0 = a.t; a.hop0 = a.t; a.dur = a.t + K.HOP_T; a.h = K.HOP_H;
+      a.top0 = a.lo; a.top = Math.min(3, a.lo + K.HOP_UP); a.hops = 1;
+      pl.hopN = (pl.hopN || 0) + 1;
+      G.FX.ring(pl.x, pl.y, 4, 16, '#e8f4ff', 0.18, 2);
+      G.Audio.sfx('select');
+      return true;
+    }
     if (!a) {
-      pl.air = { kind: 'hop', t: 0, t0: 0, hop0: 0, dur: K.HOP_T, h: K.HOP_H, l0: 0, top: topOf(pl.zMask || 1), top0: topOf(pl.zMask || 1), hops: 1 };
+      const top0 = topOf(pl.zMask || 1);
+      pl.air = { kind: 'hop', t: 0, t0: 0, hop0: 0, dur: K.HOP_T, h: K.HOP_H, l0: 0, top: Math.min(3, top0 + K.HOP_UP), top0, hops: 1 };
       pl.aLx = pl.x; pl.aLy = pl.y;
       pl.slideT = 0;
       pl.hopN = (pl.hopN || 0) + 1;
@@ -131,9 +154,9 @@ G.ExpVerbs = (() => {
       return true;
     }
     if (a.kind === 'bounce' || a.hops >= 1 + (pl.extraHops != null ? pl.extraHops : K.EXTRA_HOPS)) return false;
-    // the extra hop: a new arc from where you are, one level higher than the take-off (never two)
+    // the extra hop: a new arc from where you are, one more level up (two above the take-off with one extra hop)
     a.l0 = liftOf(a); a.kind = 'hop'; a.t0 = a.t; a.hop0 = a.t; a.dur = a.t + K.HOP_T; a.h = K.HOP_H;
-    a.top = Math.min(3, a.top0 + 1); a.hops++;
+    a.hops++; a.top = Math.min(3, a.top0 + Math.min(K.MAX_UP, K.HOP_UP + K.EXTRA_UP * (a.hops - 1)));
     pl.hopN = (pl.hopN || 0) + 1;
     G.FX.ring(pl.x, pl.y - a.l0, 4, 20, '#bfe8ff', 0.2, 2);
     G.Audio.sfx('select');
@@ -151,6 +174,24 @@ G.ExpVerbs = (() => {
     pl.squash = 0.18;
     G.FX.ring(p[0] * T + T / 2, p[1] * T + T / 2, 6, 34, '#ff6b7a', 0.3, 3);
     G.Audio.sfx('select');
+  }
+  /**
+   * Walking off a ledge (js/world/world.js collideZone: the centre crossed onto a tile one level below the layers `from`, of mask
+   * `to`): a short fall. The player is airborne (levels up to the one it left, so the edge behind doesn't push it) and
+   * carried just clear of the edge it crossed (r + 2 past it, never back; the stick still moves it along the edge and
+   * on), then lands below (land()). -> true (it is now airborne); false if it already was.
+   */
+  function drop(pl, from, to) {
+    if (pl.air) return false;
+    const T = TS(), tx = tileOf(pl.x), ty = tileOf(pl.y), dx = Math.sign(tx - tileOf(pl.zLx)), dy = Math.sign(ty - tileOf(pl.zLy));
+    const past = (v, t, d) => { const edge = d > 0 ? t * T : (t + 1) * T, l = edge + d * (pl.r + 2); return d > 0 ? Math.max(l, v) : Math.min(l, v); };
+    pl.air = { kind: 'drop', t: 0, t0: 0, hop0: 0, dur: K.DROP_T, h: K.DROP_ARC, l0: K.DROP_H, top: topOf(from), top0: topOf(from), lo: topOf(to),
+      hops: 0, sx: pl.x, sy: pl.y, dx, dy, lx: dx ? past(pl.x, tx, dx) : pl.x, ly: dy ? past(pl.y, ty, dy) : pl.y };
+    pl.aLx = pl.x; pl.aLy = pl.y;
+    pl.slideT = 0;
+    pl.airZ = K.DROP_H; pl.verb = CODE.drop;
+    pl.dropN = (pl.dropN || 0) + 1;
+    return true;
   }
   function land(pl) {
     const a = pl.air;
@@ -202,6 +243,11 @@ G.ExpVerbs = (() => {
         // the fixed arc: from the pad to its landing tile, whatever the stick says
         const k = a.t / a.dur, tx = a.sx + (a.lx - a.sx) * k, ty = a.sy + (a.ly - a.sy) * k;
         pl.svx = (tx - pl.x) / dt; pl.svy = (ty - pl.y) / dt;
+      } else if (a.kind === 'drop') {
+        // the fall off a ledge: carried clear of the edge it crossed (at least that far by the end, never back over it)
+        const k = a.t / a.dur;
+        if (a.dx) { const v = (a.sx + (a.lx - a.sx) * k - pl.x) / dt; pl.svx = a.dx > 0 ? Math.max(pl.svx, v) : Math.min(pl.svx, v); }
+        if (a.dy) { const v = (a.sy + (a.ly - a.sy) * k - pl.y) / dt; pl.svy = a.dy > 0 ? Math.max(pl.svy, v) : Math.min(pl.svy, v); }
       }
       pl.airZ = liftOf(a);
       pl.verb = CODE[a.kind];
@@ -242,24 +288,29 @@ G.ExpVerbs = (() => {
   /**
    * The per-player air row: [lift, verb, layer x2, phase cs, airtime cs, hops]. lift in world units (0 on the ground),
    * verb a CODE (0 none), phase / airtime: where in its arc (a viewer plays the rest), hops: a running count (so a
-   * viewer that missed a whole hop between two snapshots still plays one).
+   * viewer that missed a whole hop between two snapshots still plays one). Walking down a ledge (D2, after D3) added a
+   * 7th field, drops: the same running count for the falls off a ledge (verb 7 while one plays). It is optional: a row
+   * without it (an older replay / snapshot) reads as before, and an older reader ignores it, so the `x` block stays v3.
    */
   function row(p) {
     const a = p.air;
     return [Math.round(p.airZ || 0), p.verb | 0, Math.round((p.layer || 0) * 2), a ? Math.round(a.t * 100) : 0,
-      a ? Math.round(a.dur * 100) : 0, (p.hopN | 0) & 1023];
+      a ? Math.round(a.dur * 100) : 0, (p.hopN | 0) & 1023, (p.dropN | 0) & 1023];
   }
   /** Shows an air row on a puppet (a co-op mate, a watched player). row null: on the ground. */
   function applyRow(p, r) {
-    if (!r) { p.airRow = null; p.verb = 0; p.airRowN = null; return; }
-    const now = performance.now(), seen = p.airRowN, n = r[5] | 0;
+    if (!r) { p.airRow = null; p.verb = 0; p.airRowN = null; p.airRowD = null; return; }
+    const now = performance.now(), seen = p.airRowN, n = r[5] | 0, seenD = p.airRowD, nd = r.length > 6 ? r[6] | 0 : null;
     p.verb = r[1] | 0;
     p.layer = (r[2] | 0) / 2;
     if (r[0] > 0 && r[4] > r[3]) p.airRow = { code: r[1] | 0, l0: r[0], t: r[3] / 100, dur: r[4] / 100, at: now };
     // a hop that came and went between two snapshots (a 1 s live view, a 0.5 s replay frame): play one
     else if (seen != null && n !== seen && !(liftView(p) > 0)) p.airRow = { code: CODE.hop, l0: 0, t: 0, dur: K.HOP_T, at: now };
+    // ...or a fall off a ledge (only rows with the drop count)
+    else if (seenD != null && nd != null && nd !== seenD && !(liftView(p) > 0)) p.airRow = { code: CODE.drop, l0: K.DROP_H, t: 0, dur: K.DROP_T, at: now };
     // (otherwise an arc still playing finishes by itself)
     p.airRowN = n;
+    p.airRowD = nd;
   }
   /** A puppet's lift from its row, played on from the time it came. */
   function liftView(p) {
@@ -267,6 +318,7 @@ G.ExpVerbs = (() => {
     if (!r) return 0;
     const t = r.t + (performance.now() - r.at) / 1000;
     if (t >= r.dur) return 0;
+    if (r.code === CODE.drop) return dropLift(G.U.clamp(t / r.dur, 0, 1));   // (its curve from the phase alone)
     if (r.code === CODE.hop || r.code === CODE.bounce) {
       const h = r.code === CODE.bounce ? K.PAD_H : K.HOP_H;
       return Math.max(Math.sin(G.U.clamp(t / r.dur, 0, 1) * Math.PI) * h, r.l0 * (1 - (t - r.t) / Math.max(1e-3, r.dur - r.t)));
@@ -370,7 +422,7 @@ G.ExpVerbs = (() => {
     return R;
   }
 
-  return { K, TYPES, CODE, NAME, verbsOf, press, hopHeld, pass, airMask, reach, step, after, row, applyRow, lift, liftOf,
+  return { K, TYPES, CODE, NAME, verbsOf, press, hopHeld, pass, airMask, reach, drop, step, after, row, applyRow, lift, liftOf,
     drawUnder, shadowK, buttonRects, drawButtons, topOf,
     /** For tests: the queued presses, and clear them. */
     debugReset() { queued.hop = queued.slide = false; ptrs.clear(); } };

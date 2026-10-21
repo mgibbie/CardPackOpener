@@ -4,12 +4,13 @@
 // for the test (G.Expedition.debugEnable: D2 still ships them as "Coming soon"). One browser at a time.
 // Movement is measured on hand-made zones (G.ExpTerrain.custom) with every player's speed set to 100 (no weather /
 // ability multipliers), stepping the game with G.Game.debugStep and real KeyboardEvents.
-//   1. hop down a ledge: walking off the plateau stops at the edge; hopping, you cross it in the air and land on the
-//      level below (layer 0, its mask); while airborne ground enemies don't hurt you on contact, back on the ground they
+//   1. ledges (owner playtest after D3): walking off the plateau walks DOWN it, a 0.25 s drop (lifted a cliff face,
+//      falling) onto the level below, carried clear of the edge, with no contact i-frames; hopping at the edge you cross
+//      it in the air and land below; while hopping ground enemies don't hurt you on contact, back on the ground they
 //      do, and a flyer still does
-//   2. the extra hop: one hop never gets up a level; a second hop in the air lands on the next level and never the one
-//      above it; a third press does nothing
-//   3. by type (normalised speed): a Flying type (Pidgey) glides across a 3-tile deep pond holding hop (airtime 1.2 s),
+//   2. walking up into a cliff is blocked; a single hop lands one level up (not two: a 2-high wall stops it); a hop plus
+//      the extra hop reaches two levels; a third press does nothing; never three levels
+//   3. the extra hop's airtime crosses a 2-tile deep gap a single hop splashes into; by type (normalised speed): a Flying type (Pidgey) glides across a 3-tile deep pond holding hop (airtime 1.2 s),
 //      a Water type (Squirtle) surfs across it at x1.35, a Fighting type (Machop) climbs a cliff at half speed and back
 //      down; a non-matching type (Charmander) does none of those: blocked by deep water, its hops and double hops
 //      splash back to the shore, blocked by the cliff; Squirtle holding hop doesn't glide, Pidgey doesn't climb; the
@@ -20,16 +21,18 @@
 //   6. the HUD buttons (HOP, SLIDE): drawn in an Expedition run only, a mouse click hops; the gamepad: confirm hops
 //      (held: glides), cancel slides, A / B on the Nintendo layout; in a Normal run neither does anything and no button
 //      is drawn; the pad's remappable actions are unchanged
-//   7. the `x` block v2: a live snapshot mid-hop carries {xv: 2, m, z, th, a: {p: [lift, verb, ...]}}, a co-op host
+//   7. the `x` block (v3): mid-drop the air row says verb 7 and counts the drop in a 7th field; a live snapshot mid-hop carries {xv: 2, m, z, th, a: {p: [lift, verb, ...]}}, a co-op host
 //      frame every player's row by uid, a guest's frame its own row; the run's replay keeps `a` out of its slow state
-//      (frame field 7) and plays back airborne frames; the same replay rewritten as v1 (no `a`) still loads and plays
+//      frame field 7) and plays back airborne frames and 3 falls off a real ledge of the zone; the same replay rewritten
+//      as v1 (no `a`) and as an older Classic one (6-field rows, before walking down) still loads and plays
 //   8. guests and spectators: a fresh page rebuilds the zone and shows the host airborne as a co-op guest (a real host
 //      frame through G.Net's handler and js/net/coop.js), as a live spectator (a snapshot through G.WatchUI) and as a
-//      replay viewer (seeking to an airborne frame); a spectator sees a leaping enemy lifted
+//      replay viewer (seeking to an airborne frame); a spectator sees a leaping enemy lifted; the guest, the spectator
+//      and the replay viewer show falls off a ledge, also ones that came and went between two frames (the drop count)
 //   9. the phone layouts (landscape, touch; portrait is the game's "rotate your phone" prompt): at 844x390 and 667x375
 //      the HOP / SLIDE buttons are on screen and overlap nothing else on the HUD; a tap hops, a quick second tap is the
 //      extra hop, a tap on SLIDE slides (no joystick)
-//  10. screenshots mid-hop, mid-glide and mid-surf at desktop and phone size (SHOTS=<dir>, default: none written)
+//  10. screenshots mid-hop, mid-glide, mid-surf, mid-bounce and mid-drop (off a ledge) at desktop and phone size (SHOTS=<dir>, default: none written)
 //   node overworld/tests/micasurvivor_expedition_movement_test.mjs
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored sprites. MICASURVIVOR_ROOT=<dir> serves
 //  micasurvivor/ from another tree: how the "fails before D2" count was taken.)
@@ -197,10 +200,29 @@ try {
 		H.cliff();
 		const r = {};
 		H.place(pl, 0, -3);
-		let maxTy = -99;
-		H.steps(90, ['KeyS'], () => { maxTy = Math.max(maxTy, H.tile(pl.y)); });
-		r.walk = { maxTy, layer: pl.layer, mask: pl.zMask };
+		pl.landed = null;
+		let maxTy = -99, dropF = 0, dropPeak = 0, kinds = new Set(), lifts = [], dropAt = null, dropN0 = pl.dropN | 0, landedAt = null, landed = null;
+		H.steps(90, ['KeyS'], i => {
+			maxTy = Math.max(maxTy, H.tile(pl.y));
+			if (pl.air) { kinds.add(pl.air.kind); if (pl.air.kind === 'drop') { dropF++; dropPeak = Math.max(dropPeak, pl.airZ); lifts.push(Math.round(pl.airZ)); if (dropAt == null) dropAt = { i, ty: H.tile(pl.y), y: Math.round(pl.y), lx: Math.round(pl.air.ly) }; } }
+			if (pl.landed && !landed) { landed = pl.landed; landedAt = { i, y: Math.round(pl.y), ty: H.tile(pl.y), r: pl.r }; }
+		});
+		r.walk = { maxTy, ty: H.tile(pl.y), layer: pl.layer, mask: pl.zMask, dropF, dropPeak: Math.round(dropPeak), kinds: [...kinds], lifts, dropAt, landed, landedAt, drops: (pl.dropN | 0) - dropN0, air: !!pl.air };
+		// the drop gives no contact i-frames: a ground enemy on you while you fall still hurts
+		{
+			H.place(pl, 0, -1);
+			const foe = new G.Enemy({ dex: 19, name: 'x', behavior: 'chase', hp: 99999, spd: 1, dmg: 5, xp: 1 }, pl.x, pl.y, { hp: 1, spd: 1, dmg: 1 });
+			G.EnemyMgr.add(foe);
+			H.steps(60, [], () => { foe.x = pl.x + 40; foe.y = pl.y; });   // (past a new enemy's spawn-in)
+			H.hurts.length = 0;
+			let inDrop = 0;
+			pl.invuln = 0;
+			H.steps(40, ['KeyS'], () => { if (pl.air && pl.air.kind === 'drop') { inDrop++; foe.x = pl.x; foe.y = pl.y; foe.touchCd = 0; } else { foe.x = pl.x + 40; foe.y = pl.y; } });
+			r.dropHit = { inDrop, hits: H.hurts.filter(h => h.air).length };
+			G.EnemyMgr.clear();
+		}
 		// hop at the edge
+		H.place(pl, 0, -1);
 		let airFrames = 0, crossAir = false, peak = 0, layers = new Set();
 		H.seq([[1, ['KeyS', 'Space']], [70, ['KeyS']]], () => {
 			if (pl.air) { airFrames++; peak = Math.max(peak, pl.airZ); if (H.tile(pl.y) >= 0) crossAir = true; }
@@ -228,7 +250,13 @@ try {
 		G.EnemyMgr.clear();
 		return r;
 	});
-	A(ledge.walk && ledge.walk.maxTy < 0 && ledge.walk.layer === 1, 'walking off the plateau still stops at its edge (layer 1)', JSON.stringify(ledge.walk || ledge));
+	const lw = ledge.walk || {};
+	A(lw.maxTy >= 1 && lw.layer === 0 && lw.mask === 1 && !lw.air && lw.drops === 1 && lw.landed && lw.landed.kind === 'drop' && lw.landed.from === 1 && lw.landed.to === 0,
+		'walking DOWN a ledge works with no hop: off the plateau onto the level below (layer 0, mask 1), one drop', JSON.stringify(lw));
+	A(lw.dropF >= 13 && lw.dropF <= 17 && lw.dropPeak >= 10 && lw.dropPeak <= 16 && lw.lifts && lw.lifts[lw.lifts.length - 1] < lw.lifts[0] && lw.kinds.length === 1,
+		`...shown as a short fall (${lw.dropF} airborne steps, ~0.25 s; the sprite starts ${lw.dropPeak} units up, a cliff face, and falls: ${(lw.lifts || []).join(',')})`, JSON.stringify(lw));
+	A(lw.dropAt && lw.dropAt.ty === 0 && lw.landedAt && lw.landedAt.y - lw.landedAt.r >= 0, '...it starts as the centre crosses the edge and carries you clear of it (the body wholly below)', JSON.stringify([lw.dropAt, lw.landedAt]));
+	A(ledge.dropHit && ledge.dropHit.inDrop >= 10 && ledge.dropHit.hits > 0, `the drop is free movement, not a hop: no contact i-frames (a ground enemy on you mid-fall hits ${ledge.dropHit && ledge.dropHit.hits} times)`, JSON.stringify(ledge.dropHit));
 	A(ledge.hop && ledge.hop.crossAir && ledge.hop.ty >= 0 && ledge.hop.layer === 0 && ledge.hop.mask === 1 && !ledge.hop.air && ledge.hop.landed && ledge.hop.landed.from === 1 && ledge.hop.landed.to === 0,
 		`a hop at the edge crosses it in the air and lands on the level below (layer 0, mask 1; ${ledge.hop && ledge.hop.airFrames} airborne steps, lifted ${ledge.hop && ledge.hop.peak})`, JSON.stringify(ledge.hop || ledge));
 	A(ledge.hop && ledge.hop.airFrames >= 25 && ledge.hop.airFrames <= 29 && ledge.hop.peak >= 22 && ledge.hop.peak <= 24, 'the hop is a 0.45 s arc lifting the sprite up to 12 art px (24 world units)', JSON.stringify(ledge.hop));
@@ -236,26 +264,43 @@ try {
 		`contact i-frames: a ground enemy on you never hurts you in the air (${ledge.contact && ledge.contact.airSteps} steps), back on the ground it does (${ledge.contact && ledge.contact.onGround} hits)`, JSON.stringify(ledge.contact || ledge));
 	A(ledge.flyer && ledge.flyer.flying && ledge.flyer.hits > 0, 'a flyer (Butterfree) still hits you in the air (only ground contact is skipped)', JSON.stringify(ledge.flyer));
 
-	// 2. the extra hop: exactly one level up
+	// 2. walking up is blocked; a hop goes up one level, the extra hop one more (two), never three
 	const up = await E(page, () => {
 		const H = window.__t, pl = H.become(4);
-		H.steps3();
 		const r = {};
-		const go = (segs) => {
-			H.place(pl, 0, 1);
-			let minTy = 99, maxLayer = 0, maxHops = 0;
-			H.seq(segs, () => { minTy = Math.min(minTy, H.tile(pl.y)); maxLayer = Math.max(maxLayer, pl.layer || 0); if (pl.air) maxHops = Math.max(maxHops, pl.air.hops); });
-			return { ty: H.tile(pl.y), minTy, layer: pl.layer, mask: pl.zMask, maxLayer, maxHops, air: !!pl.air };
+		// walking north into the cliff (no ramp): stopped at its foot, never airborne
+		H.cliff();
+		H.place(pl, 0, 2);
+		let minTy = 99, air = false;
+		H.steps(90, ['KeyW'], () => { minTy = Math.min(minTy, H.tile(pl.y)); if (pl.air) air = true; });
+		r.walkUp = { minTy, ty: H.tile(pl.y), layer: pl.layer, mask: pl.zMask, air };
+		// (ground layers only: airborne, entity.layer is the air's top)
+		const go = (segs, tx, ty) => {
+			H.place(pl, tx || 0, ty || 0);
+			let minTy = 99, maxGround = 0, maxHops = 0, maxUp = 0;
+			H.seq(segs, () => { minTy = Math.min(minTy, H.tile(pl.y)); if (!pl.air) maxGround = Math.max(maxGround, pl.layer || 0); else { maxHops = Math.max(maxHops, pl.air.hops); maxUp = Math.max(maxUp, pl.air.top - pl.air.top0); } });
+			return { ty: H.tile(pl.y), minTy, layer: pl.layer, mask: pl.zMask, maxGround, maxHops, maxUp, air: !!pl.air, landed: pl.landed };
 		};
+		H.steps3();
 		r.one = go([[1, ['KeyW', 'Space']], [80, ['KeyW']]]);
-		r.two = go([[1, ['KeyW', 'Space']], [11, ['KeyW']], [1, ['KeyW', 'Space']], [90, ['KeyW']]]);
+		r.two = go([[1, ['KeyW', 'Space']], [18, ['KeyW']], [1, ['KeyW', 'Space']], [90, ['KeyW']]]);
 		r.three = go([[1, ['KeyW', 'Space']], [9, ['KeyW']], [1, ['KeyW', 'Space']], [9, ['KeyW']], [1, ['KeyW', 'Space']], [90, ['KeyW']]]);
+		// a wall two levels high right ahead: one hop can't get up it
+		H.zone({ hgt: (x, y) => y < 12 ? 2 : 0 });
+		r.twoHigh = go([[1, ['KeyW', 'Space']], [80, ['KeyW']]]);
+		// four levels in a row (3 / 2 / 1 / 0): with every press, never more than two above the take-off
+		H.zone({ hgt: (x, y) => y < 10 ? 3 : y < 11 ? 2 : y < 12 ? 1 : 0 });
+		r.four = go([[1, ['KeyW', 'Space']], [9, ['KeyW']], [1, ['KeyW', 'Space']], [9, ['KeyW']], [1, ['KeyW', 'Space']], [150, ['KeyW']]]);
 		return r;
 	});
-	A(up.one && up.one.ty >= 0 && up.one.layer === 0 && up.one.maxLayer === 0, 'one hop never gets up a level (back on layer 0 at the cliff\'s foot)', JSON.stringify(up.one || up));
-	A(up.two && up.two.ty === -1 && up.two.layer === 1 && up.two.mask === 2 && up.two.minTy === -1 && up.two.maxLayer === 1 && up.two.maxHops === 2,
-		'a second hop in the air lands on the next level up (layer 1), and never on the one above it (layer 2)', JSON.stringify(up.two || up));
-	A(up.three && up.three.maxHops === 2 && up.three.maxLayer <= 1 && up.three.minTy >= -1, 'a third press in the air does nothing (2 hops at most, still one level)', JSON.stringify(up.three || up));
+	A(up.walkUp && up.walkUp.minTy >= 0 && up.walkUp.layer === 0 && up.walkUp.mask === 1 && !up.walkUp.air, 'walking UP into a cliff is still blocked (stopped at its foot, layer 0; a ledge is one-way)', JSON.stringify(up.walkUp || up));
+	A(up.one && up.one.ty === -1 && up.one.layer === 1 && up.one.mask === 2 && up.one.maxGround === 1 && up.one.maxHops === 1 && up.one.maxUp === 1,
+		'a single hop toward a higher tile lands on it: one level up (layer 1), and not on the one above (layer 2)', JSON.stringify(up.one || up));
+	A(up.two && up.two.layer === 2 && up.two.mask === 4 && up.two.ty <= -2 && up.two.maxHops === 2 && up.two.maxUp === 2,
+		'a hop plus the extra hop reaches two levels up (layer 2)', JSON.stringify(up.two || up));
+	A(up.three && up.three.maxHops === 2 && up.three.maxUp === 2 && up.three.maxGround <= 2, 'a third press in the air does nothing (2 hops at most, never more than two levels)', JSON.stringify(up.three || up));
+	A(up.twoHigh && up.twoHigh.ty >= 0 && up.twoHigh.layer === 0 && up.twoHigh.maxGround === 0, 'one hop can\'t go up two levels (a 2-high wall: back on layer 0 at its foot)', JSON.stringify(up.twoHigh || up));
+	A(up.four && up.four.maxUp === 2 && up.four.maxGround <= 2 && up.four.layer <= 2, 'with three levels above, every press together still reaches at most two (never layer 3)', JSON.stringify(up.four || up));
 
 	// 3. glide, surf, climb by type; a non-matching type can't
 	const types = await E(page, () => {
@@ -265,17 +310,20 @@ try {
 		// the pond: deep columns 3..5 (x 96..192), shallow 2 and 6
 		const cross = (dex, opts) => {
 			const pl = H.become(dex);
-			H.pond();
+			pl.landed = null;
+			if (opts.gap) H.zone({ hgt: () => 0, kind: (x, y) => { const tx = x - 12; return tx >= 2 && tx <= 5 ? 2 : 0; } }); else H.pond();
 			H.place(pl, -1, 0);
 			let maxX = -1e9, deepSeen = false, verbs = new Set(), airMax = 0, airNow = 0, splash = false, deepSpd = [];
-			let lastX = pl.x, pressed = 0;
+			let lastX = pl.x, pressed = 0, lastLanded = pl.landed;
+			const lands = [];
 			const tx = () => H.tile(pl.x);
 			// walk east; hop (and keep holding it) once at the shore's last stretch
 			H.hold(['KeyD']);
 			for (let i = 0; i < 240; i++) {
+				if (pl.landed && pl.landed !== lastLanded) { lands.push([Math.round(pl.x), pl.landed.splash]); lastLanded = pl.landed; }
 				if (opts.hop && !pressed && pl.x >= Math.min(82, 96 - pl.r - 3)) { H.hold(['KeyD', 'Space']); pressed = 1; }
 				else if (pressed === 1 && !opts.hold) { H.hold(['KeyD']); pressed = 2; }
-				else if (opts.double && pressed >= 1 && pl.air && pl.air.t > 0.3 && pl.air.hops === 1) { H.hold(['KeyD']); G.Game.debugStep(1, 1 / 60); H.hold(['KeyD', 'Space']); }
+				else if (opts.double && pressed >= 1 && pl.air && pl.air.t > (opts.late || 0.3) && pl.air.hops === 1) { H.hold(['KeyD']); G.Game.debugStep(1, 1 / 60); H.hold(['KeyD', 'Space']); }
 				G.Game.debugStep(1, 1 / 60);
 				if (pl.air) { airNow++; airMax = Math.max(airMax, airNow); } else airNow = 0;
 				if (pl.verb) verbs.add(V.NAME[pl.verb]);
@@ -288,7 +336,7 @@ try {
 			}
 			H.hold([]);
 			const sp = deepSpd.slice(5, -5);
-			return { dex, x: Math.round(pl.x), tx: tx(), maxX: Math.round(maxX), deepSeen, verbs: [...verbs], airMax, splash, layer: pl.layer,
+			return { lands, dex, x: Math.round(pl.x), tx: tx(), maxX: Math.round(maxX), deepSeen, verbs: [...verbs], airMax, splash, layer: pl.layer,
 				deepSpeed: sp.length ? Math.round(sp.reduce((a, b) => a + b, 0) / sp.length * 60) : 0, landed: pl.landed };
 		};
 		r.glide = cross(16, { hop: true, hold: true });
@@ -296,6 +344,9 @@ try {
 		r.walkC = cross(4, {});
 		r.hopC = cross(4, { hop: true, hold: true });
 		r.doubleC = cross(4, { hop: true, hold: true, double: true });
+		// a 2-tile deep gap (columns 3..4): one hop splashes short, the extra hop's airtime carries you over
+		r.gapOne = cross(4, { gap: true, hop: true });
+		r.gapTwo = cross(4, { gap: true, hop: true, hold: true, double: true, late: 0.4 });
 		r.squirtleHold = (() => { const o = cross(7, { hop: true, hold: true }); return { verbs: o.verbs, airMax: o.airMax }; })();
 		// the cliff (no ramp): Machop climbs up and back down; Charmander and Pidgey can't
 		const climb = (dex, dir) => {
@@ -328,12 +379,15 @@ try {
 	const u1 = types.climbUp || {}, u2 = types.climbDown || {};
 	A(u1.verbs && u1.verbs.includes('climb') && u1.ty < 0 && u1.layer === 1 && u1.mask === 2 && u1.climbSpd >= 40 && u1.climbSpd <= 60 && u1.walkSpd >= 90,
 		`a Fighting type (Machop) climbs the cliff at half speed (${u1.climbSpd} vs ${u1.walkSpd} units/s) onto the plateau (layer 1)`, JSON.stringify(u1));
-	A(u2.ty >= 0 && u2.layer === 0 && u2.mask === 1 && u2.verbs.includes('climb'), '...and climbs back down it', JSON.stringify(u2));
+	A(u2.ty >= 0 && u2.layer === 0 && u2.mask === 1 && u2.verbs.includes('climb') && !u2.verbs.includes('drop') && !u1.verbs.includes('drop'), '...and climbs back down it, as before (a climber never drops: it climbs, at half speed)', JSON.stringify(u2));
 	const wc = types.walkC || {}, hc = types.hopC || {}, dc = types.doubleC || {}, cc = types.climbC || {}, cp = types.climbP || {}, sh = types.squirtleHold || {};
 	A(wc.maxX < 96 && !wc.deepSeen && !wc.verbs.includes('surf'), `a non-matching type (Charmander) is blocked by deep water (never past x ${wc.maxX} < 96)`, JSON.stringify(wc));
 	A(hc.splash && hc.x < 96 && !hc.verbs.includes('glide') && hc.airMax <= 28 && dc.splash && dc.x < 96 && !dc.verbs.includes('glide'),
 		`...holding hop it doesn't glide: its hop and its double hop splash back to the shore (air ${hc.airMax} / ${dc.airMax} steps)`, JSON.stringify([hc, dc]));
 	A(cc.ty >= 0 && cc.layer === 0 && !cc.verbs.includes('climb') && cp.ty >= 0 && cp.layer === 0, '...and neither Charmander nor Pidgey climbs the cliff', JSON.stringify([cc, cp]));
+	const g1 = types.gapOne || {}, g2 = types.gapTwo || {};
+	A(g1.splash && g1.x < 96 && g2.tx >= 5 && !g2.splash && g2.lands.length === 1 && g2.lands[0][0] >= 160 && g2.airMax > 40,
+		`the extra hop extends a gap crossing: over a 2-tile deep gap one hop splashes back, hop + extra hop lands across (column ${g2.tx}, ${g2.airMax} airborne steps)`, JSON.stringify([g1, g2]));
 	A(sh.verbs && !sh.verbs.includes('glide') && sh.airMax <= 28, 'Squirtle holding hop doesn\'t glide either (only Flying types)', JSON.stringify(sh));
 
 	// 4. bounce pads
@@ -404,7 +458,16 @@ try {
 		const gf = G.Hooks.reduce('net.frame', { k: 'f' }, null);
 		H.steps(40, []);
 		const s2 = G.Spectate.snap();
-		return { x: s.x, hf: hf.x, gf: gf.x, ground: s2.x && s2.x.a, hash: G.World.zone.hash, size: JSON.stringify(s.x).length };
+		// mid-fall off a ledge (the D2 cliff): the row says verb 7, and its 7th field counts the drop
+		H.cliff();
+		H.place(pl, 0, -1);
+		const d0 = pl.dropN | 0;
+		H.steps(40, ['KeyS'], () => (pl.air && pl.air.kind === 'drop' && pl.air.t > 0.06 ? false : undefined));
+		const sd = G.Spectate.snap(), hd = G.Hooks.reduce('net.frame', { k: 'f' }, { uid: 'bob', pl });
+		const drop = { p: sd.x && sd.x.a && sd.x.a.p, q: hd.x && hd.x.a && hd.x.a.q && hd.x.a.q.alice, n: (pl.dropN | 0) - d0 };
+		H.steps(30, []);
+		G.Exp.enterZone(1);
+		return { drop, x: s.x, hf: hf.x, gf: gf.x, ground: s2.x && s2.x.a, hash: G.World.zone.hash, size: JSON.stringify(s.x).length };
 	});
 	const xa = xb.x && xb.x.a && xb.x.a.p;
 	A(xb.x && xb.x.xv === 3 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash && xa && xa[0] > 10 && xa[1] === 1 && xa[3] > 0 && xa[4] === 45,
@@ -412,6 +475,9 @@ try {
 	A(xb.hf && xb.hf.xv === 3 && xb.hf.a && xb.hf.a.q && xb.hf.a.q.alice && xb.hf.a.q.alice[0] > 10 && xb.gf && xb.gf.a && xb.gf.a.p && xb.gf.a.p[0] > 10,
 		'a co-op host frame carries every player\'s row by uid (the host\'s own), a guest\'s frame its own row', JSON.stringify([xb.hf, xb.gf]));
 	A(xb.ground && xb.ground.p && xb.ground.p[0] === 0 && xb.ground.p[1] === 0, 'back on the ground the row says so (lift 0, no verb)', JSON.stringify(xb.ground));
+	const xd = xb.drop || {};
+	A(xd.p && xd.p.length === 7 && xd.p[0] > 0 && xd.p[1] === 7 && xd.p[4] === 25 && xd.p[6] === ((xa && xa[6]) | 0) + 1 && xd.n === 1 && xd.q && xd.q[1] === 7,
+		`mid-fall off a ledge the snapshot's and the host frame's row carry it: [lift ${xd.p && xd.p[0]}, verb 7 (drop), layer, phase, airtime 25 cs, hops, drops ${xd.p && xd.p[6]}] (the x block stays v3: a 7th field older readers ignore)`, JSON.stringify(xd));
 
 	// 6. the HUD buttons and the gamepad (real frames)
 	const ui = await E(page, async () => {
@@ -489,6 +555,17 @@ try {
 				H.place(pl, p[0] - dx, p[1] - dy); pl.padCd = 0;
 				H.steps(60, [key], () => (pl.air && pl.air.t > 0.3 ? false : undefined));
 			}
+			else if (what === 'drop') {
+				// mid-fall off the run's nearest south-facing ledge (its painted cliff face below)
+				const z = G.Exp.enterZone(1), W = G.World, ok = (x, y) => W.walkable(x, y) && z.terr(x, y) === 0 && !z.rampDir(x, y) && !z.propAt(x, y);
+				let L = null;
+				// (the widest straight face near the spawn: 5 tiles, else 3, else 1)
+				for (const w of [2, 1, 0]) for (let d = 2; d < 50 && !L; d++) for (let ty = -d; ty <= d && !L; ty++) for (let tx = -d; tx <= d && !L; tx++)
+					if (Math.max(Math.abs(tx), Math.abs(ty)) === d && Array.from({ length: 2 * w + 1 }, (_, i) => i - w).every(k => ok(tx + k, ty) && ok(tx + k, ty - 1) && ok(tx + k, ty + 1) && ok(tx + k, ty + 2)
+						&& z.height(tx + k, ty - 1) === z.height(tx, ty) && z.height(tx + k, ty) === z.height(tx, ty) && z.height(tx + k, ty + 1) === z.height(tx, ty) - 1 && z.height(tx + k, ty + 2) === z.height(tx, ty) - 1)) L = [tx, ty];
+				H.place(pl, L[0], L[1]);
+				H.steps(60, ['KeyS'], () => (pl.air && pl.air.kind === 'drop' && pl.air.t > 0.07 ? false : undefined));
+			}
 			else { G.Exp.enterZone(1); H.place(pl, 0, 0); if (what === 'hop') H.seq([[1, ['KeyD', 'Space']], [12, ['KeyD']]]); else H.seq([[1, ['KeyD', 'Space']], [40, ['KeyD', 'Space']]]); }
 			const st = { verb: G.ExpVerbs.NAME[pl.verb], lift: Math.round(pl.airZ || 0), air: pl.air && pl.air.kind };
 			// hold the pose while real frames draw it (the test's own stand-in for a paused sim)
@@ -503,11 +580,13 @@ try {
 		out.glide = await pose(16, 'glide'); await shoot(pg, `expedition_glide_${tag}.png`);
 		out.surf = await pose(7, 'surf'); await shoot(pg, `expedition_surf_${tag}.png`);
 		out.pad = await pose(4, 'pad'); await shoot(pg, `expedition_pad_${tag}.png`);
+		out.drop = await pose(4, 'drop'); await shoot(pg, `expedition_ledge_drop_${tag}.png`);
 		await E(pg, () => { const pl = G.Game.player; if (pl._upd) { pl.update = pl._upd; delete pl._upd; } });
 		return out;
 	};
 	const dp = await poses(page, 'desktop');
 	A(dp.hop.air === 'hop' && dp.hop.lift > 10 && dp.glide.air === 'glide' && dp.glide.lift > 5 && dp.surf.verb === 'surf' && dp.pad.air === 'bounce', 'desktop: mid-hop, mid-glide, mid-surf and mid-bounce poses drawn', JSON.stringify(dp));
+	A(dp.drop && dp.drop.air === 'drop' && dp.drop.lift > 3, 'desktop: a fall off a ledge drawn mid-drop (walking down, no hop)', JSON.stringify(dp.drop));
 
 	// 7b. the replay: hops on the run's own zone, then quit
 	const rep = await E(page, async () => {
@@ -518,24 +597,45 @@ try {
 		H.place(pl, 0, 0);
 		// ~5 s on the spawn clearing: hop, glide, hop...
 		for (let k = 0; k < 4; k++) H.seq([[1, ['KeyD', 'Space']], [70, ['KeyD', 'Space']], [10, []]]);
+		// walking down a real ledge of the zone (the nearest plain tile with a plain tile one level lower south of it), 3 times
+		const z = G.World.zone, W = G.World;
+		let ledge = null;
+		for (let d = 2; d < 40 && !ledge; d++) for (let ty = -d; ty <= d && !ledge; ty++) for (let tx = -d; tx <= d && !ledge; tx++) {
+			if (Math.max(Math.abs(tx), Math.abs(ty)) !== d) continue;
+			const ok = (x, y) => W.walkable(x, y) && z.terr(x, y) === 0 && !z.rampDir(x, y) && !z.propAt(x, y);
+			if (ok(tx, ty) && ok(tx, ty - 1) && ok(tx, ty + 1) && ok(tx, ty + 2) && z.height(tx, ty - 1) === z.height(tx, ty) && z.height(tx, ty + 1) === z.height(tx, ty) - 1 && z.height(tx, ty + 2) === z.height(tx, ty + 1)) ledge = [tx, ty];
+		}
+		let drops = 0;
+		if (ledge) for (let k = 0; k < 3; k++) { H.place(pl, ledge[0], ledge[1]); const n0 = pl.dropN | 0; H.steps(30 + k * 7, ['KeyS']); drops += (pl.dropN | 0) - n0; H.steps(25, []); }
 		G.Game.quit();
 		const e = G.Replay.last;
 		if (!e) return { error: 'no replay' };
 		await e.ready;
 		const txt = await G.Replay.unpack(e.code);
 		const d = JSON.parse(txt);
+		const dropRows = d.f.filter(f => f[7] && f[7].p && f[7].p.length === 7);
+		const dropN = dropRows.length ? Math.max(...dropRows.map(f => f[7].p[6])) : 0, dropMid = d.f.filter(f => f[7] && f[7].p && f[7].p[1] === 7).length;
 		const withA = d.f.filter(f => f[7]).length, slowA = d.f.filter(f => f[3] && f[3].x && 'a' in f[3].x).length, slowX = d.f.filter(f => f[3] && f[3].x).length;
 		const rd = await G.Replay.open(e.code);
 		const air = [];
 		for (let i = 0; i < rd.length; i++) { const s = rd.at(i); if (s.x && s.x.m === 'viridian' && s.x.a && s.x.a.p && s.x.a.p[0] > 0) air.push(i); }
+		// the frames where the drop count went up (a fall off a ledge since the frame before)
+		const dropAt = [];
+		for (let i = 1, last = null; i < rd.length; i++) { const p = rd.at(i).x && rd.at(i).x.a && rd.at(i).x.a.p; const n = p && p.length > 6 ? p[6] : null; if (last != null && n != null && n > last) dropAt.push([rd.times[i - 1], rd.times[i]]); if (n != null) last = n; }
 		// the same replay as v1: x without `a`, no field 7
 		const d1 = JSON.parse(txt);
 		for (const f of d1.f) { if (f[3] && f[3].x) f[3].x.xv = 1; if (f.length > 7) f.length = 7; while (f.length > 1 && f[f.length - 1] === 0) f.pop(); }
 		const code1 = await G.Replay.pack(JSON.stringify(d1));
+		// the same replay as an older Classic one (dv 2, before walking down a ledge): air rows of 6 fields, no drop count
+		const d0 = JSON.parse(txt);
+		for (const f of d0.f) if (f[7] && f[7].p) f[7].p = f[7].p.slice(0, 6);
+		const code0 = await G.Replay.pack(JSON.stringify(d0));
 		H.thaw();
-		return { code: e.code, code1, frames: d.f.length, withA, slowA, slowX, air, times: air.map(i => rd.times[i]), bytes: txt.length, hash: G.ExpTerrain.generate({ seed: d.h.sd, map: 'viridian', zone: 1 }).hash, seed: d.h.sd };
+		return { dropAt, ledge, drops, dropN, dropMid, dv: d.h.dv, code0, code: e.code, code1, frames: d.f.length, withA, slowA, slowX, air, times: air.map(i => rd.times[i]), bytes: txt.length, hash: G.ExpTerrain.generate({ seed: d.h.sd, map: 'viridian', zone: 1 }).hash, seed: d.h.sd };
 	});
 	A(rep.code && rep.withA > 3 && rep.slowA === 0 && rep.slowX > 0, `the replay keeps the air state in frame field 7 (${rep.withA} frames), never in its slow state (${rep.slowX} slow x blocks, none with \`a\`)`, JSON.stringify({ withA: rep.withA, slowA: rep.slowA, slowX: rep.slowX, err: rep.error }));
+	A(rep.ledge && rep.drops === 3 && rep.dropN >= 3 && rep.dropAt && rep.dropAt.length >= 3 && rep.dv === 2,
+		`the replay records the falls off a ledge (3 walked down at ${rep.ledge}: the air row's 7th field counts them, ${rep.dropMid} frames caught one mid-fall, verb 7; dv ${rep.dv})`, JSON.stringify({ ledge: rep.ledge, drops: rep.drops, dropN: rep.dropN, dropAt: rep.dropAt, dropMid: rep.dropMid, dv: rep.dv }));
 	A(rep.air && rep.air.length >= 2, `decoded, ${rep.air && rep.air.length} replay frames have the player airborne`, JSON.stringify(rep.air));
 	await ctx.close();
 
@@ -558,6 +658,17 @@ try {
 			H.deliver('alice', Object.assign({}, frame, { x: Object.assign({}, x) }));
 			const hp = G.Coop.mate('alice').pl;
 			o.guest = { zone: G.World.zone && G.World.zone.hash, lift: G.ExpVerbs ? Math.round(G.ExpVerbs.lift(hp)) : -1, verb: hp.verb, row: hp.airRow && hp.airRow.code };
+			// the host walks down a ledge: a frame mid-fall (verb 7), then one that missed a whole fall (only its drop count went up)
+			const fr = row => Object.assign({}, frame, { x: Object.assign({}, x, { a: { q: { alice: row } } }) });
+			H.deliver('alice', fr([0, 0, 2, 0, 0, 3, 4]));
+			H.deliver('alice', fr([10, 7, 2, 8, 25, 3, 5]));
+			o.guestDrop = { lift: Math.round(G.ExpVerbs.lift(hp)), verb: hp.verb, code: hp.airRow && hp.airRow.code };
+			await wait(400);
+			H.deliver('alice', fr([0, 0, 0, 0, 0, 3, 5]));
+			H.deliver('alice', fr([0, 0, 0, 0, 0, 3, 6]));
+			o.guestMissed = { lift: Math.round(G.ExpVerbs.lift(hp)), code: hp.airRow && hp.airRow.code };
+			await wait(400);
+			o.guestAfter = Math.round(G.ExpVerbs.lift(hp));
 			// the mate drawn lifted: its sprite y above its feet
 			G.Coop.end();
 			G.Game.quit();
@@ -578,6 +689,11 @@ try {
 			feed.snapshot(Object.assign({}, snap, { t: 40, x: ground }), {});
 			await wait(600);
 			o.liveAfter = { lift: Math.round(G.ExpVerbs.lift(wp)), enemyLift: en && en.jumpLift };
+			// a fall off a ledge between two 1 s snapshots: only the drop count says so, and the spectator still plays it
+			feed.snapshot(Object.assign({}, snap, { t: 50, x: Object.assign({}, x, { a: { p: [0, 0, 2, 0, 0, 5, 1] } }) }), {});
+			feed.snapshot(Object.assign({}, snap, { t: 60, x: Object.assign({}, x, { a: { p: [0, 0, 0, 0, 0, 5, 2] } }) }), {});
+			feed.snapshot(Object.assign({}, snap, { t: 70, x: Object.assign({}, x, { a: { p: [0, 0, 0, 0, 0, 5, 2] } }) }), {});   // (a view shows the snapshot before the newest)
+			o.liveDrop = { lift: Math.round(G.ExpVerbs.lift(wp)), code: wp.airRow && wp.airRow.code };
 			G.WatchUI.leave();
 			// a replay viewer: the recorded run, sought to an airborne frame
 			const rd = await G.Replay.open(rep.code);
@@ -587,6 +703,18 @@ try {
 			let best = 0;
 			for (const t of rep.times) { G.WatchUI.seek(t); best = Math.max(best, G.ExpVerbs.lift(G.WatchUI.player)); }
 			o.replay = { zone: G.World.zone && G.World.zone.hash, lift: Math.round(best) };
+			// each fall off a ledge, played forward from the frame before it to the one after it: the drop plays
+			o.replayDrops = [];
+			for (const [t0, t1] of (rep.dropAt || []).slice(-3)) { G.WatchUI.seek(t0); if (!G.WatchUI.playing) G.WatchUI.togglePlay(); G.WatchUI.tick(t1 - t0 + 0.01); G.WatchUI.togglePlay(); const p = G.WatchUI.player; o.replayDrops.push({ lift: Math.round(G.ExpVerbs.lift(p)), code: p.airRow && p.airRow.code }); }
+			G.WatchUI.leave();
+			// an older Classic replay (dv 2, air rows without the drop count): it loads and plays as before
+			const rd0 = await G.Replay.open(rep.code0);
+			G.WatchUI.playReplay(rd0, {});
+			for (let i = 0; i < 100 && !(G.World.zone && G.World.zone.hash === rep.hash); i++) { G.WatchUI.seek(rep.times[0]); await wait(50); }
+			G.WatchUI.togglePlay();
+			let best0 = 0;
+			for (const t of rep.times) { G.WatchUI.seek(t); best0 = Math.max(best0, G.ExpVerbs.lift(G.WatchUI.player)); }
+			o.old = { ok: !!rd0, zone: G.World.zone && G.World.zone.hash, lift: Math.round(best0), frames: rd0 && rd0.length, notice: G.Expedition.viewNotice('exp-classic', rep.dv) };
 			G.WatchUI.leave();
 			// the same replay rewritten as v1
 			const rd1 = await G.Replay.open(rep.code1);
@@ -605,6 +733,11 @@ try {
 		A(out.live && out.live.zone === rep.hash && out.live.lift > 5 && out.live.verb === 1 && out.live.enemyLift === 30,
 			`a live spectator sees the player mid-hop (lift ${out.live && out.live.lift}) and a leaping enemy lifted`, JSON.stringify(out.live || out));
 		A(out.liveAfter && out.liveAfter.lift === 0 && out.liveAfter.enemyLift === 0, '...and both back on the ground with the next snapshot', JSON.stringify(out.liveAfter));
+		A(out.guestDrop && out.guestDrop.lift > 0 && out.guestDrop.verb === 7 && out.guestDrop.code === 7 && out.guestMissed && out.guestMissed.lift > 0 && out.guestMissed.code === 7 && out.guestAfter === 0,
+			`a co-op guest sees the host's fall off a ledge (lift ${out.guestDrop && out.guestDrop.lift}, verb 7), also one that came and went between two frames (the drop count), then on the ground`, JSON.stringify([out.guestDrop, out.guestMissed, out.guestAfter]));
+		A(out.liveDrop && out.liveDrop.lift > 0 && out.liveDrop.code === 7, `a live spectator plays a fall that came and went between two 1 s snapshots (lift ${out.liveDrop && out.liveDrop.lift})`, JSON.stringify(out.liveDrop));
+		A(out.replayDrops && out.replayDrops.length === 3 && out.replayDrops.every(d => d.lift > 0 && d.code === 7), 'a replay viewer plays each of the 3 recorded falls off a ledge', JSON.stringify(out.replayDrops));
+		A(out.old && out.old.ok && out.old.zone === rep.hash && out.old.lift > 3 && out.old.notice === false, `an older Classic replay (dv 2, 6-field air rows) still loads and plays: same zone, hops shown (lift ${out.old && out.old.lift}), no notice`, JSON.stringify(out.old));
 		A(out.replay && out.replay.zone === rep.hash && out.replay.lift > 3, `a replay viewer seeking to an airborne frame sees the player in the air (lift ${out.replay && out.replay.lift})`, JSON.stringify(out.replay));
 		A(out.v1 && out.v1.ok && out.v1.xv === 1 && out.v1.zone === rep.hash && out.v1.lift === 0, 'the same replay as v1 (no air state) still loads: same zone, everyone on the ground', JSON.stringify(out.v1));
 		await v.ctx.close();
@@ -675,6 +808,7 @@ try {
 			await shoot(d.page, 'expedition_hud_phone.png');
 			const pp = await poses(d.page, 'phone');
 			A(pp.hop.air === 'hop' && pp.glide.air === 'glide' && pp.surf.verb === 'surf', 'phone: mid-hop, mid-glide and mid-surf poses drawn', JSON.stringify(pp));
+			A(pp.drop && pp.drop.air === 'drop' && pp.drop.lift > 3, 'phone: a fall off a ledge drawn mid-drop', JSON.stringify(pp.drop));
 		}
 		await d.ctx.close();
 	}

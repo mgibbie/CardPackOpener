@@ -56,7 +56,7 @@ G.Path = (() => {
         if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
         const n = ny * N + nx;
         if (!open[n] || dist[n] !== UNSEEN) continue;
-        if (Z) { if (!joins(open, c, n, cy * N + nx, ny * N + cx, k)) continue; }
+        if (Z) { if (!joins(open, n, c, cy * N + nx, ny * N + cx, k)) continue; }   // (DLC D2: an enemy on n steps to c)
         // Diagonal: las dos casillas de al lado tienen que estar libres.
         else if (k >= 4 && (!open[cy * N + nx] || !open[ny * N + cx])) continue;
         dist[n] = d;
@@ -65,12 +65,18 @@ G.Path = (() => {
     }
   }
 
-  /** DLC D1: can a step go from cell c to cell n (k >= 4: a diagonal past the side cells a and b)? */
+  /**
+   * DLC D1: can a ground enemy step from cell c to cell n (k >= 4: a diagonal past the side cells a and b)? Two cells
+   * join if their masks share a bit (D1), or (D2, walking down a ledge) if n is exactly one level below: a ledge is a
+   * one-way edge, down only (G.World.ledgeDown, collideZone's own rule). The BFS runs from the player outwards, so it
+   * asks it the other way round (from the farther cell to the nearer one). Pure: the same field from the same zone.
+   */
+  const step = (m, t) => !!(m & t) || G.World.ledgeDown(m, t);
   function joins(open, c, n, a, b, k, mc) {
-    const m = mc || open[c];
-    if (!(open[n] & m)) return false;
+    const m = mc || open[c], t = open[n];
+    if (!step(m, t)) return false;
     if (k < 4) return true;
-    return !!(open[a] & m) && !!(open[a] & open[n]) && !!(open[b] & m) && !!(open[b] & open[n]);
+    return step(m, open[a]) && step(open[a], t) && step(m, open[b]) && step(open[b], t);
   }
 
   /** Recalcula los campos de los jugadores vivos (lo llama el anfitrión / solitario). */
@@ -139,7 +145,7 @@ G.Path = (() => {
 
   /**
    * DLC D1: clearLine in a zone: along each of the three lines every next cell must share a layer bit with the one
-   * before it (so a straight line may go up a ramp, never over a cliff edge).
+   * before it (so a straight line may go up a ramp, never up a cliff edge; D2: it may go down a ledge, one level).
    */
   function clearLineZ(f, ax, ay, bx, by, r) {
     const TS = G.World.TS;
@@ -153,7 +159,7 @@ G.Path = (() => {
         const x = Math.floor((cx - uy * offs[s]) / TS) - f.ox, y = Math.floor((cy + ux * offs[s]) / TS) - f.oy;
         if (x < 0 || y < 0 || x >= N || y >= N) return false;
         const m = f.open[y * N + x];
-        if (!m || (run[s] && !(m & run[s]))) return false;
+        if (!m || (run[s] && !step(run[s], m))) return false;   // (D2: or one level down a ledge)
         run[s] = m;
       }
     }
