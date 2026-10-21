@@ -13,12 +13,24 @@
  *     blind. A joker gained DURING a blind (Riff-raff on setting_blind, Judgement used mid-round) is that
  *     blind's window's one.
  *   * gaining a joker WITHOUT a Pokémon type (a base-game joker, a non-Pokémon mod joker, a type outside
- *     Pokermon's 12), by any means ("gained a non-Pokémon joker (Joker)").
- * Gaining a NEW joker = a Joker-set card entering G.jokers for the first time, however it got there: bought,
- * picked from a pack, made by a tag (Top-up, Buffoon pack), or created by a card (Poké/Great/Ultra/Master
- * Ball, Judgement, Wraith, Riff-raff, The Soul) or copied as a new card (Ankh, Invisible Joker). Evolution,
- * Ditto's transformation and Tera / type changes are the SAME card (Pokermon's poke_evolve swaps the center
- * in place), so they are not new jokers. Starting jokers (a custom deck's) don't use the first window's one.
+ *     Pokermon's 12), by any means the player gains one (below) ("gained a non-Pokémon joker (Joker)"). By its gained
+ *     type: an Ankh copy of a Pokémon-made Grass banana is a Grass gain.
+ * Gaining a NEW joker = a Joker-set card entering G.jokers for the first time that the PLAYER bought or took:
+ * bought, picked from a pack, made by a tag (Top-up, Buffoon pack), created by a consumable (Poké/Great/Ultra/
+ * Master Ball, Judgement, Wraith, The Soul) or by a non-Pokémon joker (Riff-raff, Invisible Joker), or copied as
+ * a new card that way (Ankh). Evolution, Ditto's transformation and Tera / type changes are the SAME card
+ * (Pokermon's poke_evolve swaps the center in place), so they are not new jokers. Starting jokers (a custom
+ * deck's) don't use the first window's one.
+ *   * A joker MADE BY A POKÉMON JOKER'S OWN EFFECT (owner rule 2026-10-21) is not a gain at all: it neither uses the
+ *     window's one nor breaks the Nuzlocke as a non-Pokémon joker. Tropius's Gros Michel / Cavendish, Delibird's Gift
+ *     Card, Mew's random joker, Corsola's Water joker, Dragapult's Dreepy Darts, Mewtwo's copy, Nincada's Shedinja,
+ *     Audino's Mystery Egg (the list: tests/mods/runbadges_test.mjs "made by a Pokémon"). That includes a Pokémon it
+ *     makes (of any type: it still counts for the Monotype by its own type). "A Pokémon's own effect" = the joker is
+ *     the ACTING card (js/engine/core.js acting_card): its calculate, dollar bonus, add / remove, the {func}s its
+ *     calculate returns and the events any of those queued, including as a Blueprint / Brainstorm copy's target. A
+ *     consumable being used and a tag applying are never a joker's effect, even when a Pokémon made or used them; a
+ *     non-Pokémon joker (Riff-raff, the Ruins of Alph, Oologist, a Tera'd vanilla joker) is not a Pokémon. Such a
+ *     joker carries ability.rb_made_by (its maker's key), saved with it.
  *
  * Monotype (owner rule 2026-10-18, revised 2026-10-19 and 2026-10-21) — checked ONLY when a round BEGINS, never when
  * a joker is gained: buying a wrong-type or non-Pokémon joker is fine if it's gone (sold, used up) before the next round.
@@ -34,7 +46,10 @@
  *     ptype), stored on the card as ability.rb_type ('Fire' ..., 'none' for no type, 'any' for a wildcard Tera
  *     like Nacho's Stellar). Evolution and later Tera changes never change it. A COPY (Ankh, Invisible Joker:
  *     copy_card, which copies the ability table, Tera sticker included) inherits its source's gained type: it is
- *     the same Pokémon for Monotype (it is still a new joker for the Nuzlocke).
+ *     the same Pokémon for Monotype (it is still a new joker for the Nuzlocke, unless a Pokémon's effect made it).
+ *   * A joker WITHOUT a type made by a Pokémon joker's own effect (above: Tropius's bananas) is gained as its maker's
+ *     type (owner rule 2026-10-21): the run's locked type when the maker matches it, else the maker's gained type. A
+ *     Pokémon made that way keeps its own type, and a copy keeps its source's.
  *   * A joker MATCHES a type when its gained type OR its current type (get_type now: a Tera sticker, else ptype)
  *     is that type; a wildcard Tera (gained or current) matches every type. So evolving into another type is
  *     safe (the gained type), and Tera-ing a joker to the run’s type makes it count (the current type).
@@ -57,7 +72,7 @@
  * (Seeded = the player TYPED the seed. A resumed / replayed run keeps its recipe's `seeded` flag — engine/session.js
  * recipeSeeded — never "it has a seed": every recipe has one.)
  */
-import { G, LOC, emit } from '../../../js/engine/core.js';
+import { G, LOC, emit, acting_card } from '../../../js/engine/core.js';
 import { MOD_LOC } from '../../../js/mods/registry.js';
 import { get_type, wildcard_type, POKETYPES, TYPE_COLOURS } from './types.js';
 
@@ -107,18 +122,28 @@ export const runbadge_hooks = {
     if (!s || area !== G.jokers || !card || !card.ability || card.ability.set !== 'Joker' || card.rb_seen) return;
     card.rb_seen = true; // (a card property, not ability: evolution / copy_card never carry it)
     if (G.GAME.won) return;
-    s.gains += 1;
-    const name = joker_name(card);
-    if (s.ready) {
-      s.window_gains += 1;
-      if (s.window_gains > 1) brk(s, 'nuz', `2nd new joker this shop (${name})`);
-    }
+    // (owner rule 2026-10-21: a joker MADE by a Pokémon joker's own effect — Tropius's banana — is not the player's gain)
+    const by = pokemon_maker(card);
     const t = gained_type(card);
     // (the type it had when gained: what the Monotype checks read; saved with the card. A copy_card copy arrives with
-    //  its source's ability, rb_type included: it keeps that, the source's gained type — owner rule 2026-10-19)
-    if (!card.ability.rb_type) card.ability.rb_type = t;
-    // (owner rule 2026-10-18: gaining a joker without a Pokémon type breaks the Nuzlocke at once)
-    if (t === 'none') brk(s, 'nuz', `gained a non-Pokémon joker (${name})`);
+    //  its source's ability, rb_type included: it keeps that, the source's gained type — owner rule 2026-10-19. A
+    //  typeless joker a Pokémon made takes its maker's type — owner rule 2026-10-21; a Pokémon it made keeps its own.)
+    if (!card.ability.rb_type) card.ability.rb_type = t === 'none' && by ? maker_type(by) : t;
+    // (who made it: saved with the card, so a resume / replay shows the same; a copy's inherited one is dropped unless
+    //  a Pokémon made the copy too)
+    if (by) card.ability.rb_made_by = by.config.center.key;
+    else delete card.ability.rb_made_by;
+    if (!by) {
+      s.gains += 1;
+      const name = joker_name(card);
+      if (s.ready) {
+        s.window_gains += 1;
+        if (s.window_gains > 1) brk(s, 'nuz', `2nd new joker this shop (${name})`);
+      }
+      // (owner rule 2026-10-18: gaining a joker without a Pokémon type breaks the Nuzlocke at once; by its GAINED type,
+      //  so a copy of a Pokémon-made banana — Grass — is a typed gain)
+      if (card.ability.rb_type === 'none') brk(s, 'nuz', `gained a non-Pokémon joker (${name})`);
+    }
     if (G.STATE === G.STATES.SHOP || (G.STATES && [G.STATES.BUFFOON_PACK, G.STATES.MOD_PACK, G.STATES.MOD_PACK_HAND, G.STATES.TAROT_PACK, G.STATES.SPECTRAL_PACK, G.STATES.STANDARD_PACK, G.STATES.PLANET_PACK].includes(G.STATE))) mono_warn();
   },
   sell_card(card) {
@@ -128,6 +153,24 @@ export const runbadge_hooks = {
   },
 };
 
+/** The Pokémon joker whose own effect is making `card` now (core.js acting_card: its calculate, its dollar bonus, its
+ *  add / remove, and the events those queued), or null: a player action, a consumable, a tag, a non-Pokémon joker (a
+ *  Tera'd Riff-raff is still not a Pokémon), or the card itself. */
+function pokemon_maker(card) {
+  const by = acting_card();
+  if (!by || by === card || !by.ability || by.ability.set !== 'Joker' || !by.config || !by.config.center) return null;
+  const ex = by.ability.extra && typeof by.ability.extra === 'object' ? by.ability.extra : null;
+  if (!by.config.center.ptype && !(ex && ex.ptype)) return null;
+  return rb_type(by) === 'none' && gained_type(by) === 'none' ? null : by; // (a Pokémon whose type is outside the 12)
+}
+/** The type a typeless joker made by Pokémon `by` counts as: the run's locked type when `by` matches it (gained or
+ *  current), else the type `by` was gained as (else its current one). */
+function maker_type(by) {
+  const s = st();
+  if (s && s.type && matches(by, s.type)) return s.type;
+  const g = rb_type(by);
+  return g !== 'none' ? g : gained_type(by);
+}
 /** A card's type right now, as the tracker records it: a Pokermon type, 'any' (a wildcard Tera) or 'none'. */
 function gained_type(card) {
   if (wildcard_type(card)) return 'any';
