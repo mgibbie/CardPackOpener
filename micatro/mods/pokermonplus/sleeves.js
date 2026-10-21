@@ -1,16 +1,17 @@
-// Sonfive's Pokermon+ — src/sleeves/sleeves.lua: the 5 CardSleeves sleeves (deck variants, engine/sleeve.js),
-// each with its deck pairing (`alt`, CardSleeves' get_current_deck_key) as the Lua's loc_vars set it.
+// Sonfive's Pokermon+ 1.2.0 — src/sleeves/sleeves.lua: the CardSleeves sleeves (deck variants, engine/sleeve.js), each with
+// its deck pairing (`alt`, CardSleeves' get_current_deck_key) as the Lua's loc_vars set it. 1.2.0 ships 4 (Virtuous, Shiny,
+// Rogue, Void); the 1.0.3 Prophetic Sleeve is kept as a legacy definition (off the New Run picker: `legacy`), so old runs load.
 // Notes (as the mod plays: loc_vars rewrites self.config when the sleeve is shown, before the run starts):
 //   * Virtuous: a Timer Ball and -1 hand (the config's dollars = -4 is replaced by loc_vars); with the
 //     Virtuous deck: the Hieroglyph voucher instead.
-//   * Prophetic: -1 hand size, Foresight set to 3; with the Prophetic deck: Foresight set to 6 (+3 over the deck).
-//   * Shiny: shiny Pokémon x100 (the mod's edition_weight hook reads G.GAME.shiny_edition_rate). With the Shiny
-//     deck the Lua's per-run guard made it a no-op although its text says "even more likely" — intended-design
-//     fix: it multiplies again.
-//   * Rogue: a Mega Stone and +4 win ante. Void: Negative Energy +1 limit (modifiers.void) and a Nightmare after
-//     each Boss Blind (the Void deck's own calculate); its `_alt` text is never used by the Lua (no deck check).
-import { G, localize } from '../pokermon/api.js';
-import { nightmare_after_boss } from './src/pokemon/491_darkrai_line.js';
+//   * Prophetic (legacy): -1 hand size, Foresight set to 3; with the Prophetic deck: Foresight set to 6 (+3 over the deck).
+//   * Shiny: shiny Pokémon x100 (the mod's edition_weight hook reads G.GAME.shiny_edition_rate). 1.2.0's Shiny deck no longer
+//     touches the rate, so with the deck it multiplies once too (its `_alt` text).
+//   * Rogue: a Mega Stone and +4 win ante.
+//   * Void (1.2.0): Negative Energy +1 limit (modifiers.void) and the Void deck's calculate — each shop reroll has a 1 in 15
+//     chance to add a Nightmare to the shop (1.0.3: a Nightmare after each Boss Blind).
+import { G, localize, get_probability_vars } from '../pokermon/api.js';
+import { void_reroll } from './src/backs/backs.js';
 
 const MOD = 'pokermonplus', ATLAS = 'sonfive_sleeves';
 const sleeve = (key, x, def) => ({ key: 'sleeve_sonfive_' + key, pos: { x, y: 0 }, atlas: ATLAS, mod: MOD, config: {}, ...def });
@@ -24,6 +25,7 @@ export const SLEEVES = [
   }),
   sleeve('propheticsleeve', 2, {
     name: 'Prophetic Sleeve',
+    legacy: true, // (1.0.3: dropped by 1.2.0)
     config: { hand_size: -1, extra: { scry: 3 } },
     loc_vars: (self) => ({ vars: [self.config.hand_size, self.config.extra.scry] }),
     apply(self) { G.GAME.scry_amount = 0; G.GAME.scry_amount += self.config.extra.scry; },
@@ -49,8 +51,12 @@ export const SLEEVES = [
   }),
   sleeve('voidsleeve', 5, {
     name: 'Void Sleeve',
-    loc_vars: () => ({ vars: ['c_poke_nightmare'] }),
+    config: { extra: { num: 1, dem: 15 } },
+    loc_vars: (self) => {
+      const [num, dem] = get_probability_vars(G.GAME && G.GAME.sleeve_back, self.config.extra.num, self.config.extra.dem, 'voiddeck');
+      return { vars: ['c_poke_nightmare', num, dem] };
+    },
     apply() { G.GAME.modifiers.void = true; },
-    hooks: { end_round() { nightmare_after_boss({ end_of_round: true }); } },
+    hooks: { reroll_shop() { void_reroll({ extra: { num: 1, dem: 15 } }, G.GAME.sleeve_back); } },
   }),
 ];

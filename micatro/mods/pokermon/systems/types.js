@@ -59,6 +59,14 @@ const extraTable = (card) => card && card.ability && card.ability.extra && typeo
 
 /** Jokers of a type (by ptype or Tera sticker). 3.9.1 pokermon.find_pokemon_type(target_type, exclude_card, exclude_name):
  *  the optional args leave out one card / every joker of one name (3.9.1's "other <type> Jokers"). */
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): fn(card, target_type) -> true when the card also counts as
+ * that type (a pokermon.is_type wrap — Pokermon+ 1.2.0's Grafaiai: a joker of a type in its Nature counts as the Nature's
+ * other types). 3.9.1's find_pokemon_type and energy_matches go through is_type, so the rule reaches both.
+ */
+export const IS_TYPE_RULES = [];
+const type_rule = (card, target_type) => IS_TYPE_RULES.length > 0 && IS_TYPE_RULES.some((f) => f(card, target_type));
+
 export function find_pokemon_type(target_type, exclude_card, exclude_name) {
   const found = [];
   if (G.jokers && G.jokers.cards) {
@@ -66,7 +74,7 @@ export function find_pokemon_type(target_type, exclude_card, exclude_name) {
       const ex = extraTable(v);
       if (exclude_card && v === exclude_card) continue;
       if (exclude_name && v.ability && v.ability.name === exclude_name) continue;
-      if (v.ability && ((ex && target_type === ex.ptype) || wildcard_type(v) || v.ability[String(target_type).toLowerCase() + '_sticker'])) found.push(v);
+      if (v.ability && ((ex && target_type === ex.ptype) || wildcard_type(v) || v.ability[String(target_type).toLowerCase() + '_sticker'] || type_rule(v, target_type))) found.push(v);
     }
   }
   return found;
@@ -75,7 +83,7 @@ export function find_pokemon_type(target_type, exclude_card, exclude_name) {
 export function is_type(card, target_type) {
   if (wildcard_type(card)) return true;
   const ex = extraTable(card);
-  return !!(card.ability && ((ex && target_type === ex.ptype) || card.ability[String(target_type).toLowerCase() + '_sticker']));
+  return !!(card.ability && ((ex && target_type === ex.ptype) || card.ability[String(target_type).toLowerCase() + '_sticker'] || type_rule(card, target_type)));
 }
 
 export function get_type(card) {

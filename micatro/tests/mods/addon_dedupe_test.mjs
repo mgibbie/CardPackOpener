@@ -10,7 +10,7 @@
 //   - legacy keys: a recipe (custom deck) holding j_nacho_ralts replays and the card works; Pokermon+'s Wonder Guard challenge
 //     still starts with its Shedinja; a removed key keeps its name / text / art, is not "retired", resolves to itself; win
 //     stickers it earns go to Pokermon's line
-//   - the Pokédex family view and the version pins (Nacho 1.7.9-5 rev 2 since batch 18 / Pokermon+ contentRev 1)
+//   - the Pokédex family view and the version pins (Nacho 1.7.9-5 rev 2 since batch 18 / Pokermon+ 1.2.0 rev 2 since batch 20)
 //   node micatro/tests/mods/addon_dedupe_test.mjs
 import { T, hand, add, play, winRound, clearHand, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { newRun } from '../../js/engine/run.js';
@@ -253,7 +253,7 @@ sec('dex / pins', () => {
     const g = familyOf({ center: 'j_nacho_ralts' });
     ok(g[0] === 'j_nacho_ralts' && g.includes('j_poke_kirlia') && !g.includes('j_nacho_kirlia'), 'Pokédex on a legacy card: itself, then Pokermon\'s line', g);
   }
-  ok(PINS.modPin('nacho') === '1.7.9-5+r2' && PINS.modPin('pokermonplus') === '1.0.3-251101e+r1', 'pins: Nacho 1.7.9-5+r2 (batch 18), Pokermon+ 1.0.3-251101e+r1', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
+  ok(PINS.modPin('nacho') === '1.7.9-5+r2' && PINS.modPin('pokermonplus') === '1.2.0-261018a+r2', 'pins: Nacho 1.7.9-5+r2 (batch 18), Pokermon+ 1.2.0-261018a+r2 (batch 20)', [PINS.modPin('nacho'), PINS.modPin('pokermonplus')]);
   ok(PINS.LEGACY_MOD_VERSIONS.nacho === '1.6.4' && PINS.LEGACY_MOD_VERSIONS.pokermonplus === '1.0.3-251101e', 'LEGACY_MOD_VERSIONS untouched');
   const d = PINS.pinDiff({ mods: ['pokermon', 'nacho'], modVersions: { pokermon: PINS.modPin('pokermon'), nacho: '1.6.4' } });
   ok(d.length === 1 && d[0].id === 'nacho', 'a run recorded on Nacho 1.6.4 (rev 0) warns on resume', d);
