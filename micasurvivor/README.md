@@ -1338,7 +1338,7 @@ stream), sound, online co-op and the network.
 
 Expedition is a set of new modes picked on "Choose a mode", like Tower or Boss Rush. There is no on/off switch
 (owner, 2026-10-19), and the existing modes play exactly as before. D0b is the plumbing only, with no gameplay yet:
-every Expedition mode says "Coming soon".
+every Expedition mode says "Coming soon" (D3 made Classic playable: see "DLC D3" below).
 
 **The mode select:** an **Expedition** group sits between the base modes and the modifiers, with Classic, Survival
 and League (`js/systems/expedition.js` `MODES`).
@@ -1599,6 +1599,115 @@ glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
 - Chasm and lava gaps for gliding arrive with the later maps.
 - Sound: the verbs reuse the select click.
 
+## DLC D3: Expedition · Classic
+
+**Expedition · Classic is playable**: pick it on "Choose a mode" (the Expedition group; Survival and League still say
+"Coming soon"). A run is one map, **Viridian Forest**, of 3 zones plus Mew's shrine, and it can be **won**
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.8-2.10, 5.3). The code is `js/expedition/classic.js` (`G.ExpClassic`); the
+numbers are its `K`. Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded.
+
+**The run:**
+- **A zone** is D1/D2's seeded zone, a **10:00 zone clock** and a **timeline** of events over a steady trickle of the
+  map's Pokémon. The trickle starts with 4 species ("cards") and gains one a minute (the newest weighs ×1.4, older ones
+  ×0.85 per newer card). Enemies are the map's types (grass, bug, normal, flying) from all 1025 Pokémon: hand-picked
+  Viridian residents first, then any other of those types in the zone's base-stat band (base forms, middle stages,
+  final stages). Their stats follow the base spawner by run time, never below 0 / 4 / 8 minutes in zones 1 / 2 / 3, so
+  rushing a zone doesn't make the next one easy.
+- **The guardian altar** is a stone circle 26-48 tiles from the spawn, on flat ground, found from the zone's own grids
+  (every viewer finds the same one). Stand in it for 3 s (leaving drains it) and the zone's **guardian** wakes: one of
+  3 per zone (Beedrill / Butterfree / Raticate, Parasect / Venomoth / Fearow, Vileplume / Victreebel / Pidgeot).
+- **The portal** opens on the altar when the guardian falls, and pulls in every pickup. Stand in it for 0.8 s: the next
+  zone (enemies, pickups, shots and hazards are left behind; you start at its spawn).
+- **The final swarm** starts at 10:00 of zone time: spawns ×6 (and the cap ×1.4), and each new enemy has ×4 HP and ×2
+  damage per minute past it. It's a soft timer: wake the guardian before it buries you.
+- **The shrine** (zone 4) is hand-made: a round grove with a raised dais, stairs and two ponds. Mew floats faintly over
+  the pedestal; stand on it for 3 s and Mew appears. Beat it: "EXPEDITION COMPLETE!", then the run-over screen.
+- **Victory and splits:** the run-over screen shows the map and difficulty, "Map complete!" (or how far you got), and
+  the time you left each zone and the shrine against your best (+ / −). The Expedition save keeps them
+  (`split.<map>.<diff>.z<n>` and `clear.<map>.<diff>`, stored as 10⁹ − deciseconds so the save's max-merge keeps the
+  fastest), the wins (`wins.<map>.<diff>`) and the furthest zone (`zone.<map>.<diff>`). Pokémonedas: still none
+  (D9 / D10 pay the runs).
+- **Not in a Classic run:** the base biome cycle (the forest stays), the timed base bosses, the waves and surges, rifts,
+  dens, the base events and Arceus's Judgment. Level-ups, moves, items, Z-moves and Dynamax are the base game's.
+
+**The timeline** (zone 1; zone 2 is 20 s earlier, zone 3 40 s; D9's Hard / Nightmare pull it 15 / 30 s more):
+
+| Time | Event | What happens |
+|---|---|---|
+| 150, 330, 480 s | **Alpha** | A giant (×1.6) of the zone: ×9 HP, ×1.5 damage, ×8 XP, a red aura. It drops an item and a berry (D8 makes it recruitable). |
+| 235 s | **Swarm or stampede** | One or the other, from the zone's stream. |
+| 390 s | **Swarm** | 24-40 (×1.2 per zone) close in from a ring just off screen. |
+| 520 s | **Stampede** | A herd of 16-26 (Rattata / Doduo, Raticate / Tauros, Dodrio / Tauros) charges straight through, in lanes (`Enemy.xmove`). |
+| 170-280 s | **Flock** | 10-16 fliers (the Pidgey and Spearow lines) cross the map in a straight line, then hunt you, over every cliff. |
+| 400-500 s | **Rock slide** | 14 telegraphed boulders round you (4 close), each a 44 px circle that lands 1.1-2.7 s later (`G.Hazards`). |
+| 540-585 s | (half the time) | One more flock or rock slide. |
+| 330, 450 s | **Elite wave** | 5 (+2 per zone) elites: ×3 HP, ×1.3 damage, ×3 XP, a gold aura. |
+| 290, 420 s | **Totem** | A ×1.5 Pokémon with a purple aura (×12 HP) that calls 3 allies every 7 s until it falls. |
+| 360 s | **Summoner** | A stationary ×1.4 miniboss (×14 HP; Beedrill, Pidgeot, Vespiquen) that calls its family, and leaves after 50 s. |
+
+Every random choice comes from `G.DLC.rng` streams seeded by the world seed + map + zone, never `Math.random`.
+`G.ExpClassic.plan(seed, map, zone, diff)` is pure: which events, when, how many, which Pokémon, each event's own seed,
+the guardian and the zone's cards. The trickle has its own stream, so the events don't drift with how many enemies you
+kill. A co-op guest, a replay viewer and a spectator rebuild the plan and the altar from the seed. (Loot drops, the
+enemies' own AI and the base combat still use `Math.random`, as in every base mode.)
+
+**Bosses** (guardians and Mew):
+
+| | Rule (`K`) |
+|---|---|
+| HP | max(curve, **your DPS × target × 0.5** × (1 + 0.15 × tier)). The curve is 2,400 / 6,000 / 12,000 (Mew 20,000) × the base boss scale by run time. The target is 40 / 50 / 60 s (Mew 60 s). The DPS is all your damage over the last 30 s (`G.DmgLog`, at least 5 s of it); the 0.5 is the share of it a single target takes. |
+| Exhaustion | Past its target time a boss takes ×(1 + 0.15 per second) damage, up to ×8 (`enemy.takenK`, read by `Enemy.hurt`). The HUD says "EXHAUSTED ×2.5". |
+| Damage, XP | 40 / 52 / 64 (Mew 75) × 1.2, shots 0.55 of it; XP 2 / 2.5 / 3 (Mew 4) levels' worth. Patterns: the base boss AI. |
+
+**The HUD:** under the clock, "ZONE 1/3 · FINAL SWARM IN 6:48 · ALTAR 42 m" (then GUARDIAN, PORTAL 3 m, the shrine's
+MEW 4 m, LEGENDARY, COMPLETE!), red while the final swarm runs; an arrow at the screen edge to the altar / portal /
+shrine when it's off screen, kept clear of the minimap, the touch buttons and the move bar (`xarrow` in
+`G.HUD.rects()`). On the ground: the altar's charge as a gold arc, the portal swirl, the shrine's pillars, and each
+special enemy's aura, all painted in code. Event banners use the base banner.
+
+**Input:** nothing new. The altar, the portal and the pedestal are stand-in circles, so mouse, touch and pad play the
+same (D2's hop and slide as before).
+
+**The `x` block v3** `{xv: 3, m, z, th, a, c}`: `c` is what only the host knows.
+- `c = {s, p, q, f, n, d, k?, b?}`: the zone's start (run deciseconds), the phase (0 altar, 1 guardian, 2 portal,
+  3 legendary, 4 won), the altar charge 0-8, flags (1 final swarm, 2 won), timeline events fired, the difficulty, the
+  special enemies `[id, kind, ...]` (1 alpha, 2 elite, 3 totem, 4 summoner; a viewer scales and rings them), and the
+  boss `[id, exhaustion × 10]`.
+- Live snapshots and co-op host frames carry it (`spectate.snap` / `net.frame`); the replay keeps it in its slow state
+  (it changes a few times a minute). `G.Exp.viewAir` / `hostAir` apply it (`G.ExpClassic.applyC`). A spectator also
+  gets the event banners, from the rebuilt plan.
+- Zone 4 is rebuilt by `G.ExpClassic.build` (the shrine), on the host and every viewer (`G.Exp.applyX`).
+- The v1 and v2 readers are kept: a block without `c` shows no timeline.
+
+**Versions:** `G.Expedition.DV` is now **2** (Classic is playable, so content changes now change what a run means). A
+dv-1 replay or snapshot still plays without a notice (`replayOk`); a co-op lobby needs the same dv, as before.
+
+**The board:** a clean solo run sends the study's Classic score: (2 × KOs + 3 × seconds + damage / 200 + 1,500 ×
+(zone − 1) + 800 × bosses + 6,000 if won) × (1 + 0.5 × tier) (`G.ExpClassic.score`). D9 brings the boards' screen,
+tiers and medals.
+
+**Assets:** none. The altar, portal, shrine and auras are painted in code; every Pokémon is an existing sprite.
+
+**What changed in base files** (each an `if` on `G.Modes.isExp()`, `G.World.zone`, or a field only Expedition code sets):
+- `spawner.js`: an Expedition run's spawning is `G.ExpClassic.update` (like the Tower's and the Rush's).
+- `game.js`: no biome cycle, rifts, Judgment or base events in an Expedition run; `drawScene` paints the altar /
+  portal / auras; the Expedition run-over screen gets `title` and `splits`.
+- `enemy.js`: `takenK` (exhaustion) in `hurt`, and `xmove` (the stampede / flock run) at the top of `update`.
+- `hud.js`: the zone line, and `G.ExpClassic.drawHud` (arrow, exhaustion).
+- `run-ui.js`: the splits table when `r.splits` is given.
+- `expedition.js`: Classic enabled, `classic.js` in `SCRIPTS`, `DV` 2.
+
+**Not yet (D4+):**
+- the League roster, in-run evolution, Maturity, kits (D4): a Classic run uses your base partner;
+- rarity level-ups, vitamins, items with caps (D5), Ultimates (D6), the ₽ economy and interactables (D7);
+- recruiting alphas (D8: the `alpha` drop in `tickSpecials` is where the Friend Ball goes), League encounters, shinies
+  (a Classic run rolls none);
+- the map / difficulty pickers, tier tables, medals and the board screen (D9: `K.EARLY` and `bossHp({tier})` are ready);
+- boss phases at 66 / 33 % and escorts; Mt. Moon and Cerulean (D12: `MAPS` in `classic.js`);
+- starting Classic as a co-op run (the frames, snapshots and guest view are ready);
+- ground enemies routing round deep water (D2's note: they still wade it).
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
@@ -1637,6 +1746,22 @@ glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
   - the phone layouts (844 × 390 and 667 × 375) with taps, the double tap and the slide.
 
   `SHOTS=<dir>` saves mid-hop / mid-glide / mid-surf screenshots at desktop and phone size.
+- `node overworld/tests/micasurvivor_expedition_classic_test.mjs` (DLC D3), fast-forwarded with `G.Game.debugStep`:
+  - the menu: Classic playable and starting a Viridian Forest run, Survival and League "Coming soon", `DV` 2;
+  - the plan: pure (no `Math.random`, the same twice, another seed another plan), all 8 event kinds per zone in time
+    order, later zones earlier, the guardians and Mew, the altar flat, reachable and the same from a rebuild, the shrine;
+  - the live timeline over 10:40 of zone time: every event once, in order, at its time, spawning what it says; the
+    stampede's one direction, the flock, the rock slide's telegraphs, the marked alphas / elites / totems / summoners,
+    the trickle's new cards, the final swarm's spawn rate and ×4 HP;
+  - the altar's charge and drain, the guardian's HP from a measured DPS, `bossHp` and `exhaustion` with numbers and a
+    real hit, the portal (pickups pulled) and zone 2;
+  - a full run won (zones 1-3, the shrine, Mew), the victory screen in English with its 4 splits, the Expedition save,
+    a second win's deltas, the base save byte-equal;
+  - the `x` block v3 on snapshots, host frames and the replay; a fresh page as co-op guest (through `G.Net`), live
+    spectator and replay viewer (seeking to the fight and the portal); a v2 block without `c`;
+  - the zone line and the HUD at desktop and phone (844 × 390) size.
+
+  `SHOTS=<dir>` saves each event, the altar, the guardian, the portal, the shrine and the victory at desktop and phone size.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

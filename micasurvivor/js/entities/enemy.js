@@ -107,6 +107,8 @@
       if (this.dead) return;
       // MicaSurvivor (M5): congelado recibe un 25 % más (main.gd _damage_enemy).
       if (this.frozenT > 0) amount *= G.Status.FROZEN_TAKEN;
+      // MicaSurvivor (DLC D3): the exhaustion of an Expedition guardian past its target time (only Expedition code sets it)
+      if (this.takenK) amount *= this.takenK;
       const d = Math.max(1, Math.round(amount));
       // Copia de un enemigo del anfitrión: el golpe se le manda a él, que es
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
@@ -285,6 +287,8 @@
         if (this.poisonT <= 0) this.poison = 0;
       }
       if (this.dead) return;
+      // MicaSurvivor (DLC D3): an Expedition stampede / flock runs straight across first (only Expedition code sets xmove)
+      if (this.xmove && this.xmove(dt, pl)) return;
 
       // --- terreno ---
       let terrainMul = 1;

@@ -351,7 +351,8 @@ G.Game = (() => {
         time: Math.floor(time), level: pl.level, kills: pl.kills, bosses: pl.bosses, dead: !!dead, dex: pl.dex, shiny: !!pl.shiny, clean: clean(), group: coop });
       G.RunUI.showOver({
         dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
-        moves: pl.moves, caught: [], modeLines: res.lines, breakdown: '', replay, dmg: G.DmgLog.summary(pl.moves)
+        moves: pl.moves, caught: [], modeLines: res.lines, breakdown: '', replay, dmg: G.DmgLog.summary(pl.moves),
+        title: res.title || null, splits: res.splits || null   // (DLC D3: Classic's victory title and zone splits)
       }, () => { pl = null; G.Flow.afterRun(); });
       return;
     }
@@ -790,7 +791,8 @@ G.Game = (() => {
     if (G.Modes.checkTime(time)) { G.Audio.sfx('bossDown'); endRun(false); return; }
 
     // (M5 lote 8, main.gd 4705-4707: en el Rush cada 150 s desde un bioma al azar; en la Torre, uno por piso)
-    const b = G.Tower.on ? G.Tower.biomeOf(G.Tower.floor) : G.BossRush.on ? G.BossRush.biomeAt(time) : Math.floor(time / 240);
+    // (MicaSurvivor DLC D3: an Expedition map keeps its own biome: it never cycles)
+    const b = G.Modes.isExp() ? biome : G.Tower.on ? G.Tower.biomeOf(G.Tower.floor) : G.BossRush.on ? G.BossRush.biomeAt(time) : Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
       biome = b;
       G.World.setBiome(b);
@@ -829,7 +831,8 @@ G.Game = (() => {
     G.Interact.update(dt, pl);
     // MicaSurvivor (M5 lote 8, main.gd 1007 / 3249-3253 / 5863): en el Rush de Jefes y la Torre no hay
     // grietas (ni guaridas), ni Sentencia de Arceus, ni eventos (hordas, hora dorada, duendes)
-    if (!G.BossRush.on && !G.Tower.on) {
+    // (MicaSurvivor DLC D3: ni en la Expedición, que tiene su propia línea de tiempo: js/expedition/classic.js)
+    if (!G.BossRush.on && !G.Tower.on && !G.Modes.isExp()) {
       G.Rift.update(dt, pl, time);
       G.Judgment.update(dt, pl, time);
       G.Events.update(dt, all, time);
@@ -869,6 +872,7 @@ G.Game = (() => {
     G.World.drawGround(ctx, cam);
     G.World.drawLiquid(ctx, cam, t);
     G.Hazards.draw(ctx);
+    if (G.World.zone && G.ExpClassic) G.ExpClassic.drawGround(ctx);   // MicaSurvivor (DLC D3): altar, portal, shrine, auras
     G.Combat.drawGroundFields(ctx);
     G.Pickups.draw(ctx);
 

@@ -874,7 +874,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D0b. DLC toggle and plumbing** — **BUILT 2026-10-19 as "Expedition plumbing"** (no toggle; see the update below and `micasurvivor/README.md`, "DLC D0b: Expedition plumbing") | Settings → Content switch (in the DLC blob + a localStorage mirror); `ruleset`/`dv` through `Modes.plan/begin`; `core/hooks.js` seams with base code moved unchanged; `G.DLCLoader` (ordered script injection); `micasurvivordlc:<user>` blob + `micasurvivor-dlc-save-get/-put`; `micasurvivor_dlc` board with Micatro-style enforcement; `rs`/`dv` on the lobby, `start`, replay header/meta allow-list and spectate snapshots, with join/watch version gates; an empty Expedition tab; **the base-unchanged test against the D0a fixtures** + table freeze + save/replay/lobby round-trips | D0a |
 | **D1. Terrain layers** — **BUILT 2026-10-20** (`js/expedition/terrain.js`, `overworld/tests/micasurvivor_expedition_terrain_test.mjs`, README "DLC D1: terrain layers") | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
 | **D2. Movement verbs** — **BUILT 2026-10-21** (`js/expedition/verbs.js`, `overworld/tests/micasurvivor_expedition_movement_test.mjs`, README "DLC D2: movement verbs") | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
-| **D3. Expedition · Classic** | Zones, zone timeline (alphas, swarm, stampede, flock, rock slide, elite wave, totem, summoner), guardian altar, portal, final swarm, legendary shrine, victory screen, splits; boss HP from DPS + exhaustion; map 1 (Viridian Forest) | D2 |
+| **D3. Expedition · Classic** — **BUILT 2026-10-21** (`js/expedition/classic.js`, `overworld/tests/micasurvivor_expedition_classic_test.mjs`, README "DLC D3: Expedition · Classic") | Zones, zone timeline (alphas, swarm, stampede, flock, rock slide, elite wave, totem, summoner), guardian altar, portal, final swarm, legendary shrine, victory screen, splits; boss HP from DPS + exhaustion; map 1 (Viridian Forest) | D2 |
 | **D4. League roster and evolution** | ~80 kits + passives, kit unlock levels 1/2/4/7, in-run evolution with branch choice (Eevee), Maturity at 24/44, stats from base stats; the 3 starters free | D3 |
 | **D5. Level-ups and items** | 5-rarity luck-gated cards, move levels to 8 with archetype stat rolls, 8 new archetypes, 21 vitamins + slots, Refresh/Skip/Banish; ~60 items with caps and additive same-stat stacking | D4 |
 | **D6. Ultimates** | Charge meter (95 s passive, kill bucket, elite/alpha/boss, hurt), cast i-frames, cut-in; type Ultimates from Z-move effects; 16 signature Ultimates by evolution tier; auto-Ultimate setting | D4 |
@@ -1121,3 +1121,36 @@ Built as specified (`micasurvivor/README.md`, "DLC D2: movement verbs"), with th
 - **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so
   does the force-loaded run.
 
+### Update (2026-10-21): D3 built, "Expedition · Classic"
+Built as specified (`micasurvivor/README.md`, "DLC D3: Expedition · Classic"): **Classic is playable and winnable** on
+Viridian Forest; Survival and League still say "Coming soon". Choices and notes for later batches:
+- **The run:** 3 seeded zones and a hand-made shrine (zone 4, `G.ExpClassic.build`). Each zone: a 10:00 clock, the
+  timeline (alphas, swarm or stampede, swarm, stampede, flock, rock slide, elite waves, totems, summoner; later zones
+  20 / 40 s earlier), a trickle that gains a species a minute, the guardian altar (stand 3 s), the portal (stand 0.8 s),
+  the final swarm at 10:00 (spawns ×6, new enemies ×4 HP / ×2 damage per minute). The shrine: stand on the pedestal,
+  Mew appears; beating it wins. The run-over screen shows the zone splits against your best.
+- **Bosses:** HP = max(curve, DPS × target × 0.5 × (1 + 0.15 × tier)), targets 40 / 50 / 60 s (Mew 60 s); past the
+  target, ×(1 + 0.15 per second) damage taken, capped at ×8. The 0.5 ("the share of your DPS a single target takes")
+  is our own number, not PokéBonk's: our DPS meter counts every hit on every enemy. Tune it in `classic.js` `K`.
+- **Determinism:** `plan(seed, map, zone, diff)` is pure (events, sizes, species, guardian, cards); the altar comes
+  from the zone's grids; the trickle has its own stream. Loot rolls, enemy AI and combat stay `Math.random`, as in base.
+- **The `x` block v3** adds `c` (zone start, phase, altar charge, final swarm, events fired, difficulty, special
+  enemies, boss exhaustion); v1 / v2 still read. `G.Expedition.DV` is now 2 (dv-1 replays still play).
+- **Enemies:** the map's types from all 1025 Pokémon, residents first, by base-stat band per zone (there's no
+  evolution data in `G.DEX`, so "base / middle / final stage" is a BST band; D4's evolution data could replace it).
+  Their stats follow the base spawner by run time, with a floor of 0 / 4 / 8 minutes per zone. The cap is 110
+  (80 on touch), ×1.4 in the final swarm (owner #11).
+- **Deviations:** no interact key (PokéBonk's E): the altar, portal and pedestal are stand-in circles (works the same on
+  mouse, touch and pad). Alphas drop an item and a berry until D8 makes them recruitable. No boss phases / escorts
+  yet. The Classic score (study 2.12) goes to the board now; D9 owns the boards' UI, tiers and medals. Pokémonedas
+  are still not paid (D9 / D10).
+- **For D4:**
+  - a Classic run starts with the base partner (`G.Game.startRun` → `G.Modes.plan`); the League pick plugs in there,
+    and level-ups are still the base `G.LevelUp`;
+  - `G.ExpClassic.MAPS.viridian` holds the residents, guardians, legendary, stampede / flock / totem / summoner pools:
+    the League's catchable families should come from the same tables;
+  - `tickSpecials` (alpha down) is where D8's Friend Ball goes; `K.EARLY` and `bossHp({tier})` are ready for D9;
+  - `player.landed` / `player.air` (D2) are still unused: the +25 % airborne damage and the landing shockwave are D5 / D6;
+  - ground enemies still wade deep water (D2's note).
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so
+  does the force-loaded run.

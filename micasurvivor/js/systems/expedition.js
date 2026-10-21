@@ -4,8 +4,8 @@
  * is the only Expedition code a base boot loads; it is small and does nothing on its own:
  *
  *   MODES / NAME / DESC / ICON   the Expedition entries of "Choose a mode" (js/ui/modes-ui.js, the "Expedition"
- *                                group). D0b ships them all as "Coming soon": ENABLED is empty. A later batch turns
- *                                one on with ENABLED.add(id); G.Modes.plan() then plans it ({mode, dv, map, diff}).
+ *                                group). D0b shipped them all as "Coming soon"; D3 turns Classic on (ENABLED), Survival
+ *                                and League stay "Coming soon". G.Modes.plan() plans an enabled one ({mode, dv, map, diff}).
  *   DV                           the Expedition content version. Every Expedition run carries {mode: 'exp-…', dv}:
  *                                in its replay header and meta, its live snapshots and its co-op lobby. Base runs
  *                                carry no dv (the fields are optional; old replays and lobbies stay valid).
@@ -35,6 +35,7 @@ G.I18n.add({
   'Próximamente': 'Coming soon',
   'Expedición · modos nuevos (próximamente)': 'Expedition · new modes (coming soon)',
   'Mapas con alturas, guardianes y un portal final. Marcas por mapa y dificultad.': 'Maps with heights, guardians and a final portal. Records per map and difficulty.',
+  'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.': "Viridian Forest: 3 zones with heights, a guardian at each altar, the portal and Mew's shrine. Win the map.",
   'Aguanta todo lo que puedas en un mapa de Expedición, sin final.': 'Last as long as you can on an Expedition map, with no end.',
   'Atrapa y entrena a los Pokémon de tu Liga.': 'Catch and train the Pokémon of your League.',
   'La Expedición llegará pronto.': 'Expedition is coming soon.',
@@ -45,11 +46,11 @@ G.I18n.add({
 });
 
 G.Expedition = (() => {
-  const DV = 1;
+  const DV = 2;   // (DLC D3: Classic is playable; a dv-1 replay / snapshot still plays, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
-    'exp-classic': 'Mapas con alturas, guardianes y un portal final. Marcas por mapa y dificultad.',
+    'exp-classic': 'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.',
     'exp-survival': 'Aguanta todo lo que puedas en un mapa de Expedición, sin final.',
     'exp-league': 'Atrapa y entrena a los Pokémon de tu Liga.'
   };
@@ -58,8 +59,8 @@ G.Expedition = (() => {
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
-  const ENABLED = new Set();   // D0b: every Expedition mode is "Coming soon"
-  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js)
+  const ENABLED = new Set(['exp-classic']);   // D3: Classic is playable; Survival and League are still "Coming soon"
+  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

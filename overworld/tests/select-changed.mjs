@@ -44,6 +44,8 @@ export const BY_PATH = [
 	{ re: /^micasurvivor\//, suites: ['micasurvivor_dlc_base_unchanged_test.mjs', 'micasurvivor_expedition_forceload_test.mjs', 'micasurvivor_expedition_plumbing_test.mjs'], why: 'MicaSurvivor changed: the DLC base-unchanged golden runs (also with the Expedition code loaded) and the Expedition plumbing' },
 	// (DLC D2: the Expedition's own code, and the base files it hooks into, select its terrain and movement suites)
 	{ re: /^micasurvivor\/js\/(expedition\/|world\/world\.js|entities\/player\.js|systems\/combat\.js|core\/pad\.js|ui\/hud\.js|ui\/watch-ui\.js|net\/coop\.js|mica\/replay\.js)/, suites: ['micasurvivor_expedition_terrain_test.mjs', 'micasurvivor_expedition_movement_test.mjs'], why: 'the Expedition code (or a base file it hooks into) changed: its terrain layers and movement verbs' },
+	// (DLC D3: Expedition · Classic, and the base files it hooks into, select its suite)
+	{ re: /^micasurvivor\/js\/(expedition\/|systems\/expedition\.js|systems\/spawner\.js|entities\/enemy\.js|game\.js|ui\/hud\.js|ui\/run-ui\.js|ui\/modes-ui\.js|ui\/watch-ui\.js|net\/coop\.js|mica\/replay\.js|mica\/spectate\.js)/, suites: ['micasurvivor_expedition_classic_test.mjs'], why: 'the Expedition code (or a base file it hooks into) changed: Expedition · Classic (zones, timeline, guardian, portal, shrine, victory, viewers)' },
 	{ re: /^(server|functions)\//, diff: /micasurvivor|msurv/i, suites: ['micasurvivor_dlc_base_unchanged_test.mjs', 'micasurvivor_expedition_plumbing_test.mjs', 'micasurvivor_server_test.mjs'], why: 'the MicaSurvivor server actions changed: the DLC base-unchanged golden runs, the Expedition plumbing and the server actions' },
 ];
 // never affects a suite
