@@ -593,10 +593,11 @@ const hooks = {
   // (Nuzlocke / Monotype run badges: systems/runbadges.js)
   blind_on_deck: RB.blind_on_deck,
   new_round: RB.new_round,
+  draw_from_deck_to_hand: RB.round_begin, // (the round's first deal: the Monotype check, after every blind-select effect)
   shop_start: RB.shop_start,
   // (Kecleon takes the type of the joker to its right: its Lua update runs every frame; ours also when the joker row changes)
   emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
-  reordered(area) { if (area === G.jokers) sync_kecleon(); },
+  reordered(area) { if (area === G.jokers) { sync_kecleon(); RB.reordered(); } },
   sell_card(card, ...rest) {
     const r = RB.sell_card(card, ...rest);
     // (the Obituary Sleeve's alt, batch 17: a sold joker makes a Negative Energy of its type; systems/rules.js)

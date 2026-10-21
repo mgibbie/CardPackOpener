@@ -127,6 +127,14 @@ const PRE_B10 = '94347e16fd6a5de788d0c51c8860b8f534ca10e3';
 for (const p of ['micatro/mods/pokermon/index.js', 'micatro/mods/pokermon/enhancements/enhancement1.js', 'micatro/mods/pokermon/consumables/mart2.js']) {
 	JOKERS321['/' + p] = execFileSync('git', ['show', `${PRE_B10}:${p}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 }
+// That old index.js wires the CURRENT systems/runbadges.js by hook name, so it gets the hooks added since: the Monotype check
+// moved from new_round to the round's first deal (draw_from_deck_to_hand: RB.round_begin, owner rule 2026-10-21), and the
+// shop warning re-checks on a joker reorder.
+{
+	const k = '/micatro/mods/pokermon/index.js', a = '  new_round: RB.new_round,';
+	if (!JOKERS321[k].includes(a)) throw new Error('the pre-batch-10 index.js no longer wires RB.new_round');
+	JOKERS321[k] = JOKERS321[k].replace(a, a + ' draw_from_deck_to_hand: RB.round_begin, reordered: RB.reordered,');
+}
 let prompted = 0;
 const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);

@@ -825,7 +825,7 @@ export function achievementsScreen(tab = 'ach') {
     } else {
       body.appendChild(recordPanel());
     }
-    body.appendChild(h('div', 'rec-note', 'Pokermon runs only. A Nuzlocke never sells a joker and gains at most one new joker per shop (from one blind start to the next); a Monotype starts every round with jokers of only one Pokémon type. Win the run with either one intact to earn it. Seeded and challenge runs do not count.'));
+    body.appendChild(h('div', 'rec-note', 'Pokermon runs only. A Nuzlocke never sells a joker and gains at most one new joker per shop (from one blind start to the next); a Monotype starts every round with jokers of only one Pokémon type (checked as each round’s first hand is dealt, after the blind-select effects). Win the run with either one intact to earn it. Seeded and challenge runs do not count.'));
   };
   for (const [k, label] of [['ach', 'Achievements'], ['rec', 'Record']]) {
     const b = btn(label, 'red tab b-ach-' + k, () => show(k)); b.dataset.k = k; tabs.appendChild(b);
