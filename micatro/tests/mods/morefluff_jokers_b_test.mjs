@@ -221,6 +221,7 @@ start('MFB_MISS', { noBlind: true });
 
 // ------------------------------------------------------------------ Passing Balatro in 5 Minutes
 start('MFB_PASS', { noBlind: true });
+G.GAME.round_resets.blind_tags = { Small: 'tag_d_six', Big: 'tag_d_six' }; // (1.9.9999+r2: object_weights rolls the tags; a plain one here)
 {
   add(J('passando'));
   const r = act({ type: 'skip_blind' });
@@ -288,6 +289,7 @@ start('MFB_SLOT');
 
 // ------------------------------------------------------------------ Style Meter
 start('MFB_STYLE', { noBlind: true });
+G.GAME.round_resets.blind_tags = { Small: 'tag_d_six', Big: 'tag_d_six' }; // (1.9.9999+r2: object_weights rolls the tags; a plain one here)
 {
   add(J('stylemeter'));
   act({ type: 'skip_blind' });

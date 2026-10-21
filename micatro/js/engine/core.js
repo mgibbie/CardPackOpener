@@ -1248,6 +1248,9 @@ export function eval_card(card, context) {
     else jokers = card.calculate_joker(context);
     if (jokers) ret.jokers = jokers;
   }
+  // A mod may change an evaluation's amounts (a Steamodded SMODS.calculate_individual_effect wrap: More Fluff's Apple
+  // Friends doubles every +Chips / +Mult). Only while an active mod defines the hook.
+  if (ACTIVE_MODS.length) callHook('eval_card_result', card, context, ret);
   return ret;
 }
 
@@ -1412,12 +1415,19 @@ export function get_current_pool(_type, _rarity, _legendary, _append) {
   return [_pool, _pool_key + (!_legendary ? G.GAME.round_resets.ante : '')];
 }
 
-/** The SMODS joker rarity poll with weighted mod rarities (undefined = none active: the vanilla thresholds). */
+/**
+ * The SMODS joker rarity poll with weighted mod rarities (undefined = none active and no rarity mod set: the vanilla
+ * thresholds). Each weight is times G.GAME[<rarity key>_mod] (SMODS.poll_rarity: `common_mod`, `rare_mod`, ...,
+ * `<mod rarity key>_mod`; More Fluff 1.9.9999's Gem Alert makes Rares X6.7 as common with rare_mod).
+ */
+const VANILLA_RARITY_MOD = { 1: 'common_mod', 2: 'uncommon_mod', 3: 'rare_mod', 4: 'legendary_mod' };
+const rarity_mod = (key) => { const m = G.GAME[VANILLA_RARITY_MOD[key] || String(key).toLowerCase() + '_mod']; return m === undefined || m === null ? 1 : m; };
 function poll_joker_rarity(poll) {
   const mods = Object.values(RARITIES).filter((r) => r.mod && centerActive(r) && ((r.get_weight ? r.get_weight(r) : r.weight) || 0) > 0);
-  if (!mods.length) return undefined;
+  if (!mods.length && [1, 2, 3, 4].every((k) => rarity_mod(k) === 1)) return undefined;
   const avail = [{ key: 1, weight: 0.7 }, { key: 2, weight: 0.25 }, { key: 3, weight: 0.05 }, { key: 4, weight: 0 },
     ...mods.map((r) => ({ key: r.key, weight: r.get_weight ? r.get_weight(r) : r.weight }))];
+  for (const r of avail) r.weight = r.weight * rarity_mod(r.key);
   const total = avail.reduce((n, r) => n + r.weight, 0);
   let wi = 0;
   for (const r of avail) { wi += r.weight / total; if (poll < wi) return r.key; }

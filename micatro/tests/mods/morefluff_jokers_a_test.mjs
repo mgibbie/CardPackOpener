@@ -171,6 +171,7 @@ const hc = (k = 'S_2') => play(hand([k]));
 }
 { // Bad Legal Defence: a Death when the Boss Blind is selected
   start('MFA21', { noBlind: true }); add('j_mf_badlegaldefence');
+  G.GAME.round_resets.blind_tags = { Small: 'tag_d_six', Big: 'tag_d_six' }; // (1.9.9999+r2: object_weights rolls the tags; a plain one here)
   act({ type: 'skip_blind' }); act({ type: 'skip_blind' });
   clearConsumables(); act({ type: 'select_blind' });
   ok(G.GAME.blind.boss && G.consumeables.cards.some((c) => c.config.center.key === 'c_death'), 'Bad Legal Defence: Death on the boss');

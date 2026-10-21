@@ -16,6 +16,8 @@
 //      deck select and in Run Info — and a deck with only a plain win shows the plain stake sticker
 //   7. Pikachu (poke): a Pokermon win with both badges broken gives its jokers AND its deck the Pikachu sticker
 //      (ranked below Aipom, above the plain sticker); a vanilla win records no poke
+//   8. an Elite Stake win (it plays at Gold's 8): the record keeps level 9, unlocks Golden / Elite Nuzlocke + Golden /
+//      Elite Purist (toasts), the Achievements screen lists 8, the Record tab's rings are Elite
 // (owner rules 2026-10-18: gaining a non-Pokémon joker breaks the Nuzlocke at once; Monotype only breaks when a round
 //  starts with an off-type or non-Pokémon joker in the row)
 // Mod art missing from this checkout (a worktree) is served read-only from the main checkout two levels up
@@ -311,7 +313,7 @@ try {
 	await sleep(400);
 	const on = await dA.page.evaluate(() => [...document.querySelectorAll('.ach-row.on')].map((e) => e.dataset.id));
 	const all = await dA.page.evaluate(() => document.querySelectorAll('.ach-row').length);
-	A(all === 5 && JSON.stringify(on) === '["first_nuzlocke","first_monotype","nuzlocke_monotype"]', 'the Achievements screen lists all 5, with the 3 unlocked', JSON.stringify([all, on]));
+	A(all === 8 && JSON.stringify(on) === '["first_nuzlocke","first_monotype","nuzlocke_monotype"]', 'the Achievements screen lists all 8, with the 3 unlocked', JSON.stringify([all, on]));
 	await shot(dA, 'achievements_screen.png');
 	await dA.page.evaluate(() => document.querySelector('.b-ach-rec').click());
 	await sleep(300);
@@ -391,6 +393,36 @@ try {
 	const gj = await stkRec(dA, 'j_greedy_joker');
 	A(gj.win === 1 && !gj.poke, 'a vanilla win records no poke (no Pikachu)', JSON.stringify(gj));
 	await shot(dA, 'vanilla_run_no_badges.png');
+
+	// ===== 8. an Elite Stake Nuzlocke + Monotype win (Pokermon's Elite: it PLAYS at Gold's 8, its win records 9) =====
+	await dA.page.evaluate(() => { const b = document.querySelector('.go-modal .b-mainmenu'); if (b) b.click(); });
+	await sleep(400);
+	await dA.page.evaluate(async () => { await window.__micatro.newRun({ back: 'b_red', stake: 'stake_poke_elite', mods: ['pokermon'] }); });
+	await waitFor(() => dA.page.evaluate(() => !!window.__micatro.view() && window.__micatro.idle()), 40000);
+	A((await dA.page.evaluate(() => window.__micatro.view().stake)) === 8, 'an Elite Stake run plays at level 8 (view.stake)');
+	A(await winNow(dA, ['j_poke_charmander']), 'an Elite Stake Nuzlocke + Fire Monotype run won');
+	const ep = await dA.page.evaluate(() => window.__micatro.progress.getProgress());
+	A(ep.nuzStake === 9 && (ep.bothStake || {}).fire === 9 && (ep.monoStake || {}).fire === 9, 'the record keeps the win at level 9 (Elite), not Gold 8', JSON.stringify(ep));
+	A(['nuzlocke_gold', 'nuzlocke_monotype_gold', 'nuzlocke_elite', 'nuzlocke_monotype_elite'].every((id) => ep.ach[id]), 'it unlocks Golden Nuzlocke, Golden Purist, Elite Nuzlocke and Elite Purist', JSON.stringify(ep.ach));
+	A(await waitFor(() => dA.page.evaluate(() => !!document.querySelector('.ach-toast')), 8000), 'the unlock toasts show');
+	const seenT = new Set();
+	await waitFor(async () => { const t = await dA.page.evaluate(() => { const e = document.querySelector('.ach-toast .ach-t-n'); return e ? e.textContent : null; }); if (t) seenT.add(t); return seenT.size >= 4; }, 25000);
+	A(['Golden Nuzlocke', 'Golden Purist', 'Elite Nuzlocke', 'Elite Purist'].every((n) => seenT.has(n)), 'the toasts name all four', JSON.stringify([...seenT]));
+	A((await stkRec(dA, 'j_poke_charmander')).both === 9, '(the win stickers agree: Elite, level 9)', JSON.stringify(await stkRec(dA, 'j_poke_charmander')));
+	A(await waitFor(() => dA.page.evaluate(() => !document.querySelector('.ach-toast')), 20000), 'the toasts finish');
+	await dA.page.evaluate(() => document.querySelector('.go-modal .b-mainmenu').click());
+	await sleep(400);
+	await dA.page.evaluate(() => document.querySelector('.b-achievements').click());
+	await sleep(400);
+	const on8 = await dA.page.evaluate(() => [...document.querySelectorAll('.ach-row.on')].map((e) => e.dataset.id));
+	A((await dA.page.evaluate(() => document.querySelectorAll('.ach-row').length)) === 8 && JSON.stringify(on8) === '["first_nuzlocke","first_monotype","nuzlocke_monotype","nuzlocke_gold","nuzlocke_monotype_gold","nuzlocke_elite","nuzlocke_monotype_elite"]', 'the Achievements screen: 8 rows, 7 unlocked (all but Type Master)', JSON.stringify(on8));
+	await shot(dA, 'achievements_elite.png');
+	await dA.page.evaluate(() => document.querySelector('.b-ach-rec').click());
+	await sleep(300);
+	const eRec = await dA.page.evaluate(() => ({ nuz: (document.querySelector('.rec-stat[data-cat="nuz"] .wstk') || {}).dataset?.sticker, both: (document.querySelector('.rec-stat[data-cat="both"] .wstk') || {}).dataset?.sticker, fire: (document.querySelector('.rec-type[data-type="Fire"] .wstk') || {}).dataset?.sticker, ring: getComputedStyle(document.querySelector('.rec-type[data-type="Fire"] .wstk')).getPropertyValue('--wstk-ring').trim() }));
+	A(eRec.nuz === 'nuz:Elite' && eRec.both === 'both:Elite' && eRec.fire === 'both:Elite' && eRec.ring.toLowerCase() === '#ba8514', 'the Record tab: the Nuzlocke + both totals and Fire wear Elite rings (#ba8514)', JSON.stringify(eRec));
+	await shot(dA, 'record_elite.png');
+	await dA.page.evaluate(() => document.querySelector('.ach-modal .b-back').click());
 
 	for (const d of [dA, dB, dC]) A(!d.errors.length, d.name + ': no page errors', d.errors.slice(0, 3).join(' | '));
 } catch (e) {

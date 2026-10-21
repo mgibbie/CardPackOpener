@@ -242,11 +242,11 @@ export async function saveDecks(decks, rev = 0) {
 // Both also return the admin's `revoked` stickers (and `earned`, their re-earn times), which stickers.js drops.
 // Both send `maxLevel: 9` (this client knows the Elite sticker, level 9): without it the server answers with 9s shown as
 // Gold (8), so an older client that drops unknown levels neither loses the sticker from view nor push-loops (mp.mjs).
-//   fetchStickers() -> {wins, rev, revoked, earned} | {error}
+//   fetchStickers() -> {wins, rev, revoked, earned, allStakes} | {error}   (allStakes: the account's all-stakes allowance)
 //   saveStickers(wins, {keepalive, earned}) -> {ok, wins, rev, revoked, earned} | {error}
 export async function fetchStickers() {
 	if (!isLoggedIn()) return { error: 'not logged in' };
-	try { const d = await MP.call('micatro-stickers-get', { maxLevel: 9 }); return d && !d.error && d.wins && typeof d.wins === 'object' && !Array.isArray(d.wins) ? { wins: d.wins, rev: d.rev || 0, revoked: d.revoked || {}, earned: d.earned || {} } : { error: (d && d.error) || 'bad response' }; }
+	try { const d = await MP.call('micatro-stickers-get', { maxLevel: 9 }); return d && !d.error && d.wins && typeof d.wins === 'object' && !Array.isArray(d.wins) ? { wins: d.wins, rev: d.rev || 0, revoked: d.revoked || {}, earned: d.earned || {}, allStakes: d.allStakes === true } : { error: (d && d.error) || 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }
 export async function saveStickers(wins, { keepalive = false, earned = null } = {}) {

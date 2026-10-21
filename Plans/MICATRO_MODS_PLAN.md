@@ -254,10 +254,45 @@ table, art provenance and the follow-up batches: `micatro/mods/morefluff/PORTING
   Colours (Gold now a Spectral), Rotarots + Merchant / Tycoon, the Superboss rework (pick your DX boss), 6 stakes +
   3 stickers, the exile zone, the Purple Deck. Deleted keys (2 jokers, 2 decks, 4 sleeves, 2 packs, 2 tags, 1 challenge)
   are retired keys in `js/mods/aliases.js`.
-- Kept at 1.5.6 until the pkseams merge: Tall Joker, Triangle (their reworks need attributes / scale_card).
+- Kept at 1.5.6 until the pkseams merge: Tall Joker, Triangle (their reworks need attributes / scale_card). Done in batch B.
 - Follow-ups: about 20 of the 81 new jokers have real art upstream (batch B1 + the Letter / Purple / rot pools); the
   other ~61 are placeholder sketches and wait for art. Each batch bumps contentRev and re-records
   `micatro/tests/fixtures/morefluff_<pin>_fingerprints.json` (`morefluff_fingerprint_test.mjs --record`).
+
+### 10b. More Fluff 1.9.9999 — batch B (2026-10-20, branch `feat/micatro-morefluff-batch-b`)
+Pin **`1.9.9999+r2`** (`contentRev` 2; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/morefluff/PORTING.md` "Batch B".
+- **After the pkseams merge:**
+  - object_weights is on: every More Fluff run rolls through SMODS.poll_object. With Pokermon it is the same single flag,
+    and the two mods' weight hooks apply to each other's pools.
+  - `util.scale_card` is the engine's `scale_card`, and the base game's 27 scaling jokers route through it while a
+    listener is active.
+  - More Fluff's attributes are registered.
+  - Tall Joker's and Triangle's 1.9.9999 reworks.
+- **B1:** 13 new jokers with real art (Dinner, Forge, Doubled Scale, Bouncer, Jokes for Minecrafters, Apple Friends, Gem
+  Alert, Gentlemelon, Joker Reacts, Retrigger Joker, Alchemy Joker, Jimbo the Mind Sculptor, John Balatro?), the
+  Planeswalker loyalty system, and the Fish / Forge Residue / John Balatro jokers.
+- **B2:** the 26 Letter jokers and the 3 Purple jokers. They are registered but never offered: as in 1.9.9999, only the
+  Old Deck and Bonus Sheet roll their rarities, and both are blocked. The Old Deck stays out because its other 29 Old
+  Fluff jokers are sketches.
+- **B3:** the 7 rot legendaries, the prepared-card system, their 7 Spectral cards, and The Soul! (in Rotarot packs).
+  - The Spectral cards are placeholders upstream: their art is composed by `tools/micatro/stage_morefluff_batch_b_art.mjs`
+    in the style of More Fluff's Gold card.
+  - The legendaries and The Soul! are pre-turned by the same tool.
+- **Engine seams** (no-ops without a mod using them):
+  - the per-context `smods_seams` list;
+  - `calc_scaling`;
+  - `vscale`;
+  - `<rarity>_mod` rarity weights;
+  - `eval_card_result`;
+  - `post_trigger`;
+  - `add_to_scoring_hand` and `destroy_card`;
+  - board `mod_actions[].disabled` and tooltip pictures.
+- **Art** (gitignored; deploy with `npm run deploy-micatro-mods` before merging): 8 PNGs under
+  `micatro/mods/morefluff/assets/2x/1.9.9999/` and `assets/sounds/1.9.9999/g.ogg`.
+- **Tests:** `micatro/tests/mods/morefluff_batch_b_test.mjs` (234 checks; on origin/main 11 pass, 46 fail). The More Fluff
+  fingerprints were re-recorded at `+r2`, with the bot seeds re-picked.
+- **Still out:** the 61 placeholder-sketch jokers (listed in PORTING.md), the Old and Spellchaser's decks, the Nemesis
+  pack / tag, the Cryptic edition, and the Power / Ransom Note enhancements.
 
 ## 11. What follows the player between devices (2026-10-19)
 
@@ -280,3 +315,28 @@ one run backup slot (`micatro_run_backup_v1`), the device id (`micatro_device_v1
 
 Tests: `overworld/tests/micatro_runsync_server_test.mjs` (server), `overworld/tests/micatro_runsync_test.mjs`
 (two browser contexts as two devices on one account).
+
+## 12. Per-deck stake unlocks (2026-10-20)
+
+Balatro's rule in the New Run picker (`micatro/js/ui/stakeunlocks.js`, used by `screens.js newRunScreen`): per deck, White is always
+open, and a win on that deck at stake N opens stake N+1 for that deck only.
+
+- **Source of truth:** the deck's existing win sticker (`stickers.js winRecord(backKey)`, row `micatro_stickers:<user>`). The deck's
+  best level is the max across `{win, poke, nuz, mono, both}` (1..9, 9 = Elite). Nothing new is stored, so every sticker already won
+  keeps its unlocks. A revoked deck sticker takes its unlocks with it; renamed / superseded keys merge as stickers already do.
+- **Mod stakes:** each has `records` (the level a win on it records: its play level from `applied_stakes`, raised by a declared
+  `sticker_level`, the same as `run.js win_sticker_level`) and `requires` (what a win on its `above_stake` records). Pokermon's
+  and Nacho's Elite need a Gold win. MoreFluff's six stakes all record Gold, so a Gold win opens all six: the sticker can't tell a
+  Pink win from a Gold one. Bunco's Cyan, Pink and Magenta play at Orange and open on an Orange win. Lilac and The Culmination need
+  a Gold win.
+- **Picker:** a locked stake shows greyed with a lock and "Win on <above stake> with this deck to unlock". Play is disabled, so the
+  controller skips it, and the info box is `aria-live`. A saved preference, a deck change or a sync that lands on a locked stake
+  falls back to the highest open base stake. A guest uses local stickers, and a seeded run follows the same unlocks.
+- **Custom decks** record no sticker, so a custom deck unlocks by its card back (`def.back`). Otherwise it would be stuck on White.
+- **Not gated:** a run in progress or resumed, Hold-R restart (same recipe), replays, spectating, challenges (their own stake) and
+  the `window.__micatro.newRun` debug API.
+- **All-stakes allowance (owner, 2026-10-20):** `server/mp.mjs MICATRO_ALL_STAKES = ['kgib', 'jfost711']`, which the
+  `MICATRO_ALL_STAKES` env var can extend. `micatro-stickers-get` and `-put` answer `allStakes: true` for these accounts. It is
+  held in memory only (`stickers.js allStakesAllowed`): never stored, never sent by a client, and never given to a guest.
+- Tests: `overworld/tests/micatro_stake_unlocks_test.mjs` (Node: the ladder over every real mod stake, the engine's recorded levels,
+  the sticker store, the server allowance) and `micatro_stake_unlocks_ui_test.mjs` (the picker, pad, resume and challenge).

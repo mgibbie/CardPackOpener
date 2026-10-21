@@ -7,7 +7,8 @@ import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
 import { all as modAll } from './modui.js';
 import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
-import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specialStickerHTML, stickerName } from './stickers.js';
+import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specialStickerHTML, stickerName, winRecord, allStakesAllowed } from './stickers.js';
+import { stakeLadder, deckBest, stakeOpen, fallbackIndex, lockText } from './stakeunlocks.js';
 import { stickDeckCanvas } from './decksticker.js';
 import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins, typeRecord, totalLevels } from './progress.js';
 
@@ -130,6 +131,8 @@ function backDesc(key) {
   return { name: d.name, lines: (d.text || []).map((l) => String(l).replace(/#(\d)#/g, (m, i) => (vals[i - 1] != null ? Math.abs(vals[i - 1]) : '')).replace(/\{[^}]*T:[^}]*\}/g, '{C:attention}')) };
 }
 const PREF = 'micatro_newrun';
+/** A stake's display name ("Gold Stake", a mod stake's own name) for the lock text. */
+const stakeName = (s) => { const d = s && (s.mod ? s.text : LOC.descriptions.Stake[s.key]); return String((d && d.name) || (s && s.name) || 'the previous stake').replace(/\{[^}]*\}/g, ''); };   // (minus loc markup: The Culmination's)
 // The custom deck picked for the next run ({id, def}; written by ui/deckeditor.js) — read without loading the editor.
 function readCustomDeckSel() {
   try { const s = JSON.parse(localStorage.getItem('micatro_cdeck_sel') || 'null'); return s && s.def && typeof s.def === 'object' ? s : null; } catch (e) { return null; }
@@ -151,29 +154,47 @@ export function newRunScreen(o) {
   refreshBacks(msel0);
   bi = Math.max(0, backs.findIndex((b) => b.key === pref.back));
   // Stakes: the 8 base stakes, then the stakes of the selected mods (passed to the engine by key).
+  // UNLOCKS (ui/stakeunlocks.js, Balatro's rule): per deck, White is open and a win at stake N opens N+1, read from the deck's
+  // win sticker. A locked stake still shows (greyed, with a lock and what opens it) but can't be started. `wanted` is the
+  // stake the player asked for (the saved preference, then the arrows): a deck change or a sticker sync re-applies it, and
+  // while it's locked on this deck the highest open stake is selected instead (fallbackIndex).
   let stakes = STAKE_LIST.map((s, i) => ({ ...s, level: i + 1 }));
+  let ladder = stakeLadder(stakes);
+  const stakeId = (s) => (s ? s.level || s.key : null);
   const refreshStakes = (sel) => {
-    const cur = stakes[si] && (stakes[si].level || stakes[si].key);
+    const cur = stakeId(stakes[si]);
     const extra = modsApi && modsApi.stakes ? modsApi.stakes(sel.ids.filter((id) => modsApi.isLoaded(id))) : [];
     stakes = STAKE_LIST.map((s, i) => ({ ...s, level: i + 1 })).concat(extra);
-    si = Math.max(0, stakes.findIndex((s) => (s.level || s.key) === cur));
+    ladder = stakeLadder(stakes);
+    si = Math.max(0, stakes.findIndex((s) => stakeId(s) === cur));
+    snapStake();
   };
+  // the deck whose stickers decide: the deck above, or a custom deck's card back (custom-deck wins record no sticker)
+  const unlockDeck = () => (csel ? (csel.def && typeof csel.def.back === 'string' ? csel.def.back : null) : backs[bi] && backs[bi].key);
+  const deckLevel = () => deckBest(winRecord(unlockDeck()));
+  const stakeIsOpen = (i) => stakeOpen(ladder[i], deckLevel(), allStakesAllowed());
+  let csel = readCustomDeckSel();
   let si = Math.max(0, Math.min(7, (typeof pref.stake === 'number' ? pref.stake : 1) - 1));
+  let wanted = typeof pref.stake === 'string' ? pref.stake : si + 1;
+  function snapStake() {
+    const w = stakes.findIndex((s) => stakeId(s) === wanted);
+    si = fallbackIndex(ladder, w >= 0 ? w : si, deckLevel(), allStakesAllowed());
+  }
   refreshStakes(msel0);
-  if (typeof pref.stake === 'string') si = Math.max(0, stakes.findIndex((s) => s.key === pref.stake));
   const el = h('div', 'new-run');
   const deckRow = h('div', 'nr-row nr-deck');
-  const left = btn('‹', 'arrow red', () => { bi = (bi + backs.length - 1) % backs.length; draw(); });
-  const right = btn('›', 'arrow red', () => { bi = (bi + 1) % backs.length; draw(); });
+  const left = btn('‹', 'arrow red', () => { bi = (bi + backs.length - 1) % backs.length; snapStake(); draw(); });
+  const right = btn('›', 'arrow red', () => { bi = (bi + 1) % backs.length; snapStake(); draw(); });
   const deckView = h('div', 'nr-deckview');
   const deckInfo = h('div', 'nr-info');
   deckRow.append(left, deckView, deckInfo, right);
   el.appendChild(deckRow);
   const stakeRow = h('div', 'nr-row nr-stake');
-  const sl = btn('‹', 'arrow red', () => { si = (si + stakes.length - 1) % stakes.length; draw(); });
-  const sr = btn('›', 'arrow red', () => { si = (si + 1) % stakes.length; draw(); });
+  const sl = btn('‹', 'arrow red b-stake-prev', () => { si = (si + stakes.length - 1) % stakes.length; wanted = stakeId(stakes[si]); draw(); });
+  const sr = btn('›', 'arrow red b-stake-next', () => { si = (si + 1) % stakes.length; wanted = stakeId(stakes[si]); draw(); });
   const stakeView = h('div', 'nr-stakeview');
   const stakeInfo = h('div', 'nr-info');
+  stakeInfo.setAttribute('aria-live', 'polite');   // (a screen reader hears "Locked" as the arrows land on one)
   stakeRow.append(sl, stakeView, stakeInfo, sr);
   el.appendChild(stakeRow);
   const seedRow = h('div', 'nr-seed');
@@ -202,14 +223,13 @@ export function newRunScreen(o) {
   }
   drawMods();
   // custom deck (the native deck editor, ui/deckeditor.js, loaded on demand): the chosen deck replaces the deck above
-  let csel = readCustomDeckSel();
   const crow = h('div', 'nr-mods nr-cdeck');
   crow.appendChild(h('span', 'nr-mods-l', 'Custom deck'));
   const csum = h('span', 'nr-mods-sum nr-cdeck-sum');
-  const coff = btn('Off', 'grey b-cdeck-off', () => { csel = null; deckEditor().then((m) => m.setSelection(null)).catch(() => {}); drawC(); draw(); });
+  const coff = btn('Off', 'grey b-cdeck-off', () => { csel = null; deckEditor().then((m) => m.setSelection(null)).catch(() => {}); drawC(); snapStake(); draw(); });
   const copen = btn('Decks', 'green b-cdecks', () => deckEditor().then((m) => m.openDeckList({
     net: o.net, modsApi, selectedMods: () => msel.ids,
-    onPick: (entry) => { csel = entry; m.setSelection(entry); drawC(); draw(); },
+    onPick: (entry) => { csel = entry; m.setSelection(entry); drawC(); snapStake(); draw(); },
   })).catch((e) => console.warn('micatro: deck editor unavailable', e)));
   crow.append(csum, coff, copen);
   el.appendChild(crow);
@@ -264,6 +284,7 @@ export function newRunScreen(o) {
   // decks of saved-on mods appear once those mods have loaded
   if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { refreshBacks(msel); refreshStakes(msel); refreshSleeves(msel); if (el.isConnected) draw(); }).catch(() => {});
   const play = btn('Play', 'blue big wide b-start', () => {
+    if (!stakeIsOpen(si)) { draw(); return; }   // (a locked stake can't be started: the button is disabled anyway)
     const back = backs[bi].key;
     const st = stakes[si] || stakes[0];
     const stake = st.level || st.key;
@@ -281,7 +302,8 @@ export function newRunScreen(o) {
   });
   el.appendChild(play);
   // (a special sticker's sprite arriving, or a sync bringing new ones: redraw the deck)
-  const offStk = onWinStickers(() => { if (!el.isConnected) { offStk(); return; } draw(); });
+  // (and a sync can open stakes — or, a revocation, close them: re-apply the wanted stake)
+  const offStk = onWinStickers(() => { if (!el.isConnected) { offStk(); return; } snapStake(); draw(); });
   function draw() {
     drawS();
     const b = backs[bi];
@@ -316,7 +338,16 @@ export function newRunScreen(o) {
     } else if (s) stakeView.appendChild(cellEl('chips', s.pos, 'nr-chip'));
     const sd = s && (s.mod ? s.text : LOC.descriptions.Stake[s.key]);
     const sname = sd ? sd.name : (s && s.name) || 'Stake';
-    stakeInfo.innerHTML = `<div class="nr-name">${esc(sname)}${s && s.mod ? ' <span class="mod-preview" style="background:#4f6367;color:#fff">' + esc(modsApi && modsApi.modName ? modsApi.modName(s.mod) : s.mod) + '</span>' : ''}</div><div class="nr-desc">${sd && sd.text ? sd.text.map(markup).join('<br>') : ''}</div>`;
+    const open = stakeIsOpen(si);
+    stakeRow.classList.toggle('nr-locked', !open);
+    stakeRow.dataset.stake = String(stakeId(s));
+    stakeRow.dataset.locked = open ? '0' : '1';
+    if (!open) stakeView.appendChild(h('div', 'nr-lock', '🔒'));
+    const why = open ? '' : lockText(ladder[si], stakeName);
+    stakeInfo.innerHTML = `<div class="nr-name">${open ? '' : '<span class="nr-lock-ico" aria-hidden="true">🔒</span> '}${esc(sname)}${s && s.mod ? ' <span class="mod-preview" style="background:#4f6367;color:#fff">' + esc(modsApi && modsApi.modName ? modsApi.modName(s.mod) : s.mod) + '</span>' : ''}</div>`
+      + (open ? `<div class="nr-desc">${sd && sd.text ? sd.text.map(markup).join('<br>') : ''}</div>` : `<div class="nr-desc nr-lock-text">Locked. ${esc(why)}.</div>`);
+    play.disabled = !open;
+    play.title = open ? '' : 'Locked: ' + why;
   }
   draw();
   modal(el, { title: 'New Run', cls: 'nr-modal' });
