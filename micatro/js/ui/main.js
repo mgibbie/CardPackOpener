@@ -172,7 +172,9 @@ function afterAct(view, events) {
   const deckKey = view.back && !view.custom_deck && /^[A-Za-z0-9_]{1,64}$/.test(view.back) ? view.back : null;
   if (winEv && Stickers && !view.challenge && !(Engine && Engine.G && Engine.G.GAME && Engine.G.GAME.seeded)) Stickers.recordWin({ ...winEv, jokers: [...(winEv.jokers || []), ...(deckKey ? [deckKey] : [])], categories: winCategoriesOf(earned, (view.mods || []).includes('pokermon')) });
   if (earned && Progress) {
-    const unlocked = Progress.recordRunWin(earned, view.stake, Date.now(), runIdOf());
+    // (the win event, not view.stake: an Elite stake PLAYS at Gold's 8 but its win records 9 — winEv.sticker_level,
+    // run.js win_sticker_level — the same level the win stickers record)
+    const unlocked = Progress.recordRunWin(earned, { stake: view.stake, sticker_level: winEv.sticker_level }, Date.now(), runIdOf());
     if (unlocked.length) Progress.achievementToast(stage, unlocked);
   }
   // the run finished: the account's copy of it is cleared (that run only; a won run going on into Endless reopens it)
@@ -772,7 +774,8 @@ async function boot() {
   if (Stickers) Stickers.initWinStickers(myName(), loggedIn() && net.fetchStickers ? { fetch: () => net.fetchStickers(), push: (w, o) => net.saveStickers(w, o) } : null);
   // the Nuzlocke / Monotype record + achievements: this player's, synced with the account (ui/progress.js)
   Progress = await import('./progress.js').catch(() => null);
-  if (Progress) Progress.initProgress(loggedIn() ? myName() : null, net);
+  // (an achievement the record already qualifies for unlocks now, with its toast — only the player's own live game shows it)
+  if (Progress) Progress.initProgress(loggedIn() ? myName() : null, net, { onUnlock: (list) => { if (MODE === 'normal') Progress.achievementToast(stage, list); } });
   // completed challenges: this player's, synced with the account (ui/challengesync.js)
   if (MODE === 'normal') import('./challengesync.js').then((m) => m.initChallengeSync(loggedIn() ? myName() : null, loggedIn() && net && net.fetchChallenges ? { fetch: () => net.fetchChallenges(), push: (d, o) => net.saveChallenges(d, o) } : null)).catch((e) => console.warn('micatro: challenge sync unavailable', e));
   player = new Player(board);
