@@ -31,3 +31,6 @@ micasurvivor/assets/
 # MicaSurvivor generators cache (tools/micasurvivor/fetch_sprites.py)
 tools/micasurvivor/.cache/
 tools/micasurvivor/__pycache__/
+
+# test screenshots written next to the suites (never commit)
+overworld/tests/*.png
