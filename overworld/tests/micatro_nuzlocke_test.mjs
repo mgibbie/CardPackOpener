@@ -281,6 +281,7 @@ try {
 	await shot(dA, 'win_screen_achievement_toast.png');
 	const prog = await dA.page.evaluate(() => window.__micatro.progress.getProgress());
 	A(prog.nuz === 1 && prog.mono.fire === 1 && prog.both === 1 && prog.ach.first_nuzlocke && prog.ach.first_monotype && prog.ach.nuzlocke_monotype && !prog.ach.nuzlocke_gold && !prog.ach.monotype_all, 'the record: 1 Nuzlocke, Fire beaten, 1 both; 3 achievements (not Gold, not all types)', JSON.stringify(prog));
+	A((prog.bothMono || {}).fire === 1 && (prog.bothStake || {}).fire === 1 && (prog.monoStake || {}).fire === 1, 'the record keeps the win per type: Fire Nuzlocke + Monotype, at White Stake', JSON.stringify(prog));
 	A(await waitFor(() => { const r = row('micatro_progress:nuzzy'); return r && r.progress.nuz === 1 && r.progress.mono.fire === 1 && r.progress.ach.nuzlocke_monotype; }, 15000), 'the record is saved on the account (micatro_progress:nuzzy)', JSON.stringify(row('micatro_progress:nuzzy')));
 	A(await waitFor(() => { const b = row('runboard:micatro_modded') || []; const e = b.find((x) => x.name === 'nuzzy'); return e && e.badges && e.badges.nuz === true && e.badges.mono === 'fire'; }, 20000), 'the leaderboard row stores the badges {nuz, mono:"fire"}', JSON.stringify(row('runboard:micatro_modded')));
 	const stk = await dA.page.evaluate(async () => (await import('/micatro/js/ui/stickers.js')).winRecord('j_poke_charmander'));
@@ -316,6 +317,8 @@ try {
 	await sleep(300);
 	const rec = await dA.page.evaluate(() => ({ nuz: document.querySelector('.rec-nuz').textContent, both: document.querySelector('.rec-both').textContent, fire: !document.querySelector('.rec-type[data-type="Fire"]').classList.contains('off'), water: !document.querySelector('.rec-type[data-type="Water"]').classList.contains('off') }));
 	A(rec.nuz === '1' && rec.both === '1' && rec.fire && !rec.water, 'the Record tab: 1 Nuzlocke win, 1 both, Fire beaten (Water not)', JSON.stringify(rec));
+	const recStk = await dA.page.evaluate(() => ({ fire: (document.querySelector('.rec-type[data-type="Fire"] .wstk') || {}).dataset?.sticker, water: (document.querySelector('.rec-type[data-type="Water"] .wstk') || {}).dataset?.sticker, both: (document.querySelector('.rec-stat[data-cat="both"] .wstk') || {}).dataset?.sticker }));
+	A(recStk.fire === 'both:White' && recStk.water === 'both:none' && recStk.both === 'both:White', 'the Record tab: Fire wears Arceus (White), Water a greyed sticker, the total Arceus', JSON.stringify(recStk));
 	await shot(dA, 'record_screen.png');
 	await dA.page.evaluate(() => document.querySelector('.ach-modal .b-back').click());
 	// deck select: b_red (Arceus) and a deck with only a plain Green win

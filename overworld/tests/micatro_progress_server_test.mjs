@@ -7,6 +7,10 @@
 //      ({nuz:true, mono:'fire'}), validates its shape, keeps it on a WON run's board row, and the
 //      leaderboard returns it; replay meta keeps it too (allow-listed)
 //   3. the client's merge (micatro/js/ui/progress.js mergeProgress) agrees with the server's
+//   4. the per-type record (monoStake / bothMono / bothStake): stored and max-merged like the rest, so an older client
+//      (which never sends them) or a stale device can't lower them; shape-checked; a record from before them is
+//      backfilled at READ time from the player's own won replays' badges (never written by the get); the client's
+//      recordRunWin records them and typeRecord picks the Record screen's sticker (Arceus / Ambipom / none)
 //   node overworld/tests/micatro_progress_server_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -153,6 +157,72 @@ try {
 	const sm = await raw('micatro-progress-put', { progress: b }, tokens.nuzzy);
 	const both = PG.mergeProgress(m2, b);
 	A(JSON.stringify(PG.mergeProgress(sm.body.progress, {})) === JSON.stringify(PG.mergeProgress(both, {})), 'the client and server merges give the same record', JSON.stringify([sm.body.progress, both]));
+
+	// ===== 4. the per-type record =====
+	await reg('typer');
+	const t1 = await raw('micatro-progress-put', { progress: { nuz: 1, both: 1, mono: { fire: 2, water: 1 }, monoStake: { fire: 3, water: 2 }, bothMono: { fire: 1 }, bothStake: { fire: 3 } } }, tokens.typer);
+	const tp1 = t1.body.progress || {};
+	A(t1.status === 200 && (tp1.monoStake || {}).fire === 3 && tp1.monoStake.water === 2 && tp1.bothMono.fire === 1 && tp1.bothStake.fire === 3, 'a put stores the per-type stakes + Nuzlocke+Monotype wins', JSON.stringify(t1.body));
+	A(((row('micatro_progress:typer').progress.bothMono) || {}).fire === 1, '... in the row');
+	const old = await raw('micatro-progress-put', { progress: { v: 1, nuz: 1, nuzStake: 1, both: 1, mono: { fire: 2, water: 1 }, ach: {} } }, tokens.typer);
+	const op = old.body.progress || {};
+	A(old.status === 200 && (op.bothMono || {}).fire === 1 && (op.bothStake || {}).fire === 3 && (op.monoStake || {}).water === 2, "an OLD client's put (no per-type fields) never lowers them", JSON.stringify(op));
+	A(((row('micatro_progress:typer').progress.bothStake) || {}).fire === 3, '... the row keeps them');
+	const low = await raw('micatro-progress-put', { progress: { monoStake: { fire: 1 }, bothMono: { fire: 0, water: 1 }, bothStake: { fire: 1, water: 5 } } }, tokens.typer);
+	const lp = low.body.progress || {};
+	A(low.status === 200 && (lp.monoStake || {}).fire === 3 && (lp.bothMono || {}).fire === 1 && lp.bothStake.fire === 3 && lp.bothMono.water === 1 && lp.bothStake.water === 5, 'lower per-type values never lower them; new types join (per-type max)', JSON.stringify(lp));
+	for (const [what, progress] of [['an unknown type in bothMono', { bothMono: { bird: 1 } }], ['a stake over 99', { bothStake: { fire: 100 } }], ['a fractional stake', { monoStake: { fire: 1.5 } }], ['bothStake as a list', { bothStake: [1] }], ['a negative count', { bothMono: { fire: -1 } }]]) {
+		const r = await raw('micatro-progress-put', { progress }, tokens.typer);
+		A(r.status === 400, 'put refuses ' + what, r.status + ' ' + JSON.stringify(r.body));
+	}
+	// read-time backfill: a record from before the per-type fields (like kgib's: types won, Nuzlocke + Monotype only a total)
+	await reg('oldrec');
+	const oldRec = { v: 1, nuz: 3, nuzStake: 2, both: 3, mono: { fire: 1, water: 1, grass: 1, dark: 1 }, ach: { first_nuzlocke: 1000 } };
+	sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 1)').run('micatro_progress:oldrec', JSON.stringify({ rev: 7, progress: oldRec, updated_at: 1 }));
+	const rp = (id, by, meta) => sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch())').run('mreplay:' + id, JSON.stringify({ code: 'G1.x', meta, by, when: 1 }));
+	rp('a0000001', 'oldrec', { won: true, stake: 2, mods: ['pokermon'], badges: { nuz: true, mono: 'water' } });
+	rp('a0000002', 'oldrec', { won: true, stake: 1, mods: ['pokermon'], badges: { nuz: true, mono: 'grass' } });
+	rp('a0000003', 'oldrec', { won: true, stake: 4, mods: ['pokermon'], badges: { nuz: true, mono: 'grass' } });
+	rp('a0000004', 'oldrec', { won: true, stake: 2, mods: ['pokermon'], badges: { mono: 'dark' } });
+	rp('a0000005', 'oldrec', { won: false, stake: 8, mods: ['pokermon'] });
+	rp('a0000006', 'oldrec', { won: true, stake: 3, mods: ['pokermon'] });
+	rp('a0000007', 'rival', { won: true, stake: 8, mods: ['pokermon'], badges: { nuz: true, mono: 'fire' } });
+	rp('a0000008', 'oldrec', { won: true, stake: 'mod_stake', mods: ['pokermon'], badges: { nuz: true, mono: 'bird' } });
+	const before = JSON.stringify(row('micatro_progress:oldrec'));
+	w0 = writes.length;
+	const bf = (await raw('micatro-progress-get', {}, tokens.oldrec)).body.progress || {};
+	const bm = bf.bothMono || {}, bs = bf.bothStake || {}, ms = bf.monoStake || {};
+	A(bm.water === 1 && bm.grass === 2 && !bm.fire && !bm.dark, "get backfills Nuzlocke+Monotype per type from the player's own won replays (not a rival's, not a bad type)", JSON.stringify(bf));
+	A(bs.water === 2 && bs.grass === 4 && ms.dark === 2 && ms.grass === 4 && !ms.fire, '... with the best stake per type (a type with no replay keeps none)', JSON.stringify(bf));
+	A(bf.nuz === 3 && bf.both === 3 && bf.mono.fire === 1 && bf.ach.first_nuzlocke === 1000, '... the stored record reads unchanged around it', JSON.stringify(bf));
+	A(JSON.stringify(row('micatro_progress:oldrec')) === before && !writes.slice(w0).some((k) => !k.startsWith('rl:')), 'the backfill is READ-time: the get writes nothing', JSON.stringify(writes.slice(w0)));
+	const keep = await raw('micatro-progress-put', { progress: bf }, tokens.oldrec);
+	const kr = row('micatro_progress:oldrec');
+	A(keep.status === 200 && kr.rev === 8 && (kr.progress.bothMono || {}).grass === 2 && kr.progress.nuz === 3 && kr.progress.ach.first_nuzlocke === 1000, "the client's normal put of it is additive (max-merge onto the stored row)", JSON.stringify(kr));
+	const g2 = (await raw('micatro-progress-get', {}, tokens.typer)).body.progress || {};
+	A((g2.bothMono || {}).fire === 1 && !(g2.bothMono || {}).grass, "a record with its per-type data isn't backfilled from anyone's replays", JSON.stringify(g2));
+
+	// the client: recordRunWin + typeRecord
+	localStorage._m = {};
+	await PG.initProgress('guest', null);
+	PG.recordRunWin({ nuz: true, mono: 'Fire' }, 3, 1000, 'run1');
+	PG.recordRunWin({ nuz: false, mono: 'Water' }, 5, 1001, 'run2');
+	PG.recordRunWin({ nuz: true, mono: 'Fire' }, 2, 1002, 'run3');
+	PG.recordRunWin({ nuz: true, mono: 'Fire' }, 2, 1003, 'run3');   // (a run counts once)
+	const cp = PG.getProgress();
+	const cbm = cp.bothMono || {}, cbs = cp.bothStake || {}, cms = cp.monoStake || {};
+	A(cp.both === 2 && cbm.fire === 2 && cbs.fire === 3 && !cbm.water, 'recordRunWin: a Nuzlocke + Monotype win counts for its type, with its best stake', JSON.stringify(cp));
+	A(cms.fire === 3 && cms.water === 5 && cp.mono.water === 1, "... and every Monotype win records its type's best stake", JSON.stringify(cp));
+	if (typeof PG.typeRecord === 'function') {
+		const tr = (t) => PG.typeRecord(t, cp);
+		A(tr('Fire').category === 'both' && tr('Fire').level === 3 && tr('Water').category === 'mono' && tr('Water').level === 5 && tr('Grass').category === null, 'typeRecord: Fire -> Arceus (stake 3), Water -> Ambipom (stake 5), Grass -> none', JSON.stringify([tr('Fire'), tr('Water'), tr('Grass')]));
+		A(JSON.stringify(PG.typesMissingBoth(cp)) === '["Water"]', 'typesMissingBoth lists the Monotype-only types');
+		A(PG.typeRecord('Dark', { mono: { dark: 1 } }).level === 1, 'a type known only by its count (an old record) wears a White ring');
+		const tl = PG.totalLevels(cp);
+		A(tl.nuz === 3 && tl.mono === 5 && tl.both === 3 && PG.totalLevels(PG.emptyProgress()).both === 0, 'totalLevels: the best stake per total (0 = none)', JSON.stringify(tl));
+	} else A(false, 'progress.js exports typeRecord / typesMissingBoth / totalLevels');
+	const sm2 = await raw('micatro-progress-put', { progress: cp }, tokens.typer);
+	A(JSON.stringify(PG.mergeProgress(sm2.body.progress, {})) === JSON.stringify(PG.mergeProgress(PG.mergeProgress(lp, cp), {})) && (sm2.body.progress.bothMono || {}).fire === 2, 'the client and server merges agree on the per-type fields', JSON.stringify([sm2.body.progress, PG.mergeProgress(lp, cp)]));
 } catch (e) {
 	fail++; console.log('FAIL: threw ' + (e && e.stack || e));
 }

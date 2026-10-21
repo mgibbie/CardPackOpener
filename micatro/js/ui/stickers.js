@@ -458,9 +458,26 @@ export function specialImage(name) {
     e = specialImgs[name] = { img: new Image(), ok: false };
     e.img.onload = () => { e.ok = true; bump(); };
     e.img.onerror = () => { console.warn('micatro: missing win-sticker sprite ' + name); };
-    e.img.src = new URL('../../assets/textures/winstickers/' + name + '.png', import.meta.url).href;
+    e.img.src = specialImageUrl(name);
   }
   return e.ok ? e.img : null;
+}
+/** A special sprite's URL (micatro/assets/textures/winstickers/<img>.png). */
+export const specialImageUrl = (name) => new URL('../../assets/textures/winstickers/' + name + '.png', import.meta.url).href;
+/**
+ * A special sticker as HTML (screens that aren't canvases: the Achievements screen's Record): the Pokémon of `category`
+ * ('both' Arceus | 'mono' Ambipom | 'nuz' Aipom | 'poke' Pikachu) in a ring of stake `level`'s colour (1..8; higher
+ * counts as Gold), like drawSpecialSticker. level 0 = not won yet: the same sticker greyed out. The element carries
+ * data-sticker="<category>:<stake>" (or "<category>:none") for tests / a11y, and a title.
+ */
+export function specialStickerHTML(category, level, { cls = '', title = '' } = {}) {
+  const sp = SPECIAL[category];
+  if (!sp) return '';
+  const stake = level > 0 ? stickerName(level) : null;
+  const t = title || (stake ? CATEGORY_LABEL[category] + ' win — ' + stake + ' Stake' : 'No ' + CATEGORY_LABEL[category] + ' win yet');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return `<span class="wstk${stake ? '' : ' wstk-off'}${cls ? ' ' + cls : ''}" data-sticker="${category}:${stake || 'none'}" title="${esc(t)}" role="img" aria-label="${esc(t)}"`
+    + `${stake ? ` style="--wstk-ring:${STAKE_COLOURS[stake]}"` : ''}><img src="${specialImageUrl(sp.img)}" alt="" draggable="false"></span>`;
 }
 // ---------------------------------------------------------------- a stake's own sticker art (Elite)
 const ownImgs = {};

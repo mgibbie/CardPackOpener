@@ -755,7 +755,7 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .ach-desc { font-size: 20px; color: #dfe7e8; line-height: 1.15; }
 .ach-when { font-size: 18px; color: var(--money); }
 .rec-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.rec-stat { background: var(--panel-d); border-radius: 12px; padding: 8px; text-align: center; }
+.rec-stat { position: relative; background: var(--panel-d); border-radius: 12px; padding: 8px; text-align: center; }
 .rec-stat b { display: block; font-size: 40px; color: var(--attn); }
 .rec-stat span { font-size: 20px; color: #dfe7e8; }
 .rec-types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -763,6 +763,23 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .rec-type { border-radius: 10px; padding: 8px 6px 6px; text-align: center; font-size: 22px; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
 .rec-type.off { background: var(--panel-dd) !important; color: #6c7c7f !important; box-shadow: none; }
 .rec-type small { display: block; font-size: 17px; opacity: .9; }
+/* the Record's win stickers (stickers.js specialStickerHTML): the Pokémon in its best stake's ring, like on a card */
+.wstk { --wstk-ring: #ffffff; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 50px; height: 50px; border-radius: 50%; background: #f2f4f5; border: 5px solid var(--wstk-ring); box-shadow: 0 0 0 2px #4f6367, 0 2px 0 2px rgba(0,0,0,.25); flex: none; }
+.wstk img { width: 80%; height: 80%; object-fit: contain; pointer-events: none; }
+.wstk.wstk-off { background: rgba(0,0,0,.18); border: 3px dashed rgba(255,255,255,.35); box-shadow: none; }
+.wstk.wstk-off img { filter: grayscale(1) brightness(.6); opacity: .35; }
+.rec-stat .rec-stk { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; }
+.rec-type { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.rec-type .rec-stk { margin-bottom: 2px; }
+.rec-type.off .rec-stk { opacity: .7; }
+.rec-type .rec-tn { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.rec-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 19px; color: #dfe7e8; }
+.rec-legend .wstk.sm { width: 30px; height: 30px; border-width: 3px; }
+.rec-legend .muted { margin-left: 6px; }
+.portrait .rec-stat .rec-stk { position: static; display: inline-flex; width: 44px; height: 44px; border-width: 4px; }
+.portrait .rec-stat b { font-size: 34px; }
+.portrait .rec-type { font-size: 20px; }
+.portrait .rec-type .rec-stk { width: 58px; height: 58px; border-width: 5px; }
 .rec-note { font-size: 19px; color: #c6d1d3; line-height: 1.2; }
 .ri-rb { display: flex; flex-direction: column; gap: 10px; font-size: 24px; }
 .ri-rb .rb-row { display: flex; gap: 12px; align-items: center; background: var(--panel-d); border-radius: 10px; padding: 8px 12px 6px; }

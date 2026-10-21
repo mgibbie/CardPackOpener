@@ -7,9 +7,9 @@ import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
 import { all as modAll } from './modui.js';
 import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
-import { stickersShown, setStickersShown, onWinStickers, retiredStickers } from './stickers.js';
+import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specialStickerHTML, stickerName } from './stickers.js';
 import { stickDeckCanvas } from './decksticker.js';
-import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins } from './progress.js';
+import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins, typeRecord, totalLevels } from './progress.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const btn = (label, cls, fn) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; b.addEventListener('click', (e) => { sound.play('button'); fn(e); }); return b; };
@@ -764,19 +764,30 @@ function runBadgesPanel(rb) {
   el.appendChild(btn('Achievements', 'green b-ri-ach', () => achievementsScreen()));
   return el;
 }
-/** The account's record: Nuzlocke wins, Monotype wins per type (12), Nuzlocke + Monotype. */
+/**
+ * The account's record: Nuzlocke wins, Monotype wins per type (12), Nuzlocke + Monotype. Each total and each type wears
+ * a win sticker (stickers.js's art: Aipom / Ambipom / Arceus in its best stake's ring; greyed = not won yet), so a type
+ * still missing its Nuzlocke + Monotype win (Ambipom, not Arceus) shows at a glance.
+ */
 function recordPanel() {
   const p = getProgress();
   const el = h('div', 'rec');
   el.style.display = 'flex'; el.style.flexDirection = 'column'; el.style.gap = '10px';
+  const tl = totalLevels(p);
+  const stat = (cat, cls, n, label) => `<div class="rec-stat" data-cat="${cat}">${specialStickerHTML(cat, tl[cat], { cls: 'rec-stk' })}<b class="${cls}">${n}</b><span>${label}</span></div>`;
   el.appendChild(h('div', 'rec-sum',
-    `<div class="rec-stat"><b class="rec-nuz">${p.nuz || 0}</b><span>Nuzlocke wins</span></div>` +
-    `<div class="rec-stat"><b class="rec-mono">${monoWins(p)}</b><span>Monotype wins · ${typesBeaten(p).length}/12 types</span></div>` +
-    `<div class="rec-stat"><b class="rec-both">${p.both || 0}</b><span>Nuzlocke + Monotype</span></div>`));
+    stat('nuz', 'rec-nuz', p.nuz || 0, 'Nuzlocke wins') +
+    stat('mono', 'rec-mono', monoWins(p), `Monotype wins · ${typesBeaten(p).length}/12 types`) +
+    stat('both', 'rec-both', p.both || 0, 'Nuzlocke + Monotype')));
   el.appendChild(h('div', 'rec-types', TYPES.map((t) => {
-    const n = (p.mono || {})[t.toLowerCase()] || 0;
-    return `<div class="rec-type${n ? '' : ' off'}" data-type="${t}" style="${typeStyle(t)}">${t}<small>${n ? n + ' win' + (n === 1 ? '' : 's') : '-'}</small></div>`;
+    const r = typeRecord(t, p), n = r.mono;
+    const what = r.category === 'both' ? `${t}: Nuzlocke + Monotype won (${r.both})` : r.category === 'mono' ? `${t}: Monotype won, no Nuzlocke + Monotype yet` : `${t}: not won yet`;
+    const stk = r.category ? specialStickerHTML(r.category, r.level, { cls: 'rec-stk', title: what + ' — best ' + stickerName(r.level) + ' Stake' }) : specialStickerHTML('both', 0, { cls: 'rec-stk', title: what });
+    return `<div class="rec-type${n ? '' : ' off'}${r.category === 'both' ? ' has-both' : ''}" data-type="${t}" data-sticker="${r.category ? r.category + ':' + r.level : 'none'}" style="${typeStyle(t)}">${stk}<span class="rec-tn">${t}</span><small>${n ? n + ' win' + (n === 1 ? '' : 's') : '-'}</small></div>`;
   }).join('')));
+  el.appendChild(h('div', 'rec-legend', `${specialStickerHTML('both', 1, { cls: 'rec-stk sm', title: 'Arceus' })}<span>Nuzlocke + Monotype</span>${specialStickerHTML('mono', 1, { cls: 'rec-stk sm', title: 'Ambipom' })}<span>Monotype only</span><span class="muted">Ring: best stake</span>`));
+  const placed = Object.values(p.bothMono || {}).reduce((a, x) => a + (+x || 0), 0);
+  if ((p.both || 0) > placed) el.appendChild(h('div', 'rec-note rec-unplaced', `${p.both - placed} Nuzlocke + Monotype win${p.both - placed === 1 ? '' : 's'} from before per-type tracking could not be matched to a type.`));
   // win stickers on cards a mod upgrade removed (mods/aliases.js): kept, listed greyed out
   const ret = retiredStickers();
   if (ret.length) {
