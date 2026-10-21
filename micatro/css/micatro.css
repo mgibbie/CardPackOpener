@@ -319,6 +319,12 @@ b { font-weight: normal; }
 .nr-row .arrow { font-size: 56px; padding: 6px 14px 14px; min-height: 140px; }
 .nr-deckview .nr-back { width: 142px; height: 190px; display: block; filter: drop-shadow(5px 7px 0 rgba(0,0,0,.35)); }
 .nr-stakeview .nr-chip { width: 96px; height: 96px; display: block; }
+/* a stake this deck hasn't unlocked yet (ui/stakeunlocks.js): greyed chip under a lock; the text says what opens it */
+.nr-stakeview { position: relative; }
+.nr-locked .nr-chip { filter: grayscale(1) brightness(.55); }
+.nr-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 44px; pointer-events: none; text-shadow: 0 2px 0 rgba(0,0,0,.5); }
+.nr-locked .nr-info { background: #d9dfe0; }
+.nr-lock-text { color: #4f6367; }
 .nr-info { flex: 1; background: #fff; color: var(--text-dark); border-radius: 12px; padding: 12px; text-align: center; min-height: 130px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
 .nr-name { font-size: 34px; color: var(--text-dark); }
 .nr-desc { font-size: 25px; line-height: 1.1; }
