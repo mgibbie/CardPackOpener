@@ -19,7 +19,8 @@
  *                   summary = {mode, dv, map, diff, time, level, kills, bosses, dead, dex, shiny, clean, group}
  *   replay.header   js/mica/replay.js begin: the replay header h (the Expedition adds dv / map / diff)
  *   spectate.snap   js/mica/spectate.js snap(): each live / replay snapshot (the Expedition adds dv; D1: its `x` block)
- *   net.frame       DLC D1: js/net/coop.js hostFrame: reduce(frame, mate) -> each host frame (the Expedition adds `x`)
+ *   net.frame       DLC D1: js/net/coop.js hostFrame: reduce(frame, mate) -> each host frame (the Expedition adds `x`);
+ *                   DLC D2: also a guest's frame to the host, reduce(frame, null) (an Expedition guest adds its air row)
  */
 G.Hooks = (() => {
   const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame'];

@@ -291,6 +291,34 @@ const COMMON_STUBS = {
 	EventScript_ChooseDestFromOneIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
 	EventScript_ChooseDestFromTwoIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
 	EventScript_ChooseDestFromIsland: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	// ...and the rest of seagallop.inc, which VERMILION's sailor (and Bill, on
+	// CINNABAR / ONE ISLAND) `goto`s into. Missing, a TRI-PASS holder picked ONE
+	// ISLAND from the restored multichoice and the script just ended: the menu
+	// closed and nobody sailed (bug:1792554627432, 2026-10-20). The shape is the
+	// decomp's: SailTo*2 picks VAR_0x8006, SailToDest says the departure line,
+	// SetSail crosses — DoSeagallopFerryScene becomes a coordinate warp to
+	// sSeagallopSpawnTable's tile (special SeagallopSetSail arms it, ow_menukeys.js).
+	// The page-1 menu (RAINBOW PASS) is the port's own SEAGALLOP menu, as above.
+	EventScript_SailToVermilion2: [{ op: 'setvar', var: 'VAR_0x8006', value: 0 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	EventScript_SailToOneIsland2: [{ op: 'setvar', var: 'VAR_0x8006', value: 1 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	EventScript_SailToTwoIsland2: [{ op: 'setvar', var: 'VAR_0x8006', value: 2 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	EventScript_SailToThreeIsland2: [{ op: 'setvar', var: 'VAR_0x8006', value: 3 }, { op: 'goto', label: 'EventScript_SailToDest' }],
+	// (`setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY` stores the symbol: no table has it)
+	EventScript_SailToDest: [
+		{ op: 'branch', kind: 'goto', cond: { var: 'VAR_0x8004', cmp: 'eq', value: 'SEAGALLOP_VERMILION_CITY' }, label: 'EventScript_DepartingVermilion' },
+		{ op: 'branch', kind: 'goto', cond: { var: 'VAR_0x8004', cmp: 'eq', value: 0 }, label: 'EventScript_DepartingVermilion' },
+		{ op: 'goto', label: 'EventScript_SetSail' }],
+	EventScript_DepartingVermilion: [{ op: 'msg', text: 'VermilionCity_Text_Seagallop7Departing' }, { op: 'goto', label: 'EventScript_SetSail' }],
+	EventScript_SetSail: [
+		{ op: 'closemsg' },
+		{ op: 'special', name: 'SeagallopSetSail' },
+		{ op: 'branch', kind: 'goto', cond: { var: 'VAR_RESULT', cmp: 'eq', value: 0 }, label: 'EventScript_CancelSail' },
+		{ op: 'warp', map: 'MAP_DYNAMIC', coord: true }],
+	EventScript_CancelSail: [{ op: 'release' }, { op: 'end' }],
+	EventScript_SeviiDestinationsPage1: [{ op: 'special', name: 'SeagallopMenu' }, { op: 'release' }, { op: 'end' }],
+	// the ticket checks' answers (VermilionCity_EventScript_CheckHas*Ticket)
+	EventScript_SetResultTrue: [{ op: 'setvar', var: 'VAR_RESULT', value: 1 }, { op: 'return' }],
+	EventScript_SetResultFalse: [{ op: 'setvar', var: 'VAR_RESULT', value: 0 }, { op: 'return' }],
 	// a static legendary you failed to catch, and the clean-up that removes it
 	// from the map afterwards
 	Common_EventScript_LegendaryFlewAway: [{ op: 'msg', text: 'The POKeMON flew away!' }, { op: 'return' }],
@@ -957,6 +985,15 @@ function symbolName(sym, prefix) {
 	const k = String(sym).replace(prefix, '');
 	return SYMBOL_NAMES[k] || k.replace(/_/g, ' ');
 }
+const STD_STRINGS = {
+	STDSTRING_BOULDER_BADGE: 'BOULDERBADGE', STDSTRING_CASCADE_BADGE: 'CASCADEBADGE', STDSTRING_THUNDER_BADGE: 'THUNDERBADGE',
+	STDSTRING_RAINBOW_BADGE: 'RAINBOWBADGE', STDSTRING_SOUL_BADGE: 'SOULBADGE', STDSTRING_MARSH_BADGE: 'MARSHBADGE',
+	STDSTRING_VOLCANO_BADGE: 'VOLCANOBADGE', STDSTRING_EARTH_BADGE: 'EARTHBADGE',
+	STDSTRING_ITEMS: 'ITEMS', STDSTRING_KEY_ITEMS: 'KEY ITEMS', STDSTRING_POKEBALLS: 'POKé BALLS', STDSTRING_TMHMS: 'TMs & HMs',
+	STDSTRING_BERRIES: 'BERRIES', STDSTRING_COINS: 'COINS', STDSTRING_ITEMS_POCKET: 'ITEMS POCKET',
+	STDSTRING_KEY_ITEMS_POCKET: 'KEY ITEMS POCKET', STDSTRING_POKEBALLS_POCKET: 'POKé BALLS POCKET',
+	STDSTRING_TM_CASE: 'TM CASE', STDSTRING_BERRY_POUCH: 'BERRY POUCH',
+};
 function bufferText(op) {
 	let v = op.src;
 	if (typeof v === 'string' && /^VAR_/.test(v)) v = getVar(v);
@@ -972,6 +1009,8 @@ function bufferText(op) {
 		}
 		case 'move': return typeof v === 'string' && /^MOVE_/.test(v) ? symbolName(v, /^MOVE_/) : null;
 		case 'number': { const n = resolveValue(v); return Number.isFinite(+n) ? String(+n) : null; }
+		// bufferstdstring: FireRed's fixed strings (script_menu.c gStdStringPtrs)
+		case 'std': return typeof v === 'string' && /^STDSTRING_/.test(v) ? (STD_STRINGS[v] || symbolName(v, /^STDSTRING_/)) : null;
 	}
 	return null;
 }

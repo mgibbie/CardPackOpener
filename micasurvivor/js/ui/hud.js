@@ -489,6 +489,11 @@ G.HUD = (() => {
     if (G.Dynamax && !pl.remote) G.Dynamax.drawButton(ctx, w, h, pl);
     // ---------- Modo Equipo (M5 lote 7, main.gd draw_team / TeamUi): las fichas y el botón de cambiar ----------
     if (G.Team && !pl.remote) G.Team.drawHud(ctx, w, h, pl);
+    // ---------- MicaSurvivor (DLC D2): the HOP and SLIDE buttons, in an Expedition zone only (js/expedition/verbs.js) ----------
+    if (G.World.zone && G.ExpVerbs && !pl.remote) {
+      const vr = G.ExpVerbs.drawButtons(ctx, w, h, pl);
+      if (vr) for (const k of ['hop', 'slide']) mark(k, vr[k].x - 6, vr[k].y - 6, vr[k].s + 12, vr[k].s + 26);
+    }
     // (M5 lote 10) la columna de la derecha: Z, MAX y el botón de cambiar (con su texto de debajo) y las fichas del equipo
     if (G.ZMoves && !pl.remote && G.ZMoves.activeType(pl)) { const r = G.ZMoves.buttonRect(w, h); mark('zmove', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
     if (G.Dynamax && !pl.remote && G.Dynamax.unlocked()) { const r = G.Dynamax.buttonRect(w, h); mark('dynamax', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }

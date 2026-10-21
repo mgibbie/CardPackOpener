@@ -1501,10 +1501,103 @@ palette and with no image assets:
 - `expedition.js`: `terrain.js` in `SCRIPTS`, and `viewZone`.
 
 **Not yet:**
-- the movement verbs (hop down a ledge, slide, the extra hop up one layer, glide, climb, surf, bounce pads: D2);
+- the movement verbs (hop down a ledge, slide, the extra hop up one layer, glide, climb, surf, bounce pads): done in D2,
+  see below;
 - the zone timeline, guardian and portal to zone 2 (D3: `G.Exp.enterZone(n)` already builds any zone);
 - per-map biome palettes for Mt. Moon and Cerulean (D12; the run still cycles the base biomes every 4 minutes);
-- the per-enemy z / airborne column in the `x` block (D2).
+- the per-enemy z / airborne column in the `x` block: done in D2 (`x` v2).
+
+## DLC D2: movement verbs
+
+An Expedition run gets PokéBonk's movement, rebuilt as the GBA's ledges, Surf and Fly (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+5.2). It is Expedition-only: every hook is behind `G.World.zone`, which base modes never have, and the D0a fixtures pass
+unchanged. The modes are still "Coming soon"; tests use `G.Expedition.debugEnable('exp-classic')`.
+
+**The verbs** (`js/expedition/verbs.js`, `G.ExpVerbs`, numbers in `K`):
+
+| Verb | Who | Rule |
+|---|---|---|
+| Hop | everyone | A 0.45 s arc. The sprite rises up to 12 art px and its shadow stays on the ground, smaller. Airborne, ground enemies don't hurt you on contact (flyers and projectiles still do), and you pass over deep water. You can drop off a ledge onto any lower level: you land on the level of the tile under you. You can't hop up a level. |
+| Extra hop | everyone (`K.EXTRA_HOPS = 1`) | Hop again in the air: a new arc that also reaches **one** level above the take-off level, so hopping into a cliff face lands you on top. Never two levels; a third press does nothing. |
+| Glide | Flying | Hold hop past the top of the arc: the airtime stretches to 1.2 s (a 3-tile gap). Let go and you drop in 0.18 s. |
+| Slide | everyone | 0.55 s at ×1.9 the way you move (or face), then 0.9 s of cool-down. Ground only, with a dust trail. |
+| Climb | Fighting, Bug, Ghost | Walk up (or down) a cliff face one level at a time, at half speed. |
+| Surf | Water | Cross deep water (a liquid tile with liquid on all 4 sides) at ×1.35. Anyone else is blocked by deep water unless airborne; the shallow rim only slows, as before. |
+| Bounce pad | everyone | Stepping on a pad throws you 2 tiles its way, along a fixed 0.85 s arc, onto the plateau above, with a squash on landing. |
+
+The types follow the study's PokéBonk reference. A dual type gets both verbs: Gyarados surfs and glides, Scyther climbs and
+glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
+
+**Bounce pads:** the generator places up to 8 per zone, 14 tiles apart.
+- Each sits on flat ground at the foot of a cliff, with its landing one level up and the tile behind it at its own level.
+- They come from their own seeded stream after D1's steps, so D1's grids are unchanged. They are part of `zone.hash`.
+- They are painted in code by the terrain painter, with an arrow chevron the way they throw you: a red mushroom, or a coiled
+  spring where the liquid is lava. There are no image assets.
+- `G.ExpTerrain.custom({pads: [[tx, ty, dir]]})` places them by hand.
+
+**Input** (Expedition runs only; a base run's controls are unchanged):
+
+| | Hop (hold: glide) | Slide |
+|---|---|---|
+| Keyboard | Space | Shift |
+| Pad | confirm: A (Xbox A, PlayStation Cross, Nintendo A) | cancel: B (Xbox B, PlayStation Circle, Nintendo B) |
+| Touch / mouse | the HOP button, to the left of the Z-move button | the SLIDE button, above HOP (to the left of MAX) |
+
+- In a base run, confirm and cancel do nothing in play, so giving them a meaning in an Expedition run changes no base
+  binding. They follow a remap, and there is no new remappable action, so the Controls screen and saved maps are
+  unchanged. `G.Pad.held(action)` is new (hold to glide).
+- The buttons show the key (Space / Shift) on desktop and the pad glyph in pad mode, like the Z and MAX buttons. A label
+  under each button names the verb ("Hop · Glide" for a Flying type), and a chip above SLIDE names what the types add
+  (Surf, Climb).
+- The buttons are pressed on `pointerdown` on the canvas, not through `G.Touch`'s button callback, which drops a second tap
+  on the same spot within 350 ms. The extra hop is exactly such a quick second tap. They are still registered with
+  `G.Touch`, so a finger on them never opens the joystick.
+- Layout: at 844 × 390 and 667 × 375 the buttons are on screen and overlap nothing else on the HUD (`G.HUD.rects()`:
+  `hop`, `slide`). Portrait is the game's "rotate your phone" prompt.
+
+**Where it hooks in** (each one an `if` on the zone, or on a field only Expedition code sets):
+- `player.js` `update`: `G.ExpVerbs.step` before the move and `after` once collided (the landing). Airborne, you are not
+  "in" liquid.
+- `player.js` `draw`: the lift, the smaller shadow, the wake / dust, and the squash.
+- `world.js` `collideZone`: the player's own tile rule, its airborne levels and a climber's reach. Enemies keep D1's rule
+  exactly.
+- `combat.js`: no ground contact while airborne.
+- `pad.js` `gameplay`, and `held`.
+- `hud.js`: the buttons.
+- `coop.js`: a guest's frame goes through the `net.frame` seam too, with no mate, and the air rows are applied both ways.
+- `watch-ui.js`: the air rows on the puppets.
+- `replay.js`: field 7.
+- `expedition.js`: `verbs.js` in `SCRIPTS`.
+
+**The `x` block v2** `{xv: 2, m, z, th, a}`: the terrain part is v1's, and `a` is the airborne state.
+- `a.p` is the player's air row `[lift, verb, layer × 2, phase cs, airtime cs, hops]`. Verbs: 1 hop, 2 glide, 3 bounce,
+  4 slide, 5 surf, 6 climb.
+- `a.q` holds the co-op players' rows: by uid in a host frame (the host and the other guests), by name in a snapshot (the
+  partners in the air or using a verb).
+- `a.e` lists the leaping enemies, `[id, lift, …]`. Their layer is the zone's under them.
+- A viewer plays the rest of an arc from its phase. A hop that came and went between two snapshots (the hop counter went
+  up) is still played, so a 1-a-second live view shows the hops too.
+- **Co-op:** the host's frames carry every row. A guest's frames to the host carry its own row (`net.frame` with no mate).
+  The host keeps it on the mate for its frames and snapshots.
+- **Replays** keep `a` out of the slow state, in frame field 7, written only when it changes. A hop costs a few bytes, not
+  a slow-state rewrite. A base replay has no `x`, so its frames are unchanged (the D0a replay fixture still matches).
+- **The v1 reader is kept:** a v1 block still rebuilds the terrain, and everyone is shown on the ground.
+- `G.Expedition.DV` stays 1 (no Expedition mode is playable yet).
+
+**Deviations from the study:**
+- Everyone has the extra hop for now. The study gives it to an item; D5 can set `K.EXTRA_HOPS` to 0 and raise
+  `player.extraHops` with the item.
+- Slide is on B, not RB, so RB keeps "next move" as in every base run.
+- A pad re-arms 0.5 s after you land, not 25 s: in 2D it's a route up.
+
+**Not yet:**
+- Shed Shell-style slide i-frames, +25% airborne damage, and the landing shockwave. These are items and passives for
+  D5 / D6; `player.air` and `player.landed` are ready for them.
+- Deep water blocks only the player: ground enemies still wade it, and pathing is not deep-aware yet (D3).
+- The local co-op partner has no verbs: its AI and player 2's pad walk as in D1.
+- Hazards (mud, brambles, burning ground) are not passed over yet; they arrive with Survival.
+- Chasm and lava gaps for gliding arrive with the later maps.
+- Sound: the verbs reuse the select click.
 
 ## Tests
 
@@ -1527,7 +1620,23 @@ palette and with no image assets:
   up / down a ramp, a ground enemy going round to the ramp (and never up without one), a flyer straight over, the
   minimap shading, the `x` block on snapshots, host frames and the replay, a fresh page rebuilding the same zone as
   replay viewer, live spectator and co-op guest, a later Normal run without a zone, and the painted zone at desktop
-  and phone size (`SHOTS=<dir>` saves screenshots).
+  and phone size (`SHOTS=<dir>` saves screenshots). (D2: it checks `xv: 2`, and an unknown schema is now `xv: 99`.)
+- `node overworld/tests/micasurvivor_expedition_movement_test.mjs` (DLC D2), on hand-made zones at a normalised speed:
+  - hopping off a ledge onto the level below, with no ground contact damage in the air (a flyer still hits);
+  - the extra hop reaching exactly one level;
+  - Pidgey gliding across a 3-tile deep pond, Squirtle surfing it at ×1.35, Machop climbing a cliff at half speed and
+    back down, and Charmander (and the wrong types) doing none of those;
+  - the type table;
+  - a bounce pad onto the plateau, and the generator's pads;
+  - slide and its cool-down;
+  - the HUD buttons by mouse, the gamepad's confirm / cancel / hold-to-glide, and a Normal run untouched;
+  - the `x` block v2 on snapshots, host and guest frames, the replay's field 7, and a v1 rewrite of the replay still
+    loading;
+  - a fresh page as co-op guest (a host frame through `G.Net`'s handler), live spectator and replay viewer, seeing the
+    player in the air;
+  - the phone layouts (844 × 390 and 667 × 375) with taps, the double tap and the slide.
+
+  `SHOTS=<dir>` saves mid-hop / mid-glide / mid-surf screenshots at desktop and phone size.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

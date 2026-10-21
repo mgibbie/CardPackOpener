@@ -121,6 +121,22 @@ export function seagallopDests() {
 	});
 	return out;
 }
+// pokefirered src/seagallop.c sSeagallopSpawnTable, by SEAGALLOP_* number. A
+// script's `setvar VAR_0x8006, SEAGALLOP_NAVEL_ROCK` keeps the SYMBOL (no
+// constant table carries these), so both spellings are accepted.
+const SEAGALLOP_SPAWN = [
+	['VERMILION_CITY', 'MAP_VERMILION_CITY', 23, 32], ['ONE_ISLAND', 'MAP_ONE_ISLAND_HARBOR', 8, 5],
+	['TWO_ISLAND', 'MAP_TWO_ISLAND_HARBOR', 8, 5], ['THREE_ISLAND', 'MAP_THREE_ISLAND_HARBOR', 8, 5],
+	['FOUR_ISLAND', 'MAP_FOUR_ISLAND_HARBOR', 8, 5], ['FIVE_ISLAND', 'MAP_FIVE_ISLAND_HARBOR', 8, 5],
+	['SIX_ISLAND', 'MAP_SIX_ISLAND_HARBOR', 8, 5], ['SEVEN_ISLAND', 'MAP_SEVEN_ISLAND_HARBOR', 8, 5],
+	['CINNABAR_ISLAND', 'MAP_CINNABAR_ISLAND', 21, 7], ['NAVEL_ROCK', 'MAP_NAVEL_ROCK_HARBOR', 8, 5],
+	['BIRTH_ISLAND', 'MAP_BIRTH_ISLAND_HARBOR', 8, 5],
+];
+export function seagallopSpawn(v) {
+	const i = typeof v === 'string' ? SEAGALLOP_SPAWN.findIndex(r => 'SEAGALLOP_' + r[0] === v) : v;
+	const r = SEAGALLOP_SPAWN[i];
+	return r ? { map: r[1], x: r[2], y: r[3] } : null;
+}
 export function openSeagallopMenu() {
 	ferryMenu.list = seagallopDests();
 	ferryMenu.idx = 0;

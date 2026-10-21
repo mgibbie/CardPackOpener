@@ -77,6 +77,12 @@ const ALLOW = [
 	// on the floor after its fight and could be fought again (Instinct, 2026-10-06).
 	// The legendaries on these maps are native (ow_legendaries.js), not these scripts.
 	/^EventScript_(RemoveStaticMon|MonFlewAway)$/,
+	// FireRed's Route 22 / Route 23 badge guards: every guard object and trigger tile
+	// is a thin wrapper that `goto`s the shared body in data/scripts/route23.inc
+	// (BadgeGuard / BadgeGuardTrigger -> Check*Badge -> Recognize / Missing). Missing,
+	// all eight policemen were mute, VAR_MAP_SCENE_ROUTE23 never advanced, and the
+	// trigger tiles never fired (Instinct, 2026-10-19: Thunder Badge guard at (8,140)).
+	/^Route2[23](_NorthEntrance)?_EventScript_BadgeGuard(Trigger)?$/,
 ];
 const SHOW = process.argv.includes('--show');
 const readJ = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return d; } };

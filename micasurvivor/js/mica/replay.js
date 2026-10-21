@@ -155,6 +155,8 @@ G.Replay = (() => {
     const o = { b: s.b, m: s.m, mv: s.mv, ac: s.ac, it: s.it, lu: s.lu };
     // (DLC D1: 'x', an Expedition run's terrain block {xv, m, z, th}; a base snapshot has none, so its frames don't change)
     for (const k of ['ds', 'z', 'dy', 'tm', 'ar', 'wx', 'dn', 'cr', 'ad', 'x']) if (s[k] !== undefined) o[k] = s[k];
+    // (DLC D2: the x block's airborne state `a` changes with every hop: it has a frame field of its own, see encode)
+    if (o.x && o.x.a) { o.x = Object.assign({}, o.x); delete o.x.a; }
     return o;
   }
   function encode(s, kd) {
@@ -167,11 +169,15 @@ G.Replay = (() => {
     const Kt = table(r.Kp, s.pk.map(k => [k[0], k[1], qe(k[2]), qe(k[3])]), KW, null);
     const Mq = (s.mt || []).map(m => [m[0], m[1], m[2], qe(m[3]), qe(m[4]), m[5], m[6], m[7], m[8], m[9], m[10]]);
     const M = JSON.stringify(Mq);
-    const f = [r.frames.length ? s.t - r.t : s.t, diff(r.P, P), diff(r.C, C), S !== r.S ? JSON.parse(S) : 0, E.out, Kt.out, M !== r.M ? Mq : 0];
+    // DLC D2: an Expedition snapshot's airborne state (x.a) in field 7, only when it changes (0: unchanged; {}: none).
+    // A base snapshot has no x: the field stays 0 and is dropped with the other trailing zeros (base frames unchanged).
+    const XA = s.x && s.x.a ? JSON.stringify(s.x.a) : '';
+    const f = [r.frames.length ? s.t - r.t : s.t, diff(r.P, P), diff(r.C, C), S !== r.S ? JSON.parse(S) : 0, E.out, Kt.out, M !== r.M ? Mq : 0,
+      XA !== (r.XA || '') ? (XA ? JSON.parse(XA) : {}) : 0];
     while (f.length > 1 && f[f.length - 1] === 0) f.pop();
     const txt = JSON.stringify(f);
     r.frames.push(txt); r.bytes += txt.length + 1;
-    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t;
+    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA;
   }
 
   // ---------------- the decoder ----------------
@@ -208,8 +214,8 @@ G.Replay = (() => {
     const h = data.h || {}, frames = data.f || [], Q = h.Q || K.Q, QE = h.QE || K.QE, ew = h.ew || EW, kw = h.kw || KW;
     const times = [];
     const tbl = () => ({ m: new Map(), v: new Map() }), ctbl = x => ({ m: new Map(x.m), v: new Map(x.v) });
-    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], kd: [] });
-    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, kd: [] });
+    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, kd: [] });
+    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, kd: [] });
     function step(st) {
       const f = frames[st.i + 1];
       st.i++;
@@ -220,6 +226,7 @@ G.Replay = (() => {
       st.kd = applyTable(st.E, f[4], ew).died;
       applyTable(st.K, f[5], kw);
       if (f[6]) st.M = f[6];
+      if (f[7]) st.A = f[7];   // (DLC D2: the x block's airborne state)
     }
     // one pass: the frame times and a checkpoint every CHECK_EVERY frames
     const checks = [];
@@ -246,6 +253,7 @@ G.Replay = (() => {
       s.e = [...st.E.m.values()].map(r => [r[0], r[1], r[2] * QE, r[3] * QE, r[4], r[5], r[6]]);
       s.pk = [...st.K.m.values()].map(r => [r[0], r[1], r[2] * QE, r[3] * QE]);
       if (st.M && st.M.length) s.mt = st.M.map(m => [m[0], m[1], m[2], m[3] * QE, m[4] * QE, m[5], m[6], m[7], m[8], m[9], m[10]]);
+      if (s.x && st.A) s.x = Object.assign({}, s.x, { a: st.A });   // (DLC D2)
       s.kd = st.kd;
       return s;
     }

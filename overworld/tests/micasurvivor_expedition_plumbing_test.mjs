@@ -3,7 +3,7 @@
 // browser context per device. No gameplay yet: D0b ships the Expedition modes as "Coming soon".
 //   1. lazy loading: a base boot (guest and signed in) and a base run never fetch js/expedition/* (the network log) and
 //      make no Expedition request; G.Expedition.load() fetches its scripts once, in order (D1: save.js, terrain.js,
-//      core.js), and attaches the seams
+//      D2: verbs.js, core.js), and attaches the seams
 //   2. the mode select: an "Expedition" group with Classic / Survival / League, "Coming soon", aria-disabled; reached
 //      and pressed by mouse, touch (844x390) and pad (synthetic Gamepad API): each says "coming soon" and starts nothing
 //   3. the freeze: before load the base tables are writable; after it every write to G.Moves / G.Items (and its item
@@ -290,9 +290,9 @@ try {
 				seams: G.Hooks.SEAMS.map(s => G.Hooks.count(s)), scripts: [...document.querySelectorAll('script[data-expedition]')].map(s => s.getAttribute('src')), who: G.ExpSave.who };
 		});
 		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === 1, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv 1, initialised', JSON.stringify(ld));
-		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/core.js'];   // (D1 added terrain.js)
+		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js)
 		A(JSON.stringify(ld.scripts) === JSON.stringify(SCR) && d.expFetches().length === SCR.length && SCR.every((s, i) => d.expFetches()[i].endsWith(s)),
-			'the network log: exactly js/expedition/save.js, terrain.js then core.js, once', d.expFetches().join(' '));
+			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js then core.js, once', d.expFetches().join(' '));
 		A(ld.seams.length >= 4 && ld.seams.every(n => n === 1), 'the Expedition attaches to every seam once', ld.seams.join(','));
 		console.log(`     freeze: ${ld.frozen.objects} objects in ${ld.frozen.ms} ms (load ${ld.ms} ms)`);
 		A(ld.frozen.objects > 1000 && ld.frozen.ms < 200, `the freeze is a one-time cost (${ld.frozen.objects} objects, ${ld.frozen.ms} ms)`);

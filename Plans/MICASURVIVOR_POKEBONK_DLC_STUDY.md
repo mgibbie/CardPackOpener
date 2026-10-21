@@ -873,7 +873,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D0a. Determinism harness** (no gameplay change) — **BUILT 2026-10-19** (`overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs`, fixtures in `overworld/tests/fixtures/micasurvivor_golden/`, README "DLC D0a: base-unchanged harness") | `G.Game.debugStep(n, dt)` fixed-step entry; a puppeteer page-wide seeded `Math.random`; scripted input; per-second state hashes + draw counter; **golden fixtures recorded** for Normal, Daily, Boss Rush, Tower, Team and local co-op, plus a base replay fixture | — |
 | **D0b. DLC toggle and plumbing** — **BUILT 2026-10-19 as "Expedition plumbing"** (no toggle; see the update below and `micasurvivor/README.md`, "DLC D0b: Expedition plumbing") | Settings → Content switch (in the DLC blob + a localStorage mirror); `ruleset`/`dv` through `Modes.plan/begin`; `core/hooks.js` seams with base code moved unchanged; `G.DLCLoader` (ordered script injection); `micasurvivordlc:<user>` blob + `micasurvivor-dlc-save-get/-put`; `micasurvivor_dlc` board with Micatro-style enforcement; `rs`/`dv` on the lobby, `start`, replay header/meta allow-list and spectate snapshots, with join/watch version gates; an empty Expedition tab; **the base-unchanged test against the D0a fixtures** + table freeze + save/replay/lobby round-trips | D0a |
 | **D1. Terrain layers** — **BUILT 2026-10-20** (`js/expedition/terrain.js`, `overworld/tests/micasurvivor_expedition_terrain_test.mjs`, README "DLC D1: terrain layers") | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
-| **D2. Movement verbs** | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
+| **D2. Movement verbs** — **BUILT 2026-10-21** (`js/expedition/verbs.js`, `overworld/tests/micasurvivor_expedition_movement_test.mjs`, README "DLC D2: movement verbs") | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
 | **D3. Expedition · Classic** | Zones, zone timeline (alphas, swarm, stampede, flock, rock slide, elite wave, totem, summoner), guardian altar, portal, final swarm, legendary shrine, victory screen, splits; boss HP from DPS + exhaustion; map 1 (Viridian Forest) | D2 |
 | **D4. League roster and evolution** | ~80 kits + passives, kit unlock levels 1/2/4/7, in-run evolution with branch choice (Eevee), Maturity at 24/44, stats from base stats; the 3 starters free | D3 |
 | **D5. Level-ups and items** | 5-rarity luck-gated cards, move levels to 8 with archetype stat rolls, 8 new archetypes, 21 vitamins + slots, Refresh/Skip/Banish; ~60 items with caps and additive same-stat stacking | D4 |
@@ -1086,3 +1086,38 @@ Built as specified (`micasurvivor/README.md`, "DLC D1: terrain layers"). Notes f
 - **`G.Expedition.DV` stays 1:** no Expedition run could exist before D1 (every mode is "Coming soon"). The first batch
   that ships a playable mode should bump it whenever content changes after that.
 - **Base unchanged:** the D0a fixtures pass as recorded, with and without the Expedition code loaded.
+
+### Update (2026-10-21): D2 built, "movement verbs"
+Built as specified (`micasurvivor/README.md`, "DLC D2: movement verbs"), with these choices and notes for later batches:
+- **The verbs:** `G.ExpVerbs` (`js/expedition/verbs.js`), numbers in `K`. Hop 0.45 s / 12 art px; airborne you drop off a
+  ledge onto any lower level and take no contact damage from ground enemies (flyers and projectiles still hit). The extra
+  hop reaches exactly one level above the take-off. Glide (Flying, hold hop) stretches the airtime to 1.2 s. Slide is
+  0.55 s at ×1.9 with a 0.9 s cool-down. Climb (Fighting, Bug, Ghost) is one level at a time at half speed. Surf (Water)
+  crosses deep water at ×1.35. Bounce pads throw you 2 tiles onto the plateau above (0.85 s arc).
+- **Deviations:**
+  - **Everyone has the extra hop for now** (`K.EXTRA_HOPS = 1`, `player.extraHops` per player). The study gives it to an
+    item; D5 can set it to 0 and let the item raise it.
+  - **Slide is on the pad's cancel (B), not RB.** RB stays "next move", as in every base run. Hop is confirm (A). Both
+    follow a remap, and neither is a new remappable action, so the Controls screen and saved maps are unchanged.
+  - **Pads have no long cool-down** (PokéBonk's is 25 s). A pad is a route up, so it re-arms 0.5 s after you land.
+- **Deep water** (liquid on all 4 sides) blocks only the player. Enemies still wade it, as in D1, because pathing has no
+  per-type water rule yet. D3 should make `systems/pathing.js` route ground enemies round deep water (or let Water
+  enemies surf).
+- **Pads** come from the generator's own stream after the D1 steps, so D1's grids are byte-identical. They are part of
+  `zone.hash` (up to 8 per zone, 14 tiles apart, at the foot of a cliff with the landing one level up), and are painted
+  in code (a mushroom; a spring where the liquid is lava). No image assets.
+- **The `x` block v2** is `{xv: 2, m, z, th, a}`. `a.p` is the player's air row `[lift, verb, layer×2, phase cs, airtime
+  cs, hops]`, `a.q` holds the co-op players' rows (by uid in host frames, by name in snapshots), and `a.e` lists leaping
+  enemies `[id, lift, …]`.
+  - Guests now send their own row to the host: the `net.frame` seam also runs on a guest's frame, with no mate.
+  - The replay keeps `a` in frame field 7, not in its slow state.
+  - The v1 reader is kept: a v1 block rebuilds terrain and shows everyone on the ground.
+- **`G.Expedition.DV` stays 1**, because no Expedition mode is playable yet. D3 turns Classic on, and that batch should
+  start bumping it.
+- **For D3:**
+  - `player.landed` (`{from, to, kind, splash}`) is set on every landing, ready for "land from a ledge → shockwave".
+  - `player.air` (`{kind, t, dur, top, hops}`) is the airborne state for "+25% damage while airborne".
+  - `G.ExpVerbs.verbsOf(types)` is the type table, ready for the League's kits.
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so
+  does the force-loaded run.
+

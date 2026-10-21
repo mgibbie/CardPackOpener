@@ -284,7 +284,8 @@ try {
 			const c = G.Minimap.colorAt(x, y), h = z.height(x, y);
 			if (z.rampDir(x, y)) { if (!ramp) ramp = { c, base: null, x, y }; continue; }
 			const south = z.terr(x, y + 1) !== 1 && z.height(x, y + 1) < h;
-			if (south) { if (!face) face = { c, h, x, y }; continue; }
+			// (the mean over every cliff face: one face tile can be a bright flower pixel, ×0.55 still above the low ground)
+			if (south) { if (!face) face = { c: [0, 0, 0], n: 0 }; c.forEach((v, i) => { face.c[i] += v; }); face.n++; continue; }
 			acc[h][0] += lum(c); acc[h][1]++;
 			if (!sample && h === 3) sample = { x, y, c };
 		}
@@ -292,12 +293,12 @@ try {
 		G.World.setZone(null);
 		const baseRamp = ramp && G.Minimap.colorAt(ramp.x, ramp.y), baseSample = sample && G.Minimap.colorAt(sample.x, sample.y);
 		G.World.setZone(keep);
-		return { mean, ramp: ramp && ramp.c, baseRamp, face: face && face.c, sample: sample && sample.c, baseSample };
+		return { mean, ramp: ramp && ramp.c, baseRamp, face: face && face.c.map(v => Math.round(v / face.n)), sample: sample && sample.c, baseSample };
 	});
 	const incr = mm.mean && mm.mean.every((v, i) => i === 0 || (v != null && v > mm.mean[i - 1]));
 	A(incr, `minimap shading by height: mean luminance rises with each level (${mm.mean && mm.mean.join(' < ')})`, JSON.stringify(mm));
 	A(mm.ramp && mm.baseRamp && mm.ramp[0] > mm.baseRamp[0] && mm.ramp[0] - mm.ramp[2] > mm.baseRamp[0] - mm.baseRamp[2], 'ramps are drawn sandy on the minimap', JSON.stringify([mm.ramp, mm.baseRamp]));
-	A(mm.face && mm.mean && 0.299 * mm.face[0] + 0.587 * mm.face[1] + 0.114 * mm.face[2] < mm.mean[0], 'a cliff face (a tile above lower ground) is darker than any level', JSON.stringify(mm.face));
+	A(mm.face && mm.mean && 0.299 * mm.face[0] + 0.587 * mm.face[1] + 0.114 * mm.face[2] < mm.mean[0], 'cliff faces (tiles above lower ground) are darker than any level (their mean)', JSON.stringify(mm.face));
 	A(mm.sample && mm.baseSample && mm.sample.some((v, i) => v !== mm.baseSample[i]) && mm.sample[1] > mm.baseSample[1], 'without a zone the same tile is the base colour (the shading is only the zone\'s)', JSON.stringify([mm.sample, mm.baseSample]));
 
 	// 7. the x block on the snapshot and the host frame; the run's replay
@@ -312,13 +313,14 @@ try {
 		for (let i = 0; i < 400; i++) { const tx = ((i * 37) % 120) - 60, ty = ((i * 53) % 120) - 60; out.masks.push(G.World.maskAt(tx, ty)); }
 		G.Game.quit();
 		const e = G.Replay.last;
-		if (e) { await e.ready; const txt = await G.Replay.unpack(e.code); out.code = e.code; out.xInFrames = (txt.match(/"x":\{"xv":1/g) || []).length; out.terrainSent = /"hgt"|"ramp":\[/.test(txt); }
+		if (e) { await e.ready; const txt = await G.Replay.unpack(e.code); out.code = e.code; out.xInFrames = (txt.match(/"x":\{"xv":2/g) || []).length; out.terrainSent = /"hgt"|"ramp":\[/.test(txt); }
 		out.after = { state: G.Game.state };
 		window.__t.thaw();
 		return out;
 	});
-	A(xb.x && xb.x.xv === 1 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash, 'the live snapshot carries the x block v1 {xv: 1, m, z, th}', JSON.stringify(xb.x || xb));
-	A(xb.fx && JSON.stringify(xb.fx) === JSON.stringify(xb.x), 'the co-op host frame carries the same x block', JSON.stringify(xb.fx));
+	A(xb.x && xb.x.xv === 2 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash, 'the live snapshot carries the x block (v2 since D2) {xv: 2, m, z, th}', JSON.stringify(xb.x || xb));
+	const terr = x => x && JSON.stringify([x.xv, x.m, x.z, x.th]);   // (D2: the airborne part `a` differs between the two)
+	A(xb.fx && terr(xb.fx) === terr(xb.x), 'the co-op host frame carries the same x block (terrain part)', JSON.stringify(xb.fx));
 	A(xb.code && xb.xInFrames >= 1 && !xb.terrainSent, `the run's replay records the x block (${xb.xInFrames}x), never the terrain itself`, JSON.stringify({ n: xb.xInFrames, sent: xb.terrainSent }));
 	await ctx.close();
 
@@ -345,7 +347,7 @@ try {
 			out.guest = { hash: await G.Expedition.viewZone(seed, x), masks: masks() };
 			// an unknown schema: ignored
 			G.World.reset(seed);
-			out.unknown = { r: await G.Expedition.viewZone(seed, Object.assign({}, x, { xv: 2 })), zone: !!G.World.zone };
+			out.unknown = { r: await G.Expedition.viewZone(seed, Object.assign({}, x, { xv: 99 })), zone: !!G.World.zone };
 			G.World.reset(seed + 1);
 			out.otherSeed = await G.Expedition.viewZone(seed + 1, x).then(() => G.World.zone && G.World.zone.hash);
 			return out;

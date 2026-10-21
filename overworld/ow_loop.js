@@ -2,7 +2,7 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import { choiceMenu } from './choice.js';
 import { phoneMenu } from './phone.js';
-import { VIEW_H, VIEW_W, drawsAboveTop, getImage } from './engine.js';
+import { VIEW_H, VIEW_W, drawsAboveTop, getImage, netActivityAt } from './engine.js';
 import * as Story from './events.js';
 import { drawGates } from './rotating_gates.js';
 import { arcade, battle, blockers, cutscene, dialog, evolution, factorySpec, hud, items, npcs, player, portals, pvp, screen, sctx, services, trainers, world } from './ow_core.js';
@@ -63,6 +63,9 @@ function showLoadRetry() {
 
 // ---------- loop ----------
 let last = performance.now();
+// the load watchdog's absolute bound: past the fetch layer's own worst case for a
+// request that keeps stalling (4 attempts x FETCH_HEADER_MS + backoff, ~54 s)
+const LOAD_WATCH_CAP = 75000;
 let playAccum = 0;
 export function tick(now) {
 	requestAnimationFrame(tick);
@@ -95,9 +98,15 @@ export function tick(now) {
 	// player is still on (world.current only changes after a complete load), or —
 	// with no map at all — a Retry. Fetches time out well before this (engine.js),
 	// so this is the last resort.
+	// It times SILENCE: the limit runs from the later of the load's start and the
+	// fetch layer's last sign of life (engine.js netActivityAt). A load still
+	// fetching or retrying is alive — the fetch layer gives up on its own, after
+	// at most FETCH_HEADER_MS of quiet per attempt — and a wedge with nothing in
+	// flight still fires on time. LOAD_WATCH_CAP bounds a link that trickles forever.
 	if (S.loading) {
 		if (S.loadWatchStart == null) S.loadWatchStart = now;
-		else if (now - S.loadWatchStart > (S.loadWatchLimit || 20000)) {
+		else if (now - Math.max(S.loadWatchStart, netActivityAt()) > (S.loadWatchLimit || 20000)
+			|| now - S.loadWatchStart > LOAD_WATCH_CAP) {
 			S.loadWatchStart = null; S.loading = false;
 			if (cutscene.blocking) cutscene.stop();
 			fade.target = 0;

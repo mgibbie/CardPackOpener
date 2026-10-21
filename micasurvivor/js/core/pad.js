@@ -633,6 +633,10 @@ G.Pad = (() => {
     // (M5 batch 6: X / Square is the ban button, which only bans on the card screen, as reroll / Y and the Z-move).
     else if ((a === 'dynamax' || a === 'dtrigger' || a === 'dynx' || a === 'ban') && G.Dynamax) G.Dynamax.tryStart(pl);
     else if (a === 'pause' || a === 'back') game.togglePause();
+    // MicaSurvivor (DLC D2): in an Expedition zone, confirm hops (hold it to glide) and cancel slides: A and B on every
+    // layout (Xbox A / B, PlayStation Cross / Circle, Nintendo A / B), and they follow a remap. In a base run they do
+    // nothing in play, as before (no zone).
+    else if ((a === 'confirm' || a === 'cancel') && G.World.zone && G.ExpVerbs) G.ExpVerbs.press(a === 'confirm' ? 'hop' : 'slide');
   }
 
   // ---------------------------------------------------------------- the menu hint bar
@@ -694,8 +698,11 @@ G.Pad = (() => {
   }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', () => fillStatic()); else fillStatic();
 
+  /** MicaSurvivor (DLC D2): is the button of `action` held on the active pad now? (hold confirm to glide) */
+  function held(action) { return !!cur && isDown((cur.buttons || [])[btn(action)]); }
+
   return {
-    poll, axis, p2, p2Axis, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
+    held, poll, axis, p2, p2Axis, rumble, glyphHTML, drawGlyph, refreshGlyphs, settingsHTML, wireSettings,
     layout, map, defaults, setBtn, reset, buttonName, ACTIONS, LAYOUTS,
     get mode() { return mode; }, get listening() { return listening ? listening.action : null; },
     get active() { return !!cur; }, get ready() { return !!core; },
