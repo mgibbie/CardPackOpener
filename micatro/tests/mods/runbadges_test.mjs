@@ -211,6 +211,83 @@ act({ type: 'next_round' });
 act({ type: 'select_blind' }); clearHand();
 ok(!RB().mono && /^started a round with Charmander \(Fire\) in a Water run$/.test(RB().mono_reason), 'two types in the row at the first lock: broken', RB().mono_reason);
 
+// ======================================================== Monotype is checked when the round BEGINS (owner rule 2026-10-21)
+// After every blind-select effect: the setting_blind loop, blind_calculate and their queued destroys (tester Jack: his
+// Scyther sliced a non-Pokémon joker at blind select, yet Monotype broke on it — the check ran before the slice).
+const ids = () => G.jokers.cards.map((c) => c.sort_id);
+fresh();
+toShop(); buy('j_poke_bulbasaur');
+nextShop();
+ok(RB().type === 'Grass' && RB().mono, '(slice) Bulbasaur locks Grass', RB());
+buy('j_poke_scyther');
+r = buy('j_joker'); // (Bulbasaur, Scyther, Joker: Scyther slices the Joker at the next blind select)
+ok(G.jokers.cards.map(keyOf).join(',') === 'j_poke_bulbasaur,j_poke_scyther,j_joker', '(slice) the row: Bulbasaur, Scyther, Joker', G.jokers.cards.map(keyOf));
+ok(warns(r).length === 0 && RV().mono_at_risk === false, '(slice) a joker Scyther will slice is not warned about / not at risk', [warns(r), RV().mono_at_risk]);
+{
+  const [b, sc, jk] = ids();
+  r = act({ type: 'reorder', area: 'jokers', ids: [b, jk, sc] });
+  ok(r.ok && RV().mono_at_risk === true && warns(r).length === 1, "(slice) moved out of Scyther's reach: at risk, and the shop warns", [r.error, RV().mono_at_risk, warns(r)]);
+  act({ type: 'reorder', area: 'jokers', ids: [b, sc, jk] });
+  ok(RV().mono_at_risk === false, "(slice) moved back to Scyther's right: no longer at risk", RV().mono_at_risk);
+}
+{
+  const victim = joker('j_joker');
+  act({ type: 'next_round' });
+  r = act({ type: 'select_blind' });
+  ok(r.ok && !G.jokers.cards.includes(victim) && G.jokers.cards.length === 2, '(slice) Scyther sliced the Joker at blind select', G.jokers.cards.map(keyOf));
+  ok(RB().mono && RB().type === 'Grass' && RB().mono_reason === '', "(slice) a joker destroyed at blind select does not break Monotype (Jack's Grass run)", RB());
+  ok(!badgeEvents(r).some((e) => e.badge === 'mono'), '(slice) no Monotype break event', badgeEvents(r));
+  ok(RB().checked_window === RB().window, '(slice) the round was checked (its first hand was dealt)', RB());
+  clearHand(); winRound(); act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' });
+  ok(RB().mono && RB().type === 'Grass', '(slice) ... and the next round is still Monotype (Grass)', RB());
+}
+// Ceremonial Dagger (a Grass Tera) slicing an off-type Pokémon at blind select: intact too
+fresh();
+toShop(); buy('j_poke_oddish');
+nextShop(); buy('j_ceremonial', 'Grass');
+r = buy('j_poke_charmander');
+ok(warns(r).length === 0 && RV().mono_at_risk === false, '(dagger) Charmander right of the Dagger: not at risk');
+act({ type: 'next_round' }); act({ type: 'select_blind' });
+ok(!joker('j_poke_charmander') && RB().mono && RB().type === 'Grass', '(dagger) the Dagger ate Charmander at blind select: Monotype intact', [G.jokers.cards.map(keyOf), RB()]);
+// an Eternal joker can't be sliced: still at risk, and kept into the round it breaks Monotype
+fresh();
+toShop(); buy('j_poke_bulbasaur');
+nextShop(); buy('j_poke_scyther');
+buy('j_joker'); joker('j_joker').set_eternal(true);
+ok(RV().mono_at_risk === true, '(eternal) an Eternal joker right of Scyther is still at risk', RV().mono_at_risk);
+act({ type: 'next_round' }); act({ type: 'select_blind' });
+ok(joker('j_joker') && !RB().mono && RB().mono_reason === 'started a round with Joker (no type)', '(eternal) Scyther spared it: Monotype broken', RB().mono_reason);
+// a joker CREATED at blind select (Riff-raff's Commons) is in the row when the round begins: checked that round
+fresh();
+toShop(); buy('j_poke_bulbasaur');
+nextShop(); buy('j_riff_raff', 'Grass'); // (a Grass Tera'd Riff-raff: itself it matches)
+G.jokers.config.card_limit = 3; // (room for exactly one Common)
+act({ type: 'next_round' });
+ok(RB().mono && RB().type === 'Grass' && RV().mono_at_risk === false, '(riff-raff) Bulbasaur + Grass Riff-raff: intact, not at risk before the blind', RB());
+{
+  const before = new Set(G.jokers.cards);
+  r = act({ type: 'select_blind' });
+  const made = G.jokers.cards.filter((c) => !before.has(c));
+  const off = made.find((c) => c.ability.rb_type !== 'Grass' && c.ability.rb_type !== 'any');
+  ok(r.ok && made.length === 1 && off, '(riff-raff) Riff-raff made one off-type Common at blind select: ' + made.map(keyOf), made.map((c) => [keyOf(c), c.ability.rb_type]));
+  ok(!RB().mono && /^started a round with .+ in a Grass run$|^started a round with .+ (no type)$/.test(RB().mono_reason), '(riff-raff) the Common made at blind select breaks Monotype in that same round: ' + RB().mono_reason, RB());
+  ok(badgeEvents(r).some((e) => e.badge === 'mono'), '(riff-raff) the break is in the select_blind action (the toast)', badgeEvents(r));
+}
+// once per round: a joker gained after the first deal (mid-round) waits for the next round
+fresh();
+toShop(); buy('j_poke_bulbasaur');
+nextShop();
+act({ type: 'next_round' }); act({ type: 'select_blind' });
+{
+  const c = create_card('Joker', G.jokers, null, null, null, null, 'j_poke_charmander');
+  c.add_to_deck(); G.jokers.emplace(c);
+  act({ type: 'highlight', ids: [G.hand.cards[0].sort_id] });
+  r = act({ type: 'discard' }); // (a discard draws again: DRAW_TO_HAND, but not the round's first deal)
+  ok(r.ok && G.STATE === STATES.SELECTING_HAND && RB().mono, '(once) an off-type joker gained mid-round + a later draw: not checked until the next round', [r.error, RB()]);
+  clearHand(); winRound(); act({ type: 'cash_out' }); act({ type: 'next_round' }); act({ type: 'select_blind' });
+  ok(!RB().mono && RB().mono_reason === 'started a round with Charmander (Fire) in a Grass run', '(once) ... kept into the next round: broken then', RB().mono_reason);
+}
+
 // non-Pokémon jokers: the Nuzlocke breaks on gaining one; the Monotype only if it's kept into a round
 fresh();
 toShop(); r = buy('j_joker');
