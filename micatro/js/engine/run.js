@@ -567,6 +567,7 @@ function end_round() {
           if (ef.dollars && ef !== effects[0]) { ease_dollars(ef.dollars); card_eval_status_text(hc, 'dollars', ef.dollars); }
           if (ef.extra) card_eval_status_text(hc, 'extra', null, null, null, ef.extra);
         }
+        if (ACTIVE_MODS.length) callHook('held_card_evaluated', hc, effects, 'end_of_round'); // (Nacho 1.7.9's Dedenne)
       }
     }
     draw_from_hand_to_discard();
@@ -1196,6 +1197,7 @@ function evaluate_play() {
           // (mod effects on the card itself after its seal: AMM Aspects)
           if (ef.post_effects) for (const pe of ef.post_effects) [hand_chips, mult] = smods_effect(pe, hc, hand_chips, mult);
         }
+        if (ACTIVE_MODS.length) callHook('held_card_evaluated', hc, effects, 'scoring'); // (Nacho 1.7.9's Dedenne)
       }
     };
     // SMODS.score_card for mods during scoring (AMM's Void Aspect scores a held card as played; AutumnCircus'

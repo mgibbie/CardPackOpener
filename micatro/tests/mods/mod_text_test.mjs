@@ -36,7 +36,7 @@ for (const k of ['j_poke_litwick', 'j_poke_lampent', 'j_poke_chandelure']) {
 // the Jirachi tag (no loc entry in Pokermon)
 { const d = describeTag('tag_poke_jirachi_tag'); ok(texty(d, 'tag_poke_jirachi_tag'), 'Jirachi tag: a name and text', d && [d.name, d.lines]); }
 // info boxes: a vanilla tag / the Negative edition pushed without vars are filled like Balatro's
-for (const k of ['j_poke_cleffa', 'j_poke_garbodor', 'j_nacho_mega_gardevoir', 'j_poke_hisuian_qwilfish', 'j_poke_overqwil']) {
+for (const k of ['j_poke_cleffa', 'j_poke_garbodor', 'j_nacho_mega_audino', 'j_poke_hisuian_qwilfish', 'j_poke_overqwil']) { // (Nacho 1.7.9: Mega Audino's Incubator box; 1.6.4 tested its Mega Gardevoir)
   const c = add_joker(k); G.E_MANAGER.flush();
   const d = describe(c);
   ok(!unfilled(d) && (d.info || []).length > 0, 'info boxes filled: ' + k, d.info && d.info.filter((i) => (i.lines || []).some((l) => /#\d+#/.test(l))).map((i) => i.key));

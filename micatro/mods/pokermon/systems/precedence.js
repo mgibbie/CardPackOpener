@@ -9,9 +9,10 @@
  *     entry in pools.js;
  *   - never an evolution result: poke_evolve / poke_backend_evolve retarget to Pokermon's key (precedence_key), so an
  *     add-on line that evolved INTO a duplicate now evolves into Pokermon's;
- *   - its Megas carry over: a Mega the replaced add-on joker could become (Nacho's Mega Gardevoir / Gallade / Altaria /
- *     Salamence) is reached from Pokermon's joker with a Mega Stone (addon_megas, systems/items.js), and devolves back
- *     to it (get_previous_evo -> precedence_key);
+ *   - its Megas carry over: a Mega the replaced add-on joker could become is reached from Pokermon's joker with a Mega
+ *     Stone (addon_megas, systems/items.js), and devolves back to it (get_previous_evo -> precedence_key); an add-on may
+ *     also attach a Mega to a Pokermon joker outright (attach_mega: Nacho 1.7.9's re-keyed j_poke_mega_gardevoir /
+ *     _altaria / _gallade on Pokermon's Gardevoir / Altaria / Gallade);
  *   - hidden from the Pokédex family view, the design wiki and the deck editor's pickers.
  * Its key stays REGISTERED (a legacy definition, unchanged): a save, replay, custom deck, challenge or win sticker that
  * holds it still loads, names it and draws it, and an owned one keeps working as it did until it evolves.
@@ -77,10 +78,31 @@ function megaIndex() {
 }
 export function addon_megas(x) {
   const c = centerOf(x);
-  if (!c || c.mod !== POKERMON || c.megas) return [];
-  const list = megaIndex().get(c.key);
-  return list ? list.filter((k) => centerActive(P_CENTERS[k])) : [];
+  if (!c) return [];
+  const out = [];
+  // An add-on's Megas attached to this joker (attach_mega: Nacho 1.7.9's take_ownership `megas` on Pokermon's Gardevoir).
+  for (const k of ATTACHED.get(c.key) || []) if (P_CENTERS[k] && !replaced_by(k) && centerActive(P_CENTERS[k]) && !out.includes(k)) out.push(k);
+  if (c.mod === POKERMON && !c.megas) {
+    const list = megaIndex().get(c.key);
+    if (list) for (const k of list) if (centerActive(P_CENTERS[k]) && !out.includes(k)) out.push(k);
+  }
+  return out;
 }
+
+/**
+ * An add-on Mega attached to another mod's joker — Nacho 1.7.9's PkmnDip.attach_mega: SMODS.Joker:take_ownership(base,
+ * {megas = {mega}}) + pokermon.add_to_family. Micatro mods are per run, so the base center is never rewritten: the Mega is
+ * listed here and reached through addon_megas (a Mega Stone, the Mega Berry Juice), only while it is active (its mod and
+ * option on). Additive; with nothing attached Pokermon is unchanged.
+ */
+const ATTACHED = new Map();
+export function attach_mega(base_key, mega_key) {
+  const list = ATTACHED.get(base_key) || [];
+  if (!list.includes(mega_key)) list.push(mega_key);
+  ATTACHED.set(base_key, list);
+}
+/** The attached Megas of a base key (for docs and tests). */
+export const attached_megas = (base_key) => (ATTACHED.get(base_key) || []).slice();
 
 /**
  * A family member's key for DISPLAY (the Pokédex): a replaced add-on key shows Pokermon's; a Pokermon key Pokermon

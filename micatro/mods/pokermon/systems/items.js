@@ -73,6 +73,9 @@ export function evo_item_use_total(self, card, area, copier) {
 
 // ------------------------------------------------------------- held items
 /** Pickup-style reward: nothing 34%, an evolution item someone needs 25%, Leftovers 20%, Twisted Spoon 20%, Transformation 1%. */
+/** POKE_NATIVE_EVO_ITEMS (3.9.1 pokeconstants.lua): the evolution items Pokermon itself ships. */
+const NATIVE_EVO_ITEMS = ['firestone', 'waterstone', 'leafstone', 'thunderstone', 'dawnstone', 'shinystone', 'moonstone', 'duskstone',
+  'sunstone', 'icestone', 'prismscale', 'upgrade', 'dubious_disc', 'linkcable', 'kingsrock', 'dragonscale', 'hardstone'];
 export function generate_pickup_item_key(seed) {
   let item_key = 'c_poke_transformation';
   const chance = pseudorandom(seed);
@@ -84,7 +87,12 @@ export function generate_pickup_item_key(seed) {
     const keys = [];
     for (const v of G.jokers.cards) {
       const req = v.config.center.item_req;
-      if (req) keys.push('c_poke_' + (Array.isArray(req) ? pseudorandom_element(req, pseudoseed(seed))[0] : req));
+      // (3.9.1 poll_evo_item: a native evo item is c_poke_*, an add-on's is c_<its poke_custom_prefix>_* — Nacho 1.7.9's Applin
+      // needs c_nacho_tartapple / sweetapple / syrupyapple; batch 18. Pokermon's own jokers only hold native items: unchanged.)
+      if (req) {
+        const r = Array.isArray(req) ? pseudorandom_element(req, pseudoseed(seed))[0] : req;
+        keys.push('c_' + (NATIVE_EVO_ITEMS.includes(r) ? 'poke' : (v.config.center.poke_custom_prefix || 'poke')) + '_' + r);
+      }
     }
     item_key = keys.length ? pseudorandom_element(keys, pseudoseed(seed))[0] : undefined;
   }

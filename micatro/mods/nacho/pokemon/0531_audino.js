@@ -1,65 +1,50 @@
-// Nacho's Pokermon Dip 1.6.4 — src/pokemon/0531_audino.lua: Audino, Mega Audino.
-// (Audino's "Pokémon gain an extra level at end of round" is a lovely patch on level_evo:
-// ../systems.js registers it on Pokermon's LEVEL_EVO_EXTRA.)
-import {
-  G, localize, play_sound, poll_edition, defineNacho, type_tooltip, smods_create_card,
-  get_probability_vars, pseudorandom_probability,
-} from '../api.js';
+// Nacho's Pokermon Dip 1.7.9 — src/pokemon/0531_audino.lua: Audino, Mega Audino.
+// Audino: X Mult that grows (SMODS.scale_card) whenever a Pokémon evolves (the poke_evolved context: not to / from a Mega);
+// while owned, every level-evolving Pokémon takes an extra step per Audino (1.7.9 re-fires the `evolution` context once:
+// ../systems.js LEVEL_EVO_EXTRA, as 1.6.4's patch did).
+// Mega Audino (1.7.9 rework): when a Boss Blind is beaten, a Daycare egg of an adjacent parent (PkmnDip.eff.breed: both
+// neighbours Daycare-compatible), hatching in 1 round, with an edition (1 in 5 Shiny, else Foil / Holo / Polychrome).
+// 1.6.4 made an egg of any kind at every end of round.
+import { G, play_sound, pseudorandom_element, pseudoseed, defineNacho, type_tooltip, scale_card, pseudorandom_probability, get_probability_vars, poke_get_adjacent_jokers } from '../api.js';
+import { breed, defer } from '../dip.js';
 
 const FILE = 'src/pokemon/0531_audino.lua';
 
 defineNacho({
-  // Audino 531: gains X0.25 whenever a Pokémon evolves (poke_evolved)
+  // Audino 531
   audino: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       return { vars: [card.ability.extra.Xmult, card.ability.extra.Xmult_mod] };
     },
     calculate(self, card, context) {
-      if (context.poke_evolved) {
-        card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_mod;
-        return { message: localize('k_upgrade_ex'), colour: 'RED' };
+      if (context.poke_evolved && !context.blueprint) {
+        scale_card(card, { ref_value: 'Xmult', scalar_value: 'Xmult_mod', message_key: 'a_xmult', message_colour: 'XMULT' });
       }
       if (context.joker_main) return { xmult: card.ability.extra.Xmult };
       return undefined;
     },
   },
-  // Mega Audino 531-1: a Mystery Egg (with an edition, 1 in 10 shiny) at end of round
+  // Mega Audino 531-1
   mega_audino: {
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
-      info_queue.push({ set: 'Other', key: 'daycare' });
+      info_queue.push({ set: 'Other', key: 'incubator' });
       const [num, den] = get_probability_vars(card, card.ability.extra.num, card.ability.extra.den, 'mega_audino');
       return { vars: [card.ability.extra.Xmult, num, den] };
     },
     calculate(self, card, context) {
-      if (context.joker_main) return { xmult: card.ability.extra.Xmult };
-      if (context.end_of_round && context.game_over === false && !context.blueprint && !context.individual && !context.repetition) {
-        let hatchlings = false;
-        for (const v of G.jokers.cards) {
-          if (v.config.center.stage === 'Baby' || v.config.center.stage === 'Basic' || v.config.center_key === 'j_poke_mystery_egg') hatchlings = true;
-        }
-        // Intended-design fix (the "Pokemon Day Care" tooltip: eggs may exceed the Joker slots only
-        // when you have no Basic / Baby Jokers). The Lua tested `#G.jokers.cards <= card_limit` —
-        // true whenever the row isn't already over-full, so eggs always overflowed — and reserved a
-        // joker_buffer slot even when it made no egg, a slot nothing gave back (leaked every round).
-        // Now: an egg needs a free slot unless there are no hatchlings, and the buffer is only
-        // reserved for an egg actually made.
-        const room = G.jokers.cards.length + G.GAME.joker_buffer < G.jokers.config.card_limit;
-        if (room || !hatchlings) {
-          G.GAME.joker_buffer = G.GAME.joker_buffer + 1;
-          G.E_MANAGER.add_event(() => {
-            G.GAME.joker_buffer = 0;
-            play_sound('timpani');
-            const _card = smods_create_card({ set: 'Joker', key: 'j_poke_mystery_egg' });
-            let _edition = poll_edition('aura', null, true, true);
-            if (pseudorandom_probability(card, 'mega_audino', card.ability.extra.num, card.ability.extra.den, 'mega_audino')) _edition = 'e_poke_shiny';
-            _card.set_edition(_edition, true);
-            _card.add_to_deck();
-            G.jokers.emplace(_card);
-            if (_card.ability && _card.ability.extra) _card.ability.extra.rounds = 1;
-          });
-        }
+      const a = card.ability.extra;
+      if (context.joker_main) return { xmult: a.Xmult };
+      if (context.end_of_round && context.beat_boss && context.game_over === false && !context.blueprint && !context.individual && !context.repetition) {
+        const adj = poke_get_adjacent_jokers(card);
+        const poll_audino_edition = (args) => {
+          const shiny = pseudorandom_probability(card, 'mega_audino', a.num, a.den);
+          args.edition = shiny ? 'e_poke_shiny' : pseudorandom_element(['e_foil', 'e_holo', 'e_polychrome'], pseudoseed('mega_audino'))[0];
+        };
+        const incubate = (egg) => { egg.ability.extra.rounds = 1; };
+        breed(card, adj, poll_audino_edition, incubate);
+        defer(() => play_sound('timpani'));
       }
       return undefined;
     },

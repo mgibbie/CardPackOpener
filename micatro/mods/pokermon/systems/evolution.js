@@ -312,10 +312,33 @@ export function get_highest_evo(card) {
 /** Whether get_highest_evo would evolve this card (no RNG drawn: safe inside a can_use). */
 export function can_evolve_to_highest(card) { return !!highest_evo_options(card); }
 
+/**
+ * Add-on extension point (additive; empty = Pokermon unchanged): POKE_EVO_OVERRIDES lines (3.9.1 pokeconstants.lua /
+ * pokermon.get_evo_overrides) an add-on appends — {stages: [name | [names]]}: a branch's own highest and previous evo inside a
+ * shared family (Nacho 1.7.9's Goomy line: Sliggoo -> Goodra, Hisuian Sliggoo -> Hisuian Goodra). (Pokermon's own four lines —
+ * Silcoon, Cascoon, Cosmog, Kubfu — are not seeded here: our port resolves those its own way.)
+ */
+export const EVO_OVERRIDES = [];
+function evo_overrides(name) {
+  for (const line of EVO_OVERRIDES) {
+    for (let i = 0; i < line.length; i++) {
+      const stage = Array.isArray(line[i]) ? line[i] : [line[i]];
+      if (!stage.includes(name)) continue;
+      const o = {};
+      if (i > 0) o.previous_evo = line[i - 1];
+      if (i < line.length - 1) o.highest_evo = line[line.length - 1];
+      return o;
+    }
+  }
+  return {};
+}
+
 /** get_highest_evo's candidates (the highest-stage forms of the line), or false when there are none. */
 function highest_evo_options(card) {
   const name = nameOf(card);
   const prefix = 'j_' + (card.config.center.poke_custom_prefix || 'poke') + '_';
+  const ov = evo_overrides(name).highest_evo;
+  if (ov) { const o = (Array.isArray(ov) ? ov : [ov]).filter((n) => P_CENTERS[prefix + n]); if (o.length) return o; }
   let found_family = null;
   for (const v of family) for (const y of v) if (fname(y) === name) found_family = v;
   if (!found_family) return false;
@@ -352,6 +375,8 @@ export function get_previous_evo(card, full_key) {
   const name = nameOf(card);
   let prev;
   if (name.slice(0, 5) === 'mega_') { const mega = get_previous_from_mega(name, prefix, full_key); if (mega) return mega; }
+  const ovp = evo_overrides(name).previous_evo;
+  if (typeof ovp === 'string' && P_CENTERS['j_' + prefix + '_' + ovp]) return full_key ? 'j_' + prefix + '_' + ovp : ovp;
   let found = false;
   for (const v of family) {
     for (let x = 0; x < v.length; x++) {
