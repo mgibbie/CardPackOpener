@@ -213,7 +213,8 @@ const dreadLast = (cards) => { // play the LAST hand of the round (and win it)
   start('BJA15'); add('j_bunc_dogs_playing_poker');
   let r = play(hand(['S_2', 'H_2'])); ok(r.total.mult === 5, 'Dogs X2.5 on 2s', tot(r));
   r = play(hand(['S_6', 'H_6'])); ok(r.total.mult === 2, 'Dogs nothing on 6s', tot(r));
-  r = play(hand(['S_K'], 'm_stone').concat(hand(['D_3']))); ok(near(r.total.mult, 2.5), 'Dogs: Stone cards do not count as ranks', tot(r));
+  // (5.4.8b: a rankless scored card — a Stone Card too — breaks it; 5.1 skipped Stone Cards)
+  r = play(hand(['S_K'], 'm_stone').concat(hand(['D_3']))); ok(r.total.mult === 1, 'Dogs (5.4.8b): a Stone card breaks it', tot(r));
 }
 
 { // Righthook: retrigger the rightmost scored card once per remaining hand

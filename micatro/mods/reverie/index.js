@@ -59,7 +59,7 @@ import { registerMod, isActive } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_TAGS, P_CARDS, P_CENTER_POOLS, Card, CardArea, emit, play_sound, localize, card_eval_status_text,
   pseudorandom, pseudoseed, pseudorandom_element, math_random, create_card, get_current_pool, get_pack,
-  poll_edition, copy_card, find_joker, calculate_reroll_cost,
+  poll_edition, copy_card, find_joker, calculate_reroll_cost, get_next_tag_key,
 } from '../../js/engine/core.js';
 import { STATES, HANDLIST, change_shop_size, use_card } from '../../js/engine/run.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
@@ -82,6 +82,7 @@ const atlases = {
   rev_vouchers: { src: ART + 'vouchers.png', px: 71, py: 95 },
   rev_tags: { src: ART + 'tags.png', px: 34, py: 34 },
   rev_backs: { src: ART + 'backs.png', px: 71, py: 95 },
+  rev_sleeves: { src: ART + 'sleeves.png', px: 71, py: 95 }, // (1.3.0 main: assets/2x/sleeves.png, cine_sleeves)
 };
 /** Reverie.flipped_*_pos: the backs Adrifting shows for face-down vouchers / tags / boosters. */
 const FLIPPED = { Voucher: ['rev_vouchers', { x: 1, y: 0 }], Tag: ['rev_tags', { x: 0, y: 1 }], Booster: ['rev_boosters', { x: 5, y: 0 }] };
@@ -154,6 +155,8 @@ const halve_cine_quest_goal = (value) => Math.max(1, Math.floor(value * P_CENTER
 export function get_food_jokers() {
   const foods = [G.GAME.pool_flags.gros_michel_extinct ? 'j_cavendish' : 'j_gros_michel', 'j_ice_cream', 'j_turtle_bean', 'j_diet_cola', 'j_popcorn', 'j_ramen', 'j_selzer', 'j_egg'];
   if (isActive('morefluff')) foods.push('j_mf_lollipop', 'j_mf_goldencarrot', 'j_mf_tonersoup', 'j_mf_teacup');
+  // (1.3.0 main's refined list: Bunco's two foods, while Bunco is on; the other mods it names aren't Micatro mods)
+  if (isActive('bunco')) foods.push('j_bunc_fondue', 'j_bunc_starfruit');
   return foods;
 }
 const is_food_joker = (key) => get_food_jokers().includes(key);
@@ -380,7 +383,7 @@ function use_cine(card) {
     if (is_reverie) {
       c.used_cine.push('Reverie');
       for (const v of pool_cines(false)) c.used_cine.push(v.name);
-    } else if (G.GAME.selected_back_key === 'b_rev_filmstrip') c.used_cine.push(name);
+    } else if (G.GAME.selected_back_key === 'b_rev_filmstrip' || G.GAME.selected_sleeve === 'sleeve_rev_filmstrip') c.used_cine.push(name);
     else if (!find_used_cine(name)) c.used_cine = [name];
     calculate_reroll_cost(true);
     if (G.GAME.used_vouchers.v_rev_script && !c.cine_temporary_shop_card_limit) {
@@ -622,6 +625,47 @@ const tags = [
       return true;
     },
   },
+  // Mega Stamp Tag (1.3.0 main, tags.lua `mega_tag`, a CardSleeves dependency): the Stamp Sleeve on the Stamp Deck. A free
+  // Jumbo Tag Pack AND a random tag. (Its 1.3.0 key `mega_tag` is OUR 1.2.6 Stamp Tag's key, so it is keyed apart here.)
+  {
+    key: 'tag_rev_mega_stamp', name: 'Mega Stamp Tag', set: 'Tag', atlas: 'rev_tags', pos: { x: 2, y: 0 }, config: { type: 'new_blind_choice' },
+    yes_pool_flag: 'tag_tag_available',
+    loc_vars: (self, iq) => { iq.push({ key: 'p_rev_tag_jumbo_1' }); return { vars: [] }; },
+    apply(self, tag, context) {
+      if (context.type !== 'new_blind_choice') return undefined;
+      tag.yep('+', TAG_COLOUR, () => {
+        open_free_pack('p_rev_tag_jumbo_1');
+        const t = new Tag(get_next_tag_key('mega_stamp'));
+        if (t.name === 'Orbital Tag') {
+          const poker_hands = HANDLIST.filter((k) => G.GAME.hands[k].visible);
+          t.ability.orbital_hand = pseudorandom_element(poker_hands, pseudoseed('mega_stamp_orbital'))[0];
+        }
+        add_tag(t);
+        return true;
+      });
+      tag.triggered = true;
+      return true;
+    },
+  },
+];
+
+// ------------------------------------------------------------------ sleeves (1.3.0 main, data/sleeves.lua; CardSleeves)
+// Filmstrip Sleeve: the Filmstrip Deck's effect (Cines stack, +1 Cine slot); on the Filmstrip Deck (alt) no second slot, and
+// an Exchange Coupon placed in the shop / a pack is Negative 1 in 4 (`filmstrip_sleeve`; 1.3.0's config.rate is unused).
+// Stamp Sleeve: skips give Stamp Tags (the Stamp Deck's effect); on the Stamp Deck (alt) Mega Stamp Tags.
+const prob_normal = () => String(G.GAME && G.GAME.probabilities ? G.GAME.probabilities.normal : 1);
+const sleeves = [
+  {
+    key: 'sleeve_rev_filmstrip', name: 'Filmstrip Sleeve', atlas: 'rev_sleeves', pos: { x: 0, y: 0 }, config: { cine_slot: 1, odds: 4, rate: 2 },
+    loc_vars: (self) => ({ vars: [self.config.cine_slot, prob_normal(), self.config.odds] }),
+    apply(self) { G.GAME.starting_params.cine_quest_slots += self.config.cine_slot; },
+    alt: { deck: 'b_rev_filmstrip', apply() {} },
+  },
+  {
+    key: 'sleeve_rev_stamp', name: 'Stamp Sleeve', atlas: 'rev_sleeves', pos: { x: 1, y: 0 }, config: {},
+    loc_vars: () => ({ vars: [localize({ type: 'name_text', key: 'p_tag_jumbo', set: 'Other' })] }),
+    alt: { deck: 'b_rev_stamp' },
+  },
 ];
 
 // ------------------------------------------------------------------ ticket shaders (assets/shaders/*.fs)
@@ -767,6 +811,9 @@ const hooks = {
     if (editions.length) {
       const [ed] = pseudorandom_element(editions, pseudoseed('edition'));
       card.set_edition({ [ed]: true });
+    } else if (set === 'Cine' && card.ability.progress !== undefined && G.GAME.selected_sleeve === 'sleeve_rev_filmstrip' && G.GAME.selected_back_key === 'b_rev_filmstrip') {
+      // (1.3.0: the Filmstrip Sleeve on the Filmstrip Deck: an Exchange Coupon 1 in 4 Negative)
+      if (pseudorandom('filmstrip_sleeve') < G.GAME.probabilities.normal / sleeves[0].config.odds) card.set_edition({ negative: true });
     }
     if (heist) {
       card.cost = Math.max(1, Math.floor(card.cost * (100 - P_CENTERS.c_rev_gem_heist.config.extra) / 100));
@@ -912,6 +959,13 @@ const hooks = {
     const k = card.config.center.key;
     if (k === 'j_diet_cola' && ctx.selling_self) {
       G.E_MANAGER.add_event(() => { add_tag(new Tag('tag_double')); play_sound('generic1', 0.9, 0.8); play_sound('holo1', 1.2, 0.4); });
+    } else if (k === 'j_bunc_fondue' && ctx.after && G.GAME.current_round.hands_played === 1 && ctx.scoring_hand && !ctx.blueprint) {
+      // (1.3.0 custom_morsel_compat: a morseled Fondue converts the SECOND hand of the round too; its own code does the first)
+      G.GAME.Exotic = true; // (Bunco's enable_exotics())
+      const sh = ctx.scoring_hand.slice();
+      for (const c of sh) G.E_MANAGER.add_event(() => { c.flip(); play_sound('card1', 1); });
+      for (const c of sh) G.E_MANAGER.add_event(() => { c.change_suit('bunc_Fleurons'); });
+      for (const c of sh) G.E_MANAGER.add_event(() => { c.flip(); play_sound('tarot2', 1, 0.6); });
     } else if (k === 'j_mf_tonersoup' && ctx.cardarea === G.jokers && ctx.before) {
       if (G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) {
         G.GAME.consumeable_buffer += 1;
@@ -972,16 +1026,24 @@ const hooks = {
   },
 };
 function stamp_tags() {
-  if (G.GAME.selected_back_key !== 'b_rev_stamp') return;
-  G.GAME.round_resets.blind_tags.Small = 'tag_rev_mega_tag';
-  G.GAME.round_resets.blind_tags.Big = 'tag_rev_mega_tag';
+  // (Back:trigger_effect 'setting_tags', then (1.3.0) the sleeve's: the Stamp Sleeve gives Stamp Tags, Mega Stamp Tags on
+  // the Stamp Deck)
+  const deck = G.GAME.selected_back_key === 'b_rev_stamp', sleeve = G.GAME.selected_sleeve === 'sleeve_rev_stamp';
+  if (!deck && !sleeve) return;
+  const tag = sleeve && deck ? 'tag_rev_mega_stamp' : 'tag_rev_mega_tag';
+  G.GAME.round_resets.blind_tags.Small = tag;
+  G.GAME.round_resets.blind_tags.Big = tag;
 }
 
 export const REVERIE = registerMod({
   id: MOD_ID,
   name: 'Reverie',
   prefix: 'rev',
-  version: '1.0 (old-API)',
+  // The label: our source is byte-identical to tag v1.2.6 (the latest release). contentRev 1: from 1.3.0 main (3728d64,
+  // 2024-10-10) the two sleeves, the Mega Stamp Tag and Bunco's foods in Morsel (PORTING.md).
+  version: '1.2.6',
+  contentRev: 1,
+  sleeves, // (engine/sleeve.js)
   by: 'DVRP (rebuilt for Micatro)',
   badge_colour: CINE_COLOUR,
   description: 'A movie-themed expansion: Cine cards and quests that turn the next shop into a special shop (tags, packs, food jokers...).',

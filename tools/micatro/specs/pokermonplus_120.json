@@ -1,0 +1,16 @@
+{
+  "comment": "Sonfive's Pokermon+ 1.2.0-261018a (SonfiveTV/PokermonPlus commit 52c74167fbd2f98c4e1cf21eab1922ca3b993c2c, 2026-10-18; Plans/MICATRO_MODS_UPGRADES.md batch 20): the static data micatro/mods/pokermonplus/data120.js is generated from. 1.2.0 calls Pokermon 3.9 through pokermon.* namespaces and keeps its helpers under SONFIVE.*: the prelude makes pokermon.<x> a callable, indexable stub. src/blinds, src/vouchers and src/quests ship empty lists upstream (Quests are disabled) and are not extracted.",
+  "prelude": "SMODS.find_mod = function() return {} end local mt = {} mt.__index = function(t, k) local v = setmetatable({}, mt) rawset(t, k, v) return v end mt.__call = function() return nil end setmetatable(pokermon, mt) SONFIVE = {} sonfive_config = setmetatable({}, {__index = function() return true end})",
+  "run_first": ["src/functions/functions.lua"],
+  "files": {
+    "jokers": ["src/pokemon/"],
+    "consumables": ["src/consumables/"],
+    "backs": ["src/backs/"],
+    "stakes": ["src/stakes/"],
+    "stickers": ["src/stickers/"],
+    "challenges": ["src/challenges/"],
+    "sleeves": ["src/sleeves/"]
+  },
+  "globals": [],
+  "loc": "localization/en-us.lua"
+}

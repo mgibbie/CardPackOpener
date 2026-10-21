@@ -87,12 +87,12 @@ void main(){
 const ed = (key, def) => ({ ...data_of('editions', key), set: 'Edition', name: key, ...def });
 export const centers = [
   ed('e_bunc_glitter', {
-    order: 1, extra_cost: 0, shader_fs: GLITTER_FS,
+    order: 1, extra_cost: 3, shader_fs: GLITTER_FS, // (5.4.8b: +$3 in the shop; 5.1 had none)
     loc_vars: (s) => ({ vars: [s.config.Xchips] }),
     get_weight: (s) => G.GAME.edition_rate * s.weight,
   }),
   ed('e_bunc_fluorescent', {
-    order: 2, config: {}, shader_fs: FLUORESCENT_FS,
+    order: 2, extra_cost: 1, config: {}, shader_fs: FLUORESCENT_FS, // (5.4.8b: +$1)
     get_weight: (s) => G.GAME.edition_rate * s.weight,
   }),
 ];

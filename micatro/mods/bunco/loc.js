@@ -1,5 +1,6 @@
-// GENERATED from Bunco 5.1 localization/default.lua (static text only; tools/micatro/extract_mod_data.cjs).
-// The mod's own English text, unchanged: {C:...} markup and #n# placeholders are filled by describe().
+// GENERATED from Bunco 5.1 localization/default.lua (static text only; tools/micatro/extract_mod_data.cjs), with the
+// jumbocarrot0 fork 5.4.8b's rewordings of the 29 descriptions that keep their #n# placeholders (PORTING.md).
+// The mod's own English text: {C:...} markup and #n# placeholders are filled by describe().
 export default {
  "descriptions": {
   "Back": {
@@ -29,8 +30,9 @@ export default {
    "bl_bunc_blade": {
     "name": "The Blade",
     "text": [
-     "First time score exceeds #1#",
-     "makes played hand score 0"
+     "The first hand that",
+     "scores over #1#",
+     "scores 0 instead"
     ]
    },
    "bl_bunc_bulwark": {
@@ -50,8 +52,9 @@ export default {
    "bl_bunc_chasm": {
     "name": "The Chasm",
     "text": [
-     "After Play, gain Hindered,",
-     "Reactive, or Rental tag"
+     "After Play, gain a",
+     "Hindered, Reactive,",
+     "or Rental tag"
     ]
    },
    "bl_bunc_claw": {
@@ -64,43 +67,49 @@ export default {
    "bl_bunc_depths": {
     "name": "The Depths",
     "text": [
-     "After Play, gain Eternal,",
-     "Perishable, or Scattering tag"
+     "After Play, gain an",
+     "Eternal, Perishable,",
+     "or Scattering tag"
     ]
    },
    "bl_bunc_final_crown": {
     "name": "Chartreuse Crown",
     "text": [
-     "All Spade, Heart, Club, and Diamond",
-     "base suit cards are debuffed"
+     "All Spade, Heart,",
+     "Club, and Diamond",
+     "cards are debuffed"
     ]
    },
    "bl_bunc_final_dagger": {
     "name": "Magenta Dagger",
     "text": [
-     "Discarding cards plays them",
-     "and subtracts scored value"
+     "Discarding cards",
+     "instead plays them and",
+     "subtracts scored value"
     ]
    },
    "bl_bunc_final_shield": {
     "name": "Turquoise Shield",
     "text": [
-     "Excess score this Ante adds",
-     "to this blind's required score"
+     "Excess score this",
+     "Ante adds to this",
+     "blind's required score"
     ]
    },
    "bl_bunc_final_tower": {
     "name": "Indigo Tower",
     "text": [
-     "Cards not played previously",
-     "this Ante are debuffed"
+     "Cards not played",
+     "previously this",
+     "Ante are debuffed"
     ]
    },
    "bl_bunc_final_trident": {
     "name": "Vermilion Trident",
     "text": [
      "+1X Base score for",
-     "every purchase this Ante"
+     "every purchase",
+     "this Ante"
     ]
    },
    "bl_bunc_flame": {
@@ -220,16 +229,16 @@ export default {
    "m_bunc_copper": {
     "name": "Copper Card",
     "text": [
-     "Rescores if played",
-     "{C:attention}adjacent{} to other",
-     "scored Copper Card"
+     "{C:attention}Rescores{} if played",
+     "{C:attention}adjacent{} to another",
+     "scoring Copper Card"
     ]
    },
    "m_bunc_cracker": {
     "name": "Cracker Card",
     "text": [
-     "{C:attention}On discard{} the card is",
-     "played and then destroyed"
+     "Is played when {C:attention}discarded{},",
+     "then {C:attention}destroyed{}"
     ]
    }
   },
@@ -273,7 +282,7 @@ export default {
     "name": "Bounty Hunter",
     "text": [
      "All sources of money",
-     "give {C:money}1${} less and this Joker",
+     "give {C:money}#1#${} less and this Joker",
      "gains {C:mult}+#1#{} Mult each time",
      "you earn money",
      "{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)"
@@ -299,14 +308,14 @@ export default {
    "j_bunc_cassette_a": {
     "name": "Cassette (A Side)",
     "text": [
-     "Cards with {C:attention}light suit",
+     "Cards with a {C:attention}light suit",
      "give {C:chips}+#1#{} Chips when scored"
     ]
    },
    "j_bunc_cassette_b": {
     "name": "Cassette (B Side)",
     "text": [
-     "Cards with {C:attention}dark suit",
+     "Cards with a {C:attention}dark suit",
      "give {C:mult}+#2#{} Mult when scored"
     ]
    },
@@ -377,17 +386,17 @@ export default {
    "j_bunc_domino": {
     "name": "Domino",
     "text": [
-     "Upon {C:attention}acquiring{} or {C:attention}using",
-     "a card from shop or",
-     "Booster Pack, acquire {C:attention}2",
+     "When you {C:attention}acquire{} or {C:attention}use{}",
+     "a card from {C:attention}the shop{} or",
+     "a {C:attention}Booster Pack{}, acquire {C:attention}2",
      "adjacent cards if possible"
     ]
    },
    "j_bunc_doodle": {
     "name": "Doodle",
     "text": [
-     "{C:attention}Copy{} first {C:tarot}Tarot{} or {C:planet}Planet{}",
-     "card used this round",
+     "{C:attention}Copy{} the first {C:tarot}Tarot{} or",
+     "{C:planet}Planet{} card used each round",
      "{C:inactive}(Must have room)"
     ],
     "unlock": [
@@ -410,8 +419,8 @@ export default {
    "j_bunc_dread": {
     "name": "Dread",
     "text": [
-     "After scoring your {C:attention}last{} hand,",
-     "upgrade it by {C:attention}#1# levels{}",
+     "After scoring {C:attention}final{} hand of",
+     "round, upgrade it by {C:attention}#1# levels{}",
      "and {C:attention}destroy{} scored cards",
      "{C:inactive,s:0.8}All levels gained by this Joker",
      "{C:inactive,s:0.8}are lost on its removal"
@@ -505,7 +514,7 @@ export default {
     "name": "Ghost Print",
     "text": [
      "Gives Chips and Mult",
-     "from last {C:attention}hand type{} played",
+     "of last {C:attention}hand type{} played",
      "{C:inactive}(Last poker hand: #1#)"
     ]
    },
@@ -542,7 +551,7 @@ export default {
     "name": "Headache",
     "text": [
      "Create an {C:bunco_virtual_dark}Arcade Tag",
-     "for each {C:attention}#1#{} playing",
+     "for every {C:attention}#1#{} playing",
      "cards destroyed",
      "{C:inactive}({C:attention}#2#{C:inactive}/#1# cards destroyed)"
     ]
@@ -816,9 +825,9 @@ export default {
    "j_bunc_red_card": {
     "name": "Red Card",
     "text": [
-     "This Joker gains {C:red}+#1#{} Mult",
-     "per skipped choice",
-     "in {C:attention}Booster Pack{}",
+     "When any {C:attention}Booster Pack{}",
+     "is skipped, gain {C:red}+#1#{} Mult",
+     "per unused choice",
      "{C:inactive}(Currently {C:red}+#2#{C:inactive} Mult)"
     ]
    },
@@ -938,9 +947,9 @@ export default {
    "j_bunc_stylophone": {
     "name": "Stylophone",
     "text": [
-     "Cards give {C:attention}X#1#{} Mult",
-     "of the {C:attention}rank{}",
-     "when scored"
+     "Cards give {C:attention}x#1#{}",
+     "their {C:attention}rank{} in",
+     "{C:mult}Mult{} when scored"
     ]
    },
    "j_bunc_tangram": {
@@ -964,7 +973,7 @@ export default {
     "name": "The Joker",
     "text": [
      "After play, each scored",
-     "card without an enhancement has",
+     "card without an enhancement has a",
      "{C:green}#1# in #2#{} chance to be destroyed"
     ],
     "unlock": [
@@ -1063,8 +1072,8 @@ export default {
     "text": [
      "Scored {C:attention}Ks{}, {C:attention}Qs{}, {C:attention}Js{},",
      "or {C:attention}Rankless cards",
-     "have {C:green}#1# in #2#{} chance to",
-     "create a {C:attention}D6 Tag"
+     "have a {C:green}#1# in #2#{} chance",
+     "to create a {C:attention}D6 Tag"
     ]
    }
   },
@@ -1179,8 +1188,9 @@ export default {
    "bunc_reactive": {
     "name": "Reactive",
     "text": [
-     "Debuffed if no blinds",
-     "are skipped this Ante"
+     "Each Ante,",
+     "debuffed until you",
+     "skip a blind"
     ]
    },
    "bunc_scattering": {
@@ -1200,8 +1210,8 @@ export default {
     "name": "Blind Pack",
     "text": [
      "Choose one of up to",
-     "{C:attention}#1# Boss Blinds{} to",
-     "replace on this Ante"
+     "{C:attention}#1# Boss Blinds{} to replace",
+     "{C:attention}this Ante's Boss Blind{}"
     ]
    },
    "p_bunc_virtual_jumbo": {
@@ -1348,8 +1358,8 @@ export default {
    "c_bunc_the_8": {
     "name": "The 8",
     "text": [
-     "{C:attention}Link together{} any",
-     "amount of selected",
+     "{C:attention}Link together{}",
+     "{C:legendary,E:1}any number{} of selected",
      "unlinked cards in hand",
      "{C:inactive,s:0.6}(Unlimited selection while The 8 is selected)"
     ]
@@ -1609,7 +1619,8 @@ export default {
     "name": "Arcade Machine",
     "text": [
      "{C:bunco_virtual_dark}Virtual Packs",
-     "appear {C:attention}4X{} more often"
+     "appear in the shop",
+     "{C:attention}4X{} more often"
     ]
    },
    "v_bunc_chainsaw": {
@@ -1651,7 +1662,7 @@ export default {
    "v_bunc_hedge_trimmer": {
     "name": "Hedge Trimmer",
     "text": [
-     "Reduce blind's score",
+     "Reduce blind's score requirement",
      "by {C:attention}#1#%{} every hand played"
     ]
    },
@@ -1679,7 +1690,7 @@ export default {
    "v_bunc_pin_collector": {
     "name": "Pin Collector",
     "text": [
-     "All new {C:attention}Double Tags",
+     "All future {C:attention}Double Tags",
      "appear as {C:attention}Triple Tags"
     ],
     "unlock": [
@@ -1691,8 +1702,8 @@ export default {
    "v_bunc_polybius": {
     "name": "Polybius",
     "text": [
-     "{C:bunco_virtual_dark}Polymino{} cards allow to",
-     "link {C:attention}one more{} card",
+     "{C:bunco_virtual_dark}Polymino{} cards can",
+     "link {C:attention}one additional{} card",
      "{s:0.6,C:inactive}Extra card can be of any property"
     ],
     "unlock": [

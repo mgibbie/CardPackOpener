@@ -94,6 +94,7 @@ export const HOOKS = [
   'calculate',          // (context) mod-level calculate (fires alongside jokers in calculate_context)
   'end_round',          // () end of round, after the end_of_round joker pass, before round eval
   'evaluate_round',     // (rows) -> extra cash-out rows (rows so far are passed in)
+  'no_interest',        // () -> true: the cash out pays no interest this round (Pokermon+ 1.2.0's Lechonk / Oinkologne)
   'cash_out',           // (dollars) -> dollars
   'new_round',          // () setting a blind
   'shop_start',         // () shop opened

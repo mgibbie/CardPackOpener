@@ -1,6 +1,8 @@
-// Sonfive's Pokermon+ (micatro/mods/pokermonplus): every joker fired through real plays, the
-// Timer Ball, the 5 decks, Lilac stake + Weakened, negative Energy, and one test per
-// intended-design fix (each would FAIL on the shipped behaviour — noted per test).
+// Sonfive's Pokermon+ (micatro/mods/pokermonplus): registration, the per-line toggles, the jokers 1.2.0 kept unchanged
+// (Stonjourner, Meltan, Nacli and Cetoddle lines), the 1.0.3 LEGACY lines (Nincada, Croagunk, Vullaby: still registered for
+// old saves and replays, still playing their 1.0.3 behaviour), the Timer Ball, the decks, and one test per 1.0.3
+// intended-design fix (each would FAIL on the shipped behaviour — noted per test). The 1.2.0 upgrade (new jokers, reworks,
+// the deck / sleeve / Weakened / Void reworks) is micatro/tests/mods/pokermonplus_120_test.mjs.
 //   node micatro/tests/mods/pokermonplus_test.mjs
 import { T, hand, add, play, winRound, nextRound, clearHand, statusMsgs, G, P_CENTERS, act, STATES } from './poke_helpers.mjs';
 import { newRun } from '../../js/engine/run.js';
@@ -15,8 +17,8 @@ const { ok, done } = T();
 const near = (a, b) => Math.abs(a - b) < 1e-9;
 
 /** A Pokermon + Pokermon+ run, blind selected, empty hand (like poke_helpers.start). */
-function start(seed = 'PLUS', { plus = {}, poke = {}, back = 'b_red', stake = 1, mods = ['pokermon', 'pokermonplus'], noBlind = false } = {}) {
-  newRun({ seed, back, stake, mods, modOptions: { pokermon: poke, pokermonplus: plus } });
+function start(seed = 'PLUS', { plus = {}, poke = {}, back = 'b_red', stake = 1, sleeve = null, mods = ['pokermon', 'pokermonplus'], noBlind = false } = {}) {
+  newRun({ seed, back, stake, sleeve, mods, modOptions: { pokermon: poke, pokermonplus: plus } });
   G.FORCE_BOSS = 'bl_wall';
   G.GAME.round_resets.blind_choices.Boss = 'bl_wall';
   G.E_MANAGER.flush();
@@ -48,22 +50,24 @@ const flush = () => G.E_MANAGER.flush();
 // ========================================================================= on
 {
   start('ON');
-  ok(STATUS.PORTED.filter((k) => k.startsWith('j_')).length === 18, '18 jokers registered', STATUS.PORTED.length);
+  ok(STATUS.PORTED.filter((k) => k.startsWith('j_')).length === 23, '1.2.0: 23 jokers registered', STATUS.PORTED.length);
+  ok(STATUS.LEGACY_KEYS.filter((k) => k.startsWith('j_')).length === 7, '+ the 7 dropped 1.0.3 jokers as legacy definitions', STATUS.LEGACY_KEYS);
   ok(STATUS.PORTED.filter((k) => k.startsWith('b_')).length === 5 && P_CENTERS.c_sonfive_timerball.set === 'Item', '5 decks + the Timer Ball (Item)');
   ok(STATUS.challenges.length === 4, '4 challenges registered as data', STATUS.challenges.map((c) => c.key));
   const pool = P_CENTER_POOLS.Joker.filter((c) => c.mod === 'pokermonplus').map((c) => c.key);
-  ok(pool.length === 18, 'on: all 18 in the joker pool', pool.length);
+  ok(pool.length === 30, 'on: all 30 registered in the joker pool list (in_pool decides)', pool.length);
   // Fix 1 — the shipped mod loaded NONE (src/pokemon.lua needed sonfive_config.customJokers).
   const inPool = (k) => P_CENTERS[k].in_pool(P_CENTERS[k]);
   // (add-on dedupe: the Nincada line is Pokermon's now — never in a pool, addon_dedupe_test)
   ok(!inPool('j_sonfive_nincada') && !inPool('j_sonfive_ninjask'), 'add-on dedupe: Pokermon+’s Nincada line is out of the pools (Pokermon’s own)');
-  for (const k of ['j_sonfive_croagunk', 'j_sonfive_vullaby', 'j_sonfive_meltan', 'j_sonfive_stonjourner', 'j_sonfive_lechonk', 'j_sonfive_nacli', 'j_sonfive_darkrai']) {
-    ok(inPool(k), 'fix 1: ' + k + ' can appear (on by default, Croagunk & Vullaby included)');
+  for (const k of ['j_sonfive_meltan', 'j_sonfive_stonjourner', 'j_sonfive_lechonk', 'j_sonfive_nacli', 'j_sonfive_darkrai', 'j_sonfive_heatran', 'j_sonfive_shroodle']) {
+    ok(inPool(k), 'fix 1: ' + k + ' can appear (on by default)');
   }
+  ok(!inPool('j_sonfive_croagunk') && !inPool('j_sonfive_vullaby'), '1.2.0 dropped Croagunk / Vullaby: legacy, never in a pool');
   ok(!inPool('j_sonfive_shedinja') && !inPool('j_sonfive_melmetal'), 'Shedinja / Melmetal never in a pool (evolution-only)');
   const nc = P_CENTERS.j_sonfive_nincada;
   ok(nc.atlas === 'poke_AtlasJokersBasicNatdex' && nc.pos.x === 8 && nc.pos.y === 19 && nc.poke_custom_prefix === 'sonfive', 'sprites from Pokermon\'s Natdex sheet');
-  ok(P_CENTERS.j_sonfive_oinkologne.pos.y === 61, 'Oinkologne: its own sprite cell (not Gen09 {0,0})');
+  ok(P_CENTERS.j_sonfive_oinkologne.atlas === 'poke_AtlasJokersBasicGen09391' && P_CENTERS.j_sonfive_oinkologne.pos.x === 0 && P_CENTERS.j_sonfive_oinkologne.pos.y === 0, 'Oinkologne: its 3.9.1 cell (Gen 9 {0,0} is Oinkologne on the 3.9.1 sheet)');
   ok(P_CENTERS.j_sonfive_darkrai.soul_pos && P_CENTERS.j_sonfive_darkrai.config.extra.ptype === 'Dark', 'Darkrai: soul layer + type');
   ok(P.get_family_keys('nincada', 'sonfive').join() === 'j_sonfive_nincada,j_sonfive_ninjask,j_sonfive_shedinja', 'families registered', P.get_family_keys('nincada', 'sonfive'));
 }
@@ -77,7 +81,7 @@ const flush = () => G.E_MANAGER.flush();
   };
   start('TOG');
   const allOn = pokeSnapshot();
-  const off = {}; for (const k of ['nincada', 'croagunk', 'darkrai', 'vullaby', 'meltan', 'stonjourner', 'lechonk', 'nacli', 'cetoddle']) off[k] = false;
+  const off = {}; for (const k of ['nincada', 'darkrai', 'heatran', 'helioptile', 'minior', 'meltan', 'stonjourner', 'lechonk', 'duraludon', 'nacli', 'shroodle', 'cetoddle', 'canari_plush', 'key_items']) off[k] = false;
   start('TOG', { plus: off });
   const allOff = pokeSnapshot();
   ok(allOn.pool === allOff.pool && allOn.pool.length > 1000, 'fix 2: toggles leave Pokermon\'s own pool unchanged');
@@ -178,33 +182,7 @@ const flush = () => G.E_MANAGER.flush();
   ok(t.ability.extra.retriggers === 0, 'fix: toxicroak resets after an Ante with no Tarot', t.ability.extra.retriggers);
 }
 
-// =========================================================================== Darkrai
-{
-  start('DARK');
-  const b = add('j_poke_bulbasaur');
-  const base = JSON.parse(JSON.stringify(b.ability.extra));
-  const d = add('j_sonfive_darkrai');
-  add('c_poke_grass_energy');
-  play(hand(['S_2']));
-  const field = Object.keys(P.energy_values).find((f) => typeof base[f] === 'number');
-  ok(field && near(b.ability.extra[field], base[field] + P_CENTERS.j_poke_bulbasaur.config.extra[field] * P.energy_values[field]) && !b.ability.extra.energy_count,
-    'darkrai: a held Grass Energy energizes Grass jokers (no Energy count)', [field, base[field], b.ability.extra[field]]);
-  play(hand(['S_2']));
-  ok(near(b.ability.extra[field], base[field] + P_CENTERS.j_poke_bulbasaur.config.extra[field] * P.energy_values[field]), 'darkrai: applied once, not per calculate');
-  add('c_poke_grass_energy'); play(hand(['S_2']));
-  ok(near(b.ability.extra[field], base[field] + 2 * P_CENTERS.j_poke_bulbasaur.config.extra[field] * P.energy_values[field]), 'darkrai: two Energies = 2x');
-  // Fix: a base-game joker with a number `extra` (Hiker) and a Grass Tera sticker — crashed the Lua.
-  const h = add('j_hiker'); P.apply_type_sticker(h, 'Grass');
-  let threw = false; try { play(hand(['S_2'])); } catch (e) { threw = e; }
-  ok(!threw && near(h.ability.extra, 5 + 5 * 0.2 * 2), 'fix: darkrai on a base-game (number extra) joker works', [threw && threw.message, h.ability.extra]);
-  act({ type: 'sell', id: d.sort_id }); flush();
-  ok(near(b.ability.extra[field], base[field]) && near(h.ability.extra, 5), 'darkrai: selling it takes the Energy back', [b.ability.extra[field], h.ability.extra]);
-  // Nightmare after each Boss Blind.
-  add('j_sonfive_darkrai');
-  for (const c of G.consumeables.cards.slice()) { G.consumeables.remove_card(c); c.remove(); }
-  toBoss(); winRound(); flush();
-  ok(G.consumeables.cards.some((c) => key(c) === 'c_poke_nightmare'), 'darkrai: a Nightmare after the Boss Blind');
-}
+// (Darkrai: reworked by 1.2.0 — pokermonplus_120_test.mjs)
 
 // ======================================================================= Vullaby line
 {
@@ -275,35 +253,7 @@ const flush = () => G.E_MANAGER.flush();
   void a; void b;
 }
 
-// ======================================================================= Lechonk line
-{
-  start('PIG', { noBlind: true });
-  const l = add('j_sonfive_lechonk');
-  G.GAME.dollars = 20;
-  const sell0 = l.sell_cost;
-  act({ type: 'select_blind' }); flush(); clearHand();
-  ok(G.GAME.dollars === 0 && near(l.ability.extra_value, 15) && near(l.sell_cost, sell0 + 15), 'lechonk: Blind select: $20 -> $0, +$15 (75%) sell value', [G.GAME.dollars, l.ability.extra_value]);
-  ok(l.ability.extra.triggers === 1, 'lechonk: 1 trigger');
-  // Volatile Right: a normal joker to its right switches it off.
-  const j = add('j_joker'); const ev0 = l.ability.extra_value;
-  winRound(); act({ type: 'cash_out' }); act({ type: 'next_round' }); G.GAME.dollars = 10;
-  act({ type: 'select_blind' }); flush(); clearHand();
-  ok(l.ability.extra_value === ev0 && G.GAME.dollars === 10, 'lechonk: inactive unless rightmost (Volatile Right)');
-  act({ type: 'sell', id: j.sort_id }); flush();
-  // Fix: Lechonk carries the volatile flag, so another volatile-right joker doesn't switch it off.
-  ok(P_CENTERS.j_sonfive_lechonk.volatile === true, 'fix: lechonk is volatile (center flag)');
-  const volt = add('j_poke_voltorb');
-  G.jokers.cards.splice(G.jokers.cards.indexOf(volt), 1); G.jokers.cards.unshift(volt); // [Voltorb, Lechonk]
-  ok(P.volatile_active(volt.config.center, volt, 'right') && P.volatile_active(l.config.center, l, 'right'),
-    'fix: Lechonk is Volatile Right, so a Voltorb left of it still counts as rightmost (shipped: Lechonk switched it off)');
-  act({ type: 'sell', id: volt.sort_id }); flush();
-  l.ability.extra.triggers = 5; winRound(); flush();
-  ok(key(l) === 'j_sonfive_oinkologne', 'lechonk -> oinkologne after 5 triggers', key(l));
-  act({ type: 'cash_out' }); act({ type: 'next_round' });
-  G.GAME.dollars = 10; const ev1 = l.ability.extra_value;
-  act({ type: 'select_blind' }); flush();
-  ok(near(l.ability.extra_value, ev1 + 15) && G.GAME.dollars === 0, 'oinkologne: 150%', [ev1, l.ability.extra_value]);
-}
+// (Lechonk / Oinkologne: reworked by 1.2.0 — pokermonplus_120_test.mjs)
 
 // ========================================================================= Nacli line
 {
@@ -383,18 +333,23 @@ const flush = () => G.E_MANAGER.flush();
   ok(t.ability.extra.count === 2 && t.can_use_consumeable(), 'timer ball: counts Blinds selected', t.ability.extra.count);
   let d = t.config.center.loc_vars(t.config.center, [], t);
   ok(d.vars[0] === 'Common' && d.vars[1] === 2, 'timer ball: Common, Uncommon in 2 rounds', d.vars);
-  const use = () => { const n0 = G.jokers.cards.length; act({ type: 'use', id: t.sort_id }); flush(); return G.jokers.cards.length > n0 ? G.jokers.cards[G.jokers.cards.length - 1] : null; };
-  const t2 = add('c_sonfive_timerball'); t2.ability.extra.count = 4;
-  act({ type: 'use', id: t2.sort_id }); flush();
-  ok(G.jokers.cards[0].config.center.rarity === 2, 'timer ball: 3+ rounds -> Uncommon Pokémon', G.jokers.cards[0].config.center.rarity);
-  const t3 = add('c_sonfive_timerball'); t3.ability.extra.count = 9; act({ type: 'use', id: t3.sort_id }); flush();
-  ok(G.jokers.cards[1].config.center.rarity === 3, 'timer ball: 7+ -> Rare');
-  const t4 = add('c_sonfive_timerball'); t4.ability.extra.count = 20; act({ type: 'use', id: t4.sort_id }); flush();
-  ok(G.jokers.cards[2].config.center.stage === 'Legendary', 'timer ball: 15+ -> Legendary', key(G.jokers.cards[2]));
+  // (1.2.0: SMODS.add_card({set = 'Joker', rarity}) — any joker of the rarity; with Pokermon's default "Pokémon only" option
+  // that is a Pokémon: pokermonplus_120_test.mjs fires it with base-game jokers allowed)
+  const made = (tb) => { const before = new Set(G.jokers.cards); act({ type: 'use', id: tb.sort_id }); flush(); return G.jokers.cards.find((c) => !before.has(c) && c.ability.set === 'Joker'); };
+  const clear = () => { for (const c of G.jokers.cards.slice()) { G.jokers.remove_card(c); c.remove(); } };
+  const t2 = add('c_sonfive_timerball'); t2.ability.extra.count = 4; clear();
+  ok(made(t2).config.center.rarity === 2, 'timer ball: 3+ rounds -> Uncommon');
+  const t3 = add('c_sonfive_timerball'); t3.ability.extra.count = 9; clear();
+  ok(made(t3).config.center.rarity === 3, 'timer ball: 7+ -> Rare');
+  const t4 = add('c_sonfive_timerball'); t4.ability.extra.count = 20;
   d = t4.config.center.loc_vars(t4.config.center, [], t4);
   ok(d.key === 'c_sonfive_timerball_max', 'timer ball: max tooltip');
-  const j = use();
-  ok(j && j.config.center.rarity === 1 && j.config.center.stage, 'timer ball: 1 round -> Common Pokémon', j && key(j));
+  clear();
+  const lg = made(t4);
+  ok(lg && lg.config.center.rarity === 4, 'timer ball: 15+ -> Legendary', lg && key(lg));
+  clear();
+  const j = made(t);
+  ok(j && j.config.center.rarity === 1 && j.config.center.stage, 'timer ball: 1 round -> Common (a Pokémon: Pokémon only on)', j && key(j));
   start('TIMER2', { plus: { timerball: false } });
   ok(!P_CENTERS.c_sonfive_timerball.in_pool(P_CENTERS.c_sonfive_timerball), 'timer ball: option off -> out of the pool');
 }
@@ -404,73 +359,41 @@ const flush = () => G.E_MANAGER.flush();
   start('VIRT', { back: 'b_sonfive_virtuousdeck', noBlind: true });
   ok(G.consumeables.cards.some((c) => key(c) === 'c_sonfive_timerball') && G.GAME.round_resets.hands === 3, 'Virtuous: Timer Ball, -1 hand');
   start('PROPH', { back: 'b_sonfive_propheticdeck', noBlind: true });
-  ok(G.hand.config.card_limit === 7 && G.GAME.scry_amount === 3, 'Prophetic: -1 hand size, 3 Foresight');
+  ok(G.hand.config.card_limit === 7 && G.GAME.scry_amount === 3, 'Prophetic (legacy: 1.2.0 dropped it): -1 hand size, 3 Foresight');
   start('ROGUE', { back: 'b_sonfive_roguedeck', noBlind: true });
   ok(G.GAME.win_ante === 12 && G.consumeables.cards.some((c) => key(c) === 'c_poke_megastone'), 'Rogue: +4 win Ante, a Megastone');
-  start('SHINY', { back: 'b_sonfive_shinydeck', noBlind: true });
+  // The shiny x100 is the Shiny SLEEVE's (1.2.0 reworked the Shiny deck: pokermonplus_120_test.mjs).
+  start('SHINY', { sleeve: 'sleeve_sonfive_shinysleeve', noBlind: true });
   const w = P_CENTERS.e_poke_shiny.weight;
   const { reduceHook } = await import('../../js/mods/registry.js');
-  ok(G.GAME.shiny_edition_rate === 100 && reduceHook('edition_weight', w, 'poke_shiny') === w * 100, 'Shiny: shiny weight x100', reduceHook('edition_weight', w, 'poke_shiny'));
+  ok(G.GAME.shiny_edition_rate === 100 && reduceHook('edition_weight', w, 'poke_shiny') === w * 100, 'Shiny Sleeve: shiny weight x100', reduceHook('edition_weight', w, 'poke_shiny'));
   // Fix: a second Shiny run (same session) — the Lua stacked another get_weight wrapper.
-  start('SHINY2', { back: 'b_sonfive_shinydeck', noBlind: true });
-  ok(reduceHook('edition_weight', w, 'poke_shiny') === w * 100, 'fix: a second Shiny-deck run is still x100 (not stacked)');
+  start('SHINY2', { sleeve: 'sleeve_sonfive_shinysleeve', noBlind: true });
+  ok(reduceHook('edition_weight', w, 'poke_shiny') === w * 100, 'fix: a second Shiny-sleeve run is still x100 (not stacked)');
   start('RED', { noBlind: true });
   ok(reduceHook('edition_weight', w, 'poke_shiny') === w, 'other decks: shiny weight unchanged');
-  start('VOID', { back: 'b_sonfive_voiddeck' });
-  ok(G.GAME.modifiers.void, 'Void: modifier on');
-  toBoss(); winRound(); flush();
-  ok(G.consumeables.cards.some((c) => key(c) === 'c_poke_nightmare'), 'Void: a Nightmare after the Boss Blind');
 }
 
-// =============================================================== negative Energy (Void)
+// =============================================================== negative Energy outside a Void run
 {
-  start('NEG', { back: 'b_sonfive_voiddeck' });
-  const b = add('j_poke_bulbasaur');
-  for (let i = 0; i < 3; i++) act({ type: 'use', id: add('c_poke_grass_energy').sort_id, joker_targets: [b.sort_id] });
-  ok(P.get_total_energy(b) === 3 && !add('c_poke_grass_energy').can_use_consumeable(), 'void: normal Energy still capped at 3');
-  const neg = add('c_poke_grass_energy', 'negative');
-  G.jokers.highlighted.length = 0; G.jokers.add_to_highlighted(b);
-  ok(neg.can_use_consumeable(), 'void: a Negative Energy works past the cap');
-  act({ type: 'use', id: neg.sort_id, joker_targets: [b.sort_id] }); flush();
-  ok(P.get_total_energy(b) === 4 && b.ability.extra.energy_plus === 1, 'void: Negative Energy = +1 Energy and +1 to this joker\'s limit', b.ability.extra);
-  const g5 = add('c_poke_grass_energy');
-  ok(!g5.can_use_consumeable(), 'void: limit is now 4 for it (full)');
-  act({ type: 'sell', id: g5.sort_id });
-  const iq = []; P.type_tooltip(null, iq, b);
-  ok(iq[0].vars[1] === 4, 'void: tooltip shows the raised limit', iq[0].vars);
-  // energy_plus survives evolution (lovely patch -> Pokermon EVO_KEEP).
-  P.poke_evolve(b, 'j_poke_ivysaur', true);
-  ok(key(b) === 'j_poke_ivysaur' && b.ability.extra.energy_plus === 1 && P.get_total_energy(b) === 4, 'void: per-joker limit kept through evolution');
-  // Fix: Negative Energy on a base-game joker (crashed the Lua).
-  const h = add('j_hiker'); P.apply_type_sticker(h, 'Grass');
-  const n2 = add('c_poke_grass_energy', 'negative');
-  let threw = false; try { act({ type: 'use', id: n2.sort_id, joker_targets: [h.sort_id] }); } catch (e) { threw = e; }
-  ok(!threw && h.ability.energy_plus === 1 && h.ability.energy_count === 1, 'fix: negative Energy on a base-game joker', [threw && threw.message, h.ability.energy_plus]);
-  // Not a Void run: Negative Energy is just Energy.
   start('NEG2');
   const b2 = add('j_poke_bulbasaur');
   for (let i = 0; i < 3; i++) act({ type: 'use', id: add('c_poke_grass_energy').sort_id, joker_targets: [b2.sort_id] });
   const neg2 = add('c_poke_grass_energy', 'negative');
   G.jokers.highlighted.length = 0; G.jokers.add_to_highlighted(b2);
   ok(!neg2.can_use_consumeable(), 'not Void: a Negative Energy is capped like any Energy');
+  // (1.2.0: a Negative Energy on a base-game joker in a Void run raises ability.sonfive_e_limit_up — pokermonplus_120_test.mjs)
+  start('NEG3', { back: 'b_sonfive_voiddeck' });
+  const h = add('j_hiker'); P.apply_type_sticker(h, 'Grass');
+  const n2 = add('c_poke_grass_energy', 'negative');
+  let threw = false; try { act({ type: 'use', id: n2.sort_id, joker_targets: [h.sort_id] }); flush(); } catch (e) { threw = e; }
+  ok(!threw && h.ability.sonfive_e_limit_up === 1 && h.ability.energy_count === 1, 'fix: negative Energy on a base-game joker (the Lua crashed)', [threw && threw.message, h.ability.sonfive_e_limit_up]);
 }
 
-// =================================================================== Lilac + Weakened
+// =================================================================== Lilac
 {
   start('LILAC', { stake: 'stake_sonfive_lilac_stake', noBlind: true });
-  ok(G.GAME.stake === 8 && G.GAME.modifiers.enable_rentals_in_shop && G.GAME.modifiers.enable_weakened_in_shop, 'Lilac: Gold stake rules + Weakened shop jokers');
-  let weak = 0, total = 0, chk = true;
-  for (let i = 0; i < 200; i++) {
-    G.GAME.round_resets.ante = 1 + (i % 8);
-    const c = create_card('Joker', G.shop_jokers, null, null, null, null, 'j_poke_caterpie', 'sh' + i);
-    total++;
-    if (c.ability.sonfive_weakened) {
-      weak++;
-      if (!near(c.ability.extra.mult, 3 * (1 - 2 * 0.4))) chk = false;
-    } else if (c.ability.extra.mult !== 3) chk = false;
-  }
-  G.GAME.round_resets.ante = 1;
-  ok(weak > 0 && weak < total && chk, 'Lilac: some shop Pokémon are Weakened (-2 Energies of mult)', [weak, total]);
+  ok(G.GAME.stake === 8 && G.GAME.modifiers.enable_rentals_in_shop && G.GAME.modifiers.enable_sonfive_weakened, 'Lilac: Gold stake rules + Weakened shop jokers');
   const plain = create_card('Joker', G.jokers, null, null, null, null, 'j_poke_caterpie');
   ok(!plain.ability.sonfive_weakened, 'Lilac: only shop / pack jokers');
   const wk = create_card('Joker', G.shop_jokers, null, null, null, null, 'j_poke_caterpie');
@@ -478,29 +401,20 @@ const flush = () => G.E_MANAGER.flush();
   wk.add_to_deck(); G.shop_jokers.remove_card(wk); G.jokers.emplace(wk);
   const desc = (await import('../../js/engine/describe.js')).describe(wk);
   ok(desc.badges.some((b) => b.key === 'sonfive_weakened'), 'Weakened badge');
-  ok(near(wk.ability.extra.mult, 0.6), 'Weakened caterpie: 3 - 2 x (3 x 0.4)', wk.ability.extra.mult);
-  P.poke_evolve(wk, 'j_poke_metapod', true);
-  ok(wk.ability.sonfive_weakened && near(wk.ability.extra.mult, 6 * (1 - 2 * 0.4)), 'Weakened re-applied after evolution (metapod 6 -> 1.2)', wk.ability.extra.mult);
   start('GOLD', { stake: 8, noBlind: true });
-  ok(!G.GAME.modifiers.enable_weakened_in_shop, 'Gold stake: no Weakened');
+  ok(!G.GAME.modifiers.enable_sonfive_weakened, 'Gold stake: no Weakened');
 }
 
-// ================================================================ fix: sandstorm etc.
+// ================================================================ 1.0.3 helpers kept for the legacy lines
 {
   start('WEATHER');
-  hand(['S_2', 'S_3'], { center: 'm_stone' });
-  ok(F.sandstorm(), 'fix: sandstorm = every held card is a Stone Card (shipped checked nonexistent m_count)');
-  hand(['S_4']);
-  ok(!F.sandstorm(), 'sandstorm: a non-Stone card breaks it');
-  clearHand(); hand(['S_2'], { center: 'm_glass' }); ok(F.hail(), 'hail: Glass');
-  clearHand(); hand(['S_2'], { center: 'm_bonus' }); ok(F.rain(), 'rain: Bonus');
-  clearHand(); hand(['S_2'], { center: 'm_mult' }); ok(F.sunny(), 'sunny: Mult');
-  // energy_shift's restored vanilla names: Stone Joker scales.
+  // energy_shift's restored vanilla names: Stone Joker scales (the legacy Ninjask's Speed Boost uses it).
   const sj = add('j_stone');
   const before = sj.ability.extra;
   F.energy_shift(sj, 1, 'Grass', false, true);
   ok(sj.ability.extra > before, 'fix: energy_shift knows Stone Joker (shipped list said "count Joker")', [before, sj.ability.extra]);
   ok(F.sonfive_base_evo_name(P_CENTERS.j_sonfive_garganacl) === 'nacli' && F.sonfive_base_evo_name(P_CENTERS.j_sonfive_darkrai) === 'darkrai', 'sonfive_base_evo_name');
+  hand(['S_2'], { center: 'm_glass' }); ok(F.all_held('m_glass'), 'all_held: Cetitan hail');
 }
 
 done();

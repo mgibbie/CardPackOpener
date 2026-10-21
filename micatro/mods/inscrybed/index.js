@@ -5,6 +5,12 @@
  * cost 5, unlocked, discovered, blueprint_compat true, eternal_compat true).
  * Art: assets/2x/j_<slug>.png (one 71x95 cell each; the unused j_aha.png is not shipped).
  *
+ * + Mycologists, from the 2024-10 revision (LunaAstraCassiopeia/LunasBalatroMods, InscrybedJokers/, 88b7c9c, 2024-10-12,
+ *   MIT): Uncommon, $5, blueprint / eternal compatible. When the poker hand contains a Pair or Two Pair, each scored
+ *   card gives Mult equal to its rank (base.nominal: 2-10, J/Q/K 10, A 11). Only the new joker is taken: the revision's
+ *   rebalance of the other four is NOT (owner rule, 2026-10-19 — our intended-design numbers stay). Art: its
+ *   assets/2x/j_mycologist.png.
+ *
  * The shipped mod could not work as written; rebuilt as its author evidently intended
  * (each fix tested in micatro/tests/mods/inscrybed_test.mjs):
  *  1. Every scoring branch tested `context.end_calculate_context == G.jokers` — a field no
@@ -30,7 +36,7 @@ import { G, localize } from '../../js/engine/core.js';
 
 export const MOD_ID = 'inscrybed';
 const ART = '/micatro/mods/inscrybed/assets/2x';
-const SLUGS = ['beast', 'deathly', 'techno', 'magickal'];
+const SLUGS = ['beast', 'deathly', 'techno', 'magickal', 'mycologist'];
 const atlases = {};
 for (const s of SLUGS) atlases['inscrybed_' + s] = { src: `${ART}/j_${s}.png`, px: 71, py: 95 };
 
@@ -110,6 +116,17 @@ const centers = [
       }
       return { message: localize({ type: 'variable', key: 'a_mult', vars: [card.ability.mult] }), mult_mod: card.ability.mult };
     }),
+  // Mycologists (2024-10 revision; the Lua: SMODS.Joker:new("Mycologists", "mycologist", magickal_ability, ..., 2, 5, true,
+  // true, true, true) — its config is the shared Magickal table, which its calculate never reads)
+  joker('mycologist', 'Mycologists', {},
+    () => ({ vars: [] }),
+    (self, card, context) => {
+      if (context.individual && context.cardarea === G.play && context.poker_hands
+        && ((context.poker_hands['Two Pair'] || []).length || (context.poker_hands.Pair || []).length)) {
+        return { mult: context.other_card.base.nominal, card };
+      }
+      return undefined;
+    }),
 ];
 
 const loc = {
@@ -139,6 +156,12 @@ const loc = {
         'a {C:clubs}Club{} and a {C:diamonds}Diamond{} card',
         '{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult)',
       ] },
+      j_inscrybed_mycologist: { name: 'Mycologists', text: [
+        'If {C:attention}poker hand{} contains a',
+        '{C:attention}Pair{} or {C:attention}Two Pair{}, cards',
+        'give Mult equal to their rank',
+        'when scored.',
+      ] },
     },
   },
 };
@@ -147,6 +170,7 @@ export const INSCRYBED = registerMod({
   id: MOD_ID,
   name: 'Inscrybed Jokers',
   version: '1.0',
+  contentRev: 1, // (+ Mycologists, from the 2024-10-12 revision)
   by: 'LunaAstraCassiopeia (rebuilt for Micatro)',
   description: 'Jokers inspired by Inscryption.',
   content: { centers, atlases, loc },

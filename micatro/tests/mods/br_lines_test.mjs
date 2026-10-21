@@ -20,14 +20,15 @@ const leaks = (d) => (d && d.lines || []).concat(...((d && d.info) || []).map((i
   .filter((l) => typeof l === 'string' && (/\{br:/.test(l) || FILLER.test(l.replace(/\{[^}]*\}/g, '').trim())));
 
 // the cards the tester and the data show
-for (const k of ['j_sonfive_lechonk', 'j_sonfive_ninjask', 'j_sonfive_croagunk', 'j_sonfive_shedinja', 'j_sonfive_cetitan', 'j_sonfive_garganacl']) {
+for (const k of ['j_sonfive_archaludon', 'j_sonfive_shroodle', 'j_sonfive_ninjask', 'j_sonfive_croagunk', 'j_sonfive_shedinja', 'j_sonfive_cetitan', 'j_sonfive_garganacl']) {
   const d = describeCenter(k);
   ok(d && d.lines.length && !leaks(d).length, 'no {br} filler on ' + k, d && leaks(d));
 }
 // the box break still separates the boxes (a gap line), it isn't just deleted
 {
-  const d = describeCenter('j_sonfive_lechonk');
-  const i = d.lines.findIndex((l) => /Volatile Right/.test(l));
+  // (Pokermon+ 1.2.0 reworked Lechonk, whose text had one; Archaludon's has "{br:3}brrrr")
+  const d = describeCenter('j_sonfive_archaludon');
+  const i = d.lines.findIndex((l) => /1 remaining/.test(l));
   ok(i >= 0 && d.lines[i + 1] === '', 'the {br} becomes a gap between the boxes', d.lines);
 }
 // every joker / consumable of every mod: none leaks a {br} line

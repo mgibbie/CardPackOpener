@@ -44,6 +44,13 @@ export function forced_message(message, card, colour, _delay, juice) {
 export const big_juice = (card) => juice_card(card);
 /** SMODS.has_enhancement(card, key) */
 export const has_enh = (card, key) => card.config.center.key === key;
+/**
+ * SMODS.has_no_rank / has_no_suit / has_any_suit (the fork's rankless / suitless guards, 5.4.8b): a Stone Card or an
+ * enhancement flagged no_rank / no_suit (another mod's, e.g. Pokermon 3.9.1's Ludicolo); a non-debuffed Wild Card.
+ */
+export const has_no_rank = (card) => card.ability.effect === 'Stone Card' || !!card.config.center.no_rank;
+export const has_no_suit = (card) => card.ability.effect === 'Stone Card' || !!card.config.center.no_suit;
+export const has_any_suit = (card) => (card.ability.name === 'Wild Card' || card.config.center.any_suit === true) && !card.debuff;
 /** The joker's 1-based position in G.jokers (nil = not there). */
 export const joker_pos = (card) => { const i = G.jokers.cards.indexOf(card); return i >= 0 ? i + 1 : undefined; };
 /** A Card for a center key (G.P_CARDS.empty front). */
@@ -114,6 +121,9 @@ export function joker(slug, def = {}) {
   if (!s) throw new Error('bunco: no data for joker ' + slug);
   const o = JSON.parse(JSON.stringify(s));
   delete o.fns; delete o.unlock_condition; delete o.discovered;
+  // SMODS.Joker's default perishable_compat is true; Bunco 5.1 left it nil (= the default), so every Bunco joker can be
+  // Perishable (5.4.8b says so explicitly). data.js has no field: the default is applied here (port fix, pin rev 1).
+  if (o.perishable_compat === undefined) o.perishable_compat = true;
   return { ...o, set: 'Joker', unlocked: true, discovered: true, ...def };
 }
 /** The data.js entry for any content key (c_bunc_..., v_bunc_..., ...), minus the functions list. */

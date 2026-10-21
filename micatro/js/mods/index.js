@@ -145,7 +145,7 @@ export function modStakes(ids) {
 export function modBacks(ids, options = {}) {
   const on = new Set(withRequirements(ids || []));
   return Object.values(P_CENTERS)
-    .filter((c) => c.set === 'Back' && c.mod && on.has(c.mod) && !c.unported)
+    .filter((c) => c.set === 'Back' && c.mod && on.has(c.mod) && !c.unported && !c.legacy) // (legacy: a deck its mod dropped, kept for old runs)
     .filter((c) => {
       const need = c.mod_option || c.poke_option;
       if (!need) return true;

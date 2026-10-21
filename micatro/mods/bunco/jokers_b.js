@@ -18,9 +18,9 @@
  *  - Trigger Finger: the Card:highlight patch arrives through the bus ('card_highlighted', systems.js); the Lua's
  *    `cards[i]:highlight()` re-highlight loop calls highlight(nil) (a no-op un-highlight on already-unhighlighted
  *    cards) and is left out.
- *  - Vandalism: Blind:stay_flipped patch = `blind_stay_flipped` hook (a MOD blind with its own stay_flipped
- *    answers first in Micatro's Blind:stay_flipped, as SMODS's blind stay_flipped does, so Vandalism isn't
- *    reached then); the play_cards patch = `play_start`. card_list holds sort_ids (the Lua: card tables).
+ *  - Vandalism (5.4.8b): the Steamodded stay_flipped context (engine/smods.js seam, after the blind's own rule);
+ *    Blueprint / Brainstorm copies roll too (`copiers_of`); the play_cards patch = `play_start`. card_list holds
+ *    sort_ids (the Lua: card tables).
  *  - Cellphone: draw_from_play_to_discard patch = `draw_from_play_to_discard` hook (the returned cards go first,
  *    the engine sends the rest to the discard in the following event); cards_to_hand holds sort_ids. The
  *    press_play patch duplicates Steamodded's own press_play context, which Micatro already sends to every joker,
@@ -47,7 +47,7 @@ import {
 import { STATES, calculate_context, play_cards_from_highlighted } from '../../js/engine/run.js';
 import { poll_options } from './vouchers.js';
 import {
-  joker, say, forced_message, event, big_juice, SEED, HUGE, SUIT_BUFFER, change_base, onB, on,
+  joker, say, forced_message, event, big_juice, SEED, HUGE, SUIT_BUFFER, change_base, onB, on, has_no_rank, exotic_in_pool,
 } from './util.js';
 
 export const centers = [];
@@ -72,6 +72,8 @@ const POSITIONAL = new Set(['j_bunc_gameplan', 'j_bunc_conquest']);
 
 // Slothful
 J('slothful', {
+  /** 5.4.8b: the exotic-suits art (cell 74) once exotics are on (75 / 76 are Paperback's suits: n/a). */
+  get_pos: (s) => (exotic_in_pool() ? { x: 3, y: 7 } : s.pos),
   in_pool: () => !!(G.playing_cards && G.playing_cards.some((v) => v.config.center === P_CENTERS.m_wild)),
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.mult] }),
   calculate(s, card, ctx) {
@@ -99,33 +101,50 @@ J('gameplan', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.mult] }),
   update() { refresh_joker_debuffs(); },
   remove_from_deck() { refresh_joker_debuffs(); },
+  // (5.4.8b: +20 Mult per adjacent joker AT THAT JOKER'S TURN — the other_joker context — not +40 at its own)
   calculate(s, card, ctx) {
-    if (ctx.joker_main) {
-      let mult = 0;
+    if (ctx.other_joker) {
       const my_pos = G.jokers.cards.indexOf(card);
       if (my_pos < 0) return undefined;
-      if (G.jokers.cards[my_pos - 1]) mult += card.ability.extra.mult;
-      if (G.jokers.cards[my_pos + 1]) mult += card.ability.extra.mult;
-      if (mult !== 0) return { message: a_mult(mult), mult_mod: mult, card };
+      const o = ctx.other_joker;
+      if (o === G.jokers.cards[my_pos - 1] || o === G.jokers.cards[my_pos + 1]) {
+        const mult = card.ability.extra.mult;
+        return { message: a_mult(mult), mult_mod: mult, card };
+      }
     }
   },
 });
 
 // Conquest
+const marked = (j) => j.ability.bunc_conquest_chosen !== undefined && j.ability.bunc_conquest_chosen !== null;
 J('conquest', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.chips, card.ability.extra.joker] }),
   update() { refresh_joker_debuffs(); },
-  remove_from_deck() { refresh_joker_debuffs(); },
+  // (5.4.8b: ONE random pick among the other jokers — math.random(#jokers - 1), skipping its own slot — marked on the
+  // chosen joker (ability.bunc_conquest_chosen = this Conquest), in an event after the blind is set; the mark goes when
+  // the next blind is set or Conquest leaves. 5.1 re-rolled until it missed itself and kept the target on Conquest.)
+  remove_from_deck(s, card, from_debuff) {
+    if (!from_debuff && G.jokers) for (const j of G.jokers.cards) if (j.ability.bunc_conquest_chosen === card.sort_id) j.ability.bunc_conquest_chosen = undefined;
+    refresh_joker_debuffs();
+  },
   calculate(s, card, ctx) {
     if (ctx.setting_blind && !ctx.blueprint) {
-      const my_pos = G.jokers.cards.indexOf(card);
-      let target = 0;
+      for (const j of G.jokers.cards) if (j.ability.bunc_conquest_chosen === card.sort_id) j.ability.bunc_conquest_chosen = undefined;
+      card.ability.extra.joker = 0;
       if (G.jokers.cards.length > 1) {
-        target = G.jokers.cards[math_random(G.jokers.cards.length) - 1];
-        while (target === G.jokers.cards[my_pos]) target = G.jokers.cards[math_random(G.jokers.cards.length) - 1];
+        event(() => {
+          const my_pos = G.jokers.cards.indexOf(card);
+          if (my_pos < 0 || G.jokers.cards.length < 2) return;
+          let i = math_random(G.jokers.cards.length - 1) - 1;
+          if (i >= my_pos) i += 1;
+          const target = G.jokers.cards[i];
+          target.ability.bunc_conquest_chosen = card.sort_id;
+          card.ability.extra.joker = target.sort_id;
+          if (G.GAME.blind) G.GAME.blind.debuff_card(target);
+          big_juice(target);
+          if (!card.debuff) say(card, dict('bunc_debuffed'), G_MULT);
+        });
       }
-      card.ability.extra.joker = target ? target.sort_id : 0;
-      if (target) forced_message(dict('bunc_debuffed'), card, G_MULT, true, target);
     }
     if (ctx.joker_main) {
       return { message: a_chips(card.ability.extra.chips), chip_mod: card.ability.extra.chips, card: ctx.blueprint_card || card };
@@ -327,7 +346,7 @@ const RANK_NEXT = { 2: '3', 3: '4', 4: '5', 5: '6', 6: '7', 7: '8', 8: '9', 9: '
 const lowest_rank = () => {
   let rank = Infinity;
   for (const deck_card of G.playing_cards) {
-    if (deck_card.get_id() < rank && deck_card.config.center !== P_CENTERS.m_stone) rank = deck_card.get_id();
+    if (deck_card.get_id() < rank && !has_no_rank(deck_card)) rank = deck_card.get_id(); // (5.4.8b: any rankless card)
   }
   return rank;
 };
@@ -363,7 +382,8 @@ J('puzzle_board', {
     return { vars: [prob(), card.ability.extra.odds] };
   },
   calculate(s, card, ctx) {
-    if (ctx.using_consumeable && ctx.consumeable.ability.set === 'Tarot') {
+    // (5.4.8b: only when the Tarot is used with cards selected — no roll, no "Nope!" otherwise)
+    if (ctx.using_consumeable && ctx.consumeable.ability.set === 'Tarot' && G.hand && G.hand.highlighted.length > 0) {
       if (pseudorandom('puzzle_board' + SEED()) < G.GAME.probabilities.normal / card.ability.extra.odds) {
         // (the 'wheel_of_fortune' key: the base editions, + Glitter with gameplay_reworks — Bunco's poll_edition patch)
         const edition = poll_edition('wheel_of_fortune', null, true, true);
@@ -385,8 +405,17 @@ J('puzzle_board', {
 J('vandalism', {
   config: { extra: { odds: 4, xmult: 2, card_list: [] } },
   loc_vars: (s, iq, card) => ({ vars: [prob(), card.ability.extra.odds, card.ability.extra.xmult] }),
+  // (5.4.8b: the draw is Steamodded's stay_flipped context — after the blind's own rule (The Wheel rolls first) — and
+  // Blueprint / Brainstorm copy it: each copy rolls its own 1 in 4. The seam asks the Vandalisms; each one rolls for
+  // itself and for the copiers that resolve to it — the same number of rolls on the same seed as one per joker.)
   calculate(s, card, ctx) {
-    if (ctx.stay_flipped && !ctx.blueprint) big_juice(card);
+    if (ctx.stay_flipped && !ctx.blueprint && ctx.to_area === G.hand && SELECTING()) {
+      let flipped = false;
+      for (const who of [card, ...copiers_of(card)]) {
+        if (pseudorandom('vandalism' + SEED()) < G.GAME.probabilities.normal / card.ability.extra.odds) { flipped = true; big_juice(who); }
+      }
+      return flipped ? { stay_flipped: true } : undefined;
+    }
     if (ctx.play_cards) {
       card.ability.extra.card_list = [];
       for (const h of G.hand.highlighted) if (h.facing === 'back') card.ability.extra.card_list.push(h.sort_id);
@@ -397,6 +426,23 @@ J('vandalism', {
   },
 });
 
+/** The non-debuffed Blueprints / Brainstorms whose copy chain ends on `target` (vanilla Blueprint: the joker to the right;
+ * Brainstorm: the leftmost; a debuffed link breaks the chain). */
+function copiers_of(target) {
+  const out = [];
+  const js = G.jokers.cards;
+  for (const j of js) {
+    if (j === target || j.debuff) continue;
+    let t = j, depth = 0;
+    while (t && (t.ability.name === 'Blueprint' || t.ability.name === 'Brainstorm') && depth++ <= js.length) {
+      const nx = t.ability.name === 'Blueprint' ? js[js.indexOf(t) + 1] : js[0];
+      t = nx && nx !== t && !nx.debuff ? nx : null;
+    }
+    if (t === target) out.push(j);
+  }
+  return out;
+}
+
 // Protester
 J('protester', {
   loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.chip_mult, card.ability.extra.chips] }),
@@ -405,8 +451,9 @@ J('protester', {
       let raised_card;
       for (let i = 0; i < G.hand.highlighted.length; i++) {
         const h = G.hand.highlighted[i];
-        // (fix 1: the Lua tested G.hand.cards[i] — some other hand card — for Stone)
-        if (!card.debuff && card.ability.extra.rank < h.base.nominal && h.ability.effect !== 'Stone Card') {
+        // (fix 1: the Lua tested G.hand.cards[i] — some other hand card — for Stone; 5.4.8b fixed it its own way, adopted:
+        // the discarded card itself, any rankless card, and never a debuffed one — as vanilla discard jokers do)
+        if (!card.debuff && card.ability.extra.rank < h.base.nominal && !has_no_rank(h) && !h.debuff) {
           card.ability.extra.chips = h.base.nominal * card.ability.extra.chip_mult;
           card.ability.extra.rank = h.base.nominal;
           raised_card = h;
@@ -570,9 +617,7 @@ export const hooks = {
       if (l && l.config.center.key === 'j_bunc_gameplan' && !l.debuff) return true;
       if (r && r.config.center.key === 'j_bunc_gameplan' && !r.debuff) return true;
     }
-    for (const c of G.jokers.cards) {
-      if (c.config.center.key === 'j_bunc_conquest' && c.ability.extra.joker !== 0 && card.sort_id === c.ability.extra.joker) return true;
-    }
+    if (G.jokers.cards.includes(card) && marked(card)) return true; // (Conquest's mark, 5.4.8b)
     return undefined;
   },
   // Gameplan / Conquest's per-frame update (G.GAME.blind:debuff_card on every joker while one is owned).
@@ -594,19 +639,8 @@ export const hooks = {
     }
     return undefined;
   },
-  // lovely "Blind:stay_flipped (Vandalism 2/3)"
-  blind_stay_flipped(area, card) {
-    if (!G.jokers) return undefined;
-    for (const v of G.jokers.cards) {
-      if (v.config.center.key === 'j_bunc_vandalism' && !v.debuff) {
-        if (pseudorandom('vandalism' + SEED()) < G.GAME.probabilities.normal / v.ability.extra.odds && SELECTING()) {
-          v.calculate_joker({ stay_flipped: true });
-          return true;
-        }
-      }
-    }
-    return undefined;
-  },
+  // (lovely "Blind:stay_flipped (Vandalism 2/3)" is gone in 5.4.8b: Vandalism answers the stay_flipped seam context —
+  // registerMod({smods_seams: ['stay_flipped']}) in index.js)
   // lovely "G.FUNCS.play_cards_from_highlighted (Vandalism 3/3)"
   play_start() {
     if (!G.jokers) return;

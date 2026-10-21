@@ -554,7 +554,7 @@ function sleevesApi() {
     return !!(m && m.options && m.options[s.mod_option] && m.options[s.mod_option].default);
   };
   return {
-    list: (ids, options) => CH.allSleeves().filter((s) => (ids || []).includes(s.mod) && optOn(options, s)),
+    list: (ids, options) => CH.allSleeves().filter((s) => (ids || []).includes(s.mod) && !s.legacy && optOn(options, s)), // (legacy: dropped by its mod, kept for old runs)
     info: (s, back) => CH.sleeveInfo(s, back),
   };
 }

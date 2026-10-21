@@ -1,7 +1,11 @@
-// Pokermon+ — src/consumables/timerball.lua: the Timer Ball (an Item). It counts the Blinds
-// selected while you hold it; using it creates a random Pokémon whose rarity grows with that
-// count: Common from 1 round, Uncommon from 3, Rare from 7, a Legendary from 15.
-import { G, localize, play_sound, delay, set_spoon_item, create_random_poke_joker } from '../../../pokermon/api.js';
+// Pokermon+ 1.2.0 — src/consumables/timerball.lua: the Timer Ball (an Item; 1.2.0's set poke_item is Pokermon's Item). It
+// counts the Blinds selected while you hold it; using it creates a random joker whose rarity grows with that count: Common
+// from 1 round, Uncommon from 3, Rare from 7, a Legendary from 15.
+// 1.2.0: SMODS.add_card({set = 'Joker', rarity = ..., key_append = 'timerball'}) — ANY joker of that rarity (1.0.3:
+// create_random_poke_joker, Pokémon only; its text still says "Pokemon"); the Legendary tier no longer swaps the soul layer.
+// (Steamodded's rarity names Common / Uncommon / Rare are our rarity pools '1' / '2' / '3' — a string picks the pool, a number
+// would be read as a rarity roll — and Legendary is the legendary roll.)
+import { G, localize, play_sound, delay, set_spoon_item, add_card } from '../../../pokermon/api.js';
 import { scfg } from '../functions.js';
 
 const held = (card) => card.ability.extra.count - card.ability.extra.round_on_add;
@@ -37,13 +41,8 @@ export default {
       G.E_MANAGER.add_event(() => {
         play_sound('timpani');
         const difference = held(card);
-        let _card;
-        if (difference < c.uncommon) _card = create_random_poke_joker('timerball', null, 'common');
-        else if (difference < c.rare) _card = create_random_poke_joker('timerball', null, 'uncommon');
-        else if (difference < c.legendary) _card = create_random_poke_joker('timerball', null, 'rare');
-        else _card = create_random_poke_joker('timerball', 'Legendary');
-        _card.add_to_deck();
-        G.jokers.emplace(_card);
+        if (difference >= c.legendary) add_card({ set: 'Joker', legendary: true, key_append: 'timerball' });
+        else add_card({ set: 'Joker', rarity: difference >= c.rare ? '3' : difference >= c.uncommon ? '2' : '1', key_append: 'timerball' });
       });
       delay(0.6);
     },
@@ -53,10 +52,10 @@ export default {
     /** update(): the ball's sprite shows its tier (view only). */
     get_pos(self, card) {
       const d = held(card), c = self.config.extra;
-      if (c.common <= d && d < c.uncommon) return { x: 0, y: 1 };
-      if (c.uncommon <= d && d < c.rare) return { x: 0, y: 2 };
-      if (c.rare <= d && d < c.legendary) return { x: 0, y: 3 };
-      if (c.legendary <= d) return { x: 0, y: 4 };
+      if (d >= c.legendary) return { x: 0, y: 4 };
+      if (d >= c.rare) return { x: 0, y: 3 };
+      if (d >= c.uncommon) return { x: 0, y: 2 };
+      if (d >= c.common) return { x: 0, y: 1 };
       return { x: 0, y: 0 };
     },
   },

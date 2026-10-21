@@ -1,22 +1,23 @@
-// Pokermon+ — src/pokemon/808_meltan_line.lua: Meltan, Melmetal.
+// Pokermon+ 1.2.0 — src/pokemon/808_meltan_line.lua: Meltan, Melmetal.
+// 1.2.0: Melmetal retriggers held Steel cards 1 + floor(Metal Energy cards + Metal jokers / 2) times (1.0.3: Metal Energy
+// + Metal jokers) — the code's precedence (energies + types / 2) is ported as written; its card text reads "every 2 Metal
+// cards". Metal Energy is counted by key (SMODS.find_card('c_poke_metal_energy')).
 import {
   G, localize, create_card, card_eval_status_text, find_joker, next, has_enhancement, find_pokemon_type,
-  type_tooltip, scaling_evo,
+  scaling_evo, find_card,
 } from '../../../pokermon/api.js';
 
 /** SMODS: a held card's repetition only counts when the card did something (card_effects). */
 const had_effect = (context) => !!context.card_effects && (next(context.card_effects[0]) || context.card_effects.length > 1);
-const melmetal_retriggers = () => find_joker('metal_energy').length + find_pokemon_type('Metal').length;
+const melmetal_retriggers = () => 1 + Math.floor(find_card('c_poke_metal_energy').length + find_pokemon_type('Metal').length / 2);
 
 export default {
   meltan: {
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
       return { vars: [card.ability.extra.count, card.ability.extra.evo_rqmt, card.ability.extra.retriggers] };
     },
     calculate(self, card, context) {
       const abbr = card.ability.extra;
-      abbr.odds = 1 / (find_joker('metalcoat').length + 1); // (computed by the Lua, never read)
       if (context.individual && !context.end_of_round && context.cardarea === G.hand) {
         if (has_enhancement(context.other_card, 'm_steel')) abbr.count = abbr.count + 1;
       }
@@ -38,7 +39,6 @@ export default {
 
   melmetal: {
     loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
       return { vars: [G.jokers ? melmetal_retriggers() : 0] };
     },
     in_pool() { return false; },

@@ -1438,7 +1438,8 @@ function evaluate_round() {
     const ret = t.apply_to_run({ type: 'eval' });
     if (ret) { row({ name: 'tag' + (i + 1), dollars: ret.dollars, bonus: true, tag: t.key, condition: ret.condition }); dollars += ret.dollars; }
   });
-  if (G.GAME.dollars >= 5 && !G.GAME.modifiers.no_interest) {
+  // (a mod may stop the interest while one of its cards is held: Pokermon+ 1.2.0's Lechonk / Oinkologne, its lovely patch on this row)
+  if (G.GAME.dollars >= 5 && !G.GAME.modifiers.no_interest && !(ACTIVE_MODS.length && callHook('no_interest').includes(true))) {
     const d = G.GAME.interest_amount * Math.min(Math.floor(G.GAME.dollars / 5), G.GAME.interest_cap / 5);
     row({ name: 'interest', dollars: d, bonus: true, disp: G.GAME.interest_amount });
     dollars += d;
