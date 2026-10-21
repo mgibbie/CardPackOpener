@@ -20,7 +20,7 @@
  *    `evaluate_round` hook (adds no cash-out rows).
  *  - "Modded" (Jankman, Less Fluff) = a joker from any mod (center.mod; the Lua's center.original_mod).
  *    Jankman's text says "(and also Jolly Joker)", so Jolly Joker counts, as written (1.5.6 port fix, kept).
- *  - SMODS.scale_card (All I Can't Do, Yucky Rat, The Solo, Mashup Album, Less Fluff) -> util.scale_card.
+ *  - SMODS.scale_card (All I Can't Do, Yucky Rat, The Solo, Mashup Album, Less Fluff) -> the engine's scale_card.
  *
  * INTENDED-DESIGN FIXES (pinned in micatro/tests/mods/morefluff_jokers_c_test.mjs):
  *  4. Less Fluff's "X#1#" popup used the variable key 'x_mult' (not a key: no text); it uses a_xmult (1.9.9999 too).
@@ -28,11 +28,11 @@
 import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, create_card, copy_card, pseudorandom, pseudoseed, pseudorandom_element, probability_roll,
-  probability_vars, localize, ease_dollars, number_format, emit, card_eval_status_text,
+  probability_vars, localize, ease_dollars, number_format, emit, card_eval_status_text, mod_mult,
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import { get_poker_hand_info, joker_retriggers } from '../../js/engine/run.js';
-import { joker, room, say, remove_joker, has_enh, progressbar, scale_card, is_colour } from './util.js';
+import { joker, find, room, say, remove_joker, has_enh, progressbar, scale_card, is_colour } from './util.js';
 
 const centers = [];
 /** info_queue entry for a center with its description vars (its own loc_vars, or a base joker's config.extra). */
@@ -410,12 +410,20 @@ J('widejoker', {
 });
 
 // ------------------------------------------------------------------ Triangle
+// 1.9.9999 rework: every OTHER joker's SMODS.scale_card scales at X(scaling_mod) its rate ('X' scalings: scalar ^ mod),
+// through the scaling_card context (calc_scaling; js/engine/smods.js — the base game's scaling jokers too, as Steamodded
+// routes them, js/engine/jokers.js vscale). Each Three of a Kind adds +0.5 to the rate. Copies don't boost each other.
 J('triangle', {
-  loc_vars: (s, iq, card) => ({ vars: [card.ability.extra.x_mult] }),
+  loc_vars: (s, iq, card) => ({ key: find('j_mf_triangle').length >= 2 ? 'j_mf_triangle_lame' : undefined, vars: [card.ability.extra.scaling_mod, card.ability.extra.scaling_mod_mod] }),
   calculate(self, card, context) {
-    if (context.individual && context.cardarea === G.play) {
-      if (get_poker_hand_info(G.play.cards).disp_text === 'Three of a Kind') return { x_mult: card.ability.extra.x_mult, colour: 'RED', card };
+    if (context.before && context.scoring_name === 'Three of a Kind' && !context.blueprint) {
+      scale_card(card, { ref_table: card.ability.extra, ref_value: 'scaling_mod', scalar_value: 'scaling_mod_mod' });
     }
+  },
+  calc_scaling(center, self, card, initial, scalar_value, args) {
+    if (card.config.center.key === 'j_mf_triangle') return undefined;
+    if (args.operation === 'X') return { override_scalar_value: { value: Math.pow(scalar_value, self.ability.extra.scaling_mod) } };
+    return { override_scalar_value: { value: scalar_value * self.ability.extra.scaling_mod } };
   },
 });
 
@@ -468,10 +476,22 @@ J('oopsallfives', {
 
 // ------------------------------------------------------------------ hooks
 export const hooks = {
-  /** Hyperjimbo's mf_before_cards context: chips -> chips^(chips^0.04) (each owned copy, + retriggers). */
+  /** Hyperjimbo's mf_before_cards context: chips -> chips^(chips^0.04) (each owned copy, + retriggers); John Balatro's
+   *  context.initial_scoring_step (planeswalker.js): mult -> mult^2. In joker order. */
   modify_scoring([chips, mult], step, ctx) {
     if (step !== 'before_cards') return undefined;
     for (const j of G.jokers.cards.slice()) {
+      if (j.config.center.key === 'j_mf_johnbalatrotrue') {
+        const jctx = { cardarea: G.jokers, ...ctx, initial_scoring_step: true };
+        let eff = j.calculate_joker(jctx);
+        for (let t = eff && eff.mf_square_mult ? joker_retriggers(j, jctx) + 1 : 0; t > 0; t--) {
+          mult = mod_mult(BN.pow(mult, 2)); // (the Lua's pre_func: mult = mod_mult(mult ^ 2))
+          card_eval_status_text(j, 'extra', null, null, null, { message: eff.message, colour: eff.colour });
+          emit('hand_text', { chips, mult });
+          if (t > 1) { eff = j.calculate_joker({ ...jctx, retrigger_joker: true }); if (!eff) break; }
+        }
+        continue;
+      }
       if (j.config.center.key !== 'j_mf_hyperjimbo') continue;
       const jctx = { cardarea: G.jokers, ...ctx, mf_before_cards: true };
       let eff = j.calculate_joker(jctx);

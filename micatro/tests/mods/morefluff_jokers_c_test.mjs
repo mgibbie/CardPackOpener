@@ -146,11 +146,12 @@ flush();
   ok(r.total.total === 24, 'Pixel Joker: Ace X1.5', tot(r));
   r = play(hand(['S_4', 'H_9']));
   ok(near(r.total.mult, 1.5) && r.total.chips === 14, 'Pixel Joker: 9 X1.5 (high card scores the 9 only)', tot(r));
-  clearJokers(); add('j_mf_triangle');
+  // (Triangle's 1.9.9999 rework — other jokers' scaling at X its rate — is fired in morefluff_batch_b_test.mjs)
+  clearJokers(); const tri = add('j_mf_triangle');
   r = play(hand(['S_2', 'H_2', 'D_2']));
-  ok(r.total.chips === 36 && r.total.mult === 81 && r.total.total === 2916, 'Triangle: X3 per card on Three of a Kind', tot(r));
+  ok(r.total.total === 36 * 3 && tri.ability.extra.scaling_mod === 1.5, 'Triangle (1.9.9999): no Mult of its own; a Three of a Kind raises its rate X1 -> X1.5', [tot(r), tri.ability.extra]);
   r = play(hand(['S_2', 'H_2']));
-  ok(r.total.total === 28, 'Triangle: not on a Pair', tot(r));
+  ok(r.total.total === 28 && tri.ability.extra.scaling_mod === 1.5, 'Triangle: not on a Pair', tot(r));
 }
 
 // ------------------------------------------------------------- Card Buffer Advanced

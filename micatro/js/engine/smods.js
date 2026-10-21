@@ -63,14 +63,28 @@ function mentions(fn) {
   }
   return s;
 }
-/** Has this mod opted in to the Steamodded seam contexts (`registerMod({smods_seams: true})`)? */
-export const seam_mod = (id) => !!(id && MODS[id] && MODS[id].smods_seams);
+/**
+ * Has this mod opted in to the Steamodded seam contexts? `registerMod({smods_seams: true})` opts in to all of them (and
+ * to the mod-level / Blind / quantum seams below); `smods_seams: ['scaling_card', ...]` opts in to just those contexts
+ * (More Fluff 1.9.9999, which emulates stay_flipped / debuff_card itself and must not get them twice). With `name`:
+ * does it get that context?
+ */
+export const seam_mod = (id, name) => {
+  const s = id && MODS[id] && MODS[id].smods_seams;
+  return s === true || (!!name && Array.isArray(s) && s.includes(name));
+};
+/** Steamodded's deprecated center hooks for the scale / reset contexts (lovely/center.toml): calc_scaling(self, card,
+ *  other_card, value, scalar, context) / calc_resetting(self, card, other_card, initial, reset, context). */
+const LEGACY_CALC = { scaling_card: 'calc_scaling', resetting_card: 'calc_resetting' };
+const legacy_calc = (obj, name) => !!(obj && LEGACY_CALC[name] && typeof obj[LEGACY_CALC[name]] === 'function');
 /**
  * Does this object's `fn` (its calculate) listen to context `name`? Its mod must have opted in; then
  * `smods_contexts: [...]` (that list only) or `'*'` (every seam context) declares it outright, else its source is read.
  */
 export function listens(obj, fn, name, modId) {
-  if (typeof fn !== 'function' || !seam_mod(modId || (obj && obj.mod))) return false;
+  if (!seam_mod(modId || (obj && obj.mod), name)) return false;
+  if (legacy_calc(obj, name)) return true;
+  if (typeof fn !== 'function') return false;
   const d = obj && obj.smods_contexts;
   if (d === '*') return true;
   if (Array.isArray(d)) return d.includes(name);
@@ -82,15 +96,17 @@ export function wanted(name) {
   if (!ACTIVE_MODS.length) return false;
   if (wantFor !== ACTIVE_MODS || wantVer !== registryVersion()) {
     want = new Set();
-    const add = (obj, fn) => {
+    const add = (obj, fn, id) => {
+      const ok = (n) => seam_mod(id, n); // (a mod with a context list gets only those)
+      for (const n of Object.keys(LEGACY_CALC)) if (legacy_calc(obj, n) && ok(n)) want.add(n);
       if (typeof fn !== 'function') return;
       const d = obj && obj.smods_contexts;
-      if (d === '*') for (const n of SEAM_CONTEXTS) want.add(n);
-      else if (Array.isArray(d)) for (const n of d) want.add(n);
-      else for (const n of mentions(fn)) want.add(n);
+      if (d === '*') { for (const n of SEAM_CONTEXTS) if (ok(n)) want.add(n); }
+      else if (Array.isArray(d)) { for (const n of d) if (ok(n)) want.add(n); }
+      else for (const n of mentions(fn)) if (ok(n)) want.add(n);
     };
-    for (const t of [P_CENTERS, P_BLINDS, P_SEALS]) for (const o of Object.values(t)) if (o.mod && o.calculate && seam_mod(o.mod) && centerActive(o)) add(o, o.calculate);
-    for (const id of ACTIVE_MODS) { const m = MODS[id]; if (m.smods_seams && m.hooks && m.hooks.calculate) add(m, m.hooks.calculate); }
+    for (const t of [P_CENTERS, P_BLINDS, P_SEALS]) for (const o of Object.values(t)) if (o.mod && (o.calculate || o.calc_scaling || o.calc_resetting) && MODS[o.mod] && MODS[o.mod].smods_seams && centerActive(o)) add(o, o.calculate, o.mod);
+    for (const id of ACTIVE_MODS) { const m = MODS[id]; if (m.smods_seams && m.hooks && m.hooks.calculate) add(m, m.hooks.calculate, id); }
     wantFor = ACTIVE_MODS; wantVer = registryVersion();
   }
   return want.has(name);
@@ -186,6 +202,11 @@ export function calculate_seam(context, name, opts = {}) {
       if (mc.update) mc.update(mc, c);
       eff = mc.calculate(mc, c, context);
     } else eff = c.calculate_joker(context);
+    // (Steamodded Card:calculate_joker: a center's deprecated calc_scaling / calc_resetting answers when its calculate didn't)
+    if (!c.debuff && (eff === undefined || eff === null) && legacy_calc(mc, name)) {
+      eff = name === 'scaling_card' ? mc.calc_scaling(mc, c, context.card, context.value, context.scalar, context)
+        : mc.calc_resetting(mc, c, context.card, context.initial_value, context.reset_value, context);
+    }
     take(c, eff, c);
   }
   if (opts.self_card) {
@@ -222,7 +243,7 @@ export function mod_calculate(context, name) {
   if (!ACTIVE_MODS.length) return;
   for (const id of ACTIVE_MODS) {
     const m = MODS[id];
-    const f = m.smods_seams && m.hooks && m.hooks.calculate;
+    const f = m.smods_seams === true && m.hooks && m.hooks.calculate;
     if (typeof f !== 'function') continue;
     let r = MOD_READS.get(f);
     if (!r) { const src = String(f); r = new Set(MOD_VANILLA_CONTEXTS.filter((n) => new RegExp('\\.\\s*' + n + '\\b(?!\\s*\\()').test(src))); MOD_READS.set(f, r); }

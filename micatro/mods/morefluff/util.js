@@ -3,9 +3,10 @@
 import { isActive } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_CARDS, P_CENTER_POOLS, P_SEALS, Card, emit, play_sound, card_eval_status_text, localize,
-  pseudorandom, pseudoseed, pseudorandom_element, juice_card, get_current_pool,
+  pseudorandom, pseudoseed, pseudorandom_element, juice_card, get_current_pool, create_card,
 } from '../../js/engine/core.js';
 import DATA from './data.js';
+import { scale_card, object_weights, poll_seal_weighted, poll_enhancement_weighted, poll_object } from '../../js/engine/smods.js';
 import { KEPT_156, RETIRED_ART, SAPLING_ART, CARTOMANCER_ART } from './legacy.js';
 
 export const MOD_ID = 'morefluff';
@@ -88,6 +89,8 @@ export function change_base(card, suit, rank) {
  * a seal sets its own), rolled only when guaranteed or the key's chance hits.
  */
 export function poll_seal(args = {}) {
+  // (1.9.9999 turns Steamodded's object_weights on: SMODS.poll_seal is then SMODS.poll_object over the Seal set)
+  if (object_weights()) return poll_seal_weighted({ ...args, options: args.options });
   const key = (args.key || 'stdseal');
   const mod = args.mod || 1;
   const type_key = args.type_key || key + 'type' + G.GAME.round_resets.ante;
@@ -108,6 +111,8 @@ export function poll_seal(args = {}) {
  * Gemstone). (The same roll as Bunco's port of it.)
  */
 export function poll_enhancement(args = {}) {
+  // (1.9.9999 turns Steamodded's object_weights on: SMODS.poll_enhancement is then SMODS.poll_object over the Enhanced set)
+  if (object_weights()) return poll_enhancement_weighted({ ...args, options: args.options });
   let key = args.key || 'std_enhance';
   const mod = args.mod || 1;
   const type_key = args.type_key || key + 'type' + G.GAME.round_resets.ante;
@@ -165,26 +170,25 @@ export function progressbar(val, max, cap = 10) {
 }
 
 /**
- * SMODS.scale_card(card, {ref_table, ref_value, scalar_value, operation '+' | '-' | 'X', message_key, message_colour,
- * no_message}) without the scaling_card listener pass: the value scales and the message shows ("Upgrade!", or
- * message_key with the new value for 'a_xmult' / the change otherwise). PORT NOTE: the engine's own scale_card
- * (micatro/js/engine/smods.js, branch feat/micatro-pokermon-391-seams, not merged yet) also lets listeners change
- * the scaling — nothing in this batch listens (Triangle's 1.9.9999 calc_scaling and Refrigerator do: they come
- * with that seam); swap this for it then.
+ * SMODS.scale_card: the engine's (micatro/js/engine/smods.js) — the scaling_card listener pass included (Triangle's and
+ * Doubled Scale's calc_scaling: More Fluff opts in to that context, index.js `smods_seams`). -> [new value, change].
  */
-export function scale_card(card, a) {
-  const t = a.ref_table || card.ability.extra;
-  const op = a.operation || '+';
-  let change = a.scalar_value ? t[a.scalar_value] : 1;
-  if (op === '-' && change < 0) change = -change;
-  if (op === 'X') t[a.ref_value] = t[a.ref_value] * change;
-  else if (op === '-') t[a.ref_value] = t[a.ref_value] - change;
-  else t[a.ref_value] = t[a.ref_value] + change;
-  if (!a.no_message) {
-    const message = a.message_key ? localize({ type: 'variable', key: a.message_key, vars: [a.message_key === 'a_xmult' ? t[a.ref_value] : change] }) : localize('k_upgrade_ex');
-    say(card, message, a.message_colour || 'FILTER');
-  }
-  return [t[a.ref_value], change];
+export { scale_card };
+
+/**
+ * SMODS.add_card({set, key, rarity, legendary, attributes, area, edition, key_append, skip_materialize}): created, added
+ * to the deck and put in its area (the joker row / consumables; no room check, as Steamodded). With `attributes` and no
+ * key, the key is SMODS.poll_object's (an attribute pool: Alchemy Joker's "passive" joker).
+ */
+export function add_card(t) {
+  if (!t.key && t.attributes) { t.append = t.key_append; t.key = poll_object(t); }
+  const set = t.set || (t.key && P_CENTERS[t.key] && P_CENTERS[t.key].set) || 'Joker';
+  const area = t.area || (set === 'Joker' ? G.jokers : G.consumeables);
+  const card = create_card(set, area, t.legendary, t.rarity, t.skip_materialize, t.soulable, t.key || undefined, t.key_append);
+  if (t.edition) card.set_edition(typeof t.edition === 'string' ? { [t.edition.replace(/^e_/, '')]: true } : t.edition, true, true);
+  card.add_to_deck();
+  area.emplace(card);
+  return card;
 }
 
 /** A Card for a center key (G.P_CARDS.empty front) — Lua `Card(..., G.P_CARDS.empty, G.P_CENTERS[key])`. */
@@ -206,5 +210,6 @@ export function joker(slug, def = {}) {
   if (key === 'j_mf_sapling') { d.atlas = SAPLING_ART.atlas; d.pos = { ...SAPLING_ART.pos }; }
   if (key === 'j_mf_rot_cartomancer') { d.atlas = CARTOMANCER_ART.atlas; d.pos = { ...CARTOMANCER_ART.pos }; d.display_size = { ...CARTOMANCER_ART.display_size }; delete d.mf_rotate_by; }
   if (!d.atlas) delete d.atlas;
+  if (!d.name) d.name = key; // (SMODS.Center: name = key when the Lua gives none — the Lettergems; Balatro marks used_jokers by name)
   return { ...d, set: 'Joker', unlocked: true, discovered: true, ...def };
 }

@@ -17,14 +17,14 @@ import { playRun } from '../replay_bot.mjs';
 await loadMods(['morefluff']);
 const PIN = modPin('morefluff');
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures', `morefluff_${PIN}_fingerprints.json`);
-const RUNS = [ // (bot seeds picked so each run gets a few antes in)
-  { name: 'red', start: { seed: 'MFFS2', back: 'b_red', stake: 1, mods: ['morefluff'] }, bot: 2, endless: true },
-  { name: 'purple deck', start: { seed: 'MFFS3', back: 'b_mf_purple', stake: 1, mods: ['morefluff'] }, bot: 3, endless: true },
-  { name: 'rainbow deck', start: { seed: 'MFFS7', back: 'b_mf_rainbow', stake: 2, mods: ['morefluff'] }, bot: 7, endless: true },
+const RUNS = [ // (bot seeds picked so each run gets a few antes in; re-picked at 1.9.9999+r2: object_weights re-rolls every shop)
+  { name: 'red', start: { seed: 'MFFS2', back: 'b_red', stake: 1, mods: ['morefluff'] }, bot: 3, endless: true },
+  { name: 'purple deck', start: { seed: 'MFFS3', back: 'b_mf_purple', stake: 1, mods: ['morefluff'] }, bot: 2, endless: true },
+  { name: 'rainbow deck', start: { seed: 'MFFS7', back: 'b_mf_rainbow', stake: 2, mods: ['morefluff'] }, bot: 34, endless: true },
   { name: 'philosophical deck', start: { seed: 'MFFS1', back: 'b_mf_philosophical', stake: 1, mods: ['morefluff'] }, bot: 1, endless: true },
-  { name: 'pink stake', start: { seed: 'MFFP5', back: 'b_red', stake: 'stake_mf_pink', mods: ['morefluff'] }, bot: 5 },
-  { name: 'ultramarine stake', start: { seed: 'MFFS1', back: 'b_red', stake: 'stake_mf_ultramarine', mods: ['morefluff'] }, bot: 1, endless: true },
-  { name: 'final stake', start: { seed: 'MFFS1', back: 'b_red', stake: 'stake_mf_final', mods: ['morefluff'] }, bot: 1, endless: true },
+  { name: 'pink stake', start: { seed: 'MFFP5', back: 'b_red', stake: 'stake_mf_pink', mods: ['morefluff'] }, bot: 6 },
+  { name: 'ultramarine stake', start: { seed: 'MFFS1', back: 'b_red', stake: 'stake_mf_ultramarine', mods: ['morefluff'] }, bot: 3, endless: true },
+  { name: 'final stake', start: { seed: 'MFFS1', back: 'b_red', stake: 'stake_mf_final', mods: ['morefluff'] }, bot: 3, endless: true },
 ];
 
 const got = {};

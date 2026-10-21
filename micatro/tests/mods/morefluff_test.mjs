@@ -38,16 +38,16 @@ const setsIn = (area) => area.cards.map((c) => c.ability.set);
 
 // ===================================================================== on: registration
 start('MFON');
-ok(STATUS.version === '1.9.9999' && MODS.morefluff.version === '1.9.9999' && MODS.morefluff.contentRev === 1, 'More Fluff 1.9.9999, contentRev 1');
-ok(STATUS.jokers.length === 81 && STATUS.active_jokers.length === 69 && STATUS.retired_jokers.length === 11 && STATUS.colours.length === 16
-  && STATUS.spectrals.length === 1 && STATUS.rotarots.length === 22 && STATUS.boosters.length === 16 && STATUS.vouchers.length === 5
+ok(STATUS.version === '1.9.9999' && MODS.morefluff.version === '1.9.9999' && MODS.morefluff.contentRev === 2, 'More Fluff 1.9.9999, contentRev 2');
+ok(STATUS.jokers.length === 133 && STATUS.active_jokers.length === 89 && STATUS.retired_jokers.length === 11 && STATUS.colours.length === 16
+  && STATUS.spectrals.length === 9 && STATUS.rotarots.length === 22 && STATUS.boosters.length === 16 && STATUS.vouchers.length === 5
   && STATUS.enhancements.length === 8 && STATUS.decks.length === 3 && STATUS.tags.length === 2 && STATUS.blinds.length === 16
   && STATUS.superboss_tokens.length === 15 && STATUS.stakes.length === 6 && STATUS.stickers.length === 3,
-'content counts: 81 jokers (69 active, 11 retired, 1 token) / 16 Colour + Gold / 22 Rotarot / 16 packs / 5 vouchers / 8 enhancements / 3 decks / 2 tags / 16 blinds / 15 tokens / 6 stakes / 3 stickers', STATUS);
+'content counts (batch B): 133 jokers (89 active: 69 + 13 new + 7 rot legendaries; 11 retired, 3 tokens, John Balatro, 26 Letter, 3 Purple) / 16 Colour + 9 Spectral (Gold, 7 prepared, The Soul!) / 22 Rotarot / 16 packs / 5 vouchers / 8 enhancements / 3 decks / 2 tags / 16 blinds / 15 tokens / 6 stakes / 3 stickers', STATUS);
 ok(CONSUMABLE_TYPES.Colour.shop_rate === 1 && CONSUMABLE_TYPES.Rotarot.shop_rate === 2 && G.GAME.colour_rate === 1 && G.GAME.rotarot_rate === 2, 'Colour / Rotarot shop rates 1 / 2');
 ok(P_CENTER_POOLS.Colour.length === 16 && P_CENTER_POOLS.Rotarot.length === 22, 'Colour / Rotarot pools');
-ok(RARITIES.mf_token && RARITIES.mf_token.weight === 0 && P_JOKER_RARITY_POOLS.mf_token.length === 1, 'Token rarity (weight 0) holds Oops! All 5s');
-ok(RARITIES.mf_oldfluff && RARITIES.mf_oldfluff.weight === 0 && P_JOKER_RARITY_POOLS.mf_oldfluff.length === 11, 'the "Old Fluff" rarity (weight 0) holds the 11 retired jokers');
+ok(RARITIES.mf_token && RARITIES.mf_token.weight === 0 && P_JOKER_RARITY_POOLS.mf_token.length === 3, 'Token rarity (weight 0) holds Oops! All 5s, Fish and Forge Residue');
+ok(RARITIES.mf_oldfluff && RARITIES.mf_oldfluff.weight === 0 && P_JOKER_RARITY_POOLS.mf_oldfluff.length === 14, 'the "Old Fluff" rarity (weight 0) holds the 11 retired jokers and the 3 Purple ones');
 ok(P_CENTERS.c_mf_new_gold.set === 'Spectral' && P_CENTERS.c_mf_new_gold.hidden && P_CENTERS.c_mf_new_gold.soul_set === 'Colour' && P_CENTERS.c_mf_new_gold.is_colour, 'Gold is a hidden Spectral that rolls in Colour packs and charges like a Colour card');
 ok(ATLASES.mf_jokers.src.endsWith('/morefluff/assets/2x/1.9.9999/mf_jokers.png') && ATLASES.mf_jokers_156.src.endsWith('/morefluff/assets/2x/mf_jokers_refresh.png')
   && ATLASES.mf_rotarots.px === 107 && ATLASES.mf_blinds.frames === 21, 'atlases (1.9.9999 joker sheet, the 1.5.6 one for retired art, 107px rotarots, animated blinds)');
