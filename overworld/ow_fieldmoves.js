@@ -18,7 +18,7 @@ import { maybePortalTutorial } from './ow_menukeys.js';
 import { hillWarp } from './ow_minigames.js';
 import { spawnStepFx } from './ow_render.js';
 import { S } from './ow_state.js';
-import { checkCoordTrigger, checkOnFrame, runChamberWallScene, runSpecial } from './ow_story.js';
+import { checkCoordTrigger, checkOnFrame, runChamberWallScene, runScriptLabel, runSpecial } from './ow_story.js';
 import { bugContest, bugContestRoll, endBugContest, trickWarp } from './ow_venues.js';
 import { saveParty } from './party.js';
 import * as Quest from './quest.js';
@@ -35,6 +35,10 @@ import { partyMenu } from './ow_menustate.js';
 import { ruinsFloorClosed, ruinsWallClosed } from './unown_puzzle.js';
 import { afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo } from './ow_transitions.js';
 import { crackedFloorStep, holeWarpFor } from './holes.js';
+import {
+	cutMoveOpenDottedHoleDoor, cutMoveRuinValleyCheck, doBrailleDigEffect, doBrailleRegiEffect,
+	shouldDoBrailleDigEffect, shouldDoBrailleRegicePuzzle, shouldDoBrailleRegirockEffect, shouldDoBrailleRegisteelEffect,
+} from './braille_puzzles.js';
 
 
 // ---------- Mach Bike ----------
@@ -282,6 +286,9 @@ export const HM_FIELD = {
 		dialog.open('You were whisked away home!', () => moveToMap(home));
 	} },
 	dig: { name: 'DIG', use() {
+		// fldeff_dig.c: under the Sealed Chamber's braille DIG opens the inner room
+		// instead of tunnelling out (braille_puzzles.js)
+		if (shouldDoBrailleDigEffect()) { doBrailleDigEffect(); dialog.open('DIG was used on the wall...\n\nA hole opened up!'); return; }
 		const t = world.current?.map?.map_type || '';
 		if (t !== 'MAP_TYPE_UNDERGROUND') { dialog.open('DIG can only tunnel out of caves.'); return; }
 		if (!lastOutdoor) { dialog.open("It won't work here."); return; }
@@ -294,6 +301,9 @@ export const HM_FIELD = {
 		fieldHealTransfer(mon, 'MILK DRINK');
 	} },
 	cut: { name: 'CUT', use() {
+		// FireRed SetUpFieldMove_Cut asks CutMoveRuinValleyCheck FIRST: in front of the
+		// DOTTED HOLE's braille door, CUT opens it (bug:1792578554394; braille_puzzles.js)
+		if (cutMoveRuinValleyCheck()) { cutMoveOpenDottedHoleDoor(); dialog.open('The door was CUT open!'); return; }
 		const [fx, fy] = facingTile();
 		const o = items.fieldObjAt(fx, fy);
 		// clear the tree FIRST, then say so: the removal used to wait for the
@@ -304,6 +314,9 @@ export const HM_FIELD = {
 		dialog.open("There's nothing here to CUT.");
 	} },
 	rocksmash: { name: 'ROCK SMASH', use() {
+		// Emerald SetUpFieldMove_RockSmash: under the Desert Ruins' braille it opens
+		// REGIROCK's chamber (ShouldDoBrailleRegirockEffect; braille_puzzles.js)
+		if (shouldDoBrailleRegirockEffect()) { doBrailleRegiEffect('FLAG_SYS_REGIROCK_PUZZLE_COMPLETED'); dialog.open('ROCK SMASH shook the wall...\n\nA hole opened up!'); return; }
 		const [fx, fy] = facingTile();
 		const o = items.fieldObjAt(fx, fy);
 		if (o && o.kind === 'rock') {
@@ -362,6 +375,9 @@ export const HM_FIELD = {
 		dialog.open("You can't DIVE here — the water isn't deep enough.");
 	} },
 	flash: { name: 'FLASH', use() {
+		// Emerald SetUpFieldMove_Flash: at the Ancient Tomb's centre it opens
+		// REGISTEEL's chamber (ShouldDoBrailleRegisteelEffect; braille_puzzles.js)
+		if (shouldDoBrailleRegisteelEffect()) { doBrailleRegiEffect('FLAG_SYS_REGISTEEL_PUZZLE_COMPLETED'); dialog.open('FLASH lit up the tomb...\n\nA hole opened up!'); return; }
 		// SpecialAerodactylChamber: FLASH in the Aerodactyl chamber opens its hidden
 		// wall (CheckUseFlash asks it before the darkness check)
 		if (world.current.map.id === 'MAP_RUINS_OF_ALPH_AERODACTYL_CHAMBER') {
@@ -431,6 +447,7 @@ player.onBump = (tx, ty) => {
 	if (doorBlocked(world, tx, ty)) { dialog.open(GATE_TEXT); return; }
 	const m = blockers.messageAt(tx, ty);
 	if (m) { dialog.open(m); return; }
+	if (tryArrowWarpBump()) return;
 	// deep water refuses a walker without a word on the GBA too, and a pool edge
 	// in a gym reads as "an invisible wall" (Cerulean Gym, two playtest reports
 	// 2026-10-16: the walkway north is ONE column, x=9, and both testers pushed
@@ -467,8 +484,33 @@ player.onArrive = () => {
 	if (ruinsFloorClosed(world.current.name, w)) w = null;
 	// ...and its item-room wall stays a wall until it opens
 	if (ruinsWallClosed(world.current.name, w)) w = null;
+	// an ARROW warp (a cave mouth's MB_*_ARROW_WARP) is taken by heading its way,
+	// never by stepping onto it from the side (field_control_avatar.c TryArrowWarp
+	// wants the arrow's direction held). Regice's lap runs along Island Cave's
+	// bottom row, straight across the exit at (8,29) (bug:1792491795239).
+	if (w && arrowWarpDir(player.tx, player.ty) && arrowWarpDir(player.tx, player.ty) !== player.facing) w = null;
 	if (!w) savePos();
-	if (w) {
+	if (w) { enterWarp(w); return; }
+	afterStep();
+};
+// ...and standing on one, pushing the arrow's way into the wall takes it (once:
+// the bump repeats every held frame, and warpTo only sets S.loading after its fade)
+let arrowWarpAt = 0;
+export function tryArrowWarpBump() {
+	if (S.loading || cutscene.blocking || dialog.blocking || battle.blocking) return false;
+	if (performance.now() - arrowWarpAt < 1500) return false;
+	const d = arrowWarpDir(player.tx, player.ty);
+	if (!d || d !== player.facing) return false;
+	const w = world.warpAt(player.tx, player.ty);
+	if (!w || ruinsFloorClosed(world.current.name, w) || ruinsWallClosed(world.current.name, w)) return false;
+	arrowWarpAt = performance.now();
+	enterWarp(w);
+	return true;
+}
+const ARROW_WARPS = { 0x62: 'right', 0x63: 'left', 0x64: 'up', 0x65: 'down' };
+function arrowWarpDir(x, y) { return ARROW_WARPS[world.behaviorAt(x, y)] || null; }
+function enterWarp(w) {
+	{
 		const dest = parseInt(w.dest_warp_id, 10);
 		if (dest === -1) { backWarp(); return; } // backward warp — never gated
 		// TRICK HOUSE doors: the maze exit wants the scroll, the entrance door
@@ -502,6 +544,9 @@ player.onArrive = () => {
 		warpTo(w.dest_map, w.dest_warp_id);
 		return;
 	}
+}
+// the rest of a completed step that took no warp
+function afterStep() {
 	// crossed into a connection?
 	const lay = world.current.layout;
 	const outside = player.tx < 0 || player.tx >= lay.width || player.ty < 0 || player.ty >= lay.height;
@@ -533,6 +578,9 @@ player.onArrive = () => {
 		if (!cutscene.blocking && checkCoordTrigger()) return;
 		if (!cutscene.blocking) checkOnFrame();
 	} catch (e) { console.warn('[plot] coord/onFrame trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// Island Cave: the step that finishes Regice's lap back under the braille opens
+	// the wall (field_control_avatar.c -> IslandCave_EventScript_OpenRegiEntrance)
+	if (!cutscene.blocking && shouldDoBrailleRegicePuzzle()) { runScriptLabel('IslandCave_EventScript_OpenRegiEntrance'); return; }
 	// a due awakening beat on this map (e.g. WALLACE's pointer right after the clash)
 	try { if (!cutscene.blocking) checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] step trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a static legendary sitting on this tile
