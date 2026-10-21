@@ -18,10 +18,11 @@
  *   run.end         game.js endRun, an Expedition run only: reduce({lines}, summary) -> the run-over screen's lines;
  *                   summary = {mode, dv, map, diff, time, level, kills, bosses, dead, dex, shiny, clean, group}
  *   replay.header   js/mica/replay.js begin: the replay header h (the Expedition adds dv / map / diff)
- *   spectate.snap   js/mica/spectate.js snap(): each live / replay snapshot (the Expedition adds dv)
+ *   spectate.snap   js/mica/spectate.js snap(): each live / replay snapshot (the Expedition adds dv; D1: its `x` block)
+ *   net.frame       DLC D1: js/net/coop.js hostFrame: reduce(frame, mate) -> each host frame (the Expedition adds `x`)
  */
 G.Hooks = (() => {
-  const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap'];
+  const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame'];
   const L = Object.create(null);
   for (const s of SEAMS) L[s] = [];
 

@@ -872,7 +872,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 |---|---|---|
 | **D0a. Determinism harness** (no gameplay change) — **BUILT 2026-10-19** (`overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs`, fixtures in `overworld/tests/fixtures/micasurvivor_golden/`, README "DLC D0a: base-unchanged harness") | `G.Game.debugStep(n, dt)` fixed-step entry; a puppeteer page-wide seeded `Math.random`; scripted input; per-second state hashes + draw counter; **golden fixtures recorded** for Normal, Daily, Boss Rush, Tower, Team and local co-op, plus a base replay fixture | — |
 | **D0b. DLC toggle and plumbing** — **BUILT 2026-10-19 as "Expedition plumbing"** (no toggle; see the update below and `micasurvivor/README.md`, "DLC D0b: Expedition plumbing") | Settings → Content switch (in the DLC blob + a localStorage mirror); `ruleset`/`dv` through `Modes.plan/begin`; `core/hooks.js` seams with base code moved unchanged; `G.DLCLoader` (ordered script injection); `micasurvivordlc:<user>` blob + `micasurvivor-dlc-save-get/-put`; `micasurvivor_dlc` board with Micatro-style enforcement; `rs`/`dv` on the lobby, `start`, replay header/meta allow-list and spectate snapshots, with join/watch version gates; an empty Expedition tab; **the base-unchanged test against the D0a fixtures** + table freeze + save/replay/lobby round-trips | D0a |
-| **D1. Terrain layers** | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
+| **D1. Terrain layers** — **BUILT 2026-10-20** (`js/expedition/terrain.js`, `overworld/tests/micasurvivor_expedition_terrain_test.mjs`, README "DLC D1: terrain layers") | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
 | **D2. Movement verbs** | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
 | **D3. Expedition · Classic** | Zones, zone timeline (alphas, swarm, stampede, flock, rock slide, elite wave, totem, summoner), guardian altar, portal, final swarm, legendary shrine, victory screen, splits; boss HP from DPS + exhaustion; map 1 (Viridian Forest) | D2 |
 | **D4. League roster and evolution** | ~80 kits + passives, kit unlock levels 1/2/4/7, in-run evolution with branch choice (Eevee), Maturity at 24/44, stats from base stats; the 3 starters free | D3 |
@@ -1069,3 +1069,20 @@ the toggle-era names above:
   enforcement both ways.
 - **Base unchanged:** the D0a fixtures pass as recorded, also with the Expedition code force-loaded
   (`micasurvivor_expedition_forceload_test.mjs`).
+
+### Update (2026-10-20): D1 built, "terrain layers"
+Built as specified (`micasurvivor/README.md`, "DLC D1: terrain layers"). Notes for later batches:
+- **The zone:** `G.ExpTerrain.generate({seed, map, zone})` gives a 120×120-tile zone with heights 0–3, cliffs, ramps,
+  rock outcrops, ponds and props, from the world seed only (`G.DLC.rng`). A flood-fill guarantees every walkable tile is
+  reachable from the spawn, with props counted as walls too. `G.Exp.enterZone(n)` builds zone n, which D3's portal can use.
+- **Layers are bit masks:** one bit per level a tile joins (a ramp joins two). Collision and pathing only connect tiles
+  that share a bit. Each walking entity carries `zMask` (its last good tile's layers) and `layer` (h, or h + 0.5 on a
+  ramp). That is the per-entity z that D2 builds on.
+- **For D2:** hop down a ledge = let an airborne entity land on a lower tile (set `zMask` to the landing tile's mask); the
+  extra hop up = the same for one level up; climb = a type check before the cliff push in `collideZone`; glide and surf =
+  liquid / gap tiles per type. The x block gains a per-enemy z / airborne column (bump `xv` to 2 and keep the v1 reader).
+- **The `x` block v1** is `{xv, m, z, th}` on snapshots and host frames. Viewers and guests rebuild from seed + x
+  (`G.Expedition.viewZone`) and check the hash. Terrain is never streamed.
+- **`G.Expedition.DV` stays 1:** no Expedition run could exist before D1 (every mode is "Coming soon"). The first batch
+  that ships a playable mode should bump it whenever content changes after that.
+- **Base unchanged:** the D0a fixtures pass as recorded, with and without the Expedition code loaded.

@@ -98,6 +98,7 @@ G.Minimap = (() => {
       if (at(tx, ty + 1) === 1) c = c.map(v => v * 0.75);
       else if (at(tx + 1, ty) === 2 || at(tx - 1, ty) === 2 || at(tx, ty + 1) === 2 || at(tx, ty - 1) === 2) c = lerp(c, rgb(pal.shore), 0.35);
     }
+    if (W.zone) c = W.zone.mini(c, tx, ty);   // MicaSurvivor (DLC D1): an Expedition zone, shaded by height
     return c;
   }
   function refresh(ix, iy) {
@@ -292,6 +293,8 @@ G.Minimap = (() => {
   return {
     K, shown, place, draw, reset, pt, edge,
     /** Para las pruebas: lo dibujado en el último fotograma ({ kind, x, y } en unidades del HUD) y lo explorado. */
-    get drawn() { return drawn.map(d => Object.assign({}, d)); }, get explored() { return explored.size; }
+    get drawn() { return drawn.map(d => Object.assign({}, d)); }, get explored() { return explored.size; },
+    /** Para las pruebas (DLC D1): el color [r, g, b] de una casilla en el minimapa, con el bioma actual. */
+    colorAt(tx, ty) { return tileColor(G.Tiles.BIOMES[G.World.biome] || G.Tiles.BIOMES[0], tx, ty).map(Math.round); }
   };
 })();
