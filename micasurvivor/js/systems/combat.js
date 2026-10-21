@@ -715,8 +715,9 @@ G.Combat = (() => {
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.touchCd > 0 || e.behavior === 'thief') continue;
       // MicaSurvivor (DLC D2): airborne (a hop / glide / bounce pad, Expedition only) you pass over ground enemies:
-      // no contact damage from them (projectiles and flyers still hit). `air` never exists in base modes.
-      if (pl.air && !e.flying) continue;
+      // no contact damage from them (projectiles and flyers still hit). `air` never exists in base modes. Walking off a
+      // ledge (a 'drop') is free movement, not a hop: no i-frames for it.
+      if (pl.air && pl.air.kind !== 'drop' && !e.flying) continue;
       // MicaSurvivor (M5): congelado, dormido o confundido no te ataca.
       if (G.Status.stunned(e) || e.confT > 0) continue;
       e.touchCd = 0.55;

@@ -10,9 +10,10 @@
 //      walkable tile, also with trees and rocks counted as walls (props can't cut a path)
 //   3. the player (a hand-made zone: a plateau north of a cliff, one ramp): walking north into the cliff stops at its
 //      foot (layer 0); walking north up the ramp reaches the plateau (layer 1, entity.layer 0.5 on the ramp); walking
-//      south off the plateau stops at the edge (no hop-down before D2); back down the ramp works
+//      south off the plateau walks down the ledge (D2: a short drop onto layer 0); back down the ramp works
 //   4. a ground enemy south of the cliff reaches a player on the plateau by going round to the ramp (through its tile,
-//      never across a cliff edge); with the ramp removed it never gets up
+//      never up a cliff edge); with the ramp removed it never gets up; D2: an enemy on the plateau walks straight down
+//      the ledge to a player below (a ledge is a one-way edge in collision and in G.Path)
 //   5. a flyer (Butterfree hovers) flies straight over the cliff, ignoring the terrain, as before
 //   6. the minimap: by height, low ground darker and plateaus lighter (mean luminance rises with each level), ramps
 //      sandy, cliff faces dark; the same tile without a zone is the base colour
@@ -227,9 +228,9 @@ try {
 		H.steps(100, ['KeyW'], () => { if (pl.layer === 0.5) onRamp = true; });
 		r.ramp = { ty: H.tile(pl.y), tx: H.tile(pl.x), layer: pl.layer, mask: pl.zMask, onRamp };
 		H.place(pl, 0, -2);
-		let maxY = pl.y;
-		H.steps(90, ['KeyS'], () => { maxY = Math.max(maxY, pl.y); });
-		r.edge = { ty: H.tile(pl.y), maxTy: H.tile(maxY), layer: pl.layer, mask: pl.zMask };
+		let maxY = pl.y, drop = false;
+		H.steps(90, ['KeyS'], () => { maxY = Math.max(maxY, pl.y); if (pl.air && pl.air.kind === 'drop') drop = true; });
+		r.edge = { ty: H.tile(pl.y), maxTy: H.tile(maxY), layer: pl.layer, mask: pl.zMask, drop, air: !!pl.air };
 		H.place(pl, 6, -3);
 		H.steps(100, ['KeyS']);
 		r.down = { ty: H.tile(pl.y), layer: pl.layer, mask: pl.zMask };
@@ -237,7 +238,7 @@ try {
 	});
 	A(plr.cliff && plr.cliff.minTy >= 0 && plr.cliff.layer === 0 && plr.cliff.mask === 1, 'the player walking north into the cliff stops at its foot (never on the plateau, layer 0)', JSON.stringify(plr.cliff || plr));
 	A(plr.ramp && plr.ramp.ty < 0 && plr.ramp.layer === 1 && plr.ramp.mask === 2 && plr.ramp.onRamp, 'walking north up the ramp reaches the plateau (layer 0.5 on the ramp, then 1)', JSON.stringify(plr.ramp || plr));
-	A(plr.edge && plr.edge.maxTy < 0 && plr.edge.layer === 1, 'walking south off the plateau stops at the edge (no hop-down before D2)', JSON.stringify(plr.edge || plr));
+	A(plr.edge && plr.edge.ty > 0 && plr.edge.layer === 0 && plr.edge.mask === 1 && plr.edge.drop && !plr.edge.air, 'walking south off the plateau walks DOWN the ledge (D2: a short drop onto layer 0; a ledge is one-way)', JSON.stringify(plr.edge || plr));
 	A(plr.down && plr.down.ty > 0 && plr.down.layer === 0 && plr.down.mask === 1, 'back down the ramp to the low ground', JSON.stringify(plr.down || plr));
 
 	// 4. + 5. a ground enemy goes round to the ramp; a flyer goes straight over
@@ -265,11 +266,44 @@ try {
 			});
 			return { flying: e.flying, layer: e.layer, mask: e.zMask, ty: H.tile(e.y), viaRamp: tiles.has('6,0'), jumps, minDist: Math.round(minDist), maxAbsX, crossedAt };
 		};
-		return { walk: chase(true, 19, 20), noRamp: chase(false, 19, 10), fly: chase(true, 12, 6) };
+		const out = { walk: chase(true, 19, 20), noRamp: chase(false, 19, 10), fly: chase(true, 12, 6) };
+		// D2: an enemy on the plateau walks straight DOWN the ledge to a player below (no ramp needed, none taken)
+		const down = (withRamp, wall) => {
+			H.quiet();
+			// (wall: a rock bar on the plateau, row -2, columns -3..3, so the way down goes round it: G.Path's field, not a straight line)
+			W.setZone(wall ? G.ExpTerrain.custom({ w: 24, h: 24, map: 'custom', hgt: (x, y) => y < 12 ? 1 : 0, ramp: (x, y) => x === 18 && y === 12 ? 1 : 0,
+				kind: (x, y) => y === 10 && x >= 9 && x <= 15 ? 1 : 0 }) : H.cliffZone(withRamp));
+			G.Path.clear();
+			H.place(pl, 0, 4);
+			const e = new G.Enemy({ dex: 19, name: 'x', behavior: 'chase', hp: 99999, spd: 95, dmg: 1, xp: 1 }, 0, 0, { hp: 1, spd: 1, dmg: 1 });
+			H.place(e, 0, -4);
+			G.EnemyMgr.add(e);
+			const tiles = new Set();
+			let downs = 0, ups = 0, minDist = 1e9, maxAbsX = 0, prev = e.zMask;
+			H.steps(8 * 60, [], () => {
+				tiles.add(H.tile(e.x) + ',' + H.tile(e.y));
+				if (prev != null && e.zMask != null && !(prev & e.zMask)) { if (e.zMask < prev) downs++; else ups++; }
+				prev = e.zMask;
+				maxAbsX = Math.max(maxAbsX, Math.abs(H.tile(e.x)));
+				minDist = Math.min(minDist, Math.hypot(e.x - pl.x, e.y - pl.y));
+				pl.x = 16; pl.y = 4 * 32 + 16;
+			});
+			return { layer: e.layer, mask: e.zMask, ty: H.tile(e.y), viaRamp: tiles.has('6,0'), downs, ups, minDist: Math.round(minDist), maxAbsX };
+		};
+		out.down = down(true);
+		out.downNoRamp = down(false);
+		out.downWall = down(true, true);
+		return out;
 	});
 	A(foe.walk && !foe.walk.flying && foe.walk.ty < 0 && foe.walk.layer === 1 && foe.walk.viaRamp && foe.walk.jumps === 0 && foe.walk.minDist < 60,
 		`a ground enemy south of the cliff reaches the player on the plateau by the ramp (through its tile, never across a cliff edge; closest ${foe.walk && foe.walk.minDist})`, JSON.stringify(foe.walk || foe));
-	A(foe.noRamp && foe.noRamp.ty >= 0 && foe.noRamp.layer === 0 && foe.noRamp.jumps === 0, 'with the ramp removed it never gets up the cliff', JSON.stringify(foe.noRamp || foe));
+	A(foe.noRamp && foe.noRamp.ty >= 0 && foe.noRamp.layer === 0 && foe.noRamp.jumps === 0, 'with the ramp removed it never gets up the cliff (walking up a ledge stays blocked)', JSON.stringify(foe.noRamp || foe));
+	A(foe.down && foe.down.ty >= 0 && foe.down.layer === 0 && foe.down.downs === 1 && foe.down.ups === 0 && !foe.down.viaRamp && foe.down.maxAbsX <= 1 && foe.down.minDist < 60
+		&& foe.downNoRamp && foe.downNoRamp.layer === 0 && foe.downNoRamp.downs === 1 && foe.downNoRamp.minDist < 60,
+		`D2: a ground enemy on the plateau walks straight DOWN the ledge to a player below (one step down, no detour to the ramp; closest ${foe.down && foe.down.minDist}), with or without a ramp`, JSON.stringify([foe.down, foe.downNoRamp]));
+	const dw = foe.downWall || {};
+	A(dw.layer === 0 && dw.ty >= 0 && dw.downs === 1 && dw.ups === 0 && !dw.viaRamp && dw.minDist < 60,
+		`...and with a rock bar in its way it paths round the bar and down the ledge (G.Path's field has one-way ledge edges), not round by the ramp (closest ${dw.minDist})`, JSON.stringify(dw));
 	A(foe.fly && foe.fly.flying && foe.fly.mask == null && !foe.fly.viaRamp && foe.fly.maxAbsX <= 1 && foe.fly.crossedAt != null && foe.fly.crossedAt < 240 && foe.fly.minDist < 60,
 		'a flyer (Butterfree hovers) flies straight over the cliff, ignoring the terrain', JSON.stringify(foe.fly || foe));
 

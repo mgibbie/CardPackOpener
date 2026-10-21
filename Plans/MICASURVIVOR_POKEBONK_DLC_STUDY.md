@@ -873,7 +873,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D0a. Determinism harness** (no gameplay change) — **BUILT 2026-10-19** (`overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs`, fixtures in `overworld/tests/fixtures/micasurvivor_golden/`, README "DLC D0a: base-unchanged harness") | `G.Game.debugStep(n, dt)` fixed-step entry; a puppeteer page-wide seeded `Math.random`; scripted input; per-second state hashes + draw counter; **golden fixtures recorded** for Normal, Daily, Boss Rush, Tower, Team and local co-op, plus a base replay fixture | — |
 | **D0b. DLC toggle and plumbing** — **BUILT 2026-10-19 as "Expedition plumbing"** (no toggle; see the update below and `micasurvivor/README.md`, "DLC D0b: Expedition plumbing") | Settings → Content switch (in the DLC blob + a localStorage mirror); `ruleset`/`dv` through `Modes.plan/begin`; `core/hooks.js` seams with base code moved unchanged; `G.DLCLoader` (ordered script injection); `micasurvivordlc:<user>` blob + `micasurvivor-dlc-save-get/-put`; `micasurvivor_dlc` board with Micatro-style enforcement; `rs`/`dv` on the lobby, `start`, replay header/meta allow-list and spectate snapshots, with join/watch version gates; an empty Expedition tab; **the base-unchanged test against the D0a fixtures** + table freeze + save/replay/lobby round-trips | D0a |
 | **D1. Terrain layers** — **BUILT 2026-10-20** (`js/expedition/terrain.js`, `overworld/tests/micasurvivor_expedition_terrain_test.mjs`, README "DLC D1: terrain layers") | Per-tile height 0–3, cliff/ledge/ramp tiles in the code tile painter; bounded seeded zone generator (`G.DLC.rng`) with a connectivity flood-fill; layer-aware collision and pathing (ramps); minimap shading; guest/replay/spectator terrain rebuilt from seed + zone (`x` block v1) | D0b |
-| **D2. Movement verbs** — **BUILT 2026-10-21** (`js/expedition/verbs.js`, `overworld/tests/micasurvivor_expedition_movement_test.mjs`, README "DLC D2: movement verbs") | Hop (ledge-down, contact i-frames), slide, extra hop up one layer, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
+| **D2. Movement verbs** — **BUILT 2026-10-21** (`js/expedition/verbs.js`, `overworld/tests/micasurvivor_expedition_movement_test.mjs`, README "DLC D2: movement verbs") | Hop (ledge-down, contact i-frames; revised: walk down a ledge, hop up one level, extra hop two), slide, glide, climb and surf by type, bounce pads; pad and touch buttons; per-frame z/airborne in snapshots | D1 |
 | **D3. Expedition · Classic** — **BUILT 2026-10-21** (`js/expedition/classic.js`, `overworld/tests/micasurvivor_expedition_classic_test.mjs`, README "DLC D3: Expedition · Classic") | Zones, zone timeline (alphas, swarm, stampede, flock, rock slide, elite wave, totem, summoner), guardian altar, portal, final swarm, legendary shrine, victory screen, splits; boss HP from DPS + exhaustion; map 1 (Viridian Forest) | D2 |
 | **D4. League roster and evolution** | ~80 kits + passives, kit unlock levels 1/2/4/7, in-run evolution with branch choice (Eevee), Maturity at 24/44, stats from base stats; the 3 starters free | D3 |
 | **D5. Level-ups and items** | 5-rarity luck-gated cards, move levels to 8 with archetype stat rolls, 8 new archetypes, 21 vitamins + slots, Refresh/Skip/Banish; ~60 items with caps and additive same-stat stacking | D4 |
@@ -1120,6 +1120,21 @@ Built as specified (`micasurvivor/README.md`, "DLC D2: movement verbs"), with th
   - `G.ExpVerbs.verbsOf(types)` is the type table, ready for the League's kits.
 - **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so
   does the force-loaded run.
+- **Ledges revised (owner playtest of Classic, 2026-10-21):** "you should be able to walk down a ledge but not up it".
+  - **Walk down:** a tile exactly one level below no longer blocks (`G.World.ledgeDown`, in `collideZone`). The player
+    drops: a 0.25 s fall (`K.DROP_T`; the sprite starts a cliff face, `K.DROP_H` = 6 art px, up), airborne as
+    `air.kind 'drop'` (verb 7), carried just clear of the edge. **No contact i-frames for a drop** (it is free
+    movement, not a hop: `combat.js`). Any other walker just steps down. Walking up a cliff stays blocked; ramps go both
+    ways; climbers climb as before (their reach already joins the level below, so they never drop).
+  - **Hops:** a single hop reaches one level up (`K.HOP_UP`); the extra hop one more (`K.EXTRA_UP`), two above the
+    take-off, never more (`K.MAX_UP = 2`). The extra hop still adds airtime (a wider gap).
+  - **Enemies:** `pathing.js`'s BFS and straight-line check treat a ledge as one-way: ground enemies walk down, and
+    path round to a ramp to go up. Flyers, ghosts and bosses unchanged. Pure, so deterministic.
+  - **Sync:** the air row gains an optional 7th field, a running drop count, so a viewer plays a fall it missed between
+    two frames. Older rows (no 7th field) read as before; older readers ignore it, so the `x` block stays v3.
+  - **`G.Expedition.DV` stays 2:** replays are recorded snapshots, not re-simulated inputs, so a Classic replay from
+    before plays back exactly as recorded (tested). No Expedition co-op run can start yet, so the lobby gate has no
+    mixed-rule case to catch.
 
 ### Update (2026-10-21): D3 built, "Expedition · Classic"
 Built as specified (`micasurvivor/README.md`, "DLC D3: Expedition · Classic"): **Classic is playable and winnable** on

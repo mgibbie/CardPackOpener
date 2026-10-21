@@ -367,38 +367,60 @@ G.World = (() => {
   }
   /** The height an entity standing here is at (a ramp: half way), for D2's verbs; 0 without a zone. */
   function layerAt(x, y) { return zone ? zone.layer(tileOf(x), tileOf(y)) : 0; }
+  /**
+   * DLC D2 (walk down a ledge): is a tile of mask m exactly ONE level below an entity on layers `from`? (m's top level
+   * is the level under from's lowest one; a ramp's lowest level is its own.) A ledge is a one-way edge: walking off it
+   * down is allowed, walking up it never is. G.Path uses the same rule for ground enemies.
+   */
+  function ledgeDown(from, m) {
+    if (!m || !from) return false;
+    const top = m & 8 ? 8 : m & 4 ? 4 : m & 2 ? 2 : 1;
+    return top === ((from & -from) >> 1);
+  }
 
   /**
    * collide() in a zone. Each walking entity keeps the mask of the last tile it stood on in (zMask) and where that was
-   * (zLx, zLy). A tile whose mask shares no bit with the tile under the entity blocks it like a wall (a cliff edge);
-   * a ramp tile shares a bit with both of its levels. If one step carried the entity's centre straight into a tile
-   * of another layer (a dash, a knock-back, a jumper's landing), it goes back to its last good spot. Props collide as
-   * in the base world. Flying / ghost enemies and bosses never call this (they ignore terrain, as before).
+   * (zLx, zLy). A tile whose mask shares no bit with the tile under the entity blocks it like a wall (a cliff edge seen
+   * from below); a ramp tile shares a bit with both of its levels. A tile exactly one level BELOW doesn't block: walking
+   * off a ledge steps down onto it (ledgeDown; the player drops, a short fall: js/expedition/verbs.js drop()). If one
+   * step carried the entity's centre straight into a tile of another layer (a dash, a knock-back, a jumper's landing)
+   * that isn't one level down, it goes back to its last good spot. Props collide as in the base world. Flying / ghost
+   * enemies and bosses never call this (they ignore terrain, as before).
    */
   function collideZone(e) {
     const r = e.r;
     let hit = false;
     if (e.zId !== zone.id || e.zMask == null) { e.zId = zone.id; e.zMask = maskAt(tileOf(e.x), tileOf(e.y)) || 1; e.zLx = e.x; e.zLy = e.y; }
     // DLC D2: the player's movement verbs (js/expedition/verbs.js): its own tile rule (deep water: surfers only), while
-    // airborne every level up to its air's top (a hop drops off a ledge; the extra hop reaches one level up), and a
-    // climber's one level up or down. Enemies have no verbs: they keep D1's rule exactly (V = null).
+    // airborne every level up to its air's top (a hop drops off a ledge or reaches one level up, the extra hop two), and
+    // a climber's one level up or down. Enemies have no verbs (V = null): D1's rule plus walking down a ledge.
     const V = e.xverbs && G.ExpVerbs ? G.ExpVerbs : null;
     const mk = V ? (tx, ty) => V.pass(e, tx, ty) : maskAt;
-    const air = V && e.air ? V.airMask(e) : 0;
+    let air = V && e.air ? V.airMask(e) : 0;
     let cur;
+    if (!air) {
+      cur = mk(tileOf(e.x), tileOf(e.y));
+      const base = V ? V.reach(e, e.zMask) : e.zMask;
+      if (!(cur & base)) {
+        if (ledgeDown(base, cur)) {
+          // walked off a ledge: the player drops (airborne for a short fall, then lands below); others step down
+          if (V && V.drop(e, base, cur)) air = V.airMask(e);
+        } else { e.x = e.zLx; e.y = e.zLy; hit = true; cur = mk(tileOf(e.x), tileOf(e.y)); }
+      }
+      if (!air) {
+        if (!cur) cur = e.zMask;   // (inside a wall: pushed out against its own layer)
+        if (V) cur = V.reach(e, cur);
+      }
+    }
     if (air) {
       cur = air;
       if (!(mk(tileOf(e.x), tileOf(e.y)) & cur)) { e.x = e.aLx; e.y = e.aLy; hit = true; }
-    } else {
-      cur = mk(tileOf(e.x), tileOf(e.y));
-      if (!(cur & (V ? V.reach(e, e.zMask) : e.zMask))) { e.x = e.zLx; e.y = e.zLy; hit = true; cur = mk(tileOf(e.x), tileOf(e.y)); }
-      if (!cur) cur = e.zMask;   // (inside a wall: pushed out against its own layer)
-      if (V) cur = V.reach(e, cur);
     }
     for (let pass = 0; pass < 2; pass++) {
       const t0x = tileOf(e.x - r), t1x = tileOf(e.x + r), t0y = tileOf(e.y - r), t1y = tileOf(e.y + r);
       for (let ty = t0y; ty <= t1y; ty++) for (let tx = t0x; tx <= t1x; tx++) {
-        if (!(mk(tx, ty) & cur)) {
+        const tm = mk(tx, ty);
+        if (!(tm & cur) && (air || !ledgeDown(cur, tm))) {
           const bx0 = tx * TS, by0 = ty * TS, bx1 = bx0 + TS, by1 = by0 + TS;
           const qx = G.U.clamp(e.x, bx0, bx1), qy = G.U.clamp(e.y, by0, by1);
           const dx = e.x - qx, dy = e.y - qy, d2 = dx * dx + dy * dy;
@@ -426,6 +448,8 @@ G.World = (() => {
       return hit;
     }
     if (now & cur) { e.zMask = now; e.zLx = e.x; e.zLy = e.y; }
+    else if (ledgeDown(cur, now) && !V) { e.zMask = now; e.zLx = e.x; e.zLy = e.y; }   // (stepped down a ledge)
+    else if (ledgeDown(cur, now) && V.drop(e, cur, now)) { e.aLx = e.x; e.aLy = e.y; e.layer = e.air.top; return hit; }
     else { e.x = e.zLx; e.y = e.zLy; hit = true; }
     e.layer = zone.layer(tileOf(e.x), tileOf(e.y));
     return hit;
@@ -724,6 +748,6 @@ G.World = (() => {
       data.clear(); images.clear(); broken.clear();
       if (fade) fade.images = new Map();
     },
-    get zone() { return zone; }, maskAt, layerAt
+    get zone() { return zone; }, maskAt, layerAt, ledgeDown
   };
 })();

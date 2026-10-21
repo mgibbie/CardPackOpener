@@ -1462,7 +1462,8 @@ rock, drawn by the base wall painter.
 `(1 << h) | (1 << (h + 1))`, and a wall is 0. Two tiles connect when their masks share a bit.
 - **Collision** (`js/world/world.js`, `collideZone`):
   - Each walking entity keeps the mask of its last good tile (`zMask`) and where that was (`zLx`, `zLy`).
-  - A tile of another layer blocks it like a wall: you can't walk up a cliff or step off one (hop-down is D2).
+  - A tile of another layer blocks it like a wall: you can't walk up a cliff. (D2, after D3: a tile exactly one level
+    below doesn't block, so you walk DOWN a ledge; see "DLC D2".)
   - A single step that carries the centre straight across an edge (a dash, a knock-back, a jumper's landing) puts the
     entity back on its last good spot.
   - `entity.layer` is the height it stands at (h, or h + 0.5 on a ramp). This is the per-entity z that D2's verbs will
@@ -1517,11 +1518,12 @@ unchanged. The modes are still "Coming soon"; tests use `G.Expedition.debugEnabl
 
 | Verb | Who | Rule |
 |---|---|---|
-| Hop | everyone | A 0.45 s arc. The sprite rises up to 12 art px and its shadow stays on the ground, smaller. Airborne, ground enemies don't hurt you on contact (flyers and projectiles still do), and you pass over deep water. You can drop off a ledge onto any lower level: you land on the level of the tile under you. You can't hop up a level. |
-| Extra hop | everyone (`K.EXTRA_HOPS = 1`) | Hop again in the air: a new arc that also reaches **one** level above the take-off level, so hopping into a cliff face lands you on top. Never two levels; a third press does nothing. |
+| Walk down | everyone | **Walking off a ledge onto a tile one level lower needs no hop** (owner playtest, after D3). It shows as a 0.25 s fall: the sprite starts a cliff face (6 art px) up and drops onto the lower ground, the shadow already there, and you are carried just clear of the edge. You are airborne for it (`player.air.kind === 'drop'`, verb 7) but it is free movement, so it gives **no** contact i-frames. Hop during the fall and it becomes a normal first hop from the lower level. Walking **up** a cliff is still blocked: a ledge is one-way. Ramps go both ways. |
+| Hop | everyone | A 0.45 s arc. The sprite rises up to 12 art px and its shadow stays on the ground, smaller. Airborne, ground enemies don't hurt you on contact (flyers and projectiles still do), and you pass over deep water. You can drop off a ledge onto any lower level: you land on the level of the tile under you. A hop reaches **one level up** (`K.HOP_UP`): hopping toward a higher tile lands you on it. It can't go up two. |
+| Extra hop | everyone (`K.EXTRA_HOPS = 1`) | Hop again in the air: a new arc (more airtime, so a wider gap) that reaches one level higher still (`K.EXTRA_UP`), **two** above the take-off. Never more than two (`K.MAX_UP`); a third press does nothing. |
 | Glide | Flying | Hold hop past the top of the arc: the airtime stretches to 1.2 s (a 3-tile gap). Let go and you drop in 0.18 s. |
 | Slide | everyone | 0.55 s at ×1.9 the way you move (or face), then 0.9 s of cool-down. Ground only, with a dust trail. |
-| Climb | Fighting, Bug, Ghost | Walk up (or down) a cliff face one level at a time, at half speed. |
+| Climb | Fighting, Bug, Ghost | Walk up (or down) a cliff face one level at a time, at half speed. A climber walking down climbs as before; it never drops. |
 | Surf | Water | Cross deep water (a liquid tile with liquid on all 4 sides) at ×1.35. Anyone else is blocked by deep water unless airborne; the shallow rim only slows, as before. |
 | Bounce pad | everyone | Stepping on a pad throws you 2 tiles its way, along a fixed 0.85 s arc, onto the plateau above, with a squash on landing. |
 
@@ -1559,9 +1561,13 @@ glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
 - `player.js` `update`: `G.ExpVerbs.step` before the move and `after` once collided (the landing). Airborne, you are not
   "in" liquid.
 - `player.js` `draw`: the lift, the smaller shadow, the wake / dust, and the squash.
-- `world.js` `collideZone`: the player's own tile rule, its airborne levels and a climber's reach. Enemies keep D1's rule
-  exactly.
-- `combat.js`: no ground contact while airborne.
+- `world.js` `collideZone`: the player's own tile rule, its airborne levels and a climber's reach. Walking down a ledge
+  (`G.World.ledgeDown`): a tile exactly one level below doesn't block; the player drops (`G.ExpVerbs.drop`), any other
+  walker (enemies, the local co-op partner) just steps down.
+- `pathing.js`: the BFS field and the straight-line check treat a ledge as a one-way edge, so a ground enemy walks down
+  a ledge but still paths round to a ramp to go up. Flyers, ghosts and bosses ignore terrain, as before. It is pure, so
+  the same zone gives the same field.
+- `combat.js`: no ground contact while airborne, except during a drop.
 - `pad.js` `gameplay`, and `held`.
 - `hud.js`: the buttons.
 - `coop.js`: a guest's frame goes through the `net.frame` seam too, with no mate, and the air rows are applied both ways.
@@ -1570,13 +1576,15 @@ glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
 - `expedition.js`: `verbs.js` in `SCRIPTS`.
 
 **The `x` block v2** `{xv: 2, m, z, th, a}`: the terrain part is v1's, and `a` is the airborne state.
-- `a.p` is the player's air row `[lift, verb, layer × 2, phase cs, airtime cs, hops]`. Verbs: 1 hop, 2 glide, 3 bounce,
-  4 slide, 5 surf, 6 climb.
+- `a.p` is the player's air row `[lift, verb, layer × 2, phase cs, airtime cs, hops, drops]`. Verbs: 1 hop, 2 glide,
+  3 bounce, 4 slide, 5 surf, 6 climb, 7 drop (walking off a ledge). `drops` is a running count of falls off a ledge,
+  added with walking down. It is optional: a row without it (an older replay or snapshot) reads as before, and an older
+  reader ignores it, so the block stays v3.
 - `a.q` holds the co-op players' rows: by uid in a host frame (the host and the other guests), by name in a snapshot (the
   partners in the air or using a verb).
 - `a.e` lists the leaping enemies, `[id, lift, …]`. Their layer is the zone's under them.
 - A viewer plays the rest of an arc from its phase. A hop that came and went between two snapshots (the hop counter went
-  up) is still played, so a 1-a-second live view shows the hops too.
+  up) is still played, so a 1-a-second live view shows the hops too. So is a drop (the drop counter went up).
 - **Co-op:** the host's frames carry every row. A guest's frames to the host carry its own row (`net.frame` with no mate).
   The host keeps it on the mate for its frames and snapshots.
 - **Replays** keep `a` out of the slow state, in frame field 7, written only when it changes. A hop costs a few bytes, not
@@ -1586,7 +1594,12 @@ glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
 
 **Deviations from the study:**
 - Everyone has the extra hop for now. The study gives it to an item; D5 can set `K.EXTRA_HOPS` to 0 and raise
-  `player.extraHops` with the item.
+  `player.extraHops` with the item. More extra hops add airtime, never a third level (`K.MAX_UP = 2`).
+- **Ledges (owner playtest, after D3):** you walk down a ledge and hop up one. D2 first shipped the GBA rule (no walking
+  off a ledge, hop down only, the extra hop as the only way up). Now a hop reaches one level up and the extra hop two.
+  `G.Expedition.DV` stays 2: replays are recorded snapshots, not inputs, so a Classic replay recorded on the old rules
+  plays back exactly as it was, and no Expedition co-op run can start yet (the lobby's dv gate is the only other
+  reader). The board's Classic scores stay comparable enough not to split it.
 - Slide is on B, not RB, so RB keeps "next move" as in every base run.
 - A pad re-arms 0.5 s after you land, not 25 s: in 2D it's a route up.
 
@@ -1594,7 +1607,7 @@ glides, and Charizard glides. `G.ExpVerbs.verbsOf(types)` is the table.
 - Shed Shell-style slide i-frames, +25% airborne damage, and the landing shockwave. These are items and passives for
   D5 / D6; `player.air` and `player.landed` are ready for them.
 - Deep water blocks only the player: ground enemies still wade it, and pathing is not deep-aware yet (D3).
-- The local co-op partner has no verbs: its AI and player 2's pad walk as in D1.
+- The local co-op partner has no verbs: its AI and player 2's pad walk as in D1 (it steps down a ledge with no fall).
 - Hazards (mud, brambles, burning ground) are not passed over yet; they arrive with Survival.
 - Chasm and lava gaps for gliding arrive with the later maps.
 - Sound: the verbs reuse the select click.
@@ -1726,13 +1739,17 @@ tiers and medals.
 - `node overworld/tests/micasurvivor_expedition_terrain_test.mjs` (DLC D1): the generator's determinism (same
   seed + map + zone, no `Math.random`), heights and steps, every walkable tile reachable (the game's own
   `walkable` + `maskAt`, on the run's zone and 45 others, with props as walls too), the player blocked by a cliff and
-  up / down a ramp, a ground enemy going round to the ramp (and never up without one), a flyer straight over, the
+  up / down a ramp, walking down a ledge, a ground enemy going round to the ramp (and never up without one) but
+  straight down a ledge (round a rock bar by `G.Path`'s field, not by the ramp), a flyer straight over, the
   minimap shading, the `x` block on snapshots, host frames and the replay, a fresh page rebuilding the same zone as
   replay viewer, live spectator and co-op guest, a later Normal run without a zone, and the painted zone at desktop
   and phone size (`SHOTS=<dir>` saves screenshots). (D2: it checks `xv: 2`, and an unknown schema is now `xv: 99`.)
 - `node overworld/tests/micasurvivor_expedition_movement_test.mjs` (DLC D2), on hand-made zones at a normalised speed:
-  - hopping off a ledge onto the level below, with no ground contact damage in the air (a flyer still hits);
-  - the extra hop reaching exactly one level;
+  - walking down a ledge (a 0.25 s drop onto the level below, carried clear of the edge, with no contact i-frames),
+    walking up into a cliff still blocked, and hopping off a ledge with no ground contact damage in the air (a flyer
+    still hits);
+  - a single hop reaching one level up (not two), the extra hop two, a third press nothing, never three levels; the
+    extra hop's airtime carrying you over a 2-tile gap one hop splashes into;
   - Pidgey gliding across a 3-tile deep pond, Squirtle surfing it at ×1.35, Machop climbing a cliff at half speed and
     back down, and Charmander (and the wrong types) doing none of those;
   - the type table;
@@ -1742,10 +1759,11 @@ tiers and medals.
   - the `x` block v2 on snapshots, host and guest frames, the replay's field 7, and a v1 rewrite of the replay still
     loading;
   - a fresh page as co-op guest (a host frame through `G.Net`'s handler), live spectator and replay viewer, seeing the
-    player in the air;
+    player in the air, and the falls off a ledge (mid-fall rows, and ones that came and went between two frames);
+    an older Classic replay (6-field rows) still loading;
   - the phone layouts (844 × 390 and 667 × 375) with taps, the double tap and the slide.
 
-  `SHOTS=<dir>` saves mid-hop / mid-glide / mid-surf screenshots at desktop and phone size.
+  `SHOTS=<dir>` saves mid-hop / mid-glide / mid-surf / mid-bounce / mid-drop screenshots at desktop and phone size.
 - `node overworld/tests/micasurvivor_expedition_classic_test.mjs` (DLC D3), fast-forwarded with `G.Game.debugStep`:
   - the menu: Classic playable and starting a Viridian Forest run, Survival and League "Coming soon", `DV` 2;
   - the plan: pure (no `Math.random`, the same twice, another seed another plan), all 8 event kinds per zone in time
