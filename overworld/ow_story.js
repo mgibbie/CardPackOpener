@@ -50,6 +50,11 @@ import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { unownPuzzleSpecial } from './unown_puzzle.js';
 import { checkRelicanthWailord, shouldDoBrailleRegicePuzzle } from './braille_puzzles.js';
+import { ensurePersonality, isMirageIslandPresent, mirageRndAsOf, updatePerDay, updateShoalTideFlag } from './time_events.js';
+import { setInvisibleMirageTowerMetatiles, setMirageTowerVisibility } from './mirage.js';
+import { setIcefallCaveCrackedIceMetatiles } from './icefall_ice.js';
+import * as RotatingGates from './rotating_gates.js';
+import { startScreenShake } from './ow_render.js';
 import { startCrystalSlots } from './ow_crystalslots.js';
 import { crystalCallbacksFor } from './crystal_callbacks.js';
 import { startCardFlip } from './minigames/cardflip/cardflip.js';
@@ -368,8 +373,35 @@ function returnShuckie() {
 	return 2;
 }
 // ENGINE_GOT_SHUCKIE_TODAY is one of Crystal's daily flags: it lapses at midnight
-function expireDailyFlags() {
+// ...and Emerald's once-a-day update (clock.c UpdatePerDay, time_events.js): the
+// Mirage Island value steps, the SHOAL items come due. The GBA runs it on every
+// map load (DoTimeBasedEvents) — here only on a map you TRAVEL into, never on the
+// boot load or a setup re-run. On the GBA those writes are free: nothing is saved
+// until you save. Here every story write is the save, so running it on boot would
+// change (and re-revision) the save merely by OPENING the game — on a pre-existing
+// save it seeds VAR_DAYS and a random Mirage value on every device that loads it,
+// and the hydration that just matched the server then reads the next sync as a
+// same-revision divergence. Deferring it loses nothing: the day steps compose
+// (updateMirageRnd steps every day passed at once), the Mirage check reads the
+// value as of today without storing it (mirageRndAsOf), and the SHOAL items are
+// only ever read by the hermit, who runs the update himself.
+function expireDailyFlags(travel) {
 	if (Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY') && Story.getVar('VAR_MP_SHUCKIE_DAY') !== localDay()) Story.clearFlag('ENGINE_GOT_SHUCKIE_TODAY');
+	if (travel) updatePerDay();
+}
+// what the current setup pass is: 'travel' (a map entered by moving), 'load' (the
+// boot load / a setup re-run, which must leave the save untouched) or null (not in
+// a setup pass: a script the player started)
+let _setupMode = null;
+// a special that holds its script (its `waitstate`) for `ms`, then runs `then`.
+// Resumes only the script that asked: a setup script that hit it was stopped.
+function specialWait(ms, then) {
+	const cur = cutscene.cur;
+	setTimeout(() => {
+		try { then?.(); } catch (e) { console.warn('[special] wait step failed', e); }
+		if (cur && cutscene.cur === cur) cutscene.resume();
+	}, ms);
+	return 'wait';
 }
 // ON_TRANSITION runs silently on map entry (sets story vars, positions NPCs).
 // It is setup only, so run the instant ops and bail at any waiting op — it must
@@ -441,8 +473,9 @@ export function applyRestedSceneOutcomes(mapName) {
 	}
 }
 
-export async function runMapSetupScripts(isBoot) {
-	expireDailyFlags();
+export async function runMapSetupScripts(isBoot, opts) {
+	const travel = !isBoot && !!(opts && opts.travel);
+	expireDailyFlags(travel);
 	syncRocketTakeover();             // the Radio Tower takeover's flags + 5F scene, before this map's coord events read them
 	world.restoreLockedCells();      // a reloaded map starts from its layout's doors, as the GBA's does
 	const evs = world.current?.map?.object_events || [];
@@ -453,6 +486,10 @@ export async function runMapSetupScripts(isBoot) {
 	reconcileAwakeningResolution();   // the decomp vars the Hoenn awakening's resolution leaves (awakening_sync.js)
 	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
+		_setupMode = travel ? 'travel' : 'load';
+		try { runSetupPass(); } finally { _setupMode = null; }
+	};
+	const runSetupPass = () => {
 		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runChamberWallScene(); } catch (e) { console.warn('[plot] chamber wall scene failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
@@ -1208,6 +1245,50 @@ export function runSpecial(name, store, op) {
 		case 'MauvilleGymPressSwitch': GymPuzzles.mauvilleGymPressSwitch(puzzleWorld()); return;
 		case 'MauvilleGymSetDefaultBarriers': GymPuzzles.mauvilleGymSetDefaultBarriers(puzzleWorld()); return;
 		case 'MauvilleGymDeactivatePuzzle': GymPuzzles.mauvilleGymDeactivatePuzzle(puzzleWorld()); return;
+		// Petalburg Gym's sliding room doors (gym_puzzles.js): VAR_0x8004 is the room
+		case 'PetalburgGymSlideOpenRoomDoors': {
+			const cur = cutscene.cur;
+			GymPuzzles.petalburgGymSlideOpenRoomDoors(puzzleWorld(), () => { if (cur && cutscene.cur === cur) cutscene.resume(); });
+			return cur ? 'wait' : undefined;
+		}
+		case 'PetalburgGymUnlockRoomDoors': GymPuzzles.petalburgGymUnlockRoomDoors(puzzleWorld()); return;
+		// Fortree Gym / Trick House Puzzle 6 (rotating_gates.js): the ON_TRANSITION
+		// resets the gates; the graphics are drawn from that state every frame
+		case 'RotatingGate_InitPuzzle': RotatingGates.initPuzzle(Story, world.current?.name); return;
+		case 'RotatingGate_InitPuzzleAndGraphics': return;
+		// MIRAGE ISLAND (Route 130's ON_TRANSITION; time_events.js). A mon that never
+		// had a personality value gets one here, saved with the party — on a real
+		// entry. The boot load (or a setup re-run) answers read-only: the value as of
+		// today, and a mon with no personality yet simply can't match. Rolling one
+		// there would change the save just by opening the game on Route 130.
+		case 'IsMirageIslandPresent': {
+			if (_setupMode === 'load') return set(isMirageIslandPresent(S.party, mirageRndAsOf()) ? 1 : 0);
+			updatePerDay();
+			let rolled = false;
+			for (const m of S.party || []) rolled = ensurePersonality(m) || rolled;
+			if (rolled) saveParty(S.party);
+			return set(isMirageIslandPresent(S.party) ? 1 : 0);
+		}
+		// MIRAGE TOWER (mirage.js). The shakes and the collapse are a screen shake; the
+		// disintegration leaves the sand the tower stood on (SetInvisibleMirageTowerMetatiles).
+		case 'SetMirageTowerVisibility': setMirageTowerVisibility(); return;
+		case 'StartMirageTowerShake': startScreenShake(900, 2, 0); return specialWait(900);
+		case 'StartPlayerDescendMirageTower': return;
+		case 'StartMirageTowerDisintegration': startScreenShake(1200, 2, 1); { const here = world.current?.name; return specialWait(1200, () => { if (world.current?.name === here) setInvisibleMirageTowerMetatiles(world); }); }
+		case 'StartMirageTowerFossilFallAndSink': return specialWait(400);
+		case 'DoMirageTowerCeilingCrumble': startScreenShake(700, 1, 2); return specialWait(700);
+		// field_specials.c ShakeCamera: VAR_0x8004/5 = vertical/horizontal pan,
+		// 0x8006 shakes, 0x8007 frames apart. Visual only, and it does not hold the
+		// script (it never did here: 14 scripts call it)
+		case 'ShakeCamera': {
+			const n = Story.getVar('VAR_0x8006') | 0, d = Story.getVar('VAR_0x8007') | 0;
+			startScreenShake(Math.max(200, Math.min(3000, n * Math.max(1, d) * 17)), Story.getVar('VAR_0x8005') | 0, Story.getVar('VAR_0x8004') | 0, Math.max(1, d) * 17);
+			return;
+		}
+		// SHOAL CAVE: the tide, latched as you come in from outdoors (time_events.js)
+		case 'UpdateShoalTideFlag': if (updateShoalTideFlag(world.lastWarpSource?.mapType)) S.shoalTideLatched = true; return;
+		// FireRed's Icefall Cave 1F ON_LOAD: re-crack the ice you stepped on (icefall_ice.js)
+		case 'SetIcefallCaveCrackedIceMetatiles': setIcefallCaveCrackedIceMetatiles(world, Story.getFlag); return;
 		// --- the Mossdeep Space Center multi battle (Emerald main story) ---
 		// Unported, no battle ran and VAR_RESULT never read 1, so the script fell
 		// through to SetCB2WhiteOut every time — and before that, ChooseHalfParty

@@ -2,7 +2,9 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import { choiceMenu } from './choice.js';
 import { phoneMenu } from './phone.js';
-import { VIEW_H, VIEW_W, drawsAboveTop, netActivityAt } from './engine.js';
+import { VIEW_H, VIEW_W, drawsAboveTop, getImage, netActivityAt } from './engine.js';
+import * as Story from './events.js';
+import { drawGates } from './rotating_gates.js';
 import { arcade, battle, blockers, cutscene, dialog, evolution, factorySpec, hud, items, npcs, player, portals, pvp, screen, sctx, services, trainers, world } from './ow_core.js';
 import { decoMenu, drawBaseDeco, drawDecoMenu, drawRadio, drawSocial, radioMenu, socialMenu } from './ow_features.js';
 import { drawWatchingBadge, frontier, frontierWatchers } from './ow_frontier.js';
@@ -23,7 +25,7 @@ import { safeSaveStr } from './safestore.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { INPUT_TRACE, heldKeys, owlog, tickStats } from './ow_input.js';
-import { drawFossilSpots, drawMuseum } from './ow_places.js';
+import { drawMuseum } from './ow_places.js';
 import { catchUpPostBattleScripts, refundPostBattleTry } from './ow_progression.js';
 import { drawGcMenu, drawVfMenu, gcMenu, vfMenu } from './ow_gamecorner.js';
 import { drawFollower, follower, updateFollower } from './ow_follower.js';
@@ -316,11 +318,11 @@ export function tick(now) {
 		items.draw(ctx, camX, camY);
 		drawBaseDeco(ctx, camX, camY);
 		drawMuseum(ctx, camX, camY);
-		drawFossilSpots(ctx, camX, camY);
 		drawLegendary(ctx, camX, camY);
 		drawAwakening(ctx, camX, camY);
 		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
 		blockers.draw(ctx, camX, camY);
+		drawGates(ctx, camX, camY, Story, world.current?.name, getImage);   // Fortree Gym / Trick House 6 (rotating_gates.js)
 		// sprites in y order so overlaps stack correctly. In the editor the player
 		// and follower are never drawn — you're looking at the map itself.
 		const sprites = editView.on

@@ -201,10 +201,10 @@ export class NPCs {
 		// its own script: draw it with the decomp's fossil sprite (fx/fossil.png,
 		// from pokefirered's object_events/pics/misc) as one still picture, so
 		// facing it runs that script. It used to be skipped as a prop below, which
-		// left both fossils invisible and unchoosable. Emerald's Mirage Tower /
-		// Desert Underpass fossils stay with their native overlay (ow_places.js).
-		if (/GFX_FOSSIL$/.test(ev.graphics_id || '') && ev.script && ev.script !== '0x0'
-			&& !/(MirageTower_4F|DesertUnderpass)$/.test(this.world.current.name || '')) {
+		// left both fossils invisible and unchoosable. Emerald's Mirage Tower 4F
+		// pair and the Desert Underpass fossil run their own scripts the same way
+		// now that the tower's specials are ported (mirage.js).
+		if (/GFX_FOSSIL$/.test(ev.graphics_id || '') && ev.script && ev.script !== '0x0') {
 			const fimg = await getImage('fx/fossil.png').catch(() => null);
 			if (fimg) { const n = new NPC(ev, fimg); n.deco = { img: fimg, sx: 0, sy: 0, w: 16, h: 16 }; return n; }
 			return null;

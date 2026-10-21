@@ -35,6 +35,9 @@ import { partyMenu } from './ow_menustate.js';
 import { ruinsFloorClosed, ruinsWallClosed } from './unown_puzzle.js';
 import { afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo } from './ow_transitions.js';
 import { crackedFloorStep, holeWarpFor } from './holes.js';
+import { icefallIceStep } from './icefall_ice.js';
+import { mirageTowerDoorClosed } from './mirage.js';
+import { checkGateCollision } from './rotating_gates.js';
 import {
 	cutMoveOpenDottedHoleDoor, cutMoveRuinValleyCheck, doBrailleDigEffect, doBrailleRegiEffect,
 	shouldDoBrailleDigEffect, shouldDoBrailleRegicePuzzle, shouldDoBrailleRegirockEffect, shouldDoBrailleRegisteelEffect,
@@ -434,6 +437,10 @@ async function crossConnection(hit) {
 // nudge the player toward the bike when a cracked floor stops them
 // on a map with a floor below, walking onto a crack is allowed: you fall (holes.js)
 player.canFall = () => !!holeWarpFor(world.current?.name);
+// Fortree Gym / Trick House Puzzle 6: a step into a gate's arm turns it, or is
+// stopped by it (rotating_gates.js; asked only once nothing else blocks the step)
+player.gateBlocks = (dir, x, y) => checkGateCollision(Story, world.current?.name, dir, x, y,
+	(cx, cy) => { const v = world.gridAt(cx, cy); return v == null ? 1 : (v >> 10) & 3; }, { fast: !!player.biking });
 player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
 player.onHop = () => sfx('ledge');
 // ONE bump handler: the wall thud (throttled — tryMove fires every held frame)
@@ -478,12 +485,19 @@ player.onArrive = () => {
 	// Mt. Pyre): drop through to the floor below at the same spot (holes.js)
 	const fallTo = crackedFloorStep(world, player);
 	if (fallTo) { fallThroughFloor(fallTo); return; }
+	// Icefall Cave 1F's thin ice cracks under you; cracked ice breaks, and you drop
+	// to B1F at the same spot (icefall_ice.js)
+	const ice = icefallIceStep(world, player.tx, player.ty, Story);
+	if (ice === 'break') { fallThroughFloor('MAP_FOUR_ISLAND_ICEFALL_CAVE_B1F'); return; }
+	if (ice === 'crack') sfx('hit_weak');
 	// warp tile?
 	let w = world.warpAt(player.tx, player.ty);
 	// a Ruins of Alph chamber's floor is solid until its UNOWN PUZZLE is solved
 	if (ruinsFloorClosed(world.current.name, w)) w = null;
 	// ...and its item-room wall stays a wall until it opens
 	if (ruinsWallClosed(world.current.name, w)) w = null;
+	// ...and Route 111's Mirage Tower door is sand while the tower is not there (mirage.js)
+	if (mirageTowerDoorClosed(world.current.name, w)) w = null;
 	// an ARROW warp (a cave mouth's MB_*_ARROW_WARP) is taken by heading its way,
 	// never by stepping onto it from the side (field_control_avatar.c TryArrowWarp
 	// wants the arrow's direction held). Regice's lap runs along Island Cave's

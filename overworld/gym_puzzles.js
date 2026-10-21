@@ -121,6 +121,42 @@ export function mauvilleGymDeactivatePuzzle(w) {
 	}
 }
 
+// ---------- Petalburg Gym (Emerald) ----------
+// Each trainer room's doors are a 1x2 sliding door. Beating the room's trainer
+// slides them open (PetalburgGymSlideOpenRoomDoors: five frames, the last the
+// open door), and the gym's ON_LOAD re-opens every room whose trainer is beaten
+// (PetalburgGymUnlockRoomDoors: straight to the last frame). Both were unhandled,
+// so the doors only ever showed shut (the rooms' door scripts gate on the trainer
+// flags, so the way in still worked). VAR_0x8004 names the room.
+export const PETALBURG_SLIDING_DOOR = [0x218, 0x219, 0x21A, 0x21B, 0x21C];   // METATILE_PetalburgGym_SlidingDoor_Frame0..4
+// PetalburgGymSetDoorMetatiles: room -> the top cell of each of its doors
+export const PETALBURG_DOORS = {
+	1: [[1, 104], [7, 104]], 2: [[1, 78], [7, 78]], 3: [[1, 91], [7, 91]], 4: [[7, 39]],
+	5: [[1, 52], [7, 52]], 6: [[1, 65]], 7: [[7, 13]], 8: [[1, 26]],
+};
+// both halves stay impassable whatever the frame (the door is talked to, not walked through)
+export function petalburgGymSetDoorMetatiles(w, room, metatile) {
+	for (const [x, y] of PETALBURG_DOORS[room] || []) {
+		w.set(x, y, metatile, true);
+		w.set(x, y + 1, metatile + 8, true);   // + METATILE_ROW_WIDTH: the door's lower half
+	}
+}
+export function petalburgGymUnlockRoomDoors(w) {
+	petalburgGymSetDoorMetatiles(w, w.getVar('VAR_0x8004'), PETALBURG_SLIDING_DOOR[4]);
+}
+// the slide: frame 0 at once, then one frame every other tick (sSlidingDoorNextFrameDelay
+// {0, 1, 1, 1, 1}); `done` once the door is open (the script's waitstate)
+export function petalburgGymSlideOpenRoomDoors(w, done, frameMs = 33) {
+	const room = w.getVar('VAR_0x8004');
+	let f = 0;
+	const next = () => {
+		petalburgGymSetDoorMetatiles(w, room, PETALBURG_SLIDING_DOOR[f]);
+		if (++f < PETALBURG_SLIDING_DOOR.length) setTimeout(next, frameMs);
+		else if (done) done();
+	};
+	next();
+}
+
 // the maps whose ON_LOAD script lays out one of the puzzles above. main.js only
 // runs ON_LOAD for these: game-wide it is 124 maps / 506 setmetatile ops that
 // have never executed, some of which raise walls whose unlock is not ported.
@@ -133,4 +169,11 @@ export function mauvilleGymDeactivatePuzzle(w) {
 // FLAG_CINNABAR_GYM_QUIZ_N is set — never ran, so leaving and coming back shut
 // door 1 again for good (2026-10-07, Instinct).
 export const ONLOAD_MAPS = new Set(['VermilionCity_Gym', 'MauvilleCity_Gym', 'Hoenn2_MauvilleCity_Gym',
-	'PokemonMansion_1F', 'PokemonMansion_2F', 'PokemonMansion_3F', 'PokemonMansion_B1F', 'CinnabarIsland_Gym']);
+	'PokemonMansion_1F', 'PokemonMansion_2F', 'PokemonMansion_3F', 'PokemonMansion_B1F', 'CinnabarIsland_Gym',
+	// + Petalburg Gym: its ON_LOAD re-opens the beaten rooms' sliding doors (above)
+	'PetalburgCity_Gym', 'Hoenn2_PetalburgCity_Gym',
+	// + Icefall Cave 1F: its ON_LOAD re-cracks the ice you stepped on (icefall_ice.js)
+	'FourIsland_IcefallCave_1F',
+	// + Shoal Cave: its ON_LOAD lays the SHOAL SALT piles / SHOAL SHELL stones you
+	// have not taken yet (FLAG_RECEIVED_SHOAL_*: ow_features.js shoalDig)
+	'ShoalCave_LowTideInnerRoom', 'ShoalCave_LowTideLowerRoom', 'ShoalCave_LowTideStairsRoom']);

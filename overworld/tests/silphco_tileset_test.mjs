@@ -65,6 +65,11 @@ try {
 	page.on('pageerror', e => errors.push(String(e.message)));
 	page.on('console', m => { if (m.type() === 'error') consoleErr.push(m.text()); });
 	await page.evaluateOnNewDocument(st => {
+		// section 2 reads which files were fetched from Resource Timing, whose buffer
+		// holds 250 entries by default: the boot alone fills it, so the later tileset
+		// fetches were never recorded (main lost the metatiles JSON; any new module
+		// pushed condominiums_tiles.png out as well). Make room for the whole run.
+		try { performance.setResourceTimingBufferSize(20000); } catch (e) {}
 		if (sessionStorage.getItem('seeded')) return;
 		sessionStorage.setItem('seeded', '1');
 		localStorage.clear();

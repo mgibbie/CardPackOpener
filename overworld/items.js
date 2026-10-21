@@ -207,7 +207,7 @@ export class Items {
 				// berries REGROW: harvested state comes from a 24h timestamp, not
 				// the permanent collected set (legacy entries there are ignored,
 				// so pre-regrowth harvests come back on the next visit)
-				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.berryHarvested(key) });
+				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.berryHarvested(key), ev: o });
 			}
 		}
 		// authentic HM-terrain chokepoints injected in code (map data is read-only):
@@ -254,7 +254,7 @@ export class Items {
 			Bag.registerName(b.id, b.pretty.toUpperCase());
 			return `Found ${b.pretty.toUpperCase()}!`;
 		}
-		const t = this.trees.find(t => t.tx === tx && t.ty === ty);
+		const t = this.liveTrees().find(t => t.tx === tx && t.ty === ty);
 		if (t) {
 			if (t.harvested) return 'The tree is bare. (Berries regrow in a day.)';
 			t.harvested = true;
@@ -266,10 +266,17 @@ export class Items {
 		return null;
 	}
 
+	// the berry trees standing right now. A tree's object can carry a hide flag:
+	// Route 130's LIECHI tree is MIRAGE ISLAND's, hidden by FLAG_TEMP_HIDE_MIRAGE_ISLAND_BERRY_TREE
+	// whenever the island is down (the route's ON_TRANSITION sets it, after this list
+	// was built), so it is read live. Before, the tree stood in the open sea, solid and
+	// pickable, every day.
+	liveTrees() { return this.trees.filter(t => !(t.ev && objectHiddenByFlag(t.ev))); }
+
 	// visible balls, berry trees, and field obstacles are solid
 	occupied(tx, ty) {
 		return this.balls.some(b => !b.hidden && b.tx === tx && b.ty === ty)
-			|| this.trees.some(t => t.tx === tx && t.ty === ty)
+			|| this.liveTrees().some(t => t.tx === tx && t.ty === ty)
 			|| this.fieldObjs.some(o => o.tx === tx && o.ty === ty);
 	}
 
@@ -339,7 +346,7 @@ export class Items {
 			const x = b.tx * META - camX, y = b.ty * META - camY;
 			this.drawBall(ctx, x, y);
 		}
-		for (const t of this.trees) {
+		for (const t of this.liveTrees()) {
 			const x = t.tx * META - camX, y = t.ty * META - camY;
 			// trunk + canopy
 			ctx.fillStyle = '#734d29';

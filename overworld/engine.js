@@ -1024,6 +1024,9 @@ export class Player {
 			this.onBump?.(nx, ny);
 			return;
 		}
+		// a rotating gate's arm across the step (CheckForObjectEventCollision asks only
+		// once nothing else is in the way): it turns and lets you through, or it can't
+		if (this.gateBlocks && this.gateBlocks(dir, nx, ny)) { this.moveOutcome = 'gate'; this.onBump?.(nx, ny); return; }
 		this.beginMove(nx, ny, META, false);
 		this.moveOutcome = 'moved';
 	}

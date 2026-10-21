@@ -25,7 +25,24 @@ export function cameraPos() {
 	// center on player sprite (feet tile center), GBA-style; no bounds clamp
 	const cx = Math.round(player.px + META / 2 - VIEW_W / 2);
 	const cy = Math.round(player.py + META / 2 - VIEW_H / 2 - 8);
-	return [cx, cy];
+	const [sx, sy] = shakeOffset();
+	return [cx + sx, cy + sy];
+}
+
+// ---------- screen shake ----------
+// the decomps' camera shakes (ShakeCamera, the Mirage Tower's collapse): the view
+// jolts by `amp` px, flipping every `period` ms, until `until`. Reduced motion: none.
+const shake = { until: 0, ampX: 0, ampY: 0, period: 33 };
+export function startScreenShake(ms, ampX = 1, ampY = 1, period = 33) {
+	if (REDUCED_MOTION_OW) return;
+	Object.assign(shake, { until: performance.now() + ms, ampX, ampY, period: Math.max(16, period) });
+}
+function shakeOffset() {
+	if (!shake.until) return [0, 0];
+	const t = performance.now();
+	if (t >= shake.until) { shake.until = 0; return [0, 0]; }
+	const s = Math.floor(t / shake.period) & 1 ? 1 : -1;
+	return [s * shake.ampX, s * shake.ampY];
 }
 
 // day/night colour wash over the world (not menus/HUD). Keyed to the in-game

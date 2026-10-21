@@ -316,6 +316,26 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				'and the remote copy is still preserved', k2 ? k2.reason : 'nothing stashed');
 		}
 
+		// ===== a save from before the daily update / personality values =====
+		// No VAR_DAYS, no Mirage value, no personality on the party (the harness seeds
+		// exactly that story + party). Loading it must change nothing: the daily update
+		// and the personality roll run on a real map entry, never on the boot load, so
+		// the save stays byte-identical and nothing is pushed.
+		{
+			await newSession();
+			const before = await localFp();
+			const r = await page.evaluate(() => {
+				const st = JSON.parse(localStorage.getItem('magepunk_story') || '{}');
+				const party = JSON.parse(localStorage.getItem('magepunk_party_v1') || '[]');
+				return { dirty: window.__ow.owDirtyForTest(), days: (st.vars || {}).VAR_DAYS ?? null, mh: (st.vars || {}).VAR_MIRAGE_RND_H ?? null, pers: party.some(m => m && m.personality != null) };
+			});
+			A(r.days === null && r.mh === null && !r.pers, 'old-shape save: loading it adds no VAR_DAYS, Mirage value or personality', JSON.stringify(r));
+			A(r.dirty === false, 'old-shape save: and loading it leaves nothing unsaved', JSON.stringify(r));
+			await flush(); await sleep(400);
+			const after = await localFp();
+			A(after.rev === before.rev && srvFp().rev === before.rev, 'old-shape save: so no push and no revision bump', `${before.rev} -> ${after.rev} (server ${srvFp().rev})`);
+		}
+
 		// ===== THE FRESH-DEVICE CASE (regression from the first revision fix) =====
 		// Both sides at revision 0 is not a rare tie — before revisions existed EVERY
 		// save read as 0, so a signed-in fresh device hits it on its very first load
