@@ -1712,7 +1712,7 @@ tiers and medals.
 - `expedition.js`: Classic enabled, `classic.js` in `SCRIPTS`, `DV` 2.
 
 **Not yet (D4+):**
-- the League roster, in-run evolution, Maturity, kits (D4): a Classic run uses your base partner;
+- the League roster, in-run evolution, Maturity, kits (D4: done, see "DLC D4" below; a Classic run used your base partner);
 - rarity level-ups, vitamins, items with caps (D5), Ultimates (D6), the ₽ economy and interactables (D7);
 - recruiting alphas (D8: the `alpha` drop in `tickSpecials` is where the Friend Ball goes), League encounters, shinies
   (a Classic run rolls none);
@@ -1720,6 +1720,125 @@ tiers and medals.
 - boss phases at 66 / 33 % and escorts; Mt. Moon and Cerulean (D12: `MAPS` in `classic.js`);
 - starting Classic as a co-op run (the frames, snapshots and guest view are ready);
 - ground enemies routing round deep water (D2's note: they still wade it).
+
+## DLC D4: League roster and evolution
+
+**An Expedition run is played as a League member**: you pick it under Classic ("League member: Bulbasaur", then its
+screen), it starts at its first stage with one move of its own 4-move **kit**, learns the rest at Lv 2 / 4 / 7, **evolves
+mid-run** at its real levels (with a choice where the family branches), and a stage that can't evolve any more **matures**
+at Lv 24 and 44. Its stats come from its **real base stats** (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.1 and the D4
+row). The code is `js/expedition/league.js` (`G.ExpLeague`, numbers in its `K`); the data is `js/expedition/league-data.js`,
+**generated** by `node tools/micasurvivor/gen_league.mjs`. Base modes are unchanged: the D0a fixtures pass as recorded, also
+with the Expedition code force-loaded.
+
+**The roster** (owner, 2026-10-19: 249 League entries). D4 builds **78**:
+
+| Built in D4 | Why |
+|---|---|
+| The **62 three-stage families of Gen 1-4** (D4a in full) | The study's own first split. It holds every evolution shape: linear lines, babies (Pichu, Cleffa, Happiny...), stones, trades, two-way branches (Oddish, Poliwag, Ralts, Wurmple) and the pseudo-legendaries |
+| The **11 Gen 1-2 Mega families** (Slowpoke, Kangaskhan, Staryu, Pinsir, Magikarp, Aerodactyl, Onix, Scyther, Heracross, Skarmory, Houndour) | D4c's first part: the two-stage lines (Magikarp's Lv 40, Slowpoke's and Scyther's branches) and the first members that **never evolve**, so Maturity is there from the start. The Megas themselves come with D4c (they need Mega sheets) |
+| The **5 Kanto legendaries** (Articuno, Zapdos, Moltres, Mewtwo, Mew) | D4d's first part: the Expedition's own launch-map legendaries (Mew guards Viridian's shrine, Zapdos Cerulean Cape), and PokéBonk's 5 |
+
+The other **170** are stubs in the data (`stubs: [{dex, batch}]`), listed under the roster: **D4b** the 54 three-stage
+families of Gen 5-9, **D4c** 31 Mega families (the owner's 32 count Snorunt twice, as Glalie and as Froslass: one family
+with a branch), **D4d** 85 legendaries and mythicals (Cosmog's line is three-stage, so D4b).
+
+**Unlocking:**
+- **Free:** the starter trios (owner: "the starter trios free, as in PokéBonk"): the 12 of Gen 1-4. Bulbasaur is the
+  default.
+- **Every other member has a challenge**, read from the Expedition save's counters at the end of each run. By rank (the
+  final stage's base-stat total: under 470 common, 470-534 uncommon, 535+ rare), in turn:
+
+  | Rank | Challenges |
+  |---|---|
+  | Common | finish 1 / 3 Expedition runs, KO 150 Pokémon with a member of its type, reach zone 2, reach Lv 12 |
+  | Uncommon | KO 500 with a member of its type, beat 2 guardians, evolve 2 times, reach Lv 20, reach zone 3 |
+  | Rare | win a map, beat 6 guardians, evolve 5 times, reach Lv 30, KO 1,500 with a member of its type |
+  | The 600 lines (Dratini, Larvitar, Bagon, Beldum, Gible) | win 2 maps and reach Lv 35 |
+  | Legendary | Mew: win 3 times (beat it at its shrine). The birds: KO 1,000 with an Ice / Electric / Fire member and win a map. Mewtwo: 30 League members and 5 wins |
+
+- **A completed challenge** puts the member in the save's `league.met`. **In D4 a met member plays at once**
+  (`K.PLAY_MET`); D8 brings PokéBonk's catch (a completed challenge spawns the wild encounter you weaken and catch, which
+  adds it to `league.own`). The run-over screen names the new members ("New League member: Kangaskhan!").
+- **The pick** is this device's (`localStorage micasurvivorexp_pick`): a preference, not progress. A pick you can't play
+  falls back to Bulbasaur. `G.Modes.plan` puts it in the run's `dex` (so the replay header names the member).
+
+**Stats from base stats** (study 2.1, rescaled to MicaSurvivor's units; `K`):
+
+| Stat | Rule |
+|---|---|
+| Max HP | 70 + 0.45 × HP (the base game's own formula, PokéBonk's 70 + 45 f) |
+| Armor | (6 × Def + 3 × Sp. Def) / 100 points; each point is 1 % less damage taken, up to 20 % |
+| Speed | 105 × (0.92 + 0.12 × Speed / 100) (105 is the base game's speed at 65 Speed) |
+| Attack | physical 1.1 × (0.82 + 0.2 × Atk / 100), special the same with Sp. Atk. The higher is the player's attack; a move of the other class is scaled down to its own (the real games' class of each of our 66 moves; status moves aren't scaled) |
+
+The base upgrades of that Pokémon (the shop's) still apply, as they did in D3.
+
+**The passive:** a role (from the final stage's best stats: Healer +0.6 HP/s, Assault +8 % damage, Defender -6 % damage
+taken, Speedster +6 % speed) and an ability of the base game's 54 (the final stage's), both kept through every evolution.
+
+**The kit:** 4 of our own 66 moves (owner #12: hand-picked from our move set). The generator scores them by what the line
+really learns (the overworld's level-up learnsets first) and its types, and a hand table (`HAND`) sets the 47 that read
+wrong or need a signature. The first is learned at the start; Lv 2, 4 and 7 add the others, said on the level-up screen
+("Kit move: Flame Wheel (2/4)"). **The kit owns the 4 slots:** a League run gets no new-move cards (`pl.xkit`), so its
+level-ups are move upgrades, move evolutions and stats. (D5 brings the other moves the line learns.)
+
+**Evolution** (the real data: the overworld's `species_extra.json` evolution tables and `species_battle.json` base stats;
+the generator adds the 7 newer evolutions those Gen 1-4 tables lack, each cited: Obstagoon, Annihilape, Ursaluna,
+Mamoswine, Mr. Mime from Mime Jr., Mr. Rime, Kleavor):
+- **When:** at the level-up, at the real level. A stone, trade, friendship or move evolution gets a level (study 2.1):
+  18 from a three-stage family's first stage (the babies), 30 from a two-stage one's, 36 from a middle stage, and never
+  sooner than 6 levels after the stage before. PokéBonk's overrides: Caterpie, Weedle and Wurmple at 8 / 36, Magikarp
+  at 40.
+- **One target:** it evolves as the level-up screen opens (a flash, "Charmander evolved into Charmeleon!"): the new
+  stage's sprite, types (so its verbs: Charizard glides, Gallade climbs), stats, and HP up to at least 50 % then +30 %
+  of max.
+- **A branch** (Oddish, Poliwag, Slowpoke, Scyther, Wurmple, Ralts): that level-up's cards **are** the choice, one gold
+  card per form with its sprite ("What does Kirlia evolve into?"). A reroll keeps them; the pick is that level's card. The
+  choice is offered at the earliest of its levels (Kirlia: 30).
+- **Maturity:** at Lv 24 and 44, a stage that can't evolve further gets +12 % damage and max HP (Kangaskhan at 24 and
+  44; Charizard only at 44, since Charmeleon was still evolving at 24). D6's Ultimate tier will read it.
+
+**Determinism and viewers:** nothing in D4 is random (the kit, the levels and the stats are data; a branch is the
+player's choice), so there is no stream to seed. Viewers are told:
+- **The `x` block v4** `{xv: 4, m, z, th, a, c, l}`: `l` holds the League rows `[member, form, kit moves unlocked,
+  Maturity, evolutions]`. `l.p` is the watched (or sending) player's, `l.q` the co-op players' (by uid in host frames, by
+  name in snapshots). A co-op guest sends its own row, and the host shows the guest's form on its puppet and in its own
+  snapshots.
+- A viewer's puppet takes the form's sprite (`G.ExpLeague.applyRow`). A live snapshot's `me` already names the form; a
+  replay's header names the member and `l` (in the slow state) the form, so seeking shows Ralts, Kirlia, then Gallade.
+- The v1-v3 readers are kept: a block without `l` shows everyone as the snapshot draws them.
+
+**Versions:** `G.Expedition.DV` is now **3** (a run means something new). dv-1 and dv-2 replays and snapshots still play
+without a notice; a co-op lobby needs the same dv, as before.
+
+**Saved and merged** (the Expedition save `micasurvivorexp:<user>`, never the base save): the sets `league.met` (challenges
+done), `league.own` (D8's catches; empty in D4) and `league.played`; the counters `kos`, `ko.t.<type>`, `guardians`,
+`lg.evo`, `lg.mat`, `lg.lv`, `lg.runs.<dex>` and `lg.best.<dex>`. The merge is the save's own (the union of each set, the
+max of each counter), on the client and on the server, so a member never goes away. **No server change:** the server
+already takes any counter or set name.
+
+**Assets:** none. Every stage is an existing sprite; the screen, the note and the evolution flash are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on a field only Expedition code
+sets):
+- `core/hooks.js`: two new seams, `levelup.offer` (first: an Expedition League run's branch cards) and `levelup.cards`
+  (reduce: the level's news).
+- `systems/levelup.js`: the two seams, and no new-move cards when `pl.xkit`.
+- `ui/run-ui.js`: the level-up's note (`list.note`), an evolution card's sprite (`c.sprite`), the `xevo` card style.
+- `ui/modes-ui.js` + `index.html`: "League member: X" under Classic and the League screen (`#modes-league`).
+- `systems/modes.js`: an Expedition run's `dex` is the League pick. `systems/expedition.js`: `DV` 3, the two scripts,
+  `leaguePick()`.
+- `expedition/core.js`, `expedition/terrain.js`: `x` v4 and the League's hooks.
+
+**Not yet:**
+- the catch (D8): a met challenge plays at once (`K.PLAY_MET`);
+- the other 170 entries (D4b / D4c / D4d), the Megas (D4c) and the legendaries' own encounters (D4d);
+- moves from the line's learnset and from other League members of your type at level-ups, vitamins and rarities (D5);
+- signature Ultimates by evolution tier (D6: it can read the row's Maturity and evolutions);
+- PokéBonk's XP curve (8 + 5.5 L + L^1.8): Classic still uses the base one, so whether a run reaches a family's last
+  evolution (Dragonite and Tyranitar at 55) is for D5's tuning;
+- the League pick for a co-op guest (co-op Expedition runs can't start yet; the frames already carry the rows).
 
 ## Tests
 
@@ -1780,6 +1899,27 @@ tiers and medals.
   - the zone line and the HUD at desktop and phone (844 × 390) size.
 
   `SHOTS=<dir>` saves each event, the altar, the guardian, the portal, the shrine and the victory at desktop and phone size.
+- `node overworld/tests/micasurvivor_expedition_league_test.mjs` (DLC D4), fast-forwarded with `G.Game.debugStep` and the
+  real level-up screen:
+  - the data (in Node): 78 members + 170 stubs = the owner's 249 entries (248 families), the 12 starters free, every kit 4
+    of our moves, every stage's base stats and evolutions the overworld's own (or one of the 7 cited newer ones), the real
+    levels and PokéBonk's overrides; the real server handler merging two devices' League sets and counters;
+  - the League pick: "League member: Bulbasaur" before any Expedition code loads, the screen (78, 12 available, a member's
+    kit with its levels, evolution line, ability and challenge, the later batches), a locked member not pickable, picking
+    Charmander, Esc, the run started as Charmander; no Spanish;
+  - stats from base stats (HP, armor, speed, physical / special per move) for Charmander, Bulbasaur and Squirtle;
+  - the kit at Lv 2 / 4 / 7 with the screen's note, and no new-move cards;
+  - Charmander -> Charmeleon (16) -> Charizard (36): sprite, types, glide, stats, HP back up, Flame Wheel rescaled; no
+    Maturity at 24, Maturity 1 at 44; the run-over lines;
+  - the challenges after that run (Kangaskhan and Caterpie met, Dratini not), the save in the browser, a reload,
+    `ExpSave.merge` both ways, the base save byte-equal;
+  - Kangaskhan's Maturity at 24 and 44; Ralts -> Kirlia, the branch cards at 30 (a reroll keeps them), Gallade (climbs),
+    its Maturity at 44;
+  - the `x` block v4's `l` on snapshots, host and guest frames; a fresh page as co-op guest (through `G.Net`), as the host
+    of a guest, live spectator and replay viewer (Ralts, Kirlia, Gallade while seeking); a v3 block without `l`;
+  - the League screen and the level-up screen with its note at desktop and phone (844 x 390, taps) size.
+
+  `SHOTS=<dir>` saves the League pick, a kit unlock and an evolution choice at desktop and phone size.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

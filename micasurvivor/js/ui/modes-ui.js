@@ -39,6 +39,7 @@ G.ModesUI = (() => {
     closeParty(true);
     closeTeam(true);
     closeCoop(true);
+    closeLeague(true);
     render();
   }
 
@@ -80,7 +81,11 @@ G.ModesUI = (() => {
     // DLC D0b: the Expedition group (js/systems/expedition.js): "Coming soon" (reachable, not startable) until enabled
     const X = G.Expedition;
     $('modes-exp-h').textContent = X.MODES.some(X.enabled) ? 'Expedición' : 'Expedición · modos nuevos (próximamente)';
-    $('modes-exp').innerHTML = X.MODES.map(expCard).join('');
+    // (DLC D4: Classic carries "League member: X", the member you start with: js/expedition/league.js)
+    $('modes-exp').innerHTML = X.MODES.map(id => id === 'exp-classic' && X.enabled(id)
+      ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-league-pick">${G.Icons.html('ball', 18)} Miembro de la Liga: ${esc(nameOf(X.leaguePick()))}</button></div>`
+      : expCard(id)).join('');
+    if ($('modes-league-pick')) $('modes-league-pick').onclick = openLeague;
     $('modes-exp').querySelectorAll('[data-exp]').forEach(b => { b.onclick = () => start(b.dataset.exp); });
     $('modes-mods').innerHTML = M.MOD_IDS.map(id => {
       const on = p.mods.includes(id), m = M.MOD[id];
@@ -144,6 +149,7 @@ G.ModesUI = (() => {
     if (!G.UI.isOpen('scr-modes')) return false;
     if (!$('modes-team').classList.contains('hidden')) { closeTeam(); return true; }
     if (!$('modes-coop').classList.contains('hidden')) { closeCoop(); return true; }
+    if (!$('modes-league').classList.contains('hidden')) { closeLeague(); return true; }
     if ($('modes-party').classList.contains('hidden')) return false;
     closeParty();
     return true;
@@ -282,5 +288,36 @@ G.ModesUI = (() => {
     }
   }
 
-  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop };
+  // ---------------- DLC D4: "Choose your League member" (Expedition · Classic; the roster is js/expedition/league.js) ----------------
+  function openLeague() {
+    // (the League lives in the lazy Expedition code: load it first, like starting a run does)
+    return G.Expedition.load().then(() => {
+      if (!G.UI.isOpen('scr-modes')) return false;
+      G.ExpLeague.select(G.ExpLeague.pickFor());
+      $('modes-main').classList.add('hidden');
+      $('modes-league').classList.remove('hidden');
+      document.querySelector('#scr-modes [data-back]').classList.add('hidden');
+      // (the mode list was scrolled down to the Expedition group: the League screen starts at its top, and the list
+      // comes back where it was)
+      const box = document.querySelector('#scr-modes .modes-box');
+      if (box) { leagueScroll = box.scrollTop; box.scrollTop = 0; }
+      renderLeague();
+      return true;
+    }, e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+  }
+  function renderLeague() {
+    G.ExpLeague.renderPicker($('modes-league'), d => { G.UI.toast(G.I18n.f('Miembro de la Liga: {x}', nameOf(d))); closeLeague(); }, () => closeLeague());
+  }
+  let leagueScroll = 0;
+  function closeLeague(quiet) {
+    const was = !$('modes-league').classList.contains('hidden');
+    $('modes-league').classList.add('hidden');
+    if ($('modes-party').classList.contains('hidden') && $('modes-team').classList.contains('hidden') && $('modes-coop').classList.contains('hidden')) $('modes-main').classList.remove('hidden');
+    document.querySelector('#scr-modes [data-back]').classList.remove('hidden');
+    if (quiet !== true && G.UI.isOpen('scr-modes')) render();
+    const box = document.querySelector('#scr-modes .modes-box');
+    if (was && box && quiet !== true) box.scrollTop = leagueScroll;
+  }
+
+  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague };
 })();

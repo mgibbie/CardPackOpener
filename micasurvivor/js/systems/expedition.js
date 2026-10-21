@@ -42,11 +42,12 @@ G.I18n.add({
   'Tu juego no está actualizado: recarga la página.': 'Your game is out of date: reload.',
   'No se pudo cargar la Expedición. Recarga la página.': "Couldn't load Expedition. Reload the page.",
   'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This replay is from a newer version of Expedition: reload the page to watch it properly.',
-  'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This run is from a newer version of Expedition: reload the page to watch it properly.'
+  'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This run is from a newer version of Expedition: reload the page to watch it properly.',
+  'Miembro de la Liga: {x}': 'League member: {x}'   // (DLC D4: the Classic card's pick, before the Expedition code loads)
 });
 
 G.Expedition = (() => {
-  const DV = 2;   // (DLC D3: Classic is playable; a dv-1 replay / snapshot still plays, replayOk)
+  const DV = 3;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
@@ -60,12 +61,20 @@ G.Expedition = (() => {
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
   const ENABLED = new Set(['exp-classic']);   // D3: Classic is playable; Survival and League are still "Coming soon"
-  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js)
+  const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
+    'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
   /** The map / difficulty a new Expedition run gets (D0b: the first of each; a later batch adds the pickers). */
   const pick = () => ({ map: MAPS[0], diff: DIFFS[0] });
+  /** DLC D4: the League member this device starts Classic with (the Expedition code checks you can play it: G.ExpLeague.pickFor). */
+  function leaguePick() {
+    if (G.ExpLeague) return G.ExpLeague.pickFor();
+    let d = 0;
+    try { d = +localStorage.getItem('micasurvivorexp_pick') || 0; } catch (e) { /* the pick is a convenience */ }
+    return G.DEX_BY && G.DEX_BY[d] ? d : 1;
+  }
 
   // ---------------- the base tables, frozen before any Expedition code runs ----------------
   let frozen = null;
@@ -172,7 +181,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS,
-    isExp, enabled, pick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone,
+    isExp, enabled, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

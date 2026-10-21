@@ -45,25 +45,41 @@
  *   run.end         the run-over screen gets the victory title, the map / difficulty and the zone splits against your best
  *                   (G.ExpClassic.result), the save the splits, wins and best clear (G.ExpClassic.record), the board the
  *                   Classic score (G.ExpClassic.score, the study's 2.12 formula until D9)
+ *
+ * D4 (the League, js/expedition/league.js): an Expedition run is played as a League member (G.ExpLeague): its kit, its
+ * evolutions, Maturity, stats from base stats. dv 3. The `x` block is v4, {xv: 4, m, z, th, a, c, l}:
+ *   l     the League rows [member, form, kit moves unlocked, Maturity, evolutions] (G.ExpLeague.row): l.p the watched /
+ *         sending player's, l.q the co-op players' (by uid in host frames, by name in snapshots). A viewer's puppet takes
+ *         the form's sprite (G.ExpLeague.applyRow). The replay keeps `l` in its slow state (it changes a few times a run).
+ *   The v1-v3 readers are kept: a block without `l` shows every player as its snapshot draws it.
+ *   run.start       the League member's first stage, kit move and passive (G.ExpLeague.begin)
+ *   levelup.offer   kit moves at Lv 2 / 4 / 7, evolutions (a branch: its cards), Maturity (G.ExpLeague.offerHook)
+ *   levelup.cards   the level's news on the cards (G.ExpLeague.cardsHook)
+ *   run.end         the League's counters, its challenges, the new members (G.ExpLeague.record / lines)
  */
 G.Exp = (() => {
-  const dv = 2;   // this file's content version (D3: Classic playable): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 3;   // this file's content version (D3: Classic playable; D4: the League): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 3;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
-  const READS = [1, 2, 3];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`)
+  const XV = 4;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2, 3, 4];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`)
   const C = () => G.ExpClassic;
+  const LG = () => G.ExpLeague;
   const expRun = () => G.Modes.isExp();
 
   function init() {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); return; }
+      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
       if (cfg.mode === 'exp-classic' && C()) C().begin(cfg);   // (D3)
+      if (LG()) LG().begin(G.Game.player, cfg);                 // (D4: the League member)
     });
+    // (D4: a League run's level-ups: kit moves, evolutions and their choice, Maturity; a base run gets undefined / its cards)
+    G.Hooks.on('levelup.offer', pl => (LG() ? LG().offerHook(pl) : undefined));
+    G.Hooks.on('levelup.cards', (cards, pl) => (LG() ? LG().cardsHook(cards, pl) : cards));
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
       const R = G.Modes.run;
@@ -71,7 +87,7 @@ G.Exp = (() => {
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; s.x = x; } }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; s.x = x; } }
       return s;
     });
     // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
@@ -79,7 +95,7 @@ G.Exp = (() => {
     G.Hooks.on('net.frame', (f, m) => {
       if (expRun() || (!m && G.World.zone)) {
         const x = xblock();
-        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; f.x = x; }
+        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; f.x = x; }
       }
       return f;
     });
@@ -94,6 +110,8 @@ G.Exp = (() => {
         C().record();
       }
       record(sum);
+      // D4: the League's counters, then its challenges (after record(): "finish N runs" counts this one), its lines on the screen
+      if (LG() && LG().run) { const newly = LG().record(sum); G.ExpSave.commit(); out.lines = out.lines.concat(LG().lines(newly)); out.league = newly; }
       if (sum.clean && !sum.group) submitScore(sum);
       cur = null;
       return out;
@@ -176,6 +194,11 @@ G.Exp = (() => {
     const x = s && s.x, a = x && READS.includes(x.xv) && x.xv >= 2 ? x.a || {} : null;
     if (pl) V().applyRow(pl, a && a.p);
     if (mates) for (const [name, o] of mates) V().applyRow(o.p, a && a.q ? a.q[o.raw || name] : null);
+    const l = lOf(x);   // (D4: the League forms; a replay's `me` is the member, a live one's the form)
+    if (l && LG()) {
+      if (pl && l.p) LG().applyRow(pl, l.p);
+      if (mates && l.q) for (const [name, o] of mates) if (l.q[o.raw || name]) LG().applyRow(o.p, l.q[o.raw || name]);
+    }
     liftEnemies(a && a.e);
     if (C()) C().applyC(x && READS.includes(x.xv) && x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return !!a;
@@ -185,6 +208,8 @@ G.Exp = (() => {
     if (!x || !READS.includes(x.xv)) return false;
     const a = x.xv >= 2 && x.a ? x.a : {};
     for (const u in a.q || {}) { const p = mateOf(u); if (p) V().applyRow(p, a.q[u]); }
+    const l = lOf(x);   // (D4: the other players' League forms)
+    if (l && l.q && LG()) for (const u in l.q) { const p = mateOf(u); if (p) LG().applyRow(p, l.q[u]); }
     liftEnemies(a.e);
     if (C()) C().applyC(x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return true;
@@ -194,7 +219,34 @@ G.Exp = (() => {
     if (!m || !x || !READS.includes(x.xv)) return;
     m.xrow = x.xv >= 2 && x.a && Array.isArray(x.a.p) ? x.a.p : null;
     if (m.pl) V().applyRow(m.pl, m.xrow);
+    const l = lOf(x);   // (D4: the guest's League row: its puppet's form here, and so in the host's frames / snapshots)
+    if (l && l.p && m.pl && LG()) LG().applyRow(m.pl, l.p);
   }
+
+  // ---------------- D4: the League rows in the `x` block ----------------
+  /** A snapshot's `l`: the player's row, its co-op partners' (by name, those with a row). Null outside a League run. */
+  function leagueSnap() {
+    const r = LG() && LG().row();
+    if (!r) return null;
+    const l = { p: r };
+    if (G.Coop && G.Coop.active) {
+      const q = {};
+      for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xlg) q[m.name] = m.pl.xlg;
+      if (Object.keys(q).length) l.q = q;
+    }
+    return l;
+  }
+  /** A host frame's `l` for guest m: every other player's row by uid (the host's own, the other guests'). */
+  function leagueHost(m) {
+    const q = {}, r = LG() && LG().row();
+    if (r && G.Net && G.Net.uid) q[G.Net.uid] = r;
+    for (const o of G.Coop.mates) if (o.connected && o.uid !== m.uid && o.pl && o.pl.xlg) q[o.uid] = o.pl.xlg;
+    return Object.keys(q).length ? { q } : null;
+  }
+  /** A guest's own frame to the host: its row. */
+  function leagueGuest() { const r = LG() && LG().row(); return r ? { p: r } : null; }
+  /** The `l` of a v4+ block (an older block: none, everyone stays as drawn). */
+  const lOf = x => (x && READS.includes(x.xv) && x.xv >= 4 && x.l) || null;
 
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {
