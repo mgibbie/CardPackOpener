@@ -710,7 +710,10 @@ export const POKERMON = registerMod({
   // 3.9.1's own Iridescent Hacker, the Elite stake, the 5 challenges (+ 3.9.1's changes to the 7 old ones), the Obituary / Revenant
   // sleeves' alts (Pink Seal 1 in 3), the Professors' 3.9.1 pool rule, and Steamodded object_weights on (3.9.1's
   // optional_features: the Soul items' weights, pokermon.modify_pool, the Shiny / Negative weights).
-  contentRev: 15,
+  // 16 = the seals fix (tester Jack: "the Pink and Silver Seals don't work"): Standard Pack cards and Certificate roll their seal
+  // from the whole Seal pool like Steamodded's SMODS.poll_seal (the Pink / Silver Seals come up there), and the Silver Seal is on
+  // upstream main's refactor ("+1 Item", pokermon.discard_cards: the discard jokers' effects land — Jolteon, Wingull).
+  contentRev: 16,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
