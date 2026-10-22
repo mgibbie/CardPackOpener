@@ -101,6 +101,9 @@ G.Replay = (() => {
       // (DLC D6: an Expedition Ultimate cast, the `xu` event: its row's cast flag rising; a base snapshot has no x.w)
       const xw = s.x && s.x.w && s.x.w.p, pw = p.x && p.x.w && p.x.w.p;
       if (xw && (xw[4] & 1) && !(pw && (pw[4] & 1))) ev.push([s.t, 'xu', xw[5]]);
+      // (DLC D7: an Expedition interactable used, the `xi` event: the x block's `o.n` count rising; a base snapshot has no x.o)
+      const xo = s.x && s.x.o, po = p.x && p.x.o;
+      if (xo && (xo.n | 0) > ((po && po.n) | 0)) ev.push([s.t, 'xi', xo.u | 0]);
       if ((s.p[6] & 4) && !(p.p[6] & 4)) ev.push([s.t, 'dx']);
       if ((s.p[6] & 1) && !(p.p[6] & 1)) ev.push([s.t, 'dd']);
       if (s.b !== p.b) ev.push([s.t, 'bi', s.b]);
@@ -162,6 +165,8 @@ G.Replay = (() => {
     if (o.x && o.x.a) { o.x = Object.assign({}, o.x); delete o.x.a; }
     // (DLC D6: so does the Ultimate's charge `w`: field 8)
     if (o.x && o.x.w) { o.x = Object.assign({}, o.x); delete o.x.w; }
+    // (DLC D7: and the interactables' state `o` while an altar charges: field 9)
+    if (o.x && o.x.o) { o.x = Object.assign({}, o.x); delete o.x.o; }
     return o;
   }
   function encode(s, kd) {
@@ -179,12 +184,15 @@ G.Replay = (() => {
     const XA = s.x && s.x.a ? JSON.stringify(s.x.a) : '';
     // DLC D6: the Ultimate rows (x.w) in field 8, the same way (a base snapshot: 0, dropped)
     const XW = s.x && s.x.w ? JSON.stringify(s.x.w) : '';
+    // DLC D7: the interactables' state (x.o) in field 9, the same way (a base snapshot: 0, dropped)
+    const XO = s.x && s.x.o ? JSON.stringify(s.x.o) : '';
     const f = [r.frames.length ? s.t - r.t : s.t, diff(r.P, P), diff(r.C, C), S !== r.S ? JSON.parse(S) : 0, E.out, Kt.out, M !== r.M ? Mq : 0,
-      XA !== (r.XA || '') ? (XA ? JSON.parse(XA) : {}) : 0, XW !== (r.XW || '') ? (XW ? JSON.parse(XW) : {}) : 0];
+      XA !== (r.XA || '') ? (XA ? JSON.parse(XA) : {}) : 0, XW !== (r.XW || '') ? (XW ? JSON.parse(XW) : {}) : 0,
+      XO !== (r.XO || '') ? (XO ? JSON.parse(XO) : {}) : 0];
     while (f.length > 1 && f[f.length - 1] === 0) f.pop();
     const txt = JSON.stringify(f);
     r.frames.push(txt); r.bytes += txt.length + 1;
-    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA; r.XW = XW;
+    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA; r.XW = XW; r.XO = XO;
   }
 
   // ---------------- the decoder ----------------
@@ -221,8 +229,8 @@ G.Replay = (() => {
     const h = data.h || {}, frames = data.f || [], Q = h.Q || K.Q, QE = h.QE || K.QE, ew = h.ew || EW, kw = h.kw || KW;
     const times = [];
     const tbl = () => ({ m: new Map(), v: new Map() }), ctbl = x => ({ m: new Map(x.m), v: new Map(x.v) });
-    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, kd: [] });
-    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, kd: [] });
+    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, kd: [] });
+    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, kd: [] });
     function step(st) {
       const f = frames[st.i + 1];
       st.i++;
@@ -235,6 +243,7 @@ G.Replay = (() => {
       if (f[6]) st.M = f[6];
       if (f[7]) st.A = f[7];   // (DLC D2: the x block's airborne state)
       if (f[8]) st.W = f[8];   // (DLC D6: the Ultimate rows)
+      if (f[9]) st.O = f[9];   // (DLC D7: the interactables)
     }
     // one pass: the frame times and a checkpoint every CHECK_EVERY frames
     const checks = [];
@@ -263,6 +272,7 @@ G.Replay = (() => {
       if (st.M && st.M.length) s.mt = st.M.map(m => [m[0], m[1], m[2], m[3] * QE, m[4] * QE, m[5], m[6], m[7], m[8], m[9], m[10]]);
       if (s.x && st.A) s.x = Object.assign({}, s.x, { a: st.A });   // (DLC D2)
       if (s.x && st.W && st.W.p) s.x = Object.assign({}, s.x, { w: st.W });   // (DLC D6)
+      if (s.x && st.O && st.O.h) s.x = Object.assign({}, s.x, { o: st.O });   // (DLC D7)
       s.kd = st.kd;
       return s;
     }

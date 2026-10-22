@@ -30,7 +30,7 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Vitamina': 'Vitamin', 'Nueva vitamina': 'New vitamin', 'Vitamina Nv. {x} → {x}': 'Vitamin Lv {x} → {x}', 'Nv. {x} → {x}': 'Lv {x} → {x}',
   'Entrenamiento': 'Training', 'Descanso': 'Rest', 'Recupera el 40 % de tu vida.': 'Heals 40% of your HP.',
   '+{x} % de daño por nivel': '+{x}% damage a level', 'Hueco {x}/{x}': 'Slot {x}/{x}', 'Nv. {x}/{x}': 'Lv {x}/{x}',
-  'Saltar ({x})': 'Skip ({x})', 'Saltas las cartas: +{x} Pokémonedas': 'Skipped: +{x} Pokémonedas',
+  'Saltar ({x})': 'Skip ({x})', 'Saltas las cartas: +{x} Pokémonedas': 'Skipped: +{x} Pokémonedas', 'Saltas las cartas: +{x} ₽': 'Skipped: +{x} ₽',
   'Vitaminas': 'Vitamins', 'Objetos': 'Items', 'Movimientos': 'Moves', 'Suerte {x}': 'Luck {x}',
   'Cambiar {x} · Saltar {x} · Vetar {x}': 'Refresh {x} · Skip {x} · Banish {x}', 'Ninguno todavía': 'None yet',
   'Expedición · tu equipo': 'Expedition · your kit', 'Objetos: {x} · Vitaminas: {x}': 'Items: {x} · Vitamins: {x}', '¡{x}!': '{x}!', 'Escudo': 'Shield'
@@ -51,7 +51,7 @@ G.ExpLevel = (() => {
     GATE: [null, null, [3, 10], [8, 18], [14, 26]],   // Rare / Epic / Legendary ramp in over these powers
     ZONE_POWER: 12,                            // power = level + luck / 8 + 12 x (zone - 1)
     REFRESH: 2, SKIP: 2, BANISH: 1, TOOL_MAX: 6,   // the run's tools (study 2.5: 2 / 2 / 1, +1 each a Lab level, max 6)
-    SKIP_COINS: 10,                            // a Skip pays 10 x zone Pokémonedas of the run (D7's ₽ will replace them)
+    SKIP_COINS: 10,                            // a Skip pays 10 x zone ₽ (D7: the run's in-play currency, G.ExpEco.earn)
     TRAIN_DMG: 0.04, TRAIN_HP: 10, TRAIN_DECAY: 0.15, TRAIN_MIN: 1 / 3,   // Training: +4 % damage / +10 HP, then x 1 / (1 + 0.15 n), never under 1/3
     XP_A: 8, XP_B: 5.5, XP_P: 1.8, XP_K: 2.0   // XP to the next level = 2 x (8 + 5.5 L + L^1.8) (study 2.1; the x2 is ours: Lv 55 at 69k XP, README "DLC D5")
   };
@@ -237,13 +237,13 @@ G.ExpLevel = (() => {
 
   // ---------------- Skip ----------------
   const skipsLeft = () => (S ? S.skips : 0);
-  /** Skip this level's cards (the button, X, the pad's swap): no card, +10 x zone Pokémonedas of the run. */
+  /** Skip this level's cards (the button, X, the pad's swap): no card, +10 x zone ₽ (D7: G.ExpEco.earn). */
   function skip() {
     const pl = G.Game.player;
     if (!on(pl) || S.skips <= 0 || !G.UI.isOpen('scr-levelup') || !G.RunUI.offers || G.RunUI.banMode) return false;
     const coins = K.SKIP_COINS * zone();
     const ok = G.RunUI.take({ w: 0, type: 'skip', key: 'skip', title: 'skip', desc: '',
-      apply: p => { if (!S) return; S.skips--; p.coins += coins; G.Spawner.say(F('Saltas las cartas: +{x} Pokémonedas', coins), 2.4, true); logPick(p, 'skip', 'skip', 0); if (LG() && LG().run) LG().run.note = []; } });
+      apply: p => { if (!S) return; S.skips--; if (G.ExpEco && G.ExpEco.run) G.ExpEco.earn(coins, 'skip'); else p.coins += coins; G.Spawner.say(F('Saltas las cartas: +{x} ₽', coins), 2.4, true); logPick(p, 'skip', 'skip', 0); if (LG() && LG().run) LG().run.note = []; } });
     if (ok) G.Audio.sfx('select');
     return ok;
   }

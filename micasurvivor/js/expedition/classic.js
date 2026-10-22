@@ -392,6 +392,10 @@ G.ExpClassic = (() => {
     // (D5: the Cursed Incense vitamin, +12 % difficulty a level: HP and damage)
     const cu = G.ExpItems ? G.ExpItems.total(G.Game.player, 'curse') : 0;
     if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }
+    // (D7: the cursed Poké Balls and the cursed / greed altars: + difficulty (HP and damage), + XP)
+    const xm = G.ExpEco && G.ExpEco.mods();
+    if (xm && xm.diff > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + xm.diff)); e.dmg *= 1 + xm.diff; }
+    if (xm && xm.xp > 0) e.xp = Math.round(e.xp * (1 + xm.xp));
     if (o.scale) setScale(e, o.scale);
     if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: K.TOTEM.every, rng: R(mix(S.seed, e.id, 0x70)) }); }
     G.EnemyMgr.add(e);
@@ -420,7 +424,7 @@ G.ExpClassic = (() => {
     const cap = capNow();
     if (G.EnemyMgr.count >= cap) { S.acc = 0; return; }
     const zi = Math.min(3, S.zone) - 1, teff = Math.max(t, K.ZMIN[zi]);
-    const k = G.Coop.scaleRate(players.length) * (S.boss ? K.BOSS_RATE : 1) * (S.fs ? K.FINAL_SPAWN : 1) * (S.zone === 4 ? K.SHRINE_RATE : 1) * (1 + K.ZONE_RATE * zi);
+    const k = G.Coop.scaleRate(players.length) * (S.boss ? K.BOSS_RATE : 1) * (S.fs ? K.FINAL_SPAWN : 1) * (S.zone === 4 ? K.SHRINE_RATE : 1) * (1 + K.ZONE_RATE * zi) * (G.ExpEco ? 1 + G.ExpEco.mods().rate : 1);   // (D7: the cursed altar's + spawns)
     S.acc = Math.min(8, S.acc + G.Spawner.rate(teff) * k * dt);
     const cards = S.plan.cards, nC = Math.min(cards.length, K.CARDS0 + Math.floor(Math.max(0, zt) / K.CARD_EVERY));
     while (S.acc >= 1 && G.EnemyMgr.count < cap) {
@@ -614,6 +618,7 @@ G.ExpClassic = (() => {
   function drawGround(ctx) {
     if (G.ExpMoves) G.ExpMoves.draw(ctx);   // (D5: the new archetypes' shells, vortexes, waves; the items' rifts)
     if (G.ExpItems) G.ExpItems.draw(ctx);
+    if (G.ExpEco) G.ExpEco.drawGround(ctx);   // (D7: the interactables)
     const c = cur(), z = G.World.zone, si = c && sitesOf(z);
     if (!si) return;
     const now = performance.now() / 1000, [x, y] = siteXY(si.altar), cam = G.Camera;
@@ -717,11 +722,13 @@ G.ExpClassic = (() => {
     else if (c.ph === 2) parts.push(T.f('PORTAL {x} m', dist()));
     else if (c.ph === 3) parts.push(T.t('LEGENDARIO'));
     else parts.push(T.t('¡COMPLETADO!'));
+    if (pl) parts.push('₽ ' + Math.floor(pl.coins || 0));   // (D7: the run's ₽)
     return parts.join('  ·  ');
   }
   const hudColor = () => { const c = cur(); return c && c.fs && c.ph < 2 ? (Math.sin(performance.now() / 150) > 0 ? '#ff6b7a' : '#ffb0b8') : c && c.ph === 4 ? '#ffd23f' : '#9fd8a8'; };
   /** Over the HUD: an arrow to the altar / portal / shrine when it is off screen, and the boss's exhaustion. */
   function drawHud(ctx, w, h, pl, st, F, mark) {
+    if (G.ExpEco) G.ExpEco.drawHud(ctx, w, h, pl, F, mark);   // (D7: the interactables' labels and the tips)
     const c = cur(), si = c && sitesOf(G.World.zone);
     if (!si || !pl) return;
     const k = G.HUD ? G.HUD.k : 1, cam = G.Camera, now = performance.now() / 1000;
@@ -740,9 +747,12 @@ G.ExpClassic = (() => {
     // (kept clear of the HUD: the minimap on the left, the buttons down the right, the move bar at the bottom; D6: the
     //  Ultimate's button and meter are always on the right in a zone, so the column is kept clear without touch too)
     const touch = G.Touch.active && G.Game.state !== 'watch', M = 46, mm = G.HUD && G.HUD.minimap;
-    const ey = G.U.clamp(sy, M + 80, h - M - (touch ? 120 : 90));
+    let ey = G.U.clamp(sy, M + 80, h - M - (touch ? 120 : 90));
     let ex = G.U.clamp(sx, M, w - M - 200);
     if (mm && ex - 30 < mm.x + mm.s && ex + 30 > mm.x && ey + 30 > mm.y && ey - 30 < mm.y + mm.s) ex = mm.x + mm.s + 36;
+    // (D7: and clear of a first-run tip's box, under it)
+    const tb = G.ExpEco && G.ExpEco.tipRect();
+    if (tb && ex - 30 < tb.x + tb.w && ex + 30 > tb.x && ey + 30 > tb.y && ey - 30 < tb.y + tb.h) ey = tb.y + tb.h + 34;
     const a = Math.atan2(sy - ey, sx - ex);
     if (mark) mark('xarrow', ex - 30, ey - 30, 60, 60);
     const col = c.ph === 2 ? '#b48aff' : si.shrine ? '#ff9ed8' : '#ffd95e', beat = 0.5 + Math.sin(now * 6) * 0.5;
@@ -799,6 +809,10 @@ G.ExpClassic = (() => {
   return {
     K, KINDS, TIMELINE, MAPS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
     begin, reset, update, xblockC, applyC, cur, active, drawGround, drawHud, hudLine, hudColor, score, result, record,
+    /** D7: a foe of the zone at (x, y) (the interactables' waves and ambushes); null outside a Classic run. */
+    spawnFoe(dex, x, y, o) { return on() ? spawn(dex, x, y, G.Game.st.time, o || {}) : null; },
+    /** D7: a free spot round point p at distance d, from the stream rng. */
+    spotNear(rng, p, ang, flying, d) { return on() ? spot(rng, p, ang, flying, d) : null; },
     get run() { return S; }, get view() { return view; }, get on() { return on(); },
     /** For tests: jump the zone clock to `sec` (events between are fired on the next step, in order). */
     debugZoneTime(sec) { if (S) S.zs = G.Game.st.time - sec; }

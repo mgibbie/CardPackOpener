@@ -347,12 +347,12 @@ try {
 		for (let i = 0; i < 400; i++) { const tx = ((i * 37) % 120) - 60, ty = ((i * 53) % 120) - 60; out.masks.push(G.World.maskAt(tx, ty)); }
 		G.Game.quit();
 		const e = G.Replay.last;
-		if (e) { await e.ready; const txt = await G.Replay.unpack(e.code); out.code = e.code; out.xInFrames = (txt.match(/"x":\{"xv":6/g) || []).length; out.terrainSent = /"hgt"|"ramp":\[/.test(txt); }
+		if (e) { await e.ready; const txt = await G.Replay.unpack(e.code); out.code = e.code; out.xInFrames = (txt.match(/"x":\{"xv":7/g) || []).length; out.terrainSent = /"hgt"|"ramp":\[/.test(txt); }
 		out.after = { state: G.Game.state };
 		window.__t.thaw();
 		return out;
 	});
-	A(xb.x && xb.x.xv === 6 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash, 'the live snapshot carries the x block (v6 since D6) {xv: 6, m, z, th}', JSON.stringify(xb.x || xb));
+	A(xb.x && xb.x.xv === 7 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash, 'the live snapshot carries the x block (v7 since D7) {xv: 7, m, z, th}', JSON.stringify(xb.x || xb));
 	const terr = x => x && JSON.stringify([x.xv, x.m, x.z, x.th]);   // (D2: the airborne part `a` differs between the two)
 	A(xb.fx && terr(xb.fx) === terr(xb.x), 'the co-op host frame carries the same x block (terrain part)', JSON.stringify(xb.fx));
 	A(xb.code && xb.xInFrames >= 1 && !xb.terrainSent, `the run's replay records the x block (${xb.xInFrames}x), never the terrain itself`, JSON.stringify({ n: xb.xInFrames, sent: xb.terrainSent }));

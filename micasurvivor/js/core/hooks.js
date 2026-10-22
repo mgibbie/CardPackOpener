@@ -41,11 +41,14 @@
  *   enemy.ko        js/entities/enemy.js EnemyMgr.update, an enemy of this page's sim has fallen: call(e, pl) (the charge)
  *   run.hold        js/game.js update, an Expedition run only, before the clock: first(dt, pl) -> true holds the world
  *                   this frame (an Ultimate's hit-stop)
+ *   (DLC D7, economy and interactables: js/expedition/economy.js. A no-op in a base page.)
+ *   minimap.draw    js/ui/minimap.js draw, in an Expedition zone only (G.World.zone): call(ctx, pl, api) after the base
+ *                   props, api = {mm, pt, inside, edge, rec, pul} (the zone's interactables, under its fog of war)
  */
 G.Hooks = (() => {
   const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame', 'levelup.offer', 'levelup.cards',
     'xp.need', 'item.roll', 'item.take', 'player.hurt', 'player.ko', 'player.dealt', 'combat.out', 'combat.run', 'combat.ghost', 'run.tick',
-    'enemy.ko', 'run.hold'];
+    'enemy.ko', 'run.hold', 'minimap.draw'];
   const L = Object.create(null);
   for (const s of SEAMS) L[s] = [];
 

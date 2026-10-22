@@ -82,30 +82,43 @@
  *   enemy.ko        the kill bucket and the elite / alpha / boss bonuses (G.ExpUlt.onKill)
  *   player.hurt     the cast's i-frames first (before the items' shield), then the damage-taken charge
  *   run.hold        the cast's hit-stop; run.tick: the charge, the keys, auto, the cast itself
+ *
+ * D7 (economy and interactables, js/expedition/economy.js): ₽ (the run's coins: KOs, gold rocks, Skip), paid / free / cursed
+ * Poké Balls, Meowth's shop with market heat, Unown altars in 4 tiers and the comet, challenge / cursed / greed altars, Ditto,
+ * Hypno, gold rocks, berries and cages; the zone map with its legend and the fog of war; first-run tips. dv 6. The `x` block
+ * is v7, {xv: 7, m, z, th, a, c, l, u, w, o}:
+ *   o     the interactables' host state (G.ExpEco.oBlock): {s: [index, state, charge %, ...] of every one that isn't fresh,
+ *         h: [balls bought, shop buys, balls opened], g: [difficulty, spawns, XP, ₽ %, loot], m: Meowth while he's in,
+ *         n: interactables used, u: the last one}. Where they are comes from the seed (G.ExpEco.layoutOf), so it's never
+ *         sent. The replay keeps `o` in a frame field of its own (field 9) and an `xi` event when one is used.
+ *   The v1-v6 readers are kept: a block without `o` shows every interactable fresh.
+ *   enemy.ko        ₽ for the kill; run.tick: the interactables; minimap.draw: their icons, under the fog of war
  */
 G.Exp = (() => {
-  const dv = 5;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 6;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 6;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
-  const READS = [1, 2, 3, 4, 5, 6];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`; v6: + the Ultimates `w`)
+  const XV = 7;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2, 3, 4, 5, 6, 7];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`; v6: + the Ultimates `w`; v7: + the interactables `o`)
   const C = () => G.ExpClassic;
   const LG = () => G.ExpLeague;
   const LV = () => G.ExpLevel, IT = () => G.ExpItems, MV = () => G.ExpMoves;
   const UL = () => G.ExpUlt;
+  const EC = () => G.ExpEco;
   const expRun = () => G.Modes.isExp();
 
   function init() {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); return; }
+      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
       if (cfg.mode === 'exp-classic' && C()) C().begin(cfg);   // (D3)
       if (LG()) LG().begin(G.Game.player, cfg);                 // (D4: the League member)
       if (LV()) LV().begin(G.Game.player);                      // (D5: the curve, the tools, the bag)
       if (UL()) UL().begin(G.Game.player);                      // (D6: the Ultimate's meter)
+      if (EC()) EC().begin(G.Game.player);                      // (D7: ₽, the interactables, the fog, the tips)
     });
     // (D4: a League run's level-ups: kit moves, evolutions and their choice, Maturity; a base run gets undefined / its cards)
     // (D5: then the Expedition's own cards, rarity-rolled: G.ExpLevel.offer; it adds the League's note itself)
@@ -127,9 +140,11 @@ G.Exp = (() => {
     G.Hooks.on('combat.out', (k, pl, e, src, dmg) => (IT() ? IT().out(k, pl, e, src, dmg) : k));
     G.Hooks.on('combat.run', (pl, m, ghost) => { if (MV()) MV().run(pl, m, ghost); });
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
-    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); });
+    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); });
     // (D6: the Ultimate's charge from kills, and its hit-stop)
-    G.Hooks.on('enemy.ko', (e, pl) => { if (expRun() && UL()) UL().onKill(e, pl); });
+    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); });   // (D7: ₽ for the kill)
+    // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
+    G.Hooks.on('minimap.draw', (ctx, pl, api) => { if (EC()) EC().drawMini(ctx, pl, api); });
     G.Hooks.on('run.hold', (dt, pl) => (expRun() && UL() ? UL().hold(dt, pl) : undefined));
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
@@ -138,7 +153,7 @@ G.Exp = (() => {
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; const w = ultSnap(); if (w) x.w = w; s.x = x; } }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; const w = ultSnap(); if (w) x.w = w; const o = EC() && EC().oBlock(); if (o) x.o = o; s.x = x; } }
       return s;
     });
     // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
@@ -146,7 +161,7 @@ G.Exp = (() => {
     G.Hooks.on('net.frame', (f, m) => {
       if (expRun() || (!m && G.World.zone)) {
         const x = xblock();
-        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; const w = m ? ultHost(m) : ultGuest(); if (w) x.w = w; f.x = x; }
+        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; const w = m ? ultHost(m) : ultGuest(); if (w) x.w = w; const o = m && EC() && EC().oBlock(); if (o) x.o = o; f.x = x; }
       }
       return f;
     });
@@ -167,6 +182,8 @@ G.Exp = (() => {
       if (LV() && LV().run) { out.lines = out.lines.concat(LV().record(sum)); G.ExpSave.commit(); }
       // D6: the Ultimates cast (counters), a line
       if (UL() && UL().run) { out.lines = out.lines.concat(UL().record(sum)); G.ExpSave.commit(); }
+      // D7: ₽, Poké Balls, the shop, altars (counters), a line
+      if (EC() && EC().run) { out.lines = out.lines.concat(EC().record(sum)); G.ExpSave.commit(); }
       if (sum.clean && !sum.group) submitScore(sum);
       cur = null;
       return out;
@@ -266,6 +283,7 @@ G.Exp = (() => {
     }
     liftEnemies(a && a.e);
     if (C()) C().applyC(x && READS.includes(x.xv) && x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
+    if (EC()) EC().applyO(oOf(x));   // (D7: the interactables)
     return !!a;
   }
   /** A co-op guest: the host frame's `a` (rows by uid: mateOf(uid) -> that player's puppet, or null). */
@@ -281,6 +299,7 @@ G.Exp = (() => {
     if (w && w.q && UL()) for (const u in w.q) { const p = mateOf(u); if (p) UL().applyRow(p, w.q[u]); }
     liftEnemies(a.e);
     if (C()) C().applyC(x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
+    if (EC()) EC().applyO(oOf(x));   // (D7: the interactables)
     return true;
   }
   /** The host: a guest's frame `x` -> its row, kept on the mate (m.xrow) and shown on its puppet. */
@@ -368,6 +387,8 @@ G.Exp = (() => {
   function ultGuest() { const r = UL() && UL().row(); return r ? { p: r } : null; }
   /** The `w` of a v6+ block (an older block: none, no Ultimate shown). */
   const wOf = x => (x && READS.includes(x.xv) && x.xv >= 6 && x.w) || null;
+  /** The `o` of a v7+ block (D7: an older block: none, every interactable fresh). */
+  const oOf = x => (x && READS.includes(x.xv) && x.xv >= 7 && x.o) || null;
 
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {

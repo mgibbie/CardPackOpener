@@ -1914,7 +1914,7 @@ Relic Crown, Prism Scale) and 4 legendary (Master Ball, Max Revive, Revival Herb
   x2.75). Different stats still multiply. Expedition armor caps at 50 % (`K.ARMOR_CAP`).
 - **Where they come from:** where base items drop (alphas, guardians): the item.roll seam gives an
   Expedition item (`x:<id>`) from the run's seeded stream, its rarity rolled like a card's; the item.take seam stacks it
-  at once (no choice screen). D7's Poké Balls, Meowth and altars will be the main source.
+  at once (no choice screen). D7's Poké Balls, Meowth and altars will be the main source (built: "DLC D7").
 - **Procs** (seams player.hurt, player.ko, player.dealt, combat.out, run.tick): evasion and the shield, Focus Band (15 %
   per stack, every 20 s), Revival Herb (40 %, once per zone, a fire burst), Revive (30 %) and Max Revive (60 %), thorns,
   lifesteal, super-effective, boss damage, Weakness Policy, execute under 8 %, flinch, Relic Crown's time stop, and the
@@ -1922,7 +1922,7 @@ Relic Crown, Prism Scale) and 4 legendary (Master Ball, Max Revive, Revival Herb
   with the player's level (+6 % a level) and attack.
 
 **Refresh / Skip / Banish** (study 2.5, `G.ExpLevel.K`): Refresh 2 (the base reroll button, its count raised), Skip 2 (a
-new button, the X key, the pad's swap button: no card, +10 x zone Pokémonedas of the run, which D7's ₽ will replace),
+new button, the X key, the pad's swap button: no card, +10 x zone Pokémonedas of the run, which D7's ₽ will replace; D7: it pays ₽),
 Banish 1 (the base ban button: on a new move or a new vitamin; that one never comes back this run; a level-up card can't
 be banned). The base game's bought rerolls and bans add on top (max 6 each).
 
@@ -1971,7 +1971,7 @@ sets):
 
 **Not yet:**
 - the Lab (D10): a 4th card, more vitamin slots, more Refresh / Skip / Banish, the Archive, item unlocks by counter goals;
-- D7's sources (Poké Balls, Meowth, altars, Ditto copying an item, Hypno forgetting a move or vitamin) and real ₽ for Skip;
+- D7's sources (Poké Balls, Meowth, altars, Ditto copying an item, Hypno forgetting a move or vitamin) and real ₽ for Skip (built in D7);
 - the study's remaining 42 items (102 in PokéBonk), Stick and Air Balloon (no pictures in the item set); `K.EXTRA_HOPS` is
   still 1 for everyone (D2's note), so no item gives an extra hop yet;
 - learnset-exact "moves the line learns" (by type for now) and Mew's "every move of power 60+";
@@ -2099,6 +2099,123 @@ Expedition code sets):
 - a co-op guest's own Ultimate (a guest's run isn't an Expedition one yet: D11); the frames already carry its row both ways;
 - more signatures (D13+), and Mega Evolution's own (D4c / 1.0).
 
+## DLC D7: economy and interactables
+
+**An Expedition zone now has an economy and 42 things to find**: ₽ from play, Poké Balls (paid, free, cursed), Meowth's shop
+with market heat, Unown altars in 4 tiers and a comet, challenge / cursed / greed altars, Ditto, Hypno, gold rocks, berry
+bushes and cages, a zone map with a legend under a fog of war, and first-run tips (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.7, 2.15 and the D7 row). The code is `js/expedition/economy.js` (`G.ExpEco`; every number in its `K`). Base modes are
+unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**₽ is in-run play money, never real money.** It is the run's own coins (`pl.coins`; the zone line under the clock shows
+"₽ N"), which an Expedition run never pays into the base save. Nothing here costs anything but ₽ earned in that run.
+
+| Source | ₽ (`K`) |
+|---|---|
+| A KO | **0.2** x the gold stat (Nugget vitamin, Amulet Coin) x greed (`KO`; study 2.7), kept as a fraction |
+| An elite / summoner, alpha / totem, guardian / legendary / boss | **1**, **5**, **20 x zone** (`KO_ELITE`, `KO_ALPHA`, `KO_BOSS`: ours) |
+| A gold rock | **6-14 x zone** x gold (`ROCK`; study 2.7), the 6-14 seeded per rock |
+| A level-up Skip | **10 x zone** (D5's Skip, now through `G.ExpEco.earn`) |
+
+**The interactables** (per zone 1-3; the shrine has none). Each is a stand-in circle like D3's altar: walk onto it. There is
+still no interact key, so it works the same with mouse, touch and pad.
+
+| Kind | Per zone | Rule (`K`) |
+|---|---|---|
+| Poké Ball | 6 | **18 x 1.22^(0.65 x bought) ₽** (18, 20, 23, 27, 34 ... 66 after 10); luck takes luck / 400 off (at most 25 %). Stand 0.45 s: **pick 1 of 3** items (`OFFERS`) |
+| Free Poké Ball | 2 | One item at once |
+| Cursed Poké Ball | 2 | Free; **+5 % difficulty** for the run (new foes' HP and damage), a **ghost ambush of 4 + 2 x zone** (Gastly, Haunter, Misdreavus, Duskull, Drifloon, Yamask), 1 item and a 2nd at **40 % x (1 + luck / 100)** |
+| Meowth's shop | 3 stalls | Visits at 0:50-1:10 of the zone for **70 s**, then every **2:30** (the next stall, a fresh stock of **3** items). List price **30 / 55 / 95 / 160 / 260 ₽** by rarity, **+30 % a zone**. **Market heat**: 2 + ⌊balls opened / 3⌋ buys are at list price; each buy past that multiplies prices by **x1.15, x1.32, x1.49 ... up to x2** a step (opening balls cools it) |
+| Unown altar (Common / Rare / Epic / Golden) | 2 / 1 / 1 / 1 | Stand in the circle to charge it in **8 / 14 / 22 / 35 s** (radius **3 / 2.75 / 2.5 / 2.25 tiles**: the study's 6-4.5 m, halved); leaving drains it at **half speed**. Full: **1 of 3 (Common+), 1 of 3 (Uncommon+), 1 of 4 (Rare+), 2 of 4 (Epic+)**. Epic and Golden call a **horde every 7 s** while you charge (6 + 2 x zone, +4 Golden); Golden is **sealed for 90 s** |
+| Comet shard | 1 | Lands at **2:30-5:00**; a **10 s** charge (2.5 tiles); it **burns out 45 s** after landing if it isn't finished. Pick 1 of 3 (Uncommon+) and **+25 % Ultimate charge** |
+| Challenge altar | 1 | Stand 2 s: a wave of **10 + 4 x zone** at **x1.5 HP**; beat it and a **Great Ball** waits there (pick 1 of 3, Uncommon+) |
+| Cursed altar | 1 | Stand 1.6 s: a **Rare+ item** at once, **+8 % difficulty** and **+15 % spawns** for the run |
+| Gengar's greed altar | 1 | Stand 1.6 s: **+10 % difficulty, +15 % XP, +25 % ₽**, and every ball's pick shows **one more card** |
+| Ditto | 1 | Copies a random item of yours that isn't at its cap (seeded); with nothing to copy it waits |
+| Hypno | 1 | "Forget X" cards for your vitamins (or "Keep them"): the vitamin goes, its stats are re-applied (D5's sums) and its slot is free |
+| Gold rock | 8 | Breaks at a touch for its ₽ |
+| Berry bush | 8 | Heals **50 %** of max HP, only when you're hurt |
+| Cage | 2 | **20 + 10 x zone ₽** frees its Pokémon (one of the map's): **+50 % of a level's XP** |
+
+**Choices** (a ball, a blessing, the comet, the Great Ball, the shop, Hypno) open a screen of their own (`#scr-xeco`, the base
+card style with D5's rarity frames) and **hold the run** like the base item choice (`G.Game.choiceStart` / `choiceEnd`; in co-op
+`G.Coop.holdStart`).
+- A card is picked by click or tap, by the digits, or with the pad. The screen is a `.scr`, so the pad's focus walks it, and
+  Leave / Keep them is its back button.
+- A pick in the first 0.38 s after the screen opens is ignored (the A press that walked you in).
+- Every item is taken through D5's `G.ExpLevel.itemTake` (`x:<id>`): stacking, caps, the banner.
+
+**The zone map, the legend and the fog of war:**
+- **The fog:** tiles within **14** of you are explored (`SIGHT`, per zone). The minimap shows an interactable only once its tile
+  is explored (or within 9 tiles), with a small icon per kind (a new `minimap.draw` seam). Meowth shows only while he's in, the
+  comet only once it has landed.
+- **The zone map:** **M**, a click or tap on the minimap, or the pause screen's "Zone map" button (the pad's way) opens it. It
+  shows the whole zone with unexplored tiles fogged, every interactable found, the guardian's altar or the portal, and you.
+- **The legend:** each kind on the map with its icon, how many are left and used, and the share explored.
+- The map holds the run while open (solo). M or Close shuts it.
+
+**First-run tips:** the first time you meet each kind (within 7 tiles), and your first ₽ and the map, a one-line tip shows for
+6.5 s, one at a time. It sits at the top centre; on a phone it goes under the minimap, clear of the banners. Each shows
+**once**: `tip.<kind>` in the Expedition save, merged by max, so a tip seen on one device stays seen on all. Viewers never get
+tips.
+
+**Determinism and viewers:**
+- **Pure:** where everything is (`layoutOf`: the zone's grids and the world seed; 8 tiles apart, 4 for rocks and berries, 9
+  from the start, 7 from the guardian's altar), Meowth's visits and the comet's landing. A co-op guest, a replay viewer and a
+  spectator place the same 42.
+- **Seeded:** every roll (a ball's or an altar's items, Meowth's stock, a rock's ₽, Ditto's pick, a wave's or an ambush's
+  Pokémon) comes from a `G.DLC.rng` stream (the seed, the zone, the interactable, a draw count), never `Math.random` (tested).
+- **The `x` block v7** `{xv: 7, m, z, th, a, c, l, u, w, o}`. `o` is the host's state:
+  - `s`: `[index, state, charge %, ...]` for every interactable that isn't fresh (states: 1 used, 2 charging or wave running,
+    3 burnt out, 4 landed or Great Ball ready);
+  - `h`: `[balls bought, shop buys, balls opened]`; `g`: `[difficulty, spawns, XP, ₽ %, loot]`;
+  - `n`: interactables used, `u`: the last one;
+  - `m`: `[visit, stall, 3 items, sold bits]` while Meowth is in.
+
+  Host frames carry it too; a guest's own frame has none, because the host owns them. The replay keeps `o` in a frame field of
+  its own (**field 9**, only when it changes) and records an **`xi`** event when one is used (the plan's "xi interactable
+  used"). The v1-v6 readers are kept: a block without `o` shows every interactable fresh.
+- **Versions:** `G.Expedition.DV` is now **6**. dv-1 to dv-5 replays and snapshots still play without a notice; a co-op lobby
+  needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; max per counter): `tip.<kind>` (the tips seen), `eco.earned`,
+`eco.best` (most ₽ in a run), `eco.spent`, `eco.balls`, `eco.shop`, `eco.altars`, `eco.freed`, `eco.rocks`, `eco.berries`,
+`eco.ditto`, `eco.hypno`. The run-over screen adds "₽ N · Poké Balls N · Altars N". **No server change:** the server already
+takes any counter.
+
+**Assets:** none new.
+- The balls, the comet, the berries and Meowth's counter use the overworld's item pictures in `/overworld/item_icons/`
+  (`poke_ball`, `premier_ball`, `great_ball`, `star_piece`, `oran_berry`, `nugget`, `amulet_coin`).
+- Meowth, Ditto, Hypno, Gengar, Unown, the cages' Pokémon and the ghosts use their PMD sheets.
+- The altars, rocks, bushes, cages, the minimap and legend icons and the zone map are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on `G.World.zone`):
+- `core/hooks.js`: 1 new seam, `minimap.draw`. `ui/minimap.js`: its call, only in an Expedition zone.
+- `mica/replay.js`: field 9 and the `xi` event (a base snapshot has no `x.o`: its frames don't change).
+- `systems/expedition.js`: `DV` 6, `economy.js`.
+- Expedition files: `expedition/core.js` (`x` v7; the existing `enemy.ko` and `run.tick` listeners also call the economy, plus
+  the `minimap.draw` one); `classic.js` (foes' difficulty / XP / spawn modifiers, the drawing calls, "₽ N" on the zone line, the
+  altar arrow kept clear of a tip, `spawnFoe` / `spotNear` for the waves); `levelups.js` (Skip pays ₽); `items.js` (the gold stat
+  reads "+N % ₽"); `terrain.js` (`XV`).
+
+**Deviations:**
+- **No interact key:** everything is a stand-in circle (D3's rule). Balls open after 0.45 s; Ditto, Hypno and cages after
+  0.8 s. A paid ball or a cage you can't afford says how much you're short, and waits until you step off and back.
+- **The study's radii are halved** (our tiles are smaller than PokéBonk's metres). Its Big Nugget ball discount waits for an
+  item: only luck discounts for now.
+- **Ours, not the study's:** ₽ for special kills, Meowth's prices, the horde sizes and the greed / curse numbers (the study
+  gives none).
+- **Not in this batch** (the plan's D7 row doesn't list them): Snorlax, Magnemite, the slot machine (the owner allowed it, play
+  money only, decision #7) and Survival's respawn of used interactables (D11).
+- **A freed cage's research** (study: +25 research) waits for D10's research; `eco.freed` counts it meanwhile.
+- **No guardian / portal tips:** D3's banners already say what to do.
+
+**Not yet:**
+- D8's Alphas, Friend Ball and capture (the cages and the Great Ball are where D8's balls can plug in);
+- Soul Dew / Lunar Blessing (`pl.xultCharge`) and a Big Nugget, as items;
+- a co-op guest's own interactables (a guest's run isn't an Expedition one yet: D11); its frames already carry the host's `o`;
+- Survival's respawning interactables (D11), and more kinds (Snorlax, Magnemite, the slot machine).
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
@@ -2197,6 +2314,16 @@ Expedition code sets):
   live spectator and replay viewer (cut-in and ghost choreography; the `xu` event; a v5 block); a base Normal run in the same
   page; the desktop and phone layouts (on screen, no overlap; a click / tap on the button and the AUTO chip). `SHOTS=<dir>`
   saves a cut-in, a signature and a type Ultimate going off and the meter at both sizes.
+- `node overworld/tests/micasurvivor_expedition_economy_test.mjs` (DLC D7), fast-forwarded with `G.Game.debugStep`: the server
+  merging the D7 counters; the layout (42 per zone, pure, on open floor, spaced; none in the shrine); ₽ from kills (also the
+  real `enemy.ko` seam), the gold stat and a Skip; each Poké Ball kind (a paid one's price curve and luck discount, the pick of
+  3, the accidental-pick guard; free; cursed: difficulty, the ambush, 1-2 items); Meowth's schedule, prices and market heat;
+  each Unown tier (charge time, drain, offers / picks / lowest rarity, hordes, the Golden seal), the comet (landing, burning
+  out, its pick and the Ultimate charge), the challenge / cursed / greed altars; Ditto, Hypno, rocks, berries, cages; the fog,
+  the minimap's icons, the zone map and its legend (M, the pause button); the tips (once, saved); the `x` block v7 on
+  snapshots and host frames, a fresh spectator page, the replay's field 9 and `xi` events, a v6 block; a base Normal run in
+  the same page; the desktop and phone layouts (the tip box, a ball's pick, the shop, the map on screen; clicks / taps).
+  `SHOTS=<dir>` saves an altar, a ball's choice, Meowth's shop, the minimap's fog and the zone map at both sizes.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.
