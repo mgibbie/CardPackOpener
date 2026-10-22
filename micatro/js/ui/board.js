@@ -404,6 +404,8 @@ export class Board {
     for (const s of this.sprites.values()) {
       const d = s.d || {};
       const used = modAtlasesOf(d); // (its own art + a mod suit's front, a blind card, link / sticker overlays)
+      // (+ the face a mod UI draws instead: Pokermon's Shiny / Series A sheet, which the view never names)
+      if (s.fd && s.fd !== d) used.push(...modAtlasesOf(s.fd));
       if (!d.mod && !used.length) continue;
       if (atlas && !used.includes(atlas)) continue;
       s.vkey = ''; s.setData(d);
