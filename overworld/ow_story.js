@@ -30,7 +30,7 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import * as Trades from './trades.js';
 import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { openRadio } from './ow_features.js';
+import { openRadio, playerTID } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
 import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, whiteOut } from './ow_places.js';
@@ -50,7 +50,7 @@ import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import { unownPuzzleSpecial } from './unown_puzzle.js';
 import { checkRelicanthWailord, shouldDoBrailleRegicePuzzle } from './braille_puzzles.js';
-import { ensurePersonality, isMirageIslandPresent, mirageRndAsOf, updatePerDay, updateShoalTideFlag } from './time_events.js';
+import { ensurePersonality, isMirageIslandPresent, lotteryTicket, lottoTicketString, mirageRndAsOf, pickLotteryTicket, updatePerDay, updateShoalTideFlag } from './time_events.js';
 import { setInvisibleMirageTowerMetatiles, setMirageTowerVisibility } from './mirage.js';
 import { setIcefallCaveCrackedIceMetatiles } from './icefall_ice.js';
 import * as RotatingGates from './rotating_gates.js';
@@ -1022,6 +1022,8 @@ export function seedStoryState(region) {
 // Unknown store-specials default to 0 so branches take the "nothing happened"
 // path deterministically rather than reading a stale var.
 export const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_RAN = 4, B_OUTCOME_CAUGHT = 7;
+// pokecrystal constants/battle_tower_constants.asm
+const BATTLETOWERACTION_GSBALL = 11, GS_BALL_AVAILABLE = 0x0B;
 // What the last script-driven battle actually did. `GetBattleOutcome` used to
 // answer WON unconditionally, on the assumption that scripted battles were
 // skipped entirely; now that static wild battles really run, the scripts that
@@ -1274,6 +1276,35 @@ export function runSpecial(name, store, op) {
 			if (rolled) saveParty(S.party);
 			return set(isMirageIslandPresent(S.party) ? 1 : 0);
 		}
+		// THE LILYCOVE LOTTERY (lottery_corner.c; time_events.js). The day's number
+		// was drawn by the once-a-day update on the trip in; nothing here writes it.
+		// Unported, RetrieveLotteryNumber left VAR_RESULT stale and PickLotteryCornerTicket
+		// left VAR_0x8004 at whatever it held, so a ticket never won.
+		case 'RetrieveLotteryNumber': return set(lotteryTicket());
+		case 'BufferLottoTicketNumber': Story.setStrVarText(1, lottoTicketString(Story.getVar('VAR_RESULT') | 0)); return;
+		case 'PickLotteryCornerTicket': {
+			const r = pickLotteryTicket(Story.getVar('VAR_RESULT') | 0, S.party, getBox(), playerTID());
+			Story.setVar('VAR_0x8004', r.tier);
+			if (r.tier) {
+				Story.setVar('VAR_0x8005', r.prize);   // the ITEM_ symbol: `giveitem` / bufferitemname read it back
+				Story.setVar('VAR_0x8006', r.inPC);
+				Story.setStrVarText(1, String(r.mon.nickname || r.mon.name || r.mon.speciesId || '').toUpperCase());
+			}
+			return;
+		}
+		// Crystal's BattleTowerAction: only BATTLETOWERACTION_GSBALL (setval 11) has an
+		// answer here. sGSBallFlag reads GS_BALL_AVAILABLE once the 3DS Virtual Console
+		// has set it, which it does on the Hall of Fame save (engine/menus/save.asm's
+		// vc_hook) — here, once EVENT_BEAT_ELITE_FOUR (ow_progression.js
+		// applyJohtoHallOfFame). The Goldenrod POKeMON CENTER's doorway scene then
+		// hands over the GS BALL (gen_crystal_scriptvar.mjs restores its setval/ifequal).
+		case 'BattleTowerAction': {
+			if ((Story.getVar('VAR_RESULT') | 0) === BATTLETOWERACTION_GSBALL) return set(Story.getFlag('EVENT_BEAT_ELITE_FOUR') ? GS_BALL_AVAILABLE : 0);
+			return set(0);
+		}
+		// Ilex Forest's shrine: did the battle just fought catch CELEBI? (iffalse
+		// .DidntCatchCelebi skips KURT's "you caught CELEBI" beat)
+		case 'CheckCaughtCelebi': return set(S.lastBattleOutcome === B_OUTCOME_CAUGHT && battle.lastCaught?.speciesId === 'celebi' ? 1 : 0);
 		// MIRAGE TOWER (mirage.js). The shakes and the collapse are a screen shake; the
 		// disintegration leaves the sand the tower stood on (SetInvisibleMirageTowerMetatiles).
 		case 'SetMirageTowerVisibility': setMirageTowerVisibility(); return;

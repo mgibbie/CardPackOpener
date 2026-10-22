@@ -87,7 +87,11 @@ const HAND_PLACED_LEGENDS = {
 	// (8,23) is the square in front of the shrine (pokecrystal's bg_event 8, 22, BGEVENT_UP).
 	// It sat at (4,19), inside the tree wall, where no one could step (bug:1792420478358).
 	MAP_ILEX_FOREST: { species: 'celebi', dex: 251, level: 60, x: 8, y: 23, flag: 'legend_caught_celebi',
-		requires: () => Badges.isChampion('JOHTO'),
+		// ...except while the forest is restless and you carry the GS BALL: then the
+		// shrine's own script is the way in (pokecrystal IlexForest.asm .CelebiEvent,
+		// the same flag: ow_scaling.js startScriptedWildBattle), and this square is
+		// where you stand to use it
+		requires: () => Badges.isChampion('JOHTO') && !(Story.getFlag('EVENT_FOREST_IS_RESTLESS') && Bag.count('gsball') > 0),
 		intro: 'The shrine hums, and the forest folds around a small green shape — CELEBI!' },
 	// JOHKANTO had NO legendaries at all, while Hoenn has 9, Johto 5 and Kanto 4.
 	// Its Power Plant is the one bird lair the region actually owns (Seafoam and
