@@ -397,6 +397,7 @@ All are byte-identical to upstream main.
 | 15b | **DONE** (see "New jokers, sub-batch 15b" below) — **Pokermon main (post-3.9.1) +9 jokers** (owner: must ship): Lotad, Lombre, Ludicolo; Greavard, Houndstone; Electrike, Manectric; Cryogonal; Mawile. Ported from upstream main pinned at af0b656 ("3.9.1-1016a"); `version` stays 3.9.1, contentRev 13 counts them (see below why) | M | 11–15 |
 | 16 | **DONE** (see "Batch 16" below) — Pokermon 12 Megas (11 new: Mega Steelix was already ported) + Mega Stone `unique_val` + Mega Berry Juice + the Mega sleeve's `poke_infinite_megastone`. **Keep the add-on dedupe rule** (checkpoint 1 below; PORTING.md "Add-on dedupe"): a base Mega whose name an add-on Mega has makes the add-on's a duplicate automatically (`precedence.js replaced_by`); re-run `addon_dedupe_test`, and update its inventory if a new duplicate appears | M | 5 |
 | 17 | **DONE** (see "Batch 17" below; **the Pokermon 3.9.1 upgrade is complete**) — Pokermon non-Pokémon jokers (then finish Rival → Bitter Rival/Champion, Mystery Egg ← Oologist), ~~DNA seal~~, `starterq`, ~~Meteorite/Deoxys~~ (both done in new-jokers sub-batch 14), 5 blinds, Elite stake, 5 challenges; object_weights for Soul items | M | 5 |
+| 17b | **DONE** (see "Pokermon 3.9.1 leftovers" below) — the Pocket Packs' 3.9.1 contents, the Debris Sleeve's alt (a playing-card `card_limit` engine seam), the Series A art option (cosmetic) | S | 17 |
 | 18 | **DONE** (see "Batches 18–19" below) — Nacho 1.7.9: deprecate the 10 jokers now in base (aliases), re-key Megas and Elite, reworks. **Keep the add-on dedupe rule**: our 9 Nacho duplicates are already out of play as registered legacy definitions (checkpoint 1); when 1.7.9 drops the keys, choose `renamed` aliases (`aliases.js`) vs keeping the legacy definitions. Nacho's Megas re-keyed to `j_poke_*` there replace ours only if base registers them. Its 40 new jokers go through `mark_precedence` like the rest; Pokermon+ 1.2.0 (batch 20) too | M | 17 |
 | 19 | **DONE** (see "Batches 18–19" below) — Nacho 40 new jokers (31 load; 4 Toxic-Stall data-only; Impidimp / G-Max not loaded upstream) | L | 18 |
 | 20 | **DONE** (see "Batch 20" below) — Pokermon+ 1.2.0: 12 jokers, deck reworks, legacy defs for the 7 dropped | M | 17 |
@@ -762,8 +763,27 @@ Batches 4–17 are done: every Pokermon 3.9.1 content file is ported (435 rework
 Seed / Flower layer, the Unown rework, the Wish Pack, every item, seal, deck, sleeve, tag, pack, the 6 boss blinds, the Elite stake, the
 12 challenges, object_weights), pinned `3.9.1+r15`. What intentionally stays different from upstream is listed in
 `micatro/mods/pokermon/PORTING.md` "Pokermon 3.9.1 upgrade: complete" — chiefly: the owner's house rules and intended-design fixes,
-Porygon-Z's counter, the Pocket Packs' 3.9.1 contents and the Debris Sleeve's alt (not ported), Elite wins as Gold stickers, and
-cosmetic animations / music. Next in this plan: batch 18 (Nacho 1.7.9) and batch 20 (Pokermon+ 1.2.0).
+Porygon-Z's counter, the Pocket Packs' 3.9.1 contents and the Debris Sleeve's alt (not ported then: done in the leftovers batch
+below), Elite wins as Gold stickers, and cosmetic animations / music. Next in this plan: batch 18 (Nacho 1.7.9) and batch 20 (Pokermon+ 1.2.0).
+
+## Pokermon 3.9.1 leftovers — Pocket Packs, Debris Sleeve alt, Series A art: DONE (2026-10-21, branch `feat/micatro-pokermon-leftovers`)
+- Pin **3.9.1+r16** (`contentRev` 16; `LEGACY_MOD_VERSIONS` untouched). Details: `micatro/mods/pokermon/PORTING.md` "The 3.9.1 leftovers".
+- **Pocket Packs**: 3.9.1's contents — the evo item on its own roll (`pocket_evo_item`) through the new `poll_evo_item` (not in play,
+  not banned, in its pool), else a soulable Item seeded per pack (`key_append 'pocket'`); no c_keys; booster size / choice mods in
+  the text.
+- **Debris Sleeve's alt** on the Debris Deck: every Hazard card +1 hand size while held (`poke_negative_hazards`). Engine seam:
+  `js/engine/smods.js held_card_limit` (playing-card `card_limit`, opt-in through `smods_seams`), counted by run.js's draw (+ the
+  extra slots drawn at once) and view.js's `hand_limit`. **Fuzz on the seam-only diff identical to origin/main**: vanilla 40 / 5937
+  / 13 / 10, Pokermon 24 / 3869 / 13 / 6, all mods 16 / 2890 / 13 / 5.
+- **Series A art option**: Pokermon option `series` (Basic | Series A, Basic default), `cosmetic: true` — never a run option
+  (registry drops it: not in the recipe, replays or checksums); each viewer's saved choice (js/ui/modui.js `cosmetic()`). ui.js
+  draws the 136 Series A cells (data391.js `series_a`, generated), Shiny twins, alt souls and the 5 animated strips; Nacho /
+  Pokermon+ jokers on Pokermon's sheets follow it. No contentRev for this part. No new art (the Series A files are already live).
+- Tests: `micatro/tests/mods/pokermon_leftovers_test.mjs` **12 passed / 38 failed on origin/main (d3827c0c), 77 / 0 here**.
+  Re-recorded: modpin, pokermon_391_data, pokermon_391_batch17 (the pin).
+- Left (not 3.9.1-leftover scope): Pickup's `generate_pickup_item_key` still rolls its own evo item (3.9.1: poll_evo_item);
+  Shiny jokers on the Basic series draw the Basic sheet + shader (3.9.1 swaps to the Shiny sheet); the per-card series override
+  and Series B.
 
 ## Batches 18–19 — Nacho's Pokermon Dip 1.6.4 → 1.7.9-5: DONE (2026-10-21, branch `feat/micatro-nacho-179`)
 - Upstream: Eternalnacho/NachosPokermonDip `main` @ **904ae3979b8e3d18348c2b9c819c1692daf9d61e** (2026-10-19, main.json 1.7.9-5).

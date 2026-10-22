@@ -1,10 +1,10 @@
-// Pokermon 3.2.1 (the Wish Pack: 3.9.1) — boosters/packs1.lua: the 8 Pocket packs (Energy + Items, hand drawn,
+// Pokermon 3.9.1 — boosters/packs1.lua (the Pocket packs' contents since the leftovers batch; 3.2.1 before): the 8 Pocket packs (Energy + Items, hand drawn,
 // cards can be saved — the 'reserve' action), the Wish Pack (Jirachi's wishes, from the Jirachi
 // Tag), the Starter Pack (from the Starter Tag) and 3.9.1's Starter Pack...? (the knock-off starters, from the Starter Tag...?
 // the Imposter Professor makes; batch 17). Wish / Starter / Starter...? have weight 0: never in a shop.
 import {
   G, P_CENTERS, P_CENTER_POOLS, create_card, pseudorandom, pseudoseed, pseudorandom_element, defineBoosters,
-  matching_energy, find_card, any, smods_create_card, poke_family_present,
+  matching_energy, find_card, any, smods_create_card, poke_family_present, poll_evo_item,
 } from '../api.js';
 
 const FILE = 'boosters/packs1.lua';
@@ -27,50 +27,40 @@ function create_energy(self, card) {
   return create_card('Energy', G.pack_cards, null, null, true, true, null, null);
 }
 
-/** Other slots: 8% an evolution item one of your jokers needs (not already offered), else a random Item. */
-function create_item(self, card) {
-  const c_keys = pocket_keys(self);
-  const chance = pseudorandom(pseudoseed('match'));
-  if (chance > 0.92) {
-    const evo_item_keys = [];
-    for (const v of G.jokers.cards) {
-      const req = v.config.center.item_req;
-      if (!req) continue;
-      const item_key = 'c_poke_' + (Array.isArray(req) ? pseudorandom_element(req, pseudoseed('match'))[0] : req);
-      if (!any(find_card(item_key)) && !c_keys.includes(item_key)) evo_item_keys.push(item_key);
-    }
-    if (evo_item_keys.length > 0) return create_card('Item', G.pack_cards, null, null, true, true, pseudorandom_element(evo_item_keys, pseudoseed('match'))[0], null);
-    return create_card('Item', G.pack_cards, null, null, true, true, null, null);
+/**
+ * Other slots (3.9.1 packs1.lua create_item(seed), seed 'pocket'): 8% (pseudoseed(seed .. '_evo_item')) an evolution item
+ * a joker you hold needs (pokermon.poll_evo_item('match'): not in play, not banned, in its pool), else a random soulable
+ * Item (key_append = seed: a hidden Item, the Leftovers / Soul kind, can turn up). 3.2.1 rolled the evo item with 'match',
+ * kept a per-pack list of keys already offered, and its random Item wasn't per-pack seeded.
+ */
+function create_item(seed) {
+  if (pseudorandom(pseudoseed(seed + '_evo_item')) > 0.92) {
+    const evo_item_key = poll_evo_item('match');
+    if (evo_item_key) return smods_create_card({ key: evo_item_key, area: G.pack_cards, skip_materialize: true });
   }
-  return create_card('Item', G.pack_cards, null, null, true, true, null, null);
+  return smods_create_card({ set: 'Item', area: G.pack_cards, skip_materialize: true, soulable: true, key_append: seed });
 }
 
 function create_pocket_card(self, card, i) {
   // (3.9.1, batch 17: Safety First's poke_no_energy makes the Energy slot an Item)
-  if (i === 1) return G.GAME.modifiers.poke_no_energy ? create_item(self, card) : create_energy(self, card);
+  if (i === 1) return G.GAME.modifiers.poke_no_energy ? create_item('pocket') : create_energy(self, card);
   if (i === 2 && card.from_tag && G.GAME.round_resets.ante >= 5 && !any(find_card('c_poke_megastone'))) {
     if (pseudorandom(pseudoseed('pocket')) > 0.75) return create_card('Item', G.pack_cards, null, null, true, true, 'c_poke_megastone', null);
-    return create_item(self, card);
+    return create_item('pocket');
   }
-  return create_item(self, card);
+  return create_item('pocket');
 }
 
-/** self.config.c_keys in the Lua (a list on the shared center); kept per run here. */
-function pocket_keys(self) {
-  G.GAME.poke_pocket_c_keys = G.GAME.poke_pocket_c_keys || {};
-  return (G.GAME.poke_pocket_c_keys[self.key] = G.GAME.poke_pocket_c_keys[self.key] || []);
-}
-
+// 3.9.1: every Pocket pack's create_card is create_pocket_card itself (3.2.1's c_keys bookkeeping is gone), and its text counts
+// Steamodded's booster_choice_mod / booster_size_mod (the pack's "choose N of M").
 const pocket = {
-  create_card(self, card, i) {
-    const created = create_pocket_card(self, card, i);
-    const c_keys = pocket_keys(self);
-    c_keys.push(created.config.center_key);
-    if (i === self.config.extra + (G.GAME.extra_pocket_picks || 0)) c_keys.length = 0;
-    return created;
+  create_card: create_pocket_card,
+  loc_vars(self, info_queue, card) {
+    const m = G.GAME.modifiers;
+    return { vars: [card.config.center.config.choose + (m.booster_choice_mod || 0), card.ability.extra - 1 + (m.booster_size_mod || 0), 1] };
   },
-  loc_vars(self, info_queue, card) { return { vars: [self.config.choose, card.ability.extra - 1, 1] }; },
 };
+const pocket_pack = (extra, choose) => ({ ...pocket, config: { extra, choose } });
 
 /** Starter Pack candidates (no family already present): starters by type, Pikachu / Eevee, pseudo-legendaries. */
 export function starter_lists() {
@@ -175,6 +165,7 @@ defineBoosters({
     loc_vars(self, info_queue, card) { return { vars: [card.config.center.config.choose, card.ability.extra] }; },
     in_pool() { return false; },
   },
-  pokepack_normal_1: pocket, pokepack_normal_2: pocket, pokepack_jumbo_1: pocket, pokepack_mega_1: pocket,
-  pokepack_normal_3: pocket, pokepack_normal_4: pocket, pokepack_jumbo_2: pocket, pokepack_mega_2: pocket,
+  // (3.9.1 configs: 3.2.1's c_keys list is gone)
+  pokepack_normal_1: pocket_pack(4, 1), pokepack_normal_2: pocket_pack(4, 1), pokepack_jumbo_1: pocket_pack(6, 1), pokepack_mega_1: pocket_pack(6, 2),
+  pokepack_normal_3: pocket_pack(4, 1), pokepack_normal_4: pocket_pack(4, 1), pokepack_jumbo_2: pocket_pack(6, 1), pokepack_mega_2: pocket_pack(6, 2),
 }, FILE);

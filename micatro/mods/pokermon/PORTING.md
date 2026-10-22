@@ -260,8 +260,8 @@ Intended-design fixes are noted in comments at each site (search "intended").
 ## Pokermon 3.9.1 upgrade (plan: Plans/MICATRO_MODS_UPGRADES.md §2.1, §3)
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
-87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), **`3.9.1+r15`** since batch 17 (the last: the
-upgrade is complete, see "Pokermon 3.9.1 upgrade: complete")
+87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), `3.9.1+r15` for batch 17 (the last: the
+upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), **`3.9.1+r16`** since the leftovers batch ("The 3.9.1 leftovers" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -279,6 +279,7 @@ upgrade is complete, see "Pokermon 3.9.1 upgrade: complete")
 | 12–15b | new jokers (sub-batches 12–15, 15b; below) | **done 2026-10-20** — `3.9.1+r9` … `3.9.1+r13` |
 | **16** | **the Megas: 11 new Megas, the Mega Stone's 3.9.1 rules (`unique_val`), the Mega Berry Juice, the Mega Deck / Sleeve (below)** | **done 2026-10-20** — `3.9.1+r14` |
 | **17** | **the non-Pokédex jokers (Rival chain, Oologist, Imposter Professor + Starter Pack...?), April Fools (option-gated), the 5 boss blinds + 3.9.1's Iridescent Hacker, the Elite stake, the 12 challenges, the Obituary / Revenant sleeve alts (Pink Seal 1 in 3), object_weights (below)** | **done 2026-10-20** — `3.9.1+r15`; **upgrade complete** |
+| **leftovers** | **the Pocket Packs' 3.9.1 contents, the Debris Sleeve's alt (a playing-card `card_limit` engine seam), the Series A art option (cosmetic)** ("The 3.9.1 leftovers" below) | **done 2026-10-21** — `3.9.1+r16` |
 
 ### Steamodded seams for 3.9.1 (batch 4)
 Engine: `js/engine/smods.js` (ported from Steamodded/smods 5b8a087, 26.1018.0~dev-b), wired into core.js / run.js /
@@ -782,9 +783,8 @@ Debris deck / sleeve, and the 16 jokers that waited for them, all ported from th
   same deck). AtlasDecksBasic (3.9.1, vendored in batch 5) {10,0} / {10,1}. +1 Hazard layer and limit, +1 hand size, no interest, and
   $1 per Hazard card in the full deck at cash-out (3.9.1's lovely "Enhance bonus" row: `G.GAME.modifiers.poke_money_per_enhancement`,
   rules.js evaluate_round; ours is the last row, the Lua's comes after the discards row: same total).
-  - **Deferred**: the sleeve's alt on the Debris deck (3.9.1 `poke_negative_hazards`: every Hazard card has `card_limit` +1, i.e.
-    +1 hand size while held) needs a playing-card `card_limit` engine seam. It is not registered, so on the Debris deck the sleeve
-    plays its own effect.
+  - The sleeve's alt on the Debris deck (3.9.1 `poke_negative_hazards`: every Hazard card has `card_limit` +1, i.e. +1 hand size
+    while held): deferred here, **done in the leftovers batch** (the playing-card `card_limit` seam; "The 3.9.1 leftovers" below).
 - **Off hold** (spec `rework_hold` is now only Unown / Unown Swarm; `data391.js` regenerated: 90 whole configs, 270 texts, 25 flags):
   - Qwilfish: +1 Hazard layer; +15 Chips (`scale_card`) per enhanced card destroyed.
   - Skarmory: +1 Hazard layer and limit; X0.4 per held Hazard / Steel card. `rework_deferred`: Mega Skarmory (batch 16).
@@ -1125,9 +1125,9 @@ They follow 3.9.1's `list` order: Kecleon after Milotic, Shuppet / Banette / Tro
     Natdex card. A Shiny one draws it under the Shiny shader, as every Shiny. The test checks all 11 cells are real, distinct pictures.
   - **Baltoy / Claydol, Series A**: 3.9.1 lists `AtlasJokersSeriesABaltoy` / `Claydol` (32-frame animations, + Shiny) as their **Series A
     alternate** (`alts.AtlasJokersSeriesA.anim_atlas`), not their base art. 3.9.1 picks the series per profile
-    (`pokemon_spritesheet_atlas`, default "SeriesA"; the collection can toggle it per card). The port shows the Basic series for every
-    joker and has no series option (batch 5), so like every other Series A alt (Zangoose and Seviper have one too) they stay vendored,
-    unused. Wiring them = a port-wide Series A option (an art batch), not a per-joker change. The `...Future` sheets are not named by 3.9.1.
+    (`pokemon_spritesheet_atlas`, default "SeriesA"; the collection can toggle it per card). Wired in the leftovers batch: the
+    cosmetic `series` option (Basic by default) draws every Series A alt, Baltoy / Claydol animated ("The 3.9.1 leftovers" below).
+    The `...Future` sheets are not named by 3.9.1.
 - **Tests**: `micatro/tests/mods/pokermon_391_new_13_test.mjs` gives 0 passed / 31 failed on origin/main (9a00cd8f) and on sub-batch 12
   (91e0fb70), and 138 / 0 here.
   - It fires every joker through real plays and each evolution (above), Zangoose's unchanged poker hand, Claydol's return to hand, Kecleon's
@@ -1871,18 +1871,78 @@ What remains intentionally different from upstream 3.9.1:
 - **Engine shape**: the timing deviations of batch 6 (evolutions at end of round, not 3.9.1's later `evolution` context); `modify_pool`
   as `pool_filter` (same picks); bosses picked by the lovely-path eligibility (showdowns ignore `min`) rather than create_blind_pool's
   min / max (which would keep vanilla's showdowns, min 10, out of ante 8); the soul roll is the engine's per-card one.
-- **Not ported yet / left**: the **Pocket Packs' 3.9.1 contents** (create_item with `poll_evo_item`, soulable Items, per-pack seeds:
-  packs1.js keeps the 3.2.1 slots; only Safety First's Energy slot is 3.9.1); the **Debris Sleeve's alt** (needs a playing-card
-  `card_limit` seam); other mods' poll_seal copies under Pokermon's object_weights (above); the Mega Mawile / Mega Manectric sprites
+- **Not ported yet / left**: (the Pocket Packs' 3.9.1 contents, the Debris Sleeve's alt and the Series A art: done in the
+  leftovers batch, "The 3.9.1 leftovers" below); other mods' poll_seal copies under Pokermon's object_weights (above); the Mega Mawile / Mega Manectric sprites
   upstream main has without jokers; upstream main's drift after af0b656 (sub-batch 15b: Solrock / Lunatone ...).
 - **Win stickers on Elite**: DONE as a follow-up: the 9th level, Elite (see "The Elite stake" above). Earlier Elite wins stay Gold.
 - **Cosmetic only**: animations (`do_evolution_anim`, set_sprites tricks), music / cries (Miror B., Ludicolo, Voltorb Flip), the
   Mystery Dungeon back, the Unown Swarm's glued playing-card front, floating sprites hiding while an item is used, joker displays.
 
+### The 3.9.1 leftovers (2026-10-21, branch `feat/micatro-pokermon-leftovers`)
+Pinned **`3.9.1+r16`** (`contentRev: 16`; `LEGACY_MOD_VERSIONS` untouched). The three things the "complete" summary left, from
+the 3.9.1 Lua (upstream main af0b656 has the same packs1.lua / sleeve.lua / pokespriteload.lua parts).
+
+- **The Pocket Packs' contents** (boosters/packs1.js; 3.9.1 boosters/packs1.lua): every Pocket pack's `create_card` is
+  `create_pocket_card` itself. The Energy slot is unchanged (10% Double Rainbow, else 50% an Energy matching a held joker).
+  The other slots are `create_item('pocket')`:
+  - 8% (`pseudoseed('pocket_evo_item')` > 0.92) an evolution item from `pokermon.poll_evo_item('match')` (new, systems/items.js):
+    the items the held jokers need (a list requirement rolls one), each once, that exist, aren't in play (`used_jokers`) or banned,
+    and whose in_pool says yes; one at random. (Lua walks a hash set with pairs(): the port keeps first-seen order.)
+  - Else `SMODS.create_card{set = poke_item, soulable = true, key_append = 'pocket'}`: the random Item is seeded per pack and
+    can be a hidden (soul) Item.
+  - 3.2.1's per-pack `c_keys` list is gone (its configs too: 3.9.1's `{extra, choose}`), and the text counts Steamodded's
+    `booster_choice_mod` / `booster_size_mod`.
+  - The Mega Stone slot (tag packs, ante 5+) and Safety First's Item-for-Energy slot are as before.
+  - Not changed: `generate_pickup_item_key` (Pickup / Treasure jokers) keeps its own evo-item roll; 3.9.1 sends it through
+    poll_evo_item too, which would also skip items in play — a separate behaviour change, left for a later batch.
+- **The Debris Sleeve's alt on the Debris Deck** (sleeves.js `alt`; 3.9.1 sleeve.lua diceysleeve + pokermon.lua Card:set_ability
+  wrap): the sleeve sets only `G.GAME.modifiers.poke_negative_hazards`; the deck's own effect still applies (one Hazard layer, +1
+  hand size). With it, a card that becomes a Hazard gets `ability.card_limit` +1 and gives it back when it stops being one
+  (backs/backs1.js `debris_hazard_card_limit`, Pokermon's `set_ability` hook). Its alt text is 3.9.1's `sleeve_poke_diceysleeve_alt`
+  ("All Hazards give +1 hand size"; spec `loc_extra`). A playing card with a card_limit shows Steamodded's "+N hand size" tooltip
+  (`generic_card_limit_pc`, index.js `describe` hook).
+  - **Engine seam** (opt-in, the `smods_seams` pattern): `js/engine/smods.js held_card_limit(area)` = the sum of the area's cards'
+    `ability.card_limit`, 0 unless an active mod opted in (`smods_seams: true`, or a list naming `'card_limit'`). run.js
+    `draw_from_deck_to_hand` counts it into the hand space, and when a drawn card carries card_limit it draws that many more
+    straight after (Steamodded lovely/card_limit.toml's draw: the extra slots go to the next cards on the deck); not for a counted
+    draw (`e`) or while The Serpent holds the draw to 3. view.js `hand_limit` shows it. Only the slots such cards add are drawn, so
+    a run where no playing card has a card_limit is untouched.
+  - Fuzz proof (seam-only diff, before any content change), identical to origin/main: vanilla 40 runs / 5937 actions / max ante 13
+    / 10 wins; Pokermon 24 / 3869 / 13 / 6; all mods 16 / 2890 / 13 / 5 (same mod activity).
+  - Deviation: SMODS also raises the hand's `card_limit` itself (every reader sees it); ours adds it where the hand is filled and
+    shown (the draw, the view), so jokers that read the hand size (none in Pokermon) see the base size.
+- **The Series A art option** (cosmetic; no rev): 3.9.1's `pokemon_spritesheet_atlas` (a per-profile setting, Basic / Series A)
+  as the mod option **`series`** ("Joker art": Basic | Series A, **Basic by default**).
+  - `cosmetic: true` options (js/mods/registry.js) never become run options: `activateMods` drops them, so the engine, the recipe's
+    `modOptions`, replays and checksums never carry them. The UI reads the VIEWER's own saved value (js/ui/modui.js `cosmetic()`,
+    from the saved mod options; bound into mod UIs), so a player, a spectator and a replay viewer each see their own choice — the
+    per-profile semantics. The run's "Active mods" box leaves it out.
+  - data391.js `series_a` (generated from 3.9.1's PokemonSprites alts: 136 names): the Series A twin sheet of the joker's Basic
+    sheet + its base cell (the sheets mirror each other), the alt floating sprite (Gengar, Haunter, Mr. Mime, Noctowl, Mega
+    Tyranitar, Chingling, Spiritomb) else the base one, and the 5 animated strips (Bellsprout 24 frames 10 fps, Voltorb 11/11,
+    Electrode 13/13, Baltoy / Claydol 32/50). index.js registers `AtlasJokersSeriesA<Gen01-09|Natdex>[Shiny]391` (the -391 files
+    for Gen01 / Gen02 / Natdex, the shared files for Gen03-09) and the strips (systems/anim.js `SERIES_A_ANIM`).
+  - ui.js `seriesA()`: `face()` (the board), `still()` (collections, the Pokédex, deck editor thumbnails: screens.js `stillData`)
+    and `anim()` draw it. Shiny draws the Series A Shiny twin (3.9.1 e_poke_shiny `on_load`: atlas .. 'Shiny'). Zorua's disguise /
+    illusion copies the Series A face. Only a joker drawn from its own cell of a Pokermon Basic joker sheet switches: Pokermon's,
+    and the add-ons' on Pokermon's sheets — Nacho's (Chimchar, Carbink, Bounsweet, Flapple, legacy Gardevoir) and Pokermon+'s
+    (Lechonk, Cetoddle, legacy Croagunk), as 3.9.1's `load_atlas` runs for them; an add-on's own sheet never.
+  - Not ported: the per-card override (3.9.1's collection right-click, `pokemon_spritesheet_overrides`), Series B (3.9.1's option
+    lists it, its only sheet is Natdex), the artist credits per series, and the alt soul's `apply_edition` (the floating sprite
+    takes the edition shader).
+  - Found on the way, NOT changed: on the Basic series a Shiny joker draws the Basic (non-Shiny) sheet plus the Shiny shader; 3.9.1
+    swaps to the Shiny twin sheet (Series A does here). A one-line follow-up if wanted.
+  - Art: nothing new — the 30 Series A files were vendored in batch 5 and are already live on magepunk-micatromods.
+- **Tests**: `micatro/tests/mods/pokermon_leftovers_test.mjs` (new; **12 passed / 38 failed on origin/main d3827c0c, 77 / 0 here**)
+  fires the packs' slots (the RNG-exact Item draw, the evo item, poll_evo_item's rules, a pack bought and opened), the alt through
+  real draws (the dealt Hazard, a draw after a play: 9 + 3 Hazards = 12), the tooltip, the picker text, the opt-in rule, and the
+  series option (faces, Shiny, animation, add-ons, stills, the recipe / checksum unchanged, the viewer's saved choice, the art
+  crops). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_391_batch17_test` (the pin).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
-- **Batch 10**: done (above). Only the Debris sleeve's alt waits (a playing-card `card_limit` engine seam).
+- **Batch 10**: done (above). The Debris sleeve's alt came in the leftovers batch (the playing-card `card_limit` seam).
 - **Batch 10b**: done (above). Nothing waits.
 - **New jokers** (sub-batches 11–15, 15b): all done (above): 101 jokers (26 + 15 + 19 + 14 + 18 from 3.9.1, 9 from upstream main in 15b).
   `new_deferred` is empty since batch 16 (Drampa's Mega; Kirlia -> Gallade, Roselia -> Roserade and Budew -> Roselia came in with sub-batch 14).
@@ -1912,10 +1972,11 @@ on 3.9.1 but one part):
   batch 10b). Still on 3.2.1 sheets: the add-ons (Nacho, Pokermon+:
   some of their cells changed in 3.9.1 — e.g. Hisuian Sliggoo / Goodra, Naclstack, Garganacl — so they move with their own
   upgrades); the batch-1 art (Rotom Dex, the Stadium / Mega decks and sleeves, the Jirachi wishes) is unchanged.
-- Vendored but not mapped: the Series A sheets (the port shows Basic art; 3.9.1's alternate series, see sub-batch 13 for Baltoy / Claydol), 3.9.1's re-laid Bird Energy strip (the same frames in
+- Vendored, mapped in the leftovers batch: the Series A joker sheets + the 5 animated strips (the cosmetic `series` option).
+- Vendored but not mapped: the other Series A sheets (consumables, decks, boosters, stickers, vouchers: 3.9.1 names them nowhere), 3.9.1's re-laid Bird Energy strip (the same frames in
   one row; the Unown swarm's 20880 px strips are drawn since batch 10b, split into tiles), `smeargle_logo`, and the new
   files no existing card names (TitleCard, GMaxClouds, capture_disc, elite_stake*, miror_budicolo, placeholder_blind,
-  poke_logo_alt / _multi, shiny_*, the Series A Baltoy / Bellsprout / Claydol sheets).
+  poke_logo_alt / _multi, shiny_*).
 
 ## Add-on extension points (for Pokermon add-ons: Nacho's Pokermon Dip, Pokermon+)
 

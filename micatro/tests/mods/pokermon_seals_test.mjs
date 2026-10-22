@@ -28,7 +28,7 @@ const msgs = (r) => r.events.filter((e) => e.type === 'status' && e.message).map
 const empty_consumables = () => { for (const c of G.consumeables.cards.slice()) c.remove(); G.consumeables.cards.length = 0; G.GAME.consumeable_buffer = 0; };
 const set_of = (k) => P_CENTERS[k] && P_CENTERS[k].set;
 
-ok(MODS.pokermon.contentRev === 16 && PINS.modPin('pokermon') === '3.9.1+r16', 'Pokermon contentRev 16 (the seals fix: pin 3.9.1+r16)', PINS.modPin('pokermon'));
+ok(MODS.pokermon.contentRev >= 16 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 16 (the seals fix: pin 3.9.1+r16)', PINS.modPin('pokermon'));
 ok(P_SEALS.poke_pink_seal && P_SEALS.poke_silver && P_SEALS.poke_dna_seal && P_SEALS.poke_pink_seal.mod && P_SEALS.poke_silver.calculate, 'the three Pokermon seals are registered with their behaviour');
 
 // ------------------------------------------------------------------- Pink Seal

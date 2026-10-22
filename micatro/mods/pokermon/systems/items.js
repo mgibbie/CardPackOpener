@@ -99,6 +99,29 @@ export function generate_pickup_item_key(seed) {
   return item_key;
 }
 
+/**
+ * pokermon.poll_evo_item(seed) (3.9.1 pokefunctions.lua; the Pocket Packs' evolution item since the leftovers batch): the
+ * evolution items the jokers you hold need (a list requirement rolls one of its items, `pseudoseed(seed)`), each once, that
+ * exist, aren't in play (`used_jokers`) or banned and whose in_pool says yes; one of them at random (`pseudoseed(seed)`),
+ * or undefined. (Lua collects them in a hash set and walks it with pairs(): the port keeps first-seen order.)
+ */
+export function poll_evo_item(seed) {
+  const set = [];
+  for (const v of G.jokers.cards) {
+    const req = v.config.center.item_req;
+    if (!req) continue;
+    const r = Array.isArray(req) ? pseudorandom_element(req, pseudoseed(seed))[0] : req;
+    const key = 'c_' + (NATIVE_EVO_ITEMS.includes(r) ? 'poke' : v.config.center.poke_custom_prefix) + '_' + r;
+    if (!set.includes(key)) set.push(key);
+  }
+  const list = set.filter((k) => {
+    const c = P_CENTERS[k];
+    return c && !G.GAME.used_jokers[k] && !G.GAME.banned_keys[k] && (typeof c.in_pool !== 'function' || c.in_pool(c));
+  });
+  if (list.length > 1) return pseudorandom_element(list, pseudoseed(seed))[0];
+  return list[0];
+}
+
 export function create_holding_item(key, edition, has_evolved) {
   if ((G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit || (edition && edition.negative)) && !has_evolved) {
     const _card = create_card('Item', G.consumeables, null, null, null, null, key);

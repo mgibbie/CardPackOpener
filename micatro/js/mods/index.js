@@ -199,6 +199,6 @@ export function modOptionList(id) {
   return Object.entries(m.options).filter(([, o]) => !optionHidden(o)).map(([key, o]) => {
     o = o || {};
     const type = o.type || (Array.isArray(o.choices) ? 'choice' : typeof o.default === 'boolean' ? 'bool' : 'value');
-    return { key, default: o.default, label: o.label || key.replace(/_/g, ' '), type, choices: Array.isArray(o.choices) ? o.choices : null };
+    return { key, default: o.default, label: o.label || key.replace(/_/g, ' '), type, choices: Array.isArray(o.choices) ? o.choices : null, ...(o.cosmetic ? { cosmetic: true } : {}) };
   });
 }

@@ -4,7 +4,8 @@
 // choice option) is injected into the manifest via window.__micatroExtraMods. Checks:
 //   - New Run shows a Mods row; the Mods panel lists the mod (name/author/size/description),
 //     toggling it on shows its options (never a `hidden` one, whose default is still set: js/mods/index.js
-//     optionHidden), options + selection persist in localStorage
+//     optionHidden), options + selection persist in localStorage; a `cosmetic` option (Pokermon's sprite series) is listed
+//     and saved, but never enters the run's options / recipe nor the Active mods box
 //   - dependency auto-enable / auto-disable with a note (a second fake add-on requiring tmui)
 //   - the controller reticle can reach the Mods panel toggles
 //   - a run starts with the mod active (view.mods, recipe modOptions), the mod joker is drawn
@@ -170,13 +171,14 @@ try {
 		A(st.on.length === 0 && /Also turned off Test Add-on/.test(st.note), 'turning off a requirement turns off its dependents, with a note', JSON.stringify(st));
 		// on again (just tmui) -> its options render
 		await tap(page, '.mod-row[data-mod="tmui"] .mod-toggle');
-		await waitFor(() => page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt').length === 2), 8000);
+		await waitFor(() => page.evaluate(() => document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt').length === 3), 8000);
 		const opts = await page.evaluate(() => [...document.querySelectorAll('.mod-row[data-mod="tmui"] .mod-opt')].map(r => r.textContent));
-		A(opts.length === 2 && /Start with Adder\s*On/.test(opts[0]) && /Flavor\s*mild\s*hot/.test(opts[1]), 'the mod\'s options render (bool as a toggle, choice as buttons)', JSON.stringify(opts));
+		A(opts.length === 3 && /Start with Adder\s*On/.test(opts[0]) && /Flavor\s*mild\s*hot/.test(opts[1]) && /Look\s*plain\s*fancy/.test(opts[2]), 'the mod\'s options render (bool as a toggle, choice as buttons)', JSON.stringify(opts));
 		A(!opts.some(t => /Hidden Legacy/.test(t)), 'a hidden option is not listed (like Pokermon+\'s superseded "Nincada line")', JSON.stringify(opts));
 		await tap(page, '.mod-row[data-mod="tmui"] .mod-opt-c[data-val="hot"]');
+		await tap(page, '.mod-row[data-mod="tmui"] .mod-opt-c[data-val="fancy"]');
 		const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('micatro_mods') || 'null'));
-		A(saved && saved.ids.join() === 'tmui' && saved.options.tmui.flavor === 'hot', 'selection + options persist in localStorage', JSON.stringify(saved));
+		A(saved && saved.ids.join() === 'tmui' && saved.options.tmui.flavor === 'hot' && saved.options.tmui.look === 'fancy', 'selection + options persist in localStorage (the cosmetic one too: the viewer choice)', JSON.stringify(saved));
 		A(await page.evaluate(() => document.querySelector('.mod-row[data-mod="tmui"] .mod-opt-c.on').dataset.val === 'hot'), 'the chosen option is shown as on');
 		// a mod with a long option list (Mika's: one toggle per card) starts collapsed
 		await tap(page, '.mod-row[data-mod="mikas"] .mod-toggle');
@@ -198,6 +200,7 @@ try {
 		const rec = await page.evaluate(() => window.__micatro.session.recipe);
 		A(v.mods.join() === 'tmui' && rec.mods.join() === 'tmui' && rec.modOptions.tmui.flavor === 'hot' && rec.modOptions.tmui.starter === true, 'the run starts with the mod active + its options in the recipe', JSON.stringify({ mods: v.mods, o: rec.modOptions }));
 		A(rec.modOptions.tmui.legacy === true, 'the hidden option still gets its default (stored, readable)', JSON.stringify(rec.modOptions));
+		A(!('look' in rec.modOptions.tmui), 'a cosmetic option never enters the run (recipe modOptions): replays and checksums never carry it', JSON.stringify(rec.modOptions));
 		A(v.areas.jokers.map(j => j.center).join() === 'j_tmui_adder,j_tmui_ghost', 'the mod hook gave the starter jokers', v.areas.jokers.map(j => j.center).join());
 		A(await waitFor(async () => near(await cardPixel(page, 'j_tmui_adder', 'base'), [255, 0, 255]), 8000), 'the mod joker is drawn from its atlas cell (magenta)', JSON.stringify(await cardPixel(page, 'j_tmui_adder', 'base')));
 		A(near(await cardPixel(page, 'j_tmui_adder', 'soul'), [0, 255, 255]) && (await cardPixel(page, 'j_tmui_adder', 'soul', 0.05, 0.05))[3] === 0, 'its soul layer floats over it (cyan square, transparent around)');
@@ -216,7 +219,7 @@ try {
 		await page.keyboard.press('Escape');
 		await page.waitForSelector('.opt-modal .active-mods', { visible: true, timeout: 5000 }).catch(() => { });
 		const am = await page.evaluate(() => { const e = document.querySelector('.active-mods'); return e ? e.textContent : ''; });
-		A(/UI Test Mod/.test(am) && /Flavor: hot/.test(am) && /Start with Adder: On/.test(am) && !/Hidden Legacy/.test(am), 'Options lists the active mods with their options (not a hidden one)', am);
+		A(/UI Test Mod/.test(am) && /Flavor: hot/.test(am) && /Start with Adder: On/.test(am) && !/Hidden Legacy/.test(am) && !/Look:/.test(am), 'Options lists the active mods with their options (not a hidden or cosmetic one)', am);
 		await tap(page, '.opt-modal .b-back');
 		await page.keyboard.press('i');
 		A(await waitFor(() => page.evaluate(() => /UI Test Mod/.test((document.querySelector('.ri-mods') || {}).textContent || '')), 3000), 'Run Info shows the active mod badges');

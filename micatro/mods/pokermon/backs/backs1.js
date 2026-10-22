@@ -119,3 +119,16 @@ export function debris_apply(cfg) {
   G.GAME.modifiers.poke_money_per_enhancement = cfg.money;
   G.GAME.modifiers.poke_enhance_bonus_text = localize('poke_hazards_in_deck');
 }
+
+/**
+ * The Debris Sleeve's alt on the Debris Deck (3.9.1 pokermon.lua Card:set_ability wrap, "To support Debris sleeve combo";
+ * G.GAME.modifiers.poke_negative_hazards): a Hazard card carries card_limit +1 — one more hand size while it is held
+ * (Steamodded's playing-card card_limit: js/engine/smods.js held_card_limit + run.js draw_from_deck_to_hand). A card that
+ * stops being a Hazard gives it back. Called from the set_ability hook (index.js), after the new ability is built (Steamodded
+ * keeps the old ability's fields, card_limit included, across the change, as the Lua relies on).
+ */
+export function debris_hazard_card_limit(card, center, old_center) {
+  if (!G.GAME || !G.GAME.modifiers || !G.GAME.modifiers.poke_negative_hazards || !card.ability) return;
+  if (old_center && old_center.key === 'm_poke_hazard' && typeof card.ability.card_limit === 'number') card.ability.card_limit -= 1;
+  if (center && center.key === 'm_poke_hazard') card.ability.card_limit = (card.ability.card_limit || 0) + 1;
+}

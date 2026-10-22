@@ -29,6 +29,18 @@ export const ANIMATED = {
 };
 
 /**
+ * Pokermon 3.9.1's animated Series A alternates (pokesprites.lua ANIMATION_ATLAS: frames / fps; one-row strips, + Shiny twins),
+ * drawn by ui.js when the viewer picks the Series A sprite series (the cosmetic `series` option). Atlases: index.js.
+ */
+export const SERIES_A_ANIM = {
+  AtlasJokersSeriesABellsprout: { frames: 24, fps: 10 },
+  AtlasJokersSeriesAVoltorb: { frames: 11, fps: 11 },
+  AtlasJokersSeriesAElectrode: { frames: 13, fps: 13 },
+  AtlasJokersSeriesABaltoy: { frames: 32, fps: 50 },
+  AtlasJokersSeriesAClaydol: { frames: 32, fps: 50 },
+};
+
+/**
  * Kecleon's card per type (3.9.1 pokejokers_12.lua set_sprites: its poke_lookup_atlas = the Gen 3 sheet, pokespriteload.lua
  * lookup_gen_atlas 3). Colorless (or a type without a cell) is its own Natdex card. Drawn by ui.js face() (+ the Shiny shader).
  */

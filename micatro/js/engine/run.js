@@ -32,7 +32,7 @@ import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js'
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
-import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate } from './smods.js';
+import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit } from './smods.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -416,7 +416,9 @@ export function draw_from_deck_to_hand(e) {
     return true;
   }
   G.drawn_cards = [];
-  let hand_space = e || Math.min(G.deck.cards.length, G.hand.config.card_limit - G.hand.cards.length);
+  // (Steamodded: a held card's ability.card_limit is more hand size — smods.js held_card_limit; 0 unless an opted-in mod is on)
+  let held = ACTIVE_MODS.length ? held_card_limit(G.hand) : 0;
+  let hand_space = e || Math.min(G.deck.cards.length, G.hand.config.card_limit + held - G.hand.cards.length);
   // Mods may change how many cards are drawn (MoreFluff's Snake / The Serpent DX), before The Serpent.
   if (ACTIVE_MODS.length) hand_space = reduceHook('draw_hand_space', hand_space, e);
   if (G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled &&
@@ -430,6 +432,24 @@ export function draw_from_deck_to_hand(e) {
     hand_space = Math.min(G.deck.cards.length, n);
   }
   for (let i = 1; i <= hand_space; i++) draw_card(G.deck, G.hand, i * 100 / hand_space, 'up', true);
+  // Steamodded's draw (lovely/card_limit.toml draw_from_deck_to_hand): a card drawn with ability.card_limit makes room for
+  // that many more, drawn straight after it from the top of the deck (a Hazard on the Debris Deck + Sleeve takes no hand
+  // space). Not for a counted draw (`e`) or while The Serpent holds the draw to 3. Only the slots such cards add are drawn,
+  // so with none drawn nothing changes (the event is a no-op).
+  if (!e && ACTIVE_MODS.length && ACTIVE_MODS.some((id) => seam_mod(id, 'card_limit'))) {
+    const serpent = G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled && (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0);
+    if (!serpent) {
+      const top_up = () => {
+        const now = held_card_limit(G.hand), gained = now - held;
+        held = now;
+        const n = Math.min(gained, G.deck.cards.length, G.hand.config.card_limit + now - G.hand.cards.length);
+        if (n <= 0) return;
+        G.E_MANAGER.add_event(top_up, true);
+        for (let i = 0; i < n; i++) G.E_MANAGER.add_event(() => { G.hand.draw_card_from(G.deck); G.hand.sort(); }, true);
+      };
+      G.E_MANAGER.add_event(top_up);
+    }
+  }
   // (a Lua G.FUNCS.draw_from_deck_to_hand wrap: Bunco's linked cards follow their group into the hand)
   if (ACTIVE_MODS.length) callHook('draw_from_deck_to_hand', e);
 }

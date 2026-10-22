@@ -38,6 +38,8 @@
 //   consumable_spawn (batch 17) {name: {hidden, soul_set, soul_rate, weight}} the 3.2.1 consumables whose spawn fields 3.9.1
 //            changed (object_weights: the Soul items' pool weights); null = gone in 3.9.1
 //   challenges (batch 17) 3.9.1's challenge list, whole (pokechallenges.lua: functions as "__fn")
+//   series_a (leftovers batch, cosmetic) {name: {atlas, pos, soul_pos?, soul_edition?, anim?}} 3.9.1's Series A alternate art
+//            (PokemonSprites alts.AtlasJokersSeriesA): the `series` option's cells; read by ui.js only
 //   families 3.9.1's families (functions/pokefamily.lua, the extract's `family` global) that hold a new joker, minus the
 //            names the port doesn't have yet (index.js adds them to systems/evolution.js `family`)
 // It fails when a value change of an existing config key, or a blueprint_compat flip, has no decision in the spec.
@@ -286,13 +288,35 @@ counts.consumable_spawn = Object.keys(consumable_spawn).length;
 const challenges = (NEW.groups.challenges || []).flatMap((f) => listOf(f).map((c) => JSON.parse(JSON.stringify(c))));
 counts.challenges = challenges.length;
 
+// ---- series_a (the leftovers batch; cosmetic, Pokermon's `series` option): 3.9.1's alternate art, PokemonSprites
+// alts.AtlasJokersSeriesA, for every name that has one (the port's own jokers and the add-ons' on Pokermon's sheets match by
+// name, as 3.9.1's pokermon.sprites.load_atlas does). The Series A sheets mirror the Basic ones cell for cell: `atlas` is the
+// Series A twin of the joker's Basic sheet (get_atlas_string), `pos` its base cell; `soul_pos` the alt's own floating sprite
+// (+ `soul_edition`: apply_edition), else the base one; `anim` = the alt's animated strip (anim_atlas: Bellsprout, Voltorb,
+// Electrode, Baltoy, Claydol). Nothing here reaches the engine: ui.js draws it.
+const series_a = {};
+for (const s of (NEW.globals.PokemonSprites && NEW.globals.PokemonSprites.list) || []) {
+  const a = s.alts && s.alts.AtlasJokersSeriesA;
+  if (!a) continue;
+  if (s.gen_atlas !== undefined && typeof s.gen_atlas !== 'number') throw new Error(`series_a: '${s.name}' has a non-numeric gen_atlas`);
+  const sheet = 'AtlasJokersSeriesA' + (s.gen_atlas ? 'Gen' + String(s.gen_atlas).padStart(2, '0') : s.others_atlas ? 'Others' : 'Natdex');
+  const pos = Array.isArray(s.base.pos) ? s.base.pos[0] : s.base.pos;
+  const e = { atlas: sheet, pos: { x: pos.x, y: pos.y } };
+  const soul = a.soul_pos || s.base.soul_pos;
+  if (soul) e.soul_pos = { x: soul.x, y: soul.y };
+  if (a.soul_pos && a.soul_pos.apply_edition) e.soul_edition = true;
+  if (a.anim_atlas) e.anim = a.anim_atlas;
+  series_a[s.name] = e;
+}
+counts.series_a = Object.keys(series_a).length;
+
 const out = {
   version: '3.9.1',
   source: 'InertSteak/Pokermon tag 3.9.1 (GPL-3.0)',
   counts: { ...counts, jokers_changed: Object.keys(jokers).length, sprites: Object.keys(sprites).length, skipped: skipped.length },
   reworked: reworked.sort(), rework_hold: Object.entries(reworkHold), rework_deferred: Object.entries(reworkDeferred),
   jokers, sprites, sprite_hold: held, blinds, loc, skipped,
-  new_jokers, new_deferred: Object.entries(newDeferred).map(([n, d]) => [n, d.why, d.drop || []]), families, consumable_spawn, challenges,
+  new_jokers, new_deferred: Object.entries(newDeferred).map(([n, d]) => [n, d.why, d.drop || []]), families, consumable_spawn, challenges, series_a,
 };
 if (mainNames.size) {
   out.upstream_main = { repo: UM.repo, commit: UM.commit, version: UM.version, date: UM.date, jokers: [...mainNames.keys()] };

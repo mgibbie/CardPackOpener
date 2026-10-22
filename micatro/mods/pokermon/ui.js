@@ -17,13 +17,19 @@
 //     The swarm draws 3.9.1's one-row strips, tiled (index.js SWARM_STRIPS), cropped to the card.
 //   * Unown's form (3.9.1 set_sprites): the letter floats over the plain Unown card as its soul layer.
 //   * Kecleon's type (3.9.1 set_sprites): the card of the type it took from the joker to its right (Gen 3 sheet).
+//   * The sprite series (3.9.1 pokemon_spritesheet_atlas; the leftovers batch): with the viewer's cosmetic `series` option on
+//     Series A, every joker that has a Series A cell (data391.js series_a, 3.9.1 PokemonSprites alts) draws it: its Shiny
+//     twin when Shiny, its alt floating sprite, and the five animated strips (Bellsprout, Voltorb, Electrode, Baltoy, Claydol)
+//     animate. Add-on jokers on Pokermon's sheets follow it too, as 3.9.1's load_atlas does for them. Display only: the view,
+//     the run and its checksum never change; each viewer (player, spectator, replay) sees their own choice.
 import { P_CENTERS } from './api.js';
 import { MOD_LOC } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
-import { KECLEON_ATLAS, KECLEON_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED } from './systems/anim.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
+import D391 from './data391.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -179,6 +185,37 @@ function spriteCanvas(atlas, pos) {
   return c;
 }
 
+// ------------------------------------------------------------- the sprite series (Series A)
+let cosmeticOpt = null; // (modui.js bind: the viewer's own value of a cosmetic option)
+const seriesOn = () => !!cosmeticOpt && cosmeticOpt(MOD, 'series') === 'seriesa';
+const samePos = (a, b) => !!a && !!b && (a.x || 0) === (b.x || 0) && (a.y || 0) === (b.y || 0);
+/**
+ * A joker's Series A face (3.9.1 pokermon.sprites.load_atlas with pokemon_spritesheet_atlas = Series A): its Series A cell
+ * (the Basic sheet's twin, same cell), the Shiny twin when Shiny (3.9.1 e_poke_shiny on_load: atlas .. 'Shiny'), its alt
+ * floating sprite, or its animated strip (+ `poke_series_anim`, read by anim()). Only a joker drawn from its own cell of one of
+ * Pokermon's Basic joker sheets (Pokermon's, or an add-on's on Pokermon's sheets: the load_atlas path; not an add-on's own
+ * sheet, a form or another card's art). `force` ignores the option (tests). -> the new face data, or null (Basic series, or
+ * no Series A cell).
+ */
+export function seriesA(d, force) {
+  if (!d || d.facing === 'back' || !(force || seriesOn())) return null;
+  const c = P_CENTERS[d.center];
+  const s = c && c.set === 'Joker' && c.name && D391.series_a && D391.series_a[c.name];
+  if (!s || !/^poke_AtlasJokersBasic/.test(String(c.atlas)) || d.atlas !== c.atlas || !samePos(d.pos, c.pos)) return null;
+  const sh = isShiny(d) ? 'Shiny' : '';
+  if (s.anim) {
+    const a = SERIES_A_ANIM[s.anim];
+    if (!a) return null;
+    return { ...d, atlas: 'poke_' + s.anim + sh, pos: { x: 0, y: 0 }, soul_pos: undefined, poke_series_anim: { fps: a.fps, frames: a.frames, fpr: a.frames } };
+  }
+  return { ...d, atlas: 'poke_' + s.atlas + sh + '391', pos: { ...s.pos }, soul_pos: s.soul_pos ? { ...s.soul_pos } : undefined };
+}
+/** Another card's art drawn on this one (Zorua's illusion): that card's Series A face, keeping this card's identity. */
+const seriesOf = (d, key, atlas, pos) => {
+  const sa = seriesA({ ...d, center: key, atlas, pos });
+  return sa ? { atlas: sa.atlas, pos: sa.pos, soul_pos: sa.soul_pos, poke_series_anim: sa.poke_series_anim } : null;
+};
+
 // ------------------------------------------------------------- the Pokédex
 /** The family keys of a card view (get_family_keys with what the view carries). */
 export function familyOf(d) {
@@ -256,20 +293,25 @@ export const POKE_UI = {
     const sh = P_CENTERS.e_poke_shiny;
     if (sh && !sh.shader_fs) { sh.shader_fs = SHINY_FS; sh.shader_overlay = true; }
   },
-  bind(fns) { if (fns && fns.drawModCell) drawCell = fns.drawModCell; },
-  face(d, ctx) {
-    if (!d || d.facing === 'back') return null;
-    const p = d.poke;
-    // Zorua outside the joker row: its hidden Pokémon
+  bind(fns) { if (fns && fns.drawModCell) drawCell = fns.drawModCell; if (fns && fns.cosmetic) cosmeticOpt = fns.cosmetic; },
+  face(d0, ctx) {
+    if (!d0 || d0.facing === 'back') return null;
+    const p = d0.poke;
+    // Zorua outside the joker row: its hidden Pokémon (on the viewer's sprite series)
     if (p && p.illusion && P_CENTERS[p.illusion]) {
       const c = P_CENTERS[p.illusion];
-      return { ...d, atlas: c.atlas, pos: c.pos, soul_pos: undefined, win_key: d.center };
+      return { ...d0, atlas: c.atlas, pos: c.pos, soul_pos: undefined, win_key: d0.center, ...(seriesOf(d0, p.illusion, c.atlas, c.pos) || {}) };
     }
-    const tgt = zoruaTarget(d, ctx);
+    const tgt = zoruaTarget(d0, ctx);
     if (tgt) {
-      if (tgt.mod) return { ...d, atlas: tgt.atlas, pos: tgt.pos, soul_pos: withUnownForm(tgt).soul_pos, win_key: d.center };
-      return { ...d, mod: undefined, atlas: undefined, pos: undefined, soul_pos: undefined, center: tgt.center, poke_disguise: true, win_key: d.center };
+      if (tgt.mod) {
+        const t = seriesA(tgt) || tgt;
+        return { ...d0, atlas: t.atlas, pos: t.pos, soul_pos: withUnownForm(t).soul_pos, win_key: d0.center, poke_series_anim: t.poke_series_anim };
+      }
+      return { ...d0, mod: undefined, atlas: undefined, pos: undefined, soul_pos: undefined, center: tgt.center, poke_disguise: true, win_key: d0.center };
     }
+    // the viewer's sprite series: the Series A art (null on Basic, or for a joker without a Series A cell)
+    const d = seriesA(d0) || d0;
     // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
     const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
     if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
@@ -280,9 +322,13 @@ export const POKE_UI = {
     if (ds) return { ...d, soul_pos: ds };
     // Unown: its form's letter floats over the card
     const u = withUnownForm(d);
-    return u === d ? null : u;
+    return u === d0 ? null : u;
   },
+  /** A still card (collections, the Pokédex, deck editor thumbnails): its Series A art on that series. */
+  still(d) { return seriesA(d); },
   anim(d) {
+    // a Series A animated alternate (seriesA: its strip and frames)
+    if (d && d.poke_series_anim) { const s = d.poke_series_anim; return { fps: s.fps, frames: s.frames, fpr: s.fpr, atlas: d.atlas }; }
     const a = d && d.poke && d.poke.anim;
     if (!a) return null;
     // a soul-only animation on full atlas names (an add-on's: Nacho 1.7.9's Terapagos-Stellar, its 13-frame soul strip)

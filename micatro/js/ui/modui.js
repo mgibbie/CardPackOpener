@@ -12,7 +12,27 @@
 //   cardActions(d) -> [{label, cls, run(api)}]         client-only buttons on a selected card (Pokédex)
 //   runInfoTabs(view) -> [{key, label, render(body, api)}]  extra Run Info tabs
 //   cardContext(d, api) -> true    right-click / double-click on a card (Pokermon: open its Pokédex)
+//   still(d) -> d'                 what a still card (collections, the Pokédex, deck editor thumbnails) shows instead of `d`
+// bind(fns) gets {drawModCell, cosmetic}: cosmetic(modId, key) is the VIEWER's own value of a `cosmetic: true` mod option
+// (their saved mod options, else its default) — display choices that never enter a run (Pokermon's sprite series).
 import { MODREG, drawModCell } from './assets.js';
+
+const MOD_PREF = 'micatro_mods'; // (screens.js: the player's saved mod selection {ids, options})
+let prefRaw = null, prefOpts = {};
+/** The viewer's value of a cosmetic mod option (their saved mod options, else the option's default). */
+export function cosmetic(modId, key) {
+  let raw = null;
+  try { raw = typeof localStorage !== 'undefined' ? localStorage.getItem(MOD_PREF) : null; } catch (e) { raw = null; }
+  if (raw !== prefRaw) {
+    prefRaw = raw;
+    try { const p = JSON.parse(raw || '{}'); prefOpts = p && p.options && typeof p.options === 'object' ? p.options : {}; } catch (e) { prefOpts = {}; }
+  }
+  const v = prefOpts[modId] && prefOpts[modId][key];
+  if (v !== undefined) return v;
+  const m = MODREG.mods && MODREG.mods[modId];
+  const o = m && m.options && m.options[key];
+  return o ? o.default : undefined;
+}
 
 const installed = new Set();
 let cache = null, cacheFor = null, cacheN = -1;
@@ -25,7 +45,7 @@ export function modUIs() {
   for (const [id, m] of Object.entries(MODREG.mods || {})) {
     const u = m && m.ui;
     if (!u) continue;
-    if (!installed.has(id)) { installed.add(id); try { if (u.bind) u.bind({ drawModCell }); if (u.install) u.install(); } catch (e) { console.warn('micatro: mod ui install failed', id, e); } }
+    if (!installed.has(id)) { installed.add(id); try { if (u.bind) u.bind({ drawModCell, cosmetic }); if (u.install) u.install(); } catch (e) { console.warn('micatro: mod ui install failed', id, e); } }
     out.push(u);
   }
   cache = out; cacheFor = mods; cacheN = n;
