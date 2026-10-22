@@ -85,12 +85,16 @@ G.Combat = (() => {
       case 'dash':       dash(pl, m); break;
       case 'trail':      trailPatch(pl, m); break;
       case 'cone':       cone(pl, m); break;
+      // MicaSurvivor (DLC D5): a kind the base doesn't know (the Expedition's 8 new archetypes): the combat.run seam
+      default:           G.Hooks.call('combat.run', pl, m, ghost);
     }
   }
 
   const TARGETED = ['melee', 'beam', 'projectile', 'boomerang', 'chain', 'meteor', 'dash', 'cone'];
-  function needsTarget(m) { return TARGETED.includes(m.kind); }
+  // (DLC D5: an Expedition move says it needs a target, m.xtarget, and how far it reaches, m.xreach; base moves have neither)
+  function needsTarget(m) { return TARGETED.includes(m.kind) || !!m.xtarget; }
   function reach(m) {
+    if (m.xreach) return m.xreach;
     if (m.kind === 'melee') return m.radius + 30;
     if (m.kind === 'beam') return m.radius + 20;
     if (m.kind === 'boomerang') return m.radius + 40;
@@ -102,10 +106,12 @@ G.Combat = (() => {
   }
 
   function payload(m) {
-    return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type,
+    const o = { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type,
              cc: m.cc || '', ccp: m.ccp || 0,    // MicaSurvivor (M5): estado de control
              mkind: m.kind,                        // MicaSurvivor (M5): familia, para las habilidades (Puño Férreo...)
              mid: m.id };                          // MicaSurvivor (M5 lote 11): de qué movimiento es (el desglose de daño)
+    if (m.xcrit) o.xcrit = m.xcrit;                // MicaSurvivor (DLC D5): an Expedition move's own crit chance (base: never set)
+    return o;
   }
 
   /** Tabla de tipos × clima para un ataque de tipo `type` contra `e`. */
@@ -537,7 +543,8 @@ G.Combat = (() => {
   /** Repite el ataque de un compañero sólo para verlo (sin daño). */
   function ghostCast(pl, id, lvl, aim, evolved) {
     const def = G.Moves.BY_ID[id];
-    if (!def || def.kind === 'orbit') return;
+    if (!def) { G.Hooks.call('combat.ghost', pl, id, lvl, aim); return; }   // MicaSurvivor (DLC D5): an Expedition move
+    if (def.kind === 'orbit') return;
     const m = G.Moves.instance(id, lvl);
     if (evolved) G.Moves.evolve(m);
     pl.aim = aim;
@@ -557,7 +564,8 @@ G.Combat = (() => {
 
   // Golpe crítico (Mejoras → Golpe Crítico): x1,5 de daño, número naranja y grande.
   const CRIT_MUL = 1.5;
-  const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
+  // (MicaSurvivor DLC D5: + the move's own chance, src.xcrit, set only by Expedition code: a base hit reads the same)
+  const isCrit = (pl, src) => { const c = src && src.xcrit ? pl.critChance + src.xcrit : pl.critChance; return !ghost && c > 0 && Math.random() < c; };
 
   /**
    * MicaSurvivor (M5): un golpe de un ataque a un enemigo (main.gd _hit_enemy). Un dormido
@@ -576,6 +584,7 @@ G.Combat = (() => {
     if (crit) k *= CRIT_MUL;
     if (pl && pl.abFx) k *= G.Abilities.outK(pl, e, mt, src.mkind || src.kind);
     if (pl) k *= G.Items.outK(pl, e, mt);   // M5 lote 3: Cinta Experto, Gema, Bola Luminosa, Hueso Grueso, Polvo Plata
+    if (pl) k = G.Hooks.reduce('combat.out', k, pl, e, src, dmg);   // MicaSurvivor (DLC D5): an Expedition run's items (no listener: k)
     const d = dmg * k;
     // MicaSurvivor (M5 lote 11, main.gd 2481 / 5168 dmg_src): la vida que pierde va a la fuente de este golpe.
     G.DmgLog.as(G.DmgLog.keyOf(src), () => e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null));
@@ -590,7 +599,7 @@ G.Combat = (() => {
   }
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
-    dmg = land(e, dmg, col, dx, dy, knock, m, isCrit(pl), pl);
+    dmg = land(e, dmg, col, dx, dy, knock, m, isCrit(pl, m), pl);
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
   }
@@ -693,7 +702,7 @@ G.Combat = (() => {
         }
 
         // MicaSurvivor (M5): el mismo golpe que el resto de ataques (estados de control incluidos).
-        const dd = land(e, p.dmg, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock, p, isCrit(pl), p.owner || pl);
+        const dd = land(e, p.dmg, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock, p, isCrit(pl, p), p.owner || pl);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += dd;
         pl.onDealt(dd);

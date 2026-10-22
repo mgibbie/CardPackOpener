@@ -617,6 +617,9 @@ G.Pad = (() => {
       case 'ban':   // MicaSurvivor (M5 batch 6): ban mode on the level-up screen (then confirm a new-move card)
         if (scope.id === 'scr-levelup') G.RunUI.toggleBan();
         break;
+      case 'swap':  // MicaSurvivor (DLC D5): an Expedition level-up's Skip (the base game has no Skip: nothing)
+        if (scope.id === 'scr-levelup' && G.ExpLevel) G.ExpLevel.skip();
+        break;
     }
   }
   function gameplay(a) {

@@ -1834,11 +1834,148 @@ sets):
 **Not yet:**
 - the catch (D8): a met challenge plays at once (`K.PLAY_MET`);
 - the other 170 entries (D4b / D4c / D4d), the Megas (D4c) and the legendaries' own encounters (D4d);
-- moves from the line's learnset and from other League members of your type at level-ups, vitamins and rarities (D5);
+- moves from the line's learnset and from other League members of your type at level-ups, vitamins and rarities (D5: built, see below);
 - signature Ultimates by evolution tier (D6: it can read the row's Maturity and evolutions);
 - PokéBonk's XP curve (8 + 5.5 L + L^1.8): Classic still uses the base one, so whether a run reaches a family's last
   evolution (Dragonite and Tyranitar at 55) is for D5's tuning;
 - the League pick for a co-op guest (co-op Expedition runs can't start yet; the frames already carry the rows).
+
+## DLC D5: level-ups and items
+
+**An Expedition level-up deals its own cards**, each with a **rarity** (Common, Uncommon, Rare, Epic, Legendary),
+gated by your level, luck and zone. Moves now **level to 8** with stat rolls from their archetype, **8 new archetypes**
+arrive with 18 moves, **21 vitamins** fill 3 slots, **60 items** stack up to their caps, and every run has **Refresh /
+Skip / Banish**. The study's **XP curve** replaces the base one (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.1, 2.3, 2.5,
+2.6 and the D5 row). The code is `js/expedition/levelups.js` (`G.ExpLevel`: cards, rarity, tools, curve, sync, UI),
+`js/expedition/items.js` (`G.ExpItems`: vitamins, items, stats, procs) and `js/expedition/moves.js` (`G.ExpMoves`: the
+archetypes, move levels and rolls). Each file's numbers are in its `K`. Base modes are unchanged: the D0a fixtures
+pass as recorded, also with the Expedition code force-loaded. Nothing is bought: everything is earned in play.
+
+**The cards** (3 per level, `G.ExpLevel.K.CARDS`; the levelup.offer seam, after the League's branch choice):
+
+| Card | What it does | Weight |
+|---|---|---|
+| Move level | An owned move goes up one level (to 8): +8 % damage and 2 rolls (3 at Epic+), shown on the card | 14 each |
+| New move | A move "the line learns" (its types: our moves and the 18 new ones), or from the kit of another playable League member of your type ("League move: X"). It takes one of **2 slots past the kit's 4** (`K.EXTRA_SLOTS`), so the kit never loses a slot; a League member's move weighs x0.6 | 6 each |
+| New vitamin | One of the 21, into a free slot (3) | 6 each |
+| Vitamin level | One you have, to Lv 10 | 8 each |
+| Training | Only when nothing else is left: +4 % damage or +10 HP (x 1 / (1 + 0.15 n), never under a third), or a rest (40 % HP) | — |
+
+A move card is always dealt and always first (study 2.5). A League run still learns its kit at Lv 1 / 2 / 4 / 7 and
+evolves as in D4; the level's note stays above the cards.
+
+**Rarity** (study 2.5): x1 / 1.2 / 1.45 / 1.75 / 2.1 on the card's values; base weights 70 / 24 / 5 / 0.9 / 0.12. Luck
+a = luck / 100 lifts Uncommon x(1 + 0.5 a), Rare x(1 + a)², Epic x(1 + a)³, Legendary x(1 + a)⁴. Rare, Epic and Legendary are
+gated by **power = level + luck / 8 + 12 (zone − 1)**: they ramp in over power 3 → 10, 8 → 18 and 14 → 26. Each card rolls
+its own; its frame and chip show it (grey, green, blue, purple, gold). Luck comes from Lucky Punch (vitamin), Soothe Bell
+and Shiny Charm.
+
+**Move levels** (study 2.3, `G.ExpMoves.K`): every move of an Expedition run (the kit's too) levels 1 → 8. Rolls by
+rarity multiplier m: damage +22 % m, cooldown −min(25 %, 8 % m), +1 projectile (+2 at Epic+), area or speed +15 % m,
+duration +20 % m, crit +5 % m (the move's own, `m.xcrit`), status chance +25 % m (capped at 80 %). Each archetype has its
+own list (`ROLLS_OF`), minus what doesn't fit the move. A move's cooldown never drops under 35 % of its first-level one.
+The level is `m.xlv` (`m.lvl` stays 1, so a base reader never indexes a ladder past its end) and the move is rebuilt from
+its first-level numbers, the League's class factor, its level, its rolls and the run's stats (`refresh`).
+
+**The 8 new archetypes** (the study's table, damage x0.62 to our scale: `K.DMG_K`):
+
+| Archetype | Moves | How it plays |
+|---|---|---|
+| lob 20 / 1.9 s | Mud Bomb, Sludge Bomb | a bomb in a 0.55 s arc that bursts where it lands |
+| homing 9 x2 / 1.25 s | Swift, Magical Leaf | seeking shots |
+| barrage 5 x4 / 1.15 s | Bullet Seed, Pin Missile | 4 quick shots, 0.07 s apart |
+| smite 24 x2 / 1.7 s | Thunder, Sky Attack | a telegraphed strike from above on the 2 nearest foes |
+| vortex 34 / 3.6 s | Whirlpool, Twister | a 2.2 s whirl at the target that pulls foes in and ticks damage |
+| wave 15 / 2.4 s | Surf, Earthquake | a ring that spreads from you to 230 px and hits each foe once |
+| spin 9 / 0.8 s | Rapid Spin, Gyro Ball | hits everything around you at once |
+| weather 32 s / 14 s | Rain Dance, Sunny Day, Sandstorm, Snowscape | sets the run's weather (the base game's 5 kinds) |
+
+They live outside the frozen `G.Moves`; combat hands a kind it doesn't know to the combat.run seam, a co-op partner's
+cast to combat.ghost (shown, no damage). Their emblems are the type emblems.
+
+**Vitamins** (21, `G.ExpItems.VITAMINS`; max Lv 10, 3 slots): Protein / Calcium +10 % physical / special, Iron +5 armor,
+Zinc +12 regenerating shield (refills 4 s after the last hit), Carbos +7 % speed, HP Up +18 HP, PP Up +0.5 projectile,
+Ether +8 % attack speed, Dire Hit +5 % crit, X Speed +12 % projectile speed, X Defense +3.5 % evasion (cap 40 %), X Accuracy
++12 % status chance, Big Mushroom +8 % area, PP Max +10 % duration, Moomoo Milk +0.5 HP/s, Nugget +10 % Pokémonedas,
+Exp. Share +6 % XP, Lucky Punch +8 luck, Energy Root +1 % lifesteal (healed at most 5 % of max HP a second),
+Itemfinder +15 % pickup range, Cursed Incense +12 % difficulty (enemy HP and damage) for +6 % XP and Pokémonedas. Each
+level adds its value x the card's rarity multiplier.
+
+**Items** (60, `G.ExpItems.ITEMS`): 18 type boosters (+30 % to their type and +3 % to everything, common, cap 3) and 42
+others: 10 common (Muscle Band, Wise Glasses, Quick Claw, Leftovers, Lucky Egg, Amulet Coin, Scope Lens, Wide Lens, Light
+Clay, Life Orb), 12 uncommon (the Choice items, Expert Belt, Shell Bell, Rocky Helmet, Focus Band, Eviolite, Soothe Bell,
+Protector, Sitrus Berry, Macho Brace), 10 rare (Razor Fang, Weakness Policy, Assault Vest, Heavy-Duty Boots, Up-Grade,
+Shiny Charm, Exp. Share, Deep Sea Tooth, King's Rock, Revive), 6 epic (Electirizer, Sun Stone, Magmarizer, Meteorite,
+Relic Crown, Prism Scale) and 4 legendary (Master Ball, Max Revive, Revival Herb, Malicious Armor).
+- **No slots, caps instead:** an item stacks up to its `cap` (Life Orb 3, Revive 2, the legendaries 1...). A capped item is
+  never rolled; a pickup at its cap heals 20 % instead.
+- **Same-stat bonuses ADD** (study 2.6, "since 0.5.3"): every vitamin, item and Training bonus feeds a stat, and a stat
+  is the SUM of its bonuses, applied once (`total` / `apply`). Life Orb x3 + Master Ball = +115 % damage (x2.15, not
+  x2.75). Different stats still multiply. Expedition armor caps at 50 % (`K.ARMOR_CAP`).
+- **Where they come from:** where base items drop (alphas, guardians): the item.roll seam gives an
+  Expedition item (`x:<id>`) from the run's seeded stream, its rarity rolled like a card's; the item.take seam stacks it
+  at once (no choice screen). D7's Poké Balls, Meowth and altars will be the main source.
+- **Procs** (seams player.hurt, player.ko, player.dealt, combat.out, run.tick): evasion and the shield, Focus Band (15 %
+  per stack, every 20 s), Revival Herb (40 %, once per zone, a fire burst), Revive (30 %) and Max Revive (60 %), thorns,
+  lifesteal, super-effective, boss damage, Weakness Policy, execute under 8 %, flinch, Relic Crown's time stop, and the
+  epics' timed strikes (Electirizer every 2.5 s, Sun Stone 6 s, Magmarizer 4 s, Meteorite's pulling rift 8 s), which scale
+  with the player's level (+6 % a level) and attack.
+
+**Refresh / Skip / Banish** (study 2.5, `G.ExpLevel.K`): Refresh 2 (the base reroll button, its count raised), Skip 2 (a
+new button, the X key, the pad's swap button: no card, +10 x zone Pokémonedas of the run, which D7's ₽ will replace),
+Banish 1 (the base ban button: on a new move or a new vitamin; that one never comes back this run; a level-up card can't
+be banned). The base game's bought rerolls and bans add on top (max 6 each).
+
+**The XP curve:** XP to the next level = **2 x (8 + 5.5 L + L^1.8)** (`K.XP_K`, the xp.need seam). The shape is the
+study's; the x2 is ours, measured: a Classic run on Viridian Forest by a player who kills everything that spawns (8:00
+a zone, the guardian, the portal) collects about **8,100 / 39,400 / 114,000 XP** by the end of zones 1 / 2 / 3
+(24 minutes). On this curve that is **Lv 23 / 44 / 66**; Lv 55 (Dragonite and Tyranitar, the League's latest
+evolutions) needs 69,200 XP, 61 % of it, so a run that kills well reaches it in zone 3. On the base curve the same run
+ends at Lv 46. Tune `K.XP_K` (and re-check with the test's `PROBE` numbers) if D7-D9 change how much XP a run gives.
+
+**The bag on screen:** a strip under the HUD (top left) with the 3 vitamin slots and their levels and every item with its
+stacks (rarity-coloured frames), and a panel beside the pause box listing the vitamins (level, total), the items
+(stacks / cap, what they do), each move's level, your luck and the tools left. Viewers see the watched player's strip.
+
+**Determinism and viewers:** which cards are dealt, their rarity and a move level's rolls come from a `G.DLC.rng` stream
+seeded by the world seed, the co-op player and the run's draw count; every item drop from its own stream. Nothing in a
+deal or a drop calls `Math.random` (tested); procs and combat stay `Math.random`, as in base.
+- **The `x` block v5** `{xv: 5, m, z, th, a, c, l, u}`: `u` holds the bag rows `{v: [[vitamin, lv]], i: {item: n}, m: {move:
+  lv}, e: [Expedition moves], t: [refresh, skip, banish]}`. `u.p` is the watched (or sending) player's, `u.q` the co-op
+  players' (by uid in host frames, by name in snapshots). A viewer's puppet shows its bag and its Expedition moves. The
+  replay keeps `u` in its slow state. The v1-v4 readers are kept: a block without `u` shows no bag.
+- **Versions:** `G.Expedition.DV` is now **4**. dv-1 to dv-3 replays and snapshots still play without a notice; a co-op
+  lobby needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save): counters only, merged by max: `lv.cards` (cards picked),
+`lv.rar.1`-`lv.rar.5` (picks per rarity), `lv.items`, `lv.skips`, `lv.vitmax` (best vitamin level), `lv.move8` (most moves
+at Lv 8), `lv.stacks` (most item stacks). Nothing in a run is kept between runs. **No server change:** the server already
+takes any counter.
+
+**Assets:** none new. Every vitamin and item uses an overworld item picture (`/overworld/item_icons/<name>.png`, in git
+and deployed with the site); the fairy booster uses the Pink Scarf picture. The card frames, the strip and the panel are
+CSS, the archetypes' effects are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on a field only Expedition code
+sets):
+- `core/hooks.js`: 10 new seams (xp.need, item.roll, item.take, player.hurt, player.ko, player.dealt, combat.out,
+  combat.run, combat.ghost, run.tick).
+- `entities/player.js`: xpNeed, hurt (only when a listener exists), the KO, onDealt. `systems/combat.js`: an unknown kind /
+  ghost id, `m.xtarget` / `m.xreach`, a move's own `xcrit`, the out factor. `data/items.js`: roll. `game.js`: offerItem,
+  run.tick (Expedition runs only).
+- `ui/run-ui.js`: a card's rarity (`c.rar`, `c.rarName`), its picture (`c.img`), bannable Expedition cards (`c.xban`),
+  `take(card)` (Skip) and `offers`. `ui/icons.js`: an Expedition move's emblem. `core/pad.js`: swap = Skip on an
+  Expedition level-up.
+- `systems/expedition.js`: `DV` 4, the three scripts. `expedition/core.js`: `x` v5 and the hooks; `classic.js`: the
+  effects' drawing, Cursed Incense; `league.js`: the new moves' class; `terrain.js`: `XV`.
+
+**Not yet:**
+- the Lab (D10): a 4th card, more vitamin slots, more Refresh / Skip / Banish, the Archive, item unlocks by counter goals;
+- D7's sources (Poké Balls, Meowth, altars, Ditto copying an item, Hypno forgetting a move or vitamin) and real ₽ for Skip;
+- the study's remaining 42 items (102 in PokéBonk), Stick and Air Balloon (no pictures in the item set); `K.EXTRA_HOPS` is
+  still 1 for everyone (D2's note), so no item gives an extra hop yet;
+- learnset-exact "moves the line learns" (by type for now) and Mew's "every move of power 60+";
+- reactions and weather boosts by type (D8).
 
 ## Tests
 
@@ -1920,6 +2057,14 @@ sets):
   - the League screen and the level-up screen with its note at desktop and phone (844 x 390, taps) size.
 
   `SHOTS=<dir>` saves the League pick, a kit unlock and an evolution choice at desktop and phone size.
+- `node overworld/tests/micasurvivor_expedition_levelups_test.mjs` (DLC D5), fast-forwarded with `G.Game.debugStep` and the
+  real level-up screen: the server merging the D5 counters; rarity (the study's weights, luck, power gating, 40,000 seeded
+  rolls against the odds, live deals at Lv 1 vs 40); a move levelling to 8 with its rolls; each of the 8 archetypes and
+  the combat.run / combat.ghost seams; vitamins and slots; Refresh / Skip / Banish; item caps, additive stacking,
+  boosters, pickups and procs; the XP curve and its pacing (a Dratini run reaching Dragonite at 55 on real XP);
+  determinism (no `Math.random` in deals or drops), the `x` block v5 for a co-op guest, live spectator and replay viewer
+  (and a v4 block); a base Normal run in the same page; the desktop and phone layouts. `SHOTS=<dir>` saves a level-up
+  choice, a rarity spread and the bag (strip and pause panel) at both sizes.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

@@ -56,30 +56,57 @@
  *   levelup.offer   kit moves at Lv 2 / 4 / 7, evolutions (a branch: its cards), Maturity (G.ExpLeague.offerHook)
  *   levelup.cards   the level's news on the cards (G.ExpLeague.cardsHook)
  *   run.end         the League's counters, its challenges, the new members (G.ExpLeague.record / lines)
+ *
+ * D5 (level-ups and items, js/expedition/levelups.js, items.js, moves.js): rarity-rolled cards of its own, move levels to 8,
+ * the 8 new archetypes, 21 vitamins, 60 stacking items, Refresh / Skip / Banish, the study's XP curve. dv 4. The `x` block
+ * is v5, {xv: 5, m, z, th, a, c, l, u}:
+ *   u     the bag rows {v: [[vitamin, lv]], i: {item: n}, m: {move: lv}, e: [Expedition moves], t: [refresh, skip, banish]}
+ *         (G.ExpLevel.row): u.p the watched / sending player's, u.q the co-op players' (by uid in host frames, by name in
+ *         snapshots). A viewer's puppet shows its bag and its Expedition moves (G.ExpLevel.applyRow). The replay keeps
+ *         `u` in its slow state (it changes at a level-up or a pickup).
+ *   The v1-v4 readers are kept: a block without `u` shows no bag.
+ *   levelup.offer   after the League's branch: the Expedition's own cards (G.ExpLevel.offer)
+ *   xp.need         the curve (G.ExpLevel.xpNeed); item.roll / item.take: the Expedition's items (seeded drops, stacking)
+ *   player.hurt / player.ko / player.dealt / combat.out: the items' and vitamins' procs (G.ExpItems)
+ *   combat.run / combat.ghost: the 8 new archetypes (G.ExpMoves); run.tick: their effects, the items' timers, the bag strip
  */
 G.Exp = (() => {
-  const dv = 3;   // this file's content version (D3: Classic playable; D4: the League): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 4;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 4;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
-  const READS = [1, 2, 3, 4];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`)
+  const XV = 5;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2, 3, 4, 5];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`)
   const C = () => G.ExpClassic;
   const LG = () => G.ExpLeague;
+  const LV = () => G.ExpLevel, IT = () => G.ExpItems, MV = () => G.ExpMoves;
   const expRun = () => G.Modes.isExp();
 
   function init() {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); return; }
+      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
       if (cfg.mode === 'exp-classic' && C()) C().begin(cfg);   // (D3)
       if (LG()) LG().begin(G.Game.player, cfg);                 // (D4: the League member)
+      if (LV()) LV().begin(G.Game.player);                      // (D5: the curve, the tools, the bag)
     });
     // (D4: a League run's level-ups: kit moves, evolutions and their choice, Maturity; a base run gets undefined / its cards)
-    G.Hooks.on('levelup.offer', pl => (LG() ? LG().offerHook(pl) : undefined));
+    // (D5: then the Expedition's own cards, rarity-rolled: G.ExpLevel.offer; it adds the League's note itself)
+    G.Hooks.on('levelup.offer', (pl, n) => { const b = LG() ? LG().offerHook(pl) : undefined; return b !== undefined ? b : LV() ? LV().offer(pl, n) : undefined; });
     G.Hooks.on('levelup.cards', (cards, pl) => (LG() ? LG().cardsHook(cards, pl) : cards));
+    // (D5: the XP curve, the items, the procs, the new archetypes; each listener leaves a base run / another player alone)
+    G.Hooks.on('xp.need', (v, L) => (LV() ? LV().xpNeed(v, L) : v));
+    G.Hooks.on('item.roll', pl => (expRun() && LV() ? LV().itemRoll(pl) : undefined));
+    G.Hooks.on('item.take', (pl, id) => (LV() ? LV().itemTake(pl, id) : undefined));
+    G.Hooks.on('player.hurt', (d, pl, type) => (IT() ? IT().hurt(d, pl, type) : d));
+    G.Hooks.on('player.ko', pl => { if (IT()) IT().ko(pl); });
+    G.Hooks.on('player.dealt', (pl, d) => { if (IT()) IT().dealt(pl, d); });
+    G.Hooks.on('combat.out', (k, pl, e, src, dmg) => (IT() ? IT().out(k, pl, e, src, dmg) : k));
+    G.Hooks.on('combat.run', (pl, m, ghost) => { if (MV()) MV().run(pl, m, ghost); });
+    G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
+    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); });
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
       const R = G.Modes.run;
@@ -87,7 +114,7 @@ G.Exp = (() => {
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; s.x = x; } }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; s.x = x; } }
       return s;
     });
     // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
@@ -95,7 +122,7 @@ G.Exp = (() => {
     G.Hooks.on('net.frame', (f, m) => {
       if (expRun() || (!m && G.World.zone)) {
         const x = xblock();
-        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; f.x = x; }
+        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; f.x = x; }
       }
       return f;
     });
@@ -112,6 +139,8 @@ G.Exp = (() => {
       record(sum);
       // D4: the League's counters, then its challenges (after record(): "finish N runs" counts this one), its lines on the screen
       if (LG() && LG().run) { const newly = LG().record(sum); G.ExpSave.commit(); out.lines = out.lines.concat(LG().lines(newly)); out.league = newly; }
+      // D5: the level-ups' and items' counters, a line with the bag
+      if (LV() && LV().run) { out.lines = out.lines.concat(LV().record(sum)); G.ExpSave.commit(); }
       if (sum.clean && !sum.group) submitScore(sum);
       cur = null;
       return out;
@@ -199,6 +228,11 @@ G.Exp = (() => {
       if (pl && l.p) LG().applyRow(pl, l.p);
       if (mates && l.q) for (const [name, o] of mates) if (l.q[o.raw || name]) LG().applyRow(o.p, l.q[o.raw || name]);
     }
+    const u = uOf(x);   // (D5: the bags; the watched player's shows in the strip)
+    if (LV()) {
+      if (pl) { LV().applyRow(pl, u && u.p); LV().watch(pl); }
+      if (mates && u && u.q) for (const [name, o] of mates) LV().applyRow(o.p, u.q[o.raw || name] || null);
+    }
     liftEnemies(a && a.e);
     if (C()) C().applyC(x && READS.includes(x.xv) && x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return !!a;
@@ -210,6 +244,8 @@ G.Exp = (() => {
     for (const u in a.q || {}) { const p = mateOf(u); if (p) V().applyRow(p, a.q[u]); }
     const l = lOf(x);   // (D4: the other players' League forms)
     if (l && l.q && LG()) for (const u in l.q) { const p = mateOf(u); if (p) LG().applyRow(p, l.q[u]); }
+    const ub = uOf(x);   // (D5: the other players' bags and Expedition moves)
+    if (ub && ub.q && LV()) for (const u in ub.q) { const p = mateOf(u); if (p) LV().applyRow(p, ub.q[u]); }
     liftEnemies(a.e);
     if (C()) C().applyC(x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return true;
@@ -221,6 +257,8 @@ G.Exp = (() => {
     if (m.pl) V().applyRow(m.pl, m.xrow);
     const l = lOf(x);   // (D4: the guest's League row: its puppet's form here, and so in the host's frames / snapshots)
     if (l && l.p && m.pl && LG()) LG().applyRow(m.pl, l.p);
+    const u = uOf(x);   // (D5: the guest's bag: on its puppet here, and so in the host's frames / snapshots)
+    if (u && u.p && m.pl && LV()) LV().applyRow(m.pl, u.p);
   }
 
   // ---------------- D4: the League rows in the `x` block ----------------
@@ -247,6 +285,30 @@ G.Exp = (() => {
   function leagueGuest() { const r = LG() && LG().row(); return r ? { p: r } : null; }
   /** The `l` of a v4+ block (an older block: none, everyone stays as drawn). */
   const lOf = x => (x && READS.includes(x.xv) && x.xv >= 4 && x.l) || null;
+
+  // ---------------- D5: the bag rows in the `x` block ----------------
+  /** A snapshot's `u`: the player's bag row, its co-op partners' (by name, those with one). Null outside an Expedition run. */
+  function bagSnap() {
+    const r = LV() && LV().row();
+    if (!r) return null;
+    const u = { p: r };
+    if (G.Coop && G.Coop.active) {
+      const q = {};
+      for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xu) q[m.name] = m.pl.xu;
+      if (Object.keys(q).length) u.q = q;
+    }
+    return u;
+  }
+  /** A host frame's `u` for guest m: every other player's row by uid. */
+  function bagHost(m) {
+    const q = {}, r = LV() && LV().row();
+    if (r && G.Net && G.Net.uid) q[G.Net.uid] = r;
+    for (const o of G.Coop.mates) if (o.connected && o.uid !== m.uid && o.pl && o.pl.xu) q[o.uid] = o.pl.xu;
+    return Object.keys(q).length ? { q } : null;
+  }
+  function bagGuest() { const r = LV() && LV().row(); return r ? { p: r } : null; }
+  /** The `u` of a v5+ block (an older block: none, no bag shown). */
+  const uOf = x => (x && READS.includes(x.xv) && x.xv >= 5 && x.u) || null;
 
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {

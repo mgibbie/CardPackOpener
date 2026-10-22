@@ -563,7 +563,7 @@ G.Icons = (() => {
     let cv = cache.get(name);
     if (cv) return cv;
     if (name.startsWith('move:')) {
-      const m = G.Moves.BY_ID[name.slice(5)];
+      const m = G.Moves.BY_ID[name.slice(5)] || (G.ExpMoves && G.ExpMoves.MOVES[name.slice(5)]);   // (DLC D5: an Expedition move's emblem)
       cv = emblem(m ? m.type : 'normal', m ? m.kind : null);
     } else if (name.startsWith('type:')) {
       cv = emblem(name.slice(5));

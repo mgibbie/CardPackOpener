@@ -389,6 +389,9 @@ G.ExpClassic = (() => {
     const e = new G.Enemy(def, x, y, { hp: sc.hp * G.Coop.scaleHp(n) * hpK(teff) * Math.pow(K.FINAL_HP, m) * (o.hp || 1), dmg: sc.dmg, spd: sc.spd * (o.spd != null ? o.spd : 1) });
     e.dmg *= K.DMG_K * Math.pow(K.FINAL_DMG, m) * (o.dmg || 1);
     e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1));
+    // (D5: the Cursed Incense vitamin, +12 % difficulty a level: HP and damage)
+    const cu = G.ExpItems ? G.ExpItems.total(G.Game.player, 'curse') : 0;
+    if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }
     if (o.scale) setScale(e, o.scale);
     if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: K.TOTEM.every, rng: R(mix(S.seed, e.id, 0x70)) }); }
     G.EnemyMgr.add(e);
@@ -609,6 +612,8 @@ G.ExpClassic = (() => {
   let shrineMon = null;
   /** Under everything (game.js drawScene, after the hazards): the altar / portal / shrine and the special enemies' auras. */
   function drawGround(ctx) {
+    if (G.ExpMoves) G.ExpMoves.draw(ctx);   // (D5: the new archetypes' shells, vortexes, waves; the items' rifts)
+    if (G.ExpItems) G.ExpItems.draw(ctx);
     const c = cur(), z = G.World.zone, si = c && sitesOf(z);
     if (!si) return;
     const now = performance.now() / 1000, [x, y] = siteXY(si.altar), cam = G.Camera;

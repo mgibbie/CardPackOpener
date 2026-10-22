@@ -547,6 +547,7 @@ G.Game = (() => {
    * eliges a cuál sustituye o te quedas con los tuyos.
    */
   function offerItem(id) {
+    if (pl && G.Hooks.first('item.take', pl, id)) return;   // MicaSurvivor (DLC D5): an Expedition item stacks, no choice
     if (!pl || !G.Items.BY[id]) return;
     if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
     if (G.Items.BY[id].instant) { rareCandy(); return; }
@@ -823,6 +824,7 @@ G.Game = (() => {
     G.Projectiles.update(dt, pl, G.EnemyMgr.all());
     G.Combat.resolve(dt, pl, time);
     G.Combat.updateFields(dt);
+    if (G.Modes.isExp()) G.Hooks.call('run.tick', dt, pl, time);   // MicaSurvivor (DLC D5): the Expedition's own effects
     G.ZMoves.update(dt, pl);        // MicaSurvivor (M5 lote 4): el Movimiento Z y su enfriamiento
     G.ZMoves.updateWorld(dt);
     G.Dynamax.update(dt, pl);       // MicaSurvivor (M5 lote 5): Dynamax (crecer, ondas Max, final) y su enfriamiento
