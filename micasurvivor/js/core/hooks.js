@@ -24,9 +24,23 @@
  *   levelup.offer   DLC D4: js/systems/levelup.js offer(pl, n), before any card is drawn: first(pl, n) -> cards to show
  *                   instead (an Expedition League run's branch evolution), or undefined (the base cards)
  *   levelup.cards   DLC D4: the end of offer: reduce(cards, pl) -> the cards (an Expedition League run adds `note`)
+ *   (DLC D5, level-ups and items: js/expedition/levelups.js, items.js, moves.js. Each is a no-op in a base page.)
+ *   xp.need         js/entities/player.js Player.xpNeed: reduce(xp, level) -> the XP to the next level (Expedition: the
+ *                   study's 8 + 5.5 L + L^1.8 curve)
+ *   item.roll       js/data/items.js roll(): first(pl) -> an item id instead of a base item (Expedition: its own, seeded)
+ *   item.take       js/game.js offerItem: first(pl, id) -> true if the Expedition took that pickup (its stacking items)
+ *   player.hurt     js/entities/player.js hurt, the damage about to be taken: reduce(d, pl, type) (evasion, shield);
+ *                   a result <= 0 is a dodge / absorbed hit
+ *   player.ko       js/entities/player.js hurt, hp <= 0 before the base saves: call(pl) (a listener may set hp > 0)
+ *   player.dealt    js/entities/player.js onDealt: call(pl, dmg) (lifesteal)
+ *   combat.out      js/systems/combat.js land: reduce(k, pl, e, src, dmg) -> the hit's damage factor (items' procs)
+ *   combat.run      js/systems/combat.js run, a move kind the base doesn't know: call(pl, m, ghost) (the 8 new archetypes)
+ *   combat.ghost    js/systems/combat.js ghostCast, a move id the base doesn't know: call(pl, id, lvl, aim)
+ *   run.tick        js/game.js update, an Expedition run only, after the fields: call(dt, pl, time)
  */
 G.Hooks = (() => {
-  const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame', 'levelup.offer', 'levelup.cards'];
+  const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame', 'levelup.offer', 'levelup.cards',
+    'xp.need', 'item.roll', 'item.take', 'player.hurt', 'player.ko', 'player.dealt', 'combat.out', 'combat.run', 'combat.ghost', 'run.tick'];
   const L = Object.create(null);
   for (const s of SEAMS) L[s] = [];
 

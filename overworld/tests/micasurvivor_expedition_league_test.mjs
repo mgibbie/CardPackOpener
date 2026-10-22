@@ -187,6 +187,7 @@ const BEFORE = (save, keep) => {
 	/** one level up through the real screen: pick(cards) -> the index to click (default: the first). -> what was shown */
 	H.level = (pick) => {
 		const p = G.Game.player, hp0 = p.maxHp, am0 = p.atkMul;
+		if (G.ExpLevel) G.ExpLevel.K.EXTRA_SLOTS = 0;   // (DLC D5: no extra moves past the kit here: this test is about the kit's own 4)
 		G.Game.debugLevelUp();
 		for (let i = 0; i < 3 && !G.UI.isOpen('scr-levelup'); i++) H.step(1);
 		const s = H.screen();
@@ -194,7 +195,8 @@ const BEFORE = (save, keep) => {
 		// (what the level itself did, before any card: an evolution / Maturity happens as the screen opens)
 		s.hp = [Math.round(hp0), Math.round(p.maxHp)]; s.hpK = p.maxHp / hp0; s.atkK = p.atkMul / am0; s.cur = Math.round(p.hp);
 		const els = [...document.querySelectorAll('#cards .card')];
-		const i = pick ? pick(s.cards) : 0;
+		// (DLC D5: the default pick is the first card that isn't a NEW move or vitamin, so the moves stay the kit's)
+		const i = pick ? pick(s.cards) : Math.max(0, (G.RunUI.offers || []).findIndex(c => c.type !== 'new'));
 		if (els[i]) els[i].click();
 		H.step(1);
 		return s;
@@ -269,7 +271,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 3, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 3', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 4, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 4 (D5)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -391,8 +393,8 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x, me: snap.me, hf, gf };
 	});
-	A(xs.x && xs.x.xv === 4 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
-	A(xs.hf && xs.hf.xv === 4 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
+	A(xs.x && xs.x.xv === 5 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
+	A(xs.hf && xs.hf.xv === 5 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
 		'a co-op host frame carries the host\'s row by uid; a guest\'s own frame carries its row', JSON.stringify({ hf: xs.hf && xs.hf.l, gf: xs.gf && xs.gf.l }));
 
 	// ======================== 5. the run ends: lines, counters, challenges, the base save untouched
@@ -499,7 +501,7 @@ try {
 			const e = G.Replay.last; await e.ready;
 			return { code: e.code, h: e.h || null, seed: G.World.seed, snap: snaps[0] };
 		});
-		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 4, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
+		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 5, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
 		await d2.ctx.close();
 
 		// ======================== 8b. fresh pages: a co-op guest, the host of a guest, a live spectator, a replay viewer

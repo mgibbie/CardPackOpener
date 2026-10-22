@@ -107,7 +107,7 @@ G.ExpLeague = (() => {
              spd: Math.round(K.SPD0 * (K.SPD_A + K.SPD_B * spe / 100)), phys: +phys.toFixed(4), spec: +spec.toFixed(4), atk: +Math.max(phys, spec).toFixed(4) };
   }
   /** The move class: 'phys' / 'spec' / 'status'. */
-  const classOf = id => PHYS.has(id) ? 'phys' : STATUS.has(id) ? 'status' : 'spec';
+  const classOf = id => { const x = G.ExpMoves && G.ExpMoves.MOVES[id]; if (x) return x.cls || 'spec'; return PHYS.has(id) ? 'phys' : STATUS.has(id) ? 'status' : 'spec'; };   // (D5: an Expedition move says its own)
   /** A move's damage factor for species stats st: its class's multiplier over the player's attack (the higher one). */
   const factorOf = (id, st) => { const c = classOf(id); return c === 'phys' ? st.phys / st.atk : c === 'spec' ? st.spec / st.atk : 1; };
 

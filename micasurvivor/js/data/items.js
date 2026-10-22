@@ -96,6 +96,9 @@ G.Items = (() => {
    */
   function roll(except) {
     const pl = except && typeof except === 'object' ? except : (G.Game && G.Game.player) || null;
+    // MicaSurvivor (DLC D5): the item.roll seam: an Expedition run drops its own items (seeded); no listener: as before
+    const x = G.Hooks ? G.Hooks.first('item.roll', pl) : undefined;
+    if (x !== undefined) return x;
     const no = new Set([typeof except === 'string' ? except : null, pl && pl.item, pl && pl.item2].filter(Boolean));
     const pool = LIST.filter(i => !no.has(i.id) && (!pl || okFor(i.id, pl.dex)));
     return G.U.pick(pool.length ? pool : LIST).id;

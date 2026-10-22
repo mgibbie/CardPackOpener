@@ -50,12 +50,14 @@ G.RunUI = (() => {
     return banMode;
   }
 
+  // (MicaSurvivor DLC D5: an Expedition card can be banned too, c.xban = what its Banish removes: a move or a vitamin)
+  const bannable = c => !!c && (c.type === 'new' || !!c.xban);
   /** Veta la carta i (sólo un movimiento nuevo) y reparte otras. */
   function ban(i) {
     const p = G.Game.player, c = offers && offers[i];
-    if (!c || !p || c.type !== 'new' || bansLeft() <= 0) return false;
+    if (!c || !p || !bannable(c) || bansLeft() <= 0) return false;
     p.banned = p.banned || new Set();
-    p.banned.add(c.key.slice(4));
+    p.banned.add(c.xban || c.key.slice(4));
     p.bansLeft--;
     banMode = false;
     G.Audio.sfx('break');
@@ -70,7 +72,7 @@ G.RunUI = (() => {
     $('lvl-ban').classList.toggle('on', banMode);
     $('lvl-banhint').classList.toggle('hidden', !banMode);
     $('cards').classList.toggle('ban-mode', banMode);
-    $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('no-ban', banMode && !(offers && offers[j] && offers[j].type === 'new')));
+    $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('no-ban', banMode && !(offers && bannable(offers[j]))));
     $('lvl-reroll').classList.toggle('hidden', rerollsLeft() <= 0 || banMode);
   }
 
@@ -99,12 +101,17 @@ G.RunUI = (() => {
           ? `<span class="tag-chip" style="background:${c.color}">${c.tag}</span>`
           : `<span class="tag-chip" style="background:${c.color === '#ffd23f' ? '#ffd23f' : '#9fb1c9'}">${c.tag}</span>`;
       if (c.type === 'evo' || c.type === 'xevo') el.classList.add('evo');
+      // (DLC D5: an Expedition card's rarity, c.rar 1-5: its frame and chip; base cards have none)
+      if (c.rar) { el.classList.add('rar', 'rar-' + c.rar); el.dataset.rar = c.rar; }
       el.innerHTML =
         `<div class="ico" style="background:${c.color}33">${G.Icons.html(c.icon, 32)}</div>
          <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
          <div class="key"><span class="key-k">${i + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div>`;   // MicaSurvivor (M2): the pad's confirm glyph on the focused card
       // (DLC D4: an Expedition evolution card shows the Pokémon it becomes, c.sprite)
       if (c.sprite) { const ico = el.querySelector('.ico'); ico.innerHTML = ''; ico.classList.add('ico-mon'); ico.appendChild(G.UI.spriteCanvas(c.sprite, 56, 48, { scale: 1, shadow: true })); }
+      // (DLC D5: an Expedition vitamin / item card shows its item picture, c.img: a URL; and its rarity's name, c.rarName)
+      if (c.img) { const ico = el.querySelector('.ico'); ico.innerHTML = `<img class="pix ico-item" src="${c.img}" width="32" height="32" alt="" draggable="false">`; }
+      if (c.rarName) el.querySelector('.nm').insertAdjacentHTML('beforeend', `<span class="rar-chip">${c.rarName}</span>`);
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
       el.onclick = () => pick(i);
       box.appendChild(el);
@@ -125,6 +132,18 @@ G.RunUI = (() => {
       $('cards').classList.add('done');
     } else G.UI.hide('scr-levelup');
     cb(c);
+  }
+
+  /** MicaSurvivor (DLC D5): take a card that isn't one of the shown ones (an Expedition level-up's Skip), as a pick. */
+  function take(card) {
+    if (!offers || !card || banMode) return false;
+    const cb = offerCb;
+    offers = null; offerCb = null;
+    $('lvl-reroll').classList.add('hidden');
+    $('lvl-ban').classList.add('hidden');
+    if (coopMode) $('cards').classList.add('done'); else G.UI.hide('scr-levelup');
+    cb(card);
+    return true;
   }
 
   /** Cooperativo: quién falta por elegir. */
@@ -407,5 +426,5 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, toggleBan, ban, bansLeft, get banMode() { return banMode; }, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showLevelUp, reroll, toggleBan, ban, bansLeft, take, get offers() { return offers; }, get banMode() { return banMode; }, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
 })();

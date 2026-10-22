@@ -109,7 +109,9 @@ G.Player = class Player {
   }
   /** MicaSurvivor (M5 lote 9, main.gd _xp_need): la de cada nivel, ×k^0,8 con la dificultad adaptativa. */
   static xpNeed(level) {
-    return Player.xpFor(level) * (G.Adaptive ? G.Adaptive.xpK() : 1);
+    // (MicaSurvivor DLC D5: the xp.need seam, js/core/hooks.js: an Expedition run's own curve; a base page has no listener)
+    const v = Player.xpFor(level) * (G.Adaptive ? G.Adaptive.xpK() : 1);
+    return G.Hooks ? G.Hooks.reduce('xp.need', v, level) : v;
   }
 
   cy() { return this.y; }
@@ -291,6 +293,8 @@ G.Player = class Player {
         return;
       }
     }
+    // MicaSurvivor (DLC D5): the player.hurt seam (an Expedition run's evasion and shield); no listener: d as it was
+    if (!this.remote && G.Hooks && G.Hooks.count('player.hurt')) { d = G.Hooks.reduce('player.hurt', d, this, type); if (!(d > 0)) { this.invuln = 0.45; return; } }
     this.hp -= d;
     if (!this.remote && G.Modes && G.Modes.noDeath()) this.hp = Math.max(this.hp, 1);   // MicaSurvivor (M5 lote 6): la Fiesta no muere (main.gd 1861)
     this.invuln = 0.45;
@@ -320,6 +324,7 @@ G.Player = class Player {
       G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
     }
     G.Abilities.sturdy(this);   // MicaSurvivor (M5): Robustez (después de la Banda Focus, como en el port)
+    if (this.hp <= 0 && !this.remote && G.Hooks) G.Hooks.call('player.ko', this);   // MicaSurvivor (DLC D5): an Expedition run's Focus Band / revives
     if (this.hp <= 0 && this.secondChance()) return;
     // MicaSurvivor (M5 lote 7, main.gd 1898-1902): Modo Equipo, si cae el que juega entra el siguiente.
     if (this.hp <= 0 && G.Team && G.Team.onFaint(this)) return;
@@ -400,6 +405,7 @@ G.Player = class Player {
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
   onDealt(dmg) {
     if (this.hasItem('shellbell')) this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
+    if (G.Hooks) G.Hooks.call('player.dealt', this, dmg);   // MicaSurvivor (DLC D5): an Expedition run's lifesteal (no listener: nothing)
   }
 
   /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */
