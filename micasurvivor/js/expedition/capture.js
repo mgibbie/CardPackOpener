@@ -110,7 +110,7 @@ G.ExpCap = (() => {
     const rng = R(mix(seed | 0, mapIdx(map), zone | 0, 0xCA97));
     const at = intR(rng, K.LG_AT[0], K.LG_AT[1]), roll = rng(), sAt = intR(rng, K.SH_AT[0], K.SH_AT[1]), pick = rng();
     const p = shinyChance(o.luck || 0, !!o.charm);
-    return { league: o.member ? { member: o.member, at } : null, shiny: roll < p ? { at: sAt, pick } : null, roll, p };
+    return { league: o.member ? { member: o.member, at } : null, shiny: roll < p || o.force ? { at: sAt, pick } : null, roll, p };   // (D10: force = Dawn Stone)
   }
   /** The League members waiting to be caught (met from D8 on, not yet owned), in a seeded order for this run. */
   function pendingOf(seed) {
@@ -124,7 +124,7 @@ G.ExpCap = (() => {
   /** The perk of a Pokémon of type `type`: [stat, value]. */
   const perkOf = type => PERK[type] || PERK.normal;
   const perkText = type => { const [s, v] = perkOf(type); return IT() ? IT().statText(s, v) : ''; };
-  const slotsMax = () => K.SLOTS + Math.min(K.LAB_SLOTS, (G.ExpSave && G.ExpSave.get('lab.support')) || 0);
+  const slotsMax = () => K.SLOTS + Math.min(K.LAB_SLOTS, G.ExpMeta ? G.ExpMeta.labNow('support') : (G.ExpSave && G.ExpSave.get('lab.support')) || 0);   // (D10: the run's row)
 
   // ---------------- the run (host) ----------------
   let S = null;        // {seed, map, sa, tg, faint, cine, fseq, seq, n, last, zkey, zplan, pend, log}
@@ -146,6 +146,7 @@ G.ExpCap = (() => {
   function mark(e, kind, o = {}) {
     if (!S || !e) return e;
     e.hpFloor = 1; e.xcap = kind;
+    if ((kind === 'league' || kind === 'shiny') && G.ExpMeta && G.ExpMeta.useMaster()) e.hp = 1;   // (D10: Master Ball: it faints at once)
     S.tg.set(e.id, Object.assign({ kind, e, t0: now(), dex: e.dex }, o));
     return e;
   }
@@ -159,7 +160,8 @@ G.ExpCap = (() => {
     if (S.zkey !== key) {
       S.zkey = key; S.zone = z.zone; S.lgDone = false; S.shDone = false;
       const member = z.zone <= 3 ? S.pend[z.zone - 1] || 0 : 0, I = IT();
-      S.zplan = zonePlan(S.seed, z.map, z.zone, { member, luck: pl.xluck || 0, charm: !!(I && I.has(pl, 'shinycharm')) });
+      const M = G.ExpMeta;   // (D10: the 6-shiny perk is a Shiny Charm every run; Dawn Stone: a shiny in zone 1)
+      S.zplan = zonePlan(S.seed, z.map, z.zone, { member, luck: pl.xluck || 0, charm: !!(I && I.has(pl, 'shinycharm')) || !!(M && M.charm()), force: !!(M && M.dawn(z.zone)) });
     }
     const zt = now() - run.zs, P = S.zplan;
     if (P && P.league && !S.lgDone && zt >= P.league.at) { S.lgDone = true; spawnLeague(P.league.member, pl); }
@@ -211,7 +213,7 @@ G.ExpCap = (() => {
     e.xk = 'shiny'; e.xsh = true;
     e.xroam = { rng: R(mix(S.seed, S.zone, e.id, 0x40A)), t: 0, tx: x, ty: y };
     e.xmove = roam;
-    const I = IT(), charm = !!(I && I.has(pl, 'shinycharm'));
+    const I = IT(), charm = !!(I && I.has(pl, 'shinycharm')) || !!(G.ExpMeta && G.ExpMeta.charm());
     mark(e, 'shiny', { flee: charm ? K.SH_FLEE_CHARM : K.SH_FLEE });
     S.log.seen++;
     say(F('¡Un {x} variocolor anda cerca!', name(dex)), 3.4); G.Audio.sfx('shinyGet');

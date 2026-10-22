@@ -192,7 +192,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const r0 = await startClassic(page);
-	A(r0.ok && r0.mode === 'exp-classic' && r0.dex === 1 && r0.dv === 8 && r0.lv, 'Classic starts as Bulbasaur with the D5 level-ups on; the content version is 8 (D9)', JSON.stringify(r0));
+	A(r0.ok && r0.mode === 'exp-classic' && r0.dex === 1 && r0.dv === 9 && r0.lv, 'Classic starts as Bulbasaur with the D5 level-ups on; the content version is 9 (D10)', JSON.stringify(r0));
 
 	// ======================== 1. rarity: weights, luck, gating, odds, live deals, the frames
 	const rr = await E(page, () => {
@@ -543,7 +543,7 @@ try {
 	A(dt.calls === 0, 'no Math.random in 30 deals and 30 item drops (seeded G.DLC.rng streams)', dt.calls);
 	A(dt.same && dt.sameItems && dt.distinct > 20, 'the same run + draw deals the same cards (keys, rarities, rolls) and drops the same items; successive deals differ', JSON.stringify({ s: dt.same, i: dt.sameItems, d: dt.distinct }));
 	const u = dt.snap && dt.snap.x && dt.snap.x.u;
-	A(dt.snap && dt.snap.x.xv === 8 && u && u.p && u.p.i.leftovers === 2 && u.p.i.charcoal === 1 && JSON.stringify(u.p.v) === '[["carbos",1]]' && Array.isArray(u.p.t) && u.p.t.length === 3,
+	A(dt.snap && dt.snap.x.xv === 9 && u && u.p && u.p.i.leftovers === 2 && u.p.i.charcoal === 1 && JSON.stringify(u.p.v) === '[["carbos",1]]' && Array.isArray(u.p.t) && u.p.t.length === 3,
 		'a live snapshot: x v5 with `u` {p: {v: vitamins, i: items, m: move levels, t: tools}}', JSON.stringify(u));
 	A(dt.hf && dt.hf.q && dt.hf.q.alice && dt.hf.q.alice.i.leftovers === 2 && dt.gf && dt.gf.p && dt.gf.p.i.charcoal === 1,
 		'a co-op host frame carries the host\'s bag by uid; a guest\'s own frame carries its own', JSON.stringify({ hf: dt.hf, gf: dt.gf }));
@@ -626,7 +626,7 @@ try {
 	A(vw.loadedBefore === false && vw.guest && vw.guest.xu && vw.guest.xu.i.masterball === 1 && vw.guest.moves.includes('surf'),
 		'a co-op guest (a fresh page; a host frame through G.Net) shows the host\'s bag and adds her Expedition move (Surf) to her puppet', JSON.stringify(vw.guest || vw));
 	A(vw.spec && vw.spec.shown && vw.spec.icons === 2 && vw.spec.vit === 1 && vw.spec.xu.i.leftovers === 2, 'a live spectator sees the bag strip: 1 vitamin, 2 items (Leftovers ×2, Charcoal)', JSON.stringify(vw.spec));
-	A(vw.old && vw.old.xu === null && vw.old.ok && !vw.old.notice && vw.old.dv === 8, 'a dv-3 / x v4 snapshot (no `u`) still loads with no notice: no bag; this build is dv 8 (D9)', JSON.stringify(vw.old));
+	A(vw.old && vw.old.xu === null && vw.old.ok && !vw.old.notice && vw.old.dv === 9, 'a dv-3 / x v4 snapshot (no `u`) still loads with no notice: no bag; this build is dv 9 (D10)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withU > 0 && vw.replay.xu && vw.replay.xu.i.leftovers === 2 && vw.replay.icons >= 2, 'a replay viewer: the recording carries `u` and seeking shows the bag', JSON.stringify(vw.replay));
 	await d3.ctx.close();
 

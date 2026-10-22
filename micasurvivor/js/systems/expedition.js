@@ -26,8 +26,9 @@
  *                                reload"); a replay / live run with an unknown or newer dv plays with a notice.
  *   pick()                       DLC D9: the map + tier a Classic run starts on (G.ExpTier.pick once loaded; the button on
  *                                the Classic card opens "Difficulty and leaderboards", js/expedition/tiers.js).
- *   wallet                       Pokémonedas are SHARED with the base game (owner): Expedition earns and spends them
- *                                through the base save, here. Nothing calls it yet (D9 / D10 pay the runs).
+ *   wallet                       Pokémonedas are SHARED with the base game (owner decision #4): Expedition could earn and
+ *                                spend them through the base save, here. Nothing calls it: D10 pays Expedition runs in its
+ *                                OWN Stardust (js/expedition/meta.js), so the base save's coins are never touched.
  * Expedition progress (League catches, unlocks, Lab...) has its OWN save (js/expedition/save.js, the server row
  * micasurvivorexp:<user>); Expedition code never writes the base save micasurvivor:<user> except through `wallet`.
  */
@@ -46,11 +47,12 @@ G.I18n.add({
   'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This replay is from a newer version of Expedition: reload the page to watch it properly.',
   'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This run is from a newer version of Expedition: reload the page to watch it properly.',
   'Miembro de la Liga: {x}': 'League member: {x}',   // (DLC D4: the Classic card's pick, before the Expedition code loads)
-  'Dificultad: {x} · clasificaciones': 'Difficulty: {x} · leaderboards', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare'   // (DLC D9: the Classic card's second button)
+  'Dificultad: {x} · clasificaciones': 'Difficulty: {x} · leaderboards', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare',   // (DLC D9: the Classic card's second button)
+  'Cuartel de la Liga: laboratorio, tareas y logros': 'League HQ: Lab, tasks and achievements', 'Cuartel de la Liga · ★ {x}': 'League HQ · ★ {x}'   // (DLC D10: the third button)
 });
 
 G.Expedition = (() => {
-  const DV = 8;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8. Older dv replays / snapshots still play, replayOk)
+  const DV = 9;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
@@ -66,7 +68,7 @@ G.Expedition = (() => {
   const ENABLED = new Set(['exp-classic']);   // D3: Classic is playable; Survival and League are still "Coming soon"
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js)
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

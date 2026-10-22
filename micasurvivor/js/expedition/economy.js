@@ -231,7 +231,7 @@ G.ExpEco = (() => {
       const order = [ti];
       for (let d = 1; d < 5; d++) { if (ti - d >= min) order.push(ti - d); if (ti + d <= 4) order.push(ti + d); }
       for (const t of order) {
-        const pool = I.ITEMS.filter(it => it.rar === t && (!pl || I.room(pl, it.id)) && !out.includes(it.id));
+        const pool = I.ITEMS.filter(it => it.rar === t && I.inPool(pl, it.id) && !out.includes(it.id));   // (D10: locked / archived items left out)
         if (pool.length) { out.push(pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id); break; }
       }
     }
@@ -426,6 +426,7 @@ G.ExpEco = (() => {
         const cost = cageCost(zoneNow());
         if (!spend(cost)) { say(F('Te faltan {x} ₽', cost - (pl.coins || 0)), 2.4); G.Audio.sfx('error'); return; }
         markUsed(Z, o); S.log.freed++;
+        if (G.ExpMeta) G.ExpMeta.onFreed(o.v);   // (D10: +25 research to its family)
         const xp = Math.round(pl.xpNext * K.CAGE_XP), ups = pl.gainXp(xp / (pl.xpMul || 1));
         if (ups > 0) G.Game.grantLevels(ups, false);
         say(F('¡Liberas a {x}! +{x} de experiencia', (G.DEX_BY[o.v] || {}).name || '', xp), 2.8);

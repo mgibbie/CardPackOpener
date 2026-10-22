@@ -2407,7 +2407,7 @@ base board are unchanged: the D0a fixtures pass as recorded, also with the Exped
 | Boss damage | x1 | x1.42 | x1.96 | `wake` (HP stays D3's `bossHp`: x(1 + 0.15 tier) of your DPS) |
 | XP | x1 | x1.15 | x1.3 | `spawn` |
 | Score | x1 | x1.5 | x2 | the score (below) |
-| Pay | x1 | x1.75 | x2.5 | (the study's Stardust column, kept for D10's payout: nothing pays yet) |
+| Pay | x1 | x1.75 | x2.5 | (the study's Stardust column: D10 pays each run's ★ with it) |
 
 Normal is all x1 / 0 and draws nothing more from any stream, so a Normal run plays exactly as before D9.
 
@@ -2481,6 +2481,128 @@ notice (they were all Normal).
   victory banner, the server's plausibility limits, the ribbons (the study pays Stardust: here cosmetic only).
 - **Not built:** the study's KO boards, Survival boards (D11), per-species boards and clans (owner: skip), "Win the Forest on
   Hard"-style challenge unlocks beyond the sequence, a season reward other than the ribbon.
+
+## DLC D10: the League meta
+
+**Expedition now has its own meta-progression**: runs pay **Stardust (★)**, spent in **the Lab** (19 permanent upgrades) and on
+**item unlocks**; **the Archive** keeps chosen items out of the drop pool; **research** turns League families into **avatars**
+(and frames); **daily and weekly tasks** pay ★ and pre-run **boosts**; **33 achievements**; **shiny perks**
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.5, 2.6, 2.14 and the D10 row). The code is `js/expedition/meta.js` (`G.ExpMeta`);
+every number is in its `K` and its tables (`LAB`, `UNLOCKS`, `ACH`, `TASKS`, `BOOSTS`, `FRAMES`). Base modes are unchanged: the
+D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**Owner rule: no ads, nothing sold, no real money.** ★ is earned in play only (runs, tasks, achievements) and spent only here.
+It is the Expedition's own currency: **the base save's Pokémonedas, stats and achievements are never read or written** (tested:
+the base save is byte-equal after Expedition runs). Owner decision #4 had "shared Pokémonedas"; this batch's brief asked for a
+DLC currency with the base currency untouched, so `G.Expedition.wallet` stays unused. Switching the payout to Pokémonedas would
+be one line in `record` (owner's call).
+
+**★ a run** (`K.PAY`): **(10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 if won + 15 a catch) x the tier's pay** (study 2.11's
+column, `G.ExpTier.of(diff).pay`: x1 / 1.75 / 2.5). A run under a minute pays nothing. A typical Normal clear (2,000 KOs, 4
+bosses, 2 catches) pays 405 ★, Hard 709, Nightmare 1,013. The run-over screen says "Stardust: +709 ★ (×1.75 Hard)".
+
+**The Lab** (study 2.14's list; price = round(base x growth^level / 5) x 5, or the study's fixed prices):
+
+| Upgrade | Effect a level | Max | Prices |
+|---|---|---|---|
+| Training | +4 % damage | 8 | 300 x 1.35^lv (300 ... 2,445) |
+| Stamina | +8 max HP | 8 | 250 x 1.35^lv |
+| Agility | +2.5 % speed | 6 | 300 x 1.4^lv |
+| Study | +5 % XP | 5 | 400 x 1.45^lv |
+| Trading | +8 % ₽ | 5 | 300 x 1.45^lv |
+| Fortune | +5 luck | 5 | 400 x 1.5^lv |
+| Magnetism | +10 % pickup range | 4 | 250 x 1.5^lv |
+| Leftovers | +0.3 HP/s | 4 | 400 x 1.5^lv |
+| Shell | +2 armor | 5 | 350 x 1.45^lv |
+| Refresh / Skip / Banish | +1 use a run (to 6 each, study 2.5) | 4 / 4 / 5 | 400 x 1.6^lv / 300 x 1.6^lv / 500 x 1.5^lv |
+| Vitamin slots | +1 slot (3 -> 5) | 2 | 1,200 / 3,000 |
+| Move slot | +1 move slot (6 -> 7) | 1 | 1,500 |
+| Fourth option | 4 cards at each level-up | 1 | 3,000 |
+| Revive | start with a Max Revive | 1 | 5,000 |
+| Research | +25 % research | 4 | 500 x 1.6^lv |
+| Support team | a 3rd Support Alpha slot (D8's `lab.support`) | 1 | 3,500 |
+| Archive | +3 Archive slots | 3 | 800 / 1,600 / 3,200 |
+
+The whole Lab costs 84,355 ★ and the 25 items 29,050 (about 280 Normal clears, or 112 on Nightmare, before tasks: ~4,500 ★ a week if every task is done, and the achievements: 13,850 in all). The stat upgrades add
+to D5's stat sums (`G.ExpItems.total`: same-stat bonuses add); the tools / slots / cards are read by `levelups.js` and `items.js`;
+the Max Revive is D5's item, taken at the start.
+
+**Item unlocks** (study 2.6: "revealed by a counter goal, then bought with Stardust"): **25 of D5's 60 items start out of the
+drop pool**, each with a goal from the save's counters and a price (250-3,500 ★): e.g. Scope Lens "Defeat 2,000 Pokémon" 300,
+Choice Band "Win a map" 600, Assault Vest "Win a map on Hard" 1,500, Shiny Charm "Catch a shiny" 1,500, Max Revive "Win a map
+on Nightmare" 3,500. A locked item never drops, never shows in a Poké Ball / Meowth / altar offer (`G.ExpItems.inPool`); its goal
+reveals it and ★ buys it (`items.bought`). The 18 type boosters and Life Orb stay unlocked, and at least 5 Epic+ items are always in
+the pool.
+
+**The Archive** (study 2.5: "+3 slots per Lab level keeps chosen items out of the pool"): on the Archive tab, choose up to 3 x
+the Lab level of the items in the pool; they never drop in your runs. Each toggle is a Lamport counter (`arc.<item>` = stamp x 2
++ on), so the latest choice wins on every device.
+
+**Research** (study 2.14's Research Notebook): every KO of a **League family** (any stage) adds research: a KO 1, an elite 2, a
+summoner 4, an alpha or totem 5, a guardian / legendary / boss 10, a freed cage 25 (D7's cage, `onFreed`), x(1 + 0.25 Lab
+Research). Saved at the run's end (`rs.<family>`). A family is finished at 400 (starter / common), 600 (uncommon), 900 (rare)
+or 60 (legendary): its first stage becomes an **avatar** (`avatar`). The Research tab lists the 78 built families.
+
+**The card** (Card tab): avatar (your League member, or an avatar), **frame** and **title**. 10 frames drawn in CSS: Basic, Leaf
+/ Stone / Crystal / Prism (1 / 5 / 15 / 40 avatars), Champion / Nightmare / Shiny (achievements), Ribbon / Master (D9's season
+ribbons: owner #5, ribbons become frames and titles). Titles come from 6 achievements and 2 ribbons. The choices are Lamport
+counters too (`card.av / fr / ti`).
+
+**Tasks** (study 2.14): **3 daily (60 / 100 / 160 ★) and 3 weekly (300 / 450 / 700 ★)**, from 14 templates (KOs, minutes, zone,
+guardians, Poké Balls, altars, Ultimates, reactions, alphas, catches, evolutions, runs, cages, wins), seeded by the day / ISO week
+(UTC; weeks from Monday) and the account. All 3 dailies pay **50 ★ x the streak** (consecutive days, up to 5) and a boost; all 3
+weeklies 500 ★ and 3 boosts. One reroll a day and one a week. Paid when done (at a run's end). **The date is passed in**
+(`record(sum, now)`, `tasksOf(kind, now)`): no wall clock inside run logic. Progress lives in bounded counters: `tk.<d|w>.<slot>` =
+(period + 1) x 1e7 + reroll x 1e6 + progress, so a newer period always wins the max merge and nothing grows per day.
+
+**Pre-run boosts** (study 2.6): Rare Candy (+2 levels at the start), Lucky Egg (+25 % XP), Amulet Coin (+50 % ₽), Honey (+1 alpha
+a zone, at a seeded time), Dawn Stone (a shiny in zone 1: `zonePlan`'s `force`), Master Ball (the run's first League / shiny
+encounter faints at once). From the task bonuses only, max 9 each; armed on the Tasks tab (this device), spent at the run's start.
+
+**Achievements** (33, 50-1,500 ★, from the Expedition save's counters: runs, zones, wins per tier, medals, KOs, guardians,
+alphas, League catches and size, shinies, reactions, Ultimates, Poké Balls, cages, avatars, Lab levels, tasks). Claimed once into
+the set `ach`; their ★ counts in the balance from that set.
+
+**Shiny perks** (study 2.14, by shinies caught, `cap.shiny` / `shiny.caught`): 2 +3 luck, 4 +4 % XP, 6 **the Shiny Charm every run**
+(x1.5 shiny chance and its longer flee time, D8's `charm`), 10 +3 % damage, 15 +20 % damage as a shiny League member.
+
+**Saves (merge-safe, never destructive):** everything is in the Expedition save (max per counter, union per set; no server
+change). ★ earned is a **G-counter**: one counter per browser and identity (`st.<device>`), so two devices' runs add. **Spending
+is derived, never a counter:** balance = Σ `st.*` + Σ the claimed achievements' ★ − Σ the Lab's prices up to its levels − Σ the
+bought items' prices. Two devices can't pay twice for the same Lab level or item; two devices spending at once can overdraw (the
+balance shows 0 and buying waits). Boosts are G-counters too (`bg.<id>.<dev>` got, `bu.<id>.<dev>` used). Counter growth is
+bounded (a few per device, one per family, a fixed set for tasks).
+
+**Sync:** the Lab, the shiny perks and the boosts change a run, so **the run's row is fixed at its start**
+(`[Lab levels in base 36, shiny-perk tier, boost mask, shiny member]`) and every effect is `G.ExpMeta.effects(row)` (pure). **The
+`x` block is v9** with `k` (`k.p` the watched / sending player's row, `k.q` the co-op players' by uid / name); the replay header
+carries `h.k`. A viewer, spectator or co-op guest reads the same numbers; a v1-v8 block (no `k`) still loads. **`G.Expedition.DV`
+is 9** (dv-1 to dv-8 replays and snapshots still play with no notice).
+
+**"League HQ"** (a third button on the Classic card of "Choose a mode": "League HQ · ★ 1,234"; mouse, touch and pad): the ★
+balance and 7 tabs: **Lab** (each upgrade, its level, now / next and its price), **Items** (the 25 unlocks: goal, progress, Buy /
+In the drop pool), **Archive**, **Research** (the families, progress bars, silhouettes until met), **Tasks** (daily / weekly, the
+bonuses, "Reset in …", Reroll, the boosts to arm), **Achievements**, **Card** (avatar, frames, titles, shiny perks).
+
+**Assets:** none new. The overworld's item pictures (`/overworld/item_icons/`: stardust, the Lab's items, the boosts, the
+Shiny Charm), the PMD sprites for avatars, the achievement icons of `js/ui/icons.js`; frames are CSS.
+
+**What changed in base files** (each only on an Expedition path):
+- `systems/expedition.js`: `DV` 9, `meta.js` in `SCRIPTS`, 2 i18n keys, the `wallet` note.
+- `ui/modes-ui.js`: the Classic card's third button, `openMeta`, and Back / open closing the panel.
+- Expedition files: `meta.js` (new); `core.js` (dv 9, `x` v9 with `k`, `h.k`, the begin / after / tick / KO / run.end calls);
+  `items.js` (the meta stats in `total`, `slots` + the Lab, `inPool`); `levelups.js` (the Lab's tools, move slot, fourth card);
+  `economy.js` (offers through `inPool`, a cage's research); `capture.js` (Support team from the run's row, the Shiny Charm perk,
+  Dawn Stone, Master Ball).
+
+**Deviations:**
+- **Ours, not the study's:** the run's ★ formula (the study gives none), the research needed per family, the item goals and
+  prices, the achievements' list, the frames, the boosts' exact effects (Master Ball: "faints at once", as every catch already
+  succeeds), the Archive's slot cap (3 levels), the task templates.
+- **Not built:** season tasks (the season UI is hidden, owner decision #8), clan points, buying boosts (only tasks give them),
+  showing the Expedition card on the base trainer card (owner #5's crossover: the card lives in League HQ for now).
+- **For D11:** a co-op guest's own meta row (its run isn't an Expedition one yet; the host's row already travels in `k.q`), task
+  progress from Survival (the metrics are per run: add Survival's), achievements for Survival milestones.
 
 ## DLC D6-D9: the stacked branch
 
@@ -2626,6 +2748,19 @@ notice (they were all Normal).
   on the server; the Score / Time attack / Season boards in the panel and last season's Elite ribbon, once; a fresh viewer page
   showing the tier from `c.d`; the phone and desktop layouts. `SHOTS=<dir>` saves the tier picker, the boards, the season and
   the run-over medal at both sizes.
+- `node overworld/tests/micasurvivor_expedition_meta_test.mjs` (DLC D10), the real handler behind a static server: the Lab's
+  prices, a run's ★ x the tier's pay, every Lab upgrade's effect from a row, the shiny perks, the derived balance, tasks (seeded per
+  day / week, rollover by the date passed in, progress, payment once, streak, reroll), achievements claimed once, the two-device
+  merge (`meta.js` + `save.js` + `tiers.js` in a vm); two devices' saves merged through `micasurvivor-exp-save-put` (both ★
+  counters, the higher Lab level, the unions; a stale put takes nothing; exact keys); in the game: a Normal and a Hard run's ★
+  (x1 / x1.75, the run-over line), the base save's coins / stats / achievements untouched, each Lab upgrade in a run (stats, tools,
+  slots, 4 cards, the Max Revive, 3 Support slots, research x2), locked items never dropping or offered, a goal then ★ buying one,
+  the Archive's slots and its items never dropping, research finishing a family into an avatar, the card's avatar / frame / title,
+  the 6 boosts and the 6-shiny perks in a run (Rare Candy, Dawn Stone, Master Ball, Honey), the `x` block v9 `k` on snapshots,
+  guest and host frames and the replay header, a fresh viewer page reading the same effects, a v8 block; "League HQ" by its
+  button (a Lab purchase, every tab, a reroll); the save on the server; every tab at desktop and phone size. `SHOTS=<dir>` saves
+  the run-over line, the Lab, the Archive, the tasks, the achievements and the card (desktop), and the Lab, the Archive, the tasks
+  and the achievements (phone).
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 8;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8)
+const DV = 9;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -295,9 +295,9 @@ try {
 				seams: G.Hooks.SEAMS.map(s => G.Hooks.count(s)), scripts: [...document.querySelectorAll('script[data-expedition]')].map(s => s.getAttribute('src')), who: G.ExpSave.who };
 		});
 		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === DV, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv ' + DV + ', initialised', JSON.stringify(ld));
-		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js', 'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js, D4 league-data.js + league.js, D5 moves.js + items.js + levelups.js, D6 ultimates.js, D7 economy.js, D8 reactions.js + capture.js, D9 tiers.js)
+		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js', 'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js, D4 league-data.js + league.js, D5 moves.js + items.js + levelups.js, D6 ultimates.js, D7 economy.js, D8 reactions.js + capture.js, D9 tiers.js)
 		A(JSON.stringify(ld.scripts) === JSON.stringify(SCR) && d.expFetches().length === SCR.length && SCR.every((s, i) => d.expFetches()[i].endsWith(s)),
-			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js, league-data.js, league.js, moves.js, items.js, levelups.js, ultimates.js, economy.js, reactions.js, capture.js, tiers.js then core.js, once', d.expFetches().join(' '));
+			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js, league-data.js, league.js, moves.js, items.js, levelups.js, ultimates.js, economy.js, reactions.js, capture.js, tiers.js, meta.js then core.js, once', d.expFetches().join(' '));
 		A(ld.seams.length >= 4 && ld.seams.every(n => n === 1), 'the Expedition attaches to every seam once', ld.seams.join(','));
 		console.log(`     freeze: ${ld.frozen.objects} objects in ${ld.frozen.ms} ms (load ${ld.ms} ms)`);
 		A(ld.frozen.objects > 1000 && ld.frozen.ms < 200, `the freeze is a one-time cost (${ld.frozen.objects} objects, ${ld.frozen.ms} ms)`);

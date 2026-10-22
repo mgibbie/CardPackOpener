@@ -41,6 +41,7 @@ G.ModesUI = (() => {
     closeCoop(true);
     closeLeague(true);
     if (G.ExpTier) G.ExpTier.close(true);   // (DLC D9)
+    if (G.ExpMeta) G.ExpMeta.close(true);   // (DLC D10)
     render();
   }
 
@@ -84,13 +85,16 @@ G.ModesUI = (() => {
     $('modes-exp-h').textContent = X.MODES.some(X.enabled) ? 'Expedición' : 'Expedición · modos nuevos (próximamente)';
     // (DLC D4: Classic carries "League member: X", the member you start with: js/expedition/league.js)
     // (DLC D9: and "Difficulty: X · leaderboards", the tier picker and the Expedition boards: js/expedition/tiers.js)
+    // (DLC D10: and "League HQ": the Lab, item unlocks, the Archive, research, tasks, achievements, the card: js/expedition/meta.js)
     const DN = { normal: 'Normal', hard: 'Difícil', nightmare: 'Pesadilla' };
     $('modes-exp').innerHTML = X.MODES.map(id => id === 'exp-classic' && X.enabled(id)
       ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-league-pick">${G.Icons.html('ball', 18)} Miembro de la Liga: ${esc(nameOf(X.leaguePick()))}</button>`
-        + `<button class="btn mode-sub" id="modes-tier-pick">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button></div>`
+        + `<button class="btn mode-sub" id="modes-tier-pick">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button>`
+        + `<button class="btn mode-sub" id="modes-meta-pick">${G.Icons.html('star', 18)} ${G.ExpMeta ? 'Cuartel de la Liga · ★ ' + G.ExpMeta.balance().toLocaleString('en') : 'Cuartel de la Liga: laboratorio, tareas y logros'}</button></div>`
       : expCard(id)).join('');
     if ($('modes-league-pick')) $('modes-league-pick').onclick = openLeague;
     if ($('modes-tier-pick')) $('modes-tier-pick').onclick = openTier;
+    if ($('modes-meta-pick')) $('modes-meta-pick').onclick = () => openMeta();
     $('modes-exp').querySelectorAll('[data-exp]').forEach(b => { b.onclick = () => start(b.dataset.exp); });
     $('modes-mods').innerHTML = M.MOD_IDS.map(id => {
       const on = p.mods.includes(id), m = M.MOD[id];
@@ -156,6 +160,7 @@ G.ModesUI = (() => {
     if (!$('modes-coop').classList.contains('hidden')) { closeCoop(); return true; }
     if (!$('modes-league').classList.contains('hidden')) { closeLeague(); return true; }
     if (G.ExpTier && G.ExpTier.back()) return true;   // (DLC D9: "Difficulty and leaderboards")
+    if (G.ExpMeta && G.ExpMeta.back()) return true;   // (DLC D10: "League HQ")
     if ($('modes-party').classList.contains('hidden')) return false;
     closeParty();
     return true;
@@ -331,5 +336,11 @@ G.ModesUI = (() => {
       e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
   }
 
-  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague, openTier };
+  // ---------------- DLC D10: "League HQ" (Expedition; js/expedition/meta.js) ----------------
+  function openMeta(tab) {
+    return G.Expedition.load().then(() => G.ExpSave.open()).then(() => (G.UI.isOpen('scr-modes') ? G.ExpMeta.open(() => { if (G.UI.isOpen('scr-modes')) render(); }, tab) : false),
+      e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+  }
+
+  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague, openTier, openMeta };
 })();

@@ -358,7 +358,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu signed in (alice)');
 	const pr = await prep(page);
-	A(pr.ok && pr.tier && pr.dv === 8 && pr.xv === 8, 'the Expedition code loads with tiers.js; the content version is 8, the x block still v8', JSON.stringify(pr));
+	A(pr.ok && pr.tier && pr.dv === 9 && pr.xv === 9, 'the Expedition code loads with tiers.js; the content version is 9 (D10), the x block v9', JSON.stringify(pr));
 	if (!pr.ok || !pr.tier) throw new Error('no G.ExpTier: the rest needs it');
 
 	// ======================== 3a. unlocks: Normal only at first
@@ -390,7 +390,7 @@ try {
 
 	// ======================== 2 + 3. Normal: the reference numbers; a win unlocks Hard
 	const rN = await startClassic(page);
-	A(rN.ok && rN.diff === 'normal' && rN.cdiff === 'normal' && rN.dv === 8, 'Classic starts on Normal', JSON.stringify(rN));
+	A(rN.ok && rN.diff === 'normal' && rN.cdiff === 'normal' && rN.dv === 9, 'Classic starts on Normal', JSON.stringify(rN));
 	const nS = await E(page, () => {
 		const H = window.__t, C = G.ExpClassic;
 		const foe = H.foeStats(10), seed = G.World.seed;
@@ -425,7 +425,7 @@ try {
 	A(sb.r && sb.r.ok && sb.r.time && sb.r.time.better && aRow && aRow.time === 1000 && aRow.medal === 4 && aRow.replay && aRow.replay === sb.last && row('msurvreplay:' + aRow.replay).by === 'alice',
 		'G.Exp.submitScore: the won run lands on the Score and Time-attack boards with its parts, its medal and its own uploaded replay', JSON.stringify(sb).slice(0, 400));
 	const sentBody = (apiLog.filter(e => e.action === 'run-score' && e.mode === 'micasurvivor_expedition').pop() || {}).body || {};
-	A(sentBody.zone === 4 && sentBody.won === true && Number.isInteger(sentBody.dmg) && sentBody.catches === 1 && sentBody.dv === 8 && sentBody.diff === 'normal', 'what the client sent: its parts (whole numbers), dv 8, the tier', JSON.stringify(sentBody));
+	A(sentBody.zone === 4 && sentBody.won === true && Number.isInteger(sentBody.dmg) && sentBody.catches === 1 && sentBody.dv === 9 && sentBody.diff === 'normal', 'what the client sent: its parts (whole numbers), dv 9, the tier', JSON.stringify(sentBody));
 
 	// ======================== 2. Hard (picked in the panel), then Nightmare
 	const pk = await E(page, async () => {
@@ -455,7 +455,7 @@ try {
 		'Hard: the same foe has x1.4 HP, x1.42 damage, x1.08 speed, x1.15 XP', JSON.stringify([nS.foe, hS.foe]));
 	A(hS.wk.boss && hS.wk.escorts === 1 && ratio(hS.wk.bossDmg, nS.wk.bossDmg || 1) > 1.3, 'Hard: the guardian wakes with 1 escort (an elite) and x1.42 damage', JSON.stringify([nS.wk, hS.wk]));
 	A(/HARD/.test(hS.line), 'Hard: the HUD line shows HARD', hS.line);
-	A(hS.snap.dv === 8 && hS.snap.x && hS.snap.x.xv === 8 && hS.snap.x.c && hS.snap.x.c.d === 1, 'sync: the snapshot carries dv 8 and the tier as c.d = 1 (the x block stays v8)', JSON.stringify(hS.snap));
+	A(hS.snap.dv === 9 && hS.snap.x && hS.snap.x.xv === 9 && hS.snap.x.c && hS.snap.x.c.d === 1, 'sync: the snapshot carries dv 9 and the tier as c.d = 1 (the x block v9)', JSON.stringify(hS.snap));
 	const wH = await E(page, () => { window.__t.win(1300); return { unl: G.ExpTier.unlocked('viridian'), out: window.__out, medal: G.ExpTier.medal('viridian', 'hard') }; });
 	A(wH.unl === 2 && wH.out.unlocked === 'nightmare' && wH.medal === 3 && wH.out.medal.id === 'gold', 'a Hard win at 21:40: Gold (< 24:36 on Hard) and Nightmare unlocks', JSON.stringify(wH));
 	await E(page, () => G.ExpTier.setPick('viridian', 'nightmare'));
@@ -552,7 +552,7 @@ try {
 		out.view = { diff: cur && cur.diff, line: C.hudLine(pup, { time: 0 }) };
 		const z = G.World.zone, P = C.plan(z.seed, z.map, z.zone, 'hard'), N = C.plan(z.seed, z.map, z.zone, 'normal');
 		out.planHard = P.events[0].at < N.events[0].at || P.events.some((e, i) => e.at < N.events[i].at);
-		out.old = { ok: G.Expedition.replayOk(7), notice: G.Expedition.viewNotice('exp-classic', 7), newer: G.Expedition.viewNotice('exp-classic', 9) };
+		out.old = { ok: G.Expedition.replayOk(7), notice: G.Expedition.viewNotice('exp-classic', 7), newer: G.Expedition.viewNotice('exp-classic', 10) };
 		const r = await G.Replay.fetchShared(rid);
 		out.rep = r.ok ? { mode: r.meta.mode, diff: r.meta.diff, map: r.meta.map, dv: r.meta.dv } : { err: r.error };
 		return out;
@@ -560,7 +560,7 @@ try {
 	A(vw.loadedBefore === false && vw.view && vw.view.diff === 'hard' && /HARD/.test(vw.view.line) && vw.planHard,
 		'a fresh viewer page: the x block\'s c.d gives the tier (its HUD shows HARD; it plans the Hard timeline)', JSON.stringify(vw).slice(0, 400));
 	A(vw.old && vw.old.ok && !vw.old.notice && vw.old.newer, 'an old dv-7 replay / snapshot still plays with no notice; a newer dv gets one', JSON.stringify(vw.old));
-	A(vw.rep && vw.rep.mode === 'exp-classic' && vw.rep.diff === 'normal' && vw.rep.map === 'viridian' && vw.rep.dv === 8, 'the board\'s replay carries the mode, map, tier and dv 8', JSON.stringify(vw.rep));
+	A(vw.rep && vw.rep.mode === 'exp-classic' && vw.rep.diff === 'normal' && vw.rep.map === 'viridian' && vw.rep.dv === 9, 'the board\'s replay carries the mode, map, tier and dv 9', JSON.stringify(vw.rep));
 	await d1.ctx.close();
 
 	// ======================== 6. phone and desktop: the panel fits

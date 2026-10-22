@@ -470,9 +470,9 @@ try {
 		return { drop, x: s.x, hf: hf.x, gf: gf.x, ground: s2.x && s2.x.a, hash: G.World.zone.hash, size: JSON.stringify(s.x).length };
 	});
 	const xa = xb.x && xb.x.a && xb.x.a.p;
-	A(xb.x && xb.x.xv === 8 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash && xa && xa[0] > 10 && xa[1] === 1 && xa[3] > 0 && xa[4] === 45,
+	A(xb.x && xb.x.xv === 9 && xb.x.m === 'viridian' && xb.x.z === 1 && xb.x.th === xb.hash && xa && xa[0] > 10 && xa[1] === 1 && xa[3] > 0 && xa[4] === 45,
 		`a live snapshot mid-hop carries the x block (v4 since D4) {xv: 4, m, z, th, a: {p: [lift ${xa && xa[0]}, verb 1 (hop), layer, phase, airtime 45 cs, hops]}} (${xb.size} chars)`, JSON.stringify(xb.x));
-	A(xb.hf && xb.hf.xv === 8 && xb.hf.a && xb.hf.a.q && xb.hf.a.q.alice && xb.hf.a.q.alice[0] > 10 && xb.gf && xb.gf.a && xb.gf.a.p && xb.gf.a.p[0] > 10,
+	A(xb.hf && xb.hf.xv === 9 && xb.hf.a && xb.hf.a.q && xb.hf.a.q.alice && xb.hf.a.q.alice[0] > 10 && xb.gf && xb.gf.a && xb.gf.a.p && xb.gf.a.p[0] > 10,
 		'a co-op host frame carries every player\'s row by uid (the host\'s own), a guest\'s frame its own row', JSON.stringify([xb.hf, xb.gf]));
 	A(xb.ground && xb.ground.p && xb.ground.p[0] === 0 && xb.ground.p[1] === 0, 'back on the ground the row says so (lift 0, no verb)', JSON.stringify(xb.ground));
 	const xd = xb.drop || {};
@@ -634,7 +634,7 @@ try {
 		return { dropAt, ledge, drops, dropN, dropMid, dv: d.h.dv, code0, code: e.code, code1, frames: d.f.length, withA, slowA, slowX, air, times: air.map(i => rd.times[i]), bytes: txt.length, hash: G.ExpTerrain.generate({ seed: d.h.sd, map: 'viridian', zone: 1 }).hash, seed: d.h.sd };
 	});
 	A(rep.code && rep.withA > 3 && rep.slowA === 0 && rep.slowX > 0, `the replay keeps the air state in frame field 7 (${rep.withA} frames), never in its slow state (${rep.slowX} slow x blocks, none with \`a\`)`, JSON.stringify({ withA: rep.withA, slowA: rep.slowA, slowX: rep.slowX, err: rep.error }));
-	A(rep.ledge && rep.drops === 3 && rep.dropN >= 3 && rep.dropAt && rep.dropAt.length >= 3 && rep.dv === 8,
+	A(rep.ledge && rep.drops === 3 && rep.dropN >= 3 && rep.dropAt && rep.dropAt.length >= 3 && rep.dv === 9,
 		`the replay records the falls off a ledge (3 walked down at ${rep.ledge}: the air row's 7th field counts them, ${rep.dropMid} frames caught one mid-fall, verb 7; dv ${rep.dv})`, JSON.stringify({ ledge: rep.ledge, drops: rep.drops, dropN: rep.dropN, dropAt: rep.dropAt, dropMid: rep.dropMid, dv: rep.dv }));
 	A(rep.air && rep.air.length >= 2, `decoded, ${rep.air && rep.air.length} replay frames have the player airborne`, JSON.stringify(rep.air));
 	await ctx.close();

@@ -881,7 +881,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D7. Economy and interactables** — **BUILT 2026-10-22** (`js/expedition/economy.js`, `overworld/tests/micasurvivor_expedition_economy_test.mjs`, README "DLC D7: economy and interactables"; see the update below) | ₽ drops, paid/free/cursed Poké Balls, Meowth with market heat, Unown altars ×4 tiers + comet, challenge/cursed/greed altars, Ditto, Hypno, gold rocks, berries, cage; minimap legend, fog of war; first-run tips | D5 |
 | **D8. Alphas, capture and shinies** — **BUILT 2026-10-22** (`js/expedition/capture.js`, `reactions.js`, `overworld/tests/micasurvivor_expedition_capture_test.mjs`, README "DLC D8: Alphas, capture and shinies"; see the update below) | Alphas, faint window, Friend Ball, Support Alphas (2/3 slots) with type perks; League encounters (challenge → appear → weaken → catch); shiny encounters; capture cinematic; elemental reactions + weather boosts | D7 |
 | **D9. Tiers, score and boards** — **BUILT 2026-10-22** (`js/expedition/tiers.js`, `overworld/tests/micasurvivor_expedition_tiers_test.mjs`, README "DLC D9: tiers, score and boards"; see the update below) | Normal/Hard/Nightmare tables, tier unlocks per map, score formula, time-attack medals, DLC boards and the board UI; weekly season view (cosmetic prizes only) | D3 |
-| **D10. League meta** | DLC currency, Lab (~15 upgrades), item unlocks by counter goals, Archive, research → avatars and frames, DLC daily/weekly tasks, ~30 achievements, shiny perks | D8 |
+| **D10. League meta** — **BUILT 2026-10-22** (`js/expedition/meta.js`, `overworld/tests/micasurvivor_expedition_meta_test.mjs`, README "DLC D10: the League meta"; see the update below) | DLC currency, Lab (~15 upgrades), item unlocks by counter goals, Archive, research → avatars and frames, DLC daily/weekly tasks, ~30 achievements, shiny perks | D8 |
 | **D11. Survival and MP hardening** | Endless mode (milestones, phases, pacts, siege, night, migration, hazards); full online co-op pass on DLC state, relay budget check, replay size check against 1.2 MB, spectator rendering | D9, D10 |
 | **D12. Maps 2–3** | Mt. Moon, Cerulean Cape: biome palettes, residents, guardians, totems, summoners, legendaries, bounce-pad variants | D11 |
 | D13+ (later) | More maps (desert, Lavender), more signature Ultimates, Mega Evolutions as a late-run power spike (Q10), per-species boards, clans (Q9) | — |
@@ -1371,3 +1371,29 @@ Built (`micasurvivor/README.md`, "DLC D9: tiers, score and boards"). Choices and
 and shinies (dv 7, `x.p`), D9 tiers, score and boards (dv 8). One commit each; only D9 touches `server/mp.mjs`. Each batch's test
 (`micasurvivor_expedition_{ultimates,economy,capture,tiers}_test.mjs`) and the earlier Expedition suites pass on the stack; the
 whole branch needs the full gate before merging. Next: D10 (League meta), D11 (Survival + MP hardening), D12 (maps 2-3).
+
+### Update (2026-10-22): D10 built, "League meta"
+Built (`micasurvivor/README.md`, "DLC D10: the League meta"). Choices and notes for later batches:
+- **Where it lives:** `js/expedition/meta.js` (`G.ExpMeta`): Stardust, the Lab, item unlocks, the Archive, research, avatars /
+  frames / titles, tasks, achievements, shiny perks, pre-run boosts and the "League HQ" panel (a third button on the Classic card).
+  Numbers in its `K` and tables.
+- **The currency:** **Stardust (★), the Expedition's own**, earned in play only (owner rule: nothing sold, no ads, no real money).
+  The base save's Pokémonedas / stats / achievements are never touched (tested). Owner decision #4 ("shared Pokémonedas") is NOT
+  what this batch did: the D10 brief asked for a DLC currency with the base currency untouched, so `G.Expedition.wallet` stays
+  unused. One line in `record` switches the payout if the owner prefers decision #4.
+- **Economy:** a run pays (10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch) x the tier's pay (x1 / 1.75 / 2.5); a
+  Normal clear ~405 ★. Lab: study 2.14's 19 upgrades and price formula, 84,355 ★ in all; 25 item unlocks (counter goal + 250-3,500 ★,
+  29,050 in all); tasks 60 / 100 / 160 daily + 50 x streak, 300 / 450 / 700 weekly + 500 (~4,500 ★ a week); 33 achievements
+  (13,850 ★).
+- **Saves:** the Expedition save only, no server change. ★ earned is a G-counter per device (`st.<dev>`); **spending is derived**
+  (Lab levels, `items.bought`), so a merge never pays twice; the Archive and the card are Lamport counters (latest choice wins);
+  tasks are bounded counters carrying their period; research `rs.<family>`; avatars / achievements are sets.
+- **Sync:** the run's row (Lab levels, shiny-perk tier, boost mask, shiny member) is fixed at its start; `x` v9 adds `k` (and the
+  replay header `h.k`); every effect is `G.ExpMeta.effects(row)`, pure. `G.Expedition.DV` is 9; v1-v8 still read.
+- **Not built:** season tasks (the season UI is hidden, owner #8); buying boosts; the Expedition card on the base trainer card
+  (owner #5's crossover) — the card lives in League HQ.
+- **For D11:** a co-op guest's own row (its run isn't an Expedition one yet; `k.q` already carries the host's); Survival's metrics
+  for tasks (`record` builds them per run) and Survival achievements; the relay budget should count `k` (it never changes in a
+  run, so it can go once and stay in the replay's slow state, as it does).
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded, and so does the
+  force-loaded run.
