@@ -1,19 +1,35 @@
-// Pokermon 3.9.1 — seals/seals1.lua (Pink / Silver on 3.9.1 since batch 17): the Pink Seal (scored in the round's first hand,
-// with room: an Energy matching one of your jokers, else a random one; with the Obituary Sleeve on the Obituary Deck the seal
-// then has a 1 in 3 chance to fall off — G.GAME.modifiers.poke_pink_seal_selfdestruct, sleeves.js) and the Silver Seal (held in
-// hand when a hand is played: an Item if there is room, then the card is discarded through the discard pipeline — every
-// joker's `discard` context, destroyed if one says remove). 3.9.1 claims the consumable slot when the seal triggers
-// (consumeable_buffer) and makes the card with SMODS.add_card. Seal `calculate` runs through the engine's mod_card_calculate
-// seam (core.js) with main_scoring, like SMODS 1.0.
+// Pokermon 3.9.1 — seals/seals1.lua (Pink / Silver on 3.9.1 since batch 17; the Silver Seal on upstream main's refactor): the Pink
+// Seal (scored in the round's first hand, with room: an Energy matching one of your jokers, else a random one; with the Obituary
+// Sleeve on the Obituary Deck the seal then has a 1 in 3 chance to fall off — G.GAME.modifiers.poke_pink_seal_selfdestruct,
+// sleeves.js) and the Silver Seal (held in hand while a hand scores: "+1 Item" and an Item if there is room, then the card is
+// discarded through pokermon.discard_cards — the discard pipeline, every joker's `discard` effect applied). The card is made
+// with SMODS.add_card. Seal `calculate` runs through the engine's mod_card_calculate seam (core.js) with main_scoring, like
+// SMODS 1.0. Players get them from Obituary / Revenant, the Obituary / Revenant decks and sleeves, and (Steamodded) the base
+// game's seal rolls — Standard Pack cards and Certificate (js/engine/smods.js base_seal_roll; pokermon_seals_test.mjs).
 import {
-  G, localize, play_sound, delay, draw_card, eval_card, card_eval_status_text, create_card, copy_card,
-  pseudorandom_element, pseudoseed, defineSeals, matching_energy, find_card, playing_card_joker_effects, add_card,
-  pseudorandom_probability,
+  G, localize, copy_card, pseudorandom_element, pseudoseed, defineSeals, matching_energy, find_card, playing_card_joker_effects,
+  add_card, pseudorandom_probability, calculate_effect,
 } from '../api.js';
 import { P_SEALS } from '../../../js/engine/core.js';
+import { discard_cards_from_highlighted } from '../../../js/engine/run.js';
 
 const FILE = 'seals/seals1.lua';
 const has_room = () => G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit;
+
+/**
+ * pokermon.discard_cards (upstream main, functions/pokeutils.lua, 2ce6bc7): discard these hand cards outside the Discard button.
+ * It is Steamodded's hook discard — pre_discard, each card's discard seal and every joker's discard context (effects applied),
+ * destroyed ones -> remove_playing_cards, cards_discarded counted, no discard used, no post_discard — which the engine's
+ * discard_cards_from_highlighted(hook) is. (Main's poke_drawn_to guard: a card no longer in hand is not discarded again.)
+ */
+export function discard_cards(cards) {
+  cards = [].concat(cards).filter((c) => c && c.area === G.hand);
+  if (!cards.length) return;
+  const keep = G.hand.highlighted.filter((c) => !cards.includes(c));
+  G.hand.highlighted = cards.slice();
+  discard_cards_from_highlighted(true);
+  G.hand.highlighted = keep.filter((c) => c.area === G.hand);
+}
 
 defineSeals({
   pink_seal: {
@@ -48,41 +64,26 @@ defineSeals({
     },
   },
 
+  // Upstream main's Silver Seal (InertSteak/Pokermon af0b656, 7ba51bb "refactor silver seals" on 2ce6bc7's draw/discard helpers),
+  // a behaviour fix over 3.9.1's: the room check runs when the event does, the seal says "+1 Item", and the card goes through
+  // pokermon.discard_cards — every joker's discard context with its effect APPLIED (3.9.1 only read `remove`: a Silver-discarded
+  // Gold card never paid Jolteon, a card of the round's rank never paid Wingull), pre_discard first, counted as discarded.
   silver: {
     loc_vars(self) { return { vars: [self.config.match_amount] }; },
     calculate(self, card, context) {
-      if (context.cardarea === G.hand && !context.repetition_only && context.scoring_hand && !card.ability.discarded && context.main_scoring && !card.destroyed) {
+      if (context.main_scoring && context.cardarea === G.hand && !card.ability.discarded && !card.destroyed) {
         card.ability.discarded = true;
-        if (has_room()) {
-          G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
-          G.E_MANAGER.add_event(() => {
-            add_card({ set: 'Item' });
-            G.GAME.consumeable_buffer = 0;
-          });
-        }
         G.E_MANAGER.add_event(() => {
-          G.hand.add_to_highlighted(card, true);
-          play_sound('card1', 1);
-          let removed = false;
-          for (const j of G.jokers.cards.slice()) {
-            const ev = j.calculate_joker({ discard: true, other_card: card, full_hand: G.hand.highlighted });
-            if (ev) {
-              if (ev.remove) removed = true;
-              card_eval_status_text(j, 'jokers', null, 1, null, ev);
-            }
+          if (has_room()) {
+            G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
+            G.E_MANAGER.add_event(() => {
+              add_card({ set: 'Item' });
+              G.GAME.consumeable_buffer = 0;
+            });
+            calculate_effect({ message: localize('poke_plus_pokeitem'), colour: 'item' }, card);
           }
-          if (removed) {
-            if (card.ability.name === 'Glass Card') card.shatter();
-            else card.start_dissolve();
-            // Intended-design fix: the Lua passes `removed = card` (not a list, so jokers iterating it
-            // saw nothing) and fires remove_playing_cards twice; once, with the list, here.
-            for (const j of G.jokers.cards.slice()) eval_card(j, { cardarea: G.jokers, remove_playing_cards: true, removed: [card] });
-          } else {
-            draw_card(G.hand, G.discard, 100, 'down', false, card);
-            G.GAME.round_scores.cards_discarded.amt = G.GAME.round_scores.cards_discarded.amt + 1;
-          }
+          discard_cards(card);
         });
-        delay(0.3);
       }
       return undefined;
     },

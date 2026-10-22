@@ -25,7 +25,7 @@ import {
 } from './core.js';
 import { callHook, reduceHook, firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
 import { change_shop_size } from './run.js';
-import { wanted, calculate_seam, SEAM_STATE } from './smods.js';
+import { wanted, calculate_seam, SEAM_STATE, base_seal_roll } from './smods.js';
 
 // ----------------------------------------------------- misc_functions.lua
 /** stop_use(): block consumable use until the queue has drained ~7 events. */
@@ -662,8 +662,10 @@ Card.prototype.open = function () {
             const edition = poll_edition('standard_edition' + G.GAME.round_resets.ante, edition_rate, true);
             card.set_edition(edition);
             const seal_rate = 10;
-            const seal_poll = pseudorandom(pseudoseed('stdseal' + G.GAME.round_resets.ante));
-            if (seal_poll > 1 - 0.02 * seal_rate) {
+            // (Steamodded: SMODS.poll_seal({mod = 10}) over the whole Seal pool when a mod's seal is in it — Pokermon's Pink / Silver)
+            const smods_seal = ACTIVE_MODS.length ? base_seal_roll({ mod: seal_rate }) : undefined;
+            if (smods_seal) { if (smods_seal.seal) card.set_seal(smods_seal.seal); }
+            else if (pseudorandom(pseudoseed('stdseal' + G.GAME.round_resets.ante)) > 1 - 0.02 * seal_rate) {
               const seal_type = pseudorandom(pseudoseed('stdsealtype' + G.GAME.round_resets.ante));
               if (seal_type > 0.75) card.set_seal('Red');
               else if (seal_type > 0.5) card.set_seal('Blue');

@@ -790,6 +790,19 @@ export function poll_object_type(args = {}) {
 
 /** SMODS.poll_seal / SMODS.poll_enhancement under object_weights: poll_object over the Seal / Enhanced set (`options` = the pool). */
 export function poll_seal_weighted(args = {}) { args.type = 'Seal'; args.pool = args.options || undefined; return poll_object(args); }
+/**
+ * The base game's own seal rolls — Card:open's Standard Pack seal (Steamodded lovely/seal.toml: SMODS.poll_seal({mod = 10}))
+ * and Certificate's card (better_calc.toml: SMODS.poll_seal({type_key = 'certsl', guaranteed = true})) — draw from the whole
+ * Seal pool in Steamodded, so a mod's own seals come up there too (Pokermon's Pink / Silver). Taken while object_weights is on
+ * and an active mod's own seal is in the pool; otherwise (no mods, MoreFluff alone...) the vanilla roll and its RNG stay.
+ * -> {seal} (seal undefined: no seal rolled), or undefined for "use the vanilla roll".
+ */
+export function base_seal_roll(args) {
+  if (!object_weights()) return undefined;
+  const [pool] = get_current_pool('Seal');
+  if (!pool.some((k) => P_SEALS[k] && P_SEALS[k].mod)) return undefined;
+  return { seal: poll_seal_weighted(args) || undefined };
+}
 export function poll_enhancement_weighted(args = {}) { args.type = 'Enhanced'; args.pool = args.options || undefined; return poll_object(args); }
 
 /** True while an active mod turns on Steamodded's object_weights optional feature (every route below checks it). */
