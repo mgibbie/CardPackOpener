@@ -880,7 +880,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D6. Ultimates** — **BUILT 2026-10-22** (`js/expedition/ultimates.js`, `overworld/tests/micasurvivor_expedition_ultimates_test.mjs`, README "DLC D6: Ultimates"; see the update below) | Charge meter (95 s passive, kill bucket, elite/alpha/boss, hurt), cast i-frames, cut-in; type Ultimates from Z-move effects; 16 signature Ultimates by evolution tier; auto-Ultimate setting | D4 |
 | **D7. Economy and interactables** — **BUILT 2026-10-22** (`js/expedition/economy.js`, `overworld/tests/micasurvivor_expedition_economy_test.mjs`, README "DLC D7: economy and interactables"; see the update below) | ₽ drops, paid/free/cursed Poké Balls, Meowth with market heat, Unown altars ×4 tiers + comet, challenge/cursed/greed altars, Ditto, Hypno, gold rocks, berries, cage; minimap legend, fog of war; first-run tips | D5 |
 | **D8. Alphas, capture and shinies** — **BUILT 2026-10-22** (`js/expedition/capture.js`, `reactions.js`, `overworld/tests/micasurvivor_expedition_capture_test.mjs`, README "DLC D8: Alphas, capture and shinies"; see the update below) | Alphas, faint window, Friend Ball, Support Alphas (2/3 slots) with type perks; League encounters (challenge → appear → weaken → catch); shiny encounters; capture cinematic; elemental reactions + weather boosts | D7 |
-| **D9. Tiers, score and boards** | Normal/Hard/Nightmare tables, tier unlocks per map, score formula, time-attack medals, DLC boards and the board UI; weekly season view (cosmetic prizes only) | D3 |
+| **D9. Tiers, score and boards** — **BUILT 2026-10-22** (`js/expedition/tiers.js`, `overworld/tests/micasurvivor_expedition_tiers_test.mjs`, README "DLC D9: tiers, score and boards"; see the update below) | Normal/Hard/Nightmare tables, tier unlocks per map, score formula, time-attack medals, DLC boards and the board UI; weekly season view (cosmetic prizes only) | D3 |
 | **D10. League meta** | DLC currency, Lab (~15 upgrades), item unlocks by counter goals, Archive, research → avatars and frames, DLC daily/weekly tasks, ~30 achievements, shiny perks | D8 |
 | **D11. Survival and MP hardening** | Endless mode (milestones, phases, pacts, siege, night, migration, hazards); full online co-op pass on DLC state, relay budget check, replay size check against 1.2 MB, spectator rendering | D9, D10 |
 | **D12. Maps 2–3** | Mt. Moon, Cerulean Cape: biome palettes, residents, guardians, totems, summoners, legendaries, bounce-pad variants | D11 |
@@ -1337,3 +1337,37 @@ Built (`micasurvivor/README.md`, "DLC D8: Alphas, capture and shinies"). Choices
   reactions' pop-ups aren't streamed to viewers (only the damage numbers).
 - **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so does the
   force-loaded run.
+
+### Update (2026-10-22): D9 built, "tiers, score and boards"
+Built (`micasurvivor/README.md`, "DLC D9: tiers, score and boards"). Choices and notes for later batches:
+- **Where it lives:** `js/expedition/tiers.js` (`G.ExpTier`: the tier tables, unlocks, the pick, the score, medals, the season,
+  the "Difficulty and leaderboards" panel), numbers in its `K`. Classic reads `G.ExpTier.of(diff)` (`classic.js` `tierOf`).
+- **The tiers:** study 2.11's table as written (HP, damage, speed, amount, cap, elite share, event size, events earlier,
+  telegraphs, escorts, XP, score); the Stardust column is kept as `pay` for D10. Normal is all x1 / 0 and draws nothing more, so it
+  plays as before. Boss HP stays D3's `bossHp` (x(1 + 0.15 tier) of your DPS); boss damage takes the tier's. Escorts are elites of
+  the zone. Unlocks in sequence per map (`tier.<map>`, plus D3's `wins.<map>.<diff>`).
+- **The score:** study 2.12 + **400 a catch** (`G.ExpCap.run.n`), x(1 + 0.5 tier). Medals: study 2.13 (+3 min for the shrine,
+  x(1 + 0.08 tier)), on the run's time; `medal.<map>.<diff>` max-merged.
+- **Boards (owner #8, per map + difficulty):** Score (D0b's key), Time attack (`…:<diff>:time`, won runs, the medal and a replay
+  id) and a **weekly Season** view (`msurvseason:<n>:<map>:<diff>`, Monday 2026-10-12 UTC weeks, swept after 6 weeks). Decision #8
+  said "no weekly seasons for now": D9 adds the view with **cosmetic ribbons only** (claimed into the Expedition save when you look
+  at last week's place; no currency, nothing paid). Drop the tab to hide it.
+- **Server (the stack's only server change; needs the full gate):** `run-score` for `micasurvivor_expedition` takes the score's
+  parts and recomputes the score (`msurvExpScore` = `G.ExpTier.score`), checks their plausibility (zone, a win at the shrine and
+  >= 3:00, KOs / damage per second, bosses, catches), refuses a dv-8 score without parts (dv 1-7 still taken under a ceiling), and
+  takes a replay id only if it is the player's own upload of this run (mode, map, tier, time, KOs). `run-leaderboard` takes
+  `board: score | time | season` (+ `season`). Exact keys only (no `LIKE` scan; tested).
+- **Sync:** nothing new is streamed: the tier is the `x` block's `c.d` (v3 on), so `xv` stays 8; `G.Expedition.DV` is 8.
+- **Assets:** none new.
+- **For D10:** pay the run with `of(diff).pay` (x1 / 1.75 / 2.5); achievements / tasks can read `medal.*`, `medals.<id>`,
+  `tier.<map>`, `season.best`; the ribbons (`season.prize`) can become titles / frames on the trainer card (owner #5).
+- **For D11:** Survival boards (`…:survival:<map>`) are not built; a co-op run is never on a board (`clean && !group`, as before).
+- **For D12:** a new map is playable on the panel as soon as `G.ExpClassic.MAPS` has it; its medals assume a shrine (`K.SHRINE_S`).
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded, and so does the
+  force-loaded run; the base `micasurvivor` board path is untouched (tested through the handler).
+
+### D6-D9 stack (2026-10-22)
+`feat/micasurvivor-expedition-d6-d9`: D6 Ultimates (dv 5, `x.w`), D7 economy and interactables (dv 6, `x.o`), D8 alphas, capture
+and shinies (dv 7, `x.p`), D9 tiers, score and boards (dv 8). One commit each; only D9 touches `server/mp.mjs`. Each batch's test
+(`micasurvivor_expedition_{ultimates,economy,capture,tiers}_test.mjs`) and the earlier Expedition suites pass on the stack; the
+whole branch needs the full gate before merging. Next: D10 (League meta), D11 (Survival + MP hardening), D12 (maps 2-3).

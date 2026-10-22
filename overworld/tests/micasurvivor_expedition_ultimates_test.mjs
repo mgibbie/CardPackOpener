@@ -198,7 +198,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const r0 = await startClassic(page);
-	A(r0.ok && r0.mode === 'exp-classic' && r0.dex === 1 && r0.dv === 7 && r0.on && r0.c === 0 && Array.isArray(r0.row) && r0.row[0] === 0 && r0.row[2] === 1,
+	A(r0.ok && r0.mode === 'exp-classic' && r0.dex === 1 && r0.dv === 8 && r0.on && r0.c === 0 && Array.isArray(r0.row) && r0.row[0] === 0 && r0.row[2] === 1,
 		'Classic starts as Bulbasaur with the Ultimate meter at 0 (its signature, code 1); the content version is 6 (D7)', JSON.stringify(r0));
 
 	// ======================== 2. each charge source's rate
@@ -570,7 +570,7 @@ try {
 		'a co-op guest (a fresh page; host frames through G.Net) sees the host\'s cast: her puppet\'s row, the cut-in drawn, the piece as a ghost', JSON.stringify(vw.guest || vw));
 	A(vw.specIdle && vw.specIdle[0] === 37 && vw.spec && vw.spec.xw && vw.spec.xw[4] === 1 && vw.spec.ghosts === 1 && vw.spec.cutDrawn > 0 && vw.spec.rects.includes('ult'),
 		'a live spectator sees the watched player\'s meter (37 %), then the cast: the cut-in and the choreography', JSON.stringify({ i: vw.specIdle, s: vw.spec }));
-	A(vw.old && vw.old.xw === null && vw.old.ok && !vw.old.notice && vw.old.dv === 7, 'a dv-4 / x v5 snapshot (no `w`) still loads with no notice: no Ultimate; this build is dv 7 (D8)', JSON.stringify(vw.old));
+	A(vw.old && vw.old.xw === null && vw.old.ok && !vw.old.notice && vw.old.dv === 8, 'a dv-4 / x v5 snapshot (no `w`) still loads with no notice: no Ultimate; this build is dv 8 (D9)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withW > 0 && vw.replay.castAt >= 0 && vw.replay.xu.length === 1 && vw.replay.cutDrawn > 0 && vw.replay.ghosts >= 1,
 		'a replay viewer: the recording carries `w` (frame field 8) and one `xu` event; playing across the cast shows the cut-in and the choreography', JSON.stringify(vw.replay));
 	await d3.ctx.close();

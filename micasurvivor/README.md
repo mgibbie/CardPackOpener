@@ -2386,6 +2386,116 @@ auras, chips, banner and the reactions' marks are drawn in code.
   Alphas and the cinematic but not the allies' shots or the reactions' pop-ups (the damage numbers only);
 - the run's damage breakdown files the Support Alphas under "Partner / team" (there's no "Alphas" row: a base change).
 
+## DLC D9: tiers, score and boards
+
+**Expedition · Classic now has difficulty tiers, a score, time-attack medals and its own leaderboards**: Normal, Hard and
+Nightmare change the run and unlock in sequence on each map; a won run earns a medal by its time; the boards are per map and
+tier (Score, Time attack and a weekly Season with **cosmetic ribbons only**) (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.11-2.13 and the D9 row). The code is `js/expedition/tiers.js` (`G.ExpTier`); every number is in its `K`. Base modes and the
+base board are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**The tiers** (`K.TIERS`, study 2.11 as written), read by Classic (`js/expedition/classic.js`, `tierOf`):
+
+| | Normal | Hard | Nightmare | Where |
+|---|---|---|---|---|
+| Enemy HP / damage / speed | x1 | x1.4 / x1.42 / x1.08 | x1.9 / x1.96 / x1.16 | `spawn` (every foe of the zone: the trickle, events, alphas, League / shiny encounters, the interactables' waves) |
+| Enemy amount / concurrent cap | x1 | x1.3 / x1.15 | x1.6 / x1.3 | the trickle's rate, `capNow` |
+| Elite share of the trickle | 0 | 4 % | 8 % | `trickle` (D3's elite numbers) |
+| Event size / events earlier | x1 / — | x1.2 / 15 s | x1.4 / 30 s | `plan` (swarms, stampedes, flocks, elite waves, rock slides; D3's `K.EARLY` moved here) |
+| Telegraph time | x1 | x0.92 | x0.85 | the rock slide's warning circles |
+| Boss escorts | 0 | 1 | 2 | elites round a guardian / the legendary when it wakes (`escorts`, their own seeded stream) |
+| Boss damage | x1 | x1.42 | x1.96 | `wake` (HP stays D3's `bossHp`: x(1 + 0.15 tier) of your DPS) |
+| XP | x1 | x1.15 | x1.3 | `spawn` |
+| Score | x1 | x1.5 | x2 | the score (below) |
+| Pay | x1 | x1.75 | x2.5 | (the study's Stardust column, kept for D10's payout: nothing pays yet) |
+
+Normal is all x1 / 0 and draws nothing more from any stream, so a Normal run plays exactly as before D9.
+
+**Unlocks, per map, in sequence:** Normal always; **winning the map on a tier opens the next** ("Hard unlocked on Viridian
+Forest!" on the run-over screen). Saved as the counter `tier.<map>` (max-merged), read together with D3's `wins.<map>.<diff>`, so a
+win from before D9 counts. Only Viridian Forest is playable (Mt. Moon and Cerulean Cape say "Coming soon" until D12).
+
+**The score** (study 2.12, Classic, + a catch term of ours): **(2 KOs + 3 s + damage / 200 + 1,500 (zone - 1) + 800 bosses +
+6,000 if won + 400 a catch) x (1 + 0.5 tier)** (`K.SCORE`; a catch is a Support Alpha, a League encounter or a shiny,
+`G.ExpCap.run.n`). The run-over screen says "Score: 13,900 (x1.5 Hard)". The server recomputes it (below).
+
+**Time-attack medals** (study 2.13): a won run's time (the run's clock at the end, the victory banner included):
+
+| Medal | Normal | Hard | Nightmare |
+|---|---|---|---|
+| Bronze | finish | finish | finish |
+| Silver | < 30:00 | < 32:10 | < 34:20 |
+| Gold | < 23:00 | < 24:36 | < 26:12 |
+| Champion | < 17:30 | < 18:40 | < 19:50 |
+
+Normal's limits (27:00 / 20:00 / 14:30) x(1 + 0.08 tier), + 3 min for the shrine (all three launch maps have one): `K.MEDALS`,
+`MEDAL_TIER`, `SHRINE_S`. The run-over screen shows the medal (the achievement medal pictures; a trophy for Champion), "New medal:
+Gold" and the next one to aim for ("Next: Champion under 18:40"). Saved as `medal.<map>.<diff>` (max) and `medals.<id>` (count).
+
+**"Difficulty: Normal · leaderboards"** (a second button on the Classic card of "Choose a mode"; mouse, touch and pad):
+- the map tabs; **the tier cards** (each tier's table, your best clear and medal, Chosen / Choose / "Win the map on Normal to
+  unlock it"; a locked one refuses); the medal limits of the chosen tier; your season ribbons;
+- **the boards** (signed in; a guest is asked to log in): **Score** (D0b's board), **Time attack** (fastest clear, its medal and a
+  Watch link to its replay) and **Season**: "Season 2 · ends in 3 d 12 h", the prize ladder ("Season prizes (cosmetic ribbons
+  only, earned by playing)": Master #1, Elite #2-3, Top 10, Top 25, Top 50), this week's board and "Last season: #2 · Elite
+  ribbon". Each read is one exact key.
+- the pick is per device (localStorage `micasurvivorexp_tier`, clamped to what is unlocked); `G.Expedition.pick()` asks here.
+
+**The weekly season** (study 2.13's 7-day seasons, from Monday 2026-10-12 UTC; `K.SEASON0`, `K.WEEK`): every Expedition score
+also goes to its week's board. **Prizes are cosmetic only** (owner rule: never ads or paid items; no Pokémonedas, no Stardust):
+looking at the Season tab, a top-50 place last week is claimed once as a ribbon into the Expedition save (set `season.prize`,
+ids `s<season>.<map>.<tier>.<ribbon>`; counter `season.best`, 5 Master ... 1 Top 50). The owner's decision #8 had "no weekly
+seasons for now": this is the view and the ribbons only, no other rewards; it can be hidden by dropping the tab.
+
+**Server** (`server/mp.mjs`, mode `micasurvivor_expedition` of `run-score` / `run-leaderboard`; needs the full gate):
+- **The parts:** a score now carries `kills, time, dmg, zone, bosses, won, catches`; the server recomputes the score
+  (`msurvExpScore`, the same expression as `G.ExpTier.score`) and refuses a mismatch (400 "score does not match its parts").
+  Plausibility: zone 1-4, a win ends at the shrine (zone 4) and takes at least 3:00, KOs <= 15 a second + 200, damage <= 100,000 a
+  second, bosses <= 2 x zone + 4, catches <= 60, whole numbers. From dv 8 a score without its parts is refused; an older client's
+  (dv 1-7) is still taken under a generous ceiling.
+- **The replay reference:** a won run uploads its replay (`G.Replay.share`) and sends its id; the server takes it only if it is
+  one of **your** uploads (`msurvreplay:<id>`) with this run's mode, map, tier, time (± 2 s) and KOs, and keeps it on the row.
+- **Boards** (exact keys only; `store.get`, no prefix scan): `runboard:micasurvivor_expedition:<map>:<diff>` (D0b's, by score),
+  `…:<diff>:time` (won runs, by time, with the medal; your best in `runBest[...':time']`) and `msurvseason:<n>:<map>:<diff>`
+  (the week's, by score; written only when your entry improves; swept 6 weeks after its last write: `GC_TABLE`).
+  `run-leaderboard` takes `board: 'score' | 'time' | 'season'` and, for a season, `season: n` (this week or up to 4 back).
+- The run-score brake (20 a minute) and the base board's isolation are unchanged; the base `micasurvivor` path is untouched.
+
+**Sync:** the tier already travels as the `x` block's `c.d` (v3 on), and every viewer reads the same tables, so **the `x` block
+stays v8**: a spectator's or a co-op guest's HUD shows HARD / NIGHTMARE and plans the tier's timeline. The replay header already
+had `diff`. **`G.Expedition.DV` is 8** (a Hard run means something new); dv-1 to dv-7 replays and snapshots still play with no
+notice (they were all Normal).
+
+**Assets:** none new (the achievement medal and trophy pictures of `js/ui/icons.js`; the rest is HTML and CSS).
+
+**What changed in base files** (each only on an Expedition path):
+- `systems/expedition.js`: `DV` 8, `tiers.js` in `SCRIPTS`, `pick()` (the saved pick, or `G.ExpTier.pick()`), 3 i18n keys.
+- `ui/modes-ui.js`: the Classic card's second button, `openTier`, and Back / open closing the panel.
+- `game.js`: the Expedition run-over passes `medal`; `ui/run-ui.js`: the medal block (only when `r.medal` is set).
+- Expedition files: `tiers.js` (new); `classic.js` (the tier in `plan` / `spawn` / `trickle` / `capNow` / the rock slide / `wake`
+  and its escorts, `scoreParts`, the score through `G.ExpTier`, the HUD's tier tag; `K.EARLY` moved to the tier table); `core.js`
+  (dv 8, `run.end`: the parts, the medal / unlock, the mark with its parts and replay, the toasts).
+
+**Deviations:**
+- **Ours, not the study's:** the catch term (400), the escorts being elites of the zone, the medal's time including the 3 s
+  victory banner, the server's plausibility limits, the ribbons (the study pays Stardust: here cosmetic only).
+- **Not built:** the study's KO boards, Survival boards (D11), per-species boards and clans (owner: skip), "Win the Forest on
+  Hard"-style challenge unlocks beyond the sequence, a season reward other than the ribbon.
+
+## DLC D6-D9: the stacked branch
+
+`feat/micasurvivor-expedition-d6-d9` carries four batches on top of D0-D5 (merged in #806), one commit each, `G.Expedition.DV`
+5 -> 8 and the `x` block v6 -> v8:
+- **D6 Ultimates** (`ultimates.js`): the charge meter, type Ultimates from the Z-moves, 16 signature Ultimates, auto-cast. dv 5, `x.w`.
+- **D7 economy and interactables** (`economy.js`): ₽, Poké Balls, Meowth, Unown / challenge / cursed / greed altars, Ditto,
+  Hypno, rocks, berries, cages, the zone map and its fog, first-run tips. dv 6, `x.o`.
+- **D8 alphas, capture and shinies** (`capture.js`, `reactions.js`): the Friend Ball, Support Alphas, League encounters, shinies,
+  the cinematic, elemental reactions and weather boosts. dv 7, `x.p`.
+- **D9 tiers, score and boards** (`tiers.js`): Normal / Hard / Nightmare, unlocks, the score with its parts checked by the
+  server, medals, the Score / Time attack / Season boards with cosmetic ribbons. dv 8 (no `x` change). **The only server change of
+  the stack** is D9's (`server/mp.mjs`: `run-score` / `run-leaderboard` for `micasurvivor_expedition`, `msurvseason:` in the GC
+  table), so the branch needs the full gate before it merges.
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
@@ -2505,6 +2615,17 @@ auras, chips, banner and the reactions' marks are drawn in code.
   host frames and the replay (`xc`), a v7 block; a base Normal run in the same page; the desktop and phone layouts (the chips,
   the swap choice, the banner). `SHOTS=<dir>` saves an alpha, a fainted alpha, the Support Alphas, the swap choice, the
   cinematic, a shiny and a reaction at both sizes.
+- `node overworld/tests/micasurvivor_expedition_tiers_test.mjs` (DLC D9), the real handler behind a static server: the tier
+  tables, the score formula with its catch term, the medals at their limits, the season weeks and ribbons (`tiers.js` in a vm);
+  the server recomputing 16 scores from their parts, refusing junk (a wrong score, a bad zone, a win off the shrine, a 2-minute
+  clear, too many KOs / damage / catches / bosses, a dv-8 score without parts, a junk / foreign / mismatched replay), taking an
+  old dv-7 score under a ceiling, time attack (fastest first, the medal, your best kept), the season boards week to week and
+  their reads, the rate limit, exact-key reads only, the base board untouched; in the game: Normal only at first, the panel by
+  its button (locked cards, the medal limits), a Normal win (the score's parts, Champion, Hard unlocked, the run-over screen),
+  its mark on the boards with its replay; Hard and Nightmare foes, plans, escorts and trickle elites against Normal's; the save
+  on the server; the Score / Time attack / Season boards in the panel and last season's Elite ribbon, once; a fresh viewer page
+  showing the tier from `c.d`; the phone and desktop layouts. `SHOTS=<dir>` saves the tier picker, the boards, the season and
+  the run-over medal at both sizes.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

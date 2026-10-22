@@ -352,7 +352,8 @@ G.Game = (() => {
       G.RunUI.showOver({
         dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
         moves: pl.moves, caught: [], modeLines: res.lines, breakdown: '', replay, dmg: G.DmgLog.summary(pl.moves),
-        title: res.title || null, splits: res.splits || null   // (DLC D3: Classic's victory title and zone splits)
+        title: res.title || null, splits: res.splits || null,   // (DLC D3: Classic's victory title and zone splits)
+        medal: res.medal || null                                // (DLC D9: a won Classic run's time-attack medal)
       }, () => { pl = null; G.Flow.afterRun(); });
       return;
     }

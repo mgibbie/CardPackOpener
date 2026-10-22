@@ -106,9 +106,16 @@
  *   The v1-v7 readers are kept: a block without `p` shows no Support Alpha, encounter or capture.
  *   run.tick        the encounters, the faint windows, the Support Alphas; run.hold: the cinematic; combat.out: reactions,
  *                   weather; enemy.ko: an encounter KO'd some other way still faints; minimap.draw: the encounters
+ *
+ * D9 (tiers, score and boards, js/expedition/tiers.js): Normal / Hard / Nightmare change the run (G.ExpTier.of, read by
+ * classic.js), unlock in sequence per map, and pick through "Difficulty and leaderboards" (G.ExpTier.open). dv 8. The `x`
+ * block stays v8: the tier already travels as `c.d` (v3 on), and every viewer reads the same tables from it.
+ *   run.end         the score's parts (G.ExpClassic.scoreParts) and its score (G.ExpTier.score, + 400 a catch); a win's medal
+ *                   and the next tier's unlock (G.ExpTier.record, before Classic records its wins); the mark goes to the
+ *                   boards with its parts (the server recomputes the score), a won run's with its replay id (time attack)
  */
 G.Exp = (() => {
-  const dv = 7;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 8;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
   const XV = 8;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
@@ -119,6 +126,7 @@ G.Exp = (() => {
   const UL = () => G.ExpUlt;
   const EC = () => G.ExpEco;
   const CP = () => G.ExpCap, RX = () => G.ExpRx;
+  const TR = () => G.ExpTier;
   const expRun = () => G.Modes.isExp();
 
   function init() {
@@ -188,7 +196,9 @@ G.Exp = (() => {
       if (res) {
         out.lines = out.lines.concat(res.lines);
         out.title = res.title; out.splits = res.splits; out.won = res.won;
-        sum.score = C().score(sum); sum.won = res.won; sum.zone = res.zone;
+        sum.parts = C().scoreParts(sum); sum.score = C().score(sum); sum.won = res.won; sum.zone = res.zone;
+        // D9: the score line, a win's medal, the next tier (read before Classic records the win, so "unlocked" is news)
+        if (TR()) { const tr = TR().record(sum, res); out.lines = out.lines.concat(tr.lines); out.medal = tr.medal; out.unlocked = tr.unlocked; out.score = sum.score; }
         C().record();
       }
       record(sum);
@@ -434,17 +444,25 @@ G.Exp = (() => {
   }
 
   /**
-   * A mark on the Expedition board (per map + difficulty). D0b's score is the time survived; D3's Classic runs send the
-   * study's Classic score (G.ExpClassic.score); D9 brings the boards' UI and the tiers. -> {ok, better, best, rank} | {error}
+   * A mark on the Expedition boards (per map + difficulty). D0b's score is the time survived; D3's Classic runs send the
+   * study's Classic score; D9 sends its parts (m.parts: the server recomputes the score) and, for a won run, its replay id
+   * (uploaded here: the time-attack mark can be watched). -> {ok, better, best, rank, time, season} | {error}
    */
   async function submitScore(m) {
     const A = G.MicaAccount;
     if (!A || !A.name()) return { error: 'not logged in' };
-    const d = await A.call('run-score', {
+    const p = m.parts || null;
+    const replay = p && p.won && TR() && m.replay !== false ? await TR().replayId() : null;
+    const d = await A.call('run-score', Object.assign({
       mode: X.BOARD, expMode: m.mode, dv: m.dv, map: m.map, diff: m.diff,
       score: Math.floor(m.score != null ? m.score : m.time), time: Math.floor(m.time),
       kills: Math.floor(m.kills || 0), level: Math.floor(m.level || 1), dex: m.dex | 0, shiny: !!m.shiny
-    });
+    }, p ? { zone: p.zone, won: p.won, dmg: p.dmg, bosses: p.bosses, catches: p.catches } : {}, replay ? { replay } : {}));
+    if (d.ok && d.body) {
+      const b = d.body, T = G.I18n;
+      if (b.better && b.rank) G.UI.toast(T.f('¡Nueva marca de la Expedición! Puesto #{x}', b.rank), 3400);
+      else if (b.time && b.time.better && b.time.rank) G.UI.toast(T.f('Contrarreloj: puesto #{x}', b.time.rank), 3400);
+    }
     return d.ok ? d.body : { error: (d.body && d.body.error) || 'offline' };
   }
   /** The board of one map + difficulty: {top, you} */
