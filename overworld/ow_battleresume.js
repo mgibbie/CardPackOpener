@@ -138,7 +138,7 @@ function resumeEndHandler(end, savedMap) {
 		// Before the outcome: a CAUGHT static removes VAR_LAST_TALKED right there.
 		const talker = end.obj != null && end.map === world.current?.name ? npcById(end.obj) : null;
 		if (talker) S.lastTalkedNpc = talker;
-		if (!staticBattleOutcome(result)) return;
+		if (!staticBattleOutcome(result, end.legendFlag || null)) return;
 		if (cutscene.blocking || !end.frames || end.map !== world.current?.name) { saveParty(S.party); return; }
 		const ok = cutscene.runFrom(S.mapScripts, end.frames, cutsceneCtx(talker, end.frames[0].label), () => { saveParty(S.party); });
 		if (!ok) saveParty(S.party);

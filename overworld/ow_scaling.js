@@ -12,7 +12,7 @@ import { addCaught, leadMon, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { whiteOut } from './ow_places.js';
-import { dexMilestoneCheck } from './ow_follower.js';
+import { dexMilestoneCheck, scriptLegendFor } from './ow_follower.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 
 
@@ -182,7 +182,10 @@ export function cycleForm(mon) {
 // the script's own `GetBattleOutcome` branch works instead of always reading WON.
 // a static wild battle's result, as the script reads it (VAR_RESULT /
 // GetBattleOutcome). True when the script runs on; a black-out abandons it.
-export function staticBattleOutcome(result) {
+// `legendFlag`: the tile legendary's flag the battle shares (scriptLegendFor),
+// set as the tile battle sets it, on a catch or a win.
+export function staticBattleOutcome(result, legendFlag = null) {
+	if (legendFlag && (result === 'victory' || (result === 'caught' && battle.lastCaught))) Story.setFlag(legendFlag);
 	if (result === 'caught' && battle.lastCaught) {
 		Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
 		const where = addCaught(S.party, battle.lastCaught);
@@ -235,6 +238,11 @@ function staticObjIndex() {
 export function startScriptedWildBattle(species, level) {
 	if (!species || !battle.data?.species?.[species]) return 'skip';
 	if (!S.party || !leadMon(S.party) || battle.blocking) return 'skip';
+	// a legendary the tile system also places here shares its flag: once caught
+	// or beaten either way, the script's battle doesn't happen (nothing to fight)
+	const leg = scriptLegendFor(species);
+	if (leg && Story.getFlag(leg.flag)) { S.lastBattleOutcome = B_OUTCOME_RAN; return 'skip'; }
+	if (leg) level = scaleLegendaryLevel(level);
 	Dex.markSeen(species);
 	S.scriptedWildCount = (S.scriptedWildCount || 0) + 1;   // a scripted ball's encounter happened (ow_input runScriptedBall)
 	// the script stands just past its wildbattle op: a reload mid-fight resumes
@@ -243,9 +251,10 @@ export function startScriptedWildBattle(species, level) {
 	// Power Plant's ELECTRODE item on the floor, unfought (2026-10-06, Instinct).
 	const frames = cutscene.bookmark(1);
 	battle.endSpec = frames
-		? { kind: 'static', map: world.current?.name || null, frames, obj: staticObjIndex() }
+		? { kind: 'static', map: world.current?.name || null, frames, obj: staticObjIndex(), ...(leg ? { legendFlag: leg.flag } : {}) }
 		: { kind: 'wild' };
-	battle.start(S.party, species, level, result => { if (staticBattleOutcome(result)) cutscene.resume(); });
+	if (leg) battle.themeHint = 'legendary';
+	battle.start(S.party, species, level, result => { if (staticBattleOutcome(result, leg?.flag)) cutscene.resume(); });
 	return 'wait';
 }
 // FireRed's `special StartMarowakBattle` (Pokémon Tower 6F). Unimplemented, it
