@@ -69,7 +69,13 @@ const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
 	// the Ruins of Alph UNOWN PUZZLE panels: setval picks the puzzle, the special
 	// answers TRUE when it's solved, and .PuzzleComplete opens the floor (its
 	// changeblocks + the warpcheck that drops you into the inner chamber)
-	...['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle`)];
+	...['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].map(c => `RuinsOfAlph${c}Chamber:RuinsOfAlph${c}ChamberPuzzle`),
+	// the GS BALL -> CELEBI chain: the Goldenrod POKeMON CENTER's doorway scene
+	// (`setval BATTLETOWERACTION_GSBALL` + `special BattleTowerAction` + `ifequal
+	// GS_BALL_AVAILABLE, .gsball`: it ran `special; end` and never gave the ball) and
+	// the Ilex Forest shrine's CELEBI battle (`loadwildmon CELEBI, 30` + `startbattle`,
+	// an empty trainerbattle) and its `special CheckCaughtCelebi` + iffalse
+	'GoldenrodPokecenter1F:GoldenrodPokecenter1F_GSBallScene', 'IlexForest:IlexForestShrineScript.CelebiEvent'];
 // labels where the dropped WRAM bookkeeping comes back: `loadmem wX, N`,
 // `readmem wX` + `addval N` + `writemem wX`, `setval N` + `writemem wX` (all as
 // story vars, which is what the transpile already compares them as), and
@@ -95,6 +101,9 @@ const SCRIPT_TILES_IN = ['Kabuto', 'Omanyte', 'Aerodactyl', 'HoOh'].flatMap(c =>
 	.concat(['LancesRoom:LancesRoomDoorLocksBehindYouScript']);   // LANCE himself stays on the native champion path
 // specials whose result the engine actually computes (ow_story.js runSpecial)
 const ALLOW = new Set(['SnorlaxAwake', 'GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor', 'UnownPuzzle', 'PlayersHousePC']);
+// ...and ones the engine answers only as far as the RESTORE_COMMANDS_IN labels need
+// (BattleTowerAction: only its GSBALL action; the Battle Tower's own uses stay as they were)
+const ALLOW_LISTED = new Set(['BattleTowerAction', 'CheckCaughtCelebi']);
 // commands that leave hScriptVar alone (display / movement); anything else between
 // the writer and the test might overwrite it, so the restore stops there
 const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext', 'opentext', 'faceplayer',
@@ -106,7 +115,9 @@ const CONST = { PARTY_LENGTH: 6, NUM_POKEMON: 251, NUM_JOHTO_BADGES: 8, NUM_KANT
 	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3,
 	// checkpokemail answers
 	POKEMAIL_WRONG_MAIL: 0, POKEMAIL_CORRECT: 1, POKEMAIL_REFUSED: 2, POKEMAIL_NO_MAIL: 3, POKEMAIL_LAST_MON: 4,
-	UNOWNPUZZLE_KABUTO: 0, UNOWNPUZZLE_OMANYTE: 1, UNOWNPUZZLE_AERODACTYL: 2, UNOWNPUZZLE_HO_OH: 3 };
+	UNOWNPUZZLE_KABUTO: 0, UNOWNPUZZLE_OMANYTE: 1, UNOWNPUZZLE_AERODACTYL: 2, UNOWNPUZZLE_HO_OH: 3,
+	// constants/battle_tower_constants.asm
+	BATTLETOWERACTION_GSBALL: 11, GS_BALL_AVAILABLE: 0x0B };
 // the map's own `DEF NAME EQU value` lines (prices: GOLDENRODGAMECORNER_TM25_COINS)
 let LOCAL = {};
 function localDefs(asm) {
@@ -246,6 +257,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		const memKinds = MEM_RESTORE_IN.some(p => `${stem}:${label}`.startsWith(p));
 		let lastGive = null; // the givemon op a following givepokemail attaches its MAIL to
 		let acc = null;   // the script var as readmem/setval/addval leave it, for writemem
+		let wildmon = null; // `loadwildmon X, N`, for the `startbattle` after it (listed labels)
 		// every label's colon-less local labels are split out (2026-10-07: 29 branch
 		// targets on 17 maps dangled — Mr. POKeMON's `.refused`, the Dept. Store 5F
 		// clerk's TM menu, Burned Tower's rival); not only the restore-listed ones
@@ -271,6 +283,14 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 					n++; tally('writemem'); continue;
 				}
 				if (cmd === 'moveobject' && a.length === 3 && evalExpr(a[1]) != null && evalExpr(a[2]) != null) { add({ op: 'setobjxy', who: a[0], x: evalExpr(a[1]), y: evalExpr(a[2]) }); n++; tally('moveobject'); continue; }
+			}
+			// `loadwildmon X, N` + `startbattle` (listed labels): the battle the transpile
+			// turned into an empty trainerbattle, as the engine's static `wildbattle`
+			if (!conv.length && cmd === 'loadwildmon' && newKinds && /^[A-Z][A-Z0-9_]*$/.test(a[0]) && evalExpr(a[1]) != null) { wildmon = { species: a[0].toLowerCase().replace(/[^a-z0-9]/g, ''), level: evalExpr(a[1]) }; continue; }
+			if (cmd === 'startbattle' && wildmon && newKinds && conv.length === 1 && conv[0].op === 'trainerbattle') {
+				add({ op: 'wildbattle', species: wildmon.species, level: wildmon.level });
+				out.push({ __drop: true });   // our copy's trainerbattle: skipped in the merge
+				wildmon = null; n++; tally('loadwildmon'); src = null; continue;
 			}
 			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'givepokemail', 'checkpokemail', 'setval', 'verticalmenu', 'random'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
 			// commands the transpile dropped outright (conv empty) that the engine runs
@@ -352,7 +372,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			const calleeVar = memKinds && cmd === 'scall' && conv.length
 				? ((trace[j.name][qualify(a[0], g)] || []).filter(r => r[0] === 'readvar').pop() || [])[1]?.[0] : null;
 			if (calleeVar) src = { var: calleeVar, name: 'scall readvar' };
-			else if (cmd === 'special') src = ALLOW.has(a[0]) ? { var: 'VAR_RESULT', name: 'special ' + a[0] } : null;
+			else if (cmd === 'special') src = ALLOW.has(a[0]) || (newKinds && ALLOW_LISTED.has(a[0])) ? { var: 'VAR_RESULT', name: 'special ' + a[0] } : null;
 			else if (cmd === 'readvar' && a[0]) src = { var: a[0], name: 'readvar ' + a[0] };
 			// a confirm subroutine ends in `yesorno` (the engine's prompt answers 1/0), and
 			// giveitem answers 1/0 — both read by the iffalse after them (listed labels only)
@@ -365,6 +385,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		const merged = []; let oi = 0;
 		for (const op of out) {
 			if (inserted.has(op)) { merged.push(op); continue; }   // a restored op
+			if (op.__drop) { oi++; continue; }                     // a converted op the restore replaces
 			merged.push(ours[label][oi++]);
 		}
 		// cut at the colon-less labels; a block that doesn't end runs on into the next

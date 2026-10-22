@@ -21,7 +21,7 @@ import * as B from './bignum.js';
 import { get_poker_hand_info, calculate_context } from './run.js';
 import { Tag, add_tag } from './tag.js';
 import { firstHook, ACTIVE as ACTIVE_MODS } from '../mods/registry.js';
-import { wanted, scale_card } from './smods.js';
+import { wanted, scale_card, base_seal_roll } from './smods.js';
 
 /**
  * Steamodded routes the vanilla jokers' scaling through SMODS.scale_card (smods lovely/scaling.toml: Ceremonial Dagger,
@@ -342,11 +342,16 @@ Card.prototype.calculate_joker = function (context) {
             front: pseudorandom_element(P_CARDS_LIST(), pseudoseed('cert_fr'))[0],
             center: P_CENTERS.c_base,
           }, G.hand);
-          const seal_type = pseudorandom(pseudoseed('certsl'));
-          if (seal_type > 0.75) _card.set_seal('Red', true);
-          else if (seal_type > 0.5) _card.set_seal('Blue', true);
-          else if (seal_type > 0.25) _card.set_seal('Gold', true);
-          else _card.set_seal('Purple', true);
+          // (Steamodded better_calc.toml: SMODS.poll_seal({type_key = 'certsl', guaranteed = true}) over the whole Seal pool when a
+          // mod's seal is in it — Pokermon's Pink / Silver; else the vanilla roll)
+          const smods_seal = ACTIVE_MODS.length ? base_seal_roll({ type_key: 'certsl', guaranteed: true }) : undefined;
+          if (smods_seal) { if (smods_seal.seal) _card.set_seal(smods_seal.seal, true); } else {
+            const seal_type = pseudorandom(pseudoseed('certsl'));
+            if (seal_type > 0.75) _card.set_seal('Red', true);
+            else if (seal_type > 0.5) _card.set_seal('Blue', true);
+            else if (seal_type > 0.25) _card.set_seal('Gold', true);
+            else _card.set_seal('Purple', true);
+          }
           G.GAME.blind.debuff_card(_card);
           G.hand.sort();
           if (context.blueprint_card) context.blueprint_card.juice_up(); else self.juice_up();

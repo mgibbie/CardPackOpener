@@ -135,6 +135,9 @@ for (const p of ['micatro/mods/pokermon/index.js', 'micatro/mods/pokermon/enhanc
 	if (!JOKERS321[k].includes(a)) throw new Error('the pre-batch-10 index.js no longer wires RB.new_round');
 	JOKERS321[k] = JOKERS321[k].replace(a, a + ' draw_from_deck_to_hand: RB.round_begin, reordered: RB.reordered,');
 }
+// ... and the Pocket Packs before their 3.9.1 contents rework (the leftovers batch, 3.9.1+r16: the pack's Item roll differs)
+const PRE_LEFTOVERS = 'd3827c0ce7a1c2feef41d6cb8c992ccfaf5ebaaa';
+JOKERS321['/micatro/mods/pokermon/boosters/packs1.js'] = execFileSync('git', ['show', `${PRE_LEFTOVERS}:micatro/mods/pokermon/boosters/packs1.js`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 24 });
 let prompted = 0;
 const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);

@@ -30,7 +30,7 @@ import { DEFS, PORTED_FILES } from './defs.js';
 
 // Behaviour (each file registers through defs.js on import).
 import './jokers/pokejokers_01.js';
-import './backs/backs1.js';
+import { debris_hazard_card_limit } from './backs/backs1.js';
 import { BLIND_HUD_VARS } from './blinds/pokebossblind.js';
 import './consumables/mart3.js';
 import './consumables/martz.js';
@@ -84,7 +84,7 @@ import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from
 import { shiny_edition, shiny_hooks } from './systems/shiny.js';
 import * as rules from './systems/rules.js';
 import { install_scry, scoring_areas, scry_view, scry_visible } from './systems/scry.js';
-import { view_card } from './systems/anim.js';
+import { view_card, SERIES_A_ANIM } from './systems/anim.js';
 import { CHALLENGES } from './challenges.js';
 import { SLEEVES } from './sleeves.js';
 import { POKE_UI } from './ui.js';
@@ -166,6 +166,18 @@ const to391 = (c) => {
   if (m && SHEETS_391.includes(m[1]) && !TO391_HOLD.has(c.key)) c.atlas = 'poke_' + m[1] + '391';
   return c;
 };
+/**
+ * Pokermon 3.9.1's Series A sheets (the leftovers batch; vendored in batch 5): the alternate art the `series` option shows
+ * (cosmetic: ui.js draws it, the engine never sees it). Registered as 'AtlasJokersSeriesA<g>[Shiny]391' like the Basic
+ * twins: the three sheets 3.9.1 changed are '<name>-391.png' (Gen01, Gen02, Natdex), Gen03-09 are the same file in 3.2.1 and
+ * 3.9.1 (saved once). 3.9.1 has no Series A Others sheet. The five animated alternates (pokesprites.lua ANIMATION_ATLAS:
+ * frames / fps: systems/anim.js SERIES_A_ANIM; each a one-row strip, + its Shiny twin) are 'AtlasJokersSeriesA<Name>[Shiny]'.
+ */
+const SERIES_A_391 = new Set(['Gen01', 'Gen02', 'Natdex']);
+for (const g of ['Gen01', 'Gen02', 'Gen03', 'Gen04', 'Gen05', 'Gen06', 'Gen07', 'Gen08', 'Gen09', 'Natdex']) {
+  for (const sh of ['', 'Shiny']) ATLAS_FILES['AtlasJokersSeriesA' + g + sh + '391'] = ['Series A/AtlasJokersSeriesA' + g + sh + (SERIES_A_391.has(g) ? '-391' : '') + '.png'];
+}
+for (const [n, a] of Object.entries(SERIES_A_ANIM)) for (const sh of ['', 'Shiny']) ATLAS_FILES[n + sh] = ['Series A/' + n + sh + '.png', 71, 95, a.frames];
 const atlases = {};
 for (const [name, [path, px = 71, py = 95, frames]] of Object.entries(ATLAS_FILES)) {
   atlases['poke_' + name] = { src: art(path), px, py, ...(frames ? { frames } : {}) };
@@ -624,6 +636,8 @@ const hooks = {
   add_to_deck: shiny_hooks.add_to_deck,
   card_removed(card) { const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
+  // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
+  set_ability: debris_hazard_card_limit,
   end_round: shiny_hooks.end_round,
   edition_weight(w, type) {
     // pokermon.lua: Jirachi's negative_edition_rate raises Negative and takes it back from Polychrome.
@@ -636,6 +650,11 @@ const hooks = {
   scoring_areas,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
+    // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)
+    const cl = card.ability && card.ability.card_limit;
+    if (desc && typeof cl === 'number' && cl !== 0 && (card.ability.set === 'Default' || card.ability.set === 'Enhanced')) {
+      (desc.info = desc.info || []).push({ key: 'generic_card_limit_pc', name: 'Hand Size', lines: [(cl > 0 ? '+' : '-') + Math.abs(cl) + ' hand size'] });
+    }
     if (card.config.center.mod || !card.ability || card.ability.set !== 'Joker' || !desc) return;
     const b = type_badge(card);
     if (b && Array.isArray(desc.badges)) desc.badges.push(b);
@@ -710,7 +729,13 @@ export const POKERMON = registerMod({
   // 3.9.1's own Iridescent Hacker, the Elite stake, the 5 challenges (+ 3.9.1's changes to the 7 old ones), the Obituary / Revenant
   // sleeves' alts (Pink Seal 1 in 3), the Professors' 3.9.1 pool rule, and Steamodded object_weights on (3.9.1's
   // optional_features: the Soul items' weights, pokermon.modify_pool, the Shiny / Negative weights).
-  contentRev: 15,
+  // 16 = the seals fix (tester Jack: "the Pink and Silver Seals don't work"): Standard Pack cards and Certificate roll their seal
+  // from the whole Seal pool like Steamodded's SMODS.poll_seal (the Pink / Silver Seals come up there), and the Silver Seal is on
+  // upstream main's refactor ("+1 Item", pokermon.discard_cards: the discard jokers' effects land — Jolteon, Wingull).
+  // 17 = the leftovers batch: the Pocket Packs' 3.9.1 contents (create_item(seed): the 'pocket_evo_item' roll, poll_evo_item,
+  // soulable Items with key_append 'pocket'; no c_keys) and the Debris Sleeve's alt on the Debris Deck (poke_negative_hazards:
+  // every Hazard card is +1 hand size while held). (The Series A art option is cosmetic: no rev.)
+  contentRev: 17,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
@@ -742,6 +767,10 @@ export const POKERMON = registerMod({
     gen_nine: OPT(true, 'Gen 9'),
     pokemon_legacy: OPT(false, 'Legacy content'),
     pokemon_aprilfools: OPT(false, 'Joke content'),
+    // 3.9.1's sprite series (config.lua pokemon_spritesheet_atlas, a per-profile setting): Series A = the alternate art, animated
+    // where upstream animates it (ui.js). COSMETIC: each viewer's own choice (their saved mod options), never part of a run —
+    // the engine, the recipe, replays and checksums don't see it (js/mods/registry.js). Basic by default: nothing changes.
+    series: { default: 'basic', label: 'Joker art', type: 'choice', cosmetic: true, choices: [{ value: 'basic', label: 'Basic' }, { value: 'seriesa', label: 'Series A' }] },
   },
   content: {
     centers,

@@ -7,6 +7,7 @@ import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
 import { describe, describeBlind, describeTag } from './describe.js';
 import { callHook, MOD_LOC } from '../mods/registry.js';
 import { mul, toJSONValue as J } from './bignum.js';
+import { held_card_limit } from './smods.js';
 
 export const VIEW_VERSION = 1;
 
@@ -109,7 +110,7 @@ export function toView() {
     chips: J(GM.chips),
     hands_left: GM.current_round.hands_left,
     discards_left: GM.current_round.discards_left,
-    hand_limit: G.hand.config.card_limit,
+    hand_limit: G.hand.config.card_limit + held_card_limit(G.hand), // (+ held cards' card_limit: smods.js; 0 without an opted-in mod)
     joker_limit: G.jokers.config.card_limit,
     consumeable_limit: G.consumeables.config.card_limit,
     seq: G.ui_seq || 0,

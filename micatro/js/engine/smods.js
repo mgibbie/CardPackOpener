@@ -272,6 +272,21 @@ export function quantum_mod_calculate(card, context) {
 }
 
 /**
+ * Steamodded's playing-card `card_limit` (lovely/card_limit.toml + CardArea:handle_card_limit): a card in an area with
+ * `ability.card_limit = n` gives that area n more slots while it is there — in the hand, n more hand size while held
+ * (Pokermon 3.9.1's Debris Sleeve on the Debris Deck: every Hazard card has card_limit +1). -> the extra slots of the
+ * area's cards. Only an opted-in mod turns it on (`smods_seams: true`, or a list naming 'card_limit'); with none active
+ * (vanilla, Bunco, MoreFluff, ...) it is 0 without looking at a card, and content that never sets ability.card_limit on a
+ * playing card adds 0: the hand size is the area's own card_limit, as before.
+ */
+export function held_card_limit(area) {
+  if (!ACTIVE_MODS.length || !area || !ACTIVE_MODS.some((id) => seam_mod(id, 'card_limit'))) return 0;
+  let n = 0;
+  for (const c of area.cards) { const l = c.ability && c.ability.card_limit; if (typeof l === 'number' && l) n += l; }
+  return n;
+}
+
+/**
  * Steamodded Blind:calculate for the vanilla contexts: the blind on deck's prototype `calculate(self, blind, context)`
  * (SMODS.Blind calculate — Pokermon 3.9.1's boss blinds), called even while disabled (the blind checks
  * blind.disabled itself), like SMODS. -> its effect (shown like calculate_effect, no card), or undefined.
@@ -790,6 +805,19 @@ export function poll_object_type(args = {}) {
 
 /** SMODS.poll_seal / SMODS.poll_enhancement under object_weights: poll_object over the Seal / Enhanced set (`options` = the pool). */
 export function poll_seal_weighted(args = {}) { args.type = 'Seal'; args.pool = args.options || undefined; return poll_object(args); }
+/**
+ * The base game's own seal rolls — Card:open's Standard Pack seal (Steamodded lovely/seal.toml: SMODS.poll_seal({mod = 10}))
+ * and Certificate's card (better_calc.toml: SMODS.poll_seal({type_key = 'certsl', guaranteed = true})) — draw from the whole
+ * Seal pool in Steamodded, so a mod's own seals come up there too (Pokermon's Pink / Silver). Taken while object_weights is on
+ * and an active mod's own seal is in the pool; otherwise (no mods, MoreFluff alone...) the vanilla roll and its RNG stay.
+ * -> {seal} (seal undefined: no seal rolled), or undefined for "use the vanilla roll".
+ */
+export function base_seal_roll(args) {
+  if (!object_weights()) return undefined;
+  const [pool] = get_current_pool('Seal');
+  if (!pool.some((k) => P_SEALS[k] && P_SEALS[k].mod)) return undefined;
+  return { seal: poll_seal_weighted(args) || undefined };
+}
 export function poll_enhancement_weighted(args = {}) { args.type = 'Enhanced'; args.pool = args.options || undefined; return poll_object(args); }
 
 /** True while an active mod turns on Steamodded's object_weights optional feature (every route below checks it). */

@@ -5,7 +5,8 @@
 //   - "Ghost": a joker whose atlas isn't registered -> the UI's placeholder card
 //   - a "Gizmo" consumable type (badge/pack colours) + "Wrench" (gain $7)
 //   - "Gizmo Box": a draw_hand mod pack (MOD_PACK_HAND) that always shows in the shop
-//   - options: starter (bool: start with Adder + Ghost), flavor (choice), legacy (hidden: never listed, its default still set)
+//   - options: starter (bool: start with Adder + Ghost), flavor (choice), legacy (hidden: never listed, its default still set),
+//     look (cosmetic: listed and saved, but never a run option — like Pokermon's sprite series)
 // atlas.png: 3 cells of 142x190 (2x of 71x95): magenta | transparent + cyan square | yellow.
 import { registerMod, opt } from '../../../js/mods/registry.js';
 import { G, add_joker } from '../../../js/engine/core.js';
@@ -18,6 +19,7 @@ registerMod({
     starter: { default: true, label: 'Start with Adder' },
     flavor: { default: 'mild', label: 'Flavor', choices: ['mild', 'hot'] },
     legacy: { default: true, label: 'Hidden Legacy Option', hidden: () => true },   // (js/mods/index.js optionHidden)
+    look: { default: 'plain', label: 'Look', cosmetic: true, choices: ['plain', 'fancy'] }, // (js/mods/registry.js: never in the run)
   },
   content: {
     atlases: { tmui_cards: { src: BASE + 'atlas.png', px: 71, py: 95 } },
