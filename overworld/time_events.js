@@ -135,20 +135,125 @@ export function updateDailyFlags(today = localDay()) {
 	return true;
 }
 
+// THE LILYCOVE LOTTERY (lottery_corner.c). The day's number lives in
+// VAR_POKELOT_RND1 (low half) / VAR_POKELOT_RND2 (high half); new_game.c's
+// ResetLotteryCorner seeds it, UpdatePerDay's SetRandomLotteryNumber re-rolls it
+// (Random(), stepped ISO_RANDOMIZE2 once per day passed). The clerk's
+// RetrieveLotteryNumber reads it, PickLotteryCornerTicket matches it, trailing
+// digit by trailing digit, against the OT ID of every party and PC POKeMON.
+//
+// ONE DEVIATION, the number's range. The GBA ticket is the u16 low half
+// (00000-65535), against GBA Trainer IDs that are u16 too. This port's ID No.
+// (ow_features.js playerTID) runs 00000-99999, so a u16 ticket could never
+// jackpot an ID of 65536 or more (a third of players) and would skew the
+// 4-digit odds. The ticket here is the stored u32 mod 100000: the same space as
+// the IDs it is matched against, uniform the way the GBA's is.
+export const LOTTERY_PRIZES = ['ITEM_PP_UP', 'ITEM_EXP_SHARE', 'ITEM_MAX_REVIVE', 'ITEM_MASTER_BALL'];   // sLotteryPrizes
+export function getLotteryNumber() {
+	return (((Story.getVar('VAR_POKELOT_RND2') & 0xFFFF) << 16) | (Story.getVar('VAR_POKELOT_RND1') & 0xFFFF)) >>> 0;
+}
+export function setLotteryNumber(n) {
+	Story.setVar('VAR_POKELOT_RND1', n & 0xFFFF);
+	Story.setVar('VAR_POKELOT_RND2', (n >>> 16) & 0xFFFF);
+}
+const rand16 = rng => Math.floor(rng() * 0x10000) & 0xFFFF;
+// ResetLotteryCorner (a new game; here a save's first update, as InitMirageRnd)
+export function resetLotteryCorner(rng = Math.random) {
+	setLotteryNumber(((rand16(rng) << 16) | rand16(rng)) >>> 0);
+	Story.setVar('VAR_POKELOT_PRIZE_ITEM', 0);
+}
+// SetRandomLotteryNumber(days): var = Random(); ISO_RANDOMIZE2 `days` times
+export function setRandomLotteryNumber(days, rng = Math.random) {
+	let v = rand16(rng);
+	for (let i = 0; i < days; i++) v = isoRandomize2(v);
+	setLotteryNumber(v);
+}
+export const lotteryTicket = (n = getLotteryNumber()) => n % 100000;
+// GetMatchingDigits: how many trailing decimal digits agree (0-5)
+export function matchingDigits(win, otId) {
+	let n = 0;
+	for (let i = 0; i < 5; i++) {
+		if (win % 10 !== otId % 10) break;
+		win = Math.floor(win / 10); otId = Math.floor(otId / 10); n++;
+	}
+	return n;
+}
+// A POKeMON's OT ID. The port records one only for a mon someone ELSE trained:
+// the in-game trades (trades.js) and the scripted gifts that name their OT
+// (MANIA's SHUCKIE, RANDY's KENYA). Every other mon was caught, hatched or given
+// to the player as theirs, which on the GBA stamps the player's own ID — so a mon
+// with no otId reads as the player's ID, at the moment it is asked, and nothing
+// is written to the party or the box (a load never dirties the save, and the
+// player's ID is already derived, not stored per mon). A mon that names a foreign
+// OT but carries no number can't match anything (null).
+export function monOtId(mon, playerId) {
+	if (!mon) return null;
+	if (Number.isInteger(mon.otId)) return mon.otId;
+	if (mon.otName || mon.traded) return null;
+	return playerId;
+}
+// PickLotteryCornerTicket over the port's party and PC box (a flat list). Party
+// first, then the box. As on the GBA, the digits are compared with VAR_0x8004
+// (which holds digits - 1), so a later mon with as many digits takes over: a tie
+// goes to the last one. Eggs don't count.
+// -> { tier: 0-4 (VAR_0x8004), prize: ITEM_ (VAR_0x8005), inPC: 0/1 (VAR_0x8006), mon }
+export function pickLotteryTicket(ticket, party, box, playerId) {
+	let best = { tier: 0, prize: null, inPC: 0, mon: null };
+	const look = (list, inPC) => {
+		for (const mon of list || []) {
+			if (!mon || mon.isEgg || mon.egg) continue;
+			const ot = monOtId(mon, playerId);
+			if (ot == null) continue;
+			const d = matchingDigits(ticket, ot);
+			if (d > best.tier && d > 1) best = { tier: d - 1, prize: null, inPC, mon };
+		}
+	};
+	look(party, 0);
+	look(box, 1);
+	if (best.tier) best.prize = LOTTERY_PRIZES[best.tier - 1];
+	return best;
+}
+// field_specials.c BufferLottoTicketNumber: five digits, zero-padded
+export const lottoTicketString = n => String(n).padStart(5, '0');
+
+// field_specials.c UpdateFrontierManiac: the BATTLE FRONTIER lounge's MANIAC
+// (BattleFrontier_Lounge2_EventScript_GiveAdvice) talks about a different
+// facility each day: VAR_FRONTIER_MANIAC_FACILITY steps by the days passed, mod
+// FRONTIER_MANIAC_FACILITY_COUNT (10).
+export const FRONTIER_MANIAC_FACILITY_COUNT = 10;
+export function updateFrontierManiac(days) {
+	Story.setVar('VAR_FRONTIER_MANIAC_FACILITY', ((Story.getVar('VAR_FRONTIER_MANIAC_FACILITY') | 0) + days) % FRONTIER_MANIAC_FACILITY_COUNT);
+}
+
 // clock.c UpdatePerDay: once per new day. Returns the days that passed (0: none).
 // (ClearDailyFlags rides along, on its own day marker: updateDailyFlags.)
-export function updatePerDay(today = localDay()) {
+// Of the rest of UpdatePerDay, the port runs what it has a feature for: the
+// Mirage value, the SHOAL items, the LOTTERY number and the Frontier MANIAC.
+// Not here, because nothing in the port reads them: UpdateDewfordTrendPerDay
+// (no trendy-phrase system; Common_EventScript_BufferTrendyPhrase is a stub),
+// UpdateTVShowsPerDay (no TV shows / mass outbreaks), UpdateWeatherPerDay (no
+// Route 119/123 weather cycle: map weather is a fixed table), UpdatePartyPokerusTime
+// (no POKeRUS), UpdateBirchState (prof_birch.inc's ProfBirch_EventScript_UpdateLocation
+// was never transpiled, so the call to it goes nowhere and VAR_BIRCH_STATE is read
+// by nothing), UpdateFrontierGambler (VAR_FRONTIER_GAMBLER_CHALLENGE is read only
+// by the unported ShowFrontierGambler* specials).
+export function updatePerDay(today = localDay(), rng = Math.random) {
 	updateDailyFlags(today);
 	const days = Story.getVar('VAR_DAYS') | 0;
+	// a save from before the lottery was ported has no number yet (new_game.c's
+	// ResetLotteryCorner never ran): seed it on its first update, as the Mirage value
+	if (!Story.getVar('VAR_POKELOT_RND1') && !Story.getVar('VAR_POKELOT_RND2')) resetLotteryCorner(rng);
 	if (!days) {
 		Story.setVar('VAR_DAYS', today);
-		if (!getMirageRnd()) initMirageRnd();
+		if (!getMirageRnd()) initMirageRnd(rng);
 		return 0;
 	}
 	if (days === today || days > today) return 0;   // the clock went back: nothing (as the GBA)
 	const since = today - days;
 	updateMirageRnd(since);
+	updateFrontierManiac(since);
 	Story.setFlag('FLAG_SYS_SHOAL_ITEM');            // SetShoalItemFlag
+	setRandomLotteryNumber(since, rng);
 	Story.setVar('VAR_DAYS', today);
 	return since;
 }

@@ -175,6 +175,15 @@ export function legendariesHere() {
 	if (!v) return [];
 	return (Array.isArray(v) ? v : [v]).filter(e => !Story.getFlag(e.flag) && (!e.requires || e.requires()));
 }
+// the legendary a map's own SCRIPT battles (Crystal's Ilex Forest shrine:
+// `loadwildmon CELEBI` + `startbattle`) when the tile system places the same
+// species here: the script's battle takes that entry's flag, so a save still
+// gets one of it whichever way it comes (ow_scaling.js startScriptedWildBattle)
+export function scriptLegendFor(species) {
+	const v = LEGENDARY_ENCOUNTERS[world.current?.map?.id];
+	if (!v || !species) return null;
+	return (Array.isArray(v) ? v : [v]).find(e => e.species === species) || null;
+}
 export function legendaryHere() { return legendariesHere()[0] || null; } // the first (single-per-map back-compat)
 // The decomp's own object for the legendary (the Power Plant's ZAPDOS, ...) has a
 // hide flag only its script sets, after `special StartLegendaryBattle` — which this

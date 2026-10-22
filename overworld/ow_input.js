@@ -8,7 +8,7 @@ import { crystalTrainerHeader } from './crystal_trainers.js';
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
 import { arcade, battle, blockers, cutscene, dialog, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
-import { baseDecoInteract, kurtTalk, secretSpotInteract, shoalDig, shoalHermitTalk } from './ow_features.js';
+import { baseDecoInteract, kurtGSBallDue, kurtTalk, secretSpotInteract, shoalDig, shoalHermitTalk } from './ow_features.js';
 import { bikeShopTalk, glassBlowerTalk, silphDoorAt } from './ow_fieldmoves.js';
 import { FACILITY_LOBBIES, frontier, startFacility } from './ow_frontier.js';
 import { bagMenu, ferryMenu, menuBlocking, openBpShop, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
@@ -404,7 +404,15 @@ export function interact() {
 	// implementations (nurses, marts, the contest lobby, the Trick House) where
 	// shadowing the script is the whole point. Kurt is the only one whose script
 	// carries a story beat: setflag + move + hideobj.
-	if (svc === 'kurt' && Story.getFlag('EVENT_KURT_GAVE_YOU_LURE_BALL')) { kurtTalk(); return; }
+	//
+	// ...and the counter steps aside again for the GS BALL (Crystal's Celebi lead-in).
+	// Kurt1's .GotLureBall reaches .CanGiveGSBallToKurt once EVENT_CAN_GIVE_GS_BALL_TO_KURT
+	// is set (the Goldenrod POKeMON CENTER gave you the ball), and it is his script
+	// that takes the ball, sets the daily ENGINE_KURT_MAKING_BALLS, and the next day
+	// sends him running to ILEX FOREST. Kurt2 (at his workbench while he makes it)
+	// says "I'm checking it now". kurtGSBallDue() is that branch's own test; with no
+	// GS BALL business the counter answers exactly as before.
+	if (svc === 'kurt' && Story.getFlag('EVENT_KURT_GAVE_YOU_LURE_BALL') && !kurtGSBallDue()) { kurtTalk(); return; }
 	if (svc === 'trickmaster') { trickMasterTalk(); return; }
 	if (svc === 'trickscroll') { trickScrollFind(); return; }
 	if (svc === 'trickend') { trickEndTalk(); return; }

@@ -405,6 +405,14 @@ export function shoalHermitTalk() {
 	}
 	dialog.open(`HERMIT: I craft SHELL BELLS from what this cave\nhides — 4 SHOAL SALT and 4 SHOAL SHELL.\n(You carry ${salt} salt, ${shell} shell.)\n\nSalt lies deep — low tide only. Shells sit in\nthe inner cavern. Dig at the sparkling spots!`);
 }
+// pokecrystal KurtsHouse.asm Kurt1.GotLureBall -> .CanGiveGSBallToKurt: Kurt's
+// GS BALL branch runs when he may take it (EVENT_CAN_GIVE_GS_BALL_TO_KURT) and he
+// either has it already (EVENT_GAVE_GS_BALL_TO_KURT) or you carry it. (The checks
+// before it, EVENT_TEMPORARY_UNTIL_MAP_RELOAD_1 and EVENT_GAVE_KURT_*_APRICORN,
+// belong to the script's own apricorn flow, which kurtTalk replaces: never set.)
+export function kurtGSBallDue() {
+	return !!Story.getFlag('EVENT_CAN_GIVE_GS_BALL_TO_KURT') && (!!Story.getFlag('EVENT_GAVE_GS_BALL_TO_KURT') || Bag.count('gsball') > 0);
+}
 export function kurtTalk() {
 	const held = Object.keys(Bag.ITEMS).filter(id => Bag.ITEMS[id].kind === 'apricorn' && Bag.count(id) > 0);
 	if (!held.length) {
