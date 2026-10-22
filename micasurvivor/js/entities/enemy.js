@@ -1030,6 +1030,7 @@
           if (e.boss && !e.judge) pl.bosses++;
           G.Progress.kill(e);
           if (G.Tower) G.Tower.onKill(e, pl);   // MicaSurvivor (M5 lote 8): Sed de victoria y Pacto de sangre
+          if (G.Hooks) G.Hooks.call('enemy.ko', e, pl);   // MicaSurvivor (DLC D6): an Expedition run's Ultimate charge (no listener: nothing)
           corpses.push(e);
           list.splice(i, 1);
           byId.delete(e.id);

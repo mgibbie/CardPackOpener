@@ -47,7 +47,7 @@ G.I18n.add({
 });
 
 G.Expedition = (() => {
-  const DV = 4;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4. Older dv replays / snapshots still play, replayOk)
+  const DV = 5;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
@@ -63,7 +63,7 @@ G.Expedition = (() => {
   const ENABLED = new Set(['exp-classic']);   // D3: Classic is playable; Survival and League are still "Coming soon"
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js)
+    'js/expedition/ultimates.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

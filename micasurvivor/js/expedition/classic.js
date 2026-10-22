@@ -737,10 +737,11 @@ G.ExpClassic = (() => {
     const [wx, wy] = siteXY(si.altar);
     const sx = (wx - cam.left()) * cam.scale / k, sy = (wy - 30 - cam.top()) * cam.scale / k;
     if (sx > 0 && sx < w && sy > 0 && sy < h) return;
-    // (kept clear of the HUD: the minimap on the left, the touch buttons down the right, the move bar at the bottom)
+    // (kept clear of the HUD: the minimap on the left, the buttons down the right, the move bar at the bottom; D6: the
+    //  Ultimate's button and meter are always on the right in a zone, so the column is kept clear without touch too)
     const touch = G.Touch.active && G.Game.state !== 'watch', M = 46, mm = G.HUD && G.HUD.minimap;
     const ey = G.U.clamp(sy, M + 80, h - M - (touch ? 120 : 90));
-    let ex = G.U.clamp(sx, M, w - M - (touch ? 200 : 0));
+    let ex = G.U.clamp(sx, M, w - M - 200);
     if (mm && ex - 30 < mm.x + mm.s && ex + 30 > mm.x && ey + 30 > mm.y && ey - 30 < mm.y + mm.s) ex = mm.x + mm.s + 36;
     const a = Math.atan2(sy - ey, sx - ex);
     if (mark) mark('xarrow', ex - 30, ey - 30, 60, 60);

@@ -171,7 +171,8 @@ G.ZMoves = (() => {
   const activeType = pl => (pl ? typeFor(pl.dex) : '');
   function can(pl) {
     return !!pl && !pl.dead && !pl.coopDown && !pl.remote && !!G.Game && G.Game.state === 'playing' && !(G.Judgment && G.Judgment.cinematic)   // (M5 lote 12a: no mientras espectas, main.gd 1243 / 1267)
-      && state === '' && !used && pl.level >= MIN_LEVEL && !!activeType(pl) && !blocked();
+      && state === '' && !used && pl.level >= MIN_LEVEL && !!activeType(pl) && !blocked()
+      && !G.World.zone;   // (MicaSurvivor DLC D6: an Expedition zone has its own Ultimate instead, js/expedition/ultimates.js)
   }
   function tryStart(pl) {
     if (!can(pl)) return false;
@@ -1022,6 +1023,12 @@ G.ZMoves = (() => {
     const z = Object.create(Effect.prototype);
     return Object.assign(z, { pl, type, pal: type, cx, cy, t: 0, dur: 0, ev: [], done: true, acc: 0, acc2: 0, dim: 0, st: { bs: {} }, dmg });
   }
+  /**
+   * MicaSurvivor (DLC D6): one type's whole choreography as an object of its own, outside the Z's state machine (no
+   * cinematic, cooldown or unlock): an Expedition Ultimate (js/expedition/ultimates.js) ticks it, sets its damage and
+   * adds its signature's beats. A base run never calls it.
+   */
+  function effect(pl, type) { return new Effect(pl, DEF[type] ? type : 'normal'); }
   function updateWorld(dt) {
     for (const w of wisps) w.update(dt);
     if (wisps.some(w => w.gone)) wisps = wisps.filter(w => !w.gone);
@@ -1170,7 +1177,7 @@ G.ZMoves = (() => {
    */
   function drawButton(ctx, w, h, pl) {
     const zt = activeType(pl);
-    if (!zt || busy() || BLOCKED_MODES.includes(G.Game.mode)) return null;
+    if (!zt || busy() || BLOCKED_MODES.includes(G.Game.mode) || G.World.zone) return null;   // (DLC D6: no Z button in an Expedition zone)
     const r = buttonRect(w, h), c = { x: r.x + r.s / 2, y: r.y + r.s / 2 };
     const tc = rgb(G.U.TYPE_COLOR[zt]);
     const lvlOk = pl.level >= MIN_LEVEL, here = !blocked();
@@ -1206,7 +1213,7 @@ G.ZMoves = (() => {
   return {
     ORDER, NEED, COOLDOWN, MIN_LEVEL, CINE_T, BOSS_CAP, CRYSTAL_P, ZMIS_COINS, BLOCKED_MODES, DEF, ZMIS,
     unlocked, unlockedList, typesFor, typeFor, choose, grantCrystal, rollCrystal, stat, zdone, zcheck,
-    reset, can, tryStart, cineTick, update, updateWorld, drawWorld, drawDim, drawCine, drawButton, buttonRect, blocked, activeType, area,
+    reset, can, tryStart, cineTick, update, updateWorld, drawWorld, drawDim, drawCine, drawButton, buttonRect, blocked, activeType, area, effect,
     get busy() { return busy(); }, get cine() { return state === 'cine'; }, get state() { return state; }, get t() { return t; },
     get used() { return used; }, get cd() { return cd; }, get type() { return ztype; }, get fx() { return fx; }, get wisps() { return wisps.length; }
   };

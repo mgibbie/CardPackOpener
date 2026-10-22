@@ -494,6 +494,8 @@ G.HUD = (() => {
 
     // ---------- Movimiento Z (MicaSurvivor M5 lote 4, main.gd draw_z): botón con su recarga ----------
     if (G.ZMoves && !pl.remote) G.ZMoves.drawButton(ctx, w, h, pl);
+    // ---------- MicaSurvivor (DLC D6): in an Expedition zone the Ultimate takes the Z's place (its meter for a viewer) ----------
+    if (G.World.zone && G.ExpUlt) { const ur = G.ExpUlt.drawButton(ctx, w, h, pl); if (ur) mark('ult', ur.x - 6, ur.y - 6, ur.s + 12, ur.s + 36); }
     // ---------- Dynamax (M5 lote 5, main.gd draw_dyn): el botón MAX, encima del Z ----------
     if (G.Dynamax && !pl.remote) G.Dynamax.drawButton(ctx, w, h, pl);
     // ---------- Modo Equipo (M5 lote 7, main.gd draw_team / TeamUi): las fichas y el botón de cambiar ----------
@@ -504,7 +506,7 @@ G.HUD = (() => {
       if (vr) for (const k of ['hop', 'slide']) mark(k, vr[k].x - 6, vr[k].y - 6, vr[k].s + 12, vr[k].s + 26);
     }
     // (M5 lote 10) la columna de la derecha: Z, MAX y el botón de cambiar (con su texto de debajo) y las fichas del equipo
-    if (G.ZMoves && !pl.remote && G.ZMoves.activeType(pl)) { const r = G.ZMoves.buttonRect(w, h); mark('zmove', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
+    if (G.ZMoves && !pl.remote && G.ZMoves.activeType(pl) && !G.World.zone) { const r = G.ZMoves.buttonRect(w, h); mark('zmove', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
     if (G.Dynamax && !pl.remote && G.Dynamax.unlocked()) { const r = G.Dynamax.buttonRect(w, h); mark('dynamax', r.x - 6, r.y - 6, r.s + 12, r.s + 26); }
     if (G.Team && G.Team.on && !pl.remote && G.Team.view(pl).length > 1) {
       G.Team.chipRects().forEach((r, i) => mark('team' + i, r.x, r.y, r.w, r.h));

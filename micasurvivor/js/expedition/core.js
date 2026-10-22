@@ -69,28 +69,43 @@
  *   xp.need         the curve (G.ExpLevel.xpNeed); item.roll / item.take: the Expedition's items (seeded drops, stacking)
  *   player.hurt / player.ko / player.dealt / combat.out: the items' and vitamins' procs (G.ExpItems)
  *   combat.run / combat.ghost: the 8 new archetypes (G.ExpMoves); run.tick: their effects, the items' timers, the bag strip
+ *
+ * D6 (Ultimates, js/expedition/ultimates.js): a charge meter (95 s passive, a kill bucket, elite / alpha / boss kills,
+ * damage taken), the cast (hit-stop, i-frames, the cut-in), type Ultimates from the Z-moves' choreographies, 16 signature
+ * Ultimates by evolution tier, the auto-Ultimate setting. dv 5. The `x` block is v6, {xv: 6, m, z, th, a, c, l, u, w}:
+ *   w     the Ultimate rows [charge %, pieces cast, piece code, tier, flags (1 casting, 2 auto), the cast's code]
+ *         (G.ExpUlt.row): w.p the watched / sending player's, w.q the co-op players' (by uid in host frames, by name in
+ *         snapshots). A viewer's puppet shows the meter, the cut-in and each piece's choreography (no damage) when the
+ *         count goes up (G.ExpUlt.applyRow). The replay keeps `w` in a frame field of its own (field 8: it changes with
+ *         the charge), and an `xu` event when a cast starts.
+ *   The v1-v5 readers are kept: a block without `w` shows no Ultimate.
+ *   enemy.ko        the kill bucket and the elite / alpha / boss bonuses (G.ExpUlt.onKill)
+ *   player.hurt     the cast's i-frames first (before the items' shield), then the damage-taken charge
+ *   run.hold        the cast's hit-stop; run.tick: the charge, the keys, auto, the cast itself
  */
 G.Exp = (() => {
-  const dv = 4;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 5;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 5;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
-  const READS = [1, 2, 3, 4, 5];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`)
+  const XV = 6;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2, 3, 4, 5, 6];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`; v6: + the Ultimates `w`)
   const C = () => G.ExpClassic;
   const LG = () => G.ExpLeague;
   const LV = () => G.ExpLevel, IT = () => G.ExpItems, MV = () => G.ExpMoves;
+  const UL = () => G.ExpUlt;
   const expRun = () => G.Modes.isExp();
 
   function init() {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); return; }
+      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
       if (cfg.mode === 'exp-classic' && C()) C().begin(cfg);   // (D3)
       if (LG()) LG().begin(G.Game.player, cfg);                 // (D4: the League member)
       if (LV()) LV().begin(G.Game.player);                      // (D5: the curve, the tools, the bag)
+      if (UL()) UL().begin(G.Game.player);                      // (D6: the Ultimate's meter)
     });
     // (D4: a League run's level-ups: kit moves, evolutions and their choice, Maturity; a base run gets undefined / its cards)
     // (D5: then the Expedition's own cards, rarity-rolled: G.ExpLevel.offer; it adds the League's note itself)
@@ -100,13 +115,22 @@ G.Exp = (() => {
     G.Hooks.on('xp.need', (v, L) => (LV() ? LV().xpNeed(v, L) : v));
     G.Hooks.on('item.roll', pl => (expRun() && LV() ? LV().itemRoll(pl) : undefined));
     G.Hooks.on('item.take', (pl, id) => (LV() ? LV().itemTake(pl, id) : undefined));
-    G.Hooks.on('player.hurt', (d, pl, type) => (IT() ? IT().hurt(d, pl, type) : d));
+    // (D6: an Ultimate's i-frames come first, so a cast never spends the shield; then the items; then the hurt charge)
+    G.Hooks.on('player.hurt', (d, pl, type) => {
+      if (UL() && UL().guard(pl)) return 0;
+      if (IT()) d = IT().hurt(d, pl, type);
+      if (UL()) UL().hurt(d, pl);
+      return d;
+    });
     G.Hooks.on('player.ko', pl => { if (IT()) IT().ko(pl); });
     G.Hooks.on('player.dealt', (pl, d) => { if (IT()) IT().dealt(pl, d); });
     G.Hooks.on('combat.out', (k, pl, e, src, dmg) => (IT() ? IT().out(k, pl, e, src, dmg) : k));
     G.Hooks.on('combat.run', (pl, m, ghost) => { if (MV()) MV().run(pl, m, ghost); });
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
-    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); });
+    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); });
+    // (D6: the Ultimate's charge from kills, and its hit-stop)
+    G.Hooks.on('enemy.ko', (e, pl) => { if (expRun() && UL()) UL().onKill(e, pl); });
+    G.Hooks.on('run.hold', (dt, pl) => (expRun() && UL() ? UL().hold(dt, pl) : undefined));
     G.Hooks.on('replay.header', h => {
       if (!expRun()) return h;
       const R = G.Modes.run;
@@ -114,7 +138,7 @@ G.Exp = (() => {
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; s.x = x; } }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; const w = ultSnap(); if (w) x.w = w; s.x = x; } }
       return s;
     });
     // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
@@ -122,7 +146,7 @@ G.Exp = (() => {
     G.Hooks.on('net.frame', (f, m) => {
       if (expRun() || (!m && G.World.zone)) {
         const x = xblock();
-        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; f.x = x; }
+        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; const w = m ? ultHost(m) : ultGuest(); if (w) x.w = w; f.x = x; }
       }
       return f;
     });
@@ -141,6 +165,8 @@ G.Exp = (() => {
       if (LG() && LG().run) { const newly = LG().record(sum); G.ExpSave.commit(); out.lines = out.lines.concat(LG().lines(newly)); out.league = newly; }
       // D5: the level-ups' and items' counters, a line with the bag
       if (LV() && LV().run) { out.lines = out.lines.concat(LV().record(sum)); G.ExpSave.commit(); }
+      // D6: the Ultimates cast (counters), a line
+      if (UL() && UL().run) { out.lines = out.lines.concat(UL().record(sum)); G.ExpSave.commit(); }
       if (sum.clean && !sum.group) submitScore(sum);
       cur = null;
       return out;
@@ -233,6 +259,11 @@ G.Exp = (() => {
       if (pl) { LV().applyRow(pl, u && u.p); LV().watch(pl); }
       if (mates && u && u.q) for (const [name, o] of mates) LV().applyRow(o.p, u.q[o.raw || name] || null);
     }
+    const w = wOf(x);   // (D6: the Ultimates: the watched player's meter, everyone's casts)
+    if (UL()) {
+      if (pl) UL().applyRow(pl, w && w.p);
+      if (mates) for (const [name, o] of mates) UL().applyRow(o.p, w && w.q ? w.q[o.raw || name] || null : null);
+    }
     liftEnemies(a && a.e);
     if (C()) C().applyC(x && READS.includes(x.xv) && x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return !!a;
@@ -246,6 +277,8 @@ G.Exp = (() => {
     if (l && l.q && LG()) for (const u in l.q) { const p = mateOf(u); if (p) LG().applyRow(p, l.q[u]); }
     const ub = uOf(x);   // (D5: the other players' bags and Expedition moves)
     if (ub && ub.q && LV()) for (const u in ub.q) { const p = mateOf(u); if (p) LV().applyRow(p, ub.q[u]); }
+    const w = wOf(x);   // (D6: the other players' Ultimates)
+    if (w && w.q && UL()) for (const u in w.q) { const p = mateOf(u); if (p) UL().applyRow(p, w.q[u]); }
     liftEnemies(a.e);
     if (C()) C().applyC(x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     return true;
@@ -259,6 +292,8 @@ G.Exp = (() => {
     if (l && l.p && m.pl && LG()) LG().applyRow(m.pl, l.p);
     const u = uOf(x);   // (D5: the guest's bag: on its puppet here, and so in the host's frames / snapshots)
     if (u && u.p && m.pl && LV()) LV().applyRow(m.pl, u.p);
+    const w = wOf(x);   // (D6: the guest's Ultimate: on its puppet here, and so in the host's frames / snapshots)
+    if (w && w.p && m.pl && UL()) UL().applyRow(m.pl, w.p);
   }
 
   // ---------------- D4: the League rows in the `x` block ----------------
@@ -309,6 +344,30 @@ G.Exp = (() => {
   function bagGuest() { const r = LV() && LV().row(); return r ? { p: r } : null; }
   /** The `u` of a v5+ block (an older block: none, no bag shown). */
   const uOf = x => (x && READS.includes(x.xv) && x.xv >= 5 && x.u) || null;
+
+  // ---------------- D6: the Ultimate rows in the `x` block ----------------
+  /** A snapshot's `w`: the player's row, its co-op partners' (by name, those with one). Null outside an Expedition run. */
+  function ultSnap() {
+    const r = UL() && UL().row();
+    if (!r) return null;
+    const w = { p: r };
+    if (G.Coop && G.Coop.active) {
+      const q = {};
+      for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xw) q[m.name] = m.pl.xw;
+      if (Object.keys(q).length) w.q = q;
+    }
+    return w;
+  }
+  /** A host frame's `w` for guest m: every other player's row by uid. */
+  function ultHost(m) {
+    const q = {}, r = UL() && UL().row();
+    if (r && G.Net && G.Net.uid) q[G.Net.uid] = r;
+    for (const o of G.Coop.mates) if (o.connected && o.uid !== m.uid && o.pl && o.pl.xw) q[o.uid] = o.pl.xw;
+    return Object.keys(q).length ? { q } : null;
+  }
+  function ultGuest() { const r = UL() && UL().row(); return r ? { p: r } : null; }
+  /** The `w` of a v6+ block (an older block: none, no Ultimate shown). */
+  const wOf = x => (x && READS.includes(x.xv) && x.xv >= 6 && x.w) || null;
 
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {

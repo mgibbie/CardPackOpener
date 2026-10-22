@@ -271,7 +271,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 4, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 4 (D5)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 5, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 5 (D6)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -393,8 +393,8 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x, me: snap.me, hf, gf };
 	});
-	A(xs.x && xs.x.xv === 5 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
-	A(xs.hf && xs.hf.xv === 5 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
+	A(xs.x && xs.x.xv === 6 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
+	A(xs.hf && xs.hf.xv === 6 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
 		'a co-op host frame carries the host\'s row by uid; a guest\'s own frame carries its row', JSON.stringify({ hf: xs.hf && xs.hf.l, gf: xs.gf && xs.gf.l }));
 
 	// ======================== 5. the run ends: lines, counters, challenges, the base save untouched
@@ -501,7 +501,7 @@ try {
 			const e = G.Replay.last; await e.ready;
 			return { code: e.code, h: e.h || null, seed: G.World.seed, snap: snaps[0] };
 		});
-		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 5, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
+		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 6, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
 		await d2.ctx.close();
 
 		// ======================== 8b. fresh pages: a co-op guest, the host of a guest, a live spectator, a replay viewer

@@ -1835,7 +1835,7 @@ sets):
 - the catch (D8): a met challenge plays at once (`K.PLAY_MET`);
 - the other 170 entries (D4b / D4c / D4d), the Megas (D4c) and the legendaries' own encounters (D4d);
 - moves from the line's learnset and from other League members of your type at level-ups, vitamins and rarities (D5: built, see below);
-- signature Ultimates by evolution tier (D6: it can read the row's Maturity and evolutions);
+- signature Ultimates by evolution tier (D6: built, see below; the tier is the row's evolutions + Maturity);
 - PokéBonk's XP curve (8 + 5.5 L + L^1.8): Classic still uses the base one, so whether a run reaches a family's last
   evolution (Dragonite and Tyranitar at 55) is for D5's tuning;
 - the League pick for a co-op guest (co-op Expedition runs can't start yet; the frames already carry the rows).
@@ -1977,6 +1977,128 @@ sets):
 - learnset-exact "moves the line learns" (by type for now) and Mew's "every move of power 60+";
 - reactions and weather boosts by type (D8).
 
+## DLC D6: Ultimates
+
+**Every Expedition run has an Ultimate**: a meter that fills as you play, a cast with a hit-stop, i-frames and a portrait
+cut-in, and a choreography. 16 League members have a **signature Ultimate** that grows with their evolutions and Maturity;
+every other member casts its type's **type Ultimate**, which is the base game's Z-move choreography for that type, rescaled
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.4 and the D6 row). The code is `js/expedition/ultimates.js` (`G.ExpUlt`;
+every number in its `K`). Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded. In an Expedition zone the Ultimate **takes the Z-move's place**: its key, its pad buttons and its HUD spot
+(the base Z-move and its button step aside while `G.World.zone` is set, so a base run still has its Z-move).
+
+**The charge** (0 to 1, `K`; study 2.4):
+
+| Source | Charge |
+|---|---|
+| Passive | Full in **95 s** (`PASSIVE_T`) |
+| A kill | **+0.004**, drawn from a **bucket** that holds 0.024 and refills 0.008 a second (`KILL`, `BUCKET`, `BUCKET_RATE`), so a swarm can't fill it at once |
+| An elite or summoner | **+0.03** (`ELITE`), outside the bucket |
+| An alpha or totem | **+0.08** (`ALPHA`) |
+| A guardian, the legendary or any boss | **+0.2** (`BOSS`) |
+| Damage taken | **+0.35 x damage / max HP** (`HURT`), the damage actually taken (after the items' evasion and shield) |
+
+Nothing charges while a cast lasts. `pl.xultCharge` multiplies every source (1 for now: the study's Soul Dew x1.4 and Lunar
+Blessing x1.3 wait for an item batch). Kills count on the host / solo sim (the `enemy.ko` seam); a co-op guest has no
+Expedition sim of its own yet.
+
+**The cast:**
+- **Inputs**: Z or R; the pad's Z-move (L3), Y and RT buttons (the base game's Z-move buttons, in a zone only); the HUD
+  button (touch or mouse), which shows the meter as a ring in the type's colour, its %, "Ready!" and a key or pad glyph.
+- **Hit-stop**: 0.32 s (`HITSTOP`) in which the world holds (the `run.hold` seam: the clock, foes and spawns stop), then
+  the choreography starts.
+- **I-frames**: for the whole cast and 0.6 s after it (`AFTER`), through `pl.invuln` and the `player.hurt` seam, which
+  comes before the items' shield (a cast never spends the shield) and also covers lava, which zeroes `invuln`.
+- **The cut-in**: 1.1 s (`CUT_T`), drawn on the canvas over the HUD: a slanted band in the type's colour, the caster's own
+  sprite big with a light outline, "ULTIMATE" (or "TYPE ULTIMATE") and a star per tier, and the Ultimate's name.
+  Under 0.42 dim. No new art: the sprite is the member's PMD sheet; the button's icon is the type's Z-crystal.
+- **Damage** per unit of each hit's own weight in the choreography: **40 x (1 + 0.1 level) x (1 + 0.15 tier) x attack x
+  0.62** (`DMG`, `DMG_LV`, `DMG_TIER`, `DMG_K`; the 0.62 is D5's study-to-our-scale factor). Against a boss the Z-move's own
+  cap still holds: one piece takes at most 28 % of its max HP. The hits go through `G.Combat.land` like a Z-move's (types,
+  crits, abilities, the items' procs).
+- **Tier** = the League row's evolutions + its Maturity (0 to 4, `TIER_MAX`; study: "evolution stage + Maturity"). The
+  tier raises the damage, adds a signature's beats, and picks its name (tier 2 and up keep the third name).
+
+**Type Ultimates**: a member with no signature casts its current form's first type's (Caterpie and Butterfree: bug,
+"Plaga Devastadora" / "Devastating Plague"), the Z-move's own choreography (`G.ZMoves.effect(pl, type)`, a new export that builds
+one outside the Z-move's state machine: no cinematic, cooldown or unlock), under the Z-move's name, with the Ultimate's
+damage. All 18 types.
+
+**The 16 signatures** (`SIGS`; our own names, never PokéBonk's): each starts from its type's choreography and adds beats by
+tier (a ring, beams, strikes from the sky, a dive, meteors, a nova, a pull, a drain, a heal):
+
+| Member | Type | Tier 0 / 1 / 2+ |
+|---|---|---|
+| Bulbasaur | grass | Furious Seed / Petal Storm / Solar Garden |
+| Charmander | fire | Roaring Ember / Fire Vortex / Winged Inferno |
+| Squirtle | water | Bubble Wave / Spinning Tide / Hydro Cannon |
+| Pichu (Pikachu's line) | electric | Spark Burst / Chain Bolt / Volt Tackle |
+| Gastly (Gengar's line) | ghost | Shadow Lick / Shadow Rain / Evil Eye |
+| Magikarp (Gyarados) | water | Fierce Splash / Sea Rage / Abyssal Hyper Beam |
+| Dratini (Dragonite's line) | dragon | Dragon Fury / Dragon Dance / Draco Comet |
+| Mewtwo | psychic | Mind Wave / Psycho Charge / Total Psystrike |
+| Mew | psychic | Metronome / Double Metronome / Triple Metronome: 1 / 2 / 3 copies of the other 15, from the run's seeded stream |
+| Articuno | ice | Icy Wind / Blizzard / Glacial Zero |
+| Zapdos | electric | Thunder Shock / Electric Storm / Thunder Wing |
+| Moltres | fire | Flame Wing / Sacred Fire / Scorching Sun |
+| Abra (Alakazam's line) | psychic | Teleport Burst / Star Psybeam / Future Sight |
+| Machop (Machamp's line) | fighting | Karate Rush / Cross Chop / Dynamic Punch |
+| Larvitar (Tyranitar's line) | rock | Rock Toss / Rock Avalanche / Desert Edge |
+| Gible (Garchomp's line) | ground | Sand Tomb / Dragon Claw / Earth Comet |
+
+**Deviation:** the plan's list has Eevee, Snorlax, Lapras and Ditto. None of them is a League entry (not three-stage, no
+Mega, not legendary: the owner's 249), so they could never be played; Alakazam's, Machamp's, Tyranitar's and Garchomp's
+lines take their places. Ditto's "copy a random member's Ultimate" lives on in Mew's Metronome.
+
+**Auto-Ultimate** (a setting): off by default. On, it casts as soon as the meter is full with a foe within 480 px (`AUTO_R`).
+U toggles it, so does the AUTO chip under the button (touch or mouse) and the pause screen's "Auto-Ultimate: On / Off"
+button (the pad's way to it). It is kept in the **Expedition save** as two Lamport counters, `ult.auto.on` and
+`ult.auto.off` (a switch sets its own to max(both) + 1): the save's max merge then keeps the latest switch on every device.
+
+**Determinism and viewers:** the charge is pure (time, kills, damage taken); Mew's copies come from `G.DLC.rng` (the world
+seed + the cast count); the choreographies' flourishes use `Math.random`, as the base Z-move and combat do.
+- **The `x` block v6** `{xv: 6, m, z, th, a, c, l, u, w}`: `w` holds the Ultimate rows `[charge %, pieces cast, piece code,
+  tier, flags (1 casting, 2 auto), the cast's code]` (a signature's code is its member's dex, a type Ultimate's 2000 + its
+  index in `G.ZMoves.ORDER`). `w.p` is the watched (or sending) player's, `w.q` the co-op players' (by uid in host frames,
+  by name in snapshots).
+- A viewer's puppet (a co-op partner, a live spectator's or a replay's watched player) shows the meter on its HUD button;
+  when the casting flag rises it gets the cut-in, and each time the piece count goes up it plays that piece as a
+  **ghost** (the same choreography, no damage, no heal, no move). The count makes a missed frame harmless (and relay mode's
+  1 Hz frames still see a 3-4 s cast). A live view shows the snapshot before the newest, so a spectator sees it about
+  a second late, as everything else.
+- **The replay** keeps `w` in a frame field of its own (field 8, only when it changes: the charge moves every second) and
+  records an `xu` event when a cast starts (the plan's "xu Ultimate cast").
+- The v1-v5 readers are kept: a block without `w` shows no Ultimate.
+- **Versions:** `G.Expedition.DV` is now **5**. dv-1 to dv-4 replays and snapshots still play without a notice; a co-op
+  lobby needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; max per counter): `ult.casts`, `ult.best` (most in a run),
+`ult.sig` (signature casts) and the auto setting's `ult.auto.on` / `ult.auto.off`. The run-over screen adds a line
+("Ultimates: 3 (Furious Seed, Petal Storm)"). **No server change:** the server already takes any counter.
+
+**Assets:** none new. The cut-in uses the member's own sprite sheet, the button the type's Z-crystal icon, and everything
+else is drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on `G.World.zone` / a field only
+Expedition code sets):
+- `core/hooks.js`: 2 new seams, `enemy.ko` (an enemy of this page's sim has fallen) and `run.hold` (an Expedition run
+  only: true holds the world this frame).
+- `entities/enemy.js`: the `enemy.ko` call. `game.js`: `run.hold` and the overlay's two draw calls (the dim under the HUD,
+  the cut-in over it), all behind `isExp()` / `G.World.zone`.
+- `systems/zmoves.js`: `effect(pl, type)` (an export); no Z-move and no Z button in an Expedition zone.
+- `ui/hud.js`: the Ultimate button (and the Z button's rect) in a zone. `core/pad.js`: the Z-move buttons cast the
+  Ultimate in a zone. `entities/player.js`: no blinking during a cast (`xult`). `mica/spectate.js`: no Z-move chip in a
+  zone. `mica/replay.js`: field 8 and the `xu` event (a base snapshot has no `x.w`: its frames don't change).
+- `systems/expedition.js`: `DV` 5, `ultimates.js`. `expedition/core.js`: `x` v6 and the hooks; `classic.js`: the altar
+  arrow keeps clear of the right-hand column without touch too (the Ultimate's button is always there now);
+  `terrain.js`: `XV`.
+
+**Not yet:**
+- Soul Dew / Lunar Blessing and other charge or Ultimate-damage items (`pl.xultCharge`, `pl.xultDmg` are ready);
+- the run's damage breakdown files Ultimate damage under the base "Z-move" row (`DmgLog`'s `z` key);
+- a co-op guest's own Ultimate (a guest's run isn't an Expedition one yet: D11); the frames already carry its row both ways;
+- more signatures (D13+), and Mega Evolution's own (D4c / 1.0).
+
 ## Tests
 
 - `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs` (DLC D0a): the golden runs of every base
@@ -2065,6 +2187,16 @@ sets):
   determinism (no `Math.random` in deals or drops), the `x` block v5 for a co-op guest, live spectator and replay viewer
   (and a v4 block); a base Normal run in the same page; the desktop and phone layouts. `SHOTS=<dir>` saves a level-up
   choice, a rarity spread and the bag (strip and pause panel) at both sizes.
+- `node overworld/tests/micasurvivor_expedition_ultimates_test.mjs` (DLC D6), fast-forwarded with `G.Game.debugStep`: the
+  server merging the auto setting's counters (the later switch wins); each charge source's rate (95 s passive, the kill
+  bucket, elite / alpha / boss, damage taken), also through the real `enemy.ko` and `player.hurt` seams, and none while casting;
+  the cast by Z, R and the pad's Z-move / Y / RT buttons (a synthetic gamepad), the 0.32 s hit-stop, i-frames for the cast +
+  0.6 s (also after `invuln` is zeroed), the damage; the cut-in drawn with its name; all 18 type Ultimates hurting foes and a
+  Caterpie run casting bug's; the 16 signatures, Charmander's tiers (names, beats, damage) and Mew's seeded copies; the auto
+  setting (U, the pause button, the save, a merge; casting with a foe near, not without); the `x` block v6 for a co-op guest,
+  live spectator and replay viewer (cut-in and ghost choreography; the `xu` event; a v5 block); a base Normal run in the same
+  page; the desktop and phone layouts (on screen, no overlap; a click / tap on the button and the AUTO chip). `SHOTS=<dir>`
+  saves a cut-in, a signature and a type Ultimate going off and the meter at both sizes.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.
