@@ -4,7 +4,7 @@
 // mod upgrade renamed / removed stay loadable (micatro/js/mods/aliases.js).
 //   0. server: micatro-replay-put keeps the meta's modVersions / engineRev / pinAssumed (allow-listed,
 //      size-capped, malformed entries dropped) and refuses a recipe whose pins are malformed
-//   1. recorded: a new Pokermon run's save carries {pokermon: '3.9.1+r16'} + engineRev; its finished replay
+//   1. recorded: a new Pokermon run's save carries {pokermon: '3.9.1+r17'} + engineRev; its finished replay
 //      does too — locally (micatro_replays_v1) and uploaded (micatro-replay-put, the code + the meta)
 //   2. resume after a mod upgrade (recorded on Pokermon 3.2.1, now 3.9.1 rev 16): the prompt names the
 //      mod and both versions; "Continue anyway" resumes re-pinned (old pins kept, a backup kept, no second
@@ -66,7 +66,7 @@ const poke = playRun({ seed: 'PINPOKE', back: 'b_red', stake: 1, mods: ['pokermo
 const van = playRun({ seed: 'PINVAN', back: 'b_blue', stake: 1 }, { seed: 2, maxSteps: 260, weak: true });
 if (!poke.session.over || !van.session.over) throw new Error('the fixture runs must end');
 const OLD = { pokermon: '3.2.1' };                    // recorded on Pokermon 3.2.1 before contentRev 1 (the 2026-10-18/19 house rules)
-const CUR = '3.9.1+r16';                              // Pokermon 3.9.1, the leftovers batch (r15 was batch 17)
+const CUR = '3.9.1+r17';                              // Pokermon 3.9.1, the leftovers batch (r16 the seals fix, r15 batch 17)
 const part = (run, n) => ({ ...strip(run.recipe), actions: run.recipe.actions.slice(0, n) });
 const savedOld = { ...part(poke, 5), modVersions: OLD, engineRev: 1 };            // a save on the old Pokermon rules
 const savedLegacy = part(van, 5);                                                 // a save from before pins

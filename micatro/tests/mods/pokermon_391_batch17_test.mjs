@@ -71,7 +71,7 @@ const onDeckTop = (k, center) => {
 
 // ------------------------------------------------------------------- the overlay
 sec('overlay', () => {
-  ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 15 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon 3.9.1, contentRev 15+ (pin 3.9.1+r15 since batch 17; r16 the leftovers batch)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 15 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon 3.9.1, contentRev 15+ (pin 3.9.1+r15+; 16 = the seals fix)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   const n17 = Object.entries(D391.new_jokers).filter(([, v]) => v.sub_batch === '17').map(([n]) => n);
   ok(n17.slice().sort().join() === NEW.slice().sort().join(), 'data391.js new_jokers "17": the 6 non-Pokédex + 3 April Fools jokers', n17);

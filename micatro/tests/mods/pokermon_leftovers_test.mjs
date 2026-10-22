@@ -32,7 +32,7 @@ const POCKETS = ['p_poke_pokepack_normal_1', 'p_poke_pokepack_normal_2', 'p_poke
   'p_poke_pokepack_normal_3', 'p_poke_pokepack_normal_4', 'p_poke_pokepack_jumbo_2', 'p_poke_pokepack_mega_2'];
 
 // ------------------------------------------------------------------ the pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 16 && PINS.modPin('pokermon') === '3.9.1+r16',
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev >= 16 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev,
   'Pokermon 3.9.1, contentRev 16 (the leftovers batch: pin 3.9.1+r16)', [MODS.pokermon.contentRev, safe(() => PINS.modPin('pokermon'))]);
 
 // ------------------------------------------------------------------ 1. the Pocket Packs
