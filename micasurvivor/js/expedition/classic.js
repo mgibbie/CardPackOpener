@@ -398,6 +398,7 @@ G.ExpClassic = (() => {
     if (xm && xm.xp > 0) e.xp = Math.round(e.xp * (1 + xm.xp));
     if (o.scale) setScale(e, o.scale);
     if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: K.TOTEM.every, rng: R(mix(S.seed, e.id, 0x70)) }); }
+    if (o.kind === 'alpha' && G.ExpCap) G.ExpCap.mark(e, 'alpha');   // (D8: an alpha faints at 1 HP: the Friend Ball's window)
     G.EnemyMgr.add(e);
     return e;
   }
@@ -528,9 +529,11 @@ G.ExpClassic = (() => {
     for (const [id, s] of S.specials) {
       const e = s.e;
       if (e.dead) {
-        if (s.kind === 'alpha') {   // (D8: weaken it and throw a Friend Ball instead; here it drops its prize)
-          G.Pickups.drop('item', e.x - 20, e.y, G.Items.roll());
-          G.Pickups.drop('heal', e.x + 20, e.y, 0);
+        if (s.kind === 'alpha') {   // (D8: it faints; a Friend Ball makes it a Support Alpha, and it drops its prize only if you leave it)
+          if (!(G.ExpCap && G.ExpCap.alphaDown(e))) {
+            G.Pickups.drop('item', e.x - 20, e.y, G.Items.roll());
+            G.Pickups.drop('heal', e.x + 20, e.y, 0);
+          }
         } else if (s.kind === 'totem' || s.kind === 'summoner') G.Pickups.drop('heal', e.x, e.y, 0);
         S.specials.delete(id);
         continue;
@@ -619,6 +622,8 @@ G.ExpClassic = (() => {
     if (G.ExpMoves) G.ExpMoves.draw(ctx);   // (D5: the new archetypes' shells, vortexes, waves; the items' rifts)
     if (G.ExpItems) G.ExpItems.draw(ctx);
     if (G.ExpEco) G.ExpEco.drawGround(ctx);   // (D7: the interactables)
+    if (G.ExpRx) G.ExpRx.drawGround(ctx);     // (D8: wet and chilled foes)
+    if (G.ExpCap) G.ExpCap.drawGround(ctx);   // (D8: the League / shiny encounters' auras)
     const c = cur(), z = G.World.zone, si = c && sitesOf(z);
     if (!si) return;
     const now = performance.now() / 1000, [x, y] = siteXY(si.altar), cam = G.Camera;
@@ -729,6 +734,7 @@ G.ExpClassic = (() => {
   /** Over the HUD: an arrow to the altar / portal / shrine when it is off screen, and the boss's exhaustion. */
   function drawHud(ctx, w, h, pl, st, F, mark) {
     if (G.ExpEco) G.ExpEco.drawHud(ctx, w, h, pl, F, mark);   // (D7: the interactables' labels and the tips)
+    if (G.ExpCap) G.ExpCap.drawHud(ctx, w, h, pl, F, mark);   // (D8: the Support Alphas' chips, the encounters' labels and arrows)
     const c = cur(), si = c && sitesOf(G.World.zone);
     if (!si || !pl) return;
     const k = G.HUD ? G.HUD.k : 1, cam = G.Camera, now = performance.now() / 1000;
@@ -753,6 +759,9 @@ G.ExpClassic = (() => {
     // (D7: and clear of a first-run tip's box, under it)
     const tb = G.ExpEco && G.ExpEco.tipRect();
     if (tb && ex - 30 < tb.x + tb.w && ex + 30 > tb.x && ey + 30 > tb.y && ey - 30 < tb.y + tb.h) ey = tb.y + tb.h + 34;
+    // (D8: and clear of the Support Alphas' chips, to their right)
+    const sr = G.ExpCap && G.ExpCap.hudRect;
+    if (sr && ex - 30 < sr.x + sr.w && ex + 30 > sr.x && ey + 30 > sr.y && ey - 30 < sr.y + sr.h) ex = sr.x + sr.w + 36;
     const a = Math.atan2(sy - ey, sx - ex);
     if (mark) mark('xarrow', ex - 30, ey - 30, 60, 60);
     const col = c.ph === 2 ? '#b48aff' : si.shrine ? '#ff9ed8' : '#ffd95e', beat = 0.5 + Math.sin(now * 6) * 0.5;

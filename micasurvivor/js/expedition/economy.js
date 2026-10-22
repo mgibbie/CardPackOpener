@@ -132,7 +132,11 @@ G.ExpEco = (() => {
     rock: 'Roca dorada: tócala para romperla y ganar ₽.',
     berry: 'Arbusto de bayas: cura la mitad de tu vida.',
     cage: 'Jaula: paga ₽ para liberar al Pokémon y ganar experiencia.',
-    map: 'Pulsa M (o toca el minimapa) para ver el mapa de la zona.'
+    map: 'Pulsa M (o toca el minimapa) para ver el mapa de la zona.',
+    // (D8, js/expedition/capture.js: their English is in its G.ExpEN)
+    alpha: 'Alfa: debilítalo hasta que se desmaye y quédate a su lado: tu Amigo Ball lo une a tu equipo.',
+    league: 'Encuentro de la Liga: debilítalo y quédate a su lado para capturarlo. Huye si tardas.',
+    shiny: 'Variocolor: no ataca, pero huye pronto. Debilítalo y captúralo.'
   };
   const TIP_OF = { unown2: 'unown1', unown3: 'unown1' };   // (the rare / epic altars share the Unown tip; the golden one has its own)
   const COL = { ball: '#ff4d5e', freeball: '#eef3ff', cursedball: '#a35cff', great: '#4f9cf0', meowth: '#ffd23f', unown1: '#b9c4d4', unown2: '#5fd07a',
@@ -549,7 +553,7 @@ G.ExpEco = (() => {
   function openPick(o) {
     if (typeof document === 'undefined' || !pickEl) mountUI();
     if (!pickEl) return;
-    if (!o.vit && o.kind !== 'shop' && !(o.ids || []).length) { const pl = G.Game.player; if (pl) pl.heal(pl.maxHp * 0.2); return; }   // (every item capped: a heal, as D5's pickups)
+    if (!o.vit && !o.cards && o.kind !== 'shop' && !(o.ids || []).length) { const pl = G.Game.player; if (pl) pl.heal(pl.maxHp * 0.2); return; }   // (every item capped: a heal, as D5's pickups)
     pick = Object.assign({ left: o.picks || 1, at: performance.now(), taken: [] }, o);
     G.Game.choiceStart();
     if (G.Coop && G.Coop.active) G.Coop.holdStart();
@@ -563,6 +567,7 @@ G.ExpEco = (() => {
     if (pickEl) pickEl.classList.add('hidden');
     if (silent) return;
     if (was.kind === 'hypno' && S && S.z) { /* Hypno stays until you forget one */ }
+    if (was.cards && !was.done && was.onCancel) was.onCancel();   // (D8: Leave / Keep on a screen of its own cards)
     if (G.Coop && G.Coop.active) G.Coop.holdEnd();
     G.Game.choiceEnd();
   }
@@ -576,7 +581,13 @@ G.ExpEco = (() => {
     pickEl.querySelector('#xeco-sub').textContent = sub;
     const box = pickEl.querySelector('#xeco-cards');
     let html = '';
-    if (P.vit) {
+    if (P.cards) {   // (D8: cards of their own, e.g. the Friend Ball's "swap whom?": {nm, ds, icon, dex, rar})
+      P.cards.forEach((c, k) => {
+        html += `<div class="card rar rar-${(c.rar | 0) + 1}" data-i="${k}"><div class="ico">${c.icon ? `<img class="ico-item" src="${esc(c.icon)}" alt="">` : ''}</div>
+          <div class="txt"><div class="nm">${esc(c.nm)}</div><div class="ds">${esc(c.ds || '')}</div></div>
+          <div class="key"><span class="key-k">${k + 1}</span>${G.Pad.glyphHTML('confirm', 22)}</div></div>`;
+      });
+    } else if (P.vit) {
       P.vit.forEach((id, k) => {
         const d = I.VIT[id], x = pl.xv.find(v => v.id === id);
         if (!d || !x) return;
@@ -607,6 +618,7 @@ G.ExpEco = (() => {
   function choose(k) {
     const P = pick, pl = G.Game.player;
     if (!P || !pl || performance.now() - P.at < 380) return false;   // (no accidental pick: the A that walked you in)
+    if (P.cards) { if (!P.cards[k]) return false; G.Audio.sfx('select'); P.done = true; closePick(); if (P.onPick) P.onPick(k); return true; }   // (D8)
     if (P.vit) {
       const id = P.vit[k];
       if (!id || !forget(pl, id)) return false;
@@ -1137,7 +1149,7 @@ body.touch #xtip { top: 78px; font-size: 12px; max-width: min(360px, 40vw); padd
   return {
     K, KINDS, NAME, TIP, FRESH, USED, ACTIVE, GONE, READY,
     layoutOf, visitAt, ballCost, allowance, heatOf, heatMul, price, cageCost, rollOffers, shopPrices,
-    begin, reset, mods, earn, spend, onKill, tick, buy, forget, choose, openPick, closePick, openMap, closeMap,
+    begin, reset, mods, earn, spend, onKill, tick, buy, forget, choose, openPick, closePick, openMap, closeMap, tipOnce,
     oBlock, applyO, cur, drawGround, drawHud, tipRect, drawMini, mini, reveal, explored, found, record, syncPause,
     get run() { return S; }, get view() { return view; }, get pick() { return pick; }, get mapOpen() { return mapOpen; }, get mapInfo() { return mapInfo; },
     get fog() { return fog; }, get tip() { return tipNow ? tipNow.id : null; }, get tips() { return S ? S.tipLog.slice() : []; }, get miniDrawn() { return miniDrawn; }, get miniRect() { return miniRect; },

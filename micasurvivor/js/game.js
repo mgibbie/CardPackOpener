@@ -892,6 +892,7 @@ G.Game = (() => {
     for (const p of G.World.visibleProps(cam)) items.push({ y: p.flat ? p.y - 4000 : p.y, prop: p });
     for (const e of G.EnemyMgr.drawables(cam)) items.push({ y: e.y, ent: e });
     for (const e of extra) items.push({ y: e.y, ent: e });
+    if (G.World.zone && G.ExpCap) for (const d of G.ExpCap.drawables(cam)) items.push({ y: d.y, ent: d });   // MicaSurvivor (DLC D8): Support Alphas, fainted Pokémon, the capture's ball
     const rift = G.Rift.drawable();
     if (rift) items.push({ y: rift.y, ent: rift });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;

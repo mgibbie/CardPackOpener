@@ -8,9 +8,10 @@
  *
  *   the League   78 members built in D4 (each a family, starting at its first stage); 170 stubs wait for D4b / D4c / D4d.
  *                Free: the starter trios (owner: "the starter trios free, as in PokéBonk"). Every other member has a
- *                CHALLENGE (counters in the Expedition save); a completed one is "met" (set league.met). In D4 a met
- *                member plays at once (K.PLAY_MET); D8 brings the catch (the wild encounter you weaken and catch), which
- *                will add it to league.own instead. Nothing here ever takes a member away (the save only merges up).
+ *                CHALLENGE (counters in the Expedition save); a completed one is "met" (set league.met). D8: from then on a
+ *                met member is also "wild" (set league.wild) until you catch it in a run (js/expedition/capture.js: the
+ *                "wild X appeared!" encounter you weaken and catch), which adds it to league.own. Members met in D4 (met,
+ *                never wild) were playing at once and still do (K.PLAY_MET): nothing here ever takes a member away.
  *   the pick     the member you start Classic with (this device: localStorage micasurvivorexp_pick; G.Modes.plan reads
  *                pickFor()). A locked pick falls back to Bulbasaur.
  *   stats        from the stage's real base stats (study 2.1, rescaled to MicaSurvivor's units: K): HP = 70 + 0.45 hp;
@@ -55,7 +56,9 @@ G.I18n.add({
   'Movimiento del kit: {x} ({x}/4)': 'Kit move: {x} ({x}/4)', 'Elige su evolución': 'Choose its evolution',
   '{x} · Vida {x} → {x}': '{x} · HP {x} → {x}', '¿En qué evoluciona {x}?': 'What does {x} evolve into?',
   'Liga: {x}': 'League: {x}', '¡Nuevo miembro de la Liga: {x}!': 'New League member: {x}!', 'madurez {x}': 'Maturity {x}',
-  'Ya disponible': 'Available now', 'Empieza con él': 'Start with it'
+  'Ya disponible': 'Available now', 'Empieza con él': 'Start with it',
+  '¡Reto cumplido: {x}! Atrápalo en tu próxima partida': 'Challenge complete: {x}! Catch it in your next run',
+  'Cumplido: atrápalo en tu próxima partida': 'Done: catch it in your next run', '¡A capturar!': 'To catch!', 'Variocolor': 'Shiny'
 });
 
 G.ExpLeague = (() => {
@@ -70,7 +73,8 @@ G.ExpLeague = (() => {
     ATK0: 1.1, ATK_A: 0.82, ATK_B: 0.2,    // attack = 1.1 x (0.82 + 0.2 stat / 100): 1.045 at 65, the base game's 1.06
     EVO_FLOOR: 0.5, EVO_HEAL: 0.3,  // evolving: HP to at least 50 %, then +30 % of max
     ROLE: { healer: { regen: 0.6 }, assault: { atk: 0.08 }, defender: { taken: 0.06 }, speedster: { spd: 0.06 } },
-    PLAY_MET: true,                // D4: a completed challenge plays at once (D8: it brings the wild encounter instead)
+    PLAY_MET: true,                // D4: a completed challenge played at once. D8: those members stay playable (met, never wild)
+    CATCH: true,                   // D8: a challenge completed from now on is wild (league.wild) until caught in a run (league.own)
     DEFAULT: 1,                    // Bulbasaur
     PICK_KEY: 'micasurvivorexp_pick'
   };
@@ -116,7 +120,9 @@ G.ExpLeague = (() => {
   const free = d => !!BY[d] && !BY[d].ch;
   const own = d => free(d) || Sv().has('league.own', d);
   const met = d => Sv().has('league.met', d);
-  const playable = d => !!BY[d] && (own(d) || (K.PLAY_MET && met(d)));
+  /** D8: met from D8 on and not caught yet (its wild encounter comes in your next run). */
+  const wild = d => met(d) && Sv().has('league.wild', d) && !own(d);
+  const playable = d => !!BY[d] && (own(d) || (K.PLAY_MET && met(d) && !Sv().has('league.wild', d)));
   const roster = () => ids().filter(playable);
   /** The counters a challenge reads. */
   function counter(k, t) {
@@ -161,7 +167,7 @@ G.ExpLeague = (() => {
     // (two passes: "have N League members" can be completed by the first pass's new members)
     for (let pass = 0; pass < 2; pass++) for (const m of D.members) {
       if (!m.ch || met(m.dex) || Sv().has('league.own', m.dex)) continue;
-      if (progress(m.ch).done && Sv().add('league.met', m.dex)) out.push(m.dex);
+      if (progress(m.ch).done && Sv().add('league.met', m.dex)) { out.push(m.dex); if (K.CATCH) Sv().add('league.wild', m.dex); }
     }
     return out;
   }
@@ -224,7 +230,9 @@ G.ExpLeague = (() => {
     S = { member: d, form: d, kit: 0, mat: 0, evo: 0, done: 1, pending: null, note: [], st: null, role: m.role,
           ability: G.Abilities.of(finalsOf(m)[0]), log: [] };
     const hp0 = pl.mon.hp;   // (the base stat the player was built with: its bonuses are kept)
-    if (pl.dex !== d) body(pl, d);
+    const sh = Sv().has('league.shiny', d) && G.Sprites.hasShiny(d);   // (D8: a shiny of this family caught: it plays shiny, cosmetic)
+    if (sh) pl.shiny = true;
+    if (pl.dex !== d || sh) body(pl, d);
     applyStats(pl, d, null, hp0);
     // the role (a small stat mod) and the ability (one of the 54), the member's for the whole run
     const r = K.ROLE[m.role] || {};
@@ -357,7 +365,7 @@ G.ExpLeague = (() => {
   function lines(newly) {
     if (!S) return [];
     const out = [T.f('Liga: {x}', name(S.member) + (S.form !== S.member ? ' → ' + name(S.form) : '') + (S.mat ? ' · ' + T.f('madurez {x}', S.mat) : ''))];
-    for (const d of newly || []) out.push(T.f('¡Nuevo miembro de la Liga: {x}!', name(d)));
+    for (const d of newly || []) out.push(Sv().has('league.wild', d) ? T.f('¡Reto cumplido: {x}! Atrápalo en tu próxima partida', name(d)) : T.f('¡Nuevo miembro de la Liga: {x}!', name(d)));
     return out;
   }
 
@@ -374,7 +382,7 @@ G.ExpLeague = (() => {
     const kit = m.kit.map((id, i) => `<li><span class="lg-lv">${T.f('Nv. {x}', K.KIT_AT[i])}</span> ${G.Icons.html('move:' + id, 18)} <span>${esc(T.t(G.Moves.BY_ID[id].name))}</span></li>`).join('');
     const ch = !m.ch ? `<span class="lg-free">${T.t('Gratis')}</span>`
       : pr.parts.map(p => `<div class="lg-ch${p.have >= p.need ? ' done' : ''}"><span>${esc(p.text)}</span> <b>${p.have} / ${p.need}</b></div>`).join('')
-        + (pr.done ? `<div class="lg-ok">${T.t('Cumplido: ya puedes jugarlo')}</div>` : '');
+        + (pr.done ? `<div class="lg-ok">${T.t(wild(m.dex) ? 'Cumplido: atrápalo en tu próxima partida' : 'Cumplido: ya puedes jugarlo')}</div>` : '');
     box.innerHTML = `
       <div class="row between lg-head"><h3 id="league-count">${esc(T.f('Liga: {x} / {x} disponibles', have.length, list.length))}</h3><button id="league-back" class="btn small">${T.t('Atrás')}</button></div>
       <div class="lg-wrap">
@@ -400,7 +408,7 @@ G.ExpLeague = (() => {
       cell.dataset.dex = d;
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(d).padStart(3, '0')}</span>` + (d === cur ? `<span class="badge-r">${G.Icons.html('crown', 14)}</span>` : ''));
       cell.appendChild(G.UI.spriteCanvas(d, 80, 64, { scale: 2, shadow: can, silhouette: !can }));
-      cell.insertAdjacentHTML('beforeend', `<b>${esc(name(d))}</b><small class="lg-cr" style="color:${RANK_COL[M.rank]}">${T.t(can ? (M.ch ? '¡Disponible!' : RANK_NAME[M.rank]) : RANK_NAME[M.rank])}</small>`);
+      cell.insertAdjacentHTML('beforeend', `<b>${esc(name(d))}</b><small class="lg-cr" style="color:${RANK_COL[M.rank]}">${T.t(can ? (M.ch ? '¡Disponible!' : RANK_NAME[M.rank]) : wild(d) ? '¡A capturar!' : RANK_NAME[M.rank])}</small>`);
       cell.onclick = () => {
         // one tap shows it; a tap on the shown one (or "Start with it") picks it
         if (sel === d && can) { choose(d); return; }
@@ -427,7 +435,7 @@ G.ExpLeague = (() => {
 
   return {
     K, D, BY, FAM, PHYS, STATUS, stagesOf, finalsOf, nextOf, evoLevel, statsOf, classOf, factorOf,
-    free, own, met, playable, roster, progress, checkChallenges, counter, chText, readPick, setPick, pickFor,
+    free, own, met, wild, playable, roster, progress, checkChallenges, counter, chText, readPick, setPick, pickFor,
     begin, reset, process, evolve, offerHook, cardsHook, row, applyRow, record, lines, renderPicker, select,
     get run() { return S; }, get on() { return !!S && G.Modes.isExp(); }
   };

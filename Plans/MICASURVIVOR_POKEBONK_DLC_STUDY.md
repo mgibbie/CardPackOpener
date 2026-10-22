@@ -879,7 +879,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D5. Level-ups and items** — **BUILT 2026-10-21** (`js/expedition/levelups.js`, `items.js`, `moves.js`, `overworld/tests/micasurvivor_expedition_levelups_test.mjs`, README "DLC D5: level-ups and items"; see the update below) | 5-rarity luck-gated cards, move levels to 8 with archetype stat rolls, 8 new archetypes, 21 vitamins + slots, Refresh/Skip/Banish; ~60 items with caps and additive same-stat stacking | D4 |
 | **D6. Ultimates** — **BUILT 2026-10-22** (`js/expedition/ultimates.js`, `overworld/tests/micasurvivor_expedition_ultimates_test.mjs`, README "DLC D6: Ultimates"; see the update below) | Charge meter (95 s passive, kill bucket, elite/alpha/boss, hurt), cast i-frames, cut-in; type Ultimates from Z-move effects; 16 signature Ultimates by evolution tier; auto-Ultimate setting | D4 |
 | **D7. Economy and interactables** — **BUILT 2026-10-22** (`js/expedition/economy.js`, `overworld/tests/micasurvivor_expedition_economy_test.mjs`, README "DLC D7: economy and interactables"; see the update below) | ₽ drops, paid/free/cursed Poké Balls, Meowth with market heat, Unown altars ×4 tiers + comet, challenge/cursed/greed altars, Ditto, Hypno, gold rocks, berries, cage; minimap legend, fog of war; first-run tips | D5 |
-| **D8. Alphas, capture and shinies** | Alphas, faint window, Friend Ball, Support Alphas (2/3 slots) with type perks; League encounters (challenge → appear → weaken → catch); shiny encounters; capture cinematic; elemental reactions + weather boosts | D7 |
+| **D8. Alphas, capture and shinies** — **BUILT 2026-10-22** (`js/expedition/capture.js`, `reactions.js`, `overworld/tests/micasurvivor_expedition_capture_test.mjs`, README "DLC D8: Alphas, capture and shinies"; see the update below) | Alphas, faint window, Friend Ball, Support Alphas (2/3 slots) with type perks; League encounters (challenge → appear → weaken → catch); shiny encounters; capture cinematic; elemental reactions + weather boosts | D7 |
 | **D9. Tiers, score and boards** | Normal/Hard/Nightmare tables, tier unlocks per map, score formula, time-attack medals, DLC boards and the board UI; weekly season view (cosmetic prizes only) | D3 |
 | **D10. League meta** | DLC currency, Lab (~15 upgrades), item unlocks by counter goals, Archive, research → avatars and frames, DLC daily/weekly tasks, ~30 achievements, shiny perks | D8 |
 | **D11. Survival and MP hardening** | Endless mode (milestones, phases, pacts, siege, night, migration, hazards); full online co-op pass on DLC state, relay budget check, replay size check against 1.2 MB, spectator rendering | D9, D10 |
@@ -1294,3 +1294,46 @@ Built (`micasurvivor/README.md`, "DLC D7: economy and interactables"). Choices a
   - The `x` block's next field should be `p` or similar, bumping `xv` to 8 and keeping the v7 reader.
 - **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so does
   the force-loaded run.
+
+### Update (2026-10-22): D8 built, "alphas, capture and shinies"
+Built (`micasurvivor/README.md`, "DLC D8: Alphas, capture and shinies"). Choices and notes for later batches:
+- **Where it lives:** `js/expedition/capture.js` (`G.ExpCap`: alphas, the faint window, the Friend Ball, Support Alphas, League
+  encounters, shinies, the cinematic) and `js/expedition/reactions.js` (`G.ExpRx`: elemental reactions, weather boosts); numbers
+  in their `K`.
+- **The D4 unlock decision:** owner decision #3 ("League roster only, earned via challenges + capture") wins: a challenge completed
+  from D8 on adds the member to `league.met` **and** `league.wild`, and it plays only once caught (`league.own`). Members met in D4
+  (met, never wild) keep playing (`K.PLAY_MET`), so nothing leaves a save. No migration: the rule reads the sets as they are.
+- **Alphas:** at 1 HP they faint (`hpFloor`); an 8 s window; stand in its circle (no interact key) and a Friend Ball goes. Left
+  alone, D3's prize. 2 Support Alpha slots (+1 from the Lab: the counter `lab.support`); a full team asks whom to swap through
+  D7's choice screen (`openPick` now takes cards of its own). Each follows you and shoots its type (9 x (1 + 0.06 x (level - 1)) x
+  your attack every 1.25 s, to the "Partner / team" row) and gives a type perk added to D5's `total()` (Fire +15 % status, Rock +15
+  HP, Fairy +8 luck, as the study; the other 15 ours).
+- **League encounters:** up to 3 wild members a run, one a zone, 50-120 s in (seeded); HP an alpha's x9 x 0.8 / 1.2 / 1.6 / 5 by
+  rank; a 12 s window; caught, `league.own` is saved at once; it flees after 150 s (legendaries 240 s) and comes back next run.
+- **Shinies:** 8 % a zone + luck / 1,000, x1.5 with the Shiny Charm item; a zone card with a shiny sheet, x4 HP, roams and never
+  attacks, flees after 120 s (150 s). Caught: `shiny.caught`, and `league.shiny` when it's a League family's (that member then
+  plays shiny). Never the base save.
+- **The cinematic:** 3.2 s (throw, absorb, drop, 3 shakes with pips, click) under `run.hold`, then 1 s of i-frames; a banner over the
+  HUD clear of the move bar and the tip box. Every catch succeeds (no break-out roll).
+- **Reactions** (through `combat.out`, 0.25 s cool-down per foe): Electrocuted x1.5 + chain (12, 9 m, para 60 %), Steam x1.4 +
+  confuse / root, Inferno spreads burn, Wreckage x2.6, Poison Gas x1.3 + cloud, Psychic Meltdown x1.6, Dragon Rage x1.8; wet (4 s)
+  and chill (3 stacks, 1 on wet: freeze 1.6 s). The study's metres halved (D7's rule). **Weather:** Sun boosts Grass and Fog
+  boosts Dark x1.3 (the study's, missing from the base weather); a Pokémon the weather favours does +10 % on every hit.
+- **Sync:** the `x` block v8 adds `p` (Support Alphas, encounters, fainted Pokémon, the capture under way with a seq, a capture
+  count; `h` the host's uid in host frames). Viewers draw the allies in formation and play the cinematic on their own clock; the
+  replay keeps `p` in its slow state and records `xc` events. v1-v7 still read; `G.Expedition.DV` is 7.
+- **Saved:** sets `league.wild`, `league.own`, `shiny.caught`, `league.shiny`, `sa.types`; counters `cap.alpha`, `cap.league`,
+  `cap.shiny`, `cap.fled`, `shiny.seen`, `sa.best`, `rx.<name>`, `rx.total`. No server change.
+- **Assets:** none new (the overworld's ball pictures, the PMD and shiny sheets; the rest drawn in code).
+- **For D9:**
+  - the tiers can scale the encounters through `G.ExpEco.mods()` (they spawn through `G.ExpClassic.spawnFoe`, which applies it)
+    or `G.ExpCap.K` (`LG_HP`, `SH_HP`, the windows); the score formula (study 2.12) has no capture term: a "+N per catch" would read
+    `G.ExpCap.run.n` / `log`;
+  - the board needs nothing new; the run-over lines already list the catches.
+- **For D10:** the Lab's Support team raises `lab.support` (the third slot is read already); shiny perks can count `cap.shiny` /
+  `shiny.caught` (and make the Shiny Charm a meta perk: `zonePlan`'s `charm`); Honey / Dawn Stone / Master Ball boosts go in
+  `zonePlan`'s options (an extra alpha, a forced shiny) and a capture roll; tasks and achievements can read `cap.*` and `rx.*`.
+- **For D11:** a co-op guest's own Support Alphas and captures (its run isn't an Expedition one yet); the allies' shots and the
+  reactions' pop-ups aren't streamed to viewers (only the damage numbers).
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so does the
+  force-loaded run.

@@ -449,6 +449,7 @@ G.ExpUlt = (() => {
   let cutDrawn = 0, cutLast = null;
   /** The cut-in (study 2.4's portrait cut-in): a slanted band in the type's colour, the caster's sprite, the name. */
   function drawCut(ctx, w, h) {
+    if (G.ExpCap) G.ExpCap.drawOver(ctx, w, h);   // (D8: the capture cinematic's banner, the host's and a viewer's)
     const c = cutNow();
     if (!c || !c.p) return;
     const u = c.t / K.CUT_T, inn = easeOut(G.U.clamp(c.t / 0.18, 0, 1)), out = G.U.clamp((K.CUT_T - c.t) / 0.22, 0, 1), al = Math.min(1, inn * 1.2) * out;

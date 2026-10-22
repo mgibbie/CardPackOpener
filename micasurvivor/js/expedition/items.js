@@ -183,6 +183,7 @@ G.ExpItems = (() => {
     for (const x of pl.xv) if (VIT[x.id].stat === s) v += x.v;
     for (const id in pl.xi) { const st = IT[id] && IT[id].stats[s]; if (st) v += st * pl.xi[id]; }
     if (s === 'dmg') v += pl.xtr.dmg;
+    if (G.ExpCap) v += G.ExpCap.perk(pl, s);   // (D8: the Support Alphas' type perks add like any same-stat bonus)
     if (s === 'hp') v += pl.xtr.hp;
     if (s === 'xp' || s === 'coin') v += total(pl, 'curse') * K.CURSE_XP;
     if (s === 'armor' && pl.xi.eviolite && G.ExpLeague && G.ExpLeague.run) {

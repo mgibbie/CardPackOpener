@@ -104,6 +104,9 @@ G.Replay = (() => {
       // (DLC D7: an Expedition interactable used, the `xi` event: the x block's `o.n` count rising; a base snapshot has no x.o)
       const xo = s.x && s.x.o, po = p.x && p.x.o;
       if (xo && (xo.n | 0) > ((po && po.n) | 0)) ev.push([s.t, 'xi', xo.u | 0]);
+      // (DLC D8: an Expedition capture, the `xc` event: the x block's `p.n` count rising, with the Pokémon caught; a base snapshot has no x.p)
+      const xp = s.x && s.x.p, pp = p.x && p.x.p;
+      if (xp && (xp.n | 0) > ((pp && pp.n) | 0)) ev.push([s.t, 'xc', xp.u | 0]);
       if ((s.p[6] & 4) && !(p.p[6] & 4)) ev.push([s.t, 'dx']);
       if ((s.p[6] & 1) && !(p.p[6] & 1)) ev.push([s.t, 'dd']);
       if (s.b !== p.b) ev.push([s.t, 'bi', s.b]);

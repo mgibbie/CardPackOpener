@@ -190,7 +190,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const r0 = await startClassic(page);
-	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 6 && r0.on && r0.coins === 0, 'Classic starts with the economy on and 0 ₽; the content version is 6', JSON.stringify(r0));
+	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 7 && r0.on && r0.coins === 0, 'Classic starts with the economy on and 0 ₽; the content version is 7 (D8)', JSON.stringify(r0));
 	if (!r0.ok || !r0.on) throw new Error('no economy: the rest needs it');
 
 	// ======================== 1. the layout
@@ -615,8 +615,8 @@ try {
 	});
 	const oi = sy.idle && sy.idle.x && sy.idle.x.o, os = sy.snap && sy.snap.x && sy.snap.x.o;
 	const stOf = (o, i) => { for (let k = 0; k + 2 < o.s.length; k += 3) if (o.s[k] === i) return [o.s[k + 1], o.s[k + 2]]; return null; };
-	A(sy.snap && sy.snap.x.xv === 7 && oi && Array.isArray(oi.h) && os && JSON.stringify(stOf(os, sy.ids.rk)) === '[1,0]' && JSON.stringify(stOf(os, sy.ids.fb)) === '[1,0]' && stOf(os, sy.ids.un)[0] === 2 && stOf(os, sy.ids.un)[1] > 30 && os.m && os.m[1] === sy.ids.spot && os.m.length === 6 && os.n > oi.n,
-		'a live snapshot: x v7 with `o` {s: [index, state, charge %] of the used / charging ones, h, g, n, m: Meowth while he\'s in}', JSON.stringify({ oi, os }).slice(0, 700));
+	A(sy.snap && sy.snap.x.xv === 8 && oi && Array.isArray(oi.h) && os && JSON.stringify(stOf(os, sy.ids.rk)) === '[1,0]' && JSON.stringify(stOf(os, sy.ids.fb)) === '[1,0]' && stOf(os, sy.ids.un)[0] === 2 && stOf(os, sy.ids.un)[1] > 30 && os.m && os.m[1] === sy.ids.spot && os.m.length === 6 && os.n > oi.n,
+		'a live snapshot: x v8 with `o` (v7 since D7) {s: [index, state, charge %] of the used / charging ones, h, g, n, m: Meowth while he\'s in}', JSON.stringify({ oi, os }).slice(0, 700));
 	A(sy.hf && JSON.stringify(sy.hf.s) === JSON.stringify(os.s) && sy.gf === null, 'a co-op host frame carries the same `o`; a guest\'s own frame none (the host owns the interactables)', JSON.stringify({ hf: sy.hf, gf: sy.gf }).slice(0, 300));
 	A(/₽ \d+ · Poké Balls \d+ · Altars \d+/.test(sy.over) && sy.saved.earned > 0 && sy.saved.balls >= 1 && sy.saved.rocks >= 1, 'the run-over screen: "₽ N · Poké Balls N · Altars N"; the Expedition save counts them (merged by max)', JSON.stringify(sy.saved) + ' ' + (sy.over.match(/₽.*Altars \d+/) || [''])[0]);
 	A(!!sy.code, 'the run\'s replay is kept');
@@ -666,7 +666,7 @@ try {
 	}, { idle: sy.idle, snap: sy.snap, ids: sy.ids, code: sy.code, seed: sy.seed });
 	A(vw.loadedBefore === false && vw.spec && vw.spec.rk === 1 && vw.spec.fb === 1 && vw.spec.un === 2 && vw.spec.ch > 0.3 && vw.spec.spot === sy.ids.spot && vw.spec.stock === 3 && !vw.spec.host && vw.spec.n === 42 && vw.spec.tip,
 		'a live spectator (a fresh page) rebuilds the 42 interactables from the seed and shows the host\'s state: the used rock and ball, the charging altar, Meowth (no tips for a viewer)', JSON.stringify(vw.spec));
-	A(vw.old && vw.old.used === 0 && vw.old.ok && !vw.old.notice && vw.old.dv === 6, 'a dv-5 / x v6 snapshot (no `o`) still loads with no notice: every interactable fresh; this build is dv 6', JSON.stringify(vw.old));
+	A(vw.old && vw.old.used === 0 && vw.old.ok && !vw.old.notice && vw.old.dv === 7, 'a dv-5 / x v6 snapshot (no `o`) still loads with no notice: every interactable fresh; this build is dv 7 (D8)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withO > 0 && vw.replay.xi >= 2 && vw.replay.rk === 1, 'a replay keeps `o` (frame field 9) and an `xi` event per use; played back, the rock is used', JSON.stringify(vw.replay));
 	A(vw.base && vw.base.mode === 'normal' && !vw.base.zone && !vw.base.run && !vw.base.o && vw.base.mini === 0 && vw.base.loaded && vw.base.seam === 1,
 		'a Normal run in the same page (Expedition code loaded): no zone, no economy, no `x`, nothing extra on the minimap', JSON.stringify(vw.base));
