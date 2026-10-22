@@ -888,8 +888,11 @@ function userStore(db) {
 		// prefix scan, ordered by key — for per-item queues (each row a separate key)
 		// that must survive concurrent writers. Callers use controlled prefixes with
 		// no LIKE metacharacters (no _ or %), so no escaping is needed.
+		// (a key RANGE, not LIKE 'prefix%': SQLite's LIKE is case-insensitive, so it can't use the primary-key index and
+		// scanned the whole table on every call — ~95% of all D1 rows read, 2026-10-22. The range is exact: '_' / '%' in a
+		// prefix (usernames have '_') no longer act as wildcards, and keys compare byte-wise as stored.)
 		list: async (prefix) => {
-			const res = await db.prepare('SELECT key, value FROM mp_store WHERE key LIKE ? ORDER BY key').bind(prefix + '%').all();
+			const res = await db.prepare('SELECT key, value FROM mp_store WHERE key >= ? AND key < ? ORDER BY key').bind(prefix, prefixEnd(prefix)).all();
 			return (res.results || []).map(r => ({ key: r.key, value: JSON.parse(r.value) }));
 		},
 		deleteKeys: async (keys) => {
@@ -902,7 +905,7 @@ function userStore(db) {
 		// Controlled prefixes only (no LIKE metacharacters), same as list().
 		sweepOld: async (prefix, ttlSec) => {
 			const cutoff = Math.floor(Date.now() / 1000) - ttlSec;
-			await db.prepare('DELETE FROM mp_store WHERE key LIKE ? AND updated_at < ?').bind(prefix + '%', cutoff).run();
+			await db.prepare('DELETE FROM mp_store WHERE key >= ? AND key < ? AND updated_at < ?').bind(prefix, prefixEnd(prefix), cutoff).run();
 		},
 	};
 }
@@ -1240,6 +1243,13 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 });
 
 // ---------- handler ----------
+/** The first string after every key that starts with `prefix` (the upper bound of a prefix range scan): the prefix with
+ *  its last UTF-16 unit bumped by one. ('' -> '￿', all keys.) */
+function prefixEnd(prefix) {
+	if (!prefix) return '￿';
+	return prefix.slice(0, -1) + String.fromCharCode(prefix.charCodeAt(prefix.length - 1) + 1);
+}
+
 export default async function handler(req, env) {
 	if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
 	// reject an oversized body before reading it (a huge snapshot/intent/junk blob)
