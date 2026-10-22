@@ -22,8 +22,10 @@
 //     twin when Shiny, its alt floating sprite, and the five animated strips (Bellsprout, Voltorb, Electrode, Baltoy, Claydol)
 //     animate. Add-on jokers on Pokermon's sheets follow it too, as 3.9.1's load_atlas does for them. Display only: the view,
 //     the run and its checksum never change; each viewer (player, spectator, replay) sees their own choice.
+//   * Shiny jokers (3.9.1 e_poke_shiny on_load): on either series, a Shiny card draws the same cell of its sheet's Shiny twin
+//     (basicShiny: the Basic joker sheets, the add-ons on them, Nacho's Excavator), with the Shiny shader still on top.
 import { P_CENTERS } from './api.js';
-import { MOD_LOC } from '../../js/mods/registry.js';
+import { MOD_LOC, ATLASES } from '../../js/mods/registry.js';
 import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { family_display_key } from './systems/precedence.js';
@@ -210,6 +212,22 @@ export function seriesA(d, force) {
   }
   return { ...d, atlas: 'poke_' + s.atlas + sh + '391', pos: { ...s.pos }, soul_pos: s.soul_pos ? { ...s.soul_pos } : undefined };
 }
+/**
+ * A Shiny card's Shiny sheet (3.9.1 e_poke_shiny on_load, editions1.lua): the card draws the same cell of its sheet's Shiny twin,
+ * when one is registered — `<sheet>Shiny` (the Basic joker sheets: `poke_AtlasJokersBasic<g>[Shiny]391`, and the 3.2.1 ones the
+ * add-ons draw), or an add-on's own `<prefix>_shiny_<rest>` (its poke_custom_prefix branch: Nacho's Excavator). The edition's
+ * shader still draws on top (3.9.1's e_poke_shiny keeps `shader = "shiny"`). Series A faces are already on their Shiny twin
+ * (seriesA). A card whose sheet has no Shiny twin keeps today's face + the shader. -> the new face data, or null.
+ */
+export function basicShiny(d) {
+  if (!d || d.facing === 'back' || !isShiny(d) || !d.atlas) return null;
+  const a = String(d.atlas);
+  if (/shiny/i.test(a)) return null;
+  const c = P_CENTERS[d.center], pre = c && c.poke_custom_prefix;
+  const t = [/^poke_/.test(a) && a.replace(/(391)?$/, 'Shiny$1'), pre && a.startsWith(pre + '_') && pre + '_shiny' + a.slice(pre.length)]
+    .find((n) => n && ATLASES[n] && ATLASES[n].src);
+  return t ? { ...d, atlas: t } : null;
+}
 /** Another card's art drawn on this one (Zorua's illusion): that card's Series A face, keeping this card's identity. */
 const seriesOf = (d, key, atlas, pos) => {
   const sa = seriesA({ ...d, center: key, atlas, pos });
@@ -286,6 +304,24 @@ export function openPokedex(d, api) {
   return el;
 }
 
+/** The card's own face before its Shiny sheet: its Series A art, Kecleon's type, the Imposter, Deoxys' forme, Unown's form. */
+function ownFace(d0) {
+  const p = d0.poke;
+  // the viewer's sprite series: the Series A art (null on Basic, or for a joker without a Series A cell)
+  const d = seriesA(d0) || d0;
+  // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
+  const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
+  if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
+  // The Imposter Professor (3.9.1 set_sprites, batch 17): once owned (form 1), the unmasked card, Others {8,1}
+  if (d.center === 'j_poke_imposter_professor' && p && p.form === 1) return { ...d, pos: IMPOSTER_REVEALED };
+  // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card
+  const ds = d.center === 'j_poke_deoxys' && p && DEOXYS_SOULS[p.form];
+  if (ds) return { ...d, soul_pos: ds };
+  // Unown: its form's letter floats over the card
+  const u = withUnownForm(d);
+  return u === d0 ? null : u;
+}
+
 // ------------------------------------------------------------- the mod UI object
 export const POKE_UI = {
   install() {
@@ -297,35 +333,28 @@ export const POKE_UI = {
   face(d0, ctx) {
     if (!d0 || d0.facing === 'back') return null;
     const p = d0.poke;
-    // Zorua outside the joker row: its hidden Pokémon (on the viewer's sprite series)
+    // Zorua outside the joker row: its hidden Pokémon (on the viewer's sprite series; its Shiny sheet when Zorua is Shiny)
     if (p && p.illusion && P_CENTERS[p.illusion]) {
       const c = P_CENTERS[p.illusion];
-      return { ...d0, atlas: c.atlas, pos: c.pos, soul_pos: undefined, win_key: d0.center, ...(seriesOf(d0, p.illusion, c.atlas, c.pos) || {}) };
+      const ill = { ...d0, atlas: c.atlas, pos: c.pos, soul_pos: undefined, win_key: d0.center, ...(seriesOf(d0, p.illusion, c.atlas, c.pos) || {}) };
+      return basicShiny(ill) || ill;
     }
     const tgt = zoruaTarget(d0, ctx);
     if (tgt) {
       if (tgt.mod) {
-        const t = seriesA(tgt) || tgt;
+        // (the copied joker's own sprite: its Series A or Shiny sheet by ITS edition, as copy_joker_sprites copies it)
+        const t = seriesA(tgt) || basicShiny(tgt) || tgt;
         return { ...d0, atlas: t.atlas, pos: t.pos, soul_pos: withUnownForm(t).soul_pos, win_key: d0.center, poke_series_anim: t.poke_series_anim };
       }
       return { ...d0, mod: undefined, atlas: undefined, pos: undefined, soul_pos: undefined, center: tgt.center, poke_disguise: true, win_key: d0.center };
     }
-    // the viewer's sprite series: the Series A art (null on Basic, or for a joker without a Series A cell)
-    const d = seriesA(d0) || d0;
-    // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
-    const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
-    if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
-    // The Imposter Professor (3.9.1 set_sprites, batch 17): once owned (form 1), the unmasked card, Others {8,1}
-    if (d.center === 'j_poke_imposter_professor' && p && p.form === 1) return { ...d, pos: IMPOSTER_REVEALED };
-    // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card
-    const ds = d.center === 'j_poke_deoxys' && p && DEOXYS_SOULS[p.form];
-    if (ds) return { ...d, soul_pos: ds };
-    // Unown: its form's letter floats over the card
-    const u = withUnownForm(d);
-    return u === d0 ? null : u;
+    const r = ownFace(d0);
+    // a Shiny card on a sheet with a Shiny twin draws the twin's cell (3.9.1 e_poke_shiny on_load; Basic series, or a joker
+    // without a Series A cell on Series A)
+    return basicShiny(r || d0) || r;
   },
-  /** A still card (collections, the Pokédex, deck editor thumbnails): its Series A art on that series. */
-  still(d) { return seriesA(d); },
+  /** A still card (collections, the Pokédex, deck editor thumbnails): its Series A art on that series, its Shiny sheet when Shiny. */
+  still(d) { const s = seriesA(d); return basicShiny(s || d) || s; },
   anim(d) {
     // a Series A animated alternate (seriesA: its strip and frames)
     if (d && d.poke_series_anim) { const s = d.poke_series_anim; return { fps: s.fps, frames: s.frames, fpr: s.fpr, atlas: d.atlas }; }
