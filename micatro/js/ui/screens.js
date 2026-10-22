@@ -5,7 +5,7 @@ import { cellEl, drawCell, CENTERS, CARDS, BLINDS, LOC, STAKE_LIST, BACK_LIST, T
 import { composeFace, FACE_W, FACE_H, soulLayer, drawSoul } from './cardsprite.js';
 import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
-import { all as modAll } from './modui.js';
+import { all as modAll, first as modFirst, hasModUI } from './modui.js';
 import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
 import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specialStickerHTML, stickerName, winRecord, allStakesAllowed } from './stickers.js';
 import { stakeLadder, deckBest, stakeOpen, fallbackIndex, lockText } from './stakeunlocks.js';
@@ -95,7 +95,8 @@ export function modApi() {
 /** A card canvas that redraws itself once its mod art has loaded (screens built before the atlas arrived). */
 export function liveCard(d, cls, backKey) {
   const c = cardCanvas(d, cls, backKey);
-  const want = new Set([d.atlas, d.front_atlas, d.back_atlas].filter(Boolean));
+  const sd = stillData(d);
+  const want = new Set([sd.atlas, sd.front_atlas, sd.back_atlas].filter(Boolean));
   if (want.size) {
     const off = onModAtlas((name) => {
       if (!c.isConnected && c._drawn) { off(); return; }
@@ -113,7 +114,13 @@ export function cardCanvas(d, cls, backKey) {
   return c;
 }
 /** A still card: the face plus its floating layer (legendaries, The Soul, a Mega Pokémon's sprite) flattened on. */
-function drawStill(ctx, d, backKey) {
+/** A still card's face data: a mod UI's stand-in (ui/modui.js still: Pokermon's Series A art), else the card itself. */
+export function stillData(d) {
+  if (!d || !d.mod || !hasModUI()) return d;
+  return modFirst('still', d) || d;
+}
+function drawStill(ctx, d0, backKey) {
+  const d = stillData(d0);
   composeFace(ctx, d, backKey, { collection: true });
   const soul = soulLayer(d);
   if (soul) drawSoul(ctx, soul);
@@ -1158,7 +1165,7 @@ function activeModsBox(ids, modOptions) {
   for (const id of ids) {
     const r = h('div', 'am-row');
     r.innerHTML = modBadges([id]);
-    const list = modsApi ? modsApi.optionList(id) : [];
+    const list = modsApi ? modsApi.optionList(id).filter((op) => !op.cosmetic) : []; // (a cosmetic option isn't the run's)
     const vals = modOptions[id] || {};
     const parts = list.map((op) => `${esc(op.label)}: <b>${esc(fmtOpt(vals[op.key] !== undefined ? vals[op.key] : op.default))}</b>`);
     if (parts.length) r.appendChild(h('span', 'am-opts', parts.join(' · ')));

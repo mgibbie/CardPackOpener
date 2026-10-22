@@ -451,8 +451,11 @@ export function activateMods(ids, options = {}) {
   for (const id of ACTIVE) {
     const m = MODS[id];
     const defaults = {};
-    for (const [k, o] of Object.entries(m.options)) defaults[k] = o.default;
+    for (const [k, o] of Object.entries(m.options)) if (!(o && o.cosmetic)) defaults[k] = o.default;
     modOptions[id] = { ...defaults, ...(options[id] || {}) };
+    // A `cosmetic: true` option (Pokermon's sprite series) is each viewer's own display choice: never a run option, so the
+    // engine, the recipe (modOptions), replays and checksums never carry it. The UI reads it from the viewer's saved options.
+    for (const [k, o] of Object.entries(m.options)) if (o && o.cosmetic) delete modOptions[id][k];
   }
   // A registered mod may undo run-wide changes to shared tables at every new run, on or off
   // (`reset_run`; BETMMA's Bonus+ / Mult+ / Slate raise the shared enhancement values like the Lua).

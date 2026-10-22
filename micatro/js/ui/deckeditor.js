@@ -13,7 +13,7 @@
 // Saved decks: on the player's account (server/mp.mjs micatro-decks-get / -put, row
 // `micatrodecks:<user>`) when logged in, else in this browser's localStorage.
 // Loaded on demand by screens.js (the New Run screen's "Custom deck" row).
-import { modal, closeModal, cardCanvas } from './screens.js';
+import { modal, closeModal, cardCanvas, stillData } from './screens.js';
 import { composeFace, FACE_W, FACE_H, modAtlasesOf } from './cardsprite.js';
 import { CENTERS, LOC, BACK_LIST, MODREG, onModAtlas, cssColour } from './assets.js';
 import { esc } from './markup.js';
@@ -119,7 +119,7 @@ const live = new Set();
 let atlasHooked = false;
 function thumb(d, cls, backKey) {
   const c = cardCanvas(d, cls || 'cd-thumb', backKey);
-  const atl = modAtlasesOf(d);
+  const atl = modAtlasesOf(stillData(d)); // (the art it draws: a mod's still stand-in, e.g. Pokermon's Series A)
   if (d.facing === 'back' && MODREG.center(backKey) && MODREG.center(backKey).atlas) atl.push(MODREG.center(backKey).atlas);
   if (atl.length) {
     live.add({ c, d, atl, backKey });

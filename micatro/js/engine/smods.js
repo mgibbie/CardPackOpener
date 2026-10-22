@@ -272,6 +272,21 @@ export function quantum_mod_calculate(card, context) {
 }
 
 /**
+ * Steamodded's playing-card `card_limit` (lovely/card_limit.toml + CardArea:handle_card_limit): a card in an area with
+ * `ability.card_limit = n` gives that area n more slots while it is there — in the hand, n more hand size while held
+ * (Pokermon 3.9.1's Debris Sleeve on the Debris Deck: every Hazard card has card_limit +1). -> the extra slots of the
+ * area's cards. Only an opted-in mod turns it on (`smods_seams: true`, or a list naming 'card_limit'); with none active
+ * (vanilla, Bunco, MoreFluff, ...) it is 0 without looking at a card, and content that never sets ability.card_limit on a
+ * playing card adds 0: the hand size is the area's own card_limit, as before.
+ */
+export function held_card_limit(area) {
+  if (!ACTIVE_MODS.length || !area || !ACTIVE_MODS.some((id) => seam_mod(id, 'card_limit'))) return 0;
+  let n = 0;
+  for (const c of area.cards) { const l = c.ability && c.ability.card_limit; if (typeof l === 'number' && l) n += l; }
+  return n;
+}
+
+/**
  * Steamodded Blind:calculate for the vanilla contexts: the blind on deck's prototype `calculate(self, blind, context)`
  * (SMODS.Blind calculate — Pokermon 3.9.1's boss blinds), called even while disabled (the blind checks
  * blind.disabled itself), like SMODS. -> its effect (shown like calculate_effect, no card), or undefined.
