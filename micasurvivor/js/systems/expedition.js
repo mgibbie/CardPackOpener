@@ -26,9 +26,13 @@
  *                                reload"); a replay / live run with an unknown or newer dv plays with a notice.
  *   pick()                       DLC D9: the map + tier a Classic run starts on (G.ExpTier.pick once loaded; the button on
  *                                the Classic card opens "Difficulty and leaderboards", js/expedition/tiers.js).
- *   wallet                       Pokémonedas are SHARED with the base game (owner decision #4): Expedition could earn and
- *                                spend them through the base save, here. Nothing calls it: D10 pays Expedition runs in its
- *                                OWN Stardust (js/expedition/meta.js), so the base save's coins are never touched.
+ *   coopPlan(start)              DLC D11: an Expedition lobby's start -> the run every member plays ({mode, dv, map, diff, dex: your
+ *                                own League member}); null / base -> Normal. game.js startRun uses it for a co-op start.
+ *   wallet                       Pokémonedas are SHARED with the base game (owner decision #4, confirmed 2026-10-22): the
+ *                                Expedition earns (runs, tasks, achievements) and spends (the Lab, item unlocks) the base
+ *                                save's coins, only here: save.coins changes, then G.DB.commit, whose fold() books it on this
+ *                                device's ledger entry (js/core/db.js), so a merge of two devices never repeats a payment.
+ *                                js/expedition/meta.js calls it (and reconciles a thing paid for on two devices).
  * Expedition progress (League catches, unlocks, Lab...) has its OWN save (js/expedition/save.js, the server row
  * micasurvivorexp:<user>); Expedition code never writes the base save micasurvivor:<user> except through `wallet`.
  */
@@ -48,16 +52,21 @@ G.I18n.add({
   'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This run is from a newer version of Expedition: reload the page to watch it properly.',
   'Miembro de la Liga: {x}': 'League member: {x}',   // (DLC D4: the Classic card's pick, before the Expedition code loads)
   'Dificultad: {x} · clasificaciones': 'Difficulty: {x} · leaderboards', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare',   // (DLC D9: the Classic card's second button)
-  'Cuartel de la Liga: laboratorio, tareas y logros': 'League HQ: Lab, tasks and achievements', 'Cuartel de la Liga · ★ {x}': 'League HQ · ★ {x}'   // (DLC D10: the third button)
+  'Cuartel de la Liga: laboratorio, tareas y logros': 'League HQ: Lab, tasks and achievements',   // (DLC D10: the third button; D11: no balance on it, the currency is the base game's Pokémonedas)
+  // (DLC D11: Survival is playable; the Expedition with friends)
+  'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.': 'Milestones every 5 min, phases, pacts, sieges, an endless night at 45 min and Mewtwo. As long as you last.',
+  'Con amigos: {x}': 'With friends: {x}', 'Juega la Expedición con tus amigos': 'Play the Expedition with your friends',
+  'Sal de tu sala antes de crear otra.': 'Leave your lobby before you make another.', 'Inicia sesión para jugar con amigos': 'Sign in to play with friends',
+  '¡Nueva marca de Supervivencia! Puesto #{x}': 'New Survival record! Rank #{x}'
 });
 
 G.Expedition = (() => {
-  const DV = 9;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9. Older dv replays / snapshots still play, replayOk)
+  const DV = 10;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
     'exp-classic': 'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.',
-    'exp-survival': 'Aguanta todo lo que puedas en un mapa de Expedición, sin final.',
+    'exp-survival': 'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.',
     'exp-league': 'Atrapa y entrena a los Pokémon de tu Liga.'
   };
   const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball' };
@@ -65,10 +74,10 @@ G.Expedition = (() => {
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
-  const ENABLED = new Set(['exp-classic']);   // D3: Classic is playable; Survival and League are still "Coming soon"
+  const ENABLED = new Set(['exp-classic', 'exp-survival']);   // D3: Classic is playable; D11: Survival too; League stays "Coming soon"
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js)
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
@@ -159,6 +168,14 @@ G.Expedition = (() => {
     return load().then(go, e => { console.warn(e); zoneWant = ''; return null; });
   }
 
+  // ---------------- DLC D11: an Expedition co-op start ----------------
+  /** The run an Expedition lobby's start plays (every member the same mode, map and tier; each its own League member). */
+  function coopPlan(c) {
+    if (!c || !loaded || !isExp(c.mode) || !enabled(c.mode) || !lobbyOk(c.dv)) return { mode: 'normal' };
+    return { mode: c.mode, mods: [], type: null, dex: G.ExpLeague ? G.ExpLeague.pickFor(c.mode) : null, seed: 0, dv: DV,
+             map: MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0] };
+  }
+
   // ---------------- version gates ----------------
   const dvOk = dv => Number.isInteger(dv) && dv >= 1 && dv <= 9999;
   /** A co-op lobby / start: base (no dv) always joins; an Expedition one needs exactly this build's dv. */
@@ -193,7 +210,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS,
-    isExp, enabled, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone,
+    isExp, enabled, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

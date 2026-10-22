@@ -322,6 +322,7 @@ G.Coop = (() => {
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
+        default: G.Hooks.call('net.event', ev, from);   // MicaSurvivor (DLC D11): an Expedition guest's message (a base guest sends none)
       }
     }
   }
@@ -426,6 +427,7 @@ G.Coop = (() => {
       case 'ev': G.Events.onNet(ev); break;
       case 'hz': G.Hazards.add(ev[1], true); break;
       case 'fxr': G.FX.ring(ev[1], ev[2], 8, ev[3], ev[4], 0.5, 3); break;
+      default: G.Hooks.call('net.event', ev);   // MicaSurvivor (DLC D11): an Expedition host's message for you (a base host sends none)
     }
   }
 

@@ -44,6 +44,7 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   '¿A quién cambias por {x}?': 'Who do you swap for {x}?', 'Su premio cae al suelo.': 'Its prize drops to the ground.',
   'LANZA · {x} s': 'THROW · {x} s', 'HUYE EN {x}': 'FLEES IN {x}', 'SALVAJE': 'WILD', 'VARIOCOLOR': 'SHINY',
   'Alfas de apoyo: {x}': 'Support Alphas: {x}', 'Capturados: {x}': 'Caught: {x}', 'Variocolor: {x}': 'Shinies: {x}',
+  '¡{x} lanza una Amigo Ball!': '{x} throws a Friend Ball!', '¡{x} lanza una Poké Ball!': '{x} throws a Poké Ball!',
   'Alfa: debilítalo hasta que se desmaye y quédate a su lado: tu Amigo Ball lo une a tu equipo.': 'Alpha: weaken it until it faints, then stand by it: a Friend Ball makes it a Support Alpha.',
   'Encuentro de la Liga: debilítalo y quédate a su lado para capturarlo. Huye si tardas.': 'League encounter: weaken it, then stand by it to catch it. It flees if you take too long.',
   'Variocolor: no ataca, pero huye pronto. Debilítalo y captúralo.': "Shiny: it doesn't attack, but it flees soon. Weaken it and catch it.",
@@ -130,6 +131,12 @@ G.ExpCap = (() => {
   let S = null;        // {seed, map, sa, tg, faint, cine, fseq, seq, n, last, zkey, zplan, pend, log}
   let view = null;     // a viewer's / guest's copy of the `p` block
   const on = pl => !!(S && G.Modes.isExp() && pl && pl === G.Game.player && !pl.remote);
+  // (D11: online co-op. The HOST owns the targets and the faint windows; a GUEST standing by a fainted Pokémon is seen by the
+  //  host through its puppet, which hands it the catch ('xcg'): the guest throws, plays the cinematic and keeps it (its own
+  //  Support Alphas, its own League / shiny saves). A guest's Support Alphas fight on its side (their hits reach the host like
+  //  any guest hit) and travel to the others in its frames (p.s), drawn round its puppet everywhere (p.g).)
+  const guestSide = () => !!(G.Coop && G.Coop.active && !G.Coop.isHost);
+  const authority = () => !!(S && G.Modes.isExp() && !guestSide());
 
   function begin(pl) {
     S = null; view = null; vcine = null; doneIds.clear();
@@ -154,6 +161,7 @@ G.ExpCap = (() => {
   /** run.tick: the encounters' schedule, the targets, the faint windows, the Support Alphas. */
   function tick(dt, pl) {
     if (!on(pl) || S.cine) return;
+    if (guestSide()) { tickSupport(dt, pl); return; }   // (D11: a guest: its own Support Alphas; the targets are the host's)
     const z = G.World.zone, run = C() && C().run;
     if (!z || !run) return;
     const key = z.map + ':' + z.zone;
@@ -289,7 +297,55 @@ G.ExpCap = (() => {
         f.stand += dt;
         if (f.stand >= K.THROW_T) throwAt(f, pl);
       } else { f.stand = Math.max(0, f.stand - dt * 2); f.latch = false; }
+      // (D11: a co-op guest standing by it: the host hands it the catch)
+      if (G.Coop && G.Coop.active && G.Coop.isHost && S.faint.includes(f)) for (const g of G.Coop.puppets()) {
+        if (g.dead) continue;
+        const gs = f.gs || (f.gs = new Map()), gd = Math.hypot(g.x - f.x, g.y - f.y);
+        const v = gd < K.THROW_R * tsz + (g.r || 14) ? (gs.get(g.uid) || 0) + dt : 0;
+        gs.set(g.uid, v);
+        if (v >= K.THROW_T) { grant(f, g); break; }
+      }
     }
+  }
+  /** D11 (host): guest puppet g caught fainted f: off the field here, the catch on its side ('xcg'). */
+  function grant(f, g) {
+    const m = G.Coop.mate(g.uid);
+    if (!m || !m.connected) return false;
+    const i = S.faint.indexOf(f);
+    if (i >= 0) S.faint.splice(i, 1);
+    doneIds.add(f.eid);
+    m.q.push(['xcg', KC[f.kind], f.dex, f.member | 0, Math.round(f.x), Math.round(f.y), f.shiny ? 1 : 0, Math.round((f.scale || 1) * 100)]);
+    say(f.kind === 'alpha' ? F('¡{x} lanza una Amigo Ball!', m.name) : F('¡{x} lanza una Poké Ball!', m.name), 2.4);
+    G.Audio.sfx('select');
+    return true;
+  }
+  /**
+   * D11 net.event: on a GUEST, the host's 'xcg' (your catch: the throw, the cinematic, the Support Alpha or the save); on the
+   * HOST, a guest's 'xcp' [x, y] (it kept its full team: the alpha's prize drops there). -> true if handled
+   */
+  function netEvent(ev, from) {
+    const pl = G.Game.player;
+    if (!S || !pl || !Array.isArray(ev)) return false;
+    if (from != null) {
+      if (ev[0] !== 'xcp' || guestSide()) return false;
+      prize({ x: +ev[1] || pl.x, y: +ev[2] || pl.y });
+      return true;
+    }
+    if (ev[0] !== 'xcg' || !guestSide()) return false;
+    const kind = KN[ev[1]] || 'alpha', dex = ev[2] | 0, sc = (ev[7] || 100) / 100;
+    const f = { i: 0, eid: -1, kind, dex, member: ev[3] | 0, x: +ev[4], y: +ev[5], scale: sc, shiny: !!ev[6], anim: new G.Sprites.Animator(dex, sc, !!ev[6]) };
+    f.anim.play('Faint', { hold: true });
+    G.Sprites.preload([dex], 4000, f.shiny);
+    if (kind === 'alpha' && S.sa.length >= slotsMax() && EC()) {
+      S.prompt = f;
+      EC().openPick({ kind: 'friend', title: F('Tu equipo está lleno'), sub: F('¿A quién cambias por {x}?', name(dex)), picks: 1, cancel: 'Quedarme con mi equipo',
+        cards: S.sa.map(s => ({ nm: F('Cambia a {x} por {x}', name(s.dex), name(dex)), ds: T.t('Alfa de apoyo') + ' · ' + perkText(typeOf(dex)), icon: IT() ? IT().icon(BALL.alpha) : '', dex, rar: 3 })),
+        onPick: k => { S.prompt = null; startCine(f, pl, k); return true; },
+        onCancel: () => { S.prompt = null; if (G.Coop.active) G.Coop.toHost(['xcp', Math.round(f.x), Math.round(f.y)]); say(T.t('Su premio cae al suelo.'), 2.2); } });
+      return true;
+    }
+    startCine(f, pl, null);
+    return true;
   }
   const doneIds = new Set();   // (the targets already caught / prized / gone: a late tickSpecials never re-opens them)
   function expire(f) {
@@ -452,6 +508,8 @@ G.ExpCap = (() => {
   function pBlock() {
     if (!S || !G.Modes.isExp()) return null;
     const p = {};
+    // (D11: the others' Support Alphas: each co-op guest's, from its frames; by uid here, the snapshot renames them)
+    if (G.Coop && G.Coop.active && G.Coop.isHost) { const g = {}; for (const m of G.Coop.mates) if (m.connected && m.pl && Array.isArray(m.pl.xsa) && m.pl.xsa.length) g[m.uid] = m.pl.xsa; if (Object.keys(g).length) p.g = g; }
     if (S.sa.length) p.s = S.sa.map(s => s.dex);
     const t = [];
     for (const [id, g] of S.tg) if (g.kind !== 'alpha') t.push(id, KC[g.kind]);
@@ -468,7 +526,8 @@ G.ExpCap = (() => {
   function applyP(p) {
     if (!p || typeof p !== 'object') { view = null; return; }
     const prevN = view ? view.n : vn;
-    view = { s: Array.isArray(p.s) ? p.s : [], t: Array.isArray(p.t) ? p.t : [], f: Array.isArray(p.f) ? p.f : [], k: Array.isArray(p.k) ? p.k : null, n: p.n | 0, u: p.u | 0, h: p.h || null };
+    view = { s: Array.isArray(p.s) ? p.s : [], t: Array.isArray(p.t) ? p.t : [], f: Array.isArray(p.f) ? p.f : [], k: Array.isArray(p.k) ? p.k : null, n: p.n | 0, u: p.u | 0, h: p.h || null,
+             g: p.g && typeof p.g === 'object' ? p.g : null };
     // the encounters on their copies: League (x1.3, ringed), shiny (its shiny sheet, ringed)
     for (let i = 0; i + 1 < view.t.length; i += 2) {
       const e = G.EnemyMgr.get(view.t[i]), kind = KN[view.t[i + 1]];
@@ -491,6 +550,28 @@ G.ExpCap = (() => {
     vn = view.n;
     for (const d of view.s) if (!vAnims[d]) { vAnims[d] = new G.Sprites.Animator(d, K.SA_SCALE); G.Sprites.preload([d], 4000); }
   }
+  /** D11: a player's Support Alphas on its puppet (a co-op guest's, seen by the others; a watched partner's). */
+  function applyMate(p, list) {
+    if (!p) return;
+    p.xsa = Array.isArray(list) && list.length ? list.slice(0, 4).map(d => d | 0) : null;
+    for (const d of p.xsa || []) if (!vAnims[d]) { vAnims[d] = new G.Sprites.Animator(d, K.SA_SCALE); G.Sprites.preload([d], 4000); }
+  }
+  // (D11: the Support Alphas this page doesn't run still shoot, as ghosts: a cosmetic shot at the nearest foe every SA_CD,
+  //  no damage, so a spectator / partner sees the allies fight. Keyed by owner and slot.)
+  const ghostCd = new Map();
+  let ghostShots = 0;
+  function ghostShot(key, x, y, type, dt) {
+    const c = (ghostCd.has(key) ? ghostCd.get(key) : K.SA_CD * (0.3 + (ghostCd.size % 5) * 0.14)) - dt;
+    if (c > 0) { ghostCd.set(key, c); return; }
+    ghostCd.set(key, K.SA_CD);
+    const tg = nearest(x, y, K.SA_REACH);
+    if (!tg) return;
+    const a = Math.atan2(tg.y - y, tg.x - x), col = G.U.TYPE_COLOR[type] || '#ffffff';
+    G.Projectiles.spawn({ x: x + Math.cos(a) * 4, y: y + Math.sin(a) * 4, vx: Math.cos(a) * K.SA_SPEED, vy: Math.sin(a) * K.SA_SPEED, dmg: 0, r: K.SA_SIZE, life: 1.1,
+      pierce: 0, color: col, homing: 0, hits: new Set(), vis: G.VFX.forType(type), ghost: true, friendly: true, owner: null, mtype: type, mkind: 'bolt', mid: 'xsa' });
+    G.FX.spark(x + Math.cos(a) * 10, y - 14 + Math.sin(a) * 10, col, Math.cos(a), Math.sin(a), 3);
+    ghostShots++;
+  }
   const vAnims = {}, vFaint = {};
   const viewer = () => (G.Game.state === 'watch' && G.WatchUI && G.WatchUI.player) || G.Game.player;
 
@@ -512,19 +593,23 @@ G.ExpCap = (() => {
   function drawables(cam) {
     const out = [], t = performance.now() / 1000, dt = lastDraw ? Math.min(0.05, t - lastDraw) : 0;
     lastDraw = t;
-    const host = !!(S && S.zkey && G.Modes.isExp());
-    // Support Alphas
-    if (host) for (const s of S.sa) { if (cam.sees(s.x, s.y, 80)) out.push({ y: s.y, draw: ctx => drawSa(ctx, s.anim, s.x, s.y, s.type) }); }
-    else if (view && view.s.length) {
+    const own = !!(S && G.Modes.isExp() && G.Game.state !== 'watch'), host = own && !guestSide() && !!S.zkey;   // (D11: own = this page's player's; host = the targets' owner)
+    // Support Alphas: your own (the host's, a guest's), then the ones this page sees from others (drawn, and shooting as ghosts)
+    if (own) for (const s of S.sa) { if (cam.sees(s.x, s.y, 80)) out.push({ y: s.y, draw: ctx => drawSa(ctx, s.anim, s.x, s.y, s.type) }); }
+    const team = (w, list, key) => list.forEach((d, i) => {
+      const a = vAnims[d]; if (!a) return;
+      a.update(dt); a.loop('Idle'); a.dir = w.anim ? w.anim.dir : 0;
+      const [x, y] = slotSpot(w, i, list.length);
+      if (dt > 0 && G.Game.state !== 'over' && !w.dead) ghostShot(key + ':' + i, x, y, typeOf(d), dt);
+      out.push({ y, draw: ctx => drawSa(ctx, a, x, y, typeOf(d)) });
+    });
+    if (view && view.s.length && !(own && !guestSide())) {
       const w = view.h && G.Coop && G.Coop.active ? (G.Coop.puppets().find(p => p.uid === view.h) || null) : viewer();
-      if (w) view.s.forEach((d, i) => {
-        const a = vAnims[d]; if (!a) return;
-        a.update(dt); a.loop('Idle'); a.dir = w.anim ? w.anim.dir : 0;
-        const [x, y] = slotSpot(w, i, view.s.length);
-        out.push({ y, draw: ctx => drawSa(ctx, a, x, y, typeOf(d)) });
-      });
+      if (w) team(w, view.s, 'v:' + (view.h || 'me'));
     }
-    // fainted Pokémon
+    const pups = G.Game.state === 'watch' ? (G.WatchUI && G.WatchUI.drawables ? G.WatchUI.drawables().slice(1) : []) : G.Coop && G.Coop.active ? G.Coop.puppets() : [];
+    for (const p of pups) if (p && Array.isArray(p.xsa) && p.xsa.length && !(view && view.h && p.uid === view.h)) team(p, p.xsa, 'p:' + (p.uid || p.tag || ''));
+    // fainted Pokémon (the host's: its own windows, or its `p` block on a guest / viewer)
     const faints = host ? S.faint.map(f => ({ kind: f.kind, x: f.x, y: f.y, anim: f.anim, end: f.end }))
       : view ? chunk(view.f, 5).map(r => ({ kind: KN[r[0]], x: r[2], y: r[3], anim: vFaintAnim(r) })) : [];
     for (const f of faints) {
@@ -532,10 +617,11 @@ G.ExpCap = (() => {
       if (!host && f.anim) f.anim.update(dt);
       out.push({ y: f.y, draw: ctx => drawFaint(ctx, f, t) });
     }
-    // the ball (and the Pokémon drawn into it)
-    const c = host ? S.cine : vcine;
+    // the ball (and the Pokémon drawn into it): your own catch, or the one the host's block shows
+    const mine = own && S.cine;
+    const c = mine ? S.cine : vcine;
     if (c) {
-      if (!host) { c.t += dt; if (c.t > CINE_T + 0.3) vcine = null; else cineFx(c, c.t - dt, c.t); }
+      if (!mine) { c.t += dt; if (c.t > CINE_T + 0.3) vcine = null; else cineFx(c, c.t - dt, c.t); }
       out.push({ y: c.y + 4000, draw: ctx => drawCine(ctx, c, t) });   // (over the sprites round it: the Support Alphas crowd the spot)
     }
     return out;
@@ -621,8 +707,8 @@ G.ExpCap = (() => {
   let hudRect = null, overDrawn = 0, overText = '', overRect = null;
   function drawHud(ctx, w, h, pl, Fn, mark) {
     hudRect = null;
-    const host = !!(S && S.zkey && G.Modes.isExp());
-    const team = host ? S.sa.map(s => s.dex) : view ? view.s : [];
+    const own = !!(S && G.Modes.isExp() && G.Game.state !== 'watch'), host = own && !guestSide() && !!S.zkey;   // (D11: a guest's chips are its own team)
+    const team = own ? S.sa.map(s => s.dex) : view ? view.s : [];
     const cam = G.Camera, k = G.HUD ? G.HUD.k : 1, t = performance.now() / 1000;
     // the Support Alphas: a chip each under the HP bar (and the status chips), with the perk
     if (team.length) {
@@ -664,6 +750,7 @@ G.ExpCap = (() => {
     // an arrow at the screen's edge to an encounter or a fainted Pokémon off screen (clear of the minimap)
     const goals = [];
     if (host) { for (const f of S.faint) goals.push([f.x, f.y, f.kind]); for (const [, g] of S.tg) if (g.kind !== 'alpha' && g.e && !g.e.dead) goals.push([g.e.x, g.e.y, g.kind]); }
+    else if (own && view) for (const r of chunk(view.f, 5)) goals.push([r[2], r[3], KN[r[0]]]);   // (D11: a guest's arrows to the host's fainted Pokémon)
     for (const [gx, gy, kind] of goals.slice(0, 2)) {
       const sx = (gx - cam.left()) * cam.scale / k, sy = (gy - 30 - cam.top()) * cam.scale / k;
       if (sx > 0 && sx < w && sy > 0 && sy < h) continue;
@@ -682,7 +769,7 @@ G.ExpCap = (() => {
   }
   /** Over the HUD: the capture's banner (the ball, the name, 3 shake pips, "Gotcha!") and a soft dim. */
   function drawOver(ctx, w, h) {
-    const host = !!(S && S.cine), c = host ? S.cine : vcine;
+    const host = !!(S && S.cine && G.Game.state !== 'watch'), c = host ? S.cine : vcine;
     if (!c) return;
     const ph = phase(c.t), k = G.U.clamp(Math.min(w / 1280, h / 720), 0.55, 1.4), al = Math.min(1, c.t / 0.2) * Math.min(1, (CINE_T + 0.3 - c.t) / 0.3);
     if (al <= 0) return;
@@ -752,7 +839,8 @@ G.ExpCap = (() => {
   return {
     K, PERK, CINE_T, KC, shinyChance, zonePlan, pendingOf, perkOf, perkText, slotsMax, phase,
     begin, reset, mark, tick, hold, alphaDown, perk, recruit, slotSpot, pBlock, applyP, drawables, drawGround, drawHud, drawOver, drawMini, record,
-    spawnLeague, spawnShiny, faint, startCine,
+    spawnLeague, spawnShiny, faint, startCine, netEvent, applyMate, grant,
+    get ghostShots() { return ghostShots; },
     get run() { return S; }, get view() { return view; }, get vcine() { return vcine; }, get hudRect() { return hudRect; },
     get overDrawn() { return overDrawn; }, get overText() { return overText; }, get overRect() { return overRect; }
   };

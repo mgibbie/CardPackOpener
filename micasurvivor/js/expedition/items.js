@@ -185,6 +185,7 @@ G.ExpItems = (() => {
     if (s === 'dmg') v += pl.xtr.dmg;
     if (G.ExpCap) v += G.ExpCap.perk(pl, s);   // (D8: the Support Alphas' type perks add like any same-stat bonus)
     if (G.ExpMeta) v += G.ExpMeta.statOf(pl, s);   // (D10: the Lab, the shiny perks and the boosts of the run's row, the same way)
+    if (G.ExpSurv) v += G.ExpSurv.statOf(pl, s);   // (D11: Survival's pacts, their boons and banes)
     if (s === 'hp') v += pl.xtr.hp;
     if (s === 'xp' || s === 'coin') v += total(pl, 'curse') * K.CURSE_XP;
     if (s === 'armor' && pl.xi.eviolite && G.ExpLeague && G.ExpLeague.run) {

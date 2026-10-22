@@ -170,6 +170,8 @@ G.Replay = (() => {
     if (o.x && o.x.w) { o.x = Object.assign({}, o.x); delete o.x.w; }
     // (DLC D7: and the interactables' state `o` while an altar charges: field 9)
     if (o.x && o.x.o) { o.x = Object.assign({}, o.x); delete o.x.o; }
+    // (DLC D11: and Survival's rows `v` (the siege's %) and the reactions' pop-ups `r`: field 10)
+    if (o.x && (o.x.v || o.x.r)) { o.x = Object.assign({}, o.x); delete o.x.v; delete o.x.r; }
     return o;
   }
   function encode(s, kd) {
@@ -189,13 +191,15 @@ G.Replay = (() => {
     const XW = s.x && s.x.w ? JSON.stringify(s.x.w) : '';
     // DLC D7: the interactables' state (x.o) in field 9, the same way (a base snapshot: 0, dropped)
     const XO = s.x && s.x.o ? JSON.stringify(s.x.o) : '';
+    // DLC D11: Survival's rows and the reactions' pop-ups ({v, r}) in field 10, the same way (a base snapshot: 0, dropped)
+    const XF = s.x && (s.x.v || s.x.r) ? JSON.stringify({ v: s.x.v || undefined, r: s.x.r || undefined }) : '';
     const f = [r.frames.length ? s.t - r.t : s.t, diff(r.P, P), diff(r.C, C), S !== r.S ? JSON.parse(S) : 0, E.out, Kt.out, M !== r.M ? Mq : 0,
       XA !== (r.XA || '') ? (XA ? JSON.parse(XA) : {}) : 0, XW !== (r.XW || '') ? (XW ? JSON.parse(XW) : {}) : 0,
-      XO !== (r.XO || '') ? (XO ? JSON.parse(XO) : {}) : 0];
+      XO !== (r.XO || '') ? (XO ? JSON.parse(XO) : {}) : 0, XF !== (r.XF || '') ? (XF ? JSON.parse(XF) : {}) : 0];
     while (f.length > 1 && f[f.length - 1] === 0) f.pop();
     const txt = JSON.stringify(f);
     r.frames.push(txt); r.bytes += txt.length + 1;
-    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA; r.XW = XW; r.XO = XO;
+    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA; r.XW = XW; r.XO = XO; r.XF = XF;
   }
 
   // ---------------- the decoder ----------------
@@ -232,8 +236,8 @@ G.Replay = (() => {
     const h = data.h || {}, frames = data.f || [], Q = h.Q || K.Q, QE = h.QE || K.QE, ew = h.ew || EW, kw = h.kw || KW;
     const times = [];
     const tbl = () => ({ m: new Map(), v: new Map() }), ctbl = x => ({ m: new Map(x.m), v: new Map(x.v) });
-    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, kd: [] });
-    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, kd: [] });
+    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, F: null, kd: [] });
+    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, F: st.F, kd: [] });
     function step(st) {
       const f = frames[st.i + 1];
       st.i++;
@@ -247,6 +251,7 @@ G.Replay = (() => {
       if (f[7]) st.A = f[7];   // (DLC D2: the x block's airborne state)
       if (f[8]) st.W = f[8];   // (DLC D6: the Ultimate rows)
       if (f[9]) st.O = f[9];   // (DLC D7: the interactables)
+      if (f[10]) st.F = f[10];   // (DLC D11: Survival's rows, the pop-ups)
     }
     // one pass: the frame times and a checkpoint every CHECK_EVERY frames
     const checks = [];
@@ -276,6 +281,7 @@ G.Replay = (() => {
       if (s.x && st.A) s.x = Object.assign({}, s.x, { a: st.A });   // (DLC D2)
       if (s.x && st.W && st.W.p) s.x = Object.assign({}, s.x, { w: st.W });   // (DLC D6)
       if (s.x && st.O && st.O.h) s.x = Object.assign({}, s.x, { o: st.O });   // (DLC D7)
+      if (s.x && st.F && (st.F.v || st.F.r)) s.x = Object.assign({}, s.x, st.F.v ? { v: st.F.v } : {}, st.F.r ? { r: st.F.r } : {});   // (DLC D11)
       s.kd = st.kd;
       return s;
     }

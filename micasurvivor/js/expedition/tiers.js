@@ -57,6 +57,7 @@ G.I18n.add({
   '{x} desbloqueada en {x}': '{x} unlocked on {x}',
   '¡Nueva marca de la Expedición! Puesto #{x}': 'New Expedition record! Rank #{x}',
   'Contrarreloj: puesto #{x}': 'Time attack: rank #{x}',
+  'Supervivencia': 'Survival', '{x} jefes de hito': '{x} milestone bosses', 'Mejor supervivencia: {x}': 'Best survival: {x}',   // (DLC D11)
   'Difícil': 'Hard', 'Pesadilla': 'Nightmare', 'Bosque Verde': 'Viridian Forest', 'Monte Moon': 'Mt. Moon', 'Cabo Celeste': 'Cerulean Cape',
   'Ver': 'Watch', '{x} d {x} h': '{x} d {x} h', '{x} h {x} min': '{x} h {x} min'
 });
@@ -253,6 +254,7 @@ G.ExpTier = (() => {
 `;
   let el = null, onClose = null, scrollWas = 0;
   const ui = { map: null, diff: null, view: 'score', token: 0 };
+  const VIEWS = ['score', 'time', 'survival', 'season'];   // (DLC D11: + Survival's board)
   function mount() {
     if (el || typeof document === 'undefined') return el;
     const box = document.querySelector('#scr-modes .modes-box');
@@ -265,11 +267,12 @@ G.ExpTier = (() => {
   const $m = id => document.getElementById(id);
   const back0 = () => document.querySelector('#scr-modes [data-back]');
   /** Opens the panel on the mode select (the Expedition code is loaded). onBack: called after it closes. */
-  function open(onBack) {
+  function open(onBack, view) {
     if (!mount()) return false;
     onClose = onBack || null;
     const p = pick();
     ui.map = p.map; ui.diff = p.diff; ui.view = (ui.view === 'season' && !K.SEASON_TAB) ? 'score' : (ui.view || 'score');
+    if (VIEWS.includes(view)) ui.view = view;   // (DLC D11: Survival's button opens on its board)
     $m('modes-main').classList.add('hidden');
     el.classList.remove('hidden');
     if (back0()) back0().classList.add('hidden');
@@ -319,7 +322,7 @@ G.ExpTier = (() => {
       <div class="xt-tiers">${DIFFS.map(d => tierCard(ui.map, d)).join('')}</div>
       <div class="xt-medals"><b>${esc(T().f('Medallas ({x})', T().t(DIFF_NAME[ui.diff])))}</b>${lim.map(l => `<span class="xt-chip">${G.Icons.html(MEDAL_ICON[l.id], 16)} ${esc(T().t(l.name))} ${l.under ? '&lt; ' + G.U.mmss(l.under) : esc(T().t('Terminar'))}</span>`).join('')}
         <span class="xt-chip${K.SEASON_TAB ? '' : ' hidden'}" id="xt-ribbons">${G.Icons.html('crown', 14)} ${esc(rbTxt ? T().f('Tus cintas: {x}', rbTxt) : T().t('Aún no tienes cintas'))}</span></div>
-      <div class="filters xt-tabs">${[['score', 'Puntuación'], ['time', 'Contrarreloj']].concat(K.SEASON_TAB ? [['season', 'Temporada']] : []).map(([k, l]) => `<button type="button" class="chip${ui.view === k ? ' on' : ''}" data-view="${k}">${esc(T().t(l))}</button>`).join('')}</div>
+      <div class="filters xt-tabs">${[['score', 'Puntuación'], ['time', 'Contrarreloj'], ['survival', 'Supervivencia']].concat(K.SEASON_TAB ? [['season', 'Temporada']] : []).map(([k, l]) => `<button type="button" class="chip${ui.view === k ? ' on' : ''}" data-view="${k}">${esc(T().t(l))}</button>`).join('')}</div>
       <div id="xt-season" class="xt-season${ui.view === 'season' ? '' : ' hidden'}"></div>
       <div id="xt-list" class="rk-list xt-list"></div>
       <div id="xt-me" class="rk-me"></div>`;
@@ -350,7 +353,7 @@ G.ExpTier = (() => {
     mons.className = 'mons';
     if (r.dex && G.DEX_BY[r.dex]) mons.appendChild(G.UI.spriteCanvas(r.dex, 44, 40, { scale: 1, shiny: !!r.shiny }));
     d.appendChild(mons);
-    const where = r.won ? T().t('¡Mapa completado!') : r.zone ? T().f('Zona {x}', r.zone) : '';
+    const where = view === 'survival' ? (r.bosses ? T().f('{x} jefes de hito', r.bosses) : '') : r.won ? T().t('¡Mapa completado!') : r.zone ? T().f('Zona {x}', r.zone) : '';   // (DLC D11)
     const sub = [T().f('Nv. {x} · {x} derrotados', r.level || 1, (r.kills || 0).toLocaleString('en')), where, r.catches ? T().f('{x} capturas', r.catches) : ''].filter(Boolean).join(' · ');
     const md = view === 'time' ? MEDAL[r.medal | 0] || '' : '';
     const val = view === 'time'

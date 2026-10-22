@@ -44,11 +44,14 @@
  *   (DLC D7, economy and interactables: js/expedition/economy.js. A no-op in a base page.)
  *   minimap.draw    js/ui/minimap.js draw, in an Expedition zone only (G.World.zone): call(ctx, pl, api) after the base
  *                   props, api = {mm, pt, inside, edge, rec, pul} (the zone's interactables, under its fog of war)
+ *   (DLC D11, online co-op on the Expedition: js/expedition/core.js. A no-op in a base page.)
+ *   net.event       js/net/coop.js, a co-op event of a kind the base game doesn't know: call(ev, from) on the guest (from the
+ *                   host: from undefined) and on the host (from a guest: its uid). Base runs never send one.
  */
 G.Hooks = (() => {
   const SEAMS = ['run.start', 'run.end', 'replay.header', 'spectate.snap', 'net.frame', 'levelup.offer', 'levelup.cards',
     'xp.need', 'item.roll', 'item.take', 'player.hurt', 'player.ko', 'player.dealt', 'combat.out', 'combat.run', 'combat.ghost', 'run.tick',
-    'enemy.ko', 'run.hold', 'minimap.draw'];
+    'enemy.ko', 'run.hold', 'minimap.draw', 'net.event'];
   const L = Object.create(null);
   for (const s of SEAMS) L[s] = [];
 

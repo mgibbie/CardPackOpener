@@ -268,6 +268,14 @@
       $('lobby-sub').textContent = room.isHost
         ? 'Eres el anfitrión. Invita a tus amigos (hasta ' + G.Social.MAX_PLAYERS + ') y empezad cuando estéis.'
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
+      // MicaSurvivor (DLC D11): an Expedition lobby says what you'll play (the mode, the map, the tier); a base one: nothing
+      const xl = $('lobby-exp');
+      if (xl) {
+        const X = G.Expedition, T = s => G.I18n.t(s);
+        const MAPN = { viridian: 'Bosque Verde', mtmoon: 'Monte Moon', cerulean: 'Cabo Celeste' }, DIFN = { normal: 'Normal', hard: 'Difícil', nightmare: 'Pesadilla' };
+        xl.textContent = room.mode && X && X.NAME[room.mode] ? [T(X.NAME[room.mode]), room.map ? T(MAPN[room.map] || room.map) : '', room.diff ? T(DIFN[room.diff] || room.diff) : ''].filter(Boolean).join(' · ') : '';
+        xl.classList.toggle('hidden', !xl.textContent);
+      }
 
       // Las tarjetas sólo se rehacen si cambian los miembros (los sprites no parpadean).
       const key = ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|') + '|' + G.I18n.lang;
