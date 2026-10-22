@@ -590,7 +590,7 @@ G.Player = class Player {
     }
 
     // (Durante el Movimiento Z no parpadea: la invulnerabilidad es del Z.)
-    const alpha = this.invuln > 0 && !this.dead && !(G.ZMoves && G.ZMoves.busy && !this.remote) ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
+    const alpha = this.invuln > 0 && !this.dead && !(G.ZMoves && G.ZMoves.busy && !this.remote) && !this.xult ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
     // MicaSurvivor (M5 lote 5): Dynamax — el aura detrás y el sprite gigante (escala desde los pies).
     const ds = this.dynScale || (XV && this.squash > 0 ? [1.2, 0.8] : null);   // (DLC D2: a bounce pad's squash)
     if (ds) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(ds[0], ds[1]); ctx.translate(-this.x, -this.y); }

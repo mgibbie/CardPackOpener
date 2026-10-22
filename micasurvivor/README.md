@@ -1648,7 +1648,7 @@ force-loaded.
 
 | Time | Event | What happens |
 |---|---|---|
-| 150, 330, 480 s | **Alpha** | A giant (×1.6) of the zone: ×9 HP, ×1.5 damage, ×8 XP, a red aura. It drops an item and a berry (D8 makes it recruitable). |
+| 150, 330, 480 s | **Alpha** | A giant (×1.6) of the zone: ×9 HP, ×1.5 damage, ×8 XP, a red aura. It drops an item and a berry (D8 makes it recruitable: it faints, and a Friend Ball makes it a Support Alpha; left alone, the prize). |
 | 235 s | **Swarm or stampede** | One or the other, from the zone's stream. |
 | 390 s | **Swarm** | 24-40 (×1.2 per zone) close in from a ring just off screen. |
 | 520 s | **Stampede** | A herd of 16-26 (Rattata / Doduo, Raticate / Tauros, Dodrio / Tauros) charges straight through, in lanes (`Enemy.xmove`). |
@@ -1714,8 +1714,7 @@ tiers and medals.
 **Not yet (D4+):**
 - the League roster, in-run evolution, Maturity, kits (D4: done, see "DLC D4" below; a Classic run used your base partner);
 - rarity level-ups, vitamins, items with caps (D5), Ultimates (D6), the ₽ economy and interactables (D7);
-- recruiting alphas (D8: the `alpha` drop in `tickSpecials` is where the Friend Ball goes), League encounters, shinies
-  (a Classic run rolls none);
+- recruiting alphas, League encounters, shinies (D8: built, see "DLC D8" below);
 - the map / difficulty pickers, tier tables, medals and the board screen (D9: `K.EARLY` and `bossHp({tier})` are ready);
 - boss phases at 66 / 33 % and escorts; Mt. Moon and Cerulean (D12: `MAPS` in `classic.js`);
 - starting Classic as a co-op run (the frames, snapshots and guest view are ready);
@@ -1759,7 +1758,8 @@ with a branch), **D4d** 85 legendaries and mythicals (Cosmog's line is three-sta
 
 - **A completed challenge** puts the member in the save's `league.met`. **In D4 a met member plays at once**
   (`K.PLAY_MET`); D8 brings PokéBonk's catch (a completed challenge spawns the wild encounter you weaken and catch, which
-  adds it to `league.own`). The run-over screen names the new members ("New League member: Kangaskhan!").
+  adds it to `league.own`). The run-over screen names the new members ("New League member: Kangaskhan!"). **D8 built it**
+  (see "DLC D8"): a challenge completed from D8 on is met *and* wild, playable once caught; members met in D4 keep playing.
 - **The pick** is this device's (`localStorage micasurvivorexp_pick`): a preference, not progress. A pick you can't play
   falls back to Bulbasaur. `G.Modes.plan` puts it in the run's `dex` (so the replay header names the member).
 
@@ -1832,10 +1832,10 @@ sets):
 - `expedition/core.js`, `expedition/terrain.js`: `x` v4 and the League's hooks.
 
 **Not yet:**
-- the catch (D8): a met challenge plays at once (`K.PLAY_MET`);
+- the catch (D8: built, see below; members met in D4 stay playable);
 - the other 170 entries (D4b / D4c / D4d), the Megas (D4c) and the legendaries' own encounters (D4d);
 - moves from the line's learnset and from other League members of your type at level-ups, vitamins and rarities (D5: built, see below);
-- signature Ultimates by evolution tier (D6: it can read the row's Maturity and evolutions);
+- signature Ultimates by evolution tier (D6: built, see below; the tier is the row's evolutions + Maturity);
 - PokéBonk's XP curve (8 + 5.5 L + L^1.8): Classic still uses the base one, so whether a run reaches a family's last
   evolution (Dragonite and Tyranitar at 55) is for D5's tuning;
 - the League pick for a co-op guest (co-op Expedition runs can't start yet; the frames already carry the rows).
@@ -1914,7 +1914,7 @@ Relic Crown, Prism Scale) and 4 legendary (Master Ball, Max Revive, Revival Herb
   x2.75). Different stats still multiply. Expedition armor caps at 50 % (`K.ARMOR_CAP`).
 - **Where they come from:** where base items drop (alphas, guardians): the item.roll seam gives an
   Expedition item (`x:<id>`) from the run's seeded stream, its rarity rolled like a card's; the item.take seam stacks it
-  at once (no choice screen). D7's Poké Balls, Meowth and altars will be the main source.
+  at once (no choice screen). D7's Poké Balls, Meowth and altars will be the main source (built: "DLC D7").
 - **Procs** (seams player.hurt, player.ko, player.dealt, combat.out, run.tick): evasion and the shield, Focus Band (15 %
   per stack, every 20 s), Revival Herb (40 %, once per zone, a fire burst), Revive (30 %) and Max Revive (60 %), thorns,
   lifesteal, super-effective, boss damage, Weakness Policy, execute under 8 %, flinch, Relic Crown's time stop, and the
@@ -1922,7 +1922,7 @@ Relic Crown, Prism Scale) and 4 legendary (Master Ball, Max Revive, Revival Herb
   with the player's level (+6 % a level) and attack.
 
 **Refresh / Skip / Banish** (study 2.5, `G.ExpLevel.K`): Refresh 2 (the base reroll button, its count raised), Skip 2 (a
-new button, the X key, the pad's swap button: no card, +10 x zone Pokémonedas of the run, which D7's ₽ will replace),
+new button, the X key, the pad's swap button: no card, +10 x zone Pokémonedas of the run, which D7's ₽ will replace; D7: it pays ₽),
 Banish 1 (the base ban button: on a new move or a new vitamin; that one never comes back this run; a level-up card can't
 be banned). The base game's bought rerolls and bans add on top (max 6 each).
 
@@ -1971,11 +1971,530 @@ sets):
 
 **Not yet:**
 - the Lab (D10): a 4th card, more vitamin slots, more Refresh / Skip / Banish, the Archive, item unlocks by counter goals;
-- D7's sources (Poké Balls, Meowth, altars, Ditto copying an item, Hypno forgetting a move or vitamin) and real ₽ for Skip;
+- D7's sources (Poké Balls, Meowth, altars, Ditto copying an item, Hypno forgetting a move or vitamin) and real ₽ for Skip (built in D7);
 - the study's remaining 42 items (102 in PokéBonk), Stick and Air Balloon (no pictures in the item set); `K.EXTRA_HOPS` is
   still 1 for everyone (D2's note), so no item gives an extra hop yet;
 - learnset-exact "moves the line learns" (by type for now) and Mew's "every move of power 60+";
-- reactions and weather boosts by type (D8).
+- reactions and weather boosts by type (D8: built, see below).
+
+## DLC D6: Ultimates
+
+**Every Expedition run has an Ultimate**: a meter that fills as you play, a cast with a hit-stop, i-frames and a portrait
+cut-in, and a choreography. 16 League members have a **signature Ultimate** that grows with their evolutions and Maturity;
+every other member casts its type's **type Ultimate**, which is the base game's Z-move choreography for that type, rescaled
+(`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.4 and the D6 row). The code is `js/expedition/ultimates.js` (`G.ExpUlt`;
+every number in its `K`). Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded. In an Expedition zone the Ultimate **takes the Z-move's place**: its key, its pad buttons and its HUD spot
+(the base Z-move and its button step aside while `G.World.zone` is set, so a base run still has its Z-move).
+
+**The charge** (0 to 1, `K`; study 2.4):
+
+| Source | Charge |
+|---|---|
+| Passive | Full in **95 s** (`PASSIVE_T`) |
+| A kill | **+0.004**, drawn from a **bucket** that holds 0.024 and refills 0.008 a second (`KILL`, `BUCKET`, `BUCKET_RATE`), so a swarm can't fill it at once |
+| An elite or summoner | **+0.03** (`ELITE`), outside the bucket |
+| An alpha or totem | **+0.08** (`ALPHA`) |
+| A guardian, the legendary or any boss | **+0.2** (`BOSS`) |
+| Damage taken | **+0.35 x damage / max HP** (`HURT`), the damage actually taken (after the items' evasion and shield) |
+
+Nothing charges while a cast lasts. `pl.xultCharge` multiplies every source (1 for now: the study's Soul Dew x1.4 and Lunar
+Blessing x1.3 wait for an item batch). Kills count on the host / solo sim (the `enemy.ko` seam); a co-op guest has no
+Expedition sim of its own yet.
+
+**The cast:**
+- **Inputs**: Z or R; the pad's Z-move (L3), Y and RT buttons (the base game's Z-move buttons, in a zone only); the HUD
+  button (touch or mouse), which shows the meter as a ring in the type's colour, its %, "Ready!" and a key or pad glyph.
+- **Hit-stop**: 0.32 s (`HITSTOP`) in which the world holds (the `run.hold` seam: the clock, foes and spawns stop), then
+  the choreography starts.
+- **I-frames**: for the whole cast and 0.6 s after it (`AFTER`), through `pl.invuln` and the `player.hurt` seam, which
+  comes before the items' shield (a cast never spends the shield) and also covers lava, which zeroes `invuln`.
+- **The cut-in**: 1.1 s (`CUT_T`), drawn on the canvas over the HUD: a slanted band in the type's colour, the caster's own
+  sprite big with a light outline, "ULTIMATE" (or "TYPE ULTIMATE") and a star per tier, and the Ultimate's name.
+  Under 0.42 dim. No new art: the sprite is the member's PMD sheet; the button's icon is the type's Z-crystal.
+- **Damage** per unit of each hit's own weight in the choreography: **40 x (1 + 0.1 level) x (1 + 0.15 tier) x attack x
+  0.62** (`DMG`, `DMG_LV`, `DMG_TIER`, `DMG_K`; the 0.62 is D5's study-to-our-scale factor). Against a boss the Z-move's own
+  cap still holds: one piece takes at most 28 % of its max HP. The hits go through `G.Combat.land` like a Z-move's (types,
+  crits, abilities, the items' procs).
+- **Tier** = the League row's evolutions + its Maturity (0 to 4, `TIER_MAX`; study: "evolution stage + Maturity"). The
+  tier raises the damage, adds a signature's beats, and picks its name (tier 2 and up keep the third name).
+
+**Type Ultimates**: a member with no signature casts its current form's first type's (Caterpie and Butterfree: bug,
+"Plaga Devastadora" / "Devastating Plague"), the Z-move's own choreography (`G.ZMoves.effect(pl, type)`, a new export that builds
+one outside the Z-move's state machine: no cinematic, cooldown or unlock), under the Z-move's name, with the Ultimate's
+damage. All 18 types.
+
+**The 16 signatures** (`SIGS`; our own names, never PokéBonk's): each starts from its type's choreography and adds beats by
+tier (a ring, beams, strikes from the sky, a dive, meteors, a nova, a pull, a drain, a heal):
+
+| Member | Type | Tier 0 / 1 / 2+ |
+|---|---|---|
+| Bulbasaur | grass | Furious Seed / Petal Storm / Solar Garden |
+| Charmander | fire | Roaring Ember / Fire Vortex / Winged Inferno |
+| Squirtle | water | Bubble Wave / Spinning Tide / Hydro Cannon |
+| Pichu (Pikachu's line) | electric | Spark Burst / Chain Bolt / Volt Tackle |
+| Gastly (Gengar's line) | ghost | Shadow Lick / Shadow Rain / Evil Eye |
+| Magikarp (Gyarados) | water | Fierce Splash / Sea Rage / Abyssal Hyper Beam |
+| Dratini (Dragonite's line) | dragon | Dragon Fury / Dragon Dance / Draco Comet |
+| Mewtwo | psychic | Mind Wave / Psycho Charge / Total Psystrike |
+| Mew | psychic | Metronome / Double Metronome / Triple Metronome: 1 / 2 / 3 copies of the other 15, from the run's seeded stream |
+| Articuno | ice | Icy Wind / Blizzard / Glacial Zero |
+| Zapdos | electric | Thunder Shock / Electric Storm / Thunder Wing |
+| Moltres | fire | Flame Wing / Sacred Fire / Scorching Sun |
+| Abra (Alakazam's line) | psychic | Teleport Burst / Star Psybeam / Future Sight |
+| Machop (Machamp's line) | fighting | Karate Rush / Cross Chop / Dynamic Punch |
+| Larvitar (Tyranitar's line) | rock | Rock Toss / Rock Avalanche / Desert Edge |
+| Gible (Garchomp's line) | ground | Sand Tomb / Dragon Claw / Earth Comet |
+
+**Deviation:** the plan's list has Eevee, Snorlax, Lapras and Ditto. None of them is a League entry (not three-stage, no
+Mega, not legendary: the owner's 249), so they could never be played; Alakazam's, Machamp's, Tyranitar's and Garchomp's
+lines take their places. Ditto's "copy a random member's Ultimate" lives on in Mew's Metronome.
+
+**Auto-Ultimate** (a setting): off by default. On, it casts as soon as the meter is full with a foe within 480 px (`AUTO_R`).
+U toggles it, so does the AUTO chip under the button (touch or mouse) and the pause screen's "Auto-Ultimate: On / Off"
+button (the pad's way to it). It is kept in the **Expedition save** as two Lamport counters, `ult.auto.on` and
+`ult.auto.off` (a switch sets its own to max(both) + 1): the save's max merge then keeps the latest switch on every device.
+
+**Determinism and viewers:** the charge is pure (time, kills, damage taken); Mew's copies come from `G.DLC.rng` (the world
+seed + the cast count); the choreographies' flourishes use `Math.random`, as the base Z-move and combat do.
+- **The `x` block v6** `{xv: 6, m, z, th, a, c, l, u, w}`: `w` holds the Ultimate rows `[charge %, pieces cast, piece code,
+  tier, flags (1 casting, 2 auto), the cast's code]` (a signature's code is its member's dex, a type Ultimate's 2000 + its
+  index in `G.ZMoves.ORDER`). `w.p` is the watched (or sending) player's, `w.q` the co-op players' (by uid in host frames,
+  by name in snapshots).
+- A viewer's puppet (a co-op partner, a live spectator's or a replay's watched player) shows the meter on its HUD button;
+  when the casting flag rises it gets the cut-in, and each time the piece count goes up it plays that piece as a
+  **ghost** (the same choreography, no damage, no heal, no move). The count makes a missed frame harmless (and relay mode's
+  1 Hz frames still see a 3-4 s cast). A live view shows the snapshot before the newest, so a spectator sees it about
+  a second late, as everything else.
+- **The replay** keeps `w` in a frame field of its own (field 8, only when it changes: the charge moves every second) and
+  records an `xu` event when a cast starts (the plan's "xu Ultimate cast").
+- The v1-v5 readers are kept: a block without `w` shows no Ultimate.
+- **Versions:** `G.Expedition.DV` is now **5**. dv-1 to dv-4 replays and snapshots still play without a notice; a co-op
+  lobby needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; max per counter): `ult.casts`, `ult.best` (most in a run),
+`ult.sig` (signature casts) and the auto setting's `ult.auto.on` / `ult.auto.off`. The run-over screen adds a line
+("Ultimates: 3 (Furious Seed, Petal Storm)"). **No server change:** the server already takes any counter.
+
+**Assets:** none new. The cut-in uses the member's own sprite sheet, the button the type's Z-crystal icon, and everything
+else is drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on `G.World.zone` / a field only
+Expedition code sets):
+- `core/hooks.js`: 2 new seams, `enemy.ko` (an enemy of this page's sim has fallen) and `run.hold` (an Expedition run
+  only: true holds the world this frame).
+- `entities/enemy.js`: the `enemy.ko` call. `game.js`: `run.hold` and the overlay's two draw calls (the dim under the HUD,
+  the cut-in over it), all behind `isExp()` / `G.World.zone`.
+- `systems/zmoves.js`: `effect(pl, type)` (an export); no Z-move and no Z button in an Expedition zone.
+- `ui/hud.js`: the Ultimate button (and the Z button's rect) in a zone. `core/pad.js`: the Z-move buttons cast the
+  Ultimate in a zone. `entities/player.js`: no blinking during a cast (`xult`). `mica/spectate.js`: no Z-move chip in a
+  zone. `mica/replay.js`: field 8 and the `xu` event (a base snapshot has no `x.w`: its frames don't change).
+- `systems/expedition.js`: `DV` 5, `ultimates.js`. `expedition/core.js`: `x` v6 and the hooks; `classic.js`: the altar
+  arrow keeps clear of the right-hand column without touch too (the Ultimate's button is always there now);
+  `terrain.js`: `XV`.
+
+**Not yet:**
+- Soul Dew / Lunar Blessing and other charge or Ultimate-damage items (`pl.xultCharge`, `pl.xultDmg` are ready);
+- the run's damage breakdown files Ultimate damage under the base "Z-move" row (`DmgLog`'s `z` key);
+- a co-op guest's own Ultimate (a guest's run isn't an Expedition one yet: D11); the frames already carry its row both ways;
+- more signatures (D13+), and Mega Evolution's own (D4c / 1.0).
+
+## DLC D7: economy and interactables
+
+**An Expedition zone now has an economy and 42 things to find**: ₽ from play, Poké Balls (paid, free, cursed), Meowth's shop
+with market heat, Unown altars in 4 tiers and a comet, challenge / cursed / greed altars, Ditto, Hypno, gold rocks, berry
+bushes and cages, a zone map with a legend under a fog of war, and first-run tips (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.7, 2.15 and the D7 row). The code is `js/expedition/economy.js` (`G.ExpEco`; every number in its `K`). Base modes are
+unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**₽ is in-run play money, never real money.** It is the run's own coins (`pl.coins`; the zone line under the clock shows
+"₽ N"), which an Expedition run never pays into the base save. Nothing here costs anything but ₽ earned in that run.
+
+| Source | ₽ (`K`) |
+|---|---|
+| A KO | **0.2** x the gold stat (Nugget vitamin, Amulet Coin) x greed (`KO`; study 2.7), kept as a fraction |
+| An elite / summoner, alpha / totem, guardian / legendary / boss | **1**, **5**, **20 x zone** (`KO_ELITE`, `KO_ALPHA`, `KO_BOSS`: ours) |
+| A gold rock | **6-14 x zone** x gold (`ROCK`; study 2.7), the 6-14 seeded per rock |
+| A level-up Skip | **10 x zone** (D5's Skip, now through `G.ExpEco.earn`) |
+
+**The interactables** (per zone 1-3; the shrine has none). Each is a stand-in circle like D3's altar: walk onto it. There is
+still no interact key, so it works the same with mouse, touch and pad.
+
+| Kind | Per zone | Rule (`K`) |
+|---|---|---|
+| Poké Ball | 6 | **18 x 1.22^(0.65 x bought) ₽** (18, 20, 23, 27, 34 ... 66 after 10); luck takes luck / 400 off (at most 25 %). Stand 0.45 s: **pick 1 of 3** items (`OFFERS`) |
+| Free Poké Ball | 2 | One item at once |
+| Cursed Poké Ball | 2 | Free; **+5 % difficulty** for the run (new foes' HP and damage), a **ghost ambush of 4 + 2 x zone** (Gastly, Haunter, Misdreavus, Duskull, Drifloon, Yamask), 1 item and a 2nd at **40 % x (1 + luck / 100)** |
+| Meowth's shop | 3 stalls | Visits at 0:50-1:10 of the zone for **70 s**, then every **2:30** (the next stall, a fresh stock of **3** items). List price **30 / 55 / 95 / 160 / 260 ₽** by rarity, **+30 % a zone**. **Market heat**: 2 + ⌊balls opened / 3⌋ buys are at list price; each buy past that multiplies prices by **x1.15, x1.32, x1.49 ... up to x2** a step (opening balls cools it) |
+| Unown altar (Common / Rare / Epic / Golden) | 2 / 1 / 1 / 1 | Stand in the circle to charge it in **8 / 14 / 22 / 35 s** (radius **3 / 2.75 / 2.5 / 2.25 tiles**: the study's 6-4.5 m, halved); leaving drains it at **half speed**. Full: **1 of 3 (Common+), 1 of 3 (Uncommon+), 1 of 4 (Rare+), 2 of 4 (Epic+)**. Epic and Golden call a **horde every 7 s** while you charge (6 + 2 x zone, +4 Golden); Golden is **sealed for 90 s** |
+| Comet shard | 1 | Lands at **2:30-5:00**; a **10 s** charge (2.5 tiles); it **burns out 45 s** after landing if it isn't finished. Pick 1 of 3 (Uncommon+) and **+25 % Ultimate charge** |
+| Challenge altar | 1 | Stand 2 s: a wave of **10 + 4 x zone** at **x1.5 HP**; beat it and a **Great Ball** waits there (pick 1 of 3, Uncommon+) |
+| Cursed altar | 1 | Stand 1.6 s: a **Rare+ item** at once, **+8 % difficulty** and **+15 % spawns** for the run |
+| Gengar's greed altar | 1 | Stand 1.6 s: **+10 % difficulty, +15 % XP, +25 % ₽**, and every ball's pick shows **one more card** |
+| Ditto | 1 | Copies a random item of yours that isn't at its cap (seeded); with nothing to copy it waits |
+| Hypno | 1 | "Forget X" cards for your vitamins (or "Keep them"): the vitamin goes, its stats are re-applied (D5's sums) and its slot is free |
+| Gold rock | 8 | Breaks at a touch for its ₽ |
+| Berry bush | 8 | Heals **50 %** of max HP, only when you're hurt |
+| Cage | 2 | **20 + 10 x zone ₽** frees its Pokémon (one of the map's): **+50 % of a level's XP** |
+
+**Choices** (a ball, a blessing, the comet, the Great Ball, the shop, Hypno) open a screen of their own (`#scr-xeco`, the base
+card style with D5's rarity frames) and **hold the run** like the base item choice (`G.Game.choiceStart` / `choiceEnd`; in co-op
+`G.Coop.holdStart`).
+- A card is picked by click or tap, by the digits, or with the pad. The screen is a `.scr`, so the pad's focus walks it, and
+  Leave / Keep them is its back button.
+- A pick in the first 0.38 s after the screen opens is ignored (the A press that walked you in).
+- Every item is taken through D5's `G.ExpLevel.itemTake` (`x:<id>`): stacking, caps, the banner.
+
+**The zone map, the legend and the fog of war:**
+- **The fog:** tiles within **14** of you are explored (`SIGHT`, per zone). The minimap shows an interactable only once its tile
+  is explored (or within 9 tiles), with a small icon per kind (a new `minimap.draw` seam). Meowth shows only while he's in, the
+  comet only once it has landed.
+- **The zone map:** **M**, a click or tap on the minimap, or the pause screen's "Zone map" button (the pad's way) opens it. It
+  shows the whole zone with unexplored tiles fogged, every interactable found, the guardian's altar or the portal, and you.
+- **The legend:** each kind on the map with its icon, how many are left and used, and the share explored.
+- The map holds the run while open (solo). M or Close shuts it.
+
+**First-run tips:** the first time you meet each kind (within 7 tiles), and your first ₽ and the map, a one-line tip shows for
+6.5 s, one at a time. It sits at the top centre; on a phone it goes under the minimap, clear of the banners. Each shows
+**once**: `tip.<kind>` in the Expedition save, merged by max, so a tip seen on one device stays seen on all. Viewers never get
+tips.
+
+**Determinism and viewers:**
+- **Pure:** where everything is (`layoutOf`: the zone's grids and the world seed; 8 tiles apart, 4 for rocks and berries, 9
+  from the start, 7 from the guardian's altar), Meowth's visits and the comet's landing. A co-op guest, a replay viewer and a
+  spectator place the same 42.
+- **Seeded:** every roll (a ball's or an altar's items, Meowth's stock, a rock's ₽, Ditto's pick, a wave's or an ambush's
+  Pokémon) comes from a `G.DLC.rng` stream (the seed, the zone, the interactable, a draw count), never `Math.random` (tested).
+- **The `x` block v7** `{xv: 7, m, z, th, a, c, l, u, w, o}`. `o` is the host's state:
+  - `s`: `[index, state, charge %, ...]` for every interactable that isn't fresh (states: 1 used, 2 charging or wave running,
+    3 burnt out, 4 landed or Great Ball ready);
+  - `h`: `[balls bought, shop buys, balls opened]`; `g`: `[difficulty, spawns, XP, ₽ %, loot]`;
+  - `n`: interactables used, `u`: the last one;
+  - `m`: `[visit, stall, 3 items, sold bits]` while Meowth is in.
+
+  Host frames carry it too; a guest's own frame has none, because the host owns them. The replay keeps `o` in a frame field of
+  its own (**field 9**, only when it changes) and records an **`xi`** event when one is used (the plan's "xi interactable
+  used"). The v1-v6 readers are kept: a block without `o` shows every interactable fresh.
+- **Versions:** `G.Expedition.DV` is now **6**. dv-1 to dv-5 replays and snapshots still play without a notice; a co-op lobby
+  needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; max per counter): `tip.<kind>` (the tips seen), `eco.earned`,
+`eco.best` (most ₽ in a run), `eco.spent`, `eco.balls`, `eco.shop`, `eco.altars`, `eco.freed`, `eco.rocks`, `eco.berries`,
+`eco.ditto`, `eco.hypno`. The run-over screen adds "₽ N · Poké Balls N · Altars N". **No server change:** the server already
+takes any counter.
+
+**Assets:** none new.
+- The balls, the comet, the berries and Meowth's counter use the overworld's item pictures in `/overworld/item_icons/`
+  (`poke_ball`, `premier_ball`, `great_ball`, `star_piece`, `oran_berry`, `nugget`, `amulet_coin`).
+- Meowth, Ditto, Hypno, Gengar, Unown, the cages' Pokémon and the ghosts use their PMD sheets.
+- The altars, rocks, bushes, cages, the minimap and legend icons and the zone map are drawn in code.
+
+**What changed in base files** (each a seam with no listener in a base page, or an `if` on `G.World.zone`):
+- `core/hooks.js`: 1 new seam, `minimap.draw`. `ui/minimap.js`: its call, only in an Expedition zone.
+- `mica/replay.js`: field 9 and the `xi` event (a base snapshot has no `x.o`: its frames don't change).
+- `systems/expedition.js`: `DV` 6, `economy.js`.
+- Expedition files: `expedition/core.js` (`x` v7; the existing `enemy.ko` and `run.tick` listeners also call the economy, plus
+  the `minimap.draw` one); `classic.js` (foes' difficulty / XP / spawn modifiers, the drawing calls, "₽ N" on the zone line, the
+  altar arrow kept clear of a tip, `spawnFoe` / `spotNear` for the waves); `levelups.js` (Skip pays ₽); `items.js` (the gold stat
+  reads "+N % ₽"); `terrain.js` (`XV`).
+
+**Deviations:**
+- **No interact key:** everything is a stand-in circle (D3's rule). Balls open after 0.45 s; Ditto, Hypno and cages after
+  0.8 s. A paid ball or a cage you can't afford says how much you're short, and waits until you step off and back.
+- **The study's radii are halved** (our tiles are smaller than PokéBonk's metres). Its Big Nugget ball discount waits for an
+  item: only luck discounts for now.
+- **Ours, not the study's:** ₽ for special kills, Meowth's prices, the horde sizes and the greed / curse numbers (the study
+  gives none).
+- **Not in this batch** (the plan's D7 row doesn't list them): Snorlax, Magnemite, the slot machine (the owner allowed it, play
+  money only, decision #7) and Survival's respawn of used interactables (D11).
+- **A freed cage's research** (study: +25 research) waits for D10's research; `eco.freed` counts it meanwhile.
+- **No guardian / portal tips:** D3's banners already say what to do.
+
+**Not yet:**
+- D8's Alphas, Friend Ball and capture (D8: built, see below; it reuses this choice screen for its "swap whom?", the cages stay XP);
+- Soul Dew / Lunar Blessing (`pl.xultCharge`) and a Big Nugget, as items;
+- a co-op guest's own interactables (a guest's run isn't an Expedition one yet: D11); its frames already carry the host's `o`;
+- Survival's respawning interactables (D11), and more kinds (Snorlax, Magnemite, the slot machine).
+
+## DLC D8: Alphas, capture and shinies
+
+**An Expedition run now catches Pokémon**: the timeline's alphas faint instead of falling, and a Friend Ball makes them
+**Support Alphas** that fight for you with a type perk; a League challenge completed from D8 on brings that member's
+**"wild X appeared!"** encounter, which you weaken and catch to unlock it; **shinies** roam the zones; every catch plays a
+**capture cinematic**. Hits also set off **elemental reactions** and **weather boosts** (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.1, 2.3, 2.8 and the D8 row). The code is `js/expedition/capture.js` (`G.ExpCap`) and `js/expedition/reactions.js` (`G.ExpRx`);
+every number is in their `K`. Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code
+force-loaded.
+
+**Alphas and the faint window** (study 2.8):
+
+| Rule | Number (`G.ExpCap.K`) |
+|---|---|
+| D3's alphas (150 / 330 / 480 s, x1.6, x9 HP) can't be KO'd outright: at 1 HP they **faint** (`hpFloor`) | the KO counts (kills, ₽, the Ultimate's alpha bonus); its XP drops |
+| The **faint window**: it lies there in a dashed circle with a timer arc | **8 s** (`FAINT_T`) |
+| **Stand in the circle** (no interact key: D3's rule) and you throw a **Friend Ball** | within **1.6 tiles** for **0.35 s** (`THROW_R`, `THROW_T`) |
+| Left alone, the window closes and it **drops its prize** | D3's item + berry |
+
+**Support Alphas** (study 2.8): a caught alpha fights for you for the rest of the run.
+
+| Rule | Number |
+|---|---|
+| Slots | **2** (`SLOTS`), **3** with the Lab's "Support team" (D10 sets the save counter `lab.support`; `LAB_SLOTS`) |
+| A full team | the Friend Ball asks **"Your team is full · Who do you swap for X?"**: a card per Support Alpha, or **Keep my team** (the prize drops). D7's choice screen (`G.ExpEco.openPick` with cards of its own) |
+| It follows you | fanned out behind you, 70 px (`SA_FOLLOW`); past 520 px it catches up at once (`SA_LEASH`) |
+| It shoots | the nearest foe within 320 px every **1.25 s**: a bolt of its first type, **9 x (1 + 0.06 x (your level - 1)) x your attack** (`SA_DMG`, `SA_LV`, `SA_CD`), Fire burns, Poison poisons, Ice slows; to the run's "Partner / team" damage row |
+| It never takes damage | — |
+
+**Type perks** (`PERK`; the study's three examples, the rest ours), each a stat of D5's sums (`items.js` `total()`), so two of
+the same type add:
+
+| Type | Perk | Type | Perk | Type | Perk |
+|---|---|---|---|---|---|
+| Normal | +8 % XP | Fire | +15 % status chance | Water | +8 % area |
+| Grass | +0.8 HP/s | Electric | +8 % attack speed | Ice | +12 % duration |
+| Fighting | +8 % physical | Poison | +3 % lifesteal | Ground | +10 % to bosses |
+| Flying | +6 % speed | Psychic | +8 % special | Bug | +15 % pickup range |
+| Rock | +15 max HP | Ghost | +5 % evasion | Dragon | +6 % damage |
+| Dark | +5 % crit | Steel | +3 armor | Fairy | +8 luck |
+
+The perk shows under each chip (top left, under the HP bar and its status chips; the minimap and the altar arrow step round
+them), and on the "Gotcha!" line ("Gotcha! Geodude joins your team · +15 max HP").
+
+**League encounters** (study 2.1: challenge -> appear -> weaken -> catch):
+- **The D4 decision:** the owner's decision #3 is "League roster only, earned via challenges + capture", so from D8 on a
+  completed challenge puts the member in `league.met` **and** `league.wild`, and it plays only once caught (`league.own`). A
+  member met in D4 (in `league.met`, never in `league.wild`) **stays playable** (`K.PLAY_MET`): nothing is ever taken from a
+  save. The run-over line is now "Challenge complete: Kangaskhan! Catch it in your next run"; the League screen says
+  "Done: catch it in your next run" and the cell "To catch!".
+- **When:** your next run takes up to **3** wild members (`PER_RUN`) in a seeded order, one a zone, each **50-120 s** into
+  its zone (`LG_AT`): "A wild Kangaskhan appeared!" (its first stage), x1.3, a pale blue aura and a "WILD · FLEES IN 2:30"
+  label, an arrow at the screen's edge and a star on the minimap.
+- **Its HP:** an alpha's x9 x its rank: **x0.8** common (and starters), **x1.2** uncommon, **x1.6** rare, **x5** legendary
+  (`LG_HP`, `LG_RANK`; study's 0.8 / 1.6 / 5 relative to an alpha). Damage x1.3, XP x6.
+- **Weaken it:** at 1 HP it faints for **12 s** (`LG_WINDOW`); stand by it and a **Poké Ball** goes. Caught, it joins the
+  League at once (`league.own`, saved to the browser and the account straight away, not at the run's end): "Gotcha!
+  Kangaskhan joined the League!".
+- **It flees** after **150 s** (legendaries **240 s**; `LG_FLEE`, `LG_FLEE_LEG`), or when its window closes: "Kangaskhan got
+  away! It will be back in your next run" (it stays wild).
+
+**Shinies** (study 2.8):
+- **The odds:** **8 % a zone + luck / 1,000**, **x1.5** with the Shiny Charm item (`SHINY`, `SHINY_LUCK`, `SHINY_CHARM`),
+  rolled on entering each zone 1-3 with your luck then; it comes **60-420 s** in (`SH_AT`).
+- **The encounter:** one of the zone's Pokémon (its cards, with a shiny sheet), on its **shiny sprite**, x4 HP (`SH_HP`): "A
+  shiny Oddish is nearby!". It **roams** round you (220-480 px, its own seeded stream), **never attacks** (no contact, no
+  shots) and **flees after 120 s** (150 s with the charm).
+- **Caught:** `shiny.caught` gets its dex and `cap.shiny` counts it; if it is a League family's, `league.shiny` gets the member,
+  who then **plays shiny** (cosmetic, PokéBonk's "shiny skins are cosmetic"; owner decision #5 shares shinies both ways, which
+  D10 can take to the trainer card). The base save is never written: a shiny caught here is not a base-game shiny.
+
+**The capture cinematic** (study 2.1: "3 shake pips, a capture cinematic"): **3.2 s** (`CINE`) that **hold the world** (the
+`run.hold` seam: the clock, the foes and the spawns stop), then **1 s of i-frames** (`AFTER`):
+
+| Phase | s | What you see |
+|---|---|---|
+| Throw | 0.5 | the ball (Friend Ball for an alpha, Poké Ball otherwise) arcs from you to it |
+| Absorb | 0.35 | the Pokémon, white, shrinks into the ball (red light) |
+| Drop | 0.25 | the ball falls |
+| Shakes | 3 x 0.5 | it wobbles; a pip fills on the banner each time |
+| Click | 0.6 | sparks: "Gotcha! ..." |
+
+Over the HUD, a banner (ball, "Friend Ball · Vulpix", 3 pips, then "Gotcha!") sits above the move bar and steps clear of a
+first-run tip. Every catch succeeds (the study has no break-out); the Master Ball item's "guaranteed capture" has nothing
+to guarantee yet.
+
+**Elemental reactions** (study 2.3; `G.ExpRx.K`), through the `combat.out` seam, so every hit (yours, a Support Alpha's, an
+Ultimate's) can set one off; one per hit, **0.25 s** cool-down per foe and reaction:
+
+| Reaction | When | Effect |
+|---|---|---|
+| **Electrocuted** | Electric on a **wet** foe | **x1.5**; chains to up to **12** other wet foes within **9 m** (half the hit each, paralysis **60 %**), drying them |
+| **Steam** | Water on a **burning** foe | **x1.4**; confuses and roots (x0.85 speed, 1.4 s) the foes within **6 m**; the burn goes out |
+| **Inferno** | Grass or Flying on a burning foe | the burn (+2) spreads to the foes within **7 m** |
+| **Wreckage** | Fighting, Rock or Steel on a **frozen** foe | **x2.6** (on top of the base frozen x1.25); the ice shatters |
+| **Poison Gas** | Fire on a **poisoned** foe | **x1.3** and a cloud: poison +2 within **6 m** (ours: the study gives no number) |
+| **Psychic Meltdown** | Psychic on a confused or sleeping foe | **x1.6** (ours) |
+| **Dragon Rage** | Dragon on a foe with **2+** statuses (wet and chill count) | **x1.8** (ours) |
+
+- **Marks:** a Water hit leaves a foe **wet** for **4 s** (a blue puddle under it); an Ice hit adds a **chill** stack (pips
+  over it): **3** stacks, or **1** on a wet foe, **freeze** it for **1.6 s**.
+- The study's metres are halved into our tiles, as D7's altars (1 m = 16 px: 9 m = 144 px).
+- A pop-up names each reaction ("Electrocuted!") with a ring in its colour. The run counts them: `rx.<name>` and `rx.total`.
+
+**Weather boosts** (study 2.3): the base weather (`systems/weather.js`, the same for you and the foes) already boosts Fire /
+Water in sun and rain, Rock / Ground / Steel in sand, Ice in snow, Ghost / Fairy / Psychic in fog. In an Expedition zone:
+- the study's two it lacks: **Sun boosts Grass x1.3**, **Fog (the study's Mist) boosts Dark x1.3** (`WX_EXTRA`);
+- **the weather boost:** while the weather favours one of your Pokémon's types, **all its hits do +10 %** (`WX_SELF`; a Support
+  Alpha's shots go by its own types), with a line when it starts: "Harsh sunlight boosts your Bulbasaur: +10% damage".
+- Both follow the weather's 3 s fade in and out. The base weather's own numbers and schedule are unchanged (it still comes
+  by `Math.random`, as in base; the PokéBonk "Ash" weather is not added).
+
+**Input:** nothing new. The throw is a stand-in circle (D3's rule), so mouse, touch and pad play the same; the "swap whom?"
+screen is D7's (click / tap a card, digits, the pad; Keep my team is its back button).
+
+**Determinism and viewers:**
+- **Pure:** `zonePlan(seed, map, zone, {member, luck, charm})` (when the League encounter comes, the shiny roll, its time and
+  pick) and `pendingOf(seed)` (which wild members, in which order) use `G.DLC.rng` only (tested: no `Math.random`). Where an
+  encounter appears and a shiny's wandering come from streams of the seed and the zone. Combat (and so a chain's paralysis)
+  stays `Math.random`, as in base.
+- **The `x` block v8** `{xv: 8, m, z, th, a, c, l, u, w, o, p}`. `p` is the host's capture state: `s` the Support Alphas'
+  dex, `t` `[enemy id, kind, ...]` the League (7) / shiny (8) encounters, `f` `[kind, dex, x, y, flags, ...]` the fainted
+  Pokémon, `k` `[kind, dex, x, y, flags, seq]` the capture under way, `n` the captures and `u` the last one's dex; a host frame
+  adds `h`, the host's uid. A viewer draws the Support Alphas in formation round the watched player (a co-op guest: round the
+  host's puppet), the fainted Pokémon, the encounters' sheets (shiny) and auras, and plays the cinematic when `k`'s seq
+  changes (its own clock, so a missed frame is harmless).
+- **The replay** keeps `p` in its slow state (it changes a few times a zone) and records an **`xc`** event when `n` rises (the
+  plan's "xc capture result", with the dex). v1-v7 still read: a block without `p` shows no capture.
+- **Versions:** `G.Expedition.DV` is now **7**. dv-1 to dv-6 replays and snapshots still play without a notice; a co-op lobby
+  needs the same dv.
+
+**Saved and merged** (the Expedition save, never the base save; sets unioned, counters max-merged):
+- sets `league.wild` (met from D8 on, waiting to be caught), `league.own` (caught), `shiny.caught` (dex), `league.shiny`
+  (members that play shiny), `sa.types` (types ever recruited);
+- counters `cap.alpha` (recruits), `cap.league`, `cap.shiny`, `cap.fled`, `shiny.seen`, `sa.best` (most Support Alphas at
+  once), `rx.<reaction>`, `rx.total`.
+- The run-over screen adds "Support Alphas: Pidgey, Vulpix", "Caught: Kangaskhan", "Shinies: Oddish", "Reactions: 34".
+- **No server change:** the server already takes any set or counter (the test merges two devices through the real handler).
+
+**First-run tips** (D7's, once each): the alpha, the League encounter and the shiny.
+
+**Assets:** none new. The balls are the overworld's item pictures (`friend_ball`, `poke_ball`, `/overworld/item_icons/`); the
+Pokémon, their shiny sheets and the Support Alphas are their PMD sheets (MicaSurvivor has the shiny sheets); the circles,
+auras, chips, banner and the reactions' marks are drawn in code.
+
+**What changed in base files** (each an `if` on `G.World.zone` or a field only Expedition code sets):
+- `game.js` `drawScene`: the Support Alphas, fainted Pokémon and the capture's ball join the y-sorted scene (`G.ExpCap.drawables`).
+- `mica/replay.js`: the `xc` event (a base snapshot has no `x.p`: its frames don't change).
+- `systems/expedition.js`: `DV` 7, `reactions.js` and `capture.js` in `SCRIPTS`.
+- Expedition files: `expedition/core.js` (`x` v8, the hooks: `run.tick`, `run.hold`, `combat.out`, `minimap.draw`, `run.end`);
+  `classic.js` (alphas marked; a downed alpha is D8's, its prize only if left; the draw calls; the altar arrow clear of the
+  chips); `items.js` (`total()` adds the perks); `economy.js` (the choice screen takes cards of its own, `tipOnce` exported, 3
+  tips); `league.js` (`league.wild`, `wild()`, the shiny skin, the lines); `ultimates.js` (`drawCut` also draws the capture
+  banner); `terrain.js` (`XV` 8).
+
+**Deviations:**
+- **No interact key:** the throw is a stand-in circle (D3's rule).
+- **Every catch succeeds** once it has fainted (the study has no break-out roll), so the Master Ball item still only adds
+  damage. Mewtwo's "invasion" (study 2.1) is D4d's.
+- **Ours, not the study's:** the perks other than Fire / Rock / Fairy, the Support Alphas' damage, the League windows (12 s)
+  and HP base, the shiny's HP and window, Poison Gas / Meltdown / Rage's numbers, the +10 % weather boost.
+- **The cages** (D7) still free their Pokémon for XP: the capture starts from a fainted Pokémon.
+
+**Not yet:**
+- the Lab's third slot (D10: `lab.support`), shiny perks and the Shiny Charm as meta (D10: `cap.shiny`, `shiny.caught`), Honey /
+  Dawn Stone / Master Ball boosts (`zonePlan`'s options are where they'd go);
+- a co-op guest's own Support Alphas and captures (a guest's run isn't an Expedition one yet: D11); viewers see the Support
+  Alphas and the cinematic but not the allies' shots or the reactions' pop-ups (the damage numbers only);
+- the run's damage breakdown files the Support Alphas under "Partner / team" (there's no "Alphas" row: a base change).
+
+## DLC D9: tiers, score and boards
+
+**Expedition · Classic now has difficulty tiers, a score, time-attack medals and its own leaderboards**: Normal, Hard and
+Nightmare change the run and unlock in sequence on each map; a won run earns a medal by its time; the boards are per map and
+tier (Score, Time attack and a weekly Season with **cosmetic ribbons only**) (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+2.11-2.13 and the D9 row). The code is `js/expedition/tiers.js` (`G.ExpTier`); every number is in its `K`. Base modes and the
+base board are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**The tiers** (`K.TIERS`, study 2.11 as written), read by Classic (`js/expedition/classic.js`, `tierOf`):
+
+| | Normal | Hard | Nightmare | Where |
+|---|---|---|---|---|
+| Enemy HP / damage / speed | x1 | x1.4 / x1.42 / x1.08 | x1.9 / x1.96 / x1.16 | `spawn` (every foe of the zone: the trickle, events, alphas, League / shiny encounters, the interactables' waves) |
+| Enemy amount / concurrent cap | x1 | x1.3 / x1.15 | x1.6 / x1.3 | the trickle's rate, `capNow` |
+| Elite share of the trickle | 0 | 4 % | 8 % | `trickle` (D3's elite numbers) |
+| Event size / events earlier | x1 / — | x1.2 / 15 s | x1.4 / 30 s | `plan` (swarms, stampedes, flocks, elite waves, rock slides; D3's `K.EARLY` moved here) |
+| Telegraph time | x1 | x0.92 | x0.85 | the rock slide's warning circles |
+| Boss escorts | 0 | 1 | 2 | elites round a guardian / the legendary when it wakes (`escorts`, their own seeded stream) |
+| Boss damage | x1 | x1.42 | x1.96 | `wake` (HP stays D3's `bossHp`: x(1 + 0.15 tier) of your DPS) |
+| XP | x1 | x1.15 | x1.3 | `spawn` |
+| Score | x1 | x1.5 | x2 | the score (below) |
+| Pay | x1 | x1.75 | x2.5 | (the study's Stardust column, kept for D10's payout: nothing pays yet) |
+
+Normal is all x1 / 0 and draws nothing more from any stream, so a Normal run plays exactly as before D9.
+
+**Unlocks, per map, in sequence:** Normal always; **winning the map on a tier opens the next** ("Hard unlocked on Viridian
+Forest!" on the run-over screen). Saved as the counter `tier.<map>` (max-merged), read together with D3's `wins.<map>.<diff>`, so a
+win from before D9 counts. Only Viridian Forest is playable (Mt. Moon and Cerulean Cape say "Coming soon" until D12).
+
+**The score** (study 2.12, Classic, + a catch term of ours): **(2 KOs + 3 s + damage / 200 + 1,500 (zone - 1) + 800 bosses +
+6,000 if won + 400 a catch) x (1 + 0.5 tier)** (`K.SCORE`; a catch is a Support Alpha, a League encounter or a shiny,
+`G.ExpCap.run.n`). The run-over screen says "Score: 13,900 (x1.5 Hard)". The server recomputes it (below).
+
+**Time-attack medals** (study 2.13): a won run's time (the run's clock at the end, the victory banner included):
+
+| Medal | Normal | Hard | Nightmare |
+|---|---|---|---|
+| Bronze | finish | finish | finish |
+| Silver | < 30:00 | < 32:10 | < 34:20 |
+| Gold | < 23:00 | < 24:36 | < 26:12 |
+| Champion | < 17:30 | < 18:40 | < 19:50 |
+
+Normal's limits (27:00 / 20:00 / 14:30) x(1 + 0.08 tier), + 3 min for the shrine (all three launch maps have one): `K.MEDALS`,
+`MEDAL_TIER`, `SHRINE_S`. The run-over screen shows the medal (the achievement medal pictures; a trophy for Champion), "New medal:
+Gold" and the next one to aim for ("Next: Champion under 18:40"). Saved as `medal.<map>.<diff>` (max) and `medals.<id>` (count).
+
+**"Difficulty: Normal · leaderboards"** (a second button on the Classic card of "Choose a mode"; mouse, touch and pad):
+- the map tabs; **the tier cards** (each tier's table, your best clear and medal, Chosen / Choose / "Win the map on Normal to
+  unlock it"; a locked one refuses); the medal limits of the chosen tier; your season ribbons;
+- **the boards** (signed in; a guest is asked to log in): **Score** (D0b's board), **Time attack** (fastest clear, its medal and a
+  Watch link to its replay) and **Season**: "Season 2 · ends in 3 d 12 h", the prize ladder ("Season prizes (cosmetic ribbons
+  only, earned by playing)": Master #1, Elite #2-3, Top 10, Top 25, Top 50), this week's board and "Last season: #2 · Elite
+  ribbon". Each read is one exact key.
+- the pick is per device (localStorage `micasurvivorexp_tier`, clamped to what is unlocked); `G.Expedition.pick()` asks here.
+
+**The weekly season** (study 2.13's 7-day seasons, from Monday 2026-10-12 UTC; `K.SEASON0`, `K.WEEK`): every Expedition score
+also goes to its week's board. **Prizes are cosmetic only** (owner rule: never ads or paid items; no Pokémonedas, no Stardust):
+looking at the Season tab, a top-50 place last week is claimed once as a ribbon into the Expedition save (set `season.prize`,
+ids `s<season>.<map>.<tier>.<ribbon>`; counter `season.best`, 5 Master ... 1 Top 50). The owner's decision #8 had "no weekly
+seasons for now": this is the view and the ribbons only, no other rewards; it can be hidden by dropping the tab.
+
+**Server** (`server/mp.mjs`, mode `micasurvivor_expedition` of `run-score` / `run-leaderboard`; needs the full gate):
+- **The parts:** a score now carries `kills, time, dmg, zone, bosses, won, catches`; the server recomputes the score
+  (`msurvExpScore`, the same expression as `G.ExpTier.score`) and refuses a mismatch (400 "score does not match its parts").
+  Plausibility: zone 1-4, a win ends at the shrine (zone 4) and takes at least 3:00, KOs <= 15 a second + 200, damage <= 100,000 a
+  second, bosses <= 2 x zone + 4, catches <= 60, whole numbers. From dv 8 a score without its parts is refused; an older client's
+  (dv 1-7) is still taken under a generous ceiling.
+- **The replay reference:** a won run uploads its replay (`G.Replay.share`) and sends its id; the server takes it only if it is
+  one of **your** uploads (`msurvreplay:<id>`) with this run's mode, map, tier, time (± 2 s) and KOs, and keeps it on the row.
+- **Boards** (exact keys only; `store.get`, no prefix scan): `runboard:micasurvivor_expedition:<map>:<diff>` (D0b's, by score),
+  `…:<diff>:time` (won runs, by time, with the medal; your best in `runBest[...':time']`) and `msurvseason:<n>:<map>:<diff>`
+  (the week's, by score; written only when your entry improves; swept 6 weeks after its last write: `GC_TABLE`).
+  `run-leaderboard` takes `board: 'score' | 'time' | 'season'` and, for a season, `season: n` (this week or up to 4 back).
+- The run-score brake (20 a minute) and the base board's isolation are unchanged; the base `micasurvivor` path is untouched.
+
+**Sync:** the tier already travels as the `x` block's `c.d` (v3 on), and every viewer reads the same tables, so **the `x` block
+stays v8**: a spectator's or a co-op guest's HUD shows HARD / NIGHTMARE and plans the tier's timeline. The replay header already
+had `diff`. **`G.Expedition.DV` is 8** (a Hard run means something new); dv-1 to dv-7 replays and snapshots still play with no
+notice (they were all Normal).
+
+**Assets:** none new (the achievement medal and trophy pictures of `js/ui/icons.js`; the rest is HTML and CSS).
+
+**What changed in base files** (each only on an Expedition path):
+- `systems/expedition.js`: `DV` 8, `tiers.js` in `SCRIPTS`, `pick()` (the saved pick, or `G.ExpTier.pick()`), 3 i18n keys.
+- `ui/modes-ui.js`: the Classic card's second button, `openTier`, and Back / open closing the panel.
+- `game.js`: the Expedition run-over passes `medal`; `ui/run-ui.js`: the medal block (only when `r.medal` is set).
+- Expedition files: `tiers.js` (new); `classic.js` (the tier in `plan` / `spawn` / `trickle` / `capNow` / the rock slide / `wake`
+  and its escorts, `scoreParts`, the score through `G.ExpTier`, the HUD's tier tag; `K.EARLY` moved to the tier table); `core.js`
+  (dv 8, `run.end`: the parts, the medal / unlock, the mark with its parts and replay, the toasts).
+
+**Deviations:**
+- **Ours, not the study's:** the catch term (400), the escorts being elites of the zone, the medal's time including the 3 s
+  victory banner, the server's plausibility limits, the ribbons (the study pays Stardust: here cosmetic only).
+- **Not built:** the study's KO boards, Survival boards (D11), per-species boards and clans (owner: skip), "Win the Forest on
+  Hard"-style challenge unlocks beyond the sequence, a season reward other than the ribbon.
+
+## DLC D6-D9: the stacked branch
+
+`feat/micasurvivor-expedition-d6-d9` carries four batches on top of D0-D5 (merged in #806), one commit each, `G.Expedition.DV`
+5 -> 8 and the `x` block v6 -> v8:
+- **D6 Ultimates** (`ultimates.js`): the charge meter, type Ultimates from the Z-moves, 16 signature Ultimates, auto-cast. dv 5, `x.w`.
+- **D7 economy and interactables** (`economy.js`): ₽, Poké Balls, Meowth, Unown / challenge / cursed / greed altars, Ditto,
+  Hypno, rocks, berries, cages, the zone map and its fog, first-run tips. dv 6, `x.o`.
+- **D8 alphas, capture and shinies** (`capture.js`, `reactions.js`): the Friend Ball, Support Alphas, League encounters, shinies,
+  the cinematic, elemental reactions and weather boosts. dv 7, `x.p`.
+- **D9 tiers, score and boards** (`tiers.js`): Normal / Hard / Nightmare, unlocks, the score with its parts checked by the
+  server, medals, the Score / Time attack / Season boards with cosmetic ribbons. dv 8 (no `x` change). **The only server change of
+  the stack** is D9's (`server/mp.mjs`: `run-score` / `run-leaderboard` for `micasurvivor_expedition`, `msurvseason:` in the GC
+  table), so the branch needs the full gate before it merges.
 
 ## Tests
 
@@ -2065,6 +2584,48 @@ sets):
   determinism (no `Math.random` in deals or drops), the `x` block v5 for a co-op guest, live spectator and replay viewer
   (and a v4 block); a base Normal run in the same page; the desktop and phone layouts. `SHOTS=<dir>` saves a level-up
   choice, a rarity spread and the bag (strip and pause panel) at both sizes.
+- `node overworld/tests/micasurvivor_expedition_ultimates_test.mjs` (DLC D6), fast-forwarded with `G.Game.debugStep`: the
+  server merging the auto setting's counters (the later switch wins); each charge source's rate (95 s passive, the kill
+  bucket, elite / alpha / boss, damage taken), also through the real `enemy.ko` and `player.hurt` seams, and none while casting;
+  the cast by Z, R and the pad's Z-move / Y / RT buttons (a synthetic gamepad), the 0.32 s hit-stop, i-frames for the cast +
+  0.6 s (also after `invuln` is zeroed), the damage; the cut-in drawn with its name; all 18 type Ultimates hurting foes and a
+  Caterpie run casting bug's; the 16 signatures, Charmander's tiers (names, beats, damage) and Mew's seeded copies; the auto
+  setting (U, the pause button, the save, a merge; casting with a foe near, not without); the `x` block v6 for a co-op guest,
+  live spectator and replay viewer (cut-in and ghost choreography; the `xu` event; a v5 block); a base Normal run in the same
+  page; the desktop and phone layouts (on screen, no overlap; a click / tap on the button and the AUTO chip). `SHOTS=<dir>`
+  saves a cut-in, a signature and a type Ultimate going off and the meter at both sizes.
+- `node overworld/tests/micasurvivor_expedition_economy_test.mjs` (DLC D7), fast-forwarded with `G.Game.debugStep`: the server
+  merging the D7 counters; the layout (42 per zone, pure, on open floor, spaced; none in the shrine); ₽ from kills (also the
+  real `enemy.ko` seam), the gold stat and a Skip; each Poké Ball kind (a paid one's price curve and luck discount, the pick of
+  3, the accidental-pick guard; free; cursed: difficulty, the ambush, 1-2 items); Meowth's schedule, prices and market heat;
+  each Unown tier (charge time, drain, offers / picks / lowest rarity, hordes, the Golden seal), the comet (landing, burning
+  out, its pick and the Ultimate charge), the challenge / cursed / greed altars; Ditto, Hypno, rocks, berries, cages; the fog,
+  the minimap's icons, the zone map and its legend (M, the pause button); the tips (once, saved); the `x` block v7 on
+  snapshots and host frames, a fresh spectator page, the replay's field 9 and `xi` events, a v6 block; a base Normal run in
+  the same page; the desktop and phone layouts (the tip box, a ball's pick, the shop, the map on screen; clicks / taps).
+  `SHOTS=<dir>` saves an altar, a ball's choice, Meowth's shop, the minimap's fog and the zone map at both sizes.
+- `node overworld/tests/micasurvivor_expedition_capture_test.mjs` (DLC D8), fast-forwarded with `G.Game.debugStep`: the server
+  merging the D8 sets and counters; an alpha on the timeline marked, stopping at 1 HP, fainting (8 s), counted as a KO, its prize
+  when left alone; the Friend Ball and the cinematic (its 7 phases, the world held, the i-frames, the banner in English); a Support
+  Alpha with its perk (D5's sums), shooting its type to the "Partner / team" row and following; slot 2, a full team's "swap whom?"
+  and Keep my team; a League encounter end to end (met + wild, a D4-met member still playable, the next run's encounter on time
+  with its HP by rank, faint, catch, `league.own` saved at once, fleeing and staying wild); shiny odds (20,000 seeded zones), a
+  shiny on its sheet that roams, never hurts, flees, and its catch; each elemental reaction, wet / chill / freeze and the
+  cool-down through the real `G.Combat.land`; the weather boosts; pure zone plans; the `x` block v8 `p` for a live spectator,
+  host frames and the replay (`xc`), a v7 block; a base Normal run in the same page; the desktop and phone layouts (the chips,
+  the swap choice, the banner). `SHOTS=<dir>` saves an alpha, a fainted alpha, the Support Alphas, the swap choice, the
+  cinematic, a shiny and a reaction at both sizes.
+- `node overworld/tests/micasurvivor_expedition_tiers_test.mjs` (DLC D9), the real handler behind a static server: the tier
+  tables, the score formula with its catch term, the medals at their limits, the season weeks and ribbons (`tiers.js` in a vm);
+  the server recomputing 16 scores from their parts, refusing junk (a wrong score, a bad zone, a win off the shrine, a 2-minute
+  clear, too many KOs / damage / catches / bosses, a dv-8 score without parts, a junk / foreign / mismatched replay), taking an
+  old dv-7 score under a ceiling, time attack (fastest first, the medal, your best kept), the season boards week to week and
+  their reads, the rate limit, exact-key reads only, the base board untouched; in the game: Normal only at first, the panel by
+  its button (locked cards, the medal limits), a Normal win (the score's parts, Champion, Hard unlocked, the run-over screen),
+  its mark on the boards with its replay; Hard and Nightmare foes, plans, escorts and trickle elites against Normal's; the save
+  on the server; the Score / Time attack / Season boards in the panel and last season's Elite ribbon, once; a fresh viewer page
+  showing the tier from `c.d`; the phone and desktop layouts. `SHOTS=<dir>` saves the tier picker, the boards, the season and
+  the run-over medal at both sizes.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

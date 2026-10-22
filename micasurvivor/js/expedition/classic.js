@@ -61,7 +61,6 @@ G.ExpClassic = (() => {
   const K = {
     FINAL: 600,                  // s of zone time before the final swarm (study 2.8: 10:00)
     SHIFT: [0, 20, 40],          // s every timeline event of zone 1 / 2 / 3 comes earlier ("later zones arrive earlier")
-    EARLY: { normal: 0, hard: 15, nightmare: 30 },   // D9's tiers pull events earlier (study 2.11); D3 plays Normal
     ZMIN: [0, 240, 480],         // a zone's enemies are at least this far into the run (rushing a zone can't make it easy)
     CAP: 110, CAP_TOUCH: 80,     // concurrent enemies (owner #11: raised for Expedition, lower on phones)
     FINAL_SPAWN: 6, FINAL_HP: 4, FINAL_DMG: 2, FINAL_CAP: 1.4,   // the final swarm: x6 spawns, HP x4 / dmg x2 per minute
@@ -90,6 +89,10 @@ G.ExpClassic = (() => {
     [390, 'swarm'], [420, 'totem'], [450, 'elite'], [480, 'alpha'], [520, 'stampede']];
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const DIFF_NAME = { normal: 'Normal', hard: 'Difícil', nightmare: 'Pesadilla' };
+  // (D9: the tier's table, js/expedition/tiers.js G.ExpTier.K.TIERS: HP, damage, speed, amount, cap, elites, events, earlier,
+  //  telegraphs, escorts, XP. Normal is all x1 / 0, so a Normal run plays exactly as before D9.)
+  const NORMAL_T = { hp: 1, dmg: 1, spd: 1, amount: 1, cap: 1, elite: 0, event: 1, early: 0, tele: 1, escorts: 0, xp: 1, score: 1 };
+  const tierOf = d => (G.ExpTier ? G.ExpTier.of(d) : NORMAL_T);
 
   // ---------------- the maps (D3: Viridian Forest; D12 adds Mt. Moon and Cerulean Cape) ----------------
   // types: the map's residents' types (study 5.3); bands: the BST of each zone's enemies (base forms, middle, final);
@@ -133,13 +136,13 @@ G.ExpClassic = (() => {
   function plan(seed, map, zone, diff = 'normal') {
     map = MAPS[map] ? map : 'viridian';
     diff = DIFFS.includes(diff) ? diff : 'normal';
-    const M = MAPS[map], zi = Math.min(3, zone) - 1, rng = zoneStream(seed, map, zone, 0xC3);
+    const M = MAPS[map], zi = Math.min(3, zone) - 1, rng = zoneStream(seed, map, zone, 0xC3), TR = tierOf(diff);
     const P = poolOf(map, zone);
     const cards = shuffle(rng, P.res).concat(shuffle(rng, P.others).slice(0, 12));
     const guardian = pickR(rng, M.guardians[zi]);
     const events = [];
     if (zone <= 3) {
-      const shift = K.SHIFT[zi] + K.EARLY[diff];
+      const shift = K.SHIFT[zi] + TR.early;   // (D9: Hard 15 s, Nightmare 30 s earlier)
       const tl = TIMELINE.slice();
       tl.push([intR(rng, 170, 280), 'flock'], [intR(rng, 400, 500), 'rockslide']);
       if (rng() < 0.5) tl.push([intR(rng, 540, 585), rng() < 0.5 ? 'flock' : 'rockslide']);
@@ -156,6 +159,7 @@ G.ExpClassic = (() => {
         else if (kind === 'elite') { n = 5 + 2 * zi; dex = [pickR(rng, early), pickR(rng, early)]; }
         else if (kind === 'totem') dex = [pickR(rng, M.totem[zi])];
         else if (kind === 'summoner') dex = [pickR(rng, M.summoner[zi])];
+        if (TR.event !== 1 && n > 1) n = Math.round(n * TR.event);   // (D9: bigger events; no extra draw, so the plan's stream is the same)
         events.push({ at: Math.max(30, at0 - shift), kind, n, dex, seed: Math.floor(rng() * 4294967296) >>> 0, i });
       });
       events.sort((a, b) => a.at - b.at || a.i - b.i);
@@ -218,7 +222,7 @@ G.ExpClassic = (() => {
   const on = () => !!(S && G.Modes.isExp());
   const diffIdx = d => Math.max(0, DIFFS.indexOf(d));
   const say = (t, s = 3) => G.Spawner.say(t, s);
-  const capNow = () => Math.round((G.Touch && G.Touch.active ? K.CAP_TOUCH : K.CAP) * (S && S.fs ? K.FINAL_CAP : 1));
+  const capNow = () => Math.round((G.Touch && G.Touch.active ? K.CAP_TOUCH : K.CAP) * (S && S.fs ? K.FINAL_CAP : 1) * (S ? tierOf(S.diff).cap : 1));   // (D9: the tier's cap)
 
   /** A Classic run starts (js/expedition/core.js run.start, after zone 1 is set). */
   function begin(cfg) {
@@ -301,7 +305,7 @@ G.ExpClassic = (() => {
     const zi = Math.min(3, S.zone) - 1, d0 = dps();
     const hp = bossHp({ zone: S.zone, dps: d0, tier: diffIdx(S.diff), t, legend, players: Math.max(1, alive.length) });
     const bs = E.bossScale(t), lv = (G.Game.player && G.Game.player.level) || 1;
-    const dmg = legend ? K.LEGEND_DMG : K.GUARD_DMG[zi];
+    const TR = tierOf(S.diff), dmg = (legend ? K.LEGEND_DMG : K.GUARD_DMG[zi]) * TR.dmg;   // (D9: the tier's damage)
     const def = { dex, name: p.name, hp: hp.hp, spd: Math.round(G.U.clamp(40 + E.baseSpd(p) * 0.5, 40, 100)), dmg: Math.round(dmg * 1.2), xp: G.Player.xpFor(lv) * (legend ? K.LEGEND_XP : K.GUARD_XP[zi]),
       behavior: E.behaviorOf(p) === 'ranged' || legend ? 'ranged' : E.baseSpd(p) > 90 ? 'charger' : 'chase', shotDmg: Math.round(dmg * 0.55), shotCd: 1.1, range: 260 };
     const [ax, ay] = siteXY(S.sites.altar);
@@ -310,9 +314,23 @@ G.ExpClassic = (() => {
     G.EnemyMgr.add(e);
     S.boss = e; S.ph = legend ? 3 : 1; S.charge = 1; S.exhSaid = false;
     S.bosses.push({ zone: S.zone, dex, hp: e.maxHp, curve: hp.curve, fromDps: hp.fromDps, dps: Math.round(d0), target: hp.target, at: t, down: null });
+    escorts(TR.escorts, ax, ay - 70, t);   // (D9: Hard 1, Nightmare 2)
     say(G.I18n.f(legend ? '¡{x} aparece en el santuario!' : '¡{x}, el guardián, despierta!', p.name), 3.4);
     G.Camera.kick(1.1); G.Audio.sfx('boss'); G.FX.ring(ax, ay, 10, 220, legend ? '#ff9ed8' : '#ffd95e', 0.8, 6);
     return e;
+  }
+  /** D9: a boss's escorts, elites of the zone's first cards round it (their own seeded stream). */
+  function escorts(n, x, y, t) {
+    if (!(n > 0)) return [];
+    const rng = R(mix(S.seed, S.zone, MAP_IDS.indexOf(S.map) + 1, 0xE5C)), E = G.ExpTier ? G.ExpTier.K.ESCORT : K.ELITE, out = [];
+    for (let i = 0; i < n; i++) {
+      const dex = S.plan.cards[Math.floor(rng() * Math.min(S.plan.cards.length, 6))], a = (i + 0.5) / n * 6.2832 + rng() * 0.6;
+      let px = x + Math.cos(a) * 90, py = y + Math.sin(a) * 60;
+      if (!G.World.isFree(px, py, 14) && !G.Sprites.hovers(dex)) { px = x; py = y; }
+      const e = spawn(dex, px, py, t, { hp: E.hp, dmg: E.dmg, xp: E.xp, scale: E.scale, kind: 'elite' });
+      if (e) { e.xescort = 1; out.push(e); }
+    }
+    return out;
   }
   function tickBoss(t) {
     const e = S.boss;
@@ -385,15 +403,20 @@ G.ExpClassic = (() => {
     if (o.minion) def.minion = o.minion;
     if (o.behavior === 'summoner') { def.shotCd = 5; def.range = 420; }
     const m = S.fs ? Math.max(0, (t - S.zs - K.FINAL) / 60) : 0;
-    const sc = G.Enemies.scale(teff), n = Math.max(1, (G.Game.everyone ? G.Game.everyone().length : 1));
-    const e = new G.Enemy(def, x, y, { hp: sc.hp * G.Coop.scaleHp(n) * hpK(teff) * Math.pow(K.FINAL_HP, m) * (o.hp || 1), dmg: sc.dmg, spd: sc.spd * (o.spd != null ? o.spd : 1) });
-    e.dmg *= K.DMG_K * Math.pow(K.FINAL_DMG, m) * (o.dmg || 1);
-    e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1));
+    const sc = G.Enemies.scale(teff), n = Math.max(1, (G.Game.everyone ? G.Game.everyone().length : 1)), TR = tierOf(S.diff);   // (D9: the tier)
+    const e = new G.Enemy(def, x, y, { hp: sc.hp * G.Coop.scaleHp(n) * hpK(teff) * Math.pow(K.FINAL_HP, m) * (o.hp || 1) * TR.hp, dmg: sc.dmg, spd: sc.spd * (o.spd != null ? o.spd : 1) * TR.spd });
+    e.dmg *= K.DMG_K * Math.pow(K.FINAL_DMG, m) * (o.dmg || 1) * TR.dmg;
+    e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1) * TR.xp);
     // (D5: the Cursed Incense vitamin, +12 % difficulty a level: HP and damage)
     const cu = G.ExpItems ? G.ExpItems.total(G.Game.player, 'curse') : 0;
     if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }
+    // (D7: the cursed Poké Balls and the cursed / greed altars: + difficulty (HP and damage), + XP)
+    const xm = G.ExpEco && G.ExpEco.mods();
+    if (xm && xm.diff > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + xm.diff)); e.dmg *= 1 + xm.diff; }
+    if (xm && xm.xp > 0) e.xp = Math.round(e.xp * (1 + xm.xp));
     if (o.scale) setScale(e, o.scale);
     if (o.kind) { e.xk = o.kind; S.specials.set(e.id, { kind: o.kind, e, t0: t, next: K.TOTEM.every, rng: R(mix(S.seed, e.id, 0x70)) }); }
+    if (o.kind === 'alpha' && G.ExpCap) G.ExpCap.mark(e, 'alpha');   // (D8: an alpha faints at 1 HP: the Friend Ball's window)
     G.EnemyMgr.add(e);
     return e;
   }
@@ -420,7 +443,8 @@ G.ExpClassic = (() => {
     const cap = capNow();
     if (G.EnemyMgr.count >= cap) { S.acc = 0; return; }
     const zi = Math.min(3, S.zone) - 1, teff = Math.max(t, K.ZMIN[zi]);
-    const k = G.Coop.scaleRate(players.length) * (S.boss ? K.BOSS_RATE : 1) * (S.fs ? K.FINAL_SPAWN : 1) * (S.zone === 4 ? K.SHRINE_RATE : 1) * (1 + K.ZONE_RATE * zi);
+    const TR = tierOf(S.diff);
+    const k = TR.amount * G.Coop.scaleRate(players.length) * (S.boss ? K.BOSS_RATE : 1) * (S.fs ? K.FINAL_SPAWN : 1) * (S.zone === 4 ? K.SHRINE_RATE : 1) * (1 + K.ZONE_RATE * zi) * (G.ExpEco ? 1 + G.ExpEco.mods().rate : 1);   // (D7: the cursed altar's + spawns)
     S.acc = Math.min(8, S.acc + G.Spawner.rate(teff) * k * dt);
     const cards = S.plan.cards, nC = Math.min(cards.length, K.CARDS0 + Math.floor(Math.max(0, zt) / K.CARD_EVERY));
     while (S.acc >= 1 && G.EnemyMgr.count < cap) {
@@ -434,7 +458,8 @@ G.ExpClassic = (() => {
       while (ci < nC - 1 && (r -= w[ci]) > 0) ci++;
       const dex = cards[ci], p = players[Math.floor(rng() * players.length) % players.length];
       const pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(dex));
-      if (pt) spawn(dex, pt[0], pt[1], t);
+      // (D9: Hard / Nightmare make a share of the trickle elites; Normal draws nothing more, so its stream is unchanged)
+      if (pt) spawn(dex, pt[0], pt[1], t, TR.elite > 0 && rng() < TR.elite ? { hp: K.ELITE.hp, dmg: K.ELITE.dmg, xp: K.ELITE.xp, scale: K.ELITE.scale, kind: 'elite' } : undefined);
     }
   }
 
@@ -495,7 +520,7 @@ G.ExpClassic = (() => {
       const zt0 = tierAt(Math.max(t, K.ZMIN[zi])), dmg = G.Enemies.TIERS[zt0].dmg * 1.6 * G.Enemies.scale(t).dmg * K.DMG_K;
       for (let i = 0; i < ev.n; i++) {
         const close = i < 4, a = rng() * 6.2832, d = close ? rng() * 60 : 70 + rng() * 190;
-        G.Hazards.add({ kind: 'zone', x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d * 0.8, r: K.ROCK_R, delay: 1.1 + i / ev.n * 1.6,
+        G.Hazards.add({ kind: 'zone', x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d * 0.8, r: K.ROCK_R, delay: (1.1 + i / ev.n * 1.6) * tierOf(S.diff).tele,   // (D9: shorter telegraphs)
                         dmg: Math.round(dmg), type: 'rock', color: '#c8a26a' });
         entry.spawned++;
       }
@@ -524,9 +549,11 @@ G.ExpClassic = (() => {
     for (const [id, s] of S.specials) {
       const e = s.e;
       if (e.dead) {
-        if (s.kind === 'alpha') {   // (D8: weaken it and throw a Friend Ball instead; here it drops its prize)
-          G.Pickups.drop('item', e.x - 20, e.y, G.Items.roll());
-          G.Pickups.drop('heal', e.x + 20, e.y, 0);
+        if (s.kind === 'alpha') {   // (D8: it faints; a Friend Ball makes it a Support Alpha, and it drops its prize only if you leave it)
+          if (!(G.ExpCap && G.ExpCap.alphaDown(e))) {
+            G.Pickups.drop('item', e.x - 20, e.y, G.Items.roll());
+            G.Pickups.drop('heal', e.x + 20, e.y, 0);
+          }
         } else if (s.kind === 'totem' || s.kind === 'summoner') G.Pickups.drop('heal', e.x, e.y, 0);
         S.specials.delete(id);
         continue;
@@ -601,8 +628,8 @@ G.ExpClassic = (() => {
   function cur() {
     const z = G.World.zone;
     if (!z || !MAPS[z.map]) return null;
-    if (on() && S.zone === z.zone) return { zone: S.zone, zs: S.zs, ph: S.ph, charge: S.charge, fs: S.fs, won: S.won, bossEx: S.boss && S.boss.takenK > 1 ? S.boss.takenK : 0, boss: S.boss };
-    if (view) return { zone: z.zone, zs: view.zs, ph: view.ph, charge: view.charge, fs: view.fs, won: view.won, bossEx: view.bossEx, boss: view.bossId ? G.EnemyMgr.get(view.bossId) : null };
+    if (on() && S.zone === z.zone) return { zone: S.zone, zs: S.zs, ph: S.ph, charge: S.charge, fs: S.fs, won: S.won, bossEx: S.boss && S.boss.takenK > 1 ? S.boss.takenK : 0, boss: S.boss, diff: S.diff };
+    if (view) return { zone: z.zone, zs: view.zs, ph: view.ph, charge: view.charge, fs: view.fs, won: view.won, bossEx: view.bossEx, boss: view.bossId ? G.EnemyMgr.get(view.bossId) : null, diff: view.diff };
     return null;
   }
   const active = () => !!cur();
@@ -614,6 +641,9 @@ G.ExpClassic = (() => {
   function drawGround(ctx) {
     if (G.ExpMoves) G.ExpMoves.draw(ctx);   // (D5: the new archetypes' shells, vortexes, waves; the items' rifts)
     if (G.ExpItems) G.ExpItems.draw(ctx);
+    if (G.ExpEco) G.ExpEco.drawGround(ctx);   // (D7: the interactables)
+    if (G.ExpRx) G.ExpRx.drawGround(ctx);     // (D8: wet and chilled foes)
+    if (G.ExpCap) G.ExpCap.drawGround(ctx);   // (D8: the League / shiny encounters' auras)
     const c = cur(), z = G.World.zone, si = c && sitesOf(z);
     if (!si) return;
     const now = performance.now() / 1000, [x, y] = siteXY(si.altar), cam = G.Camera;
@@ -710,6 +740,7 @@ G.ExpClassic = (() => {
     if (!c) return '';
     const T = G.I18n, zt = (st ? st.time : G.Game.st.time) - c.zs, si = sitesOf(G.World.zone);
     const parts = [c.zone === 4 ? T.t('SANTUARIO') : T.f('ZONA {x}/3', c.zone)];
+    if (c.diff && c.diff !== 'normal') parts.push(T.t(DIFF_NAME[c.diff]).toUpperCase());   // (D9: the tier, on Hard / Nightmare)
     if (c.zone <= 3 && c.ph < 2) parts.push(c.fs ? T.t('¡ENJAMBRE FINAL!') : T.f('ENJAMBRE FINAL EN {x}', mmss(K.FINAL - zt)));
     const dist = () => si && pl ? Math.round(G.U.dist(pl.x, pl.y, ...siteXY(si.altar)) / 32) : 0;
     if (c.ph === 0) parts.push(si && si.shrine ? ((G.DEX_BY[MAPS[G.World.zone.map].legend] || {}).name || '').toUpperCase() + ' ' + dist() + ' m' : T.f('ALTAR {x} m', dist()));
@@ -717,11 +748,14 @@ G.ExpClassic = (() => {
     else if (c.ph === 2) parts.push(T.f('PORTAL {x} m', dist()));
     else if (c.ph === 3) parts.push(T.t('LEGENDARIO'));
     else parts.push(T.t('¡COMPLETADO!'));
+    if (pl) parts.push('₽ ' + Math.floor(pl.coins || 0));   // (D7: the run's ₽)
     return parts.join('  ·  ');
   }
   const hudColor = () => { const c = cur(); return c && c.fs && c.ph < 2 ? (Math.sin(performance.now() / 150) > 0 ? '#ff6b7a' : '#ffb0b8') : c && c.ph === 4 ? '#ffd23f' : '#9fd8a8'; };
   /** Over the HUD: an arrow to the altar / portal / shrine when it is off screen, and the boss's exhaustion. */
   function drawHud(ctx, w, h, pl, st, F, mark) {
+    if (G.ExpEco) G.ExpEco.drawHud(ctx, w, h, pl, F, mark);   // (D7: the interactables' labels and the tips)
+    if (G.ExpCap) G.ExpCap.drawHud(ctx, w, h, pl, F, mark);   // (D8: the Support Alphas' chips, the encounters' labels and arrows)
     const c = cur(), si = c && sitesOf(G.World.zone);
     if (!si || !pl) return;
     const k = G.HUD ? G.HUD.k : 1, cam = G.Camera, now = performance.now() / 1000;
@@ -737,11 +771,18 @@ G.ExpClassic = (() => {
     const [wx, wy] = siteXY(si.altar);
     const sx = (wx - cam.left()) * cam.scale / k, sy = (wy - 30 - cam.top()) * cam.scale / k;
     if (sx > 0 && sx < w && sy > 0 && sy < h) return;
-    // (kept clear of the HUD: the minimap on the left, the touch buttons down the right, the move bar at the bottom)
+    // (kept clear of the HUD: the minimap on the left, the buttons down the right, the move bar at the bottom; D6: the
+    //  Ultimate's button and meter are always on the right in a zone, so the column is kept clear without touch too)
     const touch = G.Touch.active && G.Game.state !== 'watch', M = 46, mm = G.HUD && G.HUD.minimap;
-    const ey = G.U.clamp(sy, M + 80, h - M - (touch ? 120 : 90));
-    let ex = G.U.clamp(sx, M, w - M - (touch ? 200 : 0));
+    let ey = G.U.clamp(sy, M + 80, h - M - (touch ? 120 : 90));
+    let ex = G.U.clamp(sx, M, w - M - 200);
     if (mm && ex - 30 < mm.x + mm.s && ex + 30 > mm.x && ey + 30 > mm.y && ey - 30 < mm.y + mm.s) ex = mm.x + mm.s + 36;
+    // (D7: and clear of a first-run tip's box, under it)
+    const tb = G.ExpEco && G.ExpEco.tipRect();
+    if (tb && ex - 30 < tb.x + tb.w && ex + 30 > tb.x && ey + 30 > tb.y && ey - 30 < tb.y + tb.h) ey = tb.y + tb.h + 34;
+    // (D8: and clear of the Support Alphas' chips, to their right)
+    const sr = G.ExpCap && G.ExpCap.hudRect;
+    if (sr && ex - 30 < sr.x + sr.w && ex + 30 > sr.x && ey + 30 > sr.y && ey - 30 < sr.y + sr.h) ex = sr.x + sr.w + 36;
     const a = Math.atan2(sy - ey, sx - ex);
     if (mark) mark('xarrow', ex - 30, ey - 30, 60, 60);
     const col = c.ph === 2 ? '#b48aff' : si.shrine ? '#ff9ed8' : '#ffd95e', beat = 0.5 + Math.sin(now * 6) * 0.5;
@@ -761,10 +802,16 @@ G.ExpClassic = (() => {
   // ---------------- the end of the run ----------------
   const INV = 1e9;   // splits / clear times are kept as INV - deciseconds, so the save's max-merge keeps the FASTEST
   const pbKey = (map, diff, z) => 'split.' + map + '.' + diff + '.z' + z;
-  /** The score (study 2.12, Classic; D9 owns the formula and the boards' UI). */
+  /** D9: the score's parts {kills, time, dmg, zone, bosses, won, catches} (whole numbers: the server recomputes the score from them). */
+  function scoreParts(sum) {
+    return { kills: Math.floor(sum.kills || 0), time: Math.floor(sum.time || 0), dmg: Math.floor(G.DmgLog.summary([]).total || 0), zone: S ? S.zone : 1,
+             bosses: sum.bosses | 0, won: !!(S && S.won), catches: G.ExpCap && G.ExpCap.run ? G.ExpCap.run.n | 0 : 0 };
+  }
+  /** The score (study 2.12, Classic, + D9's catch term): G.ExpTier.score of the parts on the run's tier. */
   function score(sum) {
-    const won = S && S.won, zone = S ? S.zone : 1, tier = S ? diffIdx(S.diff) : 0, dmg = G.DmgLog.summary([]).total || 0;
-    return Math.floor((2 * (sum.kills || 0) + 3 * (sum.time || 0) + dmg / 200 + 1500 * (zone - 1) + 800 * (sum.bosses || 0) + (won ? 6000 : 0)) * (1 + 0.5 * tier));
+    const p = scoreParts(sum), tier = S ? diffIdx(S.diff) : 0;
+    return G.ExpTier ? G.ExpTier.score(p, S ? S.diff : 'normal')
+      : Math.floor((2 * p.kills + 3 * p.time + p.dmg / 200 + 1500 * (p.zone - 1) + 800 * p.bosses + (p.won ? 6000 : 0)) * (1 + 0.5 * tier));
   }
   /**
    * The run-over screen's parts (js/expedition/core.js run.end): {won, title, lines, splits: [{label, t, best, delta}]}
@@ -797,7 +844,11 @@ G.ExpClassic = (() => {
 
   return {
     K, KINDS, TIMELINE, MAPS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
-    begin, reset, update, xblockC, applyC, cur, active, drawGround, drawHud, hudLine, hudColor, score, result, record,
+    begin, reset, update, xblockC, applyC, cur, active, drawGround, drawHud, hudLine, hudColor, score, scoreParts, result, record, tierOf,
+    /** D7: a foe of the zone at (x, y) (the interactables' waves and ambushes); null outside a Classic run. */
+    spawnFoe(dex, x, y, o) { return on() ? spawn(dex, x, y, G.Game.st.time, o || {}) : null; },
+    /** D7: a free spot round point p at distance d, from the stream rng. */
+    spotNear(rng, p, ang, flying, d) { return on() ? spot(rng, p, ang, flying, d) : null; },
     get run() { return S; }, get view() { return view; }, get on() { return on(); },
     /** For tests: jump the zone clock to `sec` (events between are fired on the next step, in order). */
     debugZoneTime(sec) { if (S) S.zs = G.Game.st.time - sec; }

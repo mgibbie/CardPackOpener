@@ -52,6 +52,9 @@ const baseRef = flag('--base');
 const changedOnly = args.includes('--changed') && args.splice(args.indexOf('--changed'), 1);
 const filter = (args[0] || '').toLowerCase(); // substring match on the filename
 const TIMEOUT = 5 * 60_000;
+// suites that legitimately run longer: micatro_engine_test runs every Micatro mod suite + the all-mods fuzz (~2 min alone,
+// 7 min under load by 2026-10-22, when it started hitting the 5 min cap)
+const SLOW = { 'micatro_engine_test.mjs': 15 * 60_000 };
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
 // and on a 5.8 GB machine two workers ran each suite ~1.9x slower (145/145 in
 // 1579s vs 1761s serial). Parallelism only pays with memory to spare.
@@ -118,7 +121,7 @@ function runOne(f) {
 		let out = '', err = '', timedOut = false;
 		child.stdout.on('data', d => { out += d; });
 		child.stderr.on('data', d => { err += d; });
-		const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, TIMEOUT);
+		const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, SLOW[f] || TIMEOUT);
 		child.on('close', code => {
 			clearTimeout(timer);
 			const secs = Math.round((Date.now() - started) / 1000);

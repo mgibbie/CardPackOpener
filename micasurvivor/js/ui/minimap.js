@@ -212,6 +212,8 @@ G.Minimap = (() => {
         rec('spring', q);
       }
     }
+    // MicaSurvivor (DLC D7): an Expedition zone's interactables, only those found (its fog of war); never in a base run
+    if (W.zone && G.Hooks && G.Hooks.count('minimap.draw')) G.Hooks.call('minimap.draw', ctx, pl, { mm, pt: (x, y) => pt(x, y, pl), inside, edge, rec, pul });
     // enemigos (sólo a corta distancia)
     const foes = G.EnemyMgr.all();
     ctx.fillStyle = 'rgba(255,64,77,.95)';

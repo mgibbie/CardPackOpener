@@ -105,7 +105,12 @@ const BEFORE = (save) => {
 	/** step n times of dt (default 1/30), fn(i) after each (false stops) */
 	H.step = (n, dt = 1 / 30, fn) => { for (let i = 0; i < n; i++) { H.unblock(); G.Game.debugStep(1, dt); if (fn && fn(i) === false) return i + 1; } return n; };
 	/** a picked-up item with both slots full opens the item choice (the game waits): keep what you have */
-	H.unblock = () => { if (G.Game.state === 'choice' || G.UI.isOpen('scr-item')) { const c = [...document.querySelectorAll('#item-cards .card')].pop(); if (c) c.click(); } };
+	H.unblock = () => {
+		// (D8: a downed alpha faints where it fell, and standing by it throws a Friend Ball; with the team full, the "swap whom?"
+		//  choice holds the run like the item choice: keep the team, as this suite keeps its items)
+		if (G.ExpEco && G.ExpEco.pick && G.ExpEco.pick.kind === 'friend') { G.ExpEco.closePick(); return; }
+		if (G.Game.state === 'choice' || G.UI.isOpen('scr-item')) { const c = [...document.querySelectorAll('#item-cards .card')].pop(); if (c) c.click(); }
+	};
 	H.TS = () => G.World.TS;
 	H.altarXY = () => G.ExpClassic.siteXY(G.ExpClassic.sitesOf(G.World.zone).altar);
 	H.toAltar = () => { const pl = G.Game.player, [x, y] = H.altarXY(); pl.x = x; pl.y = y; pl.zMask = null; pl.air = null; G.World.collide(pl); G.Camera.x = pl.x; G.Camera.y = pl.y; };
@@ -185,7 +190,7 @@ try {
 		on: G.Expedition.MODES.filter(G.Expedition.enabled), dv: G.Expedition.DV,
 	}));
 	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id !== 'exp-classic');
-	A(JSON.stringify(ui.on) === '["exp-classic"]' && ui.dv === 4, 'the registry: Classic enabled, Survival and League not; the content version is 4 (D3 started bumping it; D4: 3; D5: 4)', JSON.stringify(ui));
+	A(JSON.stringify(ui.on) === '["exp-classic"]' && ui.dv === 8, 'the registry: Classic enabled, Survival and League not; the content version is 8 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8)', JSON.stringify(ui));
 	A(!cl.soon && cl.aria !== 'true' && !/Coming soon/.test(cl.txt) && /^Expedition · Classic .*Viridian Forest/.test(cl.txt), 'Classic is playable: no "Coming soon", not aria-disabled, says Viridian Forest (in English)', JSON.stringify(cl));
 	A(rest.length === 2 && rest.every(c => c.soon && c.aria === 'true' && /Coming soon$/.test(c.txt)), 'Survival and League still say "Coming soon" (aria-disabled)', JSON.stringify(rest));
 	A(ui.h === 'Expedition', 'the group heading is "Expedition" (no "coming soon" now one is playable)', ui.h);
@@ -196,7 +201,7 @@ try {
 	await page.click('#modes-exp [data-exp=exp-classic]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpClassic && G.ExpClassic.on), 8000), 'clicking Classic starts an Expedition Classic run (the code lazy-loads)');
 	const st0 = await E(page, () => { window.__t.freeze(); const S = G.ExpClassic.run; return { mode: G.Game.mode, dv: G.Modes.run.dv, map: S.map, zone: S.zone, ph: S.ph, z: G.World.zone && G.World.zone.zone, biome: G.World.biome, events: S.plan.events.length }; });
-	A(st0.mode === 'exp-classic' && st0.dv === 4 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
+	A(st0.mode === 'exp-classic' && st0.dv === 8 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
 
 	// ======================== 2. the plan
 	const pl2 = await E(page, () => {
@@ -357,9 +362,9 @@ try {
 		hf = G.Hooks.reduce('net.frame', { k: 'f' }, m).x;
 		return { x: snap.x, hf, seed: G.World.seed, zone: S.zone, hash: G.World.zone.hash, charge: S.charge, n: S.n, ph: S.ph, specials: [...S.specials.values()].map(s => [s.e.id, s.kind]), snap };
 	});
-	A(xs.x && xs.x.xv === 5 && xs.x.c && xs.x.c.p === 0 && xs.x.c.q > 0 && xs.x.c.n === xs.n && Array.isArray(xs.x.c.k) && xs.x.c.k.length >= 2,
+	A(xs.x && xs.x.xv === 8 && xs.x.c && xs.x.c.p === 0 && xs.x.c.q > 0 && xs.x.c.n === xs.n && Array.isArray(xs.x.c.k) && xs.x.c.k.length >= 2,
 		'a live snapshot carries the x block (v4 since D4) with `c` (phase, altar charge, events fired, the special enemies)', JSON.stringify(xs.x));
-	A(xs.hf && xs.hf.xv === 5 && xs.hf.c && JSON.stringify(xs.hf.c) === JSON.stringify(xs.x.c), 'a co-op host frame carries the same `c`', JSON.stringify(xs.hf));
+	A(xs.hf && xs.hf.xv === 8 && xs.hf.c && JSON.stringify(xs.hf.c) === JSON.stringify(xs.x.c), 'a co-op host frame carries the same `c`', JSON.stringify(xs.hf));
 
 	// ======================== 6. a full run won
 	const win = await E(page, async () => {
@@ -514,7 +519,7 @@ try {
 		const R = lay.R || [], ov = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h, hits = [];
 		for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) if (ov(R[i], R[j]) && !['minimap'].includes(R[i].name)) hits.push(R[i].name + ' x ' + R[j].name);
 		const clock = R.find(o => o.name === 'clock');
-		A(clock && clock.x >= 0 && clock.x + clock.w <= lay.W && !hits.length && /^ZONE 1\/3\s+·\s+FINAL SWARM IN \d+:\d\d\s+·\s+ALTAR \d+ m$/.test(lay.line), `${tag}: the zone line ("${lay.line}") fits and nothing on the HUD overlaps`, JSON.stringify({ hits, clock, W: lay.W }));
+		A(clock && clock.x >= 0 && clock.x + clock.w <= lay.W && !hits.length && /^ZONE 1\/3\s+·\s+FINAL SWARM IN \d+:\d\d\s+·\s+ALTAR \d+ m\s+·\s+₽ \d+$/.test(lay.line), `${tag}: the zone line ("${lay.line}") fits and nothing on the HUD overlaps`, JSON.stringify({ hits, clock, W: lay.W }));
 		if (tag === 'phone') A(lay.touch, 'phone: touch controls are on');
 		if (SHOTS) {
 			// the altar (charging), then each timeline event of zone 1, the guardian, the portal, the shrine, the victory

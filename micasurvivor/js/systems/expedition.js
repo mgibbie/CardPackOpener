@@ -24,6 +24,8 @@
  *                                drops the zone. A base run's snapshots and frames have no `x`, so this never runs.
  *   lobbyOk(dv) / replayOk(dv)   the version gates: a co-op lobby needs the SAME dv (else "your game is out of date:
  *                                reload"); a replay / live run with an unknown or newer dv plays with a notice.
+ *   pick()                       DLC D9: the map + tier a Classic run starts on (G.ExpTier.pick once loaded; the button on
+ *                                the Classic card opens "Difficulty and leaderboards", js/expedition/tiers.js).
  *   wallet                       Pokémonedas are SHARED with the base game (owner): Expedition earns and spends them
  *                                through the base save, here. Nothing calls it yet (D9 / D10 pay the runs).
  * Expedition progress (League catches, unlocks, Lab...) has its OWN save (js/expedition/save.js, the server row
@@ -43,11 +45,12 @@ G.I18n.add({
   'No se pudo cargar la Expedición. Recarga la página.': "Couldn't load Expedition. Reload the page.",
   'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This replay is from a newer version of Expedition: reload the page to watch it properly.',
   'Esta partida es de una versión más nueva de la Expedición: recarga la página para verla bien.': 'This run is from a newer version of Expedition: reload the page to watch it properly.',
-  'Miembro de la Liga: {x}': 'League member: {x}'   // (DLC D4: the Classic card's pick, before the Expedition code loads)
+  'Miembro de la Liga: {x}': 'League member: {x}',   // (DLC D4: the Classic card's pick, before the Expedition code loads)
+  'Dificultad: {x} · clasificaciones': 'Difficulty: {x} · leaderboards', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare'   // (DLC D9: the Classic card's second button)
 });
 
 G.Expedition = (() => {
-  const DV = 4;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4. Older dv replays / snapshots still play, replayOk)
+  const DV = 8;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
@@ -63,12 +66,18 @@ G.Expedition = (() => {
   const ENABLED = new Set(['exp-classic']);   // D3: Classic is playable; Survival and League are still "Coming soon"
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js)
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
-  /** The map / difficulty a new Expedition run gets (D0b: the first of each; a later batch adds the pickers). */
-  const pick = () => ({ map: MAPS[0], diff: DIFFS[0] });
+  /** The map / difficulty a new Expedition run gets. DLC D9: the device's pick (G.ExpTier.pick: clamped to a playable map
+   *  and an unlocked tier, once the Expedition code is loaded; before that, the saved pick as it is, for the button's label). */
+  function pick() {
+    if (G.ExpTier) return G.ExpTier.pick();
+    let p = null;
+    try { p = JSON.parse(localStorage.getItem('micasurvivorexp_tier') || 'null'); } catch (e) { /* the pick is a convenience */ }
+    return { map: p && MAPS.includes(p.map) ? p.map : MAPS[0], diff: p && DIFFS.includes(p.diff) ? p.diff : DIFFS[0] };
+  }
   /** DLC D4: the League member this device starts Classic with (the Expedition code checks you can play it: G.ExpLeague.pickFor). */
   function leaguePick() {
     if (G.ExpLeague) return G.ExpLeague.pickFor();

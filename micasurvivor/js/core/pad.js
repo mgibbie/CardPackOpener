@@ -631,6 +631,8 @@ G.Pad = (() => {
     else if (a === 'swap') { if (G.Team && G.Team.on) G.Team.request(pl); }
     // MicaSurvivor (M5 batch 4): the Z-move; in a run the port also fires it with Y / Triangle (the
     // reroll button, which only rerolls on the card screen) and the right trigger.
+    // (MicaSurvivor DLC D6: in an Expedition zone the same buttons cast the Ultimate instead)
+    else if ((a === 'zmove' || a === 'reroll' || a === 'ztrigger') && G.World.zone && G.ExpUlt) G.ExpUlt.press();
     else if ((a === 'zmove' || a === 'reroll' || a === 'ztrigger') && G.ZMoves) G.ZMoves.tryStart(pl);
     // MicaSurvivor (M5 batch 5): Dynamax; in a run the port also fires it with the left trigger and X / Square
     // (M5 batch 6: X / Square is the ban button, which only bans on the card screen, as reroll / Y and the Z-move).

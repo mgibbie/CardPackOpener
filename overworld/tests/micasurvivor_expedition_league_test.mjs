@@ -271,7 +271,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 4, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 4 (D5)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 8, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 8 (D9)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -393,23 +393,23 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x, me: snap.me, hf, gf };
 	});
-	A(xs.x && xs.x.xv === 5 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
-	A(xs.hf && xs.hf.xv === 5 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
+	A(xs.x && xs.x.xv === 8 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
+	A(xs.hf && xs.hf.xv === 8 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
 		'a co-op host frame carries the host\'s row by uid; a guest\'s own frame carries its row', JSON.stringify({ hf: xs.hf && xs.hf.l, gf: xs.gf && xs.gf.l }));
 
 	// ======================== 5. the run ends: lines, counters, challenges, the base save untouched
 	const base0 = await E(page, () => localStorage.getItem('micasurvivor_save.guest'));
 	const ov = await endRun(page);
-	A(ov.state === 'over' && /League: Charmander → Charizard · Maturity 1/.test(ov.text) && /New League member: Kangaskhan!/.test(ov.text),
-		'the run-over screen: "League: Charmander → Charizard · Maturity 1" and the new members ("New League member: Kangaskhan!")', ov.text);
+	A(ov.state === 'over' && /League: Charmander → Charizard · Maturity 1/.test(ov.text) && /Challenge complete: Kangaskhan! Catch it in your next run/.test(ov.text),
+		'the run-over screen: "League: Charmander → Charizard · Maturity 1" and the challenges done (D8: "Challenge complete: Kangaskhan! Catch it in your next run")', ov.text);
 	const ch = await E(page, () => {
 		const L = G.ExpLeague, S = G.ExpSave;
 		return { met: S.list('league.met').map(Number), evo: S.get('lg.evo'), lv: S.get('lg.lv'), mat: S.get('lg.mat'), kos: S.get('kos'), runs: S.get('lg.runs.4'), played: S.list('league.played'),
-			kanga: L.playable(115), dratini: L.progress(L.BY[147].ch), mewtwo: L.playable(150), base: localStorage.getItem('micasurvivor_save.guest'), local: JSON.parse(localStorage.getItem('micasurvivorexp_save.guest') || 'null') };
+			kanga: L.playable(115), wild: L.wild(115), dratini: L.progress(L.BY[147].ch), mewtwo: L.playable(150), base: localStorage.getItem('micasurvivor_save.guest'), local: JSON.parse(localStorage.getItem('micasurvivorexp_save.guest') || 'null') };
 	});
 	A(ch.evo === 2 && ch.lv === 44 && ch.mat === 1 && ch.runs === 1 && JSON.stringify(ch.played) === '["4"]', 'the Expedition save: 2 evolutions, best level 44, Maturity 1, a run as Charmander', JSON.stringify(ch));
-	A(ch.met && ch.met.includes(115) && ch.met.includes(10) && ch.kanga && !ch.met.includes(147) && !ch.mewtwo && ch.dratini && !ch.dratini.done && ch.dratini.parts[1].have === 35 && ch.dratini.parts[0].have === 0,
-		'challenges: Kangaskhan (evolve twice) and Caterpie (finish a run) are met and playable; Dratini (2 wins + Lv 35) is not: Lv 35 done, 0 / 2 wins', JSON.stringify({ met: ch.met, dratini: ch.dratini }));
+	A(ch.met && ch.met.includes(115) && ch.met.includes(10) && !ch.kanga && ch.wild && !ch.met.includes(147) && !ch.mewtwo && ch.dratini && !ch.dratini.done && ch.dratini.parts[1].have === 35 && ch.dratini.parts[0].have === 0,
+		'challenges: Kangaskhan (evolve twice) and Caterpie (finish a run) are met (D8: wild until caught in a run, micasurvivor_expedition_capture_test); Dratini (2 wins + Lv 35) is not: Lv 35 done, 0 / 2 wins', JSON.stringify({ met: ch.met, kanga: ch.kanga, wild: ch.wild, dratini: ch.dratini }));
 	A(typeof base0 === 'string' && ch.base === base0, 'the base save is byte-for-byte unchanged by a League run');
 	A(ch.local && ch.local.sets && ch.local.sets['league.met'] && ch.local.sets['league.met'].includes('115'), 'the guest\'s Expedition save in this browser has league.met', JSON.stringify(ch.local && ch.local.sets));
 	const mg = await E(page, () => {
@@ -425,8 +425,8 @@ try {
 	await waitFor(() => page.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
 	if (await d0.visible('tap-start')) await page.click('#tap-start');
 	await waitFor(() => d0.visible('scr-menu'), 15000);
-	const rl = await E(page, async () => { await G.Expedition.load(); await G.ExpSave.open(); return { k: G.ExpLeague.playable(115), d: G.ExpLeague.playable(147), pick: G.ExpLeague.pickFor(), n: G.ExpLeague.roster().length }; });
-	A(rl.k === true && rl.d === false && rl.pick === 4 && rl.n > 12, 'after a reload: Kangaskhan is still playable, Dratini not, the pick is still Charmander', JSON.stringify(rl));
+	const rl = await E(page, async () => { await G.Expedition.load(); await G.ExpSave.open(); return { k: G.ExpLeague.playable(115), w: G.ExpLeague.wild(115), d: G.ExpLeague.playable(147), pick: G.ExpLeague.pickFor(), n: G.ExpLeague.roster().length }; });
+	A(rl.k === false && rl.w === true && rl.d === false && rl.pick === 4 && rl.n >= 12, 'after a reload: Kangaskhan is still met (and waiting to be caught, D8), Dratini not, the pick is still Charmander', JSON.stringify(rl));
 	await d0.ctx.close();
 
 	// ======================== 6 + 7. Maturity on a member that never evolves; a branch (Ralts)
@@ -439,6 +439,7 @@ try {
 			const S = G.ExpSave;
 			S.bump('runs'); S.bump('lg.evo', 2); S.best('guardians', 2);
 			const newly = G.ExpLeague.checkChallenges();
+			for (const d of newly) S.add('league.own', d);   // (D8: a met member is caught in a run first; here the save as a catch leaves it)
 			S.commit();
 			return { newly, k: G.ExpLeague.playable(115), r: G.ExpLeague.playable(280), set: G.ExpLeague.setPick(115) };
 		});
@@ -501,7 +502,7 @@ try {
 			const e = G.Replay.last; await e.ready;
 			return { code: e.code, h: e.h || null, seed: G.World.seed, snap: snaps[0] };
 		});
-		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 5, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
+		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 8, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
 		await d2.ctx.close();
 
 		// ======================== 8b. fresh pages: a co-op guest, the host of a guest, a live spectator, a replay viewer
@@ -610,12 +611,14 @@ try {
 		if (SHOTS) await shoot(d.page, `league_kit_unlock_${tag}.png`, 300);
 		if (tag === 'phone') {
 			const t1 = await E(d.page, () => document.querySelectorAll('#cards .card').length);
+			// (the first card is always a move card: a level of a kit move, or, by the run's seed, a new move, which adds one)
+			const adds = await E(d.page, () => (G.RunUI.offers && G.RunUI.offers[0] && /^new:/.test(G.RunUI.offers[0].key || '')) ? 1 : 0);
 			await d.page.tap('#cards .card');
 			await sleep(150);
-			A(t1 === 3 && await E(d.page, () => !G.UI.isOpen('scr-levelup') && G.Game.player.moves.length === 2), 'phone: tapping a card closes the screen (2 kit moves now)');
+			A(t1 === 3 && await E(d.page, n => !G.UI.isOpen('scr-levelup') && G.Game.player.moves.length === 2 + n, adds), 'phone: tapping a card closes the screen (2 kit moves now, +1 if the card was a new move)');
 			if (SHOTS) {
 				// the evolution choice on the phone: Ralts at 30 (met through its challenge in this profile)
-				await E(d.page, async () => { G.ExpSave.best('guardians', 2); G.ExpLeague.checkChallenges(); G.ExpLeague.setPick(280); G.Game.quit(); await new Promise(r => setTimeout(r, 250)); });
+				await E(d.page, async () => { G.ExpSave.best('guardians', 2); G.ExpLeague.checkChallenges(); G.ExpSave.add('league.own', 280); G.ExpLeague.setPick(280); G.Game.quit(); await new Promise(r => setTimeout(r, 250)); });
 				await startClassic(d.page);
 				await E(d.page, () => { const H = window.__t; H.levelTo(29); G.Game.debugLevelUp(); for (let i = 0; i < 3 && !G.UI.isOpen('scr-levelup'); i++) H.step(1); });
 				await shoot(d.page, 'league_evolution_choice_phone.png', 300);

@@ -298,6 +298,52 @@ const MSURV_EXP_MODE_RE = /^exp-[a-z]{1,12}$/;
 const MSURV_EXP_NAME_RE = /^[a-z][a-z0-9_.:-]{0,63}$/;
 const MSURV_EXP_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
 const msurvExpDvOk = dv => Number.isInteger(dv) && dv >= 1 && dv <= 9999;
+// DLC D9 (micasurvivor/js/expedition/tiers.js, G.ExpTier): the score's parts, time attack and the weekly season.
+//   runboard:micasurvivor_expedition:<map>:<diff>        (D0b) best SCORE per player, top 100
+//   runboard:micasurvivor_expedition:<map>:<diff>:time   best CLEAR TIME (won runs only), top 100, with the medal
+//   msurvseason:<n>:<map>:<diff>                         season n's SCORE board (top 100; a 7-day week from SEASON0,
+//                                                        Monday 00:00 UTC). Swept 6 weeks after its last write (GC_TABLE).
+//                                                        Its prizes are cosmetic ribbons only, claimed by the client.
+// Every read is an exact key (store.get), never a prefix scan.
+// A score from dv >= MSURV_EXP_PARTS_DV must carry its parts (kills, time, dmg, zone, bosses, won, catches): the server
+// recomputes the score from them (msurvExpScore = G.ExpTier.score) and refuses a mismatch or an implausible part. An older
+// client's score (dv 1-7, no parts) is still taken under a generous ceiling. A replay id, if sent, must be one of the
+// player's own uploads whose meta matches the run (mode, map, difficulty, time, KOs).
+const MSURV_EXP_PARTS_DV = 8;
+const MSURV_EXP_SCORE = { KO: 2, SEC: 3, DMG: 200, ZONE: 1500, BOSS: 800, WIN: 6000, CATCH: 400, TIER: 0.5 };   // = G.ExpTier.K.SCORE
+const MSURV_EXP_MEDALS = [1620, 1200, 870];   // silver / gold / champion under these seconds on Normal (= G.ExpTier.K.MEDALS)
+const MSURV_EXP_MEDAL_TIER = 0.08, MSURV_EXP_SHRINE_S = 180;   // x(1 + 0.08 x tier), + 3 min on a map with a shrine (all three)
+const MSURV_EXP_KO_RATE = 15, MSURV_EXP_DMG_RATE = 100_000, MSURV_EXP_MIN_CLEAR = 180, MSURV_EXP_MAX_CATCH = 60;
+const MSURV_EXP_SEASON0 = Date.UTC(2026, 9, 12), MSURV_EXP_WEEK = 7 * 86_400_000, MSURV_EXP_SEASONS_BACK = 4;
+const msurvExpSeason = now => Math.floor((now - MSURV_EXP_SEASON0) / MSURV_EXP_WEEK) + 1;
+/** The Classic score from its parts (study 2.12 + D9's catch term); the SAME expression as G.ExpTier.score. */
+function msurvExpScore(p, diff) {
+	const S = MSURV_EXP_SCORE, tier = Math.max(0, MSURV_EXP_DIFFS.indexOf(diff));
+	return Math.floor((S.KO * p.kills + S.SEC * p.time + p.dmg / S.DMG + S.ZONE * (p.zone - 1) + S.BOSS * p.bosses + (p.won ? S.WIN : 0) + S.CATCH * p.catches) * (1 + S.TIER * tier));
+}
+/** A clear time's medal: 1 bronze, 2 silver, 3 gold, 4 champion (= G.ExpTier.medalOf). */
+function msurvExpMedal(time, diff) {
+	const k = 1 + MSURV_EXP_MEDAL_TIER * Math.max(0, MSURV_EXP_DIFFS.indexOf(diff));
+	let m = 1;
+	MSURV_EXP_MEDALS.forEach((s, i) => { if (time < s * k + MSURV_EXP_SHRINE_S) m = i + 2; });
+	return m;
+}
+/** An Expedition score's parts -> {parts} (null: none sent), or {error}. */
+function msurvExpParts(body, time) {
+	const keys = ['zone', 'won', 'dmg', 'bosses', 'catches'];
+	if (!keys.some(k => body[k] != null)) return { parts: null };
+	const isInt = (v, lo, hi) => Number.isSafeInteger(v) && v >= lo && v <= hi;
+	const p = { kills: body.kills, time, dmg: body.dmg, zone: body.zone, bosses: body.bosses, won: body.won, catches: body.catches };
+	if (!isInt(p.zone, 1, 4)) return { error: 'bad zone' };
+	if (typeof p.won !== 'boolean') return { error: 'bad won' };
+	if (!isInt(p.kills, 0, MSURV_EXP_KO_RATE * time + 200)) return { error: 'implausible KOs' };
+	if (!isInt(p.dmg, 0, MSURV_EXP_DMG_RATE * Math.max(1, time))) return { error: 'implausible damage' };
+	if (!isInt(p.bosses, 0, 2 * p.zone + 4)) return { error: 'implausible bosses' };
+	if (!isInt(p.catches, 0, MSURV_EXP_MAX_CATCH)) return { error: 'implausible catches' };
+	if (p.won && p.zone !== 4) return { error: 'a won run ends at the shrine' };
+	if (p.won && time < MSURV_EXP_MIN_CLEAR) return { error: 'implausible clear time', min: MSURV_EXP_MIN_CLEAR };
+	return { parts: p };
+}
 // an Expedition save -> {save} in its canonical form, or {error} (strict: the client's own clean() drops what this refuses)
 function cleanMsurvExpSave(s) {
 	const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
@@ -619,6 +665,7 @@ const GC_TABLE = [
 	['msurvstate:', 1 * HR], ['msurvspec:', 1 * HR], ['msurvlive:', 6 * HR], ['msurvspecbudget:', 48 * HR],
 	['msurvreplay:', 30 * 24 * HR], // a MicaSurvivor run replay — a month, like the Micatro ones
 	['msurvreplays:', 60 * 24 * HR], // the per-player replay index (self-heals against swept replays on read)
+	['msurvseason:', 42 * 24 * HR], // MicaSurvivor Expedition weekly season boards (DLC D9): 4 past seasons stay readable
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -1934,6 +1981,30 @@ export default async function handler(req, env) {
 			const time = int(body.time), score = int(body.score);
 			if (!(time >= 0 && time <= MICASURVIVOR_MAX_TIME)) return json({ error: 'bad time', max: MICASURVIVOR_MAX_TIME }, 400);
 			if (!(score >= 0 && score <= 1e12)) return json({ error: 'bad score' }, 400);
+			// DLC D9: the score's parts, recomputed here (a newer client must send them); an older one's under a ceiling
+			const pr = msurvExpParts(body, time);
+			if (pr.error) return json({ error: pr.error, ...(pr.min ? { min: pr.min } : {}) }, 400);
+			const parts = pr.parts;
+			if (!parts && body.dv >= MSURV_EXP_PARTS_DV) return json({ error: 'an Expedition score needs its parts', dv: MSURV_EXP_PARTS_DV }, 400);
+			if (parts) {
+				const want = msurvExpScore(parts, body.diff);
+				if (Math.abs(score - want) > 1) return json({ error: 'score does not match its parts', want }, 400);
+			} else {
+				const k0 = int(body.kills) || 0;
+				if (k0 > MSURV_EXP_KO_RATE * time + 200) return json({ error: 'implausible KOs' }, 400);
+				const cap = msurvExpScore({ kills: Math.max(0, k0), time, dmg: MSURV_EXP_DMG_RATE * Math.max(1, time), zone: 4, bosses: 12, won: true, catches: MSURV_EXP_MAX_CATCH }, body.diff);
+				if (score > cap) return json({ error: 'implausible score' }, 400);
+			}
+			// the run's replay (micasurvivor-replay-put): only one of YOUR uploads, and its meta must be this run's
+			let replay = '';
+			if (body.replay != null) {
+				const rid = String(body.replay);
+				const rr = REPLAY_ID_RE.test(rid) ? await store.get('msurvreplay:' + rid) : null;
+				const m = rr && rr.meta;
+				if (!rr || rr.by !== username || !m || m.mode !== body.expMode || m.map !== body.map || m.diff !== body.diff
+					|| Math.abs((m.time | 0) - time) > 2 || (parts && (m.kills | 0) !== parts.kills)) return json({ error: 'replay does not match this run' }, 400);
+				replay = rid;
+			}
 			const dex = int(body.dex);
 			const run = {
 				score, time,
@@ -1942,12 +2013,28 @@ export default async function handler(req, env) {
 				dex: dex >= 1 && dex <= 2000 ? dex : 0,
 				shiny: body.shiny === true,
 				expMode: body.expMode, dv: body.dv,
+				...(parts ? { zone: parts.zone, won: parts.won, bosses: parts.bosses, catches: parts.catches } : {}),
+				...(replay ? { replay } : {}),
 			};
-			const cmp = (a, b) => (a.score - b.score) || (a.time - b.time);
+			const now = Date.now();
+			const cmp = (a, b) => (a.score - b.score) || (a.time - b.time);   // (D0b's order: the score, then the time)
 			const bestKey = mode + expSub;
 			const prev = user.runBest[bestKey];
 			const better = !prev || typeof prev.score !== 'number' || cmp(run, prev) > 0;
-			if (better) { user.runBest[bestKey] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
+			let userDirty = false;
+			if (better) { user.runBest[bestKey] = { ...run, when: now }; userDirty = true; }
+			// D9: time attack (a won run with its parts): the fastest clear, its medal
+			let tOut = null, tBoard = null;
+			if (parts && parts.won) {
+				const tRun = { time, score, medal: msurvExpMedal(time, body.diff), kills: run.kills, level: run.level, dex: run.dex, shiny: run.shiny, dv: body.dv, catches: parts.catches, ...(replay ? { replay } : {}) };
+				const tcmp = (a, b) => (b.time - a.time) || (a.score - b.score);   // (the faster; on a tie, the higher score)
+				const tPrev = user.runBest[bestKey + ':time'];
+				const tBetter = !tPrev || typeof tPrev.time !== 'number' || tcmp(tRun, tPrev) > 0;
+				if (tBetter) { user.runBest[bestKey + ':time'] = { ...tRun, when: now }; userDirty = true; }
+				tOut = { better: tBetter, best: user.runBest[bestKey + ':time'], rank: null };
+				tBoard = tcmp;
+			}
+			if (userDirty) await store.setJSON(username, user);
 			const best = user.runBest[bestKey] || null;
 			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
 			if (best) board.push({ name: username, ...best });
@@ -1955,7 +2042,31 @@ export default async function handler(req, env) {
 			const capped = board.slice(0, 100);
 			if (better) await store.setJSON(key, capped);
 			const rank = capped.findIndex(e => e.name === username) + 1;
-			return json({ ok: true, better, best, rank: rank || null, board: key.slice('runboard:'.length) });
+			if (tOut) {
+				const tKey = key + ':time';
+				const tb = ((await store.get(tKey)) || []).filter(e => e.name !== username);
+				tb.push({ name: username, ...tOut.best });
+				tb.sort((a, b) => tBoard(b, a) || a.when - b.when);
+				const tc = tb.slice(0, 100);
+				if (tOut.better) await store.setJSON(tKey, tc);
+				tOut.rank = (tc.findIndex(e => e.name === username) + 1) || null;
+			}
+			// D9: this week's season board (your best this season; written only when it changes)
+			const sid = msurvExpSeason(msurvNow());
+			const sKey = 'msurvseason:' + sid + ':' + body.map + ':' + body.diff;
+			const sb = (await store.get(sKey)) || [];
+			const mine = sb.find(e => e.name === username);
+			const sBetter = !mine || cmp(run, mine) > 0;
+			let sRank = sb.findIndex(e => e.name === username) + 1;
+			if (sBetter) {
+				const nb = sb.filter(e => e.name !== username);
+				nb.push({ name: username, ...run, when: now });
+				nb.sort((a, b) => cmp(b, a) || a.when - b.when);
+				const sc = nb.slice(0, 100);
+				sRank = sc.findIndex(e => e.name === username) + 1;
+				if (sRank) await store.setJSON(sKey, sc);
+			}
+			return json({ ok: true, better, best, rank: rank || null, board: key.slice('runboard:'.length), time: tOut, season: { id: sid, better: sBetter && !!sRank, rank: sRank || null } });
 		}
 		// MICATRO ranks by the run's best single-hand SCORE (higher is better), not a
 		// W/L record. Scores can outgrow 2^53 or reach Infinity (Balatro's "naneinf"):
@@ -2049,6 +2160,26 @@ export default async function handler(req, env) {
 			if (better) await store.setJSON(key, capped);
 			const rank = capped.findIndex(e => e.name === username) + 1;
 			return json({ ok: true, better, best, rank: rank || null });
+		}
+		// DLC D9: an Expedition board's view: 'score' (D0b's), 'time' (time attack) or 'season' (a week's score board: this
+		// one, or one of the MSURV_EXP_SEASONS_BACK before it). Exact keys only.
+		if (mode === 'micasurvivor_expedition' && body.board != null && body.board !== 'score') {
+			const view = String(body.board);
+			if (view === 'time') {
+				const tb = (await store.get(key + ':time')) || [];
+				const tr = tb.findIndex(e => e.name === username) + 1;
+				const mineT = user.runBest[mode + expSub + ':time'];
+				return json({ board: 'time', top: tb.slice(0, 50), you: mineT ? { ...mineT, rank: tr || null } : null });
+			}
+			if (view !== 'season') return json({ error: 'no such board', boards: ['score', 'time', 'season'] }, 400);
+			const now = msurvNow(), cur = msurvExpSeason(now);
+			const sid = body.season == null ? cur : body.season;
+			if (!Number.isInteger(sid) || sid > cur || sid < Math.max(1, cur - MSURV_EXP_SEASONS_BACK)) return json({ error: 'no such season', current: cur, oldest: Math.max(1, cur - MSURV_EXP_SEASONS_BACK) }, 400);
+			const sb = (await store.get('msurvseason:' + sid + ':' + body.map + ':' + body.diff)) || [];
+			const si = sb.findIndex(e => e.name === username);
+			const starts = MSURV_EXP_SEASON0 + (sid - 1) * MSURV_EXP_WEEK;
+			return json({ board: 'season', season: sid, current: cur, starts, ends: starts + MSURV_EXP_WEEK, now,
+				top: sb.slice(0, 50), you: si >= 0 ? { ...sb[si], rank: si + 1 } : null });
 		}
 		const board = (await store.get(key)) || [];
 		const rank = board.findIndex(e => e.name === username) + 1;

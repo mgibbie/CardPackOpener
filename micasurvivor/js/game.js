@@ -352,7 +352,8 @@ G.Game = (() => {
       G.RunUI.showOver({
         dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: 0, record: false, t1: 0, t10: 0, judge: null,
         moves: pl.moves, caught: [], modeLines: res.lines, breakdown: '', replay, dmg: G.DmgLog.summary(pl.moves),
-        title: res.title || null, splits: res.splits || null   // (DLC D3: Classic's victory title and zone splits)
+        title: res.title || null, splits: res.splits || null,   // (DLC D3: Classic's victory title and zone splits)
+        medal: res.medal || null                                // (DLC D9: a won Classic run's time-attack medal)
       }, () => { pl = null; G.Flow.afterRun(); });
       return;
     }
@@ -776,6 +777,14 @@ G.Game = (() => {
       G.FX.update(dt);
       return;
     }
+    // MicaSurvivor (DLC D6): an Expedition Ultimate's hit-stop holds the world for a moment (the run.hold seam; never in a base run)
+    if (G.Modes.isExp() && G.Hooks.first('run.hold', dt, pl)) {
+      pl.anim.update(dt);
+      G.Camera.follow(pl.x, pl.y, dt);
+      G.World.update(dt, G.Camera);
+      G.FX.update(dt);
+      return;
+    }
     // Tras caer, deja que se vea la animación de Faint antes del resumen.
     // (En la arena de la grieta no: allí caer sólo te echa de vuelta.)
     if (pl.dead && !coop && !G.Rift.inArena) {
@@ -884,6 +893,7 @@ G.Game = (() => {
     for (const p of G.World.visibleProps(cam)) items.push({ y: p.flat ? p.y - 4000 : p.y, prop: p });
     for (const e of G.EnemyMgr.drawables(cam)) items.push({ y: e.y, ent: e });
     for (const e of extra) items.push({ y: e.y, ent: e });
+    if (G.World.zone && G.ExpCap) for (const d of G.ExpCap.drawables(cam)) items.push({ y: d.y, ent: d });   // MicaSurvivor (DLC D8): Support Alphas, fainted Pokémon, the capture's ball
     const rift = G.Rift.drawable();
     if (rift) items.push({ y: rift.y, ent: rift });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
@@ -926,15 +936,18 @@ G.Game = (() => {
       ctx.fillRect(0, 0, w, h);
     }
     G.ZMoves.drawDim(ctx, w, h);    // MicaSurvivor (M5 lote 4): la pantalla se oscurece durante el Z
+    if (G.World.zone && G.ExpUlt) G.ExpUlt.drawDim(ctx, w, h);   // MicaSurvivor (DLC D6): an Expedition Ultimate's dim (and the viewers' casts)
     if (!G.Judgment.cinematic) G.Dynamax.drawOverlay(ctx, w, h);   // MicaSurvivor (M5 lote 5): borde rojo, tiempo y cartel
     if (state === 'watch') {
       // MicaSurvivor (M5 lote 12c): el HUD de quien miras (sin sus controles) y lo que el HUD no dice de él
       G.HUD.draw(ctx, w, G.WatchUI.hudH(h), pl, st);
+      if (G.World.zone && G.ExpUlt) G.ExpUlt.drawCut(ctx, w, h);   // (DLC D6: the watched player's Ultimate cut-in)
       G.Touch.clearButtons();
       G.WatchUI.drawOverlay(ctx, w, h);
     } else {
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
     G.ZMoves.drawCine(ctx, w, h);
+    if (G.World.zone && G.ExpUlt) G.ExpUlt.drawCut(ctx, w, h);   // MicaSurvivor (DLC D6): an Expedition Ultimate's cut-in
     G.Judgment.drawOverlay(ctx, w, h);
     G.Touch.draw(ctx);
     }

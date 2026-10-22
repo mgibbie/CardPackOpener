@@ -67,7 +67,7 @@ G.Spectate = (() => {
     if (pl.dynScale) s.ds = [Math.round(pl.dynScale[0] * 100), Math.round(pl.dynScale[1] * 100)];
     // Z-move / Dynamax (their buttons are not drawn for a watched player: the watcher's own HUD shows these)
     const zt = G.ZMoves && G.ZMoves.activeType(pl);
-    if (zt) s.z = [zt, G.ZMoves.state || '', G.ZMoves.used ? 1 : 0, Math.ceil(G.ZMoves.cd || 0)];
+    if (zt && !G.World.zone) s.z = [zt, G.ZMoves.state || '', G.ZMoves.used ? 1 : 0, Math.ceil(G.ZMoves.cd || 0)];
     if (G.Dynamax && G.Dynamax.unlocked()) s.dy = [G.Dynamax.active ? 1 : 0, Math.ceil(G.Dynamax.left || 0), G.Dynamax.used ? 1 : 0, Math.ceil(G.Dynamax.cd || 0)];
     if (G.Team && G.Team.on) s.tm = [G.Team.cur | 0, G.Team.view(pl).map(m => [m.dex, Math.round(G.U.clamp(m.frac, 0, 1) * 100)])];
     if (G.World.arena) { const a = G.World.arena; s.ar = [a.tx, a.ty, a.r, a.type || 'normal']; }

@@ -32,7 +32,7 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   '+{x} de vida máxima': '+{x} max HP', '+{x} proyectiles': '+{x} projectiles', '+{x} % de velocidad de ataque': '+{x}% attack speed',
   '+{x} % de crítico': '+{x}% crit', '+{x} % de velocidad de proyectil': '+{x}% projectile speed', '+{x} % de evasión': '+{x}% evasion',
   '+{x} % de estado': '+{x}% status chance', '+{x} % de área': '+{x}% area', '+{x} % de duración': '+{x}% duration',
-  '+{x} de vida por segundo': '+{x} HP per second', '+{x} % de Pokémonedas': '+{x}% Pokémonedas', '+{x} % de experiencia': '+{x}% XP',
+  '+{x} de vida por segundo': '+{x} HP per second', '+{x} % de Pokémonedas': '+{x}% Pokémonedas', '+{x} % de ₽': '+{x}% ₽', '+{x} % de experiencia': '+{x}% XP',
   '+{x} de suerte': '+{x} luck', '+{x} % de robo de vida': '+{x}% lifesteal', '+{x} % de radio de recogida': '+{x}% pickup range',
   '+{x} % de dificultad': '+{x}% difficulty', '+{x} % contra súper eficaces': '+{x}% super-effective damage',
   '+{x} % de daño a jefes': '+{x}% damage to bosses', '+{x} % de daño de tipo {x}': '+{x}% {x}-type damage',
@@ -183,6 +183,7 @@ G.ExpItems = (() => {
     for (const x of pl.xv) if (VIT[x.id].stat === s) v += x.v;
     for (const id in pl.xi) { const st = IT[id] && IT[id].stats[s]; if (st) v += st * pl.xi[id]; }
     if (s === 'dmg') v += pl.xtr.dmg;
+    if (G.ExpCap) v += G.ExpCap.perk(pl, s);   // (D8: the Support Alphas' type perks add like any same-stat bonus)
     if (s === 'hp') v += pl.xtr.hp;
     if (s === 'xp' || s === 'coin') v += total(pl, 'curse') * K.CURSE_XP;
     if (s === 'armor' && pl.xi.eviolite && G.ExpLeague && G.ExpLeague.run) {
@@ -256,7 +257,7 @@ G.ExpItems = (() => {
       case 'area': return F('+{x} % de área', p);
       case 'dur': return F('+{x} % de duración', p);
       case 'regen': return F('+{x} de vida por segundo', n);
-      case 'coin': return F('+{x} % de Pokémonedas', p);
+      case 'coin': return F('+{x} % de ₽', p);   // (D7: the run's ₽)
       case 'xp': return F('+{x} % de experiencia', p);
       case 'luck': return F('+{x} de suerte', Math.round(v));
       case 'steal': return F('+{x} % de robo de vida', p);

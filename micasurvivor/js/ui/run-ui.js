@@ -188,13 +188,19 @@ G.RunUI = (() => {
       <table style="margin:4px auto 0;border-collapse:collapse;font-size:14px" cellpadding="3"><tbody>${rows}</tbody></table></div>`;
   }
 
+  /** MicaSurvivor (DLC D9): a won Expedition Classic run's time-attack medal (r.medal; base runs have none). */
+  function medalHtml(m) {
+    return `<div style="grid-column:1/-1" class="over-medal"><span>Medalla</span><b class="gold">${G.Icons.html(m.icon, 24)} ${m.name} · ${G.U.mmss(m.time)}${m.isNew ? ' ★' : ''}</b>`
+      + (m.next ? `<div style="font-size:12px;color:var(--muted)">${m.next}</div>` : '') + '</div>';
+  }
+
   function showOver(r, onBack) {
     // MicaSurvivor (M5 lote 6): "¡Tiempo!" al acabar la Contrarreloj; las líneas del modo (récords del Diario,
     // grietas ganadas, el tipo, la Fiesta) bajo el título.
     // (M5 lote 8: «¡TORRE COMPLETA!» al superar el piso 30, main.gd _tower_win)
     $('over-title').textContent = r.title || (r.timeUp ? '¡Tiempo!' : r.dead ? 'Has caído…' : 'Run terminada');
     const modeLine = (r.modeLines || []).length ? `<div style="grid-column:1/-1;text-align:center" class="over-mode"><p>${r.modeLines.map(l => `<span>${l}</span>`).join(' · ')}</p></div>` : '';
-    $('over-stats').innerHTML = modeLine + (r.splits ? splitsHtml(r.splits) : '') + (r.rifts != null ? `<div style="grid-column:1/-1"><span>Grietas ganadas</span><b class="gold">${r.rifts}</b></div>` : '') + `
+    $('over-stats').innerHTML = modeLine + (r.splits ? splitsHtml(r.splits) : '') + (r.medal ? medalHtml(r.medal) : '') + (r.rifts != null ? `<div style="grid-column:1/-1"><span>Grietas ganadas</span><b class="gold">${r.rifts}</b></div>` : '') + `
       <div><span>Tiempo</span><b>${G.U.mmss(r.time)}</b></div>
       <div><span>Nivel</span><b>${r.level}</b></div>
       <div><span>Derrotados</span><b>${r.kills}</b></div>
