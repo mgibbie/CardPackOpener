@@ -1930,8 +1930,17 @@ the 3.9.1 Lua (upstream main af0b656 has the same packs1.lua / sleeve.lua / poke
   - Not ported: the per-card override (3.9.1's collection right-click, `pokemon_spritesheet_overrides`), Series B (3.9.1's option
     lists it, its only sheet is Natdex), the artist credits per series, and the alt soul's `apply_edition` (the floating sprite
     takes the edition shader).
-  - Found on the way, NOT changed: on the Basic series a Shiny joker draws the Basic (non-Shiny) sheet plus the Shiny shader; 3.9.1
-    swaps to the Shiny twin sheet (Series A does here). A one-line follow-up if wanted.
+  - **Shiny on the Basic series** (follow-up, cosmetic; no rev): a Shiny joker draws the same cell of its sheet's Shiny twin, as 3.9.1's
+    e_poke_shiny `on_load` does (`atlas .. 'Shiny'` when that atlas exists; the edition keeps `shader = "shiny"`, so the shader still
+    draws on top). ui.js `basicShiny()`, applied last in `face()` and `still()`: the board, spectate / replays, collections, the Pokédex,
+    deck editor thumbnails; Kecleon's type card, Unown's letter, Deoxys' forme and Mega souls come off the Shiny sheet too. Zorua's
+    illusion follows Zorua's edition, its in-row disguise the copied joker's (copy_joker_sprites). On Series A, a joker with no Series A
+    cell gets its Basic Shiny card. Add-ons: Nacho / Pokermon+ jokers on Pokermon's 3.9.1 or 3.2.1 sheets, and on_load's
+    `poke_custom_prefix` branch (`<prefix>_shiny_<rest>`): Nacho's Excavator -> `nacho_shiny_excavator179` (vendored, unused till now).
+    Every one of the 681 Basic-sheet jokers has a real, recoloured Shiny cell (checked crop by crop). No Shiny twin, so today's card +
+    the shader: Rage Candy Bar, Capture Disc, Repel (single-card art), Pokermon+'s `sonfive_other` sheet (Mega Darkrai, Member Card,
+    Mystery Box, Canari Plush). Already Shiny through their animation: the Unown Swarm, Miror Budicolo, Terapagos-Stellar's soul.
+    Not changed: vanilla jokers made Shiny (3.9.1 swaps them to `AtlasJokersVanillaShiny`; registered here, still unused).
   - Art: nothing new — the 30 Series A files were vendored in batch 5 and are already live on magepunk-micatromods.
 - **Tests**: `micatro/tests/mods/pokermon_leftovers_test.mjs` (new; **12 passed / 38 failed on origin/main d3827c0c, 77 / 0 here**)
   fires the packs' slots (the RNG-exact Item draw, the evo item, poll_evo_item's rules, a pack bought and opened), the alt through

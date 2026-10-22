@@ -293,6 +293,88 @@ await sec(async () => {
   SERIES.v = 'basic';
 });
 
+// ------------------------------------------------------------------ 3b. Shiny on the Basic series: the Shiny sheet (3.9.1 e_poke_shiny on_load)
+const { basicShiny } = await import('../../mods/pokermon/ui.js');
+const twinOf = (a) => String(a).replace(/(391)?$/, 'Shiny$1');
+await sec(async () => {
+  const { loadMods } = await import('../../js/mods/index.js');
+  const { ATLASES } = await import('../../js/mods/registry.js');
+  await loadMods(['pokermon', 'nacho', 'pokermonplus']);
+  newRun({ seed: 'SHBASIC', back: 'b_red', mods: ['pokermon', 'nacho', 'pokermonplus'] }); G.E_MANAGER.flush();
+  SERIES.v = 'basic';
+  const pika = viewOf('j_poke_pikachu'), pikaS = viewOf('j_poke_pikachu', 'e_poke_shiny');
+  const f = face(pikaS);
+  ok(face(pika) === null, 'Basic: a plain Pikachu is its Basic card');
+  ok(f && f.atlas === 'poke_AtlasJokersBasicNatdexShiny391' && f.pos.x === pikaS.pos.x && f.pos.y === pikaS.pos.y && f.edition === 'poke_shiny',
+    'Basic + Shiny: Pikachu draws the same cell of the Basic Natdex SHINY sheet (and keeps the Shiny edition, whose shader 3.9.1 still draws)', f && [f.atlas, f.pos, f.edition]);
+  const st = POKE_UI.still(pikaS);
+  ok(st && st.atlas === 'poke_AtlasJokersBasicNatdexShiny391' && POKE_UI.still(pika) === null, 'Basic + Shiny: still cards (collection, Pokédex, deck editor) draw the Shiny sheet too', st && st.atlas);
+  // a Mega: its card and its floating sprite both come from the Shiny sheet
+  const mg = face(viewOf('j_poke_mega_gengar', 'e_poke_shiny'));
+  ok(mg && mg.atlas === 'poke_AtlasJokersBasicGen01Shiny391' && mg.soul_pos, 'Basic + Shiny: Mega Gengar (card + floating sprite) on the Gen01 Shiny sheet', mg && [mg.atlas, mg.soul_pos]);
+  // Kecleon's type card (set_sprite_pos on the Shiny sheet), Unown's form
+  const kv = viewOf('j_poke_kecleon', 'e_poke_shiny');
+  const k = face({ ...kv, poke: { ...(kv.poke || {}), ptype: 'Fire' } });
+  ok(k && k.atlas === 'poke_AtlasJokersBasicGen03Shiny391', 'Basic + Shiny: Kecleon\'s type card is on the Gen03 Shiny sheet', k && k.atlas);
+  const uv = viewOf('j_poke_unown', 'e_poke_shiny');
+  const u = face({ ...uv, poke: { ...(uv.poke || {}), form: 'B' } });
+  ok(u && /Shiny391$/.test(u.atlas) && u.soul_pos && u.soul_pos.x === 2, 'Basic + Shiny: Unown\'s form letter floats over its Shiny card', u && [u.atlas, u.soul_pos]);
+  // Zorua: its illusion by its own edition; its disguise copies the target's sprite by the TARGET's edition
+  const zS = viewOf('j_poke_zorua', 'e_poke_shiny'), z = viewOf('j_poke_zorua');
+  const ill = face({ ...zS, poke: { ...(zS.poke || {}), illusion: 'j_poke_pikachu' } });
+  ok(ill && ill.atlas === 'poke_AtlasJokersBasicNatdexShiny391' && ill.win_key === 'j_poke_zorua', 'Basic + Shiny: a Shiny Zorua\'s illusion is the Shiny Pikachu card', ill && ill.atlas);
+  const tgt = viewOf('j_poke_bulbasaur', 'e_poke_shiny');
+  const dz = POKE_UI.face(z, { jokers: [z, tgt], area: 'jokers' });
+  ok(dz && dz.atlas === 'poke_AtlasJokersBasicNatdexShiny391' && dz.win_key === 'j_poke_zorua', 'Basic: Zorua disguised as a Shiny Bulbasaur draws Bulbasaur\'s Shiny card', dz && dz.atlas);
+  // Series A on, a joker without a Series A cell: its Basic Shiny card (load_atlas keeps the Basic sheet, on_load adds 'Shiny')
+  SERIES.v = 'seriesa';
+  const ch = face(viewOf('j_poke_charmander', 'e_poke_shiny'));
+  ok(ch && ch.atlas === 'poke_AtlasJokersBasicNatdexShiny391', 'Series A + Shiny, no Series A cell (Charmander): the Basic Shiny sheet', ch && ch.atlas);
+  SERIES.v = 'basic';
+  // the add-ons on Pokermon's sheets (3.9.1 and the 3.2.1 sheets), and the add-ons' own sheets
+  const nch = viewOf('j_nacho_chimchar', 'e_poke_shiny'), sal = viewOf('j_nacho_mega_salamence', 'e_poke_shiny'), lec = viewOf('j_sonfive_lechonk', 'e_poke_shiny');
+  ok(face(nch) && face(nch).atlas === twinOf(nch.atlas) && /^poke_AtlasJokersBasic/.test(nch.atlas), 'Basic + Shiny: Nacho\'s Chimchar (Pokermon\'s sheet) draws its Shiny cell', face(nch) && face(nch).atlas);
+  ok(sal.atlas === 'poke_AtlasJokersBasicGen03' && face(sal) && face(sal).atlas === 'poke_AtlasJokersBasicGen03Shiny', 'Basic + Shiny: Nacho\'s Mega Salamence (Pokermon\'s 3.2.1 Gen03 sheet) draws its Shiny twin', face(sal) && face(sal).atlas);
+  ok(face(lec) && face(lec).atlas === twinOf(lec.atlas), 'Basic + Shiny: Pokermon+\'s Lechonk draws its Shiny cell', face(lec) && face(lec).atlas);
+  const ex = face(viewOf('j_nacho_excavator', 'e_poke_shiny'));
+  ok(ex && ex.atlas === 'nacho_shiny_excavator179', 'Basic + Shiny: Nacho\'s Excavator draws its own Shiny sheet (on_load\'s poke_custom_prefix branch: nacho_shiny_excavator)', ex && ex.atlas);
+  // no Shiny twin: today's card + the shader
+  for (const kk of ['j_poke_rage_candy_bar', 'j_poke_capture_disc', 'j_poke_repel', 'j_sonfive_member_card']) {
+    const v = viewOf(kk, 'e_poke_shiny');
+    ok(basicShiny(v) === null && v.edition === 'poke_shiny', `no Shiny sheet: ${kk} keeps its card + the Shiny shader`, v.atlas);
+  }
+  // every joker on a Basic joker sheet has its Shiny twin registered
+  const miss = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && /^poke_AtlasJokersBasic/.test(String(c.atlas)) && !(ATLASES[twinOf(c.atlas)] && ATLASES[twinOf(c.atlas)].src)).map((c) => c.key);
+  ok(miss.length === 0, 'every joker on a Basic joker sheet has its Shiny twin sheet registered', miss);
+});
+
+// art: every Basic-sheet joker's Shiny cell (card or floating sprite) is a real, recoloured picture
+await sec(async () => {
+  if (!ART) { ok(false, 'the Pokermon art is not here (set MICATRO_MAIN to the main checkout)'); return; }
+  const W = 142, H = 190;
+  const fileOf = (a) => { const m = /^poke_(AtlasJokersBasic\w+?)(Shiny)?(391)?$/.exec(a); return path.join(ART, 'Basic Series', m[1] + (m[2] || '') + (m[3] ? '-391' : '') + '.png'); };
+  const list = Object.values(P_CENTERS).filter((c) => c.set === 'Joker' && /^poke_AtlasJokersBasic/.test(String(c.atlas)) && c.pos);
+  const req = {};
+  list.forEach((c, i) => {
+    for (const [tag, pos] of [['c', c.pos], ['s', c.soul_pos && c.soul_pos.x < 90 ? c.soul_pos : null]]) {
+      if (!pos) continue;
+      for (const [f, t] of [[fileOf(c.atlas), 'b'], [fileOf(twinOf(c.atlas)), 'h']]) (req[f] = req[f] || {})[i + tag + t] = [pos.x * W, pos.y * H, W, H];
+    }
+  });
+  const px = {};
+  for (const [f, r] of Object.entries(req)) { if (!fs.existsSync(f)) { ok(false, 'missing ' + f); continue; } Object.assign(px, await crops(f, r)); }
+  const opaque = (a) => { let n = 0; for (let i = 3; i < a.px.length; i += 4) if (a.px[i] > 128) n++; return n / (a.px.length / 4); };
+  const diff = (a, b) => { let d = 0; for (let i = 0; i < a.px.length; i++) d += Math.abs(a.px[i] - b.px[i]); return d / a.px.length; };
+  const bad = [];
+  list.forEach((c, i) => {
+    const cb = px[i + 'cb'], ch = px[i + 'ch'], sb = px[i + 'sb'], sh = px[i + 'sh'];
+    const real = cb && ch && cb.inside && ch.inside && opaque(ch) > 0.5;
+    const recol = (cb && ch && diff(cb, ch) > 0.15) || (sb && sh && sb.inside && sh.inside && diff(sb, sh) > 0.15);
+    if (!real || !recol) bad.push(c.key);
+  });
+  ok(list.length > 600 && bad.length === 0, `every Basic-sheet joker's Shiny cell is a real picture, recoloured from its Basic cell (${list.length} jokers)`, bad);
+});
+
 await sec(() => {
   // cosmetic: the option never reaches the engine — not in the run's options, not in the recipe; gameplay and checksum unchanged
   const runWith = (opts) => {
