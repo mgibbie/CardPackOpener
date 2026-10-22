@@ -510,6 +510,11 @@ try {
 	A(bd.score && bd.score.rows.length >= 4 && bd.score.rows.some(r => /alice/.test(r)) && /Your best rank: #\d+/.test(bd.score.me), 'the Score board in the panel: the real server\'s top for Viridian Forest · Normal and your rank', JSON.stringify(bd.score).slice(0, 400));
 	A(bd.time && bd.time.rows.length >= 1 && /alice/.test(bd.time.rows.join()) && /16:40/.test(bd.time.rows.join()) && bd.time.watch && /Your best rank: #1 · 16:40/.test(bd.time.me), 'the Time-attack board: alice\'s 16:40 with her medal and a Watch link to its replay', JSON.stringify(bd.time).slice(0, 400));
 	await shoot(page, 'tiers-desktop-board-time.png');
+	// the Season tab is hidden by default (owner decision #8: no weekly seasons for now) — the panel shows Score + Time attack only
+	const hid = await E(page, () => ({ tab: !!document.querySelector('[data-view="season"]'), ribbons: document.getElementById('xt-ribbons').classList.contains('hidden'), flag: G.ExpTier.K.SEASON_TAB }));
+	A(hid.flag === false && !hid.tab && hid.ribbons, 'the Season tab and the ribbon chip are hidden (SEASON_TAB off)', JSON.stringify(hid));
+	// (the view still works when switched on: the rest of this section turns it on)
+	await E(page, async () => { G.ExpTier.K.SEASON_TAB = true; document.querySelector('[data-view="score"]').click(); await new Promise(r => setTimeout(r, 250)); });
 	const ss = await E(page, async () => {
 		const wait = ms => new Promise(r => setTimeout(r, ms));
 		const until = async (f, ms = 5000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (f()) return true; await wait(60); } return false; };
@@ -562,7 +567,7 @@ try {
 	for (const [tag, view] of [['desktop', null], ['phone', { width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
 		const d = tag === 'desktop' ? d0 : await bootPage({ user: 'alice', token: tokens.alice, state: states.alice, save: SAVE('alice') }, view);
 		if (tag === 'phone') await prep(d.page);
-		for (const v of ['score', 'season']) {
+		for (const v of ['score']) {
 			const lay = await E(d.page, async v => {
 				const wait = ms => new Promise(r => setTimeout(r, ms));
 				const until = async (f, ms = 5000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (f()) return true; await wait(60); } return false; };

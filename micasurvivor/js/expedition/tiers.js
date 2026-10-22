@@ -77,6 +77,9 @@ G.ExpTier = (() => {
     MEDALS: [1620, 1200, 870], MEDAL_TIER: 0.08, SHRINE_S: 180,
     // the weekly season (study 2.13: 7 days, from 2026-10-12); = server/mp.mjs MSURV_EXP_SEASON0 / _WEEK
     SEASON0: Date.UTC(2026, 9, 12), WEEK: 7 * 86400000,
+    // the Season tab + ribbon chip are HIDDEN (owner decision #8: no weekly seasons for now, 2026-10-22). The server keeps
+    // writing the season boards (GC'd), so turning this on later shows real weeks.
+    SEASON_TAB: false,
     // the season's ribbons by place (study 2.13's map-board places; no Stardust: cosmetic only)
     PRIZES: [[1, 'master'], [3, 'elite'], [10, 'top10'], [25, 'top25'], [50, 'top50']],
     ESCORT: { hp: 3, dmg: 1.3, xp: 3, scale: 1.25 }   // a boss's escorts are elites of the zone (D3's ELITE numbers)
@@ -266,7 +269,7 @@ G.ExpTier = (() => {
     if (!mount()) return false;
     onClose = onBack || null;
     const p = pick();
-    ui.map = p.map; ui.diff = p.diff; ui.view = ui.view || 'score';
+    ui.map = p.map; ui.diff = p.diff; ui.view = (ui.view === 'season' && !K.SEASON_TAB) ? 'score' : (ui.view || 'score');
     $m('modes-main').classList.add('hidden');
     el.classList.remove('hidden');
     if (back0()) back0().classList.add('hidden');
@@ -315,8 +318,8 @@ G.ExpTier = (() => {
       <div class="gen-tabs xt-maps">${maps.map(m => `<button type="button" class="gen-tab${m === ui.map ? ' on' : ''}" data-map="${m}"${play.includes(m) ? '' : ' aria-disabled="true"'}><b>${esc(T().t(MAP_NAME[m]))}</b>${play.includes(m) ? '' : ` <small>${esc(T().t('Próximamente'))}</small>`}</button>`).join('')}</div>
       <div class="xt-tiers">${DIFFS.map(d => tierCard(ui.map, d)).join('')}</div>
       <div class="xt-medals"><b>${esc(T().f('Medallas ({x})', T().t(DIFF_NAME[ui.diff])))}</b>${lim.map(l => `<span class="xt-chip">${G.Icons.html(MEDAL_ICON[l.id], 16)} ${esc(T().t(l.name))} ${l.under ? '&lt; ' + G.U.mmss(l.under) : esc(T().t('Terminar'))}</span>`).join('')}
-        <span class="xt-chip" id="xt-ribbons">${G.Icons.html('crown', 14)} ${esc(rbTxt ? T().f('Tus cintas: {x}', rbTxt) : T().t('Aún no tienes cintas'))}</span></div>
-      <div class="filters xt-tabs">${[['score', 'Puntuación'], ['time', 'Contrarreloj'], ['season', 'Temporada']].map(([k, l]) => `<button type="button" class="chip${ui.view === k ? ' on' : ''}" data-view="${k}">${esc(T().t(l))}</button>`).join('')}</div>
+        <span class="xt-chip${K.SEASON_TAB ? '' : ' hidden'}" id="xt-ribbons">${G.Icons.html('crown', 14)} ${esc(rbTxt ? T().f('Tus cintas: {x}', rbTxt) : T().t('Aún no tienes cintas'))}</span></div>
+      <div class="filters xt-tabs">${[['score', 'Puntuación'], ['time', 'Contrarreloj']].concat(K.SEASON_TAB ? [['season', 'Temporada']] : []).map(([k, l]) => `<button type="button" class="chip${ui.view === k ? ' on' : ''}" data-view="${k}">${esc(T().t(l))}</button>`).join('')}</div>
       <div id="xt-season" class="xt-season${ui.view === 'season' ? '' : ' hidden'}"></div>
       <div id="xt-list" class="rk-list xt-list"></div>
       <div id="xt-me" class="rk-me"></div>`;
