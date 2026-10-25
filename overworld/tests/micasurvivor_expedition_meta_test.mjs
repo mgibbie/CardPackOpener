@@ -4,15 +4,19 @@
 // Ball), js/ui/modes-ui.js (the "League HQ" button). Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md 2.5, 2.6, 2.14 and the D10 row.
 // The REAL server handler (bundled like the dev server, over sqlite) behind a static server, headless Chrome. One browser at a
 // time (and it always exits).
-//   0. pure (meta.js + save.js + tiers.js in a vm): the Lab's prices (study 2.14's formula), a run's ★ x the tier's pay
-//      (x1 / 1.75 / 2.5), every Lab upgrade's effect from a row, the shiny perks, the balance (earned - derived spending),
+//   0. pure (meta.js + save.js + tiers.js in a vm): the Lab's prices (study 2.14's formula), a run's pay x the tier's (x1 / 1.75 /
+//      2.5) in POKÉMONEDAS (DLC D11, owner decision #4: the base game's coins, the D10 tables x K.SCALE), every Lab upgrade's
+//      effect from a row, the shiny perks, a purchase spends the base save's coins (G.Expedition.wallet) and is refused short,
 //      tasks: seeded per day / week, rollover by the date PASSED IN, progress, streak, the reroll; achievements claimed once;
-//      the save merge of two devices (G-counters add, Lab levels max, the Archive's latest toggle)
-//   1. the server: two devices' Expedition saves merge through micasurvivor-exp-save-put (★ of both, the higher Lab level,
-//      the union of bought items / achievements / avatars); a stale put takes nothing away; exact keys only
-//   2. the browser: a run pays ★ (Normal x1, Hard x1.75, the run-over line); the base save's coins untouched
+//      the save merge of two devices (Lab levels max, the Archive's latest toggle, the purchase records' union)
+//   1. the server: two devices' Expedition saves merge through micasurvivor-exp-save-put (the higher Lab level, the union of
+//      bought items / achievements / avatars / purchase records); a stale put takes nothing away; exact keys only. The same
+//      item bought on BOTH devices while apart is refunded once, by the second device (reconcile), never twice
+//   2. the browser: a run pays Pokémonedas (Normal x1, Hard x1.75, the run-over line) into the BASE save, booked on this
+//      device's ledger entry (save.led[device]); the base coins change by exactly the Expedition's earnings and spends;
+//      loading the Expedition never writes the base save
 //   3. each Lab upgrade in a run (stats, tools, slots, the fourth card, the Max Revive, Support team, research x)
-//   4. item unlocks: a locked item never drops; its goal reveals it; ★ buys it into the pool. The Archive keeps items out
+//   4. item unlocks: a locked item never drops; its goal reveals it; Pokémonedas buy it into the pool. The Archive keeps items out
 //   5. research: KOs / a cage add to the family; a finished family is an avatar; the card's avatar / frame / title
 //   6. boosts and shiny perks in a run: Rare Candy, Lucky Egg, Amulet Coin, Honey, Dawn Stone, Master Ball; the Shiny Charm perk
 //   7. sync: the x block v9 `k`, the replay header h.k, a fresh viewer page reads the same effects; a v8 block still loads;
@@ -52,12 +56,20 @@ const T0 = Date.now();
 const DAY = 86400000;
 
 // ======================== 0. pure: meta.js (+ save.js, tiers.js) in a vm
-function vmMeta() {
+function vmMeta(devId) {
 	const store = new Map();
+	if (devId) store.set('micasurvivorexp_dev.guest', devId);
 	const G = {
 		I18n: { add() {}, lang: 'es', t: s => s, f: (s, ...v) => { let i = 0; return s.replace(/\{x\}/g, () => v[i++]); } },
 		U: { mmss: s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') }, Expedition: { BOARD: 'micasurvivor_expedition' },
 		DLC: {}, Modes: { isExp: () => false },
+		// (DLC D11: the base save's coins and the wallet, as js/systems/expedition.js has them; commits counted)
+		DB: { save: { coins: 0, stats: {} }, commits: 0, commit() { this.commits++; return true; } },
+	};
+	G.Expedition.wallet = {
+		balance: () => G.DB.save.coins || 0,
+		earn(n) { n = Math.floor(+n); const s = G.DB.save; if (!(n > 0)) return false; s.coins += n; s.stats.coinsEarned = (s.stats.coinsEarned || 0) + n; G.DB.commit(true); return true; },
+		spend(n) { n = Math.floor(+n); const s = G.DB.save; if (!(n > 0) || s.coins < n) return false; s.coins -= n; G.DB.commit(true); return true; }
 	};
 	const ctx = { G, console, Date, Math, JSON, addEventListener() {}, setTimeout, clearTimeout,
 		localStorage: { getItem: k => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) } };
@@ -80,13 +92,20 @@ if (M0) {
 		'the Lab: 19 upgrades; Training costs round(300 x 1.35^level / 5) x 5 (300, 405, ... 2,445), max 8', [M.price('training', 0), M.price('training', 1), M.price('training', 7)].join(' '));
 	A(JSON.stringify([M.price('vitamins', 0), M.price('vitamins', 1), M.price('moveslot', 0), M.price('option', 0), M.price('revive', 0), M.price('support', 0)]) === '[1200,3000,1500,3000,5000,3500]',
 		'study 2.14\'s fixed prices: vitamin slots 1,200 / 3,000, 4th move slot 1,500, fourth option 3,000, Revive 5,000, Support team 3,500');
-	// a run's ★ x the tier's pay multiplier
+	// a run's pay x the tier's multiplier, in Pokémonedas (D11: the D10 units x K.SCALE, rounded to 5)
 	const p = { kills: 2000, time: 1500, zone: 4, bosses: 4, won: true, catches: 2 };
-	const base = Math.round(10 + 2000 / 40 + 25 * 3 + 30 * 4 + 120 + 15 * 2);
+	const base = Math.round(10 + 2000 / 40 + 25 * 3 + 30 * 4 + 120 + 15 * 2), coins = n => Math.round(n * 8 / 5) * 5;
 	const pn = M.payOf(p, 'normal'), ph = M.payOf(p, 'hard'), px = M.payOf(p, 'nightmare');
-	A(pn.pay === base && base === 405 && ph.pay === Math.round(base * 1.75) && px.pay === Math.round(base * 2.5) && ph.mul === 1.75 && px.mul === 2.5,
-		'a run\'s ★: 10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch = 405, x the tier\'s pay (study 2.11): 405 / 709 / 1,013', JSON.stringify([pn, ph, px]));
-	A(M.payOf({ ...p, time: 59 }, 'hard').pay === 0 && M.payOf({ kills: 0, time: 60, zone: 1, bosses: 0, won: false, catches: 0 }, 'normal').pay === 10, 'a run under a minute pays nothing (no quit-farming); a minute pays the base 10 ★');
+	A(M.K.SCALE === 8 && pn.base === base && base === 405 && pn.pay === 3240 && ph.pay === coins(base * 1.75) && ph.pay === 5670 && px.pay === 8100 && ph.mul === 1.75 && px.mul === 2.5,
+		'a run\'s pay: (10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch = 405) x the tier\'s (study 2.11) x8 Pokémonedas: 3,240 / 5,670 / 8,100', JSON.stringify([pn, ph, px]));
+	A(M.payOf({ ...p, time: 59 }, 'hard').pay === 0 && M.payOf({ kills: 0, time: 60, zone: 1, bosses: 0, won: false, catches: 0 }, 'normal').pay === 80, 'a run under a minute pays nothing (no quit-farming); a minute pays the base 10 x8 = 80');
+	// a purchase spends the base save's coins through the wallet (refused short, nothing taken)
+	G0.DB.save.coins = 2395;
+	const poor = M.buyLab('training'), c0 = G0.DB.save.coins;
+	G0.DB.save.coins = 2400;
+	const okL = M.buyLab('training');
+	A(poor.error === 'poor' && poor.need === 2400 && c0 === 2395 && okL.ok && okL.price === 2400 && G0.DB.save.coins === 0 && M.labLv('training') === 1 && S.list('cur.spend').includes('lab.training.0:' + M.dev()) && M.balance() === 0,
+		'the Lab spends Pokémonedas: Training Lv 1 costs 300 x8 = 2,400 of the base save\'s coins (2,395 is refused, nothing taken); the purchase is recorded with this device\'s id (cur.spend)', JSON.stringify({ poor, okL, coins: G0.DB.save.coins, spend: S.list('cur.spend') }));
 	// every Lab upgrade's effect from a row
 	const lv = { training: 8, stamina: 8, agility: 6, study: 5, trading: 5, fortune: 5, magnetism: 4, leftovers: 4, shell: 5, refresh: 4, skip: 4, banish: 5, vitamins: 2, moveslot: 1, option: 1, revive: 1, research: 4, support: 1, archive: 3 };
 	for (const [k, n] of Object.entries(lv)) S.best('lab.' + k, n);
@@ -96,11 +115,9 @@ if (M0) {
 		'the stat upgrades at max: Training +32 % damage (8 x 4), Stamina +64 HP (8 x 8), Agility +15 % speed, Study +25 % XP, Trading +40 % ₽, Fortune +25 luck, Magnetism +40 %, Leftovers +1.2 HP/s, Shell +10 armor', JSON.stringify(st));
 	A(JSON.stringify(['refresh', 'skip', 'banish', 'vitamins', 'moveslot', 'option', 'revive', 'research', 'support', 'archive'].map(k => e.lab[k])) === '[4,4,5,2,1,1,1,4,1,3]' && M.arcSlots(3) === 9,
 		'... and the others: Refresh / Skip / Banish +4 / +4 / +5 (to 6 each), 2 vitamin slots, a move slot, the fourth option, the Max Revive, Research x2, a Support slot, 9 Archive slots', JSON.stringify(e.lab));
-	A(M.labCost('training', 8) === [0, 1, 2, 3, 4, 5, 6, 7].reduce((a, i) => a + M.price('training', i), 0), 'the Lab\'s spending is DERIVED from its levels (Σ the prices paid)');
-	// the balance: earned (G-counters + achievements) - the Lab - bought items
-	const spent = M.LAB.reduce((a, u) => a + M.labCost(u.id, M.labLv(u.id)), 0);
-	S.bump('st.dev1', spent + 1000);
-	A(M.balance() === 1000, 'the balance: Σ st.* (+ achievements) - the Lab\'s derived spending = 1,000', M.balance());
+	A(M.labCost('training', 8) === [0, 1, 2, 3, 4, 5, 6, 7].reduce((a, i) => a + M.price('training', i), 0), 'the Lab\'s total (Σ the prices of its levels)');
+	G0.DB.save.coins = 1000;
+	A(M.balance() === 1000, 'the balance is the base save\'s Pokémonedas (1,000)', M.balance());
 	// the shiny perks (study 2.14): 2 / 4 / 6 / 10 / 15
 	A([0, 1, 2, 3, 4, 5, 6, 9, 10, 14, 15, 99].map(M.perkTier).join() === '0,0,1,1,2,2,3,3,4,4,5,5', 'shiny perks by shinies caught: 2, 4, 6, 10, 15');
 	const pe = M.effects(['0', 5, 0, 1]), pe4 = M.effects(['0', 4, 0, 1]), pe5n = M.effects(['0', 5, 0, 0]);
@@ -124,26 +141,26 @@ if (M0) {
 	// progress, payment, rollover (in the guest save, whose account key is the 'guest' hash)
 	const g0 = M.earned();
 	const today = M.tasksOf('d', d1);
-	const big = { runs: 9, kos: 1e5, mins: 999, zone: 4, wins: 9, guardians: 99, balls: 99, altars: 99, casts: 99, reactions: 9999, alphas: 99, catches: 99, evos: 99, freed: 99 };
+	const big = { runs: 9, kos: 1e5, mins: 999, zone: 4, wins: 9, guardians: 99, balls: 99, altars: 99, casts: 99, reactions: 9999, alphas: 99, catches: 99, evos: 99, freed: 99, smins: 999, miles: 99 };
 	const half = Object.fromEntries(Object.entries(big).map(([k]) => [k, 0]));
-	const t0 = today[0]; half[t0.m] = Math.max(1, Math.floor(t0.need / 2));
+	const ti = Math.max(0, today.findIndex(t => t.need >= 2)), t0 = today[ti]; half[t0.m] = Math.max(1, Math.floor(t0.need / 2));
 	if (t0.mode === 'max') half[t0.m] = Math.max(1, t0.need - 1);
 	M.taskRun(half, d1);
-	const mid = M.tasksOf('d', d1)[0];
+	const mid = M.tasksOf('d', d1)[ti];
 	A(mid.have === half[t0.m] && !mid.done && !mid.claimed, 'a run counts toward a task (' + t0.id + ': ' + mid.have + ' / ' + mid.need + ')', JSON.stringify(mid));
-	const nxt = M.tasksOf('d', d2)[0];
+	const nxt = M.tasksOf('d', d2)[ti];
 	A(nxt.have === 0, 'the next day: progress starts again from 0 (the counter carries its period: a newer one wins the max merge)', JSON.stringify(nxt));
 	const lines = M.taskRun(big, d1);
 	const after = M.tasksOf('d', d1), wk = M.tasksOf('w', d1);
 	const paid = M.earned() - g0;
-	A(after.every(t => t.claimed) && wk.every(t => t.claimed) && paid === 60 + 100 + 160 + 50 + 300 + 450 + 700 + 500 && lines.length === 8,
-		'a big run finishes all 6: 60 + 100 + 160 + the daily bonus 50 x streak 1 + 300 + 450 + 700 + the weekly 500 = 2,320 ★', JSON.stringify({ paid, lines }));
+	A(after.every(t => t.claimed) && wk.every(t => t.claimed) && paid === 8 * (60 + 100 + 160 + 50 + 300 + 450 + 700 + 500) && paid === 18560 && lines.length === 8 && /\+480 Pokémonedas/.test(lines.join(' ')),
+		'a big run finishes all 6: (60 + 100 + 160 + the daily bonus 50 x streak 1 + 300 + 450 + 700 + the weekly 500) x8 = 18,560 Pokémonedas', JSON.stringify({ paid, lines }));
 	const boostsGot = M.BOOSTS.reduce((a, b) => a + M.boostHave(b.id), 0);
 	A(boostsGot === 4, 'the bonuses give boosts: 1 for the 3 dailies, 3 for the 3 weeklies', boostsGot);
 	const again = M.taskRun(big, d1b);
 	A(!again.length && M.earned() - g0 === paid, 'later the same day: nothing pays twice');
 	M.taskRun(big, d2);
-	A(M.dailyStreak(M.dayOf(d2)) === 2 && M.earned() - g0 === paid + 60 + 100 + 160 + 100, 'the next day: new tasks; all 3 done the day after makes a streak of 2 (+100 ★)', M.earned() - g0);
+	A(M.dailyStreak(M.dayOf(d2)) === 2 && M.earned() - g0 === paid + 8 * (60 + 100 + 160 + 100), 'the next day: new tasks; all 3 done the day after makes a streak of 2 (+800)', M.earned() - g0);
 	M.taskRun(big, Date.UTC(2026, 9, 25, 3));
 	A(M.dailyStreak(M.dayOf(Date.UTC(2026, 9, 25, 3))) === 1, 'a missed day resets the streak to 1');
 	// the reroll: one a period, not a finished task
@@ -153,16 +170,16 @@ if (M0) {
 		'the reroll: one task a day gets another template (once a day)', JSON.stringify([r0.map(t => t.id), r1.map(t => t.id)]));
 	// achievements: claimed once into the set; their ★ derived from it
 	S.best('runs', 12);
-	const e0 = M.earned(), c1 = M.checkAch(), c2 = M.checkAch();
-	A(c1.some(a => a.id === 'run1') && c1.some(a => a.id === 'run10') && !c2.length && M.earned() - e0 === c1.reduce((a, x) => a + x.star, 0) && S.list('ach').includes('run10'),
-		'achievements: "finish 10 runs" and the rest reached are claimed once (the set `ach`); their ★ count in the balance', JSON.stringify(c1.map(a => a.id)));
-	A(M.ACH.length >= 30 && M.ACH.every(a => a.star >= 50 && a.star <= 1500), '~30 achievements (' + M.ACH.length + '), 50-1,500 ★ each (study 2.14)');
+	const e0 = M.earned(), b0 = G0.DB.save.coins, c1 = M.checkAch(), c2 = M.checkAch();
+	A(c1.some(a => a.id === 'run1') && c1.some(a => a.id === 'run10') && !c2.length && M.earned() - e0 === c1.reduce((a, x) => a + M.coinsOf(x.star), 0) && G0.DB.save.coins - b0 === M.earned() - e0 && S.list('ach').includes('run10'),
+		'achievements: "finish 10 runs" and the rest reached are claimed once (the set `ach`) and paid once in Pokémonedas', JSON.stringify(c1.map(a => a.id)));
+	A(M.ACH.length >= 30 && M.ACH.every(a => a.star >= 50 && a.star <= 1500), '~30 achievements (' + M.ACH.length + '), 50-1,500 units each (study 2.14), x8 in Pokémonedas');
 	// the save merge of two devices: G-counters add, the Lab takes the max, the Archive the latest toggle
-	const devA = { v: 1, counters: { 'st.aaaa11': 700, 'lab.training': 2, 'arc.lifeorb': 3 }, sets: { 'items.bought': ['scopelens'], ach: ['run1'] } };
-	const devB = { v: 1, counters: { 'st.bbbb22': 400, 'lab.training': 3, 'arc.lifeorb': 4 }, sets: { 'items.bought': ['widelens'], ach: ['run1', 'zone2'] } };
+	const devA = { v: 1, counters: { 'lab.training': 2, 'arc.lifeorb': 3 }, sets: { 'items.bought': ['scopelens'], ach: ['run1'], 'cur.spend': ['item.scopelens:aaaa11'] } };
+	const devB = { v: 1, counters: { 'lab.training': 3, 'arc.lifeorb': 4 }, sets: { 'items.bought': ['scopelens', 'widelens'], ach: ['run1', 'zone2'], 'cur.spend': ['item.scopelens:bbbb22', 'item.widelens:bbbb22'] } };
 	const mg = S.merge(devA, devB);
-	A(mg.counters['st.aaaa11'] === 700 && mg.counters['st.bbbb22'] === 400 && mg.counters['lab.training'] === 3 && mg.counters['arc.lifeorb'] === 4 && JSON.stringify(mg.sets['items.bought']) === '["scopelens","widelens"]',
-		'the merge: each device\'s ★ counter kept (700 + 400 = 1,100 earned), the higher Lab level, the Archive\'s later toggle (off), the union of bought items', JSON.stringify(mg));
+	A(mg.counters['lab.training'] === 3 && mg.counters['arc.lifeorb'] === 4 && JSON.stringify(mg.sets['items.bought']) === '["scopelens","widelens"]' && mg.sets['cur.spend'].length === 3,
+		'the merge: the higher Lab level, the Archive\'s later toggle (off), the union of bought items and of the purchase records (who paid what)', JSON.stringify(mg));
 }
 
 // ======================== 1. the server (the real handler over sqlite)
@@ -190,25 +207,35 @@ A(Object.values(tokens).every(Boolean), 'test accounts registered');
 	// two devices of bob: each puts its own progress; the server merges (never backwards)
 	const i0 = SQL.length;
 	const g0 = await raw('micasurvivor-exp-save-get', {}, tokens.bob);
-	const a = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { 'st.aaaa11': 700, 'lab.training': 2, 'lab.support': 1 }, sets: { 'items.bought': ['scopelens'], ach: ['run1'], avatar: ['10'] } }, rev: g0.body.rev || 0 }, tokens.bob);
+	const a = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { 'lab.training': 2, 'lab.support': 1 }, sets: { 'items.bought': ['scopelens'], ach: ['run1'], avatar: ['10'], 'cur.spend': ['item.scopelens:aaaa11'], 'cur.earn': ['ach.run1:aaaa11'] } }, rev: g0.body.rev || 0 }, tokens.bob);
 	// device B is stale (rev 0): 409 with the stored save; it merges and retries
-	const b0 = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { 'st.bbbb22': 400, 'lab.training': 3 }, sets: { 'items.bought': ['widelens'], ach: ['zone2'] } }, rev: 0 }, tokens.bob);
-	const b1 = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { 'st.bbbb22': 400, 'lab.training': 3 }, sets: { 'items.bought': ['widelens'], ach: ['zone2'] } }, rev: b0.body.rev }, tokens.bob);
+	// (device B bought Scope Lens too while apart, and claimed "First steps" too: both devices paid / were paid)
+	const B = { v: 1, counters: { 'lab.training': 3 }, sets: { 'items.bought': ['scopelens', 'widelens'], ach: ['run1', 'zone2'], 'cur.spend': ['item.scopelens:bbbb22', 'item.widelens:bbbb22'], 'cur.earn': ['ach.run1:bbbb22', 'ach.zone2:bbbb22'] } };
+	const b0 = await raw('micasurvivor-exp-save-put', { save: B, rev: 0 }, tokens.bob);
+	const b1 = await raw('micasurvivor-exp-save-put', { save: B, rev: b0.body.rev }, tokens.bob);
 	const sv = row('micasurvivorexp:bob');
-	A(a.status === 200 && b0.status === 409 && b1.status === 200 && sv && sv.save.counters['st.aaaa11'] === 700 && sv.save.counters['st.bbbb22'] === 400 && sv.save.counters['lab.training'] === 3 && sv.save.counters['lab.support'] === 1
-		&& JSON.stringify(sv.save.sets['items.bought']) === '["scopelens","widelens"]' && JSON.stringify(sv.save.sets.ach) === '["run1","zone2"]' && JSON.stringify(sv.save.sets.avatar) === '["10"]',
-		'the server merges two devices: both ★ counters (700 + 400), Lab Training 3 (the higher), Support 1, the union of bought items / achievements / avatars', JSON.stringify(sv && sv.save));
-	const lower = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { 'st.aaaa11': 1, 'lab.training': 0 }, sets: {} }, rev: sv.rev }, tokens.bob);
+	A(a.status === 200 && b0.status === 409 && b1.status === 200 && sv && sv.save.counters['lab.training'] === 3 && sv.save.counters['lab.support'] === 1
+		&& JSON.stringify(sv.save.sets['items.bought']) === '["scopelens","widelens"]' && JSON.stringify(sv.save.sets.ach) === '["run1","zone2"]' && JSON.stringify(sv.save.sets.avatar) === '["10"]'
+		&& sv.save.sets['cur.spend'].length === 3 && sv.save.sets['cur.earn'].length === 3,
+		'the server merges two devices: Lab Training 3 (the higher), Support 1, the union of bought items / achievements / avatars / who-paid-what records', JSON.stringify(sv && sv.save));
+	const lower = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { 'lab.training': 0 }, sets: {} }, rev: sv.rev }, tokens.bob);
 	const sv2 = row('micasurvivorexp:bob');
-	A(lower.status === 200 && sv2.save.counters['st.aaaa11'] === 700 && sv2.save.counters['lab.training'] === 3 && sv2.save.sets['items.bought'].length === 2, 'a put with less (an old device) takes nothing away', JSON.stringify(sv2.save.counters));
+	A(lower.status === 200 && sv2.save.counters['lab.training'] === 3 && sv2.save.sets['items.bought'].length === 2 && sv2.save.sets['cur.spend'].length === 3, 'a put with less (an old device) takes nothing away', JSON.stringify(sv2.save.counters));
 	if (M0) {
-		const { G: G1 } = vmMeta();
-		await G1.ExpSave.open();
-		const m = G1.ExpSave.merge(G1.ExpSave.data, sv2.save);
-		Object.assign(G1.ExpSave.data, m);
-		const M = G1.ExpMeta;
-		const want = 700 + 400 + M.ACH_BY.run1.star + M.ACH_BY.zone2.star - M.labCost('training', 3) - M.labCost('support', 1) - M.UNLOCKS.find(u => u.id === 'scopelens').cost - M.UNLOCKS.find(u => u.id === 'widelens').cost;
-		A(M.balance() === Math.max(0, want) && M.earned() === 700 + 400 + M.ACH_BY.run1.star + M.ACH_BY.zone2.star, 'the merged save\'s balance = both devices\' ★ + the achievements - the Lab (Training 3, Support) - the 2 items, each paid ONCE', [M.balance(), want].join(' '));
+		// each device reads the merged save: Scope Lens was paid on both and "First steps" paid to both. The second device
+		// (by id) undoes its own copy, ONCE (a refund / a claw-back through the wallet); the first device changes nothing.
+		const load = async (id, coins) => { const { G: G1 } = vmMeta(id); await G1.ExpSave.open(); Object.assign(G1.ExpSave.data, G1.ExpSave.merge(G1.ExpSave.data, JSON.parse(JSON.stringify(sv2.save)))); G1.DB.save.coins = coins; return G1; };
+		const GA = await load('aaaa11', 5000), GB = await load('bbbb22', 5000), MB = GB.ExpMeta;
+		const mA = GA.ExpMeta.reconcile(), mB = MB.reconcile(), mB2 = MB.reconcile();
+		const want = MB.coinsOf(MB.UNLOCKS.find(u => u.id === 'scopelens').cost) - MB.coinsOf(MB.ACH_BY.run1.star);
+		A(mA === 0 && GA.DB.save.coins === 5000 && GA.DB.commits === 0 && mB === want && GB.DB.save.coins === 5000 + want && mB2 === 0 && GB.DB.save.coins === 5000 + want
+			&& JSON.stringify(GB.ExpSave.list('cur.fix').sort()) === '["ach.run1:bbbb22","item.scopelens:bbbb22"]',
+			'a double payment across devices: the second device refunds its Scope Lens (+2,400) and gives back its "First steps" (-' + MB.coinsOf(MB.ACH_BY.run1.star) + '), once (cur.fix); the first device and a second reconcile change nothing',
+			JSON.stringify({ mA, mB, mB2, a: GA.DB.save.coins, b: GB.DB.save.coins, fix: GB.ExpSave.list('cur.fix') }));
+		// and a device that only READS (nothing to undo) never writes the base save
+		const GC = await load('cccc33', 5000);
+		GC.ExpMeta.reconcile(); GC.ExpMeta.balance();
+		A(GC.DB.commits === 0 && GC.DB.save.coins === 5000, 'a third device with nothing to undo: no base-save write (G.DB.commit never called)', GC.DB.commits);
 	}
 	const q = SQL.slice(i0).filter(s => /^\s*SELECT/i.test(s));
 	A(q.length >= 3 && !q.some(s => /LIKE/i.test(s)), 'the Expedition save reads are exact keys (no SELECT ... LIKE)', q.slice(0, 3).join(' | '));
@@ -269,6 +296,8 @@ const BEFORE = (o) => {
 	H.win = t => { const S = G.ExpClassic.run; S.won = true; S.zone = 4; S.ph = 4; S.splits[3] = t; G.Game.debugTime(t); G.Game.endRun(false); return window.__sum; };
 	/** end a run that isn't won after `t` s */
 	H.lose = t => { G.Game.debugTime(t); G.Game.endRun(false); return window.__sum; };
+	/** D11: Pokémonedas into the base save through the Expedition's wallet (counted in the tally like any earning) */
+	H.fund = n => G.Expedition.wallet.earn(n);
 	/** the player's stats as the Lab touches them */
 	H.stats = () => { const pl = G.Game.player; const x = pl.xap || {}; return { atk: pl.atkMul / (x.atkMul || 1), atkMul: pl.atkMul, spd: pl.spdMul, xp: pl.xpMul, coin: pl.coinMul, mag: pl.magnet, regen: pl.regenFlat, red: pl.dmgReduce, luck: pl.xluck, maxHp: pl.maxHp, hpFlat: x.hpFlat || 0,
 		reroll: pl.rerollBonus, bans: pl.bansLeft, skips: G.ExpLevel.run ? G.ExpLevel.run.skips : null, moves: pl.maxMoves, vit: G.ExpItems.slots(pl), maxrev: (pl.xi || {}).maxrevive || 0, sa: G.ExpCap.slotsMax(), row: pl.xmr }; };
@@ -311,6 +340,12 @@ try {
 		if (ok !== true) return { ok: false, err: ok };
 		await G.ExpSave.open();
 		if (!window.__hooked) { window.__hooked = 1; G.Hooks.on('run.end', (out, sum) => { window.__sum = JSON.parse(JSON.stringify(sum)); window.__out = { lines: out.lines.slice() }; return out; }); }
+		// (D11: every Pokémoneda the Expedition moves goes through the wallet: tally them)
+		if (!window.__wal) {
+			const W = G.Expedition.wallet, e0 = W.earn, s0 = W.spend, T = window.__wal = { earn: 0, spend: 0 };
+			W.earn = n => { const ok = e0(n); if (ok) T.earn += Math.floor(n); return ok; };
+			W.spend = n => { const ok = s0(n); if (ok) T.spend += Math.floor(n); return ok; };
+		}
 		return { ok: true, meta: !!G.ExpMeta, dv: G.Expedition.DV, xv: G.Exp.XV, cdv: G.Exp.dv };
 	});
 	/** start Classic on the device's pick; freeze the frames; a sturdy player; no foes */
@@ -334,47 +369,60 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu signed in (alice)');
 	const baseCoins0 = await E(page, () => JSON.stringify({ coins: G.DB.save.coins, stats: G.DB.save.stats, ach: G.DB.save.ach }));
+	// (D11: the base save as stored, before any Expedition code loads: loading must never write it)
+	const rawBase = () => E(page, () => localStorage.getItem('micasurvivor_save.mp:alice'));
+	const base0 = await rawBase();
 	// the "League HQ" button before the Expedition code loads
 	const btn0 = await E(page, async () => { window.__t.thaw(); G.ModesUI.open(); await new Promise(r => setTimeout(r, 200)); const b = document.getElementById('modes-meta-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded }; });
 	A(btn0.txt === 'League HQ: Lab, tasks and achievements' && btn0.loaded === false, 'the Classic card has a third button, "League HQ: Lab, tasks and achievements" (before any Expedition code loads)', JSON.stringify(btn0));
 	await E(page, () => G.UI.show('scr-menu', true));
 	const pr = await prep(page);
-	A(pr.ok && pr.meta && pr.dv === 9 && pr.cdv === 9 && pr.xv === 9, 'the Expedition code loads with meta.js; the content version is 9, the x block v9', JSON.stringify(pr));
+	A(pr.ok && pr.meta && pr.dv === 10 && pr.cdv === 10 && pr.xv === 10, 'the Expedition code loads with meta.js; the content version is 10, the x block v10 (D11)', JSON.stringify(pr));
 	if (!pr.ok || !pr.meta) throw new Error('no G.ExpMeta: the rest needs it');
+	// loading the Expedition (and its save, and reading the balance) never writes the base save
+	const base1 = await rawBase(), led0 = await E(page, () => ({ coins: G.DB.save.coins, dev: JSON.parse(localStorage.getItem('micasurvivor_dev')), led: JSON.parse(JSON.stringify(G.DB.save.led || {})), bal: G.ExpMeta.balance(), wal: Object.assign({}, window.__wal) }));
+	A(base1 === base0 && led0.bal === led0.coins, 'loading the Expedition and its save never writes the base save (the stored copy is byte-equal); the League HQ balance is the base save\'s coins', JSON.stringify({ same: base1 === base0, bal: led0.bal, coins: led0.coins }));
 
-	// ======================== 2. a run pays ★ x the tier's pay; the base save is untouched
+	// ======================== 2. a run pays Pokémonedas x the tier's pay, into the base save through this device's ledger
 	const rN = await startClassic(page);
 	const s0 = await E(page, () => ({ row: G.ExpMeta.row(), pay: G.ExpSave.get('pay.total') }));
 	const pN = await E(page, () => {
-		const M = G.ExpMeta, sumSt = () => Object.entries(G.ExpSave.data.counters).filter(([k]) => k.startsWith('st.')).reduce((a, [, v]) => a + v, 0);
-		const st0 = sumSt(), pay0 = G.ExpSave.get('pay.total');
+		const M = G.ExpMeta, dev = JSON.parse(localStorage.getItem('micasurvivor_dev')), ledC = () => ((G.DB.save.led || {})[dev] || {}).c || [0, 0];
+		const pay0 = G.ExpSave.get('pay.total'), c0 = G.DB.save.coins, l0 = ledC().slice(), w0 = window.__wal.earn - window.__wal.spend;
+		// (what the next commit books to this device that isn't the Expedition's: a base change not folded yet)
+		const unb = c0 - Object.values(G.DB.save.led || {}).reduce((a, e) => a + (e.c ? e.c[0] - e.c[1] : 0), 0);
 		G.ExpCap.run.n = 2;
 		const sum = window.__t.win(1200);
-		return { sum, lines: window.__out.lines, pay: G.ExpSave.get('pay.total') - pay0, st: sumSt() - st0, want: M.payOf(sum.parts, 'normal') };
+		const l1 = ledC();
+		return { sum, lines: window.__out.lines, pay: G.ExpSave.get('pay.total') - pay0, coins: G.DB.save.coins - c0, led: [l1[0] - l0[0] - unb, l1[1] - l0[1]], unb, wal: window.__wal.earn - window.__wal.spend - w0, want: M.payOf(sum.parts, 'normal') };
 	});
 	const oN = await overText(page);
 	A(rN.ok && rN.meta && s0.row && s0.row[0] === '0'.repeat(19), 'Classic starts with the meta row (a fresh save: every Lab level 0)', JSON.stringify(s0));
-	A(pN.want && pN.pay === pN.want.pay && pN.want.mul === 1 && pN.pay > 100 && pN.st >= pN.pay && pN.lines.includes('Stardust: +' + pN.pay + ' ★'),
-		'a won Normal run pays its ★ (x1) into the Expedition save, with a run-over line "Stardust: +N ★"', JSON.stringify({ pay: pN.pay, want: pN.want, st: pN.st, lines: pN.lines }));
-	A(/Stardust: \+\d+ ★/.test(oN), 'the run-over screen shows it', oN.slice(0, 400));
+	A(pN.want && pN.pay === pN.want.pay && pN.want.mul === 1 && pN.pay > 800 && pN.lines.includes('Pokémonedas: +' + pN.pay),
+		'a won Normal run pays its Pokémonedas (x1), with a run-over line "Pokémonedas: +N"', JSON.stringify({ pay: pN.pay, want: pN.want, lines: pN.lines }));
+	A(pN.coins === pN.wal && pN.coins >= pN.pay && pN.led[0] === pN.coins && pN.led[1] === 0,
+		'... into the BASE save: its coins rise by exactly what the wallet paid (the run + its achievements), booked as earned on this device\'s ledger entry (save.led[device].c)', JSON.stringify({ pay: pN.pay, coins: pN.coins, wal: pN.wal, led: pN.led }));
+	A(/Pokémonedas: \+\d+/.test(oN) && !/Stardust/.test(oN), 'the run-over screen shows it (no Stardust anywhere)', oN.slice(0, 900));
 	await shoot(page, 'meta-desktop-runover.png');
 	// Hard (unlocked by the win): x1.75
 	await E(page, () => G.ExpTier.setPick('viridian', 'hard'));
 	await startClassic(page);
 	const pH = await E(page, () => { const pay0 = G.ExpSave.get('pay.total'); G.ExpCap.run.n = 2; const sum = window.__t.win(1200); return { pay: G.ExpSave.get('pay.total') - pay0, want: G.ExpMeta.payOf(sum.parts, 'hard'), base: G.ExpMeta.payOf(sum.parts, 'normal'), lines: window.__out.lines }; });
-	A(pH.pay === pH.want.pay && pH.want.mul === 1.75 && pH.pay === Math.round(pH.want.base * 1.75) && pH.lines.some(l => l === 'Stardust: +' + pH.pay + ' ★ (×1.75 Hard)'),
-		'a Hard run pays x1.75 (the tier\'s pay): "Stardust: +N ★ (×1.75 Hard)"', JSON.stringify(pH));
+	A(pH.pay === pH.want.pay && pH.want.mul === 1.75 && pH.pay === Math.round(pH.want.base * 1.75 * 8 / 5) * 5 && pH.lines.some(l => l === 'Pokémonedas: +' + pH.pay + ' (×1.75 Hard)'),
+		'a Hard run pays x1.75 (the tier\'s pay): "Pokémonedas: +N (×1.75 Hard)"', JSON.stringify(pH));
 	await E(page, () => G.ExpTier.setPick('viridian', 'normal'));
 	const ach1 = await E(page, () => ({ ach: G.ExpSave.list('ach'), lines: window.__out.lines }));
 	A(ach1.ach.includes('run1') && ach1.ach.includes('win1') && ach1.ach.includes('zone4'), 'achievements from the runs: "First steps", "Map complete", "The shrine" (claimed into the set `ach`)', JSON.stringify(ach1.ach));
-	const baseCoins1 = await E(page, () => JSON.stringify({ coins: G.DB.save.coins, stats: G.DB.save.stats, ach: G.DB.save.ach }));
-	A(baseCoins1 === baseCoins0, 'the base save\'s Pokémonedas, stats and achievements are untouched by Expedition runs', baseCoins0 + ' -> ' + baseCoins1);
+	const baseCoins1 = await E(page, () => { const s = G.DB.save, st = Object.assign({}, s.stats); delete st.coinsEarned; return { coins: s.coins, earned: s.stats.coinsEarned || 0, rest: JSON.stringify({ stats: st, ach: s.ach }), wal: window.__wal }; });
+	const b0j = JSON.parse(baseCoins0), st0 = Object.assign({}, b0j.stats); delete st0.coinsEarned;
+	A(baseCoins1.coins - b0j.coins === baseCoins1.wal.earn - baseCoins1.wal.spend && baseCoins1.earned - (b0j.stats.coinsEarned || 0) === baseCoins1.wal.earn && baseCoins1.rest === JSON.stringify({ stats: st0, ach: b0j.ach }),
+		'the base save\'s coins (and coinsEarned) changed by exactly the Expedition\'s earnings; its other stats and achievements are untouched', JSON.stringify({ before: b0j.coins, after: baseCoins1.coins, wal: baseCoins1.wal }));
 
 	// ======================== 3. each Lab upgrade in a run
 	const base = await (async () => { await startClassic(page); return E(page, () => window.__t.stats()); })();
 	await quit(page);
-	// (the ★ to pay for it first: the balance is earned - the Lab's derived prices)
-	await E(page, () => { const S = G.ExpSave, M = G.ExpMeta; S.bump('st.' + M.dev(), M.LAB.reduce((a, u) => a + M.labCost(u.id, u.max), 0)); for (const [k, n] of Object.entries({ training: 8, stamina: 8, agility: 6, study: 5, trading: 5, fortune: 5, magnetism: 4, leftovers: 4, shell: 5, refresh: 4, skip: 4, banish: 5, vitamins: 2, moveslot: 1, option: 1, revive: 1, research: 4, support: 1 })) S.best('lab.' + k, n); S.commit(); });
+	// (the levels set straight into the Expedition save: what each one does, not what it costs)
+	await E(page, () => { const S = G.ExpSave, M = G.ExpMeta; for (const [k, n] of Object.entries({ training: 8, stamina: 8, agility: 6, study: 5, trading: 5, fortune: 5, magnetism: 4, leftovers: 4, shell: 5, refresh: 4, skip: 4, banish: 5, vitamins: 2, moveslot: 1, option: 1, revive: 1, research: 4, support: 1 })) S.best('lab.' + k, n); S.commit(); });
 	await startClassic(page);
 	const lab = await E(page, () => {
 		const H = window.__t, st = H.stats(), pl = G.Game.player;
@@ -422,18 +470,20 @@ try {
 	const un2 = await E(page, () => {
 		const M = G.ExpMeta, S = G.ExpSave;
 		S.best('kos', 2500);
-		const bal0 = M.balance();
-		const poor = M.balance() < 300 ? M.buyItem('scopelens') : null;
-		S.bump('st.' + M.dev(), 1000);
+		const need = M.coinsOf(300);
+		if (M.balance() >= need) G.Expedition.wallet.spend(M.balance() - need + 5);   // (5 short)
+		const bal0 = M.balance(), poor = M.buyItem('scopelens'), bal0b = M.balance();
+		window.__t.fund(1000);
 		const bal1 = M.balance(), ok = M.buyItem('scopelens'), twice = M.buyItem('scopelens');
-		return { bal0, poor, ok, twice, spent: bal1 - M.balance(), bought: S.list('items.bought') };
+		return { bal0, poor, bal0b, ok, twice, spent: bal1 - M.balance(), bought: S.list('items.bought'), rec: S.list('cur.spend').filter(x => x.startsWith('item.')) };
 	});
-	A(un2.ok && un2.ok.ok && un2.twice.error === 'have' && un2.spent === 300 && JSON.stringify(un2.bought) === '["scopelens"]', 'its goal reached, 300 ★ buys Scope Lens into the pool (once; `items.bought`)', JSON.stringify(un2));
+	A(un2.poor && un2.poor.error === 'poor' && un2.bal0 === un2.bal0b && un2.ok && un2.ok.ok && un2.twice.error === 'have' && un2.spent === 2400 && JSON.stringify(un2.bought) === '["scopelens"]' && un2.rec.length === 1 && /^item\.scopelens:/.test(un2.rec[0]),
+		'its goal reached, 300 x8 = 2,400 Pokémonedas buy Scope Lens into the pool (5 short is refused, nothing taken; bought once; `items.bought`, its record in cur.spend)', JSON.stringify(un2));
 	// the Archive: Lab level 1 = 3 slots
 	const arc = await E(page, () => {
 		const M = G.ExpMeta, S = G.ExpSave, out = {};
 		out.none = M.toggleArchive('lifeorb', true);
-		S.bump('st.' + M.dev(), 2000);
+		window.__t.fund(M.coinsOf(2000));
 		out.buy = M.buyLab('archive');
 		out.locked = M.toggleArchive('widelens', true);
 		out.a = ['lifeorb', 'protector', 'quickclaw'].map(id => M.toggleArchive(id, true));
@@ -525,7 +575,7 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x && { xv: snap.x.xv, k: snap.x.k }, dv: snap.dv, gf: gf && gf.k, hf: hf && hf.k, h: h && h.k, row: G.ExpMeta.row(), eff: G.ExpMeta.effects(G.ExpMeta.row()), seed: G.World.seed };
 	});
-	A(sy.x && sy.x.xv === 9 && sy.x.k && JSON.stringify(sy.x.k.p) === JSON.stringify(sy.row) && sy.dv === 9, 'a live snapshot: dv 9, x v9 with `k` {p: the run\'s row}', JSON.stringify(sy.x));
+	A(sy.x && sy.x.xv === 10 && sy.x.k && JSON.stringify(sy.x.k.p) === JSON.stringify(sy.row) && sy.dv === 10, 'a live snapshot: dv 10, x v10 with `k` {p: the run\'s row}', JSON.stringify(sy.x));
 	A(sy.gf && JSON.stringify(sy.gf.p) === JSON.stringify(sy.row), 'a co-op frame carries the same row (k.p)', JSON.stringify(sy.gf));
 	A(Array.isArray(sy.h) && JSON.stringify(sy.h) === JSON.stringify(sy.row), 'the replay header carries the row (h.k)', JSON.stringify(sy.h));
 	A(sy.hf && sy.hf.q && JSON.stringify(sy.hf.q.alice) === JSON.stringify(sy.row), 'a co-op host frame carries the host\'s row by uid (k.q.alice)', JSON.stringify(sy.hf));
@@ -542,7 +592,7 @@ try {
 		const old = { xv: 8, m: 'viridian', z: 1, th: '' };
 		const pup2 = new G.Player(G.DEX_BY[1], {}, false); pup2.remote = true;
 		G.Exp.viewAir({ x: old, dv: 8 }, pup2, null);
-		out.old = { row: pup2.xmr || null, ok: G.Expedition.replayOk(8), notice: G.Expedition.viewNotice('exp-classic', 8), newer: G.Expedition.viewNotice('exp-classic', 10) };
+		out.old = { row: pup2.xmr || null, ok: G.Expedition.replayOk(8), notice: G.Expedition.viewNotice('exp-classic', 8), newer: G.Expedition.viewNotice('exp-classic', 11) };
 		return out;
 	}, { xv: 9, m: 'viridian', z: 1, th: '', k: sy.x && sy.x.k }, sy.seed);
 	A(vw.loadedBefore === false && JSON.stringify(vw.row) === JSON.stringify(sy.row) && JSON.stringify(vw.eff) === JSON.stringify(sy.eff) && near(vw.xp, sy.eff.stats.xp, 1e-9),
@@ -551,7 +601,7 @@ try {
 	await d1.ctx.close();
 
 	// ======================== 8. the panel
-	await E(page, () => { G.ExpSave.bump('st.' + G.ExpMeta.dev(), 5000); G.ExpMeta.clock = () => Date.UTC(2026, 9, 22, 12); });
+	await E(page, () => { window.__t.fund(40000); G.ExpMeta.clock = () => Date.UTC(2026, 9, 22, 12); });
 	const pn = await E(page, async () => {
 		const wait = ms => new Promise(r => setTimeout(r, ms));
 		window.__t.thaw(); G.ModesUI.open(); await wait(150);
@@ -563,15 +613,18 @@ try {
 		const bal0 = G.ExpMeta.balance();
 		const lvA = G.ExpMeta.labLv('archive');
 		el.querySelector('[data-buy="archive"]').click(); await wait(100);
-		out.bought = { lv: G.ExpMeta.labLv('archive') - lvA, paid: bal0 - G.ExpMeta.balance(), price: G.ExpMeta.price('archive', lvA), bal: document.getElementById('xm-bal').innerText };
+		out.bought = { lv: G.ExpMeta.labLv('archive') - lvA, paid: bal0 - G.ExpMeta.balance(), price: G.ExpMeta.price('archive', lvA), bal: document.getElementById('xm-bal').innerText.trim(), coins: G.DB.save.coins };
+		out.head = document.querySelector('#modes-xmeta .xm-head').innerText.replace(/\s+/g, ' ');
+		out.labBtn = (document.querySelector('[data-buy="training"], [data-buy="stamina"], [data-buy="agility"]') || { innerText: '' }).innerText.trim();
 		out.labText = document.querySelector('[data-lab="archive"]').innerText.replace(/\s+/g, ' ');
 		out.maxed = document.querySelector('[data-lab="training"]').innerText.replace(/\s+/g, ' ');
 		return out;
 	});
-	A(pn.txt && /^League HQ · ★ [\d,]+$/.test(pn.txt) && pn.shown && pn.main && JSON.stringify(pn.tabs) === '["Lab","Items","Archive","Research","Tasks","Achievements","Card"]' && pn.lab === 19,
-		'"League HQ · ★ N" opens the panel: Lab, Items, Archive, Research, Tasks, Achievements, Card; the Lab\'s 19 upgrades', JSON.stringify(pn).slice(0, 400));
-	A(pn.bought && pn.bought.lv === 1 && pn.bought.paid === pn.bought.price && pn.bought.price === 1600 && /Archive Lv 2\/3 · Now: \+6 Archive slots/.test(pn.labText) && /Training Lv 8\/8 · Now: \+32% damage Max/.test(pn.maxed),
-		'a click buys Archive Lv 2 (1,600 ★ off the balance): "Now: +6 Archive slots"; Training at 8 / 8 says Max', JSON.stringify(pn.bought) + ' ' + pn.labText + ' | ' + pn.maxed);
+	A(pn.txt === 'League HQ: Lab, tasks and achievements' && pn.shown && pn.main && JSON.stringify(pn.tabs) === '["Lab","Items","Archive","Research","Tasks","Achievements","Card"]' && pn.lab === 19,
+		'"League HQ: Lab, tasks and achievements" opens the panel: Lab, Items, Archive, Research, Tasks, Achievements, Card; the Lab\'s 19 upgrades', JSON.stringify(pn).slice(0, 400));
+	A(pn.bought && pn.bought.lv === 1 && pn.bought.price === 1600 && pn.bought.paid === 12800 && pn.bought.bal === pn.bought.coins.toLocaleString('en') && /Archive Lv 2\/3 · Now: \+6 Archive slots/.test(pn.labText) && /Training Lv 8\/8 · Now: \+32% damage Max/.test(pn.maxed),
+		'a click buys Archive Lv 2 (1,600 x8 = 12,800 Pokémonedas off the base save): "Now: +6 Archive slots"; the head shows the base balance; Training at 8 / 8 says Max', JSON.stringify(pn.bought) + ' ' + pn.labText + ' | ' + pn.maxed);
+	A(!/★|Stardust/.test(pn.head + ' ' + pn.labText) && /Your usual Pokémonedas/.test(pn.head + ' ' + (await E(page, () => document.querySelector('#modes-xmeta .xm-note').innerText))), 'no Stardust (★) left on the panel: "Your usual Pokémonedas: earned by playing ..., never sold."', pn.head);
 	await shoot(page, 'meta-desktop-lab.png');
 	const tabs = await E(page, async () => {
 		const wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
@@ -589,7 +642,7 @@ try {
 	A(tabs.archive && /3 \/ 6 slots/.test(tabs.archive.head) && tabs.archive.n === 36 && tabs.archive.click, 'Archive: "3 / 6 slots" over the 36 items in the pool; a click archives Muscle Band', JSON.stringify(tabs.archive));
 	A(tabs.research && tabs.research.n === 78 && /Avatars: 1 \/ 78/.test(tabs.research.head) && /Pidgey/.test(tabs.research.first), 'Research: the 78 League families, "Avatars: 1 / 78", Pidgey (finished) first', JSON.stringify(tabs.research));
 	A(tabs.tasks && tabs.tasks.d === 3 && tabs.tasks.w === 3 && tabs.tasks.boosts === 6 && /Daily/.test(tabs.tasks.text) && /Weekly/.test(tabs.tasks.text) && /Reset in/.test(tabs.tasks.text), 'Tasks: 3 daily + 3 weekly with "Reset in …", the bonuses, the 6 boosts', tabs.tasks.text);
-	A(tabs.ach && tabs.ach.n === 33 && /\d+ \/ 33 achievements/.test(tabs.ach.head) && tabs.ach.done >= 4, 'Achievements: 33, the ones you have marked done', JSON.stringify(tabs.ach));
+	A(tabs.ach && tabs.ach.n === 38 && /\d+ \/ 38 achievements/.test(tabs.ach.head) && tabs.ach.done >= 4, 'Achievements: 38 (D10\'s 33 + Survival\'s 5), the ones you have marked done', JSON.stringify(tabs.ach));
 	A(tabs.card && /Your Expedition card/.test(tabs.card.text) && tabs.card.avs === 2 && tabs.card.frames === 10 && /Shiny perks \(6 caught\)/.test(tabs.card.text), 'Card: your avatar / frame / title, 10 frames, the shiny perks (6 caught)', JSON.stringify(tabs.card).slice(0, 400));
 	for (const [t, f] of [['lab', 'lab'], ['archive', 'archive'], ['tasks', 'tasks'], ['ach', 'achievements'], ['card', 'card']]) {
 		if (t === 'lab') continue;
@@ -598,12 +651,14 @@ try {
 	}
 	// a reroll by click (Tasks)
 	const rr = await E(page, async () => {
-		const wait = ms => new Promise(r => setTimeout(r, ms));
+		const wait = ms => new Promise(r => setTimeout(r, ms)), D = Date.UTC(2026, 10, 9, 12);
+		G.ExpMeta.clock = () => D;
+		document.querySelector('[data-xtab="ach"]').click(); await wait(100);
 		document.querySelector('[data-xtab="tasks"]').click(); await wait(150);
-		const ids0 = G.ExpMeta.tasksOf('d', Date.UTC(2026, 9, 22, 12)).map(t => t.id);
+		const ids0 = G.ExpMeta.tasksOf('d', D).map(t => t.id);
 		const b = document.querySelector('#xm-daily [data-rr]'); if (!b) return { none: true };
 		b.click(); await wait(150);
-		const ids1 = G.ExpMeta.tasksOf('d', Date.UTC(2026, 9, 22, 12)).map(t => t.id);
+		const ids1 = G.ExpMeta.tasksOf('d', D).map(t => t.id);
 		return { ids0, ids1, left: document.querySelectorAll('#xm-daily [data-rr]').length };
 	});
 	A(rr.ids0 && rr.ids1 && JSON.stringify(rr.ids0) !== JSON.stringify(rr.ids1) && rr.left === 0, 'Tasks: a click rerolls one daily task; no more reroll buttons today', JSON.stringify(rr));
@@ -613,9 +668,19 @@ try {
 	await E(page, () => G.ExpSave.flush());
 	await waitFor(() => { const r = row('micasurvivorexp:alice'); return r && (r.save.sets.avatar || []).includes('16'); }, 8000);
 	const xs = row('micasurvivorexp:alice');
-	A(xs && xs.save.counters['pay.total'] > 0 && (xs.save.sets.ach || []).includes('win1') && (xs.save.sets['items.bought'] || []).includes('scopelens') && (xs.save.sets.avatar || []).includes('16') && Object.keys(xs.save.counters).some(k => /^st\.[a-z0-9]+$/.test(k)),
-		'alice\'s Expedition save on the server: ★ (st.<device>), pay.total, achievements, the bought item, the avatar', JSON.stringify(xs && Object.keys(xs.save.counters).filter(k => /^(st|pay|lab|tk)\./.test(k))));
-	A(xs && !Object.keys(xs.save.counters).some(k => /coins|pokemonedas/i.test(k)), 'no base currency in the Expedition save');
+	A(xs && xs.save.counters['pay.total'] > 0 && (xs.save.sets.ach || []).includes('win1') && (xs.save.sets['items.bought'] || []).includes('scopelens') && (xs.save.sets.avatar || []).includes('16') && (xs.save.sets['cur.spend'] || []).some(x => /^item\.scopelens:/.test(x)),
+		'alice\'s Expedition save on the server: pay.total, achievements, the bought item and who paid for it (cur.spend), the avatar', JSON.stringify(xs && Object.keys(xs.save.counters).filter(k => /^(st|pay|lab|tk)\./.test(k))));
+	A(xs && !Object.keys(xs.save.counters).some(k => /^st\.|^coins$|^bal/.test(k)), 'no balance and no Stardust in the Expedition save (the coins are the base save\'s)');
+	// the base save (the account row): the coins the Expedition moved, through the ledger, never more
+	await E(page, () => G.DB.commit(true));
+	const fin = await E(page, () => ({ coins: G.DB.save.coins, wal: window.__wal, dev: JSON.parse(localStorage.getItem('micasurvivor_dev')), led: G.DB.save.led }));
+	const b0c = JSON.parse(baseCoins0).coins;
+	await waitFor(() => { const r = row('micasurvivor:alice'); return r && (r.save || r).coins === fin.coins; }, 12000);
+	const brow = row('micasurvivor:alice'), bsave = brow && (brow.save || brow);
+	const sb0 = JSON.parse(base0 || '{}'), le0 = ((sb0.led || {})[fin.dev] || {}).c || [0, 0], unbooked = b0c - (sb0.coins || 0);   // (a base earning not yet booked when the stored copy was read)
+	const ledSum = l => Object.values(l || {}).reduce((a, e) => a + (e.c ? e.c[0] - e.c[1] : 0), 0);
+	A(fin.coins - b0c === fin.wal.earn - fin.wal.spend && bsave && bsave.coins === fin.coins && ledSum(bsave.led) === fin.coins && bsave.led[fin.dev] && bsave.led[fin.dev].c[0] - le0[0] === fin.wal.earn + unbooked && bsave.led[fin.dev].c[1] - le0[1] === fin.wal.spend,
+		'all through the test the base coins moved by exactly the Expedition\'s earnings - spends (+' + fin.wal.earn + ' / -' + fin.wal.spend + '), booked on this device\'s ledger entry, and reached the account row (micasurvivor:alice)', JSON.stringify({ b0c, fin: fin.coins, wal: fin.wal, row: bsave && bsave.coins, led: bsave && bsave.led && bsave.led[fin.dev] }));
 
 	// ======================== phone (844 x 390, touch) and desktop: the panel fits
 	for (const [tag, view] of [['desktop', null], ['phone', { width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {

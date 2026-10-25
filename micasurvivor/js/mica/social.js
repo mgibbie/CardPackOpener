@@ -232,6 +232,7 @@ G.Social = (() => {
     const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo(), G.Expedition ? { dv: G.Expedition.DV } : {}));
     if (!r.ok || !r.body.lobby) return { ok: false, error: errText(r) };
     applyLobby(r.body.lobby);
+    if (room && room.mode && G.Expedition) refreshMember();   // (DLC D11: an Expedition lobby: your card shows your League member)
     return { ok: true };
   }
 

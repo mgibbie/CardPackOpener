@@ -643,6 +643,7 @@ G.Exp = (() => {
   /** D11: an Expedition run brings the local partner (js/systems/localcoop.js) when player 2's pad is connected or the
    *  "local partner" setting is on (localStorage micasurvivorexp_mate = '1'). */
   function localMate() {
+    if (G.Modes.run && G.Modes.run.group) return false;   // (an online co-op run: the friends are the team)
     let pref = false;
     try { pref = localStorage.getItem('micasurvivorexp_mate') === '1'; } catch (e) { /* a convenience */ }
     return pref || !!(G.Pad && G.Pad.p2 && G.Pad.p2());

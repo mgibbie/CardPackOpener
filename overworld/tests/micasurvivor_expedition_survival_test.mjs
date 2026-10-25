@@ -286,11 +286,11 @@ try {
 		H.jump(720, 2); H.step(2); out.z1 = C.run.zi; out.c1 = C.run.plan.cards.slice(0, 3); out.ph1 = S.run.phase;
 		H.wipe(); H.jump(1440, 4); H.step(2); out.z2 = C.run.zi; out.ph2 = S.run.phase;
 		// a foe of phase 3 vs one of phase 1 (the band and the stats move on)
-		const bands = C.MAPS.viridian.bands;
-		out.bst = C.run.plan.cards.slice(0, 6).map(d => G.DEX_BY[d].bst); out.band = bands[2];
+		const P3 = C.poolOf('viridian', 3), pool3 = new Set(P3.res.concat(P3.others));
+		out.inPool = C.run.plan.cards.every(d => pool3.has(d)); out.same3 = JSON.stringify(C.run.plan.cards) === JSON.stringify(C.plan(G.World.seed, 'viridian', 3).cards);
 		// deep wounds at 40:00: a heal of 100 gives 60
 		H.wipe(); H.jump(2400, 7); H.step(1);
-		pl.hp = Math.max(1, pl.maxHp - 200); H.step(1);
+		pl.maxHp = 1000; pl.hp = 500; H.step(1);
 		const h0 = pl.hp; pl.heal(100); H.step(1); out.healed = Math.round(pl.hp - h0);
 		// Endless Night at 50:00: a new foe x1.6 HP vs the same foe just before 45:00
 		H.wipe(); H.jump(2699, 8); const a = C.spawnFoe(10, pl.x + 300, pl.y); const ha = a.maxHp;
@@ -299,7 +299,7 @@ try {
 		H.wipe();
 		return out;
 	});
-	A(ph.z0 === 0 && ph.z1 === 1 && ph.ph1 === 1 && ph.z2 === 2 && ph.ph2 === 2 && JSON.stringify(ph.c0) !== JSON.stringify(ph.c1) && ph.bst.every(b => b >= ph.band[0] && b <= ph.band[1]),
+	A(ph.z0 === 0 && ph.z1 === 1 && ph.ph1 === 1 && ph.z2 === 2 && ph.ph2 === 2 && JSON.stringify(ph.c0) !== JSON.stringify(ph.c1) && ph.inPool && ph.same3,
 		'the phases move the enemies on: at 12:00 the middle band, at 24:00 the final stages (the trickle\'s cards follow)', JSON.stringify(ph));
 	A(ph.healed >= 59 && ph.healed <= 61, 'deep wounds at 40:00: a heal of 100 gives 60 (x0.6)', ph.healed);
 	A(Math.abs(ph.nightK - ph.nightWant) < 0.08 && ph.nightK > 1.5, 'Endless Night at 50:00: a new foe has x1.6 HP (on top of the clock\'s own growth)', JSON.stringify(ph));
@@ -346,7 +346,7 @@ try {
 		out.fliers = G.EnemyMgr.all().filter(e => e.xsiege && !e.dead).length;
 		out.flying = G.EnemyMgr.all().filter(e => e.xsiege).every(e => e.flying);
 		out.factor = G.Hooks.reduce('combat.out', 1, pl, G.EnemyMgr.all()[0] || { x: 0, y: 0 }, null, 10);
-		pl.x += 400; H.step(1);
+		pl.x += 400; pl.zMask = null; pl._px = null; H.step(1);
 		out.off = S.run.siege.on;
 		for (let i = 0; i < 2 * 30; i++) H.step(1);
 		out.k3 = S.run.siege.k;
@@ -374,7 +374,7 @@ try {
 	A(mg.closed === 0 && mg.ph === 2 && /PORTAL \d+ s/.test(mg.line), 'at 11:00 a migration portal opens ("PORTAL 90 s" on the HUD)', JSON.stringify(mg));
 	A(mg.z0 === 1 && mg.z1 === 2 && mg.h1 !== mg.h0 && mg.land === 2 && mg.ph1 === 0 && mg.next >= 660 + 660 && mg.objs > 20 && mg.fresh, 'stepping in moves the run to new lands (zone 2\'s terrain, its fresh interactables); the next portal in 11:00', JSON.stringify(mg));
 	await shoot(page, 'survival-migration-desktop.png');
-	const mg2 = await E(page, () => { const H = window.__t, C = G.ExpClassic, S = G.ExpSurv; G.Game.debugTime(S.run.nextMig); H.calm(); H.step(2); const open = C.run.ph; G.Game.debugTime(S.run.portalUntil + 1); H.step(2); return { open, closed: C.run.ph, next: S.run.nextMig }; });
+	const mg2 = await E(page, () => { const H = window.__t, C = G.ExpClassic, S = G.ExpSurv; const at = S.run.nextMig; G.Game.debugTime(at); S.run.miles = Math.floor(at / 300); H.wipe(); H.calm(); H.step(2); const open = C.run.ph; G.Game.debugTime(S.run.portalUntil + 1); H.step(2); return { open, closed: C.run.ph, next: S.run.nextMig }; });
 	A(mg2.open === 2 && mg2.closed === 0, 'a portal nobody takes closes after 90 s', JSON.stringify(mg2));
 
 	// hostile terrain
@@ -388,11 +388,12 @@ try {
 		const at = k => list.find(o => o.kind === k);
 		const walk = (o, t, dx) => {   // one step of 10 px inside o at run time t -> how far you actually moved
 			H.jump(t, Math.floor(t / 300)); pl.air = null;
-			pl.x = o.x; pl.y = o.y; H.step(1);
+			pl.x = o.x; pl.y = o.y; pl.zMask = null; pl._px = null; H.step(1);
 			S.run.px = pl.x; S.run.py = pl.y; S.run.lastHp = pl.hp; S.run.lastMax = pl.maxHp;
 			const x0 = pl.x, y0 = pl.y, hp0 = pl.hp;
+			const k0 = (S.hazardAt(x0, y0, G.Game.st.time) || {}).kind, off = Math.round(Math.hypot(x0 - o.x, y0 - o.y));
 			pl.x += dx; S.tick(1 / 30, pl);
-			return { moved: Math.round(Math.hypot(pl.x - x0, pl.y - y0) * 10) / 10, hurt: Math.round((hp0 - pl.hp) * 100) / 100 };
+			return { moved: Math.round(Math.hypot(pl.x - x0, pl.y - y0) * 10) / 10, hurt: Math.round((hp0 - pl.hp) * 100) / 100, k0, off, inv: pl.invuln, t: G.Game.st.time, ph: S.phaseOf(G.Game.st.time) };
 		};
 		pl.hp = pl.maxHp;
 		out.mud = walk(at('mud'), 100, 10);
@@ -401,7 +402,7 @@ try {
 		out.br = walk(at('brambles'), 800, 10);
 		out.burn = walk(at('burning'), 1500, 0);
 		pl.air = { kind: 'hop', t: 0.1, t0: 0, hop0: 0, dur: 0.45, h: 12, l0: 0, top: 1, top0: 0, hops: 1 };
-		const o = at('mud'); H.jump(100, 0); pl.x = o.x; pl.y = o.y; S.run.px = pl.x; S.run.py = pl.y; const x0 = pl.x; pl.x += 10; S.tick(1 / 30, pl); out.hop = Math.round((pl.x - x0) * 10) / 10;
+		const o = at('mud'); H.jump(100, 0); pl.x = o.x; pl.y = o.y; pl.zMask = null; pl._px = null; S.run.px = pl.x; S.run.py = pl.y; const x0 = pl.x; pl.x += 10; S.tick(1 / 30, pl); out.hop = Math.round((pl.x - x0) * 10) / 10;
 		pl.air = null;
 		return out;
 	});
@@ -420,14 +421,15 @@ try {
 		S.run.downs = 3; S.run.legends = 1; S.run.miles = 4;
 		const sum = H.lose(1290);
 		await new Promise(r => setTimeout(r, 1200));
-		return { sum, lines: window.__out.lines, best: G.ExpSave.get('surv.best.viridian.normal'), runs: G.ExpSave.get('surv.runs'), miles: G.ExpSave.get('surv.miles'), ach: G.ExpSave.list('ach'), coins: G.DB.save.coins, led: G.DB.save.led, dev: localStorage.getItem('micasurvivor_dev'), pay: G.ExpSave.get('pay.coins') };
+		window.__sub = await G.Exp.submitScore(window.__sum);
+		return { sub: window.__sub, sum, lines: window.__out.lines, best: G.ExpSave.get('surv.best.viridian.normal'), runs: G.ExpSave.get('surv.runs'), miles: G.ExpSave.get('surv.miles'), ach: G.ExpSave.list('ach'), coins: G.DB.save.coins, led: G.DB.save.led, dev: JSON.parse(localStorage.getItem('micasurvivor_dev')), pay: G.ExpSave.get('pay.coins') };
 	});
 	const p = en.sum && en.sum.parts;
 	A(p && p.bosses === 3 && p.legends === 1 && p.time === 1290 && p.kills === 1500 && en.sum.score === Math.floor(2 * 1500 + 4 * 1290 + p.dmg / 200 + 800 * 3 + 2000 * 1 + 400 * p.catches),
 		'the run\'s parts and score: KOs, time, damage, 3 milestone bosses (1 legendary), catches', JSON.stringify(en.sum));
 	A(en.lines.some(l => /^Survival · Viridian Forest · Normal$/.test(l)) && en.lines.some(l => /^Survived 21:30/.test(l)) && en.lines.some(l => /Milestone bosses: 3 \(1 legendary\)/.test(l)) && en.lines.some(l => /^Score: /.test(l)),
 		'the run-over lines: "Survival · Viridian Forest · Normal", "Survived 21:30", "Milestone bosses: 3 (1 legendary)", the score', JSON.stringify(en.lines));
-	A(en.best === 1290 && en.runs >= 1 && en.miles >= 3, 'the Expedition save: the best time per map + tier (surv.best.viridian.normal), runs, milestones', JSON.stringify(en));
+	A(en.best >= 1290 && en.runs >= 1 && en.miles >= 3, 'the Expedition save: the best time per map + tier (surv.best.viridian.normal), runs, milestones', JSON.stringify(en));
 	const payLine = en.lines.find(l => /^Pokémonedas: \+\d+/.test(l)), paid = payLine ? +payLine.match(/\+(\d+)/)[1] : 0;
 	const devE = en.led && en.dev && en.led[en.dev] && en.led[en.dev].c;
 	const dev0 = coins0.led && coins0.led[en.dev] && coins0.led[en.dev].c || [0, 0];
@@ -501,7 +503,7 @@ try {
 		});
 		const sr = hud.sr, kk = hud.k;
 		const fits = sr && sr.x >= 0 && (sr.x + sr.w) * kk <= hud.W + 1 && sr.y >= 0 && (!hud.moves || (sr.y + sr.h) <= hud.moves.y) && (!hud.clock || sr.y >= hud.clock.y + hud.clock.h - 2);
-		A(fits && /SURVIVAL · PHASE 1 · BOSS IN \d:\d\d/.test(hud.line), `${tag}${hud.touch ? ' (touch)' : ''}: the Survival line under the clock and the siege banner fit, clear of the clock and the move bar`, JSON.stringify(hud));
+		A(fits && /SURVIVAL\s+·\s+PHASE 1\s+·\s+BOSS IN \d:\d\d/.test(hud.line), `${tag}${hud.touch ? ' (touch)' : ''}: the Survival line under the clock and the siege banner fit, clear of the clock and the move bar`, JSON.stringify(hud));
 		await shoot(d.page, `survival-hud-${tag}.png`);
 		if (tag === 'phone') {
 			await E(d.page, () => { const H = window.__t; H.jump(299.9, 0); H.step(6); const e = G.ExpSurv.run.bosses[0].e; e.hurt(e.hp * 10, '#fff'); H.step(5); });

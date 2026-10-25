@@ -130,8 +130,10 @@ G.ExpMeta = (() => {
   // ---------------- balance (tune here; README "DLC D10") ----------------
   const K = {
     // POKÉMONEDAS (owner decision #4): every price and reward below is in the D10 table's units; coinsOf(n) = round(n x SCALE / 5) x 5.
-    // SCALE makes an Expedition clear pay about what a base run of the same length pays (measured: README "DLC D11").
-    SCALE: 4,
+    // SCALE makes an Expedition clear pay about what a base run of the same length pays (README "DLC D11"): a base Normal run
+    // pays time / 5 + KOs / 4 + 80 a boss + the coins picked up, ~1,950 at 15:00 and ~3,230 at 20:00; a Normal clear (~20:00,
+    // ~405 units) x8 = ~3,240. Prices scale the same, so the Lab and the unlocks take the runs D10 intended.
+    SCALE: 8,
     // a run: (BASE + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 if won + 15 a catch) x the tier's pay (study 2.11: x1 / 1.75 / 2.5),
     // then x SCALE in Pokémonedas. A run under MIN_T seconds pays nothing (no quit-farming).
     PAY: { BASE: 10, KO: 1 / 40, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60 },   // (D11: + 60 a Survival legendary, on top of its boss)

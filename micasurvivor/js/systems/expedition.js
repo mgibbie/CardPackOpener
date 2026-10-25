@@ -173,7 +173,7 @@ G.Expedition = (() => {
   function coopPlan(c) {
     if (!c || !loaded || !isExp(c.mode) || !enabled(c.mode) || !lobbyOk(c.dv)) return { mode: 'normal' };
     return { mode: c.mode, mods: [], type: null, dex: G.ExpLeague ? G.ExpLeague.pickFor(c.mode) : null, seed: 0, dv: DV,
-             map: MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0] };
+             map: MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true };   // (group: an online co-op run: no local partner)
   }
 
   // ---------------- version gates ----------------

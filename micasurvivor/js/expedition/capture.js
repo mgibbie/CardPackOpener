@@ -468,7 +468,8 @@ G.ExpCap = (() => {
   }
   function nearest(x, y, reach) {
     let best = null, bd = reach * reach;
-    for (const e of G.EnemyMgr.queryCircle(x, y, reach)) { if (e.dead) continue; const d2 = G.U.dist2(x, y, e.x, e.y); if (d2 <= bd) { bd = d2; best = e; } }
+    // (D11: a spectator's copies aren't in the spatial grid (EnemyMgr.update doesn't run while watching): the list itself)
+    for (const e of (G.Game.state === 'watch' ? G.EnemyMgr.all() : G.EnemyMgr.queryCircle(x, y, reach))) { if (e.dead) continue; const d2 = G.U.dist2(x, y, e.x, e.y); if (d2 <= bd) { bd = d2; best = e; } }
     return best;
   }
   const saDmg = pl => K.SA_DMG * (1 + K.SA_LV * Math.max(0, (pl.level || 1) - 1)) * (pl.atk || 1);
