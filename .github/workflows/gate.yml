@@ -213,6 +213,7 @@ jobs:
           pattern: gate-shard-*
           merge-multiple: true
         continue-on-error: true
+        timeout-minutes: 2 # (one artifact download once hung for 3 minutes; the verdict does not need them)
       - name: Summarise
         run: |
           {
