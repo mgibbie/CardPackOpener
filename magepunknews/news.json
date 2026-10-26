@@ -1,5 +1,5 @@
 {
-	"generated": "2026-10-19",
+	"generated": "2026-10-26",
 	"micatroAtlas": {
 		"Joker": {
 			"src": "/micatro/assets/textures/Jokers.png",
@@ -148,13 +148,6 @@
 			"w": 1420,
 			"h": 1140
 		},
-		"@poke_j_poke_unown_swarm": {
-			"src": "/micatro/mods/pokermon/assets/2x/j_poke_unown_swarm.png",
-			"cw": 580,
-			"ch": 570,
-			"w": 6960,
-			"h": 1710
-		},
 		"@poke_AtlasConsumablesBirdEnergy": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasConsumablesBirdEnergy.png",
 			"cw": 142,
@@ -213,6 +206,350 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "db78133",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "Battlecards card bugs 10-26: conditional targets, summon triggers, fail-closed conditions, Ghoul revive, Hysteria, Executioners, Invoke, EVIL Recruiter",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4928a0d",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "Overworld bugs 10-26: Steven's sprite, NPC sprite aliases, Viridian trainer duplication, phone banner",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f14b998",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "Battlecards bugs 10-26: run flow, stale runs, bell, Coin log, hand tuck, boss repeats, replay log",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4a68b28",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D10-D12: League meta, Survival + one currency + co-op, Mt. Moon + Cerulean Cape",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "fc628dc",
+			"date": "2026-10-22",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D6-D9: Ultimates, economy, capture + shinies, tiers + boards",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f52a041",
+			"date": "2026-10-22",
+			"kind": "patch",
+			"title": "Micatro Pokermon: shiny jokers on Basic art use the 3.9.1 shiny sheets",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "082cf23",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D5: level-ups and items",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4204360",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 leftovers: Pocket Packs, Debris Sleeve alt, Series A art option",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b113c06",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro Pokermon seals: Pink/Silver obtainable from Standard Packs + Certificate; Silver Seal per upstream main",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5d6d043",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Overworld: Lilycove Lottery draw, Kurt/GS Ball/Celebi chain, Frontier Maniac daily step",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d3827c0",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D4: League roster and evolution",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5b4f40b",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro Pokermon+ 1.0.3 -> 1.2.0-261018a (batch 20)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ba73ca2",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro mod catch-ups: Bunco fork 5.4.8b, Reverie 1.2.6 sleeves/Morsel, Inscrybed Mycologists",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0199f75",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition: walk down ledges, hop up (owner playtest)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9d7c93f",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro run badges: jokers created by a Pokemon inherit its type; not a Nuzlocke gain",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0b30d67",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro Nacho's Pokermon Dip 1.6.4 -> 1.7.9-5 (batches 18 + 19)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3746d5d",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D3: Classic playable (Viridian Forest)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e93b49e",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Overworld: reset daily flags once per real day (on travel, never on load)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "79d033c",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Overworld: port six missing puzzle/special mechanics",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1ec5629",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Overworld bugs 10-21 (A): rampage at 0 PP, Route 22/23 badge guards, Seagallop, load watchdog",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b9ffbf5",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Overworld bugs 10-21 (B): Regi doors, Regice Braille lap, Sky Pillar Rayquaza, Ruin Valley Dotted Hole",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d56dd59",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D2: movement verbs",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "36ef291",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro Monotype: check when the round's first hand is dealt (after blind-select effects)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2f23e14",
+			"date": "2026-10-21",
+			"kind": "patch",
+			"title": "Micatro MoreFluff 1.9.9999 batch B: reworks, 13 B1 jokers, Letter/Purple jokers, rot legendaries",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d8ca5be",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "MicaSurvivor Expedition D1: terrain layers",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e6ed7b9",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro: Elite win stickers as a 9th level",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "76d4eeb",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 checkpoint 2: Megas (16) + non-Pokemon jokers, blinds, Elite stake, challenges (17) — upgrade complete",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "eaf7649",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro dedupe follow-ups: hide Pokermon+ Nincada option; merge legacy-duplicate win stickers",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a81450b",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 checkpoint 1: 101 new jokers (sub-batches 11-15b) + Pokermon precedence dedupe",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9a00cd8",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 batch 10b: Unown rework + Wish Pack",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ecb39fd",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 batch 10: Hazard layer, Seed, items, Debris deck; un-hold 16 jokers",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "94347e1",
+			"date": "2026-10-20",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 batch 8: reworks for pokejokers_18-34 + zother; track upgrade plan",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a7b29c1",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 batch 7: reworks for pokejokers_09-17",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e295b8b",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 batch 6: Gen 1 range joker reworks (pokejokers_01-08)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "30f7310",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: account-synced run in progress + completed challenges",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "aa4bfab",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro Pokermon 3.9.1 batch 5: static data re-extract + 3.9.1 art",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ff58dec",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: Steamodded engine seams for the Pokermon 3.9.1 upgrade (batch 4, no behaviour change)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f3bf275",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: MoreFluff 1.9.9999 rewrite, PR A (existing cards, systems, stakes, aliases)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1552654",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: Monotype counts a joker's gained OR current (Tera) type; copies inherit the gained type; move the watching chip",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "03618a8",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "MicaSurvivor DLC D0b: Expedition plumbing (no gameplay yet)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b25e920",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: resumed runs count as unseeded, so their wins earn stickers and badges",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "84532ce",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Overworld: fix 6 tester-reported bugs (Sevii harbors, Mt. Ember grunts, Hoenn trainer text, Crystal warps, legendary tiles)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "12ed729",
+			"date": "2026-10-19",
+			"kind": "patch",
+			"title": "Micatro: mod version pin for saved runs and replays, plus key aliases",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "f3342a7",
 			"date": "2026-10-19",

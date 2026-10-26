@@ -131,6 +131,23 @@ export function serverEndedRun(local, entry) {
 	return String(entry.ended) === String(local.runId);
 }
 
+// The server's slot says a run ended — a DIFFERENT run than the local copy — and it
+// ended AFTER the local copy was last written. The local copy is then an older run's
+// zombie: this browser lost every write since (its replays and ended-runs list stop at
+// the same moment), while the run(s) that followed were played and finished. The
+// ended marker names only the LAST finished run, so serverEndedRun cannot see this
+// one: instinctgauntlet ended run 12, reloaded, and was offered run 11 at 0W/2L
+// (2026-10-22). A local run written after the marker (started since, e.g. offline)
+// is never touched; neither is a copy with no stamp to compare.
+export function serverSupersededRun(local, entry) {
+	if (!entry || typeof entry !== 'object' || entry.run || !entry.ended) return false;
+	if (!local || typeof local !== 'object' || !local.active) return false;
+	if (local.runId && String(entry.ended) === String(local.runId)) return false; // that one is serverEndedRun's
+	const endedAt = Number(entry.updated_at) || 0;
+	const localAt = runStamp(local, 0);
+	return endedAt > 0 && localAt > 0 && localAt < endedAt;
+}
+
 // Back-compat boolean wrapper: true = keep the local copy, false = take the server's.
 export function keepLocalRun(local, serverRun, serverUpdatedAt) {
 	return pickCanonicalRun(local, serverRun, serverUpdatedAt).pick === 'local';

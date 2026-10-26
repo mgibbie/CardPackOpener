@@ -355,6 +355,17 @@
 			padding: 14px 34px; font-size: 19px; font-weight: 700;
 			background: #6b4fd4; color: #fff; border: none; border-radius: 12px; cursor: pointer;
 		}
+		/* the site topbar's bell must work on EVERY Battlecards screen. Its cluster
+		   (z 55) and inbox (60/61) sat UNDER the run overlays (NEXT / defeat / run
+		   screens, z 60), the decision veil (9499) and the card reader (9050): the
+		   bell showed through but a click landed on the layer above it (instinct-
+		   gauntlet, 2026-10-23). Lift the cluster + its inbox above the game UI,
+		   still below the replay bar (9999), profile (10000) and roster (10002).
+		   `html body` outranks topbar.js's own (later-injected) rules. */
+		html body #mp-topbar.tb-compact { z-index: 9620; }
+		html body #mp-inbox-overlay { z-index: 9630; }
+		html body #mp-inbox { z-index: 9631; }
+		html body #mp-deckpick { z-index: 9640; }
 		/* the site topbar's gear/bell cluster owns the top-right ~52px — the
 		   concede/log stack starts below it, and the inline log below them */
 		#concede {

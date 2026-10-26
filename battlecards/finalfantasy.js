@@ -152,8 +152,12 @@ export function enemyRosterFor(wins) {
 export const rungFor = wins => (wins <= 2 ? 'A' : wins <= 6 ? 'B' : wins <= 10 ? 'C' : 'D');
 export const rungLabel = wins => ({ A: 'Henchman', B: 'Lieutenant', C: 'Archvillain', D: 'Final Boss' }[rungFor(wins)]);
 
-export function randomEnemy(wins, rng, avoidId) {
-	let roster = enemyRosterFor(wins).filter(c => c !== avoidId);
+// `faced` = every enemy already met this run: one is never offered again while the rung
+// still has someone new (The Balrog at F10 and again at F12 — instinctgauntlet, 2026-10-25).
+export function randomEnemy(wins, rng, avoidId, faced) {
+	const seen = new Set(Array.isArray(faced) ? faced : []);
+	let roster = enemyRosterFor(wins).filter(c => c !== avoidId && !seen.has(c));
+	if (!roster.length) roster = enemyRosterFor(wins).filter(c => c !== avoidId);
 	if (!roster.length) roster = enemyRosterFor(wins);
 	return roster[Math.floor(rng() * roster.length)];
 }
