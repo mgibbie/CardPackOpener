@@ -57,6 +57,18 @@ export const KEYMAP = {
 	w: 'up', s: 'down', a: 'left', d: 'right',
 };
 export const heldKeys = [];
+// A TAP THAT NEVER REACHES A FRAME. Movement reads heldKeys once per tick, so a
+// key pressed AND released between two ticks was never seen at all: no turn, no
+// step, no refusal — every gate clear and nothing happening. A 60fps desktop
+// loses most zero-length taps (an automated tester's key press, a JS-dispatched
+// key); a slow browser (playtest cloud browsers run at a few fps) loses nearly
+// every ordinary one. Reported as "movement fully wedged" on Route 107
+// (bug:1793024785335): the taps toward the sand were all dropped, the ones that
+// landed faced the sea. The press is latched here and the tick delivers it once
+// (ow_loop.js), unless the key is still held by then (held keys walk as before)
+// or something else owned the screen at that moment.
+export function latchTap(dir) { S.tapDir = dir; }
+S.tapDir = null;
 S.wasInBattle = false; // when a battle ends, flush held keys so we don't take a stray step out of it
 S.runHeld = false; // Shift on keyboard, holding B on touch
 // while typing in the chat box, keys belong to the input, not the game
@@ -75,6 +87,7 @@ addEventListener('keydown', e => {
 	if (dir) {
 		e.preventDefault();
 		if (!heldKeys.includes(dir)) heldKeys.unshift(dir);
+		latchTap(dir);
 		owlog('keydown ACCEPTED', e.key, '->', dir, 'held=' + heldKeys.join('|'));
 	}
 });
@@ -90,7 +103,7 @@ addEventListener('keyup', e => {
 // Leaving the tab mid-walk used to leave the arrow HELD: its keyup never
 // arrives, so the player kept walking on return. Blur / a hidden tab let go of
 // every held direction and the run key (the gamepad core does the same).
-const letGoOfKeys = () => { heldKeys.length = 0; S.runHeld = false; };
+const letGoOfKeys = () => { heldKeys.length = 0; S.tapDir = null; S.runHeld = false; };
 addEventListener('blur', letGoOfKeys);
 document.addEventListener('visibilitychange', () => { if (document.hidden) letGoOfKeys(); });
 owlog('listeners attached: keydown/keyup (movement)');

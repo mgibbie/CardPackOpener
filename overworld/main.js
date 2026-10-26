@@ -91,7 +91,7 @@ import {
 } from './ow_scaling.js';
 // ow_input.js: ow_input.js — keyboard input: held-key tracking, the movement gates, the run button, and the item/repel helpers bound to input.
 import {
-	INPUT_TRACE, KEYMAP, POS_KEY, heldKeys, interact, owlog, repelWoreOff, savePos, setRepel,
+	INPUT_TRACE, KEYMAP, POS_KEY, heldKeys, interact, latchTap, owlog, repelWoreOff, savePos, setRepel,
 	tickStats, typingInChat, useGadget,
 } from './ow_input.js';
 // ow_keybinds.js: ow_keybinds.js — remappable key bindings (load/save and the action lookup the input layer uses).
@@ -100,7 +100,7 @@ import {
 } from './ow_keybinds.js';
 // ow_loop.js: ow_loop.js — the frame loop (tick: update + draw every frame, with the input and cutscene watchdogs) and the touch HUD.
 import {
-	initTouchHud, tick, touchHud,
+	initTouchHud, tick, touchHud, touchHudTap,
 } from './ow_loop.js';
 // ow_screens.js: the START-menu screens and service counters (dex, friends, mail, quests, deck select, cards, run menu, in-game trades, DAY CARE, NAME RATER, move relearner)
 import {
@@ -573,6 +573,7 @@ function setDpadDir(dir) {
 	if (dpadDir) { const i = heldKeys.indexOf(dpadDir); if (i >= 0) heldKeys.splice(i, 1); }
 	dpadDir = dir;
 	if (dir && !heldKeys.includes(dir)) heldKeys.unshift(dir);
+	if (dir) latchTap(dir);   // a quick thumb tap still steps (see latchTap)
 }
 for (const [id, dir] of Object.entries(DPAD)) {
 	document.getElementById(id).addEventListener('pointerdown', e => {
@@ -641,6 +642,8 @@ screen.addEventListener('pointerdown', e => {
 	if (pvp.blocking) { pvp.tap(...screenPos(e)); return; }
 	if (battle.blocking) { battle.tap(...screenPos(e)); return; }
 	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
+	// the touch HUD's objective strip: a tap shows the whole sentence / folds it back
+	if (!anyMenuOpen() && touchHudTap(...screenPos(e))) return;
 	if (anyMenuOpen()) {
 		const [x, y] = screenPos(e);
 		// topmost first: a button drawn later sits ON TOP of an earlier one (the
