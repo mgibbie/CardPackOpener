@@ -930,7 +930,9 @@ export function mulligan(state, pi, uids) {
 	emit(state, { type: 'mulligan', player: pi, count: swap.length });
 }
 
-export function addCoin(state, pi) {
+// `cause` (optional) rides the coinGiven event so the log can say WHY the Coin came:
+// { kind: 'land', by, land, from? } for an opponent's land develop / upgrade.
+export function addCoin(state, pi, cause) {
 	const p = state.players[pi];
 	if (p.eliminated) return;
 	const def = state.cardsById['coin'];
@@ -938,7 +940,7 @@ export function addCoin(state, pi) {
 	const card = instantiate(def, pi);
 	card.zone = 'hand';
 	p.hand.push(card);
-	emit(state, { type: 'coinGiven', player: pi, card });
+	emit(state, cause ? { type: 'coinGiven', player: pi, card, cause } : { type: 'coinGiven', player: pi, card });
 }
 
 // Tradeable: instead of playing the card, pay 1 mana to shuffle it back
@@ -1503,7 +1505,7 @@ export function buyLand(state, pi, landId) {
 	if (allowed && !allowed.includes(landId)) return false; // color-locked run mode
 	const p = state.players[pi];
 	spendMana(p, LAND_COST);
-	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	for (const o of opponentsOf(state, pi)) addCoin(state, o, { kind: 'land', by: pi, land: def.name });
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	p.lands.push(card);
@@ -1524,12 +1526,13 @@ export function upgradeLand(state, pi, landUid, advId) {
 	const def = state.cardsById[advId];
 	if (!def || def.type !== 'land') return false;
 	spendMana(p, LAND_COST);
-	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	const from = p.lands[idx].name;
+	for (const o of opponentsOf(state, pi)) addCoin(state, o, { kind: 'land', by: pi, land: def.name, from });
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	card.tapped = p.lands[idx].tapped;
 	p.lands[idx] = card;
-	emit(state, { type: 'landUpgraded', player: pi, card, mana: availableMana(p) });
+	emit(state, { type: 'landUpgraded', player: pi, card, from, mana: availableMana(p) });
 	landEntered(state, pi, card);
 	return true;
 }

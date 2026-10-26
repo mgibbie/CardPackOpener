@@ -3,7 +3,7 @@
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META, drawOwMon, elevCompatible } from './engine.js';
-import { isTrainerEvent, spritePath } from './trainers.js';
+import { isTrainerEvent, peopleFile, spritePath } from './trainers.js';
 import { itemsOwns } from './items.js';
 import { objectHiddenByFlag } from './events.js';
 
@@ -169,7 +169,10 @@ export class NPCs {
 		return this.owSpecies.has(j) ? j : null;
 	}
 
+	// generation-guarded like Trainers.loadForMap: two overlapping loads (the
+	// story-overlay heal re-running setup mid-transition) appended every NPC twice
 	async loadForMap() {
+		const gen = this._loadGen = (this._loadGen || 0) + 1;
 		this.list = [];
 		const evs = this.world.current.map.object_events || [];
 		const crystal = !!this.world.current.map._crystal_tileset;
@@ -186,7 +189,8 @@ export class NPCs {
 			// invisible while the blanket flag rule hid them anyway; the moment flags
 			// are read honestly they would each be drawn TWICE, once as a fake NPC.
 			const n = await this.build(ev);
-			if (n) this.list.push(n);
+			if (gen !== this._loadGen) return;   // a newer load owns the list now
+			if (n && !this.list.some(o => o.ev === ev)) this.list.push(n);
 		}));
 	}
 
@@ -230,9 +234,10 @@ export class NPCs {
 		// Crystal names its graphics SPRITE_X — the fallback only stripped the
 		// GBA prefix, so sprite files like fisher.png were probed as
 		// sprite_fisher.png, silently emptying whole Johto towns
-		const file = this.gfx[ev.graphics_id]
-			|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase() + '.png';
-		let img = await getImage(`data/people/${file}`).catch(() => null);
+		// (peopleFile: gfx_map, then the Crystal/Emerald -> FireRed aliases, then the
+		// raw name; null for ids with their own people_extra art, e.g. STEVEN)
+		const file = peopleFile(this.gfx, ev.graphics_id);
+		let img = file ? await getImage(`data/people/${file}`).catch(() => null) : null;
 		if (!img) img = await getImage(spritePath(ev.graphics_id, false)).catch(() => null);
 		return img ? new NPC(ev, img) : null;
 	}
