@@ -4,6 +4,10 @@
 //      when I get close": planeswalkers sat dead-centre BEHIND your hero panel,
 //      and pointing at anything low on the screen popped the tucked hand up over
 //      them. They now flank the panel, and the hand rises only for the hand.
+//      The tuck lift (#811) raised the tucked row's top edge over the planeswalker, so
+//      a hand card whose column lined up with it (a 6-card hand, among others) caught
+//      the pointer and popped the hand up again: 2 runs in 3, by the opening hand. The
+//      hand is now FORCED to 6 cards, so that overlap is checked every run.
 //   2. "There was a button that said planeswalker... it just rolled the planar
 //      die and the button went away": the Planechase roll was a floating DOM
 //      button. It is now an orb on the hero panel (owner: "treat it like another
@@ -100,6 +104,12 @@ try {
 		if (!def) return null;
 		const c = E.instantiate(def, H); c.zone = 'planeswalker'; p.planeswalkers.push(c);
 		g.pump();
+		// force the hand that lines a tucked card up under the planeswalker: 6 cards (the
+		// opening hand used to decide it, so this passed or failed by the shuffle)
+		const filler = Object.values(s.cardsById).find(d => d && d.type === 'creature' && d.collectible !== false);
+		p.hand.length = 0;
+		for (let i = 0; i < 6; i++) { const h = E.instantiate(filler, H); h.zone = 'hand'; p.hand.push(h); }
+		g.pump();
 		return { uid: c.uid, name: c.name };
 	});
 	await sleep(900);
@@ -109,7 +119,12 @@ try {
 	A(await page.evaluate(() => window.__game.handMini === true), 'setup: pressing the field tucks the hand down');
 	const pwAt = await page.evaluate(u => window.__game.screenPosOf(u), pw && pw.uid);
 	if (pwAt) {
+		// the case that matters: a TUCKED hand card sits in the planeswalker's column, its lifted
+		// top edge over it (if a layout change moves it away, re-pick the hand size above)
+		const under = await page.evaluate(x => { const g = window.__game; return g.state.players[g.HUMAN].hand.map(c => g.screenPosOf(c.uid)).filter(Boolean).some(p => Math.abs(p.x - x) < 40); }, pwAt.x);
+		A(under, "setup: a tucked hand card sits in the planeswalker's column");
 		await page.mouse.move(pwAt.x, pwAt.y - 30, { steps: 4 }); await page.mouse.move(pwAt.x, pwAt.y, { steps: 4 });
+		await sleep(80); await page.mouse.move(pwAt.x + 1, pwAt.y);   // a settling move: hover picks are throttled (25ms), so the last step could be dropped and the pick never land ON the planeswalker
 		await sleep(600);
 		const s1 = await page.evaluate(() => ({ mini: window.__game.handMini, hover: window.__game.hoverUid }));
 		A(s1.hover === pw.uid, `the planeswalker is out from behind the hero panel: pointing at ${pw.name} reaches it`, JSON.stringify(s1));
