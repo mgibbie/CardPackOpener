@@ -198,7 +198,9 @@ const BEFORE = (save, keep) => {
 		s.hp = [Math.round(hp0), Math.round(p.maxHp)]; s.hpK = p.maxHp / hp0; s.atkK = p.atkMul / am0; s.cur = Math.round(p.hp);
 		const els = [...document.querySelectorAll('#cards .card')];
 		// (DLC D5: the default pick is the first card that isn't a NEW move or vitamin, so the moves stay the kit's)
-		const i = pick ? pick(s.cards) : Math.max(0, (G.RunUI.offers || []).findIndex(c => c.type !== 'new'));
+		// (DLC D14: at a Mega's level-up this test keeps the form: "Not yet")
+		const later = (G.RunUI.offers || []).findIndex(c => c.key === 'xmega:later');
+		const i = pick ? pick(s.cards) : later >= 0 ? later : Math.max(0, (G.RunUI.offers || []).findIndex(c => c.type !== 'new'));
 		if (els[i]) els[i].click();
 		H.step(1);
 		return s;
@@ -273,7 +275,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 12, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 12 (D13)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 13, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 13 (D14)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -501,7 +503,7 @@ try {
 		});
 		A(gal.a && gal.a.dex === 475 && JSON.stringify(gal.a.types) === '["psychic","fighting"]' && gal.a.verbs.climb && JSON.stringify(gal.a.row) === '[280,475,4,0,2]',
 			'picking Gallade: Psychic / Fighting, it climbs now (the verbs follow the form); the row [280, 475, 4, 0, 2]', JSON.stringify(gal.a));
-		A(gal.b && gal.b.row && gal.b.row[3] === 1 && JSON.stringify(gal.log.map(l => [l[0], l[1]])) === '[[20,"evo"],[30,"branch"],[30,"evo"],[44,"mat"]]',
+		A(gal.b && gal.b.row && gal.b.row[3] === 1 && JSON.stringify(gal.log.filter(l => !/^mega/.test(l[1])).map(l => [l[0], l[1]])) === '[[20,"evo"],[30,"branch"],[30,"evo"],[44,"mat"]]'   /* (D14: Gallade's Mega waits: "Not yet") */,
 			'... and Gallade (final) matures at Lv 44, not at 24 (Kirlia still evolved then)', JSON.stringify(gal));
 		// the run's replay: before and after the evolutions
 		const rec = await E(p2, async () => {

@@ -125,7 +125,10 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Llega a la última etapa {x} veces': 'Reach a final stage {x} times', 'Llega a la última etapa': 'Reach a final stage',
   'Ten {x} legendarios en la Liga': 'Have {x} legendaries in the League', 'Ten un legendario en la Liga': 'Have a legendary in the League',
   'Liga de cincuenta': 'League of fifty', 'Liga centenaria': 'League of a hundred', 'Liga completa': 'Full League', 'Gran Entrenador': 'Grand Trainer',
-  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends'
+  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends',
+  // (D14: Mega Evolution's task and achievements)
+  'Megaevoluciona {x} veces': 'Mega Evolve {x} times', 'Megaevoluciona una vez': 'Mega Evolve once', 'Consigue {x} megaevoluciones distintas': 'Get {x} different Mega Evolutions',
+  'Megaevolución': 'Mega Evolution', 'Megapoder': 'Mega power', 'Megacolección': 'Mega collection', 'Megaentrenador': 'Mega Trainer'
 
 });
 G.I18n.add(G.ExpEN);
@@ -273,6 +276,8 @@ G.ExpMeta = (() => {
       case 'mewtwo': return S.get('surv.mewtwo');
       case 'pacts': return S.get('surv.pacts');
       case 'leagueLeg': return LG() ? LG().roster().filter(d => LG().BY[d].rank === 'legendary').length : 0;   // (D13)
+      case 'megas': return S.get('lg.mega');   // (D14)
+      case 'megaKinds': return S.list('mega.seen').length;
     }
     return 0;
   }
@@ -284,13 +289,14 @@ G.ExpMeta = (() => {
     champion: 'Consigue {x} medalla de campeón', freed: 'Libera {x} Pokémon enjaulados', altars: 'Usa {x} altares', league: 'Ten {x} miembros de la Liga',
     leagueCaught: 'Captura {x} miembros de la Liga', avatars: 'Consigue {x} avatares', lab: 'Sube el Laboratorio a {x} niveles', tasks: 'Completa {x} tareas',
     survMin: 'Aguanta {x} minutos en Supervivencia', miles: 'Vence a {x} jefes de hito', pacts: 'Sella {x} pactos', smins: 'Aguanta {x} minutos en Supervivencia',   // (D11)
-    leagueLeg: 'Ten {x} legendarios en la Liga', finals: 'Llega a la última etapa {x} veces'   // (D13)
+    leagueLeg: 'Ten {x} legendarios en la Liga', finals: 'Llega a la última etapa {x} veces',   // (D13)
+    megas: 'Megaevoluciona {x} veces', megaKinds: 'Consigue {x} megaevoluciones distintas'   // (D14)
   };
   // (one: the singular, "Win a map" rather than "Win 1 maps")
   const GOAL_ONE = { wins: 'Gana un mapa', runs: 'Termina una partida', guardians: 'Vence a un guardián', altars: 'Usa un altar', alphas: 'Captura un alfa',
     catches: 'Captura un Pokémon', evos: 'Evoluciona una vez', freed: 'Libera a un Pokémon enjaulado', shinies: 'Captura un variocolor', gold: 'Consigue una medalla de oro',
     champion: 'Consigue una medalla de campeón', avatars: 'Consigue un avatar', leagueCaught: 'Captura un miembro de la Liga', mat: 'Alcanza la madurez',
-    mewtwo: 'Derrota a Mewtwo en Supervivencia', miles: 'Vence a un jefe de hito', leagueLeg: 'Ten un legendario en la Liga', finals: 'Llega a la última etapa' };
+    mewtwo: 'Derrota a Mewtwo en Supervivencia', miles: 'Vence a un jefe de hito', leagueLeg: 'Ten un legendario en la Liga', finals: 'Llega a la última etapa', megas: 'Megaevoluciona una vez' };
   const goalText = (k, n) => (n === 1 && GOAL_ONE[k] ? T.t(GOAL_ONE[k]) : F(GOAL_TEXT[k] || '{x}', n.toLocaleString('en')));
 
   // ---------------- achievements (32; the set `ach`) ----------------
@@ -317,7 +323,10 @@ G.ExpMeta = (() => {
     // (D13: League mode. LATE: their titles go after the season ribbons in TITLES, so the card's saved title index still means the same)
     ['league50', 'Liga de cincuenta', 'league', 50, 600, null, null, 1], ['league100', 'Liga centenaria', 'league', 100, 1200, 'Gran Entrenador', null, 1],
     ['league245', 'Liga completa', 'league', 245, 1500, 'Campeón de la Liga', null, 1],
-    ['legend1', 'Leyenda viva', 'leagueLeg', 1, 400, null, null, 1], ['legend10', 'Panteón', 'leagueLeg', 10, 1200, 'Guardián de leyendas', null, 1]
+    ['legend1', 'Leyenda viva', 'leagueLeg', 1, 400, null, null, 1], ['legend10', 'Panteón', 'leagueLeg', 10, 1200, 'Guardián de leyendas', null, 1],
+    // (D14: Mega Evolution, late too)
+    ['mega1', 'Megaevolución', 'megas', 1, 300, null, null, 1], ['mega10', 'Megapoder', 'megas', 10, 800, null, null, 1],
+    ['megakinds', 'Megacolección', 'megaKinds', 10, 1200, 'Megaentrenador', null, 1]
   ].map(([id, name, k, n, star, title, frame, late]) => ({ id, name, k, n, star, title: title || null, frame: frame || null, late: !!late }));
   const ACH_BY = {};
   for (const a of ACH) ACH_BY[a.id] = a;
@@ -529,7 +538,8 @@ G.ExpMeta = (() => {
     ['miles', 'Vence a {x} jefes de hito', 'miles', 'sum', [1, 3, 5], [6, 12, 20]],
     // (D13: League mode. SINCE: it joins the pool from that UTC day / week on, so the tasks already dealt that day and week stay
     //  as they are: a bigger pool shuffles into other tasks, and a slot's progress is the slot's, not the task's)
-    ['final', 'Llega a la última etapa {x} veces', 'finals', 'sum', [1, 2, 3], [4, 8, 12], Date.UTC(2026, 10, 2)]
+    ['final', 'Llega a la última etapa {x} veces', 'finals', 'sum', [1, 2, 3], [4, 8, 12], Date.UTC(2026, 10, 2)],
+    ['mega', 'Megaevoluciona {x} veces', 'megas', 'sum', null, [1, 3, 5], Date.UTC(2026, 10, 2)]   // (D14: weekly only, a Mega needs a long run)
   ].map(([id, text, m, mode, d, w, since]) => ({ id, text, m, mode, d, w, since: since || 0 }));
   const TASK_BY = {};
   for (const t of TASKS) TASK_BY[t.id] = t;
@@ -802,7 +812,8 @@ G.ExpMeta = (() => {
       casts: UL() && UL().run ? UL().run.casts || 0 : 0, reactions: RX() && RX().run ? RX().run.n || 0 : 0,
       alphas: CPr ? CPr.log.alpha : 0, catches: CPr ? CPr.n : 0, evos: LG() && LG().run ? LG().run.evo || 0 : 0,
       smins: 0, miles: 0,   // (D11: Survival's, below)
-      finals: finalStage() ? 1 : 0   // (D13: the run ended at its line's last stage)
+      finals: finalStage() ? 1 : 0,   // (D13: the run ended at its line's last stage)
+      megas: LG() && LG().run && LG().run.mega ? 1 : 0   // (D14: the run Mega Evolved)
     };
     if (sum.mode === 'exp-survival' && G.ExpSurv) Object.assign(m, G.ExpSurv.metrics(sum));
     out.push(...taskRun(m, now));

@@ -2866,6 +2866,43 @@ achievements), `core.js` (dv 12).
 - The board is League size (owner #8 rules out per-species boards); per-member records are on each card, not on a board.
 - The legendaries' encounters are D8's League encounters (no special Mewtwo-style invasion).
 
+## DLC D14: Mega Evolution
+
+**Owner decision #10, "include Mega Evolution in 1.0"**, as the study's late-run power spike (5.5), on the owner's roster rule (every
+species that can Mega Evolve is in the League: "Mega at the capable stage"). The code is `js/expedition/mega.js` (`G.ExpMega`:
+the data, the look) and `league.js` (`megaCards` / `megaEvolve`); the data is `js/expedition/mega-data.js`, **generated** by
+`node tools/micasurvivor/gen_megas.mjs` from PokéAPI's `-mega` varieties (cached in `tools/micasurvivor/megas_pokeapi.json`;
+`--fetch` refreshes it). Base modes are unchanged: the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+| | |
+|---|---|
+| The Megas | **93 of 87 species** (PokéAPI's 97 varieties; Magearna's Original Color, Tatsugiri's Droopy / Stretchy and Meowstic's female fold into the base form's). Charizard, Mewtwo and Raichu have X / Y; Absol, Garchomp and Lucario their Mega and their Z |
+| When | a League run whose form can Mega Evolve, **from Lv 40** (`K.LV`): that level-up's cards ARE the choice (as a branch evolution), a gold card per Mega and **"Not yet"**, which brings the choice back **5 levels** later (`K.AGAIN`). Once a run; it lasts to the run's end |
+| What | the Mega's **real base stats** (HP the same, the rest +100) and **types** (so the verbs follow: Mega Charizard X is Fire / Dragon and no longer glides; Mega Charizard Y still does), the **Ultimate one tier up** (`ultimates.js` `tierOfRow`, capped at the tier max as before), 1.2 s of i-frames and a flash. The passive (role, ability), the kit and Maturity stay the member's |
+| The look | **existing art only** (owner): the 48 Gen 6-7 Megas use the overworld battle system's own Mega pictures (`overworld/data/pokemon/s<num x 32 + form>.png`, already deployed with magepunk-owdata; unused by the overworld so far), drawn at the member's height in whole pixels, mirrored for the right-facing rows (the battle front faces left, B1c's rule), with the walking hop and the hurt flash. The other 45 (the Legends Z-A Megas, the Z forms) are **composed** from the member's own animated sheet. Every Mega carries the same two marks drawn in code: a Mega aura at its feet and the keystone's three-colour sign over its head |
+| The level-up card | the battle sprite (or the member's sprite for a composed one), "Charizard → Mega Charizard X", its types, HP and "Ultimate +1" |
+| The League card | "Mega Evolution: Charizard → Mega Charizard X / Mega Charizard Y (from Lv 40)" |
+
+**Sync:** the League row `l` gains a 6th field, the Mega's PokéAPI id, only once the member has Mega Evolved (a row is the same
+5 fields otherwise, so tapes don't grow). A viewer's, spectator's or co-op puppet takes the look from it (`G.ExpLeague.applyRow`:
+a row without it puts the member's own sheet back). Older readers ignore the field, so **the `x` block stays v10**;
+**`G.Expedition.DV` is 13** (dv 1-12 still play).
+
+**Saved:** the counter `lg.mega` and the set `mega.seen` (form ids). **Tasks / achievements** (`meta.js`): the weekly task "Mega Evolve
+N times" (1 / 3 / 5, from 2026-11-02 like D13's); 3 achievements: Mega Evolution (once), Mega power (10 times), Mega collection (10
+different Megas, title Mega Trainer), after the season ribbons in the title list (D13's rule).
+
+**Assets:** none new: the 48 battle sprites are the overworld's, the rest is the member's own sheet plus code-drawn marks.
+
+**What changed in base files:** none. Expedition files: `mega.js`, `mega-data.js` (new), `league.js`, `ultimates.js`, `meta.js`,
+`core.js` (dv 13), `systems/expedition.js` (DV 13, the two scripts).
+
+**Deviations / not built:**
+- When a Mega comes is ours (Lv 40, a level-up's choice): PokéBonk has none yet; its Season 2 roadmap only names them.
+- No Mega Stone item and no reversion: the study's "late-run power spike" is the whole rest of the run.
+- The Megas keep the member's ability (one of our 54), not the Mega's own (Tough Claws, Drought...).
+- No shiny Mega pictures (the battle set has none): a shiny member's Mega shows the normal picture (B1c's rule).
+
 ## DLC D10-D12: the stacked branch
 
 `feat/micasurvivor-expedition-d10-d12` carries three batches on top of D6-D9, `G.Expedition.DV` 8 -> 11 and the `x` block v8 -> v10:
@@ -3070,6 +3107,12 @@ achievements), `core.js` (dv 12).
   run, wild, its encounter in a later run; the `hard` part; the Leaderboard tab and its way to the map boards and back; the
   achievements paid once and the title order; the League task's start date and its metric from a run that ends at Vivillon;
   the phone (844 x 390).
+- `node overworld/tests/micasurvivor_expedition_mega_test.mjs` (DLC D14): the generated Megas (93 of 87 species, PokéAPI's stats
+  and types, each in a League family; the 48 with an existing overworld battle sprite, the rest composed); a Charizard run: no
+  Mega before 40, the choice at 40 (X / Y with their sprites, "Not yet"), Mega Charizard X's stats, types, verbs, Ultimate tier,
+  i-frames and look (drawn at the member's height, mirrored facing right, the keystone's sign), once a run, the snapshot's row,
+  the run-over line, counters and achievement; "Not yet" back 5 levels later; a composed Mega (Raichu X); a fresh viewer
+  page's puppet from the row (and back); the League card's line; the weekly task; the phone.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

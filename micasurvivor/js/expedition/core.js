@@ -155,9 +155,15 @@
  * generation, each member's kit, evolutions, Ultimate, records and challenge, "Play Classic / Survival" with it, the HQ's tabs
  * and the League board (server/mp.mjs: counted from the saved League). dv 12 (new members play); the `x` block is unchanged
  * (v10: `l` already names the member and its form).
+ *
+ * D14 (Mega Evolution, js/expedition/mega.js + mega-data.js, league.js megaCards / megaEvolve): from Lv 40 a League member's form
+ * that can Mega Evolve gets the choice at a level-up (one card per Mega, "Not yet"); the Mega's real base stats and types, its
+ * look (the overworld battle system's own Mega sprite, or composed from the member's sheet; the aura and the keystone's sign),
+ * the Ultimate a tier up. dv 13; the `x` block stays v10: the League row `l` gets a 6th field, the Mega's id, only once it
+ * has Mega Evolved (older readers ignore it; a viewer's puppet takes the look from it).
  */
 G.Exp = (() => {
-  const dv = 12;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 13;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League; D14: Mega Evolution): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
   const XV = 10;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows

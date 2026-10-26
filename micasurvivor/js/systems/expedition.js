@@ -65,7 +65,7 @@ G.I18n.add({
 });
 
 G.Expedition = (() => {
-  const DV = 12;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12. Older dv replays / snapshots still play, replayOk)
+  const DV = 13;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12; D14: Mega Evolution: 13. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
@@ -83,8 +83,8 @@ G.Expedition = (() => {
   // research, tasks and boards"): its card opens the League (G.ExpMeta's League view); G.Modes.plan never plans it as a run.
   const HUB = new Set(['exp-league']);
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
-    'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js)
+    'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/mega-data.js', 'js/expedition/mega.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);

@@ -110,8 +110,10 @@ G.ExpLeague = (() => {
 
   // ---------------- stats from base stats (pure) ----------------
   /** {hp, armor, taken, spd, phys, spec, atk} of species d (its real base stats; study 2.1, K). */
-  function statsOf(d) {
-    const b = D.base[d] || [50, 50, 50, 50, 50, 50], [hp, atk, def, spa, spd, spe] = b;
+  function statsOf(d) { return statsFrom(D.base[d] || [50, 50, 50, 50, 50, 50]); }
+  /** The same from a base-stat row [hp, atk, def, spa, spd, spe] (D14: a Mega's). */
+  function statsFrom(b) {
+    const [hp, atk, def, spa, spd, spe] = b;
     const armor = (K.ARMOR_DEF * def + K.ARMOR_SPD * spd) / 100;
     const phys = K.ATK0 * (K.ATK_A + K.ATK_B * atk / 100), spec = K.ATK0 * (K.ATK_A + K.ATK_B * spa / 100);
     return { hp: Math.round(K.HP0 + K.HP_K * hp), armor: Math.round(armor * 10) / 10, taken: Math.min(K.ARMOR_MAX, armor * K.ARMOR_RED),
@@ -204,8 +206,9 @@ G.ExpLeague = (() => {
     G.Sprites.preload([d], 8000, p.shiny);
   }
   /** The stage's stats on the player: HP, armor, speed and attack from its base stats (the rest of its bonuses kept). */
-  function applyStats(pl, d, prev, hp0) {
-    const st = statsOf(d), mon = Object.assign({}, G.DEX_BY[d], { hp: st.hp, spd: st.spd, atk: st.atk });
+  function applyStats(pl, d, prev, hp0, mega) {
+    // (D14: a Mega's own base stats and types on the member's species)
+    const st = mega ? statsFrom(mega.base) : statsOf(d), mon = Object.assign({}, G.DEX_BY[d], { hp: st.hp, spd: st.spd, atk: st.atk }, mega ? { types: mega.types.slice() } : {});
     pl.mon = mon;
     pl.baseSpd = st.spd;
     pl.baseAtk = st.atk;
@@ -238,7 +241,7 @@ G.ExpLeague = (() => {
     if (!pl || !G.Modes.isExp()) return null;
     const d = BY[cfg && cfg.dex] ? cfg.dex : FAM[pl.dex] && BY[FAM[pl.dex]] ? FAM[pl.dex] : K.DEFAULT;
     const m = BY[d];
-    S = { member: d, form: d, kit: 0, mat: 0, evo: 0, done: 1, pending: null, note: [], st: null, role: m.role,
+    S = { member: d, form: d, kit: 0, mat: 0, evo: 0, done: 1, pending: null, note: [], st: null, role: m.role, mega: 0, megaAt: G.ExpMega ? G.ExpMega.K.LV : 0,
           ability: G.Abilities.of(finalsOf(m)[0]), log: [] };
     const hp0 = pl.mon.hp;   // (the base stat the player was built with: its bonuses are kept)
     const sh = Sv().has('league.shiny', d) && G.Sprites.hasShiny(d);   // (D8: a shiny of this family caught: it plays shiny, cosmetic)
@@ -328,7 +331,54 @@ G.ExpLeague = (() => {
     if (!on(pl)) return undefined;
     process(pl);
     if (S.pending) { const c = branchCards(pl); c.note = [T.f('¿En qué evoluciona {x}?', name(S.form))].concat(S.note); wrap(c); return c; }
+    // (D14: from Lv 40 a form that can Mega Evolve: that level's cards are the Megas and "Not yet")
+    const mg = megaCards(pl);
+    if (mg) { mg.note = [T.f('¿Megaevoluciona {x}?', name(S.form))].concat(S.note); wrap(mg); return mg; }
     return undefined;
+  }
+
+  // ---------------- D14: Mega Evolution (js/expedition/mega.js: the data and the look) ----------------
+  /** The Mega cards of this level-up (null: none due): one gold card per Mega of the form, then "Not yet". */
+  function megaCards(pl) {
+    const X = G.ExpMega;
+    if (!X || !S || S.mega || !S.megaAt || pl.level < S.megaAt) return null;
+    const opts = X.of(S.form);
+    if (!opts.length) return null;
+    const prev = S.st || statsOf(S.form);
+    const cards = opts.map(e => {
+      const st = statsFrom(e.base);
+      return Object.assign({
+        w: 0, type: 'xevo', key: 'xmega:' + e.id, icon: 'star', color: '#e050e8', tag: T.t('MEGAEVOLUCIÓN'), mega: e.id,
+        title: name(S.form) + ' → ' + X.nameOf(e),
+        desc: T.f('{x} · Vida {x} → {x} · definitivo +1', e.types.map(t => T.t(G.U.TYPE_NAME[t])).join(' / '), Math.round(pl.maxHp), Math.round(pl.maxHp + st.hp - prev.hp)),
+        apply: q => { megaEvolve(q, e.id, q.level); process(q); }
+      }, X.cardArt(e, S.form));
+    });
+    cards.push({ w: 0, type: 'xevo', key: 'xmega:later', icon: 'clock', color: '#9fb1c9', tag: T.t('Todavía no'), title: T.t('Todavía no'),
+      desc: T.f('Sigue como {x}; se ofrece otra vez dentro de {x} niveles', name(S.form), X.K.AGAIN),
+      apply: q => { if (S) { S.megaAt = q.level + X.K.AGAIN; S.log.push([q.level, 'mega-later']); } } });
+    return cards;
+  }
+  /** Mega Evolve into Mega `id` (a level-up's card): its base stats and types, its look, the Ultimate a tier up (the row). */
+  function megaEvolve(pl, id, lv) {
+    const X = G.ExpMega, e = X && X.BY[id];
+    if (!S || !e || e.sp !== S.form || S.mega) return false;
+    const prev = S.st || statsOf(S.form);
+    applyStats(pl, S.form, prev, null, e);
+    pl.xverbsDex = null;   // (its types changed: the verbs follow, e.g. Mega Charizard X no longer glides)
+    G.Abilities.set(pl, S.ability);
+    X.look(pl, e);
+    S.mega = id;
+    S.log.push([lv || pl.level, 'mega', id]);
+    pl.invuln = Math.max(pl.invuln || 0, X.K.IFRAMES);
+    const txt = T.f('¡{x} megaevoluciona a {x}!', name(S.form), X.nameOf(e));
+    S.note.push(txt);
+    G.Spawner.say(txt, 3.2, true);
+    G.Game.flash('#ffe6ff', 0.7);
+    for (const [r, c] of [[150, '#ff9a2e'], [190, '#e050e8'], [230, '#3fa2ff']]) G.FX.ring(pl.x, pl.y, 8, r, c, 0.9, 6);
+    G.FX.burst(pl.x, pl.y - pl.bodyH * 0.5, '#ffd6ff', 54, 280);
+    G.Audio.sfx('legend');
+    return true;
   }
   /** The levelup.cards seam: the base cards of an Expedition League run get the level's news (kit move, evolution). */
   function cardsHook(cards, pl) {
@@ -341,15 +391,25 @@ G.ExpLeague = (() => {
 
   // ---------------- the `x` block's `l` (viewers and guests) ----------------
   /** The League row of the local player: [member, form, kit moves, Maturity, evolutions] (null outside a League run). */
-  const row = () => S ? [S.member, S.form, S.kit, S.mat, S.evo] : null;
+  //  (D14: + the Mega's id when it has Mega Evolved; a row without it is the same 5 fields as before)
+  const row = () => S ? (S.mega ? [S.member, S.form, S.kit, S.mat, S.evo, S.mega] : [S.member, S.form, S.kit, S.mat, S.evo]) : null;
   /** A viewer's / host's puppet p shows row r's form (only the sprite: a puppet has no stats of its own). */
   function applyRow(p, r) {
     if (!p) return false;
     p.xlg = Array.isArray(r) ? r : null;
     const to = p.xlg && p.xlg[1] | 0;
-    if (!to || !G.DEX_BY[to] || p.dex === to) return false;
+    // (D14: a Mega's look from the row's 6th field; a row without it puts a Mega puppet back in its own sheet)
+    const mg = p.xlg && G.ExpMega ? G.ExpMega.BY[p.xlg[5] | 0] || null : null;
+    if (!to || !G.DEX_BY[to]) return false;
+    if (p.dex === to) {
+      if (mg && p.xmegaLook !== mg.id) { G.ExpMega.look(p, mg); return true; }
+      if (!mg && p.xmegaLook) { p.xmegaLook = 0; body(p, to); return true; }
+      return false;
+    }
     p.mon = G.DEX_BY[to];
+    p.xmegaLook = 0;
     body(p, to);
+    if (mg) G.ExpMega.look(p, mg);
     return true;
   }
 
@@ -370,12 +430,14 @@ G.ExpLeague = (() => {
     Svv.bump('lg.runs.' + m.dex);
     Svv.best('lg.best.' + m.dex, sum.level || 1);
     Svv.add('league.played', m.dex);
+    if (S.mega) { Svv.bump('lg.mega'); Svv.add('mega.seen', S.mega); }   // (D14)
     return checkChallenges();
   }
   /** The run-over screen's League lines (before record: the new members come from record's return). */
   function lines(newly) {
     if (!S) return [];
-    const out = [T.f('Liga: {x}', name(S.member) + (S.form !== S.member ? ' → ' + name(S.form) : '') + (S.mat ? ' · ' + T.f('madurez {x}', S.mat) : ''))];
+    const mg = S.mega && G.ExpMega && G.ExpMega.BY[S.mega];   // (D14: "... → Charizard → Mega Charizard X")
+    const out = [T.f('Liga: {x}', name(S.member) + (S.form !== S.member ? ' → ' + name(S.form) : '') + (mg ? ' → ' + G.ExpMega.nameOf(mg) : '') + (S.mat ? ' · ' + T.f('madurez {x}', S.mat) : ''))];
     for (const d of newly || []) out.push(Sv().has('league.wild', d) ? T.f('¡Reto cumplido: {x}! Atrápalo en tu próxima partida', name(d)) : T.f('¡Nuevo miembro de la Liga: {x}!', name(d)));
     return out;
   }
@@ -517,6 +579,7 @@ G.ExpLeague = (() => {
     K, D, BY, FAM, PHYS, STATUS, stagesOf, finalsOf, nextOf, evoLevel, statsOf, classOf, factorOf,
     free, own, met, wild, playable, roster, progress, checkChallenges, counter, chText, readPick, setPick, pickFor,
     begin, reset, process, evolve, offerHook, cardsHook, row, applyRow, record, lines, renderPicker, select, genOf, GENS, records, ultOf,
+    statsFrom, megaCards, megaEvolve,
     get run() { return S; }, get on() { return !!S && G.Modes.isExp(); }
   };
 })();
