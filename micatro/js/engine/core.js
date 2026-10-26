@@ -1181,15 +1181,16 @@ export function level_up_hand(card, hand, instant, amount) {
 
 /**
  * Steamodded: a playing card's MOD enhancement and MOD seal `calculate(self, card, context)`
- * (skipped while debuffed) -> {enhancement, seal} results, or undefined.
+ * (skipped while debuffed) -> {enhancement, seal} results, or undefined. `only(center)`, when given, picks which of the
+ * two run (run.js end_round: the held-card retrigger seam, smods.js eor_seam_center).
  */
-export function mod_card_calculate(card, context) {
+export function mod_card_calculate(card, context, only) {
   if (card.debuff || card.ability.set === 'Joker') return undefined;
   let out;
   const ec = card.config.center;
-  if (ec && ec.mod && ec.set === 'Enhanced' && ec.calculate) { const r = ec.calculate(ec, card, context); if (r) (out = out || {}).enhancement = r; }
+  if (ec && ec.mod && ec.set === 'Enhanced' && ec.calculate && (!only || only(ec))) { const r = ec.calculate(ec, card, context); if (r) (out = out || {}).enhancement = r; }
   const sc = card.seal && P_SEALS[card.seal];
-  if (sc && sc.mod && sc.calculate) { const r = sc.calculate(sc, card, context); if (r) (out = out || {}).seal = r; }
+  if (sc && sc.mod && sc.calculate && (!only || only(sc))) { const r = sc.calculate(sc, card, context); if (r) (out = out || {}).seal = r; }
   return out;
 }
 /** Merge a mod enhancement / seal scoring return into eval_card's playing-card result. */

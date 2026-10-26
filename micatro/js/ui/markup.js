@@ -143,6 +143,8 @@ export function describePlaying(cv) {
   // lines a mod adds to a playing card's tooltip (view_card mod_lines: Bunco's linked group, mod editions)
   if (cv.mod_lines && cv.mod_lines.length) { lines.push(''); lines.push(...cv.mod_lines); }
   if (cv.debuff) { lines.push(''); lines.push('{C:red}Debuffed'); }
+  // (a mod enhancement's info_queue boxes: engine/view.js enh.info)
+  if (enh && Array.isArray(enh.info) && enh.info.length) return { name, lines, badges, name_colours, playing: true, info: enh.info };
   return { name, lines, badges, name_colours, playing: true };
 }
 

@@ -261,7 +261,8 @@ Intended-design fixes are noted in comments at each site (search "intended").
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
 87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), `3.9.1+r15` for batch 17 (the last: the
-upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), **`3.9.1+r16`** since the leftovers batch ("The 3.9.1 leftovers" below)
+upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), **`3.9.1+r18`** since the Hazard
+follow-ups ("The Hazard audit" below: held-Hazard retriggers)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -1952,7 +1953,8 @@ the 3.9.1 Lua (upstream main af0b656 has the same packs1.lua / sleeve.lua / poke
 Tester reports said Hazards weren't working as intended. Line-by-line against 3.9.1 (enhancement1.lua, pokeutils.lua
 add_hazards / change_hazard_*, pokermon.lua's first_hand_drawn deal and set_ability wrap, backs1.lua / sleeve.lua, 04_mart_rare.lua,
 every hazard joker in pokejokers_07/08/12/18/20/21/31 + zzzapril_fools) and Steamodded 26.1002 (draw / first_hand_drawn,
-calculate_end_of_round_effects, quantum enhancements, card_limit): the GAMEPLAY matches. No contentRev bump (no behaviour change).
+calculate_end_of_round_effects, quantum enhancements, card_limit): the GAMEPLAY matches but for one retrigger rule (below, fixed in the
+follow-ups: `3.9.1+r18`).
 - **Fixed (cosmetic): Pokermon's text colours.** 3.9.1 pokesprites.lua's `pokermon.colours` + its `loc_colour` hook colour every
   `{C:poke_<name>}` / `{X:poke_<name>}`: the "+1 hazard layer" of every Hazard joker / the Debris deck is the hazard bronze
   `#BA7333`, the Pink Seal pink, the types' `{X:poke_grass}` boxes their type colour. Ours knew none of them: `{C:poke_*}` drew the
@@ -1969,21 +1971,53 @@ calculate_end_of_round_effects, quantum enhancements, card_limit): the GAMEPLAY 
     get (Poké Ball, evolution) and the Debris deck still deal. "Hazards Allowed: whether Pokémon with Hazards appear in the shop."
   - A debuffed Hazard card doesn't roll its destroy (Steamodded skips a debuffed card's calculate); a debuffed hazard joker gives no
     layer while debuffed.
-- **Left as is, for the owner**:
-  - Steamodded re-runs a held card's whole end-of-round evaluation on each retrigger (Mime / Red Seal / Gigalith / Mega Steelix), so a
-    retriggered Hazard rolls its destroy again — but only when that card had some other end-of-round effect (e.g. Nacho's Carbink
-    makes Hazards Gold). Ours rolls once (the mod-enhancement pass is outside run.js's retrigger loop). An engine change for every
-    mod: not done here.
-  - 3.9.1's Debris Sleeve on a non-Debris deck overrides CardSleeves' `apply` without calling it, so its `no_interest` config never
-    applies (it earns interest though its text says "Earn no Interest"). Ours applies the sleeve's config like a deck: no interest,
-    as the text says.
+- **Intentional difference (owner ruling, 2026-10-26)**: 3.9.1's Debris Sleeve on a non-Debris deck overrides CardSleeves' `apply`
+  without calling it, so its `no_interest` config never applies (it earns interest though its text says "Earn no Interest"). Ours
+  applies the sleeve's config like a deck: **no interest, as the text says**. The owner keeps it that way; don't "fix" it to 3.9.1.
+- **Follow-ups (owner-approved; pin `3.9.1+r18`)**:
+  - **Held-Hazard retriggers, as 3.9.1 + Steamodded.** SMODS.calculate_end_of_round_effects (src/utils.lua) evaluates a held card once
+    per pass — its own, then one per retrigger (Mime, Red Seal, a mod joker's `repetitions`: Gigalith, Mega Steelix) — and each pass is
+    the WHOLE eval_card, so the Hazard's `calculate` (and any quantum enhancement's) runs again. The next pass only runs while the
+    last one calculated something: `j = j + (flags.calculated and 1 or #reps)`. Hazard's destroy roll returns nothing, so a plain held
+    Hazard rolls ONCE whatever its retriggers; with another end-of-round effect on it — Gold via Nacho's Carbink ($3), a Blue Seal
+    making a Planet — every reached pass rolls again (Mime + Gold: 2 rolls; Mime + Red Seal + Gold: 3; 2 Mimes + Blue Seal with one free
+    consumable slot: 2, the second pass makes nothing so the third never runs). Ours rolled once.
+  - The engine seam (opt-in, the `smods_seams` pattern): js/engine/smods.js `eor_retrigger_seam()` — on while an active mod opts in
+    (`smods_seams: true`, or a list naming `'held_retrigger'`) — + `eor_seam_center` / `eor_calculated`. run.js end_round: with it
+    on, an opted-in mod's enhancement / seal end-of-round `calculate` (and `quantum_mod_calculate`) moves from the up-front pass over the
+    hand into the per-card retrigger loop, card by card as Steamodded (Hazard A, A again, then B), and re-runs on each pass while the
+    one before calculated (`eor_calculated`: the pass's h_dollars / Blue Seal `effect` / joker returns / the mod return). Vanilla
+    enhancements, seals and jokers and non-opted-in mods' centers (Bunco, MoreFluff, ...) run exactly as before; with no opted-in mod
+    the seam is off (core.js `mod_card_calculate` gained an optional center filter). One difference that comes with it: the opted-in
+    pass now runs after the game-over check, as in Steamodded (a lost round no longer rolls its held Hazards).
+  - Fuzz proof on the seam-only diff (engine files only, against eb1381ec): identical — vanilla 40 runs / 5937 actions / max ante 13 /
+    10 wins; Pokermon 24 / 3909 / 13 / 6; all mods 16 / 2897 / 13 / 5 (same mod activity).
+  - **House tooltips (text only)**: how Hazards work, as extra info boxes beside 3.9.1's own text (nothing upstream rewritten).
+    The Hazard card (enhancement1.js loc_vars -> systems/utils.js `hazard_rules_tip`), descriptions.Other.`poke_hazard_rules` "Hazards":
+    "Stay in your deck until / destroyed while {C:attention}held{} / {C:inactive}(playing or discarding / {C:inactive}one keeps it) /
+    Take up {C:attention}hand{} slots: / {C:attention}discard{} them to draw". Every card showing the Hazard Layer tooltip (the hazard
+    jokers, Nacho's Carbink) gets `poke_hazard_deal` "Hazards" LAST (index.js describe hook, so it never pushes one of 3.9.1's own
+    boxes out — the board shows three): "At most {C:attention}N{} a round / {C:inactive}(the {C:poke_hazard}hazard limit{C:inactive}) /
+    Stay in your deck / until destroyed / while {C:attention}held{} / Take up {C:attention}hand{} slots: / {C:attention}discard{} to draw"
+    (N = the live limit). The option reads "Hazard Pokémon in shop" (was "Hazards allowed": it only filters the shop pools).
+    UI plumbing: a mod enhancement's info boxes now reach the in-hand tooltip (engine/view.js `enh.info` -> ui/markup.js
+    describePlaying), and a tooltip wider than the board wraps its boxes onto another row (ui/board.js renderTip; on a phone the card
+    + three boxes ran off the right edge). Screenshots (desktop + phone): scratchpad `hazards/tip_*.png`.
 - **Tester evidence** (SELECT-only, 222 `mreplay:` rows, all Pokermon): 6 runs ever had a Hazard layer or Hazard cards (Cacnea, Golett,
   Skarmory, Tarountula, Baltoy, Hisuian Qwilfish / Overqwil); re-simulated, the r17 one replays to its checksum and the older ones
   behave as above up to where their pins diverge. No bug row and no `chat:dm:mgibbie` row mention Hazards.
-- **Tests**: `micatro/tests/mods/pokermon_hazards_test.mjs` (new; 62 passed / 4 failed on origin/main, 66 / 0 here) plays it all
+- **Tests**: `micatro/tests/mods/pokermon_hazards_test.mjs` (new; 62 passed / 4 failed on origin/main, 66 / 0 at eb1381ec) plays it all
   through real actions: the deal over several rounds and the limit (Skarmory), the hand slots, the Hazard card (no rank / suit / chips,
   the destroy only when held, ~1 in 3 over 120 rolls, not when debuffed), every hazard joker in play, the Boots, the Debris deck's
-  cash-out over 3 rounds and the sleeve alt, the option, and the colours.
+  cash-out over 3 rounds and the sleeve alt, the option, and the colours. The follow-ups add its `retriggers` section (real end of
+  round with Mime / Red Seal / both / 2 Mimes, plain, Gold via Carbink and Blue Seal Hazards: the number of destroy rolls, the
+  card-by-card order, a sure destroy rolled twice) and the tooltip checks: 70 passed / 10 failed with the follow-ups' sources
+  reverted, 87 / 0 with them. `smods_seams_test` section 10 fires the seam with synthetic mods (an opted-in enhancement re-runs on a
+  pass that calculated, not on one that didn't; a not-opted-in one runs once; no opted-in mod, seam off): 117 / 1 reverted, 118 / 0.
+  `overworld/tests/micatro_tooltip_test.mjs`: a three-info-box tooltip stays on a phone screen (fails reverted: right edge 460 > 390).
+  Re-run and passing: every Pokermon / Nacho / Pokermon+ Node suite, `micatro_engine_test` (109 suites), `micatro_mod_version_pin`,
+  `micatro_resume_win_badges`, `micatro_runsync` (fixtures unchanged: no recording held a retriggered Hazard), `micatro_ui`,
+  `micatro_mods_ui`, `micatro_custom_enhancement`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

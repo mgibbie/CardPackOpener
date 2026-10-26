@@ -272,6 +272,35 @@ export function quantum_mod_calculate(card, context) {
 }
 
 /**
+ * Steamodded's held-card end-of-round evaluation (src/utils.lua SMODS.calculate_end_of_round_effects), for the playing-card
+ * centers of mods that opted in (`smods_seams: true`, or a list naming 'held_retrigger'). Steamodded evaluates a held card
+ * once per pass — its own pass, then one per retrigger (Mime, Red Seal, a mod joker's `repetitions`) — and each pass is the
+ * WHOLE evaluation: the card's own enhancement / seal `calculate` (and its quantum enhancements') run again. The next pass
+ * only runs while the last one did something: `j = j + (flags.calculated and 1 or #reps)`. So Pokermon 3.9.1's Hazard
+ * (whose end-of-round destroy roll returns nothing) rolls once when that is all the card does, and once per reached
+ * retrigger when the card also pays, like a Gold card (Nacho's Carbink) or a Blue Seal making a Planet.
+ * run.js end_round: with the seam on, an opted-in center's end-of-round calculate moves from the up-front pass over the
+ * hand into the per-card retrigger loop (card by card, as Steamodded: A, A again, then B); everything else — vanilla
+ * enhancements / seals / jokers, and non-opted-in mods' centers (Bunco, MoreFluff, ...) — runs exactly as before. With no
+ * opted-in mod active the seam is off and end_round is unchanged.
+ */
+export const eor_retrigger_seam = () => ACTIVE_MODS.length > 0 && ACTIVE_MODS.some((id) => seam_mod(id, 'held_retrigger'));
+/** Is this enhancement / seal center evaluated by the held-card retrigger seam (a center of an opted-in mod)? */
+export const eor_seam_center = (c) => !!(c && c.mod && seam_mod(c.mod, 'held_retrigger'));
+/** The up-front pass's filter while the seam is on: only the centers the seam does NOT take. */
+export const not_eor_seam_center = (c) => !eor_seam_center(c);
+/**
+ * Did one held-card end-of-round pass do anything (Steamodded's `flags.calculated`)? `ms`: the seam's mod_card_calculate
+ * result; `effects`: run.js's vanilla effects for the pass (the card's get_end_of_round_effect + the jokers' individual
+ * returns). An empty table, or one carrying only `card`, did nothing.
+ */
+export function eor_calculated(ms, effects) {
+  const did = (r) => !!(r && typeof r === 'object' && Object.keys(r).some((k) => k !== 'card' && truthy(r[k])));
+  if (ms && (did(ms.enhancement) || did(ms.seal))) return true;
+  return (effects || []).some(did);
+}
+
+/**
  * Steamodded's playing-card `card_limit` (lovely/card_limit.toml + CardArea:handle_card_limit): a card in an area with
  * `ability.card_limit = n` gives that area n more slots while it is there — in the hand, n more hand size while held
  * (Pokermon 3.9.1's Debris Sleeve on the Debris Deck: every Hazard card has card_limit +1). -> the extra slots of the

@@ -43,6 +43,7 @@ try {
 		await page.evaluate(async () => {
 			const C = await import('/micatro/js/engine/core.js');
 			C.add_joker('j_blueprint'); C.add_joker('j_joker');
+			C.add_joker('j_ticket', 'foil', false, true); // (three info boxes: Gold Card, Foil, Eternal)
 			C.add_joker('c_mercury'); // a consumable too
 			C.G.E_MANAGER.flush();
 			await window.__micatro.act({ type: 'select_blind' });
@@ -67,6 +68,22 @@ try {
 			// deselect
 			await page.evaluate(() => document.querySelector('.stage, #stage, body').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
 			await new Promise(r => setTimeout(r, 200));
+		}
+		// A card with three info boxes (Golden Ticket, Foil, Eternal): on a phone the card's box + three ran off the
+		// right edge (Pokermon's hazard jokers, 2026-10-26); the boxes wrap onto another row instead. Desktop: one row.
+		{
+			const id = await page.evaluate(async () => { const C = await import('/micatro/js/engine/core.js'); return C.G.jokers.cards[2].sort_id; });
+			const sel = `.card[data-id="${id}"]`;
+			if (vp.hasTouch) await page.tap(sel); else await page.click(sel);
+			await new Promise(r => setTimeout(r, 500));
+			const r = await page.evaluate(() => {
+				const tip = document.querySelector('.tip');
+				const boxes = tip && tip.style.display !== 'none' ? [...tip.children].map((e) => e.getBoundingClientRect()) : [];
+				return { n: boxes.length, right: Math.max(...boxes.map((b) => b.right)), left: Math.min(...boxes.map((b) => b.left)), rows: new Set(boxes.map((b) => Math.round(b.top))).size, vw: innerWidth };
+			});
+			A(r.n === 4 && r.left >= -1 && r.right <= r.vw + 1, `${label}: a tooltip with three info boxes stays inside the screen`, JSON.stringify(r));
+			if (!vp.hasTouch) A(r.rows === 1, `${label}: ... on one row where it fits`, JSON.stringify(r));
+			if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `tooltip_wide_${label.replace(/ /g, '_')}.png`) });
 		}
 		await page.close();
 	}

@@ -18,6 +18,7 @@ import { toView } from '../../js/engine/view.js';
 import { describe } from '../../js/engine/describe.js';
 import { get_current_pool } from '../../js/engine/core.js';
 import * as API from '../../mods/pokermon/api.js';
+import '../../mods/nacho/index.js'; // (Nacho's Carbink: the retrigger section)
 
 const { ok, done } = T();
 const key = (c) => c.config.center.key;
@@ -133,6 +134,65 @@ sec('destroy', () => {
   G.GAME.probabilities.normal = 3;
   winRound(hand(['H_9']));
   ok(G.playing_cards.includes(hz[0]) && !G.playing_cards.includes(hz[1]), 'a debuffed Hazard held at end of round is not destroyed (Steamodded skips its calculate)');
+});
+
+// ------------------------------------------------------------------ retriggers of a held Hazard (Mime / Red Seal)
+// 3.9.1 + Steamodded calculate_end_of_round_effects: a held card is evaluated once per pass (its own + one per Mime / Red
+// Seal retrigger), and the next pass only runs while the last one did something (`j = j + (flags.calculated and 1 or #reps)`).
+// The Hazard's own roll returns nothing, so a plain held Hazard rolls once however many retriggers it has; with another
+// end-of-round effect on it (Gold via Nacho's Carbink, a Blue Seal making a Planet) every reached pass rolls again.
+sec('retriggers', () => {
+  let rolls = [];
+  const wrap = () => {
+    const H = P_CENTERS.m_poke_hazard;
+    if (H.__rt_orig) return;
+    const orig = H.calculate;
+    H.__rt_orig = orig;
+    H.calculate = function (self, card, context) {
+      if (context.end_of_round && context.playing_card_end_of_round && !context.individual && !context.repetition && context.cardarea === G.hand) rolls.push(card);
+      return orig.call(this, self, card, context);
+    };
+  };
+  /** One held Hazard (or n) at end of round with these jokers / seal; -> {rolls, again, dollars, planets, hz}. */
+  const endRound = (seed, { jokers = [], seal, mods, n = 1, fill = 0, normal = 0 } = {}) => {
+    start(seed, {}, { noBlind: true, mods });
+    for (const j of jokers) add(j);
+    for (let i = 0; i < fill; i++) add('c_fool');
+    act({ type: 'select_blind' }); clearHand();
+    const hz = hand(['S_2', 'S_3', 'S_4'].slice(0, n), { center: 'm_poke_hazard' });
+    if (seal) for (const c of hz) c.set_seal(seal, true);
+    G.GAME.probabilities.normal = normal; // (0: count the rolls, keep the card)
+    wrap(); rolls = [];
+    const d0 = G.GAME.dollars, p0 = G.consumeables.cards.length;
+    const r = winRound(hand(['H_9']));
+    return { rolls: rolls.length, order: rolls, again: statusMsgs(r.events).filter((m) => m === 'Again!').length, dollars: G.GAME.dollars - d0, planets: G.consumeables.cards.length - p0, hz };
+  };
+  const NA = ['nacho'];
+  let x = endRound('HZT_RT_MIME', { jokers: ['j_mime'] });
+  ok(x.rolls === 1 && x.again === 0, 'Mime + a plain held Hazard: 1 destroy roll (nothing else to retrigger)', [x.rolls, x.again]);
+  x = endRound('HZT_RT_MIMEG', { jokers: ['j_mime', 'j_nacho_carbink'], mods: NA });
+  ok(x.rolls === 2 && x.again === 1 && x.dollars === 6, 'Mime + a held Hazard that is also Gold (Carbink): 2 destroy rolls ($3 twice, "Again!")', [x.rolls, x.again, x.dollars]);
+  x = endRound('HZT_RT_RED', { seal: 'Red' });
+  ok(x.rolls === 1 && x.again === 0, 'Red Seal on a plain held Hazard: 1 destroy roll', [x.rolls, x.again]);
+  x = endRound('HZT_RT_REDG', { seal: 'Red', jokers: ['j_nacho_carbink'], mods: NA });
+  ok(x.rolls === 2 && x.dollars === 6, 'Red Seal on a held Gold Hazard (Carbink): 2 destroy rolls', [x.rolls, x.dollars]);
+  x = endRound('HZT_RT_BOTH', { seal: 'Red', jokers: ['j_mime', 'j_nacho_carbink'], mods: NA });
+  ok(x.rolls === 3 && x.dollars === 9, 'Mime + Red Seal on a held Gold Hazard: 3 destroy rolls', [x.rolls, x.dollars]);
+  x = endRound('HZT_RT_BLUE', { seal: 'Blue', jokers: ['j_mime'] });
+  ok(x.rolls === 2 && x.planets === 2, 'Mime + a Blue Seal Hazard (2 free slots): 2 Planets, 2 destroy rolls', [x.rolls, x.planets]);
+  // the pass after one that did nothing never runs: 2 Mimes, 1 free slot -> pass 1 Planet, pass 2 no room, pass 3 not reached
+  x = endRound('HZT_RT_BLUE1', { seal: 'Blue', jokers: ['j_mime', 'j_mime'], fill: 1 });
+  ok(x.rolls === 2 && x.planets === 1, '2 Mimes + a Blue Seal Hazard, 1 free slot: the 2nd pass makes nothing, so no 3rd roll (2 rolls)', [x.rolls, x.planets]);
+  // card by card, as Steamodded: each Hazard's passes before the next Hazard's
+  x = endRound('HZT_RT_ORDER', { jokers: ['j_mime', 'j_nacho_carbink'], mods: NA, n: 2 });
+  ok(x.rolls === 4 && x.order[0] === x.hz[0] && x.order[1] === x.hz[0] && x.order[2] === x.hz[1] && x.order[3] === x.hz[1], 'two held Gold Hazards with Mime: rolled card by card (A, A, B, B)', x.order.map((c) => x.hz.indexOf(c)));
+  // a certain destroy rolled twice destroys the card once
+  x = endRound('HZT_RT_DEST', { jokers: ['j_mime', 'j_nacho_carbink'], mods: NA, normal: 3 });
+  ok(x.rolls === 2 && !G.playing_cards.includes(x.hz[0]) && !G.hand.cards.includes(x.hz[0]) && G.STATE === STATES.ROUND_EVAL, 'a sure destroy rolled twice: the Hazard goes once, the round ends normally', [x.rolls, G.STATE]);
+  // no retrigger: nothing changes (the roll still comes on the first pass)
+  x = endRound('HZT_RT_NONE', { jokers: ['j_nacho_carbink'], mods: NA });
+  ok(x.rolls === 1 && x.dollars === 3, 'a held Gold Hazard without retriggers: 1 roll, $3', [x.rolls, x.dollars]);
+  const H = P_CENTERS.m_poke_hazard; if (H.__rt_orig) { H.calculate = H.__rt_orig; delete H.__rt_orig; }
 });
 
 // ------------------------------------------------------------------ the hazard jokers, in play
@@ -288,6 +348,31 @@ try {
   ok(/color:#ff7abf/i.test(mk.markup('{C:poke_pink}Pink Seal{}')), '{C:poke_pink} is pink');
   ok(/color:#ff9a00/i.test(mk.markup('{C:attention}x{}')) && /color:#4f6367/.test(mk.markup('{C:nope}x{}')), 'base colours and the unknown-colour fallback unchanged');
   ok(M.LOC_COLOURS.poke_hazard === '#ba7333' && Object.keys(M.LOC_COLOURS).length >= 20, 'the registry carries the mod colours (pokermon.colours: 20)');
+  // the house "Hazards" tooltips (how they work: an extra info_queue entry beside 3.9.1's own text)
+  start('HZT_TIPS', {}, { mods: ['nacho'] });
+  const [hzc] = hand(['S_2'], { center: 'm_poke_hazard' });
+  const hi = describe(hzc).info.find((i) => i.key === 'poke_hazard_rules');
+  const ht = hi ? hi.lines.join(' ') : '';
+  ok(hi && hi.name === 'Hazards' && /Stay in your deck/.test(ht) && /held/.test(ht) && /playing or discarding/.test(ht) && /one keeps it/.test(ht) && /hand{} slots/.test(ht) && /discard{} them to draw/.test(ht),
+    'the Hazard card: a "Hazards" tooltip (stay in the deck; only a held one can go; take hand slots, discard them)', hi);
+  ok(describe(hzc).lines.join(' ').includes('1 in 3'), "... beside 3.9.1's own text (1 in 3 when held), unchanged");
+  const qi = describe(add('j_poke_qwilfish')).info;
+  const qd = qi.find((i) => i.key === 'poke_hazard_deal');
+  ok(qi.map((i) => i.key).join() === 'hazard_level,m_poke_hazard,poke_hazard_deal' && qd && qd.lines[0] === 'At most {C:attention}3{} a round' && /poke_hazard}hazard limit/.test(qd.lines[1]),
+    'a hazard joker: Hazard Layer, Hazard Card, then "Hazards" (at most the limit a round, stay in the deck, take hand slots)', qi);
+  add('j_poke_skarmory');
+  ok(describe(G.jokers.cards[0]).info.find((i) => i.key === 'poke_hazard_deal').lines[0] === 'At most {C:attention}4{} a round', '... the limit is live (Skarmory: 4)');
+  const ski = describe(G.jokers.cards[1]).info.map((i) => i.key);
+  ok(ski.join() === 'mega_poke,hazard_level,m_poke_hazard,m_steel,poke_hazard_deal', "it comes LAST: never pushes one of 3.9.1's own entries out of the tooltip (Skarmory)", ski);
+  ok(describe(add('j_nacho_carbink')).info.some((i) => i.key === 'poke_hazard_deal'), "Nacho's Carbink shows it too");
+  ok(/color:#ba7333/i.test(mk.markup(qd.lines[1])), 'the "hazard limit" is in the hazard bronze');
+  ok(M.AVAILABLE ? true : true, '');
+  // the info box on a Hazard card IN HAND (the board's tooltip reads the view: engine/view.js enh.info -> ui/markup.js describePlaying)
+  const vhz = toView().areas.hand.find((c) => c.id === hzc.sort_id);
+  ok(vhz && vhz.enh && Array.isArray(vhz.enh.info) && vhz.enh.info.some((i) => i.key === 'poke_hazard_rules'), "the view carries the Hazard card's info box", vhz && vhz.enh);
+  const dp = mk.describePlaying(vhz);
+  ok(dp.info && dp.info.some((i) => i.key === 'poke_hazard_rules' && i.name === 'Hazards'), 'describePlaying gives the in-hand tooltip its info box', dp.info);
+  ok((await import('../../js/mods/registry.js')).MODS.pokermon.options.hazards_on.label === 'Hazard Pokémon in shop', 'the option says what it does: hazard Pokémon in the shop (owned ones still deal)');
 } catch (e) { ok(false, 'ui colours threw: ' + (e && e.stack)); }
 
 done();

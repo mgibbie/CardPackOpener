@@ -9,7 +9,7 @@
 // Miror Budicolo turns into (jokers/zzzapril_fools.js). No rank or suit, replaces the base card, always scores: "Ludicolo!".
 import {
   G, P_CENTERS, localize, ease_dollars, defineEnhancements, pseudorandom_probability, get_probability_vars,
-  poke_remove_card, poke_suit_check, find_card, any,
+  poke_remove_card, poke_suit_check, find_card, any, hazard_rules_tip,
 } from '../api.js';
 
 const FILE = 'enhancements/enhancement1.lua';
@@ -19,6 +19,7 @@ defineEnhancements({
     config: { num: 1, dem: 3 }, // (3.9.1: 1 in 3; 3.2.1's data.js says 1 in 6)
     loc_vars(self, info_queue, center) {
       const [num, dem] = get_probability_vars(center, self.config.num, self.config.dem, 'hazard');
+      info_queue.push(hazard_rules_tip()); // (house: how Hazards work; systems/utils.js)
       return { vars: [num, dem] };
     },
     in_pool() { return false; },

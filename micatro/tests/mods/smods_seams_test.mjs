@@ -128,7 +128,10 @@ registerMod({
     { key: 'j_so_quantum', set: 'Joker', name: 'Deaf Quantum', rarity: 1, cost: 1, pos: { x: 0, y: 0 }, config: {}, quantum_enhancements: true,
       calculate(self, card, context) { if (context.check_enhancement && context.other_card.config.center.key === 'm_stone') return { m_so_mark: true }; } },
     { key: 'm_so_mark', set: 'Enhanced', name: 'Deaf Mark', pos: { x: 0, y: 0 }, config: {},
-      calculate(self, card, context) { if (context.end_of_round && context.extra_enhancement) LOG.push(['DEAF-QUANTUM']); } }],
+      calculate(self, card, context) { if (context.end_of_round && context.extra_enhancement) LOG.push(['DEAF-QUANTUM']); } },
+    // (held-card retriggers) a mod enhancement of a mod that did NOT opt in: evaluated once at end of round, as before
+    { key: 'm_so_eor', set: 'Enhanced', name: 'Deaf Held', pos: { x: 0, y: 0 }, config: {},
+      calculate(self, card, context) { if (context.end_of_round && context.cardarea === G.hand && !context.repetition && !context.individual) LOG.push(['DEAF-EOR', card.base.value]); } }],
     blinds: [{ key: 'bl_so_boss', name: 'The Deaf', dollars: 5, mult: 2, vars: [], debuff: {}, boss: { min: 1, max: 10 }, pos: { x: 0, y: 0 },
       calculate(self, blind, context) { LOG.push(['DEAF-BLIND', Object.keys(context).join()]); } }],
   },
@@ -580,6 +583,32 @@ registerMod({
     'add_booster_to_shop: a random shop pack, or the given one, at the end of the shop row', G.shop_booster.cards.map((x) => x.config.center.key));
   G.GAME.dollars = 100;
   ok(act({ type: 'buy', id: k.sort_id }).ok, '... and it can be bought / opened');
+}
+
+// ================================================================== 10. held-card end-of-round retriggers (smods.js eor_retrigger_seam)
+// Steamodded evaluates a held card again per retrigger while the last pass calculated: an opted-in mod enhancement's own
+// end-of-round calculate runs on every reached pass; a not-opted-in one runs once, as before.
+{
+  fresh('SEAM_EOR', ['seamtest', 'seamoff']);
+  add_joker('j_mime'); flush();
+  G.consumeables.config.card_limit = 10;
+  const [a] = hand(['D_9'], { center: 'm_st_seed' });
+  const [b] = hand(['D_8'], { center: 'm_so_eor' });
+  const [c] = hand(['D_7'], { center: 'm_st_seed' });
+  a.set_seal('Blue', true); b.set_seal('Blue', true);
+  clearLog();
+  winRound(hand(['C_2']));
+  ok(seen('playing_card_end_of_round').map((e) => e[1]).join() === '9,9,7', 'retriggers: Mime re-runs an opted-in held enhancement on a pass that calculated (Blue Seal: 9 twice), not on one that did nothing (7 once)', seen('playing_card_end_of_round'));
+  ok(seen('DEAF-EOR').map((e) => e[1]).join() === '8', 'retriggers: a not-opted-in mod enhancement still runs once (up front), whatever its retriggers', seen('DEAF-EOR'));
+}
+{
+  fresh('SEAM_EOR0', ['seamoff']);
+  add_joker('j_mime'); flush();
+  const [b] = hand(['D_8'], { center: 'm_so_eor' });
+  b.set_seal('Blue', true);
+  clearLog();
+  winRound(hand(['C_2']));
+  ok(seen('DEAF-EOR').length === 1, 'retriggers: with no opted-in mod active the seam is off (once)', seen('DEAF-EOR'));
 }
 
 done();
