@@ -56,6 +56,8 @@ try {
 	const t0 = Date.now();
 	while (Date.now() - t0 < 45000 && !(await page.evaluate(() => !!(window.__game && window.__game.state && window.__game.targeting)).catch(() => false))) await sleep(200);
 	await sleep(2500);
+	// the opening-hand modal opens a beat after the board is ready (later on a slow / software-GL machine, like CI): wait for it
+	await page.waitForFunction(() => [...document.querySelectorAll('button')].some(x => /keep hand/i.test(x.textContent) && x.getBoundingClientRect().width > 0), { timeout: 15000 }).catch(() => {});
 	await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /keep hand/i.test(x.textContent)); if (b) { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.click(); } });
 	await sleep(900);
 	const tap = async (b, ms = 70) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(ms); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(160); };

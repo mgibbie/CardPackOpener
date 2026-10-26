@@ -43,9 +43,15 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 // ===== 1. the audit =====
 {
 	const { execFileSync } = await import('child_process');
-	const r = JSON.parse(execFileSync(process.execPath, [path.join(ROOT, 'tools', 'audit_crystal_local_labels.mjs'), '--json'], { cwd: ROOT, maxBuffer: 1 << 26 }).toString());
-	const left = r.maps.filter(m => m.colonless.length).map(m => m.stem + ': ' + m.colonless.join(' '));
-	A(r.colonless === 0, '1. no branch on a Crystal map targets a missing colon-less local label', left.slice(0, 6).join(' | '));
+	// (the audit reads pokecrystal's maps: MAGEPUNK_REF, or a Magepunk66/Reference above the checkout)
+	let r = null;
+	try { r = JSON.parse(execFileSync(process.execPath, [path.join(ROOT, 'tools', 'audit_crystal_local_labels.mjs'), '--json'], { cwd: ROOT, maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }).toString()); }
+	catch (e) { if (!/Magepunk66 not found|pokecrystal/.test(String(e.stderr))) throw e; }
+	if (!r) console.log('skip - 1. needs the pokecrystal decomp (MAGEPUNK_REF or Magepunk66/Reference): the audit');
+	else {
+		const left = r.maps.filter(m => m.colonless.length).map(m => m.stem + ': ' + m.colonless.join(' '));
+		A(r.colonless === 0, '1. no branch on a Crystal map targets a missing colon-less local label', left.slice(0, 6).join(' | '));
+	}
 	const P = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld', 'crystal_scriptvar_data.json'), 'utf8')).patches;
 	for (const [stem, label] of [['MrPokemonsHouse', 'MrPokemonsHouse_MrPokemonScript.refused'], ['Route37', 'SunnyScript.next'],
 		['BurnedTower1F', 'BurnedTowerRivalBattleScript.totodile'], ['GoldenrodDeptStore5F', 'GoldenrodDeptStore5FClerkScript.headbutt']])

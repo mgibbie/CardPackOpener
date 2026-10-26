@@ -64,6 +64,8 @@ try {
 	A(await page.evaluate(() => !!window.__padboard), 'the board controller runs on the match page');
 	// the mulligan is a DOM modal: the board stands aside for padnav
 	A(await page.evaluate(() => window.__padboard.active() === false), 'while the mulligan is up the board stands aside (padnav owns modals)');
+	// the opening-hand modal opens a beat after the board is ready (later on a slow / software-GL machine, like CI): wait for it
+	await page.waitForFunction(() => [...document.querySelectorAll('button')].some(x => /keep hand/i.test(x.textContent) && x.getBoundingClientRect().width > 0), { timeout: 15000 }).catch(() => {});
 	await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /keep hand/i.test(x.textContent)); if (b) { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.click(); } });
 	await sleep(900);
 

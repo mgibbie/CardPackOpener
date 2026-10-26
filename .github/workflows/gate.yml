@@ -39,6 +39,8 @@ concurrency:
 
 env:
   CHROME: /usr/bin/google-chrome
+  # the owner's timezone: the MicaSurvivor golden replay (and anything else that formats a local date) was recorded there
+  TZ: America/New_York
   # micatro suites serve gitignored mod art from MICATRO_MAIN when the checkout lacks it; in CI it IS the checkout
   MICATRO_MAIN: ${{ github.workspace }}
 
@@ -144,6 +146,12 @@ jobs:
           fail-on-cache-miss: true
       - name: Install dev dependencies
         run: npm install --no-audit --no-fund # package-lock.json is gitignored, so not `npm ci`
+      # a few micatro suites serve old mod files with `git show <sha>:path` (the pinned
+      # 'sha' constants in the suites): fetch just those commits into the shallow clone
+      - name: Fetch the commits the suites pin
+        run: |
+          SHAS=$(grep -ohE "'[0-9a-f]{40}'" overworld/tests/*_test.mjs | tr -d "'" | sort -u)
+          if [ -n "$SHAS" ]; then git fetch --no-tags --depth=1 origin $SHAS; fi
       - name: Gate shard
         run: |
           $CHROME --version
