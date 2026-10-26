@@ -1212,6 +1212,7 @@ G.Flow = {
     const X = G.Expedition;
     if (X && X.isExp(mode)) {
       if (!X.enabled(mode)) { G.UI.toast('La Expedición llegará pronto.'); G.Audio.sfx('error'); return Promise.resolve(false); }
+      if (X.hub && X.hub(mode)) return G.ModesUI.openLeagueMode();   // (DLC D13: League mode opens the League, no run)
       return X.load().then(() => { if (G.Game.state !== 'ui') return false; G.Game.startRun(null, mode); return true; },
         e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
     }

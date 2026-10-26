@@ -169,7 +169,7 @@ G.ExpLevel = (() => {
   function newCard(pl, c, ti, rng) {
     const Mv = M(), d = Mv.MOVES[c.id] || G.Moves.BY_ID[c.id], tmp = Mv.instance(c.id);
     const rolls = ti > 0 ? Mv.drawRolls(tmp, ti, I().RAR_MUL[ti], rng) : [];
-    const from = c.from ? F('Movimiento de la Liga: {x}', (G.DEX_BY[c.from] || {}).name || '#' + c.from) : T.t('Movimiento de la línea');
+    const from = c.from ? F('Movimiento de la Liga: {x}', G.DEX_BY[c.from] ? T.t(G.DEX_BY[c.from].name) : '#' + c.from) : T.t('Movimiento de la línea');
     const desc = T.t(d.desc) + (d.xexp ? ' <span class="cc-chance">' + T.t(G.U.TYPE_NAME[d.type]) + ' · ' + Mv.kindName(d) + '</span>' : '')
       + (rolls.length ? ' · ' + rolls.map(Mv.rollText).join(' · ') : '') + ' <span class="xsrc">' + from + '</span>';
     return dress({

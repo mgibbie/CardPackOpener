@@ -1,0 +1,1636 @@
+{
+ "source": "https://pokeapi.co/api/v2/pokemon/<id> (the -mega varieties)",
+ "fetched": "2026-10-26",
+ "forms": [
+  {
+   "name": "venusaur-mega",
+   "id": 10033,
+   "species": 3,
+   "types": [
+    "grass",
+    "poison"
+   ],
+   "stats": [
+    80,
+    100,
+    123,
+    122,
+    120,
+    80
+   ]
+  },
+  {
+   "name": "charizard-mega-x",
+   "id": 10034,
+   "species": 6,
+   "types": [
+    "fire",
+    "dragon"
+   ],
+   "stats": [
+    78,
+    130,
+    111,
+    130,
+    85,
+    100
+   ]
+  },
+  {
+   "name": "charizard-mega-y",
+   "id": 10035,
+   "species": 6,
+   "types": [
+    "fire",
+    "flying"
+   ],
+   "stats": [
+    78,
+    104,
+    78,
+    159,
+    115,
+    100
+   ]
+  },
+  {
+   "name": "blastoise-mega",
+   "id": 10036,
+   "species": 9,
+   "types": [
+    "water"
+   ],
+   "stats": [
+    79,
+    103,
+    120,
+    135,
+    115,
+    78
+   ]
+  },
+  {
+   "name": "alakazam-mega",
+   "id": 10037,
+   "species": 65,
+   "types": [
+    "psychic"
+   ],
+   "stats": [
+    55,
+    50,
+    65,
+    175,
+    105,
+    150
+   ]
+  },
+  {
+   "name": "gengar-mega",
+   "id": 10038,
+   "species": 94,
+   "types": [
+    "ghost",
+    "poison"
+   ],
+   "stats": [
+    60,
+    65,
+    80,
+    170,
+    95,
+    130
+   ]
+  },
+  {
+   "name": "kangaskhan-mega",
+   "id": 10039,
+   "species": 115,
+   "types": [
+    "normal"
+   ],
+   "stats": [
+    105,
+    125,
+    100,
+    60,
+    100,
+    100
+   ]
+  },
+  {
+   "name": "pinsir-mega",
+   "id": 10040,
+   "species": 127,
+   "types": [
+    "bug",
+    "flying"
+   ],
+   "stats": [
+    65,
+    155,
+    120,
+    65,
+    90,
+    105
+   ]
+  },
+  {
+   "name": "gyarados-mega",
+   "id": 10041,
+   "species": 130,
+   "types": [
+    "water",
+    "dark"
+   ],
+   "stats": [
+    95,
+    155,
+    109,
+    70,
+    130,
+    81
+   ]
+  },
+  {
+   "name": "aerodactyl-mega",
+   "id": 10042,
+   "species": 142,
+   "types": [
+    "rock",
+    "flying"
+   ],
+   "stats": [
+    80,
+    135,
+    85,
+    70,
+    95,
+    150
+   ]
+  },
+  {
+   "name": "mewtwo-mega-x",
+   "id": 10043,
+   "species": 150,
+   "types": [
+    "psychic",
+    "fighting"
+   ],
+   "stats": [
+    106,
+    190,
+    100,
+    154,
+    100,
+    130
+   ]
+  },
+  {
+   "name": "mewtwo-mega-y",
+   "id": 10044,
+   "species": 150,
+   "types": [
+    "psychic"
+   ],
+   "stats": [
+    106,
+    150,
+    70,
+    194,
+    120,
+    140
+   ]
+  },
+  {
+   "name": "ampharos-mega",
+   "id": 10045,
+   "species": 181,
+   "types": [
+    "electric",
+    "dragon"
+   ],
+   "stats": [
+    90,
+    95,
+    105,
+    165,
+    110,
+    45
+   ]
+  },
+  {
+   "name": "scizor-mega",
+   "id": 10046,
+   "species": 212,
+   "types": [
+    "bug",
+    "steel"
+   ],
+   "stats": [
+    70,
+    150,
+    140,
+    65,
+    100,
+    75
+   ]
+  },
+  {
+   "name": "heracross-mega",
+   "id": 10047,
+   "species": 214,
+   "types": [
+    "bug",
+    "fighting"
+   ],
+   "stats": [
+    80,
+    185,
+    115,
+    40,
+    105,
+    75
+   ]
+  },
+  {
+   "name": "houndoom-mega",
+   "id": 10048,
+   "species": 229,
+   "types": [
+    "dark",
+    "fire"
+   ],
+   "stats": [
+    75,
+    90,
+    90,
+    140,
+    90,
+    115
+   ]
+  },
+  {
+   "name": "tyranitar-mega",
+   "id": 10049,
+   "species": 248,
+   "types": [
+    "rock",
+    "dark"
+   ],
+   "stats": [
+    100,
+    164,
+    150,
+    95,
+    120,
+    71
+   ]
+  },
+  {
+   "name": "blaziken-mega",
+   "id": 10050,
+   "species": 257,
+   "types": [
+    "fire",
+    "fighting"
+   ],
+   "stats": [
+    80,
+    160,
+    80,
+    130,
+    80,
+    100
+   ]
+  },
+  {
+   "name": "gardevoir-mega",
+   "id": 10051,
+   "species": 282,
+   "types": [
+    "psychic",
+    "fairy"
+   ],
+   "stats": [
+    68,
+    85,
+    65,
+    165,
+    135,
+    100
+   ]
+  },
+  {
+   "name": "mawile-mega",
+   "id": 10052,
+   "species": 303,
+   "types": [
+    "steel",
+    "fairy"
+   ],
+   "stats": [
+    50,
+    105,
+    125,
+    55,
+    95,
+    50
+   ]
+  },
+  {
+   "name": "aggron-mega",
+   "id": 10053,
+   "species": 306,
+   "types": [
+    "steel"
+   ],
+   "stats": [
+    70,
+    140,
+    230,
+    60,
+    80,
+    50
+   ]
+  },
+  {
+   "name": "medicham-mega",
+   "id": 10054,
+   "species": 308,
+   "types": [
+    "fighting",
+    "psychic"
+   ],
+   "stats": [
+    60,
+    100,
+    85,
+    80,
+    85,
+    100
+   ]
+  },
+  {
+   "name": "manectric-mega",
+   "id": 10055,
+   "species": 310,
+   "types": [
+    "electric"
+   ],
+   "stats": [
+    70,
+    75,
+    80,
+    135,
+    80,
+    135
+   ]
+  },
+  {
+   "name": "banette-mega",
+   "id": 10056,
+   "species": 354,
+   "types": [
+    "ghost"
+   ],
+   "stats": [
+    64,
+    165,
+    75,
+    93,
+    83,
+    75
+   ]
+  },
+  {
+   "name": "absol-mega",
+   "id": 10057,
+   "species": 359,
+   "types": [
+    "dark"
+   ],
+   "stats": [
+    65,
+    150,
+    60,
+    115,
+    60,
+    115
+   ]
+  },
+  {
+   "name": "garchomp-mega",
+   "id": 10058,
+   "species": 445,
+   "types": [
+    "dragon",
+    "ground"
+   ],
+   "stats": [
+    108,
+    170,
+    115,
+    120,
+    95,
+    92
+   ]
+  },
+  {
+   "name": "lucario-mega",
+   "id": 10059,
+   "species": 448,
+   "types": [
+    "fighting",
+    "steel"
+   ],
+   "stats": [
+    70,
+    145,
+    88,
+    140,
+    70,
+    112
+   ]
+  },
+  {
+   "name": "abomasnow-mega",
+   "id": 10060,
+   "species": 460,
+   "types": [
+    "grass",
+    "ice"
+   ],
+   "stats": [
+    90,
+    132,
+    105,
+    132,
+    105,
+    30
+   ]
+  },
+  {
+   "name": "latias-mega",
+   "id": 10062,
+   "species": 380,
+   "types": [
+    "dragon",
+    "psychic"
+   ],
+   "stats": [
+    80,
+    100,
+    120,
+    140,
+    150,
+    110
+   ]
+  },
+  {
+   "name": "latios-mega",
+   "id": 10063,
+   "species": 381,
+   "types": [
+    "dragon",
+    "psychic"
+   ],
+   "stats": [
+    80,
+    130,
+    100,
+    160,
+    120,
+    110
+   ]
+  },
+  {
+   "name": "swampert-mega",
+   "id": 10064,
+   "species": 260,
+   "types": [
+    "water",
+    "ground"
+   ],
+   "stats": [
+    100,
+    150,
+    110,
+    95,
+    110,
+    70
+   ]
+  },
+  {
+   "name": "sceptile-mega",
+   "id": 10065,
+   "species": 254,
+   "types": [
+    "grass",
+    "dragon"
+   ],
+   "stats": [
+    70,
+    110,
+    75,
+    145,
+    85,
+    145
+   ]
+  },
+  {
+   "name": "sableye-mega",
+   "id": 10066,
+   "species": 302,
+   "types": [
+    "dark",
+    "ghost"
+   ],
+   "stats": [
+    50,
+    85,
+    125,
+    85,
+    115,
+    20
+   ]
+  },
+  {
+   "name": "altaria-mega",
+   "id": 10067,
+   "species": 334,
+   "types": [
+    "dragon",
+    "fairy"
+   ],
+   "stats": [
+    75,
+    110,
+    110,
+    110,
+    105,
+    80
+   ]
+  },
+  {
+   "name": "gallade-mega",
+   "id": 10068,
+   "species": 475,
+   "types": [
+    "psychic",
+    "fighting"
+   ],
+   "stats": [
+    68,
+    165,
+    95,
+    65,
+    115,
+    110
+   ]
+  },
+  {
+   "name": "audino-mega",
+   "id": 10069,
+   "species": 531,
+   "types": [
+    "normal",
+    "fairy"
+   ],
+   "stats": [
+    103,
+    60,
+    126,
+    80,
+    126,
+    50
+   ]
+  },
+  {
+   "name": "sharpedo-mega",
+   "id": 10070,
+   "species": 319,
+   "types": [
+    "water",
+    "dark"
+   ],
+   "stats": [
+    70,
+    140,
+    70,
+    110,
+    65,
+    105
+   ]
+  },
+  {
+   "name": "slowbro-mega",
+   "id": 10071,
+   "species": 80,
+   "types": [
+    "water",
+    "psychic"
+   ],
+   "stats": [
+    95,
+    75,
+    180,
+    130,
+    80,
+    30
+   ]
+  },
+  {
+   "name": "steelix-mega",
+   "id": 10072,
+   "species": 208,
+   "types": [
+    "steel",
+    "ground"
+   ],
+   "stats": [
+    75,
+    125,
+    230,
+    55,
+    95,
+    30
+   ]
+  },
+  {
+   "name": "pidgeot-mega",
+   "id": 10073,
+   "species": 18,
+   "types": [
+    "normal",
+    "flying"
+   ],
+   "stats": [
+    83,
+    80,
+    80,
+    135,
+    80,
+    121
+   ]
+  },
+  {
+   "name": "glalie-mega",
+   "id": 10074,
+   "species": 362,
+   "types": [
+    "ice"
+   ],
+   "stats": [
+    80,
+    120,
+    80,
+    120,
+    80,
+    100
+   ]
+  },
+  {
+   "name": "diancie-mega",
+   "id": 10075,
+   "species": 719,
+   "types": [
+    "rock",
+    "fairy"
+   ],
+   "stats": [
+    50,
+    160,
+    110,
+    160,
+    110,
+    110
+   ]
+  },
+  {
+   "name": "metagross-mega",
+   "id": 10076,
+   "species": 376,
+   "types": [
+    "steel",
+    "psychic"
+   ],
+   "stats": [
+    80,
+    145,
+    150,
+    105,
+    110,
+    110
+   ]
+  },
+  {
+   "name": "rayquaza-mega",
+   "id": 10079,
+   "species": 384,
+   "types": [
+    "dragon",
+    "flying"
+   ],
+   "stats": [
+    105,
+    180,
+    100,
+    180,
+    100,
+    115
+   ]
+  },
+  {
+   "name": "camerupt-mega",
+   "id": 10087,
+   "species": 323,
+   "types": [
+    "fire",
+    "ground"
+   ],
+   "stats": [
+    70,
+    120,
+    100,
+    145,
+    105,
+    20
+   ]
+  },
+  {
+   "name": "lopunny-mega",
+   "id": 10088,
+   "species": 428,
+   "types": [
+    "normal",
+    "fighting"
+   ],
+   "stats": [
+    65,
+    136,
+    94,
+    54,
+    96,
+    135
+   ]
+  },
+  {
+   "name": "salamence-mega",
+   "id": 10089,
+   "species": 373,
+   "types": [
+    "dragon",
+    "flying"
+   ],
+   "stats": [
+    95,
+    145,
+    130,
+    120,
+    90,
+    120
+   ]
+  },
+  {
+   "name": "beedrill-mega",
+   "id": 10090,
+   "species": 15,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "stats": [
+    65,
+    150,
+    40,
+    15,
+    80,
+    145
+   ]
+  },
+  {
+   "name": "clefable-mega",
+   "id": 10278,
+   "species": 36,
+   "types": [
+    "fairy",
+    "flying"
+   ],
+   "stats": [
+    95,
+    80,
+    93,
+    135,
+    110,
+    70
+   ]
+  },
+  {
+   "name": "victreebel-mega",
+   "id": 10279,
+   "species": 71,
+   "types": [
+    "grass",
+    "poison"
+   ],
+   "stats": [
+    80,
+    125,
+    85,
+    135,
+    95,
+    70
+   ]
+  },
+  {
+   "name": "starmie-mega",
+   "id": 10280,
+   "species": 121,
+   "types": [
+    "water",
+    "psychic"
+   ],
+   "stats": [
+    60,
+    100,
+    105,
+    130,
+    105,
+    120
+   ]
+  },
+  {
+   "name": "dragonite-mega",
+   "id": 10281,
+   "species": 149,
+   "types": [
+    "dragon",
+    "flying"
+   ],
+   "stats": [
+    91,
+    124,
+    115,
+    145,
+    125,
+    100
+   ]
+  },
+  {
+   "name": "meganium-mega",
+   "id": 10282,
+   "species": 154,
+   "types": [
+    "grass",
+    "fairy"
+   ],
+   "stats": [
+    80,
+    92,
+    115,
+    143,
+    115,
+    80
+   ]
+  },
+  {
+   "name": "feraligatr-mega",
+   "id": 10283,
+   "species": 160,
+   "types": [
+    "water",
+    "dragon"
+   ],
+   "stats": [
+    85,
+    160,
+    125,
+    89,
+    93,
+    78
+   ]
+  },
+  {
+   "name": "skarmory-mega",
+   "id": 10284,
+   "species": 227,
+   "types": [
+    "steel",
+    "flying"
+   ],
+   "stats": [
+    65,
+    140,
+    110,
+    40,
+    100,
+    110
+   ]
+  },
+  {
+   "name": "froslass-mega",
+   "id": 10285,
+   "species": 478,
+   "types": [
+    "ice",
+    "ghost"
+   ],
+   "stats": [
+    70,
+    80,
+    70,
+    140,
+    100,
+    120
+   ]
+  },
+  {
+   "name": "emboar-mega",
+   "id": 10286,
+   "species": 500,
+   "types": [
+    "fire",
+    "fighting"
+   ],
+   "stats": [
+    110,
+    148,
+    75,
+    110,
+    110,
+    75
+   ]
+  },
+  {
+   "name": "excadrill-mega",
+   "id": 10287,
+   "species": 530,
+   "types": [
+    "ground",
+    "steel"
+   ],
+   "stats": [
+    110,
+    165,
+    100,
+    65,
+    65,
+    103
+   ]
+  },
+  {
+   "name": "scolipede-mega",
+   "id": 10288,
+   "species": 545,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "stats": [
+    60,
+    140,
+    149,
+    75,
+    99,
+    62
+   ]
+  },
+  {
+   "name": "scrafty-mega",
+   "id": 10289,
+   "species": 560,
+   "types": [
+    "dark",
+    "fighting"
+   ],
+   "stats": [
+    65,
+    130,
+    135,
+    55,
+    135,
+    68
+   ]
+  },
+  {
+   "name": "eelektross-mega",
+   "id": 10290,
+   "species": 604,
+   "types": [
+    "electric"
+   ],
+   "stats": [
+    85,
+    145,
+    80,
+    135,
+    90,
+    80
+   ]
+  },
+  {
+   "name": "chandelure-mega",
+   "id": 10291,
+   "species": 609,
+   "types": [
+    "ghost",
+    "fire"
+   ],
+   "stats": [
+    60,
+    75,
+    110,
+    175,
+    110,
+    90
+   ]
+  },
+  {
+   "name": "chesnaught-mega",
+   "id": 10292,
+   "species": 652,
+   "types": [
+    "grass",
+    "fighting"
+   ],
+   "stats": [
+    88,
+    137,
+    172,
+    74,
+    115,
+    44
+   ]
+  },
+  {
+   "name": "delphox-mega",
+   "id": 10293,
+   "species": 655,
+   "types": [
+    "fire",
+    "psychic"
+   ],
+   "stats": [
+    75,
+    69,
+    72,
+    159,
+    125,
+    134
+   ]
+  },
+  {
+   "name": "greninja-mega",
+   "id": 10294,
+   "species": 658,
+   "types": [
+    "water",
+    "dark"
+   ],
+   "stats": [
+    72,
+    125,
+    77,
+    133,
+    81,
+    142
+   ]
+  },
+  {
+   "name": "pyroar-mega",
+   "id": 10295,
+   "species": 668,
+   "types": [
+    "fire",
+    "normal"
+   ],
+   "stats": [
+    86,
+    88,
+    92,
+    129,
+    86,
+    126
+   ]
+  },
+  {
+   "name": "floette-mega",
+   "id": 10296,
+   "species": 670,
+   "types": [
+    "fairy"
+   ],
+   "stats": [
+    74,
+    85,
+    87,
+    155,
+    148,
+    102
+   ]
+  },
+  {
+   "name": "malamar-mega",
+   "id": 10297,
+   "species": 687,
+   "types": [
+    "dark",
+    "psychic"
+   ],
+   "stats": [
+    86,
+    102,
+    88,
+    98,
+    120,
+    88
+   ]
+  },
+  {
+   "name": "barbaracle-mega",
+   "id": 10298,
+   "species": 689,
+   "types": [
+    "rock",
+    "fighting"
+   ],
+   "stats": [
+    72,
+    140,
+    130,
+    64,
+    106,
+    88
+   ]
+  },
+  {
+   "name": "dragalge-mega",
+   "id": 10299,
+   "species": 691,
+   "types": [
+    "poison",
+    "dragon"
+   ],
+   "stats": [
+    65,
+    85,
+    105,
+    132,
+    163,
+    44
+   ]
+  },
+  {
+   "name": "hawlucha-mega",
+   "id": 10300,
+   "species": 701,
+   "types": [
+    "fighting",
+    "flying"
+   ],
+   "stats": [
+    78,
+    137,
+    100,
+    74,
+    93,
+    118
+   ]
+  },
+  {
+   "name": "zygarde-mega",
+   "id": 10301,
+   "species": 718,
+   "types": [
+    "dragon",
+    "ground"
+   ],
+   "stats": [
+    216,
+    70,
+    91,
+    216,
+    85,
+    100
+   ]
+  },
+  {
+   "name": "drampa-mega",
+   "id": 10302,
+   "species": 780,
+   "types": [
+    "normal",
+    "dragon"
+   ],
+   "stats": [
+    78,
+    85,
+    110,
+    160,
+    116,
+    36
+   ]
+  },
+  {
+   "name": "falinks-mega",
+   "id": 10303,
+   "species": 870,
+   "types": [
+    "fighting"
+   ],
+   "stats": [
+    65,
+    135,
+    135,
+    70,
+    65,
+    100
+   ]
+  },
+  {
+   "name": "raichu-mega-x",
+   "id": 10304,
+   "species": 26,
+   "types": [
+    "electric"
+   ],
+   "stats": [
+    60,
+    135,
+    95,
+    90,
+    95,
+    110
+   ]
+  },
+  {
+   "name": "raichu-mega-y",
+   "id": 10305,
+   "species": 26,
+   "types": [
+    "electric"
+   ],
+   "stats": [
+    60,
+    100,
+    55,
+    160,
+    80,
+    130
+   ]
+  },
+  {
+   "name": "chimecho-mega",
+   "id": 10306,
+   "species": 358,
+   "types": [
+    "psychic",
+    "steel"
+   ],
+   "stats": [
+    75,
+    50,
+    110,
+    135,
+    120,
+    65
+   ]
+  },
+  {
+   "name": "absol-mega-z",
+   "id": 10307,
+   "species": 359,
+   "types": [
+    "dark",
+    "ghost"
+   ],
+   "stats": [
+    65,
+    154,
+    60,
+    75,
+    60,
+    151
+   ]
+  },
+  {
+   "name": "staraptor-mega",
+   "id": 10308,
+   "species": 398,
+   "types": [
+    "fighting",
+    "flying"
+   ],
+   "stats": [
+    85,
+    140,
+    100,
+    60,
+    90,
+    110
+   ]
+  },
+  {
+   "name": "garchomp-mega-z",
+   "id": 10309,
+   "species": 445,
+   "types": [
+    "dragon"
+   ],
+   "stats": [
+    108,
+    130,
+    85,
+    141,
+    85,
+    151
+   ]
+  },
+  {
+   "name": "lucario-mega-z",
+   "id": 10310,
+   "species": 448,
+   "types": [
+    "fighting",
+    "steel"
+   ],
+   "stats": [
+    70,
+    100,
+    70,
+    164,
+    70,
+    151
+   ]
+  },
+  {
+   "name": "heatran-mega",
+   "id": 10311,
+   "species": 485,
+   "types": [
+    "fire",
+    "steel"
+   ],
+   "stats": [
+    91,
+    120,
+    106,
+    175,
+    141,
+    67
+   ]
+  },
+  {
+   "name": "darkrai-mega",
+   "id": 10312,
+   "species": 491,
+   "types": [
+    "dark"
+   ],
+   "stats": [
+    70,
+    120,
+    130,
+    165,
+    130,
+    85
+   ]
+  },
+  {
+   "name": "golurk-mega",
+   "id": 10313,
+   "species": 623,
+   "types": [
+    "ground",
+    "ghost"
+   ],
+   "stats": [
+    89,
+    159,
+    105,
+    70,
+    105,
+    55
+   ]
+  },
+  {
+   "name": "meowstic-male-mega",
+   "id": 10314,
+   "species": 678,
+   "types": [
+    "psychic"
+   ],
+   "stats": [
+    74,
+    48,
+    76,
+    143,
+    101,
+    124
+   ]
+  },
+  {
+   "name": "crabominable-mega",
+   "id": 10315,
+   "species": 740,
+   "types": [
+    "fighting",
+    "ice"
+   ],
+   "stats": [
+    97,
+    157,
+    122,
+    62,
+    107,
+    33
+   ]
+  },
+  {
+   "name": "golisopod-mega",
+   "id": 10316,
+   "species": 768,
+   "types": [
+    "bug",
+    "steel"
+   ],
+   "stats": [
+    75,
+    150,
+    175,
+    70,
+    120,
+    40
+   ]
+  },
+  {
+   "name": "magearna-mega",
+   "id": 10317,
+   "species": 801,
+   "types": [
+    "steel",
+    "fairy"
+   ],
+   "stats": [
+    80,
+    125,
+    115,
+    170,
+    115,
+    95
+   ]
+  },
+  {
+   "name": "magearna-original-mega",
+   "id": 10318,
+   "species": 801,
+   "types": [
+    "steel",
+    "fairy"
+   ],
+   "stats": [
+    80,
+    125,
+    115,
+    170,
+    115,
+    95
+   ]
+  },
+  {
+   "name": "zeraora-mega",
+   "id": 10319,
+   "species": 807,
+   "types": [
+    "electric"
+   ],
+   "stats": [
+    88,
+    157,
+    75,
+    147,
+    80,
+    153
+   ]
+  },
+  {
+   "name": "scovillain-mega",
+   "id": 10320,
+   "species": 952,
+   "types": [
+    "grass",
+    "fire"
+   ],
+   "stats": [
+    65,
+    138,
+    85,
+    138,
+    85,
+    75
+   ]
+  },
+  {
+   "name": "glimmora-mega",
+   "id": 10321,
+   "species": 970,
+   "types": [
+    "rock",
+    "poison"
+   ],
+   "stats": [
+    83,
+    90,
+    105,
+    150,
+    96,
+    101
+   ]
+  },
+  {
+   "name": "tatsugiri-curly-mega",
+   "id": 10322,
+   "species": 978,
+   "types": [
+    "dragon",
+    "water"
+   ],
+   "stats": [
+    68,
+    65,
+    90,
+    135,
+    125,
+    92
+   ]
+  },
+  {
+   "name": "tatsugiri-droopy-mega",
+   "id": 10323,
+   "species": 978,
+   "types": [
+    "dragon",
+    "water"
+   ],
+   "stats": [
+    68,
+    65,
+    90,
+    135,
+    125,
+    92
+   ]
+  },
+  {
+   "name": "tatsugiri-stretchy-mega",
+   "id": 10324,
+   "species": 978,
+   "types": [
+    "dragon",
+    "water"
+   ],
+   "stats": [
+    68,
+    65,
+    90,
+    135,
+    125,
+    92
+   ]
+  },
+  {
+   "name": "baxcalibur-mega",
+   "id": 10325,
+   "species": 998,
+   "types": [
+    "dragon",
+    "ice"
+   ],
+   "stats": [
+    115,
+    175,
+    117,
+    105,
+    101,
+    87
+   ]
+  },
+  {
+   "name": "meowstic-female-mega",
+   "id": 10326,
+   "species": 678,
+   "types": [
+    "psychic"
+   ],
+   "stats": [
+    74,
+    48,
+    76,
+    143,
+    101,
+    124
+   ]
+  }
+ ]
+}

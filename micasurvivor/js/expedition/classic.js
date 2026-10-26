@@ -576,7 +576,7 @@ G.ExpClassic = (() => {
     const entry = { at: ev.at, kind: ev.kind, n: ev.n, dex: ev.dex.slice(), zt: Math.round((t - S.zs) * 10) / 10, spawned: 0 };
     S.log.push(entry);
     const add = e => { if (e) entry.spawned++; return e; };
-    const name = d => (G.DEX_BY[d] || {}).name || '';
+    const name = d => (G.DEX_BY[d] ? G.I18n.t(G.DEX_BY[d].name) : '');   // (D13: the English name where it differs)
     if (ev.kind === 'alpha') {
       const pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(ev.dex[0]));
       if (pt) add(spawn(ev.dex[0], pt[0], pt[1], t, { ti: 1, hp: K.ALPHA.hp, dmg: K.ALPHA.dmg, xp: K.ALPHA.xp, scale: K.ALPHA.scale, spd: 0.9, kind: 'alpha' }));
