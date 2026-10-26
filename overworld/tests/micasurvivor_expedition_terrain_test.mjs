@@ -365,7 +365,11 @@ try {
 			const out = { loadedBefore: G.Expedition.loaded };
 			const rd = await G.Replay.open(code);
 			G.WatchUI.playReplay(rd, {});
-			for (let i = 0; i < 100 && !(G.World.zone && G.World.zone.hash); i++) await new Promise(r => setTimeout(r, 50));
+			// (paused on its first frame: this run's tape goes on into the earlier sections' hand-made zones, and on a slow CI runner the
+			//  playback reached them before the Expedition code had loaded, so the zone 1 of frame 0 was never shown: a race, not a bug)
+			G.WatchUI.togglePlay();
+			// (wait for the zone the tape names, not a fixed 5 s: on a CI runner loading the Expedition code (19 scripts since D14) can take longer)
+			for (const t0 = Date.now(); Date.now() - t0 < 30000 && !(G.Expedition.loaded && G.World.zone && G.World.zone.hash === x.th);) await new Promise(r => setTimeout(r, 50));
 			const masks = () => { const m = []; for (let i = 0; i < 400; i++) { const tx = ((i * 37) % 120) - 60, ty = ((i * 53) % 120) - 60; m.push(G.World.maskAt(tx, ty)); } return m; };
 			out.replay = { hash: G.World.zone && G.World.zone.hash, seed: G.World.seed, masks: masks(), loaded: G.Expedition.loaded, state: G.Game.state };
 			G.WatchUI.leave();
@@ -373,7 +377,7 @@ try {
 			G.MicaAccount.name = () => 'viewer';
 			G.Spectate.watch = (u, cb) => { cb.snapshot({ v: 1, t: 10, sd: seed, b: 0, m: 'exp-classic', dv: 1, x, me: [4, 0], p: [0, 0, 0, 0, 100, 100, 0], lv: [1, 0, 10], k: 0, bo: 0, co: 0, mv: [], ac: 0, it: ['', ''], lu: 0, e: [], pk: [] }, {}); };
 			G.WatchUI.watchLive('host');
-			for (let i = 0; i < 60 && !(G.World.zone && G.World.zone.hash === x.th); i++) await new Promise(r => setTimeout(r, 50));
+			for (const t0 = Date.now(); Date.now() - t0 < 15000 && !(G.World.zone && G.World.zone.hash === x.th);) await new Promise(r => setTimeout(r, 50));
 			out.live = { hash: G.World.zone && G.World.zone.hash, masks: masks() };
 			G.WatchUI.leave();
 			// a co-op guest: the host frame's x, on the guest's world from the start seed
