@@ -25,13 +25,30 @@ A fresh clone has neither (see "start setup").
   `git worktree remove --force` while a link remains — it deletes the target's contents.
 
 ## The gate
+- **CI gate (the default)**: `.github/workflows/gate.yml` runs on every PR, every push to main
+  and nightly. One check, **`gate`**, is green only when every part passed: the overworld
+  gate sharded over up to 16 runners (2 suites at a time each), the Battlecards node suite
+  and the undefined-name lint. A PR runs the QUICK selection against its base; main, nightly
+  and a manual run (Actions → Gate → Run workflow) run FULL. Wait on it with
+  `gh pr checks <n> --watch`; a failing shard's log (and screenshots) is an artifact
+  (`gh run view <id> --log-failed`). The assets come from their Pages projects by the
+  manifests in `tools/cloud/` (cached; a manifest change refetches). No secrets.
 - Quick (per change): `node overworld/tests/run-all.mjs --changed` — the selected suites +
-  a smoke set; touching core files widens it.
-- Full (before big batches): `node overworld/tests/run-all.mjs` (~70 min, 198 suites).
+  the smoke set + the touched game's lane smoke (`LANES` in `select-changed.mjs`). FULL only
+  when the change reaches shared boot code: `overworld/ow_core.js` code (not comments),
+  `ow_state.js` beyond `field: undefined` lines, a boot `<script>`/import map/modulepreload in
+  `overworld/index.html` (CSS, markup and `/site/` helper tags are quick), a dependency version.
+- Full: `node overworld/tests/run-all.mjs` (~2 h serial here, ~380 suites — let CI do it).
   After an interruption: add `--resume`. Failures are retried alone at the end; "FLAKY
   (failed, then passed alone)" is a pass.
+- `--shard i/n` runs one CI shard's slice locally (split by the committed
+  `overworld/tests/gate-timings.json`; refresh it with `node overworld/tests/gate-shard.mjs
+  --update <gate logs>`); `--lane micatro` runs one game's suites; `--list-json` prints the plan.
+  A new game: append a row to `LANES` (its paths, suite-name pattern, 1-3 boot suites).
 - Battlecards engine tests: `npm test` (`battlecards/tests/run-all.mjs`).
-- Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`.
+- Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`
+  (micasurvivor/micatro suites also serve their gitignored assets: `node tools/cloud/fetch-assets.mjs`;
+  after deploying new ones, `--write-manifest`).
 
 ## Balance simulator (Lorequest run modes)
 `node tools/runmode-sim.mjs --mode=<lorequest|middleearth|swordcoast|finalfantasy|multiverse> [--rung=A|B|C|D] [--games=10]`
