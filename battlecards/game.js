@@ -4263,7 +4263,27 @@ function pick(ev, excludeUid = null) {
 	for (const e of entities.values()) if (e.mesh.userData.uid !== excludeUid) meshes.push(e.mesh);
 	if (heroPanelMesh.visible && excludeUid !== 'heropanel') meshes.push(heroPanelMesh);
 	const hits = raycaster.intersectObjects(meshes);
-	return hits.length ? hits[0].object.userData.uid : null;
+	if (!hits.length) return null;
+	// a TUCKED hand card yields to any card behind it. The tuck lift (tuckLiftZ) raises the
+	// tucked row's top edge over the planeswalkers flanking the hero panel, so pointing at a
+	// planeswalker hit the hand card in front of it first: that card lifted, the hand popped
+	// up and covered the planeswalker again (Bryan's bug, back whenever a hand card's column
+	// lined up with the planeswalker). Only where nothing but the hand (or the hero panel,
+	// which the hand has always sat over) is under the pointer does the tucked hand answer.
+	if (handMini) {
+		for (const h of hits) {
+			const uid = h.object.userData.uid;
+			if (isTuckedHandCard(uid)) continue;
+			if (h.object !== heroPanelMesh) return uid;
+			break;
+		}
+	}
+	return hits[0].object.userData.uid;
+}
+function isTuckedHandCard(uid) {
+	if (!handMini || uid == null || uid === hoverUid || pending?.card.uid === uid) return false;
+	const c = cardOf(uid);
+	return !!c && c.zone === 'hand' && c.controller === HUMAN;
 }
 
 // screen-space distance from a point to a mesh's projected rect (0 = inside).
