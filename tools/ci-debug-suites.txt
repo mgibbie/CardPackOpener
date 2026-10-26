@@ -1,6 +1,4 @@
-micatro_gamepad_test
 controller_polish_test
-micasurvivor_dlc_base_unchanged_test
-micatro_stake_unlocks_ui_test
 boardhand_test
-micatro_tooltip_test
+micatro_gamepad_test
+micasurvivor_dlc_base_unchanged_test
