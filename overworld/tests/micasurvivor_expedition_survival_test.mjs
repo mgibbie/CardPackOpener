@@ -200,10 +200,10 @@ try {
 	A(mn.tier && mn.coop && /With friends: Expedition · Survival/.test(mn.coopTxt || ''), 'Survival\'s group: "Difficulty: Normal · leaderboards" and "With friends: Expedition · Survival"', JSON.stringify(mn));
 	await E(page, () => G.UI.show('scr-menu', true));
 	const pr = await prep(page);
-	A(pr.ok && pr.surv && pr.dv === 14 && pr.cdv === 14 && pr.xv === 10, 'the Expedition code loads with survival.js; the content version is 14 (D15), the x block v10', JSON.stringify(pr));
+	A(pr.ok && pr.surv && pr.dv === 15 && pr.cdv === 15 && pr.xv === 10, 'the Expedition code loads with survival.js; the content version is 15 (D16), the x block v10', JSON.stringify(pr));
 	if (!pr.ok || !pr.surv) throw new Error('no G.ExpSurv: the rest needs it');
 	const st0 = await startSurv(page, true);
-	A(st0.ok && st0.mode === 'exp-survival' && st0.dv === 14 && st0.surv && st0.cl && st0.map === 'viridian', 'a click on the Survival card starts a Survival run (exp-survival, dv 14, Viridian Forest, Classic\'s engine with S.surv)', JSON.stringify(st0));
+	A(st0.ok && st0.mode === 'exp-survival' && st0.dv === 15 && st0.surv && st0.cl && st0.map === 'viridian', 'a click on the Survival card starts a Survival run (exp-survival, dv 14, Viridian Forest, Classic\'s engine with S.surv)', JSON.stringify(st0));
 
 	// ======================== 2. each system
 	// pure: the clock's rules and the milestones
@@ -483,9 +483,12 @@ try {
 	A(tk.has && tk.ach && Math.abs(tk.m.smins - 21.5) < 1e-9, 'Survival\'s tasks ("Last N minutes in Survival", "Beat N milestone bosses") and 5 achievements (Mewtwo\'s title "Survival Legend")', JSON.stringify(tk));
 	// the board (the client submitted it at the run's end; then the handler directly)
 	await sleep(300);
-	const bd = row('runboard:micasurvivor_expedition:viridian:normal:survival');
-	A(Array.isArray(bd) && bd.length === 1 && bd[0].name === 'alice' && bd[0].score === en.sum.score && bd[0].bosses === 3 && bd[0].legends === 1 && !row('msurvseason:' + (Math.floor((Date.now() - Date.UTC(2026, 9, 12)) / 604800000) + 1) + ':viridian:normal'),
-		'the run reached its Survival board (runboard:...:viridian:normal:survival), not the Classic or season boards', JSON.stringify(bd));
+	// (DLC D16: this build's run, dv 15+, ranks on the new rules' boards: ...:r2:viridian:normal:survival; the legacy one untouched)
+	const bd = row('runboard:micasurvivor_expedition:r2:viridian:normal:survival');
+	const sid = Math.floor((Date.now() - Date.UTC(2026, 9, 12)) / 604800000) + 1;
+	A(Array.isArray(bd) && bd.length === 1 && bd[0].name === 'alice' && bd[0].score === en.sum.score && bd[0].bosses === 3 && bd[0].legends === 1 && !row('msurvseason:' + sid + ':r2:viridian:normal') && !row('msurvseason:' + sid + ':viridian:normal')
+		&& !row('runboard:micasurvivor_expedition:viridian:normal:survival'),
+		'the run reached its Survival board (runboard:...:r2:viridian:normal:survival, the new rules\'), not the Classic, season or legacy boards', JSON.stringify(bd));
 	const sub = (o, tok = tokens.bob) => raw('run-score', Object.assign({ mode: 'micasurvivor_expedition', expMode: 'exp-survival', dv: 10, map: 'viridian', diff: 'hard', time: 1800, kills: 900, level: 30, dex: 4, dmg: 300000, bosses: 6, legends: 2, catches: 1 }, o), tok);
 	const want = Math.floor((2 * 900 + 4 * 1800 + 300000 / 200 + 800 * 6 + 2000 * 2 + 400) * 1.5);
 	const i0 = SQL.length;

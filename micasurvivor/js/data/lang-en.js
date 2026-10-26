@@ -123,6 +123,7 @@ G.I18n.add({
   'Pañuelo Elección': 'Choice Scarf', 'Casco Dentado': 'Rocky Helmet', 'Chaleco Asalto': 'Assault Vest',
   'Recuperas un 1,5% de tu vida por segundo.': 'You recover 1.5% of your HP per second.',
   '+40% de daño, pero no puedes cambiar de movimiento.': '+40% damage, but you can\'t switch moves.',
+  '+40% de daño con el movimiento del hueco 1, -20% con los demás.': '+40% damage with your slot-1 move, -20% with the others.',
   '-20% de recarga en todos tus movimientos.': '-20% cooldown on all your moves.',
   'Un golpe que te dejaría KO te deja con 1 de vida (cada 60 s).': 'A hit that would knock you out leaves you at 1 HP (every 60 s).',
   'Recuperas vida con el daño que haces.': 'You heal from the damage you deal.', '+50% de Pokémonedas al acabar la run.': '+50% PokéCoins at the end of the run.',
@@ -190,6 +191,7 @@ G.I18n.add({
   // (la frase larga antes: la corta también encajaría con ella)
   'Se lanzará a la vez que {x}.': 'It will fire at the same time as {x}.',
   '¡Vínculo! {x} movimientos a la vez': 'Bond! {x} moves at once',
+  '¡Vínculo! {x} movimientos en un hueco: tienes un hueco libre': 'Bond! {x} moves in one slot: you have a free slot',
   'Guardas el vínculo: aprende otro movimiento para usarlo': 'Bond saved: learn another move to use it',
   '¡Se ha abierto una grieta misteriosa!': 'A mysterious rift has opened!', 'Has entrado en la grieta…': 'You entered the rift…',
   'La grieta os ha expulsado…': 'The rift threw you out…', '{x} ha dejado la partida': '{x} left the game',
@@ -200,6 +202,16 @@ G.I18n.add({
   '{x} · {x} DERROTADOS · {x} MONEDAS': '{x} · {x} DEFEATED · {x} COINS',
   'Arrastra el dedo para moverte · toca un ataque para cambiarlo': 'Drag your finger to move · tap a move to switch',
   'WASD moverse · 1-4 / Q / E o clic en un ataque para cambiarlo · Esc pausa': 'WASD move · 1-4 / Q / E or click a move to switch · Esc pause',
+  'WASD moverse · tus movimientos atacan solos · Esc pausa': 'WASD move · your moves attack on their own · Esc pause',
+  'WASD moverse · tus movimientos atacan solos · Tab cambiar de Pokémon · Esc pausa': 'WASD move · your moves attack on their own · Tab switch Pokémon · Esc pause',
+  'Arrastra el dedo para moverte · tus movimientos atacan solos': 'Drag to move · your moves attack on their own',
+  'Arrastra el dedo para moverte · tus movimientos atacan solos · toca una ficha para cambiar de Pokémon': 'Drag to move · your moves attack on their own · tap a card to switch Pokémon',
+  'tus movimientos atacan solos ·': 'your moves attack on their own ·', 'tus movimientos atacan solos': 'your moves attack on their own',
+  'Tus movimientos atacan solos, cada uno con su recarga; el botón de arriba a la derecha pausa.': 'Your moves attack on their own, each on its own cooldown; the top-right button pauses.',
+  // (DLC D16: the boards of the new rules, and the old ones as "Legacy")
+  'Reglas actuales': 'Current', 'Reglas anteriores': 'Legacy',
+  'Clasificación anterior a las reglas nuevas (todos los movimientos a la vez): sólo lectura.': 'The board from before the new rules (every move at once): read-only.',
+  'El juego del anfitrión no está actualizado: tiene que recargar la página.': 'The host\'s game is out of date: they need to reload.',
   'El anfitrión ha terminado la partida': 'The host has ended the game', 'Se ha perdido la conexión con el anfitrión.': 'Lost connection to the host.',
 
   // ---------------- pausa y fin ----------------
@@ -438,6 +450,7 @@ G.I18n.add({
   'Pequeño': 'Small', 'Normal': 'Normal', 'Grande': 'Large', 'o flechas': 'or arrow keys', 'moverse': 'move', 'o clic en el icono': 'or click its icon', 'elegir ataque': 'choose move',
   'ataque anterior / siguiente': 'previous / next move', 'elegir carta al subir de nivel': 'choose a card when leveling up',
   'Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Toca un ataque de abajo para cambiarlo y el botón de arriba a la derecha para pausar. Se juega en horizontal.': 'Put your finger anywhere and drag to move: the joystick appears where you touch. Tap a move at the bottom to switch to it and the top-right button to pause. Play in landscape.',
+  'Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Tus movimientos atacan solos, cada uno con su recarga; el botón de arriba a la derecha pausa. Se juega en horizontal.': 'Put your finger anywhere and drag to move: the joystick appears where you touch. Your moves attack on their own, each on its own cooldown; the top-right button pauses. Play in landscape.',
   'Apodo': 'Nickname', 'Es único y no se puede cambiar.': 'It\'s unique and can\'t be changed.', 'Tipo de cuenta': 'Account type', 'Partida': 'Save',
   'Cuenta de este navegador': 'This browser\'s account', 'Nombre y contraseña': 'Name and password', 'Google': 'Google',
   'Cerrar sesión': 'Log out', 'Borrar cuenta': 'Delete account', 'Crear cuenta o entrar': 'Sign up or log in',
@@ -565,6 +578,8 @@ G.I18n.add({
   'Atajos de movimientos': 'Move shortcuts', 'Libre': 'Free',
   'Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.':
     'Choose which move always goes in each slot (keys 1-4 or the icons at the bottom), for muscle memory. If you do not have that many moves yet, it goes to the closest slot.',
+  'Elige qué movimiento va siempre en cada hueco. Todos atacan a la vez; el del hueco 1 es el que potencia la Cinta Elección. Si aún no tienes tantos movimientos, va al hueco más cercano.':
+    'Choose which move always goes in each slot. They all attack at once; the one in slot 1 is the one the Choice Band boosts. If you do not have that many moves yet, it goes to the closest slot.',
   'Golpe Crítico': 'Critical Hit', '+3% de críticos (x1,5 de daño)': '+3% critical chance (x1.5 damage)',
   'Cambio de cartas': 'Card reroll', '+1 cambio de cartas de nivel por run': '+1 level-up card reroll per run',
   'Veto': 'Ban', 'Bloquea 1 movimiento: no te sale en las cartas': 'Ban 1 move: it never shows up in your cards',
@@ -604,6 +619,7 @@ G.I18n.add({
   // ---------------- MicaSurvivor (M2): controller (js/core/pad.js) ----------------
   'Mando': 'Controller', 'Mando:': 'Controller:', 'Tipo de mando': 'Controller type',
   'Movimiento anterior': 'Previous move', 'Movimiento siguiente': 'Next move', 'Aceptar / elegir': 'Confirm / pick',
+  'Anterior (pestañas y cartas)': 'Previous (tabs and cards)', 'Siguiente (pestañas y cartas)': 'Next (tabs and cards)',
   'Atrás / cancelar': 'Back / cancel', 'Cambiar cartas': 'Reroll cards', 'Moverse': 'Move',
   'Cambia los iconos de los botones y restablece la asignación.': 'Changes the button icons and resets the mapping.',
   'Elige una acción y pulsa el botón que quieras: si otra acción lo usaba, se intercambian.': 'Pick an action, then press the button you want: if another action used it, the two swap.',

@@ -59,13 +59,20 @@ G.WatchUI = (() => {
   }
 
   function setMoves(s) {
-    const key = JSON.stringify(s.mv || []) + '|' + (s.ac | 0);
+    const key = JSON.stringify(s.mv || []) + '|' + (s.ac | 0) + '|' + (s.af | 0) + '|' + (s.sg || []).join(',');
     if (key === movesKey) return;
     movesKey = key;
     G.Projectiles.clearOrbs(pl);
     pl.moves = (s.mv || []).filter(m => G.Moves.BY_ID[m[0]]).map(m => { const x = G.Moves.instance(m[0], m[1] || 1); if (m[2]) G.Moves.evolve(x); return x; });
+    // (DLC D16: a new tape / snapshot fires every move (af) and may group a bond's fused slot (sg); an old one shows its
+    //  active move alone, as it was recorded)
+    pl.af = !!s.af;
     pl.slots = pl.moves.map(m => [m]);
-    pl.active = Math.min(s.ac | 0, Math.max(0, pl.slots.length - 1));
+    if (pl.af && Array.isArray(s.sg) && s.sg.reduce((a, b) => a + (b | 0), 0) === pl.moves.length) {
+      let i = 0;
+      pl.slots = s.sg.map(n => pl.moves.slice(i, (i += n | 0)));
+    }
+    pl.active = pl.af ? 0 : Math.min(s.ac | 0, Math.max(0, pl.slots.length - 1));
   }
 
   /** Shows frame `a` (what exists, its fields) gliding towards `b` (positions). */
@@ -237,7 +244,7 @@ G.WatchUI = (() => {
   /** Harmless copies of the watched Pokémon's attacks (like a co-op partner's: they hit nothing). */
   function ghosts(dt) {
     if (!pl || pl.dead || pl.zHidden || pl.coopDown || (mode === 'replay' && !playing)) return;
-    const g = pl.activeGroup();
+    const g = pl.af ? pl.moves : pl.activeGroup();   // (DLC D16: a new tape / snapshot: every move; an old one: its active slot)
     try {
       G.Combat.ghostOrbit(pl, dt, timeNow);
       for (const m of g) {

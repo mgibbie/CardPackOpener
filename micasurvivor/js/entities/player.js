@@ -1,6 +1,7 @@
 /* ============ player.js — el Pokémon que controlas ============
- * (x, y) son los PIES. Sólo UN movimiento está activo a la vez: se dispara
- * solo y se cambia con 1-4 / Q / E. Cada disparo reproduce la animación de
+ * (x, y) son los PIES. MicaSurvivor (2026-10-26, DLC D16): every slot fires on its own cooldown (`af`, all-fire); there is
+ * no switching (1-4 / Q / E / LB / RB / a tap do nothing in a run). `active` stays 0 for an all-fire player; only the
+ * puppet of an old tape or snapshot (af false) keeps the one-active-move look. Cada disparo reproduce la animación de
  * ataque de Mundo Misterioso que le toca (Attack, Shoot o Charge).
  */
 G.Player = class Player {
@@ -36,6 +37,11 @@ G.Player = class Player {
     this.active = 0;           // hueco activo
     this.maxMoves = 4;         // huecos
     this.bonds = 0;            // vínculos por usar (premio de los legendarios)
+    // MicaSurvivor (DLC D16): every slot fires (false only on an old tape's / snapshot's puppet: js/ui/watch-ui.js); the
+    // run's move-damage factor (G.Combat.AF, set at the run's start); the melee guard's clock (owner decision #9)
+    this.af = true;
+    this.afDmg = 1;
+    this.meleeT = 0;
 
     this.buffs = {
       atk: { n: 0, t: 0, amount: 0 },
@@ -100,6 +106,10 @@ G.Player = class Player {
     return (this.sizePerk || 1) * Math.pow(1.12, this.statsTaken.size || 0) * (this.hasItem('bigorb') ? 1.3 : 1);
   }
 
+  /** MicaSurvivor (DLC D16-D18): this build's ruleset (2: every move fires, one held item, shared upgrades). A base lobby, a
+   *  base score and a new tape carry it: an old client's co-op is refused and its scores rank on the legacy board. */
+  static get RULES() { return 2; }
+
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
   static get REVIVE_TIME() { return 3; }
 
@@ -143,8 +153,8 @@ G.Player = class Player {
     const group = [m];
     this.slots.push(group);
     this.arrange();
-    // Se cambia al nuevo, salvo si estás usando un vínculo (no te quita el grupo).
-    if (!(this.slots[this.active] && this.slots[this.active].length > 1)) this.setActive(this.slots.indexOf(group));
+    // Se cambia al nuevo, salvo si estás usando un vínculo (no te quita el grupo). (DLC D16: all-fire, nothing to switch)
+    if (!this.af && !(this.slots[this.active] && this.slots[this.active].length > 1)) this.setActive(this.slots.indexOf(group));
     return true;
   }
 
@@ -169,12 +179,13 @@ G.Player = class Player {
     }
     for (const g of this.slots) if (!out.includes(g)) out[out.indexOf(null)] = g;
     this.slots = out;
-    if (cur) this.active = out.indexOf(cur);
+    if (cur) this.active = this.af ? 0 : out.indexOf(cur);
   }
 
   hasMove(id) { return this.moves.some(m => m.id === id); }
 
   setActive(i) {
+    if (this.af) return;   // (DLC D16: every slot fires; there is nothing to switch to)
     if (i < 0 || i >= this.slots.length || i === this.active) return;
     // Cinta Elección: no se puede cambiar de movimiento.
     if (this.hasItem('choiceband') && this.slots[this.active]) {
@@ -222,14 +233,17 @@ G.Player = class Player {
     this.arrange();
     // Se pasa al grupo, salvo con la Cinta Elección (sigues en el hueco que tenías, si queda).
     const a = this.slots.indexOf(cur);
-    this.active = this.hasItem('choiceband') && a >= 0 ? a : this.slots.indexOf(target);
+    this.active = this.af ? 0 : this.hasItem('choiceband') && a >= 0 ? a : this.slots.indexOf(target);
     this.bonds = Math.max(0, this.bonds - 1);
     G.Projectiles.clearOrbs(this);
     return target;
   }
 
-  /** Movimientos que se lanzan ahora (el grupo del hueco activo). */
+  /** Movimientos que se lanzan ahora (el grupo del hueco activo). (DLC D16: an all-fire player's slot 1, its "main" move:
+   *  the aim's priority, the ground halo's colour and the Choice Band's +40 % follow it; G.Combat.tick fires every slot.) */
   activeGroup() { return this.slots[this.active] || []; }
+  /** DLC D16: the slot (0-3) that holds move `id`, or -1. */
+  slotOf(id) { return this.slots.findIndex(g => g.some(m => m.id === id)); }
 
   activeMove() { return this.activeGroup()[0]; }
 
@@ -238,6 +252,8 @@ G.Player = class Player {
    * acelera si la recarga es más corta que la animación, para que encadene.
    */
   cast(m) {
+    // MicaSurvivor (DLC D16, owner decision #9): a melee move that fires guards you for G.Combat.AF.MELEE_GUARD s
+    if (m.kind === 'melee' && !this.remote && G.Combat && G.Combat.AF) this.meleeT = G.Combat.AF.MELEE_GUARD;
     // Vidasfera: cada ataque cuesta un poco de vida (nunca te deja KO).
     if (this.hasItem('lifeorb') && m.kind !== 'orbit' && m.kind !== 'trail' && !this.remote) {
       this.hp = Math.max(1, this.hp - Math.max(1, this.maxHp * 0.01));
@@ -280,7 +296,8 @@ G.Player = class Player {
     amount *= G.Abilities.inK(this, type, eff);
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
-    const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
+    // (DLC D16: all-fire, for G.Combat.AF.MELEE_GUARD s after a melee move fires)
+    const close = this.af ? (this.meleeT > 0 ? G.Combat.AF.MELEE_TAKEN : 1) : this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
     let d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close * (this.remote ? 1 : G.Tower.takenK()));
     // MicaSurvivor (M5 lote 8, main.gd 1834-1848): en la Torre, los pactos (Frenesí, Piel de piedra...) cambian
     // el daño recibido y el escudo del descanso lo absorbe antes que tu vida.
@@ -431,6 +448,7 @@ G.Player = class Player {
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
+    if (this.meleeT > 0) this.meleeT -= dt;   // (DLC D16: the melee guard)
 
     for (const k in this.buffs) {
       const b = this.buffs[k];
@@ -545,9 +563,12 @@ G.Player = class Player {
     if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
     else if (!n.dead && this.dead) this.revive(n.hp / (n.maxHp || 1));
     // Movimiento activo (para el halo, el HUD y los orbes).
-    if (n.mv && (!this.moves[0] || this.moves[0].id !== n.mv || this.moves[0].lvl !== n.ml) && G.Moves.BY_ID[n.mv]) {
-      this.moves = [G.Moves.instance(n.mv, n.ml || 1)];
-      this.slots = [this.moves.slice()];
+    // (DLC D16: a new client's frame lists its orbit moves, n.ms [[id, lvl]...]: every one keeps its orbs; an old frame names
+    //  one move, n.mv, as before)
+    const want = Array.isArray(n.ms) ? n.ms.filter(x => Array.isArray(x) && G.Moves.BY_ID[x[0]]) : n.mv && G.Moves.BY_ID[n.mv] ? [[n.mv, n.ml || 1]] : null;
+    if (want && want.length && want.map(x => x[0] + ':' + (x[1] || 1)).join('/') !== this.moves.map(m => m.id + ':' + m.lvl).join('/')) {
+      this.moves = want.map(x => G.Moves.instance(x[0], x[1] || 1));
+      this.slots = this.af ? this.moves.map(m => [m]) : [this.moves.slice()];
       this.active = 0;
       G.Projectiles.clearOrbs(this);
     }

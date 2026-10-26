@@ -1,5 +1,6 @@
 /* ============ combat.js — ejecución de movimientos y colisiones ============
- * Sólo se ejecuta el movimiento ACTIVO del jugador. Cada `kind` tiene aquí su
+ * MicaSurvivor (2026-10-26, DLC D16: every move fires): every slot fires, each move on its own cooldown (pl.af);
+ * only an old tape's / snapshot's puppet (pl.af false) still fires its ACTIVE slot alone. Cada `kind` tiene aquí su
  * implementación. Todos los ataques dañan también los objetos destructibles
  * del escenario (rocas, cofres, hierba alta).
  *
@@ -20,8 +21,35 @@ G.Combat = (() => {
 
   function tick(dt, pl, now) {
     if (pl.dead || pl.coopDown) return;   // (M5 lote 12a: caído en el Modo Cooperativo no atacas, main.gd _update_down)
+    // MicaSurvivor (DLC D16): every slot, every move in it (a bond's fused slot too), each on its own cooldown
+    if (pl.af) { for (const g of pl.slots) for (const m of g) tickMove(dt, pl, m, now); return; }
     // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
+  }
+
+  // ---------------- MicaSurvivor (DLC D16, owner 2026-10-26: "all of my moves should be firing at the same time") ----------------
+  // DMG / DMG_EXP: the global move-damage factor of an all-fire run (base / Expedition), so the total DPS is ~1.6x the one-
+  // active-move game's (measured with tools/micasurvivor/dps_sim.mjs, README "DLC D16"; D21 fine-tunes it). Set on the
+  // player at the run's start (pl.afDmg): the local co-op partner, with its single move, keeps x1.
+  // CB_MAIN / CB_REST: the Choice Band (owner decision #8): +40 % on the slot-1 move, -20 % on the others.
+  // MELEE_GUARD: -25 % damage taken for this long after a melee move fires (owner decision #9).
+  // (measured 2026-10-26, 2 x 10 builds each, the bot's runs at 5:00 and 10:00: all-fire at x1 = ~2.0x the best single slot in
+  //  base Normal, ~1.4x in Expedition Normal, whose levelled first kit move dominates; so 1.6 / 2.0 = 0.8 and 1.6 / 1.4 ~ 1.1)
+  const AF = { DMG: 0.8, DMG_EXP: 1.1, CB_MAIN: 1.4, CB_REST: 0.8, MELEE_GUARD: 1.5, MELEE_TAKEN: 0.75 };
+  /** The move a hit comes from (a move instance or its view, or a projectile / orb / Expedition hit's mid), or null. */
+  function moveIdOf(src) {
+    if (!src || src.dsrc || src.mkind === 'zmove' || src.kind === 'item') return null;
+    if (typeof src.mid === 'string' && src.mid) return src.mid;
+    return src.def && typeof src.id === 'string' ? src.id : null;
+  }
+  /** An all-fire player's factor on a move's hit: the global factor x the Choice Band's slot rule (1 for anything else). */
+  function afK(pl, src) {
+    if (!pl || !pl.af) return 1;
+    const id = moveIdOf(src);
+    if (!id) return 1;
+    let k = pl.afDmg || 1;
+    if (pl.hasItem && pl.hasItem('choiceband')) k *= (pl.slots[0] || []).some(m => m.id === id) ? AF.CB_MAIN : AF.CB_REST;
+    return k;
   }
 
   // MicaSurvivor (M5, main.gd _f / _size_k): el Calibre agranda áreas, proyectiles, orbes y
@@ -557,6 +585,14 @@ G.Combat = (() => {
 
   /** Orbes de un compañero que tiene activo un movimiento de órbita (sólo visual). */
   function ghostOrbit(pl, dt, now) {
+    // (DLC D16: an all-fire puppet shows the orbs of every orbit move it has; an old one, its active move's)
+    if (pl.af) {
+      const list = pl.dead ? [] : pl.moves.filter(m => m.kind === 'orbit');
+      for (const m of list) orbit(pl, m, dt, now, true);
+      const ids = list.map(m => m.id);
+      for (const p of G.Projectiles.all().filter(p => p.orb && p.owner === pl && !ids.includes(p.mid))) G.Projectiles.remove(p);
+      return;
+    }
     const m = pl.activeMove();
     if (m && m.kind === 'orbit' && !pl.dead) orbit(pl, m, dt, now, true);
     else if (G.Projectiles.all().some(p => p.orb && p.owner === pl)) G.Projectiles.clearOrbs(pl);
@@ -585,6 +621,7 @@ G.Combat = (() => {
     if (pl && pl.abFx) k *= G.Abilities.outK(pl, e, mt, src.mkind || src.kind);
     if (pl) k *= G.Items.outK(pl, e, mt);   // M5 lote 3: Cinta Experto, Gema, Bola Luminosa, Hueso Grueso, Polvo Plata
     if (pl) k = G.Hooks.reduce('combat.out', k, pl, e, src, dmg);   // MicaSurvivor (DLC D5): an Expedition run's items (no listener: k)
+    if (pl && pl.af) k *= afK(pl, src);   // MicaSurvivor (DLC D16): the all-fire damage factor and the Choice Band's slot rule
     const d = dmg * k;
     // MicaSurvivor (M5 lote 11, main.gd 2481 / 5168 dmg_src): la vida que pierde va a la fuente de este golpe.
     G.DmgLog.as(G.DmgLog.keyOf(src), () => e.hurt(d, col, dx, dy, knock, crit ? 'crit' : mt ? G.Types.label(G.Types.mult(mt, e.types)) : null));
@@ -740,6 +777,6 @@ G.Combat = (() => {
     }
   }
 
-  return { tick, resolve, ghostCast, eff, land, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
+  return { tick, resolve, ghostCast, eff, land, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields, AF, afK, moveIdOf,
            get fieldCount() { return fields.length; } };
 })();

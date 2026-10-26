@@ -358,7 +358,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu signed in (alice)');
 	const pr = await prep(page);
-	A(pr.ok && pr.tier && pr.dv === 14 && pr.xv === 10, 'the Expedition code loads with tiers.js; the content version is 14 (D15), the x block v10', JSON.stringify(pr));
+	A(pr.ok && pr.tier && pr.dv === 15 && pr.xv === 10, 'the Expedition code loads with tiers.js; the content version is 15 (D16), the x block v10', JSON.stringify(pr));
 	if (!pr.ok || !pr.tier) throw new Error('no G.ExpTier: the rest needs it');
 
 	// ======================== 3a. unlocks: Normal only at first
@@ -390,7 +390,7 @@ try {
 
 	// ======================== 2 + 3. Normal: the reference numbers; a win unlocks Hard
 	const rN = await startClassic(page);
-	A(rN.ok && rN.diff === 'normal' && rN.cdiff === 'normal' && rN.dv === 14, 'Classic starts on Normal', JSON.stringify(rN));
+	A(rN.ok && rN.diff === 'normal' && rN.cdiff === 'normal' && rN.dv === 15, 'Classic starts on Normal', JSON.stringify(rN));
 	const nS = await E(page, () => {
 		const H = window.__t, C = G.ExpClassic;
 		const foe = H.foeStats(10), seed = G.World.seed;
@@ -420,12 +420,13 @@ try {
 	await shoot(page, 'tiers-desktop-runover-medal.png');
 	// the mark to the boards through the real server: its parts and its replay (time attack)
 	const sb = await E(page, async () => { const r = await G.Exp.submitScore(window.__sum); return { r, last: G.Replay.last && G.Replay.last.id }; });
-	const aliceT = row('runboard:micasurvivor_expedition:viridian:normal:time') || [];
+	// (DLC D16: this build's run, dv 15+, ranks on the new rules' boards: ...:r2:<map>:<diff>[:time])
+	const aliceT = row('runboard:micasurvivor_expedition:r2:viridian:normal:time') || [];
 	const aRow = aliceT.find(e => e.name === 'alice');
 	A(sb.r && sb.r.ok && sb.r.time && sb.r.time.better && aRow && aRow.time === 1000 && aRow.medal === 4 && aRow.replay && aRow.replay === sb.last && row('msurvreplay:' + aRow.replay).by === 'alice',
 		'G.Exp.submitScore: the won run lands on the Score and Time-attack boards with its parts, its medal and its own uploaded replay', JSON.stringify(sb).slice(0, 400));
 	const sentBody = (apiLog.filter(e => e.action === 'run-score' && e.mode === 'micasurvivor_expedition').pop() || {}).body || {};
-	A(sentBody.zone === 4 && sentBody.won === true && Number.isInteger(sentBody.dmg) && sentBody.catches === 1 && sentBody.dv === 14 && sentBody.diff === 'normal', 'what the client sent: its parts (whole numbers), dv 9, the tier', JSON.stringify(sentBody));
+	A(sentBody.zone === 4 && sentBody.won === true && Number.isInteger(sentBody.dmg) && sentBody.catches === 1 && sentBody.dv === 15 && sentBody.diff === 'normal', 'what the client sent: its parts (whole numbers), dv 9, the tier', JSON.stringify(sentBody));
 
 	// ======================== 2. Hard (picked in the panel), then Nightmare
 	const pk = await E(page, async () => {
@@ -455,7 +456,7 @@ try {
 		'Hard: the same foe has x1.4 HP, x1.42 damage, x1.08 speed, x1.15 XP', JSON.stringify([nS.foe, hS.foe]));
 	A(hS.wk.boss && hS.wk.escorts === 1 && ratio(hS.wk.bossDmg, nS.wk.bossDmg || 1) > 1.3, 'Hard: the guardian wakes with 1 escort (an elite) and x1.42 damage', JSON.stringify([nS.wk, hS.wk]));
 	A(/HARD/.test(hS.line), 'Hard: the HUD line shows HARD', hS.line);
-	A(hS.snap.dv === 14 && hS.snap.x && hS.snap.x.xv === 10 && hS.snap.x.c && hS.snap.x.c.d === 1, 'sync: the snapshot carries dv 14 and the tier as c.d = 1 (the x block v10)', JSON.stringify(hS.snap));
+	A(hS.snap.dv === 15 && hS.snap.x && hS.snap.x.xv === 10 && hS.snap.x.c && hS.snap.x.c.d === 1, 'sync: the snapshot carries dv 15 and the tier as c.d = 1 (the x block v10)', JSON.stringify(hS.snap));
 	const wH = await E(page, () => { window.__t.win(1300); return { unl: G.ExpTier.unlocked('viridian'), out: window.__out, medal: G.ExpTier.medal('viridian', 'hard') }; });
 	A(wH.unl === 2 && wH.out.unlocked === 'nightmare' && wH.medal === 3 && wH.out.medal.id === 'gold', 'a Hard win at 21:40: Gold (< 24:36 on Hard) and Nightmare unlocks', JSON.stringify(wH));
 	await E(page, () => G.ExpTier.setPick('viridian', 'nightmare'));
@@ -492,7 +493,10 @@ try {
 	// ======================== 4. the boards in the panel (the real server), the season, the ribbon
 	const sid = XT.seasonOf(NOW).id;
 	// last season: alice was #2 on Normal (a row as the server writes it), so she earns the Elite ribbon
-	put('msurvseason:' + (sid - 1) + ':viridian:normal', [{ name: 'bob', score: 90000, time: 1500 }, { name: 'alice', score: 80000, time: 1400 }, { name: 'carl', score: 100, time: 99 }]);
+	put('msurvseason:' + (sid - 1) + ':r2:viridian:normal', [{ name: 'bob', score: 90000, time: 1500 }, { name: 'alice', score: 80000, time: 1400 }, { name: 'carl', score: 100, time: 99 }]);
+	// (DLC D16: the panel reads the new rules' boards; the marks part 1 sent (dv 8, the legacy boards) are copied there as a
+	//  dv-15 client's would be, so the panel has a board to show. Its "Legacy" chip reads the old keys: checked below.)
+	for (const k of ['', ':time']) { const old = row('runboard:micasurvivor_expedition:viridian:normal' + k) || [], nw = row('runboard:micasurvivor_expedition:r2:viridian:normal' + k) || []; put('runboard:micasurvivor_expedition:r2:viridian:normal' + k, nw.concat(old.filter(e => !nw.some(n => n.name === e.name)))); }
 	const bd = await E(page, async () => {
 		const wait = ms => new Promise(r => setTimeout(r, ms));
 		const until = async (f, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (f()) return true; await wait(60); } return false; };
@@ -505,9 +509,18 @@ try {
 		document.querySelector('[data-view="time"]').click();
 		await until(() => list().length > 0 && /16:40/.test(list().join()));
 		out.time = { rows: list(), me: document.getElementById('xt-me').innerText, watch: !!document.querySelector('#xt-list a.xt-watch'), medal: !!document.querySelector('#xt-list .rk-row .time img, #xt-list .rk-row .time canvas, #xt-list .rk-row .time svg, #xt-list .rk-row .time i, #xt-list .rk-row .time span') };
+		// (DLC D16) the "Legacy" chip: the boards from before the new rules (alice's dv-15 run is not there)
+		document.querySelector('[data-view="score"]').click();
+		await until(() => list().length > 0);
+		document.querySelector('[data-legacy]').click();
+		await until(() => document.querySelector('[data-legacy]').classList.contains('on') && list().length > 0 && !list().some(r => /16:40/.test(r)));
+		out.legacy = { on: document.querySelector('[data-legacy]').classList.contains('on'), rows: list() };
+		document.querySelector('[data-legacy]').click();
+		await until(() => !document.querySelector('[data-legacy]').classList.contains('on'));
 		return out;
 	});
 	A(bd.score && bd.score.rows.length >= 4 && bd.score.rows.some(r => /alice/.test(r)) && /Your best rank: #\d+/.test(bd.score.me), 'the Score board in the panel: the real server\'s top for Viridian Forest · Normal and your rank', JSON.stringify(bd.score).slice(0, 400));
+	A(bd.legacy && bd.legacy.on && bd.legacy.rows.length > 0 && !bd.legacy.rows.some(r => /16:40/.test(r)), 'its "Legacy" chip shows the board from before the new rules (DLC D16), without this build\'s run', JSON.stringify(bd.legacy));
 	A(bd.time && bd.time.rows.length >= 1 && /alice/.test(bd.time.rows.join()) && /16:40/.test(bd.time.rows.join()) && bd.time.watch && /Your best rank: #1 · 16:40/.test(bd.time.me), 'the Time-attack board: alice\'s 16:40 with her medal and a Watch link to its replay', JSON.stringify(bd.time).slice(0, 400));
 	await shoot(page, 'tiers-desktop-board-time.png');
 	// the Season tab is hidden by default (owner decision #8: no weekly seasons for now) — the panel shows Score + Time attack only
@@ -560,7 +573,7 @@ try {
 	A(vw.loadedBefore === false && vw.view && vw.view.diff === 'hard' && /HARD/.test(vw.view.line) && vw.planHard,
 		'a fresh viewer page: the x block\'s c.d gives the tier (its HUD shows HARD; it plans the Hard timeline)', JSON.stringify(vw).slice(0, 400));
 	A(vw.old && vw.old.ok && !vw.old.notice && vw.old.newer, 'an old dv-7 replay / snapshot still plays with no notice; a newer dv gets one', JSON.stringify(vw.old));
-	A(vw.rep && vw.rep.mode === 'exp-classic' && vw.rep.diff === 'normal' && vw.rep.map === 'viridian' && vw.rep.dv === 14, 'the board\'s replay carries the mode, map, tier and dv 14', JSON.stringify(vw.rep));
+	A(vw.rep && vw.rep.mode === 'exp-classic' && vw.rep.diff === 'normal' && vw.rep.map === 'viridian' && vw.rep.dv === 15, 'the board\'s replay carries the mode, map, tier and dv 15', JSON.stringify(vw.rep));
 	await d1.ctx.close();
 
 	// ======================== 6. phone and desktop: the panel fits

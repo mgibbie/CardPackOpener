@@ -283,6 +283,19 @@ function cleanMsurvReplayMeta(m) {
 }
 // MICASURVIVOR leaderboard (run-score mode 'micasurvivor'): best survival time, solo.
 const MICASURVIVOR_MAX_TIME = 4 * 3600; // seconds; a longer "run" is refused, not clamped onto the board
+// MICASURVIVOR rulesets (DLC D16-D18, owner 2026-10-26: every move fires on its own cooldown, one held item, shared upgrades).
+// A run of the new rules ranks on NEW boards from this release; the boards before it stay readable as "Legacy" and keep
+// taking an old (cached) client's scores, which played the old rules. Exact keys only, never a prefix scan:
+//   base        rules 2 (body.rules, sent by the new client) -> runboard:micasurvivor:r2 (best: runBest['micasurvivor:r2']);
+//               no rules (an old client) -> runboard:micasurvivor, as before
+//   Expedition  dv >= MSURV_EXP_AF_DV (the server decides from the content version) ->
+//               runboard:micasurvivor_expedition:r2:<map>:<diff>[:time|:survival] and msurvseason:<n>:r2:<map>:<diff>;
+//               an older dv -> the legacy keys, as before. The League board (no run) is one board for both.
+//   reads       run-leaderboard {rules: 2} -> the new boards; without it (an old client, or the "Legacy" view) -> the old ones
+//   co-op       a base lobby carries its rules (msurv-lobby-create {rules}); a join with other rules is refused (409)
+const MSURV_RULES = 2;
+const MSURV_EXP_AF_DV = 15;
+const msurvRulesOf = v => (v == null ? 1 : Number.isInteger(v) && v >= 1 && v <= MSURV_RULES ? v : 0);
 // MICASURVIVOR EXPEDITION (DLC D0b; micasurvivor/js/systems/expedition.js): new modes with their OWN save and boards.
 //   micasurvivorexp:<user>   {rev, save, updated_at}: Expedition progress (League, unlocks, Lab...), never the base row.
 //                            save = {v, counters:{name:n}, sets:{name:[id]}}; a put is compare-and-set on rev AND is
@@ -2050,12 +2063,20 @@ export default async function handler(req, env) {
 			const mineL = (user.runBest || {})['micasurvivor_expedition:league'];
 			return json({ board: 'league', top: lb.slice(0, 50), you: mineL ? { ...mineL, rank: lr || null } : null });
 		}
+		// DLC D16: the ruleset's board (MSURV_RULES above): a new-rules run, or a read of the new boards, adds ':r2'
+		let rulesSub = '';
+		if (mode === 'micasurvivor') {
+			const rules = action === 'run-score' ? msurvRulesOf(body.rules) : body.rules === MSURV_RULES ? MSURV_RULES : 1;
+			if (!rules) return json({ error: 'bad rules', max: MSURV_RULES }, 400);
+			if (rules === MSURV_RULES) rulesSub = ':r2';
+		}
 		if (mode === 'micasurvivor_expedition') {
 			if (!MSURV_EXP_MAPS.includes(body.map) || !MSURV_EXP_DIFFS.includes(body.diff)) return json({ error: 'an Expedition board needs its map and difficulty', maps: MSURV_EXP_MAPS, diffs: MSURV_EXP_DIFFS }, 400);
 			if (action === 'run-score' && (!MSURV_EXP_MODE_RE.test(String(body.expMode)) || !msurvExpDvOk(body.dv))) return json({ error: 'an Expedition score needs its mode and content version' }, 400);
-			expSub = ':' + body.map + ':' + body.diff;
+			if (action === 'run-score' ? body.dv >= MSURV_EXP_AF_DV : body.rules === MSURV_RULES) rulesSub = ':r2';
+			expSub = rulesSub + ':' + body.map + ':' + body.diff;
 		}
-		const key = 'runboard:' + mode + expSub;
+		const key = 'runboard:' + mode + (mode === 'micasurvivor' ? rulesSub : '') + expSub;
 		user.runBest = user.runBest || {};
 		// DLC D11: an Expedition · Survival score: its own board (exact key ...:<map>:<diff>:survival), its own parts and formula
 		if (mode === 'micasurvivor_expedition' && action === 'run-score' && body.expMode === 'exp-survival') {
@@ -2164,7 +2185,7 @@ export default async function handler(req, env) {
 			}
 			// D9: this week's season board (your best this season; written only when it changes)
 			const sid = msurvExpSeason(msurvNow());
-			const sKey = 'msurvseason:' + sid + ':' + body.map + ':' + body.diff;
+			const sKey = 'msurvseason:' + sid + rulesSub + ':' + body.map + ':' + body.diff;   // (DLC D16: ':r2' for the new rules)
 			const sb = (await store.get(sKey)) || [];
 			const mine = sb.find(e => e.name === username);
 			const sBetter = !mine || cmp(run, mine) > 0;
@@ -2244,10 +2265,11 @@ export default async function handler(req, env) {
 				shiny: body.shiny === true,
 			};
 			const cmp = (a, b) => (a.time - b.time) || ((a.kills || 0) - (b.kills || 0));
-			const prev = user.runBest[mode];
+			const bKey = mode + rulesSub;   // (DLC D16: 'micasurvivor:r2' for the new rules)
+			const prev = user.runBest[bKey];
 			const better = !prev || typeof prev.time !== 'number' || cmp(run, prev) > 0;
-			if (better) { user.runBest[mode] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
-			const best = user.runBest[mode] || null;
+			if (better) { user.runBest[bKey] = { ...run, when: Date.now() }; await store.setJSON(username, user); }
+			const best = user.runBest[bKey] || null;
 			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
 			if (best) board.push({ name: username, ...best });
 			board.sort((a, b) => cmp(b, a) || a.when - b.when);
@@ -2292,7 +2314,7 @@ export default async function handler(req, env) {
 			const now = msurvNow(), cur = msurvExpSeason(now);
 			const sid = body.season == null ? cur : body.season;
 			if (!Number.isInteger(sid) || sid > cur || sid < Math.max(1, cur - MSURV_EXP_SEASONS_BACK)) return json({ error: 'no such season', current: cur, oldest: Math.max(1, cur - MSURV_EXP_SEASONS_BACK) }, 400);
-			const sb = (await store.get('msurvseason:' + sid + ':' + body.map + ':' + body.diff)) || [];
+			const sb = (await store.get('msurvseason:' + sid + rulesSub + ':' + body.map + ':' + body.diff)) || [];
 			const si = sb.findIndex(e => e.name === username);
 			const starts = MSURV_EXP_SEASON0 + (sid - 1) * MSURV_EXP_WEEK;
 			return json({ board: 'season', season: sid, current: cur, starts, ends: starts + MSURV_EXP_WEEK, now,
@@ -2300,7 +2322,7 @@ export default async function handler(req, env) {
 		}
 		const board = (await store.get(key)) || [];
 		const rank = board.findIndex(e => e.name === username) + 1;
-		const youKey = mode + expSub;   // (an Expedition board: the best per map + difficulty)
+		const youKey = mode + (mode === 'micasurvivor' ? rulesSub : '') + expSub;   // (an Expedition board: the best per map + difficulty; D16: + the rules)
 		return json({ top: board.slice(0, 50), you: user.runBest[youKey] ? { ...user.runBest[youKey], rank: rank || null } : null });
 	}
 
@@ -2954,6 +2976,7 @@ export default async function handler(req, env) {
 			members: lb.members.map(m => ({ name: m.name, dex: m.dex, shiny: !!m.shiny, ready: m.name === lb.host || !!m.ready })),
 			start: lb.start || null,
 			...(lb.dv != null ? { mode: lb.mode, dv: lb.dv } : {}),   // (DLC D0b: an Expedition lobby only)
+			...(lb.dv == null && lb.rules ? { rules: lb.rules } : {}),   // (DLC D16: a base lobby's ruleset)
 			...(lb.dv != null && lb.map ? { map: lb.map, diff: lb.diff } : {}),   // (DLC D11: its map and tier)
 			...(lb.host === username ? { invited: Object.keys(lb.invited || {}).filter(n => now - lb.invited[n] < MSURV_INVITE_TTL_MS) } : {}),
 		});
@@ -3024,11 +3047,15 @@ export default async function handler(req, env) {
 			// DLC D0b: an Expedition lobby carries its mode ('exp-…') and content version (dv), both or neither
 			const exp = body.mode != null || body.dv != null;
 			if (exp && (!MSURV_EXP_MODE_RE.test(String(body.mode)) || !msurvExpDvOk(body.dv))) return json({ error: 'bad Expedition mode or version' }, 400);
+			// (DLC D16: a base lobby's ruleset, 1 = an old client's (no field), 2 = every move fires; allow-listed)
+			const rules = msurvRulesOf(body.rules);
+			if (!rules) return json({ error: 'bad rules', max: MSURV_RULES }, 400);
 			for (let i = 0; i < 4; i++) {
 				const nid = randomBytes(6).toString('hex');
 				const lb = { id: nid, host: username, open: true, rev: 1, at: now, ts: now, invited: {}, start: null,
 					members: [{ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: true, seen: now }] };
 				if (exp) { lb.mode = body.mode; lb.dv = body.dv; }   // (DLC D0b: an Expedition lobby; a base one has neither)
+				else if (rules > 1) lb.rules = rules;                  // (DLC D16: a base lobby's ruleset; an old client's has none)
 				// (DLC D11: and the map + tier everyone plays, allow-listed; optional, as a D0b client sends neither)
 				if (exp && MSURV_EXP_MAPS.includes(body.map) && MSURV_EXP_DIFFS.includes(body.diff)) { lb.map = body.map; lb.diff = body.diff; }
 				if (await store.setIfRev(LKEY(nid), lb, 0)) return json({ lobby: view(lb) });
@@ -3045,6 +3072,11 @@ export default async function handler(req, env) {
 				return json({ error: 'only the host\'s friends can join' }, 403);
 			// DLC D0b: an Expedition lobby takes only players on the same content version (a stale cache reloads)
 			if (lb0.dv != null && body.dv !== lb0.dv) return json({ error: 'your game is out of date: reload', mode: lb0.mode, dv: lb0.dv }, 409);
+			// DLC D16: a base lobby takes only players of its ruleset (an old client and a new one never play together)
+			if (lb0.dv == null) {
+				const mine = msurvRulesOf(body.rules), theirs = lb0.rules || 1;
+				if (mine !== theirs) return json({ error: mine < theirs ? 'your game is out of date: reload' : 'the host is on an old version of the game (out of date)', rules: theirs }, 409);
+			}
 			const r = await mutate(lb => {
 				const me = member(lb, username);
 				if (me) { me.dex = dexOf(body.dex); me.shiny = !!body.shiny; me.seen = now; return; }
@@ -3111,6 +3143,7 @@ export default async function handler(req, env) {
 					lb.start = { seed: seed >= 0 && seed < 1e9 ? seed : Math.floor(Math.random() * 1e6), at: now, host: lb.host,
 						members: live2.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny })) };
 					if (lb.dv != null) { lb.start.mode = lb.mode; lb.start.dv = lb.dv; }   // (DLC D0b: an Expedition lobby's start)
+					else if (lb.rules) lb.start.rules = lb.rules;   // (DLC D16: a base lobby's ruleset)
 					if (lb.dv != null && lb.map) { lb.start.map = lb.map; lb.start.diff = lb.diff; }   // (DLC D11: its map and tier)
 				}
 			});

@@ -113,8 +113,8 @@ if (M0) {
 	const st = e.stats, r2 = x => Math.round(x * 1000) / 1000;
 	A(r2(st.dmg) === 0.32 && st.hp === 64 && r2(st.spd) === 0.15 && r2(st.xp) === 0.25 && r2(st.coin) === 0.4 && st.luck === 25 && r2(st.magnet) === 0.4 && r2(st.regen) === 1.2 && st.armor === 10,
 		'the stat upgrades at max: Training +32 % damage (8 x 4), Stamina +64 HP (8 x 8), Agility +15 % speed, Study +25 % XP, Trading +40 % ₽, Fortune +25 luck, Magnetism +40 %, Leftovers +1.2 HP/s, Shell +10 armor', JSON.stringify(st));
-	A(JSON.stringify(['refresh', 'skip', 'banish', 'vitamins', 'moveslot', 'option', 'revive', 'research', 'support', 'archive'].map(k => e.lab[k])) === '[4,4,5,2,1,1,1,4,1,3]' && M.arcSlots(3) === 9,
-		'... and the others: Refresh / Skip / Banish +4 / +4 / +5 (to 6 each), 2 vitamin slots, a move slot, the fourth option, the Max Revive, Research x2, a Support slot, 9 Archive slots', JSON.stringify(e.lab));
+	A(JSON.stringify(['refresh', 'skip', 'banish', 'vitamins', 'moveslot', 'option', 'revive', 'research', 'support', 'archive'].map(k => e.lab[k])) === '[4,4,5,2,0,1,1,4,1,3]' && M.arcSlots(3) === 9,   // (DLC D16: the move slot is retired: 0 whatever the row says)
+		'... and the others: Refresh / Skip / Banish +4 / +4 / +5 (to 6 each), 2 vitamin slots, no move slot (retired, DLC D16), the fourth option, the Max Revive, Research x2, a Support slot, 9 Archive slots', JSON.stringify(e.lab));
 	A(M.labCost('training', 8) === [0, 1, 2, 3, 4, 5, 6, 7].reduce((a, i) => a + M.price('training', i), 0), 'the Lab\'s total (Σ the prices of its levels)');
 	G0.DB.save.coins = 1000;
 	A(M.balance() === 1000, 'the balance is the base save\'s Pokémonedas (1,000)', M.balance());
@@ -342,9 +342,11 @@ try {
 		if (!window.__hooked) { window.__hooked = 1; G.Hooks.on('run.end', (out, sum) => { window.__sum = JSON.parse(JSON.stringify(sum)); window.__out = { lines: out.lines.slice() }; return out; }); }
 		// (D11: every Pokémoneda the Expedition moves goes through the wallet: tally them)
 		if (!window.__wal) {
-			const W = G.Expedition.wallet, e0 = W.earn, s0 = W.spend, T = window.__wal = { earn: 0, spend: 0 };
+			const W = G.Expedition.wallet, e0 = W.earn, s0 = W.spend, r0 = W.refund, T = window.__wal = { earn: 0, spend: 0, refund: 0 };
 			W.earn = n => { const ok = e0(n); if (ok) T.earn += Math.floor(n); return ok; };
 			W.spend = n => { const ok = s0(n); if (ok) T.spend += Math.floor(n); return ok; };
+			// (DLC D16: a retired Lab row's refund, the move slot this test sets at Lv 1 below: coins in, not counted as earned)
+			W.refund = n => { const ok = r0(n); if (ok) T.refund += Math.floor(n); return ok; };
 		}
 		return { ok: true, meta: !!G.ExpMeta, dv: G.Expedition.DV, xv: G.Exp.XV, cdv: G.Exp.dv };
 	});
@@ -377,7 +379,7 @@ try {
 	A(btn0.txt === 'League HQ: Lab, tasks and achievements' && btn0.loaded === false, 'the Classic card has a third button, "League HQ: Lab, tasks and achievements" (before any Expedition code loads)', JSON.stringify(btn0));
 	await E(page, () => G.UI.show('scr-menu', true));
 	const pr = await prep(page);
-	A(pr.ok && pr.meta && pr.dv === 14 && pr.cdv === 14 && pr.xv === 10, 'the Expedition code loads with meta.js; the content version is 14 (D15), the x block v10 (D11)', JSON.stringify(pr));
+	A(pr.ok && pr.meta && pr.dv === 15 && pr.cdv === 15 && pr.xv === 10, 'the Expedition code loads with meta.js; the content version is 15 (D16), the x block v10 (D11)', JSON.stringify(pr));
 	if (!pr.ok || !pr.meta) throw new Error('no G.ExpMeta: the rest needs it');
 	// loading the Expedition (and its save, and reading the balance) never writes the base save
 	const base1 = await rawBase(), led0 = await E(page, () => ({ coins: G.DB.save.coins, dev: JSON.parse(localStorage.getItem('micasurvivor_dev')), led: JSON.parse(JSON.stringify(G.DB.save.led || {})), bal: G.ExpMeta.balance(), wal: Object.assign({}, window.__wal) }));
@@ -415,7 +417,7 @@ try {
 	A(ach1.ach.includes('run1') && ach1.ach.includes('win1') && ach1.ach.includes('zone4'), 'achievements from the runs: "First steps", "Map complete", "The shrine" (claimed into the set `ach`)', JSON.stringify(ach1.ach));
 	const baseCoins1 = await E(page, () => { const s = G.DB.save, st = Object.assign({}, s.stats); delete st.coinsEarned; return { coins: s.coins, earned: s.stats.coinsEarned || 0, rest: JSON.stringify({ stats: st, ach: s.ach }), wal: window.__wal }; });
 	const b0j = JSON.parse(baseCoins0), st0 = Object.assign({}, b0j.stats); delete st0.coinsEarned;
-	A(baseCoins1.coins - b0j.coins === baseCoins1.wal.earn - baseCoins1.wal.spend && baseCoins1.earned - (b0j.stats.coinsEarned || 0) === baseCoins1.wal.earn && baseCoins1.rest === JSON.stringify({ stats: st0, ach: b0j.ach }),
+	A(baseCoins1.coins - b0j.coins === baseCoins1.wal.earn + baseCoins1.wal.refund - baseCoins1.wal.spend && baseCoins1.earned - (b0j.stats.coinsEarned || 0) === baseCoins1.wal.earn && baseCoins1.rest === JSON.stringify({ stats: st0, ach: b0j.ach }),
 		'the base save\'s coins (and coinsEarned) changed by exactly the Expedition\'s earnings; its other stats and achievements are untouched', JSON.stringify({ before: b0j.coins, after: baseCoins1.coins, wal: baseCoins1.wal }));
 
 	// ======================== 3. each Lab upgrade in a run
@@ -437,7 +439,8 @@ try {
 	A(L.luck - B.luck === 25 && near(L.regen - B.regen, 1.2, 1e-9) && near(L.red - B.red, 0.10, 1e-9), 'Fortune 5 +25 luck, Leftovers 4 +1.2 HP/s, Shell 5 +10 armor (10 % less damage)', JSON.stringify([L.luck, B.luck, L.regen, B.regen, L.red, B.red]));
 	A(L.reroll - B.reroll === 4 && L.bans - B.bans === 5 && L.skips - B.skips === 4 && L.reroll + 1 === 6 && L.bans === 6 && L.skips === 6,
 		'Refresh / Banish / Skip: +4 / +5 / +4, to 6 each (study 2.5: max 6)', JSON.stringify([B.reroll, L.reroll, B.bans, L.bans, B.skips, L.skips]));
-	A(L.vit === B.vit + 2 && L.moves === B.moves + 1 && lab.cards === 4, 'vitamin slots 3 -> 5, move slots 6 -> 7, and a level-up deals 4 cards (the fourth option)', JSON.stringify([B.vit, L.vit, B.moves, L.moves, lab.cards]));
+	// (DLC D16: 4 move slots in every run, the Lab's +1 retired: was "move slots 6 -> 7")
+	A(L.vit === B.vit + 2 && L.moves === 4 && B.moves === 4 && lab.cards === 4, 'vitamin slots 3 -> 5, move slots 4 with or without the (retired) Lab move slot, and a level-up deals 4 cards (the fourth option)', JSON.stringify([B.vit, L.vit, B.moves, L.moves, lab.cards]));
 	A(L.maxrev === 1 && B.maxrev === 0 && L.sa === 3 && B.sa === 2, 'Revive: the run starts with a Max Revive; Support team: 3 Support Alpha slots (2 without)', JSON.stringify([L.maxrev, L.sa, B.sa]));
 	A(Array.isArray(L.row) && L.row[0] === '8865554454452111410', 'the run\'s row carries the Lab levels (base 36, one an upgrade, in the Lab\'s order)', JSON.stringify(L.row));
 	// research x2 at Research 4
@@ -575,7 +578,7 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x && { xv: snap.x.xv, k: snap.x.k }, dv: snap.dv, gf: gf && gf.k, hf: hf && hf.k, h: h && h.k, row: G.ExpMeta.row(), eff: G.ExpMeta.effects(G.ExpMeta.row()), seed: G.World.seed };
 	});
-	A(sy.x && sy.x.xv === 10 && sy.x.k && JSON.stringify(sy.x.k.p) === JSON.stringify(sy.row) && sy.dv === 14, 'a live snapshot: dv 14, x v10 with `k` {p: the run\'s row}', JSON.stringify(sy.x));
+	A(sy.x && sy.x.xv === 10 && sy.x.k && JSON.stringify(sy.x.k.p) === JSON.stringify(sy.row) && sy.dv === 15, 'a live snapshot: dv 14, x v10 with `k` {p: the run\'s row}', JSON.stringify(sy.x));
 	A(sy.gf && JSON.stringify(sy.gf.p) === JSON.stringify(sy.row), 'a co-op frame carries the same row (k.p)', JSON.stringify(sy.gf));
 	A(Array.isArray(sy.h) && JSON.stringify(sy.h) === JSON.stringify(sy.row), 'the replay header carries the row (h.k)', JSON.stringify(sy.h));
 	A(sy.hf && sy.hf.q && JSON.stringify(sy.hf.q.alice) === JSON.stringify(sy.row), 'a co-op host frame carries the host\'s row by uid (k.q.alice)', JSON.stringify(sy.hf));
@@ -620,8 +623,8 @@ try {
 		out.maxed = document.querySelector('[data-lab="training"]').innerText.replace(/\s+/g, ' ');
 		return out;
 	});
-	A(pn.txt === 'League HQ: Lab, tasks and achievements' && pn.shown && pn.main && JSON.stringify(pn.tabs) === '["Lab","Items","Archive","Research","Tasks","Achievements","Card"]' && pn.lab === 19,
-		'"League HQ: Lab, tasks and achievements" opens the panel: Lab, Items, Archive, Research, Tasks, Achievements, Card; the Lab\'s 19 upgrades', JSON.stringify(pn).slice(0, 400));
+	A(pn.txt === 'League HQ: Lab, tasks and achievements' && pn.shown && pn.main && JSON.stringify(pn.tabs) === '["Lab","Items","Archive","Research","Tasks","Achievements","Card"]' && pn.lab === 18,
+		'"League HQ: Lab, tasks and achievements" opens the panel: Lab, Items, Archive, Research, Tasks, Achievements, Card; the Lab\'s 18 upgrades (DLC D16: the move slot is retired, not listed)', JSON.stringify(pn).slice(0, 400));
 	A(pn.bought && pn.bought.lv === 1 && pn.bought.price === 1600 && pn.bought.paid === 4800 && pn.bought.bal === pn.bought.coins.toLocaleString('en') && /Archive Lv 2\/3 · Now: \+6 Archive slots/.test(pn.labText) && /Training Lv 8\/8 · Now: \+32% damage Max/.test(pn.maxed),
 		'a click buys Archive Lv 2 (1,600 x3 = 4,800 Pokémonedas off the base save): "Now: +6 Archive slots"; the head shows the base balance; Training at 8 / 8 says Max', JSON.stringify(pn.bought) + ' ' + pn.labText + ' | ' + pn.maxed);
 	A(!/★|Stardust/.test(pn.head + ' ' + pn.labText) && /Your usual Pokémonedas/.test(pn.head + ' ' + (await E(page, () => document.querySelector('#modes-xmeta .xm-note').innerText))), 'no Stardust (★) left on the panel: "Your usual Pokémonedas: earned by playing ..., never sold."', pn.head);
@@ -679,8 +682,8 @@ try {
 	const brow = row('micasurvivor:alice'), bsave = brow && (brow.save || brow);
 	const sb0 = JSON.parse(base0 || '{}'), le0 = ((sb0.led || {})[fin.dev] || {}).c || [0, 0], unbooked = b0c - (sb0.coins || 0);   // (a base earning not yet booked when the stored copy was read)
 	const ledSum = l => Object.values(l || {}).reduce((a, e) => a + (e.c ? e.c[0] - e.c[1] : 0), 0);
-	A(fin.coins - b0c === fin.wal.earn - fin.wal.spend && bsave && bsave.coins === fin.coins && ledSum(bsave.led) === fin.coins && bsave.led[fin.dev] && bsave.led[fin.dev].c[0] - le0[0] === fin.wal.earn + unbooked && bsave.led[fin.dev].c[1] - le0[1] === fin.wal.spend,
-		'all through the test the base coins moved by exactly the Expedition\'s earnings - spends (+' + fin.wal.earn + ' / -' + fin.wal.spend + '), booked on this device\'s ledger entry, and reached the account row (micasurvivor:alice)', JSON.stringify({ b0c, fin: fin.coins, wal: fin.wal, row: bsave && bsave.coins, led: bsave && bsave.led && bsave.led[fin.dev] }));
+	A(fin.coins - b0c === fin.wal.earn + fin.wal.refund - fin.wal.spend && fin.wal.refund === 4500 && bsave && bsave.coins === fin.coins && ledSum(bsave.led) === fin.coins && bsave.led[fin.dev] && bsave.led[fin.dev].c[0] - le0[0] === fin.wal.earn + fin.wal.refund + unbooked && bsave.led[fin.dev].c[1] - le0[1] === fin.wal.spend,
+		'all through the test the base coins moved by exactly the Expedition\'s earnings + refunds - spends (+' + fin.wal.earn + ' + ' + fin.wal.refund + ' (D16: the retired move slot, once) / -' + fin.wal.spend + '), booked on this device\'s ledger entry, and reached the account row (micasurvivor:alice)', JSON.stringify({ b0c, fin: fin.coins, wal: fin.wal, row: bsave && bsave.coins, led: bsave && bsave.led && bsave.led[fin.dev] }));
 
 	// ======================== phone (844 x 390, touch) and desktop: the panel fits
 	for (const [tag, view] of [['desktop', null], ['phone', { width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {

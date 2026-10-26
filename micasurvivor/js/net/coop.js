@@ -140,11 +140,14 @@ G.Coop = (() => {
 
   function myState() {
     // Con un vínculo se manda la órbita si la hay (es lo único que los demás no ven por los 'c').
-    const g = local.activeGroup();
-    const m = g.find(x => x.kind === 'orbit') || g[0];
+    // (DLC D16: every slot fires, so field 15 lists EVERY orbit move [[id, lvl]...] (an old reader ignores it); fields 7-8
+    //  keep one move, the first orbit or slot 1's, for an old reader)
+    const all = local.af ? local.moves : local.activeGroup();
+    const orbs = all.filter(x => x.kind === 'orbit');
+    const m = orbs[0] || local.activeGroup()[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq];
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, orbs.map(x => [x.id, x.lvl])];
   }
 
   /**
@@ -165,7 +168,7 @@ G.Coop = (() => {
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
-             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14] };
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], ms: Array.isArray(a[15]) ? a[15] : null };   // (DLC D16: ms)
   }
 
   // ---------------- envío ----------------
@@ -544,6 +547,8 @@ G.Coop = (() => {
     /** MicaSurvivor (M5 batch 12b): the numbers, for the design wiki (tools/micasurvivor/gen_designwiki.mjs). */
     K: { rateDirect: Math.round(1 / RATE_FAST), rateRelay: Math.round(1 / RATE_SLOW), stall: STALL_MS / 1000, stallRelay: STALL_RELAY_MS / 1000, near: NEAR },
     BUDGET_MSG,
+    /** For tests (DLC D16): a player's state row as sent, and as read back. */
+    stateOf: p => { const was = local; local = p; try { return myState(); } finally { local = was; } }, readState,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */

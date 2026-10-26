@@ -411,7 +411,7 @@
   ];
 
   // Cuerpo a cuerpo (12-10-2026): +20 % de daño y +25 % de alcance y de arco
-  // (y -25 % de daño recibido mientras sea tu ataque activo, en player.js).
+  // (y -25 % de daño recibido mientras sea tu ataque activo, en player.js; DLC D16: 1,5 s después de cada golpe cuerpo a cuerpo).
   // Pegaban bien, pero había que arriesgar mucho más que con los de distancia.
   for (const m of RAW) {
     if (m.kind !== 'melee') continue;

@@ -340,7 +340,7 @@ G.MenuUI = (() => {
     const el = document.createElement('div');
     el.className = 'panel bind-panel';
     el.innerHTML = `<b>Atajos de movimientos</b>
-      <p class="sub" style="margin:2px 0 8px">Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.</p>
+      <p class="sub" style="margin:2px 0 8px">Elige qué movimiento va siempre en cada hueco. Todos atacan a la vez; el del hueco 1 es el que potencia la Cinta Elección. Si aún no tienes tantos movimientos, va al hueco más cercano.</p>
       <div class="bind-slots">${[0, 1, 2, 3].map(i => `<label class="bind-slot"><span>${i + 1}</span>
         <select class="field" data-slot="${i}"><option value="">Libre</option>${ids.map(id =>
           `<option value="${id}" ${list[i] === id ? 'selected' : ''}>${G.Moves.BY_ID[id].name}</option>`).join('')}</select></label>`).join('')}</div>`;

@@ -350,6 +350,7 @@
   <div class="box wide">
     <div class="row between"><h2>Ranking <span class="sub" style="font-size:15px">· tiempo aguantado</span></h2><span class="row" style="gap:6px"><button id="rk-mod" class="btn small ghost hidden">Moderación</button><button class="btn small ghost" data-back>Volver</button></span></div>
     <div class="gen-tabs" id="rk-mode"></div>
+    <div class="gen-tabs hidden" id="rk-rules"></div>
     <div class="filters" id="rk-period"></div>
     <div class="row rk-tools">
       <div class="filters" id="rk-scope" style="margin:0"></div>
@@ -575,10 +576,10 @@
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center" style="width:min(460px,100%)">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa</p>
-    <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · tus movimientos atacan solos · <kbd>Esc</kbd> pausa</p>
+    <p class="sub touch-hint">Arrastra el dedo para moverte · tus movimientos atacan solos</p>
     <!-- MicaSurvivor (M2): the controller's version of the hints (js/core/pad.js fills the glyphs) -->
-    <p class="sub pad-hint"><span class="key-p" data-glyphs="lstick"></span> moverse · <span class="key-p" data-glyphs="prev next"></span> cambiar de ataque · <span class="key-p" data-glyphs="pause"></span> pausa</p>
+    <p class="sub pad-hint"><span class="key-p" data-glyphs="lstick"></span> moverse · tus movimientos atacan solos · <span class="key-p" data-glyphs="pause"></span> pausa</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div id="pause-ability"></div> <!-- MicaSurvivor (M5): the partner's ability -->
     <p id="pause-mode" class="sub pause-mode hidden"></p> <!-- MicaSurvivor (M5 batch 6): the run's mode and modifiers -->

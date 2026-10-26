@@ -47,7 +47,7 @@ G.Pad = (() => {
   const ACTIONS = ['prev', 'next', 'pause', 'confirm', 'cancel', 'reroll', 'ban', 'swap', 'zmove', 'dynamax'];
   const ADDED = ['zmove', 'dynamax', 'ban', 'swap'];   // actions added by M5 batches 4, 5, 6, 7 (oldest first)
   const LABELS = {
-    prev: 'Movimiento anterior', next: 'Movimiento siguiente', pause: 'Pausa',
+    prev: 'Anterior (pestañas y cartas)', next: 'Siguiente (pestañas y cartas)', pause: 'Pausa',
     confirm: 'Aceptar / elegir', cancel: 'Atrás / cancelar', reroll: 'Cambiar cartas',
     ban: 'Vetar carta', swap: 'Cambiar Pokémon (Modo Equipo)', zmove: 'Movimiento Z', dynamax: 'Dynamax'
   };
@@ -625,8 +625,9 @@ G.Pad = (() => {
   function gameplay(a) {
     const game = G.Game, pl = game && game.player;
     if (!game || game.state !== 'playing' || !pl || pl.dead) return;
-    if (a === 'prev') pl.cycle(-1);
-    else if (a === 'next') pl.cycle(1);
+    // (MicaSurvivor DLC D16: every move fires on its own cooldown; LB / RB (prev / next) do nothing in a run, owner decision #14.
+    //  They still walk the cards and the tabs in menus.)
+    if (a === 'prev' || a === 'next') return;
     // MicaSurvivor (M5 batch 7, main.gd 667-668): switch Pokémon in team mode (the next one standing)
     else if (a === 'swap') { if (G.Team && G.Team.on) G.Team.request(pl); }
     // MicaSurvivor (M5 batch 4): the Z-move; in a run the port also fires it with Y / Triangle (the

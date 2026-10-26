@@ -214,10 +214,11 @@ G.ExpTier = (() => {
 
   // ---------------- the boards (server/mp.mjs run-score / run-leaderboard, mode micasurvivor_expedition) ----------------
   /** One board: view 'score' | 'time' | 'season' (season: a season id, default the current). -> the server's body | {error} */
-  async function read(map, diff, view = 'score', season) {
+  // (DLC D16: rules = the boards of the new rules (every move fires) from dv 15; legacy: the boards before them, read-only)
+  async function read(map, diff, view = 'score', season, legacy = ui.legacy) {
     const A = G.MicaAccount;
     if (!A || !A.name()) return { top: [], you: null, error: 'not logged in' };
-    const d = await A.call('run-leaderboard', Object.assign({ mode: G.Expedition.BOARD, map, diff }, view !== 'score' ? { board: view } : {}, season != null ? { season } : {}));
+    const d = await A.call('run-leaderboard', Object.assign({ mode: G.Expedition.BOARD, map, diff }, view !== 'score' ? { board: view } : {}, season != null ? { season } : {}, legacy ? {} : { rules: G.Player.RULES }));
     if (!d.ok) return { top: [], you: null, error: (d.body && d.body.error) || 'offline' };
     return d.body;
   }
@@ -266,7 +267,7 @@ G.ExpTier = (() => {
 }
 `;
   let el = null, onClose = null, scrollWas = 0;
-  const ui = { map: null, diff: null, view: 'score', token: 0 };
+  const ui = { map: null, diff: null, view: 'score', token: 0, legacy: false };   // (DLC D16: legacy, the boards before the new rules)
   const VIEWS = ['score', 'time', 'survival', 'season'];   // (DLC D11: + Survival's board)
   function mount() {
     if (el || typeof document === 'undefined') return el;
@@ -336,7 +337,7 @@ G.ExpTier = (() => {
       <div class="xt-tiers">${DIFFS.map(d => tierCard(ui.map, d)).join('')}</div>
       <div class="xt-medals"><b>${esc(T().f('Medallas ({x})', T().t(DIFF_NAME[ui.diff])))}</b>${lim.map(l => `<span class="xt-chip">${G.Icons.html(MEDAL_ICON[l.id], 16)} ${esc(T().t(l.name))} ${l.under ? '&lt; ' + G.U.mmss(l.under) : esc(T().t('Terminar'))}</span>`).join('')}
         <span class="xt-chip${K.SEASON_TAB ? '' : ' hidden'}" id="xt-ribbons">${G.Icons.html('crown', 14)} ${esc(rbTxt ? T().f('Tus cintas: {x}', rbTxt) : T().t('Aún no tienes cintas'))}</span></div>
-      <div class="filters xt-tabs">${[['score', 'Puntuación'], ['time', 'Contrarreloj'], ['survival', 'Supervivencia']].concat(K.SEASON_TAB ? [['season', 'Temporada']] : []).map(([k, l]) => `<button type="button" class="chip${ui.view === k ? ' on' : ''}" data-view="${k}">${esc(T().t(l))}</button>`).join('')}</div>
+      <div class="filters xt-tabs">${[['score', 'Puntuación'], ['time', 'Contrarreloj'], ['survival', 'Supervivencia']].concat(K.SEASON_TAB ? [['season', 'Temporada']] : []).map(([k, l]) => `<button type="button" class="chip${ui.view === k ? ' on' : ''}" data-view="${k}">${esc(T().t(l))}</button>`).join('')}<button type="button" class="chip${ui.legacy ? ' on' : ''}" data-legacy="1" title="${esc(T().t('Clasificación anterior a las reglas nuevas (todos los movimientos a la vez): sólo lectura.'))}">${esc(T().t('Reglas anteriores'))}</button></div>
       <div id="xt-season" class="xt-season${ui.view === 'season' ? '' : ' hidden'}"></div>
       <div id="xt-list" class="rk-list xt-list"></div>
       <div id="xt-me" class="rk-me"></div>`;
@@ -352,6 +353,7 @@ G.ExpTier = (() => {
       ui.diff = d; render();
     }; });
     el.querySelectorAll('[data-view]').forEach(b => { b.onclick = () => { ui.view = b.dataset.view; G.Audio.sfx('select'); render(); }; });
+    el.querySelectorAll('[data-legacy]').forEach(b => { b.onclick = () => { ui.legacy = !ui.legacy; G.Audio.sfx('select'); render(); }; });   // (DLC D16)
     loadBoard();
   }
   const fmtT = t => t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t);

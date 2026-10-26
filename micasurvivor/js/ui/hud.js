@@ -373,16 +373,20 @@ G.HUD = (() => {
     }
     const BOND = '#ff8ad8';
     const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
+    // MicaSurvivor (DLC D16): every slot fires, so none is raised or "active", a tap switches nothing and there are no
+    // keys to show; each slot has its own cooldown sweep (a bond's fused slot, a sweep per move in its grid). Only the
+    // puppet of an old tape / snapshot (pl.af false) keeps the one-active-move look.
+    const allFire = pl.af !== false;
 
     for (let i = 0; i < n; i++) {
       const g = pl.slots[i] || [];
       const m = g[0];
       const fused = g.length > 1;
-      const on = i === pl.active;
+      const on = !allFire && i === pl.active;
       const x = sx + i * (S + GAP);
       const y = on ? sy - 6 : sy;
-      // Tocar (o hacer clic en) un icono activa ese movimiento.
-      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
+      // Tocar (o hacer clic en) un icono activa ese movimiento. (DLC D16: not in an all-fire run)
+      if (m && !allFire) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo
@@ -433,11 +437,12 @@ G.HUD = (() => {
         }
       }
 
-      // tecla
+      // tecla (DLC D16: the slot's number, no longer a key: a fused slot shows its bond's count instead)
       ctx.font = F(800, 9);
       ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.6)';
       ctx.textAlign = 'left';
-      ctx.fillText(String(i + 1), x + 3, y + 10);
+      if (!allFire) ctx.fillText(String(i + 1), x + 3, y + 10);
+      else if (fused) ctx.fillText('×' + g.length, x + 3, y + 10);
 
       // nombre encima del activo (con un vínculo: "Ascuas +2")
       if (on) {
@@ -450,7 +455,7 @@ G.HUD = (() => {
 
     mark('moves', sx, sy - 6 - 18, totalW, S + 6 + 18);
     // MicaSurvivor (M2): with a controller, its prev / next move buttons either side of the bar.
-    const padOn = G.Pad && G.Pad.mode === 'pad' && !watching;
+    const padOn = G.Pad && G.Pad.mode === 'pad' && !watching && !allFire;   // (DLC D16: no switching, no LB / RB glyphs)
     if (padOn && n > 1) {
       G.Pad.drawGlyph(ctx, 'prev', sx - S - 18 - 32, sy + S / 2 - 13, 26);
       G.Pad.drawGlyph(ctx, 'next', sx + totalW + 6, sy + S / 2 - 13, 26);
@@ -540,9 +545,10 @@ G.HUD = (() => {
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       // (M5 lote 7: en el Modo Equipo, cómo se cambia de Pokémon)
       const team = G.Team && G.Team.on;
-      ctx.fillText(touch ? (team ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo  ·  toca una ficha para cambiar de Pokémon' : 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo')
-                         : team ? 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Tab cambiar de Pokémon  ·  Esc pausa'
-                         : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
+      // (DLC D16: every move fires on its own; nothing to switch)
+      ctx.fillText(touch ? (team ? 'Arrastra el dedo para moverte  ·  tus movimientos atacan solos  ·  toca una ficha para cambiar de Pokémon' : 'Arrastra el dedo para moverte  ·  tus movimientos atacan solos')
+                         : team ? 'WASD moverse  ·  tus movimientos atacan solos  ·  Tab cambiar de Pokémon  ·  Esc pausa'
+                         : 'WASD moverse  ·  tus movimientos atacan solos  ·  Esc pausa', w / 2, h - 4);
     }
 
     // ---------- minimapa (MicaSurvivor M5 lote 10, js/ui/minimap.js) ----------
@@ -554,7 +560,7 @@ G.HUD = (() => {
 
   /** MicaSurvivor (M2): the bottom controls hint with the controller's glyphs. */
   function padHint(ctx, w, h) {
-    const parts = [['g', 'lstick'], ['t', 'moverse  ·  '], ['g', 'prev'], ['g', 'next'], ['t', 'cambiar de ataque  ·  '],
+    const parts = [['g', 'lstick'], ['t', 'moverse  ·  '], ['t', 'tus movimientos atacan solos  ·  '],   // (DLC D16: no LB / RB switching)
       ...(G.Team && G.Team.on ? [['g', 'swap'], ['t', 'cambiar de Pokémon  ·  ']] : []), ['g', 'pause'], ['t', 'pausa']];   // (M5 lote 7)
     const GS = 14;
     ctx.font = F(600, 10);

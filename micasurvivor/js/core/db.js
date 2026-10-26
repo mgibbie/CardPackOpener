@@ -1111,6 +1111,20 @@ G.DB = (() => {
     get mpRev() { return mpRev; },
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
     sanitize,   // MicaSurvivor (M5 lote 4): para las pruebas (lo que quita de una partida editada a mano)
+    /** MicaSurvivor (DLC D16-D18): a copy of the save before a refund writes it, micasurvivor_backup.<key>.<tag>.<ms> (the
+     *  newest 2 per tag are kept). -> the copy's key, or null (no save, or the browser's storage is full: then no refund). */
+    backup(tag) {
+      if (!save) return null;
+      const pre = K_BACKUP + (key || 'guest') + '.' + tag + '.';
+      try {
+        const old = [];
+        for (let i = 0; i < localStorage.length; i++) { const x = localStorage.key(i); if (x && x.startsWith(pre)) old.push(x); }
+        old.sort().slice(0, Math.max(0, old.length - 1)).forEach(remove);
+      } catch (e) { /* nada */ }
+      const k = pre + Date.now();
+      return write(k, plain(fold(save))) ? k : null;
+    },
+    get device() { return DEV; },
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

@@ -199,14 +199,14 @@ try {
 	const bob = await bootPage({ user: 'bob', token: tokens.bob, state: states.bob, save: SAVE('bob') }, PHONE);
 	A(alice.menu && bob.menu, 'alice (desktop) and bob (a phone, 844 x 390, touch) boot signed in to the menu');
 	const pa = await prep(alice), pb = await prep(bob);
-	A(pa.ok && pb.ok && pa.dv === 14 && pa.xv === 10, 'both load the Expedition (dv 14, x v10)', JSON.stringify([pa, pb]));
+	A(pa.ok && pb.ok && pa.dv === 15 && pa.xv === 10, 'both load the Expedition (dv 15, x v10)', JSON.stringify([pa, pb]));
 	// bob's own League member (Charmander, his) and a Lab level of his own (Training 3: +12 % damage)
 	const bobSetup = await bob.E(() => { G.ExpSave.add('league.own', 4); const ok = G.ExpLeague.setPick(4); G.ExpSave.best('lab.training', 3); G.ExpSave.commit(); return { ok, pick: G.Expedition.leaguePick() }; });
 	A(bobSetup.ok && bobSetup.pick === 4, 'bob picks his own League member (Charmander) and has his own Lab (Training 3)', JSON.stringify(bobSetup));
 	await alice.E(() => { G.ExpSave.best('tier.viridian', 1); G.ExpSave.commit(); return G.ExpTier.setPick('viridian', 'hard'); });   // (Hard unlocked on alice's save; the lobby takes the host's pick)
 	const L1 = await lobbyStart(alice, bob, 'exp-classic');
 	const lrow = L1.mk && row('msurvlobby:' + L1.mk.id);
-	A(L1.mk && L1.mk.mode === 'exp-classic' && L1.mk.dv === 14 && L1.mk.map === 'viridian' && L1.mk.diff === 'hard' && lrow && lrow.mode === 'exp-classic' && lrow.map === 'viridian' && lrow.diff === 'hard',
+	A(L1.mk && L1.mk.mode === 'exp-classic' && L1.mk.dv === 15 && L1.mk.map === 'viridian' && L1.mk.diff === 'hard' && lrow && lrow.mode === 'exp-classic' && lrow.map === 'viridian' && lrow.diff === 'hard',
 		'"With friends: Expedition · Classic" makes an Expedition lobby: mode, dv 10, map and tier on the server row (msurvlobby:<id>)', JSON.stringify({ mk: L1.mk, row: lrow && { mode: lrow.mode, dv: lrow.dv, map: lrow.map, diff: lrow.diff } }));
 	A(L1.mk && L1.mk.expShown && L1.mk.exp === 'Expedition · Classic · Viridian Forest · Hard' && L1.jn && L1.jn.r.ok && L1.jn.exp === 'Expedition · Classic · Viridian Forest · Hard',
 		'the lobby says what everyone plays: "Expedition · Classic · Viridian Forest · Hard" (host and guest)', JSON.stringify([L1.mk && L1.mk.exp, L1.jn]));
@@ -220,7 +220,7 @@ try {
 	const runA = await alice.E(() => ({ mode: G.Modes.run.mode, dv: G.Modes.run.dv, map: G.Modes.run.map, diff: G.Modes.run.diff, seed: G.World.seed, hash: G.World.zone && G.World.zone.hash, host: G.Coop.isHost, timeline: !!G.ExpClassic.run, dex: G.Game.player.dex, group: !!G.Modes.run.group, mate: !!(G.LocalCoop && G.LocalCoop.mate) }));
 	const runB = await bob.E(() => ({ mode: G.Modes.run.mode, dv: G.Modes.run.dv, map: G.Modes.run.map, diff: G.Modes.run.diff, seed: G.World.seed, hash: G.World.zone && G.World.zone.hash, host: G.Coop.isHost, timeline: !!G.ExpClassic.run, dex: G.Game.player.dex,
 		league: !!(G.ExpLeague && G.ExpLeague.run), meta: !!(G.ExpMeta && G.ExpMeta.run), row: G.ExpMeta.row(), view: G.ExpClassic.view && G.ExpClassic.view.diff, line: G.ExpClassic.hudLine(G.Game.player, G.Game.st), touch: G.Touch.active }));
-	A(runA.mode === 'exp-classic' && runB.mode === 'exp-classic' && runA.dv === 14 && runB.dv === 14 && runA.map === 'viridian' && runB.diff === 'hard' && runA.diff === 'hard' && runA.seed === runB.seed && runA.hash && runA.hash === runB.hash,
+	A(runA.mode === 'exp-classic' && runB.mode === 'exp-classic' && runA.dv === 15 && runB.dv === 15 && runA.map === 'viridian' && runB.diff === 'hard' && runA.diff === 'hard' && runA.seed === runB.seed && runA.hash && runA.hash === runB.hash,
 		'both play Expedition · Classic, Viridian Forest, Hard (the lobby\'s), on the same seed: the guest rebuilt the same terrain (zone hash)', JSON.stringify({ runA, runB }).slice(0, 500));
 	A(runA.host && runA.timeline && !runB.host && !runB.timeline && runB.view === 'hard' && /HARD/.test(runB.line) && runB.touch, 'the host runs the timeline; the guest reads it (its `c` view: the tier, "HARD" on its HUD)', JSON.stringify({ line: runB.line, view: runB.view }));
 	A(runB.dex === 4 && runA.dex !== 4 && runB.league && runB.meta && Array.isArray(runB.row) && runB.row[0][0] === '3' && runA.group && !runA.mate,
@@ -299,15 +299,20 @@ try {
 		const bp = G.Coop.mate('bob').pl, cap = Math.round(G.ExpClassic.K.CAP * G.ExpClassic.tierOf('hard').cap);
 		// a full cap of foes round the guest (alphas, elites among them), the team's and the guest's Support Alphas, pop-ups
 		const out = { cap };
+		// (DLC D16: every move fires: the host with its whole kit (Lv 8: 4 moves), each cast a 'c' event to the guests)
+		{ const pl = G.Game.player; pl.level = Math.max(pl.level, 8); G.ExpLeague.process(pl); out.moves = pl.slots.length; }
 		let n = G.EnemyMgr.count;
 		for (let i = 0; n < cap && i < cap * 2; i++) { const a = i * 2.39996, d = 120 + (i % 9) * 80; const e = G.ExpClassic.spawnFoe([10, 13, 16, 19, 21, 29, 32, 43][i % 8], bp.x + Math.cos(a) * d, bp.y + Math.sin(a) * d * 0.8, i % 12 === 0 ? { kind: 'elite', scale: 1.3 } : {}); if (e) { e.spd = 0; e.maxHp = e.hp = 1e7; n++; } }
 		for (let i = 0; i < 8; i++) G.ExpRx.react(['electro', 'melt', 'rage'][i % 3], { x: bp.x + i * 20, y: bp.y, bodyH: 30, xwet: 1 }, 10, G.Game.st.time);
 		out.enemies = G.EnemyMgr.count;
 		const sizes = [], send = G.Net.send;
-		G.Net.send = (u, msg) => { if (u === 'bob' && msg && msg.k === 'f') sizes.push({ n: JSON.stringify(msg).length, x: msg.x ? JSON.stringify(msg.x).length : 0, e: (msg.e || []).length, keys: msg.x ? Object.keys(msg.x).join('') : '' }); return send(u, msg); };
+		const t0 = performance.now(); let cN = 0, cChars = 0;
+		G.Net.send = (u, msg) => { if (u === 'bob' && msg && msg.k === 'f') { for (const ev of msg.ev || []) if (ev && ev[0] === 'c') { cN++; cChars += JSON.stringify(ev).length + 1; } } if (u === 'bob' && msg && msg.k === 'f') sizes.push({ n: JSON.stringify(msg).length, x: msg.x ? JSON.stringify(msg.x).length : 0, e: (msg.e || []).length, keys: msg.x ? Object.keys(msg.x).join('') : '' }); return send(u, msg); };
 		await wait(2500);
 		G.Net.send = send;
 		out.frames = sizes.length;
+		// (DLC D16: a relayed frame carries ~1 s of events: the casts of every move of the host in a second, on top of the busiest frame)
+		const secs = (performance.now() - t0) / 1000; out.cPerSec = Math.round(cN / secs * 10) / 10; out.cCharsPerSec = Math.round(cChars / secs);
 		const big = sizes.sort((a, b) => b.n - a.n)[0] || {};
 		out.max = big.n; out.x = big.x; out.e = big.e; out.keys = big.keys;
 		// the biggest one itself, to push through the server's relay
@@ -320,6 +325,8 @@ try {
 	});
 	const relG = await bob.E(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)), s = [], t = G.Net.toHost; G.Net.toHost = msg => { if (msg && msg.k === 'f') s.push(JSON.stringify(msg).length); return t(msg); }; await wait(1500); G.Net.toHost = t; return { n: s.length, max: Math.max(0, ...s) }; });
 	console.log(`     relay: a busy host frame to the guest is ${rel.max} chars (${rel.e} foes, x block ${rel.x} chars: ${rel.keys}); the guest's frame ${relG.max}; budget 16,000 a message, 64,000 a relay row`);
+	console.log(`     relay (DLC D16, every move fires): the host's ${rel.moves} moves cast ${rel.cPerSec} 'c' events a second (${rel.cCharsPerSec} chars); busiest frame + 1 s of casts = ${rel.max + rel.cCharsPerSec} chars`);
+	A(rel.moves === 4 && rel.max + rel.cCharsPerSec < 16000, 'relay budget with every move firing (DLC D16): the busiest host frame plus a second of the 4 moves\' cast events fits one relayed message (16,000)', JSON.stringify({ moves: rel.moves, max: rel.max, c: rel.cCharsPerSec }));
 	A(rel.max > 0 && rel.e >= 60 && rel.max <= 16000 && relG.max > 0 && relG.max <= 16000, 'relay budget: the busiest host frame (a full cap of foes + every DLC block) and the guest\'s frame each fit one relayed message (16,000)', JSON.stringify({ rel: { max: rel.max, e: rel.e, x: rel.x, cap: rel.cap, enemies: rel.enemies }, relG }));
 	A(rel.max * 3 <= 64000, 'three of them fit one relay row (64,000: a 1 Hz relay keeps ~3 unacknowledged frames to a guest)', rel.max * 3);
 	if (rel.sample) {
@@ -535,8 +542,10 @@ try {
 	console.log(`     replay: a full Classic clear (${clRep.t} s, zone ${clRep.zone}, won ${clRep.won}, ${clRep.kills} KOs, up to ${clRep.maxE} foes) packs to ${clRep.code} chars, ${clRep.frames} frames (sim ${clRep.ms} ms)`);
 	console.log('     classic tape by field: ' + JSON.stringify(clRep.parts));
 	A(clRep.ok && clRep.won && clRep.code > 0 && clRep.code < 1200000 && clRep.frames <= 30000, 'replay size: a full Classic clear (3 zones and the shrine) packs under 1.2 MB', JSON.stringify(clRep));
-	A(survRep.hdt === 1 && survRep.dtMed === 10 && clRep.hdt === 0.5 && clRep.dtMed === 5,
-		"the Survival tape's frames are 1 s apart (header dt 1); a Classic tape keeps 0.5 s", JSON.stringify({ s: [survRep.hdt, survRep.dtMed, survRep.dtMin], c: [clRep.hdt, clRep.dtMed] }));
+	// (DLC D16: every move fires, so a 45-min Survival run KOs about twice as many foes and its tape thins sooner: its frames are
+	//  1 s apart or, past the thinning sizes, 2 s; never closer)
+	A(survRep.hdt === 1 && survRep.dtMed >= 10 && survRep.dtMed <= 20 && clRep.hdt === 0.5 && clRep.dtMed === 5,
+		"the Survival tape's frames are 1 s apart (header dt 1; 2 s once it thins); a Classic tape keeps 0.5 s", JSON.stringify({ s: [survRep.hdt, survRep.dtMed, survRep.dtMin], c: [clRep.hdt, clRep.dtMed] }));
 	A(JSON.stringify(survRep.thin) === '[1,1,1.5,2,3,1]' && survRep.stop === 4500000,
 		"an endless run's tape spaces its frames out as it grows (x1.5 at 3.0 M raw chars, x2 at 3.3 M, x3 at 3.55 M) and stops adding frames at 4.5 M", JSON.stringify([survRep.thin, survRep.stop]));
 	// the cap's last resort: a tape that still packs over it merges every two frames (halve), exactly

@@ -163,7 +163,7 @@
  * has Mega Evolved (older readers ignore it; a viewer's puppet takes the look from it).
  */
 G.Exp = (() => {
-  const dv = 14;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League; D14: Mega Evolution; D15: the slot machine, Survival respawns): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 15;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League; D14: Mega Evolution; D15: the slot machine, Survival respawns; D16: every move fires): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
   const XV = 10;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
@@ -654,7 +654,7 @@ G.Exp = (() => {
   async function leaderboard(map, diff) {
     const A = G.MicaAccount;
     if (!A || !A.name()) return { top: [], you: null, error: 'not logged in' };
-    const d = await A.call('run-leaderboard', { mode: X.BOARD, map, diff });
+    const d = await A.call('run-leaderboard', { mode: X.BOARD, map, diff, rules: G.Player.RULES });   // (DLC D16: the new rules' board)
     if (!d.ok) return { top: [], you: null, error: (d.body && d.body.error) || 'offline' };
     return { top: d.body.top || [], you: d.body.you || null };
   }

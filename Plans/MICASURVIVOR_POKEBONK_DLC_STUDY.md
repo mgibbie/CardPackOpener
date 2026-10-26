@@ -1553,3 +1553,164 @@ Built (`micasurvivor/README.md`, "DLC D15: the slot machine and Survival's respa
 `feat/micasurvivor-expedition-d13-d15`: D13 League mode (dv 12, the stack's only server change: the League board), D14 Mega Evolution
 (dv 13), D15 the slot machine and Survival's respawns (dv 14). With it every Expedition 1.0 item the owner decided is built. Left: the
 owner playtest and flipping the default (owner #1), then D16+ (more maps, signatures, per-species boards, clans).
+
+### 2026-10-26 owner request: all moves fire, 1 item + 4 moves, shared upgrades, all 1,025
+The owner's request and the plan for it (batches D16-D21), as approved ("go with the defaults"), with the survey's findings.
+Two owner changes came on the same day, while D16-D18 were being built; they REPLACE decisions 7 and the D17 batch below:
+- **Decision 7 (bonds), changed:** keep fusion. A legendary's bond still fuses moves into ONE slot (`player.js` fuse, up to 4
+  moves a group), as before; every slot fires, so every move in a fused slot fires on its own cooldown too. The 4-slot cap counts
+  SLOTS, not moves, so the slot a bond frees can take another move from the level-ups (a fused build fires more than 4 moves). The
+  HUD shows a fused slot's moves grouped in one slot. (The "+12 % damage / -6 % cooldown per bond" default is not built.) Expedition
+  has no bonds, so nothing there changes.
+- **D17 (one item slot), changed** (owner: "maybe we can keep the backpack/more items in expedition and just have 1 slot for an
+  equipped held item in both modes"): Expedition KEEPS its stacking inventory (the ~60 items to their caps, vitamins, Poké Balls,
+  Meowth, altars, Ditto) exactly as it is. Both modes have exactly ONE equipped HELD-item slot (base's held items, `data/items.js`,
+  with base's replace screen). Base: Backpack and the Tower's Double baggage no longer add a 2nd slot (retired, refunded once).
+  Expedition: the same single held slot, fed where held items naturally appear (see "D17 built"); where a stacking Expedition item
+  duplicates a held item, the stacking one stays.
+
+Owner request, 2026-10-26, verbatim:
+"i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and expedition mode and i want both modes to respond to the same upgrades i can buy for the pokemon to improve their stats. in both modes i do not want to have to switch between moves. all of my moves should be firing at the same time on their own cooldowns and it should be 1 item slot and 4 move slots for both expedition and regular."
+
+Owner: "go with the defaults". All the recommended defaults below are APPROVED.
+
+#### Survey findings (read-only, from origin/main at ca8bfe98+; verify line numbers)
+
+### Rosters
+- **Base playable:**
+  - All 1,025 species are obtainable: `G.DEX` (`js/data/pokedex.js`), gacha (`js/systems/gacha.js:45-48`, no legendary filter), rescue (`game.js:304-312`), wild shinies (`game.js:315-326`), 29 personality starters (`js/data/starters.js`).
+  - Every species has a start move and a pool (`G.Moves.startFor` / `poolFor`).
+- **Expedition playable:**
+  - 245 League members (families, first stage) covering 519 species (`js/expedition/league-data.js` ← `tools/micasurvivor/gen_league.mjs`).
+  - 12 are free. Unlock path: `league.met` → `wild` → `own` (`league.js:128-186`).
+  - 1,025 species form 580 families (roots = species with no pre-evo in `overworld/data/species_extra.json`). Missing: 335 families / 506 species.
+- **Base enemies:**
+  - Effectively all 1,025 (`js/data/enemies.js:33-40, 73`; bosses `:206-211`; legendaries in rift / judgment / tower).
+  - BUG: Wishiwashi #746 (BST 175) is below the lowest tier and only listed in the unused `beach` biome (`enemies.js:83`), so it never spawns.
+- **Expedition enemies:**
+  - About 665 species. `poolOf` filters by the map's types + the zone's BST band and skips legendaries and rarity 5 (`classic.js:148-152`; maps `classic.js:104-131`).
+  - 292 off-type species never appear, nor do 20 rarity-5 non-legendaries.
+- **Data:** `overworld/data/species_battle.json` has all 1,025 base stats. All 1,025 sprite folders exist in `micasurvivor/assets/pokemon/<dex>/`. No new art is needed.
+
+### Upgrades
+- **Base:**
+  - 17 per-Pokémon upgrades (`js/data/upgrades.js:5-23`: hp, atk, spd, cd, def, regen, magnet, xp, coins, moves, crit, size, reroll, tm, ban, revive, bag), stored in `save.pupg[dex]`.
+  - The shop (`js/ui/menu.js:270-323`) lists only base-owned Pokémon.
+  - Applied at `game.js:105` → Player (`player.js:20-85`). Merge = max per level (`db.js:278-283`).
+- **Expedition:**
+  - It already loads the shop upgrades of the member's first-stage dex.
+  - `moves` / `tm` do nothing (`league.begin` clears the moves, `league.js:258-263`). `bag` does nothing (items stack).
+  - The Lab (`expedition/meta.js` ~180) is account-wide. Its 9 stat rows (Training, Stamina, Agility, Study, Trading, Fortune, Magnetism, Leftovers, Shell) overlap the shop. It also has a Move slot.
+
+### Moves
+- Both modes fire ONE slot: `G.Combat.tick` runs only `pl.activeGroup()` (`systems/combat.js:21-25`). Each move has its own cooldown `m.t` (`:51-70`).
+- **Switching:**
+  - keys 1-4, Q/E, Tab (`game.js:690-698`); pad LB/RB (`core/pad.js:628-629`); HUD tap (`ui/hud.js:385`);
+  - a switch resets the cooldown to 35% and clears orbs (`player.js:177-190`);
+  - Choice Band blocks switching (`player.js:180`, `data/items.js:31`).
+- **Slots:**
+  - Base: 4 moves (`player.js:37`); 1 item, or 2 with Backpack / the Tower's "Double baggage" pact (`player.js:72-73, 83-84, 392`).
+  - Expedition: kit of 4 + 2 `EXTRA_SLOTS` + 1 Lab slot, up to 7 (`expedition/levelups.js:48, 104, 149`); 60 stacking items; vitamins 3 slots (+2 from the Lab).
+  - Base bonds fuse moves into one slot (`player.js:197-229`, `levelup.js:3`; `rift.js:248`, `tower.js:45, 357`).
+- **Things that depend on one active move:**
+  - melee −25% damage taken (`player.js:283`);
+  - HUD active slot, bond grid, tap-to-switch (`hud.js:358-470`);
+  - the Shortcuts panel (`save.pbind`, `menu.js:333-351`, `db.js:147-157`);
+  - co-op sends one move per frame (`net/coop.js:141-148`), partner orbs only for the active move (`combat.js:558-563`), `'c'` cast events (`coop.js:437-440`);
+  - spectate `ac` (`mica/spectate.js:61`), replay keeps it (`mica/replay.js:185`), the viewer ghosts the active group (`ui/watch-ui.js:67-68, 238-256`);
+  - level-up new-move cards (`systems/levelup.js:39, 105`; `expedition/levelups.js:149`);
+  - hint text "1-4 / Q / E" (HUD, `lang-en.js`, pad glyphs);
+  - tests: the pad suite, the D0a harness (Digit1 switches mid-run), items, dynamax, tower, league, levelups, mega, meta.
+
+### Constraints
+- **Golden fixtures** `overworld/tests/fixtures/micasurvivor_golden/*.json`:
+  - Re-record ONCE on purpose: `node overworld/tests/micasurvivor_dlc_base_unchanged_test.mjs --record` (in a worktree: `MAGEPUNK_ASSET_ROOT=<main checkout>`).
+  - Explain the diff in the PR (README ~1327). The forceload test reuses them. The test profile has `moves:1`, `bag:1` (test line ~84).
+- **SAVE TRAP:** `sanitize` deletes unknown upgrade ids (`db.js:188`). Retired ids MUST stay in `G.Upgrades.BY`, marked retired, or purchases (and the refund basis) vanish.
+- **Refunds:**
+  - The base coin ledger (`save.led`) merges by max, so a refund on two devices could pay twice. Reuse Expedition's `cur.spend` / `cur.earn` + `reconcile()` pattern.
+  - Back up first (the `micasurvivor_backup.mp:<user>.<time>` pattern). Owner rule: never migrate a save without backup and rollback.
+- **Expedition save cap:** 2,000 counters, on client (`expedition/save.js:24`) and server (`server/mp.mjs:428`). Per-family counters `lg.runs.*`, `lg.best.*`, `rs.*` would reach ~1,740 at 580 families. MUST fix before D19.
+- **Versions:**
+  - Expedition `DV` is 14 (`systems/expedition.js:68`); `x` v10.
+  - Base replays `h.v:1` (`replay.js:69`), snapshots `v:1`, base lobbies carry no version.
+  - New tapes need a flag (e.g. `h.af:1`) so old ones replay with one active move.
+  - Base co-op needs a ruleset field on the lobby (server allow-list change).
+- **Leaderboards:** the base board ranks survival time (`mp.mjs:2234-2257`); Expedition boards kills / seconds / damage. New board keys from the release; old ones readable as "Legacy". Server change.
+- **Balance:** 4 moves firing ≈ 2.5–4× DPS. Base Normal has adaptive difficulty (`systems/adaptive.js:74`); Expedition boss HP follows DPS. Tune with the D11 fixed-step bot sim.
+- **Phones:** no projectile cap (`entities/projectile.js`). Touch enemy cap 80 Expedition / 64 base. Measure at 844×390.
+- **Relay:** busiest host frame 9,966 / 16,000 chars. Measure extra `'c'` events with `micasurvivor_expedition_mp_test`.
+
+#### Batches
+- **D16, every move fires (both modes):**
+  - Loop over all slots in combat. Remove switching (keys, pad, HUD taps). The HUD shows all 4 slots with cooldown sweeps.
+  - Bonds / Choice Band / melee per the decisions below.
+  - Co-op sends a list of orbit moves; the reader accepts the old single move.
+  - Replay `h.af`, snapshot `af`, base lobby ruleset field.
+  - Expedition: `maxMoves` 4, `EXTRA_SLOTS` 0, Lab Move slot retired + refunded. DV 15.
+  - Re-record D0a.
+- **D17, one item slot (both modes):**
+  - Base: retire Backpack + Double baggage (refund once, reconciled).
+  - Expedition: the 60 items become one held item with base's replace screen. Adapt Poké Balls, Meowth, altars, Ditto. `x.u.i` stays readable. DV 16.
+- **D18, shared Pokémon upgrades:**
+  - Per family = the max over its stages' `pupg`, computed at read time (no save rewrite).
+  - The shop lists base-owned plus League-playable.
+  - `tm` swaps kit move 1. `moves` (Repertoire) unlocks kit move 2 at Lv 1.
+  - Retire the Lab's 9 stat rows with a reconciled refund. Backup first.
+- **D19, full League:**
+  - Fix the counter cap first.
+  - 580 families / 1,025 species; the first 245 members byte-identical.
+  - Kits, ranks, roles, challenges; server `MSURV_EXP_LEAGUE` list; achievements / titles. DV 17.
+- **D20, Expedition enemies, all 1,025:**
+  - Off-type wanderers as a seeded share; rarity-5 species as zone-3 / Survival elites; roaming legendaries.
+  - Fix Wishiwashi in base. DV 18.
+  - Test: the union of plans over seeds covers 1,025.
+- **D21, boards, balance, performance:**
+  - New board keys (server; ships no later than the D16 release).
+  - A sim-tuned damage factor (~1.6× today's total DPS), a phone projectile budget, relay / replay size measurements.
+
+#### APPROVED decisions (owner: "go with the defaults")
+1. **Unlocking:** base keeps gacha + rescue. In Expedition every family is a League member (challenge + catch, as now), and owning ANY stage in base also unlocks that family.
+2. **Expedition starts at the first stage**; you reach every species by evolving.
+3. **Refunds:** refund Backpack, the Lab Move slot and the Lab's 9 stat rows in full, once per account, after a backup. Keep every other upgrade.
+4. **Upgrades are per family** (the best level among its stages, at read time).
+5. **"1 item slot" = held items only.** Vitamins keep their 3 slots.
+6. **When the 4 move slots are full:** base as today (upgrades / evolutions / stats only). Expedition offers rare "swap a move" cards so the 18 new moves stay reachable.
+7. **Bonds (OWNER CHANGED 2026-10-26):** fusion stays — a bond fuses moves into ONE slot, freeing a slot the player may fill; every move in a fused slot fires on its own cooldown; the 4 cap counts slots, not moves.
+8. **Choice Band:** +40% damage on the slot-1 move, −20% on the others.
+9. **Melee:** −25% damage taken for 1.5 s after a melee move fires.
+10. **Balance:** a global damage factor so total DPS ≈ 1.6× today's (bot sim).
+11. **Leaderboards:** new boards from the release; old ones readable as "Legacy".
+12. **Old replays / live views** keep the one-active-move look.
+13. **Base co-op** between an old and a new client is refused.
+14. **Freed keys / buttons** (1-4, Q/E, LB/RB) are unbound in a run. Team mode keeps Tab and R3.
+15. **Expedition:** all 27 starter trios free; up to 5 wild members a run instead of 3.
+
+### Update (2026-10-26): D16 built, "every move fires"
+Built (`micasurvivor/README.md`, "DLC D16: every move fires"). Both modes; a deliberate base change. Choices and notes for later batches:
+- **Where it lives:** `G.Combat.tick` fires every slot of an all-fire player (`pl.af`); `G.Combat.AF` holds the numbers (the damage
+  factors, the Choice Band's +40 % / -20 %, the melee guard) and `afK` applies them in `land()`; `Player.setActive` / `cycle` are no-ops
+  for an all-fire player (`active` stays 0, so `activeMove()` is slot 1: the aim's priority, the halo, the band's boosted move).
+- **Decision 7 as the owner changed it:** bonds fuse as before; the freed slot is offered again by the base level-up (its rule was
+  already "while slots < 4"); no per-bond bonus. Expedition has no bonds.
+- **Balance (decision #10):** `AF.DMG` 0.8 (base), `AF.DMG_EXP` 1.1 (Expedition), from `tools/micasurvivor/dps_sim.mjs` (D11's bot sim
+  + a dummy ring, 10 builds a mode). Today's best single slot -> shipped: base Normal 864 -> 1,148 DPS (**x1.58**), a fused base build
+  **x1.73**, Expedition Normal 1,592 -> 2,563 (**x1.63**). "Today's" = the best slot, what a player kept active; against the MEAN slot
+  all-fire is x3.9 / x3.6 at x1. D21 fine-tunes: a 45-min Survival run now KOs ~16,000 (was ~8,000-8,500), so Survival's pacing and
+  boss HP (which follows DPS) want a look.
+- **Expedition:** `K.MAX_MOVES` 4, `EXTRA_SLOTS` 0; swap cards (decision #6) with a fixed total weight (`K.W.swap` = 3), replacing the
+  lowest-level move in its slot (`lv.swaps` counter). The Lab's Move slot retired (`retired: 'D16'` stays in `LAB`: the run row's
+  order) and refunded once per account (`refundRetired`, `rf.lab.<id>.<level>:<device>` in `cur.earn`, reconciled like any double
+  payment; backups of both saves first; `rollbackRefunds`). D18's 9 stat rows reuse the same path. Read-only D1 (2026-10-26): no
+  Expedition save on the server owns a Lab level, so no live refund.
+- **The board split (D21's, shipped now with the rule change):** server `MSURV_RULES` 2 / `MSURV_EXP_AF_DV` 15: base `rules: 2` ->
+  `runboard:micasurvivor:r2`, Expedition dv >= 15 -> `...:r2:<map>:<diff>[:time|:survival]`, season `msurvseason:<n>:r2:...`; reads
+  `{rules: 2}`, else Legacy. The UI's "Legacy" ("Reglas anteriores") tab / chip. An old cached client keeps writing the legacy boards.
+- **Old tapes / views / co-op:** `h.af`, the slow fields' `af` / `sg`; co-op frame field 15 (every orbit move); a base lobby's `rules`
+  (server allow-list: 1 or 2; a mismatched join 409; the start carries it). Old tapes, old snapshots and old co-op frames still read.
+- **Measured:** the busiest relay frame 10,147 / 16,000 chars with the host's 4 moves (3.2 casts a second); phones 844x390: <= 15
+  projectiles, p95 18 ms, the HUD fits; no projectile budget needed. Tapes: Survival 45 min 793,626 chars, a Classic clear 762,311.
+- **Golden fixtures:** re-recorded once (every mode diverges from second 1: more casts, more draws). Normal, Daily and Tower now last
+  the whole 120 s (they fell at 111.7 / 103.3 / 91.3 s); Boss Rush falls at 90.7 s instead of 117.3 s (its third boss is Mew instead of
+  Registeel: the random stream shifted). Passes twice in a row; the force-loaded run passes.
+- **Versions:** `G.Expedition.DV` 15, `x` v10.
