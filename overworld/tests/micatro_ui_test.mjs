@@ -110,6 +110,24 @@ try {
 				if (signedIn) { localStorage.setItem('magepunk_mp_token_v1', 'mic-token'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }
 			} catch { }
 		}, STATE, signedIn);
+		// the test hook's contract: window.__micatro.ready (normal mode) turns true only once the main menu is up. It used to be
+		// true before boot had read the account's run (micatro-run-get, up to 3 s), so a run a test started at `ready` had
+		// the boot menu drawn over it a moment later (micatro_tooltip_test / _mobile_viewport_test red on CI). Record when it
+		// first reads true and whether the menu was there.
+		await page.evaluateOnNewDocument(() => {
+			window.__readyLog = [];
+			let hook;
+			const note = (o, v) => { if (v && o.mode === 'normal' && !window.__readyLog.length) window.__readyLog.push({ menu: !!document.querySelector('.menu-modal') }); };
+			Object.defineProperty(window, '__micatro', {
+				configurable: true, get: () => hook,
+				set: (o) => {
+					hook = o;
+					if (!o || typeof o !== 'object') return;
+					let r = o.ready; note(o, r);
+					Object.defineProperty(o, 'ready', { configurable: true, enumerable: true, get: () => r, set: (v) => { note(o, v); r = v; } });
+				},
+			});
+		});
 		await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready)), 30000);
 		return { page, errors, ctx };
@@ -117,9 +135,20 @@ try {
 	const idle = (page) => waitFor(() => page.evaluate(() => window.__micatro.idle()), 30000);
 	const V = (page) => page.evaluate(() => window.__micatro.view());
 	const clickSel = async (page, sel) => { await page.waitForSelector(sel, { visible: true, timeout: 8000 }); await page.click(sel); };
-	const clickCard = (page, id) => page.click(`.card[data-id="${id}"]`);
+	// the cards have come to rest: every sprite at its layout target (cardsprite.js frame() eases T toward tgt, and the board
+	// caps a frame's dt at 50 ms, so on a slow CI runner a card still slides in long after a fixed sleep — a click or a
+	// measurement there hit the card next to it)
+	const settle = (page) => waitFor(() => page.evaluate(() => {
+		for (const sp of window.__micatro.board.sprites.values()) {
+			if (sp.leaving) continue;
+			const T = sp.T, g = sp.tgt;
+			if (sp.dragging || sp.juice || sp.flipAnim || Math.abs(T.x - g.x) > 0.5 || Math.abs(T.y - g.y) > 0.5 || Math.abs(T.r - g.r) > 0.005 || Math.abs(T.s - g.s) > 0.005) return false;
+		}
+		return true;
+	}), 20000);
+	const clickCard = async (page, id) => { await settle(page); await page.click(`.card[data-id="${id}"]`); };
 	// hand-vs-controls geometry: every hand card's box against Play/Discard, the screen and the "n/8" counter
-	const handGeom = (page) => page.evaluate(() => {
+	const handGeom = async (page) => { await settle(page); return page.evaluate(() => {
 		const R = (el) => el.getBoundingClientRect();
 		const hit = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
 		const ids = window.__micatro.view().areas.hand.map(c => c.id);
@@ -135,7 +164,7 @@ try {
 			underCounter: cards.filter(c => hit(c, lbl)).length,
 			gapSpread: gaps.length ? Math.max(...gaps) - Math.min(...gaps) : 0,
 		};
-	});
+	}); };
 	const growHand = (page, by) => page.evaluate(async (by) => {
 		const C = await import('/micatro/js/engine/core.js');
 		C.G.hand.change_size(by);
@@ -148,6 +177,8 @@ try {
 		await page.evaluate(BOT);
 		// (the menu draws a moment after `ready`: boot waits up to 3 s for the account's run first — run sync)
 		A(await waitFor(() => page.evaluate(() => window.__micatro.mode === 'normal' && !!document.querySelector('.main-menu .b-menu-play')), 15000), 'the main menu shows with a Play button');
+		const rl = await page.evaluate(() => window.__readyLog);
+		A(rl.length === 1 && rl[0].menu, 'signed in: __micatro.ready turns true only once the main menu is up (after the account run is read)', JSON.stringify(rl));
 		A(await page.evaluate(() => !!document.querySelector('script[src="/site/topbar.js"]') && document.querySelector('meta[name="mp-topbar"]').content === 'compact'), 'the page carries the compact site topbar');
 
 		// New Run: seeded via the setup screen
@@ -217,6 +248,7 @@ try {
 		// drag a hand card with the mouse: the engine gets a 'reorder'
 		if (v.state === 'SELECTING_HAND') {
 			const o0 = v.areas.hand.map(c => c.id);
+			await settle(page);
 			const pts = await page.evaluate((a, b) => { const r = (id) => document.querySelector(`.card[data-id="${id}"]`).getBoundingClientRect(); const ra = r(a), rb = r(b); return { x0: ra.left + ra.width / 2, y0: ra.top + ra.height / 2, x1: rb.left + rb.width * 0.8, y1: rb.top + rb.height / 2 }; }, o0[0], o0[3]);
 			await page.mouse.move(pts.x0, pts.y0); await page.mouse.down();
 			for (let i = 1; i <= 12; i++) { await page.mouse.move(pts.x0 + (pts.x1 - pts.x0) * i / 12, pts.y0 + (pts.y1 - pts.y0) * i / 12); await sleep(16); }
@@ -356,12 +388,14 @@ try {
 	// ================================================================ phone portrait
 	{
 		const { page, errors, ctx } = await open({ url: '/micatro/?direct=1', w: 390, h: 844, signedIn: false, mobile: true });
+		const rlg = await page.evaluate(() => window.__readyLog);
+		A(rlg.length === 1 && rlg[0].menu, 'a guest: __micatro.ready turns true only once the main menu is up', JSON.stringify(rlg));
 		A(await page.evaluate(() => !!document.querySelector('.login-link')), 'a guest sees the "log in to let friends watch" link');
 		A(await page.evaluate(() => { const a = document.querySelector('.main-menu .back-link'); return !!a && a.getAttribute('href') === '/overworld/' && /overworld/i.test(a.textContent); }), '?direct=1 (the arcade cabinet) offers "Back to the overworld"');
 		await page.evaluate(() => window.__micatro.newRun({ seed: 'PHONE1' }));
 		await idle(page);
 		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
-		await idle(page); await sleep(500);
+		await idle(page); await sleep(500); await settle(page);
 		const lay = await page.evaluate(() => {
 			const st = document.getElementById('stage').getBoundingClientRect();
 			const b = document.querySelector('.b-play').getBoundingClientRect();
@@ -386,7 +420,7 @@ try {
 		A(pg.n === 8 && pg.offscreen === 0 && pg.underCounter === 0 && pg.overButtons === 0 && pg.gapSpread < 2, '390×844, 8 cards: an even fan, fully on screen, the counter covers nothing', JSON.stringify(pg));
 		// tap two cards and Play with touch
 		const ids = (await V(page)).areas.hand.slice(0, 2).map(c => c.id);
-		for (const id of ids) { await page.tap(`.card[data-id="${id}"]`); await idle(page); await sleep(150); }
+		for (const id of ids) { await settle(page); await page.tap(`.card[data-id="${id}"]`); await idle(page); await sleep(150); }
 		await page.tap('.b-play');
 		await sleep(400); await idle(page);
 		const v = await V(page);

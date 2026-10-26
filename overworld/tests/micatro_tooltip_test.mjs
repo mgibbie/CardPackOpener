@@ -30,11 +30,24 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise(r => server.listen(PORT, r));
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(100); } return false; }
 const overlap = (a, b) => a && b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 try {
 	for (const [label, vp] of [['phone portrait', { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true }], ['desktop', { width: 1280, height: 800 }]]) {
 		const page = await browser.newPage();
+		// the cards have come to rest: every sprite at its layout target (cardsprite.js frame() eases T toward tgt, and the board
+		// caps a frame's dt at 50 ms, so on a slow CI runner a card still slides in long after a fixed sleep — a tap there
+		// hit the card next to it, or the button of one sliding past)
+		const settle = () => waitFor(() => page.evaluate(() => {
+			for (const sp of window.__micatro.board.sprites.values()) {
+				if (sp.leaving) continue;
+				const T = sp.T, g = sp.tgt;
+				if (sp.dragging || sp.juice || sp.flipAnim || Math.abs(T.x - g.x) > 0.5 || Math.abs(T.y - g.y) > 0.5 || Math.abs(T.r - g.r) > 0.005 || Math.abs(T.s - g.s) > 0.005) return false;
+			}
+			return true;
+		}), 20000);
 		await page.setViewport(vp);
 		await page.evaluateOnNewDocument(() => { localStorage.setItem('micatro_speed', '4'); localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0'); });
 		await page.goto(`http://localhost:${PORT}/micatro/`, { waitUntil: 'domcontentloaded' });
@@ -54,6 +67,7 @@ try {
 			const id = await page.evaluate(async (area) => { const C = await import('/micatro/js/engine/core.js'); const c = C.G[area].cards[0]; return c && c.sort_id; }, area);
 			const sel = `.card[data-id="${id}"]`;
 			await page.waitForSelector(sel, { timeout: 5000 });
+			await settle();
 			if (vp.hasTouch) await page.tap(sel); else await page.click(sel);
 			await new Promise(r => setTimeout(r, 500));
 			const r = await page.evaluate((sel) => {
@@ -74,6 +88,7 @@ try {
 		{
 			const id = await page.evaluate(async () => { const C = await import('/micatro/js/engine/core.js'); return C.G.jokers.cards[2].sort_id; });
 			const sel = `.card[data-id="${id}"]`;
+			await settle();
 			if (vp.hasTouch) await page.tap(sel); else await page.click(sel);
 			await new Promise(r => setTimeout(r, 500));
 			const r = await page.evaluate(() => {

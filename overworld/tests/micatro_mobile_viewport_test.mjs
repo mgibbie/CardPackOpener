@@ -99,6 +99,17 @@ try {
 	await page.evaluate(BOT);
 	const idle = () => waitFor(() => page.evaluate(() => window.__micatro.idle()), 30000);
 	const V = () => page.evaluate(() => window.__micatro.view());
+	// the cards have come to rest: every sprite at its layout target (cardsprite.js frame() eases T toward tgt, and the board
+	// caps a frame's dt at 50 ms, so on a slow CI runner a card still slides in long after a fixed sleep — a tap there
+	// hit the card next to it, or the button of one sliding past)
+	const settle = () => waitFor(() => page.evaluate(() => {
+		for (const sp of window.__micatro.board.sprites.values()) {
+			if (sp.leaving) continue;
+			const T = sp.T, g = sp.tgt;
+			if (sp.dragging || sp.juice || sp.flipAnim || Math.abs(T.x - g.x) > 0.5 || Math.abs(T.y - g.y) > 0.5 || Math.abs(T.r - g.r) > 0.005 || Math.abs(T.s - g.s) > 0.005) return false;
+		}
+		return true;
+	}), 20000);
 	const act = async (a) => { await page.evaluate(a => window.__micatro.act(a), a); await idle(); };
 
 	// ---- play the first blind out (same seeded bot as micatro_ui_test) and cash out into the shop
@@ -126,12 +137,13 @@ try {
 		await sleep(150);
 		if (vis != null) await page.evaluate((x) => window.__fakeVisible(x), vis);
 		await sleep(250);
-		await idle(); await sleep(500); // cards ease to their new targets
+		await idle(); await sleep(500); await settle(); // cards ease to their new targets
 	};
 	// tap a card the way a finger does (pointer events on the card), so its buttons appear
 	// (at a point of the card nothing else covers — the selected card's tooltip can overlap a neighbour)
 	const select = async (id) => {
 		for (let tries = 0; tries < 3; tries++) {
+			await settle();
 			const p = await page.evaluate((id) => {
 				const el = document.querySelector(`.card[data-id="${id}"]`); if (!el) return null;
 				const r = el.getBoundingClientRect();

@@ -70,6 +70,15 @@ try {
 		await page.evaluateOnNewDocument((st, signedIn) => {
 			const pad = { id: 'Pro Controller 057e', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
 			window.__owFakePads = [pad]; window.__pad = pad;
+			// (a poll of site/gamepad.js reads p.connected once: count them, so a press is held until the game has SEEN it — a fixed
+			// 70 ms press fell between two slow CI frames and was never read — and released only once a poll has seen that too)
+			let polls = 0;
+			Object.defineProperty(pad, 'connected', { get() { polls++; return true; }, enumerable: true });
+			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
+			const set = (b, on) => { pad.buttons[b] = on ? { pressed: true, value: 1 } : { pressed: false, value: 0 }; };
+			window.__padSet = async (b, on) => { set(b, on); const n = polls; await until(() => polls > n); };
+			// (two polls after the release: the frame that acted on it, then one more so its requestAnimationFrame follow-ups have run)
+			window.__padTap = async (b, hold = 70) => { const t0 = performance.now(); set(b, true); const n = polls; await until(() => polls > n && performance.now() - t0 >= hold); set(b, false); const m = polls; await until(() => polls > m + 1); };
 			try {
 				localStorage.setItem('micatro_speed', '4'); localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0');
 				localStorage.removeItem('micatro_run_v1');
@@ -80,7 +89,7 @@ try {
 		await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready && window.__micatroPad)), 30000);
 		await sleep(400);
-		const tap = async (b, hold = 70) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(hold); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(140); };
+		const tap = async (b, hold = 70) => { await page.evaluate((b, hold) => window.__padTap(b, hold), b, hold); await sleep(140); };
 		return { page, errors, ctx, tap };
 	};
 
@@ -143,9 +152,9 @@ try {
 		// hold confirm + right moves the focused card one slot right
 		const order0 = v.areas.hand.map(c => c.id);
 		await focusTo(order0[0]);
-		await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, B.confirm); await sleep(120);
+		await page.evaluate(b => window.__padSet(b, true), B.confirm); await sleep(120);
 		await tap(B.right);
-		await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, B.confirm); await sleep(200);
+		await page.evaluate(b => window.__padSet(b, false), B.confirm); await sleep(200);
 		await idle();
 		v = await V();
 		A(v.areas.hand[1].id === order0[0] && v.areas.hand[0].id === order0[1] && !v.areas.hand.some(c => c.hl), 'hold confirm + → moves the card (and does not select it)', JSON.stringify(v.areas.hand.slice(0, 2).map(c => c.id)));

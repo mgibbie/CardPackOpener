@@ -802,7 +802,9 @@ async function boot() {
     get replay() { return replayCtrl; },
     get progress() { return Progress; },
     get runSync() { return RunSync; },
-    ready: true,
+    // true once the game takes input: the main menu is up (normal mode: after run sync's first read, up to 3 s —
+    // a run started before then had the boot menu drawn over it), a replay / spectate view straight away
+    ready: MODE !== 'normal',
   };
   if (MODE === 'spectate') { startSpectating(); return; }
   if (MODE === 'replay') { startReplayMode(); return; }
@@ -816,5 +818,6 @@ async function boot() {
     if (!first) ready.then(() => redrawMenu()).catch(() => {});
   }
   UI.mainMenu(menuOpts());
+  window.__micatro.ready = true;
 }
 boot().catch((e) => { console.error('micatro boot failed', e); });
