@@ -61,6 +61,8 @@ try {
 	const tap = async (b, ms = 70) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(ms); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(140); };
 	const pb = () => page.evaluate(() => ({ mode: window.__padboard?.mode, focus: window.__padboard?.focus, slot: window.__padboard?.slot, active: window.__padboard?.active() }));
 
+	// the opening-hand modal opens a beat after the board is ready (later on a slow / software-GL machine, like CI): wait for it
+	await page.waitForFunction(() => [...document.querySelectorAll('button')].some(x => /keep hand/i.test(x.textContent) && x.getBoundingClientRect().width > 0), { timeout: 15000 }).catch(() => {});
 	A(await page.evaluate(() => !!window.__padboard), 'the board controller runs on the match page');
 	// the mulligan is a DOM modal: the board stands aside for padnav
 	A(await page.evaluate(() => window.__padboard.active() === false), 'while the mulligan is up the board stands aside (padnav owns modals)');

@@ -16,6 +16,8 @@ import path from 'path';
 
 const D = path.join('overworld', 'data');
 const MP66 = (() => {
+	// MAGEPUNK_REF = the Reference folder itself (as the gate's other decomp readers take it)
+	if (process.env.MAGEPUNK_REF && fs.existsSync(path.join(process.env.MAGEPUNK_REF, 'pokecrystal', 'maps'))) return path.dirname(path.resolve(process.env.MAGEPUNK_REF));
 	for (let d = path.resolve('.'); ; d = path.dirname(d)) {
 		const p = path.join(d, 'Magepunk66');
 		if (fs.existsSync(path.join(p, 'Reference', 'pokecrystal', 'maps'))) return p;

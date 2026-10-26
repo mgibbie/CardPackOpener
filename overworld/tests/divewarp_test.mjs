@@ -41,7 +41,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const root = path.join(REF, 'pokeemerald', 'data', 'maps');
 	const want = fs.existsSync(root) ? fs.readdirSync(root).filter(d => fs.existsSync(path.join(root, d, 'scripts.inc')) && /setdivewarp/.test(fs.readFileSync(path.join(root, d, 'scripts.inc'), 'utf8'))) : [];
 	const miss = want.filter(d => !EXTRA_DIVE[d]);
-	A(want.length >= 15 && miss.length === 0, `1. all ${want.length} pokeemerald maps with a setdivewarp have their dive/emerge link`, miss.join(', ') || String(want.length));
+	if (!fs.existsSync(root)) console.log(`skip - 1. needs the pokeemerald decomp (MAGEPUNK_REF, ${REF}): the setdivewarp scan`);
+	else A(want.length >= 15 && miss.length === 0, `1. all ${want.length} pokeemerald maps with a setdivewarp have their dive/emerge link`, miss.join(', ') || String(want.length));
 	A(EXTRA_DIVE.Underwater_SeafloorCavern?.emerge?.map === 'MAP_SEAFLOOR_CAVERN_ENTRANCE', '1. Underwater_SeafloorCavern surfaces into SeafloorCavern_Entrance', JSON.stringify(EXTRA_DIVE.Underwater_SeafloorCavern));
 	A(EXTRA_DIVE.AbandonedShip_HiddenFloorCorridors?.dive?.map === 'MAP_ABANDONED_SHIP_UNDERWATER1', "1. the Abandoned Ship's hidden corridors dive back to Underwater1", JSON.stringify(EXTRA_DIVE.AbandonedShip_HiddenFloorCorridors));
 }

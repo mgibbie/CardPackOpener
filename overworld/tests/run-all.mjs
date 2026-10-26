@@ -1,7 +1,7 @@
 // tests/run-all.mjs — run every overworld test (the battlecards runner's twin).
-// These are dev-machine checks: most boot headless Chrome against the LOCAL
-// overworld/data assets (gitignored + offloaded), so this is a pre-push gate for
-// overworld work, not CI.
+// Most suites boot headless Chrome against the LOCAL
+// overworld/data assets (gitignored + offloaded). It runs on a dev machine and,
+// sharded, on GitHub Actions (.github/workflows/gate.yml fetches the assets).
 //
 // Usage:  node overworld/tests/run-all.mjs             (from the repo root)
 //         node overworld/tests/run-all.mjs portals     (only files whose name contains "portals")
@@ -11,6 +11,11 @@
 //         node overworld/tests/run-all.mjs --changed   (QUICK gate: only the suites this branch's changes
 //                                                       can affect + a smoke set; see select-changed.mjs.
 //                                                       --base <ref> compares against another ref)
+//         node overworld/tests/run-all.mjs --shard 3/16 (only this shard's slice, balanced on the committed
+//                                                       gate-timings.json; combines with --changed; CI's gate.yml)
+//         node overworld/tests/run-all.mjs --lane micatro (only one game's suites; LANES in select-changed.mjs)
+//         node overworld/tests/run-all.mjs --list-json (print what would run + its estimated seconds, run nothing)
+//         --no-battlecards                             (--changed: skip the Battlecards node suite; CI runs it as its own job)
 //         CHROME=<path> node overworld/tests/run-all.mjs
 // Exit code is non-zero if any test fails (after its retry). Each test gets 5 minutes.
 //
@@ -43,9 +48,14 @@ import os from 'os';
 const here = dirname(fileURLToPath(import.meta.url));
 // a cloud session's Chrome (tools/cloud/setup.sh) — every suite reads CHROME and inherits this env
 if (!process.env.CHROME && existsSync('/opt/chrome/chrome')) process.env.CHROME = '/opt/chrome/chrome';
-const args = process.argv.slice(2);
+// (`--x=y` is the same as `--x y`)
+const args = process.argv.slice(2).flatMap(a => /^--[\w-]+=/.test(a) ? [a.slice(0, a.indexOf('=')), a.slice(a.indexOf('=') + 1)] : [a]);
 const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args.splice(i, 2)[1] : null; };
 const jobsArg = flag('--jobs');
+const shardArg = flag('--shard');
+const laneArg = flag('--lane');
+const listJson = args.includes('--list-json') && args.splice(args.indexOf('--list-json'), 1);
+const noBattlecards = args.includes('--no-battlecards') && args.splice(args.indexOf('--no-battlecards'), 1);
 const noRetry = args.includes('--no-retry') && args.splice(args.indexOf('--no-retry'), 1);
 const resume = args.includes('--resume') && args.splice(args.indexOf('--resume'), 1);
 const baseRef = flag('--base');
@@ -103,6 +113,29 @@ if (changedOnly) {
 		if (selection.broad?.length) console.log(`  (too common to select on: ${selection.broad.join(', ')})`);
 	}
 }
+// one game's lane (select-changed.mjs LANES): only the suites it owns
+if (laneArg) {
+	const { LANES, laneOfSuite } = await import('./select-changed.mjs');
+	if (!LANES.some(l => l.name === laneArg)) { console.log(`no lane "${laneArg}" (lanes: ${LANES.map(l => l.name).join(', ')})`); process.exit(1); }
+	for (let i = files.length - 1; i >= 0; i--) if (laneOfSuite(files[i]) !== laneArg) files.splice(i, 1);
+	console.log(`lane ${laneArg}: ${files.length} suite(s)`);
+}
+// SHARDED (CI): this runner's slice of the list above, balanced on the committed
+// gate-timings.json, so every shard computes the same split (see gate-shard.mjs)
+const { assignShards, parseShard, loadTimings, estOf } = await import('./gate-shard.mjs');
+const timings = loadTimings();
+if (listJson) {   // the CI plan job: what would run, and its estimated serial seconds
+	const est = files.reduce((a, f) => a + estOf(f, timings), 0);
+	console.log(JSON.stringify({ full: !selection || !!selection.full, why: selection?.why || null, suites: files.length, est, battlecards: !selection || !!selection.battlecards }));
+	process.exit(0);
+}
+if (shardArg) {
+	const { i, n } = parseShard(shardArg);
+	const mine = new Set(assignShards(files, n, timings)[i - 1].suites);
+	const all = files.length;
+	for (let k = files.length - 1; k >= 0; k--) if (!mine.has(files[k])) files.splice(k, 1);
+	console.log(`shard ${i}/${n}: ${files.length} of ${all} suite(s), ~${files.reduce((a, f) => a + estOf(f, timings), 0)}s serial`);
+}
 const skipped = files.filter(f => alreadyPassed.has(f));
 
 let history = {};
@@ -111,7 +144,7 @@ const portsOf = f => {
 	const src = readFileSync(join(here, f), 'utf8');
 	return new Set([...src.matchAll(/\bPORT\s*=\s*(\d{4,5})|\.listen\(\s*(\d{4,5})/g)].map(m => m[1] || m[2]));
 };
-const suites = files.filter(f => !alreadyPassed.has(f)).map(f => ({ f, ports: portsOf(f), exclusive: EXCLUSIVE.has(f), est: history[f]?.secs ?? 30 }))
+const suites = files.filter(f => !alreadyPassed.has(f)).map(f => ({ f, ports: portsOf(f), exclusive: EXCLUSIVE.has(f), est: history[f]?.secs ?? estOf(f, timings) }))
 	.sort((a, b) => b.est - a.est);
 
 function runOne(f) {
@@ -170,7 +203,7 @@ const t0 = Date.now();
 // the quick gate also runs the Battlecards node suite when Battlecards or the
 // server changed (CI runs it too; locally it is ~1 minute and catches it first)
 let bcFailed = false;
-if (selection && selection.battlecards) {
+if (selection && selection.battlecards && !noBattlecards && !shardArg) {   // (CI runs it as its own job)
 	const r = await new Promise(resolve => {
 		const started = Date.now();
 		const child = spawn(process.execPath, [join(here, '../../battlecards/tests/run-all.mjs')], { stdio: ['ignore', 'pipe', 'pipe'] });

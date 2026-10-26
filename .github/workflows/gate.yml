@@ -1,0 +1,232 @@
+name: Gate
+
+# The test gate on GitHub Actions: the overworld gate (overworld/tests/run-all.mjs,
+# ~380 browser suites) sharded across runners, plus the Battlecards node suite and
+# the overworld undefined-name lint. ONE check, "gate", sums it all up, so branch
+# protection / `gh pr merge --auto` can wait on a single name.
+#   pull_request:      the QUICK gate (--changed vs the PR's base: the suites the diff can
+#                      affect + the smoke set; FULL when it touches core boot code)
+#   push to main,
+#   nightly, manual:   the FULL gate
+# Every shard runs the same command a dev machine can (`run-all.mjs [--changed] --shard i/n`):
+# the split is computed from the committed overworld/tests/gate-timings.json, so the
+# shards agree without talking to each other. Failures are retried once alone; a suite
+# that then passes is FLAKY, which counts as a pass (same as locally).
+# The gitignored assets (overworld/data, micasurvivor/assets, micatro/mods/*/assets) come
+# from their live Pages projects by manifest, fetched once per manifest change into the
+# Actions cache. No secrets are used.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    - cron: "30 8 * * *" # 08:30 UTC nightly, FULL
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Run the FULL gate (otherwise the quick --changed gate vs origin/main)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  # a new push to a PR cancels its older run; main/nightly runs each finish
+  group: gate-${{ github.event_name == 'pull_request' && github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CHROME: /usr/bin/google-chrome
+  # the owner's timezone: the MicaSurvivor golden replay (and anything else that formats a local date) was recorded there
+  TZ: America/New_York
+  # micatro suites serve gitignored mod art from MICATRO_MAIN when the checkout lacks it; in CI it IS the checkout
+  MICATRO_MAIN: ${{ github.workspace }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      shards: ${{ steps.plan.outputs.shards }}
+      n: ${{ steps.plan.outputs.n }}
+      args: ${{ steps.plan.outputs.args }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # a PR checks out its merge commit: HEAD^1 is the base branch tip, so HEAD^1..HEAD is the PR's diff
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Plan the shards
+        id: plan
+        env:
+          # a PR asks for the FULL gate with "[full gate]" in its title or a "full-gate" label
+          PR_FULL: ${{ github.event_name == 'pull_request' && (contains(github.event.pull_request.title, '[full gate]') || contains(github.event.pull_request.labels.*.name, 'full-gate')) }}
+          EVENT: ${{ github.event_name }}
+          FULL_INPUT: ${{ inputs.full }}
+        run: |
+          if { [ "$EVENT" = "pull_request" ] && [ "$PR_FULL" != "true" ]; } || { [ "$EVENT" = "workflow_dispatch" ] && [ "$FULL_INPUT" != "true" ]; }; then
+            if [ "$EVENT" = "workflow_dispatch" ]; then git fetch --depth=200 origin main; BASE=origin/main; else BASE=HEAD^1; fi
+            ARGS="--changed --base $BASE"
+          else
+            ARGS=""
+          fi
+          node overworld/tests/run-all.mjs $ARGS --list-json | tee plan.txt   # (--changed also prints the selection)
+          J=$(tail -1 plan.txt)
+          echo "$J"
+          # ~6 minutes of (serial) suite time per shard, 1..16 shards (the longest suite, micatro_engine_test, is ~4.5 min)
+          N=$(node -e "const j=JSON.parse(process.argv[1]); console.log(Math.max(1, Math.min(16, Math.ceil(j.est / 360))))" "$J")
+          MODE=$(node -e "const j=JSON.parse(process.argv[1]); console.log(j.full ? 'full' : 'quick')" "$J")
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "n=$N" >> "$GITHUB_OUTPUT"
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "shards=$(node -e "console.log(JSON.stringify(Array.from({length:+process.argv[1]},(_,i)=>i+1)))" "$N")" >> "$GITHUB_OUTPUT"
+          echo "### Gate plan: $MODE, $N shard(s)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"; echo "$J" >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            overworld/data
+            micasurvivor/assets
+            micatro/mods/*/assets
+          key: gate-assets-v1-${{ hashFiles('tools/cloud/*_manifest.txt') }}
+          lookup-only: true
+      - name: Fetch the gitignored assets from their Pages projects
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          node tools/cloud/fetch-owdata.mjs
+          node tools/cloud/fetch-assets.mjs
+          du -sh overworld/data micasurvivor/assets
+      - name: Save them to the cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            overworld/data
+            micasurvivor/assets
+            micatro/mods/*/assets
+          key: gate-assets-v1-${{ hashFiles('tools/cloud/*_manifest.txt') }}
+
+  shard:
+    needs: [plan, assets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    name: shard ${{ matrix.shard }}/${{ needs.plan.outputs.n }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            overworld/data
+            micasurvivor/assets
+            micatro/mods/*/assets
+          key: gate-assets-v1-${{ hashFiles('tools/cloud/*_manifest.txt') }}
+          fail-on-cache-miss: true
+      - name: Install dev dependencies
+        run: npm install --no-audit --no-fund # package-lock.json is gitignored, so not `npm ci`
+      # a few micatro suites serve old mod files with `git show <sha>:path` (the pinned
+      # 'sha' constants in the suites): fetch just those commits into the shallow clone
+      - name: Fetch the commits the suites pin
+        run: |
+          SHAS=$(grep -ohE "'[0-9a-f]{40}'" overworld/tests/*_test.mjs | tr -d "'" | sort -u)
+          if [ -n "$SHAS" ]; then git fetch --no-tags --depth=1 origin $SHAS; fi
+      - name: Gate shard
+        run: |
+          $CHROME --version
+          if [ "${{ needs.plan.outputs.mode }}" = "quick" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then git fetch --depth=200 origin main; fi
+          set -o pipefail
+          node overworld/tests/run-all.mjs ${{ needs.plan.outputs.args }} --shard ${{ matrix.shard }}/${{ needs.plan.outputs.n }} --jobs 2 2>&1 | tee gate-shard-${{ matrix.shard }}.log
+      # every shard's log (the summary reads them; gate-shard.mjs --update refreshes the timings from them)
+      - name: Upload the shard log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-shard-${{ matrix.shard }}
+          path: gate-shard-${{ matrix.shard }}.log
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Upload the screenshots of a failed shard
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-shots-${{ matrix.shard }}
+          path: overworld/tests/*.png
+          retention-days: 14
+          if-no-files-found: ignore
+
+  battlecards:
+    # the Battlecards engine suite (~620 small node suites, ~5 min serial), every 3rd suite per job
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: battlecards ${{ matrix.shard }}/3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Battlecards node suite
+        run: node battlecards/tests/run-all.mjs --shard ${{ matrix.shard }}/3
+      # the main.js split's safety net: no overworld module may use a name it
+      # doesn't declare or import (ESLint no-undef; needs only the dev deps)
+      - name: Install dev dependencies
+        if: matrix.shard == 1
+        run: npm install --no-audit --no-fund
+      - name: Overworld undefined-name check
+        if: matrix.shard == 1
+        run: node overworld/tests/undef_test.mjs
+
+  gate:
+    # the ONE required check: green only when every shard and the Battlecards job passed
+    if: always()
+    needs: [plan, assets, shard, battlecards]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gate-shard-*
+          merge-multiple: true
+        continue-on-error: true
+        timeout-minutes: 2 # (one artifact download once hung for 3 minutes; the verdict does not need them)
+      - name: Summarise
+        run: |
+          {
+            echo "### Gate: ${{ needs.plan.outputs.mode }}, ${{ needs.plan.outputs.n }} shard(s)"
+            echo "plan=${{ needs.plan.result }} assets=${{ needs.assets.result }} shards=${{ needs.shard.result }} battlecards=${{ needs.battlecards.result }}"
+            echo '```'
+            for f in gate-shard-*.log; do [ -f "$f" ] && grep -hE '^(shard |[0-9]+/[0-9]+ tests passed|FLAKY|FAILED|FAIL )' "$f"; done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"
+      - name: Verdict
+        run: |
+          ok() { [ "$1" = "success" ]; }
+          ok "${{ needs.plan.result }}" && ok "${{ needs.assets.result }}" && ok "${{ needs.shard.result }}" && ok "${{ needs.battlecards.result }}" \
+            || { echo "gate FAILED"; exit 1; }
+          echo "gate passed"

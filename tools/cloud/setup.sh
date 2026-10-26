@@ -8,6 +8,7 @@
 #   2. a Chrome for puppeteer at /opt/chrome/chrome (the gate runners and the
 #      doctor use it automatically when CHROME isn't set)
 #   3. overworld/data from magepunk-owdata.pages.dev (gitignored, ~270 MB)
+#   4. micasurvivor/assets + micatro/mods/*/assets from their Pages projects (~190 MB)
 # Card art (battlecards/art, 1.4 GB) is NOT fetched: the game falls back to
 # procedural art and the gate doesn't need it.
 set -euo pipefail
@@ -38,5 +39,8 @@ fi
 
 echo "== overworld/data"
 node tools/cloud/fetch-owdata.mjs
+
+echo "== micasurvivor + micatro mod assets"
+node tools/cloud/fetch-assets.mjs || echo "(some assets did not fetch: only their suites are affected)"
 
 echo "== setup done. Check with: node tools/cloud/doctor.mjs"

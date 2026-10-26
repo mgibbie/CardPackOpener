@@ -27,15 +27,56 @@ export const SMOKE = [
 	'mobile_test.mjs', 'crossregion_test.mjs', 'townmap_test.mjs', 'trainercard_test.mjs', 'movemechanics_test.mjs',
 	'frontier_test.mjs', 'backwarp_test.mjs', 'warpfade_test.mjs', 'qolsweep_test.mjs', 'inputs_test.mjs', 'portals_test.mjs',
 ];
-// a change here can reach any suite: run everything
+// a change here can reach any suite: run everything. An entry may carry
+// `quick(changedLines)`: when EVERY changed line passes it (and there is at least
+// one), the change cannot reach the shared boot path, so the file is selected by
+// name like any other (plus the smoke set) instead of forcing FULL. No diff at all
+// (an unreadable or untracked file) is always FULL.
+// (main.js is not here: after the split it is ~950 lines of wiring, and its
+// edits are matched by name like any other module's)
+// (the gate's own files are not here: a quick run exercises them directly,
+// and a helper like owsource.mjs selects the suites that import it)
+// a whole <script src="/site/x.js"></script> tag (+ an optional trailing <!-- note -->): a shared site helper, not the game's boot
+const SITE_HELPER_TAG = /^\s*<script\b[^>]*\bsrc=["']\/site\/[\w.-]+\.js["'][^>]*>\s*<\/script>\s*(<!--.*-->\s*)?$/i;
+const commentOrBlank = l => /^\s*$/.test(l) || (/^\s*(\/\/|\/\*|\*)/.test(l) && !/\*\/\s*\S/.test(l));
 export const CORE = [
-	// (main.js is not here: after the split it is ~950 lines of wiring, and its
-	// edits are matched by name like any other module's)
-	/^overworld\/ow_core\.js$/, /^overworld\/ow_state\.js$/, /^overworld\/index\.html$/,
-	/^package(-lock)?\.json$/,
-	// (the gate's own files are not here: a quick run exercises them directly,
-	// and a helper like owsource.mjs selects the suites that import it)
+	// the shared singletons every overworld module imports: only a comment edit is quick
+	{ re: /^overworld\/ow_core\.js$/, quick: commentOrBlank },
+	// the shared state object: its fields are documentation (main.js assigns them), so
+	// adding/removing a `name: undefined,  // note` field is quick, and the field name selects
+	{ re: /^overworld\/ow_state\.js$/, quick: l => commentOrBlank(l) || /^\s*[A-Za-z_$][\w$]*:\s*undefined,?\s*(\/\/.*)?$/.test(l) },
+	// the overworld page: FULL only when its boot changes — a <script> tag that is not a
+	// /site/ helper (main.js IS the game), an import map or a modulepreload. CSS, markup
+	// and /site/ helper tags select by name + the overworld lane's smoke.
+	{ re: /^overworld\/index\.html$/, quick: l => !/importmap|modulepreload/i.test(l) && (!/<\/?script\b/i.test(l) || SITE_HELPER_TAG.test(l)) },
+	// dependencies: FULL when a version spec changes ("pkg": "^1.2.3"); a script line is quick
+	{ re: /^package\.json$/, quick: l => !/"[@\w./-]+"\s*:\s*"[\^~<>=]*\s*\d/.test(l) },
+	{ re: /^package-lock\.json$/ },
 ];
+// the changed (+/-) lines of a unified diff, without the file headers
+export const changedLines = diff => diff.split('\n').filter(l => /^[+-]/.test(l) && !/^(\+\+\+|---)( |$)/.test(l)).map(l => l.slice(1).replace(/\r$/, ''));
+// is this changed core file one that forces FULL? (see CORE's `quick`)
+export function forcesFull(entry, diff) {
+	if (!entry.quick) return true;
+	const lines = changedLines(diff || '');
+	return !lines.length || !lines.every(entry.quick);
+}
+// PER-GAME LANES. Each game (or sub-game) owns a folder and a set of suites. A change
+// under a lane's paths adds that lane's own smoke suites (on top of the global SMOKE and
+// the by-name selection), so a game's core loop is always exercised by its own changes.
+// `run-all.mjs --lane <name>` runs a whole lane. A new game appends one row: its paths,
+// a suite-name pattern, and 1-3 cheap suites that boot it.
+// (overworld is the default lane: suites no other lane claims)
+export const LANES = [
+	{ name: 'micatro', paths: /^micatro\//, suites: /^micatro_|^(designwiki|magepunknews)_micatro/, smoke: ['micatro_ui_test.mjs', 'micatro_server_test.mjs'] },
+	{ name: 'micasurvivor', paths: /^micasurvivor\//, suites: /micasurvivor/, smoke: ['micasurvivor_boot_test.mjs'] },
+	{ name: 'designwiki', paths: /^designwiki\//, suites: /^designwiki_/, smoke: [] },
+	// (Battlecards' engine has its own node suite, battlecards/tests/run-all.mjs, with its own CI job;
+	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites)
+	{ name: 'overworld', paths: /^overworld\//, suites: null, smoke: [] },   // null: every suite the other lanes don't claim; SMOKE is its smoke
+];
+export const laneOfSuite = s => (LANES.find(l => l.suites && l.suites.test(s)) || LANES.find(l => !l.suites)).name;
+export const laneOfPath = f => (LANES.find(l => l.paths.test(f)) || {}).name || null;
 // suites a PATH always selects, whatever its diff names. MicaSurvivor DLC D0a: the "base unchanged" golden runs
 // (micasurvivor_dlc_base_unchanged_test.mjs) guard every base mode, so any micasurvivor/** change runs them, and so
 // does a server change whose diff (its lines or its hunk headers) touches the MicaSurvivor / msurv actions. DLC D0b adds
@@ -100,10 +141,12 @@ export function tokensOf(diff, file) {
 		body = body.replace(/\s\/\/ .*$/, '');                        // a trailing comment
 		for (const m of body.matchAll(/'(magepunk_[a-z0-9_]+)'/g)) t.add(m[1]);                                          // save keys
 		if (json) continue;   // JSON: data, not code (cards.json is handled by id)
+		if (/\.(html|css)$/.test(file)) for (const m of body.matchAll(/(?:[#.]|\b(?:id|class)=["'])([A-Za-z][\w-]{2,})/g)) t.add(m[1]);   // page ids/classes (#t-start, class="tbtn")
 		for (const m of body.matchAll(/(?:function\s*\*?\s*|const\s+|let\s+|var\s+|class\s+)([A-Za-z_$][\w$]{3,})/g)) t.add(m[1]);
 		for (const m of body.matchAll(/^\s*(?:async\s+)?([A-Za-z_$][\w$]{3,})\s*\([^)]*\)\s*\{/g)) t.add(m[1]);           // method shorthand
 		for (const m of body.matchAll(/register\(\s*'([\w-]{4,})'/g)) t.add(m[1]);                                         // effect handlers
 		for (const m of body.matchAll(/action === '([\w-]{4,})'/g)) t.add(m[1]);                                         // server actions
+		for (const m of body.matchAll(/^\s*([A-Za-z_$][\w$]{3,}):\s*undefined\b/g)) t.add(m[1]);                          // a declared state field (ow_state.js)
 	}
 	for (const s of [...t]) if (!specific(s)) t.delete(s);
 	return t;
@@ -131,9 +174,15 @@ export function selectSuites({ base, files: filesIn, diffFor, contentFor, suiteF
 	const suites = new Map(), broad = new Set();
 	const pick = (f, why) => { if (!allSuites.includes(f)) return; if (!suites.has(f)) suites.set(f, []); if (!suites.get(f).includes(why)) suites.get(f).push(why); };
 	const relevant = files.filter(f => !IGNORE.some(r => r.test(f)) && !/^overworld\/data\//.test(f));
-	const core = relevant.find(f => CORE.some(r => r.test(f)));
 	const battlecards = relevant.some(f => /^(battlecards|server)\//.test(f));
-	if (core) return { full: true, why: `core file changed: ${core}`, suites: new Map(allSuites.map(f => [f, ['full gate']])), changed: files, battlecards };
+	// a core file forces FULL unless its whole diff is one its CORE entry calls quick
+	const quickCore = [];
+	for (const f of relevant) {
+		const entry = CORE.find(c => c.re.test(f));
+		if (!entry) continue;
+		if (forcesFull(entry, getDiff(f))) return { full: true, why: `core file changed: ${f}`, suites: new Map(allSuites.map(s => [s, ['full gate']])), changed: files, battlecards };
+		quickCore.push(f);
+	}
 	const texts = new Map(allSuites.map(f => [f, src(f)]));
 	for (const f of relevant) {
 		const m = f.match(/^overworld\/tests\/([^/]+\.mjs)$/);
@@ -159,8 +208,11 @@ export function selectSuites({ base, files: filesIn, diffFor, contentFor, suiteF
 		// Battlecards pages are exercised by the suites that load them
 		if (/^battlecards\//.test(f)) for (const [s, t] of texts) if (/battlecards\/index\.html/.test(t)) pick(s, 'loads Battlecards');
 	}
+	// each lane a change touches adds that lane's own smoke suites
+	const lanes = [...new Set(relevant.map(laneOfPath).filter(Boolean))];
+	for (const name of lanes) for (const s of LANES.find(l => l.name === name).smoke) pick(s, `${name} lane smoke`);
 	for (const s of SMOKE) pick(s, 'smoke');
-	return { full: false, why: null, suites, changed: files, battlecards, broad: [...broad] };
+	return { full: false, why: null, suites, changed: files, battlecards, broad: [...broad], lanes, quickCore };
 }
 
 // `node overworld/tests/select-changed.mjs` prints the selection
@@ -168,6 +220,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 	const r = selectSuites({ base: process.argv[2] });
 	console.log(`changed: ${r.changed.length} file(s)`);
 	if (r.full) console.log(`FULL gate: ${r.why}`);
+	else if (r.quickCore.length) console.log(`(core file(s) with a quick-safe diff, selected by name: ${r.quickCore.join(', ')})`);
 	else for (const [s, why] of r.suites) console.log(`  ${s}  <- ${why.slice(0, 3).join('; ')}${why.length > 3 ? ` (+${why.length - 3})` : ''}`);
 	if (r.broad && r.broad.length) console.log(`  (too common to select on: ${r.broad.join(', ')})`);
 	console.log(`${r.suites.size} suite(s)${r.battlecards ? ' + the battlecards suite' : ''}`);
