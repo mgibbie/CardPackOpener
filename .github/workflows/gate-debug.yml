@@ -31,7 +31,8 @@ jobs:
         env:
           TZ: America/New_York
         run: |
-          timeout 200 node tools/ci-bc-debug.mjs 2>&1 | cut -c1-600
+          timeout 200 node overworld/tests/_dbg_boardhand.mjs 2>&1 | grep -E 'DBG|FAIL|passed' | cut -c1-1500
+          for t in $(cat tools/ci-debug-suites.txt); do node overworld/tests/run-all.mjs $t --no-retry --jobs 1 2>&1 | grep -vE '^ok  ' | head -20; done
       - if: always()
         uses: actions/upload-artifact@v4
         with:
