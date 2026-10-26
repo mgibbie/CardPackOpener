@@ -124,8 +124,8 @@ G.ExpUlt = (() => {
     const p = G.DEX_BY[form] || G.DEX_BY[member];
     return typeCode(p && p.types ? p.types[0] : 'normal');
   }
-  /** The tier from a League row [member, form, kit, Maturity, evolutions]. */
-  const tierOfRow = r => (Array.isArray(r) ? Math.min(K.TIER_MAX, (r[4] | 0) + (r[3] | 0)) : 0);
+  /** The tier from a League row [member, form, kit, Maturity, evolutions, (D14) Mega]: a Mega Evolution is one tier more. */
+  const tierOfRow = r => (Array.isArray(r) ? Math.min(K.TIER_MAX, (r[4] | 0) + (r[3] | 0) + (r[5] ? 1 : 0)) : 0);
   /** An Ultimate's name at a tier (Spanish key; the canvas translates). */
   function nameOf(code, tier) {
     if (SIGS[code]) return SIGS[code].names[Math.min(2, Math.max(0, tier | 0))];

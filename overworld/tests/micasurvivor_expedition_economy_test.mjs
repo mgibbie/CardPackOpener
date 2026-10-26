@@ -190,7 +190,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const r0 = await startClassic(page);
-	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 11 && r0.on && r0.coins === 0, 'Classic starts with the economy on and 0 ₽; the content version is 11 (D12)', JSON.stringify(r0));
+	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 14 && r0.on && r0.coins === 0, 'Classic starts with the economy on and 0 ₽; the content version is 14 (D15)', JSON.stringify(r0));
 	if (!r0.ok || !r0.on) throw new Error('no economy: the rest needs it');
 
 	// ======================== 1. the layout
@@ -221,8 +221,8 @@ try {
 		out.draws = draws;
 		return out;
 	});
-	const KN = { unown4: 1, unown3: 1, unown2: 1, unown1: 2, challenge: 1, cursedaltar: 1, greed: 1, comet: 1, meowth: 3, ball: 6, freeball: 2, cursedball: 2, ditto: 1, hypno: 1, cage: 2, rock: 8, berry: 8 };
-	A(ly.n === 42 && Object.keys(KN).every(k => ly.kinds[k] === KN[k]), 'zone 1 holds 42 interactables: 6 paid / 2 free / 2 cursed balls, 3 Meowth stalls, Unown altars 2 / 1 / 1 / 1, comet, challenge, cursed, greed, Ditto, Hypno, 2 cages, 8 rocks, 8 berries', JSON.stringify(ly.kinds));
+	const KN = { unown4: 1, unown3: 1, unown2: 1, unown1: 2, challenge: 1, cursedaltar: 1, greed: 1, comet: 1, meowth: 3, ball: 6, freeball: 2, cursedball: 2, ditto: 1, hypno: 1, cage: 2, rock: 8, berry: 8, slots: 1 };   // (D15: + the slot machine)
+	A(ly.n === 43 && Object.keys(KN).every(k => ly.kinds[k] === KN[k]), 'zone 1 holds 43 interactables: 6 paid / 2 free / 2 cursed balls, 3 Meowth stalls, Unown altars 2 / 1 / 1 / 1, comet, challenge, cursed, greed, Ditto, Hypno, 2 cages, 8 rocks, 8 berries, a slot machine (D15)', JSON.stringify(ly.kinds));
 	A(ly.same && ly.other && ly.draws === 0, 'the layout is pure: a rebuilt zone (a viewer\'s) places the same ones, with the same Meowth visits and comet; another seed, another layout; no Math.random', JSON.stringify({ same: ly.same, other: ly.other, draws: ly.draws }));
 	A(ly.bad.length === 0 && ly.minGap >= 4, 'every one on open floor (no cliff, ramp, prop), 9+ tiles from the start, 7+ from the guardian\'s altar, 4+ tiles apart', JSON.stringify({ bad: ly.bad, gap: ly.minGap }));
 	A(ly.rocks.every(v => v >= 6 && v <= 14) && ly.cages.every(d => d > 0) && ly.visits.length >= 3 && ly.visits[0].at >= 50 && ly.visits[0].at <= 70 && ly.visits[0].until - ly.visits[0].at === 70 && ly.visits[1].at - ly.visits[0].at >= 130 && ly.cometAt >= 150 && ly.cometAt <= 300 && ly.shrine === null,
@@ -664,9 +664,9 @@ try {
 		G.Game.quit(); await wait(200);
 		return out;
 	}, { idle: sy.idle, snap: sy.snap, ids: sy.ids, code: sy.code, seed: sy.seed });
-	A(vw.loadedBefore === false && vw.spec && vw.spec.rk === 1 && vw.spec.fb === 1 && vw.spec.un === 2 && vw.spec.ch > 0.3 && vw.spec.spot === sy.ids.spot && vw.spec.stock === 3 && !vw.spec.host && vw.spec.n === 42 && vw.spec.tip,
-		'a live spectator (a fresh page) rebuilds the 42 interactables from the seed and shows the host\'s state: the used rock and ball, the charging altar, Meowth (no tips for a viewer)', JSON.stringify(vw.spec));
-	A(vw.old && vw.old.used === 0 && vw.old.ok && !vw.old.notice && vw.old.dv === 11, 'a dv-5 / x v6 snapshot (no `o`) still loads with no notice: every interactable fresh; this build is dv 11 (D12)', JSON.stringify(vw.old));
+	A(vw.loadedBefore === false && vw.spec && vw.spec.rk === 1 && vw.spec.fb === 1 && vw.spec.un === 2 && vw.spec.ch > 0.3 && vw.spec.spot === sy.ids.spot && vw.spec.stock === 3 && !vw.spec.host && vw.spec.n === 43 && vw.spec.tip,
+		'a live spectator (a fresh page) rebuilds the 43 interactables from the seed and shows the host\'s state: the used rock and ball, the charging altar, Meowth (no tips for a viewer)', JSON.stringify(vw.spec));
+	A(vw.old && vw.old.used === 0 && vw.old.ok && !vw.old.notice && vw.old.dv === 14, 'a dv-5 / x v6 snapshot (no `o`) still loads with no notice: every interactable fresh; this build is dv 14 (D12)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withO > 0 && vw.replay.xi >= 2 && vw.replay.rk === 1, 'a replay keeps `o` (frame field 9) and an `xi` event per use; played back, the rock is used', JSON.stringify(vw.replay));
 	A(vw.base && vw.base.mode === 'normal' && !vw.base.zone && !vw.base.run && !vw.base.o && vw.base.mini === 0 && vw.base.loaded && vw.base.seam === 1,
 		'a Normal run in the same page (Expedition code loaded): no zone, no economy, no `x`, nothing extra on the minimap', JSON.stringify(vw.base));

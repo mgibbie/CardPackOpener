@@ -97,7 +97,7 @@ G.ExpCap = (() => {
   const intR = (rng, a, b) => a + Math.min(b - a, Math.floor(rng() * (b - a + 1)));
   const TS = () => G.World.TS;
   const now = () => (G.Game.st ? G.Game.st.time : 0);
-  const name = d => (G.DEX_BY[d] || {}).name || '#' + d;
+  const name = d => (G.DEX_BY[d] ? G.I18n.t(G.DEX_BY[d].name) : '#' + d);   // (D13: the English name where it differs)
   const say = (t, s = 3) => G.Spawner.say(t, s, true);
 
   /** A zone's shiny chance (study 2.8): 8 % + luck / 1,000, x1.5 with the Shiny Charm. Pure. */

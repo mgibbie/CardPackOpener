@@ -136,7 +136,7 @@ G.ExpSurv = (() => {
   const strHash = s => { let h = 0; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h | 0; };
   const TS = () => G.World.TS;
   const now = () => (G.Game.st ? G.Game.st.time : 0);
-  const name = d => (G.DEX_BY[d] || {}).name || '#' + d;
+  const name = d => (G.DEX_BY[d] ? G.I18n.t(G.DEX_BY[d].name) : '#' + d);   // (D13: the English name where it differs)
   const mmss = s => G.U.mmss(Math.max(0, s));
 
   // ---------------- the clock's rules (pure: every viewer computes them from the run's time) ----------------

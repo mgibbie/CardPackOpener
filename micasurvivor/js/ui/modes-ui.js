@@ -139,6 +139,7 @@ G.ModesUI = (() => {
   function start(mode) {
     // DLC D0b: an Expedition mode not playable yet: "coming soon" (G.Flow.play says the same)
     if (G.Expedition.isExp(mode) && !G.Expedition.enabled(mode)) { G.UI.toast('La Expedición llegará pronto.'); G.Audio.sfx('error'); return; }
+    if (G.Expedition.hub && G.Expedition.hub(mode)) { openLeagueMode(); return; }   // (DLC D13: League mode is the League's own screen, no run)
     if (G.Social.room) { G.LobbyUI.open(); return; }   // en una sala: la partida en grupo (siempre normal)
     // M5 lote 7 (menu.gd 1657): sin 2 Pokémon el Modo Equipo no empieza
     if (mode === 'team' && !G.Team.unlocked()) { G.UI.toast('Consigue otro Pokémon primero'); G.Audio.sfx('error'); return; }
@@ -350,6 +351,14 @@ G.ModesUI = (() => {
       e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
   }
 
+  // ---------------- DLC D13: League mode (the League's own screen: the roster, the HQ, the League board; js/expedition/meta.js) ----------------
+  /** Opens League mode on the mode select (tab: 'roster' by default). -> Promise<bool> */
+  function openLeagueMode(tab) {
+    if (!G.UI.isOpen('scr-modes')) open();
+    return G.Expedition.load().then(() => G.ExpSave.open()).then(() => (G.UI.isOpen('scr-modes') ? G.ExpMeta.open(() => { if (G.UI.isOpen('scr-modes')) render(); }, tab || 'roster', { league: true }) : false),
+      e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+  }
+
   // ---------------- DLC D11: the Expedition with friends (an Expedition co-op lobby: js/mica/social.js createRoom) ----------------
   /** An Expedition lobby of mode `mode` on your map + tier pick, opened for you to invite your friends. -> Promise<bool> */
   function openExpCoop(mode) {
@@ -369,5 +378,5 @@ G.ModesUI = (() => {
     }, e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
   }
 
-  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague, openTier, openMeta, openExpCoop };
+  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague, openTier, openMeta, openExpCoop, openLeagueMode };
 })();
