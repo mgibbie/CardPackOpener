@@ -27,7 +27,7 @@ A fresh clone has neither (see "start setup").
 ## The gate
 - Quick (per change): `node overworld/tests/run-all.mjs --changed` — the selected suites +
   a smoke set; touching core files widens it.
-- Full (before big batches): `node overworld/tests/run-all.mjs` (~70 min, 198 suites).
+- Full (before big batches): `node overworld/tests/run-all.mjs` (~2 h, ~380 suites).
   After an interruption: add `--resume`. Failures are retried alone at the end; "FLAKY
   (failed, then passed alone)" is a pass.
 - Battlecards engine tests: `npm test` (`battlecards/tests/run-all.mjs`).
