@@ -207,6 +207,30 @@
 	},
 	"entries": [
 		{
+			"sha": "7058319",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "Overworld bugs 10-26b: quick taps step (Route 107 'turns but never steps'); readable mobile objective strip",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "076ff96",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "Micatro Pokermon Hazards: text colours, player-facing tooltips, Mime/Red Seal retrigger re-roll (3.9.1+r18)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4b2436d",
+			"date": "2026-10-26",
+			"kind": "patch",
+			"title": "Site: per-account local data, so a new account never sees another account's local runs/saves",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "db78133",
 			"date": "2026-10-26",
 			"kind": "patch",
