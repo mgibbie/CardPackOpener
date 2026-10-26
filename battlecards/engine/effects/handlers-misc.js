@@ -1641,6 +1641,25 @@ register('fight', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 
 
 register('force-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Hysteria: "Choose an enemy creature. It attacks random creatures until it dies."
+			// The chosen creature swings at a random OTHER creature (either side) again and
+			// again — it used to have no branch here, so the spell paid its mana and did nothing.
+			// Stops when it dies, nothing is left to hit, or after a hard cap (an Immune or
+			// 0-Attack standoff can't loop forever).
+			if (e.target === 'enemy-creature') {
+				const a = chosenCreature();
+				if (!a || a.controller === pi || a.type === 'location') return;
+				for (let n = 0; n < 30 && !state.over; n++) {
+					if (isDead(a) || a.zone !== 'board') break;
+					const pool = [];
+					for (const pl of state.players) for (const c of pl.board) if (c !== a && !isDead(c) && c.type !== 'location' && !(c.dormantLeft > 0)) pool.push(c);
+					if (!pool.length) break;
+					const t = pool[Math.floor(state.rng() * pool.length)];
+					resolveCombat(state, a.controller, a.uid, { type: 'creature', uid: t.uid, player: t.controller });
+				}
+				sweepDeaths(state);
+				return;
+			}
 			// Behemoth's Lure: force a random enemy to attack the Behemoth (parent)
 			const magnet = source && source.colossalOf ? (state.players[pi].board.find(c => !isDead(c) && c.name === source.colossalOf) || source) : source;
 			if (magnet && !isDead(magnet)) {
@@ -2125,131 +2144,141 @@ register('joust', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 } });
 
 
-register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			// "If you control a Beast / have 12 or less Health / it's Frozen, ... instead"
-			const t = chosenCreature();
-			const p = state.players[pi];
-			let ok = true;
-			if (e.if.controlTribe) ok = e.if.controlTribe.split('|').some(tr => p.board.some(c => !isDead(c) && (c.tribe || '').includes(tr))); // Gutwrencher Oni: a Devil, Ogre or Horror
-			else if (e.if.party != null) { const toks = new Set(); for (const c of p.board) if (!isDead(c) && c.type === 'creature') for (const tk of (c.tribe || '').split(/\s+/).filter(Boolean)) toks.add(tk); ok = toks.size >= e.if.party; } // Party: N+ distinct creature classes/tribes on your board
-			else if (e.if.controlKeyword) ok = p.board.some(c => !isDead(c) && c.type !== 'location' && has(c, e.if.controlKeyword)); // King's Defender: a minion with Taunt
-			else if (e.if.lastCardRune) ok = !!(p.lastPlayedRunes && (p.lastPlayedRunes[e.if.lastCardRune] || 0) > 0); // Grotesque Runeblade: the last card you played had an Unholy/Blood rune
-			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc
-			else if (e.if.diedThisGame) ok = p.deathLogIds.includes(e.if.diedThisGame); // Feugen/Stalagg
-			else if (e.if.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= e.if.enemyMaxHealth); // Drakonid Crusher
-			else if (e.if.noDuplicates) ok = new Set(p.deck).size === p.deck.length; // Reno Jackson
-			else if (e.if.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.if.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
-			else if (e.if.controlSecret) ok = p.secrets.length > 0; // Avian Watcher
-			else if (e.if.controlArtEnch) ok = p.artifacts.length > 0 || p.enchantments.length > 0; // metalcraft: control an artifact or enchantment
-			else if (e.if.enemyFrozen) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => c.frozen && !isDead(c))); // Cryomancer
-			else if (e.if.enemyHasTaunt) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && has(c, KW.TAUNT))); // Spiked Hogrider
-			else if (e.if.enemyHandEmpty) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length === 0); // Tanaris Hogchopper
-			else if (e.if.weaponAttack != null) ok = !!(p.weapon && p.weapon.attack >= e.if.weaponAttack); // Luckydo Buccaneer
-			else if (e.if.weaponEquipped) ok = !!p.weapon; // Hobart Grapplehammer
-			else if (e.if.enemyHandSize != null) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length >= e.if.enemyHandSize); // Leatherclad Hogleader
-			else if (e.if.controlHealth != null) ok = p.board.some(c => !isDead(c) && hp(c) >= e.if.controlHealth); // Fight Promoter
-			else if (e.if.selfAttack != null) ok = !!(source && source.attack >= e.if.selfAttack); // Meanstreet Marshal
-			else if (e.if.elementalLastTurn) ok = !!p.elementalLastTurn; // Thunder Lizard, Blazecaller, …
-			else if (e.if.holdingMinAttack != null) ok = p.hand.some(c => c.type === 'creature' && c.attack >= e.if.holdingMinAttack); // Elder Longneck
-			else if (e.if.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === e.if.controlStatic); // Master of Ceremonies: a Spell Damage minion
-			else if (e.if.maxHealthSelf != null) ok = p.life <= e.if.maxHealthSelf;
-			else if (e.if.targetFrozen) ok = !!(t && t.frozen);
-			else if (e.if.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(e.if.targetFriendlyTribe));
-			else if (e.if.heroAttacked) ok = p.heroAttacksUsed > 0;
-			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
-			else if (e.if.cthunMinAttack != null) ok = (CTHUN_BASE + p.cthunAtk) >= e.if.cthunMinAttack;
-			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
-			else if (e.if.adjacentPlayedWhileHeld) ok = !!source && (source.adjacentPlayedWhileHeld || 0) > 0; // Orbital Moon: you played an adjacent card this turn
-			else if (e.if.handEmpty) ok = p.hand.length === 0;
-			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
-			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
-			else if (e.if.finale) ok = availableMana(p) === 0; // you spent all your mana playing this card
-			else if (e.if.lastCardCost != null) ok = (p.lastCardCost === e.if.lastCardCost); // Rolling Stone: the last card you played costs N
-			else if (e.if.friendlyUndeadDied) ok = (p.deathLogIds || []).some(id => (state.cardsById[id]?.tribe || '').includes('Undead')); // Bone Flinger (approx: a friendly Undead has died this game)
-			else if (e.if.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
-			else if (e.if.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
-			else if (e.if.deckAtLeast != null) ok = p.deck.length >= e.if.deckAtLeast; // Crowd Control
-			else if (e.if.deckAtMost != null) ok = p.deck.length <= e.if.deckAtMost; // Blood Shard Bristleback
-			else if (e.if.heroPowerUsed) ok = (p.heroPowers || []).some(h => h.usedThisTurn); // Manafeeder Panthara
-			else if (e.if.holdingSpellMinCost != null) ok = p.hand.some(c => (c.type === 'sorcery' || c.type === 'instant' || c.type === 'secret' || c.type === 'trap') && (c.cost || 0) >= e.if.holdingSpellMinCost); // Groundskeeper
-			else if (e.if.enemyTurn) ok = state.current !== pi; // Skelemancer / Vryghoul / Mountainfire Armor (died on opponent's turn)
-			else if (e.if.deckNoCost != null) ok = !p.deck.some(id => (state.cardsById[id]?.cost || 0) === e.if.deckNoCost); // Prince Keleseth / Valanar
-			else if (e.if.deckHasKeyword) ok = p.deck.some(id => { const def = state.cardsById[id]; return def?.type === 'creature' && (def.keywords || []).includes(e.if.deckHasKeyword); }); // Corpsetaker
-			else if (e.if.noOtherCreatures) ok = !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Lone Champion
-			else if (e.if.controlTribeCount) ok = p.board.filter(c => !isDead(c) && (c.tribe || '').includes(e.if.controlTribeCount.tribe)).length >= e.if.controlTribeCount.count; // Windshear Stormcaller
-			else if (e.if.heroTookDamage) ok = !!p.heroDamagedThisTurn; // Duskbat / Deathweb Spider
-			else if (e.if.onlyCreature) ok = !state.players.some(pl => pl.board.some(c => c !== source && !isDead(c) && c.type !== 'location')); // Night Prowler
-			else if (e.if.deckAllEven) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 0); // Murkspark Eel
-			else if (e.if.deckAllOdd) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 1); // Gloom Stag / Glitter Moth
-			else if (e.if.anyDiedThisTurn) ok = (state.diedThisTurn || 0) > 0; // Carrion Drake
-			else if (e.if.controlCountHealth) ok = p.board.filter(c => !isDead(c) && c.type !== 'location' && hp(c) >= e.if.controlCountHealth.health).length >= e.if.controlCountHealth.count; // Star Aligner
-			else if (e.if.emptyEverything) ok = p.deck.length === 0 && p.hand.length === 0 && !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Mecha'thun
-			else if (e.if.hasRememberedSpells) ok = !!(source && source.rememberedSpells && source.rememberedSpells.length); // Zerek, Master Cloner
-			else if (e.if.enemyCreatureCount != null) ok = opponentsOf(state, pi).reduce((s, o) => s + state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length, 0) >= e.if.enemyCreatureCount; // Belligerent Gnome
-			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Wartbringer
-			else if (e.if.controlFrozen) ok = p.board.some(c => !isDead(c) && c.frozen); // Ice Cream Peddler
-			else if (e.if.healedGame != null) ok = (p.healedGame || 0) >= e.if.healedGame; // Zandalari Templar
-			else if (e.if.playedQuestGame) ok = !!p.questsPlayedGame; // Sky Gen'ral Kragg
-			else if (e.if.anyDamaged) ok = state.players.some(pl => pl.board.some(c => !isDead(c) && c.type !== 'location' && c.damage > 0)); // Bonechewer Raider
-			else if (e.if.controlStealthed) ok = p.board.some(c => !isDead(c) && c.stealthed); // Greyheart Sage
-			else if (e.if.castSpellLastTurn) ok = !!p.castSpellLastTurn; // Marshspawn / Shattered Rumbler
-			else if (e.if.heroHealthChanged) ok = !!p.heroHealthChangedThisTurn; // Brittlebone Destroyer
-			else if (e.if.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
-			else if (e.if.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
-			else if (e.if.armorAtLeast != null) ok = (p.armor || 0) >= e.if.armorAtLeast; // Fleshshaper
-			else if (e.if.armorChangedThisTurn) ok = !!p.armorChangedThisTurn; // Stoneskin Armorer
-			else if (e.if.drawsThisTurnAtLeast != null) ok = (p.drawsThisTurn || 0) >= e.if.drawsThisTurnAtLeast; // Careless Mechanist
-			else if (e.if.corpsesAtLeast != null) ok = (p.corpses || 0) >= e.if.corpsesAtLeast; // Eulogizer
-			else if (e.if.dragonsPlayedGame != null) ok = (p.dragonsPlayedGame || 0) >= e.if.dragonsPlayedGame; // Timewinder Zarimi
-			else if (e.if.elementalsPlayedGame != null) ok = (p.elementalsPlayedGame || 0) >= e.if.elementalsPlayedGame; // Lesser Ruby Spellstone
-			else if (e.if.deathrattlesPlayedGame != null) ok = (p.deathrattlesPlayedGame || 0) >= e.if.deathrattlesPlayedGame; // Lesser Onyx Spellstone
-			else if (e.if.holdingCost != null) ok = p.hand.some(c => c !== source && (c.cost || 0) === e.if.holdingCost); // Greedy Partner: holding another N-Cost card
-			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
-			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate
-			else if (e.if.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
-			else if (e.if.holdingSchool) ok = p.hand.some(c => schoolOf(c) === e.if.holdingSchool); // Toad of the Wilds
-			else if (e.if.castSchoolThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[e.if.castSchoolThisTurn]); // Metamorfin
-			else if (e.if.diedCountGame) ok = (p.diedCountById?.[e.if.diedCountGame.id] || 0) >= e.if.diedCountGame.count; // Elwynn Boar
-			else if (e.if.anyHeroDamagedThisTurn) ok = state.players.some(pl => pl.heroDamagedThisTurn); // Twilight Deceptor
-			else if (e.if.holdingSchoolsBoth) ok = e.if.holdingSchoolsBoth.every(sch => p.hand.some(c => schoolOf(c) === sch)); // Lightmaw Netherdrake
-			else if (e.if.holdingTribeMinCost) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribeMinCost.tribe) && (c.cost || 0) >= e.if.holdingTribeMinCost.cost); // Warden of Chains
-			else if (e.if.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
-			else if (e.if.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= e.if.armorGainedGame; // Captain Galvangar
-			else if (e.if.spellsCastWhileHeld != null) ok = (source && source.spellsCastWhileHeld || 0) >= e.if.spellsCastWhileHeld; // Spellcoiler / Ancient Krakenbane
-			else if (e.if.stealthAttackedWhileHeld != null) ok = (source && source.stealthAttackedWhileHeld || 0) >= e.if.stealthAttackedWhileHeld; // Tricks of the Trade
-			else if (e.if.schoolWhileHeld) ok = !!(source && source.schoolsWhileHeld && source.schoolsWhileHeld[e.if.schoolWhileHeld]); // Heralds
-			else if (e.if.dealtHeroDamage != null) ok = (p.damageToEnemyHeroThisTurn || 0) >= e.if.dealtHeroDamage; // Crooked Cook
-			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
-			else if (e.if.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
-			else if (e.if.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
-			else if (e.if.controlLackey) ok = p.board.some(c => !isDead(c) && typeof c.id === 'string' && c.id.startsWith('lackey_')); // Heistbaron Togwaggle
-			else if (e.if.unspentMana) ok = availableMana(p) > 0; // Crystal Merchant
-			else if (e.if.controlCountId) ok = p.board.filter(c => !isDead(c) && c.id === e.if.controlCountId.id).length >= e.if.controlCountId.count; // Desert Obelisk
-			else if (e.if.boardFullOfId) ok = p.board.filter(c => !isDead(c) && c.type !== 'location').length >= 7 && p.board.every(c => isDead(c) || c.type === 'location' || c.id === e.if.boardFullOfId); // Mogu Cultist
-			else if (e.if.enemyControlTribe) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && (c.tribe || '').includes(e.if.enemyControlTribe))); // Dragonmaw Poacher
-			else if (e.if.invokedTwice) ok = (p.invokeCount || 0) >= 2; // Descent of Dragons "Invoked twice"
-			else if (e.if.deckNoNeutral) ok = p.deck.length > 0 && p.deck.every(id => (state.cardsById[id]?.cardClass || 'neutral') !== 'neutral'); // Lightforged Zealot/Crusader
-			else if (e.if.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
-			else if (e.if.heroPowerUpgraded) ok = !!p.heroPowerUpgraded || (p.imbueCount || 0) >= 1; // legacy Imbue proxy
-			else if (e.if.imbuedAtLeast != null) ok = (p.imbueCount || 0) >= e.if.imbuedAtLeast || !!p.heroPowerUpgraded; // Petal Picker twice / Malorne 4x
-			else if (e.if.kindredActive) ok = kindredActive(state, pi, source); // Lost City Kindred: you control another minion sharing a type
-			else if (e.if.buildingStarship != null) ok = ((p.starshipPieces || []).length > 0) === !!e.if.buildingStarship; // Crystal Welder / Exarch Othaar / The Exodar
-			else if (e.if.holdingNameIncludes) ok = p.hand.some(c => (c.name || '').includes(e.if.holdingNameIncludes) && c !== source); // Warchief / Mindflayer Rafaam
-			else if (e.if.selfPaidZero != null) ok = (source && source._paidCost === 0) === !!e.if.selfPaidZero; // Void Ray
-			else if (e.if.selfPaidMax != null) ok = !!source && source._paidCost != null && source._paidCost <= e.if.selfPaidMax; // Verdant Dreamsaber
-			else if (e.if.friendlyDeathsAtLeast != null) ok = (p.friendlyDeaths || 0) >= e.if.friendlyDeathsAtLeast; // Aessina
-			else if (e.if.playedQuestGame != null) ok = ((p.questsPlayedGame || 0) > 0) === !!e.if.playedQuestGame; // Questing Assistant
-			else if (e.if.selfHeldMana != null) ok = !!source && (source._manaWhileHeld || 0) >= e.if.selfHeldMana; // Felwood / Broodwatcher / Merithra
-			else if (e.if.noMinionLastTurn != null) ok = (p._minionLastTurn !== true) === !!e.if.noMinionLastTurn; // Wizened Wildspeaker
-			else if (e.if.schoolCastThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[e.if.schoolCastThisTurn]); // Baleful Blazer
-			else if (e.if.selfCopiesDiedAtLeast != null) ok = !!source && (p.diedCountById?.[source.id] || 0) >= e.if.selfCopiesDiedAtLeast; // Captured Archmage
-			else if (e.if.deckNoSpells != null) ok = !p.deck.some(id => { const dd = state.cardsById[id]; return dd && isSpellType(dd); }) === !!e.if.deckNoSpells; // Hexmarshal
-			else if (e.if.deckNoMinions != null) ok = !p.deck.some(id => state.cardsById[id]?.type === 'creature') === !!e.if.deckNoMinions; // Malfunction: your deck has no minions
-			else if (e.if.ownTurnDamageAtLeast != null) ok = (p.ownTurnsDamage || 0) >= e.if.ownTurnDamageAtLeast; // Party Planner Vona
-			else if (e.if.holdingTribe) ok = p.hand.some(c => c !== source && (c.tribe || '').includes(e.if.holdingTribe)); // Victor Nefarius: holding a Dragon
-			else if (e.if.spellDamageDealtThisTurn != null) ok = (p.spellDmgTurn === state.turnNumber) === !!e.if.spellDamageDealtThisTurn; // Unstable Spellcaster
-			else if (e.if.selfEnemyCopyHeld != null) ok = !!(source && source._enemyCopyWhileHeld) === !!e.if.selfEnemyCopyHeld; // Mind Sweeper
-			else if (e.if.deckSharesType) { // City Chief Esho: every minion in your deck shares a minion type ('All' is a wildcard)
+// The conditional effect's condition evaluator. EVERY key a card's `if` may use
+// has a branch below; a key with no branch FAILS CLOSED (false + one console
+// warning) — it used to fall through `let ok = true` and silently take the
+// upgraded branch (Sylvanas's Triumph 2026-10-26: playedBefore had no branch, so
+// every cast hit all enemies). `t` is the chosen creature (or null).
+const _warnedIf = new Set();
+export function evalConditional(state, pi, cond, t, source) {
+	const p = state.players[pi];
+	let ok;
+	if (!cond || typeof cond !== 'object') return false;
+	const keys = Object.keys(cond);
+	if (keys.length !== 1) { // the chain reads ONE key; a second would be ignored silently
+		if (!_warnedIf.has('multi:' + keys.join('+'))) { _warnedIf.add('multi:' + keys.join('+')); console.warn(`conditional: ${keys.length} condition keys (${keys.join(', ')}) — exactly one is supported; failing closed`); }
+		return false;
+	}
+			if (cond.controlTribe) ok = cond.controlTribe.split('|').some(tr => p.board.some(c => !isDead(c) && (c.tribe || '').includes(tr))); // Gutwrencher Oni: a Devil, Ogre or Horror
+			else if (cond.party != null) { const toks = new Set(); for (const c of p.board) if (!isDead(c) && c.type === 'creature') for (const tk of (c.tribe || '').split(/\s+/).filter(Boolean)) toks.add(tk); ok = toks.size >= cond.party; } // Party: N+ distinct creature classes/tribes on your board
+			else if (cond.controlKeyword) ok = p.board.some(c => !isDead(c) && c.type !== 'location' && has(c, cond.controlKeyword)); // King's Defender: a minion with Taunt
+			else if (cond.lastCardRune) ok = !!(p.lastPlayedRunes && (p.lastPlayedRunes[cond.lastCardRune] || 0) > 0); // Grotesque Runeblade: the last card you played had an Unholy/Blood rune
+			else if (cond.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= cond.minOtherCreatures; // Nesting Roc
+			else if (cond.diedThisGame) ok = p.deathLogIds.includes(cond.diedThisGame); // Feugen/Stalagg
+			else if (cond.enemyMaxHealth != null) ok = opponentsOf(state, pi).some(o => state.players[o].life <= cond.enemyMaxHealth); // Drakonid Crusher
+			else if (cond.noDuplicates) ok = new Set(p.deck).size === p.deck.length; // Reno Jackson
+			else if (cond.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(cond.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
+			else if (cond.controlSecret) ok = p.secrets.length > 0; // Avian Watcher
+			else if (cond.controlArtEnch) ok = p.artifacts.length > 0 || p.enchantments.length > 0; // metalcraft: control an artifact or enchantment
+			else if (cond.enemyFrozen) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => c.frozen && !isDead(c))); // Cryomancer
+			else if (cond.enemyHasTaunt) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && has(c, KW.TAUNT))); // Spiked Hogrider
+			else if (cond.enemyHandEmpty) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length === 0); // Tanaris Hogchopper
+			else if (cond.weaponAttack != null) ok = !!(p.weapon && p.weapon.attack >= cond.weaponAttack); // Luckydo Buccaneer
+			else if (cond.weaponEquipped) ok = !!p.weapon; // Hobart Grapplehammer
+			else if (cond.enemyHandSize != null) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length >= cond.enemyHandSize); // Leatherclad Hogleader
+			else if (cond.controlHealth != null) ok = p.board.some(c => !isDead(c) && hp(c) >= cond.controlHealth); // Fight Promoter
+			else if (cond.selfAttack != null) ok = !!(source && source.attack >= cond.selfAttack); // Meanstreet Marshal
+			else if (cond.elementalLastTurn) ok = !!p.elementalLastTurn; // Thunder Lizard, Blazecaller, …
+			else if (cond.holdingMinAttack != null) ok = p.hand.some(c => c.type === 'creature' && c.attack >= cond.holdingMinAttack); // Elder Longneck
+			else if (cond.controlStatic) ok = p.board.some(c => !isDead(c) && c.static?.type === cond.controlStatic); // Master of Ceremonies: a Spell Damage minion
+			else if (cond.maxHealthSelf != null) ok = p.life <= cond.maxHealthSelf;
+			else if (cond.targetFrozen) ok = !!(t && t.frozen);
+			else if (cond.targetFriendlyTribe) ok = !!(t && t.controller === pi && (t.tribe || '').includes(cond.targetFriendlyTribe));
+			else if (cond.heroAttacked) ok = p.heroAttacksUsed > 0;
+			else if (cond.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= cond.controlMinAttack);
+			else if (cond.cthunMinAttack != null) ok = (CTHUN_BASE + p.cthunAtk) >= cond.cthunMinAttack;
+			else if (cond.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(cond.holdingTribe));
+			else if (cond.adjacentPlayedWhileHeld) ok = !!source && (source.adjacentPlayedWhileHeld || 0) > 0; // Orbital Moon: you played an adjacent card this turn
+			else if (cond.handEmpty) ok = p.hand.length === 0;
+			else if (cond.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
+			else if (cond.manathirst != null) ok = (p.mana.max || 0) >= cond.manathirst; // mana crystals this turn, regardless of spend
+			else if (cond.finale) ok = availableMana(p) === 0; // you spent all your mana playing this card
+			else if (cond.lastCardCost != null) ok = (p.lastCardCost === cond.lastCardCost); // Rolling Stone: the last card you played costs N
+			else if (cond.friendlyUndeadDied) ok = (p.deathLogIds || []).some(id => (state.cardsById[id]?.tribe || '').includes('Undead')); // Bone Flinger (approx: a friendly Undead has died this game)
+			else if (cond.noFriendlyDeaths) ok = (p.diedThisTurn || 0) === 0;
+			else if (cond.friendlyDied) ok = (p.diedThisTurn || 0) > 0;       // Bone Flurry
+			else if (cond.deckAtLeast != null) ok = p.deck.length >= cond.deckAtLeast; // Crowd Control
+			else if (cond.deckAtMost != null) ok = p.deck.length <= cond.deckAtMost; // Blood Shard Bristleback
+			else if (cond.heroPowerUsed) ok = (p.heroPowers || []).some(h => h.usedThisTurn); // Manafeeder Panthara
+			else if (cond.holdingSpellMinCost != null) ok = p.hand.some(c => (c.type === 'sorcery' || c.type === 'instant' || c.type === 'secret' || c.type === 'trap') && (c.cost || 0) >= cond.holdingSpellMinCost); // Groundskeeper
+			else if (cond.enemyTurn) ok = state.current !== pi; // Skelemancer / Vryghoul / Mountainfire Armor (died on opponent's turn)
+			else if (cond.deckNoCost != null) ok = !p.deck.some(id => (state.cardsById[id]?.cost || 0) === cond.deckNoCost); // Prince Keleseth / Valanar
+			else if (cond.deckHasKeyword) ok = p.deck.some(id => { const def = state.cardsById[id]; return def?.type === 'creature' && (def.keywords || []).includes(cond.deckHasKeyword); }); // Corpsetaker
+			else if (cond.noOtherCreatures) ok = !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Lone Champion
+			else if (cond.controlTribeCount) ok = p.board.filter(c => !isDead(c) && (c.tribe || '').includes(cond.controlTribeCount.tribe)).length >= cond.controlTribeCount.count; // Windshear Stormcaller
+			else if (cond.heroTookDamage) ok = !!p.heroDamagedThisTurn; // Duskbat / Deathweb Spider
+			else if (cond.onlyCreature) ok = !state.players.some(pl => pl.board.some(c => c !== source && !isDead(c) && c.type !== 'location')); // Night Prowler
+			else if (cond.deckAllEven) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 0); // Murkspark Eel
+			else if (cond.deckAllOdd) ok = p.deck.length > 0 && p.deck.every(id => ((state.cardsById[id]?.cost || 0) % 2) === 1); // Gloom Stag / Glitter Moth
+			else if (cond.anyDiedThisTurn) ok = (state.diedThisTurn || 0) > 0; // Carrion Drake
+			else if (cond.controlCountHealth) ok = p.board.filter(c => !isDead(c) && c.type !== 'location' && hp(c) >= cond.controlCountHealth.health).length >= cond.controlCountHealth.count; // Star Aligner
+			else if (cond.emptyEverything) ok = p.deck.length === 0 && p.hand.length === 0 && !p.board.some(c => c !== source && !isDead(c) && c.type !== 'location'); // Mecha'thun
+			else if (cond.hasRememberedSpells) ok = !!(source && source.rememberedSpells && source.rememberedSpells.length); // Zerek, Master Cloner
+			else if (cond.enemyCreatureCount != null) ok = opponentsOf(state, pi).reduce((s, o) => s + state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length, 0) >= cond.enemyCreatureCount; // Belligerent Gnome
+			else if (cond.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= cond.spellsThisTurn; // Wartbringer
+			else if (cond.controlFrozen) ok = p.board.some(c => !isDead(c) && c.frozen); // Ice Cream Peddler
+			else if (cond.healedGame != null) ok = (p.healedGame || 0) >= cond.healedGame; // Zandalari Templar
+			else if (cond.playedQuestGame) ok = !!p.questsPlayedGame; // Sky Gen'ral Kragg
+			else if (cond.anyDamaged) ok = state.players.some(pl => pl.board.some(c => !isDead(c) && c.type !== 'location' && c.damage > 0)); // Bonechewer Raider
+			else if (cond.controlStealthed) ok = p.board.some(c => !isDead(c) && c.stealthed); // Greyheart Sage
+			else if (cond.castSpellLastTurn) ok = !!p.castSpellLastTurn; // Marshspawn / Shattered Rumbler
+			else if (cond.heroHealthChanged) ok = !!p.heroHealthChangedThisTurn; // Brittlebone Destroyer
+			else if (cond.hasSpellDamage) ok = staticValue(p, 'spell-damage') > 0; // Sorcerous Substitute
+			else if (cond.hasArmor) ok = (p.armor || 0) > 0; // Ironclad
+			else if (cond.armorAtLeast != null) ok = (p.armor || 0) >= cond.armorAtLeast; // Fleshshaper
+			else if (cond.armorChangedThisTurn) ok = !!p.armorChangedThisTurn; // Stoneskin Armorer
+			else if (cond.drawsThisTurnAtLeast != null) ok = (p.drawsThisTurn || 0) >= cond.drawsThisTurnAtLeast; // Careless Mechanist
+			else if (cond.corpsesAtLeast != null) ok = (p.corpses || 0) >= cond.corpsesAtLeast; // Eulogizer
+			else if (cond.dragonsPlayedGame != null) ok = (p.dragonsPlayedGame || 0) >= cond.dragonsPlayedGame; // Timewinder Zarimi
+			else if (cond.elementalsPlayedGame != null) ok = (p.elementalsPlayedGame || 0) >= cond.elementalsPlayedGame; // Lesser Ruby Spellstone
+			else if (cond.deathrattlesPlayedGame != null) ok = (p.deathrattlesPlayedGame || 0) >= cond.deathrattlesPlayedGame; // Lesser Onyx Spellstone
+			else if (cond.holdingCost != null) ok = p.hand.some(c => c !== source && (c.cost || 0) === cond.holdingCost); // Greedy Partner: holding another N-Cost card
+			else if (cond.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
+			else if (cond.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= cond.spellsGame; // Yogg-Saron, Master of Fate
+			else if (cond.healedThisTurn) ok = !!p.healedThisTurn; // Cleric of An'she
+			else if (cond.holdingSchool) ok = p.hand.some(c => schoolOf(c) === cond.holdingSchool); // Toad of the Wilds
+			else if (cond.castSchoolThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[cond.castSchoolThisTurn]); // Metamorfin
+			else if (cond.diedCountGame) ok = (p.diedCountById?.[cond.diedCountGame.id] || 0) >= cond.diedCountGame.count; // Elwynn Boar
+			else if (cond.anyHeroDamagedThisTurn) ok = state.players.some(pl => pl.heroDamagedThisTurn); // Twilight Deceptor
+			else if (cond.holdingSchoolsBoth) ok = cond.holdingSchoolsBoth.every(sch => p.hand.some(c => schoolOf(c) === sch)); // Lightmaw Netherdrake
+			else if (cond.holdingTribeMinCost) ok = p.hand.some(c => (c.tribe || '').includes(cond.holdingTribeMinCost.tribe) && (c.cost || 0) >= cond.holdingTribeMinCost.cost); // Warden of Chains
+			else if (cond.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
+			else if (cond.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= cond.armorGainedGame; // Captain Galvangar
+			else if (cond.spellsCastWhileHeld != null) ok = (source && source.spellsCastWhileHeld || 0) >= cond.spellsCastWhileHeld; // Spellcoiler / Ancient Krakenbane
+			else if (cond.stealthAttackedWhileHeld != null) ok = (source && source.stealthAttackedWhileHeld || 0) >= cond.stealthAttackedWhileHeld; // Tricks of the Trade
+			else if (cond.schoolWhileHeld) ok = !!(source && source.schoolsWhileHeld && source.schoolsWhileHeld[cond.schoolWhileHeld]); // Heralds
+			else if (cond.dealtHeroDamage != null) ok = (p.damageToEnemyHeroThisTurn || 0) >= cond.dealtHeroDamage; // Crooked Cook
+			else if (cond.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= cond.hpDamageGame; // Jan'alai, the Dragonhawk
+			else if (cond.deckEmpty) ok = p.deck.length === 0; // Chef Nomi
+			else if (cond.holdingOtherClass) ok = p.hand.some(c => c !== source && c.cardClass && c.cardClass !== 'neutral' && c.cardClass !== p.heroClass); // Underbelly Fence
+			else if (cond.controlLackey) ok = p.board.some(c => !isDead(c) && typeof c.id === 'string' && c.id.startsWith('lackey_')); // Heistbaron Togwaggle
+			else if (cond.unspentMana) ok = availableMana(p) > 0; // Crystal Merchant
+			else if (cond.controlCountId) ok = p.board.filter(c => !isDead(c) && c.id === cond.controlCountId.id).length >= cond.controlCountId.count; // Desert Obelisk
+			else if (cond.boardFullOfId) ok = p.board.filter(c => !isDead(c) && c.type !== 'location').length >= 7 && p.board.every(c => isDead(c) || c.type === 'location' || c.id === cond.boardFullOfId); // Mogu Cultist
+			else if (cond.enemyControlTribe) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && (c.tribe || '').includes(cond.enemyControlTribe))); // Dragonmaw Poacher
+			else if (cond.invokedTwice) ok = (p.invokeCount || 0) >= 2; // Descent of Dragons "Invoked twice"
+			else if (cond.deckNoNeutral) ok = p.deck.length > 0 && p.deck.every(id => (state.cardsById[id]?.cardClass || 'neutral') !== 'neutral'); // Lightforged Zealot/Crusader
+			else if (cond.overloaded) ok = (p.overloadPending || 0) > 0 || (p.overloadLockedThisTurn || 0) > 0; // Cumulo-Maximus
+			else if (cond.heroPowerUpgraded) ok = !!p.heroPowerUpgraded || (p.imbueCount || 0) >= 1; // legacy Imbue proxy
+			else if (cond.imbuedAtLeast != null) ok = (p.imbueCount || 0) >= cond.imbuedAtLeast || !!p.heroPowerUpgraded; // Petal Picker twice / Malorne 4x
+			else if (cond.kindredActive) ok = kindredActive(state, pi, source); // Lost City Kindred: you control another minion sharing a type
+			else if (cond.buildingStarship != null) ok = ((p.starshipPieces || []).length > 0) === !!cond.buildingStarship; // Crystal Welder / Exarch Othaar / The Exodar
+			else if (cond.holdingNameIncludes) ok = p.hand.some(c => (c.name || '').includes(cond.holdingNameIncludes) && c !== source); // Warchief / Mindflayer Rafaam
+			else if (cond.selfPaidZero != null) ok = (source && source._paidCost === 0) === !!cond.selfPaidZero; // Void Ray
+			else if (cond.selfPaidMax != null) ok = !!source && source._paidCost != null && source._paidCost <= cond.selfPaidMax; // Verdant Dreamsaber
+			else if (cond.friendlyDeathsAtLeast != null) ok = (p.friendlyDeaths || 0) >= cond.friendlyDeathsAtLeast; // Aessina
+			else if (cond.playedQuestGame != null) ok = ((p.questsPlayedGame || 0) > 0) === !!cond.playedQuestGame; // Questing Assistant
+			else if (cond.selfHeldMana != null) ok = !!source && (source._manaWhileHeld || 0) >= cond.selfHeldMana; // Felwood / Broodwatcher / Merithra
+			else if (cond.noMinionLastTurn != null) ok = (p._minionLastTurn !== true) === !!cond.noMinionLastTurn; // Wizened Wildspeaker
+			else if (cond.schoolCastThisTurn) ok = !!(p.schoolsCastThisTurn && p.schoolsCastThisTurn[cond.schoolCastThisTurn]); // Baleful Blazer
+			else if (cond.selfCopiesDiedAtLeast != null) ok = !!source && (p.diedCountById?.[source.id] || 0) >= cond.selfCopiesDiedAtLeast; // Captured Archmage
+			else if (cond.deckNoSpells != null) ok = !p.deck.some(id => { const dd = state.cardsById[id]; return dd && isSpellType(dd); }) === !!cond.deckNoSpells; // Hexmarshal
+			else if (cond.deckNoMinions != null) ok = !p.deck.some(id => state.cardsById[id]?.type === 'creature') === !!cond.deckNoMinions; // Malfunction: your deck has no minions
+			else if (cond.ownTurnDamageAtLeast != null) ok = (p.ownTurnsDamage || 0) >= cond.ownTurnDamageAtLeast; // Party Planner Vona
+			else if (cond.holdingTribe) ok = p.hand.some(c => c !== source && (c.tribe || '').includes(cond.holdingTribe)); // Victor Nefarius: holding a Dragon
+			else if (cond.spellDamageDealtThisTurn != null) ok = (p.spellDmgTurn === state.turnNumber) === !!cond.spellDamageDealtThisTurn; // Unstable Spellcaster
+			else if (cond.selfEnemyCopyHeld != null) ok = !!(source && source._enemyCopyWhileHeld) === !!cond.selfEnemyCopyHeld; // Mind Sweeper
+			else if (cond.deckSharesType) { // City Chief Esho: every minion in your deck shares a minion type ('All' is a wildcard)
 				const lists = p.deck.filter(id => state.cardsById[id]?.type === 'creature')
 					.map(id => ((state.cardsById[id]?.tribe) || '').split('/').filter(Boolean));
 				if (!lists.length || lists.some(l => !l.length)) ok = false;
@@ -2259,12 +2288,31 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 						|| [...candidates].some(t => lists.every(l => l.includes(t) || l.includes('All')));
 				}
 			}
-			else if (e.if.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= e.if.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
-			else if (e.if.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= e.if.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
-			else if (e.if.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // Swiftdraw riders (Farm Hand / Benevolent Banker)
-			else if (e.if.holdingDarkGift) ok = p.hand.some(c => c._darkGift); // Frostburn Matriarch / Dragon Turtle
-			else if (e.if.secretsThisGame != null) ok = (p.secretsThisGame || 0) >= e.if.secretsThisGame; // Tomb Diver: played N Secrets this game
-			else if (e.if.onlyLandName) ok = p.lands.length > 0 && p.lands.every(l => (l.name || '').includes(e.if.onlyLandName)); // Magmatic Scorchwing: control only Mountains
+			else if (cond.spellsThisTurn != null) ok = (p.spellsPlayedThisTurn || 0) >= cond.spellsThisTurn; // Unstable Spellcaster (spell-damage-dealt approx)
+			else if (cond.deckCostsDistinct != null) ok = new Set(p.deck.map(id => state.cardsById[id]?.cost || 0)).size >= cond.deckCostsDistinct; // Elise the Navigator: 10 cards of different Costs
+			else if (cond.selfDrawnThisTurn) ok = !!(source && source.drawnThisTurn); // Swiftdraw riders (Farm Hand / Benevolent Banker)
+			else if (cond.holdingDarkGift) ok = p.hand.some(c => c._darkGift); // Frostburn Matriarch / Dragon Turtle
+			else if (cond.secretsThisGame != null) ok = (p.secretsThisGame || 0) >= cond.secretsThisGame; // Tomb Diver: played N Secrets this game
+			else if (cond.onlyLandName) ok = p.lands.length > 0 && p.lands.every(l => (l.name || '').includes(cond.onlyLandName)); // Magmatic Scorchwing: control only Mountains
+			// the five keys the 2026-10-26 audit found with no branch (all used to pass silently):
+			// playedCountById is bumped AFTER a card resolves, so it holds only EARLIER plays here
+			else if (cond.playedBefore) ok = !!source && (p.playedCountById?.[source.id] || 0) >= 1; // Sylvanas's Triumph: you've played another copy of this
+			else if (cond.holdingMinionMinCost != null) ok = p.hand.some(c => c !== source && c.type === 'creature' && (c.cost || 0) >= cond.holdingMinionMinCost); // Precursory Strike
+			else if (cond.ownHealthAtMost != null) ok = p.life <= cond.ownHealthAtMost; // Sensory Deprivation: you have 20 or less Health
+			else if (cond.playedOtherClassThisTurn) ok = (p.otherClassPlayedThisTurn || 0) > 0; // Ransack: an EARLIER card this turn was from another class
+			else if (cond.targetIsEnemy) ok = !!(t && t.controller !== pi); // Go with the Flow: the chosen creature is an enemy
+			else {
+				if (!_warnedIf.has(keys[0])) { _warnedIf.add(keys[0]); console.warn(`conditional: unhandled condition key '${keys[0]}' — failing closed (add a branch in evalConditional)`); }
+				ok = false;
+			}
+	return !!ok;
+}
+
+register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// "If you control a Beast / have 12 or less Health / it's Frozen, ... instead"
+			const t = chosenCreature();
+			const p = state.players[pi];
+			const ok = evalConditional(state, pi, e.if, t, source);
 			execEffects(state, pi, ok ? e.then : (e.else || []), target, source);
 			if (ok && e.if.kindredActive && p.nextKindredTwice) { p.nextKindredTwice = false; execEffects(state, pi, e.then, target, source); } // Primalfin Challenger: your next Kindred triggers twice
 } });
@@ -2350,6 +2398,81 @@ register('replay-opponent-last-turn', ({ state, pi, target, source, enemies, sca
 				}
 			}
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
+});
+
+
+// ---------- play-path twins of trigger-only effect types (2026-10-26 audit) ----------
+// These types were registered ONLY on the trigger side (runSecretEffects: secrets,
+// ongoings), where ctx says which creature reacted. Spells that reused them on the
+// PLAY path reached execEffects, found no handler and did nothing — mana paid, no
+// effect (Hysteria's failure mode). Each twin reads the play path's own subject:
+// the chosen target.
+const liveCreature = c => c && !isDead(c) && c.zone === 'board' && c.type !== 'location';
+register('all-friendly-attack-target', ({ state, pi, chosenCreature }, e) => {
+	// Unholy Frenzy (resummon) / Devouring Swarm (toHand): your creatures attack the chosen enemy
+	const tgt = chosenCreature();
+	if (!liveCreature(tgt) || tgt.controller === pi) return;
+	const p = state.players[pi];
+	const crew = p.board.filter(c => liveCreature(c) && c.attack > 0 && !(c.dormantLeft > 0)).map(c => ({ uid: c.uid, id: c.id }));
+	for (const m of crew) {
+		if (state.over || !liveCreature(tgt)) break;
+		const a = p.board.find(c => c.uid === m.uid);
+		if (!liveCreature(a)) continue;
+		resolveCombat(state, pi, a.uid, { type: 'creature', uid: tgt.uid, player: tgt.controller });
+		sweepDeaths(state);
+		if (a.zone === 'board' && !isDead(a)) continue; // survived
+		const def = state.cardsById[m.id];
+		if (!def) continue;
+		if (e.resummon) summon(state, pi, def);
+		else if (e.toHand && p.hand.length < MAX_HAND) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+	}
+});
+register('force-attacked-neighbor', ({ state, chosenCreature }) => {
+	// Ramming Speed: the chosen creature attacks one of its neighbors
+	const t = chosenCreature();
+	if (!liveCreature(t)) return;
+	const board = state.players[t.controller].board;
+	const i = board.indexOf(t);
+	const neighbors = [board[i - 1], board[i + 1]].filter(liveCreature);
+	if (!neighbors.length) return;
+	const n = neighbors[Math.floor(state.rng() * neighbors.length)];
+	resolveCombat(state, t.controller, t.uid, { type: 'creature', uid: n.uid, player: n.controller });
+	sweepDeaths(state);
+});
+register('beasts-attack-random', ({ state, pi, enemies, chosenCreature }) => {
+	// The Beast Within: the chosen (just-buffed) friendly creature attacks a random enemy creature
+	const b = chosenCreature();
+	if (!liveCreature(b) || b.controller !== pi) return;
+	const pool = enemies.flatMap(o => state.players[o].board.filter(c => liveCreature(c) && !(c.dormantLeft > 0)));
+	if (!pool.length) return;
+	const t = pool[Math.floor(state.rng() * pool.length)];
+	resolveCombat(state, pi, b.uid, { type: 'creature', uid: t.uid, player: t.controller });
+	sweepDeaths(state);
+});
+register('damage-frozen', ({ state, source }, e) => {
+	// Shattering Blast: every Frozen creature takes the damage (99 = destroy)
+	for (const pl of state.players) for (const c of [...pl.board]) if (liveCreature(c) && c.frozen) damageCreature(state, c, e.value || 3, source || null);
+	sweepDeaths(state);
+});
+register('summon-enemy-minion-copy', ({ state, pi, chosenCreature }, e) => {
+	// Sensory Deprivation: create a copy of the chosen enemy creature (stats from e if given)
+	const t = chosenCreature();
+	if (!t || t.controller === pi || !state.cardsById[t.id]) return;
+	const cp = summon(state, pi, state.cardsById[t.id]);
+	if (cp && (e.attack != null || e.health != null)) { if (e.attack != null) cp.attack = e.attack; if (e.health != null) cp.maxHealth = e.health; emit(state, { type: 'buff', uid: cp.uid, attack: cp.attack, hp: hp(cp) }); }
+});
+register('summon-copy-attack-die', ({ state, pi, chosenCreature }, e) => {
+	// Wreck'em and Deck'em: a copy of the chosen friendly Mech attacks a random enemy, then dies
+	const m = chosenCreature();
+	if (!m || m.controller !== pi || (e.tribe && !(m.tribe || '').includes(e.tribe)) || !state.cardsById[m.id]) return;
+	const copy = summon(state, pi, state.cardsById[m.id]);
+	if (!copy) return;
+	copy.sick = false;
+	const foes = [];
+	for (const o of opponentsOf(state, pi)) { for (const c of state.players[o].board) if (liveCreature(c) && !c.stealthed && !(c.dormantLeft > 0)) foes.push({ type: 'creature', uid: c.uid, player: o }); foes.push({ type: 'hero', player: o }); }
+	if (foes.length && !isDead(copy)) resolveCombat(state, pi, copy.uid, foes[Math.floor(state.rng() * foes.length)]);
+	if (!isDead(copy) && copy.zone === 'board') { copy.damage = copy.maxHealth; copy.shield = false; emit(state, { type: 'destroy', uid: copy.uid }); }
+	sweepDeaths(state);
 });
 
 

@@ -50,10 +50,21 @@ register('blessing-dragon', ({ state, pi, target, source, enemies, scaled }, e) 
 });
 
 
+// ONE Invoke, two counters: galakrondInvokes powers Galakrond up, invokeCount answers
+// "if you've Invoked twice" (Kronx, Scion of Ruin, Veiled Worshipper…). The two Invoke
+// effects used to bump one counter each, so the 10 invoke-galakrond cards never counted
+// toward "Invoked twice" and Dragonblight Cultist / Corrupt Elementalist never upgraded
+// Galakrond (2026-10-26: Kronx took his Armor branch after two Galakrond Invokes).
+function countInvokes(state, pi, n) {
+	const p = state.players[pi];
+	p.galakrondInvokes = (p.galakrondInvokes || 0) + n;
+	p.invokeCount = (p.invokeCount || 0) + n;
+	emit(state, { type: 'invokeGalakrond', player: pi, count: p.galakrondInvokes });
+}
+
 register('invoke-galakrond', ({ state, pi, target, source, enemies, scaled }, e) => {
 			// Invoke Galakrond: power up your Galakrond (base -> upgraded at 2 -> maxed at 4)
-			state.players[pi].galakrondInvokes = (state.players[pi].galakrondInvokes || 0) + 1;
-			emit(state, { type: 'invokeGalakrond', player: pi, count: state.players[pi].galakrondInvokes });
+			countInvokes(state, pi, 1);
 });
 
 
@@ -341,7 +352,7 @@ register('summon-per-enemy-bomb', ({ state, pi, target, source, enemies, scaled,
 register('invoke', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Descent of Dragons: Invoke Galakrond (tracked as a counter; grants a small bonus)
 			const p = state.players[pi];
-			p.invokeCount = (p.invokeCount || 0) + (e.times || 1);
+			countInvokes(state, pi, e.times || 1);
 			if (source && source.zone === 'board' && !isDead(source) && (e.attack || e.health)) buffCreature(source, e.attack || 0, e.health || 0);
 });
 
@@ -1380,6 +1391,7 @@ register('summon-attackers', ({ state, pi, chosenCreature }, e) => {
 			// target — with tribe:'Undead' it asked for "a friendly Undead" and found
 			// no legal target at all.
 			keywords: kws, tribe: e.tokenTribe || null,
+			immuneWhileAttacking: !!e.immuneWhileAttacking, // Furious Fowls: "with Immune while attacking"
 		});
 		if (!tok) break;                                   // board full
 		if (victim && !isDead(victim) && !isDead(tok)) {
@@ -1758,6 +1770,21 @@ register('dragonbone-revive', ({ state, pi, target, source, enemies, scaled, hm,
 	const c = summon(state, pi, state.cardsById[source.id]);
 	if (c) { c.dormantLeft = 99; c.reviveTimer = 2; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: 2 }); }
 } });
+
+
+register('revive-later', ({ state, pi, source }, e) => {
+	// Inexorable Ghoul: "Deathrattle: Revive after N turns." The creature LEAVES play —
+	// nothing waits on the board to be buffed, frozen or killed — and a FRESH copy
+	// returns later. "N turns" counts the owner's turn starts, the same clock as
+	// Dormant ("Dormant for 2 turns") and Dragonbone Ritual's "Revive in two turns":
+	// it comes back at the start of the owner's 2nd turn after the death, whichever
+	// player's turn it died on (died on your turn 15 -> back on your turn 19).
+	if (!source || !state.cardsById[source.id]) return;
+	const p = state.players[pi];
+	const turns = Math.max(1, e.turns || 2);
+	(p.pendingRevives = p.pendingRevives || []).push({ id: source.id, turnsLeft: turns });
+	emit(state, { type: 'reviveScheduled', player: pi, name: source.name, turns });
+});
 
 
 register('destroy-summon-copy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {

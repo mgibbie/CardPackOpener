@@ -3724,6 +3724,10 @@ function nextEvent() {
 			break;
 		}
 		case 'defenderMiss': delay = 150; break;
+		case 'reviveScheduled': // Inexorable Ghoul: it left play; a fresh copy returns later
+			log(`${ev.name} will revive in ${ev.turns} turn${ev.turns === 1 ? '' : 's'}`);
+			delay = 300;
+			break;
 		case 'reborn': {
 			const ent = entities.get(ev.uid);
 			if (ent) { refreshFace(ent); floatText('☥', '#ffd25f', ent.mesh.position); }

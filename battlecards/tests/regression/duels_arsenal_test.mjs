@@ -372,8 +372,9 @@ const heroSwing = (st, pi) => { st.players[pi].heroAttacksUsed = 0; E.heroAttack
 	const st = fresh();
 	const g = put(st, 0, 'duels_inexorable_ghoul');
 	g.damage = g.maxHealth; g.shield = false; E.sweepDeaths(st);
+	// 2026-10-26: it LEAVES play and a fresh copy returns after 2 of your turns (bugs_1026_cards_test) — no dormant copy on the board
 	const back = st.players[0].board.find(c => c.id === 'duels_inexorable_ghoul');
-	ok('Inexorable Ghoul returns dormant with a 2-turn timer', back && back.reviveTimer === 2, back && back.reviveTimer);
+	ok('Inexorable Ghoul leaves play with a 2-turn revive scheduled', !back && (st.players[0].pendingRevives || []).some(r => r.id === 'duels_inexorable_ghoul' && r.turnsLeft === 2), JSON.stringify(st.players[0].pendingRevives));
 }
 {
 	const st = fresh();
