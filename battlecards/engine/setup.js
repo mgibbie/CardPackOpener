@@ -24,7 +24,14 @@ export function resetDeckAndHand(state, pi, ids, { shuffle = true } = {}) {
 			[p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]];
 		}
 	}
+	const wiped = new Set(p.hand);
 	p.hand = [];
+	// The wiped hand was never shown, so its queued "drew" / "got The Coin" events go too.
+	// Run bosses re-deal right after createGame, and the live log printed the opening
+	// "got The Coin" twice (one Coin in hand; replays, one line per frame, showed one).
+	if (wiped.size && Array.isArray(state.events)) {
+		state.events = state.events.filter(ev => !(ev && ev.player === pi && ev.card && wiped.has(ev.card) && (ev.type === 'draw' || ev.type === 'coinGiven')));
+	}
 }
 
 // Out-of-band hero-state writes, allow-listed so a typo (or a future engine

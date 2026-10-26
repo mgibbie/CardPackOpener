@@ -930,7 +930,9 @@ export function mulligan(state, pi, uids) {
 	emit(state, { type: 'mulligan', player: pi, count: swap.length });
 }
 
-export function addCoin(state, pi) {
+// `cause` (optional) rides the coinGiven event so the log can say WHY the Coin came:
+// { kind: 'land', by, land, from? } for an opponent's land develop / upgrade.
+export function addCoin(state, pi, cause) {
 	const p = state.players[pi];
 	if (p.eliminated) return;
 	const def = state.cardsById['coin'];
@@ -938,7 +940,7 @@ export function addCoin(state, pi) {
 	const card = instantiate(def, pi);
 	card.zone = 'hand';
 	p.hand.push(card);
-	emit(state, { type: 'coinGiven', player: pi, card });
+	emit(state, cause ? { type: 'coinGiven', player: pi, card, cause } : { type: 'coinGiven', player: pi, card });
 }
 
 // Tradeable: instead of playing the card, pay 1 mana to shuffle it back
@@ -1209,6 +1211,27 @@ export function concede(state, pi) {
 }
 
 // ---------- summoning ----------
+// "After/whenever you summon a creature" reactors (Su Leadfoot, Impish Aid, Spiked Arms,
+// the AV tactic passives, Collapsing Star). Summoning INCLUDES playing a creature from
+// hand — they used to live only in summon(), so a hand-played creature got nothing
+// (Su Leadfoot: no Divine Shield/Rush on played creatures, 2026-10-26). summon() and
+// playCard's creature branch both call this, once, right after the creature lands.
+export function applySummonReactors(state, pi, c) {
+	const p = state.players[pi];
+	if (p.collapsingStar && (c.tribe || '').includes('Demon')) for (const hpw of p.heroPowers) if (hpw.id === 'collapsing_star') hpw.usedThisTurn = false; // Collapsing Star: summoning a Demon refreshes it
+	// AV tactic passives (Duels): Neutral creatures the tactic-holder summons on their turn
+	if (state.current === pi && c.type === 'creature' && (c.cardClass || 'neutral') === 'neutral') {
+		if (heroPassive(p, 'bolsterDefenses')) { c.attack += 1; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		if (heroPassive(p, 'takeTheBridge')) { c.attack += 2; if (!c.keywords.includes(KW.RUSH)) c.keywords.push(KW.RUSH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+	}
+	// Duels treasure creatures/weapons that react to the controller's summons
+	if (c.type === 'creature') {
+		if (p.board.some(x => x.suLeadfoot && x !== c && !isDead(x))) { for (const k of [KW.DIVINE_SHIELD, KW.RUSH]) if (!c.keywords.includes(k)) c.keywords.push(k); c.shield = true; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Su Leadfoot
+		if ((c.tribe || '').includes('Demon') && p.board.some(x => x.impishAid && x !== c && !isDead(x))) { c.attack += 2; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Impish Aid
+		if (p.weapon && p.weapon.spikedArms) { c.attack += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); damageCreature(state, c, 1, null); } // Spiked Arms (buff first so 1-Health summons keep the Attack for their death log)
+	}
+}
+
 // the Creatures row has no size cap; only eliminated players can't summon
 export function summon(state, pi, tokenDef) {
 	const p = state.players[pi];
@@ -1233,10 +1256,10 @@ export function summon(state, pi, tokenDef) {
 	}
 	if (p.nextTribeSummonBuff && (c.tribe || '').includes(p.nextTribeSummonBuff.tribe)) { c.attack += p.nextTribeSummonBuff.attack || 0; c.maxHealth += p.nextTribeSummonBuff.health || 0; p.nextTribeSummonBuff = null; } // Thornmantle Musician
 	if (p.tribeSummonBuff && state.turnNumber < p.tribeSummonBuff.untilTurn && (c.tribe || '').includes(p.tribeSummonBuff.tribe)) { for (const k of p.tribeSummonBuff.keywords) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } } // Timewarden: Dragons gain Taunt + Divine Shield
-	if (p.collapsingStar && (c.tribe || '').includes('Demon')) for (const hpw of p.heroPowers) if (hpw.id === 'collapsing_star') hpw.usedThisTurn = false; // Collapsing Star: summoning a Demon refreshes it
 	if (p.legionInvasion && (c.tribe || '').includes('Demon')) { c.maxHealth += 2; if (!c.keywords.includes(KW.TAUNT)) c.keywords.push(KW.TAUNT); } // Sargeras (Legion Invasion): future Demons have +2 Health and Taunt
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
+	if (c.name === 'Treant' || (c.tribe || '').includes('Treant')) p.treantsSummonedGame = (p.treantsSummonedGame || 0) + 1; // Cultivation: Treants created this game
 	if ((c.tribe || '').includes('Totem')) p.totemsSummonedGame = (p.totemsSummonedGame || 0) + 1; // Thing from Below / Gigantotem: Totems summoned this game
 	for (const t of (c.tribe || '').split(/[/\s]+/).filter(Boolean)) (p.tribeSummonedGame = p.tribeSummonedGame || {})[t] = (p.tribeSummonedGame[t] || 0) + 1; // Knight of the Wild / Frostsaber Matriarch: minions of a tribe summoned this game
 	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
@@ -1247,17 +1270,7 @@ export function summon(state, pi, tokenDef) {
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
-	// AV tactic passives (Duels): Neutral creatures the tactic-holder summons on their turn
-	if (state.current === pi && c.type === 'creature' && (c.cardClass || 'neutral') === 'neutral') {
-		if (heroPassive(p, 'bolsterDefenses')) { c.attack += 1; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
-		if (heroPassive(p, 'takeTheBridge')) { c.attack += 2; if (!c.keywords.includes(KW.RUSH)) c.keywords.push(KW.RUSH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
-	}
-	// Duels treasure creatures/weapons that react to the controller's summons
-	if (c.type === 'creature') {
-		if (p.board.some(x => x.suLeadfoot && x !== c && !isDead(x))) { for (const k of [KW.DIVINE_SHIELD, KW.RUSH]) if (!c.keywords.includes(k)) c.keywords.push(k); c.shield = true; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Su Leadfoot
-		if ((c.tribe || '').includes('Demon') && p.board.some(x => x.impishAid && x !== c && !isDead(x))) { c.attack += 2; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Impish Aid
-		if (p.weapon && p.weapon.spikedArms) { c.attack += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); damageCreature(state, c, 1, null); } // Spiked Arms (buff first so 1-Health summons keep the Attack for their death log)
-	}
+	applySummonReactors(state, pi, c);
 	// Runaway-summon guard: "when you summon a creature, summon…" triggers can
 	// recurse without bound — e.g. Spiritsinger Umbra fires a summoned minion's
 	// summon-deathrattle, or a self-copying Pirate (Shoplifter Goldbeard). Past
@@ -1492,7 +1505,7 @@ export function buyLand(state, pi, landId) {
 	if (allowed && !allowed.includes(landId)) return false; // color-locked run mode
 	const p = state.players[pi];
 	spendMana(p, LAND_COST);
-	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	for (const o of opponentsOf(state, pi)) addCoin(state, o, { kind: 'land', by: pi, land: def.name });
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	p.lands.push(card);
@@ -1513,12 +1526,13 @@ export function upgradeLand(state, pi, landUid, advId) {
 	const def = state.cardsById[advId];
 	if (!def || def.type !== 'land') return false;
 	spendMana(p, LAND_COST);
-	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	const from = p.lands[idx].name;
+	for (const o of opponentsOf(state, pi)) addCoin(state, o, { kind: 'land', by: pi, land: def.name, from });
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	card.tapped = p.lands[idx].tapped;
 	p.lands[idx] = card;
-	emit(state, { type: 'landUpgraded', player: pi, card, mana: availableMana(p) });
+	emit(state, { type: 'landUpgraded', player: pi, card, from, mana: availableMana(p) });
 	landEntered(state, pi, card);
 	return true;
 }
@@ -2446,6 +2460,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		// position = insertion index (adjacency matters); default = right end
 		if (position == null || position >= p.board.length) p.board.push(card);
 		else p.board.splice(Math.max(0, position), 0, card);
+		applySummonReactors(state, pi, card); // Su Leadfoot & co.: playing a creature IS summoning it
 		p.creaturesPlayedThisTurn++;
 		p.minionsPlayedGame = (p.minionsPlayedGame || 0) + 1; // Zee's Might
 		questTick(state, 'summon', pi, 1, card);
@@ -2656,6 +2671,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	questTick(state, 'play', pi, 1, card); // "Play N cards" quests
 	// counted AFTER resolution so Combo sees only cards played EARLIER this turn
 	p.cardsPlayedThisTurn++;
+	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass) p.otherClassPlayedThisTurn = (p.otherClassPlayedThisTurn || 0) + 1; // Ransack: an EARLIER other-class card this turn (counted after resolution, like Combo)
 	// Rat Trap / Motion Denied: an opponent's secret watching the Nth card this turn
 	fireSecretsAll(state, pi, 'enemy-card-played', { played: card, cardsPlayedThisTurn: p.cardsPlayedThisTurn });
 	for (const hc of p.hand) if (hc._locked) hc._locked = false; // Low Security Wing: playing another card unlocks
@@ -5511,7 +5527,7 @@ export function endTurn(state) {
 	np.heroAttacksUsed = 0;
 	np.landsPlayedThisTurn = 0;
 	np.creaturesPlayedThisTurn = 0;
-	np.cardsPlayedThisTurn = 0; np.cardsDrawnThisTurn = 0;
+	np.cardsPlayedThisTurn = 0; np.cardsDrawnThisTurn = 0; np.otherClassPlayedThisTurn = 0;
 	np.drawsThisTurn = 0; // reset before the mandatory draw so it counts as the first
 	np.spellsPlayedThisTurn = 0; np.schoolsCastThisTurn = {}; np.firstBattlecryThisTurn = null; np.castBigSpellThisTurn = false; // Metamorfin / Bolner Hammerbeak / Arcane Tyrant
 	np.discoveredThisTurn = 0; // Parallax Cannon
@@ -5545,6 +5561,12 @@ export function endTurn(state) {
 	if (np.partyReplacement) { const PKW = ['taunt', 'rush', 'divine_shield', 'lifesteal']; execEffects(state, state.current, [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Adventurer', keywords: [PKW[Math.floor(state.rng() * PKW.length)]] }], null, null); } // Party Replacement: a 2/2 Adventurer with a random bonus
 	if (np.battleStance) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Battle Stance (Duels): +2 hero Attack on your turn
 	if (np.weapon && np.weapon.startTurnEffects) execEffects(state, state.current, JSON.parse(JSON.stringify(np.weapon.startTurnEffects)), null, np.weapon); // Horns of Flame / Archmage Staff (Duels)
+	if (np.pendingRevives && np.pendingRevives.length) { // Inexorable Ghoul: "Revive after N turns" (engine/effects/handlers-summon.js revive-later)
+		for (const r of np.pendingRevives) r.turnsLeft--;
+		const due = np.pendingRevives.filter(r => r.turnsLeft <= 0);
+		np.pendingRevives = np.pendingRevives.filter(r => r.turnsLeft > 0);
+		for (const r of due) if (!state.over && state.cardsById[r.id]) summon(state, state.current, state.cardsById[r.id]); // a fresh copy; ready like any creature at your turn start (the sick reset below)
+	}
 	for (const c of np.board) if (c.reviveTimer > 0) { c.reviveTimer--; if (c.reviveTimer <= 0) { c.reviveTimer = 0; c.dormantLeft = 0; c.sick = false; emit(state, { type: 'awaken', player: state.current, uid: c.uid, name: c.name }); } } // Dragonbone Ritual: dormant Dragons revive on schedule
 	if (np.legendaryLoot && !np._legLootUsed) { np._legLootUsed = true; execEffects(state, state.current, [{ type: 'discover', cardType: 'weapon', rarity: 'legendary' }], null, null); } // Legendary Loot: on your first turn, Discover a Legendary weapon
 	// AV tactics (Duels): a tactic-family power transforms into another family member each turn

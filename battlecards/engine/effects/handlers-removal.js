@@ -37,6 +37,7 @@ import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
 import { drawCards, toGraveyard, bouncePermanent } from '../zones.js';
 import { runDeathrattle } from '../death.js';
+import { isLackey } from '../targeting.js';
 
 register('hero-corpse-deathrattle', ({ state, pi, target, source, enemies, scaled }, e) => {
 			state.players[pi].heroDeathrattleCorpses = true; // Husk, Eternal Reaper
@@ -405,7 +406,7 @@ register('copy-last-deathrattle-died', ({ state, pi, target, source, enemies, sc
 register('destroy-friendly-tribe-buff-all', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Elder Nadox: destroy a chosen friendly minion; your minions gain its Attack
 			const t = chosenCreature();
-			if (t && t.controller === pi) { const a = t.attack || 0; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); for (const c of state.players[pi].board) if (c !== t && !isDead(c) && c.type !== 'location') buffCreature(c, a, 0); }
+			if (t && t.controller === pi && (!e.tribe || (t.tribe || '').includes(e.tribe))) { const a = t.attack || 0; t.damage = t.maxHealth; t.shield = false; emit(state, { type: 'destroy', uid: t.uid }); for (const c of state.players[pi].board) if (c !== t && !isDead(c) && c.type !== 'location') buffCreature(c, a, 0); }
 } });
 
 
@@ -1449,6 +1450,9 @@ register('destroy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy
 				&& (e.minAttack == null || t.attack >= e.minAttack)
 				&& (e.requireKeyword == null || t.keywords.includes(e.requireKeyword))
 				&& (e.requireRarity == null || t.rarity === e.requireRarity)
+				&& (e.maxHealth == null || hp(t) <= e.maxHealth) // Merciless Executioners / Black Arrow: "with N or less Health" (current Health)
+				&& !(e.requireUndamaged && t.damage > 0) // Walk the Plank
+				&& (!e.requireLackey || isLackey(t)) // EVIL Recruiter: only a Lackey
 				&& (e.tribe == null || (t.tribe || '').includes(e.tribe))
 				&& !(e.requireDamaged && t.damage === 0)) {
 				t.damage = t.maxHealth;

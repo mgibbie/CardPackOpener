@@ -43,10 +43,48 @@ const TYPE_ITEM = {
 // (tracked — served by the MAIN deploy, so no owdata push needed). Anything else that
 // is still missing a sprite falls back to a generic so an NPC/trainer can never fail
 // to render. Returns a full page-relative path.
-const LEADER_ART = new Set(['ROXANNE', 'BRAWLY', 'WATTSON', 'FLANNERY', 'NORMAN', 'WINONA', 'TATE', 'LIZA', 'JUAN', 'WALLACE'].map(n => 'OBJ_EVENT_GFX_' + n));
+// STEVEN (Granite Cave, Mossdeep, Meteor Falls...) is the same verbatim pokeemerald
+// art; without it he drew as the generic man after a 404 (bug:1792594036709).
+const LEADER_ART = new Set(['ROXANNE', 'BRAWLY', 'WATTSON', 'FLANNERY', 'NORMAN', 'WINONA', 'TATE', 'LIZA', 'JUAN', 'WALLACE', 'STEVEN'].map(n => 'OBJ_EVENT_GFX_' + n));
+export const hasExtraArt = graphicsId => LEADER_ART.has(graphicsId);
 export function spritePath(graphicsId, isTrainer) {
 	if (LEADER_ART.has(graphicsId)) return `people_extra/${graphicsId.replace('OBJ_EVENT_GFX_', '').toLowerCase()}.png`;
 	return `data/people/${isTrainer ? 'cooltrainer_m.png' : 'man.png'}`;
+}
+// Crystal / Emerald graphics ids whose person already exists in the FireRed set
+// under another name. data/gfx_map.json (owdata) only knows FireRed's own ids, so
+// these were requested by their raw name (people/officer.png, people/granny.png —
+// bug:1792701740150), 404'd, and drew as the generic man. Every target is a real
+// file in data/people; the test checks that.
+export const GFX_ALIAS = {
+	OBJ_EVENT_GFX_OFFICER: 'policeman.png',
+	OBJ_EVENT_GFX_GRANNY: 'old_woman.png',
+	OBJ_EVENT_GFX_OLD_MAN: 'old_man_1.png',
+	OBJ_EVENT_GFX_GRAMPS: 'old_man_2.png',
+	OBJ_EVENT_GFX_SCIENTIST_1: 'scientist.png',
+	OBJ_EVENT_GFX_SCIENTIST_2: 'scientist.png',
+	OBJ_EVENT_GFX_MART_EMPLOYEE: 'clerk.png',
+	OBJ_EVENT_GFX_ROCKET: 'rocket_m.png',
+	OBJ_EVENT_GFX_AZALEA_ROCKET: 'rocket_m.png',
+	OBJ_EVENT_GFX_ROCKET_GIRL: 'rocket_f.png',
+	OBJ_EVENT_GFX_GAMEBOY_KID: 'gba_kid.png',
+	OBJ_EVENT_GFX_SWIMMER_GIRL: 'swimmer_f_land.png',
+	OBJ_EVENT_GFX_SWIMMER_GUY: 'swimmer_m_land.png',
+	OBJ_EVENT_GFX_COOK: 'chef.png',
+	OBJ_EVENT_GFX_OAK: 'prof_oak.png',
+	OBJ_EVENT_GFX_REDS_MOM: 'mom.png',
+	OBJ_EVENT_GFX_SURGE: 'lt_surge.png',
+	OBJ_EVENT_GFX_LINK_RECEPTIONIST: 'cable_club_receptionist.png',
+	OBJ_EVENT_GFX_STANDING_YOUNGSTER: 'youngster.png',
+	OBJ_EVENT_GFX_GYM_GUIDE: 'gym_guy.png',
+	OBJ_EVENT_GFX_MAN_1: 'man.png',
+};
+// the data/people file to try first for a graphics id (null: go straight to
+// spritePath — the id has its own people_extra art, so there is nothing to 404)
+export function peopleFile(gfx, graphicsId) {
+	if (LEADER_ART.has(graphicsId)) return null;
+	return (gfx && gfx[graphicsId]) || GFX_ALIAS[graphicsId]
+		|| (graphicsId || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase() + '.png';
 }
 
 // all battle-capable trainers, including talk-to ones (sight range 0 — gym
@@ -203,7 +241,15 @@ export class Trainers {
 		return (ev.type === 'object' || ev.type == null) && ev.script && this.data?.rosters?.[ev.script] != null;
 	}
 
+	// Overlapping loads (the story-overlay heal re-running a map's setup while a
+	// transition is still loading objects; bug:1792868498540) used to BOTH append
+	// into the same fresh list: Viridian Forest's five trainers came back as ten,
+	// every base id then looked like a collision, the coordinate-suffixed keys no
+	// longer matched the save's plain ones, and beaten trainers fought again. Each
+	// load now carries a generation; only the newest one may add trainers, and an
+	// event is never listed twice.
 	async loadForMap() {
+		const gen = this._loadGen = (this._loadGen || 0) + 1;
 		this.list = [];
 		this._dupBases = null;
 		this.engagement = null;
@@ -234,23 +280,30 @@ export class Trainers {
 			const storyFlagged = !!(ev.flag && ev.flag !== '0');
 			const claimedByBeat = storyFlagged && !!(this.spawnFlagged && this.spawnFlagged(ev));
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
-			const file = this.gfx[ev.graphics_id]
-				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
-			let img = await getImage(`data/people/${file}`).catch(() => null);
+			const file = peopleFile(this.gfx, ev.graphics_id);
+			let img = file ? await getImage(`data/people/${file}`).catch(() => null) : null;
 			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer —
 			// use their real people_extra art, else a generic
 			if (!img) img = await getImage(spritePath(ev.graphics_id, true)).catch(() => null);
-			if (img) { const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t); }
+			if (gen !== this._loadGen) return;   // a newer load owns the list now
+			if (img && !this.list.some(o => o.ev === ev)) { const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t); }
 		}));
+		if (gen !== this._loadGen) return;
 		this.recomputeDupBases();
 	}
 
 	// which base ids appear more than once on THIS map? Only those need the
 	// coordinate suffix, so unique trainers keep the save key they already have.
+	// A collision is two DIFFERENT objects (distinct source tiles) sharing a base —
+	// Violet Gym's Abe and Rod — never one event that happens to be listed twice.
 	recomputeDupBases() {
 		const seen = new Map();
-		for (const t of this.list) { const b = this.baseKeyOf(t); seen.set(b, (seen.get(b) || 0) + 1); }
-		this._dupBases = new Set([...seen].filter(([, n]) => n > 1).map(([b]) => b));
+		for (const t of this.list) {
+			const b = this.baseKeyOf(t);
+			if (!seen.has(b)) seen.set(b, new Set());
+			seen.get(b).add(`${t.ev.x},${t.ev.y}`);
+		}
+		this._dupBases = new Set([...seen].filter(([, at]) => at.size > 1).map(([b]) => b));
 		return this._dupBases;
 	}
 

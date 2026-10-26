@@ -136,7 +136,7 @@ try {
 	const end = src.slice(src.indexOf('function endRunKey'), src.indexOf('function endRunKey') + 500);
 	A(end.indexOf('safeLoad(key') < end.indexOf('localStorage.removeItem(key)') && /serverClearRun\(key, runId\)/.test(end), '5. endRunKey reads the runId before clearing and sends it with run-clear');
 	A(/ENDED_RUNS_KEY/.test(end), '5. endRunKey remembers the ended run on this device');
-	const hyd = src.slice(src.indexOf('async function hydrateRunsFromServer'), src.indexOf('async function hydrateRunsFromServer') + 900);
+	const hyd = src.slice(src.indexOf('async function hydrateRunsFromServer'), src.indexOf('async function hydrateRunsFromServer') + 1600);
 	A(/endedRunIds\(\)\.includes/.test(hyd), '5. boot never takes a run this device ended back from the server');
 }
 

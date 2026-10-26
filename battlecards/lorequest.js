@@ -106,8 +106,12 @@ export function enemyRosterFor(games) { return games < PW_BATTLES ? PLANESWALKER
 
 // pick a random enemy character from the appropriate roster (no immediate repeat, and — for
 // the planeswalker stretch — never your own deck's character)
-export function randomEnemy(games, rng, avoidId, selfId) {
-	let roster = enemyRosterFor(games).filter(c => c !== avoidId && c !== selfId);
+// `faced` = every enemy already met this run: never offered again while the roster still has
+// someone new (a Commander re-offered two fights later — instinctgauntlet, 2026-10-25).
+export function randomEnemy(games, rng, avoidId, selfId, faced) {
+	const seen = new Set(Array.isArray(faced) ? faced : []);
+	let roster = enemyRosterFor(games).filter(c => c !== avoidId && c !== selfId && !seen.has(c));
+	if (!roster.length) roster = enemyRosterFor(games).filter(c => c !== avoidId && c !== selfId);
 	if (!roster.length) roster = enemyRosterFor(games);
 	return roster[Math.floor(rng() * roster.length)];
 }
