@@ -18,6 +18,12 @@
  * Loading never writes the base save; only a payment (and a reconcile with something to undo) does.
  * Prices and rewards are written in the D10 tables' units and converted with K.SCALE (coinsOf): one Pokémoneda tuning knob.
  *
+ * RETIRED Lab rows (DLC D16: the move slot, every move fires; D18: the 9 stat rows, the Pokémon upgrades are shared): they stay
+ * in LAB (the row's order) with `retired`, do nothing in a run (effects), can't be bought, and every level bought is REFUNDED
+ * ONCE per account (refundRetired): 'rf.lab.<id>.<level>:<device>' in cur.earn, one per level as its purchase was, so two
+ * devices that refund while apart are reconciled like any double payment (the second claws its copy back, cur.fix). The base
+ * and Expedition saves are backed up first (G.DB.backup / micasurvivorexp_backup.*); rollbackRefunds() undoes this device's.
+ *
  * Everything else persists in the Expedition save (G.ExpSave: max per counter, union per set), so it can't go backwards:
  *   the Lab       `lab.<id>` levels (max). 19 upgrades (study 2.14). Their effects reach the run through the run's ROW.
  *   unlocks       25 items start out of the drop pool; a counter goal reveals each, then Pokémonedas buy it (`items.bought`).
@@ -72,6 +78,8 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Potenciadores (para la próxima partida)': 'Boosts (for your next run)', 'Usar': 'Use', 'Usará': 'Armed',
   '¡Tarea hecha: {x}! +{x} Pokémonedas': 'Task done: {x}! +{x} Pokémonedas', '¡Bonus diario! +{x} Pokémonedas · {x}': 'Daily bonus! +{x} Pokémonedas · {x}', '¡Bonus semanal! +{x} Pokémonedas': 'Weekly bonus! +{x} Pokémonedas',
   'Pago doble corregido: {x} Pokémonedas': 'Double payment fixed: {x} Pokémonedas',
+  'Mejoras retiradas: te devolvemos {x} Pokémonedas': 'Retired upgrades: {x} Pokémonedas refunded',   // (DLC D16 / D18)
+  'Retiradas con las reglas nuevas y devueltas: {x}': 'Retired with the new rules and refunded: {x}',
   'Ya cambiaste una tarea hoy': 'You already rerolled a task today', 'Ya cambiaste una tarea esta semana': 'You already rerolled a task this week',
   'Derrota a {x} Pokémon': 'Defeat {x} Pokémon', 'Juega {x} minutos': 'Play {x} minutes', 'Llega a la zona {x}': 'Reach zone {x}',
   'Vence a {x} guardianes': 'Beat {x} guardians', 'Abre {x} Poké Balls': 'Open {x} Poké Balls', 'Usa {x} altares': 'Use {x} altars',
@@ -164,20 +172,22 @@ G.ExpMeta = (() => {
   };
   // the 19 Lab upgrades (study 2.14). ORDER IS THE ROW'S: append only. price(lvl) = round(base x growth^lvl / 5) x 5 or `prices`.
   const LAB = [
-    { id: 'training', name: 'Entrenamiento', icon: 'muscle_band', max: 8, base: 300, g: 1.35, stat: 'dmg', per: 0.04 },
-    { id: 'stamina', name: 'Aguante', icon: 'hp_up', max: 8, base: 250, g: 1.35, stat: 'hp', per: 8 },
-    { id: 'agility', name: 'Agilidad', icon: 'carbos', max: 6, base: 300, g: 1.4, stat: 'spd', per: 0.025 },
-    { id: 'study', name: 'Estudio', icon: 'exp_share', max: 5, base: 400, g: 1.45, stat: 'xp', per: 0.05 },
-    { id: 'trading', name: 'Comercio', icon: 'amulet_coin', max: 5, base: 300, g: 1.45, stat: 'coin', per: 0.08 },
-    { id: 'fortune', name: 'Fortuna', icon: 'lucky_punch', max: 5, base: 400, g: 1.5, stat: 'luck', per: 5 },
-    { id: 'magnetism', name: 'Magnetismo', icon: 'magnet', max: 4, base: 250, g: 1.5, stat: 'magnet', per: 0.1 },
-    { id: 'leftovers', name: 'Restos', icon: 'leftovers', max: 4, base: 400, g: 1.5, stat: 'regen', per: 0.3 },
-    { id: 'shell', name: 'Caparazón', icon: 'shoal_shell', max: 5, base: 350, g: 1.45, stat: 'armor', per: 2 },
+    // (DLC D18, owner 2026-10-26: the shop's per-Pokémon upgrades work in both modes, so the Lab's 9 stat rows that overlapped
+    //  them are retired and refunded: retired 'D18')
+    { id: 'training', name: 'Entrenamiento', icon: 'muscle_band', max: 8, base: 300, g: 1.35, stat: 'dmg', per: 0.04, retired: 'D18' },
+    { id: 'stamina', name: 'Aguante', icon: 'hp_up', max: 8, base: 250, g: 1.35, stat: 'hp', per: 8, retired: 'D18' },
+    { id: 'agility', name: 'Agilidad', icon: 'carbos', max: 6, base: 300, g: 1.4, stat: 'spd', per: 0.025, retired: 'D18' },
+    { id: 'study', name: 'Estudio', icon: 'exp_share', max: 5, base: 400, g: 1.45, stat: 'xp', per: 0.05, retired: 'D18' },
+    { id: 'trading', name: 'Comercio', icon: 'amulet_coin', max: 5, base: 300, g: 1.45, stat: 'coin', per: 0.08, retired: 'D18' },
+    { id: 'fortune', name: 'Fortuna', icon: 'lucky_punch', max: 5, base: 400, g: 1.5, stat: 'luck', per: 5, retired: 'D18' },
+    { id: 'magnetism', name: 'Magnetismo', icon: 'magnet', max: 4, base: 250, g: 1.5, stat: 'magnet', per: 0.1, retired: 'D18' },
+    { id: 'leftovers', name: 'Restos', icon: 'leftovers', max: 4, base: 400, g: 1.5, stat: 'regen', per: 0.3, retired: 'D18' },
+    { id: 'shell', name: 'Caparazón', icon: 'shoal_shell', max: 5, base: 350, g: 1.45, stat: 'armor', per: 2, retired: 'D18' },
     { id: 'refresh', name: 'Cambiar', icon: 'vs_seeker', max: 4, base: 400, g: 1.6, text: '+{x} uso por partida' },
     { id: 'skip', name: 'Saltar', icon: 'escape_rope', max: 4, base: 300, g: 1.6, text: '+{x} uso por partida' },
     { id: 'banish', name: 'Vetar', icon: 'cleanse_tag', max: 5, base: 500, g: 1.5, text: '+{x} uso por partida' },
     { id: 'vitamins', name: 'Huecos de vitamina', icon: 'protein', max: 2, prices: [1200, 3000], text: '+{x} hueco de vitamina' },
-    { id: 'moveslot', name: 'Hueco de movimiento', icon: 'tm', max: 1, prices: [1500], text: '+{x} hueco de movimiento' },
+    { id: 'moveslot', name: 'Hueco de movimiento', icon: 'tm', max: 1, prices: [1500], text: '+{x} hueco de movimiento', retired: 'D16' },   // (DLC D16: 4 move slots, every one firing)
     { id: 'option', name: 'Cuarta opción', icon: 'teachy_tv', max: 1, prices: [3000], text: '+{x} carta en cada subida de nivel' },
     { id: 'revive', name: 'Revivir', icon: 'max_revive', max: 1, prices: [5000], text: 'Empiezas con un Revivir Máximo' },
     { id: 'research', name: 'Investigación', icon: 'silph_scope', max: 4, base: 500, g: 1.6, text: '+{x} % de investigación', k: 25 },
@@ -315,7 +325,7 @@ G.ExpMeta = (() => {
     ['ult10', 'Definitivo', 'casts', 10, 150], ['ult100', 'Sin límites', 'casts', 100, 500],
     ['ball50', 'Abrebolas', 'balls', 50, 200], ['cage10', 'Liberador', 'freed', 10, 300],
     ['avatar1', 'Investigador', 'avatars', 1, 150], ['avatar10', 'Enciclopedia', 'avatars', 10, 600, 'Investigador jefe'],
-    ['lab10', 'Ayudante de laboratorio', 'lab', 10, 300], ['lab50', 'Profesor', 'lab', 50, 1000, 'Profesor'],
+    ['lab10', 'Ayudante de laboratorio', 'lab', 10, 300], ['lab50', 'Profesor', 'lab', 25, 1000, 'Profesor'],   // (DLC D18: 25, the Lab without its 9 retired rows; the id stays)
     ['task30', 'Constante', 'tasks', 30, 500],
     // (D11: Survival)
     ['surv10', 'Superviviente', 'survMin', 10, 150], ['surv30', 'Resistencia', 'survMin', 30, 500], ['miles10', 'Cazahitos', 'miles', 10, 300],
@@ -369,6 +379,7 @@ G.ExpMeta = (() => {
   function amountOf(what) {
     const p = what.split('.');
     if (p[0] === 'lab' && LAB_BY[p[1]]) { const v = price(p[1], +p[2]); return Number.isFinite(v) ? coinsOf(v) : 0; }
+    if (p[0] === 'rf' && p[1] === 'lab' && LAB_BY[p[2]] && LAB_BY[p[2]].retired) { const v = price(p[2], +p[3]); return Number.isFinite(v) ? coinsOf(v) : 0; }   // (DLC D16: a retired level's refund)
     if (p[0] === 'item' && UNLOCK_BY[p[1]]) return coinsOf(UNLOCK_BY[p[1]].cost);
     if (p[0] === 'ach' && ACH_BY[p[1]]) return coinsOf(ACH_BY[p[1]].star);
     return 0;
@@ -414,6 +425,62 @@ G.ExpMeta = (() => {
     return moved;
   }
 
+  // ---------------- DLC D16 / D18: the retired Lab rows, refunded once per account ----------------
+  const refundKey = (id, i) => 'rf.lab.' + id + '.' + i;
+  /** The refunds this save still owes: every level bought of a retired row that no device has refunded. -> ['rf.lab.<id>.<i>'] */
+  function refundsOwed() {
+    const done = new Set(Sv().list('cur.earn').map(x => x.slice(0, x.lastIndexOf(':'))));
+    const out = [];
+    for (const u of LAB) if (u.retired) for (let i = 0; i < labLv(u.id); i++) if (!done.has(refundKey(u.id, i))) out.push(refundKey(u.id, i));
+    return out;
+  }
+  /** The Expedition save copied before a refund writes (the base save's copy is G.DB.backup's). -> its key */
+  function backupExp(tag) {
+    const w = Sv().who || 'guest', k = 'micasurvivorexp_backup.' + w + '.' + tag + '.' + Date.now();
+    try {
+      // (the newest 2 copies per tag are kept)
+      const old = [];
+      for (let i = 0; i < localStorage.length; i++) { const x = localStorage.key(i); if (x && x.startsWith('micasurvivorexp_backup.' + w + '.' + tag + '.')) old.push(x); }
+      old.sort().slice(0, Math.max(0, old.length - 1)).forEach(x => localStorage.removeItem(x));
+      localStorage.setItem(k, JSON.stringify(Sv().data));
+    } catch (e) { return null; }
+    return k;
+  }
+  /**
+   * Pays every refund owed (each retired level's price, once per account), after backing both saves up. The record goes in
+   * cur.earn first ('rf.lab.<id>.<i>:<device>'), so reconcile() undoes a second device's copy. -> the Pokémonedas paid
+   */
+  function refundRetired() {
+    if (!Sv() || !Sv().data || !G.Expedition || !G.Expedition.wallet || !(G.DB && G.DB.save)) return 0;
+    const owed = refundsOwed();
+    if (!owed.length) return 0;
+    const bk = [G.DB.backup ? G.DB.backup('exp-refund') : null, backupExp('refund')];
+    if (!bk[0] || !bk[1]) return 0;   // (no backup, no refund: it waits for the next time)
+    let paid = 0;
+    for (const w of owed) {
+      const n = amountOf(w);
+      if (!(n > 0)) continue;
+      Sv().add('cur.earn', w + ':' + dev());
+      if (W().refund(n)) paid += n;
+    }
+    Sv().commit();
+    if (paid) { Sv().bump('rf.paid', paid); Sv().commit(); toast(F('Mejoras retiradas: te devolvemos {x} Pokémonedas', fmt(paid)), 4200); }
+    return paid;
+  }
+  /** Undoes THIS device's refunds (each taken back once, as far as the balance goes; never paid again). -> the Pokémonedas taken */
+  function rollbackRefunds() {
+    const me = dev(), fixed = new Set(Sv().list('cur.fix'));
+    let took = 0;
+    for (const id of Sv().list('cur.earn')) {
+      if (!id.startsWith('rf.') || !id.endsWith(':' + me) || fixed.has(id)) continue;
+      const amt = amountOf(id.slice(0, id.lastIndexOf(':'))), take = Math.min(amt, Math.max(0, W().balance()));
+      Sv().add('cur.fix', id);
+      if (take > 0 && W().spend(take)) took += take;
+    }
+    Sv().commit();
+    return took;
+  }
+
   /** A run's pay (pure): {base (the table's units), mul (the tier's), pay (Pokémonedas)}. p: {kills, time, zone, bosses, won, catches, legends, surv (D11: a Survival run: its minutes pay)}. */
   function payOf(p, diff) {
     const P = K.PAY, mul = TR() ? TR().of(diff).pay : 1;
@@ -427,6 +494,7 @@ G.ExpMeta = (() => {
   function buyLab(id) {
     const u = LAB_BY[id];
     if (!u) return { error: 'unknown' };
+    if (u.retired) return { error: 'retired' };   // (DLC D16 / D18)
     const lv = labLv(id);
     if (lv >= u.max) return { error: 'max' };
     const p = coinsOf(price(id, lv));
@@ -685,7 +753,8 @@ G.ExpMeta = (() => {
   function effects(r) {
     const e = { lab: {}, stats: {}, boosts: {}, perk: 0, charm: false, shinyMember: false };
     if (!validRow(r)) return e;
-    LAB.forEach((u, i) => { const n = Math.min(u.max, B36.indexOf(r[0][i] || '0')); e.lab[u.id] = Math.max(0, n); if (u.stat && n > 0) e.stats[u.stat] = (e.stats[u.stat] || 0) + u.per * n; });
+    // (DLC D16 / D18: a retired row does nothing in a run, whatever level the row says)
+    LAB.forEach((u, i) => { const n = u.retired ? 0 : Math.min(u.max, B36.indexOf(r[0][i] || '0')); e.lab[u.id] = Math.max(0, n); if (u.stat && n > 0) e.stats[u.stat] = (e.stats[u.stat] || 0) + u.per * n; });
     const mask = r[2] | 0;
     for (const b of BOOSTS) if (mask & (1 << b.i)) { e.boosts[b.id] = true; if (b.stat) e.stats[b.stat] = (e.stats[b.stat] || 0) + b.v; }
     e.perk = Math.max(0, Math.min(K.SHINY.length, r[1] | 0));
@@ -787,6 +856,7 @@ G.ExpMeta = (() => {
     const p = sum.parts || { kills: sum.kills || 0, time: sum.time || 0, zone: sum.zone || 1, bosses: 0, won: !!sum.won, catches: CP() && CP().run ? CP().run.n : 0 };
     const diff = sum.diff || 'normal', pay = payOf(sum.mode === 'exp-survival' ? Object.assign({}, p, { surv: true }) : p, diff);   // (D11: Survival's minutes)
     reconcile();   // (a double payment from another device, undone before this run pays)
+    refundRetired();   // (DLC D16 / D18: the retired Lab rows' refunds, once per account)
     if (pay.pay > 0) {
       const got = credit(pay.pay); Svv.bump('pay.total', got); Svv.best('pay.best', got);
       out.push(pay.mul !== 1 ? F('Pokémonedas: +{x} (×{x} {x})', got, pay.mul, T.t(TR().DIFF_NAME[diff])) : F('Pokémonedas: +{x}', got));
@@ -896,6 +966,7 @@ G.ExpMeta = (() => {
     const box = document.querySelector('#scr-modes .modes-box');
     if (box) { scrollWas = box.scrollTop; box.scrollTop = 0; }
     reconcile();
+    refundRetired();   // (DLC D16 / D18)
     for (const a of checkAch()) G.UI.toast(F('¡Logro: {x}! +{x} Pokémonedas', T.t(a.name), coinsOf(a.star)), 3000);
     render();
     return true;
@@ -977,7 +1048,10 @@ G.ExpMeta = (() => {
   }
   const act = (b, fn) => { b.onclick = e => { e.stopPropagation(); fn(); }; };
   function tabLab(body) {
-    body.innerHTML = `<div class="xm-grid">${LAB.map(u => {
+    // (DLC D16 / D18: a retired row is not shown; a line says what was refunded)
+    const gone = LAB.filter(u => u.retired && labLv(u.id) > 0);
+    const note = gone.length ? `<p class="xm-note" style="display:block" id="xm-retired">${esc(F('Retiradas con las reglas nuevas y devueltas: {x}', gone.map(u => T.t(u.name)).join(', ')))}</p>` : '';
+    body.innerHTML = note + `<div class="xm-grid">${LAB.filter(u => !u.retired).map(u => {
       const lv = labLv(u.id), p = max0(u, lv) ? 0 : coinsOf(price(u.id, lv)), max = lv >= u.max;
       return `<div class="xm-c${max ? ' done' : ''}" data-lab="${u.id}">${img(u.icon)}<span><b>${esc(T.t(u.name))}</b> <small>${esc(F('Nv. {x}/{x}', lv, u.max))} · ${esc(F('Ahora: {x}', labText(u, lv)))}</small></span>
         ${max ? `<span class="xm-tag">${esc(T.t('Máximo'))}</span>` : `<button class="btn small${balance() >= p ? ' gold' : ''}" type="button" data-buy="${u.id}">${coin()} ${fmt(p)}</button>`}
@@ -1100,6 +1174,7 @@ G.ExpMeta = (() => {
     tasksOf, reroll, taskRun, dayOf, weekOf, periodOf, dailyStreak, checkAch, achHave,
     card, chooseAvatar, chooseFrame, chooseTitle, frameOpen, titleOpen,
     rowNow, effects, begin, after, reset, labNow, statOf, excluded, charm, dawn, useMaster, onKill, onFreed, tick, row, applyRow, record,
+    refundsOwed, refundRetired, rollbackRefunds,   // (DLC D16 / D18)
     open, close, back, render, tabsNow, finalStage,
     get run() { return S; }, get shown() { return isShown(); }, get ui() { return ui; }, get el() { return el; },
     /** For tests: pin the panel's "today". */

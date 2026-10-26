@@ -359,7 +359,7 @@ try {
 			const hp0 = pl.hp;
 			T.withRandom(0.5, () => G.Combat.tick(2, pl, 0));
 			const k = G.Types.mult('psychic', s1.types) * G.Weather.mult('psychic');
-			return { d1: s1.maxHp - s1.hp, d2: s2.maxHp - s2.hp, awake: awake.maxHp - awake.hp, want: Math.round(46 * pl.atk * k),
+			return { d1: s1.maxHp - s1.hp, d2: s2.maxHp - s2.hp, awake: awake.maxHp - awake.hp, want: Math.round(46 * pl.atk * k * pl.afDmg),   // (DLC D16: x the run's all-fire damage factor, G.Combat.AF.DMG)
 				healed: pl.hp - hp0, wantHeal: 2 * pl.maxHp * 0.012, still: s1.sleepT > 0 && s2.sleepT > 0, radius: m.radius };
 		});
 		A(d.awake === 0 && d.d1 === d.want && d.d2 === d.want, `Dream Eater hits only sleeping enemies (${d.d1} each), the awake one is untouched`, JSON.stringify(d));

@@ -20,7 +20,8 @@
  *                armor = 6 def + 3 spd (/100) -> damage taken -1 % per point (cap 20 %); speed = SPD0 x (0.92 + 0.12 spe);
  *                physical / special = ATK0 x (0.82 + 0.2 atk|spa): the higher is the player's attack, a move of the other
  *                class is scaled down to its own (m.xk on the move instance)
- *   the kit      4 moves, learned at Lv 1 / 2 / 4 / 7 (K.KIT_AT). The kit owns the 4 move slots: an Expedition League run
+ *   the kit      4 moves, learned at Lv 1 / 2 / 4 / 7 (K.KIT_AT); DLC D18: the TM upgrade swaps the first for your TM pick,
+ *                Repertoire unlocks the second at Lv 1. The kit owns the 4 move slots: an Expedition League run
  *                gets no "new move" cards (pl.xkit, js/systems/levelup.js); level-ups offer move upgrades and stats
  *   the passive  the member's role (healer / assault / defender / speedster: a small stat mod) + an ability of the 54
  *                (G.Abilities.of the family's final stage), kept through every evolution
@@ -255,11 +256,17 @@ G.ExpLeague = (() => {
     if (r.taken) pl.dmgReduce += r.taken;
     if (r.spd) pl.spdMul *= 1 + r.spd;
     G.Abilities.set(pl, S.ability);
-    // the kit owns the move slots: its first move only (no start move, no "Repertoire" second move)
+    // the kit owns the move slots: its first move only (no start move)
     G.Projectiles.clearOrbs(pl);
     pl.moves = []; pl.slots = []; pl.active = 0;
     pl.xkit = true;
-    learnKit(pl, 0);
+    // DLC D18 (the shared upgrades: the family's levels, as the base run reads them): the TM swaps the kit's first move for your
+    // TM pick; Repertoire unlocks the kit's second move at Lv 1
+    const P = G.Upgrades.perks(G.DB.levelsOf ? G.DB.levelsOf(d) : {});
+    const tm = P.tm && G.tmPick ? G.tmPick(d) : null;
+    if (tm && G.Moves.BY_ID[tm] && pl.addMove(tm)) { scaleMove(pl.moves.find(x => x.id === tm), S.st); S.kit = 1; S.tm = tm; S.log.push([1, 'tm', tm]); }
+    else learnKit(pl, 0);
+    if (P.startMoves >= 2 && learnKit(pl, 1)) S.log.push([1, 'kit', m.kit[1]]);
     pl.setActive(0);
     return S;
   }

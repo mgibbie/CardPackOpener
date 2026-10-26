@@ -135,7 +135,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const ld = await E(page, async () => { const ok = await G.Expedition.load(); await G.ExpSave.open(); return { ok, dv: G.Expedition.DV, cdv: G.Exp.dv, xv: G.Exp.XV, slots: typeof G.ExpEco.payout }; });
-	A(ld.ok === true && ld.dv === 14 && ld.cdv === 14 && ld.xv === 10 && ld.slots === 'function', 'the Expedition code loads: content version 14 (D15), the x block still v10', JSON.stringify(ld));
+	A(ld.ok === true && ld.dv === 17 && ld.cdv === 17 && ld.xv === 10 && ld.slots === 'function', 'the Expedition code loads: content version 17 (D18), the x block still v10', JSON.stringify(ld));
 
 	// ======================== 1. pure
 	const pu = await E(page, () => {
@@ -161,7 +161,7 @@ try {
 
 	// ======================== 2. a Classic run: spins through the stand-in
 	const st = await start(page, 'exp-classic');
-	A(st.ok && st.mode === 'exp-classic' && st.dv === 14 && st.zone === 1, 'Classic starts (zone 1, dv 14)', JSON.stringify(st));
+	A(st.ok && st.mode === 'exp-classic' && st.dv === 17 && st.zone === 1, 'Classic starts (zone 1, dv 14)', JSON.stringify(st));
 	const s1 = await E(page, () => {
 		const H = window.__t, X = G.ExpEco, pl = G.Game.player, o = H.obj('slots'), cost = X.slotCost(1), base0 = G.DB.save.coins;
 		pl.coins = 500;

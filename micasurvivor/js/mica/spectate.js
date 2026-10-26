@@ -58,10 +58,14 @@ G.Spectate = (() => {
       p: [r1(pl.x), r1(pl.y), pl.anim.dir | 0, animIdx(pl.anim), Math.ceil(Math.max(0, pl.hp)), r1(pl.maxHp),
           (pl.dead ? 1 : 0) | (pl.walking ? 2 : 0) | (pl.dyn ? 4 : 0) | (pl.coopDown ? 8 : 0) | (pl.zHidden ? 16 : 0)],
       lv: [pl.level, Math.floor(pl.xp), Math.ceil(pl.xpNext)], k: pl.kills, bo: pl.bosses, co: pl.coins,
-      mv: pl.moves.map(m => [m.id, m.lvl, m.evolved ? 1 : 0]), ac: pl.active | 0,
+      // (DLC D16: an all-fire player's moves in slot order, so `sg` groups them; an old one's in learning order)
+      mv: (pl.af ? pl.slots.flat() : pl.moves).map(m => [m.id, m.lvl, m.evolved ? 1 : 0]), ac: pl.active | 0,
       it: [pl.item || '', pl.item2 || ''],
       lu: st === 'levelup' ? 1 : st === 'choice' || st === 'held' ? 2 : st === 'paused' ? 3 : 0
     };
+    // (DLC D16: af = every move fires (a viewer ghosts them all); sg = the slots' sizes when a bond fused some, so the viewer's
+    //  HUD groups them. An old snapshot has neither: its viewer shows the one active move, as before.)
+    if (pl.af) { s.af = 1; if (pl.slots.some(g => g.length > 1)) s.sg = pl.slots.map(g => g.length); }
     const ad = G.Adaptive && G.Adaptive.pct();
     if (ad > 0) s.ad = ad;            // the adaptive difficulty's "Challenge: N%"
     if (pl.dynScale) s.ds = [Math.round(pl.dynScale[0] * 100), Math.round(pl.dynScale[1] * 100)];

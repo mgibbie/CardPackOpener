@@ -102,7 +102,8 @@ G.Game = (() => {
     const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
     // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas). Equipo: el primero.
     const mon = G.DEX_BY[cfg.dex || save.partner];
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
+    // (MicaSurvivor DLC D18: the upgrades of the Pokémon's FAMILY, the best level among its stages: the same in every mode)
+    const perks = G.Upgrades.perks(G.DB.levelsOf(mon.dex));
 
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -164,6 +165,7 @@ G.Game = (() => {
     runReal = performance.now(); tampered = false;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl.afDmg = G.Combat.AF.DMG;   // MicaSurvivor (DLC D16): every move fires; the run's move-damage factor (an Expedition run sets its own)
     pl.bansLeft = perks.bans || 0;   // MicaSurvivor (M5 lote 6): vetos de cartas en la partida (main_e16.gd 197)
     banked = { t1: 0, t10: 0 };
     caught = [];
@@ -172,7 +174,7 @@ G.Game = (() => {
     (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
     pl.addMove(G.startMoveOf(mon.dex));
     // Mejora "Veto": movimientos que no quieres que te salgan.
-    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    pl.banned = new Set((G.DB.familyPick('pban', mon.dex) || []).slice(0, perks.bans));   // (DLC D18: the family's vetoes)
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.
     if (perks.startMoves >= 2) {
       const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');
@@ -499,7 +501,8 @@ G.Game = (() => {
       G.Audio.sfx('legend');
       G.FX.ring(pl.x, pl.y, 8, 130, '#ff8ad8', 0.8, 6);
       G.FX.burst(pl.x, pl.y - pl.bodyH * 0.5, '#ffb3e6', 40, 240);
-      G.Spawner.say('¡Vínculo! ' + group.length + ' movimientos a la vez', 2.6, true);
+      // (DLC D16: every slot fires anyway; the bond's gift is the slot it frees, for another move at the next level-ups)
+      G.Spawner.say('¡Vínculo! ' + group.length + ' movimientos en un hueco: tienes un hueco libre', 2.6, true);
       if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
       if (G.Coop.active) G.Coop.holdEnd();
     });
@@ -687,15 +690,12 @@ G.Game = (() => {
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
     if (state !== 'playing' || !pl) return;
-    for (let i = 0; i < 4; i++) {
-      if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
-    }
+    // MicaSurvivor (DLC D16, owner 2026-10-26: "i do not want to have to switch between moves"): every move fires on its own
+    // cooldown, so 1-4 / Q / E (and Tab outside Team mode) do nothing in a run any more (owner decision #14: unbound).
     if (G.Input.tap('keyz')) G.ZMoves.tryStart(pl);   // MicaSurvivor (M5 lote 4): Movimiento Z
     if (G.Input.tap('keyc')) G.Dynamax.tryStart(pl);  // MicaSurvivor (M5 lote 5): Dynamax
-    if (G.Input.tap('keyq')) pl.cycle(-1);
-    // MicaSurvivor (M5 lote 7, main.gd 642): en el Modo Equipo, Tab cambia de Pokémon (si no, el siguiente movimiento)
+    // MicaSurvivor (M5 lote 7, main.gd 642): en el Modo Equipo, Tab cambia de Pokémon
     if (G.Input.tap('tab') && G.Team.on) G.Team.request(pl);
-    else if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
 
   // ---------------- bucle ----------------
@@ -1194,6 +1194,9 @@ G.Flow = {
   goMenu() {
     if (G.Game.state !== 'ui') G.Game.toUI();
     G.Audio.music('village');
+    // MicaSurvivor (DLC D17-D18): a retired upgrade's levels are paid back, once per account (after a backup: js/core/db.js)
+    const rf = G.DB.refundRetired ? G.DB.refundRetired() : 0;
+    if (rf > 0) G.UI.toast(G.I18n.f('Mejoras retiradas: te devolvemos {x} Pokémonedas', rf.toLocaleString('en')), 4200);
     G.MenuUI.open();
     G.LoginUI.offerRecovery();
   },
@@ -1228,6 +1231,11 @@ G.Flow = {
     // MicaSurvivor (DLC D0b): an Expedition lobby's start carries its content version (dv): only the same build plays it
     if (G.Expedition && !G.Expedition.lobbyOk(cfg.dv)) {
       G.UI.toast('Tu juego no está actualizado: recarga la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
+      return;
+    }
+    // MicaSurvivor (DLC D16): a base lobby's start carries its ruleset (an old host's has none: 1): only the same rules play
+    if (cfg.dv == null && (cfg.rules || 1) !== G.Player.RULES) {
+      G.UI.toast('El juego del anfitrión no está actualizado: tiene que recargar la página.', 5000); G.Audio.sfx('error'); G.Social.leaveRoom();
       return;
     }
     G.LobbyUI.close();

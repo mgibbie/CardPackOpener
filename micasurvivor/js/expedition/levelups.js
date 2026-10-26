@@ -6,8 +6,10 @@
  *
  *   the cards     an Expedition level-up deals K.CARDS (3) cards of its own (the levelup.offer seam, after the League's
  *                 branch choice): a MOVE LEVEL (each owned move below Lv 8: G.ExpMoves), a NEW MOVE (the moves the
- *                 line learns, by its types, and the kits of other League members of your type; they take one of
- *                 K.EXTRA_SLOTS slots past the kit's 4, so the kit never loses one), a NEW VITAMIN (3 slots) or a
+ *                 line learns, by its types, and the kits of other League members of your type; they took one of
+ *                 K.EXTRA_SLOTS slots past the kit's 4 until D16), a SWAP (DLC D16, owner 2026-10-26: "1 item slot and 4
+ *                 move slots"; decision #6: with the 4 slots full, a rare card swaps one of those moves in for your
+ *                 lowest-level one, so the Expedition's own moves stay reachable), a NEW VITAMIN (3 slots) or a
  *                 VITAMIN LEVEL (to 10: G.ExpItems). A move card is always pulled to the front. When nothing is left,
  *                 TRAINING: a small permanent bonus with diminishing returns (never under a third of the first).
  *   rarity        every card rolls its own: Common / Uncommon / Rare / Epic / Legendary, x1 / 1.2 / 1.45 / 1.75 / 2.1 on its
@@ -20,6 +22,12 @@
  *   the XP curve  8 + 5.5 L + L^1.8 (study 2.1) x K.XP_K (the xp.need seam): the scale is ours, measured so that a normal
  *                 Classic run reaches the Lv 50 / 55 evolutions (README "DLC D5": the probe's numbers).
  *
+ *   held item   DLC D17 (owner 2026-10-26: "keep the backpack/more items in expedition and just have 1 slot for an equipped held
+ *                 item in both modes"): the stacking items above stay exactly as they are; on top, ONE equipped base held item
+ *                 (js/data/items.js, base's slot and replace screen: pl.item). Its source: every boss (a zone's guardian, the
+ *                 shrine's, Survival's milestones) also drops one, seeded, from the base held items no stacking item duplicates
+ *                 (K.HELD_POOL: Focus Sash, Never-Melt Ice, Big Orb, Type Gem, Safety Goggles, Light Ball, Thick Club; where
+ *                 both exist, e.g. Leftovers, the Choice Band or Silver Powder, the stacking one stays the Expedition's).
  * Determinism: every card (which cards, their rarity, a move level's rolls) comes from a G.DLC.rng stream seeded by the
  * run's world seed, the player's co-op slot and the run's draw count, and every item drop from its own stream (roll), so
  * the same run deals the same cards and drops the same items; nothing here calls Math.random. Viewers are told: the `x`
@@ -33,7 +41,8 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Saltar ({x})': 'Skip ({x})', 'Saltas las cartas: +{x} Pokémonedas': 'Skipped: +{x} Pokémonedas', 'Saltas las cartas: +{x} ₽': 'Skipped: +{x} ₽',
   'Vitaminas': 'Vitamins', 'Objetos': 'Items', 'Movimientos': 'Moves', 'Suerte {x}': 'Luck {x}',
   'Cambiar {x} · Saltar {x} · Vetar {x}': 'Refresh {x} · Skip {x} · Banish {x}', 'Ninguno todavía': 'None yet',
-  'Expedición · tu equipo': 'Expedition · your kit', 'Objetos: {x} · Vitaminas: {x}': 'Items: {x} · Vitamins: {x}', '¡{x}!': '{x}!', 'Escudo': 'Shield'
+  'Expedición · tu equipo': 'Expedition · your kit', 'Objetos: {x} · Vitaminas: {x}': 'Items: {x} · Vitamins: {x}', '¡{x}!': '{x}!', 'Escudo': 'Shield',
+  'Cambia {x}': 'Replaces {x}', 'Olvida {x} (Nv. {x}).': 'Forgets {x} (Lv {x}).'
 });
 G.I18n.add(G.ExpEN);
 
@@ -45,14 +54,20 @@ G.ExpLevel = (() => {
   // ---------------- balance (tune here; README "DLC D5") ----------------
   const K = {
     CARDS: 3,                                  // cards per level (study 2.5; + the Lab's "fourth option": D10, G.ExpMeta.labNow)
-    EXTRA_SLOTS: 2,                            // move slots past the kit's 4 (the kit keeps its own)
-    W: { up: 14, newMove: 6, newVit: 6, vitUp: 8, league: 0.6 },   // card weights (a League member's move: x0.6 of a line move)
+    EXTRA_SLOTS: 0,                            // move slots past the kit's 4 (D5-D15: 2; DLC D16, owner: 4 move slots in both modes)
+    MAX_MOVES: 4,                              // DLC D16: the move slots (every one fires on its own cooldown)
+    // card weights (a League member's move: x0.6 of a line move). swap: DLC D16, the WHOLE weight of the swap cards (each
+    // candidate gets swap / n, so they stay rare however many moves the line can learn)
+    W: { up: 14, newMove: 6, newVit: 6, vitUp: 8, league: 0.6, swap: 3 },
     RAR_W: [70, 24, 5, 0.9, 0.12],             // the rarity weights (study 2.5)
     GATE: [null, null, [3, 10], [8, 18], [14, 26]],   // Rare / Epic / Legendary ramp in over these powers
     ZONE_POWER: 12,                            // power = level + luck / 8 + 12 x (zone - 1)
     REFRESH: 2, SKIP: 2, BANISH: 1, TOOL_MAX: 6,   // the run's tools (study 2.5: 2 / 2 / 1, +1 each a Lab level, max 6)
     SKIP_COINS: 10,                            // a Skip pays 10 x zone ₽ (D7: the run's in-play currency, G.ExpEco.earn)
     TRAIN_DMG: 0.04, TRAIN_HP: 10, TRAIN_DECAY: 0.15, TRAIN_MIN: 1 / 3,   // Training: +4 % damage / +10 HP, then x 1 / (1 + 0.15 n), never under 1/3
+    // DLC D17: the base held items a boss drops (none that a stacking Expedition item duplicates; no Rare Candy, an instant; no
+    // Pure Incense, the base spawner's)
+    HELD_POOL: ['focussash', 'eternalice', 'bigorb', 'typegem', 'safetygoggles', 'lightball', 'thickclub'],   // (Silver Powder: the stacking bug booster)
     XP_A: 8, XP_B: 5.5, XP_P: 1.8, XP_K: 2.0   // XP to the next level = 2 x (8 + 5.5 L + L^1.8) (study 2.1; the x2 is ours: Lv 55 at 69k XP, README "DLC D5")
   };
 
@@ -97,11 +112,12 @@ G.ExpLevel = (() => {
   function begin(pl) {
     S = null;
     if (!pl || !G.Modes.isExp()) return null;
-    const lab = id => (G.ExpMeta ? G.ExpMeta.labNow(id) : 0);   // (D10: the Lab, +1 each a level, max 6; +1 move slot)
-    S = { draw: 0, items: 0, skips: Math.min(K.TOOL_MAX, K.SKIP + lab('skip')), log: [], extra: [] };
+    const lab = id => (G.ExpMeta ? G.ExpMeta.labNow(id) : 0);   // (D10: the Lab, +1 each a level, max 6; D16: the move slot is retired)
+    S = { draw: 0, items: 0, held: 0, skips: Math.min(K.TOOL_MAX, K.SKIP + lab('skip')), log: [], extra: [] };
     I().ensure(pl);
     pl.xpNext = need(pl.level);
-    pl.maxMoves = 4 + K.EXTRA_SLOTS + lab('moveslot');
+    pl.maxMoves = K.MAX_MOVES + K.EXTRA_SLOTS;   // (DLC D16: 4, every one firing; the Lab's +1 move slot is retired and refunded)
+    pl.afDmg = G.Combat.AF.DMG_EXP;              // (DLC D16: the Expedition's all-fire damage factor)
     pl.rerollBonus = Math.min(K.TOOL_MAX - 1, (pl.rerollBonus || 0) + K.REFRESH - 1 + lab('refresh'));
     pl.bansLeft = Math.min(K.TOOL_MAX, (pl.bansLeft || 0) + K.BANISH + lab('banish'));
     I().apply(pl);
@@ -146,8 +162,14 @@ G.ExpLevel = (() => {
       out.push({ key: 'up:' + m.id, w: K.W.up, kind: 'move', make: (ti, rng) => upCard(pl, m, ti, rng) });
     }
     const extras = S.extra.length;
-    if (extras < K.EXTRA_SLOTS + (G.ExpMeta ? G.ExpMeta.labNow('moveslot') : 0) && pl.slots.length < pl.maxMoves) {
+    if (extras < K.EXTRA_SLOTS && pl.slots.length < pl.maxMoves) {
       for (const c of moveCands(pl)) out.push({ key: 'new:' + c.id, w: K.W.newMove * (c.from ? K.W.league : 1), kind: 'move', make: (ti, rng) => newCard(pl, c, ti, rng) });
+    }
+    // DLC D16 (decision #6): the 4 slots full, a rare swap (its whole weight K.W.swap, shared by the candidates)
+    const out0 = swapOut(pl);
+    if (out0 && pl.slots.length >= pl.maxMoves) {
+      const cs = moveCands(pl), wsum = cs.reduce((a, c) => a + (c.from ? K.W.league : 1), 0);
+      for (const c of cs) out.push({ key: 'swap:' + c.id, w: K.W.swap * (c.from ? K.W.league : 1) / wsum, kind: 'move', make: (ti, rng) => swapCard(pl, c, out0, ti, rng) });
     }
     if (pl.xv.length < Iv.slots(pl)) {
       for (const v of Iv.VITAMINS) if (!Iv.vitOf(pl, v.id) && !banned(pl, 'v:' + v.id)) out.push({ key: 'vit:' + v.id, w: K.W.newVit, kind: 'vit', make: ti => vitCard(pl, v.id, ti) });
@@ -185,6 +207,33 @@ G.ExpLevel = (() => {
         logPick(p, 'new', c.id, ti);
       }
     }, ti);
+  }
+  /** DLC D16: the move a swap card replaces: your lowest-level one (on a tie, the last slot's). -> the instance or null */
+  function swapOut(pl) {
+    let best = null;
+    pl.slots.forEach(g => { for (const m of g) if (!best || M().levelOf(m) <= M().levelOf(best)) best = m; });
+    return best;
+  }
+  /** DLC D16: a swap card: move c.id takes `old`'s slot (old is forgotten; its level-ups too). */
+  function swapCard(pl, c, old, ti, rng) {
+    const card = newCard(pl, c, ti, rng), learnNew = card.apply;
+    card.type = 'swap'; card.key = 'swap:' + c.id; card.swapOut = old.id;
+    card.tag = F('Cambia {x}', name(old.id));
+    card.desc = F('Olvida {x} (Nv. {x}).', name(old.id), M().levelOf(old)) + ' ' + card.desc;
+    card.apply = p => {
+      const m0 = p.moves.find(m => m.id === old.id), si = p.slotOf(old.id);
+      if (!m0 || si < 0 || p.hasMove(c.id)) return;
+      p.moves.splice(p.moves.indexOf(m0), 1);
+      p.slots[si] = p.slots[si].filter(m => m !== m0);
+      if (!p.slots[si].length) p.slots.splice(si, 1);
+      for (const o of G.Projectiles.all().filter(o => o.orb && o.owner === p && o.mid === old.id)) G.Projectiles.remove(o);
+      learnNew(p);
+      // into the old move's slot (the others keep theirs)
+      const ni = p.slotOf(c.id);
+      if (ni >= 0 && ni !== si) { const g = p.slots.splice(ni, 1)[0]; p.slots.splice(Math.min(si, p.slots.length), 0, g); }
+      if (S) S.log[S.log.length - 1] = [p.level, 'swap', c.id + '>' + old.id, ti];
+    };
+    return card;
   }
   function vitCard(pl, id, ti) {
     const Iv = I(), v = Iv.VIT[id], x = Iv.vitOf(pl, id), lv = x ? x.lvl : 0;
@@ -259,6 +308,22 @@ G.ExpLevel = (() => {
     const id = I().rollItem(p, rng);
     return id ? I().PREFIX + id : I().PREFIX + 'leftovers';
   }
+  // ---------------- DLC D17: the one held item ----------------
+  /** The base held item a boss drops for player pl (seeded; one it can use and doesn't hold), or null. */
+  function heldRoll(pl) {
+    if (!S) return null;
+    const pool = K.HELD_POOL.filter(id => G.Items.BY[id] && !G.Items.BY[id].instant && G.Items.okFor(id, pl.dex) && !(G.ExpItems && G.ExpItems.IT[id]) && !pl.hasItem(id));
+    if (!pool.length) return null;
+    const rng = G.DLC.rng(mix(G.World.seed | 0, 0x4E1D, S.held++));
+    return pool[Math.floor(rng() * pool.length)];
+  }
+  /** enemy.ko: a boss of this page's sim drops one base held item too (base's pickup: base's slot and replace screen). */
+  function onKill(e, pl) {
+    if (!S || !e || !e.boss || e.remote || !G.Modes.isExp()) return null;
+    const id = heldRoll(pl || G.Game.player);
+    if (id) G.Pickups.drop('item', e.x + 26, e.y - 10, id);
+    return id;
+  }
   /** item.take: an Expedition item picked up: one more stack (no choice screen). -> true if it was ours */
   function itemTake(pl, v) {
     const id = I() && I().idOf(v);
@@ -292,6 +357,9 @@ G.ExpLevel = (() => {
     p.xu = r && typeof r === 'object' ? r : null;
     if (p.xu && Array.isArray(p.xu.e) && p.moves) {
       for (const id of p.xu.e) if (M().isExpMove(id) && !p.moves.some(m => m.id === id)) { const m = M().instance(id); p.moves.push(m); if (p.slots) p.slots.push([m]); }
+      // (DLC D16: an Expedition move swapped away is dropped from the puppet too)
+      const gone = m => M().isExpMove(m.id) && !p.xu.e.includes(m.id);
+      if (p.moves.some(gone)) { p.moves = p.moves.filter(m => !gone(m)); if (p.slots) p.slots = p.slots.map(g => g.filter(m => !gone(m))).filter(g => g.length); }
     }
     if (p === viewing()) syncUI();
     return true;
@@ -424,7 +492,8 @@ body.touch #xbag { bottom: 10px; } body.touch #xbag .xb-row { max-width: 146px; 
     if (!S || !Sv) return [];
     let picks = 0, items = 0;
     for (const [, kind, , ti] of S.log) {
-      if (kind === 'up' || kind === 'new' || kind === 'vit') { picks++; Sv.bump('lv.rar.' + (ti + 1)); }
+      if (kind === 'up' || kind === 'new' || kind === 'vit' || kind === 'swap') { picks++; Sv.bump('lv.rar.' + (ti + 1)); }
+      if (kind === 'swap') Sv.bump('lv.swaps');   // (DLC D16)
       if (kind === 'item') items++;
       if (kind === 'skip') Sv.bump('lv.skips');
     }
@@ -444,7 +513,7 @@ body.touch #xbag { bottom: 10px; } body.touch #xbag .xb-row { max-width: 146px; 
 
   return {
     K, weights, odds, rollRarity, power, zone, need, xpNeed, begin, reset, offer, candidates, moveCands, trainCards, skip, skipsLeft,
-    itemRoll, itemTake, row, applyRow, watch, record, syncUI, syncTools, renderPause, tick, mix,
+    itemRoll, itemTake, heldRoll, onKill, row, applyRow, watch, record, syncUI, syncTools, renderPause, tick, mix,
     get run() { return S; }, get bagEl() { return bagEl; }
   };
 })();

@@ -69,7 +69,8 @@ G.Tower = (() => {
   // Las legendarias (main.gd 242-247): doradas, sin coste, no cuentan para el tope de 6.
   const LEGENDS = [
     { id: 'l_time', name: 'Maestría del tiempo', icon: 'r_l_time', desc: 'Tu enfriamiento baja un 70%. Sin ningún coste.', fx: { cd: 0.3 } },
-    { id: 'l_bag', name: 'Doble equipaje', icon: 'r_l_bag', desc: 'Puedes llevar 2 objetos a la vez (por ejemplo Restos y Cascabel Concha) y recibes uno ahora mismo. Sin ningún coste.', fx: { carry: 1.0 } },
+    // (DLC D17: retired, one held item in every mode; kept so an old run's log still names it, never offered)
+    { id: 'l_bag', name: 'Doble equipaje', icon: 'r_l_bag', desc: 'Puedes llevar 2 objetos a la vez (por ejemplo Restos y Cascabel Concha) y recibes uno ahora mismo. Sin ningún coste.', fx: { carry: 1.0 }, retired: 'D17' },
     { id: 'l_reap', name: 'Sed de victoria', icon: 'r_l_reap', desc: 'Cada Pokémon que derrotes aumenta tu daño permanentemente un 0,30%. Sin ningún coste.', fx: { reap: 1.0 } },
     { id: 'l_armor', name: 'Coraza legendaria', icon: 'r_l_armor', desc: 'Tu defensa sube un 60%. Sin ningún coste.', fx: { def: 0.6 } }
   ];
@@ -394,9 +395,9 @@ G.Tower = (() => {
     const pool = G.U.pickN(RISKS.filter(r => !risks.includes(r.id)), RISKS.length);
     const picks = [];
     if (riskCount() < MAX_RISKS) for (const r of pool.slice(0, OFFER)) picks.push({ id: r.id, title: r.name, desc: r.desc, icon: r.icon, tag: 'Riesgo', color: '#ff5b8a' });
-    const lpool = LEGENDS.filter(l => !risks.includes(l.id));
+    const lpool = LEGENDS.filter(l => !l.retired && !risks.includes(l.id));   // (DLC D17: not a retired one)
     if (lpool.length && (forceLegend || Math.random() < LEGEND_CHANCE)) {
-      const lg = lpool.find(l => l.id === forceLegend) || G.U.pick(lpool);
+      const lg = lpool.find(l => l.id === forceLegend) || G.U.pick(lpool);   // (a forced retired legend falls back to a random one)
       const card = { id: lg.id, title: lg.name, desc: lg.desc, icon: lg.icon, tag: 'Legendaria', color: '#ffd23f', legend: true };
       if (!picks.length) picks.push(card); else picks[Math.floor(Math.random() * picks.length)] = card;
     }

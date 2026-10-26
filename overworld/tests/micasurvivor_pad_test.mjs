@@ -14,7 +14,7 @@
 //     persisting across a reload (micasurvivor_settings), vibration toggle, reset to defaults
 //   - in a run: left stick moves (deadzone, analog scaling), D-pad moves, pause / resume with the
 //     REMAPPED pause button, level-up card: glyph prompts, reroll with the remapped button, pick
-//     with D-pad + confirm, LB / RB switch moves, rumble on hit, quit to the summary and back
+//     with D-pad + confirm, LB / RB do NOT switch moves (DLC D16: every move fires), rumble on hit, quit to the summary and back
 //   - glyphs switch back to keys on keyboard use and to the pad on pad use
 //   - hot-plug: unplugging hides the ring; the first pad that presses drives, a second one is ignored
 //   - (M3) signing in mid-session: after the reload the game plays as the Magepunk user and offers
@@ -307,12 +307,12 @@ try {
 	p1 = await pos();
 	A(p1.y - p0.y > 30, `D-pad moves the partner (dy ${Math.round(p1.y - p0.y)})`);
 	// HUD hint (first 14 s) is drawn with glyphs: just check the mode the HUD reads
-	A(await ev(() => G.Pad.mode) === 'pad', 'in a run the HUD is in pad mode (glyph hints, LB/RB beside the moves)');
+	A(await ev(() => G.Pad.mode) === 'pad', 'in a run the HUD is in pad mode (glyph hints; DLC D16: no LB/RB beside the moves)');
 	// pause / resume with the remapped pause button (X)
 	await press(B.X);
 	A(await waitFor(() => visible('scr-pause'), 2000) && await ev(() => G.Game.state) === 'paused', 'the REMAPPED pause button (X) pauses');
 	const ph = await ev(() => ({ pad: getComputedStyle(document.querySelector('#scr-pause .pad-hint')).display, kbd: getComputedStyle(document.querySelector('#scr-pause .kbd-hint')).display, glyphs: document.querySelectorAll('#scr-pause .pad-hint svg').length }));
-	A(ph.pad !== 'none' && ph.kbd === 'none' && ph.glyphs >= 4, 'pause shows the pad hints (glyphs), not the keyboard ones', JSON.stringify(ph));
+	A(ph.pad !== 'none' && ph.kbd === 'none' && ph.glyphs >= 2, 'pause shows the pad hints (glyphs: the stick and pause; DLC D16: no LB / RB switching any more), not the keyboard ones', JSON.stringify(ph));
 	f = await focus();
 	A(f && f.id === 'btn-resume', 'pause: the ring is on Continue', JSON.stringify(f));
 	await press(B.cancel);
@@ -370,14 +370,17 @@ try {
 	A(await waitFor(async () => !(await visible('scr-levelup')), 3000) && await ev(() => G.Game.state) === 'playing', 'confirm picks the focused card; the run resumes');
 	await sleep(200);
 	const slots = await ev(() => G.Game.player.slots.length);
-	if (slots > 1) {
-		const a0 = await ev(() => G.Game.player.active);
+	// (DLC D16, owner 2026-10-26: every move fires on its own cooldown; LB / RB no longer switch in a run, decision #14. This
+	//  replaces "RB / LB switch the active move": a second move is learnt by hand when no new-move card was offered.)
+	if (slots < 2) await ev(() => { const p = G.Game.player; const id = G.Moves.poolFor(p.mon).find(x => !p.hasMove(x)); if (id) p.addMove(id); });
+	{
+		const a0 = await ev(() => ({ a: G.Game.player.active, n: G.Game.player.slots.length, af: G.Game.player.af }));
 		await press(B.RB);
 		const a1 = await ev(() => G.Game.player.active);
 		await press(B.LB);
 		const a2 = await ev(() => G.Game.player.active);
-		A(a1 !== a0 && a2 === a0, `RB / LB switch the active move (${a0} -> ${a1} -> ${a2})`);
-	} else console.log(`note: no new-move card was offered (${moves0} -> ${slots} slots): LB/RB move switch not exercised`);
+		A(a0.n >= 2 && a0.af === true && a0.a === 0 && a1 === 0 && a2 === 0, `RB / LB no longer switch moves in a run: every move fires (slots ${a0.n}, active ${a0.a} -> ${a1} -> ${a2}; was "${moves0} -> ${slots}")`);
+	}
 	// rumble on hit
 	const calls0 = await ev(() => window.__pads[0].vibrationActuator.calls.length);
 	await ev(() => { const p = G.Game.player; p.invuln = 0; p.hurt(1); });

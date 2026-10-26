@@ -2948,6 +2948,166 @@ never respawns.
 **Deviations:** the slot machine is a stand-in circle (no interact key, D3's rule) and pays items, ₽ or an ambush (PokéBonk's "₽ per
 spin, for items"; the table above is ours). Respawn delays are the study's 120-240 s range spread by kind (ours).
 
+## DLC D16: every move fires (base and Expedition)
+
+Owner, 2026-10-26: "in both modes i do not want to have to switch between moves. all of my moves should be firing at the same time
+on their own cooldowns". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "2026-10-26 owner request" (the plan, the 15 approved defaults and
+the owner's two same-day changes) and "D16 built". **This batch changes the base game on purpose** (the D0a fixtures were re-recorded
+once, below).
+
+**What changed for the player**
+- **Every slot fires**, each move on its own cooldown (`G.Combat.tick` loops every slot and every move in it; `pl.af`, all-fire). There
+  is no switching: 1-4 / numpad / Q / E (and Tab outside Team mode) and the pad's LB / RB do nothing in a run (owner decision #14: left
+  unbound; Team mode keeps Tab and R3); a tap on a move icon does nothing. `setActive` / `cycle` are no-ops; `active` stays 0.
+- **The HUD** shows the 4 slots with their cooldown sweeps and no raised "active" one, no key numbers, no LB / RB glyphs; a bond's fused
+  slot keeps its 2x2 grid (each move its own sweep) with "x2..x4". The hints say "your moves attack on their own".
+- **Bonds** (owner, changed decision #7): a legendary's bond still FUSES moves into one slot (up to 4), as before; every move of a fused
+  slot fires on its own cooldown, and the slot it frees takes another move from the level-ups. The cap is 4 SLOTS, so a fused build fires
+  more than 4 moves.
+- **The Choice Band** (decision #8): +40 % on the slot-1 move's hits, -20 % on the others (in `G.Combat.land`: `G.Combat.afK`); no stat
+  bonus any more. The Shortcuts panel (Upgrades) still pins a move to a slot, so you choose which move the band boosts.
+- **Melee** (decision #9): -25 % damage taken for 1.5 s after a melee move fires (`pl.meleeT`), instead of "while a melee move is active".
+- **The damage factor** (decision #10): every move's hit x `G.Combat.AF.DMG` = **0.8** in base runs and `DMG_EXP` = **1.1** in the
+  Expedition, set on the player at the run's start (`pl.afDmg`; the local co-op partner, with one move, keeps x1). Measured with
+  `tools/micasurvivor/dps_sim.mjs` (D11's fixed-step bot sim: a fixed profile, an invulnerable bot, seeded `Math.random`, runs to 5:00
+  and 10:00 on 5 seeds; each run's build then on a ring of 12 still dummies for 20 s):
+
+  | | today: best single slot | all-fire x1 | shipped | shipped / today |
+  |---|---|---|---|---|
+  | base Normal | 864 DPS | x1.97 | 1,148 | **x1.58** |
+  | base Normal, a fused build (2 moves bonded, the freed slot filled) | | x2.17 | 1,241 | **x1.73** |
+  | Expedition Normal (Classic, zone 1) | 1,592 DPS | x1.47 | 2,563 | **x1.63** |
+
+  (The Expedition gains less from the other slots: its levelled first kit move carries a run. D21 fine-tunes both factors.)
+- **Expedition:** 4 move slots (`K.MAX_MOVES`; D5's `EXTRA_SLOTS` 2 is now 0), the kit fills them by Lv 7. With the 4 full, a rare
+  **swap card** (decision #6; `K.W.swap` = 3, the whole weight shared by the candidates) offers a move of the line or the League in place
+  of your lowest-level move, which takes its slot. **The Lab's "Move slot" is retired** (`retired: 'D16'`): no effect in a run whatever
+  its level, it can't be bought, League HQ doesn't list it, and its price is refunded (below).
+- **New leaderboards** (decision #11; the server change, D21's board split shipped now): a run of the new rules ranks on new boards, the
+  old ones stay readable as **Legacy** ("Reglas anteriores": the base Leaderboard screen's tabs `#rk-rules`, the Expedition panel's chip).
+  Base: `rules: 2` -> `runboard:micasurvivor:r2`; Expedition dv >= 15 -> `runboard:micasurvivor_expedition:r2:<map>:<diff>[:time|:survival]`
+  and `msurvseason:<n>:r2:<map>:<diff>`; an old client's scores go on taking the legacy keys. Exact keys only. The League board is one
+  board for both.
+
+**Refunds (owner decision #3: in full, once per account, after a backup).** The retired Lab rows are refunded by
+`G.ExpMeta.refundRetired()` when League HQ opens and when a run ends (before it pays; loading never writes the base save, D10's rule):
+every level bought of a retired row is one record `rf.lab.<id>.<level>:<device>` in the Expedition save's `cur.earn` (as its purchase
+was `lab.<id>.<level>:<device>` in `cur.spend`), paid at that level's price x `K.SCALE`. Two devices that refund while apart both
+record theirs; after a merge, `reconcile()` makes every device but the first (by id) claw its copy back once (`cur.fix`): the refund is
+paid once per account (tested with two browsers). Before the first refund write: `G.DB.backup('exp-refund')`
+(`micasurvivor_backup.<key>.exp-refund.<ms>`, the base save) and `micasurvivorexp_backup.<who>.refund.<ms>` (the Expedition save); no
+backup, no refund. `G.ExpMeta.rollbackRefunds()` takes this device's refunds back (as far as the balance goes) and they are never paid
+again. The coins go through `G.Expedition.wallet.refund` (coins in, not counted as `coinsEarned`). Who it affects (read-only D1,
+2026-10-26): no Expedition save on the server has bought a Lab level, so nobody gets a Lab refund today.
+
+**Old tapes, live views and co-op**
+- A new tape's header carries `h.af: 1`, every frame's slow fields `af` (and `sg`, the slots' sizes, when a bond fused some); a live
+  snapshot carries `af` / `sg` and lists its moves in slot order. A viewer of a new tape / snapshot ghosts every move and groups the
+  fused slot; an **old tape or snapshot (no `af`) plays with its one active move**, as recorded (`js/ui/watch-ui.js` setMoves).
+- A co-op frame's field 15 lists every orbit move `[[id, lvl]...]` (fields 7-8 keep one move for an old reader); the reader takes either
+  (`Player.netUpdate`), and a puppet shows the orbs of all its orbit moves (`G.Combat.ghostOrbit`). Each cast is still a `'c'` event.
+- **Base co-op between an old and a new client is refused:** a base lobby carries `rules` (`msurv-lobby-create {rules: 2}`; an old
+  client's has none = 1), a join with other rules is refused (409, "your game is out of date" / "the host is ... out of date"), its start
+  carries the rules and `G.Flow.startCoop` refuses a start of other rules. Expedition lobbies go by their dv, as before.
+
+**Sizes and phones (measured):** the busiest relay frame to a guest 10,048 chars (126 foes) + a second of the host's 4 moves' casts
+(3.2 `'c'` events, 99 chars) = 10,147 of 16,000 (`micasurvivor_expedition_mp_test`). A 45-min Survival tape 793,626 chars (cap 1.2 MB;
+twice the KOs, so it thins to 2 s frames sooner), a Classic clear 762,311. On an 844x390 touch screen with all 4 moves firing at 7:20:
+at most 15 projectiles in base Normal, 14 in Expedition (90 foes), frame time p50 16.7 / p95 18 ms (headless desktop Chrome), the HUD
+fits (no element off screen); no projectile budget needed. In portrait (390x844) the game asks to rotate, as before.
+
+**Versions:** `G.Expedition.DV` **15**; the `x` block stays v10. dv 1-14 still play. Base replays stay `h.v: 1` (+ `h.af`), snapshots
+`v: 1` (+ `af`).
+
+**The D0a fixtures, re-recorded (`--record`, once, on purpose)** because the base game changed: every mode's per-second hashes, draw
+counts, spawns, totals, final snapshot and save differ from second 1 (more moves fire, so more `Math.random` draws and different
+fights). Normal now survives the whole 120 s (it fell at 111.7 s), as do Daily (103.3 s) and Tower (91.3 s); Team and Co-op ran 120 s
+before and after; Boss Rush now falls at 90.7 s instead of 117.3 s (a different third boss, Mew instead of Registeel, from the shifted
+random stream). The harness itself is unchanged; it passes twice in a row, and the force-loaded run passes too.
+
+**Tests:** `overworld/tests/micasurvivor_allmoves_test.mjs` (47 checks: the server's lobby rules and board split, every move firing on
+a dummy ring, no switching, the HUD, the Choice Band, a bond's freed slot, melee, co-op frames old and new, snapshots, a new tape and an
+old one, the Expedition's slots and swap cards, the Lab refund once across two devices, the rollback). Updated where the behaviour
+changed on purpose: `_pad` (LB / RB no longer switch; the pause hint's glyphs), `_mechanics` (Dream Eater's damage x the factor),
+`_account` (the new board key, the Legacy tab), `_expedition_meta` (the move slot retired: 18 Lab rows, 4 move slots, the refund in the
+coin tally), `_expedition_plumbing` / `_tiers` / `_survival` (the r2 boards; a dv-15 score carries its parts), `_expedition_mp` (the
+relay with 4 moves; a Survival tape that thins sooner), every Expedition suite's dv 14 -> 15; the design wiki's data regenerated (the
+Choice Band's text).
+
+## DLC D17: one held item (base and Expedition)
+
+Owner, 2026-10-26: "1 item slot and 4 move slots for both expedition and regular", then the same day: "maybe we can keep the
+backpack/more items in expedition and just have 1 slot for an equipped held item in both modes". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+"D17 built". A deliberate base change (the D0a fixtures re-recorded once more, below).
+
+**What changed for the player**
+- **Base: one held item.** `Player.itemSlots()` is 1 in every mode: the first item is worn, a second opens the replace screen (keep /
+  switch). **Backpack is retired** (`G.Upgrades.BY.bag.retired = 'D17'`: kept so `sanitize` keeps its level and the refund knows it;
+  `perks().bag` is false; the shop lists `G.Upgrades.live()` only). **The Tower's "Double baggage" is retired** (`retired: 'D17'`, never
+  offered, even forced; the other 3 legendary pacts still come; it was free, so there is nothing to refund).
+- **Expedition: the stacking inventory stays exactly as it was** (the 60 items to their caps, 3 vitamin slots, Poké Balls, Meowth,
+  altars, Ditto). On top, **ONE equipped base held item**, base's slot and replace screen. Its source (ours, kept small): every boss (a
+  zone's guardian, the shrine's, Survival's milestones) also drops one, seeded (`G.ExpLevel.heldRoll`, its own stream), from the base
+  held items no stacking item duplicates (`K.HELD_POOL`: Focus Sash, Never-Melt Ice, Colossal Orb, Type Gem, Safety Goggles, Light Ball,
+  Thick Club; species-locked ones only to their species). Where both exist (Leftovers, the Choice items, Silver Powder...), the stacking
+  one stays the Expedition's. `G.Expedition.DV` **16**; the `x` block stays v10 (the held item is the snapshot's `it`, as in base).
+
+**The Backpack refund (owner decision #3: in full, once per account, after a backup)** — `js/core/db.js` `refundRetired()`, when the
+menu opens (`G.Flow.goMenu`): every level of a retired upgrade (`G.Upgrades.LIST`, `retired`) is one record
+`save.rf["up.<dex>.<id>.<level>:<device>"]` = the Pokémonedas paid back (its price, 7,500 a Backpack), booked on this device's coin
+ledger entry like any earning. `rf` / `rfx` merge as a union (`merge`) and are sanitized. Two devices that refund while apart both
+record theirs; merged, every device but the first (by id) takes its copy back once (`reconcileRefunds`, `save.rfx`), the Expedition's
+`cur.spend` / `cur.earn` / `reconcile()` pattern (tested with two browsers, both ways and again). Before the first refund write the
+save is copied to `micasurvivor_backup.<key>.refund.<ms>` (the newest 2 kept); no backup, no refund. `G.DB.rollbackRefunds()` takes
+this device's refunds back and marks them so they are never paid again. **Who it affects** (read-only D1, 2026-10-26): of the 4
+MicaSurvivor accounts on the server, 1 owns Backpack (on 1 Pokémon): 7,500 Pokémonedas back.
+
+**The D0a fixtures, re-recorded once more:** the golden profile owns Backpack on its 5 Pokémon, so every mode's final save now holds
+the refund (+37,500 coins, 5 `rf` records; the backup is in localStorage, not the save). Boss Rush also diverges from second 76: its
+second item would have gone into the Backpack's 2nd slot and now opens the replace screen (3 card picks instead of 2; it ends at
+90.95 s instead of 90.68 s). The other five sims are unchanged second by second. Passes twice; the force-loaded run passes.
+
+**Tests:** `overworld/tests/micasurvivor_oneitem_test.mjs` (19 checks: Backpack retired, kept and refunded once with its backup; one
+held slot and the replace screen; the Tower; two devices refunding then merging, paid once; the rollback; the Expedition's stacking
+inventory unchanged and a boss's held item in the one slot, then the replace screen; dv 16). Updated on purpose: `_items` (Backpack no
+longer sold; one slot; "carry two" became "one held item"), `_tower` (Double baggage never offered; also: no moves while the Blood pact
+heal is measured over real frames, where a draining move now fires), every Expedition suite's dv 15 -> 16.
+
+## DLC D18: shared Pokémon upgrades (base and Expedition)
+
+Owner, 2026-10-26: "i want both modes to respond to the same upgrades i can buy for the pokemon to improve their stats".
+`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D18 built".
+
+**What changed for the player**
+- **Upgrades are per FAMILY** (decision #4): `G.DB.levelsOf(dex)` is the best level of each upgrade among the family's stages'
+  `save.pupg`, computed at read time (no save is rewritten). A base run (`startRun`) and an Expedition run of any stage read the same
+  levels, so the same `G.Upgrades.perks` object (tested). The TM pick and the vetoes follow the family too (`G.DB.familyPick`: this
+  stage's, else another stage's).
+- **The families:** `js/data/families.js` (`G.FAMILY`, `G.Families.rootOf / membersOf`), generated by
+  `tools/micasurvivor/gen_families.mjs` from the overworld's evolution tables (+ the League generator's supplement and the later
+  cross-generation evolutions those tables don't carry: Sylveon, the Galarian / Hisuian / Paldean ones): 553 families for the 1,025
+  species; every League family agrees (tested).
+- **The shop** (Upgrades) shows a stage its family's levels; a purchase writes that Pokémon's own entry one level above, which every
+  stage then reads. It lists your Pokémon **and the League members you can play** (marked "(Liga)"; the Expedition code is loaded for
+  its roster only when this browser has an Expedition save).
+- **The Expedition kit:** the **TM** swaps the kit's first move for your TM pick; **Repertoire** unlocks the kit's second move at
+  Lv 1 (`G.ExpLeague.begin`; `S.tm`, the log's `tm` entry). Backpack is D17's (retired).
+- **The Lab's 9 stat rows** (Training, Stamina, Agility, Study, Trading, Fortune, Magnetism, Leftovers, Shell), which overlapped the
+  shop, are **retired** (`retired: 'D18'`: no effect in a run, not sold, not listed) and refunded once per account through D16's path
+  (`rf.lab.<id>.<level>:<device>`, reconciled across devices, both saves backed up first). The Lab keeps its 9 other rows. "Profesor"
+  (`lab50`, the id kept) now asks for 25 Lab levels, what today's Lab holds. Read-only D1 (2026-10-26): no server Expedition save
+  owns a Lab level, so no live refund.
+- `G.Expedition.DV` **17**; the `x` block stays v10.
+
+**Not changed:** the D0a golden runs (their profile's 5 Pokémon are 5 families, each with its own levels, so nothing moves; the
+fixtures pass as recorded after D17).
+
+**Tests:** `overworld/tests/micasurvivor_sharedupgrades_test.mjs` (17 checks: the families, per-family max at read time, the same
+perks object in both modes, the shop's levels / purchase / League members, the TM and Repertoire in the kit, the 9 Lab rows retired
+and refunded once with backups, Profesor at 25, dv 17). Updated on purpose: `_expedition_meta` (the 9 stat rows add nothing, a Lab
+purchase shown with Refresh, 9 rows listed, the boosts without Study / Trading, refunds in the coin tally), dv 16 -> 17 in the
+Expedition suites.
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
@@ -2993,6 +3153,15 @@ The branch needs the full gate before it merges.
 - `node overworld/tests/micasurvivor_expedition_forceload_test.mjs` (DLC D0b): the same unchanged D0a test with the
   Expedition code force-loaded (and the base tables frozen) in every page before its base sim; it must still match the
   D0a fixtures.
+- `node overworld/tests/micasurvivor_allmoves_test.mjs` (DLC D16): every move fires on its own cooldown in both modes, no
+  switching, the HUD, the Choice Band, bonds and the freed slot, melee, co-op frames and tapes old and new, the boards split by
+  ruleset and the base lobby's rules (the real handler), the Expedition's 4 slots and swap cards, the Lab's move slot refunded
+  once across two devices.
+- `node overworld/tests/micasurvivor_oneitem_test.mjs` (DLC D17): one held item in both modes, Backpack and Double baggage
+  retired, the Backpack refund once across two devices, the Expedition's stacking items unchanged and a boss's held item.
+- `node overworld/tests/micasurvivor_sharedupgrades_test.mjs` (DLC D18): the families, per-family levels at read time, the same
+  perks in both modes, the shop, the TM / Repertoire in the kit, the Lab's 9 stat rows retired and refunded.
+- `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
 - `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
   lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly
   save.js + core.js once); the Expedition group by mouse, touch (844x390) and pad, "Coming soon", starting nothing; the

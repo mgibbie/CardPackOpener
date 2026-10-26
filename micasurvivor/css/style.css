@@ -903,6 +903,7 @@ body.pad-input .menu-item.pad-focus::before { opacity: 1; transform: none; }
 
 /* MicaSurvivor (M3): the Magepunk leaderboard reuses #scr-rank without the Firebase filters */
 .mica-board #rk-mode, .mica-board #rk-period, .mica-board .rk-tools { display: none; }
+#scr-rank:not(.mica-board) #rk-rules { display: none; }   /* (DLC D16: the current / legacy board tabs, our board only) */
 .mica-back { color: var(--muted); }
 
 /* MicaSurvivor (M5): a Pokémon's ability (Pokédex, partner card, starters, pause) */

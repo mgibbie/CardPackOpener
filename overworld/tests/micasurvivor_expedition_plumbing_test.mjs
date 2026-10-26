@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 14;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11; D13 League mode: 12; D14 Mega Evolution: 13; D15 slots and respawns: 14)
+const DV = 17;   // G.Expedition.DV (D18: shared upgrades: 17; D17: one held item: 16; D16: every move fires: 15; D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11; D13 League mode: 12; D14 Mega Evolution: 13; D15 slots and respawns: 14)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -400,10 +400,15 @@ try {
 
 		// the boards: an Expedition mark goes to its own board, never the base one
 		const bb0 = JSON.stringify(row('runboard:micasurvivor'));
-		const sc = await d.E(() => G.Exp.submitScore({ mode: 'exp-classic', dv: 1, map: 'viridian', diff: 'normal', time: 321, kills: 50, level: 12, dex: 4 }));
-		A(sc.ok && sc.rank === 1 && sc.board === 'micasurvivor_expedition:viridian:normal' && row('runboard:micasurvivor_expedition:viridian:normal')[0].name === 'alice', 'G.Exp.submitScore: the mark lands on runboard:micasurvivor_expedition:viridian:normal', JSON.stringify(sc));
+		// (DLC D16: a dv-1 mark still lands on the legacy board; this build's (dv 15+) on the new rules' board, which the client reads)
+		const sc0 = await d.E(() => G.Exp.submitScore({ mode: 'exp-classic', dv: 1, map: 'viridian', diff: 'normal', time: 300, kills: 40, level: 11, dex: 4 }));
+		// (this build's mark carries its parts: dv >= 8; score = 2 x 50 KOs + 3 x 321 s)
+		const sc = await d.E((dv) => G.Exp.submitScore({ mode: 'exp-classic', dv, map: 'viridian', diff: 'normal', time: 321, kills: 50, level: 12, dex: 4, score: 1063, parts: { kills: 50, time: 321, dmg: 0, zone: 1, bosses: 0, won: false, catches: 0 } }), DV);
+		A(sc0.ok && sc0.board === 'micasurvivor_expedition:viridian:normal' && row('runboard:micasurvivor_expedition:viridian:normal')[0].name === 'alice' && row('runboard:micasurvivor_expedition:viridian:normal')[0].score === 300
+			&& sc.ok && sc.rank === 1 && sc.board === 'micasurvivor_expedition:r2:viridian:normal' && row('runboard:micasurvivor_expedition:r2:viridian:normal')[0].name === 'alice',
+			'G.Exp.submitScore: an old dv\'s mark lands on runboard:micasurvivor_expedition:viridian:normal (Legacy), this build\'s on runboard:micasurvivor_expedition:r2:viridian:normal', JSON.stringify([sc0, sc]));
 		const lb = await d.E(() => G.Exp.leaderboard('viridian', 'normal'));
-		A(lb.top.length === 1 && lb.you && lb.you.rank === 1 && lb.you.score === 321, 'G.Exp.leaderboard(map, diff): the top + your rank', JSON.stringify(lb));
+		A(lb.top.length === 1 && lb.you && lb.you.rank === 1 && lb.you.score === 1063, 'G.Exp.leaderboard(map, diff): the top + your rank (the new rules\' board)', JSON.stringify(lb));
 		const forged = await d.E(() => G.MicaAccount.call('run-score', { mode: 'micasurvivor', time: 321, kills: 50, level: 12, dex: 4, expMode: 'exp-classic', dv: 1, map: 'viridian', diff: 'normal' }));
 		A(forged.status === 400 && JSON.stringify(row('runboard:micasurvivor')) === bb0, 'an Expedition score sent to the base board is refused (400): the base board is untouched', JSON.stringify(forged));
 
@@ -505,7 +510,7 @@ try {
 		await call('msurv-lobby-leave', { id: lx1.body.lobby.id }, tokens.bob);
 		const mine = await d.E(async () => { const r = await G.Social.createRoom({ mode: 'exp-classic' }); const out = { id: r && r.id, mode: r && r.mode, dv: r && r.dv }; await G.Social.leaveRoom(); return out; });
 		A(mine.mode === 'exp-classic' && mine.dv === DV, 'G.Social.createRoom({mode}) makes an Expedition lobby with this build\'s dv', JSON.stringify(mine));
-		const lb0 = await call('msurv-lobby-create', { dex: 25 }, tokens.bob);
+		const lb0 = await call('msurv-lobby-create', { dex: 25, rules: 2 }, tokens.bob);   // (DLC D16: a new client's base lobby carries its ruleset)
 		const jb = await d.E(async id => { const r = await G.Social.joinRoom(id); const R = G.Social.room; const out = { ok: r.ok, mode: R && R.mode, dv: R && R.dv }; await G.Social.leaveRoom(); return out; }, lb0.body.lobby.id);
 		A(jb.ok && jb.mode === null && jb.dv === null, 'a base lobby joins as before (no mode / dv)', JSON.stringify(jb));
 		await call('msurv-lobby-leave', { id: lb0.body.lobby.id }, tokens.bob);

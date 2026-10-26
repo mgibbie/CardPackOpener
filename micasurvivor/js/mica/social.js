@@ -190,6 +190,7 @@ G.Social = (() => {
     if (/at least one/.test(e)) return 'Necesitas al menos un amigo en la sala.';
     if (/already in/.test(e)) return 'Ya está en tu sala.';
     if (/slow down/.test(e)) return 'Demasiado deprisa: espera un momento.';
+    if (/host.*out of date/.test(e)) return 'El juego del anfitrión no está actualizado: tiene que recargar la página.';   // (DLC D16: a base lobby of the old rules)
     if (/out of date/.test(e)) return 'Tu juego no está actualizado: recarga la página.';   // (DLC D0b: an Expedition lobby of another version)
     return 'No se pudo entrar en la sala.';
   }
@@ -202,6 +203,7 @@ G.Social = (() => {
       .sort((a, b) => (a.uid === lb.host ? -1 : b.uid === lb.host ? 1 : 0));
     room = { id: lb.id, host: lb.host, isHost: lb.host === uid, open: !!lb.open, v: lb.v, members, start: lb.start || null,
              mode: lb.mode || null, dv: lb.dv == null ? null : lb.dv,   // (DLC D0b: an Expedition lobby's mode + content version; base: null)
+             rules: lb.rules || 1,                                       // (DLC D16: a base lobby's ruleset; an old host's: 1)
              map: lb.map || null, diff: lb.diff || null,                // (DLC D11: its map and tier)
              invited: lb.invited || (was && was.id === lb.id ? was.invited : []) };
     lobbyAt = Date.now();
@@ -219,7 +221,8 @@ G.Social = (() => {
   async function createRoom(opts) {
     if (room) return room;
     const X = G.Expedition, exp = opts && X && X.isExp(opts.mode);
-    const r = await call('msurv-lobby-create', exp ? Object.assign(memberInfo(true), { mode: opts.mode, dv: X.DV }, opts.map ? { map: opts.map, diff: opts.diff } : {}) : memberInfo());
+    // (DLC D16: a base lobby carries this build's ruleset: the server refuses a guest of other rules)
+    const r = await call('msurv-lobby-create', exp ? Object.assign(memberInfo(true), { mode: opts.mode, dv: X.DV }, opts.map ? { map: opts.map, diff: opts.diff } : {}) : Object.assign(memberInfo(), { rules: G.Player.RULES }));
     if (!r.ok || !r.body.lobby) return null;
     applyLobby(r.body.lobby);
     return room;
@@ -229,7 +232,8 @@ G.Social = (() => {
     if (room && room.id === id) return { ok: true };
     if (room) await leaveRoom();
     // (DLC D0b: dv = this build's Expedition content version; the server refuses an Expedition lobby of another one)
-    const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo(), G.Expedition ? { dv: G.Expedition.DV } : {}));
+    // (DLC D16: and rules = this build's ruleset; a base lobby of other rules refuses the join)
+    const r = await call('msurv-lobby-join', Object.assign({ id }, memberInfo(), G.Expedition ? { dv: G.Expedition.DV } : {}, { rules: G.Player.RULES }));
     if (!r.ok || !r.body.lobby) return { ok: false, error: errText(r) };
     applyLobby(r.body.lobby);
     if (room && room.mode && G.Expedition) refreshMember();   // (DLC D11: an Expedition lobby: your card shows your League member)

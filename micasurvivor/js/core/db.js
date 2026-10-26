@@ -181,6 +181,11 @@ G.DB = (() => {
     if (G.Tower) G.Tower.sanitize(s);
     // Modo Cooperativo (M5 lote 12a): el compañero elegido (coopDex, un Pokémon que exista) y cuándo (coopAt).
     if (G.LocalCoop) G.LocalCoop.sanitize(s);
+    // DLC D17-D18: the refunds of retired upgrades ("up.<dex>.<id>.<level>:<device>" -> Pokémonedas) and their fixes (-> 1)
+    for (const coll of ['rf', 'rfx']) {
+      if (!isObj(s[coll])) { delete s[coll]; continue; }
+      for (const k of Object.keys(s[coll])) if (!/^up\.\d{1,4}\.[a-z]{1,12}\.\d{1,2}:[a-z0-9.]{1,16}$/.test(k) || !(n(s[coll][k]) > 0)) delete s[coll][k]; else s[coll][k] = n(s[coll][k]);
+    }
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -304,7 +309,8 @@ G.DB = (() => {
     if (G.Tower) G.Tower.merge(r, older);
     // Modo Cooperativo (M5 lote 12a): el compañero elegido más tarde (coopAt), aunque la otra versión sea la más reciente.
     if (G.LocalCoop) G.LocalCoop.merge(r, older);
-    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis', 'typeDone']) {
+    // (DLC D17-D18: rf / rfx, the retired upgrades' refunds and their fixes, "<what>:<device>": union, like a collection)
+    for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach', 'zmis', 'typeDone', 'rf', 'rfx']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) if (!r[coll][k]) r[coll][k] = older[coll][k];
     }
@@ -337,6 +343,79 @@ G.DB = (() => {
     r.created = Math.min(a.created || Date.now(), b.created || Date.now());
     r.updated = Math.max(a.updated || 0, b.updated || 0);
     return r;
+  }
+
+  // ---------------- MicaSurvivor (DLC D17-D18): retired upgrades, refunded ONCE per account ----------------
+  // Every level bought of a retired upgrade (G.Upgrades: retired) is one record save.rf["up.<dex>.<id>.<level>:<device>"] = the
+  // Pokémonedas paid back (its price, G.Upgrades.cost). The coins go in on this device's ledger entry (fold), like any earning.
+  // Two devices that refund while apart both record theirs; merged (rf is a union), every device but the first (by id) takes its
+  // copy back once (reconcileRefunds: save.rfx["<what>:<device>"]), as js/expedition/meta.js reconcile() does for the Expedition's
+  // purchases. The save is backed up first (backup('refund')); no backup, no refund. rollbackRefunds() undoes this device's.
+  function refundsOwed(s) {
+    const done = new Set(Object.keys(s.rf || {}).map(k => k.slice(0, k.lastIndexOf(':'))));
+    const out = [];
+    if (!G.Upgrades) return out;
+    for (const d of Object.keys(s.pupg || {})) for (const u of G.Upgrades.LIST) {
+      if (!u.retired) continue;
+      const lv = Math.min(u.max, num(s.pupg[d][u.id]));
+      for (let i = 0; i < lv; i++) { const w = 'up.' + d + '.' + u.id + '.' + i; if (!done.has(w)) out.push([w, G.Upgrades.cost(u.id, i)]); }
+    }
+    return out;
+  }
+  /** A second device's copy of a refund, taken back once (as far as the balance goes). -> the Pokémonedas taken */
+  function reconcileRefunds() {
+    if (!save || guest || !isObj(save.rf)) return 0;
+    save.rfx = isObj(save.rfx) ? save.rfx : {};
+    const by = new Map();
+    for (const k of Object.keys(save.rf)) { const i = k.lastIndexOf(':'); const w = k.slice(0, i); if (!by.has(w)) by.set(w, []); by.get(w).push(k.slice(i + 1)); }
+    let took = 0;
+    for (const [w, devs] of by) {
+      if (devs.length < 2 || !devs.includes(DEV) || save.rfx[w + ':' + DEV]) continue;
+      devs.sort();
+      if (devs[0] === DEV) continue;
+      const take = Math.min(num(save.rf[w + ':' + DEV]), num(save.coins));
+      save.rfx[w + ':' + DEV] = Math.max(1, take);
+      save.coins -= take; took += take;
+    }
+    if (took) commit(true);
+    return took;
+  }
+  /** Pays every refund owed (after a backup of the save). -> the Pokémonedas paid */
+  function refundRetired() {
+    if (!save || guest) return 0;
+    reconcileRefunds();
+    const owed = refundsOwed(save);
+    if (!owed.length) return 0;
+    if (!backupOf('refund')) return 0;
+    save.rf = isObj(save.rf) ? save.rf : {};
+    let paid = 0;
+    for (const [w, n0] of owed) { const n = num(n0); if (!n) continue; save.rf[w + ':' + DEV] = n; save.coins = num(save.coins) + n; paid += n; }
+    commit(true);
+    return paid;
+  }
+  /** Takes back THIS device's refunds (never paid again: each is marked fixed). -> the Pokémonedas taken */
+  function rollbackRefunds() {
+    if (!save || guest || !isObj(save.rf)) return 0;
+    save.rfx = isObj(save.rfx) ? save.rfx : {};
+    let took = 0;
+    for (const k of Object.keys(save.rf)) {
+      if (!k.endsWith(':' + DEV) || save.rfx[k]) continue;
+      const take = Math.min(num(save.rf[k]), num(save.coins));
+      save.rfx[k] = Math.max(1, take); save.coins -= take; took += take;
+    }
+    commit(true);
+    return took;
+  }
+  function backupOf(tag) {
+    if (!save) return null;
+    const pre = K_BACKUP + (key || 'guest') + '.' + tag + '.';
+    try {
+      const old = [];
+      for (let i = 0; i < localStorage.length; i++) { const x = localStorage.key(i); if (x && x.startsWith(pre)) old.push(x); }
+      old.sort().slice(0, Math.max(0, old.length - 1)).forEach(remove);
+    } catch (e) { /* nada */ }
+    const k = pre + Date.now();
+    return write(k, plain(fold(save))) ? k : null;
   }
 
   /** Sustituye el contenido de `save` sin cambiar el objeto (otros módulos lo tienen). */
@@ -1088,6 +1167,28 @@ G.DB = (() => {
   function ownsShiny(dex) { return !!(save && save.shiny && save.shiny[dex]); }
 
   /** Mejoras compradas para un Pokémon: { id -> nivel }. */
+  /**
+   * MicaSurvivor (DLC D18, owner 2026-10-26: "both modes to respond to the same upgrades i can buy for the pokemon"): the
+   * upgrade levels that count for `dex`: per FAMILY, the best level of each upgrade among its stages' save.pupg, computed
+   * here at read time (no save is rewritten). A base run and an Expedition run of any stage read the same levels. -> a copy
+   */
+  function levelsOf(dex) {
+    const out = {};
+    if (!save || !save.pupg) return out;
+    const fam = G.Families ? G.Families.membersOf(dex) : [+dex];
+    for (const d of fam) { const u = save.pupg[d]; if (u) for (const id in u) out[id] = Math.max(out[id] || 0, num(u[id])); }
+    return out;
+  }
+  /** DLC D18: a per-Pokémon pick (`ptm` the TM move, `pban` the vetoes) for dex: its own, else the first stage of its family
+   *  that has one (so an upgrade bought on one stage works for the others). */
+  function familyPick(field, dex) {
+    const m = save && save[field];
+    if (!m) return undefined;
+    if (m[dex] != null && (!Array.isArray(m[dex]) || m[dex].length)) return m[dex];
+    for (const d of G.Families ? G.Families.membersOf(dex) : []) if (m[d] != null && (!Array.isArray(m[d]) || m[d].length)) return m[d];
+    return undefined;
+  }
+
   function upgradesOf(dex) {
     if (!save) return {};
     save.pupg = save.pupg || {};
@@ -1109,8 +1210,13 @@ G.DB = (() => {
     get magepunk() { return mode === 'magepunk' ? mpUser : null; },
     get carryOffer() { return carryOffer; }, carryGuest,
     get mpRev() { return mpRev; },
-    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf, levelsOf, familyPick,
     sanitize,   // MicaSurvivor (M5 lote 4): para las pruebas (lo que quita de una partida editada a mano)
+    /** MicaSurvivor (DLC D16-D18): a copy of the save before a refund writes it, micasurvivor_backup.<key>.<tag>.<ms> (the
+     *  newest 2 per tag are kept). -> the copy's key, or null (no save, or the browser's storage is full: then no refund). */
+    backup: tag => backupOf(tag),
+    get device() { return DEV; },
+    refundRetired, rollbackRefunds, reconcileRefunds, refundsOwed: () => (save ? refundsOwed(save) : []),
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

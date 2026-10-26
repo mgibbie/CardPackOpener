@@ -65,8 +65,9 @@ G.tmPool = dex => {
 /** El elegido con la MT (save.ptm[dex]) si la tienes comprada y sigue siendo válido; si no, null. */
 G.tmPick = dex => {
   const sv = G.DB && G.DB.save;
-  if (!sv || !((sv.pupg || {})[dex] || {}).tm) return null;
-  const id = (sv.ptm || {})[dex];
+  // (MicaSurvivor DLC D18: the TM is per family: bought on any stage, the pick of this stage or, if none, another stage's)
+  if (!sv || !(G.DB.levelsOf ? G.DB.levelsOf(dex).tm : ((sv.pupg || {})[dex] || {}).tm)) return null;
+  const id = G.DB.familyPick ? G.DB.familyPick('ptm', dex) : (sv.ptm || {})[dex];
   return id && G.tmPool(dex).includes(id) ? id : null;
 };
 

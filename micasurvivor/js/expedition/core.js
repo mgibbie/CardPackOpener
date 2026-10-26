@@ -163,7 +163,7 @@
  * has Mega Evolved (older readers ignore it; a viewer's puppet takes the look from it).
  */
 G.Exp = (() => {
-  const dv = 14;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League; D14: Mega Evolution; D15: the slot machine, Survival respawns): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 17;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League; D14: Mega Evolution; D15: the slot machine, Survival respawns; D16: every move fires; D17: one held item; D18: shared upgrades): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
   const XV = 10;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
@@ -222,7 +222,7 @@ G.Exp = (() => {
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
     G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); if (cur && G.LocalCoop && G.LocalCoop.on) cur.mate = true; });   // (D11: Survival, last: it reads what this step healed; a local partner keeps the run off the boards)
     // (D6: the Ultimate's charge from kills, and its hit-stop)
-    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); });   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
+    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); if (LV()) LV().onKill(e, pl); });   // (D17: a boss's held item)   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
     // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
     G.Hooks.on('minimap.draw', (ctx, pl, api) => { if (EC()) EC().drawMini(ctx, pl, api); if (CP()) CP().drawMini(ctx, pl, api); });   // (D8: the encounters)
     G.Hooks.on('run.hold', (dt, pl) => { if (!expRun()) return undefined; const u = UL() ? UL().hold(dt, pl) : undefined; return u || (CP() ? CP().hold(dt, pl) : undefined); });   // (D8: the capture cinematic)
@@ -654,7 +654,7 @@ G.Exp = (() => {
   async function leaderboard(map, diff) {
     const A = G.MicaAccount;
     if (!A || !A.name()) return { top: [], you: null, error: 'not logged in' };
-    const d = await A.call('run-leaderboard', { mode: X.BOARD, map, diff });
+    const d = await A.call('run-leaderboard', { mode: X.BOARD, map, diff, rules: G.Player.RULES });   // (DLC D16: the new rules' board)
     if (!d.ok) return { top: [], you: null, error: (d.body && d.body.error) || 'offline' };
     return { top: d.body.top || [], you: d.body.you || null };
   }

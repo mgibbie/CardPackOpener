@@ -68,7 +68,7 @@ G.Replay = (() => {
       rid: hex(6), started: Date.now(),
       h: { v: 1, Q: K.Q, QE: K.QE, dt: K.REC_DT, sd: G.World.seed, m: g.mode || 'normal', dex: pl.dex, shiny: pl.shiny ? 1 : 0, mon: pl.mon.name,
            by: (G.MicaAccount && G.MicaAccount.name()) || '', coop: G.Coop && G.Coop.active ? (G.Coop.members || []).map(m => m.uid) : [],
-           items: Object.keys(G.Items.BY), ew: EW, kw: KW },
+           items: Object.keys(G.Items.BY), ew: EW, kw: KW, ...(pl.af ? { af: 1 } : {}) },   // (DLC D16: af = every move fires; an old tape has none)
       frames: [], ev: [], bytes: 0,
       // the encoder's memory of the previous frame
       P: null, C: null, S: '', E: { m: new Map(), v: new Map() }, Kp: { m: new Map(), v: new Map() }, M: '', t: 0
@@ -184,7 +184,7 @@ G.Replay = (() => {
   function slowOf(s) {
     const o = { b: s.b, m: s.m, mv: s.mv, ac: s.ac, it: s.it, lu: s.lu };
     // (DLC D1: 'x', an Expedition run's terrain block {xv, m, z, th}; a base snapshot has none, so its frames don't change)
-    for (const k of ['ds', 'z', 'dy', 'tm', 'ar', 'wx', 'dn', 'cr', 'ad', 'x']) if (s[k] !== undefined) o[k] = s[k];
+    for (const k of ['ds', 'z', 'dy', 'tm', 'ar', 'wx', 'dn', 'cr', 'ad', 'x', 'af', 'sg']) if (s[k] !== undefined) o[k] = s[k];   // (DLC D16: af, sg)
     // (DLC D2: the x block's airborne state `a` changes with every hop: it has a frame field of its own, see encode)
     if (o.x && o.x.a) { o.x = Object.assign({}, o.x); delete o.x.a; }
     // (DLC D6: so does the Ultimate's charge `w`: field 8)
@@ -332,6 +332,7 @@ G.Replay = (() => {
       const P = st.P, C = st.C, S = st.S;
       const s = Object.assign({ v: 1, t: st.t, sd: h.sd, me: [h.dex, h.shiny], p: [P[0] * Q, P[1] * Q, P[2], P[3], P[4], P[5], P[6]],
         lv: [C[0], C[1], C[2]], k: C[3], bo: C[4], co: C[5] }, S);
+      if (h.af && s.af == null) s.af = h.af;   // (DLC D16: the header says every move fires)
       s.e = [...st.E.m.values()].map(r => [r[0], r[1], r[2] * QE, r[3] * QE, r[4], r[5], r[6]]);
       s.pk = [...st.K.m.values()].map(r => [r[0], r[1], r[2] * QE, r[3] * QE]);
       if (st.M && st.M.length) s.mt = st.M.map(m => [m[0], m[1], m[2], m[3] * QE, m[4] * QE, m[5], m[6], m[7], m[8], m[9], m[10]]);

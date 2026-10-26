@@ -217,7 +217,7 @@ try {
 			['scholar', { xp: 1.5, ehp: 1.2 }], ['stone', { taken: 0.75, spd: 0.85 }], ['contract', { coins: 1.5, bossHp: 1.25 }], ['fast', { atk: 1.15, healmul: 0.55 }], ['swarm', { atk: 1.12, xp: 1.2, spawn: 1.3 }],
 			['quick', { cd: 0.7, atk: 0.9 }], ['heavy', { atk: 1.22, cd: 1.2 }], ['overclock', { cd: 0.75, maxhp: 0.9 }], ['metronome', { cd: 0.8, spawn: 1.15 }], ['slowburn', { cd: 1.15, taken: 0.75, regen: 1 }],
 			['berserk', { cd: 0.85, atk: 1.1, taken: 1.1 }]]), 'the 15 risk cards of main.gd 223-239 with their exact effects', JSON.stringify(r.risks));
-		A(JSON.stringify(r.legends) === JSON.stringify([['l_time', { cd: 0.3 }], ['l_bag', { carry: 1 }], ['l_reap', { reap: 1 }], ['l_armor', { def: 0.6 }]]), 'the 4 legendary cards of main.gd 242-247', JSON.stringify(r.legends));
+		A(JSON.stringify(r.legends) === JSON.stringify([['l_time', { cd: 0.3 }], ['l_bag', { carry: 1 }], ['l_reap', { reap: 1 }], ['l_armor', { def: 0.6 }]]), 'the 4 legendary cards of main.gd 242-247 (Double baggage kept, retired in DLC D17)', JSON.stringify(r.legends));
 		A(r.icons.length === 0, 'every card has its port icon (icons.gd EXTRA r_* / contract / m_tower)', JSON.stringify(r.icons));
 		A(r.list.includes('tower') && r.name === 'Floor Tower' && r.icon === 'm_tower', 'a "Floor Tower" mode with its icon', JSON.stringify([r.list, r.name]));
 		A(JSON.stringify(r.ach) === JSON.stringify([['tower5', 1, 5, { coins: 800, t1: 3, t10: 1 }, '', 29], ['tower10', 2, 10, { coins: 2000, t1: 4, t10: 2 }, '', 29], ['tower15', 3, 15, { coins: 4000, t1: 5, t10: 3 }, '', 29],
@@ -523,10 +523,12 @@ try {
 		// the kill-driven ones: Blood pact heals 2 HP a kill, Thirst for victory +0.30 % damage a kill
 		const k = await E(() => {
 			const pl = G.Game.player, T = G.Tower;
+			// (DLC D16: every move fires, and a draining one would heal in these 300 ms of real frames: no moves while measured)
+			const sl = pl.slots; pl.slots = [];
 			pl.hp = 20; const atk0 = pl.atkMul, t0 = performance.now();
 			const e = G.Spawner.spawnOne(pl, T.dt()); e.hurt(1e9);
 			const e2 = G.Spawner.spawnOne(pl, T.dt()); e2.hurt(1e9);
-			return new Promise(res => setTimeout(() => res({ hp: pl.hp, regen: pl.regen * (performance.now() - t0) / 1000, reap: T.reap, atk: pl.atkMul / atk0, line: T.hudLine() }), 300));
+			return new Promise(res => setTimeout(() => { const o = { hp: pl.hp, regen: pl.regen * (performance.now() - t0) / 1000, reap: T.reap, atk: pl.atkMul / atk0, line: T.hudLine() }; pl.slots = sl; res(o); }, 300));
 		});
 		A(k.hp >= 24 - 0.01 && k.hp <= 24 + k.regen + 0.01 && k.reap === 2 && near(k.atk, (1 + 0.006) / 1, 1e-9) && /Thirst for victory \+0\.6%/.test(k.line), 'two kills: +2 HP each (Blood pact), damage x1.006 and "Thirst for victory +0.6%" on the HUD (main.gd 4493-4498)', JSON.stringify(k));
 		// heals with Fasting: a berry heals 30 % x 0.55
@@ -551,16 +553,18 @@ try {
 		await sleep(200);
 		const sh = await E(() => ({ shield: G.Tower.shield, want: G.Game.player.maxHp * 0.35 }));
 		A(near(sh.shield, sh.want, 1e-6), 'Shield: a shield of 35 % of max HP', JSON.stringify(sh));
-		// a legendary (relic) card: forced, Double baggage
+		// a legendary (relic) card, forced. (DLC D17: Double baggage is retired, one held item in every mode: forced, another
+		//  legendary comes instead; this replaces "Double baggage: 2 item slots and an item right away")
 		await E(() => { G.TowerUI.hide(); G.Tower.debugLegend('l_bag'); G.Tower.riskOpen(); });
 		await sleep(250);
 		const lg = await E(() => ({ cards: [...document.querySelectorAll('#tower-cards .card')].map(c => [c.dataset.id, c.classList.contains('legend')]), txt: document.querySelector('#tower-cards .card.legend') && document.querySelector('#tower-cards .card.legend').innerText }));
-		A(lg.cards.some(([id, l]) => id === 'l_bag' && l) && lg.cards.length === 4 && /Double baggage/.test(lg.txt) && /Legendary/.test(lg.txt) && /No cost\./.test(lg.txt), 'a golden legendary card replaces one of the three ("Double baggage", "Legendary", "No cost.")', JSON.stringify(lg));
+		const lgId = (lg.cards.find(([, l]) => l) || [])[0];
+		A(lgId && lgId !== 'l_bag' && !lg.cards.some(([id]) => id === 'l_bag') && lg.cards.length === 4 && /Legendary/.test(lg.txt) && /No cost\./.test(lg.txt), 'a golden legendary card replaces one of the three ("Legendary", "No cost."); a forced Double baggage (retired) never shows', JSON.stringify(lg));
 		await shot('tower_relic_card.png');
-		await E(() => document.querySelector('#tower-cards .card[data-id="l_bag"]').click());
+		await E(id => document.querySelector('#tower-cards .card[data-id="' + id + '"]').click(), lgId);
 		await sleep(300);
-		const bag = await E(() => ({ slots: G.Game.player.itemSlots(), item: G.Game.player.item || G.Game.player.item2, choice: G.UI.isOpen('scr-item'), risks: G.Tower.risks }));
-		A(bag.slots === 2 && (bag.item || bag.choice) && bag.risks.includes('l_bag'), 'Double baggage: 2 item slots and an item right away (main.gd 3569-3572 / 5755)', JSON.stringify(bag));
+		const bag = await E(() => ({ slots: G.Game.player.itemSlots(), risks: G.Tower.risks }));
+		A(bag.slots === 1 && bag.risks.length > 0 && !bag.risks.includes('l_bag'), 'the legendary is sealed; still ONE held-item slot', JSON.stringify(bag));
 		// the shield absorbs the next floor's hits
 		await E(() => { if (G.UI.isOpen('scr-item')) document.querySelector('#item-cards .card').click(); });
 		await waitFor(() => E(() => G.Game.state === 'playing'), 3000);

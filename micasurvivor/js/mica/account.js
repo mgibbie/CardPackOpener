@@ -93,12 +93,14 @@ G.MicaAccount = (() => {
   /** {time (s), kills, level, dex, shiny} -> {ok, better, best, rank} | {error} */
   async function submitScore(r) {
     if (!name()) return { error: 'not logged in' };
-    const d = await call('run-score', { mode: 'micasurvivor', time: Math.floor(r.time), kills: Math.floor(r.kills || 0), level: Math.floor(r.level || 1), dex: r.dex | 0, shiny: !!r.shiny });
+    // (DLC D16: rules = this build's ruleset, G.Player.RULES: the server files it on the new board, runboard:micasurvivor:r2)
+    const d = await call('run-score', { mode: 'micasurvivor', time: Math.floor(r.time), kills: Math.floor(r.kills || 0), level: Math.floor(r.level || 1), dex: r.dex | 0, shiny: !!r.shiny, rules: G.Player.RULES });
     return d.ok ? d.body : { error: (d.body && d.body.error) || 'offline' };
   }
-  async function leaderboard() {
+  /** (DLC D16) legacy: the board from before the new rules (every move fires), read-only. */
+  async function leaderboard(legacy) {
     if (!name()) return { top: [], you: null, error: 'not logged in' };
-    const d = await call('run-leaderboard', { mode: 'micasurvivor' });
+    const d = await call('run-leaderboard', legacy ? { mode: 'micasurvivor' } : { mode: 'micasurvivor', rules: G.Player.RULES });
     if (!d.ok) return { top: [], you: null, error: (d.body && d.body.error) || 'offline' };
     return { top: d.body.top || [], you: d.body.you || null };
   }
@@ -159,17 +161,33 @@ G.MicaUI = (() => {
   }
 
   const fmt = t => t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t);
-  let token = 0;
-  /** The Leaderboard screen (#scr-rank, reused): our run board, top 50 + your rank. */
-  async function openRanking() {
+  let token = 0, legacy = false;
+  /** The Leaderboard screen (#scr-rank, reused): our run board, top 50 + your rank. (DLC D16: "Reglas actuales" = the board of
+   *  the new rules from 2026-10-26, "Reglas anteriores" (Legacy) = the board before them, read-only: #rk-rules.) */
+  async function openRanking(view) {
     const acc = G.MicaAccount;
     if (!acc.name()) { G.UI.toast(G.T('Inicia sesión en Magepunk para salir en la clasificación.'), 3200); return; }
+    if (view === 'legacy' || view === 'current') legacy = view === 'legacy';
     G.UI.show('scr-rank', true);
     $('scr-rank').classList.add('mica-board');
+    const tabs = $('rk-rules');
+    if (tabs) {
+      tabs.classList.remove('hidden');
+      tabs.innerHTML = '';
+      for (const [k, label] of [['current', 'Reglas actuales'], ['legacy', 'Reglas anteriores']]) {
+        const b = document.createElement('button');
+        b.className = 'gen-tab' + ((k === 'legacy') === legacy ? ' on' : '');
+        b.dataset.rules = k;
+        b.innerHTML = '<b>' + esc(G.T(label)) + '</b>';
+        b.onclick = () => openRanking(k);
+        tabs.appendChild(b);
+      }
+    }
     const list = $('rk-list'), me = $('rk-me');
     list.innerHTML = '<p class="sub">Cargando…</p>'; me.innerHTML = '';
+    if (legacy) me.innerHTML = '';
     const my = ++token;
-    const d = await acc.leaderboard();
+    const d = await acc.leaderboard(legacy);
     if (my !== token) return;
     if (d.error) { list.innerHTML = `<p class="sub">${esc(G.T('No se pudo cargar la clasificación.'))}</p>`; return; }
     list.innerHTML = '';
@@ -188,8 +206,9 @@ G.MicaUI = (() => {
         + `<span class="time">${fmt(r.time || 0)}</span><span></span>`);
       list.appendChild(el);
     });
-    me.innerHTML = d.you && d.you.rank ? esc(G.T('Tu mejor puesto: #' + d.you.rank)) + ` · ${fmt(d.you.time || 0)}`
-      : d.you ? esc(G.T('Aún no estás en el top 100.')) : esc(G.T('Aún no tienes marca.'));
+    me.innerHTML = (d.you && d.you.rank ? esc(G.T('Tu mejor puesto: #' + d.you.rank)) + ` · ${fmt(d.you.time || 0)}`
+      : d.you ? esc(G.T('Aún no estás en el top 100.')) : esc(G.T('Aún no tienes marca.')))
+      + (legacy ? ' · ' + esc(G.T('Clasificación anterior a las reglas nuevas (todos los movimientos a la vez): sólo lectura.')) : '');
   }
 
   /** endRun hook: a clean solo run's mark goes to the board (logged-in players only). */

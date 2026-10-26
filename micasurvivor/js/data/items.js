@@ -3,7 +3,7 @@
  * candado) y los sueltan los jefes. Sólo puedes llevar UNO; si encuentras
  * otro, eliges con cuál quedarte. Duran lo que dura la run.
  * MicaSurvivor (M5 lote 3): +15 objetos del port de Android (types_data.gd ITEMS, con los
- * números de main.gd), y con la mejora Mochila se llevan DOS (Player.itemSlots()).
+ * números de main.gd), y con la mejora Mochila se llevaban DOS (DLC D17: uno, en todos los modos; Player.itemSlots()).
  *
  *   on(pl)   se lo pones (lo que hace mientras lo llevas)
  *   off(pl)  se lo quitas (deshace lo de on)
@@ -28,8 +28,10 @@ G.Items = (() => {
     { id: 'leftovers', name: 'Restos', desc: 'Recuperas un 1,5% de tu vida por segundo.',
       on: p => { p.regenFlat += p.maxHp * 0.015; p._itemRegen = p.maxHp * 0.015; },
       off: p => { p.regenFlat -= p._itemRegen || 0; } },
-    { id: 'choiceband', name: 'Cinta Elección', desc: '+40% de daño, pero no puedes cambiar de movimiento.',
-      on: p => { p.atkMul *= 1.4; }, off: p => { p.atkMul /= 1.4; } },
+    // (MicaSurvivor DLC D16, owner decision #8: every move fires, so the band boosts slot 1's move and weakens the rest:
+    //  G.Combat.AF.CB_MAIN / CB_REST in G.Combat.land; nothing on the player's stats)
+    { id: 'choiceband', name: 'Cinta Elección', desc: '+40% de daño con el movimiento del hueco 1, -20% con los demás.',
+      on: nop, off: nop },
     { id: 'quickclaw', name: 'Garra Rápida', desc: '-20% de recarga en todos tus movimientos.',
       on: p => { p.cdMul *= 0.8; }, off: p => { p.cdMul /= 0.8; } },
     { id: 'focussash', name: 'Banda Focus', desc: 'Un golpe que te dejaría KO te deja con 1 de vida (cada 60 s).',

@@ -6,13 +6,13 @@
 //   - data: 26 items in the port's order, 15 new with the port's icons (data/icons.json "ui",
 //     icons.gd EXTRA for the Colossal Orb); 17 upgrades with the port's costs / levels; English
 //   - upgrades screen: Caliber (6 levels, 80 x 1.4^n), TM (2000), Second Chance (2 levels, 2500 x2),
-//     Backpack (7500) bought with Pokémonedas; the TM editor ("Choose") opened and used with the
+//     (Backpack: retired in DLC D17, not on sale) bought with Pokémonedas; the TM editor ("Choose") opened and used with the
 //     gamepad only: the pool is the Pokémon's types + Normal without support moves (Mew: all), the
 //     pick becomes the starting move and leaves the ban list
 //   - upgrades persist (pushed to the account, back after a reload) and merge safely: a newer save
 //     from another device (409) is merged with max levels, nothing bought is lost, a hand-edited
 //     level above the max is clamped, the TM pick of each Pokémon is kept
-//   - a run with them: x1.48 size, 2 hearts, 2 item slots, the TM move first; the web's free card
+//   - a run with them: x1.48 size, 2 hearts, ONE item slot (DLC D17), the TM move first; the web's free card
 //     reroll is still there
 //   - every new item with the port's numbers: Never-Melt Ice (30 % slow, 2 s, real contact loop),
 //     Scope Lens (+15 % crit), Expert Belt (x1.25 super effective), Wide Lens (x1.2 radius), Colossal
@@ -22,8 +22,8 @@
 //     effective hit), Rare Candy (+1 level at once, no slot taken), Pure Incense (x0.75 spawn rate,
 //     x1.3 HP, x1.5 XP, x1.25 coins), Light Ball / Thick Club (species-locked: x2 Electric for
 //     Pikachu/Pichu/Raichu, x1.5 Ground for Cubone/Marowak, and they only drop for them), Silver Powder
-//   - carry two: a free second slot fills itself; with both full, a 3-card choice (replace slot 1 /
-//     slot 2 / keep both); the HUD shows both; without the Backpack the old 2-card choice
+//   - one held item (DLC D17: replaces "carry two"): the first is worn; a second opens the 2-card choice (keep / switch, also
+//     with an old save's Backpack flag); the HUD shows it
 //   - Second Chance: a lethal hit revives with full HP (2.5 s invulnerable) and knocks enemies within
 //     260 away (500); Focus Sash still fires first; no hearts left -> down
 // Screenshots go to MICASURVIVOR_SHOTS=<dir> when set.
@@ -181,20 +181,21 @@ try {
 	A(await waitFor(() => visible('scr-upgrades'), 5000), 'upgrades screen');
 	await sleep(400);
 	{
-		const row = id => E(id => { const i = G.Upgrades.LIST.findIndex(u => u.id === id); const el = document.querySelectorAll('#upg-list .upg-item')[i]; return el ? el.innerText.replace(/\s+/g, ' ').trim() : null; }, id);
-		const buy = id => E(id => { const i = G.Upgrades.LIST.findIndex(u => u.id === id); const c0 = G.DB.save.coins; document.querySelectorAll('#upg-list .upg-item')[i].querySelector('[data-buy]').click(); return c0 - G.DB.save.coins; }, id);
+		// (DLC D17: the shop lists the upgrades on sale, G.Upgrades.live(): Backpack is retired)
+		const row = id => E(id => { const i = G.Upgrades.live().findIndex(u => u.id === id); const el = i < 0 ? null : document.querySelectorAll('#upg-list .upg-item')[i]; return el ? el.innerText.replace(/\s+/g, ' ').trim() : null; }, id);
+		const buy = id => E(id => { const i = G.Upgrades.live().findIndex(u => u.id === id); const c0 = G.DB.save.coins; document.querySelectorAll('#upg-list .upg-item')[i].querySelector('[data-buy]').click(); return c0 - G.DB.save.coins; }, id);
 		const noTmBefore = await E(() => !document.querySelector('[data-tm]'));
 		A(noTmBefore, 'no TM editor button before the TM is bought');
 		A(/Caliber/.test(await row('size')) && /\+8% size for projectiles, orbs and areas/.test(await row('size')) && /TM Choose your starting move \(from your types\)/.test(await row('tm'))
-			&& /Second Chance/.test(await row('revive')) && /Backpack Carry 2 items at once per run/.test(await row('bag')), 'the 4 new rows, in English', JSON.stringify([await row('size'), await row('tm'), await row('revive'), await row('bag')]));
+			&& /Second Chance/.test(await row('revive')) && (await row('bag')) === null, 'the 3 new rows on sale, in English (Backpack retired: not listed, DLC D17)', JSON.stringify([await row('size'), await row('tm'), await row('revive'), await row('bag')]));
 		const paid = {};
-		for (const id of ['size', 'tm', 'revive', 'bag']) { paid[id] = []; for (let i = 0; i < UP[id][0] + 1; i++) paid[id].push(await buy(id)); }
-		A(JSON.stringify(paid) === JSON.stringify(Object.fromEntries(['size', 'tm', 'revive', 'bag'].map(id => [id, [...costs(id), 0]]))), 'each level costs the port\'s price and a maxed upgrade cannot be bought again', JSON.stringify(paid));
+		for (const id of ['size', 'tm', 'revive']) { paid[id] = []; for (let i = 0; i < UP[id][0] + 1; i++) paid[id].push(await buy(id)); }
+		A(JSON.stringify(paid) === JSON.stringify(Object.fromEntries(['size', 'tm', 'revive'].map(id => [id, [...costs(id), 0]]))), 'each level costs the port\'s price and a maxed upgrade cannot be bought again', JSON.stringify(paid));
 		const lv = await E(() => G.DB.upgradesOf(4));
-		A(lv.size === 6 && lv.tm === 1 && lv.revive === 2 && lv.bag === 1, 'levels saved per Pokémon (save.pupg[4])', JSON.stringify(lv));
+		A(lv.size === 6 && lv.tm === 1 && lv.revive === 2 && !lv.bag, 'levels saved per Pokémon (save.pupg[4])', JSON.stringify(lv));
 		const perks = await E(() => G.Upgrades.perks(G.DB.upgradesOf(4)));
-		A(near(perks.size, 1.48) && perks.tm === 1 && perks.revives === 2 && perks.bag === true && perks.rerolls === 0, 'perks: size x1.48 (+8% x6), TM on, 2 hearts, Backpack, no bought rerolls', JSON.stringify(perks));
-		A(/Max/.test(await row('bag')), 'maxed rows say "Max."', await row('bag'));
+		A(near(perks.size, 1.48) && perks.tm === 1 && perks.revives === 2 && perks.bag === false && perks.rerolls === 0, 'perks: size x1.48 (+8% x6), TM on, 2 hearts, no Backpack (retired), no bought rerolls', JSON.stringify(perks));
+		A(/Max/.test(await row('tm')), 'maxed rows say "Max."', await row('tm'));
 		await shot('upgrades.png');
 	}
 
@@ -236,8 +237,8 @@ try {
 	// ================= 4. persisted to the account + merged safely =================
 	{
 		await E(() => G.DB.flush());
-		await waitFor(() => ROW.save && ROW.save.pupg && ROW.save.pupg['4'] && ROW.save.pupg['4'].bag === 1, 5000);
-		A(ROW.save && JSON.stringify(ROW.save.pupg['4']) === JSON.stringify({ size: 6, tm: 1, revive: 2, bag: 1 }) && ROW.save.ptm['4'] === 'flamethrower', 'the upgrades and the TM pick reach the account row', JSON.stringify(ROW.save && [ROW.save.pupg, ROW.save.ptm]));
+		await waitFor(() => ROW.save && ROW.save.pupg && ROW.save.pupg['4'] && ROW.save.pupg['4'].revive === 2, 5000);
+		A(ROW.save && JSON.stringify(ROW.save.pupg['4']) === JSON.stringify({ size: 6, tm: 1, revive: 2 }) && ROW.save.ptm['4'] === 'flamethrower', 'the upgrades and the TM pick reach the account row', JSON.stringify(ROW.save && [ROW.save.pupg, ROW.save.ptm]));
 		// another device saved meanwhile (newer): fewer levels on 4, a hand-edited one above the max, other picks
 		const other = JSON.parse(JSON.stringify(ROW.save));
 		other.pupg['4'] = { size: 99, hp: 3 };
@@ -250,7 +251,7 @@ try {
 		await E(() => G.DB.flush());
 		const m = { row: ROW.save && ROW.save.pupg, ptm: ROW.save && ROW.save.ptm, local: await E(() => [G.DB.save.pupg, G.DB.save.ptm]) };
 		const sorted = o => JSON.stringify(Object.keys(o || {}).sort().map(k => [k, o[k]]));
-		A(m.row && sorted(m.row['4']) === sorted({ size: 6, hp: 3, tm: 1, revive: 2, bag: 1 }) && m.row['7'] && m.row['7'].revive === 1,
+		A(m.row && sorted(m.row['4']) === sorted({ size: 6, hp: 3, tm: 1, revive: 2 }) && m.row['7'] && m.row['7'].revive === 1,
 			'a stale write (409) merges: the max of every level, nothing bought on either device lost, the hand-edited 99 clamped to 6', JSON.stringify(m));
 		A(m.ptm && m.ptm['4'] === 'flamethrower' && m.ptm['7'] === 'water-gun', 'each Pokémon\'s TM pick survives the merge', JSON.stringify(m.ptm));
 		const direct = await E(() => {
@@ -266,7 +267,7 @@ try {
 		await sleep(300); if (await visible('tap-start')) await page.click('#tap-start');
 		A(await waitFor(() => visible('scr-menu'), 10000), 'after a reload: the menu (same account)');
 		const back = await E(() => [G.DB.upgradesOf(4), G.DB.save.ptm[4], G.startMoveOf(4)]);
-		A(back[0].size === 6 && back[0].tm === 1 && back[0].revive === 2 && back[0].bag === 1 && back[1] === 'flamethrower' && back[2] === 'flamethrower', 'after a reload the upgrades and the TM pick are still there', JSON.stringify(back));
+		A(back[0].size === 6 && back[0].tm === 1 && back[0].revive === 2 && !back[0].bag && back[1] === 'flamethrower' && back[2] === 'flamethrower', 'after a reload the upgrades and the TM pick are still there', JSON.stringify(back));
 	}
 
 	// ================= 5. a run with the upgrades =================
@@ -276,7 +277,7 @@ try {
 	{
 		const r = await E(() => { const pl = G.Game.player; return { size: pl.sizePerk, sizeK: pl.sizeK(), revives: pl.revives, bag: pl.bag, slots: pl.itemSlots(), first: pl.moves[0].id, free: Math.max(0, 1 + (pl.rerollBonus || 0) - (pl.rerolls || 0)), bonus: pl.rerollBonus }; });
 		A(near(r.size, 1.48) && near(r.sizeK, 1.48), `Caliber 6: projectiles, orbs and areas x${r.size} (Player.sizeK)`);
-		A(r.revives === 2 && r.bag && r.slots === 2, 'Second Chance 2: two hearts; Backpack: two item slots', JSON.stringify(r));
+		A(r.revives === 2 && !r.bag && r.slots === 1, 'Second Chance 2: two hearts; ONE item slot (DLC D17)', JSON.stringify(r));
 		A(r.first === 'flamethrower', `the TM pick is the run's first move (${r.first})`);
 		A(r.free === 1 && r.bonus === 0, `the web's free card reroll is kept (${r.free} left, no reroll upgrade bought)`);
 		const drawn = await E(async () => {
@@ -353,7 +354,7 @@ try {
 			pl.dex = dex0;
 			T.clean(); const c0 = pl.critChance; T.eq('scopelens'); const c1 = pl.critChance; T.clean(); const c2 = pl.critChance;
 			out.scope = [c1 - c0, c2 - c0];
-			// two at once multiply (Backpack): Expert Belt + Type Gem on a super-effective fire hit
+			// two at once multiply (item + item2, as an old run carried them): Expert Belt + Type Gem on a super-effective fire hit
 			out.both = ratio('expertbelt', grass, 'fire') && (() => { T.clean(); const a = T.hit(grass, 'fire'); T.eq('expertbelt', 'typegem'); return T.hit(grass, 'fire') / a; })();
 			// a real Ember projectile carries the item bonus (Type Gem)
 			const cast = withGem => {
@@ -376,7 +377,7 @@ try {
 		A([25, 26, 172].every(d => near(r.light[d][0], 2) && near(r.light[d][1], 1)) && near(r.light[4][0], 1), 'Light Ball: x2 Electric for Pikachu / Raichu / Pichu only (Charmander holding it: x1)', JSON.stringify(r.light));
 		A([104, 105].every(d => near(r.club[d][0], 1.5) && near(r.club[d][1], 1)) && near(r.club[4][0], 1), 'Thick Club: x1.5 Ground for Cubone / Marowak only', JSON.stringify(r.club));
 		A(near(r.scope[0], 0.15) && near(r.scope[1], 0), `Scope Lens: +15% crit chance while held (+${r.scope[0].toFixed(2)}, back to +${r.scope[1]} when removed)`);
-		A(near(r.both, 1.5), `two items stack (Backpack): Expert Belt x Type Gem = x${r.both.toFixed(3)}`);
+		A(near(r.both, 1.5), `two items stack (item + item2, as an old run carried them): Expert Belt x Type Gem = x${r.both.toFixed(3)}`);
 		A(near(r.real, 1.2, 1e-6), `a real Ember projectile carries the Type Gem bonus (x${r.real.toFixed(4)})`);
 	}
 
@@ -509,15 +510,16 @@ try {
 		A(JSON.stringify(r.locks.ok) === '[true,true,true,false,true,false,true]' && r.locks.heldSkip === 0, 'G.Items.okFor + the drops skip both held items', JSON.stringify(r.locks));
 	}
 
-	// ================= 10. carry two (Backpack) =================
+	// ================= 10. one held item (DLC D17, owner 2026-10-26: "1 slot for an equipped held item in both modes";
+	// this replaces M5 batch 3's "carry two (Backpack)": Backpack is retired and refunded, see micasurvivor_oneitem_test) =================
 	{
 		const step = await E(() => {
 			const out = {};
-			const pl = T.clean(); pl.bag = true;
+			const pl = T.clean(); pl.bag = true;   // (an old save's Backpack flag: no second slot any more)
 			const c0 = pl.critChance;
+			out.slots = pl.itemSlots();
 			G.Game.offerItem('scopelens'); out.a = [pl.item, pl.item2];
-			G.Game.offerItem('bigorb'); out.b = [pl.item, pl.item2, !document.getElementById('scr-item').classList.contains('hidden')];
-			G.Game.offerItem('bigorb'); out.dup = [pl.item, pl.item2];
+			G.Game.offerItem('scopelens'); out.dup = [pl.item, pl.item2, document.getElementById('scr-item').classList.contains('hidden')];
 			out.crit = pl.critChance - c0;
 			G.Game.offerItem('weaknesspolicy');
 			return out;
@@ -526,34 +528,26 @@ try {
 		Object.assign(step, await E(() => ({
 			cards: [...document.querySelectorAll('#item-cards .card')].map(c => c.innerText.replace(/\s+/g, ' ').trim()),
 			sub: document.getElementById('item-sub').innerText,
-			info: ((document.querySelector('#item-cards .item-new') || {}).innerText || '').replace(/\s+/g, ' '),
 		})));
-		A(JSON.stringify(step.a) === '["scopelens",null]' && JSON.stringify(step.b) === '["scopelens","bigorb",false]', 'Backpack: the first item goes to slot 1, the second fills slot 2 by itself', JSON.stringify(step));
-		A(JSON.stringify(step.dup) === '["scopelens","bigorb"]' && near(step.crit, 0.15), 'one you already hold changes nothing; the held items work (Scope Lens +15%)', JSON.stringify(step));
-		A(await visible('scr-item') && step.cards.length === 3 && /Switch to Weakness Policy/.test(step.cards[0]) && /Replaces: Scope Lens/.test(step.cards[0]) && /Replaces: Colossal Orb/.test(step.cards[1]) && /Keep both/.test(step.cards[2]),
-			'both full: 3 cards — replace slot 1, replace slot 2, keep both (in English)', JSON.stringify(step.cards));
-		const keys = await E(() => [...document.querySelectorAll('#scr-item .sub .key-k kbd')].map(k => k.textContent).join());
-		A(keys === '1,2,3', 'the key hint shows 1 2 3', keys);
-		A(/You can carry two items/.test(step.sub) && /Weakness Policy: If you're hit by something super effective/.test(step.info), 'the screen says you carry two and what the new one does', JSON.stringify([step.sub, step.info]));
-		await shot('item_choice_two.png');
-		await E(() => document.querySelectorAll('#item-cards .card')[0].click());
-		const after = await E(() => { const pl = G.Game.player; return { items: [pl.item, pl.item2], hidden: document.getElementById('scr-item').classList.contains('hidden') }; });
-		const crit = await E(() => { const pl = G.Game.player; const c = pl.critChance; pl.equip('scopelens', 1); const d = pl.critChance - c; pl.equip('weaknesspolicy', 1); return d; });
-		A(JSON.stringify(after.items) === '["weaknesspolicy","bigorb"]' && after.hidden && near(crit, 0.15), 'replacing slot 1 takes the Scope Lens off (its +15% crit goes with it)', JSON.stringify([after, crit]));
-		await E(() => G.Game.offerItem('expertbelt'));
-		await E(() => document.querySelectorAll('#item-cards .card')[2].click());
-		const kept = await E(() => [G.Game.player.item, G.Game.player.item2]);
-		A(JSON.stringify(kept) === '["weaknesspolicy","bigorb"]', '"Keep both" changes nothing', JSON.stringify(kept));
-		// keyboard: 2 picks the second card (the item screen reads 1-3 whatever the run state)
-		await E(() => G.Game.offerItem('sitrusberry'));
+		A(step.slots === 1 && JSON.stringify(step.a) === '["scopelens",null]', 'one held slot even with an old Backpack flag: the first item is worn', JSON.stringify(step));
+		A(JSON.stringify(step.dup) === '["scopelens",null,true]' && near(step.crit, 0.15), 'one you already hold changes nothing; the held item works (Scope Lens +15%)', JSON.stringify(step));
+		A(await visible('scr-item') && step.cards.length === 2 && /Keep Scope Lens/.test(step.cards[0]) && /Switch to Weakness Policy/.test(step.cards[1]) && /only hold one/.test(step.sub),
+			'a second item: the replace screen, 2 cards (keep yours / switch), in English', JSON.stringify(step));
+		await shot('item_choice_one.png');
+		// keyboard: 2 picks the second card (the item screen reads its keys whatever the run state)
 		await page.keyboard.press('Digit2');
 		await sleep(200);
-		const k2 = await E(() => [G.Game.player.item, G.Game.player.item2, document.getElementById('scr-item').classList.contains('hidden')]);
-		A(JSON.stringify(k2) === '["weaknesspolicy","sitrusberry",true]', 'key 2 replaces slot 2', JSON.stringify(k2));
-		// HUD: both slots drawn with their names
+		const k2 = await E(() => { const pl = G.Game.player; return [pl.item, pl.item2, document.getElementById('scr-item').classList.contains('hidden'), pl.critChance]; });
+		const crit = await E(() => { const pl = G.Game.player; const c = pl.critChance; pl.equip('scopelens', 1); const d = pl.critChance - c; pl.equip('weaknesspolicy', 1); return d; });
+		A(JSON.stringify(k2.slice(0, 3)) === '["weaknesspolicy",null,true]' && near(crit, 0.15), 'key 2 switches: the Scope Lens comes off (its +15% crit with it)', JSON.stringify([k2, crit]));
+		await E(() => G.Game.offerItem('expertbelt'));
+		await E(() => document.querySelectorAll('#item-cards .card')[0].click());
+		const kept = await E(() => [G.Game.player.item, G.Game.player.item2]);
+		A(JSON.stringify(kept) === '["weaknesspolicy",null]', '"Keep" changes nothing', JSON.stringify(kept));
+		// HUD: the one slot drawn with its name
 		const drawn = await E(async () => {
 			G.UI.hide('scr-pause');
-			const pl = G.Game.player; pl.equip('heavyboots', 1); pl.equip('safetygoggles', 2);
+			const pl = G.Game.player; pl.equip('heavyboots', 1);
 			const seen = [];
 			const P = CanvasRenderingContext2D.prototype, f = P.fillText;
 			P.fillText = function (t, ...a) { seen.push(String(t)); return f.call(this, t, ...a); };
@@ -562,30 +556,13 @@ try {
 			return [...new Set(seen)];
 		});
 		// (the HUD draws the Spanish source; the i18n canvas wrapper underneath translates it)
-		A(drawn.includes('Botas Gruesas') && drawn.includes('Gafas Protectoras') && (await E(() => [G.I18n.t('Botas Gruesas'), G.I18n.t('Gafas Protectoras')].join())) === 'Heavy-Duty Boots,Safety Goggles', 'the HUD shows both held items with their names', JSON.stringify(drawn.slice(0, 40)));
+		A(drawn.includes('Botas Gruesas') && (await E(() => G.I18n.t('Botas Gruesas'))) === 'Heavy-Duty Boots', 'the HUD shows the held item with its name', JSON.stringify(drawn.slice(0, 40)));
 		// a few of the new items lying on the ground (their icons)
 		await E(() => { const pl = G.Game.player; ['eternalice', 'sitrusberry', 'lightball', 'rarecandy', 'pureincense', 'bigorb'].forEach((id, i) => G.Pickups.drop('item', pl.x - 75 + i * 30, pl.y + 38, id)); });
 		await sleep(400);
-		await shot('hud_two_items.png');
+		await shot('hud_one_item.png');
 		await shot('hud_items_zoom.png', { x: 360, y: 440, width: 560, height: 280 });
 		await E(() => G.Pickups.clear());
-		// without the Backpack: the old 2-card choice
-		const one = await E(() => {
-			const pl = T.eq('leftovers'); pl.bag = false;
-			G.Game.offerItem('choicescarf');
-			return {};
-		});
-		await sleep(400);
-		Object.assign(one, await E(() => {
-			const pl = G.Game.player;
-			const cards = [...document.querySelectorAll('#item-cards .card')].map(c => c.innerText.replace(/\s+/g, ' ').trim());
-			const sub = document.getElementById('item-sub').innerText;
-			document.querySelectorAll('#item-cards .card')[1].click();
-			return { cards, sub, items: [pl.item, pl.item2], slots: pl.itemSlots() };
-		}));
-		A(one.slots === 1 && one.cards.length === 2 && /Keep Leftovers/.test(one.cards[0]) && /Switch to Choice Scarf/.test(one.cards[1]) && /only hold one/.test(one.sub) && JSON.stringify(one.items) === '["choicescarf",null]',
-			'without the Backpack: one slot, the 2-card choice as before', JSON.stringify(one));
-		await E(() => { G.Game.player.bag = true; });
 	}
 
 	// ================= 11. Second Chance =================

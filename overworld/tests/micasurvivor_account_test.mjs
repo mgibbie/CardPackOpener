@@ -261,8 +261,11 @@ try {
 	await g3.ctx.close();
 
 	// ===== 4. the leaderboard =====
-	await call('run-score', { mode: 'micasurvivor', time: 1500, kills: 4200, level: 41, dex: 6 }, tokens.bob);
-	await call('run-score', { mode: 'micasurvivor', time: 2, kills: 0, level: 1, dex: 7, shiny: true }, tokens.dave);
+	// (DLC D16: the new client sends rules 2 and ranks on the new board, runboard:micasurvivor:r2; an old client's score, no
+	//  rules, goes to the legacy board, which the Leaderboard screen shows under "Legacy")
+	await call('run-score', { mode: 'micasurvivor', time: 1500, kills: 4200, level: 41, dex: 6, rules: 2 }, tokens.bob);
+	await call('run-score', { mode: 'micasurvivor', time: 2, kills: 0, level: 1, dex: 7, shiny: true, rules: 2 }, tokens.dave);
+	await call('run-score', { mode: 'micasurvivor', time: 3600, kills: 9000, level: 60, dex: 9 }, tokens.dave);
 	await a1.page.evaluate(() => { G.MicaAccount.MIN_T = 0; });   // (a real run must last 120 s to count)
 	await a1.page.click('#scr-menu [data-go=play]');
 	A(await waitFor(() => a1.page.evaluate(() => G.Game.state === 'playing'), 15000), 'alice starts a run');
@@ -272,8 +275,8 @@ try {
 	await waitFor(() => a1.visible('scr-pause'), 5000);
 	await a1.page.click('#btn-quit');
 	A(await waitFor(() => a1.visible('scr-over'), 8000), 'the run ends (summary)');
-	A(await waitFor(() => (row('runboard:micasurvivor') || []).some(e => e.name === 'alice'), 10000), 'the run is on the micasurvivor board');
-	const mine = (row('runboard:micasurvivor') || []).find(e => e.name === 'alice') || {};
+	A(await waitFor(() => (row('runboard:micasurvivor:r2') || []).some(e => e.name === 'alice'), 10000) && !(row('runboard:micasurvivor') || []).some(e => e.name === 'alice'), 'the run is on the micasurvivor board of the new rules (runboard:micasurvivor:r2), not the legacy one');
+	const mine = (row('runboard:micasurvivor:r2') || []).find(e => e.name === 'alice') || {};
 	A(mine.time >= 4 && mine.time <= 20 && mine.dex === partnerA && typeof mine.kills === 'number' && mine.level >= 1, 'with its time, kills, level and partner', JSON.stringify(mine));
 	await a1.page.click('#btn-again');
 	await waitFor(() => a1.visible('scr-menu'), 8000);
@@ -288,6 +291,13 @@ try {
 	A(lb.rows.map(r => r.who).join(',') === 'bob,alice,dave' && lb.rows[0].t === '25:00' && lb.rows[1].mine && lb.rows.every(r => r.sprite), 'top list in order, times formatted, your row highlighted, partner sprites', JSON.stringify(lb.rows));
 	A(/Your best rank: #2/.test(lb.me) && lb.filters === 'none', 'your rank under the list; the Firebase filters are hidden', JSON.stringify(lb));
 	await a1.shot('account_leaderboard.png');
+	// (DLC D16) the Legacy tab: the board from before the new rules, read-only
+	await a1.page.click('#rk-rules [data-rules=legacy]');
+	A(await waitFor(() => a1.page.evaluate(() => { const r = [...document.querySelectorAll('#rk-list .rk-row .who b')].map(b => b.textContent); return r.length === 1 && r[0] === 'dave'; }), 8000)
+		&& await a1.page.evaluate(() => document.querySelector('#rk-rules [data-rules=legacy]').classList.contains('on') && /before the new rules/.test(document.getElementById('rk-me').textContent)),
+		'the "Legacy" tab lists the board from before the new rules (an old client\'s score), and says it is read-only');
+	await a1.page.click('#rk-rules [data-rules=current]');
+	A(await waitFor(() => a1.page.evaluate(() => document.querySelectorAll('#rk-list .rk-row').length === 3), 8000), '"Current" goes back to the new board');
 
 	A(external.length === 0, 'no request to any non-localhost origin', external.slice(0, 5).join(' | '));
 	A(a1.errors.length === 0, 'no console errors', a1.errors.slice(0, 5).join(' | '));
