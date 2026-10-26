@@ -8,8 +8,10 @@
 //                a kit is 4 of MicaSurvivor's own 66 moves (owner decision #12: hand-picked from our move set), scored
 //                by what the line really learns; HAND overrides the picks where the score alone reads wrong
 //   types, names G.DEX (micasurvivor/js/data/pokedex.js); the abilities (class passives) are G.Abilities at runtime
-// The roster (owner, 2026-10-19, Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md): 249 League entries. D4 builds 78 of them
-// (BUILT below); the other 171 are STUBS with the batch that builds them (D4b / D4c / D4d).
+// The roster (owner, 2026-10-19, Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md): 249 League entries (248 families: the owner's
+// count lists Snorunt twice, as Glalie and as Froslass). D4 built 78 of them; D13 builds the other 170 (D4b / D4c / D4d), so
+// the League is complete and there are no stubs. The 78 keep their D4 data byte for byte: they are generated first, in
+// the same order, so the challenge rotation they took is the same; the 170 continue it.
 import fs from 'fs';
 import path from 'path';
 import vm from 'vm';
@@ -51,7 +53,7 @@ const MEGA_REST = [302, 303, 307, 309, 318, 322, 333, 353, 433, 359, 361, 427, 4
   677, 686, 688, 690, 701, 739, 767, 780, 870, 951, 969, 978];
 const LEG_ALL = Object.values(DEX_BY).filter(p => p.leg).map(p => p.dex);
 const LEG_REST = LEG_ALL.filter(d => !LEG1.includes(d) && !(d >= 789 && d <= 792));   // (Cosmog's line is three-stage: D4b)
-const STARTERS = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393];   // the starter trios: free (owner)
+const STARTERS = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393];   // the starter trios: free (owner: all 12 Gen 1-4 starters)
 
 // ---------------- evolutions ----------------
 // The 7 the overworld tables (Gen 1-4 era) don't carry, from the games' own rules (Bulbapedia "Evolution" pages):
@@ -63,10 +65,20 @@ const SUPPLEMENT = {
   mimejr: [{ type: 'move', param: 'mimic', target: 'mrmime' }],   // Gen 4 (level up knowing Mimic)
   mrmime: [{ type: 'level', param: 42, target: 'mrrime' }],   // Gen 8 (Galarian Mr. Mime, Lv 42)
   scyther: [{ type: 'item', param: 'blackaugurite', target: 'kleavor' }],   // Legends: Arceus (Black Augurite)
+  // (D13: the Gen 6-9 ones the tables don't carry either)
+  flabebe: [{ type: 'level', param: 19, target: 'floette' }],   // Gen 6 (Lv 19)
+  steenee: [{ type: 'move', param: 'stomp', target: 'tsareena' }],   // Gen 7 (level up knowing Stomp)
+  pawmo: [{ type: 'other', param: 'walk1000', target: 'pawmot' }],   // Gen 9 (level up after 1,000 steps in Let's Go mode)
+  dipplin: [{ type: 'move', param: 'dragoncheer', target: 'hydrapple' }],   // Gen 9 (level up knowing Dragon Cheer)
+  kubfu: [{ type: 'item', param: 'scrollofdarkness', target: 'urshifu' }],   // Gen 8 (the Scroll of Darkness / of Waters)
+  meltan: [{ type: 'other', param: 'candy400', target: 'melmetal' }],   // Pokémon GO (400 Meltan Candy)
 };
 const evosOf = k => (extra[k] && extra[k].evos || []).concat(SUPPLEMENT[k] || []);
 // PokéBonk's level overrides (study 2.1): the bug lines that evolve twice before Lv 10 go at 8 / 36; Magikarp at 40.
-const OVERRIDE = { metapod: 8, butterfree: 36, kakuna: 8, beedrill: 36, silcoon: 8, cascoon: 8, beautifly: 36, dustox: 36, gyarados: 40 };
+const OVERRIDE = { metapod: 8, butterfree: 36, kakuna: 8, beedrill: 36, silcoon: 8, cascoon: 8, beautifly: 36, dustox: 36, gyarados: 40,
+  // (D13, ours in the same spirit: the League's latest evolution stays Lv 55, Dragonite's and Tyranitar's, which a Classic clear
+  //  reaches with room to spare; the real 64 / 60 would need ~90 % of a full clear's XP)
+  zweilous: 49, drakloak: 49, hydreigon: 55, dragapult: 55 };   // (their middle stages a level sooner: a stage comes at least 6 levels after the last)
 /**
  * The evolution tree of a family: {dex: [[toDex, level], ...]}. A level evolution keeps its level; a stone / trade /
  * friendship / move one gets a level (study 2.1: "stones mapped to a level"): 18 from a base form of a three-stage
@@ -151,6 +163,28 @@ const HAND = {
   355: ['lick', 'hex', 'shadow-ball', 'will-o-wisp'],               // Duskull
   387: ['razor-leaf', 'bulldoze', 'leaf-storm', 'giga-drain'],      // Turtwig
   403: ['thunder-shock', 'bite', 'discharge', 'thunderbolt'],       // Shinx
+  // D13 (D4b / D4c / D4d): where the score picked a filler (Tackle, Substitute) over the line's own moves
+  495: ['vine-whip', 'razor-leaf', 'giga-drain', 'leaf-storm'],     // Snivy
+  498: ['ember', 'flame-wheel', 'karate-chop', 'flamethrower'],     // Tepig (Emboar: Fire / Fighting)
+  501: ['water-gun', 'bubble-beam', 'swords-dance', 'hydro-pump'],  // Oshawott
+  656: ['water-gun', 'quick-attack', 'dark-pulse', 'hydro-pump'],   // Froakie (Greninja: Water / Dark)
+  722: ['razor-leaf', 'aerial-ace', 'hex', 'leaf-storm'],           // Rowlet (Decidueye: Grass / Ghost)
+  813: ['ember', 'quick-attack', 'flame-wheel', 'flamethrower'],    // Scorbunny
+  816: ['water-gun', 'bubble', 'bubble-beam', 'hydro-pump'],        // Sobble
+  906: ['razor-leaf', 'bite', 'giga-drain', 'leaf-storm'],          // Sprigatito (Meowscarada: Grass / Dark)
+  912: ['water-gun', 'aerial-ace', 'karate-chop', 'hydro-pump'],    // Quaxly (Quaquaval: Water / Fighting)
+  382: ['water-gun', 'bubble-beam', 'ice-beam', 'hydro-pump'],      // Kyogre
+  383: ['mud-shot', 'bulldoze', 'flamethrower', 'rock-slide'],      // Groudon
+  483: ['metal-claw', 'dragon-rage', 'flash-cannon', 'meteor-mash'], // Dialga
+  484: ['water-gun', 'dragon-rage', 'bubble-beam', 'hydro-pump'],   // Palkia
+  487: ['hex', 'dragon-rage', 'shadow-ball', 'will-o-wisp'],        // Giratina
+  493: ['hyper-voice', 'psychic', 'shadow-ball', 'meteor-mash'],    // Arceus
+  716: ['fairy-wind', 'dazzling-gleam', 'psybeam', 'aqua-ring'],    // Xerneas
+  800: ['confusion', 'psycho-cut', 'psychic', 'flash-cannon'],      // Necrozma
+  888: ['metal-claw', 'dazzling-gleam', 'quick-attack', 'swords-dance'], // Zacian
+  889: ['metal-claw', 'aura-sphere', 'karate-chop', 'harden'],      // Zamazenta
+  890: ['sludge', 'dragon-rage', 'toxic', 'dragon-dance'],          // Eternatus
+  1024: ['tackle', 'rock-throw', 'hyper-voice', 'harden'],          // Terapagos
 };
 /** The line's species keys (every stage of the tree, base first). */
 function stagesOf(base, tree) { const out = [base], q = [base]; while (q.length) { const d = q.shift(); for (const [to] of tree[d] || []) { out.push(to); q.push(to); } } return out; }
@@ -214,6 +248,7 @@ function rankOf(base, finalBst) {
 //   ko    KOs in Expedition runs       kot   KOs with a member of type t guard guardians beaten
 //   evo   evolutions in runs           mat   Maturity reached (1 / 2)   lv    a run's best level
 //   league  League members you can play
+//   hard    maps won on Hard or Nightmare   night  maps won on Nightmare (D13: the legendaries' challenges)
 const ROT = {
   common: [t => ({ k: 'runs', n: 1 }), t => ({ k: 'kot', t, n: 150 }), t => ({ k: 'zone', n: 2 }), t => ({ k: 'lv', n: 12 }), t => ({ k: 'runs', n: 3 })],
   uncommon: [t => ({ k: 'kot', t, n: 500 }), t => ({ k: 'guard', n: 2 }), t => ({ k: 'evo', n: 2 }), t => ({ k: 'lv', n: 20 }), t => ({ k: 'zone', n: 3 })],
@@ -226,43 +261,70 @@ const LEGEND_CH = {
   146: { all: [{ k: 'kot', t: 'fire', n: 1000 }, { k: 'wins', n: 1 }] },         // Moltres
   150: { all: [{ k: 'league', n: 30 }, { k: 'wins', n: 5 }] },                  // Mewtwo
 };
-const PSEUDO = new Set([147, 246, 371, 374, 443]);   // the 600-BST lines: a win AND a long run
+const PSEUDO = new Set([147, 246, 371, 374, 443, 633, 704, 782, 885, 996]);   // the 600-BST lines: a win AND a long run (D13: + Deino, Goomy, Jangmo-o, Dreepy, Frigibax)
+// D13 (D4d): every other legendary / mythical, PokéBonk-style "a special challenge" (study 2.1: the birds "KO with a type +
+// win", Mewtwo "N League members + wins"). Ours, by the final stage's base-stat total:
+//   >= 670 (the box legendaries: Lugia, Kyogre, Dialga, Zekrom, Xerneas, Solgaleo, Zacian, Koraidon...): 60 League members and a
+//          map won on Hard (or Nightmare)
+//   600-669 (the mythicals and the other big ones: Latias, Jirachi, Heatran, Victini, Meloetta, Diancie, Magearna...): KO 1,500
+//          with a member of its type and win 3 maps
+//   < 600 (the trios and quartets: the beasts, the Regis, the lake trio, the Swords, the Tapus, the Treasures of Ruin, the
+//          Paradox, Kubfu, Type: Null...): KO 1,000 with a member of its type and win a map (the birds' own challenge)
+//   Arceus: 150 League members and a map won on Nightmare
+const legendCh = (d, fb) => {
+  const t = DEX_BY[d].types[0];
+  if (d === 493) return { all: [{ k: 'league', n: 150 }, { k: 'night', n: 1 }] };
+  if (fb >= 670) return { all: [{ k: 'league', n: 60 }, { k: 'hard', n: 1 }] };
+  if (fb >= 600) return { all: [{ k: 'kot', t, n: 1500 }, { k: 'wins', n: 3 }] };
+  return { all: [{ k: 'kot', t, n: 1000 }, { k: 'wins', n: 1 }] };
+};
 
 // ---------------- build ----------------
 const built = [...D4A, ...MEGA12, ...LEG1];
 if (built.length !== 78 || new Set(built).size !== 78) throw new Error('roster: ' + built.length);
+// D13: the other 170 (D4b's 54 three-stage Gen 5-9 families, D4c's 31 Mega families, D4d's 85 legendaries and mythicals)
+// (each FAMILY is one member, starting at its first stage: Silvally, Urshifu and Melmetal are Type: Null's, Kubfu's and Meltan's
+//  evolutions, so the owner's 170 species are 167 families: 245 members in all)
+const D13all = [...new Set([...D4B, ...MEGA_REST, ...LEG_REST])];
+if (D13all.length !== 170 || D13all.some(d => built.includes(d))) throw new Error('D13 roster: ' + D13all.length);
+const laterStage = new Set();
+for (const d of [...built, ...D13all]) { const t = treeOf(d); for (const s of stagesOf(d, t)) if (s !== d) laterStage.add(s); }
+const D13 = D13all.filter(d => !laterStage.has(d));
+if (D13.length !== 167) throw new Error('D13 families: ' + D13.length + ' (' + D13all.filter(d => laterStage.has(d)) + ')');
+const BATCH = {};
+for (const d of D4B) BATCH[d] = 'D4b';
+for (const d of MEGA_REST) BATCH[d] = 'D4c';
+for (const d of LEG_REST) BATCH[d] = 'D4d';
 const base = {}, members = [], rot = { common: 0, uncommon: 0, rare: 0 };
-for (const d of built.slice().sort((a, b) => a - b)) {
+// (the D4 78 first, in their order, so their challenges are the same as D4's; then the 170, continuing the rotation)
+for (const d of [...built.slice().sort((a, b) => a - b), ...D13.slice().sort((a, b) => a - b)]) {
   if (!KEY[d] || !DEX_BY[d]) throw new Error('no species ' + d);
   const tree = treeOf(d), line = stagesOf(d, tree);
   for (const s of line) base[s] = bs(s);
   const finals = line.filter(s => !tree[s]), fb = Math.max(...finals.map(bstOf));
   const rank = rankOf(d, fb);
   let ch = null;
-  if (rank === 'legendary') ch = LEGEND_CH[d];
+  if (rank === 'legendary') ch = LEGEND_CH[d] || legendCh(d, fb);
   else if (PSEUDO.has(d)) ch = { all: [{ k: 'wins', n: 2 }, { k: 'lv', n: 35 }] };
   else if (rank !== 'starter') { const l = ROT[rank]; ch = l[rot[rank]++ % l.length](DEX_BY[d].types[0]); }
   const kit = kitOf(d, tree);
   for (const id of kit) if (!Moves.BY_ID[id]) throw new Error('kit move ' + id + ' of ' + d);
-  members.push({ dex: d, rank, role: roleOf(finals[0]), kit, evo: tree, ch });
+  members.push(Object.assign({ dex: d, rank, role: roleOf(finals[0]), kit, evo: tree, ch }, BATCH[d] ? { b: BATCH[d] } : {}));
 }
-const stubs = [];
-for (const d of D4B) stubs.push({ dex: d, batch: 'D4b' });
-for (const d of [...new Set(MEGA_REST)]) stubs.push({ dex: d, batch: 'D4c' });
-for (const d of LEG_REST) stubs.push({ dex: d, batch: 'D4d' });
-const entries = members.length + D4B.length + MEGA_REST.length + LEG_REST.length;   // (the owner's count: Snorunt twice)
-if (entries !== 249) throw new Error('League entries: ' + entries);
-for (const s of stubs) if (!DEX_BY[s.dex]) throw new Error('stub ' + s.dex);
+members.sort((a, b) => a.dex - b.dex);
+const stubs = [];   // (D13: none left)
+const entries = members.length + 1 + 3;   // (the owner's 249 list Snorunt twice, as Glalie and as Froslass, and Silvally, Urshifu, Melmetal on their own)
+if (entries !== 249 || members.length !== 245) throw new Error('League entries: ' + entries);
 
 const J = o => JSON.stringify(o);
 const lines = [
   "'use strict';",
   '/* ============ expedition/league-data.js — GENERATED by tools/micasurvivor/gen_league.mjs, do not edit by hand ============',
-  ' * The Expedition League (MicaSurvivor DLC D4): ' + members.length + ' members built, ' + stubs.length + ' stubs for later batches (' + entries + ' League entries, owner 2026-10-19).',
+  ' * The Expedition League (MicaSurvivor DLC D4, completed in D13): ' + members.length + ' members (' + entries + ' League entries, owner 2026-10-19: Snorunt counted twice).',
   ' *   members  {dex (the family\'s first stage), rank, role, kit: 4 move ids (unlocked at Lv 1 / 2 / 4 / 7), evo: {dex: [[toDex, level]]},',
-  ' *            ch: the challenge (null: free)}',
+  ' *            ch: the challenge (null: free), b: the batch that built it (D4b / D4c / D4d; none: D4)}',
   ' *   base     the real base stats of every stage: [hp, atk, def, spa, spd, spe] (overworld/data/species_battle.json)',
-  ' *   stubs    {dex, batch}: League entries a later batch builds (D4b three-stage Gen 5-9, D4c Mega families, D4d legendaries)',
+  ' *   stubs    none since D13 (the D4b three-stage Gen 5-9 families, the D4c Mega families and the D4d legendaries are members now)',
   ' * Evolutions come from overworld/data/species_extra.json (+ 7 newer ones, cited in the generator), stones / trades /',
   ' * friendship mapped to a level (study 2.1).',
   ' */',

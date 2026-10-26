@@ -68,11 +68,13 @@ const T0 = Date.now();
 		const extra = JSON.parse(fs.readFileSync(path.join(AROOT, 'overworld/data/species_extra.json'), 'utf8'));
 		const key = {}; for (const [k, s] of Object.entries(battle)) if (s.num > 0 && s.num <= 1025 && (!key[s.num] || k.length < key[s.num].length)) key[s.num] = k;
 		const M = D.members, DEX = ctx.G.DEX_BY, MV = ctx.G.Moves.BY_ID;
-		const byBatch = b => D.stubs.filter(s => s.batch === b).length;
-		A(M.length === 78 && D.stubs.length === 170 && byBatch('D4b') === 54 && byBatch('D4c') === 31 && byBatch('D4d') === 85,
-			'the roster: 78 members built, 170 stubs (D4b 54, D4c 31: the owner\'s 32 count Snorunt twice, D4d 85): the owner\'s 249 entries', JSON.stringify({ m: M.length, s: D.stubs.length, b: byBatch('D4b'), c: byBatch('D4c'), d: byBatch('D4d') }));
-		const ids = new Set(M.map(m => m.dex).concat(D.stubs.map(s => s.dex)));
-		A(ids.size === 248 && [...ids].every(d => DEX[d]), 'every entry is a real Pokémon of the game, no family twice (248 families)', ids.size);
+
+		// (DLC D13 built the stubs: micasurvivor_expedition_leaguemode_test.mjs checks the whole League; this test keeps D4's 78 as they were)
+		const byBatch = b => M.filter(m => m.b === b).length;
+		A(M.length === 245 && D.stubs.length === 0 && M.filter(m => !m.b).length === 78 && byBatch('D4b') === 54 && byBatch('D4c') === 31 && byBatch('D4d') === 82,
+			'the roster: D4\'s 78 members + D13\'s 167 (D4b 54, D4c 31, D4d 82: Silvally, Urshifu and Melmetal are evolutions), no stubs: the owner\'s 249 entries', JSON.stringify({ m: M.length, s: D.stubs.length, b: byBatch('D4b'), c: byBatch('D4c'), d: byBatch('D4d') }));
+		const ids = new Set(M.map(m => m.dex));
+		A(ids.size === 245 && [...ids].every(d => DEX[d]), 'every entry is a real Pokémon of the game, no family twice (245 families)', ids.size);
 		const free = M.filter(m => !m.ch).map(m => m.dex);
 		A(JSON.stringify(free) === JSON.stringify([1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393]) && M.filter(m => m.rank === 'starter').length === 12,
 			'free: the 12 starter trios of Gen 1-4 (owner: "the starter trios free"); every other member has a challenge', JSON.stringify(free));
@@ -93,9 +95,9 @@ const T0 = Date.now();
 			// every edge is the overworld's (or one of the 7 newer ones the generator cites), level edges at their real level
 			for (const [f, l] of Object.entries(m.evo)) for (const [to, lv] of l) {
 				const e = (extra[key[+f]] && extra[key[+f]].evos || []).find(x => battle[x.target] && battle[x.target].num === to);
-				const newer = { 264: 862, 57: 979, 217: 901, 221: 473, 439: 122, 122: 866, 123: 900 }[+f] === to;
+				const newer = { 264: 862, 57: 979, 217: 901, 221: 473, 439: 122, 122: 866, 123: 900, 669: 670, 762: 763, 922: 923, 1011: 1019, 891: 892, 808: 809 }[+f] === to;   // (D13: + Floette, Tsareena, Pawmot, Hydrapple, Urshifu, Melmetal)
 				if (!e && !newer) evoBad.push(f + '>' + to);
-				else if (e && e.type === 'level' && !['metapod', 'butterfree', 'kakuna', 'beedrill', 'silcoon', 'cascoon', 'beautifly', 'dustox', 'gyarados'].includes(e.target) && lv !== Math.max(e.param, lv)) evoBad.push(f + '>' + to + '@' + lv);
+				else if (e && e.type === 'level' && !['metapod', 'butterfree', 'kakuna', 'beedrill', 'silcoon', 'cascoon', 'beautifly', 'dustox', 'gyarados', 'zweilous', 'drakloak', 'hydreigon', 'dragapult'].includes(e.target) && lv !== Math.max(e.param, lv)) evoBad.push(f + '>' + to + '@' + lv);
 			}
 		}
 		A(!stats.length && stages >= 200, `the base stats of all ${stages} stages are the overworld's species_battle.json numbers`, stats.join(','));
@@ -271,7 +273,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 11, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 11 (D12)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 12, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 12 (D13)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -279,14 +281,16 @@ try {
 		const cells = [...document.querySelectorAll('#league-grid .cell')];
 		return { n: cells.length, free: cells.filter(c => !c.classList.contains('locked')).map(c => +c.dataset.dex), count: document.getElementById('league-count').innerText,
 			detail: document.getElementById('league-detail').innerText, on: (document.querySelector('#league-grid .cell.on') || {}).dataset, main: !document.getElementById('modes-main').classList.contains('hidden'),
-			later: (document.querySelector('.lg-later') || {}).innerText };
+			later: (document.querySelector('.lg-later') || {}).innerText, gen1: G.ExpLeague.D.members.filter(m => G.DEX_BY[m.dex].gen === 1).length,
+			gens: [...document.querySelectorAll('#league-gens [data-gen]')].map(c => c.innerText.replace(/\s+/g, ' ').trim()) };
 	});
-	A(lg.n === 78 && JSON.stringify(lg.free) === '[1,4,7,152,155,158,252,255,258,387,390,393]' && lg.count === 'League: 12 / 78 available' && !lg.main,
-		'the League screen: 78 members, the 12 starters playable, "League: 12 / 78 available"', JSON.stringify({ n: lg.n, free: lg.free, count: lg.count }));
+	// (DLC D13: the whole League is 245, one generation a page: Bulbasaur's, Gen 1)
+	A(lg.n === lg.gen1 && lg.n === 35 && JSON.stringify(lg.free) === '[1,4,7]' && lg.count === 'League: 12 / 245 available' && !lg.main && lg.gens.length === 9 && lg.gens[0] === 'Gen 1 3/35',
+		'the League screen: one generation a page (Gen 1: 35 members, its 3 starters playable), "League: 12 / 245 available", the 9 generation chips', JSON.stringify({ n: lg.n, free: lg.free, count: lg.count, gens: lg.gens }));
 	A(/Bulbasaur/.test(lg.detail) && /Starter/.test(lg.detail) && /Healer/.test(lg.detail) && /Lv\.? 1\s*Vine Whip/.test(lg.detail) && /Lv\.? 2\s*Razor Leaf/.test(lg.detail) && /Lv\.? 4/.test(lg.detail) && /Lv\.? 7/.test(lg.detail)
 		&& /Bulbasaur → Ivysaur \(Lv\.? 16\)/.test(lg.detail) && /Ivysaur → Venusaur \(Lv\.? 32\)/.test(lg.detail) && /Free/.test(lg.detail) && /Ability/.test(lg.detail),
 		'a member\'s card: rank, role, ability, the kit with its unlock levels (1 / 2 / 4 / 7), the evolution line with real levels, "Free"', lg.detail);
-	A(/D4b: 54/.test(lg.later || '') && /D4d: 85/.test(lg.later || ''), 'the later batches are listed under the roster (the stubs)', lg.later);
+	A(!lg.later, 'no "later batches" line any more (D13 built them all)', lg.later);
 	// a locked member: its challenge, and no way to pick it
 	await page.click('#league-grid .cell[data-dex="115"]');
 	await sleep(150);

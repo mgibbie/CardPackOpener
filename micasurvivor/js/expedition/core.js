@@ -149,9 +149,15 @@
  * totems, summoners, shrine boss, Survival legendaries, terrain profile, palette (a base biome, set here on every zone: enterZone
  * and applyX), height tint, minimap shading, hazard colours and bounce pad. A map opens when the one before it is cleared
  * (G.ExpTier.mapOpen). dv 11 (the maps' content); the `x` block is unchanged (v10: `m` already names the map).
+ *
+ * D13 (League mode, js/expedition/league.js, meta.js): the whole League (245 members: D4b's three-stage Gen 5-9 families, D4c's
+ * Mega families, D4d's legendaries and mythicals) and League mode itself, a SCREEN (G.Expedition.hub): the roster by
+ * generation, each member's kit, evolutions, Ultimate, records and challenge, "Play Classic / Survival" with it, the HQ's tabs
+ * and the League board (server/mp.mjs: counted from the saved League). dv 12 (new members play); the `x` block is unchanged
+ * (v10: `l` already names the member and its form).
  */
 G.Exp = (() => {
-  const dv = 11;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 12;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape; D13: the whole League): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
   const XV = 10;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows

@@ -4,8 +4,9 @@
  * is the only Expedition code a base boot loads; it is small and does nothing on its own:
  *
  *   MODES / NAME / DESC / ICON   the Expedition entries of "Choose a mode" (js/ui/modes-ui.js, the "Expedition"
- *                                group). D0b shipped them all as "Coming soon"; D3 turns Classic on (ENABLED), Survival
- *                                and League stay "Coming soon". G.Modes.plan() plans an enabled one ({mode, dv, map, diff}).
+ *                                group). D0b shipped them all as "Coming soon"; D3 turns Classic on (ENABLED), D11 Survival,
+ *                                D13 League. G.Modes.plan() plans an enabled run mode ({mode, dv, map, diff}); League is a
+ *                                HUB (a screen: the roster, the HQ and the League board), never a run.
  *   DV                           the Expedition content version. Every Expedition run carries {mode: 'exp-…', dv}:
  *                                in its replay header and meta, its live snapshots and its co-op lobby. Base runs
  *                                carry no dv (the fields are optional; old replays and lobbies stay valid).
@@ -46,6 +47,8 @@ G.I18n.add({
   'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.': 'Viridian Forest, Mt. Moon and Cerulean Cape: 3 zones with heights, a guardian at each altar, the portal and the shrine. Win a map to open the next.',   // (DLC D12)
   'Aguanta todo lo que puedas en un mapa de Expedición, sin final.': 'Last as long as you can on an Expedition map, with no end.',
   'Atrapa y entrena a los Pokémon de tu Liga.': 'Catch and train the Pokémon of your League.',
+  // (DLC D13: League mode is the League's own screen: the roster, the HQ, the League board)
+  'Tu Liga: 245 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.': 'Your League: 245 members with their kit, evolutions, Ultimate and challenge; the Lab, tasks, achievements and the League board.',
   'La Expedición llegará pronto.': 'Expedition is coming soon.',
   'Tu juego no está actualizado: recarga la página.': 'Your game is out of date: reload.',
   'No se pudo cargar la Expedición. Recarga la página.': "Couldn't load Expedition. Reload the page.",
@@ -62,26 +65,31 @@ G.I18n.add({
 });
 
 G.Expedition = (() => {
-  const DV = 11;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11. Older dv replays / snapshots still play, replayOk)
+  const DV = 12;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
     'exp-classic': 'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.',   // (DLC D12: the 3 maps)
     'exp-survival': 'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.',
-    'exp-league': 'Atrapa y entrena a los Pokémon de tu Liga.'
+    'exp-league': 'Tu Liga: 245 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.'   // (DLC D13)
   };
   const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball' };
   // the launch maps and difficulties (owner decisions #6 / #8); the boards are per map + difficulty (server/mp.mjs EXP_*)
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
-  const ENABLED = new Set(['exp-classic', 'exp-survival']);   // D3: Classic is playable; D11: Survival too; League stays "Coming soon"
+  const ENABLED = new Set(['exp-classic', 'exp-survival', 'exp-league']);   // D3: Classic is playable; D11: Survival too; D13: League
+  // DLC D13: League mode is a SCREEN, not a run (study 5.3: "a roster screen with challenges, kits and Ultimates, the Lab,
+  // research, tasks and boards"): its card opens the League (G.ExpMeta's League view); G.Modes.plan never plans it as a run.
+  const HUB = new Set(['exp-league']);
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
     'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
+  /** DLC D13: a mode that opens a screen instead of starting a run (League). */
+  const hub = m => HUB.has(m);
   /** The map / difficulty a new Expedition run gets. DLC D9: the device's pick (G.ExpTier.pick: clamped to a playable map
    *  and an unlocked tier, once the Expedition code is loaded; before that, the saved pick as it is, for the button's label). */
   function pick() {
@@ -210,8 +218,8 @@ G.Expedition = (() => {
   };
 
   return {
-    DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS,
-    isExp, enabled, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
+    DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS, HUB,
+    isExp, enabled, hub, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

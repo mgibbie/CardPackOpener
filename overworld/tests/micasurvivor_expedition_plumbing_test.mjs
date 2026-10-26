@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 11;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11)
+const DV = 12;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11; D13 League mode: 12)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -223,7 +223,10 @@ try {
 		A(st.X === 'object' && !st.loaded && st.frozen === null && st.exp === 'undefined' && st.save === 'undefined' && st.scripts === 0 && !st.movesFrozen,
 			'base boot: the registry is there (G.Expedition) but no Expedition code ran: no G.Exp / G.ExpSave, nothing frozen', JSON.stringify(st));
 		A(st.seams.length >= 4 && st.seams.every(n => n === 0), 'base boot: no listener on any seam (run.start, run.end, replay.header, spectate.snap; D1: net.frame)', st.seams.join(','));
-		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic","exp-survival"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic (D3) and Survival (D11) enabled, content version ' + DV, JSON.stringify(st));
+		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic","exp-survival","exp-league"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic (D3), Survival (D11) and League (D13) enabled, content version ' + DV, JSON.stringify(st));
+		// (DLC D13: every Expedition mode is playable now. This page turns League off again, so the "Coming soon" gate below, which a
+		//  future mode will use, is still tested: the card, the pad, G.Flow.play and the network log)
+		await d.E(() => { G.Expedition.ENABLED.delete('exp-league'); });
 		A(d.expFetches().length === 0, 'the network log: a base boot fetches nothing from js/expedition/', d.expFetches().join(' '));
 		// a base run: still nothing, and its run / replay / snapshot carry no dv
 		const base = await d.E(async () => {

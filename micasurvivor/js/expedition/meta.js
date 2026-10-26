@@ -114,7 +114,18 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Aguanta {x} minutos en Supervivencia': 'Last {x} minutes in Survival', 'Vence a {x} jefes de hito': 'Beat {x} milestone bosses',
   'Vence a un jefe de hito': 'Beat a milestone boss', 'Sella {x} pactos': 'Seal {x} pacts', 'Derrota a Mewtwo en Supervivencia': 'Defeat Mewtwo in Survival',
   'Superviviente': 'Survivor', 'Resistencia': 'Endurance', 'Medianoche': 'Midnight', 'Leyenda de la Supervivencia': 'Survival Legend',
-  'Pactista': 'Pact maker', 'Cazahitos': 'Milestone hunter'
+  'Pactista': 'Pact maker', 'Cazahitos': 'Milestone hunter',
+  // (D13: League mode: the League's own screen, its board, tasks and achievements)
+  'Expedición · Liga': 'Expedition · League', 'Liga': 'League', 'Clasificación': 'Leaderboard', 'Clasificación de la Liga': 'League leaderboard',
+  'Miembros de la Liga que puedes jugar. Los cuenta el servidor con tu Liga guardada.': 'League members you can play, counted by the server from your saved League.',
+  'Inicia sesión en Magepunk para aparecer en la clasificación.': 'Sign in to Magepunk to appear on the leaderboard.', 'Cargando...': 'Loading...',
+  'Tu Liga: {x} miembros · {x} legendarios': 'Your League: {x} members · {x} legendary', 'Nadie todavía.': 'Nobody yet.', 'Sin conexión': 'Offline',
+  '{x} miembros · {x} legendarios': '{x} members · {x} legendary', 'Puesto #{x}': 'Rank #{x}',
+  'Por mapa y dificultad': 'By map and difficulty', 'Clásico: puntuación y contrarreloj': 'Classic: score and time attack', 'Supervivencia': 'Survival',
+  'Llega a la última etapa {x} veces': 'Reach a final stage {x} times', 'Llega a la última etapa': 'Reach a final stage',
+  'Ten {x} legendarios en la Liga': 'Have {x} legendaries in the League', 'Ten un legendario en la Liga': 'Have a legendary in the League',
+  'Liga de cincuenta': 'League of fifty', 'Liga centenaria': 'League of a hundred', 'Liga completa': 'Full League', 'Gran Entrenador': 'Grand Trainer',
+  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends'
 
 });
 G.I18n.add(G.ExpEN);
@@ -261,6 +272,7 @@ G.ExpMeta = (() => {
       case 'miles': return S.get('surv.miles');
       case 'mewtwo': return S.get('surv.mewtwo');
       case 'pacts': return S.get('surv.pacts');
+      case 'leagueLeg': return LG() ? LG().roster().filter(d => LG().BY[d].rank === 'legendary').length : 0;   // (D13)
     }
     return 0;
   }
@@ -271,13 +283,14 @@ G.ExpMeta = (() => {
     alphas: 'Captura {x} alfas', shinies: 'Captura {x} variocolor', gold: 'Consigue {x} medalla de oro', winNight: 'Gana un mapa en Pesadilla',
     champion: 'Consigue {x} medalla de campeón', freed: 'Libera {x} Pokémon enjaulados', altars: 'Usa {x} altares', league: 'Ten {x} miembros de la Liga',
     leagueCaught: 'Captura {x} miembros de la Liga', avatars: 'Consigue {x} avatares', lab: 'Sube el Laboratorio a {x} niveles', tasks: 'Completa {x} tareas',
-    survMin: 'Aguanta {x} minutos en Supervivencia', miles: 'Vence a {x} jefes de hito', pacts: 'Sella {x} pactos', smins: 'Aguanta {x} minutos en Supervivencia'   // (D11)
+    survMin: 'Aguanta {x} minutos en Supervivencia', miles: 'Vence a {x} jefes de hito', pacts: 'Sella {x} pactos', smins: 'Aguanta {x} minutos en Supervivencia',   // (D11)
+    leagueLeg: 'Ten {x} legendarios en la Liga', finals: 'Llega a la última etapa {x} veces'   // (D13)
   };
   // (one: the singular, "Win a map" rather than "Win 1 maps")
   const GOAL_ONE = { wins: 'Gana un mapa', runs: 'Termina una partida', guardians: 'Vence a un guardián', altars: 'Usa un altar', alphas: 'Captura un alfa',
     catches: 'Captura un Pokémon', evos: 'Evoluciona una vez', freed: 'Libera a un Pokémon enjaulado', shinies: 'Captura un variocolor', gold: 'Consigue una medalla de oro',
     champion: 'Consigue una medalla de campeón', avatars: 'Consigue un avatar', leagueCaught: 'Captura un miembro de la Liga', mat: 'Alcanza la madurez',
-    mewtwo: 'Derrota a Mewtwo en Supervivencia', miles: 'Vence a un jefe de hito' };
+    mewtwo: 'Derrota a Mewtwo en Supervivencia', miles: 'Vence a un jefe de hito', leagueLeg: 'Ten un legendario en la Liga', finals: 'Llega a la última etapa' };
   const goalText = (k, n) => (n === 1 && GOAL_ONE[k] ? T.t(GOAL_ONE[k]) : F(GOAL_TEXT[k] || '{x}', n.toLocaleString('en')));
 
   // ---------------- achievements (32; the set `ach`) ----------------
@@ -300,8 +313,12 @@ G.ExpMeta = (() => {
     ['task30', 'Constante', 'tasks', 30, 500],
     // (D11: Survival)
     ['surv10', 'Superviviente', 'survMin', 10, 150], ['surv30', 'Resistencia', 'survMin', 30, 500], ['miles10', 'Cazahitos', 'miles', 10, 300],
-    ['mewtwo', 'Medianoche', 'mewtwo', 1, 1200, 'Leyenda de la Supervivencia'], ['pact10', 'Pactista', 'pacts', 10, 300]
-  ].map(([id, name, k, n, star, title, frame]) => ({ id, name, k, n, star, title: title || null, frame: frame || null }));
+    ['mewtwo', 'Medianoche', 'mewtwo', 1, 1200, 'Leyenda de la Supervivencia'], ['pact10', 'Pactista', 'pacts', 10, 300],
+    // (D13: League mode. LATE: their titles go after the season ribbons in TITLES, so the card's saved title index still means the same)
+    ['league50', 'Liga de cincuenta', 'league', 50, 600, null, null, 1], ['league100', 'Liga centenaria', 'league', 100, 1200, 'Gran Entrenador', null, 1],
+    ['league245', 'Liga completa', 'league', 245, 1500, 'Campeón de la Liga', null, 1],
+    ['legend1', 'Leyenda viva', 'leagueLeg', 1, 400, null, null, 1], ['legend10', 'Panteón', 'leagueLeg', 10, 1200, 'Guardián de leyendas', null, 1]
+  ].map(([id, name, k, n, star, title, frame, late]) => ({ id, name, k, n, star, title: title || null, frame: frame || null, late: !!late }));
   const ACH_BY = {};
   for (const a of ACH) ACH_BY[a.id] = a;
   const achDone = a => stat(a.k) >= a.n;
@@ -509,8 +526,11 @@ G.ExpMeta = (() => {
     ['win', 'Gana {x} mapas', 'wins', 'sum', null, [1, 2, 3]],
     // (D11: Survival: one run's best minutes, and milestone bosses)
     ['surv', 'Aguanta {x} minutos en Supervivencia', 'smins', 'max', [8, 15, 25], [30, 40, 50]],
-    ['miles', 'Vence a {x} jefes de hito', 'miles', 'sum', [1, 3, 5], [6, 12, 20]]
-  ].map(([id, text, m, mode, d, w]) => ({ id, text, m, mode, d, w }));
+    ['miles', 'Vence a {x} jefes de hito', 'miles', 'sum', [1, 3, 5], [6, 12, 20]],
+    // (D13: League mode. SINCE: it joins the pool from that UTC day / week on, so the tasks already dealt that day and week stay
+    //  as they are: a bigger pool shuffles into other tasks, and a slot's progress is the slot's, not the task's)
+    ['final', 'Llega a la última etapa {x} veces', 'finals', 'sum', [1, 2, 3], [4, 8, 12], Date.UTC(2026, 10, 2)]
+  ].map(([id, text, m, mode, d, w, since]) => ({ id, text, m, mode, d, w, since: since || 0 }));
   const TASK_BY = {};
   for (const t of TASKS) TASK_BY[t.id] = t;
   function mix(...vals) {
@@ -535,7 +555,7 @@ G.ExpMeta = (() => {
    */
   function tasksOf(kind, now, who) {
     const per = periodOf(kind, now), rng = G.DLC.rng(mix(per, kind === 'd' ? 0xDA1 : 0x3EE, who == null ? whoKey() : who));
-    const pool = TASKS.filter(t => (kind === 'd' ? t.d : t.w)).map(t => t.id);
+    const pool = TASKS.filter(t => (kind === 'd' ? t.d : t.w) && (!t.since || per >= periodOf(kind, t.since))).map(t => t.id);   // (D13: a newer task from its day / week on)
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const ids = pool.slice(0, 3), rr = rerollOf(kind, per);
     if (rr && rr.slot >= 0 && rr.slot < 3) ids[rr.slot] = pool[3 + (mix(per, rr.slot, 0x2E) % (pool.length - 3))];
@@ -616,7 +636,8 @@ G.ExpMeta = (() => {
   const frameOpen = f => (f.k ? stat(f.k) >= f.n : f.ach ? achHave(f.ach) : f.ribbon ? Sv().get('season.best') >= f.ribbon : true);
   const frameHow = f => (f.k ? goalText(f.k, f.n) : f.ach ? T.t(ACH_BY[f.ach].name) : f.ribbon ? (f.ribbon >= 4 ? 'Élite / Maestro' : 'Top 50') : '');
   // titles: the achievements' (ACH order), then the season ribbons' (owner #5: ribbons become titles / frames)
-  const TITLES = ACH.filter(a => a.title).map(a => ({ name: a.title, ach: a.id })).concat([{ name: 'Élite de temporada', ribbon: 4 }, { name: 'Maestro de temporada', ribbon: 5 }]);
+  const TITLES = ACH.filter(a => a.title && !a.late).map(a => ({ name: a.title, ach: a.id })).concat([{ name: 'Élite de temporada', ribbon: 4 }, { name: 'Maestro de temporada', ribbon: 5 }],
+    ACH.filter(a => a.title && a.late).map(a => ({ name: a.title, ach: a.id })));   // (D13: the late ones after the ribbons: the saved pick is an index)
   const titleOpen = t => (t.ach ? achHave(t.ach) : Sv().get('season.best') >= t.ribbon);
   const CARD_K = 4096;
   const pickOf = k => { const v = Sv().get('card.' + k); return v ? v % CARD_K : null; };
@@ -768,7 +789,7 @@ G.ExpMeta = (() => {
       if (add <= 0) continue;
       rsum += add;
       Svv.bump('rs.' + fam, add);
-      if (research(fam) >= needOf(+fam) && Svv.add('avatar', fam)) out.push(F('¡Avatar nuevo: {x}!', (G.DEX_BY[fam] || {}).name || '#' + fam));
+      if (research(fam) >= needOf(+fam) && Svv.add('avatar', fam)) out.push(F('¡Avatar nuevo: {x}!', G.DEX_BY[fam] ? T.t(G.DEX_BY[fam].name) : '#' + fam));
     }
     if (rsum) out.push(F('Investigación: +{x}', rsum));
     if (S.used.length) out.push(F('Potenciadores: {x}', S.used.map(id => T.t(BOOST_BY[id].name)).join(', ')));
@@ -780,7 +801,8 @@ G.ExpMeta = (() => {
       balls: ECr ? ECr.log.balls : 0, altars: ECr ? ECr.log.altars : 0, freed: ECr ? ECr.log.freed : 0,
       casts: UL() && UL().run ? UL().run.casts || 0 : 0, reactions: RX() && RX().run ? RX().run.n || 0 : 0,
       alphas: CPr ? CPr.log.alpha : 0, catches: CPr ? CPr.n : 0, evos: LG() && LG().run ? LG().run.evo || 0 : 0,
-      smins: 0, miles: 0   // (D11: Survival's, below)
+      smins: 0, miles: 0,   // (D11: Survival's, below)
+      finals: finalStage() ? 1 : 0   // (D13: the run ended at its line's last stage)
     };
     if (sum.mode === 'exp-survival' && G.ExpSurv) Object.assign(m, G.ExpSurv.metrics(sum));
     out.push(...taskRun(m, now));
@@ -829,8 +851,11 @@ G.ExpMeta = (() => {
 }
 `;
   let el = null, onClose = null, scrollWas = 0;
-  const ui = { tab: 'lab' };
+  const ui = { tab: 'lab', league: false };
   const TABS = [['lab', 'Laboratorio'], ['items', 'Objetos'], ['archive', 'Archivo'], ['research', 'Investigación'], ['tasks', 'Tareas'], ['ach', 'Logros'], ['card', 'Tarjeta']];
+  // (D13: League mode is this panel's League view: the roster first, the HQ's tabs, then the League board)
+  const LEAGUE_TABS = [['roster', 'Liga']].concat(TABS, [['board', 'Clasificación']]);
+  const tabsNow = () => (ui.league ? LEAGUE_TABS : TABS);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const img = (n, s = 32) => `<img src="${ICON(n)}" width="${s}" height="${s}" alt="" loading="lazy">`;
   const bar = (a, b) => `<div class="xm-bar"><i style="width:${Math.round(100 * Math.min(1, b ? a / b : 1))}%"></i></div>`;
@@ -848,10 +873,12 @@ G.ExpMeta = (() => {
   const back0 = () => document.querySelector('#scr-modes [data-back]');
   let clock = () => Date.now();   // (the panel's "today": a UI boundary; tests can pin it)
   /** Opens the panel on the mode select (the Expedition code is loaded). onBack: called after it closes. */
-  function open(onBack, tab) {
+  function open(onBack, tab, opts) {
     if (!mount()) return false;
     onClose = onBack || null;
+    ui.league = !!(opts && opts.league);   // (D13: League mode's view; the Classic card's "League HQ" button opens the HQ as before)
     if (tab) ui.tab = tab;
+    if (!tabsNow().some(t => t[0] === ui.tab)) ui.tab = tabsNow()[0][0];
     $m('modes-main').classList.add('hidden');
     el.classList.remove('hidden');
     if (back0()) back0().classList.add('hidden');
@@ -882,16 +909,60 @@ G.ExpMeta = (() => {
   function render() {
     if (!el) return;
     el.innerHTML = `
-      <div class="xm-head"><h3>${esc(T.t('Expedición · cuartel de la Liga'))}</h3>
+      <div class="xm-head"><h3>${esc(T.t(ui.league ? 'Expedición · Liga' : 'Expedición · cuartel de la Liga'))}</h3>
         <span class="xm-bal" id="xm-bal" title="${esc(T.t('Pokémonedas'))}">${G.Icons ? G.Icons.html('coin', 22) : ''} ${fmt(balance())}</span>
         <button id="xm-back" class="btn small" type="button">${esc(T.t('Atrás'))}</button></div>
       <p class="xm-note">${esc(T.t('Tus Pokémonedas de siempre: se ganan jugando (partidas, tareas y logros) y nunca se venden.'))}</p>
-      <div class="filters xm-tabs">${TABS.map(([k, l]) => `<button type="button" class="chip${ui.tab === k ? ' on' : ''}" data-xtab="${k}">${esc(T.t(l))}</button>`).join('')}</div>
+      <div class="filters xm-tabs">${tabsNow().map(([k, l]) => `<button type="button" class="chip${ui.tab === k ? ' on' : ''}" data-xtab="${k}">${esc(T.t(l))}</button>`).join('')}</div>
       <div id="xm-body" class="xm-list"></div>`;
     $m('xm-back').onclick = () => close();
     el.querySelectorAll('[data-xtab]').forEach(b => { b.onclick = () => { ui.tab = b.dataset.xtab; sfx('select'); render(); }; });
     const body = $m('xm-body');
-    ({ lab: tabLab, items: tabItems, archive: tabArchive, research: tabResearch, tasks: tabTasks, ach: tabAch, card: tabCard }[ui.tab] || tabLab)(body);
+    ({ lab: tabLab, items: tabItems, archive: tabArchive, research: tabResearch, tasks: tabTasks, ach: tabAch, card: tabCard, roster: tabRoster, board: tabBoard }[ui.tab] || tabLab)(body);
+  }
+  // ---------------- D13: League mode's own tabs ----------------
+  /** The roster (js/expedition/league.js renderPicker, its hub view): a member's card with "Play Classic / Survival". */
+  function tabRoster(body) {
+    LG().renderPicker(body, d => toast(T.f('Miembro de la Liga: {x}', G.DEX_BY[d] ? T.t(G.DEX_BY[d].name) : '#' + d)), null, { hub: true, onPlay: mode => play(mode) });
+  }
+  /** Play a run of mode with the picked member, from League mode (the panel closes quietly: the run's end goes to the menu). */
+  function play(mode) {
+    close(true);
+    return G.Flow && G.Flow.play ? G.Flow.play(mode) : false;
+  }
+  let lbSeq = 0;
+  /** The League board (server/mp.mjs: counted from your saved League) and the way to the boards per map + difficulty. */
+  function tabBoard(body) {
+    const lg = LG(), have = lg ? lg.roster() : [], legs = have.filter(d => lg.BY[d].rank === 'legendary').length;
+    const A = G.MicaAccount, me = A && A.name();
+    body.innerHTML = `<h4>${esc(T.t('Clasificación de la Liga'))}</h4>
+      <p class="xm-note" style="display:block">${esc(T.t('Miembros de la Liga que puedes jugar. Los cuenta el servidor con tu Liga guardada.'))} <b id="xm-lbme">${esc(F('Tu Liga: {x} miembros · {x} legendarios', have.length, legs))}</b></p>
+      <div class="xm-grid" id="xm-lb">${me ? `<p class="sub">${esc(T.t('Cargando...'))}</p>` : `<p class="sub">${esc(T.t('Inicia sesión en Magepunk para aparecer en la clasificación.'))}</p>`}</div>
+      <h4>${esc(T.t('Por mapa y dificultad'))}</h4>
+      <div class="xm-pick"><button type="button" data-tview="score">${esc(T.t('Clásico: puntuación y contrarreloj'))}</button><button type="button" data-tview="survival">${esc(T.t('Supervivencia'))}</button></div>`;
+    body.querySelectorAll('[data-tview]').forEach(b => act(b, () => {
+      const view = b.dataset.tview;
+      sfx('select');
+      close(true);
+      if (G.ExpTier) G.ExpTier.open(() => { if (G.ModesUI && G.ModesUI.openLeagueMode) G.ModesUI.openLeagueMode('board'); }, view);
+    }));
+    if (!me) return;
+    const seq = ++lbSeq;
+    // (your save's latest first: the server counts the League it holds)
+    Promise.resolve(Sv().flush ? Sv().flush() : null).catch(() => null).then(() => A.call('run-leaderboard', { mode: G.Expedition.BOARD, board: 'league' })).then(d => {
+      const box = $m('xm-lb');
+      if (seq !== lbSeq || !box || ui.tab !== 'board') return;
+      if (!d || !d.ok) { box.innerHTML = `<p class="sub">${esc(T.t('Sin conexión'))}</p>`; return; }
+      const top = d.body.top || [], you = d.body.you;
+      const row = (e, rank, mine) => `<div class="xm-c${mine ? ' done' : ''}" data-lbrow="${rank}"><span class="xm-tag">${rank === 'you' ? esc(you.rank ? F('Puesto #{x}', you.rank) : '-') : '#' + rank}</span><span><b translate="no">${esc(e.name || me)}</b> <small>${esc(F('{x} miembros · {x} legendarios', e.members | 0, e.legends | 0))}</small></span><span></span><small></small></div>`;
+      box.innerHTML = top.map((e, i) => row(e, i + 1, e.name === me)).join('') || `<p class="sub">${esc(T.t('Nadie todavía.'))}</p>`;
+      if (you && !top.some(e => e.name === me)) box.insertAdjacentHTML('beforeend', row(you, 'you', true));
+    });
+  }
+  /** D13: did this run end at its line's last stage (a League member with an evolution line)? */
+  function finalStage() {
+    const L = LG(), r = L && L.run, m = r && L.BY[r.member];
+    return !!(m && L.stagesOf(m).length > 1 && !L.nextOf(m, r.form).length);
   }
   const act = (b, fn) => { b.onclick = e => { e.stopPropagation(); fn(); }; };
   function tabLab(body) {
@@ -946,7 +1017,7 @@ G.ExpMeta = (() => {
       const cv = G.UI && G.UI.spriteCanvas ? G.UI.spriteCanvas(d, 32, 32, { scale: 1 }) : document.createElement('canvas');
       if (!have && !done) cv.style.filter = 'brightness(0)';
       c.appendChild(cv);
-      c.insertAdjacentHTML('beforeend', `<span><b>${esc((G.DEX_BY[d] || {}).name || '#' + d)}</b> <small>${fmt(Math.min(have, need))} / ${fmt(need)}</small></span><span class="xm-tag${done ? '' : ' lock'}">${done ? esc(T.t('Avatar')) : ''}</span><small>${bar(have, need)}</small>`);
+      c.insertAdjacentHTML('beforeend', `<span><b>${esc(G.DEX_BY[d] ? T.t(G.DEX_BY[d].name) : '#' + d)}</b> <small>${fmt(Math.min(have, need))} / ${fmt(need)}</small></span><span class="xm-tag${done ? '' : ' lock'}">${done ? esc(T.t('Avatar')) : ''}</span><small>${bar(have, need)}</small>`);
       grid.appendChild(c);
     }
   }
@@ -1018,7 +1089,7 @@ G.ExpMeta = (() => {
     tasksOf, reroll, taskRun, dayOf, weekOf, periodOf, dailyStreak, checkAch, achHave,
     card, chooseAvatar, chooseFrame, chooseTitle, frameOpen, titleOpen,
     rowNow, effects, begin, after, reset, labNow, statOf, excluded, charm, dawn, useMaster, onKill, onFreed, tick, row, applyRow, record,
-    open, close, back, render,
+    open, close, back, render, tabsNow, finalStage,
     get run() { return S; }, get shown() { return isShown(); }, get ui() { return ui; }, get el() { return el; },
     /** For tests: pin the panel's "today". */
     set clock(f) { clock = typeof f === 'function' ? f : () => Date.now(); }

@@ -347,6 +347,52 @@ function msurvExpSurvParts(body, time) {
 	if (!isInt(p.catches, 0, MSURV_EXP_MAX_CATCH)) return { error: 'implausible catches' };
 	return { parts: p };
 }
+// DLC D13 (micasurvivor/js/expedition/league.js, G.ExpLeague): the League mode's board, ranked by League members you can play.
+//   runboard:micasurvivor_expedition:league   top 100 by members, then legendary members, then who got there first (an exact key)
+// The count is the SERVER's, from the merged Expedition save of micasurvivor-exp-save-put (never a number the client sends):
+// the 12 free starters + the members caught (league.own) + the ones a challenge made playable before D8's catch (league.met
+// and never league.wild), each a League family's first stage of MSURV_EXP_LEAGUE (= js/expedition/league-data.js, 245). It is
+// written only when your count (or your legendaries) grows, so most saves write nothing more. Reads: run-leaderboard board 'league'.
+const MSURV_EXP_LEAGUE = new Set([1, 4, 7, 10, 13, 16, 29, 32, 41, 43, 56, 60, 63, 66, 69, 74, 79, 81, 92, 95, 111, 115, 116, 120, 123, 127, 129, 137, 142, 144, 145, 146,
+	147, 150, 151, 152, 155, 158, 172, 173, 174, 175, 179, 187, 214, 216, 220, 227, 228, 239, 240, 243, 244, 245, 246, 249, 250, 251, 252, 255, 258, 263, 265, 270, 273,
+	280, 287, 293, 298, 302, 303, 304, 307, 309, 318, 322, 328, 333, 353, 355, 359, 361, 363, 371, 374, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 390, 393,
+	396, 403, 406, 427, 433, 439, 440, 443, 447, 459, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 498, 501, 506, 519, 524, 529, 531,
+	532, 535, 540, 543, 551, 559, 574, 577, 582, 599, 602, 607, 610, 622, 624, 633, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 650, 653, 656, 661, 664,
+	667, 669, 677, 679, 686, 688, 690, 701, 704, 716, 717, 718, 719, 720, 721, 722, 725, 728, 731, 736, 739, 761, 767, 772, 780, 782, 785, 786, 787, 788, 789, 800, 801,
+	802, 807, 808, 810, 813, 816, 821, 824, 837, 840, 856, 859, 870, 885, 888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905, 906, 909, 912, 921, 928, 932, 951, 957,
+	969, 978, 996, 1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024, 1025]);
+const MSURV_EXP_LEAGUE_FREE = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393];   // (owner: all 12 Gen 1-4 starters free)
+const MSURV_EXP_LEAGUE_LEG = new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484,
+	485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 785, 786, 787, 788,
+	789, 800, 801, 802, 807, 808, 888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024, 1025]);
+/** The League members a (clean) Expedition save can play -> {members, legends} (= G.ExpLeague.roster()). */
+function msurvExpLeagueCount(save) {
+	const sets = (save && save.sets) || {}, wild = new Set(sets['league.wild'] || []), have = new Set(MSURV_EXP_LEAGUE_FREE);
+	for (const id of sets['league.own'] || []) if (MSURV_EXP_LEAGUE.has(+id)) have.add(+id);
+	for (const id of sets['league.met'] || []) if (MSURV_EXP_LEAGUE.has(+id) && !wild.has(id)) have.add(+id);
+	let legends = 0;
+	for (const d of have) if (MSURV_EXP_LEAGUE_LEG.has(d)) legends++;
+	return { members: have.size, legends };
+}
+/** A merged Expedition save -> the League board (only when the count grows). -> {better, rank} */
+async function msurvExpLeagueBoard(store, username, user, save) {
+	const { members, legends } = msurvExpLeagueCount(save);
+	const KEY = 'runboard:micasurvivor_expedition:league', BEST = 'micasurvivor_expedition:league';
+	user.runBest = user.runBest || {};
+	const prev = user.runBest[BEST];
+	const cmp = (a, b) => (a.members - b.members) || (a.legends - b.legends);
+	const run = { members, legends };
+	if (members <= MSURV_EXP_LEAGUE_FREE.length || (prev && cmp(run, prev) <= 0)) return { better: false, rank: null };
+	const now = Date.now();
+	user.runBest[BEST] = { ...run, when: now };
+	await store.setJSON(username, user);
+	const board = ((await store.get(KEY)) || []).filter(e => e.name !== username);
+	board.push({ name: username, ...run, when: now });
+	board.sort((a, b) => cmp(b, a) || a.when - b.when);
+	const capped = board.slice(0, 100);
+	await store.setJSON(KEY, capped);
+	return { better: true, rank: (capped.findIndex(e => e.name === username) + 1) || null };
+}
 /** A clear time's medal: 1 bronze, 2 silver, 3 gold, 4 champion (= G.ExpTier.medalOf). */
 function msurvExpMedal(time, diff) {
 	const k = 1 + MSURV_EXP_MEDAL_TIER * Math.max(0, MSURV_EXP_DIFFS.indexOf(diff));
@@ -1995,6 +2041,15 @@ export default async function handler(req, env) {
 			return json({ error: 'an Expedition score goes to the micasurvivor_expedition board', fields: expFields }, 400);
 		}
 		let expSub = '';
+		// DLC D13: the League board (no map or difficulty): read here; it is written by micasurvivor-exp-save-put from the saved
+		// League, so a score for it is refused (the count is never the client's)
+		if (mode === 'micasurvivor_expedition' && (body.board === 'league' || body.expMode === 'exp-league')) {
+			if (action === 'run-score') return json({ error: 'the League board follows your saved League (micasurvivor-exp-save-put)' }, 400);
+			const lb = (await store.get('runboard:micasurvivor_expedition:league')) || [];
+			const lr = lb.findIndex(e => e.name === username) + 1;
+			const mineL = (user.runBest || {})['micasurvivor_expedition:league'];
+			return json({ board: 'league', top: lb.slice(0, 50), you: mineL ? { ...mineL, rank: lr || null } : null });
+		}
 		if (mode === 'micasurvivor_expedition') {
 			if (!MSURV_EXP_MAPS.includes(body.map) || !MSURV_EXP_DIFFS.includes(body.diff)) return json({ error: 'an Expedition board needs its map and difficulty', maps: MSURV_EXP_MAPS, diffs: MSURV_EXP_DIFFS }, 400);
 			if (action === 'run-score' && (!MSURV_EXP_MODE_RE.test(String(body.expMode)) || !msurvExpDvOk(body.dv))) return json({ error: 'an Expedition score needs its mode and content version' }, 400);
@@ -2868,7 +2923,10 @@ export default async function handler(req, env) {
 		const stored = cur && cur.save ? cleanMsurvExpSave(cur.save).save : null;
 		const merged = stored ? mergeMsurvExpSave(stored, c.save) : c.save;
 		if (JSON.stringify(merged).length > MSURV_EXP_SAVE_MAX) return json({ error: 'save too large', max: MSURV_EXP_SAVE_MAX }, 413);
-		if (await store.setIfRev(key, { rev: expect + 1, save: merged, updated_at: Date.now() }, expect)) return json({ ok: true, rev: expect + 1, save: merged });
+		if (await store.setIfRev(key, { rev: expect + 1, save: merged, updated_at: Date.now() }, expect)) {
+			const lg = await msurvExpLeagueBoard(store, username, user, merged);   // (DLC D13: the League board follows the saved League)
+			return json({ ok: true, rev: expect + 1, save: merged, ...(lg.better ? { league: lg } : {}) });
+		}
 		const now = await store.get(key);
 		return json({ error: 'stale', rev: (now && now.rev) || 0, save: (now && now.save) || null }, 409);
 	}

@@ -190,7 +190,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const r0 = await startClassic(page);
-	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 11 && r0.on && r0.coins === 0, 'Classic starts with the economy on and 0 ₽; the content version is 11 (D12)', JSON.stringify(r0));
+	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 12 && r0.on && r0.coins === 0, 'Classic starts with the economy on and 0 ₽; the content version is 12 (D13)', JSON.stringify(r0));
 	if (!r0.ok || !r0.on) throw new Error('no economy: the rest needs it');
 
 	// ======================== 1. the layout
@@ -666,7 +666,7 @@ try {
 	}, { idle: sy.idle, snap: sy.snap, ids: sy.ids, code: sy.code, seed: sy.seed });
 	A(vw.loadedBefore === false && vw.spec && vw.spec.rk === 1 && vw.spec.fb === 1 && vw.spec.un === 2 && vw.spec.ch > 0.3 && vw.spec.spot === sy.ids.spot && vw.spec.stock === 3 && !vw.spec.host && vw.spec.n === 42 && vw.spec.tip,
 		'a live spectator (a fresh page) rebuilds the 42 interactables from the seed and shows the host\'s state: the used rock and ball, the charging altar, Meowth (no tips for a viewer)', JSON.stringify(vw.spec));
-	A(vw.old && vw.old.used === 0 && vw.old.ok && !vw.old.notice && vw.old.dv === 11, 'a dv-5 / x v6 snapshot (no `o`) still loads with no notice: every interactable fresh; this build is dv 11 (D12)', JSON.stringify(vw.old));
+	A(vw.old && vw.old.used === 0 && vw.old.ok && !vw.old.notice && vw.old.dv === 12, 'a dv-5 / x v6 snapshot (no `o`) still loads with no notice: every interactable fresh; this build is dv 12 (D12)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withO > 0 && vw.replay.xi >= 2 && vw.replay.rk === 1, 'a replay keeps `o` (frame field 9) and an `xi` event per use; played back, the rock is used', JSON.stringify(vw.replay));
 	A(vw.base && vw.base.mode === 'normal' && !vw.base.zone && !vw.base.run && !vw.base.o && vw.base.mini === 0 && vw.base.loaded && vw.base.seam === 1,
 		'a Normal run in the same page (Expedition code loaded): no zone, no economy, no `x`, nothing extra on the minimap', JSON.stringify(vw.base));
