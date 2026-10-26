@@ -1948,6 +1948,43 @@ the 3.9.1 Lua (upstream main af0b656 has the same packs1.lua / sleeve.lua / poke
   series option (faces, Shiny, animation, add-ons, stills, the recipe / checksum unchanged, the viewer's saved choice, the art
   crops). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_391_batch17_test` (the pin).
 
+### The Hazard audit (2026-10-26, branch `fix/micatro-pokermon-hazards`)
+Tester reports said Hazards weren't working as intended. Line-by-line against 3.9.1 (enhancement1.lua, pokeutils.lua
+add_hazards / change_hazard_*, pokermon.lua's first_hand_drawn deal and set_ability wrap, backs1.lua / sleeve.lua, 04_mart_rare.lua,
+every hazard joker in pokejokers_07/08/12/18/20/21/31 + zzzapril_fools) and Steamodded 26.1002 (draw / first_hand_drawn,
+calculate_end_of_round_effects, quantum enhancements, card_limit): the GAMEPLAY matches. No contentRev bump (no behaviour change).
+- **Fixed (cosmetic): Pokermon's text colours.** 3.9.1 pokesprites.lua's `pokermon.colours` + its `loc_colour` hook colour every
+  `{C:poke_<name>}` / `{X:poke_<name>}`: the "+1 hazard layer" of every Hazard joker / the Debris deck is the hazard bronze
+  `#BA7333`, the Pink Seal pink, the types' `{X:poke_grass}` boxes their type colour. Ours knew none of them: `{C:poke_*}` drew the
+  default text grey and `{X:poke_*}` a red box. A mod may now register `content.loc_colours` (js/mods/registry.js `LOC_COLOURS`,
+  bound into the UI's MODREG; js/ui/markup.js reads it after the base colours); Pokermon registers the 20 of pokermon.colours.
+- **Working as 3.9.1 intends** (likely what testers hit; player-facing explanations):
+  - Dealt Hazards are NEW cards: they stay in the deck for good and come back in later draws. Only one HELD in hand at the end of
+    a round can go (1 in 3); a played or discarded Hazard is never destroyed. "Hold Hazards to the end of the round to clear them
+    out; playing or discarding them keeps them in your deck."
+  - They take hand slots: 3 dealt = 11/8, and after a play the hand only refills to 8. "Hazards fill your hand; discard them to draw
+    real cards."
+  - The deal is once per round (the first hand) and capped by the limit (3; +1 Skarmory, +1 Debris).
+  - The `hazards_on` option only keeps the hazard jokers (and, with no layer, the Boots) out of the pools: a hazard joker you still
+    get (Poké Ball, evolution) and the Debris deck still deal. "Hazards Allowed: whether Pokémon with Hazards appear in the shop."
+  - A debuffed Hazard card doesn't roll its destroy (Steamodded skips a debuffed card's calculate); a debuffed hazard joker gives no
+    layer while debuffed.
+- **Left as is, for the owner**:
+  - Steamodded re-runs a held card's whole end-of-round evaluation on each retrigger (Mime / Red Seal / Gigalith / Mega Steelix), so a
+    retriggered Hazard rolls its destroy again — but only when that card had some other end-of-round effect (e.g. Nacho's Carbink
+    makes Hazards Gold). Ours rolls once (the mod-enhancement pass is outside run.js's retrigger loop). An engine change for every
+    mod: not done here.
+  - 3.9.1's Debris Sleeve on a non-Debris deck overrides CardSleeves' `apply` without calling it, so its `no_interest` config never
+    applies (it earns interest though its text says "Earn no Interest"). Ours applies the sleeve's config like a deck: no interest,
+    as the text says.
+- **Tester evidence** (SELECT-only, 222 `mreplay:` rows, all Pokermon): 6 runs ever had a Hazard layer or Hazard cards (Cacnea, Golett,
+  Skarmory, Tarountula, Baltoy, Hisuian Qwilfish / Overqwil); re-simulated, the r17 one replays to its checksum and the older ones
+  behave as above up to where their pins diverge. No bug row and no `chat:dm:mgibbie` row mention Hazards.
+- **Tests**: `micatro/tests/mods/pokermon_hazards_test.mjs` (new; 62 passed / 4 failed on origin/main, 66 / 0 here) plays it all
+  through real actions: the deal over several rounds and the limit (Skarmory), the hand slots, the Hazard card (no rank / suit / chips,
+  the destroy only when held, ~1 in 3 over 120 rolls, not when debuffed), every hazard joker in play, the Boots, the Debris deck's
+  cash-out over 3 rounds and the sleeve alt, the option, and the colours.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

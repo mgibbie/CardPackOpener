@@ -37,8 +37,8 @@ export function markup(line, colours) {
       for (const part of spec.split(',')) {
         const [k, v0] = part.split(':');
         const v = (v0 || '').trim().toLowerCase();
-        if (k === 'C') { if (v === 'dark_edition') cls += ' dark-ed'; else st.push('color:' + (COL[v] || typeColour(v) || '#4f6367')); }
-        else if (k === 'X') { st.push('background:' + (COL[v] || '#fe5f55')); cls += ' xbox'; }
+        if (k === 'C') { if (v === 'dark_edition') cls += ' dark-ed'; else st.push('color:' + (COL[v] || modColour(v) || typeColour(v) || '#4f6367')); }
+        else if (k === 'X') { st.push('background:' + (COL[v] || modColour(v) || '#fe5f55')); cls += ' xbox'; }
         else if (k === 'V') { const c = colours && colours[(parseInt(v, 10) || 1) - 1]; const css = cssCol(c); if (css) st.push('color:' + css); }
         else if (k === 's') { const n = parseFloat(v); if (n) st.push("font-size:" + Math.round(Math.min(1.6, n) * 100) + "%"); }
         else if (k === 'f') { const ff = modFont((v0 || '').trim()); if (ff) st.push("font-family:'" + ff + "',m6x11,sans-serif"); } // (a mod font: AutumnCircus' Noto Emoji)
@@ -64,6 +64,8 @@ export function titleHtml(name, colours) {
 /** Is this tooltip a playing card's? (Balatro's card_h_popup draws a playing card's name on a white pill.) */
 export const isPlayingDesc = (desc) => !!desc && (desc.set === 'Default' || desc.set === 'Enhanced' || !!desc.playing);
 
+/** {C:<name>} / {X:<name>} of a mod's own text colour (registry LOC_COLOURS: Pokermon's {C:poke_hazard}, {X:poke_grass}). */
+const modColour = (v) => (MODREG.loc_colours && MODREG.loc_colours[v]) || null;
 /** {C:<mod consumable type>} — the type's colour (Reverie's {C:cine}, More Fluff's Colour cards). */
 function typeColour(v) {
   const t = modType(v);
@@ -74,7 +76,7 @@ function cssCol(c) {
   if (!c) return null;
   if (Array.isArray(c)) return `rgba(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)},${c[3] == null ? 1 : c[3]})`;
   const k = String(c).toLowerCase();
-  return COL[k] || (/^#/.test(k) ? k : null);
+  return COL[k] || modColour(k) || (/^#/.test(k) ? k : null);
 }
 
 /** Balatro's number_format: commas, scientific past 1e11. */

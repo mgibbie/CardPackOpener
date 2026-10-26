@@ -784,6 +784,14 @@ export const POKERMON = registerMod({
     // ones resolve to them (create_card, pools, CONSUMABLE_TYPES, loc, and 3.9.1 data whose set is the new name).
     set_aliases: { poke_energy: 'Energy', poke_item: 'Item' },
     attributes: POKE_ATTRIBUTES, // (pokeconstants.lua's SMODS.Attribute list; systems/attributes.js)
+    // 3.9.1 pokesprites.lua pokermon.colours + its loc_colour hook: {C:poke_<name>} / {X:poke_<name>} in the text are these
+    // colours (the Hazard layer's bronze {C:poke_hazard}, the Pink Seal's {C:poke_pink}, the types' {X:poke_grass}...). Cosmetic.
+    loc_colours: {
+      poke_dark: '#0086a5', poke_lightning: '#f8f800', poke_fire: '#f81020', poke_water: '#38b8f8', poke_earth: '#e97333',
+      poke_fairy: '#ff3db6', poke_fighting: '#b85838', poke_colorless: '#c8c0f8', poke_psychic: '#c135ff', poke_metal: '#888080',
+      poke_grass: '#289830', poke_dragon: '#c8a800', poke_bird: '#f7b58c', poke_pink: '#ff7abf', poke_pocket: '#e8c069',
+      poke_hazard: '#ba7333', poke_sun: '#f48e62', poke_rain: '#6169ff', poke_sand: '#e1c019', poke_snow: '#82c8e8',
+    },
     rarities: [
       { key: 'poke_safari', name: 'Safari', weight: 0, badge_colour: '#F2C74E' },
       { key: 'poke_mega', name: 'Mega', weight: 0, badge_colour: '#E8578E' },
