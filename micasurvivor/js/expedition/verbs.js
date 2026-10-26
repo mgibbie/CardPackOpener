@@ -209,17 +209,19 @@ G.ExpVerbs = (() => {
   }
 
   // ---------------- each step (js/entities/player.js update) ----------------
-  /** Before the move: input, the air arc, slide, surf and climb speeds, pads. Changes pl.svx / svy. */
-  function step(pl, dt, ax, ay) {
+  /** Before the move: input, the air arc, slide, surf and climb speeds, pads. Changes pl.svx / svy.
+   *  (DLC D11: inp = {hop, slide, held} drives an entity that isn't this page's player: the local co-op partner, by player 2's
+   *  pad or its AI (js/systems/localcoop.js). Without it, your own keys / pad / buttons, as before.) */
+  function step(pl, dt, ax, ay, inp) {
     const z = G.World.zone;
     if (!z) return;
     const V = ensure(pl);
     if (pl.slideCd > 0) pl.slideCd = Math.max(0, pl.slideCd - dt);
     if (pl.padCd > 0) pl.padCd -= dt;
     if (pl.squash > 0) pl.squash -= dt;
-    const ctl = !pl.frozen && !pl.remote && !pl.dead;
-    const hopP = take('hop') && ctl || (ctl && G.Input.tap('space'));
-    const slideP = take('slide') && ctl || (ctl && (G.Input.tap('shiftleft') || G.Input.tap('shiftright')));
+    const ctl = inp ? !pl.frozen && !pl.dead : !pl.frozen && !pl.remote && !pl.dead;
+    const hopP = inp ? !!inp.hop && ctl : take('hop') && ctl || (ctl && G.Input.tap('space'));
+    const slideP = inp ? !!inp.slide && ctl : take('slide') && ctl || (ctl && (G.Input.tap('shiftleft') || G.Input.tap('shiftright')));
     pl.verb = 0;
     // a bounce pad under you (on the ground)
     if (ctl && !pl.air && !(pl.padCd > 0)) { const p = z.padAt && z.padAt(tileOf(pl.x), tileOf(pl.y)); if (p) bounce(pl, p); }
@@ -232,7 +234,7 @@ G.ExpVerbs = (() => {
     const a = pl.air;
     if (a) {
       // glide: a Flying type holding hop once the arc starts to come down; letting go drops you
-      const held = hopHeld();
+      const held = inp ? !!inp.held : hopHeld();
       if (V.glide && a.kind === 'hop' && held && a.t >= a.t0 + (a.dur - a.t0) / 2) {
         a.l0 = liftOf(a); a.kind = 'glide'; a.t0 = a.t; a.dur = Math.max(a.dur, a.hop0 + K.GLIDE_T);
       } else if (a.kind === 'glide' && !held) {

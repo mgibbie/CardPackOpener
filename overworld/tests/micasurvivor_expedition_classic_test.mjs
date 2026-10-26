@@ -111,6 +111,12 @@ const BEFORE = (save) => {
 		if (G.ExpEco && G.ExpEco.pick && G.ExpEco.pick.kind === 'friend') { G.ExpEco.closePick(); return; }
 		if (G.Game.state === 'choice' || G.UI.isOpen('scr-item')) { const c = [...document.querySelectorAll('#item-cards .card')].pop(); if (c) c.click(); }
 	};
+	/** D11: the base save before / after, without what an Expedition run pays (coins, the ledger, coinsEarned): {same, paid, keys} */
+	H.baseDiff = (t0, t1) => {
+		const strip = t => { const o = JSON.parse(t); const c = [o.coins, (o.stats && o.stats.coinsEarned) || 0]; delete o.coins; delete o.updated; delete o.led; if (o.stats) delete o.stats.coinsEarned; return [o, c]; };
+		const [a, ca] = strip(t0), [b, cb] = strip(t1), keys = [...new Set(Object.keys(a).concat(Object.keys(b)))].filter(k => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+		return { same: !keys.length && cb[0] - ca[0] === cb[1] - ca[1], paid: cb[0] - ca[0], earned: cb[1] - ca[1], keys, diff: keys.map(k => k + ': ' + JSON.stringify(a[k]).slice(0, 200) + ' -> ' + JSON.stringify(b[k]).slice(0, 200)) };
+	};
 	H.TS = () => G.World.TS;
 	H.altarXY = () => G.ExpClassic.siteXY(G.ExpClassic.sitesOf(G.World.zone).altar);
 	H.toAltar = () => { const pl = G.Game.player, [x, y] = H.altarXY(); pl.x = x; pl.y = y; pl.zMask = null; pl.air = null; G.World.collide(pl); G.Camera.x = pl.x; G.Camera.y = pl.y; };
@@ -189,19 +195,19 @@ try {
 		cards: [...document.querySelectorAll('#modes-exp [data-exp]')].map(b => ({ id: b.dataset.exp, soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim() })),
 		on: G.Expedition.MODES.filter(G.Expedition.enabled), dv: G.Expedition.DV,
 	}));
-	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id !== 'exp-classic');
-	A(JSON.stringify(ui.on) === '["exp-classic"]' && ui.dv === 8, 'the registry: Classic enabled, Survival and League not; the content version is 8 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8)', JSON.stringify(ui));
+	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id === 'exp-league');
+	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival"]' && ui.dv === 11, 'the registry: Classic and Survival enabled (D11), League not; the content version is 10 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11)', JSON.stringify(ui));
 	A(!cl.soon && cl.aria !== 'true' && !/Coming soon/.test(cl.txt) && /^Expedition · Classic .*Viridian Forest/.test(cl.txt), 'Classic is playable: no "Coming soon", not aria-disabled, says Viridian Forest (in English)', JSON.stringify(cl));
-	A(rest.length === 2 && rest.every(c => c.soon && c.aria === 'true' && /Coming soon$/.test(c.txt)), 'Survival and League still say "Coming soon" (aria-disabled)', JSON.stringify(rest));
+	A(rest.length === 1 && rest.every(c => c.soon && c.aria === 'true' && /Coming soon$/.test(c.txt)), 'League still says "Coming soon" (aria-disabled; Survival is playable since D11)', JSON.stringify(rest));
 	A(ui.h === 'Expedition', 'the group heading is "Expedition" (no "coming soon" now one is playable)', ui.h);
-	await page.click('#modes-exp [data-exp=exp-survival]');
+	await page.click('#modes-exp [data-exp=exp-league]');
 	await sleep(200);
 	const toast = await E(page, () => { const t = [...document.querySelectorAll('.toast')].pop(); return t ? t.innerText : ''; });
-	A(/coming soon/i.test(toast) && await E(page, () => G.Game.state === 'ui'), 'clicking Survival says "coming soon" and starts nothing', toast);
+	A(/coming soon/i.test(toast) && await E(page, () => G.Game.state === 'ui'), 'clicking League says "coming soon" and starts nothing', toast);
 	await page.click('#modes-exp [data-exp=exp-classic]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpClassic && G.ExpClassic.on), 8000), 'clicking Classic starts an Expedition Classic run (the code lazy-loads)');
 	const st0 = await E(page, () => { window.__t.freeze(); const S = G.ExpClassic.run; return { mode: G.Game.mode, dv: G.Modes.run.dv, map: S.map, zone: S.zone, ph: S.ph, z: G.World.zone && G.World.zone.zone, biome: G.World.biome, events: S.plan.events.length }; });
-	A(st0.mode === 'exp-classic' && st0.dv === 8 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
+	A(st0.mode === 'exp-classic' && st0.dv === 11 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
 
 	// ======================== 2. the plan
 	const pl2 = await E(page, () => {
@@ -362,9 +368,9 @@ try {
 		hf = G.Hooks.reduce('net.frame', { k: 'f' }, m).x;
 		return { x: snap.x, hf, seed: G.World.seed, zone: S.zone, hash: G.World.zone.hash, charge: S.charge, n: S.n, ph: S.ph, specials: [...S.specials.values()].map(s => [s.e.id, s.kind]), snap };
 	});
-	A(xs.x && xs.x.xv === 8 && xs.x.c && xs.x.c.p === 0 && xs.x.c.q > 0 && xs.x.c.n === xs.n && Array.isArray(xs.x.c.k) && xs.x.c.k.length >= 2,
+	A(xs.x && xs.x.xv === 10 && xs.x.c && xs.x.c.p === 0 && xs.x.c.q > 0 && xs.x.c.n === xs.n && Array.isArray(xs.x.c.k) && xs.x.c.k.length >= 2,
 		'a live snapshot carries the x block (v4 since D4) with `c` (phase, altar charge, events fired, the special enemies)', JSON.stringify(xs.x));
-	A(xs.hf && xs.hf.xv === 8 && xs.hf.c && JSON.stringify(xs.hf.c) === JSON.stringify(xs.x.c), 'a co-op host frame carries the same `c`', JSON.stringify(xs.hf));
+	A(xs.hf && xs.hf.xv === 10 && xs.hf.c && JSON.stringify(xs.hf.c) === JSON.stringify(xs.x.c), 'a co-op host frame carries the same `c`', JSON.stringify(xs.hf));
 
 	// ======================== 6. a full run won
 	const win = await E(page, async () => {
@@ -381,7 +387,7 @@ try {
 		const over = document.getElementById('scr-over'), ttl = document.getElementById('over-title').innerText;
 		return { z2, z3, shrine, mew, won, state: G.Game.state, overShown: !over.classList.contains('hidden'), ttl, text: over.innerText,
 			splitsRows: over.querySelectorAll('.over-splits tr').length, wins: G.ExpSave.get('wins.viridian.normal'), clear: G.ExpSave.get('clear.viridian.normal'),
-			sp: [1, 2, 3, 4].map(z => G.ExpSave.get('split.viridian.normal.z' + z)), baseSame: JSON.stringify(G.DB.save) === s0 };
+			sp: [1, 2, 3, 4].map(z => G.ExpSave.get('split.viridian.normal.z' + z)), baseSame: window.__t.baseDiff(s0, JSON.stringify(G.DB.save)) };
 	});
 	A(win.z2 && win.z2.down && win.z3 && win.z3.down && win.shrine.zone === 4 && win.shrine.z === 4 && win.shrine.ph === 0 && win.shrine.w === 44,
 		"zones 2 and 3: each guardian beaten and each portal taken; zone 3's portal leads to the shrine (zone 4)", JSON.stringify({ z2: win.z2, z3: win.z3, shrine: win.shrine }));
@@ -389,7 +395,7 @@ try {
 	A(win.state === 'over' && win.overShown && /^EXPEDITION COMPLETE!$/.test(win.ttl) && win.splitsRows === 4 && /Viridian Forest · Normal/.test(win.text) && /Map complete!/.test(win.text) && /Splits/i.test(win.text),
 		'the victory screen: "EXPEDITION COMPLETE!", Viridian Forest · Normal, Map complete!, the 4 zone splits', JSON.stringify({ ttl: win.ttl, rows: win.splitsRows, text: (win.text || '').slice(0, 300) }));
 	A(win.wins === 1 && win.clear > 0 && win.sp.every(v => v > 0), 'the Expedition save keeps the win, the best clear and each zone\'s best split', JSON.stringify({ wins: win.wins, clear: win.clear, sp: win.sp }));
-	A(win.baseSame, 'the base save is byte-for-byte unchanged by the whole run');
+	A(win.baseSame && win.baseSame.same && win.baseSame.paid > 0, 'the base save is unchanged by the whole run but its Pokémonedas (D11: the run pays the base coins, counted as earned): +' + (win.baseSame && win.baseSame.paid), JSON.stringify(win.baseSame));
 	const spOver = await E(page, () => {
 		const out = [];
 		const tw = document.createTreeWalker(document.getElementById('scr-over'), NodeFilter.SHOW_TEXT);
@@ -436,10 +442,12 @@ try {
 		await new Promise(r => setTimeout(r, 200));
 		const e = G.Replay.last;
 		await e.ready;
-		const txt = await G.Replay.unpack(e.code);
-		return { seed: G.World.seed, mid, open, code: e.code, cInFrames: (txt.match(/"c":\{"s":/g) || []).length, hash: mid.x && mid.x.th, sites: C.sitesOf(G.World.zone) && C.sitesOf(G.World.zone).altar };
+		// (D11: `c` moved to a replay frame field of its own: count its phase changes through the replay reader)
+		const rd = await G.Replay.open(e.code), phs = [];
+		for (let i = 0; i < rd.length; i++) { const s = rd.at(i), q = s.x && s.x.c ? s.x.c.p : null; if (q != null && q !== phs[phs.length - 1]) phs.push(q); }
+		return { seed: G.World.seed, mid, open, code: e.code, cInFrames: phs.length, phs, hash: mid.x && mid.x.th, sites: C.sitesOf(G.World.zone) && C.sitesOf(G.World.zone).altar };
 	});
-	A(rec.mid && rec.mid.x && rec.mid.x.c && rec.mid.x.c.p === 1 && rec.mid.x.c.b && rec.open.x.c.p === 2 && rec.cInFrames >= 2, `the run's replay keeps \`c\` in its slow state (${rec.cInFrames} changes)`, JSON.stringify({ mid: rec.mid && rec.mid.x, open: rec.open && rec.open.x, n: rec.cInFrames }));
+	A(rec.mid && rec.mid.x && rec.mid.x.c && rec.mid.x.c.p === 1 && rec.mid.x.c.b && rec.open.x.c.p === 2 && rec.cInFrames >= 2, `the run's replay keeps \`c\` (D11: its own frame field; ${rec.cInFrames} phases: ${(rec.phs || []).join(' > ')})`, JSON.stringify({ mid: rec.mid && rec.mid.x, open: rec.open && rec.open.x, n: rec.cInFrames }));
 	await d0.ctx.close();
 
 	// a fresh page: as co-op guest, spectator, replay viewer

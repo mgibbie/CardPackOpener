@@ -28,7 +28,8 @@
  * Numbers live in K (balance; see micasurvivor/README.md "DLC D3"). Hooks for D4+ are noted where they belong.
  */
 G.I18n.add({
-  'Bosque Verde': 'Viridian Forest',
+  'Bosque Verde': 'Viridian Forest', 'Monte Moon': 'Mt. Moon', 'Cabo Celeste': 'Cerulean Cape',
+  '¡Una bandada cruza la cueva!': 'A flock crosses the cave!', '¡Una bandada cruza el cabo!': 'A flock crosses the cape!',
   'Zona {x}': 'Zone {x}', 'Santuario': 'Shrine', 'Normal': 'Normal', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare',
   '¡Un {x} alfa aparece!': 'An alpha {x} appears!',
   '¡Enjambre! Te rodean': 'Swarm! You are surrounded',
@@ -97,6 +98,9 @@ G.ExpClassic = (() => {
   // ---------------- the maps (D3: Viridian Forest; D12 adds Mt. Moon and Cerulean Cape) ----------------
   // types: the map's residents' types (study 5.3); bands: the BST of each zone's enemies (base forms, middle, final);
   // residents: hand-picked families weighted first; then every other Pokémon of those types in the band (all 1025).
+  // guardians: 3 per zone (one is drawn); legend: the shrine's boss; stampede / flock / totem / summoner: per-zone pools
+  // (summoner -> its minion); flock: the banner of its flock event. (D12: the unlock rule is G.ExpTier.mapOpen: a map opens
+  // when the one before it is cleared.)
   const MAPS = {
     viridian: {
       name: 'Bosque Verde', types: ['grass', 'bug', 'normal', 'flying'],
@@ -105,6 +109,24 @@ G.ExpClassic = (() => {
       guardians: [[15, 12, 20], [47, 49, 22], [45, 71, 18]], legend: 151,
       stampede: [[19, 84], [20, 128], [85, 128]], flock: [[16, 21], [17, 22], [18, 22]],
       totem: [[14, 11], [44, 70], [3, 15]], summoner: [[15], [18], [416]], minion: { 15: 13, 18: 16, 416: 415 }
+    },
+    // DLC D12: Mt. Moon (rock / ground / fairy, cave ledges; study 5.3: "Clefable as a guardian": the moon's own, at the shrine)
+    mtmoon: {
+      name: 'Monte Moon', types: ['rock', 'ground', 'fairy'], flockSay: '¡Una bandada cruza la cueva!',
+      bands: [[200, 360], [320, 470], [420, 590]],
+      residents: [[41, 74, 246, 35, 27, 50, 173, 104, 39], [42, 75, 47, 28, 51, 95, 138, 140, 111], [36, 76, 112, 105, 139, 141, 142, 169, 208]],
+      guardians: [[95, 28, 47], [105, 139, 141], [76, 112, 142]], legend: 36,
+      stampede: [[74, 27], [75, 111], [76, 112]], flock: [[41], [42, 41], [169, 42]],
+      totem: [[35, 74], [75, 47], [36, 76]], summoner: [[35], [139], [36]], minion: { 35: 173, 139: 138, 36: 35 }
+    },
+    // DLC D12: Cerulean Cape (water / electric / flying, islands, surf and glide gaps; study 5.3: Zapdos)
+    cerulean: {
+      name: 'Cabo Celeste', types: ['water', 'electric', 'flying'], flockSay: '¡Una bandada cruza el cabo!',
+      bands: [[180, 345], [300, 455], [400, 570]],
+      residents: [[60, 72, 54, 118, 116, 81, 100, 278, 98, 120], [61, 55, 119, 117, 82, 101, 22, 99, 86], [62, 73, 121, 130, 87, 125, 135, 26, 131]],
+      guardians: [[99, 117, 82], [121, 125, 22], [130, 131, 26]], legend: 145,
+      stampede: [[98, 60], [99, 86], [62, 87]], flock: [[278, 81], [22, 82], [22, 279]],
+      totem: [[120, 100], [119, 101], [121, 125]], summoner: [[54], [82], [130]], minion: { 54: 60, 82: 81, 130: 129 }
     }
   };
   const MAP_IDS = ['viridian', 'mtmoon', 'cerulean'];
@@ -170,8 +192,13 @@ G.ExpClassic = (() => {
 
   // ---------------- the shrine (zone 4, hand-made) ----------------
   const SHRINE = { w: 44, h: 44, ped: [0, -13] };
-  /** The shrine zone: a round grove (rock outside), a raised dais to the north with stairs, two ponds. */
+  /**
+   * The shrine zone: a round grove (rock outside), a raised dais to the north with stairs, two ponds. (D12: Mt. Moon's is a
+   * crater: rock pillars for the ponds and a crystal ring; Cerulean Cape's an island: a ring of sea round the grove, the
+   * ponds kept. The dais, its stairs and the pedestal are the same on every map.)
+   */
   function shrine(seed, map) {
+    if (map === 'mtmoon' || map === 'cerulean') return shrineD12(seed, map);
     const { w, h } = SHRINE, cx = w >> 1, cy = h >> 1;
     const d = (x, y) => Math.hypot(x - cx, (y - cy) * 1.1);
     const dais = (x, y) => Math.abs(x - cx) <= 4 && y - cy >= -16 && y - cy <= -10;
@@ -182,6 +209,27 @@ G.ExpClassic = (() => {
       hgt: (x, y) => dais(x, y) ? 1 : 0,
       ramp: (x, y) => Math.abs(x - cx) <= 1 && y - cy === -9 ? 1 : 0,
       prop: (x, y) => { const r = d(x, y); if (r > 17.6 && r <= 19.5 && (x * 7 + y * 3) % 4 === 0) return 1; if (r < 17 && r > 9 && (x * 13 + y * 5) % 11 === 0 && !dais(x, y) && !pond(x, y)) return 3; return 0; }
+    });
+  }
+  function shrineD12(seed, map) {
+    const { w, h } = SHRINE, cx = w >> 1, cy = h >> 1, cave = map === 'mtmoon';
+    const d = (x, y) => Math.hypot(x - cx, (y - cy) * 1.1);
+    const dais = (x, y) => Math.abs(x - cx) <= 4 && y - cy >= -16 && y - cy <= -10;
+    const side = (x, y) => Math.hypot(Math.abs(x - cx) - 11, y - cy - 4) < 2.6;      // Viridian's ponds: Mt. Moon's rock pillars
+    const sea = (x, y) => !cave && d(x, y) > 16.2 && d(x, y) <= 19.5;                  // Cerulean Cape: the sea round the island
+    return G.ExpTerrain.custom({
+      w, h, seed, map, zone: 4,
+      kind: (x, y) => d(x, y) > 19.5 ? 1 : sea(x, y) ? 2 : side(x, y) ? (cave ? 1 : 2) : 0,
+      hgt: (x, y) => dais(x, y) ? 1 : 0,
+      ramp: (x, y) => Math.abs(x - cx) <= 1 && y - cy === -9 ? 1 : 0,
+      prop: (x, y) => {
+        const r = d(x, y);
+        if (sea(x, y) || side(x, y) || dais(x, y) || (Math.abs(x - cx) <= 2 && y - cy >= -10 && y - cy <= -6)) return 0;   // (never on or by the stairs)
+        if (cave && r > 17.6 && r <= 19.5 && (x * 7 + y * 3) % 3 === 0) return 1;   // (the cave biome paints a tree as a crystal)
+        if (!cave && r > 15 && r <= 16.2 && (x * 7 + y * 3) % 5 === 0) return 1;
+        if (r < 15 && r > 9 && (x * 13 + y * 5) % (cave ? 13 : 11) === 0) return cave ? 2 : 3;
+        return 0;
+      }
     });
   }
   /** The zone for (seed, map, z): zones 1-3 from the generator, zone 4 the shrine. Used by the host and every viewer. */
@@ -224,22 +272,36 @@ G.ExpClassic = (() => {
   const say = (t, s = 3) => G.Spawner.say(t, s);
   const capNow = () => Math.round((G.Touch && G.Touch.active ? K.CAP_TOUCH : K.CAP) * (S && S.fs ? K.FINAL_CAP : 1) * (S ? tierOf(S.diff).cap : 1));   // (D9: the tier's cap)
 
-  /** A Classic run starts (js/expedition/core.js run.start, after zone 1 is set). */
+  /** A Classic run starts (js/expedition/core.js run.start, after zone 1 is set). (DLC D11: and a Survival run: the same
+   *  spawner, events and bosses, driven by js/expedition/survival.js; S.surv, S.zi = its phase, the land = S.zone) */
   function begin(cfg) {
     S = { map: MAPS[cfg.map] ? cfg.map : 'viridian', diff: DIFFS.includes(cfg.diff) ? cfg.diff : 'normal', seed: G.World.seed | 0,
-          zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, ended: false, dps: [] };
+          zone: 0, zs: 0, splits: [], log: [], bosses: [], won: false, ended: false, dps: [], surv: cfg.mode === 'exp-survival', zi: 0, pzs: 0 };
     zoneStart(1, 0);
     return S;
   }
   function reset() { S = null; view = null; }
+  /** D11: the zone index (0-2) of the enemies' bands and stats: the zone in Classic, the phase in Survival. */
+  const zIdx = () => (S && S.surv ? S.zi : Math.min(3, S ? S.zone : 1) - 1);
 
   function zoneStart(z, t) {
-    const p = plan(S.seed, S.map, z, S.diff);
+    const p = plan(S.seed, S.map, S.surv ? S.zi + 1 : z, S.diff);
+    if (S.surv) p.events = [];   // (D11: Survival's timeline is its own, js/expedition/survival.js; its cards follow the phase)
     Object.assign(S, { zone: z, zs: t, plan: p, n: 0, ph: 0, charge: 0, portalT: 0, fs: false, boss: null, exhSaid: false, acc: 0,
                        trick: zoneStream(S.seed, S.map, z, 0xC4), specials: new Map(), sites: sitesOf(G.World.zone) });
     G.Sprites.preload(p.cards.slice(0, 8).concat([p.guardian, p.legend], ...p.events.map(e => e.dex)), 8000);
-    if (z === 4) say(G.I18n.f('— Santuario de {x} —', G.DEX_BY[p.legend].name), 3.4);
+    if (S.surv) say(G.I18n.f('— Tierra {x} · {x} —', G.ExpSurv ? G.ExpSurv.landOf() : 1, G.I18n.t(MAPS[S.map].name)), 3.2);
+    else if (z === 4) say(G.I18n.f('— Santuario de {x} —', G.DEX_BY[p.legend].name), 3.4);
     else say(G.I18n.f('— Zona {x} · {x} —', z, G.I18n.t(MAPS[S.map].name)), 3.2);
+  }
+  /** D11: Survival's phase (0-2): the enemies' band and stats move on, and the trickle's cards are the new phase's. */
+  function setPhase(zi, t) {
+    if (!S || !S.surv) return;
+    S.zi = zi; S.pzs = t;
+    const p = plan(S.seed, S.map, zi + 1, S.diff);
+    p.events = [];
+    S.plan = p;
+    G.Sprites.preload(p.cards.slice(0, 8), 8000);
   }
 
   /** Every step of an Expedition run on the host (js/systems/spawner.js, instead of the base waves). */
@@ -249,6 +311,17 @@ G.ExpClassic = (() => {
     const alive = players.filter(p => !p.dead);
     dpsSample(t);
     tickSpecials(dt, t, alive);
+    if (S.surv) {   // (D11: Survival: milestones, phases, migration, siege flocks; the portal when the migration opens)
+      if (G.ExpSurv) G.ExpSurv.update(dt, players, t, alive);
+      if (S.ph === 2) {
+        const site = siteXY(S.sites.altar), TS = TSz();
+        const nearP = alive.some(p => G.U.dist2(p.x, p.y, site[0], site[1]) < (K.PORTAL_R * TS) ** 2);
+        S.portalT = nearP ? S.portalT + dt : Math.max(0, S.portalT - dt);
+        if (S.portalT >= K.PORTAL_T) { nextZone(t, players); return; }
+      }
+      trickle(dt, t, t - S.pzs, alive.length ? alive : players);
+      return;
+    }
     tickBoss(t);
     const site = siteXY(S.sites.altar), TS = TSz();
     const near = r => alive.some(p => G.U.dist2(p.x, p.y, site[0], site[1]) < (r * TS) ** 2);
@@ -300,20 +373,32 @@ G.ExpClassic = (() => {
   const exhaustion = (since, target) => since <= target ? 1 : Math.min(K.EXH_MAX, 1 + K.EXH_RATE * (since - target));
 
   // ---------------- bosses ----------------
-  function wake(t, alive) {
-    const legend = S.zone === 4, dex = legend ? S.plan.legend : S.plan.guardian, p = G.DEX_BY[dex], E = G.Enemies;
-    const zi = Math.min(3, S.zone) - 1, d0 = dps();
-    const hp = bossHp({ zone: S.zone, dps: d0, tier: diffIdx(S.diff), t, legend, players: Math.max(1, alive.length) });
+  /**
+   * A guardian / legendary at (x, y) (D3's wake; D11: Survival's milestone bosses too). o: {dex, legend, zone (1-4, the HP
+   * curve and target), target (s, overrides), dmgK, hpK}. -> {e, hp} (the enemy is added; its HP from your DPS, bossHp).
+   */
+  function makeBoss(o, t, alive) {
+    const legend = !!o.legend, dex = o.dex, p = G.DEX_BY[dex], E = G.Enemies;
+    const zi = Math.min(3, o.zone) - 1, d0 = dps();
+    const hp = bossHp({ zone: o.zone, dps: d0, tier: diffIdx(S.diff), t, legend, players: Math.max(1, alive.length) });
+    if (o.target) { const k = o.target / hp.target; hp.fromDps = Math.round(hp.fromDps * k); hp.hp = Math.max(hp.curve, hp.fromDps); hp.target = o.target; }
+    if (o.hpK) hp.hp = Math.round(hp.hp * o.hpK);
     const bs = E.bossScale(t), lv = (G.Game.player && G.Game.player.level) || 1;
-    const TR = tierOf(S.diff), dmg = (legend ? K.LEGEND_DMG : K.GUARD_DMG[zi]) * TR.dmg;   // (D9: the tier's damage)
+    const TR = tierOf(S.diff), dmg = (legend ? K.LEGEND_DMG : K.GUARD_DMG[zi]) * TR.dmg * (o.dmgK || 1);   // (D9: the tier's damage)
     const def = { dex, name: p.name, hp: hp.hp, spd: Math.round(G.U.clamp(40 + E.baseSpd(p) * 0.5, 40, 100)), dmg: Math.round(dmg * 1.2), xp: G.Player.xpFor(lv) * (legend ? K.LEGEND_XP : K.GUARD_XP[zi]),
       behavior: E.behaviorOf(p) === 'ranged' || legend ? 'ranged' : E.baseSpd(p) > 90 ? 'charger' : 'chase', shotDmg: Math.round(dmg * 0.55), shotCd: 1.1, range: 260 };
-    const [ax, ay] = siteXY(S.sites.altar);
-    const e = new G.Enemy(def, ax, ay - 70, { hp: 1, dmg: bs.dmg, spd: 1 }, true);
+    const e = new G.Enemy(def, o.x, o.y, { hp: 1, dmg: bs.dmg, spd: 1 }, true);
     e.xk = legend ? 'legend' : 'guardian'; e.xborn = t; e.xtarget = hp.target;
     G.EnemyMgr.add(e);
+    S.bosses.push({ zone: o.zone, dex, hp: e.maxHp, curve: hp.curve, fromDps: hp.fromDps, dps: Math.round(d0), target: hp.target, at: t, down: null });
+    return { e, hp };
+  }
+  function wake(t, alive) {
+    const legend = S.zone === 4, dex = legend ? S.plan.legend : S.plan.guardian, p = G.DEX_BY[dex];
+    const TR = tierOf(S.diff);
+    const [ax, ay] = siteXY(S.sites.altar);
+    const { e } = makeBoss({ dex, legend, zone: S.zone, x: ax, y: ay - 70 }, t, alive);
     S.boss = e; S.ph = legend ? 3 : 1; S.charge = 1; S.exhSaid = false;
-    S.bosses.push({ zone: S.zone, dex, hp: e.maxHp, curve: hp.curve, fromDps: hp.fromDps, dps: Math.round(d0), target: hp.target, at: t, down: null });
     escorts(TR.escorts, ax, ay - 70, t);   // (D9: Hard 1, Nightmare 2)
     say(G.I18n.f(legend ? '¡{x} aparece en el santuario!' : '¡{x}, el guardián, despierta!', p.name), 3.4);
     G.Camera.kick(1.1); G.Audio.sfx('boss'); G.FX.ring(ax, ay, 10, 220, legend ? '#ff9ed8' : '#ffd95e', 0.8, 6);
@@ -359,9 +444,12 @@ G.ExpClassic = (() => {
 
   /** Through the portal: the next zone (zone 3's portal: the shrine). */
   function nextZone(t, players) {
-    S.splits[S.zone - 1] = t;
+    // (D11: Survival's migration: the next land, zones 1 -> 2 -> 3 -> 1 again; no splits)
+    const z = S.surv ? S.zone % 3 + 1 : S.zone + 1;
+    if (!S.surv) S.splits[S.zone - 1] = t;
     G.EnemyMgr.clear(); G.Pickups.clear(); G.Projectiles.clear(); G.Hazards.clear(); G.Combat.clearFields();
-    G.Exp.enterZone(S.zone + 1);
+    if (S.surv && G.ExpSurv) G.ExpSurv.migrated(t);
+    G.Exp.enterZone(z);
     const mates = (G.LocalCoop && G.LocalCoop.mate ? [G.LocalCoop.mate] : []);
     for (const [i, p] of players.concat(mates).entries()) {
       if (p.remote) continue;
@@ -369,7 +457,7 @@ G.ExpClassic = (() => {
     }
     G.Camera.x = players[0].x; G.Camera.y = players[0].y;
     G.Game.flash('#ffffff', 0.7); G.Audio.sfx('biome');
-    zoneStart(S.zone + 1, t);
+    zoneStart(z, t);
   }
 
   // ---------------- spawning ----------------
@@ -396,7 +484,7 @@ G.ExpClassic = (() => {
   }
   /** Creates an enemy of the zone at (x, y). o: {ti+, hp, dmg, xp, scale, behavior, spd, kind} -> the enemy */
   function spawn(dex, x, y, t, o = {}) {
-    const zi = Math.min(3, S.zone) - 1, teff = Math.max(t, K.ZMIN[zi]), [lo, hi] = TIER_RANGE[zi];
+    const zi = zIdx(), teff = Math.max(t, K.ZMIN[zi]), [lo, hi] = TIER_RANGE[zi];
     const ti = G.U.clamp(tierAt(teff) + (o.ti || 0), lo, Math.min(5, hi + (o.ti || 0)));
     const def = defOf(dex, ti);
     if (o.behavior) def.behavior = o.behavior;
@@ -406,6 +494,9 @@ G.ExpClassic = (() => {
     const sc = G.Enemies.scale(teff), n = Math.max(1, (G.Game.everyone ? G.Game.everyone().length : 1)), TR = tierOf(S.diff);   // (D9: the tier)
     const e = new G.Enemy(def, x, y, { hp: sc.hp * G.Coop.scaleHp(n) * hpK(teff) * Math.pow(K.FINAL_HP, m) * (o.hp || 1) * TR.hp, dmg: sc.dmg, spd: sc.spd * (o.spd != null ? o.spd : 1) * TR.spd });
     e.dmg *= K.DMG_K * Math.pow(K.FINAL_DMG, m) * (o.dmg || 1) * TR.dmg;
+    // (D11: Survival: the Endless Night and the pacts' banes (enemies' HP / damage), js/expedition/survival.js foeK)
+    const sk = S.surv && G.ExpSurv ? G.ExpSurv.foeK(t, o.kind) : null;
+    if (sk) { e.maxHp = e.hp = Math.round(e.maxHp * sk.hp); e.dmg *= sk.dmg; }
     e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1) * TR.xp);
     // (D5: the Cursed Incense vitamin, +12 % difficulty a level: HP and damage)
     const cu = G.ExpItems ? G.ExpItems.total(G.Game.player, 'curse') : 0;
@@ -442,9 +533,9 @@ G.ExpClassic = (() => {
     if (S.zone === 4 && S.ph !== 3) return;   // (the shrine is quiet until the legendary is up)
     const cap = capNow();
     if (G.EnemyMgr.count >= cap) { S.acc = 0; return; }
-    const zi = Math.min(3, S.zone) - 1, teff = Math.max(t, K.ZMIN[zi]);
-    const TR = tierOf(S.diff);
-    const k = TR.amount * G.Coop.scaleRate(players.length) * (S.boss ? K.BOSS_RATE : 1) * (S.fs ? K.FINAL_SPAWN : 1) * (S.zone === 4 ? K.SHRINE_RATE : 1) * (1 + K.ZONE_RATE * zi) * (G.ExpEco ? 1 + G.ExpEco.mods().rate : 1);   // (D7: the cursed altar's + spawns)
+    const zi = zIdx(), teff = Math.max(t, K.ZMIN[zi]);
+    const TR = tierOf(S.diff), sk = S.surv && G.ExpSurv ? G.ExpSurv.foeK(t) : null;   // (D11: Survival's pacts: + spawns, + elites)
+    const k = (sk ? sk.rate : 1) * TR.amount * G.Coop.scaleRate(players.length) * (S.boss ? K.BOSS_RATE : 1) * (S.fs ? K.FINAL_SPAWN : 1) * (S.zone === 4 ? K.SHRINE_RATE : 1) * (1 + K.ZONE_RATE * zi) * (G.ExpEco ? 1 + G.ExpEco.mods().rate : 1);   // (D7: the cursed altar's + spawns)
     S.acc = Math.min(8, S.acc + G.Spawner.rate(teff) * k * dt);
     const cards = S.plan.cards, nC = Math.min(cards.length, K.CARDS0 + Math.floor(Math.max(0, zt) / K.CARD_EVERY));
     while (S.acc >= 1 && G.EnemyMgr.count < cap) {
@@ -459,7 +550,8 @@ G.ExpClassic = (() => {
       const dex = cards[ci], p = players[Math.floor(rng() * players.length) % players.length];
       const pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(dex));
       // (D9: Hard / Nightmare make a share of the trickle elites; Normal draws nothing more, so its stream is unchanged)
-      if (pt) spawn(dex, pt[0], pt[1], t, TR.elite > 0 && rng() < TR.elite ? { hp: K.ELITE.hp, dmg: K.ELITE.dmg, xp: K.ELITE.xp, scale: K.ELITE.scale, kind: 'elite' } : undefined);
+      const el = TR.elite + (sk ? sk.elite : 0);
+      if (pt) spawn(dex, pt[0], pt[1], t, el > 0 && rng() < el ? { hp: K.ELITE.hp, dmg: K.ELITE.dmg, xp: K.ELITE.xp, scale: K.ELITE.scale, kind: 'elite' } : undefined);
     }
   }
 
@@ -480,7 +572,7 @@ G.ExpClassic = (() => {
   function charge(e, dx, dy, spd, dur) { e.xrun = { dx, dy, spd, t: dur }; e.xmove = runStep; }
 
   function fire(ev, t, players) {
-    const p = players[0], rng = R(ev.seed), zi = Math.min(3, S.zone) - 1, Rr = G.Camera.outerRadius();
+    const p = players[0], rng = R(ev.seed), zi = zIdx(), Rr = G.Camera.outerRadius();
     const entry = { at: ev.at, kind: ev.kind, n: ev.n, dex: ev.dex.slice(), zt: Math.round((t - S.zs) * 10) / 10, spawned: 0 };
     S.log.push(entry);
     const add = e => { if (e) entry.spawned++; return e; };
@@ -513,7 +605,7 @@ G.ExpClassic = (() => {
           break;
         }
       }
-      if (fly) say('¡Una bandada cruza el bosque!', 2.6);
+      if (fly) say(MAPS[S.map].flockSay || '¡Una bandada cruza el bosque!', 2.6);
       else say(G.I18n.f('¡Estampida de {x}!', name(ev.dex[0])), 2.6);
       G.Audio.sfx('surge'); if (!fly) G.Camera.kick(0.4);
     } else if (ev.kind === 'rockslide') {
@@ -586,6 +678,7 @@ G.ExpClassic = (() => {
   function xblockC() {
     if (!on()) return null;
     const c = { s: Math.round(S.zs * 10), p: S.ph, q: Math.round(S.charge * 8), f: (S.fs ? 1 : 0) | (S.won ? 2 : 0), n: S.n, d: diffIdx(S.diff) };
+    if (S.surv) c.v = 1;   // (D11: a Survival run: no altar; its own state is the x block's `s`, js/expedition/survival.js)
     const k = [];
     for (const [id, s] of S.specials) if (!s.e.dead) k.push(id, KCODE[s.kind]);
     if (k.length) c.k = k;
@@ -597,7 +690,7 @@ G.ExpClassic = (() => {
     if (!c) { view = null; return; }
     const prevN = view && view.z === (G.World.zone && G.World.zone.zone) ? view.n : null;
     view = { z: G.World.zone ? G.World.zone.zone : 0, zs: (c.s || 0) / 10, ph: c.p | 0, charge: (c.q || 0) / 8, fs: !!(c.f & 1), won: !!(c.f & 2), n: c.n | 0,
-             diff: DIFFS[c.d | 0] || 'normal', bossEx: c.b ? c.b[1] / 10 : 0, bossId: c.b ? c.b[0] : 0 };
+             diff: DIFFS[c.d | 0] || 'normal', bossEx: c.b ? c.b[1] / 10 : 0, bossId: c.b ? c.b[0] : 0, surv: !!c.v };
     const k = c.k || [];
     for (let i = 0; i + 1 < k.length; i += 2) {
       const e = G.EnemyMgr.get(k[i]), kind = KNAME[k[i + 1]];
@@ -606,7 +699,7 @@ G.ExpClassic = (() => {
       if (KSCALE[kind]) setScale(e, KSCALE[kind]);
     }
     // a spectator sees the event banners too (a co-op guest already gets the host's)
-    if (prevN != null && view.n > prevN && G.Game.state === 'watch') {
+    if (prevN != null && view.n > prevN && G.Game.state === 'watch' && !view.surv) {
       const z = G.World.zone, P = z && MAPS[z.map] ? planFor(z) : null, ev = P && P.events[view.n - 1];
       if (ev) G.Spawner.say(bannerOf(ev), 2.6, true);
     }
@@ -620,7 +713,7 @@ G.ExpClassic = (() => {
   function bannerOf(ev) {
     const name = (G.DEX_BY[ev.dex[0]] || {}).name || '';
     return { alpha: G.I18n.f('¡Un {x} alfa aparece!', name), swarm: '¡Enjambre! Te rodean', stampede: G.I18n.f('¡Estampida de {x}!', name),
-             flock: '¡Una bandada cruza el bosque!', rockslide: '¡Avalancha! Sal de los círculos', elite: '¡Oleada de élite!',
+             flock: (MAPS[(G.World.zone && G.World.zone.map)] || {}).flockSay || '¡Una bandada cruza el bosque!', rockslide: '¡Avalancha! Sal de los círculos', elite: '¡Oleada de élite!',
              totem: G.I18n.f('¡{x} dominante llama a los suyos!', name), summoner: G.I18n.f('¡{x} invocador!', name) }[ev.kind] || '';
   }
 
@@ -628,8 +721,8 @@ G.ExpClassic = (() => {
   function cur() {
     const z = G.World.zone;
     if (!z || !MAPS[z.map]) return null;
-    if (on() && S.zone === z.zone) return { zone: S.zone, zs: S.zs, ph: S.ph, charge: S.charge, fs: S.fs, won: S.won, bossEx: S.boss && S.boss.takenK > 1 ? S.boss.takenK : 0, boss: S.boss, diff: S.diff };
-    if (view) return { zone: z.zone, zs: view.zs, ph: view.ph, charge: view.charge, fs: view.fs, won: view.won, bossEx: view.bossEx, boss: view.bossId ? G.EnemyMgr.get(view.bossId) : null, diff: view.diff };
+    if (on() && S.zone === z.zone) return { zone: S.zone, zs: S.zs, ph: S.ph, charge: S.charge, fs: S.fs, won: S.won, bossEx: S.boss && S.boss.takenK > 1 ? S.boss.takenK : 0, boss: S.boss, diff: S.diff, surv: S.surv };
+    if (view) return { zone: z.zone, zs: view.zs, ph: view.ph, charge: view.charge, fs: view.fs, won: view.won, bossEx: view.bossEx, boss: view.bossId ? G.EnemyMgr.get(view.bossId) : null, diff: view.diff, surv: view.surv };
     return null;
   }
   const active = () => !!cur();
@@ -644,12 +737,13 @@ G.ExpClassic = (() => {
     if (G.ExpEco) G.ExpEco.drawGround(ctx);   // (D7: the interactables)
     if (G.ExpRx) G.ExpRx.drawGround(ctx);     // (D8: wet and chilled foes)
     if (G.ExpCap) G.ExpCap.drawGround(ctx);   // (D8: the League / shiny encounters' auras)
+    if (G.ExpSurv) G.ExpSurv.drawGround(ctx);   // (D11: Survival's hostile terrain)
     const c = cur(), z = G.World.zone, si = c && sitesOf(z);
     if (!si) return;
     const now = performance.now() / 1000, [x, y] = siteXY(si.altar), cam = G.Camera;
     if (cam.sees(x, y, 160)) {
       if (si.shrine) drawShrine(ctx, x, y, c, now);
-      else drawAltar(ctx, x, y, c, now);
+      else if (!c.surv) drawAltar(ctx, x, y, c, now);   // (D11: Survival has no altar: the site is its migration portal's)
       if (c.ph === 2) drawPortal(ctx, x, y, now);
     }
     for (const e of G.EnemyMgr.all()) {
@@ -738,6 +832,7 @@ G.ExpClassic = (() => {
   function hudLine(pl, st) {
     const c = cur();
     if (!c) return '';
+    if (c.surv) return G.ExpSurv ? G.ExpSurv.hudLine(pl, st, c) : '';   // (D11)
     const T = G.I18n, zt = (st ? st.time : G.Game.st.time) - c.zs, si = sitesOf(G.World.zone);
     const parts = [c.zone === 4 ? T.t('SANTUARIO') : T.f('ZONA {x}/3', c.zone)];
     if (c.diff && c.diff !== 'normal') parts.push(T.t(DIFF_NAME[c.diff]).toUpperCase());   // (D9: the tier, on Hard / Nightmare)
@@ -751,11 +846,12 @@ G.ExpClassic = (() => {
     if (pl) parts.push('₽ ' + Math.floor(pl.coins || 0));   // (D7: the run's ₽)
     return parts.join('  ·  ');
   }
-  const hudColor = () => { const c = cur(); return c && c.fs && c.ph < 2 ? (Math.sin(performance.now() / 150) > 0 ? '#ff6b7a' : '#ffb0b8') : c && c.ph === 4 ? '#ffd23f' : '#9fd8a8'; };
+  const hudColor = () => { const c = cur(); if (c && c.surv && G.ExpSurv) return G.ExpSurv.hudColor(c); return c && c.fs && c.ph < 2 ? (Math.sin(performance.now() / 150) > 0 ? '#ff6b7a' : '#ffb0b8') : c && c.ph === 4 ? '#ffd23f' : '#9fd8a8'; };
   /** Over the HUD: an arrow to the altar / portal / shrine when it is off screen, and the boss's exhaustion. */
   function drawHud(ctx, w, h, pl, st, F, mark) {
     if (G.ExpEco) G.ExpEco.drawHud(ctx, w, h, pl, F, mark);   // (D7: the interactables' labels and the tips)
     if (G.ExpCap) G.ExpCap.drawHud(ctx, w, h, pl, F, mark);   // (D8: the Support Alphas' chips, the encounters' labels and arrows)
+    if (G.ExpSurv) G.ExpSurv.drawHud(ctx, w, h, pl, F, mark);   // (D11: Survival's siege warning and the night / wounds chips)
     const c = cur(), si = c && sitesOf(G.World.zone);
     if (!si || !pl) return;
     const k = G.HUD ? G.HUD.k : 1, cam = G.Camera, now = performance.now() / 1000;
@@ -768,6 +864,7 @@ G.ExpClassic = (() => {
       if (mark) mark('exhaust', w / 2 - 60, 85, 120, 14);
     }
     if (c.ph !== 0 && c.ph !== 2) return;
+    if (c.surv && c.ph !== 2) return;   // (D11: Survival points only at an open migration portal)
     const [wx, wy] = siteXY(si.altar);
     const sx = (wx - cam.left()) * cam.scale / k, sy = (wy - 30 - cam.top()) * cam.scale / k;
     if (sx > 0 && sx < w && sy > 0 && sy < h) return;
@@ -804,11 +901,13 @@ G.ExpClassic = (() => {
   const pbKey = (map, diff, z) => 'split.' + map + '.' + diff + '.z' + z;
   /** D9: the score's parts {kills, time, dmg, zone, bosses, won, catches} (whole numbers: the server recomputes the score from them). */
   function scoreParts(sum) {
+    if (S && S.surv && G.ExpSurv) return G.ExpSurv.scoreParts(sum);   // (D11: Survival's own parts)
     return { kills: Math.floor(sum.kills || 0), time: Math.floor(sum.time || 0), dmg: Math.floor(G.DmgLog.summary([]).total || 0), zone: S ? S.zone : 1,
              bosses: sum.bosses | 0, won: !!(S && S.won), catches: G.ExpCap && G.ExpCap.run ? G.ExpCap.run.n | 0 : 0 };
   }
   /** The score (study 2.12, Classic, + D9's catch term): G.ExpTier.score of the parts on the run's tier. */
   function score(sum) {
+    if (S && S.surv && G.ExpSurv) return G.ExpSurv.score(sum);   // (D11)
     const p = scoreParts(sum), tier = S ? diffIdx(S.diff) : 0;
     return G.ExpTier ? G.ExpTier.score(p, S ? S.diff : 'normal')
       : Math.floor((2 * p.kills + 3 * p.time + p.dmg / 200 + 1500 * (p.zone - 1) + 800 * p.bosses + (p.won ? 6000 : 0)) * (1 + 0.5 * tier));
@@ -819,6 +918,7 @@ G.ExpClassic = (() => {
    */
   function result() {
     if (!S) return null;
+    if (S.surv) return G.ExpSurv ? G.ExpSurv.result() : null;   // (D11)
     const Sv = G.ExpSave, names = [1, 2, 3].map(z => G.I18n.f('Zona {x}', z)).concat([G.I18n.t('Santuario')]);
     const splits = [];
     for (let z = 1; z <= 4; z++) {
@@ -836,6 +936,7 @@ G.ExpClassic = (() => {
   /** The run into the Expedition save: wins, the best clear and the best split of each zone (never the base save). */
   function record() {
     if (!S) return;
+    if (S.surv) { if (G.ExpSurv) G.ExpSurv.record(); return; }   // (D11)
     const Sv = G.ExpSave;
     for (let z = 1; z <= 4; z++) if (S.splits[z - 1] != null) Sv.best(pbKey(S.map, S.diff, z), INV - Math.round(S.splits[z - 1] * 10));
     Sv.best('zone.' + S.map + '.' + S.diff, S.zone);
@@ -843,8 +944,11 @@ G.ExpClassic = (() => {
   }
 
   return {
-    K, KINDS, TIMELINE, MAPS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
+    K, KINDS, TIMELINE, MAPS, MAP_IDS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
     begin, reset, update, xblockC, applyC, cur, active, drawGround, drawHud, hudLine, hudColor, score, scoreParts, result, record, tierOf,
+    zIdx, setPhase, makeBoss, escorts,   // (D11: Survival's engine room, js/expedition/survival.js)
+    /** D11: one timeline event ({at, kind, n, dex, seed}: plan()'s shape) fired now round the players. */
+    fireEvent(ev, players) { return on() ? fire(ev, G.Game.st.time, players) : null; },
     /** D7: a foe of the zone at (x, y) (the interactables' waves and ambushes); null outside a Classic run. */
     spawnFoe(dex, x, y, o) { return on() ? spawn(dex, x, y, G.Game.st.time, o || {}) : null; },
     /** D7: a free spot round point p at distance d, from the stream rng. */

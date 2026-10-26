@@ -97,7 +97,9 @@ G.Game = (() => {
   function startRun(coop = null, mode = 'normal') {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
-    const cfg = G.Modes.begin(coop ? { mode: 'normal' } : G.Modes.plan(mode));
+    // (MicaSurvivor DLC D11: an Expedition lobby's start plays its Expedition mode, map and tier for everyone: G.Expedition.coopPlan;
+    //  a base start, or a page without the Expedition code, is Normal as always)
+    const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
     // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas). Equipo: el primero.
     const mon = G.DEX_BY[cfg.dex || save.partner];
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
@@ -1229,6 +1231,12 @@ G.Flow = {
     }
     G.LobbyUI.close();
     document.getElementById('invite-pop').classList.add('hidden');
+    // MicaSurvivor (DLC D11): an Expedition lobby's start loads the Expedition code first (a base start: as always)
+    if (cfg.mode && G.Expedition && G.Expedition.isExp(cfg.mode)) {
+      G.Expedition.load().then(() => { if (G.Game.state === 'ui') G.Game.startRun(cfg); },
+        e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); });
+      return;
+    }
     G.Game.startRun(cfg);
   }
 };

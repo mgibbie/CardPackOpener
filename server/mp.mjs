@@ -321,6 +321,32 @@ function msurvExpScore(p, diff) {
 	const S = MSURV_EXP_SCORE, tier = Math.max(0, MSURV_EXP_DIFFS.indexOf(diff));
 	return Math.floor((S.KO * p.kills + S.SEC * p.time + p.dmg / S.DMG + S.ZONE * (p.zone - 1) + S.BOSS * p.bosses + (p.won ? S.WIN : 0) + S.CATCH * p.catches) * (1 + S.TIER * tier));
 }
+// DLC D11 (micasurvivor/js/expedition/survival.js, G.ExpSurv): Expedition · Survival, an endless run with its own board.
+//   runboard:micasurvivor_expedition:<map>:<diff>:survival   best SURVIVAL SCORE per player, top 100 (an exact key, like the others)
+// A Survival score must carry its parts (kills, dmg, bosses, legends, catches) and a content version >= MSURV_EXP_SURV_DV;
+// the server recomputes the score (msurvExpSurvScore = G.ExpSurv.scoreOf) and refuses a mismatch or an implausible part
+// (a milestone boss comes every MSURV_EXP_MILE_S seconds, every 3rd a legendary). Its run is never on the season board.
+const MSURV_EXP_SURV_DV = 10;
+const MSURV_EXP_SURV_SCORE = { KO: 2, SEC: 4, DMG: 200, BOSS: 800, LEGEND: 2000, CATCH: 400, TIER: 0.5 };   // = G.ExpSurv.K.SCORE
+const MSURV_EXP_MILE_S = 300, MSURV_EXP_LEGEND_EVERY = 3;
+/** The Survival score from its parts (study 2.12, Survival + the catch term, x the tier); the SAME expression as G.ExpSurv.scoreOf. */
+function msurvExpSurvScore(p, diff) {
+	const S = MSURV_EXP_SURV_SCORE, tier = Math.max(0, MSURV_EXP_DIFFS.indexOf(diff));
+	return Math.floor((S.KO * p.kills + S.SEC * p.time + p.dmg / S.DMG + S.BOSS * p.bosses + S.LEGEND * p.legends + S.CATCH * p.catches) * (1 + S.TIER * tier));
+}
+/** A Survival score's parts -> {parts} or {error} (they are required). */
+function msurvExpSurvParts(body, time) {
+	const isInt = (v, lo, hi) => Number.isSafeInteger(v) && v >= lo && v <= hi;
+	const p = { kills: body.kills, time, dmg: body.dmg, bosses: body.bosses, legends: body.legends, catches: body.catches };
+	if (['dmg', 'bosses', 'legends', 'catches'].some(k => body[k] == null)) return { error: 'a Survival score needs its parts' };
+	if (!isInt(p.kills, 0, MSURV_EXP_KO_RATE * time + 200)) return { error: 'implausible KOs' };
+	if (!isInt(p.dmg, 0, MSURV_EXP_DMG_RATE * Math.max(1, time))) return { error: 'implausible damage' };
+	const miles = Math.floor(time / MSURV_EXP_MILE_S);
+	if (!isInt(p.bosses, 0, miles)) return { error: 'implausible bosses', max: miles };
+	if (!isInt(p.legends, 0, Math.min(p.bosses, Math.floor(miles / MSURV_EXP_LEGEND_EVERY)))) return { error: 'implausible legendaries' };
+	if (!isInt(p.catches, 0, MSURV_EXP_MAX_CATCH)) return { error: 'implausible catches' };
+	return { parts: p };
+}
 /** A clear time's medal: 1 bronze, 2 silver, 3 gold, 4 champion (= G.ExpTier.medalOf). */
 function msurvExpMedal(time, diff) {
 	const k = 1 + MSURV_EXP_MEDAL_TIER * Math.max(0, MSURV_EXP_DIFFS.indexOf(diff));
@@ -1976,6 +2002,36 @@ export default async function handler(req, env) {
 		}
 		const key = 'runboard:' + mode + expSub;
 		user.runBest = user.runBest || {};
+		// DLC D11: an Expedition · Survival score: its own board (exact key ...:<map>:<diff>:survival), its own parts and formula
+		if (mode === 'micasurvivor_expedition' && action === 'run-score' && body.expMode === 'exp-survival') {
+			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
+			const time = int(body.time), score = int(body.score);
+			if (!(time >= 0 && time <= MICASURVIVOR_MAX_TIME)) return json({ error: 'bad time', max: MICASURVIVOR_MAX_TIME }, 400);
+			if (!(score >= 0 && score <= 1e12)) return json({ error: 'bad score' }, 400);
+			if (!(body.dv >= MSURV_EXP_SURV_DV)) return json({ error: 'a Survival score needs content version ' + MSURV_EXP_SURV_DV + ' or newer', dv: MSURV_EXP_SURV_DV }, 400);
+			const pr = msurvExpSurvParts(body, time);
+			if (pr.error) return json({ error: pr.error, ...(pr.max != null ? { max: pr.max } : {}) }, 400);
+			const parts = pr.parts, want = msurvExpSurvScore(parts, body.diff);
+			if (Math.abs(score - want) > 1) return json({ error: 'score does not match its parts', want }, 400);
+			const dex = int(body.dex);
+			const run = {
+				score, time, kills: parts.kills, level: Math.max(1, Math.min(9999, int(body.level) || 1)), dex: dex >= 1 && dex <= 2000 ? dex : 0,
+				shiny: body.shiny === true, expMode: body.expMode, dv: body.dv, bosses: parts.bosses, legends: parts.legends, catches: parts.catches,
+			};
+			const now = Date.now(), sKey = key + ':survival', bestKey = mode + expSub + ':survival';
+			const cmp = (a, b) => (a.score - b.score) || (a.time - b.time);
+			const prev = user.runBest[bestKey];
+			const better = !prev || typeof prev.score !== 'number' || cmp(run, prev) > 0;
+			if (better) { user.runBest[bestKey] = { ...run, when: now }; await store.setJSON(username, user); }
+			const best = user.runBest[bestKey] || null;
+			const board = ((await store.get(sKey)) || []).filter(e => e.name !== username);
+			if (best) board.push({ name: username, ...best });
+			board.sort((a, b) => cmp(b, a) || a.when - b.when);
+			const capped = board.slice(0, 100);
+			if (better) await store.setJSON(sKey, capped);
+			const rank = capped.findIndex(e => e.name === username) + 1;
+			return json({ ok: true, better, best, rank: rank || null, board: sKey.slice('runboard:'.length) });
+		}
 		if (mode === 'micasurvivor_expedition' && action === 'run-score') {
 			const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN);
 			const time = int(body.time), score = int(body.score);
@@ -2165,13 +2221,19 @@ export default async function handler(req, env) {
 		// one, or one of the MSURV_EXP_SEASONS_BACK before it). Exact keys only.
 		if (mode === 'micasurvivor_expedition' && body.board != null && body.board !== 'score') {
 			const view = String(body.board);
+			if (view === 'survival') {   // (DLC D11: Survival's board, an exact key)
+				const sb = (await store.get(key + ':survival')) || [];
+				const sr = sb.findIndex(e => e.name === username) + 1;
+				const mineS = user.runBest[mode + expSub + ':survival'];
+				return json({ board: 'survival', top: sb.slice(0, 50), you: mineS ? { ...mineS, rank: sr || null } : null });
+			}
 			if (view === 'time') {
 				const tb = (await store.get(key + ':time')) || [];
 				const tr = tb.findIndex(e => e.name === username) + 1;
 				const mineT = user.runBest[mode + expSub + ':time'];
 				return json({ board: 'time', top: tb.slice(0, 50), you: mineT ? { ...mineT, rank: tr || null } : null });
 			}
-			if (view !== 'season') return json({ error: 'no such board', boards: ['score', 'time', 'season'] }, 400);
+			if (view !== 'season') return json({ error: 'no such board', boards: ['score', 'time', 'season', 'survival'] }, 400);
 			const now = msurvNow(), cur = msurvExpSeason(now);
 			const sid = body.season == null ? cur : body.season;
 			if (!Number.isInteger(sid) || sid > cur || sid < Math.max(1, cur - MSURV_EXP_SEASONS_BACK)) return json({ error: 'no such season', current: cur, oldest: Math.max(1, cur - MSURV_EXP_SEASONS_BACK) }, 400);
@@ -2834,6 +2896,7 @@ export default async function handler(req, env) {
 			members: lb.members.map(m => ({ name: m.name, dex: m.dex, shiny: !!m.shiny, ready: m.name === lb.host || !!m.ready })),
 			start: lb.start || null,
 			...(lb.dv != null ? { mode: lb.mode, dv: lb.dv } : {}),   // (DLC D0b: an Expedition lobby only)
+			...(lb.dv != null && lb.map ? { map: lb.map, diff: lb.diff } : {}),   // (DLC D11: its map and tier)
 			...(lb.host === username ? { invited: Object.keys(lb.invited || {}).filter(n => now - lb.invited[n] < MSURV_INVITE_TTL_MS) } : {}),
 		});
 		// compare-and-set on the lobby's rev: fn(lb) edits lb in place and returns nothing, an
@@ -2908,6 +2971,8 @@ export default async function handler(req, env) {
 				const lb = { id: nid, host: username, open: true, rev: 1, at: now, ts: now, invited: {}, start: null,
 					members: [{ name: username, dex: dexOf(body.dex), shiny: !!body.shiny, ready: true, seen: now }] };
 				if (exp) { lb.mode = body.mode; lb.dv = body.dv; }   // (DLC D0b: an Expedition lobby; a base one has neither)
+				// (DLC D11: and the map + tier everyone plays, allow-listed; optional, as a D0b client sends neither)
+				if (exp && MSURV_EXP_MAPS.includes(body.map) && MSURV_EXP_DIFFS.includes(body.diff)) { lb.map = body.map; lb.diff = body.diff; }
 				if (await store.setIfRev(LKEY(nid), lb, 0)) return json({ lobby: view(lb) });
 			}
 			return json({ error: 'busy, try again' }, 503);
@@ -2988,6 +3053,7 @@ export default async function handler(req, env) {
 					lb.start = { seed: seed >= 0 && seed < 1e9 ? seed : Math.floor(Math.random() * 1e6), at: now, host: lb.host,
 						members: live2.map(m => ({ uid: m.name, name: m.name, dex: m.dex, shiny: !!m.shiny })) };
 					if (lb.dv != null) { lb.start.mode = lb.mode; lb.start.dv = lb.dv; }   // (DLC D0b: an Expedition lobby's start)
+					if (lb.dv != null && lb.map) { lb.start.map = lb.map; lb.start.diff = lb.diff; }   // (DLC D11: its map and tier)
 				}
 			});
 			if (r.error) return fail(r);

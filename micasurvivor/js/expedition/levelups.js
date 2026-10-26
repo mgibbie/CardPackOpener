@@ -44,7 +44,7 @@ G.ExpLevel = (() => {
   const M = () => G.ExpMoves, I = () => G.ExpItems, LG = () => G.ExpLeague;
   // ---------------- balance (tune here; README "DLC D5") ----------------
   const K = {
-    CARDS: 3,                                  // cards per level (study 2.5; the Lab's "fourth option" is D10)
+    CARDS: 3,                                  // cards per level (study 2.5; + the Lab's "fourth option": D10, G.ExpMeta.labNow)
     EXTRA_SLOTS: 2,                            // move slots past the kit's 4 (the kit keeps its own)
     W: { up: 14, newMove: 6, newVit: 6, vitUp: 8, league: 0.6 },   // card weights (a League member's move: x0.6 of a line move)
     RAR_W: [70, 24, 5, 0.9, 0.12],             // the rarity weights (study 2.5)
@@ -97,12 +97,13 @@ G.ExpLevel = (() => {
   function begin(pl) {
     S = null;
     if (!pl || !G.Modes.isExp()) return null;
-    S = { draw: 0, items: 0, skips: K.SKIP, log: [], extra: [] };
+    const lab = id => (G.ExpMeta ? G.ExpMeta.labNow(id) : 0);   // (D10: the Lab, +1 each a level, max 6; +1 move slot)
+    S = { draw: 0, items: 0, skips: Math.min(K.TOOL_MAX, K.SKIP + lab('skip')), log: [], extra: [] };
     I().ensure(pl);
     pl.xpNext = need(pl.level);
-    pl.maxMoves = 4 + K.EXTRA_SLOTS;
-    pl.rerollBonus = Math.min(K.TOOL_MAX - 1, (pl.rerollBonus || 0) + K.REFRESH - 1);
-    pl.bansLeft = Math.min(K.TOOL_MAX, (pl.bansLeft || 0) + K.BANISH);
+    pl.maxMoves = 4 + K.EXTRA_SLOTS + lab('moveslot');
+    pl.rerollBonus = Math.min(K.TOOL_MAX - 1, (pl.rerollBonus || 0) + K.REFRESH - 1 + lab('refresh'));
+    pl.bansLeft = Math.min(K.TOOL_MAX, (pl.bansLeft || 0) + K.BANISH + lab('banish'));
     I().apply(pl);
     I().reset();
     M().clear();
@@ -145,7 +146,7 @@ G.ExpLevel = (() => {
       out.push({ key: 'up:' + m.id, w: K.W.up, kind: 'move', make: (ti, rng) => upCard(pl, m, ti, rng) });
     }
     const extras = S.extra.length;
-    if (extras < K.EXTRA_SLOTS && pl.slots.length < pl.maxMoves) {
+    if (extras < K.EXTRA_SLOTS + (G.ExpMeta ? G.ExpMeta.labNow('moveslot') : 0) && pl.slots.length < pl.maxMoves) {
       for (const c of moveCands(pl)) out.push({ key: 'new:' + c.id, w: K.W.newMove * (c.from ? K.W.league : 1), kind: 'move', make: (ti, rng) => newCard(pl, c, ti, rng) });
     }
     if (pl.xv.length < Iv.slots(pl)) {
@@ -213,6 +214,7 @@ G.ExpLevel = (() => {
   /** The levelup.offer seam (after the League's branch): an Expedition run's own cards. -> cards, or undefined. */
   function offer(pl, n = K.CARDS) {
     if (!on(pl)) return undefined;
+    if (G.ExpMeta) n += G.ExpMeta.labNow('option');   // (D10: the Lab's fourth option)
     M().refreshAll(pl);
     const rng = G.DLC.rng(mix(G.World.seed | 0, slot(), pl.level, S.draw++, 0xD5));
     const pool = candidates(pl), picked = [], o = { level: pl.level, luck: pl.xluck || 0, zone: zone() };

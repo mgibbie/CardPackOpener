@@ -1,12 +1,12 @@
 // micasurvivor_expedition_plumbing_test.mjs — MicaSurvivor DLC D0b: the Expedition plumbing, end to end. The REAL
 // server handler (server/mp.mjs bundled like the dev server, over sqlite) behind a static server, headless Chrome, one
 // browser context per device. D0b shipped the Expedition modes as "Coming soon"; since D3 Classic is playable (its own
-// suite: micasurvivor_expedition_classic_test.mjs), so here Survival and League are the "Coming soon" ones, and the
-// content version is DV (2 since D3).
+// suite: micasurvivor_expedition_classic_test.mjs) and since D11 Survival (micasurvivor_expedition_survival_test.mjs), so
+// here League is the "Coming soon" one, and the content version is DV (2 since D3).
 //   1. lazy loading: a base boot (guest and signed in) and a base run never fetch js/expedition/* (the network log) and
 //      make no Expedition request; G.Expedition.load() fetches its scripts once, in order (D1: save.js, terrain.js,
 //      D2: verbs.js, core.js), and attaches the seams
-//   2. the mode select: an "Expedition" group with Classic / Survival / League; Survival and League "Coming soon",
+//   2. the mode select: an "Expedition" group with Classic / Survival / League; League "Coming soon",
 //      aria-disabled; reached and pressed by mouse, touch (844x390) and pad (synthetic Gamepad API): each says "coming soon"
 //      and starts nothing
 //   3. the freeze: before load the base tables are writable; after it every write to G.Moves / G.Items (and its item
@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 8;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8)
+const DV = 11;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -223,7 +223,7 @@ try {
 		A(st.X === 'object' && !st.loaded && st.frozen === null && st.exp === 'undefined' && st.save === 'undefined' && st.scripts === 0 && !st.movesFrozen,
 			'base boot: the registry is there (G.Expedition) but no Expedition code ran: no G.Exp / G.ExpSave, nothing frozen', JSON.stringify(st));
 		A(st.seams.length >= 4 && st.seams.every(n => n === 0), 'base boot: no listener on any seam (run.start, run.end, replay.header, spectate.snap; D1: net.frame)', st.seams.join(','));
-		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic enabled (D3), content version ' + DV, JSON.stringify(st));
+		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic","exp-survival"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic (D3) and Survival (D11) enabled, content version ' + DV, JSON.stringify(st));
 		A(d.expFetches().length === 0, 'the network log: a base boot fetches nothing from js/expedition/', d.expFetches().join(' '));
 		// a base run: still nothing, and its run / replay / snapshot carry no dv
 		const base = await d.E(async () => {
@@ -253,7 +253,7 @@ try {
 			after: !!document.querySelector('#modes-list ~ #modes-exp-h ~ #modes-exp ~ .modes-h ~ #modes-mods'),
 		}));
 		A(ui.cards.map(c => c.id).join(',') === 'exp-classic,exp-survival,exp-league' && ui.after, 'the Expedition group: Classic, Survival, League, between the base modes and the modifiers', JSON.stringify(ui.cards.map(c => c.id)));
-		A(ui.cards.slice(1).every(c => c.soon && c.aria === 'true' && !c.disabled) && !ui.cards[0].soon && ui.cards[0].aria !== 'true', 'Survival and League are "Coming soon": aria-disabled, not [disabled] (so the pad still reaches them); Classic is playable', JSON.stringify(ui.cards));
+		A(ui.cards.slice(2).every(c => c.soon && c.aria === 'true' && !c.disabled) && ui.cards.slice(0, 2).every(c => !c.soon && c.aria !== 'true'), 'League is "Coming soon": aria-disabled, not [disabled] (so the pad still reaches it); Classic and Survival are playable', JSON.stringify(ui.cards));
 		A(/^Expedition$/.test(ui.h) && /^Expedition · Classic /.test(ui.cards[0].txt) && !/Coming soon/.test(ui.cards[0].txt) && /^Expedition · League .*Coming soon$/.test(ui.cards[2].txt), 'in English: "Expedition", "Expedition · League … Coming soon"', JSON.stringify([ui.h, ui.cards[0].txt, ui.cards[2].txt]));
 		const sp = await d.spanish('#modes-exp-h, #modes-exp');
 		A(!sp.length, 'no Spanish on the Expedition group', sp.join(', '));
@@ -263,10 +263,10 @@ try {
 		let t = await d.toast();
 		A(t === 'Expedition is coming soon.' && await d.visible('scr-modes') && await d.E(() => G.Game.state === 'ui'), 'mouse: clicking League says "Expedition is coming soon." and starts nothing', t);
 		// touch
-		await d.page.tap('#modes-exp [data-exp=exp-survival]');
+		await d.page.tap('#modes-exp [data-exp=exp-league]');
 		await sleep(200);
 		t = await d.toast();
-		A(t === 'Expedition is coming soon.' && await d.E(() => G.Game.state === 'ui'), 'touch: tapping Survival says so too', t);
+		A(t === 'Expedition is coming soon.' && await d.E(() => G.Game.state === 'ui'), 'touch: tapping League says so too', t);
 		// G.Flow.play directly: still nothing (the gate is in the flow, not only the screen)
 		const fp = await d.E(async () => { const r = await G.Flow.play('exp-league'); return { r, st: G.Game.state, mode: G.Modes.plan('exp-league').mode }; });
 		A(fp.r === false && fp.st === 'ui' && fp.mode === 'normal', 'G.Flow.play of a disabled Expedition mode resolves false and starts nothing (and plan() falls back to normal)', JSON.stringify(fp));
@@ -295,9 +295,9 @@ try {
 				seams: G.Hooks.SEAMS.map(s => G.Hooks.count(s)), scripts: [...document.querySelectorAll('script[data-expedition]')].map(s => s.getAttribute('src')), who: G.ExpSave.who };
 		});
 		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === DV, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv ' + DV + ', initialised', JSON.stringify(ld));
-		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js', 'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js, D4 league-data.js + league.js, D5 moves.js + items.js + levelups.js, D6 ultimates.js, D7 economy.js, D8 reactions.js + capture.js, D9 tiers.js)
+		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js', 'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js, D4 league-data.js + league.js, D5 moves.js + items.js + levelups.js, D6 ultimates.js, D7 economy.js, D8 reactions.js + capture.js, D9 tiers.js)
 		A(JSON.stringify(ld.scripts) === JSON.stringify(SCR) && d.expFetches().length === SCR.length && SCR.every((s, i) => d.expFetches()[i].endsWith(s)),
-			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js, league-data.js, league.js, moves.js, items.js, levelups.js, ultimates.js, economy.js, reactions.js, capture.js, tiers.js then core.js, once', d.expFetches().join(' '));
+			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js, league-data.js, league.js, moves.js, items.js, levelups.js, ultimates.js, economy.js, reactions.js, capture.js, tiers.js, meta.js, survival.js (D11) then core.js, once', d.expFetches().join(' '));
 		A(ld.seams.length >= 4 && ld.seams.every(n => n === 1), 'the Expedition attaches to every seam once', ld.seams.join(','));
 		console.log(`     freeze: ${ld.frozen.objects} objects in ${ld.frozen.ms} ms (load ${ld.ms} ms)`);
 		A(ld.frozen.objects > 1000 && ld.frozen.ms < 200, `the freeze is a one-time cost (${ld.frozen.objects} objects, ${ld.frozen.ms} ms)`);
@@ -435,7 +435,11 @@ try {
 		const sOver = await d.spanish('#scr-over');
 		A(!sOver.length, 'no Spanish on its run-over screen', sOver.join(', '));
 		const s1 = await d.E(() => JSON.stringify(G.DB.save));
-		A(s0 === s1, 'the base save is byte-for-byte unchanged by the Expedition run (no coins, stats, missions)', s0.length + ' vs ' + s1.length);
+		{   // (D11, owner decision #4: an Expedition run pays the base Pokémonedas; nothing else in the base save changes)
+			const strip = t => { const o = JSON.parse(t); const c = [o.coins, (o.stats && o.stats.coinsEarned) || 0]; delete o.coins; delete o.updated; delete o.led; if (o.stats) delete o.stats.coinsEarned; return [JSON.stringify(o), c]; };
+			const [a, ca] = strip(s0), [b, cb] = strip(s1);
+			A(a === b && cb[0] - ca[0] === cb[1] - ca[1] && cb[0] >= ca[0], 'the base save is unchanged by the Expedition run but its Pokémonedas (D11: the pay, counted as earned; no stats, missions): +' + (cb[0] - ca[0]), a.length + ' vs ' + b.length);
+		}
 		await sleep(2500);
 		const runActs = apiLog.slice(nRun).map(e => e.action + (e.mode ? ':' + e.mode : ''));
 		A(!runActs.includes('run-score:micasurvivor') && !runActs.includes('micasurvivor-save-put') && JSON.stringify(row('micasurvivor:alice')) === xr0, 'nor the base board or the base row: no base run-score, no base save put', runActs.join(','));

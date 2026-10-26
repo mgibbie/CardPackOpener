@@ -136,7 +136,10 @@ G.LocalCoop = (() => {
   /** Al empezar (game.js startRun): main.gd _setup_partner. */
   function begin(pl) {
     reset();
-    if (!pl || !G.Game || G.Game.mode !== 'coop' || (G.Coop && G.Coop.active)) return;
+    // (MicaSurvivor DLC D11: an Expedition run with player 2's pad connected, or the Expedition's "local partner" setting,
+    //  brings the partner too: G.Exp.localMate, js/expedition/core.js. A base run: only the 'coop' mode, as always.)
+    const expMate = !!(G.Modes && G.Modes.isExp && G.Modes.isExp() && G.Exp && G.Exp.localMate && G.Exp.localMate());
+    if (!pl || !G.Game || (G.Game.mode !== 'coop' && !expMate) || (G.Coop && G.Coop.active)) return;
     const s = save(), d = dex(s, pl.dex), mon = G.DEX_BY[d];
     if (!mon) return;
     const shiny = !!(s && s.partnerShiny) && G.DB.ownsShiny(d) && G.Sprites.hasShiny(d);
@@ -212,12 +215,23 @@ G.LocalCoop = (() => {
     const len = Math.hypot(vx, vy);
     if (len > 1) { vx /= len; vy /= len; }
     const moving = Math.hypot(vx, vy) > 0.05;
-    mate.x += vx * K.speed * dt;
-    mate.y += vy * K.speed * dt;
+    // MicaSurvivor (DLC D11): in an Expedition zone the partner has the movement verbs (js/expedition/verbs.js): player 2's A
+    // hops (held: a Flying type glides), B slides; the AI hops up to you when you stand a level above it, and slides to catch
+    // up. A base run has no zone: the plain step below, as always.
+    const XV = G.World.zone && G.ExpVerbs && G.Modes.isExp() ? G.ExpVerbs : null;
+    if (XV) {
+      mate.svx = vx * K.speed; mate.svy = vy * K.speed;
+      XV.step(mate, dt, vx, vy, mateInput(pl, dt));
+      mate.x += mate.svx * dt; mate.y += mate.svy * dt;
+    } else {
+      mate.x += vx * K.speed * dt;
+      mate.y += vy * K.speed * dt;
+    }
     const r = mate.r;
     mate.r = r * 0.55;             // (el port choca con el 55 % de su radio)
     G.World.collide(mate);
     mate.r = r;
+    if (XV) XV.after(mate, dt);
     if (!down && G.U.dist2(mate.x, mate.y, pl.x, pl.y) > K.leash * K.leash) {
       const a = Math.random() * Math.PI * 2;
       [mate.x, mate.y] = freeSpot(pl.x + Math.cos(a) * K.tpR, pl.y + Math.sin(a) * K.tpR);
@@ -237,6 +251,23 @@ G.LocalCoop = (() => {
       cd = move.cd * K.cd;
       fire(pl, move);
     }
+  }
+
+  // MicaSurvivor (DLC D11): the partner's verbs in an Expedition zone: player 2's buttons (A hop / hold to glide, B slide), else its AI
+  let p2a = false, p2b = false, aiHopT = 0, aiSlideT = 0;
+  function mateInput(pl, dt) {
+    const p = ctrl === 'p2' && G.Pad && G.Pad.p2 ? G.Pad.p2() : null;
+    if (p) {
+      const bt = i => !!(p.buttons && p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.5));
+      const a = bt(0), b = bt(1), out = { hop: a && !p2a, slide: b && !p2b, held: a };
+      p2a = a; p2b = b;
+      return out;
+    }
+    aiHopT -= dt; aiSlideT -= dt;
+    const d = Math.hypot(pl.x - mate.x, pl.y - mate.y), out = { hop: false, slide: false, held: false };
+    if (!down && !mate.air && aiHopT <= 0 && (pl.layer || 0) >= (mate.layer || 0) + 0.9 && d < 200) { out.hop = true; aiHopT = 1.2; }
+    else if (!down && !mate.air && aiSlideT <= 0 && d > 330) { out.slide = true; aiSlideT = 2.5; }
+    return out;
   }
 
   /** Un disparo (main.gd 1719-1730): tu ataque, tu tamaño y tus objetos; ×0,8; al desglose como "Compañero". */

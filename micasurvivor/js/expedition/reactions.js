@@ -165,9 +165,47 @@ G.ExpRx = (() => {
     G.FX.dmgText(e.x, e.y - e.bodyH - 22, raw(F(NAME[rx])), COL[rx], true);
     G.FX.ring(e.x, e.y, 6, R, COL[rx], 0.42, 4);
     if (S) { S.rx[rx] = (S.rx[rx] || 0) + 1; S.n++; S.log.push(rx); if (S.log.length > 40) S.log.shift(); }
+    pushPop(KINDS.indexOf(rx), e.x, e.y - e.bodyH - 22, '');
     return k;
   }
   let lastChain = 0;
+
+  // ---------------- D11: the pop-ups for the others (spectators, replays, co-op partners) ----------------
+  // The reactions of the last POP_DS tenths of a second travel in the x block's `r` (flat [t ds, kind, x, y, ...], the newest
+  // POP_MAX): every viewer shows each one once (keyed by all four), so a lost or repeated frame shows nothing twice. A guest
+  // sends its own; the host passes them on to the others (never back to their sender).
+  const POP_DS = 15, POP_MAX = 8, pops = [];
+  let popsShown = 0;
+  function pushPop(code, x, y, from) {
+    if (code < 0) return;
+    pops.push([Math.round(now() * 10), code, Math.round(x), Math.round(y), from || '']);
+    while (pops.length > POP_MAX * 2) pops.shift();
+  }
+  /** The `r` of a snapshot / frame (except: a sender's uid whose own pop-ups it already showed). -> flat list or null */
+  function rBlock(except) {
+    const t = Math.round(now() * 10), out = [];
+    for (const p of pops) if (t - p[0] <= POP_DS && t >= p[0] && (!except || p[4] !== except)) out.push(p[0], p[1], p[2], p[3]);
+    return out.length ? out.slice(-POP_MAX * 4) : null;
+  }
+  const seen = new Set();
+  /** A viewer / partner: show the `r` pop-ups not shown yet (from: the co-op guest that sent them, on the host). */
+  function applyR(r, from) {
+    if (!Array.isArray(r)) return 0;
+    let n = 0;
+    for (let i = 0; i + 3 < r.length; i += 4) {
+      const key = r[i] + ':' + r[i + 1] + ':' + r[i + 2] + ':' + r[i + 3], kind = KINDS[r[i + 1]];
+      if (!kind || seen.has(key)) continue;
+      seen.add(key); if (seen.size > 300) seen.delete(seen.values().next().value);
+      if (G.Camera.sees(r[i + 2], r[i + 3], 120)) {
+        G.FX.dmgText(r[i + 2], r[i + 3], raw(F(NAME[kind])), COL[kind], true);
+        G.FX.ring(r[i + 2], r[i + 3] + 22, 6, 40, COL[kind], 0.42, 4);
+      }
+      if (from) pops.push([r[i], r[i + 1], r[i + 2], r[i + 3], from]);
+      n++; popsShown++;
+    }
+    while (pops.length > POP_MAX * 2) pops.shift();
+    return n;
+  }
 
   /** run.tick: the weather boost's banner (once per weather, when it favours your Pokémon). */
   function tick(dt, pl) {
@@ -205,6 +243,6 @@ G.ExpRx = (() => {
     return S.n ? [F('Reacciones: {x}', S.n)] : [];
   }
 
-  return { K, KINDS, NAME, COL, begin, reset, out, react, wet, statuses, chill, favoured, wxK, tick, drawGround, record,
-    get run() { return S; }, get lastChain() { return lastChain; } };
+  return { K, KINDS, NAME, COL, begin, reset, out, react, wet, statuses, chill, favoured, wxK, tick, drawGround, record, rBlock, applyR,
+    get run() { return S; }, get lastChain() { return lastChain; }, get popsShown() { return popsShown; } };
 })();

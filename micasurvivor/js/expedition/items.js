@@ -78,7 +78,7 @@ G.ExpItems = (() => {
   const F = (es, ...v) => { const en = T.lang === 'en' && G.ExpEN[es]; let i = 0; return en ? en.replace(/\{x\}/g, () => v[i++]) : T.f(es, ...v); };
   // ---------------- balance (tune here; README "DLC D5") ----------------
   const K = {
-    VIT_SLOTS: 3, VIT_MAX: 10,        // vitamin slots and max level (study 2.5; the Lab's +1 / +2 slots are D10)
+    VIT_SLOTS: 3, VIT_MAX: 10,        // vitamin slots and max level (study 2.5; + the Lab's +1 / +2 slots: D10, G.ExpMeta.labNow)
     ARMOR_PT: 0.01, ARMOR_CAP: 0.5,   // 1 armor point = 1 % less damage taken; the Expedition's items + vitamins cap at 50 %
     EVADE_CAP: 0.4,                   // evasion never above 40 %
     STEAL_CAP: 0.05,                  // lifesteal heals at most 5 % of max HP a second
@@ -184,6 +184,8 @@ G.ExpItems = (() => {
     for (const id in pl.xi) { const st = IT[id] && IT[id].stats[s]; if (st) v += st * pl.xi[id]; }
     if (s === 'dmg') v += pl.xtr.dmg;
     if (G.ExpCap) v += G.ExpCap.perk(pl, s);   // (D8: the Support Alphas' type perks add like any same-stat bonus)
+    if (G.ExpMeta) v += G.ExpMeta.statOf(pl, s);   // (D10: the Lab, the shiny perks and the boosts of the run's row, the same way)
+    if (G.ExpSurv) v += G.ExpSurv.statOf(pl, s);   // (D11: Survival's pacts, their boons and banes)
     if (s === 'hp') v += pl.xtr.hp;
     if (s === 'xp' || s === 'coin') v += total(pl, 'curse') * K.CURSE_XP;
     if (s === 'armor' && pl.xi.eviolite && G.ExpLeague && G.ExpLeague.run) {
@@ -235,7 +237,7 @@ G.ExpItems = (() => {
     apply(pl);
     return x;
   }
-  const slots = () => K.VIT_SLOTS;
+  const slots = () => K.VIT_SLOTS + (G.ExpMeta ? G.ExpMeta.labNow('vitamins') : 0);   // (D10: the Lab's +1 / +2)
   /** A vitamin's per-level text at rarity multiplier mul (or its total, v). */
   function statText(stat, v) {
     const p = Math.round(v * 1000) / 10, n = Math.round(v * 10) / 10;
@@ -286,6 +288,8 @@ G.ExpItems = (() => {
   const has = (pl, id) => !!(pl && pl.xi && pl.xi[id]);
   const stacks = (pl, id) => (pl && pl.xi && pl.xi[id]) || 0;
   const room = (pl, id) => stacks(pl, id) < IT[id].cap;
+  /** D10: an item that can drop now: room for it, and not kept out of this run's pool (locked until bought, or archived). */
+  const inPool = (pl, id) => (!pl || room(pl, id)) && !(G.ExpMeta && G.ExpMeta.excluded(id));
   /** Take one stack of item id. -> the new count, or 0 at its cap. */
   function takeItem(pl, id) {
     ensure(pl);
@@ -301,7 +305,7 @@ G.ExpItems = (() => {
     const L = G.ExpLevel;
     const ti = L ? L.rollRarity(rng, { level: pl ? pl.level : 1, luck: pl ? pl.xluck || 0 : 0, zone: L.zone(), item: true }) : 0;
     for (let t = ti; t >= 0; t--) {
-      const pool = ITEMS.filter(it => it.rar === t && (!pl || room(pl, it.id)));
+      const pool = ITEMS.filter(it => it.rar === t && inPool(pl, it.id));
       if (pool.length) return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id;
     }
     return null;
@@ -456,7 +460,7 @@ G.ExpItems = (() => {
 
   return {
     K, RAR, RAR_NAME, RAR_COL, RAR_MUL, VITAMINS, VIT, ITEMS, IT, BOOST, PREFIX, idOf, ensure, total, apply,
-    vitOf, takeVitamin, slots, statText, vitText, itemText, icon, has, stacks, room, takeItem, rollItem,
+    vitOf, takeVitamin, slots, statText, vitText, itemText, icon, has, stacks, room, inPool, takeItem, rollItem,
     hurt, ko, dealt, out, tick, draw, reset, row, on
   };
 })();

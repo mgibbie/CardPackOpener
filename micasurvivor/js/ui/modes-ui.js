@@ -41,6 +41,7 @@ G.ModesUI = (() => {
     closeCoop(true);
     closeLeague(true);
     if (G.ExpTier) G.ExpTier.close(true);   // (DLC D9)
+    if (G.ExpMeta) G.ExpMeta.close(true);   // (DLC D10)
     render();
   }
 
@@ -84,13 +85,23 @@ G.ModesUI = (() => {
     $('modes-exp-h').textContent = X.MODES.some(X.enabled) ? 'Expedición' : 'Expedición · modos nuevos (próximamente)';
     // (DLC D4: Classic carries "League member: X", the member you start with: js/expedition/league.js)
     // (DLC D9: and "Difficulty: X · leaderboards", the tier picker and the Expedition boards: js/expedition/tiers.js)
+    // (DLC D10: and "League HQ": the Lab, item unlocks, the Archive, research, tasks, achievements, the card: js/expedition/meta.js)
     const DN = { normal: 'Normal', hard: 'Difícil', nightmare: 'Pesadilla' };
+    // (DLC D11: Survival is playable: its group has the same difficulty / boards button (its Survival board) and both groups a
+    //  "With friends" button, an Expedition co-op lobby of that mode, map and tier)
+    const friends = id => `<button class="btn mode-sub" id="modes-xcoop-${id.slice(4)}" data-xcoop="${id}">${G.Icons.html('friends', 18)} ${esc(G.I18n.f('Con amigos: {x}', G.I18n.t(X.NAME[id])))}</button>`;
     $('modes-exp').innerHTML = X.MODES.map(id => id === 'exp-classic' && X.enabled(id)
       ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-league-pick">${G.Icons.html('ball', 18)} Miembro de la Liga: ${esc(nameOf(X.leaguePick()))}</button>`
-        + `<button class="btn mode-sub" id="modes-tier-pick">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button></div>`
-      : expCard(id)).join('');
+        + `<button class="btn mode-sub" id="modes-tier-pick">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button>`
+        + `<button class="btn mode-sub" id="modes-meta-pick">${G.Icons.html('star', 18)} Cuartel de la Liga: laboratorio, tareas y logros</button>${friends(id)}</div>`
+      : id === 'exp-survival' && X.enabled(id)
+        ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-surv-tier">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button>${friends(id)}</div>`
+        : expCard(id)).join('');
     if ($('modes-league-pick')) $('modes-league-pick').onclick = openLeague;
-    if ($('modes-tier-pick')) $('modes-tier-pick').onclick = openTier;
+    if ($('modes-tier-pick')) $('modes-tier-pick').onclick = () => openTier();
+    if ($('modes-surv-tier')) $('modes-surv-tier').onclick = () => openTier('survival');
+    if ($('modes-meta-pick')) $('modes-meta-pick').onclick = () => openMeta();
+    $('modes-exp').querySelectorAll('[data-xcoop]').forEach(b => { b.onclick = () => openExpCoop(b.dataset.xcoop); });
     $('modes-exp').querySelectorAll('[data-exp]').forEach(b => { b.onclick = () => start(b.dataset.exp); });
     $('modes-mods').innerHTML = M.MOD_IDS.map(id => {
       const on = p.mods.includes(id), m = M.MOD[id];
@@ -156,6 +167,7 @@ G.ModesUI = (() => {
     if (!$('modes-coop').classList.contains('hidden')) { closeCoop(); return true; }
     if (!$('modes-league').classList.contains('hidden')) { closeLeague(); return true; }
     if (G.ExpTier && G.ExpTier.back()) return true;   // (DLC D9: "Difficulty and leaderboards")
+    if (G.ExpMeta && G.ExpMeta.back()) return true;   // (DLC D10: "League HQ")
     if ($('modes-party').classList.contains('hidden')) return false;
     closeParty();
     return true;
@@ -326,10 +338,36 @@ G.ModesUI = (() => {
   }
 
   // ---------------- DLC D9: "Difficulty and leaderboards" (Expedition · Classic; js/expedition/tiers.js) ----------------
-  function openTier() {
-    return G.Expedition.load().then(() => (G.UI.isOpen('scr-modes') ? G.ExpTier.open(() => { if (G.UI.isOpen('scr-modes')) render(); }) : false),
+  // (DLC D11: also Survival's, opening on its own board: view 'survival')
+  function openTier(view) {
+    return G.Expedition.load().then(() => (G.UI.isOpen('scr-modes') ? G.ExpTier.open(() => { if (G.UI.isOpen('scr-modes')) render(); }, view) : false),
       e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
   }
 
-  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague, openTier };
+  // ---------------- DLC D10: "League HQ" (Expedition; js/expedition/meta.js) ----------------
+  function openMeta(tab) {
+    return G.Expedition.load().then(() => G.ExpSave.open()).then(() => (G.UI.isOpen('scr-modes') ? G.ExpMeta.open(() => { if (G.UI.isOpen('scr-modes')) render(); }, tab) : false),
+      e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+  }
+
+  // ---------------- DLC D11: the Expedition with friends (an Expedition co-op lobby: js/mica/social.js createRoom) ----------------
+  /** An Expedition lobby of mode `mode` on your map + tier pick, opened for you to invite your friends. -> Promise<bool> */
+  function openExpCoop(mode) {
+    const X = G.Expedition, A = G.MicaAccount;
+    if (!X.enabled(mode)) { G.UI.toast('La Expedición llegará pronto.'); G.Audio.sfx('error'); return Promise.resolve(false); }
+    if (!A || !A.name()) { G.UI.toast('Inicia sesión para jugar con amigos'); G.Audio.sfx('error'); return Promise.resolve(false); }
+    const R = G.Social.room;
+    if (R) {
+      if (R.mode === mode) { G.LobbyUI.open(); return Promise.resolve(true); }
+      G.UI.toast('Sal de tu sala antes de crear otra.'); G.Audio.sfx('error'); return Promise.resolve(false);
+    }
+    return X.load().then(async () => {
+      const at = X.pick(), room = await G.Social.createRoom({ mode, map: at.map, diff: at.diff });
+      if (!room) { G.UI.toast('No se pudo crear la sala.'); G.Audio.sfx('error'); return false; }
+      G.LobbyUI.open();
+      return true;
+    }, e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+  }
+
+  return { init, open, render, back, openParty, closeParty, openTeam, closeTeam, openCoop, closeCoop, openLeague, closeLeague, openTier, openMeta, openExpCoop };
 })();

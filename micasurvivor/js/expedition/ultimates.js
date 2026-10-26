@@ -426,6 +426,7 @@ G.ExpUlt = (() => {
   let lastDraw = 0;
   /** The dim under the HUD (called each render in a zone): the local cast's and a viewer's; also the viewers' clock. */
   function drawDim(ctx, w, h) {
+    if (G.ExpSurv) G.ExpSurv.drawNight(ctx, w, h);   // (D11: Survival's Endless Night, under the Ultimate's dim)
     const now = performance.now(), dt = lastDraw ? Math.min(0.05, (now - lastDraw) / 1000) : 0;
     lastDraw = now;
     viewTick(dt);

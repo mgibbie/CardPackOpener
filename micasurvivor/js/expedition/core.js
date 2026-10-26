@@ -113,13 +113,49 @@
  *   run.end         the score's parts (G.ExpClassic.scoreParts) and its score (G.ExpTier.score, + 400 a catch); a win's medal
  *                   and the next tier's unlock (G.ExpTier.record, before Classic records its wins); the mark goes to the
  *                   boards with its parts (the server recomputes the score), a won run's with its replay id (time attack)
+ *
+ * D10 (the League meta, js/expedition/meta.js): a run's pay (D11: in the base game's Pokémonedas, owner decision #4; D10 had its own Stardust), the Lab (19 upgrades),
+ * item unlocks, the Archive, research -> avatars and frames, daily / weekly tasks, 33 achievements, shiny perks, pre-run boosts,
+ * the "League HQ" panel. dv 9. The Lab, the shiny perks and the boosts change a run, so the run's ROW is fixed at its start
+ * and the `x` block is v9, {xv: 9, m, z, th, a, c, l, u, w, o, p, k}:
+ *   k     the meta rows [Lab levels in base 36, shiny-perk tier, boost mask, shiny member] (G.ExpMeta.row): k.p the watched /
+ *         sending player's, k.q the co-op players' (by uid in host frames, by name in snapshots). Every effect is
+ *         G.ExpMeta.effects(row) (pure), so a viewer reads the same numbers. The replay keeps it in its slow state (it never
+ *         changes in a run) and its header as h.k.
+ *   The v1-v8 readers are kept: a block without `k` shows no Lab.
+ *   run.start       the row, the boosts spent, the item exclusions (G.ExpMeta.begin, before the level-ups' begin: the tools,
+ *                   the slots and the stats read it); the Lab's Max Revive after every begin (G.ExpMeta.after)
+ *   enemy.ko        research for the family; run.tick: Rare Candy, Honey
+ *   run.end         Pokémonedas x the tier's pay (G.Expedition.wallet), research and avatars, tasks (the date passed in), achievements (G.ExpMeta.record)
+ *
+ * D11 (Expedition · Survival, js/expedition/survival.js; online co-op on the Expedition): Survival is playable (milestones, phases,
+ * pacts, siege, night, migration, hazards; its own board), and a co-op GUEST's run is an Expedition run too (its own League member,
+ * meta row, bag, Ultimate, Support Alphas and catches; the host keeps the timeline, the interactables, the targets). dv 10. The
+ * `x` block is v10, {xv: 10, m, z, th, a, c, l, u, w, o, p, k, s, v, r}:
+ *   s     Survival's host state [milestones, bosses down, legendaries down, land, portal s left, Mewtwo down, pacts seq]
+ *         (G.ExpSurv.sBlock): every viewer computes the phase, wounds, night and hazards from the clock and the land
+ *   v     the Survival rows [pacts, siege %] (G.ExpSurv.row): v.p the watched / sending player's, v.q the others' (by uid in
+ *         host frames, by name in snapshots)
+ *   r     the reactions' recent pop-ups, flat [t ds, kind, x, y, ...] (G.ExpRx.rBlock): every viewer shows each once
+ *   p.g   the other players' Support Alphas {uid | name: [dex]} (D8's `p` grows a field; a guest's frame carries its own p.s)
+ *   The replay keeps `s` in its slow state and {v, r} in a frame field of its own (field 10). The v1-v9 readers are kept.
+ *   run.start       a guest skips the host-only timeline (classic begin); Survival's own state (G.ExpSurv.begin)
+ *   run.tick        Survival's wounds, hazards, siege and pacts on your own player (G.ExpSurv.tick)
+ *   combat.out      the siege's damage factor (G.ExpSurv.out)
+ *   net.event       (a new seam, js/net/coop.js) the co-op messages of the economy ('xo', 'xg', ...) and the catches ('xcg', 'xcp')
+ *   run.end         Survival's score, record and lines (G.ExpSurv), its board (expMode 'exp-survival': its own parts)
+ *
+ * D12 (maps 2-3, js/expedition/classic.js MAPS, terrain.js LOOK): Mt. Moon and Cerulean Cape, each its residents, guardians,
+ * totems, summoners, shrine boss, Survival legendaries, terrain profile, palette (a base biome, set here on every zone: enterZone
+ * and applyX), height tint, minimap shading, hazard colours and bounce pad. A map opens when the one before it is cleared
+ * (G.ExpTier.mapOpen). dv 11 (the maps' content); the `x` block is unchanged (v10: `m` already names the map).
  */
 G.Exp = (() => {
-  const dv = 8;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 11;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
-  const XV = 8;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
-  const READS = [1, 2, 3, 4, 5, 6, 7, 8];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`; v6: + the Ultimates `w`; v7: + the interactables `o`; v8: + the captures `p`)
+  const XV = 10;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
+  const READS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];   // the schemas applyX / viewAir read (v1: D1's terrain only; v2: + air; v3: + the timeline `c`; v4: + the League `l`; v5: + the bag `u`; v6: + the Ultimates `w`; v7: + the interactables `o`; v8: + the captures `p`; v9: + the meta rows `k`; v10: + Survival `s` / `v`, the pop-ups `r`, p.g)
   const C = () => G.ExpClassic;
   const LG = () => G.ExpLeague;
   const LV = () => G.ExpLevel, IT = () => G.ExpItems, MV = () => G.ExpMoves;
@@ -127,22 +163,30 @@ G.Exp = (() => {
   const EC = () => G.ExpEco;
   const CP = () => G.ExpCap, RX = () => G.ExpRx;
   const TR = () => G.ExpTier;
+  const MT = () => G.ExpMeta;
+  const SV = () => G.ExpSurv;
   const expRun = () => G.Modes.isExp();
+  const guestRun = () => !!(G.Coop && G.Coop.active && !G.Coop.isHost);   // (D11: a co-op guest's Expedition run)
 
   function init() {
     if (inited) return;
     inited = true;
     G.Hooks.on('run.start', cfg => {
-      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); if (CP()) CP().reset(); if (RX()) RX().reset(); return; }
+      if (!expRun()) { if (C()) C().reset(); if (LG()) LG().reset(); if (LV()) LV().reset(); if (UL()) UL().reset(); if (EC()) EC().reset(); if (CP()) CP().reset(); if (RX()) RX().reset(); if (MT()) MT().reset(); if (SV()) SV().reset(); return; }
       cur = { mode: cfg.mode, dv: cfg.dv, map: cfg.map, diff: cfg.diff, zone: 0, th: '' };
       enterZone(1);
-      if (cfg.mode === 'exp-classic' && C()) C().begin(cfg);   // (D3)
+      // (D3: Classic's timeline; D11: Survival's too, on the same engine. A co-op guest runs neither: the host's `c` / `s` blocks)
+      if (C()) C().reset();
+      if ((cfg.mode === 'exp-classic' || cfg.mode === 'exp-survival') && C() && !guestRun()) C().begin(cfg);
       if (LG()) LG().begin(G.Game.player, cfg);                 // (D4: the League member)
+      if (MT()) MT().begin(G.Game.player);                      // (D10: the Lab / perks / boosts row, before the level-ups read it)
+      if (SV()) SV().begin(G.Game.player, cfg);                 // (D11: Survival's pacts, siege, wounds; a base / Classic run: none)
       if (LV()) LV().begin(G.Game.player);                      // (D5: the curve, the tools, the bag)
       if (UL()) UL().begin(G.Game.player);                      // (D6: the Ultimate's meter)
       if (EC()) EC().begin(G.Game.player);                      // (D7: ₽, the interactables, the fog, the tips)
       if (CP()) CP().begin(G.Game.player);                      // (D8: alphas, Support Alphas, League encounters, shinies)
       if (RX()) RX().begin(G.Game.player);                      // (D8: elemental reactions, weather boosts)
+      if (MT()) MT().after(G.Game.player);                      // (D10: the Lab's Max Revive)
     });
     // (D4: a League run's level-ups: kit moves, evolutions and their choice, Maturity; a base run gets undefined / its cards)
     // (D5: then the Expedition's own cards, rarity-rolled: G.ExpLevel.offer; it adds the League's note itself)
@@ -161,12 +205,12 @@ G.Exp = (() => {
     });
     G.Hooks.on('player.ko', pl => { if (IT()) IT().ko(pl); });
     G.Hooks.on('player.dealt', (pl, d) => { if (IT()) IT().dealt(pl, d); });
-    G.Hooks.on('combat.out', (k, pl, e, src, dmg) => { if (IT()) k = IT().out(k, pl, e, src, dmg); return RX() ? RX().out(k, pl, e, src, dmg) : k; });   // (D8: reactions, weather)
+    G.Hooks.on('combat.out', (k, pl, e, src, dmg) => { if (IT()) k = IT().out(k, pl, e, src, dmg); if (RX()) k = RX().out(k, pl, e, src, dmg); return SV() ? SV().out(k, pl) : k; });   // (D8: reactions, weather; D11: the siege)
     G.Hooks.on('combat.run', (pl, m, ghost) => { if (MV()) MV().run(pl, m, ghost); });
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
-    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); });
+    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); if (cur && G.LocalCoop && G.LocalCoop.on) cur.mate = true; });   // (D11: Survival, last: it reads what this step healed; a local partner keeps the run off the boards)
     // (D6: the Ultimate's charge from kills, and its hit-stop)
-    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); });   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
+    G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); });   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
     // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
     G.Hooks.on('minimap.draw', (ctx, pl, api) => { if (EC()) EC().drawMini(ctx, pl, api); if (CP()) CP().drawMini(ctx, pl, api); });   // (D8: the encounters)
     G.Hooks.on('run.hold', (dt, pl) => { if (!expRun()) return undefined; const u = UL() ? UL().hold(dt, pl) : undefined; return u || (CP() ? CP().hold(dt, pl) : undefined); });   // (D8: the capture cinematic)
@@ -174,10 +218,11 @@ G.Exp = (() => {
       if (!expRun()) return h;
       const R = G.Modes.run;
       h.dv = R.dv; h.map = R.map; h.diff = R.diff;
+      const k = MT() && MT().row(); if (k) h.k = k;   // (D10: the run's meta row)
       return h;
     });
     G.Hooks.on('spectate.snap', s => {
-      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = C() && C().xblockC(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; const w = ultSnap(); if (w) x.w = w; const o = EC() && EC().oBlock(); if (o) x.o = o; const p = CP() && CP().pBlock(); if (p) x.p = p; s.x = x; } }
+      if (expRun()) { s.dv = G.Modes.run.dv; const x = xblock(); if (x) { x.a = airSnap(s); const c = cBlock(); if (c) x.c = c; const l = leagueSnap(); if (l) x.l = l; const u = bagSnap(); if (u) x.u = u; const w = ultSnap(); if (w) x.w = w; const o = oBlockNow(); if (o) x.o = o; const p = pSnap(); if (p) x.p = p; const k = metaSnap(); if (k) x.k = k; const ss = sBlockNow(); if (ss) x.s = ss; const v = survSnap(); if (v) x.v = v; const r = RX() && RX().rBlock(null); if (r) x.r = r; s.x = x; } }
       return s;
     });
     // (a host frame: m is the guest it goes to; a guest's frame to the host: m is null. A guest's run may not be an
@@ -185,14 +230,28 @@ G.Exp = (() => {
     G.Hooks.on('net.frame', (f, m) => {
       if (expRun() || (!m && G.World.zone)) {
         const x = xblock();
-        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; const w = m ? ultHost(m) : ultGuest(); if (w) x.w = w; const o = m && EC() && EC().oBlock(); if (o) x.o = o; const p = m && CP() && CP().pBlock(); if (p) { if (G.Net && G.Net.uid) p.h = G.Net.uid; x.p = p; } f.x = x; }
+        if (x) { x.a = m ? airHost(m) : airGuest(); const c = m && C() && C().xblockC(); if (c) x.c = c; const l = m ? leagueHost(m) : leagueGuest(); if (l) x.l = l; const u = m ? bagHost(m) : bagGuest(); if (u) x.u = u; const w = m ? ultHost(m) : ultGuest(); if (w) x.w = w; const o = m && EC() && EC().oBlock(); if (o) x.o = o; const p = m ? capHost(m) : capGuest(); if (p) x.p = p; const k = m ? metaHost(m) : metaGuest(); if (k) x.k = k;
+          // (D11: Survival's host state and rows; the reactions' pop-ups, never back to the guest that sent them)
+          const ss = m && SV() && SV().sBlock(); if (ss) x.s = ss; const v = m ? survHost(m) : survGuest(); if (v) x.v = v; const r = RX() && RX().rBlock(m ? m.uid : null); if (r) x.r = r;
+          f.x = x; }
       }
       return f;
     });
+    // (D11: the co-op messages the base game doesn't know: the economy's offers / buys and the catches; from = the sender's uid on the host)
+    G.Hooks.on('net.event', (ev, from) => { if (!expRun()) return; if (EC() && EC().netEvent(ev, from)) return; if (CP()) CP().netEvent(ev, from); });
     G.Hooks.on('run.end', (out, sum) => {
       if (!X.isExp(sum.mode)) return out;
+      // D11: a Survival run: its score from its own parts, its record (no medals: a Survival run is never "won")
+      if (sum.mode === 'exp-survival' && SV() && SV().run) {
+        const sr = SV().result();
+        sum.parts = SV().scoreParts(sum); sum.score = SV().score(sum); sum.won = false; sum.zone = sum.parts.zone;
+        const tr = TR() ? TR().of(sum.diff) : null;
+        out.lines = out.lines.concat(sr.lines, [tr && tr.score !== 1 ? G.I18n.f('Puntuación: {x} (×{x} {x})', sum.score.toLocaleString('en'), tr.score, G.I18n.t(TR().DIFF_NAME[sum.diff])) : G.I18n.f('Puntuación: {x}', sum.score.toLocaleString('en'))]);
+        out.score = sum.score;
+        SV().record();
+      }
       // D3: the Classic run's outcome (read before it is recorded, so the splits compare with the old bests)
-      const res = sum.mode === 'exp-classic' && C() ? C().result() : null;
+      const res = sum.mode === 'exp-classic' && C() && C().run ? C().result() : null;
       if (res) {
         out.lines = out.lines.concat(res.lines);
         out.title = res.title; out.splits = res.splits; out.won = res.won;
@@ -213,7 +272,9 @@ G.Exp = (() => {
       // D8: Support Alphas, captures, shinies, reactions (sets and counters), their lines
       if (CP() && CP().run) { out.lines = out.lines.concat(CP().record(sum)); G.ExpSave.commit(); }
       if (RX() && RX().run) { out.lines = out.lines.concat(RX().record(sum)); G.ExpSave.commit(); }
-      if (sum.clean && !sum.group) submitScore(sum);
+      // D10: the pay (x the tier's; D11: Pokémonedas through G.Expedition.wallet), research, tasks (today's date, passed in), achievements (after every counter above)
+      if (MT() && MT().run) { out.lines = out.lines.concat(MT().record(sum, Date.now())); G.ExpSave.commit(); }
+      if (boardOk(sum)) submitScore(sum);
       cur = null;
       return out;
     });
@@ -226,6 +287,7 @@ G.Exp = (() => {
     const map = (cur && cur.map) || G.Modes.run.map;
     const zone = C() ? C().build(G.World.seed, map, z) : G.ExpTerrain.generate({ seed: G.World.seed, map, zone: z });   // (D3: zone 4 = the shrine)
     G.World.setZone(zone);
+    G.World.setBiome(G.ExpTerrain.biomeOf(map), true);   // (D12: the map's palette: Viridian 0 as before, Mt. Moon the cave, Cerulean Cape the sea grotto)
     G.Path.clear();
     G.Minimap.reset();
     if (cur) { cur.zone = z; cur.th = zone.hash; }
@@ -255,11 +317,12 @@ G.Exp = (() => {
     const pl = G.Game.player;
     if (!pl) return {};
     const a = { p: V().row(pl) };
-    if (G.Coop && G.Coop.active) {
-      const q = {};
-      for (const m of G.Coop.mates) if (m.connected && busy(m.xrow)) q[m.name] = m.xrow;
-      if (Object.keys(q).length) a.q = q;
-    }
+    const q = {};
+    if (G.Coop && G.Coop.active) for (const m of G.Coop.mates) if (m.connected && busy(m.xrow)) q[m.name] = m.xrow;
+    // (D11: the local partner's verbs too, by its Pokémon's name: the snapshot's partner row is [name, ...])
+    const LC = G.LocalCoop;
+    if (LC && LC.on && LC.mate) { const r = V().row(LC.mate); if (busy(r)) q[LC.mate.mon.name] = r; }
+    if (Object.keys(q).length) a.q = q;
     const e = airEnemies(pl.x, pl.y);
     if (e.length) a.e = e;
     return a;
@@ -313,12 +376,30 @@ G.Exp = (() => {
     liftEnemies(a && a.e);
     if (C()) C().applyC(x && READS.includes(x.xv) && x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     if (EC()) EC().applyO(oOf(x));   // (D7: the interactables)
-    if (CP()) CP().applyP(pOf(x));   // (D8: the captures)
+    const pb = pOf(x);
+    if (CP()) {
+      CP().applyP(pb);   // (D8: the captures)
+      if (mates) for (const [name, o] of mates) CP().applyMate(o.p, pb && pb.g ? pb.g[o.raw || name] || null : null);   // (D11: the partners' Support Alphas)
+    }
+    const k = kOf(x);   // (D10: the meta rows)
+    if (MT()) {
+      if (pl) MT().applyRow(pl, k && k.p);
+      if (mates) for (const [name, o] of mates) MT().applyRow(o.p, k && k.q ? k.q[o.raw || name] || null : null);
+    }
+    // (D11: Survival's state and rows; the reactions' pop-ups)
+    if (SV()) {
+      SV().applyS(sOf(x));
+      const v = vOf(x);
+      if (pl) SV().applyRow(pl, v && v.p);
+      if (mates) for (const [name, o] of mates) SV().applyRow(o.p, v && v.q ? v.q[o.raw || name] || null : null);
+    }
+    if (RX()) RX().applyR(rOf(x));
     return !!a;
   }
   /** A co-op guest: the host frame's `a` (rows by uid: mateOf(uid) -> that player's puppet, or null). */
   function hostAir(x, mateOf) {
     if (!x || !READS.includes(x.xv)) return false;
+    lastHost.c = x.xv >= 3 ? x.c || null : null; lastHost.o = oOf(x); lastHost.s = sOf(x);   // (D11: a guest's own snapshots carry the host's state)
     const a = x.xv >= 2 && x.a ? x.a : {};
     for (const u in a.q || {}) { const p = mateOf(u); if (p) V().applyRow(p, a.q[u]); }
     const l = lOf(x);   // (D4: the other players' League forms)
@@ -330,7 +411,20 @@ G.Exp = (() => {
     liftEnemies(a.e);
     if (C()) C().applyC(x.xv >= 3 ? x.c || null : null);   // (D3: the timeline state)
     if (EC()) EC().applyO(oOf(x));   // (D7: the interactables)
-    if (CP()) CP().applyP(pOf(x));   // (D8: the captures; the host's Support Alphas round its puppet: p.h)
+    const pb = pOf(x);
+    if (CP()) {
+      CP().applyP(pb);   // (D8: the captures; the host's Support Alphas round its puppet: p.h)
+      if (pb && pb.g) for (const u in pb.g) { const p = mateOf(u); if (p) CP().applyMate(p, pb.g[u]); }   // (D11: the other guests')
+    }
+    const kb = kOf(x);   // (D10: the other players' meta rows)
+    if (kb && kb.q && MT()) for (const u in kb.q) { const p = mateOf(u); if (p) MT().applyRow(p, kb.q[u]); }
+    // (D11: Survival's host state (your pacts follow its milestones) and the others' rows; the pop-ups)
+    if (SV()) {
+      SV().applyS(sOf(x));
+      const v = vOf(x);
+      if (v && v.q) for (const u in v.q) { const p = mateOf(u); if (p) SV().applyRow(p, v.q[u]); }
+    }
+    if (RX()) RX().applyR(rOf(x));
     return true;
   }
   /** The host: a guest's frame `x` -> its row, kept on the mate (m.xrow) and shown on its puppet. */
@@ -344,6 +438,16 @@ G.Exp = (() => {
     if (u && u.p && m.pl && LV()) LV().applyRow(m.pl, u.p);
     const w = wOf(x);   // (D6: the guest's Ultimate: on its puppet here, and so in the host's frames / snapshots)
     if (w && w.p && m.pl && UL()) UL().applyRow(m.pl, w.p);
+    const k = kOf(x);   // (D10: the guest's meta row)
+    if (k && k.p && m.pl && MT()) MT().applyRow(m.pl, k.p);
+    if (!(x.xv >= 10)) return;
+    // (D11: the guest's Support Alphas (drawn round its puppet, passed on in p.g), its Survival row (its pacts' team banes
+    //  count on the host: G.ExpSurv.foeTeam), its reactions' pop-ups (shown here, passed on to the others))
+    const p = pOf(x);
+    if (m.pl && CP()) CP().applyMate(m.pl, p && p.s);
+    const v = vOf(x);
+    if (m.pl && SV()) SV().applyRow(m.pl, v && v.p);
+    if (RX()) RX().applyR(rOf(x), m.uid);
   }
 
   // ---------------- D4: the League rows in the `x` block ----------------
@@ -422,6 +526,73 @@ G.Exp = (() => {
   const oOf = x => (x && READS.includes(x.xv) && x.xv >= 7 && x.o) || null;
   /** The `p` of a v8+ block (D8: an older block: none, no capture shown). */
   const pOf = x => (x && READS.includes(x.xv) && x.xv >= 8 && x.p) || null;
+  /** The `k` of a v9+ block (D10: an older block: none, no Lab shown). */
+  const kOf = x => (x && READS.includes(x.xv) && x.xv >= 9 && x.k) || null;
+  /** D11: the `s` / `v` / `r` of a v10+ block (an older one: none, no Survival state / pop-ups shown). */
+  const sOf = x => (x && READS.includes(x.xv) && x.xv >= 10 && x.s) || null;
+  const vOf = x => (x && READS.includes(x.xv) && x.xv >= 10 && x.v) || null;
+  const rOf = x => (x && READS.includes(x.xv) && x.xv >= 10 && x.r) || null;
+
+  // ---------------- D11: the co-op guest's own blocks, Survival's rows ----------------
+  /** A snapshot's `c` / `o` / `s`: the host's own state, or (a co-op guest's snapshots) the host's as it last came. */
+  const cBlock = () => (C() && C().run ? C().xblockC() : lastHost.c);
+  const oBlockNow = () => (guestRun() ? lastHost.o : EC() && EC().oBlock());
+  const sBlockNow = () => (guestRun() ? lastHost.s : SV() && SV().sBlock());
+  const lastHost = { c: null, o: null, s: null, p: null };
+  /** A snapshot's `p`: the page's own captures (+ the partners' Support Alphas by name); a guest's: its own and the host's view. */
+  function pSnap() {
+    const p = CP() && CP().pBlock();
+    if (p && p.g && G.Coop && G.Coop.active) { const g = {}; for (const u in p.g) { const m = G.Coop.mate(u); if (m) g[m.name] = p.g[u]; } p.g = g; }
+    return p;
+  }
+  /** A host frame's `p` for guest m: the host's captures, its uid, and the other guests' Support Alphas (not m's own). */
+  function capHost(m) {
+    const p = CP() && CP().pBlock();
+    if (!p) return null;
+    if (G.Net && G.Net.uid) p.h = G.Net.uid;
+    if (p.g) { delete p.g[m.uid]; if (!Object.keys(p.g).length) delete p.g; }
+    return p;
+  }
+  /** A guest's frame to the host: its own Support Alphas and catch count (p.s, p.n). */
+  function capGuest() { const S = CP() && CP().run; return S && S.sa.length ? { s: S.sa.map(a => a.dex), n: S.n | 0 } : null; }
+  /** A snapshot's `v`: the player's Survival row, its co-op partners' (by name). */
+  function survSnap() {
+    const r = SV() && SV().row();
+    if (!r) return null;
+    const v = { p: r };
+    if (G.Coop && G.Coop.active) { const q = {}; for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xsv) q[m.name] = m.pl.xsv; if (Object.keys(q).length) v.q = q; }
+    return v;
+  }
+  /** A host frame's `v` for guest m: every other player's row by uid. */
+  function survHost(m) {
+    const q = {}, r = SV() && SV().row();
+    if (r && G.Net && G.Net.uid) q[G.Net.uid] = r;
+    for (const o of G.Coop.mates) if (o.connected && o.uid !== m.uid && o.pl && o.pl.xsv) q[o.uid] = o.pl.xsv;
+    return Object.keys(q).length ? { q } : null;
+  }
+  function survGuest() { const r = SV() && SV().row(); return r ? { p: r } : null; }
+
+  // ---------------- D10: the meta rows in the `x` block ----------------
+  /** A snapshot's `k`: the player's row, its co-op partners' (by name, those with one). Null outside an Expedition run. */
+  function metaSnap() {
+    const r = MT() && MT().row();
+    if (!r) return null;
+    const k = { p: r };
+    if (G.Coop && G.Coop.active) {
+      const q = {};
+      for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xmr) q[m.name] = m.pl.xmr;
+      if (Object.keys(q).length) k.q = q;
+    }
+    return k;
+  }
+  /** A host frame's `k` for guest m: every other player's row by uid. */
+  function metaHost(m) {
+    const q = {}, r = MT() && MT().row();
+    if (r && G.Net && G.Net.uid) q[G.Net.uid] = r;
+    for (const o of G.Coop.mates) if (o.connected && o.uid !== m.uid && o.pl && o.pl.xmr) q[o.uid] = o.pl.xmr;
+    return Object.keys(q).length ? { q } : null;
+  }
+  function metaGuest() { const r = MT() && MT().row(); return r ? { p: r } : null; }
 
   /** A viewer / guest: the same zone from the same seed + `x`. -> its hash, or null (an unknown schema). */
   function applyX(seed, x) {
@@ -430,6 +601,7 @@ G.Exp = (() => {
     const zone = C() ? C().build(seed, x.m, x.z) : G.ExpTerrain.generate({ seed, map: x.m, zone: x.z });   // (D3: zone 4 = the shrine)
     if (x.th && zone.hash !== x.th) console.warn('[Exp] terrain rebuild differs from the host (' + zone.hash + ' vs ' + x.th + ')');
     G.World.setZone(zone);
+    G.World.setBiome(G.ExpTerrain.biomeOf(x.m), true);   // (D12: the map's palette; a snapshot's `b` says the same)
     G.Minimap.reset();
     return zone.hash;
   }
@@ -451,16 +623,17 @@ G.Exp = (() => {
   async function submitScore(m) {
     const A = G.MicaAccount;
     if (!A || !A.name()) return { error: 'not logged in' };
-    const p = m.parts || null;
+    const p = m.parts || null, surv = m.mode === 'exp-survival';
     const replay = p && p.won && TR() && m.replay !== false ? await TR().replayId() : null;
     const d = await A.call('run-score', Object.assign({
       mode: X.BOARD, expMode: m.mode, dv: m.dv, map: m.map, diff: m.diff,
       score: Math.floor(m.score != null ? m.score : m.time), time: Math.floor(m.time),
       kills: Math.floor(m.kills || 0), level: Math.floor(m.level || 1), dex: m.dex | 0, shiny: !!m.shiny
-    }, p ? { zone: p.zone, won: p.won, dmg: p.dmg, bosses: p.bosses, catches: p.catches } : {}, replay ? { replay } : {}));
+    }, p && surv ? { dmg: p.dmg, bosses: p.bosses, legends: p.legends, catches: p.catches }   // (D11: Survival's parts)
+      : p ? { zone: p.zone, won: p.won, dmg: p.dmg, bosses: p.bosses, catches: p.catches } : {}, replay ? { replay } : {}));
     if (d.ok && d.body) {
       const b = d.body, T = G.I18n;
-      if (b.better && b.rank) G.UI.toast(T.f('¡Nueva marca de la Expedición! Puesto #{x}', b.rank), 3400);
+      if (b.better && b.rank) G.UI.toast(T.f(surv ? '¡Nueva marca de Supervivencia! Puesto #{x}' : '¡Nueva marca de la Expedición! Puesto #{x}', b.rank), 3400);
       else if (b.time && b.time.better && b.time.rank) G.UI.toast(T.f('Contrarreloj: puesto #{x}', b.time.rank), 3400);
     }
     return d.ok ? d.body : { error: (d.body && d.body.error) || 'offline' };
@@ -474,6 +647,18 @@ G.Exp = (() => {
     return { top: d.body.top || [], you: d.body.you || null };
   }
 
-  return { dv, XV, READS, init, submitScore, leaderboard, record, enterZone, xblock, applyX, viewAir, hostAir, guestAir,
+  /** D11: a run reaches its board only clean, solo and without a local partner (a co-op run, online or local, never does). */
+  const boardOk = sum => !!(sum && sum.clean && !sum.group && !(cur && cur.mate));
+
+  /** D11: an Expedition run brings the local partner (js/systems/localcoop.js) when player 2's pad is connected or the
+   *  "local partner" setting is on (localStorage micasurvivorexp_mate = '1'). */
+  function localMate() {
+    if (G.Modes.run && G.Modes.run.group) return false;   // (an online co-op run: the friends are the team)
+    let pref = false;
+    try { pref = localStorage.getItem('micasurvivorexp_mate') === '1'; } catch (e) { /* a convenience */ }
+    return pref || !!(G.Pad && G.Pad.p2 && G.Pad.p2());
+  }
+
+  return { dv, XV, READS, init, submitScore, leaderboard, record, enterZone, xblock, applyX, viewAir, hostAir, guestAir, localMate, boardOk,
     get run() { return cur; }, get inited() { return inited; } };
 })();

@@ -271,7 +271,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 8, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 8 (D9)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 11, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 11 (D12)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -393,12 +393,12 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x, me: snap.me, hf, gf };
 	});
-	A(xs.x && xs.x.xv === 8 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
-	A(xs.hf && xs.hf.xv === 8 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
+	A(xs.x && xs.x.xv === 10 && JSON.stringify(xs.x.l) === '{"p":[4,6,4,1,2]}' && xs.me && xs.me[0] === 6, 'a live snapshot: x v4 with `l` {p: [4, 6, 4, 1, 2]}; its `me` is the form (Charizard)', JSON.stringify({ x: xs.x, me: xs.me }));
+	A(xs.hf && xs.hf.xv === 10 && xs.hf.l && xs.hf.l.q && JSON.stringify(xs.hf.l.q.alice) === '[4,6,4,1,2]' && xs.gf && JSON.stringify(xs.gf.l) === '{"p":[4,6,4,1,2]}',
 		'a co-op host frame carries the host\'s row by uid; a guest\'s own frame carries its row', JSON.stringify({ hf: xs.hf && xs.hf.l, gf: xs.gf && xs.gf.l }));
 
 	// ======================== 5. the run ends: lines, counters, challenges, the base save untouched
-	const base0 = await E(page, () => localStorage.getItem('micasurvivor_save.guest'));
+	const base0 = await E(page, () => JSON.stringify(G.DB.save));   // (the base save as the game holds it: the seeded row isn't normalised until the game first writes it)
 	const ov = await endRun(page);
 	A(ov.state === 'over' && /League: Charmander → Charizard · Maturity 1/.test(ov.text) && /Challenge complete: Kangaskhan! Catch it in your next run/.test(ov.text),
 		'the run-over screen: "League: Charmander → Charizard · Maturity 1" and the challenges done (D8: "Challenge complete: Kangaskhan! Catch it in your next run")', ov.text);
@@ -410,7 +410,12 @@ try {
 	A(ch.evo === 2 && ch.lv === 44 && ch.mat === 1 && ch.runs === 1 && JSON.stringify(ch.played) === '["4"]', 'the Expedition save: 2 evolutions, best level 44, Maturity 1, a run as Charmander', JSON.stringify(ch));
 	A(ch.met && ch.met.includes(115) && ch.met.includes(10) && !ch.kanga && ch.wild && !ch.met.includes(147) && !ch.mewtwo && ch.dratini && !ch.dratini.done && ch.dratini.parts[1].have === 35 && ch.dratini.parts[0].have === 0,
 		'challenges: Kangaskhan (evolve twice) and Caterpie (finish a run) are met (D8: wild until caught in a run, micasurvivor_expedition_capture_test); Dratini (2 wins + Lv 35) is not: Lv 35 done, 0 / 2 wins', JSON.stringify({ met: ch.met, kanga: ch.kanga, wild: ch.wild, dratini: ch.dratini }));
-	A(typeof base0 === 'string' && ch.base === base0, 'the base save is byte-for-byte unchanged by a League run');
+	{   // (D11, owner decision #4: the run pays the base game's Pokémonedas; nothing else in the base save changes)
+		const strip = t => { const o = JSON.parse(t); delete o.coins; delete o.updated; delete o.led; if (o.stats) delete o.stats.coinsEarned; return JSON.stringify(o); };
+		const b0 = typeof base0 === 'string' ? JSON.parse(base0) : null, b1 = ch.base ? JSON.parse(ch.base) : null, got = b0 && b1 ? b1.coins - b0.coins : null;
+		A(b0 && b1 && strip(base0) === strip(ch.base) && got > 0 && got === (b1.stats.coinsEarned || 0) - (b0.stats.coinsEarned || 0),
+			'a League run changes nothing in the base save but its Pokémonedas (D11: the pay of the run, counted as earned): +' + got, JSON.stringify({ got, earned: b0 && b1 ? ((b1.stats || {}).coinsEarned || 0) - ((b0.stats || {}).coinsEarned || 0) : null, keys: b0 && b1 ? Object.keys(Object.assign({}, b0, b1)).filter(k => !['coins', 'updated', 'led'].includes(k) && JSON.stringify(b0[k]) !== JSON.stringify(b1[k])).map(k => k + ': ' + String(JSON.stringify(b0[k])).slice(0, 300) + ' -> ' + String(JSON.stringify(b1[k])).slice(0, 300)) : null }));
+	}
 	A(ch.local && ch.local.sets && ch.local.sets['league.met'] && ch.local.sets['league.met'].includes('115'), 'the guest\'s Expedition save in this browser has league.met', JSON.stringify(ch.local && ch.local.sets));
 	const mg = await E(page, () => {
 		const S = G.ExpSave, a = S.data, b = { v: 1, counters: { 'lg.lv': 12, 'lg.evo': 9 }, sets: { 'league.met': ['280'], 'league.own': ['143'] } };
@@ -502,7 +507,7 @@ try {
 			const e = G.Replay.last; await e.ready;
 			return { code: e.code, h: e.h || null, seed: G.World.seed, snap: snaps[0] };
 		});
-		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 8, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
+		A(rec.code && rec.snap && rec.snap.x && rec.snap.x.xv === 10, 'the Ralts run\'s replay is kept', JSON.stringify({ code: !!rec.code }));
 		await d2.ctx.close();
 
 		// ======================== 8b. fresh pages: a co-op guest, the host of a guest, a live spectator, a replay viewer

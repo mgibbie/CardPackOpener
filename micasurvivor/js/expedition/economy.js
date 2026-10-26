@@ -231,7 +231,7 @@ G.ExpEco = (() => {
       const order = [ti];
       for (let d = 1; d < 5; d++) { if (ti - d >= min) order.push(ti - d); if (ti + d <= 4) order.push(ti + d); }
       for (const t of order) {
-        const pool = I.ITEMS.filter(it => it.rar === t && (!pl || I.room(pl, it.id)) && !out.includes(it.id));
+        const pool = I.ITEMS.filter(it => it.rar === t && I.inPool(pl, it.id) && !out.includes(it.id));   // (D10: locked / archived items left out)
         if (pool.length) { out.push(pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))].id); break; }
       }
     }
@@ -242,6 +242,20 @@ G.ExpEco = (() => {
   let S = null;        // {frac, earned, spent, balls, opened, buys, mods, used, last, draws, waves, z: the zone's state, log}
   let view = null;     // a viewer's / guest's copy of the `o` block
   const on = pl => !!(S && G.Modes.isExp() && pl && pl === G.Game.player && !pl.remote);
+  // (D11: online co-op. The HOST keeps every interactable's state and the team's ₽; a guest standing in a circle is seen by
+  //  the host through its puppet, and a personal reward goes to the guest as a seeded offer it rolls with its own pool:
+  //  net.event 'xo' / 'xg' / 'xgi' / 'xd' / 'xh' / 'xs', and the guest's 'xb' (a buy at Meowth's).)
+  const guestSide = () => !!(G.Coop && G.Coop.active && !G.Coop.isHost);
+  const mateOf = pl => (pl && pl.remote && G.Coop && G.Coop.active && G.Coop.isHost ? G.Coop.mate(pl.uid) || null : null);
+  const toMate = (m, ev) => { if (m && m.connected && m.q.length < 400) m.q.push(ev); };
+  const teamCoins = () => ((G.Game.player && G.Game.player.coins) || 0);
+  /** A player's own stand clocks and latches at the interactables (the host's in Z.t / Z.latch, each guest's its own). */
+  function per(Z, pl) {
+    if (!pl || !pl.remote) return Z;
+    let P = Z.per.get(pl.uid);
+    if (!P) { P = { t: new Array(Z.st.length).fill(0), latch: new Set() }; Z.per.set(pl.uid, P); }
+    return P;
+  }
 
   function begin(pl) {
     S = null; view = null; closePick(true); closeMap();
@@ -290,16 +304,18 @@ G.ExpEco = (() => {
   function zoneState(lay) {
     const n = lay.objs.length;
     return { key: lay.key, lay, st: new Array(n).fill(FRESH), ch: new Array(n).fill(0), t: new Array(n).fill(0), latch: new Set(), wave: new Map(),
-             visit: -1, stock: null, sold: 0, spot: -1 };
+             visit: -1, stock: null, sold: 0, spot: -1, per: new Map() };
   }
   const zoneTime = () => { const r = C() && C().run, st = G.Game.st; return r && st ? st.time - r.zs : st ? st.time : 0; };
-  const rngFor = (i, salt) => R(mix(G.World.seed | 0, mapIdx(G.World.zone.map), G.World.zone.zone | 0, i, salt, S.draws++));
+  const seedFor = (i, salt) => mix(G.World.seed | 0, mapIdx(G.World.zone.map), G.World.zone.zone | 0, i, salt, S.draws++);
+  const rngFor = (i, salt) => R(seedFor(i, salt));
   function markUsed(Z, o, st = USED) { Z.st[o.i] = st; if (st === USED) { S.used++; S.last = o.i; } }
   const say = (t, s = 2.8) => G.Spawner.say(t, s, true);
 
   /** run.tick: the interactables round the player. */
   function tick(dt, pl) {
     if (!S || !on(pl)) return;
+    if (guestSide()) { reveal(pl); tickTips(dt); return; }   // (D11: a guest: the host runs the interactables; its fog and tips)
     const z = G.World.zone, lay = layoutOf(z);
     if (!lay) { S.z = null; return; }
     if (!S.z || S.z.key !== lay.key) { S.z = zoneState(lay); preload(); }
@@ -316,36 +332,53 @@ G.ExpEco = (() => {
       Z.spot = -1; Z.stock = null;
       say(F('Meowth recoge su tienda'), 2.2);
     }
+    // (D11: the co-op guests too, each by its puppet: a shared altar charges for whoever is nearest)
+    const guests = G.Coop && G.Coop.active && G.Coop.isHost ? G.Coop.puppets().filter(p => !p.dead) : [];
     for (const o of lay.objs) {
       const st = Z.st[o.i];
       if (st === USED || st === GONE) continue;
       const d = Math.hypot(pl.x - o.x, pl.y - o.y);
       if (Z.latch.has(o.i) && d > 3.2 * tsz + (pl.r || 0)) Z.latch.delete(o.i);
       if (d < 7 * tsz && (o.kind !== 'meowth' || Z.spot === o.i) && (o.kind !== 'comet' || st === READY || st === ACTIVE)) tipOnce(TIP_OF[o.kind] || o.kind);
-      if (pl.dead) continue;
-      step(o, Z, st, d, dt, pl, zt);
+      if (guests.length && SHARED[o.kind]) {
+        let who = pl.dead ? null : pl, dd = pl.dead ? Infinity : d;
+        for (const g of guests) { const gd = Math.hypot(g.x - o.x, g.y - o.y); if (gd < dd) { dd = gd; who = g; } }
+        if (who) step(o, Z, st, dd, dt, who, zt, Z);
+        if (pickOpen()) break;
+        continue;
+      }
+      if (!pl.dead) step(o, Z, st, d, dt, pl, zt, Z);
       if (pickOpen()) break;   // (a choice opened: the world holds)
+      for (const g of guests) {
+        if (Z.st[o.i] === USED || Z.st[o.i] === GONE) break;
+        const P = per(Z, g), gd = Math.hypot(g.x - o.x, g.y - o.y);
+        if (P.latch.has(o.i) && gd > 3.2 * tsz + (g.r || 0)) P.latch.delete(o.i);
+        step(o, Z, Z.st[o.i], gd, dt, g, zt, P);
+      }
     }
     tickTips(dt);
   }
+  // (D11: the altars that charge for whoever stands in them: one clock for everyone)
+  const SHARED = { unown1: 1, unown2: 1, unown3: 1, unown4: 1, comet: 1 };
   /** One interactable's step (the host). */
-  function step(o, Z, st, d, dt, pl, zt) {
-    const tsz = TS(), pr = pl.r || 14;
+  function step(o, Z, st, d, dt, pl, zt, P = Z) {
+    const tsz = TS(), pr = pl.r || 14, m = mateOf(pl);   // (D11: m = the co-op guest standing here, or null: the host / solo)
     const stand = (r, need) => {
-      if (d < r) { Z.t[o.i] += dt; return Z.t[o.i] >= need; }
-      Z.t[o.i] = Math.max(0, Z.t[o.i] - dt * 2);
+      if (d < r) { P.t[o.i] += dt; return P.t[o.i] >= need; }
+      P.t[o.i] = Math.max(0, P.t[o.i] - dt * 2);
       return false;
     };
     switch (o.kind) {
       case 'ball': case 'freeball': case 'cursedball': {
-        if (Z.latch.has(o.i) || !stand(1.15 * tsz + pr, K.OPEN_T)) return;
-        openBall(o, Z, pl);
+        if (P.latch.has(o.i) || !stand(1.15 * tsz + pr, K.OPEN_T)) return;
+        openBall(o, Z, pl, null, P);
         return;
       }
       case 'meowth': {
-        if (Z.spot !== o.i || Z.latch.has(o.i) || d > 1.7 * tsz + pr) return;
-        Z.latch.add(o.i);
-        openShop(o, Z, pl);
+        if (Z.spot !== o.i || P.latch.has(o.i) || d > 1.7 * tsz + pr) return;
+        P.latch.add(o.i);
+        if (m) toMate(m, ['xs', Z.visit, Z.spot]);   // (D11: the guest opens the shop on its side; its buys come back as 'xb')
+        else openShop(o, Z, pl);
         return;
       }
       case 'unown1': case 'unown2': case 'unown3': case 'unown4': case 'comet': {
@@ -369,7 +402,7 @@ G.ExpEco = (() => {
       case 'challenge': {
         if (st === FRESH) {
           if (!stand(1.6 * tsz + pr, K.CHAL_T)) return;
-          Z.st[o.i] = ACTIVE; Z.t[o.i] = 0;
+          Z.st[o.i] = ACTIVE; P.t[o.i] = 0;
           const ids = horde(o, K.CHAL_N[0] + K.CHAL_N[1] * zoneNow(), { hp: K.CHAL_HP });
           Z.wave.set(o.i, ids);
           say(F('¡Desafío! Derrota la oleada'), 2.6); G.Audio.sfx('surge');
@@ -377,12 +410,12 @@ G.ExpEco = (() => {
         } else if (st === ACTIVE) {
           const ids = Z.wave.get(o.i) || [];
           if (!ids.some(id => { const e = G.EnemyMgr.get(id); return e && !e.dead; })) {
-            Z.st[o.i] = READY; Z.wave.delete(o.i); Z.t[o.i] = 0;
+            Z.st[o.i] = READY; Z.wave.delete(o.i); P.t[o.i] = 0;
             say(F('¡Desafío superado! Una Super Ball'), 2.8); G.Audio.sfx('legend'); G.FX.ring(o.x, o.y, 8, 140, COL.great, 0.7, 5);
           }
         } else if (st === READY) {
-          if (Z.latch.has(o.i) || !stand(1.15 * tsz + pr, K.OPEN_T)) return;
-          openBall(o, Z, pl, 'great');
+          if (P.latch.has(o.i) || !stand(1.15 * tsz + pr, K.OPEN_T)) return;
+          openBall(o, Z, pl, 'great', P);
         }
         return;
       }
@@ -392,8 +425,8 @@ G.ExpEco = (() => {
         const M = S.mods;
         if (o.kind === 'cursedaltar') {
           M.diff += K.CURSE_ALTAR.diff; M.rate += K.CURSE_ALTAR.rate;
-          const id = rollOffers(pl, rngFor(o.i, 0xC0A5), 1, 2)[0];
-          if (id) LV().itemTake(pl, IT().PREFIX + id);
+          if (m) toMate(m, ['xg', seedFor(o.i, 0xC0A5), 1, 2, 0]);   // (D11: the guest's own Rare+ item)
+          else { const id = rollOffers(pl, rngFor(o.i, 0xC0A5), 1, 2)[0]; if (id) LV().itemTake(pl, IT().PREFIX + id); }
           say(F('¡Maldición! Más enemigos y más dificultad'), 3);
         } else {
           M.diff += K.GREED.diff; M.xp += K.GREED.xp; M.money += K.GREED.money; M.loot = Math.max(M.loot, K.GREED.loot);
@@ -403,9 +436,10 @@ G.ExpEco = (() => {
         return;
       }
       case 'ditto': {
-        if (Z.latch.has(o.i) || !stand(1.3 * tsz + pr, K.MEET_T)) return;
+        if (P.latch.has(o.i) || !stand(1.3 * tsz + pr, K.MEET_T)) return;
+        P.latch.add(o.i); P.t[o.i] = 0;
+        if (m) { markUsed(Z, o); S.log.ditto++; toMate(m, ['xd', seedFor(o.i, 0xD170)]); G.FX.ring(o.x, o.y, 8, 120, COL.ditto, 0.6, 4); return; }   // (D11: the guest's own items)
         const I = IT(), have = Object.keys(pl.xi || {}).filter(id => I.IT[id] && I.room(pl, id));
-        Z.latch.add(o.i); Z.t[o.i] = 0;
         if (!have.length) { say(F('Ditto no tiene nada que copiar'), 2.4); return; }
         const id = have[Math.floor(rngFor(o.i, 0xD170)() * have.length) % have.length];
         markUsed(Z, o); S.log.ditto++;
@@ -414,19 +448,22 @@ G.ExpEco = (() => {
         return;
       }
       case 'hypno': {
-        if (Z.latch.has(o.i) || !stand(1.3 * tsz + pr, K.MEET_T)) return;
-        Z.latch.add(o.i); Z.t[o.i] = 0;
+        if (P.latch.has(o.i) || !stand(1.3 * tsz + pr, K.MEET_T)) return;
+        P.latch.add(o.i); P.t[o.i] = 0;
+        if (m) { toMate(m, ['xh', o.i]); return; }   // (D11: the guest forgets one of its own vitamins on its side)
         if (!pl.xv || !pl.xv.length) { say(F('No tienes vitaminas que olvidar'), 2.4); return; }
         openHypno(o, Z, pl);
         return;
       }
       case 'cage': {
-        if (Z.latch.has(o.i) || !stand(1.3 * tsz + pr, K.MEET_T)) return;
-        Z.latch.add(o.i); Z.t[o.i] = 0;
+        if (P.latch.has(o.i) || !stand(1.3 * tsz + pr, K.MEET_T)) return;
+        P.latch.add(o.i); P.t[o.i] = 0;
         const cost = cageCost(zoneNow());
-        if (!spend(cost)) { say(F('Te faltan {x} ₽', cost - (pl.coins || 0)), 2.4); G.Audio.sfx('error'); return; }
+        if (!spend(cost)) { say(F('Te faltan {x} ₽', cost - teamCoins()), 2.4); G.Audio.sfx('error'); return; }
         markUsed(Z, o); S.log.freed++;
-        const xp = Math.round(pl.xpNext * K.CAGE_XP), ups = pl.gainXp(xp / (pl.xpMul || 1));
+        if (G.ExpMeta) G.ExpMeta.onFreed(o.v);   // (D10: +25 research to its family)
+        const tp = G.Game.player;   // (D11: the team's XP is the host's: a guest freeing a cage levels everyone)
+        const xp = Math.round(tp.xpNext * K.CAGE_XP), ups = tp.gainXp(xp / (tp.xpMul || 1));
         if (ups > 0) G.Game.grantLevels(ups, false);
         say(F('¡Liberas a {x}! +{x} de experiencia', (G.DEX_BY[o.v] || {}).name || '', xp), 2.8);
         G.Audio.sfx('legend'); G.FX.ring(o.x, o.y, 8, 140, '#7dffb0', 0.6, 5);
@@ -443,6 +480,7 @@ G.ExpEco = (() => {
       case 'berry': {
         if (d > 0.85 * tsz + pr || pl.hp >= pl.maxHp) return;
         markUsed(Z, o); S.log.berries++;
+        if (m) { toMate(m, ['heal', K.BERRY]); G.Audio.sfx('heal'); return; }   // (D11: the base co-op heal event, on the guest's side)
         const before = pl.hp;
         pl.heal(pl.maxHp * K.BERRY);
         say(F('¡Bayas! +{x} de vida', Math.round(pl.hp - before)), 2.2); G.Audio.sfx('heal');
@@ -472,28 +510,30 @@ G.ExpEco = (() => {
   }
 
   // ---------------- the balls ----------------
-  function openBall(o, Z, pl, as) {
-    const kind = as || o.kind, I = IT();
+  function openBall(o, Z, pl, as, P = Z) {
+    const kind = as || o.kind, I = IT(), m = mateOf(pl);
     if (kind === 'ball') {
       const cost = ballCost(S.balls, pl.xluck || 0);
-      Z.latch.add(o.i); Z.t[o.i] = 0;
-      if ((pl.coins || 0) < cost) { say(F('Te faltan {x} ₽', cost - (pl.coins || 0)), 2.4); G.Audio.sfx('error'); return false; }
+      P.latch.add(o.i); P.t[o.i] = 0;
+      if (teamCoins() < cost) { say(F('Te faltan {x} ₽', cost - teamCoins()), 2.4); G.Audio.sfx('error'); return false; }
       spend(cost); S.balls++;
     }
     markUsed(Z, o); S.opened++; S.log.balls++;
     G.Audio.sfx('legend'); G.FX.ring(o.x, o.y, 6, 110, COL[kind], 0.5, 4);
-    const rng = rngFor(o.i, 0xBA11);
+    const sd = seedFor(o.i, 0xBA11), rng = R(sd);
     if (kind === 'ball' || kind === 'great') {
-      const n = K.OFFERS + (S.mods.loot | 0), ids = rollOffers(pl, rng, n, kind === 'great' ? 1 : 0);
+      const n = K.OFFERS + (S.mods.loot | 0);
+      if (m) { toMate(m, ['xo', kind, sd, n, kind === 'great' ? 1 : 0, 1, 0]); return true; }   // (D11: the guest picks from its own roll)
+      const ids = rollOffers(pl, rng, n, kind === 'great' ? 1 : 0);
       openPick({ kind: 'ball', title: NAME[kind], sub: F('Elige 1 de {x}', ids.length), ids, picks: 1 });
       return true;
     }
-    if (kind === 'freeball') { const id = rollOffers(pl, rng, 1, 0)[0]; if (id) LV().itemTake(pl, I.PREFIX + id); return true; }
+    if (kind === 'freeball') { if (m) { toMate(m, ['xg', sd, 1, 0, 0]); return true; } const id = rollOffers(pl, rng, 1, 0)[0]; if (id) LV().itemTake(pl, I.PREFIX + id); return true; }
     // cursed: +5 % difficulty, a ghost ambush, 1 item (a 2nd at 40 % x (1 + luck / 100))
     S.mods.diff += K.CURSE_BALL;
     const two = rng() < K.CURSE_2ND * (1 + (pl.xluck || 0) / 100);
-    const ids = rollOffers(pl, rng, two ? 2 : 1, 0);
-    for (const id of ids) LV().itemTake(pl, I.PREFIX + id);
+    if (m) toMate(m, ['xg', sd, two ? 2 : 1, 0, 1]);   // (D11: the guest's items, from the same stream past the "two" draw)
+    else { const ids = rollOffers(pl, rng, two ? 2 : 1, 0); for (const id of ids) LV().itemTake(pl, I.PREFIX + id); }
     const ghosts = K.GHOST_DEX.filter(d => G.SPRITE_META[d]);
     horde({ i: o.i, x: pl.x, y: pl.y }, K.GHOSTS[0] + K.GHOSTS[1] * zoneNow(), { dex: ghosts.length ? ghosts : null, d: 220, msg: '¡Emboscada fantasma!' });
     say(F('¡La Poké Ball estaba maldita! +5 % de dificultad'), 3);
@@ -503,7 +543,12 @@ G.ExpEco = (() => {
   function blessing(o, Z, pl, tier) {
     markUsed(Z, o); Z.ch[o.i] = 1; S.log.altars++;
     G.Audio.sfx('legend'); G.FX.ring(o.x, o.y, 10, 200, COL[o.kind], 0.8, 6);
-    const rng = rngFor(o.i, 0xB1E5);
+    const sd = seedFor(o.i, 0xB1E5), rng = R(sd), m = mateOf(pl);
+    if (m) {   // (D11: a guest finished it: its blessing, rolled from its own pool on its side)
+      if (tier == null) toMate(m, ['xo', 'comet', sd, 3, 1, 1, 1]);
+      else { const [n, picks, min] = K.UNOWN_OFFERS[tier]; toMate(m, ['xo', 'unown' + tier, sd, n, min, picks, 0]); }
+      return;
+    }
     if (tier == null) {   // the comet
       const ids = rollOffers(pl, rng, 3, 1);
       const U = G.ExpUlt;
@@ -517,11 +562,20 @@ G.ExpEco = (() => {
   }
 
   // ---------------- Meowth ----------------
-  const heatNow = () => (S ? heatOf(S.buys, S.opened) : view ? heatOf(view.h[1], view.h[2]) : 0);
+  const heatNow = () => (S && !guestSide() ? heatOf(S.buys, S.opened) : view ? heatOf(view.h[1], view.h[2]) : 0);
   /** Meowth's prices now (by stock slot). */
   function shopPrices(stock) { const h = heatNow(), z = zoneNow(), I = IT(); return (stock || []).map(id => price(I.IT[id] ? I.IT[id].rar : 0, z, h)); }
   function openShop(o, Z, pl) { openPick({ kind: 'shop', title: NAME.meowth, ids: Z.stock || [], picks: 99, cancel: 'Irse' }); }
   function buy(slot) {
+    if (guestSide()) {   // (D11: a guest asks the host; the item comes back as 'xgi')
+      const c = cur();
+      if (!c || !c.stock || (c.sold & (1 << slot)) || (pick && pick.taken.includes(slot))) return false;
+      const cost = shopPrices(c.stock)[slot];
+      if (teamCoins() < cost) { say(F('Te faltan {x} ₽', cost - teamCoins()), 2.2); G.Audio.sfx('error'); return false; }
+      G.Coop.toHost(['xb', slot, c.spot]); G.Audio.sfx('coin');
+      if (pick) pick.taken.push(slot);
+      return true;
+    }
     const pl = G.Game.player, Z = S && S.z;
     if (!Z || !Z.stock || (Z.sold & (1 << slot))) return false;
     const id = Z.stock[slot], cost = shopPrices(Z.stock)[slot];
@@ -530,6 +584,66 @@ G.ExpEco = (() => {
     LV().itemTake(pl, IT().PREFIX + id);
     G.Audio.sfx('coin');
     return true;
+  }
+
+  // ---------------- D11: online co-op (the host's offers to a guest, a guest's buys) ----------------
+  /**
+   * net.event (js/net/coop.js, through core.js): on a GUEST the host's messages for it, on the HOST a guest's. -> true if handled
+   *   'xo' [kind, seed, n, min, picks, ult]  pick from n items rolled from seed with YOUR pool (ball / great / comet / unownN)
+   *   'xg' [seed, n, min, skip]              take n items rolled from seed (after skip draws): a free / cursed ball, the cursed altar
+   *   'xgi' [ids]                            take these items (a buy at Meowth's)
+   *   'xd' [seed]                            Ditto copies one of your items      'xh' [i]  Hypno: forget a vitamin
+   *   'xs' [visit, spot]                     Meowth's shop opens (its stock is the `o` block's)
+   *   'xb' [slot, spot] (guest -> host)      buy that slot with the team's ₽ (the host checks and answers 'xgi')
+   */
+  function netEvent(ev, from) {
+    const pl = G.Game.player, I = IT();
+    if (!S || !pl || !Array.isArray(ev)) return false;
+    if (from != null) {
+      if (ev[0] !== 'xb' || guestSide()) return false;
+      const Z = S.z, m = G.Coop.mate(from), slot = ev[1] | 0;
+      if (!Z || !m || !Z.stock || Z.spot !== ev[2] || (Z.sold & (1 << slot)) || !Z.stock[slot]) return true;
+      const cost = shopPrices(Z.stock)[slot];
+      if (!spend(cost)) return true;
+      Z.sold |= 1 << slot; S.buys++; S.log.shop++; S.used++; S.last = Z.spot;
+      toMate(m, ['xgi', [Z.stock[slot]]]);
+      return true;
+    }
+    if (!guestSide()) return false;
+    switch (ev[0]) {
+      case 'xo': {
+        const [, kind, sd, n, min, picks, ult] = ev, ids = rollOffers(pl, R(sd >>> 0), n | 0, min | 0);
+        const U = G.ExpUlt;
+        if (ult && U && U.run && !U.run.cast) U.run.c = Math.min(1, U.run.c + K.COMET_ULT);
+        const tier = /^unown\d$/.test(kind) ? +kind.slice(5) : null;
+        const title = kind === 'comet' ? NAME.comet : tier != null ? (tier === 3 ? F('¡Bendición dorada!') : F('Bendición Unown')) : NAME[kind] || NAME.ball;
+        const sub = (picks > 1 ? F('Elige 2 de {x}', ids.length) : F('Elige 1 de {x}', ids.length)) + (kind === 'comet' ? ' · ' + F('Definitivo +25 %') : '');
+        openPick({ kind: kind === 'comet' ? 'comet' : tier != null ? 'unown' : 'ball', title, sub, ids, picks: Math.max(1, Math.min(picks | 0, ids.length)) });
+        return true;
+      }
+      case 'xg': {
+        const rng = R(ev[1] >>> 0);
+        for (let k = 0; k < (ev[4] | 0); k++) rng();
+        for (const id of rollOffers(pl, rng, ev[2] | 0, ev[3] | 0)) LV().itemTake(pl, I.PREFIX + id);
+        G.Audio.sfx('select');
+        return true;
+      }
+      case 'xgi': for (const id of ev[1] || []) if (I.IT[id]) LV().itemTake(pl, I.PREFIX + id); return true;
+      case 'xd': {
+        const have = Object.keys(pl.xi || {}).filter(id => I.IT[id] && I.room(pl, id));
+        if (!have.length) { say(F('Ditto no tiene nada que copiar'), 2.4); return true; }
+        const id = have[Math.floor(R(ev[1] >>> 0)() * have.length) % have.length];
+        LV().itemTake(pl, I.PREFIX + id);
+        say(F('Ditto copia {x}', T.t(I.IT[id].name)), 2.8);
+        return true;
+      }
+      case 'xh':
+        if (!pl.xv || !pl.xv.length) { say(F('No tienes vitaminas que olvidar'), 2.4); return true; }
+        openPick({ kind: 'hypno', title: NAME.hypno, sub: F('Hypno: «Mira el péndulo...»'), vit: pl.xv.map(x => x.id), picks: 1, cancel: 'Quedármelas' });
+        return true;
+      case 'xs': { const c = cur(); openPick({ kind: 'shop', title: NAME.meowth, ids: (c && c.stock) || [], picks: 99, cancel: 'Irse' }); return true; }
+    }
+    return false;
   }
 
   // ---------------- Hypno ----------------
@@ -600,7 +714,7 @@ G.ExpEco = (() => {
       P.ids.forEach((id, k) => {
         const it = I.IT[id];
         if (!it) return;
-        const sold = P.kind === 'shop' ? !!(Z && (Z.sold & (1 << k))) : P.taken.includes(k);
+        const sold = P.kind === 'shop' ? (guestSide() ? !!(((cur() || { sold: 0 }).sold & (1 << k)) || P.taken.includes(k)) : !!(Z && (Z.sold & (1 << k)))) : P.taken.includes(k);
         const cost = prices ? prices[k] : 0, poor = prices && (pl.coins || 0) < cost;
         const tag = prices ? (sold ? T.t('Vendido') : F('Comprar · {x} ₽', cost)) : '';
         html += `<div class="card rar rar-${it.rar + 1}${sold ? ' picked xsold' : ''}${poor && !sold ? ' xpoor' : ''}" data-i="${k}"><div class="ico"><img class="ico-item" src="${I.icon(it.icon)}" alt=""></div>
@@ -1149,7 +1263,7 @@ body.touch #xtip { top: 78px; font-size: 12px; max-width: min(360px, 40vw); padd
   return {
     K, KINDS, NAME, TIP, FRESH, USED, ACTIVE, GONE, READY,
     layoutOf, visitAt, ballCost, allowance, heatOf, heatMul, price, cageCost, rollOffers, shopPrices,
-    begin, reset, mods, earn, spend, onKill, tick, buy, forget, choose, openPick, closePick, openMap, closeMap, tipOnce,
+    begin, reset, mods, earn, spend, onKill, tick, buy, forget, choose, openPick, closePick, openMap, closeMap, tipOnce, netEvent,
     oBlock, applyO, cur, drawGround, drawHud, tipRect, drawMini, mini, reveal, explored, found, record, syncPause,
     get run() { return S; }, get view() { return view; }, get pick() { return pick; }, get mapOpen() { return mapOpen; }, get mapInfo() { return mapInfo; },
     get fog() { return fog; }, get tip() { return tipNow ? tipNow.id : null; }, get tips() { return S ? S.tipLog.slice() : []; }, get miniDrawn() { return miniDrawn; }, get miniRect() { return miniRect; },
