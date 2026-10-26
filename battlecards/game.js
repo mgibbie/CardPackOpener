@@ -19,7 +19,7 @@ import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
-import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun } from './runsync.js';
+import { pickCanonicalRun, useLocalAsyncTurn, serverEndedRun, serverSupersededRun } from './runsync.js';
 import { winLossLabel, plural } from './runlabel.js';
 import { runSummary } from './runlabel.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
@@ -162,7 +162,17 @@ function stampRun(run) {
 	run.updatedAt = Date.now();
 	return run;
 }
-const saverFor = key => run => safeSave(key, stampRun(run));
+// A run write must land too (a loot pick, the next enemy, a banked win): on a full store it
+// evicts expendable replay data and retries, like the mid-fight snapshot. If it still fails,
+// the player is told — a run whose saves silently stop resumes hours behind on the next load.
+const saverFor = key => run => { const ok = safeSaveRetry(key, stampRun(run), freeSpaceForSnapshot); if (!ok) runSaveFailed(key); return ok; };
+let _runSaveWarned = false;
+function runSaveFailed(key) {
+	if (_runSaveWarned) return;
+	_runSaveWarned = true;
+	try { banner('⚠ This browser could not save your run (storage is full or blocked) — your progress may not survive a reload.', 8000); } catch (e) { /* no DOM yet */ }
+	try { window.reportErr?.('run save failed after eviction (' + key + ')', 'game.js runSaveFailed'); } catch (e) { /* ignore */ }
+}
 // A run that loses reconciliation but still holds progress is never dropped — it is
 // stashed under a sibling key so it stays recoverable.
 function preserveRunConflict(key, run, reason) {
@@ -259,7 +269,7 @@ function saveRunSnapshot() {
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
 		run.snapshotAt = Date.now(); // freshness stamp so boot never discards this for a stale server copy
 		stampRun(run); // identity + monotonic rev, so reconciliation can order this write
-		safeSaveRetry(io.key, run, freeSpaceForSnapshot); // local only; never silently skipped
+		if (!safeSaveRetry(io.key, run, freeSpaceForSnapshot)) runSaveFailed(io.key); // local only; never silently skipped
 	} catch (e) { /* never let a save break play */ }
 }
 // drop the in-fight snapshot when a fight ends (so the next fight boots fresh, not resumes the finished one)
@@ -469,6 +479,30 @@ function endRunKey(key) {
 	localStorage.removeItem(key);
 	serverClearRun(key, runId);
 }
+// Fight! on a run's NEXT screen reloads the page to boot the fight fresh. The boot used to
+// treat that reload like any return to the mode and showed "<RUN> IN PROGRESS / Continue the
+// run" first — one extra click every fight, with Abandon right under it (instinctgauntlet,
+// 2026-10-22). Fight! now leaves a one-shot, tab-scoped marker naming the run it advanced;
+// a boot that finds the SAME run skips the resume prompt. Any other load (a manual reload, a
+// new tab, another run) still asks.
+const FIGHT_GO_KEY = 'magepunk_fight_go_v1';
+let _fightGo = null;
+function fightNow() {
+	try {
+		const io = activeRunIO(); const run = io && io.load();
+		if (io && run && run.runId) sessionStorage.setItem(FIGHT_GO_KEY, JSON.stringify({ key: io.key, runId: String(run.runId), at: Date.now() }));
+	} catch (e) { /* no sessionStorage: the resume prompt simply shows */ }
+	location.reload();
+}
+function takeFightGo() {
+	let v = null;
+	try { v = JSON.parse(sessionStorage.getItem(FIGHT_GO_KEY) || 'null'); sessionStorage.removeItem(FIGHT_GO_KEY); } catch (e) { v = null; }
+	return v && typeof v === 'object' && Date.now() - (v.at || 0) < 120000 ? v : null;
+}
+function fightGoFor(run) {
+	const io = activeRunIO();
+	return !!(_fightGo && io && run && run.runId && _fightGo.key === io.key && _fightGo.runId === String(run.runId));
+}
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
 const _runsEndedAtBoot = new Set();   // run keys whose stale local copy the boot put away
 async function hydrateRunsFromServer() {
@@ -480,6 +514,8 @@ async function hydrateRunsFromServer() {
 			// the server says this very run is OVER: a local copy of it is a zombie (its
 			// removal was lost) — every save of it would be refused, so put it away now
 			if (serverEndedRun(safeLoad(key, null), entry)) { endLocalRunCopy(key, safeLoad(key, null), 'server-ended'); _runsEndedAtBoot.add(key); continue; }
+			// ...or a LATER run ended there since this copy was written: an older run's zombie (stashed, never deleted)
+			if (serverSupersededRun(safeLoad(key, null), entry)) { endLocalRunCopy(key, safeLoad(key, null), 'server-ended-later-run'); _runsEndedAtBoot.add(key); continue; }
 			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
 			if (entry.run.runId && endedRunIds().includes(String(entry.run.runId))) continue; // a run this device ended
 			// Pick ONE canonical copy. entry.updated_at is the server's own write stamp —
@@ -507,6 +543,14 @@ const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name
 	: heistBossName && pi === 1 ? heistBossName : `AI ${pi}`);
+// why a Coin arrived (coinGiven.cause), as a log suffix
+function coinCauseText(cause) {
+	if (!cause || cause.kind !== 'land' || cause.by == null) return '';
+	return cause.from ? ` (${nameOf(cause.by)} upgraded ${cause.from} into ${cause.land})` : ` (${nameOf(cause.by)} developed ${cause.land})`;
+}
+// who just played The Coin (its 'play' event), so the 'coin' event that follows logs once;
+// anything else (Escaped Manasaber's attack) is plain temp mana: "gained 1 Mana"
+let coinPlayBy = null;
 // nameOf returns the SECOND person for the local player ("You"), so anything that
 // glues a third-person verb or a possessive onto it reads wrong: "You rolls the
 // planar die", "returned to You's hand". These pick the right form by person.
@@ -1394,6 +1438,28 @@ function openArtifactTapMenu(card, ev) {
 }
 
 let sprocketRing = null; // gold ring marking the human's active Contraption slot
+// How far the TUCKED hand moves up the table to stay on screen. Its fixed spot sat below
+// a 720px-tall window's edge: a press on the field tucks the hand, and at 1280x720 the
+// cards' centers landed at y≈740-757, a thin sliver showing (instinctgauntlet, 2026-10-25).
+// Solved once per viewport/camera: the tucked row's centers stay TUCK_MARGIN px above the
+// bottom edge; a tall window, where it already fits, keeps the old spot (lift 0).
+const TUCK_MARGIN = 34;
+const _tuckV = new THREE.Vector3();
+const _tuck = { w: -1, h: -1, off: NaN, cy: NaN, cz: NaN, dz: 0 };   // per-frame: compare numbers, allocate nothing
+function tuckLiftZ(off) {
+	const t = _tuck, cy = camera.position.y, cz = camera.position.z;
+	if (t.w === innerWidth && t.h === innerHeight && t.off === off && t.cy === cy && t.cz === cz) return t.dz;
+	camera.updateMatrixWorld();
+	const limit = innerHeight - TUCK_MARGIN;
+	let dz = 0;
+	for (let k = 0; k < 40; k++) {
+		toWorld(0, 1.32, off + 7.5 - dz, HUMAN, _tuckV).project(camera);
+		if ((1 - _tuckV.y) / 2 * innerHeight <= limit) break;
+		dz += 0.05;
+	}
+	t.w = innerWidth; t.h = innerHeight; t.off = off; t.cy = cy; t.cz = cz; t.dz = dz;
+	return dz;
+}
 function layoutTargets() {
 	if (!state) return;
 	const off = sliceOff();
@@ -1432,7 +1498,7 @@ function layoutTargets() {
 				const hovered = hoverUid === card.uid || (pending?.card.uid === card.uid);
 				if (handMini && !hovered) {
 					// tucked down below the hero panel so the panel reads clearly
-					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03);
+					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03 - tuckLiftZ(off));
 					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = 0.5;
 				} else {
@@ -2142,9 +2208,17 @@ function heroPanelOrbHit(uv) {
 
 // read-only HUD for a watcher: fill both sides' stats, mark whose turn it is,
 // and never light up controls or "your turn" affordances
+// a seat's name for a watcher. A REPLAY has no spectateName, so the seat being watched
+// read as null ("null wins!" on every replay's last frame). Replays name each seat from
+// the tape ("You" there means the recorder, so the hero's own name is used instead).
+function watchSeatName(pi) {
+	if (spectateMode && pi === HUMAN) return spectateName;
+	const taped = replayMode ? replayTape?.meta?.heroes?.[pi]?.name : null;
+	return (taped && taped !== 'You' ? taped : null) || state?.classPicks?.[pi]?.name || (replayMode ? `Player ${pi + 1}` : `Opponent ${pi}`);
+}
+const watchResultLine = () => (state.winner == null ? 'The game ended in a draw.' : `${watchSeatName(state.winner)} wins!`);
 function updateHudSpectate() {
-	const label = pi => pi === HUMAN ? spectateName
-		: (state.classPicks?.[pi]?.name || `Opponent ${pi}`);
+	const label = watchSeatName;
 	const gearOf = p => {
 		const g = [];
 		if (p.weapon) g.push(`⚔ ${p.weapon.name || ''} ${p.weapon.attack}/${p.weapon.durability}`);
@@ -2177,7 +2251,7 @@ function updateHudSpectate() {
 	$('concede').style.display = 'none';
 	$('coin-btn').style.display = 'none';
 	$('hint').textContent = state.over
-		? `${label(state.winner)} wins!`
+		? watchResultLine()
 		: `${label(state.current)} is playing…`;
 }
 
@@ -3530,7 +3604,9 @@ function nextEvent() {
 		case 'play':
 			if (matchStats) statInc(matchStats.cards, ev.player);
 			SFX.play('cardPlay');
-			log(`${nameOf(ev.player)} played ${ev.card.name}`, [ev.card]);
+			// The Coin's own 'coin' event prints its line ("played The Coin (+1 mana)") — one line, not two
+			coinPlayBy = ev.card.id === 'coin' ? ev.player : null;
+			if (coinPlayBy == null) log(`${nameOf(ev.player)} played ${ev.card.name}`, [ev.card]);
 			delay = 420;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
@@ -3683,6 +3759,11 @@ function nextEvent() {
 			log(`${nameOf(ev.player)} developed ${ev.card.name}`);
 			delay = 320;
 			break;
+		case 'landUpgraded':
+			SFX.play('land');
+			log(`${nameOf(ev.player)} upgraded ${ev.from ? ev.from + ' into ' : 'a land into '}${ev.card.name}`);
+			delay = 320;
+			break;
 		case 'landTapped':
 			log(`${nameOf(ev.player)} tapped ${ev.card.name}: ${ev.text}`);
 			delay = 300;
@@ -3704,7 +3785,9 @@ function nextEvent() {
 			delay = 350;
 			break;
 		case 'manaGained': delay = 120; break;
-		case 'coinGiven': SFX.play('coin'); log(`${nameOf(ev.player)} got The Coin`); delay = 120; break;
+		// a land develop/upgrade hands each opponent The Coin (the land rule) — name the cause, or
+		// the Coin reads as a stray grant on the other player's turn (instinctgauntlet, 2026-10-23..25)
+		case 'coinGiven': SFX.play('coin'); log(`${nameOf(ev.player)} got The Coin${coinCauseText(ev.cause)}`); delay = 120; break;
 		case 'conjure':
 			log(ev.player === HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
 			delay = 350;
@@ -3978,7 +4061,7 @@ function nextEvent() {
 		case 'overloaded': log(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'have' : 'has'} ${ev.amount} mana locked (overload)`); delay = 300; break;
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
-		case 'coin': log(`${nameOf(ev.player)} played The Coin (+1 mana)`); delay = 250; break;
+		case 'coin': log(coinPlayBy === ev.player ? `${nameOf(ev.player)} played The Coin (+1 mana)` : `${nameOf(ev.player)} gained 1 Mana`); coinPlayBy = null; delay = 250; break;
 		case 'reshuffle': log(`${possOf(ev.player)} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
 		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
@@ -6782,12 +6865,13 @@ async function start() {
 		if (mode === 'multiverse') { location.href = '?multiverse=1'; return; }
 		menuChosen = true;
 	}
+	_fightGo = takeFightGo(); // a Fight! click on the NEXT screen boots straight into the fight
 	await hydrateRunsFromServer(); // server-authoritative: refresh the localStorage run caches from D1 before booting
 	if (activeRunIO() && _runsEndedAtBoot.has(activeRunIO().key)) { log('Your last run had already ended — its result is saved on the server. Pick a new run.'); banner('Your last run had already ended — its result is saved.', 4000); }
 	if (dungeonRunMode) {
 		let run = loadRun();
 		// a saved run offers resume-or-abandon; it never locks the class choice
-		if (run && run.active && !(await resumeRunOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeRunOverlay(run))) {
 			clearRun();
 			run = null;
 		}
@@ -6808,7 +6892,7 @@ async function start() {
 	} else if (heistRunMode) {
 		heistCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadHeist();
-		if (run && run.active && !(await resumeHeistOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeHeistOverlay(run))) {
 			clearHeist();
 			run = null;
 		}
@@ -6831,7 +6915,7 @@ async function start() {
 	} else if (tombsRunMode) {
 		tombsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadTombs();
-		if (run && run.active && !(await resumeTombsOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeTombsOverlay(run))) {
 			clearTombs();
 			run = null;
 		}
@@ -6854,7 +6938,7 @@ async function start() {
 	} else if (duelsRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadDuels();
-		if (run && run.active && !(await resumeDuelsOverlay(run))) {
+		if (run && run.active && !fightGoFor(run) && !(await resumeDuelsOverlay(run))) {
 			clearDuels();
 			run = null;
 		}
@@ -6877,7 +6961,7 @@ async function start() {
 	} else if (lorequestRunMode) {
 		lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
-		if (run && run.active && !(await resumeLorequestOverlay(run))) { clearLorequest(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeLorequestOverlay(run))) { clearLorequest(); run = null; }
 		if (!run || !run.active) {
 			const characterId = await pickLorequestDeckOverlay(cardsById);
 			const deck = Lorequest.deckOf(cardsById, characterId);
@@ -6889,7 +6973,7 @@ async function start() {
 	} else if (middleearthRunMode) {
 		middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
-		if (run && run.active && !(await resumeMiddleEarthOverlay(run))) { clearMiddleearth(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeMiddleEarthOverlay(run))) { clearMiddleearth(); run = null; }
 		if (!run || !run.active) {
 			const characterId = await pickMiddleEarthHeroOverlay(cardsById);
 			const deck = Middleearth.deckOf(cardsById, characterId);
@@ -6901,7 +6985,7 @@ async function start() {
 		} else if (swordcoastRunMode) {
 			swordcoastCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadSwordcoast();
-			if (run && run.active && !(await resumeSwordCoastOverlay(run))) { clearSwordcoast(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeSwordCoastOverlay(run))) { clearSwordcoast(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickSwordCoastHeroOverlay(cardsById);
 				const deck = Swordcoast.deckOf(cardsById, characterId);
@@ -6913,7 +6997,7 @@ async function start() {
 		} else if (finalfantasyRunMode) {
 			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadFinalfantasy();
-			if (run && run.active && !(await resumeFinalFantasyOverlay(run))) { clearFinalfantasy(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeFinalFantasyOverlay(run))) { clearFinalfantasy(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickFinalFantasyHeroOverlay(cardsById);
 				const deck = Finalfantasy.deckOf(cardsById, characterId);
@@ -6925,7 +7009,7 @@ async function start() {
 		} else if (multiverseRunMode) {
 			multiverseCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadMultiverse();
-			if (run && run.active && !(await resumeMultiverseOverlay(run))) { clearMultiverse(); run = null; }
+			if (run && run.active && !fightGoFor(run) && !(await resumeMultiverseOverlay(run))) { clearMultiverse(); run = null; }
 			if (!run || !run.active) {
 				const characterId = await pickMultiverseHeroOverlay(cardsById);
 				const deck = Multiverse.deckOf(cardsById, characterId);
@@ -6937,7 +7021,7 @@ async function start() {
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
-		if (run && run.active && !(await resumeArenaOverlay(run))) { clearArena(); run = null; }
+		if (run && run.active && !fightGoFor(run) && !(await resumeArenaOverlay(run))) { clearArena(); run = null; }
 		if (!run || !run.active) {
 			const heroId = await pickDuelsHeroOverlay();
 			let hero = Duels.HEROES.find(h => h.id === heroId);
@@ -7530,7 +7614,7 @@ function advanceRun(run, nextLevel) {
 	saveRun(run);
 	const boss = Dungeon.BOSSES[run.bossId];
 	const el = dungeonOverlay(`LEVEL ${nextLevel}`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP) — "${boss.flavor}"`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function dungeonDefeat(run) {
@@ -7859,7 +7943,7 @@ function advanceHeist(run, nextLevel) {
 	saveHeist(run);
 	const boss = Heist.BOSSES[run.bossId];
 	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP)`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function heistDefeat(run) {
@@ -8103,7 +8187,7 @@ function advanceTombs(run, nextLevel) {
 	saveTombs(run);
 	const boss = Tombs.BOSSES[run.bossId];
 	const el = dungeonOverlay(`FIGHT ${nextLevel}/8`, `Next: ${boss.name} (${runLifeFor(nextLevel)} HP)${boss.plagueLord ? ' — the Plague Lord!' : ''}`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function tombsDefeat(run) {
@@ -8371,7 +8455,7 @@ function advanceDuels(run) {
 	run.enemy = genDuelsEnemy(duelsCardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveDuels(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards.`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function duelsRunComplete(run) {
@@ -8529,8 +8613,8 @@ async function pickLorequestDeckOverlay(cardsById) {
 }
 
 // roll the next enemy: roster by `games` (planeswalkers < 8, then bosses), deck at `wins`-parity
-function genLorequestEnemy(cardsById, games, wins, avoidId, selfId) {
-	const character = Lorequest.randomEnemy(games, Math.random, avoidId, selfId);
+function genLorequestEnemy(cardsById, games, wins, avoidId, selfId, faced) {
+	const character = Lorequest.randomEnemy(games, Math.random, avoidId, selfId, faced);
 	return Lorequest.generateEnemy(cardsById, character, wins, Math.random);
 }
 
@@ -8575,6 +8659,15 @@ function bootLorequestEncounter(cardsById, run) {
 // SAME choices: resume is frame-exact), each pick is saved as it is made, and
 // boot reopens the reward instead of a fight. Advancing clears it.
 function beginPostGame(run, won) { delete run.pendingResult; run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
+// Every enemy this run has already met, the one just fought included — the next pick
+// skips them (The Balrog at F10 and again at F12; Azog likewise). Saves from before the
+// list existed still name their foes in the fight-replay labels ("Fight 3 — Azog (win)").
+function noteFaced(run) {
+	const seen = new Set(Array.isArray(run.faced) ? run.faced : []);
+	for (const f of Array.isArray(run.fightReplays) ? run.fightReplays : []) { const m = /—\s*(.+?)(?:\s\((?:win|loss)\))?$/.exec((f && f.label) || ''); if (m) seen.add(m[1]); }
+	if (run.enemy && run.enemy.id) seen.add(run.enemy.id);
+	return (run.faced = [...seen]);
+}
 function postGameRng(run, salt) { return E.seededRng(((run.postGame ? run.postGame.seed : (Math.random() * 2 ** 31) >>> 0) + salt * 7919) >>> 0); }
 function postGameStage(run, stage, save) { if (run.postGame) { run.postGame.stage = stage; save(run); } }
 function resumePostGame(run, step1, step2, advance) {
@@ -8643,11 +8736,11 @@ function afterLorequestBucket(run) {
 function advanceLorequest(run) {
 	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
 	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genLorequestEnemy(lorequestCardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId);
+	run.enemy = genLorequestEnemy(lorequestCardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId, noteFaced(run));
 	saveLorequest(run);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${tier})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function lorequestRunComplete(run) {
@@ -8725,8 +8818,8 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 }
 
 // roll the next enemy: rung by `wins`, avoiding an immediate repeat. STATIC (no loot/parity).
-function genMiddleEarthEnemy(cardsById, wins, avoidId) {
-	const character = Middleearth.randomEnemy(wins, Math.random, avoidId);
+function genMiddleEarthEnemy(cardsById, wins, avoidId, faced) {
+	const character = Middleearth.randomEnemy(wins, Math.random, avoidId, faced);
 	return Middleearth.generateEnemy(cardsById, character);
 }
 
@@ -8831,10 +8924,10 @@ function afterMiddleEarthReward(run) {
 
 function advanceMiddleEarth(run) {
 	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genMiddleEarthEnemy(middleearthCardsById, run.wins || 0, run.enemy && run.enemy.id);
+	run.enemy = genMiddleEarthEnemy(middleearthCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveMiddleearth(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Middleearth.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function middleEarthRunComplete(run) {
@@ -8913,8 +9006,8 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 }
 
 // roll the next enemy: rung by `wins`, avoiding an immediate repeat. STATIC (no loot/parity).
-function genSwordCoastEnemy(cardsById, wins, avoidId) {
-	const character = Swordcoast.randomEnemy(wins, Math.random, avoidId);
+function genSwordCoastEnemy(cardsById, wins, avoidId, faced) {
+	const character = Swordcoast.randomEnemy(wins, Math.random, avoidId, faced);
 	return Swordcoast.generateEnemy(cardsById, character);
 }
 
@@ -9019,10 +9112,10 @@ function afterSwordCoastReward(run) {
 
 function advanceSwordCoast(run) {
 	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genSwordCoastEnemy(swordcoastCardsById, run.wins || 0, run.enemy && run.enemy.id);
+	run.enemy = genSwordCoastEnemy(swordcoastCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveSwordcoast(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Swordcoast.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function swordCoastRunComplete(run) {
@@ -9100,8 +9193,8 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 	});
 }
 
-function genFinalFantasyEnemy(cardsById, wins, avoidId) {
-	const character = Finalfantasy.randomEnemy(wins, Math.random, avoidId);
+function genFinalFantasyEnemy(cardsById, wins, avoidId, faced) {
+	const character = Finalfantasy.randomEnemy(wins, Math.random, avoidId, faced);
 	return Finalfantasy.generateEnemy(cardsById, character);
 }
 
@@ -9203,10 +9296,10 @@ function afterFinalFantasyReward(run) {
 
 function advanceFinalFantasy(run) {
 	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genFinalFantasyEnemy(finalfantasyCardsById, run.wins || 0, run.enemy && run.enemy.id);
+	run.enemy = genFinalFantasyEnemy(finalfantasyCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveFinalfantasy(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function finalFantasyRunComplete(run) {
@@ -9286,8 +9379,8 @@ async function pickMultiverseHeroOverlay(cardsById) {
 }
 
 // roll the next villain: roster by `wins`, deck at `wins`-parity, avoiding an immediate repeat
-function genMultiverseEnemy(cardsById, wins, avoidId) {
-	const character = Multiverse.randomEnemy(wins, Math.random, avoidId);
+function genMultiverseEnemy(cardsById, wins, avoidId, faced) {
+	const character = Multiverse.randomEnemy(wins, Math.random, avoidId, faced);
 	return Multiverse.generateEnemy(cardsById, character, wins, Math.random);
 }
 
@@ -9375,10 +9468,10 @@ function afterMultiverseBucket(run) {
 
 function advanceMultiverse(run) {
 	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
-	run.enemy = genMultiverseEnemy(multiverseCardsById, run.wins || 0, run.enemy && run.enemy.id);
+	run.enemy = genMultiverseEnemy(multiverseCardsById, run.wins || 0, run.enemy && run.enemy.id, noteFaced(run));
 	saveMultiverse(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Multiverse.rungLabel(run.wins || 0)})`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 function multiverseRunComplete(run) {
@@ -9468,7 +9561,7 @@ function advanceArena(run, won) {
 	run.enemy = genArenaEnemy(runDefs(), run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveArena(run);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins} win${run.wins === 1 ? '' : 's'}` : `LOSS - ${run.losses}/3`, `Next up: ${run.enemy.name}. ${winLossLabel(run)} - your drafted deck stands pat.`);
-	el.appendChild(overlayButton('Fight!', () => location.reload()));
+	el.appendChild(overlayButton('Fight!', fightNow));
 }
 
 // reward scales with wins: 100 gold + 120 per win, plus the server pack
@@ -9761,6 +9854,22 @@ function renderReplayFrame(i) {
 	}
 	updateHud();
 	updateReplayBar();
+	syncReplayLog();
+}
+// A replay plays no events, so the 📜 Log drawer stayed EMPTY. Each frame carries its
+// caption (the live log's line at that moment): the drawer shows them up to the frame
+// on screen, ending with the result on the last one.
+function syncReplayLog() {
+	if (!replayTape) return;
+	logHistory.length = 0; logLinks.length = 0;
+	let prev = null;
+	for (let k = 0; k <= replayIdx; k++) {
+		const cap = replayTape.frames[k] && replayTape.frames[k].cap;
+		if (cap && cap !== prev) { logHistory.push(cap); logLinks.push([]); }
+		prev = cap;
+	}
+	if (state && state.over) { logHistory.push(watchResultLine()); logLinks.push([]); }
+	if (logFull && logFull.classList.contains('open')) renderLogFull();
 }
 function replayGoto(i) { replayPause(); renderReplayFrame(i); }
 function replayStep(d) { replayPause(); renderReplayFrame(replayIdx + d); }
