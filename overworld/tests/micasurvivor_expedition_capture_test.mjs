@@ -194,7 +194,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const r0 = await startClassic(page);
-	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 18 && r0.xv === 10 && r0.on && r0.rx, 'Classic starts with captures and reactions on; the content version is 18 (D19), the x block v8', JSON.stringify(r0));
+	A(r0.ok && r0.mode === 'exp-classic' && r0.dv === 19 && r0.xv === 10 && r0.on && r0.rx, 'Classic starts with captures and reactions on; the content version is 19 (D20), the x block v8', JSON.stringify(r0));
 	if (!r0.ok || !r0.on) throw new Error('no capture system: the rest needs it');
 
 	// ======================== 1. an alpha appears; the faint window; its prize when left alone
@@ -620,7 +620,7 @@ try {
 	A(vw.loadedBefore === false && vw.spec && JSON.stringify(vw.spec.s) === '[16]' && vw.spec.f === 5 && vw.spec.shiny && vw.spec.xk === 'shiny' && vw.spec.drawables >= 2 && !vw.spec.run,
 		'a live spectator (a fresh page): the Support Alpha drawn round the watched player, the fainted alpha, the shiny on its shiny sheet', JSON.stringify(vw.spec));
 	A(vw.spec && vw.spec.cine && vw.spec.over, '... and the capture cinematic when the host throws (its ball and its banner)', JSON.stringify(vw.spec));
-	A(vw.old && vw.old.view === null && vw.old.ok && !vw.old.notice && vw.old.dv === 18, 'a dv-6 / x v7 snapshot (no `p`) still loads with no notice: no capture shown; this build is dv 17 (D12)', JSON.stringify(vw.old));
+	A(vw.old && vw.old.view === null && vw.old.ok && !vw.old.notice && vw.old.dv === 19, 'a dv-6 / x v7 snapshot (no `p`) still loads with no notice: no capture shown; this build is dv 17 (D12)', JSON.stringify(vw.old));
 	A(vw.replay && vw.replay.withP > 0 && vw.replay.xc.length >= 2 && vw.replay.xc.includes(16) && vw.replay.xc.includes(21) && JSON.stringify(vw.replay.sa) === '[16,21]', 'a replay keeps `p` and an `xc` event per capture (Pidgey, Spearow); played back, the Support Alphas', JSON.stringify(vw.replay));
 	A(vw.base && vw.base.mode === 'normal' && !vw.base.zone && !vw.base.run && !vw.base.rx && !vw.base.x && vw.base.loaded, 'a Normal run in the same page (Expedition code loaded): no zone, no captures or reactions, no `x`', JSON.stringify(vw.base));
 	await d3.ctx.close();

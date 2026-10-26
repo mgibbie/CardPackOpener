@@ -193,6 +193,10 @@ G.ExpSurv = (() => {
       if (TR.event !== 1 && n > 1) n = Math.round(n * TR.event);
       return { at: t0 + Math.max(20, at - TR.early), kind, n, dex, seed: Math.floor(rng() * 4294967296) >>> 0, i };
     });
+    // (DLC D20, its own stream, after the segment's draws: phase 3 adds a rarity-5 elite pack; from phase 2 a legendary may roam)
+    const rd = R(mix(seed | 0, mapIdx(map), g, 0xD20)), CK = Cl.K, r5 = Cl.rare5 ? Cl.rare5() : [], rl = Cl.roamers ? Cl.roamers(map) : [];
+    if (zi === 2 && r5.length) ev.push({ at: t0 + intR(rd, 60, 240), kind: 'elite', n: Math.round(CK.RARE5_N * Math.min(2, zk)), dex: [pickR(rd, r5), pickR(rd, r5)], seed: Math.floor(rd() * 4294967296) >>> 0, i: 90, rare: 1 });
+    if (zi >= 1 && rl.length && rd() < CK.ROAM_P) ev.push({ at: t0 + intR(rd, 30, 270), kind: 'roam', n: 1, dex: [pickR(rd, rl)], seed: Math.floor(rd() * 4294967296) >>> 0, i: 91 });
     ev.sort((a, b) => a.at - b.at || a.i - b.i);
     ev.forEach(e => { delete e.i; });
     return ev;

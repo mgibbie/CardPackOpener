@@ -3153,6 +3153,42 @@ too, Sylveon), a Pawniard run to Kingambit, 5 wild members). Fails 23 of 30 befo
 Roggenrola, Snivy being free; the board counts), `_expedition_meta` (553 research families, 48 achievements), `_expedition_capture`
 (up to 5 wild members), `_expedition_classic` and `_sharedupgrades` (553), dv 17 -> 18 in the Expedition suites.
 
+## DLC D20: Expedition enemies, all 1,025 (and Wishiwashi in base)
+
+Owner, 2026-10-26: "i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and
+expedition mode". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D20 built".
+
+**What changed for the player**
+- **Wanderers** (Expedition): every zone 1-3 has 6 seeded "wanderers" (`plan().wander`, `K.WANDER_N`): Pokémon of NONE of the
+  map's types, from the zone's BST band (zone 1 also takes anything below its band, so Wishiwashi, BST 175, wanders there). They
+  are **12 % of the trickle** (`K.WANDER`), so a map keeps its identity: Viridian is still grass / bug / normal / flying, with the odd
+  Gastly or Ponyta passing through. Survival's trickle is Classic's, so it has them too.
+- **Rarity-5 elites:** zone 3 has one more elite wave of the 20 rarity-5 non-legendaries (Dragonite, Tyranitar, Slaking,
+  Salamence, Metagross, Garchomp, Hydreigon, Goodra, Kommo-o, Dragapult, Baxcalibur, Archaludon, the Paradox: 3 foes, at 300-470 s);
+  Survival's phase 3 (zone 3's) segments add one each 5:00.
+- **Roaming legendaries:** in zones 2-3 (35 % a zone) and from Survival's phase 2 (35 % a segment), a legendary or mythical (any but
+  the map's shrine legendary) roams in: "A legendary Raikou roams the zone!", x16 HP, x1.4 damage, x10 XP, a bigger sprite; beaten it
+  drops an item and a heal; left alone it moves on after 90 s ("Raikou has left!"). A new special kind, `roam` (the `c` block's code
+  7: an older viewer ignores it).
+- All of it comes from its own stream (`zoneStream(..., 0xD20)`, Survival's `0xD20` per segment), drawn after the plan's own draws:
+  a plan's cards, guardian and D3 timeline are what they were. Pure, as before.
+- **Base fix: Wishiwashi** (#746, BST 175, Solo Form) never spawned: the lowest base tier started at BST 180 and its only list was
+  the unused "beach" biome. The first tier now starts at 0 (`js/data/enemies.js`); as a "fan" enemy it joins the first tier's Water
+  hordes (the first tier's cast takes plain enemies only, as for every low-BST fan). The D0a golden runs are unchanged (no Water horde
+  in their first tier's 120 s), and so is the force-loaded run.
+- `G.Expedition.DV` **19**; the `x` block stays v10.
+
+**Coverage:** the union of `G.ExpClassic.plan`'s outputs over 1,500 seeds x 3 maps x 4 zones (cards, wanderers, events, guardians,
+shrines) + Survival's segments and milestones: **all 1,025** (before D20: ~665 species; tested). Base: every species is a tier
+candidate, a boss slot or a rift / judgment / tower legendary (tested; Wishiwashi was the one missing).
+
+**Tests:** `overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (14 checks: the Expedition union covers 1,025, the
+wanderers off-type and a minority, every rarity-5 a zone-3 elite and every legendary roams, plans pure and the D3 timeline in
+order; base coverage, Wishiwashi a first-tier candidate in Water hordes; FIRED: a zone's trickle spawns its wanderers at ~11 %, a
+roaming Raikou spawns, is a special and leaves, the rarity-5 elites spawn, a base Water horde spawns Wishiwashi). 11 of 14 fail
+before D20 (the base checks fail with only the enemies.js line reverted). Updated on purpose: `_expedition_classic` (a zone's kinds:
++ `roam` sometimes), dv 18 -> 19 in the Expedition suites.
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
@@ -3209,6 +3245,8 @@ The branch needs the full gate before it merges.
 - `node overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (DLC D19): every species 1-1025 a stage of one League member
   (553 families), every kit move a game move, D13's 245 byte-identical, the server's lists, the save's counter cap (client and
   server, an old client), the base collection's families, the 27 free trios, the pages, an Eevee run fired, Kingambit, 5 wild members.
+- `node overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (DLC D20): all 1,025 as Expedition enemies (the union of the
+  plans over many seeds), wanderers a minority, rarity-5 elites, roaming legendaries; base coverage and Wishiwashi.
 - `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
 - `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
   lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly

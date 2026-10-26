@@ -1780,3 +1780,24 @@ Built (`micasurvivor/README.md`, "DLC D19: the full League"). Choices and notes 
   Master", late). The hub card says 553.
 - **Versions:** `G.Expedition.DV` 18, `x` v10. No new streamed state.
 - **Base unchanged:** the D0a fixtures pass as recorded, and so does the force-loaded run.
+
+### Update (2026-10-26): D20 built, "all 1,025 as enemies"
+Built (`micasurvivor/README.md`, "DLC D20"). Choices and notes:
+- **Wanderers (ours: 6 a zone, 12 % of the trickle):** `plan().wander`, Pokémon of none of the map's types from the zone's band
+  (zone 1 also below it). The trickle swaps one of its draws for a wanderer at `K.WANDER`; the cards and their ages are untouched,
+  so the map's residents dominate. They are a separate list, not cards, because a Classic zone only ever reaches its first ~10 cards
+  (4 + one a minute): wanderers appended to the cards would never have spawned.
+- **Rarity-5 (20 species) as zone-3 / Survival elites:** one extra elite wave in zone 3's plan (3 foes, 300-470 s) and in each of
+  Survival's phase-3 segments.
+- **Roaming legendaries (ours: 35 % a zone 2-3 / a Survival segment from phase 2):** a new special `roam` (x16 HP, x1.4 damage, x10
+  XP, scale 1.4), an item + a heal when beaten, gone after 90 s; `c` block code 7 (an old viewer skips it). Not catchable (the League
+  encounters stay the way to a legendary member).
+- **Determinism:** every D20 draw is from its own stream (`0xD20`), after the plan's own, so a plan's cards / guardian / D3 timeline
+  are unchanged; the trickle's stream gains one draw a spawn (Expedition only; dv 19).
+- **Base: Wishiwashi.** The first tier's band starts at 0 (was 180). As a "fan" it never enters the first tier's cast (plain enemies
+  only there, as for every low-BST fan) but joins its Water hordes. The D0a fixtures did NOT change (no Water horde in the first
+  tier's 120 s of any golden run; the force-loaded run passes too), so nothing was re-recorded.
+- **Coverage, tested:** Expedition's plans (1,500 seeds x 3 maps x 4 zones + Survival) cover all 1,025 (survey: ~665 before); base:
+  every species is a tier candidate, a boss slot or a rift / judgment / tower legendary.
+- **Versions:** `G.Expedition.DV` 19, `x` v10. Sizes (`micasurvivor_expedition_mp_test`): busiest relay frame + 1 s of casts 10,215 /
+  16,000; a 45-min Survival tape 792,034 chars (17,600 KOs, up to 233 foes), a Classic clear 789,094 (7,328 KOs): under 1.2 MB.

@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 18;   // G.Expedition.DV (D19: the full League: 18; D18: shared upgrades: 17; D17: one held item: 16; D16: every move fires: 15; D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11; D13 League mode: 12; D14 Mega Evolution: 13; D15 slots and respawns: 14)
+const DV = 19;   // G.Expedition.DV (D20: all 1,025 as enemies: 19; D19: the full League: 18; D18: shared upgrades: 17; D17: one held item: 16; D16: every move fires: 15; D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11; D13 League mode: 12; D14 Mega Evolution: 13; D15 slots and respawns: 14)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
