@@ -57,10 +57,26 @@ G.ExpTerrain = (() => {
   // per map: where the noise is cut into levels 1..3, rock outcrops, ponds (noise thresholds), trees, grass, ramps
   const PROFILES = {
     viridian: { cuts: [0.44, 0.58, 0.72], walls: 0.83, ponds: 0.73, trees: 0.045, grove: 0.62, grass: 0.62, rampEvery: 34 },
-    mtmoon:   { cuts: [0.36, 0.5, 0.63], walls: 0.74, ponds: 0.9, trees: 0.008, grove: 0.8, grass: 0.8, rampEvery: 44 },
-    cerulean: { cuts: [0.5, 0.64, 0.78], walls: 0.9, ponds: 0.6, trees: 0.025, grove: 0.7, grass: 0.66, rampEvery: 30 }
+    // (DLC D12: Mt. Moon, cave ledges: low cuts (most of it high ground, all four levels), rock everywhere, hardly any water,
+    //  few ramps and more bounce pads (moon-stone crystals); Cerulean Cape: mostly low ground and the sea (big ponds), few
+    //  rocks, glide gaps; its pads are life buoys)
+    mtmoon:   { cuts: [0.36, 0.5, 0.63], walls: 0.74, ponds: 0.9, trees: 0.008, grove: 0.8, grass: 0.8, rampEvery: 44, pads: 10 },
+    cerulean: { cuts: [0.5, 0.64, 0.78], walls: 0.9, ponds: 0.55, trees: 0.025, grove: 0.7, grass: 0.66, rampEvery: 30, pads: 8 }
   };
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
+  /**
+   * DLC D12: each map's look. biome: the base biome palette the zone is painted in (js/world/tiles.js BIOMES, existing art:
+   * Viridian the forest, Mt. Moon the crystal cave, Cerulean Cape the rift's sea grotto); tint: the height tint (low ground
+   * .. plateau); pad: the bounce pad's picture; mini: the minimap's ramp colour and height shading.
+   */
+  const LOOK = {
+    viridian: { biome: () => 0, tint: [0.9, 1, 1.09, 1.17], pad: 'mushroom', mini: { ramp: [232, 208, 138], k0: 0.8, k: 0.13 } },
+    mtmoon:   { biome: () => 1, tint: [0.78, 0.92, 1.05, 1.18], pad: 'crystal', mini: { ramp: [196, 178, 236], k0: 0.7, k: 0.16 } },
+    cerulean: { biome: () => (G.Tiles ? G.Tiles.arenaBiome('water') : 0), tint: [0.94, 1, 1.07, 1.13], pad: 'buoy', mini: { ramp: [244, 226, 168], k0: 0.86, k: 0.1 } }
+  };
+  const lookOf = map => LOOK[map] || LOOK.viridian;
+  /** DLC D12: the base biome index a map's zones are painted in (G.World.setBiome; Viridian: 0, as before). */
+  const biomeOf = map => lookOf(map).biome();
 
   // ---------------- seeds and noise ----------------
   function mix(...vals) {
@@ -440,8 +456,8 @@ G.ExpTerrain = (() => {
     return packRGB(r, g, b);
   }
   /** The height tint: low ground a little darker, plateaus a little lighter. */
-  const TINT = [0.9, 1, 1.09, 1.17];
-  const tintOf = lv => lv <= 0 ? TINT[0] : lv >= MAXH ? TINT[MAXH] : TINT[Math.floor(lv)] + (TINT[Math.ceil(lv)] - TINT[Math.floor(lv)]) * (lv - Math.floor(lv));
+  const TINT = [0.9, 1, 1.09, 1.17];   // (Viridian's; DLC D12: each map's own, LOOK[map].tint)
+  const tintOf = (lv, map) => { const TT = map ? lookOf(map).tint : TINT; return lv <= 0 ? TT[0] : lv >= MAXH ? TT[MAXH] : TT[Math.floor(lv)] + (TT[Math.ceil(lv)] - TT[Math.floor(lv)]) * (lv - Math.floor(lv)); };
 
   /**
    * Paints the terrain layers over a baked chunk image (art resolution: G.Tiles.T px per tile). Called by
@@ -469,7 +485,7 @@ G.ExpTerrain = (() => {
       tiles++;
       const ox = i * TT, oy = j * TT, lv = H_(tx, ty), rd = R(tx, ty);
       // 1) height tint
-      const k = tintOf(lv + (rd ? 0.5 : 0));
+      const k = tintOf(lv + (rd ? 0.5 : 0), z.map);
       if (k !== 1) for (let y = 0; y < TT; y++) for (let x = 0; x < TT; x++) buf[(oy + y) * CW + ox + x] = scalePx(get(ox + x, oy + y), k);
       const lower = (dx, dy) => land(tx + dx, ty + dy) && H_(tx + dx, ty + dy) < lv && !(R(tx + dx, ty + dy) && H_(tx + dx, ty + dy) + 1 >= lv && rampFacesZ(tx + dx, ty + dy, -dx, -dy));
       const higher = (dx, dy) => land(tx + dx, ty + dy) && H_(tx + dx, ty + dy) > lv && !(rd && lv + 1 >= H_(tx + dx, ty + dy) && rampFacesZ(tx, ty, dx, dy));
@@ -511,7 +527,7 @@ G.ExpTerrain = (() => {
     for (const p of z.pads) {
       const i = p[0] - tx0, j = p[1] - ty0;
       if (i < 0 || j < 0 || i >= n || j >= n) continue;
-      paintPad(set, i * TT, j * TT, TT, p[2], B.liquid === 'lava', C);
+      paintPad(set, i * TT, j * TT, TT, p[2], B.liquid === 'lava' ? 'spring' : lookOf(z.map).pad, C);   // (DLC D12: the map's own pad)
     }
     ctx.putImageData(img, 0, 0);
     z.painted += tiles;
@@ -520,9 +536,13 @@ G.ExpTerrain = (() => {
   /** DLC D2: a bounce pad, pixel by pixel (art px, a 16 x 16 tile): a red cap with white spots, or a coiled spring. */
   const PAD_RED = packRGB(214, 54, 64), PAD_DARK = packRGB(120, 24, 40), PAD_WHITE = packRGB(250, 246, 236), PAD_STEM = packRGB(236, 214, 170);
   const PAD_STEEL = packRGB(180, 190, 204), PAD_STEEL2 = packRGB(96, 104, 124), PAD_ARROW = packRGB(255, 226, 92);
-  function paintPad(set, ox, oy, TT, dir, spring, C) {
-    const cx = TT / 2 - 0.5;
-    for (let y = 0; y < TT; y++) for (let x = 0; x < TT; x++) {
+  // (DLC D12: Mt. Moon's moon-stone crystal, Cerulean Cape's life buoy)
+  const PAD_CRY = [packRGB(92, 70, 156), packRGB(150, 128, 222), packRGB(206, 192, 255), packRGB(250, 246, 255)];
+  const PAD_BUOY = [packRGB(232, 64, 58), packRGB(252, 248, 240), packRGB(120, 28, 30), packRGB(60, 120, 170)];
+  function paintPad(set, ox, oy, TT, dir, variant, C) {
+    const cx = TT / 2 - 0.5, spring = variant === 'spring';
+    if (variant === 'crystal' || variant === 'buoy') paintPadX(set, ox, oy, TT, variant, cx);
+    else for (let y = 0; y < TT; y++) for (let x = 0; x < TT; x++) {
       const dx = (x - cx) / 6.5, dy = (y - 7) / 4.2, d = dx * dx + dy * dy;
       if (spring) {
         if (d <= 1 && y <= 9) set(ox + x, oy + y, d > 0.7 ? PAD_STEEL2 : y < 6 ? PAD_STEEL : packRGB(206, 214, 226));
@@ -540,6 +560,27 @@ G.ExpTerrain = (() => {
     }
   }
 
+  /** DLC D12: the other pads: a cluster of moon-stone crystals (Mt. Moon) or a red and white life buoy (Cerulean Cape). */
+  function paintPadX(set, ox, oy, TT, variant, cx) {
+    for (let y = 0; y < TT; y++) for (let x = 0; x < TT; x++) {
+      const dx = x - cx;
+      if (variant === 'crystal') {
+        // three facets: a tall one in the middle, two short ones beside it, on a dark base
+        const tall = Math.abs(dx) <= 2.5 - Math.max(0, 4 - y) * 0.6 && y >= 1 && y <= 12;
+        const left = Math.abs(dx + 4.5) <= 1.6 - Math.max(0, 6 - y) * 0.5 && y >= 5 && y <= 12;
+        const right = Math.abs(dx - 4.5) <= 1.6 - Math.max(0, 7 - y) * 0.5 && y >= 6 && y <= 12;
+        if (tall || left || right) set(ox + x, oy + y, dx < (tall ? 0 : left ? -4.5 : 4.5) ? PAD_CRY[2] : (x + y) % 5 === 0 ? PAD_CRY[3] : PAD_CRY[1]);
+        else if (y >= 12 && y <= 13 && Math.abs(dx) < 6.5) set(ox + x, oy + y, PAD_CRY[0]);
+      } else {
+        // a ring (squashed: seen from above), red and white quarters, a dark rope outline, the water through the middle
+        const ex = dx / 6.5, ey = (y - 7.5) / 4.6, d = Math.sqrt(ex * ex + ey * ey);
+        if (d > 1 || d < 0.45) { if (d <= 0.45) set(ox + x, oy + y, PAD_BUOY[3]); continue; }
+        const q = Math.floor((Math.atan2(ey, ex) + Math.PI) / (Math.PI / 2) + 0.5) % 2;
+        set(ox + x, oy + y, d > 0.9 || d < 0.52 ? PAD_BUOY[2] : q ? PAD_BUOY[0] : PAD_BUOY[1]);
+      }
+    }
+  }
+
   /** Does the ramp at (tx, ty) go up towards (dx, dy)? (no cliff edge is drawn where a ramp meets its top) */
   function rampFaces(z, tx, ty, dx, dy) {
     const d = z.rampDir(tx, ty);
@@ -547,16 +588,15 @@ G.ExpTerrain = (() => {
   }
 
   // ---------------- the minimap ----------------
-  const RAMP_COL = [232, 208, 138];
   /** A minimap pixel by height: low ground darker, plateaus lighter, cliff faces dark, ramps sandy. */
   function mini(z, c, tx, ty) {
     if (!z.inside(tx, ty) || z.terr(tx, ty) === WALL) return c;
-    const lv = z.height(tx, ty), k = 0.8 + lv * 0.13;
+    const M = lookOf(z.map).mini, lv = z.height(tx, ty), k = M.k0 + lv * M.k;
     let out = c.map(v => Math.min(255, v * k));
-    if (z.rampDir(tx, ty)) out = out.map((v, i) => v + (RAMP_COL[i] - v) * 0.5);
+    if (z.rampDir(tx, ty)) out = out.map((v, i) => v + (M.ramp[i] - v) * 0.5);
     else if (z.inside(tx, ty + 1) && z.terr(tx, ty + 1) !== WALL && z.height(tx, ty + 1) < lv) out = out.map(v => v * 0.55);
     return out;
   }
 
-  return { XV, W, H, X0, Y0, MAXH, FLOOR, WALL, LIQUID, MAPS, PROFILES, zoneSeed, generate, custom, audit, tintOf };
+  return { XV, W, H, X0, Y0, MAXH, FLOOR, WALL, LIQUID, MAPS, PROFILES, LOOK, lookOf, biomeOf, zoneSeed, generate, custom, audit, tintOf };
 })();

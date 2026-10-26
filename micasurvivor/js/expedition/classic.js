@@ -28,7 +28,8 @@
  * Numbers live in K (balance; see micasurvivor/README.md "DLC D3"). Hooks for D4+ are noted where they belong.
  */
 G.I18n.add({
-  'Bosque Verde': 'Viridian Forest',
+  'Bosque Verde': 'Viridian Forest', 'Monte Moon': 'Mt. Moon', 'Cabo Celeste': 'Cerulean Cape',
+  '¡Una bandada cruza la cueva!': 'A flock crosses the cave!', '¡Una bandada cruza el cabo!': 'A flock crosses the cape!',
   'Zona {x}': 'Zone {x}', 'Santuario': 'Shrine', 'Normal': 'Normal', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare',
   '¡Un {x} alfa aparece!': 'An alpha {x} appears!',
   '¡Enjambre! Te rodean': 'Swarm! You are surrounded',
@@ -97,6 +98,9 @@ G.ExpClassic = (() => {
   // ---------------- the maps (D3: Viridian Forest; D12 adds Mt. Moon and Cerulean Cape) ----------------
   // types: the map's residents' types (study 5.3); bands: the BST of each zone's enemies (base forms, middle, final);
   // residents: hand-picked families weighted first; then every other Pokémon of those types in the band (all 1025).
+  // guardians: 3 per zone (one is drawn); legend: the shrine's boss; stampede / flock / totem / summoner: per-zone pools
+  // (summoner -> its minion); flock: the banner of its flock event. (D12: the unlock rule is G.ExpTier.mapOpen: a map opens
+  // when the one before it is cleared.)
   const MAPS = {
     viridian: {
       name: 'Bosque Verde', types: ['grass', 'bug', 'normal', 'flying'],
@@ -105,6 +109,24 @@ G.ExpClassic = (() => {
       guardians: [[15, 12, 20], [47, 49, 22], [45, 71, 18]], legend: 151,
       stampede: [[19, 84], [20, 128], [85, 128]], flock: [[16, 21], [17, 22], [18, 22]],
       totem: [[14, 11], [44, 70], [3, 15]], summoner: [[15], [18], [416]], minion: { 15: 13, 18: 16, 416: 415 }
+    },
+    // DLC D12: Mt. Moon (rock / ground / fairy, cave ledges; study 5.3: "Clefable as a guardian": the moon's own, at the shrine)
+    mtmoon: {
+      name: 'Monte Moon', types: ['rock', 'ground', 'fairy'], flockSay: '¡Una bandada cruza la cueva!',
+      bands: [[200, 360], [320, 470], [420, 590]],
+      residents: [[41, 74, 246, 35, 27, 50, 173, 104, 39], [42, 75, 47, 28, 51, 95, 138, 140, 111], [36, 76, 112, 105, 139, 141, 142, 169, 208]],
+      guardians: [[95, 28, 47], [105, 139, 141], [76, 112, 142]], legend: 36,
+      stampede: [[74, 27], [75, 111], [76, 112]], flock: [[41], [42, 41], [169, 42]],
+      totem: [[35, 74], [75, 47], [36, 76]], summoner: [[35], [139], [36]], minion: { 35: 173, 139: 138, 36: 35 }
+    },
+    // DLC D12: Cerulean Cape (water / electric / flying, islands, surf and glide gaps; study 5.3: Zapdos)
+    cerulean: {
+      name: 'Cabo Celeste', types: ['water', 'electric', 'flying'], flockSay: '¡Una bandada cruza el cabo!',
+      bands: [[180, 345], [300, 455], [400, 570]],
+      residents: [[60, 72, 54, 118, 116, 81, 100, 278, 98, 120], [61, 55, 119, 117, 82, 101, 22, 99, 86], [62, 73, 121, 130, 87, 125, 135, 26, 131]],
+      guardians: [[99, 117, 82], [121, 125, 22], [130, 131, 26]], legend: 145,
+      stampede: [[98, 60], [99, 86], [62, 87]], flock: [[278, 81], [22, 82], [22, 279]],
+      totem: [[120, 100], [119, 101], [121, 125]], summoner: [[54], [82], [130]], minion: { 54: 60, 82: 81, 130: 129 }
     }
   };
   const MAP_IDS = ['viridian', 'mtmoon', 'cerulean'];
@@ -170,8 +192,13 @@ G.ExpClassic = (() => {
 
   // ---------------- the shrine (zone 4, hand-made) ----------------
   const SHRINE = { w: 44, h: 44, ped: [0, -13] };
-  /** The shrine zone: a round grove (rock outside), a raised dais to the north with stairs, two ponds. */
+  /**
+   * The shrine zone: a round grove (rock outside), a raised dais to the north with stairs, two ponds. (D12: Mt. Moon's is a
+   * crater: rock pillars for the ponds and a crystal ring; Cerulean Cape's an island: a ring of sea round the grove, the
+   * ponds kept. The dais, its stairs and the pedestal are the same on every map.)
+   */
   function shrine(seed, map) {
+    if (map === 'mtmoon' || map === 'cerulean') return shrineD12(seed, map);
     const { w, h } = SHRINE, cx = w >> 1, cy = h >> 1;
     const d = (x, y) => Math.hypot(x - cx, (y - cy) * 1.1);
     const dais = (x, y) => Math.abs(x - cx) <= 4 && y - cy >= -16 && y - cy <= -10;
@@ -182,6 +209,27 @@ G.ExpClassic = (() => {
       hgt: (x, y) => dais(x, y) ? 1 : 0,
       ramp: (x, y) => Math.abs(x - cx) <= 1 && y - cy === -9 ? 1 : 0,
       prop: (x, y) => { const r = d(x, y); if (r > 17.6 && r <= 19.5 && (x * 7 + y * 3) % 4 === 0) return 1; if (r < 17 && r > 9 && (x * 13 + y * 5) % 11 === 0 && !dais(x, y) && !pond(x, y)) return 3; return 0; }
+    });
+  }
+  function shrineD12(seed, map) {
+    const { w, h } = SHRINE, cx = w >> 1, cy = h >> 1, cave = map === 'mtmoon';
+    const d = (x, y) => Math.hypot(x - cx, (y - cy) * 1.1);
+    const dais = (x, y) => Math.abs(x - cx) <= 4 && y - cy >= -16 && y - cy <= -10;
+    const side = (x, y) => Math.hypot(Math.abs(x - cx) - 11, y - cy - 4) < 2.6;      // Viridian's ponds: Mt. Moon's rock pillars
+    const sea = (x, y) => !cave && d(x, y) > 16.2 && d(x, y) <= 19.5;                  // Cerulean Cape: the sea round the island
+    return G.ExpTerrain.custom({
+      w, h, seed, map, zone: 4,
+      kind: (x, y) => d(x, y) > 19.5 ? 1 : sea(x, y) ? 2 : side(x, y) ? (cave ? 1 : 2) : 0,
+      hgt: (x, y) => dais(x, y) ? 1 : 0,
+      ramp: (x, y) => Math.abs(x - cx) <= 1 && y - cy === -9 ? 1 : 0,
+      prop: (x, y) => {
+        const r = d(x, y);
+        if (sea(x, y) || side(x, y) || dais(x, y) || (Math.abs(x - cx) <= 2 && y - cy >= -10 && y - cy <= -6)) return 0;   // (never on or by the stairs)
+        if (cave && r > 17.6 && r <= 19.5 && (x * 7 + y * 3) % 3 === 0) return 1;   // (the cave biome paints a tree as a crystal)
+        if (!cave && r > 15 && r <= 16.2 && (x * 7 + y * 3) % 5 === 0) return 1;
+        if (r < 15 && r > 9 && (x * 13 + y * 5) % (cave ? 13 : 11) === 0) return cave ? 2 : 3;
+        return 0;
+      }
     });
   }
   /** The zone for (seed, map, z): zones 1-3 from the generator, zone 4 the shrine. Used by the host and every viewer. */
@@ -557,7 +605,7 @@ G.ExpClassic = (() => {
           break;
         }
       }
-      if (fly) say('¡Una bandada cruza el bosque!', 2.6);
+      if (fly) say(MAPS[S.map].flockSay || '¡Una bandada cruza el bosque!', 2.6);
       else say(G.I18n.f('¡Estampida de {x}!', name(ev.dex[0])), 2.6);
       G.Audio.sfx('surge'); if (!fly) G.Camera.kick(0.4);
     } else if (ev.kind === 'rockslide') {
@@ -665,7 +713,7 @@ G.ExpClassic = (() => {
   function bannerOf(ev) {
     const name = (G.DEX_BY[ev.dex[0]] || {}).name || '';
     return { alpha: G.I18n.f('¡Un {x} alfa aparece!', name), swarm: '¡Enjambre! Te rodean', stampede: G.I18n.f('¡Estampida de {x}!', name),
-             flock: '¡Una bandada cruza el bosque!', rockslide: '¡Avalancha! Sal de los círculos', elite: '¡Oleada de élite!',
+             flock: (MAPS[(G.World.zone && G.World.zone.map)] || {}).flockSay || '¡Una bandada cruza el bosque!', rockslide: '¡Avalancha! Sal de los círculos', elite: '¡Oleada de élite!',
              totem: G.I18n.f('¡{x} dominante llama a los suyos!', name), summoner: G.I18n.f('¡{x} invocador!', name) }[ev.kind] || '';
   }
 
@@ -896,7 +944,7 @@ G.ExpClassic = (() => {
   }
 
   return {
-    K, KINDS, TIMELINE, MAPS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
+    K, KINDS, TIMELINE, MAPS, MAP_IDS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
     begin, reset, update, xblockC, applyC, cur, active, drawGround, drawHud, hudLine, hudColor, score, scoreParts, result, record, tierOf,
     zIdx, setPhase, makeBoss, escorts,   // (D11: Survival's engine room, js/expedition/survival.js)
     /** D11: one timeline event ({at, kind, n, dex, seed}: plan()'s shape) fired now round the players. */

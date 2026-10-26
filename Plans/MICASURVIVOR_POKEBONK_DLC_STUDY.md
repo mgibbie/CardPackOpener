@@ -883,7 +883,7 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D9. Tiers, score and boards** — **BUILT 2026-10-22** (`js/expedition/tiers.js`, `overworld/tests/micasurvivor_expedition_tiers_test.mjs`, README "DLC D9: tiers, score and boards"; see the update below) | Normal/Hard/Nightmare tables, tier unlocks per map, score formula, time-attack medals, DLC boards and the board UI; weekly season view (cosmetic prizes only) | D3 |
 | **D10. League meta** — **BUILT 2026-10-22** (`js/expedition/meta.js`, `overworld/tests/micasurvivor_expedition_meta_test.mjs`, README "DLC D10: the League meta"; see the update below) | DLC currency, Lab (~15 upgrades), item unlocks by counter goals, Archive, research → avatars and frames, DLC daily/weekly tasks, ~30 achievements, shiny perks | D8 |
 | **D11. Survival and MP hardening** — **BUILT 2026-10-25** (`js/expedition/survival.js`, `overworld/tests/micasurvivor_expedition_survival_test.mjs` and `micasurvivor_expedition_mp_test.mjs`, README "DLC D11: Survival and MP hardening"; see the update below) | Endless mode (milestones, phases, pacts, siege, night, migration, hazards); full online co-op pass on DLC state, relay budget check, replay size check against 1.2 MB, spectator rendering | D9, D10 |
-| **D12. Maps 2–3** | Mt. Moon, Cerulean Cape: biome palettes, residents, guardians, totems, summoners, legendaries, bounce-pad variants | D11 |
+| **D12. Maps 2–3** — **BUILT 2026-10-25** (`js/expedition/classic.js` MAPS, `terrain.js` LOOK, `overworld/tests/micasurvivor_expedition_maps_test.mjs`, README "DLC D12: maps 2-3, Mt. Moon and Cerulean Cape"; see the update below) | Mt. Moon, Cerulean Cape: biome palettes, residents, guardians, totems, summoners, legendaries, bounce-pad variants | D11 |
 | D13+ (later) | More maps (desert, Lavender), more signature Ultimates, Mega Evolutions as a late-run power spike (Q10), per-species boards, clans (Q9) | — |
 
 **Milestones:**
@@ -1437,3 +1437,36 @@ Built (`micasurvivor/README.md`, "DLC D11: Survival and MP hardening"). Choices 
   interactables (study 2.7) isn't built (a migration gives fresh lands).
 - **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded, and so does the
   force-loaded run.
+
+### Update (2026-10-25): D12 built, "maps 2-3"
+Built (`micasurvivor/README.md`, "DLC D12: maps 2-3, Mt. Moon and Cerulean Cape"). Choices and notes for later batches:
+- **Where it lives:** each map is an entry in `G.ExpClassic.MAPS` (residents by stage, BST bands, guardians, shrine boss,
+  stampede / flock / totem / summoner pools and minions, the flock's banner) and in `G.ExpTerrain.PROFILES` / `LOOK` (the
+  generator's numbers; the palette, height tint, minimap shading and bounce pad). Survival reads both, plus `K.LEGENDS[map]` and
+  its hazard colours (`HAZ_PAL`).
+- **Mt. Moon** (rock / ground / fairy): cave ledges (~44 % high ground vs Viridian's 32 %, all 4 levels in every zone, twice the
+  rock, hardly any water, fewer ramps, 10 pads), the crystal cave's palette, moon-stone crystal pads; Zubat / Geodude / Clefairy
+  families to Golem, Rhydon, Aerodactyl; the shrine boss is **Clefable** (5.3's "Clefable as a guardian"); Survival: Clefable,
+  then a bird.
+- **Cerulean Cape** (water / electric / flying): the sea (~18 % water vs 4 %), low ground, life-buoy pads, the rift's sea grotto
+  palette; Poliwag / Tentacool / Magnemite families to Gyarados, Lapras, Raichu; the shrine (an island) boss is **Zapdos**;
+  Survival: Zapdos, then Articuno / Moltres / Mew.
+- **Unlock rule** (study 1: "each unlocks by beating the previous map"): Mt. Moon opens when Viridian Forest is won on any tier,
+  Cerulean Cape when Mt. Moon is (`G.ExpTier.mapOpen`, reading D3's `wins.<map>.<diff>`). The panel's map tabs say "Clear X first"
+  instead of "Coming soon"; the pick is clamped to an open map.
+- **Existing art only:** base biome tiles for the palettes, pads / hazards / shrines in code, the existing sprites. No assets.
+- **Sync:** the palette is set from the map on every zone (`enterZone` / `applyX`); the `x` block stays v10; `G.Expedition.DV` is
+  11 (dv 1-10 still play). No server change (the map allow-list already had all three).
+- **Fix found by the sweep:** `js/mica/social.js` `update()` ignores an answer that arrives after you left the lobby (D11's
+  `refreshMember` after a join could bring a refused Expedition lobby back).
+- **Not built:** per-map music; true islands (the generator keeps all land connected; water is crossed by surf or glide).
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded, and so does the
+  force-loaded run.
+
+### D10-D12 stack (2026-10-25)
+`feat/micasurvivor-expedition-d10-d12`: D10 the League meta (dv 9, `x.k`), D11 Survival, one currency and MP hardening (dv 10,
+`x.s` / `x.v` / `x.r`, the stack's server change), D12 maps 2-3 (dv 11, no `x` change). Every Expedition suite
+(`micasurvivor_expedition_*_test.mjs`, now with `_maps`) and the base-unchanged harness pass on the stack; the whole branch needs
+the full gate before merging. With D12 the 1.0 milestone's content (D9-D12) is in. Left for Expedition: League mode itself (its
+card says "Coming soon"), Mega Evolution (owner #10, "include in 1.0"), the slot machine (owner #7), Survival's interactable
+respawns, the owner playtest and flipping the default (owner #1), then D13+ (more maps, signatures, per-species boards).

@@ -144,9 +144,14 @@
  *   combat.out      the siege's damage factor (G.ExpSurv.out)
  *   net.event       (a new seam, js/net/coop.js) the co-op messages of the economy ('xo', 'xg', ...) and the catches ('xcg', 'xcp')
  *   run.end         Survival's score, record and lines (G.ExpSurv), its board (expMode 'exp-survival': its own parts)
+ *
+ * D12 (maps 2-3, js/expedition/classic.js MAPS, terrain.js LOOK): Mt. Moon and Cerulean Cape, each its residents, guardians,
+ * totems, summoners, shrine boss, Survival legendaries, terrain profile, palette (a base biome, set here on every zone: enterZone
+ * and applyX), height tint, minimap shading, hazard colours and bounce pad. A map opens when the one before it is cleared
+ * (G.ExpTier.mapOpen). dv 11 (the maps' content); the `x` block is unchanged (v10: `m` already names the map).
  */
 G.Exp = (() => {
-  const dv = 10;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op): G.Expedition.DV must match (the loader refuses a stale cache)
+  const dv = 11;   // this file's content version (D3: Classic playable; D4: the League; D5: level-ups and items; D6: Ultimates; D7: economy and interactables; D8: alphas, capture and shinies; D9: tiers, score and boards; D10: the League meta; D11: Survival and Expedition co-op; D12: Mt. Moon and Cerulean Cape): G.Expedition.DV must match (the loader refuses a stale cache)
   const X = G.Expedition;
   let inited = false, cur = null;
   const XV = 10;   // the `x` block's schema (G.ExpTerrain.XV): bump it (and keep a reader for the old one) when it grows
@@ -282,6 +287,7 @@ G.Exp = (() => {
     const map = (cur && cur.map) || G.Modes.run.map;
     const zone = C() ? C().build(G.World.seed, map, z) : G.ExpTerrain.generate({ seed: G.World.seed, map, zone: z });   // (D3: zone 4 = the shrine)
     G.World.setZone(zone);
+    G.World.setBiome(G.ExpTerrain.biomeOf(map), true);   // (D12: the map's palette: Viridian 0 as before, Mt. Moon the cave, Cerulean Cape the sea grotto)
     G.Path.clear();
     G.Minimap.reset();
     if (cur) { cur.zone = z; cur.th = zone.hash; }
@@ -595,6 +601,7 @@ G.Exp = (() => {
     const zone = C() ? C().build(seed, x.m, x.z) : G.ExpTerrain.generate({ seed, map: x.m, zone: x.z });   // (D3: zone 4 = the shrine)
     if (x.th && zone.hash !== x.th) console.warn('[Exp] terrain rebuild differs from the host (' + zone.hash + ' vs ' + x.th + ')');
     G.World.setZone(zone);
+    G.World.setBiome(G.ExpTerrain.biomeOf(x.m), true);   // (D12: the map's palette; a snapshot's `b` says the same)
     G.Minimap.reset();
     return zone.hash;
   }

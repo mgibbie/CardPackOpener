@@ -2728,6 +2728,79 @@ gain `map` / `diff` (allow-listed, optional: a D0b client sends neither). No new
 - **For D12:** Survival runs on any map in `G.ExpClassic.MAPS`; its legendaries per map are `K.LEGENDS[map]` (Viridian's only
   now: Mew, then the birds) and its boards are per map already; the hazards' colours are one palette (per biome later).
 
+## DLC D12: maps 2-3, Mt. Moon and Cerulean Cape
+
+**The two other launch maps** (owner decision #6) are playable in Classic and Survival. `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+5.3 and the D12 row. Each map is one entry in `G.ExpClassic.MAPS` (`js/expedition/classic.js`) and one in `G.ExpTerrain.PROFILES` /
+`LOOK` (`js/expedition/terrain.js`); Survival reads both. Base modes are unchanged: the D0a fixtures pass as recorded (58/0), also
+with the Expedition code force-loaded.
+
+| | Viridian Forest (D3) | **Mt. Moon** | **Cerulean Cape** |
+|---|---|---|---|
+| Types | grass / bug / normal / flying | rock / ground / fairy | water / electric / flying |
+| Terrain | gentle terraces, ponds | cave ledges: ~44 % high ground (Viridian 32 %), all 4 levels in every zone, twice the rock, hardly any water, fewer ramps, 10 pads | the sea: ~18 % water (Viridian 4 %), mostly low ground, few rocks: surf and glide gaps |
+| Palette | the forest (biome 0) | the crystal cave (biome 1; its "trees" are crystals) | the rift's sea grotto (`arenaBiome('water')`) |
+| Height tint | 0.9 / 1 / 1.09 / 1.17 | 0.78 / 0.92 / 1.05 / 1.18 (deep floors, bright ledges) | 0.94 / 1 / 1.07 / 1.13 |
+| Bounce pad | a red mushroom | a moon-stone crystal | a red and white life buoy |
+| Residents (zone 1 / 2 / 3) | Caterpie, Weedle, Pidgey... | Zubat, Geodude, Larvitar, Clefairy, Sandshrew, Diglett, Cleffa, Cubone, Jigglypuff / Golbat, Graveler, Parasect, Sandslash, Dugtrio, Onix, Omanyte, Kabuto, Rhyhorn / Clefable, Golem, Rhydon, Marowak, Omastar, Kabutops, Aerodactyl, Crobat, Steelix | Poliwag, Tentacool, Psyduck, Goldeen, Horsea, Magnemite, Voltorb, Wingull, Krabby, Staryu / Poliwhirl, Golduck, Seaking, Seadra, Magneton, Electrode, Fearow, Kingler, Seel / Poliwrath, Tentacruel, Starmie, Gyarados, Dewgong, Electabuzz, Jolteon, Raichu, Lapras |
+| Guardians (one of 3 a zone) | Beedrill, Butterfree, Raticate / ... | Onix, Sandslash, Parasect / Marowak, Omastar, Kabutops / Golem, Rhydon, Aerodactyl | Kingler, Seadra, Magneton / Starmie, Electabuzz, Fearow / Gyarados, Lapras, Raichu |
+| Totems | Metapod, Kakuna / ... | Clefairy, Geodude / Graveler, Parasect / Clefable, Golem | Staryu, Voltorb / Seaking, Electrode / Starmie, Electabuzz |
+| Summoners (-> minion) | Beedrill -> Weedle / ... | Clefairy -> Cleffa / Omastar -> Omanyte / Clefable -> Clefairy | Psyduck -> Poliwag / Magneton -> Magnemite / Gyarados -> Magikarp |
+| Stampede / flock | Rattata, Doduo... / Pidgey, Spearow... | Geodude, Sandshrew, Graveler, Rhyhorn... / Zubat, Golbat, Crobat | Krabby, Poliwag, Seel... / Wingull, Magnemite, Fearow, Magneton, Pelipper |
+| Shrine boss | Mew | **Clefable** (study 5.3: "Clefable as a guardian": the moon's own) | **Zapdos** |
+| Shrine | a grove, two ponds | a crater: rock pillars for the ponds, a ring of crystals, rocks | an island: a ring of sea round the grove |
+| Survival legendaries | Mew, then a bird | Clefable, then a bird | Zapdos, then Articuno / Moltres / Mew |
+| Hazard colours | D11's | grey gravel, violet crystal shards, scree, moon-fire | tidal mud, coral, wet sand, live sparks |
+
+- **Residents** are hand-picked families by stage (their BST rises zone by zone), then every other Pokémon of the map's types in
+  the zone's band (all 1025, as D3). No zone-1 resident is shared with Viridian's.
+- **The unlock rule** (study 1: each map "unlocks by beating the previous map"): Viridian Forest is always open; **Mt. Moon opens
+  when Viridian Forest is won on any tier**, Cerulean Cape when Mt. Moon is (`G.ExpTier.mapOpen`, reading D3's max-merged
+  `wins.<map>.<diff>`: no new save field). A new map starts on Normal; its own tiers unlock in sequence (D9). The run-over
+  screen says "New map open: Cerulean Cape". The pick (`G.ExpTier.pick`, used by Classic, Survival and a co-op lobby) is
+  clamped to an open map.
+- **No more "Coming soon" for maps:** the "Difficulty and leaderboards" panel's map tabs show a locked map as "Clear Viridian
+  Forest first" (a click toasts "Clear Viridian Forest to open this map"). The Classic card names the three maps.
+- **Determinism:** the zones come from the same seeded generator (`zoneSeed(seed, map, zone)`), each map with its profile; the
+  plans, sites, hazards, milestones and segments are pure as before. The palette is set from the map on every zone (`core.js`
+  `enterZone` and `applyX`), so a guest, a spectator and a replay viewer paint the same (a snapshot's `b` says it too).
+- **Sync:** nothing new is streamed (the `x` block's `m` already names the map), so the `x` block stays v10. **`G.Expedition.DV`
+  is 11** (the maps' content); dv 1-10 replays and snapshots still play.
+- **Server:** nothing new. Its map allow-list has had the three maps since D0b, so the Classic score / time and Survival boards
+  are per map already (`runboard:micasurvivor_expedition:<map>:<diff>[:time|:survival]`).
+
+**What changed in base files:** one fix, `js/mica/social.js` `update()`: a lobby update answered after you left (D11's
+`refreshMember` right after a join, then a refused start of another dv) no longer brings the old lobby back (found by the
+plumbing suite's stale-pin sweep; the lobby rows, base runs and fixtures are unchanged). Expedition files:
+- `classic.js`: the two maps, their shrines, the flock's banner per map.
+- `terrain.js`: the profiles' pads, `LOOK` (palette, tint, minimap shading, pad) and the pad painter.
+- `survival.js`: `K.LEGENDS` per map, the hazard colours.
+- `tiers.js`: the unlock rule, the map tabs.
+- `core.js`: dv 11, the palette on every zone.
+- `systems/expedition.js`: `DV` 11, the Classic card's text.
+
+**Assets:** none new. The palettes are the base biome tiles (the crystal cave, the sea grotto); the pads, hazards and shrines are
+drawn in code; every Pokémon is from the existing sprite set.
+
+**Deviations / not built:**
+- Mt. Moon's shrine boss is Clefable (the study's line), not a legendary; it fights as one (a 60 s DPS target, legendary scale).
+- Cerulean Cape's land is always connected (the generator turns land cut off by water into rock), so its "islands" are coasts
+  and lagoons you walk round, surf (Water types) or glide over; the shrine is the true island.
+- The music is the run's usual one (the game's biome music isn't reachable from the Expedition).
+
+## DLC D10-D12: the stacked branch
+
+`feat/micasurvivor-expedition-d10-d12` carries three batches on top of D6-D9, `G.Expedition.DV` 8 -> 11 and the `x` block v8 -> v10:
+- **D10 the League meta** (`meta.js`): the Lab, item unlocks, the Archive, research, avatars / frames / titles, tasks,
+  achievements, shiny perks, boosts, League HQ. dv 9, `x.k`.
+- **D11 Survival and MP hardening** (`survival.js`): endless Survival (milestones, phases, pacts, siege, night, migration,
+  hazards) and its board; one currency (the base Pokémonedas through `G.Expedition.wallet`); co-op guests on Expedition runs,
+  the local partner's verbs, spectator / replay rendering, the relay and replay size budgets. dv 10, `x.s` / `x.v` / `x.r`.
+- **D12 maps 2-3** (`classic.js`, `terrain.js`): Mt. Moon and Cerulean Cape, each with its residents, bosses, terrain, look,
+  Survival legendaries and hazard colours; a map opens when the one before it is won. dv 11 (no `x` change).
+- Server changes: D11's (`run-score` / `run-leaderboard` for Survival, the lobby's map / tier). D12 has none. The branch needs
+  the full gate before it merges.
+
 ## DLC D6-D9: the stacked branch
 
 `feat/micasurvivor-expedition-d6-d9` carries four batches on top of D0-D5 (merged in #806), one commit each, `G.Expedition.DV`
@@ -2903,6 +2976,13 @@ gain `map` / `diff` (allow-listed, optional: a D0b client sends neither). No new
   its siege row); a live snapshot under 24 KB; a spectator (night, hazards, Survival's HUD, both teams' Support Alphas shooting,
   pop-ups); replay size (a 45-min Survival run to Mewtwo and a full Classic clear under 1.2 MB, 1 s / 0.5 s frames, the
   thinning steps, `halve` exact on the real tape, `finish()` halving over the cap, a base tape never thinned).
+- `node overworld/tests/micasurvivor_expedition_maps_test.mjs` (DLC D12): each new map's zones seeded and flood-fill connected
+  (props never cut a path), its profile (Mt. Moon high and rocky, Cerulean Cape wet), its shrine, its look (palette, tint,
+  minimap, the pad painted per map); its residents, guardians, totems, summoners (and minions), stampedes, flocks and shrine
+  boss, the plan pure; a totem and a summoner live on Mt. Moon; Survival's legendaries, segments, hazards and colours per map,
+  Zapdos at 15:00 on Cerulean Cape; the boards per map through the real handler; the unlock rule and the map tabs (no "Coming
+  soon"); a Classic run won on each map; a co-op guest, a spectator and a replay viewer on Cerulean Cape; the phone (HUD, map
+  tabs). `SHOTS=<dir>` saves each map's zone, shrine and a Survival milestone, desktop and phone.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

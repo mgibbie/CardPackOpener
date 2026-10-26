@@ -59,6 +59,7 @@ G.I18n.add({
   'Contrarreloj: puesto #{x}': 'Time attack: rank #{x}',
   'Supervivencia': 'Survival', '{x} jefes de hito': '{x} milestone bosses', 'Mejor supervivencia: {x}': 'Best survival: {x}',   // (DLC D11)
   'Difícil': 'Hard', 'Pesadilla': 'Nightmare', 'Bosque Verde': 'Viridian Forest', 'Monte Moon': 'Mt. Moon', 'Cabo Celeste': 'Cerulean Cape',
+  'Gana {x} para abrir este mapa': 'Clear {x} to open this map', 'Gana {x} antes': 'Clear {x} first', 'Nuevo mapa abierto: {x}': 'New map open: {x}',   // (DLC D12)
   'Ver': 'Watch', '{x} d {x} h': '{x} d {x} h', '{x} h {x} min': '{x} h {x} min'
 });
 
@@ -104,6 +105,16 @@ G.ExpTier = (() => {
   const of = d => K.TIERS[DIFFS.includes(d) ? d : 'normal'];
   /** The maps Classic can play (D3: Viridian Forest; D12 adds the others). */
   const playable = () => (G.ExpClassic ? Object.keys(G.ExpClassic.MAPS) : ['viridian']);
+  /** DLC D12: the maps in their unlock order (the study's: each opens when the one before it is cleared). */
+  const MAP_ORDER = ['viridian', 'mtmoon', 'cerulean'];
+  /** The map you must clear to open `map` (null: the first, always open). */
+  const prevMap = map => { const i = MAP_ORDER.indexOf(map); return i > 0 ? MAP_ORDER[i - 1] : null; };
+  /** DLC D12: is `map` open? Playable, and the map before it won on any tier (D3's `wins.<map>.<diff>`, max-merged). */
+  function mapOpen(map) {
+    if (!playable().includes(map)) return false;
+    const pv = prevMap(map);
+    return !pv || DIFFS.some(d => Sv().get('wins.' + pv + '.' + d) > 0);
+  }
 
   // ---------------- unlocks, medals, records (the Expedition save; max-merged) ----------------
   /** The highest tier index open on `map` (0 Normal, 1 Hard, 2 Nightmare): the counter, or the wins in sequence. */
@@ -113,7 +124,7 @@ G.ExpTier = (() => {
     while (n < 2 && S.get('wins.' + map + '.' + DIFFS[n]) > 0) n++;
     return Math.min(2, Math.max(n, S.get('tier.' + map)));
   }
-  const isOpen = (map, diff) => playable().includes(map) && idx(diff) <= unlocked(map) && DIFFS.includes(diff);
+  const isOpen = (map, diff) => mapOpen(map) && idx(diff) <= unlocked(map) && DIFFS.includes(diff);   // (D12: and the map open)
   /** A clear time's medal index: 1 bronze (any win), 2 silver, 3 gold, 4 champion. Pure. */
   function medalOf(time, diff, map) {
     const k = 1 + K.MEDAL_TIER * idx(diff), shrine = K.SHRINE_S;   // (all three launch maps have a shrine)
@@ -130,8 +141,8 @@ G.ExpTier = (() => {
   function readPick() { try { const v = JSON.parse(localStorage.getItem(PICK_KEY) || 'null'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } }
   /** The map + tier a new Classic run gets: the saved pick, clamped to a playable map and an unlocked tier. */
   function pick() {
-    const p = readPick(), maps = playable();
-    const map = maps.includes(p.map) ? p.map : maps[0];
+    const p = readPick(), maps = playable().filter(mapOpen);   // (D12: only an open map)
+    const map = maps.includes(p.map) ? p.map : maps[0] || 'viridian';
     const diff = DIFFS[Math.min(idx(p.diff), unlocked(map))];
     return { map, diff };
   }
@@ -193,8 +204,10 @@ G.ExpTier = (() => {
             next: nx ? T().f('Siguiente: {x} en menos de {x}', T().t(nx.name), G.U.mmss(nx.under)) : null };
       lines.push(T().f(mi > had ? 'Nueva medalla: {x}' : 'Medalla: {x}', m.name));
       const before = unlocked(map), want = Math.min(2, idx(diff) + 1);
+      const next = MAP_ORDER[MAP_ORDER.indexOf(map) + 1], nextWas = next ? mapOpen(next) : true;   // (D12: before this win is recorded)
       S.best('tier.' + map, want);
       if (want > before) { unl = DIFFS[want]; lines.push(T().f('{x} desbloqueada en {x}', T().t(DIFF_NAME[unl]), T().t(MAP_NAME[map] || map))); }
+      if (!nextWas && playable().includes(next)) lines.push(T().f('Nuevo mapa abierto: {x}', T().t(MAP_NAME[next])));
     }
     return { lines, medal: m, unlocked: unl };
   }
@@ -313,12 +326,13 @@ G.ExpTier = (() => {
   }
   function render() {
     if (!el) return;
-    const maps = ['viridian', 'mtmoon', 'cerulean'], play = playable();
+    const maps = MAP_ORDER, play = maps.filter(mapOpen);   // (D12: every map is playable; a locked one says which map opens it)
+    const lockTxt = (m, long) => playable().includes(m) ? T().f(long ? 'Gana {x} para abrir este mapa' : 'Gana {x} antes', T().t(MAP_NAME[prevMap(m)])) : T().t('Próximamente');
     const lim = limits(ui.diff, ui.map);
     const rb = ribbons(), rbTxt = Object.keys(rb).length ? Object.entries(rb).sort((a, b) => PRIZE_LV[b[0]] - PRIZE_LV[a[0]]).map(([k, n]) => T().t(PRIZE_NAME[k]) + ' ×' + n).join(', ') : '';
     el.innerHTML = `
       <div class="row between xt-head"><h3>${esc(T().t('Expedición · dificultad y clasificaciones'))}</h3><button id="xt-back" class="btn small" type="button">${esc(T().t('Atrás'))}</button></div>
-      <div class="gen-tabs xt-maps">${maps.map(m => `<button type="button" class="gen-tab${m === ui.map ? ' on' : ''}" data-map="${m}"${play.includes(m) ? '' : ' aria-disabled="true"'}><b>${esc(T().t(MAP_NAME[m]))}</b>${play.includes(m) ? '' : ` <small>${esc(T().t('Próximamente'))}</small>`}</button>`).join('')}</div>
+      <div class="gen-tabs xt-maps">${maps.map(m => `<button type="button" class="gen-tab${m === ui.map ? ' on' : ''}" data-map="${m}"${play.includes(m) ? '' : ' aria-disabled="true"'}><b>${esc(T().t(MAP_NAME[m]))}</b>${play.includes(m) ? '' : ` <small>${G.Icons.html('ban', 12)} ${esc(lockTxt(m))}</small>`}</button>`).join('')}</div>
       <div class="xt-tiers">${DIFFS.map(d => tierCard(ui.map, d)).join('')}</div>
       <div class="xt-medals"><b>${esc(T().f('Medallas ({x})', T().t(DIFF_NAME[ui.diff])))}</b>${lim.map(l => `<span class="xt-chip">${G.Icons.html(MEDAL_ICON[l.id], 16)} ${esc(T().t(l.name))} ${l.under ? '&lt; ' + G.U.mmss(l.under) : esc(T().t('Terminar'))}</span>`).join('')}
         <span class="xt-chip${K.SEASON_TAB ? '' : ' hidden'}" id="xt-ribbons">${G.Icons.html('crown', 14)} ${esc(rbTxt ? T().f('Tus cintas: {x}', rbTxt) : T().t('Aún no tienes cintas'))}</span></div>
@@ -329,7 +343,7 @@ G.ExpTier = (() => {
     $m('xt-back').onclick = () => close();
     el.querySelectorAll('[data-map]').forEach(b => { b.onclick = () => {
       const m = b.dataset.map;
-      if (!play.includes(m)) { G.UI.toast(T().t('Próximamente')); G.Audio.sfx('error'); return; }
+      if (!play.includes(m)) { G.UI.toast(lockTxt(m, true)); G.Audio.sfx('error'); return; }
       ui.map = m; ui.diff = DIFFS[Math.min(idx(ui.diff), unlocked(m))]; setPick(ui.map, ui.diff); G.Audio.sfx('select'); render();
     }; });
     el.querySelectorAll('[data-tier]').forEach(b => { b.onclick = () => {
@@ -406,7 +420,7 @@ G.ExpTier = (() => {
 
   return {
     K, DIFFS, DIFF_NAME, MAP_NAME, MEDAL, MEDAL_NAME, MEDAL_ICON, PRIZE_NAME,
-    of, idx, playable, unlocked, isOpen, medalOf, limits, medal, bestClear, pick, setPick, score, seasonOf, prizeOf, claim, ribbons,
+    MAP_ORDER, of, idx, playable, mapOpen, prevMap, unlocked, isOpen, medalOf, limits, medal, bestClear, pick, setPick, score, seasonOf, prizeOf, claim, ribbons,
     record, read, replayId, open, close, back, render,
     get shown() { return isOpenUI(); }, get ui() { return ui; }, get el() { return el; }
   };

@@ -266,7 +266,11 @@ G.Social = (() => {
 
   async function update(patch) {
     if (!room) return { ok: false };
-    const r = await call('msurv-lobby-update', Object.assign({ id: room.id }, patch));
+    const id = room.id;
+    const r = await call('msurv-lobby-update', Object.assign({ id }, patch));
+    // (DLC D12 fix: you left / changed lobby while this was in flight, e.g. D11's refreshMember right after a join and then a
+    //  refused start: its answer must not bring the old lobby back)
+    if (!room || room.id !== id) return { ok: false };
     if (r.body && r.body.closed) { closedRoom(); return { ok: false, error: errText(r) }; }
     if (!r.ok) return { ok: false, error: errText(r) };
     applyLobby(r.body.lobby);

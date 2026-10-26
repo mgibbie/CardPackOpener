@@ -271,7 +271,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 10, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 10 (D11)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 11, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 11 (D12)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -398,7 +398,7 @@ try {
 		'a co-op host frame carries the host\'s row by uid; a guest\'s own frame carries its row', JSON.stringify({ hf: xs.hf && xs.hf.l, gf: xs.gf && xs.gf.l }));
 
 	// ======================== 5. the run ends: lines, counters, challenges, the base save untouched
-	const base0 = await E(page, () => localStorage.getItem('micasurvivor_save.guest'));
+	const base0 = await E(page, () => JSON.stringify(G.DB.save));   // (the base save as the game holds it: the seeded row isn't normalised until the game first writes it)
 	const ov = await endRun(page);
 	A(ov.state === 'over' && /League: Charmander → Charizard · Maturity 1/.test(ov.text) && /Challenge complete: Kangaskhan! Catch it in your next run/.test(ov.text),
 		'the run-over screen: "League: Charmander → Charizard · Maturity 1" and the challenges done (D8: "Challenge complete: Kangaskhan! Catch it in your next run")', ov.text);
@@ -414,7 +414,7 @@ try {
 		const strip = t => { const o = JSON.parse(t); delete o.coins; delete o.updated; delete o.led; if (o.stats) delete o.stats.coinsEarned; return JSON.stringify(o); };
 		const b0 = typeof base0 === 'string' ? JSON.parse(base0) : null, b1 = ch.base ? JSON.parse(ch.base) : null, got = b0 && b1 ? b1.coins - b0.coins : null;
 		A(b0 && b1 && strip(base0) === strip(ch.base) && got > 0 && got === (b1.stats.coinsEarned || 0) - (b0.stats.coinsEarned || 0),
-			'a League run changes nothing in the base save but its Pokémonedas (D11: the pay of the run, counted as earned): +' + got, JSON.stringify({ got }));
+			'a League run changes nothing in the base save but its Pokémonedas (D11: the pay of the run, counted as earned): +' + got, JSON.stringify({ got, earned: b0 && b1 ? ((b1.stats || {}).coinsEarned || 0) - ((b0.stats || {}).coinsEarned || 0) : null, keys: b0 && b1 ? Object.keys(Object.assign({}, b0, b1)).filter(k => !['coins', 'updated', 'led'].includes(k) && JSON.stringify(b0[k]) !== JSON.stringify(b1[k])).map(k => k + ': ' + String(JSON.stringify(b0[k])).slice(0, 300) + ' -> ' + String(JSON.stringify(b1[k])).slice(0, 300)) : null }));
 	}
 	A(ch.local && ch.local.sets && ch.local.sets['league.met'] && ch.local.sets['league.met'].includes('115'), 'the guest\'s Expedition save in this browser has league.met', JSON.stringify(ch.local && ch.local.sets));
 	const mg = await E(page, () => {

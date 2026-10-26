@@ -43,6 +43,7 @@ G.I18n.add({
   'Expedición · modos nuevos (próximamente)': 'Expedition · new modes (coming soon)',
   'Mapas con alturas, guardianes y un portal final. Marcas por mapa y dificultad.': 'Maps with heights, guardians and a final portal. Records per map and difficulty.',
   'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.': "Viridian Forest: 3 zones with heights, a guardian at each altar, the portal and Mew's shrine. Win the map.",
+  'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.': 'Viridian Forest, Mt. Moon and Cerulean Cape: 3 zones with heights, a guardian at each altar, the portal and the shrine. Win a map to open the next.',   // (DLC D12)
   'Aguanta todo lo que puedas en un mapa de Expedición, sin final.': 'Last as long as you can on an Expedition map, with no end.',
   'Atrapa y entrena a los Pokémon de tu Liga.': 'Catch and train the Pokémon of your League.',
   'La Expedición llegará pronto.': 'Expedition is coming soon.',
@@ -61,11 +62,11 @@ G.I18n.add({
 });
 
 G.Expedition = (() => {
-  const DV = 10;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10. Older dv replays / snapshots still play, replayOk)
+  const DV = 11;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
-    'exp-classic': 'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.',
+    'exp-classic': 'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.',   // (DLC D12: the 3 maps)
     'exp-survival': 'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.',
     'exp-league': 'Atrapa y entrena a los Pokémon de tu Liga.'
   };

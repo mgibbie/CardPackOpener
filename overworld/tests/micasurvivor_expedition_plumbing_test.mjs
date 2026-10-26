@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 10;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10)
+const DV = 11;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10; D12 maps 2-3: 11)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -295,9 +295,9 @@ try {
 				seams: G.Hooks.SEAMS.map(s => G.Hooks.count(s)), scripts: [...document.querySelectorAll('script[data-expedition]')].map(s => s.getAttribute('src')), who: G.ExpSave.who };
 		});
 		A(ld.a === true && ld.b === true && ld.loaded && ld.init && ld.dv === DV, 'G.Expedition.load(): resolves true (twice at once: one load), G.Exp at dv ' + DV + ', initialised', JSON.stringify(ld));
-		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js', 'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js, D4 league-data.js + league.js, D5 moves.js + items.js + levelups.js, D6 ultimates.js, D7 economy.js, D8 reactions.js + capture.js, D9 tiers.js)
+		const SCR = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js', 'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js', 'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1 added terrain.js, D2 verbs.js, D3 classic.js, D4 league-data.js + league.js, D5 moves.js + items.js + levelups.js, D6 ultimates.js, D7 economy.js, D8 reactions.js + capture.js, D9 tiers.js)
 		A(JSON.stringify(ld.scripts) === JSON.stringify(SCR) && d.expFetches().length === SCR.length && SCR.every((s, i) => d.expFetches()[i].endsWith(s)),
-			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js, league-data.js, league.js, moves.js, items.js, levelups.js, ultimates.js, economy.js, reactions.js, capture.js, tiers.js, meta.js then core.js, once', d.expFetches().join(' '));
+			'the network log: exactly js/expedition/save.js, terrain.js, verbs.js, classic.js, league-data.js, league.js, moves.js, items.js, levelups.js, ultimates.js, economy.js, reactions.js, capture.js, tiers.js, meta.js, survival.js (D11) then core.js, once', d.expFetches().join(' '));
 		A(ld.seams.length >= 4 && ld.seams.every(n => n === 1), 'the Expedition attaches to every seam once', ld.seams.join(','));
 		console.log(`     freeze: ${ld.frozen.objects} objects in ${ld.frozen.ms} ms (load ${ld.ms} ms)`);
 		A(ld.frozen.objects > 1000 && ld.frozen.ms < 200, `the freeze is a one-time cost (${ld.frozen.objects} objects, ${ld.frozen.ms} ms)`);
@@ -435,7 +435,11 @@ try {
 		const sOver = await d.spanish('#scr-over');
 		A(!sOver.length, 'no Spanish on its run-over screen', sOver.join(', '));
 		const s1 = await d.E(() => JSON.stringify(G.DB.save));
-		A(s0 === s1, 'the base save is byte-for-byte unchanged by the Expedition run (no coins, stats, missions)', s0.length + ' vs ' + s1.length);
+		{   // (D11, owner decision #4: an Expedition run pays the base Pokémonedas; nothing else in the base save changes)
+			const strip = t => { const o = JSON.parse(t); const c = [o.coins, (o.stats && o.stats.coinsEarned) || 0]; delete o.coins; delete o.updated; delete o.led; if (o.stats) delete o.stats.coinsEarned; return [JSON.stringify(o), c]; };
+			const [a, ca] = strip(s0), [b, cb] = strip(s1);
+			A(a === b && cb[0] - ca[0] === cb[1] - ca[1] && cb[0] >= ca[0], 'the base save is unchanged by the Expedition run but its Pokémonedas (D11: the pay, counted as earned; no stats, missions): +' + (cb[0] - ca[0]), a.length + ' vs ' + b.length);
+		}
 		await sleep(2500);
 		const runActs = apiLog.slice(nRun).map(e => e.action + (e.mode ? ':' + e.mode : ''));
 		A(!runActs.includes('run-score:micasurvivor') && !runActs.includes('micasurvivor-save-put') && JSON.stringify(row('micasurvivor:alice')) === xr0, 'nor the base board or the base row: no base run-score, no base save put', runActs.join(','));

@@ -89,7 +89,9 @@ G.ExpSurv = (() => {
     SEG_GROW: 0.15, SEG_MAX: 3,  // the timeline's events grow +15 % a segment, to x3
     // the score (study 2.12, Survival; + D9's catch term and the tier's x(1 + 0.5 tier)); = server/mp.mjs MSURV_EXP_SURV_SCORE
     SCORE: { KO: 2, SEC: 4, DMG: 200, BOSS: 800, LEGEND: 2000, CATCH: 400, TIER: 0.5 },
-    LEGENDS: { viridian: [151, 145, 144, 146] }   // the legendary milestones in order (Mew, the birds), then Mewtwo at 45
+    // the legendary milestones in order (the map's own, then the others), then Mewtwo at 45. (D12: Mt. Moon's own is the moon's
+    // Clefable, its shrine boss, then the birds; Cerulean Cape's Zapdos, then the other two birds and Mew)
+    LEGENDS: { viridian: [151, 145, 144, 146], mtmoon: [36, 144, 146, 145], cerulean: [145, 144, 146, 151] }
   };
   // (each pact's picture: the overworld's item pictures, no new art)
   const PACT_ICON = { glass: 'life_orb', iron: 'hard_stone', frenzy: 'quick_claw', greed: 'amulet_coin', horde: 'lucky_egg', vampire: 'shell_bell', hunter: 'razor_claw', titan: 'focus_band', scholar: 'scope_lens' };
@@ -109,6 +111,17 @@ G.ExpSurv = (() => {
   for (const p of PACTS) { PACT_BY[p.id] = p; PACT_CODE[p.code] = p; }
   const HAZ = [['mud', 'Barro', 0, '#7a5a34'], ['brambles', 'Zarzas', 1, '#3f7a3a'], ['quicksand', 'Arenas movedizas', 1, '#d9b56a'], ['burning', 'Suelo ardiente', 2, '#ff6a2a']]
     .map(([id, name, phase, col], i) => ({ id, i, name, phase, col }));
+  // DLC D12: each map's hazard colours (the same four hazards and rules; only the look): [fill, detail, rim] by hazard. Viridian
+  // keeps D11's. Mt. Moon: grey gravel, violet crystal shards, dark scree, moon-fire; Cerulean Cape: tidal mud, coral, wet sand,
+  // live sparks.
+  const HAZ_D11 = { mud: ['#7a5a34', '#5a4026', 'rgba(0,0,0,.35)'], brambles: ['#3f7a3a', '#1f4a1c', 'rgba(0,0,0,.35)'], quicksand: ['#d9b56a', '#a8833f', 'rgba(0,0,0,.35)'], burning: ['#ff6a2a', '#ffe08a|#ff8a3d', '#ffd06a'] };
+  const HAZ_PAL = {
+    viridian: HAZ_D11,
+    mtmoon: { mud: ['#6b6470', '#45404c', 'rgba(0,0,0,.4)'], brambles: ['#7a5ac0', '#d8c8ff', 'rgba(20,0,40,.45)'], quicksand: ['#8c8478', '#5e574e', 'rgba(0,0,0,.4)'], burning: ['#9a4fff', '#f0d8ff|#c88aff', '#e0c0ff'] },
+    cerulean: { mud: ['#5e7a80', '#3b5258', 'rgba(0,0,0,.3)'], brambles: ['#d0607a', '#ffd0dc', 'rgba(80,0,20,.4)'], quicksand: ['#e2cd96', '#b89a5a', 'rgba(0,0,0,.3)'], burning: ['#e8c020', '#fff6c0|#ffd23f', '#fff6c0'] }
+  };
+  /** The colours of hazard `kind` on `map`: [fill, detail (two for the flicker: 'a|b'), rim]. */
+  const hazPal = (map, kind) => (HAZ_PAL[map] || HAZ_D11)[kind] || HAZ_D11[kind];
 
   // ---------------- seeded helpers ----------------
   function mix(...vals) {
@@ -537,20 +550,20 @@ G.ExpSurv = (() => {
     const t = now(), ph = phaseOf(t), cam = G.Camera, tt = performance.now() / 1000;
     for (const o of hazardsOf(zn)) {
       if (o.phase > ph || !cam.sees(o.x, o.y, o.r + 20)) continue;
-      const H = HAZ[o.k];
+      const P = hazPal(zn.map, o.kind), det = P[1].split('|');   // (D12: the map's colours)
       ctx.save();
-      ctx.globalAlpha = 0.55; ctx.fillStyle = H.col;
+      ctx.globalAlpha = 0.55; ctx.fillStyle = P[0];
       ctx.beginPath(); ctx.ellipse(o.x, o.y, o.r, o.r * 0.7, 0, 0, 6.2832); ctx.fill();
-      ctx.globalAlpha = 0.85; ctx.strokeStyle = o.kind === 'burning' ? '#ffd06a' : 'rgba(0,0,0,.35)'; ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.85; ctx.strokeStyle = P[2]; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.ellipse(o.x, o.y, o.r, o.r * 0.7, 0, 0, 6.2832); ctx.stroke();
       // texture: mud bubbles, thorns, sand swirls, embers
       for (let i = 0; i < 9; i++) {
         const a = i * 2.39996 + (o.kind === 'quicksand' ? tt * 0.8 : 0), rr = o.r * (0.2 + 0.75 * ((i * 37) % 10) / 10);
         const x = o.x + Math.cos(a) * rr, y = o.y + Math.sin(a) * rr * 0.7;
-        if (o.kind === 'mud') { ctx.fillStyle = '#5a4026'; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, 6.2832); ctx.fill(); }
-        else if (o.kind === 'brambles') { ctx.strokeStyle = '#1f4a1c'; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 4, y + 3); ctx.lineTo(x, y - 4); ctx.lineTo(x + 4, y + 3); ctx.stroke(); }
-        else if (o.kind === 'quicksand') { ctx.strokeStyle = '#a8833f'; ctx.globalAlpha = 0.7; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(o.x, o.y, rr * 0.6, a, a + 1.2); ctx.stroke(); }
-        else { ctx.fillStyle = Math.sin(tt * 6 + i) > 0 ? '#ffe08a' : '#ff8a3d'; ctx.globalAlpha = 0.9; ctx.fillRect(Math.round(x), Math.round(y - ((tt * 20 + i * 5) % 10)), 2, 2); }
+        if (o.kind === 'mud') { ctx.fillStyle = det[0]; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, 6.2832); ctx.fill(); }
+        else if (o.kind === 'brambles') { ctx.strokeStyle = det[0]; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 4, y + 3); ctx.lineTo(x, y - 4); ctx.lineTo(x + 4, y + 3); ctx.stroke(); }
+        else if (o.kind === 'quicksand') { ctx.strokeStyle = det[0]; ctx.globalAlpha = 0.7; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(o.x, o.y, rr * 0.6, a, a + 1.2); ctx.stroke(); }
+        else { ctx.fillStyle = Math.sin(tt * 6 + i) > 0 ? det[0] : det[1] || det[0]; ctx.globalAlpha = 0.9; ctx.fillRect(Math.round(x), Math.round(y - ((tt * 20 + i * 5) % 10)), 2, 2); }
       }
       ctx.restore();
       hazDrawn++;
@@ -610,7 +623,7 @@ G.ExpSurv = (() => {
   }
 
   return {
-    K, PACTS, PACT_BY, HAZ, phaseOf, woundK, nightOf, milestone, segPlan, hazardsOf, hazardAt, offerOf, scoreOf, siegeStep,
+    K, PACTS, PACT_BY, HAZ, HAZ_PAL, hazPal, phaseOf, woundK, nightOf, milestone, segPlan, hazardsOf, hazardAt, offerOf, scoreOf, siegeStep,
     begin, reset, update, migrated, tick, out, row, take, statOf, foeK, foeTeam, sBlock, applyS, applyRow, landOf,
     hudLine, hudColor, drawHud, drawNight, drawGround, scoreParts, score, result, record, metrics,
     get run() { return S; }, get view() { return view; }, get nightDrawn() { return nightDrawn; }, get hazDrawn() { return hazDrawn; }, get siegeRect() { return siegeRect; }
