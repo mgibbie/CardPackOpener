@@ -1167,6 +1167,28 @@ G.DB = (() => {
   function ownsShiny(dex) { return !!(save && save.shiny && save.shiny[dex]); }
 
   /** Mejoras compradas para un Pokémon: { id -> nivel }. */
+  /**
+   * MicaSurvivor (DLC D18, owner 2026-10-26: "both modes to respond to the same upgrades i can buy for the pokemon"): the
+   * upgrade levels that count for `dex`: per FAMILY, the best level of each upgrade among its stages' save.pupg, computed
+   * here at read time (no save is rewritten). A base run and an Expedition run of any stage read the same levels. -> a copy
+   */
+  function levelsOf(dex) {
+    const out = {};
+    if (!save || !save.pupg) return out;
+    const fam = G.Families ? G.Families.membersOf(dex) : [+dex];
+    for (const d of fam) { const u = save.pupg[d]; if (u) for (const id in u) out[id] = Math.max(out[id] || 0, num(u[id])); }
+    return out;
+  }
+  /** DLC D18: a per-Pokémon pick (`ptm` the TM move, `pban` the vetoes) for dex: its own, else the first stage of its family
+   *  that has one (so an upgrade bought on one stage works for the others). */
+  function familyPick(field, dex) {
+    const m = save && save[field];
+    if (!m) return undefined;
+    if (m[dex] != null && (!Array.isArray(m[dex]) || m[dex].length)) return m[dex];
+    for (const d of G.Families ? G.Families.membersOf(dex) : []) if (m[d] != null && (!Array.isArray(m[d]) || m[d].length)) return m[d];
+    return undefined;
+  }
+
   function upgradesOf(dex) {
     if (!save) return {};
     save.pupg = save.pupg || {};
@@ -1188,7 +1210,7 @@ G.DB = (() => {
     get magepunk() { return mode === 'magepunk' ? mpUser : null; },
     get carryOffer() { return carryOffer; }, carryGuest,
     get mpRev() { return mpRev; },
-    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf, levelsOf, familyPick,
     sanitize,   // MicaSurvivor (M5 lote 4): para las pruebas (lo que quita de una partida editada a mano)
     /** MicaSurvivor (DLC D16-D18): a copy of the save before a refund writes it, micasurvivor_backup.<key>.<tag>.<ms> (the
      *  newest 2 per tag are kept). -> the copy's key, or null (no save, or the browser's storage is full: then no refund). */

@@ -172,15 +172,17 @@ G.ExpMeta = (() => {
   };
   // the 19 Lab upgrades (study 2.14). ORDER IS THE ROW'S: append only. price(lvl) = round(base x growth^lvl / 5) x 5 or `prices`.
   const LAB = [
-    { id: 'training', name: 'Entrenamiento', icon: 'muscle_band', max: 8, base: 300, g: 1.35, stat: 'dmg', per: 0.04 },
-    { id: 'stamina', name: 'Aguante', icon: 'hp_up', max: 8, base: 250, g: 1.35, stat: 'hp', per: 8 },
-    { id: 'agility', name: 'Agilidad', icon: 'carbos', max: 6, base: 300, g: 1.4, stat: 'spd', per: 0.025 },
-    { id: 'study', name: 'Estudio', icon: 'exp_share', max: 5, base: 400, g: 1.45, stat: 'xp', per: 0.05 },
-    { id: 'trading', name: 'Comercio', icon: 'amulet_coin', max: 5, base: 300, g: 1.45, stat: 'coin', per: 0.08 },
-    { id: 'fortune', name: 'Fortuna', icon: 'lucky_punch', max: 5, base: 400, g: 1.5, stat: 'luck', per: 5 },
-    { id: 'magnetism', name: 'Magnetismo', icon: 'magnet', max: 4, base: 250, g: 1.5, stat: 'magnet', per: 0.1 },
-    { id: 'leftovers', name: 'Restos', icon: 'leftovers', max: 4, base: 400, g: 1.5, stat: 'regen', per: 0.3 },
-    { id: 'shell', name: 'Caparazón', icon: 'shoal_shell', max: 5, base: 350, g: 1.45, stat: 'armor', per: 2 },
+    // (DLC D18, owner 2026-10-26: the shop's per-Pokémon upgrades work in both modes, so the Lab's 9 stat rows that overlapped
+    //  them are retired and refunded: retired 'D18')
+    { id: 'training', name: 'Entrenamiento', icon: 'muscle_band', max: 8, base: 300, g: 1.35, stat: 'dmg', per: 0.04, retired: 'D18' },
+    { id: 'stamina', name: 'Aguante', icon: 'hp_up', max: 8, base: 250, g: 1.35, stat: 'hp', per: 8, retired: 'D18' },
+    { id: 'agility', name: 'Agilidad', icon: 'carbos', max: 6, base: 300, g: 1.4, stat: 'spd', per: 0.025, retired: 'D18' },
+    { id: 'study', name: 'Estudio', icon: 'exp_share', max: 5, base: 400, g: 1.45, stat: 'xp', per: 0.05, retired: 'D18' },
+    { id: 'trading', name: 'Comercio', icon: 'amulet_coin', max: 5, base: 300, g: 1.45, stat: 'coin', per: 0.08, retired: 'D18' },
+    { id: 'fortune', name: 'Fortuna', icon: 'lucky_punch', max: 5, base: 400, g: 1.5, stat: 'luck', per: 5, retired: 'D18' },
+    { id: 'magnetism', name: 'Magnetismo', icon: 'magnet', max: 4, base: 250, g: 1.5, stat: 'magnet', per: 0.1, retired: 'D18' },
+    { id: 'leftovers', name: 'Restos', icon: 'leftovers', max: 4, base: 400, g: 1.5, stat: 'regen', per: 0.3, retired: 'D18' },
+    { id: 'shell', name: 'Caparazón', icon: 'shoal_shell', max: 5, base: 350, g: 1.45, stat: 'armor', per: 2, retired: 'D18' },
     { id: 'refresh', name: 'Cambiar', icon: 'vs_seeker', max: 4, base: 400, g: 1.6, text: '+{x} uso por partida' },
     { id: 'skip', name: 'Saltar', icon: 'escape_rope', max: 4, base: 300, g: 1.6, text: '+{x} uso por partida' },
     { id: 'banish', name: 'Vetar', icon: 'cleanse_tag', max: 5, base: 500, g: 1.5, text: '+{x} uso por partida' },
@@ -323,7 +325,7 @@ G.ExpMeta = (() => {
     ['ult10', 'Definitivo', 'casts', 10, 150], ['ult100', 'Sin límites', 'casts', 100, 500],
     ['ball50', 'Abrebolas', 'balls', 50, 200], ['cage10', 'Liberador', 'freed', 10, 300],
     ['avatar1', 'Investigador', 'avatars', 1, 150], ['avatar10', 'Enciclopedia', 'avatars', 10, 600, 'Investigador jefe'],
-    ['lab10', 'Ayudante de laboratorio', 'lab', 10, 300], ['lab50', 'Profesor', 'lab', 50, 1000, 'Profesor'],
+    ['lab10', 'Ayudante de laboratorio', 'lab', 10, 300], ['lab50', 'Profesor', 'lab', 25, 1000, 'Profesor'],   // (DLC D18: 25, the Lab without its 9 retired rows; the id stays)
     ['task30', 'Constante', 'tasks', 30, 500],
     // (D11: Survival)
     ['surv10', 'Superviviente', 'survMin', 10, 150], ['surv30', 'Resistencia', 'survMin', 30, 500], ['miles10', 'Cazahitos', 'miles', 10, 300],

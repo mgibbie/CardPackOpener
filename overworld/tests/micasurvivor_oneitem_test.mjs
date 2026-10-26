@@ -196,7 +196,7 @@ try {
 		const shown = !document.getElementById('scr-item').classList.contains('hidden'), st2 = G.Game.state;
 		return { n0, vit, cap, stack, held0, drops1, got1, worn, state1, drops2, shown, st2, pool: X.K.HELD_POOL, dups: X.K.HELD_POOL.filter(id => I.IT[id]), slots: pl.itemSlots(), dv: G.Expedition.DV, xi: Object.keys(pl.xi) };
 	});
-	A(e1.dv === 16 && e1.n0 === 60 && e1.vit === 3 && e1.stack === e1.cap && e1.held0 === null, 'Expedition keeps its stacking inventory as it was: 60 items stacking to their caps (Leftovers to ' + e1.cap + '), 3 vitamin slots, and a stacking pickup never takes the held slot; dv 16', JSON.stringify(e1));
+	A(e1.dv === 17 && e1.n0 === 60 && e1.vit === 3 && e1.stack === e1.cap && e1.held0 === null, 'Expedition keeps its stacking inventory as it was: 60 items stacking to their caps (Leftovers to ' + e1.cap + '), 3 vitamin slots, and a stacking pickup never takes the held slot; dv 16', JSON.stringify(e1));
 	const heldDrop = e1.drops1 ? e1.drops1.filter(v => e1.pool.includes(v)) : [];
 	A(heldDrop.length === 1 && e1.drops1.some(v => /^x:/.test(v)) && e1.dups.length === 0, 'a boss drops its stacking item AND one base held item (from the 7 no stacking item duplicates)', JSON.stringify({ drops: e1.drops1, pool: e1.pool }));
 	A(e1.slots === 1 && e1.worn === heldDrop[0] && e1.state1 === 'playing', 'the held item is worn in the ONE held slot (no screen while it is empty)', JSON.stringify(e1));

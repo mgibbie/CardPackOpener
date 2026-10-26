@@ -283,7 +283,7 @@ try {
 	await waitFor(() => d0.visible('scr-modes'), 3000);
 	await sleep(200);
 	const c0 = await E(page, () => { const b = document.querySelector('#modes-exp [data-exp=exp-league]'); return { soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim(), on: G.Expedition.enabled('exp-league'), hub: G.Expedition.hub('exp-league'), plan: G.Modes.plan('exp-league').mode, dv: G.Expedition.DV }; });
-	A(c0.on && c0.hub && !c0.soon && c0.aria !== 'true' && /^Expedition · League .*245 members/.test(c0.txt) && c0.plan === 'normal' && c0.dv === 16,
+	A(c0.on && c0.hub && !c0.soon && c0.aria !== 'true' && /^Expedition · League .*245 members/.test(c0.txt) && c0.plan === 'normal' && c0.dv === 17,
 		'the League card is playable (no "Coming soon"): "Your League: 245 members ..."; League is a screen, never planned as a run (plan -> normal); content version 12', JSON.stringify(c0));
 	await page.click('#modes-exp [data-exp=exp-league]');
 	A(await waitFor(() => E(page, () => !!(G.ExpMeta && G.ExpMeta.shown)), 8000), 'a click on it opens League mode (the Expedition code lazy-loads)');
@@ -344,7 +344,7 @@ try {
 	await page.click('[data-play="exp-classic"]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpLeague.run), 8000), '"Play Classic" starts a Classic run');
 	const r1 = await E(page, () => { const H = window.__t; H.freeze(); H.sturdy(); H.thin(); H.quiet(); const p = G.Game.player; return { mode: G.Game.mode, runDex: G.Modes.run.dex, dex: p.dex, member: G.ExpLeague.run.member, moves: p.moves.map(m => m.id), pick: localStorage.getItem('micasurvivorexp_pick'), dv: G.Modes.run.dv }; });
-	A(r1.mode === 'exp-classic' && r1.runDex === 495 && r1.dex === 495 && r1.member === 495 && JSON.stringify(r1.moves) === '["vine-whip"]' && r1.pick === '495' && r1.dv === 16, 'the run is Snivy\'s (the pick, the run\'s dex, its kit\'s first move Vine Whip), dv 14', JSON.stringify(r1));
+	A(r1.mode === 'exp-classic' && r1.runDex === 495 && r1.dex === 495 && r1.member === 495 && JSON.stringify(r1.moves) === '["vine-whip"]' && r1.pick === '495' && r1.dv === 17, 'the run is Snivy\'s (the pick, the run\'s dex, its kit\'s first move Vine Whip), dv 14', JSON.stringify(r1));
 	const r2 = await E(page, () => { const H = window.__t; H.levelTo(17); const p = G.Game.player; return { lv: p.level, dex: p.dex, form: G.ExpLeague.run.form, row: G.ExpLeague.row(), kit: p.moves.map(m => m.id), kitLog: G.ExpLeague.run.log.filter(l => l[1] === 'kit').map(l => l[0] + ':' + l[2]) }; });
 	A(r2.lv === 17 && r2.dex === 496 && r2.form === 496 && r2.row[1] === 496 && JSON.stringify(r2.kitLog) === '["2:razor-leaf","4:giga-drain","7:leaf-storm"]' && r2.kit.length === 4 /* (DLC D16: a swap card may since have replaced one: the League's log says what the kit taught) */, 'Snivy evolves into Servine at Lv 17 mid-run; its kit learned at 2 / 4 / 7', JSON.stringify(r2));
 	const end1 = await E(page, () => { window.__t.lose(600); return { lines: window.__out.lines, runs: G.ExpSave.get('lg.runs.495'), best: G.ExpSave.get('lg.best.495') }; });

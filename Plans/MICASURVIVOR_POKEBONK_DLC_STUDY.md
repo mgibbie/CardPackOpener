@@ -1729,3 +1729,22 @@ inventory; both modes get exactly one equipped held-item slot). Choices and note
 - **Versions:** `G.Expedition.DV` 16, `x` v10 (the held item is the snapshot's `it`).
 - **Golden fixtures:** re-recorded (every final save holds the profile's Backpack refund, +37,500 and 5 `rf` records; Boss Rush's
   second item opens the replace screen at second 76 instead of filling a 2nd slot). The other sims are unchanged second by second.
+
+### Update (2026-10-26): D18 built, "shared Pokémon upgrades"
+Built (`micasurvivor/README.md`, "DLC D18: shared Pokémon upgrades"). Choices and notes for D19+:
+- **Per family at read time** (decision #4): `G.DB.levelsOf(dex)` = the max per upgrade over the family's stages (`js/data/families.js`,
+  generated: 553 families, the League's 245 agree); `G.DB.familyPick` for the TM pick and vetoes. No save rewrite; a purchase writes
+  the shop's Pokémon one level above the family's. Both modes call `G.Upgrades.perks(G.DB.levelsOf(dex))`: the same perks object.
+- **The study's 580 families vs our 553:** the overworld tables plus the supplements give 553 roots; D19's full League ("580 families")
+  should take its family list from `G.Families` (or reconcile the two first), so the League and the shop agree on what a family is.
+- **The shop** lists base-owned + League-playable (loads the Expedition code only if this browser has an Expedition save).
+- **The kit:** TM -> kit move 1; Repertoire -> kit move 2 at Lv 1 (decision text). `moves` / `tm` did nothing in Expedition before.
+- **The Lab:** the 9 stat rows retired (`retired: 'D18'`) and refunded with D16's reconciled refund; `lab50` "Profesor" now 25 levels.
+  Read-only D1: no live Lab owners.
+- **Versions:** `G.Expedition.DV` 17, `x` v10. The D0a fixtures are unchanged by D18 (its profile's Pokémon are separate families).
+
+### D16-D18 stack (2026-10-26)
+`feat/micasurvivor-d16-d18`: D16 every move fires (dv 15; the stack's server change: the boards split by ruleset and the base
+lobby's rules), D17 one held item (dv 16), D18 shared upgrades (dv 17). Left of the owner's request: D19 (the full League, after the
+counter-cap fix), D20 (Expedition enemies, all 1,025; Wishiwashi in base), D21 (fine-tune the damage factors with `dps_sim.mjs`,
+Survival's pacing now that a 45-min run KOs ~16,000; the boards themselves shipped here).

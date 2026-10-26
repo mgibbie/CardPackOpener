@@ -102,7 +102,8 @@ G.Game = (() => {
     const cfg = G.Modes.begin(coop ? (coop.mode && G.Expedition && G.Expedition.coopPlan ? G.Expedition.coopPlan(coop) : { mode: 'normal' }) : G.Modes.plan(mode));
     // Diario y Fiesta: su propio Pokémon (el del día / el elegido, aunque no lo tengas). Equipo: el primero.
     const mon = G.DEX_BY[cfg.dex || save.partner];
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
+    // (MicaSurvivor DLC D18: the upgrades of the Pokémon's FAMILY, the best level among its stages: the same in every mode)
+    const perks = G.Upgrades.perks(G.DB.levelsOf(mon.dex));
 
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -173,7 +174,7 @@ G.Game = (() => {
     (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
     pl.addMove(G.startMoveOf(mon.dex));
     // Mejora "Veto": movimientos que no quieres que te salgan.
-    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    pl.banned = new Set((G.DB.familyPick('pban', mon.dex) || []).slice(0, perks.bans));   // (DLC D18: the family's vetoes)
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.
     if (perks.startMoves >= 2) {
       const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');

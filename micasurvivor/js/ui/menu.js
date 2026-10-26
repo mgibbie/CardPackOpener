@@ -267,21 +267,40 @@ G.MenuUI = (() => {
   function openUpgrades() {
     G.UI.show('scr-upgrades', true);
     const s = G.DB.save;
-    if (!upgDex || !s.owned[upgDex]) upgDex = s.partner;
+    // MicaSurvivor (DLC D18): your Pokémon AND the League members you can play in the Expedition (the upgrades are per family
+    // and both modes read them); the Expedition code is loaded for its roster only if this browser has played it.
+    const league = leagueMons();
+    if (!upgDex || !(s.owned[upgDex] || league.includes(upgDex))) upgDex = s.partner;
     // Selector con tus Pokémon: el compañero primero, luego los que ya tienen mejoras.
     const sel = $('upg-mon');
-    const lv = d => Object.values(s.pupg[d] || {}).reduce((a, b) => a + b, 0);
-    const mons = Object.keys(s.owned).map(Number).filter(d => G.DEX_BY[d])
+    const lv = d => Object.values(G.DB.levelsOf(d)).reduce((a, b) => a + b, 0);
+    const mons = [...new Set(Object.keys(s.owned).map(Number).concat(league))].filter(d => G.DEX_BY[d])
       .sort((a, b) => (b === s.partner) - (a === s.partner) || lv(b) - lv(a) || a - b);
-    sel.innerHTML = mons.map(d => `<option value="${d}">${G.DEX_BY[d].name}${d === s.partner ? ' (compañero)' : ''}${lv(d) ? ' · ' + lv(d) + ' niveles' : ''}</option>`).join('');
+    sel.innerHTML = mons.map(d => `<option value="${d}">${G.DEX_BY[d].name}${d === s.partner ? ' (compañero)' : !s.owned[d] ? ' (Liga)' : ''}${lv(d) ? ' · ' + lv(d) + ' niveles' : ''}</option>`).join('');
     sel.value = upgDex;
     sel.onchange = () => { upgDex = +sel.value; G.Audio.sfx('select'); renderUpgrades(); };
     renderUpgrades();
   }
 
+  /** DLC D18: the League members playable in the Expedition (their family's first stage), [] if its code isn't loaded. The
+   *  first time, if this browser has an Expedition save, the code is loaded and the list redrawn. */
+  let leagueLoading = false;
+  function leagueMons() {
+    const L = G.ExpLeague;
+    if (L && G.ExpSave && G.ExpSave.data) { try { return L.roster(); } catch (e) { return []; } }
+    let played = false;
+    try { for (let i = 0; i < localStorage.length; i++) if (/^micasurvivorexp_save\./.test(localStorage.key(i) || '')) { played = true; break; } } catch (e) { /* no storage */ }
+    if (played && !leagueLoading && G.Expedition && G.Expedition.load) {
+      leagueLoading = true;
+      G.Expedition.load().then(() => G.ExpSave.open()).then(() => { if (G.UI.isOpen('scr-upgrades')) openUpgrades(); }, () => {});
+    }
+    return [];
+  }
+
   function renderUpgrades() {
     const s = G.DB.save;
-    const levels = G.DB.upgradesOf(upgDex);
+    // (DLC D18: the family's levels, the best among its stages; a purchase writes this Pokémon's own entry one level above)
+    const levels = G.DB.levelsOf(upgDex);
     const mon = G.DEX_BY[upgDex];
     const shiny = upgDex === s.partner && !!s.partnerShiny && G.DB.ownsShiny(upgDex);
     G.UI.sprite($('upg-stage'), upgDex, { lively: true, scale: 2, hero: true, shiny });
@@ -309,7 +328,7 @@ G.MenuUI = (() => {
       if (u.id === 'tm' && lvl > 0) el.querySelector('[data-tm]').onclick = () => { tmOpen = !tmOpen; renderUpgrades(); };
       el.querySelector('[data-buy]').onclick = () => {
         // Se vuelve a leer todo al pulsar (la partida puede haber cambiado desde que se dibujó).
-        const sv = G.DB.save, lv = G.DB.upgradesOf(upgDex), now = lv[u.id] || 0;
+        const sv = G.DB.save, lv = G.DB.upgradesOf(upgDex), now = G.DB.levelsOf(upgDex)[u.id] || 0;   // (DLC D18: per family)
         if (now >= u.max) { renderUpgrades(); return; }
         const price = G.Upgrades.cost(u.id, now);
         if (sv.coins < price) { renderUpgrades(); return; }
