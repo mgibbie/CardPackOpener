@@ -189,19 +189,19 @@ try {
 		cards: [...document.querySelectorAll('#modes-exp [data-exp]')].map(b => ({ id: b.dataset.exp, soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim() })),
 		on: G.Expedition.MODES.filter(G.Expedition.enabled), dv: G.Expedition.DV,
 	}));
-	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id !== 'exp-classic');
-	A(JSON.stringify(ui.on) === '["exp-classic"]' && ui.dv === 9, 'the registry: Classic enabled, Survival and League not; the content version is 9 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9)', JSON.stringify(ui));
+	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id === 'exp-league');
+	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival"]' && ui.dv === 10, 'the registry: Classic and Survival enabled (D11), League not; the content version is 10 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10)', JSON.stringify(ui));
 	A(!cl.soon && cl.aria !== 'true' && !/Coming soon/.test(cl.txt) && /^Expedition · Classic .*Viridian Forest/.test(cl.txt), 'Classic is playable: no "Coming soon", not aria-disabled, says Viridian Forest (in English)', JSON.stringify(cl));
-	A(rest.length === 2 && rest.every(c => c.soon && c.aria === 'true' && /Coming soon$/.test(c.txt)), 'Survival and League still say "Coming soon" (aria-disabled)', JSON.stringify(rest));
+	A(rest.length === 1 && rest.every(c => c.soon && c.aria === 'true' && /Coming soon$/.test(c.txt)), 'League still says "Coming soon" (aria-disabled; Survival is playable since D11)', JSON.stringify(rest));
 	A(ui.h === 'Expedition', 'the group heading is "Expedition" (no "coming soon" now one is playable)', ui.h);
-	await page.click('#modes-exp [data-exp=exp-survival]');
+	await page.click('#modes-exp [data-exp=exp-league]');
 	await sleep(200);
 	const toast = await E(page, () => { const t = [...document.querySelectorAll('.toast')].pop(); return t ? t.innerText : ''; });
-	A(/coming soon/i.test(toast) && await E(page, () => G.Game.state === 'ui'), 'clicking Survival says "coming soon" and starts nothing', toast);
+	A(/coming soon/i.test(toast) && await E(page, () => G.Game.state === 'ui'), 'clicking League says "coming soon" and starts nothing', toast);
 	await page.click('#modes-exp [data-exp=exp-classic]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpClassic && G.ExpClassic.on), 8000), 'clicking Classic starts an Expedition Classic run (the code lazy-loads)');
 	const st0 = await E(page, () => { window.__t.freeze(); const S = G.ExpClassic.run; return { mode: G.Game.mode, dv: G.Modes.run.dv, map: S.map, zone: S.zone, ph: S.ph, z: G.World.zone && G.World.zone.zone, biome: G.World.biome, events: S.plan.events.length }; });
-	A(st0.mode === 'exp-classic' && st0.dv === 9 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
+	A(st0.mode === 'exp-classic' && st0.dv === 10 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
 
 	// ======================== 2. the plan
 	const pl2 = await E(page, () => {
@@ -362,9 +362,9 @@ try {
 		hf = G.Hooks.reduce('net.frame', { k: 'f' }, m).x;
 		return { x: snap.x, hf, seed: G.World.seed, zone: S.zone, hash: G.World.zone.hash, charge: S.charge, n: S.n, ph: S.ph, specials: [...S.specials.values()].map(s => [s.e.id, s.kind]), snap };
 	});
-	A(xs.x && xs.x.xv === 9 && xs.x.c && xs.x.c.p === 0 && xs.x.c.q > 0 && xs.x.c.n === xs.n && Array.isArray(xs.x.c.k) && xs.x.c.k.length >= 2,
+	A(xs.x && xs.x.xv === 10 && xs.x.c && xs.x.c.p === 0 && xs.x.c.q > 0 && xs.x.c.n === xs.n && Array.isArray(xs.x.c.k) && xs.x.c.k.length >= 2,
 		'a live snapshot carries the x block (v4 since D4) with `c` (phase, altar charge, events fired, the special enemies)', JSON.stringify(xs.x));
-	A(xs.hf && xs.hf.xv === 9 && xs.hf.c && JSON.stringify(xs.hf.c) === JSON.stringify(xs.x.c), 'a co-op host frame carries the same `c`', JSON.stringify(xs.hf));
+	A(xs.hf && xs.hf.xv === 10 && xs.hf.c && JSON.stringify(xs.hf.c) === JSON.stringify(xs.x.c), 'a co-op host frame carries the same `c`', JSON.stringify(xs.hf));
 
 	// ======================== 6. a full run won
 	const win = await E(page, async () => {

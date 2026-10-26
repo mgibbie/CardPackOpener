@@ -94,18 +94,18 @@ if (M0) {
 		'study 2.14\'s fixed prices: vitamin slots 1,200 / 3,000, 4th move slot 1,500, fourth option 3,000, Revive 5,000, Support team 3,500');
 	// a run's pay x the tier's multiplier, in Pokémonedas (D11: the D10 units x K.SCALE, rounded to 5)
 	const p = { kills: 2000, time: 1500, zone: 4, bosses: 4, won: true, catches: 2 };
-	const base = Math.round(10 + 2000 / 40 + 25 * 3 + 30 * 4 + 120 + 15 * 2), coins = n => Math.round(n * 8 / 5) * 5;
+	const base = Math.round(10 + 2000 / 40 + 25 * 3 + 30 * 4 + 120 + 15 * 2), coins = n => Math.round(n * 3 / 5) * 5;
 	const pn = M.payOf(p, 'normal'), ph = M.payOf(p, 'hard'), px = M.payOf(p, 'nightmare');
-	A(M.K.SCALE === 8 && pn.base === base && base === 405 && pn.pay === 3240 && ph.pay === coins(base * 1.75) && ph.pay === 5670 && px.pay === 8100 && ph.mul === 1.75 && px.mul === 2.5,
-		'a run\'s pay: (10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch = 405) x the tier\'s (study 2.11) x8 Pokémonedas: 3,240 / 5,670 / 8,100', JSON.stringify([pn, ph, px]));
-	A(M.payOf({ ...p, time: 59 }, 'hard').pay === 0 && M.payOf({ kills: 0, time: 60, zone: 1, bosses: 0, won: false, catches: 0 }, 'normal').pay === 80, 'a run under a minute pays nothing (no quit-farming); a minute pays the base 10 x8 = 80');
+	A(M.K.SCALE === 3 && pn.base === base && base === 405 && pn.pay === 1215 && ph.pay === coins(base * 1.75) && ph.pay === 2125 && px.pay === 3040 && ph.mul === 1.75 && px.mul === 2.5,
+		'a run\'s pay: (10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch = 405) x the tier\'s (study 2.11) x3 Pokémonedas: 1,215 / 2,125 / 3,040', JSON.stringify([pn, ph, px]));
+	A(M.payOf({ ...p, time: 59 }, 'hard').pay === 0 && M.payOf({ kills: 0, time: 60, zone: 1, bosses: 0, won: false, catches: 0 }, 'normal').pay === 30, 'a run under a minute pays nothing (no quit-farming); a minute pays the base 10 x3 = 30');
 	// a purchase spends the base save's coins through the wallet (refused short, nothing taken)
-	G0.DB.save.coins = 2395;
+	G0.DB.save.coins = 895;
 	const poor = M.buyLab('training'), c0 = G0.DB.save.coins;
-	G0.DB.save.coins = 2400;
+	G0.DB.save.coins = 900;
 	const okL = M.buyLab('training');
-	A(poor.error === 'poor' && poor.need === 2400 && c0 === 2395 && okL.ok && okL.price === 2400 && G0.DB.save.coins === 0 && M.labLv('training') === 1 && S.list('cur.spend').includes('lab.training.0:' + M.dev()) && M.balance() === 0,
-		'the Lab spends Pokémonedas: Training Lv 1 costs 300 x8 = 2,400 of the base save\'s coins (2,395 is refused, nothing taken); the purchase is recorded with this device\'s id (cur.spend)', JSON.stringify({ poor, okL, coins: G0.DB.save.coins, spend: S.list('cur.spend') }));
+	A(poor.error === 'poor' && poor.need === 900 && c0 === 895 && okL.ok && okL.price === 900 && G0.DB.save.coins === 0 && M.labLv('training') === 1 && S.list('cur.spend').includes('lab.training.0:' + M.dev()) && M.balance() === 0,
+		'the Lab spends Pokémonedas: Training Lv 1 costs 300 x3 = 900 of the base save\'s coins (895 is refused, nothing taken); the purchase is recorded with this device\'s id (cur.spend)', JSON.stringify({ poor, okL, coins: G0.DB.save.coins, spend: S.list('cur.spend') }));
 	// every Lab upgrade's effect from a row
 	const lv = { training: 8, stamina: 8, agility: 6, study: 5, trading: 5, fortune: 5, magnetism: 4, leftovers: 4, shell: 5, refresh: 4, skip: 4, banish: 5, vitamins: 2, moveslot: 1, option: 1, revive: 1, research: 4, support: 1, archive: 3 };
 	for (const [k, n] of Object.entries(lv)) S.best('lab.' + k, n);
@@ -153,14 +153,14 @@ if (M0) {
 	const lines = M.taskRun(big, d1);
 	const after = M.tasksOf('d', d1), wk = M.tasksOf('w', d1);
 	const paid = M.earned() - g0;
-	A(after.every(t => t.claimed) && wk.every(t => t.claimed) && paid === 8 * (60 + 100 + 160 + 50 + 300 + 450 + 700 + 500) && paid === 18560 && lines.length === 8 && /\+480 Pokémonedas/.test(lines.join(' ')),
-		'a big run finishes all 6: (60 + 100 + 160 + the daily bonus 50 x streak 1 + 300 + 450 + 700 + the weekly 500) x8 = 18,560 Pokémonedas', JSON.stringify({ paid, lines }));
+	A(after.every(t => t.claimed) && wk.every(t => t.claimed) && paid === 3 * (60 + 100 + 160 + 50 + 300 + 450 + 700 + 500) && paid === 6960 && lines.length === 8 && /\+480 Pokémonedas/.test(lines.join(' ')),
+		'a big run finishes all 6: (60 + 100 + 160 + the daily bonus 50 x streak 1 + 300 + 450 + 700 + the weekly 500) x3 = 6,960 Pokémonedas', JSON.stringify({ paid, lines }));
 	const boostsGot = M.BOOSTS.reduce((a, b) => a + M.boostHave(b.id), 0);
 	A(boostsGot === 4, 'the bonuses give boosts: 1 for the 3 dailies, 3 for the 3 weeklies', boostsGot);
 	const again = M.taskRun(big, d1b);
 	A(!again.length && M.earned() - g0 === paid, 'later the same day: nothing pays twice');
 	M.taskRun(big, d2);
-	A(M.dailyStreak(M.dayOf(d2)) === 2 && M.earned() - g0 === paid + 8 * (60 + 100 + 160 + 100), 'the next day: new tasks; all 3 done the day after makes a streak of 2 (+800)', M.earned() - g0);
+	A(M.dailyStreak(M.dayOf(d2)) === 2 && M.earned() - g0 === paid + 3 * (60 + 100 + 160 + 100), 'the next day: new tasks; all 3 done the day after makes a streak of 2 (+300)', M.earned() - g0);
 	M.taskRun(big, Date.UTC(2026, 9, 25, 3));
 	A(M.dailyStreak(M.dayOf(Date.UTC(2026, 9, 25, 3))) === 1, 'a missed day resets the streak to 1');
 	// the reroll: one a period, not a finished task
@@ -173,7 +173,7 @@ if (M0) {
 	const e0 = M.earned(), b0 = G0.DB.save.coins, c1 = M.checkAch(), c2 = M.checkAch();
 	A(c1.some(a => a.id === 'run1') && c1.some(a => a.id === 'run10') && !c2.length && M.earned() - e0 === c1.reduce((a, x) => a + M.coinsOf(x.star), 0) && G0.DB.save.coins - b0 === M.earned() - e0 && S.list('ach').includes('run10'),
 		'achievements: "finish 10 runs" and the rest reached are claimed once (the set `ach`) and paid once in Pokémonedas', JSON.stringify(c1.map(a => a.id)));
-	A(M.ACH.length >= 30 && M.ACH.every(a => a.star >= 50 && a.star <= 1500), '~30 achievements (' + M.ACH.length + '), 50-1,500 units each (study 2.14), x8 in Pokémonedas');
+	A(M.ACH.length >= 30 && M.ACH.every(a => a.star >= 50 && a.star <= 1500), '~30 achievements (' + M.ACH.length + '), 50-1,500 units each (study 2.14), x3 in Pokémonedas');
 	// the save merge of two devices: G-counters add, the Lab takes the max, the Archive the latest toggle
 	const devA = { v: 1, counters: { 'lab.training': 2, 'arc.lifeorb': 3 }, sets: { 'items.bought': ['scopelens'], ach: ['run1'], 'cur.spend': ['item.scopelens:aaaa11'] } };
 	const devB = { v: 1, counters: { 'lab.training': 3, 'arc.lifeorb': 4 }, sets: { 'items.bought': ['scopelens', 'widelens'], ach: ['run1', 'zone2'], 'cur.spend': ['item.scopelens:bbbb22', 'item.widelens:bbbb22'] } };
@@ -230,7 +230,7 @@ A(Object.values(tokens).every(Boolean), 'test accounts registered');
 		const want = MB.coinsOf(MB.UNLOCKS.find(u => u.id === 'scopelens').cost) - MB.coinsOf(MB.ACH_BY.run1.star);
 		A(mA === 0 && GA.DB.save.coins === 5000 && GA.DB.commits === 0 && mB === want && GB.DB.save.coins === 5000 + want && mB2 === 0 && GB.DB.save.coins === 5000 + want
 			&& JSON.stringify(GB.ExpSave.list('cur.fix').sort()) === '["ach.run1:bbbb22","item.scopelens:bbbb22"]',
-			'a double payment across devices: the second device refunds its Scope Lens (+2,400) and gives back its "First steps" (-' + MB.coinsOf(MB.ACH_BY.run1.star) + '), once (cur.fix); the first device and a second reconcile change nothing',
+			'a double payment across devices: the second device refunds its Scope Lens (+900) and gives back its "First steps" (-' + MB.coinsOf(MB.ACH_BY.run1.star) + '), once (cur.fix); the first device and a second reconcile change nothing',
 			JSON.stringify({ mA, mB, mB2, a: GA.DB.save.coins, b: GB.DB.save.coins, fix: GB.ExpSave.list('cur.fix') }));
 		// and a device that only READS (nothing to undo) never writes the base save
 		const GC = await load('cccc33', 5000);
@@ -398,7 +398,7 @@ try {
 	});
 	const oN = await overText(page);
 	A(rN.ok && rN.meta && s0.row && s0.row[0] === '0'.repeat(19), 'Classic starts with the meta row (a fresh save: every Lab level 0)', JSON.stringify(s0));
-	A(pN.want && pN.pay === pN.want.pay && pN.want.mul === 1 && pN.pay > 800 && pN.lines.includes('Pokémonedas: +' + pN.pay),
+	A(pN.want && pN.pay === pN.want.pay && pN.want.mul === 1 && pN.pay > 300 && pN.lines.includes('Pokémonedas: +' + pN.pay),
 		'a won Normal run pays its Pokémonedas (x1), with a run-over line "Pokémonedas: +N"', JSON.stringify({ pay: pN.pay, want: pN.want, lines: pN.lines }));
 	A(pN.coins === pN.wal && pN.coins >= pN.pay && pN.led[0] === pN.coins && pN.led[1] === 0,
 		'... into the BASE save: its coins rise by exactly what the wallet paid (the run + its achievements), booked as earned on this device\'s ledger entry (save.led[device].c)', JSON.stringify({ pay: pN.pay, coins: pN.coins, wal: pN.wal, led: pN.led }));
@@ -408,7 +408,7 @@ try {
 	await E(page, () => G.ExpTier.setPick('viridian', 'hard'));
 	await startClassic(page);
 	const pH = await E(page, () => { const pay0 = G.ExpSave.get('pay.total'); G.ExpCap.run.n = 2; const sum = window.__t.win(1200); return { pay: G.ExpSave.get('pay.total') - pay0, want: G.ExpMeta.payOf(sum.parts, 'hard'), base: G.ExpMeta.payOf(sum.parts, 'normal'), lines: window.__out.lines }; });
-	A(pH.pay === pH.want.pay && pH.want.mul === 1.75 && pH.pay === Math.round(pH.want.base * 1.75 * 8 / 5) * 5 && pH.lines.some(l => l === 'Pokémonedas: +' + pH.pay + ' (×1.75 Hard)'),
+	A(pH.pay === pH.want.pay && pH.want.mul === 1.75 && pH.pay === Math.round(pH.want.base * 1.75 * 3 / 5) * 5 && pH.lines.some(l => l === 'Pokémonedas: +' + pH.pay + ' (×1.75 Hard)'),
 		'a Hard run pays x1.75 (the tier\'s pay): "Pokémonedas: +N (×1.75 Hard)"', JSON.stringify(pH));
 	await E(page, () => G.ExpTier.setPick('viridian', 'normal'));
 	const ach1 = await E(page, () => ({ ach: G.ExpSave.list('ach'), lines: window.__out.lines }));
@@ -477,8 +477,8 @@ try {
 		const bal1 = M.balance(), ok = M.buyItem('scopelens'), twice = M.buyItem('scopelens');
 		return { bal0, poor, bal0b, ok, twice, spent: bal1 - M.balance(), bought: S.list('items.bought'), rec: S.list('cur.spend').filter(x => x.startsWith('item.')) };
 	});
-	A(un2.poor && un2.poor.error === 'poor' && un2.bal0 === un2.bal0b && un2.ok && un2.ok.ok && un2.twice.error === 'have' && un2.spent === 2400 && JSON.stringify(un2.bought) === '["scopelens"]' && un2.rec.length === 1 && /^item\.scopelens:/.test(un2.rec[0]),
-		'its goal reached, 300 x8 = 2,400 Pokémonedas buy Scope Lens into the pool (5 short is refused, nothing taken; bought once; `items.bought`, its record in cur.spend)', JSON.stringify(un2));
+	A(un2.poor && un2.poor.error === 'poor' && un2.bal0 === un2.bal0b && un2.ok && un2.ok.ok && un2.twice.error === 'have' && un2.spent === 900 && JSON.stringify(un2.bought) === '["scopelens"]' && un2.rec.length === 1 && /^item\.scopelens:/.test(un2.rec[0]),
+		'its goal reached, 300 x3 = 900 Pokémonedas buy Scope Lens into the pool (5 short is refused, nothing taken; bought once; `items.bought`, its record in cur.spend)', JSON.stringify(un2));
 	// the Archive: Lab level 1 = 3 slots
 	const arc = await E(page, () => {
 		const M = G.ExpMeta, S = G.ExpSave, out = {};
@@ -622,8 +622,8 @@ try {
 	});
 	A(pn.txt === 'League HQ: Lab, tasks and achievements' && pn.shown && pn.main && JSON.stringify(pn.tabs) === '["Lab","Items","Archive","Research","Tasks","Achievements","Card"]' && pn.lab === 19,
 		'"League HQ: Lab, tasks and achievements" opens the panel: Lab, Items, Archive, Research, Tasks, Achievements, Card; the Lab\'s 19 upgrades', JSON.stringify(pn).slice(0, 400));
-	A(pn.bought && pn.bought.lv === 1 && pn.bought.price === 1600 && pn.bought.paid === 12800 && pn.bought.bal === pn.bought.coins.toLocaleString('en') && /Archive Lv 2\/3 · Now: \+6 Archive slots/.test(pn.labText) && /Training Lv 8\/8 · Now: \+32% damage Max/.test(pn.maxed),
-		'a click buys Archive Lv 2 (1,600 x8 = 12,800 Pokémonedas off the base save): "Now: +6 Archive slots"; the head shows the base balance; Training at 8 / 8 says Max', JSON.stringify(pn.bought) + ' ' + pn.labText + ' | ' + pn.maxed);
+	A(pn.bought && pn.bought.lv === 1 && pn.bought.price === 1600 && pn.bought.paid === 4800 && pn.bought.bal === pn.bought.coins.toLocaleString('en') && /Archive Lv 2\/3 · Now: \+6 Archive slots/.test(pn.labText) && /Training Lv 8\/8 · Now: \+32% damage Max/.test(pn.maxed),
+		'a click buys Archive Lv 2 (1,600 x3 = 4,800 Pokémonedas off the base save): "Now: +6 Archive slots"; the head shows the base balance; Training at 8 / 8 says Max', JSON.stringify(pn.bought) + ' ' + pn.labText + ' | ' + pn.maxed);
 	A(!/★|Stardust/.test(pn.head + ' ' + pn.labText) && /Your usual Pokémonedas/.test(pn.head + ' ' + (await E(page, () => document.querySelector('#modes-xmeta .xm-note').innerText))), 'no Stardust (★) left on the panel: "Your usual Pokémonedas: earned by playing ..., never sold."', pn.head);
 	await shoot(page, 'meta-desktop-lab.png');
 	const tabs = await E(page, async () => {

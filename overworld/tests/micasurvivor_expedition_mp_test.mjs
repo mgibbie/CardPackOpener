@@ -229,8 +229,12 @@ try {
 	A(JSON.stringify(metaH.row) === JSON.stringify(runB.row) && Math.abs(metaH.dmg - 0.12) < 1e-9 && metaH.dex === 4, 'the host sees bob\'s meta row on his puppet: his Lab is his effect (+12 % damage from Training 3)', JSON.stringify(metaH));
 	// verbs: bob hops; the host sees it
 	const hop0 = await alice.E(() => { const r = G.Coop.mate('bob').xrow; return r ? r[5] | 0 : 0; });
-	await bob.E(() => G.ExpVerbs.press('hop'));
-	const hopSeen = await waitFor(() => alice.E(h0 => { const r = G.Coop.mate('bob').xrow; return r && (r[5] | 0) > h0; }, hop0), 4000);
+	// (a press is swallowed while the guest is already in the air or held: press again, up to 3 times)
+	let hopSeen = false;
+	for (let k = 0; k < 3 && !hopSeen; k++) {
+		await bob.E(() => { const pl = G.Game.player; pl.air = null; pl.frozen = false; G.ExpVerbs.press('hop'); });
+		hopSeen = await waitFor(() => alice.E(h0 => { const r = G.Coop.mate('bob').xrow; return r && (r[5] | 0) > h0; }, hop0), 3000);
+	}
 	A(hopSeen, 'verbs: the guest hops; the host sees the hop on its puppet (the air row\'s hop count)');
 	// the Ultimate: bob's meter full, he casts; the host sees the cast
 	await bob.E(() => { G.ExpUlt.run.c = 1; G.ExpUlt.press(); });
@@ -378,6 +382,16 @@ try {
 	await alice.E(() => { const s = G.ExpSurv.run.siege, pl = G.Game.player; s.ax = pl.x; s.ay = pl.y; s.t = 25; s.on = true; s.k = 0.6; });
 	const siegeH = await waitFor(() => bob.E(() => { const p = G.Coop.mate('alice').pl; return p.xsv && p.xsv[1] > 0; }), 5000);
 	A(siegeH, 'the guest\'s siege travels in its row: the host knows alice is under siege (and sends the flocks after her puppet)');
+	// (both players beside the host's nearest hazard so the spectator's camera has a hazard in view
+	//  and the foes below are spawned round both)
+	const hzAt = await bob.E(() => {
+		const pl = G.Game.player, list = G.ExpSurv.hazardsOf(G.World.zone).slice().sort((a, b) => Math.hypot(a.x - pl.x, a.y - pl.y) - Math.hypot(b.x - pl.x, b.y - pl.y));
+		const hz = list[0]; if (!hz) return null;
+		window.__t.go(hz.x + hz.r * 0.5, hz.y);
+		return [hz.x + hz.r * 0.5, hz.y];
+	});
+	if (hzAt) await alice.E(p => window.__t.go(p[0] + 40, p[1] + 20), hzAt);
+	await sleep(800);
 	// a snapshot of the host (for the spectator), with everything on it: the guest's Support Alpha, a pop-up, the night
 	await alice.E(() => { const pl = G.Game.player; G.ExpCap.run.sa.push({ dex: 21, type: 'flying', x: pl.x + 30, y: pl.y, anim: new G.Sprites.Animator(21, G.ExpCap.K.SA_SCALE) }); });
 	await sleep(1200);
@@ -437,7 +451,7 @@ try {
 		/** the unpacked tape's size by frame field (chars of JSON): where a replay's bytes go */
 		H.parts = text => {
 			if (!text) return null;
-			const d = JSON.parse(text), names = ['dt', 'P', 'C', 'S', 'E', 'K', 'M', 'XA', 'XW', 'XO', 'XF'], o = { total: text.length, h: JSON.stringify(d.h).length, ev: JSON.stringify(d.ev || []).length };
+			const d = JSON.parse(text), names = ['dt', 'P', 'C', 'S', 'E', 'K', 'M', 'XA', 'XW', 'XO', 'XF', 'XC'], o = { total: text.length, h: JSON.stringify(d.h).length, ev: JSON.stringify(d.ev || []).length };
 			for (const f of d.f) { const a = typeof f === 'string' ? JSON.parse(f) : f; a.forEach((v, i) => { const k = names[i] || 'f' + i; o[k] = (o[k] || 0) + JSON.stringify(v).length + 1; }); }
 			return o;
 		};
@@ -462,7 +476,7 @@ try {
 		window.requestAnimationFrame = () => 0;
 		const ok = await G.Flow.play('exp-survival');
 		H.sturdy();
-		const dt = 1 / 20, T = 45 * 60 + 20, t0 = performance.now(), C = G.ExpClassic, S = G.ExpSurv;
+		const dt = 1 / 20, T = 45 * 60 + 50, t0 = performance.now(), C = G.ExpClassic, S = G.ExpSurv;
 		let migr = 0, bossKills = 0, maxE = 0;
 		while (G.Game.st.time < T && G.Game.state !== 'over') {
 			H.tick(dt);
@@ -477,7 +491,13 @@ try {
 		out.code = e && e.code ? e.code.length : 0; out.frames = e && e.meta ? e.meta.frames : null; out.bytes = G.Replay.stats.frames;
 		const rd = e && e.code ? await G.Replay.open(e.code) : null;
 		out.readable = !!rd; out.last = rd ? (rd.at(rd.length - 1) || {}).x ? 'x' : '-' : null;
-		out.parts = window.__t.parts(e && e.code ? await G.Replay.unpack(e.code) : null);
+		const txt = e && e.code ? await G.Replay.unpack(e.code) : null;
+		out.parts = window.__t.parts(txt);
+		window.__survTxt = txt;
+		// (D11: the tape's frame intervals (tenths of a second): Survival's 1 s; the size steps of any Expedition tape)
+		if (txt) { const d = JSON.parse(txt), dts = d.f.slice(1).map(f => f[0] || 0).sort((a, b) => a - b); out.hdt = d.h.dt; out.dtMed = dts[dts.length >> 1]; out.dtMin = dts[0]; }
+		out.thin = [0, 2999999, 3000000, 3300000, 3550000].map(b => G.Replay.thinDt({ dt: 1, bytes: b })).concat([G.Replay.thinDt({ dt: 0.5, bytes: 3400000 })]);
+		out.stop = G.Replay.K.THIN_STOP;
 		return out;
 	});
 	console.log('     survival tape by field: ' + JSON.stringify(survRep.parts));
@@ -507,12 +527,49 @@ try {
 		await wait(300);
 		const e = G.Replay.last; if (e && e.ready) await e.ready;
 		out.code = e && e.code ? e.code.length : 0; out.frames = e && e.meta ? e.meta.frames : null;
-		out.parts = window.__t.parts(e && e.code ? await G.Replay.unpack(e.code) : null);
+		const txt = e && e.code ? await G.Replay.unpack(e.code) : null;
+		out.parts = window.__t.parts(txt);
+		if (txt) { const d = JSON.parse(txt), dts = d.f.slice(1).map(f => f[0] || 0).sort((a, b) => a - b); out.hdt = d.h.dt; out.dtMed = dts[dts.length >> 1]; }
 		return out;
 	});
 	console.log(`     replay: a full Classic clear (${clRep.t} s, zone ${clRep.zone}, won ${clRep.won}, ${clRep.kills} KOs, up to ${clRep.maxE} foes) packs to ${clRep.code} chars, ${clRep.frames} frames (sim ${clRep.ms} ms)`);
 	console.log('     classic tape by field: ' + JSON.stringify(clRep.parts));
 	A(clRep.ok && clRep.won && clRep.code > 0 && clRep.code < 1200000 && clRep.frames <= 30000, 'replay size: a full Classic clear (3 zones and the shrine) packs under 1.2 MB', JSON.stringify(clRep));
+	A(survRep.hdt === 1 && survRep.dtMed === 10 && clRep.hdt === 0.5 && clRep.dtMed === 5,
+		"the Survival tape's frames are 1 s apart (header dt 1); a Classic tape keeps 0.5 s", JSON.stringify({ s: [survRep.hdt, survRep.dtMed, survRep.dtMin], c: [clRep.hdt, clRep.dtMed] }));
+	A(JSON.stringify(survRep.thin) === '[1,1,1.5,2,3,1]' && survRep.stop === 4500000,
+		"an endless run's tape spaces its frames out as it grows (x1.5 at 3.0 M raw chars, x2 at 3.3 M, x3 at 3.55 M) and stops adding frames at 4.5 M", JSON.stringify([survRep.thin, survRep.stop]));
+	// the cap's last resort: a tape that still packs over it merges every two frames (halve), exactly
+	const hv = await sim.E(async () => {
+		const H = window.__t, wait = ms => new Promise(r => setTimeout(r, ms)), R = G.Replay, out = {};
+		// (a) the 45-min Survival tape halved: each merged frame decodes to the original's state at that point, the whole run kept
+		const d = JSON.parse(window.__survTxt), f1 = d.f.map(f => JSON.stringify(f)), f2 = R.halve(f1);
+		const a = R.reader({ v: 1, h: d.h, f: d.f, ev: d.ev }), b = R.reader({ v: 1, h: d.h, f: f2.map(x => JSON.parse(x)), ev: d.ev });
+		const key = s => JSON.stringify([s.t, s.p, s.lv, s.k, s.e.map(e => e.slice(0, 7)).sort((x, y) => x[0] - y[0]), s.pk.slice().sort((x, y) => x[0] - y[0]), s.x]);
+		let bad = 0; for (let j = 0; j < b.length; j++) if (key(a.at(Math.min(a.length - 1, 2 * j + 1))) !== key(b.at(j))) bad++;
+		out.half = { n1: f1.length, n2: f2.length, bad, dur: [a.duration, b.duration], packed: [(await R.pack(window.__survTxt)).length, (await R.pack(JSON.stringify({ v: 1, h: d.h, f: f2.map(x => JSON.parse(x)), ev: d.ev }))).length] };
+		// (b) finish() over the cap (forced to 1 char): an Expedition tape is halved HALVE_MAX times and still plays to its end
+		const cap = R.K.PACKED_MAX;
+		const runFor = async (mode, secs) => {
+			if (G.Game.state === 'over') { G.Flow.afterRun(); await wait(300); }
+			const ok = await G.Flow.play(mode); H.sturdy();
+			while (G.Game.st.time < secs && G.Game.state !== 'over') H.tick(1 / 20);
+			R.K.PACKED_MAX = 1;
+			const t = G.Game.st.time; G.Game.quit(); await wait(400);
+			const e = R.last; if (e && e.ready) await e.ready;
+			R.K.PACKED_MAX = cap;
+			const txt = await R.unpack(e.code), dd = JSON.parse(txt), rd = await R.open(e.code);
+			return { ok, mode: dd.h.m, halved: dd.h.halved || 0, frames: dd.f.length, metaFrames: e.meta.frames, t: Math.round(t), dur: rd ? Math.round(rd.duration) : null };
+		};
+		out.exp = await runFor('exp-classic', 120);
+		out.base = await runFor('normal', 60);
+		return out;
+	});
+	A(hv.half.bad === 0 && hv.half.n2 === Math.ceil(hv.half.n1 / 2) && hv.half.dur[0] === hv.half.dur[1] && hv.half.packed[1] < hv.half.packed[0] * 0.75,
+		'halve(): the Survival tape with every two frames merged decodes to exactly the original state at each merged frame, keeps the whole run, and packs ' + hv.half.packed[0] + ' -> ' + hv.half.packed[1], JSON.stringify(hv.half));
+	A(hv.exp.ok && hv.exp.halved === 3 && hv.exp.frames === hv.exp.metaFrames && hv.exp.frames <= 40 && Math.abs(hv.exp.dur - hv.exp.t) <= 2,
+		'finish() over the cap: an Expedition tape is halved (up to 3 times) and still plays to its end', JSON.stringify(hv.exp));
+	A(hv.base.mode === 'normal' && hv.base.halved === 0 && hv.base.frames >= 110, "a base run's tape is never halved or thinned (0.5 s frames, as before)", JSON.stringify(hv.base));
 	await sim.ctx.close();
 } catch (e) {
 	fail++;

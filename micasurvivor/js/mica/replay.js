@@ -40,7 +40,15 @@ G.Replay = (() => {
     LOCAL_MAX: 3,        // runs kept in this browser
     PACKED_MAX: 1200000, // the server's cap (MSURV_REPLAY_MAX)
     FRAMES_MAX: 30000,
-    STORE_MAX_CHARS: 1200000   // the local copies, together (the newest is always kept)
+    STORE_MAX_CHARS: 1200000,  // the local copies, together (the newest is always kept)
+    // DLC D11: an Expedition replay's size. Survival is endless, so its frames are REC_DT_SURV apart, and every Expedition
+    // tape spaces its frames out as it grows (raw JSON chars -> x the interval; packed is ~0.3-0.4 of raw) and stops adding
+    // frames at THIN_STOP. If it still packs over PACKED_MAX, finish() merges every two frames (halve) and packs it again,
+    // up to HALVE_MAX times. A base run has none of this (rec.thin is false: its frames are exactly as before).
+    REC_DT_SURV: 1,
+    THIN: [[3000000, 1.5], [3300000, 2], [3550000, 3]],
+    THIN_STOP: 4500000,
+    HALVE_MAX: 3
   };
   const STORE_KEY = 'micasurvivor_replays_v1';
   const EW = 6, KW = 3;  // enemy row fields after the id: dex, x, y, hp%, maxHp, flags · pickup: kind, x, y
@@ -68,6 +76,11 @@ G.Replay = (() => {
     // DLC D0b: an Expedition run's header gains its content version (dv) and map / difficulty (js/expedition/core.js);
     // a base run's is unchanged (no listener, or one that leaves base runs alone)
     rec.h = G.Hooks.reduce('replay.header', rec.h);
+    // (DLC D11: an Expedition tape (its header has dv) thins as it grows; Survival's frames are 1 s apart. The reader needs
+    //  nothing new: every frame carries its own interval, and the playback blends between frames.)
+    rec.thin = rec.h.dv != null;
+    rec.dt = rec.thin && rec.h.m === 'exp-survival' ? K.REC_DT_SURV : K.REC_DT;
+    if (rec.dt !== K.REC_DT) rec.h.dt = rec.dt;
     sample();
   }
 
@@ -76,13 +89,21 @@ G.Replay = (() => {
     if (!rec) return;
     const t0 = performance.now();
     if (playing) acc += dt;
-    if (acc >= K.REC_DT) { acc -= K.REC_DT; if (acc > K.REC_DT) acc = 0; sample(); }
+    const step = rec.thin ? thinDt(rec) : K.REC_DT;
+    if (acc >= step) { acc -= step; if (acc > step) acc = 0; sample(); }
     const ms = performance.now() - t0;
     stats.obsMs += ms; stats.obsFrames++;
   }
 
+  /** DLC D11: an Expedition tape's frame interval now (its base, x the step its size has reached). */
+  function thinDt(r) {
+    let k = 1;
+    for (const [at, m] of K.THIN) if (r.bytes >= at) k = m;
+    return r.dt * k;
+  }
+
   function sample() {
-    if (!rec || rec.frames.length >= K.FRAMES_MAX) return;
+    if (!rec || rec.frames.length >= K.FRAMES_MAX || (rec.thin && rec.bytes >= K.THIN_STOP)) return;
     const t0 = performance.now();
     const s = G.Spectate.snap();
     if (!s) return;
@@ -172,6 +193,8 @@ G.Replay = (() => {
     if (o.x && o.x.o) { o.x = Object.assign({}, o.x); delete o.x.o; }
     // (DLC D11: and Survival's rows `v` (the siege's %) and the reactions' pop-ups `r`: field 10)
     if (o.x && (o.x.v || o.x.r)) { o.x = Object.assign({}, o.x); delete o.x.v; delete o.x.r; }
+    // (DLC D11: and the timeline's state `c` (a boss's exhaustion, the specials alive) changes most frames: field 11)
+    if (o.x && o.x.c) { o.x = Object.assign({}, o.x); delete o.x.c; }
     return o;
   }
   function encode(s, kd) {
@@ -193,13 +216,16 @@ G.Replay = (() => {
     const XO = s.x && s.x.o ? JSON.stringify(s.x.o) : '';
     // DLC D11: Survival's rows and the reactions' pop-ups ({v, r}) in field 10, the same way (a base snapshot: 0, dropped)
     const XF = s.x && (s.x.v || s.x.r) ? JSON.stringify({ v: s.x.v || undefined, r: s.x.r || undefined }) : '';
+    // DLC D11: the timeline's state (x.c) in field 11, the same way (a base snapshot: 0, dropped; an older tape: in S)
+    const XC = s.x && s.x.c ? JSON.stringify(s.x.c) : '';
     const f = [r.frames.length ? s.t - r.t : s.t, diff(r.P, P), diff(r.C, C), S !== r.S ? JSON.parse(S) : 0, E.out, Kt.out, M !== r.M ? Mq : 0,
       XA !== (r.XA || '') ? (XA ? JSON.parse(XA) : {}) : 0, XW !== (r.XW || '') ? (XW ? JSON.parse(XW) : {}) : 0,
-      XO !== (r.XO || '') ? (XO ? JSON.parse(XO) : {}) : 0, XF !== (r.XF || '') ? (XF ? JSON.parse(XF) : {}) : 0];
+      XO !== (r.XO || '') ? (XO ? JSON.parse(XO) : {}) : 0, XF !== (r.XF || '') ? (XF ? JSON.parse(XF) : {}) : 0,
+      XC !== (r.XC || '') ? (XC ? JSON.parse(XC) : {}) : 0];
     while (f.length > 1 && f[f.length - 1] === 0) f.pop();
     const txt = JSON.stringify(f);
     r.frames.push(txt); r.bytes += txt.length + 1;
-    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA; r.XW = XW; r.XO = XO; r.XF = XF;
+    r.P = P; r.C = C; r.S = S; r.E = E.st; r.Kp = Kt.st; r.M = M; r.t = s.t; r.XA = XA; r.XW = XW; r.XO = XO; r.XF = XF; r.XC = XC;
   }
 
   // ---------------- the decoder ----------------
@@ -231,13 +257,43 @@ G.Replay = (() => {
     for (let i = 0; i < add.length; i += w + 1) { id += add[i]; st.m.set(id, [id, ...add.slice(i + 1, i + 1 + w)]); st.v.set(id, [0, 0]); }
     return { died: dl };
   }
+  /**
+   * DLC D11: a tape with every two frames merged into one (an Expedition tape that packs over the cap). Decoded with the
+   * reader's applyTable and encoded again with table(), so any reader plays it: each merged frame carries the summed
+   * interval, the counters' summed differences, the latest slow / x fields, and the entities as they stand at its end.
+   */
+  function halve(frames, ew = EW, kw = KW) {
+    const out = [];
+    const dE = { m: new Map(), v: new Map() }, dK = { m: new Map(), v: new Map() };
+    let eE = { m: new Map(), v: new Map() }, eK = { m: new Map(), v: new Map() };
+    let P = [0, 0, 0, 0, 0, 0, 0], C = [0, 0, 0, 0, 0, 0], pP = null, pC = null, dt = 0, died = [];
+    const late = new Array(12).fill(0);   // the latest whole-value fields since the last frame out: 3 S, 6 M, 7-11 the x fields
+    const sorted = st => [...st.m.values()].sort((a, b) => a[0] - b[0]);
+    for (let i = 0; i < frames.length; i++) {
+      const f = typeof frames[i] === 'string' ? JSON.parse(frames[i]) : frames[i];
+      dt += f[0] || 0;
+      if (f[1]) P = P.map((v, j) => v + (f[1][j] || 0));
+      if (f[2]) C = C.map((v, j) => v + (f[2][j] || 0));
+      died.push(...applyTable(dE, f[4], ew).died);
+      applyTable(dK, f[5], kw);
+      for (const j of [3, 6, 7, 8, 9, 10, 11]) if (f[j]) late[j] = f[j];
+      if (i % 2 === 0 && i !== frames.length - 1) continue;
+      const E = table(eE, sorted(dE), ew, died), Kt = table(eK, sorted(dK), kw, null);
+      eE = E.st; eK = Kt.st;
+      const o = [dt, diff(pP, P), diff(pC, C), late[3], E.out, Kt.out, late[6], late[7], late[8], late[9], late[10], late[11]];
+      while (o.length > 1 && o[o.length - 1] === 0) o.pop();
+      out.push(JSON.stringify(o));
+      pP = P.slice(); pC = C.slice(); dt = 0; died = []; late.fill(0);
+    }
+    return out;
+  }
   /** A Reader over a decoded replay {v, h, f, ev}. */
   function reader(data) {
     const h = data.h || {}, frames = data.f || [], Q = h.Q || K.Q, QE = h.QE || K.QE, ew = h.ew || EW, kw = h.kw || KW;
     const times = [];
     const tbl = () => ({ m: new Map(), v: new Map() }), ctbl = x => ({ m: new Map(x.m), v: new Map(x.v) });
-    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, F: null, kd: [] });
-    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, F: st.F, kd: [] });
+    const fresh = () => ({ i: -1, t: 0, P: [0, 0, 0, 0, 0, 0, 0], C: [0, 0, 0, 0, 0, 0], S: {}, E: tbl(), K: tbl(), M: [], A: null, W: null, O: null, F: null, X: null, kd: [] });
+    const clone = st => ({ i: st.i, t: st.t, P: st.P.slice(), C: st.C.slice(), S: st.S, E: ctbl(st.E), K: ctbl(st.K), M: st.M, A: st.A, W: st.W, O: st.O, F: st.F, X: st.X, kd: [] });
     function step(st) {
       const f = frames[st.i + 1];
       st.i++;
@@ -252,6 +308,7 @@ G.Replay = (() => {
       if (f[8]) st.W = f[8];   // (DLC D6: the Ultimate rows)
       if (f[9]) st.O = f[9];   // (DLC D7: the interactables)
       if (f[10]) st.F = f[10];   // (DLC D11: Survival's rows, the pop-ups)
+      if (f[11]) st.X = f[11];   // (DLC D11: the timeline's state; a tape from before D11 keeps it in S)
     }
     // one pass: the frame times and a checkpoint every CHECK_EVERY frames
     const checks = [];
@@ -282,6 +339,7 @@ G.Replay = (() => {
       if (s.x && st.W && st.W.p) s.x = Object.assign({}, s.x, { w: st.W });   // (DLC D6)
       if (s.x && st.O && st.O.h) s.x = Object.assign({}, s.x, { o: st.O });   // (DLC D7)
       if (s.x && st.F && (st.F.v || st.F.r)) s.x = Object.assign({}, s.x, st.F.v ? { v: st.F.v } : {}, st.F.r ? { r: st.F.r } : {});   // (DLC D11)
+      if (s.x && st.X) { s.x = Object.assign({}, s.x); if (Object.keys(st.X).length) s.x.c = st.X; else delete s.x.c; }   // (DLC D11)
       s.kd = st.kd;
       return s;
     }
@@ -358,9 +416,19 @@ G.Replay = (() => {
     const entry = { rid: r.rid, when: r.started, meta, code: null, id: null };
     entry.ready = (async () => {
       const t0 = performance.now();
-      const text = '{"v":1,"h":' + JSON.stringify(h) + ',"f":[' + r.frames.join(',') + '],"ev":' + JSON.stringify(r.ev) + '}';
-      entry.raw = text.length;
-      entry.code = await pack(text);
+      let frames = r.frames;
+      const text = () => '{"v":1,"h":' + JSON.stringify(h) + ',"f":[' + frames.join(',') + '],"ev":' + JSON.stringify(r.ev) + '}';
+      let txt = text();
+      entry.raw = txt.length;
+      entry.code = await pack(txt);
+      // (DLC D11: an Expedition tape over the server's cap: every two frames merged, packed again (a base tape: never))
+      for (let k = 0; r.thin && entry.code.length > K.PACKED_MAX && k < K.HALVE_MAX; k++) {
+        frames = halve(frames, h.ew || EW, h.kw || KW);
+        h.halved = k + 1;
+        txt = text();
+        entry.code = await pack(txt);
+        meta.frames = frames.length;
+      }
       entry.packMs = Math.round(performance.now() - t0);
       remember({ rid: entry.rid, when: entry.when, meta, code: entry.code, id: null });
       return entry;
@@ -414,7 +482,7 @@ G.Replay = (() => {
   }
 
   return {
-    K, stats, begin, observe, finish, share, fetchShared, open, reader, pack, unpack, linkOf,
+    K, stats, thinDt, halve, begin, observe, finish, share, fetchShared, open, reader, pack, unpack, linkOf,
     /** For tests: the entity-table codec (encode a frame / apply it). */
     _codec: { table, applyTable },
     local: readStore,

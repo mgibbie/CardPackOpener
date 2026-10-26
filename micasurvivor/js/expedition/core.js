@@ -114,7 +114,7 @@
  *                   and the next tier's unlock (G.ExpTier.record, before Classic records its wins); the mark goes to the
  *                   boards with its parts (the server recomputes the score), a won run's with its replay id (time attack)
  *
- * D10 (the League meta, js/expedition/meta.js): Stardust (★, the Expedition's own, earned in play only), the Lab (19 upgrades),
+ * D10 (the League meta, js/expedition/meta.js): a run's pay (D11: in the base game's Pokémonedas, owner decision #4; D10 had its own Stardust), the Lab (19 upgrades),
  * item unlocks, the Archive, research -> avatars and frames, daily / weekly tasks, 33 achievements, shiny perks, pre-run boosts,
  * the "League HQ" panel. dv 9. The Lab, the shiny perks and the boosts change a run, so the run's ROW is fixed at its start
  * and the `x` block is v9, {xv: 9, m, z, th, a, c, l, u, w, o, p, k}:
@@ -126,7 +126,7 @@
  *   run.start       the row, the boosts spent, the item exclusions (G.ExpMeta.begin, before the level-ups' begin: the tools,
  *                   the slots and the stats read it); the Lab's Max Revive after every begin (G.ExpMeta.after)
  *   enemy.ko        research for the family; run.tick: Rare Candy, Honey
- *   run.end         ★ x the tier's pay, research and avatars, tasks (the date passed in), achievements (G.ExpMeta.record)
+ *   run.end         Pokémonedas x the tier's pay (G.Expedition.wallet), research and avatars, tasks (the date passed in), achievements (G.ExpMeta.record)
  *
  * D11 (Expedition · Survival, js/expedition/survival.js; online co-op on the Expedition): Survival is playable (milestones, phases,
  * pacts, siege, night, migration, hazards; its own board), and a co-op GUEST's run is an Expedition run too (its own League member,
@@ -203,7 +203,7 @@ G.Exp = (() => {
     G.Hooks.on('combat.out', (k, pl, e, src, dmg) => { if (IT()) k = IT().out(k, pl, e, src, dmg); if (RX()) k = RX().out(k, pl, e, src, dmg); return SV() ? SV().out(k, pl) : k; });   // (D8: reactions, weather; D11: the siege)
     G.Hooks.on('combat.run', (pl, m, ghost) => { if (MV()) MV().run(pl, m, ghost); });
     G.Hooks.on('combat.ghost', (pl, id, lvl, aim) => { if (MV()) MV().ghost(pl, id, lvl, aim); });
-    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); });   // (D11: Survival, last: it reads what this step healed)
+    G.Hooks.on('run.tick', (dt, pl) => { if (!expRun()) return; if (MV()) MV().tick(dt); if (IT()) IT().tick(dt, pl); if (LV()) LV().tick(dt); if (UL()) UL().tick(dt, pl); if (EC()) EC().tick(dt, pl); if (CP()) CP().tick(dt, pl); if (RX()) RX().tick(dt, pl); if (MT()) MT().tick(dt, pl); if (SV()) SV().tick(dt, pl); if (cur && G.LocalCoop && G.LocalCoop.on) cur.mate = true; });   // (D11: Survival, last: it reads what this step healed; a local partner keeps the run off the boards)
     // (D6: the Ultimate's charge from kills, and its hit-stop)
     G.Hooks.on('enemy.ko', (e, pl) => { if (!expRun()) return; if (UL()) UL().onKill(e, pl); if (EC()) EC().onKill(e, pl); if (MT()) MT().onKill(e, pl); });   // (D10: research)   // (D7: ₽ for the kill; D8: a capture target's faint is seen in run.tick)
     // (D7: the zone's interactables on the minimap, under the fog of war; the seam only runs in a zone)
@@ -267,9 +267,9 @@ G.Exp = (() => {
       // D8: Support Alphas, captures, shinies, reactions (sets and counters), their lines
       if (CP() && CP().run) { out.lines = out.lines.concat(CP().record(sum)); G.ExpSave.commit(); }
       if (RX() && RX().run) { out.lines = out.lines.concat(RX().record(sum)); G.ExpSave.commit(); }
-      // D10: ★ (x the tier's pay), research, tasks (today's date, passed in), achievements (after every counter above)
+      // D10: the pay (x the tier's; D11: Pokémonedas through G.Expedition.wallet), research, tasks (today's date, passed in), achievements (after every counter above)
       if (MT() && MT().run) { out.lines = out.lines.concat(MT().record(sum, Date.now())); G.ExpSave.commit(); }
-      if (sum.clean && !sum.group) submitScore(sum);
+      if (boardOk(sum)) submitScore(sum);
       cur = null;
       return out;
     });
@@ -640,6 +640,9 @@ G.Exp = (() => {
     return { top: d.body.top || [], you: d.body.you || null };
   }
 
+  /** D11: a run reaches its board only clean, solo and without a local partner (a co-op run, online or local, never does). */
+  const boardOk = sum => !!(sum && sum.clean && !sum.group && !(cur && cur.mate));
+
   /** D11: an Expedition run brings the local partner (js/systems/localcoop.js) when player 2's pad is connected or the
    *  "local partner" setting is on (localStorage micasurvivorexp_mate = '1'). */
   function localMate() {
@@ -649,6 +652,6 @@ G.Exp = (() => {
     return pref || !!(G.Pad && G.Pad.p2 && G.Pad.p2());
   }
 
-  return { dv, XV, READS, init, submitScore, leaderboard, record, enterZone, xblock, applyX, viewAir, hostAir, guestAir, localMate,
+  return { dv, XV, READS, init, submitScore, leaderboard, record, enterZone, xblock, applyX, viewAir, hostAir, guestAir, localMate, boardOk,
     get run() { return cur; }, get inited() { return inited; } };
 })();

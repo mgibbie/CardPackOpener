@@ -1,12 +1,12 @@
 // micasurvivor_expedition_plumbing_test.mjs — MicaSurvivor DLC D0b: the Expedition plumbing, end to end. The REAL
 // server handler (server/mp.mjs bundled like the dev server, over sqlite) behind a static server, headless Chrome, one
 // browser context per device. D0b shipped the Expedition modes as "Coming soon"; since D3 Classic is playable (its own
-// suite: micasurvivor_expedition_classic_test.mjs), so here Survival and League are the "Coming soon" ones, and the
-// content version is DV (2 since D3).
+// suite: micasurvivor_expedition_classic_test.mjs) and since D11 Survival (micasurvivor_expedition_survival_test.mjs), so
+// here League is the "Coming soon" one, and the content version is DV (2 since D3).
 //   1. lazy loading: a base boot (guest and signed in) and a base run never fetch js/expedition/* (the network log) and
 //      make no Expedition request; G.Expedition.load() fetches its scripts once, in order (D1: save.js, terrain.js,
 //      D2: verbs.js, core.js), and attaches the seams
-//   2. the mode select: an "Expedition" group with Classic / Survival / League; Survival and League "Coming soon",
+//   2. the mode select: an "Expedition" group with Classic / Survival / League; League "Coming soon",
 //      aria-disabled; reached and pressed by mouse, touch (844x390) and pad (synthetic Gamepad API): each says "coming soon"
 //      and starts nothing
 //   3. the freeze: before load the base tables are writable; after it every write to G.Moves / G.Items (and its item
@@ -32,7 +32,7 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 
-const DV = 9;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9)
+const DV = 10;   // G.Expedition.DV (D0b-D2: 1; D3 made Classic playable and bumped it to 2; D4 the League: 3; D5 level-ups and items: 4; D6 Ultimates: 5; D7 economy: 6; D8 captures: 7; D9 tiers: 8; D10 the League meta: 9; D11 Survival and MP: 10)
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
@@ -223,7 +223,7 @@ try {
 		A(st.X === 'object' && !st.loaded && st.frozen === null && st.exp === 'undefined' && st.save === 'undefined' && st.scripts === 0 && !st.movesFrozen,
 			'base boot: the registry is there (G.Expedition) but no Expedition code ran: no G.Exp / G.ExpSave, nothing frozen', JSON.stringify(st));
 		A(st.seams.length >= 4 && st.seams.every(n => n === 0), 'base boot: no listener on any seam (run.start, run.end, replay.header, spectate.snap; D1: net.frame)', st.seams.join(','));
-		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic enabled (D3), content version ' + DV, JSON.stringify(st));
+		A(JSON.stringify(st.modes) === '["exp-classic","exp-survival","exp-league"]' && JSON.stringify(st.on) === '["exp-classic","exp-survival"]' && st.dv === DV, 'the registry: Classic / Survival / League, Classic (D3) and Survival (D11) enabled, content version ' + DV, JSON.stringify(st));
 		A(d.expFetches().length === 0, 'the network log: a base boot fetches nothing from js/expedition/', d.expFetches().join(' '));
 		// a base run: still nothing, and its run / replay / snapshot carry no dv
 		const base = await d.E(async () => {
@@ -253,7 +253,7 @@ try {
 			after: !!document.querySelector('#modes-list ~ #modes-exp-h ~ #modes-exp ~ .modes-h ~ #modes-mods'),
 		}));
 		A(ui.cards.map(c => c.id).join(',') === 'exp-classic,exp-survival,exp-league' && ui.after, 'the Expedition group: Classic, Survival, League, between the base modes and the modifiers', JSON.stringify(ui.cards.map(c => c.id)));
-		A(ui.cards.slice(1).every(c => c.soon && c.aria === 'true' && !c.disabled) && !ui.cards[0].soon && ui.cards[0].aria !== 'true', 'Survival and League are "Coming soon": aria-disabled, not [disabled] (so the pad still reaches them); Classic is playable', JSON.stringify(ui.cards));
+		A(ui.cards.slice(2).every(c => c.soon && c.aria === 'true' && !c.disabled) && ui.cards.slice(0, 2).every(c => !c.soon && c.aria !== 'true'), 'League is "Coming soon": aria-disabled, not [disabled] (so the pad still reaches it); Classic and Survival are playable', JSON.stringify(ui.cards));
 		A(/^Expedition$/.test(ui.h) && /^Expedition · Classic /.test(ui.cards[0].txt) && !/Coming soon/.test(ui.cards[0].txt) && /^Expedition · League .*Coming soon$/.test(ui.cards[2].txt), 'in English: "Expedition", "Expedition · League … Coming soon"', JSON.stringify([ui.h, ui.cards[0].txt, ui.cards[2].txt]));
 		const sp = await d.spanish('#modes-exp-h, #modes-exp');
 		A(!sp.length, 'no Spanish on the Expedition group', sp.join(', '));
@@ -263,10 +263,10 @@ try {
 		let t = await d.toast();
 		A(t === 'Expedition is coming soon.' && await d.visible('scr-modes') && await d.E(() => G.Game.state === 'ui'), 'mouse: clicking League says "Expedition is coming soon." and starts nothing', t);
 		// touch
-		await d.page.tap('#modes-exp [data-exp=exp-survival]');
+		await d.page.tap('#modes-exp [data-exp=exp-league]');
 		await sleep(200);
 		t = await d.toast();
-		A(t === 'Expedition is coming soon.' && await d.E(() => G.Game.state === 'ui'), 'touch: tapping Survival says so too', t);
+		A(t === 'Expedition is coming soon.' && await d.E(() => G.Game.state === 'ui'), 'touch: tapping League says so too', t);
 		// G.Flow.play directly: still nothing (the gate is in the flow, not only the screen)
 		const fp = await d.E(async () => { const r = await G.Flow.play('exp-league'); return { r, st: G.Game.state, mode: G.Modes.plan('exp-league').mode }; });
 		A(fp.r === false && fp.st === 'ui' && fp.mode === 'normal', 'G.Flow.play of a disabled Expedition mode resolves false and starts nothing (and plan() falls back to normal)', JSON.stringify(fp));

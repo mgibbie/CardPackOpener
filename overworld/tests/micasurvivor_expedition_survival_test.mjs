@@ -9,7 +9,8 @@
 //   2. each system: milestones (a boss every 5:00, its pact; every 3rd a legendary), Mewtwo at 45:00 (fast-forward: it doesn't
 //      end the run), phases (12:00 / 24:00), the segment timeline (pure, fires), deep wounds (30:00), Endless Night (45:00),
 //      pacts (boons on your stats, team banes on new foes), siege (standing still 20 s from 5:00: damage falls, flocks hunt),
-//      migration (11:00: the portal, the next land), hostile terrain (mud, quicksand, brambles, burning; a hop clears it)
+//      migration (11:00: the portal, the next land), hostile terrain (mud, quicksand, brambles, burning; a hop clears it),
+//      the local co-op partner's verbs (player 2's pad: A hops, B slides; its AI slides to catch up; its row in the snapshot)
 //   3. the end: the score's parts and the server's formula; the Survival board through the real handler, its validation (a
 //      wrong score, too many bosses / legendaries, no parts, an old dv), exact keys; the run's pay in Pokémonedas through the
 //      base save's ledger; Survival's tasks and achievements (D10)
@@ -412,6 +413,46 @@ try {
 	A(hz.hop === 10, 'a hop clears it (airborne: no slow)', JSON.stringify(hz));
 	await shoot(page, 'survival-hazards-desktop.png');
 
+	// the local co-op partner (js/systems/localcoop.js): with player 2's pad or the "local partner" setting, an Expedition run
+	// brings it, and it has the verbs (player 2's A hops, B slides; else its AI slides to catch up); spectators see its row
+	const lc0 = await E(page, () => { window.__t.step(2); return { mate: !!(G.LocalCoop.on && G.LocalCoop.mate), board: G.Exp.boardOk({ clean: true, group: false }), coop: G.Exp.boardOk({ clean: true, group: true }) }; });
+	await E(page, () => { localStorage.setItem('micasurvivorexp_mate', '1'); });
+	await startSurv(page);
+	const lc = await E(page, () => {
+		const H = window.__t, L = G.LocalCoop, pl = G.Game.player, m = L.mate, out = { on: L.on, mate: !!m, group: !!G.Modes.run.group };
+		if (!m) return out;
+		H.jump(100, 0);
+		const P = G.Pad, p2 = P.p2, ax = P.p2Axis;
+		let a = false, b = false;
+		P.p2 = () => ({ index: 1, id: 'test pad', buttons: [{ pressed: a, value: a ? 1 : 0 }, { pressed: b, value: b ? 1 : 0 }] });
+		P.p2Axis = () => [0.01, 0];
+		const goNear = () => { m.x = pl.x + 50; m.y = pl.y + 10; m.air = null; m.slideT = 0; m.slideCd = 0; m.zMask = null; };
+		goNear(); H.step(2);
+		out.ctrl = L.ctrl;
+		const h0 = m.hopN | 0;
+		a = true; H.step(1); out.air = !!m.air; out.hop = (m.hopN | 0) - h0;
+		const snap = G.Spectate.snap(), q = snap.x && snap.x.a && snap.x.a.q;
+		out.snapRow = q ? q[m.mon.name] || null : null;
+		H.step(4); a = false; H.step(30);
+		goNear(); H.step(2);
+		b = true; H.step(1); out.slide = (m.slideT || 0) > 0; b = false; H.step(30);
+		// the AI (no pad): far behind you (but inside the leash) it slides to catch up
+		P.p2 = p2; P.p2Axis = ax; H.step(2);
+		out.ctrlAi = L.ctrl;
+		m.x = pl.x + 400; m.y = pl.y; m.air = null; m.slideT = 0; m.slideCd = 0; m.zMask = null;
+		let slid = false; for (let i = 0; i < 90 && !slid; i++) { H.step(1); slid = (m.slideT || 0) > 0; }
+		out.aiSlide = slid;
+		out.board = G.Exp.boardOk({ clean: true, group: false });
+		return out;
+	});
+	await E(page, () => { localStorage.removeItem('micasurvivorexp_mate'); });
+	A(!lc0.mate && lc.on && lc.mate && !lc.group, 'the local partner: an Expedition run brings it with the "local partner" setting (none without it, or the pad)', JSON.stringify({ lc0, lc }));
+	A(lc.ctrl === 'p2' && lc.hop === 1 && lc.air && lc.slide, 'player 2\'s pad drives the partner\'s verbs: A hops (it takes to the air), B slides', JSON.stringify(lc));
+	A(Array.isArray(lc.snapRow) && lc.snapRow[5] >= 1, 'the partner\'s verb row goes in the snapshot (x.a.q by its Pokémon\'s name), so spectators see its hops', JSON.stringify(lc.snapRow));
+	A(lc0.board && !lc0.coop && lc.board === false, 'a solo clean run goes to its board; an online co-op run, or one with the local partner, never does', JSON.stringify({ lc0, board: lc.board }));
+	A(lc.ctrlAi === 'ai' && lc.aiSlide, 'without a pad its AI slides to catch up when it falls behind', JSON.stringify(lc));
+	await quit(page);
+
 	// ======================== 3. the end: score, board (the real handler), pay, tasks, achievements
 	await startSurv(page);
 	const coins0 = await E(page, () => ({ coins: G.DB.save.coins, led: JSON.parse(JSON.stringify(G.DB.save.led || {})) }));
@@ -435,6 +476,8 @@ try {
 	const dev0 = coins0.led && coins0.led[en.dev] && coins0.led[en.dev].c || [0, 0];
 	A(paid > 0 && en.coins - coins0.coins >= paid && devE && devE[0] - (dev0[0] || 0) === en.coins - coins0.coins,
 		'the run pays Pokémonedas (the base save\'s, owner decision #4) through this device\'s ledger entry: +' + paid, JSON.stringify({ payLine, before: coins0.coins, after: en.coins, devE, dev0 }));
+	{ const want = Math.round((10 + p.kills / 40 + 25 * (p.zone - 1) + 30 * p.bosses + 60 * p.legends + 15 * p.catches + 4 * p.time / 60) * 3 / 5) * 5;
+		A(paid === want && p.zone === 2, 'The Survival pay (D10 units x3): 10 + KOs / 40 + 25 a phase passed + 30 a milestone boss + 60 a legendary + 15 a catch + 4 a minute survived = ' + want + ' for 21:30', JSON.stringify({ paid, want, p })); }
 	A(en.ach.includes('surv10') && en.ach.includes('run1'), 'Survival\'s achievements (D10): "Survivor" (10 minutes)', JSON.stringify(en.ach));
 	const tk = await E(page, () => { const M = G.ExpMeta; return { has: M.TASKS.some(t => t.id === 'surv') && M.TASKS.some(t => t.id === 'miles'), ach: ['surv10', 'surv30', 'miles10', 'mewtwo', 'pact10'].every(id => M.ACH_BY[id]), m: G.ExpSurv.metrics({ time: 1290 }) }; });
 	A(tk.has && tk.ach && Math.abs(tk.m.smins - 21.5) < 1e-9, 'Survival\'s tasks ("Last N minutes in Survival", "Beat N milestone bosses") and 5 achievements (Mewtwo\'s title "Survival Legend")', JSON.stringify(tk));

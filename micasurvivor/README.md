@@ -2491,6 +2491,10 @@ notice (they were all Normal).
 every number is in its `K` and its tables (`LAB`, `UNLOCKS`, `ACH`, `TASKS`, `BOOSTS`, `FRAMES`). Base modes are unchanged: the
 D0a fixtures pass as recorded, also with the Expedition code force-loaded.
 
+> **D11 change (owner decision #4, confirmed):** there is no Stardust any more. Every price and reward below is now paid in the
+> base game's **Pokémonedas**, x3 (`K.SCALE`), through `G.Expedition.wallet` and the base save's per-device ledger; a Normal
+> clear pays ~1,270-1,365. See "DLC D11: Survival and MP hardening". The rest of this section is D10 as built.
+
 **Owner rule: no ads, nothing sold, no real money.** ★ is earned in play only (runs, tasks, achievements) and spent only here.
 It is the Expedition's own currency: **the base save's Pokémonedas, stats and achievements are never read or written** (tested:
 the base save is byte-equal after Expedition runs). Owner decision #4 had "shared Pokémonedas"; this batch's brief asked for a
@@ -2603,6 +2607,126 @@ Shiny Charm), the PMD sprites for avatars, the achievement icons of `js/ui/icons
   showing the Expedition card on the base trainer card (owner #5's crossover: the card lives in League HQ for now).
 - **For D11:** a co-op guest's own meta row (its run isn't an Expedition one yet; the host's row already travels in `k.q`), task
   progress from Survival (the metrics are per run: add Survival's), achievements for Survival milestones.
+
+## DLC D11: Survival and MP hardening
+
+**Expedition · Survival is playable** (the Survival card of "Choose a mode"; League still says "Coming soon"), **the
+Expedition pays and spends the base game's Pokémonedas** (owner decision #4), and **online co-op, spectating and replays carry
+every DLC system**. `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 1 ("Run: Survival"), 2.8, 2.12, 5.0.5-5.0.7, 5.3 and the D11 row.
+The code is `js/expedition/survival.js` (`G.ExpSurv`, every number in its `K`) on Classic's engine (`classic.js` with `S.surv`).
+Base modes are unchanged: the D0a fixtures pass as recorded (58/0), also with the Expedition code force-loaded.
+
+**Survival** (endless, one map; the run ends only when you fall):
+- **Milestones:** a boss every 5:00 (a guardian of the phase, its HP from your DPS like D3's, +6 % a milestone); **every 3rd a
+  legendary** (15:00 Mew, 30:00 one of the birds) and **Mewtwo at 45:00** (a 90 s fight that doesn't end the run). Each
+  milestone boss down drops 2 items (3 for a legendary) and a heal, and every player chooses a **pact**.
+- **Phases** at 12:00 and 24:00: the enemies move to the middle, then the final stages (the trickle's cards and stats follow).
+- **Timeline:** every 5:00 segment brings an alpha, a swarm or stampede, a flock, an elite wave, a rock slide, a totem (every
+  2nd) and a summoner (every 3rd), +15 % a segment up to x3 (seeded and pure: `segPlan`).
+- **Deep wounds** from 30:00: every heal is worth 4 % less a minute, down to x0.2. **Endless Night** from 45:00: each new enemy
+  has +12 % HP and +6 % damage a minute, and the screen darkens round the players.
+- **Pacts** (9, 3 offered after each milestone boss, seeded per player; one or none): Glass Cannon, Iron Hide, Frenzy, Greed,
+  Horde, Vampire, Hunter, Titan, Scholar. Boons and banes on your stats (`items.js` total); team banes (enemy HP / damage /
+  spawns / elites, milestone boss HP) count every co-op player's pacts on the host.
+- **Siege** (study 2.8, the radius halved like D7's): from 5:00, 20 s within 6 m of one spot starts it: your damage falls toward
+  x0.3 and a flock of 5 fliers hunts you every 8 s. Moving lifts it.
+- **Migration:** at 11:00 (and every 11:00) a portal opens at the land's portal site for 90 s (it waits while a milestone boss is
+  up); step in and the run moves to new lands (zones 1 -> 2 -> 3 -> 1, fresh terrain and interactables).
+- **Hostile terrain:** 16 patches a land (pure from its grids): mud (x0.6 speed), brambles (cut you while you move, from 12:00),
+  quicksand (slows and pulls, from 12:00), burning ground (burns, from 24:00). A hop clears them; they never knock you out.
+- **The score** (study 2.12 + D9's catch term): (2 KOs + 4 s + damage / 200 + 800 a milestone boss + 2,000 a legendary + 400 a
+  catch) x (1 + 0.5 tier). **Its board**, `runboard:micasurvivor_expedition:<map>:<diff>:survival` (best score per player, top
+  100), on the "Difficulty · leaderboards" panel's Survival tab (Survival's own button opens on it). Only a clean solo run goes
+  there (`G.Exp.boardOk`: never an online co-op run, nor one with the local partner).
+- **Saved** (the Expedition save): `surv.best.<map>.<diff>`, `surv.best`, `surv.runs`, `surv.miles`, `surv.legends`,
+  `surv.mewtwo`, `surv.pacts`, `surv.lands`. D10's **tasks** gain "Last N minutes in Survival" and "Beat N milestone bosses";
+  **5 achievements**: Survivor (10 min), Endurance (30 min), Milestone hunter (10 bosses), Midnight (Mewtwo; title "Survival
+  Legend"), Pact maker (10 pacts).
+
+**One currency: Pokémonedas** (owner decision #4, confirmed 2026-10-22). D10's Stardust (★) and its UI are gone. Runs, tasks and
+achievements pay, and the Lab and the item unlocks spend, **the base save's coins**, only through `G.Expedition.wallet`
+(`save.coins` +/-, then `G.DB.commit`, whose `fold()` books the change on **this device's ledger entry**, `save.led[device]`,
+merged by max per entry: `js/core/db.js`). So a payment is booked once, by the device that made it. What the ledger can't know is
+two devices paying for the **same thing** while apart (the same Lab level, item, achievement or task): each purchase / claim is
+also written in the Expedition save with the device's id (`cur.spend` / `cur.earn` = "<what>:<device>"; the tasks' in bounded
+counters `tkp.*` / `tkbp.*`), and `reconcile()` (on opening League HQ and before a run pays) makes every device but the first
+(by id) undo its own copy exactly once (`cur.fix`): a refund for a spend, a claw-back for an earning. **Loading never writes the
+base save** (tested byte-equal); a base run pays exactly as before (the D0a fixtures).
+- **The scale** (`K.SCALE` = 3; every D10 table stays in its units and `coinsOf(n)` = round(n x 3 / 5) x 5). Measured with the
+  same fixed-step sim (a fresh save, an invulnerable bot): a **base Normal run pays 854 at 15:00 and 1,190 at 19:00** (time / 5 +
+  KOs / 4 + 80 a boss + the coins picked up; ~1,300-1,500 at 23:00); the base game's own upgrades cost **58,310 in all** (one level
+  50-7,500). An Expedition Classic run gets ~1,465 KOs in zone 1's 10 minutes, so a **Normal clear** (~23:00, ~4,000 KOs, 420-455
+  units) pays **~1,270-1,365**: about a base run of the same length (x8, the first draft, paid ~3,400, a better farm for base
+  upgrades than the base game). Hard x1.75, Nightmare x2.5.
+- **Survival** pays the same units + **4 a minute survived** (x3 = 12 a minute, the base run's time / 5: an endless run has no
+  zones or win to pay) + 60 a legendary: a 21:30 run with 3 milestone bosses pays 925.
+- **Prices** x3: Lab Training Lv 1 900, the whole Lab ~253,000, the 25 unlocks 87,150 (the same number of runs D10 intended);
+  tasks 180 / 300 / 480 daily, 900 / 1,350 / 2,100 weekly, +150 x streak, +1,500 for all 3 weeklies; achievements 150-4,500.
+- League HQ shows the base balance with the coin icon; the Classic card's button no longer shows a balance.
+
+**Co-op on the Expedition** (owner decision #13; Classic and Survival):
+- **A lobby** ("With friends: Expedition · Classic / Survival" on each card): `msurv-lobby-create` stores the map and tier
+  (allow-listed) next to D0b's mode / dv; the start carries them; the lobby says "Expedition · Survival · Viridian Forest · Hard";
+  each member's card shows its League member. `G.Expedition.coopPlan(start)` turns a start into the run every member plays.
+- **A guest's run is an Expedition run** (dv 10): the same terrain from the seed, the host's timeline (`c`), interactables
+  (`o`), Survival state (`s`); its own League member, kit, meta row (its Lab is its effect on the host), bag, Ultimate, verbs,
+  pacts and siege. A new seam, **`net.event`** (`js/net/coop.js`: a co-op event kind the base game doesn't know), carries the
+  economy's personal rewards (`xo` a pick from the guest's own roll, `xg` items, `xgi` a Meowth buy, `xd` Ditto, `xh` Hypno, `xs`
+  the shop; the guest's `xb` buy) and the catches (`xcg`: the host hands a guest standing by a fainted Pokémon its own catch;
+  `xcp` its alpha's prize when its team is full). A guest's **Support Alphas** fight on its side and travel in its frames (`p.s`),
+  drawn round its puppet everywhere (`p.g`), shooting as cosmetic ghosts where they aren't simulated (no double damage).
+- **The local partner** (`js/systems/localcoop.js`): an Expedition run brings it when player 2's pad is connected or the
+  "local partner" setting is on (`micasurvivorexp_mate`); it has the verbs (player 2's A hops, held glides; B slides; its AI hops
+  up to you and slides to catch up), and its verb row goes in the snapshot (`x.a.q`, by its Pokémon's name).
+- **Spectators and replays** see everything: the terrain, the night, the hazards, Survival's HUD and banners, both players'
+  Support Alphas shooting, the reactions' pop-ups (`r`: every viewer shows each once).
+
+**The `x` block is v10**, `G.Expedition.DV` is 10 (v1-v9 still read; dv 1-9 replays and snapshots still play):
+- `s` Survival's host state [milestones, bosses down, legendaries down, land, portal s left, Mewtwo down, pacts seq]; `v` the
+  Survival rows [pacts, siege %] (`v.p` the watched / sending player's, `v.q` the others'); `r` the reactions' recent pop-ups
+  (flat [t, kind, x, y, ...]); `p.g` the other players' Support Alphas. Phases, wounds, night and hazards follow the clock and the
+  land's grids, so they cost nothing.
+- **The relay budget**, measured with D10's `k` included: the busiest host frame (a full cap, 126 foes round the guest, every
+  DLC block) is **9,400-10,200 chars** (its `x` block ~570), the guest's frame ~350-400: under the server's 16,000 a message, and
+  three fit a 64,000 relay row; it goes through the real `msurv-relay-push`. No trimming was needed. A live snapshot is ~3,500
+  chars (cap 24 KB).
+- **Replay size** (cap 1.2 MB packed): an Expedition tape thins, a base tape never does (`js/mica/replay.js`, all on `rec.thin`,
+  set only when the header has dv). Survival's frames are **1 s** apart (Classic keeps 0.5 s); the timeline's state `x.c` has a
+  frame field of its own (11; it changes most frames and dragged the whole slow state with it); a tape spaces its frames out
+  as it grows (x1.5 at 3.0 M raw chars, x2 at 3.3 M, x3 at 3.55 M; no new frames past 4.5 M); and **if it still packs over the
+  cap, `finish()` merges every two frames** (`halve`: decoded and re-encoded with the same codec, exact at every merged frame)
+  and packs again, up to 3 times. The reader needs nothing new (each frame carries its own interval; playback blends). Measured
+  (a fast-forward bot): **a 45-min Survival run to Mewtwo** (5 lands, ~200 foes) **0.91-1.02 MB** (8,000-8,500 KOs; a run of
+  18,000 KOs packed 1.20 MB before `halve` existed; `halve` takes a tape like that to ~0.6 MB); **a full Classic clear 0.62-0.74 MB**.
+
+**Server** (`server/mp.mjs`; exact keys only, no `LIKE`): `run-score` for `micasurvivor_expedition` with `expMode:
+'exp-survival'` takes its own parts (kills, dmg, bosses, legends, catches; required) and recomputes the score
+(`msurvExpSurvScore` = `G.ExpSurv.scoreOf`, +/-1), refuses an implausible part (KOs / damage per second as D9, more bosses than
+one per 5:00, more legendaries than every 3rd of them, catches) and a dv under 10; best per player in `user.runBest`, the board
+`runboard:micasurvivor_expedition:<map>:<diff>:survival` (top 100). `run-leaderboard` takes `board: 'survival'`. The lobby rows
+gain `map` / `diff` (allow-listed, optional: a D0b client sends neither). No new tables, no change to the base actions.
+
+**What changed in base files** (each only on an Expedition path; a base run, lobby, frame or tape is byte-identical):
+- `js/game.js`: a co-op start of an Expedition lobby plays `G.Expedition.coopPlan` (and `G.Flow` loads the Expedition first).
+- `js/core/hooks.js`: the `net.event` seam. `js/net/coop.js`: an unknown event kind goes to it (base sends none).
+- `js/systems/localcoop.js`: the partner in an Expedition run, its verbs. `js/systems/expedition.js`: `DV` 10, Survival enabled,
+  `coopPlan`, the `wallet` used, i18n.
+- `js/mica/social.js` (`memberInfo` / `createRoom` with the map and tier), `js/ui/social-ui.js` and `index.html` (the lobby's
+  "Expedition · ..." line), `js/ui/modes-ui.js` (Survival's group, "With friends"), `js/mica/replay.js` (fields 10 / 11, the
+  thinning, `halve`).
+- Expedition files: `survival.js` (new); `classic.js` (`S.surv`, `makeBoss`, `setPhase`, `fireEvent`, migration); `core.js` (dv
+  10, `x` v10, the guest's blocks, `net.event`, Survival's run.end, `boardOk`, `localMate`); `meta.js` (Pokémonedas, reconcile,
+  Survival tasks / achievements); `economy.js` / `capture.js` (the guest's share); `reactions.js` (`r`); `verbs.js` (input for
+  the partner); `items.js` (pacts); `tiers.js` (the Survival tab); `ultimates.js` (the night).
+
+**Assets:** none new (the overworld's item pictures for the pacts; hazards, night and siege drawn in code).
+
+**Deviations / not built:**
+- Ours, not the study's: the pacts' list and numbers, the hazards' numbers, the timeline per segment, Survival's pay.
+- Survival respawns of used interactables (study 2.7, 120-240 s) aren't built: a migration gives fresh lands instead.
+- A replay past ~65 min of Survival is coarser (the thinning steps, then `halve`); the live run is unaffected.
+- **For D12:** Survival runs on any map in `G.ExpClassic.MAPS`; its legendaries per map are `K.LEGENDS[map]` (Viridian's only
+  now: Mew, then the birds) and its boards are per map already; the hazards' colours are one palette (per biome later).
 
 ## DLC D6-D9: the stacked branch
 
@@ -2761,6 +2885,24 @@ Shiny Charm), the PMD sprites for avatars, the achievement icons of `js/ui/icons
   button (a Lab purchase, every tab, a reroll); the save on the server; every tab at desktop and phone size. `SHOTS=<dir>` saves
   the run-over line, the Lab, the Archive, the tasks, the achievements and the card (desktop), and the Lab, the Archive, the tasks
   and the achievements (phone).
+- `node overworld/tests/micasurvivor_expedition_survival_test.mjs` (DLC D11), the real handler behind a static server,
+  fast-forwarded: Survival playable on the menu (League still "Coming soon"); the clock's rules (phases, wounds, night) and the
+  milestones (every 5:00, every 3rd a legendary, Mewtwo at 45:00 not ending the run), the segment timeline (pure), each pact's
+  boons / banes and team banes, siege (from 5:00, damage x0.3, flocks), migration (the portal, the next land, closing), the
+  hazards (pure, each kind, a hop clearing them), the local partner's verbs (pad and AI, its row in the snapshot); the score's
+  parts, the run-over lines, the Expedition save, the pay in Pokémonedas through this device's ledger entry, Survival's tasks
+  and achievements; the Survival board through the handler (a wrong score, too many bosses / legendaries, no parts, an old dv
+  refused; exact keys); boardOk (no co-op / partner runs); the HUD, the siege banner and the pact choice at desktop and phone
+  size. `SHOTS=<dir>` saves the pact, night, Mewtwo, siege, migration, hazards, board, HUD and phone screens.
+- `node overworld/tests/micasurvivor_expedition_mp_test.mjs` (DLC D11), two signed-in friends in real co-op (the real handler,
+  WebRTC on localhost), one browser: an Expedition lobby (mode, map, tier on the row and the lobby line; League members on the
+  cards); Classic with a phone guest (the same terrain, the tier, its League member and meta row, verbs, Ultimate, interactables
+  and a Poké Ball from its own roll, a capture into its own team with its Support Alpha shooting on the host, a reaction's
+  pop-up); the relay budget (the busiest host frame vs 16,000 a message and 64,000 a row, through `msurv-relay-push`); Survival
+  with the roles swapped (the host's milestones, the guest's own pact and its team bane on the host, night, hazards, migration,
+  its siege row); a live snapshot under 24 KB; a spectator (night, hazards, Survival's HUD, both teams' Support Alphas shooting,
+  pop-ups); replay size (a 45-min Survival run to Mewtwo and a full Classic clear under 1.2 MB, 1 s / 0.5 s frames, the
+  thinning steps, `halve` exact on the real tape, `finish()` halving over the cap, a base tape never thinned).
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

@@ -1,5 +1,5 @@
 'use strict';
-/* ============ expedition/meta.js — the League meta: Stardust, the Lab, item unlocks, the Archive, research, tasks,
+/* ============ expedition/meta.js — the League meta: Pokémonedas (D11: the base game's), the Lab, item unlocks, the Archive, research, tasks,
  *              achievements, shiny perks, the trainer card (MicaSurvivor DLC D10, not upstream) ============
  * Lazy-loaded with the rest of js/expedition/ (G.Expedition.load()); a base page never runs it, and every run hook acts only
  * in an Expedition run. Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md 2.5 (Archive), 2.6 (item unlocks, pre-run boosts), 2.14 (the
@@ -130,13 +130,14 @@ G.ExpMeta = (() => {
   // ---------------- balance (tune here; README "DLC D10") ----------------
   const K = {
     // POKÉMONEDAS (owner decision #4): every price and reward below is in the D10 table's units; coinsOf(n) = round(n x SCALE / 5) x 5.
-    // SCALE makes an Expedition clear pay about what a base run of the same length pays (README "DLC D11"): a base Normal run
-    // pays time / 5 + KOs / 4 + 80 a boss + the coins picked up, ~1,950 at 15:00 and ~3,230 at 20:00; a Normal clear (~20:00,
-    // ~405 units) x8 = ~3,240. Prices scale the same, so the Lab and the unlocks take the runs D10 intended.
-    SCALE: 8,
+    // SCALE makes an Expedition clear pay about what a base run of the same length pays (README "DLC D11", measured with the
+    // same fixed-step sim): a base Normal run pays time / 5 + KOs / 4 + 80 a boss + the coins picked up, 854 at 15:00 and
+    // 1,190 at 19:00 (~1,300-1,500 at 23:00); a Normal clear (~23:00, ~4,000 KOs, 420-455 units) x3 = ~1,270-1,365. Prices
+    // scale the same, so the Lab and the unlocks take the runs D10 intended (the base game's own upgrades: 58,310 in all).
+    SCALE: 3,
     // a run: (BASE + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 if won + 15 a catch) x the tier's pay (study 2.11: x1 / 1.75 / 2.5),
     // then x SCALE in Pokémonedas. A run under MIN_T seconds pays nothing (no quit-farming).
-    PAY: { BASE: 10, KO: 1 / 40, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60 },   // (D11: + 60 a Survival legendary, on top of its boss)
+    PAY: { BASE: 10, KO: 1 / 40, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60, SURV_MIN: 4 },   // (D11: Survival: + 60 a legendary, on top of its boss, and + 4 a minute survived (x3 = 12 a minute, the base run's time / 5): an endless run has no zones or win to pay)
     // research (study 2.14): a KO 1, elite 2, summoner 4, alpha / totem 5, boss 10, a freed cage 25; x(1 + 0.25 Lab Research)
     RS: { ko: 1, elite: 2, summoner: 4, alpha: 5, boss: 10, cage: 25, LAB: 0.25 },
     RS_NEED: { starter: 400, common: 400, uncommon: 600, rare: 900, legendary: 60 },   // a family's research to finish it (ours)
@@ -387,11 +388,11 @@ G.ExpMeta = (() => {
     return moved;
   }
 
-  /** A run's pay (pure): {base (the table's units), mul (the tier's), pay (Pokémonedas)}. p: {kills, time, zone, bosses, won, catches, legends}. */
+  /** A run's pay (pure): {base (the table's units), mul (the tier's), pay (Pokémonedas)}. p: {kills, time, zone, bosses, won, catches, legends, surv (D11: a Survival run: its minutes pay)}. */
   function payOf(p, diff) {
     const P = K.PAY, mul = TR() ? TR().of(diff).pay : 1;
     if (!(p.time >= P.MIN_T)) return { base: 0, mul, pay: 0 };
-    const base = P.BASE + (p.kills || 0) * P.KO + P.ZONE * Math.max(0, (p.zone || 1) - 1) + P.BOSS * (p.bosses || 0) + (p.won ? P.WIN : 0) + P.CATCH * (p.catches || 0) + P.LEGEND * (p.legends || 0);
+    const base = P.BASE + (p.kills || 0) * P.KO + P.ZONE * Math.max(0, (p.zone || 1) - 1) + P.BOSS * (p.bosses || 0) + (p.won ? P.WIN : 0) + P.CATCH * (p.catches || 0) + P.LEGEND * (p.legends || 0) + P.SURV_MIN * (p.surv ? (p.time || 0) / 60 : 0);
     return { base: Math.round(base), mul, pay: coinsOf(base * mul) };
   }
 
@@ -753,7 +754,7 @@ G.ExpMeta = (() => {
     if (!S) return [];
     const out = [], Svv = Sv();
     const p = sum.parts || { kills: sum.kills || 0, time: sum.time || 0, zone: sum.zone || 1, bosses: 0, won: !!sum.won, catches: CP() && CP().run ? CP().run.n : 0 };
-    const diff = sum.diff || 'normal', pay = payOf(p, diff);
+    const diff = sum.diff || 'normal', pay = payOf(sum.mode === 'exp-survival' ? Object.assign({}, p, { surv: true }) : p, diff);   // (D11: Survival's minutes)
     reconcile();   // (a double payment from another device, undone before this run pays)
     if (pay.pay > 0) {
       const got = credit(pay.pay); Svv.bump('pay.total', got); Svv.best('pay.best', got);
