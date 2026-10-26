@@ -71,10 +71,10 @@ const T0 = Date.now();
 
 		// (DLC D13 built the stubs: micasurvivor_expedition_leaguemode_test.mjs checks the whole League; this test keeps D4's 78 as they were)
 		const byBatch = b => M.filter(m => m.b === b).length;
-		A(M.length === 245 && D.stubs.length === 0 && M.filter(m => !m.b).length === 78 && byBatch('D4b') === 54 && byBatch('D4c') === 31 && byBatch('D4d') === 82,
-			'the roster: D4\'s 78 members + D13\'s 167 (D4b 54, D4c 31, D4d 82: Silvally, Urshifu and Melmetal are evolutions), no stubs: the owner\'s 249 entries', JSON.stringify({ m: M.length, s: D.stubs.length, b: byBatch('D4b'), c: byBatch('D4c'), d: byBatch('D4d') }));
+		A(M.length === 553 && D.stubs.length === 0 && M.filter(m => !m.b).length === 78 && byBatch('D4b') === 54 && byBatch('D4c') === 31 && byBatch('D4d') === 82 && byBatch('D19') === 308,
+			'the roster: D4\'s 78 members + D13\'s 167 (D4b 54, D4c 31, D4d 82: Silvally, Urshifu and Melmetal are evolutions), no stubs: the owner\'s 249 entries; + D19\'s 308 (every other family)', JSON.stringify({ m: M.length, s: D.stubs.length, b: byBatch('D4b'), c: byBatch('D4c'), d: byBatch('D4d') }));
 		const ids = new Set(M.map(m => m.dex));
-		A(ids.size === 245 && [...ids].every(d => DEX[d]), 'every entry is a real Pokémon of the game, no family twice (245 families)', ids.size);
+		A(ids.size === 553 && [...ids].every(d => DEX[d]), 'every entry is a real Pokémon of the game, no family twice (553 families since D19)', ids.size);
 		const free = M.filter(m => !m.ch).map(m => m.dex);
 		A(JSON.stringify(free) === JSON.stringify([1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393]) && M.filter(m => m.rank === 'starter').length === 12,
 			'free: the 12 starter trios of Gen 1-4 (owner: "the starter trios free"); every other member has a challenge', JSON.stringify(free));
@@ -95,9 +95,10 @@ const T0 = Date.now();
 			// every edge is the overworld's (or one of the 7 newer ones the generator cites), level edges at their real level
 			for (const [f, l] of Object.entries(m.evo)) for (const [to, lv] of l) {
 				const e = (extra[key[+f]] && extra[key[+f]].evos || []).find(x => battle[x.target] && battle[x.target].num === to);
-				const newer = { 264: 862, 57: 979, 217: 901, 221: 473, 439: 122, 122: 866, 123: 900, 669: 670, 762: 763, 922: 923, 1011: 1019, 891: 892, 808: 809 }[+f] === to;   // (D13: + Floette, Tsareena, Pawmot, Hydrapple, Urshifu, Melmetal)
+				const newer = { 264: 862, 57: 979, 217: 901, 221: 473, 439: 122, 122: 866, 123: 900, 669: 670, 762: 763, 922: 923, 1011: 1019, 891: 892, 808: 809,   // (D13: + Floette, Tsareena, Pawmot, Hydrapple, Urshifu, Melmetal)
+					52: 863, 83: 865, 133: 700, 194: 980, 203: 981, 206: 982, 211: 904, 215: 903, 222: 864, 234: 899, 550: 902, 562: 867, 625: 983, 999: 1000 }[+f] === to;   // (D19: the cross-generation ones js/data/families.js counts)
 				if (!e && !newer) evoBad.push(f + '>' + to);
-				else if (e && e.type === 'level' && !['metapod', 'butterfree', 'kakuna', 'beedrill', 'silcoon', 'cascoon', 'beautifly', 'dustox', 'gyarados', 'zweilous', 'drakloak', 'hydreigon', 'dragapult'].includes(e.target) && lv !== Math.max(e.param, lv)) evoBad.push(f + '>' + to + '@' + lv);
+				else if (e && e.type === 'level' && !['metapod', 'butterfree', 'kakuna', 'beedrill', 'silcoon', 'cascoon', 'beautifly', 'dustox', 'gyarados', 'zweilous', 'drakloak', 'hydreigon', 'dragapult', 'volcarona'].includes(e.target) && lv !== Math.max(e.param, lv)) evoBad.push(f + '>' + to + '@' + lv);
 			}
 		}
 		A(!stats.length && stages >= 200, `the base stats of all ${stages} stages are the overworld's species_battle.json numbers`, stats.join(','));
@@ -200,7 +201,7 @@ const BEFORE = (save, keep) => {
 		// (DLC D5: the default pick is the first card that isn't a NEW move or vitamin, so the moves stay the kit's)
 		// (DLC D14: at a Mega's level-up this test keeps the form: "Not yet")
 		const later = (G.RunUI.offers || []).findIndex(c => c.key === 'xmega:later');
-		const i = pick ? pick(s.cards) : later >= 0 ? later : Math.max(0, (G.RunUI.offers || []).findIndex(c => c.type !== 'new'));
+		const i = pick ? pick(s.cards) : later >= 0 ? later : Math.max(0, (G.RunUI.offers || []).findIndex(c => c.type !== 'new' && c.type !== 'swap'));   // (D19: never a D16 swap card, which replaced a kit move at random: a flake)
 		if (els[i]) els[i].click();
 		H.step(1);
 		return s;
@@ -275,7 +276,7 @@ try {
 	A(await toModes(d0), 'the menu opens "Choose a mode"');
 	await sleep(200);
 	const btn0 = await E(page, () => { const b = document.getElementById('modes-league-pick'); return { txt: b && b.innerText.trim(), loaded: G.Expedition.loaded, dv: G.Expedition.DV }; });
-	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 17, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 17 (D18)', JSON.stringify(btn0));
+	A(btn0.txt === 'League member: Bulbasaur' && btn0.loaded === false && btn0.dv === 18, 'the Classic card carries "League member: Bulbasaur" (before any Expedition code loads); the content version is 18 (D19)', JSON.stringify(btn0));
 	await page.click('#modes-league-pick');
 	A(await waitFor(() => d0.visible('modes-league'), 8000), 'pressing it opens the League screen (the Expedition code lazy-loads)');
 	await sleep(250);
@@ -286,14 +287,17 @@ try {
 			later: (document.querySelector('.lg-later') || {}).innerText, gen1: G.ExpLeague.D.members.filter(m => G.DEX_BY[m.dex].gen === 1).length,
 			gens: [...document.querySelectorAll('#league-gens [data-gen]')].map(c => c.innerText.replace(/\s+/g, ' ').trim()) };
 	});
-	// (DLC D13: the whole League is 245, one generation a page: Bulbasaur's, Gen 1)
-	A(lg.n === lg.gen1 && lg.n === 35 && JSON.stringify(lg.free) === '[1,4,7]' && lg.count === 'League: 12 / 245 available' && !lg.main && lg.gens.length === 9 && lg.gens[0] === 'Gen 1 3/35',
-		'the League screen: one generation a page (Gen 1: 35 members, its 3 starters playable), "League: 12 / 245 available", the 9 generation chips', JSON.stringify({ n: lg.n, free: lg.free, count: lg.count, gens: lg.gens }));
+	// (DLC D13: the whole League, one generation a page: Bulbasaur's, Gen 1. D19: 553 members, a generation in pages of 42; the 27 starter
+	//  trios free, + the family of the guest's base Pokémon)
+	A(lg.gen1 === 68 && lg.n === 42 && JSON.stringify(lg.free) === '[1,4,7]' && lg.count === 'League: 28 / 553 available' && !lg.main && lg.gens.length === 9 && lg.gens[0] === 'Gen 1 3/68',
+		'the League screen: one generation a page (Gen 1: 68 members, its first page of 42, its 3 starters playable), "League: 28 / 553 available", the 9 generation chips', JSON.stringify({ n: lg.n, free: lg.free, count: lg.count, gens: lg.gens }));
 	A(/Bulbasaur/.test(lg.detail) && /Starter/.test(lg.detail) && /Healer/.test(lg.detail) && /Lv\.? 1\s*Vine Whip/.test(lg.detail) && /Lv\.? 2\s*Razor Leaf/.test(lg.detail) && /Lv\.? 4/.test(lg.detail) && /Lv\.? 7/.test(lg.detail)
 		&& /Bulbasaur → Ivysaur \(Lv\.? 16\)/.test(lg.detail) && /Ivysaur → Venusaur \(Lv\.? 32\)/.test(lg.detail) && /Free/.test(lg.detail) && /Ability/.test(lg.detail),
 		'a member\'s card: rank, role, ability, the kit with its unlock levels (1 / 2 / 4 / 7), the evolution line with real levels, "Free"', lg.detail);
 	A(!lg.later, 'no "later batches" line any more (D13 built them all)', lg.later);
-	// a locked member: its challenge, and no way to pick it
+	// a locked member: its challenge, and no way to pick it (D19: Kangaskhan is on Gen 1's second page)
+	await page.click('#league-pages [data-page="1"]');
+	await sleep(150);
 	await page.click('#league-grid .cell[data-dex="115"]');
 	await sleep(150);
 	const lk = await E(page, () => ({ detail: document.getElementById('league-detail').innerText, go: !!document.getElementById('league-go') }));
@@ -304,6 +308,8 @@ try {
 	A(await E(page, () => G.ExpLeague.readPick() === 0 && localStorage.getItem('micasurvivorexp_pick') === null), 'tapping a locked member again picks nothing');
 	A(!(await noSpanish(page, '#modes-league')).length, 'no Spanish on the League screen', JSON.stringify(await noSpanish(page, '#modes-league')));
 	// Charmander: one tap shows it, a second picks it
+	await page.click('#league-pages [data-page="0"]');
+	await sleep(150);
 	await page.click('#league-grid .cell[data-dex="4"]');
 	await sleep(120);
 	await page.click('#league-grid .cell[data-dex="4"]');

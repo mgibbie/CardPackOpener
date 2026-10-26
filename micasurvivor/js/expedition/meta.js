@@ -133,7 +133,9 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Llega a la última etapa {x} veces': 'Reach a final stage {x} times', 'Llega a la última etapa': 'Reach a final stage',
   'Ten {x} legendarios en la Liga': 'Have {x} legendaries in the League', 'Ten un legendario en la Liga': 'Have a legendary in the League',
   'Liga de cincuenta': 'League of fifty', 'Liga centenaria': 'League of a hundred', 'Liga completa': 'Full League', 'Gran Entrenador': 'Grand Trainer',
-  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends',
+  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend',
+  // (D19: the full League, 553)
+  'Liga de 245': 'League of 245', 'Liga de cuatrocientos': 'League of four hundred', 'Maestro de la Liga': 'League Master', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends',
   // (D14: Mega Evolution's task and achievements)
   'Megaevoluciona {x} veces': 'Mega Evolve {x} times', 'Megaevoluciona una vez': 'Mega Evolve once', 'Consigue {x} megaevoluciones distintas': 'Get {x} different Mega Evolutions',
   'Megaevolución': 'Mega Evolution', 'Megapoder': 'Mega power', 'Megacolección': 'Mega collection', 'Megaentrenador': 'Mega Trainer'
@@ -332,11 +334,14 @@ G.ExpMeta = (() => {
     ['mewtwo', 'Medianoche', 'mewtwo', 1, 1200, 'Leyenda de la Supervivencia'], ['pact10', 'Pactista', 'pacts', 10, 300],
     // (D13: League mode. LATE: their titles go after the season ribbons in TITLES, so the card's saved title index still means the same)
     ['league50', 'Liga de cincuenta', 'league', 50, 600, null, null, 1], ['league100', 'Liga centenaria', 'league', 100, 1200, 'Gran Entrenador', null, 1],
-    ['league245', 'Liga completa', 'league', 245, 1500, 'Campeón de la Liga', null, 1],
+    ['league245', 'Liga de 245', 'league', 245, 1500, 'Campeón de la Liga', null, 1],   // (D19: the League was 245; "Full" is league553 now. The id and title stay)
     ['legend1', 'Leyenda viva', 'leagueLeg', 1, 400, null, null, 1], ['legend10', 'Panteón', 'leagueLeg', 10, 1200, 'Guardián de leyendas', null, 1],
     // (D14: Mega Evolution, late too)
     ['mega1', 'Megaevolución', 'megas', 1, 300, null, null, 1], ['mega10', 'Megapoder', 'megas', 10, 800, null, null, 1],
-    ['megakinds', 'Megacolección', 'megaKinds', 10, 1200, 'Megaentrenador', null, 1]
+    ['megakinds', 'Megacolección', 'megaKinds', 10, 1200, 'Megaentrenador', null, 1],
+    // (D19: the full League, every family: 553 members. Late, appended: the saved title index keeps its meaning)
+    ['league400', 'Liga de cuatrocientos', 'league', 400, 1200, null, null, 1],
+    ['league553', 'Liga completa', 'league', 553, 1500, 'Maestro de la Liga', null, 1]
   ].map(([id, name, k, n, star, title, frame, late]) => ({ id, name, k, n, star, title: title || null, frame: frame || null, late: !!late }));
   const ACH_BY = {};
   for (const a of ACH) ACH_BY[a.id] = a;

@@ -3108,6 +3108,51 @@ and refunded once with backups, Profesor at 25, dv 17). Updated on purpose: `_ex
 purchase shown with Refresh, 9 rows listed, the boosts without Study / Trading, refunds in the coin tally), dv 16 -> 17 in the
 Expedition suites.
 
+## DLC D19: the full League (every species playable in Expedition)
+
+Owner, 2026-10-26: "i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and
+expedition mode". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D19 built".
+
+**First, the save cap.** The Expedition save held at most 2,000 counters (client `expedition/save.js` `MAX.counters`, server
+`cleanMsurvExpSave`); the per-family counters `lg.runs.<family>`, `lg.best.<family>` and `rs.<family>` alone are 3 x 553 = 1,659
+with the full League, and a client's `clean()` silently DROPPED every counter past 2,000. Now 8,000 on both sides
+(`MSURV_EXP_COUNTERS_MAX`); the 200,000-char row cap is unchanged and still bounds the row (a save with every family's three counters
+and 750 others is ~38,500 chars). Nothing is migrated or rewritten. An old cached client keeps the first 2,000 it reads and pushes
+those: the server MERGES every put into what it holds, so the rest are never lost and a new client reads them all back. A put whose
+merge with the stored save would pass 8,000 is refused (413) and the stored save is kept, so the stored row always reads back clean.
+
+**What changed for the player**
+- **Every family is a League member** (decision #1): 553, the families of `js/data/families.js` (`G.Families`, the shop's, so the
+  League and the shop agree on what a family is). Every species 1-1025 is a stage of exactly one member (tested). D13's 245 are
+  byte-identical (kits, ranks, roles, challenges, evolution levels; tested against `overworld/tests/fixtures/micasurvivor_league245.json`)
+  but for **Pawniard, which gains Kingambit** (Lv 55: the cross-generation evolutions `families.js` already counts are now in the
+  generator's supplement too; Bisharp's is the only one inside a D4-D13 member; its rank, role and challenge are computed without
+  it, so the challenge rotation every later member drew from is the same). The 308 new members (`b: 'D19'`, after the 245, continuing
+  the rotation): kits scored on their learnsets, ranks / roles / challenges by the same rules, Eevee's 8 evolutions one level-up's
+  cards (Lv 30), Volcarona and Kingambit at 55 (the League's latest evolution stays Lv 55).
+- **Owning any stage of a family in the base game unlocks the family** (`G.ExpLeague.own`: read from `G.DB.owns`, never written);
+  the server counts it too for the League board (it reads the base save's exact key `micasurvivor:<user>`).
+- **A run starts at the first stage** (decision #2): a base Vaporeon gives you Eevee, which evolves in the run.
+- **All 27 starter trios are free** (decision #15): the data's `free` list (`MSURV_EXP_LEAGUE_FREE` on the server); the Gen 5-9
+  starters keep their D13 rank and challenge in `members`.
+- **Up to 5 wild members a run** (decision #15, was 3): zones 1-3 one each as before, zones 1-2 a second one at 150-230 s
+  (`G.ExpCap.K.PER_RUN`, `LG_AT2`; the plan's draws before it are unchanged).
+- **The League screen:** a generation in pages of 42 (`K.PAGE`; Gen 5 has 82), page chips next to the count; the count and the
+  achievements follow the 553: "League of 245" (`league245`, its id and title kept), + "League of four hundred" (`league400`) and
+  "Full League" (`league553`, title "League Master"), appended late so a saved title index keeps its meaning.
+- `G.Expedition.DV` **18**; the `x` block stays v10 (the League row already names the member and form).
+
+**Not changed:** the base game (the D0a fixtures pass as recorded); old saves read as they are.
+
+**Tests:** `overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (30 checks: every dex 1-1025 reachable through a family,
+every kit move exists, the 245 byte-identical, the server's lists = the generated ones, the 2,400-counter save through the client's
+clean / merge and the server, an old client losing nothing, the cap refused, the base collection's families counted by the server
+and playable in the game, the 27 trios free, the pages, an Eevee run FIRED (every kit move fires, its 8 evolution cards, on a phone
+too, Sylveon), a Pawniard run to Kingambit, 5 wild members). Fails 23 of 30 before D19. Updated on purpose: `_expedition_league` and
+`_leaguemode` (553 members, the 27 free starters and base ownership in the counts, the pages; a locked / caught D4b member is
+Roggenrola, Snivy being free; the board counts), `_expedition_meta` (553 research families, 48 achievements), `_expedition_capture`
+(up to 5 wild members), `_expedition_classic` and `_sharedupgrades` (553), dv 17 -> 18 in the Expedition suites.
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
@@ -3161,6 +3206,9 @@ The branch needs the full gate before it merges.
   retired, the Backpack refund once across two devices, the Expedition's stacking items unchanged and a boss's held item.
 - `node overworld/tests/micasurvivor_sharedupgrades_test.mjs` (DLC D18): the families, per-family levels at read time, the same
   perks in both modes, the shop, the TM / Repertoire in the kit, the Lab's 9 stat rows retired and refunded.
+- `node overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (DLC D19): every species 1-1025 a stage of one League member
+  (553 families), every kit move a game move, D13's 245 byte-identical, the server's lists, the save's counter cap (client and
+  server, an old client), the base collection's families, the 27 free trios, the pages, an Eevee run fired, Kingambit, 5 wild members.
 - `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
 - `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
   lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly

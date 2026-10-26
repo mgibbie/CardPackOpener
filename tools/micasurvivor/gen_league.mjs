@@ -24,8 +24,8 @@ const OUT = path.join(MS, 'expedition/league-data.js');
 // ---------------- the game's own tables (loaded as the browser would) ----------------
 const ctx = { G: {}, console };
 vm.createContext(ctx);
-for (const f of ['data/pokedex.js', 'data/moves.js']) vm.runInContext(fs.readFileSync(path.join(MS, f), 'utf8'), ctx, { filename: f });
-const { DEX_BY, Moves } = ctx.G;
+for (const f of ['data/pokedex.js', 'data/moves.js', 'data/families.js']) vm.runInContext(fs.readFileSync(path.join(MS, f), 'utf8'), ctx, { filename: f });
+const { DEX_BY, Moves, Families } = ctx.G;
 const battle = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
 const extra = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_extra.json'), 'utf8'));
 
@@ -54,6 +54,9 @@ const MEGA_REST = [302, 303, 307, 309, 318, 322, 333, 353, 433, 359, 361, 427, 4
 const LEG_ALL = Object.values(DEX_BY).filter(p => p.leg).map(p => p.dex);
 const LEG_REST = LEG_ALL.filter(d => !LEG1.includes(d) && !(d >= 789 && d <= 792));   // (Cosmog's line is three-stage: D4b)
 const STARTERS = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393];   // the starter trios: free (owner: all 12 Gen 1-4 starters)
+// D19 (owner decision #15, 2026-10-26: "all 27 starter trios free"): the Gen 5-9 starters are free too. They keep their D13 rank and
+// challenge in `members` (the 245 stay byte-identical); the data's `free` list is what the game and the server read.
+const FREE27 = [...STARTERS, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912];
 
 // ---------------- evolutions ----------------
 // The 7 the overworld tables (Gen 1-4 era) don't carry, from the games' own rules (Bulbapedia "Evolution" pages):
@@ -72,13 +75,37 @@ const SUPPLEMENT = {
   dipplin: [{ type: 'move', param: 'dragoncheer', target: 'hydrapple' }],   // Gen 9 (level up knowing Dragon Cheer)
   kubfu: [{ type: 'item', param: 'scrollofdarkness', target: 'urshifu' }],   // Gen 8 (the Scroll of Darkness / of Waters)
   meltan: [{ type: 'other', param: 'candy400', target: 'melmetal' }],   // Pokémon GO (400 Meltan Candy)
+  // (D19, the full League: the cross-generation evolutions js/data/families.js already counts (gen_families.mjs SUPPLEMENT),
+  //  so the League and the shop agree on every family. Bisharp's is the only one inside a D4-D13 member: Pawniard gains Kingambit)
+  eevee: [{ type: 'friendship', param: 'fairy', target: 'sylveon' }],   // Gen 6 (affection + a Fairy move)
+  meowth: [{ type: 'level', param: 28, target: 'perrserker' }],   // Gen 8 (Galarian Meowth, Lv 28)
+  corsola: [{ type: 'level', param: 38, target: 'cursola' }],   // Gen 8 (Galarian Corsola, Lv 38)
+  farfetchd: [{ type: 'other', param: 'crits3', target: 'sirfetchd' }],   // Gen 8 (3 critical hits in one battle)
+  yamask: [{ type: 'level', param: 34, target: 'runerigus' }],   // Gen 8 (Galarian Yamask: 49 damage, then the arch; ours: Cofagrigus' level)
+  stantler: [{ type: 'move', param: 'psyshieldbash', target: 'wyrdeer' }],   // Legends: Arceus (Psyshield Bash 20 times)
+  basculin: [{ type: 'other', param: 'recoil294', target: 'basculegion' }],   // Legends: Arceus (294 recoil damage, white-striped)
+  sneasel: [{ type: 'item', param: 'razorclaw', target: 'sneasler' }],   // Legends: Arceus (Hisuian Sneasel, Razor Claw by day)
+  qwilfish: [{ type: 'move', param: 'barbbarrage', target: 'overqwil' }],   // Legends: Arceus (Barb Barrage 20 times)
+  wooper: [{ type: 'level', param: 20, target: 'clodsire' }],   // Gen 9 (Paldean Wooper, Lv 20)
+  girafarig: [{ type: 'move', param: 'twinbeam', target: 'farigiraf' }],   // Gen 9 (level up knowing Twin Beam)
+  dunsparce: [{ type: 'move', param: 'hyperdrill', target: 'dudunsparce' }],   // Gen 9 (level up knowing Hyper Drill)
+  bisharp: [{ type: 'other', param: 'leaderscrest', target: 'kingambit' }],   // Gen 9 (3 Leader's Crest Bisharp)
+  gimmighoul: [{ type: 'other', param: 'coins999', target: 'gholdengo' }],   // Gen 9 (999 Gimmighoul Coins)
 };
-const evosOf = k => (extra[k] && extra[k].evos || []).concat(SUPPLEMENT[k] || []);
+// (D19: `old` leaves out D19's supplement, for the D4-D13 members' rank, role and challenge: Pawniard gains Kingambit, a stage, but
+//  keeps the rank, role and challenge it had, so the rotation every later member drew from is the same)
+const D19_SUPP = new Set(['eevee', 'meowth', 'corsola', 'farfetchd', 'yamask', 'stantler', 'basculin', 'sneasel', 'qwilfish', 'wooper', 'girafarig', 'dunsparce', 'bisharp', 'gimmighoul']);
+let old = false;
+const evosOf = k => (extra[k] && extra[k].evos || []).concat(old && D19_SUPP.has(k) ? [] : SUPPLEMENT[k] || []);
 // PokéBonk's level overrides (study 2.1): the bug lines that evolve twice before Lv 10 go at 8 / 36; Magikarp at 40.
 const OVERRIDE = { metapod: 8, butterfree: 36, kakuna: 8, beedrill: 36, silcoon: 8, cascoon: 8, beautifly: 36, dustox: 36, gyarados: 40,
   // (D13, ours in the same spirit: the League's latest evolution stays Lv 55, Dragonite's and Tyranitar's, which a Classic clear
   //  reaches with room to spare; the real 64 / 60 would need ~90 % of a full clear's XP)
-  zweilous: 49, drakloak: 49, hydreigon: 55, dragapult: 55 };   // (their middle stages a level sooner: a stage comes at least 6 levels after the last)
+  zweilous: 49, drakloak: 49, hydreigon: 55, dragapult: 55,
+  // (D19, the same: Volcarona at 55, not 59; Kingambit at 55 too, only 3 levels after Pawniard's D13 Bisharp at 52 (NO_FLOOR):
+  //  the League's latest evolution stays Lv 55)
+  volcarona: 55, kingambit: 55 };
+const NO_FLOOR = new Set(['kingambit']);   // (their middle stages a level sooner: a stage comes at least 6 levels after the last)
 /**
  * The evolution tree of a family: {dex: [[toDex, level], ...]}. A level evolution keeps its level; a stone / trade /
  * friendship / move one gets a level (study 2.1: "stones mapped to a level"): 18 from a base form of a three-stage
@@ -97,7 +124,7 @@ function treeOf(base) {
       seen.add(to);
       let lv = e.type === 'level' ? e.param : stage === 0 ? (stages >= 3 ? 18 : 30) : 36;
       if (OVERRIDE[e.target]) lv = OVERRIDE[e.target];
-      lv = Math.max(lv, (stageLv[from] || 0) + 6);
+      if (!NO_FLOOR.has(e.target)) lv = Math.max(lv, (stageLv[from] || 0) + 6);
       stageLv[to] = lv;
       out.push([to, lv]);
       walk(e.target, stage + 1);
@@ -291,17 +318,26 @@ const laterStage = new Set();
 for (const d of [...built, ...D13all]) { const t = treeOf(d); for (const s of stagesOf(d, t)) if (s !== d) laterStage.add(s); }
 const D13 = D13all.filter(d => !laterStage.has(d));
 if (D13.length !== 167) throw new Error('D13 families: ' + D13.length + ' (' + D13all.filter(d => laterStage.has(d)) + ')');
+// D19 (owner 2026-10-26: "increase coverage to the full 1025 ... playable characters"): every other FAMILY of js/data/families.js
+// (G.Families, generated by gen_families.mjs: the shop's families, so the League and the shop agree), from its first stage. They come
+// after the 245, sorted, continuing the challenge rotation, so the 245 keep their data.
+const ROOTS = [...new Set(Array.from({ length: 1025 }, (_, i) => Families.rootOf(i + 1)))].sort((a, b) => a - b);
+const D19 = ROOTS.filter(d => !built.includes(d) && !D13.includes(d));
 const BATCH = {};
 for (const d of D4B) BATCH[d] = 'D4b';
 for (const d of MEGA_REST) BATCH[d] = 'D4c';
 for (const d of LEG_REST) BATCH[d] = 'D4d';
+for (const d of D19) BATCH[d] = 'D19';
 const base = {}, members = [], rot = { common: 0, uncommon: 0, rare: 0 };
 // (the D4 78 first, in their order, so their challenges are the same as D4's; then the 170, continuing the rotation)
-for (const d of [...built.slice().sort((a, b) => a - b), ...D13.slice().sort((a, b) => a - b)]) {
+for (const d of [...built.slice().sort((a, b) => a - b), ...D13.slice().sort((a, b) => a - b), ...D19]) {
   if (!KEY[d] || !DEX_BY[d]) throw new Error('no species ' + d);
   const tree = treeOf(d), line = stagesOf(d, tree);
   for (const s of line) base[s] = bs(s);
-  const finals = line.filter(s => !tree[s]), fb = Math.max(...finals.map(bstOf));
+  old = BATCH[d] !== 'D19';
+  const tree0 = old ? treeOf(d) : tree, line0 = stagesOf(d, tree0);
+  old = false;
+  const finals = line0.filter(s => !tree0[s]), fb = Math.max(...finals.map(bstOf));
   const rank = rankOf(d, fb);
   let ch = null;
   if (rank === 'legendary') ch = LEGEND_CH[d] || legendCh(d, fb);
@@ -313,16 +349,25 @@ for (const d of [...built.slice().sort((a, b) => a - b), ...D13.slice().sort((a,
 }
 members.sort((a, b) => a.dex - b.dex);
 const stubs = [];   // (D13: none left)
-const entries = members.length + 1 + 3;   // (the owner's 249 list Snorunt twice, as Glalie and as Froslass, and Silvally, Urshifu, Melmetal on their own)
-if (entries !== 249 || members.length !== 245) throw new Error('League entries: ' + entries);
+const pre19 = members.filter(m => m.b !== 'D19');
+if (pre19.length !== 245) throw new Error('League D4-D13 members: ' + pre19.length);
+// D19: every family is a member, and every species 1-1025 is a stage of exactly one member (the families' own split)
+if (members.length !== ROOTS.length || D19.length + 245 !== ROOTS.length) throw new Error('League members: ' + members.length + ' / ' + ROOTS.length + ' families');
+{
+  const famOf = {};
+  for (const m of members) for (const s of stagesOf(m.dex, m.evo)) { if (famOf[s]) throw new Error('stage ' + s + ' twice'); famOf[s] = m.dex; }
+  for (let d = 1; d <= 1025; d++) if (famOf[d] !== Families.rootOf(d)) throw new Error('species ' + d + ': League ' + famOf[d] + ', families.js ' + Families.rootOf(d));
+}
+const entries = members.length;
 
 const J = o => JSON.stringify(o);
 const lines = [
   "'use strict';",
   '/* ============ expedition/league-data.js — GENERATED by tools/micasurvivor/gen_league.mjs, do not edit by hand ============',
-  ' * The Expedition League (MicaSurvivor DLC D4, completed in D13): ' + members.length + ' members (' + entries + ' League entries, owner 2026-10-19: Snorunt counted twice).',
+  ' * The Expedition League (MicaSurvivor DLC D4, D13; D19: every family): ' + members.length + ' members, one a family of js/data/families.js, every species 1-1025.',
   ' *   members  {dex (the family\'s first stage), rank, role, kit: 4 move ids (unlocked at Lv 1 / 2 / 4 / 7), evo: {dex: [[toDex, level]]},',
-  ' *            ch: the challenge (null: free), b: the batch that built it (D4b / D4c / D4d; none: D4)}',
+  ' *            ch: the challenge (null: free), b: the batch that built it (D4b / D4c / D4d / D19; none: D4)}',
+  ' *   free     the free members (D19, owner: all 27 starter trios; the Gen 5-9 ones keep their D13 rank and challenge in members)',
   ' *   base     the real base stats of every stage: [hp, atk, def, spa, spd, spe] (overworld/data/species_battle.json)',
   ' *   stubs    none since D13 (the D4b three-stage Gen 5-9 families, the D4c Mega families and the D4d legendaries are members now)',
   ' * Evolutions come from overworld/data/species_extra.json (+ 7 newer ones, cited in the generator), stones / trades /',
@@ -333,6 +378,7 @@ const lines = [
   ...members.map((m, i) => '    ' + J(m) + (i < members.length - 1 ? ',' : '')),
   '  ],',
   '  base: ' + J(base) + ',',
+  '  free: ' + J(FREE27) + ',',
   '  stubs: ' + J(stubs),
   '};',
   '',

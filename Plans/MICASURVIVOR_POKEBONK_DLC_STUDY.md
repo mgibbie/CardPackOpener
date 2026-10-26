@@ -1748,3 +1748,35 @@ Built (`micasurvivor/README.md`, "DLC D18: shared Pokémon upgrades"). Choices a
 lobby's rules), D17 one held item (dv 16), D18 shared upgrades (dv 17). Left of the owner's request: D19 (the full League, after the
 counter-cap fix), D20 (Expedition enemies, all 1,025; Wishiwashi in base), D21 (fine-tune the damage factors with `dps_sim.mjs`,
 Survival's pacing now that a 45-min run KOs ~16,000; the boards themselves shipped here).
+
+### Update (2026-10-26): D19 built, "the full League"
+Built (`micasurvivor/README.md`, "DLC D19: the full League"). Choices and notes for D20+:
+- **The counter cap first:** 2,000 -> 8,000 counters on the client (`expedition/save.js` `MAX.counters`) and the server
+  (`MSURV_EXP_COUNTERS_MAX`); the row's 200,000-char cap unchanged (a save with all 553 families' three counters + 750 others is
+  ~38,500 chars). Raised, not packed: no save is rewritten or migrated, so nothing needs a backup or a rollback. An old cached
+  client (2,000) drops counters past 2,000 from its own copy only; the server merges every put, so it never loses them (tested). A
+  put whose MERGE would pass 8,000 is refused (413) and the stored save kept: without that guard the stored row would fail the next
+  read's `cleanMsurvExpSave` and a put would replace it.
+- **The family list is `G.Families`** (553, as the study's D18 note asked; the survey's "580" was another count): the generator
+  loads `js/data/families.js`, and checks that every species 1-1025 is a stage of exactly one member and that member is the family's
+  root. To agree, the generator's supplement takes the 14 cross-generation evolutions `gen_families.mjs` already had (Sylveon,
+  Perrserker, Cursola, Sirfetch'd, Runerigus, Wyrdeer, Basculegion, Sneasler, Overqwil, Clodsire, Farigiraf, Dudunsparce,
+  Kingambit, Gholdengo). Only Bisharp's is inside a D13 member: **Pawniard gains Kingambit** (Lv 55, exempt from the "6 levels
+  after the last stage" floor, so the League's latest evolution stays 55); its rank / role / challenge are computed without the D19
+  supplement, so the challenge rotation is unchanged and the other 244 are byte-identical (fixture-tested).
+- **The 308 new members** follow the D13 rules (kits scored on the learnsets, no new hand picks; ranks by final BST: 102 common, 166
+  uncommon, 40 rare; the rotation continued). No new legendary (D13 had them all). Volcarona's Lv 59 is overridden to 55, like D13's
+  Hydreigon / Dragapult. Eevee is one 8-card branch at Lv 30 (the level-up's cards scroll on a phone: tested at 844 x 390).
+- **Decision #1 (base ownership):** `G.ExpLeague.own(d)` also reads `G.DB.owns` for any stage of the family (`G.Families.membersOf`):
+  read-only, nothing copied into the Expedition save. The server's League board counts it too: `msurvExpLeagueBoard` reads the base
+  row `micasurvivor:<user>` (exact key) and maps `owned` through `MSURV_EXP_FAMILY` (= `G.FAMILY`, compared by the test). The board
+  only updates on an Expedition save put, so a base catch shows on the board at the next Expedition sync.
+- **Decision #15:** the data's `free` list holds the 27 trios (the Gen 5-9 starters keep their D13 `ch` in `members`: "free" is the
+  list, so the 245 stay byte-identical); the server's `MSURV_EXP_LEAGUE_FREE` is the same list (the board's "more than the free ones"
+  threshold is now 27). Wild members: `PER_RUN` 5; zones 1-2 get a second encounter at 150-230 s, drawn after the zone plan's other
+  draws (so their values are as before).
+- **The League screen:** a generation in pages of 42 (chips next to the count, so the phone keeps the grid's height);
+  achievements: `league245` renamed "League of 245" (id / title kept), `league400`, `league553` "Full League" (title "League
+  Master", late). The hub card says 553.
+- **Versions:** `G.Expedition.DV` 18, `x` v10. No new streamed state.
+- **Base unchanged:** the D0a fixtures pass as recorded, and so does the force-loaded run.

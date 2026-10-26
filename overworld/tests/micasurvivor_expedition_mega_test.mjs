@@ -191,7 +191,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const pr = await prep(page);
-	A(pr.ok && pr.dv === 17 && pr.cdv === 17 && pr.xv === 10 && pr.mega && pr.n === 93, 'the Expedition code loads with mega.js: content version 13 (D14), the x block still v10', JSON.stringify(pr));
+	A(pr.ok && pr.dv === 18 && pr.cdv === 18 && pr.xv === 10 && pr.mega && pr.n === 93, 'the Expedition code loads with mega.js: content version 13 (D14), the x block still v10', JSON.stringify(pr));
 
 	// ======================== 1. a Charizard run: the choice at Lv 40
 	const s0 = await startAs(page, 4);
@@ -238,7 +238,7 @@ try {
 	A(!again.seen.length && again.mega === 10034, 'once a run: no Mega card again (Lv 41-46)', JSON.stringify(again));
 	// viewers: the snapshot's League row carries the Mega
 	const snap = await E(page, () => { const s = G.Spectate.snap(); return { dv: s.dv, l: s.x && s.x.l, me: s.me, row: G.ExpLeague.row() }; });
-	A(snap.dv === 17 && snap.l && snap.l.p[5] === 10034 && JSON.stringify(snap.l.p) === JSON.stringify(snap.row), 'a live snapshot\'s `l` row carries the Mega (dv 17, x v10)', JSON.stringify(snap));
+	A(snap.dv === 18 && snap.l && snap.l.p[5] === 10034 && JSON.stringify(snap.l.p) === JSON.stringify(snap.row), 'a live snapshot\'s `l` row carries the Mega (dv 17, x v10)', JSON.stringify(snap));
 	// the run's end
 	const end = await E(page, () => { window.__t.lose(1500); return { lines: window.__out.lines, megas: G.ExpSave.get('lg.mega'), seen: G.ExpSave.list('mega.seen'), ach: G.ExpSave.list('ach').filter(a => /^mega/.test(a)) }; });
 	A(end.lines.some(l => /League: Charmander → Charizard → Mega Charizard X/.test(l)) && end.megas === 1 && JSON.stringify(end.seen) === '["10034"]' && end.ach.includes('mega1') && end.lines.some(l => /Achievement: Mega Evolution!/.test(l)),

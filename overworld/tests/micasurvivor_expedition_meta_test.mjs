@@ -380,7 +380,7 @@ try {
 	A(btn0.txt === 'League HQ: Lab, tasks and achievements' && btn0.loaded === false, 'the Classic card has a third button, "League HQ: Lab, tasks and achievements" (before any Expedition code loads)', JSON.stringify(btn0));
 	await E(page, () => G.UI.show('scr-menu', true));
 	const pr = await prep(page);
-	A(pr.ok && pr.meta && pr.dv === 17 && pr.cdv === 17 && pr.xv === 10, 'the Expedition code loads with meta.js; the content version is 17 (D18), the x block v10 (D11)', JSON.stringify(pr));
+	A(pr.ok && pr.meta && pr.dv === 18 && pr.cdv === 18 && pr.xv === 10, 'the Expedition code loads with meta.js; the content version is 18 (D19), the x block v10 (D11)', JSON.stringify(pr));
 	if (!pr.ok || !pr.meta) throw new Error('no G.ExpMeta: the rest needs it');
 	// loading the Expedition (and its save, and reading the balance) never writes the base save
 	const base1 = await rawBase(), led0 = await E(page, () => ({ coins: G.DB.save.coins, dev: JSON.parse(localStorage.getItem('micasurvivor_dev')), led: JSON.parse(JSON.stringify(G.DB.save.led || {})), bal: G.ExpMeta.balance(), wal: Object.assign({}, window.__wal) }));
@@ -580,7 +580,7 @@ try {
 		if (had) Object.defineProperty(G.Net, 'uid', had); else delete G.Net.uid;
 		return { x: snap.x && { xv: snap.x.xv, k: snap.x.k }, dv: snap.dv, gf: gf && gf.k, hf: hf && hf.k, h: h && h.k, row: G.ExpMeta.row(), eff: G.ExpMeta.effects(G.ExpMeta.row()), seed: G.World.seed };
 	});
-	A(sy.x && sy.x.xv === 10 && sy.x.k && JSON.stringify(sy.x.k.p) === JSON.stringify(sy.row) && sy.dv === 17, 'a live snapshot: dv 14, x v10 with `k` {p: the run\'s row}', JSON.stringify(sy.x));
+	A(sy.x && sy.x.xv === 10 && sy.x.k && JSON.stringify(sy.x.k.p) === JSON.stringify(sy.row) && sy.dv === 18, 'a live snapshot: dv 14, x v10 with `k` {p: the run\'s row}', JSON.stringify(sy.x));
 	A(sy.gf && JSON.stringify(sy.gf.p) === JSON.stringify(sy.row), 'a co-op frame carries the same row (k.p)', JSON.stringify(sy.gf));
 	A(Array.isArray(sy.h) && JSON.stringify(sy.h) === JSON.stringify(sy.row), 'the replay header carries the row (h.k)', JSON.stringify(sy.h));
 	A(sy.hf && sy.hf.q && JSON.stringify(sy.hf.q.alice) === JSON.stringify(sy.row), 'a co-op host frame carries the host\'s row by uid (k.q.alice)', JSON.stringify(sy.hf));
@@ -645,9 +645,9 @@ try {
 	});
 	A(tabs.items && tabs.items.n === 25 && /In the drop pool/.test(tabs.items.scope) && /36 \/ 60 items in the drop pool/.test(tabs.items.head), 'Items: the 25 unlocks with their goals; Scope Lens "In the drop pool"; 36 / 60 in the pool', JSON.stringify(tabs.items));
 	A(tabs.archive && /3 \/ 6 slots/.test(tabs.archive.head) && tabs.archive.n === 36 && tabs.archive.click, 'Archive: "3 / 6 slots" over the 36 items in the pool; a click archives Muscle Band', JSON.stringify(tabs.archive));
-	A(tabs.research && tabs.research.n === 245 && /Avatars: 1 \/ 245/.test(tabs.research.head) && /Pidgey/.test(tabs.research.first), 'Research: the 245 League families (D13), "Avatars: 1 / 245", Pidgey (finished) first', JSON.stringify(tabs.research));
+	A(tabs.research && tabs.research.n === 553 && /Avatars: 1 \/ 553/.test(tabs.research.head) && /Pidgey/.test(tabs.research.first), 'Research: the 553 League families (D19: every family), "Avatars: 1 / 553", Pidgey (finished) first', JSON.stringify(tabs.research));
 	A(tabs.tasks && tabs.tasks.d === 3 && tabs.tasks.w === 3 && tabs.tasks.boosts === 6 && /Daily/.test(tabs.tasks.text) && /Weekly/.test(tabs.tasks.text) && /Reset in/.test(tabs.tasks.text), 'Tasks: 3 daily + 3 weekly with "Reset in …", the bonuses, the 6 boosts', tabs.tasks.text);
-	A(tabs.ach && tabs.ach.n === 46 && /\d+ \/ 46 achievements/.test(tabs.ach.head) && tabs.ach.done >= 4, 'Achievements: 46 (D10\'s 33 + Survival\'s 5 + League mode\'s 5: D13 + Mega Evolution\'s 3: D14), the ones you have marked done', JSON.stringify(tabs.ach));
+	A(tabs.ach && tabs.ach.n === 48 && /\d+ \/ 48 achievements/.test(tabs.ach.head) && tabs.ach.done >= 4, 'Achievements: 48 (D10\'s 33 + Survival\'s 5 + League mode\'s 5: D13 + Mega Evolution\'s 3: D14 + the full League\'s 2: D19), the ones you have marked done', JSON.stringify(tabs.ach));
 	A(tabs.card && /Your Expedition card/.test(tabs.card.text) && tabs.card.avs === 2 && tabs.card.frames === 10 && /Shiny perks \(6 caught\)/.test(tabs.card.text), 'Card: your avatar / frame / title, 10 frames, the shiny perks (6 caught)', JSON.stringify(tabs.card).slice(0, 400));
 	for (const [t, f] of [['lab', 'lab'], ['archive', 'archive'], ['tasks', 'tasks'], ['ach', 'achievements'], ['card', 'card']]) {
 		if (t === 'lab') continue;

@@ -48,7 +48,7 @@ G.I18n.add({
   'Aguanta todo lo que puedas en un mapa de Expedición, sin final.': 'Last as long as you can on an Expedition map, with no end.',
   'Atrapa y entrena a los Pokémon de tu Liga.': 'Catch and train the Pokémon of your League.',
   // (DLC D13: League mode is the League's own screen: the roster, the HQ, the League board)
-  'Tu Liga: 245 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.': 'Your League: 245 members with their kit, evolutions, Ultimate and challenge; the Lab, tasks, achievements and the League board.',
+  'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.': 'Your League: 553 members with their kit, evolutions, Ultimate and challenge; the Lab, tasks, achievements and the League board.',
   'La Expedición llegará pronto.': 'Expedition is coming soon.',
   'Tu juego no está actualizado: recarga la página.': 'Your game is out of date: reload.',
   'No se pudo cargar la Expedición. Recarga la página.': "Couldn't load Expedition. Reload the page.",
@@ -65,13 +65,13 @@ G.I18n.add({
 });
 
 G.Expedition = (() => {
-  const DV = 17;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12; D14: Mega Evolution: 13; D15: the slot machine, Survival's respawns: 14; D16: every move fires (4 slots, the swap cards, the Lab's move slot retired), the new boards: 15; D17: one held item (a boss drops a base held item): 16; D18: shared per-family upgrades (the TM / Repertoire in the kit, the Lab's 9 stat rows retired): 17. Older dv replays / snapshots still play, replayOk)
+  const DV = 18;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12; D14: Mega Evolution: 13; D15: the slot machine, Survival's respawns: 14; D16: every move fires (4 slots, the swap cards, the Lab's move slot retired), the new boards: 15; D17: one held item (a boss drops a base held item): 16; D18: shared per-family upgrades (the TM / Repertoire in the kit, the Lab's 9 stat rows retired): 17; D19: the full League (553 families, every species; 27 free starter trios, base-owned families, 5 wild members a run): 18. Older dv replays / snapshots still play, replayOk)
   const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
   const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
   const DESC = {
     'exp-classic': 'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.',   // (DLC D12: the 3 maps)
     'exp-survival': 'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.',
-    'exp-league': 'Tu Liga: 245 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.'   // (DLC D13)
+    'exp-league': 'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.'   // (DLC D13)
   };
   const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball' };
   // the launch maps and difficulties (owner decisions #6 / #8); the boards are per map + difficulty (server/mp.mjs EXP_*)

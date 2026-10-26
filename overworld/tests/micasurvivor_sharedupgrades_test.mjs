@@ -43,7 +43,7 @@ const T0 = Date.now();
 	for (const m of L.members) { const st = new Set([m.dex]); for (const k in m.evo || {}) { st.add(+k); for (const [t] of m.evo[k]) st.add(t); } for (const d of st) if (F.rootOf(d) !== m.dex) bad.push(d); }
 	A(all.every(d => roots.has(F.rootOf(d)) && F.rootOf(F.rootOf(d)) === F.rootOf(d)) && roots.size > 500 && roots.size < 600, `every one of the 1,025 species maps to its family's root (${roots.size} families)`, roots.size);
 	A(JSON.stringify(F.membersOf(5)) === '[4,5,6]' && F.membersOf(700).includes(133) && F.membersOf(134).length === 9 && F.rootOf(26) === 172 && F.rootOf(983) === 624, 'Charmander\'s line, Eevee and its 8 (Sylveon too), Pichu -> Raichu, Bisharp -> Kingambit', JSON.stringify([F.membersOf(5), F.membersOf(134), F.rootOf(26), F.rootOf(983)]));
-	A(bad.length === 0, 'the League\'s 245 families agree with it (every stage of a member has the member as its root)', bad.slice(0, 10).join());
+	A(bad.length === 0, 'the League\'s families (553 since D19) agree with it (every stage of a member has the member as its root)', bad.slice(0, 10).join());
 }
 
 const server = http.createServer((req, res) => {
@@ -141,7 +141,7 @@ try {
 	const pkB = r3.base && r3.base[0], pkX = r3.exp && r3.exp.find(c => sorted(c.lv) === sorted(JSON.parse(fam)));
 	A(pkB && pkX && sorted(pkB.lv) === sorted(JSON.parse(fam)) && JSON.stringify(pkB.r) === JSON.stringify(pkX.r) && r3.member === 4 && r3.exp.every(c => JSON.stringify(c.r) === JSON.stringify(pkB.r)),
 		'a base run (Charmander) and an Expedition run (the Charmander member) read the SAME perks object: the family\'s levels', JSON.stringify(r3).slice(0, 900));
-	A(r3.dv === 17, 'the Expedition content version is 17 (D18)', r3.dv);
+	A(r3.dv === 18, 'the Expedition content version is 18 (D19)', r3.dv);
 	// ======================== 4. the shop
 	const r4 = await E(page, async () => {
 		document.querySelector('#scr-menu [data-go=upgrades]') ? document.querySelector('#scr-menu [data-go=upgrades]').click() : G.MenuUI.open();

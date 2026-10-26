@@ -419,7 +419,7 @@ try {
 		const n = H.casts(8);
 		return { start, kit, news, swaps: swaps.length, swapW, W: X.K.W.swap, lowId, lowSlot, after, n, ids: pl.moves.filter(m => m.kind !== 'orbit' && m.kind !== 'buff' && m.kind !== 'weather').map(m => m.id) };
 	});
-	A(e1.start && e1.start.max === 4 && e1.start.dv === 17 && e1.start.cdv === 17 && e1.start.k === (await E(px, () => G.Combat.AF.DMG_EXP)), 'Expedition Classic: 4 move slots (no extra slots, no Lab slot), its own all-fire factor; dv 15', JSON.stringify(e1));
+	A(e1.start && e1.start.max === 4 && e1.start.dv === 18 && e1.start.cdv === 18 && e1.start.k === (await E(px, () => G.Combat.AF.DMG_EXP)), 'Expedition Classic: 4 move slots (no extra slots, no Lab slot), its own all-fire factor; dv 15', JSON.stringify(e1));
 	A(e1.kit && e1.kit.length === 4 && e1.news === 0 && e1.swaps > 0 && Math.abs(e1.swapW - e1.W) < 0.01, 'the kit fills the 4 slots by Lv 7; no new-move cards then, only rare swap cards (their whole weight K.W.swap)', JSON.stringify(e1));
 	A(e1.after && e1.after.type === 'swap' && !e1.after.has && e1.after.at === e1.lowSlot && e1.after.slots.length === 4, 'a swap card forgets the lowest-level move and the new one takes its slot', JSON.stringify(e1));
 	A(e1.ids && e1.ids.length >= 3 && e1.ids.every(id => e1.n[id] > 0), 'every Expedition move fires on its own cooldown', JSON.stringify({ ids: e1.ids, n: e1.n }));
