@@ -75,9 +75,9 @@ const MAPS2 = ['mtmoon', 'cerulean'];
 	const out = {};
 	for (const map of MAPS2) {
 		const p = { kills: 2600, time: 1380, dmg: 900000, zone: 4, bosses: 4, won: true, catches: 1 };
-		const c = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-classic', dv: 13, map, diff: 'normal', level: 30, dex: 4, ...p, score: cScore(p) }, tok);
+		const c = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-classic', dv: 14, map, diff: 'normal', level: 30, dex: 4, ...p, score: cScore(p) }, tok);
 		const sp = { kills: 1900, time: 1000, dmg: 600000, bosses: 3, legends: 1, catches: 0 };
-		const s = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-survival', dv: 13, map, diff: 'normal', level: 30, dex: 4, ...sp, score: sScore(sp) }, tok);
+		const s = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-survival', dv: 14, map, diff: 'normal', level: 30, dex: 4, ...sp, score: sScore(sp) }, tok);
 		const lb = await raw('run-leaderboard', { mode: 'micasurvivor_expedition', map, diff: 'normal', board: 'score' }, tok);
 		const lt = await raw('run-leaderboard', { mode: 'micasurvivor_expedition', map, diff: 'normal', board: 'time' }, tok);
 		const ls = await raw('run-leaderboard', { mode: 'micasurvivor_expedition', map, diff: 'normal', board: 'survival' }, tok);
@@ -217,7 +217,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const ld = await load(page);
-	A(ld.ok && ld.dv === 13 && ld.cdv === 13 && ld.xv === 10 && JSON.stringify(ld.maps) === '["viridian","mtmoon","cerulean"]',
+	A(ld.ok && ld.dv === 14 && ld.cdv === 14 && ld.xv === 10 && JSON.stringify(ld.maps) === '["viridian","mtmoon","cerulean"]',
 		'the Expedition code loads: content version 11 (D12; old replays still play), the x block still v10, all three maps in G.ExpClassic.MAPS', JSON.stringify(ld));
 	if (!ld.ok) throw new Error('the Expedition code did not load');
 
@@ -324,7 +324,7 @@ try {
 
 	// a live run on Mt. Moon: the palette, a totem and a summoner of the map
 	const st1 = await startOn(page, 'mtmoon');
-	A(st1.picked && st1.ok && st1.map === 'mtmoon' && st1.zmap === 'mtmoon' && st1.dv === 13 && st1.biome === 1, 'Classic starts on Mt. Moon (dv 13): its zone, painted in the crystal cave\'s palette', JSON.stringify(st1));
+	A(st1.picked && st1.ok && st1.map === 'mtmoon' && st1.zmap === 'mtmoon' && st1.dv === 14 && st1.biome === 1, 'Classic starts on Mt. Moon (dv 14): its zone, painted in the crystal cave\'s palette', JSON.stringify(st1));
 	const live = await E(page, () => {
 		const H = window.__t, C = G.ExpClassic, S = C.run, M = C.MAPS.mtmoon, out = {};
 		for (const kind of ['totem', 'summoner']) {
@@ -460,7 +460,7 @@ try {
 		await e.ready;
 		return { seed: G.World.seed, mid, open, code: e.code, hash: mid.x && mid.x.th, m: mid.x && mid.x.m, altar: C.sitesOf(G.World.zone) && C.sitesOf(G.World.zone).altar, biome: mid.b, dv: mid.dv };
 	});
-	A(rec.m === 'cerulean' && rec.dv === 13 && rec.mid.x.c && rec.mid.x.c.p === 1 && rec.open.x.c.p === 2 && rec.biome === pure.water, 'a Cerulean Cape run\'s snapshots name the map (x.m), dv 13 and its palette (b)', JSON.stringify({ m: rec.m, dv: rec.dv, b: rec.biome, c: rec.mid.x && rec.mid.x.c }));
+	A(rec.m === 'cerulean' && rec.dv === 14 && rec.mid.x.c && rec.mid.x.c.p === 1 && rec.open.x.c.p === 2 && rec.biome === pure.water, 'a Cerulean Cape run\'s snapshots name the map (x.m), dv 14 and its palette (b)', JSON.stringify({ m: rec.m, dv: rec.dv, b: rec.biome, c: rec.mid.x && rec.mid.x.c }));
 	await d0.ctx.close();
 	{
 		const d = await bootPage();
@@ -504,7 +504,7 @@ try {
 		}, rec, pure.water);
 		A(g.loadedBefore === false && g.guest && g.guest.hash === rec.hash && g.guest.map === 'cerulean' && JSON.stringify(g.guest.altar) === JSON.stringify(rec.altar) && g.guest.cur === 2 && g.guest.biome === pure.water,
 			'a co-op guest (a fresh page; a host frame) rebuilds the same Cerulean Cape zone, altar and palette, the portal open', JSON.stringify(g.guest || g));
-		A(g.spec && g.spec.hash === rec.hash && g.spec.ph === 1 && g.spec.biome === pure.water && g.spec.notice === false, 'a live spectator sees the same Cerulean Cape zone, palette and guardian fight (no version notice at dv 13)', JSON.stringify(g.spec));
+		A(g.spec && g.spec.hash === rec.hash && g.spec.ph === 1 && g.spec.biome === pure.water && g.spec.notice === false, 'a live spectator sees the same Cerulean Cape zone, palette and guardian fight (no version notice at dv 14)', JSON.stringify(g.spec));
 		A(g.replay && g.replay.portal > 0 && g.replay.hash === rec.hash && g.replay.ph === 2 && g.replay.biome === pure.water && g.oldOk === true,
 			'a replay viewer plays the Cerulean Cape run on the same zone and palette; dv-10 and dv-1 replays still play', JSON.stringify(g.replay));
 		await d.ctx.close();

@@ -141,8 +141,8 @@ const BOARD = 'runboard:micasurvivor_expedition:league';
 	const writes = SQL.slice(SQL.length - 12).filter(s => /INSERT|UPDATE/i.test(s)).length, b3 = row(BOARD);
 	A(p2.status === 200 && !p2.body.league && JSON.stringify(b3) === JSON.stringify(b2) && (row('leo').runBest || {})['micasurvivor_expedition:league'].members === 15, 'a save that adds no member leaves the board as it was (no board write)', JSON.stringify({ st: p2.status, lg: p2.body.league, writes, n0 }));
 	// the client can't post a number
-	const rs = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-league', dv: 13, members: 245, score: 245 }, tokens.leo);
-	const rs2 = await raw('run-score', { mode: 'micasurvivor_expedition', board: 'league', dv: 13, members: 245 }, tokens.leo);
+	const rs = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-league', dv: 14, members: 245, score: 245 }, tokens.leo);
+	const rs2 = await raw('run-score', { mode: 'micasurvivor_expedition', board: 'league', dv: 14, members: 245 }, tokens.leo);
 	A(rs.status === 400 && rs2.status === 400 && JSON.stringify(row(BOARD)) === JSON.stringify(b2), 'run-score can\'t set the League board (it follows the saved League)', JSON.stringify([rs.body, rs2.body]));
 	const lb = await raw('run-leaderboard', { mode: 'micasurvivor_expedition', board: 'league' }, tokens.leo);
 	A(lb.status === 200 && lb.body.board === 'league' && lb.body.top.length === 2 && lb.body.top[0].name === 'mia' && lb.body.you && lb.body.you.rank === 2 && lb.body.you.members === 15,
@@ -283,7 +283,7 @@ try {
 	await waitFor(() => d0.visible('scr-modes'), 3000);
 	await sleep(200);
 	const c0 = await E(page, () => { const b = document.querySelector('#modes-exp [data-exp=exp-league]'); return { soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim(), on: G.Expedition.enabled('exp-league'), hub: G.Expedition.hub('exp-league'), plan: G.Modes.plan('exp-league').mode, dv: G.Expedition.DV }; });
-	A(c0.on && c0.hub && !c0.soon && c0.aria !== 'true' && /^Expedition · League .*245 members/.test(c0.txt) && c0.plan === 'normal' && c0.dv === 13,
+	A(c0.on && c0.hub && !c0.soon && c0.aria !== 'true' && /^Expedition · League .*245 members/.test(c0.txt) && c0.plan === 'normal' && c0.dv === 14,
 		'the League card is playable (no "Coming soon"): "Your League: 245 members ..."; League is a screen, never planned as a run (plan -> normal); content version 12', JSON.stringify(c0));
 	await page.click('#modes-exp [data-exp=exp-league]');
 	A(await waitFor(() => E(page, () => !!(G.ExpMeta && G.ExpMeta.shown)), 8000), 'a click on it opens League mode (the Expedition code lazy-loads)');
@@ -344,7 +344,7 @@ try {
 	await page.click('[data-play="exp-classic"]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpLeague.run), 8000), '"Play Classic" starts a Classic run');
 	const r1 = await E(page, () => { const H = window.__t; H.freeze(); H.sturdy(); H.thin(); H.quiet(); const p = G.Game.player; return { mode: G.Game.mode, runDex: G.Modes.run.dex, dex: p.dex, member: G.ExpLeague.run.member, moves: p.moves.map(m => m.id), pick: localStorage.getItem('micasurvivorexp_pick'), dv: G.Modes.run.dv }; });
-	A(r1.mode === 'exp-classic' && r1.runDex === 495 && r1.dex === 495 && r1.member === 495 && JSON.stringify(r1.moves) === '["vine-whip"]' && r1.pick === '495' && r1.dv === 13, 'the run is Snivy\'s (the pick, the run\'s dex, its kit\'s first move Vine Whip), dv 13', JSON.stringify(r1));
+	A(r1.mode === 'exp-classic' && r1.runDex === 495 && r1.dex === 495 && r1.member === 495 && JSON.stringify(r1.moves) === '["vine-whip"]' && r1.pick === '495' && r1.dv === 14, 'the run is Snivy\'s (the pick, the run\'s dex, its kit\'s first move Vine Whip), dv 14', JSON.stringify(r1));
 	const r2 = await E(page, () => { const H = window.__t; H.levelTo(17); const p = G.Game.player; return { lv: p.level, dex: p.dex, form: G.ExpLeague.run.form, row: G.ExpLeague.row(), kit: p.moves.map(m => m.id) }; });
 	A(r2.lv === 17 && r2.dex === 496 && r2.form === 496 && r2.row[1] === 496 && r2.kit.includes('razor-leaf') && r2.kit.includes('giga-drain') && r2.kit.includes('leaf-storm'), 'Snivy evolves into Servine at Lv 17 mid-run; its kit learned at 2 / 4 / 7', JSON.stringify(r2));
 	const end1 = await E(page, () => { window.__t.lose(600); return { lines: window.__out.lines, runs: G.ExpSave.get('lg.runs.495'), best: G.ExpSave.get('lg.best.495') }; });

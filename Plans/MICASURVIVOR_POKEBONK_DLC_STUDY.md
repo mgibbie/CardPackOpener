@@ -886,7 +886,8 @@ Each batch is sized like an M5 batch: **one major system per PR**, one new `js/d
 | **D12. Maps 2–3** — **BUILT 2026-10-25** (`js/expedition/classic.js` MAPS, `terrain.js` LOOK, `overworld/tests/micasurvivor_expedition_maps_test.mjs`, README "DLC D12: maps 2-3, Mt. Moon and Cerulean Cape"; see the update below) | Mt. Moon, Cerulean Cape: biome palettes, residents, guardians, totems, summoners, legendaries, bounce-pad variants | D11 |
 | **D13. League mode** — **BUILT 2026-10-26** (the whole League: 245 members; `js/expedition/league.js`, `meta.js`, `overworld/tests/micasurvivor_expedition_leaguemode_test.mjs`, README "DLC D13: League mode"; see the update below) | League mode as the League's own screen (roster by generation, kits, evolutions, Ultimates, records, challenges, Play), D4b / D4c / D4d built, the League board, a League task and 5 achievements | D12 |
 | **D14. Mega Evolution** — **BUILT 2026-10-26** (`js/expedition/mega.js`, `mega-data.js`, `overworld/tests/micasurvivor_expedition_mega_test.mjs`, README "DLC D14: Mega Evolution"; see the update below) | 93 Megas of 87 species from Lv 40 as a level-up choice: real stats and types, the Ultimate a tier up, the overworld's Mega sprites or a composed look | D13 |
-| D15+ (later) | More maps (desert, Lavender), more signature Ultimates, Mega Evolutions as a late-run power spike (Q10), per-species boards, clans (Q9) | — |
+| **D15. Slot machine + Survival respawns** — **BUILT 2026-10-26** (`js/expedition/economy.js`, `overworld/tests/micasurvivor_expedition_slots_test.mjs`, README "DLC D15"; see the update below) | The slot machine (play money only; a bad roll spawns Voltorb / Electrode) and Survival's respawn of used interactables | D14 |
+| D16+ (later) | More maps (desert, Lavender), more signature Ultimates, Mega Evolutions as a late-run power spike (Q10), per-species boards, clans (Q9) | — |
 
 **Milestones:**
 - **α** (D0–D3): a playable, winnable Expedition map with verticality, behind the switch, base
@@ -1531,3 +1532,24 @@ Built (`micasurvivor/README.md`, "DLC D14: Mega Evolution"): owner decision #10 
 - **Saved:** `lg.mega`, `mega.seen`; a weekly task (from 2026-11-02) and 3 achievements (late titles).
 - **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so does the
   force-loaded run.
+
+### Update (2026-10-26): D15 built, "the slot machine and Survival's respawns"
+Built (`micasurvivor/README.md`, "DLC D15: the slot machine and Survival's respawns"). Choices and notes:
+- **The slot machine (owner #7: yes, play money only):** one a zone, after every D7 interactable (their places and indices kept). A
+  spin is 10 + 5 x zone of the run's ₽ (never the base Pokémonedas, never real money; tested). Seeded reels; three of a kind pays
+  (an item pick by ball, berries, the Nugget jackpot), a pair 2 spins back, two Voltorb a Voltorb ambush (Electrode in zone 3:
+  the study's "a bad roll spawns Voltorb or Electrode"), three Voltorb Electrodes and a broken machine. The table and its odds
+  (~5 % bad, ~0.9 of the stakes back) are ours.
+- **Survival's respawns (study 2.7, "120-240 s depending on kind"; ours by kind):** rocks / berries 2:00, balls and the slot machine
+  3:00, altars, Ditto, Hypno, cages 4:00; Meowth and the comet keep their schedules. Pure in the land's clock; viewers see it
+  through the `o` block.
+- **Sync:** `o.y` (the machines' last spins) is optional; `x` stays v10; `G.Expedition.DV` is 14 (dv 1-13 still play).
+- **Sizes (D11's measurement, `micasurvivor_expedition_mp_test`):** busiest host frame 9,966 chars (126 foes, `x` 571) vs 16,000 a relay
+  message; a 45-min Survival tape 890,835 chars, a full Classic clear 644,273 (cap 1.2 MB). No trimming needed.
+- **Base unchanged:** `micasurvivor_dlc_base_unchanged_test` passes against the D0a fixtures as recorded (58/0), and so does the
+  force-loaded run.
+
+### D13-D15 stack (2026-10-26)
+`feat/micasurvivor-expedition-d13-d15`: D13 League mode (dv 12, the stack's only server change: the League board), D14 Mega Evolution
+(dv 13), D15 the slot machine and Survival's respawns (dv 14). With it every Expedition 1.0 item the owner decided is built. Left: the
+owner playtest and flipping the default (owner #1), then D16+ (more maps, signatures, per-species boards, clans).

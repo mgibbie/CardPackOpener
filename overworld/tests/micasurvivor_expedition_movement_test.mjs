@@ -634,7 +634,7 @@ try {
 		return { dropAt, ledge, drops, dropN, dropMid, dv: d.h.dv, code0, code: e.code, code1, frames: d.f.length, withA, slowA, slowX, air, times: air.map(i => rd.times[i]), bytes: txt.length, hash: G.ExpTerrain.generate({ seed: d.h.sd, map: 'viridian', zone: 1 }).hash, seed: d.h.sd };
 	});
 	A(rep.code && rep.withA > 3 && rep.slowA === 0 && rep.slowX > 0, `the replay keeps the air state in frame field 7 (${rep.withA} frames), never in its slow state (${rep.slowX} slow x blocks, none with \`a\`)`, JSON.stringify({ withA: rep.withA, slowA: rep.slowA, slowX: rep.slowX, err: rep.error }));
-	A(rep.ledge && rep.drops === 3 && rep.dropN >= 3 && rep.dropAt && rep.dropAt.length >= 3 && rep.dv === 13,
+	A(rep.ledge && rep.drops === 3 && rep.dropN >= 3 && rep.dropAt && rep.dropAt.length >= 3 && rep.dv === 14,
 		`the replay records the falls off a ledge (3 walked down at ${rep.ledge}: the air row's 7th field counts them, ${rep.dropMid} frames caught one mid-fall, verb 7; dv ${rep.dv})`, JSON.stringify({ ledge: rep.ledge, drops: rep.drops, dropN: rep.dropN, dropAt: rep.dropAt, dropMid: rep.dropMid, dv: rep.dv }));
 	A(rep.air && rep.air.length >= 2, `decoded, ${rep.air && rep.air.length} replay frames have the player airborne`, JSON.stringify(rep.air));
 	await ctx.close();

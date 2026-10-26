@@ -26,6 +26,14 @@
  *              only show what you have found: tiles within 14 of you are explored (the fog of war), an interactable shows
  *              once its tile is.
  *   tips       a one-time tip the first time you meet each kind (the Expedition save: tip.<kind>, merged by max).
+ *   slots      (D15, owner decision #7: "yes, PLAY MONEY ONLY") one slot machine a zone. Stand at it and a spin costs in-run ₽
+ *              (10 + 5 x zone; never real money, nothing is sold: the ₽ are the run's). Three seeded reels: three of a kind pays
+ *              (berries: a heal and an item; Poké / Great / Ultra / Master Ball: an item pick, better by ball; Nuggets: 15 spins'
+ *              worth of ₽), two of a kind gives two spins back, and a BAD ROLL (two Voltorb) springs a Voltorb ambush (Electrode
+ *              in zone 3); three Voltorb is Electrodes and the machine breaks. Step away and back for another spin.
+ *   respawns   (D15, study 2.7) in SURVIVAL a used interactable comes back after 120-240 s by kind (K.RESPAWN): rocks and berries
+ *              2:00, balls and the slot machine 3:00, altars, Ditto, Hypno and cages 4:00. Meowth and the comet keep their own
+ *              schedule. A migration's new lands are fresh anyway.
  *
  * Where everything is comes from the zone's own grids and the world seed (layoutOf, pure), so a co-op guest, a replay and a
  * spectator place the same interactables. What only the host knows (used, charge, Meowth's stock, heat, the curses) is the
@@ -74,6 +82,12 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Roca dorada: tócala para romperla y ganar ₽.': 'Gold rock: touch it to smash it for ₽.',
   'Arbusto de bayas: cura la mitad de tu vida.': 'Berry bush: heals half your HP.',
   'Jaula: paga ₽ para liberar al Pokémon y ganar experiencia.': 'Cage: pay ₽ to free the Pokémon and gain XP.',
+  // (D15: the slot machine; Survival's respawns)
+  'Tragaperras': 'Slot machine', 'Tragaperras: quédate delante para tirar. Cuesta ₽ de la partida (nunca dinero real). Tres iguales dan premio; dos Voltorb, una emboscada.':
+    "Slot machine: stand in front of it to spin. It costs the run's ₽ (never real money). Three of a kind wins; two Voltorb, an ambush.",
+  '¡Premio! {x}': 'Winner! {x}', '¡Bote! +{x} ₽': 'Jackpot! +{x} ₽', 'Pareja: +{x} ₽': 'A pair: +{x} ₽', 'Sin premio': 'No win',
+  '¡Mala tirada! ¡Voltorb!': 'Bad roll! Voltorb!', '¡Mala tirada! ¡Electrode!': 'Bad roll! Electrode!', '¡Tres Voltorb! La máquina explota': 'Three Voltorb! The machine blows up',
+  'Bayas y un objeto': 'Berries and an item', 'Tirada · {x} ₽': 'Spin · {x} ₽', 'Ha vuelto: {x}': 'Back again: {x}',
   'Pulsa M (o toca el minimapa) para ver el mapa de la zona.': 'Press M (or tap the minimap) for the zone map.'
 });
 G.I18n.add(G.ExpEN);
@@ -104,17 +118,25 @@ G.ExpEco = (() => {
     CAGE: [20, 10], CAGE_XP: 0.5,                          // 20 + 10 x zone ₽; +50 % of a level's XP (study 2.7)
     BERRY: 0.5,
     SIGHT: 14, RADAR: 9,                                   // the fog: tiles within 14 are explored; an interactable within 9 shows anyway
-    TIP_T: 6.5
+    TIP_T: 6.5,
+    // (D15) the slot machine: a spin costs 10 + 5 x zone in-run ₽ (play money only); stand SLOT_T s; the reels' symbols and weights
+    SLOT_COST: [10, 5], SLOT_T: 0.8, SLOT_SPIN: 0.9,
+    SLOT_SYM: ['berry', 'poke', 'great', 'ultra', 'master', 'nugget', 'voltorb'], SLOT_W: [30, 22, 14, 8, 3, 12, 11],
+    SLOT_JACKPOT: 15, SLOT_PAIR: 2, SLOT_AMBUSH: [3, 1], SLOT_AMBUSH3: [4, 2],
+    // (D15) Survival: a used interactable comes back after this many seconds (study 2.7: 120-240 s by kind)
+    RESPAWN: { rock: 120, berry: 120, ball: 180, freeball: 180, cursedball: 180, slots: 180, ditto: 240, hypno: 240, cage: 240,
+      unown1: 240, unown2: 240, unown3: 240, unown4: 240, challenge: 240, cursedaltar: 240, greed: 240 }
   };
   // what each zone holds (zones 1-3; the shrine has none), placed in this order (the big ones first)
   const PLACE = [['unown4', 1], ['unown3', 1], ['unown2', 1], ['unown1', 2], ['challenge', 1], ['cursedaltar', 1], ['greed', 1],
-    ['comet', 1], ['meowth', 3], ['ball', 6], ['freeball', 2], ['cursedball', 2], ['ditto', 1], ['hypno', 1], ['cage', 2], ['rock', 8], ['berry', 8]];
+    ['comet', 1], ['meowth', 3], ['ball', 6], ['freeball', 2], ['cursedball', 2], ['ditto', 1], ['hypno', 1], ['cage', 2], ['rock', 8], ['berry', 8],
+    ['slots', 1]];   // (D15: last, so every D7 interactable keeps its place and index)
   const SMALL = new Set(['rock', 'berry']);
   const KINDS = PLACE.map(p => p[0]);
   const NAME = { ball: 'Poké Ball', freeball: 'Poké Ball gratis', cursedball: 'Poké Ball maldita', great: 'Super Ball', meowth: 'Tienda de Meowth',
     unown1: 'Altar Unown', unown2: 'Altar Unown raro', unown3: 'Altar Unown épico', unown4: 'Altar Unown dorado', comet: 'Fragmento de cometa',
     challenge: 'Altar de desafío', cursedaltar: 'Altar maldito', greed: 'Altar de Gengar', ditto: 'Ditto', hypno: 'Hypno', rock: 'Roca dorada',
-    berry: 'Bayas', cage: 'Jaula' };
+    berry: 'Bayas', cage: 'Jaula', slots: 'Tragaperras' };
   const TIP = {
     money: '₽ (Pokédólares): los ganas derrotando Pokémon y rompiendo rocas doradas. Gástalos en Poké Balls, en la tienda de Meowth y en las jaulas.',
     ball: 'Poké Ball: quédate encima para abrirla. Cuesta ₽, cada vez más, y eliges 1 de 3 objetos.',
@@ -132,6 +154,7 @@ G.ExpEco = (() => {
     rock: 'Roca dorada: tócala para romperla y ganar ₽.',
     berry: 'Arbusto de bayas: cura la mitad de tu vida.',
     cage: 'Jaula: paga ₽ para liberar al Pokémon y ganar experiencia.',
+    slots: 'Tragaperras: quédate delante para tirar. Cuesta ₽ de la partida (nunca dinero real). Tres iguales dan premio; dos Voltorb, una emboscada.',
     map: 'Pulsa M (o toca el minimapa) para ver el mapa de la zona.',
     // (D8, js/expedition/capture.js: their English is in its G.ExpEN)
     alpha: 'Alfa: debilítalo hasta que se desmaye y quédate a su lado: tu Amigo Ball lo une a tu equipo.',
@@ -141,7 +164,7 @@ G.ExpEco = (() => {
   const TIP_OF = { unown2: 'unown1', unown3: 'unown1' };   // (the rare / epic altars share the Unown tip; the golden one has its own)
   const COL = { ball: '#ff4d5e', freeball: '#eef3ff', cursedball: '#a35cff', great: '#4f9cf0', meowth: '#ffd23f', unown1: '#b9c4d4', unown2: '#5fd07a',
     unown3: '#b46cf2', unown4: '#ffb020', comet: '#7fe9ff', challenge: '#ff7b3d', cursedaltar: '#7c3fb0', greed: '#d05cff', ditto: '#f0a8e8',
-    hypno: '#f6d860', rock: '#e8b93a', berry: '#3f8cff', cage: '#9aa3b2' };
+    hypno: '#f6d860', rock: '#e8b93a', berry: '#3f8cff', cage: '#9aa3b2', slots: '#ff5fa2' };
   // the states an interactable can be in (the `o` block sends every one that isn't FRESH)
   const FRESH = 0, USED = 1, ACTIVE = 2, GONE = 3, READY = 4;
 
@@ -261,7 +284,7 @@ G.ExpEco = (() => {
     S = null; view = null; closePick(true); closeMap();
     if (!pl || !G.Modes.isExp()) return null;
     S = { frac: 0, earned: 0, spent: 0, balls: 0, opened: 0, buys: 0, mods: { diff: 0, rate: 0, xp: 0, money: 0, loot: 0 }, used: 0, last: 0,
-          draws: 0, waves: 0, z: null, log: { balls: 0, shop: 0, altars: 0, freed: 0, rocks: 0, berries: 0, ditto: 0, hypno: 0 }, tipQ: [], tipLog: [], hordes: [] };
+          draws: 0, waves: 0, z: null, log: { balls: 0, shop: 0, altars: 0, freed: 0, rocks: 0, berries: 0, ditto: 0, hypno: 0, spins: 0, slotWins: 0, ambush: 0, respawns: 0 }, tipQ: [], tipLog: [], hordes: [] };
     mountUI();
     return S;
   }
@@ -304,12 +327,27 @@ G.ExpEco = (() => {
   function zoneState(lay) {
     const n = lay.objs.length;
     return { key: lay.key, lay, st: new Array(n).fill(FRESH), ch: new Array(n).fill(0), t: new Array(n).fill(0), latch: new Set(), wave: new Map(),
-             visit: -1, stock: null, sold: 0, spot: -1, per: new Map() };
+             visit: -1, stock: null, sold: 0, spot: -1, per: new Map(), usedAt: new Array(n).fill(-1), slot: new Map() };   // (D15: when each was used; the slot machines' last spin)
   }
   const zoneTime = () => { const r = C() && C().run, st = G.Game.st; return r && st ? st.time - r.zs : st ? st.time : 0; };
   const seedFor = (i, salt) => mix(G.World.seed | 0, mapIdx(G.World.zone.map), G.World.zone.zone | 0, i, salt, S.draws++);
   const rngFor = (i, salt) => R(seedFor(i, salt));
-  function markUsed(Z, o, st = USED) { Z.st[o.i] = st; if (st === USED) { S.used++; S.last = o.i; } }
+  function markUsed(Z, o, st = USED) { Z.st[o.i] = st; if (st === USED) { S.used++; S.last = o.i; if (Z.usedAt) Z.usedAt[o.i] = zoneTime(); } }
+  /** D15: is this a Survival run (its used interactables respawn)? */
+  const survRun = () => !!(C() && C().run && C().run.surv);
+  /** D15 (study 2.7): Survival brings back what was used, K.RESPAWN s after (by kind). Pure in the zone clock. -> how many */
+  function respawn(Z, zt) {
+    let n = 0;
+    for (const o of Z.lay.objs) {
+      const after = K.RESPAWN[o.kind];
+      if (!after || Z.st[o.i] !== USED || !(Z.usedAt[o.i] >= 0) || zt - Z.usedAt[o.i] < after) continue;
+      Z.st[o.i] = FRESH; Z.ch[o.i] = 0; Z.t[o.i] = 0; Z.usedAt[o.i] = -1; Z.latch.delete(o.i); Z.wave.delete(o.i); Z.slot.delete(o.i);
+      for (const P of Z.per.values()) { P.t[o.i] = 0; P.latch.delete(o.i); }
+      S.log.respawns++; n++;
+      G.FX.ring(o.x, o.y, 6, 90, COL[o.kind] || '#ffffff', 0.5, 4);
+    }
+    return n;
+  }
   const say = (t, s = 2.8) => G.Spawner.say(t, s, true);
 
   /** run.tick: the interactables round the player. */
@@ -321,6 +359,7 @@ G.ExpEco = (() => {
     if (!S.z || S.z.key !== lay.key) { S.z = zoneState(lay); preload(); }
     reveal(pl);
     const Z = S.z, zt = zoneTime(), tsz = TS();
+    if (survRun()) respawn(Z, zt);   // (D15: Survival's respawns)
     // Meowth comes and goes
     const vis = visitAt(lay, zt);
     if (vis && (Z.visit !== vis.v || Z.spot < 0)) {   // (a new visit; or, after a jump of the zone clock, the same one again)
@@ -469,6 +508,12 @@ G.ExpEco = (() => {
         G.Audio.sfx('legend'); G.FX.ring(o.x, o.y, 8, 140, '#7dffb0', 0.6, 5);
         return;
       }
+      case 'slots': {   // (D15: in-run ₽ only, never real money)
+        if (P.latch.has(o.i) || !stand(1.3 * tsz + pr, K.SLOT_T)) return;
+        P.latch.add(o.i); P.t[o.i] = 0;
+        spin(o, Z, pl);
+        return;
+      }
       case 'rock': {
         if (d > 0.75 * tsz + pr) return;
         markUsed(Z, o); S.log.rocks++;
@@ -507,6 +552,65 @@ G.ExpEco = (() => {
     S.hordes.push([o.i, ids.length]);
     if (!opt.quiet) { say(F(opt.msg || '¡Horda!'), 2); G.Audio.sfx('surge'); }
     return ids;
+  }
+
+  // ---------------- D15: the slot machine (owner #7: play money only, the run's ₽) ----------------
+  const slotCost = zone => K.SLOT_COST[0] + K.SLOT_COST[1] * Math.max(1, zone);
+  /** Three reels from rng (the symbols' indices). Pure. */
+  function reels(rng) {
+    const tot = K.SLOT_W.reduce((a, b) => a + b, 0), out = [];
+    for (let k = 0; k < 3; k++) { let r = rng() * tot, i = 0; while (i < K.SLOT_W.length - 1 && (r -= K.SLOT_W[i]) >= 0) i++; out.push(i); }
+    return out;
+  }
+  /** What reels r pay: {kind: 'triple' | 'pair' | 'bad' | 'boom' | 'none', sym}. Pure. */
+  function payout(r) {
+    const V = K.SLOT_SYM.indexOf('voltorb'), v = r.filter(x => x === V).length;
+    if (v === 3) return { kind: 'boom', sym: V };
+    if (v === 2) return { kind: 'bad', sym: V };
+    if (r[0] === r[1] && r[1] === r[2]) return { kind: 'triple', sym: r[0] };
+    const pair = r.find((x, i) => r.indexOf(x) !== i && x !== V);
+    return pair != null ? { kind: 'pair', sym: pair } : { kind: 'none', sym: -1 };
+  }
+  /** The reels slot machine i would roll next (pure: it draws nothing; for tests and tools). */
+  const peekSpin = i => (S && G.World.zone ? reels(R(mix(G.World.seed | 0, mapIdx(G.World.zone.map), G.World.zone.zone | 0, i, 0x5107, S.draws))) : null);
+  /** One spin of slot machine o by player pl (the host): pay, roll, reward or ambush. */
+  function spin(o, Z, pl) {
+    const zone = zoneNow(), cost = slotCost(zone), m = mateOf(pl);
+    if (!spend(cost)) { say(F('Te faltan {x} ₽', cost - teamCoins()), 2.4); G.Audio.sfx('error'); return false; }
+    const sd = seedFor(o.i, 0x5107), rng = R(sd), r = reels(rng), p = payout(r), sym = K.SLOT_SYM[p.sym];
+    const st = Z.slot.get(o.i) || { n: 0, r: [0, 0, 0], at: 0, win: 0 };
+    st.n++; st.r = r; st.at = zoneTime(); st.win = p.kind === 'triple' || p.kind === 'pair' ? 1 : p.kind === 'none' ? 0 : 2;
+    Z.slot.set(o.i, st);
+    S.log.spins++; S.used++; S.last = o.i;
+    G.Audio.sfx('coin');
+    if (p.kind === 'bad' || p.kind === 'boom') {
+      const boom = p.kind === 'boom', dex = boom || zone >= 3 ? 101 : 100, [a, b] = boom ? K.SLOT_AMBUSH3 : K.SLOT_AMBUSH;
+      horde(o, a + b * zone, { dex: [dex], d: 200, msg: dex === 101 ? '¡Mala tirada! ¡Electrode!' : '¡Mala tirada! ¡Voltorb!' });
+      S.log.ambush++;
+      if (boom) { markUsed(Z, o); say(F('¡Tres Voltorb! La máquina explota'), 3); G.FX.burst(o.x, o.y - 20, '#ffcf5a', 40, 260); G.Audio.sfx('boss'); }
+      return true;
+    }
+    if (p.kind === 'none') { say(F('Sin premio'), 1.8); return true; }
+    S.log.slotWins++;
+    G.FX.ring(o.x, o.y, 6, 120, COL.slots, 0.6, 5);
+    if (p.kind === 'pair') { const got = earn(cost * K.SLOT_PAIR, 'slots'); say(F('Pareja: +{x} ₽', got), 2.4); return true; }
+    // three of a kind
+    if (sym === 'nugget') { const got = earn(cost * K.SLOT_JACKPOT, 'slots'); say(F('¡Bote! +{x} ₽', got), 3); G.Audio.sfx('legend'); return true; }
+    G.Audio.sfx('legend');
+    if (sym === 'berry') {
+      say(F('¡Premio! {x}', T.t('Bayas y un objeto')), 2.6);
+      if (m) { toMate(m, ['heal', K.BERRY]); toMate(m, ['xg', sd, 1, 0, 3]); return true; }   // (D11's messages: the guest's own heal and item)
+      pl.heal(pl.maxHp * K.BERRY);
+      const id = rollOffers(pl, rng, 1, 0)[0]; if (id) LV().itemTake(pl, IT().PREFIX + id);
+      return true;
+    }
+    // a ball: Poké 1 of 3 Common+, Great 1 of 3 Uncommon+, Ultra 1 of 3 Rare+, Master 2 of 4 Epic+
+    const [n, picks, min] = { poke: [3, 1, 0], great: [3, 1, 1], ultra: [3, 1, 2], master: [4, 2, 3] }[sym];
+    say(F('¡Premio! {x}', T.t(NAME.slots)), 2.4);
+    if (m) { toMate(m, ['xo', 'ball', sd, n, min, picks, 0]); return true; }
+    const ids = rollOffers(pl, rng, n, min);
+    openPick({ kind: 'ball', title: NAME.slots, sub: F(picks > 1 ? 'Elige 2 de {x}' : 'Elige 1 de {x}', ids.length), ids, picks: Math.min(picks, ids.length) });
+    return true;
   }
 
   // ---------------- the balls ----------------
@@ -805,13 +909,17 @@ G.ExpEco = (() => {
     if (Z) {
       for (let i = 0; i < Z.st.length; i++) if (Z.st[i] !== FRESH || Z.ch[i] > 0) o.s.push(i, Z.st[i], Math.round(Z.ch[i] * 100));
       if (Z.spot >= 0 && Z.stock) o.m = [Z.visit, Z.spot, ...Z.stock, Z.sold];
+      // (D15: each slot machine that has spun: [index, spins, reel 1, 2, 3, win (0 none, 1 a win, 2 an ambush)], flat)
+      if (Z.slot.size) { o.y = []; for (const [i, st] of Z.slot) o.y.push(i, st.n, st.r[0], st.r[1], st.r[2], st.win); }
     }
     return o;
   }
   /** A viewer / guest: a snapshot's / host frame's `o` (null: none, every interactable fresh). */
   function applyO(o) {
     if (!o || !Array.isArray(o.s) || !Array.isArray(o.h)) { view = null; return; }
-    view = { s: o.s, h: o.h, g: o.g || [0, 0, 0, 0, 0], m: Array.isArray(o.m) ? o.m : null, n: o.n | 0 };
+    const prevY = view && view.y;
+    view = { s: o.s, h: o.h, g: o.g || [0, 0, 0, 0, 0], m: Array.isArray(o.m) ? o.m : null, n: o.n | 0, y: Array.isArray(o.y) ? o.y : null };   // (D15: o.y, the slot machines)
+    if (view.y && G.Game.state === 'watch') for (let k = 0; k + 5 < view.y.length; k += 6) { const i = view.y[k], n = view.y[k + 1], was = prevY ? prevY.findIndex((v, j) => j % 6 === 0 && v === i) : -1; if (was < 0 || prevY[was + 1] !== n) slotSeen.set(i, performance.now() / 1000); }
     mountUI();
     const p = viewer();
     if (p) reveal(p);
@@ -825,6 +933,17 @@ G.ExpEco = (() => {
     return im && im.complete && im.naturalWidth ? im : null;
   }
   const ICON = { ball: 'poke_ball', freeball: 'premier_ball', cursedball: 'poke_ball', great: 'great_ball', comet: 'star_piece', berry: 'oran_berry' };
+  // (D15: the reels' pictures: the overworld's item icons; Voltorb's own sheet)
+  const SLOT_ICON = { berry: 'oran_berry', poke: 'poke_ball', great: 'great_ball', ultra: 'ultra_ball', master: 'master_ball', nugget: 'nugget' };
+  const slotSeen = new Map();   // (a viewer: when each machine's last spin came in, for the reels' roll)
+  /** A slot machine's last spin for drawing: {n, r, win, at (seconds, performance clock)} (the host's, or a viewer's copy). */
+  function slotOf(i) {
+    if (S && S.z && G.Modes.isExp() && !guestSide()) { const st = S.z.slot.get(i); return st ? { n: st.n, r: st.r, win: st.win, t: zoneTime() - st.at } : null; }
+    const y = view && view.y;
+    if (!y) return null;
+    for (let k = 0; k + 5 < y.length; k += 6) if (y[k] === i) return { n: y[k + 1], r: [y[k + 2], y[k + 3], y[k + 4]], win: y[k + 5], t: slotSeen.has(i) ? performance.now() / 1000 - slotSeen.get(i) : 99 };
+    return null;
+  }
   const MON = { meowth: 52, ditto: 132, hypno: 97, greed: 94, unown1: 201, unown2: 201, unown3: 201, unown4: 201 };
   const anims = {};
   function anim(dex) {
@@ -942,6 +1061,29 @@ G.ExpEco = (() => {
         if (!used) { if (!icon(ctx, ICON.berry, x, y - 12, 16)) { ctx.fillStyle = COL.berry; for (const [dx, dy] of [[-5, -10], [5, -12], [1, -5]]) { ctx.beginPath(); ctx.arc(x + dx, y + dy, 3, 0, 6.2832); ctx.fill(); } } }
         return;
       }
+      case 'slots': {   // (D15: a cabinet drawn in code; its reels show the last spin, rolling for a moment after it)
+        const sl = slotOf(o.i);
+        shadow(ctx, x, y, 18);
+        ctx.globalAlpha = used ? 0.45 : 1;
+        ctx.fillStyle = used ? '#5a4a52' : '#c2185b'; ctx.fillRect(x - 20, y - 50, 40, 50);
+        ctx.fillStyle = used ? '#3a3036' : '#7a0e3a'; ctx.fillRect(x - 20, y - 8, 40, 8);
+        ctx.fillStyle = '#ffd23f'; ctx.fillRect(x - 22, y - 54, 44, 6);
+        ctx.fillStyle = '#1b1020'; ctx.fillRect(x - 16, y - 42, 32, 14);
+        const rolling = sl && sl.t < K.SLOT_SPIN && !used;
+        for (let k = 0; k < 3; k++) {
+          const cx = x - 10 + k * 10, cy = y - 35;
+          ctx.fillStyle = '#f4f0e8'; ctx.fillRect(cx - 4, cy - 6, 9, 12);
+          const si = rolling ? Math.floor(now * 14 + k * 3) % K.SLOT_SYM.length : sl ? sl.r[k] : [1, 5, 0][k];
+          const sym = K.SLOT_SYM[si];
+          if (sym === 'voltorb') { ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.arc(cx + 0.5, cy, 4, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(cx + 0.5, cy, 4, 0, Math.PI); ctx.fill(); }
+          else icon(ctx, SLOT_ICON[sym], cx + 0.5, cy, 10);
+        }
+        // the lever
+        ctx.strokeStyle = '#9aa3b2'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 21, y - 30); ctx.lineTo(x + 26, y - 44 + (rolling ? 8 : 0)); ctx.stroke();
+        ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.arc(x + 26, y - 45 + (rolling ? 8 : 0), 3, 0, 6.2832); ctx.fill();
+        if (sl && !rolling && sl.win && sl.t < K.SLOT_SPIN + 1.2) { ctx.globalAlpha = 0.5 + Math.sin(now * 12) * 0.3; ctx.strokeStyle = sl.win === 1 ? '#ffd23f' : '#ff5252'; ctx.lineWidth = 3; ctx.strokeRect(x - 18, y - 44, 36, 18); }
+        return;
+      }
       case 'cage': {
         shadow(ctx, x, y, 16);
         if (!used) { const a = anim(o.v); if (a) a.draw(ctx, x, y - 2); }
@@ -972,6 +1114,7 @@ G.ExpEco = (() => {
       if (st === USED || st === GONE || Math.hypot(o.x - pl.x, o.y - pl.y) > 9 * tsz) continue;
       if (o.kind === 'ball') label(o, ballCost(c.h[0], pl.xluck || 0) + ' ₽', (pl.coins || 0) >= ballCost(c.h[0], pl.xluck || 0) ? '#ffd23f' : '#ff9aa4', 34);
       else if (o.kind === 'cage') label(o, cageCost(zoneNow()) + ' ₽', (pl.coins || 0) >= cageCost(zoneNow()) ? '#ffd23f' : '#ff9aa4', 48);
+      else if (o.kind === 'slots') label(o, F('Tirada · {x} ₽', slotCost(zoneNow())), (pl.coins || 0) >= slotCost(zoneNow()) ? '#ffd23f' : '#ff9aa4', 64);   // (D15)
       else if (o.kind === 'meowth' && c.spot === o.i) label(o, T.t('TIENDA'), '#ffd23f', 60);
       else if (o.kind === 'unown4' && zt < K.SEAL) label(o, F('SELLADO {x}', G.U.mmss(Math.max(0, K.SEAL - zt))), '#c9ced8', 56);
       else if ((o.kind.startsWith('unown') || o.kind === 'comet') && st === ACTIVE) label(o, Math.floor(c.ch[o.i] * 100) + ' %', COL[o.kind], o.kind === 'comet' ? 40 : 56);
@@ -1024,6 +1167,9 @@ G.ExpEco = (() => {
       ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(5.5, 5); ctx.lineTo(-5.5, 5); ctx.closePath(); ctx.fill(); ctx.stroke();
     } else if (kind === 'rock') {
       ctx.fillStyle = col; ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8);
+    } else if (kind === 'slots') {   // (D15: a pink cabinet with three reel dots)
+      ctx.fillStyle = col; ctx.fillRect(-5, -6, 10, 12); ctx.strokeRect(-5, -6, 10, 12);
+      ctx.fillStyle = '#ffffff'; for (let k = 0; k < 3; k++) ctx.fillRect(-3.5 + k * 2.6, -2, 2, 3);
     } else if (kind === 'cage') {
       ctx.fillStyle = '#3a404c'; ctx.fillRect(-5, -5, 10, 10); ctx.strokeStyle = col; ctx.strokeRect(-5, -5, 10, 10);
       ctx.beginPath(); ctx.moveTo(-1.5, -5); ctx.lineTo(-1.5, 5); ctx.moveTo(1.5, -5); ctx.lineTo(1.5, 5); ctx.stroke();
@@ -1256,13 +1402,13 @@ body.touch #xtip { top: 78px; font-size: 12px; max-width: min(360px, 40vw); padd
     const L = S.log;
     if (S.earned) { Sv.bump('eco.earned', S.earned); Sv.best('eco.best', S.earned); }
     if (S.spent) Sv.bump('eco.spent', S.spent);
-    for (const k of ['balls', 'shop', 'altars', 'freed', 'rocks', 'berries', 'ditto', 'hypno']) if (L[k]) Sv.bump('eco.' + k, L[k]);
+    for (const k of ['balls', 'shop', 'altars', 'freed', 'rocks', 'berries', 'ditto', 'hypno', 'spins', 'slotWins', 'ambush', 'respawns']) if (L[k]) Sv.bump('eco.' + k, L[k]);   // (D15: + the slot machine's, Survival's respawns)
     return [F('₽ {x} · Poké Balls {x} · Altares {x}', S.earned, L.balls, L.altars)];
   }
 
   return {
     K, KINDS, NAME, TIP, FRESH, USED, ACTIVE, GONE, READY,
-    layoutOf, visitAt, ballCost, allowance, heatOf, heatMul, price, cageCost, rollOffers, shopPrices,
+    layoutOf, visitAt, ballCost, allowance, heatOf, heatMul, price, cageCost, rollOffers, shopPrices, slotCost, reels, payout, respawn, slotOf, peekSpin,
     begin, reset, mods, earn, spend, onKill, tick, buy, forget, choose, openPick, closePick, openMap, closeMap, tipOnce, netEvent,
     oBlock, applyO, cur, drawGround, drawHud, tipRect, drawMini, mini, reveal, explored, found, record, syncPause,
     get run() { return S; }, get view() { return view; }, get pick() { return pick; }, get mapOpen() { return mapOpen; }, get mapInfo() { return mapInfo; },

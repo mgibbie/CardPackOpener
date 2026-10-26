@@ -2903,6 +2903,62 @@ different Megas, title Mega Trainer), after the season ribbons in the title list
 - The Megas keep the member's ability (one of our 54), not the Mega's own (Tough Claws, Drought...).
 - No shiny Mega pictures (the battle set has none): a shiny member's Mega shows the normal picture (B1c's rule).
 
+## DLC D15: the slot machine and Survival's respawns
+
+Both in `js/expedition/economy.js` (numbers in its `K`). `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` 2.7 (the interactables table's slot
+machine; "Survival respawns used interactables after 120-240 s, depending on kind") and the D15 update. Base modes are unchanged:
+the D0a fixtures pass as recorded, also with the Expedition code force-loaded.
+
+**The slot machine** (owner decision #7: **yes, PLAY MONEY ONLY**: the run's in-run ₽, never real money; nothing is sold, no ads):
+
+| | |
+|---|---|
+| Where | one a zone (zones 1-3, every map, Classic and Survival), placed **after** every D7 interactable, so their places and indices are D7's |
+| A spin | stand at it (0.8 s, the stand-in rule: no interact key) and a spin costs **10 + 5 x zone ₽** of the run; step away and back for another |
+| The reels | three seeded reels (its own `G.DLC.rng` stream, never `Math.random`): berry 30, Poké Ball 22, Great Ball 14, Ultra Ball 8, Master Ball 3, Nugget 12, Voltorb 11 |
+| Three of a kind | berries: heal 50 % and an item; Poké Ball: pick 1 of 3; Great: 1 of 3 Uncommon+; Ultra: 1 of 3 Rare+; Master: 2 of 4 Epic+; Nuggets: the jackpot, 15 spins of ₽ |
+| Two of a kind | 2 spins of ₽ back |
+| **A bad roll** (two Voltorb) | a Voltorb ambush of 3 + zone round the machine (Electrode in zone 3), study 2.7's "a bad roll spawns Voltorb or Electrode" |
+| Three Voltorb | Electrodes (4 + 2 x zone) and the machine breaks |
+| Odds | ~5 % a bad roll, ~3 % a prize, ~45 % a pair; the ₽ that come back are ~0.9 of the stakes, so it is a sink for play money, not a source |
+
+It is drawn in code (a cabinet whose reels show the last spin, rolling for a moment after it; the lever; a flash on a win or an
+ambush), labelled "Spin · N ₽", on the minimap and the zone map's legend, with a one-time tip. A co-op guest spins with the team's ₽
+and gets its prize through D11's messages. Viewers: the `o` block gains an optional `y` (`[index, spins, reel 1-3, win]` per machine
+that has spun), so a spectator or replay sees the reels; an older reader ignores it.
+
+**Survival's respawns** (study 2.7): in a Survival run a used interactable comes back after `K.RESPAWN` seconds of the land's clock,
+by kind: gold rocks and berries 2:00, Poké Balls (paid, free, cursed) and the slot machine 3:00, Unown / challenge / cursed / greed
+altars, Ditto, Hypno and cages 4:00. Meowth and the comet keep their own schedules; a migration's lands are fresh anyway. A respawn
+is pure in the clock (`usedAt` + the delay), and the `o` block simply stops listing it, so every viewer sees it come back. Classic
+never respawns.
+
+**Saved:** the counters `eco.spins`, `eco.slotWins`, `eco.ambush`, `eco.respawns`.
+
+**Versions:** `G.Expedition.DV` is **14** (a new interactable, respawns); the `x` block stays v10 (`o.y` is optional). dv 1-13 still play.
+
+**Sizes (measured with `micasurvivor_expedition_mp_test`, D11's way):** the busiest host frame to a guest 9,966 chars (126 foes,
+`x` 571 chars; budget 16,000 a relay message); a 45-minute Survival tape to Mewtwo 890,835 chars and a full Classic clear 644,273
+(cap 1.2 MB). A spun machine adds 6 numbers to `o`.
+
+**Assets:** none new (the overworld's item icons for the reels, Voltorb / Electrode's own sheets, the cabinet in code).
+
+**What changed in base files:** none.
+
+**Deviations:** the slot machine is a stand-in circle (no interact key, D3's rule) and pays items, ₽ or an ambush (PokéBonk's "₽ per
+spin, for items"; the table above is ours). Respawn delays are the study's 120-240 s range spread by kind (ours).
+
+## DLC D13-D15: the stacked branch
+
+`feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
+the `x` block unchanged (v10):
+- **D13 League mode** (`league.js`, `meta.js`): the whole League (245 members), League mode as the League's own screen, the League
+  board, a task and 5 achievements. dv 12. **The stack's only server change** (`server/mp.mjs`: the League board, written by
+  `micasurvivor-exp-save-put`, read by `run-leaderboard`).
+- **D14 Mega Evolution** (`mega.js`, `mega-data.js`): 93 Megas, from Lv 40, existing art only. dv 13 (`l`'s optional 6th field).
+- **D15 the slot machine and Survival's respawns** (`economy.js`). dv 14 (`o`'s optional `y`).
+The branch needs the full gate before it merges.
+
 ## DLC D10-D12: the stacked branch
 
 `feat/micasurvivor-expedition-d10-d12` carries three batches on top of D6-D9, `G.Expedition.DV` 8 -> 11 and the `x` block v8 -> v10:
@@ -3113,6 +3169,10 @@ different Megas, title Mega Trainer), after the season ribbons in the title list
   i-frames and look (drawn at the member's height, mirrored facing right, the keystone's sign), once a run, the snapshot's row,
   the run-over line, counters and achievement; "Not yet" back 5 levels later; a composed Mega (Raichu X); a fresh viewer
   page's puppet from the row (and back); the League card's line; the weekly task; the phone.
+- `node overworld/tests/micasurvivor_expedition_slots_test.mjs` (DLC D15): the slot machine's table, odds and placement (one a
+  zone, after D7's); spins through the stand-in (a bad roll's Voltorb ambush, a pair, the jackpot, a Poké Ball pick, nothing, too
+  poor, three Voltorb breaking it), the base save's Pokémonedas never moving, the legend and tip, a fresh viewer's reels;
+  Survival's respawns by kind (2:00 / 3:00 / 4:00, not a second sooner), Classic's none; the saved counters.
 - `node overworld/tests/micasurvivor_boot_test.mjs` covers boot (no console errors, no external
   requests), guest start, a 30 s bot run with level-up picks, and the save round-trip through a
   reload.

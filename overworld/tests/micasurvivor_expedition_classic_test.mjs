@@ -196,7 +196,7 @@ try {
 		on: G.Expedition.MODES.filter(G.Expedition.enabled), dv: G.Expedition.DV,
 	}));
 	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id === 'exp-league');
-	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival","exp-league"]' && ui.dv === 13, 'the registry: Classic, Survival (D11) and League (D13) enabled; the content version is 12 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11; D13: 12)', JSON.stringify(ui));
+	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival","exp-league"]' && ui.dv === 14, 'the registry: Classic, Survival (D11) and League (D13) enabled; the content version is 12 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11; D13: 12)', JSON.stringify(ui));
 	A(!cl.soon && cl.aria !== 'true' && !/Coming soon/.test(cl.txt) && /^Expedition · Classic .*Viridian Forest/.test(cl.txt), 'Classic is playable: no "Coming soon", not aria-disabled, says Viridian Forest (in English)', JSON.stringify(cl));
 	A(rest.length === 1 && rest.every(c => !c.soon && c.aria !== 'true' && !/Coming soon/.test(c.txt) && /245 members/.test(c.txt)), 'League is playable since D13 (no "Coming soon"): "Your League: 245 members ..."', JSON.stringify(rest));
 	A(ui.h === 'Expedition', 'the group heading is "Expedition" (no "coming soon" now one is playable)', ui.h);
@@ -207,7 +207,7 @@ try {
 	await page.click('#modes-exp [data-exp=exp-classic]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpClassic && G.ExpClassic.on), 8000), 'clicking Classic starts an Expedition Classic run (the code lazy-loads)');
 	const st0 = await E(page, () => { window.__t.freeze(); const S = G.ExpClassic.run; return { mode: G.Game.mode, dv: G.Modes.run.dv, map: S.map, zone: S.zone, ph: S.ph, z: G.World.zone && G.World.zone.zone, biome: G.World.biome, events: S.plan.events.length }; });
-	A(st0.mode === 'exp-classic' && st0.dv === 13 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
+	A(st0.mode === 'exp-classic' && st0.dv === 14 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
 
 	// ======================== 2. the plan
 	const pl2 = await E(page, () => {
