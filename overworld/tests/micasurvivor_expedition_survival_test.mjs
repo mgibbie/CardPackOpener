@@ -200,10 +200,10 @@ try {
 	A(mn.tier && mn.coop && /With friends: Expedition · Survival/.test(mn.coopTxt || ''), 'Survival\'s group: "Difficulty: Normal · leaderboards" and "With friends: Expedition · Survival"', JSON.stringify(mn));
 	await E(page, () => G.UI.show('scr-menu', true));
 	const pr = await prep(page);
-	A(pr.ok && pr.surv && pr.dv === 15 && pr.cdv === 15 && pr.xv === 10, 'the Expedition code loads with survival.js; the content version is 15 (D16), the x block v10', JSON.stringify(pr));
+	A(pr.ok && pr.surv && pr.dv === 16 && pr.cdv === 16 && pr.xv === 10, 'the Expedition code loads with survival.js; the content version is 16 (D17), the x block v10', JSON.stringify(pr));
 	if (!pr.ok || !pr.surv) throw new Error('no G.ExpSurv: the rest needs it');
 	const st0 = await startSurv(page, true);
-	A(st0.ok && st0.mode === 'exp-survival' && st0.dv === 15 && st0.surv && st0.cl && st0.map === 'viridian', 'a click on the Survival card starts a Survival run (exp-survival, dv 14, Viridian Forest, Classic\'s engine with S.surv)', JSON.stringify(st0));
+	A(st0.ok && st0.mode === 'exp-survival' && st0.dv === 16 && st0.surv && st0.cl && st0.map === 'viridian', 'a click on the Survival card starts a Survival run (exp-survival, dv 14, Viridian Forest, Classic\'s engine with S.surv)', JSON.stringify(st0));
 
 	// ======================== 2. each system
 	// pure: the clock's rules and the milestones

@@ -1193,6 +1193,9 @@ G.Flow = {
   goMenu() {
     if (G.Game.state !== 'ui') G.Game.toUI();
     G.Audio.music('village');
+    // MicaSurvivor (DLC D17-D18): a retired upgrade's levels are paid back, once per account (after a backup: js/core/db.js)
+    const rf = G.DB.refundRetired ? G.DB.refundRetired() : 0;
+    if (rf > 0) G.UI.toast(G.I18n.f('Mejoras retiradas: te devolvemos {x} Pokémonedas', rf.toLocaleString('en')), 4200);
     G.MenuUI.open();
     G.LoginUI.offerRecovery();
   },

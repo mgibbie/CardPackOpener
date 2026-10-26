@@ -3034,6 +3034,45 @@ coin tally), `_expedition_plumbing` / `_tiers` / `_survival` (the r2 boards; a d
 relay with 4 moves; a Survival tape that thins sooner), every Expedition suite's dv 14 -> 15; the design wiki's data regenerated (the
 Choice Band's text).
 
+## DLC D17: one held item (base and Expedition)
+
+Owner, 2026-10-26: "1 item slot and 4 move slots for both expedition and regular", then the same day: "maybe we can keep the
+backpack/more items in expedition and just have 1 slot for an equipped held item in both modes". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`
+"D17 built". A deliberate base change (the D0a fixtures re-recorded once more, below).
+
+**What changed for the player**
+- **Base: one held item.** `Player.itemSlots()` is 1 in every mode: the first item is worn, a second opens the replace screen (keep /
+  switch). **Backpack is retired** (`G.Upgrades.BY.bag.retired = 'D17'`: kept so `sanitize` keeps its level and the refund knows it;
+  `perks().bag` is false; the shop lists `G.Upgrades.live()` only). **The Tower's "Double baggage" is retired** (`retired: 'D17'`, never
+  offered, even forced; the other 3 legendary pacts still come; it was free, so there is nothing to refund).
+- **Expedition: the stacking inventory stays exactly as it was** (the 60 items to their caps, 3 vitamin slots, Poké Balls, Meowth,
+  altars, Ditto). On top, **ONE equipped base held item**, base's slot and replace screen. Its source (ours, kept small): every boss (a
+  zone's guardian, the shrine's, Survival's milestones) also drops one, seeded (`G.ExpLevel.heldRoll`, its own stream), from the base
+  held items no stacking item duplicates (`K.HELD_POOL`: Focus Sash, Never-Melt Ice, Colossal Orb, Type Gem, Safety Goggles, Light Ball,
+  Thick Club; species-locked ones only to their species). Where both exist (Leftovers, the Choice items, Silver Powder...), the stacking
+  one stays the Expedition's. `G.Expedition.DV` **16**; the `x` block stays v10 (the held item is the snapshot's `it`, as in base).
+
+**The Backpack refund (owner decision #3: in full, once per account, after a backup)** — `js/core/db.js` `refundRetired()`, when the
+menu opens (`G.Flow.goMenu`): every level of a retired upgrade (`G.Upgrades.LIST`, `retired`) is one record
+`save.rf["up.<dex>.<id>.<level>:<device>"]` = the Pokémonedas paid back (its price, 7,500 a Backpack), booked on this device's coin
+ledger entry like any earning. `rf` / `rfx` merge as a union (`merge`) and are sanitized. Two devices that refund while apart both
+record theirs; merged, every device but the first (by id) takes its copy back once (`reconcileRefunds`, `save.rfx`), the Expedition's
+`cur.spend` / `cur.earn` / `reconcile()` pattern (tested with two browsers, both ways and again). Before the first refund write the
+save is copied to `micasurvivor_backup.<key>.refund.<ms>` (the newest 2 kept); no backup, no refund. `G.DB.rollbackRefunds()` takes
+this device's refunds back and marks them so they are never paid again. **Who it affects** (read-only D1, 2026-10-26): of the 4
+MicaSurvivor accounts on the server, 1 owns Backpack (on 1 Pokémon): 7,500 Pokémonedas back.
+
+**The D0a fixtures, re-recorded once more:** the golden profile owns Backpack on its 5 Pokémon, so every mode's final save now holds
+the refund (+37,500 coins, 5 `rf` records; the backup is in localStorage, not the save). Boss Rush also diverges from second 76: its
+second item would have gone into the Backpack's 2nd slot and now opens the replace screen (3 card picks instead of 2; it ends at
+90.95 s instead of 90.68 s). The other five sims are unchanged second by second. Passes twice; the force-loaded run passes.
+
+**Tests:** `overworld/tests/micasurvivor_oneitem_test.mjs` (19 checks: Backpack retired, kept and refunded once with its backup; one
+held slot and the replace screen; the Tower; two devices refunding then merging, paid once; the rollback; the Expedition's stacking
+inventory unchanged and a boss's held item in the one slot, then the replace screen; dv 16). Updated on purpose: `_items` (Backpack no
+longer sold; one slot; "carry two" became "one held item"), `_tower` (Double baggage never offered; also: no moves while the Blood pact
+heal is measured over real frames, where a draining move now fires), every Expedition suite's dv 15 -> 16.
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,

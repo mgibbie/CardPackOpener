@@ -3,7 +3,7 @@
  * candado) y los sueltan los jefes. Sólo puedes llevar UNO; si encuentras
  * otro, eliges con cuál quedarte. Duran lo que dura la run.
  * MicaSurvivor (M5 lote 3): +15 objetos del port de Android (types_data.gd ITEMS, con los
- * números de main.gd), y con la mejora Mochila se llevan DOS (Player.itemSlots()).
+ * números de main.gd), y con la mejora Mochila se llevaban DOS (DLC D17: uno, en todos los modos; Player.itemSlots()).
  *
  *   on(pl)   se lo pones (lo que hace mientras lo llevas)
  *   off(pl)  se lo quitas (deshace lo de on)

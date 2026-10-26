@@ -1,5 +1,8 @@
 /* ============ upgrades.js — mejoras permanentes entre runs ============
  * Se compran con Pokémonedas en el menú. `per` es lo que da cada nivel.
+ * MicaSurvivor (DLC D17-D18): a RETIRED upgrade (`retired`: the batch) stays in LIST / BY (G.DB.sanitize drops an unknown id,
+ * and its levels are the refund's basis) but does nothing, isn't sold and isn't listed; G.DB.refundRetired pays its levels
+ * back once per account. D17: Backpack (owner: "1 slot for an equipped held item in both modes").
  */
 G.Upgrades = (() => {
   const LIST = [
@@ -20,7 +23,7 @@ G.Upgrades = (() => {
     { id: 'tm',     icon: 'tm', name: 'MT',             unit: 'Elige tu movimiento inicial (de tus tipos)', max: 1, base: 2000, grow: 1 },
     { id: 'ban',    icon: 'ban', name: 'Veto',           unit: 'Bloquea 1 movimiento: no te sale en las cartas', max: 3, base: 300, grow: 1.9 },
     { id: 'revive', icon: 'revive', name: 'Segunda oportunidad', unit: '+1 corazón: al caer, revives con la vida completa', max: 2, base: 2500, grow: 2 },
-    { id: 'bag',    icon: 'bag', name: 'Mochila',        unit: 'Llevas 2 objetos a la vez por partida', max: 1, base: 7500, grow: 1 }
+    { id: 'bag',    icon: 'bag', name: 'Mochila',        unit: 'Llevas 2 objetos a la vez por partida', max: 1, base: 7500, grow: 1, retired: 'D17' }
   ];
   const BY = {};
   for (const u of LIST) BY[u.id] = u;
@@ -49,11 +52,13 @@ G.Upgrades = (() => {
       size: 1 + L('size') * 0.08,          // MicaSurvivor (M5 lote 3): Calibre (Player.sizePerk)
       tm: L('tm'),                         // MT: G.startMoveOf usa el elegido (save.ptm)
       revives: L('revive'),                // Segunda oportunidad: corazones por partida
-      bag: L('bag') > 0,                   // Mochila: 2 huecos de objeto
+      bag: false,                          // Mochila: retired (DLC D17: one held item); its level stays for the refund
       rerolls: L('reroll'),
       bans: L('ban')
     };
   }
 
-  return { LIST, BY, cost, perks };
+  /** DLC D17-D18: the upgrades on sale (the retired ones are not). */
+  const live = () => LIST.filter(u => !u.retired);
+  return { LIST, BY, cost, perks, live };
 })();

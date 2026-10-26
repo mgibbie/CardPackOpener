@@ -199,14 +199,14 @@ try {
 	const bob = await bootPage({ user: 'bob', token: tokens.bob, state: states.bob, save: SAVE('bob') }, PHONE);
 	A(alice.menu && bob.menu, 'alice (desktop) and bob (a phone, 844 x 390, touch) boot signed in to the menu');
 	const pa = await prep(alice), pb = await prep(bob);
-	A(pa.ok && pb.ok && pa.dv === 15 && pa.xv === 10, 'both load the Expedition (dv 15, x v10)', JSON.stringify([pa, pb]));
+	A(pa.ok && pb.ok && pa.dv === 16 && pa.xv === 10, 'both load the Expedition (dv 16, x v10)', JSON.stringify([pa, pb]));
 	// bob's own League member (Charmander, his) and a Lab level of his own (Training 3: +12 % damage)
 	const bobSetup = await bob.E(() => { G.ExpSave.add('league.own', 4); const ok = G.ExpLeague.setPick(4); G.ExpSave.best('lab.training', 3); G.ExpSave.commit(); return { ok, pick: G.Expedition.leaguePick() }; });
 	A(bobSetup.ok && bobSetup.pick === 4, 'bob picks his own League member (Charmander) and has his own Lab (Training 3)', JSON.stringify(bobSetup));
 	await alice.E(() => { G.ExpSave.best('tier.viridian', 1); G.ExpSave.commit(); return G.ExpTier.setPick('viridian', 'hard'); });   // (Hard unlocked on alice's save; the lobby takes the host's pick)
 	const L1 = await lobbyStart(alice, bob, 'exp-classic');
 	const lrow = L1.mk && row('msurvlobby:' + L1.mk.id);
-	A(L1.mk && L1.mk.mode === 'exp-classic' && L1.mk.dv === 15 && L1.mk.map === 'viridian' && L1.mk.diff === 'hard' && lrow && lrow.mode === 'exp-classic' && lrow.map === 'viridian' && lrow.diff === 'hard',
+	A(L1.mk && L1.mk.mode === 'exp-classic' && L1.mk.dv === 16 && L1.mk.map === 'viridian' && L1.mk.diff === 'hard' && lrow && lrow.mode === 'exp-classic' && lrow.map === 'viridian' && lrow.diff === 'hard',
 		'"With friends: Expedition · Classic" makes an Expedition lobby: mode, dv 10, map and tier on the server row (msurvlobby:<id>)', JSON.stringify({ mk: L1.mk, row: lrow && { mode: lrow.mode, dv: lrow.dv, map: lrow.map, diff: lrow.diff } }));
 	A(L1.mk && L1.mk.expShown && L1.mk.exp === 'Expedition · Classic · Viridian Forest · Hard' && L1.jn && L1.jn.r.ok && L1.jn.exp === 'Expedition · Classic · Viridian Forest · Hard',
 		'the lobby says what everyone plays: "Expedition · Classic · Viridian Forest · Hard" (host and guest)', JSON.stringify([L1.mk && L1.mk.exp, L1.jn]));
@@ -220,7 +220,7 @@ try {
 	const runA = await alice.E(() => ({ mode: G.Modes.run.mode, dv: G.Modes.run.dv, map: G.Modes.run.map, diff: G.Modes.run.diff, seed: G.World.seed, hash: G.World.zone && G.World.zone.hash, host: G.Coop.isHost, timeline: !!G.ExpClassic.run, dex: G.Game.player.dex, group: !!G.Modes.run.group, mate: !!(G.LocalCoop && G.LocalCoop.mate) }));
 	const runB = await bob.E(() => ({ mode: G.Modes.run.mode, dv: G.Modes.run.dv, map: G.Modes.run.map, diff: G.Modes.run.diff, seed: G.World.seed, hash: G.World.zone && G.World.zone.hash, host: G.Coop.isHost, timeline: !!G.ExpClassic.run, dex: G.Game.player.dex,
 		league: !!(G.ExpLeague && G.ExpLeague.run), meta: !!(G.ExpMeta && G.ExpMeta.run), row: G.ExpMeta.row(), view: G.ExpClassic.view && G.ExpClassic.view.diff, line: G.ExpClassic.hudLine(G.Game.player, G.Game.st), touch: G.Touch.active }));
-	A(runA.mode === 'exp-classic' && runB.mode === 'exp-classic' && runA.dv === 15 && runB.dv === 15 && runA.map === 'viridian' && runB.diff === 'hard' && runA.diff === 'hard' && runA.seed === runB.seed && runA.hash && runA.hash === runB.hash,
+	A(runA.mode === 'exp-classic' && runB.mode === 'exp-classic' && runA.dv === 16 && runB.dv === 16 && runA.map === 'viridian' && runB.diff === 'hard' && runA.diff === 'hard' && runA.seed === runB.seed && runA.hash && runA.hash === runB.hash,
 		'both play Expedition · Classic, Viridian Forest, Hard (the lobby\'s), on the same seed: the guest rebuilt the same terrain (zone hash)', JSON.stringify({ runA, runB }).slice(0, 500));
 	A(runA.host && runA.timeline && !runB.host && !runB.timeline && runB.view === 'hard' && /HARD/.test(runB.line) && runB.touch, 'the host runs the timeline; the guest reads it (its `c` view: the tier, "HARD" on its HUD)', JSON.stringify({ line: runB.line, view: runB.view }));
 	A(runB.dex === 4 && runA.dex !== 4 && runB.league && runB.meta && Array.isArray(runB.row) && runB.row[0][0] === '3' && runA.group && !runA.mate,

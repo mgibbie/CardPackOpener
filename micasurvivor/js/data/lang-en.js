@@ -792,6 +792,7 @@ G.I18n.add({
   'MT': 'TM', 'Elige tu movimiento inicial (de tus tipos)': 'Choose your starting move (from your types)',
   'Segunda oportunidad': 'Second Chance', '+1 corazón: al caer, revives con la vida completa': '+1 heart: when you fall, revive with full HP',
   'Mochila': 'Backpack', 'Llevas 2 objetos a la vez por partida': 'Carry 2 items at once per run',
+  'Mejoras retiradas: te devolvemos {x} Pokémonedas': 'Retired upgrades: {x} Pokémonedas refunded',   // (DLC D17-D18)
   'Elige el movimiento con el que empiezas cada partida. Puedes cambiarlo gratis cuando quieras.': 'Choose the move you start every run with. You can change it for free whenever you want.',
   // ---------------- MicaSurvivor M5 lote 4: Movimientos Z (port de Android, lang_en.json) ----------------
   'Carrera Estelar': 'Starlight Dash', 'Hecatombe Pirotécnica': 'Pyrotechnic Holocaust', 'Hidrovórtice Abisal': 'Abyssal Hydro Vortex',

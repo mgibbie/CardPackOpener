@@ -288,7 +288,7 @@ G.MenuUI = (() => {
     $('upg-stage').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     const box = $('upg-list');
     box.innerHTML = '';
-    for (const u of G.Upgrades.LIST) {
+    for (const u of G.Upgrades.live()) {   // (DLC D17-D18: a retired upgrade isn't sold or listed; its price came back)
       const lvl = levels[u.id] || 0;
       const maxed = lvl >= u.max;
       const cost = maxed ? 0 : G.Upgrades.cost(u.id, lvl);

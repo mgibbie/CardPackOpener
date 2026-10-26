@@ -405,8 +405,9 @@ G.Player = class Player {
   // MicaSurvivor (M5 lote 3): dos huecos con la Mochila (main.gd _has_item: item o item2).
   hasItem(id) { return !!id && (this.item === id || this.item2 === id); }
 
-  /** Huecos de objeto: 1, o 2 con la mejora Mochila (o el pacto de la Torre, `bagPact`). */
-  itemSlots() { return this.bag || this.bagPact ? 2 : 1; }
+  /** Huecos de objeto: 1. (DLC D17, owner 2026-10-26: one equipped held item in both modes; Backpack and the Tower's Double
+   *  baggage are retired. `item2` stays readable: an old tape / snapshot can name a second item.) */
+  itemSlots() { return 1; }
 
   /** Objetos que llevas, en orden de hueco. */
   items() { return [this.item, this.item2].filter(Boolean); }

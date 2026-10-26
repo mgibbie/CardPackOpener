@@ -1714,3 +1714,18 @@ Built (`micasurvivor/README.md`, "DLC D16: every move fires"). Both modes; a del
   the whole 120 s (they fell at 111.7 / 103.3 / 91.3 s); Boss Rush falls at 90.7 s instead of 117.3 s (its third boss is Mew instead of
   Registeel: the random stream shifted). Passes twice in a row; the force-loaded run passes.
 - **Versions:** `G.Expedition.DV` 15, `x` v10.
+
+### Update (2026-10-26): D17 built, "one held item"
+Built (`micasurvivor/README.md`, "DLC D17: one held item"), as the owner changed it the same day (Expedition keeps its stacking
+inventory; both modes get exactly one equipped held-item slot). Choices and notes:
+- **Base:** `Player.itemSlots()` 1; Backpack retired (`G.Upgrades.BY.bag.retired`, `G.Upgrades.live()` for the shop) and refunded once
+  per account (`G.DB.refundRetired` at the menu: `save.rf` / `save.rfx`, reconciled like the Expedition's double payments; backup
+  first; `rollbackRefunds`); the Tower's Double baggage retired (free, no refund). `item2` still reads (old tapes, old snapshots).
+  Read-only D1: 1 of the 4 server accounts owns Backpack (1 Pokémon, 7,500 back).
+- **Expedition: had no held-item concept** (every base drop became a stacking item through `item.take`). Ours, kept small: every boss
+  also drops ONE base held item from `G.ExpLevel.K.HELD_POOL` (the 7 base held items no stacking item duplicates), seeded; base's slot
+  and replace screen. Duplicates stay stacking (Leftovers, the Choice items, Silver Powder...). D18+ can widen the pool (alphas,
+  Meowth) if the owner wants more.
+- **Versions:** `G.Expedition.DV` 16, `x` v10 (the held item is the snapshot's `it`).
+- **Golden fixtures:** re-recorded (every final save holds the profile's Backpack refund, +37,500 and 5 `rf` records; Boss Rush's
+  second item opens the replace screen at second 76 instead of filling a 2nd slot). The other sims are unchanged second by second.
