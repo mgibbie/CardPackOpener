@@ -52,6 +52,9 @@ export async function call(action, payload = {}, opts = {}) {
 export async function auth(action, username, password) {
 	const data = await call(action, { username, password });
 	if (data.token) {
+		// whose is the local game data this browser already holds? Settled before the
+		// new login is stored (site/account_silo.js; bug:1792610921028)
+		try { globalThis.MagepunkSilo?.onAuth?.(action, data.state?.username || username); } catch (e) {}
 		safeSaveStr(TOKEN_KEY, data.token);
 		safeSave(STATE_KEY, data.state);
 	}

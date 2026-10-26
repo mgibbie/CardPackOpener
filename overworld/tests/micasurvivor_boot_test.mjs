@@ -131,7 +131,7 @@ try {
 	await sleep(800);
 	const menu = await page.evaluate(() => ({ partner: G.DB.save.partner, coins: G.DB.save.coins, keys: Object.keys(localStorage), text: document.getElementById('scr-menu').innerText }));
 	A(menu.partner > 0, 'a partner is saved', menu.partner);
-	A(menu.keys.includes('micasurvivor_save.guest') && menu.keys.every(k => k.startsWith('micasurvivor_')), 'saves under micasurvivor_* keys only', menu.keys.join(','));
+	A(menu.keys.includes('micasurvivor_save.guest') && menu.keys.every(k => k.startsWith('micasurvivor_') || k === 'magepunk_local_owner_v1' /* site/account_silo.js device tag */), 'saves under micasurvivor_* keys only', menu.keys.join(','));
 	A(/MicaSurvivor/.test(menu.text) && /Based on PokéSurvivor by JPTER78/.test(menu.text), 'menu logo + credit');
 	await shot('desktop_menu.png');
 
