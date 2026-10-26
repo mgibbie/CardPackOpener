@@ -25,8 +25,13 @@ export function fireCreatureTrigger(state, c, when, extra = {}) {
 
 // condition on an ongoing trigger, judged against the event's subject card
 // (the summoned/played/dead/damaged creature) or the owner's own state
+export const ONGOING_COND_KEYS = new Set(['maxAttack', 'tribe', 'overload', 'cardType', 'keyword', 'maxHealthSubj', 'spellCost', 'maxCost', 'minCost', 'spellsThisTurn', 'otherClass', 'controlSecret', 'creature', 'nontoken', 'yourTurn', 'enemySubj', 'adjacentSelf', 'cardId', 'self', 'selfTarget', 'enemy', 'school', 'controlArtEnch', 'damageAmount', 'heroHealed', 'minAttackSelf', 'attackEqualsSelf', 'handMax', 'tribeSubj', 'dormantSelf', 'playedBefore', 'selfFullHealth', 'friendlyTarget', 'friendlySecret', 'dealtHeroDamage', 'drawsThisTurnAtLeast']);
+const _warnedCond = new Set();
 export function ongoingCondOk(state, pi, cond, ctx) {
 	const subj = ctx.minion || ctx.played || ctx.dead || ctx.damaged || ctx.frozen || null;
+	// every key below is a known condition; an unknown one FAILS CLOSED (it used to be
+	// ignored, so the trigger fired unconditionally — Crooked Cook / Careless Mechanist, 2026-10-26 audit)
+	for (const k in cond) if (!ONGOING_COND_KEYS.has(k)) { if (!_warnedCond.has(k)) { _warnedCond.add(k); console.warn(`ongoing trigger: unhandled condition key '${k}' — failing closed (add it to ongoingCondOk)`); } return false; }
 	if (cond.maxAttack != null && !(subj && subj.attack <= cond.maxAttack)) return false;
 	if (cond.tribe && !(subj && (subj.tribe || '').includes(cond.tribe))) return false;
 	if (cond.overload && !(subj && subj.overload > 0)) return false;
@@ -66,6 +71,8 @@ export function ongoingCondOk(state, pi, cond, ctx) {
 	if (cond.selfFullHealth && !(ctx.self && ctx.self.damage === 0)) return false; // Incensed Matriarch: only at full Health
 	if (cond.friendlyTarget && !(ctx.targetCreature && ctx.targetCreature.controller === pi)) return false; // Pelagos: a spell cast on a FRIENDLY minion
 	if (cond.friendlySecret && ctx.secretOwner !== pi) return false; // Orion, Mansion Manager: one of YOUR Secrets revealed
+	if (cond.dealtHeroDamage != null && (state.players[pi].damageToEnemyHeroThisTurn || 0) < cond.dealtHeroDamage) return false; // Crooked Cook: dealt N+ damage to the enemy hero this turn
+	if (cond.drawsThisTurnAtLeast != null && (state.players[pi].drawsThisTurn || 0) < cond.drawsThisTurnAtLeast) return false; // Careless Mechanist: your second draw this turn
 	return true;
 }
 

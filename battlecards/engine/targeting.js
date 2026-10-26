@@ -159,7 +159,35 @@ const CHOSEN = {
 	corrupt: { 'enemy-creature': 'enemy-creature' },
 	'mind-control-temp': { 'enemy-creature': 'enemy-creature' },
 	'set-hero-health': { 'any-hero': 'any-hero' },
+	'force-attack': { 'enemy-creature': 'enemy-creature' }, // Hysteria: the enemy creature that goes berserk
+	'all-friendly-attack-target': { 'enemy-creature': 'enemy-creature' }, // Unholy Frenzy / Devouring Swarm
+	'force-attacked-neighbor': { creature: 'creature' }, // Ramming Speed
+	'summon-enemy-minion-copy': { 'enemy-creature': 'enemy-creature' }, // Sensory Deprivation
+	'summon-copy-attack-die': { creature: 'friendly-creature' }, // Wreck'em and Deck'em: a friendly Mech
 };
+
+// A Lackey (Togwaggle / EVIL Recruiter): the five lackey_* cards
+export const isLackey = c => !!c && typeof c.id === 'string' && c.id.startsWith('lackey_');
+
+// An effect's "only if <player state>" gate, read the SAME way its handler reads it at
+// resolution (none of these change between declaring the card and resolving it). When
+// one is unmet the effect does nothing, so targetSpec must not ask for its target —
+// Gyreworm asked for a target and then dealt 0 (2026-10-26).
+export function gateUnmet(state, pi, e, card) {
+	const p = state && state.players && state.players[pi];
+	if (!p) return false;
+	if (e.requireElementalLastTurn && !p.elementalLastTurn) return true; // Gyreworm / Lilypad Lurker
+	if (e.requireControlOtherTribe && !p.board.some(c => c !== card && !isDead(c) && (c.tribe || '').includes(e.requireControlOtherTribe))) return true; // South Coast Chieftain
+	if (e.requireDeckAtMost != null && p.deck.length > e.requireDeckAtMost) return true; // Blood Shard Bristleback
+	if (e.requireHeroDamagedThisTurn && !p.heroDamagedThisTurn) return true; // Shadowblade Slinger
+	if (e.requireHeroPowerUpgraded && !(p.heroPowerUpgraded || (p.imbueCount || 0) >= 2)) return true; // Resplendent Dreamweaver
+	if (e.requireHeroHealthChanged && !p.heroHealthChangedThisTurn) return true; // Liferender / Brittlebone Destroyer
+	if (e.requireWeaponEquipped && !p.weapon) return true; // Fogsail Freebooter
+	if (e.requireQuestPlayed && !(p.questsPlayedGame > 0)) return true; // Questing Assistant
+	if (e.requireControlSecret && !p.secrets.length) return true; // Blackjack Stunner
+	if (e.requireDeckNoNeutral && p.deck.some(id => (state.cardsById[id]?.cardClass || 'neutral') === 'neutral')) return true; // Class Action Lawyer
+	return false;
+}
 
 // Returns null (no target needed) or { targets, filter(card)?, required, why }
 // `choice` selects a Choose One branch before deriving the target.
@@ -194,6 +222,7 @@ export function targetSpec(state, pi, card, choice) {
 	// Chandra's Fury, Sensory Deprivation (2026-10-12: the card resolved untargeted)
 	const _expand = list => list.flatMap(e => (!e.target && (e.then || e.else)) ? [e, ..._expand([...(e.then || []), ...(e.else || [])])] : [e]);
 	for (const e of _expand(_specEffects)) {
+		if (gateUnmet(state, pi, e, card)) continue; // Gyreworm with no Elemental last turn: no prompt for a 0-damage battlecry
 		let kind = CHOSEN[e.type]?.[e.target];
 		// "the enemy hero" is unambiguous in 1v1 but a choice with 3+ players;
 		// Joust likewise lets you pick which opponent to Joust against
@@ -214,17 +243,26 @@ export function targetSpec(state, pi, card, choice) {
 		if (e.target === 'artifact-location-or-enchantment') { filter = c => c.type === 'artifact' || c.type === 'enchantment' || c.type === 'location'; why = 'an artifact, location or enchantment'; }
 		if (e.target === 'artifact') { filter = c => c.type === 'artifact'; why = 'an artifact'; }
 		if (e.target === 'enchantment') { filter = c => c.type === 'enchantment'; why = 'an enchantment'; }
-		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
-		if (e.maxCost != null) { filter = c => (c.cost || 0) <= e.maxCost; why = `a creature that costs ${e.maxCost} or less`; }
-		if (e.minAttack != null) { filter = c => c.attack >= e.minAttack; why = `a creature with ${e.minAttack} or more Attack`; }
-		if (e.requireKeyword != null) { filter = c => c.keywords.includes(e.requireKeyword); why = `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`; }
-		if (e.requireDamaged) { filter = c => c.damage > 0; why = 'a damaged creature'; }
+		// target restrictions COMPOSE (each used to overwrite the last, and several the
+		// handlers enforce were missing here — the prompt/AI offered targets the effect
+		// then refused, or the handler never checked and destroyed the wrong creature:
+		// Azog's Merciless Executioner took a 4-Health creature, EVIL Recruiter a non-Lackey)
+		const and = (pred, w) => { const prev = filter; filter = prev ? (c => prev(c) && pred(c)) : pred; why = w; };
+		if (e.maxAttack != null) and(c => c.attack <= e.maxAttack, `a creature with ${e.maxAttack} or less Attack`);
+		if (e.maxHealth != null) and(c => hp(c) <= e.maxHealth, `a creature with ${e.maxHealth} or less Health`);
+		if (e.maxCost != null) and(c => (c.cost || 0) <= e.maxCost, `a creature that costs ${e.maxCost} or less`);
+		if (e.minAttack != null) and(c => c.attack >= e.minAttack, `a creature with ${e.minAttack} or more Attack`);
+		if (e.requireKeyword != null) and(c => c.keywords.includes(e.requireKeyword), `a creature with ${e.requireKeyword.replace(/_/g, ' ')}`);
+		if (e.requireDamaged) and(c => c.damage > 0, 'a damaged creature');
+		if (e.requireUndamaged) and(c => !(c.damage > 0), 'an undamaged creature'); // Walk the Plank
+		if (e.requireRarity) and(c => c.rarity === e.requireRarity, `a ${e.requireRarity} creature`); // Grimtotem Bounty Hunter / Garona's Last Stand
+		if (e.requireTargetTribe) and(c => !!(c.tribe || '').length, 'a creature with a creature type'); // Bugsquasher
+		if (e.requireLackey) and(c => isLackey(c), 'a friendly Lackey'); // EVIL Recruiter
 		if (e.excludeSelf) { const prev = filter; filter = c => c !== card && (!prev || prev(c)); why = (why || 'a creature') + ' other than this'; }
-			if (e.excludeTitan) { const prev = filter; filter = c => !c.titan && (!prev || prev(c)); why = 'a non-Titan minion'; } // Aman'Thul: Shape the Stars
+		if (e.excludeTitan) { const prev = filter; filter = c => !c.titan && (!prev || prev(c)); why = 'a non-Titan minion'; } // Aman'Thul: Shape the Stars
 		if (e.tribe) {
 			const tribes = e.tribe.split('|');
-			filter = c => tribes.some(t => (c.tribe || '').includes(t));
-			why = `a friendly ${e.tribe.replace(/\|/g, '/')}`;
+			and(c => tribes.some(t => (c.tribe || '').includes(t)), `a friendly ${e.tribe.replace(/|/g, '/')}`);
 		}
 		// spells need their target; creature/weapon battlecries fizzle without one.
 		// picking which opponent (enemy-hero, e.g. Joust/multi-target burn) is required.
