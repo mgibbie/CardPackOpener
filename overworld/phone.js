@@ -198,8 +198,16 @@ export function ringFrom(c) {
 	const s = state();
 	s.steps = 0; s.lastCallAt = Date.now(); save();
 	sfx('notice');
-	hud.textContent = `PHONE: ${c.name} is calling!`;
-	dialog.open(say(`Ring ring... It's ${c.cls ? c.cls + ' ' : ''}${c.name}!\n\n` + incomingText(c)));
+	// The banner belongs to the call: hanging up puts the bar back to the map name.
+	// It used to be written here and never cleared, so "PHONE: KAREN is calling!"
+	// stayed up through menus, battles and saves until the next map transition
+	// rewrote the bar (bug:1792972818943). Only our own banner is cleared — if
+	// something else wrote the bar during the call, its message stands.
+	const banner = `PHONE: ${c.name} is calling!`;
+	hud.textContent = banner;
+	dialog.open(say(`Ring ring... It's ${c.cls ? c.cls + ' ' : ''}${c.name}!\n\n` + incomingText(c)), () => {
+		if (hud.textContent === banner) hud.textContent = (world.current && world.current.map && world.current.map.name) || '';
+	});
 	return true;
 }
 
