@@ -27,10 +27,15 @@ jobs:
             micatro/mods/*/assets
           key: gate-assets-v1-${{ hashFiles('tools/cloud/*_manifest.txt') }}
       - run: npm install --no-audit --no-fund && node tools/cloud/fetch-owdata.mjs > /dev/null && node tools/cloud/fetch-assets.mjs
-      - run: node tools/ci-probe.mjs
+      - run: node tools/ci-probe.mjs || true
       - name: suites
         run: |
-          for t in $(cat tools/ci-debug-suites.txt); do node overworld/tests/run-all.mjs $t --no-retry --jobs 1 2>&1 | grep -vE '^ok  ' | head -40; done
+          printf '#!/bin/sh\nexec /usr/bin/google-chrome --blink-settings=primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2 "$@"\n' > /tmp/chrome-desktop && chmod +x /tmp/chrome-desktop
+          CHROME=/tmp/chrome-desktop node tools/ci-probe.mjs
+          for t in $(cat tools/ci-debug-suites.txt); do
+            echo "=== TZ: $t"; TZ=America/New_York node overworld/tests/run-all.mjs $t --no-retry --jobs 1 2>&1 | grep -vE '^ok  ' | head -20
+            echo "=== desktop pointer: $t"; CHROME=/tmp/chrome-desktop node overworld/tests/run-all.mjs $t --no-retry --jobs 1 2>&1 | grep -vE '^ok  ' | head -20
+          done
       - if: always()
         uses: actions/upload-artifact@v4
         with:
