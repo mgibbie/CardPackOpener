@@ -72,6 +72,11 @@ export function tick(now) {
 	tickStats.frames++;
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
+	// a tap pressed and released since the last tick (ow_input.js latchTap) is good
+	// for THIS tick only: if anything owns the screen now, it is dropped, never
+	// replayed later as a stale step out of a dialog, a battle or a warp
+	const tapNow = S.tapDir;
+	S.tapDir = null;
 	// advance the warp fade before any `loading` bail so it keeps animating in the
 	// loading=false windows on either side of a map swap (it sits at full black
 	// during the load itself, when the loop bails and the screen is frozen anyway)
@@ -236,7 +241,9 @@ export function tick(now) {
 		trainers.update(dt);
 		player.run = S.runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
-		const heldDir = heldKeys[0] || null;
+		// a tap released before this tick (ow_input.js latchTap) still counts once —
+		// delivered only to a standing player; a held key supersedes it
+		const heldDir = heldKeys[0] || (tapNow && !player.moving && !trainers.engaging ? tapNow : null);
 		const moveDir = (menuBlocking() || editView.on) ? null : heldDir;
 		if (!trainers.engaging) { tickStats.playerUpdates++; player.update(dt, moveDir); }
 		// WATCHDOG 3 — input starvation. Two ways the player can be stuck:
@@ -436,7 +443,7 @@ export function tick(now) {
 //
 // Rather than touch the ~15 call sites, a MutationObserver mirrors those two DOM
 // nodes onto the canvas. Anything that writes the bar keeps working unchanged.
-export const touchHud = { msg: '', until: 0, objective: '' };
+export const touchHud = { msg: '', until: 0, objective: '', expanded: false, truncated: false, rect: null };
 // Called by main.js at the point this setup used to run inline. As a top-level
 // statement here it ran when this module LOADED, before main.js had marked the
 // body 'touch', so the observer was never installed and the touch HUD stayed
@@ -453,33 +460,106 @@ if (document.body.classList.contains('touch')) {
 	touchHud.objective = (objEl.textContent || '').trim();
 }
 }
+// Word-wrap `text` to `maxW` canvas pixels (the current sctx font). Never asks
+// fillText to squeeze: that is what made a long objective one unreadable sliver.
+export function wrapHudText(measure, text, maxW) {
+	const lines = [];
+	let cur = '';
+	for (const word of String(text).split(/\s+/).filter(Boolean)) {
+		const next = cur ? cur + ' ' + word : word;
+		if (!cur || measure(next) <= maxW) { cur = next; continue; }
+		lines.push(cur); cur = word;
+	}
+	if (cur) lines.push(cur);
+	return lines;
+}
+// cut `lines` to `max`, ending the last kept line with the "more" marker
+function clampLines(measure, lines, max, maxW, more) {
+	if (lines.length <= max) return { lines, cut: false };
+	const out = lines.slice(0, max);
+	let last = out[max - 1];
+	while (last && measure(last + more) > maxW) last = last.replace(/\s*\S+$/, '');
+	out[max - 1] = (last || '') + more;
+	return { lines: out, cut: true };
+}
+// the canvas's CSS width and the left edge (in canvas px) of the MENU/PARTY/BAG
+// column, re-measured at most twice a second (layout reads, not per frame)
+const hudGeom = { at: -1e9, cssW: 0, btnLeft: null, btnBottom: 0 };
+function measureHudGeom(SW, SH) {
+	const now = performance.now();
+	if (now - hudGeom.at < 500) return hudGeom;
+	hudGeom.at = now;
+	const r = screen.getBoundingClientRect();
+	hudGeom.cssW = r.width || SW;
+	hudGeom.btnLeft = null; hudGeom.btnBottom = 0;
+	if (r.width && r.height) {
+		for (const id of ['t-start', 't-party', 't-bag']) {
+			const b = document.getElementById(id)?.getBoundingClientRect();
+			if (!b || !b.width || !b.height) continue;   // hidden
+			const left = (b.left - r.left) * (SW / r.width), bottom = (b.bottom - r.top) * (SH / r.height);
+			if (left >= SW || bottom <= 0) continue;     // entirely off the canvas
+			hudGeom.btnLeft = hudGeom.btnLeft == null ? left : Math.min(hudGeom.btnLeft, left);
+			hudGeom.btnBottom = Math.max(hudGeom.btnBottom, bottom);
+		}
+	}
+	return hudGeom;
+}
+// a tap on the strip shows the whole objective (or folds it back); main.js asks
+export function touchHudTap(x, y) {
+	const r = touchHud.rect;
+	if (!r || x < r.x || x > r.x + r.w || y < r.y || y > r.y + r.h) return false;
+	if (!touchHud.truncated && !touchHud.expanded) return false;
+	touchHud.expanded = !touchHud.expanded;
+	return true;
+}
 function drawTouchHud(SW, SH) {
+	touchHud.rect = null;
 	if (!document.body.classList.contains('touch')) return;
 	if (menuBlocking()) return;                       // never over a menu or a battle
 	const now = performance.now();
+	if (touchHud.objective !== touchHud._lastObjective) { touchHud._lastObjective = touchHud.objective; touchHud.expanded = false; }
 	const rows = [];
-	if (touchHud.objective) rows.push(['#9d8fd4', touchHud.objective]);
-	if (touchHud.msg && now < touchHud.until) rows.push(['#ffffff', touchHud.msg]);
-	if (!rows.length) return;
-	const pad = Math.round(SW * 0.02), fs = Math.max(11, Math.round(SW / 34));
+	// collapsed, the objective gets 3 lines and a notice 2; a tap shows it all
+	if (touchHud.objective) rows.push(['#9d8fd4', touchHud.objective, touchHud.expanded ? 99 : 3, true]);
+	if (touchHud.msg && now < touchHud.until) rows.push(['#ffffff', touchHud.msg, 2, false]);
+	if (!rows.length) { touchHud.truncated = false; return; }
+	const g = measureHudGeom(SW, SH);
+	const pad = Math.round(SW * 0.02);
+	// at least ~12 CSS px on screen, whatever the canvas's backing resolution
+	const fs = Math.max(11, Math.round(SW / 34), Math.round(12 * SW / (g.cssW || SW)));
+	const lh = Math.round(fs * 1.25);
 	sctx.save();
 	sctx.font = `${fs}px system-ui, sans-serif`;
 	sctx.textBaseline = 'top';
-	const w = Math.min(SW - pad * 2, Math.max(...rows.map(r => sctx.measureText(r[1]).width)) + pad * 2);
-	const h = rows.length * (fs + 4) + pad;
+	const measure = t => sctx.measureText(t).width;
 	// Sit UNDER the world frame when the canvas is taller than it (landscape
 	// tablets), where the desktop bar would be. On a portrait phone the frame
 	// fills the canvas, so it overlays the top-left instead — left-anchored and
 	// width-capped so it never reaches the MENU/PARTY/BAG buttons on the right.
 	const below = VIEW_H * SCALE + pad;
-	const y = (below + h + pad <= SH) ? below : pad;
+	const overlay = !(below + lh * 2 + pad * 2 <= SH);
+	let maxW = SW - pad * 2;
+	if (overlay && g.btnLeft != null && g.btnLeft > SW * 0.4) maxW = Math.min(maxW, g.btnLeft - pad * 2);
+	const textW = maxW - pad * 2;
+	let cut = false;
+	const laid = rows.map(([color, text, max, isObj]) => {
+		const c = clampLines(measure, wrapHudText(measure, text, textW), max, textW, isObj ? '… ▾' : '…');
+		if (isObj && c.cut) cut = true;
+		return [color, c.lines];
+	});
+	touchHud.truncated = cut;
+	const lines = laid.flatMap(([color, ls]) => ls.map(l => [color, l]));
+	const w = Math.min(maxW, Math.max(...lines.map(l => measure(l[1]))) + pad * 2);
+	const h = lines.length * lh + pad;
+	const y = overlay ? pad : below;
 	sctx.fillStyle = 'rgba(10,8,18,0.78)';
 	sctx.fillRect(pad, y, w, h);
 	sctx.strokeStyle = 'rgba(157,143,212,0.5)';
 	sctx.strokeRect(pad + 0.5, y + 0.5, w, h);
-	rows.forEach((r, i) => {
-		sctx.fillStyle = r[0];
-		sctx.fillText(r[1], pad * 2, y + i * (fs + 4) + 4, w - pad * 2);
+	lines.forEach((l, i) => {
+		sctx.fillStyle = l[0];
+		sctx.fillText(l[1], pad * 2, y + i * lh + Math.round(pad / 2));   // no maxWidth: wrapped, never squeezed
 	});
+	touchHud.rect = { x: pad, y, w, h, lines: lines.length, fs, maxW };
 	sctx.restore();
 }
