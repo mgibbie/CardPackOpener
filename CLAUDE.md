@@ -29,7 +29,8 @@ A fresh clone has neither (see "start setup").
   and nightly. One check, **`gate`**, is green only when every part passed: the overworld
   gate sharded over up to 16 runners (2 suites at a time each), the Battlecards node suite
   and the undefined-name lint. A PR runs the QUICK selection against its base; main, nightly
-  and a manual run (Actions → Gate → Run workflow) run FULL. Wait on it with
+  and a manual run (Actions → Gate → Run workflow) run FULL. A PR gets the FULL gate with `[full gate]` in its title
+  (or a `full-gate` label). Wait on it with
   `gh pr checks <n> --watch`; a failing shard's log (and screenshots) is an artifact
   (`gh run view <id> --log-failed`). The assets come from their Pages projects by the
   manifests in `tools/cloud/` (cached; a manifest change refetches). No secrets.

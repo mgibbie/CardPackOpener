@@ -77,8 +77,8 @@ jobs:
           node overworld/tests/run-all.mjs $ARGS --list-json | tee plan.txt   # (--changed also prints the selection)
           J=$(tail -1 plan.txt)
           echo "$J"
-          # ~8 minutes of (local, serial) suite time per shard, 1..16 shards
-          N=$(node -e "const j=JSON.parse(process.argv[1]); console.log(Math.max(1, Math.min(16, Math.ceil(j.est / 480))))" "$J")
+          # ~6 minutes of (serial) suite time per shard, 1..16 shards (the longest suite, micatro_engine_test, is ~4.5 min)
+          N=$(node -e "const j=JSON.parse(process.argv[1]); console.log(Math.max(1, Math.min(16, Math.ceil(j.est / 360))))" "$J")
           MODE=$(node -e "const j=JSON.parse(process.argv[1]); console.log(j.full ? 'full' : 'quick')" "$J")
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "n=$N" >> "$GITHUB_OUTPUT"
