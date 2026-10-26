@@ -74,6 +74,15 @@ try {
 		await page.evaluateOnNewDocument((token, st, ls) => {
 			const pad = { id: 'Pro Controller 057e', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
 			window.__owFakePads = [pad]; window.__pad = pad;
+			// (a poll of site/gamepad.js reads p.connected once: count them, so a press is held until the game has SEEN it — a fixed
+			// 70 ms press fell between two slow CI frames and was never read — and released only once a poll has seen that too)
+			let polls = 0;
+			Object.defineProperty(pad, 'connected', { get() { polls++; return true; }, enumerable: true });
+			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
+			const set = (b, on) => { pad.buttons[b] = on ? { pressed: true, value: 1 } : { pressed: false, value: 0 }; };
+			window.__padSet = async (b, on) => { set(b, on); const n = polls; await until(() => polls > n); };
+			// (two polls after the release: the frame that acted on it, then one more so its requestAnimationFrame follow-ups have run)
+			window.__padTap = async (b, hold = 70) => { const t0 = performance.now(); set(b, true); const n = polls; await until(() => polls > n && performance.now() - t0 >= hold); set(b, false); const m = polls; await until(() => polls > m + 1); };
 			try {
 				if (sessionStorage.getItem('su_init')) return;
 				sessionStorage.setItem('su_init', '1');
@@ -85,11 +94,15 @@ try {
 		}, token, token ? stateOf(ACCTS[token].user) : null, ls);
 		await page.goto(`http://localhost:${PORT}${url}`, { waitUntil: 'domcontentloaded' });
 		await waitFor(() => page.evaluate(() => !!(window.__micatro && window.__micatro.ready && document.querySelector('.b-menu-play'))), 30000);
-		const tap = async (b) => { await page.evaluate(b => { window.__pad.buttons[b] = { pressed: true, value: 1 }; }, b); await sleep(70); await page.evaluate(b => { window.__pad.buttons[b] = { pressed: false, value: 0 }; }, b); await sleep(160); };
+		const tap = async (b) => { await page.evaluate(b => window.__padTap(b, 70), b); await sleep(160); };
 		return { page, ctx, errors, tap };
 	};
 	const synced = (page) => waitFor(() => page.evaluate(async () => { const s = (await import('/micatro/js/ui/stickers.js')).stickerSyncState(); return !s || s.synced; }), 10000);
-	const openNewRun = async (page) => { await page.evaluate(() => document.querySelector('.b-menu-play').click()); await waitFor(() => page.evaluate(() => !!document.querySelector('.new-run .nr-stake')), 8000); await sleep(150); };
+	const openNewRun = async (page) => {
+		// the saved-on mods load as New Run opens, and their arrival re-applies the wanted stake (screens.js refreshStakes ->
+		// snapStake): on a slow runner that landed mid-test (the picker jumped off a locked stake). Load them first.
+		await page.evaluate(async () => { let ids = []; try { ids = JSON.parse(localStorage.getItem('micatro_mods') || '{}').ids || []; } catch { } if (ids.length) await window.__micatro.loadMods(ids); });
+		await page.evaluate(() => document.querySelector('.b-menu-play').click()); await waitFor(() => page.evaluate(() => !!document.querySelector('.new-run .nr-stake')), 8000); await sleep(150); };
 	const picker = (page) => page.evaluate(() => {
 		const r = document.querySelector('.nr-stake');
 		return { stake: r.dataset.stake, locked: r.dataset.locked === '1', name: r.querySelector('.nr-name').textContent.replace(/\s+/g, ' ').trim(), desc: r.querySelector('.nr-desc').textContent.trim(), lockIcon: !!r.querySelector('.nr-lock'), play: !document.querySelector('.b-start').disabled, deck: document.querySelector('.nr-deck .nr-name').textContent.trim(), live: r.querySelector('.nr-info').getAttribute('aria-live') };

@@ -217,6 +217,9 @@ async function open(map, x, y, { region = 'KANTO', flags = {}, vars = {}, badges
 		localStorage.setItem('magepunk_badges_v1', JSON.stringify(badges));
 		localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, story_seeded: true, intro_started: true, intro_greeted: true, ...flags }, vars }));
 		localStorage.setItem('magepunk_settings', JSON.stringify({ textSpeed: 'instant', battleAnim: 'off' }));
+		// a REPEL with the Lv 70 lead: these walks test warps, scenes and sight lines, and a 6%-a-step wild battle
+		// (Burned Tower B1F) ate the step onto the beasts' trigger tile now and then
+		localStorage.setItem('magepunk_repel_v1', '99999');
 	}, region, flags, vars, badges);
 	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=${map}&x=${x}&y=${y}`, { waitUntil: 'domcontentloaded' });
 	await boot(page, map);
@@ -328,7 +331,8 @@ try {
 		// TAKAO (2,18) watches (2,15..17): walk the west corridor into his sight
 		await page.evaluate(() => { const p = window.__ow.player; p.setTile(2, 14); p.facing = 'down'; window.__dlg = []; });
 		await step(page, 'down');
-		await sleep(2500);
+		// (he walks over before he speaks: wait for his line, not a fixed 2.5 s — a slow runner's frames made the walk longer)
+		for (let i = 0; i < 200 && !(await page.evaluate(() => window.__dlg.some(t => t.length > 3))); i++) await sleep(100);
 		const seen = await page.evaluate(() => ({ dlg: window.__dlg.slice(), battle: !!window.__ow.battle.active || !!window.__ow.trainers.engaging || window.__ow.dialog.blocking }));
 		A(seen.battle && seen.dlg.some(t => t.length > 3), '[1792312462383] stepping into TAKAO\'s sight line engages him', JSON.stringify(seen));
 		await page.close();
@@ -355,7 +359,7 @@ try {
 		const path_ = [];
 		for (let i = 0; i < 3; i++) { await step(page, 'up'); path_.push(await where(page)); if (path_[i].map !== 'BurnedTowerB1F') break; }
 		await drive(page, 30000);
-		const st = await page.evaluate(() => ({ map: window.__ow.world.current.name, released: !!(JSON.parse(localStorage.getItem('magepunk_story') || '{}').flags || {}).EVENT_RELEASED_THE_BEASTS, ladder: !!window.__ow.world.warpAt(7, 15) }));
+		const st = await page.evaluate(() => ({ battle: !!window.__ow.battle.active, map: window.__ow.world.current.name, released: !!(JSON.parse(localStorage.getItem('magepunk_story') || '{}').flags || {}).EVENT_RELEASED_THE_BEASTS, ladder: !!window.__ow.world.warpAt(7, 15) }));
 		A(path_.every(p => p.map === 'BurnedTowerB1F') && st.released, '[1792417108739] (10,9) -> (10,8) -> (10,7) -> (10,6) stays on B1F and releases the beasts', JSON.stringify({ path_, st }));
 		A(st.ladder, '...and the B1F ladder at (7,15) is still a warp');
 		await page.close();
