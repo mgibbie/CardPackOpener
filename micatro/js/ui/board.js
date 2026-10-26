@@ -1242,6 +1242,12 @@ export class Board {
     const title = titleHtml(desc.name || (d && d.name) || '', desc.name_colours || desc.colours);
     this.tip.innerHTML = `<div class="tip-main"><div class="tip-name${pc ? ' pc' : ''}">${pc ? `<span class="tip-pc">${title}</span>` : title}</div>${lines ? `<div class="tip-body">${lines}</div>` : ''}${extra}${badges ? `<div class="tip-badges">${badges}</div>` : ''}${modB ? `<div class="tip-modbadges">${modB}</div>` : ''}</div>${info}`;
     this.tip.style.display = '';
+    // A tooltip wider than the board (a phone in portrait: the card + three info boxes ran off the right edge) wraps its
+    // boxes onto another row; one that fits is left exactly as it was.
+    this.tip.style.flexWrap = ''; this.tip.style.maxWidth = ''; this.tip.style.justifyContent = '';
+    if (this.W && this.tip.scrollWidth > this.W - 16) {
+      this.tip.style.flexWrap = 'wrap'; this.tip.style.maxWidth = (this.W - 16) + 'px'; this.tip.style.justifyContent = 'center';
+    }
   }
   placeTip(x, y, area, btns) {
     const tw = this.tip.offsetWidth, th = this.tip.offsetHeight;

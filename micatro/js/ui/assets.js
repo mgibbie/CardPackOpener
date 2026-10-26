@@ -104,10 +104,11 @@ export const BACK_LIST = Object.entries(DATA.centers).filter(([k, v]) => v.set =
 // has loaded (bindModRegistry); images load lazily the first time a card asks for
 // them. Mod art is served cross-origin in production (a separate Pages project),
 // so images are requested with CORS — the card canvases feed WebGL and must not taint.
-export const MODREG = { atlases: {}, types: {}, rarities: {}, mods: {}, loc: { descriptions: {}, misc: {} }, center: () => null, seal: () => null };
+export const MODREG = { atlases: {}, types: {}, rarities: {}, mods: {}, loc: { descriptions: {}, misc: {} }, loc_colours: {}, center: () => null, seal: () => null };
 export function bindModRegistry(m) {
   if (!m) return;
   MODREG.atlases = m.ATLASES || MODREG.atlases;
+  MODREG.loc_colours = m.LOC_COLOURS || MODREG.loc_colours; // (a mod's {C:name} text colours: markup.js)
   MODREG.types = m.CONSUMABLE_TYPES || MODREG.types;
   MODREG.rarities = m.RARITIES || MODREG.rarities;
   MODREG.mods = m.MODS || MODREG.mods;

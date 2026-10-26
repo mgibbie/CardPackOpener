@@ -31,6 +31,12 @@ export const RARITIES = {};
 export const ATLASES = {};
 /** Mod localization: set -> key -> {name, text:[...]} merged from all mods. */
 export const MOD_LOC = { descriptions: {}, misc: { dictionary: {}, labels: {} } };
+/**
+ * Mod text colours (`content.loc_colours: {name: '#rrggbb'}`, names lowercase): what a `{C:name}` / `{X:name}` in a
+ * mod's text resolves to — a Lua mod's loc_colour hook or G.ARGS.LOC_COLOURS entries (Pokermon's pokermon.colours:
+ * {C:poke_hazard}, {X:poke_grass}). Read by the UI's markup (js/ui/markup.js); cosmetic, never by the engine.
+ */
+export const LOC_COLOURS = {};
 
 /**
  * SMODS.Attribute: key -> {key, keys: [object keys], alias?: [attribute keys], mod?}. Steamodded's built-in
@@ -388,6 +394,7 @@ export function registerMod(mod) {
   for (const s of C.stickers || []) { own(s); STICKERS[s.key] = s; }
   for (const [key, snd] of Object.entries(C.sounds || {})) SOUNDS[key] = { ...snd, mod: mod.id };
   for (const [name, a] of Object.entries(C.atlases || {})) ATLASES[name] = { ...a, mod: mod.id };
+  for (const [name, col] of Object.entries(C.loc_colours || {})) LOC_COLOURS[String(name).toLowerCase()] = col;
   if (C.loc) {
     for (const [set, entries] of Object.entries(C.loc.descriptions || {})) {
       MOD_LOC.descriptions[set] = MOD_LOC.descriptions[set] || {};

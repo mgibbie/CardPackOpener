@@ -60,7 +60,12 @@ export function cardView(c, withDesc) {
   // text for the card's tooltip (ui/markup.js describePlaying knows only the base enhancements, so a Flower Queen
   // explained nothing but "+10 chips"), and whether it replaces the rank and suit (SMODS replace_base_card).
   if (ctr.mod && c.ability.set === 'Enhanced' && c.base && c.base.suit) {
-    try { const d = describe(c); v.enh = { name: d.name, lines: d.lines || [] }; } catch (e) { v.enh = { name: c.ability.name, lines: [] }; }
+    try {
+      const d = describe(c);
+      v.enh = { name: d.name, lines: d.lines || [] };
+      // ... and its info_queue boxes, as Balatro shows them beside an enhanced card (Pokermon's "Hazards": how they work)
+      if (d.info && d.info.length) v.enh.info = d.info;
+    } catch (e) { v.enh = { name: c.ability.name, lines: [] }; }
     if (ctr.replace_base_card) v.enh.replace = true;
   }
   callHook('view_card', c, v);
