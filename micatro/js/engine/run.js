@@ -32,7 +32,8 @@ import { CUSTOM_DECK_ID, CUSTOM_DECK_BACK, validateDeck } from './customdeck.js'
 import { CHALLENGE_ID, findChallenge, prepareChallenge, apply_challenge, challenge_protos, challengeBack, challengeMods } from './challenge.js';
 import { SLEEVE_ID, findSleeve, sleeveFor, prepareSleeve, apply_sleeve } from './sleeve.js';
 // (Steamodded seams for Pokermon 3.9.1: opt-in contexts, Blind:calculate, the object_weights shop roll — no-ops unless a mod uses them)
-import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit } from './smods.js';
+import { wanted, calculate_seam, modify_scoring_hand, blind_calculate, SEAM_STATE, object_weights, poll_object, poll_object_type, merge_defaults, mod_calculate, seam_mod, quantum_mod_calculate, held_card_limit,
+  eor_retrigger_seam, eor_seam_center, not_eor_seam_center, eor_calculated } from './smods.js';
 
 export const STATES = {
   SELECTING_HAND: 1, HAND_PLAYED: 2, DRAW_TO_HAND: 3, GAME_OVER: 4, SHOP: 5, PLAY_TAROT: 6,
@@ -501,6 +502,9 @@ function end_round() {
   G.E_MANAGER.add_event(() => {
     let game_over = true, game_won = false;
     if (B.beats(G.GAME.chips, G.GAME.blind.chips)) game_over = false;
+    // (smods.js eor_retrigger_seam: an opted-in mod's held-card centers are evaluated per pass in the loop below)
+    const eor = eor_retrigger_seam();
+    let pceor;
     for (const j of G.jokers.cards.slice()) {
       // main_eval / beat_boss: Steamodded's end_of_round flags (vanilla jokers ignore them).
       const ectx = { end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss };
@@ -525,9 +529,10 @@ function end_round() {
       mod_calculate({ end_of_round: true, game_over, main_eval: true, beat_boss: !!G.GAME.blind.boss }, 'end_of_round');
       // Held playing cards' MOD enhancements / seals see end_of_round too (Pokermon's Hazard); Steamodded marks this
       // pass playing_card_end_of_round (Pokermon 3.9.1's Seed enhancement checks it).
-      const pceor = wanted('playing_card_end_of_round') || undefined;
+      pceor = wanted('playing_card_end_of_round') || undefined;
       for (const hc of G.hand.cards.slice()) {
         const hctx = { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss, ...(pceor ? { playing_card_end_of_round: true } : {}) };
+        if (eor) { mod_card_calculate(hc, hctx, not_eor_seam_center); continue; } // (the seam's centers: card by card below)
         mod_card_calculate(hc, hctx);
         // ... and a quantum MOD enhancement's own calculate (opted-in mods only: smods.js quantum_mod_calculate)
         quantum_mod_calculate(hc, hctx);
@@ -564,8 +569,16 @@ function end_round() {
     for (let i = 0; i < G.hand.cards.length; i++) {
       const hc = G.hand.cards[i];
       const reps = [1];
+      let reach = true; // (seam) Steamodded only runs a pass while the one before it calculated something
       for (let j = 0; j < reps.length; j++) {
         if (reps[j] !== 1) card_eval_status_text((reps[j].jokers || reps[j].seals).card, 'jokers', null, null, null, reps[j].jokers || reps[j].seals);
+        let ms;
+        if (eor && reach) {
+          // the opted-in mod enhancement / seal (Pokermon's Hazard) and quantum enhancements, again on every reached pass
+          const hctx = { end_of_round: true, cardarea: G.hand, game_over, beat_boss: !!G.GAME.blind.boss, ...(pceor ? { playing_card_end_of_round: true } : {}) };
+          ms = mod_card_calculate(hc, hctx, eor_seam_center);
+          quantum_mod_calculate(hc, hctx);
+        }
         const effects = [hc.get_end_of_round_effect()];
         for (const jk of G.jokers.cards) {
           const ev = jk.calculate_joker({ cardarea: G.hand, other_card: hc, individual: true, end_of_round: true });
@@ -588,6 +601,7 @@ function end_round() {
           if (ef.extra) card_eval_status_text(hc, 'extra', null, null, null, ef.extra);
         }
         if (ACTIVE_MODS.length) callHook('held_card_evaluated', hc, effects, 'end_of_round'); // (Nacho 1.7.9's Dedenne)
+        if (eor && reach) reach = eor_calculated(ms, effects);
       }
     }
     draw_from_hand_to_discard();

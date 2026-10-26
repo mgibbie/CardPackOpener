@@ -1,6 +1,6 @@
 // Every mod Micatro ships, loaded on demand (a mod's code and data only
 // download when a run enables it). Order = default display order.
-import { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC, resolveMods } from './registry.js';
+import { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC, LOC_COLOURS, resolveMods } from './registry.js';
 import { P_CENTERS, P_STAKES, P_SEALS } from '../engine/core.js';
 
 export const AVAILABLE = [
@@ -121,7 +121,7 @@ export async function loadMods(ids) {
 // the registry plus dependency bookkeeping over AVAILABLE (which is known
 // before any mod module has downloaded).
 
-export { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC };
+export { MODS, ATLASES, CONSUMABLE_TYPES, RARITIES, MOD_LOC, LOC_COLOURS };
 
 /** A registered center (mod or base) by key — e.g. a mod deck's art. */
 export const centerByKey = (key) => P_CENTERS[key] || null;

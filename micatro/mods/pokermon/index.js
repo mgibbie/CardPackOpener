@@ -88,7 +88,7 @@ import { view_card, SERIES_A_ANIM } from './systems/anim.js';
 import { CHALLENGES } from './challenges.js';
 import { SLEEVES } from './sleeves.js';
 import { POKE_UI } from './ui.js';
-import { cfg } from './systems/utils.js';
+import { cfg, hazard_deal_tip } from './systems/utils.js';
 import { family_win_keys, set_family } from './systems/evolution.js';
 import { runbadge_hooks as RB, runbadge_view } from './systems/runbadges.js';
 import { ELITE_STAKE, elite_boss_eligible } from './stakes.js';
@@ -573,6 +573,25 @@ for (const f of DATA.groups.stickers) for (const item of listOf(f)) {
     const T = s.type[0].toUpperCase() + s.type.slice(1);
     OTHER[s.key] = { name: 'Type', text: ['{X:' + s.type + ',C:white}' + T + '{}'] };
   }
+  // House tooltips: how Hazards work (tester reports, 2026-10-26: "Hazards aren't working as intended" — they were; the rules
+  // were just never said). Extra info_queue entries beside 3.9.1's own text (systems/utils.js hazard_rules_tip / hazard_deal_tip).
+  OTHER.poke_hazard_rules = { name: 'Hazards', text: [
+    'Stay in your deck until',
+    'destroyed while {C:attention}held{}',
+    '{C:inactive}(playing or discarding',
+    '{C:inactive}one keeps it)',
+    'Take up {C:attention}hand{} slots:',
+    '{C:attention}discard{} them to draw',
+  ] };
+  OTHER.poke_hazard_deal = { name: 'Hazards', text: [
+    'At most {C:attention}#1#{} a round',
+    '{C:inactive}(the {C:poke_hazard}hazard limit{C:inactive})',
+    'Stay in your deck',
+    'until destroyed',
+    'while {C:attention}held{}',
+    'Take up {C:attention}hand{} slots:',
+    '{C:attention}discard{} to draw',
+  ] };
   // The Jirachi tag (tags1.lua: no_collection, no loc entry — it showed its raw key while on the HUD).
   const TAG = (DATA.loc.descriptions.Tag = DATA.loc.descriptions.Tag || {});
   if (!TAG.tag_poke_jirachi_tag) TAG.tag_poke_jirachi_tag = { name: 'Jirachi Tag', text: ["Jirachi grants a wish:", 'opens a free {C:attention}Wish Pack{}', 'when the next Blind is chosen'] };
@@ -655,6 +674,13 @@ const hooks = {
     if (desc && typeof cl === 'number' && cl !== 0 && (card.ability.set === 'Default' || card.ability.set === 'Enhanced')) {
       (desc.info = desc.info || []).push({ key: 'generic_card_limit_pc', name: 'Hand Size', lines: [(cl > 0 ? '+' : '-') + Math.abs(cl) + ' hand size'] });
     }
+    // House: a card showing 3.9.1's Hazard Layer tooltip (every hazard joker, Nacho's Carbink) also gets "Hazards" (how they
+    // work, systems/utils.js hazard_deal_tip) — LAST, after 3.9.1's own entries, so it never pushes one of them out of the
+    // tooltip (the board shows three; with more it is the one left out).
+    if (desc && Array.isArray(desc.info) && desc.info.some((i) => i && i.key === 'hazard_level') && !desc.info.some((i) => i && i.key === 'poke_hazard_deal')) {
+      const t = hazard_deal_tip(), d = DATA.loc.descriptions.Other[t.key];
+      if (d) desc.info.push({ key: t.key, name: d.name, lines: d.text.map((l) => l.replace(/#(\d+)#/g, (m, n) => String(t.vars[n - 1] ?? ''))) });
+    }
     if (card.config.center.mod || !card.ability || card.ability.set !== 'Joker' || !desc) return;
     const b = type_badge(card);
     if (b && Array.isArray(desc.badges)) desc.badges.push(b);
@@ -735,7 +761,10 @@ export const POKERMON = registerMod({
   // 17 = the leftovers batch: the Pocket Packs' 3.9.1 contents (create_item(seed): the 'pocket_evo_item' roll, poll_evo_item,
   // soulable Items with key_append 'pocket'; no c_keys) and the Debris Sleeve's alt on the Debris Deck (poke_negative_hazards:
   // every Hazard card is +1 hand size while held). (The Series A art option is cosmetic: no rev.)
-  contentRev: 17,
+  // 18 = the Hazard follow-ups: a Mime / Red Seal retrigger of a held Hazard rolls its destroy again when that card also did
+  // something at end of round (Gold via Nacho's Carbink, a Blue Seal's Planet), as Steamodded's calculate_end_of_round_effects
+  // (js/engine/smods.js eor_retrigger_seam); + the Hazard tooltips (text only).
+  contentRev: 18,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
@@ -753,7 +782,7 @@ export const POKERMON = registerMod({
     unlimited_energy: OPT(false, 'Unlimited Energy'),
     precise_energy: OPT(true, 'Precise Energy scaling'),
     shiny_playing_cards: OPT(false, 'Shiny on playing cards'),
-    hazards_on: OPT(true, 'Hazards allowed'),
+    hazards_on: OPT(true, 'Hazard Pokémon in shop'), // (3.9.1's "Hazards allowed": only a pool filter — owned ones still deal)
     detailed_tooltips: OPT(true, 'Detailed tooltips'),
     previous_evo_stickers: OPT(true, 'Previous-evo stake stickers'),
     gen_oneb: OPT(true, 'Gen 1'),
@@ -784,6 +813,14 @@ export const POKERMON = registerMod({
     // ones resolve to them (create_card, pools, CONSUMABLE_TYPES, loc, and 3.9.1 data whose set is the new name).
     set_aliases: { poke_energy: 'Energy', poke_item: 'Item' },
     attributes: POKE_ATTRIBUTES, // (pokeconstants.lua's SMODS.Attribute list; systems/attributes.js)
+    // 3.9.1 pokesprites.lua pokermon.colours + its loc_colour hook: {C:poke_<name>} / {X:poke_<name>} in the text are these
+    // colours (the Hazard layer's bronze {C:poke_hazard}, the Pink Seal's {C:poke_pink}, the types' {X:poke_grass}...). Cosmetic.
+    loc_colours: {
+      poke_dark: '#0086a5', poke_lightning: '#f8f800', poke_fire: '#f81020', poke_water: '#38b8f8', poke_earth: '#e97333',
+      poke_fairy: '#ff3db6', poke_fighting: '#b85838', poke_colorless: '#c8c0f8', poke_psychic: '#c135ff', poke_metal: '#888080',
+      poke_grass: '#289830', poke_dragon: '#c8a800', poke_bird: '#f7b58c', poke_pink: '#ff7abf', poke_pocket: '#e8c069',
+      poke_hazard: '#ba7333', poke_sun: '#f48e62', poke_rain: '#6169ff', poke_sand: '#e1c019', poke_snow: '#82c8e8',
+    },
     rarities: [
       { key: 'poke_safari', name: 'Safari', weight: 0, badge_colour: '#F2C74E' },
       { key: 'poke_mega', name: 'Mega', weight: 0, badge_colour: '#E8578E' },

@@ -387,6 +387,14 @@ export function poke_get_hazard_level_vars() {
 }
 /** The Hazard Layer tooltip (3.9.1: {set = 'Other', key = 'hazard_level', vars = get_hazard_level_vars()}). */
 export const hazard_level_tip = () => ({ set: 'Other', key: 'hazard_level', vars: poke_get_hazard_level_vars() });
+/**
+ * House tooltips (not in 3.9.1; tester reports, 2026-10-26): how Hazards work, as an extra info_queue entry beside 3.9.1's
+ * own text (index.js has their loc). hazard_rules_tip: the Hazard card's (they stay in the deck, only a held one can go,
+ * they take hand slots); hazard_deal_tip: the hazard jokers' (+ the limit, which the Hazard Layer's "#1#/#2#" doesn't name;
+ * index.js's describe hook appends it after any Hazard Layer tooltip).
+ */
+export const hazard_rules_tip = () => ({ set: 'Other', key: 'poke_hazard_rules' });
+export const hazard_deal_tip = () => ({ set: 'Other', key: 'poke_hazard_deal', vars: [G.GAME ? (G.GAME.poke_hazard_max ?? 3) : 3] });
 /** pokermon.change_growth_level: extra times a Seed card grows when scored. */
 export function poke_change_growth_level(mod) {
   G.GAME.poke_growth_level = (G.GAME.poke_growth_level ?? 0) + mod;
