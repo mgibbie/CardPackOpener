@@ -113,6 +113,10 @@ const { OW_RESET_KEYS, OW_KEEP_KEYS } = await import('../../site/owreset.js');
 		page.on('pageerror', e => pageErrors.push(e.message));
 
 		const seed = (user) => page.evaluate((u) => {
+			// this test swaps identities by overwriting the token in one browser, which
+			// the per-account silo (site/account_silo.js) would rightly treat as a
+			// SECOND account: drop the owner tag so each identity owns the seeded keys
+			localStorage.removeItem('magepunk_local_owner_v1');
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: u }));
 			// overworld progress
