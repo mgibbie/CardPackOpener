@@ -27,18 +27,11 @@ jobs:
             micatro/mods/*/assets
           key: gate-assets-v1-${{ hashFiles('tools/cloud/*_manifest.txt') }}
       - run: npm install --no-audit --no-fund && node tools/cloud/fetch-owdata.mjs > /dev/null && node tools/cloud/fetch-assets.mjs
-      - run: node tools/ci-probe.mjs || true
       - name: suites
         env:
           TZ: America/New_York
         run: |
-          which Xvfb xvfb-run || true
-          (Xvfb :99 -screen 0 1920x1080x24 >/dev/null 2>&1 &) ; sleep 2
-          DISPLAY=:99 node tools/ci-probe.mjs || true
-          printf '#!/bin/bash\nargs=()\nfor a in "$@"; do case "$a" in --headless*) ;; *) args+=("$a");; esac; done\nexec /usr/bin/google-chrome "${args[@]}"\n' > /tmp/chrome-headful && chmod +x /tmp/chrome-headful
-          for t in $(cat tools/ci-debug-suites.txt); do
-            echo "=== headful Xvfb: $t"; DISPLAY=:99 CHROME=/tmp/chrome-headful node overworld/tests/run-all.mjs $t --no-retry --jobs 1 2>&1 | grep -vE '^ok  ' | head -20
-          done
+          timeout 200 node tools/ci-bc-debug.mjs 2>&1 | cut -c1-600
       - if: always()
         uses: actions/upload-artifact@v4
         with:
