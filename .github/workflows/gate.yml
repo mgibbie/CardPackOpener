@@ -19,6 +19,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   schedule:
     - cron: "30 8 * * *" # 08:30 UTC nightly, FULL
   workflow_dispatch:
@@ -59,9 +60,14 @@ jobs:
           node-version: "22"
       - name: Plan the shards
         id: plan
+        env:
+          # a PR asks for the FULL gate with "[full gate]" in its title or a "full-gate" label
+          PR_FULL: ${{ github.event_name == 'pull_request' && (contains(github.event.pull_request.title, '[full gate]') || contains(github.event.pull_request.labels.*.name, 'full-gate')) }}
+          EVENT: ${{ github.event_name }}
+          FULL_INPUT: ${{ inputs.full }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] || { [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.full }}" != "true" ]; }; then
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then git fetch --depth=200 origin main; BASE=origin/main; else BASE=HEAD^1; fi
+          if { [ "$EVENT" = "pull_request" ] && [ "$PR_FULL" != "true" ]; } || { [ "$EVENT" = "workflow_dispatch" ] && [ "$FULL_INPUT" != "true" ]; }; then
+            if [ "$EVENT" = "workflow_dispatch" ]; then git fetch --depth=200 origin main; BASE=origin/main; else BASE=HEAD^1; fi
             ARGS="--changed --base $BASE"
           else
             ARGS=""
@@ -88,7 +94,7 @@ jobs:
         with:
           node-version: "22"
       - id: cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             overworld/data
@@ -144,32 +150,47 @@ jobs:
           if [ "${{ needs.plan.outputs.mode }}" = "quick" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then git fetch --depth=200 origin main; fi
           set -o pipefail
           node overworld/tests/run-all.mjs ${{ needs.plan.outputs.args }} --shard ${{ matrix.shard }}/${{ needs.plan.outputs.n }} --jobs 2 2>&1 | tee gate-shard-${{ matrix.shard }}.log
+      # every shard's log (the summary reads them; gate-shard.mjs --update refreshes the timings from them)
       - name: Upload the shard log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gate-shard-${{ matrix.shard }}
-          path: |
-            gate-shard-${{ matrix.shard }}.log
-            overworld/tests/*.png
+          path: gate-shard-${{ matrix.shard }}.log
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Upload the screenshots of a failed shard
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-shots-${{ matrix.shard }}
+          path: overworld/tests/*.png
           retention-days: 14
           if-no-files-found: ignore
 
   battlecards:
+    # the Battlecards engine suite (~620 small node suites, ~5 min serial), every 3rd suite per job
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: battlecards ${{ matrix.shard }}/3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - name: Battlecards node suite
-        run: node battlecards/tests/run-all.mjs
+        run: node battlecards/tests/run-all.mjs --shard ${{ matrix.shard }}/3
       # the main.js split's safety net: no overworld module may use a name it
       # doesn't declare or import (ESLint no-undef; needs only the dev deps)
       - name: Install dev dependencies
+        if: matrix.shard == 1
         run: npm install --no-audit --no-fund
       - name: Overworld undefined-name check
+        if: matrix.shard == 1
         run: node overworld/tests/undef_test.mjs
 
   gate:
