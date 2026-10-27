@@ -1,5 +1,17 @@
 // compose_missing_pokermon_jokers.mjs — card art for every canonical Pokemon that has no Pokermon joker yet (the design
-// wiki's "Pokermon jokers not in the game yet" section). Owner rule: real joker art, never a placeholder — the PROPER
+// wiki's "Pokermon jokers not in the game yet" section).
+//
+// UPSTREAM FIRST (owner, 2026-10-27: "upgrade all of that to the 'upstream' art in every instance where it is possible"): Pokermon
+// 3.9.1's sprite table (functions/pokespriteload.lua PokemonSprites, snapshot tools/micatro/specs/pokermon_391_sprite_table.json
+// from gen_pokermon_391_sprite_table.mjs) draws a finished card for many species it has no joker for yet. Where it has one, the
+// wiki card IS that card: the cell the game would draw (the same lookup as `poke_sprite391` / data391.js sprites), cropped
+// byte-for-byte from the shipped 3.9.1 sheet (micatro/mods/pokermon/assets/2x/Basic Series/<atlas>-391.png, the Shiny from
+// <atlas>Shiny-391.png); a card with a floating soul layer (Legendaries, Ultra Beasts, Paradoxes) gets its soul cell composited
+// over it (alpha "over", as the game draws it at rest). A multi-cell entry (Vivillon's patterns...) shows its first cell, as
+// data391.js does. A species is matched to its entry by name (the key, else the key and entry name with punctuation dropped:
+// tapukoko = tapu_koko). Only where upstream has no entry, or its cell is empty on the sheet, is the card COMPOSED, below.
+//
+// COMPOSED: owner rule: real joker art, never a placeholder — the PROPER
 // Pokermon frame for the card plus the Pokemon's battle sprite from the overworld battle system (the file battle.js
 // draws), and a Shiny variant. Built on compose_pokermon_joker_art.mjs (same frame reconstruction, name font, sprite
 // scale / placement / outline and battle.js shiny filter); this script picks the frame and the background itself.
@@ -22,7 +34,7 @@
 //   * Long names are set with no letter gap (upstream's banner is 50 px wide); accents are dropped (Flabebe).
 //
 //   node tools/micatro/compose_missing_pokermon_jokers.mjs [--out designwiki/sprites/pokermon_jokers] [--only 293,294]
-//   writes <out>/<dex4>.png and <out>/<dex4>_shiny.png (142 x 190 RGBA), and prints a summary. Deterministic: the same
+//   writes <out>/<dex4>.png and <out>/<dex4>_shiny.png (142 x 190 RGBA: upstream's card, else composed), and prints a summary. Deterministic: the same
 //   inputs give byte-identical files (designwiki_pokermon_jokers_test re-composes them and compares).
 import fs from 'fs';
 import path from 'path';
@@ -32,6 +44,9 @@ import { computeMissing, ROOT, STAGE_LABEL } from './pokermon_missing_jokers.mjs
 
 export const SHEET = 'Natdex', ATLAS = 'poke_AtlasJokersBasicNatdex391';
 export const OUT_DEFAULT = path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
+export const SPRITE_TABLE = path.join(ROOT, 'tools/micatro/specs/pokermon_391_sprite_table.json');
+/** Opaque pixels a cell needs (of 142 x 190 = 26980; a whole card with its rounded corners is ~25400+) to count as drawn. */
+export const MIN_OPAQUE = 20000;
 /** Mythical species (Showdown's "Mythical" tag): their Legendary cards carry upstream's M mark instead of the L. */
 export const MYTHICAL = new Set([151, 251, 385, 386, 489, 490, 491, 492, 493, 494, 647, 648, 649, 719, 720, 721, 801, 802, 807, 808, 809, 893, 1025]);
 const MIN_CLUSTER = 5, SIM = 0.3, BALL_AGREE = 0.7;
@@ -102,7 +117,8 @@ export async function loadContext(opts = {}) {
     for (const g of varied) if (mode(g.map((c) => c.cell.normal[p]))[1] >= g.length * 0.9) yes++;
     if (yes * 2 > varied.length) furniture.add(p);
   }
-  const ctx = { M, assets, data, sheets, cards, clusters, furniture, cache: new Map() };
+  const table = opts.table || JSON.parse(fs.readFileSync(SPRITE_TABLE, 'utf8')).sprites;
+  const ctx = { M, assets, data, sheets, cards, clusters, furniture, table, cache: new Map() };
   return ctx;
 }
 
@@ -249,19 +265,81 @@ export function composeSpecies(ctx, s) {
   return out;
 }
 
+// ------------------------------------------------------------ upstream cards
+const normName = (n) => String(n).toLowerCase().replace(/[^a-z0-9]/g, '');
+/** The 3.9.1 sprite-table entry for a species ({name, atlas, pos, soul?, multi?}), or null: by key, else by key / name minus punctuation. */
+export function upstreamEntry(table, s) {
+  let name = table[s.key] ? s.key : null;
+  if (!name) {
+    const hits = Object.keys(table).filter((n) => normName(n) === normName(s.key));
+    if (hits.length === 1) name = hits[0];
+  }
+  return name ? { name, ...table[name] } : null;
+}
+/** One 142 x 190 cell of a 3.9.1 sheet, the raw RGBA bytes as shipped. */
+export function cropCell(sheet, [cx, cy]) {
+  if ((cx + 1) * C.CELL_W > sheet.w || (cy + 1) * C.CELL_H > sheet.h) throw new Error(`cell ${cx},${cy} is outside ${sheet.name}`);
+  const out = Buffer.alloc(C.CELL_W * C.CELL_H * 4), row = C.CELL_W * 4;
+  for (let y = 0; y < C.CELL_H; y++) { const at = ((cy * C.CELL_H + y) * sheet.w + cx * C.CELL_W) * 4; sheet.rgba.copy(out, y * row, at, at + row); }
+  return out;
+}
+export const opaqueCount = (rgba) => { let n = 0; for (let i = 3; i < rgba.length; i += 4) if (rgba[i]) n++; return n; };
+/** `top` over `base` (straight alpha, integer maths, deterministic). */
+export function overlay(base, top) {
+  const out = Buffer.from(base);
+  for (let i = 0; i < out.length; i += 4) {
+    const ta = top[i + 3];
+    if (!ta) continue;
+    if (ta === 255) { top.copy(out, i, i, i + 4); continue; }
+    const ba = out[i + 3], oa = ta + Math.round(ba * (255 - ta) / 255);
+    for (let k = 0; k < 3; k++) out[i + k] = oa ? Math.round((top[i + k] * ta + out[i + k] * ba * (255 - ta) / 255) / oa) : 0;
+    out[i + 3] = oa;
+  }
+  return out;
+}
+/** A 3.9.1 sheet by its atlas name (AtlasJokersBasicGen06 / ...Shiny). */
+const sheetOf = (ctx, atlas) => C.loadSheet(ctx.assets, atlas.replace(/^AtlasJokersBasic/, ''));
+/** The upstream card for a species ({ normal, shiny, entry, recipe }), or null when upstream has none (no entry / an empty cell). */
+export function upstreamArt(ctx, s) {
+  const e = upstreamEntry(ctx.table, s);
+  if (!e) return null;
+  const out = { entry: e };
+  for (const variant of ['normal', 'shiny']) {
+    const sheet = sheetOf(ctx, e.atlas + (variant === 'shiny' ? 'Shiny' : ''));
+    const base = cropCell(sheet, e.pos);
+    if (opaqueCount(base) < MIN_OPAQUE) return null;
+    let img = base;
+    if (e.soul) {
+      const soul = cropCell(sheet, e.soul);
+      if (!opaqueCount(soul)) return null;
+      img = overlay(base, soul);
+    }
+    out[variant] = img;
+  }
+  out.recipe = { upstream: `Pokermon 3.9.1 ${e.atlas}-391.png cell ${e.pos.join(',')}` + (e.soul ? ` + soul ${e.soul.join(',')}` : '')
+    + ` (pokespriteload.lua "${e.name}")` + (e.multi ? `; the first of its ${e.multi} cells` : '') };
+  return out;
+}
+/** The wiki card for a species: upstream's where it has one, else composed. { source: 'upstream' | 'composed', normal, shiny, recipe }. */
+export function artFor(ctx, s) {
+  const up = upstreamArt(ctx, s);
+  if (up) return { source: 'upstream', ...up };
+  return { source: 'composed', ...composeSpecies(ctx, s) };
+}
+
 export const fileOf = (dex, shiny) => String(dex).padStart(4, '0') + (shiny ? '_shiny' : '') + '.png';
 
-/** Compose every missing species into `out`; returns [{dex, recipe}]. */
+/** Write every missing species' card into `out` (upstream's, else composed); returns [{dex, source, recipe}]. */
 export async function composeAll({ out = OUT_DEFAULT, only = null, ...opts } = {}) {
   const ctx = await loadContext(opts);
   fs.mkdirSync(out, { recursive: true });
   const res = [];
   for (const s of ctx.M.missing) {
     if (only && !only.has(s.dex)) continue;
-    const r = composeSpecies(ctx, s);
+    const r = artFor(ctx, s);
     fs.writeFileSync(path.join(out, fileOf(s.dex, false)), C.encode(C.CELL_W, C.CELL_H, r.normal));
     fs.writeFileSync(path.join(out, fileOf(s.dex, true)), C.encode(C.CELL_W, C.CELL_H, r.shiny));
-    res.push({ dex: s.dex, recipe: r.recipe });
+    res.push({ dex: s.dex, source: r.source, recipe: r.recipe });
   }
   // a species that got a joker since the last run: its card goes (only on a full run, and only our own <dex4>[_shiny].png)
   if (!only) {
@@ -279,5 +357,6 @@ if (isMain) {
   const only = arg('only') ? new Set(arg('only').split(',').map(Number)) : null;
   const { ctx, res } = await composeAll({ out, only });
   const big = [...ctx.clusters.values()].filter((c) => c.length >= MIN_CLUSTER).length;
-  console.log(`composed ${res.length} species (${res.length * 2} files) into ${out}; ${ctx.cards.length} sheet cards, ${ctx.clusters.size} scenes (${big} with ${MIN_CLUSTER}+ cards)`);
+  const up = res.filter((r) => r.source === 'upstream').length;
+  console.log(`wrote ${res.length} species (${res.length * 2} files) into ${out}: ${up} upstream, ${res.length - up} composed; ${ctx.cards.length} sheet cards, ${ctx.clusters.size} scenes (${big} with ${MIN_CLUSTER}+ cards)`);
 }
