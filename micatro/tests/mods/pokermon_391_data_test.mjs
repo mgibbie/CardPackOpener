@@ -5,7 +5,7 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 18 (pin '3.9.1+r18', the Hazard follow-ups (held-Hazard retriggers); r17 the leftovers batch; r16 the seals fix; batch 17 was r15 (non-Pokémon jokers, blinds, Elite, challenges, object_weights); batch 16 was r14; sub-batch 15b was r13, sub-batch 15 was r12, sub-batch 14 r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 19 (pin '3.9.1+r19', the owner's 25 new jokers; r18 the Hazard follow-ups (held-Hazard retriggers); r17 the leftovers batch; r16 the seals fix; batch 17 was r15 (non-Pokémon jokers, blinds, Elite, challenges, object_weights); batch 16 was r14; sub-batch 15b was r13, sub-batch 15 was r12, sub-batch 14 r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
@@ -28,17 +28,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 18, 'Pokermon is version 3.9.1, contentRev 18', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r18', 'its pin is 3.9.1+r18', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 19, 'Pokermon is version 3.9.1, contentRev 19', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r19', 'its pin is 3.9.1+r19', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r18', 'a new run is pinned 3.9.1+r18', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r19', 'a new run is pinned 3.9.1+r19', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r18', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 18). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r19', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 19). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
@@ -195,7 +195,9 @@ else {
   // (batch 17: the five new boss blinds and the Ludicolo card; pokermon_391_batch17_test.mjs checks their art)
   const NEW_391 = new Set(['c_poke_miracleseed', 'c_poke_heavyboots', 'm_poke_seed', 'c_poke_meteorite', 'c_poke_berry_juice_mega',
     'bl_poke_mirror', 'bl_poke_rocket', 'bl_poke_star', 'bl_poke_gray_godfather', 'bl_poke_white_executive', 'm_poke_ludicolo',
-    ...Object.keys(D391.new_jokers || {}).map((n) => 'j_poke_' + n)]);
+    ...Object.keys(D391.new_jokers || {}).map((n) => 'j_poke_' + n),
+    // (the owner's designs: new to the port, no 3.2.1 joker to compare; pokermon_new_jokers_test.mjs checks their 3.9.1 cells)
+    ...(P.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)]);
   const cards = [...C2.centers, ...C2.blinds, ...C2.stickers, ...MODS.pokermon.sleeves].filter((c) => !NEW_391.has(c.key) && (/391$/.test(c.atlas || '') && c.pos && !/AtlasJokersBasicOthers391|AtlasDecksBasic391/.test(c.atlas) || ['j_poke_rival', 'b_poke_pokemondeck'].includes(c.key)));
   const fileOf = (a) => decodeURIComponent(ATLASES[a].src).replace(/^.*\/assets\/2x\//, '');
   const cell = (a, pos) => { const A = ATLASES[a], cw = (A.px || 71) * 2, chh = (A.py || 95) * 2; return [pos.x * cw, pos.y * chh, cw, chh]; };
@@ -229,7 +231,7 @@ else {
   // The moved jokers (3.9.1 re-laid the Natdex legendaries / forms into the Gen sheets): their new cells, by name.
   for (const n of ['aegislash', 'arceus', 'vivillon', 'flabebe', 'pumpkaboo', 'gourgeist', 'zygarde']) {
     const c = C(n);
-    if (!c) continue;
+    if (!c || NEW_391.has(c.key)) continue; // (Aegislash is one of the owner's designs: no 3.2.1 joker)
     ok(same.includes(c.key) || touched.some((s) => s.startsWith(c.key + ' ')), `moved by 3.9.1: ${n} (${c.atlas} ${c.pos.x},${c.pos.y}) shows its 3.2.1 picture`);
   }
   // Unown is on its 3.9.1 card since batch 10b (the Unown rework); the add-ons keep the 3.2.1 sheets.

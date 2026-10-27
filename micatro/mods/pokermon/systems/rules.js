@@ -12,7 +12,8 @@
  *   is_face           Probopass: Stone Cards are face cards
  *   set_debuff        debufffunctions.lua: fainted Baby Pokémon stay debuffed for the rest of
  *                     the round; Gholdengo can't be debuffed, Tangrowth protects Wild Cards,
- *                     Tentacruel protects 10s
+ *                     Tentacruel protects 10s; the owner's designs: Kubfu / Urshifu can't be debuffed,
+ *                     Single Strike Urshifu protects every playing card (Unseen Fist)
  *   set_cost          Minun ($1 off Jokers, Boosters, consumables), Chimecho (free Vouchers), Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
  *                     sell value at least $1, Unown sells for $0
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
@@ -88,6 +89,9 @@ export function set_debuff(card) {
     return (G.STATE === S.SELECTING_HAND || G.STATE === S.HAND_PLAYED || G.STATE === S.DRAW_TO_HAND) ? true : undefined;
   }
   if (card.ability.name === 'gholdengo') return 'prevent_debuff';
+  // (the owner's designs, jokers/pokejokers_designs.js: Inner Focus / Unseen Fist)
+  if (card.ability.name === 'kubfu' || card.ability.name === 'urshifu_single' || card.ability.name === 'urshifu_rapid') return 'prevent_debuff';
+  if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('urshifu_single').length) return 'prevent_debuff';
   if (card.ability.name === 'Wild Card' && find_joker('tangrowth').length) return 'prevent_debuff';
   if (card.get_id() === 10 && find_joker('tentacruel').length) return 'prevent_debuff';
   return undefined;

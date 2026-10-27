@@ -78,6 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
+import { DESIGN_FAMILIES, DESIGN_LOC } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -252,7 +253,8 @@ const SPRITES = DATA.globals.PokemonSprites;
  * sheet becomes its 391 twin in to391). A list of positions = a multi-sprite Pokémon: Micatro shows the first.
  */
 function jokerSprite391(item, c) {
-  const s = D391.sprites[item.name];
+  // (the owner's designs carry their 3.9.1 cell themselves: jokers/pokejokers_designs.js poke_sprite391)
+  const s = D391.sprites[item.name] || item.poke_sprite391;
   if (!s) return false;
   c.atlas = 'poke_' + s.atlas;
   c.pos = { ...s.pos };
@@ -468,11 +470,18 @@ for (const f of D391.families || []) set_family(f);
 // Hisuian Qwilfish / Overqwil) aren't in data.js: a port defines them in full — static fields (pos, config,
 // rarity, cost, stage, ptype, gen, atlas as the Lua names it, ...) plus behaviour — and jokerCenter builds
 // them exactly like data.js's (withStatic), so their atlas / sprite / config.extra.ptype come out the same way.
+// A definition with `poke_after` (the owner's designs: jokers/pokejokers_designs.js) goes right after that joker (Pokédex order), else last.
 for (const [name, def] of Object.entries(DEFS.jokers)) {
   if (dataJokerNames.has(name)) continue;
   if (!def.stage || def.rarity === undefined) throw new Error(`pokermon: joker '${name}' is not in data.js and its definition has no static data (stage/rarity/pos/config)`);
-  centers.push(jokerCenter({ name }, def.poke_file));
+  const c = jokerCenter({ name }, def.poke_file);
+  if (def.poke_after) {
+    const at = centers.findIndex((x) => x.key === 'j_poke_' + def.poke_after);
+    if (at < 0) throw new Error(`pokermon: joker '${name}' comes after '${def.poke_after}', which isn't registered`);
+    centers.splice(at + 1, 0, c);
+  } else centers.push(c);
 }
+for (const f of DESIGN_FAMILIES) set_family(f);
 for (const f of DATA.groups.consumables) for (const item of listOf(f)) centers.push(consumableCenter(item, f.file));
 // Content 3.9.1 adds that data.js (3.2.1) doesn't have (batch 10: Miracle Seed, Heavy-Duty Boots, the Seed card, the Debris
 // deck): its definition carries the whole static data (key, pos, atlas, config, ...) and is built like data.js's, after it.
@@ -520,6 +529,8 @@ for (const [k, d] of Object.entries(D391.loc)) {
   const set = LOC_SET[k] || k;
   Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 }
+// The owner's designs' text (jokers/pokejokers_designs.js DESIGN_LOC)
+for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
 for (const k of ['dictionary', 'v_dictionary', 'labels', 'v_text', 'challenge_names']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
 // The challenges' rule texts (batch 17): 3.9.1 renamed two rule ids but kept their texts' old keys (Safety First's poke_no_energy,
 // Randomizer's poke_apply_randomizer); Mystery Dungeon's "Resets at <time>" is the viewer's local time of UTC midnight (3.9.1
@@ -764,7 +775,10 @@ export const POKERMON = registerMod({
   // 18 = the Hazard follow-ups: a Mime / Red Seal retrigger of a held Hazard rolls its destroy again when that card also did
   // something at end of round (Gold via Nacho's Carbink, a Blue Seal's Planet), as Steamodded's calculate_end_of_round_effects
   // (js/engine/smods.js eor_retrigger_seam); + the Hazard tooltips (text only).
-  contentRev: 18,
+  // 19 = the owner's 25 new jokers (Desktop/Pokermon_Joker_Design_Guide.txt section 5; jokers/pokejokers_designs.js): the Shinx,
+  // Honedge, Spheal, Grookey (a Grass starter), Kubfu / Urshifu, Tandemaus, Darumaka, Scraggy and Mudbray lines, Xerneas, Spiritomb
+  // and Tatsugiri join the pools; Kubfu / Urshifu can't be debuffed, and Single Strike Urshifu keeps playing cards from being debuffed.
+  contentRev: 19,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

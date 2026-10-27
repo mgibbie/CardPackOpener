@@ -416,6 +416,8 @@ sec(() => {
   const it = add('c_poke_pokeball');
   act({ type: 'use', id: it.sort_id }); flush();
   ok(tarots() === 1, 'rabsca: using an Item gives a Tarot (1 in 4; must have room)', G.consumeables.cards.map(key));
+  // (the Poke Ball's random Basic joker leaves the row, as in the Rellor section: its own effect isn't under test)
+  for (const c of G.jokers.cards.slice()) if (c !== j) { c.remove_from_deck && c.remove_from_deck(); c.remove(); }
   clearHand();
   const r = play(hand(['S_A']));
   ok(r.total.mult === 1 + 1 && key(j) === 'j_poke_rabsca', 'rabsca: +1 Mult per Item used this run', r.total);

@@ -70,8 +70,10 @@ sec(() => {
   ok(MODS.pokermon.content.attributes ? MODS.pokermon.content.attributes.some((a) => a.key === 'deplete') : true, 'the deplete attribute is registered');
 });
 sec(() => {
-  // Their place in the joker list: main's file order.
-  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
+  // Their place in the joker list: main's file order. (The owner's designs, PORTING.md "The owner's 25 new jokers", sit among them
+  // in Pokédex order: Tatsugiri after Houndstone; skipped here.)
+  const designs = new Set((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n));
+  const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker' && !designs.has(c.key)).map((c) => c.key);
   const after = (a, b) => keys.indexOf('j_poke_' + b) === keys.indexOf('j_poke_' + a) + 1;
   ok(after('dustox', 'lotad') && after('lotad', 'lombre') && after('lombre', 'ludicolo') && after('ludicolo', 'seedot')
     && after('sableye', 'mawile') && after('mawile', 'aron') && after('medicham', 'electrike') && after('electrike', 'manectric')
