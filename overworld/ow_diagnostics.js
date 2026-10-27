@@ -41,18 +41,27 @@ export function openCanvasMenus() {
 // 2026-10-16) read "isPassable(8,15)=true, every gate clear" as an invisible wall
 // when (8,15) is the gym's pool — gateReport named every gate but not the tile.
 const FACE = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
-export function aheadReport() {
-	const [dx, dy] = FACE[player.facing] || [0, 0];
+export function aheadReport(dir = player.facing) {
+	const [dx, dy] = FACE[dir] || [0, 0];
 	const x = player.tx + dx, y = player.ty + dy;
 	if (!world.current) return { x, y, refusal: null };
 	const passable = !!world.isPassable(x, y), water = !!world.isSurfable(x, y);
 	const refusal = (player.surfing ? !(water || passable) : !passable) ? 'wall'
 		: !player.surfing && water ? 'water (needs SURF)'
-		: player.surfing && player.facing !== 'down' && world.behaviorAt(x, y) === 0x13 ? 'waterfall'
+		: player.surfing && dir !== 'down' && world.behaviorAt(x, y) === 0x13 ? 'waterfall'
 		: world.isCrackedFloor?.(x, y) && !player.biking && !player.canFall?.() ? 'cracked floor'
 		: player.blocked && player.blocked(x, y) ? 'object (NPC/trainer/blocker/boulder)'
 		: null;
 	return { x, y, behavior: world.behaviorAt(x, y), passable, water, refusal };
+}
+// ...and the same verdict for all four neighbours. Route 107 (bug:1793045962446, re-filed twice): an automated
+// tester probed `world.isPassable` on every side of (4,10), read four `true`s and filed "every tile passable, the
+// player turns but never steps" — east and north are deep water (passable = collision only), refused without SURF,
+// and the step west / south was never in doubt. One look at `around` now names the side that is open.
+export function aroundReport() {
+	const out = {};
+	for (const d of Object.keys(FACE)) { const a = aheadReport(d); out[d] = a.refusal || 'open'; }
+	return out;
 }
 // why the last movement input was accepted or ignored, plus every gate's live value
 export function gateReport() {
@@ -77,7 +86,7 @@ export function gateReport() {
 		playerMoving: !!player.moving, moveT: player.moveT, moveOutcome: player.moveOutcome, moveDist: player.moveDist,
 		surfing: !!player.surfing, biking: !!player.biking, facing: player.facing,
 		tx: player.tx, ty: player.ty, map: world.current ? world.current.name : null,
-		ahead: aheadReport(),
+		ahead: aheadReport(), around: aroundReport(),
 		tick: { ...tickStats },
 	};
 	r.blockedBy = r.typingInChat ? 'typingInChat'
