@@ -239,7 +239,9 @@ try {
 	const xp1 = await xput(tokens.alice, { save: XS(), rev: 0, username: 'bob' });
 	A(xp1.status === 200 && xp1.body.ok && xp1.body.rev === 1 && xp1.body.save && xp1.body.save.counters.runs === 1, 'Expedition: the first put (rev 0) lands as rev 1 and returns the stored save', JSON.stringify(xp1));
 	const xw = writes.slice(w0).filter(k => !k.startsWith('rl:') && !k.startsWith('gc:') && !k.startsWith('presence:'));
-	A(xw.length === 1 && xw[0] === 'micasurvivorexp:alice', 'Expedition: the put writes exactly one row, micasurvivorexp:alice', xw.join(','));
+	// (DLC D19: alice's BASE collection (her micasurvivor:alice row) makes her League bigger than the 27 free starters, so the put also
+	//  puts her on the League board: her user row's runBest and the board's exact key; nothing else)
+	A(xw[0] === 'micasurvivorexp:alice' && xw.slice(1).every(k => k === 'alice' || k === 'runboard:micasurvivor_expedition:league'), 'Expedition: the put writes micasurvivorexp:alice (and, D19, the League board exact keys), nothing else', xw.join(','));
 	const xr1 = row('micasurvivorexp:alice');
 	A(xr1 && xr1.rev === 1 && typeof xr1.updated_at === 'number' && JSON.stringify(xr1.save) === JSON.stringify(XS()), 'Expedition: row micasurvivorexp:alice = {rev, save, updated_at}', JSON.stringify(xr1));
 	A(!row('micasurvivorexp:bob') && JSON.stringify(row('micasurvivor:alice')) === baseRow, "Expedition: a body 'username' is ignored, and the BASE row micasurvivor:alice is untouched");
@@ -275,7 +277,7 @@ try {
 		['a negative counter', { v: 1, counters: { runs: -1 } }], ['a fractional counter', { v: 1, counters: { runs: 1.5 } }], ['a string counter', { v: 1, counters: { runs: '3' } }],
 		['an upper-case counter name', { v: 1, counters: { Runs: 1 } }], ['a counter past 1e15', { v: 1, counters: { runs: 2e15 } }],
 		['a set that is not a list', { v: 1, sets: { league: 'x' } }], ['a set id with a space', { v: 1, sets: { league: ['a b'] } }], ['an object in a set', { v: 1, sets: { league: [{}] } }],
-		['2001 counters', { v: 1, counters: Object.fromEntries(Array.from({ length: 2001 }, (_, i) => ['c' + i, 1])) }],
+		['8001 counters (DLC D19: the cap is 8,000, was 2,000)', { v: 1, counters: Object.fromEntries(Array.from({ length: 8001 }, (_, i) => ['c' + i, 1])) }],
 		['a set of 5001', { v: 1, sets: { league: Array.from({ length: 5001 }, (_, i) => 'x' + i) } }]];
 	for (const [label, save] of badSaves) {
 		const r = await xput(tokens.alice, { save, rev: 5 });

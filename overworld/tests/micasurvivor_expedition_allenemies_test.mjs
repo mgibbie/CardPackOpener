@@ -211,7 +211,7 @@ try {
 		while (tries++ < 400) { G.Events.debugStart('horde'); const b = G.Events.bag(); if (b && b.some(d => d.dex === 746)) break; }
 		G.Enemies.hordeTypes = ht;
 		const inHorde = !!(G.Events.bag() || []).some(d => d.dex === 746), n0 = H.spawned.length;
-		for (let i = 0; i < 40 * 15 && !H.spawned.slice(n0).some(s => s.dex === 746); i++) { H.step(1, 1 / 15); if (i % 15 === 0) H.cull(); }
+		for (let i = 0; i < 150 * 15 && !H.spawned.slice(n0).some(s => s.dex === 746); i++) { if (i % (25 * 15) === 0 && i) { G.Enemies.hordeTypes = () => ["water"]; for (let k = 0; k < 400; k++) { G.Events.debugStart("horde"); const b = G.Events.bag(); if (b && b.some(d => d.dex === 746)) break; } G.Enemies.hordeTypes = ht; } { H.step(1, 1 / 15); if (i % 15 === 0) H.cull(); } }   // (a horde lasts its time: a fresh Water horde with Wishiwashi every 25 s, CI 2026-10-27)
 		const got = H.spawned.slice(n0).filter(s => s.dex === 746).length;
 		const mode = G.Game.mode;
 		G.Game.quit();

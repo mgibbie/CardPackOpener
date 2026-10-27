@@ -530,7 +530,7 @@ try {
 			const e2 = G.Spawner.spawnOne(pl, T.dt()); e2.hurt(1e9);
 			return new Promise(res => setTimeout(() => { const o = { hp: pl.hp, regen: pl.regen * (performance.now() - t0) / 1000, reap: T.reap, atk: pl.atkMul / atk0, line: T.hudLine() }; pl.slots = sl; res(o); }, 300));
 		});
-		A(k.hp >= 24 - 0.01 && k.hp <= 24 + k.regen + 0.01 && k.reap === 2 && near(k.atk, (1 + 0.006) / 1, 1e-9) && /Thirst for victory \+0\.6%/.test(k.line), 'two kills: +2 HP each (Blood pact), damage x1.006 and "Thirst for victory +0.6%" on the HUD (main.gd 4493-4498)', JSON.stringify(k));
+		A(k.hp >= 24 - 0.01 && k.hp <= 24 + k.regen + 0.05 && /* (a slow runner's frame lands just after the 300 ms window: 0.05 HP of slack, CI 2026-10-27) */  k.reap === 2 && near(k.atk, (1 + 0.006) / 1, 1e-9) && /Thirst for victory \+0\.6%/.test(k.line), 'two kills: +2 HP each (Blood pact), damage x1.006 and "Thirst for victory +0.6%" on the HUD (main.gd 4493-4498)', JSON.stringify(k));
 		// heals with Fasting: a berry heals 30 % x 0.55
 		const hb = await E(() => { const pl = G.Game.player; pl.hp = 10; G.Game.debugCollect({ kind: 'heal', value: 0 }); return { got: pl.hp - 10, want: pl.maxHp * 0.3 * 0.55, rest: G.Tower.restHeal() }; });
 		A(near(hb.got, hb.want, 0.01) && near(hb.rest, 0.4 * 0.55, 1e-9), 'Fasting: a berry heals 30 % x 0.55 and the rest 40 % x 0.55 (main.gd 5371 / 3482)', JSON.stringify(hb));
