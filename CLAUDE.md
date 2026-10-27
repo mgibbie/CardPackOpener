@@ -86,6 +86,11 @@ Card text conventions: keywords alphabetical, `A, B & C.`; a spell's school is i
 "Luck:" = coin flip `{type:'luck', effects}`; Red/Green/... card pools = `landSet` Mountain/Forest/....
 
 ## "do the joker design list"
+**Before designing or pitching ANY Pokermon joker** (the owner's requests, the wiki list, a rework): read
+`micatro/mods/pokermon/DESIGN_GUIDE.txt` first: the systems primer (rarity/cost slots, evolution timers, what Energy
+scales), the section for the joker's type (identity, typical numbers by stage, under-explored space, pitfalls), and the
+quick-reference table. Pitch within those conventions and say where a design departs from them. Keep the guide current: when
+a design adds a new pattern (e.g. Energy raising a cap), add it there.
 The owner designs NEW Pokermon jokers on the wiki: every canonical Pokémon with no joker in Pokermon / Nacho /
 Pokermon+ has a card at `designwiki/#/pokermon-jokers/<dex>` with an owner-only "Submit design" box.
 1. Read the designs: `SELECT length(value) AS n, value FROM mp_store WHERE key='owner_todo:jokers'`

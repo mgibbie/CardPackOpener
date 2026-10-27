@@ -1,0 +1,1806 @@
+==================================================================================================
+POKERMON JOKER DESIGN GUIDE
+A study of the existing Pokermon jokers, for designing the 445 Pokemon that don't have one yet
+==================================================================================================
+Prepared 2026-10-27.
+
+Sources (read only; nothing in the repo was changed):
+  - micatro/mods/pokermon        Pokermon 3.9.1 port (pin 3.9.1+r18): jokers/*.js, data.js + the
+                                 data391.js overlay, systems/*.js, PORTING.md
+  - micatro/mods/nacho           Nacho's Pokermon Dip 1.7.9-5
+  - micatro/mods/pokermonplus    Sonfive's Pokermon+ 1.2.0
+  - upstream Pokermon 3.9.1 Lua  (localization/en-us.lua, pokermon.lua, pokesprites.lua)
+  - designwiki/data/pokermon_jokers.json (PR #825): the 445 missing species, with type, stage,
+    rarity/cost guesses and evolution lines
+
+How the numbers were made:
+  The three mods were loaded in node through the same index.js files the game uses. Every
+  registered joker center was dumped (ptype, stage, rarity, cost, config), and its text was
+  resolved through its own loc_vars, so the numbers quoted are the numbers the card shows.
+  "Feature" counts come from scanning the resolved text plus the config field names. "Hook"
+  counts come from scanning calculate() and the local helpers it calls, so they are approximate.
+  A shared helper can mention a context the joker never really uses, and end_of_round is
+  inflated by the evolution checks.
+  Legacy (retired) add-on jokers are excluded. "Non-Mega" means the 610 Pokemon jokers, forms
+  included (Rotom forms, Unown, Tauros (Herd), Dreepy Dart and so on).
+
+Conventions used in this file:
+  Stage 1 / Stage 2 = Pokermon's "One" / "Two".
+  Rarity: C = Common, U = Uncommon, R = Rare, L = Legendary, S = Safari, M = Mega.
+  Numbers written a-b~m mean: min a, max b, median m.
+
+CONTENTS
+  1. Overview
+  2. Systems primer
+  3. Guide per type (12 types)
+  4. General design principles
+  5. 25 design recommendations
+  6. Quick reference: number ranges by type and stage
+
+
+==================================================================================================
+1. OVERVIEW
+==================================================================================================
+
+1.1 What a Pokermon joker is made of
+------------------------------------
+Every Pokemon joker is a center with these parts. Field names are the ones used in data.js and
+in defineJokers.
+
+  ptype       One of 12 types: Grass, Fire, Water, Lightning, Psychic, Fighting, Colorless,
+              Dark, Metal, Fairy, Dragon, Earth. The internal name is "Dark"; its Energy card is
+              called "Darkness Energy". Two oddities: Missingno is "Bird", and Nacho's Terapagos
+              is "Stellar".
+              The type drives Energy matching, type synergies ("each Dark Joker..."), Tera
+              stickers, the card frame and the attribute <type>_type.
+  stage       Baby / Basic / One / Two / Legendary / Mega. "Other" is used for non-Pokemon
+              jokers (Pokedex, Everstone, Rival...), and Shedinja is "???".
+  rarity      1-4 (Common to Legendary), 'poke_safari', or 'poke_mega'.
+  cost        The shop price. The sell value is half of it, as in vanilla.
+  config      extra = { the numbers }, plus evo_rqmt for scaling evolutions. Field names matter,
+              because Energy only scales certain names (see 2.4).
+  ability     calculate(self, card, context). Most jokers have one effect, some have two
+              boxes, each fired on one of the engine's contexts.
+  evolution   One of:
+                level_evo     rounds countdown
+                scaling_evo   reach evo_rqmt
+                item_evo      item_req
+                type_evo      a Tera sticker
+                deck_*_evo    a deck composition
+                a custom condition
+  scaling     A growing value (mult with mult_mod, chips with chip_mod, Xmult with Xmult_mod).
+              It carries over when the joker evolves.
+  energy      Using a matching Energy card permanently raises the numeric fields by a share of
+              their base values (up to 3 times per joker by default).
+  text        A loc entry j_poke_<name>, with the evolution footer in small grey text, for
+              example "(Evolves after 4 rounds)".
+  optional    attributes (3.9.1 Steamodded attributes), megas, starter, volatile,
+              enhancement_gate (pool gate), a held item created in add_to_deck,
+              poke_custom_values_to_keep.
+
+Worked example: Charmander (Fire, Basic, Uncommon, $5)
+  config    { evo_rqmt: 16, extra: { d_size: 1, mult: 0, mult_mod: 1 } }
+  text      "+1 discard / Gains +1 Mult if hand is played when 0 discards remaining /
+            (Evolves at +0 / +16 Mult)"
+  hooks     before (gain), joker_main (score), add_to_deck (discards)
+  evolution scaling_evo -> Charmeleon (Safari $8, +2 a step, evolves at 36), then Charizard
+            (Safari $10: +36 Mult, and X1.5 when 0 discards remain)
+  energy    mult (+40% of base) and mult_mod (+20%) grow; d_size does not.
+
+1.2 Coverage
+------------
+580 of the 1,025 National Dex species have a joker in at least one of the three mods, and 445
+have none.
+  Pokermon:             501 species (485 only there)
+  Nacho's Pokermon Dip:  69 species  (56 only there)
+  Sonfive's Pokermon+:   26 species  (23 only there)
+
+  Gen   Dex range   Species   Covered   Missing
+  1     001-151       151       151         0
+  2     152-251       100       100         0
+  3     252-386       135       109        26
+  4     387-493       107        62        45
+  5     494-649       156        53       103
+  6     650-721        72        16        56
+  7     722-809        88        20        68
+  8     810-905        96        20        76
+  9     906-1025      120        49        71
+  ALL               1,025       580       445
+
+Missing by Pokermon type (using the wiki's type mapping, see 2.1):
+  Grass 79, Water 66, Colorless 48, Earth 43, Psychic 40, Dark 37, Lightning 31, Fire 27,
+  Fighting 23, Dragon 20, Metal 16, Fairy 15
+
+Missing by stage:
+  Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
+
+Notable gaps:
+  - Starters: every Gen 5-9 starter line is missing (15 lines, 45 species). Gen 4 is covered
+    by Nacho (the Turtwig, Chimchar and Piplup lines).
+  - Legendaries and mythicals: 70 missing. Most of Gens 4-9: the Regis, the Lati twins, the
+    weather trio, the creation trio, the Lake trio, Arceus, Xerneas/Yveltal, the Tapus, the
+    Cosmog line, the Ruinous four, Koraidon and Miraidon.
+  - Fossils: the Tirtouga, Archen, Tyrunt and Amaura lines, and the four Galar fossils, are all
+    missing. They are natural fits for the existing "Ancient" mechanic (2.5).
+  - Ultra Beasts: Nihilego, Buzzwole, Pheromosa, Xurkitree, Celesteela, Kartana, Guzzlord,
+    Poipole/Naganadel, Stakataka and Blacephalon are all missing. There is no shared UB mechanic
+    yet.
+  - Paradox Pokemon: all 20 are missing. Each is a Rare single-stage Basic in the wiki's guess.
+
+
+==================================================================================================
+2. SYSTEMS PRIMER
+==================================================================================================
+
+2.1 Types and the ptype mapping
+-------------------------------
+The 12 Pokermon types are POKETYPES in systems/types.js. The wiki maps the real types like this:
+  Normal  -> Colorless       Bug      -> Grass       Electric -> Lightning
+  Ice     -> Water           Poison   -> Dark        Ghost    -> Psychic
+  Ground  -> Earth           Rock     -> Earth       Steel    -> Metal
+  Fire, Water, Grass, Fighting, Psychic, Dragon, Dark and Fairy map to themselves.
+  A species whose first type is Flying takes its second type. Pure Flying becomes Colorless.
+
+Existing lines sometimes change type when the species gains one:
+  Seedot (Grass)     -> Nuzleaf (Dark)
+  Pineco (Grass)     -> Forretress (Metal)
+  Pupitar (Earth)    -> Tyranitar (Dark)
+  Seadra (Water)     -> Kingdra (Dragon)
+  Onix (Earth)       -> Steelix (Metal)
+  Grubbin (Grass)    -> Charjabug (Lightning)
+  Bunnelby (Colorless) -> Diggersby (Earth)
+Use this when the new type opens a better identity. Some Megas change type too: Mega Charizard
+X and Mega Ampharos become Dragon, Mega Lopunny and Mega Mewtwo X become Fighting.
+
+Type synergy is read with find_pokemon_type(type) or is_type(card, type). Tera stickers
+(<type>_sticker) override a joker's type and can sit on vanilla jokers.
+
+2.2 Rarity and cost conventions
+-------------------------------
+Rarities:
+  Common 1, Uncommon 2, Rare 3, Legendary 4: in the shop at the usual weights.
+  Safari: weight 0. The tooltip says "Can only be obtained through Evolution or certain
+    Pokeball Items" (also the Safari Tag). Nearly every evolved Pokemon is Safari.
+  Mega: weight 0. Only reached with a Mega Stone or a Mega Berry Juice.
+
+Observed rarity/cost, Pokemon jokers in all three mods (count in brackets):
+  Baby       U $4 (10), C $3 (4); rarely R $3-$6 (Wynaut, Chingling, Riolu)
+  Basic      U $6 (50), C $5 (45), C $4 (42), U $5 (26), R $7 (22), R $8 (16), U $7 (14)
+  Stage 1    S $8 (83), S $7 (40), S $6 (21), S $10 (20), S $9 (13); a few shop-able
+             C/U/R ones (Metapod, Arbok, Golbat, Gloom, Weepinbell, Lanturn, Quagsire...)
+  Stage 2    S $10 (48), S $8 (7), S $11 (5); shop-able Butterfree and Beedrill (U $5)
+  Legendary  L $20 (32); Shaymin and Shaymin Sky $10, Missingno $21
+  Mega       M $12 (34); Mega Raichu X/Y $10, Mega Mewtwo X/Y $30, Mega Lucario $11
+
+By position in the evolution line (Pokermon only):
+  3-stage line   Basic: U $6 (19), C $4 (11), U $5 (9), C $5 (7)
+                 Stage 1: S $8 (29), S $6 (8), S $7 (5)
+                 Stage 2: S $10 (46), S $8 (6)
+  2-stage line   Basic: C $5 (32), C $4 (27), U $6 (19), U $5 (14)
+                 Stage 1: S $8 (41), S $7 (35), S $10 (19), S $9 (13)
+  Single-stage   Basic: R $7-$8 is typical (Lapras R $5, Absol R $8, Lucario R $9)
+
+The wiki's default guesses follow the same modes:
+  Basic of a 3-stage line          U $6
+  Stage 1 (either line length)     S $8
+  Stage 2                          S $10
+  Basic of a 2-stage line          C $5
+  Single-stage Basic               R $7
+  Legendary                        L $20
+  Baby                             U $4
+
+Common deviations:
+  - Starters: Basic U $5-$6 with the 'starter' attribute.
+  - Early-evolving bugs: Caterpie and Weedle are C $2; their Stage 1 is C $4 and their
+    Stage 2 is U $5 and shop-able.
+  - Pre-evolutions too weak alone are cheap (Magikarp C $2, Feebas R $3).
+  - Strong single-stage Basics go up to R $8-$9.
+
+2.3 Evolution
+-------------
+Mechanisms (systems/evolution.js). Every evolution happens in the main end_of_round pass, never
+from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still count down.
+
+  level_evo     extra.rounds counts down by 1 each round won (not while debuffed).
+                Footer: "(Evolves after N rounds)". 113 jokers use it.
+  scaling_evo   Evolves when a tracked value reaches config.evo_rqmt.
+                Footers: "(Evolves at +X / +16 Mult)" (11), "... Chips" (8), "... X Mult" (5),
+                "(Evolves after triggering N times)" (17). There are also bespoke counts:
+                "after earning $16", "after playing 6 Full Houses", "after scoring 15 Gold
+                cards", "after using 20 consumables", "after rerolling 7 times".
+  item_evo      An evolution Item sets extra.evolve, and the joker evolves at the end of the next
+                round. item_req names the item.
+                  Linking Cord (all 10 trade evolutions)   Moon Stone (7)   Dusk Stone (5)
+                  Thunder, Leaf, Water Stone (4 each)      Fire, Dawn Stone (3 each)
+                  Shiny, Sun Stone (2 each)
+                  King's Rock, Prism Scale, Upgrade, Dubious Disc, Hard Stone, Ice Stone
+                Branches use evo_list. Gloom takes Leaf/Sun, Poliwhirl takes Water Stone/King's
+                Rock, Charcadet takes Dawn/Dusk, Eevee takes eight stones.
+  type_evo      Evolves while holding a Tera sticker of a type: Onix (Metal), Scyther (Metal
+                sticker or Hard Stone), Seadra (Dragon), Pokermon+'s Duraludon (Metal).
+  deck_*_evo    Evolves on deck composition: Chansey (25% Lucky), Nacho's Snover (12.5% Glass),
+                Nacho's Dipplin (25% Wild).
+  custom        Branching by play counters (Rockruff picks its Lycanroc by counting Even and Odd
+                cards scored), "after 4 rounds not debuffed" (Volatile jokers), "4 rounds in
+                debt" (Snorunt), "after defeating 2 Boss Blinds" (Shroomish).
+
+Typical round timers (level_evo):
+  Baby     always 2 rounds (all 18)
+  Basic    4 rounds (43) or 5 rounds (34); 3 rounds (4); 2 rounds (Caterpie, Weedle, Koffing);
+           Magikarp 8
+  Stage 1  4 (6), 5 (5), 3 (3); Shelgon 8 (it counts down faster on Straights)
+  Rule of thumb: early-evolving Pokemon (around Lv 15-20) get 4 rounds, normal ones 5, and
+  bug lines 2-3.
+
+Typical scaling thresholds:
+  +Mult   Basic evolves at +8 to +18 (Paras 8, Zubat 12, Horsea 12, Dratini 15, Sentret 15,
+          Charmander 16, Shuppet 18). Stage 1 evolves around 2-3x higher (Charmeleon 36,
+          Dragonair 55).
+  Chips   Basic 36-60 (Swablu 36, Squirtle 40, Baltoy 40, Beldum 50, Ponyta 60, Slugma 60).
+          Stage 1 about 3-4x (Wartortle 120, Metang 200).
+  X Mult  Basic X1.5-X2 (Mareep 1.5, Aron 2, Pawniard 2); Stage 1 X2.5-X4 (Flaaffy 2.5,
+          Lairon 4).
+
+What carries over (copy_scaled_values): scaled values (mult, chips, Xmult, Xmult_multi and money
+that have a matching _mod field), plus poke_custom_values_to_keep. Energy is re-applied to the new
+base values. Edition, Tera sticker, eternal and rental status carry over; a Perishable's tally
+resets. Design the line so that the inherited value matters (Charmander's Mult becomes
+Charizard's flat Mult).
+
+How much a Stage 1 or Stage 2 should out-scale its Basic, measured on lines that keep the same
+field:
+  Basic -> Stage 1    flat +Mult x1.67 (range 1-5)     Chips x1.5 (1-3)
+                      X gain per trigger x1.5          Mult/Chip gain per trigger x1-1.67
+                      (often unchanged; the stage adds a second effect instead)
+                      Hand size, hands, discards and retriggers usually stay the same.
+  Stage 1 -> Stage 2  flat +Mult x1.5 (0.5-2.3)        Chips x1.4
+                      Mult gain per trigger about x1 (Stage 2 changes the kind instead)
+Second ability box ("{br:2}" in the text):
+  Basic 18% (47/267)   Stage 1 38% (84/219)   Stage 2 40% (27/68)   Legendary 38%
+X Mult appears in:
+  18% of Basics, 23% of Stage 1s, 43% of Stage 2s
+
+The patterns behind those numbers:
+  (a) Same effect, bigger number.
+      Weedle (+20 Chips) -> Kakuna (+40) -> Beedrill (+80).
+      Geodude (+75 Chips / -1 hand size) -> Graveler (+175 / -2) -> Golem (+275 / -3).
+  (b) Same trigger, the payoff moves from + to X.
+      Oddish: odd cards give +1/+3/+5 Mult -> Gloom +3/+5/+7 -> Vileplume +7, X1.3 or X1.5.
+      Cyndaquil: +4 Mult per remaining discard -> Quilava +8 -> Typhlosion +8 and X0.3 each.
+  (c) The Stage 1 or Stage 2 keeps the old effect and adds a second box.
+      Grimer -> Muk; Houndour -> Houndoom; Electrike -> Manectric (Gold card returns to hand).
+  (d) The final stage switches mechanic, often to a rule-bender.
+      Gastly/Haunter (chance of a Negative) -> Gengar (a guaranteed Negative in 5 rounds).
+      Abra -> Alakazam (+1 consumable slot).
+      Slakoth -> Vigoroth -> Slaking (X4, -1 hand).
+
+Baby Pokemon (rules.js faint_baby_poke):
+  - Rule: "When hand is played, if there are any non-Baby Jokers to the right of this Joker,
+    debuff this Joker" (it faints).
+  - Every Baby has a Mult penalty: X0.75 usually; X0.5 for Tyrogue, Mime Jr., Happiny and
+    Munchlax; X0.9 for Riolu. The field is Xmult_minus, which Energy does not touch.
+  - In exchange each Baby has a utility. Pichu earns $10 at end of round. Cleffa, Igglybuff,
+    Azurill, Wynaut, Chingling and Mantyke create a Negative tarot. Budew creates a Negative
+    Miracle Seed. Smoochum and Elekid create a Tag when they evolve. Magby gives +1 discard.
+  - Baby rarity is U $4, or C $3 for the money/tarot ones.
+
+2.4 Energy and energize (systems/energy.js)
+-------------------------------------------
+How it works:
+  - Using an Energy card of the joker's type (leftmost or selected joker) "energizes" it. Every
+    numeric field listed in energy_values goes up by a share of the center's BASE value of that
+    field.
+  - Colorless Energy works on any typed joker at half strength.
+  - Double Rainbow Energy (Spectral) energizes any type twice; Berry Juice Energy works on any
+    type.
+  - Limit: 3 Energy per joker (energy_max). G.GAME.energy_plus raises it: Porygon +1, Porygon2
+    +2, Porygon-Z +3, Ludicolo +1, and Mega Mewtwo Y +1 per Boss Blind defeated.
+
+Share of the BASE value added per Energy:
+  mult, mult1, mult2, s_mult                  +40%
+  chips, chips1-3                             +30%
+  money, money1, money2                       +30%
+  money_mod                                   +10%
+  mult_mod, mult_mod2, chip_mod               +20%
+  Xmult, Xmult1, Xmult2, Xmult_mod            +20%   (an X2 field becomes X2.4)
+  Xmult_multi, Xmult_multi2                   +5%    (per-card X: X1.5 becomes X1.575)
+  Xchips +20%, Xchips_multi +5%
+
+Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
+(probabilities), Xmult_minus, hazard_level, scry.
+
+Designer consequences:
+  1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
+     per Energy; a per-card X stored as Xmult_multi grows only 5% (on purpose, because it fires
+     once per card).
+  2. A pure retrigger, hand-size or Foresight joker gains nothing from Energy. That is fine
+     (Rattata). If you want the joker to want Energy, give it a numeric rider (Victreebel's
+     +24 Chips on the cards it retriggers).
+  3. Scaling jokers whose accumulator starts at 0 (mult: 0) gain only through their _mod field.
+  4. precise_energy (default ON) keeps fractional values.
+
+Energy sources:
+  Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
+  joker's type); Porygon-Z (when you use an Energy); Pyroar (Flush with a King or Queen);
+  Ludicolo (2-card hands); Jelly Donut; Nightmare (Spectral).
+
+Energy-themed jokers:
+  Ralts/Kirlia: +Mult per Energized Joker.
+  Gardevoir: X0.3 per Energized Joker.
+  Gallade: X0.5 per Joker with 2+ Energy.
+  Porygon-Z: X0.1 per Energy used.
+
+2.5 Recurring Pokermon keywords
+-------------------------------
+Each keyword below has an info_queue tooltip. Reuse the keyword rather than inventing a new one.
+
+  Volatile Left / Right (rules.js volatile_active)
+    Works only while it is the leftmost (Left) or rightmost (Right) of the non-Volatile jokers.
+    House pattern: a big effect, then "debuff self this round", and the joker evolves "after N
+    rounds not debuffed".
+      Voltorb      Right, X1.75 (C $4)
+      Electrode    X2.25 and $3
+      Koffing      Left, +12 Mult
+      Pineco       Left, +120 Chips
+      Vanillite    Left, +60 Chips, -10 a hand
+      Wobbuffet, Ditto
+  Nature
+    Values rolled when the joker is created, in set_ability(initial), and shown as
+    "Nature: (2, 9, King)". They can be ranks (Treecko line, Corphish), a suit (Wurmple line),
+    poker hands (Axew line), Joker types (Pokermon+'s Shroodle), Unown's letter, or Spinda's
+    ranks plus enhancements.
+  Ancient
+    Effects depend on how many of one rank are in the poker hand, in cumulative tiers "1+ / 2+ /
+    3+" (Stage 1 adds "4+"). Used by the fossils: Omanyte (3s), Kabuto (2s), Aerodactyl (Aces),
+    Lileep (8s), Anorith (7s), Relicanth (4s), and Nacho's Cranidos (5s) and Shieldon (6s).
+    Basics evolve after "Trigger 3+ ability 5 times".
+  Foresight (scry)
+    "+N Foresight" shows the top N cards of the deck (G.GAME.scry_amount). Foreseen cards are
+    scored like an extra held-in-hand area (context.individual with cardarea G.scry_view). Used
+    by:
+      Hoothoot +2 / Noctowl +4   Foreseen cards give their total Chips
+      Stantler                   adds the highest Foreseen rank to Mult
+      Espeon                     X2.5 if the top card is Hearts
+      Lopunny                    X2 if an unscored card shares a rank with a Foreseen card
+      Masquerain, Munna/Musharna, Wyrdeer, Mega Lopunny, Nacho's Munkidori
+  Deplete / Depleted
+    Drawing the last card of a rank remaining in the deck. Used by Bunnelby/Diggersby,
+    Relicanth, Greavard/Houndstone and Nacho's Appletun.
+  Drain
+    Moves $1 of sell value from other jokers (Litwick, Lampent, Ceruledge, Dusk Stone).
+  Type Changer
+    Applies a Tera sticker (Weird Tree, Treasure Eatery, Tera Orb, Metal Coat, Dragon Scale).
+  Holding X
+    See 2.7.
+
+2.6 Hazards, Seeds and Flowers, Wishes, Unown
+---------------------------------------------
+Hazards (3.9.1 Hazard layer; enhancements/enhancement1.js and systems/utils.js)
+  - Hazard card: "no rank or suit", no chips, always scores. It has a 1 in 3 chance to be
+    destroyed if held in hand at end of round. It stays in the deck until destroyed and takes a
+    hand slot (discard it to draw).
+  - Hazard layer: when the first hand of a round is drawn, that many Hazard cards are dealt into
+    the hand. The layer is capped by the hazard limit (default 3).
+  - Jokers write "{C:poke_hazard}+1{} hazard layer" and spread hazard_layer (add/remove), which
+    raises G.GAME.poke_hazard_level. Skarmory and Mega Skarmory raise the limit too ("hazard
+    layer and limit").
+  - Payoffs:
+      Roggenrola line   cards with no rank held give +5/+10/+7 Mult (+ retrigger)
+      Skarmory          X0.4 per Hazard or Steel card held
+      Golett/Golurk     held cards give X1.2/X1.3 by chance, guaranteed for Hazard cards
+      Baltoy/Claydol    chips per Hazard card discarded
+      Cacnea/Cacturne   $3/$5 when a card is destroyed
+      Ferroseed line    Hazard and Wild cards are also Steel
+      Nacho's Carbink   Hazards also count as Gold
+  - Counter: Heavy-Duty Boots (reusable Item: Hazard probabilities become 0 for the round).
+  - 19 non-Mega jokers mention Hazards, spread over Earth (5), Grass (6), Psychic, Metal, Dark,
+    Water and Fairy.
+
+Seeds and Flowers (3.9.1)
+  - Seed card: "Grows 1 (+growth level) when scored". After 5 growths it turns into a Flower
+    card and earns $15. Seed is in the Enhanced pool (weight 5). Miracle Seed (Item) makes one.
+  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade it needs only 3+
+    suits; with Shaymin or Shaymin Sky it gives X3.
+  - Growth level (+1 extra growth per score): Shiftry, Brambleghast.
+  - Seed makers: the Hoppip line (discards become Seeds, then the joker self-destructs on
+    discard), Bellossom, Roselia, Nuzleaf/Shiftry (drawn Flowers become Seeds), Bramblin
+    (second Queen scored each round), Budew (a Negative Miracle Seed).
+
+Wishes (Jirachi)
+  - Jirachi (Legendary): "At the end of the shop, make a wish!" This opens a Wish Pack of 3
+    random unused wishes, and Jirachi transforms into the chosen form:
+      Banker      3X payout at end of round
+      Booster     +1 card in packs, and the first 3 rerolls add a Booster
+      Power       played cards give X2 every 3 hands
+      Invisible   copies the joker to the right if you have 3+ Energized jokers
+      Fixer       a single-card first discard becomes Death, Cryptid or Metal Coat
+      Copy        copies the joker to the right with +1 Energy
+      Negging     +2 Joker slots, Negative 2X more often
+  - The Wish template is a good one for any "choose your form" legendary.
+
+Unown
+  - Unown (Safari Basic $5): "Nature: (rank) / +6 Mult if poker hand contains a Nature card",
+    and it self-destructs at end of round.
+  - Ruins of Alph (Other, R $8) creates 3 Negative Unown each Blind, merges an Unown after it
+    triggers (+2 Mult each), and pays out by Unown merged (5 / 10 / 20 / 28). At 28 the reward
+    is Unown Swarm, where each Legendary Joker gives +28 Mult and X2.8.
+
+2.7 Held items ("Holding")
+--------------------------
+The "Holding X" tooltip reads: "This Joker comes with a X card (Must have room)". The joker
+creates its signature consumable in add_to_deck. Not when re-added from a debuff; sometimes as
+a Negative so it always fits. The ability then refers to the item.
+
+Pokermon's held items:
+  Farfetch'd          Leek: $4 is guaranteed when the Leek is used
+  Cubone              Thick Club: counts double toward its Mult
+  Snorlax             Leftovers: gains X0.2 per Leftovers you have
+  Hypno               Trance (Spectral)
+  Ninetales           a Negative Medium
+  Mega Victreebel     Medium
+  Mega Feraligatr     Dragon Scale
+  Gardevoir           Black Hole
+  Spinda              Wheel of Fortune
+  Luvdisc             Heart Scale
+  Gallade             Double Rainbow Energy
+  Farigiraf           Cryptid
+Add-ons: Nacho's Terapagos (a Negative Tera Orb), Pokermon+'s Darkrai (Nightmare), Pokermon+'s
+Meltan (a Negative Metal Coat).
+
+Three uses:
+  (a) The item is the joker's engine: Snorlax, Cubone, Farfetch'd.
+  (b) A thematic vanilla consumable that comes "for free": Hypno's Trance, Gardevoir's Black
+      Hole, Spinda's Wheel of Fortune, Farigiraf's Cryptid.
+  (c) A rare resource: Gallade's Double Rainbow Energy.
+Pokermon's reusable cards (marked "Usable once per round"): Leftovers, Leek, Thick Club,
+Heavy-Duty Boots, the Mega Stone, the Meteorite. Evolution Items double as minor effects: the
+Moon Stone has a chance to level up the selected poker hand, and the Fire Stone makes Mult
+cards.
+
+2.8 Megas (systems/items.js)
+----------------------------
+How Megas work:
+  - The Mega Stone is a reusable Spectral, usable once per round. It Mega Evolves a joker that
+    has megas[], or devolves a Mega back. Only 1 joker can Mega Evolve per Mega Stone you have.
+    Selling the stone devolves its Mega.
+  - The Mega Berry Juice (an Item) Mega Evolves the leftmost or selected joker.
+  - Charizard, Mewtwo and Raichu have two Megas: leftmost gives X, rightmost gives Y, anywhere
+    else is random (getMega_by_position).
+  - There are 41 Megas: 34 Pokermon, 6 Nacho, 1 Pokermon+. Rarity poke_mega, cost $12 is
+    standard, and none of them evolve.
+
+Mega design patterns:
+  1. One enormous stat.
+     Mega Beedrill +640 Chips; Mega Venusaur +4 hand size; Mega Blastoise +3 hands;
+     Mega Charizard Y +5 discards.
+  2. The base condition pushed to its extreme.
+     Mega Charizard X: X5 at 0 discards. Mega Slowbro: X0.5 per hand played this Ante.
+     Mega Starmie: Diamonds give X2.5 and $5 on 2-card hands.
+  3. A rule-bender.
+     Mega Gyarados: X3 and disables every Boss Blind. Mega Kangaskhan: retrigger all played
+     cards. Mega Mewtwo X: all Jokers give X2.5 ($30). Mega Ampharos: hand size becomes half the
+     deck. Mega Drampa: packs are always Mega.
+  4. A power spike with a drawback.
+     Mega Heracross retriggers all played cards twice but debuffs itself unless 5 cards are
+     played or discarded. Mega Scizor makes Commons give X4, then destroys them. Mega
+     Aerodactyl has a 1 in 4 chance to destroy each Ace.
+Rule of thumb: a Mega trades the line's flexibility for one dramatic axis, and it is temporary
+by nature (you can devolve it once per round).
+
+2.9 Shiny (systems/shiny.js)
+----------------------------
+  - The Shiny edition (e_poke_shiny) has shop weight 2 and costs +$5.
+  - It has no scoring effect. While a shiny card is owned, the shop has +1 Booster Pack slot.
+  - Playing cards can't become shiny unless the shiny_playing_cards option is on.
+  - Design rule: never put power in "if this is shiny". Shiny is an economy and cosmetic layer.
+    (Nacho's Mega Audino Mystery Egg rolling a 1 in 5 shiny is the only joker that touches it.)
+
+2.10 Text style and the poke_ colours
+-------------------------------------
+Pokermon's text is short: 4-6 lines of about 25-32 characters. Its conventions:
+  - Numbers carry their colour: {C:mult}+4{} Mult, {C:chips}+30{} Chips,
+    {X:mult,C:white} X1.5 {} Mult (note the spaces inside), {C:money}$3{}.
+  - Keywords use {C:attention}: Blind, poker hand names, ranks, enhancements.
+  - The second ability box is a "{br:2}ERROR - CONTACT STEAK" line (the engine draws a divider).
+  - The state line: "{C:inactive}(Currently {C:mult}+0{C:inactive} Mult)".
+  - The evolution footer is small grey:
+      "{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#2#{C:inactive,s:0.8} rounds)"
+  - Odds: "{C:green}#1# in #2#{} chance". Always read them through get_probability_vars so
+    Venonat, Absol and others can modify them.
+  - "{C:inactive,s:0.8}(Must have room)" for anything that creates a card.
+  - "{S:1.1,C:red,E:2}self destructs{}" for self-destruction.
+Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS):
+  {C:poke_<type>} or {X:poke_<type>,C:white} for a type name. Lightning is
+    {X:poke_lightning,C:black}: black on yellow.
+    Hex values:
+      grass 289830    fire f81020      water 38b8f8      lightning f8f800
+      psychic c135ff  fighting b85838  colorless c8c0f8  dark 0086a5
+      metal 888080    fairy ff3db6     dragon c8a800     earth e97333
+  {C:poke_pink}    Energy / Energized (30 uses)
+  {C:poke_item}    Item cards (35 uses)
+  {C:poke_hazard}  hazard layer (15 uses)
+  {C:purple}       Foresight (vanilla purple)
+  {C:poke_bird}    Missingno
+  {C:poke_pocket}  Pocket Packs
+  poke_sun, poke_rain, poke_sand, poke_snow: defined in 3.9.1 but used by no text or joker
+    yet. They are a reserved slot for weather designs (Castform, Kyogre/Groudon, Hippowdon).
+Most used tags overall:
+  attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
+  green 77, dark_edition 49.
+
+
+==================================================================================================
+3. GUIDE PER TYPE
+==================================================================================================
+Read the counts as "how many non-Mega jokers of the type have this", from text and config:
+  out:   what the joker produces (+Mult / +Chips / X Mult / $ / retriggers)
+  hooks: the calculate contexts their code reads (approximate; end_of_round includes the
+         evolution checks)
+"Typical numbers" are the observed min-max~median of the config values by stage:
+  "+M / +C / X"           flat joker effects
+  "card +M / +C / X"      per scored or held card
+  "gain"                  the step per trigger for scaling jokers
+
+--------------------------------------------------------------------------------------------------
+3.1 GRASS: 108 jokers (102 non-Mega; Pokermon 97, Nacho 11). The biggest type; Bug maps here.
+--------------------------------------------------------------------------------------------------
+Identity: the "economy and hand" type.
+  out:   +Mult 30, $ 28, +Chips 23, X 14, retrigger 5
+  Also:  hand size 22, enhancements 28 (Seed/Flower 12, Wild 6, Lucky, Glass), probability 19,
+         Nature 8, Hazards 6
+  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig).
+  Grass is where money comes from cards held in hand (Bulbasaur, Chikorita, Treecko), where
+  sell value grows (Smoliv line), and where Seeds grow.
+Hooks: individual 46, joker_main 44, before 24, add_to_deck 20 (hand size), repetition 15,
+  after 12, setting_blind 10, using_consumeable 5, pre_discard 4, remove_playing_cards 4,
+  mod_probability 3
+Examples:
+  Bulbasaur (U $5)   +1 hand size; earn $1 for each card of the round's rank held in hand.
+                     Evolves after earning $16. Venusaur earns $2 each.
+  Oddish (C $4)      Odd-rank cards give +1/+3/+5 Mult. Gloom +3/+5/+7 (Leaf or Sun Stone);
+                     Vileplume +7, X1.3 or X1.5.
+  Venonat (U $4)     "Adds 1 to all listed probabilities" (5 rounds). Venomoth adds 2.
+  Sunflora (S $8)    Earn $1 when a Blind is selected, a hand is played, a hand is discarded, a
+                     consumable is used, and at end of round.
+  Arboliva (S $10)   +$2 sell value to every Joker and consumable each round, doubled for Grass
+                     Jokers and Grass Energy.
+Typical numbers:
+  Basic     +M 1-7~3 | +C 20-120~40 | card +M 1-10~5 | card +C 16-50~40 | $ 1-4~2 | gain +M 1-4
+  Stage 1   +M 1-11~7 | +C 40-135~60 | card +M 3-15~7 | card +C 32-75 | $ 1-5~2 | X 3 (Dustox)
+  Stage 2   +M 8-12~11 | +C 60-80 | card X 1.3-1.5 | $ 1-2
+Under-explored:
+  - Retriggers (only 5).
+  - Joker-row effects: copying (only Skitty/Delcatty) and adjacency.
+  - Tarot and Planet creation (3).
+  - The Bug subset (36 of the 79 missing Grass species) has almost no shared identity.
+    Caterpie/Weedle/Wurmple are cheap and fast-evolving, and the moth/beetle lines are random.
+    Swarm or insect-collective ideas (Combee/Vespiquen, Durant, Joltik) are open.
+Pitfalls:
+  - Hand size stacks across many Grass jokers (22 already give it). Keep new hand size at +1,
+    and gate anything bigger (Breloom gives +2 for one round only).
+  - Money on held cards compounds with interest. Keep it to $1-$2 per trigger.
+  - Close to vanilla: Bellsprout is Even Steven with Chips instead of Mult, Oddish is Odd Todd
+    with Mult instead of Chips, Scyther resembles Ceremonial Dagger, Arboliva resembles Gift Card
+    (+$2 instead of +$1, and typed), Venonat is a weaker Oops! All 6s.
+
+--------------------------------------------------------------------------------------------------
+3.2 FIRE: 45 jokers (43 non-Mega; Pokermon 40, Nacho 4, Pokermon+ 1)
+--------------------------------------------------------------------------------------------------
+Identity: Mult and discards.
+  out:   +Mult 19, X 15, +Chips 6, $ 4, retrigger 1
+  Discards appear in 19 of 43 texts. Fire starters give +1 discard (Charmander, Cyndaquil,
+  Torchic, Chimchar).
+  Recurring shapes:
+    - "Scale with remaining discards" (Cyndaquil line).
+    - "Reward 0 discards remaining" (the Charmander line).
+    - "Destroy the card of a 1-card first discard" (Magmar, Magmortar, Entei's 4-card variant).
+    - Mult-card synergy (Arcanine, Flareon, Camerupt, Torkoal).
+    - Flush (Growlithe, Litleo, Pyroar).
+Hooks: joker_main 30, individual 17, add_to_deck 11 (discards), repetition 10, before 10,
+  after 7, first_hand_drawn 6, pre_discard 6, discard 5
+Examples:
+  Charmander line    +1 discard; gains Mult when a hand is played at 0 discards remaining.
+                     Charizard: +36 Mult and X1.5 at 0 discards. Mega X: X5.
+  Cyndaquil (U $5)   +1 discard, +4 Mult per remaining discard. Typhlosion: +8 Mult and X0.3
+                     per remaining discard.
+  Magmar (R $7)      If the first discard has only 1 card, destroy it and gain +2 Mult.
+                     Magmortar also gains X0.05 per discard used.
+  Numel (C $6)       X3 Mult every 20 cards scored. Camerupt: X4, with Mult cards counted twice.
+  Moltres (L $20)    Upgrades the first discarded poker hand each round by 3 levels.
+Typical numbers:
+  Basic     +M 3-8~4 | +C 70 (Litleo) | X 3 (Numel) | gain +M 1-5 | gain +C 12
+  Stage 1   +M 8 | +C 90 | X 1.5-4~3 | card X 2 | gain X 0.05-1
+  Stage 2   +M 8-36~30 | X 1.3-1.5 | gain +M 10 | gain X 0.3
+Under-explored:
+  - Chips (6), money (4), retriggers (1, Torkoal), seals, consumable creation (2).
+  - Fire-type synergy: only Blaziken.
+  - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
+    few hands.
+  - The 5 missing Gen 5-9 Fire starter lines will all want to follow the "+1 discard" starter
+    rule.
+Pitfalls:
+  - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
+    vouchers, Mega Charizard Y's +5).
+  - Reward-at-0-discards is already done four ways (Charmander, Charizard, Mega Charizard X,
+    Meditite). Don't add a fifth.
+  - Close to vanilla: Cyndaquil resembles Banner (Banner gives +30 Chips per remaining
+    discard); the 0-discards jokers resemble Mystic Summit (+15 Mult); Moltres is a 3-level
+    Burnt Joker; Magmar resembles Trading Card.
+
+--------------------------------------------------------------------------------------------------
+3.3 WATER: 104 jokers (98 non-Mega; Pokermon 93, Nacho 9, Pokermon+ 2). Ice maps here.
+--------------------------------------------------------------------------------------------------
+Identity: Chips, hands and retriggers.
+  out:   +Chips 34, +Mult 16, X 16, $ 14, retrigger 11
+  Also:  +hands 15 (all Water starters give +1 hand), face cards 14, suits 9, enhancements 20
+         (Bonus 6, Gold 4, Glass 4)
+  The broadest type. Recurring shapes:
+    - Chips per remaining hand (the Squirtle line) or per card played this round (the Totodile
+      line).
+    - Final-hand payoffs (Slowpoke X2).
+    - Retriggering whole hands (Shellder/Cloyster, Remoraid/Octillery, Politoed, Milotic).
+    - Suit cycling (Poliwag line).
+  The Ice subset has its own mini-identity: Glass (Glaceon, Cryogonal) and debt (Snorunt,
+  Glalie, Froslass).
+Hooks: joker_main 59, individual 30, before 28, repetition 22, add_to_deck 20 (hands), after 13,
+  setting_blind 5, open_booster 5, discard 4
+Examples:
+  Squirtle (U $6)    +1 hand; gains +1 Chips per remaining hand each hand played. Evolves at 40.
+                     Blastoise: +120 Chips and +25 per remaining hand.
+  Totodile (U $5)    +1 hand, +4 Chips per card played this round. Croconaw +7; Feraligatr +10.
+  Magikarp (C $2)    +1 Chip, applies Splash, 8 rounds. Gyarados (S $10): a flat X2.5 Mult.
+  Cloyster (S $8)    If the hand has 5 scoring cards, each has a 1 in 2 chance to retrigger.
+  Staryu (C $4)      Diamonds give +1 Mult and $1 (Water Stone). Starmie: +2 Mult and $2.
+Typical numbers:
+  Basic     +M 1-15~4 | +C 1-80~60 | card +M 1-7~4 | $ 1-4~3 | gain +C 1-30~6 | X 2
+  Stage 1   +M 25 (Quagsire) | +C 40-120~60 | X 1.5-3~2.5 | card +M 2-10~6 | card +C 20-50
+  Stage 2   +C 120-140 | card X 1.3 | gain +C 10-60~25
+Under-explored:
+  - Hand size (3) and discards (4).
+  - Seals (3: Seel, Dewgong, Articuno).
+  - Energy interaction.
+  - Ice beyond Glass and debt: 15 missing Ice species map to Water (Spheal, Cubchoo, Bergmite,
+    Snom, Eiscue, Glastrier...). They could own a "frozen" mechanic, for example cards kept in
+    hand between rounds or Glass that doesn't break.
+  - Water-type synergy (only Corsola, Lanturn, Pelipper and Politoed count Water Jokers).
+Pitfalls:
+  - Extra hands stack with every hand-based scaler. A new +hand joker plus Blastoise grows
+    quadratically.
+  - Whole-hand retriggers are the strongest effect in the game. Every existing one is
+    conditional (5 scoring cards, the first hand only, the hand contains an 8, same suit).
+  - Close to vanilla: Krabby is a smaller Scary Face (+20 instead of +30 Chips); Slowpoke is a
+    weaker Acrobat (X2 instead of X3 on the final hand); Carvanha/Sharpedo use Card Sharp's
+    condition; Remoraid is a one-hand Seltzer; Lapras resembles Throwback; Staryu resembles
+    Rough Gem.
+
+--------------------------------------------------------------------------------------------------
+3.4 LIGHTNING: 32 jokers (30 non-Mega; Pokermon 29, Nacho 1, Pokermon+ 2)
+--------------------------------------------------------------------------------------------------
+Identity: money and X Mult.
+  out:   $ 18, X 15, +Mult 5, +Chips 2, retrigger 0
+  Also:  Gold/Steel cards 11, Lightning-type synergy 5, sell value 2
+  Recurring shapes:
+    - Money thresholds (Pikachu, Raichu, Zapdos).
+    - Played Steel cards (the Magnemite line, the only "played Steel" payoff in the game).
+    - Gold cards (Electrike, Manectric, Jolteon).
+    - Sell-value banking (Electabuzz, Electivire).
+    - Volatile (Voltorb, Electrode).
+    - Counting Lightning Jokers (Charjabug, Vikavolt, Lanturn).
+Hooks: joker_main 18, individual 9, end_of_round 7, before 4, playing_card_added 3,
+  calc_dollar_bonus 3, selling_card 2, remove_playing_cards 2
+Examples:
+  Pikachu (C $6)       +10 Mult if you have $25+; otherwise earn $2 when a Blind is selected
+                       (Thunder Stone). Raichu: +4 Mult per $10, and earns interest when a Blind
+                       is selected.
+  Magnemite (U $7)     Played Steel cards give X1.5. Magneton adds X0.2 per adjacent Metal
+                       Joker; Magnezone adds X0.25 per Metal Joker.
+  Electabuzz (R $8)    Gains $2 of sell value per card sold and each round; pays 25% of its sell
+                       value each round (max $20). Electivire: X0.02 per $ of sell value.
+  Zapdos (L $20)       X0.08 Mult for every $2 you have.
+  Grubbin (C $3)       +3 Mult, tripled with a Lightning Joker. Charjabug: +7 per Lightning
+                       Joker. Vikavolt: X0.5 per Lightning Joker.
+Typical numbers:
+  Basic     +M 3-10 | X 1.75-2.5 | card X 1.5 | $ 1-10~2 (Pichu's $10 is the Baby outlier)
+  Stage 1   +M 7 | +C 60 | X 2-2.25 | card X 1.5 | $ 1-5~3 | gain X 0.02-0.25
+  Stage 2   card X 1.5 | gain X 0.3
+Under-explored:
+  - Chips (2), retriggers (0) and plain Mult.
+  - Consumables (1), Foresight (0), hand-type conditions (4).
+  - "Speed" ideas: extra draws and the first hand of the round.
+  - 30 non-Mega jokers against 31 missing species. Only Fighting is more under-filled
+    (20 against 23).
+Pitfalls:
+  - Money that scales with money (Raichu, Zapdos) snowballs with interest. Cap it, or pay by
+    threshold.
+  - X Mult from a dollar count needs a low step (Zapdos is X0.08 per $2).
+  - Close to vanilla: Raichu is a richer-step Bootstraps; Electrike is a $3 Golden Ticket;
+    Mareep/Ampharos resemble Hologram.
+
+--------------------------------------------------------------------------------------------------
+3.5 PSYCHIC: 66 jokers (62 non-Mega; Pokermon 62, Nacho 4). Ghost maps here.
+--------------------------------------------------------------------------------------------------
+Identity: consumables (tarot and planet), X Mult, the shop, and Ghost-flavoured Negative and
+Spectral effects.
+  out:   X 20, $ 11, retrigger 7, +Mult 5, +Chips 4
+  Also:  Planets 12, shop and price effects 11, editions/Negative 10, probability 9, Tarot 8,
+         Spectral 3, Foresight 4
+  Two halves:
+    - Psychic proper: Abra line, Drowzee/Hypno, Natu/Xatu, Ralts line, Gothita line,
+      Elgyem/Beheeyem, Mew, Mewtwo, Espeon.
+    - Ghost: Gastly line (Negative), Misdreavus/Mismagius (steal chips), Duskull line
+      (final-hand retriggers, Spectral in the shop), Shuppet/Banette (Jokers sold), Golett
+      (Hazards), Pumpkaboo (Spectral from Jacks discarded), Dreepy line (sell value), Greavard
+      (depleted ranks).
+Hooks: joker_main 25, end_of_round 22, add_to_deck 21, individual 15, repetition 15,
+  setting_blind 5, using_consumeable 4, destroy_card 4, first_hand_drawn 4, open_booster 3,
+  calc_dollar_bonus 3
+Examples:
+  Abra (C $6)          1 in 2 chance to create a Tarot or Item if the poker hand was already
+                       played this round. Alakazam: +1 consumable slot, Fool or Twisted Spoon.
+  Drowzee (U $5)       X0.2 per unique Planet card used this run (evolves after 7 unique).
+                       Hypno: X0.25, holding Trance.
+  Gastly (U $7)        1 in 6 chance at end of round to make a random Joker Negative (then it
+                       self-destructs). Haunter: 1 in 4. Gengar: a guaranteed one in 5 rounds.
+  Elgyem (R $7)        When a Blind is selected, create a Negative Planet for one of your 5
+                       highest-level hands. Beheeyem: top 3, plus a Telescope or Observatory
+                       after 9 Boosters.
+  Mew (L $20)          At the end of the shop, create a Negative Tarot, Spectral or Item, or a
+                       Negative Joker 15% of the time.
+Typical numbers:
+  Basic     X 1.2-2 | card X 2 | $ 1-3 | gain +M 3-5 | gain X 0.05-0.2
+  Stage 1   X 1.3-2.5~2.5 | card X 2.2 | $ 1-6 | gain +M 3-8 | gain X 0.25
+  Stage 2   $ 2 | gain X 0.3 (mostly rule effects: Gengar, Gothitelle, Dusknoir)
+Under-explored:
+  - Plain Chips and Mult (Psychic rarely just adds).
+  - Hand size (1).
+  - Spectral creation outside Ghosts.
+  - The Ghost half has no shared keyword: Negative, Spectral, final hand and selling are all
+    scattered. 17 of the 40 missing Psychic species are Ghosts.
+Pitfalls:
+  - Negative creation is the most dangerous effect in Pokermon (Gastly line, Mew, Elgyem).
+    Keep it to chance, delay or a one-per-round limit.
+  - Free consumables plus Alakazam/Kangaskhan slots snowball.
+  - Close to vanilla: Gothitelle is Astronomer (free Planets and Celestial Packs) plus $2;
+    Drowzee resembles Constellation; Mr. Mime is a focused Mime; Dusknoir's retrigger is Dusk;
+    Abra uses Card Sharp's condition.
+
+--------------------------------------------------------------------------------------------------
+3.6 FIGHTING: 24 jokers (20 non-Mega; Pokermon 20, Nacho 4)
+--------------------------------------------------------------------------------------------------
+Identity: hands versus discards, Mult and X Mult, deck-size math.
+  out:   X 9, +Mult 8, +Chips 3, $ 0, retrigger 0
+  Recurring shapes:
+    - "+hands / -discards" (the Machop line).
+    - Extra hands when a Blind is selected (Makuhita, Hariyama).
+    - Deck size (Hitmonlee: cards below 52; Hitmonchan: above 52; Hitmontop: exactly 52).
+    - Prime ranks (the Mankey line).
+    - Empty consumable slots at 0 discards (Meditite, Medicham).
+    - Editions held in hand (Lucario).
+Hooks: joker_main 13, individual 5, end_of_round 4, add_to_deck 4, setting_blind 3,
+  repetition 3, before 3
+Examples:
+  Machop (C $6)        +1 hand, -1 discard, +2 Mult. Machoke: +2/-2, +10 (Linking Cord).
+                       Machamp: +4 hands, -4 discards, +20 Mult.
+  Mankey (U $6)        Played 2, 3, 5 and 7 give +3 Mult and +5 Chips. Primeape: +5/+7.
+                       Annihilape: the same, multiplied by hands played this round.
+  Hitmonlee (U $6)     X0.15 for every card below 52 in your full deck. Hitmonchan: the same
+                       above 52.
+  Meditite (C $5)      +7 Mult per empty consumable slot at 0 discards. Medicham: +12, and
+                       applies Sixth Sense.
+  Lucario (R $9)       Each editioned card held in hand gives X1.3.
+Typical numbers:
+  Basic     +M 2 | X 1.3-1.5 | gain +M 3-7 | gain X 0.1-0.15
+  Stage 1   +M 10 | gain +M 5-12 | gain X 0.1
+  Stage 2   +M 20 | gain +M 5 | gain X 0.5
+Under-explored:
+  - Money (0), retriggers (0), enhancements (1), consumable creation (0).
+  - Fighting-type synergy (only Hariyama, plus Blaziken's "Fire or Fighting").
+  - Martial-arts ideas: "the first hand of the round", combos (consecutive hands), "exactly 1
+    card" strikes.
+  - 23 missing species, including the Kubfu/Urshifu, Timburr, Mienfoo, Pancham, Crabrawler and
+    Clobbopus lines.
+Pitfalls:
+  - +hands stacks with Water's hand scalers.
+  - Machamp's "+4 hands, -4 discards" is Burglar territory (vanilla Burglar: +3 hands, lose all
+    discards).
+  - Deck-size jokers are trivial in deck-thinning runs. Use small steps (X0.15 a card).
+  - Close to vanilla: Mankey is a Fibonacci with primes instead; Hitmonlee resembles Erosion
+    (X instead of +Mult).
+
+--------------------------------------------------------------------------------------------------
+3.7 COLORLESS: 73 jokers (71 non-Mega; Pokermon 63, Nacho 8, Pokermon+ 2). Normal maps here.
+--------------------------------------------------------------------------------------------------
+Identity: the toolbox. Utility, shop and rerolls, copying, probability, and the "type-less"
+synergies.
+  out:   +Mult 18, X 15, $ 6, retrigger 2, +Chips 1
+  Also:  shop/reroll/booster/tags 11, probability 9, Items 8, Energy 6 (the Porygon line),
+         copying 5 (Smeargle, Zoroark-style, Skitty, Delcatty, Hisuian Zorua), Foresight 4
+         (Hoothoot, Noctowl, Stantler)
+  Colorless Energy works on every type, so Colorless jokers are the "glue". Birds (the Pidgey,
+  Spearow, Taillow, Swablu and Pidove lines) recur on hand composition and draws.
+Hooks: joker_main 34, end_of_round 23, individual 21, add_to_deck 18, repetition 16, before 9,
+  hand_drawn 8, using_consumeable 8, setting_blind 5, open_booster 4, ending_shop 4,
+  reroll_shop 3
+Examples:
+  Pidgey (C $5)        +2 Mult for each different rank and suit in the poker hand. Pidgeotto
+                       +3; Pidgeot +5.
+  Rattata (C $5)       Retrigger the first 2 scored cards. Raticate: the first 3.
+  Porygon (U $6)       +1 Energy Limit; create an Energy when any Booster Pack is opened.
+                       Porygon-Z: +3 Energy Limit, X0.1 per Energy used.
+  Miltank (U $7)       Earn $4 per Colorless Joker at end of round.
+  Slakoth (U $4)       +15 Mult, -1 hand when a hand is played. Vigoroth: X0.5 per remaining
+                       hand. Slaking: X4, -1 hand.
+Typical numbers:
+  Basic     +M 3-15~6 | X 1.75-2 | card +M 6 | card X 1.5 | $ 1-4 | gain +M 1-4 | gain X 0.2
+  Stage 1   +M 5 | X 2 | card +M 7 | $ 1-2 | gain +M 1-6 | gain X 0.5
+  Stage 2   X 4 (Slaking) | gain +M 5
+Under-explored:
+  - Chips (1).
+  - Colorless-type synergy (Miltank and Kecleon only).
+  - Enhancements (7).
+  - Birds have no shared hook, and 17 of the missing Colorless species are Flying (Starly,
+    Pidove, Fletchling, Pikipek, Rookidee, Rufflet, Chatot, Squawkabilly, Tornadus...).
+Pitfalls:
+  - Copying effects (Smeargle, Zoroark) multiply whatever is strongest. Never add a new
+    unconditional copier below Rare.
+  - Free rerolls and shop slots: Bidoof/Bibarel already scale rerolls, and Dudunsparce gives
+    +1 of each shop slot.
+  - Close to vanilla: Rattata is Hanging Chad spread over 2 cards; Bidoof is Chaos the Clown;
+    Teddiursa is a smaller Red Card; Doduo resembles Smiley Face; Plusle resembles Abstract
+    Joker; Smeargle and Zoroark sit in Blueprint/Brainstorm's space.
+
+--------------------------------------------------------------------------------------------------
+3.8 DARK: 51 jokers (48 non-Mega; Pokermon 43, Nacho 4, Pokermon+ 4). Poison maps here.
+--------------------------------------------------------------------------------------------------
+Identity: destruction, devouring enhancements, held face cards, discards, Dark-type synergy.
+  out:   +Mult 16, X 11, +Chips 10, $ 6, retrigger 0
+  Also:  enhancements 10 (mostly eaten), hand types 10 (Three of a Kind, Straight), playing
+         cards destroyed 8, discards 6, face cards 6
+  Recurring shapes:
+    - Eating enhancements for Mult (the Zubat line; Crobat converts them by enhancement type).
+    - Held Kings and Queens (the Nidoran lines).
+    - Deck bloat or thinning (Grimer, Muk).
+    - "Destroy a card, gain" (Poochyena, Sneasel/Weavile, the Deino line).
+    - Counting Dark Jokers (Murkrow, Honchkrow, Mightyena).
+    - Volatile Poison (Koffing, Weezing).
+Hooks: joker_main 22, individual 17, end_of_round 17, before 12, repetition 8, after 8,
+  add_to_deck 7, hand_drawn 6, calc_dollar_bonus 5, discard 3, remove_playing_cards 3,
+  destroy_card 3
+Examples:
+  Zubat (C $5)         Gains +2 Mult when a scoring Enhanced card is played, removing its
+                       enhancement. Golbat: +2 per Enhanced card. Crobat: converts each
+                       enhancement to Mult, Chips, X Mult or $ by its type.
+  Houndour (U $4)      +1 discard selection limit; discarded cards permanently gain +2 Mult.
+                       Houndoom: +3 limit.
+  Murkrow (U $6)       X0.5 per Dark Joker (Dusk Stone). Honchkrow: each Dark Joker gives X1.5.
+  Deino (U $6)         X1.5 if the hand contains a Three of a Kind (house rule: "contains").
+                       Zweilous X2. Hydreigon destroys unscoring cards on a Three of a Kind and
+                       gains X0.33 per destroyed card.
+  Absol (R $8)         X2 Mult; all listed probabilities are always 0.
+Typical numbers:
+  Basic     +M 8-12~10 | X 1.5-2 | card +M 8 | card +C 50 | $ 2-4 | gain +M 2 | gain X 0.5
+  Stage 1   +M 15-18 | X 1.5-2 | card +M 12 | card +C 50-75 | $ 4 | gain +C 5-20 | gain X 1
+  Stage 2   X 3.33 (Hydreigon) | card +M 15 | card +C 60-90 | gain X 0.1-0.33
+Under-explored:
+  - Retriggers (0), consumables (Tarot 1), money (6).
+  - Poison as status: "poisoned" cards that lose value each hand. Nacho's Toxic cards (the
+    Loyal Three, Pecharunt) show the shape, but base Pokermon has none.
+  - 37 missing species, with many Poison lines (Gulpin, Stunky, Skorupi, Skrelp, Mareanie,
+    Salandit, Poipole).
+Pitfalls:
+  - Destroy-for-value stacks with every "when a card is destroyed" payoff (Poochyena, Pawniard,
+    Hydreigon, Cacnea, Nacho's Flapple). Check a new destroyer against all of them.
+  - Absol inverts every "chance to fail" design.
+  - Close to vanilla: Zubat/Golbat resemble Vampire (Mult instead of X Mult); Nidoking resembles
+    Baron (+Mult instead of X); Nidoqueen resembles Shoot the Moon (Chips instead of Mult);
+    Weezing's sell-to-disable is Luchador.
+
+--------------------------------------------------------------------------------------------------
+3.9 METAL: 39 jokers (36 non-Mega; Pokermon 31, Nacho 5, Pokermon+ 3). Steel maps here.
+--------------------------------------------------------------------------------------------------
+Identity: X Mult and Steel cards.
+  out:   X 17, +Chips 5, $ 5, retrigger 3, +Mult 1
+  Also:  Steel 12 (plus Stone 3, Gold 2), cards destroyed 8 (Aron line eats Steel; Pawniard
+         line), Energy 5 (Jirachi forms, Nacho's Perrserker)
+  Metal is where Legendaries cluster: 10 of its 39 are Legendary, through Jirachi's wish forms
+  and Pokermon+'s Meltan/Melmetal.
+Hooks: joker_main 15, individual 13, end_of_round 13, before 11, repetition 8,
+  first_hand_drawn 3, hand_drawn 3, ending_shop 3, remove_playing_cards 3, destroying_card 3
+Examples:
+  Aron (U $6)          Gains X0.25 per Steel card in the poker hand, destroying them (evolves at
+                       X2). Lairon: X0.4 per Steel or Stone. Aggron: Steel, Stone or Gold.
+  Beldum (U $6)        Gains +4 Chips on a Four of a Kind and +4 on a hand with an Ace.
+                       Metagross: +200 Chips; on a Four of a Kind each card gives X equal to the
+                       fourth root of its total Chips.
+  Klink (C $4)         Earn $1 per 12 cards drawn during Blinds. Klang: per 10. Klinklang: $1
+                       and X0.4 per 8 drawn (the X resets each round).
+  Pawniard (R $7)      Gains X0.25 when a face card is destroyed. Bisharp destroys a single
+                       first-hand face card. Kingambit: X2, and non-face cards give half that if
+                       the only King in the deck is held.
+  Skarmory (R $7)      +1 hazard layer and limit; X0.4 per Hazard or Steel card held.
+Typical numbers:
+  Basic     X 1.3 | card X 1.3 | $ 1-3 | gain X 0.25-0.4
+  Stage 1   +C 150 (Forretress) | card X 1.3-1.5 | gain +C 5-8 | gain X 0.25-0.5
+  Stage 2   X 2 | +C 200 (Metagross) | gain X 0.4
+Under-explored:
+  - Plain Mult (1), discards (1), consumables (1).
+  - Metal-type synergy (Magneton/Magnezone are Lightning).
+  - Held-in-hand Steel payoffs. The vanilla strength of Steel is HELD, but Pokermon mostly
+    rewards played or eaten Steel. Only Skarmory, Ferrothorn's retrigger, and Pokermon+'s
+    Meltan/Melmetal use held Steel.
+  - Only 16 missing species (Honedge line, Klefki, Cufant line, Varoom line, Orthworm,
+    Corviknight, Registeel, Dialga, Cobalion, Magearna, Iron Crown...).
+Pitfalls:
+  - Steel plus X Mult per card is the strongest scaling axis in vanilla already.
+  - "Eat Steel for permanent X" (the Aron line) thins the deck and scales. Keep its steps at
+    X0.25-0.4.
+  - Close to vanilla: Steel Joker (X0.2 per Steel in the deck) overlaps any deck-count design;
+    Mega Scizor resembles Baseball Card (X4 per Common instead of X1.5 per Uncommon).
+
+--------------------------------------------------------------------------------------------------
+3.10 FAIRY: 20 jokers (17 non-Mega; Pokermon 17, Nacho 3). The smallest type.
+--------------------------------------------------------------------------------------------------
+Identity: suits, face cards and per-card value, Lucky and probability.
+  out:   +Mult 7, +Chips 6, X 6, $ 0, retrigger 0
+  Also:  enhancements 8 (Lucky, Steel via Tinkatink), suits 4
+  Recurring shapes:
+    - One suit gives value (Clefairy: Clubs; Jigglypuff: Spades).
+    - The first face card gives X (Snubbull, Granbull).
+    - Lucky-card odds (Togetic, Togekiss).
+    - Every played card gives Mult, at the cost of debuffing deck cards (the Tinkatink line).
+    - Copies with editions (Sylveon).
+Hooks: individual 12, end_of_round 8, before 6, repetition 5, joker_main 4, after 4,
+  setting_blind 3. Fairy is the most per-card ("individual") type.
+Examples:
+  Clefairy (C $4)      Played Clubs give +3 Mult (Moon Stone). Clefable: +1 Mult per Clubs card
+                       played this round (5 Clubs give +5 each).
+  Jigglypuff (C $4)    Spades give +2 Mult and +10 Chips. Wigglytuff: +2 Mult, +30 Chips and the
+                       card's total Chips.
+  Snubbull (C $5)      The first played face card gives X1.75. Granbull: X2.25, or X2.5 if it
+                       is a Queen.
+  Togekiss (S $10)     +1 to all probabilities; Lucky cards have 2 in 5 for +100 Chips and 2 in
+                       10 for X1.5.
+  Tinkatink (R $7)     Played cards give +5 Mult; 12 non-Steel deck cards are debuffed when a
+                       Blind is selected. Tinkatuff: +10/16. Tinkaton: +15/20, and Steel cards
+                       are also Glass.
+Typical numbers:
+  Basic     +C 100 (Togetic Lucky) | card +M 2-5~3 | card +C 10 | card X 1.75
+  Stage 1   card +M 2-10 | card +C 30 | card X 2.25-2.5 | gain +M 1 | gain +C 10
+  Stage 2   card +M 15 (Tinkaton)
+Under-explored:
+  - Almost everything: money (0), retriggers (0), consumables, the shop.
+  - Fairy-type synergy (0).
+  - The fairy/healing lore (restoring destroyed cards, removing debuffs, Wish-like gifts) is
+    untouched.
+  - 15 missing species: the Flabebe line, the Spritzee, Swirlix and Milcery lines, Comfey,
+    Xerneas, Zacian, Enamorus, Scream Tail and Iron Valiant.
+Pitfalls:
+  - Per-card X on face cards is strong with Pareidolia (Panpour applies it).
+  - Close to vanilla: Clefairy resembles Onyx Agate (+7 Mult on Clubs); Jigglypuff resembles
+    Arrowhead (+50 Chips on Spades); Snubbull is a weaker Photograph (X1.75 instead of X2).
+
+--------------------------------------------------------------------------------------------------
+3.11 DRAGON: 30 jokers (25 non-Mega; Pokermon 16, Nacho 13, Pokermon+ 1)
+--------------------------------------------------------------------------------------------------
+Identity: poker-hand conditions, growth that is slow but huge, hand size.
+  out:   +Mult 9, X 7, $ 2, +Chips 1, retrigger 1
+  Also:  hand-type conditions 13 (Straight, Flush, Full House, Five of a Kind, small hands),
+         hand size 5, destroy 5 (Nacho's Applin line)
+  Recurring shapes:
+    - Small hands (the Dratini line: 3 or fewer, then 2 or fewer, then 1 card).
+    - Straights played this run (the Bagon line).
+    - Nature poker hands (the Axew line, doubling or tripling base Chips and Mult).
+    - Flushes (Nacho's Goomy line).
+    - Five of a Kind (Nacho's Frigibax line).
+  Pseudo-legendary lines (Dratini, Bagon, Axew, Goomy, Frigibax) have high Stage 2 ceilings and
+  long evolution conditions.
+Hooks: joker_main 13, before 8, individual 7, end_of_round 5, after 5, setting_blind 4,
+  remove_playing_cards 4, repetition 3, hand_drawn 3
+Examples:
+  Dratini (U $6)       Gains +1 Mult if the hand has 3 or fewer cards (evolves at 15).
+                       Dragonair: +2 at 2 or fewer (55). Dragonite: +55 Mult, and a single-card
+                       hand retriggers 5 times.
+  Bagon (U $6)         -1 hand size; +3 Mult per Straight played this run. Shelgon: -2 hand
+                       size. Salamence: +5 per Straight, plus hand size by Straights.
+  Axew (U $6)          Nature: two poker hands; the first Nature hand of each round doubles base
+                       Chips and Mult. Fraxure: every Nature hand. Haxorus: tripled.
+  Kingdra (S $10)      Gains +1 Mult per 6 scored, or X0.05 instead if a King is held.
+  Drampa (R $8)        +1 Booster Pack in the shop; Booster Packs are always Jumbo or better.
+Typical numbers:
+  Basic     X 2 | card X 1.5 | gain +M 1-3~1
+  Stage 1   $ 1-3 | gain +M 1-3 | gain X 0.3
+  Stage 2   +M 55 (Dragonite) | gain +M 1-5 | gain X 0.05-0.2
+Under-explored:
+  - Chips (1), money (2), enhancements (2).
+  - Dragon-type synergy (Altaria's "another Dragon Joker"; Mega Feraligatr counts Dragons).
+  - Legendary dragons: 14 of the 20 missing Dragon species are Legendary or pseudo-legendary
+    (Gible line, Jangmo-o line, the Lati twins, Rayquaza, Reshiram, Zekrom, Kyurem, Zygarde,
+    Regidrago).
+Pitfalls:
+  - "Base Chips and Mult doubled" (Axew) multiplies hand levels. With Planet stacking this is
+    exponential, so keep it to Nature hands or once per round.
+  - Big flat +Mult at Stage 2 (Dragonite +55) is the type's convention. Don't exceed it without
+    a condition.
+  - Close to vanilla: Dratini's 3-or-fewer condition is Half Joker's (+20 Mult); Bagon resembles
+    Runner (Runner gains Chips per Straight; Bagon counts Mult over the whole run).
+
+--------------------------------------------------------------------------------------------------
+3.12 EARTH: 55 jokers (54 non-Mega; Pokermon 46, Nacho 4, Pokermon+ 5). Ground and Rock map here.
+--------------------------------------------------------------------------------------------------
+Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
+  out:   +Chips 20, +Mult 18, X 18, retrigger 7, $ 4
+  Also:  Stone 13, Glass 6, Ancient 8, Hazards 5, probability 9, face cards 6
+  Recurring shapes:
+    - Big Chips with -hand size (the Geodude line).
+    - Stone cards gaining Chips or retriggering (the Rhyhorn line, Probopass, Excadrill).
+    - Stone plus Glass (the Swinub line).
+    - Ancient ranks (Kabuto, Aerodactyl, Relicanth, Nacho's Cranidos and Shieldon).
+    - Cards with no rank held (Roggenrola line).
+    - Held Diamonds or debuffed cards (Gligar, Gliscor).
+Hooks: individual 33, end_of_round 29, joker_main 26, before 14, repetition 13, add_to_deck 10,
+  after 9, setting_blind 8
+Examples:
+  Geodude (C $6)       +75 Chips, -1 hand size. Graveler: +175/-2. Golem: +275/-3.
+  Rhyhorn (C $5)       Every played Stone card permanently gains +12 Chips. Rhydon: +16, and the
+                       first Stone card retriggers. Rhyperior: +8 and a retrigger, plus 1 more
+                       per 3 Earth Jokers.
+  Kabuto (U $5)        Ancient 2s: 1+ gives +50 Chips; 2+ makes scoring 2s gain +5 Chips;
+                       3+ gives +50 Chips. Kabutops adds 4+: retrigger all 2s.
+  Roggenrola (C $4)    +1 hazard layer; each card with no rank held gives +5 Mult. Boldore +10;
+                       Gigalith +7 and a retrigger.
+  Gligar (R $8)        Played cards give X0.15 per Diamonds card held (the suit changes).
+                       Gliscor: X0.25 per Diamonds or debuffed card held.
+Typical numbers:
+  Basic     +M 4-5 | +C 5-75~50 | X 1.1-2 | card +M 2-5 | card +C 12-40 | gain +C 1-25~10
+  Stage 1   +C 5-175~70 | X 1.5-2 | card +M 4-10~5 | card +C 16-24 | gain +C 1-40 | gain X 0.4
+  Stage 2   +C 275 (Golem) | X 4 (Pokermon+'s Garganacl) | card +M 15 | gain +M 2-7
+Under-explored:
+  - Money (4), consumables, discards (4).
+  - Sand and weather: the poke_sand colour is reserved (Hippowdon, Sandaconda).
+  - Earth-type synergy (only Rhyperior).
+  - Missing fossils (Tirtouga, Archen, Tyrunt, Amaura, the Galar fossils) belong in Ancient.
+  - 43 missing species: Earth is the 4th largest gap.
+Pitfalls:
+  - Permanent per-card Chips (the Rhyhorn line, Kabuto) stack with Hiker. Keep steps at +5 to
+    +16.
+  - -hand-size costs must keep scaling with the reward (Golem -3).
+  - Close to vanilla: Golem resembles Stuntman (+250 Chips, -2 hand size); Rhyhorn is a
+    Stone-only Hiker; Sandshrew is Stone Joker counting Glass instead of Stone.
+
+
+==================================================================================================
+4. GENERAL DESIGN PRINCIPLES
+==================================================================================================
+
+4.1 Evolution lines that feel like growth
+-----------------------------------------
+  - Keep the trigger and grow the payoff. Players learn the Basic's condition, and the Stage 1
+    and Stage 2 reward them for keeping it. That is the Oddish, Cyndaquil, Squirtle and Dratini
+    pattern.
+  - Make the value carry over. If the Basic scales (mult plus mult_mod, chips plus chip_mod,
+    Xmult plus Xmult_mod), the evolution inherits it, so a well-fed Basic is a better
+    Stage 1.
+  - Step sizes, from section 2.3:
+      Basic to Stage 1    about x1.5-1.7 on the main number
+      Stage 1 to Stage 2  about x1.4-1.5, or swap + for X
+      About 40% of Stage 1s and Stage 2s add a second ability box, against 18% of Basics
+  - Give each stage a clear job:
+      Basic    simple and on-curve, with a 4-5 round timer or a reachable threshold
+      Stage 1  the main engine
+      Stage 2  either a big flat number (Golem, Dragonite) or a rule change (Gengar, Slaking,
+               Kingambit)
+  - Pick the evolution kind from the real game:
+      trade evolutions        Linking Cord
+      stone evolutions        the matching stone
+      friendship or time      rounds
+      level evolutions        rounds, or a play-count threshold that teaches the mechanic
+                              ("after triggering N times")
+      branching evolutions    evo_list items, or Rockruff-style play counters
+  - Pre-evolutions that are deliberately weak (Magikarp, Feebas) are fine when the payoff is
+    dramatic. Price them low (C $2, R $3).
+
+4.2 Flavour tied to the Pokemon
+-------------------------------
+The best existing jokers read their signature move, ability or Pokedex entry literally:
+  Rollout-like growth; Slaking's Truant (-1 hand); Absol's disaster sense (probabilities 0);
+  Wobbuffet's Shadow Tag (Eternal); Delibird's Present; Ditto's Transform; Smeargle's Sketch;
+  Snorunt and Glalie's "debt" ice; Zangoose adding cards (Crush Claw); Mimikyu's Disguise
+  (prevents death); Gholdengo's "can't be debuffed" (Good as Gold).
+A good test: someone who knows the Pokemon should guess roughly what the card does from its name.
+Prefer, in this order:
+  1. the signature move or ability
+  2. the Pokedex fact
+  3. the type identity
+Mechanic keywords the community already knows (Volatile, Nature, Ancient, Foresight, Hazards,
+Holding, Drain) should be reused before new ones are invented.
+
+4.3 Avoiding copies
+-------------------
+Before finalising a design, check it against three lists:
+  - The same type's existing shapes (section 3). For example, Fire already rewards 0 discards
+    four times.
+  - The vanilla jokers listed in the "close to vanilla" notes. A Pokermon joker that only
+    re-skins a vanilla joker needs a twist: a type, an evolution, a second box. Even existing
+    ones do this: Krabby is Scary Face at 2/3 strength, but it grows into Kingler's Bonus-card
+    conversion.
+  - The hooks. If your effect is "on joker_main, +N if hand contains X", there are ~40 of those
+    already. Reach for the less-used hooks:
+      hand_drawn (32), using_consumeable (25), remove_playing_cards (23), open_booster (14),
+      ending_shop (14), selling_card (7), reroll_shop (6), playing_card_added (6),
+      skipping_booster (4)
+    The Steamodded seams from batch 4 (debuff_card, modify_scoring_hand, drawing_cards,
+    money_altered, modify_final_cashout, stay_flipped, modify_hand, poker_hand_changed) each
+    have only 1-2 Pokermon users so far.
+
+4.4 Balance by rarity
+---------------------
+  Common Basic ($4-$5)
+    One condition, small number: +3 to +10 Mult, +40 to +75 Chips, $1-$3, or X1.5-X1.75 with a
+    real condition (Voltorb's Volatile). It evolves quickly.
+  Uncommon Basic ($5-$6, the 3-stage default)
+    The first piece of an engine. Scaling steps of +1 to +2 Mult, +4 to +12 Chips or X0.1-0.25,
+    or a utility (+1 hand size, +1 discard, Foresight).
+  Rare Basic ($7-$9, the single-stage default)
+    Has to stand alone forever. X2 with a condition (Pinsir, Heracross, Absol), a rule change
+    (Mr. Mime, Lucario), or an engine (Electabuzz).
+  Safari Stage 1 ($7-$9)
+    The main engine. X2-X2.5 flat is the ceiling (Gyarados X2.5 after 8 rounds of Magikarp).
+  Safari Stage 2 ($10)
+    The full engine plus one more thing. X3-X4 needs a cost or condition (Slaking -1 hand,
+    Hydreigon destroying cards).
+  Legendary ($20)
+    A unique rule (Moltres, Celebi, Mew, Ho-oh) or a high-ceiling scaler (Zapdos, Lugia). Never
+    just big numbers.
+  Mega ($12)
+    One axis, pushed to the extreme, often with a drawback (2.8).
+  Baby ($3-$4)
+    Penalty X0.75 (or X0.5 for strong utilities) plus one utility, and always 2 rounds.
+Probability effects should go through pseudorandom_probability/get_probability_vars, so Venonat
+(+1 numerator), Togekiss, Leafeon (x3), Nacho's Victini (x3) and Absol (always 0) affect them.
+Price for that:
+  - "1 in 2" becomes guaranteed with one Venonat.
+  - A "chance to fail" becomes a chance to succeed under Absol.
+
+4.5 How Megas, shinies and held items layer on
+----------------------------------------------
+  - Megas: design one only for species that have a canonical Mega (or Gigantamax-style
+    showpieces if the owner wants). The Mega should be the line's mechanic at 3-5x, or a rule
+    break, at $12. It must stay interesting with the once-per-round devolve: Megas are switched
+    in for the Boss Blind.
+  - Shiny: never touches ability text. Assume any joker can be Shiny (+$5 cost, +1 booster
+    slot).
+  - Held items: add one when the Pokemon has a canonical held item or signature item (Leek,
+    Thick Club, Leftovers, Lucky Egg/Punch, Quick Powder, Metal Powder, Dragon Scale, Deep Sea
+    Tooth or Scale, Razor Claw or Fang, Rusted Sword or Shield...). Let the ability reference
+    it, and make it "(Must have room)" or Negative.
+  - Energy: decide which numbers should scale. Only fields in energy_values do (2.4). A
+    retrigger or hand-size joker that should want Energy needs a numeric rider.
+
+
+==================================================================================================
+5. 25 DESIGN RECOMMENDATIONS
+==================================================================================================
+All 25 species are from the missing list (designwiki/data/pokermon_jokers.json). Types, stages
+and rarity guesses are taken from it; cost and rarity changes are flagged.
+
+Spread:
+  Types     all 12 types
+  Gens      Gen 3 (3), Gen 4 (4), Gen 5 (4), Gen 6 (4), Gen 7 (2), Gen 8 (5), Gen 9 (3)
+  Lines     four full 3-stage lines (Shinx, Honedge, Spheal, Grookey); five 2-stage lines
+  Legendary Kubfu/Urshifu and Xerneas
+
+Ability text is in Pokermon's loc style. Numbers are written in place of the #N# variables; in
+en-us.lua they would be #1#, #2# and so on, filled by loc_vars. Each entry gives:
+  - the ability text
+  - the evolution condition
+  - Flavour: why it fits the Pokemon
+  - Hook: the mechanic it uses
+  - Balance: the comparison with similar existing jokers
+  - Impl: the existing joker code it most resembles
+
+--------------------------------------------------------------------------------------------------
+LINE A: SHINX -> LUXIO -> LUXRAY (Lightning, Gen 4). "The eyes that see through walls"
+--------------------------------------------------------------------------------------------------
+Line idea: Lightning has no Foresight joker. Luxray's Pokedex fame is seeing through solid
+objects, so the line foresees the deck and pays for matching it. Money keeps it on Lightning's
+identity, and the payoff turns into X Mult at Stage 2.
+
+#1  SHINX  (#403)   Lightning | Basic | Uncommon | $6
+    {C:purple}+1 Foresight
+    Played cards that share a rank
+    with a {C:attention}Foreseen{} card
+    earn {C:money}$1{} when scored
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}4{C:inactive,s:0.8} rounds)
+  Evolution: level_evo, 4 rounds. Shinx evolves early (Lv 15), like Pidgey's 4.
+  Flavour:   Shinx's fur flashes when it senses danger, and the whole family is about sight.
+             Electric means money.
+  Hook:      Foresight (the scry spread) plus an individual G.play check against the ranks in
+             G.scry_view.cards; returns dollars.
+  Balance:   About 1-2 matches a hand once the player builds hands around the Foreseen rank:
+             about $4-8 a round at best, $0 if ignored. Below Electrike (each Gold card earns
+             $3, C $5), and it needs no enhancement investment. Bulbasaur (U $5) pays a similar
+             $1 per card and also gives +1 hand size. Energy scales the money field.
+  Impl:      Lopunny (pokejokers_15.js) builds the Foreseen-rank lookup; Electrike
+             (pokejokers_11.js) returns dollars and uses dollar_buffer from individual. Use the
+             "...scry" add/remove pair (pokejokers_06.js) and level_evo('j_poke_luxio').
+
+#2  LUXIO  (#404)   Lightning | Stage 1 | Safari | $8
+    {C:purple}+2 Foresight
+    Played cards that share a rank
+    with a {C:attention}Foreseen{} card give
+    {C:mult}+6{} Mult and earn {C:money}$1{} when scored
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}5{C:inactive,s:0.8} rounds)
+  Evolution: level_evo, 5 rounds (Lv 30).
+  Flavour:   Luxio's claws release electricity and its group hunts together. More sight means
+             more Foresight.
+  Hook:      As Shinx; individual returns { mult, dollars }.
+  Balance:   Two Foreseen cards roughly double the matches. +6 Mult per matching card is the
+             Stage 1 per-card median (6). Lopunny (Stage 1) gives +5 Mult per unscored card and
+             X2 on a Foreseen-rank match. Luxio is steadier, Lopunny spikier.
+  Impl:      As Shinx; Rockruff (pokejokers_25.js) returns { mult } from individual.
+
+#3  LUXRAY  (#405)   Lightning | Stage 2 | Safari | $10
+    {C:purple}+3 Foresight
+    Played cards that share a rank
+    with a {C:attention}Foreseen{} card give
+    {X:mult,C:white} X1.4 {} Mult and earn {C:money}$1{}
+    when scored
+  Flavour:   "Luxray can see through solid objects. It can find prey hiding behind walls."
+  Hook:      As Luxio, with per-card X (Xmult_multi, so Energy adds only 5%).
+  Balance:   With 3 of 13 ranks visible and a planned hand, 2-3 matches give X2-2.7 plus $2-3.
+             A fully steered 5-card hand gives X5.4: that is the reward for planning around
+             cards you haven't drawn yet. This sits with Vileplume (X1.3/X1.5 on odd ranks) and
+             Poliwrath (X1.3 on a cycling suit), both S $10.
+  Impl:      Magnemite (pokejokers_03.js) returns x_mult per card in individual; the rest is as
+             Shinx.
+
+--------------------------------------------------------------------------------------------------
+LINE B: HONEDGE -> DOUBLADE -> AEGISLASH (Metal, Gen 6). "Shield and Blade"
+--------------------------------------------------------------------------------------------------
+Line idea: Metal rarely rewards Steel cards HELD in hand, which is the vanilla strength of
+Steel. The line feeds on held Steel, then Aegislash alternates its two formes with how you play.
+
+#4  HONEDGE  (#679)   Metal | Basic | Uncommon | $6
+    Gains {C:mult}+1{} Mult for each
+    {C:attention}Steel{} card held in hand
+    when a hand is played
+    {C:inactive}(Currently {C:mult}+0{C:inactive} Mult)
+    {C:inactive,s:0.8}(Evolves at {C:mult,s:0.8}+0{C:inactive,s:0.8} / +20 Mult)
+  Evolution: scaling_evo at +20 Mult (evo_rqmt 20). Charmander evolves at 16, Shuppet at 18.
+  Flavour:   Honedge wraps its cloth around whoever grabs it and drains their life, so it grows
+             stronger from the Steel you hold.
+  Hook:      before: count G.hand cards with m_steel and scale; joker_main gives the Mult.
+  Balance:   With 2-3 Steel held it grows about +8-12 a round, so it evolves in 2-3 rounds. The
+             Mult is inherited. Mantine gains +4 Chips per Gold card scored or held (R $8);
+             this is a Mult version that needs Steel already in the deck.
+  Impl:      Skarmory (pokejokers_08.js) counts held Steel; Mantine (pokejokers_08.js) scales
+             on enhanced cards; scale_card(card, { ref_value: 'mult', scalar_value:
+             'mult_mod' }) as in Shuppet (pokejokers_12.js); scaling_evo('j_poke_doublade').
+
+#5  DOUBLADE  (#680)   Metal | Stage 1 | Safari | $8
+    Gains {C:mult}+2{} Mult for each
+    {C:attention}Steel{} card held in hand
+    when a hand is played
+    {br:2}ERROR - CONTACT STEAK
+    Retrigger the first {C:attention}2{}
+    {C:attention}Steel{} cards held in hand
+    {C:inactive}(Currently {C:mult}+20{C:inactive} Mult)
+    {C:inactive,s:0.8}(Evolves with a {C:attention,s:0.8}Dusk Stone{C:inactive,s:0.8})
+  Evolution: item_evo, Dusk Stone (canonical: Doublade evolves with a Dusk Stone).
+  Flavour:   Two swords that coordinate their attacks telepathically, so two Steel cards get a
+             second swing.
+  Hook:      repetition with cardarea G.hand, on the first 2 held Steel cards.
+  Balance:   Two retriggered held Steel cards turn X2.25 into about X5.1 from those two cards.
+             This is strong, but it needs Steel held. The precedents are Ferrothorn (all held
+             Steel retrigger on a Flush, S $8) and Pokermon+'s Meltan (Legendary: each held
+             Steel retriggers once). The Mult growth doubles to +2.
+  Impl:      Ferrothorn (pokejokers_20.js): the repetition branch on G.hand with the
+             card_effects guard. Count retriggers per hand in extra and reset them in after.
+             item_req 'duskstone' as in Murkrow (pokejokers_07.js).
+
+#6  AEGISLASH  (#681)   Metal | Stage 2 | Safari | $10
+    {C:mult}+20{} Mult {C:inactive}(kept from Doublade)
+    {C:attention}Stance Change:{}
+    {C:attention}Blade Forme:{} {X:mult,C:white} X2.5 {} Mult
+    {C:attention}Shield Forme:{} retrigger all
+    {C:attention}Steel{} cards held in hand
+    {br:2}ERROR - CONTACT STEAK
+    Playing a hand switches to Blade Forme,
+    discarding switches to Shield Forme
+    {C:inactive}(Starts each round in Shield Forme)
+  Flavour:   Stance Change, Aegislash's signature ability: attacking turns it to Blade, and
+             King's Shield returns it to Shield.
+  Hook:      A forme flag in extra.
+               Shield (start of round, or after any discard): repetition on G.hand Steel cards.
+               Blade (the next hand after a played hand): X2.5 in joker_main.
+               Flip to Blade in after; flip to Shield in discard (or pre_discard).
+               Reset at end_of_round.
+  Balance:   The first hand of each round is a Shield hand (held Steel retriggered); every hand
+             in a row after it is a Blade hand at X2.5. Discarding gives up the X. Gyarados
+             gives X2.5 flat at Stage 1, so Aegislash's is conditional but alternates with a
+             Steel payoff. The flat Mult no longer grows (the scaling stopped at Doublade).
+  Impl:      Charcadet (pokejokers_32.js) for per-hand state in after and the reset at
+             end_of_round; Magmar or Umbreon (pokejokers_05.js / _07.js) for reading the
+             discard context; Ferrothorn for the held-Steel retrigger. An optional `form` field lets
+             the renderer swap art (as Minior and Pumpkaboo do).
+
+--------------------------------------------------------------------------------------------------
+LINE C: SPHEAL -> SEALEO -> WALREIN (Water, Gen 3). "Rollout"
+--------------------------------------------------------------------------------------------------
+Line idea: Rollout doubles in power on each consecutive hit for 5 turns. That gives Water Chips
+which double while the player repeats a poker hand. It is the opposite of Sentret/Furret, which
+reward changing hands.
+
+#7  SPHEAL  (#363)   Water | Basic | Uncommon | $6
+    {C:attention}Rollout:{} {C:chips}+10{} Chips, doubled
+    for each consecutive hand of
+    the same poker hand {C:inactive}(max 4 doublings)
+    {C:inactive}(Resets when the hand changes
+    {C:inactive}and at end of round)
+    {C:inactive}(Currently {C:chips}+10{C:inactive} Chips)
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}5{C:inactive,s:0.8} rounds)
+  Evolution: level_evo, 5 rounds (Lv 32).
+  Flavour:   Spheal rolls instead of walking, and Rollout doubles each turn.
+  Hook:      before compares context.scoring_name with the last hand and steps or resets a
+             streak (0-4); joker_main gives chips x 2^streak.
+  Balance:   +10 / 20 / 40 / 80 / 160. A typical round with 2-3 repeats gives about +70 Chips
+             in total, in line with Common chips jokers (Spinarak +40, or 1 in 3 for +90). The
+             ceiling of +160 needs 5 identical hands. Vanilla Card Sharp (X3 if the poker hand
+             was already played this round) shares the "repeat" axis; Spheal is a Chips build-up
+             instead.
+  Impl:      Sentret (pokejokers_06.js) tracks the last hand in before; Squirtle's squirt_calc
+             (pokejokers_01.js) shows the chip_mod return. Keep the base in `chips` so Energy
+             (+30%) raises the doubled value.
+
+#8  SEALEO  (#364)   Water | Stage 1 | Safari | $8
+    {C:chips}+1{} hand
+    {C:attention}Rollout:{} {C:chips}+20{} Chips, doubled
+    for each consecutive hand of
+    the same poker hand {C:inactive}(max 4 doublings)
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}5{C:inactive,s:0.8} rounds)
+  Evolution: level_evo, 5 rounds (Lv 44).
+  Flavour:   "It often balances and rolls things on the tip of its nose": it keeps the ball
+             rolling, so +1 hand to extend the streak.
+  Hook:      As Spheal, plus the Squirtle line's hands pair (pokejokers_01.js, the `hands`
+             object: ease_hands_played on add and remove).
+  Balance:   +20 up to +320. The +1 hand matches Wartortle's (+1 hand, +2 Chips per remaining
+             hand, up to 120). Sealeo can go higher but only on repetition.
+  Impl:      Spheal's code plus ...hands from pokejokers_01.js.
+
+#9  WALREIN  (#365)   Water | Stage 2 | Safari | $10
+    {C:chips}+1{} hand
+    {C:attention}Rollout:{} {C:chips}+40{} Chips, doubled
+    for each consecutive hand of
+    the same poker hand {C:inactive}(max 4 doublings)
+    {br:2}ERROR - CONTACT STEAK
+    {C:attention}Sheer Cold:{} {X:mult,C:white} X3 {} Mult while
+    Rollout is at full power
+  Flavour:   Walrein's tusks shatter icebergs. Sheer Cold is a one-hit-KO move, a finisher
+             once the roll completes.
+  Hook:      As Sealeo; at streak 4, joker_main also gives Xmult 3.
+  Balance:   +40 / 80 / 160 / 320 / 640. The X3 needs 5 identical hands in one round, which
+             with the base 4 hands plus Walrein's +1 is exactly the last hand of a full round.
+             It is a harder Acrobat (vanilla X3 on the final hand). Blastoise sits around +245
+             Chips; Walrein is lower early and higher late.
+  Impl:      Spheal's code; the X return as in Slowpoke (pokejokers_03.js).
+
+--------------------------------------------------------------------------------------------------
+LINE D: GROOKEY -> THWACKEY -> RILLABOOM (Grass starter, Gen 8). "The beat"
+--------------------------------------------------------------------------------------------------
+Line idea: a template for the 15 missing starter lines. It keeps the starter rule (Grass:
++1 hand size, kept at every stage; 'starter' attribute) and gives Grass the retriggers it lacks
+(only 5 so far), driven by a rhythm counter.
+
+#10 GROOKEY  (#810)   Grass | Basic | Uncommon | $5 (starter; the wiki guessed $6)
+    {C:attention}+1{} hand size
+    Every {C:attention}4th{} card scored this
+    round is retriggered
+    {C:inactive}(Beat {C:attention}0{C:inactive}/4)
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}12{C:inactive,s:0.8} beats)
+  Evolution: "after triggering 12 times" (scaling_evo on a counter), the Gen 3 starter style.
+             About 4 rounds.
+  Flavour:   "When it uses its special stick to strike up a beat, the sound waves produced
+             carry revitalizing energy to trees and flowers."
+  Hook:      repetition with cardarea G.play: count each scored card in a round-long counter
+             and retrigger on multiples of 4. Reset at end_of_round.
+  Balance:   About 1 retrigger every 1-2 hands. Rattata (C $5) retriggers 2 cards every hand,
+             so Grookey's retriggers are fewer but it brings +1 hand size and the line. Starter
+             Basics are U $5 (Bulbasaur, Cyndaquil, Treecko...).
+  Impl:      Victreebel (pokejokers_03.js) keeps a round_retriggers counter in repetition with
+             a !context.blueprint guard and resets it at end_of_round. Bulbasaur's add/remove
+             change_size (pokejokers_01.js); Electrike's trigger counter with scaling_evo.
+             Starters also need 'starter' in attributes.
+
+#11 THWACKEY  (#811)   Grass | Stage 1 | Safari | $8
+    {C:attention}+1{} hand size
+    Every {C:attention}3rd{} card scored this
+    round is retriggered
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}16{C:inactive,s:0.8} beats)
+  Flavour:   Thwackey drums with two sticks, and the faster it beats the more it's respected.
+  Balance:   About 1.5 retriggers a hand; between Rattata and Raticate (first 3, S $7).
+  Impl:      As Grookey.
+
+#12 RILLABOOM  (#812)   Grass | Stage 2 | Safari | $10
+    {C:attention}+1{} hand size
+    Every {C:attention}2nd{} card scored this
+    round is retriggered
+    {br:2}ERROR - CONTACT STEAK
+    {C:attention}Drum Beating:{} retriggered cards
+    give {C:mult}+3{} Mult
+  Flavour:   Rillaboom's drum kit is made from a tree stump; its signature move is Drum
+             Beating.
+  Hook:      As Thwackey, plus individual +3 Mult when the card is on a beat. The `mult` field
+             gives Energy something to scale.
+  Balance:   2-3 retriggers per 5-card hand, each with +3 Mult. Octillery (retrigger all played
+             cards, but debuffs itself unless the hand contains an 8, S $6) and Mega Kangaskhan
+             (all cards) are the upper bar. Rillaboom is below them and flexible.
+  Impl:      As Grookey; the per-card Mult as in Rockruff.
+
+--------------------------------------------------------------------------------------------------
+LINE E: KUBFU -> URSHIFU (Fighting Legendary, Gen 8). "Two schools"
+--------------------------------------------------------------------------------------------------
+#13 KUBFU  (#891)   Fighting | Legendary | Legendary | $10 (the wiki guessed $20)
+    This Joker can't be debuffed
+    Gains {X:mult,C:white} X0.1 {} Mult when a hand
+    with exactly {C:attention}1{} or exactly {C:attention}5{}
+    scoring cards is played
+    {C:inactive}(Currently {X:mult,C:white} X1 {C:inactive} Mult)
+    {C:inactive,s:0.8}(Evolves after 10 trainings:
+    {C:inactive,s:0.8}more 1-card hands: Single Strike,
+    {C:inactive,s:0.8}more 5-card hands: Rapid Strike)
+  Evolution: a custom branch on two counters. Canonically Kubfu reads a scroll in the Tower of
+             Darkness or the Tower of Waters; here the player's own training picks the school.
+  Flavour:   Inner Focus (it can't flinch, so it can't be debuffed); relentless training.
+  Hook:      joker_main counts scoring_hand.length (1 or 5) and steps two counters.
+  Balance:   X1 to X2 over 10 trainings (2-3 rounds): a Pawniard-like curve (Pawniard is R $7
+             and evolves at X2). At $10 it is priced like Shaymin ($10), the other Legendary that
+             changes by play. Its value is the Urshifu it becomes.
+  Impl:      Rockruff (pokejokers_25.js) branches with chained scaling_evo calls on two
+             counters. For "can't be debuffed", add the name to systems/rules.js set_debuff the
+             way Gholdengo does. Scale Xmult with Xmult_mod so it carries over.
+
+#14 URSHIFU  (#892)   Fighting | Legendary | Legendary | $20
+    Two formes, two centers (urshifu_single, urshifu_rapid), as Lycanroc has three.
+    Both keep Kubfu's X Mult, keep training (+X0.1), and can't be debuffed.
+
+    Single Strike Style
+    {X:mult,C:white} X2 {} Mult {C:inactive}(kept from Kubfu)
+    {C:attention}Unseen Fist:{} playing cards
+    can't be debuffed
+    {br:2}ERROR - CONTACT STEAK
+    {C:attention}Wicked Blow:{} if played hand is
+    exactly {C:attention}1{} card, it also gives this
+    Joker's {X:mult,C:white}X{} Mult when scored
+
+    Rapid Strike Style
+    {X:mult,C:white} X2 {} Mult {C:inactive}(kept from Kubfu)
+    {C:attention}Surging Strikes:{} retrigger
+    the first {C:attention}3{} scored cards
+  Flavour:   Wicked Blow is one strike that always crits. Surging Strikes hits three times and
+             always crits. Unseen Fist ignores Protect.
+  Hook:      Single Strike: per-card x_mult in individual when #scoring_hand == 1, plus debuff
+             prevention. Rapid Strike: repetition on scoring_hand[0..2].
+  Balance:   Single Strike turns X2.5 into X6.25 on a single card. Single-card hands are low
+             base (Dragonite's 5 retriggers on a single card is the precedent), and "playing
+             cards can't be debuffed" answers suit and face bosses (Chicot-lite). Rapid Strike is
+             Raticate (S $7) plus a growing X. Legendary-tier, like Zapdos or Lugia.
+  Impl:      The formes are separate centers chosen by Kubfu's branch (Lycanroc day/night/dusk,
+             pokejokers_25.js). Unseen Fist goes in systems/rules.js set_debuff (Tentacruel's
+             "10s can't be debuffed" check), or the debuff_card seam (smods batch 4,
+             {prevent_debuff = true}). Only rules.js reads that seam today, for a challenge
+             rule; no joker does. Wicked Blow follows
+             Dragonite's single-card check (pokejokers_05.js); Surging Strikes follows Rattata
+             (pokejokers_01.js).
+
+--------------------------------------------------------------------------------------------------
+#15 XERNEAS  (#716)   Fairy | Legendary | Legendary | $20 (Gen 6)
+--------------------------------------------------------------------------------------------------
+    {C:attention}Geomancy:{} after the first hand
+    of each round, played cards give
+    {X:mult,C:white} X1.25 {} Mult when scored
+    {C:inactive}(Charging...)
+    {br:2}ERROR - CONTACT STEAK
+    The first playing card destroyed
+    each round returns to your hand
+    as a copy
+  Flavour:   Geomancy spends its first turn charging, then sharply raises three stats.
+             "Legends say it can share eternal life."
+  Hook:      Per-round state (active after the first hand's after), per-card x_mult in
+             individual; remove_playing_cards adds a copy to hand once per round.
+  Balance:   From the second hand on, a 5-card hand gets about X3.05. The first hand of every
+             round is unboosted, so it rewards multi-hand rounds. That is near Zapdos (X0.08 per
+             $2, about X2-4) and Lugia (X1 per 40 cards drawn). The rebirth is a small
+             safety net for destroy decks, with no scaling. It also gives Fairy its first
+             "restore" effect.
+  Impl:      Charcadet (pokejokers_32.js) for the after / end_of_round state; Mega Pinsir
+             (pokejokers_05.js) for per-card x_mult; Chansey (pokejokers_04.js) for "add a copy
+             of it to hand"; Poochyena (pokejokers_09.js) for the remove_playing_cards loop.
+
+--------------------------------------------------------------------------------------------------
+LINE F: TANDEMAUS -> MAUSHOLD (Colorless, Gen 9). "Population Bomb"
+--------------------------------------------------------------------------------------------------
+#16 TANDEMAUS  (#924)   Colorless | Basic | Common | $5
+    Played cards that share a rank
+    with another scored card give
+    {C:mult}+3{} Mult when scored
+    {C:inactive}(The pair never separates)
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}5{C:inactive,s:0.8} rounds)
+  Evolution: level_evo, 5 rounds (Lv 25 in battle).
+  Flavour:   Tandemaus always move as a pair.
+  Hook:      individual on G.play: check the scoring_hand for another card with the same
+             get_id().
+  Balance:   Pair +6, Two Pair +12, Three of a Kind +9, Full House +15. That is about Jolly
+             Joker (+8 Mult on a Pair) spread over more hands, and Common-level.
+  Impl:      Mankey's per-card Mult (pokejokers_02.js) with a rank-share test.
+
+#17 MAUSHOLD  (#925)   Colorless | Stage 1 | Safari | $8
+    Played cards that share a rank
+    with another scored card give
+    {C:mult}+3{} Mult when scored
+    {br:2}ERROR - CONTACT STEAK
+    {C:attention}Population Bomb:{} retrigger the
+    first scored card, then {C:green}1 in 2{}
+    chance to retrigger it again,
+    up to {C:attention}4{} times {C:inactive}(Family of Four)
+  Form:      Nature-style roll on creation: 1 in 100 is the Family of Three ("up to 3 times;
+             each retrigger earns $1"), as in the games.
+  Flavour:   Population Bomb is the mice hitting 1-10 times, each hit needing an accuracy
+             check. Maushold's rare Family of Three form.
+  Hook:      repetition on scoring_hand[0]: roll pseudorandom_probability in a loop and return
+             repetitions = successes + 1.
+  Balance:   Expected retriggers: 1 + 0.5 + 0.25 + 0.125 = about 1.9 on one card. One Venonat
+             makes the 1 in 2 guaranteed (4 retriggers), which is still below Dragonite's 5 on a
+             single card and vanilla Hanging Chad plus Oops! All 6s territory. Cap it at 4: the
+             loop is the risk.
+  Impl:      Cloyster (pokejokers_04.js) for the probability roll in repetition (seed it
+             'maushold'); Rattata (pokejokers_01.js) for the scoring_hand[0] repetition;
+             Pumpkaboo (pokejokers_24.js) for the form roll in set_ability(initial) and the
+             loc key per form.
+
+--------------------------------------------------------------------------------------------------
+LINE G: DARUMAKA -> DARMANITAN (Fire, Gen 5). "Hustle, then Zen"
+--------------------------------------------------------------------------------------------------
+#18 DARUMAKA  (#554)   Fire | Basic | Common | $5
+    {C:mult}+15{} Mult
+    {C:attention}Hustle:{} {C:green}1 in 4{} chance
+    to give nothing
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}4{C:inactive,s:0.8} rounds)
+  Flavour:   Hustle, Darumaka's ability: stronger attacks, worse accuracy.
+  Hook:      joker_main with a probability roll.
+  Balance:   Expected +11.25. Gros Michel gives +15 with a 1 in 6 chance to be destroyed, and
+             Ekans gives +10 on a Straight. It deliberately inverts probability synergy:
+             Venonat and Togekiss make it miss MORE, and Absol (probabilities always 0) makes it
+             never miss. A cheap Absol combo is fine at Common.
+  Impl:      Spinarak (pokejokers_06.js) rolls in joker_main; go through get_probability_vars
+             and pseudorandom_probability so modifiers apply.
+
+#19 DARMANITAN  (#555)   Fire | Stage 1 | Safari | $8
+    {C:mult}+30{} Mult
+    {br:2}ERROR - CONTACT STEAK
+    {C:attention}Zen Mode:{} on the final hand of
+    the round, gives {X:mult,C:white} X3 {} Mult instead
+    and becomes {X:poke_psychic,C:white}Psychic{} until
+    end of round
+  Flavour:   Sheer Force replaces Hustle (no more misses). Zen Mode is the hidden ability:
+             below half HP it turns Fire/Psychic and meditates.
+  Hook:      joker_main: if hands_left == 0, give X3, else +30. The type flip comes from a
+             temporary Psychic Tera sticker, removed at end_of_round.
+  Balance:   +30 is at the top of the Stage 1 flat range (Quagsire +25; Charizard has +36 at
+             Stage 2). The final-hand X3 equals Acrobat and beats Slowpoke (X2, U $6). The
+             Psychic flip lets Psychic-count jokers count it on that hand. Note that a Tera
+             sticker also changes Energy matching while it is on.
+  Impl:      Slowpoke (pokejokers_03.js) checks G.GAME.current_round.hands_left === 0 in
+             joker_main; Kecleon (pokejokers_12.js, kecleon_set_type) calls
+             apply_type_sticker.
+
+--------------------------------------------------------------------------------------------------
+LINE H: SCRAGGY -> SCRAFTY (Dark, Gen 5). "Moxie"
+--------------------------------------------------------------------------------------------------
+#20 SCRAGGY  (#559)   Dark | Basic | Common | $5
+    {C:mult}+4{} Mult
+    {C:attention}Moxie:{} gains {C:mult}+3{} Mult when a
+    Blind is defeated with the
+    first hand of the round
+    {C:inactive}(Currently {C:mult}+4{C:inactive} Mult)
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}4{C:inactive,s:0.8} rounds)
+  Flavour:   Moxie: its Attack rises after each knockout. Scraggy headbutts anything.
+  Hook:      Main end_of_round: if G.GAME.current_round.hands_played === 1, scale.
+             (Micatro increments hands_played after the hand is scored, in run.js, so it counts
+             the winning hand.)
+  Balance:   It grows only when you already one-shot a Blind, so it is a "rich get richer"
+             Common: about +3 a round once you are strong. Teddiursa (+2 per Booster skipped)
+             and Red Card are the comparisons.
+  Impl:      Teddiursa (pokejokers_08.js) for the scale-on-event shape; level_evo.
+
+#21 SCRAFTY  (#560)   Dark | Stage 1 | Safari | $8
+    {C:attention}Moxie:{} gains {C:mult}+3{} Mult, plus {C:mult}+1{}
+    for each other {X:poke_dark,C:white}Dark{} Joker, when a
+    Blind is defeated with the first
+    hand of the round
+    {br:2}ERROR - CONTACT STEAK
+    {X:mult,C:white} X1.5 {} Mult on the first
+    hand of each round
+    {C:inactive}(Currently {C:mult}+N{C:inactive} Mult)
+  Flavour:   A gang leader: "the bigger its crest, the more respected it is", so it grows
+             with the gang (Dark Jokers). Its first strike helps the one-shot that feeds Moxie.
+  Hook:      As Scraggy, plus joker_main X1.5 when hands_played === 0 (before the increment).
+  Balance:   Mightyena (+2 per card destroyed, +1 per Dark Joker) is the gang precedent. The
+             first-hand X1.5 makes Moxie reliable without giving X on every hand. In Stage 1
+             terms that is below Honchkrow (X1.5 per Dark Joker, every hand).
+  Impl:      Mightyena (pokejokers_09.js) for counting Dark Jokers with
+             find_pokemon_type('Dark', card); Scraggy's Moxie.
+
+--------------------------------------------------------------------------------------------------
+#22 SPIRITOMB  (#442)   Psychic (Ghost/Dark) | Basic | Rare | $7 (Gen 4)
+--------------------------------------------------------------------------------------------------
+    Gains {C:attention}1{} spirit when a playing
+    card is destroyed or a Joker is sold
+    {X:mult,C:white} X0.02 {} Mult per spirit
+    {C:inactive}(Currently {C:attention}0{C:inactive}/108 spirits, {X:mult,C:white} X1 {C:inactive})
+    {br:2}ERROR - CONTACT STEAK
+    At {C:attention}108{} spirits, create {C:spectral}The Soul{}
+    {C:inactive}(Once; must have room)
+  Flavour:   "A Pokemon that was formed by 108 spirits. It is bound to a fissure in an odd
+             keystone." Ghost means Spectral.
+  Hook:      remove_playing_cards (count context.removed) plus selling_card (Jokers);
+             joker_main gives Xmult; the Spectral is created once.
+  Balance:   Slow: X2 at 50 spirits. It is a Rare for destroy decks (Muk, Hydreigon, Garbodor,
+             the Aron line), compared with Hydreigon (X0.33 per card destroyed, Stage 2) and
+             Tropius (X0.5 per Joker destroyed). Vanilla Campfire (X0.25 per card sold, reset
+             at the Boss) covers selling. The Soul at 108 is a one-time payoff only very
+             destructive runs reach.
+  Impl:      Poochyena (pokejokers_09.js, pooch_calc) loops over context.removed; Shuppet
+             (pokejokers_12.js, shuppet_calc) reads selling_card for Jokers; the Spectral comes
+             from smods_create_card({ set: 'Spectral', key: 'c_soul' }) or create_consumeable.
+
+--------------------------------------------------------------------------------------------------
+#23 TATSUGIRI  (#978)   Dragon | Basic | Rare | $7 (Gen 9)
+--------------------------------------------------------------------------------------------------
+    {C:attention}Nature:{} Curly, Droopy or Stretchy
+    {C:attention}Commander:{} the leftmost
+    {X:poke_water,C:white}Water{} Joker gives
+    {C:inactive}Curly:{} {X:mult,C:white} X1.75 {} Mult
+    {C:inactive}Droopy:{} {C:chips}+100{} Chips
+    {C:inactive}Stretchy:{} {C:mult}+20{} Mult
+  Flavour:   Commander: Tatsugiri hops into Dondozo's mouth and directs it, raising Attack
+             (Curly), Defense (Droopy) or Speed (Stretchy). On its own it pretends to be weak,
+             so it gives nothing itself.
+  Hook:      other_joker on the first G.jokers card that is_type 'Water'; the form is rolled
+             in set_ability(initial).
+  Balance:   One Water Joker at X1.75 matches Tauros (Tauros and Miltank Jokers give X1.75,
+             U $7) and sits below Honchkrow (every Dark Joker gives X1.5, S $8). Water is the
+             second-largest type (98), so it is easy to enable but needs a slot. It is the first
+             Dragon/Water bridge.
+  Impl:      Honchkrow (pokejokers_15.js) for the other_joker return, restricted to one Joker;
+             Pumpkaboo (pokejokers_24.js) for the form roll and loc key per form
+             (j_poke_tatsugiri_curly...).
+
+--------------------------------------------------------------------------------------------------
+LINE I: MUDBRAY -> MUDSDALE (Earth, Gen 7). "Stamina"
+--------------------------------------------------------------------------------------------------
+#24 MUDBRAY  (#749)   Earth | Basic | Common | $5
+    {C:chips}+20{} Chips
+    {C:attention}Stamina:{} gains {C:chips}+6{} Chips when
+    you play a hand that isn't the
+    first hand of the round
+    {C:inactive}(Currently {C:chips}+20{C:inactive} Chips)
+    {C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}5{C:inactive,s:0.8} rounds)
+  Flavour:   Stamina: Defense rises each time it is hit. A hand that didn't end the Blind was a
+             hit taken.
+  Hook:      before: if G.GAME.current_round.hands_played > 0, scale chips by chip_mod.
+  Balance:   About +6-12 Chips a round; after 5 rounds about +60, which is Ponyta's evolution
+             line in Chips (+12 per Straight, evolves at 60). Common-level.
+  Impl:      Charcadet (pokejokers_32.js) for the scale-per-hand shape; Ponyta for chip_mod
+             with joker_main chips. The Chips carry over (chips with chip_mod).
+
+#25 MUDSDALE  (#750)   Earth | Stage 1 | Safari | $8
+    {C:attention}Stamina:{} gains {C:chips}+10{} Chips when
+    you play a hand that isn't the
+    first hand of the round
+    {br:2}ERROR - CONTACT STEAK
+    {C:attention}Mud Spit:{} the first unscored
+    card in each played hand
+    becomes a {C:attention}Stone{} card
+    {C:inactive}(Currently {C:chips}+N{C:inactive} Chips)
+  Flavour:   The mud Mudsdale spits "hardens like stone"; it kicks hard enough to wreck a car.
+  Hook:      As Mudbray; before: set_ability(m_stone) on the first card of context.full_hand
+             that isn't in scoring_hand.
+  Balance:   Stone conversion feeds the Earth Stone engine (Rhyhorn line, Probopass, Drilbur,
+             Excadrill, Onix). One card per hand at most, and only an unscored one, so it is
+             slower than Kingler (all faces become Bonus) and Nosepass (the first face card
+             becomes Stone and gives X2.5).
+  Impl:      Nosepass (pokejokers_10.js) for set_ability(P_CENTERS.m_stone, null, true) in
+             before; Mudbray's Stamina.
+
+Design checklist used for all 25:
+  - The species is on the missing list.
+  - The type is the wiki's mapping (Spiritomb: Ghost/Dark becomes Psychic).
+  - Rarity and cost follow the line-position defaults (2.2). The only changes are Grookey $5
+    (starter convention) and Kubfu $10 (Shaymin precedent).
+  - The effect is not a re-skin of an existing Pokermon or vanilla joker (checked against
+    section 3).
+  - Every hook named is used by existing Pokermon code. The optional debuff_card route for
+    Urshifu is used only by rules.js, and has a set_debuff alternative.
+
+
+==================================================================================================
+6. QUICK REFERENCE: NUMBER RANGES BY TYPE AND STAGE
+==================================================================================================
+Observed config values on the existing Pokemon jokers, written min-max~median (one value means
+a single example). Use these to fill the wiki boxes.
+  +M      flat Mult             +C      flat Chips              X       flat X Mult
+  c+M     per card Mult         c+C     per card Chips          cX      per card X Mult
+  $       money per trigger
+  g+M / g+C / gX   gain per trigger for scaling jokers (the _mod field)
+
+ALL TYPES
+  Basic    +M 1-15~4   +C 1-120~60   X 1.1-3~2   c+M 1-10~5   c+C 10-50~20   cX 1.3-2.5~1.5
+           $ 1-10~2    g+M 1-7~2     g+C 1-30~6   gX 0.05-0.75~0.2
+  Stage 1  +M 1-25~8   +C 5-175~70   X 1.3-4~2   c+M 2-15~6   c+C 16-75~32   cX 1.3-2.5~1.5
+           $ 1-6~2     g+M 1-13~2    g+C 1-50~8   gX 0.02-1~0.3
+  Stage 2  +M 8-55~20  +C 60-275~120 X 1.1-4~3   c+M 3-15~15  c+C 8-200~80   cX 1.3-1.5
+           $ 1-4~2     g+M 1-10~5    g+C 7-60~15  gX 0.05-0.5~0.3
+  Legend.  X 1.2-2     $ 2-9         gX 0.02-1~0.4   (Legendaries are rule effects first)
+  Mega     X 1.5-5~3   cX 1.6-2.5    $ 2-20~5    plus one huge stat (+640 Chips, +3 hands...)
+  Baby     X0.75 penalty (X0.5 / X0.9); utility only (Pichu $10)
+
+BY TYPE (Basic / Stage 1 / Stage 2)
+  GRASS      B  +M 1-7~3 | +C 20-120~40 | c+M 1-10~5 | c+C 16-50~40 | $ 1-4~2 | g+M 1-4
+             1  +M 1-11~7 | +C 40-135~60 | c+M 3-15~7 | c+C 32-75 | $ 1-5~2 | g+C 2-20
+             2  +M 8-12~11 | +C 60-80 | cX 1.3-1.5 | $ 1-2
+  FIRE       B  +M 3-8~4 | +C 70 | X 3 (Numel) | g+M 1-5~5 | g+C 12
+             1  +M 8 | +C 90 | X 1.5-4~3 | cX 2 | g+M 2-8 | gX 0.05-1~0.75
+             2  +M 8-36~30 | X 1.3-1.5 | g+M 10 | gX 0.3
+  WATER      B  +M 1-15~4 | +C 1-80~60 | X 2 | c+M 1-7~4 | $ 1-4~3 | g+C 1-30~6
+             1  +M 25 | +C 40-120~60 | X 1.5-3~2.5 | c+M 2-10~6 | c+C 20-50 | gX 0.1-0.5
+             2  +C 120-140 | cX 1.3 | g+C 10-60~25
+  LIGHTNING  B  +M 3-10 | X 1.75-2.5 | cX 1.5 | $ 1-10~2 | gX 0.1
+             1  +M 7 | +C 60 | X 2-2.25 | cX 1.5 | $ 1-5~3 | gX 0.02-0.25
+             2  cX 1.5 | gX 0.3
+  PSYCHIC    B  X 1.2-2 | cX 2 | $ 1-3 | g+M 3-5 | gX 0.05-0.2
+             1  X 1.3-2.5~2.5 | cX 2.2 | $ 1-6 | g+M 3-8 | gX 0.25
+             2  $ 2 | gX 0.3 (rule effects)
+  FIGHTING   B  +M 2 | X 1.3-1.5 | g+M 3-7 | gX 0.1-0.15
+             1  +M 10 | g+M 5-12 | gX 0.1
+             2  +M 20 | g+M 5 | gX 0.5
+  COLORLESS  B  +M 3-15~6 | X 1.75-2 | c+M 6 | cX 1.5 | $ 1-4 | g+M 1-4 | gX 0.2-0.25
+             1  +M 5 | X 2 | c+M 7 | $ 1-2 | g+M 1-6 | gX 0.5
+             2  X 4 (Slaking) | g+M 5
+  DARK       B  +M 8-12~10 | X 1.5-2 | c+M 8 | c+C 50 | $ 2-4 | g+M 2 | gX 0.5
+             1  +M 15-18 | X 1.5-2 | c+M 12 | c+C 50-75 | $ 4 | g+C 5-20 | gX 1
+             2  X 3.33 | c+M 15 | c+C 60-90 | gX 0.1-0.33
+  METAL      B  X 1.3 | cX 1.3 | $ 1-3 | gX 0.25-0.4
+             1  +C 150 | cX 1.3-1.5 | g+C 5-8 | gX 0.25-0.5
+             2  X 2 | +C 200 | gX 0.4
+  FAIRY      B  c+M 2-5~3 | c+C 10 | cX 1.75 | +C 100 (Lucky odds)
+             1  c+M 2-10 | c+C 30 | cX 2.25-2.5 | g+M 1 | g+C 10
+             2  c+M 15
+  DRAGON     B  X 2 | cX 1.5 | g+M 1-3~1
+             1  $ 1-3 | g+M 1-3 | gX 0.3
+             2  +M 55 | g+M 1-5 | gX 0.05-0.2
+  EARTH      B  +M 4-5 | +C 5-75~50 | X 1.1-2 | c+M 2-5 | c+C 12-40 | g+C 1-25~10 | gX 0.1-0.75
+             1  +C 5-175~70 | X 1.5-2 | c+M 4-10~5 | c+C 16-24 | g+C 1-40 | gX 0.1-0.5~0.4
+             2  +C 275 | X 1.1-4 | c+M 15 | g+M 2-7
+
+DEFAULTS TO START FROM (then adjust per section 3)
+  Rarity and cost  Baby U $4
+                   Basic: of a 3-stage line U $6; of a 2-stage line C $5; single-stage R $7;
+                     starter U $5
+                   Stage 1 S $8
+                   Stage 2 S $10
+                   Legendary L $20
+                   Mega M $12
+  Evolution        Baby 2 rounds
+                   Basic 4 rounds (early evolver) or 5
+                   Stage 1 4-5 rounds, or an item
+                   Scaling thresholds: Basic +12 to +18 Mult, 40-60 Chips or X1.5-X2;
+                   Stage 1 about 2-4x those
+  Step-up          Basic to Stage 1 about x1.5-1.7; Stage 1 to Stage 2 about x1.4-1.5, or + to X
+  Energy           mult +40%, chips/money +30%, X fields +20%, per-card X +5%,
+                   gain fields +20% (money_mod +10%); limit 3 per joker
+  Text             4-6 lines of about 25-32 characters; second box after {br:2}; grey (Currently)
+                   and (Evolves) lines; type names as {X:poke_<type>,C:white}
+
+==================================================================================================
+END
+==================================================================================================
