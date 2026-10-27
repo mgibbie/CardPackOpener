@@ -164,7 +164,7 @@ export function modAtlasState(name) {
   }
   return e.state === 'ok' ? 'ok' : e.state === 'error' ? 'missing' : 'loading';
 }
-/** Is a mod atlas's art still on its way (its sheet, a tile of it, or in crop mode a block of it)? Never starts a load. */
+/** Is a mod atlas's art still on its way (its sheet, a tile of it, or a block of it)? Never starts a load. */
 export function modArtLoading(name) {
   const a = MODREG.atlases[name];
   if (a && a.tiles) return a.tiles.some(modArtLoading);
@@ -200,19 +200,20 @@ export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
   if (!pos) return false;
   let r = modCellRect(atlas, pos, frame);
   if (!r) return false;
-  const key = cropping ? r.atlas + '|' + r.sx + ',' + r.sy + ',' + r.sw + ',' + r.sh : null;
+  // a pre-split sheet's cell comes from its small block (tools/micatro/split_mod_atlases.mjs), never the whole sheet —
+  // in a run as in the deck editor; it's cropped into the LRU below and the block let go (keepBlock)
+  const b = blocksOn ? blockOf(r, atlas) : null;
+  if (b && b.empty) return true;   // (no pixels there)
+  const key = cropping || b ? r.atlas + '|' + r.sx + ',' + r.sy + ',' + r.sw + ',' + r.sh : null;
   let src = key && crops.get(key);
   if (src) { crops.delete(key); crops.set(key, src); }   // (LRU: most recent last)
   else {
-    // crop mode: a pre-split sheet's cell comes from its small block (tools/micatro/split_mod_atlases.mjs), never the sheet
-    const b = key ? blockOf(r, atlas) : null;
-    if (b && b.empty) return true;   // (no pixels there)
     const from = b || r;
     if (modAtlasState(from.atlas) !== 'ok') { misses++; if (!b && r.atlas !== atlas) modAtlasState(atlas); return false; }   // (a tiled atlas: not ALL its tiles for one block)
     src = modImgs.get(from.atlas).img;
-    if (b) r = { ...r, sx: b.sx, sy: b.sy };
+    if (b) { r = { ...r, sx: b.sx, sy: b.sy }; keepBlock(b.atlas); }
     if (key) {
-      // crop mode: keep this cell as its own small canvas, so the whole sheet can be let go (releaseModSheets)
+      // keep this cell as its own small canvas, so its block (crop mode: or whole sheet) can be let go
       try {
         const c = document.createElement('canvas');
         c.width = r.sw; c.height = r.sh;
@@ -230,16 +231,45 @@ export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
   return true;
 }
 /*
- * Cell crops — for screens that show hundreds of mod cards at once (the deck editor and its picker: Pokermon + Nacho +
- * Pokermon+ = 850 jokers over ~20 sheets, the biggest 4260 x 13110 px = 213 MB decoded, which 582 of them share).
- * While crops are on (beginCellCrops .. endCellCrops), each mod cell drawn is read from its pre-split BLOCK when the
- * sheet has blocks (below; else from the sheet), copied into its own small canvas (an LRU of `cap` cells) and drawn from
- * there; releaseModSheets() then lets go of the blocks / sheets loaded meanwhile (the decoded bitmap is freed). One
- * that's needed again reloads (HTTP cache) on its next draw and fires onModAtlas as usual. Images the game had already
- * loaded are left alone; outside crop mode everything draws from the whole sheets as before.
+ * Cell crops. Every cell of a pre-split sheet (below: Pokermon's Natdex joker sheet is 4260 x 13110 px = 213 MB decoded,
+ * 582 jokers share it) is read from its small BLOCK, copied into its own small canvas (an LRU of `cropCap` cells) and
+ * drawn from there; the block is then let go (keepBlock). That's the whole game — a run's shop, jokers, packs, tooltips,
+ * Run Info, replays, spectating — so a phone never decodes a whole split sheet. A crop is the cell at its own 2x size, so
+ * one serves every size it's drawn at. Sheets that aren't split (under 4 MB decoded) draw straight from the sheet.
+ * Crop mode (beginCellCrops .. endCellCrops) is for screens that show hundreds of mod cards at once (the deck editor and
+ * its picker: Pokermon + Nacho + Pokermon+ = 850 jokers over ~20 sheets): every cell is cropped, unsplit sheets too, and
+ * releaseModSheets() lets go of the blocks / sheets loaded meanwhile. One that's needed again reloads (HTTP cache) on
+ * its next draw and fires onModAtlas as usual.
  */
-let cropping = 0, cropCap = 160;
-// Pre-split sheets (js/mods/split_sheets.js, made by tools/micatro/split_mod_atlases.mjs): in crop mode a cell is read
+const GAME_CROPS = 256;             // a run's crops: its visible cards (+ souls, animation frames) with headroom, ~108 KB each
+let cropping = 0, cropCap = GAME_CROPS;
+let blocksOn = true;
+/** Tests: false draws every cell from its whole sheet again (the reference the blocks are checked against). */
+export function setModBlocks(on) { blocksOn = !!on; crops.clear(); }
+/*
+ * Blocks in a run: a block (~1.5 MB decoded) is only needed while its cells are cropped. The last few used stay decoded
+ * (the cards of one shop / pack / collection page and an animation's next frames often share one), the rest are let
+ * go, and all of them once no block has been used for a moment — so a run keeps only crops, never a whole sheet.
+ */
+const KEEP_BLOCKS = 6, BLOCK_IDLE_MS = 1500;
+const keptBlocks = new Map();       // block name -> true, least recently used first
+let blockIdleT = 0;
+function keepBlock(name) {
+  keptBlocks.delete(name); keptBlocks.set(name, true);
+  while (keptBlocks.size > KEEP_BLOCKS) { const n = keptBlocks.keys().next().value; keptBlocks.delete(n); releaseImage(n); }
+  clearTimeout(blockIdleT);
+  blockIdleT = setTimeout(() => { for (const n of [...keptBlocks.keys()]) { keptBlocks.delete(n); releaseImage(n); } }, BLOCK_IDLE_MS);
+}
+/** Free one loaded mod image's decoded bitmap (it reloads from the HTTP cache on its next draw). */
+function releaseImage(name) {
+  const e = modImgs.get(name);
+  if (!e || e.state !== 'ok') return false;   // (still loading: its listeners draw first)
+  e.img.onload = e.img.onerror = null;
+  e.img.removeAttribute('src');
+  modImgs.delete(name);
+  return true;
+}
+// Pre-split sheets (js/mods/split_sheets.js, made by tools/micatro/split_mod_atlases.mjs): a cell is read
 // from its block <dir>/_split/<name>/<bx>_<by>.png (~1.5 MB decoded) instead of the whole sheet (up to 213 MB).
 const blockAtlases = new Map();     // block name -> {src, sheet}
 const splitBroken = new Set();      // sheets with a block that failed to load (not deployed yet): drawn whole
@@ -276,21 +306,16 @@ function blockOf(r, atlas) {
 const crops = new Map();            // 'image atlas|sx,sy,sw,sh' -> canvas
 const cropSheets = new Set();       // sheets first loaded while crops were on
 export function beginCellCrops(cap = 160) { cropping++; cropCap = Math.max(cropCap, cap); }
-export function endCellCrops() { if (cropping && --cropping === 0) { releaseModSheets(); crops.clear(); cropSheets.clear(); cropCap = 160; } }
+export function endCellCrops() { if (cropping && --cropping === 0) { releaseModSheets(); crops.clear(); cropSheets.clear(); cropCap = GAME_CROPS; } }
 export function setCellCropCap(cap) { cropCap = Math.max(16, cap | 0); while (crops.size > cropCap) crops.delete(crops.keys().next().value); }
 /** Let go of the (loaded) sheets that were first loaded while crops were on. */
 export function releaseModSheets() {
   for (const name of [...cropSheets]) {
-    const e = modImgs.get(name);
-    if (!e) { cropSheets.delete(name); continue; }
-    if (e.state !== 'ok') continue;   // (still loading: its listeners draw first)
-    e.img.onload = e.img.onerror = null;
-    e.img.removeAttribute('src');
-    modImgs.delete(name);
-    cropSheets.delete(name);
+    if (!modImgs.has(name)) { cropSheets.delete(name); continue; }
+    if (releaseImage(name)) { cropSheets.delete(name); keptBlocks.delete(name); }
   }
 }
-/** The decoded mod sheets + blocks alive now ({name, w, h}) and the crops: what the deck editor keeps in memory (tests). */
+/** The decoded mod sheets + blocks alive now ({name, w, h}) and the crops: what the game keeps in memory (tests). */
 export function modSheetStats() {
   const sheets = [];
   const blocks = [];
