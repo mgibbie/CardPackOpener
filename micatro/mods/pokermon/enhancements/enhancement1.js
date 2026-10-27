@@ -24,7 +24,8 @@ defineEnhancements({
     },
     in_pool() { return false; },
     calculate(self, card, context) {
-      if (context.end_of_round && !context.individual && !context.repetition && context.cardarea === G.hand && context.playing_card_end_of_round) {
+      // (house: a Hazard Gulpin / Swalot already swallowed this round — `poke_swallowed` — doesn't roll a second destroy)
+      if (context.end_of_round && !context.individual && !context.repetition && context.cardarea === G.hand && context.playing_card_end_of_round && !card.poke_swallowed) {
         if (pseudorandom_probability(card, 'hazard', self.config.num, self.config.dem, 'hazard')) poke_remove_card(card, card);
       }
       return undefined;

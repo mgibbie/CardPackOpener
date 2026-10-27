@@ -17,12 +17,14 @@
 // reworked in 23) — upstream 3.9.1 draws them too (Natdex 10 / 12 / 14, 60);
 // Whismur -> Loudred -> Exploud (each broken Glass card grows its Chips, then Mult, then X Mult, every form keeping the last's; a
 // Negative Justice on each evolution; Colorless; contentRev 21) — upstream 3.9.1 draws them too (Natdex 14 / 16 / 18, 19).
+// Gulpin -> Swalot (Stockpile: each end of round swallows a held Hazard, else a held Diamond; +Mult on scored Diamonds; Swalot's $ by
+// rank and X Mult per card the deck has lost; Dark; contentRev 24) — upstream 3.9.1 draws them too (Natdex 0 / 2, 21).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed, energy_values,
+  add_card, detailed, energy_values, poke_remove_card, ease_dollars,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -207,6 +209,43 @@ const glass_tips = (info_queue, evolves) => {
   info_queue.push(P_CENTERS.m_glass);
   if (evolves && detailed()) { info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } }); info_queue.push(P_CENTERS.c_justice); }
 };
+
+/** Gulpin / Swalot: max Stockpile (`stockpile_max`, the house energy field: +1 per Energy, +0.5 per mismatched Colorless — floored). */
+const stock_max = (ex) => Math.floor(ex.stockpile_max + 1e-9);
+const stock_mult = (ex) => ex.stockpile_mult * ex.stockpile;
+/** Gulpin / Swalot: a scored Diamond card gives +stockpile_mult Mult per Stockpile (Blueprint copies it). */
+function stockpile_mult(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && card.ability.extra.stockpile > 0 && context.other_card.is_suit('Diamonds')) {
+    return { mult: stock_mult(card.ability.extra), card };
+  }
+  return undefined;
+}
+/** Swalot: X1 + Xmult_mod per card the full deck is below the run's starting size (Erosion's count), never below X1. */
+const swalot_x = (ex) => {
+  const below = G.GAME && G.playing_cards ? (G.GAME.starting_deck_size || 0) - G.playing_cards.length : 0;
+  return Math.max(1, 1 + ex.Xmult_mod * Math.max(0, below));
+};
+const swallowable = (c) => !c.destroyed && !c.shattered && !c.removed && !c.poke_swallowed;
+/** Gulpin / Swalot, end of round: swallow the leftmost held Hazard (else the leftmost held Diamond — a debuffed one isn't a Diamond,
+ *  as is_suit) through Pokermon's poke_remove_card (dissolve, remove_playing_cards: Qwilfish / Spiritomb count it as any destroyed
+ *  card); +1 Stockpile below max. At max, Gulpin leaves the Diamonds alone; Swalot still swallows one for its rank in $. The Hazard's
+ *  own 1 in 3 roll later this pass skips it (`poke_swallowed`, enhancement1.js). Once per round: not Blueprint, not a joker retrigger. */
+function swallow(card, context, swalot) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over) return;
+  const ex = card.ability.extra, room = ex.stockpile < stock_max(ex);
+  let target = G.hand.cards.find((c) => swallowable(c) && has_enhancement(c, 'm_poke_hazard'));
+  let dollars = 0;
+  if (!target && (room || swalot)) {
+    target = G.hand.cards.find((c) => swallowable(c) && c.is_suit('Diamonds'));
+    if (target && swalot && !has_no_rank(target)) dollars = target.get_id();
+  }
+  if (!target) return;
+  target.poke_swallowed = true;
+  poke_remove_card(target, card);
+  if (room) ex.stockpile = ex.stockpile + 1;
+  card_eval_status_text(card, 'extra', null, null, null, { message: room ? 'Stockpile!' : 'Swallow!', colour: 'MULT' });
+  if (dollars > 0) { ease_dollars(dollars); card_eval_status_text(card, 'dollars', dollars); }
+}
 
 /** Kubfu / Urshifu, training: X Mult grows on a hand of exactly 1 or exactly 5 scoring cards (Kubfu counts each school). */
 function training(card, context) {
@@ -828,6 +867,57 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F4: Gulpin -> Swalot (Dark, Gen 3)
+  // The owner's design (2026-10-27): Stockpile. At the end of each round it swallows (destroys, Pokermon's poke_remove_card — the
+  // Hazard plumbing) 1 Hazard card held in hand, else 1 Diamond card held in hand, gaining 1 Stockpile up to its max (3; each
+  // Energy +1: the house energy field `stockpile_max`, systems/energy.js). Scored Diamonds give +2 Mult per Stockpile
+  // (`stockpile_mult`: not energized). Gulpin at max swallows only Hazards (a Diamond would be eaten for nothing); it evolves at
+  // exactly 3 Stockpile (fixed: Energy never slows it), and the Stockpile carries into Swalot.
+  // Gulpin 316: Uncommon $6.
+  gulpin: {
+    name: 'gulpin', poke_sprite391: sprite('Natdex', 0, 21),
+    config: { extra: { stockpile: 0, stockpile_max: 3, stockpile_mult: 2, stockpile_evo: 3 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Dark', gen: 3, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'suit', 'diamonds', 'hazards', 'destroy_card', 'scaling_evo'], poke_after: 'roselia',
+    poke_custom_values_to_keep: ['stockpile'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_hazard);
+      const ex = card.ability.extra;
+      return { vars: [ex.stockpile, stock_max(ex), ex.stockpile_mult, stock_mult(ex), ex.stockpile_evo] };
+    },
+    calculate(self, card, context) {
+      const r = stockpile_mult(card, context);
+      if (r) return r;
+      swallow(card, context, false);
+      return scaling_evo(self, card, context, 'j_poke_swalot', card.ability.extra.stockpile, card.ability.extra.stockpile_evo);
+    },
+  },
+  // Swalot 317: Safari $8. Keeps the Stockpile and its Mult; a swallowed Diamond (when no Hazard is held) also pays its rank in $
+  // (2-10, J 11, Q 12, K 13, A 14: get_id, as Balatro numbers ranks; fixed, not energized) — even at max. X0.1 Mult per card the
+  // deck is below its starting size (Erosion's G.GAME.starting_deck_size; `Xmult_mod`, energized: +X0.02 per Energy), never below X1.
+  swalot: {
+    name: 'swalot', poke_sprite391: sprite('Natdex', 2, 21),
+    config: { extra: { stockpile: 0, stockpile_max: 3, stockpile_mult: 2, Xmult_mod: 0.1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 3, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'scaling', 'economy', 'suit', 'diamonds', 'hazards', 'destroy_card', 'full_deck'], poke_after: 'gulpin',
+    poke_custom_values_to_keep: ['stockpile'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_hazard);
+      const ex = card.ability.extra;
+      return { vars: [ex.stockpile, stock_max(ex), ex.stockpile_mult, stock_mult(ex), r3(ex.Xmult_mod), r3(swalot_x(ex))] };
+    },
+    calculate(self, card, context) {
+      const r = stockpile_mult(card, context);
+      if (r) return r;
+      if (context.joker_main && swalot_x(card.ability.extra) > 1) {
+        const x = swalot_x(card.ability.extra);
+        return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+      }
+      swallow(card, context, true);
+      return undefined;
+    },
+  },
+
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -872,6 +962,7 @@ export const DESIGN_FAMILIES = [
   ['mudbray', 'mudsdale'],
   ['sprigatito', 'floragato', 'meowscarada'],
   ['whismur', 'loudred', 'exploud'],
+  ['gulpin', 'swalot'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -885,6 +976,10 @@ const LUCKY_GROW = [
 ];
 const GLASS_BREAKS = (gain) => [gain + ' each', 'time a {C:attention}Glass{} card breaks'];
 const NEG_JUSTICE = ['On evolution, create a', '{C:dark_edition}Negative{} {C:tarot}Justice{}'];
+const SWALLOW = (money) => ['At end of round, swallow (destroy)', 'a {C:attention}Hazard{} card held in hand', 'and gain {C:attention}1{} Stockpile; if none,', 'a {C:diamonds}Diamond{} card held in hand',
+  ...(money ? ['and earn {C:money}${} equal to its rank', '{C:inactive,s:0.8}(J 11, Q 12, K 13, A 14)'] : []), '{C:inactive}(Currently {C:attention}#1#{C:inactive}/#2# Stockpile)'];
+const STOCK_MULT = ['Scored {C:diamonds}Diamond{} cards give', '{C:mult}+#3#{} Mult per Stockpile', '{C:inactive}(Currently {C:mult}+#4#{C:inactive} Mult)'];
+const STOCK_ENERGY = '{C:inactive,s:0.8}(Each Energy: +1 max Stockpile)';
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -961,6 +1056,15 @@ export const DESIGN_LOC = {
     ] },
     j_poke_exploud: { name: 'Exploud', text: [
       '{C:chips}+#1#{} Chips, {C:mult}+#2#{} Mult,', '{X:mult,C:white} X#3# {} Mult', ...GLASS_BREAKS('Gains {X:mult,C:white} X#4# {} Mult'),
+    ] },
+    j_poke_gulpin: { name: 'Gulpin', text: [
+      [...SWALLOW(false), '{C:inactive}(At max, only Hazards)', STOCK_ENERGY],
+      [...STOCK_MULT, '{C:inactive,s:0.8}(Evolves at {C:attention,s:0.8}#5#{C:inactive,s:0.8} Stockpile)'],
+    ] },
+    j_poke_swalot: { name: 'Swalot', text: [
+      [...SWALLOW(true), STOCK_ENERGY],
+      STOCK_MULT,
+      ['{X:mult,C:white} X#5# {} Mult for each card', 'below your starting deck size', '{C:inactive}(Currently {X:mult,C:white} X#6# {C:inactive} Mult)'],
     ] },
     j_poke_mudbray: { name: 'Mudbray', text: ['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
     j_poke_mudsdale: { name: 'Mudsdale', text: [

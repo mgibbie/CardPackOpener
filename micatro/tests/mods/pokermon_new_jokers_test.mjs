@@ -55,12 +55,12 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 23 && PINS.modPin('pokermon') === '3.9.1+r23', 'Pokermon contentRev 23 (pin 3.9.1+r23; the Sprigatito rework)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 23)', 'version stays 3.9.1: "3.9.1 (rev 23)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 24 && PINS.modPin('pokermon') === '3.9.1+r24', 'Pokermon contentRev 24 (pin 3.9.1+r24; the Gulpin line)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 24)', 'version stays 3.9.1: "3.9.1 (rev 24)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
-  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3 + 3, 'defs: 26 (+ the 3 of the Sprigatito line, the 3 of the Whismur line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
+  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3 + 3 + 2, 'defs: 26 (+ the 3 of the Sprigatito line, the 3 of the Whismur line, the 2 of the Gulpin line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
 });
 sec('static', () => {
   // [rarity, cost, stage, type, gen] as designed (Grookey $5: the starter convention; Kubfu $10: Shaymin's precedent)
