@@ -456,3 +456,48 @@ a.mc-pill { text-decoration: none; }
 .mc-wstk-off .mc-winstk { display: none; }
 .mc-wstk-note { margin: 0 0 10px; font-size: 13px; }
 .mc-wstk-btn { margin-left: 6px; padding: 2px 10px; font-size: 12px; }
+/* ---- Pokermon jokers not in the game yet (#/pokermon-jokers) ---- */
+.pj-head p { max-width: 860px; }
+.pj-ownernote { color: #5b3fc4; font-weight: 600; }
+.pj-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 4px; }
+.pj-sel, .pj-q, .pj-cost { padding: 6px 9px; font: inherit; border: 1px solid #c9d2e3; border-radius: 7px; background: #fff; color: inherit; min-width: 0; }
+.pj-q { flex: 1 1 200px; max-width: 320px; }
+.pj-gen h2 { margin: 18px 0 8px; font-size: 17px; }
+.pj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.pj-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 6px 7px; background: #fff; border: 1px solid #e1e6f0; border-radius: 10px; color: inherit; text-align: center; }
+.pj-tile:hover { border-color: #2b6cb0; text-decoration: none; box-shadow: 0 3px 12px rgba(43,108,176,.16); }
+.pj-art { display: block; width: 100%; max-width: 142px; height: auto; aspect-ratio: 142 / 190; image-rendering: pixelated; }
+.pj-name { font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+.pj-meta { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; }
+.pj-dex { color: #76819c; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pj-ptype { display: inline-block; padding: 0 7px; border-radius: 9px; font-size: 11.5px; font-weight: 600; line-height: 18px; }
+.pj-stage { font-size: 12px; }
+.pj-designed { position: absolute; top: 6px; right: 6px; padding: 0 6px; border-radius: 9px; background: #6b4fd4; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; }
+.pj-page { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+.pj-page-art { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 auto; }
+.pj-art-big { width: 284px; max-width: 100%; }
+.pj-flip { padding: 5px 14px; }
+.pj-page-info { flex: 1 1 300px; min-width: 0; }
+.pj-page-info h1 { margin-top: 0; }
+.pj-facts { border-collapse: collapse; margin-bottom: 10px; }
+.pj-facts th { text-align: left; padding: 5px 14px 5px 0; color: #5d6884; font-weight: 600; vertical-align: top; white-space: nowrap; }
+.pj-facts td { padding: 5px 0; overflow-wrap: anywhere; }
+.pj-line { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 0; padding: 0; list-style: none; }
+.pj-line li + li::before { content: '→'; margin: 0 7px; color: #98a2bd; }
+.pj-recipe { font-size: 12px; max-width: 640px; }
+.pj-owner .pj-label { display: block; margin: 8px 0 4px; font-weight: 600; }
+.pj-owner .pj-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 8px; }
+.pj-owner .pj-row .pj-label { margin: 0; }
+.pj-cost { width: 80px; }
+.pj-msg { overflow-wrap: anywhere; }
+.pj-prev h3 { margin: 16px 0 6px; font-size: 14px; }
+.pj-design { padding: 8px 10px; margin-bottom: 6px; background: #fff; border: 1px solid #d9d1f0; border-radius: 8px; }
+.pj-design-meta { font-size: 12px; }
+.pj-design-text, .pj-design-notes { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 430px) {
+  .pj-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 7px; }
+  .pj-tile { padding: 6px 4px; }
+  .pj-name { font-size: 13px; }
+  .pj-sel, .pj-q { flex: 1 1 100%; max-width: none; }
+  .pj-art-big { width: 213px; }
+}

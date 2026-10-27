@@ -3570,6 +3570,200 @@ function controlsView() {
       ])));
 }
 
+// ---------- Pokermon jokers not in the game yet (#/pokermon-jokers) ----------
+// Every canonical Pokémon (National Dex 1-1025) with no joker in Pokermon, Nacho's Pokermon Dip or Sonfive's Pokermon+
+// (data/pokermon_jokers.json, from tools/micatro/gen_designwiki_pokermon_jokers.mjs): composed card art (the proper
+// Pokermon frame + the overworld battle sprite, and a Shiny), its Pokermon type, stage, evolution line and a rarity /
+// cost guess by upstream's conventions. The ability is blank on purpose: the owner designs it. The signed-in owner
+// (mgibbie) gets a "Submit design" box on each card, filing into the server's joker-design inbox (joker-design-add ->
+// D1 owner_todo:jokers; "do the joker design list" in CLAUDE.md), and sees the designs already filed for it. Everyone
+// else sees neither box nor designs (and the server refuses them too). Filters live in the hash (?gen= ?type= ?q=).
+const PJ = '#/pokermon-jokers';
+const PJ_COLOURS = { Grass: '#289830', Fire: '#f81020', Water: '#38b8f8', Lightning: '#f8f800', Psychic: '#c135ff', Fighting: '#b85838', Colorless: '#c8c0f8', Dark: '#0086a5', Metal: '#888080', Fairy: '#ff3db6', Dragon: '#c8a800', Earth: '#e97333' };
+const PJ_DARK_TEXT = new Set(['Lightning', 'Colorless', 'Dragon']); // (as Pokermon's own badges: dark text on the light colours)
+const PJ_RARITIES = ['Common', 'Uncommon', 'Rare', 'Legendary', 'Safari'];
+let pjData = null;
+const loadPokermonJokers = () => pjData || (pjData = fetch('data/pokermon_jokers.json' + CB)
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .catch(e => { pjData = null; throw e; }));
+const pjOn = (...seg) => { const p = location.hash.slice(1).split('?')[0].split('/').filter(Boolean); return p[0] === 'pokermon-jokers' && seg.every((s, i) => (p[i + 1] || '') === s) && p.length === seg.length + 1; };
+const pjIsOwner = () => {
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null'); } catch (e) { /* no login */ }
+  return cached?.username === 'mgibbie';
+};
+const pjDexLabel = n => '#' + String(n).padStart(4, '0');
+const pjBadge = t => h('span', { class: 'pj-ptype', style: 'background:' + (PJ_COLOURS[t] || '#888') + ';color:' + (PJ_DARK_TEXT.has(t) ? '#1c2230' : '#fff') }, t);
+const pjImg = (src, alt, cls) => h('img', { class: cls || 'pj-art', src, alt, loading: 'lazy', width: '142', height: '190' });
+/** The owner's filed designs (all, or one species'); [] for anyone else. */
+async function pjFetchDesigns(dex) {
+  if (!pjIsOwner()) return [];
+  const MP = await import('/battlecards/mpmode.js');
+  const r = await MP.call('joker-design-list', dex == null ? {} : { dex });
+  if (r.error) throw new Error(r.error);
+  return r.designs || [];
+}
+
+async function pokermonJokersView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading…'));
+  let D;
+  try { D = await loadPokermonJokers(); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Pokermon jokers not in the game yet'), h('p', { class: 'muted' }, 'Could not load the list.')); }
+  if (!pjOn()) return;
+  const P = new URLSearchParams(location.hash.split('?')[1] || '');
+  const st = { gen: P.get('gen') || '', type: P.get('type') || '', q: P.get('q') || '' };
+  const c = D.counts;
+  const typeCount = {};
+  for (const s of D.species) typeCount[s.ptype] = (typeCount[s.ptype] || 0) + 1;
+  const genSel = h('select', { class: 'pj-sel', id: 'pjGen', 'aria-label': 'Generation' },
+    h('option', { value: '' }, 'All generations'),
+    Object.entries(c.byGen).filter(([, n]) => n).map(([g, n]) => h('option', { value: g }, 'Generation ' + g + ' (' + n + ')')));
+  const typeSel = h('select', { class: 'pj-sel', id: 'pjType', 'aria-label': 'Pokermon type' },
+    h('option', { value: '' }, 'All types'),
+    Object.keys(PJ_COLOURS).filter(t => typeCount[t]).map(t => h('option', { value: t }, t + ' (' + typeCount[t] + ')')));
+  const qIn = h('input', { type: 'search', class: 'pj-q', id: 'pjQ', placeholder: 'Search a name or dex number', autocomplete: 'off', 'aria-label': 'Search' });
+  genSel.value = st.gen; typeSel.value = st.type; qIn.value = st.q;
+  const shown = h('span', { class: 'muted pj-shown' });
+  const body = h('div', { class: 'pj-body' });
+  let designs = new Map(); // dex -> how many designs the owner filed (owner only)
+  const render = () => {
+    const qs = new URLSearchParams();
+    if (st.gen) qs.set('gen', st.gen);
+    if (st.type) qs.set('type', st.type);
+    if (st.q) qs.set('q', st.q);
+    const target = PJ + (qs.toString() ? '?' + qs : '');
+    if (location.hash !== target) history.replaceState(null, '', target);
+    const nq = norm(st.q), qDex = /^#?\d+$/.test(st.q.trim()) ? +st.q.trim().replace('#', '') : null;
+    const list = D.species.filter(s => (!st.gen || String(s.gen) === st.gen) && (!st.type || s.ptype === st.type)
+      && (!nq || (qDex != null ? s.dex === qDex : norm(s.name).includes(nq))));
+    shown.textContent = list.length === D.species.length ? '' : list.length + ' shown';
+    const byGen = new Map();
+    for (const s of list) { if (!byGen.has(s.gen)) byGen.set(s.gen, []); byGen.get(s.gen).push(s); }
+    body.replaceChildren(...(list.length ? [...byGen.entries()].map(([g, ss]) => h('section', { class: 'pj-gen', 'data-gen': g },
+      h('h2', null, 'Generation ' + g, ' ', h('span', { class: 'num' }, '(' + ss.length + ')')),
+      h('div', { class: 'pj-grid' }, ss.map(s => h('a', { class: 'pj-tile', href: PJ + '/' + s.dex, 'data-dex': s.dex, 'data-ptype': s.ptype },
+        pjImg(s.art.normal, s.name),
+        h('span', { class: 'pj-name' }, s.name),
+        h('span', { class: 'pj-meta' }, h('span', { class: 'pj-dex' }, pjDexLabel(s.dex)), pjBadge(s.ptype)),
+        h('span', { class: 'pj-stage muted' }, s.stageLabel),
+        designs.get(s.dex) ? h('span', { class: 'pj-designed', title: 'designs you filed' }, '✎ ' + designs.get(s.dex)) : null)))))
+      : [h('p', { class: 'muted' }, 'No species match.')]));
+  };
+  genSel.onchange = () => { st.gen = genSel.value; render(); };
+  typeSel.onchange = () => { st.type = typeSel.value; render(); };
+  let qt = null;
+  qIn.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { st.q = qIn.value.trim(); render(); }, 120); };
+  const bm = c.byMod;
+  content.replaceChildren(
+    h('div', { class: 'pj-head' },
+      h('h1', null, 'Pokermon jokers not in the game yet ', h('span', { class: 'num' }, '(' + c.missing + ')')),
+      h('p', null, c.missing + ' of the ' + c.dex + ' canonical Pokémon have no joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
+        ' (' + bm.pokermon.species + ' species), ', h('a', { href: '#/micatro-mods/mod/nacho' }, 'Nacho’s Pokermon Dip'), ' (' + bm.nacho.species + ') or ',
+        h('a', { href: '#/micatro-mods/mod/pokermonplus' }, 'Sonfive’s Pokermon+'), ' (' + bm.pokermonplus.species + ') yet — ' + c.covered + ' are covered. ',
+        'Each card below is drawn the way Pokermon draws its own: the frame for its Pokermon type and stage, a scene from its family or type, and its battle sprite. ',
+        'Type, stage and a rarity guess follow Pokermon’s conventions; the ability is still to be designed. Megas and regional forms are left out (only base species), and so are fakemon.'),
+      pjIsOwner() ? h('p', { class: 'pj-ownernote' }, 'Owner: open a card to submit a design for it. Designs go to the joker design list.') : null),
+    h('div', { class: 'pj-filters' }, genSel, typeSel, qIn, shown),
+    body);
+  render();
+  if (pjIsOwner()) {
+    pjFetchDesigns().then(list => {
+      designs = new Map();
+      for (const d of list) designs.set(d.dex, (designs.get(d.dex) || 0) + 1);
+      if (designs.size && pjOn()) render();
+    }).catch(() => { /* offline: no markers */ });
+  }
+}
+
+async function pokermonJokerDetail(id) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading…'));
+  let D;
+  try { D = await loadPokermonJokers(); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Pokermon joker'), h('p', { class: 'muted' }, 'Could not load the list.')); }
+  if (!pjOn(id)) return;
+  const s = D.species.find(x => String(x.dex) === String(id));
+  const back = h('p', { class: 'lp-back' }, h('a', { href: PJ }, '← Pokermon jokers not in the game yet'));
+  if (!s) return content.replaceChildren(back, h('h1', null, 'Not on the list'), h('p', { class: 'muted' }, 'That Pokémon already has a joker, or is not a canonical species.'));
+  let shiny = false;
+  const art = pjImg(s.art.normal, s.name, 'pj-art pj-art-big');
+  const flip = h('button', { type: 'button', class: 'pj-flip' }, 'Show Shiny');
+  flip.onclick = () => { shiny = !shiny; art.src = shiny ? s.art.shiny : s.art.normal; flip.textContent = shiny ? 'Show normal' : 'Show Shiny'; };
+  const missing = new Set(D.species.map(x => x.dex));
+  const lineEl = h('ol', { class: 'pj-line' }, s.line.map(l => h('li', { class: l.dex === s.dex ? 'cur' : null },
+    l.dex === s.dex ? h('b', null, l.name)
+      : missing.has(l.dex) ? h('a', { href: PJ + '/' + l.dex }, l.name)
+        : l.joker ? h('a', { href: '#/micatro-mods/jokers?item=' + encodeURIComponent(l.joker), title: 'already a joker' }, l.name, ' ✓') : h('span', null, l.name))));
+  const pk = DB.pokemon && DB.pokemon[s.key];
+  const row = (k, ...v) => h('tr', null, h('th', null, k), h('td', null, ...v));
+  content.replaceChildren(
+    back,
+    h('div', { class: 'pj-page' },
+      h('div', { class: 'pj-page-art' }, art, flip),
+      h('div', { class: 'pj-page-info' },
+        h('h1', null, s.name, ' ', h('span', { class: 'num' }, pjDexLabel(s.dex))),
+        h('table', { class: 'pj-facts' },
+          row('Pokermon type', pjBadge(s.ptype), h('span', { class: 'muted' }, ' from ' + s.types.join(' / '))),
+          row('Stage', s.stageLabel),
+          row('Evolution line', s.line.length > 1 ? lineEl : h('span', { class: 'muted' }, 'Does not evolve')),
+          row('Rarity (guess)', s.rarityLabel),
+          row('Cost (guess)', s.cost != null ? '$' + s.cost : '—'),
+          row('Generation', String(s.gen)),
+          row('Pokédex', pk ? h('a', { href: '#/pokemon/' + s.key }, s.name + '’s Pokédex page') : h('span', { class: 'muted' }, '—'))),
+        h('h2', null, 'Ability'),
+        h('p', { class: 'pj-ability muted' }, 'Not designed yet.'),
+        s.art.recipe ? h('p', { class: 'pj-recipe muted' }, 'Art: ' + s.art.recipe.frame + '; ' + s.art.recipe.background + '; battle sprite ' + s.art.recipe.sprite + '.') : null)),
+    ...[pjDesignBox(s)].filter(Boolean)); // (replaceChildren would print a null)
+}
+
+// ---------- owner-only "Submit design" box (a joker design -> the server's joker-design inbox) ----------
+// For the mgibbie account only (cached login, as ownerTodoBox; the server re-checks the token on every call).
+function pjDesignBox(s) {
+  if (!pjIsOwner()) return null;
+  const ability = h('textarea', { class: 'todo-text', id: 'pjAbility', rows: '4', maxlength: '2000', placeholder: 'What does ' + s.name + ' do? e.g. “+4 Mult for each Spade played; evolves after 5 rounds”' });
+  const rarity = h('select', { class: 'pj-sel', id: 'pjRarity', 'aria-label': 'Rarity' }, PJ_RARITIES.map(r => h('option', { value: r }, r)));
+  rarity.value = PJ_RARITIES.includes(s.rarityLabel) ? s.rarityLabel : 'Common';
+  const cost = h('input', { class: 'pj-cost', id: 'pjCost', type: 'number', min: '0', max: '99', step: '1', inputmode: 'numeric', placeholder: s.cost != null ? String(s.cost) : '', 'aria-label': 'Cost' });
+  const notes = h('textarea', { class: 'todo-text', id: 'pjNotes', rows: '2', maxlength: '2000', placeholder: 'Notes (optional): evolution, Shiny, art…' });
+  const msg = h('span', { class: 'muted pj-msg', role: 'status' });
+  const btn = h('button', { type: 'button', class: 'todo-submit', id: 'pjSubmit' }, 'Submit design');
+  const prev = h('div', { class: 'pj-prev' });
+  const showPrev = list => {
+    prev.replaceChildren(...(list.length ? [h('h3', null, 'Filed designs for ' + s.name + ' (' + list.length + ')'),
+      ...list.slice().reverse().map(d => h('div', { class: 'pj-design', 'data-ts': d.ts },
+        h('div', { class: 'pj-design-meta muted' }, new Date(d.ts).toLocaleString(), d.rarity ? ' · ' + d.rarity : '', d.cost != null ? ' · $' + d.cost : ''),
+        h('div', { class: 'pj-design-text' }, d.ability),
+        d.notes ? h('div', { class: 'pj-design-notes muted' }, d.notes) : null))] : []));
+  };
+  const loadPrev = () => pjFetchDesigns(s.dex).then(showPrev).catch(e => { prev.replaceChildren(h('p', { class: 'muted' }, 'Could not load the filed designs: ' + String(e.message || e).slice(0, 60))); });
+  btn.addEventListener('click', async () => {
+    const text = ability.value.trim();
+    if (!text) { msg.textContent = 'write the ability first'; return; }
+    btn.disabled = true;
+    msg.textContent = 'filing…';
+    try {
+      const MP = await import('/battlecards/mpmode.js');
+      const r = await MP.call('joker-design-add', { dex: s.dex, name: s.name, ability: text, rarity: rarity.value, cost: cost.value.trim(), notes: notes.value.trim() });
+      if (r.error) throw new Error(r.error);
+      ability.value = ''; notes.value = ''; cost.value = '';
+      msg.textContent = `filed ✓ (${r.count} design${r.count === 1 ? '' : 's'} in the joker design list)`;
+      loadPrev();
+    } catch (e) {
+      msg.textContent = 'failed: ' + String(e.message || e).slice(0, 80);
+    }
+    btn.disabled = false;
+  });
+  loadPrev();
+  return h('div', { class: 'owner-todo pj-owner' },
+    h('h2', null, 'Submit design', h('span', { class: 'muted', style: 'font-size:12px;margin-left:8px;' }, 'owner only — files to the joker design list')),
+    h('label', { class: 'pj-label', for: 'pjAbility' }, 'Ability'), ability,
+    h('div', { class: 'pj-row' },
+      h('label', { class: 'pj-label' }, 'Rarity ', rarity),
+      h('label', { class: 'pj-label' }, 'Cost $', cost)),
+    h('label', { class: 'pj-label', for: 'pjNotes' }, 'Notes'), notes,
+    h('div', { class: 'pj-row' }, btn, msg),
+    prev);
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -3636,6 +3830,7 @@ function route() {
   if (section === 'micatro') return micatroRoute(id, parts[2]);
   if (section === 'micatro-mods') return micatroModsRoute(id, parts[2]);
   if (section === 'micasurvivor') return micasurvivorRoute(id);
+  if (section === 'pokermon-jokers') return id ? pokermonJokerDetail(id) : pokermonJokersView();
   if (section === 'search') return globalSearchView();
   notFound();
 }
