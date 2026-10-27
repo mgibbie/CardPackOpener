@@ -3,7 +3,7 @@
 //   Shinx -> Luxio -> Luxray, Honedge -> Doublade -> Aegislash (a real Dusk Stone), Spheal -> Sealeo -> Walrein, Grookey ->
 //   Thwackey -> Rillaboom, Kubfu -> Urshifu (Single Strike / Rapid Strike by its training), Tandemaus -> Maushold, Darumaka ->
 //   Darmanitan, Scraggy -> Scrafty, Mudbray -> Mudsdale; Xerneas, Spiritomb, Tatsugiri.
-// Plus: the pin (contentRev 19), the static data, the Pokédex order, families, pools (rarity, gens, the Starter Pack, Urshifu only
+// Plus: the pin (contentRev 20 since the Sprigatito line: pokermon_sprigatito_test.mjs), the static data, the Pokédex order, families, pools (rarity, gens, the Starter Pack, Urshifu only
 // through Kubfu), the text, the debuff rules (Kubfu / Urshifu / Unseen Fist) and the art (upstream 3.9.1's own cells + Shiny twins).
 //   node micatro/tests/mods/pokermon_new_jokers_test.mjs
 import path from 'path';
@@ -54,12 +54,12 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 19 && PINS.modPin('pokermon') === '3.9.1+r19', 'Pokermon contentRev 19 (pin 3.9.1+r19)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 19)', 'version stays 3.9.1: "3.9.1 (rev 19)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 20 && PINS.modPin('pokermon') === '3.9.1+r20', 'Pokermon contentRev 20 (pin 3.9.1+r20)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 20)', 'version stays 3.9.1: "3.9.1 (rev 20)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
-  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26, 'defs: 26 from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
+  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3, 'defs: 26 (+ the 3 of the Sprigatito line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
 });
 sec('static', () => {
   // [rarity, cost, stage, type, gen] as designed (Grookey $5: the starter convention; Kubfu $10: Shaymin's precedent)

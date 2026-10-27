@@ -6,8 +6,8 @@
 //   Foil +50 Chips, Holographic +10 Mult, Polychrome X0.5 Mult; Red Seal +1 retrigger, Gold Seal +$3 when scored.
 // The stats are Steamodded's permanent card values (perma_bonus / perma_mult / perma_x_mult / perma_h_x_mult /
 // perma_h_dollars / perma_p_dollars / perma_repetitions). The engine scores perma_bonus / perma_mult / perma_x_mult /
-// perma_h_dollars itself; this mod's hooks add the other three (index.js: chip_h_x_mult, p_dollars, card_repetitions),
-// with Steamodded's multiplicative_stacking for the held X Mult.
+// perma_h_dollars itself; this mod's hooks add perma_h_x_mult and perma_repetitions (index.js: chip_h_x_mult, card_repetitions),
+// with Steamodded's multiplicative_stacking for the held X Mult, and base Pokermon's p_dollars hook pays perma_p_dollars.
 // (`(perma or 1) + n` in the Lua starts from Steamodded's 0 — every ability has perma_* = 0 — so it is `(perma || 0) + n`.)
 import { G, P_CENTERS, pseudorandom, pseudoseed } from '../../../pokermon/api.js';
 import { FORGED } from '../stakes.js';
@@ -76,7 +76,7 @@ export function perma_h_x_mult(v, card) {
   if (!p || card.debuff) return undefined;
   return multiplicative_stacking(v || 1, p);
 }
-/** Card:get_p_dollars + perma_p_dollars (hook p_dollars). */
+/** Card:get_p_dollars + perma_p_dollars. (Not hooked here any more: base Pokermon's index.js perma_p_dollars scores it, contentRev 20.) */
 export function perma_p_dollars(v, card) {
   const p = card && card.ability && card.ability.perma_p_dollars;
   if (!p || card.debuff) return undefined;

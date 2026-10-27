@@ -262,7 +262,8 @@ Intended-design fixes are noted in comments at each site (search "intended").
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
 87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), `3.9.1+r15` for batch 17 (the last: the
 upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), `3.9.1+r18` for the Hazard
-follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below)
+follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), **`3.9.1+r20`** since the owner's
+Sprigatito line ("The owner's Sprigatito line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2094,6 +2095,34 @@ Nacho nor our Pokermon+ has any of them, so there is nothing to dedupe.
 - **Wiki**: `node tools/micatro/gen_designwiki_pokermon_jokers.mjs` (420 missing; its 50 cards deleted, and ~80 other species' composed
   cards shift a few pixels because their frames are the mode of the registered cards) and `gen_designwiki.mjs` (the mods' joker data).
   The wiki art: `npx wrangler pages deploy designwiki/sprites --project-name=magepunk-sprites --branch=cloudflare-migration --commit-dirty=true`.
+
+### The owner's Sprigatito line (2026-10-27, branch `feat/pokermon-sprigatito-line`)
+Pinned **`3.9.1+r20`** (`contentRev: 20`; `LEGACY_MOD_VERSIONS` untouched). The owner's wiki design ("do the joker design list") for
+Sprigatito (906) -> Floragato (907) -> Meowscarada (908), defined with the 25 in `jokers/pokejokers_designs.js` (LINE F2; 29 defs now),
+after Ursaluna in Pokédex order. Neither Nacho nor Pokermon+ has these species.
+- **Sprigatito** (Grass starter, U **$5**, `starter: true`: the Starter Pack's Grass list): Hiker for Lucky cards. When a scored Lucky card
+  triggers (`lucky_trigger`: its 1 in 5 Mult or 1 in 15 money; once per scoring even when both hit, as Lucky Cat), the card permanently
+  gains +1 Mult and +$1 when scored: Steamodded's `perma_mult` / `perma_p_dollars` on the card. They score every time after (the growth
+  lands after the card scored, as Hiker's chips), survive evolving and selling the joker and a change of enhancement, and show on the
+  card's tooltip ("+N extra Mult", "+$N when scored": index.js `perma_lines`, in `describe` and the board's `view_card` mod_lines). Blueprint copies it (Hiker is blueprint-compatible). 5 rounds.
+- **Floragato** (Safari $8): the same, +2 Mult and +$2. 5 rounds (the starter pace: Chikorita / Totodile 5 and 5).
+- **Meowscarada** (Safari $10): no growth (cards keep what they have); a Lucky card held in hand gives X1.25 Mult, as a Steel card (Baron's
+  shape: the joker's individual G.hand return, so Mime / a Red Seal retrigger it like Steel; nothing while debuffed; a played Lucky card
+  gets nothing). Not counted as Steel: `has_enhancement(c, 'm_steel')` stays false, Steel Joker / Honedge don't count them (the tooltip
+  says so). Enhancements are exclusive, so it is Lucky cards only.
+- **Energy**: the Mult step is `mult_mod` (+20% of its base per Energy: Sprigatito +1.2 / +1.4 / +1.6, Floragato +2.4 / +2.8 / +3.2), the
+  money step `dollars` (in no `energy_values`: always $1 / $2). A card keeps the step it was given: later Energy never re-grows it
+  (Houndour's `perma_mult` precedent). Meowscarada's X is `Xmult_multi` (per-card X, +5% of its base: X1.3125 / X1.375 / X1.4375).
+- **perma_p_dollars** is now base Pokermon's `p_dollars` hook (index.js `perma_p_dollars`); it was Pokermon+'s (Heatran's forged cards).
+  Pokermon+ requires Pokermon, so it is the same rule, scored once.
+- **Art: upstream's own.** 3.9.1's pokespriteload.lua draws all three on the vendored Natdex sheet ({10,60}, {12,60}, {14,60}, Shiny twins):
+  `poke_sprite391`. Nothing to deploy for the mod. The wiki drops them (417 missing).
+- **Tests**: `micatro/tests/mods/pokermon_sprigatito_test.mjs` (2 passed / 10 failed on origin/main, 56 / 0 here) fires the growth, the scoring without
+  a trigger, Energy, evolution at 5 + 5 rounds, selling, Meowscarada's held X (with Energy, a Red Seal, Steel Joker) and the text.
+  Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 29 defs), `micatro_mod_version_pin`.
+- **Fuzz**: vanilla identical (40 / 5937 / 13 / 10). The seam-only diff (the 3 definitions removed, the hook move and tooltip lines kept)
+  is identical to origin/main (Pokermon 24 / 3419 / 13 / 6, all mods 16 / 2907 / 13 / 5); with the jokers the Pokermon runs diverge at
+  pool rolls (Pokermon 24 / 3203 / 13 / 6, all mods 16 / 3130 / 13 / 6).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
