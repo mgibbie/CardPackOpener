@@ -21,6 +21,9 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
 
+// the server's random GC sweep (server/mp.mjs gcRate) stays off: its `gc:last` stamp would land in this suite's write checks
+process.env.MP_GC_RATE = '0';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
 let pass = 0, fail = 0;
@@ -67,6 +70,16 @@ const reg = async (name) => { const r = (await raw('register', { username: name,
 try {
 	for (const n of ['nuzzy', 'rival']) await reg(n);
 	A(tokens.nuzzy && tokens.rival, 'test accounts register');
+
+	// ===== 0. the GC sweep is the test's to switch (CI 2026-10-27: the random ~10% sweep stamped gc:last inside the
+	// exact-writes check below). Off: 60 requests never sweep. Forced on: the next request does. (Before gcRate the
+	// sweep ignored MP_GC_RATE: 60 requests at 10% stamp gc:last ~99.8% of the time.)
+	for (let i = 0; i < 60; i++) await raw('state', {}, tokens.rival);
+	A(row('gc:last') === null, 'MP_GC_RATE=0: 60 signed-in requests never run the GC sweep (no gc:last)', JSON.stringify(row('gc:last')));
+	process.env.MP_GC_RATE = '1';
+	await raw('state', {}, tokens.rival);
+	A(typeof row('gc:last') === 'number', 'MP_GC_RATE=1: the next signed-in request sweeps (stamps gc:last)', JSON.stringify(row('gc:last')));
+	process.env.MP_GC_RATE = '0';
 
 	// ===== 1. progress get / put =====
 	A((await raw('micatro-progress-get', {})).status === 401, 'progress-get needs an account');

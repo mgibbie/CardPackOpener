@@ -187,14 +187,24 @@ try {
 			if (x * x + y * y <= 25 && (z.height(x, y) !== sh || z.terr(x, y) !== 0 || z.rampDir(x, y))) flatSpawn = false;
 		}
 		const levels = T.audit(z).levels;
-		return { same, hashA: a.hash, hashB: b.hash, run: z.hash, other, zone2, drawn, maxStep, flatSpawn, levels, stats: z.stats, map: z.map, zn: z.zone, w: z.w, h: z.h, ms: a.stats.ms };
+		// the time budget measures the generator's WORK, not one wall-clock sample: a single cold call (JIT warm-up, a
+		// CI runner sharing its CPU with another suite) read 443 ms where the steady state is ~60-100 ms. Best of 5
+		// generate() calls, against the best of 5 runs of a fixed reference workload timed the same way; the 400 ms budget
+		// holds on a machine where the reference takes REF_MS and scales with a slower one (never below 400 ms)
+		const REF_MS = 35, now = () => performance.now();
+		const refWork = () => { const t0 = now(), arr = new Float64Array(1 << 18); let x = 12345; for (let i = 0; i < arr.length; i++) { x = (Math.imul(x, 1103515245) + 12345) | 0; arr[i] = x; } arr.sort(); return now() - t0; };
+		const genMs = [a.stats.ms, b.stats.ms], refMs = [];
+		for (let k = 0; k < 3; k++) genMs.push(T.generate({ seed: G.World.seed, map: 'viridian', zone: 1 }).stats.ms);
+		for (let k = 0; k < 5; k++) refMs.push(refWork());
+		const ms = Math.min(...genMs), ref = Math.round(Math.min(...refMs) * 10) / 10, budget = Math.round(400 * Math.max(1, ref / REF_MS));
+		return { same, hashA: a.hash, hashB: b.hash, run: z.hash, other, zone2, drawn, maxStep, flatSpawn, levels, stats: z.stats, map: z.map, zn: z.zone, w: z.w, h: z.h, ms, genMs, ref, budget };
 	});
 	A(gen.same && gen.hashA === gen.hashB, 'the generator is deterministic: the same seed + map + zone gives the identical heightmap, kinds, ramps and props', JSON.stringify(gen));
 	A(gen.run === gen.hashA && gen.map === 'viridian' && gen.zn === 1 && gen.w === 120 && gen.h === 120, "the run's zone is exactly that one (world seed, Viridian, zone 1, 120x120)", JSON.stringify(gen));
 	A(gen.other && gen.other !== gen.hashA && gen.zone2 !== gen.hashA, 'another seed, or another zone, gives another zone', JSON.stringify(gen));
 	A(gen.drawn === 0, 'the generator never draws Math.random (its own seeded G.DLC.rng stream)', String(gen.drawn));
 	A(gen.levels && gen.levels.every(n => n > 200) && gen.maxStep === 1 && gen.flatSpawn, `heights 0..3 all used (${gen.levels}), neighbours differ by at most 1, the spawn is a flat clearing`, JSON.stringify(gen));
-	A(gen.stats && gen.stats.ramps > 3 && gen.stats.extra >= 0 && gen.ms < 400, `ramps placed (${gen.stats && gen.stats.ramps} to connect + ${gen.stats && gen.stats.extra} along long cliffs), generated in ${gen.ms} ms`, JSON.stringify(gen.stats));
+	A(gen.stats && gen.stats.ramps > 3 && gen.stats.extra >= 0 && gen.ms < gen.budget, `ramps placed (${gen.stats && gen.stats.ramps} to connect + ${gen.stats && gen.stats.extra} along long cliffs), generated in ${gen.ms} ms (best of 5; budget ${gen.budget} ms, reference ${gen.ref} ms)`, JSON.stringify([gen.stats, gen.genMs]));
 
 	// 2. connectivity, with the game's own rule
 	const conn = await E(page, () => {
@@ -312,11 +322,12 @@ try {
 		const keep = G.Exp.enterZone(1), z = G.World.zone;
 		const lum = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
 		const acc = [[0, 0], [0, 0], [0, 0], [0, 0]];
-		let ramp = null, face = null, faceN = null, sample = null;
+		let face = null, faceN = null, sample = null;
+		const ramps = [];
 		for (let y = z.y0 + 1; y < z.y0 + z.h - 1; y++) for (let x = z.x0 + 1; x < z.x0 + z.w - 1; x++) {
 			if (z.terr(x, y) !== 0) continue;
 			const c = G.Minimap.colorAt(x, y), h = z.height(x, y);
-			if (z.rampDir(x, y)) { if (!ramp) ramp = { c, base: null, x, y }; continue; }
+			if (z.rampDir(x, y)) { ramps.push({ c, x, y }); continue; }
 			const south = z.terr(x, y + 1) !== 1 && z.height(x, y + 1) < h;
 			// (the mean over every cliff face: one face tile can be a bright flower pixel, ×0.55 still above the low ground)
 			if (south) { if (!face) face = { c: [0, 0, 0], n: 0 }; c.forEach((v, i) => { face.c[i] += v; }); face.n++; continue; }
@@ -325,13 +336,23 @@ try {
 		}
 		const mean = acc.map(([s, n]) => n ? Math.round(s / n) : null);
 		G.World.setZone(null);
-		const baseRamp = ramp && G.Minimap.colorAt(ramp.x, ramp.y), baseSample = sample && G.Minimap.colorAt(sample.x, sample.y);
+		// RAMPS: every ramp tile against its own base colour. One tile was a coin toss: the ramp blends its tile 50% toward
+		// sand, so a ramp laid over a white or pink flower pixel (~2% of ramp tiles) comes out less red than the flower it
+		// covers, and the first ramp scanned (the world seed is random) was sometimes one of those. Sandier on average
+		// (redder, and red over blue) and tile by tile on the large majority.
+		const rs = { n: ramps.length, sandier: 0, r: 0, baseR: 0, rb: 0, baseRb: 0, worst: null };
+		for (const t of ramps) {
+			const b = G.Minimap.colorAt(t.x, t.y), ok = t.c[0] > b[0] && t.c[0] - t.c[2] > b[0] - b[2];
+			if (ok) rs.sandier++; else if (!rs.worst) rs.worst = { c: t.c, base: b };
+			rs.r += t.c[0]; rs.baseR += b[0]; rs.rb += t.c[0] - t.c[2]; rs.baseRb += b[0] - b[2];
+		}
+		const baseSample = sample && G.Minimap.colorAt(sample.x, sample.y);
 		G.World.setZone(keep);
-		return { mean, ramp: ramp && ramp.c, baseRamp, face: face && face.c.map(v => Math.round(v / face.n)), sample: sample && sample.c, baseSample };
+		return { mean, rs, face: face && face.c.map(v => Math.round(v / face.n)), sample: sample && sample.c, baseSample };
 	});
 	const incr = mm.mean && mm.mean.every((v, i) => i === 0 || (v != null && v > mm.mean[i - 1]));
 	A(incr, `minimap shading by height: mean luminance rises with each level (${mm.mean && mm.mean.join(' < ')})`, JSON.stringify(mm));
-	A(mm.ramp && mm.baseRamp && mm.ramp[0] > mm.baseRamp[0] && mm.ramp[0] - mm.ramp[2] > mm.baseRamp[0] - mm.baseRamp[2], 'ramps are drawn sandy on the minimap', JSON.stringify([mm.ramp, mm.baseRamp]));
+	A(mm.rs && mm.rs.n > 3 && mm.rs.r > mm.rs.baseR && mm.rs.rb > mm.rs.baseRb && mm.rs.sandier >= 0.9 * mm.rs.n, `ramps are drawn sandy on the minimap (${mm.rs && mm.rs.sandier} of ${mm.rs && mm.rs.n} ramp tiles redder than their base colour, and on average)`, JSON.stringify(mm.rs));
 	A(mm.face && mm.mean && 0.299 * mm.face[0] + 0.587 * mm.face[1] + 0.114 * mm.face[2] < mm.mean[0], 'cliff faces (tiles above lower ground) are darker than any level (their mean)', JSON.stringify(mm.face));
 	A(mm.sample && mm.baseSample && mm.sample.some((v, i) => v !== mm.baseSample[i]) && mm.sample[1] > mm.baseSample[1], 'without a zone the same tile is the base colour (the shading is only the zone\'s)', JSON.stringify([mm.sample, mm.baseSample]));
 

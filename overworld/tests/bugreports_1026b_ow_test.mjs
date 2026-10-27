@@ -9,6 +9,11 @@
 //     toward the sand vanished; the ones that landed faced the sea (east and north
 //     of (4,10) are deep water, correctly refused without SURF). A tap is now
 //     latched and delivered on the next tick (ow_input.js latchTap, ow_loop.js).
+//   bug:1793045962446 (remytest, re-file after the latch shipped) "all 4 neighbouring tiles read isPassable=true;
+//     20 Right taps + 12 toward a passable tile, zero steps". Not reproduced on the live build by any input path
+//     (CDP press, 60 ms hold, JS-dispatched keydown/keyup, d-pad tap/click, 20x CPU throttle): Right and Up are deep
+//     water, refused without SURF; Left and Down step. isPassable is collision only (water is "passable" to a surfer),
+//     which is what the four trues measured. gateReport() now carries `around`: the real verdict for each side.
 //   bug:1793029837579 (+ follow-up 1793029906253, instinctgauntlet)  the phone's
 //     objective strip drew the whole long sentence on ONE line with fillText's
 //     maxWidth, squeezing it into an unreadable sliver that ran under MENU. It now
@@ -100,6 +105,10 @@ try {
 		const page = await open(null, 0, 0, { save });
 		const at = await where(page);
 		A(at.map === 'Route107' && at.x === 4 && at.y === 10, '[1793024785335] the save resumes on Route107 (4,10)', JSON.stringify(at));
+		// the reporter's probe: isPassable on all four sides reads true, yet two of them are sea
+		const probe = await page.evaluate(() => { const O = window.__ow, w = O.world, p = O.player; return { passable: [[1, 0], [0, -1], [-1, 0], [0, 1]].map(([dx, dy]) => w.isPassable(p.tx + dx, p.ty + dy)), around: O.gateReport().around }; });
+		A(probe.passable.every(Boolean) && probe.around && /SURF/.test(probe.around.right) && /SURF/.test(probe.around.up) && probe.around.left === 'open' && probe.around.down === 'open',
+			'[1793045962446] isPassable reads true on all four sides, and gateReport().around names the truth: east + north deep water (needs SURF), west + south open', JSON.stringify(probe));
 		// keydown + keyup in ONE task: no tick can ever see the key held
 		const jsTap = k => page.evaluate(k => { dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); }, k);
 		for (let i = 0; i < 3; i++) { await jsTap('ArrowLeft'); await sleep(80); await settle(page); }

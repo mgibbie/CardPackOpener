@@ -28,6 +28,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
 import puppeteer from 'puppeteer-core';
 
+// the server's random GC sweep (server/mp.mjs gcRate) stays off: its `gc:last` stamp would land in this suite's write checks
+process.env.MP_GC_RATE = '0';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
 const CHROME = process.env.CHROME || [
