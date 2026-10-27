@@ -616,8 +616,9 @@ register('mill-self', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 				const id = p.deck.pop();
 				if (!id) break;
 				const def = state.cardsById[id];
-				if (def && !def.token) { const c = instantiate(def, pi); c.zone = 'graveyard'; p.graveyard.push(c); }
-				emit(state, { type: 'mill', player: pi });
+				let c = null;
+				if (def && !def.token) { c = instantiate(def, pi); c.zone = 'graveyard'; p.graveyard.push(c); }
+				emit(state, { type: 'mill', player: pi, card: c || { id, name: def ? def.name : 'a card' } }); // the log names the milled card
 			}
 } });
 

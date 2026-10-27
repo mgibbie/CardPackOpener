@@ -1544,7 +1544,7 @@ register('destroy-enemy-hand-deck-board', ({ state, pi, target, source, enemies,
 
 
 register('freeze', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) freezeCreature(state, c); }
+			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') freezeCreature(state, c); } // a location is not a creature (bug 1793088885807)
 			else if (e.target === 'all-others') { for (const pl of state.players) for (const c of pl.board) if (c !== source && !isDead(c) && c.type !== 'location') freezeCreature(state, c); } // Snowfall Guardian
 			else if (e.target === 'random-enemy') { // Demented Frostcaller / Popsicooler (count)
 				for (let i = 0; i < (e.count || 1); i++) {
@@ -1827,6 +1827,8 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 					&& (c.tribe || '').includes(e.perFriendlyTribe)).length;
 			}
 			if (e.perHandCard) hits = state.players[pi].hand.length; // Meteorologist
+			if (e.repeatPerHandCard) hits += state.players[pi].hand.length; // Dark Skies: once, then "repeat for each card in your hand"
+			if (e.untilDeath) hits = 80; // Bouncing Blade: "repeat until a creature dies" (HS caps it at 80)
 			if (e.perHandSpell) hits = state.players[pi].hand.filter(c => isSpellType(c)).length; // Void Flayer
 			if (e.perManaCrystal) hits = state.players[pi].mana?.max || 0; // Trogg Gemtosser: one per Mana Crystal
 			if (e.countStat) hits = state.players[pi][e.countStat] || 0; // Thor, Explosive Payload: once per Starship launched
@@ -1838,7 +1840,7 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 				else if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
 				// "a random creature or planeswalker you don't control" (Long List of the Ents)
 				else if (e.pool === 'enemy-creatures-walkers') { for (const o of enemies) { pushBoard(o); for (const w of state.players[o].planeswalkers || []) pool.push({ w }); } }
-				else if (e.pool === 'all-creatures') { for (let s = 0; s < state.players.length; s++) pushBoard(s); }
+				else if (e.pool === 'all-creatures' || e.pool === 'creatures') { for (let s = 0; s < state.players.length; s++) pushBoard(s); } // 'creatures' (Dark Skies / Bouncing Blade) used to match no pool and fizzle
 				else if (e.pool === 'enemies') { for (const o of enemies) { pushBoard(o); pool.push({ hero: o }); } }
 				else if (e.pool === 'characters') {
 					for (let s = 0; s < state.players.length; s++) {
@@ -1860,6 +1862,7 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 					const rem = Math.max(0, pick.c.maxHealth - pick.c.damage);
 					damageCreature(state, pick.c, rdv, null);
 					if (e.excessToHero && !pick.c.shield && rdv > rem) damageHero(state, pick.c.controller, rdv - rem, pi);
+					if (e.untilDeath && isDead(pick.c)) break;
 				}
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
@@ -2166,8 +2169,7 @@ register('damage-all-minions-mill-per-kill', ({ state, pi }, e) => {
 	const liveAfter = state.players.reduce((s, pl) => s + pl.board.filter(c => c.type === 'creature' && !isDead(c)).length, 0);
 	const kills = Math.max(0, liveBefore - liveAfter);
 	const deck = state.players[pi].deck;
-	for (let n = 0; n < kills && deck.length; n++) deck.pop(); // destroy from the top
-	if (kills) emit(state, { type: 'mill', player: pi, count: kills });
+	for (let n = 0; n < kills && deck.length; n++) { const id = deck.pop(); const def = state.cardsById[id]; emit(state, { type: 'mill', player: pi, card: { id, name: def ? def.name : 'a card' } }); } // destroy from the top
 });
 
 register('summon-attack-lowest-if-deck-empty', ({ state, pi, enemies }, e) => {

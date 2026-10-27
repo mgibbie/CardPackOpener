@@ -85,6 +85,7 @@ export function execEffects(state, pi, effects, target, source) {
 		if (e.valuePer === 'beasts-you-control') return (e.value || 0) + p.board.filter(c => !isDead(c) && (c.tribe || '').includes('Beast')).length; // Overwhelm: base + 1 per Beast you control
 		if (e.valuePer === 'twotwo-you-control') return (e.value || 0) + p.board.filter(c => !isDead(c) && c.type !== 'location' && (c.attack || 0) === 2 && (c.maxHealth || 0) === 2).length; // Duskana: base + 1 per full 2/2 creature you control
 		if (e.valuePer === 'lands-you-control') return (e.value || 0) + (p.lands ? p.lands.length : 0); // Beanstalk Giant's Fertile Footsteps: X = lands you control
+		if (e.valuePer === 'unique-tribes') { const ts = new Set(); for (const c of p.board) if (!isDead(c) && c.type === 'creature') for (const t of (c.tribe || '').split(/[/\s]+/).filter(Boolean)) ts.add(t); return (e.value || 1) + ts.size; } // Roaring Applause: 1 + one per creature type you control
 		if (e.valuePer === 'corpses') return (e.value || 1) * (p.corpses || 0); // Fistful of Corpses: damage = your Corpses (not spent)
 		if (e.valuePer === 'damaged-friendly') {
 			let n = p.board.filter(c => !isDead(c) && c.damage > 0).length;

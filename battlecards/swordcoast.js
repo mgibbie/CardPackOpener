@@ -124,6 +124,15 @@ export function seatOf(character) {
 export const WINS_TO_CLEAR = 12;
 export const LOSSES_TO_END = 3;
 
+// The clear headline names the foe the 12th win was actually taken from. Either rung-D boss
+// (Tiamat or Asmodeus) can close a run — losing to Tiamat and then beating Asmodeus used to
+// read "TIAMAT IS SLAIN!" (bug 1793048650433).
+export function clearHeadline(finalEnemyName) {
+	if (finalEnemyName === 'Tiamat') return `${WINS_TO_CLEAR} WINS - TIAMAT IS SLAIN!`;
+	if (finalEnemyName) return `${WINS_TO_CLEAR} WINS - ${String(finalEnemyName).toUpperCase()} IS VANQUISHED!`;
+	return `${WINS_TO_CLEAR} WINS - THE SWORD COAST IS SAVED!`;
+}
+
 // ── decks ──
 // hero deck = 10 singleton cards; enemy deck = 2 copies of each of its 15 cards (= 30).
 export function deckOf(cardsById, character) {

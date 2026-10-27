@@ -3581,6 +3581,10 @@ function nextEvent() {
 	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); surfacePendingChoice(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
 	queueBusy = true;
 	let delay = 120;
+	// A renderer fault on one event must not strand the queue: queueBusy would stay true, the HUD
+	// would freeze behind the engine and maybeRunAI would never run again (bug 1793087158441 — a
+	// 'mill' event with no card). Log it, rethrow out-of-band for the error beacon, keep draining.
+	try {
 	switch (ev.type) {
 		case 'turnStart':
 			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
@@ -3825,7 +3829,7 @@ function nextEvent() {
 			delay = 280;
 			break;
 		case 'mill':
-			log(`${nameOf(ev.player)} milled ${ev.card.name}`);
+			log(`${nameOf(ev.player)} milled ${ev.card?.name || (ev.count > 1 ? ev.count + ' cards' : 'a card')}`);
 			delay = 220;
 			break;
 		case 'plunder':
@@ -4159,6 +4163,10 @@ function nextEvent() {
 			delay = 200;
 			break;
 		}
+	}
+	} catch (err) {
+		console.error('[battlecards] event render failed:', ev && ev.type, err);
+		setTimeout(() => { throw err; }, 0);
 	}
 	updateHud();
 	setTimeout(nextEvent, delay);
@@ -9144,7 +9152,7 @@ function advanceSwordCoast(run) {
 
 function swordCoastRunComplete(run) {
 	try { localStorage.setItem(SWORDCOAST_UNLOCK_KEY, '1'); } catch (e) { }
-	const el = dungeonOverlay('12 WINS - TIAMAT IS SLAIN!',
+	const el = dungeonOverlay(Swordcoast.clearHeadline(run.enemy && run.enemy.name),
 		`${run.characterId} clears the Sword Coast with a ${run.deck.length}-card deck. Gale, Waterdeep Prodigy is now a playable hero!`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
