@@ -37,6 +37,7 @@ import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
 import { drawCards, toGraveyard, bouncePermanent } from '../zones.js';
 import { runDeathrattle } from '../death.js';
+import { noteResult } from './followups.js';
 
 register('draw-minions-set-stats', ({ state, pi }, e) => {
 	// Amitus (Reinforced): draw N minions from your deck and set their Attack,
@@ -56,7 +57,7 @@ register('draw-minions-set-stats', ({ state, pi }, e) => {
 	}
 });
 
-register('draw', ({ state, pi, scaled, enemies }, e) => {
+register('draw', ({ state, pi, scaled, enemies, source }, e) => {
 	// count-vs-value tolerance (docs/06 pinned it; king_llane regression): a
 	// handful of imported cards write `count` instead of `value` — the old
 	// chain read only e.value, so {type:'draw', count:1} silently drew NOTHING
@@ -65,7 +66,12 @@ register('draw', ({ state, pi, scaled, enemies }, e) => {
 	// forOpponent: the cards go to an opponent instead — "Your opponent draws
 	// 2 cards" riders (Renaturalize), mirroring shuffle-ids' forEnemy
 	else if (e.forOpponent && enemies.length) drawCards(state, enemies[0], n);
-	else drawCards(state, pi, n);
+	else {
+		// note the drawn cards so a later effect can act on them (Lunar Visions / Fast Forward)
+		const hand = state.players[pi].hand, before = new Set(hand);
+		drawCards(state, pi, n);
+		noteResult(source, 'draw', state.players[pi].hand.filter(c => !before.has(c)));
+	}
 });
 
 

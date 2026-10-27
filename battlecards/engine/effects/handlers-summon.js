@@ -37,6 +37,7 @@ import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
 import { drawCards, toGraveyard, bouncePermanent } from '../zones.js';
 import { runDeathrattle } from '../death.js';
+import { noteResult } from './followups.js';
 
 register('summon-random-hand-size', ({ state, pi, target, source, enemies, scaled }, e) => {
 			// Astromancer: summon a random creature costing exactly your hand size
@@ -1107,17 +1108,22 @@ register('summon-from-hand', ({ state, pi, target, source, enemies, scaled, hm, 
 			// Voidcaller: a random qualifying creature jumps from hand to board.
 			// count>1 pulls that many (Beastmaster Leoroxx: 3 Beasts from hand)
 			const p = state.players[pi];
+			const _put = [];
+			noteResult(source, 'summoned', _put); // Chemical Spill: "...then deal 5 damage to it"
 			for (let n = 0; n < (e.count || 1); n++) {
-				const pool = p.hand.filter(c => c.type === 'creature'
+				let pool = p.hand.filter(c => c.type === 'creature'
 					&& (!e.tribe || (c.tribe || '').includes(e.tribe))
 					&& (e.maxCost == null || (c.cost || 0) <= e.maxCost) // Razorboar
 					&& (!e.requireKeyword || (c.keywords || []).includes(e.requireKeyword)));
 				if (!pool.length) break;
+				// Chemical Spill: the HIGHEST Cost creature (ties broken at random)
+				if (e.highest) { const top = Math.max(...pool.map(c => c.cost || 0)); pool = pool.filter(c => (c.cost || 0) === top); }
 				const c = pool[Math.floor(state.rng() * pool.length)];
 				p.hand = p.hand.filter(x => x !== c);
 				c.zone = 'board';
 				c.sick = true;
 				p.board.push(c);
+				_put.push(c);
 				emit(state, { type: 'summon', player: pi, card: c });
 				fireOngoing(state, pi, 'summoned', { minion: c });
 				recomputeAuras(state);
