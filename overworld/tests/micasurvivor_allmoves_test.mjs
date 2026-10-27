@@ -285,7 +285,8 @@ try {
 		return { plain, band, atk0, atk1, item, k: G.Combat.afK(pl, { mid: ids[0] }), desc: G.Items.BY.choiceband.desc };
 	});
 	const ratio = b3.plain ? b3.band.map((v, i) => Math.round(v / b3.plain[i] * 1000) / 1000) : [];
-	A(ratio[0] === 1.4 && ratio.slice(1).every(r => r === 0.8) && b3.atk1 === b3.atk0, 'the Choice Band: +40 % on the slot-1 move\'s hits, -20 % on the others (G.Combat.land), and no stat bonus any more', JSON.stringify({ ratio, b3 }));
+	// (DLC D21: base all-fire x0.85, was x0.8: the hits are whole numbers, so the ratios are within 1 % of 1.4 / 0.8)
+	A(Math.abs(ratio[0] - 1.4) < 0.01 && ratio.slice(1).every(r => Math.abs(r - 0.8) < 0.01) && b3.atk1 === b3.atk0, 'the Choice Band: +40 % on the slot-1 move\'s hits, -20 % on the others (G.Combat.land), and no stat bonus any more', JSON.stringify({ ratio, b3 }));
 	A(/hueco 1/.test(b3.desc || ''), 'its text says so', b3.desc);
 	// B4: a bond fuses, the freed slot is offered and filled, and all 5 fire
 	const b4 = await E(page, () => {

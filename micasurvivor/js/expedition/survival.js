@@ -74,6 +74,12 @@ G.ExpSurv = (() => {
   // ---------------- balance (tune here; README "DLC D11") ----------------
   const K = {
     MILE_S: 300,                 // a milestone boss every 5:00 (study: "a milestone boss every 5 min")
+    // DLC D21: Survival's KO pacing. With every move firing (D16) a 45-min bot run KOs ~12,500 (one active slot: ~2,000); half as
+    // many foes, each x1.8 HP and XP (a little less of each in all; the timeline's packs halved too), take it to ~10,000. Applied to
+    // every non-boss foe of Survival (the trickle's rate, the event packs, the spawns' HP and XP: foeK, segPlan); bosses keep their
+    // DPS targets. (A smaller cap or tougher foes barely move it further: a level-300 bot one-shots the field, so the KOs follow the
+    // kills it can reach, not their HP.) (tools/micasurvivor/dps_sim.mjs --pace; pinned by micasurvivor_expedition_balance_test.mjs)
+    PACE: { rate: 0.5, hp: 1.8, xp: 1.8 },
     LEGEND_EVERY: 3,             // ... every 3rd a legendary
     MEWTWO_AT: 2700, MEWTWO: 150, MEWTWO_TARGET: 90,   // Mewtwo at 45:00 (the 9th milestone): a 90 s fight from your DPS
     MILE_TARGET: [40, 50, 60], LEGEND_TARGET: 60,      // the bosses' target times by phase (D3's), legendaries 60 s
@@ -191,6 +197,7 @@ G.ExpSurv = (() => {
       else if (kind === 'totem') dex = [pickR(rng, M.totem[zi])];
       else if (kind === 'summoner') dex = [pickR(rng, M.summoner[zi])];
       if (TR.event !== 1 && n > 1) n = Math.round(n * TR.event);
+      if (n > 1 && kind !== 'rockslide') n = Math.max(1, Math.round(n * K.PACE.rate));   // (D21: the pacing, as the trickle's: half the foes, x1.8 HP each)
       return { at: t0 + Math.max(20, at - TR.early), kind, n, dex, seed: Math.floor(rng() * 4294967296) >>> 0, i };
     });
     // (DLC D20, its own stream, after the segment's draws: phase 3 adds a rarity-5 elite pack; from phase 2 a legendary may roam)
@@ -355,8 +362,8 @@ G.ExpSurv = (() => {
   }
   /** classic.js spawn / trickle: the night and the pacts on a new enemy at t: {hp, dmg, rate, elite}. */
   function foeK(t, kind) {
-    const n = nightOf(t), tm = foeTeam();
-    return { hp: n.hp * (1 + tm.hp), dmg: n.dmg * (1 + tm.dmg), rate: 1 + tm.rate, elite: tm.elite };
+    const n = nightOf(t), tm = foeTeam(), P = K.PACE;   // (D21: the pacing)
+    return { hp: n.hp * (1 + tm.hp) * P.hp, dmg: n.dmg * (1 + tm.dmg), rate: (1 + tm.rate) * P.rate, elite: tm.elite, xp: P.xp };
   }
 
   // ---------------- siege ----------------

@@ -1801,3 +1801,26 @@ Built (`micasurvivor/README.md`, "DLC D20"). Choices and notes:
   every species is a tier candidate, a boss slot or a rift / judgment / tower legendary.
 - **Versions:** `G.Expedition.DV` 19, `x` v10. Sizes (`micasurvivor_expedition_mp_test`): busiest relay frame + 1 s of casts 10,215 /
   16,000; a 45-min Survival tape 792,034 chars (17,600 KOs, up to 233 foes), a Classic clear 789,094 (7,328 KOs): under 1.2 MB.
+
+### Update (2026-10-26): D21 built, "balance and performance"
+Built (`micasurvivor/README.md`, "DLC D21"). Choices and notes:
+- **The tool:** `dps_sim.mjs --pace` (the D11 bot, invulnerable, no forced KOs; one-slot vs shipped; KOs, level, bosses, pay) and
+  `--why` (spawns and KOs by source). The bot runs are NOT deterministic run to run (the same seeds gave 9,958 and 12,823 Survival
+  KOs on two runs), so every number here is a range of 3-run averages.
+- **DPS (decision #10):** base 0.8 -> 0.85 (x1.32 at 0.8, x1.71 at 0.9 over 10 builds, x1.79 at 0.96; builds spread x1.15-2.2);
+  Expedition 1.1 kept (x1.61). A fused base build runs higher (x1.9 at 0.9): bonds are the base game's late-run reward, left as is.
+- **Pay:** the Expedition KO term 1/40 -> 1/150 (a Normal clear ~1,340 again; D11's ~1,270-1,365). The base game pays as before.
+- **Survival:** `K.PACE` {rate 0.5 (trickle + timeline packs), hp 1.8, xp 1.8}. KOs fell ~20 % (bot ~10,000-12,800 a 45-min run;
+  assisted mp bot 15,100-16,200 vs 17,600-18,800), pay ~2,250-2,575 vs a one-slot run's ~2,010-2,175 (D16: ~+60 %). Tried and
+  dropped: a smaller Survival cap (x0.65) and harder foes (x2.2): the KOs did not fall (a Lv 300+ bot one-shots the field; the KOs
+  follow how many foes it reaches). The real lever would be Survival's level curve (Lv 300-400 in 45 min); not touched: it is the
+  base XP curve D11 shares, and the owner asked for pacing / rewards, which this does.
+- **Measured, nothing to fix:** phone 844x390 p50 16.6 / p95 17.9 ms, 85 foes, 68 projectiles at most, no sideways scroll; relay
+  9,968-10,217 / 16,000; tapes under 1.2 MB (Survival 0.78-1.16 MB, Classic 0.74-0.75 MB).
+- **Golden fixtures** re-recorded once for the base factor (README D21 lists each mode's change). Passes twice; forceload passes.
+- No new versions (no streamed state changed): `G.Expedition.DV` 19, `x` v10.
+
+### D19-D21 stack (2026-10-26)
+`feat/micasurvivor-d19-d21`: D19 the full League (dv 18; the server: the counter cap, the 553 / 27 lists, base-owned families on
+the League board), D20 all 1,025 as enemies (dv 19; base: Wishiwashi), D21 balance (the base damage factor, the Expedition KO pay,
+Survival's pacing; the D0a fixtures re-recorded). With it the owner's 2026-10-26 request (D16-D21) is built.

@@ -35,7 +35,10 @@ G.Combat = (() => {
   // MELEE_GUARD: -25 % damage taken for this long after a melee move fires (owner decision #9).
   // (measured 2026-10-26, 2 x 10 builds each, the bot's runs at 5:00 and 10:00: all-fire at x1 = ~2.0x the best single slot in
   //  base Normal, ~1.4x in Expedition Normal, whose levelled first kit move dominates; so 1.6 / 2.0 = 0.8 and 1.6 / 1.4 ~ 1.1)
-  const AF = { DMG: 0.8, DMG_EXP: 1.1, CB_MAIN: 1.4, CB_REST: 0.8, MELEE_GUARD: 1.5, MELEE_TAKEN: 0.75 };
+  // (DLC D21, re-measured after D17-D20 with the same sim: base all-fire / the best single slot was x1.32 at x0.8 (6 builds),
+  //  x1.71 at x0.9 (10 builds), x1.79 at x0.96 (6 builds), the builds spreading x1.15-2.2: DMG 0.8 -> 0.85, ~x1.6. Expedition at
+  //  x1.1 is x1.61 (6 builds), kept. Pinned by micasurvivor_expedition_balance_test.mjs)
+  const AF = { DMG: 0.85, DMG_EXP: 1.1, CB_MAIN: 1.4, CB_REST: 0.8, MELEE_GUARD: 1.5, MELEE_TAKEN: 0.75 };
   /** The move a hit comes from (a move instance or its view, or a projectile / orb / Expedition hit's mid), or null. */
   function moveIdOf(src) {
     if (!src || src.dsrc || src.mkind === 'zmove' || src.kind === 'item') return null;

@@ -161,7 +161,9 @@ G.ExpMeta = (() => {
     SCALE: 3,
     // a run: (BASE + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 if won + 15 a catch) x the tier's pay (study 2.11: x1 / 1.75 / 2.5),
     // then x SCALE in Pokémonedas. A run under MIN_T seconds pays nothing (no quit-farming).
-    PAY: { BASE: 10, KO: 1 / 40, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60, SURV_MIN: 4 },   // (D11: Survival: + 60 a legendary, on top of its boss, and + 4 a minute survived (x3 = 12 a minute, the base run's time / 5): an endless run has no zones or win to pay)
+    // (DLC D21: KO 1 / 40 -> 1 / 150. Every move firing (D16) took a Normal clear from ~4,000 KOs to ~8,500 in the pacing bot
+    //  (tools/micasurvivor/dps_sim.mjs --pace), so it paid ~1,740 instead of D11's ~1,270-1,365; at 1 / 150 it pays ~1,355 again)
+    PAY: { BASE: 10, KO: 1 / 150, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60, SURV_MIN: 4 },   // (D11: Survival: + 60 a legendary, on top of its boss, and + 4 a minute survived (x3 = 12 a minute, the base run's time / 5): an endless run has no zones or win to pay)
     // research (study 2.14): a KO 1, elite 2, summoner 4, alpha / totem 5, boss 10, a freed cage 25; x(1 + 0.25 Lab Research)
     RS: { ko: 1, elite: 2, summoner: 4, alpha: 5, boss: 10, cage: 25, LAB: 0.25 },
     RS_NEED: { starter: 400, common: 400, uncommon: 600, rare: 900, legendary: 60 },   // a family's research to finish it (ours)

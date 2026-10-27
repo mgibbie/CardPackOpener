@@ -525,7 +525,7 @@ G.ExpClassic = (() => {
     // (D11: Survival: the Endless Night and the pacts' banes (enemies' HP / damage), js/expedition/survival.js foeK)
     const sk = S.surv && G.ExpSurv ? G.ExpSurv.foeK(t, o.kind) : null;
     if (sk) { e.maxHp = e.hp = Math.round(e.maxHp * sk.hp); e.dmg *= sk.dmg; }
-    e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1) * TR.xp);
+    e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1) * TR.xp * (sk && sk.xp ? sk.xp : 1));   // (D21: Survival's pacing, foeK)
     // (D5: the Cursed Incense vitamin, +12 % difficulty a level: HP and damage)
     const cu = G.ExpItems ? G.ExpItems.total(G.Game.player, 'curse') : 0;
     if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }

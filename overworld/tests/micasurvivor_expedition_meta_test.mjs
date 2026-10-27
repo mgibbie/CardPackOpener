@@ -94,10 +94,11 @@ if (M0) {
 		'study 2.14\'s fixed prices: vitamin slots 1,200 / 3,000, 4th move slot 1,500, fourth option 3,000, Revive 5,000, Support team 3,500');
 	// a run's pay x the tier's multiplier, in Pokémonedas (D11: the D10 units x K.SCALE, rounded to 5)
 	const p = { kills: 2000, time: 1500, zone: 4, bosses: 4, won: true, catches: 2 };
-	const base = Math.round(10 + 2000 / 40 + 25 * 3 + 30 * 4 + 120 + 15 * 2), coins = n => Math.round(n * 3 / 5) * 5;
+	// (DLC D21: KOs / 150, was / 40: every move firing doubled a clear's KOs; micasurvivor_expedition_balance_test.mjs)
+	const raw = 10 + 2000 / 150 + 25 * 3 + 30 * 4 + 120 + 15 * 2, base = Math.round(raw), coins = n => Math.round(n * 3 / 5) * 5;
 	const pn = M.payOf(p, 'normal'), ph = M.payOf(p, 'hard'), px = M.payOf(p, 'nightmare');
-	A(M.K.SCALE === 3 && pn.base === base && base === 405 && pn.pay === 1215 && ph.pay === coins(base * 1.75) && ph.pay === 2125 && px.pay === 3040 && ph.mul === 1.75 && px.mul === 2.5,
-		'a run\'s pay: (10 + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch = 405) x the tier\'s (study 2.11) x3 Pokémonedas: 1,215 / 2,125 / 3,040', JSON.stringify([pn, ph, px]));
+	A(M.K.SCALE === 3 && pn.base === base && base === 368 && pn.pay === coins(raw) && pn.pay === 1105 && ph.pay === coins(raw * 1.75) && px.pay === coins(raw * 2.5) && ph.mul === 1.75 && px.mul === 2.5,
+		'a run\'s pay: (10 + KOs / 150 + 25 (zone - 1) + 30 a boss + 120 won + 15 a catch = 368) x the tier\'s (study 2.11) x3 Pokémonedas: ' + [pn.pay, ph.pay, px.pay].join(' / '), JSON.stringify([pn, ph, px]));
 	A(M.payOf({ ...p, time: 59 }, 'hard').pay === 0 && M.payOf({ kills: 0, time: 60, zone: 1, bosses: 0, won: false, catches: 0 }, 'normal').pay === 30, 'a run under a minute pays nothing (no quit-farming); a minute pays the base 10 x3 = 30');
 	// a purchase spends the base save's coins through the wallet (refused short, nothing taken)
 	// (DLC D18: Training and the other 8 stat rows are retired: a purchase is refused; Refresh shows the spending)

@@ -3189,6 +3189,43 @@ roaming Raikou spawns, is a special and leaves, the rarity-5 elites spawn, a bas
 before D20 (the base checks fail with only the enemies.js line reverted). Updated on purpose: `_expedition_classic` (a zone's kinds:
 + `roam` sometimes), dv 18 -> 19 in the Expedition suites.
 
+## DLC D21: balance and performance after "every move fires"
+
+The owner's request's last batch (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D21 built"). Measured with
+`tools/micasurvivor/dps_sim.mjs` (D16's DPS sim) and its new **`--pace`** mode: the same invulnerable bot plays a 45-min Survival
+run and a Classic clear, once as the one-active-move game (`pl.af = false`, x1) and once as shipped, and prints KOs, level, bosses
+and the Normal pay (`--why`: where the foes come from). No forced KOs (the mp test's bot has 3 a second).
+
+**What changed for the player**
+- **Base damage factor** `G.Combat.AF.DMG` 0.8 -> **0.85** (decision #10: ~1.6x the one-active-move game). Re-measured after D17-D20
+  (one held item and the family upgrades changed the bot's builds): all-fire / the best single slot was x1.32 at 0.8 (6 builds), x1.71
+  at 0.9 (10 builds), x1.79 at 0.96 (6 builds), single builds from x1.15 to x2.2; 0.85 is ~x1.6. Expedition's `DMG_EXP` 1.1 measures
+  **x1.61** (6 builds): kept.
+- **Expedition KO pay** `G.ExpMeta.K.PAY.KO` 1/40 -> **1/150**. All-fire took a Normal clear from D11's ~4,000 KOs to ~8,400
+  (bot), so a clear paid ~1,740 instead of ~1,270-1,365: now **~1,340** (bot: 1,337 avg of 3, 8,378 KOs, 20:21). One currency, x3
+  scale, as before; base runs pay exactly as they did.
+- **Survival's pacing** (`G.ExpSurv.K.PACE`): half the trickle's rate and half each timeline pack, each foe x1.8 HP and XP (bosses
+  keep their DPS targets): a 45-min bot run KOs **~10,000-12,800** (shipped before D21: ~12,500-15,200; one active slot:
+  ~1,700-2,800); the mp test's assisted bot 15,100-16,200 (was 17,600-18,800). Its pay: **~2,250-2,575** (before D21 ~2,480-2,755; a
+  one-slot run ~2,010-2,175): no longer ~1.6x. The KOs move less than the knobs because a Lv 300+ bot one-shots the field: they
+  follow how many foes it reaches, not their HP or number (a smaller cap even raised them; measured, not shipped).
+
+**Measured (no change needed):** phone 844x390 (touch, an Eevee-line Expedition run at 7:26 with its 4 moves, 85 foes with
+wanderers and a roaming Suicune): frame time p50 16.6 / p95 17.9 ms (headless desktop Chrome), up to 68 projectiles, no sideways
+scroll; the busiest relay frame + 1 s of casts **9,968-10,217** / 16,000 chars; a 45-min Survival tape **779,597-1,161,066** chars and
+a full Classic clear **743,943-750,550** (cap 1.2 MB; two runs of `micasurvivor_expedition_mp_test`: a Survival tape with fewer
+foes a frame thins later and carries more frames; `halve` stays the last resort).
+
+**Golden fixtures (D0a) re-recorded** for the base factor (0.8 -> 0.85): every mode diverges between seconds 6 and 14 (hits land
+x1.0625 harder, so foes fall on other frames and the random stream moves). Normal 145 KOs (was 111), Daily 67 (68), Team 137
+(178), Co-op 121 (143), all still alive at 120 s; Boss Rush lasts to 118.0 s (was 91.0) and beats 3 bosses (2); the Tower falls at
+81.1 s (it lasted the 120 s). Passes twice in a row; the force-loaded run passes.
+
+**Tests:** `overworld/tests/micasurvivor_expedition_balance_test.mjs` (9 checks: the tuned numbers; the bot's clear and a 45-min
+Survival run's pay; FIRED: a Survival spawn's x1.8 HP and XP, Classic's unpaced, Survival's trickle at half (ABBA windows), the
+runs' damage factors). Fails 7 of 9 before D21. Updated on purpose: `_expedition_meta` and `_expedition_survival` (KOs / 150; the
+pacts' foeK on top of the pacing), `_allmoves` (the Choice Band's ratios within 1 %: whole-number hits at x0.85).
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
@@ -3247,6 +3284,8 @@ The branch needs the full gate before it merges.
   server, an old client), the base collection's families, the 27 free trios, the pages, an Eevee run fired, Kingambit, 5 wild members.
 - `node overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (DLC D20): all 1,025 as Expedition enemies (the union of the
   plans over many seeds), wanderers a minority, rarity-5 elites, roaming legendaries; base coverage and Wishiwashi.
+- `node overworld/tests/micasurvivor_expedition_balance_test.mjs` (DLC D21): the tuned damage factors, the Expedition KO pay and
+  Survival's pacing, pinned and fired.
 - `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
 - `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
   lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly

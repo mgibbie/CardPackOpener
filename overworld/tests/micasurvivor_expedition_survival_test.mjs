@@ -276,8 +276,8 @@ try {
 		const fk = S.foeK(100);
 		return { out, n: S.PACTS.length, fk, team: S.foeTeam() };
 	});
-	A(allp.n === 9 && allp.out.length === 8 && allp.out.every(x => x.ok) && Math.abs(allp.fk.hp - 1.15) < 1e-9 && Math.abs(allp.fk.dmg - 1.15) < 1e-9 && Math.abs(allp.fk.rate - 1.25) < 1e-9 && Math.abs(allp.fk.elite - 0.06) < 1e-9,
-		'all 9 pacts (study: "pacts trade a boon for a bane"): each one\'s boon / bane on your stats, the team banes on a new foe (HP x1.15, damage x1.15, spawns x1.25, elites +6 %)', JSON.stringify(allp));
+	A(allp.n === 9 && allp.out.length === 8 && allp.out.every(x => x.ok) && Math.abs(allp.fk.hp - 1.15 * 1.8) < 1e-9 && Math.abs(allp.fk.dmg - 1.15) < 1e-9 && Math.abs(allp.fk.rate - 1.25 * 0.5) < 1e-9 && Math.abs(allp.fk.elite - 0.06) < 1e-9,
+		'all 9 pacts (study: "pacts trade a boon for a bane"): each one\'s boon / bane on your stats, the team banes on a new foe (HP x1.15, damage x1.15, spawns x1.25, elites +6 %; D21: on top of Survival\'s pacing, HP x1.8, spawns x0.5)', JSON.stringify(allp));
 
 	// phases, wounds, night
 	await startSurv(page);
@@ -476,8 +476,8 @@ try {
 	const dev0 = coins0.led && coins0.led[en.dev] && coins0.led[en.dev].c || [0, 0];
 	A(paid > 0 && en.coins - coins0.coins >= paid && devE && devE[0] - (dev0[0] || 0) === en.coins - coins0.coins,
 		'the run pays Pokémonedas (the base save\'s, owner decision #4) through this device\'s ledger entry: +' + paid, JSON.stringify({ payLine, before: coins0.coins, after: en.coins, devE, dev0 }));
-	{ const want = Math.round((10 + p.kills / 40 + 25 * (p.zone - 1) + 30 * p.bosses + 60 * p.legends + 15 * p.catches + 4 * p.time / 60) * 3 / 5) * 5;
-		A(paid === want && p.zone === 2, 'The Survival pay (D10 units x3): 10 + KOs / 40 + 25 a phase passed + 30 a milestone boss + 60 a legendary + 15 a catch + 4 a minute survived = ' + want + ' for 21:30', JSON.stringify({ paid, want, p })); }
+	{ const want = Math.round((10 + p.kills / 150 + 25 * (p.zone - 1) + 30 * p.bosses + 60 * p.legends + 15 * p.catches + 4 * p.time / 60) * 3 / 5) * 5;
+		A(paid === want && p.zone === 2, 'The Survival pay (D10 units x3): 10 + KOs / 150 (D21) + 25 a phase passed + 30 a milestone boss + 60 a legendary + 15 a catch + 4 a minute survived = ' + want + ' for 21:30', JSON.stringify({ paid, want, p })); }
 	A(en.ach.includes('surv10') && en.ach.includes('run1'), 'Survival\'s achievements (D10): "Survivor" (10 minutes)', JSON.stringify(en.ach));
 	const tk = await E(page, () => { const M = G.ExpMeta; return { has: M.TASKS.some(t => t.id === 'surv') && M.TASKS.some(t => t.id === 'miles'), ach: ['surv10', 'surv30', 'miles10', 'mewtwo', 'pact10'].every(id => M.ACH_BY[id]), m: G.ExpSurv.metrics({ time: 1290 }) }; });
 	A(tk.has && tk.ach && Math.abs(tk.m.smins - 21.5) < 1e-9, 'Survival\'s tasks ("Last N minutes in Survival", "Beat N milestone bosses") and 5 achievements (Mewtwo\'s title "Survival Legend")', JSON.stringify(tk));
