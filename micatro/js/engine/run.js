@@ -1104,6 +1104,7 @@ function evaluate_play() {
       }
       for (let r = 0; r < reps.length; r++) {
         if (reps[r] !== 1) card_eval_status_text((reps[r].jokers || reps[r].seals).card, 'jokers', null, null, null, reps[r].jokers || reps[r].seals);
+        sc.lucky_procs = undefined;
         const effects = [eval_card(sc, { cardarea: G.play, full_hand: G.play.cards, scoring_hand, poker_hand: text })];
         for (const j of G.jokers.cards) {
           const ictx = { cardarea: G.play, ...base_ctx(), other_card: sc, individual: true };
@@ -1117,6 +1118,7 @@ function evaluate_play() {
         // (SMODS: the mod-level calculate sees each card's individual context too, after the jokers; Pokermon 3.9.1's Leafeon)
         if (ACTIVE_MODS.length) mod_calculate({ cardarea: G.play, ...base_ctx(), other_card: sc, individual: true }, 'individual');
         sc.lucky_trigger = undefined;
+        sc.lucky_procs = undefined; // (how many of its Lucky rolls hit this scoring: Mult and money count 1 each — Sprigatito's evolution)
         for (const ef of effects) {
           if (ef.chips) { if (ef.card) juice_card(ef.card); hand_chips = mod_chips(B.add(hand_chips, ef.chips)); card_eval_status_text(sc, 'chips', ef.chips); emit('hand_text', { chips: hand_chips }); }
           if (ef.mult) { if (ef.card) juice_card(ef.card); mult = mod_mult(B.add(mult, ef.mult)); card_eval_status_text(sc, 'mult', ef.mult); emit('hand_text', { mult }); }

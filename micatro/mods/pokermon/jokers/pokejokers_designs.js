@@ -13,7 +13,8 @@
 // chosen by its training), Tandemaus -> Maushold (Population Bomb), Darumaka -> Darmanitan (Hustle / Zen Mode), Scraggy -> Scrafty
 // (Moxie), Mudbray -> Mudsdale (Stamina / Mud Spit); and Xerneas, Spiritomb, Tatsugiri on their own.
 // Then the owner's wiki designs (CLAUDE.md "do the joker design list"): Sprigatito -> Floragato -> Meowscarada (Lucky cards grow like
-// Hiker's; then held Lucky cards act as Steel; Grass starter; contentRev 20) — upstream 3.9.1 draws them too (Natdex 10 / 12 / 14, 60);
+// Hiker's: +Mult / +$, then X Mult; evolves by Lucky triggers, a Negative The Magician on each evolution; Grass starter; contentRev 20,
+// reworked in 23) — upstream 3.9.1 draws them too (Natdex 10 / 12 / 14, 60);
 // Whismur -> Loudred -> Exploud (each broken Glass card grows its Chips, then Mult, then X Mult, every form keeping the last's; a
 // Negative Justice on each evolution; Colorless; contentRev 21) — upstream 3.9.1 draws them too (Natdex 14 / 16 / 18, 19).
 import {
@@ -21,7 +22,7 @@ import {
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed,
+  add_card, detailed, energy_values,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -125,17 +126,47 @@ function beat_calc(card, context) {
   return undefined;
 }
 
+/** The Sprigatito line: how many of this scored card's Lucky rolls hit (its 1 in 5 Mult and 1 in 15 money count 1 each: the engine's
+ *  lucky_procs; at least 1 when only lucky_trigger is known — a mod's own Lucky roll), or 0 when it didn't trigger. */
+const lucky_procs = (c) => (c.lucky_trigger ? Math.max(1, c.lucky_procs || 0) : 0);
+const lucky_scored = (context) => !!(context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.lucky_trigger);
 /** Sprigatito / Floragato (Hiker for Lucky cards): a scored card whose Lucky effect triggered permanently gains +mult_mod Mult and
- *  +$dollars when scored (Steamodded's perma_mult / perma_p_dollars; the value at the time, kept by the card). Blueprint copies it, as Hiker. */
+ *  +$dollars when scored (Steamodded's perma_mult / perma_p_dollars; the value at the time, kept by the card) — once per scoring, even
+ *  when both rolls hit. Every hit counts toward evolving (lucky_triggers; not Blueprint's copy). Blueprint copies the growth, as Hiker. */
 function lucky_grow(card, context) {
-  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.lucky_trigger) {
+  if (lucky_scored(context)) {
     const a = context.other_card.ability, ex = card.ability.extra;
+    if (!context.blueprint) ex.lucky_triggers = (ex.lucky_triggers || 0) + lucky_procs(context.other_card);
     a.perma_mult = (a.perma_mult || 0) + ex.mult_mod;
     a.perma_p_dollars = (a.perma_p_dollars || 0) + ex.dollars;
     return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, colour: 'MULT', card };
   }
   return undefined;
 }
+/** Meowscarada: a scored card whose Lucky effect triggered permanently gains X(Xmult_mod) Mult (Steamodded's perma_x_mult: the engine
+ *  scores x_mult * (1 + perma_x_mult) every time the card scores after — X1.5 after one trigger, X2 after two). Once per scoring. */
+function lucky_xgrow(card, context) {
+  if (lucky_scored(context)) {
+    const a = context.other_card.ability;
+    a.perma_x_mult = (a.perma_x_mult || 0) + card.ability.extra.Xmult_mod;
+    return { extra: { message: localize('k_upgrade_ex'), colour: 'XMULT' }, colour: 'XMULT', card };
+  }
+  return undefined;
+}
+/** The Sprigatito line: an extra table from before contentRev 23 (a round counter, Meowscarada's held X) brought to the new shape —
+ *  the Lucky-trigger count from 0 (rounds played don't map to triggers), Meowscarada's X gain from its base with the Energy it has. */
+function lucky_legacy(self, card) {
+  const ex = card.ability.extra, base = self.config.extra;
+  if (!ex || typeof ex !== 'object') return;
+  if (base.lucky_triggers !== undefined && typeof ex.lucky_triggers !== 'number') ex.lucky_triggers = 0;
+  if (base.Xmult_mod !== undefined && typeof ex.Xmult_mod !== 'number') {
+    ex.Xmult_mod = base.Xmult_mod * (1 + energy_values.Xmult_mod * ((ex.energy_count || 0) + (ex.c_energy_count || 0) / 2));
+    delete ex.Xmult_multi;
+  }
+  if (base.rounds === undefined && ex.rounds !== undefined) delete ex.rounds;
+}
+const lucky_left = (self, card) => Math.max(0, self.config.evo_rqmt - (card.ability.extra.lucky_triggers || 0));
+const r3 = (x) => Math.round(x * 1000) / 1000;
 
 /** Whismur line: how many Glass cards broke (their 1 in 4 shatter; Glass Joker's count — remove_playing_cards, the `shattered`
  *  ones), each growing `ref` by its gain `mod` (Energy scales only the gain; the totals are in fields energize ignores, so a
@@ -159,14 +190,19 @@ function glass_main(card, context) {
   r.colour = r.Xmult_mod ? 'XMULT' : r.mult_mod ? 'MULT' : 'CHIPS';
   return r;
 }
-/** Whismur line: a Negative Justice when this card evolved from `from` (the poke_evolved context, after the swap; Chingling's
- *  add_card). Negative: it needs no consumable slot. */
-function glass_evolved(card, context, from) {
+/** A Negative Tarot (`tarot`: Whismur's line c_justice, Sprigatito's c_magician) when this card evolved from `from` (the poke_evolved
+ *  context, after the swap; Chingling's add_card). Negative: it needs no consumable slot. */
+function evolved_tarot(card, context, from, tarot) {
   if (context.poke_evolved && context.card === card && context.from === 'j_poke_' + from && !context.blueprint) {
-    G.E_MANAGER.add_event(() => { add_card({ set: 'Tarot', key: 'c_justice', edition: 'e_negative' }); });
+    G.E_MANAGER.add_event(() => { add_card({ set: 'Tarot', key: tarot, edition: 'e_negative' }); });
   }
   return undefined;
 }
+const glass_evolved = (card, context, from) => evolved_tarot(card, context, from, 'c_justice');
+const lucky_tips = (info_queue, evolves) => {
+  info_queue.push(P_CENTERS.m_lucky);
+  if (evolves && detailed()) { info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } }); info_queue.push(P_CENTERS.c_magician); }
+};
 const glass_tips = (info_queue, evolves) => {
   info_queue.push(P_CENTERS.m_glass);
   if (evolves && detailed()) { info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } }); info_queue.push(P_CENTERS.c_justice); }
@@ -690,43 +726,60 @@ defineJokers({
   },
 
   // ---------------------------------------------------------------- LINE F2: Sprigatito -> Floragato -> Meowscarada (Grass starter, Gen 9)
-  // The owner's design (2026-10-27, after the 25): Hiker for Lucky cards. Sprigatito 906: when a Lucky card triggers (its 1 in 5 Mult
-  // or 1 in 15 money), that card permanently gains +1 Mult and +$1 when scored (perma_mult / perma_p_dollars, Hiker's perma_bonus
-  // route), every time it scores after. 5 rounds. The Mult step is `mult_mod` (Energy: +20% of its base each), the money step
+  // The owner's design (2026-10-27, after the 25; reworked in contentRev 23): Hiker for Lucky cards. Sprigatito 906: when a Lucky card
+  // triggers (its 1 in 5 Mult or 1 in 15 money), that card permanently gains +1 Mult and +$1 when scored (perma_mult / perma_p_dollars,
+  // Hiker's perma_bonus route), every time it scores after. The Mult step is `mult_mod` (Energy: +20% of its base each), the money step
   // `dollars` (in no energy_values: fixed); a card keeps what it was given — later Energy doesn't re-grow it (Houndour's perma_mult).
+  // Evolves after 8 Lucky triggers (scaling_evo on `lucky_triggers`, at end of round; a card hitting both rolls counts 2 but grows
+  // once); each evolution creates a Negative The Magician (Whismur's Negative Justice).
   sprigatito: {
     name: 'sprigatito', poke_sprite391: sprite('Natdex', 10, 60),
-    config: { extra: { mult_mod: 1, dollars: 1, rounds: 5 } },
+    config: { evo_rqmt: 8, extra: { mult_mod: 1, dollars: 1, lucky_triggers: 0 } },
     rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: true, starter: true,
-    attributes: ['starter', 'mult', 'economy', 'enhancements', 'modify_card', 'round_evo'], poke_after: 'ursaluna',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.mult_mod, ex.dollars, ex.rounds] }; },
-    calculate(self, card, context) { return lucky_grow(card, context) || level_evo(self, card, context, 'j_poke_floragato'); },
+    attributes: ['starter', 'mult', 'economy', 'enhancements', 'modify_card', 'tarot', 'trigger_evo'], poke_after: 'ursaluna',
+    loc_vars(self, info_queue, card) {
+      lucky_legacy(self, card);
+      type_tooltip(self, info_queue, card); lucky_tips(info_queue, true);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.mult_mod), ex.dollars, lucky_left(self, card), ex.lucky_triggers || 0, self.config.evo_rqmt] };
+    },
+    calculate(self, card, context) {
+      lucky_legacy(self, card);
+      return lucky_grow(card, context) || scaling_evo(self, card, context, 'j_poke_floragato', card.ability.extra.lucky_triggers || 0, self.config.evo_rqmt);
+    },
   },
-  // Floragato 907: the same, +2 Mult and +$2 per Lucky trigger. 5 rounds.
+  // Floragato 907: the same, +2 Mult and +$2 per Lucky trigger. Evolves after 12 more Lucky triggers (the count starts over). A Negative
+  // The Magician when it evolves in.
   floragato: {
     name: 'floragato', poke_sprite391: sprite('Natdex', 12, 60),
-    config: { extra: { mult_mod: 2, dollars: 2, rounds: 5 } },
+    config: { evo_rqmt: 12, extra: { mult_mod: 2, dollars: 2, lucky_triggers: 0 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 9, blueprint_compat: true,
-    attributes: ['starter', 'mult', 'economy', 'enhancements', 'modify_card', 'round_evo'], poke_after: 'sprigatito',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.mult_mod, ex.dollars, ex.rounds] }; },
-    calculate(self, card, context) { return lucky_grow(card, context) || level_evo(self, card, context, 'j_poke_meowscarada'); },
+    attributes: ['starter', 'mult', 'economy', 'enhancements', 'modify_card', 'tarot', 'trigger_evo'], poke_after: 'sprigatito',
+    loc_vars(self, info_queue, card) {
+      lucky_legacy(self, card);
+      type_tooltip(self, info_queue, card); lucky_tips(info_queue, true);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.mult_mod), ex.dollars, lucky_left(self, card), ex.lucky_triggers || 0, self.config.evo_rqmt] };
+    },
+    calculate(self, card, context) {
+      lucky_legacy(self, card);
+      evolved_tarot(card, context, 'sprigatito', 'c_magician');
+      return lucky_grow(card, context) || scaling_evo(self, card, context, 'j_poke_meowscarada', card.ability.extra.lucky_triggers || 0, self.config.evo_rqmt);
+    },
   },
-  // Meowscarada 908: no more growth (the cards keep theirs); Lucky cards held in hand give X1.25 Mult, like Steel cards: the joker's
-  // per-card X (`Xmult_multi`: Energy +5% of its base each — X1.3125 / X1.375 / X1.4375). Not counted as Steel (Steel Joker,
-  // has_enhancement): only the held X Mult.
+  // Meowscarada 908: no more +Mult / +$ (the cards keep theirs); a Lucky card that triggers permanently gains X0.5 Mult (perma_x_mult:
+  // X1.5 after one trigger, X2 after two, scored every time after). The gain is `Xmult_mod` (Energy +20% of its base each: X0.6 / X0.7 /
+  // X0.8); a banked X stays what it was. A Negative The Magician when it evolves in.
   meowscarada: {
     name: 'meowscarada', poke_sprite391: sprite('Natdex', 14, 60),
-    config: { extra: { Xmult_multi: 1.25 } },
+    config: { extra: { Xmult_mod: 0.5 } },
     rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 9, blueprint_compat: true,
-    attributes: ['starter', 'xmult', 'enhancements'], poke_after: 'floragato',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); return { vars: [card.ability.extra.Xmult_multi] }; },
+    attributes: ['starter', 'xmult', 'scaling', 'enhancements', 'modify_card'], poke_after: 'floragato',
+    loc_vars(self, info_queue, card) { lucky_legacy(self, card); type_tooltip(self, info_queue, card); lucky_tips(info_queue, false); return { vars: [r3(card.ability.extra.Xmult_mod)] }; },
     calculate(self, card, context) {
-      // (a held Lucky card, as Steel's held X Mult — Baron's shape: retriggered by Mime / a Red Seal like Steel; nothing while debuffed)
-      if (context.individual && context.cardarea === G.hand && !context.end_of_round && has_enhancement(context.other_card, 'm_lucky')) {
-        if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
-        return { x_mult: card.ability.extra.Xmult_multi, card };
-      }
-      return undefined;
+      lucky_legacy(self, card);
+      evolved_tarot(card, context, 'floragato', 'c_magician');
+      return lucky_xgrow(card, context);
     },
   },
 
@@ -826,7 +879,10 @@ const EVOLVES_ROUNDS = (n) => '{C:inactive,s:0.8}(Evolves after {C:attention,s:0
 const ROLLOUT = (c, m) => ['{C:attention}Rollout:{} {C:chips}+#' + c + '#{} Chips, doubled', 'for each consecutive hand of', 'the same poker hand {C:inactive}(max #' + m + '# doublings)'];
 const PAIR = ['Played cards that share a rank', 'with another scored card give', '{C:mult}+#1#{} Mult when scored'];
 const TRAIN = (x) => ['Gains {X:mult,C:white} X#' + x + '# {} Mult when a hand', 'with exactly {C:attention}1{} or exactly {C:attention}5{}', 'scoring cards is played', '{C:inactive}(Can\'t be debuffed)'];
-const LUCKY_GROW = ['When a {C:attention}Lucky{} card triggers,', 'it permanently gains {C:mult}+#1#{} Mult', 'and {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)];
+const LUCKY_GROW = [
+  ['When a {C:attention}Lucky{} card triggers,', 'it permanently gains {C:mult}+#1#{} Mult', 'and {C:money}$#2#{} when scored'],
+  ['On evolution, create a', '{C:dark_edition}Negative{} {C:tarot}The Magician{}', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#3#{C:inactive,s:0.8} Lucky triggers)', '{C:inactive,s:0.8}(Lucky triggers: #4#/#5#)'],
+];
 const GLASS_BREAKS = (gain) => [gain + ' each', 'time a {C:attention}Glass{} card breaks'];
 const NEG_JUSTICE = ['On evolution, create a', '{C:dark_edition}Negative{} {C:tarot}Justice{}'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
@@ -894,7 +950,7 @@ export const DESIGN_LOC = {
     j_poke_tatsugiri_stretchy: { name: 'Tatsugiri', text: ['{C:attention}Nature:{} Stretchy', ...COMMANDER, '{C:mult}+#3#{} Mult'] },
     j_poke_sprigatito: { name: 'Sprigatito', text: LUCKY_GROW },
     j_poke_floragato: { name: 'Floragato', text: LUCKY_GROW },
-    j_poke_meowscarada: { name: 'Meowscarada', text: ['{C:attention}Lucky{} cards held in hand', 'each give {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Like {C:attention}Steel{C:inactive} cards, but not', '{C:inactive}counted as Steel)'] },
+    j_poke_meowscarada: { name: 'Meowscarada', text: ['When a {C:attention}Lucky{} card triggers,', 'it permanently gains', '{X:mult,C:white} X#1# {} Mult when scored'] },
     j_poke_whismur: { name: 'Whismur', text: [
       ['{C:chips}+#1#{} Chips', ...GLASS_BREAKS('Gains {C:chips}+#2#{} Chips')],
       [...NEG_JUSTICE, EVOLVES_ROUNDS(3)],

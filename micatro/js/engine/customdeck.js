@@ -1064,7 +1064,7 @@ const hooks = {
     if (card.seal === 'Gold' && roll(R('chance_to_double_gold_seal'), 'gold_seal')) add += 3;
     const lucky7 = card.get_id() === 7 && R('make_sevens_lucky'), luckyS = isStone(card) && R('make_stones_lucky');
     if (card.ability.effect !== 'Lucky Card' && (lucky7 || luckyS) && roll(lucky7 || luckyS, 'lucky_money_as')) {
-      if (probability_roll(card, 'lucky_money', 1, 15)) { card.lucky_trigger = true; add += 20; }
+      if (probability_roll(card, 'lucky_money', 1, 15)) { card.lucky_trigger = true; card.lucky_procs = (card.lucky_procs || 0) + 1; add += 20; }
     }
     if (!add) return ret;
     G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + add;
@@ -1075,7 +1075,7 @@ const hooks = {
     if (card.debuff || card.ability.set === 'Joker') return ret;
     const lucky7 = card.get_id() === 7 && R('make_sevens_lucky'), luckyS = isStone(card) && R('make_stones_lucky');
     if (card.ability.effect !== 'Lucky Card' && (lucky7 || luckyS) && roll(lucky7 || luckyS, 'lucky_mult_as')) {
-      if (probability_roll(card, 'lucky_mult', 1, 5)) { card.lucky_trigger = true; return ret + 20; }
+      if (probability_roll(card, 'lucky_mult', 1, 5)) { card.lucky_trigger = true; card.lucky_procs = (card.lucky_procs || 0) + 1; return ret + 20; }
       return ret;
     }
     if (card.ability.effect === 'Mult Card') {
