@@ -70,12 +70,14 @@ async function openPage(speed) {
 		localStorage.setItem('micatro_speed', String(speed)); localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0');
 		localStorage.setItem('micatro_joker_wins_v1:guest', JSON.stringify(wins));
 		// fault injection, off unless a step turns it on: a sprite that throws when drawn / an image that draws nothing
-		window.__fault = { throwSrc: null, blankSrc: null };
+		// (blankSrc matches a sheet's blocks too — <dir>/_split/<sheet>/<bx>_<by>.png, which runs draw split sheets from —
+		// and blankHits counts the blanked draws by kind: {sheet, block})
+		window.__fault = { throwSrc: null, blankSrc: null, blankHits: { sheet: 0, block: 0 } };
 		const di = CanvasRenderingContext2D.prototype.drawImage;
 		CanvasRenderingContext2D.prototype.drawImage = function (im, ...rest) {
 			const src = (im && im.src) || '';
 			if (window.__fault.throwSrc && src.includes(window.__fault.throwSrc)) throw new DOMException('The image is in the broken state.', 'InvalidStateError');
-			if (window.__fault.blankSrc && src.includes(window.__fault.blankSrc)) return undefined; // (not decodable right now: draws nothing)
+			if (window.__fault.blankSrc && src.includes(window.__fault.blankSrc)) { window.__fault.blankHits[src.includes('/_split/') ? 'block' : 'sheet']++; return undefined; } // (not decodable right now: draws nothing)
 			return di.call(this, im, ...rest);
 		};
 		// the WebGL contexts the page makes (the card shaders' is the 142x190 one)
@@ -281,12 +283,21 @@ async function rerollFaces(speed) {
 		await page.evaluate(() => { window.__fault.throwSrc = null; });
 
 		// the Pokermon atlas can't be drawn for a moment (an iPhone under memory pressure: the image draws nothing):
-		// rerolls and a recompose land then; once it draws again the faces come back on their own
-		await page.evaluate(() => { window.__fault.blankSrc = 'AtlasJokersBasicNatdex'; window.__micatro.board.refreshModArt(); });
+		// rerolls and a recompose land then; once it draws again the faces come back on their own. Runs draw a split
+		// sheet's cells from its blocks through cached crops (assets.js): the phone drops those canvases too
+		// (dropModCrops), so every face redrawn now goes back to the (undrawable) blocks
+		await page.evaluate(async () => {
+			const As = await import('/micatro/js/ui/assets.js');
+			window.__fault.blankSrc = 'AtlasJokersBasicNatdex'; window.__fault.blankHits = { sheet: 0, block: 0 };
+			if (As.dropModCrops) As.dropModCrops();
+			window.__micatro.board.refreshModArt();
+		});
 		A(await rerolls(page, 2), `${label}: with the atlas undrawable, the game still settles after 2 rerolls`);
 		const during = await faces(page);
 		await shot(page, `reroll-${label}-3-atlas-undrawable.png`);
 		A(during.some((x) => x.px < 5000), `${label}: (the fault bites: some Pokermon faces are empty while the atlas can't be drawn)`, fmtFaces(during));
+		const hits = await page.evaluate(() => ({ ...window.__fault.blankHits }));
+		A(hits.block > 0 && hits.sheet === 0, `${label}: (the fault hits the sheet's blocks the run draws from, never the whole sheet)`, JSON.stringify(hits));
 		await page.evaluate(() => { window.__fault.blankSrc = null; });
 		await sleep(5000);
 		f = await faces(page);

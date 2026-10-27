@@ -88,7 +88,7 @@ try {
 		await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: mobile, hasTouch: mobile });
 		const errors = [];
 		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
-		page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
+		page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200) + (m.location() && m.location().url ? ' @ ' + m.location().url : '')); });   // (a 404's URL: which file)
 		await page.evaluateOnNewDocument((st, mods) => {
 			try {
 				localStorage.setItem('micatro_speed', '4'); localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0');
