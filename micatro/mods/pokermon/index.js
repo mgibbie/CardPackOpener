@@ -628,13 +628,14 @@ for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
 }
 
 // --------------------------------------------------------------------- hooks
-/** Steamodded's localize_perma_bonuses on a playing card: its permanent +Mult and "+$N when scored" (Sprigatito / Floragato's Lucky
- *  cards, Houndour's discards). Not on Pokermon+'s Heatran-forged cards (their Forged box lists them) nor while debuffed. */
+/** Steamodded's localize_perma_bonuses on a playing card: its permanent +Mult, X Mult (contentRev 23: Meowscarada's Lucky cards, Tyranitar)
+ *  and "+$N when scored" (Sprigatito / Floragato's Lucky cards, Houndour's discards). Not on Pokermon+'s Heatran-forged cards (their Forged box lists them) nor while debuffed. */
 function perma_lines(card) {
   const a = card && card.ability;
   if (!a || !card.base || !card.base.suit || (a.set !== 'Default' && a.set !== 'Enhanced') || card.debuff || a.sonfive_heatran) return [];
   const out = [];
   if (a.perma_mult) out.push('{C:mult}+' + Math.round(a.perma_mult * 1000) / 1000 + '{} extra Mult');
+  if (a.perma_x_mult) out.push('{X:mult,C:white}X' + Math.round((1 + a.perma_x_mult) * 1000) / 1000 + '{} Mult');
   if (a.perma_p_dollars) out.push('{C:money}+$' + a.perma_p_dollars + '{} when scored');
   return out;
 }
@@ -822,7 +823,11 @@ export const POKERMON = registerMod({
   // on-beat cards give +1 / +2 Mult (Energy now scales them).
   // 22 = the owner's 12 Type Sleeves (typesleeves.js): a Negative Energy of the sleeve's type at the start, and the first 2 shops'
   // initial stock each holds a Joker of that type (the last joker slot; rerolls restock normally).
-  contentRev: 22,
+  // 23 = the owner's Sprigatito rework: Sprigatito / Floragato evolve after 8 / 12 Lucky triggers (each roll that hits counts; the
+  // engine's per-card lucky_procs) instead of 5 + 5 rounds, each evolution creates a Negative The Magician, and Meowscarada's Lucky
+  // cards permanently gain X0.5 Mult when they trigger (perma_x_mult) instead of the held-Steel X1.25; a card's perma X Mult shows on
+  // its tooltip.
+  contentRev: 23,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

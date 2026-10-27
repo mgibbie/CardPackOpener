@@ -76,7 +76,7 @@ function playShop(s) {
 
 // ------------------------------------------------------------------- pin, registration, text, art
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 22 && PINS.modPin('pokermon') === '3.9.1+r22', 'Pokermon contentRev 22 (pin 3.9.1+r22)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 22 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 22+ (23 since the Sprigatito rework)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
 });
 sec('registered', () => {

@@ -796,7 +796,7 @@ export class Card {
     // SMODS: + ability.perma_mult (absent in the base game).
     const perma = this.ability.perma_mult || 0;
     if (this.ability.effect === 'Lucky Card') {
-      if (probability_roll(this, 'lucky_mult', 1, 5)) { this.lucky_trigger = true; return perma + this.ability.mult; }
+      if (probability_roll(this, 'lucky_mult', 1, 5)) { this.lucky_trigger = true; this.lucky_procs = (this.lucky_procs || 0) + 1; return perma + this.ability.mult; }
       return perma;
     }
     return perma + this.ability.mult;
@@ -876,7 +876,7 @@ export class Card {
     if (this.seal === 'Gold') ret += 3;
     if (this.ability.p_dollars > 0) {
       if (this.ability.effect === 'Lucky Card') {
-        if (probability_roll(this, 'lucky_money', 1, 15)) { this.lucky_trigger = true; ret += this.ability.p_dollars; }
+        if (probability_roll(this, 'lucky_money', 1, 15)) { this.lucky_trigger = true; this.lucky_procs = (this.lucky_procs || 0) + 1; ret += this.ability.p_dollars; }
       } else ret += this.ability.p_dollars;
     }
     if (ret > 0) {
@@ -1257,8 +1257,8 @@ export function eval_card(card, context) {
       if (context.cardarea === G.play && k === 'm_lucky') {
         // SMODS scores a quantum enhancement as that enhancement, so a quantum Lucky card ROLLS
         // like a real one (1 in 5 Mult, 1 in 15 money) — Milatro's Butterfly Effect.
-        if (probability_roll(card, 'lucky_mult', 1, 5)) { card.lucky_trigger = true; ret.mult = (ret.mult || 0) + q.mult; }
-        if (probability_roll(card, 'lucky_money', 1, 15)) { card.lucky_trigger = true; ret.p_dollars = (ret.p_dollars || 0) + q.p_dollars; }
+        if (probability_roll(card, 'lucky_mult', 1, 5)) { card.lucky_trigger = true; card.lucky_procs = (card.lucky_procs || 0) + 1; ret.mult = (ret.mult || 0) + q.mult; }
+        if (probability_roll(card, 'lucky_money', 1, 15)) { card.lucky_trigger = true; card.lucky_procs = (card.lucky_procs || 0) + 1; ret.p_dollars = (ret.p_dollars || 0) + q.p_dollars; }
       } else if (context.cardarea === G.play) {
         if (q.bonus) ret.chips = (ret.chips || 0) + q.bonus;
         if (q.mult) ret.mult = (ret.mult || 0) + q.mult;

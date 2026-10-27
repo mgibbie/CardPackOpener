@@ -263,7 +263,8 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), `3.9.1+r15` for batch 17 (the last: the
 upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), `3.9.1+r18` for the Hazard
 follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), `3.9.1+r20` for the owner's
-Sprigatito line ("The owner's Sprigatito line" below), **`3.9.1+r21`** since the owner's Whismur line ("The owner's Whismur line" below)
+Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
+for the owner's Type Sleeves, **`3.9.1+r23`** since the owner's Sprigatito rework ("The Sprigatito rework" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2097,6 +2098,8 @@ Nacho nor our Pokermon+ has any of them, so there is nothing to dedupe.
   The wiki art: `npx wrangler pages deploy designwiki/sprites --project-name=magepunk-sprites --branch=cloudflare-migration --commit-dirty=true`.
 
 ### The owner's Sprigatito line (2026-10-27, branch `feat/pokermon-sprigatito-line`)
+(Reworked in contentRev 23: "The Sprigatito rework" below — evolution by Lucky triggers, a Negative The Magician per evolution,
+Meowscarada's permanent X Mult. This section is the r20 design.)
 Pinned **`3.9.1+r20`** (`contentRev: 20`; `LEGACY_MOD_VERSIONS` untouched). The owner's wiki design ("do the joker design list") for
 Sprigatito (906) -> Floragato (907) -> Meowscarada (908), defined with the 25 in `jokers/pokejokers_designs.js` (LINE F2; 29 defs now),
 after Ursaluna in Pokédex order. Neither Nacho nor Pokermon+ has these species.
@@ -2186,6 +2189,41 @@ Energy", so its sleeve is the **Darkness Sleeve**, `sleeve_poke_darknesssleeve`)
   `pokermon_sprigatito_test` (their pin checks), `micatro_mod_version_pin`; the wiki data regenerated.
 - **Fuzz**: identical to origin/main (vanilla 40 / 5937 / 13 / 10; Pokermon 24 / 3414 / 13 / 6; all mods 24 / 4707 / 13 / 9): the fuzz
   plays no sleeve.
+
+### The Sprigatito rework (2026-10-27, branch `feat/pokermon-meowscarada-rework`)
+Pinned **`3.9.1+r23`** (`contentRev: 23`; `LEGACY_MOD_VERSIONS` untouched). The owner's changes to the Sprigatito line (LINE F2):
+- **Meowscarada**: the held-Steel X1.25 is gone. When a scored Lucky card triggers, that card permanently gains **X0.5 Mult**
+  (Steamodded's `perma_x_mult`; the engine's `get_chip_x_mult` scores `x_mult * (1 + perma_x_mult)` every time the card scores, so
+  X1.5 after one trigger, X2 after two; the gain lands after the card scored, Hiker-style). Once per scoring, even when both rolls hit.
+  No more +Mult / +$: cards keep what Sprigatito / Floragato gave them. Blueprint copies it (as the earlier stages). Pokermon+'s Heatran
+  perma fields stack with it (one engine path; its hooks add only `perma_h_x_mult` / `perma_repetitions`), so nothing double-counts.
+- **Energy**: the gain is `Xmult_mod` (`energy_values` 0.2: +X0.1 per Energy, X0.6 / X0.7 / X0.8; Colorless +X0.05). Not
+  retroactive: a card's banked `perma_x_mult` is on the card, never re-scaled. The tooltip shows the energized gain.
+- **Evolution by Lucky triggers** (`scaling_evo` on `ability.extra.lucky_triggers`, at end of round as Grookey's beats): Sprigatito
+  after **8**, Floragato after **12** more (the count is not carried: each form's config starts at 0). Every roll that hits counts: the
+  engine now counts them per card (`lucky_procs`, set beside `lucky_trigger` by the Lucky Mult / money rolls — core.js, the quantum
+  Lucky rolls, the custom deck's lucky 7s / Stones — and cleared with it per scoring), so a card hitting both counts 2 (its growth
+  is still once). Blueprint's copy grows the card but doesn't count. Text: "(Evolves after N Lucky triggers)" with N left, and
+  "(Lucky triggers: k/8)".
+- **A Negative The Magician** on each evolution (Sprigatito -> Floragato, Floragato -> Meowscarada; two over the line): Whismur's
+  Negative Justice code, generalised (`evolved_tarot`, the new form's `poke_evolved` context; Negative, so full slots don't matter).
+- **Card tooltip**: a playing card's `perma_x_mult` now shows ("X1.5 Mult", index.js `perma_lines`, Steamodded's
+  localize_perma_bonuses) beside its +Mult / +$ (also on Tyranitar's / the Speed seal's cards; Heatran-forged cards keep their box).
+- **Old runs**: a saved run is its recipe, re-simulated on resume (session.js), so after the r22 -> r23 prompt ("Continue anyway")
+  the line re-plays on the new rules: a Sprigatito / Floragato counts the replayed Lucky triggers from 0 (rounds don't map to triggers;
+  the old `rounds` counter is gone), a Meowscarada takes the new ability, and every card keeps what it banked. Where the new scores
+  make a later move impossible (a round now won sooner or later) the rebuild stops there with the usual "rebuilt up to move N" toast;
+  the joker is never lost. A pre-r23 `ability.extra` met directly (`lucky_legacy`) is normalised too: no counter -> 0, `rounds`
+  dropped, Meowscarada's `Xmult_multi` -> `Xmult_mod` from its base with the Energy it has. Fixture:
+  `micatro/tests/fixtures/pokermon_sprigatito_r22_recipe.json` (recorded on origin/main e2ad0022: a Lucky deck + Sprigatito, saves
+  at rounds 7 and 12).
+- **Tests**: `micatro/tests/mods/pokermon_sprigatito_test.mjs` (43 passed / 55 failed on origin/main, 98 / 0 here): the growth, the
+  double-proc count, Blueprint, Energy, evolution at exactly 8 and 12 (7 / 11 don't), one Negative Magician per evolution with full
+  slots, Meowscarada's X0.5 (X1.5 / X2, scored later without a trigger, Energy X0.6 / X0.7 / X0.8 not retroactive, the evolved Energy
+  X0.7, no held effect, Pokermon+ once), old `extra` tables and the r22 recipe. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `pokermon_type_sleeves_test` (its pin check), `micatro_mod_version_pin`; the wiki data regenerated.
+- **Fuzz**: identical to origin/main (vanilla 60 / 9722 / 13 / 17; Pokermon 24 / 3414 / 13 / 6, all ok): no fuzz run held the line's
+  Lucky-trigger path to a different result, and the engine's new lucky_procs is bookkeeping only.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
