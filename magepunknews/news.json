@@ -522,6 +522,74 @@
 	},
 	"entries": [
 		{
+			"sha": "b646897",
+			"date": "2026-10-27",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Trapinch line (contentRev 25)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_trapinch",
+							"name": "Trapinch",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 21
+							}
+						},
+						{
+							"key": "j_poke_vibrava",
+							"name": "Vibrava",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 21
+							}
+						},
+						{
+							"key": "j_poke_flygon",
+							"name": "Flygon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 21
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "c501b60",
+			"date": "2026-10-27",
+			"kind": "patch",
+			"title": "Pokermon joker design guide in the repo (consulted before every design)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6a8428d",
+			"date": "2026-10-27",
+			"kind": "patch",
+			"title": "fix 2026-10-27 (c) tester reports (Germination, Shadow Word: Void, Mysterio's Mirage)",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "7356677",
 			"date": "2026-10-27",
 			"kind": "micatro",
