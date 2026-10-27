@@ -7,6 +7,7 @@
 import { G, P_CENTERS, localize, play_sound, create_card, change_shop_size, get_probability_vars } from './api.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
 import { debris_apply } from './backs/backs1.js';
+import { TYPE_SLEEVES } from './typesleeves.js';
 
 const MOD = 'pokermon';
 const DECKS = 'poke_AtlasDecksBasic391', DECKS_391 = DECKS;
@@ -139,4 +140,6 @@ export const SLEEVES = [
       apply() { G.GAME.modifiers.poke_negative_hazards = true; },
     },
   }),
+  // Micatro's own: the 12 Type Sleeves (typesleeves.js; the owner's design, contentRev 22), after Pokermon's.
+  ...TYPE_SLEEVES,
 ];

@@ -345,6 +345,7 @@ pokermon/assets/2x/shiny_capture_disc.png
 pokermon/assets/2x/shiny_miror_budicolo.png
 pokermon/assets/2x/smeargle_logo-391.png
 pokermon/assets/2x/smeargle_logo.png
+pokermon/assets/2x/type_sleeves.png
 pokermon/assets/2x/unergy.png
 pokermon/assets/2x/unitem.png
 pokermon/assets/shaders/booster.fs

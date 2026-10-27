@@ -2150,6 +2150,43 @@ Pokermon+ has these species.
 - **Tests**: `micatro/tests/mods/pokermon_whismur_test.mjs` (2 passed / 13 failed on origin/main, 54 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 32 defs), `pokermon_sprigatito_test` (its pin check), `micatro_mod_version_pin`.
 
+### The owner's Type Sleeves (2026-10-27, branch `feat/pokermon-type-sleeves`)
+Pinned **`3.9.1+r22`** (`contentRev: 22`; `LEGACY_MOD_VERSIONS` untouched). Twelve Micatro-made sleeves (not upstream), one per type of
+`systems/types.js` POKETYPES (the Energy system's 12: Grass, Fire, Water, Lightning, Psychic, Fighting, Colorless, Dark, Metal, Fairy,
+Dragon, Earth), in `typesleeves.js`, appended to sleeves.js `SLEEVES` (keys `sleeve_poke_<energy>sleeve`; Dark's Energy is "Darkness
+Energy", so its sleeve is the **Darkness Sleeve**, `sleeve_poke_darknesssleeve`).
+- **Text**: "Start with a Negative <Type> Energy card / The first 2 shops each / start with a <Type> Joker" (the type in its
+  `{X:poke_<type>}` box).
+- **The Energy**: the sleeve's `apply` adds it in an event, as Whismur's Negative Justice (`add_card({set: 'Energy', key, edition:
+  'e_negative'})`): +1 consumable slot with it, so it never takes one.
+- **The guarantee** (sleeve `hooks`, run by the engine's internal sleeve mod): `shop_start` counts each NEW shop (not a re-open after a
+  pack); for visits 1 and 2 the initial stock's LAST joker slot (`create_card_for_shop`) is a Joker of the type; `shop_stocked` ends it
+  (a 0-slot shop or a mod that stocks the shop itself uses the visit up). Shop size unchanged; a Rare / Uncommon Tag still makes the
+  first slot. **Rerolls restock normally** (the owner's default: the guarantee is the initial stock's only), and a reroll does not use
+  a visit up.
+- **The pick** (`pick_type_joker`): `get_current_pool('Joker', <rarity>, false, 'sho')` for Common / Uncommon / Rare (+ an active mod
+  rarity with weight > 0; no Legendary: the shop never rolls one) — so in_pool, every mod's pool_filter (Pokémon only, the Gen options,
+  Hazards allowed), the add-on precedence, no duplicates unless Showman, banned keys, gates — cut to the type (`config.extra.ptype`),
+  then the normal rarity odds (0.7 / 0.25 / 0.05 times `G.GAME.<rarity>_mod`) over the rarities still holding one. Seeded on the
+  shop's streams ('rarity' + ante + 'sho', then the pool key 'Joker' + rarity + 'sho' + ante), so a replay, a resume (the recipe
+  re-simulates) and a spectator stock the same Joker. `G.GAME.poke_type_sleeve_last` records the pick (null = the fallback).
+- **The fallback**: no Joker of the type can come up (e.g. Metal with only Gen 1 on) -> the slot rolls as normal, drawing nothing
+  from the RNG first (the stock is exactly a run's without the guarantee).
+- **Decks**: any deck, no alternate effect (no deck pairs naturally). One deck touch: on the Luminous Deck (a random Tera type on every
+  Joker) the guaranteed Joker's Tera sticker is the sleeve's type, so it stays a Joker of that type.
+- **Unlocks**: Micatro's sleeves have none; the 12 carry `unlocked: true`.
+- **Art**: `assets/2x/type_sleeves.png` (`poke_type_sleeves`, one row of 12 cells in POKETYPES order), composed by
+  `node tools/micatro/compose_pokermon_type_sleeves.mjs` (`--check` compares): the Trainer Sleeve's pocket with its navy recoloured to
+  the type colour (TYPE_COLOURS, at the Trainer tones' lightness), the type's Energy card inside, and the type's Tera sticker icon in the
+  tab. Gitignored mod art: deployed with `npm run deploy-micatro-mods` (listed in `tools/cloud/micatromods_manifest.txt`).
+- **Tests**: `micatro/tests/mods/pokermon_type_sleeves_test.mjs` (133 passed / 94 failed on origin/main, 296 / 0 here): every type's
+  Negative Energy and shops 1 / 2 / 3, rerolls, Hazards off / on, duplicates, the add-on precedence, the fallback (and its RNG), the first
+  slot, the Luminous Deck, and determinism (same seed; resume mid-shop 1 and 2, after a buy and a reroll). Re-recorded: `modpin_test`,
+  `challenges_test` (23 Pokermon sleeves), `pokermon_391_data_test`, `pokermon_new_jokers_test`, `pokermon_whismur_test` /
+  `pokermon_sprigatito_test` (their pin checks), `micatro_mod_version_pin`; the wiki data regenerated.
+- **Fuzz**: identical to origin/main (vanilla 40 / 5937 / 13 / 10; Pokermon 24 / 3414 / 13 / 6; all mods 24 / 4707 / 13 / 9): the fuzz
+  plays no sleeve.
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

@@ -230,7 +230,7 @@ ok(get_blind_amount(2) === 800 && !ACTIVE.includes(CH.CHALLENGE_ID), 'BETMMA wit
 
 // ------------------------------------------------------------- sleeves
 const sleeves = SL.allSleeves();
-ok(sleeves.filter((s) => s.mod === 'pokermon').length === 11 && sleeves.filter((s) => s.mod === 'pokermonplus').length === 5 && sleeves.filter((s) => s.mod === 'morefluff').length === 0, 'sleeves: Pokermon 11 (+ the 3.9.1 Debris Sleeve), Pokermon+ 5, MoreFluff 0 (1.9.9999 dropped its 4)');
+ok(sleeves.filter((s) => s.mod === 'pokermon').length === 23 && sleeves.filter((s) => s.mod === 'pokermonplus').length === 5 && sleeves.filter((s) => s.mod === 'morefluff').length === 0, 'sleeves: Pokermon 23 (11 + the 3.9.1 Debris Sleeve, + the 12 Type Sleeves), Pokermon+ 5, MoreFluff 0 (1.9.9999 dropped its 4)');
 for (const sl of sleeves) {
   const s = new Session();
   s.start({ seed: 'SLV', back: 'b_blue', sleeve: sl.key, mods: [sl.mod] });

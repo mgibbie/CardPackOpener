@@ -88,6 +88,7 @@ import { install_scry, scoring_areas, scry_view, scry_visible } from './systems/
 import { view_card, SERIES_A_ANIM } from './systems/anim.js';
 import { CHALLENGES } from './challenges.js';
 import { SLEEVES } from './sleeves.js';
+import { TYPE_SLEEVE_LOC } from './typesleeves.js';
 import { POKE_UI } from './ui.js';
 import { cfg, hazard_deal_tip } from './systems/utils.js';
 import { family_win_keys, set_family } from './systems/evolution.js';
@@ -135,6 +136,9 @@ const ATLAS_FILES = {
   capture_disc: ['capture_disc.png'],
   elite_stake: ['elite_stake.png', 29, 29],
   elite_stake_sticker: ['elite_stake_sticker.png'],
+  // The Type Sleeves (typesleeves.js; contentRev 22): one row of 12 sleeve cells in POKETYPES order, composed by
+  // tools/micatro/compose_pokermon_type_sleeves.mjs from the Trainer Sleeve's pocket and each type's Energy card (owner rule: no placeholders).
+  type_sleeves: ['type_sleeves.png'],
   // Micatro-composed cards (owner rule: no placeholders; 3.9.1 draws placeholder_joker for both): Rage Candy Bar (data391.js
   // sprite_extra) and Repel (never registered upstream), by tools/micatro/compose_pokermon_joker_art.mjs from the Others sheet's
   // white JOKER card and the overworld item icons (PORTING.md "Batch 17").
@@ -531,6 +535,8 @@ for (const [k, d] of Object.entries(D391.loc)) {
 }
 // The owner's designs' text (jokers/pokejokers_designs.js DESIGN_LOC)
 for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// The Type Sleeves' text (typesleeves.js: Micatro's own sleeves)
+Object.assign(DATA.loc.descriptions.Sleeve = DATA.loc.descriptions.Sleeve || {}, TYPE_SLEEVE_LOC);
 for (const k of ['dictionary', 'v_dictionary', 'labels', 'v_text', 'challenge_names']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }
 // The challenges' rule texts (batch 17): 3.9.1 renamed two rule ids but kept their texts' old keys (Safety First's poke_no_energy,
 // Randomizer's poke_apply_randomizer); Mystery Dungeon's "Resets at <time>" is the viewer's local time of UTC midnight (3.9.1
@@ -814,7 +820,9 @@ export const POKERMON = registerMod({
   // 21 = the owner's Whismur line (Whismur -> Loudred -> Exploud; jokers/pokejokers_designs.js): each broken Glass card grows its
   // Chips, then Mult, then X Mult (every form keeps the last's), and each evolution creates a Negative Justice; Grookey / Thwackey's
   // on-beat cards give +1 / +2 Mult (Energy now scales them).
-  contentRev: 21,
+  // 22 = the owner's 12 Type Sleeves (typesleeves.js): a Negative Energy of the sleeve's type at the start, and the first 2 shops'
+  // initial stock each holds a Joker of that type (the last joker slot; rerolls restock normally).
+  contentRev: 22,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

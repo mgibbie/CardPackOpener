@@ -36,7 +36,7 @@ const LINE = ['whismur', 'loudred', 'exploud'];
 
 // ------------------------------------------------------------------- pin, static data, order, family, art
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 21 && PINS.modPin('pokermon') === '3.9.1+r21', 'Pokermon contentRev 21 (pin 3.9.1+r21)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 21 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 21+ (22 since the Type Sleeves)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(LINE.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 3 registered and ported', LINE.filter((n) => !C(n) || C(n).unported));
   ok(LINE.every((n) => (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).includes(n)), 'defined with the owner\'s designs (micatro/pokejokers_designs)');
