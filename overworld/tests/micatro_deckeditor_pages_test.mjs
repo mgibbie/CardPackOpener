@@ -253,16 +253,20 @@ try {
 		A(v.custom_deck && v.areas.jokers.map((j) => j.center).join() === [k3, lastKey].join(), 'the run starts with the page-3 and last-page jokers', JSON.stringify(v.areas && v.areas.jokers.map((j) => j.center)));
 		await sleep(800);
 		await shot(page, 'run-phone');
-		// ---- the blocks' art is the whole sheet's: Pikachu drawn now (out of the editor: the sheet itself) is the same picture
+		// ---- the blocks' art is the whole sheet's: Pikachu drawn from the whole sheet (assets.js setModBlocks(false): runs
+		// draw from the blocks too since the follow-up) is the same picture
 		A(!!ref, 'a Natdex-sheet joker (Pikachu) was seen while paging');
 		if (ref) {
 			const same = await page.evaluate(async (ref) => {
 				const S = await import('/micatro/js/ui/screens.js'), A = await import('/micatro/js/ui/assets.js'), { P_CENTERS } = await import('/micatro/js/engine/core.js');
 				const c = P_CENTERS.j_poke_pikachu, d = { center: 'j_poke_pikachu', mod: c.mod, atlas: c.atlas, pos: c.pos, set: c.set, name: ref.name };
+				if (A.setModBlocks) A.setModBlocks(false);
 				const cv = S.cardCanvas(d, 'x');
 				for (let i = 0; i < 100 && A.modArtLoading(S.stillData(d).atlas); i++) await new Promise((r) => setTimeout(r, 100));
 				S.redrawCard(cv, d);
-				return { same: cv.toDataURL() === ref.url, full: A.modSheetStats().sheets.map((x) => x.w + 'x' + x.h) };
+				const full = A.modSheetStats().sheets.map((x) => x.w + 'x' + x.h);
+				if (A.setModBlocks) A.setModBlocks(true);
+				return { same: cv.toDataURL() === ref.url, full };
 			}, ref);
 			A(same.same && same.full.includes('4260x13110'), 'the tile drawn from blocks == the one drawn from the whole Natdex sheet', JSON.stringify(same.full));
 		}
