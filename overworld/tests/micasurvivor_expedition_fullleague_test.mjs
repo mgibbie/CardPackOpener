@@ -324,7 +324,7 @@ try {
 		return { dv: G.Expedition.DV, cdv: G.Exp.dv, n: L.D.members.length, roster: L.roster(), base: [624, 133, 172].map(d => [L.playable(d), L.own(d), L.free(d)]), locked: [10, 19, 52].map(L.playable),
 			free27: L.D.free.filter(d => L.free(d) && L.playable(d)).length, kitOk: L.D.members.every(m => m.kit.every(id => !!G.Moves.BY_ID[id])) };
 	});
-	A(lg.dv === 19 && lg.cdv === 19 && lg.n === 553 && lg.kitOk, 'the Expedition loads: content version 18 (D19), 553 members, every kit move a game move', JSON.stringify({ dv: lg.dv, cdv: lg.cdv, n: lg.n, err: lg.error }));
+	A(lg.dv === 20 && lg.cdv === 20 && lg.n === 553 && lg.kitOk, 'the Expedition loads: content version 18 (D19), 553 members, every kit move a game move', JSON.stringify({ dv: lg.dv, cdv: lg.cdv, n: lg.n, err: lg.error }));
 	A(lg.free27 === 27 && lg.base && lg.base.every(([p, o, f]) => p && o && !f) && JSON.stringify(lg.locked) === '[false,false,false]' && lg.roster && lg.roster.length === 30,
 		'all 27 starter trios are free; a family with a stage in the base collection is playable (Kingambit -> Pawniard, Vaporeon -> Eevee, Pikachu -> Pichu): 30; Caterpie, Rattata, Meowth still locked', JSON.stringify({ free27: lg.free27, base: lg.base, locked: lg.locked, n: lg.roster && lg.roster.length }));
 	const scr = await E(page, async () => {
@@ -342,7 +342,7 @@ try {
 
 	// ======================== 4. FIRE: an Eevee run (decision #2: from the first stage, though the base owns Vaporeon)
 	const r1 = await runAs(page, 133);
-	A(r1.ok && r1.mode === 'exp-classic' && r1.dex === 133 && r1.member === 133 && r1.runDex === 133 && r1.dv === 19 && r1.moves.length >= 1, 'Play Classic as Eevee: the run starts at the first stage, Eevee (the base owns Vaporeon), dv 18', JSON.stringify(r1));
+	A(r1.ok && r1.mode === 'exp-classic' && r1.dex === 133 && r1.member === 133 && r1.runDex === 133 && r1.dv === 20 && r1.moves.length >= 1, 'Play Classic as Eevee: the run starts at the first stage, Eevee (the base owns Vaporeon), dv 18', JSON.stringify(r1));
 	const r2 = await E(page, () => {
 		const H = window.__t; H.levelTo(8);
 		const pl = G.Game.player, kit = G.ExpLeague.BY[133].kit;

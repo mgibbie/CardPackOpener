@@ -1824,3 +1824,18 @@ Built (`micasurvivor/README.md`, "DLC D21"). Choices and notes:
 `feat/micasurvivor-d19-d21`: D19 the full League (dv 18; the server: the counter cap, the 553 / 27 lists, base-owned families on
 the League board), D20 all 1,025 as enemies (dv 19; base: Wishiwashi), D21 balance (the base damage factor, the Expedition KO pay,
 Survival's pacing; the D0a fixtures re-recorded). With it the owner's 2026-10-26 request (D16-D21) is built.
+
+### Update (2026-10-27): Survival curve
+Built (`micasurvivor/README.md`, "The Survival curve"), owner: "survival does need its own slower levelling curve". Choices and notes:
+- **The curve:** Survival's XP a level = the Expedition's (Classic's / League's, unchanged) x (1 + ((L - 40) / 20)^1.5) above Lv 40
+  (`G.ExpSurv.K.CURVE`, read by `G.ExpLevel.need`, so Rare Candy and the level-up loop follow it). Early levels are untouched (Lv 40
+  at ~5:00); the slowdown is mid / late (x2 at Lv 60, x6.2 at 100, x13.9 at 150).
+- **Levels (bot, dps_sim.mjs --pace):** 5 / 12 / 24 / 30 / 45 min: shared curve 40 / 96 / 219 / 267 / 356 (8 runs), Survival curve
+  40 / 75 / 116 / 129 / 146 (14 runs).
+- **KOs: D21's guess was wrong.** The 45-min KOs did not fall (~12,000-13,800 on both curves; even Lv 70 at 45:00 KOs ~12,200;
+  half again fewer trickle spawns ~10,200; a x0.6 cap ~11,800). The bot's build saturates by Lv ~70 and the KOs follow the foes'
+  inflow, not the level. The ~8,000 target needs another lever (an owner call: e.g. how fast Survival's foes reach the player).
+- **Pay** unchanged, in D21's range (2,501 a 45-min run, 8 runs). **Beatable:** the hurt-for-real bot (boss fights not assisted)
+  downs all 9 milestones and Mewtwo in 6/6 runs on both curves.
+- **Versions:** `G.Expedition.DV` 20 (the curve is gated on the run's dv: an old run / tape / snapshot keeps the shared curve;
+  co-op lobbies are one dv and the guest's level is the host's). `x` v10. Base unchanged: the D0a fixtures pass as recorded.

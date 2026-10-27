@@ -3226,6 +3226,49 @@ Survival run's pay; FIRED: a Survival spawn's x1.8 HP and XP, Classic's unpaced,
 runs' damage factors). Fails 7 of 9 before D21. Updated on purpose: `_expedition_meta` and `_expedition_survival` (KOs / 150; the
 pacts' foeK on top of the pacing), `_allmoves` (the Choice Band's ratios within 1 %: whole-number hits at x0.85).
 
+## The Survival curve (Survival levels on its own, slower curve)
+
+Owner 2026-10-27: "survival does need its own slower levelling curve" (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "Survival curve").
+
+**What changed for the player:** a Survival run (content version 20) levels on its own curve: the XP to the next level is the
+Expedition's (`G.ExpLevel.need`: 2 x (8 + 5.5 L + L^1.8), still Classic's and League's) **x (1 + ((L - 40) / 20)^1.5)** above
+Lv 40 (`G.ExpSurv.K.CURVE` {DV 20, FROM 40, SCALE 20, POW 1.5}; `G.ExpSurv.need` / `curveK` / `curveOn`). Lv 1-40 are exactly as
+before (Lv 40 at ~5:00), then the slowdown grows: x1.35 at Lv 50, x2 at Lv 60, x6.2 at Lv 100, x13.9 at Lv 150. Base, Classic and League are
+unchanged (the D0a fixtures pass as recorded, 58/0, and so does the force-loaded run).
+
+**Measured** (`tools/micasurvivor/dps_sim.mjs --pace --pmodes=survival --afonly`, the D21 bot; new flags: `--dv=19` plays the old
+curve, `--curve=FROM,SCALE,POW`, `--rate=`, `--capk=` try other knobs, `--soft` hurts the bot for real and counts its falls, every
+row prints the level at 5 / 12 / 24 / 30 / 45 min). Level at 5 / 12 / 24 / 30 / 45 min, bot averages:
+
+| curve | runs | 5:00 | 12:00 | 24:00 | 30:00 | 45:00 |
+|---|---|---|---|---|---|---|
+| shared (dv 19) | 8 | 40 | 96 | 219 | 267 | 356 |
+| Survival (dv 20) | 14 | 40 | 75 | 116 | 129 | 146 |
+
+**The KOs did not fall.** D21's guess (a Lv 300+ bot one-shots the field, so the level curve is the lever) does not hold: the
+45-min KOs stay ~12,000 whatever the level. Shipped curve: 11,996 (8 runs) and 13,771 (6 `--soft` runs to 47:00) vs the shared
+curve's 13,740 on the same 6 seeds; even a curve that stops the bot at Lv 70 at 45:00 (`--curve=20,5,2`) KOs 12,247, Lv 97
+(`30,10,2`) 12,145. Two other knobs, tried on top of the curve and not shipped: half again fewer trickle spawns (`--rate=0.35`)
+10,239 (4 runs) and a x0.6 enemy cap 11,806 (8 runs). Single runs spread 5,200-17,800, so only many-run averages mean anything.
+The bot saturates its build (4 moves at Lv 8, the vitamins) by Lv ~70 and kills what reaches it; the KOs follow the foes' inflow,
+not its level. So the ~8,000 target needs a different lever; the curve is shipped for itself (the owner's ask: a slower climb).
+
+**Pay:** unchanged and in D21's range: 2,501 Pokémonedas (8 runs to 45:29) vs D21's ~2,250-2,575; no pay knob moved.
+
+**Beatable:** the `--soft` bot (hurt for real, boss fights NOT assisted) downs all 9 milestones and Mewtwo in 6 of 6 runs on both
+curves, and falls no more often on the new one (2,014 vs 2,319 refills a run: the wandering bot stands in the swarm). The plain
+`--vuln` wandering bot dies at ~4:00-5:00 on both curves alike (Lv 32-40: the curves are the same there), so it cannot measure
+45:00; no bot here plays well enough to.
+
+**Sync:** `G.Expedition.DV` 20 (`G.Exp.dv` 20). The curve is read from the RUN's dv (`G.Modes.dv`), so a run, a snapshot or a
+tape of dv <= 19 keeps the shared curve; a tape carries each frame's `xpNext` (its counters), so an old tape replays its own
+numbers. A co-op lobby needs one dv (`lobbyOk`) and a guest's level / `xpNext` is the host's (`syncTeam`), so host and guest
+agree. No new streamed state (`x` v10).
+
+**Tests:** `overworld/tests/micasurvivor_expedition_survivalcurve_test.mjs` (12 checks, FIRED: real runs fed real XP through the
+game's own level-up loop: Survival dv 20 on the curve; Classic, League and base unchanged; a dv-19 Survival run on the shared
+curve; dv-19 and dv-20 tapes recorded and read back). Fails 10 of 12 before. The dv pins in 21 other suites moved 19 -> 20.
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
@@ -3286,6 +3329,8 @@ The branch needs the full gate before it merges.
   plans over many seeds), wanderers a minority, rarity-5 elites, roaming legendaries; base coverage and Wishiwashi.
 - `node overworld/tests/micasurvivor_expedition_balance_test.mjs` (DLC D21): the tuned damage factors, the Expedition KO pay and
   Survival's pacing, pinned and fired.
+- `node overworld/tests/micasurvivor_expedition_survivalcurve_test.mjs` (the Survival curve): Survival's own XP curve from dv 20,
+  fired; Classic, League and base unchanged; an old-dv run and tape keep the shared curve.
 - `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
 - `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
   lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly

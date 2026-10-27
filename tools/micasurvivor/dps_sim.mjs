@@ -39,6 +39,16 @@ const APPLY = process.argv.includes('--apply');
 const PACE = process.argv.includes('--pace');
 const PMODES = arg('pmodes', 'survival,classic').split(',');
 const SURV_T = +arg('survT', 2750);
+// (the Survival curve: --afonly skips the one-slot runs; --dv=19 plays the run at that content version (19: the shared curve, before
+//  the Survival curve); --vuln: the bot can be hurt and fall (no boss assist): the survival rate. Every run prints its level at the
+//  LV_AT marks.)
+const AF_ONLY = process.argv.includes('--afonly');
+const RUN_DV = arg('dv', null) == null ? null : +arg('dv', null);
+const VULN = process.argv.includes('--vuln') ? 1 : process.argv.includes('--soft') ? 2 : 0;   // (--soft: hurt for real, but a fall
+//  refills the HP and is counted (falls, the first fall's time): the wandering bot dies by ~4:30 on either curve, so this compares them)
+const RATE = arg('rate', null) == null ? null : +arg('rate', null);   // (--rate=: try Survival's spawn pacing, K.PACE.rate)
+const CAPK = arg('capk', null) == null ? null : +arg('capk', null);   // (--capk=: try a smaller field, G.ExpClassic.K.CAP x k, the run's mode only)
+const CURVE = arg('curve', null) ? arg('curve', null).split(',').map(Number) : null;   // (--curve=FROM,SCALE,POW: try a Survival curve)
 const PORT = 8893;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.md': 'text/markdown; charset=utf-8', '.txt': 'text/plain', '.svg': 'image/svg+xml' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -152,10 +162,16 @@ const BEFORE = save => {
 		return Math.round(dps * 10) / 10;
 	};
 	/** DLC D21: a pacing run of the started Expedition run (see --pace). af: every slot firing (as shipped), else one slot at x1. */
-	H.pace = (classic, T, dt, af) => {
+	H.pace = (classic, T, dt, af, vuln) => {
 		H.freeze();
 		const pl = G.Game.player, C = G.ExpClassic, S = G.ExpSurv;
-		pl.hurt = () => {}; pl.invuln = 1e9;
+		if (!vuln) { pl.hurt = () => {}; pl.invuln = 1e9; }
+		let falls = 0, fall1 = null;
+		if (vuln === 2) {
+			const nd = G.Modes.noDeath, hurt0 = pl.hurt;
+			pl.hurt = function (...a) { G.Modes.noDeath = () => true; try { hurt0.apply(this, a); } finally { G.Modes.noDeath = nd; } if (this.hp <= 1) { falls++; if (fall1 == null) fall1 = Math.round(G.Game.st.time); this.hp = this.maxHp; } };
+		}
+		const LV_AT = [300, 720, 1440, 1800, 2700], lvAt = {};
 		if (!af) { pl.af = false; pl.afDmg = 1; pl.active = 0; }
 		let sum = null, maxE = 0, blocked = 0;
 		if (!H.hooked) { H.hooked = 1; G.Hooks.on('run.end', (o, sm) => { H.sum = JSON.parse(JSON.stringify(sm)); return o; }); }
@@ -182,6 +198,8 @@ const BEFORE = save => {
 				maxE = Math.max(maxE, G.EnemyMgr.count);
 				const Rn = C.run; if (!Rn) continue;
 				const t = G.Game.st.time;
+				for (const m of LV_AT) if (t >= m && lvAt[m] == null) lvAt[m] = pl.level;
+				if (vuln) continue;
 				if (classic) {
 					const zt = t - Rn.zs;
 					if ((zt > 390 && Rn.ph === 0) || Rn.ph === 2 || (Rn.zone === 4 && Rn.ph === 0)) toAltar();
@@ -193,13 +211,14 @@ const BEFORE = save => {
 			}
 		}
 		hold([]);
-		const kills = pl.kills, level = pl.level, t = Math.round(G.Game.st.time), zone = C.run ? C.run.zone : null, won = !!(C.run && C.run.won);
+		const kills = pl.kills, level = pl.level, t = Math.round(G.Game.st.time), zone = C.run ? C.run.zone : null, won = !!(C.run && C.run.won), dead = !!pl.dead || G.Game.state === 'over';
+		const mewtwo = !classic && S.run ? S.run.mewtwo : null, milestones = !classic && S.run ? S.run.downs : null;
 		if (G.Game.state !== 'over') G.Game.endRun(false);
 		sum = H.sum || {};
 		const p = sum.parts || { kills, time: t, zone: zone || 1, bosses: 0, won, catches: 0 };
 		const pay = G.ExpMeta.payOf(classic ? p : Object.assign({}, p, { surv: true }), 'normal');
 		if (window.__why) { const k = {}; for (const [e, st] of src) if (e.dead) k[st] = (k[st] || 0) + 1; console.log('WHY spawns ' + JSON.stringify(Object.entries(why).sort((a, b) => b[1] - a[1]).slice(0, 12)) + ' dead ' + JSON.stringify(Object.entries(k).sort((a, b) => b[1] - a[1]).slice(0, 12))); }
-		return { af, t, kills, level, zone, won, bosses: p.bosses, legends: p.legends || 0, units: pay.base, pay: pay.pay, maxE, k: af ? pl.afDmg : 1 };
+		return { af, t, kills, level, lvAt, zone, won, dead, mewtwo, milestones, bosses: p.bosses, legends: p.legends || 0, falls, fall1, units: pay.base, pay: pay.pay, maxE, k: af ? pl.afDmg : 1, dv: G.Modes.dv };
 	};
 	/** (base) a bond: the first two loose moves fused, then a new move in the freed slot. -> the slots */
 	H.fuseBuild = () => {
@@ -219,7 +238,7 @@ await new Promise(r => server.listen(PORT, r));
 let browser;
 try {
 	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 1800000, args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
-	if (PACE) for (const pm of PMODES) for (let seed = 1; seed <= SEEDS; seed++) for (const af of [false, true]) {
+	if (PACE) for (const pm of PMODES) for (let seed = 1; seed <= SEEDS; seed++) for (const af of AF_ONLY ? [true] : [false, true]) {
 		const t0 = Date.now();
 		const ctx = await browser.createBrowserContext();
 		const page = await ctx.newPage();
@@ -230,16 +249,20 @@ try {
 		await waitFor(() => page.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
 		if (await page.evaluate(() => { const el = document.getElementById('tap-start'); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; })) await page.click('#tap-start');
 		await waitFor(() => page.evaluate(() => { const el = document.getElementById('scr-menu'); return !!el && !el.classList.contains('hidden'); }), 15000);
-		const r = await page.evaluate(async (pm, seed, af, T, dt) => {
+		const r = await page.evaluate(async (pm, seed, af, T, dt, dv, vuln, curve, rate, capk) => {
 			G.Audio.sfx = () => {}; G.Audio.music = () => {};
 			window.__s.reseed(seed * 7919);
 			const ok = await G.Expedition.load().catch(e => String(e));
 			if (ok !== true) return { error: String(ok) };
 			await G.ExpSave.open();
+			if (capk != null) { G.ExpClassic.K.CAP = Math.round(G.ExpClassic.K.CAP * capk); G.ExpClassic.K.CAP_TOUCH = Math.round(G.ExpClassic.K.CAP_TOUCH * capk); }
+			if (rate != null) G.ExpSurv.K.PACE.rate = rate;
+			if (curve) Object.assign(G.ExpSurv.K.CURVE, { FROM: curve[0], SCALE: curve[1], POW: curve[2] });
+			if (dv != null) { const plan0 = G.Modes.plan; G.Modes.plan = m => Object.assign(plan0(m), { dv }); }   // (--dv: the run's content version)
 			await G.Flow.play(pm === 'classic' ? 'exp-classic' : 'exp-survival');
 			if (G.Game.state !== 'playing') return { error: 'did not start ' + G.Game.state };
-			return window.__s.pace(pm === 'classic', T, dt, af);
-		}, pm, seed, af, pm === 'classic' ? 3600 : SURV_T, 1 / 20);
+			return window.__s.pace(pm === 'classic', T, dt, af, vuln);
+		}, pm, seed, af, pm === 'classic' ? 3600 : SURV_T, 1 / 20, RUN_DV, VULN, CURVE, RATE, CAPK);
 		await ctx.close();
 		const row = Object.assign({ pace: pm, seed, secs: Math.round((Date.now() - t0) / 1000) }, r);
 		out.push(row);
