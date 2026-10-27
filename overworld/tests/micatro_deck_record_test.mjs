@@ -167,6 +167,10 @@ try {
 		await shot(page, 'decks_desktop_mods.png');
 		const { seen, n, ind } = await allPages(page);
 		const keys = seen.map((t) => t.back);
+		if (SHOTS) { // the page holding the Pokermon deck (its Aipom sticker comes from the mod's own sprite)
+			for (let i = 0; i < 8 && !(await page.evaluate(() => !!document.querySelector('[data-back="b_poke_pokemondeck"]:not([hidden])'))); i++) await page.evaluate(() => document.querySelector('.b-dk-prev').click());
+			await shot(page, 'decks_desktop_mods_pokermon_page.png');
+		}
 		const by = Object.fromEntries(seen.map((t) => [t.back, t]));
 		const vanilla = await page.evaluate(async () => (await import('/micatro/js/ui/assets.js')).BACK_LIST.map((b) => b.key));
 		const pokeBacks = await page.evaluate(async () => (await import('/micatro/js/mods/index.js')).modBacks(['pokermon'], {}).map((b) => b.key));
