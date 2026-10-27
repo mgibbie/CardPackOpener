@@ -12,6 +12,8 @@
 // Sealeo -> Walrein (Rollout), Grookey -> Thwackey -> Rillaboom (the beat; Grass starter), Kubfu -> Urshifu (Single / Rapid Strike,
 // chosen by its training), Tandemaus -> Maushold (Population Bomb), Darumaka -> Darmanitan (Hustle / Zen Mode), Scraggy -> Scrafty
 // (Moxie), Mudbray -> Mudsdale (Stamina / Mud Spit); and Xerneas, Spiritomb, Tatsugiri on their own.
+// Then the owner's wiki designs (CLAUDE.md "do the joker design list"): Sprigatito -> Floragato -> Meowscarada (Lucky cards grow like
+// Hiker's; then held Lucky cards act as Steel; Grass starter; contentRev 20) — upstream 3.9.1 draws them too (Natdex 10 / 12 / 14, 60).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -117,6 +119,18 @@ function beat_calc(card, context) {
   if (ex.mult && context.individual && context.cardarea === G.play && !context.end_of_round && on_beat(context.other_card)) return { mult: ex.mult, card };
   if (context.after && context.cardarea === G.jokers && !context.blueprint) ex.beat_idx = [];
   if (round_end(context) && !context.blueprint) ex.beat = 0;
+  return undefined;
+}
+
+/** Sprigatito / Floragato (Hiker for Lucky cards): a scored card whose Lucky effect triggered permanently gains +mult_mod Mult and
+ *  +$dollars when scored (Steamodded's perma_mult / perma_p_dollars; the value at the time, kept by the card). Blueprint copies it, as Hiker. */
+function lucky_grow(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.lucky_trigger) {
+    const a = context.other_card.ability, ex = card.ability.extra;
+    a.perma_mult = (a.perma_mult || 0) + ex.mult_mod;
+    a.perma_p_dollars = (a.perma_p_dollars || 0) + ex.dollars;
+    return { extra: { message: localize('k_upgrade_ex'), colour: 'MULT' }, colour: 'MULT', card };
+  }
   return undefined;
 }
 
@@ -635,6 +649,47 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F2: Sprigatito -> Floragato -> Meowscarada (Grass starter, Gen 9)
+  // The owner's design (2026-10-27, after the 25): Hiker for Lucky cards. Sprigatito 906: when a Lucky card triggers (its 1 in 5 Mult
+  // or 1 in 15 money), that card permanently gains +1 Mult and +$1 when scored (perma_mult / perma_p_dollars, Hiker's perma_bonus
+  // route), every time it scores after. 5 rounds. The Mult step is `mult_mod` (Energy: +20% of its base each), the money step
+  // `dollars` (in no energy_values: fixed); a card keeps what it was given — later Energy doesn't re-grow it (Houndour's perma_mult).
+  sprigatito: {
+    name: 'sprigatito', poke_sprite391: sprite('Natdex', 10, 60),
+    config: { extra: { mult_mod: 1, dollars: 1, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 9, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'mult', 'economy', 'enhancements', 'modify_card', 'round_evo'], poke_after: 'ursaluna',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.mult_mod, ex.dollars, ex.rounds] }; },
+    calculate(self, card, context) { return lucky_grow(card, context) || level_evo(self, card, context, 'j_poke_floragato'); },
+  },
+  // Floragato 907: the same, +2 Mult and +$2 per Lucky trigger. 5 rounds.
+  floragato: {
+    name: 'floragato', poke_sprite391: sprite('Natdex', 12, 60),
+    config: { extra: { mult_mod: 2, dollars: 2, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['starter', 'mult', 'economy', 'enhancements', 'modify_card', 'round_evo'], poke_after: 'sprigatito',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.mult_mod, ex.dollars, ex.rounds] }; },
+    calculate(self, card, context) { return lucky_grow(card, context) || level_evo(self, card, context, 'j_poke_meowscarada'); },
+  },
+  // Meowscarada 908: no more growth (the cards keep theirs); Lucky cards held in hand give X1.25 Mult, like Steel cards: the joker's
+  // per-card X (`Xmult_multi`: Energy +5% of its base each — X1.3125 / X1.375 / X1.4375). Not counted as Steel (Steel Joker,
+  // has_enhancement): only the held X Mult.
+  meowscarada: {
+    name: 'meowscarada', poke_sprite391: sprite('Natdex', 14, 60),
+    config: { extra: { Xmult_multi: 1.25 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 9, blueprint_compat: true,
+    attributes: ['starter', 'xmult', 'enhancements'], poke_after: 'floragato',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); return { vars: [card.ability.extra.Xmult_multi] }; },
+    calculate(self, card, context) {
+      // (a held Lucky card, as Steel's held X Mult — Baron's shape: retriggered by Mime / a Red Seal like Steel; nothing while debuffed)
+      if (context.individual && context.cardarea === G.hand && !context.end_of_round && has_enhancement(context.other_card, 'm_lucky')) {
+        if (context.other_card.debuff) return { message: localize('k_debuffed'), colour: 'RED', card };
+        return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      return undefined;
+    },
+  },
+
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -677,6 +732,7 @@ export const DESIGN_FAMILIES = [
   ['darumaka', 'darmanitan'],
   ['scraggy', 'scrafty'],
   ['mudbray', 'mudsdale'],
+  ['sprigatito', 'floragato', 'meowscarada'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -684,6 +740,7 @@ const EVOLVES_ROUNDS = (n) => '{C:inactive,s:0.8}(Evolves after {C:attention,s:0
 const ROLLOUT = (c, m) => ['{C:attention}Rollout:{} {C:chips}+#' + c + '#{} Chips, doubled', 'for each consecutive hand of', 'the same poker hand {C:inactive}(max #' + m + '# doublings)'];
 const PAIR = ['Played cards that share a rank', 'with another scored card give', '{C:mult}+#1#{} Mult when scored'];
 const TRAIN = (x) => ['Gains {X:mult,C:white} X#' + x + '# {} Mult when a hand', 'with exactly {C:attention}1{} or exactly {C:attention}5{}', 'scoring cards is played', '{C:inactive}(Can\'t be debuffed)'];
+const LUCKY_GROW = ['When a {C:attention}Lucky{} card triggers,', 'it permanently gains {C:mult}+#1#{} Mult', 'and {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -747,6 +804,9 @@ export const DESIGN_LOC = {
     j_poke_tatsugiri_curly: { name: 'Tatsugiri', text: ['{C:attention}Nature:{} Curly', ...COMMANDER, '{X:mult,C:white} X#1# {} Mult'] },
     j_poke_tatsugiri_droopy: { name: 'Tatsugiri', text: ['{C:attention}Nature:{} Droopy', ...COMMANDER, '{C:chips}+#2#{} Chips'] },
     j_poke_tatsugiri_stretchy: { name: 'Tatsugiri', text: ['{C:attention}Nature:{} Stretchy', ...COMMANDER, '{C:mult}+#3#{} Mult'] },
+    j_poke_sprigatito: { name: 'Sprigatito', text: LUCKY_GROW },
+    j_poke_floragato: { name: 'Floragato', text: LUCKY_GROW },
+    j_poke_meowscarada: { name: 'Meowscarada', text: ['{C:attention}Lucky{} cards held in hand', 'each give {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Like {C:attention}Steel{C:inactive} cards, but not', '{C:inactive}counted as Steel)'] },
     j_poke_mudbray: { name: 'Mudbray', text: ['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
     j_poke_mudsdale: { name: 'Mudsdale', text: [
       ['{C:attention}Stamina:{} gains {C:chips}+#1#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round'],

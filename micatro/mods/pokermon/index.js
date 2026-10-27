@@ -622,6 +622,24 @@ for (const f of DATA.groups.consumable_types) for (const item of listOf(f)) {
 }
 
 // --------------------------------------------------------------------- hooks
+/** Steamodded's localize_perma_bonuses on a playing card: its permanent +Mult and "+$N when scored" (Sprigatito / Floragato's Lucky
+ *  cards, Houndour's discards). Not on Pokermon+'s Heatran-forged cards (their Forged box lists them) nor while debuffed. */
+function perma_lines(card) {
+  const a = card && card.ability;
+  if (!a || !card.base || !card.base.suit || (a.set !== 'Default' && a.set !== 'Enhanced') || card.debuff || a.sonfive_heatran) return [];
+  const out = [];
+  if (a.perma_mult) out.push('{C:mult}+' + Math.round(a.perma_mult * 1000) / 1000 + '{} extra Mult');
+  if (a.perma_p_dollars) out.push('{C:money}+$' + a.perma_p_dollars + '{} when scored');
+  return out;
+}
+/** Card:get_p_dollars + ability.perma_p_dollars (hook p_dollars; Steamodded's permanent "+$N when scored"). */
+export function perma_p_dollars(v, card) {
+  const p = card && card.ability && card.ability.perma_p_dollars;
+  if (!p || card.debuff) return undefined;
+  G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + p;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  return (v || 0) + p;
+}
 /** Kecleon's update for every Kecleon in the joker row (its type follows the joker to its right). */
 // (through its center: the 3.2.1 test fixtures serve an older joker file)
 const sync_kecleon = () => { if (G.jokers) for (const c of G.jokers.cards.slice()) { const mc = c.config.center; if (mc.key === 'j_poke_kecleon' && mc.update) mc.update(mc, c); } };
@@ -678,6 +696,10 @@ const hooks = {
     return undefined;
   },
   scoring_areas,
+  // Steamodded's perma_p_dollars (Card:get_p_dollars: + ability.perma_p_dollars; the engine scores perma_mult itself): Sprigatito /
+  // Floragato's Lucky cards (jokers/pokejokers_designs.js), Pokermon+'s Heatran-forged cards. (Pokermon+ requires Pokermon: it was
+  // that mod's hook until contentRev 20.)
+  p_dollars: perma_p_dollars,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
     // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)
@@ -692,6 +714,9 @@ const hooks = {
       const t = hazard_deal_tip(), d = DATA.loc.descriptions.Other[t.key];
       if (d) desc.info.push({ key: t.key, name: d.name, lines: d.text.map((l) => l.replace(/#(\d+)#/g, (m, n) => String(t.vars[n - 1] ?? ''))) });
     }
+    // Steamodded's localize_perma_bonuses on a playing card (perma_lines)
+    const pl = perma_lines(card);
+    if (desc && Array.isArray(desc.lines) && pl.length) desc.lines.push(...pl);
     if (card.config.center.mod || !card.ability || card.ability.set !== 'Joker' || !desc) return;
     const b = type_badge(card);
     if (b && Array.isArray(desc.badges)) desc.badges.push(b);
@@ -705,7 +730,12 @@ const hooks = {
       (desc.info = desc.info || []).push({ key: q.key, name: d.name, lines });
     }
   },
-  view_card,
+  view_card(card, v) {
+    // (the board's playing-card tooltip, ui/markup.js describePlaying: the permanent bonuses as mod_lines)
+    const pl = perma_lines(card);
+    if (pl.length) v.mod_lines = (v.mod_lines || []).concat(pl);
+    return view_card(card, v);
+  },
   view(view, cardView) {
     // (face up, as the Lua's copies are: copy_card makes a fresh front-facing card)
     if (G.scry_view && scry_visible()) view.areas.scry = scry_view.cards.map((c) => { const v = cardView(c); delete v.facing; delete v.hl; return v; });
@@ -778,7 +808,10 @@ export const POKERMON = registerMod({
   // 19 = the owner's 25 new jokers (Desktop/Pokermon_Joker_Design_Guide.txt section 5; jokers/pokejokers_designs.js): the Shinx,
   // Honedge, Spheal, Grookey (a Grass starter), Kubfu / Urshifu, Tandemaus, Darumaka, Scraggy and Mudbray lines, Xerneas, Spiritomb
   // and Tatsugiri join the pools; Kubfu / Urshifu can't be debuffed, and Single Strike Urshifu keeps playing cards from being debuffed.
-  contentRev: 19,
+  // 20 = the owner's Sprigatito line (Sprigatito -> Floragato -> Meowscarada; jokers/pokejokers_designs.js): a Lucky trigger grows the
+  // card (+Mult / +$ when scored, Hiker-style), then held Lucky cards give X Mult like Steel; Sprigatito joins the Grass starters
+  // (the Starter Pack); perma_p_dollars is scored by Pokermon's hook (was Pokermon+'s).
+  contentRev: 20,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

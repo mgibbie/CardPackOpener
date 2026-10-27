@@ -46,7 +46,7 @@ import {
 } from '../pokermon/api.js';
 import { MOD_ID, set_debuff, void_energy_override, e_limit_up_of, sonfive_base_evo_name, grafaiai_is_type, deenergize_one } from './src/functions.js';
 import { weakened_in_shop, lilac_stake, weakened_sticker, forged_sticker, WEAKENED, FORGED } from './src/stakes.js';
-import { perma_h_x_mult, perma_p_dollars, perma_repetitions } from './src/pokemon/485_heatran_line.js';
+import { perma_h_x_mult, perma_repetitions } from './src/pokemon/485_heatran_line.js';
 import { minior_soul, minior_round_eval } from './src/pokemon/774_minior_line.js';
 import { void_reroll } from './src/backs/backs.js';
 
@@ -335,8 +335,8 @@ const hooks = {
     }
   },
   // Heatran's forged cards: Steamodded's permanent values the engine doesn't score itself.
+  // (perma_p_dollars is base Pokermon's hook since its contentRev 20 — Sprigatito's Lucky cards use it too; one hook, never twice)
   chip_h_x_mult: perma_h_x_mult,
-  p_dollars: perma_p_dollars,
   card_repetitions: perma_repetitions,
   /** Shiny Sleeve: e_poke_shiny's weight + (rate - 1) * its base weight (the Lua get_weight wrap). */
   edition_weight(w, type) {
