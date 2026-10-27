@@ -311,20 +311,25 @@ export function findBackgroundCells(sheets, sibs, skip = new Set(), min = 0.5) {
 }
 
 // ---- name, sprite, compositing ----------------------------------------------------------------------------------------
-/** Draw `text` in the upstream name font: glyph grey with a white 8-neighbour outline. */
-export function drawName(img, text) {
+/**
+ * Draw `text` in the upstream name font: glyph grey with a white 8-neighbour outline. `opts.x`: the first glyph's left x
+ * (default NAME.x; a Legendary card's name starts after its L / M mark); `opts.gap`: the letter gap (default 1; 0 squeezes
+ * a long name into the banner, as compose_missing_pokermon_jokers.mjs does).
+ */
+export function drawName(img, text, opts = {}) {
   if (!text) return; // (an Others-sheet card has no name banner: --label "")
   const glyph = new Uint8Array(LW * LH);
-  let x = NAME.x;
+  const gap = opts.gap ?? LETTER_GAP;
+  let x = opts.x ?? NAME.x;
   for (const ch of text) {
     if (ch === ' ') { x += SPACE_ADVANCE; continue; }
     const g = FONT[ch];
     if (!g) throw new Error(`no glyph for ${JSON.stringify(ch)} in the name font (has: space ${Object.keys(FONT).join('')})`);
     const rows = g.split('/');
     rows.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) if (r[dx] === '#') glyph[(NAME.top + dy) * LW + x + dx] = 1; });
-    x += rows[0].length + LETTER_GAP;
+    x += rows[0].length + gap;
   }
-  if (x - LETTER_GAP > NAME.zone.x1) throw new Error(`name "${text}" is too wide for the banner`);
+  if (x - gap > NAME.zone.x1) throw new Error(`name "${text}" is too wide for the banner`);
   for (let y = 1; y < LH - 1; y++) for (let x2 = 1; x2 < LW - 1; x2++) {
     const p = y * LW + x2;
     if (glyph[p]) { img[p] = GLYPH; continue; }

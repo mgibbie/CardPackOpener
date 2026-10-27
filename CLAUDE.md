@@ -85,6 +85,22 @@ Investigate its ⚠ items. Message a tester via their bell: the `chat:dm:<user>`
 Card text conventions: keywords alphabetical, `A, B & C.`; a spell's school is its `tribe`;
 "Luck:" = coin flip `{type:'luck', effects}`; Red/Green/... card pools = `landSet` Mountain/Forest/....
 
+## "do the joker design list"
+The owner designs NEW Pokermon jokers on the wiki: every canonical Pokémon with no joker in Pokermon / Nacho /
+Pokermon+ has a card at `designwiki/#/pokermon-jokers/<dex>` with an owner-only "Submit design" box.
+1. Read the designs: `SELECT length(value) AS n, value FROM mp_store WHERE key='owner_todo:jokers'`
+   (entries `{ts, dex, name, ability, rarity, cost, notes}`; the wiki card has the type / stage / line and the art).
+2. Implement each as a joker in the Pokermon mod (`micatro/mods/pokermon/`, ported like its other jokers: ptype, stage,
+   rarity, cost, the ability). Art: the composed `designwiki/sprites/pokermon_jokers/<dex4>.png` + `_shiny.png`, copied
+   into the gitignored `micatro/mods/pokermon/assets/2x/` and registered in `ATLAS_FILES` (as Rage Candy Bar), then
+   `npm run deploy-micatro-mods` (+ `node tools/cloud/fetch-assets.mjs --write-manifest`). Add a micatro test that PLAYS
+   the ability.
+3. `node tools/micatro/gen_designwiki_pokermon_jokers.mjs` — the species drops off the wiki list (`designwiki_pokermon_jokers_test`
+   fails until it does), then redeploy the wiki art: `npx wrangler pages deploy designwiki/sprites --project-name=magepunk-sprites --branch=cloudflare-migration --commit-dirty=true`.
+4. Clear only what you applied: re-read `length(value)`; all applied →
+   `DELETE FROM mp_store WHERE key='owner_todo:jokers' AND length(value)=<n>`; some → POST `{action:'joker-design-done', tsList:[…]}`
+   with the owner's token (exact timestamps). A design filed meanwhile changes the length, so the delete no-ops.
+
 ## "start setup" — a cloud session readies itself (the owner types this, often from the iPhone app)
 Do ALL of it without asking questions; keep replies phone-short.
 1. `bash tools/cloud/setup.sh` (background; ~4 min; idempotent): npm install, Chrome at

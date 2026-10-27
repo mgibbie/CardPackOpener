@@ -732,6 +732,7 @@ const RATE_LIMITS = {
 	'ow-save': [60, 60_000], 'run-save': [60, 60_000], 'base-save': [20, 60_000],
 	'replay-playlist-put': [10, 60_000], // one per finished run — deliberate, never hot
 	'save-deck': [30, 60_000], 'open-pack': [60, 60_000],
+	'joker-design-add': [30, 60_000], // the owner filing a joker design from the wiki — deliberate, never hot
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
@@ -742,6 +743,9 @@ const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game bo
 const AFETCH_LIMIT = [40, 60_000];  // per-IP public override-image fetch (1 per overridden card per boot)
 const ART_OVERRIDE_MAX = 500_000;   // one re-encoded 768px jpeg as a data URL
 const ART_OVERRIDE_SLOTS = 20;      // bounded: fold into the repo before saving more
+// the owner's joker-design inbox (owner_todo:jokers): field caps (characters) and how many designs it holds before it
+// must be applied (500 x ~4 KB stays well under D1's row limit)
+const JOKER_DESIGN_MAX = { ability: 2000, notes: 2000, name: 60, rarity: 40, entries: 500 };
 const BUG_TEXT_MAX = 60_000;        // a bug report: up to ~60KB of markdown (testers write long ones)
 const BUG_OPEN_MAX = 60;            // per reporter, open (un-reviewed) reports
 const REPAIR_MAX_BYTES = 600_000;   // one queued save repair (a full save export)
@@ -1034,6 +1038,28 @@ function userStore(db) {
 		},
 		delete: async (k) => {
 			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
+		},
+		// A row and its SQL length(value) — the guard setIfLength compares against ({value: null, n: null} when absent).
+		getWithLength: async (k) => {
+			const row = await db.prepare('SELECT value, length(value) AS n FROM mp_store WHERE key = ?').bind(k).first();
+			return row ? { value: JSON.parse(row.value), n: Number(row.n) } : { value: null, n: null };
+		},
+		// Write `v` (null = delete) only if the row is still exactly as read: its length(value) is still `n` (n null = the row
+		// must not exist yet). ONE statement, so two writers that read the same row can't both land — the loser sees false,
+		// re-reads and retries (the owner joker-design inbox: an append never clobbers another append or a clear).
+		setIfLength: async (k, v, n) => {
+			let r;
+			if (n == null) {
+				r = await db.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO NOTHING')
+					.bind(k, JSON.stringify(v)).run();
+			} else if (v === null) {
+				r = await db.prepare('DELETE FROM mp_store WHERE key = ? AND length(value) = ?').bind(k, n).run();
+			} else {
+				r = await db.prepare('UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND length(value) = ?')
+					.bind(JSON.stringify(v), k, n).run();
+			}
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
 		},
 		// A player's won Micatro run replays that carry badges: [{stake, badges}] (the per-type record backfill,
 		// micatro-progress-get). A key-range scan of mreplay: rows (30-day GC), only the two small fields read out.
@@ -1706,6 +1732,59 @@ export default async function handler(req, env) {
 		const next = list.filter(e => !drop.has(e.ts));
 		await store.setJSON('owner_todo', next.length ? next : null);
 		return json({ ok: true, count: next.length });
+	}
+
+	// ---------- owner joker-design inbox (Design Wiki "Pokermon jokers not in the game yet") ----------
+	// The to-do inbox's twin for NEW Pokermon jokers: each card on designwiki/#/pokermon-jokers (a canonical species with no
+	// joker in Pokermon / Nacho / Pokermon+) shows the owner a "Submit design" box; a design lands here, in ONE exact key
+	// ('owner_todo:jokers', a JSON list, oldest first; the ':' keeps it out of the username keyspace, /^[a-z0-9_]{3,20}$/, and no GC
+	// prefix covers it) as {ts, dex, name, ability, rarity, cost, notes}. A dev session
+	// later reads it ("do the joker design list" in CLAUDE.md), implements the jokers in the Pokermon mod and clears what it
+	// applied. Owner-only (isAdmin; the username comes from the verified token above). Every write is guarded on the row's
+	// length (setIfLength) and retried on a conflict, so an append never clobbers another append or a clear; a clear names
+	// exact timestamps (no clear-everything, as todo-done).
+	if (action === 'joker-design-add' || action === 'joker-design-list' || action === 'joker-design-done') {
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
+		const KEY = 'owner_todo:jokers';
+		if (action === 'joker-design-list') {
+			const list = (await store.get(KEY)) || [];
+			const dex = body.dex == null ? null : Number(body.dex);
+			return json({ designs: dex == null ? list : list.filter(e => e.dex === dex) });
+		}
+		let entry = null, drop = null;
+		if (action === 'joker-design-add') {
+			const dex = Number(body.dex);
+			if (!Number.isInteger(dex) || dex < 1 || dex > 1025) return json({ error: 'bad dex number' }, 400);
+			const ability = String(body.ability || '').trim();
+			if (!ability) return json({ error: 'write the ability first' }, 400);
+			const name = String(body.name || '').trim(), rarity = String(body.rarity || '').trim(), notes = String(body.notes || '').trim();
+			if (ability.length > JOKER_DESIGN_MAX.ability || notes.length > JOKER_DESIGN_MAX.notes || name.length > JOKER_DESIGN_MAX.name || rarity.length > JOKER_DESIGN_MAX.rarity) return json({ error: 'too long' }, 400);
+			let cost = null;
+			if (body.cost != null && String(body.cost).trim() !== '') {
+				cost = Number(body.cost);
+				if (!Number.isInteger(cost) || cost < 0 || cost > 99) return json({ error: 'cost must be a whole number 0-99' }, 400);
+			}
+			entry = { dex, name, ability, rarity, cost, notes };
+		} else {
+			drop = new Set((Array.isArray(body.tsList) ? body.tsList : [body.ts]).map(Number).filter(Number.isFinite));
+			if (!drop.size) return json({ error: 'name the designs to clear (tsList)' }, 400);
+		}
+		for (let attempt = 0; attempt < 12; attempt++) {
+			// (lost the race: back off a random moment so the writers stop moving in lock-step)
+			if (attempt) await new Promise(r => setTimeout(r, Math.random() * 10 * attempt));
+			const cur = await store.getWithLength(KEY);
+			const list = Array.isArray(cur.value) ? cur.value : [];
+			let next;
+			if (entry) {
+				if (list.length >= JOKER_DESIGN_MAX.entries) return json({ error: 'the joker design list is full — apply it first' }, 400);
+				const last = list.length ? list[list.length - 1].ts : 0;
+				next = [...list, { ts: Math.max(Date.now(), last + 1), ...entry }];
+			} else next = list.filter(e => !drop.has(e.ts));
+			if (await store.setIfLength(KEY, next.length ? next : null, cur.n)) {
+				return json(entry ? { ok: true, count: next.length, design: next[next.length - 1] } : { ok: true, count: next.length });
+			}
+		}
+		return json({ error: 'the joker design list is busy — try again' }, 409);
 	}
 
 	// ---------- Bug Report Review list (playtesters -> owner) ----------
