@@ -1,12 +1,12 @@
 // micatro_deckeditor_pages_test.mjs — the deck editor's picker is PAGED (owner, 2026-10-27: "the deck creator mod breaks
 // on mobile when i have pokermon mods on because there are too many jokers. it needs to have pages").
-// Pokermon + Nacho + Pokermon+ give the joker picker 850 jokers. The old picker showed 48 and a "More" button that
-// added 48 more AND rebuilt every shown tile each press: reaching the last joker left 850 tiles / 859 canvases
+// Pokermon + Nacho + Pokermon+ give the joker picker 852 jokers. The old picker showed 48 and a "More" button that
+// added 48 more AND rebuilt every shown tile each press: reaching the last joker left 852 tiles / 859 canvases
 // (89 MB of canvas backing store, ~7,600 canvases created on the way) in a phone's tab. Now:
 //   - phone portrait (390 x 844, CPU x4): the picker opens within a budget; only ONE PAGE of tiles (one screen) is
 //     built, and the page's canvases are reused page to page (the count never grows)
-//   - Prev / Next + "Page 1 / N" (N = ceil(850 / page)); Next / Prev move a page; a controller's RB / LB turn it
-//   - the search runs over all 850 (a joker from the last page is found: "1 of 850 Jokers"); the Mod filter too
+//   - Prev / Next + "Page 1 / N" (N = ceil(852 / page)); Next / Prev move a page; a controller's RB / LB turn it
+//   - the search runs over all 852 (a joker from the last page is found: "1 of 852 Jokers"); the Mod filter too
 //   - a joker picked on page 3 keeps its ✓ after paging away and back, and is in the deck's Starting Jokers
 //   - a deck with a joker from the LAST page saves (Save & use) and its run starts with that joker
 //   - phone landscape (844 x 390): one page fits the screen; desktop (1600 x 900): 48 a page, as before
@@ -40,7 +40,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(100); } return false; }
 const MODS = ['pokermon', 'nacho', 'pokermonplus'];
-const TOTAL = 850;          // jokers with the three on (150 base + 611 Pokermon + 66 Nacho + 23 Pokermon+)
+const TOTAL = 852;          // jokers with the three on (150 base + 613 Pokermon + 66 Nacho + 23 Pokermon+)
 const OPEN_BUDGET = 4000;   // ms, tap -> the first page drawn, at CPU x4
 
 const server = http.createServer(async (req, res) => {
@@ -159,7 +159,7 @@ try {
 		let p = await pick(page);
 		A(openMs < OPEN_BUDGET, `phone: the joker picker opens within ${OPEN_BUDGET} ms at CPU x4`, openMs + ' ms');
 		await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
-		A(/850 Jokers/.test(p.note), `all ${TOTAL} jokers (Pokermon + Nacho + Pokermon+) are offered`, p.note);
+		A(new RegExp(TOTAL + ' Jokers').test(p.note), `all ${TOTAL} jokers (Pokermon + Nacho + Pokermon+) are offered`, p.note);
 		const size = p.shown;
 		A(p.ind && size >= 10 && size <= 48 && p.tiles === size && p.canvases === size, 'phone: only one page of tiles is built (one canvas each)', JSON.stringify({ size, tiles: p.tiles, canvases: p.canvases, ind: p.ind, more: p.more }));
 		A(p.overflow <= 2 && p.lastIn, 'phone: a page is one screen (the picker does not scroll)', JSON.stringify({ overflow: p.overflow, lastIn: p.lastIn }));
@@ -227,13 +227,13 @@ try {
 		await page.keyboard.type(lastName);
 		await sleep(150);
 		p = await pick(page);
-		A(p.keys.includes(lastKey) && /of 850 Jokers/.test(p.note) && (p.ind === 'Page 1 / 1' || p.ind === null || p.ind === 'Page 1 / 1'), `search "${lastName}" finds the last page's joker (${p.note})`, JSON.stringify({ keys: p.keys, note: p.note, ind: p.ind }));
+		A(p.keys.includes(lastKey) && new RegExp('of ' + TOTAL + ' Jokers').test(p.note) && (p.ind === 'Page 1 / 1' || p.ind === null || p.ind === 'Page 1 / 1'), `search "${lastName}" finds the last page's joker (${p.note})`, JSON.stringify({ keys: p.keys, note: p.note, ind: p.ind }));
 		A(await page.evaluate(() => getComputedStyle(document.querySelector('.cd-pager')).display === 'none'), 'one page of matches: no pager');
 		await page.evaluate(() => { const q = document.querySelector('.cd-search'); q.value = ''; q.dispatchEvent(new Event('input')); });
 		// ---- the Mod filter, across every page, then paged
 		for (let i = 0; i < 5 && !/Pokermon\+/.test(await text(page, '[data-filter="mod"]')); i++) await tap(page, '[data-filter="mod"]', { touch: true });
 		p = await pick(page);
-		A(/Pokermon\+/.test(await text(page, '[data-filter="mod"]')) && /^23 of 850/.test(p.note) && p.ind === `Page 1 / ${Math.ceil(23 / size)}`, 'Mod filter: Pokermon+ = 23 of 850, paged', JSON.stringify({ note: p.note, ind: p.ind }));
+		A(/Pokermon\+/.test(await text(page, '[data-filter="mod"]')) && new RegExp('^23 of ' + TOTAL).test(p.note) && p.ind === `Page 1 / ${Math.ceil(23 / size)}`, 'Mod filter: Pokermon+ = 23 of ' + TOTAL + ', paged', JSON.stringify({ note: p.note, ind: p.ind }));
 		await shot(page, 'picker-filter-phone');
 		for (let i = 0; i < 5 && !/All/.test(await text(page, '[data-filter="mod"]')); i++) await tap(page, '[data-filter="mod"]', { touch: true });
 		// ---- pick the last joker of the last page, then build + play the deck
