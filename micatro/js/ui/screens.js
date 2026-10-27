@@ -11,7 +11,7 @@ import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specia
 import { aliasesOf } from '../mods/aliases.js';
 import { supersededFrom } from '../mods/superseded.js';
 import { stakeLadder, deckBest, stakeOpen, fallbackIndex, lockText } from './stakeunlocks.js';
-import { stickDeckCanvas } from './decksticker.js';
+import { stickDeckCanvas, stickDeckCanvasCentred } from './decksticker.js';
 import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins, typeRecord, totalLevels } from './progress.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -901,7 +901,7 @@ function decksPanel() {
     ctx.clearRect(0, 0, x.c.width, x.c.height);
     if (!b.mod) drawCell(ctx, 'centers', b.pos, 0, 0, x.c.width, x.c.height);
     else if (!drawModCell(ctx, b.atlas, b.pos, 0, 0, x.c.width, x.c.height)) drawCell(ctx, 'centers', { x: 0, y: 2 }, 0, 0, x.c.width, x.c.height);
-    stickDeckCanvas(x.c, b.key);
+    stickDeckCanvasCentred(x.c, b.key);   // big and centred here (owner)
   }
   function draw() {
     page = Math.min(page, pages() - 1);
