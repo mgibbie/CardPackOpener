@@ -22,6 +22,9 @@
 // Trapinch -> Vibrava -> Flygon (Sand Pit: each card you discard banks +2 / +3 Chips on the joker, evolving after 40 then 60 more;
 // Vibrava +1 discard; Flygon keeps the bank and gives X1 + 0.25 per discard used this round; Earth; contentRev 25) — upstream 3.9.1
 // draws them too (Natdex 24 / 26 / 28, 21).
+// Spoink -> Grumpig (Pearl: each end of round a held unsealed card gains a Pink Seal; Spoink X0.1 per Pink Seal trigger, evolving after 8;
+// Grumpig makes Pink Seals trigger every hand, X0.15 per hand one triggers in, X0.3 on an overflow; Psychic; contentRev 26) — upstream
+// 3.9.1 draws them too (Natdex 18 / 20, 21).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -289,6 +292,37 @@ function sand_main(card, context) {
 /** Flygon, Sandstorm: X(1 + Xmult_mod per discard used this round). A discard USE counts once however many cards it had; effect
  *  discards (hook) never raise discards_used; it is 0 again each round (run.js new round). */
 const sandstorm_x = (ex) => r3(1 + ex.Xmult_mod * ((G.GAME && G.GAME.current_round && G.GAME.current_round.discards_used) || 0));
+
+/** Spoink / Grumpig, Pearl: at the end of the round, a random card held in hand with no seal gains a Pink Seal (the run's seeded RNG;
+ *  none unsealed: nothing). Once per round: not Blueprint, not a joker retrigger, not on a game over. */
+function pearl(card, context) {
+  if (!round_end(context) || context.blueprint || context.retrigger_joker || context.game_over) return;
+  const bare = G.hand.cards.filter((c) => !c.seal && !c.destroyed && !c.shattered && !c.removed);
+  if (!bare.length) return;
+  const target = pseudorandom_element(bare, pseudoseed('poke_spoink_pearl'))[0];
+  target.set_seal('poke_pink_seal');
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Pearl!', colour: 'pink' });
+}
+/** Spoink / Grumpig: the banked X Mult (`pink_Xmult`, in no energy field), every hand (Blueprint copies it). */
+function pearl_main(card, context) {
+  const x = card.ability.extra.pink_Xmult;
+  if (context.joker_main && x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+  return undefined;
+}
+/** Grumpig's gain for the current hand: Xmult_mod for a hand with a Pink Seal trigger, twice that (Black Pearl) when one of them had no
+ *  room for its Energy — once per hand, the overflow gain replacing the normal one (G.GAME.hands_played names the hand: it only goes up
+ *  after the hand has scored). */
+function grumpig_gain(card, overflow) {
+  const ex = card.ability.extra, hand_no = G.GAME.hands_played || 0;
+  if (ex.pink_hand !== hand_no) { ex.pink_hand = hand_no; ex.pink_gain = 0; }
+  const want = overflow ? 2 * ex.Xmult_mod : ex.Xmult_mod;
+  if (want <= (ex.pink_gain || 0) + 1e-12) return;
+  const add = want - (ex.pink_gain || 0);
+  ex.pink_gain = want;
+  ex.pink_Xmult = r3(ex.pink_Xmult + add);
+  card_eval_status_text(card, 'extra', null, null, null, { message: overflow ? 'Black Pearl!' : localize('k_upgrade_ex'), colour: 'XMULT' });
+}
+const pink_tip = (info_queue) => info_queue.push({ key: 'poke_pink_seal_seal', set: 'Other' });
 
 /** Kubfu / Urshifu, training: X Mult grows on a hand of exactly 1 or exactly 5 scoring cards (Kubfu counts each school). */
 function training(card, context) {
@@ -1006,6 +1040,56 @@ defineJokers({
     calculate(self, card, context) { return sand_main(card, context); },
   },
 
+  // ---------------------------------------------------------------- LINE F6: Spoink -> Grumpig (Psychic, Gen 3)
+  // The owner's design (2026-10-27): Pearl. At the end of each round a random card held in hand with no seal gains a Pink Seal
+  // (pearl: seeded; none unsealed, nothing). Every Pink Seal trigger (its scoring effect firing, with or without room for the Energy:
+  // seals1.js pink_triggered -> the center's poke_pink_trigger hook; Blueprint has none, so it copies the X Mult and never counts)
+  // grows the banked X Mult (`pink_Xmult`, in no energy field: never retroactive; kept through evolution). The gains are `Xmult_mod`
+  // (Energy +20% of its base each: Spoink X0.1 -> +0.02, Grumpig X0.15 -> +0.03, its Black Pearl twice that -> +0.06).
+  // Spoink 325: Common $5; X0.1 per Pink Seal trigger; evolves after 8 triggers (`pink_triggers`, at end of round).
+  spoink: {
+    name: 'spoink', poke_sprite391: sprite('Natdex', 18, 21),
+    config: { evo_rqmt: 8, extra: { pink_Xmult: 1, Xmult_mod: 0.1, pink_triggers: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'seals', 'energy', 'scaling_evo'], poke_after: 'torkoal',
+    poke_custom_values_to_keep: ['pink_Xmult'],
+    poke_pink_trigger(self, card) {
+      const ex = card.ability.extra;
+      ex.pink_triggers = (ex.pink_triggers || 0) + 1;
+      ex.pink_Xmult = r3(ex.pink_Xmult + ex.Xmult_mod);
+      card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'XMULT' });
+    },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); pink_tip(info_queue);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.pink_Xmult), r3(ex.Xmult_mod), ex.pink_triggers || 0, self.config.evo_rqmt] };
+    },
+    calculate(self, card, context) {
+      pearl(card, context);
+      return pearl_main(card, context) || scaling_evo(self, card, context, 'j_poke_grumpig', card.ability.extra.pink_triggers || 0, self.config.evo_rqmt);
+    },
+  },
+  // Grumpig 326: Safari $8. Spoink's bank and Pearl; Spoink Dance: Pink Seals trigger on EVERY hand while it is held (seals1.js);
+  // X0.15 for each hand in which a Pink Seal triggered (once per hand, not per seal); Black Pearl: X0.3 instead when one of that
+  // hand's Pink Seals had no room for its Energy (the overflow gain replaces the normal one: still once per hand).
+  grumpig: {
+    name: 'grumpig', poke_sprite391: sprite('Natdex', 20, 21),
+    config: { extra: { pink_Xmult: 1, Xmult_mod: 0.15 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'seals', 'energy'], poke_after: 'spoink',
+    poke_custom_values_to_keep: ['pink_Xmult'],
+    poke_pink_trigger(self, card, seal_card, overflow) { grumpig_gain(card, overflow); },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); pink_tip(info_queue);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.pink_Xmult), r3(ex.Xmult_mod), r3(2 * ex.Xmult_mod)] };
+    },
+    calculate(self, card, context) {
+      pearl(card, context);
+      return pearl_main(card, context);
+    },
+  },
+
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -1052,6 +1136,7 @@ export const DESIGN_FAMILIES = [
   ['whismur', 'loudred', 'exploud'],
   ['gulpin', 'swalot'],
   ['trapinch', 'vibrava', 'flygon'],
+  ['spoink', 'grumpig'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -1071,6 +1156,7 @@ const STOCK_MULT = ['Scored {C:diamonds}Diamond{} cards give', '{C:mult}+#3#{} M
 const STOCK_ENERGY = '{C:inactive,s:0.8}(Each Energy: +1 max Stockpile)';
 const SAND_PIT = (name) => ['{C:attention}' + name + ':{} each card you', 'discard permanently adds', '{C:chips}+#2#{} Chips to this Joker', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)'];
 const SAND_EVO = ['{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} discarded cards)', '{C:inactive,s:0.8}(Discarded: #3#/#4#)'];
+const PEARL = ['{C:attention}Pearl:{} at end of round, a', 'random card held in hand', 'with no seal gains a {C:attention}Pink Seal{}'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -1165,6 +1251,16 @@ export const DESIGN_LOC = {
     j_poke_flygon: { name: 'Flygon', text: [
       ['{C:chips}+#1#{} Chips {C:inactive}(kept from Vibrava)'],
       ['{C:poke_sand}Sandstorm:{} {X:mult,C:white} X#2# {} Mult for', 'each discard used this round', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
+    j_poke_spoink: { name: 'Spoink', text: [
+      PEARL,
+      ['Gains {X:mult,C:white} X#2# {} Mult each', 'time a {C:attention}Pink Seal{} triggers', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)',
+        '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} Pink Seal triggers)', '{C:inactive,s:0.8}(Pink Seal triggers: #3#/#4#)'],
+    ] },
+    j_poke_grumpig: { name: 'Grumpig', text: [
+      PEARL,
+      ['{C:attention}Spoink Dance:{} {C:attention}Pink Seals{}', 'trigger on every hand'],
+      ['Gains {X:mult,C:white} X#2# {} Mult for each', 'hand a {C:attention}Pink Seal{} triggers in', '{C:attention}Black Pearl:{} {X:mult,C:white} X#3# {} instead if', 'one had no room for its Energy', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
     ] },
     j_poke_mudbray: { name: 'Mudbray', text: ['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
     j_poke_mudsdale: { name: 'Mudsdale', text: [

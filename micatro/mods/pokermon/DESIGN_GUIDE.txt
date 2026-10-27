@@ -210,6 +210,7 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
                 cards", "after using 20 consumables", "after rerolling 7 times".
                 House: "after 40 discarded cards" (Trapinch; Vibrava 60 more), counting each card a
                 player discard holds, with a "(Discarded: k/40)" progress line.
+                House: "after 8 Pink Seal triggers" (Spoink), with a "(Pink Seal triggers: k/8)" line.
   item_evo      An evolution Item sets extra.evolve, and the joker evolves at the end of the next
                 round. item_req names the item.
                   Linking Cord (all 10 trade evolutions)   Moon Stone (7)   Dusk Stone (5)
@@ -324,11 +325,27 @@ Designer consequences:
      energize ignores, with its gain in an energy field (chip_mod / mult_mod / Xmult_mod). Energy
      then raises only future gains, never what is already banked (not retroactive), and the bank
      carries through evolution by poke_custom_values_to_keep.
+  6. An OVERFLOW gain (house pattern: Grumpig's Black Pearl) is the normal gain doubled, computed
+     from the same Xmult_mod (2 x Xmult_mod), so one energy field scales both and the ratio holds.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
   joker's type); Porygon-Z (when you use an Energy); Pyroar (Flush with a King or Queen);
   Ludicolo (2-card hands); Jelly Donut; Nightmare (Spectral).
+
+House patterns around the Pink Seal (the owner's Spoink line, jokers/pokejokers_designs.js):
+  - Seal-adding joker: at end of round a random held card WITH NO SEAL gains a Pink Seal (Pearl:
+    the run's seeded pseudorandom_element; none unsealed, nothing; not Blueprint, once a round).
+  - "Trigger every hand" override: Pink Seals fire only in the round's first hand (upstream), but
+    seals1.js's check is `hands_played === 0 || find_card('j_poke_grumpig').length > 0`: a narrow
+    key check, so with no (undebuffed) Grumpig nothing changes for vanilla, other mods or the
+    Obituary Deck. Each trigger still runs the Obituary fall-off roll and the Bird Energy removal.
+  - Counting triggers: the seal calls every owned joker's center hook poke_pink_trigger(self,
+    joker, seal_card, overflow) once per trigger (retriggers count again), with or without room
+    for the Energy. A Blueprint has no hook, so it copies the X Mult and never counts.
+  - Overflow-to-X-Mult: when the seal has no consumable room (overflow), Grumpig gains X0.3
+    instead of X0.15 for that hand: once per hand, the overflow gain REPLACING the normal one
+    (a hand with 3 seals, one overflowed, gains X0.3 total). G.GAME.hands_played names the hand.
 
 Energy-themed jokers:
   Ralts/Kirlia: +Mult per Energized Joker.
@@ -753,6 +770,9 @@ Examples:
                        after 9 Boosters.
   Mew (L $20)          At the end of the shop, create a Negative Tarot, Spectral or Item, or a
                        Negative Joker 15% of the time.
+  Owner's lines: Spoink -> Grumpig (C $5 -> S $8): Pearl adds a Pink Seal to a held unsealed card
+    each round; X0.1 banked per Pink Seal trigger (evolves after 8); Grumpig makes Pink Seals
+    trigger every hand, X0.15 per hand one triggers in, X0.3 instead on an overflow (Black Pearl).
 Typical numbers:
   Basic     X 1.2-2 | card X 2 | $ 1-3 | gain +M 3-5 | gain X 0.05-0.2
   Stage 1   X 1.3-2.5~2.5 | card X 2.2 | $ 1-6 | gain +M 3-8 | gain X 0.25

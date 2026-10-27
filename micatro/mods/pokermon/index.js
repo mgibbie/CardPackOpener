@@ -834,7 +834,10 @@ export const POKERMON = registerMod({
   // 25 = the owner's Trapinch line (Trapinch -> Vibrava -> Flygon; jokers/pokejokers_designs.js): Sand Pit — every card the player
   // discards banks +2 (Vibrava +3) Chips on the joker, evolving after 40 then 60 more discarded cards; Vibrava +1 discard; Flygon
   // keeps the bank and gives X1 + 0.25 per discard used this round (Sandstorm).
-  contentRev: 25,
+  // 26 = the owner's Spoink line (Spoink -> Grumpig; jokers/pokejokers_designs.js): Pearl — at end of round a random unsealed held
+  // card gains a Pink Seal; Spoink banks X0.1 per Pink Seal trigger, evolving after 8; Grumpig makes Pink Seals trigger on every hand
+  // (seals/seals1.js) and banks X0.15 per hand one triggers in (Black Pearl: X0.3 when one had no room for its Energy).
+  contentRev: 26,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

@@ -5,7 +5,7 @@
 //   - a sample of the taken rarities / costs / compat flags / gates / config numbers, fired through real plays where a
 //     number is read in play; a sample of the SKIPPED ones (reworks: still the 3.2.1 numbers); the house rules intact
 //   - the boss blind under its new key (old key resolves: aliases.js), fought
-//   - version '3.9.1', contentRev 25 (pin '3.9.1+r25', the owner's Trapinch line; r24 the owner's Gulpin line; r23 the owner's Sprigatito rework; r22 the owner's Type Sleeves; r21 the owner's Whismur line; r20 the owner's Sprigatito line; r19 the owner's 25 new jokers; r18 the Hazard follow-ups (held-Hazard retriggers); r17 the leftovers batch; r16 the seals fix; batch 17 was r15 (non-Pokémon jokers, blinds, Elite, challenges, object_weights); batch 16 was r14; sub-batch 15b was r13, sub-batch 15 was r12, sub-batch 14 r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
+//   - version '3.9.1', contentRev 26 (pin '3.9.1+r26', the owner's Spoink line; r25 the owner's Trapinch line; r24 the owner's Gulpin line; r23 the owner's Sprigatito rework; r22 the owner's Type Sleeves; r21 the owner's Whismur line; r20 the owner's Sprigatito line; r19 the owner's 25 new jokers; r18 the Hazard follow-ups (held-Hazard retriggers); r17 the leftovers batch; r16 the seals fix; batch 17 was r15 (non-Pokémon jokers, blinds, Elite, challenges, object_weights); batch 16 was r14; sub-batch 15b was r13, sub-batch 15 was r12, sub-batch 14 r11, sub-batch 13 r10, sub-batch 12 r9, sub-batch 11 r8, batch 10b r7, batch 10 r6, batch 8 r5, batch 7 r4, batch 6 r3, batch 5 r2): a 3.2.1 run / replay reads as changed
 //   (batch 6 moved pokejokers_01-08 onto their 3.9.1 behaviour: pokermon_391_reworks_a_test.mjs; the samples below that
 //   were batch-5 skips in that range now sit outside it)
 //   - art (when it's on disk: this checkout, else the main checkout of a worktree): every Pokermon card drawn from a
@@ -28,17 +28,17 @@ const { ok, done } = T();
 const C = (n) => P_CENTERS['j_poke_' + n];
 
 // ---------------------------------------------------------------- version pin
-ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 25, 'Pokermon is version 3.9.1, contentRev 25', [MODS.pokermon.version, MODS.pokermon.contentRev]);
-ok(PINS.modPin('pokermon') === '3.9.1+r25', 'its pin is 3.9.1+r25', PINS.modPin('pokermon'));
+ok(MODS.pokermon.version === '3.9.1' && MODS.pokermon.contentRev === 26, 'Pokermon is version 3.9.1, contentRev 26', [MODS.pokermon.version, MODS.pokermon.contentRev]);
+ok(PINS.modPin('pokermon') === '3.9.1+r26', 'its pin is 3.9.1+r26', PINS.modPin('pokermon'));
 ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'the legacy table still reads old recipes as 3.2.1+r1 (frozen)');
 {
   const s = new Session();
   s.start({ seed: 'PK391PIN', mods: ['pokermon'] });
-  ok(s.recipe.modVersions.pokermon === '3.9.1+r25', 'a new run is pinned 3.9.1+r25', s.recipe.modVersions);
+  ok(s.recipe.modVersions.pokermon === '3.9.1+r26', 'a new run is pinned 3.9.1+r26', s.recipe.modVersions);
   const old = { ...s.recipe, modVersions: { pokermon: '3.2.1+r1' } };
   const d = Session.pinDiff(old);
-  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r25', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
-  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 25). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
+  ok(d.length === 1 && d[0].recorded === '3.2.1+r1' && d[0].current === '3.9.1+r26', 'a run recorded on 3.2.1+r1 differs (the resume prompt)', d);
+  ok(PINS.replayWarning(d) === 'Recorded with Pokermon 3.2.1 (rev 1); current 3.9.1 (rev 26). Playback may differ.', 'the replay banner names both versions', PINS.replayWarning(d));
   const legacy = { ...s.recipe };
   delete legacy.modVersions; delete legacy.engineRev;
   ok(Session.pinDiff(legacy).some((x) => x.id === 'pokermon' && x.recorded === '3.2.1+r1'), 'a pre-pin recipe (legacy) differs too');
