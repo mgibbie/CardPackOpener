@@ -2254,6 +2254,7 @@ has these species.
   Nothing to deploy for the mod. The wiki drops them (412 missing).
 - **Tests**: `micatro/tests/mods/pokermon_gulpin_test.mjs` (2 passed / 18 failed on origin/main, 59 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 34 defs), `micatro_mod_version_pin`.
+- **Fuzz**: vanilla identical (60 / 9722 / 13 / 17); Pokermon diverges at pool rolls, all ok (24 / 3414 -> 3714 / 13 / 6 -> 7); all mods 16 / 2966 / 13 / 5, all ok.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
