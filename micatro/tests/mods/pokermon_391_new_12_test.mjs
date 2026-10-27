@@ -61,7 +61,8 @@ sec(() => {
   // Their place in the joker list: 3.9.1's file order.
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
-  const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
+  // (and past the owner's designs: the Spoink line sits between Torkoal and Spinda)
+  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)]);
   const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('skitty', 'delcatty') && after('delcatty', 'sableye') && after('sableye', 'aron') && after('aggron', 'meditite') && after('minun', 'volbeat')
     && after('wailord', 'numel') && after('mega_camerupt', 'torkoal') && after('torkoal', 'spinda'), 'inserted in 3.9.1 file order');

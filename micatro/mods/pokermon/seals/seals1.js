@@ -1,7 +1,8 @@
 // Pokermon 3.9.1 — seals/seals1.lua (Pink / Silver on 3.9.1 since batch 17; the Silver Seal on upstream main's refactor): the Pink
 // Seal (scored in the round's first hand, with room: an Energy matching one of your jokers, else a random one; with the Obituary
 // Sleeve on the Obituary Deck the seal then has a 1 in 3 chance to fall off — G.GAME.modifiers.poke_pink_seal_selfdestruct,
-// sleeves.js) and the Silver Seal (held in hand while a hand scores: "+1 Item" and an Item if there is room, then the card is
+// sleeves.js; house: while the owner's Grumpig is held, every hand, and each trigger is told to the Spoink line — pink_triggered)
+// and the Silver Seal (held in hand while a hand scores: "+1 Item" and an Item if there is room, then the card is
 // discarded through pokermon.discard_cards — the discard pipeline, every joker's `discard` effect applied). The card is made
 // with SMODS.add_card. Seal `calculate` runs through the engine's mod_card_calculate seam (core.js) with main_scoring, like
 // SMODS 1.0. Players get them from Obituary / Revenant, the Obituary / Revenant decks and sleeves, and (Steamodded) the base
@@ -15,6 +16,15 @@ import { discard_cards_from_highlighted } from '../../../js/engine/run.js';
 
 const FILE = 'seals/seals1.lua';
 const has_room = () => G.consumeables.cards.length + G.GAME.consumeable_buffer < G.consumeables.config.card_limit;
+/** A Pink Seal's scoring effect fired (house, the owner's Spoink line): every owned joker with a `poke_pink_trigger(self, joker, seal_card,
+ *  overflow)` center hook hears it, once per trigger (each retrigger of the card is one more), not debuffed; a Blueprint has no hook, so it
+ *  never counts. `overflow`: no consumable room, so no Energy (Grumpig's Black Pearl). No such joker owned: nothing happens. */
+function pink_triggered(card, overflow) {
+  for (const j of G.jokers.cards.slice()) {
+    const c = j.config.center;
+    if (c.poke_pink_trigger && !j.debuff) c.poke_pink_trigger(c, j, card, overflow);
+  }
+}
 
 /**
  * pokermon.discard_cards (upstream main, functions/pokeutils.lua, 2ce6bc7): discard these hand cards outside the Discard button.
@@ -35,7 +45,12 @@ defineSeals({
   pink_seal: {
     config: { num: 1, dem: 3 }, // (3.9.1: the Obituary Sleeve's 1 in 3 fall-off chance)
     calculate(self, card, context) {
-      if (context.cardarea === G.play && !context.repetition_only && context.main_scoring && G.GAME.current_round.hands_played === 0) {
+      // (house, the owner's Grumpig — jokers/pokejokers_designs.js: while a Grumpig is held, not debuffed, Pink Seals trigger on
+      // EVERY hand; without one, the round's first hand only, as upstream)
+      if (context.cardarea === G.play && !context.repetition_only && context.main_scoring
+          && (G.GAME.current_round.hands_played === 0 || find_card('j_poke_grumpig').length > 0)) {
+        // (house: the owner's Spoink line counts every trigger, with or without room for the Energy — `overflow` when none)
+        pink_triggered(card, !has_room());
         if (has_room()) {
           G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1;
           G.E_MANAGER.add_event(() => {

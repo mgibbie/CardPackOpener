@@ -265,7 +265,8 @@ upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9
 follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), `3.9.1+r20` for the owner's
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
-Gulpin line ("The owner's Gulpin line" below), **`3.9.1+r25`** since the owner's Trapinch line ("The owner's Trapinch line" below)
+Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), **`3.9.1+r26`** since the owner's Spoink line ("The owner's Spoink
+line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2280,6 +2281,32 @@ Nacho nor Pokermon+ has these species.
   `poke_sprite391`. Nothing to deploy for the mod. The wiki drops them (409 missing).
 - **Tests**: `micatro/tests/mods/pokermon_trapinch_test.mjs` (2 passed / 16 failed on origin/main, 75 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 37 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (855 jokers).
+
+### The owner's Spoink line (2026-10-27, branch `feat/pokermon-spoink-line`)
+Pinned **`3.9.1+r26`** (`contentRev: 26`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Spoink (325) -> Grumpig (326), Psychic, in
+`jokers/pokejokers_designs.js` (LINE F6; 39 defs now), after Torkoal in Pokédex order. Neither Nacho nor Pokermon+ has these species.
+- **Pearl** (both): at the end of each round a random card held in hand with **no seal** gains a **Pink Seal** (`pseudorandom_element`,
+  seed `poke_spoink_pearl`; none unsealed: nothing). Once a round: not Blueprint, not a joker retrigger, not on a game over.
+- **Counting a trigger**: `seals/seals1.js` `pink_triggered` calls each owned (undebuffed) joker's center hook `poke_pink_trigger(self, joker,
+  seal_card, overflow)` whenever the Pink Seal's scoring effect fires — with or without room for its Energy (`overflow` = no room); each
+  retrigger of the card is one more. A Blueprint has no hook: it copies the X Mult and never counts.
+- **Spoink** (Common **$5**): **X0.1** banked per trigger (`pink_Xmult`, in no energy field; `Xmult_mod` the gain), given every hand.
+  **Evolves after 8 triggers** (`pink_triggers`, scaling_evo at end of round), "(Pink Seal triggers: k/8)". The bank carries
+  (`poke_custom_values_to_keep`).
+- **Grumpig** (Safari **$8**): Spoink's bank and Pearl. **Spoink Dance**: Pink Seals trigger on **every hand** while it is held — the seal's
+  `hands_played === 0` check gained `|| find_card('j_poke_grumpig').length > 0` (a debuffed Grumpig doesn't count); without one nothing
+  changes (vanilla, other mods, the Obituary Deck). Each trigger still rolls the Obituary fall-off and drops the seal for a Bird Energy.
+  **X0.15** for each hand a Pink Seal triggers in (once per hand, not per seal; `G.GAME.hands_played` names the hand). **Black Pearl**:
+  a trigger with no consumable room makes that hand's gain **X0.3** instead (= 2 x `Xmult_mod`): still once per hand, the overflow gain
+  replacing the normal one (one roomy + one overflowed seal: X0.3 total).
+- **Energy**: the gains only, `Xmult_mod` +20% of its base per Energy: Spoink X0.12 / X0.14 / X0.16 (Colorless +0.01); Grumpig X0.18 /
+  X0.21 / X0.24, Black Pearl X0.36 / X0.42 / X0.48. The bank is never retroactive; Energy carries through the evolution (re-applied to
+  Grumpig's base). Adding the seal is fixed.
+- **Art: upstream's own.** 3.9.1 draws both on the Natdex sheet ({18,21}, {20,21}, Shiny twins): `poke_sprite391`. Nothing to deploy for
+  the mod. The wiki drops them (407 missing).
+- **Tests**: `micatro/tests/mods/pokermon_spoink_test.mjs` (4 passed / 16 failed on origin/main; 38 / 29 with only seals1.js reverted; 67 / 0
+  here). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 39 defs), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (857 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
