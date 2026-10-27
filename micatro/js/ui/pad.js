@@ -12,6 +12,7 @@
 //   context   card info (tooltip) on/off
 //   LB / RB   the screen's two main buttons: Play Hand / Discard, Select / Skip blind,
 //             Next Round / Reroll, Cash Out, Skip pack
+//             (in the deck editor's picker: previous / next page)
 //   cancel    close a dialog · deselect
 //   Start     pause menu (options, speed, run info, deck, quit)   Select  deck view
 // Replay viewer (?replay=): LB / RB step back / forward, secondary plays / pauses, and the replay
@@ -213,6 +214,13 @@ export function initPad({ board, stage, UI, readOnly, onMenu, mainMenu, replay =
   function pairFor(v) { if (!v) return [null, null]; if (PACK.test(v.state)) return [null, '.b-skip-pack']; return BUTTON_PAIRS[v.state] || [null, null]; }
   function shoulder(i) {
     if (replay && !topModal()) { replay.step(i ? 1 : -1); return; }
+    // a paged list in the open dialog (the deck editor's picker): LB / RB turn the page
+    const pg = topModal() && topModal().querySelector('[data-pad-pager]');
+    if (pg) {
+      const b = pg.querySelector(i ? '.b-cd-pg-next' : '.b-cd-pg-prev');
+      if (b && !b.disabled && shownEl(b, true)) { clickLike(b); requestAnimationFrame(() => { ensure(); place(); }); }
+      return;
+    }
     if (readOnly || topModal()) return;
     const sel = pairFor(view())[i];
     if (!sel) return;

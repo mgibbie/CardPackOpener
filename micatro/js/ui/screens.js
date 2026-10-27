@@ -113,6 +113,8 @@ export function cardCanvas(d, cls, backKey) {
   drawStill(c.getContext('2d'), d, backKey);
   return c;
 }
+/** Redraw an existing cardCanvas with another card (a reused thumbnail: the deck editor's paged picker). */
+export function redrawCard(c, d, backKey) { drawStill(c.getContext('2d'), d, backKey); }
 /** A still card: the face plus its floating layer (legendaries, The Soul, a Mega Pokémon's sprite) flattened on. */
 /** A still card's face data: a mod UI's stand-in (ui/modui.js still: Pokermon's Series A art), else the card itself. */
 export function stillData(d) {
