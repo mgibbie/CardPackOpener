@@ -13,8 +13,8 @@
 // Saved decks: on the player's account (server/mp.mjs micatro-decks-get / -put, row
 // `micatrodecks:<user>`) when logged in, else in this browser's localStorage.
 // Loaded on demand by screens.js (the New Run screen's "Custom deck" row).
-import { modal, closeModal, cardCanvas, stillData } from './screens.js';
-import { composeFace, FACE_W, FACE_H, modAtlasesOf } from './cardsprite.js';
+import { modal, closeModal, cardCanvas, redrawCard, stillData } from './screens.js';
+import { modAtlasesOf } from './cardsprite.js';
 import { CENTERS, LOC, BACK_LIST, MODREG, onModAtlas, cssColour } from './assets.js';
 import { esc } from './markup.js';
 import { sound } from './sound.js';
@@ -114,20 +114,19 @@ function faceOf(key) {
   if (c.mod) return { center: key, mod: c.mod, atlas: c.atlas, pos: c.pos, set: c.set, name: nameOf(key) };
   return { center: key };
 }
-// thumbnails waiting for a mod atlas: recomposed when it loads
+// thumbnails waiting for a mod atlas: redrawn when it loads ({c, d, atl, backKey}; a paged picker tile's d changes)
 const live = new Set();
 let atlasHooked = false;
+function hookAtlases() {
+  if (atlasHooked) return;
+  atlasHooked = true;
+  onModAtlas((name) => { for (const t of [...live]) { if (!t.c.isConnected) { live.delete(t); continue; } if (t.d && t.atl.includes(name)) redrawCard(t.c, t.d, t.backKey); } });
+}
 function thumb(d, cls, backKey) {
   const c = cardCanvas(d, cls || 'cd-thumb', backKey);
   const atl = modAtlasesOf(stillData(d)); // (the art it draws: a mod's still stand-in, e.g. Pokermon's Series A)
   if (d.facing === 'back' && MODREG.center(backKey) && MODREG.center(backKey).atlas) atl.push(MODREG.center(backKey).atlas);
-  if (atl.length) {
-    live.add({ c, d, atl, backKey });
-    if (!atlasHooked) {
-      atlasHooked = true;
-      onModAtlas((name) => { for (const t of [...live]) { if (!t.c.isConnected) { live.delete(t); continue; } if (t.atl.includes(name)) composeFace(t.c.getContext('2d'), t.d, t.backKey); } });
-    }
-  }
+  if (atl.length) { live.add({ c, d, atl, backKey }); hookAtlases(); }
   return c;
 }
 const itemThumb = (key, cls) => thumb(faceOf(key), cls);
@@ -151,47 +150,158 @@ function pickable(kind, modSet) {
   return list.sort(by).map((c) => c.key);
 }
 const KIND_LABEL = { joker: 'Joker', consumable: 'Consumable', voucher: 'Voucher', tag: 'Tag', blind: 'Boss Blind', booster: 'Booster Pack' };
+const RARITY_NAMES = { 1: 'Common', 2: 'Uncommon', 3: 'Rare', 4: 'Legendary' };
+const defOf = (k) => P_CENTERS[k] || P_TAGS[k] || P_BLINDS[k] || {};
+const modLabel = (m) => (m === 'base' ? 'Base game' : (MODREG.mods[m] && MODREG.mods[m].name) || m);
+const rarityLabel = (r) => RARITY_NAMES[r] || (MODREG.rarities[r] && MODREG.rarities[r].name) || String(r);
+const setLabel = (s) => (CONSUMABLE_TYPES[s] && CONSUMABLE_TYPES[s].name) || s;
+const modOf = (k) => defOf(k).mod || 'base';
+/** A picker's filters: [id, label, key -> value, value -> name]. One shows only when the list has more than one value. */
+const FACETS = {
+  joker: [['mod', 'Mod', modOf, modLabel], ['rarity', 'Rarity', (k) => defOf(k).rarity ?? 1, rarityLabel]],
+  consumable: [['mod', 'Mod', modOf, modLabel], ['set', 'Type', (k) => defOf(k).set, setLabel]],
+};
+const facetsFor = (kind) => FACETS[kind] || [['mod', 'Mod', modOf, modLabel]];
+/** A phone (either way up): the picker pages one screen of tiles. A desktop keeps 48 a page (what it showed before). */
+const isPhone = () => Math.min(innerWidth, innerHeight) < 600 || !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+export const DESKTOP_PAGE = 48;
 
-/** The picker: search + a grid of tiles; tapping a tile calls onPick(key). Stays open for more picks. */
-function picker(kind, modSet, onPick, { title, multi = true } = {}) {
+/**
+ * The picker: search + filters + ONE PAGE of tiles, with Prev / Next and "Page 3 / 42"; tapping a tile calls
+ * onPick(key) and the picker stays open for more picks. The search and filters run over every item first, then
+ * the matches are paged. Only the page's tiles exist: the same tile elements (and their canvases) are redrawn when
+ * the page changes, so the canvas memory stays one page's worth however many jokers the mods add (Pokermon + Nacho +
+ * Pokermon+: 850; the old "More" button rebuilt every shown tile on each press and ran out of memory on phones).
+ * count(key) -> how many of it the deck already has: a badge on its tile, on whatever page it is.
+ */
+function picker(kind, modSet, onPick, { title, multi = true, count = null } = {}) {
   const all = pickable(kind, modSet);
   const el = h('div', 'cd-picker');
+  el.dataset.kind = kind;
   const top = h('div', 'cd-pick-top');
   const q = h('input', 'cd-input cd-search');
-  q.placeholder = 'Search'; q.autocomplete = 'off'; q.spellcheck = false; q.maxLength = 40;
+  q.placeholder = 'Search'; q.autocomplete = 'off'; q.spellcheck = false; q.maxLength = 40; q.dataset.k = 'pick:search';
   q.addEventListener('pointerdown', (e) => e.stopPropagation());
   const note = h('div', 'cd-pick-note muted');
   top.append(q, note);
-  const grid = h('div', 'cd-pick-grid');
-  const more = btn('More', 'grey b-cd-more', () => { shown += PAGE; draw(); }, 'pick:more');
-  el.append(top, grid, more);
-  const PAGE = 48;
-  let shown = PAGE;
-  function draw() {
-    const s = q.value.trim().toLowerCase();
-    const list = s ? all.filter((k) => nameOf(k).toLowerCase().includes(s) || k.toLowerCase().includes(s)) : all;
-    grid.innerHTML = '';
-    for (const k of list.slice(0, shown)) {
-      const t = h('button', 'cd-tile');
-      t.type = 'button'; t.dataset.k = 'pick:' + k; t.dataset.key = k;
-      t.appendChild(itemThumb(k));
-      const c = P_CENTERS[k] || P_TAGS[k] || P_BLINDS[k];
-      t.appendChild(h('span', 'cd-tile-n', esc(nameOf(k)) + (c && c.mod ? ` <span class="cd-modtag">${esc(MODREG.mods[c.mod] ? MODREG.mods[c.mod].name : c.mod)}</span>` : '')));
-      t.addEventListener('click', () => {
-        sound.play('button');
-        onPick(k);
-        note.textContent = `Added ${nameOf(k)}`;
-        if (!multi) closeModal();
-      });
-      grid.appendChild(t);
+  el.appendChild(top);
+  const facetVal = {};
+  const facets = facetsFor(kind).map(([id, label, of, nm]) => ({ id, label, of, nm, vals: [...new Set(all.map(of))] })).filter((f) => f.vals.length > 1);
+  const filt = h('div', 'cd-wrap cd-pick-filters');
+  const drawFilters = () => {
+    filt.innerHTML = '';
+    for (const f of facets) {
+      const cur = facetVal[f.id];
+      const b = btn(esc(f.label + ': ' + (cur === undefined ? 'All' : f.nm(cur))), 'grey cd-cyc cd-filter' + (cur === undefined ? '' : ' on'), () => {
+        const i = cur === undefined ? -1 : f.vals.indexOf(cur);
+        if (i + 1 >= f.vals.length) delete facetVal[f.id]; else facetVal[f.id] = f.vals[i + 1];
+        page = 0; note.textContent = ''; drawFilters(); draw();
+      }, 'pick:f:' + f.id);
+      b.dataset.filter = f.id;
+      filt.appendChild(b);
     }
-    if (!list.length) grid.appendChild(h('div', 'muted', 'Nothing matches.'));
-    more.style.display = list.length > shown ? '' : 'none';
-    note.textContent = note.textContent || `${list.length} ${KIND_LABEL[kind] || ''}${list.length === 1 ? '' : 's'}`;
+  };
+  if (facets.length) { drawFilters(); el.appendChild(filt); }
+  const grid = h('div', 'cd-pick-grid');
+  const empty = h('div', 'muted cd-pick-empty', 'Nothing matches.');
+  const pager = h('div', 'cd-pager');
+  pager.dataset.padPager = '1';   // (pad.js: LB / RB turn the page)
+  const prev = btn('‹ Prev', 'red cd-pg b-cd-pg-prev', () => go(page - 1), 'pick:prev');
+  const ind = h('div', 'cd-page-ind');
+  const next = btn('Next ›', 'red cd-pg b-cd-pg-next', () => go(page + 1), 'pick:next');
+  pager.append(prev, ind, next);
+  el.append(grid, empty, pager);
+
+  let page = 0, list = all;
+  let size = isPhone() ? 1 : DESKTOP_PAGE;   // (a phone measures one tile, then fills the screen)
+  const tiles = [];   // the page's tile elements, reused page to page: {t, c, rec, n, badge}
+  function tile(i) {
+    if (tiles[i]) return tiles[i];
+    const t = h('button', 'cd-tile');
+    t.type = 'button';
+    const c = cardCanvas({ facing: 'back' }, 'cd-thumb');
+    const n = h('span', 'cd-tile-n');
+    const badge = h('span', 'cd-have');
+    t.append(c, n, badge);
+    t.addEventListener('click', () => {
+      const k = t.dataset.key;
+      if (!k) return;
+      sound.play('button');
+      onPick(k);
+      note.textContent = `Added ${nameOf(k)}`;
+      if (!multi) { closeModal(); return; }
+      paintBadges();
+    });
+    const rec = { c, d: null, atl: [] };
+    live.add(rec); hookAtlases();
+    grid.appendChild(t);
+    return (tiles[i] = { t, c, rec, n, badge });
   }
-  q.addEventListener('input', () => { shown = PAGE; note.textContent = ''; draw(); });
+  function paintBadges() {
+    if (!count) return;
+    for (const x of tiles) {
+      const k = x.t.dataset.key, v = k ? count(k) : 0;
+      x.badge.textContent = v ? (v > 1 ? '×' + v : '✓') : '';
+      x.t.classList.toggle('have', !!v);
+    }
+  }
+  function filtered() {
+    const s = q.value.trim().toLowerCase();
+    return all.filter((k) => {
+      for (const f of facets) if (facetVal[f.id] !== undefined && f.of(k) !== facetVal[f.id]) return false;
+      return !s || nameOf(k).toLowerCase().includes(s) || k.toLowerCase().includes(s);
+    });
+  }
+  const pages = () => Math.max(1, Math.ceil(list.length / size));
+  function go(p) { page = Math.min(pages() - 1, Math.max(0, p)); note.textContent = ''; draw(); }
+  function draw() {
+    list = filtered();
+    page = Math.min(page, pages() - 1);
+    const keys = list.slice(page * size, page * size + size);
+    keys.forEach((k, i) => {
+      const x = tile(i);
+      x.t.hidden = false;
+      if (x.t.dataset.key === k) return;
+      const d = faceOf(k), c = defOf(k);
+      x.t.dataset.key = k; x.t.dataset.k = 'pick:' + k;
+      redrawCard(x.c, d);
+      x.rec.d = d; x.rec.atl = modAtlasesOf(stillData(d));
+      x.n.innerHTML = esc(nameOf(k)) + (c.mod ? ` <span class="cd-modtag">${esc(modLabel(c.mod))}</span>` : '');
+    });
+    // a short last page hides the spare tiles; a smaller page size (fit) drops them
+    for (let i = keys.length; i < tiles.length; i++) { const x = tiles[i]; x.t.hidden = true; x.t.dataset.key = ''; x.t.dataset.k = ''; x.rec.d = null; x.rec.atl = []; }
+    while (tiles.length > size) { const x = tiles.pop(); x.t.remove(); live.delete(x.rec); }
+    empty.style.display = list.length ? 'none' : '';
+    paintBadges();
+    const n = pages();
+    ind.textContent = `Page ${page + 1} / ${n}`;
+    prev.disabled = page <= 0; next.disabled = page >= n - 1;
+    pager.style.display = n > 1 ? '' : 'none';
+    const label = KIND_LABEL[kind] || '';
+    note.textContent = note.textContent || (list.length === all.length ? `${all.length} ${label}${all.length === 1 ? '' : 's'}` : `${list.length} of ${all.length} ${label}s`);
+  }
+  q.addEventListener('input', () => { page = 0; note.textContent = ''; draw(); });
   draw();
   modal(el, { title: title || ('Add ' + (KIND_LABEL[kind] || kind)), cls: 'cd-pick-modal' });
+  if (size !== DESKTOP_PAGE) {
+    size = fitPage(); draw();
+    // (names wrap differently: if the first page still overflows the box, a row less)
+    const box = el.closest('.modal-box'), cols = Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length);
+    for (let i = 0; i < 3 && box && box.scrollHeight > box.clientHeight + 1 && size > cols * 2; i++) { size -= cols; draw(); }
+  }
+  /** One screen of tiles (stage px): the grid's columns x the rows that fit beside the search, filters and pager. */
+  function fitPage() {
+    const cols = Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length);
+    const wrap = el.closest('.modal'), box = el.closest('.modal-box');
+    const t = tiles[0] && tiles[0].t;
+    if (!wrap || !box || !t || !t.offsetHeight) return cols * 4;
+    const gap = parseFloat(getComputedStyle(grid).rowGap) || 8;
+    pager.style.display = '';   // (count the pager: there is one whenever there is more than a page)
+    const room = wrap.clientHeight * 0.92 - (box.scrollHeight - grid.offsetHeight) - 4;   // (.modal-box: max-height 92%)
+    const rows = Math.max(2, Math.floor((room + gap) / (t.offsetHeight + gap)));
+    return Math.min(DESKTOP_PAGE, cols * rows);
+  }
+  return el;
 }
 
 // ------------------------------------------------------------- small widgets
@@ -533,7 +643,7 @@ export function openEditor(entry, o, refresh) {
         r.appendChild(btn('✕', 'red cd-x', () => { items.splice(i, 1); change(); }, `rm:${kind}:${i}`));
         s.appendChild(r);
       }
-      s.appendChild(btn('+ Add ' + KIND_LABEL[kind], 'blue b-cd-add-' + kind, async () => { await ensureMods(); picker(kind, modSet(), (k) => { addFn(k); needMod(k); dirty = true; render(); }); }, 'add:' + kind));
+      s.appendChild(btn('+ Add ' + KIND_LABEL[kind], 'blue b-cd-add-' + kind, async () => { await ensureMods(); picker(kind, modSet(), (k) => { addFn(k); needMod(k); dirty = true; render(); }, { count: (k) => items.reduce((a, it) => a + (typeof it === 'string' ? (it === k ? 1 : 0) : it.key === k ? it.n || 1 : 0), 0) }); }, 'add:' + kind));
     };
     list('Starting Jokers', 'joker', draft.jokers, (mid, j, i) => {
       const w = h('div', 'cd-wrap');
@@ -567,7 +677,7 @@ export function openEditor(entry, o, refresh) {
       });
       if (!list.length) w.appendChild(h('span', 'muted', 'None'));
       s.appendChild(w);
-      s.appendChild(btn('+ Ban a ' + KIND_LABEL[kind], 'blue b-cd-ban-' + kind, async () => { await ensureMods(); picker(kind, modSet(), (key) => { if (!list.includes(key)) list.push(key); needMod(key); dirty = true; render(); }, { title: 'Ban a ' + KIND_LABEL[kind] }); }, 'ban:' + kind));
+      s.appendChild(btn('+ Ban a ' + KIND_LABEL[kind], 'blue b-cd-ban-' + kind, async () => { await ensureMods(); picker(kind, modSet(), (key) => { if (!list.includes(key)) list.push(key); needMod(key); dirty = true; render(); }, { title: 'Ban a ' + KIND_LABEL[kind], count: (key) => (list.includes(key) ? 1 : 0) }); }, 'ban:' + kind));
     }
   }
 
