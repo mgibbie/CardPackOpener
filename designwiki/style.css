@@ -477,6 +477,9 @@ a.mc-pill { text-decoration: none; }
 .pj-page-art { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 auto; }
 .pj-art-big { width: 284px; max-width: 100%; }
 .pj-flip { padding: 5px 14px; }
+.pj-artsrc { font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; opacity: 0.8; }
+.pj-artsrc-upstream { color: #2e9d57; }
+.pj-artsrc-composed { color: #c08a1a; }
 .pj-page-info { flex: 1 1 300px; min-width: 0; }
 .pj-page-info h1 { margin-top: 0; }
 .pj-facts { border-collapse: collapse; margin-bottom: 10px; }

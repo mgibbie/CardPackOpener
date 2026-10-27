@@ -3572,8 +3572,9 @@ function controlsView() {
 
 // ---------- Pokermon jokers not in the game yet (#/pokermon-jokers) ----------
 // Every canonical Pokémon (National Dex 1-1025) with no joker in Pokermon, Nacho's Pokermon Dip or Sonfive's Pokermon+
-// (data/pokermon_jokers.json, from tools/micatro/gen_designwiki_pokermon_jokers.mjs): composed card art (the proper
-// Pokermon frame + the overworld battle sprite, and a Shiny), its Pokermon type, stage, evolution line and a rarity /
+// (data/pokermon_jokers.json, from tools/micatro/gen_designwiki_pokermon_jokers.mjs): its card art (+ Shiny) — upstream
+// Pokermon 3.9.1's own card wherever its sprite table draws the species (art.source 'upstream'), else composed (the proper
+// Pokermon frame + the overworld battle sprite; 'composed'), labelled on the card page —, its Pokermon type, stage, evolution line and a rarity /
 // cost guess by upstream's conventions. The ability is blank on purpose: the owner designs it. The signed-in owner
 // (mgibbie) gets a "Submit design" box on each card, filing into the server's joker-design inbox (joker-design-add ->
 // D1 owner_todo:jokers; "do the joker design list" in CLAUDE.md), and sees the designs already filed for it. Everyone
@@ -3594,6 +3595,8 @@ const pjIsOwner = () => {
 };
 const pjDexLabel = n => '#' + String(n).padStart(4, '0');
 const pjBadge = t => h('span', { class: 'pj-ptype', style: 'background:' + (PJ_COLOURS[t] || '#888') + ';color:' + (PJ_DARK_TEXT.has(t) ? '#1c2230' : '#fff') }, t);
+/** The card page's art-source label (art.source: 'upstream' = Pokermon 3.9.1's own card, 'composed' = ours). */
+const PJ_ART_LABEL = { upstream: 'Art: Pokermon upstream', composed: 'Art: composed (no upstream card yet)' };
 const pjImg = (src, alt, cls) => h('img', { class: cls || 'pj-art', src, alt, loading: 'lazy', width: '142', height: '190' });
 /** The owner's filed designs (all, or one species'); [] for anyone else. */
 async function pjFetchDesigns(dex) {
@@ -3642,7 +3645,7 @@ async function pokermonJokersView() {
     body.replaceChildren(...(list.length ? [...byGen.entries()].map(([g, ss]) => h('section', { class: 'pj-gen', 'data-gen': g },
       h('h2', null, 'Generation ' + g, ' ', h('span', { class: 'num' }, '(' + ss.length + ')')),
       h('div', { class: 'pj-grid' }, ss.map(s => h('a', { class: 'pj-tile', href: PJ + '/' + s.dex, 'data-dex': s.dex, 'data-ptype': s.ptype },
-        pjImg(s.art.normal, s.name),
+        pjImg(s.art.normal + CB, s.name),
         h('span', { class: 'pj-name' }, s.name),
         h('span', { class: 'pj-meta' }, h('span', { class: 'pj-dex' }, pjDexLabel(s.dex)), pjBadge(s.ptype)),
         h('span', { class: 'pj-stage muted' }, s.stageLabel),
@@ -3660,7 +3663,8 @@ async function pokermonJokersView() {
       h('p', null, c.missing + ' of the ' + c.dex + ' canonical Pokémon have no joker in ', h('a', { href: '#/micatro-mods/mod/pokermon' }, 'Pokermon'),
         ' (' + bm.pokermon.species + ' species), ', h('a', { href: '#/micatro-mods/mod/nacho' }, 'Nacho’s Pokermon Dip'), ' (' + bm.nacho.species + ') or ',
         h('a', { href: '#/micatro-mods/mod/pokermonplus' }, 'Sonfive’s Pokermon+'), ' (' + bm.pokermonplus.species + ') yet — ' + c.covered + ' are covered. ',
-        'Each card below is drawn the way Pokermon draws its own: the frame for its Pokermon type and stage, a scene from its family or type, and its battle sprite. ',
+        (c.art && !c.art.composed ? 'Every card below is Pokermon’s own: upstream already draws all of them (' + c.art.upstream + '), it just has no joker for them yet. '
+          : 'Each card below is Pokermon’s own where upstream already draws it (' + ((c.art && c.art.upstream) || 0) + '); the rest (' + ((c.art && c.art.composed) || 0) + ') are composed the way Pokermon draws its own: the frame for its Pokermon type and stage, a scene from its family or type, and its battle sprite. '),
         'Type, stage and a rarity guess follow Pokermon’s conventions; the ability is still to be designed. Megas and regional forms are left out (only base species), and so are fakemon.'),
       pjIsOwner() ? h('p', { class: 'pj-ownernote' }, 'Owner: open a card to submit a design for it. Designs go to the joker design list.') : null),
     h('div', { class: 'pj-filters' }, genSel, typeSel, qIn, shown),
@@ -3685,9 +3689,9 @@ async function pokermonJokerDetail(id) {
   const back = h('p', { class: 'lp-back' }, h('a', { href: PJ }, '← Pokermon jokers not in the game yet'));
   if (!s) return content.replaceChildren(back, h('h1', null, 'Not on the list'), h('p', { class: 'muted' }, 'That Pokémon already has a joker, or is not a canonical species.'));
   let shiny = false;
-  const art = pjImg(s.art.normal, s.name, 'pj-art pj-art-big');
+  const art = pjImg(s.art.normal + CB, s.name, 'pj-art pj-art-big');
   const flip = h('button', { type: 'button', class: 'pj-flip' }, 'Show Shiny');
-  flip.onclick = () => { shiny = !shiny; art.src = shiny ? s.art.shiny : s.art.normal; flip.textContent = shiny ? 'Show normal' : 'Show Shiny'; };
+  flip.onclick = () => { shiny = !shiny; art.src = (shiny ? s.art.shiny : s.art.normal) + CB; flip.textContent = shiny ? 'Show normal' : 'Show Shiny'; };
   const missing = new Set(D.species.map(x => x.dex));
   const lineEl = h('ol', { class: 'pj-line' }, s.line.map(l => h('li', { class: l.dex === s.dex ? 'cur' : null },
     l.dex === s.dex ? h('b', null, l.name)
@@ -3698,7 +3702,8 @@ async function pokermonJokerDetail(id) {
   content.replaceChildren(
     back,
     h('div', { class: 'pj-page' },
-      h('div', { class: 'pj-page-art' }, art, flip),
+      h('div', { class: 'pj-page-art' }, art, flip,
+        PJ_ART_LABEL[s.art.source] ? h('span', { class: 'pj-artsrc pj-artsrc-' + s.art.source, 'data-source': s.art.source }, PJ_ART_LABEL[s.art.source]) : null),
       h('div', { class: 'pj-page-info' },
         h('h1', null, s.name, ' ', h('span', { class: 'num' }, pjDexLabel(s.dex))),
         h('table', { class: 'pj-facts' },
@@ -3711,7 +3716,8 @@ async function pokermonJokerDetail(id) {
           row('Pokédex', pk ? h('a', { href: '#/pokemon/' + s.key }, s.name + '’s Pokédex page') : h('span', { class: 'muted' }, '—'))),
         h('h2', null, 'Ability'),
         h('p', { class: 'pj-ability muted' }, 'Not designed yet.'),
-        s.art.recipe ? h('p', { class: 'pj-recipe muted' }, 'Art: ' + s.art.recipe.frame + '; ' + s.art.recipe.background + '; battle sprite ' + s.art.recipe.sprite + '.') : null)),
+        s.art.recipe ? h('p', { class: 'pj-recipe muted' }, s.art.recipe.upstream ? 'Art: ' + s.art.recipe.upstream + '.'
+          : 'Art: ' + s.art.recipe.frame + '; ' + s.art.recipe.background + '; battle sprite ' + s.art.recipe.sprite + '.') : null)),
     ...[pjDesignBox(s)].filter(Boolean)); // (replaceChildren would print a null)
 }
 

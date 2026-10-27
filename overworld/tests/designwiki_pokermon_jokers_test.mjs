@@ -5,10 +5,14 @@
 //         recomputed from the mods as the game registers them (a mod upgrade that adds jokers fails this until the list is
 //         regenerated); no listed species has a joker (by name) in any of the three, and every species they do cover is
 //         off the list; listed + covered = 1025; the type table is the mods' own majority (primary type -> ptype)
-//   ART   the art script re-composes every listed species (normal + Shiny) byte-identical to the committed PNGs, and none
-//         is blank: 142 x 190, opaque, many colours, and the battle sprite painted 100+ pixels onto the card
+//   ART   UPSTREAM FIRST: every species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json
+//         — checked against the game's own lookups, data391.js sprites and the owner's jokers' poke_sprite391 — with a non-empty
+//         cell on the shipped sheet) uses that card, pixel-identical to the sheet's cell (+ its soul layer); only the rest are
+//         composed, none blank (142 x 190, opaque, many colours, the battle sprite painted 100+ pixels); art.source records
+//         which; the art script re-makes every card byte-identical, and re-running the generator gives the same JSON + PNGs
 //   WIKI  (the real dev server: real auth + the joker-design actions on a fresh sqlite) the index lists every species, grouped
-//         by generation, with working generation / type / search filters; a card page shows its art (+ Shiny), name, dex,
+//         by generation, with working generation / type / search filters; a card page shows its art (+ Shiny) and the art
+//         source label ("Art: Pokermon upstream" / "Art: composed (no upstream card yet)", by art.source), name, dex,
 //         type, stage and evolution line; the "Submit design" box appears ONLY for the owner (signed out and a non-owner
 //         see none, and the page never calls the joker-design API for them); the owner's submission round-trips (the server
 //         holds exactly what was typed, the card shows it read-only, and the index marks the tile); no horizontal scroll at
@@ -73,39 +77,107 @@ try {
 		'spot check: Stoutland Stage 2, Herdier Stage 1, Toxel Baby, Arceus Legendary, Corviknight Metal, Noibat Dragon');
 
 	// ================================================================== ART
+	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
+	// non-empty cell on the shipped sheet) shows THAT card, pixel-identical to the sheet's cell (+ its soul layer); only the rest
+	// are composed (and those must not be blank).
 	const C = await imp('tools/micatro/compose_pokermon_joker_art.mjs');
 	const MJ = await imp('tools/micatro/compose_missing_pokermon_jokers.mjs');
 	const ctx = await MJ.loadContext();
-	let same = 0, blank = [], differs = [], thin = [];
+	const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/micatro/specs/pokermon_391_sprite_table.json'), 'utf8')).sprites;
+	const SHEETS = ctx.assets; // micatro/mods/pokermon/assets/2x/Basic Series (the shipped 3.9.1 sheets; a worktree's link to the main checkout)
+	// the table is the game's own lookup: data391.js sprites (every 3.9.1 joker the port has) and the owner's jokers' poke_sprite391
+	const D391 = (await imp('micatro/mods/pokermon/data391.js')).default;
+	const tblBad = Object.entries(D391.sprites).filter(([n, e]) => !e.extra && (!TABLE[n] || TABLE[n].atlas !== e.atlas || TABLE[n].pos.join() !== `${e.pos.x},${e.pos.y}`
+		|| (TABLE[n].soul || []).join() !== (e.soul_pos ? `${e.soul_pos.x},${e.soul_pos.y}` : '')));
+	A(Object.keys(D391.sprites).length > 500 && !tblBad.length, `the sprite table agrees with data391.js sprites for all ${Object.keys(D391.sprites).length} ported jokers`, tblBad.slice(0, 5).map(([n]) => n).join(','));
+	const designsSrc = fs.readFileSync(path.join(ROOT, 'micatro/mods/pokermon/jokers/pokejokers_designs.js'), 'utf8');
+	const designCells = [...designsSrc.matchAll(/name: '(\w+)', poke_sprite391: sprite\('(\w+)', (\d+), (\d+)(?:, \[(\d+), (\d+)\])?\)/g)];
+	const PORT_NAME = { urshifu_single: 'urshifu_single_strike', urshifu_rapid: 'urshifu_rapid_strike' }; // (the port's keys for upstream's names)
+	const dBad = designCells.map(([m, n, ...r]) => [m, PORT_NAME[n] || n, ...r]).filter(([, n, sh, x, y, sx, sy]) => !TABLE[n] || TABLE[n].atlas !== 'AtlasJokersBasic' + sh || TABLE[n].pos.join() !== `${x},${y}` || (TABLE[n].soul || []).join() !== (sx ? `${sx},${sy}` : ''));
+	A(designCells.length >= 30 && !dBad.length, `... and with the owner's ${designCells.length} jokers' poke_sprite391 cells`, dBad.map(m => m[1]).join(','));
+	// independently: which species have an upstream card (by name; punctuation dropped: tapukoko = tapu_koko), read off the sheets
+	const nm = (n) => String(n).toLowerCase().replace(/[^a-z0-9]/g, '');
+	const sheetCache = new Map(), sheet = (atlas) => { if (!sheetCache.has(atlas)) sheetCache.set(atlas, C.decode(path.join(SHEETS, atlas + '-391.png'))); return sheetCache.get(atlas); };
+	const crop = (sh, [cx, cy]) => { const o = Buffer.alloc(142 * 190 * 4); for (let y = 0; y < 190; y++) for (let x = 0; x < 142; x++) { const at = ((cy * 190 + y) * sh.w + cx * 142 + x) * 4; sh.rgba.copy(o, (y * 142 + x) * 4, at, at + 4); } return o; };
+	const opaque = (b) => { let n = 0; for (let i = 3; i < b.length; i += 4) if (b[i]) n++; return n; };
+	const upstreamOf = (s) => {
+		const names = TABLE[s.key] ? [s.key] : Object.keys(TABLE).filter(n => nm(n) === nm(s.key));
+		if (names.length !== 1) return null;
+		const e = TABLE[names[0]], cells = {};
+		for (const v of ['normal', 'shiny']) {
+			const sh = sheet(e.atlas + (v === 'shiny' ? 'Shiny' : ''));
+			cells[v] = { base: crop(sh, e.pos), soul: e.soul ? crop(sh, e.soul) : null };
+			if (opaque(cells[v].base) < 20000 || (e.soul && !opaque(cells[v].soul))) return null;
+		}
+		return { name: names[0], e, cells };
+	};
+	let same = 0;
+	const blank = [], differs = [], thin = [], srcBad = [], notUp = [], pixBad = [], composed = [];
 	const t0 = Date.now();
 	for (const s of ctx.M.missing) {
-		const r = MJ.composeSpecies(ctx, s);
+		const d = D.species.find(x => x.dex === s.dex);
+		const up = upstreamOf(s);
+		const r = MJ.artFor(ctx, s);
+		if (up && r.source !== 'upstream') notUp.push(s.name);
+		if (d.art.source !== r.source || (!up && r.source !== 'composed')) srcBad.push(`${s.name} data ${d.art.source} / script ${r.source} / upstream ${!!up}`);
+		if (r.source === 'composed') composed.push(s);
 		for (const v of ['normal', 'shiny']) {
-			const file = path.join(ROOT, 'designwiki', s.dex && (v === 'normal' ? D.species.find(x => x.dex === s.dex).art.normal : D.species.find(x => x.dex === s.dex).art.shiny));
+			const file = path.join(ROOT, 'designwiki', d.art[v]);
 			const bytes = C.encode(C.CELL_W, C.CELL_H, r[v]);
 			if (fs.existsSync(file) && fs.readFileSync(file).equals(bytes)) same++; else differs.push(s.dex + ' ' + v);
-			if (r[v + 'Painted'] < 100) thin.push(`${s.dex} ${v} (${r[v + 'Painted']})`);
-			if (fs.existsSync(file)) {
-				const img = C.decode(file);
-				const colours = new Set(), art = new Set();
-				let opaque = 0;
-				for (let i = 0; i < img.w * img.h; i++) {
-					const v32 = img.rgba.readUInt32LE(i * 4);
-					if (img.rgba[i * 4 + 3] === 255) opaque++;
-					colours.add(v32);
-					const x = (i % img.w) >> 1, y = ((i / img.w) | 0) >> 1;
-					if (C.inArt(x, y)) art.add(v32);
+			if (r.source === 'composed' && r[v + 'Painted'] < 100) thin.push(`${s.dex} ${v} (${r[v + 'Painted']})`);
+			if (!fs.existsSync(file)) continue;
+			const img = C.decode(file);
+			if (up && r.source === 'upstream') {
+				// pixel-identical to the sheet: the base cell where the soul is clear, the soul where it is opaque, "over" between
+				const { base, soul } = up.cells[v];
+				let bad = 0;
+				for (let i = 0; i < 142 * 190 * 4; i += 4) {
+					const sa = soul ? soul[i + 3] : 0;
+					const want = sa === 0 ? base : sa === 255 ? soul : null;
+					if (want) { for (let k = 0; k < 4; k++) if (img.rgba[i + k] !== want[i + k]) { bad++; break; } }
+					else if (img.rgba[i + 3] < Math.max(sa, base[i + 3])) bad++;
 				}
-				if (img.w !== 142 || img.h !== 190 || opaque < img.w * img.h * 0.9 || colours.size < 24 || art.size < 8) blank.push(`${s.dex} ${v}: ${img.w}x${img.h} opaque ${opaque} colours ${colours.size} art ${art.size}`);
+				if (img.w !== 142 || img.h !== 190 || bad) pixBad.push(`${s.name} ${v}: ${bad} px`);
 			}
+			const colours = new Set(), art = new Set();
+			let opq = 0;
+			for (let i = 0; i < img.w * img.h; i++) {
+				const v32 = img.rgba.readUInt32LE(i * 4);
+				if (img.rgba[i * 4 + 3] === 255) opq++;
+				colours.add(v32);
+				const x = (i % img.w) >> 1, y = ((i / img.w) | 0) >> 1;
+				if (C.inArt(x, y)) art.add(v32);
+			}
+			if (img.w !== 142 || img.h !== 190 || opq < img.w * img.h * 0.9 || colours.size < 24 || art.size < 8) blank.push(`${s.dex} ${v}: ${img.w}x${img.h} opaque ${opq} colours ${colours.size} art ${art.size}`);
 		}
 	}
+	const nUp = D.species.filter(s => s.art.source === 'upstream').length, nCo = D.species.filter(s => s.art.source === 'composed').length;
+	console.log(`     art: ${nUp} upstream, ${nCo} composed (${composed.map(s => s.name).join(', ') || 'none'})`);
 	A(D.species.every(s => s.art && fs.existsSync(path.join(ROOT, 'designwiki', s.art.normal)) && fs.existsSync(path.join(ROOT, 'designwiki', s.art.shiny))), 'every listed species has a normal + Shiny card in designwiki/sprites/pokermon_jokers/');
-	A(!differs.length && same === listed.length * 2, `the art script re-composes all ${listed.length * 2} cards byte-identical (${Math.round((Date.now() - t0) / 1000)} s)`, differs.slice(0, 8).join(', '));
+	A(nUp + nCo === listed.length && D.counts.art.upstream === nUp && D.counts.art.composed === nCo
+		&& Object.entries(D.counts.artByGen).every(([g, v]) => v.upstream + v.composed === D.counts.byGen[g]), `every card records its source (art.source: upstream ${nUp} + composed ${nCo}), and the counts match`);
+	A(!notUp.length, 'every species with an upstream 3.9.1 card uses it', notUp.join(', '));
+	A(!srcBad.length, 'the recorded source is what the script makes (composed ONLY where upstream has no card)', srcBad.slice(0, 5).join(' | '));
+	A(!pixBad.length && nUp > 0, `every upstream card is pixel-identical to its cell on the shipped 3.9.1 sheet (+ soul layer) (${nUp} x 2)`, pixBad.slice(0, 5).join(' | '));
+	A(D.species.every(s => s.art.source === 'upstream' ? /^Pokermon 3\.9\.1 AtlasJokersBasic\w+-391\.png cell \d+,\d+/.test(s.art.recipe?.upstream || '') : !!s.art.recipe?.frame), 'each recipe names its source (the sheet + cell, or the composed frame)');
+	A(!differs.length && same === listed.length * 2, `the art script re-makes all ${listed.length * 2} cards byte-identical (${Math.round((Date.now() - t0) / 1000)} s)`, differs.slice(0, 8).join(', '));
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
-	A(!thin.length, 'the battle sprite painted 100+ pixels onto every card', thin.slice(0, 8).join(', '));
+	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
+	// the composer stays working for species upstream doesn't draw (none today): a Basic, a Stage 1, a Baby and a Legendary
+	const fallback = ['Stoutland', 'Herdier', 'Toxel', 'Arceus'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
+	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Stoutland, Herdier, Toxel, Arceus)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
+	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
+	const GEN = await imp('tools/micatro/gen_designwiki_pokermon_jokers.mjs');
+	const tmpArt = fs.mkdtempSync(path.join(os.tmpdir(), 'pj-art-'));
+	const regen = JSON.stringify(await GEN.buildData({ art: true, out: tmpArt })) + '\n';
+	const genFiles = fs.readdirSync(tmpArt).sort(), artDir = path.join(ROOT, 'designwiki/sprites/pokermon_jokers');
+	const genDiff = genFiles.filter(f => !fs.existsSync(path.join(artDir, f)) || !fs.readFileSync(path.join(tmpArt, f)).equals(fs.readFileSync(path.join(artDir, f))));
+	A(regen === fs.readFileSync(GEN.OUT_JSON, 'utf8').replace(/\r\n/g, '\n') && genFiles.length === listed.length * 2 && !genDiff.length,
+		`re-running the generator is byte-identical (data/pokermon_jokers.json + ${genFiles.length} PNGs)`, genDiff.slice(0, 5).join(','));
+	fs.rmSync(tmpArt, { recursive: true, force: true });
 
 	// ================================================================== WIKI
 	const dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'pj-wiki-')), 'users.sqlite');
@@ -166,16 +238,40 @@ try {
 		facts: document.querySelector('.pj-facts')?.textContent, line: [...document.querySelectorAll('.pj-line li')].map(l => l.textContent), box: !!document.querySelector('.pj-owner, #pjSubmit'),
 		nullText: [...document.getElementById('content').childNodes].some(n => n.nodeType === 3 && /^\s*(null|undefined)\s*$/.test(n.textContent)),
 	}));
-	A(card.h1 === 'Stoutland #0508' && card.img === 142 && /0508\.png$/.test(card.src), 'a card page shows the name, dex and its composed art', JSON.stringify(card));
+	A(card.h1 === 'Stoutland #0508' && card.img === 142 && /0508\.png(\?|$)/.test(card.src), 'a card page shows the name, dex and its art', JSON.stringify(card));
+	const LABEL = { upstream: 'Art: Pokermon upstream', composed: 'Art: composed (no upstream card yet)' };
+	const label = () => anon.page.evaluate(() => { const e = document.querySelector('.pj-page-art .pj-artsrc'); return e && { text: e.textContent, src: e.dataset.source }; });
+	const want508 = D.species.find(s => s.dex === 508).art.source;
+	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want508], src: want508 }), `the card is labelled with its art source (${LABEL[want508]})`, JSON.stringify(await label()));
 	A(/Colorless/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Lillipup","Herdier","Stoutland"]', 'type, stage and evolution line', JSON.stringify(card));
 	A(!card.box, 'signed out: no Submit design box');
 	A(!card.nullText, 'no stray null / undefined text where the box would be');
 	await anon.page.click('.pj-flip');
-	A(/0508_shiny\.png$/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
+	A(/0508_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
 	await shot(anon.page, 'desktop_card_signed_out');
+	// a Legendary (soul layer) card, and its label
+	await go(anon.page, '#/pokermon-jokers/493');
+	const want493 = D.species.find(s => s.dex === 493).art.source;
+	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want493], src: want493 }) && await anon.page.$eval('.pj-art-big', i => i.naturalWidth) === 142, `Arceus (Legendary): its card and label (${LABEL[want493]})`);
+	await shot(anon.page, 'desktop_card_legendary');
 	A(!anon.designCalls.length, 'signed out: the page never calls the joker-design API', anon.designCalls.join(','));
 	A(!anon.errors.length, 'no console errors (signed out)', anon.errors.slice(0, 3).join(' | '));
 	await anon.ctx.close();
+
+	// ---------- the composed label (no species is composed today, so the data is flipped for one card in the browser) ----------
+	const cp = await open(null, null);
+	await cp.page.setRequestInterception(true);
+	cp.page.on('request', r => {
+		if (!/\/designwiki\/data\/pokermon_jokers\.json/.test(r.url())) return r.continue();
+		const j = JSON.parse(JSON.stringify(D));
+		const t = j.species.find(s => s.dex === 848);
+		t.art.source = 'composed'; t.art.recipe = { frame: 'Lightning Baby frame (test)', background: 'a scene (test)', sprite: 'toxel.png x2' };
+		r.respond({ status: 200, contentType: 'application/json', body: JSON.stringify(j) });
+	});
+	await go(cp.page, '#/pokermon-jokers/848');
+	const cl = await cp.page.evaluate(() => ({ text: document.querySelector('.pj-artsrc')?.textContent, src: document.querySelector('.pj-artsrc')?.dataset.source, recipe: document.querySelector('.pj-recipe')?.textContent }));
+	A(cl.text === LABEL.composed && cl.src === 'composed' && /Lightning Baby frame \(test\)/.test(cl.recipe || ''), 'a composed card is labelled "Art: composed (no upstream card yet)" with its recipe', JSON.stringify(cl));
+	await cp.ctx.close();
 
 	// ---------- a non-owner: no box ----------
 	const pe = await open(peon, 'pjpeon');
