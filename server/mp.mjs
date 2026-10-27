@@ -1174,6 +1174,15 @@ async function gameWatchers(store, cs, who, now) {
 // (a `gc:last` marker gates it), sweeping each ephemeral prefix past its TTL. The
 // gc:last read-modify-write isn't atomic, but a concurrent double-sweep just deletes
 // the same dead rows twice — idempotent. Returns whether it swept.
+// The share of authenticated requests that try the sweep (GC_RATE). MP_GC_RATE (0..1) overrides it, read per
+// request: the server tests set 0, because a sweep drawn at random stamps `gc:last` in the middle of a check that
+// a request wrote exactly its own rows (CI 2026-10-27: micatro_progress_server_test read ["gc:last", ...]).
+const GC_RATE = 0.1;
+function gcRate() {
+	const v = typeof process !== 'undefined' && process.env ? process.env.MP_GC_RATE : undefined;
+	const n = v == null || v === '' ? NaN : Number(v);
+	return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : GC_RATE;
+}
 async function maybeGC(store, now) {
 	const last = await store.get('gc:last');
 	if (last && now - last < GC_INTERVAL_MS) return false;
@@ -1626,7 +1635,7 @@ export default async function handler(req, env) {
 	if (rl && !(await rateLimit(store, action + ':' + username, rl[0], rl[1]))) return json({ error: 'slow down' }, 429);
 	// opportunistic GC on a fraction of authenticated traffic (the interval marker
 	// keeps the actual sweep to ~once per GC_INTERVAL_MS regardless of how often it's called)
-	if (Math.random() < 0.1) await maybeGC(store, Date.now());
+	if (Math.random() < gcRate()) await maybeGC(store, Date.now());
 	await ensureFriendFields(store, username, user); // backfill code/friends
 	await normalizeDecks(store, username, user); // migrate to 40 PvP deck slots + seed a Mage Starter
 	await grantStarterBaseline(store, username, user); // starter-deck playset + welcome packs (once)
