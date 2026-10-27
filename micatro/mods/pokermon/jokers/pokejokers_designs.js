@@ -13,12 +13,15 @@
 // chosen by its training), Tandemaus -> Maushold (Population Bomb), Darumaka -> Darmanitan (Hustle / Zen Mode), Scraggy -> Scrafty
 // (Moxie), Mudbray -> Mudsdale (Stamina / Mud Spit); and Xerneas, Spiritomb, Tatsugiri on their own.
 // Then the owner's wiki designs (CLAUDE.md "do the joker design list"): Sprigatito -> Floragato -> Meowscarada (Lucky cards grow like
-// Hiker's; then held Lucky cards act as Steel; Grass starter; contentRev 20) — upstream 3.9.1 draws them too (Natdex 10 / 12 / 14, 60).
+// Hiker's; then held Lucky cards act as Steel; Grass starter; contentRev 20) — upstream 3.9.1 draws them too (Natdex 10 / 12 / 14, 60);
+// Whismur -> Loudred -> Exploud (each broken Glass card grows its Chips, then Mult, then X Mult, every form keeping the last's; a
+// Negative Justice on each evolution; Colorless; contentRev 21) — upstream 3.9.1 draws them too (Natdex 14 / 16 / 18, 19).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
+  add_card, detailed,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -133,6 +136,41 @@ function lucky_grow(card, context) {
   }
   return undefined;
 }
+
+/** Whismur line: how many Glass cards broke (their 1 in 4 shatter; Glass Joker's count — remove_playing_cards, the `shattered`
+ *  ones), each growing `ref` by its gain `mod` (Energy scales only the gain; the totals are in fields energize ignores, so a
+ *  banked amount keeps what it was worth when earned). Not Blueprint (it scales, as Glass Joker). */
+function glass_grow(card, context, ref, mod, message_key) {
+  if (context.remove_playing_cards && !context.blueprint && context.removed) {
+    const n = context.removed.filter((c) => c.shattered).length;
+    if (n > 0) scale_card(card, { ref_value: ref, scalar_value: mod, scalar_factor: n, message_key, message_colour: message_key === 'a_chips' ? 'CHIPS' : message_key === 'a_mult' ? 'MULT' : 'XMULT' });
+  }
+  return undefined;
+}
+/** Whismur line: the Chips (Whismur's), the Mult (Loudred's) and the X Mult (Exploud's) this form has. */
+function glass_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const ex = card.ability.extra, r = {};
+  if (ex.glass_chips) r.chip_mod = ex.glass_chips;
+  if (ex.glass_mult) r.mult_mod = ex.glass_mult;
+  if (ex.glass_Xmult && ex.glass_Xmult !== 1) r.Xmult_mod = ex.glass_Xmult;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r.Xmult_mod) : r.mult_mod ? a_mult(r.mult_mod) : a_chips(r.chip_mod);
+  r.colour = r.Xmult_mod ? 'XMULT' : r.mult_mod ? 'MULT' : 'CHIPS';
+  return r;
+}
+/** Whismur line: a Negative Justice when this card evolved from `from` (the poke_evolved context, after the swap; Chingling's
+ *  add_card). Negative: it needs no consumable slot. */
+function glass_evolved(card, context, from) {
+  if (context.poke_evolved && context.card === card && context.from === 'j_poke_' + from && !context.blueprint) {
+    G.E_MANAGER.add_event(() => { add_card({ set: 'Tarot', key: 'c_justice', edition: 'e_negative' }); });
+  }
+  return undefined;
+}
+const glass_tips = (info_queue, evolves) => {
+  info_queue.push(P_CENTERS.m_glass);
+  if (evolves && detailed()) { info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } }); info_queue.push(P_CENTERS.c_justice); }
+};
 
 /** Kubfu / Urshifu, training: X Mult grows on a hand of exactly 1 or exactly 5 scoring cards (Kubfu counts each school). */
 function training(card, context) {
@@ -347,22 +385,24 @@ defineJokers({
 
   // ---------------------------------------------------------------- LINE D: Grookey -> Thwackey -> Rillaboom (Grass starter, Gen 8)
   // Grookey 810: +1 hand size; every 4th card scored this round is retriggered. Evolves after 12 beats.
+  // (contentRev 21: on-beat cards also give +1 Mult — the lead-in to Rillaboom's Drum Beating; `mult` is its Energy field.)
   grookey: {
     name: 'grookey', poke_sprite391: sprite('Natdex', 28, 53),
-    config: { evo_rqmt: 12, extra: { h_size: 1, every: 4, beat: 0, beats: 0, retriggers: 1 } },
+    config: { evo_rqmt: 12, extra: { h_size: 1, every: 4, beat: 0, beats: 0, retriggers: 1, mult: 1 } },
     rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 8, blueprint_compat: true, starter: true,
-    attributes: ['starter', 'hand_size', 'retrigger', 'trigger_evo'], poke_after: 'mega_drampa',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ordinal(ex.every), ex.beat % ex.every, Math.max(0, self.config.evo_rqmt - ex.beats), ex.every] }; },
+    attributes: ['starter', 'hand_size', 'retrigger', 'mult', 'trigger_evo'], poke_after: 'mega_drampa',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ordinal(ex.every), ex.beat % ex.every, Math.max(0, self.config.evo_rqmt - ex.beats), ex.every, ex.mult] }; },
     calculate(self, card, context) { return beat_calc(card, context) || scaling_evo(self, card, context, 'j_poke_thwackey', card.ability.extra.beats, self.config.evo_rqmt); },
     ...hand_size,
   },
-  // Thwackey 811: +1 hand size; every 3rd card scored this round is retriggered. Evolves after 16 beats.
+  // Thwackey 811: +1 hand size; every 3rd card scored this round is retriggered, and gives +2 Mult (contentRev 21: the lead-in to
+  // Drum Beating, so Energy has a field to scale — `mult`, as Rillaboom's). Evolves after 16 beats.
   thwackey: {
     name: 'thwackey', poke_sprite391: sprite('Natdex', 0, 54),
-    config: { evo_rqmt: 16, extra: { h_size: 1, every: 3, beat: 0, beats: 0, retriggers: 1 } },
+    config: { evo_rqmt: 16, extra: { h_size: 1, every: 3, beat: 0, beats: 0, retriggers: 1, mult: 2 } },
     rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 8, blueprint_compat: true,
-    attributes: ['starter', 'hand_size', 'retrigger', 'trigger_evo'], poke_after: 'grookey',
-    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ordinal(ex.every), Math.max(0, self.config.evo_rqmt - ex.beats)] }; },
+    attributes: ['starter', 'hand_size', 'retrigger', 'mult', 'trigger_evo'], poke_after: 'grookey',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ordinal(ex.every), Math.max(0, self.config.evo_rqmt - ex.beats), ex.mult] }; },
     calculate(self, card, context) { return beat_calc(card, context) || scaling_evo(self, card, context, 'j_poke_rillaboom', card.ability.extra.beats, self.config.evo_rqmt); },
     ...hand_size,
   },
@@ -690,6 +730,51 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F3: Whismur -> Loudred -> Exploud (Colorless, Gen 3)
+  // The owner's design (2026-10-27): each Glass card that breaks (its 1 in 4 shatter, as Glass Joker counts) grows the joker, and
+  // every form keeps what the last had. Starting / banked totals: glass_chips / glass_mult / glass_Xmult (in no energy_values:
+  // Energy never scales them, so a banked gain keeps its worth); the gain per break: chip_mod / mult_mod / Xmult_mod (Energy +20%
+  // of its base each: +4 / +0.6 / +X0.04). The totals carry over on evolution (poke_custom_values_to_keep); Energy too
+  // (energy_count, re-applied to the new base gain). Each evolution makes a Negative Justice (Chingling's). 4 rounds, then 5.
+  // Whismur 293: +30 Chips; +20 Chips per broken Glass card.
+  whismur: {
+    name: 'whismur', poke_sprite391: sprite('Natdex', 14, 19),
+    config: { extra: { glass_chips: 30, chip_mod: 20, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'scaling', 'enhancements', 'tarot', 'round_evo'], poke_after: 'shedinja',
+    poke_custom_values_to_keep: ['glass_chips'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); glass_tips(info_queue, true); const ex = card.ability.extra; return { vars: [ex.glass_chips, ex.chip_mod, ex.rounds] }; },
+    calculate(self, card, context) {
+      return glass_grow(card, context, 'glass_chips', 'chip_mod', 'a_chips') || glass_main(card, context) || level_evo(self, card, context, 'j_poke_loudred');
+    },
+  },
+  // Loudred 294: Whismur's Chips (+30 fresh) and +4 Mult; +3 Mult per broken Glass card. A Negative Justice when it evolves in.
+  loudred: {
+    name: 'loudred', poke_sprite391: sprite('Natdex', 16, 19),
+    config: { extra: { glass_chips: 30, glass_mult: 4, mult_mod: 3, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'mult', 'scaling', 'enhancements', 'tarot', 'round_evo'], poke_after: 'whismur',
+    poke_custom_values_to_keep: ['glass_chips', 'glass_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); glass_tips(info_queue, true); const ex = card.ability.extra; return { vars: [ex.glass_chips, ex.glass_mult, ex.mult_mod, ex.rounds] }; },
+    calculate(self, card, context) {
+      glass_evolved(card, context, 'whismur');
+      return glass_grow(card, context, 'glass_mult', 'mult_mod', 'a_mult') || glass_main(card, context) || level_evo(self, card, context, 'j_poke_exploud');
+    },
+  },
+  // Exploud 295: the Chips and the Mult (+30 / +4 fresh) and X1.5 Mult; +X0.2 per broken Glass card. A Negative Justice when it
+  // evolves in.
+  exploud: {
+    name: 'exploud', poke_sprite391: sprite('Natdex', 18, 19),
+    config: { extra: { glass_chips: 30, glass_mult: 4, glass_Xmult: 1.5, Xmult_mod: 0.2 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Colorless', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'mult', 'xmult', 'scaling', 'enhancements'], poke_after: 'loudred',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); glass_tips(info_queue, false); const ex = card.ability.extra; return { vars: [ex.glass_chips, ex.glass_mult, ex.glass_Xmult, ex.Xmult_mod] }; },
+    calculate(self, card, context) {
+      glass_evolved(card, context, 'loudred');
+      return glass_grow(card, context, 'glass_Xmult', 'Xmult_mod', 'a_xmult') || glass_main(card, context);
+    },
+  },
+
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -733,6 +818,7 @@ export const DESIGN_FAMILIES = [
   ['scraggy', 'scrafty'],
   ['mudbray', 'mudsdale'],
   ['sprigatito', 'floragato', 'meowscarada'],
+  ['whismur', 'loudred', 'exploud'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -741,6 +827,8 @@ const ROLLOUT = (c, m) => ['{C:attention}Rollout:{} {C:chips}+#' + c + '#{} Chip
 const PAIR = ['Played cards that share a rank', 'with another scored card give', '{C:mult}+#1#{} Mult when scored'];
 const TRAIN = (x) => ['Gains {X:mult,C:white} X#' + x + '# {} Mult when a hand', 'with exactly {C:attention}1{} or exactly {C:attention}5{}', 'scoring cards is played', '{C:inactive}(Can\'t be debuffed)'];
 const LUCKY_GROW = ['When a {C:attention}Lucky{} card triggers,', 'it permanently gains {C:mult}+#1#{} Mult', 'and {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)];
+const GLASS_BREAKS = (gain) => [gain + ' each', 'time a {C:attention}Glass{} card breaks'];
+const NEG_JUSTICE = ['On evolution, create a', '{C:dark_edition}Negative{} {C:tarot}Justice{}'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -762,8 +850,8 @@ export const DESIGN_LOC = {
       ['{C:chips}+#1#{} hand', ...ROLLOUT(2, 3), '{C:inactive}(Currently {C:chips}+#5#{C:inactive} Chips)'],
       ['{C:attention}Sheer Cold:{} {X:mult,C:white} X#4# {} Mult while', 'Rollout is at full power'],
     ] },
-    j_poke_grookey: { name: 'Grookey', text: ['{C:attention}+#1#{} hand size', 'Every {C:attention}#2#{} card scored this', 'round is retriggered', '{C:inactive}(Beat {C:attention}#3#{C:inactive}/#5#)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} beats)'] },
-    j_poke_thwackey: { name: 'Thwackey', text: ['{C:attention}+#1#{} hand size', 'Every {C:attention}#2#{} card scored this', 'round is retriggered', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#3#{C:inactive,s:0.8} beats)'] },
+    j_poke_grookey: { name: 'Grookey', text: ['{C:attention}+#1#{} hand size', 'Every {C:attention}#2#{} card scored this', 'round is retriggered and', 'gives {C:mult}+#6#{} Mult', '{C:inactive}(Beat {C:attention}#3#{C:inactive}/#5#)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} beats)'] },
+    j_poke_thwackey: { name: 'Thwackey', text: ['{C:attention}+#1#{} hand size', 'Every {C:attention}#2#{} card scored this', 'round is retriggered and', 'gives {C:mult}+#4#{} Mult', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#3#{C:inactive,s:0.8} beats)'] },
     j_poke_rillaboom: { name: 'Rillaboom', text: [
       ['{C:attention}+#1#{} hand size', 'Every {C:attention}#2#{} card scored this', 'round is retriggered'],
       ['{C:attention}Drum Beating:{} retriggered cards', 'give {C:mult}+#3#{} Mult'],
@@ -807,6 +895,17 @@ export const DESIGN_LOC = {
     j_poke_sprigatito: { name: 'Sprigatito', text: LUCKY_GROW },
     j_poke_floragato: { name: 'Floragato', text: LUCKY_GROW },
     j_poke_meowscarada: { name: 'Meowscarada', text: ['{C:attention}Lucky{} cards held in hand', 'each give {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Like {C:attention}Steel{C:inactive} cards, but not', '{C:inactive}counted as Steel)'] },
+    j_poke_whismur: { name: 'Whismur', text: [
+      ['{C:chips}+#1#{} Chips', ...GLASS_BREAKS('Gains {C:chips}+#2#{} Chips')],
+      [...NEG_JUSTICE, EVOLVES_ROUNDS(3)],
+    ] },
+    j_poke_loudred: { name: 'Loudred', text: [
+      ['{C:chips}+#1#{} Chips, {C:mult}+#2#{} Mult', ...GLASS_BREAKS('Gains {C:mult}+#3#{} Mult')],
+      [...NEG_JUSTICE, EVOLVES_ROUNDS(4)],
+    ] },
+    j_poke_exploud: { name: 'Exploud', text: [
+      '{C:chips}+#1#{} Chips, {C:mult}+#2#{} Mult,', '{X:mult,C:white} X#3# {} Mult', ...GLASS_BREAKS('Gains {X:mult,C:white} X#4# {} Mult'),
+    ] },
     j_poke_mudbray: { name: 'Mudbray', text: ['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
     j_poke_mudsdale: { name: 'Mudsdale', text: [
       ['{C:attention}Stamina:{} gains {C:chips}+#1#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round'],

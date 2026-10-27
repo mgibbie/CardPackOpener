@@ -58,7 +58,7 @@ try {
 	A([...coveredDex].every(d => !listed.includes(d)), 'every species a mod joker covers (incl. Megas / forms) is off the list');
 	A(coveredDex.size + listed.length === 1025 && D.counts.covered === coveredDex.size && D.counts.missing === listed.length, `listed (${listed.length}) + covered (${coveredDex.size}) = 1025`);
 	for (const m of PM.MODS) A(D.counts.byMod[m].species === M.coverage[m].size, `${m}: ${D.counts.byMod[m].species} species covered`);
-	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Whismur'), 'spot check: Bulbasaur / Pikachu / Mewtwo have jokers, Whismur does not');
+	A(['Bulbasaur', 'Pikachu', 'Mewtwo'].every(n => !D.species.some(s => s.name === n)) && D.species.some(s => s.name === 'Lillipup'), 'spot check: Bulbasaur / Pikachu / Mewtwo have jokers, Lillipup does not');
 	// the type table is the mods' own majority (every primary type that has a clear one; Flying has none upstream)
 	const badTypes = Object.entries(M.typeVotes).filter(([t, v]) => {
 		if (t === 'Flying') return false;
@@ -69,8 +69,8 @@ try {
 	A(D.species.every(s => PM.ptypeOf(s.types) === s.ptype && (s.types[0] === 'Flying' || Object.keys(D.conventions.typeToPtype).includes(s.types[0]))), 'each ptype follows from the primary type (Flying: the second type)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = (n) => D.species.find(s => s.name === n);
-	A(sp('Exploud')?.stage === 'Two' && sp('Loudred')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Arceus')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',
-		'spot check: Exploud Stage 2, Loudred Stage 1, Toxel Baby, Arceus Legendary, Corviknight Metal, Noibat Dragon');
+	A(sp('Stoutland')?.stage === 'Two' && sp('Herdier')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Arceus')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',
+		'spot check: Stoutland Stage 2, Herdier Stage 1, Toxel Baby, Arceus Legendary, Corviknight Metal, Noibat Dragon');
 
 	// ================================================================== ART
 	const C = await imp('tools/micatro/compose_pokermon_joker_art.mjs');
@@ -153,25 +153,25 @@ try {
 	const w5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
 	A(w5.length === D.species.filter(s => s.gen === 5 && s.ptype === 'Water').length && w5.every(t => t === 'Water'), 'the type filter narrows to Water (in Gen 5)', w5.length);
 	await anon.page.select('#pjGen', ''); await anon.page.select('#pjType', '');
-	await anon.page.type('#pjQ', 'whis');
-	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Whismur/) && await tiles(anon.page) === D.species.filter(s => /whis/i.test(s.name)).length, 4000), 'search by name');
+	await anon.page.type('#pjQ', 'lilli');
+	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Lillipup/) && await tiles(anon.page) === D.species.filter(s => /lilli/i.test(s.name)).length, 4000), 'search by name');
 	await anon.page.evaluate(() => { const q = document.getElementById('pjQ'); q.value = ''; q.dispatchEvent(new Event('input')); });
 	await anon.page.type('#pjQ', '#0848');
 	A(await waitFor(async () => await tiles(anon.page) === 1 && /Toxel/.test(await anon.page.$eval('.pj-tile', t => t.textContent)), 4000), 'search by dex number (#0848 = Toxel)');
 	await go(anon.page, '#/pokermon-jokers');
 	await shot(anon.page, 'desktop_index_signed_out');
-	await go(anon.page, '#/pokermon-jokers/295');
+	await go(anon.page, '#/pokermon-jokers/508');
 	const card = await anon.page.evaluate(() => ({
 		h1: document.querySelector('.pj-page h1')?.textContent, img: document.querySelector('.pj-art-big')?.naturalWidth, src: document.querySelector('.pj-art-big')?.getAttribute('src'),
 		facts: document.querySelector('.pj-facts')?.textContent, line: [...document.querySelectorAll('.pj-line li')].map(l => l.textContent), box: !!document.querySelector('.pj-owner, #pjSubmit'),
 		nullText: [...document.getElementById('content').childNodes].some(n => n.nodeType === 3 && /^\s*(null|undefined)\s*$/.test(n.textContent)),
 	}));
-	A(card.h1 === 'Exploud #0295' && card.img === 142 && /0295\.png$/.test(card.src), 'a card page shows the name, dex and its composed art', JSON.stringify(card));
-	A(/Colorless/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Whismur","Loudred","Exploud"]', 'type, stage and evolution line', JSON.stringify(card));
+	A(card.h1 === 'Stoutland #0508' && card.img === 142 && /0508\.png$/.test(card.src), 'a card page shows the name, dex and its composed art', JSON.stringify(card));
+	A(/Colorless/.test(card.facts) && /Stage 2/.test(card.facts) && JSON.stringify(card.line) === '["Lillipup","Herdier","Stoutland"]', 'type, stage and evolution line', JSON.stringify(card));
 	A(!card.box, 'signed out: no Submit design box');
 	A(!card.nullText, 'no stray null / undefined text where the box would be');
 	await anon.page.click('.pj-flip');
-	A(/0295_shiny\.png$/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
+	A(/0508_shiny\.png$/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
 	await shot(anon.page, 'desktop_card_signed_out');
 	A(!anon.designCalls.length, 'signed out: the page never calls the joker-design API', anon.designCalls.join(','));
 	A(!anon.errors.length, 'no console errors (signed out)', anon.errors.slice(0, 3).join(' | '));
@@ -179,7 +179,7 @@ try {
 
 	// ---------- a non-owner: no box ----------
 	const pe = await open(peon, 'pjpeon');
-	await go(pe.page, '#/pokermon-jokers/295');
+	await go(pe.page, '#/pokermon-jokers/508');
 	A(!(await pe.page.$('.pj-owner')) && !(await pe.page.$('#pjSubmit')), 'a non-owner: no Submit design box');
 	await go(pe.page, '#/pokermon-jokers');
 	A(!pe.designCalls.length, 'a non-owner: the page never calls the joker-design API', pe.designCalls.join(','));
@@ -187,10 +187,10 @@ try {
 
 	// ---------- the owner: box, submission round-trip ----------
 	const ow = await open(owner, 'mgibbie');
-	await go(ow.page, '#/pokermon-jokers/295');
+	await go(ow.page, '#/pokermon-jokers/508');
 	A(await ow.page.$('.pj-owner #pjSubmit') !== null, 'the owner sees the Submit design box');
-	A(await ow.page.$eval('#pjRarity', s => s.value) === D.species.find(s => s.dex === 295).rarityLabel, 'the rarity defaults to the guess');
-	const typed = { ability: 'Retrigger every scored 3\nGains X0.5 Mult per Loudred sold', rarity: 'Rare', cost: '9', notes: 'Shiny: X2 instead' };
+	A(await ow.page.$eval('#pjRarity', s => s.value) === D.species.find(s => s.dex === 508).rarityLabel, 'the rarity defaults to the guess');
+	const typed = { ability: 'Retrigger every scored 3\nGains X0.5 Mult per Herdier sold', rarity: 'Rare', cost: '9', notes: 'Shiny: X2 instead' };
 	await ow.page.type('#pjAbility', typed.ability);
 	await ow.page.select('#pjRarity', typed.rarity);
 	await ow.page.type('#pjCost', typed.cost);
@@ -199,17 +199,17 @@ try {
 	A(await waitFor(() => ow.page.$eval('.pj-msg', m => /filed ✓ \(1 design in the joker design list\)/.test(m.textContent)), 8000), 'submitting shows the confirmation', await ow.page.$eval('.pj-msg', m => m.textContent));
 	const srv = await api('joker-design-list', {}, owner);
 	const got = srv.designs && srv.designs[0];
-	A(srv.designs?.length === 1 && got.dex === 295 && got.name === 'Exploud' && got.ability === typed.ability && got.rarity === 'Rare' && got.cost === 9 && got.notes === typed.notes,
+	A(srv.designs?.length === 1 && got.dex === 508 && got.name === 'Stoutland' && got.ability === typed.ability && got.rarity === 'Rare' && got.cost === 9 && got.notes === typed.notes,
 		'the server holds exactly what was typed (owner_todo:jokers)', JSON.stringify(srv));
 	A(await waitFor(() => ow.page.$$eval('.pj-design', ds => ds.length === 1 && ds[0].textContent.includes('Retrigger every scored 3')), 5000), 'the filed design shows on the card');
 	A(await ow.page.$eval('#pjAbility', t => t.value) === '', 'the box clears after filing');
-	await go(ow.page, '#/pokermon-jokers/295');
+	await go(ow.page, '#/pokermon-jokers/508');
 	A(await waitFor(() => ow.page.$$eval('.pj-design', ds => ds.length === 1 && /Rare/.test(ds[0].textContent) && /\$9/.test(ds[0].textContent) && /Shiny: X2/.test(ds[0].textContent)), 5000), 'after a reload the design is still listed, read-only (rarity, cost, notes)');
 	A(await ow.page.$$eval('.pj-design textarea, .pj-design input', x => x.length) === 0, 'the filed designs are read-only');
 	await ow.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 	await shot(ow.page, 'desktop_card_owner');
 	await go(ow.page, '#/pokermon-jokers');
-	A(await waitFor(() => ow.page.$eval('.pj-tile[data-dex="295"] .pj-designed', e => e.textContent === '✎ 1'), 5000), 'the index marks the tile the owner designed');
+	A(await waitFor(() => ow.page.$eval('.pj-tile[data-dex="508"] .pj-designed', e => e.textContent === '✎ 1'), 5000), 'the index marks the tile the owner designed');
 	A(!ow.errors.length, 'no console errors (owner)', ow.errors.slice(0, 3).join(' | '));
 	await ow.ctx.close();
 
@@ -224,7 +224,7 @@ try {
 	await shot(phA.page, 'phone_card_signed_out');
 	await phA.ctx.close();
 	const phO = await open(owner, 'mgibbie', 390, 844);
-	await go(phO.page, '#/pokermon-jokers/295');
+	await go(phO.page, '#/pokermon-jokers/508');
 	A(await waitFor(() => phO.page.$$eval('.pj-design', d => d.length === 1), 5000) && await noHScroll(phO.page), '390 px card, owner: the box and the filed design fit with no horizontal scroll');
 	A(await phO.page.evaluate(() => { const b = document.querySelector('.pj-owner').getBoundingClientRect(); return b.left >= 0 && b.right <= window.innerWidth; }), '390 px: the owner box sits inside the screen');
 	await phO.page.evaluate(() => document.querySelector('.pj-owner').scrollIntoView());
