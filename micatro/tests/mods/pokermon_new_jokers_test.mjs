@@ -3,7 +3,7 @@
 //   Shinx -> Luxio -> Luxray, Honedge -> Doublade -> Aegislash (a real Dusk Stone), Spheal -> Sealeo -> Walrein, Grookey ->
 //   Thwackey -> Rillaboom, Kubfu -> Urshifu (Single Strike / Rapid Strike by its training), Tandemaus -> Maushold, Darumaka ->
 //   Darmanitan, Scraggy -> Scrafty, Mudbray -> Mudsdale; Xerneas, Spiritomb, Tatsugiri.
-// Plus: the pin (contentRev 20 since the Sprigatito line: pokermon_sprigatito_test.mjs), the static data, the Pokédex order, families, pools (rarity, gens, the Starter Pack, Urshifu only
+// Plus: the pin (contentRev 21 since the Whismur line: pokermon_whismur_test.mjs), the static data, the Pokédex order, families, pools (rarity, gens, the Starter Pack, Urshifu only
 // through Kubfu), the text, the debuff rules (Kubfu / Urshifu / Unseen Fist) and the art (upstream 3.9.1's own cells + Shiny twins).
 //   node micatro/tests/mods/pokermon_new_jokers_test.mjs
 import path from 'path';
@@ -14,7 +14,8 @@ import { MODS } from '../../js/mods/registry.js';
 import * as PINS from '../../js/mods/pins.js';
 import { STATUS } from '../../mods/pokermon/index.js';
 import { poke_get_family_list } from '../../mods/pokermon/systems/evolution.js';
-import { increment_energy } from '../../mods/pokermon/systems/energy.js';
+import { increment_energy, energy_values } from '../../mods/pokermon/systems/energy.js';
+import { describe } from '../../js/engine/describe.js';
 import { is_type, apply_type_sticker } from '../../mods/pokermon/systems/types.js';
 import { starter_lists } from '../../mods/pokermon/boosters/packs1.js';
 import { seriesA } from '../../mods/pokermon/ui.js';
@@ -54,12 +55,12 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 20 && PINS.modPin('pokermon') === '3.9.1+r20', 'Pokermon contentRev 20 (pin 3.9.1+r20)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 20)', 'version stays 3.9.1: "3.9.1 (rev 20)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 21 && PINS.modPin('pokermon') === '3.9.1+r21', 'Pokermon contentRev 21 (pin 3.9.1+r21)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 21)', 'version stays 3.9.1: "3.9.1 (rev 21)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
-  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3, 'defs: 26 (+ the 3 of the Sprigatito line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
+  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3 + 3, 'defs: 26 (+ the 3 of the Sprigatito line, the 3 of the Whismur line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
 });
 sec('static', () => {
   // [rarity, cost, stage, type, gen] as designed (Grookey $5: the starter convention; Kubfu $10: Shaymin's precedent)
@@ -282,6 +283,62 @@ sec('grookey', () => {
   ok(G.hand.config.card_limit === h0, 'rillaboom sold: hand size back', [G.hand.config.card_limit, h0]);
   start('GROOKEY2');
   ok(starter_lists().grass.includes('j_poke_grookey') && !starter_lists().grass.includes('j_poke_thwackey'), 'Grookey is a Grass starter (the Starter Pack); Thwackey is not');
+});
+
+// Grookey / Thwackey's Mult (contentRev 21, the lead-in to Drum Beating): on-beat cards also give +1 / +2 Mult each time they score —
+// the `mult` field, so Energy scales it as Rillaboom's (energy_values.mult per Energy, of its base), and carries into the evolutions.
+sec('grookey mult', () => {
+  start('GROOKM');
+  const j = add('j_poke_grookey');
+  const straight = () => hand(['S_2', 'H_3', 'D_4', 'C_5', 'S_6']);
+  let r = play(straight());
+  ok(r.total.chips === 30 + 20 + 5 && r.total.mult === 4 + 2 * 1, 'grookey: the on-beat 5 (scored twice) gives +1 Mult each time', r.total);
+  r = play(hand(['S_9']));
+  ok(r.total.mult === 1, 'grookey: an off-beat card (the 6th scored) gives no Mult', r.total);
+  play(hand(['S_8']));
+  r = play(hand(['S_7']));
+  ok(r.total.chips === 5 + 7 + 7 && r.total.mult === 1 + 2 * 1, 'grookey: the 8th card scored is on the beat: +1 Mult twice', r.total);
+  increment_energy(j, 'Grass');
+  const em = energy_values.mult;
+  ok(near(j.ability.extra.mult, 1 + 1 * em) && j.ability.extra.energy_count === 1, 'grookey: 1 Grass Energy -> +' + (1 + em) + ' Mult (energy_values.mult of its base)', j.ability.extra);
+  r = play(straight()); // beats 9..13: the 12th is this hand's 4th card (the 5)
+  ok(near(r.total.mult, 4 + 2 * (1 + em)), 'grookey (1 Energy): the on-beat card gives the energized Mult', r.total);
+  ok(/1\.4/.test(JSON.stringify(describe(j))) && /Mult/.test(JSON.stringify(describe(j))), 'grookey: the tooltip shows the energized +1.4 Mult', JSON.stringify(describe(j)).slice(0, 500));
+  j.ability.extra.beats = 12;
+  winRound();
+  ok(key(j) === 'j_poke_thwackey' && near(j.ability.extra.mult, 2 + 2 * em) && j.ability.extra.energy_count === 1, 'grookey -> thwackey keeps its Energy: +' + (2 + 2 * em) + ' Mult (the evolving energize)', [key(j), j.ability.extra]);
+  nextRound();
+  r = play(straight());
+  ok(near(r.total.mult, 4 + 2 * (2 + 2 * em)), 'thwackey (1 Energy): the on-beat 4 gives +2.8 Mult each time it scores', r.total);
+  r = play(hand(['S_9'])); // the 6th card scored: on the beat
+  ok(near(r.total.mult, 1 + 2 * (2 + 2 * em)), 'thwackey: the 6th card scored is on the beat', r.total);
+  r = play(hand(['S_8']));
+  ok(r.total.mult === 1, 'thwackey: an off-beat card (the 7th) gives no Mult', r.total);
+  j.ability.extra.beats = 16;
+  winRound();
+  ok(key(j) === 'j_poke_rillaboom' && near(j.ability.extra.mult, 3 + 3 * em), 'thwackey -> rillaboom keeps the Energy: Drum Beating +' + (3 + 3 * em), [key(j), j.ability.extra]);
+  nextRound();
+  r = play(straight());
+  ok(near(r.total.mult, 4 + 4 * (3 + 3 * em)), 'rillaboom (1 Energy): the 3 and the 5 give +4.2 Mult each scoring', r.total);
+  start('GROOKM2');
+  const t = add('j_poke_thwackey');
+  r = play(straight());
+  ok(r.total.mult === 4 + 2 * 2, 'thwackey (fresh): +2 Mult on each scoring of the on-beat card', r.total);
+  increment_energy(t, 'Grass'); increment_energy(t, 'Grass');
+  ok(near(t.ability.extra.mult, 2 + 2 * 2 * em), 'thwackey: 2 Energy -> +' + (2 + 4 * em) + ' Mult', t.ability.extra);
+  const J = MODS.pokermon.content.loc.descriptions.Joker;
+  ok(J.j_poke_grookey.text.some((l) => /#6#\{\} Mult/.test(l)) && J.j_poke_thwackey.text.some((l) => /#4#\{\} Mult/.test(l)), 'the texts name the Mult');
+});
+// Audit: every joker of the owner's designs has an Energy-scaled field (a numeric config.extra key in energy_values), or says it
+// doesn't on purpose (poke_no_energy_field: true) — so Energy is never silently a no-op (Grookey / Thwackey were, before contentRev 21).
+sec('design energy audit', () => {
+  const names = STATUS.PORTED_FILES['micatro/pokejokers_designs'] || [];
+  const bad = names.filter((n) => {
+    const c = MODS.pokermon.content.centers.find((x) => x.key === 'j_poke_' + n);
+    const ex = (c && c.config && c.config.extra) || {};
+    return !(c && c.poke_no_energy_field) && !Object.keys(ex).some((k) => k in energy_values && typeof ex[k] === 'number');
+  });
+  ok(names.length >= 32 && bad.length === 0, 'every owner-designed joker has an Energy-scaled field (or poke_no_energy_field)', bad);
 });
 
 // ------------------------------------------------------------------- LINE E: Kubfu -> Urshifu

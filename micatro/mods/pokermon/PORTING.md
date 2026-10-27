@@ -262,8 +262,8 @@ Intended-design fixes are noted in comments at each site (search "intended").
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
 87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), `3.9.1+r15` for batch 17 (the last: the
 upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), `3.9.1+r18` for the Hazard
-follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), **`3.9.1+r20`** since the owner's
-Sprigatito line ("The owner's Sprigatito line" below)
+follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), `3.9.1+r20` for the owner's
+Sprigatito line ("The owner's Sprigatito line" below), **`3.9.1+r21`** since the owner's Whismur line ("The owner's Whismur line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2123,6 +2123,32 @@ after Ursaluna in Pokédex order. Neither Nacho nor Pokermon+ has these species.
 - **Fuzz**: vanilla identical (40 / 5937 / 13 / 10). The seam-only diff (the 3 definitions removed, the hook move and tooltip lines kept)
   is identical to origin/main (Pokermon 24 / 3419 / 13 / 6, all mods 16 / 2907 / 13 / 5); with the jokers the Pokermon runs diverge at
   pool rolls (Pokermon 24 / 3203 / 13 / 6, all mods 16 / 3130 / 13 / 6).
+
+### The owner's Whismur line (2026-10-27, branch `feat/pokermon-whismur-line`)
+Pinned **`3.9.1+r21`** (`contentRev: 21`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Whismur (293) -> Loudred (294) ->
+Exploud (295), Colorless, in `jokers/pokejokers_designs.js` (LINE F3; 32 defs now), after Shedinja in Pokédex order. Neither Nacho nor
+Pokermon+ has these species.
+- **The trigger**: a Glass card breaking by its 1 in 4 shatter: Glass Joker's own count (`remove_playing_cards`, the `removed` cards with
+  `shattered`), once per broken card (3 in one hand count 3). Not Blueprint (it scales). The growth lands after the hand, as Glass Joker's.
+- **Whismur** (U **$6**): +30 Chips; +20 Chips per break. 4 rounds.
+- **Loudred** (Safari $8): Whismur's Chips (all of them, the starting 30 included; +30 when found fresh) and +4 Mult; +3 Mult per break. 5 rounds.
+- **Exploud** (Safari $10): the Chips and the Mult (+30 / +4 fresh) and X1.5 Mult; +X0.2 per break. One joker_main return: chips, then
+  Mult, then X Mult.
+- **Fields**: the totals `glass_chips` / `glass_mult` / `glass_Xmult` are in no `energy_values`, so Energy never touches the starting
+  values or a banked gain (not retroactive); the gain is `chip_mod` / `mult_mod` / `Xmult_mod` (+20% of its base per Energy: +4 / +0.6 /
+  +X0.04). The totals carry over with `poke_custom_values_to_keep`; the Energy (energy_count) is re-applied to the new form's base gain.
+  The tooltip shows every carried total and the energized gain.
+- **Negative Justice**: each evolution (Whismur -> Loudred, Loudred -> Exploud) creates one Negative Justice (Chingling's `add_card`; Negative,
+  so full consumable slots don't matter): the new form's `poke_evolved` context from the previous form. Two over the line.
+- **Art: upstream's own.** 3.9.1's pokespriteload.lua draws all three on the Natdex sheet ({14,19}, {16,19}, {18,19}, Shiny twins):
+  `poke_sprite391`. Nothing to deploy for the mod. The wiki drops them (414 missing).
+- **Grookey / Thwackey** (same contentRev): their on-beat (retriggered) cards also give +1 / +2 Mult each time they score, the lead-in to
+  Rillaboom's Drum Beating (+3, unchanged): the `mult` field, as Rillaboom's, so Energy (which did nothing on them: hand size, beats and
+  retriggers aren't energized) scales it by `energy_values.mult` (0.4 of its base per Energy: +1.4 / +2.8 with one) and the evolving energize carries
+  it into Thwackey / Rillaboom. Audit (`pokermon_new_jokers_test` "design energy audit"): every owner-designed joker has a numeric
+  `config.extra` key in `energy_values`, or `poke_no_energy_field: true` on purpose (none today).
+- **Tests**: `micatro/tests/mods/pokermon_whismur_test.mjs` (2 passed / 13 failed on origin/main, 54 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 32 defs), `pokermon_sprigatito_test` (its pin check), `micatro_mod_version_pin`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

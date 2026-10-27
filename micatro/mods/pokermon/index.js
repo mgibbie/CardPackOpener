@@ -811,7 +811,10 @@ export const POKERMON = registerMod({
   // 20 = the owner's Sprigatito line (Sprigatito -> Floragato -> Meowscarada; jokers/pokejokers_designs.js): a Lucky trigger grows the
   // card (+Mult / +$ when scored, Hiker-style), then held Lucky cards give X Mult like Steel; Sprigatito joins the Grass starters
   // (the Starter Pack); perma_p_dollars is scored by Pokermon's hook (was Pokermon+'s).
-  contentRev: 20,
+  // 21 = the owner's Whismur line (Whismur -> Loudred -> Exploud; jokers/pokejokers_designs.js): each broken Glass card grows its
+  // Chips, then Mult, then X Mult (every form keeps the last's), and each evolution creates a Negative Justice; Grookey / Thwackey's
+  // on-beat cards give +1 / +2 Mult (Energy now scales them).
+  contentRev: 21,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
