@@ -15,7 +15,7 @@
 // Loaded on demand by screens.js (the New Run screen's "Custom deck" row).
 import { modal, closeModal, cardCanvas, redrawCard, stillData } from './screens.js';
 import { modAtlasesOf } from './cardsprite.js';
-import { CENTERS, LOC, BACK_LIST, MODREG, onModAtlas, cssColour } from './assets.js';
+import { CENTERS, LOC, BACK_LIST, MODREG, onModAtlas, cssColour, beginCellCrops, endCellCrops, releaseModSheets, setCellCropCap, modDrawMisses } from './assets.js';
 import { esc } from './markup.js';
 import { sound } from './sound.js';
 import * as CD from '../engine/customdeck.js';
@@ -117,16 +117,24 @@ function faceOf(key) {
 // thumbnails waiting for a mod atlas: redrawn when it loads ({c, d, atl, backKey}; a paged picker tile's d changes)
 const live = new Set();
 let atlasHooked = false;
+/** Redraw a waiting thumbnail; it stays `pending` while some of its art is still loading (only those redraw on a load). */
+function redrawLive(t) { const m = modDrawMisses(); redrawCard(t.c, t.d, t.backKey); t.pending = modDrawMisses() > m; }
 function hookAtlases() {
   if (atlasHooked) return;
   atlasHooked = true;
-  onModAtlas((name) => { for (const t of [...live]) { if (!t.c.isConnected) { live.delete(t); continue; } if (t.d && t.atl.includes(name)) redrawCard(t.c, t.d, t.backKey); } });
+  onModAtlas((name) => { for (const t of [...live]) { if (!t.c.isConnected) { live.delete(t); continue; } if (t.d && t.pending && t.atl.includes(name)) redrawLive(t); } releaseSoon(); });
 }
+// The editor draws mod cards in crop mode (assets.js beginCellCrops): each cell it draws is kept as a small canvas, and
+// once the cards on screen have their cells, the whole sheets are let go — after a sheet loads and after each redraw.
+let releaseT = 0;
+const releaseSoon = () => { if (!releaseT) releaseT = setTimeout(() => { releaseT = 0; releaseModSheets(); }, 0); };
 function thumb(d, cls, backKey) {
+  const m0 = modDrawMisses();
   const c = cardCanvas(d, cls || 'cd-thumb', backKey);
+  const pending = modDrawMisses() > m0;
   const atl = modAtlasesOf(stillData(d)); // (the art it draws: a mod's still stand-in, e.g. Pokermon's Series A)
   if (d.facing === 'back' && MODREG.center(backKey) && MODREG.center(backKey).atlas) atl.push(MODREG.center(backKey).atlas);
-  if (atl.length) { live.add({ c, d, atl, backKey }); hookAtlases(); }
+  if (atl.length) { live.add({ c, d, atl, backKey, pending }); hookAtlases(); }
   return c;
 }
 const itemThumb = (key, cls) => thumb(faceOf(key), cls);
@@ -214,6 +222,19 @@ function picker(kind, modSet, onPick, { title, multi = true, count = null } = {}
 
   let page = 0, list = all;
   let size = isPhone() ? 1 : DESKTOP_PAGE;   // (a phone measures one tile, then fills the screen)
+  // The next page is drawn ahead into a scratch canvas, so Next draws from crops at once. The cells come from the small
+  // blocks of the pre-split sheets (tools/micatro/split_mod_atlases.mjs): a page decodes a few ~1.5 MB blocks, and lets
+  // them go once cropped, never a whole sheet (Pokermon's Natdex jokers: 4260 x 13110 px, 213 MB decoded).
+  const scratch = cardCanvas({ facing: 'back' }, 'cd-thumb');
+  let warmT = 0;
+  let warmKeys = [];   // the next page's cards whose art is still loading
+  const warm = (keys) => {
+    if (!el.isConnected) return;
+    warmKeys = keys.filter((k) => { const m = modDrawMisses(); redrawCard(scratch, faceOf(k)); return modDrawMisses() > m; });
+    releaseSoon();
+  };
+  const warmSoon = () => { clearTimeout(warmT); warmT = setTimeout(() => warm(list.slice((page + 1) * size, (page + 2) * size)), 0); };
+  const offAtlas = onModAtlas(() => { if (warmKeys.length) warm(warmKeys); });   // (now, before releaseSoon lets the just-loaded block go)
   const tiles = [];   // the page's tile elements, reused page to page: {t, c, rec, n, badge}
   function tile(i) {
     if (tiles[i]) return tiles[i];
@@ -264,8 +285,8 @@ function picker(kind, modSet, onPick, { title, multi = true, count = null } = {}
       if (x.t.dataset.key === k) return;
       const d = faceOf(k), c = defOf(k);
       x.t.dataset.key = k; x.t.dataset.k = 'pick:' + k;
-      redrawCard(x.c, d);
       x.rec.d = d; x.rec.atl = modAtlasesOf(stillData(d));
+      redrawLive(x.rec);
       x.n.innerHTML = esc(nameOf(k)) + (c.mod ? ` <span class="cd-modtag">${esc(modLabel(c.mod))}</span>` : '');
     });
     // a short last page hides the spare tiles; a smaller page size (fit) drops them
@@ -279,10 +300,12 @@ function picker(kind, modSet, onPick, { title, multi = true, count = null } = {}
     pager.style.display = n > 1 ? '' : 'none';
     const label = KIND_LABEL[kind] || '';
     note.textContent = note.textContent || (list.length === all.length ? `${all.length} ${label}${all.length === 1 ? '' : 's'}` : `${list.length} of ${all.length} ${label}s`);
+    setCellCropCap(Math.max(160, size * 4));   // (this page + the next, up to 2 cells a card: art + its floating layer)
+    warmSoon();
   }
   q.addEventListener('input', () => { page = 0; note.textContent = ''; draw(); });
   draw();
-  modal(el, { title: title || ('Add ' + (KIND_LABEL[kind] || kind)), cls: 'cd-pick-modal' });
+  modal(el, { title: title || ('Add ' + (KIND_LABEL[kind] || kind)), cls: 'cd-pick-modal', onClose: () => { offAtlas(); clearTimeout(warmT); } });
   if (size !== DESKTOP_PAGE) {
     size = fitPage(); draw();
     // (names wrap differently: if the first page still overflows the box, a row less)
@@ -480,7 +503,8 @@ export function openEditor(entry, o, refresh) {
   }, 'saveuse');
   foot.append(save, use);
   el.append(head, tabs, body, msg, foot);
-  modal(el, { title: 'Deck Editor', cls: 'cd-editor-modal' });
+  beginCellCrops();
+  modal(el, { title: 'Deck Editor', cls: 'cd-editor-modal', onClose: () => endCellCrops() });
   const box = el.closest('.modal-box');
 
   // the mods whose content the pickers offer: this deck's + the New Run selection
@@ -501,6 +525,7 @@ export function openEditor(entry, o, refresh) {
     ({ deck: deckTab, cards: cardsTab, items: itemsTab, bans: bansTab, rules: rulesTab, share: shareTab })[tab]();
     if (box) box.scrollTop = top;
     if (focusKey) { const f = [...el.querySelectorAll('[data-k]')].find((x) => x.dataset.k === focusKey); if (f) f.focus({ preventScroll: true }); }
+    releaseSoon();
   }
   const section = (title, cls) => { const s = h('div', 'cd-sec ' + (cls || '')); if (title) s.appendChild(h('div', 'cd-sec-t', title)); body.appendChild(s); return s; };
   const line = (label, ctl, k) => { const r = h('div', 'cd-line'); if (k) r.dataset.line = k; r.append(h('div', 'cd-l', esc(label)), ctl); return r; };
