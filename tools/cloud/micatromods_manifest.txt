@@ -15,14 +15,65 @@ autumncircus/assets/2x/StakeMyCardsPls.png
 autumncircus/assets/2x/TagImIt.png
 autumncircus/assets/2x/TransGirlsWhoBooster.png
 autumncircus/assets/2x/VouchMe.png
+autumncircus/assets/2x/_split/BasicOddities/0_0.png
+autumncircus/assets/2x/_split/BasicOddities/0_1.png
+autumncircus/assets/2x/_split/BasicOddities/0_2.png
+autumncircus/assets/2x/_split/BasicOddities/1_0.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/0_0.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/0_1.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/0_2.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/0_3.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/0_4.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/1_0.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/1_1.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/1_2.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/1_3.png
+autumncircus/assets/2x/_split/BlindToAllButTheVideo/1_4.png
+autumncircus/assets/2x/_split/Emojiokers/0_0.png
+autumncircus/assets/2x/_split/Emojiokers/0_1.png
+autumncircus/assets/2x/_split/Emojiokers/0_2.png
+autumncircus/assets/2x/_split/Emojiokers/0_3.png
+autumncircus/assets/2x/_split/Emojiokers/1_0.png
+autumncircus/assets/2x/_split/LooksLikeTheJokers/0_0.png
+autumncircus/assets/2x/_split/LooksLikeTheJokers/0_1.png
+autumncircus/assets/2x/_split/LooksLikeTheJokers/0_2.png
+autumncircus/assets/2x/_split/LooksLikeTheJokers/1_0.png
+autumncircus/assets/2x/_split/LooksLikeTheJokers/1_1.png
+autumncircus/assets/2x/_split/MoreConsumables/0_0.png
+autumncircus/assets/2x/_split/MoreConsumables/0_1.png
+autumncircus/assets/2x/_split/MoreConsumables/0_2.png
+autumncircus/assets/2x/_split/MoreConsumables/0_3.png
+autumncircus/assets/2x/_split/MoreConsumables/1_1.png
+autumncircus/assets/2x/_split/MoreConsumables/1_2.png
+autumncircus/assets/2x/_split/MoreConsumables/1_3.png
+autumncircus/assets/2x/_split/VouchMe/0_0.png
+autumncircus/assets/2x/_split/VouchMe/1_0.png
 autumncircus/assets/2x/specialjoker.png
 autumncircus/assets/fonts/NotoEmoji-Bold.ttf
 autumnmood/assets/2x/Oddity.png
 autumnmood/assets/2x/OddityTag.png
 autumnmood/assets/2x/bottle.png
+betmma/assets/2x/_split/betmma/0_0.png
+betmma/assets/2x/_split/betmma/0_1.png
+betmma/assets/2x/_split/betmma/0_2.png
+betmma/assets/2x/_split/betmma/0_3.png
+betmma/assets/2x/_split/betmma/0_4.png
+betmma/assets/2x/_split/betmma/1_0.png
+betmma/assets/2x/_split/betmma/1_1.png
+betmma/assets/2x/_split/betmma/1_2.png
+betmma/assets/2x/_split/betmma/1_3.png
+betmma/assets/2x/_split/betmma/1_4.png
 betmma/assets/2x/betmma.png
 bunco/assets/2x/Blinds/Blinds.png
 bunco/assets/2x/Blinds/BlindsFinisher.png
+bunco/assets/2x/Blinds/_split/Blinds/0_0.png
+bunco/assets/2x/Blinds/_split/Blinds/0_1.png
+bunco/assets/2x/Blinds/_split/Blinds/0_2.png
+bunco/assets/2x/Blinds/_split/Blinds/0_3.png
+bunco/assets/2x/Blinds/_split/Blinds/1_0.png
+bunco/assets/2x/Blinds/_split/Blinds/1_1.png
+bunco/assets/2x/Blinds/_split/Blinds/1_2.png
+bunco/assets/2x/Blinds/_split/Blinds/1_3.png
 bunco/assets/2x/Boosters/BoostersBlind.png
 bunco/assets/2x/Boosters/BoostersVirtual.png
 bunco/assets/2x/Consumables/Planets.png
@@ -49,11 +100,31 @@ bunco/assets/2x/Jokers/Jokers-548b.png
 bunco/assets/2x/Jokers/Jokers.png
 bunco/assets/2x/Jokers/JokersExotic.png
 bunco/assets/2x/Jokers/JokersLegendary.png
+bunco/assets/2x/Jokers/_split/JokerBlind/0_0.png
+bunco/assets/2x/Jokers/_split/JokerBlind/1_0.png
+bunco/assets/2x/Jokers/_split/JokerBlind/2_0.png
+bunco/assets/2x/Jokers/_split/JokerBlind/3_0.png
+bunco/assets/2x/Jokers/_split/JokerBlind/4_0.png
+bunco/assets/2x/Jokers/_split/JokerBlind/5_0.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/0_0.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/0_1.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/0_2.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/0_3.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/1_0.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/1_1.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/1_2.png
+bunco/assets/2x/Jokers/_split/Jokers-548b/1_7.png
+bunco/assets/2x/Jokers/_split/JokersExotic/0_0.png
+bunco/assets/2x/Jokers/_split/JokersExotic/1_0.png
 bunco/assets/2x/Links/Link.png
 bunco/assets/2x/Resprites/Consumables.png
 bunco/assets/2x/Resprites/EnhancedContrast.png
 bunco/assets/2x/Resprites/EnhancedUIContrast.png
 bunco/assets/2x/Resprites/Jokers.png
+bunco/assets/2x/Resprites/_split/EnhancedContrast/0_0.png
+bunco/assets/2x/Resprites/_split/EnhancedContrast/0_1.png
+bunco/assets/2x/Resprites/_split/EnhancedContrast/1_0.png
+bunco/assets/2x/Resprites/_split/EnhancedContrast/1_1.png
 bunco/assets/2x/Skins/SkinDuckGameHC.png
 bunco/assets/2x/Skins/SkinDuckGameLC.png
 bunco/assets/2x/Skins/SkinFiendFolioHC.png
@@ -71,6 +142,8 @@ bunco/assets/2x/Tags/TagsExotic.png
 bunco/assets/2x/Tags/TagsHand.png
 bunco/assets/2x/Tags/TagsSticker.png
 bunco/assets/2x/Vouchers/Vouchers.png
+bunco/assets/2x/Vouchers/_split/Vouchers/0_0.png
+bunco/assets/2x/Vouchers/_split/Vouchers/1_0.png
 bunco/assets/fonts/font.ttf
 bunco/assets/shaders/background.fs
 bunco/assets/shaders/flame.fs
@@ -97,8 +170,46 @@ inscrybed/assets/2x/j_deathly.png
 inscrybed/assets/2x/j_magickal.png
 inscrybed/assets/2x/j_mycologist.png
 inscrybed/assets/2x/j_techno.png
+mikas/assets/2x/_split/mikas/0_0.png
+mikas/assets/2x/_split/mikas/0_1.png
+mikas/assets/2x/_split/mikas/0_2.png
+mikas/assets/2x/_split/mikas/0_3.png
+mikas/assets/2x/_split/mikas/1_0.png
+mikas/assets/2x/_split/mikas/1_1.png
+mikas/assets/2x/_split/mikas/1_2.png
 mikas/assets/2x/mikas.png
 milatro/assets/2x/MilatroJokers.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/0_0.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/0_1.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/0_2.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/0_3.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/1_0.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/1_1.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/1_2.png
+morefluff/assets/2x/1.9.9999/_split/mf_blinds/1_3.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_0.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_1.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_2.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_3.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_4.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_5.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_6.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_7.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_8.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/0_9.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_0.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_1.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_2.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_3.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_4.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_5.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_6.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_7.png
+morefluff/assets/2x/1.9.9999/_split/mf_jokers/1_8.png
+morefluff/assets/2x/1.9.9999/_split/mf_loyalty/0_0.png
+morefluff/assets/2x/1.9.9999/_split/mf_loyalty/0_1.png
+morefluff/assets/2x/1.9.9999/_split/mf_loyalty/1_0.png
+morefluff/assets/2x/1.9.9999/_split/mf_loyalty/1_1.png
 morefluff/assets/2x/1.9.9999/lettergem_destroy_b.png
 morefluff/assets/2x/1.9.9999/lettergem_g_b.png
 morefluff/assets/2x/1.9.9999/mf_blinds.png
@@ -116,6 +227,30 @@ morefluff/assets/2x/1.9.9999/mf_stake_stickers.png
 morefluff/assets/2x/1.9.9999/mf_stakes.png
 morefluff/assets/2x/1.9.9999/mf_tags.png
 morefluff/assets/2x/1.9.9999/mf_vouchers.png
+morefluff/assets/2x/_split/mf_hyperjimbo/0_0.png
+morefluff/assets/2x/_split/mf_hyperjimbo/0_1.png
+morefluff/assets/2x/_split/mf_hyperjimbo/0_2.png
+morefluff/assets/2x/_split/mf_hyperjimbo/0_3.png
+morefluff/assets/2x/_split/mf_hyperjimbo/0_4.png
+morefluff/assets/2x/_split/mf_hyperjimbo/1_0.png
+morefluff/assets/2x/_split/mf_hyperjimbo/1_1.png
+morefluff/assets/2x/_split/mf_hyperjimbo/1_2.png
+morefluff/assets/2x/_split/mf_hyperjimbo/1_3.png
+morefluff/assets/2x/_split/mf_hyperjimbo/1_4.png
+morefluff/assets/2x/_split/mf_jokers_refresh/0_0.png
+morefluff/assets/2x/_split/mf_jokers_refresh/0_1.png
+morefluff/assets/2x/_split/mf_jokers_refresh/0_2.png
+morefluff/assets/2x/_split/mf_jokers_refresh/0_3.png
+morefluff/assets/2x/_split/mf_jokers_refresh/0_4.png
+morefluff/assets/2x/_split/mf_jokers_refresh/1_0.png
+morefluff/assets/2x/_split/mf_jokers_refresh/1_1.png
+morefluff/assets/2x/_split/mf_jokers_refresh/1_2.png
+morefluff/assets/2x/_split/mf_jokers_refresh/1_3.png
+morefluff/assets/2x/_split/mf_jokers_refresh/1_4.png
+morefluff/assets/2x/_split/mf_mv/0_0.png
+morefluff/assets/2x/_split/mf_mv/0_1.png
+morefluff/assets/2x/_split/mf_mv/1_0.png
+morefluff/assets/2x/_split/mf_mv/1_1.png
 morefluff/assets/2x/lightningstrikesthrice.png
 morefluff/assets/2x/mf_blinds.png
 morefluff/assets/2x/mf_colours_refresh.png
@@ -166,6 +301,9 @@ olympus/assets/2x/j_hephaestus.png
 olympus/assets/2x/j_hera.png
 olympus/assets/2x/j_zeus.png
 omertadeck/assets/2x/Enhancers.png
+omertadeck/assets/2x/_split/Enhancers/0_0.png
+omertadeck/assets/2x/_split/Enhancers/0_1.png
+omertadeck/assets/2x/_split/Enhancers/0_2.png
 pokermon/assets/2x/AtlasBossblinds-391.png
 pokermon/assets/2x/AtlasBossblinds.png
 pokermon/assets/2x/AtlasJokersVanillaShiny.png
@@ -232,6 +370,1132 @@ pokermon/assets/2x/Basic Series/JokerBasicUnownSwarm-soul.png
 pokermon/assets/2x/Basic Series/JokerBasicUnownSwarm-soulshiny.png
 pokermon/assets/2x/Basic Series/JokerBasicUnownSwarm.png
 pokermon/assets/2x/Basic Series/TitleCard.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasConsumablesBasic/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01-391/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny-391/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen01Shiny/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen02Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen03Shiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen04Shiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen05Shiny/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06-391/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny-391/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen06Shiny/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen07Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08-391/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny-391/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen08Shiny/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicGen09Shiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/0_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/1_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/2_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/3_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex-391/4_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/0_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/1_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/2_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/3_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdex/4_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/0_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/1_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/2_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/3_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny-391/4_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/0_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_34.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/1_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/2_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/3_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_10.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_11.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_12.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_13.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_14.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_15.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_16.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_17.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_18.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_19.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_20.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_21.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_22.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_23.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_24.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_25.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_26.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_27.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_28.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_29.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_3.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_30.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_31.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_32.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_33.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_4.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_5.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_6.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_7.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_8.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicNatdexShiny/4_9.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthers/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny-391/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny-391/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny-391/0_2.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny-391/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny-391/1_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny/0_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny/0_1.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny/1_0.png
+pokermon/assets/2x/Basic Series/_split/AtlasJokersBasicOthersShiny/1_1.png
 pokermon/assets/2x/DeckSkins/Gen01RBYClubs.png
 pokermon/assets/2x/DeckSkins/Gen01RBYClubsHC.png
 pokermon/assets/2x/DeckSkins/Gen01RBYDiamonds.png
@@ -299,8 +1563,443 @@ pokermon/assets/2x/Series A/AtlasJokersSeriesAVoltorbShiny.png
 pokermon/assets/2x/Series A/AtlasStickersSeriesA.png
 pokermon/assets/2x/Series A/AtlasVouchersSeriesA.png
 pokermon/assets/2x/Series A/TitleCard.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01-391/0_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01-391/0_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01-391/0_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01-391/0_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01-391/1_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01Shiny-391/0_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01Shiny-391/0_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01Shiny-391/0_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01Shiny-391/0_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen01Shiny-391/1_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02-391/0_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02-391/0_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02-391/0_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02-391/0_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02-391/1_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02-391/1_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02Shiny-391/0_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02Shiny-391/0_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02Shiny-391/0_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02Shiny-391/0_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02Shiny-391/1_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen02Shiny-391/1_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen03/0_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen03/1_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen03Shiny/0_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen03Shiny/1_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesAGen05Shiny/0_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_15.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_22.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_25.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_31.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_34.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/0_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_10.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_11.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_13.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_20.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_22.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_25.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_34.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/1_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_13.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_15.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_22.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_25.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_7.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/2_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_11.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_20.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_7.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/3_9.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_15.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdex-391/4_9.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_15.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_22.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_25.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_31.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_34.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/0_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_10.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_11.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_13.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_20.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_22.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_25.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_34.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/1_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_0.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_13.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_15.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_22.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_25.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_7.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/2_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_1.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_11.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_14.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_16.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_2.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_20.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_24.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_28.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_29.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_5.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_7.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/3_9.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_12.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_15.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_17.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_18.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_19.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_21.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_23.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_26.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_3.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_30.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_32.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_33.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_4.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_6.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_8.png
+pokermon/assets/2x/Series A/_split/AtlasJokersSeriesANatdexShiny-391/4_9.png
 pokermon/assets/2x/Series B/AtlasJokersSeriesBNatdex.png
 pokermon/assets/2x/Series B/AtlasJokersSeriesBNatdexShiny.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/0_0.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/0_1.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/0_2.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/0_3.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/0_4.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/0_5.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/1_0.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/1_1.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/1_2.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/1_3.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/1_4.png
+pokermon/assets/2x/_split/AtlasBossblinds-391/1_5.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_0.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_1.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_2.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_3.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_4.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_5.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_6.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/0_7.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_0.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_1.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_2.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_3.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_4.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_5.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_6.png
+pokermon/assets/2x/_split/AtlasJokersVanillaShiny/1_7.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t0/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t1/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm-391-t2/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t0/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t1/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny-391-t2/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t0/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t1/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_shiny_soul-391-t2/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t0/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/10_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/11_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/12_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/13_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/7_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/8_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t1/9_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/0_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/1_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/2_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/3_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/4_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/5_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/6_0.png
+pokermon/assets/2x/_split/j_poke_unown_swarm_soul-391-t2/7_0.png
 pokermon/assets/2x/capture_disc.png
 pokermon/assets/2x/elite_stake.png
 pokermon/assets/2x/elite_stake_sticker.png
@@ -390,6 +2089,10 @@ riskofjesters/assets/2x/j_snake_eyes.png
 riskofjesters/assets/2x/v_3d_printer.png
 riskofjesters/assets/2x/v_militech_printer.png
 smirkeo/assets/2x/j_smirkeo_micatro.png
+sylviesilly/assets/2x/_split/sylvie_backs/0_0.png
+sylviesilly/assets/2x/_split/sylvie_backs/0_1.png
+sylviesilly/assets/2x/_split/sylvie_backs/0_2.png
+sylviesilly/assets/2x/_split/sylvie_backs/0_3.png
 sylviesilly/assets/2x/sylvie_backs.png
 sylviesilly/assets/2x/sylvie_blinds.png
 sylviesilly/assets/2x/sylvie_boosters.png

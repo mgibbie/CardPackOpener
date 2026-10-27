@@ -10,7 +10,11 @@
 //   - a joker picked on page 3 keeps its ✓ after paging away and back, and is in the deck's Starting Jokers
 //   - a deck with a joker from the LAST page saves (Save & use) and its run starts with that joker
 //   - phone landscape (844 x 390): one page fits the screen; desktop (1600 x 900): 48 a page, as before
+//   - memory (2026-10-27 follow-up): browsing all 25 pages never decodes a whole pre-split sheet (Pokermon's Natdex
+//     sheet is 4260 x 13110 px = 213 MB decoded); cells come from the small blocks of tools/micatro/split_mod_atlases.mjs,
+//     cropped and let go: at most 60 MB of mod images decoded at once, none alive after, and the art matches the sheet's
 // Covers micatro/js/ui/deckeditor.js (picker), micatro/js/ui/screens.js (redrawCard), micatro/js/ui/pad.js (shoulder),
+// micatro/js/ui/assets.js (drawModCell crop mode, blocks), micatro/js/ui/cardsprite.js, micatro/js/mods/split_sheets.js,
 // micatro/css/micatro.css — named here so `run-all.mjs --changed` selects this suite.
 //   node overworld/tests/micatro_deckeditor_pages_test.mjs
 import http from 'http';
@@ -61,6 +65,14 @@ try {
 			// a fake controller (headless Chrome has none): window.__padTap(button) holds it until site/gamepad.js has polled it
 			const pad = { id: 'Pro Controller 057e', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
 			window.__owFakePads = [pad];
+			// every mod image the page decodes (a whole sheet, or a block of a pre-split one), and the most alive at once
+			const I = window.Image, imgs = [];
+			window.__modLoads = []; window.__modPeakMB = 0;
+			window.Image = function (...a) { const im = new I(...a); imgs.push(im); im.addEventListener('load', () => { if (/\/mods\//.test(im.src)) window.__modLoads.push({ src: decodeURIComponent(im.src), w: im.naturalWidth, h: im.naturalHeight }); }); return im; };
+			window.Image.prototype = I.prototype;
+			window.__modAliveMB = () => imgs.filter((i) => /\/mods\//.test(i.src) && i.complete && i.naturalWidth).reduce((n, i) => n + i.naturalWidth * i.naturalHeight * 4, 0) / 1048576;
+			window.__modPending = () => imgs.filter((i) => /\/mods\//.test(i.src) && !i.complete).length;
+			setInterval(() => { window.__modPeakMB = Math.max(window.__modPeakMB, window.__modAliveMB()); }, 25);
 			let polls = 0;
 			Object.defineProperty(pad, 'connected', { get() { polls++; return true; }, enumerable: true });
 			const until = (f, ms = 10000) => new Promise((r) => { const t0 = performance.now(); const k = () => (f() || performance.now() - t0 > ms ? r() : setTimeout(k, 4)); k(); });
@@ -120,7 +132,8 @@ try {
 	const openPicker = async (page, touch) => {
 		await tap(page, '.b-menu-play', { touch });
 		await page.waitForSelector('.new-run', { visible: true });
-		await tap(page, '.b-cdecks', { touch });
+		// (the New Run screen may still be settling: tap Decks again if its list didn't open)
+		for (let i = 0; i < 3 && !(await page.$('.cd-list')); i++) { await tap(page, '.b-cdecks', { touch }); await waitFor(() => page.$('.cd-list'), 4000); }
 		await page.waitForSelector('.cd-list', { visible: true, timeout: 10000 });
 		await waitFor(() => page.evaluate(() => !/Loading/.test(document.querySelector('.cd-status').textContent)), 10000);
 		await tap(page, '.b-cd-new', { touch });
@@ -170,12 +183,30 @@ try {
 		await tap(page, '.b-cd-pg-prev', { touch: true });
 		A(await page.evaluate((k) => document.querySelector(`.cd-tile[data-key="${k}"]`).classList.contains('have'), k3), 'back on page 3: it is still ✓');
 		// ---- page all the way to the end: the tile + canvas count never grows
-		let maxTiles = 0, maxCanvases = 0, steps = 0;
+		let maxTiles = 0, maxCanvases = 0, steps = 0, ref = null;
 		while (await page.evaluate(() => !document.querySelector('.b-cd-pg-next').disabled) && steps < 200) {
 			await page.evaluate(() => document.querySelector('.b-cd-pg-next').click());
+			await waitFor(() => page.evaluate(() => window.__modPending() === 0), 5000);   // (the page's art, as a player waits for it)
 			const q = await pick(page);
 			maxTiles = Math.max(maxTiles, q.tiles); maxCanvases = Math.max(maxCanvases, q.canvases); steps++;
+			// keep one Natdex-sheet joker's tile as drawn from the blocks, to check against the whole sheet later
+			if (!ref && q.keys.includes('j_poke_pikachu')) { await sleep(200); ref = await page.evaluate(() => { const t = document.querySelector('.cd-tile[data-key="j_poke_pikachu"]'); return { url: t.querySelector('canvas').toDataURL(), name: t.querySelector('.cd-tile-n').firstChild.textContent.trim() }; }); }
 		}
+		const mem = await page.evaluate(async () => {
+			const A = await import('/micatro/js/ui/assets.js'), { SPLIT_SHEETS } = await import('/micatro/js/mods/split_sheets.js');
+			const st = A.modSheetStats ? A.modSheetStats() : { sheets: [], blocks: [], crops: 0, cropCap: 0, splitBroken: [] };   // (none before the follow-up)
+			const isSplit = (src) => Object.keys(SPLIT_SHEETS).some((k) => src.endsWith(k));
+			const loads = window.__modLoads;
+			return {
+				wholeSplitSheets: loads.filter((l) => !/\/_split\//.test(l.src) && isSplit(l.src)).map((l) => l.src.split('/').pop() + ' ' + l.w + 'x' + l.h),
+				blocks: loads.filter((l) => /\/_split\//.test(l.src)).length, biggest: Math.max(0, ...loads.map((l) => l.w * l.h * 4 / 1048576)),
+				peakMB: +window.__modPeakMB.toFixed(1), aliveMB: +window.__modAliveMB().toFixed(1),
+				sheetsAlive: st.sheets.length + st.blocks.length, crops: st.crops, cropCap: st.cropCap, splitBroken: st.splitBroken,
+			};
+		});
+		A(mem.blocks > 20 && mem.wholeSplitSheets.length === 0 && mem.splitBroken.length === 0, `memory: the art came from ${mem.blocks} small blocks, no whole pre-split sheet was decoded`, JSON.stringify(mem));
+		A(mem.peakMB < 60 && mem.biggest < 8, `memory: at most ${mem.peakMB} MB of mod images decoded at once (budget 60; the Natdex sheet alone is 213)`, JSON.stringify(mem));
+		A(mem.aliveMB < 8 && mem.crops <= mem.cropCap, `memory: after paging to the last page, ${mem.aliveMB} MB of images still decoded and ${mem.crops} cell crops (cap ${mem.cropCap})`, JSON.stringify(mem));
 		p = await pick(page);
 		const canvasesInDoc = await page.evaluate(() => document.querySelectorAll('canvas').length);
 		A(p.ind === `Page ${N} / ${N}` && maxTiles <= size && maxCanvases <= size, `paged to the end (${steps} Next): never more than one page of tiles / canvases`, JSON.stringify({ ind: p.ind, maxTiles, maxCanvases, canvasesInDoc }));
@@ -219,6 +250,19 @@ try {
 		A(v.custom_deck && v.areas.jokers.map((j) => j.center).join() === [k3, lastKey].join(), 'the run starts with the page-3 and last-page jokers', JSON.stringify(v.areas && v.areas.jokers.map((j) => j.center)));
 		await sleep(800);
 		await shot(page, 'run-phone');
+		// ---- the blocks' art is the whole sheet's: Pikachu drawn now (out of the editor: the sheet itself) is the same picture
+		A(!!ref, 'a Natdex-sheet joker (Pikachu) was seen while paging');
+		if (ref) {
+			const same = await page.evaluate(async (ref) => {
+				const S = await import('/micatro/js/ui/screens.js'), A = await import('/micatro/js/ui/assets.js'), { P_CENTERS } = await import('/micatro/js/engine/core.js');
+				const c = P_CENTERS.j_poke_pikachu, d = { center: 'j_poke_pikachu', mod: c.mod, atlas: c.atlas, pos: c.pos, set: c.set, name: ref.name };
+				const cv = S.cardCanvas(d, 'x');
+				for (let i = 0; i < 100 && A.modArtLoading(S.stillData(d).atlas); i++) await new Promise((r) => setTimeout(r, 100));
+				S.redrawCard(cv, d);
+				return { same: cv.toDataURL() === ref.url, full: A.modSheetStats().sheets.map((x) => x.w + 'x' + x.h) };
+			}, ref);
+			A(same.same && same.full.includes('4260x13110'), 'the tile drawn from blocks == the one drawn from the whole Natdex sheet', JSON.stringify(same.full));
+		}
 		A(errors.length === 0, 'no console errors (phone portrait)', errors.join(' | '));
 	}
 

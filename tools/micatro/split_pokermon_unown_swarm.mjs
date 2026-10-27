@@ -17,7 +17,7 @@ import zlib from 'zlib';
 export const STRIPS = ['j_poke_unown_swarm', 'j_poke_unown_swarm_shiny', 'j_poke_unown_swarm_soul', 'j_poke_unown_swarm_shiny_soul'];
 export const FRAMES = 36, CELL_W = 580, CELL_H = 570, TILE_COLS = 14, MAX_W = 8192;
 
-function decode(file) {
+export function decode(file) {
   const buf = fs.readFileSync(file);
   let p = 8, w, h, depth, ctype, inter, pal = null, trns = null;
   const idat = [];
@@ -62,7 +62,7 @@ function chunk(type, data) {
   return Buffer.concat([len, td, crc]);
 }
 /** 8-bit RGBA PNG; each row takes the filter (0-4) with the smallest sum of |bytes| (libpng's heuristic). */
-function encode(w, h, rgba) {
+export function encode(w, h, rgba) {
   const stride = w * 4, raw = Buffer.alloc((stride + 1) * h), cand = Buffer.alloc(stride);
   for (let y = 0; y < h; y++) {
     let best = -1, bestSum = Infinity;

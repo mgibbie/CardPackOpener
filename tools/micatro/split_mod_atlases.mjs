@@ -1,0 +1,80 @@
+// Pre-split the big Micatro mod atlases into small blocks of cells, so a screen that shows many mod cards (the deck
+// editor's picker) never decodes a whole sheet. Pokermon's AtlasJokersBasicNatdex is 4260 x 13110 px: 213 MB decoded
+// for ONE joker's art, past what iOS Safari survives. A block is BX x BY cells, at most ~1000 x 400 px (about 1.5 MB
+// decoded); the deck editor loads only the blocks its page needs (micatro/js/ui/assets.js, crop mode), and falls back
+// to the whole sheet when a block is missing.
+//
+//   in:  every atlas the mods register (micatro/js/mods/index.js loadMods: {src, px, py}) whose sheet decodes to more
+//        than MIN_MB (the soul / shiny / Series A / 3.9.1 sheets are atlases of their own, so they're split too)
+//   out: micatro/mods/<id>/assets/2x/<sheet dir>/_split/<sheet name>/<bx>_<by>.png   (gitignored, beside the sheet;
+//        deployed with `npm run deploy-micatro-mods`), fully transparent blocks are not written
+//        micatro/js/mods/split_sheets.js — the manifest (committed): '<id>/assets/2x/<sheet>.png' -> {w, h, bw, bh, empty}
+// Pixels are copied unchanged (8-bit RGBA). Re-running is reproducible: the same sheets give the same blocks + manifest.
+//   node tools/micatro/split_mod_atlases.mjs [--dry]
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { decode, encode } from './split_pokermon_unown_swarm.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+export const MIN_MB = 4, MAX_BW = 1024, MAX_BH = 400;
+const DRY = process.argv.includes('--dry');
+
+globalThis.localStorage = globalThis.localStorage || { getItem() { return null; }, setItem() { }, removeItem() { } };
+const M = await import(pathToFileURL(path.join(ROOT, 'micatro/js/mods/index.js')).href);
+await M.loadMods(M.AVAILABLE.map((m) => m.id));
+
+const S = 2;   // (the atlases' px / py are 1x cells; the files are 2x)
+const sheets = new Map();   // key '<id>/assets/2x/<rel>.png' -> {file, cw, ch}
+for (const a of Object.values(M.ATLASES)) {
+  if (!a.src || a.tiles) continue;
+  const m = decodeURIComponent(a.src).match(/([^/]+\/assets\/2x\/.+\.png)$/);
+  if (!m) continue;
+  const key = m[1], file = path.join(ROOT, 'micatro/mods', key);
+  const cw = a.px * S, ch = a.py * S;
+  const had = sheets.get(key);
+  if (had && (had.cw !== cw || had.ch !== ch)) { console.warn(`skip ${key}: two cell sizes (${had.cw}x${had.ch}, ${cw}x${ch})`); had.bad = true; continue; }
+  if (!had) sheets.set(key, { file, cw, ch });
+}
+const dims = (file) => { const b = Buffer.alloc(24); const fd = fs.openSync(file, 'r'); fs.readSync(fd, b, 0, 24, 0); fs.closeSync(fd); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
+
+const manifest = {};
+let files = 0, bytes = 0, fromBytes = 0, skipped = 0;
+for (const [key, s] of [...sheets].sort(([a], [b]) => (a < b ? -1 : 1))) {
+  if (s.bad || !fs.existsSync(s.file)) { if (!s.bad) console.warn(`missing ${key}`); continue; }
+  const { w, h } = dims(s.file);
+  if (w * h * 4 / 1048576 <= MIN_MB) { skipped++; continue; }
+  const BX = Math.max(1, Math.floor(MAX_BW / s.cw)), BY = Math.max(1, Math.floor(MAX_BH / s.ch));
+  const bw = BX * s.cw, bh = BY * s.ch;
+  const outDir = path.join(path.dirname(s.file), '_split', path.basename(s.file, '.png'));
+  let img = null;
+  if (!DRY) { try { img = decode(s.file); } catch (e) { console.warn(`left whole: ${e.message}`); skipped++; continue; } }
+  const empty = [];
+  let n = 0;
+  for (let by = 0; by * bh < h; by++) for (let bx = 0; bx * bw < w; bx++) {
+    if (DRY) { n++; continue; }
+    const x0 = bx * bw, y0 = by * bh, tw = Math.min(bw, w - x0), th = Math.min(bh, h - y0);
+    const rgba = Buffer.alloc(tw * th * 4);
+    for (let y = 0; y < th; y++) img.rgba.copy(rgba, y * tw * 4, ((y0 + y) * w + x0) * 4, ((y0 + y) * w + x0 + tw) * 4);
+    let any = false;
+    for (let i = 3; i < rgba.length; i += 4) if (rgba[i]) { any = true; break; }
+    if (!any) { empty.push(bx + '_' + by); continue; }
+    fs.mkdirSync(outDir, { recursive: true });
+    const png = encode(tw, th, rgba);
+    fs.writeFileSync(path.join(outDir, `${bx}_${by}.png`), png);
+    bytes += png.length; n++;
+  }
+  files += n; fromBytes += fs.statSync(s.file).size;
+  manifest[key] = { w, h, bw, bh, ...(empty.length ? { empty } : {}) };
+  console.log(`${key}: ${w}x${h} (${Math.round(w * h * 4 / 1048576)} MB decoded) -> ${n} blocks of ${BX}x${BY} cells (${bw}x${bh} px)${empty.length ? `, ${empty.length} empty` : ''}`);
+}
+console.log(`${Object.keys(manifest).length} sheets split into ${files} blocks (${(bytes / 1048576).toFixed(1)} MB of PNG, from ${(fromBytes / 1048576).toFixed(1)} MB); ${skipped} sheets under ${MIN_MB} MB left whole`);
+if (!DRY) {
+  const out = path.join(ROOT, 'micatro/js/mods/split_sheets.js');
+  const body = Object.entries(manifest).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join('\r\n');
+  fs.writeFileSync(out, `// GENERATED by tools/micatro/split_mod_atlases.mjs — do not edit. The big mod sheets that are pre-split into blocks:\r\n` +
+    `// '<mod>/assets/2x/<sheet>.png' -> {w, h (the sheet), bw, bh (a block, px), empty (blocks with no pixels, not written)}.\r\n` +
+    `// Block (bx, by) of <dir>/<name>.png is <dir>/_split/<name>/<bx>_<by>.png (js/ui/assets.js draws from it in crop mode).\r\n` +
+    `export const SPLIT_SHEETS = {\r\n${body}\r\n};\r\n`);
+  console.log('wrote', path.relative(ROOT, out));
+}

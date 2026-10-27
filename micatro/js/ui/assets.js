@@ -1,6 +1,7 @@
 // Texture atlases + sprite lookup. Balatro's own atlas table (game.lua
 // asset_atli / animation_atli) at 2x: every cell is twice the 1x px/py.
 import DATA from '../../data/balatro_data.js';
+import { SPLIT_SHEETS } from '../mods/split_sheets.js';
 
 export const D = DATA;
 const BASE = new URL('../../assets/', import.meta.url).href;
@@ -140,24 +141,37 @@ function tiledState(name, a) {
 }
 /** 'ok' | 'loading' | 'missing' — kicks off the load on first ask. */
 export function modAtlasState(name) {
-  const a = MODREG.atlases[name];
+  const a = MODREG.atlases[name] || blockAtlases.get(name);
   if (a && a.tiles) return tiledState(name, a);
   if (!a || !a.src) return 'missing';
   let e = modImgs.get(name);
   if (!e) {
     e = { img: new Image(), state: 'loading' };
     modImgs.set(name, e);
+    if (cropping) cropSheets.add(name);   // (crop mode: let go of it once its cells are cropped)
     e.img.crossOrigin = 'anonymous';
     const done = (st) => {
       e.state = st;
-      const names = [name, ...(tileParents.get(name) || [])];
+      // (a block of a split sheet: its sheet hears it too, and a tiled atlas over that sheet)
+      const up = tileParents.get(name) || [];
+      const names = [name, ...up, ...up.flatMap((n) => tileParents.get(n) || [])];
+      if (st === 'error' && blockAtlases.has(name)) splitBroken.add(blockAtlases.get(name).sheet);   // (not deployed: the whole sheet)
       for (const cb of modListeners) for (const n of names) { try { cb(n); } catch (err) { /* ignore */ } }
     };
     e.img.onload = () => done('ok');
-    e.img.onerror = () => { console.warn('micatro: mod atlas failed to load: ' + name); done('error'); };
+    e.img.onerror = () => { if (!blockAtlases.has(name)) console.warn('micatro: mod atlas failed to load: ' + name); done('error'); };
     e.img.src = a.src;
   }
   return e.state === 'ok' ? 'ok' : e.state === 'error' ? 'missing' : 'loading';
+}
+/** Is a mod atlas's art still on its way (its sheet, a tile of it, or in crop mode a block of it)? Never starts a load. */
+export function modArtLoading(name) {
+  const a = MODREG.atlases[name];
+  if (a && a.tiles) return a.tiles.some(modArtLoading);
+  const e = modImgs.get(name);
+  if (e) return e.state === 'loading';
+  for (const [b, x] of blockAtlases) if (x.sheet === name) { const be = modImgs.get(b); if (be && be.state === 'loading') return true; }
+  return false;
 }
 /**
  * Where a mod atlas cell is: {atlas (the image's atlas: a tile of a tiled atlas), sx, sy, sw, sh} in that image's pixels
@@ -178,14 +192,112 @@ export function modCellRect(atlas, pos, frame = 0) {
   if (c) return { atlas: img, sx: x * cw + c.x * S, sy: y * ch + c.y * S, sw: c.w * S, sh: c.h * S };
   return { atlas: img, sx: x * cw, sy: y * ch, sw: cw, sh: ch };
 }
+let misses = 0;
+/** How many mod cells couldn't draw yet (art still loading): a redraw that raised it is still waiting for art. */
+export const modDrawMisses = () => misses;
 /** Draw one cell of a mod atlas; false when the art isn't (yet) available. */
 export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
   if (!pos) return false;
-  const r = modCellRect(atlas, pos, frame);
-  if (!r || modAtlasState(r.atlas) !== 'ok') { if (r && r.atlas !== atlas) modAtlasState(atlas); return false; }
-  const im = modImgs.get(r.atlas).img;
-  try { ctx.drawImage(im, r.sx, r.sy, r.sw, r.sh, dx, dy, dw ?? r.sw, dh ?? r.sh); } catch (e) { return false; }
+  let r = modCellRect(atlas, pos, frame);
+  if (!r) return false;
+  const key = cropping ? r.atlas + '|' + r.sx + ',' + r.sy + ',' + r.sw + ',' + r.sh : null;
+  let src = key && crops.get(key);
+  if (src) { crops.delete(key); crops.set(key, src); }   // (LRU: most recent last)
+  else {
+    // crop mode: a pre-split sheet's cell comes from its small block (tools/micatro/split_mod_atlases.mjs), never the sheet
+    const b = key ? blockOf(r, atlas) : null;
+    if (b && b.empty) return true;   // (no pixels there)
+    const from = b || r;
+    if (modAtlasState(from.atlas) !== 'ok') { misses++; if (!b && r.atlas !== atlas) modAtlasState(atlas); return false; }   // (a tiled atlas: not ALL its tiles for one block)
+    src = modImgs.get(from.atlas).img;
+    if (b) r = { ...r, sx: b.sx, sy: b.sy };
+    if (key) {
+      // crop mode: keep this cell as its own small canvas, so the whole sheet can be let go (releaseModSheets)
+      try {
+        const c = document.createElement('canvas');
+        c.width = r.sw; c.height = r.sh;
+        c.getContext('2d').drawImage(src, r.sx, r.sy, r.sw, r.sh, 0, 0, r.sw, r.sh);
+        crops.set(key, c);
+        while (crops.size > cropCap) crops.delete(crops.keys().next().value);
+        src = c;
+      } catch (e) { /* draw from the sheet */ }
+    }
+  }
+  try {
+    if (src.tagName === 'CANVAS') ctx.drawImage(src, 0, 0, r.sw, r.sh, dx, dy, dw ?? r.sw, dh ?? r.sh);
+    else ctx.drawImage(src, r.sx, r.sy, r.sw, r.sh, dx, dy, dw ?? r.sw, dh ?? r.sh);
+  } catch (e) { return false; }
   return true;
+}
+/*
+ * Cell crops — for screens that show hundreds of mod cards at once (the deck editor and its picker: Pokermon + Nacho +
+ * Pokermon+ = 850 jokers over ~20 sheets, the biggest 4260 x 13110 px = 213 MB decoded, which 582 of them share).
+ * While crops are on (beginCellCrops .. endCellCrops), each mod cell drawn is read from its pre-split BLOCK when the
+ * sheet has blocks (below; else from the sheet), copied into its own small canvas (an LRU of `cap` cells) and drawn from
+ * there; releaseModSheets() then lets go of the blocks / sheets loaded meanwhile (the decoded bitmap is freed). One
+ * that's needed again reloads (HTTP cache) on its next draw and fires onModAtlas as usual. Images the game had already
+ * loaded are left alone; outside crop mode everything draws from the whole sheets as before.
+ */
+let cropping = 0, cropCap = 160;
+// Pre-split sheets (js/mods/split_sheets.js, made by tools/micatro/split_mod_atlases.mjs): in crop mode a cell is read
+// from its block <dir>/_split/<name>/<bx>_<by>.png (~1.5 MB decoded) instead of the whole sheet (up to 213 MB).
+const blockAtlases = new Map();     // block name -> {src, sheet}
+const splitBroken = new Set();      // sheets with a block that failed to load (not deployed yet): drawn whole
+const splitCache = new Map();       // image atlas name -> its manifest entry + src, or null
+function sheetSplit(name) {
+  if (splitCache.has(name)) return splitCache.get(name);
+  const a = MODREG.atlases[name];
+  let sp = null;
+  if (a && a.src) {
+    let path = a.src;
+    try { path = decodeURIComponent(a.src); } catch (e) { /* as is */ }
+    const m = path.match(/([^/]+\/assets\/2x\/.+\.png)$/);
+    if (m && SPLIT_SHEETS[m[1]]) sp = { ...SPLIT_SHEETS[m[1]], src: a.src, empty: new Set(SPLIT_SHEETS[m[1]].empty || []) };
+  }
+  splitCache.set(name, sp);
+  return sp;
+}
+/** The block that holds cell rect r of a pre-split sheet: {atlas (the block's name), sx, sy} or {empty}, else null. */
+function blockOf(r, atlas) {
+  if (splitBroken.has(r.atlas)) return null;
+  const sp = sheetSplit(r.atlas);
+  if (!sp) return null;
+  const bx = Math.floor(r.sx / sp.bw), by = Math.floor(r.sy / sp.bh);
+  if (r.sx + r.sw > (bx + 1) * sp.bw || r.sy + r.sh > (by + 1) * sp.bh) return null;   // (straddles two blocks)
+  const id = bx + '_' + by;
+  if (sp.empty.has(id)) return { empty: true };
+  const name = r.atlas + '#' + id;
+  if (!blockAtlases.has(name)) {
+    blockAtlases.set(name, { src: sp.src.replace(/\/([^/]+)\.png$/, '/_split/$1/' + id + '.png'), sheet: r.atlas });
+    tileParents.set(name, atlas && atlas !== r.atlas ? [r.atlas, atlas] : [r.atlas]);   // (its listeners: the sheet's, a tiled atlas's)
+  }
+  return { atlas: name, sx: r.sx - bx * sp.bw, sy: r.sy - by * sp.bh };
+}
+const crops = new Map();            // 'image atlas|sx,sy,sw,sh' -> canvas
+const cropSheets = new Set();       // sheets first loaded while crops were on
+export function beginCellCrops(cap = 160) { cropping++; cropCap = Math.max(cropCap, cap); }
+export function endCellCrops() { if (cropping && --cropping === 0) { releaseModSheets(); crops.clear(); cropSheets.clear(); cropCap = 160; } }
+export function setCellCropCap(cap) { cropCap = Math.max(16, cap | 0); while (crops.size > cropCap) crops.delete(crops.keys().next().value); }
+/** Let go of the (loaded) sheets that were first loaded while crops were on. */
+export function releaseModSheets() {
+  for (const name of [...cropSheets]) {
+    const e = modImgs.get(name);
+    if (!e) { cropSheets.delete(name); continue; }
+    if (e.state !== 'ok') continue;   // (still loading: its listeners draw first)
+    e.img.onload = e.img.onerror = null;
+    e.img.removeAttribute('src');
+    modImgs.delete(name);
+    cropSheets.delete(name);
+  }
+}
+/** The decoded mod sheets + blocks alive now ({name, w, h}) and the crops: what the deck editor keeps in memory (tests). */
+export function modSheetStats() {
+  const sheets = [];
+  const blocks = [];
+  for (const [name, e] of modImgs) if (e.state === 'ok' && e.img.naturalWidth) (blockAtlases.has(name) ? blocks : sheets).push({ name, w: e.img.naturalWidth, h: e.img.naturalHeight });
+  const byImage = {};
+  for (const k of crops.keys()) { const a = k.slice(0, k.indexOf('|')); byImage[a] = (byImage[a] || 0) + 1; }
+  return { sheets, blocks, crops: crops.size, cropCap, cropping, byImage, splitBroken: [...splitBroken] };
 }
 /**
  * A mod font by key (a mod's content.fonts: {key: {src, family}} — SMODS.Font), loaded on first use; returns the

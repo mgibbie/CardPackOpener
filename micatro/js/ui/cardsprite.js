@@ -3,7 +3,7 @@
 // each frame when it has an edition / debuff / dissolve. Position, rotation and
 // scale ease toward a target set by the board layout; juice/flip/dissolve/
 // shatter are local animations. Draws ONLY from view data (cardView objects).
-import { drawCell, centerAtlas, CENTERS, CARDS, TAGS, SEAL_POS, STICKER_POS, SOUL_POS, MODREG, drawModCell, modAtlasState } from './assets.js';
+import { drawCell, centerAtlas, CENTERS, CARDS, TAGS, SEAL_POS, STICKER_POS, SOUL_POS, MODREG, drawModCell, modArtLoading } from './assets.js';
 import { CardFX } from './gl.js';
 import { first as modFirst, all as modAll, hasModUI } from './modui.js';
 import { drawSkinFront, skinVer } from './skins.js';
@@ -42,7 +42,7 @@ export function composeFace(ctx, d, backKey, opts) {
   if (d.tag_card) {
     // a Tag sold / packed as a card (Reverie): the square tag sprite, small in the shop, big in packs
     const tg = TAGS[d.tag || d.center];
-    if (!drawTagCell(ctx, d.atlas || (tg && tg.atlas), (d.atlas && d.pos) || (tg && tg.pos), d.tag_card)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
+    if (!drawTagCell(ctx, d.atlas || (tg && tg.atlas), (d.atlas && d.pos) || (tg && tg.pos), d.tag_card)) placeholderFace(ctx, d, d.atlas && modArtLoading(d.atlas));
     return;
   }
   // A mod's "blind card" (Bunco's Blind Packs): the blind's chip, square in the card's place.
@@ -69,7 +69,7 @@ function composeBase(ctx, d, backKey, center, modCard) {
     if (d.front_atlas && !noBase) { if (!drawSkinFront(ctx, d, null, FACE_W, FACE_H)) drawModCell(ctx, d.front_atlas, d.front_pos, 0, 0, FACE_W, FACE_H); }
     else if (d.front && CARDS[d.front] && !noBase) { if (!drawSkinFront(ctx, d, CARDS[d.front].pos, FACE_W, FACE_H)) drawCell(ctx, 'cards_1', CARDS[d.front].pos, 0, 0, FACE_W, FACE_H); }
   } else if (modCard) {
-    if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modAtlasState(d.atlas) === 'loading');
+    if (!drawModCell(ctx, d.atlas, d.pos, 0, 0, FACE_W, FACE_H)) placeholderFace(ctx, d, d.atlas && modArtLoading(d.atlas));
   } else if (center) {
     drawCell(ctx, centerAtlas(center), center.pos, 0, 0, FACE_W, FACE_H);
   } else {
