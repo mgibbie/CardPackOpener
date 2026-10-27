@@ -133,7 +133,9 @@ G.ExpEN = Object.assign(G.ExpEN || {}, {
   'Llega a la última etapa {x} veces': 'Reach a final stage {x} times', 'Llega a la última etapa': 'Reach a final stage',
   'Ten {x} legendarios en la Liga': 'Have {x} legendaries in the League', 'Ten un legendario en la Liga': 'Have a legendary in the League',
   'Liga de cincuenta': 'League of fifty', 'Liga centenaria': 'League of a hundred', 'Liga completa': 'Full League', 'Gran Entrenador': 'Grand Trainer',
-  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends',
+  'Campeón de la Liga': 'League Champion', 'Leyenda viva': 'Living legend',
+  // (D19: the full League, 553)
+  'Liga de 245': 'League of 245', 'Liga de cuatrocientos': 'League of four hundred', 'Maestro de la Liga': 'League Master', 'Panteón': 'Pantheon', 'Guardián de leyendas': 'Keeper of legends',
   // (D14: Mega Evolution's task and achievements)
   'Megaevoluciona {x} veces': 'Mega Evolve {x} times', 'Megaevoluciona una vez': 'Mega Evolve once', 'Consigue {x} megaevoluciones distintas': 'Get {x} different Mega Evolutions',
   'Megaevolución': 'Mega Evolution', 'Megapoder': 'Mega power', 'Megacolección': 'Mega collection', 'Megaentrenador': 'Mega Trainer'
@@ -159,7 +161,9 @@ G.ExpMeta = (() => {
     SCALE: 3,
     // a run: (BASE + KOs / 40 + 25 (zone - 1) + 30 a boss + 120 if won + 15 a catch) x the tier's pay (study 2.11: x1 / 1.75 / 2.5),
     // then x SCALE in Pokémonedas. A run under MIN_T seconds pays nothing (no quit-farming).
-    PAY: { BASE: 10, KO: 1 / 40, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60, SURV_MIN: 4 },   // (D11: Survival: + 60 a legendary, on top of its boss, and + 4 a minute survived (x3 = 12 a minute, the base run's time / 5): an endless run has no zones or win to pay)
+    // (DLC D21: KO 1 / 40 -> 1 / 150. Every move firing (D16) took a Normal clear from ~4,000 KOs to ~8,500 in the pacing bot
+    //  (tools/micasurvivor/dps_sim.mjs --pace), so it paid ~1,740 instead of D11's ~1,270-1,365; at 1 / 150 it pays ~1,355 again)
+    PAY: { BASE: 10, KO: 1 / 150, ZONE: 25, BOSS: 30, WIN: 120, CATCH: 15, MIN_T: 60, LEGEND: 60, SURV_MIN: 4 },   // (D11: Survival: + 60 a legendary, on top of its boss, and + 4 a minute survived (x3 = 12 a minute, the base run's time / 5): an endless run has no zones or win to pay)
     // research (study 2.14): a KO 1, elite 2, summoner 4, alpha / totem 5, boss 10, a freed cage 25; x(1 + 0.25 Lab Research)
     RS: { ko: 1, elite: 2, summoner: 4, alpha: 5, boss: 10, cage: 25, LAB: 0.25 },
     RS_NEED: { starter: 400, common: 400, uncommon: 600, rare: 900, legendary: 60 },   // a family's research to finish it (ours)
@@ -332,11 +336,14 @@ G.ExpMeta = (() => {
     ['mewtwo', 'Medianoche', 'mewtwo', 1, 1200, 'Leyenda de la Supervivencia'], ['pact10', 'Pactista', 'pacts', 10, 300],
     // (D13: League mode. LATE: their titles go after the season ribbons in TITLES, so the card's saved title index still means the same)
     ['league50', 'Liga de cincuenta', 'league', 50, 600, null, null, 1], ['league100', 'Liga centenaria', 'league', 100, 1200, 'Gran Entrenador', null, 1],
-    ['league245', 'Liga completa', 'league', 245, 1500, 'Campeón de la Liga', null, 1],
+    ['league245', 'Liga de 245', 'league', 245, 1500, 'Campeón de la Liga', null, 1],   // (D19: the League was 245; "Full" is league553 now. The id and title stay)
     ['legend1', 'Leyenda viva', 'leagueLeg', 1, 400, null, null, 1], ['legend10', 'Panteón', 'leagueLeg', 10, 1200, 'Guardián de leyendas', null, 1],
     // (D14: Mega Evolution, late too)
     ['mega1', 'Megaevolución', 'megas', 1, 300, null, null, 1], ['mega10', 'Megapoder', 'megas', 10, 800, null, null, 1],
-    ['megakinds', 'Megacolección', 'megaKinds', 10, 1200, 'Megaentrenador', null, 1]
+    ['megakinds', 'Megacolección', 'megaKinds', 10, 1200, 'Megaentrenador', null, 1],
+    // (D19: the full League, every family: 553 members. Late, appended: the saved title index keeps its meaning)
+    ['league400', 'Liga de cuatrocientos', 'league', 400, 1200, null, null, 1],
+    ['league553', 'Liga completa', 'league', 553, 1500, 'Maestro de la Liga', null, 1]
   ].map(([id, name, k, n, star, title, frame, late]) => ({ id, name, k, n, star, title: title || null, frame: frame || null, late: !!late }));
   const ACH_BY = {};
   for (const a of ACH) ACH_BY[a.id] = a;

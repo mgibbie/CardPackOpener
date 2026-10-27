@@ -15,7 +15,7 @@
  *                Fire +15 % status chance, Rock +15 max HP, Fairy +8 luck... study 2.8), a stat of D5's sums (items.js
  *                total(): same-stat bonuses add).
  *   League       a challenge completed from D8 on puts the member in league.met AND league.wild: in your next run its
- *                "wild X appeared!" encounter comes 50-120 s into a zone (one per zone, up to 3 a run). Weaken it (x0.8 /
+ *                "wild X appeared!" encounter comes 50-120 s into a zone (one per zone; D19: zones 1-2 a second one at 150-230 s, up to 5 a run). Weaken it (x0.8 /
  *                1.2 / 1.6 / 5 of an alpha's HP by rank); at 1 HP it faints (12 s window); stand by it: a Poké Ball, the
  *                cinematic, and it joins the League (league.own, saved at once). It flees after 150 s (legendaries 240 s)
  *                or when its window closes, and comes back next run. Members met in D4 (met, never wild) stay playable.
@@ -70,7 +70,9 @@ G.ExpCap = (() => {
     SA_DMG: 9, SA_LV: 0.06, SA_CD: 1.25, SA_REACH: 320, SA_SPEED: 430, SA_SIZE: 7, SA_SCALE: 1.15, SA_FOLLOW: 70, SA_LEASH: 520,
     // League encounters (study 2.1): 50-120 s into a zone, HP x rank of an alpha's (x9), flees after 150 s (legendary 240 s)
     LG_AT: [50, 120], LG_HP: 9, LG_RANK: { starter: 0.8, common: 0.8, uncommon: 1.2, rare: 1.6, legendary: 5 }, LG_DMG: 1.3, LG_XP: 6,
-    LG_SCALE: 1.3, LG_FLEE: 150, LG_FLEE_LEG: 240, LG_WINDOW: 12, PER_RUN: 3,
+    LG_SCALE: 1.3, LG_FLEE: 150, LG_FLEE_LEG: 240, LG_WINDOW: 12,
+    // D19 (owner decision #15: up to 5 wild members a run, was 3): zones 1-3 one each, as before, and zones 1-2 a second one later
+    PER_RUN: 5, LG_AT2: [150, 230],
     // shinies (study 2.8): 8 % a zone + luck / 1,000, x1.5 with the Shiny Charm; it roams and flees after 120 s (150 s)
     SHINY: 0.08, SHINY_LUCK: 1000, SHINY_CHARM: 1.5, SH_AT: [60, 420], SH_FLEE: 120, SH_FLEE_CHARM: 150, SH_HP: 4, SH_XP: 5, SH_WINDOW: 10,
     SH_ROAM: [220, 480], SH_SPD: 0.7,
@@ -110,8 +112,10 @@ G.ExpCap = (() => {
     if (!(zone >= 1 && zone <= 3)) return { league: null, shiny: null, roll: 1, p: 0 };
     const rng = R(mix(seed | 0, mapIdx(map), zone | 0, 0xCA97));
     const at = intR(rng, K.LG_AT[0], K.LG_AT[1]), roll = rng(), sAt = intR(rng, K.SH_AT[0], K.SH_AT[1]), pick = rng();
+    const at2 = intR(rng, K.LG_AT2[0], K.LG_AT2[1]);   // (D19: drawn after the others, so their values are as before)
     const p = shinyChance(o.luck || 0, !!o.charm);
-    return { league: o.member ? { member: o.member, at } : null, shiny: roll < p || o.force ? { at: sAt, pick } : null, roll, p };   // (D10: force = Dawn Stone)
+    return { league: o.member ? { member: o.member, at } : null, league2: o.member2 ? { member: o.member2, at: at2 } : null,
+             shiny: roll < p || o.force ? { at: sAt, pick } : null, roll, p };   // (D10: force = Dawn Stone)
   }
   /** The League members waiting to be caught (met from D8 on, not yet owned), in a seeded order for this run. */
   function pendingOf(seed) {
@@ -166,13 +170,15 @@ G.ExpCap = (() => {
     if (!z || !run) return;
     const key = z.map + ':' + z.zone;
     if (S.zkey !== key) {
-      S.zkey = key; S.zone = z.zone; S.lgDone = false; S.shDone = false;
+      S.zkey = key; S.zone = z.zone; S.lgDone = false; S.lg2Done = false; S.shDone = false;
       const member = z.zone <= 3 ? S.pend[z.zone - 1] || 0 : 0, I = IT();
+      const member2 = z.zone <= 2 ? S.pend[z.zone + 2] || 0 : 0;   // (D19: the 4th and 5th wild members, zones 1 and 2)
       const M = G.ExpMeta;   // (D10: the 6-shiny perk is a Shiny Charm every run; Dawn Stone: a shiny in zone 1)
-      S.zplan = zonePlan(S.seed, z.map, z.zone, { member, luck: pl.xluck || 0, charm: !!(I && I.has(pl, 'shinycharm')) || !!(M && M.charm()), force: !!(M && M.dawn(z.zone)) });
+      S.zplan = zonePlan(S.seed, z.map, z.zone, { member, member2, luck: pl.xluck || 0, charm: !!(I && I.has(pl, 'shinycharm')) || !!(M && M.charm()), force: !!(M && M.dawn(z.zone)) });
     }
     const zt = now() - run.zs, P = S.zplan;
     if (P && P.league && !S.lgDone && zt >= P.league.at) { S.lgDone = true; spawnLeague(P.league.member, pl); }
+    if (P && P.league2 && !S.lg2Done && zt >= P.league2.at) { S.lg2Done = true; spawnLeague(P.league2.member, pl); }
     if (P && P.shiny && !S.shDone && zt >= P.shiny.at) { S.shDone = true; spawnShiny(P.shiny.pick, pl); }
     // the targets: faint at 1 HP; League / shiny flee on time
     for (const [id, g] of S.tg) {

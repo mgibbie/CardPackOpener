@@ -3108,6 +3108,124 @@ and refunded once with backups, Profesor at 25, dv 17). Updated on purpose: `_ex
 purchase shown with Refresh, 9 rows listed, the boosts without Study / Trading, refunds in the coin tally), dv 16 -> 17 in the
 Expedition suites.
 
+## DLC D19: the full League (every species playable in Expedition)
+
+Owner, 2026-10-26: "i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and
+expedition mode". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D19 built".
+
+**First, the save cap.** The Expedition save held at most 2,000 counters (client `expedition/save.js` `MAX.counters`, server
+`cleanMsurvExpSave`); the per-family counters `lg.runs.<family>`, `lg.best.<family>` and `rs.<family>` alone are 3 x 553 = 1,659
+with the full League, and a client's `clean()` silently DROPPED every counter past 2,000. Now 8,000 on both sides
+(`MSURV_EXP_COUNTERS_MAX`); the 200,000-char row cap is unchanged and still bounds the row (a save with every family's three counters
+and 750 others is ~38,500 chars). Nothing is migrated or rewritten. An old cached client keeps the first 2,000 it reads and pushes
+those: the server MERGES every put into what it holds, so the rest are never lost and a new client reads them all back. A put whose
+merge with the stored save would pass 8,000 is refused (413) and the stored save is kept, so the stored row always reads back clean.
+
+**What changed for the player**
+- **Every family is a League member** (decision #1): 553, the families of `js/data/families.js` (`G.Families`, the shop's, so the
+  League and the shop agree on what a family is). Every species 1-1025 is a stage of exactly one member (tested). D13's 245 are
+  byte-identical (kits, ranks, roles, challenges, evolution levels; tested against `overworld/tests/fixtures/micasurvivor_league245.json`)
+  but for **Pawniard, which gains Kingambit** (Lv 55: the cross-generation evolutions `families.js` already counts are now in the
+  generator's supplement too; Bisharp's is the only one inside a D4-D13 member; its rank, role and challenge are computed without
+  it, so the challenge rotation every later member drew from is the same). The 308 new members (`b: 'D19'`, after the 245, continuing
+  the rotation): kits scored on their learnsets, ranks / roles / challenges by the same rules, Eevee's 8 evolutions one level-up's
+  cards (Lv 30), Volcarona and Kingambit at 55 (the League's latest evolution stays Lv 55).
+- **Owning any stage of a family in the base game unlocks the family** (`G.ExpLeague.own`: read from `G.DB.owns`, never written);
+  the server counts it too for the League board (it reads the base save's exact key `micasurvivor:<user>`).
+- **A run starts at the first stage** (decision #2): a base Vaporeon gives you Eevee, which evolves in the run.
+- **All 27 starter trios are free** (decision #15): the data's `free` list (`MSURV_EXP_LEAGUE_FREE` on the server); the Gen 5-9
+  starters keep their D13 rank and challenge in `members`.
+- **Up to 5 wild members a run** (decision #15, was 3): zones 1-3 one each as before, zones 1-2 a second one at 150-230 s
+  (`G.ExpCap.K.PER_RUN`, `LG_AT2`; the plan's draws before it are unchanged).
+- **The League screen:** a generation in pages of 42 (`K.PAGE`; Gen 5 has 82), page chips next to the count; the count and the
+  achievements follow the 553: "League of 245" (`league245`, its id and title kept), + "League of four hundred" (`league400`) and
+  "Full League" (`league553`, title "League Master"), appended late so a saved title index keeps its meaning.
+- `G.Expedition.DV` **18**; the `x` block stays v10 (the League row already names the member and form).
+
+**Not changed:** the base game (the D0a fixtures pass as recorded); old saves read as they are.
+
+**Tests:** `overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (30 checks: every dex 1-1025 reachable through a family,
+every kit move exists, the 245 byte-identical, the server's lists = the generated ones, the 2,400-counter save through the client's
+clean / merge and the server, an old client losing nothing, the cap refused, the base collection's families counted by the server
+and playable in the game, the 27 trios free, the pages, an Eevee run FIRED (every kit move fires, its 8 evolution cards, on a phone
+too, Sylveon), a Pawniard run to Kingambit, 5 wild members). Fails 23 of 30 before D19. Updated on purpose: `_expedition_league` and
+`_leaguemode` (553 members, the 27 free starters and base ownership in the counts, the pages; a locked / caught D4b member is
+Roggenrola, Snivy being free; the board counts), `_expedition_meta` (553 research families, 48 achievements), `_expedition_capture`
+(up to 5 wild members), `_expedition_classic` and `_sharedupgrades` (553), dv 17 -> 18 in the Expedition suites.
+
+## DLC D20: Expedition enemies, all 1,025 (and Wishiwashi in base)
+
+Owner, 2026-10-26: "i want to increase coverage to the full 1025 for both enemies and playable characters in bother regular and
+expedition mode". `Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D20 built".
+
+**What changed for the player**
+- **Wanderers** (Expedition): every zone 1-3 has 6 seeded "wanderers" (`plan().wander`, `K.WANDER_N`): Pokémon of NONE of the
+  map's types, from the zone's BST band (zone 1 also takes anything below its band, so Wishiwashi, BST 175, wanders there). They
+  are **12 % of the trickle** (`K.WANDER`), so a map keeps its identity: Viridian is still grass / bug / normal / flying, with the odd
+  Gastly or Ponyta passing through. Survival's trickle is Classic's, so it has them too.
+- **Rarity-5 elites:** zone 3 has one more elite wave of the 20 rarity-5 non-legendaries (Dragonite, Tyranitar, Slaking,
+  Salamence, Metagross, Garchomp, Hydreigon, Goodra, Kommo-o, Dragapult, Baxcalibur, Archaludon, the Paradox: 3 foes, at 300-470 s);
+  Survival's phase 3 (zone 3's) segments add one each 5:00.
+- **Roaming legendaries:** in zones 2-3 (35 % a zone) and from Survival's phase 2 (35 % a segment), a legendary or mythical (any but
+  the map's shrine legendary) roams in: "A legendary Raikou roams the zone!", x16 HP, x1.4 damage, x10 XP, a bigger sprite; beaten it
+  drops an item and a heal; left alone it moves on after 90 s ("Raikou has left!"). A new special kind, `roam` (the `c` block's code
+  7: an older viewer ignores it).
+- All of it comes from its own stream (`zoneStream(..., 0xD20)`, Survival's `0xD20` per segment), drawn after the plan's own draws:
+  a plan's cards, guardian and D3 timeline are what they were. Pure, as before.
+- **Base fix: Wishiwashi** (#746, BST 175, Solo Form) never spawned: the lowest base tier started at BST 180 and its only list was
+  the unused "beach" biome. The first tier now starts at 0 (`js/data/enemies.js`); as a "fan" enemy it joins the first tier's Water
+  hordes (the first tier's cast takes plain enemies only, as for every low-BST fan). The D0a golden runs are unchanged (no Water horde
+  in their first tier's 120 s), and so is the force-loaded run.
+- `G.Expedition.DV` **19**; the `x` block stays v10.
+
+**Coverage:** the union of `G.ExpClassic.plan`'s outputs over 1,500 seeds x 3 maps x 4 zones (cards, wanderers, events, guardians,
+shrines) + Survival's segments and milestones: **all 1,025** (before D20: ~665 species; tested). Base: every species is a tier
+candidate, a boss slot or a rift / judgment / tower legendary (tested; Wishiwashi was the one missing).
+
+**Tests:** `overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (14 checks: the Expedition union covers 1,025, the
+wanderers off-type and a minority, every rarity-5 a zone-3 elite and every legendary roams, plans pure and the D3 timeline in
+order; base coverage, Wishiwashi a first-tier candidate in Water hordes; FIRED: a zone's trickle spawns its wanderers at ~11 %, a
+roaming Raikou spawns, is a special and leaves, the rarity-5 elites spawn, a base Water horde spawns Wishiwashi). 11 of 14 fail
+before D20 (the base checks fail with only the enemies.js line reverted). Updated on purpose: `_expedition_classic` (a zone's kinds:
++ `roam` sometimes), dv 18 -> 19 in the Expedition suites.
+
+## DLC D21: balance and performance after "every move fires"
+
+The owner's request's last batch (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md` "D21 built"). Measured with
+`tools/micasurvivor/dps_sim.mjs` (D16's DPS sim) and its new **`--pace`** mode: the same invulnerable bot plays a 45-min Survival
+run and a Classic clear, once as the one-active-move game (`pl.af = false`, x1) and once as shipped, and prints KOs, level, bosses
+and the Normal pay (`--why`: where the foes come from). No forced KOs (the mp test's bot has 3 a second).
+
+**What changed for the player**
+- **Base damage factor** `G.Combat.AF.DMG` 0.8 -> **0.85** (decision #10: ~1.6x the one-active-move game). Re-measured after D17-D20
+  (one held item and the family upgrades changed the bot's builds): all-fire / the best single slot was x1.32 at 0.8 (6 builds), x1.71
+  at 0.9 (10 builds), x1.79 at 0.96 (6 builds), single builds from x1.15 to x2.2; 0.85 is ~x1.6. Expedition's `DMG_EXP` 1.1 measures
+  **x1.61** (6 builds): kept.
+- **Expedition KO pay** `G.ExpMeta.K.PAY.KO` 1/40 -> **1/150**. All-fire took a Normal clear from D11's ~4,000 KOs to ~8,400
+  (bot), so a clear paid ~1,740 instead of ~1,270-1,365: now **~1,340** (bot: 1,337 avg of 3, 8,378 KOs, 20:21). One currency, x3
+  scale, as before; base runs pay exactly as they did.
+- **Survival's pacing** (`G.ExpSurv.K.PACE`): half the trickle's rate and half each timeline pack, each foe x1.8 HP and XP (bosses
+  keep their DPS targets): a 45-min bot run KOs **~10,000-12,800** (shipped before D21: ~12,500-15,200; one active slot:
+  ~1,700-2,800); the mp test's assisted bot 15,100-16,200 (was 17,600-18,800). Its pay: **~2,250-2,575** (before D21 ~2,480-2,755; a
+  one-slot run ~2,010-2,175): no longer ~1.6x. The KOs move less than the knobs because a Lv 300+ bot one-shots the field: they
+  follow how many foes it reaches, not their HP or number (a smaller cap even raised them; measured, not shipped).
+
+**Measured (no change needed):** phone 844x390 (touch, an Eevee-line Expedition run at 7:26 with its 4 moves, 85 foes with
+wanderers and a roaming Suicune): frame time p50 16.6 / p95 17.9 ms (headless desktop Chrome), up to 68 projectiles, no sideways
+scroll; the busiest relay frame + 1 s of casts **9,968-10,217** / 16,000 chars; a 45-min Survival tape **779,597-1,161,066** chars and
+a full Classic clear **743,943-750,550** (cap 1.2 MB; two runs of `micasurvivor_expedition_mp_test`: a Survival tape with fewer
+foes a frame thins later and carries more frames; `halve` stays the last resort).
+
+**Golden fixtures (D0a) re-recorded** for the base factor (0.8 -> 0.85): every mode diverges between seconds 6 and 14 (hits land
+x1.0625 harder, so foes fall on other frames and the random stream moves). Normal 145 KOs (was 111), Daily 67 (68), Team 137
+(178), Co-op 121 (143), all still alive at 120 s; Boss Rush lasts to 118.0 s (was 91.0) and beats 3 bosses (2); the Tower falls at
+81.1 s (it lasted the 120 s). Passes twice in a row; the force-loaded run passes.
+
+**Tests:** `overworld/tests/micasurvivor_expedition_balance_test.mjs` (9 checks: the tuned numbers; the bot's clear and a 45-min
+Survival run's pay; FIRED: a Survival spawn's x1.8 HP and XP, Classic's unpaced, Survival's trickle at half (ABBA windows), the
+runs' damage factors). Fails 7 of 9 before D21. Updated on purpose: `_expedition_meta` and `_expedition_survival` (KOs / 150; the
+pacts' foeK on top of the pacing), `_allmoves` (the Choice Band's ratios within 1 %: whole-number hits at x0.85).
+
 ## DLC D13-D15: the stacked branch
 
 `feat/micasurvivor-expedition-d13-d15` carries three batches on top of D12 (merged), one commit each, `G.Expedition.DV` 11 -> 14,
@@ -3161,6 +3279,13 @@ The branch needs the full gate before it merges.
   retired, the Backpack refund once across two devices, the Expedition's stacking items unchanged and a boss's held item.
 - `node overworld/tests/micasurvivor_sharedupgrades_test.mjs` (DLC D18): the families, per-family levels at read time, the same
   perks in both modes, the shop, the TM / Repertoire in the kit, the Lab's 9 stat rows retired and refunded.
+- `node overworld/tests/micasurvivor_expedition_fullleague_test.mjs` (DLC D19): every species 1-1025 a stage of one League member
+  (553 families), every kit move a game move, D13's 245 byte-identical, the server's lists, the save's counter cap (client and
+  server, an old client), the base collection's families, the 27 free trios, the pages, an Eevee run fired, Kingambit, 5 wild members.
+- `node overworld/tests/micasurvivor_expedition_allenemies_test.mjs` (DLC D20): all 1,025 as Expedition enemies (the union of the
+  plans over many seeds), wanderers a minority, rarity-5 elites, roaming legendaries; base coverage and Wishiwashi.
+- `node overworld/tests/micasurvivor_expedition_balance_test.mjs` (DLC D21): the tuned damage factors, the Expedition KO pay and
+  Survival's pacing, pinned and fired.
 - `node tools/micasurvivor/dps_sim.mjs` (DLC D16, not a test): the DPS measurement behind `G.Combat.AF`.
 - `node overworld/tests/micasurvivor_expedition_plumbing_test.mjs` (DLC D0b), the real handler behind a static server:
   lazy loading (the network log: no js/expedition/ fetch on a base boot or run, guest or signed in; then exactly

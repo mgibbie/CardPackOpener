@@ -39,6 +39,7 @@ G.I18n.add({
   '¡Oleada de élite!': 'Elite wave!',
   '¡{x} dominante llama a los suyos!': 'Totem {x} calls its allies!',
   '¡{x} invocador!': 'Summoner {x}!',
+  '¡Un {x} legendario merodea por la zona!': 'A legendary {x} roams the zone!', '¡{x} se ha marchado!': '{x} has left!',   // (DLC D20)
   '¡ENJAMBRE FINAL! Despierta al guardián': 'FINAL SWARM! Wake the guardian',
   '¡{x}, el guardián, despierta!': '{x}, the guardian, awakens!',
   '¡{x} está agotado!': '{x} is exhausted!',
@@ -81,9 +82,15 @@ G.ExpClassic = (() => {
     ALPHA: { hp: 9, dmg: 1.5, xp: 8, scale: 1.6 }, ELITE: { hp: 3, dmg: 1.3, xp: 3, scale: 1.25 },
     TOTEM: { hp: 12, dmg: 1.3, xp: 6, scale: 1.5, spd: 0.7, every: 7, calls: 3 },
     SUMMONER: { hp: 14, dmg: 1.2, xp: 6, scale: 1.4, life: 50 },
-    STAMPEDE_SPD: 230, FLOCK_SPD: 180, ROCK_R: 44, ROCKS: 14
+    STAMPEDE_SPD: 230, FLOCK_SPD: 180, ROCK_R: 44, ROCKS: 14,
+    // DLC D20 (owner 2026-10-26: "the full 1025 for both enemies and playable characters"): every Pokémon is an enemy somewhere.
+    // WANDER: the share of the trickle that is one of the zone's WANDER_N seeded "wanderers" (Pokémon NOT of the map's types, from
+    // the zone's band; zone 1 also those below it): a minority, so a map keeps its identity. RARE5: zone 3's rarity-5 elite pack
+    // (the pseudo-legendaries, the Paradox...; n). ROAM: a legendary roams zones 2-3 (ROAM_P a zone) and leaves after life s.
+    WANDER: 0.12, WANDER_N: 6, RARE5_N: 3, RARE5_AT: [300, 470], ROAM_P: 0.35, ROAM_AT: [200, 420],
+    ROAM: { hp: 16, dmg: 1.4, xp: 10, scale: 1.4, life: 90 }
   };
-  const KINDS = ['alpha', 'swarm', 'stampede', 'flock', 'rockslide', 'elite', 'totem', 'summoner'];
+  const KINDS = ['alpha', 'swarm', 'stampede', 'flock', 'rockslide', 'elite', 'totem', 'summoner', 'roam'];   // (D20: + roam)
   // zone 1's timeline (study 2.8, rescaled); 'a|b' = one of them, by the zone's stream. Plus a flock (170-280 s), a
   // rock slide (400-500 s) and, half the time, one more of either (540-585 s).
   const TIMELINE = [[150, 'alpha'], [235, 'swarm|stampede'], [290, 'totem'], [330, 'alpha'], [330, 'elite'], [360, 'summoner'],
@@ -151,6 +158,17 @@ G.ExpClassic = (() => {
       && p.types.some(t => M.types.includes(t)) && !res.includes(p.dex)).map(p => p.dex);
     return { res, others };
   }
+  // DLC D20: the enemies the map's types and bands leave out (a test checks every one of the 1,025 is somewhere)
+  /** The zone's wanderers' pool: the Pokémon of no map type in the zone's band (zone 1: below it too, e.g. Wishiwashi, BST 175). */
+  function wanderPool(map, zone) {
+    const M = MAPS[map], zi = Math.min(3, zone) - 1, band = M.bands[zi];
+    return G.DEX.filter(p => !p.leg && p.rarity < 5 && G.SPRITE_META[p.dex] && p.bst <= band[1] && (p.bst >= band[0] || zi === 0)
+      && (!p.types.some(t => M.types.includes(t)) || p.bst < band[0])).map(p => p.dex);
+  }
+  /** The rarity-5 Pokémon that are not legendary (Dragonite, Tyranitar, Slaking, the Paradox...): zone 3's elite packs. */
+  const rare5 = () => G.DEX.filter(p => !p.leg && p.rarity >= 5 && G.SPRITE_META[p.dex]).map(p => p.dex);
+  /** The legendaries and mythicals that may roam (all but the map's own shrine legendary). */
+  const roamers = map => G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex] && p.dex !== MAPS[map].legend).map(p => p.dex);
   /**
    * The zone's plan from the run's seed: {map, zone, diff, guardian, legend, cards: [dex], events: [{at, kind, n, dex: [],
    * seed}]}, events sorted by time (zone 4, the shrine, has none). Pure: same arguments, same plan, no Math.random.
@@ -187,7 +205,17 @@ G.ExpClassic = (() => {
       events.sort((a, b) => a.at - b.at || a.i - b.i);
       events.forEach(e => { delete e.i; });
     }
-    return { map, zone, diff, guardian, legend: M.legend, cards, events };
+    // (DLC D20, from its own stream, after every draw above: the cards, the guardian and the timeline are as before)
+    let wander = [];
+    if (zone <= 3) {
+      const rd = zoneStream(seed, map, zone, 0xD20), shift = K.SHIFT[zi] + TR.early;
+      wander = shuffle(rd, wanderPool(map, zone)).slice(0, K.WANDER_N);
+      const r5 = rare5(), rl = roamers(map);
+      if (zone === 3 && r5.length) events.push({ at: Math.max(30, intR(rd, K.RARE5_AT[0], K.RARE5_AT[1]) - shift), kind: 'elite', n: K.RARE5_N, dex: [pickR(rd, r5), pickR(rd, r5)], seed: Math.floor(rd() * 4294967296) >>> 0, rare: 1 });
+      if (zone >= 2 && rl.length && rd() < K.ROAM_P) events.push({ at: Math.max(30, intR(rd, K.ROAM_AT[0], K.ROAM_AT[1]) - shift), kind: 'roam', n: 1, dex: [pickR(rd, rl)], seed: Math.floor(rd() * 4294967296) >>> 0 });
+      events.sort((a, b) => a.at - b.at);   // (stable: the D3 timeline's order kept)
+    }
+    return { map, zone, diff, guardian, legend: M.legend, cards, events, wander };
   }
 
   // ---------------- the shrine (zone 4, hand-made) ----------------
@@ -289,7 +317,7 @@ G.ExpClassic = (() => {
     if (S.surv) p.events = [];   // (D11: Survival's timeline is its own, js/expedition/survival.js; its cards follow the phase)
     Object.assign(S, { zone: z, zs: t, plan: p, n: 0, ph: 0, charge: 0, portalT: 0, fs: false, boss: null, exhSaid: false, acc: 0,
                        trick: zoneStream(S.seed, S.map, z, 0xC4), specials: new Map(), sites: sitesOf(G.World.zone) });
-    G.Sprites.preload(p.cards.slice(0, 8).concat([p.guardian, p.legend], ...p.events.map(e => e.dex)), 8000);
+    G.Sprites.preload(p.cards.slice(0, 8).concat([p.guardian, p.legend], p.wander || [], ...p.events.map(e => e.dex)), 8000);   // (D20: + the wanderers)
     if (S.surv) say(G.I18n.f('— Tierra {x} · {x} —', G.ExpSurv ? G.ExpSurv.landOf() : 1, G.I18n.t(MAPS[S.map].name)), 3.2);
     else if (z === 4) say(G.I18n.f('— Santuario de {x} —', G.DEX_BY[p.legend].name), 3.4);
     else say(G.I18n.f('— Zona {x} · {x} —', z, G.I18n.t(MAPS[S.map].name)), 3.2);
@@ -301,7 +329,7 @@ G.ExpClassic = (() => {
     const p = plan(S.seed, S.map, zi + 1, S.diff);
     p.events = [];
     S.plan = p;
-    G.Sprites.preload(p.cards.slice(0, 8), 8000);
+    G.Sprites.preload(p.cards.slice(0, 8).concat(p.wander || []), 8000);
   }
 
   /** Every step of an Expedition run on the host (js/systems/spawner.js, instead of the base waves). */
@@ -497,7 +525,7 @@ G.ExpClassic = (() => {
     // (D11: Survival: the Endless Night and the pacts' banes (enemies' HP / damage), js/expedition/survival.js foeK)
     const sk = S.surv && G.ExpSurv ? G.ExpSurv.foeK(t, o.kind) : null;
     if (sk) { e.maxHp = e.hp = Math.round(e.maxHp * sk.hp); e.dmg *= sk.dmg; }
-    e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1) * TR.xp);
+    e.xp = Math.round(e.xp * K.XP_K * (o.xp || 1) * TR.xp * (sk && sk.xp ? sk.xp : 1));   // (D21: Survival's pacing, foeK)
     // (D5: the Cursed Incense vitamin, +12 % difficulty a level: HP and damage)
     const cu = G.ExpItems ? G.ExpItems.total(G.Game.player, 'curse') : 0;
     if (cu > 0) { e.maxHp = e.hp = Math.round(e.maxHp * (1 + cu)); e.dmg *= 1 + cu; }
@@ -547,7 +575,11 @@ G.ExpClassic = (() => {
       for (let i = 0; i < nC; i++) { const v = i === nC - 1 && nC > K.CARDS0 ? 1.4 : Math.pow(0.85, nC - 1 - Math.max(i, K.CARDS0 - 1)); w.push(v); tot += v; }
       let r = rng() * tot, ci = 0;
       while (ci < nC - 1 && (r -= w[ci]) > 0) ci++;
-      const dex = cards[ci], p = players[Math.floor(rng() * players.length) % players.length];
+      let dex = cards[ci];
+      // (D20: a minority share of the trickle is one of the zone's wanderers, off the map's types)
+      const wd = S.plan.wander;
+      if (wd && wd.length && rng() < K.WANDER) dex = wd[Math.floor(rng() * wd.length) % wd.length];
+      const p = players[Math.floor(rng() * players.length) % players.length];
       const pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(dex));
       // (D9: Hard / Nightmare make a share of the trickle elites; Normal draws nothing more, so its stream is unchanged)
       const el = TR.elite + (sk ? sk.elite : 0);
@@ -628,6 +660,10 @@ G.ExpClassic = (() => {
       const pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(ev.dex[0]));
       if (pt) add(spawn(ev.dex[0], pt[0], pt[1], t, { ti: 1, hp: K.TOTEM.hp, dmg: K.TOTEM.dmg, xp: K.TOTEM.xp, scale: K.TOTEM.scale, spd: K.TOTEM.spd, kind: 'totem' }));
       say(G.I18n.f('¡{x} dominante llama a los suyos!', name(ev.dex[0])), 3); G.Audio.sfx('boss');
+    } else if (ev.kind === 'roam') {   // (D20: a legendary roams the zone, and leaves after K.ROAM.life s)
+      const pt = spot(rng, p, rng() * 6.2832, G.Sprites.hovers(ev.dex[0]));
+      if (pt) add(spawn(ev.dex[0], pt[0], pt[1], t, { ti: 1, hp: K.ROAM.hp, dmg: K.ROAM.dmg, xp: K.ROAM.xp, scale: K.ROAM.scale, kind: 'roam' }));
+      say(G.I18n.f('¡Un {x} legendario merodea por la zona!', name(ev.dex[0])), 3.2); G.Audio.sfx('boss');
     } else if (ev.kind === 'summoner') {
       const pt = spot(rng, p, rng() * 6.2832, true, Rr * 0.7);
       const minion = MAPS[S.map].minion[ev.dex[0]] || ev.dex[0];
@@ -647,6 +683,7 @@ G.ExpClassic = (() => {
             G.Pickups.drop('heal', e.x + 20, e.y, 0);
           }
         } else if (s.kind === 'totem' || s.kind === 'summoner') G.Pickups.drop('heal', e.x, e.y, 0);
+        else if (s.kind === 'roam') { G.Pickups.drop('item', e.x - 20, e.y, G.Items.roll()); G.Pickups.drop('heal', e.x + 20, e.y, 0); }   // (D20)
         S.specials.delete(id);
         continue;
       }
@@ -662,14 +699,18 @@ G.ExpClassic = (() => {
       } else if (s.kind === 'summoner' && t - s.t0 > K.SUMMONER.life) {
         e.behavior = 'thief'; e.life = 0;   // (the base "it got away" exit: gone this step, no drop)
         S.specials.delete(id);
+      } else if (s.kind === 'roam' && t - s.t0 > K.ROAM.life) {   // (D20: a roaming legendary moves on)
+        e.behavior = 'thief'; e.life = 0;
+        S.specials.delete(id);
+        say(G.I18n.f('¡{x} se ha marchado!', G.DEX_BY[e.dex] ? G.I18n.t(G.DEX_BY[e.dex].name) : ''), 2.6);
       }
     }
   }
 
   // ---------------- the `x` block's `c` (viewers and guests) ----------------
-  const KCODE = { alpha: 1, elite: 2, totem: 3, summoner: 4, guardian: 5, legend: 6 };
+  const KCODE = { alpha: 1, elite: 2, totem: 3, summoner: 4, guardian: 5, legend: 6, roam: 7 };   // (D20: + roam; an older viewer ignores 7)
   const KNAME = Object.fromEntries(Object.entries(KCODE).map(([k, v]) => [v, k]));
-  const KSCALE = { alpha: K.ALPHA.scale, elite: K.ELITE.scale, totem: K.TOTEM.scale, summoner: K.SUMMONER.scale };
+  const KSCALE = { alpha: K.ALPHA.scale, elite: K.ELITE.scale, totem: K.TOTEM.scale, summoner: K.SUMMONER.scale, roam: K.ROAM.scale };
   /**
    * The host's `c`: {s: zone start (run ds), p: phase (0 altar / 1 guardian / 2 portal / 3 legendary / 4 won), q: altar
    * charge 0-8, f: bits (1 final swarm, 2 won), n: timeline events fired, d: difficulty index, k: [id, kind, ...] the
@@ -944,7 +985,7 @@ G.ExpClassic = (() => {
   }
 
   return {
-    K, KINDS, TIMELINE, MAPS, MAP_IDS, DIFFS, plan, poolOf, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
+    K, KINDS, TIMELINE, MAPS, MAP_IDS, DIFFS, plan, poolOf, wanderPool, rare5, roamers, shrine, build, sitesOf, siteXY, bossHp, exhaustion, dps, defOf,
     begin, reset, update, xblockC, applyC, cur, active, drawGround, drawHud, hudLine, hudColor, score, scoreParts, result, record, tierOf,
     zIdx, setPhase, makeBoss, escorts,   // (D11: Survival's engine room, js/expedition/survival.js)
     /** D11: one timeline event ({at, kind, n, dex, seed}: plan()'s shape) fired now round the players. */

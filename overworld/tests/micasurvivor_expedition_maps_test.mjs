@@ -217,7 +217,7 @@ try {
 	const { page } = d0;
 	A(d0.menu, 'boots to the menu as a guest');
 	const ld = await load(page);
-	A(ld.ok && ld.dv === 17 && ld.cdv === 17 && ld.xv === 10 && JSON.stringify(ld.maps) === '["viridian","mtmoon","cerulean"]',
+	A(ld.ok && ld.dv === 19 && ld.cdv === 19 && ld.xv === 10 && JSON.stringify(ld.maps) === '["viridian","mtmoon","cerulean"]',
 		'the Expedition code loads: content version 11 (D12; old replays still play), the x block still v10, all three maps in G.ExpClassic.MAPS', JSON.stringify(ld));
 	if (!ld.ok) throw new Error('the Expedition code did not load');
 
@@ -324,7 +324,7 @@ try {
 
 	// a live run on Mt. Moon: the palette, a totem and a summoner of the map
 	const st1 = await startOn(page, 'mtmoon');
-	A(st1.picked && st1.ok && st1.map === 'mtmoon' && st1.zmap === 'mtmoon' && st1.dv === 17 && st1.biome === 1, 'Classic starts on Mt. Moon (dv 17): its zone, painted in the crystal cave\'s palette', JSON.stringify(st1));
+	A(st1.picked && st1.ok && st1.map === 'mtmoon' && st1.zmap === 'mtmoon' && st1.dv === 19 && st1.biome === 1, 'Classic starts on Mt. Moon (dv 17): its zone, painted in the crystal cave\'s palette', JSON.stringify(st1));
 	const live = await E(page, () => {
 		const H = window.__t, C = G.ExpClassic, S = C.run, M = C.MAPS.mtmoon, out = {};
 		for (const kind of ['totem', 'summoner']) {
@@ -460,7 +460,7 @@ try {
 		await e.ready;
 		return { seed: G.World.seed, mid, open, code: e.code, hash: mid.x && mid.x.th, m: mid.x && mid.x.m, altar: C.sitesOf(G.World.zone) && C.sitesOf(G.World.zone).altar, biome: mid.b, dv: mid.dv };
 	});
-	A(rec.m === 'cerulean' && rec.dv === 17 && rec.mid.x.c && rec.mid.x.c.p === 1 && rec.open.x.c.p === 2 && rec.biome === pure.water, 'a Cerulean Cape run\'s snapshots name the map (x.m), dv 14 and its palette (b)', JSON.stringify({ m: rec.m, dv: rec.dv, b: rec.biome, c: rec.mid.x && rec.mid.x.c }));
+	A(rec.m === 'cerulean' && rec.dv === 19 && rec.mid.x.c && rec.mid.x.c.p === 1 && rec.open.x.c.p === 2 && rec.biome === pure.water, 'a Cerulean Cape run\'s snapshots name the map (x.m), dv 14 and its palette (b)', JSON.stringify({ m: rec.m, dv: rec.dv, b: rec.biome, c: rec.mid.x && rec.mid.x.c }));
 	await d0.ctx.close();
 	{
 		const d = await bootPage();

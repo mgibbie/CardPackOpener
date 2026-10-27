@@ -14,6 +14,11 @@
 //   node tools/micasurvivor/dps_sim.mjs [--modes=normal,exp] [--seeds=3] [--t=300,600] [--window=20] [--dt=0.0333]
 // (In a git worktree add MAGEPUNK_ASSET_ROOT=<main checkout> for the gitignored sprites. One browser, one page at a time.)
 // --apply: also measure with the factors the code ships (pl.afDmg as the run set it) and print the shipped multiplier.
+// --pace (DLC D21): the PACING bot runs instead: the same invulnerable bot plays an Expedition run (--pmodes=survival,classic:
+//   Survival to --survT seconds, milestone bosses down 40 s after they come, the migration portal taken; Classic to its clear,
+//   ~6:30 a zone, then the altar, the guardian down 45 s after it wakes, the portal), once as today's game (one active slot:
+//   pl.af = false, x1) and once as shipped (every slot firing, the shipped factor); prints KOs, the level, the bosses and the
+//   Normal pay (G.ExpMeta.payOf, in Pokémonedas) of each, averaged over --seeds. No forced KOs (the mp test's bot has them).
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -31,6 +36,9 @@ const TS = arg('t', '300,600').split(',').map(Number);
 const WINDOW = +arg('window', 20);
 const DT = +arg('dt', 1 / 30);
 const APPLY = process.argv.includes('--apply');
+const PACE = process.argv.includes('--pace');
+const PMODES = arg('pmodes', 'survival,classic').split(',');
+const SURV_T = +arg('survT', 2750);
 const PORT = 8893;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.md': 'text/markdown; charset=utf-8', '.txt': 'text/plain', '.svg': 'image/svg+xml' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -143,6 +151,56 @@ const BEFORE = save => {
 		pl.af = keep.af; pl.active = keep.active; pl.afDmg = keep.k;
 		return Math.round(dps * 10) / 10;
 	};
+	/** DLC D21: a pacing run of the started Expedition run (see --pace). af: every slot firing (as shipped), else one slot at x1. */
+	H.pace = (classic, T, dt, af) => {
+		H.freeze();
+		const pl = G.Game.player, C = G.ExpClassic, S = G.ExpSurv;
+		pl.hurt = () => {}; pl.invuln = 1e9;
+		if (!af) { pl.af = false; pl.afDmg = 1; pl.active = 0; }
+		let sum = null, maxE = 0, blocked = 0;
+		if (!H.hooked) { H.hooked = 1; G.Hooks.on('run.end', (o, sm) => { H.sum = JSON.parse(JSON.stringify(sm)); return o; }); }
+		H.sum = null;
+		// (--why: where the run's foes come from, by the function that added them, and the KOs by that source)
+		const why = {}, src = new Map();
+		if (window.__why) { const add0 = G.EnemyMgr.add; G.EnemyMgr.add = function (e) { if (e && !e.remote) { const st = (new Error().stack || '').split('\n').slice(2, 4).map(l => (l.match(/at (\S+)/) || [])[1] || '?').join('<'); why[st] = (why[st] || 0) + 1; src.set(e, st); } return add0.call(this, e); }; }
+		const toAltar = () => { const [x, y] = C.siteXY(C.sitesOf(G.World.zone).altar); pl.x = x; pl.y = y; pl.zMask = null; pl._px = null; };
+		const steps = Math.round(T / dt);
+		for (let f = 0; f < steps; f++) {
+			const st = G.Game.state;
+			if (st === 'over') break;
+			if (st === 'playing') { blocked = 0; hold(H.input(f)); }
+			else {
+				hold([]);
+				if (st !== 'held') {
+					if (G.ExpEco && G.ExpEco.pick) { G.ExpEco.pick.at = -1e9; G.ExpEco.choose(0); }
+					else H.tap('Digit1');
+				}
+				if (++blocked > 300) { if (G.ExpCap && G.ExpCap.run && G.ExpCap.run.prompt) G.ExpCap.run.prompt = null; H.tap('Escape'); if (blocked > 900) break; }
+			}
+			G.Game.debugStep(1, dt);
+			if (f % 10 === 0) {
+				maxE = Math.max(maxE, G.EnemyMgr.count);
+				const Rn = C.run; if (!Rn) continue;
+				const t = G.Game.st.time;
+				if (classic) {
+					const zt = t - Rn.zs;
+					if ((zt > 390 && Rn.ph === 0) || Rn.ph === 2 || (Rn.zone === 4 && Rn.ph === 0)) toAltar();
+					if (Rn.boss && !Rn.boss.dead && t - (Rn.boss.xborn || 0) > 45) Rn.boss.hurt(Rn.boss.maxHp * 10, '#fff');
+				} else {
+					for (const b of S.run.bosses) if (t - b.at > 40 && !b.e.dead) b.e.hurt(b.e.hp * 10, '#fff');
+					if (Rn.ph === 2) { const [x, y] = C.siteXY(Rn.sites.altar); pl.x = x; pl.y = y; pl.zMask = null; pl._px = null; }
+				}
+			}
+		}
+		hold([]);
+		const kills = pl.kills, level = pl.level, t = Math.round(G.Game.st.time), zone = C.run ? C.run.zone : null, won = !!(C.run && C.run.won);
+		if (G.Game.state !== 'over') G.Game.endRun(false);
+		sum = H.sum || {};
+		const p = sum.parts || { kills, time: t, zone: zone || 1, bosses: 0, won, catches: 0 };
+		const pay = G.ExpMeta.payOf(classic ? p : Object.assign({}, p, { surv: true }), 'normal');
+		if (window.__why) { const k = {}; for (const [e, st] of src) if (e.dead) k[st] = (k[st] || 0) + 1; console.log('WHY spawns ' + JSON.stringify(Object.entries(why).sort((a, b) => b[1] - a[1]).slice(0, 12)) + ' dead ' + JSON.stringify(Object.entries(k).sort((a, b) => b[1] - a[1]).slice(0, 12))); }
+		return { af, t, kills, level, zone, won, bosses: p.bosses, legends: p.legends || 0, units: pay.base, pay: pay.pay, maxE, k: af ? pl.afDmg : 1 };
+	};
 	/** (base) a bond: the first two loose moves fused, then a new move in the freed slot. -> the slots */
 	H.fuseBuild = () => {
 		const pl = G.Game.player;
@@ -161,7 +219,33 @@ await new Promise(r => server.listen(PORT, r));
 let browser;
 try {
 	browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 1800000, args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
-	for (const mode of MODES) for (let seed = 1; seed <= SEEDS; seed++) for (const T of TS) {
+	if (PACE) for (const pm of PMODES) for (let seed = 1; seed <= SEEDS; seed++) for (const af of [false, true]) {
+		const t0 = Date.now();
+		const ctx = await browser.createBrowserContext();
+		const page = await ctx.newPage();
+		await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
+		await page.evaluateOnNewDocument(BEFORE, SAVE);
+		if (process.argv.includes('--why')) { page.on('console', m => { if (/^WHY/.test(m.text())) console.log(m.text()); }); await page.evaluateOnNewDocument(() => { window.__why = 1; }); }
+		await page.goto(`http://localhost:${PORT}/micasurvivor/`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => page.evaluate(() => typeof G === 'object' && G.Game && document.getElementById('boot').classList.contains('hidden')), 30000);
+		if (await page.evaluate(() => { const el = document.getElementById('tap-start'); return !!el && !el.classList.contains('hidden') && el.getClientRects().length > 0; })) await page.click('#tap-start');
+		await waitFor(() => page.evaluate(() => { const el = document.getElementById('scr-menu'); return !!el && !el.classList.contains('hidden'); }), 15000);
+		const r = await page.evaluate(async (pm, seed, af, T, dt) => {
+			G.Audio.sfx = () => {}; G.Audio.music = () => {};
+			window.__s.reseed(seed * 7919);
+			const ok = await G.Expedition.load().catch(e => String(e));
+			if (ok !== true) return { error: String(ok) };
+			await G.ExpSave.open();
+			await G.Flow.play(pm === 'classic' ? 'exp-classic' : 'exp-survival');
+			if (G.Game.state !== 'playing') return { error: 'did not start ' + G.Game.state };
+			return window.__s.pace(pm === 'classic', T, dt, af);
+		}, pm, seed, af, pm === 'classic' ? 3600 : SURV_T, 1 / 20);
+		await ctx.close();
+		const row = Object.assign({ pace: pm, seed, secs: Math.round((Date.now() - t0) / 1000) }, r);
+		out.push(row);
+		console.log(JSON.stringify(row));
+	}
+	if (!PACE) for (const mode of MODES) for (let seed = 1; seed <= SEEDS; seed++) for (const T of TS) {
 		const t0 = Date.now();
 		const ctx = await browser.createBrowserContext();
 		const page = await ctx.newPage();
@@ -211,7 +295,13 @@ try {
 	if (browser) await browser.close();
 	server.close();
 }
-for (const mode of MODES) {
+for (const pm of PACE ? PMODES : []) for (const af of [false, true]) {
+	const rs = out.filter(r => r.pace === pm && r.af === af && !r.error);
+	if (!rs.length) continue;
+	const avg = k => Math.round(rs.reduce((a, r) => a + (r[k] || 0), 0) / rs.length);
+	console.log(`\n${pm} ${af ? 'all-fire (shipped)' : 'one slot (before D16)'}: ${rs.length} runs · ${avg('t')} s · ${avg('kills')} KOs · Lv ${avg('level')} · ${avg('bosses')} bosses · won ${rs.filter(r => r.won).length} · ${avg('units')} units = ${avg('pay')} Pokémonedas · up to ${avg('maxE')} foes`);
+}
+for (const mode of PACE ? [] : MODES) {
 	const rs = out.filter(r => r.mode === mode);
 	if (!rs.length) continue;
 	const avg = k => +(rs.reduce((a, r) => a + (r[k] || 0), 0) / rs.filter(r => r[k] != null).length).toFixed(3);

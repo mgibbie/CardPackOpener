@@ -196,9 +196,9 @@ try {
 		on: G.Expedition.MODES.filter(G.Expedition.enabled), dv: G.Expedition.DV,
 	}));
 	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id === 'exp-league');
-	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival","exp-league"]' && ui.dv === 17, 'the registry: Classic, Survival (D11) and League (D13) enabled; the content version is 12 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11; D13: 12)', JSON.stringify(ui));
+	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival","exp-league"]' && ui.dv === 19, 'the registry: Classic, Survival (D11) and League (D13) enabled; the content version is 12 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11; D13: 12)', JSON.stringify(ui));
 	A(!cl.soon && cl.aria !== 'true' && !/Coming soon/.test(cl.txt) && /^Expedition · Classic .*Viridian Forest/.test(cl.txt), 'Classic is playable: no "Coming soon", not aria-disabled, says Viridian Forest (in English)', JSON.stringify(cl));
-	A(rest.length === 1 && rest.every(c => !c.soon && c.aria !== 'true' && !/Coming soon/.test(c.txt) && /245 members/.test(c.txt)), 'League is playable since D13 (no "Coming soon"): "Your League: 245 members ..."', JSON.stringify(rest));
+	A(rest.length === 1 && rest.every(c => !c.soon && c.aria !== 'true' && !/Coming soon/.test(c.txt) && /553 members/.test(c.txt)), 'League is playable since D13 (no "Coming soon"): "Your League: 245 members ..."', JSON.stringify(rest));
 	A(ui.h === 'Expedition', 'the group heading is "Expedition" (no "coming soon" now one is playable)', ui.h);
 	await page.click('#modes-exp [data-exp=exp-league]');
 	A(await waitFor(() => E(page, () => !!(G.ExpMeta && G.ExpMeta.shown && G.ExpMeta.ui.league)), 6000) && await E(page, () => G.Game.state === 'ui'), 'clicking League opens League mode (the League\'s own screen: D13) and starts no run');
@@ -207,7 +207,7 @@ try {
 	await page.click('#modes-exp [data-exp=exp-classic]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpClassic && G.ExpClassic.on), 8000), 'clicking Classic starts an Expedition Classic run (the code lazy-loads)');
 	const st0 = await E(page, () => { window.__t.freeze(); const S = G.ExpClassic.run; return { mode: G.Game.mode, dv: G.Modes.run.dv, map: S.map, zone: S.zone, ph: S.ph, z: G.World.zone && G.World.zone.zone, biome: G.World.biome, events: S.plan.events.length }; });
-	A(st0.mode === 'exp-classic' && st0.dv === 17 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
+	A(st0.mode === 'exp-classic' && st0.dv === 19 && st0.map === 'viridian' && st0.zone === 1 && st0.z === 1 && st0.ph === 0 && st0.events >= 13, 'the run: Viridian Forest, zone 1, the altar waiting, a zone timeline of 13+ events', JSON.stringify(st0));
 
 	// ======================== 2. the plan
 	const pl2 = await E(page, () => {
@@ -235,7 +235,8 @@ try {
 	A(pl2.same && pl2.draws === 0, 'plan(seed, map, zone) is pure: the same twice, and it draws no Math.random', JSON.stringify({ same: pl2.same, draws: pl2.draws }));
 	A(pl2.differs, 'another seed gives another plan');
 	const ALL = 'alpha,elite,flock,rockslide,stampede,summoner,swarm,totem';
-	A(pl2.kinds && pl2.kinds.every(k => k.join(',') === ALL) && pl2.sorted, 'each of zones 1-3 has all 8 kinds (alpha, swarm, stampede, flock, rock slide, elite wave, totem, summoner), in time order', JSON.stringify(pl2.kinds));
+	// (DLC D20: zones 2-3 may also have a roaming legendary, its own kind)
+	A(pl2.kinds && pl2.kinds.every(k => k.filter(x => x !== 'roam').join(',') === ALL) && pl2.sorted, 'each of zones 1-3 has all 8 kinds (alpha, swarm, stampede, flock, rock slide, elite wave, totem, summoner), in time order (D20: + a roaming legendary in zones 2-3, sometimes)', JSON.stringify(pl2.kinds));
 	A(pl2.firstAlpha && pl2.firstAlpha[0] === 150 && pl2.firstAlpha[1] === 130 && pl2.firstAlpha[2] === 110, 'later zones arrive earlier (the first alpha at 150 / 130 / 110 s)', JSON.stringify(pl2.firstAlpha));
 	A(pl2.guard && pl2.guard.every(Boolean) && pl2.legend === 151 && pl2.shrineEvents === 0, "each zone's guardian is one of its 3; the shrine holds Mew and no timeline", JSON.stringify(pl2));
 	A(JSON.stringify(pl2.altar) === JSON.stringify(pl2.altar2) && pl2.flat && pl2.reach && pl2.dist >= 26 && pl2.dist <= 48, `the altar: the same from a rebuild, on flat floor, reachable from the spawn, ${pl2.dist} tiles out`, JSON.stringify(pl2));

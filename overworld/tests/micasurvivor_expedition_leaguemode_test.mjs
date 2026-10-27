@@ -69,7 +69,8 @@ if (D) {
 	const fam = {};
 	let twice = [];
 	for (const m of M) for (const d of stagesOf(m)) { if (fam[d]) twice.push(d); fam[d] = m.dex; }
-	A(M.length === 245 && !D.stubs.length && !twice.length, 'the League: 245 members (the owner\'s 249 entries: Snorunt counted twice, Silvally / Urshifu / Melmetal are evolutions), no stubs, no stage in two families', JSON.stringify({ n: M.length, stubs: D.stubs.length, twice }));
+	// (DLC D19: the full League, every family: 553 members; D13's 245 are the ones without b 'D19', micasurvivor_expedition_fullleague_test.mjs checks the rest)
+	A(M.length === 553 && M.filter(m => m.b !== 'D19').length === 245 && !D.stubs.length && !twice.length, 'the League: D13\'s 245 members (the owner\'s 249 entries: Snorunt counted twice, Silvally / Urshifu / Melmetal are evolutions) + D19\'s 308, no stubs, no stage in two families', JSON.stringify({ n: M.length, stubs: D.stubs.length, twice }));
 	const d4 = M.filter(m => !m.b);
 	A(d4.length === 78 && M.filter(m => m.b === 'D4b').length === 54 && M.filter(m => m.b === 'D4c').length === 31 && M.filter(m => m.b === 'D4d').length === 82, 'D4\'s 78 + D4b 54 + D4c 31 + D4d 82', JSON.stringify([d4.length, M.filter(m => m.b === 'D4b').length, M.filter(m => m.b === 'D4c').length, M.filter(m => m.b === 'D4d').length]));
 	// every legendary / mythical, every Mega-capable species (PokéAPI's -mega varieties) is somewhere in the League
@@ -85,7 +86,8 @@ if (D) {
 	A(!badKit.length, 'every kit: 4 different moves of our own, the first one a damaging move', JSON.stringify(badKit.map(m => m.dex)));
 	const free = M.filter(m => !m.ch).map(m => m.dex);
 	const g59starters = [495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912];
-	A(JSON.stringify(free) === '[1,4,7,152,155,158,252,255,258,387,390,393]' && g59starters.every(d => M.find(m => m.dex === d && m.ch)), 'free: the 12 Gen 1-4 starters (owner); the Gen 5-9 starters have challenges', JSON.stringify(free));
+	A(JSON.stringify(free) === '[1,4,7,152,155,158,252,255,258,387,390,393]' && g59starters.every(d => M.find(m => m.dex === d && m.ch)) && JSON.stringify(D.free) === JSON.stringify(free.concat(g59starters)),
+		'free: the 12 Gen 1-4 starters with no challenge; the Gen 5-9 starters keep their D13 challenges in the data, and since D19 the data\'s free list has all 27 trios (owner decision #15)', JSON.stringify({ free, all: D.free }));
 	const L = d => M.find(m => m.dex === d) || {};
 	const legBad = M.filter(m => m.rank === 'legendary' && m.dex !== 151 && !(m.ch && (m.ch.all || []).length === 2));   // (Mew keeps D4's "win 3 times")
 	A(!legBad.length && JSON.stringify(L(382).ch) === '{"all":[{"k":"league","n":60},{"k":"hard","n":1}]}' && JSON.stringify(L(493).ch) === '{"all":[{"k":"league","n":150},{"k":"night","n":1}]}'
@@ -127,25 +129,25 @@ const BOARD = 'runboard:micasurvivor_expedition:league';
 	const p1 = await raw('micasurvivor-exp-save-put', { save: s1, rev: 0 }, tokens.leo);
 	const b1 = row(BOARD) || [];
 	const me1 = b1.find(e => e.name === 'leo') || {};
-	A(p1.status === 200 && me1.members === 15 && me1.legends === 1 && p1.body.league && p1.body.league.rank === 1,
-		'a save put counts the League server-side: 12 free + Snivy + Raikou (caught) + Pidgey (met before the catch) = 15, 1 legendary; Articuno (still wild) and unknown ids never count', JSON.stringify({ st: p1.status, me1, lg: p1.body.league }));
+	A(p1.status === 200 && me1.members === 29 && me1.legends === 1 && p1.body.league && p1.body.league.rank === 1,
+		'a save put counts the League server-side: 27 free (D19: Snivy is one) + Raikou (caught) + Pidgey (met before the catch) = 29, 1 legendary; Articuno (still wild) and unknown ids never count', JSON.stringify({ st: p1.status, me1, lg: p1.body.league }));
 	// mia has more: she ranks above
 	const s2 = { v: 1, counters: {}, sets: { 'league.own': ['495', '498', '501', '650', '653', '656', '144', '145', '146'] } };
 	await raw('micasurvivor-exp-save-put', { save: s2, rev: 0 }, tokens.mia);
 	const b2 = row(BOARD) || [];
-	A(b2.length === 2 && b2[0].name === 'mia' && b2[0].members === 21 && b2[0].legends === 3 && b2[1].name === 'leo', 'the board ranks by members (mia 21 over leo 15)', JSON.stringify(b2));
+	A(b2.length === 2 && b2[0].name === 'mia' && b2[0].members === 30 && b2[0].legends === 3 && b2[1].name === 'leo', 'the board ranks by members (mia 30 over leo 29: her 6 starters are free since D19, the birds count)', JSON.stringify(b2));
 	// a put that adds nothing to the League writes no board row (the count only grows)
 	const n0 = SQL.filter(s => /INSERT|UPDATE/i.test(s)).length;
 	const g = await raw('micasurvivor-exp-save-get', {}, tokens.leo);
 	const p2 = await raw('micasurvivor-exp-save-put', { save: { v: 1, counters: { runs: 5 }, sets: {} }, rev: g.body.rev }, tokens.leo);
 	const writes = SQL.slice(SQL.length - 12).filter(s => /INSERT|UPDATE/i.test(s)).length, b3 = row(BOARD);
-	A(p2.status === 200 && !p2.body.league && JSON.stringify(b3) === JSON.stringify(b2) && (row('leo').runBest || {})['micasurvivor_expedition:league'].members === 15, 'a save that adds no member leaves the board as it was (no board write)', JSON.stringify({ st: p2.status, lg: p2.body.league, writes, n0 }));
+	A(p2.status === 200 && !p2.body.league && JSON.stringify(b3) === JSON.stringify(b2) && (row('leo').runBest || {})['micasurvivor_expedition:league'].members === 29, 'a save that adds no member leaves the board as it was (no board write)', JSON.stringify({ st: p2.status, lg: p2.body.league, writes, n0 }));
 	// the client can't post a number
 	const rs = await raw('run-score', { mode: 'micasurvivor_expedition', expMode: 'exp-league', dv: 14, members: 245, score: 245 }, tokens.leo);
 	const rs2 = await raw('run-score', { mode: 'micasurvivor_expedition', board: 'league', dv: 14, members: 245 }, tokens.leo);
 	A(rs.status === 400 && rs2.status === 400 && JSON.stringify(row(BOARD)) === JSON.stringify(b2), 'run-score can\'t set the League board (it follows the saved League)', JSON.stringify([rs.body, rs2.body]));
 	const lb = await raw('run-leaderboard', { mode: 'micasurvivor_expedition', board: 'league' }, tokens.leo);
-	A(lb.status === 200 && lb.body.board === 'league' && lb.body.top.length === 2 && lb.body.top[0].name === 'mia' && lb.body.you && lb.body.you.rank === 2 && lb.body.you.members === 15,
+	A(lb.status === 200 && lb.body.board === 'league' && lb.body.top.length === 2 && lb.body.top[0].name === 'mia' && lb.body.you && lb.body.you.rank === 2 && lb.body.you.members === 29,
 		'run-leaderboard {board: "league"} reads it (no map or difficulty): the top and your rank', JSON.stringify(lb.body));
 	const q = SQL.slice(i0);
 	A(!q.some(s => /LIKE/i.test(s)) && !row('runboard:micasurvivor') && !row('runboard:micasurvivor_expedition:viridian:normal'), 'exact keys only (no LIKE); the base board and the map boards untouched', q.filter(s => /LIKE/i.test(s)).join(' | '));
@@ -283,18 +285,21 @@ try {
 	await waitFor(() => d0.visible('scr-modes'), 3000);
 	await sleep(200);
 	const c0 = await E(page, () => { const b = document.querySelector('#modes-exp [data-exp=exp-league]'); return { soon: b.classList.contains('soon'), aria: b.getAttribute('aria-disabled'), txt: b.innerText.replace(/\s+/g, ' ').trim(), on: G.Expedition.enabled('exp-league'), hub: G.Expedition.hub('exp-league'), plan: G.Modes.plan('exp-league').mode, dv: G.Expedition.DV }; });
-	A(c0.on && c0.hub && !c0.soon && c0.aria !== 'true' && /^Expedition · League .*245 members/.test(c0.txt) && c0.plan === 'normal' && c0.dv === 17,
-		'the League card is playable (no "Coming soon"): "Your League: 245 members ..."; League is a screen, never planned as a run (plan -> normal); content version 12', JSON.stringify(c0));
+	A(c0.on && c0.hub && !c0.soon && c0.aria !== 'true' && /^Expedition · League .*553 members/.test(c0.txt) && c0.plan === 'normal' && c0.dv === 19,
+		'the League card is playable (no "Coming soon"): "Your League: 553 members ..." (D19); League is a screen, never planned as a run (plan -> normal); content version 18 (D19)', JSON.stringify(c0));
 	await page.click('#modes-exp [data-exp=exp-league]');
 	A(await waitFor(() => E(page, () => !!(G.ExpMeta && G.ExpMeta.shown)), 8000), 'a click on it opens League mode (the Expedition code lazy-loads)');
 	await sleep(300);
 	await hook(page);
 	const lm = await E(page, () => ({ state: G.Game.state, h: document.querySelector('#modes-xmeta .xm-head h3').innerText, tabs: [...document.querySelectorAll('[data-xtab]')].map(b => b.innerText.trim()),
 		on: (document.querySelector('[data-xtab].on') || { dataset: {} }).dataset.xtab, main: document.getElementById('modes-main').classList.contains('hidden'), count: (document.getElementById('league-count') || {}).innerText,
-		gens: [...document.querySelectorAll('#league-gens [data-gen]')].map(c => c.innerText.replace(/\s+/g, ' ').trim()), cells: document.querySelectorAll('#league-grid .cell').length }));
+		gens: [...document.querySelectorAll('#league-gens [data-gen]')].map(c => c.innerText.replace(/\s+/g, ' ').trim()), cells: document.querySelectorAll('#league-grid .cell').length,
+		pages: [...document.querySelectorAll('#league-pages [data-page]')].map(c => c.innerText.replace(/\s+/g, ' ').trim()) }));
 	A(lm.state === 'ui' && lm.h === 'Expedition · League' && JSON.stringify(lm.tabs) === '["League","Lab","Items","Archive","Research","Tasks","Achievements","Card","Leaderboard"]' && lm.on === 'roster' && lm.main,
 		'League mode: no run, "Expedition · League" with its tabs (League, the HQ\'s seven, Leaderboard), the roster first', JSON.stringify(lm));
-	A(lm.count === 'League: 12 / 245 available' && lm.gens.length === 9 && lm.gens[0] === 'Gen 1 3/35' && lm.gens[4] === 'Gen 5 0/37' && lm.cells === 35, 'the roster: "League: 12 / 245 available", a page per generation (Gen 1: 35 members, 3 playable; Gen 5: 0 of 37)', JSON.stringify(lm));
+	// (DLC D19: 553 members, the 27 starter trios free, alice's base Pikachu makes Pichu's family hers: 28; a generation has pages of 42)
+	A(lm.count === 'League: 28 / 553 available' && lm.gens.length === 9 && lm.gens[0] === 'Gen 1 3/68' && lm.gens[4] === 'Gen 5 3/82' && lm.cells === 42 && JSON.stringify(lm.pages) === '["001-102 3/42","104-151 0/26"]',
+		'the roster: "League: 28 / 553 available" (D19), a page per generation in pages of 42 (Gen 1: 68 members, 3 playable; Gen 5: 3 of 82)', JSON.stringify(lm));
 	// Charmander's card: the hub lines (its signature Ultimate by tier, records), Play Classic / Survival
 	await page.click('#league-grid .cell[data-dex="4"]');
 	await sleep(150);
@@ -305,18 +310,20 @@ try {
 	await page.click('#league-gens [data-gen="5"]');
 	await sleep(200);
 	const g5 = await E(page, () => ({ cells: [...document.querySelectorAll('#league-grid .cell')].map(c => +c.dataset.dex), on: (document.querySelector('#league-gens .chip.on') || {}).innerText }));
-	await page.click('#league-grid .cell[data-dex="495"]');
+	await page.click('#league-grid .cell[data-dex="524"]');
 	await sleep(150);
 	const sn = await card(page), snPlay = await E(page, () => document.querySelectorAll('[data-play]').length);
-	A(g5.cells.length === 37 && g5.cells[0] === 494 && g5.cells[1] === 495 && g5.cells.includes(633) && g5.cells.includes(638) && /^Gen 5/.test(g5.on || ''), 'the Gen 5 page: 37 members (Victini, Snivy, Deino, the Swords of Justice...)', JSON.stringify(g5));
-	A(sn && /Snivy/.test(sn.txt) && /Snivy → Servine \(Lv\.? 17\) · Servine → Serperior \(Lv\.? 36\)/.test(sn.txt) && /Challenge Evolve 2 times 0 \/ 2/i.test(sn.txt) && /Ultimate .+ \(type\)/i.test(sn.txt) && snPlay === 0, 'Snivy (D4b): its evolution line, its type Ultimate, its challenge; locked, so no Play buttons', sn && sn.txt);
-	// Kyogre: the box legendary's challenge, the new "hard" part
-	await page.click('#league-gens [data-gen="3"]');
+	await page.click('#league-pages [data-page="1"]');
 	await sleep(150);
-	await page.click('#league-grid .cell[data-dex="382"]');
+	const g5b = await E(page, () => ({ cells: [...document.querySelectorAll('#league-grid .cell')].map(c => +c.dataset.dex), sel: +(document.getElementById('league-detail') || { dataset: {} }).dataset.dex }));
+	A(g5.cells.length === 42 && g5.cells[0] === 494 && g5.cells[1] === 495 && /^Gen 5/.test(g5.on || '') && g5b.cells.length === 40 && g5b.cells.includes(633) && g5b.cells.includes(638) && g5b.cells.includes(g5b.sel),
+		'the Gen 5 pages: 42 + 40 members (Victini, Snivy...; Deino, the Swords of Justice on the second page, which opens on one of its own)', JSON.stringify({ g5, g5b }));
+	A(sn && /Roggenrola/.test(sn.txt) && /Roggenrola → Boldore \(Lv\.? 25\) · Boldore → Gigalith \(Lv\.? 36\)/.test(sn.txt) && /Challenge Evolve 2 times 0 \/ 2/i.test(sn.txt) && /Ultimate .+ \(type\)/i.test(sn.txt) && snPlay === 0, 'Roggenrola (D4b): its evolution line, its type Ultimate, its challenge; locked, so no Play buttons (D19: Snivy is free now, a starter)', sn && sn.txt);
+	// Kyogre: the box legendary's challenge, the new "hard" part
+	await E(page, () => { G.ExpLeague.select(382); G.ExpMeta.render(); });   // (D19: Kyogre is on Gen 3's second page)
 	await sleep(150);
 	const ky = await card(page);
-	A(ky && /Kyogre/.test(ky.txt) && /Legendary/.test(ky.txt) && /Have 60 League members 12 \/ 60/.test(ky.txt) && /Win a map on Hard or Nightmare 0 \/ 1/.test(ky.txt), 'Kyogre (D4d): "Have 60 League members 12 / 60" and "Win a map on Hard or Nightmare 0 / 1"', ky && ky.txt);
+	A(ky && /Kyogre/.test(ky.txt) && /Legendary/.test(ky.txt) && /Have 60 League members 28 \/ 60/.test(ky.txt) && /Win a map on Hard or Nightmare 0 \/ 1/.test(ky.txt), 'Kyogre (D4d): "Have 60 League members 28 / 60" and "Win a map on Hard or Nightmare 0 / 1"', ky && ky.txt);
 	await E(page, () => { G.ExpSave.bump('wins.viridian.hard'); G.ExpMeta.render(); });
 	await sleep(150);
 	const ky2 = await card(page);
@@ -334,21 +341,21 @@ try {
 	await sleep(250);
 	A(await E(page, () => !G.ExpMeta.shown && G.UI.isOpen('scr-modes') && !document.getElementById('modes-main').classList.contains('hidden')), 'Esc goes back from League mode to the mode list');
 
-	// ======================== 3. a Gen 5 member caught plays from League mode
-	await E(page, () => { G.ExpSave.add('league.own', 495); G.ExpSave.commit(); });
+	// ======================== 3. a Gen 5 member caught plays from League mode (D19: Roggenrola; Snivy is a free starter now)
+	await E(page, () => { G.ExpSave.add('league.own', 524); G.ExpSave.commit(); });
 	await openLM(page, 'roster');
-	await E(page, () => { G.ExpLeague.select(495); G.ExpMeta.render(); });
+	await E(page, () => { G.ExpLeague.select(524); G.ExpMeta.render(); });
 	await sleep(150);
 	const sn2 = await E(page, () => ({ play: [...document.querySelectorAll('[data-play]')].map(b => b.dataset.play), count: document.getElementById('league-count').innerText }));
-	A(JSON.stringify(sn2.play) === '["exp-classic","exp-survival"]' && sn2.count === 'League: 13 / 245 available', 'caught, Snivy is playable: "League: 13 / 245", its Play buttons', JSON.stringify(sn2));
+	A(JSON.stringify(sn2.play) === '["exp-classic","exp-survival"]' && sn2.count === 'League: 29 / 553 available', 'caught, Roggenrola is playable: "League: 29 / 553", its Play buttons', JSON.stringify(sn2));
 	await page.click('[data-play="exp-classic"]');
 	A(await waitFor(() => E(page, () => G.Game.state === 'playing' && !!G.ExpLeague.run), 8000), '"Play Classic" starts a Classic run');
 	const r1 = await E(page, () => { const H = window.__t; H.freeze(); H.sturdy(); H.thin(); H.quiet(); const p = G.Game.player; return { mode: G.Game.mode, runDex: G.Modes.run.dex, dex: p.dex, member: G.ExpLeague.run.member, moves: p.moves.map(m => m.id), pick: localStorage.getItem('micasurvivorexp_pick'), dv: G.Modes.run.dv }; });
-	A(r1.mode === 'exp-classic' && r1.runDex === 495 && r1.dex === 495 && r1.member === 495 && JSON.stringify(r1.moves) === '["vine-whip"]' && r1.pick === '495' && r1.dv === 17, 'the run is Snivy\'s (the pick, the run\'s dex, its kit\'s first move Vine Whip), dv 14', JSON.stringify(r1));
-	const r2 = await E(page, () => { const H = window.__t; H.levelTo(17); const p = G.Game.player; return { lv: p.level, dex: p.dex, form: G.ExpLeague.run.form, row: G.ExpLeague.row(), kit: p.moves.map(m => m.id), kitLog: G.ExpLeague.run.log.filter(l => l[1] === 'kit').map(l => l[0] + ':' + l[2]) }; });
-	A(r2.lv === 17 && r2.dex === 496 && r2.form === 496 && r2.row[1] === 496 && JSON.stringify(r2.kitLog) === '["2:razor-leaf","4:giga-drain","7:leaf-storm"]' && r2.kit.length === 4 /* (DLC D16: a swap card may since have replaced one: the League's log says what the kit taught) */, 'Snivy evolves into Servine at Lv 17 mid-run; its kit learned at 2 / 4 / 7', JSON.stringify(r2));
-	const end1 = await E(page, () => { window.__t.lose(600); return { lines: window.__out.lines, runs: G.ExpSave.get('lg.runs.495'), best: G.ExpSave.get('lg.best.495') }; });
-	A(end1.lines.some(l => /League: Snivy → Servine/.test(l)) && end1.runs === 1 && end1.best === 17, 'the run-over screen: "League: Snivy → Servine"; the member\'s records (1 run, best Lv 17)', JSON.stringify(end1));
+	A(r1.mode === 'exp-classic' && r1.runDex === 524 && r1.dex === 524 && r1.member === 524 && JSON.stringify(r1.moves) === '["rock-slide"]' && r1.pick === '524' && r1.dv === 19, 'the run is Roggenrola\'s (the pick, the run\'s dex, its kit\'s first move Rock Slide), dv 18', JSON.stringify(r1));
+	const r2 = await E(page, () => { const H = window.__t; H.levelTo(25); const p = G.Game.player; return { lv: p.level, dex: p.dex, form: G.ExpLeague.run.form, row: G.ExpLeague.row(), kit: p.moves.map(m => m.id), kitLog: G.ExpLeague.run.log.filter(l => l[1] === 'kit').map(l => l[0] + ':' + l[2]) }; });
+	A(r2.lv === 25 && r2.dex === 525 && r2.form === 525 && r2.row[1] === 525 && JSON.stringify(r2.kitLog) === '["2:tackle","4:rock-throw","7:harden"]' && r2.kit.length === 4 /* (DLC D16: a swap card may since have replaced one: the League's log says what the kit taught) */, 'Roggenrola evolves into Boldore at Lv 25 mid-run; its kit learned at 2 / 4 / 7', JSON.stringify(r2));
+	const end1 = await E(page, () => { window.__t.lose(600); return { lines: window.__out.lines, runs: G.ExpSave.get('lg.runs.524'), best: G.ExpSave.get('lg.best.524') }; });
+	A(end1.lines.some(l => /League: Roggenrola → Boldore/.test(l)) && end1.runs === 1 && end1.best === 25, 'the run-over screen: "League: Roggenrola → Boldore"; the member\'s records (1 run, best Lv 25)', JSON.stringify(end1));
 
 	// ======================== 4. a legendary's challenge: Raikou (1,000 Electric KOs + a win) -> wild -> its encounter next run
 	const rk = await E(page, async () => {
@@ -381,7 +388,7 @@ try {
 		for (let sd = 1; sd < 400 && seed243 == null; sd++) if (G.ExpCap.pendingOf(sd).includes(243)) seed243 = sd;
 		return { pend, tg, wild, seed243 };
 	});
-	A(rk2.wild.includes(243) && rk2.pend.length === Math.min(3, rk2.wild.length) && rk2.pend.every(d => rk2.wild.includes(d)) && rk2.seed243 != null && rk2.tg.some(([k, d]) => k === 'league' && d === rk2.pend[0]), 'the next run brings the wild Raikou among its League encounters (one a zone: D8\'s machinery; zone 1\'s spawned)', JSON.stringify(rk2));
+	A(rk2.wild.includes(243) && rk2.pend.length === Math.min(5, rk2.wild.length) && rk2.pend.every(d => rk2.wild.includes(d)) && rk2.seed243 != null && rk2.tg.some(([k, d]) => k === 'league' && d === rk2.pend[0]), 'the next run brings the wild Raikou among its League encounters (up to 5 a run since D19; zone 1\'s spawned)', JSON.stringify(rk2));
 	// (the fix found by D13: an encounter's banner names it in English where the Pokédex's Spanish name differs)
 	const tnB = await E(page, () => { const e = G.ExpCap.spawnLeague(772, G.Game.player); return { e: !!e, banner: (G.Spawner.banner() || {}).text }; });
 	A(tnB.e && tnB.banner === 'A wild Type: Null appeared!', 'a wild Type: Null\'s banner says "Type: Null" in English (not "Código Cero")', JSON.stringify(tnB));
@@ -393,8 +400,8 @@ try {
 	await waitFor(() => E(page, () => document.querySelectorAll('#xm-lb [data-lbrow]').length > 0), 6000);
 	const brd = await E(page, () => ({ rows: [...document.querySelectorAll('#xm-lb [data-lbrow]')].map(r => r.innerText.replace(/\s+/g, ' ').trim()), me: (document.getElementById('xm-lbme') || {}).innerText, n: G.ExpLeague.roster().length, pick: [...document.querySelectorAll('[data-tview]')].map(b => b.innerText) }));
 	const aliceRow = (row(BOARD) || []).find(e => e.name === 'alice');
-	A(bt.tab === 'board' && aliceRow && aliceRow.members === brd.n && brd.rows.length === 3 && brd.rows[0] === '#1 mia 21 members · 3 legendary' && brd.rows.some(r => new RegExp('alice ' + brd.n + ' members').test(r)) && /Your League: 13 members · 0 legendary/.test(brd.me || ''),
-		'the Leaderboard tab: the server\'s League board (mia, leo, alice with her ' + brd.n + ' members counted from her saved League)', JSON.stringify({ brd, aliceRow }));
+	A(bt.tab === 'board' && aliceRow && aliceRow.members === brd.n && brd.rows.length === 3 && brd.rows[0] === '#1 mia 30 members · 3 legendary' && brd.rows.some(r => new RegExp('alice ' + brd.n + ' members').test(r)) && new RegExp('Your League: ' + brd.n + ' members · 0 legendary').test(brd.me || '') && brd.n === 29,
+		'the Leaderboard tab: the server\'s League board (mia, leo, alice with her ' + brd.n + ' members counted from her saved League and, D19, her base collection: Pichu\'s family)', JSON.stringify({ brd, aliceRow }));
 	A(JSON.stringify(brd.pick) === '["Classic: score and time attack","Survival"]', 'and the way to the boards per map and difficulty (Classic, Survival)', JSON.stringify(brd.pick));
 	await E(page, () => { const f = G.ModesUI.openLeagueMode; if (!f.__w) { G.ModesUI.openLeagueMode = function (...a) { window.__olm = (window.__olm || 0) + 1; return f.apply(this, a); }; G.ModesUI.openLeagueMode.__w = 1; } });
 	await page.click('[data-tview="survival"]');
@@ -423,8 +430,8 @@ try {
 		return { n: G.ExpLeague.roster().length, got, paid, newly, want: newly.reduce((s, id) => s + M.coinsOf(M.ACH_BY[id].star), 0), again, rows, titles: M.TITLES.map(t => t.name), t0,
 			ribbon: M.TITLES.findIndex(t => t.name === 'Maestro de temporada'), early: M.ACH.filter(a => a.title && !a.late).length, late: M.TITLES.slice(M.ACH.filter(a => a.title && !a.late).length + 2).map(t => t.name) };
 	});
-	A(ac.n === 51 && ac.got[0] && ac.got[1] && !ac.got[2] && ac.newly.includes('league50') && ac.newly.includes('legend1') && ac.paid === ac.want && ac.again === 0 && ac.rows.every(Boolean),
-		'achievements: "League of fifty" (51 members) and "Living legend" (a legendary) claimed once, each paid into the base Pokémonedas (+' + ac.paid + ' with the others this unlocked); "League of a hundred" not yet', JSON.stringify(ac));
+	A(ac.n === 67 && ac.got[0] && ac.got[1] && !ac.got[2] && ac.newly.includes('league50') && ac.newly.includes('legend1') && ac.paid === ac.want && ac.again === 0 && ac.rows.every(Boolean),
+		'achievements: "League of fifty" (67 members: D19\'s 27 free + Pichu + Roggenrola + 38 caught) and "Living legend" (a legendary) claimed once, each paid into the base Pokémonedas (+' + ac.paid + ' with the others this unlocked); "League of a hundred" not yet', JSON.stringify(ac));
 	A(ac.ribbon === ac.early + 1 && JSON.stringify(ac.titles.slice(0, ac.early + 2)) === JSON.stringify(ac.titles.slice(0, ac.early).concat(['Élite de temporada', 'Maestro de temporada'])) && JSON.stringify(ac.late.slice(0, 3)) === '["Gran Entrenador","Campeón de la Liga","Guardián de leyendas"]',
 		'the new titles come after the season ribbons: a saved title pick (an index) keeps its meaning', JSON.stringify({ ribbon: ac.ribbon, early: ac.early, late: ac.late }));
 	const tk = await E(page, () => {

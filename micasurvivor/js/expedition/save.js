@@ -21,7 +21,11 @@
 G.ExpSave = (() => {
   const K_SAVE = 'micasurvivorexp_save.', K_REV = 'micasurvivorexp_rev.', K_MIG = 'micasurvivorexp_migrated.guest';
   const NAME_RE = /^[a-z][a-z0-9_.:-]{0,63}$/, ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
-  const MAX = { counters: 2000, sets: 200, items: 5000, value: 1e15 };
+  // (DLC D19: counters 2,000 -> 8,000, = server/mp.mjs MSURV_EXP_COUNTERS_MAX. The full League's per-family counters, lg.runs.<family>,
+  //  lg.best.<family> and rs.<family>, are up to 3 x 553 = 1,659 on their own. A save stays well under the server's 200,000 chars:
+  //  every family's three counters at their largest are ~45,000. An old client (2,000) keeps the first 2,000 it reads and pushes
+  //  those; the server MERGES every put into what it holds, so the rest are never lost, and this client reads them all back.)
+  const MAX = { counters: 8000, sets: 200, items: 5000, value: 1e15 };
   const PUSH_MS = 2000;
 
   const blank = () => ({ v: 1, counters: {}, sets: {} });

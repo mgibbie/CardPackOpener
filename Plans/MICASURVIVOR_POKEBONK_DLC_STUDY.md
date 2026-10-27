@@ -1748,3 +1748,79 @@ Built (`micasurvivor/README.md`, "DLC D18: shared Pokémon upgrades"). Choices a
 lobby's rules), D17 one held item (dv 16), D18 shared upgrades (dv 17). Left of the owner's request: D19 (the full League, after the
 counter-cap fix), D20 (Expedition enemies, all 1,025; Wishiwashi in base), D21 (fine-tune the damage factors with `dps_sim.mjs`,
 Survival's pacing now that a 45-min run KOs ~16,000; the boards themselves shipped here).
+
+### Update (2026-10-26): D19 built, "the full League"
+Built (`micasurvivor/README.md`, "DLC D19: the full League"). Choices and notes for D20+:
+- **The counter cap first:** 2,000 -> 8,000 counters on the client (`expedition/save.js` `MAX.counters`) and the server
+  (`MSURV_EXP_COUNTERS_MAX`); the row's 200,000-char cap unchanged (a save with all 553 families' three counters + 750 others is
+  ~38,500 chars). Raised, not packed: no save is rewritten or migrated, so nothing needs a backup or a rollback. An old cached
+  client (2,000) drops counters past 2,000 from its own copy only; the server merges every put, so it never loses them (tested). A
+  put whose MERGE would pass 8,000 is refused (413) and the stored save kept: without that guard the stored row would fail the next
+  read's `cleanMsurvExpSave` and a put would replace it.
+- **The family list is `G.Families`** (553, as the study's D18 note asked; the survey's "580" was another count): the generator
+  loads `js/data/families.js`, and checks that every species 1-1025 is a stage of exactly one member and that member is the family's
+  root. To agree, the generator's supplement takes the 14 cross-generation evolutions `gen_families.mjs` already had (Sylveon,
+  Perrserker, Cursola, Sirfetch'd, Runerigus, Wyrdeer, Basculegion, Sneasler, Overqwil, Clodsire, Farigiraf, Dudunsparce,
+  Kingambit, Gholdengo). Only Bisharp's is inside a D13 member: **Pawniard gains Kingambit** (Lv 55, exempt from the "6 levels
+  after the last stage" floor, so the League's latest evolution stays 55); its rank / role / challenge are computed without the D19
+  supplement, so the challenge rotation is unchanged and the other 244 are byte-identical (fixture-tested).
+- **The 308 new members** follow the D13 rules (kits scored on the learnsets, no new hand picks; ranks by final BST: 102 common, 166
+  uncommon, 40 rare; the rotation continued). No new legendary (D13 had them all). Volcarona's Lv 59 is overridden to 55, like D13's
+  Hydreigon / Dragapult. Eevee is one 8-card branch at Lv 30 (the level-up's cards scroll on a phone: tested at 844 x 390).
+- **Decision #1 (base ownership):** `G.ExpLeague.own(d)` also reads `G.DB.owns` for any stage of the family (`G.Families.membersOf`):
+  read-only, nothing copied into the Expedition save. The server's League board counts it too: `msurvExpLeagueBoard` reads the base
+  row `micasurvivor:<user>` (exact key) and maps `owned` through `MSURV_EXP_FAMILY` (= `G.FAMILY`, compared by the test). The board
+  only updates on an Expedition save put, so a base catch shows on the board at the next Expedition sync.
+- **Decision #15:** the data's `free` list holds the 27 trios (the Gen 5-9 starters keep their D13 `ch` in `members`: "free" is the
+  list, so the 245 stay byte-identical); the server's `MSURV_EXP_LEAGUE_FREE` is the same list (the board's "more than the free ones"
+  threshold is now 27). Wild members: `PER_RUN` 5; zones 1-2 get a second encounter at 150-230 s, drawn after the zone plan's other
+  draws (so their values are as before).
+- **The League screen:** a generation in pages of 42 (chips next to the count, so the phone keeps the grid's height);
+  achievements: `league245` renamed "League of 245" (id / title kept), `league400`, `league553` "Full League" (title "League
+  Master", late). The hub card says 553.
+- **Versions:** `G.Expedition.DV` 18, `x` v10. No new streamed state.
+- **Base unchanged:** the D0a fixtures pass as recorded, and so does the force-loaded run.
+
+### Update (2026-10-26): D20 built, "all 1,025 as enemies"
+Built (`micasurvivor/README.md`, "DLC D20"). Choices and notes:
+- **Wanderers (ours: 6 a zone, 12 % of the trickle):** `plan().wander`, Pokémon of none of the map's types from the zone's band
+  (zone 1 also below it). The trickle swaps one of its draws for a wanderer at `K.WANDER`; the cards and their ages are untouched,
+  so the map's residents dominate. They are a separate list, not cards, because a Classic zone only ever reaches its first ~10 cards
+  (4 + one a minute): wanderers appended to the cards would never have spawned.
+- **Rarity-5 (20 species) as zone-3 / Survival elites:** one extra elite wave in zone 3's plan (3 foes, 300-470 s) and in each of
+  Survival's phase-3 segments.
+- **Roaming legendaries (ours: 35 % a zone 2-3 / a Survival segment from phase 2):** a new special `roam` (x16 HP, x1.4 damage, x10
+  XP, scale 1.4), an item + a heal when beaten, gone after 90 s; `c` block code 7 (an old viewer skips it). Not catchable (the League
+  encounters stay the way to a legendary member).
+- **Determinism:** every D20 draw is from its own stream (`0xD20`), after the plan's own, so a plan's cards / guardian / D3 timeline
+  are unchanged; the trickle's stream gains one draw a spawn (Expedition only; dv 19).
+- **Base: Wishiwashi.** The first tier's band starts at 0 (was 180). As a "fan" it never enters the first tier's cast (plain enemies
+  only there, as for every low-BST fan) but joins its Water hordes. The D0a fixtures did NOT change (no Water horde in the first
+  tier's 120 s of any golden run; the force-loaded run passes too), so nothing was re-recorded.
+- **Coverage, tested:** Expedition's plans (1,500 seeds x 3 maps x 4 zones + Survival) cover all 1,025 (survey: ~665 before); base:
+  every species is a tier candidate, a boss slot or a rift / judgment / tower legendary.
+- **Versions:** `G.Expedition.DV` 19, `x` v10. Sizes (`micasurvivor_expedition_mp_test`): busiest relay frame + 1 s of casts 10,215 /
+  16,000; a 45-min Survival tape 792,034 chars (17,600 KOs, up to 233 foes), a Classic clear 789,094 (7,328 KOs): under 1.2 MB.
+
+### Update (2026-10-26): D21 built, "balance and performance"
+Built (`micasurvivor/README.md`, "DLC D21"). Choices and notes:
+- **The tool:** `dps_sim.mjs --pace` (the D11 bot, invulnerable, no forced KOs; one-slot vs shipped; KOs, level, bosses, pay) and
+  `--why` (spawns and KOs by source). The bot runs are NOT deterministic run to run (the same seeds gave 9,958 and 12,823 Survival
+  KOs on two runs), so every number here is a range of 3-run averages.
+- **DPS (decision #10):** base 0.8 -> 0.85 (x1.32 at 0.8, x1.71 at 0.9 over 10 builds, x1.79 at 0.96; builds spread x1.15-2.2);
+  Expedition 1.1 kept (x1.61). A fused base build runs higher (x1.9 at 0.9): bonds are the base game's late-run reward, left as is.
+- **Pay:** the Expedition KO term 1/40 -> 1/150 (a Normal clear ~1,340 again; D11's ~1,270-1,365). The base game pays as before.
+- **Survival:** `K.PACE` {rate 0.5 (trickle + timeline packs), hp 1.8, xp 1.8}. KOs fell ~20 % (bot ~10,000-12,800 a 45-min run;
+  assisted mp bot 15,100-16,200 vs 17,600-18,800), pay ~2,250-2,575 vs a one-slot run's ~2,010-2,175 (D16: ~+60 %). Tried and
+  dropped: a smaller Survival cap (x0.65) and harder foes (x2.2): the KOs did not fall (a Lv 300+ bot one-shots the field; the KOs
+  follow how many foes it reaches). The real lever would be Survival's level curve (Lv 300-400 in 45 min); not touched: it is the
+  base XP curve D11 shares, and the owner asked for pacing / rewards, which this does.
+- **Measured, nothing to fix:** phone 844x390 p50 16.6 / p95 17.9 ms, 85 foes, 68 projectiles at most, no sideways scroll; relay
+  9,968-10,217 / 16,000; tapes under 1.2 MB (Survival 0.78-1.16 MB, Classic 0.74-0.75 MB).
+- **Golden fixtures** re-recorded once for the base factor (README D21 lists each mode's change). Passes twice; forceload passes.
+- No new versions (no streamed state changed): `G.Expedition.DV` 19, `x` v10.
+
+### D19-D21 stack (2026-10-26)
+`feat/micasurvivor-d19-d21`: D19 the full League (dv 18; the server: the counter cap, the 553 / 27 lists, base-owned families on
+the League board), D20 all 1,025 as enemies (dv 19; base: Wishiwashi), D21 balance (the base damage factor, the Expedition KO pay,
+Survival's pacing; the D0a fixtures re-recorded). With it the owner's 2026-10-26 request (D16-D21) is built.

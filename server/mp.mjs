@@ -305,6 +305,9 @@ const msurvRulesOf = v => (v == null ? 1 : Number.isInteger(v) && v >= 1 && v <=
 //                            on the base 'micasurvivor' board, and an Expedition board score without them is refused,
 //                            like micatro / micatro_modded. The key is built here from allow-listed fields.
 const MSURV_EXP_SAVE_MAX = 200_000;
+// DLC D19 (the full League, 553 families): a save may carry up to 8,000 counters (= micasurvivor/js/expedition/save.js MAX.counters;
+// it was 2,000, and the per-family lg.runs.* / lg.best.* / rs.* alone reach 1,659). The save's size cap above still bounds the row.
+const MSURV_EXP_COUNTERS_MAX = 8000;
 const MSURV_EXP_MAPS = ['viridian', 'mtmoon', 'cerulean'];
 const MSURV_EXP_DIFFS = ['normal', 'hard', 'nightmare'];
 const MSURV_EXP_MODE_RE = /^exp-[a-z]{1,12}$/;
@@ -364,23 +367,47 @@ function msurvExpSurvParts(body, time) {
 //   runboard:micasurvivor_expedition:league   top 100 by members, then legendary members, then who got there first (an exact key)
 // The count is the SERVER's, from the merged Expedition save of micasurvivor-exp-save-put (never a number the client sends):
 // the 12 free starters + the members caught (league.own) + the ones a challenge made playable before D8's catch (league.met
-// and never league.wild), each a League family's first stage of MSURV_EXP_LEAGUE (= js/expedition/league-data.js, 245). It is
+// and never league.wild), each a League family's first stage of MSURV_EXP_LEAGUE (= js/expedition/league-data.js: 245, D19 every
+// family, 553), + (D19) every family with a stage in the base save's collection (micasurvivor:<user>, read by its exact key). It is
 // written only when your count (or your legendaries) grows, so most saves write nothing more. Reads: run-leaderboard board 'league'.
-const MSURV_EXP_LEAGUE = new Set([1, 4, 7, 10, 13, 16, 29, 32, 41, 43, 56, 60, 63, 66, 69, 74, 79, 81, 92, 95, 111, 115, 116, 120, 123, 127, 129, 137, 142, 144, 145, 146,
-	147, 150, 151, 152, 155, 158, 172, 173, 174, 175, 179, 187, 214, 216, 220, 227, 228, 239, 240, 243, 244, 245, 246, 249, 250, 251, 252, 255, 258, 263, 265, 270, 273,
-	280, 287, 293, 298, 302, 303, 304, 307, 309, 318, 322, 328, 333, 353, 355, 359, 361, 363, 371, 374, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 390, 393,
-	396, 403, 406, 427, 433, 439, 440, 443, 447, 459, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 498, 501, 506, 519, 524, 529, 531,
-	532, 535, 540, 543, 551, 559, 574, 577, 582, 599, 602, 607, 610, 622, 624, 633, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 650, 653, 656, 661, 664,
-	667, 669, 677, 679, 686, 688, 690, 701, 704, 716, 717, 718, 719, 720, 721, 722, 725, 728, 731, 736, 739, 761, 767, 772, 780, 782, 785, 786, 787, 788, 789, 800, 801,
-	802, 807, 808, 810, 813, 816, 821, 824, 837, 840, 856, 859, 870, 885, 888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905, 906, 909, 912, 921, 928, 932, 951, 957,
-	969, 978, 996, 1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024, 1025]);
-const MSURV_EXP_LEAGUE_FREE = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393];   // (owner: all 12 Gen 1-4 starters free)
-const MSURV_EXP_LEAGUE_LEG = new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484,
-	485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 785, 786, 787, 788,
-	789, 800, 801, 802, 807, 808, 888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024, 1025]);
-/** The League members a (clean) Expedition save can play -> {members, legends} (= G.ExpLeague.roster()). */
-function msurvExpLeagueCount(save) {
+const MSURV_EXP_LEAGUE = new Set([1, 4, 7, 10, 13, 16, 19, 21, 23, 27, 29, 32, 37, 41, 43, 46, 48, 50, 52, 54, 56, 58, 60, 63, 66, 69, 72, 74, 77, 79, 81, 83, 84, 86, 88, 90, 92, 95,
+	96, 98, 100, 102, 104, 108, 109, 111, 114, 115, 116, 118, 120, 123, 127, 128, 129, 131, 132, 133, 137, 138, 140, 142, 144, 145, 146, 147, 150, 151,
+	152, 155, 158, 161, 163, 165, 167, 170, 172, 173, 174, 175, 177, 179, 185, 187, 190, 191, 193, 194, 198, 200, 201, 203, 204, 206, 207, 209, 211, 213,
+	214, 215, 216, 218, 220, 222, 223, 225, 226, 227, 228, 231, 234, 235, 236, 238, 239, 240, 241, 243, 244, 245, 246, 249, 250, 251, 252, 255, 258, 261,
+	263, 265, 270, 273, 276, 278, 280, 283, 285, 287, 290, 293, 296, 298, 299, 300, 302, 303, 304, 307, 309, 311, 312, 313, 314, 316, 318, 320, 322, 324,
+	325, 327, 328, 331, 333, 335, 336, 337, 338, 339, 341, 343, 345, 347, 349, 351, 352, 353, 355, 357, 359, 360, 361, 363, 366, 369, 370, 371, 374, 377,
+	378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 390, 393, 396, 399, 401, 403, 406, 408, 410, 412, 415, 417, 418, 420, 422, 424, 425, 427, 431, 433,
+	434, 436, 438, 439, 440, 441, 442, 443, 446, 447, 449, 451, 453, 455, 456, 458, 459, 463, 465, 469, 476, 479, 480, 481, 482, 483, 484, 485, 486, 487,
+	488, 489, 490, 491, 492, 493, 494, 495, 498, 501, 504, 506, 509, 511, 513, 515, 517, 519, 522, 524, 527, 529, 531, 532, 535, 538, 539, 540, 543, 546,
+	548, 550, 551, 554, 556, 557, 559, 561, 562, 564, 566, 568, 570, 572, 574, 577, 580, 582, 585, 587, 588, 590, 592, 594, 595, 597, 599, 602, 605, 607,
+	610, 613, 615, 616, 618, 619, 621, 622, 624, 626, 627, 629, 631, 632, 633, 636, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 650, 653,
+	656, 659, 661, 664, 667, 669, 672, 674, 676, 677, 679, 682, 684, 686, 688, 690, 692, 694, 696, 698, 701, 702, 703, 704, 707, 708, 710, 712, 714, 716,
+	717, 718, 719, 720, 721, 722, 725, 728, 731, 734, 736, 739, 741, 742, 744, 746, 747, 749, 751, 753, 755, 757, 759, 761, 764, 765, 766, 767, 769, 771,
+	772, 774, 775, 776, 777, 778, 779, 780, 781, 782, 785, 786, 787, 788, 789, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807,
+	808, 810, 813, 816, 819, 821, 824, 827, 829, 831, 833, 835, 837, 840, 843, 845, 846, 848, 850, 852, 853, 854, 856, 859, 868, 869, 870, 871, 872, 874,
+	875, 876, 877, 878, 880, 881, 882, 883, 884, 885, 888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905, 906, 909, 912, 915, 917, 919, 921, 924, 926,
+	928, 931, 932, 935, 938, 940, 942, 944, 946, 947, 948, 950, 951, 953, 954, 955, 957, 960, 962, 963, 965, 967, 968, 969, 971, 973, 974, 976, 977, 978,
+	984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 999, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1012, 1014, 1015,
+	1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025]);
+// (DLC D19: all 27 starter trios free, Gen 1-9: the data's `free` list)
+const MSURV_EXP_LEAGUE_FREE = [1, 4, 7, 152, 155, 158, 252, 255, 258, 387, 390, 393, 495, 498, 501, 650, 653, 656, 722, 725, 728, 810, 813, 816, 906, 909, 912];
+const MSURV_EXP_LEAGUE_LEG = new Set([144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488,
+	489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 785, 786, 787, 788, 789,
+	800, 801, 802, 807, 808, 888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905, 1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017, 1024,
+	1025]);
+// DLC D19 (owner decision #1: owning ANY stage of a family in the base game unlocks the family in Expedition): every species with a
+// pre-evolution -> its family's first stage (= micasurvivor/js/data/families.js G.FAMILY, generated; compared by a test). The base
+// save is read from its exact key micasurvivor:<user>; its `owned` (dex -> {at, from}) is the base collection.
+const MSURV_EXP_FAMILY = (() => { const m = new Map(); for (const p of '2:1,3:1,5:4,6:4,8:7,9:7,11:10,12:10,14:13,15:13,17:16,18:16,20:19,22:21,24:23,25:172,26:172,28:27,30:29,31:29,33:32,34:32,35:173,36:173,38:37,39:174,40:174,42:41,44:43,45:43,47:46,49:48,51:50,53:52,55:54,57:56,59:58,61:60,62:60,64:63,65:63,67:66,68:66,70:69,71:69,73:72,75:74,76:74,78:77,80:79,82:81,85:84,87:86,89:88,91:90,93:92,94:92,97:96,99:98,101:100,103:102,105:104,106:236,107:236,110:109,112:111,113:440,117:116,119:118,121:120,122:439,124:238,125:239,126:240,130:129,134:133,135:133,136:133,139:138,141:140,143:446,148:147,149:147,153:152,154:152,156:155,157:155,159:158,160:158,162:161,164:163,166:165,168:167,169:41,171:170,176:175,178:177,180:179,181:179,182:43,183:298,184:298,186:60,188:187,189:187,192:191,195:194,196:133,197:133,199:79,202:360,205:204,208:95,210:209,212:123,217:216,219:218,221:220,224:223,229:228,230:116,232:231,233:137,237:236,242:440,247:246,248:246,253:252,254:252,256:255,257:255,259:258,260:258,262:261,264:263,266:265,267:265,268:265,269:265,271:270,272:270,274:273,275:273,277:276,279:278,281:280,282:280,284:283,286:285,288:287,289:287,291:290,292:290,294:293,295:293,297:296,301:300,305:304,306:304,308:307,310:309,315:406,317:316,319:318,321:320,323:322,326:325,329:328,330:328,332:331,334:333,340:339,342:341,344:343,346:345,348:347,350:349,354:353,356:355,358:433,362:361,364:363,365:363,367:366,368:366,372:371,373:371,375:374,376:374,388:387,389:387,391:390,392:390,394:393,395:393,397:396,398:396,400:399,402:401,404:403,405:403,407:406,409:408,411:410,413:412,414:412,416:415,419:418,421:420,423:422,426:425,428:427,429:200,430:198,432:431,435:434,437:436,444:443,445:443,448:447,450:449,452:451,454:453,457:456,460:459,461:215,462:81,464:111,466:239,467:240,468:175,470:133,471:133,472:207,473:220,474:137,475:280,477:355,478:361,496:495,497:495,499:498,500:498,502:501,503:501,505:504,507:506,508:506,510:509,512:511,514:513,516:515,518:517,520:519,521:519,523:522,525:524,526:524,528:527,530:529,533:532,534:532,536:535,537:535,541:540,542:540,544:543,545:543,547:546,549:548,552:551,553:551,555:554,558:557,560:559,563:562,565:564,567:566,569:568,571:570,573:572,575:574,576:574,578:577,579:577,581:580,583:582,584:582,586:585,589:588,591:590,593:592,596:595,598:597,600:599,601:599,603:602,604:602,606:605,608:607,609:607,611:610,612:610,614:613,617:616,620:619,623:622,625:624,628:627,630:629,634:633,635:633,637:636,651:650,652:650,654:653,655:653,657:656,658:656,660:659,662:661,663:661,665:664,666:664,668:667,670:669,671:669,673:672,675:674,678:677,680:679,681:679,683:682,685:684,687:686,689:688,691:690,693:692,695:694,697:696,699:698,700:133,705:704,706:704,709:708,711:710,713:712,715:714,723:722,724:722,726:725,727:725,729:728,730:728,732:731,733:731,735:734,737:736,738:736,740:739,743:742,745:744,748:747,750:749,752:751,754:753,756:755,758:757,760:759,762:761,763:761,768:767,770:769,773:772,783:782,784:782,790:789,791:789,792:789,809:808,811:810,812:810,814:813,815:813,817:816,818:816,820:819,822:821,823:821,825:824,826:824,828:827,830:829,832:831,834:833,836:835,838:837,839:837,841:840,842:840,844:843,847:846,849:848,851:850,855:854,857:856,858:856,860:859,861:859,862:263,863:52,864:222,865:83,866:439,867:562,873:872,879:878,886:885,887:885,892:891,899:234,900:123,901:216,902:550,903:215,904:211,907:906,908:906,910:909,911:909,913:912,914:912,916:915,918:917,920:919,922:921,923:921,925:924,927:926,929:928,930:928,933:932,934:932,936:935,937:935,939:938,941:940,943:942,945:944,949:948,952:951,956:955,958:957,959:957,961:960,964:963,966:965,970:969,972:971,975:974,979:56,980:194,981:203,982:206,983:624,997:996,998:996,1000:999,1011:840,1013:1012,1018:884,1019:840'.split(',')) { const [d, r] = p.split(':'); m.set(+d, +r); } return m; })();
+const msurvExpRootOf = d => MSURV_EXP_FAMILY.get(d) || d;
+/** The League members a (clean) Expedition save can play -> {members, legends} (= G.ExpLeague.roster()). baseOwned (DLC D19): the
+ *  base save's `owned` object (or null): a family with any stage there is a member you can play. */
+function msurvExpLeagueCount(save, baseOwned) {
 	const sets = (save && save.sets) || {}, wild = new Set(sets['league.wild'] || []), have = new Set(MSURV_EXP_LEAGUE_FREE);
+	if (baseOwned && typeof baseOwned === 'object' && !Array.isArray(baseOwned)) for (const k of Object.keys(baseOwned)) {
+		const d = +k;
+		if (Number.isInteger(d) && d >= 1 && d <= 1025 && MSURV_EXP_LEAGUE.has(msurvExpRootOf(d))) have.add(msurvExpRootOf(d));
+	}
 	for (const id of sets['league.own'] || []) if (MSURV_EXP_LEAGUE.has(+id)) have.add(+id);
 	for (const id of sets['league.met'] || []) if (MSURV_EXP_LEAGUE.has(+id) && !wild.has(id)) have.add(+id);
 	let legends = 0;
@@ -389,7 +416,8 @@ function msurvExpLeagueCount(save) {
 }
 /** A merged Expedition save -> the League board (only when the count grows). -> {better, rank} */
 async function msurvExpLeagueBoard(store, username, user, save) {
-	const { members, legends } = msurvExpLeagueCount(save);
+	const baseRow = await store.get('micasurvivor:' + username);   // (DLC D19: the base collection, an exact key)
+	const { members, legends } = msurvExpLeagueCount(save, baseRow && baseRow.save && baseRow.save.owned);
 	const KEY = 'runboard:micasurvivor_expedition:league', BEST = 'micasurvivor_expedition:league';
 	user.runBest = user.runBest || {};
 	const prev = user.runBest[BEST];
@@ -438,7 +466,7 @@ function cleanMsurvExpSave(s) {
 	if (s.counters != null) {
 		if (!isObj(s.counters)) return { error: 'bad counters' };
 		const ks = Object.keys(s.counters);
-		if (ks.length > 2000) return { error: 'too many counters', max: 2000 };
+		if (ks.length > MSURV_EXP_COUNTERS_MAX) return { error: 'too many counters', max: MSURV_EXP_COUNTERS_MAX };
 		for (const k of ks) {
 			const n = s.counters[k];
 			if (!MSURV_EXP_NAME_RE.test(k) || !Number.isSafeInteger(n) || n < 0 || n > 1e15) return { error: 'bad counter: ' + k.slice(0, 64) };
@@ -2945,6 +2973,9 @@ export default async function handler(req, env) {
 		const stored = cur && cur.save ? cleanMsurvExpSave(cur.save).save : null;
 		const merged = stored ? mergeMsurvExpSave(stored, c.save) : c.save;
 		if (JSON.stringify(merged).length > MSURV_EXP_SAVE_MAX) return json({ error: 'save too large', max: MSURV_EXP_SAVE_MAX }, 413);
+		// (DLC D19: the union of two saves could pass the counter cap; refuse it, so the stored save always reads back clean and is
+		//  never replaced by a put alone)
+		if (Object.keys(merged.counters).length > MSURV_EXP_COUNTERS_MAX) return json({ error: 'too many counters', max: MSURV_EXP_COUNTERS_MAX }, 413);
 		if (await store.setIfRev(key, { rev: expect + 1, save: merged, updated_at: Date.now() }, expect)) {
 			const lg = await msurvExpLeagueBoard(store, username, user, merged);   // (DLC D13: the League board follows the saved League)
 			return json({ ok: true, rev: expect + 1, save: merged, ...(lg.better ? { league: lg } : {}) });
