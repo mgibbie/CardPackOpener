@@ -7,7 +7,9 @@ import { markup, fmt, esc, describeCenterFallback } from './markup.js';
 import { sound } from './sound.js';
 import { all as modAll, first as modFirst, hasModUI } from './modui.js';
 import { skinSuits, choicesFor, choiceFor, setSkin, drawSkinFront, onSkins } from './skins.js';
-import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specialStickerHTML, stickerName, winRecord, allStakesAllowed } from './stickers.js';
+import { stickersShown, setStickersShown, onWinStickers, retiredStickers, specialStickerHTML, stickerName, winRecord, allStakesAllowed, recordedKeys, STAKE_COLOURS } from './stickers.js';
+import { aliasesOf } from '../mods/aliases.js';
+import { supersededFrom } from '../mods/superseded.js';
 import { stakeLadder, deckBest, stakeOpen, fallbackIndex, lockText } from './stakeunlocks.js';
 import { stickDeckCanvas } from './decksticker.js';
 import { getProgress, badgePills, ACHIEVEMENTS, TYPES, typeStyle, typesBeaten, monoWins, typeRecord, totalLevels } from './progress.js';
@@ -842,7 +844,124 @@ function recordPanel() {
   }
   return el;
 }
-/** The Achievements screen (main menu, Run Info's Badges tab): the list + the record. */
+/**
+ * The Decks record (a tester's idea: "a view like [the Record] but for decks"): one tile per deck — every vanilla deck, then
+ * the decks of the mods turned on under Play › Mods — with its back, its name and the best stake won with it, in that
+ * stake's colour (a ring round the back, and the deck's own win sticker drawn on it, as in deck select). Never won: dimmed.
+ * Header: decks won (N / total), decks won at Gold or higher, the highest stake won on any deck.
+ * Its data is the decks' WIN STICKERS (ui/stickers.js winRecord(backKey): the highest stake level won per category; the
+ * account row micatro_stickers:<user>), so every win from before this screen shows at once and nothing new is stored. The
+ * record keeps the best stake per deck, not how many times a deck was won, so a tile says "Won" + the stake, not a count.
+ * Paged like the deck editor's picker (one screen of tiles; LB / RB turn the page on a controller).
+ */
+const deckKeyCovers = (k) => [k, ...aliasesOf(k), ...supersededFrom(k).flatMap((l) => [l, ...aliasesOf(l)])];
+function decksPanel() {
+  const el = h('div', 'rec dk-rec');
+  el.style.display = 'flex'; el.style.flexDirection = 'column'; el.style.gap = '7px';
+  const sum = h('div', 'rec-sum dk-sum');
+  const grid = h('div', 'dk-grid');
+  const pager = h('div', 'cd-pager dk-pager');
+  pager.dataset.padPager = '1';   // (pad.js: LB / RB turn the page)
+  const prev = btn('‹ Prev', 'red cd-pg b-cd-pg-prev b-dk-prev', () => go(page - 1));
+  const ind = h('div', 'cd-page-ind dk-page-ind');
+  const next = btn('Next ›', 'red cd-pg b-cd-pg-next b-dk-next', () => go(page + 1));
+  pager.append(prev, ind, next);
+  const off = h('div', 'rec-note dk-off');
+  el.append(sum, grid, pager);
+  el.appendChild(h('div', 'rec-legend dk-legend', '<span class="dk-ring-key" style="--ring:#eac058"></span><span>Ring: best stake won with this deck</span><span class="muted">Dimmed: not won yet</span>'));
+  el.appendChild(h('div', 'rec-note dk-note', 'A deck shows its best stake (its deck-select sticker), not a win count. Mod decks show while the mod is on. Seeded, challenge and custom-deck runs do not count.'));
+  let decks = [], page = 0, size = 15;
+  const msel = loadModPrefs();
+  const refreshDecks = () => {
+    const ids = modsApi ? msel.ids.filter((id) => modsApi.isLoaded(id)) : [];
+    const extra = modsApi && modsApi.backs && ids.length ? modsApi.backs(ids, msel.options) : [];
+    decks = BACK_LIST.concat(extra).map((b) => {
+      const level = deckBest(winRecord(b.key));
+      const d = backDesc(b.key);
+      return { b, level, name: String((d && d.name) || b.name || b.key).replace(/\{[^}]*\}/g, '') };
+    });
+  };
+  const pages = () => Math.max(1, Math.ceil(decks.length / size));
+  function go(p) { page = Math.min(pages() - 1, Math.max(0, p)); draw(); }
+  const tiles = [];   // the page's tiles, reused page to page: {t, c, n, s, key}
+  function tile(i) {
+    if (tiles[i]) return tiles[i];
+    const t = h('div', 'dk-tile');
+    const art = h('div', 'dk-art');
+    const c = document.createElement('canvas');
+    c.className = 'dk-back'; c.width = FACE_W; c.height = FACE_H;
+    art.appendChild(c);
+    const n = h('span', 'dk-name'), s = h('small', 'dk-best');
+    t.append(art, n, s);
+    grid.appendChild(t);
+    return (tiles[i] = { t, art, c, n, s, key: null });
+  }
+  function paint(x, b) {
+    const ctx = x.c.getContext('2d');
+    ctx.clearRect(0, 0, x.c.width, x.c.height);
+    if (!b.mod) drawCell(ctx, 'centers', b.pos, 0, 0, x.c.width, x.c.height);
+    else if (!drawModCell(ctx, b.atlas, b.pos, 0, 0, x.c.width, x.c.height)) drawCell(ctx, 'centers', { x: 0, y: 2 }, 0, 0, x.c.width, x.c.height);
+    stickDeckCanvas(x.c, b.key);
+  }
+  function draw() {
+    page = Math.min(page, pages() - 1);
+    const shown = decks.slice(page * size, page * size + size);
+    shown.forEach((dk, i) => {
+      const x = tile(i), stake = stickerName(dk.level);
+      x.t.hidden = false;
+      x.key = dk.b.key;
+      x.t.dataset.back = dk.b.key; x.t.dataset.best = String(dk.level); x.t.dataset.stake = stake || 'none';
+      if (dk.b.mod) x.t.dataset.mod = dk.b.mod; else delete x.t.dataset.mod;
+      x.t.classList.toggle('off', !dk.level);
+      x.art.style.setProperty('--ring', stake ? STAKE_COLOURS[stake] : 'transparent');
+      x.t.title = dk.name + ': ' + (stake ? 'won — best ' + stake + ' Stake' : 'not won yet');
+      x.n.textContent = dk.name;
+      x.s.innerHTML = stake ? `Won · <span class="dk-stake">${esc(stake)}</span>` : 'Not won';
+      paint(x, dk.b);
+    });
+    for (let i = shown.length; i < tiles.length; i++) { tiles[i].t.hidden = true; tiles[i].key = null; }
+    while (tiles.length > size) tiles.pop().t.remove();
+    const n = pages();
+    ind.textContent = `Page ${page + 1} / ${n}`;
+    prev.disabled = page <= 0; next.disabled = page >= n - 1;
+    pager.style.display = n > 1 ? '' : 'none';
+    // the header: decks won, Gold or higher, the highest stake on any deck
+    const won = decks.filter((d) => d.level), gold = won.filter((d) => d.level >= 8);
+    const best = Math.max(0, ...decks.map((d) => d.level)), bestName = stickerName(best);
+    const ring = (lv) => (lv ? `<span class="dk-chip" style="--ring:${STAKE_COLOURS[stickerName(lv)]}"></span>` : '');
+    sum.innerHTML = `<div class="rec-stat" data-cat="won">${ring(best)}<b class="dk-n">${won.length}<small> / ${decks.length}</small></b><span>Decks won</span></div>`
+      + `<div class="rec-stat" data-cat="gold">${ring(gold.length ? 8 : 0)}<b class="dk-n">${gold.length}</b><span>Won on Gold Stake or higher</span></div>`
+      + `<div class="rec-stat" data-cat="best">${ring(best)}<b class="dk-n">${bestName ? esc(bestName) : '-'}</b><span>Best stake won</span></div>`;
+    // won decks whose mod is off (their art and name need the mod): counted, not drawn
+    const covered = new Set(decks.flatMap((d) => deckKeyCovers(d.b.key)));
+    const hidden = recordedKeys('b_').filter((k) => k !== 'b_challenge' && !covered.has(k)).length;
+    off.textContent = hidden ? `+ ${hidden} more won deck${hidden === 1 ? '' : 's'} from mods that are off (Play › Mods).` : '';
+    off.style.display = hidden ? '' : 'none';
+  }
+  refreshDecks();
+  draw();
+  /** One screen of tiles (stage px): the grid's columns x the rows that fit with the header, pager and notes. */
+  el.fit = () => {
+    const wrap = el.closest('.modal'), box = el.closest('.modal-box');
+    const cols = Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length);
+    const t = tiles[0] && tiles[0].t;
+    if (!wrap || !box || !t || !t.offsetHeight) return;
+    const gap = parseFloat(getComputedStyle(grid).rowGap) || 8;
+    pager.style.display = '';   // (count the pager when there is more than a page)
+    const room = wrap.clientHeight * 0.92 - (box.scrollHeight - grid.offsetHeight) - 4;   // (.modal-box: max-height 92%)
+    const rows = Math.max(2, Math.floor((room + gap) / (t.offsetHeight + gap)));
+    size = Math.max(cols * 2, Math.min(40, cols * rows));
+    draw();
+    for (let i = 0; i < 3 && box.scrollHeight > box.clientHeight + 1 && size > cols * 2; i++) { size -= cols; draw(); }
+  };
+  // the turned-on mods' decks once those mods have loaded; a sticker sync / a sticker sprite / a mod deck's art: redraw
+  if (modsApi && msel.ids.length) Promise.resolve(modsApi.load(modsApi.withRequirements(msel.ids))).then(() => { if (!el.isConnected) return; refreshDecks(); draw(); el.fit(); }).catch(() => {});
+  const offStk = onWinStickers(() => { if (!el.isConnected) { offStk(); return; } refreshDecks(); draw(); });
+  const offAtl = onModAtlas(() => { if (!el.isConnected) { offAtl(); return; } draw(); });
+  el.appendChild(off);
+  return el;
+}
+/** The Achievements screen (main menu, Run Info's Badges tab): the list, the record and the Decks record. */
 export function achievementsScreen(tab = 'ach') {
   const el = h('div', 'ach-screen');
   const tabs = h('div', 'tabs');
@@ -862,16 +981,23 @@ export function achievementsScreen(tab = 'ach') {
         list.appendChild(row);
       }
       body.appendChild(list);
+    } else if (k === 'deck') {
+      const dp = decksPanel();
+      body.appendChild(dp);
+      if (dp.isConnected) dp.fit();
+      return;   // (its own note: the Pokermon one below is the Record's)
     } else {
       body.appendChild(recordPanel());
     }
     body.appendChild(h('div', 'rec-note', 'Pokermon runs only. A Nuzlocke never sells a joker and gains at most one new joker per shop (from one blind start to the next); a Monotype starts every round with jokers of only one Pokémon type (checked as each round’s first hand is dealt, after the blind-select effects). A joker a Pokémon joker makes itself (Tropius’s bananas) is not one you gained, and counts as its maker’s type. Win the run with either one intact to earn it. Seeded and challenge runs do not count.'));
   };
-  for (const [k, label] of [['ach', 'Achievements'], ['rec', 'Record']]) {
+  for (const [k, label] of [['ach', 'Achievements'], ['rec', 'Record'], ['deck', 'Decks']]) {
     const b = btn(label, 'red tab b-ach-' + k, () => show(k)); b.dataset.k = k; tabs.appendChild(b);
   }
   show(tab);
   modal(el, { title: 'Achievements', cls: 'ach-modal' });
+  const dp = body.querySelector('.dk-rec');
+  if (dp) dp.fit();   // (opened on the Decks tab: a page is one screen of tiles, measured once it is on screen)
 }
 
 // ------------------------------------------------------------- resume prompt

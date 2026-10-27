@@ -802,6 +802,28 @@ body.has-replay-bar.rb-tucked #pad-hints { bottom: 40px; }
 .portrait .rec-type { font-size: 20px; }
 .portrait .rec-type .rec-stk { width: 58px; height: 58px; border-width: 5px; }
 .rec-note { font-size: 19px; color: #c6d1d3; line-height: 1.2; }
+/* the Decks record (screens.js decksPanel): a deck's back in its best stake's ring; never won = dimmed */
+.dk-sum .rec-stat { padding: 6px 8px; }
+.dk-sum .rec-stat b { font-size: 34px; line-height: 1.1; }
+.dk-sum .rec-stat b small { font-size: 22px; color: #dfe7e8; }
+.dk-sum .rec-stat span { font-size: 18px; }
+.dk-rec .rec-note, .dk-rec .rec-legend { font-size: 17px; }
+.dk-chip { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; box-sizing: border-box; border: 6px solid var(--ring); box-shadow: 0 0 0 2px #4f6367; }
+.dk-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.portrait .dk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dk-tile { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--panel-d); border-radius: 10px; padding: 6px 4px 4px; text-align: center; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.dk-tile[hidden] { display: none; }
+.dk-art { --ring: transparent; border-radius: 8px; box-shadow: 0 0 0 4px var(--ring); margin: 4px 0 3px; line-height: 0; }
+.dk-back { width: 71px; height: 95px; display: block; }
+.dk-name { font-size: 18px; line-height: 1.05; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-best { font-size: 16px; color: #dfe7e8; }
+.dk-stake { color: var(--attn); }
+.dk-tile.off { background: var(--panel-dd); box-shadow: none; color: #6c7c7f; }
+.dk-tile.off .dk-best { color: #6c7c7f; }
+.dk-tile.off .dk-back { filter: grayscale(1) brightness(.6); opacity: .55; }
+.dk-ring-key { display: inline-block; width: 26px; height: 26px; border-radius: 50%; box-sizing: border-box; border: 5px solid var(--ring); box-shadow: 0 0 0 2px #4f6367; }
+.portrait .dk-chip { position: static; display: block; margin: 0 auto 2px; width: 24px; height: 24px; border-width: 5px; }
+.portrait .dk-name { font-size: 17px; }
 .ri-rb { display: flex; flex-direction: column; gap: 10px; font-size: 24px; }
 .ri-rb .rb-row { display: flex; gap: 12px; align-items: center; background: var(--panel-d); border-radius: 10px; padding: 8px 12px 6px; }
 .ri-rb .rb-off { color: #fe8a80; }

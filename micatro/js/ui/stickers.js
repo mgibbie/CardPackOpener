@@ -382,6 +382,9 @@ function recordOf(centerKey, from = wins, rv = revoked) {
 export const winRecord = (centerKey) => ({ ...(recordOf(centerKey) || {}) });
 /** The highest stake level this joker has won on, in any category (0 = none). */
 export const winLevel = (centerKey) => { const r = recordOf(centerKey); return r ? Math.max(0, ...Object.values(r)) : 0; };
+/** The keys with a stored record that start with `prefix` (deck backs: 'b_'), retired ones left out (the Decks record counts
+ *  the won decks whose mod is off: their art and name need the mod). Each as stored: its renamed / superseded twins not merged. */
+export const recordedKeys = (prefix = '') => Object.keys(wins).filter((k) => k.startsWith(prefix) && !isRetired(k) && !!normRecord(wins[k]));
 /** Stickers kept on RETIRED cards (a mod upgrade removed them): [{key, name, sticker}] — listed greyed out. */
 export function retiredStickers() {
   return Object.keys(wins).filter((k) => isRetired(k)).sort().map((k) => ({ key: k, name: retiredName(k), sticker: stickerFor(wins[k]) }));
