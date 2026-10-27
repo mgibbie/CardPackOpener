@@ -261,8 +261,8 @@ Intended-design fixes are noted in comments at each site (search "intended").
 
 Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.829.0). The port is 3.2.1 (really commit
 87fb499, 2025-11-01) moving to 3.9.1 batch by batch: pinned `3.2.1+r1` until batch 5, `3.9.1+r2` for batch 5, `3.9.1+r3` for batch 6, `3.9.1+r4` for batch 7, `3.9.1+r5` for batch 8, `3.9.1+r6` for batch 10, `3.9.1+r7` for batch 10b, `3.9.1+r8` … `3.9.1+r13` for new-jokers sub-batches 11–15b, `3.9.1+r14` for batch 16 (the Megas), `3.9.1+r15` for batch 17 (the last: the
-upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), **`3.9.1+r18`** since the Hazard
-follow-ups ("The Hazard audit" below: held-Hazard retriggers)
+upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), `3.9.1+r18` for the Hazard
+follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2018,6 +2018,82 @@ follow-ups: `3.9.1+r18`).
   Re-run and passing: every Pokermon / Nacho / Pokermon+ Node suite, `micatro_engine_test` (109 suites), `micatro_mod_version_pin`,
   `micatro_resume_win_badges`, `micatro_runsync` (fixtures unchanged: no recording held a retriggered Hazard), `micatro_ui`,
   `micatro_mods_ui`, `micatro_custom_enhancement`.
+
+### The owner's 25 new jokers (2026-10-27, branch `feat/pokermon-25-new-jokers`)
+Pinned **`3.9.1+r19`** (`contentRev: 19`; `version` stays '3.9.1'; `LEGACY_MOD_VERSIONS` untouched). The 25 designs of the owner's
+`Desktop/Pokermon_Joker_Design_Guide.txt` section 5 ("25 DESIGN RECOMMENDATIONS"): species no mod had a joker for (the design wiki's
+"not in the game yet" list, now 445 -> 420). They are Micatro's own designs, not upstream code, so there is no Lua behind them:
+`jokers/pokejokers_designs.js` (status file `micatro/pokejokers_designs`, 26 defs) defines each in FULL (static data + behaviour, the
+Repel / Jirachi-forms route), and index.js inserts each after the joker its `poke_after` names (Pokédex order). Text: `DESIGN_LOC`
+(Pokermon loc style, `{br:2}` box breaks), families: `DESIGN_FAMILIES` (`set_family`). Base Pokermon owns these species: neither our
+Nacho nor our Pokermon+ has any of them, so there is nothing to dedupe.
+
+- **The jokers** (numbers as designed; rarity / cost: Basic U $6 or C $5, Stage 1 Safari $8, Stage 2 Safari $10):
+  - **Shinx -> Luxio -> Luxray** (Lightning): +1 / +2 / +3 Foresight; a scored card sharing a rank with a Foreseen card earns $1 (Luxio:
+    and +6 Mult; Luxray: and X1.4). 4 rounds, then 5. Money through `dollar_buffer` (Electrike).
+  - **Honedge -> Doublade -> Aegislash** (Metal): +1 / +2 Mult per Steel card held when a hand is played (`scale_card` x count);
+    Honedge evolves at +20, Doublade with a **Dusk Stone** (`item_req`). Doublade retriggers the first 2 scoring (not debuffed) held Steel
+    cards. Aegislash: +20 Mult (kept), Stance Change — Shield Forme (each round's start, and after a discard: `pre_discard`) retriggers
+    every held Steel card, Blade Forme (after a played hand: `after`) gives X2.5; `extra.form`.
+  - **Spheal -> Sealeo -> Walrein** (Water): Rollout +10 / +20 / +40 Chips doubled per consecutive same poker hand (max 4 doublings;
+    resets when the hand changes and at end of round); Sealeo / Walrein +1 hand (the Squirtle pair); Walrein's Sheer Cold X3 at full power.
+    5 rounds each. (Energy raises the base Chips, so the doubled value — and Sheer Cold's `Xmult` — as designed.)
+  - **Grookey -> Thwackey -> Rillaboom** (Grass starter: `starter: true`, so the Starter Pack's Grass list; U **$5**): +1 hand size; every
+    4th / 3rd / 2nd card scored this round is retriggered (the round's count in `beat`, the hand's beats picked in `before` so Blueprint
+    copies them); evolves after 12 / 16 beats (`scaling_evo` on `beats`); Rillaboom's Drum Beating: a beat card gives +3 Mult each time
+    it scores.
+  - **Kubfu -> Urshifu** (Fighting Legendary; Kubfu **$10**, Urshifu $20): Kubfu gains X0.1 on a hand of exactly 1 or 5 scoring cards
+    (counting each school); after 10 trainings it becomes the school it trained more — `urshifu_single` (more 1-card hands) or
+    `urshifu_rapid` (more 5-card hands). Both keep the X Mult (`Xmult` + `Xmult_mod` carry over; their own base is X2) and keep training.
+    Single Strike: Unseen Fist (playing cards can't be debuffed) and Wicked Blow (a 1-card hand's card also gives the X Mult). Rapid
+    Strike: Surging Strikes (the first 3 scored cards are retriggered). Kubfu and both Urshifu can't be debuffed: `systems/rules.js
+    set_debuff` (the Gholdengo / Tentacruel hook).
+  - **Xerneas** (Fairy Legendary, $20): Geomancy — after the round's first hand, scored cards give X1.25; the first playing card destroyed
+    each round comes back as a copy (`remove_playing_cards`, Chansey's copy).
+  - **Tandemaus -> Maushold** (Colorless): a scored card sharing a rank with another scored card gives +3 Mult (5 rounds). Maushold's
+    Population Bomb: the first scored card is retriggered, then 1 in 2 per further retrigger, up to 4 (Family of Four); 1 in 100
+    (`pseudorandom('maushold_family')` on creation) is the Family of Three: up to 3, each retrigger earns $1 (its own text key).
+  - **Darumaka -> Darmanitan** (Fire): +15 Mult with Hustle's 1 in 4 to give nothing (probability jokers make it miss MORE; 4 rounds);
+    Darmanitan +30 Mult, and on the round's final hand Zen Mode: X3 instead, and a Psychic Tera sticker until end of round (then its own
+    type back, or the Tera it wore).
+  - **Scraggy -> Scrafty** (Dark): +4 Mult; Moxie +3 when a Blind falls to the round's first hand (end of round, `hands_played === 1`;
+    4 rounds). Scrafty: Moxie +3, +1 per other Dark Joker; X1.5 on the round's first hand.
+  - **Spiritomb** (Psychic, R $7): a spirit per playing card destroyed and per Joker sold; X0.02 per spirit; at 108, The Soul (once, when a
+    consumable slot is free — it waits for room).
+  - **Tatsugiri** (Dragon, R $7): a Nature rolled on creation (Curly / Droopy / Stretchy, its own text key); Commander: the leftmost
+    Water Joker (never itself) gives X1.75 / +100 Chips / +20 Mult (`other_joker`).
+  - **Mudbray -> Mudsdale** (Earth): +20 Chips, Stamina +6 per hand that isn't the round's first (5 rounds); Mudsdale Stamina +10 and Mud
+    Spit: the first unscored card of each played hand becomes a Stone card.
+- **Pools**: Common Tandemaus / Darumaka / Scraggy / Mudbray, Uncommon Shinx / Honedge / Spheal / Grookey, Rare Spiritomb / Tatsugiri,
+  Legendary (The Soul) Kubfu / Xerneas; the Safari stages never; the Gen options apply. Urshifu is only reached through Kubfu
+  (`in_pool` false), as the training decides the school.
+- **Art: upstream's own, no new files.** Pokermon 3.9.1's pokespriteload.lua already draws all 25 (no upstream joker uses them yet), on the
+  3.9.1 sheets vendored in batch 5, each with its Shiny twin, the Legendaries with their floating souls — and both Urshifu formes. So by
+  the owner's art rule (a composed card only where upstream has none) every joker takes its 3.9.1 cell: `poke_sprite391` on the
+  definition, read by index.js `jokerSprite391` like data391.js `sprites` (Natdex; Aegislash / Xerneas Gen 6, Darmanitan Gen 5, Urshifu
+  Gen 8, Maushold / Tatsugiri Gen 9). Spiritomb and Mudbray also have Series A alternates (data391.js `series_a`). The design wiki's
+  composed cards for these species are no longer used (the wiki list drops them). Nothing to deploy for the mod.
+- **Deviations / choices** (where the design left room):
+  - Kubfu's tie (5 / 5): the school of its last training. Urshifu's base X is X2 (Kubfu's at evolution; the larger value is kept).
+  - Urshifu is the design's Fighting; upstream's two cards carry its secondary-type icons (Dark / Water).
+  - Xerneas: a card destroyed outside a Blind (the shop) comes back into the deck, not the hand.
+  - Spiritomb at 108 with full consumable slots: The Soul waits (the next spirit, or the end of a round, with room).
+  - Aegislash's Blade Forme and Darmanitan's Zen Mode keep their one card (upstream draws no other forme); `extra.form` tracks them.
+  - Text: small status lines the designs implied were added (Aegislash's forme, Kubfu's school counts, Xerneas "Charging..." /
+    "Active!", Sealeo / Walrein's current Chips, Urshifu's training line).
+- **Fuzz** (micatro_engine_test's runs, per-run state traces): the seam-only diff (the code with the 26 definitions emptied) is identical
+  to origin/main on every run (vanilla 40 / 5937 / 13 / 10, Pokermon 24 / 3909 / 13 / 6, all mods 16 / 2897 / 13 / 5). With the jokers:
+  vanilla identical; Pokermon 23/24 and all mods 15/16 runs diverge, each at a shop / pack / Poké Ball roll that now draws from the
+  longer pools (Pokermon 24 / 3419 / 13 / 6, all mods 16 / 2907 / 13 / 5).
+- **Tests**: `micatro/tests/mods/pokermon_new_jokers_test.mjs` (**59 passed / 25 failed on origin/main, 293 / 0 here**) fires every ability
+  through real plays with exact numbers and every evolution (rounds, +20 Mult, a real Dusk Stone, 12 / 16 beats, both Urshifu schools and
+  the tie), the carried Mult / Chips / X Mult / Energy, the debuff rules, pools, gens, the Starter Pack, the text and the art cells.
+  Re-recorded: `modpin_test`, `pokermon_391_data_test` (+ its 3.2.1-vs-3.9.1 art compare skips the new jokers), `micatro_mod_version_pin`;
+  `pokermon_391_new_14` / `15b`'s order checks skip the designs between two neighbours; `pokermon_391_new_15`'s Rabsca section removes
+  the Poké Ball's random joker (the pools changed which one it makes). `micatro_runsync` / `micatro_resume_win_badges` needed nothing.
+- **Wiki**: `node tools/micatro/gen_designwiki_pokermon_jokers.mjs` (420 missing; its 50 cards deleted, and ~80 other species' composed
+  cards shift a few pixels because their frames are the mode of the registered cards) and `gen_designwiki.mjs` (the mods' joker data).
+  The wiki art: `npx wrangler pages deploy designwiki/sprites --project-name=magepunk-sprites --branch=cloudflare-migration --commit-dirty=true`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
