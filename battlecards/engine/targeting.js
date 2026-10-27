@@ -57,6 +57,8 @@ const CHOSEN = {
 	'steal-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'bounce-to-deck-bottom': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'summon-copy-of-target-buffed': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	'destroy-summon-tokens-by-health': { creature: 'creature' }, // Shadow Word: Void (was untargeted: paid 4 and fizzled)
+	'destroy-summon-copy': { creature: 'creature' }, // Holy Book (same blind spot)
 	'set-target-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'destroy-fragment-then-damage': { any: 'any', 'enemy-any': 'enemy-any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'transform-into-token': { 'friendly-creature': 'friendly-creature', creature: 'creature' },

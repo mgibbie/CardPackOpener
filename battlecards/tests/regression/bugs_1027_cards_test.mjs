@@ -149,6 +149,13 @@ const frozenNow = (st, c) => c.frozen === st.turnNumber;
 		&& !/\ball\b|\beach\b/i.test(d.description || '')
 		&& JSON.stringify([d.effects, d.tapAbility, d.taps]).includes('"type":"freeze","target":"enemy-creatures"'));
 	ok('no singular-freeze card still freezes every enemy creature', bad.length === 0, bad.map(d => d.id));
+	// 2026-10-27c: Mysterio's Mirage ("At the start of your turn, freeze a RANDOM enemy creature") slipped
+	// past this check twice over — the phrase had "random" in it, and the effect lived in `ongoing`, which
+	// the scan above never read. This one reads the whole card, every zone of it.
+	const bad2 = raw.cards.filter(d => /\bfreeze (a|an|one) (random )?(other )?(enemy )?(creature|minion|character)\b/i.test((d.description || '') + ' ' + (d.tapAbility?.text || ''))
+		&& !/\b(all|each|every)\b/i.test(d.description || '')
+		&& /"type":"freeze","target":"(enemy-creatures|all-others|friendly-others)"/.test(JSON.stringify(d)));
+	ok('no singular or random-single freeze (any zone: effects, ongoing, taps, deathrattle) freezes a whole row', bad2.length === 0, bad2.map(d => d.id));
 }
 
 // ---------- 5) "Repeat for each ..." actually repeats ----------

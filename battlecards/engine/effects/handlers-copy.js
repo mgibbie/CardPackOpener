@@ -32,6 +32,7 @@ import {
 	applyRollEntry, targetSpec, legalTargets, runSpell,
 	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
+	copyDefOf,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
@@ -469,10 +470,11 @@ register('copy-to-all-zones', ({ state, pi, target, source, enemies, scaled, hm,
 			// Sathrovarr: add a copy of a chosen friendly creature to hand, deck, and board
 			const t = chosenCreature();
 			const p = state.players[pi];
-			if (t && state.cardsById[t.id]) {
-				if (p.hand.length < MAX_HAND) { const c = instantiate(state.cardsById[t.id], pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
-				p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
-				if (p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, state.cardsById[t.id]);
+			const def = t && copyDefOf(state, t);
+			if (def) {
+				if (p.hand.length < MAX_HAND) { const c = instantiate(def, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); }
+				if (state.cardsById[t.id]) { p.deck.push(t.id); for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; } } // a deck holds card ids: a token has none to shuffle in
+				if (p.board.filter(c => !isDead(c)).length < 7) summon(state, pi, def);
 			}
 } });
 
