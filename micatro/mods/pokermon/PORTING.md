@@ -264,7 +264,8 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), `3.9.1+r18` for the Hazard
 follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), `3.9.1+r20` for the owner's
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
-for the owner's Type Sleeves, **`3.9.1+r23`** since the owner's Sprigatito rework ("The Sprigatito rework" below)
+for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), **`3.9.1+r24`** since the owner's
+Gulpin line ("The owner's Gulpin line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2224,6 +2225,35 @@ Pinned **`3.9.1+r23`** (`contentRev: 23`; `LEGACY_MOD_VERSIONS` untouched). The 
   `pokermon_new_jokers_test`, `pokermon_type_sleeves_test` (its pin check), `micatro_mod_version_pin`; the wiki data regenerated.
 - **Fuzz**: identical to origin/main (vanilla 60 / 9722 / 13 / 17; Pokermon 24 / 3414 / 13 / 6, all ok): no fuzz run held the line's
   Lucky-trigger path to a different result, and the engine's new lucky_procs is bookkeeping only.
+
+### The owner's Gulpin line (2026-10-27, branch `feat/pokermon-gulpin-line`)
+Pinned **`3.9.1+r24`** (`contentRev: 24`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Gulpin (316) -> Swalot (317), Dark (Poison
+is Dark in Pokermon), in `jokers/pokejokers_designs.js` (LINE F4; 34 defs now), after Roselia in Pokédex order. Neither Nacho nor Pokermon+
+has these species.
+- **Stockpile** (both): at the end of each round (the joker pass; not a lost round, not Blueprint, not a joker retrigger) it swallows the
+  LEFTMOST Hazard card held in hand, else the leftmost Diamond card held in hand (`is_suit`: a Wild card counts, a debuffed card doesn't),
+  and gains 1 Stockpile up to max. The swallow is Pokermon's `poke_remove_card` — the Hazard plumbing every Hazard destroy uses (sound,
+  dissolve, `remove_playing_cards` to every joker: Qwilfish, Spiritomb, ... count it like any destroyed card; a Glass Diamond shatters).
+  The swallowed Hazard is marked `poke_swallowed`, and the Hazard's own 1 in 3 roll (enhancement1.js; also a quantum Hazard's) skips
+  it, so one card is never destroyed (or counted) twice. Heavy-Duty Boots only zero the Hazards' own roll: Gulpin still swallows.
+- **Gulpin** (U **$6**): scored Diamonds give +2 Mult per Stockpile. At max it swallows only Hazards (a Diamond would be eaten for
+  nothing). Evolves at exactly **3** Stockpile (`stockpile_evo`, fixed: with Energy's higher max it still evolves at 3; at 3 / 3 it
+  evolves the same end of round), keeping the Stockpile (`poke_custom_values_to_keep`).
+- **Swalot** (Safari **$8**): the same +2 Mult per Stockpile; a swallowed Diamond also earns its rank in $ (`get_id`, as Balatro numbers
+  ranks: 2-10, J 11, Q 12, K 13, A 14), even at max (then no Stockpile); X0.1 Mult per card the full deck is below the run's starting
+  size (Erosion's `G.GAME.starting_deck_size - #G.playing_cards`; so the Abandoned deck etc. measure from their own start), never
+  below X1. Its swallows shrink the deck too.
+- **Energy**: max Stockpile is the house energy field `stockpile_max` (systems/energy.js: `energy_values.stockpile_max = 1/3` of its
+  base 3 = exactly +1 per Energy: 3 -> 4 -> 5 -> 6 at 3 Energy; a mismatched Colorless Energy counts half, +0.5, and the joker floors
+  it, so two Colorless make +1). Energize needed no new hook: a numeric field in `energy_values` is what makes a joker take Energy
+  (and Transformation / Berry Juice), and only a card with `stockpile_max` has it. The +2 Mult per Stockpile (`stockpile_mult`) and the
+  Stockpile are not energy fields; the money is no field (fixed). Swalot's per-card X is `Xmult_mod` (energy_values 0.2 of its base:
+  +X0.02 per Darkness Energy — X0.12 / X0.14 / X0.16 per card; +X0.01 per Colorless). Evolving re-applies the Energy to Swalot's base
+  (max and X).
+- **Art: upstream's own.** 3.9.1's pokespriteload.lua draws both on the Natdex sheet ({0,21}, {2,21}, Shiny twins): `poke_sprite391`.
+  Nothing to deploy for the mod. The wiki drops them (412 missing).
+- **Tests**: `micatro/tests/mods/pokermon_gulpin_test.mjs` (2 passed / 18 failed on origin/main, 59 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 34 defs), `micatro_mod_version_pin`.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

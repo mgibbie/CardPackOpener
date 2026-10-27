@@ -22,6 +22,10 @@ import { cfg, set_spoon_item } from './utils.js';
 import { has_type, type_sticker_applied, set_energy_max, energy_limit_bonus, wildcard_type, IS_TYPE_RULES } from './types.js';
 
 export const energy_values = DATA.globals.energy_values;
+// House (the owner's Gulpin line, jokers/pokejokers_designs.js): max Stockpile, base 3, grows by a third of its base per Energy —
+// exactly +1 (3 -> 4 -> 5 -> 6), a mismatched Colorless Energy +0.5 (energize's usual half; the joker floors it, so two make +1).
+// Only a card with a numeric `stockpile_max` field has it, so no other joker changes.
+energy_values.stockpile_max = 1 / 3;
 export const energy_max = DATA.globals.energy_max;
 set_energy_max(energy_max);
 const ENERGY_FIELDS = Object.keys(energy_values);

@@ -827,7 +827,11 @@ export const POKERMON = registerMod({
   // engine's per-card lucky_procs) instead of 5 + 5 rounds, each evolution creates a Negative The Magician, and Meowscarada's Lucky
   // cards permanently gain X0.5 Mult when they trigger (perma_x_mult) instead of the held-Steel X1.25; a card's perma X Mult shows on
   // its tooltip.
-  contentRev: 23,
+  // 24 = the owner's Gulpin line (Gulpin -> Swalot; jokers/pokejokers_designs.js): at end of round each swallows (destroys) a held
+  // Hazard, else a held Diamond, for Stockpile (max 3, +1 per Energy: the house energy field `stockpile_max`); scored Diamonds give
+  // +2 Mult per Stockpile; Gulpin evolves at 3; Swalot's swallowed Diamond pays its rank in $ and it gives X0.1 Mult per card the
+  // deck is below its starting size. A Hazard swallowed this way doesn't roll its own destroy too (enhancement1.js).
+  contentRev: 24,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
