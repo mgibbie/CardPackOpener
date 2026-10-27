@@ -71,6 +71,13 @@
 			"w": 4260,
 			"h": 13110
 		},
+		"@poke_type_sleeves": {
+			"src": "/micatro/mods/pokermon/assets/2x/type_sleeves.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 190
+		},
 		"@poke_AtlasJokersBasicGen05391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen05-391.png",
 			"cw": 142,
@@ -514,6 +521,206 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "7356677",
+			"date": "2026-10-27",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Gulpin line (contentRev 24)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_gulpin",
+							"name": "Gulpin",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 21
+							}
+						},
+						{
+							"key": "j_poke_swalot",
+							"name": "Swalot",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 21
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "9d0bc65",
+			"date": "2026-10-27",
+			"kind": "patch",
+			"title": "Pokermon: the owner's Sprigatito rework (contentRev 23)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4c124ae",
+			"date": "2026-10-27",
+			"kind": "patch",
+			"title": "Micatro runs: mod art from pre-split sheet blocks (no whole sheet decoded)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e2ad002",
+			"date": "2026-10-27",
+			"kind": "patch",
+			"title": "Micatro deck editor: mod art from pre-split sheet blocks (bounded memory)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d2bd12e",
+			"date": "2026-10-27",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's 12 Type Sleeves (contentRev 22)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "sleeve_poke_grasssleeve",
+							"name": "Grass Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 0,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_firesleeve",
+							"name": "Fire Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 1,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_watersleeve",
+							"name": "Water Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 2,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_lightningsleeve",
+							"name": "Lightning Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 3,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_psychicsleeve",
+							"name": "Psychic Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 4,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_fightingsleeve",
+							"name": "Fighting Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 5,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_colorlesssleeve",
+							"name": "Colorless Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 6,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_darknesssleeve",
+							"name": "Darkness Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 7,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_metalsleeve",
+							"name": "Metal Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 8,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_fairysleeve",
+							"name": "Fairy Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 9,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_dragonsleeve",
+							"name": "Dragon Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 10,
+								"y": 0
+							}
+						},
+						{
+							"key": "sleeve_poke_earthsleeve",
+							"name": "Earth Sleeve",
+							"set": "Sleeve",
+							"atlas": "@poke_type_sleeves",
+							"pos": {
+								"x": 11,
+								"y": 0
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "f95674e",
 			"date": "2026-10-27",
