@@ -582,7 +582,8 @@ register('damage-overkill-hero', ({ state, pi, source, chosenCreature, enemies }
 			const before = hp(t);
 			damageCreature(state, t, e.value || 0, source);
 			const excess = (e.value || 0) - before;
-			if (excess > 0) { const foe = enemies[0]; if (foe != null) damageHero(state, foe, excess, source); }
+			// Unstable Shadow Blast (excessTo:'own-hero'): "Excess damage hits your hero"
+			if (excess > 0) { const who = e.excessTo === 'own-hero' ? pi : enemies[0]; if (who != null) damageHero(state, who, excess, source); }
 			sweepDeaths(state);
 } });
 
@@ -1325,7 +1326,7 @@ register('devour-enemy', ({ state, pi, target, source, enemies, scaled, hm, pick
 
 
 register('grant-deathrattle', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			const targets = e.target === 'creature' ? [chosenCreature()].filter(Boolean)
+			const targets = (e.target === 'creature' || e.target === 'friendly-creature') ? [chosenCreature()].filter(c => c && (e.target === 'creature' || c.controller === pi))
 				: e.target === 'self' ? (source && source.zone === 'board' && !isDead(source) ? [source] : []) // Fatespinner
 				: e.target === 'friendly-others' ? state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type !== 'location' && (!e.tribe || (c.tribe || '').includes(e.tribe))) // Rustsworn Cultist / Braingill (tribe filter)
 				: state.players[pi].board.filter(c => !isDead(c));
@@ -1362,6 +1363,18 @@ register('buff-self-per-damaged-then-attack-all', ({ state, pi, target, source, 
 register('damage-random-enemy-by-attack', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Biopod: deal damage equal to this minion's Attack to a random enemy
 			// (count = independent hits; minionsOnly restricts to enemy minions — Felfire Thrusters)
+			// Whispers of the Deep (fromTarget): the CHOSEN creature's Attack, randomly split
+			// among enemy creatures (a spell has no Attack of its own — it dealt 0)
+			if (e.fromTarget) {
+				const t = chosenCreature();
+				for (let k = 0; k < (t ? t.attack || 0 : 0); k++) {
+					const pool = []; for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push(c);
+					if (!pool.length) break;
+					damageCreature(state, pool[Math.floor(state.rng() * pool.length)], 1, source);
+					sweepDeaths(state);
+				}
+				return;
+			}
 			if (source) {
 				const amt = source.attack || 0;
 				for (let i = 0; i < (e.count || 1) && amt > 0; i++) {
@@ -1441,6 +1454,22 @@ register('destroy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy
 			if (target && target.type === 'walker') {
 				const w = findPermanent(state, target.uid);
 				if (w && w.type === 'planeswalker') { destroyWalker(state, w); if (e.then) execEffects(state, pi, e.then, target, source); }
+				return;
+			}
+			// "Destroy all enemy creatures" / "all creatures with 3 or less Attack": no target
+			// prompt exists for these (they are not CHOSEN kinds), so they resolved on a null
+			// target and destroyed nothing. Each creature on the named side(s), same filters.
+			if (e.target === 'enemy-creatures' || e.target === 'all-creatures') {
+				const sides = e.target === 'enemy-creatures' ? enemies : state.players.map((_, i) => i);
+				for (const s of sides) for (const c of [...state.players[s].board]) {
+					if (isDead(c) || c.type === 'location') continue;
+					if (e.maxAttack != null && c.attack > e.maxAttack) continue;
+					if (e.minAttack != null && c.attack < e.minAttack) continue;
+					if (e.maxCost != null && (c.cost || 0) > e.maxCost) continue;
+					if (e.tribe != null && !(c.tribe || '').includes(e.tribe)) continue;
+					c.damage = c.maxHealth; c.doomed = true; c.shield = false;
+					emit(state, { type: 'destroy', uid: c.uid });
+				}
 				return;
 			}
 			const t = chosenCreature();
@@ -2221,4 +2250,18 @@ register('remix-damage-all-rotating-bonus', ({ state, pi, source }, e) => {
 	];
 	const idx = ((source && source.remix && source.remix.index) || 0) % bonuses.length;
 	execEffects(state, pi, JSON.parse(JSON.stringify(bonuses[idx])), null, source);
+});
+
+register('destroy-lowest-friendly', ({ state, pi, target, source }, e) => {
+	// Desecrated Graveyard: destroy your lowest-Attack creature (ties at random);
+	// `then` runs only if one was destroyed ("...to create a 4/4 Shade")
+	const pool = state.players[pi].board.filter(c => !isDead(c) && c.type === 'creature');
+	if (!pool.length) return;
+	const low = Math.min(...pool.map(c => c.attack || 0));
+	const ties = pool.filter(c => (c.attack || 0) === low);
+	const t = ties[Math.floor(state.rng() * ties.length)];
+	t.damage = t.maxHealth; t.doomed = true; t.shield = false;
+	emit(state, { type: 'destroy', uid: t.uid });
+	sweepDeaths(state);
+	if (e.then) execEffects(state, pi, e.then, target, source);
 });

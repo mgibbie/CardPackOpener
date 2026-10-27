@@ -13,3 +13,4 @@ import './handlers-hero.js';
 import './handlers-misc.js';
 import './handlers-heist.js';
 import './handlers-tombs.js';
+import './handlers-followup.js';

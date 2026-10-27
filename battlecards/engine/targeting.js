@@ -30,13 +30,13 @@ const CHOSEN = {
 	'wyrm-bolt': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Wyrm Bolt
 	'bubba-hounds': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Bubba (Duels): the hounds' quarry
 	'no-guts-no-glory': { creature: 'creature' }, // No Guts, No Glory
-	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any' },
+	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any', 'friendly-creature': 'friendly-creature', 'friendly-any': 'friendly-any' }, // + Lightning Rod / Dark Possession
 	heal: { any: 'any', creature: 'creature' },
-	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature', 'enemy-creature': 'enemy-creature' }, // + Shattering Finale (-0/-3)
 	grow: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-hatch-egg': { 'friendly-creature': 'friendly-creature' }, // Clutch of Corruption: a friendly Dragon
 	'spend-all-mana-damage': { creature: 'creature' }, // Forbidden Flame: a minion
-	'grant-ongoing': { 'friendly-creature': 'friendly-creature' },
+	'grant-ongoing': { 'friendly-creature': 'friendly-creature', creature: 'creature', 'enemy-creature': 'enemy-creature' }, // + Power Word: Glory / Sinful Brand
 	'grant-static': { 'friendly-creature': 'friendly-creature' },
 	grant: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'grant-spell-damage': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
@@ -100,7 +100,7 @@ const CHOSEN = {
 	'destroy-target-and-adjacent': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // Meteorhorn
 	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
 	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
-	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },
+	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature', creature: 'creature' }, // + Shattered Reflections
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', 'creature-or-walker': 'creature-or-walker' },
 	// Naturalize and friends: a CHOSEN artifact/enchantment. Rides the existing
 	// 'permanent' target kind (legalTargets already enumerates artifacts,
@@ -120,7 +120,7 @@ const CHOSEN = {
 	disguise: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	freeze: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'trigger-one-deathrattle': { 'friendly-creature': 'friendly-creature' },
-	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	silence: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // + Purify / Whispers of the Deep
 	'temp-buff': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'friendly-any': 'friendly-any' },
 	'heal-full': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'set-health': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -142,9 +142,9 @@ const CHOSEN = {
 	'summon-copies-from-deck': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'blade-of-cthun': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	conditional: { any: 'any', creature: 'creature' },
-	'damage-then': { any: 'any', creature: 'creature' },
+	'damage-then': { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' }, // + Synchronized Spark
 	'draw-damage': { any: 'any' },
-	'grant-deathrattle': { creature: 'creature' },
+	'grant-deathrattle': { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // + Cursed Campaign
 	'copy-deathrattle': { 'friendly-creature': 'friendly-creature' },
 	attach: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'attach-curse': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -164,6 +164,22 @@ const CHOSEN = {
 	'force-attacked-neighbor': { creature: 'creature' }, // Ramming Speed
 	'summon-enemy-minion-copy': { 'enemy-creature': 'enemy-creature' }, // Sensory Deprivation
 	'summon-copy-attack-die': { creature: 'friendly-creature' }, // Wreck'em and Deck'em: a friendly Mech
+	// 2026-10-27 fizzle sweep: these handlers act on the chosen creature, but nothing
+	// asked for one, so the spell paid its mana and resolved on a null target
+	adapt: { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // Adaptation / Crackling Razormaw
+	'damage-overkill-hero': { creature: 'creature' }, // Piercing Shot / Unstable Shadow Blast
+	'destroy-split-attack': { 'enemy-creature': 'enemy-creature' }, // Death Roll
+	'damage-excess-to-bottle': { 'enemy-creature': 'enemy-creature' }, // Invasive Shadeleaf
+	'summon-enemy-copy-attack-original': { 'enemy-creature': 'enemy-creature' }, // Funhouse Mirror
+	'mind-control-delayed': { 'enemy-creature': 'enemy-creature' }, // Embrace Darkness
+	'buff-target-gain-armor-by-attack': { 'friendly-creature': 'friendly-creature' }, // Earthen Scales
+	'shuffle-shadows-of-target': { creature: 'creature' }, // Shadow of Death
+	'smolder-buff': { 'friendly-creature': 'friendly-creature' }, // Smoldering Strength
+	'buff-shared-type': { 'friendly-creature': 'friendly-creature' }, // Ready the Fleet
+	'spend-all-mana-destroy': { creature: 'creature' }, // Forbidden Words
+	'throw-weapon': { creature: 'creature' }, // Doomerang
+	'destroy-summon-random-of-cost': { creature: 'creature' }, // Conjurer's Calling
+	'imp-losion': { creature: 'creature' }, // Imp-losion
 };
 
 // A Lackey (Togwaggle / EVIL Recruiter): the five lackey_* cards

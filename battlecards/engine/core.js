@@ -295,6 +295,7 @@ export function instantiate(def, controller) {
 		transformInHandTribe: def.transformInHandTribe || null, // Hive Queen's Larva: only into a given tribe (Zerg)
 		transformInHandType: def.transformInHandType || null, // Molten Blade: transform into a random weapon (default: creature)
 		transformInHandClass: def.transformInHandClass || null, // Shifting Scroll: restrict the transform pool to a class
+		transformOnSpellCast: def.transformOnSpellCast || false, // Shadow of Demise: while held, becomes a copy of each spell you cast
 		transformWhenDrawn: def.transformWhenDrawn || null,  // Unidentified Maul: on draw, become a random one of these ids
 		keepsEnchantments: !!def.keepsEnchantments,          // Kingsbane: keeps its enchantments across shuffle/redraw
 		relic: !!def.relic,                                  // DH Relics: scale with relicImprove, doubled by Relic Vault
@@ -2624,6 +2625,10 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		{ const sch = schoolOf(card); if (sch) { (p.schoolsCastThisTurn = p.schoolsCastThisTurn || {})[sch] = true; (p.schoolsCastGame = p.schoolsCastGame || {})[sch] = true; if (sch === 'Fel') (p.felSpellsGame = p.felSpellsGame || []).push(card.id); if (sch === 'Frost') p.frostSpellsGame = (p.frostSpellsGame || 0) + 1; if (sch === 'Holy' && p.holyRefreshShield && !p.heroShield) { p.heroShield = true; emit(state, { type: 'heroShield', player: pi }); } } } // Metamorfin / Multicaster / Jace / Bearon; Starlight Groove: Holy spells refresh Divine Shield
 		{ const sc2 = schoolOf(card); if (sc2) for (const hc of [...p.hand]) { const ht2 = hc.handTransformOnSchool; if (ht2 && ht2.schools.includes(sc2) && ht2.forms && ht2.forms.length) { const fdef = state.cardsById[ht2.forms[Math.floor(state.rng() * ht2.forms.length)]]; if (fdef) { const morph = instantiate(fdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'conjure', player: pi, card: morph, color: null }); } } } } // Lady Naz'jar: transform in hand after a Fire/Frost/Arcane spell
 		{ for (const hc of [...p.hand]) { const ht4 = hc.handTransformOnTwoSchools; if (ht4 && ht4.forms && ht4.forms.length && Object.keys(hc.schoolsWhileHeld || {}).length >= 2) { const fdef = state.cardsById[ht4.forms[Math.floor(state.rng() * ht4.forms.length)]]; if (fdef) { const morph = instantiate(fdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'conjure', player: pi, card: morph, color: null }); } } } } // Carress: transform in hand after two different spell schools
+		// Shadow of Demise: while held, each spell you cast turns it into a copy of that
+		// spell — a copy that keeps the Shadow, so it goes on transforming (same uid, so
+		// the hand slot and any selection survive the morph)
+		{ for (const hc of [...p.hand]) { if (!hc.transformOnSpellCast || hc === card) continue; const sdef = state.cardsById[card.id] || card; const morph = instantiate(sdef, pi); morph.uid = hc.uid; morph.zone = 'hand'; morph.transformOnSpellCast = true; morph.description = (morph.description ? morph.description + '\n' : '') + 'Shadow: each time you cast a spell, transform this into a copy of it.'; p.hand[p.hand.indexOf(hc)] = morph; emit(state, { type: 'transformed', uid: hc.uid, player: pi, from: hc.name, card: morph }); } }
 		if ((card.cost || 0) >= 6) p.lastBigSpell = { id: card.id, target }; // Grey Sage Parrot
 		p.lastSpellPlayed = { id: card.id, target }; // Asvedon: opponent's most recent spell (any cost)
 		p.spellsPlayedTotal = (p.spellsPlayedTotal || 0) + 1; // Arcane Giant
@@ -4121,9 +4126,54 @@ function transformInto(state, t, model) {
 	recomputeAuras(state);
 }
 
+// A Discover pick can carry follow-ups (`pend.after`) queued by a later effect of
+// the same spell — Soul Searching / Blood Clone copy the pick, Paleomancy keeps all
+// three, Story of Umbra triggers the summoned pick's Deathrattle
+// (effects/handlers-followup.js). They run once the pick itself has resolved.
 export function resolvePick(state, id) {
+	const pend = state.pickQueue[0];
+	const before = pend && pend.after && state.players[pend.player] ? new Set(state.players[pend.player].board.map(c => c.uid)) : null;
+	const r = resolvePickBase(state, id);
+	if (pend && r && Array.isArray(pend.ids)) {
+		pend.chosenId = pend.ids.includes(id) ? id : pend.ids[0];
+		if (before) {
+			const s = state.players[pend.player].board.find(c => !before.has(c.uid) && c.id === pend.chosenId && !isDead(c));
+			pend.summonedUid = s ? s.uid : null;
+			for (const f of pend.after) applyPickFollowup(state, pend, f);
+			sweepDeaths(state);
+		}
+	}
+	return r;
+}
+
+export function applyPickFollowup(state, pend, f) {
+	const pi = pend.player, p = state.players[pi];
+	const def = state.cardsById[pend.chosenId];
+	if (!p || p.eliminated || !def) return;
+	const toHand = d => { if (p.hand.length >= MAX_HAND) return; const c = instantiate(d, pi); c.zone = 'hand'; p.hand.push(c); emit(state, { type: 'conjure', player: pi, card: c, color: null }); };
+	if (f.kind === 'copy') {
+		for (let n = 0; n < (f.count || 1); n++) {
+			if (f.to === 'board') { if (def.type === 'creature') summon(state, pi, { ...def, token: true }); } // Blood Clone: a token copy
+			else toHand(def); // Soul Searching: a copy in hand
+		}
+	} else if (f.kind === 'keep-all') { // Paleomancy: the two you didn't pick as well
+		for (const oid of pend.ids) if (oid !== pend.chosenId && state.cardsById[oid]) toHand(state.cardsById[oid]);
+	} else if (f.kind === 'trigger-deathrattle') { // Story of Umbra
+		const m = pend.summonedUid != null ? p.board.find(c => c.uid === pend.summonedUid) : null;
+		if (m && !isDead(m) && m.deathrattle) runDeathrattle(state, pi, m);
+	}
+}
+
+function resolvePickBase(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.mode === 'reduce-drawn') {
+		// Fast Forward: one of the cards just drawn costs (N) less (ids may repeat; uids are exact)
+		const k = Math.max(0, pend.ids.indexOf(id));
+		const c = state.players[pend.player].hand.find(x => x.uid === pend.uids[k]);
+		if (c) { c.cost = Math.max(0, (c.cost || 0) - (pend.value || 1)); emit(state, { type: 'costChange', player: pend.player, uid: c.uid, cost: c.cost }); }
+		return true;
+	}
 	if (pend.mode === 'transform-into') {
 		const t = findCreature(state, pend.targetUid);
 		const model = findCreature(state, pend.ids.includes(id) ? id : pend.ids[0]);
