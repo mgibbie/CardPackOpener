@@ -141,7 +141,7 @@ try {
 	const pkB = r3.base && r3.base[0], pkX = r3.exp && r3.exp.find(c => sorted(c.lv) === sorted(JSON.parse(fam)));
 	A(pkB && pkX && sorted(pkB.lv) === sorted(JSON.parse(fam)) && JSON.stringify(pkB.r) === JSON.stringify(pkX.r) && r3.member === 4 && r3.exp.every(c => JSON.stringify(c.r) === JSON.stringify(pkB.r)),
 		'a base run (Charmander) and an Expedition run (the Charmander member) read the SAME perks object: the family\'s levels', JSON.stringify(r3).slice(0, 900));
-	A(r3.dv === 19, 'the Expedition content version is 19 (D20)', r3.dv);
+	A(r3.dv === 20, 'the Expedition content version is 19 (D20)', r3.dv);
 	// ======================== 4. the shop
 	const r4 = await E(page, async () => {
 		document.querySelector('#scr-menu [data-go=upgrades]') ? document.querySelector('#scr-menu [data-go=upgrades]').click() : G.MenuUI.open();

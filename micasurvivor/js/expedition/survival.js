@@ -80,6 +80,14 @@ G.ExpSurv = (() => {
     // DPS targets. (A smaller cap or tougher foes barely move it further: a level-300 bot one-shots the field, so the KOs follow the
     // kills it can reach, not their HP.) (tools/micasurvivor/dps_sim.mjs --pace; pinned by micasurvivor_expedition_balance_test.mjs)
     PACE: { rate: 0.5, hp: 1.8, xp: 1.8 },
+    // The Survival curve (owner 2026-10-27: "survival does need its own slower levelling curve"). Survival's XP to the next level =
+    // the Expedition's (levelups.js need: 2 x (8 + 5.5 L + L^1.8), Classic's and League's, untouched) x (1 + ((L - FROM) / SCALE)^POW)
+    // above Lv FROM: Lv 1-40 come as fast as before (Lv 40 at ~5:00), then it slows through the mid / late run. The bot (dps_sim.mjs
+    // --pace): Lv 40 / 75 / 116 / 129 / 146 at 5 / 12 / 24 / 30 / 45 min (the shared curve: 40 / 96 / 219 / 267 / 356). Only a run of
+    // content version >= DV: an older run, tape or snapshot keeps the shared curve; a co-op lobby is one dv, so host and guests agree.
+    // (Measured: the KOs do NOT follow the level: ~12,000 a 45-min bot run at Lv 70, 146 or 356 alike; README "The Survival curve".)
+    // (pinned and fired by micasurvivor_expedition_survivalcurve_test.mjs)
+    CURVE: { DV: 20, FROM: 40, SCALE: 20, POW: 1.5 },
     LEGEND_EVERY: 3,             // ... every 3rd a legendary
     MEWTWO_AT: 2700, MEWTWO: 150, MEWTWO_TARGET: 90,   // Mewtwo at 45:00 (the 9th milestone): a 90 s fight from your DPS
     MILE_TARGET: [40, 50, 60], LEGEND_TARGET: 60,      // the bosses' target times by phase (D3's), legendaries 60 s
@@ -360,6 +368,15 @@ G.ExpSurv = (() => {
     if (G.Coop && G.Coop.active && G.Coop.isHost) for (const m of G.Coop.mates) if (m.connected && m.pl && m.pl.xsv) add(m.pl.xsv[0]);
     return out;
   }
+  // ---------------- the Survival curve ----------------
+  /** Does this run level on the Survival curve? (a Survival run of content version >= K.CURVE.DV: the run's own dv, so an older
+   *  run keeps the shared curve; co-op lobbies are one dv, so the host and its guests agree) */
+  const curveOn = () => !!(G.Modes && G.Modes.is('exp-survival') && (G.Modes.dv || 0) >= K.CURVE.DV);
+  /** The curve's factor at level L (pure): 1 up to FROM, then 1 + ((L - FROM) / SCALE)^POW. */
+  const curveK = L => { const c = K.CURVE, d = L - c.FROM; return d > 0 ? 1 + Math.pow(d / c.SCALE, c.POW) : 1; };
+  /** levelups.js need: the XP to the next level from the Expedition's `v` at level L (a run not on the curve: v). */
+  const need = (v, L) => (curveOn() ? Math.round(v * curveK(L)) : v);
+
   /** classic.js spawn / trickle: the night and the pacts on a new enemy at t: {hp, dmg, rate, elite}. */
   function foeK(t, kind) {
     const n = nightOf(t), tm = foeTeam(), P = K.PACE;   // (D21: the pacing)
@@ -634,7 +651,7 @@ G.ExpSurv = (() => {
   }
 
   return {
-    K, PACTS, PACT_BY, HAZ, HAZ_PAL, hazPal, phaseOf, woundK, nightOf, milestone, segPlan, hazardsOf, hazardAt, offerOf, scoreOf, siegeStep,
+    K, PACTS, PACT_BY, HAZ, HAZ_PAL, hazPal, curveOn, curveK, need, phaseOf, woundK, nightOf, milestone, segPlan, hazardsOf, hazardAt, offerOf, scoreOf, siegeStep,
     begin, reset, update, migrated, tick, out, row, take, statOf, foeK, foeTeam, sBlock, applyS, applyRow, landOf,
     hudLine, hudColor, drawHud, drawNight, drawGround, scoreParts, score, result, record, metrics,
     get run() { return S; }, get view() { return view; }, get nightDrawn() { return nightDrawn; }, get hazDrawn() { return hazDrawn; }, get siegeRect() { return siegeRect; }

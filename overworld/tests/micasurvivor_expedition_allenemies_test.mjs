@@ -172,7 +172,7 @@ try {
 		const tr = H.spawned.filter(s => !s.xk), nW = tr.filter(s => wander.includes(s.dex) && !cards.includes(s.dex)).length;
 		return { ok, dv: G.Modes.run.dv, n: tr.length, nW, wander, share: tr.length ? nW / tr.length : 0, kinds: [...new Set(tr.map(s => s.dex))].length };
 	});
-	A(w.ok && w.dv === 19 && w.n > 100 && w.nW > 0 && w.share < 0.25 && w.wander.length === 6, `a Classic zone's trickle (300 s): ${w.nW} of ${w.n} spawns are its 6 wanderers (${Math.round((w.share || 0) * 100)} %: a minority), dv 19`, JSON.stringify(w));
+	A(w.ok && w.dv === 20 && w.n > 100 && w.nW > 0 && w.share < 0.25 && w.wander.length === 6, `a Classic zone's trickle (300 s): ${w.nW} of ${w.n} spawns are its 6 wanderers (${Math.round((w.share || 0) * 100)} %: a minority), dv 19`, JSON.stringify(w));
 	// a roaming legendary: a special, and it leaves after its time
 	const r = await E(() => {
 		const H = window.__t, C = G.ExpClassic, R = C.run, n0 = H.spawned.length;

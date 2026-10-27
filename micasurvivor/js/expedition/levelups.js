@@ -21,6 +21,8 @@
  *                 or vitamin never comes back this run). The base game's bought rerolls / bans add on top (max 6 each).
  *   the XP curve  8 + 5.5 L + L^1.8 (study 2.1) x K.XP_K (the xp.need seam): the scale is ours, measured so that a normal
  *                 Classic run reaches the Lv 50 / 55 evolutions (README "DLC D5": the probe's numbers).
+ *                 Survival (content version 20) levels on its own, slower curve above Lv 40: this one x G.ExpSurv.curveK
+ *                 (README "The Survival curve"); Classic and League keep this one.
  *
  *   held item   DLC D17 (owner 2026-10-26: "keep the backpack/more items in expedition and just have 1 slot for an equipped held
  *                 item in both modes"): the stacking items above stay exactly as they are; on top, ONE equipped base held item
@@ -104,7 +106,8 @@ G.ExpLevel = (() => {
   // ---------------- the run ----------------
   let S = null;   // {draw, items, skips, log: [[level, kind, key, tier]]}
   const on = pl => !!(S && G.Modes.isExp() && pl && pl === G.Game.player && !pl.remote);
-  const need = L => Math.round(K.XP_K * (K.XP_A + K.XP_B * L + Math.pow(L, K.XP_P)));
+  // (the Survival curve, dv 20: a Survival run's own, slower above Lv 40: G.ExpSurv.need; Classic and League keep this one)
+  const need = L => { const v = Math.round(K.XP_K * (K.XP_A + K.XP_B * L + Math.pow(L, K.XP_P))); return G.ExpSurv ? G.ExpSurv.need(v, L) : v; };
   /** The xp.need seam: an Expedition run's curve (a base run: the base one). */
   const xpNeed = (v, L) => (G.Modes.isExp() ? need(L) : v);
 
