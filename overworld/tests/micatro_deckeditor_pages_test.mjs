@@ -94,6 +94,9 @@ try {
 	const tap = async (page, sel, { touch = false } = {}) => {
 		await page.waitForSelector(sel, { visible: true, timeout: 10000 });
 		await waitFor(() => page.evaluate((s) => { const m = document.querySelector(s).closest('.modal'); return !m || m.getAnimations({ subtree: true }).every((a) => a.playState !== 'running'); }, sel), 2000);
+		// (and stops moving: the New Run screen re-lays out as the mods load, and a tap meant for Decks once hit Mods)
+		let last = '';
+		await waitFor(async () => { const r = await page.evaluate((s) => { const e = document.querySelector(s); e.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(Math.round).join(); }, sel); const same = r === last; last = r; if (!same) await sleep(250); return same; }, 4000);
 		const hit = await page.evaluate((s) => {
 			const el = document.querySelector(s);
 			el.scrollIntoView({ block: 'center', behavior: 'instant' });
