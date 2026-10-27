@@ -70,7 +70,8 @@ sec(() => {
   // Their place in the joker list: 3.9.1's file order (its `list`: Kecleon after Milotic, Shuppet after Dusclops).
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
-  const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
+  // (and past the owner's designs: the Trapinch line sits between Spinda and Cacnea)
+  const fromMain = new Set([...Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n), ...(STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)]);
   const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('spinda', 'cacnea') && after('cacturne', 'swablu') && after('armaldo', 'feebas') && after('milotic', 'kecleon') && after('kecleon', 'duskull')
     && after('dusclops', 'shuppet') && after('banette', 'tropius') && after('chimecho', 'absol'), 'inserted in 3.9.1 file order');
@@ -101,7 +102,8 @@ sec(() => {
 sec(() => {
   // Pools: in_pool + pool_filter; the shop's rarity pools
   start('POOL13');
-  const pool = P_CENTER_POOLS.Joker.map((c) => c.key);
+  const designs = new Set((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n)); // (the owner's Trapinch line sits between them)
+  const pool = P_CENTER_POOLS.Joker.map((c) => c.key).filter((k) => !designs.has(k));
   ok(pool.indexOf('j_poke_cacnea') === pool.indexOf('j_poke_spinda') + 1 && pool.includes('j_poke_chimecho'), 'the Joker pool holds them, in 3.9.1 order');
   ok(C('kecleon').in_pool(C('kecleon')) && pool_filter(C('kecleon'), 'Joker') === undefined, 'Kecleon can be rolled');
   const avail = (r) => get_current_pool('Joker', r)[0].filter((k) => k !== 'UNAVAILABLE');

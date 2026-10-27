@@ -831,7 +831,10 @@ export const POKERMON = registerMod({
   // Hazard, else a held Diamond, for Stockpile (max 3, +1 per Energy: the house energy field `stockpile_max`); scored Diamonds give
   // +2 Mult per Stockpile; Gulpin evolves at 3; Swalot's swallowed Diamond pays its rank in $ and it gives X0.1 Mult per card the
   // deck is below its starting size. A Hazard swallowed this way doesn't roll its own destroy too (enhancement1.js).
-  contentRev: 24,
+  // 25 = the owner's Trapinch line (Trapinch -> Vibrava -> Flygon; jokers/pokejokers_designs.js): Sand Pit — every card the player
+  // discards banks +2 (Vibrava +3) Chips on the joker, evolving after 40 then 60 more discarded cards; Vibrava +1 discard; Flygon
+  // keeps the bank and gives X1 + 0.25 per discard used this round (Sandstorm).
+  contentRev: 25,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
