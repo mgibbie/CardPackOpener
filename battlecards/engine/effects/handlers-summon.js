@@ -1342,7 +1342,7 @@ register('launch-starship', ({ state, pi, target, source, enemies, scaled, hm, p
 						if (hd && hd.launchTransform && state.cardsById[hd.launchTransform]) {
 							const ni = instantiate(state.cardsById[hd.launchTransform], pi);
 							ni.zone = 'hand'; p.hand[hi] = ni;
-							emit(state, { type: 'transformed', player: pi, uid: ni.uid, name: ni.name });
+							emit(state, { type: 'transformed', player: pi, uid: ni.uid, name: ni.name, from: hd.name, card: ni });
 						}
 					}
 					p.deck = p.deck.map(id => {
@@ -1414,6 +1414,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			// forEnemy: tokens go to a random opponent (Leeroy's Whelps);
 			// eachPlayer: every player summons the token(s) (Sokenzan's Arrival)
 			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : e.count === 'mana-max' ? (state.players[pi].mana?.max || 0) : (e.count || 1); // Rat Pack / Vision of the Warden (a Treant per Mana Crystal)
+			if (e.per === 'secrets-controlled') n += (state.players[pi].secrets || []).length; // Petting Zoo: "Repeat for each Secret you control"
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;

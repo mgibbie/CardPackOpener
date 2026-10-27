@@ -2188,6 +2188,7 @@ export function evalConditional(state, pi, cond, t, source) {
 			else if (cond.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= cond.controlMinAttack);
 			else if (cond.cthunMinAttack != null) ok = (CTHUN_BASE + p.cthunAtk) >= cond.cthunMinAttack;
 			else if (cond.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(cond.holdingTribe));
+			else if (cond.holdingTribeCount) ok = p.hand.filter(c => c !== source && (c.tribe || '').includes(cond.holdingTribeCount.tribe)).length >= cond.holdingTribeCount.count; // Fly Off the Shelves: repeat per held Dragon
 			else if (cond.adjacentPlayedWhileHeld) ok = !!source && (source.adjacentPlayedWhileHeld || 0) > 0; // Orbital Moon: you played an adjacent card this turn
 			else if (cond.handEmpty) ok = p.hand.length === 0;
 			else if (cond.excavatedTwice) ok = (p.excavateCount || 0) >= 2;

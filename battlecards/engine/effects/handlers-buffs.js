@@ -320,7 +320,9 @@ register('grant-next-class-free', ({ state, pi, target, source, enemies, scaled,
 
 register('buff-hand-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Voidgill: give all minions of a tribe in your hand +X/+X
-			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack = (c.attack || 0) + (e.attack || 0); c.maxHealth = (c.maxHealth || 0) + (e.health || 0); }
+			// Chum Bucket: "... Repeat for each Murloc you control." (repeatPerFriendlyTribe)
+			const times = 1 + (e.repeatPerFriendlyTribe ? state.players[pi].board.filter(c => !isDead(c) && c.type === 'creature' && (c.tribe || '').includes(e.repeatPerFriendlyTribe)).length : 0);
+			for (const c of state.players[pi].hand) if (c.type === 'creature' && (c.tribe || '').includes(e.tribe)) { c.attack = (c.attack || 0) + (e.attack || 0) * times; c.maxHealth = (c.maxHealth || 0) + (e.health || 0) * times; }
 });
 
 
@@ -1201,6 +1203,11 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 							&& ((c.tribe || '').includes(e.repeatPerFriendly)
 								|| c.name.includes(e.repeatPerFriendly))).length;
 					}
+					// Ring of Courage: "+1/+1. Repeat for each enemy creature." (bug 1793090559317)
+					if (e.repeatPerEnemy) for (const o of enemies) times += state.players[o].board.filter(c => !isDead(c) && c.type !== 'location').length;
+					// Blazing Power: "+1/+1. Repeat for each damaged friendly character." — valuePer
+					// counts the repeats (the chosen-creature branch used to ignore it: always +1/+1)
+					if (e.valuePer) times += scaled({ ...e, value: 1 }) || 0;
 					for (let i = 0; i < times; i++) buffCreature(t, e.attack, e.health);
 					if (e.grant && !t.keywords.includes(e.grant)) { t.keywords.push(e.grant); if (e.grant === KW.DIVINE_SHIELD) t.shield = true; } // Future Gnomeregan: +2/+1 and Divine Shield
 				}
