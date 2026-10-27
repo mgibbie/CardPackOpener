@@ -264,8 +264,8 @@ Upstream: InertSteak/Pokermon tag **3.9.1** (2026-09-18; needs Steamodded >= 26.
 upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9.1+r17` for the seals fix / the leftovers batch ("The 3.9.1 leftovers" below), `3.9.1+r18` for the Hazard
 follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), `3.9.1+r20` for the owner's
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
-for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), **`3.9.1+r24`** since the owner's
-Gulpin line ("The owner's Gulpin line" below)
+for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
+Gulpin line ("The owner's Gulpin line" below), **`3.9.1+r25`** since the owner's Trapinch line ("The owner's Trapinch line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2255,6 +2255,31 @@ has these species.
 - **Tests**: `micatro/tests/mods/pokermon_gulpin_test.mjs` (2 passed / 18 failed on origin/main, 59 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 34 defs), `micatro_mod_version_pin`.
 - **Fuzz**: vanilla identical (60 / 9722 / 13 / 17); Pokermon diverges at pool rolls, all ok (24 / 3414 -> 3714 / 13 / 6 -> 7); all mods 16 / 2966 / 13 / 5, all ok.
+
+### The owner's Trapinch line (2026-10-27, branch `feat/pokermon-trapinch-line`)
+Pinned **`3.9.1+r25`** (`contentRev: 25`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Trapinch (328) -> Vibrava (329) -> Flygon
+(330), Earth (Ground is Earth in Pokermon), in `jokers/pokejokers_designs.js` (LINE F5; 37 defs now), after Spinda in Pokédex order. Neither
+Nacho nor Pokermon+ has these species.
+- **Sand Pit** (Trapinch, U **$6**; Vibrava's "Supersonic"): every card the PLAYER discards permanently banks Chips on the joker (`sand_chips`):
+  +2 per card (Vibrava +3; `chip_mod`). A discard of N cards banks and counts N. Counted on `pre_discard` without `hook`: a discard an effect
+  makes for you (The Hook, Pokermon's seals, the Bunco / MoreFluff blinds — all `discard_cards_from_highlighted(true)`) banks and counts
+  nothing. Not Blueprint (it scales); a Blueprint copies the banked Chips. The joker gives the bank every hand.
+- **Evolution**: by discarded cards (`sand_cards`, scaling_evo at end of round): Trapinch at **40**, Vibrava after **60 more** (its count
+  starts over). The bank carries through both (`poke_custom_values_to_keep: ['sand_chips']`).
+- **Vibrava** (Safari **$8**): **+1 discard each round** while held (`d_size` in extra; the Charmander line's add_to_deck / remove_from_deck
+  pair: on gain +1 to `round_resets.discards` and +1 now; off on sale, destruction or evolution — set_ability runs the old center's
+  remove_from_deck across the swap). Fixed: `d_size` is never energized.
+- **Flygon** (Safari **$10**): keeps the whole bank and **banks no more** (the owner's default: its new power is the X Mult). Sandstorm
+  (`{C:poke_sand}`, the reserved weather colour's first use): **X(1 + 0.25 x discards used this round)** — `G.GAME.current_round.discards_used`,
+  so a discard use counts once however many cards, an effect discard never counts, and it is 0 again each round. No +1 discard.
+- **Energy**: the gains only. `chip_mod` +20% of its base per Energy: Trapinch +2.4 / +2.8 / +3.2 per card, Vibrava +3.6 / +4.2 / +4.8
+  (a Colorless counts half: +0.2 / +0.3); Flygon's `Xmult_mod` +20%: X0.3 / X0.35 / X0.4 per discard (+0.025 a Colorless). The bank
+  (`sand_chips`) is in no energy field, so Energy is never retroactive (a banked Chip keeps what it was worth when earned). Energy carries
+  through the evolutions (energy_count, re-applied to the new base gain).
+- **Art: upstream's own.** 3.9.1's pokespriteload.lua draws all three on the Natdex sheet ({24,21}, {26,21}, {28,21}, Shiny twins):
+  `poke_sprite391`. Nothing to deploy for the mod. The wiki drops them (409 missing).
+- **Tests**: `micatro/tests/mods/pokermon_trapinch_test.mjs` (2 passed / 16 failed on origin/main, 75 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 37 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (855 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

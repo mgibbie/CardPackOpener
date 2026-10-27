@@ -19,12 +19,15 @@
 // Negative Justice on each evolution; Colorless; contentRev 21) — upstream 3.9.1 draws them too (Natdex 14 / 16 / 18, 19).
 // Gulpin -> Swalot (Stockpile: each end of round swallows a held Hazard, else a held Diamond; +Mult on scored Diamonds; Swalot's $ by
 // rank and X Mult per card the deck has lost; Dark; contentRev 24) — upstream 3.9.1 draws them too (Natdex 0 / 2, 21).
+// Trapinch -> Vibrava -> Flygon (Sand Pit: each card you discard banks +2 / +3 Chips on the joker, evolving after 40 then 60 more;
+// Vibrava +1 discard; Flygon keeps the bank and gives X1 + 0.25 per discard used this round; Earth; contentRev 25) — upstream 3.9.1
+// draws them too (Natdex 24 / 26 / 28, 21).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed, energy_values, poke_remove_card, ease_dollars,
+  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -246,6 +249,46 @@ function swallow(card, context, swalot) {
   card_eval_status_text(card, 'extra', null, null, null, { message: room ? 'Stockpile!' : 'Swallow!', colour: 'MULT' });
   if (dollars > 0) { ease_dollars(dollars); card_eval_status_text(card, 'dollars', dollars); }
 }
+
+/** Vibrava: +d_size discards each round while held (the Charmander line's pair, pokejokers_01): on gain, and off again when sold,
+ *  destroyed or evolved (set_ability runs the old center's remove_from_deck across an evolution). */
+const discards = {
+  add_to_deck(self, card) { G.GAME.round_resets.discards = G.GAME.round_resets.discards + card.ability.extra.d_size; ease_discard(card.ability.extra.d_size); },
+  remove_from_deck(self, card) { G.GAME.round_resets.discards = G.GAME.round_resets.discards - card.ability.extra.d_size; ease_discard(-card.ability.extra.d_size); },
+};
+/** Trapinch / Vibrava, Sand Pit: every card the PLAYER discards (the pre_discard context of a real discard: `hook` is set by every
+ *  effect that discards for you — The Hook, Pokermon's seals, Bunco / MoreFluff blinds — and those don't count) banks +chip_mod Chips
+ *  on the joker (`sand_chips`, in no energy_values: a banked Chip keeps what it was worth when earned) and counts toward evolution
+ *  (`sand_cards`). A discard of N cards counts N. Not Blueprint (it scales). */
+function sand_pit(card, context) {
+  if (context.pre_discard && !context.hook && !context.blueprint && !context.retrigger_joker && context.full_hand && context.full_hand.length) {
+    const ex = card.ability.extra, n = context.full_hand.length;
+    let gained = 0;
+    scale_card(card, {
+      ref_value: 'sand_chips', scalar_value: 'chip_mod', scalar_factor: n, no_message: true,
+      operation: (t, k, v, change) => { t[k] = r3(v + change); gained = change; },
+    });
+    ex.sand_cards = (ex.sand_cards || 0) + n;
+    card_eval_status_text(card, 'extra', null, null, null, { message: a_chips(r3(gained)), colour: 'CHIPS' });
+  }
+  return undefined;
+}
+/** Trapinch / Vibrava / Flygon: the banked Chips, every hand (Blueprint copies them). */
+function sand_main(card, context) {
+  const ex = card.ability.extra;
+  if (!context.joker_main) return undefined;
+  const x = ex.Xmult_mod !== undefined ? sandstorm_x(ex) : 1;
+  const r = {};
+  if (ex.sand_chips > 0) r.chip_mod = ex.sand_chips;
+  if (x > 1) r.Xmult_mod = x;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(x) : a_chips(r.chip_mod);
+  r.colour = r.Xmult_mod ? 'XMULT' : 'CHIPS';
+  return r;
+}
+/** Flygon, Sandstorm: X(1 + Xmult_mod per discard used this round). A discard USE counts once however many cards it had; effect
+ *  discards (hook) never raise discards_used; it is 0 again each round (run.js new round). */
+const sandstorm_x = (ex) => r3(1 + ex.Xmult_mod * ((G.GAME && G.GAME.current_round && G.GAME.current_round.discards_used) || 0));
 
 /** Kubfu / Urshifu, training: X Mult grows on a hand of exactly 1 or exactly 5 scoring cards (Kubfu counts each school). */
 function training(card, context) {
@@ -918,6 +961,51 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F5: Trapinch -> Vibrava -> Flygon (Earth, Gen 3)
+  // The owner's design (2026-10-27): Sand Pit. Every card you discard (a real discard: not one an effect makes — `hook`) permanently
+  // banks Chips on the joker (`sand_chips`, in no energy_values, so a banked Chip keeps its worth and Energy is never retroactive),
+  // which it gives every hand. The gain per card is `chip_mod` (Energy +20% of its base each: Trapinch +0.4, Vibrava +0.6). The bank
+  // carries through both evolutions (poke_custom_values_to_keep); Energy too (energy_count, re-applied to the new base). Evolution by
+  // cards discarded (`sand_cards`, at end of round): 40, then 60 more (the count starts over).
+  // Trapinch 328: Uncommon $6; +2 Chips per discarded card.
+  trapinch: {
+    name: 'trapinch', poke_sprite391: sprite('Natdex', 24, 21),
+    config: { evo_rqmt: 40, extra: { sand_chips: 0, chip_mod: 2, sand_cards: 0 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'scaling', 'discard', 'scaling_evo'], poke_after: 'spinda',
+    poke_custom_values_to_keep: ['sand_chips'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.sand_chips), r3(ex.chip_mod), ex.sand_cards || 0, self.config.evo_rqmt] }; },
+    calculate(self, card, context) {
+      return sand_pit(card, context) || sand_main(card, context) || scaling_evo(self, card, context, 'j_poke_vibrava', card.ability.extra.sand_cards || 0, self.config.evo_rqmt);
+    },
+  },
+  // Vibrava 329: Safari $8. Trapinch's bank, +3 Chips per discarded card; Supersonic: +1 discard each round while held (fixed: d_size
+  // is never energized). Evolves after 60 more discarded cards.
+  vibrava: {
+    name: 'vibrava', poke_sprite391: sprite('Natdex', 26, 21),
+    config: { evo_rqmt: 60, extra: { sand_chips: 0, chip_mod: 3, sand_cards: 0, d_size: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'scaling', 'discard', 'scaling_evo'], poke_after: 'trapinch',
+    poke_custom_values_to_keep: ['sand_chips'],
+    ...discards,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.sand_chips), r3(ex.chip_mod), ex.sand_cards || 0, self.config.evo_rqmt, ex.d_size] }; },
+    calculate(self, card, context) {
+      return sand_pit(card, context) || sand_main(card, context) || scaling_evo(self, card, context, 'j_poke_flygon', card.ability.extra.sand_cards || 0, self.config.evo_rqmt);
+    },
+  },
+  // Flygon 330: Safari $10. Gives the whole bank (it banks no more: its power is the X Mult) and, Sandstorm, X(1 + 0.25 per discard
+  // used this round): a discard use counts once however many cards; it resets each round. `Xmult_mod` (Energy +20% of its base each:
+  // X0.3 / X0.35 / X0.4 per discard). No +1 discard (Vibrava's goes when it evolves).
+  flygon: {
+    name: 'flygon', poke_sprite391: sprite('Natdex', 28, 21),
+    config: { extra: { sand_chips: 0, Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'discard', 'reset'], poke_after: 'vibrava',
+    poke_custom_values_to_keep: ['sand_chips'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.sand_chips), r3(ex.Xmult_mod), sandstorm_x(ex)] }; },
+    calculate(self, card, context) { return sand_main(card, context); },
+  },
+
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -963,6 +1051,7 @@ export const DESIGN_FAMILIES = [
   ['sprigatito', 'floragato', 'meowscarada'],
   ['whismur', 'loudred', 'exploud'],
   ['gulpin', 'swalot'],
+  ['trapinch', 'vibrava', 'flygon'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -980,6 +1069,8 @@ const SWALLOW = (money) => ['At end of round, swallow (destroy)', 'a {C:attentio
   ...(money ? ['and earn {C:money}${} equal to its rank', '{C:inactive,s:0.8}(J 11, Q 12, K 13, A 14)'] : []), '{C:inactive}(Currently {C:attention}#1#{C:inactive}/#2# Stockpile)'];
 const STOCK_MULT = ['Scored {C:diamonds}Diamond{} cards give', '{C:mult}+#3#{} Mult per Stockpile', '{C:inactive}(Currently {C:mult}+#4#{C:inactive} Mult)'];
 const STOCK_ENERGY = '{C:inactive,s:0.8}(Each Energy: +1 max Stockpile)';
+const SAND_PIT = (name) => ['{C:attention}' + name + ':{} each card you', 'discard permanently adds', '{C:chips}+#2#{} Chips to this Joker', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)'];
+const SAND_EVO = ['{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} discarded cards)', '{C:inactive,s:0.8}(Discarded: #3#/#4#)'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -1065,6 +1156,15 @@ export const DESIGN_LOC = {
       [...SWALLOW(true), STOCK_ENERGY],
       STOCK_MULT,
       ['{X:mult,C:white} X#5# {} Mult for each card', 'below your starting deck size', '{C:inactive}(Currently {X:mult,C:white} X#6# {C:inactive} Mult)'],
+    ] },
+    j_poke_trapinch: { name: 'Trapinch', text: [...SAND_PIT('Sand Pit'), ...SAND_EVO] },
+    j_poke_vibrava: { name: 'Vibrava', text: [
+      ['{C:red}+#5#{} discard each round'],
+      [...SAND_PIT('Supersonic'), ...SAND_EVO],
+    ] },
+    j_poke_flygon: { name: 'Flygon', text: [
+      ['{C:chips}+#1#{} Chips {C:inactive}(kept from Vibrava)'],
+      ['{C:poke_sand}Sandstorm:{} {X:mult,C:white} X#2# {} Mult for', 'each discard used this round', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
     j_poke_mudbray: { name: 'Mudbray', text: ['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
     j_poke_mudsdale: { name: 'Mudsdale', text: [

@@ -208,6 +208,8 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
                 "(Evolves after triggering N times)" (17). There are also bespoke counts:
                 "after earning $16", "after playing 6 Full Houses", "after scoring 15 Gold
                 cards", "after using 20 consumables", "after rerolling 7 times".
+                House: "after 40 discarded cards" (Trapinch; Vibrava 60 more), counting each card a
+                player discard holds, with a "(Discarded: k/40)" progress line.
   item_evo      An evolution Item sets extra.evolve, and the joker evolves at the end of the next
                 round. item_req names the item.
                   Linking Cord (all 10 trade evolutions)   Moon Stone (7)   Dusk Stone (5)
@@ -318,6 +320,10 @@ Designer consequences:
      +24 Chips on the cards it retriggers).
   3. Scaling jokers whose accumulator starts at 0 (mult: 0) gain only through their _mod field.
   4. precise_energy (default ON) keeps fractional values.
+  5. A BANKED total (house pattern: Whismur's glass_chips, Trapinch's sand_chips) lives in a field
+     energize ignores, with its gain in an energy field (chip_mod / mult_mod / Xmult_mod). Energy
+     then raises only future gains, never what is already banked (not retroactive), and the bank
+     carries through evolution by poke_custom_values_to_keep.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
@@ -522,8 +528,9 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
   {C:purple}       Foresight (vanilla purple)
   {C:poke_bird}    Missingno
   {C:poke_pocket}  Pocket Packs
-  poke_sun, poke_rain, poke_sand, poke_snow: defined in 3.9.1 but used by no text or joker
-    yet. They are a reserved slot for weather designs (Castform, Kyogre/Groudon, Hippowdon).
+  poke_sun, poke_rain, poke_sand, poke_snow: defined in 3.9.1 for weather designs (Castform,
+    Kyogre/Groudon, Hippowdon). poke_sand's first use is the owner's Flygon ("{C:poke_sand}Sandstorm:");
+    the other three are still unused.
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
   green 77, dark_edition 49.
@@ -1037,6 +1044,8 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
     - Ancient ranks (Kabuto, Aerodactyl, Relicanth, Nacho's Cranidos and Shieldon).
     - Cards with no rank held (Roggenrola line).
     - Held Diamonds or debuffed cards (Gligar, Gliscor).
+    - Discards that bank Chips (the owner's Trapinch line: +2 / +3 Chips per discarded card,
+      kept on the joker; Vibrava +1 discard; Flygon X1 + 0.25 per discard used this round).
 Hooks: individual 33, end_of_round 29, joker_main 26, before 14, repetition 13, add_to_deck 10,
   after 9, setting_blind 8
 Examples:
@@ -1055,8 +1064,10 @@ Typical numbers:
   Stage 1   +C 5-175~70 | X 1.5-2 | card +M 4-10~5 | card +C 16-24 | gain +C 1-40 | gain X 0.4
   Stage 2   +C 275 (Golem) | X 4 (Pokermon+'s Garganacl) | card +M 15 | gain +M 2-7
 Under-explored:
-  - Money (4), consumables, discards (4).
-  - Sand and weather: the poke_sand colour is reserved (Hippowdon, Sandaconda).
+  - Money (4), consumables. Discards are partly used now (the Trapinch line: Chips per card
+    discarded, X per discard used); discards for money, Mult or Stone/Hazard making are still open.
+  - Sand and weather: poke_sand is used once (Flygon's Sandstorm); a real weather system
+    (Hippowdon, Sandaconda, a sand "field" state) is still open.
   - Earth-type synergy (only Rhyperior).
   - Missing fossils (Tirtouga, Archen, Tyrunt, Amaura, the Galar fossils) belong in Ancient.
   - 43 missing species: Earth is the 4th largest gap.
