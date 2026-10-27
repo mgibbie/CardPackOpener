@@ -29,7 +29,7 @@ import {
 	checkGameOver, questTick, disguiseCreature,
 	spendMana, breakWeapon, resolveCombat, addCardToHand, syncCthun, degradeWeapon,
 	runBattlecry, kindredActive, firePonder,
-	applyRollEntry, targetSpec, legalTargets, runSpell,
+	applyRollEntry, targetSpec, legalTargets, runSpell, copyDefOf,
 	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
 } from '../../engine.js';
@@ -536,7 +536,7 @@ register('remove-colossal-keyword', ({ state, pi, target, source, enemies, scale
 register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ini Stormcoil: summon a copy of a chosen friendly minion with granted keywords
 			const t = chosenCreature();
-			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } if (e.grantFragile) c.diesToAnyDamage = true; } } } // Aman'Thul (Shape the Stars): copy with +2/+2; Reverberations: fragile copy
+			if (t) { const base = copyDefOf(state, t); if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } if (e.grantFragile) c.diesToAnyDamage = true; } } } // Aman'Thul (Shape the Stars): copy with +2/+2; Reverberations: fragile copy
 } });
 
 

@@ -4,7 +4,7 @@ import { register } from './registry.js';
 import {
 	emit, instantiate, hp, isDead, opponentsOf, summon, recomputeAuras, sweepDeaths,
 	MAX_HAND, breakWeapon, isSpellType, targetSpec, legalTargets, runSpell,
-	addManaCrystal,
+	addManaCrystal, copyDefOf,
 } from '../../engine.js';
 import { gainArmor } from '../damage.js';
 
@@ -157,7 +157,7 @@ register('fill-board-copies-of-target', ({ state, pi, target, source, enemies, s
 	// creature (1/1 copies keep the id/keywords, lose the buffs)
 	const t = chosenCreature();
 	if (!t) return;
-	const base = state.cardsById[t.id];
+	const base = copyDefOf(state, t);
 	const p = state.players[pi];
 	const cap = 7;
 	// bounded: a copy that doesn't "stick" (dies on summon, or is a location so it

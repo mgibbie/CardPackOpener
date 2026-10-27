@@ -325,5 +325,63 @@ const CARD_TYPES = new Set(['creature', 'sorcery', 'instant', 'weapon', 'land', 
 	ok('guard: every collectible spell with a single-target effect asks for its target', silent.length === 0, silent.slice(0, 15).join(' '));
 }
 
+// ---------- guard 2b: the same, for EVERY spell — tokens, run-mode treasures, untargeted effects ----------
+// (2026-10-27c: Shadow Word: Void and Holy Book are Duels treasures — `token` — so guard 2 never
+// looked; and their effect carried no `target` at all, so the SINGLE-target filter never matched.)
+// A handler that bails the moment it has no chosen creature is a silent fizzle without a prompt.
+{
+	const BAILS = src => /const (\w+) = chosenCreature\(\);\s*(\/\/[^\n]*\s*)*if \(!\1( \|\||\))[^\n]*return/.test(src);
+	const PLURAL = e => e.all || (e.target && !['creature', 'enemy-creature', 'friendly-creature', 'any', 'enemy-any', 'friendly-any'].includes(e.target));
+	const st = fresh(); put(st, 0, '_bear').damage = 1; put(st, 1, '_bear').damage = 1;
+	const silent = [];
+	let n = 0;
+	for (const d of raw.cards) {
+		if (!isSpell(d)) continue;
+		const lists = d.choices ? d.choices.map((c, i) => [i, c.effects || []]) : [[null, d.effects || []]];
+		for (const [ch, effs] of lists) {
+			const reads = effs.filter(e => !PLURAL(e) && getEffectHandler(e.type) && BAILS(getEffectHandler(e.type).toString()));
+			if (!reads.length) continue;
+			n++;
+			if (!E.targetSpec(st, 0, E.instantiate(d, 0), ch)) silent.push(`${d.id}(${reads.map(e => e.type).join(',')})`);
+		}
+	}
+	ok(`guard: all ${n} spells (tokens/treasures too) whose effect needs a chosen creature ask for one`, n > 20 && silent.length === 0, silent.slice(0, 15).join(' '));
+}
+
+// ---------- guard 3: "a copy of it" works on a TOKEN, not only on a printed card ----------
+// (2026-10-27c Germination on Thor's Wolf: the copy handlers looked the target up in cards.json,
+// and a token has no entry — 4 mana, nothing.) Fires every card whose effect copies a chosen
+// creature on a real card and on a token twin; the battlefield must end up the same.
+{
+	const COPIES = src => /chosenCreature\(\)/.test(src) && /cardsById\[/.test(src);
+	// by design a token that LEAVES play is gone (blink / destroy-then-return) and a deck holds card ids
+	const BY_DESIGN = new Set(['blink', 'destroy-and-remember', 'resummon-remembered', 'summon-copies-from-deck']);
+	const tokenOf = (st, pi) => { const c = E.summon(st, pi, { id: 'token_bear', name: 'Bear', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 2, health: 2, tribe: 'Beast Mech Undead Protoss', description: 'A 2/2 Bear.' }); c.sick = false; return c; };
+	byId._tbear = { id: '_tbear', name: 'Bear', type: 'creature', cost: 2, attack: 2, health: 2, rarity: 'common', cardClass: 'neutral', description: 'test', tribe: 'Beast Mech Undead Protoss' };
+	const broken = [];
+	let n = 0;
+	for (const d of raw.cards) {
+		if (!(isSpell(d) || d.type === 'creature') || d.choices || !Array.isArray(d.effects)) continue;
+		const types = d.effects.map(e => e.type);
+		if (types.some(t => BY_DESIGN.has(t)) || !types.some(t => getEffectHandler(t) && COPIES(getEffectHandler(t).toString()))) continue;
+		const run = tok => {
+			const st = fresh(); st.players[0].corpses = 10;
+			const t = tok ? tokenOf(st, 0) : put(st, 0, '_tbear');
+			if (tok) tokenOf(st, 1); else put(st, 1, '_tbear');
+			const c = give(st, 0, d.id);
+			const spec = E.targetSpec(st, 0, c);
+			if (!spec || !['friendly-creature', 'creature'].includes(spec.targets)) return null;
+			E.playCard(st, 0, c.uid, tc(t), null, null); E.sweepDeaths(st);
+			return st.players.map(p => p.board.filter(x => !E.isDead(x)).length).join('|');
+		};
+		let a, b;
+		try { a = run(false); b = run(true); } catch (err) { broken.push(`${d.id}(threw ${err.message})`); continue; }
+		if (a == null) continue;
+		n++;
+		if (a !== b) broken.push(`${d.id}(card ${a} vs token ${b})`);
+	}
+	ok(`guard: all ${n} "copy a chosen creature" cards copy a token the same as a card`, n > 20 && broken.length === 0, broken.slice(0, 12).join(' '));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

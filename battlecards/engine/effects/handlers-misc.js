@@ -84,6 +84,7 @@ import {
 	applyRollEntry, targetSpec, legalTargets, runSpell,
 	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
+	copyDefOf,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
 import { gainArmor } from '../damage.js';
@@ -2458,15 +2459,15 @@ register('damage-frozen', ({ state, source }, e) => {
 register('summon-enemy-minion-copy', ({ state, pi, chosenCreature }, e) => {
 	// Sensory Deprivation: create a copy of the chosen enemy creature (stats from e if given)
 	const t = chosenCreature();
-	if (!t || t.controller === pi || !state.cardsById[t.id]) return;
-	const cp = summon(state, pi, state.cardsById[t.id]);
+	if (!t || t.controller === pi) return;
+	const cp = summon(state, pi, copyDefOf(state, t));
 	if (cp && (e.attack != null || e.health != null)) { if (e.attack != null) cp.attack = e.attack; if (e.health != null) cp.maxHealth = e.health; emit(state, { type: 'buff', uid: cp.uid, attack: cp.attack, hp: hp(cp) }); }
 });
 register('summon-copy-attack-die', ({ state, pi, chosenCreature }, e) => {
 	// Wreck'em and Deck'em: a copy of the chosen friendly Mech attacks a random enemy, then dies
 	const m = chosenCreature();
-	if (!m || m.controller !== pi || (e.tribe && !(m.tribe || '').includes(e.tribe)) || !state.cardsById[m.id]) return;
-	const copy = summon(state, pi, state.cardsById[m.id]);
+	if (!m || m.controller !== pi || (e.tribe && !(m.tribe || '').includes(e.tribe))) return;
+	const copy = summon(state, pi, copyDefOf(state, m));
 	if (!copy) return;
 	copy.sick = false;
 	const foes = [];
@@ -3570,9 +3571,10 @@ register('stalking-pride', ({ state, pi }, e) => {
 // Acquired Allies: bounce a chosen minion to its owner's hand, then shuffle two copies of it into YOUR deck
 register('acquired-allies', ({ state, pi, chosenCreature }, e) => {
 	const t = chosenCreature();
-	if (!t || isDead(t) || !state.cardsById[t.id]) return;
+	if (!t || isDead(t)) return;
 	const id = t.id;
-	bouncePermanent(state, t.controller, t);
+	bouncePermanent(state, t.controller, t); // a token still leaves play (it just has no card to copy)
+	if (!state.cardsById[id]) return;
 	const p = state.players[pi];
 	for (let n = 0; n < (e.count || 2); n++) p.deck.push(id);
 	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }

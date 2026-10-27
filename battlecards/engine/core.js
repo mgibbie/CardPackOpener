@@ -1233,6 +1233,27 @@ export function applySummonReactors(state, pi, c) {
 	}
 }
 
+// The def to build a "copy of a creature" from. A real card copies its printed
+// card; a TOKEN (Wolf, Doombot, Voidfiend...) has no cards.json entry, so every
+// "create a copy of it" handler that looked the id up silently did nothing on one
+// (Germination on a Thor Wolf, 2026-10-27). Rebuild the token's printed form
+// from the instance instead: its printed stats, its own (non-aura) keywords,
+// its text, and the copy stays a token.
+export function copyDefOf(state, c) {
+	if (!c) return null;
+	const def = state.cardsById && state.cardsById[c.id];
+	if (def) return def;
+	const clone = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
+	const aura = c.auraKeywords || [];
+	return {
+		id: c.id, name: c.name, type: c.type || 'creature', cardClass: c.cardClass || 'neutral',
+		cost: c.cost || 0, rarity: c.rarity || 'common', description: c.description || '', token: true,
+		attack: c.printedAttack ?? c.attack ?? 0, health: c.printedHealth ?? c.maxHealth ?? 1,
+		keywords: (c.keywords || []).filter(k => !aura.includes(k)), tribe: c.tribe || null,
+		deathrattle: clone(c.deathrattle), ongoing: clone(c.ongoing), effects: clone(c.effects),
+	};
+}
+
 // the Creatures row has no size cap; only eliminated players can't summon
 export function summon(state, pi, tokenDef) {
 	const p = state.players[pi];
