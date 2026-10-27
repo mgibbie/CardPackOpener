@@ -329,7 +329,9 @@ let _lastPushedRunJson = '';
 // copy or the run has ended — see onRunWriteReply), or a definitive error (bad
 // key / too large). Resolves with that answer, or null when every try failed.
 const RUN_WRITE_BACKOFF = [1000, 2000, 4000, 8000, 16000];
-const isTransientRunReply = d => !d || (d.error && /slow down|bad response/i.test(String(d.error)));
+// transient = no answer at all (network error / timeout), a 429 "slow down", a 503
+// "busy, retry", or a garbled reply (a 5xx HTML error page -> mpmode's 'bad response')
+const isTransientRunReply = d => !d || (!d.ok && !d.stale && d.error && /slow down|bad response|busy|retry|try again/i.test(String(d.error)));
 async function runWrite(action, payload, opts = {}) {
 	const waits = opts.backoff || RUN_WRITE_BACKOFF;
 	for (let i = 0; ; i++) {
@@ -343,15 +345,38 @@ async function runWrite(action, payload, opts = {}) {
 // What a run-save's answer means for the run in this tab. Every failure used to
 // be swallowed (`.catch(() => {})` on a reply that never throws), so a refused or
 // lost save left the server behind with nobody the wiser.
+//
+// A TRANSIENT failure (no answer, 429, 503, a garbled 5xx page) is not a refusal: the
+// heartbeat resends it 5 s later, so one blip says nothing (bug:1793106175884 — a single
+// garbled heartbeat reply showed "The server would not save your run: bad response"
+// although the next heartbeat saved it). It is still never silent: a RESULT whose
+// retries are all spent, or RUN_SYNC_WARN_AFTER heartbeats in a row, warn — as a
+// connection problem, not a refusal — and the first save that lands after any warning
+// says so, so the warning never outlives the problem.
+const RUN_SYNC_WARN_AFTER = 3;
+let _runSyncFails = 0;
 function onRunWriteReply(key, sent, json, d, mustLand) {
 	const ok = !!(d && d.ok);
 	if (!ok && _lastPushedRunJson === json) _lastPushedRunJson = ''; // not on the server: the next heartbeat resends it
-	if (ok || !d) {
-		// a lost heartbeat is simply resent next tick; a lost RESULT (all its retries spent) is said out loud
-		if (!d && mustLand && _runSyncWarned !== 'lost') { _runSyncWarned = 'lost'; banner('⚠ Could not reach the server to save this result — still trying. Keep this tab open.', 5000); try { window.reportErr?.('run result could not reach the server (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ } }
-		else if (ok) _runSyncWarned = '';
+	if (ok) {
+		_runSyncFails = 0;
+		if (_runSyncWarned === 'lost' || _runSyncWarned === 'offline' || _runSyncWarned === 'error') banner('✓ Your run is saved on the server again.', 4000);
+		_runSyncWarned = '';
 		return;
 	}
+	if (isTransientRunReply(d)) {
+		_runSyncFails++;
+		if (mustLand) {
+			// runWrite already spent every retry on this RESULT: say it out loud
+			if (_runSyncWarned !== 'lost') { _runSyncWarned = 'lost'; banner('⚠ Could not reach the server to save this result — still trying. Keep this tab open.', 5000); try { window.reportErr?.('run result could not reach the server (' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ } }
+		} else if (_runSyncFails >= RUN_SYNC_WARN_AFTER && !_runSyncWarned) {
+			_runSyncWarned = 'offline';
+			banner('⚠ Having trouble reaching the server — your run is kept on this device and saving is still being retried.', 6000);
+			try { window.reportErr?.('run save: server unreachable for ' + _runSyncFails + ' heartbeats (' + (d && d.error ? String(d.error).slice(0, 40) : 'no answer') + ', ' + key + ')', 'game.js onRunWriteReply'); } catch (e) { /* ignore */ }
+		}
+		return;
+	}
+	_runSyncFails = 0;   // the server answered: whatever it said, it is reachable
 	const local = safeLoad(key, null);
 	const sameRun = !!(local && sent && local.runId && String(local.runId) === String(sent.runId));
 	if (d.stale && d.ended) { if (sameRun) runEndedOnServer(key, local); return; }
