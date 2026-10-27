@@ -217,9 +217,15 @@ export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
       try {
         const c = document.createElement('canvas');
         c.width = r.sw; c.height = r.sh;
-        c.getContext('2d').drawImage(src, r.sx, r.sy, r.sw, r.sh, 0, 0, r.sw, r.sh);
-        crops.set(key, c);
-        while (crops.size > cropCap) crops.delete(crops.keys().next().value);
+        const cx = c.getContext('2d');
+        cx.drawImage(src, r.sx, r.sy, r.sw, r.sh, 0, 0, r.sw, r.sh);
+        // a crop that came out empty isn't kept: the image may not have been drawable just then (an iPhone under memory
+        // pressure draws nothing), and a cached empty crop would leave the card blank for good — the next draw (the
+        // face's blank retry, cardsprite.js) crops it again, as the whole-sheet path redraws from the sheet
+        if (!cropEmpty(cx, r.sw, r.sh)) {
+          crops.set(key, c);
+          while (crops.size > cropCap) crops.delete(crops.keys().next().value);
+        }
         src = c;
       } catch (e) { /* draw from the sheet */ }
     }
@@ -229,6 +235,14 @@ export function drawModCell(ctx, atlas, pos, dx, dy, dw, dh, frame = 0) {
     else ctx.drawImage(src, r.sx, r.sy, r.sw, r.sh, dx, dy, dw ?? r.sw, dh ?? r.sh);
   } catch (e) { return false; }
   return true;
+}
+/** Did a crop draw no pixels at all? (false when it can't be read: kept as drawn) */
+function cropEmpty(cx, w, h) {
+  try {
+    const d = cx.getImageData(0, 0, w, h).data;
+    for (let i = 3; i < d.length; i += 4) if (d[i]) return false;
+    return true;
+  } catch (e) { return false; }
 }
 /*
  * Cell crops. Every cell of a pre-split sheet (below: Pokermon's Natdex joker sheet is 4260 x 13110 px = 213 MB decoded,
@@ -246,6 +260,8 @@ let cropping = 0, cropCap = GAME_CROPS;
 let blocksOn = true;
 /** Tests: false draws every cell from its whole sheet again (the reference the blocks are checked against). */
 export function setModBlocks(on) { blocksOn = !!on; crops.clear(); }
+/** Tests: forget every crop (as when a phone drops its canvases): the next draws crop again from the blocks / sheets. */
+export function dropModCrops() { crops.clear(); }
 /*
  * Blocks in a run: a block (~1.5 MB decoded) is only needed while its cells are cropped. The last few used stay decoded
  * (the cards of one shop / pack / collection page and an animation's next frames often share one), the rest are let
@@ -292,6 +308,9 @@ function blockOf(r, atlas) {
   if (splitBroken.has(r.atlas)) return null;
   const sp = sheetSplit(r.atlas);
   if (!sp) return null;
+  // (a cell outside the sheet — a placeholder pos like Pokermon's {x: 99, y: 99} — has no block: the whole sheet draws
+  // nothing there either, so it's empty, never a request for a block that doesn't exist)
+  if (r.sx >= sp.w || r.sy >= sp.h || r.sx + r.sw <= 0 || r.sy + r.sh <= 0) return { empty: true };
   const bx = Math.floor(r.sx / sp.bw), by = Math.floor(r.sy / sp.bh);
   if (r.sx + r.sw > (bx + 1) * sp.bw || r.sy + r.sh > (by + 1) * sp.bh) return null;   // (straddles two blocks)
   const id = bx + '_' + by;

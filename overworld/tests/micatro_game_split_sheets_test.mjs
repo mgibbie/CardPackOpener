@@ -237,6 +237,21 @@ try {
 	A(!px.error && px.blank.length === 0, 'pixel: every sample drew art (none blank)', JSON.stringify(px.blank));
 	A(!px.error && px.off.length === 0 && px.exact >= 20, `pixel: drawn from blocks == drawn from the whole sheets: ${px.exact} of ${px.n} bit-identical (every card face, soul, half size), odd-scale thumbnails within rounding`, JSON.stringify({ off: px.off, close: px.close }));
 	A(!px.error && px.fromBlocks === 0 && px.sheetsUsed.some((n) => /Natdex/.test(n)), 'pixel: the block pass decoded no whole split sheet; the reference pass did (Natdex)', JSON.stringify({ fromBlocks: px.fromBlocks, sheets: px.sheetsUsed }));
+	// ---- a cell outside its sheet (a placeholder pos: Pokermon draws some jokers at {x: 99, y: 99}) has no block: it draws
+	// nothing, like the whole sheet there, and never requests a block that doesn't exist (a 404 that marked the whole sheet
+	// broken, so every card of it drew from the 213 MB sheet again)
+	const oob = await page.evaluate(async () => {
+		const As = await import('/micatro/js/ui/assets.js');
+		const atlas = Object.keys(As.MODREG.atlases).find((n) => /\/AtlasJokersBasicNatdex\.png$/.test(decodeURIComponent(As.MODREG.atlases[n].src || '')));
+		if (!atlas) return { error: 'no Natdex atlas' };
+		const c = document.createElement('canvas'); c.width = 142; c.height = 190;
+		const drew = As.drawModCell(c.getContext('2d'), atlas, { x: 99, y: 99 }, 0, 0, 142, 190);
+		await new Promise((r) => setTimeout(r, 500));
+		const asked = performance.getEntriesByType('resource').map((e) => decodeURIComponent(e.name)).filter((u) => /\/_split\/AtlasJokersBasicNatdex\/\d+_\d+\.png/.test(u))
+			.filter((u) => { const [, bx, by] = u.match(/\/(\d+)_(\d+)\.png/); return bx * 994 >= 4260 || by * 380 >= 13110; });
+		return { atlas, drew, loading: As.modArtLoading(atlas), asked, broken: As.modSheetStats().splitBroken };
+	});
+	A(!oob.error && oob.drew === true && !oob.loading && oob.asked.length === 0 && oob.broken.length === 0, 'a cell outside its sheet draws as empty and requests no block (none past the sheet asked for; the sheet is not marked broken, which would decode it whole)', JSON.stringify(oob));
 	A(errors.length === 0, 'no console errors', errors.join(' | '));
 
 	// ---- the blocks aren't there (a mod not split yet, blocks not deployed): the whole sheet, the same picture
