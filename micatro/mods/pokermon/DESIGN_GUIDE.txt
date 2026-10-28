@@ -117,8 +117,8 @@ Missing by stage:
 
 Notable gaps:
   - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
-    by Nacho (the Turtwig, Chimchar and Piplup lines). Built since: Grookey (the owner's), the
-    Gen 8 Scorbunny and Sobble lines (the starters spec; the house pattern in 2.1).
+    by Nacho (the Turtwig, Chimchar and Piplup lines). Gen 7 (Rowlet, Litten, Popplio) and Gen 8
+    (Scorbunny, Sobble; Grookey is the owner's) are now built to the starter template (2.2).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -499,26 +499,6 @@ House pattern: a LEGENDARY THAT HATCHES ANOTHER JOKER (the owner's Manaphy, Egg 
   - The hatchling is a real joker of its own (Phione: +6 Mult per Water Joker, Legendary $20 too), a weaker cousin of the parent's effect
     (Manaphy: X1.2 per Water Joker), so the two build the same team instead of stacking a second copy of one number. No family: it never
     evolves into the parent.
-House pattern: a GEN 5-9 STARTER LINE (the starters spec, 2026-10-28; Gen 8's Scorbunny and Sobble lines, contentRev 48,
-jokers/pokejokers_designs.js libero_mult / unscored_chips / snipe_target):
-  - The type perk at EVERY stage, from the shared add/remove pairs: Grass +1 hand size (`hand_size`), Fire +1 discard (`discards`, the
-    Charmander pair), Water +1 hand (`hands`, the Squirtle pair). An evolution runs the old center's remove_from_deck and the new one's
-    add_to_deck, so the perk stays +1 (never +2). d_size / hands / h_size are never energized.
-  - Basic Uncommon $5 with starter: true AND 'starter' in attributes (starter_lists reads `starter` + the ptype: the Starter Pack's Grass /
-    Fire / Water slot). Only the Basic sets starter: true, so the pack never offers a Stage 1 / 2; they keep 'starter' in attributes (as
-    Grookey's). Stage 1 Safari $8, Stage 2 Safari $10. Evolution by rounds, 5 then 5 (level_evo; the Johto starters' timers).
-  - Energy raises the line's one main number only (mult +40%, chips +30%, a joker-wide X per thing `Xmult_mod` +20%, a per-card X
-    `Xmult_multi` +5%); evolution re-applies the count to the next base (Scorbunny 1 Energy +4.2 -> Raboot +7 -> Cinderace X0.6).
-  - PER DISCARD LEFT (Scorbunny +3 / Raboot +5 Mult, Cinderace X(1 + 0.5 each)): read at joker_main (Cyndaquil's cynda_calc), so the
-    joker's own +1 discard counts while unused, and 0 left gives nothing. The Fire pitfall applies: Cinderace with the Red Deck is X3.5
-    untouched, and every discard source (Drunkard, Wasteful) adds X0.5. It pulls against Fire's discard payoffs (Torchic, Trapinch), a
-    real choice rather than a stack.
-  - UNSCORED PLAYED CARDS (Sobble +20 / Drizzile +35 Chips each): context.full_hand minus context.scoring_hand, in joker_main. A debuffed
-    card outside the scoring hand counts; a debuffed card INSIDE it is part of the scoring hand and doesn't; Splash (every card scores)
-    turns it off, Stone cards always score. It rewards padding a Pair / High Card with kickers, the opposite of Flush / Straight.
-  - ONE TARGET PER HAND (Inteleon's Snipe Shot X2 on the highest-ranked scored card): pick among the scored cards that can score (not
-    debuffed, not rankless), Ace high, a tie the LEFTMOST (the first to score); re-read on every individual call, so a retrigger of the
-    target hits again and nothing else does. A per-card X goes in `Xmult_multi` (+5%: X2.1 / 2.2 / 2.3), even though only one card fires.
   - Per-joker "each Water Joker gives" uses the other_joker context (Baseball Card's, Blaziken's: each joker shows its own bonus), with
     is_type and !debuff, itself included. A per-joker X is Xmult_multi (+5%), a per-joker Mult is mult (+40%).
 
@@ -608,6 +588,27 @@ The wiki's default guesses follow the same modes:
 
 Common deviations:
   - Starters: Basic U $5-$6 with the 'starter' attribute.
+    House pattern: a STARTER LINE (the Gen 7 lines, jokers/pokejokers_designs.js "the Gen 7 starters"; the template for Gens 5-9):
+      - The type perk at EVERY stage, fixed (never in energy_values): Grass +1 hand size (h_size, Bulbasaur's add/remove), Fire +1
+        discard (d_size, Charmander's), Water +1 hand (hands, Squirtle's). An evolution's set_ability takes the old stage's perk back
+        and gives the new one's, so it stays exactly +1.
+      - Basic Uncommon $5 with BOTH starter: true (the Starter Pack's typed slot, boosters/packs1.js starter_lists) and the 'starter'
+        attribute; Stage 1 Safari $8 and Stage 2 Safari $10 keep the attribute but not starter: true (never Starter Pack picks).
+      - Evolution by rounds, 5 then 5 (level_evo). The older starters evolve by scaling (Bulbasaur's $16, Charmander's +16 Mult) or
+        by triggers (the owner's Grookey / Sprigatito); rounds are Nacho's Turtwig / Piplup shape.
+      - Each line has ONE main number that Energy raises at the standard share; a stage whose own effect has no number (Rowlet /
+        Dartrix: retriggers only) carries the last stage's field ("Energy carries to Decidueye": the Combee pattern, 2.4 #8).
+      - Shapes used by Gen 7: the RIGHTMOST scored card (position in the scoring hand, as the Shellos line's East Sea: a debuffed card
+        there gets nothing, the end never shifts inward) retriggered 1 / 2 / 2 times, with a per-card X (Xmult_multi) on the last
+        stage, which multiplies with its own retriggers (X1.3^3); HANDS ALREADY PLAYED THIS ROUND (current_round.hands_played,
+        still the pre-hand count while a hand scores, so the round's first hand counts 0: say "already played" on the card); a SUIT
+        rider (scored Hearts +Mult, then a per-card X).
+      - Shapes used by Gen 8 (Scorbunny / Sobble; jokers/pokejokers_designs.js libero_mult / unscored_chips / snipe_target): PER DISCARD
+        LEFT (+3 / +5 Mult, then X(1 + 0.5 each); read at joker_main as Cyndaquil, so the joker's own unused discard counts; Cinderace is
+        X3.5 on the Red Deck untouched and every discard source adds X0.5); UNSCORED PLAYED CARDS (+20 / +35 Chips each: full_hand minus
+        scoring_hand; a debuffed kicker counts, a debuffed card in the scoring hand doesn't; Splash turns it off); ONE TARGET PER HAND
+        (Inteleon X2 on the highest-ranked scored card that can score, not debuffed or rankless, a tie the LEFTMOST; re-read on every
+        individual call, so the target's retriggers hit again; a per-card X in Xmult_multi, X2.1 / 2.2 / 2.3 with Energy).
   - Early-evolving bugs: Caterpie and Weedle are C $2; their Stage 1 is C $4 and their
     Stage 2 is U $5 and shop-able.
   - Pre-evolutions too weak alone are cheap (Magikarp C $2, Feebas R $3).
@@ -1035,7 +1036,7 @@ Identity: the "economy and hand" type.
   out:   +Mult 30, $ 28, +Chips 23, X 14, retrigger 5
   Also:  hand size 22, enhancements 28 (Seed/Flower 12, Wild 6, Lucky, Glass), probability 19,
          Nature 8, Hazards 6
-  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig).
+  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig, Rowlet).
   Grass is where money comes from cards held in hand (Bulbasaur, Chikorita, Treecko), where
   sell value grows (Smoliv line), and where Seeds grow.
   The owner's Burmy line is Grass by default (Plant Burmy +5 Mult; Plant Wormadam, scored unenhanced
@@ -1060,6 +1061,8 @@ Examples:
   Owner's Combee (C $5): Honey Gather, the Jokers directly left and right gain +$1 sell value each
                      round (5 rounds). Vespiquen +$2; Attack Order X(1 + 0.1 per $ of those two
                      Jokers' sell value), max X3.
+  Rowlet (U $5)      +1 hand size; the rightmost scored card retriggers once (5 rounds). Dartrix
+                     twice; Decidueye (Spirit Shackle) twice and X1.3 each time it scores.
   Owner's Carnivine (R $7): Flytrap, the first card you discard each round is devoured (destroyed:
                      "card destroyed" payoffs fire) and banks +4 Mult (the devour pattern, 2.1).
 Typical numbers:
@@ -1090,7 +1093,7 @@ Pitfalls:
 Identity: Mult and discards.
   out:   +Mult 19, X 15, +Chips 6, $ 4, retrigger 1
   Discards appear in 19 of 43 texts. Fire starters give +1 discard (Charmander, Cyndaquil,
-  Torchic, Chimchar; and Scorbunny's line, whose Mult / X scales with discards left).
+  Torchic, Chimchar, Litten, Scorbunny).
   Recurring shapes:
     - "Scale with remaining discards" (Cyndaquil line).
     - "Reward 0 discards remaining" (the Charmander line).
@@ -1108,6 +1111,10 @@ Examples:
                      Magmortar also gains X0.05 per discard used.
   Numel (C $6)       X3 Mult every 20 cards scored. Camerupt: X4, with Mult cards counted twice.
   Moltres (L $20)    Upgrades the first discarded poker hand each round by 3 levels.
+  Litten (U $5)      +1 discard; +2 Mult per hand already played this round (5 rounds).
+                     Torracat +4; Incineroar X0.25 per hand (X1 / 1.25 / 1.5 / 1.75).
+  Scorbunny (U $5)   +1 discard; +3 Mult per discard left (5 rounds). Raboot +5; Cinderace
+                     (Libero) X(1 + 0.5 per discard left).
 Typical numbers:
   Basic     +M 3-8~4 | +C 70 (Litleo) | X 3 (Numel) | gain +M 1-5 | gain +C 12
   Stage 1   +M 8 | +C 90 | X 1.5-4~3 | card X 2 | gain X 0.05-1
@@ -1117,8 +1124,8 @@ Under-explored:
   - Fire-type synergy: only Blaziken.
   - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
     few hands.
-  - The 5 missing Gen 5-9 Fire starter lines will all want to follow the "+1 discard" starter
-    rule.
+  - The Gen 5-9 Fire starter lines follow the "+1 discard" starter rule (Litten's line does:
+    the starter line pattern, 2.2).
 Pitfalls:
   - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
     vouchers, Mega Charizard Y's +5).
@@ -1153,6 +1160,10 @@ Examples:
   Magikarp (C $2)    +1 Chip, applies Splash, 8 rounds. Gyarados (S $10): a flat X2.5 Mult.
   Cloyster (S $8)    If the hand has 5 scoring cards, each has a 1 in 2 chance to retrigger.
   Staryu (C $4)      Diamonds give +1 Mult and $1 (Water Stone). Starmie: +2 Mult and $2.
+  Popplio (U $5)     +1 hand; scored Hearts give +3 Mult (5 rounds). Brionne +5; Primarina
+                     (Sparkling Aria) X1.2 per scored Heart.
+  Sobble (U $5)      +1 hand; +20 Chips per played card that doesn't score (5 rounds). Drizzile
+                     +35; Inteleon (Snipe Shot) X2 on the highest-ranked scored card.
   Owner's Finneon (C $5) +40 Chips on night hands (each round's 2nd / 4th: Lunatone / Solrock's cycle).
                      Lumineon (S $8): each scored card +15 Chips by night; with Lunatone by day too.
 Typical numbers:
