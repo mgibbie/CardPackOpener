@@ -55,8 +55,8 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 47 && PINS.modPin('pokermon') === '3.9.1+r47', 'Pokermon contentRev 47 (pin 3.9.1+r47; the Gen 7 starters; r46 the Lake trio, Cresselia, Manaphy and Phione; r45 the creation trio, Regigigas and Arceus; r44 the last Gen 4 regulars; r43 the Gible line; r42 the Stunky line; r41 the Burmy three-pile cloak; r40 the Shellos line; r39 the Cherubi line)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 47)', 'version stays 3.9.1: "3.9.1 (rev 47)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 48 && PINS.modPin('pokermon') === '3.9.1+r48', 'Pokermon contentRev 48 (pin 3.9.1+r48; the Gen 7 starters; r47 the Regigigas trio wake; r46 the Lake trio, Cresselia, Manaphy and Phione; r45 the creation trio, Regigigas and Arceus; r44 the last Gen 4 regulars; r43 the Gible line; r42 the Stunky line; r41 the Burmy three-pile cloak; r40 the Shellos line; r39 the Cherubi line)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 48)', 'version stays 3.9.1: "3.9.1 (rev 48)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
