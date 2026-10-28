@@ -33,6 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
+import { SEA_ATLAS, SEA_SPRITES } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -258,7 +259,9 @@ export function familyOf(d) {
 function cardOf(key, live) {
   const c = P_CENTERS[key];
   if (live && live.center === key) return { ...live, hl: false };
-  return { center: key, mod: c.mod, set: c.set, name: c.name, atlas: c.atlas, pos: c.pos, soul_pos: c.soul_pos };
+  // (the Shellos line: the family shown in the sea of the card it was opened from)
+  const sea = SEA_SPRITES[key] && live && live.poke && SEA_SPRITES[key][live.poke.form];
+  return { center: key, mod: c.mod, set: c.set, name: c.name, atlas: sea ? SEA_ATLAS : c.atlas, pos: sea || c.pos, soul_pos: c.soul_pos };
 }
 /** The Pokédex modal: the family as cards; pick one to read it. api = {modal, cardCanvas, markup, esc, fmt}. */
 export function openPokedex(d, api) {
@@ -327,6 +330,9 @@ function ownFace(d0) {
   // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card
   const ds = d.center === 'j_poke_deoxys' && p && DEOXYS_SOULS[p.form];
   if (ds) return { ...d, soul_pos: ds };
+  // Shellos / Gastrodon (the owner's design): the West Sea's card (the Gen 4 sheet); East = its own card
+  const sea = p && SEA_SPRITES[d.center] && p.form === 'west' && SEA_SPRITES[d.center].west;
+  if (sea) return { ...d, atlas: SEA_ATLAS, pos: sea };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

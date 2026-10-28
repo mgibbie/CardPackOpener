@@ -889,7 +889,10 @@ export const POKERMON = registerMod({
   // 39 = the owner's Cherubi line (Cherubi -> Cherrim; jokers/pokejokers_designs.js): Sweet Seeds — a random unenhanced deck card becomes
   // a Seed when a Blind is selected, +1 growth level (Seeds bloom in 3 scores); Cherubi evolves after 2 blooms; Cherrim's Flower Gift
   // (Flowers need 3+ suits) and Sunshine Form (Flowers X2.5 instead of X2 while sunny: a red first deal, or Groudon held).
-  contentRev: 39,
+  // 40 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
+  // its art following; Tide Pool +40 Chips on the sea's end scored card (leftmost / rightmost); Gastrodon's Tide retriggers it, Storm
+  // Drain X0.1 per Energy card used (X0.2 Water); Two Seas: a West and an East held, every one works on both ends.
+  contentRev: 40,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

@@ -80,6 +80,17 @@ export const IMPOSTER_REVEALED = { x: 8, y: 1 };
 
 export const DEOXYS_SOULS = { 1: { x: 5, y: 3 }, 2: { x: 7, y: 3 }, 3: { x: 9, y: 3 } };
 
+/**
+ * The Shellos line's seas (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws both on the Gen 4 sheet, the two
+ * cells pokespriteload.lua lists (`shellos` base.pos {4,1} / {6,1}, `gastrodon` {8,1} / {10,1}): the FIRST is the East Sea (blue),
+ * each center's own card; the second the West Sea (pink), by ability.extra.form. Drawn by ui.js face() (+ the Shiny sheet's twins).
+ */
+export const SEA_ATLAS = 'poke_AtlasJokersBasicGen04391';
+export const SEA_SPRITES = {
+  j_poke_shellos: { east: { x: 4, y: 1 }, west: { x: 6, y: 1 } },
+  j_poke_gastrodon: { east: { x: 8, y: 1 }, west: { x: 10, y: 1 } },
+};
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;
