@@ -55,8 +55,8 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 40 && PINS.modPin('pokermon') === '3.9.1+r40', 'Pokermon contentRev 40 (pin 3.9.1+r40; the Shellos line; r39 the Cherubi line)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 40)', 'version stays 3.9.1: "3.9.1 (rev 40)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 41 && PINS.modPin('pokermon') === '3.9.1+r41', 'Pokermon contentRev 41 (pin 3.9.1+r41; the Burmy three-pile cloak; r40 the Shellos line; r39 the Cherubi line)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 41)', 'version stays 3.9.1: "3.9.1 (rev 41)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
