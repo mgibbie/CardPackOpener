@@ -865,7 +865,9 @@ export const POKERMON = registerMod({
   // (+1 discard, scored Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the
   // first deal pick one for the round); Rayquaza (Delta Stream: both work; Dragon Ascent X0.2 per Straight / Flush); Latias / Latios
   // (X0.15 per Tarot / Planet used; Soul Dew: both held, either grows both).
-  contentRev: 33,
+  // 34 = the owner's Combee line (Combee -> Vespiquen; jokers/pokejokers_designs.js): Honey Gather — at end of round the Jokers directly
+  // left and right gain +$1 / +$2 sell value; Vespiquen's Attack Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3.
+  contentRev: 34,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

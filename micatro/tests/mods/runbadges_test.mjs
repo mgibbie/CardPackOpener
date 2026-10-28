@@ -19,6 +19,9 @@ const RV = () => toView().run_badges;
 const badgeEvents = (r) => (r.events || []).filter((e) => e.type === 'run_badge');
 
 /** An unseeded Pokermon run waiting at the first blind select (eligible for the badges). */
+/** Riff-raff's rolls below must be OFF-type for a Grass run: ban the Grass Commons from its pool (the pool grows as Grass Commons are
+ *  added, e.g. the owner's Combee, which a fixed seed then rolls; a Grass roll is correct play, just not what these checks test). */
+function ban_grass_commons() { for (const c of Object.values(P_CENTERS)) if (c.set === 'Joker' && c.rarity === 1 && c.config && c.config.extra && c.config.extra.ptype === 'Grass') G.GAME.banned_keys[c.key] = true; }
 function fresh() {
   newRun({ seed: 'RBFRESH1', seeded: false, back: 'b_red', mods: ['pokermon'] }); // (a fixed seed, still unseeded: eligible)
   G.FORCE_BOSS = 'bl_wall'; G.GAME.round_resets.blind_choices.Boss = 'bl_wall'; // (as poke_helpers.start: a harmless boss)
@@ -263,6 +266,7 @@ fresh();
 toShop(); buy('j_poke_bulbasaur');
 nextShop(); buy('j_riff_raff', 'Grass'); // (a Grass Tera'd Riff-raff: itself it matches)
 G.jokers.config.card_limit = 3; // (room for exactly one Common)
+ban_grass_commons();
 act({ type: 'next_round' });
 ok(RB().mono && RB().type === 'Grass' && RV().mono_at_risk === false, '(riff-raff) Bulbasaur + Grass Riff-raff: intact, not at risk before the blind', RB());
 {
@@ -538,6 +542,7 @@ fresh();
 toShop(); buy('j_poke_bulbasaur');
 nextShop(); buy('j_riff_raff', 'Grass');
 G.jokers.config.card_limit = 3;
+ban_grass_commons();
 act({ type: 'next_round' });
 {
   const before = new Set(G.jokers.cards);

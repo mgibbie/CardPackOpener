@@ -276,6 +276,23 @@ House pattern: an EON DUO, a pair with full cross-growth (the owner's Latias / L
   - Banked in eon_Xmult (no energy field), the gain Xmult_mod +20% per Energy (0.15 -> 0.18 / 0.21 / 0.24): Energy never raises
     what is banked. Blueprint copies the X, never the growth.
 
+House pattern: ADJACENCY HONEY, then sell value to X (the owner's Combee line, jokers/pokejokers_designs.js honey_gather / attack_order_x):
+  - Honey: at end of round (end_of_round + main_eval, not Blueprint) the Jokers directly LEFT and RIGHT (poke_get_adjacent_jokers,
+    Magneton's / Dolliv's neighbours) each gain a FIXED +$1 (Combee, C $5, 5 rounds) / +$2 (Vespiquen, S $8) of sell value
+    (ability.extra_value, then set_cost: the Smoliv line's field). Nothing on an empty side (a row edge, a lone joker); never
+    itself (Dolliv feeds itself too; the bee only feeds others). A debuffed bee gives nothing (it isn't calculated); a debuffed
+    NEIGHBOUR still takes it (sell value isn't an ability). The row order is the decision: moving jokers moves the honey.
+  - Sell value to X (Electivire's shape, read off OTHER jokers): X(1 + 0.1 per $ of the two neighbours' current sell_cost),
+    capped at X3 in a field Energy ignores (Xmult_cap). The honey feeds it: two $1 Jokers start at X1.2 and reach X2 after two
+    rounds; a big neighbour (Blueprint $5, a Negative, an Egg, an Arboliva-fed row) reaches the cap fast, hence the cap.
+  - Energy: only the per-$ Xmult_mod (+20%: 0.1 -> 0.12 / 0.14 / 0.16). The honey amount and the cap are fixed, so Energy shortens
+    the climb to X3 without making money. The Basic carries the SAME Xmult_mod though it doesn't use it, so it can be energized
+    (energy_can_use needs an energy field) and evolution re-applies the Energy to the Stage 1's base (say so on the card:
+    "Energy carries to Vespiquen"). Blueprint copies the X only (the honey is guarded by !context.blueprint, so a copied bee never
+    feeds twice); the Basic, with no scoring effect, is blueprint_compat false.
+  - Sell value as a resource is a money engine (selling the fed jokers, Swashbuckler / Ceremonial Dagger feed): keep the gain at
+    $1-$2 per neighbour per round and never compound it (no "doubled for Grass" on top of an adjacency feed).
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -451,6 +468,9 @@ Designer consequences:
   7. ENERGY RAISING A COUNT (house: the owner's Regice, `glass_convert`): a count with no other number (cards converted per Blind)
      gets its own energy_values entry set to 1 (the whole base: +1 per Energy, +0.5 per mismatched Colorless, floored by the
      joker), the shape of Gulpin's `stockpile_max` (1/3 of a base 3). Only the joker carrying the field changes.
+  8. ENERGY FOR LATER (house: the owner's Combee): a Basic whose own effect has no number (a fixed honey) can still take Energy
+     if it carries its evolution's energy field (Combee's unused Xmult_mod 0.1); evolution re-applies the count to the new base.
+     Tell the player on the card ("Energy carries to Vespiquen"). A cap (Xmult_cap) or a fixed gain stays out of energy_values.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
@@ -713,17 +733,23 @@ Examples:
                      consumable is used, and at end of round.
   Arboliva (S $10)   +$2 sell value to every Joker and consumable each round, doubled for Grass
                      Jokers and Grass Energy.
+  Owner's Combee (C $5): Honey Gather, the Jokers directly left and right gain +$1 sell value each
+                     round (5 rounds). Vespiquen +$2; Attack Order X(1 + 0.1 per $ of those two
+                     Jokers' sell value), max X3.
 Typical numbers:
   Basic     +M 1-7~3 | +C 20-120~40 | card +M 1-10~5 | card +C 16-50~40 | $ 1-4~2 | gain +M 1-4
   Stage 1   +M 1-11~7 | +C 40-135~60 | card +M 3-15~7 | card +C 32-75 | $ 1-5~2 | X 3 (Dustox)
   Stage 2   +M 8-12~11 | +C 60-80 | card X 1.3-1.5 | $ 1-2
 Under-explored:
   - Retriggers (only 5).
-  - Joker-row effects: copying (only Skitty/Delcatty) and adjacency.
+  - Joker-row effects: copying (only Skitty/Delcatty) and adjacency (Dolliv; the owner's Combee line
+    now: adjacency honey and sell value to X, the house pattern in 2.1).
   - Tarot and Planet creation (3).
   - The Bug subset (36 of the 79 missing Grass species) has almost no shared identity.
     Caterpie/Weedle/Wurmple are cheap and fast-evolving, and the moth/beetle lines are random.
-    Swarm or insect-collective ideas (Combee/Vespiquen, Durant, Joltik) are open.
+    Swarm or insect-collective ideas are partly used: the owner's Combee line made the hive
+    (feed your neighbours, score off them). Durant and Joltik are still open; reuse hive() /
+    honey_gather rather than a new adjacency rule.
 Pitfalls:
   - Hand size stacks across many Grass jokers (22 already give it). Keep new hand size at +1,
     and gate anything bigger (Breloom gives +2 for one round only).
