@@ -904,7 +904,10 @@ export const POKERMON = registerMod({
   // (scored Stone +30 / +60 extra Chips; Hippowdon turns 1 unenhanced card in hand Stone on each round's first deal), Skorupi -> Drapion
   // (each scored card 1 in 5 X1.25 / 1 in 3 X1.5 crits; Drapion's Lucky cards always crit), Carnivine (the round's first discarded card is
   // devoured, +4 Mult banked), Finneon -> Lumineon (night hands: +40 Chips / +15 per scored card; Lumineon by day too with Lunatone).
-  contentRev: 44,
+  // 45 = the owner's creation trio, Regigigas and Arceus (jokers/pokejokers_designs.js): Dialga's Roar of Time (the round's first hand
+  // scored twice), Palkia's Spacial Rend (+1 Joker slot, +1 hand size), Giratina's Shadow Force (X0.25 per destroyed card; Origin Forme
+  // with Dialga / Palkia: X0.5), Regigigas's Slow Start (X4 after 5 rounds, a Regi cuts one each), Arceus's Multitype (every type).
+  contentRev: 45,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

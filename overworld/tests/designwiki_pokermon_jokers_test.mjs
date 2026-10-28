@@ -99,8 +99,8 @@ try {
 		&& sp0('Keldeo')?.ptype === 'Fighting' && sp0('Keldeo')?.type_source === 'art' && sp0('Keldeo')?.mapped_ptype === 'Water', 'spot check (the card wins; Latias is in the game now): Dwebble Earth, Venipede Dark, Sandile Dark, Kyurem Water, Stunfisk Lightning; Keldeo Fighting from its art (the mapping said Water)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Stoutland')?.stage === 'Two' && sp('Herdier')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Arceus')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',
-		'spot check: Stoutland Stage 2, Herdier Stage 1, Toxel Baby, Arceus Legendary, Corviknight Metal, Noibat Dragon');
+	A(sp('Stoutland')?.stage === 'Two' && sp('Herdier')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Yveltal')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',
+		'spot check: Stoutland Stage 2, Herdier Stage 1, Toxel Baby, Yveltal Legendary, Corviknight Metal, Noibat Dragon');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -191,8 +191,8 @@ try {
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
 	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
 	// the composer stays working for species upstream doesn't draw (none today): a Basic, a Stage 1, a Baby and a Legendary
-	const fallback = ['Stoutland', 'Herdier', 'Toxel', 'Arceus'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
-	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Stoutland, Herdier, Toxel, Arceus)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
+	const fallback = ['Stoutland', 'Herdier', 'Toxel', 'Yveltal'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
+	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Stoutland, Herdier, Toxel, Yveltal)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte
@@ -276,9 +276,9 @@ try {
 	A(/0508_shiny\.png(\?|$)/.test(await anon.page.$eval('.pj-art-big', i => i.getAttribute('src'))), 'the Shiny toggle swaps in the Shiny card');
 	await shot(anon.page, 'desktop_card_signed_out');
 	// a Legendary (soul layer) card, and its label
-	await go(anon.page, '#/pokermon-jokers/493');
-	const want493 = D.species.find(s => s.dex === 493).art.source;
-	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want493], src: want493 }) && await anon.page.$eval('.pj-art-big', i => i.naturalWidth) === 142, `Arceus (Legendary): its card and label (${LABEL[want493]})`);
+	await go(anon.page, '#/pokermon-jokers/717');
+	const want717 = D.species.find(s => s.dex === 717).art.source;
+	A(JSON.stringify(await label()) === JSON.stringify({ text: LABEL[want717], src: want717 }) && await anon.page.$eval('.pj-art-big', i => i.naturalWidth) === 142, `Yveltal (Legendary): its card and label (${LABEL[want717]})`);
 	await shot(anon.page, 'desktop_card_legendary');
 	A(!anon.designCalls.length, 'signed out: the page never calls the joker-design API', anon.designCalls.join(','));
 	A(!anon.errors.length, 'no console errors (signed out)', anon.errors.slice(0, 3).join(' | '));

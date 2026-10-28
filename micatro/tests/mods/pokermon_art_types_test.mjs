@@ -36,6 +36,8 @@ await sec('static', () => {
   ok(D.gible === 'Dragon' && D.gabite === 'Dragon' && D.garchomp === 'Dragon', 'Gible / Gabite / Garchomp: Dragon (all three cards show the Dragon icon)', [D.gible, D.gabite, D.garchomp]);
   ok(D.hippopotas === 'Earth' && D.hippowdon === 'Earth' && D.skorupi === 'Dark' && D.drapion === 'Dark' && D.carnivine === 'Grass' && D.finneon === 'Water' && D.lumineon === 'Water',
     'Hippopotas / Hippowdon Earth, Skorupi / Drapion Dark, Carnivine Grass, Finneon / Lumineon Water (the icons on their cards)', [D.hippopotas, D.hippowdon, D.skorupi, D.drapion, D.carnivine, D.finneon, D.lumineon]);
+  ok(D.dialga === 'Metal' && D.palkia === 'Water' && D.giratina === 'Psychic' && D.regigigas === 'Colorless' && D.arceus === 'Colorless',
+    'Dialga Metal, Palkia Water, Giratina Psychic, Regigigas / Arceus Colorless (the icons on their cards)', [D.dialga, D.palkia, D.giratina, D.regigigas, D.arceus]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });
@@ -74,6 +76,9 @@ else await sec('art', async () => {
   }
   ok(cloaks.length === 6 && cloaks.every(([, want, r]) => r && r.ptype === want), 'Burmy / Wormadam: each cloak\'s type is its own card\'s (Plant Grass, Sandy Earth, Trash Metal)',
     cloaks.map(([f, w, r]) => `${f} ${w} / card ${r && r.ptype}`));
+  // Giratina: its Origin Forme card (Gen 4 {10,3}, drawn while Dialga or Palkia is held) shows the Psychic icon too: one type for both
+  const origin = typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen04', pos: [10, 3] });
+  ok(origin && origin.ptype === 'Psychic' && P_CENTERS.j_poke_giratina.ptype === 'Psychic', 'Giratina: the Origin Forme card shows Psychic, as its Altered card', origin);
 });
 
 /** Kubfu with these trainings, evolved by a winning 1-card hand. */

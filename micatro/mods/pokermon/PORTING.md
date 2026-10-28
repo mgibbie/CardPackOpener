@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), **`3.9.1+r44`** since the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), **`3.9.1+r45`** since the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2727,6 +2727,41 @@ has any of them.
   drops them (364 missing).
 - **Tests**: `micatro/tests/mods/pokermon_gen4_regulars_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test` (the pin, 82 defs), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (900 jokers).
+### The owner's creation trio, Regigigas and Arceus (2026-10-28, branch `feat/pokermon-gen4-creation`)
+Pinned **`3.9.1+r45`** (`contentRev: 45`; `LEGACY_MOD_VERSIONS` untouched). Batch C of the owner's "last 18 Gen 4 jokers": Dialga (483),
+Palkia (484), Regigigas (486), Giratina (487) and Arceus (493), all **Legendary $20** (The Soul / the Legendary pool), in
+`jokers/pokejokers_designs.js` (87 defs now). Pokédex order: Rotom's forms (479), Dialga, Palkia, Regigigas, Giratina, Shaymin (492);
+Shaymin Sky, Arceus, Pansage. Types from the card art: Dialga **Metal**, Palkia **Water**, Giratina **Psychic** (Altered and Origin cards
+both), Regigigas and Arceus **Colorless**. Neither Nacho nor Pokermon+ has any of them.
+- **Dialga**, Roar of Time: the **first hand of each round is scored twice**: every scored card retriggers once (a `repetition` for each card
+  of `G.play` while `hands_played === 0`; a discard first doesn't use it up). The cards' chips / mult / enhancements / seals and the per-card
+  joker effects happen twice; the jokers' own hand effects (joker_main, after) and the hand's base run once, as for one hand. Blueprint copies
+  it (a third scoring), as on Whiscash. Energy-inert (`poke_no_energy_field`).
+- **Palkia**, Spacial Rend: **+1 Joker slot and +1 hand size** while held, given in `add_to_deck` and taken in `remove_from_deck`,
+  **debuffs included** (a debuff takes both, lifting it gives both back). Nobody is ever pushed out: a debuff on a full row leaves it one Joker
+  over the limit until one leaves (nothing can join meanwhile). Sold or destroyed it takes its own slot along (never over); a debuffed one
+  leaving gives nothing back twice. A Negative Palkia: +2 slots (debuffed, the Negative's +1 stays, as vanilla). Energy-inert.
+- **Regigigas**, Slow Start: gives nothing until its countdown `slow_start` (**5** when obtained) reaches **0**, then **X4 Mult** for the rest
+  of the run. At each end of round (main pass; not Blueprint; a debuffed Regigigas waits) the countdown drops by **1 + the distinct Regis held**
+  (Regirock / Regice / Registeel, undebuffed; two of one count once): none **5 rounds**, one 3, two 2, all three **2** (5, 1, 0). Awake, with all
+  three Regis held, **each Regi converts 1 extra card per Blind** (`giga_trio_bonus` in `regi_converts`; once, however many Regigigas; the
+  Regis' tooltips show it). Energy: `Xmult` **X4 -> X4.8 / X5.6 / X6.4**; the wait is fixed.
+- **Giratina**, Shadow Force: permanently gains **X0.25 Mult for each playing card destroyed**, any cause (`remove_playing_cards`:
+  Glass shattering, Hanged Man, the eaters...), banked in `shadow_Xmult` (not retroactive). **Origin Forme**: while an undebuffed Dialga or
+  Palkia is held, the gain is **X0.5** and it shows the Origin card (Gen 4 **{10,3}** with its soul **{11,3}**: `systems/anim.js`
+  `GIRATINA_ORIGIN`, `ui.js` ownFace, from the live `poke_view_form`). Energy: `Xmult_mod` **0.25 -> 0.3 / 0.35 / 0.4** (Origin 0.6 / 0.7 / 0.8).
+  Blueprint copies the X, never the growth.
+- **Arceus**, Multitype: **counts as every Pokermon type** (`center.poke_multitype`; `systems/types.js` `multitype`, read by `is_type`,
+  `find_pokemon_type` and `energy.js` `energy_matches`): Barboach's Water / Earth Jokers (once), Starly's flock, Pachirisu's Lightning Jokers,
+  the `find_pokemon_type` counters, and **every type's Energy energizes it at full strength**. Its own ptype stays Colorless; a Tera sticker
+  gives it that one type instead. **Monotype: exempt** (`poke_mono_exempt`, Castform's flag; the Nuzlocke reads it as a Colorless gain).
+  Judgment: **X(1 + 0.25 per different type among your Jokers)**: other undebuffed jokers by their shown type, an every-type joker (another
+  Arceus, a Stellar Tera) as one type of its own, itself as one, at most 12 (X4). Energy: `Xmult_mod` **0.25 -> 0.3 / 0.35 / 0.4**.
+- **Art**: upstream 3.9.1's own cells with their souls (Gen 4 Dialga {10,2}, Palkia {4,3}, Giratina {8,3} / Origin {10,3}, Arceus {4,4};
+  Natdex Regigigas {10,32}); nothing to deploy. The wiki drops them (359 missing).
+- **Tests**: `micatro/tests/mods/pokermon_gen4_creation_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, 87 defs), `pokermon_art_types_test` (the five types + the Origin card), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (905 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

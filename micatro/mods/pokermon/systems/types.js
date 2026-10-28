@@ -66,6 +66,17 @@ const extraTable = (card) => card && card.ability && card.ability.extra && typeo
  */
 export const IS_TYPE_RULES = [];
 const type_rule = (card, target_type) => IS_TYPE_RULES.length > 0 && IS_TYPE_RULES.some((f) => f(card, target_type));
+/**
+ * The owner's Arceus (Multitype; jokers/pokejokers_designs.js): a center with poke_multitype counts as EVERY one of the 12 Pokermon
+ * types for type checks (is_type, find_pokemon_type, energy_matches: every type's Energy matches it at full strength). Its own ptype
+ * stays Colorless (get_type, the badge, Kecleon, the card frame). A Tera sticker replaces the type as on any joker: a Tera'd Arceus
+ * is that one type only. Bird / Stellar / Trans are not among the 12 (Bird / Trans Energy match any typed joker anyway).
+ */
+export function multitype(card) {
+  const c = card && card.config && card.config.center;
+  return !!(c && c.poke_multitype && !type_sticker_applied(card));
+}
+const multi = (card, t) => POKETYPES.includes(t) && multitype(card);
 
 export function find_pokemon_type(target_type, exclude_card, exclude_name) {
   const found = [];
@@ -74,14 +85,14 @@ export function find_pokemon_type(target_type, exclude_card, exclude_name) {
       const ex = extraTable(v);
       if (exclude_card && v === exclude_card) continue;
       if (exclude_name && v.ability && v.ability.name === exclude_name) continue;
-      if (v.ability && ((ex && target_type === ex.ptype) || wildcard_type(v) || v.ability[String(target_type).toLowerCase() + '_sticker'] || type_rule(v, target_type))) found.push(v);
+      if (v.ability && ((ex && target_type === ex.ptype) || wildcard_type(v) || v.ability[String(target_type).toLowerCase() + '_sticker'] || type_rule(v, target_type) || multi(v, target_type))) found.push(v);
     }
   }
   return found;
 }
 
 export function is_type(card, target_type) {
-  if (wildcard_type(card)) return true;
+  if (wildcard_type(card) || multi(card, target_type)) return true;
   const ex = extraTable(card);
   return !!(card.ability && ((ex && target_type === ex.ptype) || card.ability[String(target_type).toLowerCase() + '_sticker'] || type_rule(card, target_type)));
 }
