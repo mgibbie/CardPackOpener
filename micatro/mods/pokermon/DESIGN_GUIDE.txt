@@ -426,6 +426,45 @@ treasure_nest / dragon_rush_x):
   - Held-Gold X counts only UNDEBUFFED cards held in hand (G.hand.cards at joker_main: the played cards are in G.play). Gold already pays $3
     each at end of round, so the X is per card at a Stage 2 rate (X0.5, Staraptor's per-joker step), not a Basic's.
   - Blueprint copies the bank's Mult and the X, never the growth or the conversion (both guarded by !context.blueprint).
+House pattern: SAND STREAM, Stone extra Chips and a Stone made each round (the owner's Hippopotas line, jokers/pokejokers_designs.js
+sand_stream / sand_stone):
+  - "+N EXTRA Chips per scored Stone card" is a joker effect (context.individual on G.play, has_enhancement(c, 'm_stone'): quantum Stone
+    too), NOT a Card hook: it adds on top of whatever the Stone card gives itself, so it stacks with Regirock's "instead" rule (+100 + 30)
+    and Blueprint / Red Seal / Mime repeat it like any per-card effect. An "instead" rule (Regirock) belongs on the card (2.1, the trio);
+    an "extra" rule belongs on the joker. Hippopotas +30 (C $5, 5 rounds), Hippowdon +60 (S $8); `chips` +30% (39 / 48 / 57, 78 / 96 / 114).
+  - The conversion is from the HAND, on the round's FIRST deal (Castform's first_deal moment, 2.1: every card is in hand, nothing played
+    or discarded yet; a per-joker round field, sand_round, so later draws never convert again): 1 random UNENHANCED card held in hand
+    becomes Stone (set_ability, seal and edition kept; seeded pseudorandom_element 'hippowdon_sand'). Never another enhancement; none
+    unenhanced, nothing. The first deal (not the end of round) so the Stone card is playable THIS round with the joker's own +60.
+  - Fixed count (no energy field), not Blueprint (a copied Hippowdon still makes one Stone a round): an Energy-grown or copied
+    conversion would turn the deck to Stone fast, and a Stone deck has no ranks or suits for anything else.
+House pattern: a CRIT CHANCE per scored card (the owner's Skorupi line, jokers/pokejokers_designs.js sniper):
+  - Each scored card rolls num in dem (Skorupi 1 in 5, Drapion 1 in 3) through Pokermon's pseudorandom_probability(card, seed, num, dem,
+    seed), read for the text through get_probability_vars: Oops! All 6s and Venonat raise the odds, Absol fixes them at 0, and the card
+    shows the live odds ("2 in 5" with Oops!). A crit is the card's own x_mult (Skorupi X1.25, Drapion X1.5 in `Xmult_multi`, +5% per
+    Energy: X1.3125 / 1.375 / 1.4375, X1.575 / 1.65 / 1.725); num / dem are never energized. Each retrigger rolls again; Blueprint rolls
+    its own.
+  - A GUARANTEE is a rule, not a bigger roll (Golett's Hazard cards, Drapion's Lucky cards: always_crit): it skips the roll, so Absol
+    never stops it and Oops! never matters. Say on the card which cards always succeed.
+  - The test pins the X exactly with forced odds (num = dem) and the rate statistically over many seeded cards (each hand must be exactly
+    base x X^k), never one seed's lucky draw.
+House pattern: DEVOUR THE FIRST DISCARD (the owner's Carnivine, Flytrap, jokers/pokejokers_designs.js flytrap; Entei's / Magmar's
+shape):
+  - The round's FIRST player discard: pre_discard, not an effect's discard (context.hook: The Hook, seals, Bunco blinds), with
+    discards_used 0, once a round (a per-joker devour_round). An effect discard before it doesn't use it up. It marks the discard's
+    LEFTMOST card (full_hand is in hand order) and, in that card's own discard pass, returns { remove: true }: the engine destroys it
+    (Trading Card's way: dissolve, a Glass card shatters) and runs every joker's remove_playing_cards, so every "a card is destroyed"
+    payoff fires (Canio, Hydreigon, Cacnea, Kingambit, Spiritomb). The mark is cleared at once, so a joker retrigger never devours twice.
+  - Pay it with a bank (devour_mult +4 Mult a devour, no energy field; gain `mult_mod` +20%: 4.8 / 5.6 / 6.4), Rare $7 single-stage. One
+    card a round is mild thinning (about 8 cards over a run); keep the count at one. Blueprint copies the Mult, never the devour.
+  - Tooltip: the bank and "hungry" / "fed this round".
+House pattern: REUSING THE DAY / NIGHT CYCLE (the owner's Finneon line; Lunatone / Solrock's is_day / next_is_day / cosmic, 2.1):
+  - Any joker can key off the same cycle (the round's 2nd and 4th hands are night): Finneon +40 Chips on night hands (`chips`, 52 / 64 / 76),
+    Lumineon each scored card +15 Chips on night hands (19.5 / 24 / 28.5). Reuse the helpers, never a second hand count, so every
+    day / night joker agrees on the same hand and the tooltip's "Next hand" line reads the same.
+  - A day / night joker can borrow the pair's partner as its unlock: Lumineon works on day hands too while Lunatone is held (cosmic: owned
+    and undebuffed; a Blueprint isn't Lunatone). One-way: Lumineon does nothing for Lunatone. The tooltip says "Lunatone: active / needs
+    Lunatone".
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -863,7 +902,7 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
   {C:poke_pocket}  Pocket Packs
   poke_sun, poke_rain, poke_sand, poke_snow: defined in 3.9.1 for weather designs (Castform,
     Kyogre/Groudon, Hippowdon). All four are now used (Kyogre / Groudon too: "always {C:poke_rain}Rainy{}"): poke_sand by the owner's Flygon
-    ("{C:poke_sand}Sandstorm:"), poke_sun / poke_rain / poke_snow by the owner's Castform
+    ("{C:poke_sand}Sandstorm:") and Hippopotas / Hippowdon ("{C:poke_sand}Sand Stream:"), poke_sun / poke_rain / poke_snow by the owner's Castform
     ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
@@ -914,6 +953,8 @@ Examples:
   Owner's Combee (C $5): Honey Gather, the Jokers directly left and right gain +$1 sell value each
                      round (5 rounds). Vespiquen +$2; Attack Order X(1 + 0.1 per $ of those two
                      Jokers' sell value), max X3.
+  Owner's Carnivine (R $7): Flytrap, the first card you discard each round is devoured (destroyed:
+                     "card destroyed" payoffs fire) and banks +4 Mult (the devour pattern, 2.1).
 Typical numbers:
   Basic     +M 1-7~3 | +C 20-120~40 | card +M 1-10~5 | card +C 16-50~40 | $ 1-4~2 | gain +M 1-4
   Stage 1   +M 1-11~7 | +C 40-135~60 | card +M 3-15~7 | card +C 32-75 | $ 1-5~2 | X 3 (Dustox)
@@ -1005,6 +1046,8 @@ Examples:
   Magikarp (C $2)    +1 Chip, applies Splash, 8 rounds. Gyarados (S $10): a flat X2.5 Mult.
   Cloyster (S $8)    If the hand has 5 scoring cards, each has a 1 in 2 chance to retrigger.
   Staryu (C $4)      Diamonds give +1 Mult and $1 (Water Stone). Starmie: +2 Mult and $2.
+  Owner's Finneon (C $5) +40 Chips on night hands (each round's 2nd / 4th: Lunatone / Solrock's cycle).
+                     Lumineon (S $8): each scored card +15 Chips by night; with Lunatone by day too.
 Typical numbers:
   Basic     +M 1-15~4 | +C 1-80~60 | card +M 1-7~4 | $ 1-4~3 | gain +C 1-30~6 | X 2
   Stage 1   +M 25 (Quagsire) | +C 40-120~60 | X 1.5-3~2.5 | card +M 2-10~6 | card +C 20-50
@@ -1296,6 +1339,8 @@ Examples:
                        Zweilous X2. Hydreigon destroys unscoring cards on a Three of a Kind and
                        gains X0.33 per destroyed card.
   Absol (R $8)         X2 Mult; all listed probabilities are always 0.
+  Owner's Skorupi (C $5) Sniper: each scored card 1 in 5 to crit for X1.25. Drapion (S $8): 1 in 3
+                       for X1.5, Lucky cards always crit (the crit-chance pattern, 2.1).
 Typical numbers:
   Basic     +M 8-12~10 | X 1.5-2 | card +M 8 | card +C 50 | $ 2-4 | gain +M 2 | gain X 0.5
   Stage 1   +M 15-18 | X 1.5-2 | card +M 12 | card +C 50-75 | $ 4 | gain +C 5-20 | gain X 1
@@ -1307,7 +1352,9 @@ Under-explored:
     BLIND instead (its requirement drops after each hand: Stunky -4% of the start, Skuntank n x 4%,
     max -75%; house pattern "Poisoning the Blind", 2.1). Poisoned PLAYING cards are still open.
   - 28 missing species by their card type (the wiki, 2026-10-28), with many Poison lines
-    (Skorupi, Venipede, Skrelp, Mareanie, Poipole; Gulpin and Stunky are done).
+    (Venipede, Skrelp, Mareanie, Poipole; Gulpin, Stunky and Skorupi are done).
+  - Probability: the owner's Skorupi line is the type's first chance joker (per-card crits through
+    pseudorandom_probability; Absol, the type's own, turns it off: an anti-synergy inside the type).
 Pitfalls:
   - Destroy-for-value stacks with every "when a card is destroyed" payoff (Poochyena, Pawniard,
     Hydreigon, Cacnea, Nacho's Flapple). Check a new destroyer against all of them.
@@ -1476,6 +1523,8 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
     - Day / night pairs (the owner's Lunatone + Solrock, U $6 each, single-stage): Solrock +100
       Chips on day hands (1st / 3rd / 5th), Lunatone X2 on night hands (2nd / 4th); holding both,
       each also covers the other half at half strength (+50 Chips / X1.5). See the pair pattern in 2.1.
+    - Sand (the owner's Hippopotas line, C $5 -> S $8): scored Stone cards +30 / +60 EXTRA Chips (stacks with Regirock),
+      and Hippowdon turns 1 unenhanced card in hand Stone on each round's first deal (the Sand Stream pattern, 2.1).
     - Weather (the owner's Groudon, L $20, Desolate Land): +1 discard each round, scored Hearts / Diamonds X1.25 each
       (Xmult_multi: X1.3125 / X1.375 / X1.4375 energized), Castform locked Sunny; Primal Clash with Kyogre (2.1).
 Hooks: individual 33, end_of_round 29, joker_main 26, before 14, repetition 13, add_to_deck 10,
@@ -1499,7 +1548,8 @@ Under-explored:
   - Money (4), consumables. Discards are partly used now (the Trapinch line: Chips per card
     discarded, X per discard used); discards for money, Mult or Stone/Hazard making are still open.
   - Sand and weather: poke_sand is used once (Flygon's Sandstorm). A round's weather now exists (Castform's Forecast and the
-    weather trio's Primal Clash, read on the first deal: G.GAME.poke_primal); a sand weather (Hippowdon, Sandaconda) is still open.
+    weather trio's Primal Clash, read on the first deal: G.GAME.poke_primal); Stone making from sand is now the owner's
+    Hippowdon (one card in hand a round, 2.1); a true sand WEATHER (a round-wide state, Sandaconda) is still open.
   - Earth-type synergy: Rhyperior, and (partly) the owner's Barboach line, which counts Water OR Earth Jokers. A pure Earth
     counter is still open.
   - Missing fossils (Tirtouga, Archen, Tyrunt, Amaura, the Galar fossils) belong in Ancient.
