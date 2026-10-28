@@ -865,10 +865,13 @@ export const POKERMON = registerMod({
   // (+1 discard, scored Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the
   // first deal pick one for the round); Rayquaza (Delta Stream: both work; Dragon Ascent X0.2 per Straight / Flush); Latias / Latios
   // (X0.15 per Tarot / Planet used; Soul Dew: both held, either grows both).
-  // 34 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
+  // 34 = the owner's Chatot + Pachirisu (jokers/pokejokers_designs.js): Chatot's Vocabulary, +4 Mult per different poker hand played
+  // this run, and New Word, a Planet for each hand type's first play this run while held; Pachirisu's Quick Spark, X2 (+X0.25 per other
+  // Lightning Joker) on each round's first hand, and Cheek Pouch, $1 per Lightning Joker at end of round.
+  // 35 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
   // its art following; Tide Pool +40 Chips on the sea's end scored card (leftmost / rightmost); Gastrodon's Tide retriggers it, Storm
   // Drain X0.1 per Energy card used (X0.2 Water); Two Seas: a West and an East held, every one works on both ends.
-  contentRev: 34,
+  contentRev: 35,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

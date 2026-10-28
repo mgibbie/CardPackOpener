@@ -234,6 +234,28 @@ House pattern: a ONE-TYPE TEAM count, the Colorless Bird flock (the owner's Star
     into debt only as far as the run allows (dollars - 1 >= bankrupt_at: $0 normally, -$20 with Credit Card; Gholdengo's buffer
     check), so it never blocks a play and never strands the player below the shop's own limit. Not copied by Blueprint (it copies
     the X Mult only); a debuffed joker pays nothing. Say the limit on the card ("Never past your debt limit").
+House pattern: a VOCABULARY of hand types (the owner's Chatot, jokers/pokejokers_designs.js vocabulary / new_word):
+  - Count the DIFFERENT poker hands played this run from the run's own records: G.GAME.hands[h].played > 0 (run.js evaluate_play
+    adds 1 before the jokers' `before` pass and never resets it in a run). So a joker bought late sees the whole run, secret hands
+    (Five of a Kind, Flush House, Flush Five) and add-on hands count, and the hand being played already counts in joker_main.
+    Chatot: +4 Mult per type (`mult`, Energy +40%: 5.6 / 7.2 / 8.8). A typical run plays 5-7 types, so +20 to +28 Mult at Rare $7.
+  - A FIRST-TIME rider reads the same record: in `before`, `played === 1` is the hand's first play this run. Chatot creates that
+    hand's Planet (P_CENTER_POOLS.Planet by config.hand_type) with consumable room (the Blue Seal's
+    cards + consumeable_buffer < card_limit check), only while held: a type first played without it is past 1 and never grants.
+    Keep a per-joker record of what it granted (`new_words`), so a retriggered `before` or a mod resetting a count can't grant
+    twice. Not copied by Blueprint (it copies the Mult); a debuffed hand (The Psychic...) has no `before` pass, so no Planet.
+  - Don't use played_this_round for a run count (it resets each round), and don't count from the purchase (a late buy is dead).
+House pattern: a FIRST-HAND team X (the owner's Pachirisu, jokers/pokejokers_designs.js spark_x / pouch_money):
+  - The round's first hand is current_round.hands_played === 0 while it scores (a discard before it doesn't use it up). Pachirisu:
+    X2 Mult (`Xmult`) plus X0.25 (`Xmult_mod`) per OTHER Lightning Joker on that hand: X2 alone, X2.75 with three others. One
+    hand a round, so the X runs higher than an always-on Basic X (Lightning Basic X 1.75-2.5). Energy +20% on both: X2.4 / 2.8 / 3.2
+    and X0.3 / 0.35 / 0.4 per joker. The team count is Barboach / Starly's (is_type, not debuffed), but of the OTHERS for the X
+    (it pays X2 on its own) and itself included for money.
+  - Pair it with an end-of-round payout in a fixed field Energy ignores (`pouch`: $1 per Lightning Joker, itself included),
+    through calc_dollar_bonus so it is a row of the cash-out list (Miltank's shape). Blueprint copies the X, never the payout
+    (calc_dollar_bonus isn't copied, as Golden Joker); a debuffed joker pays nothing.
+  - Tooltip: the current X and its state ("Active!" / "Used this round"; in the shop it is the next round's first hand) and the
+    current payout. Juice the card on the first deal while it is on (Whiscash's Earthquake).
 
 House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejokers_designs.js regi_others):
   - Separate species (no family), each with its own rule, sharing one scaling rider: "1 + (OTHER Regis you have)". The count is of
@@ -892,6 +914,9 @@ Examples:
   Zapdos (L $20)       X0.08 Mult for every $2 you have.
   Grubbin (C $3)       +3 Mult, tripled with a Lightning Joker. Charjabug: +7 per Lightning
                        Joker. Vikavolt: X0.5 per Lightning Joker.
+  Owner's Pachirisu (R $7, single-stage): Quick Spark, X2 on each round's first hand, plus
+                       X0.25 per other Lightning Joker; Cheek Pouch, $1 per Lightning Joker
+                       at end of round (itself included).
 Typical numbers:
   Basic     +M 3-10 | X 1.75-2.5 | card X 1.5 | $ 1-10~2 (Pichu's $10 is the Baby outlier)
   Stage 1   +M 7 | +C 60 | X 2-2.25 | card X 1.5 | $ 1-5~3 | gain X 0.02-0.25
@@ -899,7 +924,8 @@ Typical numbers:
 Under-explored:
   - Chips (2), retriggers (0) and plain Mult.
   - Consumables (1), Foresight (0), hand-type conditions (4).
-  - "Speed" ideas: extra draws and the first hand of the round.
+  - "Speed" ideas: extra draws and the first hand of the round (the owner's Pachirisu takes the first hand: the
+    first-hand team X in 2.1).
   - 30 non-Mega jokers against 31 missing species. Only Fighting is more under-filled
     (20 against 23).
 Pitfalls:
@@ -1038,6 +1064,9 @@ Examples:
                        Snowy (Water) held Spades X1.1; Normal (Colorless) +10 Mult.
   Owner's Starly (U $6): Flock, +2 Mult per Colorless Joker, itself included. Staravia +4;
                        Staraptor X(1 + 0.5 each), Recoil: lose $1 each hand played.
+  Owner's Chatot (R $7, single-stage): Vocabulary, +4 Mult for each different poker hand
+                       played this run; New Word: a hand's first play this run, while held,
+                       creates its Planet (with room).
 Typical numbers:
   Basic     +M 3-15~6 | X 1.75-2 | card +M 6 | card X 1.5 | $ 1-4 | gain +M 1-4 | gain X 0.2
   Stage 1   +M 5 | X 2 | card +M 7 | $ 1-2 | gain +M 1-6 | gain X 0.5
@@ -1048,8 +1077,9 @@ Under-explored:
     2.1). Type changers: Kecleon, and the owner's Castform (its weather form; see 2.1).
   - Enhancements (7).
   - Birds: the owner's Starly line made the first shared Bird hook (Flock: count the Colorless team; Brave Bird: X Mult with a
-    $1 Recoil). 16 of the missing Colorless species are Flying (Pidove, Fletchling, Pikipek, Rookidee, Rufflet, Chatot,
-    Squawkabilly, Tornadus...): the flock count is there to reuse.
+    $1 Recoil). 15 of the missing Colorless species are Flying (Pidove, Fletchling, Pikipek, Rookidee, Rufflet,
+    Squawkabilly, Tornadus...): the flock count is there to reuse. Chatot (a Bird) went the hand-type way instead (2.1).
+  - Hand types across the run: the owner's Chatot counts the run's played-hand records (the vocabulary pattern in 2.1).
 Pitfalls:
   - Copying effects (Smeargle, Zoroark) multiply whatever is strongest. Never add a new
     unconditional copier below Rare.
