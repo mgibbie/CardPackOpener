@@ -266,6 +266,7 @@ fresh();
 toShop(); buy('j_poke_bulbasaur');
 nextShop(); buy('j_riff_raff', 'Grass'); // (a Grass Tera'd Riff-raff: itself it matches)
 G.jokers.config.card_limit = 3; // (room for exactly one Common)
+G.GAME.banned_keys.j_poke_burmy = true; // (a Common whose cloak type Monotype leaves out, poke_mono_exempt: the case needs an off-type Common)
 ban_grass_commons();
 act({ type: 'next_round' });
 ok(RB().mono && RB().type === 'Grass' && RV().mono_at_risk === false, '(riff-raff) Bulbasaur + Grass Riff-raff: intact, not at risk before the blind', RB());
@@ -542,6 +543,7 @@ fresh();
 toShop(); buy('j_poke_bulbasaur');
 nextShop(); buy('j_riff_raff', 'Grass');
 G.jokers.config.card_limit = 3;
+G.GAME.banned_keys.j_poke_burmy = true; // (a Common whose cloak type Monotype leaves out, poke_mono_exempt: the case needs an off-type Common)
 ban_grass_commons();
 act({ type: 'next_round' });
 {
