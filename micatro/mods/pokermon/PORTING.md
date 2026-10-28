@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), **`3.9.1+r43`** since the owner's Gible line ("The owner's Gible line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), **`3.9.1+r44`** since the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2698,6 +2698,35 @@ Garchomp here.
 - **Art**: upstream 3.9.1's own (Natdex {14,29} / {16,29} / {18,29}); nothing to deploy. The wiki drops them (371 missing).
 - **Tests**: `micatro/tests/mods/pokermon_gible_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
   (the pin, 75 defs), `pokermon_art_types_test` (all three Dragon), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (893 jokers).
+
+### The owner's last Gen 4 regulars (2026-10-28, branch `feat/pokermon-gen4-regulars`)
+Pinned **`3.9.1+r44`** (`contentRev: 44`; `LEGACY_MOD_VERSIONS` untouched). PR A of the owner-approved "last 18 Gen 4 jokers": Hippopotas (449)
+-> Hippowdon (450), Skorupi (451) -> Drapion (452), Carnivine (455), Finneon (456) -> Lumineon (457), in `jokers/pokejokers_designs.js`
+(`sand_stream` / `sand_stone` / `sniper` / `flytrap` / `luminous`; 82 defs now), after Mega Lucario in Pokédex order (Mantyke 458 next;
+Croagunk / Toxicroak are Pokermon+'s). Types from their cards: Earth, Earth, Dark, Dark, Grass, Water, Water. Neither Nacho nor Pokermon+
+has any of them.
+- **Hippopotas** (Basic, **Common $5**, 5 rounds), Sand Stream: scored **Stone** cards give **+30 extra Chips** (a joker per-card effect on
+  top of the Stone card's own +50, so it stacks with Regirock's +100: 5 + 100 + 30; Blueprint and retriggers repeat it).
+- **Hippowdon** (Stage 1, **Safari $8**): **+60 extra**; and on **each round's first deal** (Castform's `first_deal`, its own `sand_round`:
+  later draws never convert) **1 random unenhanced card held in hand becomes Stone** (seeded `'hippowdon_sand'`; none unenhanced: nothing,
+  it never overwrites). CHOICE: the first deal, not end of round, so the new Stone card is playable that round. Fixed; not Blueprint.
+- **Skorupi** (Basic, **Common $5**, 5 rounds), Sniper: each scored card has a **1 in 5** chance to crit for **X1.25**
+  (`pseudorandom_probability` / `get_probability_vars`: Oops! All 6s 2 in 5, Absol 0). **Drapion** (Stage 1, **Safari $8**): **1 in 3** for
+  **X1.5**; **Lucky cards always crit** (no roll, so Absol never stops them). Each retrigger rolls again; Blueprint rolls its own.
+- **Carnivine** (Basic, single-stage, **Rare $7**), Flytrap: the round's **first player discard** (not an effect's `hook` discard;
+  `discards_used` 0; once a round) devours its **leftmost card**: the discard pass returns `{ remove: true }`, so the engine destroys it
+  (Trading Card / Entei / Magmar) and every joker's `remove_playing_cards` runs (Canio, Hydreigon...). Each devour banks **+4 Mult**
+  (`devour_mult`), given every hand.
+- **Finneon** (Basic, **Common $5**, 5 rounds): **+40 Chips on night hands** (each round's 2nd and 4th: Lunatone / Solrock's `is_day`).
+  **Lumineon** (Stage 1, **Safari $8**): on night hands **each scored card +15 Chips**; with **Lunatone** (owned, undebuffed: `cosmic`) on
+  day hands too.
+- **Energy**: Hippopotas `chips` 30 -> 39 / 48 / 57, Hippowdon 60 -> 78 / 96 / 114; Skorupi `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375,
+  Drapion 1.5 -> 1.575 / 1.65 / 1.725 (the odds never); Carnivine `mult_mod` 4 -> 4.8 / 5.6 / 6.4 (the bank never retroactive); Finneon
+  `chips` 40 -> 52 / 64 / 76, Lumineon 15 -> 19.5 / 24 / 28.5. Fixed: Hippowdon's conversion. Carried through evolution.
+- **Art**: upstream 3.9.1's own Natdex cells ({26,29} / {28,29}, {0,30} / {2,30}, {8,30}, {10,30} / {12,30}); nothing to deploy. The wiki
+  drops them (364 missing).
+- **Tests**: `micatro/tests/mods/pokermon_gen4_regulars_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, 82 defs), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (900 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
