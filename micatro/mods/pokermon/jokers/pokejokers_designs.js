@@ -43,6 +43,9 @@
 // Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the round's first deal pick one
 // for the round), Rayquaza (Dragon: Delta Stream calms the clash; Dragon Ascent X0.2 per Straight / Flush) — upstream 3.9.1 draws them with
 // their souls (Natdex 8-17, 25).
+// Shellos -> Gastrodon (contentRev 34): a sea, West or East, rolled once per card; Tide Pool +40 Chips on the leftmost (West) / rightmost
+// (East) scored card; Gastrodon's Tide retriggers it, Storm Drain X0.1 per Energy card used (X0.2 Water); Two Seas: both seas held, every one
+// works on both ends; Water — upstream 3.9.1 draws both seas (Gen 4 sheet: East {4,1} / {8,1}, West {6,1} / {10,1}).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -695,6 +698,38 @@ function eon(card, context, own, partner) {
   if (context.joker_main && ex.eon_Xmult > 1) return { message: a_xmult(r3(ex.eon_Xmult)), colour: 'XMULT', Xmult_mod: ex.eon_Xmult };
   return undefined;
 }
+
+// The owner's Shellos line (Tide Pool / Tide / Storm Drain / Two Seas): each card's sea (ability.extra.form, 'west' or 'east') is rolled
+// ONCE when the card is created (set_ability initial, the run's seeded RNG), so a save / resume — which rebuilds the run from its
+// recipe — gives it back the same sea; `form` is one of the values every evolution keeps (systems/evolution.js NAMES_TO_KEEP).
+export const SEAS = { west: { name: 'West Sea', end: 'leftmost' }, east: { name: 'East Sea', end: 'rightmost' } };
+const SEA_LINE = ['j_poke_shellos', 'j_poke_gastrodon'];
+const sea_of = (card) => (SEAS[card.ability.extra.form] ? card.ability.extra.form : 'east');
+/** The seas held: every undebuffed Shellos / Gastrodon in the joker row (a Blueprint copying one is not one). */
+const seas_held = () => new Set(((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && SEA_LINE.includes(j.config.center.key)).map(sea_of));
+/** Two Seas: a West AND an East Shellos / Gastrodon held (any mix, undebuffed). */
+export const two_seas = () => { const s = seas_held(); return s.has('west') && s.has('east'); };
+/** The seas this card works on: its own, or both under Two Seas. */
+const seas_for = (card) => (two_seas() ? ['west', 'east'] : [sea_of(card)]);
+/** The scored card this sea names: the leftmost (West) or the rightmost (East) of the scoring hand, by position (a debuffed one there
+ *  scores nothing: the end never shifts inward). A 1-card hand's card is both ends, and still counts once. */
+const sea_end = (context, sea) => { const s = context.scoring_hand || []; return s.length ? (sea === 'west' ? s[0] : s[s.length - 1]) : undefined; };
+const at_sea_end = (card, context, c) => seas_for(card).some((sea) => sea_end(context, sea) === c);
+const sea_ends_text = (card) => (two_seas_text(card) === 'active' ? 'leftmost and rightmost scored cards' : SEAS[sea_of(card)].end + ' scored card');
+const two_seas_text = (card) => {
+  const s = seas_held(); // (+ its own sea: a shop card says what it would be once bought)
+  s.add(sea_of(card));
+  if (s.has('west') && s.has('east')) return 'active';
+  return s.has('west') ? 'needs an East Sea' : 'needs a West Sea';
+};
+/** Tide Pool / Tide: the sea's end card gives +chips each time it scores (Gastrodon's retrigger scores it again, so again). */
+function tide_chips(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && at_sea_end(card, context, context.other_card)) return { chips: card.ability.extra.chips, card };
+  return undefined;
+}
+/** Storm Drain: each Energy card used (the Energy set — the 12 type Energies and Bird Energy, the cards Porygon-Z counts — on any
+ *  joker, or none) banks Xmult_mod, twice that for Water Energy (one energy field scales both, the ratio holds). Not Blueprint. */
+const storm_gain = (ex, consumeable) => (consumeable.config.center.key === 'c_poke_water_energy' ? 2 : 1) * ex.Xmult_mod;
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -1510,6 +1545,63 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F9: Shellos -> Gastrodon (Water, Gen 4)
+  // The owner's design (2026-10-28). Each card has a SEA, West or East, rolled once when it is created (set_ability initial: the run's
+  // seeded pseudorandom 'shellos_sea' / 'gastrodon_sea'), kept on ability.extra.form — so through save / resume and evolution — and
+  // its card shows that sea: upstream 3.9.1 draws both on the Gen 4 sheet (Shellos East {4,1} blue / West {6,1} pink, Gastrodon East
+  // {8,1} / West {10,1}, Shiny twins on the Shiny sheet; systems/anim.js SEA_SPRITES, ui.js ownFace). West works on the LEFTMOST
+  // scored card, East on the RIGHTMOST (by position; a debuffed one there scores nothing). Two Seas: holding a West AND an East
+  // Shellos / Gastrodon (any mix, undebuffed), every one of them works on BOTH ends; a 1-card hand's card is both ends, once.
+  // Energy: the end card's Chips `chips` +30% of base (40 -> 52 / 64 / 76) and Storm Drain's gain `Xmult_mod` +20% (0.1 -> 0.12 /
+  // 0.14 / 0.16, Water Energy twice that); the retrigger is fixed; carried through evolution (energy_count re-applied to the new
+  // base), never retroactive (the bank `drain_Xmult` is in no energy field). Neither Nacho nor Pokermon+ has the line.
+  // Shellos 422: Common $5; Tide Pool, the sea's end card +40 Chips when scored. Evolves after 5 rounds, keeping its sea.
+  shellos: {
+    name: 'shellos', poke_sprite391: sprite('Gen04', 4, 1),
+    config: { extra: { chips: 40, form: 'east', rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 4, blueprint_compat: true,
+    attributes: ['chips', 'position', 'round_evo'], poke_after: 'floatzel',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.chips), sea_ends_text(card), SEAS[sea_of(card)].name, two_seas_text(card), ex.rounds] };
+    },
+    set_ability(self, card, initial) {
+      if (initial) card.ability.extra.form = pseudorandom(pseudoseed('shellos_sea')) < 0.5 ? 'west' : 'east';
+    },
+    calculate(self, card, context) { return tide_chips(card, context) || level_evo(self, card, context, 'j_poke_gastrodon'); },
+  },
+  // Gastrodon 423: Safari $8; Tide, the sea's end card retriggers once (`retriggers`, fixed) and gives +40 Chips each time it scores
+  // (so +80 with the retrigger); Storm Drain, each Energy card used (on any joker) banks X0.1 Mult, X0.2 for Water Energy. Blueprint
+  // copies the retrigger, the Chips and the X, never the growth.
+  gastrodon: {
+    name: 'gastrodon', poke_sprite391: sprite('Gen04', 8, 1),
+    config: { extra: { chips: 40, retriggers: 1, Xmult_mod: 0.1, drain_Xmult: 1, form: 'east' } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 4, blueprint_compat: true,
+    attributes: ['chips', 'retrigger', 'xmult', 'scaling', 'energy', 'position'], poke_after: 'shellos',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.chips), sea_ends_text(card), SEAS[sea_of(card)].name, two_seas_text(card), r3(ex.Xmult_mod), r3(2 * ex.Xmult_mod), r3(ex.drain_Xmult)] };
+    },
+    set_ability(self, card, initial) {
+      if (initial) card.ability.extra.form = pseudorandom(pseudoseed('gastrodon_sea')) < 0.5 ? 'west' : 'east';
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (context.using_consumeable && !context.blueprint && context.consumeable && context.consumeable.ability.set === 'Energy') {
+        ex.drain_Xmult = r3(ex.drain_Xmult + storm_gain(ex, context.consumeable));
+        card_eval_status_text(card, 'extra', null, null, null, { message: 'Storm Drain!', colour: 'XMULT' });
+        return undefined;
+      }
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && at_sea_end(card, context, context.other_card)) {
+        return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+      }
+      if (context.joker_main && ex.drain_Xmult > 1) return { message: a_xmult(r3(ex.drain_Xmult)), colour: 'XMULT', Xmult_mod: ex.drain_Xmult };
+      return tide_chips(card, context);
+    },
+  },
+
   // ---------------------------------------------------------------- Castform 351 (Colorless, Gen 3)
   // The owner's design (2026-10-27): Forecast. When the round's first hand is drawn, Castform reads the weather from the suit held
   // most (forecast: Hearts + Diamonds together vs Clubs vs Spades; Wild counts for all three; debuffed / suitless cards for none;
@@ -1746,6 +1838,7 @@ export const DESIGN_FAMILIES = [
   ['spoink', 'grumpig'],
   ['barboach', 'whiscash'],
   ['starly', 'staravia', 'staraptor'],
+  ['shellos', 'gastrodon'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -1775,6 +1868,7 @@ const FLOCK = ['{C:attention}Flock:{} {C:mult}+#1#{} Mult for each', '{X:poke_co
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
 const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, every', '{C:tarot}Tarot{} or {C:planet}Planet{} used', 'grows both of them', '{C:inactive}(Soul Dew: #3#)'];
+const TWO_SEAS = (n) => ['{C:attention}Two Seas:{} with a {C:attention}West{} and an', '{C:attention}East{} Shellos or Gastrodon, each', 'works on both end cards', '{C:inactive}(Two Seas: #' + n + '#)'];
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
   '{C:inactive}(+1 for each other Regi)'];
 export const DESIGN_LOC = {
@@ -1892,6 +1986,15 @@ export const DESIGN_LOC = {
       ['{C:attention}Brave Bird:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each {X:poke_colorless,C:white}Colorless{} Joker', '{C:inactive}(Itself included)',
         '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
       ['{C:attention}Recoil:{} lose {C:money}$#2#{} each', 'hand played', '{C:inactive,s:0.8}(Never past your debt limit)'],
+    ] },
+    j_poke_shellos: { name: 'Shellos', text: [
+      ['{C:attention}Tide Pool:{} {C:chips}+#1#{} Chips on the', '{C:attention}#2#{}', '{C:inactive}(#3#: rolled once when created)'],
+      [...TWO_SEAS(4), EVOLVES_ROUNDS(5)],
+    ] },
+    j_poke_gastrodon: { name: 'Gastrodon', text: [
+      ['{C:attention}Tide:{} retrigger the', '{C:attention}#2#{},', '{C:chips}+#1#{} Chips per trigger', '{C:inactive}(#3#, kept from Shellos)'],
+      ['{C:attention}Storm Drain:{} gains {X:mult,C:white} X#5# {} Mult', 'each time you use an {C:poke_pink}Energy{}', 'card, {X:mult,C:white} X#6# {} for {X:poke_water,C:white}Water{} Energy', '{C:inactive}(Currently {X:mult,C:white} X#7# {C:inactive} Mult)'],
+      TWO_SEAS(4),
     ] },
     j_poke_castform: { name: 'Castform', text: [
       FORECAST,

@@ -2485,6 +2485,30 @@ Psychic, Kyogre Water, Groudon Earth, Rayquaza Dragon** (`tools/micatro/pokermon
 - **Tests**: `micatro/tests/mods/pokermon_gen3_legendaries_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test` (the pin, 55 defs), `pokermon_regis_test` (Pokédex order), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (873 jokers).
 
+### The owner's Shellos line (2026-10-28, branch `feat/pokermon-shellos-line`)
+Pinned **`3.9.1+r34`** (`contentRev: 34`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
+(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (57 defs now), after Floatzel in Pokédex order (Ambipom 424 next).
+Neither Nacho nor Pokermon+ has the line.
+- **The sea**: each card is **West or East**, rolled ONCE when it is created (`set_ability` initial, the run's seeded `pseudorandom('shellos_sea')`
+  / `'gastrodon_sea'`), kept in `ability.extra.form` (copies, rounds, evolution: `NAMES_TO_KEEP`; save / resume rebuild the run from its recipe,
+  so the same seed rolls the same sea).
+- **Shellos** (Basic, **Common $5**), Tide Pool: West, the **leftmost** scored card gives **+40 Chips**; East, the **rightmost**. Evolves after
+  **5 rounds**, keeping its sea. The end is by position: a debuffed card there scores nothing (the end never moves inward).
+- **Gastrodon** (Stage 1, **Safari $8**), Tide: its sea's end card **retriggers once** and gives **+40 Chips each time it scores** (+80 with the
+  retrigger). Storm Drain: each **Energy card used** (the Energy set: the 12 type Energies and Bird Energy, on any joker; not Double Rainbow, a
+  Spectral, nor Berry Juice Energy, an Item) permanently gains **X0.1 Mult**, **X0.2 for Water Energy**. Banked in `drain_Xmult`; Blueprint copies
+  the retrigger, the Chips and the X, never the growth. An Energy that energizes Gastrodon itself counts at its new gain (use() runs first).
+- **Two Seas**: holding a West AND an East Shellos / Gastrodon (any mix, undebuffed; a Blueprint is not one), **every one works on both end
+  cards**. A 1-card hand's card is both ends: once (one +40 per joker, one retrigger).
+- **Energy**: the end card's `chips` +30% of base (40 -> **52 / 64 / 76**); Storm Drain's gain `Xmult_mod` +20% (0.1 -> **0.12 / 0.14 / 0.16**,
+  Water twice that). The retrigger is fixed. Carried through evolution (energy_count re-applied to Gastrodon's base); never retroactive.
+- **Art: upstream's own, per sea** (pokespriteload.lua lists two `base.pos` each on the Gen 4 sheet): **East Sea** (blue) = the first cell,
+  each center's own card: Shellos {4,1}, Gastrodon {8,1}; **West Sea** (pink) = the second: Shellos {6,1}, Gastrodon {10,1} (`systems/anim.js`
+  `SEA_SPRITES`, `ui.js` ownFace; the Shiny sheet's twins at the same cells). The Pokédex modal shows the family in the card's sea. Nothing to
+  deploy for the mod. The wiki drops them (389 missing); the mods wiki shows one cell per joker (its East card).
+- **Tests**: `micatro/tests/mods/pokermon_shellos_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 57 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (875 jokers).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):

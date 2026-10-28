@@ -15,6 +15,7 @@ import { pathToFileURL } from 'url';
 import { fileURLToPath } from 'url';
 import { T, start, hand, add, play, winRound, nextRound, clearHand, G, P_CENTERS } from './poke_helpers.mjs';
 import { ART } from './poke_art_helpers.mjs';
+import { SEA_SPRITES } from '../../mods/pokermon/systems/anim.js';
 import { increment_energy, energy_matches } from '../../mods/pokermon/systems/energy.js';
 import { is_type, find_pokemon_type } from '../../mods/pokermon/systems/types.js';
 import { CASTFORM_FORMS } from '../../mods/pokermon/jokers/pokejokers_designs.js';
@@ -52,6 +53,10 @@ else await sec('art', async () => {
     if (!r || r.ptype !== c.ptype) bad.push(`${c.name}: ptype ${c.ptype}, card ${r && r.ptype} (${r && r.score.toFixed(2)})`);
   }
   ok(!bad.length, `every owner-designed joker's ptype is the type its card shows (${designs().length})`, bad);
+  // Shellos / Gastrodon: both seas' cards (East = each one's own Gen 4 cell, West the second) show the Water icon, their ptype
+  const seas = Object.entries(SEA_SPRITES || {}).flatMap(([k, cells]) => Object.entries(cells).map(([f, p]) => [k + ' ' + f, P_CENTERS[k] && P_CENTERS[k].ptype, typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen04', pos: [p.x, p.y] })]));
+  ok(seas.length === 4 && seas.every(([, want, r]) => want === 'Water' && r && r.ptype === want), 'Shellos / Gastrodon: each sea’s card shows the Water icon (West and East)',
+    seas.map(([f, w, r]) => `${f} ${w} / card ${r && r.ptype}`));
   const own = typer.typeOfEntry({ atlas: P_CENTERS.j_poke_castform.poke_sprite391.atlas, pos: [P_CENTERS.j_poke_castform.poke_sprite391.pos.x, P_CENTERS.j_poke_castform.poke_sprite391.pos.y] });
   const forms = Object.entries(CASTFORM_SPRITES).map(([f, p]) => [f, CASTFORM_FORMS[f].ptype, typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen03', pos: [p.x, p.y] })]);
   ok(own && own.ptype === CASTFORM_FORMS.normal.ptype && forms.length === 3 && forms.every(([, want, r]) => r && r.ptype === want),

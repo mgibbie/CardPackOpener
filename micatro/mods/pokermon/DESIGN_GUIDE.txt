@@ -276,6 +276,26 @@ House pattern: an EON DUO, a pair with full cross-growth (the owner's Latias / L
   - Banked in eon_Xmult (no energy field), the gain Xmult_mod +20% per Energy (0.15 -> 0.18 / 0.21 / 0.24): Energy never raises
     what is banked. Blueprint copies the X, never the growth.
 
+House pattern: a ROLLED-ONCE TRAIT with its own art (the owner's Shellos line's sea, jokers/pokejokers_designs.js SEAS; Tatsugiri's
+nature and Burmy's gender are the same roll without the art):
+  - Rolled in the center's set_ability(self, card, initial) when `initial` (a new card: shop, pack, add_joker, create_card): the
+    run's seeded pseudorandom with the joker's own seed key ('shellos_sea'), so a seed always rolls the same trait. Never re-rolled:
+    rounds, copies (copy_card keeps ability.extra) and evolution keep it.
+  - Store it in ability.extra.form when it should survive evolution (systems/evolution.js NAMES_TO_KEEP always restores `form`);
+    the view gets it as poke.form (systems/anim.js view_card). Save / resume rebuild the run from its recipe, so the same seed rolls
+    the same trait again: nothing to persist by hand. Give the config a default (form: 'east'), the trait of the center's own cell.
+  - Per-trait art: where upstream draws one cell per form (pokespriteload.lua lists two `base.pos` for Shellos / Gastrodon), the
+    center keeps the FIRST cell and ui.js ownFace draws the other from a table (SEA_SPRITES), keyed by center and form, like
+    Castform's CASTFORM_SPRITES. basicShiny then swaps in the Shiny sheet's twin at the same position, so Shiny works for free.
+    Look at the cells to name them (Shellos {4,1} is blue = East, {6,1} pink = West), and pin it with a pixel test that cuts the
+    cell each card is DRAWN from out of its sheet (pokermon_shellos_test 'art cells': West cells are pink). The Pokedex modal
+    shows the family in the opened card's form (ui.js cardOf). The mods wiki (gen_designwiki_mods.mjs) shows one cell per joker.
+  - A rolled SIDE (Shellos West = the leftmost scored card, East the rightmost) is a position rule: read the end of
+    context.scoring_hand by position; a debuffed card there scores nothing (the end never moves inward). A 1-card hand's card is
+    both ends, so a rule on both ends must apply once (test the card against each end, not count the ends).
+  - Two Seas (a cross-trait unlock): holding both traits (any mix of the line, undebuffed; a Blueprint is not one) unlocks both
+    sides for every copy. The tooltip says what a shop card WOULD do once bought (its own trait counts with the row's).
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -476,6 +496,16 @@ Energy-themed jokers:
   Gardevoir: X0.3 per Energized Joker.
   Gallade: X0.5 per Joker with 2+ Energy.
   Porygon-Z: X0.1 per Energy used.
+  Gastrodon (the owner's Storm Drain): banks X0.1 per Energy card used, X0.2 for Water Energy.
+
+House pattern: ENERGY USED ANYWHERE (the owner's Gastrodon, Storm Drain; Porygon-Z's trigger):
+  - context.using_consumeable with consumeable.ability.set === 'Energy': the 12 type Energies and Bird Energy, on ANY joker (or
+    energizing nothing: a mismatched Colorless still counts). Double Rainbow Energy (a Spectral) and Berry Juice Energy (an Item)
+    are not in the Energy set and don't count; say so if a design means them.
+  - A matching type pays more (Water Energy: consumeable.config.center.key === 'c_poke_water_energy'), derived from the same gain
+    field (2 x Xmult_mod), so one energy field scales both and the ratio holds.
+  - Order: the Energy's use() runs first, so an Energy that energizes the joker itself is counted at the NEW gain (a Water Energy
+    on a fresh Gastrodon banks 2 x 0.12). Banked in a non-energy field (drain_Xmult): not retroactive. Not Blueprint (it scales).
 
 2.5 Recurring Pokermon keywords
 -------------------------------
@@ -789,6 +819,7 @@ Identity: Chips, hands and retriggers.
     - Final-hand payoffs (Slowpoke X2).
     - Retriggering whole hands (Shellder/Cloyster, Remoraid/Octillery, Politoed, Milotic, the owner's Whiscash).
     - Suit cycling (Poliwag line).
+    - Position: the owner's Shellos line works on the leftmost (West Sea) or rightmost (East Sea) scored card (2.1, rolled once).
   The Ice subset has its own mini-identity: Glass (Glaceon, Cryogonal) and debt (Snorunt,
   Glalie, Froslass).
 Hooks: joker_main 59, individual 30, before 28, repetition 22, add_to_deck 20 (hands), after 13,
@@ -807,7 +838,7 @@ Typical numbers:
 Under-explored:
   - Hand size (3) and discards (4).
   - Seals (3: Seel, Dewgong, Articuno).
-  - Energy interaction.
+  - Energy interaction (the owner's Gastrodon, Storm Drain: X0.1 per Energy card used anywhere, X0.2 Water; 2.4).
   - Ice beyond Glass and debt: 15 missing Ice species map to Water (Spheal, Cubchoo, Bergmite,
     Snom, Eiscue, Glastrier...). They could own a "frozen" mechanic, for example cards kept in
     hand between rounds or Glass that doesn't break.
