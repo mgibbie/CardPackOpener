@@ -118,8 +118,9 @@ Missing by stage:
 Notable gaps:
   - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
     by Nacho (the Turtwig, Chimchar and Piplup lines). Gen 5 (Snivy, Tepig, Oshawott), Gen 7 (Rowlet, Litten,
-    Popplio) and Gen 8 (Scorbunny, Sobble; Grookey is the owner's) are now built to the starter template (2.2);
-    Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 51; "a STARTER LINE, Gen 6 additions", 2.1).
+    Popplio) and Gen 8 (Scorbunny, Sobble; Grookey is the owner's) are now built to the starter template (2.2); all three Gen 9
+    lines are the owner's (Sprigatito, Fuecoco, Quaxly); Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 52;
+    "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -805,6 +806,11 @@ Designer consequences:
      energize ignores, with its gain in an energy field (chip_mod / mult_mod / Xmult_mod). Energy
      then raises only future gains, never what is already banked (not retroactive), and the bank
      carries through evolution by poke_custom_values_to_keep.
+     A STARTER BANK (house: the owner's Gen 9 starters, Fuecoco and Quaxly): the Basic and the Stage 1 bank a flat value
+     (`torch_mult` +1 / +2 Mult a hand; `moxie_chips` +4 / +6 Chips per unused hand), and the Stage 2 STOPS banking it (it
+     keeps giving it, "kept from Crocalor") and banks an X total instead (`torch_Xmult` / `moxie_Xmult` from X1, its own
+     Xmult_mod), pattern (b) of 2.3 on a bank. List every bank in poke_custom_values_to_keep on the stage that evolves AWAY
+     (the old center's list is read), and give the evolving stage the next stage's bank fields only if they start the same.
   6. An OVERFLOW gain (house pattern: Grumpig's Black Pearl) is the normal gain doubled, computed
      from the same Xmult_mod (2 x Xmult_mod), so one energy field scales both and the ratio holds.
   7. ENERGY RAISING A COUNT (house: the owner's Regice, `glass_convert`): a count with no other number (cards converted per Blind)
@@ -853,6 +859,13 @@ House pattern: ENERGY USED ANYWHERE (the owner's Gastrodon, Storm Drain; Porygon
     field (2 x Xmult_mod), so one energy field scales both and the ratio holds.
   - Order: the Energy's use() runs first, so an Energy that energizes the joker itself is counted at the NEW gain (a Water Energy
     on a fresh Gastrodon banks 2 x 0.12). Banked in a non-energy field (drain_Xmult): not retroactive. Not Blueprint (it scales).
+
+House pattern: UNUSED HANDS WHEN A BLIND IS BEATEN (the owner's Quaxly line, Moxie):
+  - Read G.GAME.current_round.hands_left in the main end_of_round pass (round_end: not a held card's, not a repetition) and not
+    on context.game_over: the hands left AFTER the winning hand, before the next round refills them. 0 left (won on the last
+    hand): no gain, no message. Blueprint never banks (it copies the given Chips / X).
+  - Gain first, then level_evo in the same pass, so the round that evolves it still banks at the old stage's gain.
+  - A +hands perk feeds it (the starter's own +1 hand is one more unused hand when you win early).
 
 2.5 Recurring Pokermon keywords
 -------------------------------
@@ -1166,6 +1179,9 @@ Examples:
                      Charizard: +36 Mult and X1.5 at 0 discards. Mega X: X5.
   Cyndaquil (U $5)   +1 discard, +4 Mult per remaining discard. Typhlosion: +8 Mult and X0.3
                      per remaining discard.
+  Fuecoco (U $5)     The owner's (Gen 9, Torch Song): +1 discard at every stage; banks +1 Mult per hand
+                     played (counted in `before`: the hand being played counts itself). Crocalor +2.
+                     Skeledirge gives the bank and banks X0.05 per hand. 5 rounds, then 5.
   Magmar (R $7)      If the first discard has only 1 card, destroy it and gain +2 Mult.
                      Magmortar also gains X0.05 per discard used.
   Numel (C $6)       X3 Mult every 20 cards scored. Camerupt: X4, with Mult cards counted twice.
@@ -1183,8 +1199,8 @@ Under-explored:
   - Fire-type synergy: only Blaziken.
   - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
     few hands.
-  - The Gen 5-9 Fire starter lines follow the "+1 discard" starter rule (Litten's and Tepig's lines do:
-    the starter line pattern, 2.2; Fennekin's too, with +1 Foresight).
+  - The Gen 5-9 Fire starter lines follow the "+1 discard" starter rule (Litten's, Tepig's and
+    Fuecoco's lines do: the starter line pattern, 2.2; Fennekin's too, with +1 Foresight).
 Pitfalls:
   - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
     vouchers, Mega Charizard Y's +5).
@@ -1220,6 +1236,9 @@ Examples:
   Squirtle (U $6)    +1 hand; gains +1 Chips per remaining hand each hand played. Evolves at 40.
                      Blastoise: +120 Chips and +25 per remaining hand.
   Totodile (U $5)    +1 hand, +4 Chips per card played this round. Croconaw +7; Feraligatr +10.
+  Quaxly (U $5)      The owner's (Gen 9, Moxie): +1 hand at every stage; when you beat a Blind, banks
+                     +4 Chips per unused hand (hands_left after the winning hand; its own +1 hand feeds
+                     it). Quaxwell +6. Quaquaval gives the bank and banks X0.2 per unused hand.
   Magikarp (C $2)    +1 Chip, applies Splash, 8 rounds. Gyarados (S $10): a flat X2.5 Mult.
   Cloyster (S $8)    If the hand has 5 scoring cards, each has a 1 in 2 chance to retrigger.
   Staryu (C $4)      Diamonds give +1 Mult and $1 (Water Stone). Starmie: +2 Mult and $2.

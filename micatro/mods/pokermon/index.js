@@ -928,11 +928,14 @@ export const POKERMON = registerMod({
   // Contrary (+4 / +8 Mult per debuffed card held), Serperior's (debuffed scored cards score as if not, X1.25 each: the score_debuffed hook),
   // Tepig / Pignite / Emboar's Flame Charge (+4 / +6 Mult, X0.25 per hand in a row of the same poker hand this round), Oshawott / Dewott /
   // Samurott's Razor Shell (the first 1 / 2 / 3 scored cards retrigger) and Shell Blade (scored Aces X1.5); each with its starter perk.
-  // 51 = the Gen 6 starters (jokers/pokejokers_designs.js discards_scry / braixen_tarot / mystical_fire / froak_count / protean_pick):
+  // 51 = the owner's Gen 9 starters (jokers/pokejokers_designs.js torch_song / moxie_bank): Fuecoco -> Crocalor -> Skeledirge (Fire,
+  // +1 discard; Torch Song: +1 / +2 Mult banked per hand played, Skeledirge X0.05) and Quaxly -> Quaxwell -> Quaquaval (Water, +1 hand;
+  // Moxie: +4 / +6 Chips banked per unused hand when a Blind is beaten, Quaquaval X0.2).
+  // 52 = the Gen 6 starters (jokers/pokejokers_designs.js discards_scry / braixen_tarot / mystical_fire / froak_count / protean_pick):
   // Chespin -> Quilladin -> Chesnaught (+1 hand size; +40 / +80 / +150 Chips; Spiky Shield X1.5 with 2+ hands left), Fennekin -> Braixen
   // -> Delphox (+1 discard, +1 Foresight; Braixen's Tarot on a Foreseen-rank discard; Mystical Fire X0.2 per Tarot used), Froakie ->
   // Frogadier -> Greninja (+1 hand; +30 / +50 Chips per Water Joker; Protean, X(1.5 + 0.5 per other Joker of its type)).
-  contentRev: 51,
+  contentRev: 52,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

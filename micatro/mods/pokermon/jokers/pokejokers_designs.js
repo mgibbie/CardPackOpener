@@ -90,7 +90,10 @@
 // cards score as if not, X1.25 each), Tepig -> Pignite -> Emboar (Fire; Flame Charge: +4 / +6 Mult, then X0.25, per hand in a row of the
 // same poker hand this round), Oshawott -> Dewott -> Samurott (Water; Razor Shell: the first 1 / 2 / 3 scored cards retrigger; Samurott's
 // scored Aces X1.5) — upstream 3.9.1 draws them (Natdex {28,32}, {0..14,33}).
-// The Gen 6 starters (contentRev 51): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
+// The owner's Gen 9 starters (contentRev 51): Fuecoco -> Crocalor -> Skeledirge (Fire starter, +1 discard; Torch Song: +1 / +2 Mult
+// banked per hand played, then X0.05) and Quaxly -> Quaxwell -> Quaquaval (Water starter, +1 hand; Moxie: +4 / +6 Chips banked per unused
+// hand when a Blind is beaten, then X0.2) — upstream 3.9.1 draws them (Natdex 16 / 18 / 20 / 22 / 24 / 26, 60).
+// The Gen 6 starters (contentRev 52): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
 // Shield X1.5 while 2+ hands are left), Fennekin -> Braixen -> Delphox (Fire: +1 discard, +1 Foresight; Braixen's first Foreseen-rank
 // discard each round creates a Tarot; Delphox's Mystical Fire X0.2 per Tarot used), Froakie -> Frogadier -> Greninja (Water: +1 hand;
 // +30 / +50 Chips per Water Joker; Greninja's Protean takes the most common type among your other Jokers each Blind, X(1.5 + 0.5 per
@@ -448,6 +451,58 @@ function sand_main(card, context) {
 /** Flygon, Sandstorm: X(1 + Xmult_mod per discard used this round). A discard USE counts once however many cards it had; effect
  *  discards (hook) never raise discards_used; it is 0 again each round (run.js new round). */
 const sandstorm_x = (ex) => r3(1 + ex.Xmult_mod * ((G.GAME && G.GAME.current_round && G.GAME.current_round.discards_used) || 0));
+
+/** The Gen 9 starters' bank (Trapinch's sand_chips pattern): `ref` (a field in no energy_values: a banked gain keeps what it was
+ *  worth when earned, Energy is never retroactive) grows by `mod` x `n` (the gain is the Energy field). r3-rounded; `xm` shows the
+ *  new X total, else the gain. */
+function bank(card, ref, mod, n, colour) {
+  let gained = 0;
+  scale_card(card, {
+    ref_value: ref, scalar_value: mod, scalar_factor: n, no_message: true,
+    operation: (t, k, v, change) => { t[k] = r3(v + change); gained = change; },
+  });
+  const ex = card.ability.extra;
+  const message = colour === 'XMULT' ? a_xmult(ex[ref]) : colour === 'MULT' ? a_mult(r3(gained)) : a_chips(r3(gained));
+  card_eval_status_text(card, 'extra', null, null, null, { message, colour });
+}
+/** Fuecoco / Crocalor / Skeledirge, Torch Song: every hand you play (its `before`: the hand being played counts itself) banks
+ *  +mult_mod Mult (`torch_mult`; Skeledirge banks X Mult instead, +Xmult_mod on `torch_Xmult`). Not Blueprint, not a joker
+ *  retrigger (it scales). */
+function torch_song(card, context) {
+  if (context.before && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) {
+    const ex = card.ability.extra;
+    if (ex.Xmult_mod !== undefined) bank(card, 'torch_Xmult', 'Xmult_mod', 1, 'XMULT');
+    else bank(card, 'torch_mult', 'mult_mod', 1, 'MULT');
+  }
+  return undefined;
+}
+/** Quaxly / Quaxwell / Quaquaval, Moxie: when you beat a Blind (the main end_of_round pass, not a game over), banks +chip_mod
+ *  Chips (`moxie_chips`; Quaquaval: +Xmult_mod X Mult on `moxie_Xmult`) for each unused hand — the hands left after the winning
+ *  hand (G.GAME.current_round.hands_left, before the next round refills them). None left: nothing. Not Blueprint. */
+const unused_hands = () => Math.max(0, (G.GAME && G.GAME.current_round && G.GAME.current_round.hands_left) || 0);
+function moxie_bank(card, context) {
+  if (round_end(context) && !context.blueprint && !context.retrigger_joker && !context.game_over) {
+    const n = unused_hands(), ex = card.ability.extra;
+    if (n > 0) {
+      if (ex.Xmult_mod !== undefined) bank(card, 'moxie_Xmult', 'Xmult_mod', n, 'XMULT');
+      else bank(card, 'moxie_chips', 'chip_mod', n, 'CHIPS');
+    }
+  }
+  return undefined;
+}
+/** The Gen 9 starters: their banked Chips / Mult and X Mult, every hand (Blueprint copies them). */
+function starter9_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const ex = card.ability.extra, r = {};
+  if (ex.moxie_chips > 0) r.chip_mod = ex.moxie_chips;
+  if (ex.torch_mult > 0) r.mult_mod = ex.torch_mult;
+  const x = ex.torch_Xmult !== undefined ? ex.torch_Xmult : ex.moxie_Xmult;
+  if (x !== undefined && x > 1) r.Xmult_mod = x;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r.Xmult_mod) : r.mult_mod ? a_mult(r.mult_mod) : a_chips(r.chip_mod);
+  r.colour = r.Xmult_mod ? 'XMULT' : r.mult_mod ? 'MULT' : 'CHIPS';
+  return r;
+}
 
 /** Spoink / Grumpig, Pearl: at the end of the round, a random card held in hand with no seal gains a Pink Seal (the run's seeded RNG;
  *  none unsealed: nothing). Once per round: not Blueprint, not a joker retrigger, not on a game over. */
@@ -2165,6 +2220,86 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F2b: Fuecoco -> Crocalor -> Skeledirge (Fire starter, Gen 9)
+  // The owner's Gen 9 starters (2026-10-28, contentRev 51). Torch Song: every hand played (counted in `before`, so the hand being
+  // played counts itself) permanently banks Mult on the joker (`torch_mult`, in no energy_values: never retroactive; kept through
+  // both evolutions). The gain is `mult_mod` (Energy +20% of its base each: Fuecoco 1 -> 1.2 / 1.4 / 1.6, Crocalor 2 -> 2.4 / 2.8 / 3.2).
+  // Skeledirge banks X Mult instead (`torch_Xmult` from X1, gain `Xmult_mod` 0.05 -> 0.06 / 0.07 / 0.08) and still gives the banked
+  // Mult. The Fire starter perk at every stage: +1 discard (`d_size`, fixed). Evolves after 5 rounds, then 5 (Cyndaquil's timers).
+  // Fuecoco 909: Uncommon $5, a starter (the Starter Pack).
+  fuecoco: {
+    name: 'fuecoco', poke_sprite391: sprite('Natdex', 16, 60),
+    config: { extra: { d_size: 1, torch_mult: 0, mult_mod: 1, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 9, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'discard', 'passive', 'mult', 'scaling', 'round_evo'], poke_after: 'meowscarada',
+    poke_custom_values_to_keep: ['torch_mult'],
+    ...discards,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult_mod), r3(ex.torch_mult), ex.rounds] }; },
+    calculate(self, card, context) { return torch_song(card, context) || starter9_main(card, context) || level_evo(self, card, context, 'j_poke_crocalor'); },
+  },
+  // Crocalor 910: Safari $8; Fuecoco's bank, +2 Mult per hand.
+  crocalor: {
+    name: 'crocalor', poke_sprite391: sprite('Natdex', 18, 60),
+    config: { extra: { d_size: 1, torch_mult: 0, mult_mod: 2, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 9, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'passive', 'mult', 'scaling', 'round_evo'], poke_after: 'fuecoco',
+    poke_custom_values_to_keep: ['torch_mult'],
+    ...discards,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult_mod), r3(ex.torch_mult), ex.rounds] }; },
+    calculate(self, card, context) { return torch_song(card, context) || starter9_main(card, context) || level_evo(self, card, context, 'j_poke_skeledirge'); },
+  },
+  // Skeledirge 911: Safari $10; gives the banked Mult (it banks no more) and banks X0.05 Mult per hand played.
+  skeledirge: {
+    name: 'skeledirge', poke_sprite391: sprite('Natdex', 20, 60),
+    config: { extra: { d_size: 1, torch_mult: 0, torch_Xmult: 1, Xmult_mod: 0.05 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 9, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'passive', 'mult', 'xmult', 'scaling'], poke_after: 'crocalor',
+    poke_custom_values_to_keep: ['torch_mult', 'torch_Xmult'],
+    ...discards,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.torch_mult), r3(ex.Xmult_mod), r3(ex.torch_Xmult)] }; },
+    calculate(self, card, context) { return torch_song(card, context) || starter9_main(card, context); },
+  },
+
+  // ---------------------------------------------------------------- LINE F2c: Quaxly -> Quaxwell -> Quaquaval (Water starter, Gen 9)
+  // The owner's Gen 9 starters (2026-10-28, contentRev 51). Moxie: when you beat a Blind, permanently banks Chips for each unused hand
+  // (the hands left after the winning one) on the joker (`moxie_chips`, in no energy_values: never retroactive; kept through both
+  // evolutions). The gain is `chip_mod` (Energy +20% of its base each: Quaxly 4 -> 4.8 / 5.6 / 6.4, Quaxwell 6 -> 7.2 / 8.4 / 9.6).
+  // Quaquaval banks X Mult instead (`moxie_Xmult` from X1, gain `Xmult_mod` 0.2 -> 0.24 / 0.28 / 0.32 per unused hand) and still gives
+  // the banked Chips. The Water starter perk at every stage: +1 hand (`hands`, fixed: the Squirtle line's pair). 5 rounds, then 5.
+  // Quaxly 912: Uncommon $5, a starter (the Starter Pack).
+  quaxly: {
+    name: 'quaxly', poke_sprite391: sprite('Natdex', 22, 60),
+    config: { extra: { hands: 1, moxie_chips: 0, chip_mod: 4, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Water', gen: 9, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hands', 'passive', 'chips', 'scaling', 'round_evo'], poke_after: 'skeledirge',
+    poke_custom_values_to_keep: ['moxie_chips'],
+    ...hands,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.chip_mod), r3(ex.moxie_chips), ex.rounds] }; },
+    calculate(self, card, context) { moxie_bank(card, context); return starter9_main(card, context) || level_evo(self, card, context, 'j_poke_quaxwell'); },
+  },
+  // Quaxwell 913: Safari $8; Quaxly's bank, +6 Chips per unused hand.
+  quaxwell: {
+    name: 'quaxwell', poke_sprite391: sprite('Natdex', 24, 60),
+    config: { extra: { hands: 1, moxie_chips: 0, chip_mod: 6, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 9, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'passive', 'chips', 'scaling', 'round_evo'], poke_after: 'quaxly',
+    poke_custom_values_to_keep: ['moxie_chips'],
+    ...hands,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.chip_mod), r3(ex.moxie_chips), ex.rounds] }; },
+    calculate(self, card, context) { moxie_bank(card, context); return starter9_main(card, context) || level_evo(self, card, context, 'j_poke_quaquaval'); },
+  },
+  // Quaquaval 914: Safari $10; gives the banked Chips (it banks no more) and banks X0.2 Mult per unused hand when you beat a Blind.
+  quaquaval: {
+    name: 'quaquaval', poke_sprite391: sprite('Natdex', 26, 60),
+    config: { extra: { hands: 1, moxie_chips: 0, moxie_Xmult: 1, Xmult_mod: 0.2 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Water', gen: 9, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'passive', 'chips', 'xmult', 'scaling'], poke_after: 'quaxwell',
+    poke_custom_values_to_keep: ['moxie_chips', 'moxie_Xmult'],
+    ...hands,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.moxie_chips), r3(ex.Xmult_mod), r3(ex.moxie_Xmult)] }; },
+    calculate(self, card, context) { moxie_bank(card, context); return starter9_main(card, context); },
+  },
+
   // ---------------------------------------------------------------- LINE F3: Whismur -> Loudred -> Exploud (Colorless, Gen 3)
   // The owner's design (2026-10-27): each Glass card that breaks (its 1 in 4 shatter, as Glass Joker counts) grows the joker, and
   // every form keeps what the last had. Starting / banked totals: glass_chips / glass_mult / glass_Xmult (in no energy_values:
@@ -3751,6 +3886,8 @@ export const DESIGN_FAMILIES = [
   ['scraggy', 'scrafty'],
   ['mudbray', 'mudsdale'],
   ['sprigatito', 'floragato', 'meowscarada'],
+  ['fuecoco', 'crocalor', 'skeledirge'],
+  ['quaxly', 'quaxwell', 'quaquaval'],
   ['whismur', 'loudred', 'exploud'],
   ['gulpin', 'swalot'],
   ['trapinch', 'vibrava', 'flygon'],
@@ -3833,6 +3970,8 @@ const RAZOR_SHELL = (n) => ['{C:attention}Razor Shell:{} retrigger the', n];
 const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{C:attention}Uxie{}, {C:attention}Mesprit{} or {C:attention}Azelf{} held', '{C:inactive}(Currently #' + n + '#/2 others)'];
 const LIBERO_MULT = ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult for each', 'remaining {C:attention}discard{}', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)'];
 const UNSCORED_CHIPS = ['{C:chips}+#1#{} hand', 'Each played card that', 'doesn\'t score gives', '{C:chips}+#2#{} Chips'];
+const TORCH_SONG = (gain) => ['{C:attention}Torch Song:{} permanently', 'gains ' + gain, 'for each hand played'];
+const MOXIE9 = (gain) => ['{C:attention}Moxie:{} when you beat a', '{C:attention}Blind{}, permanently gains', gain + ' for each', 'unused hand'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -3919,6 +4058,18 @@ export const DESIGN_LOC = {
     j_poke_sprigatito: { name: 'Sprigatito', text: LUCKY_GROW },
     j_poke_floragato: { name: 'Floragato', text: LUCKY_GROW },
     j_poke_meowscarada: { name: 'Meowscarada', text: ['When a {C:attention}Lucky{} card triggers,', 'it permanently gains', '{X:mult,C:white} X#1# {} Mult when scored'] },
+    j_poke_fuecoco: { name: 'Fuecoco', text: ['{C:red}+#1#{} discard', ...TORCH_SONG('{C:mult}+#2#{} Mult'), '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_crocalor: { name: 'Crocalor', text: ['{C:red}+#1#{} discard', ...TORCH_SONG('{C:mult}+#2#{} Mult'), '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_skeledirge: { name: 'Skeledirge', text: [
+      ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult {C:inactive}(kept from Crocalor)'],
+      [...TORCH_SONG('{X:mult,C:white} X#3# {} Mult'), '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
+    j_poke_quaxly: { name: 'Quaxly', text: ['{C:blue}+#1#{} hand', ...MOXIE9('{C:chips}+#2#{} Chips'), '{C:inactive}(Currently {C:chips}+#3#{C:inactive} Chips)', EVOLVES_ROUNDS(4)] },
+    j_poke_quaxwell: { name: 'Quaxwell', text: ['{C:blue}+#1#{} hand', ...MOXIE9('{C:chips}+#2#{} Chips'), '{C:inactive}(Currently {C:chips}+#3#{C:inactive} Chips)', EVOLVES_ROUNDS(4)] },
+    j_poke_quaquaval: { name: 'Quaquaval', text: [
+      ['{C:blue}+#1#{} hand', '{C:chips}+#2#{} Chips {C:inactive}(kept from Quaxwell)'],
+      [...MOXIE9('{X:mult,C:white} X#3# {} Mult'), '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
     j_poke_whismur: { name: 'Whismur', text: [
       ['{C:chips}+#1#{} Chips', ...GLASS_BREAKS('Gains {C:chips}+#2#{} Chips')],
       [...NEG_JUSTICE, EVOLVES_ROUNDS(3)],

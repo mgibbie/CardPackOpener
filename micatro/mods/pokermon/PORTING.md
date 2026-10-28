@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), **`3.9.1+r51`** since the Gen 6 starters ("The Gen 6 starters" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52`** since the Gen 6 starters ("The Gen 6 starters" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2904,10 +2904,41 @@ Arceus (493), before Pansage (511). Neither Nacho nor Pokermon+ has any of them.
   `pokermon_new_jokers_test` (the pin, 117 defs), `pokermon_art_types_test` (the nine types), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (935 jokers), `pokermon_gen4_creation_test` (Arceus is now followed by Snivy).
 
+### The owner's Gen 9 starters (2026-10-28, branch `feat/pokermon-starters-gen9`)
+Pinned **`3.9.1+r51`** (`contentRev: 51`; `LEGACY_MOD_VERSIONS` untouched). The Fire and Water Gen 9 starter lines (Sprigatito's line was
+already in), in `jokers/pokejokers_designs.js` (`bank` / `torch_song` / `moxie_bank` / `starter9_main`; 123 defs now). Pokédex order: after
+Meowscarada (908), before Tarountula (917). Neither Nacho nor Pokermon+ has any of them. The starter conventions: the type perk at **every**
+stage (fixed: Energy never touches `d_size` / `hands`), Basic **Uncommon $5** with `starter: true` + the `'starter'` attribute (the Starter
+Pack's Fire / Water slot; its evolutions are not starters), Stage 1 **Safari $8**, Stage 2 **Safari $10**, `level_evo` **5 rounds, then 5**
+(Cyndaquil's / Totodile's timers).
+- **Fuecoco** (909, **Fire**), Torch Song: **+1 discard**; **permanently gains +1 Mult per hand played**. The choice: the gain is in `before`,
+  so the hand being played counts itself (the first hand gives +1). Banked in `torch_mult` (no energy field); the gain `mult_mod`.
+- **Crocalor** (910, **Fire**): +1 discard; Fuecoco's bank, **+2 Mult** per hand.
+- **Skeledirge** (911, **Fire**): +1 discard; gives the banked Mult (it banks no more) and **permanently gains X0.05 Mult per hand played**
+  (`torch_Xmult` from X1, gain `Xmult_mod`; the same `before` timing).
+- **Quaxly** (912, **Water**), Moxie: **+1 hand**; **when you beat a Blind, permanently gains +4 Chips per unused hand**. The choice: "unused"
+  = `G.GAME.current_round.hands_left` in the main end_of_round pass, i.e. the hands left after the winning hand; not on a game over; 0 left
+  banks nothing. The gain runs before `level_evo` in the same pass, so the round it evolves still banks at Quaxly's rate. Banked in
+  `moxie_chips`; the gain `chip_mod`.
+- **Quaxwell** (913, **Water**): +1 hand; Quaxly's bank, **+6 Chips** per unused hand.
+- **Quaquaval** (914, **Water**): +1 hand; gives the banked Chips (it banks no more) and **gains X0.2 Mult per unused hand** when you beat a
+  Blind (`moxie_Xmult` from X1, gain `Xmult_mod`).
+- **Banks** carry through both evolutions (`poke_custom_values_to_keep` on the stage evolving away) and are never raised by Energy (not
+  retroactive). Blueprint copies what is given, never the growth.
+- **Energy** (+20% of the gain's base each; the Energy count carries through evolution and is re-applied to the new base): Fuecoco
+  `mult_mod` **1 -> 1.2 / 1.4 / 1.6**, Crocalor **2 -> 2.4 / 2.8 / 3.2**, Skeledirge `Xmult_mod` **0.05 -> 0.06 / 0.07 / 0.08**; Quaxly
+  `chip_mod` **4 -> 4.8 / 5.6 / 6.4**, Quaxwell **6 -> 7.2 / 8.4 / 9.6**, Quaquaval `Xmult_mod` **0.2 -> 0.24 / 0.28 / 0.32**. Fixed: the
+  perks, the timers.
+- **Art**: upstream 3.9.1's own cells (Natdex 16 / 18 / 20 / 22 / 24 / 26, row 60), whose icons are Fire x3 and Water x3; nothing to deploy.
+  The wiki drops them (323 missing).
+- **Tests**: `micatro/tests/mods/pokermon_starters_gen9_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, 123 defs), `pokermon_art_types_test` (three Fire, three Water), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (941 jokers).
+
 ### The Gen 6 starters (2026-10-28, branch `feat/pokermon-starters-gen6`)
-Pinned **`3.9.1+r51`** (`contentRev: 51`; `LEGACY_MOD_VERSIONS` untouched). The owner's "build" of the missing Gen 5-9 starters, the Gen 6
+Pinned **`3.9.1+r52`** (`contentRev: 52`; `LEGACY_MOD_VERSIONS` untouched). The owner's "build" of the missing Gen 5-9 starters, the Gen 6
 PR: Chespin, Fennekin and Froakie's lines (9 jokers) in `jokers/pokejokers_designs.js` (`discards_scry` / `spiky_on` / `braixen_tarot` /
-`mystical_fire` / `froak_count` / `protean_pick`; 126 defs now). Pokédex order: after Hydreigon (635), before Bunnelby (659). Neither Nacho nor
+`mystical_fire` / `froak_count` / `protean_pick`; 132 defs now). Pokédex order: after Hydreigon (635), before Bunnelby (659). Neither Nacho nor
 Pokermon+ has any of them.
 - **Starter conventions** (Bulbasaur / Charmander / Squirtle, Chikorita / Cyndaquil / Totodile, Grookey / Sprigatito): a type perk at every
   stage, fixed (never energized) and taken back when the joker goes: Grass **+1 hand size** (`h_size`), Fire **+1 discard** (`d_size`), Water
@@ -2940,10 +2971,10 @@ Pokermon+ has any of them.
   / 95**); Greninja `Xmult` and `Xmult_mod` +20% (**1.5 -> 1.8 / 2.1 / 2.4**, **0.5 -> 0.6 / 0.7 / 0.8**), its CURRENT type's Energy matching
   (Castform's rule). Fixed: the perks, the Foresight, the 2 hands, the Tarot. The bank (`fire_Xmult`) is never raised by Energy; Energy is
   re-applied to each new base on evolution.
-- **Art**: upstream 3.9.1's own cells (Natdex 8, 10 ... 24, 43); nothing to deploy. The wiki drops them (320 missing).
+- **Art**: upstream 3.9.1's own cells (Natdex 8, 10 ... 24, 43); nothing to deploy. The wiki drops them (314 missing).
 - **Tests**: `micatro/tests/mods/pokermon_starters_gen6_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
-  `pokermon_new_jokers_test` (the pin, 126 defs), `pokermon_art_types_test` (three Grass, three Fire, three Water), `micatro_mod_version_pin`,
-  `micatro_deckeditor_pages` (944 jokers).
+  `pokermon_new_jokers_test` (the pin, 132 defs), `pokermon_art_types_test` (three Grass, three Fire, three Water), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (950 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
