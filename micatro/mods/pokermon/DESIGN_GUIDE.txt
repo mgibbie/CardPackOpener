@@ -116,9 +116,10 @@ Missing by stage:
   Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
 
 Notable gaps:
-  - Starters: the Gen 5-9 starter lines were missing (15 lines, 45 species); Gen 6 (Chespin, Fennekin,
-    Froakie) is now built (contentRev 48; "a STARTER LINE", 2.1). Gen 4 is covered by Nacho (the Turtwig,
-    Chimchar and Piplup lines).
+  - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
+    by Nacho (the Turtwig, Chimchar and Piplup lines). Gen 7 (Rowlet, Litten, Popplio) is now
+    built to the starter template (2.2); Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 49;
+    "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -552,15 +553,12 @@ House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; 
     a joker that is every type (another Arceus, a Stellar Tera) adds ONE type of its own, never twelve; itself counts as one; at most 12.
     X(1 + 0.25 per type), `Xmult_mod` +20% (0.3 / 0.35 / 0.4): X2 with four types, X4 at all twelve.
 
-House pattern: a STARTER LINE (the Gen 6 starters, jokers/pokejokers_designs.js; the template for the Gen 5-9 starters):
-  - The type perk at EVERY stage, fixed (no energy field) and taken back when the joker goes: Grass +1 hand size (`h_size`, the
-    hand_size pair), Fire +1 discard (`d_size`, the discards pair), Water +1 hand (`hands`, the hands pair). An evolution runs the old
-    center's remove_from_deck and the new one's add_to_deck, so the perk is swapped, never doubled. A stage with a second perk (Fennekin's
-    Foresight) needs ONE combined add/remove pair (`discards_scry`): two spreads overwrite each other's add_to_deck.
-  - Basic Uncommon $5 with `starter: true` (the Starter Pack's Grass / Fire / Water slot: packs1.js starter_lists; a held family is left
-    out), Stage 1 Safari $8, Stage 2 Safari $10; the `starter` attribute on every stage. 5 rounds then 5 (Chikorita / Cyndaquil / Totodile).
-  - A stage with no number of its own carries its evolution's energy field (Fennekin / Braixen hold Delphox's `Xmult_mod`; Combee's
-    "Energy for later") and says so ("Energy carries to Delphox").
+House pattern: a STARTER LINE, Gen 6 additions (the Chespin / Fennekin / Froakie lines; the template itself is in 2.2 "Common
+deviations"):
+  - A stage with a SECOND perk (Fennekin's +1 Foresight on top of +1 discard) needs ONE combined add/remove pair (discards_scry):
+    two spread pairs overwrite each other's add_to_deck.
+  - The Starter Pack leaves out a family already held (packs1.js poke_family_present): holding a Quilladin, no Chespin is offered.
+  - Fennekin / Braixen (Foresight only) carry Delphox's Xmult_mod and say "Energy carries to Delphox" (2.4 #8).
 House pattern: a HANDS-LEFT threshold, "while you have N or more hands left" (the Gen 6 Chesnaught, Spiky Shield; spiky_on):
   - Say whether the current hand counts. run.js takes the hand (ease_hands_played(-1)) BEFORE the jokers score, so "counted before the
     hand is played" is hands_left + 1 >= N while scoring: with N = 2, every hand but a round's last. (Azelf's / Drifloon's "final hand" is
@@ -616,6 +614,21 @@ The wiki's default guesses follow the same modes:
 
 Common deviations:
   - Starters: Basic U $5-$6 with the 'starter' attribute.
+    House pattern: a STARTER LINE (the Gen 7 lines, jokers/pokejokers_designs.js "the Gen 7 starters"; the template for Gens 5-9):
+      - The type perk at EVERY stage, fixed (never in energy_values): Grass +1 hand size (h_size, Bulbasaur's add/remove), Fire +1
+        discard (d_size, Charmander's), Water +1 hand (hands, Squirtle's). An evolution's set_ability takes the old stage's perk back
+        and gives the new one's, so it stays exactly +1.
+      - Basic Uncommon $5 with BOTH starter: true (the Starter Pack's typed slot, boosters/packs1.js starter_lists) and the 'starter'
+        attribute; Stage 1 Safari $8 and Stage 2 Safari $10 keep the attribute but not starter: true (never Starter Pack picks).
+      - Evolution by rounds, 5 then 5 (level_evo). The older starters evolve by scaling (Bulbasaur's $16, Charmander's +16 Mult) or
+        by triggers (the owner's Grookey / Sprigatito); rounds are Nacho's Turtwig / Piplup shape.
+      - Each line has ONE main number that Energy raises at the standard share; a stage whose own effect has no number (Rowlet /
+        Dartrix: retriggers only) carries the last stage's field ("Energy carries to Decidueye": the Combee pattern, 2.4 #8).
+      - Shapes used by Gen 7: the RIGHTMOST scored card (position in the scoring hand, as the Shellos line's East Sea: a debuffed card
+        there gets nothing, the end never shifts inward) retriggered 1 / 2 / 2 times, with a per-card X (Xmult_multi) on the last
+        stage, which multiplies with its own retriggers (X1.3^3); HANDS ALREADY PLAYED THIS ROUND (current_round.hands_played,
+        still the pre-hand count while a hand scores, so the round's first hand counts 0: say "already played" on the card); a SUIT
+        rider (scored Hearts +Mult, then a per-card X).
   - Early-evolving bugs: Caterpie and Weedle are C $2; their Stage 1 is C $4 and their
     Stage 2 is U $5 and shop-able.
   - Pre-evolutions too weak alone are cheap (Magikarp C $2, Feebas R $3).
@@ -1043,7 +1056,7 @@ Identity: the "economy and hand" type.
   out:   +Mult 30, $ 28, +Chips 23, X 14, retrigger 5
   Also:  hand size 22, enhancements 28 (Seed/Flower 12, Wild 6, Lucky, Glass), probability 19,
          Nature 8, Hazards 6
-  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig).
+  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig, Rowlet).
   Grass is where money comes from cards held in hand (Bulbasaur, Chikorita, Treecko), where
   sell value grows (Smoliv line), and where Seeds grow.
   The owner's Burmy line is Grass by default (Plant Burmy +5 Mult; Plant Wormadam, scored unenhanced
@@ -1068,6 +1081,8 @@ Examples:
   Owner's Combee (C $5): Honey Gather, the Jokers directly left and right gain +$1 sell value each
                      round (5 rounds). Vespiquen +$2; Attack Order X(1 + 0.1 per $ of those two
                      Jokers' sell value), max X3.
+  Rowlet (U $5)      +1 hand size; the rightmost scored card retriggers once (5 rounds). Dartrix
+                     twice; Decidueye (Spirit Shackle) twice and X1.3 each time it scores.
   Owner's Carnivine (R $7): Flytrap, the first card you discard each round is devoured (destroyed:
                      "card destroyed" payoffs fire) and banks +4 Mult (the devour pattern, 2.1).
 Typical numbers:
@@ -1098,7 +1113,7 @@ Pitfalls:
 Identity: Mult and discards.
   out:   +Mult 19, X 15, +Chips 6, $ 4, retrigger 1
   Discards appear in 19 of 43 texts. Fire starters give +1 discard (Charmander, Cyndaquil,
-  Torchic, Chimchar).
+  Torchic, Chimchar, Litten).
   Recurring shapes:
     - "Scale with remaining discards" (Cyndaquil line).
     - "Reward 0 discards remaining" (the Charmander line).
@@ -1116,6 +1131,8 @@ Examples:
                      Magmortar also gains X0.05 per discard used.
   Numel (C $6)       X3 Mult every 20 cards scored. Camerupt: X4, with Mult cards counted twice.
   Moltres (L $20)    Upgrades the first discarded poker hand each round by 3 levels.
+  Litten (U $5)      +1 discard; +2 Mult per hand already played this round (5 rounds).
+                     Torracat +4; Incineroar X0.25 per hand (X1 / 1.25 / 1.5 / 1.75).
 Typical numbers:
   Basic     +M 3-8~4 | +C 70 (Litleo) | X 3 (Numel) | gain +M 1-5 | gain +C 12
   Stage 1   +M 8 | +C 90 | X 1.5-4~3 | card X 2 | gain X 0.05-1
@@ -1125,8 +1142,8 @@ Under-explored:
   - Fire-type synergy: only Blaziken.
   - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
     few hands.
-  - The 5 missing Gen 5-9 Fire starter lines will all want to follow the "+1 discard" starter
-    rule. Fennekin (Gen 6) does: +1 discard at every stage, with +1 Foresight.
+  - The Gen 5-9 Fire starter lines follow the "+1 discard" starter rule (Litten's line does:
+    the starter line pattern, 2.2; Fennekin's too, with +1 Foresight).
 Pitfalls:
   - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
     vouchers, Mega Charizard Y's +5).
@@ -1161,6 +1178,8 @@ Examples:
   Magikarp (C $2)    +1 Chip, applies Splash, 8 rounds. Gyarados (S $10): a flat X2.5 Mult.
   Cloyster (S $8)    If the hand has 5 scoring cards, each has a 1 in 2 chance to retrigger.
   Staryu (C $4)      Diamonds give +1 Mult and $1 (Water Stone). Starmie: +2 Mult and $2.
+  Popplio (U $5)     +1 hand; scored Hearts give +3 Mult (5 rounds). Brionne +5; Primarina
+                     (Sparkling Aria) X1.2 per scored Heart.
   Owner's Finneon (C $5) +40 Chips on night hands (each round's 2nd / 4th: Lunatone / Solrock's cycle).
                      Lumineon (S $8): each scored card +15 Chips by night; with Lunatone by day too.
 Typical numbers:

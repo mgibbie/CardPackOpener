@@ -82,7 +82,7 @@
 // Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
 // Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
 // (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
-// The Gen 6 starters (contentRev 48): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
+// The Gen 6 starters (contentRev 49): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
 // Shield X1.5 while 2+ hands are left), Fennekin -> Braixen -> Delphox (Fire: +1 discard, +1 Foresight; Braixen's first Foreseen-rank
 // discard each round creates a Tarot; Delphox's Mystical Fire X0.2 per Tarot used), Froakie -> Frogadier -> Greninja (Water: +1 hand;
 // +30 / +50 Chips per Water Joker; Greninja's Protean takes the most common type among your other Jokers each Blind, X(1.5 + 0.5 per
@@ -1267,6 +1267,35 @@ function manaphy_egg(card, context) {
   card.juice_up();
 }
 
+// ---------------------------------------------------------------- the Gen 7 starters (Rowlet / Litten / Popplio lines)
+/** Rowlet line: the RIGHTMOST scored card (by position, as the Shellos line's East Sea: a debuffed card there gets nothing, the end
+ *  never shifts inward; a 1-card hand's card is it). */
+const rightmost_scored = (context) => { const s = context.scoring_hand || []; return s.length ? s[s.length - 1] : undefined; };
+/** Rowlet / Dartrix / Decidueye: the rightmost scored card retriggers `retriggers` times (fixed); Decidueye's Spirit Shackle also gives
+ *  X`Xmult_multi` each time it scores (so X1.3 three times with both retriggers). Rowlet / Dartrix carry the unused Xmult_multi so they
+ *  can take Energy for Decidueye (the Combee pattern). */
+function shackle_calc(card, context) {
+  const ex = card.ability.extra;
+  if (context.repetition && !context.end_of_round && context.cardarea === G.play && context.other_card === rightmost_scored(context) && !context.other_card.debuff) {
+    return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+  }
+  if (ex.shackle && context.individual && !context.end_of_round && context.cardarea === G.play && context.other_card === rightmost_scored(context)) {
+    return { x_mult: r3(ex.Xmult_multi), card };
+  }
+  return undefined;
+}
+/** Litten line: the hands already played this round, BEFORE this one (current_round.hands_played is still the pre-hand count while a
+ *  hand scores; run.js adds 1 after evaluate_play; reset each round). The round's first hand counts 0. */
+const hands_before = () => (G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played) || 0;
+const litten_mult = (card) => r3(card.ability.extra.mult * hands_before());
+const incineroar_x = (card) => r3(1 + card.ability.extra.Xmult_mod * hands_before());
+/** Popplio line: scored Hearts (is_suit: Wild cards and Smeared Joker count) give +mult, Primarina's Sparkling Aria X`Xmult_multi`. */
+function aria_calc(card, context) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit('Hearts'))) return undefined;
+  const ex = card.ability.extra;
+  if (ex.aria) return { x_mult: r3(ex.Xmult_multi), card };
+  return { mult: r3(ex.mult), card };
+}
 // ------------------------------------------------------------ the Gen 6 starters (Chespin / Fennekin / Froakie lines)
 /** Fennekin / Braixen / Delphox: +1 discard (the Charmander line's pair) AND +1 Foresight (the Shinx line's), in one add/remove pair
  *  (two spreads would overwrite each other's add_to_deck). */
@@ -1613,6 +1642,114 @@ defineJokers({
       if (round_end(context) && !context.blueprint) ex.revived = false;
       return undefined;
     },
+  },
+
+  // ---------------------------------------------------------------- the Gen 7 starters (contentRev 48)
+  // The owner's "build" (2026-10-28, the Gen 5-9 starters spec). Pokermon's starter rules: the type perk at every stage (Grass +1 hand
+  // size like Bulbasaur, Fire +1 discard like Charmander, Water +1 hand like Squirtle; fixed, never Energy), Basic Uncommon $5 with the
+  // 'starter' attribute (`starter: true`: the Starter Pack's Grass / Fire / Water slot), Stage 1 Safari $8, Stage 2 Safari $10;
+  // evolution by rounds, 5 then 5 (level_evo). Types are the cards' (upstream 3.9.1 draws all nine on the Natdex sheet, row 48: Rowlet
+  // {2,48} ... Primarina {18,48}). No banked values: every number is read live. Neither Nacho nor Pokermon+ has these lines.
+  // Rowlet 722: +1 hand size; the rightmost scored card retriggers once. Energy: carries Decidueye's per-card X (Xmult_multi, +5%).
+  rowlet: {
+    name: 'rowlet', poke_sprite391: sprite('Natdex', 2, 48),
+    config: { extra: { h_size: 1, retriggers: 1, Xmult_multi: 1.3, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 7, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hand_size', 'retrigger', 'position', 'round_evo'], poke_after: 'xerneas',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ex.retriggers, ex.rounds, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return shackle_calc(card, context) || level_evo(self, card, context, 'j_poke_dartrix'); },
+    ...hand_size,
+  },
+  // Dartrix 723: +1 hand size; the rightmost scored card retriggers twice.
+  dartrix: {
+    name: 'dartrix', poke_sprite391: sprite('Natdex', 4, 48),
+    config: { extra: { h_size: 1, retriggers: 2, Xmult_multi: 1.3, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['starter', 'hand_size', 'retrigger', 'position', 'round_evo'], poke_after: 'rowlet',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ex.retriggers, ex.rounds, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return shackle_calc(card, context) || level_evo(self, card, context, 'j_poke_decidueye'); },
+    ...hand_size,
+  },
+  // Decidueye 724: +1 hand size; Spirit Shackle, the rightmost scored card retriggers twice and gives X1.3 Mult each time it scores.
+  decidueye: {
+    name: 'decidueye', poke_sprite391: sprite('Natdex', 6, 48),
+    config: { extra: { h_size: 1, retriggers: 2, Xmult_multi: 1.3, shackle: true } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 7, blueprint_compat: true,
+    attributes: ['starter', 'hand_size', 'retrigger', 'position', 'xmult'], poke_after: 'dartrix',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ex.retriggers, r3(ex.Xmult_multi), r3(Math.pow(ex.Xmult_multi, ex.retriggers + 1))] }; },
+    calculate(self, card, context) { return shackle_calc(card, context); },
+    ...hand_size,
+  },
+  // Litten 725: +1 discard; +2 Mult for each hand already played this round (the hands BEFORE this one: the round's first hand +0).
+  // Energy: `mult` +40% (2 -> 2.8 / 3.6 / 4.4).
+  litten: {
+    name: 'litten', poke_sprite391: sprite('Natdex', 8, 48),
+    config: { extra: { d_size: 1, mult: 2, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 7, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'discard', 'mult', 'round_evo'], poke_after: 'decidueye',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), litten_mult(card), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && hands_before() > 0) { const m = litten_mult(card); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_torracat');
+    },
+    ...discards,
+  },
+  // Torracat 726: +1 discard; +4 Mult for each hand already played this round. Energy: `mult` +40% (4 -> 5.6 / 7.2 / 8.8).
+  torracat: {
+    name: 'torracat', poke_sprite391: sprite('Natdex', 10, 48),
+    config: { extra: { d_size: 1, mult: 4, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 7, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'mult', 'round_evo'], poke_after: 'litten',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), litten_mult(card), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && hands_before() > 0) { const m = litten_mult(card); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return level_evo(self, card, context, 'j_poke_incineroar');
+    },
+    ...discards,
+  },
+  // Incineroar 727: +1 discard; X(1 + 0.25 per hand already played this round): X1 / X1.25 / X1.5 / X1.75 on hands 1-4.
+  // Energy: `Xmult_mod` +20% (0.25 -> 0.3 / 0.35 / 0.4).
+  incineroar: {
+    name: 'incineroar', poke_sprite391: sprite('Natdex', 12, 48),
+    config: { extra: { d_size: 1, Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 7, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'xmult'], poke_after: 'torracat',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult_mod), incineroar_x(card)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && hands_before() > 0) { const x = incineroar_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+    ...discards,
+  },
+  // Popplio 728: +1 hand; scored Hearts give +3 Mult. Energy: `mult` +40% (3 -> 4.2 / 5.4 / 6.6).
+  popplio: {
+    name: 'popplio', poke_sprite391: sprite('Natdex', 14, 48),
+    config: { extra: { hands: 1, mult: 3, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Water', gen: 7, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hands', 'mult', 'suit', 'hearts', 'round_evo'], poke_after: 'incineroar',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return aria_calc(card, context) || level_evo(self, card, context, 'j_poke_brionne'); },
+    ...hands,
+  },
+  // Brionne 729: +1 hand; scored Hearts give +5 Mult. Energy: `mult` +40% (5 -> 7 / 9 / 11).
+  brionne: {
+    name: 'brionne', poke_sprite391: sprite('Natdex', 16, 48),
+    config: { extra: { hands: 1, mult: 5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 7, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'mult', 'suit', 'hearts', 'round_evo'], poke_after: 'popplio',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return aria_calc(card, context) || level_evo(self, card, context, 'j_poke_primarina'); },
+    ...hands,
+  },
+  // Primarina 730: +1 hand; Sparkling Aria, scored Hearts give X1.2 Mult. Energy: `Xmult_multi` +5% (1.2 -> 1.26 / 1.32 / 1.38).
+  primarina: {
+    name: 'primarina', poke_sprite391: sprite('Natdex', 18, 48),
+    config: { extra: { hands: 1, Xmult_multi: 1.2, aria: true } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Water', gen: 7, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'xmult', 'suit', 'hearts'], poke_after: 'brionne',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return aria_calc(card, context); },
+    ...hands,
   },
 
   // ---------------------------------------------------------------- LINE F: Tandemaus -> Maushold (Colorless, Gen 9)
@@ -3344,6 +3481,9 @@ export const DESIGN_FAMILIES = [
   ['hippopotas', 'hippowdon'],
   ['skorupi', 'drapion'],
   ['finneon', 'lumineon'],
+  ['rowlet', 'dartrix', 'decidueye'],
+  ['litten', 'torracat', 'incineroar'],
+  ['popplio', 'brionne', 'primarina'],
   ['chespin', 'quilladin', 'chesnaught'],
   ['fennekin', 'braixen', 'delphox'],
   ['froakie', 'frogadier', 'greninja'],
@@ -3438,6 +3578,21 @@ export const DESIGN_LOC = {
     j_poke_xerneas: { name: 'Xerneas', text: [
       ['{C:attention}Geomancy:{} after the first hand', 'of each round, played cards give', '{X:mult,C:white} X#1# {} Mult when scored', '{C:inactive}(#2#)'],
       ['The first playing card destroyed', 'each round returns to your hand', 'as a copy'],
+    ] },
+    j_poke_rowlet: { name: 'Rowlet', text: ['{C:attention}+#1#{} hand size', 'Retrigger the {C:attention}rightmost{}', 'scored card', '{C:inactive,s:0.8}(Energy carries to Decidueye)', EVOLVES_ROUNDS(3)] },
+    j_poke_dartrix: { name: 'Dartrix', text: ['{C:attention}+#1#{} hand size', 'Retrigger the {C:attention}rightmost{}', 'scored card {C:attention}#2#{} times', '{C:inactive,s:0.8}(Energy carries to Decidueye)', EVOLVES_ROUNDS(3)] },
+    j_poke_decidueye: { name: 'Decidueye', text: [
+      ['{C:attention}+#1#{} hand size'],
+      ['{C:attention}Spirit Shackle:{} retrigger the', '{C:attention}rightmost{} scored card {C:attention}#2#{} times;', 'it gives {X:mult,C:white} X#3# {} Mult', 'each time it scores', '{C:inactive}({X:mult,C:white} X#4# {C:inactive} in all)'],
+    ] },
+    j_poke_litten: { name: 'Litten', text: ['{C:red}+#1#{} discard each round', '{C:mult}+#2#{} Mult for each hand', 'already played this round', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_torracat: { name: 'Torracat', text: ['{C:red}+#1#{} discard each round', '{C:mult}+#2#{} Mult for each hand', 'already played this round', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)', EVOLVES_ROUNDS(4)] },
+    j_poke_incineroar: { name: 'Incineroar', text: ['{C:red}+#1#{} discard each round', '{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#2# {} for', 'each hand already played', 'this round', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_popplio: { name: 'Popplio', text: ['{C:chips}+#1#{} hand each round', 'Scored {C:hearts}Hearts{} give', '{C:mult}+#2#{} Mult', EVOLVES_ROUNDS(3)] },
+    j_poke_brionne: { name: 'Brionne', text: ['{C:chips}+#1#{} hand each round', 'Scored {C:hearts}Hearts{} give', '{C:mult}+#2#{} Mult', EVOLVES_ROUNDS(3)] },
+    j_poke_primarina: { name: 'Primarina', text: [
+      ['{C:chips}+#1#{} hand each round'],
+      ['{C:attention}Sparkling Aria:{} scored', '{C:hearts}Hearts{} give {X:mult,C:white} X#2# {} Mult'],
     ] },
     j_poke_tandemaus: { name: 'Tandemaus', text: [...PAIR, '{C:inactive}(The pair never separates)', EVOLVES_ROUNDS(2)] },
     j_poke_maushold: { name: 'Maushold', text: [PAIR,
