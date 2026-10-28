@@ -58,6 +58,17 @@ export const KECLEON_SPRITES = {
 export const CASTFORM_SPRITES = { sunny: { x: 0, y: 0 }, rainy: { x: 2, y: 0 }, snowy: { x: 4, y: 0 } };
 
 /**
+ * Burmy's and Wormadam's cloaks (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws all three on the Gen 4 sheet
+ * (row 0: Burmy Plant / Sandy / Trash at 0 / 2 / 4, Wormadam at 6 / 8 / 10; pokespriteload.lua lists only the Plant cells) — by
+ * ability.extra.form. Plant is each one's own card. Drawn by ui.js face() (+ the Shiny sheet's twin cells).
+ */
+export const CLOAK_ATLAS = 'poke_AtlasJokersBasicGen04391';
+export const BURMY_SPRITES = {
+  j_poke_burmy: { sandy: { x: 2, y: 0 }, trash: { x: 4, y: 0 } },
+  j_poke_wormadam: { sandy: { x: 8, y: 0 }, trash: { x: 10, y: 0 } },
+};
+
+/**
  * Deoxys's forme (3.9.1 pokejokers_13.lua set_sprites, sub-batch 14): its floating sprite on the Gen 3 sheet by extra.form —
  * 1 Attack {5,3}, 2 Defense {7,3}, 3 Speed {9,3}; Normal (4) is its own soul {3,3}. Drawn by ui.js face().
  */

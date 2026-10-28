@@ -55,12 +55,12 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 37 && PINS.modPin('pokermon') === '3.9.1+r37', 'Pokermon contentRev 37 (pin 3.9.1+r37; the Shellos line; r36 the Drifloon line)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 37)', 'version stays 3.9.1: "3.9.1 (rev 37)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 38 && PINS.modPin('pokermon') === '3.9.1+r38', 'Pokermon contentRev 38 (pin 3.9.1+r38; the Shellos line; r37 the Burmy line)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 38)', 'version stays 3.9.1: "3.9.1 (rev 38)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
-  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3 + 3 + 2 + 3 + 2 + 1 + 2 + 2 + 3 + 3 + 5 + 2 + 2 + 2 + 2, 'defs: 26 (+ the 3 of the Sprigatito line, the 3 of the Whismur line, the 2 of the Gulpin line, the 3 of the Trapinch line, the 2 of the Spoink line, Castform, the 2 of the Barboach line, Lunatone + Solrock, the Regi trio, the 3 of the Starly line, the 5 Gen 3 Legendaries, Chatot + Pachirisu, the 2 of the Glameow line, the 2 of the Drifloon line, the 2 of the Shellos line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
+  ok((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length === 26 + 3 + 3 + 2 + 3 + 2 + 1 + 2 + 2 + 3 + 3 + 5 + 2 + 2 + 2 + 3 + 2, 'defs: 26 (+ the 3 of the Sprigatito line, the 3 of the Whismur line, the 2 of the Gulpin line, the 3 of the Trapinch line, the 2 of the Spoink line, Castform, the 2 of the Barboach line, Lunatone + Solrock, the Regi trio, the 3 of the Starly line, the 5 Gen 3 Legendaries, Chatot + Pachirisu, the 2 of the Glameow line, the 2 of the Drifloon line, the 3 of the Burmy line, the 2 of the Shellos line) from micatro/pokejokers_designs', (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).length);
 });
 sec('static', () => {
   // [rarity, cost, stage, type, gen] as designed (Grookey $5: the starter convention; Kubfu $10: Shaymin's precedent)

@@ -31,7 +31,7 @@ import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
-import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
 import { SEA_ATLAS, SEA_SPRITES } from './systems/anim.js';
 
@@ -319,6 +319,9 @@ function ownFace(d0) {
   // Castform (the owner's design): its weather form's card (the same Gen 3 sheet); Normal = its own card
   const cf = d.center === 'j_poke_castform' && p && CASTFORM_SPRITES[p.form];
   if (cf) return { ...d, atlas: KECLEON_ATLAS, pos: cf };
+  // Burmy / Wormadam (the owner's design): the cloak's card (the Gen 4 sheet); Plant = its own card
+  const bm = p && BURMY_SPRITES[d.center] && BURMY_SPRITES[d.center][p.form];
+  if (bm) return { ...d, atlas: CLOAK_ATLAS, pos: bm };
   // The Imposter Professor (3.9.1 set_sprites, batch 17): once owned (form 1), the unmasked card, Others {8,1}
   if (d.center === 'j_poke_imposter_professor' && p && p.form === 1) return { ...d, pos: IMPOSTER_REVEALED };
   // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card
