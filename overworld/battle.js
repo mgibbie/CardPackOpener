@@ -750,9 +750,9 @@ export class Battle {
 			getJSON('data/egg_moves.json').catch(() => ({})),
 		]);
 		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields, eggMoves };
-		// the Love2D build's pixel font, so battle text matches the desktop game
+		// the Love2D build's pixel font, so battle text matches the desktop game — Micatro's copy, which also draws ♀ / ♂ (tools/micatro/add_gender_glyphs.py); the original in data/fonts has neither
 		try {
-			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
+			const f = new FontFace('m6x11plus', 'url(../micatro/assets/fonts/m6x11plus.ttf?v=2)');
 			await f.load();
 			document.fonts.add(f);
 		} catch (e) { /* system monospace fallback */ }
