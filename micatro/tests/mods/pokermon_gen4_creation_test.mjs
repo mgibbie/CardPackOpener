@@ -84,7 +84,7 @@ await sec('static', () => {
   ok(keys.slice(i - 1, i + 5).join() === 'j_poke_azelf,j_poke_dialga,j_poke_palkia,j_poke_regigigas,j_poke_giratina,j_poke_cresselia',
     'Pokédex order: Azelf (482, the Lake trio), Dialga, Palkia, Regigigas, Giratina, then Cresselia (488)', keys.slice(i - 1, i + 5));
   const a = keys.indexOf('j_poke_arceus');
-  ok(keys.slice(a - 1, a + 2).join() === 'j_poke_shaymin_sky,j_poke_arceus,j_poke_pansage', 'Pokédex order: Shaymin Sky (492), Arceus, then Pansage (511)', keys.slice(a - 1, a + 2));
+  ok(keys.slice(a - 1, a + 2).join() === 'j_poke_shaymin_sky,j_poke_arceus,j_poke_snivy', 'Pokédex order: Shaymin Sky (492), Arceus, then Snivy (495, the Gen 5 starters)', keys.slice(a - 1, a + 2));
   const [leg] = get_current_pool('Joker', 4, true);
   ok(NEW.every((n) => leg.includes('j_poke_' + n)), 'all five are in the Legendary pool (The Soul)', leg.filter((k) => NEW.some((n) => k.includes(n))));
   ok(P_CENTERS.j_poke_dialga.poke_no_energy_field === true && P_CENTERS.j_poke_palkia.poke_no_energy_field === true, 'Dialga / Palkia are Energy-inert by design (poke_no_energy_field)');

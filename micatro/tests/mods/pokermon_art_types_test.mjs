@@ -44,6 +44,10 @@ await sec('static', () => {
     'the Lake trio + Cresselia: Psychic; Phione / Manaphy: Water (the icons on their cards)', [D.uxie, D.mesprit, D.azelf, D.cresselia, D.phione, D.manaphy]);
   ok(['rowlet', 'dartrix', 'decidueye'].every((n) => D[n] === 'Grass') && ['litten', 'torracat', 'incineroar'].every((n) => D[n] === 'Fire') && ['popplio', 'brionne', 'primarina'].every((n) => D[n] === 'Water'),
     'the Gen 7 starters: Rowlet line Grass, Litten line Fire, Popplio line Water (the icons on their cards)', ['rowlet', 'dartrix', 'decidueye', 'litten', 'torracat', 'incineroar', 'popplio', 'brionne', 'primarina'].map((n) => D[n]));
+  ok(D.snivy === 'Grass' && D.servine === 'Grass' && D.serperior === 'Grass' && D.tepig === 'Fire' && D.pignite === 'Fire' && D.emboar === 'Fire'
+    && D.oshawott === 'Water' && D.dewott === 'Water' && D.samurott === 'Water',
+  'the Gen 5 starters: Snivy line Grass, Tepig line Fire (Pignite / Emboar too: Fire/Fighting, their cards Fire), Oshawott line Water (the icons on their cards)',
+  [D.snivy, D.servine, D.serperior, D.tepig, D.pignite, D.emboar, D.oshawott, D.dewott, D.samurott]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });
