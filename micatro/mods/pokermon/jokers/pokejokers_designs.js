@@ -67,11 +67,16 @@
 // (evolves at +25); Gabite's Treasure Nest turns one scored card of a Full House Gold (evolves with 6 Gold cards in the full deck);
 // Garchomp's Dragon Rush X(1 + 0.5 per Gold card held in hand) on top of the bank; Dragon — upstream 3.9.1 draws them (Natdex 14 / 16 /
 // 18, 29).
+// The creation trio, Regigigas and Arceus (contentRev 44), Legendary $20 each: Dialga (Metal; Roar of Time: the round's first hand is scored
+// twice, every scored card retriggering), Palkia (Water; Spacial Rend: +1 Joker slot, +1 hand size), Giratina (Psychic; Shadow Force: X0.25
+// per destroyed playing card, X0.5 in its Origin Forme with Dialga / Palkia), Regigigas (Colorless; Slow Start: X4 once its 5-round wait,
+// cut by each Regi, is over; awake with the trio, +1 Regi conversion each) and Arceus (Colorless; Multitype: every type for type checks,
+// X0.25 per different type among your Jokers) — upstream 3.9.1 draws them with their souls (Gen 4 sheet; Regigigas Natdex 10, 32).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
-  find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
+  find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied, get_type, multitype, wildcard_type, POKETYPES,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
   poke_get_adjacent_jokers, emit,
@@ -629,7 +634,8 @@ export function regi_others(card) {
   return seen.size;
 }
 /** Cards this Regi converts when a Blind is selected: its base (1; Regice's `glass_convert`, +1 per Energy, floored) + the others. */
-const regi_converts = (card) => Math.floor((card.ability.extra.glass_convert || 1) + 1e-9) + regi_others(card);
+/** (+1 with all three Regis and an awake Regigigas: giga_trio_bonus, the owner's Regigigas.) */
+const regi_converts = (card) => Math.floor((card.ability.extra.glass_convert || 1) + 1e-9) + regi_others(card) + giga_trio_bonus(card);
 const unbroken = (c) => !c.destroyed && !c.shattered && !c.removed;
 /** When a Blind is selected: `n` random cards of the FULL deck (G.playing_cards, the run's seeded pseudorandom_element) become `enh`.
  *  Unenhanced cards first; once none is left, any card that isn't already `enh` (overwriting its enhancement; seal and edition kept).
@@ -1098,6 +1104,48 @@ function treasure_nest(card, context) {
 }
 /** Garchomp, Dragon Rush: X(1 + Xmult_mod per undebuffed Gold card held in hand). */
 const dragon_rush_x = (card) => r3(1 + card.ability.extra.Xmult_mod * gold_held());
+
+// ---------------------------------------------------------------- the creation trio, Regigigas and Arceus (the owner's Gen 4 Legendaries)
+/** Dialga, Roar of Time: the round's first hand (hands_played === 0 while it scores; a discard before it doesn't use it up). */
+const roar_on = () => !!(G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played === 0);
+/** Giratina's Origin Forme: an undebuffed Dialga or Palkia is held (find_card skips debuffed cards; a Blueprint is neither). */
+const origin_forme = () => !!(G.jokers && (find_card('j_poke_dialga').length > 0 || find_card('j_poke_palkia').length > 0));
+/** Shadow Force's gain per destroyed playing card: Xmult_mod, doubled in the Origin Forme (one energy field scales both). */
+const shadow_gain = (card) => r3(card.ability.extra.Xmult_mod * (origin_forme() ? 2 : 1));
+/** Palkia, Spacial Rend: +slots Joker slots and +h_size hand size while held AND undebuffed. Both are given in add_to_deck and taken
+ *  in remove_from_deck, from_debuff included (Juggler's hand size; unlike a Negative's slot, which vanilla keeps through a debuff):
+ *  a debuff takes both away and lifting it gives both back. Nobody is ever pushed out: a debuff on a full row leaves the row one
+ *  over the limit until a Joker leaves (the shop and every effect that makes a Joker need a free slot, so none can join meanwhile).
+ *  Sold or destroyed it takes its own slot with it, so the row is never over the limit; a debuffed Palkia leaving gives nothing
+ *  back twice (remove_from_deck already ran on the debuff). A Negative Palkia gives +2 (its edition's +1 and Spacial Rend's). */
+const spacial_rend = {
+  add_to_deck(self, card) { const ex = card.ability.extra; G.jokers.config.card_limit += ex.slots; G.hand.change_size(ex.h_size); },
+  remove_from_deck(self, card) { const ex = card.ability.extra; G.jokers.config.card_limit -= ex.slots; G.hand.change_size(-ex.h_size); },
+};
+/** Regigigas, Slow Start: the distinct Regi species held (undebuffed; two Regices count once) — each cuts a round off the wait. */
+const regis_distinct = () => new Set(((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && REGIS.includes(j.config.center.key)).map((j) => j.config.center.key)).size;
+const giga_awake = (card) => !((card.ability.extra.slow_start || 0) > 0);
+/** Regi Trio + Regigigas: with all three Regis held and an awake Regigigas (undebuffed), each Regi converts 1 more card per Blind
+ *  (once, however many Regigigas). */
+function giga_trio_bonus(regi) {
+  if (regi_others(regi) < 2) return 0;
+  return ((G.jokers && G.jokers.cards) || []).some((j) => !j.debuff && j.config.center.key === 'j_poke_regigigas' && giga_awake(j)) ? 1 : 0;
+}
+/** Arceus, Multitype: the different types among your Jokers. Each other undebuffed joker gives its shown type (get_type: a Tera
+ *  sticker, else its ptype; one of the 12); a joker that counts as every type (another Arceus, a Stellar Tera) adds one type of
+ *  its own (a missing one), never all twelve; Arceus itself counts as one. At most 12. */
+function multitype_count(card) {
+  const seen = new Set();
+  let wild = 0;
+  for (const j of (G.jokers && G.jokers.cards) || []) {
+    if (j === card || j.debuff) continue;
+    if (multitype(j) || wildcard_type(j)) { wild++; continue; }
+    const t = get_type(j);
+    if (POKETYPES.includes(t)) seen.add(t);
+  }
+  return Math.min(POKETYPES.length, seen.size + wild + 1);
+}
+const multitype_x = (card) => r3(1 + card.ability.extra.Xmult_mod * multitype_count(card));
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -2594,6 +2642,121 @@ defineJokers({
       return r;
     },
   },
+  // ---------------------------------------------------------------- The creation trio: Dialga 483 / Palkia 484 / Giratina 487 (Gen 4)
+  // The owner's design (2026-10-28). Legendary $20 each (The Soul / the Legendary pool). Types from the card art: Dialga Metal, Palkia
+  // Water, Giratina Psychic (both its Altered and its Origin card show the Psychic icon). Neither Nacho nor Pokermon+ has them. Art:
+  // upstream 3.9.1's own cells with their floating souls (Gen 4 sheet: Dialga {10,2}, Palkia {4,3}, Giratina {8,3}; the Origin Forme
+  // {10,3} / soul {11,3}, drawn by ui.js ownFace from the view's live form, as Cherrim's Sunshine). After Rotom's forms (479) in Pokédex
+  // order (Pokermon has no joker for 480-491 but Shaymin 492).
+  // Dialga 483, Roar of Time: the FIRST hand of each round is scored twice — every scored card retriggers once (a repetition for each
+  // card of G.play while hands_played === 0, Whiscash's Earthquake without its gate), so the cards' chips, mult, enhancements, seals
+  // and every per-card joker effect happen twice while the jokers' own hand effects (joker_main, after) run once, as for one hand.
+  // Fixed (no number): Energy-inert by design (poke_no_energy_field). Blueprint copies it like Whiscash / Remoraid (a second retrigger).
+  dialga: {
+    name: 'dialga', poke_sprite391: sprite('Gen04', 10, 2, [11, 2]),
+    config: { extra: { retriggers: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 4, blueprint_compat: true,
+    attributes: ['retrigger', 'hands'], poke_after: 'rotomm',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [spark_state()] }; },
+    calculate(self, card, context) {
+      if (context.first_hand_drawn && !context.blueprint) juice_card_until(card, () => roar_on() && !G.RESET_JIGGLES, true);
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && roar_on()) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return undefined;
+    },
+  },
+  // Palkia 484, Spacial Rend: +1 Joker slot and +1 hand size while held (spacial_rend above: reverted when sold, destroyed or debuffed;
+  // never pushing a Joker out). Fixed: Energy-inert by design (poke_no_energy_field). Nothing to copy (blueprint_compat false).
+  palkia: {
+    name: 'palkia', poke_sprite391: sprite('Gen04', 4, 3, [5, 3]),
+    config: { extra: { slots: 1, h_size: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 4, blueprint_compat: false,
+    attributes: ['joker_slot', 'hand_size'], poke_after: 'dialga',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.slots, ex.h_size] }; },
+    ...spacial_rend,
+  },
+  // Regigigas 486, Slow Start (Colorless): asleep (it gives nothing) until its countdown `slow_start` (5 when obtained) reaches 0;
+  // then X4 Mult for the rest of the run. The countdown: at each end of round (the main end_of_round pass; not Blueprint; a debuffed
+  // Regigigas isn't calculated, so it waits) it drops by 1 + the DISTINCT Regis held then (Regirock / Regice / Registeel, undebuffed;
+  // regis_distinct): no Regi 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0), all three 2 (5 1 0). Awake, with all three Regis
+  // held, each Regi converts 1 extra card per Blind (giga_trio_bonus in regi_converts; once, however many Regigigas). Energy: `Xmult`
+  // +20% of base (X4 -> X4.8 / X5.6 / X6.4); the wait is fixed (`slow_start`, no energy field). Blueprint copies the X only when awake.
+  // After Palkia (Pokermon has no Heatran 485).
+  regigigas: {
+    name: 'regigigas', poke_sprite391: sprite('Natdex', 10, 32, [11, 32]),
+    config: { extra: { Xmult: 4, slow_start: 5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'full_deck'], poke_after: 'palkia',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, n = regis_distinct(), left = Math.max(0, ex.slow_start || 0);
+      return { vars: [r3(ex.Xmult), left, n, giga_awake(card) ? 'Awake!' : 'Asleep: ' + left + ' left, -' + (1 + n) + ' a round'] };
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (round_end(context) && !context.blueprint && !giga_awake(card)) {
+        ex.slow_start = Math.max(0, ex.slow_start - (1 + regis_distinct()));
+        card_eval_status_text(card, 'extra', null, null, null, giga_awake(card) ? { message: 'Awake!', colour: 'XMULT' } : { message: 'Slow Start: ' + ex.slow_start, colour: 'FILTER' });
+        return undefined;
+      }
+      if (context.joker_main && giga_awake(card)) return { message: a_xmult(r3(ex.Xmult)), colour: 'XMULT', Xmult_mod: ex.Xmult };
+      return undefined;
+    },
+  },
+  // Giratina 487, Shadow Force (Psychic): permanently gains X0.25 Mult for each playing card destroyed, by any cause (the
+  // remove_playing_cards context every destroying path sends: Glass shattering, Hanged Man, Gulpin's swallow, a discard eaten...),
+  // banked in `shadow_Xmult` (no energy field; never retroactive). Origin Forme: while an undebuffed Dialga or Palkia is held, its
+  // gain is doubled (X0.5) and it shows the Origin card (poke_view_form, live). Energy: the gain `Xmult_mod` +20% (0.25 -> 0.3 / 0.35 /
+  // 0.4; Origin 0.6 / 0.7 / 0.8). Blueprint copies the X, never the growth. After Regigigas.
+  giratina: {
+    name: 'giratina', poke_sprite391: sprite('Gen04', 8, 3, [9, 3]),
+    config: { extra: { shadow_Xmult: 1, Xmult_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'destroy_card'], poke_after: 'regigigas',
+    /** The view's form (systems/anim.js view_card): live, so a Dialga / Palkia bought, sold or debuffed redraws it at once. */
+    poke_view_form(self, card) { return origin_forme() ? 'origin' : 'altered'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.shadow_Xmult), r3(ex.Xmult_mod), r3(2 * ex.Xmult_mod), origin_forme() ? 'Origin Forme' : 'Altered Forme'] };
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (context.remove_playing_cards && !context.blueprint && (context.removed || []).length) {
+        ex.shadow_Xmult = r3(ex.shadow_Xmult + shadow_gain(card) * context.removed.length);
+        card_eval_status_text(card, 'extra', null, null, null, { message: a_xmult(ex.shadow_Xmult), colour: 'XMULT' });
+        return undefined;
+      }
+      if (context.joker_main && ex.shadow_Xmult > 1) return { message: a_xmult(r3(ex.shadow_Xmult)), colour: 'XMULT', Xmult_mod: ex.shadow_Xmult };
+      return undefined;
+    },
+  },
+  // Arceus 493, Multitype (Colorless): counts as EVERY Pokermon type for type checks and synergies (center.poke_multitype: systems/
+  // types.js is_type / find_pokemon_type, energy.js energy_matches): Barboach's Water / Earth Jokers (once), Starly's Colorless flock,
+  // Pachirisu's Lightning Jokers, Corsola / Pelipper's find_pokemon_type, and every type's Energy matches it at full strength. Its own
+  // ptype stays Colorless (get_type, badge, Kecleon); a Tera sticker gives it that one type instead, as on any joker. Its type never
+  // breaks Monotype (poke_mono_exempt, Castform's exemption: it would match any lock). Judgment: X(1 + 0.25 per different type among
+  // your Jokers), itself counting as one type (multitype_count: at most 12, X4). Energy: `Xmult_mod` +20% (0.25 -> 0.3 / 0.35 / 0.4).
+  // After Shaymin Sky (492).
+  arceus: {
+    name: 'arceus', poke_sprite391: sprite('Gen04', 4, 4, [5, 4]),
+    config: { extra: { Xmult_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'types'], poke_after: 'shaymin_sky',
+    poke_multitype: true, poke_mono_exempt: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: [r3(card.ability.extra.Xmult_mod), multitype_count(card), multitype_x(card)] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const x = multitype_x(card);
+      return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -2918,6 +3081,22 @@ export const DESIGN_LOC = {
     j_poke_mothim: { name: 'Mothim', text: [
       '{C:attention}Free Flight:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each different', 'enhancement in your full deck',
       '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)', '{C:inactive,s:0.8}(Bonus, Mult, Wild, Glass, Steel,', '{C:inactive,s:0.8}Stone, Gold, Lucky, Seed, Flower)',
+    ] },
+    j_poke_dialga: { name: 'Dialga', text: ['{C:attention}Roar of Time:{} the first hand', 'of each round is scored twice:', 'every scored card', 'retriggers once', '{C:inactive}(#1#)'] },
+    j_poke_palkia: { name: 'Palkia', text: ['{C:attention}Spacial Rend:{} {C:dark_edition}+#1#{} Joker slot', 'and {C:attention}+#2#{} hand size'] },
+    j_poke_regigigas: { name: 'Regigigas', text: [
+      ['{C:attention}Slow Start:{} gives nothing for', 'its first {C:attention}5{} rounds, then', '{X:mult,C:white} X#1# {} Mult for the rest of the run', 'Each {C:attention}Regi{} you have cuts',
+        '{C:attention}1{} more round off the wait', 'at each end of round', '{C:inactive}(#4#)'],
+      ['{C:attention}Regi Trio:{} while awake, with', '{C:attention}Regirock{}, {C:attention}Regice{} and {C:attention}Registeel{},', 'each of them converts', '{C:attention}1{} more card per Blind'],
+    ] },
+    j_poke_giratina: { name: 'Giratina', text: [
+      ['{C:attention}Shadow Force:{} gains {X:mult,C:white} X#2# {} Mult', 'each time a playing card', 'is destroyed', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
+      ['{C:attention}Origin Forme:{} with {C:attention}Dialga{} or', '{C:attention}Palkia{}, gains {X:mult,C:white} X#3# {} instead', '{C:inactive}(#4#)'],
+    ] },
+    j_poke_arceus: { name: 'Arceus', text: [
+      ['{C:attention}Multitype:{} counts as', 'every {C:attention}type{}', '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
+      ['{C:attention}Judgment:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each different', '{C:attention}type{} among your Jokers', '{C:inactive}(Itself counts as one)',
+        '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'],
     ] },
   },
   Other: {

@@ -59,6 +59,10 @@ export const CASTFORM_SPRITES = { sunny: { x: 0, y: 0 }, rainy: { x: 2, y: 0 }, 
 /** Cherrim's Sunshine Form (the owner's design): upstream 3.9.1's Gen 4 sheet draws it beside its Overcast card {0,1} (unlisted in
  *  pokespriteload.lua). By the view's form (its center's poke_view_form: live). Overcast = its own card. */
 export const CHERRIM_SPRITES = { sunshine: { x: 2, y: 1 } };
+/** Giratina's Origin Forme (the owner's design): upstream 3.9.1's own card on the Gen 4 sheet, {10,3} with its floating soul {11,3}
+ *  (sprite table `giratina_origin`), beside its Altered card {8,3}. By the view's form (its center's poke_view_form: live, while an
+ *  undebuffed Dialga or Palkia is held). Altered = its own card. */
+export const GIRATINA_ORIGIN = { pos: { x: 10, y: 3 }, soul_pos: { x: 11, y: 3 } };
 
 /**
  * Burmy's and Wormadam's cloaks (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws all three on the Gen 4 sheet

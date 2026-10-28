@@ -900,7 +900,10 @@ export const POKERMON = registerMod({
   // 43 = the owner's Gible line (Gible -> Gabite -> Garchomp; jokers/pokejokers_designs.js bite / treasure_nest): Bite banks +1 Mult per
   // scored card of a hand containing a Pair (evolves at +25); Gabite's Treasure Nest turns one scored card of a Full House Gold (unenhanced
   // first; evolves with 6 Gold cards in the deck); Garchomp's Dragon Rush X(1 + 0.5 per Gold card held in hand).
-  contentRev: 43,
+  // 44 = the owner's creation trio, Regigigas and Arceus (jokers/pokejokers_designs.js): Dialga's Roar of Time (the round's first hand
+  // scored twice), Palkia's Spacial Rend (+1 Joker slot, +1 hand size), Giratina's Shadow Force (X0.25 per destroyed card; Origin Forme
+  // with Dialga / Palkia: X0.5), Regigigas's Slow Start (X4 after 5 rounds, a Regi cuts one each), Arceus's Multitype (every type).
+  contentRev: 44,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

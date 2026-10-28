@@ -31,7 +31,7 @@ import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
-import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
 import { SEA_ATLAS, SEA_SPRITES } from './systems/anim.js';
 
@@ -322,6 +322,8 @@ function ownFace(d0) {
   // Cherrim (the owner's design): its Sunshine Form's card, beside its Overcast card on the 3.9.1 Gen 4 sheet
   const ch = d0.center === 'j_poke_cherrim' && p && CHERRIM_SPRITES[p.form];
   if (ch) return { ...d0, atlas: P_CENTERS.j_poke_cherrim.atlas, pos: ch };
+  // Giratina (the owner's design): its Origin Forme's card and soul (the 3.9.1 Gen 4 sheet) while Dialga or Palkia is held
+  if (d0.center === 'j_poke_giratina' && p && p.form === 'origin') return { ...d0, atlas: P_CENTERS.j_poke_giratina.atlas, pos: GIRATINA_ORIGIN.pos, soul_pos: GIRATINA_ORIGIN.soul_pos };
   // Burmy / Wormadam (the owner's design): the cloak's card (the Gen 4 sheet); Plant = its own card
   const bm = p && BURMY_SPRITES[d.center] && BURMY_SPRITES[d.center][p.form];
   if (bm) return { ...d, atlas: CLOAK_ATLAS, pos: bm };
