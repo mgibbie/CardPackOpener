@@ -40,6 +40,8 @@ await sec('static', () => {
     'Dialga Metal, Palkia Water, Giratina Psychic, Regigigas / Arceus Colorless (the icons on their cards)', [D.dialga, D.palkia, D.giratina, D.regigigas, D.arceus]);
   ok(D.uxie === 'Psychic' && D.mesprit === 'Psychic' && D.azelf === 'Psychic' && D.cresselia === 'Psychic' && D.phione === 'Water' && D.manaphy === 'Water',
     'the Lake trio + Cresselia: Psychic; Phione / Manaphy: Water (the icons on their cards)', [D.uxie, D.mesprit, D.azelf, D.cresselia, D.phione, D.manaphy]);
+  ok(D.fuecoco === 'Fire' && D.crocalor === 'Fire' && D.skeledirge === 'Fire' && D.quaxly === 'Water' && D.quaxwell === 'Water' && D.quaquaval === 'Water',
+    'the Gen 9 starters: Fuecoco / Crocalor / Skeledirge Fire, Quaxly / Quaxwell / Quaquaval Water (the icons on their cards)', [D.fuecoco, D.crocalor, D.skeledirge, D.quaxly, D.quaxwell, D.quaquaval]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });
