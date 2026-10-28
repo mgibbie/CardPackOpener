@@ -705,7 +705,8 @@ export const MOTHIM_ENHANCEMENTS = ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm
 /** The different enhancements (of MOTHIM_ENHANCEMENTS) the full deck holds, by each card's own enhancement. */
 export const distinct_enhancements = (cards) => new Set((cards || []).map((c) => c.config && c.config.center && c.config.center.key).filter((k) => MOTHIM_ENHANCEMENTS.includes(k))).size;
 const free_flight_x = (card) => r3(1 + card.ability.extra.Xmult_mod * distinct_enhancements(G.playing_cards));
-const gender_name = (g) => (g === 'male' ? 'Male' : 'Female');
+// the gender signs (m6x11plus draws both since tools/micatro/add_gender_glyphs.py; before it, the text spelt Female / Male)
+const gender_name = (g) => (g === 'male' ? '♂' : '♀');
 
 // ------------------------------------------------------------ the weather trio (Kyogre / Groudon / Rayquaza) and the Eon duo (Latias / Latios)
 /** Undebuffed owned jokers of this design (a debuffed one does nothing; a Blueprint copy has its own key, so it never counts). */
@@ -2596,7 +2597,7 @@ export const DESIGN_LOC = {
       ['{C:attention}Cloak:{} at end of round, takes', 'the cloak of the most common', 'enhancement in your full deck', '{C:inactive}(A tie keeps the cloak)'],
       ['{C:attention}Plant{} {X:poke_grass,C:white}Grass{}: {C:mult}+#1#{} Mult', '{C:inactive}(unenhanced or other enhancements)', '{C:attention}Sandy{} {X:poke_earth,C:white}Earth{}: {C:chips}+#2#{} Chips {C:inactive}(Stone)',
         '{C:attention}Trash{} {X:poke_metal,C:white}Metal{}: earn {C:money}$#3#{} at end', 'of round {C:inactive}(Steel)'],
-      ['{C:inactive}(Currently {C:attention}#4#{C:inactive} Cloak, #5#)', '{C:inactive,s:0.8}(Its type never breaks Monotype)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} rounds:', '{C:inactive,s:0.8}Female into Wormadam, Male into Mothim)'],
+      ['{C:inactive}(Currently {C:attention}#4#{C:inactive} Cloak, #5#)', '{C:inactive,s:0.8}(Its type never breaks Monotype)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} rounds:', '{C:inactive,s:0.8}♀ into Wormadam, ♂ into Mothim)'],
     ] },
     j_poke_wormadam: { name: 'Wormadam', text: [CLOAKED('Plant', 'grass', 'Grass'), ['Each scored {C:attention}unenhanced{}', 'card gives {C:mult}+#1#{} Mult']] },
     j_poke_wormadam_sandy: { name: 'Wormadam', text: [CLOAKED('Sandy', 'earth', 'Earth'), ['Each scored {C:attention}Stone{} card', 'gives {X:mult,C:white} X#2# {} Mult']] },

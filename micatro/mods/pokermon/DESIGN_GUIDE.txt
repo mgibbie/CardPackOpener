@@ -348,9 +348,9 @@ House pattern: a GENDERED BRANCH (the owner's Burmy line; Burmy -> Wormadam Fema
     ability.extra.gender, so it is saved with the card; a resume replays the recipe and rolls the same one. A copy (Invisible
     Joker, Ankh) keeps it (copy_card copies the ability).
   - The branch is a plain level_evo whose target is chosen by it (4 rounds: Female -> j_poke_wormadam, Male -> j_poke_mothim); no item,
-    no counter. The tooltip names both and the card's own: "(Currently Plant Cloak, Male)".
-  - Write "Female" / "Male": Micatro's pixel font (m6x11plus) has no female / male signs (U+2640 / U+2642), the reason upstream
-    writes "Nidoran F".
+    no counter. The tooltip names both and the card's own: "(Currently Plant Cloak, ♂)".
+  - Write the signs ♀ / ♂ (U+2640 / U+2642): Micatro's pixel font (m6x11plus) draws both since
+    tools/micatro/add_gender_glyphs.py (upstream writes "Nidoran F" for want of them; ours says Nidoran♀).
   - The two branches can differ in shape: Wormadam keeps the Basic's state (the cloak), Mothim drops it for a deck-wide count
     (X(1 + 0.25 per DIFFERENT enhancement in the full deck), of the 8 vanilla enhancements + Pokermon's Seed and Flower; Hazard and
     the April Fools Ludicolo don't count; up to X3.5; `Xmult_mod` +20%: 0.3 / 0.35 / 0.4).

@@ -2560,7 +2560,8 @@ Neither Nacho nor Pokermon+ has the line.
   Its type is its cloak's (`ability.extra.ptype`, as Castform; a Tera sticker still owns the type), its card the cloak's.
 - **Gender**: rolled once when the card is created (`set_ability` initial: shop, pack, Pokéball, starting joker), with the run's seeded
   `pseudorandom('burmy_gender')`: Female or Male, on `ability.extra.gender` (saved with the card; a resume replays the recipe and rolls the same).
-  The tooltip says "Female" / "Male": the pixel font has no ♀ / ♂ (as upstream's "Nidoran F").
+  The tooltip says ♀ / ♂: m6x11plus draws both signs (tools/micatro/add_gender_glyphs.py; until then it said "Female" / "Male",
+  as upstream writes "Nidoran F" — ours is Nidoran♀ / Nidoran♂ now, keys unchanged).
 - **Evolves after 4 rounds**: Female -> **Wormadam**, keeping its cloak (`form` is one of the values every evolution keeps; a POST_EVOLVE hook
   re-applies the cloak's type), Male -> **Mothim**.
 - **Wormadam** (Stage 1, **Safari $8**), **Cloaked**: the cloak is locked. Plant (Grass): each scored **unenhanced** card **+3 Mult** (`mult1`);
