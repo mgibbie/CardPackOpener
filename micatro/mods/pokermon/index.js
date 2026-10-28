@@ -907,7 +907,11 @@ export const POKERMON = registerMod({
   // 45 = the owner's creation trio, Regigigas and Arceus (jokers/pokejokers_designs.js): Dialga's Roar of Time (the round's first hand
   // scored twice), Palkia's Spacial Rend (+1 Joker slot, +1 hand size), Giratina's Shadow Force (X0.25 per destroyed card; Origin Forme
   // with Dialga / Palkia: X0.5), Regigigas's Slow Start (X4 after 5 rounds, a Regi cuts one each), Arceus's Multitype (every type).
-  contentRev: 45,
+  // 46 = the owner's Lake trio, Cresselia, Manaphy and Phione (jokers/pokejokers_designs.js lake_others / lunar_refresh / manaphy_egg):
+  // Uxie (+2 Foresight, X1.3 per Foreseen card), Mesprit (X1.5, X2.5 on a poker hand new this round), Azelf (X2.5 on the final hand), +X0.25
+  // per other guardian; Cresselia's Lunar Blessing (playing cards can't be debuffed) and X1.5; Phione +6 Mult / Manaphy X1.2 per Water Joker,
+  // Manaphy's Egg (1 in 4 at the end of each shop, with a free slot: a Phione).
+  contentRev: 46,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

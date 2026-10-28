@@ -81,8 +81,8 @@ await sec('static', () => {
   }
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_dialga');
-  ok(keys.slice(i - 1, i + 5).join() === 'j_poke_rotomm,j_poke_dialga,j_poke_palkia,j_poke_regigigas,j_poke_giratina,j_poke_shaymin',
-    'Pokédex order: Rotom (479), Dialga, Palkia, Regigigas, Giratina, then Shaymin (492)', keys.slice(i - 1, i + 5));
+  ok(keys.slice(i - 1, i + 5).join() === 'j_poke_azelf,j_poke_dialga,j_poke_palkia,j_poke_regigigas,j_poke_giratina,j_poke_cresselia',
+    'Pokédex order: Azelf (482, the Lake trio), Dialga, Palkia, Regigigas, Giratina, then Cresselia (488)', keys.slice(i - 1, i + 5));
   const a = keys.indexOf('j_poke_arceus');
   ok(keys.slice(a - 1, a + 2).join() === 'j_poke_shaymin_sky,j_poke_arceus,j_poke_pansage', 'Pokédex order: Shaymin Sky (492), Arceus, then Pansage (511)', keys.slice(a - 1, a + 2));
   const [leg] = get_current_pool('Joker', 4, true);

@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), **`3.9.1+r45`** since the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), **`3.9.1+r46`** since the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2762,6 +2762,48 @@ both), Regigigas and Arceus **Colorless**. Neither Nacho nor Pokermon+ has any o
 - **Tests**: `micatro/tests/mods/pokermon_gen4_creation_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test` (the pin, 87 defs), `pokermon_art_types_test` (the five types + the Origin card), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (905 jokers).
+
+### The owner's Lake trio, Cresselia, Manaphy and Phione (2026-10-28, branch `feat/pokermon-gen4-lake-trio`)
+Pinned **`3.9.1+r46`** (`contentRev: 46`; `LEGACY_MOD_VERSIONS` untouched). Batch B of the owner's "last 18 Gen 4 jokers": six Legendaries,
+all **Legendary $20** (The Soul / the Legendary pool), in `jokers/pokejokers_designs.js` (`lake_others` / `lunar_refresh` / `manaphy_egg`;
+93 defs now). Pokédex order: Uxie, Mesprit, Azelf after Rotom (479, its last form), then (after the creation trio, Regigigas and Giratina: Dialga now follows Azelf) Cresselia, Phione,
+Manaphy before Shaymin (492). Neither Nacho nor Pokermon+ has any of them.
+- **Uxie** (480, **Psychic**), Knowledge: **+2 Foresight** (the Shinx line's `scry` add/remove); **each Foreseen card gives X1.3 Mult**. The
+  choice: "a scored card that was Foreseen" is Pokermon's own Foresight scoring — the Foreseen cards (the top of the deck, `G.scry_view`)
+  are scored like held cards (`context.individual` with `cardarea === G.scry_view`, Hoothoot's), so each one gives the X; a debuffed one
+  gives nothing; any other joker's Foresight adds more cards (X1.3 each).
+- **Mesprit** (481, **Psychic**), Emotion: **X1.5 Mult, or X2.5** when the hand's poker hand **hasn't been played yet this round**
+  (`G.GAME.hands[scoring_name].played_this_round <= 1`: run.js counts the play before the jokers score, Abra's reading; it resets each round).
+- **Azelf** (482, **Psychic**), Willpower: **X2.5 Mult on the final hand** of each round (`hands_left === 0` while it scores: Drifloon's /
+  Acrobat's check).
+- **Lake Guardians** (all three): **+X0.25** to the guardian's X values for each **other** guardian species held, undebuffed (`lake_others`,
+  the Regi Trio's distinct count: a twin never counts, two Mesprits count once). One / two / three: Uxie **X1.3 / 1.55 / 1.8** a Foreseen
+  card, Mesprit **X1.5 / 1.75 / 2** and **X2.5 / 2.75 / 3**, Azelf **X2.5 / 2.75 / 3**.
+- **Cresselia** (488, **Psychic**), Lunar Blessing: while you have it (undebuffed), **playing cards can't be debuffed** — by a Boss Blind
+  (The Goad, Head, Club, Window, Plant, Pillar, Verdant Leaf...) or anything else (a mod's `debuff_card`, an `SMODS.debuff_card` source).
+  `systems/rules.js set_debuff` answers `'prevent_debuff'` for a playing card (Urshifu's Unseen Fist rule), which `Card:set_debuff` lets win
+  outright. Gaining, losing or being debuffed queues the Blind's debuff pass over every playing card (`lunar_refresh`), so a Cresselia gained
+  mid-Blind lifts the Boss's debuffs at once and one sold / destroyed / debuffed gives them back. Jokers can still be debuffed (Crimson Heart),
+  Cresselia too. Also **X1.5 Mult**. **With Pokermon+'s Darkrai**: no rule between them (the choice). Darkrai never debuffs playing cards (a
+  Nightmare when it joins, and held Energy lent to the jokers of its type), so the blessing has nothing to block; a held Psychic Energy
+  energizes Cresselia through Darkrai like any Psychic joker (X1.5 -> X1.8), never the blessing.
+- **Phione** (489, **Water**): **each Water Joker (itself included) gives +6 Mult**.
+- **Manaphy** (490, **Water**), Sea Guardian: **each Water Joker (itself included) gives X1.2 Mult**; **Egg**: at the end of each shop
+  (`ending_shop`), if there is a **free Joker slot** (Glameow's `slot_room`: cards + `joker_buffer` < limit; no slot, no roll), a **1 in 4**
+  chance (`pseudorandom_probability`, seed `'manaphy_egg'`: the run's seeded stream; Oops! All 6s raises it) to create a **Phione**
+  (`add_card`, key `j_poke_phione`), at the right end of the row. Created at once, so a second Manaphy sees the slot taken; Blueprint copies
+  the X, never the Egg.
+- Phione / Manaphy count Water Jokers in the **other_joker** context (Baseball Card's: each Water Joker shows its own bonus): `is_type`, so a
+  Tera sticker counts (it replaces the type) and a debuffed joker gives nothing. Not a family (Phione never evolves).
+- **Energy**: Uxie `Xmult_multi` +5% (**1.3 -> 1.365 / 1.43 / 1.495**), Mesprit `Xmult` / `Xmult2` +20% (**1.5 -> 1.8 / 2.1 / 2.4**,
+  **2.5 -> 3 / 3.5 / 4**), Azelf `Xmult` +20% (**2.5 -> 3 / 3.5 / 4**), Cresselia `Xmult` +20% (**1.5 -> 1.8 / 2.1 / 2.4**), Phione `mult`
+  +40% (**6 -> 8.4 / 10.8 / 13.2**), Manaphy `Xmult_multi` +5% (**1.2 -> 1.26 / 1.32 / 1.38**). Fixed: the +0.25 per guardian (`lake_mod`),
+  Uxie's Foresight, Cresselia's blessing, the Egg's 1 in 4.
+- **Art**: upstream 3.9.1's own cells with their floating souls (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}); nothing to
+  deploy. The wiki drops them (353 missing).
+- **Tests**: `micatro/tests/mods/pokermon_gen4_lake_trio_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, 93 defs), `pokermon_art_types_test` (four Psychic, two Water), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (911 jokers), `pokermon_gen4_creation_test` (Dialga now follows Azelf, Giratina is followed by Cresselia).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

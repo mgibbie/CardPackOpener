@@ -77,6 +77,11 @@
 // per destroyed playing card, X0.5 in its Origin Forme with Dialga / Palkia), Regigigas (Colorless; Slow Start: X4 once its 5-round wait,
 // cut by each Regi, is over; awake with the trio, +1 Regi conversion each) and Arceus (Colorless; Multitype: every type for type checks,
 // X0.25 per different type among your Jokers) — upstream 3.9.1 draws them with their souls (Gen 4 sheet; Regigigas Natdex 10, 32).
+// The Lake trio, Cresselia, Manaphy and Phione (contentRev 46), Legendary $20 each: Uxie (+2 Foresight, X1.3 per Foreseen card), Mesprit (X1.5,
+// X2.5 on a poker hand not yet played this round), Azelf (X2.5 on the final hand), each +X0.25 per other guardian held (Lake Guardians); Psychic.
+// Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
+// Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
+// (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -1209,6 +1214,50 @@ function multitype_count(card) {
   return Math.min(POKETYPES.length, seen.size + wild + 1);
 }
 const multitype_x = (card) => r3(1 + card.ability.extra.Xmult_mod * multitype_count(card));
+
+// ---------------------------------------------------------------- the Lake trio (Uxie / Mesprit / Azelf), Cresselia, Manaphy / Phione
+const LAKE = ['j_poke_uxie', 'j_poke_mesprit', 'j_poke_azelf'];
+/** Lake Guardians: how many OTHER Lake guardian species you have (undebuffed) — the Regi Trio's count (regi_others): distinct species, so
+ *  a twin of the same guardian (Showman) is never an "other guardian", and two Mesprits count once for an Uxie. 0, 1 or 2. */
+export function lake_others(card) {
+  const own = card.config.center.key, seen = new Set();
+  for (const j of (G.jokers && G.jokers.cards) || []) {
+    const k = j.config.center.key;
+    if (j !== card && !j.debuff && k !== own && LAKE.includes(k)) seen.add(k);
+  }
+  return seen.size;
+}
+/** A guardian's X: its own field (an energy field) + `lake_mod` (0.25, in no energy field) for each other guardian. */
+const lake_x = (card, field) => r3(card.ability.extra[field] + card.ability.extra.lake_mod * lake_others(card));
+/** Mesprit, Emotion: the hand's poker hand had not been played yet this round. run.js evaluate_play has already counted THIS play
+ *  (played_this_round is 1 on its first play of the round) before the jokers score, as Abra's "already played" (> 1) reads it. */
+const first_this_round = (context) => { const h = context.scoring_name && G.GAME.hands[context.scoring_name]; return !!h && (h.played_this_round || 0) <= 1; };
+/** Cresselia, Lunar Blessing (systems/rules.js set_debuff: playing cards get 'prevent_debuff' while an undebuffed Cresselia is owned).
+ *  Gaining or losing it re-runs the Blind's debuff pass over every playing card (Blind:disable's own pass), queued so it runs once the
+ *  card has landed / left / been debuffed: a Cresselia gained mid-Blind lifts the Boss's debuffs at once, and one sold, destroyed or
+ *  debuffed mid-Blind gives them back. Outside a Blind nothing is debuffed anyway. */
+function lunar_refresh() {
+  G.E_MANAGER.add_event(() => {
+    if (G.GAME && G.GAME.facing_blind && G.GAME.blind && G.playing_cards) for (const c of G.playing_cards) G.GAME.blind.debuff_card(c);
+  });
+}
+/** Manaphy / Phione: a Water Joker for "each Water Joker gives": is_type (a Tera sticker counts — it replaces the type), undebuffed. */
+const sea_joker = (j) => !!(j && j.ability && j.ability.set === 'Joker' && !j.debuff && is_type(j, 'Water'));
+/** Water Jokers for the tooltip, itself included (+1 while it is Water: a Tera of another type takes it out), so a shop card shows what it
+ *  would give once bought. */
+const sea_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && sea_joker(j)).length + (is_type(card, 'Water') ? 1 : 0);
+/** Manaphy, Egg: at the end of each shop (not Blueprint), with a free Joker slot NOW (cards + pending creations < limit, Glameow's
+ *  slot_room; no slot, no roll), a 1 in 4 chance (Pokermon's pseudorandom_probability: the run's seeded stream, seed 'manaphy_egg', so
+ *  Oops! All 6s raises it and Absol fixes it) to create a Phione, appended at the right end of the row. Created at once (add_card), so a
+ *  second Manaphy sees the slot taken. */
+function manaphy_egg(card, context) {
+  if (!context.ending_shop || context.blueprint || !slot_room()) return;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, 'manaphy_egg', ex.num, ex.dem, 'manaphy_egg')) return;
+  const egg = add_card({ set: 'Joker', key: 'j_poke_phione', key_append: 'manaphy' });
+  card_eval_status_text(egg, 'extra', null, null, null, { message: 'Hatched!', colour: 'BLUE' });
+  card.juice_up();
+}
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -2793,6 +2842,67 @@ defineJokers({
       return undefined;
     },
   },
+  // ---------------------------------------------------------------- The Lake trio: Uxie 480 / Mesprit 481 / Azelf 482 (Psychic, Gen 4)
+  // The owner's design (2026-10-28). Legendary $20 each (The Soul / the Legendary pool). Types from the card art: all three Psychic.
+  // Uxie, Knowledge: +2 Foresight (the Shinx line's scry); each Foreseen card gives X1.3 Mult (the Foreseen cards are scored like held
+  // cards, context.individual with cardarea G.scry_view, as Hoothoot's; a debuffed one gives nothing). Mesprit, Emotion: X1.5 Mult, or
+  // X2.5 on a hand whose poker hand hasn't been played yet this round (first_this_round). Azelf, Willpower: X2.5 Mult on the final hand
+  // of each round (final_hand, Drifloon's check). Lake Guardians: each one's X values get +X0.25 for each OTHER guardian species held,
+  // undebuffed (lake_others, the Regi Trio's distinct count) — all three: Uxie X1.8 per Foreseen card, Mesprit X2 / X3, Azelf X3.
+  // Energy: Uxie's per-card `Xmult_multi` +5% (1.3 -> 1.365 / 1.43 / 1.495), Mesprit's `Xmult` / `Xmult2` +20% (1.5 -> 1.8 / 2.1 / 2.4,
+  // 2.5 -> 3 / 3.5 / 4), Azelf's `Xmult` +20% (2.5 -> 3 / 3.5 / 4); the +0.25 per guardian (`lake_mod`) and the Foresight are fixed.
+  // Neither Nacho nor Pokermon+ has them. Art: upstream 3.9.1's own cells with their floating souls (Natdex {28,31}, {0,32}, {2,32}).
+  uxie: {
+    name: 'uxie', poke_sprite391: sprite('Natdex', 28, 31, [29, 31]),
+    config: { extra: { scry: 2, Xmult_multi: 1.3, lake_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['foresight', 'xmult'], poke_after: 'rotomm',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); scry_tip(info_queue);
+      const ex = card.ability.extra;
+      return { vars: [ex.scry, r3(ex.Xmult_multi), r3(ex.lake_mod), lake_others(card), lake_x(card, 'Xmult_multi')] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.scry_view && !context.end_of_round && !context.other_card.debuff) {
+        return { x_mult: lake_x(card, 'Xmult_multi'), card };
+      }
+      return undefined;
+    },
+    ...scry,
+  },
+  mesprit: {
+    name: 'mesprit', poke_sprite391: sprite('Natdex', 0, 32, [1, 32]),
+    config: { extra: { Xmult: 1.5, Xmult2: 2.5, lake_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'hand_type'], poke_after: 'uxie',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult), r3(ex.Xmult2), r3(ex.lake_mod), lake_others(card), lake_x(card, 'Xmult'), lake_x(card, 'Xmult2')] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const x = lake_x(card, first_this_round(context) ? 'Xmult2' : 'Xmult');
+      return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+  azelf: {
+    name: 'azelf', poke_sprite391: sprite('Natdex', 2, 32, [3, 32]),
+    config: { extra: { Xmult: 2.5, lake_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['xmult'], poke_after: 'mesprit',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult), r3(ex.lake_mod), lake_others(card), lake_x(card, 'Xmult')] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main || !final_hand()) return undefined;
+      const x = lake_x(card, 'Xmult');
+      return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+
   // ---------------------------------------------------------------- The creation trio: Dialga 483 / Palkia 484 / Giratina 487 (Gen 4)
   // The owner's design (2026-10-28). Legendary $20 each (The Soul / the Legendary pool). Types from the card art: Dialga Metal, Palkia
   // Water, Giratina Psychic (both its Altered and its Origin card show the Psychic icon). Neither Nacho nor Pokermon+ has them. Art:
@@ -2807,7 +2917,7 @@ defineJokers({
     name: 'dialga', poke_sprite391: sprite('Gen04', 10, 2, [11, 2]),
     config: { extra: { retriggers: 1 } },
     rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 4, blueprint_compat: true,
-    attributes: ['retrigger', 'hands'], poke_after: 'rotomm',
+    attributes: ['retrigger', 'hands'], poke_after: 'azelf',
     poke_no_energy_field: true,
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [spark_state()] }; },
     calculate(self, card, context) {
@@ -2908,6 +3018,72 @@ defineJokers({
       return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
     },
   },
+
+  // ---------------------------------------------------------------- Cresselia 488 (Psychic, Gen 4)
+  // The owner's design (2026-10-28). Legendary $20. Lunar Blessing: while you have it (undebuffed), your playing cards can't be debuffed —
+  // by a Boss Blind (The Goad / Head / Club / Window / Plant / Pillar / Verdant Leaf...) or anything else (a mod's debuff_card, an
+  // SMODS.debuff_card source): systems/rules.js set_debuff answers 'prevent_debuff', which Card:set_debuff lets win outright, Urshifu's
+  // Unseen Fist rule. Gaining / losing it re-runs the debuff pass at once (lunar_refresh). Jokers can still be debuffed (Crimson Heart),
+  // Cresselia included. And X1.5 Mult (`Xmult`, Energy +20%: 1.8 / 2.1 / 2.4); the blessing is fixed.
+  // Pokermon+'s Darkrai: no rule between them. Darkrai never debuffs playing cards (it brings a Nightmare and lends held Energy), so the
+  // blessing has nothing to block; Darkrai's held-Energy energizing reaches Cresselia like any Psychic joker (a held Psychic Energy
+  // raises its X1.5), and it can't raise the blessing. Neither Nacho nor Pokermon+ has Cresselia. Art: upstream 3.9.1 (Natdex {14,32}).
+  cresselia: {
+    name: 'cresselia', poke_sprite391: sprite('Natdex', 14, 32, [15, 32]),
+    config: { extra: { Xmult: 1.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'debuff'], poke_after: 'giratina',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+    add_to_deck() { lunar_refresh(); },
+    remove_from_deck() { lunar_refresh(); },
+  },
+
+  // ---------------------------------------------------------------- Phione 489 / Manaphy 490 (Water, Gen 4)
+  // The owner's design (2026-10-28). Legendary $20 each. Phione: each Water Joker (itself included) gives +6 Mult (`mult`, Energy +40%:
+  // 8.4 / 10.8 / 13.2). Manaphy, Sea Guardian: each Water Joker (itself included) gives X1.2 Mult (`Xmult_multi`, the per-joker X as
+  // Blaziken's, Energy +5%: 1.26 / 1.32 / 1.38); Egg: at the end of each shop, with a free Joker slot, a 1 in 4 chance (seeded) to create
+  // a Phione (manaphy_egg). Both use the other_joker context (Baseball Card's: each Water Joker shows its own bonus): is_type, so a Tera
+  // sticker counts (and a Water joker with another Tera doesn't); a debuffed joker gives nothing. Not families: Phione never evolves.
+  // Neither Nacho nor Pokermon+ has them. Art: upstream 3.9.1's own cells with their floating souls (Natdex {16,32} / {18,32}).
+  phione: {
+    name: 'phione', poke_sprite391: sprite('Natdex', 16, 32, [17, 32]),
+    config: { extra: { mult: 6 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'types', 'joker'], poke_after: 'cresselia',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const n = sea_count(card); return { vars: [r3(card.ability.extra.mult), n, r3(card.ability.extra.mult * n)] }; },
+    calculate(self, card, context) {
+      if (context.other_joker && sea_joker(context.other_joker)) {
+        const m = r3(card.ability.extra.mult);
+        G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
+        return { message: a_mult(m), colour: 'MULT', mult_mod: m };
+      }
+      return undefined;
+    },
+  },
+  manaphy: {
+    name: 'manaphy', poke_sprite391: sprite('Natdex', 18, 32, [19, 32]),
+    config: { extra: { Xmult_multi: 1.2, num: 1, dem: 4 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'types', 'joker', 'chance', 'generation'], poke_after: 'phione',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, [num, dem] = get_probability_vars(card, ex.num, ex.dem, 'manaphy_egg'), n = sea_count(card);
+      return { vars: [r3(ex.Xmult_multi), num, dem, n, r3(Math.pow(ex.Xmult_multi, n))] };
+    },
+    calculate(self, card, context) {
+      manaphy_egg(card, context);
+      if (context.other_joker && sea_joker(context.other_joker)) {
+        const x = r3(card.ability.extra.Xmult_multi);
+        G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
+        return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+      }
+      return undefined;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -2989,6 +3165,7 @@ const POISON_GAS = (name, by, nth) => ['{C:attention}' + name + ':{} after ' + (
 const BITE = ['{C:attention}Bite:{} when a hand containing', 'a {C:attention}Pair{} scores, permanently', 'gains {C:mult}+#2#{} Mult for each', 'scored card', '{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult)'];
 const SAND_STREAM = ['{C:poke_sand}Sand Stream:{} scored', '{C:attention}Stone{} cards give', '{C:chips}+#1#{} extra Chips'];
 const SNIPER = ['{C:attention}Sniper:{} each scored card', 'has a {C:green}#1# in #2#{} chance to', 'crit for {X:mult,C:white} X#3# {} Mult'];
+const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{C:attention}Uxie{}, {C:attention}Mesprit{} or {C:attention}Azelf{} held', '{C:inactive}(Currently #' + n + '#/2 others)'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -3271,6 +3448,27 @@ export const DESIGN_LOC = {
       ['{C:attention}Multitype:{} counts as', 'every {C:attention}type{}', '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
       ['{C:attention}Judgment:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each different', '{C:attention}type{} among your Jokers', '{C:inactive}(Itself counts as one)',
         '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
+    j_poke_uxie: { name: 'Uxie', text: [
+      ['{C:purple}+#1# Foresight', '{C:attention}Knowledge:{} each {C:attention}Foreseen{}', 'card gives {X:mult,C:white} X#2# {} Mult', '{C:inactive}(scored like a held card)'],
+      [...LAKE_GUARDIANS(3, 4), '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} a card)'],
+    ] },
+    j_poke_mesprit: { name: 'Mesprit', text: [
+      ['{C:attention}Emotion:{} {X:mult,C:white} X#1# {} Mult, or', '{X:mult,C:white} X#2# {} if the {C:attention}poker hand{}', 'hasn\'t been played yet', 'this round'],
+      [...LAKE_GUARDIANS(3, 4), '{C:inactive}(Currently {X:mult,C:white} X#5# {C:inactive} / {X:mult,C:white} X#6# {C:inactive})'],
+    ] },
+    j_poke_azelf: { name: 'Azelf', text: [
+      ['{C:attention}Willpower:{} {X:mult,C:white} X#1# {} Mult on the', 'final hand of each round'],
+      [...LAKE_GUARDIANS(2, 3), '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive})'],
+    ] },
+    j_poke_cresselia: { name: 'Cresselia', text: [
+      ['{C:attention}Lunar Blessing:{} while you', 'have this Joker, playing cards', 'can\'t be {C:attention}debuffed{}', '{C:inactive}(Boss Blinds or anything else)'],
+      ['{X:mult,C:white} X#1# {} Mult'],
+    ] },
+    j_poke_phione: { name: 'Phione', text: ['Each {X:poke_water,C:white}Water{} Joker', 'gives {C:mult}+#1#{} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'] },
+    j_poke_manaphy: { name: 'Manaphy', text: [
+      ['{C:attention}Sea Guardian:{} each', '{X:poke_water,C:white}Water{} Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {X:mult,C:white} X#5# {C:inactive} Mult)'],
+      ['{C:attention}Egg:{} at the end of the shop,', 'if you have a free Joker slot,', '{C:green}#2# in #3#{} chance to', 'create a {C:attention}Phione{}'],
     ] },
   },
   Other: {

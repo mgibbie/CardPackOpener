@@ -38,6 +38,8 @@ await sec('static', () => {
     'Hippopotas / Hippowdon Earth, Skorupi / Drapion Dark, Carnivine Grass, Finneon / Lumineon Water (the icons on their cards)', [D.hippopotas, D.hippowdon, D.skorupi, D.drapion, D.carnivine, D.finneon, D.lumineon]);
   ok(D.dialga === 'Metal' && D.palkia === 'Water' && D.giratina === 'Psychic' && D.regigigas === 'Colorless' && D.arceus === 'Colorless',
     'Dialga Metal, Palkia Water, Giratina Psychic, Regigigas / Arceus Colorless (the icons on their cards)', [D.dialga, D.palkia, D.giratina, D.regigigas, D.arceus]);
+  ok(D.uxie === 'Psychic' && D.mesprit === 'Psychic' && D.azelf === 'Psychic' && D.cresselia === 'Psychic' && D.phione === 'Water' && D.manaphy === 'Water',
+    'the Lake trio + Cresselia: Psychic; Phione / Manaphy: Water (the icons on their cards)', [D.uxie, D.mesprit, D.azelf, D.cresselia, D.phione, D.manaphy]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

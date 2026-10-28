@@ -119,7 +119,7 @@ Notable gaps:
   - Starters: every Gen 5-9 starter line is missing (15 lines, 45 species). Gen 4 is covered
     by Nacho (the Turtwig, Chimchar and Piplup lines).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
-    creation trio, Regigigas and Arceus are now the owner's designs): the Lake trio, Xerneas/Yveltal, the Tapus, the
+    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
   - Fossils: the Tirtouga, Archen, Tyrunt and Amaura lines, and the four Galar fossils, are all
     missing. They are natural fits for the existing "Ancient" mechanic (2.5).
@@ -465,6 +465,41 @@ House pattern: REUSING THE DAY / NIGHT CYCLE (the owner's Finneon line; Lunatone
   - A day / night joker can borrow the pair's partner as its unlock: Lumineon works on day hands too while Lunatone is held (cosmic: owned
     and undebuffed; a Blueprint isn't Lunatone). One-way: Lumineon does nothing for Lunatone. The tooltip says "Lunatone: active / needs
     Lunatone".
+House pattern: the LAKE TRIO, three X Legendaries with a shared X rider (the owner's Uxie / Mesprit / Azelf, jokers/pokejokers_designs.js
+lake_others / lake_x):
+  - Three separate species, each a full Legendary X alone, each paying on a DIFFERENT moment of the round: Uxie per Foreseen card (+2
+    Foresight; the scry cards are scored like held cards, cardarea G.scry_view), Mesprit on a poker hand new this round (X1.5, else X2.5:
+    G.GAME.hands[scoring_name].played_this_round <= 1 in joker_main, because run.js counts the play before the jokers score), Azelf on the
+    final hand (X2.5; hands_left === 0, Drifloon's check). Together they cover every hand without stacking on the same trigger.
+  - The rider is the Regi Trio's count (distinct OTHER species, undebuffed; a twin never counts) but ADDED to the joker's own X instead of
+    a conversion: X + lake_mod (0.25) per other guardian, in every X the joker has (Mesprit's both). All three: Uxie X1.8 a card, Mesprit
+    X2 / X3, Azelf X3. Keep lake_mod out of energy_values: Energy raises the base X (Xmult_multi +5% on the per-card one, Xmult / Xmult2
+    +20%), the trio bonus stays a flat +0.25 x others, so neither multiplies the other.
+  - Tooltip: the base numbers, "(Currently k/2 others)" and the current X, so a shop card shows what it would give with the row's guardians.
+House pattern: NO DEBUFF, a rule-bender Legendary (the owner's Cresselia, Lunar Blessing; systems/rules.js set_debuff, lunar_refresh):
+  - "Playing cards can't be debuffed" is ONE line in the Pokermon set_debuff hook: a playing card (ability.set Default / Enhanced) answers
+    'prevent_debuff' while find_joker finds the joker (find_joker skips a debuffed one). Card:set_debuff lets 'prevent_debuff' win outright,
+    before debuff_sources and the Blind's own rule, so a Boss Blind (The Goad, Head, Club, Window, Plant, Pillar, Verdant Leaf), a mod's
+    debuff_card answer and an SMODS.debuff_card source are all blocked by the same check. Urshifu Single Strike's Unseen Fist is the same rule.
+  - The debuff state is only recomputed when something asks (the Blind's set_blind / disable pass, a card's set_ability). So the joker
+    re-runs the Blind's pass over G.playing_cards from add_to_deck AND remove_from_deck (which also run on a debuff / un-debuff), QUEUED
+    (an event): by then the card has landed, left, or been marked debuffed. Only while facing a Blind (nothing is debuffed outside one).
+  - It protects playing cards only: jokers can still be debuffed (Crimson Heart), the joker itself included. Jokers that debuff on purpose
+    for their own payoff (Baby faints, "debuff self this round") are jokers, so they still work.
+  - The rule is Energy-inert; give the joker a number (Cresselia's X1.5, `Xmult`) so Energy still has something to raise. With Pokermon+'s
+    Darkrai: no interaction to write (it never debuffs cards); its held-Energy energizing raises the X like any joker's.
+House pattern: a LEGENDARY THAT HATCHES ANOTHER JOKER (the owner's Manaphy, Egg -> Phione; jokers/pokejokers_designs.js manaphy_egg):
+  - The moment is the end of each shop (context.ending_shop, Mew's moment), not Blueprint (a copy would hatch twice).
+  - Slot first, then the roll: only with a free Joker slot NOW (Glameow's slot_room: cards + joker_buffer < card_limit); with no slot there
+    is no roll at all, so a full row never moves the seeded stream and never pushes a joker out. The chance is Pokermon's
+    pseudorandom_probability (a seed key of its own, 'manaphy_egg'), so Oops! All 6s raises it and the tooltip's get_probability_vars agrees.
+  - Create it at once with add_card (key j_poke_phione): it lands at the right end of the row, and a second hatcher in the same pass sees
+    the slot taken. A Negative is not forced: the hatchling takes a real slot.
+  - The hatchling is a real joker of its own (Phione: +6 Mult per Water Joker, Legendary $20 too), a weaker cousin of the parent's effect
+    (Manaphy: X1.2 per Water Joker), so the two build the same team instead of stacking a second copy of one number. No family: it never
+    evolves into the parent.
+  - Per-joker "each Water Joker gives" uses the other_joker context (Baseball Card's, Blaziken's: each joker shows its own bonus), with
+    is_type and !debuff, itself included. A per-joker X is Xmult_multi (+5%), a per-joker Mult is mult (+40%).
 
 House pattern: a CREATION TRIO, two rule-benders and a partner form (the owner's Dialga / Palkia / Giratina, jokers/pokejokers_designs.js
 roar_on / spacial_rend / origin_forme):
@@ -673,7 +708,7 @@ Share of the BASE value added per Energy:
 
 Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
 (probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot), slots (Palkia's +1 Joker
-slot), slow_start (Regigigas's wait).
+slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1114,6 +1149,8 @@ Under-explored:
     anti-synergy by design. Effects that DESTROY a Glass card on purpose (Hanged Man, a joker's destroy) still do.
   - Water-type synergy: Corsola, Lanturn, Pelipper and Politoed count Water Jokers; the owner's Barboach line counts Water OR
     Earth Jokers (the two-type team, 2.1): +12 / +20 Chips each. Other pairings (Water + Lightning, Water + Grass...) are open.
+    The owner's Manaphy (X1.2 per Water Joker, itself included) and Phione (+6 Mult per Water Joker) are a Legendary pair on the same
+    count, Manaphy's Egg hatching a Phione (1 in 4 at the end of each shop, with a free slot: the hatching Legendary, 2.1).
 Pitfalls:
   - Extra hands stack with every hand-based scaler. A new +hand joker plus Blastoise grows
     quadratically.
@@ -1213,6 +1250,9 @@ Examples:
   Owner's lines: Spoink -> Grumpig (C $5 -> S $8): Pearl adds a Pink Seal to a held unsealed card
     each round; X0.1 banked per Pink Seal trigger (evolves after 8); Grumpig makes Pink Seals
     trigger every hand, X0.15 per hand one triggers in, X0.3 instead on an overflow (Black Pearl).
+  Owner's Lake trio (L $20 each): Uxie +2 Foresight and X1.3 per Foreseen card, Mesprit X1.5 (X2.5 on a poker hand new this
+    round), Azelf X2.5 on the final hand; +X0.25 each per other guardian held (the Lake trio, 2.1). Cresselia (L $20): playing
+    cards can't be debuffed, X1.5 (no debuff, 2.1).
   Owner's Latias / Latios (L $20 each; the card art is Psychic, not Dragon): X0.15 per Tarot (Mist Ball) / per Planet
     (Luster Purge) used; Soul Dew: holding both, either kind grows both (the Eon duo, 2.1). Energy +20% on the gain.
   Owner's Drifloon -> Drifblim (C $5 -> S $8; Ghost/Flying, the art is Psychic): Stockpile +1 per discard action (max 3 / 5, +1
