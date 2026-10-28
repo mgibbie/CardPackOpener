@@ -265,8 +265,8 @@ upgrade is complete, see "Pokermon 3.9.1 upgrade: complete"), `3.9.1+r16` / `3.9
 follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** since the owner's 25 new jokers ("The owner's 25 new jokers" below), `3.9.1+r20` for the owner's
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
-Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), **`3.9.1+r26`** since the owner's Spoink line ("The owner's Spoink
-line" below)
+Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
+line" below), **`3.9.1+r27`** since the owner's Castform ("The owner's Castform" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2307,6 +2307,39 @@ Pinned **`3.9.1+r26`** (`contentRev: 26`; `LEGACY_MOD_VERSIONS` untouched). The 
 - **Tests**: `micatro/tests/mods/pokermon_spoink_test.mjs` (4 passed / 16 failed on origin/main; 38 / 29 with only seals1.js reverted; 67 / 0
   here). Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 39 defs), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (857 jokers).
+
+### The owner's Castform (2026-10-27, branch `feat/pokermon-castform`)
+Pinned **`3.9.1+r27`** (`contentRev: 27`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Castform (351), single-stage, **Rare $7**, starting
+**Colorless**, in `jokers/pokejokers_designs.js` (40 defs now), after Milotic in Pokédex order. Neither Nacho nor Pokermon+ has it.
+- **Forecast**: on the round's **first deal** (Steamodded `hand_drawn` in `DRAW_TO_HAND` with nothing played or discarded, once per `G.GAME.round`;
+  `first_hand_drawn` runs before the deal's draw events land, so the hand is empty there) Castform counts the cards held: **red** (Hearts or
+  Diamonds, counted together) vs **Clubs** vs **Spades**, through `is_suit`: a **Wild** card counts once for each of the three; a **debuffed**
+  card, a Stone card or a Hazard counts for none (with Smeared Joker, Clubs and Spades count as each other, so a black lead is a tie). The
+  single highest count picks the form; a **tie for the top** (or no suited card) is **Normal**. Not Blueprint.
+- **Forms** (`ability.extra.form`, for the whole round; later draws never re-read it): **Sunny** (Fire) scored Hearts / Diamonds **+4 Mult**
+  (`mult1`); **Rainy** (Water) scored Clubs **+30 Chips** (`chips1`) and the **first scored Club retriggers** once (`retriggers`, fixed; its
+  retrigger scores the +30 again); **Snowy** (Water: Ice maps to Water) each Spade **held in hand X1.1** (`Xmult_multi`); **Normal** (Colorless)
+  **+10 Mult** (`mult2`). A Blueprint copies the current form's effect.
+- **Out of rounds**: Normal / Colorless again after each round (queued in the end_of_round pass, so the other jokers' end-of-round effects
+  still see the form); the shop sees a Colorless Castform.
+- **Type**: the form changes its own `ability.extra.ptype` (what `is_type`, `find_pokemon_type`, `get_type` and `energy_matches` read), then
+  `set_debuff()` and a Kecleon re-sync (Kecleon copies the joker to its right) — Kecleon's set_type, without the Tera sticker, so a player's
+  Tera still overrides the weather's type as on any joker.
+- **Energy** (energize's usual shares, every form's field at once): mult1 / mult2 +40%, chips1 +30%, Xmult_multi +5% of base — one Energy
+  +5.6 / +39 / X1.155 / +14, three +8.8 / +57 / X1.265 / +22. Its current form's type Energy matches while it is in that form (Fire when
+  Sunny, Water when Rainy or Snowy); Colorless Energy always matches — full strength while Normal, half otherwise (+0.8 / +4.5 / ...), the
+  usual rule for a non-Colorless ptype.
+- **Monotype** (owner's choice): its weather type never counts. The center's `poke_mono_exempt: true` makes `systems/runbadges.js` leave it
+  out of every Monotype check (never breaks, never locks the type, no shop warning). The Nuzlocke reads it as usual (a Colorless gain).
+  The card says so: "(Normal again after the round; its type never breaks Monotype)".
+- **Text**: `j_poke_castform` (Normal, and the collection: the four forms' chart, "(Currently Normal)"), `j_poke_castform_sunny / _rainy /
+  _snowy` (the form's effect), chosen by loc_vars `key`. `{C:poke_sun}` / `{C:poke_rain}` / `{C:poke_snow}` are used for the first time.
+- **Art: upstream's own.** Normal is its Natdex card ({10,23}); the three weather cards are on the 3.9.1 Gen 3 sheet at {0,0} / {2,0} /
+  {4,0} (unlisted in pokespriteload.lua; left of Kecleon's type cards) with Shiny twins: `systems/anim.js` `CASTFORM_SPRITES`, drawn by
+  `ui.js` ownFace from the view's form. Nothing to deploy for the mod. The wiki drops it (406 missing).
+- **Tests**: `micatro/tests/mods/pokermon_castform_test.mjs` (2 passed / 18 failed on origin/main; 100 / 5 with only runbadges.js reverted — the Monotype checks; 105 / 0 here).
+  Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 40 defs), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (858 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

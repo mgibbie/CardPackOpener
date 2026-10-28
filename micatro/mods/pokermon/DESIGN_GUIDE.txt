@@ -155,6 +155,32 @@ X and Mega Ampharos become Dragon, Mega Lopunny and Mega Mewtwo X become Fightin
 Type synergy is read with find_pokemon_type(type) or is_type(card, type). Tera stickers
 (<type>_sticker) override a joker's type and can sit on vanilla jokers.
 
+House pattern: a WEATHER / FORM change (the owner's Castform, jokers/pokejokers_designs.js):
+  - The joker reads the weather once a round, on the round's FIRST deal: Steamodded's hand_drawn
+    context while G.STATE is DRAW_TO_HAND with nothing played or discarded yet (and once per
+    G.GAME.round). Not first_hand_drawn: in Micatro that context runs before the deal's draw
+    events land, so the hand is still empty there. Not Blueprint.
+  - The form (ability.extra.form) holds for the whole round and picks the effect; later draws
+    (after a play or a discard) never re-read it. After the round it is Normal again (queued in the
+    end_of_round pass, so the other jokers' end-of-round effects still see the form): in the shop
+    it is its own type.
+  - Its TYPE follows the form by changing its own ability.extra.ptype, which is_type,
+    find_pokemon_type, get_type and energy_matches all read. No Tera sticker, so a player's Tera
+    still overrides it as on any joker. card.set_debuff() is re-run and Kecleons are re-synced (they
+    copy the joker to their right) whenever it changes, as Kecleon's own set_type does.
+  - Energy: one field per form (mult1 / chips1 / Xmult_multi / mult2), so every Energy raises
+    every form at once. Its current type's Energy matches while it is in that form; Colorless
+    Energy always matches (full strength only while it is Colorless, half otherwise: energize's
+    usual rule for a non-Colorless ptype).
+  - Monotype exemption: a center with poke_mono_exempt: true is left out of every Monotype check
+    (systems/runbadges.js mono_state): it never breaks the run, never locks the type, never
+    triggers the shop warning. Use it only where the type is outside the player's control (the
+    weather); the Nuzlocke reads the joker as usual. Say it on the card ("its type never breaks
+    Monotype").
+  - Art: one cell per form when upstream has one (Castform's Sunny / Rainy / Snowy sit on the 3.9.1
+    Gen 3 sheet, unlisted in pokespriteload.lua), drawn by ui.js ownFace from the view's form.
+  - Darmanitan's Zen Mode is the other shape: a temporary Tera sticker, restored at end of round.
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -546,8 +572,9 @@ Type and keyword colours (pokesprites.lua pokermon.colours; Micatro TYPE_COLOURS
   {C:poke_bird}    Missingno
   {C:poke_pocket}  Pocket Packs
   poke_sun, poke_rain, poke_sand, poke_snow: defined in 3.9.1 for weather designs (Castform,
-    Kyogre/Groudon, Hippowdon). poke_sand's first use is the owner's Flygon ("{C:poke_sand}Sandstorm:");
-    the other three are still unused.
+    Kyogre/Groudon, Hippowdon). All four are now used: poke_sand by the owner's Flygon
+    ("{C:poke_sand}Sandstorm:"), poke_sun / poke_rain / poke_snow by the owner's Castform
+    ("{C:poke_sun}Sunny Form:", "{C:poke_rain}Rainy Form:", "{C:poke_snow}Snowy Form:").
 Most used tags overall:
   attention 1166, inactive 540, mult 230, X:mult 218, chips 184, money 122, br:2 106,
   green 77, dark_edition 49.
@@ -857,13 +884,19 @@ Examples:
   Miltank (U $7)       Earn $4 per Colorless Joker at end of round.
   Slakoth (U $4)       +15 Mult, -1 hand when a hand is played. Vigoroth: X0.5 per remaining
                        hand. Slaking: X4, -1 hand.
+  Owner's Castform (R $7, single-stage): Forecast. On the round's first deal the suit held most
+                       (Hearts + Diamonds together vs Clubs vs Spades; a tie: Normal) picks
+                       its form and type for the round: Sunny (Fire) scored Hearts / Diamonds
+                       +4 Mult; Rainy (Water) scored Clubs +30 Chips, the first retriggers;
+                       Snowy (Water) held Spades X1.1; Normal (Colorless) +10 Mult.
 Typical numbers:
   Basic     +M 3-15~6 | X 1.75-2 | card +M 6 | card X 1.5 | $ 1-4 | gain +M 1-4 | gain X 0.2
   Stage 1   +M 5 | X 2 | card +M 7 | $ 1-2 | gain +M 1-6 | gain X 0.5
   Stage 2   X 4 (Slaking) | gain +M 5
 Under-explored:
   - Chips (1).
-  - Colorless-type synergy (Miltank and Kecleon only).
+  - Colorless-type synergy (Miltank and Kecleon only). Type changers: Kecleon, and the owner's
+    Castform (its weather form; see 2.1).
   - Enhancements (7).
   - Birds have no shared hook, and 17 of the missing Colorless species are Flying (Starly,
     Pidove, Fletchling, Pikipek, Rookidee, Rufflet, Chatot, Squawkabilly, Tornadus...).
