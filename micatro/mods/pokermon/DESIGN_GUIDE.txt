@@ -118,8 +118,8 @@ Missing by stage:
 Notable gaps:
   - Starters: every Gen 5-9 starter line is missing (15 lines, 45 species). Gen 4 is covered
     by Nacho (the Turtwig, Chimchar and Piplup lines).
-  - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the Lake
-    trio, Cresselia, Manaphy and Phione are now the owner's designs): the creation trio, Arceus, Xerneas/Yveltal, the Tapus, the
+  - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
+    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
   - Fossils: the Tirtouga, Archen, Tyrunt and Amaura lines, and the four Galar fossils, are all
     missing. They are natural fits for the existing "Ancient" mechanic (2.5).
@@ -501,6 +501,53 @@ House pattern: a LEGENDARY THAT HATCHES ANOTHER JOKER (the owner's Manaphy, Egg 
   - Per-joker "each Water Joker gives" uses the other_joker context (Baseball Card's, Blaziken's: each joker shows its own bonus), with
     is_type and !debuff, itself included. A per-joker X is Xmult_multi (+5%), a per-joker Mult is mult (+40%).
 
+House pattern: a CREATION TRIO, two rule-benders and a partner form (the owner's Dialga / Palkia / Giratina, jokers/pokejokers_designs.js
+roar_on / spacial_rend / origin_forme):
+  - Each is a Legendary rule-bender with NO number of its own, so it is Energy-inert (poke_no_energy_field, Kyogre's way): Dialga's
+    retrigger and Palkia's slot and hand size never grow.
+  - Dialga, Roar of Time: the round's first hand is "scored twice" as a WHOLE-HAND RETRIGGER, not a second evaluation: a repetition of
+    every card of G.play while current_round.hands_played === 0 (Whiscash's Earthquake without its team gate; a discard first doesn't use
+    it up). Each card's chips, mult, enhancement, seal and per-card joker effects happen twice, while the jokers' own hand effects
+    (joker_main, after, the hand's base Chips and Mult) run once. That is the faithful "one hand, scored twice" and keeps the 3.4 Water
+    pitfall in bounds: the strongest effect in the game, gated to ONE hand a round. Blueprint copies it as on Whiscash (a third scoring).
+  - Palkia, Spacial Rend: +1 Joker slot (G.jokers.config.card_limit) and +1 hand size (G.hand.change_size), both in add_to_deck and
+    remove_from_deck, from_debuff INCLUDED (Juggler's hand size; unlike vanilla's Negative, whose slot survives a debuff, and the opposite
+    of Purugly's cost, which must survive one). A debuff on a full row leaves it one Joker over the limit: nobody is ever pushed out, and
+    nothing can join until a Joker leaves (every way in needs a free slot). Sold or destroyed, it takes its own slot with it, so the row is
+    never over. A debuffed one leaving gives nothing back twice (remove_from_deck already ran). A Negative Palkia gives +2 (edition + rule);
+    debuffed, the edition's +1 stays.
+  - Giratina, Shadow Force: a BANK grown by every destroyed playing card, any cause: the remove_playing_cards context (context.removed),
+    which every destroying path sends (Glass shattering, Hanged Man, Pokermon's poke_remove_card eaters, a discard that destroys). X0.25 a
+    card, banked in a non-energy field (shadow_Xmult); the gain Xmult_mod +20%.
+  - A PARTNER FORM (Origin Forme): while a partner is held (find_card: undebuffed, a Blueprint is not one) the joker shows another 3.9.1
+    cell AND its number changes (the gain doubles, derived as 2 x Xmult_mod so one energy field scales both). The cell is a live view form
+    (center.poke_view_form, Cherrim's way: buying, selling or debuffing the partner redraws it); a Legendary's form swaps BOTH the
+    background cell and its floating soul (ui.js ownFace: GIRATINA_ORIGIN pos {10,3} + soul_pos {11,3}). The type stays (both cards show
+    Psychic: check the alternate cell's icon with pokermon_art_type.mjs before giving a form its own type).
+House pattern: SLOW START, a payoff that wakes up (the owner's Regigigas, jokers/pokejokers_designs.js regis_distinct / giga_trio_bonus):
+  - A big flat X (X4 Mult, `Xmult` +20%: X4.8 / X5.6 / X6.4) paid for with a WAIT: it gives nothing until a countdown on the card
+    (`slow_start`, 5 when obtained, a non-energy field: Energy never shortens it) reaches 0, then works for the rest of the run.
+  - The countdown runs in the main end_of_round pass (not Blueprint; a debuffed joker isn't calculated, so it waits too), and an outside
+    condition speeds it: it drops by 1 + the DISTINCT related jokers held then (the Regis, regi_others' rule: two Regices count once).
+    Define every case on the card and in the tests: none 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0), all three 2 (5 1 0).
+  - Don't name the field `rounds`: that is level_evo's countdown, and the card view draws it as an evolution timer.
+  - It can feed its family's shared rider: awake, with the whole trio held, each Regi converts 1 more card per Blind (a term added to
+    regi_converts, once however many copies; the Regis' own tooltip shows the new count).
+  - Tooltip: the state, "Asleep: k left, -n a round" / "Awake!". Blueprint copies the X only while it is awake.
+House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; systems/types.js multitype):
+  - One flag on the center, read where Pokermon decides types: is_type and find_pokemon_type answer true for every one of the 12
+    POKETYPES, and energy_matches lets every type's Energy energize it at full strength. So every type synergy counts it with no special
+    case (Barboach's Water / Earth Jokers once, Starly's Colorless flock, Pachirisu's Lightning Jokers, Corsola / Pelipper's
+    find_pokemon_type, any Water count made with is_type). Its own ptype stays one type (Colorless: get_type, the badge, Kecleon,
+    the frame), so anything that READS a single type sees that one. Bird / Stellar / Trans are not among the 12.
+  - A Tera sticker REPLACES it as on any joker (multitype() is false while a sticker is on; apply_type_sticker writes the ptype too).
+  - Debuffed, the house counters leave it out (their own !j.debuff), as any joker.
+  - Monotype: exempt (poke_mono_exempt, Castform's flag), since a joker of every type would match any lock and can't pick one. The
+    Nuzlocke reads it as usual (a typed, Colorless, gain).
+  - Its payoff counts DIFFERENT types among your Jokers (multitype_count): each other undebuffed joker gives its shown type (get_type);
+    a joker that is every type (another Arceus, a Stellar Tera) adds ONE type of its own, never twelve; itself counts as one; at most 12.
+    X(1 + 0.25 per type), `Xmult_mod` +20% (0.3 / 0.35 / 0.4): X2 with four types, X4 at all twelve.
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -660,7 +707,8 @@ Share of the BASE value added per Energy:
   Xchips +20%, Xchips_multi +5%
 
 Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
-(probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot), lake_mod (the Lake trio's +X0.25 per other guardian).
+(probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot), slots (Palkia's +1 Joker
+slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1112,6 +1160,8 @@ Pitfalls:
     round's first hand (hands_played === 0, Remoraid's test) only while you have 2+ OTHER Water or Earth Jokers. Two gates (the
     first hand AND a team size), a Stage 1 Safari, the retrigger count fixed (Energy raises its Chips rider instead). Blueprint
     copies it like Remoraid: a second retrigger. The tooltip says Active! / Used this round / Inactive: k/2 others.
+    House: an UNGATED first-hand whole-hand retrigger on a Legendary (the owner's Dialga, Roar of Time, Metal; 2.1 creation trio): the
+    first-hand gate alone, paid for with a Legendary slot and no number (Energy-inert).
     House: a SUIT-gated retrigger on a Legendary (the owner's Kyogre, Primordial Sea): every scored Club retriggers once, plus
     +1 hand each round; it shares the round with Groudon under Primal Clash (the weather trio, 2.1), so it is off on Groudon's
     rounds. Energy-inert (poke_no_energy_field): the retrigger and the hand are fixed.
@@ -1440,7 +1490,7 @@ Under-explored:
     Wormadam pays $1 per Steel card held at end of round (a Gold card's money, so Mime repeats it), and
     Trash Burmy (Metal while the deck is mostly Steel) $1 at end of round.
   - Only 16 missing species (Honedge line, Klefki, Cufant line, Varoom line, Orthworm,
-    Corviknight, Registeel, Dialga, Cobalion, Magearna, Iron Crown...).
+    Corviknight, Cobalion, Magearna, Iron Crown...; Registeel and Dialga are the owner's now).
 Pitfalls:
   - Steel plus X Mult per card is the strongest scaling axis in vanilla already.
   - "Eat Steel for permanent X" (the Aron line) thins the deck and scales. Keep its steps at

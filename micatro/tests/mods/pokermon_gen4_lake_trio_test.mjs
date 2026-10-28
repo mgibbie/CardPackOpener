@@ -106,6 +106,7 @@ await sec('static', () => {
   const j = keys.indexOf('j_poke_cresselia');
   ok(j > i && keys[j + 1] === 'j_poke_phione' && keys[j + 2] === 'j_poke_manaphy' && keys.indexOf('j_poke_shaymin') > j + 2 && keys.indexOf('j_poke_azelf') < j,
     'Pokédex order: ... Azelf, (the creation trio), Cresselia (488), Phione, Manaphy, Shaymin (492)', keys.slice(j - 1, j + 4));
+  ok(keys[j - 1] === 'j_poke_giratina' && keys[i + 3] === 'j_poke_dialga', 'the creation trio (483-487) sits between Azelf and Cresselia: Azelf > Dialga, Giratina > Cresselia', [keys[i + 3], keys[j - 1]]);
   const E = (n) => P_CENTERS['j_poke_' + n].config.extra;
   ok(E('uxie').scry === 2 && E('uxie').Xmult_multi === 1.3 && E('uxie').lake_mod === 0.25, 'Uxie: +2 Foresight, X1.3 a Foreseen card, +0.25 a guardian', E('uxie'));
   ok(E('mesprit').Xmult === 1.5 && E('mesprit').Xmult2 === 2.5 && E('mesprit').lake_mod === 0.25, 'Mesprit: X1.5 / X2.5', E('mesprit'));
@@ -313,6 +314,16 @@ await sec('manaphy', () => {
   r = play(['S_2']);
   ok(near(r.mult, ((1 * 1.2) + 6) * 1.2 + 6), 'the debuffed Water Egg gives nothing', r.total);
   ok(plain(m).includes('X1.2 Mult') && plain(m).includes('Currently 2: X1.44 Mult') && plain(m).includes('1 in 4'), 'tooltip: X1.2 per Water Joker, currently 2 (X1.44), 1 in 4', plain(m));
+});
+await sec('phione / manaphy + arceus', () => {
+  // the owner's Arceus (Multitype: counts as every type) is a Water Joker for both
+  const [p, m] = fresh('ARCW', ['phione', 'manaphy']);
+  const a = add('j_poke_arceus');
+  const rp = p.calculate_joker({ other_joker: a }), rm = m.calculate_joker({ other_joker: a });
+  ok(rp && rp.mult_mod === 6 && rm && near(rm.Xmult_mod, 1.2), 'Arceus counts as a Water Joker: +6 Mult from Phione, X1.2 from Manaphy', [rp, rm]);
+  ok(flat(p).includes('Currently 3: +18 Mult') && flat(m).includes('Currently 3: X1.728 Mult'), 'tooltips count Arceus: 3 Water Jokers', [flat(p), flat(m)]);
+  debuff(a);
+  ok(!p.calculate_joker({ other_joker: a }) && !m.calculate_joker({ other_joker: a }), 'a debuffed Arceus counts for neither');
 });
 await sec('manaphy egg', () => {
   // the roll is the run's seeded stream ('manaphy_egg'): predicted on a copy of it, so the test holds for any seed
