@@ -46,7 +46,7 @@
 // Chatot (Vocabulary: +4 Mult for each different poker hand played this run; New Word: a hand's first play this run, while held,
 // creates its Planet; Colorless) and Pachirisu (Quick Spark: X2 on each round's first hand, Nuzzle +X0.25 per other Lightning Joker;
 // Cheek Pouch: $1 per Lightning Joker at end of round; Lightning), Rare $7 each — upstream 3.9.1 draws them (Natdex 10,29 / 22,27).
-// Shellos -> Gastrodon (contentRev 35): a sea, West or East, rolled once per card; Tide Pool +40 Chips on the leftmost (West) / rightmost
+// Shellos -> Gastrodon (contentRev 36): a sea, West or East, rolled once per card; Tide Pool +40 Chips on the leftmost (West) / rightmost
 // (East) scored card; Gastrodon's Tide retriggers it, Storm Drain X0.1 per Energy card used (X0.2 Water); Two Seas: both seas held, every one
 // works on both ends; Water — upstream 3.9.1 draws both seas (Gen 4 sheet: East {4,1} / {8,1}, West {6,1} / {10,1}).
 import {
@@ -54,7 +54,7 @@ import {
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy,
+  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, can_evolve,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -773,6 +773,68 @@ function tide_chips(card, context) {
 /** Storm Drain: each Energy card used (the Energy set — the 12 type Energies and Bird Energy, the cards Porygon-Z counts — on any
  *  joker, or none) banks Xmult_mod, twice that for Water Energy (one energy field scales both, the ratio holds). Not Blueprint. */
 const storm_gain = (ex, consumeable) => (consumeable.config.center.key === 'c_poke_water_energy' ? 2 : 1) * ex.Xmult_mod;
+
+
+// ---------------------------------------------------------------- the owner's Glameow line: Fickle + Thick Fat
+// Fickle: a favourite suit per joker, held on the ABILITY (card.ability.fav_suit, not in extra), so it survives the evolution's
+// set_ability (Steamodded keeps the ability fields the new center doesn't set) with no keep-list. It is picked when the joker is first
+// obtained (add_to_deck, when none is set yet: an evolving card keeps its own) and again at each end of round, Ancient Joker's pick
+// (core.js reset_ancient_card): the run's seeded pseudorandom_element over the four suits minus the current favourite, seeded by the
+// ante ('fickle' + ante). Never on creation (a shop / collection card would draw from the run's seed outside the recipe), so the shop
+// card reads "(Favourite: picked when obtained)". Wild cards and Smeared Joker count through is_suit.
+const FICKLE_SUITS = ['Spades', 'Hearts', 'Clubs', 'Diamonds'];
+function fickle_pick(card) {
+  const suits = FICKLE_SUITS.filter((s) => s !== card.ability.fav_suit);
+  card.ability.fav_suit = pseudorandom_element(suits, pseudoseed('fickle' + G.GAME.round_resets.ante))[0];
+  return card.ability.fav_suit;
+}
+const fav_scored = (card, context) => !!(card.ability.fav_suit && context.individual && context.cardarea === G.play && !context.end_of_round
+  && context.other_card.is_suit(card.ability.fav_suit));
+const fav_vars = (card) => (card.ability.fav_suit ? localize(card.ability.fav_suit, 'suits_plural') : 'picked when obtained');
+const fav_colour = (card) => [card.ability.fav_suit || 'inactive'];
+function fickle(card, context) {
+  if (round_end(context) && !context.blueprint) {
+    const s = fickle_pick(card);
+    card_eval_status_text(card, 'extra', null, null, null, { message: localize(s, 'suits_plural') + '!', colour: 'FILTER' });
+  }
+}
+// Thick Fat: -1 Joker slot while held (G.jokers.config.card_limit, as Banette's +1), paid in add_to_deck and refunded in
+// remove_from_deck (sold, destroyed, or turned into another joker). Kept while DEBUFFED, as vanilla keeps a Negative's slot
+// (queue_negative_removal): a debuff gives no slot back, so lifting it can never put the jokers over the limit; a debuffed Purugly
+// that is sold / destroyed is refunded by the card_removed hook (index.js -> slot_cost_removed). A Negative Purugly nets 0 (its +1).
+export function slot_cost_add(card, from_debuff) {
+  if (!from_debuff) G.jokers.config.card_limit -= card.ability.extra.slot_cost;
+  card.ability.poke_slot_queued = undefined;
+}
+export function slot_cost_remove(card, from_debuff) {
+  if (from_debuff) { card.ability.poke_slot_queued = card.ability.extra.slot_cost; return; }
+  G.jokers.config.card_limit += card.ability.extra.slot_cost;
+}
+/** index.js card_removed: a DEBUFFED Purugly leaving (its remove_from_deck already ran on the debuff) gives its slot back. */
+export function slot_cost_removed(card) {
+  if (card.ability && card.ability.poke_slot_queued && !card.added_to_deck && G.jokers) {
+    G.jokers.config.card_limit += card.ability.poke_slot_queued;
+    card.ability.poke_slot_queued = undefined;
+  }
+}
+// The evolution waits for room: Purugly's -1 slot must not put the jokers over the limit (owner: never push a joker out). Room =
+// a free slot now (cards + pending creations < limit), so after the -1 every joker still fits. A Glameow whose countdown ends without
+// room stays at 0 rounds and evolves at the first end of round with a free slot. Committing reserves the slot in G.GAME.joker_buffer
+// (as Riff-raff does) until the queued evolution has landed, so two Glameows ready in one round never both take the last slot.
+const slot_room = () => G.jokers.cards.length + (G.GAME.joker_buffer || 0) < G.jokers.config.card_limit;
+function glameow_evo(self, card, context) {
+  const ex = card.ability.extra;
+  if (!can_evolve(self, card, context, 'j_poke_purugly') || card.debuff || ex.rounds === undefined || ex.rounds > 1) return level_evo(self, card, context, 'j_poke_purugly');
+  if (!slot_room()) {
+    ex.rounds = 0;
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Needs a slot!', colour: 'FILTER' });
+    return undefined;
+  }
+  G.GAME.joker_buffer = (G.GAME.joker_buffer || 0) + 1;
+  const r = level_evo(self, card, context, 'j_poke_purugly');
+  G.E_MANAGER.add_event(() => { G.GAME.joker_buffer = Math.max(0, (G.GAME.joker_buffer || 0) - 1); });
+  return r;
+}
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -1912,6 +1974,43 @@ defineJokers({
     },
     calc_dollar_bonus(self, card) { return pouch_money(card); },
   },
+  // ---------------------------------------------------------------- LINE: Glameow -> Purugly (Colorless, Gen 4)
+  // The owner's design (2026-10-28): Fickle — a favourite suit, picked when first obtained and again each end of round (the run's
+  // seeded RNG, Ancient Joker's pick: never the same suit twice running; fickle_pick above); scored cards of it give +5 Mult (Glameow)
+  // / X1.25 Mult each (Purugly). Purugly's Thick Fat: -1 Joker slot while held (slot_cost_*). Glameow evolves after 5 rounds, but only
+  // with a free Joker slot (glameow_evo: it waits, never pushing a joker out). Energy: Glameow's per-card `mult` (+40% of base: 5 -> 7 /
+  // 9 / 11), Purugly's per-card `Xmult_multi` (+5%: X1.25 -> X1.3125 / X1.375 / X1.4375), re-applied on evolution; the slot cost is fixed
+  // (`slot_cost`, no energy field). Neither Nacho nor Pokermon+ has the line. Art: upstream 3.9.1's own (Natdex 20 / 22, 28). After
+  // Honchkrow (430) in Pokédex order.
+  // Glameow 431: Common $5.
+  glameow: {
+    name: 'glameow', poke_sprite391: sprite('Natdex', 20, 28),
+    config: { extra: { mult: 5, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'suit', 'round_evo'], poke_after: 'honchkrow',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), fav_vars(card), ex.rounds], colours: fav_colour(card) }; },
+    add_to_deck(self, card) { if (!card.ability.fav_suit) fickle_pick(card); },
+    calculate(self, card, context) {
+      if (fav_scored(card, context)) return { mult: card.ability.extra.mult, card };
+      fickle(card, context);
+      return glameow_evo(self, card, context);
+    },
+  },
+  // Purugly 432: Safari $8.
+  purugly: {
+    name: 'purugly', poke_sprite391: sprite('Natdex', 22, 28),
+    config: { extra: { Xmult_multi: 1.25, slot_cost: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'suit', 'joker_slot'], poke_after: 'glameow',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), ex.slot_cost, fav_vars(card)], colours: fav_colour(card) }; },
+    add_to_deck(self, card, from_debuff) { if (!card.ability.fav_suit) fickle_pick(card); slot_cost_add(card, from_debuff); },
+    remove_from_deck(self, card, from_debuff) { slot_cost_remove(card, from_debuff); },
+    calculate(self, card, context) {
+      if (fav_scored(card, context)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      fickle(card, context);
+      return undefined;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -1932,6 +2031,7 @@ export const DESIGN_FAMILIES = [
   ['spoink', 'grumpig'],
   ['barboach', 'whiscash'],
   ['starly', 'staravia', 'staraptor'],
+  ['glameow', 'purugly'],
   ['shellos', 'gastrodon'],
 ];
 
@@ -1965,6 +2065,7 @@ const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, eve
 const TWO_SEAS = (n) => ['{C:attention}Two Seas:{} with a {C:attention}West{} and an', '{C:attention}East{} Shellos or Gastrodon, each', 'works on both end cards', '{C:inactive}(Two Seas: #' + n + '#)'];
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
   '{C:inactive}(+1 for each other Regi)'];
+const FICKLE = (gain, n) => ['{C:attention}Fickle:{} picks a new favourite', 'suit each round', 'Scored cards of its favourite', 'suit each give ' + gain, '{C:inactive}(Favourite: {V:1}#' + n + '#{C:inactive})'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -2163,6 +2264,11 @@ export const DESIGN_LOC = {
       ['{C:attention}Quick Spark:{} the first hand', 'of each round gives {X:mult,C:white} X#1# {} Mult', '{C:attention}Nuzzle:{} plus {X:mult,C:white} X#2# {} for each', 'other {X:poke_lightning,C:black}Lightning{} Joker',
         '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive}, #4#)'],
       ['{C:attention}Cheek Pouch:{} earn {C:money}$#5#{} for each', '{X:poke_lightning,C:black}Lightning{} Joker at end of round', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:money}$#6#{C:inactive})'],
+    ] },
+    j_poke_glameow: { name: 'Glameow', text: [...FICKLE('{C:mult}+#1#{} Mult', 2), EVOLVES_ROUNDS(3), '{C:inactive,s:0.8}(Needs a free Joker slot to evolve)'] },
+    j_poke_purugly: { name: 'Purugly', text: [
+      ['{C:attention}Thick Fat:{} {C:red}-#2#{} Joker slot'],
+      FICKLE('{X:mult,C:white} X#1# {} Mult', 3),
     ] },
   },
   Other: {
