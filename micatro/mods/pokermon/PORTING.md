@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), **`3.9.1+r32`** since the owner's Starly line ("The owner's Starly line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), **`3.9.1+r33`** since the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2428,10 +2428,15 @@ Regice Water, Registeel Metal**. Neither Nacho nor Pokermon+ has them.
   X2.2 / X2.3); Regice `glass_convert`, a new house energy field (systems/energy.js, coefficient 1 = its whole base): **+1 Glass card per Blind per
   Energy** (1 -> 2 / 3 / 4, before the trio's +1 per other Regi; a mismatched Colorless +0.5, floored).
 - **Text**: the convert count on each tooltip ("{C:attention}N{} random card(s)"), "(+1 for each other Regi)"; Regice "(Each Energy: +1 card)". The
-  Stone / Steel cards' own tooltips still read +50 / X1.5 (Micatro draws the enhancement text from the center config, as vanilla's).
+  Stone / Steel cards' own tooltips show the live value (follow-up, branch `feat/pokermon-gen3-legendaries`): +100 Chips (+ the card's banked
+  `perma_bonus`, energized 130 / 160 / 190) with Regirock, X2 (X2.1 / X2.2 / X2.3) with Registeel. The engine's `enh_live_vars` (describe.js; the
+  board's in-hand tooltip through cardView `enh_vars` -> markup.js describePlaying) asks the pure hook `enh_loc_vars`, which Pokermon answers with
+  the same `regi_chip_bonus` / `regi_h_x_mult` its scoring hooks use (`pokermon_regi_tooltips_test`).
 - **Art: upstream's own** (Natdex {2,25} / {4,25} / {6,25}, each with its floating soul {3,25} / {5,25} / {7,25}). Nothing to deploy for the mod.
   The wiki drops them.
 - **Tests**: `micatro/tests/mods/pokermon_regis_test.mjs` (8 passed / 13 failed on origin/main; 75 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 47 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (865 jokers).
+
 ### The owner's Starly line (2026-10-28, branch `feat/pokermon-starly-line`)
 Pinned **`3.9.1+r32`** (`contentRev: 32`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Starly (396) -> Staravia (397) -> Staraptor (398),
 all **Colorless** (upstream's cells show the white Colorless frame and star), in `jokers/pokejokers_designs.js` (50 defs now), after Deoxys in
@@ -2449,6 +2454,36 @@ Pokédex order (Pokermon has no joker for 387-395). Neither Nacho nor Pokermon+ 
 - **Art: upstream's own** (Natdex {10,26} / {12,26} / {14,26}). Nothing to deploy for the mod. The wiki drops them (396 missing).
 - **Tests**: `micatro/tests/mods/pokermon_starly_test.mjs` (3 passed / 14 failed on origin/main; 70 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 50 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (868 jokers).
+
+### The owner's Gen 3 Legendaries (2026-10-28, branch `feat/pokermon-gen3-legendaries`)
+Pinned **`3.9.1+r33`** (`contentRev: 33`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Latias (380), Latios (381), Kyogre (382), Groudon
+(383) and Rayquaza (384): five **Legendary $20** single jokers in `jokers/pokejokers_designs.js` (55 defs now), after Registeel in Pokédex order
+(Jirachi 385 next). They reach a run like Pokermon's other Legendaries: The Soul / the Legendary pool. Types from the card art: **Latias and Latios
+Psychic, Kyogre Water, Groudon Earth, Rayquaza Dragon** (`tools/micatro/pokermon_art_type.mjs`). Neither Nacho nor Pokermon+ has any of them.
+- **Kyogre**, Primordial Sea: **+1 hand each round** (round_resets, added / removed like the Squirtle line); **every scored Club retriggers once**;
+  **Castform is locked Rainy**. Energy-inert by design (`poke_no_energy_field`: the hand and the retrigger are fixed; Kyogre has no number).
+- **Groudon**, Desolate Land: **+1 discard each round**; **scored Hearts and Diamonds each give X1.25 Mult** (`Xmult_multi`); **Castform is
+  locked Sunny**.
+- **Primal Clash** (both held undebuffed, no undebuffed Rayquaza): the round's weather is read ONCE on the round's first deal (Castform's moment,
+  `primal_read`, cached in `G.GAME.poke_primal` so whichever of Kyogre / Groudon / Castform reads first decides for all): Clubs held vs Hearts +
+  Diamonds held (Castform's counting: Wild both; debuffed / Stone / Hazard neither; Spades nothing). More Clubs: **Kyogre's round**; more red:
+  **Groudon's round**. **Tie: the one with more Energy (its best copy's); still tied, Kyogre.** The other does nothing that round: no effect, and
+  its +1 hand / +1 discard is taken back at the read (never below 1 hand / 0 discards; `primal_taken` keeps selling it from taking it twice; one
+  gained mid-round as the loser gives nothing until the next round). The decision holds for the whole round; Castform follows the winner's weather.
+- **Rayquaza**, Delta Stream: while held, **Kyogre and Groudon both work every round** (no clash). **Castform then reads its normal forecast**
+  (the weather is calmed, not doubly locked). Dragon Ascent: **permanently gains X0.2 Mult each time a played hand contains a Straight or a Flush**
+  (`poker_hands.Straight` / `.Flush`, in `before`; a Straight Flush grows once). Banked in `ascent_Xmult`; Blueprint copies the X, not the growth.
+- **Latias**, Mist Ball: **X0.15 Mult each time you use a Tarot**; **Latios**, Luster Purge: **X0.15 per Planet**. **Soul Dew**: holding both
+  (`find_card`: a debuffed partner breaks it), every Tarot OR Planet grows both. Banked in `eon_Xmult`; Blueprint copies the X, never grows.
+- **Castform** (`castform_lock`): Kyogre -> Rainy, Groudon -> Sunny, both -> the clash winner's, Rayquaza -> no lock. Its effect and type follow
+  the locked form; it is Normal again after the round, as before. Its tooltip adds "Kyogre / Groudon lock its weather".
+- **Energy** (the standard shares): Groudon `Xmult_multi` +5% (X1.25 -> **X1.3125 / X1.375 / X1.4375**); Rayquaza's gain `Xmult_mod` +20% (0.2 ->
+  **0.24 / 0.28 / 0.32**); Latias / Latios `Xmult_mod` +20% (0.15 -> **0.18 / 0.21 / 0.24**). The banks are in no energy field (never raised by
+  Energy). Fixed: Kyogre's +1 hand and retrigger, Groudon's +1 discard.
+- **Art: upstream's own** (Natdex {8,25} / {10,25} / {12,25} / {14,25} / {16,25}, each with its floating soul one cell right). Nothing to deploy for
+  the mod. The wiki drops them.
+- **Tests**: `micatro/tests/mods/pokermon_gen3_legendaries_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, 55 defs), `pokermon_regis_test` (Pokédex order), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (873 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

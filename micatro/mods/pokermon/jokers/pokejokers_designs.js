@@ -38,12 +38,17 @@
 // shatters; Water), Registeel (Iron Body: held Steel X2 instead of X1.5; Metal), Legendary $20 each; each converts 1 + (other Regi species
 // held) random deck cards to its enhancement when a Blind is selected; contentRev 31 — upstream 3.9.1 draws them with their souls
 // (Natdex 2 / 4 / 6, 25).
+// The Eon duo and the weather trio (contentRev 33), Legendary $20 each: Latias / Latios (Psychic: X0.15 per Tarot / per Planet used; Soul
+// Dew, both held: either grows both), Kyogre (Water: +1 hand, scored Clubs retrigger, Castform Rainy), Groudon (Earth: +1 discard, scored
+// Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the round's first deal pick one
+// for the round), Rayquaza (Dragon: Delta Stream calms the clash; Dragon Ascent X0.2 per Straight / Flush) — upstream 3.9.1 draws them with
+// their souls (Natdex 8-17, 25).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card,
+  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -567,7 +572,129 @@ export function regi_h_x_mult(v, card) {
   const base = card.ability.h_x_mult || 1.5;
   return v * Math.max(...steels.map((j) => j.ability.extra.Xmult_multi)) / base;
 }
+/** The Stone / Steel card's own tooltip (engine hook enh_loc_vars, describe.js enh_live_vars): the number the two hooks above will
+ *  score, from those same functions — Stone +100 (+ its banked perma_bonus) with Regirock, held Steel X2 (energized X2.1 / X2.2 / X2.3)
+ *  with Registeel. No undebuffed Regi: undefined (the card's own +50 / X1.5). */
+export function regi_enh_vars(vars, card) {
+  const ab = card.ability, f = ab.effect === 'Stone Card' ? regi_chip_bonus : ab.effect === 'Steel Card' ? regi_h_x_mult : null;
+  const v = f ? f(vars[0], card) : undefined;
+  return v === undefined ? undefined : [v, ...vars.slice(1)];
+}
 const regi_tips = (self, info_queue, card, enh) => { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS[enh]); };
+
+// ------------------------------------------------------------ the weather trio (Kyogre / Groudon / Rayquaza) and the Eon duo (Latias / Latios)
+/** Undebuffed owned jokers of this design (a debuffed one does nothing; a Blueprint copy has its own key, so it never counts). */
+const legends = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === 'j_poke_' + name);
+/** Primal Clash's count of the cards held: Castform's Forecast rules (forecast above) for its two sides — Hearts + Diamonds ("red")
+ *  vs Clubs; a Wild card counts for both; a debuffed card, a Stone card or a Hazard (no suit: is_suit) for neither. Spades don't count. */
+export function clash_count(cards) {
+  let red = 0, clubs = 0;
+  for (const c of cards) {
+    if (c.is_suit('Hearts') || c.is_suit('Diamonds')) red += 1;
+    if (c.is_suit('Clubs')) clubs += 1;
+  }
+  return { red, clubs };
+}
+/** The round's weather, read ONCE on the round's first deal by whichever of Kyogre / Groudon / Castform reads first (their first_deal),
+ *  so Castform sees the same weather wherever it sits: G.GAME.poke_primal = {round, kyogre, groudon, rayquaza, winner, tie, red, clubs}.
+ *  Primal Clash: with an undebuffed Kyogre AND Groudon and no Rayquaza, the side with more cards held wins the whole round (Clubs:
+ *  Kyogre; Hearts + Diamonds: Groudon); a tie goes to the one with more Energy (its best copy's), still tied Kyogre. The loser's own
+ *  +1 hand / +1 discard is taken back for that round (primal_take_back). Delta Stream (Rayquaza held): no clash, winner null. */
+export function primal_read() {
+  const GM = G.GAME;
+  if (GM.poke_primal && GM.poke_primal.round === GM.round) return GM.poke_primal;
+  const ky = legends('kyogre'), gr = legends('groudon'), ray = legends('rayquaza').length > 0;
+  const { red, clubs } = clash_count(G.hand.cards);
+  let winner = null, tie = false;
+  if (ky.length && gr.length && !ray) {
+    if (clubs !== red) winner = clubs > red ? 'kyogre' : 'groudon';
+    else {
+      tie = true;
+      const ek = Math.max(...ky.map(get_total_energy)), eg = Math.max(...gr.map(get_total_energy));
+      winner = eg > ek ? 'groudon' : 'kyogre';
+    }
+  }
+  GM.poke_primal = { round: GM.round, kyogre: ky.length > 0, groudon: gr.length > 0, rayquaza: ray, winner, tie, red, clubs };
+  if (winner) {
+    for (const j of winner === 'kyogre' ? gr : ky) primal_take_back(j);
+    const w = (winner === 'kyogre' ? ky : gr)[0];
+    card_eval_status_text(w, 'extra', null, null, null, { message: winner === 'kyogre' ? 'Primordial Sea!' : 'Desolate Land!', colour: winner === 'kyogre' ? '#6169ff' : '#f48e62' });
+  }
+  return GM.poke_primal;
+}
+/** Is this Kyogre / Groudon working right now? Only the round's clash loser isn't (out of a round — the shop — every one is). */
+export function primal_on(card) {
+  const GM = G.GAME, P = GM && GM.poke_primal;
+  if (!P || !P.winner || !GM.facing_blind || P.round !== GM.round) return true;
+  return 'j_poke_' + P.winner === card.config.center.key;
+}
+/** The clash loser's +1 hand (Kyogre) / +1 discard (Groudon) doesn't apply this round: take back what it gave (once a round; never below
+ *  1 hand / 0 discards). primal_taken remembers how much, so selling it this round doesn't take it twice. */
+function primal_take_back(j) {
+  const ex = j.ability.extra, cr = G.GAME.current_round;
+  if (ex.primal_off === G.GAME.round) return;
+  ex.primal_off = G.GAME.round;
+  const n = ex.hands ? Math.max(0, Math.min(cr.hands_left - 1, ex.hands)) : Math.max(0, Math.min(cr.discards_left, ex.d_size || 0));
+  ex.primal_taken = n;
+  if (n > 0) { if (ex.hands) ease_hands_played(-n); else ease_discard(-n); }
+  card_eval_status_text(j, 'extra', null, null, null, { message: localize('k_nope_ex'), colour: 'inactive' });
+}
+/** Kyogre's +hands / Groudon's +d_size each round (the Squirtle / Charmander pairs), except while it is the round's clash loser:
+ *  bought (or made) then, it gives nothing this round; sold then, it takes back only what is still given. */
+const primal_bonus = (field) => {
+  const give = (n) => (field === 'hands' ? ease_hands_played(n) : ease_discard(n));
+  const reset = (n) => { if (field === 'hands') G.GAME.round_resets.hands += n; else G.GAME.round_resets.discards += n; };
+  return {
+    add_to_deck(self, card, from_debuff) {
+      const ex = card.ability.extra, n = ex[field];
+      reset(n);
+      if (from_debuff) return;
+      if (!primal_on(card)) { ex.primal_off = G.GAME.round; ex.primal_taken = n; return; }
+      give(n);
+    },
+    remove_from_deck(self, card) {
+      const ex = card.ability.extra, n = ex[field], cr = G.GAME.current_round;
+      reset(-n);
+      const still = ex.primal_off === G.GAME.round && G.GAME.facing_blind ? n - (ex.primal_taken || 0) : n;
+      const dec = field === 'hands' ? Math.min(cr.hands_left - 1, still) : Math.min(cr.discards_left, still);
+      if (dec > 0) give(-dec);
+    },
+  };
+};
+/** Castform's weather lock (its Forecast, first deal): Kyogre held -> Rainy, Groudon -> Sunny; both (the clash) -> the winner's.
+ *  Rayquaza (Delta Stream, the weather calmed) -> no lock: Castform reads the normal forecast. null: no lock. */
+export function castform_lock() {
+  const P = primal_read();
+  if (P.rayquaza) return null;
+  if (P.winner) return P.winner === 'kyogre' ? 'rainy' : 'sunny';
+  return P.kyogre ? 'rainy' : P.groudon ? 'sunny' : null;
+}
+/** The tooltip's clash line for Kyogre / Groudon. */
+function clash_state(partner) {
+  if (legends('rayquaza').length) return 'calmed by Rayquaza';
+  if (!legends(partner).length) return 'no ' + partner[0].toUpperCase() + partner.slice(1);
+  const GM = G.GAME, P = GM.poke_primal;
+  if (!GM.facing_blind || !P || P.round !== GM.round || !P.winner) return 'read on the next first deal';
+  return (P.winner === 'kyogre' ? 'Kyogre' : 'Groudon') + "'s round" + (P.tie ? ', a tie' : '') + ' (' + P.clubs + ' Clubs, ' + P.red + ' red)';
+}
+/** Rayquaza, Dragon Ascent: the played hand contains a Straight or a Flush (a Straight Flush is one hand: it grows once). */
+const ascends = (context) => !!context.poker_hands && ((context.poker_hands.Straight || []).length > 0 || (context.poker_hands.Flush || []).length > 0);
+/** Latias / Latios: the banked X (`eon_Xmult`, in no energy field: what is banked keeps its worth), each gain `Xmult_mod` (Energy +20%).
+ *  Soul Dew: with the partner held (undebuffed; find_card), every Tarot OR Planet grows both. Not Blueprint (it copies the X only). */
+const soul_dew = (partner) => !!(G.jokers && find_card('j_poke_' + partner).length > 0);
+function eon(card, context, own, partner) {
+  const ex = card.ability.extra;
+  if (context.using_consumeable && !context.blueprint && context.consumeable) {
+    const set = context.consumeable.ability.set;
+    if (set === own || ((set === 'Tarot' || set === 'Planet') && soul_dew(partner))) {
+      ex.eon_Xmult = r3(ex.eon_Xmult + ex.Xmult_mod);
+      card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'XMULT' });
+    }
+    return undefined;
+  }
+  if (context.joker_main && ex.eon_Xmult > 1) return { message: a_xmult(r3(ex.eon_Xmult)), colour: 'XMULT', Xmult_mod: ex.eon_Xmult };
+  return undefined;
+}
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -1410,7 +1537,7 @@ defineJokers({
       const ex = card.ability.extra;
       if (first_deal(card, context)) {
         ex.forecast_round = G.GAME.round;
-        const form = forecast(G.hand.cards);
+        const form = castform_lock() || forecast(G.hand.cards); // (Kyogre / Groudon lock the weather; Rayquaza calms it)
         castform_set_form(card, form);
         card_eval_status_text(card, 'extra', null, null, null, { message: CASTFORM_FORMS[form].name + '!', colour: CASTFORM_FORMS[form].colour });
         return undefined;
@@ -1515,6 +1642,90 @@ defineJokers({
     loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_steel'); return { vars: [r3(card.ability.extra.Xmult_multi), regi_converts(card)] }; },
     calculate(self, card, context) { regi_convert(card, context, 'm_steel', 'registeel', 'Steel'); return undefined; },
   },
+
+  // ---------------------------------------------------------------- The Eon duo: Latias 380 / Latios 381 (Psychic, Gen 3)
+  // The owner's design (2026-10-28). Legendary $20 each (The Soul / the Legendary pool). Types from the card art: both Psychic (their
+  // real Dragon type is the mapping's; the 3.9.1 card draws the Psychic icon). Latias, Mist Ball: permanently gains X0.15 Mult each time
+  // you use a Tarot card. Latios, Luster Purge: the same for a Planet card. Soul Dew: holding BOTH (the partner undebuffed; find_card),
+  // every Tarot OR Planet grows both — each copy on its own. A Blueprint copies the X, never the growth. Banked in `eon_Xmult` (no
+  // energy field), the gain `Xmult_mod` (Energy +20% of base: 0.15 -> 0.18 / 0.21 / 0.24). Neither Nacho nor Pokermon+ has them. Art:
+  // upstream 3.9.1's own cells with their floating souls (Natdex 8 / 10, 25).
+  latias: {
+    name: 'latias', poke_sprite391: sprite('Natdex', 8, 25, [9, 25]),
+    config: { extra: { eon_Xmult: 1, Xmult_mod: 0.15 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'tarot', 'planet'], poke_after: 'registeel',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), soul_dew('latios') ? 'active' : 'needs Latios'] }; },
+    calculate(self, card, context) { return eon(card, context, 'Tarot', 'latios'); },
+  },
+  latios: {
+    name: 'latios', poke_sprite391: sprite('Natdex', 10, 25, [11, 25]),
+    config: { extra: { eon_Xmult: 1, Xmult_mod: 0.15 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'tarot', 'planet'], poke_after: 'latias',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.eon_Xmult), r3(ex.Xmult_mod), soul_dew('latias') ? 'active' : 'needs Latias'] }; },
+    calculate(self, card, context) { return eon(card, context, 'Planet', 'latias'); },
+  },
+
+  // ---------------------------------------------------------------- The weather trio: Kyogre 382 / Groudon 383 / Rayquaza 384 (Gen 3)
+  // The owner's design (2026-10-28). Legendary $20 each. Types from the card art: Kyogre Water, Groudon Earth, Rayquaza Dragon.
+  // Kyogre, Primordial Sea: +1 hand each round; every scored Club retriggers once; Castform is locked Rainy. Groudon, Desolate Land:
+  // +1 discard each round; scored Hearts and Diamonds each give X1.25 Mult; Castform is locked Sunny. Primal Clash (both held, no
+  // Rayquaza): on the round's first deal (Castform's weather read) the cards held decide — more Clubs: Kyogre's round, more Hearts +
+  // Diamonds: Groudon's (Wild both, debuffed / Stone / Hazard neither); a tie: the one with more Energy, else Kyogre. The other one does
+  // nothing that round, its +1 hand / discard included (primal_read). Rayquaza, Delta Stream: while held both work every round (no
+  // clash; Castform reads its normal forecast, the weather calmed); Dragon Ascent: permanently gains X0.2 Mult each time a played hand
+  // contains a Straight or a Flush (once for a Straight Flush). Energy: Groudon's per-card `Xmult_multi` +5% of base (X1.25 -> X1.3125
+  // / X1.375 / X1.4375); Rayquaza's gain `Xmult_mod` +20% (0.2 -> 0.24 / 0.28 / 0.32; banked in `ascent_Xmult`, no energy field).
+  // Kyogre has no number (+1 hand and the retrigger are fixed): Energy-inert by design (poke_no_energy_field). Neither Nacho nor
+  // Pokermon+ has them. Art: upstream 3.9.1's own cells with their floating souls (Natdex 12 / 14 / 16, 25).
+  kyogre: {
+    name: 'kyogre', poke_sprite391: sprite('Natdex', 12, 25, [13, 25]),
+    config: { extra: { hands: 1, retriggers: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 3, blueprint_compat: true,
+    attributes: ['hands', 'retrigger', 'suit', 'clubs', 'types'], poke_after: 'latios',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, clash_state('groudon')] }; },
+    calculate(self, card, context) {
+      if (first_deal(card, context)) { card.ability.extra.forecast_round = G.GAME.round; primal_read(); return undefined; }
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && primal_on(card) && context.other_card.is_suit('Clubs')) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return undefined;
+    },
+    ...primal_bonus('hands'),
+  },
+  groudon: {
+    name: 'groudon', poke_sprite391: sprite('Natdex', 14, 25, [15, 25]),
+    config: { extra: { d_size: 1, Xmult_multi: 1.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['discard', 'xmult', 'suit', 'hearts', 'diamonds', 'types'], poke_after: 'kyogre',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult_multi), clash_state('kyogre')] }; },
+    calculate(self, card, context) {
+      if (first_deal(card, context)) { card.ability.extra.forecast_round = G.GAME.round; primal_read(); return undefined; }
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && primal_on(card)
+        && (context.other_card.is_suit('Hearts') || context.other_card.is_suit('Diamonds'))) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+    ...primal_bonus('d_size'),
+  },
+  rayquaza: {
+    name: 'rayquaza', poke_sprite391: sprite('Natdex', 16, 25, [17, 25]),
+    config: { extra: { ascent_Xmult: 1, Xmult_mod: 0.2 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dragon', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'hand_type', 'types'], poke_after: 'groudon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.ascent_Xmult), r3(ex.Xmult_mod)] }; },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (context.before && context.cardarea === G.jokers && !context.blueprint && ascends(context)) {
+        ex.ascent_Xmult = r3(ex.ascent_Xmult + ex.Xmult_mod);
+        card_eval_status_text(card, 'extra', null, null, null, { message: 'Dragon Ascent!', colour: 'XMULT' });
+        return undefined;
+      }
+      if (context.joker_main && ex.ascent_Xmult > 1) return { message: a_xmult(r3(ex.ascent_Xmult)), colour: 'XMULT', Xmult_mod: ex.ascent_Xmult };
+      return undefined;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -1556,12 +1767,14 @@ const SAND_PIT = (name) => ['{C:attention}' + name + ':{} each card you', 'disca
 const SAND_EVO = ['{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} discarded cards)', '{C:inactive,s:0.8}(Discarded: #3#/#4#)'];
 const PEARL = ['{C:attention}Pearl:{} at end of round, a', 'random card held in hand', 'with no seal gains a {C:attention}Pink Seal{}'];
 const FORECAST = ['{C:attention}Forecast:{} when a round\'s first', 'hand is drawn, takes the form', 'of the suit held most'];
-const FORECAST_NOTE = ['{C:inactive,s:0.8}(Normal again after the round;', '{C:inactive,s:0.8}its type never breaks Monotype)'];
+const FORECAST_NOTE = ['{C:inactive,s:0.8}(Normal again after the round;', '{C:inactive,s:0.8}its type never breaks Monotype;', '{C:inactive,s:0.8}Kyogre / Groudon lock its weather)'];
 const MUDDY = ['{C:attention}Muddy Water:{} {C:chips}+#1#{} Chips for', 'each {X:poke_water,C:white}Water{} or {X:poke_earth,C:white}Earth{} Joker', '{C:inactive}(Itself included)',
   '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:chips}+#3#{C:inactive} Chips)'];
 const FLOCK = ['{C:attention}Flock:{} {C:mult}+#1#{} Mult for each', '{X:poke_colorless,C:white}Colorless{} Joker {C:inactive}(Itself included)',
   '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
+const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
+const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, every', '{C:tarot}Tarot{} or {C:planet}Planet{} used', 'grows both of them', '{C:inactive}(Soul Dew: #3#)'];
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
   '{C:inactive}(+1 for each other Regi)'];
 export const DESIGN_LOC = {
@@ -1724,6 +1937,26 @@ export const DESIGN_LOC = {
     j_poke_registeel: { name: 'Registeel', text: [
       ['{C:attention}Iron Body:{} {C:attention}Steel{} cards held', 'in hand give {X:mult,C:white} X#1# {} Mult', 'instead of {X:mult,C:white} X1.5 {}'],
       REGI_TRIO('Steel', 2),
+    ] },
+    j_poke_latias: { name: 'Latias', text: [
+      ['{C:attention}Mist Ball:{} gains {X:mult,C:white} X#2# {} Mult', 'each time you use a {C:tarot}Tarot{} card', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
+      EON('Latios'),
+    ] },
+    j_poke_latios: { name: 'Latios', text: [
+      ['{C:attention}Luster Purge:{} gains {X:mult,C:white} X#2# {} Mult', 'each time you use a {C:planet}Planet{} card', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
+      EON('Latias'),
+    ] },
+    j_poke_kyogre: { name: 'Kyogre', text: [
+      ['{C:attention}Primordial Sea:{} {C:chips}+#1#{} hand', 'each round', 'Every scored {C:clubs}Club{}', 'retriggers once', '{C:attention}Castform{} is always {C:poke_rain}Rainy{}'],
+      CLASH(2),
+    ] },
+    j_poke_groudon: { name: 'Groudon', text: [
+      ['{C:attention}Desolate Land:{} {C:red}+#1#{} discard', 'each round', 'Scored {C:hearts}Hearts{} and {C:diamonds}Diamonds{}', 'each give {X:mult,C:white} X#2# {} Mult', '{C:attention}Castform{} is always {C:poke_sun}Sunny{}'],
+      CLASH(3),
+    ] },
+    j_poke_rayquaza: { name: 'Rayquaza', text: [
+      ['{C:attention}Delta Stream:{} {C:attention}Kyogre{} and', '{C:attention}Groudon{} both work every round', '{C:inactive}(no Primal Clash; Castform reads', '{C:inactive}the weather as usual)'],
+      ['{C:attention}Dragon Ascent:{} gains {X:mult,C:white} X#2# {} Mult', 'when a played hand contains', 'a {C:attention}Straight{} or a {C:attention}Flush{}', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
     ] },
   },
   Other: {

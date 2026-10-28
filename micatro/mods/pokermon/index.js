@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -712,6 +712,8 @@ const hooks = {
   // while an undebuffed one is owned: no Regi, no change.
   chip_bonus: regi_chip_bonus,
   chip_h_x_mult: regi_h_x_mult,
+  // ... and the Stone / Steel card's own tooltip shows it (+100 Chips / X2, energized too): the same two functions (describe.js enh_live_vars).
+  enh_loc_vars: regi_enh_vars,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
     // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)
@@ -859,7 +861,11 @@ export const POKERMON = registerMod({
   // 32 = the owner's Starly line (Starly -> Staravia -> Staraptor; jokers/pokejokers_designs.js): Flock — +2 / +4 Mult for each Colorless
   // Joker, itself included (is_type: Tera stickers and Castform's Normal form count; debuffed ones don't); Staraptor's Brave Bird
   // X(1 + 0.5 per Colorless Joker) with Recoil: each hand played loses $1 (never past the debt limit).
-  contentRev: 32,
+  // 33 = the owner's Gen 3 Legendaries (jokers/pokejokers_designs.js): Kyogre (+1 hand, scored Clubs retrigger, Castform Rainy), Groudon
+  // (+1 discard, scored Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the
+  // first deal pick one for the round); Rayquaza (Delta Stream: both work; Dragon Ascent X0.2 per Straight / Flush); Latias / Latios
+  // (X0.15 per Tarot / Planet used; Soul Dew: both held, either grows both).
+  contentRev: 33,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

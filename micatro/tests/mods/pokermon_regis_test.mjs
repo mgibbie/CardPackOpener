@@ -69,7 +69,7 @@ sec('static', () => {
   ok(energy_values.chips1 === 0.3 && energy_values.chip_mod === 0.2 && energy_values.Xmult_multi === 0.05 && energy_values.glass_convert === 1, 'energy fields: chips1 +30%, chip_mod +20%, Xmult_multi +5%, glass_convert +1 (its whole base)', energy_values);
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_regirock');
-  ok(keys.slice(i - 1, i + 4).join() === 'j_poke_metagross,j_poke_regirock,j_poke_regice,j_poke_registeel,j_poke_jirachi', 'Pokédex order: Metagross (376), Regirock, Regice, Registeel, Jirachi (385)', keys.slice(i - 1, i + 4));
+  ok(keys.slice(i - 1, i + 5).join() === 'j_poke_metagross,j_poke_regirock,j_poke_regice,j_poke_registeel,j_poke_latias,j_poke_latios', 'Pokédex order: Metagross (376), Regirock, Regice, Registeel, then Latias (380)', keys.slice(i - 1, i + 5));
   // the Legendary pool (The Soul): all three are in it, none in the Common / Uncommon / Rare shop pools
   const [leg] = get_current_pool('Joker', 4, true);
   ok(REGIS.every((n) => leg.includes('j_poke_' + n)), 'all three are in the Legendary pool', leg.filter((k) => /regi/.test(k)));

@@ -163,6 +163,8 @@ export const HOOKS = [
   'chip_x_mult',        // (ret, card) -> Card:get_chip_x_mult's value
   'chip_h_x_mult',      // (ret, card) -> Card:get_chip_h_x_mult's value (a held card's X Mult; Nacho 1.7.9's Dhelmise)
   'p_dollars',          // (ret, card) -> Card:get_p_dollars's value
+  'enh_loc_vars',       // (vars, card) -> a Stone / Steel card's tooltip numbers, live (describe.js enh_live_vars; PURE, display only:
+                        //   the value the mod's chip_bonus / chip_h_x_mult will score — Pokermon's Regirock / Registeel)
   'card_repetitions',   // (card, context) -> [{message, repetitions, card}] the card's own extra retriggers (like a Red Seal)
   'eval_card',          // (card, context, ret) eval_card scored a played (G.play) / held (G.hand) card; may add to ret
   'evaluate_poker_hand',// (results, hand) evaluate_poker_hand's result table, before it's returned (edit in place)

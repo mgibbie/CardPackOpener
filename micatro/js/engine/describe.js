@@ -311,8 +311,8 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
     const e = _c.effect, cfg = _c.config;
     if (e === 'Mult Card') loc_vars = [cfg.mult];
     else if (e === 'Glass Card') loc_vars = [cfg.Xmult, G.GAME.probabilities.normal, cfg.extra];
-    else if (e === 'Steel Card') loc_vars = [cfg.h_x_mult];
-    else if (e === 'Stone Card') loc_vars = [(specific_vars && specific_vars.bonus_chips) || cfg.bonus];
+    else if (e === 'Steel Card') loc_vars = (specific_vars && specific_vars.enh_vars) || [cfg.h_x_mult];
+    else if (e === 'Stone Card') loc_vars = (specific_vars && specific_vars.enh_vars) || [(specific_vars && specific_vars.bonus_chips) || cfg.bonus];
     else if (e === 'Gold Card') loc_vars = [cfg.h_dollars];
     else if (e === 'Lucky Card') loc_vars = [G.GAME.probabilities.normal, cfg.mult, 5, cfg.p_dollars, 15];
     lines.push(...desc_lines('Enhanced', _c.key, loc_vars));
@@ -421,6 +421,21 @@ function generate_card_ui(_c, specific_vars, card_type, badges, main_start, main
 }
 
 // ------------------------------------------- generate_UIBox_ability_table
+/** A Stone / Steel card's own tooltip numbers, live: Stone's Chips (its bonus + perma_bonus, as Balatro's bonus_chips) and Steel's held
+ *  X Mult. A mod that changes what the card scores reports it through the PURE hook enh_loc_vars (Pokermon's Regirock: Stone +100;
+ *  Registeel: held Steel X2), from the same function its scoring hook uses. Never the scoring getters themselves (get_chip_bonus may
+ *  roll: BETMMA's Real Random). undefined for any other card, or a debuffed one. */
+export function enh_live_vars(card) {
+  const a = card && card.ability;
+  if (!a || card.debuff || !card.base || !card.base.suit) return undefined;
+  let vars;
+  if (a.effect === 'Stone Card') vars = [a.bonus + (a.perma_bonus || 0)];
+  else if (a.effect === 'Steel Card') vars = [a.h_x_mult];
+  else return undefined;
+  vars = reduceHook('enh_loc_vars', vars, card);
+  return vars.map((n) => (typeof n === 'number' ? Math.round(n * 1000) / 1000 : n));
+}
+
 /** Live description of a Card (joker, consumable, voucher, booster, playing card). */
 export function describe(card) {
   const out = describe0(card);
@@ -444,6 +459,7 @@ function describe0(card) {
       playing_card, value: card.base.value, suit: card.base.suit,
       nominal_chips: card.base.nominal > 0 ? card.base.nominal : undefined,
       bonus_chips: bonus > 0 ? bonus : undefined,
+      enh_vars: enh_live_vars(card),
     };
   } else if (a.set === 'Joker') {
     ({ loc_vars, main_start, main_end } = joker_specifics(card));
