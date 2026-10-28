@@ -684,12 +684,31 @@ Hazards (3.9.1 Hazard layer; enhancements/enhancement1.js and systems/utils.js)
 Seeds and Flowers (3.9.1)
   - Seed card: "Grows 1 (+growth level) when scored". After 5 growths it turns into a Flower
     card and earns $15. Seed is in the Enhanced pool (weight 5). Miracle Seed (Item) makes one.
-  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade it needs only 3+
-    suits; with Shaymin or Shaymin Sky it gives X3.
-  - Growth level (+1 extra growth per score): Shiftry, Brambleghast.
+  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade (or the owner's Cherrim) it
+    needs only 3+ suits; with Shaymin or Shaymin Sky it gives X3. Cherrim in the sun: X2.5 instead of X2.
+  - Growth level (+1 extra growth per score): Shiftry, Brambleghast, the owner's Cherubi and Cherrim.
+  House pattern: a SEED GROWER (the owner's Cherubi / Cherrim, jokers/pokejokers_designs.js sweet_seeds):
+    - A deck conversion when a Blind is selected (the Regi trio's moment, 2.1): 1 random UNENHANCED card of the full deck
+      becomes a Seed (seeded pseudorandom_element; none unenhanced, nothing: it never overwrites another enhancement).
+    - Faster growth through the growth level, not a new rule: +1 growth while owned (Shiftry's add_to_deck / remove_from_deck
+      pair), so the Seed card itself does the work (2 a score: a bloom in 3 scores instead of 5). A debuffed joker gives none;
+      copies, Shiftry and Brambleghast stack. The Seed's own tooltip ("Grows 2 times") already reads it.
+    - Evolution by blooms: the Seed card calls every owned undebuffed joker's poke_seed_bloom(self, joker, seed) hook when it
+      turns into a Flower (once per Seed; a Blueprint has no hook, so it never counts). "(Bloomed: k/2)". Only blooms while held.
+  House pattern: a FLOWER RULE and a SUN BOOST (the owner's Cherrim):
+    - The Flower card asks every owned undebuffed joker's poke_flower_rule(self, joker) -> {suits, x}: the FEWEST suits asked
+      (Roserade's 3 is one more minimum, so Roserade + Cherrim is still 3, never 2) and the BEST X instead of the card's X2
+      ("instead" never stacks between two boosters). Shaymin's +1 stays on top (X2.5 -> X3.5).
+    - The weather: "sunny" = Castform's forecast() on the round's first deal reads Sunny (Hearts + Diamonds held most, a tie
+      isn't), remembered for the round; OR a working Groudon (Desolate Land: held, undebuffed, not this round's Primal Clash
+      loser; live). Rayquaza's calm keeps Groudon working, so Groudon still means sun. Overcast otherwise.
+    - Energy on the boosted X as a per-card X (Xmult_multi +5%: X2.5 -> X2.625 / X2.75 / X2.875); the Basic carries the same
+      field (unused by it) so Energy spent before evolving is kept. Form art: the Sunshine cell beside the card on the 3.9.1
+      sheet, drawn from a LIVE view form (the center's poke_view_form hook), so a Groudon bought or sold redraws it at once.
   - Seed makers: the Hoppip line (discards become Seeds, then the joker self-destructs on
     discard), Bellossom, Roselia, Nuzleaf/Shiftry (drawn Flowers become Seeds), Bramblin
-    (second Queen scored each round), Budew (a Negative Miracle Seed).
+    (second Queen scored each round), Budew (a Negative Miracle Seed), the owner's Cherubi /
+    Cherrim (a random unenhanced deck card each Blind, +1 growth level).
 
 Wishes (Jirachi)
   - Jirachi (Legendary): "At the end of the shop, make a wish!" This opens a Wish Pack of 3
@@ -854,6 +873,9 @@ Examples:
                      consumable is used, and at end of round.
   Arboliva (S $10)   +$2 sell value to every Joker and consumable each round, doubled for Grass
                      Jokers and Grass Energy.
+  Owner's Cherubi (C $5) -> Cherrim (S $8): a random unenhanced deck card becomes a Seed each
+                     Blind, +1 growth level (blooms in 3 scores); evolves after 2 blooms. Cherrim:
+                     Flowers need 3+ suits, X2.5 instead of X2 while sunny (2.6).
   Owner's Combee (C $5): Honey Gather, the Jokers directly left and right gain +$1 sell value each
                      round (5 rounds). Vespiquen +$2; Attack Order X(1 + 0.1 per $ of those two
                      Jokers' sell value), max X3.

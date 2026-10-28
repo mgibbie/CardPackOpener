@@ -56,6 +56,9 @@ export const KECLEON_SPRITES = {
  * Normal is its own Natdex card. Drawn by ui.js face() (+ the Shiny sheet's twin cells).
  */
 export const CASTFORM_SPRITES = { sunny: { x: 0, y: 0 }, rainy: { x: 2, y: 0 }, snowy: { x: 4, y: 0 } };
+/** Cherrim's Sunshine Form (the owner's design): upstream 3.9.1's Gen 4 sheet draws it beside its Overcast card {0,1} (unlisted in
+ *  pokespriteload.lua). By the view's form (its center's poke_view_form: live). Overcast = its own card. */
+export const CHERRIM_SPRITES = { sunshine: { x: 2, y: 1 } };
 
 /**
  * Burmy's and Wormadam's cloaks (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws all three on the Gen 4 sheet
@@ -107,6 +110,8 @@ export function view_card(card, v) {
     if (typeof ex.rounds === 'number') p.rounds = ex.rounds;
     if (ex.evolve) p.evolve = ex.evolve;
     if (ex.form !== undefined) p.form = ex.form;
+    // (a form read live from the game, not stored: the owner's Cherrim, sunny or overcast)
+    if (typeof c.poke_view_form === 'function') p.form = c.poke_view_form(c, card);
     // Zorua's copy switch (its disguise + shadow show only while active: pokedraw.lua zorua_shadow)
     if (typeof ex.active === 'boolean' && (c.key === 'j_poke_zorua' || c.key === 'j_poke_zoroark')) p.active = ex.active;
     // Zorua / Zoroark Illusion: drawn (and described) as this Pokémon outside the joker row.

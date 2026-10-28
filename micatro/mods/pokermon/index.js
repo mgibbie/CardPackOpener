@@ -882,10 +882,13 @@ export const POKERMON = registerMod({
   // its type and card following; a seeded gender; Wormadam keeps the cloak for good, Mothim X(1 + 0.25 per different enhancement).
   // 38 = the owner's Combee line (Combee -> Vespiquen; jokers/pokejokers_designs.js): Honey Gather — at end of round the Jokers directly
   // left and right gain +$1 / +$2 sell value; Vespiquen's Attack Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3.
-  // 39 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
+  // 39 = the owner's Cherubi line (Cherubi -> Cherrim; jokers/pokejokers_designs.js): Sweet Seeds — a random unenhanced deck card becomes
+  // a Seed when a Blind is selected, +1 growth level (Seeds bloom in 3 scores); Cherubi evolves after 2 blooms; Cherrim's Flower Gift
+  // (Flowers need 3+ suits) and Sunshine Form (Flowers X2.5 instead of X2 while sunny: a red first deal, or Groudon held).
+  // 40 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
   // its art following; Tide Pool +40 Chips on the sea's end scored card (leftmost / rightmost); Gastrodon's Tide retriggers it, Storm
   // Drain X0.1 per Energy card used (X0.2 Water); Two Seas: a West and an East held, every one works on both ends.
-  contentRev: 39,
+  contentRev: 40,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

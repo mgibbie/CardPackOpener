@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), **`3.9.1+r39`** since the owner's Shellos line ("The owner's Shellos line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), **`3.9.1+r40`** since the owner's Shellos line ("The owner's Shellos line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2598,9 +2598,33 @@ Pokédex order (Pachirisu 417 now comes after Vespiquen). Neither Nacho nor Poke
   `runbadges_test`'s two Riff-raff checks now ban the Grass Commons from its roll (the fixed seed rolled Combee, a legal Grass Common, where
   they need an off-type one).
 
+### The owner's Cherubi line (2026-10-28, branch `feat/pokermon-cherubi-line`)
+Pinned **`3.9.1+r39`** (`contentRev: 39`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Cherubi (420) -> Cherrim (421), both **Grass**
+(their upstream cards' icon), in `jokers/pokejokers_designs.js` (68 defs now), after Floatzel in Pokédex order. Neither Nacho nor Pokermon+ has them.
+- **Cherubi** (Common $5), **Sweet Seeds**: when a Blind is selected, **1 random unenhanced card of the full deck becomes a Seed card** (seeded
+  `pseudorandom_element`; none unenhanced, nothing — it never overwrites; Blueprint copies it); **+1 growth level** while owned (Shiftry's
+  `growth` -> `G.GAME.poke_growth_level`, which the Seed card reads: it grows 2 a score and blooms on its **3rd** score instead of its 5th; off
+  while debuffed; copies and Shiftry / Brambleghast stack). **Evolves after 2 of your Seeds bloom into Flowers** while it is held: the Seed card's
+  bloom calls every owned undebuffed joker's `poke_seed_bloom` hook (`enhancements/enhancement1.js`), "(Bloomed: k/2)".
+- **Cherrim** (Safari $8): Sweet Seeds; **Flower Gift**: Flower cards need only **3+ suits** (Roserade's rule: with both it is still 3, a minimum,
+  never 2); **Sunshine Form**: while it's sunny, Flower cards give **X2.5 instead of X2** (Shaymin's +1 still on top: X3.5). The Flower card asks
+  every owned undebuffed joker's `poke_flower_rule` -> {suits, x}: the fewest suits and the best X win.
+- **Sunny** (`cherrim_sunny`): (a) the round's FIRST deal holds Hearts + Diamonds most, read by **Castform's own `forecast()`** (same counting:
+  Wild all three, debuffed / Stone / Hazard none; a tie is not sunny), for the whole round; or (b) **Groudon held and working** (Desolate Land:
+  undebuffed and not the loser of this round's Primal Clash, `primal_on`; live, so a Groudon gained or sold mid-round changes it at once).
+  **Rayquaza doesn't remove Groudon's sun**: Delta Stream keeps Groudon working (it only un-locks Castform). Otherwise **Overcast**. In the shop
+  only (b) counts. Tested against the real Groudon (on main since #859).
+- **Energy**: the Sunshine X is `Xmult_multi` (the per-card X, +5% of base: **X2.625 / X2.75 / X2.875**; Colorless half: X2.5625). Cherubi carries
+  the same field (it has no X of its own) so Energy used on it shows on its card and carries to Cherrim. Fixed: the conversion, the growth, the 3 suits.
+- **Art: upstream's own**: Cherubi Natdex {28,27}; Cherrim's Overcast card Gen 4 {0,1} and its **Sunshine card Gen 4 {2,1}** (beside it on the 3.9.1
+  sheet, unlisted in pokespriteload.lua; `systems/anim.js` CHERRIM_SPRITES, drawn by `ui.js` ownFace from the view's form, which the center's
+  `poke_view_form` hook reads live). Shiny twins on the Gen 4 Shiny sheet. Nothing to deploy for the mod. The wiki drops both.
+- **Tests**: `micatro/tests/mods/pokermon_cherubi_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 68 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (886 jokers).
+
 ### The owner's Shellos line (2026-10-28, branch `feat/pokermon-shellos-line`)
-Pinned **`3.9.1+r39`** (`contentRev: 39`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
-(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (68 defs now), after Floatzel in Pokédex order (Ambipom 424 next).
+Pinned **`3.9.1+r40`** (`contentRev: 40`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
+(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (70 defs now), after Cherrim in Pokédex order (Ambipom 424 next).
 Neither Nacho nor Pokermon+ has the line.
 - **The sea**: each card is **West or East**, rolled ONCE when it is created (`set_ability` initial, the run's seeded `pseudorandom('shellos_sea')`
   / `'gastrodon_sea'`), kept in `ability.extra.form` (copies, rounds, evolution: `NAMES_TO_KEEP`; save / resume rebuild the run from its recipe,
@@ -2618,9 +2642,9 @@ Neither Nacho nor Pokermon+ has the line.
 - **Art: upstream's own, per sea** (pokespriteload.lua lists two `base.pos` each on the Gen 4 sheet): **East Sea** (blue) = the first cell,
   each center's own card: Shellos {4,1}, Gastrodon {8,1}; **West Sea** (pink) = the second: Shellos {6,1}, Gastrodon {10,1} (`systems/anim.js`
   `SEA_SPRITES`, `ui.js` ownFace; the Shiny sheet's twins at the same cells). The Pokédex modal shows the family in the card's sea. Nothing to
-  deploy for the mod. The wiki drops them (378 missing); the mods wiki shows one cell per joker (its East card).
+  deploy for the mod. The wiki drops them (376 missing); the mods wiki shows one cell per joker (its East card).
 - **Tests**: `micatro/tests/mods/pokermon_shellos_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
-  (the pin, 68 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (886 jokers).
+  (the pin, 70 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (888 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
