@@ -34,6 +34,8 @@ await sec('static', () => {
   ok(D.kubfu === 'Fighting' && D.urshifu_single === 'Dark' && D.urshifu_rapid === 'Water', 'Kubfu Fighting; Urshifu Single Strike Dark, Rapid Strike Water (their cards\' types)', [D.kubfu, D.urshifu_single, D.urshifu_rapid]);
   ok(D.stunky === 'Dark' && D.skuntank === 'Dark', 'Stunky / Skuntank: Dark (both cards show the Dark icon)', [D.stunky, D.skuntank]);
   ok(D.gible === 'Dragon' && D.gabite === 'Dragon' && D.garchomp === 'Dragon', 'Gible / Gabite / Garchomp: Dragon (all three cards show the Dragon icon)', [D.gible, D.gabite, D.garchomp]);
+  ok(D.hippopotas === 'Earth' && D.hippowdon === 'Earth' && D.skorupi === 'Dark' && D.drapion === 'Dark' && D.carnivine === 'Grass' && D.finneon === 'Water' && D.lumineon === 'Water',
+    'Hippopotas / Hippowdon Earth, Skorupi / Drapion Dark, Carnivine Grass, Finneon / Lumineon Water (the icons on their cards)', [D.hippopotas, D.hippowdon, D.skorupi, D.drapion, D.carnivine, D.finneon, D.lumineon]);
   ok(D.dialga === 'Metal' && D.palkia === 'Water' && D.giratina === 'Psychic' && D.regigigas === 'Colorless' && D.arceus === 'Colorless',
     'Dialga Metal, Palkia Water, Giratina Psychic, Regigigas / Arceus Colorless (the icons on their cards)', [D.dialga, D.palkia, D.giratina, D.regigigas, D.arceus]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',

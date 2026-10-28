@@ -59,7 +59,7 @@ const enh = (k) => (G.playing_cards || []).filter((c) => c.config.center.key ===
 
 // ------------------------------------------------------------------- pin, static data, order, pool, art, precedence
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 44 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 44+', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 45 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 45+', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   for (const n of NEW) {
     ok(P_CENTERS['j_poke_' + n] && !P_CENTERS['j_poke_' + n].unported && STATUS.PORTED.jokers.includes('j_poke_' + n), n + ': registered and ported');

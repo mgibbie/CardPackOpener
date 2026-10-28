@@ -67,7 +67,12 @@
 // (evolves at +25); Gabite's Treasure Nest turns one scored card of a Full House Gold (evolves with 6 Gold cards in the full deck);
 // Garchomp's Dragon Rush X(1 + 0.5 per Gold card held in hand) on top of the bank; Dragon — upstream 3.9.1 draws them (Natdex 14 / 16 /
 // 18, 29).
-// The creation trio, Regigigas and Arceus (contentRev 44), Legendary $20 each: Dialga (Metal; Roar of Time: the round's first hand is scored
+// The last Gen 4 regulars (contentRev 44): Hippopotas -> Hippowdon (Sand Stream: scored Stone cards +30 / +60 extra Chips; Hippowdon turns
+// 1 unenhanced card in hand Stone on each round's first deal), Skorupi -> Drapion (Sniper: scored cards 1 in 5 X1.25 / 1 in 3 X1.5 crits;
+// Lucky cards always crit for Drapion), Carnivine (Flytrap: the round's first discarded card is devoured, +4 Mult banked), Finneon ->
+// Lumineon (night hands: +40 Chips / +15 a scored card; Lumineon by day too with Lunatone) — upstream 3.9.1 draws them (Natdex 26-28, 29;
+// 0-12, 30).
+// The creation trio, Regigigas and Arceus (contentRev 45), Legendary $20 each: Dialga (Metal; Roar of Time: the round's first hand is scored
 // twice, every scored card retriggering), Palkia (Water; Spacial Rend: +1 Joker slot, +1 hand size), Giratina (Psychic; Shadow Force: X0.25
 // per destroyed playing card, X0.5 in its Origin Forme with Dialga / Palkia), Regigigas (Colorless; Slow Start: X4 once its 5-round wait,
 // cut by each Regi, is over; awake with the trio, +1 Regi conversion each) and Arceus (Colorless; Multitype: every type for type checks,
@@ -463,8 +468,8 @@ function castform_set_form(card, form) {
 }
 /** The round's FIRST deal (Steamodded hand_drawn while the first hand is dealt: nothing played or discarded yet, once a round):
  *  every card is in hand by then (the first_hand_drawn context runs before the deal's draw events land). */
-const first_deal = (card, context) => !!(context.hand_drawn && !context.blueprint && G.STATE === G.STATES.DRAW_TO_HAND && G.GAME.current_round
-  && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && card.ability.extra.forecast_round !== G.GAME.round);
+const first_deal = (card, context, field = 'forecast_round') => !!(context.hand_drawn && !context.blueprint && G.STATE === G.STATES.DRAW_TO_HAND && G.GAME.current_round
+  && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && card.ability.extra[field] !== G.GAME.round);
 /** Rainy: the first Club among the scoring cards (a debuffed one isn't a Club: is_suit). */
 const first_club = (context) => (context.scoring_hand || []).find((c) => c.is_suit('Clubs'));
 
@@ -1105,6 +1110,64 @@ function treasure_nest(card, context) {
 /** Garchomp, Dragon Rush: X(1 + Xmult_mod per undebuffed Gold card held in hand). */
 const dragon_rush_x = (card) => r3(1 + card.ability.extra.Xmult_mod * gold_held());
 
+// ------------------------------------------------------------ the last Gen 4 regulars (contentRev 44)
+/** Hippopotas / Hippowdon, Sand Stream: a scored Stone card gives +chips EXTRA (a joker effect on top of the Stone card's own +50, or
+ *  Regirock's +100 instead: the two stack). Any card that counts as Stone (has_enhancement: quantum too); debuffed cards never score.
+ *  Blueprint copies it; a Red Seal / Mime retrigger repeats it. */
+function sand_stream(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_stone')) {
+    return { chips: card.ability.extra.chips, card };
+  }
+  return undefined;
+}
+/** Hippowdon, Sand Stream: on the round's FIRST deal (Castform's moment, first_deal: every card is in hand), 1 random UNENHANCED card
+ *  held in hand becomes a Stone card (Midas Mask's set_ability; seal and edition kept). The run's seeded pseudorandom_element
+ *  ('hippowdon_sand'); none unenhanced: nothing (it never overwrites another enhancement). Once a round (sand_round), fixed (no Energy
+ *  field), not Blueprint. */
+function sand_stone(card, context) {
+  if (!first_deal(card, context, 'sand_round')) return;
+  card.ability.extra.sand_round = G.GAME.round;
+  const pool = G.hand.cards.filter((c) => c.config.center === P_CENTERS.c_base && !c.destroyed && !c.shattered && !c.removed);
+  if (!pool.length) return;
+  const [pick] = pseudorandom_element(pool, pseudoseed('hippowdon_sand'));
+  pick.set_ability(P_CENTERS.m_stone, null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Sand Stream!', colour: '#e1c019' });
+}
+/** Skorupi / Drapion, Sniper: each scored card rolls num in dem (Pokermon's probability helpers: Oops! / Venonat raise it, Absol fixes it
+ *  at 0) to CRIT for X Xmult_multi; Drapion's Lucky cards (always_crit: any card counting as Lucky) crit with no roll, so Absol never
+ *  stops them. Each retrigger rolls again. Blueprint copies it (its own roll). */
+function sniper(card, context, seed) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round)) return undefined;
+  const ex = card.ability.extra;
+  const crit = (ex.always_crit && has_enhancement(context.other_card, 'm_lucky')) || pseudorandom_probability(card, seed, ex.num, ex.dem, seed);
+  return crit ? { x_mult: ex.Xmult_multi, card } : undefined;
+}
+const sniper_vars = (card, seed) => { const ex = card.ability.extra; const [num, dem] = get_probability_vars(card, ex.num, ex.dem, seed); return [num, dem, r3(ex.Xmult_multi)]; };
+/** Carnivine, Flytrap: the round's FIRST player discard (pre_discard, not an effect's `hook` discard, discards_used 0; once a round:
+ *  devour_round) marks its leftmost card (the discard's own order: hand position); in that card's discard pass the joker returns
+ *  { remove: true }, so the engine destroys it like Trading Card / Entei / Magmar do — dissolved (a Glass card shatters), and every
+ *  joker's remove_playing_cards runs (Hydreigon, Cacnea, Kingambit, Spiritomb... count it as a destroyed card). Each devour banks +mult_mod
+ *  Mult (`devour_mult`, no energy field: never retroactive). Not Blueprint, once even under a joker retrigger (the mark is cleared). */
+function flytrap(card, context) {
+  const ex = card.ability.extra;
+  if (context.pre_discard && !context.hook && !context.blueprint && !context.retrigger_joker && context.full_hand && context.full_hand.length
+    && G.GAME.current_round.discards_used === 0 && ex.devour_round !== G.GAME.round) {
+    ex.devour_round = G.GAME.round;
+    context.full_hand[0].poke_devoured_by = card;
+    return undefined;
+  }
+  if (context.discard && !context.blueprint && context.other_card && context.other_card.poke_devoured_by === card) {
+    context.other_card.poke_devoured_by = undefined;
+    ex.devour_mult = r3(ex.devour_mult + ex.mult_mod);
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Devoured!', colour: 'MULT' });
+    return { remove: true };
+  }
+  return undefined;
+}
+const flytrap_state = (card) => (G.GAME && G.GAME.facing_blind && (G.GAME.current_round.discards_used > 0 || card.ability.extra.devour_round === G.GAME.round) ? 'fed this round' : 'hungry');
+/** Lumineon, Luminous: night hands (Lunatone / Solrock's cycle, is_day above); with Lunatone (owned, undebuffed: cosmic) day hands too. */
+const luminous = (card) => !is_day() || cosmic(card, 'j_poke_lunatone');
 // ---------------------------------------------------------------- the creation trio, Regigigas and Arceus (the owner's Gen 4 Legendaries)
 /** Dialga, Roar of Time: the round's first hand (hands_played === 0 while it scores; a discard before it doesn't use it up). */
 const roar_on = () => !!(G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played === 0);
@@ -2642,6 +2705,94 @@ defineJokers({
       return r;
     },
   },
+  // ---------------------------------------------------------------- the last Gen 4 regulars (contentRev 44): Hippopotas -> Hippowdon,
+  // Skorupi -> Drapion, Carnivine, Finneon -> Lumineon. The owner's designs (2026-10-28). Neither Nacho nor Pokermon+ has any of them.
+  // Art: upstream 3.9.1's own cells (Natdex {26,29} / {28,29}, {0,30} / {2,30}, {8,30}, {10,30} / {12,30}); nothing to deploy. After
+  // Lucario's Mega (448), before Mantyke (458); Croagunk / Toxicroak (453 / 454) are Pokermon+'s.
+  // Hippopotas 449: Common $5, Earth. Sand Stream: scored Stone cards give +30 extra Chips (`chips` +30%: 39 / 48 / 57). 5 rounds.
+  hippopotas: {
+    name: 'hippopotas', poke_sprite391: sprite('Natdex', 26, 29),
+    config: { extra: { chips: 30, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 4, blueprint_compat: true,
+    attributes: ['chips', 'enhancements', 'round_evo'], poke_after: 'mega_lucario',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) { return sand_stream(card, context) || level_evo(self, card, context, 'j_poke_hippowdon'); },
+  },
+  // Hippowdon 450: Safari $8. +60 extra Chips per scored Stone card (78 / 96 / 114 energized); on each round's first deal, 1 random
+  // unenhanced card held in hand becomes a Stone card (fixed: Energy never raises the conversion).
+  hippowdon: {
+    name: 'hippowdon', poke_sprite391: sprite('Natdex', 28, 29),
+    config: { extra: { chips: 60 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 4, blueprint_compat: true,
+    attributes: ['chips', 'enhancements', 'modify_card'], poke_after: 'hippopotas',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); return { vars: [r3(card.ability.extra.chips)] }; },
+    calculate(self, card, context) { sand_stone(card, context); return sand_stream(card, context); },
+  },
+  // Skorupi 451: Common $5, Dark. Sniper: each scored card, 1 in 5 to crit for X1.25 (`Xmult_multi` +5%: X1.3125 / 1.375 / 1.4375; the odds
+  // are num / dem, never energized). 5 rounds.
+  skorupi: {
+    name: 'skorupi', poke_sprite391: sprite('Natdex', 0, 30),
+    config: { extra: { num: 1, dem: 5, Xmult_multi: 1.25, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'chance', 'round_evo'], poke_after: 'hippowdon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [...sniper_vars(card, 'skorupi'), card.ability.extra.rounds] }; },
+    calculate(self, card, context) { return sniper(card, context, 'skorupi') || level_evo(self, card, context, 'j_poke_drapion'); },
+  },
+  // Drapion 452: Safari $8. 1 in 3 to crit for X1.5 (X1.575 / 1.65 / 1.725); Lucky cards always crit (no roll: Absol can't stop them).
+  drapion: {
+    name: 'drapion', poke_sprite391: sprite('Natdex', 2, 30),
+    config: { extra: { num: 1, dem: 3, Xmult_multi: 1.5, always_crit: true } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'chance', 'enhancements'], poke_after: 'skorupi',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); return { vars: sniper_vars(card, 'drapion') }; },
+    calculate(self, card, context) { return sniper(card, context, 'drapion'); },
+  },
+  // Carnivine 455: Rare $7, Grass, single-stage. Flytrap: the first card you discard each round is devoured (destroyed: the engine's
+  // discard-destroy, so "card destroyed" payoffs fire) and banks +4 Mult for good (`mult_mod` +20%: 4.8 / 5.6 / 6.4 a devour; the bank
+  // `devour_mult` is never retroactive). It gives the bank every hand (Blueprint copies the Mult, never the devour).
+  carnivine: {
+    name: 'carnivine', poke_sprite391: sprite('Natdex', 8, 30),
+    config: { extra: { devour_mult: 0, mult_mod: 4 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'discard', 'destroy_card'], poke_after: 'drapion',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.devour_mult), r3(ex.mult_mod), flytrap_state(card)] }; },
+    calculate(self, card, context) {
+      const r = flytrap(card, context);
+      if (r) return r;
+      const m = card.ability.extra.devour_mult;
+      if (context.joker_main && m > 0) return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m };
+      return undefined;
+    },
+  },
+  // Finneon 456: Common $5, Water. +40 Chips on NIGHT hands (the 2nd and 4th of each round: Lunatone / Solrock's cycle; `chips` +30%:
+  // 52 / 64 / 76). 5 rounds.
+  finneon: {
+    name: 'finneon', poke_sprite391: sprite('Natdex', 10, 30),
+    config: { extra: { chips: 40, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 4, blueprint_compat: true,
+    attributes: ['chips', 'hands', 'round_evo'], poke_after: 'carnivine',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), next_is_day() ? 'Day' : 'Night', ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && !is_day()) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return level_evo(self, card, context, 'j_poke_lumineon');
+    },
+  },
+  // Lumineon 457: Safari $8. On night hands each scored card gives +15 Chips (19.5 / 24 / 28.5); with Lunatone (owned, undebuffed) on
+  // day hands too.
+  lumineon: {
+    name: 'lumineon', poke_sprite391: sprite('Natdex', 12, 30),
+    config: { extra: { chips: 15 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 4, blueprint_compat: true,
+    attributes: ['chips', 'hands'], poke_after: 'finneon',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: [r3(card.ability.extra.chips), next_is_day() ? 'Day' : 'Night', cosmic(card, 'j_poke_lunatone') ? 'active' : 'needs Lunatone'] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && luminous(card)) return { chips: card.ability.extra.chips, card };
+      return undefined;
+    },
+  },
   // ---------------------------------------------------------------- The creation trio: Dialga 483 / Palkia 484 / Giratina 487 (Gen 4)
   // The owner's design (2026-10-28). Legendary $20 each (The Soul / the Legendary pool). Types from the card art: Dialga Metal, Palkia
   // Water, Giratina Psychic (both its Altered and its Origin card show the Psychic icon). Neither Nacho nor Pokermon+ has them. Art:
@@ -2785,6 +2936,9 @@ export const DESIGN_FAMILIES = [
   ['shellos', 'gastrodon'],
   ['stunky', 'skuntank'],
   ['gible', 'gabite', 'garchomp'],
+  ['hippopotas', 'hippowdon'],
+  ['skorupi', 'drapion'],
+  ['finneon', 'lumineon'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -2833,6 +2987,8 @@ const FICKLE = (gain, n) => ['{C:attention}Fickle:{} picks a new favourite', 'su
 const POISON_GAS = (name, by, nth) => ['{C:attention}' + name + ':{} after ' + (nth ? 'your {C:attention}nth{}' : 'each'), (nth ? 'hand this round' : 'hand you play') + ', the Blind\'s', 'requirement drops by ' + by, 'of its starting requirement',
   '{C:inactive}(Never the hand that scored;', '{C:inactive}reach it and the Blind is won)', '{C:inactive}(Max -#2#% a Blind; this Blind: {C:attention}-#3#%{C:inactive})'];
 const BITE = ['{C:attention}Bite:{} when a hand containing', 'a {C:attention}Pair{} scores, permanently', 'gains {C:mult}+#2#{} Mult for each', 'scored card', '{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult)'];
+const SAND_STREAM = ['{C:poke_sand}Sand Stream:{} scored', '{C:attention}Stone{} cards give', '{C:chips}+#1#{} extra Chips'];
+const SNIPER = ['{C:attention}Sniper:{} each scored card', 'has a {C:green}#1# in #2#{} chance to', 'crit for {X:mult,C:white} X#3# {} Mult'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -3068,6 +3224,24 @@ export const DESIGN_LOC = {
       ['{C:mult}+#1#{} Mult {C:inactive}(banked by Bite)'],
       ['{C:attention}Dragon Rush:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#2# {} for each {C:attention}Gold{} card', 'held in hand',
         '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
+    j_poke_hippopotas: { name: 'Hippopotas', text: [...SAND_STREAM, EVOLVES_ROUNDS(2)] },
+    j_poke_hippowdon: { name: 'Hippowdon', text: [
+      SAND_STREAM,
+      ["On each round's first deal, 1", 'random {C:attention}unenhanced{} card held', 'in hand becomes a {C:attention}Stone{} card'],
+    ] },
+    j_poke_skorupi: { name: 'Skorupi', text: [...SNIPER, EVOLVES_ROUNDS(4)] },
+    j_poke_drapion: { name: 'Drapion', text: [...SNIPER, '{C:attention}Lucky{} cards always crit'] },
+    j_poke_carnivine: { name: 'Carnivine', text: [
+      '{C:attention}Flytrap:{} the first card you', 'discard each round is', 'devoured ({C:red}destroyed{}) and', 'permanently adds {C:mult}+#2#{} Mult',
+      '{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult; #3#)',
+    ] },
+    j_poke_finneon: { name: 'Finneon', text: [
+      '{C:chips}+#1#{} Chips on {C:attention}night{} hands', '{C:inactive}(each round\'s 2nd and 4th hands)', '{C:inactive}(Next hand: {C:attention}#2#{C:inactive})', EVOLVES_ROUNDS(3),
+    ] },
+    j_poke_lumineon: { name: 'Lumineon', text: [
+      ['On {C:attention}night{} hands, each scored', 'card gives {C:chips}+#1#{} Chips', '{C:inactive}(each round\'s 2nd and 4th hands)'],
+      ['With {C:attention}Lunatone{}, on {C:attention}day{} hands too', '{C:inactive}(Next hand: {C:attention}#2#{C:inactive})', '{C:inactive}(Lunatone: {C:attention}#3#{C:inactive})'],
     ] },
     j_poke_burmy: { name: 'Burmy', text: [
       ['{C:attention}Cloak:{} at end of round, takes', 'the cloak most common in your', 'full deck: {C:attention}Stone{} (Sandy), {C:attention}Steel{}', '(Trash), or everything else (Plant)', '{C:inactive}(A tie keeps the cloak)'],
