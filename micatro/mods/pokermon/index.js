@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -712,6 +712,8 @@ const hooks = {
   // while an undebuffed one is owned: no Regi, no change.
   chip_bonus: regi_chip_bonus,
   chip_h_x_mult: regi_h_x_mult,
+  // ... and the Stone / Steel card's own tooltip shows it (+100 Chips / X2, energized too): the same two functions (describe.js enh_live_vars).
+  enh_loc_vars: regi_enh_vars,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
     // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)

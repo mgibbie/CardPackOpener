@@ -120,8 +120,9 @@ export function describePlaying(cv) {
     case 'm_bonus': extra('Bonus Card', [`{C:chips}+${cfg.bonus || 30}{} extra chips`]); break;
     case 'm_mult': extra('Mult Card', sub(D.Enhanced.m_mult.text, [cfg.mult || 4])); break;
     case 'm_glass': extra('Glass Card', sub(D.Enhanced.m_glass.text, [cfg.Xmult || 2, 1, cfg.extra || 4])); break;
-    case 'm_steel': extra('Steel Card', sub(D.Enhanced.m_steel.text, [cfg.h_x_mult || 1.5])); break;
-    case 'm_stone': lines.push(...sub(D.Enhanced.m_stone.text, [cfg.bonus || 50])); break;
+    // (cv.enh_vars: the card's live numbers, engine/view.js — a banked perma_bonus, Pokermon's Regirock / Registeel)
+    case 'm_steel': extra('Steel Card', sub(D.Enhanced.m_steel.text, cv.enh_vars || [cfg.h_x_mult || 1.5])); break;
+    case 'm_stone': lines.push(...sub(D.Enhanced.m_stone.text, cv.enh_vars || [cfg.bonus || 50])); break;
     case 'm_gold': extra('Gold Card', sub(D.Enhanced.m_gold.text, [cfg.h_dollars || 3])); break;
     case 'm_lucky': extra('Lucky Card', sub(D.Enhanced.m_lucky.text, [1, cfg.mult || 20, 5, cfg.p_dollars || 20, 15])); break;
     case 'm_wild': extra('Wild Card', D.Enhanced.m_wild.text); break;

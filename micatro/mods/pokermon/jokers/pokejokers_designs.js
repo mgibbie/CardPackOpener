@@ -545,6 +545,14 @@ export function regi_h_x_mult(v, card) {
   const base = card.ability.h_x_mult || 1.5;
   return v * Math.max(...steels.map((j) => j.ability.extra.Xmult_multi)) / base;
 }
+/** The Stone / Steel card's own tooltip (engine hook enh_loc_vars, describe.js enh_live_vars): the number the two hooks above will
+ *  score, from those same functions — Stone +100 (+ its banked perma_bonus) with Regirock, held Steel X2 (energized X2.1 / X2.2 / X2.3)
+ *  with Registeel. No undebuffed Regi: undefined (the card's own +50 / X1.5). */
+export function regi_enh_vars(vars, card) {
+  const ab = card.ability, f = ab.effect === 'Stone Card' ? regi_chip_bonus : ab.effect === 'Steel Card' ? regi_h_x_mult : null;
+  const v = f ? f(vars[0], card) : undefined;
+  return v === undefined ? undefined : [v, ...vars.slice(1)];
+}
 const regi_tips = (self, info_queue, card, enh) => { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS[enh]); };
 
 defineJokers({

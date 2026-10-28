@@ -4,7 +4,7 @@
 
 import { G, P_BLINDS, P_TAGS, P_CENTERS, P_SEALS, get_blind_amount, setEventCardView } from './core.js';
 import { STATE_NAMES, HANDLIST, legal, get_poker_hand_info } from './run.js';
-import { describe, describeBlind, describeTag } from './describe.js';
+import { describe, describeBlind, describeTag, enh_live_vars } from './describe.js';
 import { callHook, MOD_LOC } from '../mods/registry.js';
 import { mul, toJSONValue as J } from './bignum.js';
 import { held_card_limit } from './smods.js';
@@ -67,6 +67,12 @@ export function cardView(c, withDesc) {
       if (d.info && d.info.length) v.enh.info = d.info;
     } catch (e) { v.enh = { name: c.ability.name, lines: [] }; }
     if (ctr.replace_base_card) v.enh.replace = true;
+  }
+  // A Stone / Steel card's live numbers for its tooltip (ui/markup.js describePlaying), only where they differ from the
+  // enhancement's own (+50 Chips / X1.5): a banked perma_bonus, or a mod's rule (Pokermon's Regirock / Registeel).
+  if (c.base && c.base.suit && (c.ability.effect === 'Stone Card' || c.ability.effect === 'Steel Card')) {
+    const ev = enh_live_vars(c), cfg = ctr.config || {};
+    if (ev && ev[0] !== (c.ability.effect === 'Stone Card' ? cfg.bonus || 50 : cfg.h_x_mult || 1.5)) v.enh_vars = ev;
   }
   callHook('view_card', c, v);
   return v;

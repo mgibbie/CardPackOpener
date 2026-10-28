@@ -235,6 +235,8 @@ House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejok
     Stone "+100 instead of +50" is a chip_bonus hook (Card:get_chip_bonus), Registeel's held Steel "X2 instead of X1.5" a
     chip_h_x_mult hook (Card:get_chip_h_x_mult), so retriggers (Red Seal, Mime) repeat the new value exactly as they repeat the
     old one. Take the best copy's value (an "instead" rule never stacks with a twin); only while an undebuffed one is owned.
+    The card's OWN tooltip must say the new number: answer the pure engine hook enh_loc_vars (describe.js enh_live_vars) with the
+    same function the scoring hook uses (regi_enh_vars), so the Stone card reads +100 (+ its bank) and the Steel card X2, energized too.
 
 2.2 Rarity and cost conventions
 -------------------------------

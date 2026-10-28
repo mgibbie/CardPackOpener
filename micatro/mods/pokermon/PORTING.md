@@ -2428,7 +2428,10 @@ Regice Water, Registeel Metal**. Neither Nacho nor Pokermon+ has them.
   X2.2 / X2.3); Regice `glass_convert`, a new house energy field (systems/energy.js, coefficient 1 = its whole base): **+1 Glass card per Blind per
   Energy** (1 -> 2 / 3 / 4, before the trio's +1 per other Regi; a mismatched Colorless +0.5, floored).
 - **Text**: the convert count on each tooltip ("{C:attention}N{} random card(s)"), "(+1 for each other Regi)"; Regice "(Each Energy: +1 card)". The
-  Stone / Steel cards' own tooltips still read +50 / X1.5 (Micatro draws the enhancement text from the center config, as vanilla's).
+  Stone / Steel cards' own tooltips show the live value (follow-up, branch `feat/pokermon-gen3-legendaries`): +100 Chips (+ the card's banked
+  `perma_bonus`, energized 130 / 160 / 190) with Regirock, X2 (X2.1 / X2.2 / X2.3) with Registeel. The engine's `enh_live_vars` (describe.js; the
+  board's in-hand tooltip through cardView `enh_vars` -> markup.js describePlaying) asks the pure hook `enh_loc_vars`, which Pokermon answers with
+  the same `regi_chip_bonus` / `regi_h_x_mult` its scoring hooks use (`pokermon_regi_tooltips_test`).
 - **Art: upstream's own** (Natdex {2,25} / {4,25} / {6,25}, each with its floating soul {3,25} / {5,25} / {7,25}). Nothing to deploy for the mod.
   The wiki drops them.
 - **Tests**: `micatro/tests/mods/pokermon_regis_test.mjs` (8 passed / 13 failed on origin/main; 75 / 0 here). Re-recorded: `modpin_test`,
