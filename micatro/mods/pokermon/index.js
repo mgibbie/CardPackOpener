@@ -913,7 +913,11 @@ export const POKERMON = registerMod({
   // Manaphy's Egg (1 in 4 at the end of each shop, with a free slot: a Phione).
   // 47 = the owner's Regigigas trio wake (jokers/pokejokers_designs.js giga_drop): with all three Regis held, Slow Start's countdown
   // goes straight to 0 at the next end of round (awake after 1 round, was 2); none / one / two Regis stay 5 / 3 / 2.
-  contentRev: 47,
+  // 48 = the Gen 7 starters (jokers/pokejokers_designs.js shackle_calc / hands_before / aria_calc): Rowlet / Dartrix / Decidueye (+1 hand
+  // size; the rightmost scored card retriggers 1 / 2 / 2 times, Decidueye's Spirit Shackle X1.3 each time it scores), Litten / Torracat /
+  // Incineroar (+1 discard; +2 / +4 Mult, X0.25, per hand already played this round), Popplio / Brionne / Primarina (+1 hand; scored
+  // Hearts +3 / +5 Mult, Sparkling Aria X1.2). Basics Uncommon $5 starters (the Starter Pack), evolving after 5 then 5 rounds.
+  contentRev: 48,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
