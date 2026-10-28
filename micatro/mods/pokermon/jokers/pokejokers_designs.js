@@ -47,7 +47,7 @@
 // creates its Planet; Colorless) and Pachirisu (Quick Spark: X2 on each round's first hand, Nuzzle +X0.25 per other Lightning Joker;
 // Cheek Pouch: $1 per Lightning Joker at end of round; Lightning), Rare $7 each — upstream 3.9.1 draws them (Natdex 10,29 / 22,27).
 // Combee -> Vespiquen (Honey Gather: at end of round the Jokers directly left and right gain +$1 / +$2 sell value; Vespiquen's Attack
-// Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3; Grass, Common $5 / Safari $8; contentRev 36) — upstream 3.9.1 draws
+// Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3; Grass, Common $5 / Safari $8; contentRev 37) — upstream 3.9.1 draws
 // them (Natdex 18 / 20, 27).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
@@ -241,8 +241,10 @@ const glass_tips = (info_queue, evolves) => {
   if (evolves && detailed()) { info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } }); info_queue.push(P_CENTERS.c_justice); }
 };
 
-/** Gulpin / Swalot: max Stockpile (`stockpile_max`, the house energy field: +1 per Energy, +0.5 per mismatched Colorless — floored). */
-const stock_max = (ex) => Math.floor(ex.stockpile_max + 1e-9);
+/** Gulpin / Swalot / Drifloon / Drifblim: max Stockpile (`stockpile_max`, the house energy field: base 3, +1 per Energy, +0.5 per
+ *  mismatched Colorless — floored), plus a fixed `stockpile_bonus` (Drifblim's +2: its base 5, still +1 per Energy, since the energy
+ *  field grows by a third of ITS base, 3). */
+const stock_max = (ex) => Math.floor(ex.stockpile_max + 1e-9) + (ex.stockpile_bonus || 0);
 const stock_mult = (ex) => ex.stockpile_mult * ex.stockpile;
 /** Gulpin / Swalot: a scored Diamond card gives +stockpile_mult Mult per Stockpile (Blueprint copies it). */
 function stockpile_mult(card, context) {
@@ -277,6 +279,54 @@ function swallow(card, context, swalot) {
   card_eval_status_text(card, 'extra', null, null, null, { message: room ? 'Stockpile!' : 'Swallow!', colour: 'MULT' });
   if (dollars > 0) { ease_dollars(dollars); card_eval_status_text(card, 'dollars', dollars); }
 }
+
+/** Drifloon / Drifblim, Stockpile: each PLAYER discard action (pre_discard of a real discard; `hook` = an effect's discard, as Sand Pit)
+ *  gains 1 Stockpile below max — once per discard, however many cards. Not Blueprint, not a joker retrigger. */
+function drift_charge(card, context) {
+  if (!context.pre_discard || context.hook || context.blueprint || context.retrigger_joker) return;
+  const ex = card.ability.extra;
+  if (ex.stockpile >= stock_max(ex)) return;
+  ex.stockpile = ex.stockpile + 1;
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Stockpile!', colour: 'XMULT' });
+}
+/** Spit Up's X: X1 + spit_Xmult (0.5, in no energy field) per Stockpile. */
+const spit_x = (ex) => r3(1 + ex.spit_Xmult * ex.stockpile);
+/** The round's final hand: no hands left after this one is played (Acrobat's check: hands_left is already spent while it scores). */
+const final_hand = () => !!(G.GAME && G.GAME.current_round && G.GAME.current_round.hands_left === 0);
+/** Drifloon / Drifblim, Spit Up: on the final hand, with 1+ Stockpile, X(1 + 0.5 per Stockpile) in joker_main (a Blueprint copies it,
+ *  either side of the joker: the Stockpile is still there for it). The joker itself marks the Spit Up (`spitting`), and in `after` (once
+ *  the whole hand has scored) resets the Stockpile to 0 and counts it (`spit_ups`, Drifloon's evolution) — once, never by a Blueprint or a
+ *  joker retrigger. 0 Stockpile: nothing, and it doesn't count. */
+function spit_up(card, context) {
+  const ex = card.ability.extra;
+  if (context.joker_main && final_hand() && ex.stockpile > 0) {
+    if (!context.blueprint) ex.spitting = true;
+    const x = spit_x(ex);
+    return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+  }
+  if (context.after && ex.spitting && !context.blueprint && !context.retrigger_joker) {
+    ex.spitting = undefined;
+    ex.stockpile = 0;
+    if (ex.spit_ups !== undefined) ex.spit_ups = ex.spit_ups + 1;
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Spit Up!', colour: 'XMULT' });
+  }
+  return undefined;
+}
+/** Drifblim, Aftermath: a Negative Spectral (random: create_card's seeded roll, key_append 'drifblim'; Negative, so it needs no free
+ *  consumable slot). From selling_self (sold) and from the start_dissolve hook (destroyed: Ceremonial Dagger, Madness, Hex, Ankh, a
+ *  Pokermon eater...; index.js hooks.start_dissolve -> drifblim_destroyed). Not on evolving or any transform (set_ability: no
+ *  dissolve); not from a Blueprint; not while debuffed (a debuffed joker has no abilities). */
+function aftermath(card) {
+  G.E_MANAGER.add_event(() => { add_card({ set: 'Spectral', edition: 'e_negative', key_append: 'drifblim' }); });
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Aftermath!', colour: 'Spectral' });
+}
+/** index.js hooks.start_dissolve: an owned Drifblim being destroyed (a saved one — joker_type_destroyed's no_destroy — never gets here). */
+export function drifblim_destroyed(card) {
+  if (!card || card.debuff || card.removed || !G.jokers || card.area !== G.jokers) return;
+  if (!card.config || !card.config.center || card.config.center.key !== 'j_poke_drifblim') return;
+  aftermath(card);
+}
+const drift_vars = (ex, evo) => [ex.stockpile, stock_max(ex), r3(ex.spit_Xmult), spit_x(ex), ex.spit_ups || 0, evo];
 
 /** Vibrava: +d_size discards each round while held (the Charmander line's pair, pokejokers_01): on gain, and off again when sold,
  *  destroyed or evolved (set_ability runs the old center's remove_from_deck across an evolution). */
@@ -1638,7 +1688,48 @@ defineJokers({
     },
   },
 
-  // ---------------------------------------------------------------- LINE F9: Combee -> Vespiquen (Grass, Gen 4)
+  // ---------------------------------------------------------------- LINE F9: Drifloon -> Drifblim (Psychic: Ghost/Flying, Gen 4)
+  // The owner's design (2026-10-28): Stockpile (Gulpin's counter and its `stockpile_max` energy field, reused: stock_max) charged by
+  // discards, released on the round's last hand. Each player DISCARD action gains 1 Stockpile up to max (once per discard, not per
+  // card: drift_charge). Spit Up: on the FINAL hand of the round (hands_left 0, Acrobat's check) X(1 + 0.5 per Stockpile), then the
+  // Stockpile resets to 0 (spit_up: the reset waits for `after`, so a Blueprint either side copies the X; it never adds or resets).
+  // Energy: +1 max Stockpile each (Colorless +0.5, floored); the X0.5 per Stockpile (`spit_Xmult`) is never energized. Stockpile and
+  // Energy carry into Drifblim. Art: upstream 3.9.1's own cells (Natdex 8 / 10, 28: the Psychic frame).
+  // Drifloon 425: Common $5 (a 2-stage line's Basic); max 3; evolves after 4 Spit Ups (each with 1+ Stockpile; `spit_ups`, end of round).
+  drifloon: {
+    name: 'drifloon', poke_sprite391: sprite('Natdex', 8, 28),
+    config: { evo_rqmt: 4, extra: { stockpile: 0, stockpile_max: 3, spit_Xmult: 0.5, spit_ups: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'discard', 'reset', 'scaling_evo'], poke_after: 'ambipom',
+    poke_custom_values_to_keep: ['stockpile'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: drift_vars(card.ability.extra, self.config.evo_rqmt) }; },
+    calculate(self, card, context) {
+      drift_charge(card, context);
+      return spit_up(card, context) || scaling_evo(self, card, context, 'j_poke_drifblim', card.ability.extra.spit_ups || 0, self.config.evo_rqmt);
+    },
+  },
+  // Drifblim 426: Safari $8. The same Stockpile and Spit Up, max 5 (stockpile_max 3 — the energy field's base, so still +1 per Energy —
+  // plus a fixed `stockpile_bonus` 2: 5 -> 8 with 3 Energy). Aftermath: when SOLD (selling_self) or DESTROYED (index.js
+  // hooks.start_dissolve -> drifblim_destroyed), create a Negative Spectral card (aftermath). Not when it transforms; not a Blueprint.
+  drifblim: {
+    name: 'drifblim', poke_sprite391: sprite('Natdex', 10, 28),
+    config: { extra: { stockpile: 0, stockpile_max: 3, stockpile_bonus: 2, spit_Xmult: 0.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'discard', 'reset', 'spectral', 'on_sell'], poke_after: 'drifloon',
+    poke_custom_values_to_keep: ['stockpile'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      if (detailed()) info_queue.push({ key: 'e_negative_consumable', set: 'Edition', config: { extra: 1 } });
+      return { vars: drift_vars(card.ability.extra) };
+    },
+    calculate(self, card, context) {
+      if (context.selling_self && !context.blueprint) { aftermath(card); return undefined; }
+      drift_charge(card, context);
+      return spit_up(card, context);
+    },
+  },
+
+  // ---------------------------------------------------------------- LINE F10: Combee -> Vespiquen (Grass, Gen 4)
   // The owner's design (2026-10-28): Honey Gather (honey_gather above) — at end of round the Jokers directly left and right gain a
   // FIXED +$1 / +$2 sell value (`honey`: no energy field; nothing on an empty side; a debuffed one gives nothing; Blueprint never feeds
   // it twice). Vespiquen's Attack Order: X(1 + 0.1 per $ of the two neighbours' current sell value, card.sell_cost), capped at X3
@@ -1998,6 +2089,7 @@ export const DESIGN_FAMILIES = [
   ['barboach', 'whiscash'],
   ['starly', 'staravia', 'staraptor'],
   ['glameow', 'purugly'],
+  ['drifloon', 'drifblim'],
   ['combee', 'vespiquen'],
 ];
 
@@ -2025,6 +2117,11 @@ const MUDDY = ['{C:attention}Muddy Water:{} {C:chips}+#1#{} Chips for', 'each {X
   '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:chips}+#3#{C:inactive} Chips)'];
 const FLOCK = ['{C:attention}Flock:{} {C:mult}+#1#{} Mult for each', '{X:poke_colorless,C:white}Colorless{} Joker {C:inactive}(Itself included)',
   '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'];
+const DRIFT_CHARGE = ['{C:attention}Stockpile:{} each discard gains', '{C:attention}1{} Stockpile {C:inactive}(once per discard,', '{C:inactive}not per card; max #2#)',
+  '{C:inactive}(Currently {C:attention}#1#{C:inactive}/#2# Stockpile)', STOCK_ENERGY];
+const SPIT_UP = ['{C:attention}Spit Up:{} on the final hand of', 'the round, {X:mult,C:white} X1 {} Mult plus {X:mult,C:white} X#3# {}', 'per Stockpile, then the', 'Stockpile resets to {C:attention}0{}',
+  '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)', '{C:inactive,s:0.8}(Nothing with 0 Stockpile)'];
+const AFTERMATH = ['{C:attention}Aftermath:{} when this Joker is', 'sold or destroyed, create a', '{C:dark_edition}Negative{} {C:spectral}Spectral{} card', '{C:inactive}(Not when it transforms)'];
 const HONEY = ['{C:attention}Honey Gather:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
@@ -2148,6 +2245,11 @@ export const DESIGN_LOC = {
         '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
       ['{C:attention}Recoil:{} lose {C:money}$#2#{} each', 'hand played', '{C:inactive,s:0.8}(Never past your debt limit)'],
     ] },
+    j_poke_drifloon: { name: 'Drifloon', text: [
+      DRIFT_CHARGE,
+      [...SPIT_UP, '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} Spit Ups)', '{C:inactive,s:0.8}(Spit Ups: #5#/#6#)'],
+    ] },
+    j_poke_drifblim: { name: 'Drifblim', text: [DRIFT_CHARGE, SPIT_UP, AFTERMATH] },
     j_poke_combee: { name: 'Combee', text: [...HONEY, '{C:inactive,s:0.8}(Energy carries to Vespiquen)', EVOLVES_ROUNDS(2)] },
     j_poke_vespiquen: { name: 'Vespiquen', text: [
       HONEY,
