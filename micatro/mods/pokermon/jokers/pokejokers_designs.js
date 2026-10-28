@@ -53,12 +53,16 @@
 // Combee -> Vespiquen (Honey Gather: at end of round the Jokers directly left and right gain +$1 / +$2 sell value; Vespiquen's Attack
 // Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3; Grass, Common $5 / Safari $8; contentRev 38) — upstream 3.9.1 draws
 // them (Natdex 18 / 20, 27).
+// The owner's Cherubi line (contentRev 39): Cherubi -> Cherrim (Grass; Sweet Seeds: a random unenhanced deck card becomes a Seed each
+// Blind, +1 growth level; Cherubi evolves after 2 blooms; Cherrim's Flower Gift (3+ suits) and Sunshine Form (Flowers X2.5 instead of X2
+// while sunny: a red first deal by Castform's forecast, or Groudon working)) — upstream 3.9.1 draws them (Natdex 28, 27; Gen 4 0 / 2, 1).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
+  poke_change_growth_level,
   poke_get_adjacent_jokers,
 } from '../api.js';
 
@@ -817,6 +821,41 @@ function eon(card, context, own, partner) {
   return undefined;
 }
 
+// ------------------------------------------------------------ the owner's Cherubi line (Cherubi -> Cherrim): Seeds and the sun
+/** Sweet Seeds: when a Blind is selected, ONE random unenhanced card of the full deck (G.playing_cards, the run's seeded
+ *  pseudorandom_element) becomes a Seed card; none unenhanced, nothing (it never overwrites). Blueprint copies it (as Marble Joker). */
+function sweet_seeds(card, context) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
+  const plain = (G.playing_cards || []).filter((c) => unbroken(c) && c.config.center.key === 'c_base');
+  if (!plain.length) return;
+  const [pick] = pseudorandom_element(plain, pseudoseed('poke_cherubi_seeds'));
+  pick.set_ability(P_CENTERS.m_poke_seed, null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 Seed', colour: 'GREEN' });
+}
+/** ... and +1 growth level while owned (Shiftry's `growth`: G.GAME.poke_growth_level, read by the Seed card itself), so a scored Seed
+ *  grows 2 a score and blooms in 3 scores instead of 5. Off while debuffed (SMODS removes / re-adds a debuffed joker), carried across
+ *  the evolution (set_ability removes Cherubi's, adds Cherrim's). Copies stack, like Shiftry + Brambleghast. */
+const sweet_growth = {
+  add_to_deck(self, card) { poke_change_growth_level(card.ability.extra.growth); },
+  remove_from_deck(self, card) { poke_change_growth_level(-card.ability.extra.growth); },
+};
+/** Is it sunny for Cherrim? (a) the round's FIRST deal read red: Castform's own forecast() (Hearts + Diamonds vs Clubs vs Spades,
+ *  a tie is not sunny), remembered for the round (`sun_round`); or (b) Desolate Land: an undebuffed Groudon is held and working (not
+ *  the loser of a Primal Clash this round: primal_on). Rayquaza's Delta Stream keeps Groudon working, so Groudon still means sun
+ *  (Rayquaza only un-locks CASTFORM's weather). (b) is live: a Groudon gained or sold mid-round changes it at once. Out of a round
+ *  (the shop) only (b) counts. */
+const desolate_sun = () => legends('groudon').some((j) => primal_on(j));
+export function cherrim_sunny(card) {
+  const ex = card.ability.extra, GM = G.GAME;
+  return !!((GM && GM.facing_blind && ex.sun_round === GM.round) || desolate_sun());
+}
+const cherrim_form = (card) => (cherrim_sunny(card) ? 'sunshine' : 'overcast');
+const seed_tips = (self, info_queue, card) => {
+  type_tooltip(self, info_queue, card);
+  info_queue.push(P_CENTERS.m_poke_seed);
+  info_queue.push({ set: 'Other', key: 'growth_level' });
+};
 // ------------------------------------------------------------ Chatot (Vocabulary / New Word)
 // The run's played-hand records: G.GAME.hands[h].played is the run's count for that poker hand (run.js evaluate_play adds 1 before
 // the jokers' `before` pass; it never resets during a run), so it counts every hand type played this run, from before Chatot was
@@ -1991,6 +2030,70 @@ defineJokers({
       return undefined;
     },
   },
+
+  // ---------------------------------------------------------------- LINE J: Cherubi -> Cherrim (Grass, Gen 4)
+  // The owner's design (2026-10-28). Types from the card art: both Grass. Sweet Seeds (both): when a Blind is selected, 1 random
+  // unenhanced card in the full deck becomes a Seed card (sweet_seeds), and +1 growth level while owned (sweet_growth: a scored Seed
+  // grows 2, blooming in 3 scores instead of 5). Cherubi evolves after 2 of your Seeds bloom into Flowers while it is held (the Seed
+  // card's bloom calls every owned joker's poke_seed_bloom hook, enhancements/enhancement1.js). Cherrim, Flower Gift: Flower cards need
+  // only 3+ suits (as Roserade; with both still 3: a minimum, never stacking); Sunshine Form: while it's sunny (cherrim_sunny) Flower
+  // cards give X2.5 instead of X2 (the Flower card asks every owned joker's poke_flower_rule; the best X wins, Shaymin's +1 still on
+  // top: X3.5). Energy: the Sunshine X is `Xmult_multi` (the per-card X, +5% of base: X2.625 / X2.75 / X2.875); the conversion and
+  // the growth are fixed. Cherubi carries the same field (it has no X of its own) so Energy used on it shows and carries to Cherrim.
+  // Neither Nacho nor Pokermon+ has the line. Art: upstream 3.9.1's own cells — Cherubi Natdex {28,27}; Cherrim Overcast Gen 4 {0,1},
+  // Sunshine Gen 4 {2,1} (unlisted in pokespriteload.lua, drawn by ui.js ownFace from the view's form, as Castform's weathers).
+  // Cherubi 420: Common $5; evolves after 2 Seeds bloom (`seeds_bloomed`, checked at end of round).
+  cherubi: {
+    name: 'cherubi', poke_sprite391: sprite('Natdex', 28, 27),
+    config: { evo_rqmt: 2, extra: { growth: 1, Xmult_multi: 2.5, seeds_bloomed: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['enhancements', 'modify_card', 'full_deck', 'scaling_evo'], poke_after: 'floatzel',
+    poke_seed_bloom(self, card) {
+      const ex = card.ability.extra;
+      ex.seeds_bloomed = (ex.seeds_bloomed || 0) + 1;
+      card_eval_status_text(card, 'extra', null, null, null, { message: 'Bloom ' + Math.min(ex.seeds_bloomed, self.config.evo_rqmt) + '/' + self.config.evo_rqmt, colour: 'GREEN' });
+    },
+    loc_vars(self, info_queue, card) {
+      seed_tips(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [ex.growth, Math.min(ex.seeds_bloomed || 0, self.config.evo_rqmt), self.config.evo_rqmt, r3(ex.Xmult_multi)] };
+    },
+    calculate(self, card, context) {
+      sweet_seeds(card, context);
+      return scaling_evo(self, card, context, 'j_poke_cherrim', card.ability.extra.seeds_bloomed || 0, self.config.evo_rqmt);
+    },
+    ...sweet_growth,
+  },
+  // Cherrim 421: Safari $8; Sweet Seeds, Flower Gift, Sunshine Form (Overcast otherwise). Its form shows on the card (poke_view_form).
+  cherrim: {
+    name: 'cherrim', poke_sprite391: sprite('Gen04', 0, 1),
+    config: { extra: { growth: 1, Xmult_multi: 2.5, suits: 3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck', 'suits', 'hand_drawn'], poke_after: 'cherubi',
+    /** The Flower card's rule (enhancements/enhancement1.js flower): 3+ suits always; X2.5 (energized) instead of X2 while sunny. */
+    poke_flower_rule(self, card) { const ex = card.ability.extra; return { suits: ex.suits, x: cherrim_sunny(card) ? ex.Xmult_multi : undefined }; },
+    /** The view's form (systems/anim.js view_card): live, so a Groudon bought or sold redraws it at once. */
+    poke_view_form(self, card) { return cherrim_form(card); },
+    loc_vars(self, info_queue, card) {
+      seed_tips(self, info_queue, card);
+      info_queue.push(P_CENTERS.m_poke_flower);
+      const ex = card.ability.extra, sun = cherrim_sunny(card);
+      return { vars: [ex.growth, ex.suits, r3(ex.Xmult_multi)], key: sun ? 'j_poke_cherrim_sunshine' : undefined };
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (first_deal(card, context)) {
+        ex.forecast_round = G.GAME.round;
+        if (forecast(G.hand.cards) === 'sunny') ex.sun_round = G.GAME.round;
+        if (cherrim_sunny(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Sunshine!', colour: CASTFORM_FORMS.sunny.colour });
+        return undefined;
+      }
+      sweet_seeds(card, context);
+      return undefined;
+    },
+    ...sweet_growth,
+  },
+
   // ---------------------------------------------------------------- Chatot 441 (Colorless, Gen 4)
   // The owner's design (2026-10-28). Rare $7, single-stage. Vocabulary: +4 Mult for each DIFFERENT poker hand type played this run
   // (vocabulary above: G.GAME.hands[h].played > 0, the run's own records, so a Chatot bought late sees the whole run; secret hands
@@ -2226,6 +2329,7 @@ export const DESIGN_FAMILIES = [
   ['spoink', 'grumpig'],
   ['barboach', 'whiscash'],
   ['starly', 'staravia', 'staraptor'],
+  ['cherubi', 'cherrim'],
   ['burmy', 'wormadam', 'mothim'],
   ['glameow', 'purugly'],
   ['drifloon', 'drifblim'],
@@ -2268,6 +2372,11 @@ const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, eve
 const CLOAKED = (name, c, type) => ['{C:attention}Cloaked:{} ' + name + ' Cloak, {X:poke_' + c + ',C:white}' + type + '{}', '{C:inactive}(kept from Burmy, for good)'];
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
   '{C:inactive}(+1 for each other Regi)'];
+const SWEET_SEEDS = ['{C:attention}Sweet Seeds:{} when a {C:attention}Blind{}', 'is selected, a random unenhanced', 'card in your deck becomes a', '{C:attention}Seed{} card',
+  '{C:attention}+#1#{} growth level {C:inactive}(Seeds bloom', '{C:inactive}in 3 scores instead of 5)'];
+const FLOWER_GIFT = ['{C:attention}Flower Gift:{} {C:attention}Flower{} cards', 'need only {C:attention}#2#+{} suits'];
+const SUNSHINE = ['{C:poke_sun}Sunshine Form:{} while sunny,', '{C:attention}Flower{} cards give {X:mult,C:white} X#3# {}', 'Mult instead of {X:mult,C:white} X2 {}',
+  '{C:inactive}(Sunny: {C:hearts}Hearts{C:inactive}+{C:diamonds}Diamonds{C:inactive} held most', '{C:inactive}on the round\'s first deal,', '{C:inactive}or {C:attention}Groudon{C:inactive} held)'];
 const FICKLE = (gain, n) => ['{C:attention}Fickle:{} picks a new favourite', 'suit each round', 'Scored cards of its favourite', 'suit each give ' + gain, '{C:inactive}(Favourite: {V:1}#' + n + '#{C:inactive})'];
 export const DESIGN_LOC = {
   Joker: {
@@ -2462,6 +2571,13 @@ export const DESIGN_LOC = {
       ['{C:attention}Delta Stream:{} {C:attention}Kyogre{} and', '{C:attention}Groudon{} both work every round', '{C:inactive}(no Primal Clash; Castform reads', '{C:inactive}the weather as usual)'],
       ['{C:attention}Dragon Ascent:{} gains {X:mult,C:white} X#2# {} Mult', 'when a played hand contains', 'a {C:attention}Straight{} or a {C:attention}Flush{}', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
     ] },
+    j_poke_cherubi: { name: 'Cherubi', text: [
+      SWEET_SEEDS,
+      ['{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#3#{C:inactive,s:0.8} of your Seeds', '{C:inactive,s:0.8}bloom into Flowers)', '{C:inactive,s:0.8}(Bloomed: #2#/#3#)',
+        '{C:inactive,s:0.8}(Energy also raises Cherrim\'s', '{C:inactive,s:0.8}Sunshine Flowers: X#4#)'],
+    ] },
+    j_poke_cherrim: { name: 'Cherrim', text: [SWEET_SEEDS, FLOWER_GIFT, [...SUNSHINE, '{C:inactive}(Currently {C:attention}Overcast{C:inactive})']] },
+    j_poke_cherrim_sunshine: { name: 'Cherrim', text: [SWEET_SEEDS, FLOWER_GIFT, [...SUNSHINE, '{C:inactive}(Currently {C:poke_sun}Sunshine{C:inactive})']] },
     j_poke_chatot: { name: 'Chatot', text: [
       ['{C:attention}Vocabulary:{} {C:mult}+#1#{} Mult for each', 'different {C:attention}poker hand{} played', 'this run', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'],
       ['{C:attention}New Word:{} the first time each', '{C:attention}poker hand{} is played this run,', 'create its {C:planet}Planet{} card', '{C:inactive}(Must have room)'],
