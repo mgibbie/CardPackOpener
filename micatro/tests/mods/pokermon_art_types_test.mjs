@@ -1,5 +1,5 @@
 // The owner's Pokermon jokers take the type their CARD shows (owner rule, 2026-10-28: "the type shown on the card is always the right
-// one when there's a conflict"; contentRev 29). Every joker of jokers/pokejokers_designs.js draws an upstream 3.9.1 card
+// one when there's a conflict"; contentRev 30). Every joker of jokers/pokejokers_designs.js draws an upstream 3.9.1 card
 // (`poke_sprite391`), and upstream draws the type on it (the type icon in the bottom-left corner). tools/micatro/pokermon_art_type.mjs
 // reads that icon by template matching, trained on the jokers upstream itself registers.
 //   ART   (when the gitignored Pokermon sheets are on disk) the reader gets every registered upstream joker's type right,

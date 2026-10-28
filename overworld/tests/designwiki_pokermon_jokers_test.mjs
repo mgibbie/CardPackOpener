@@ -96,7 +96,7 @@ try {
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
 	A(sp0('Latias')?.ptype === 'Psychic' && sp0('Venipede')?.ptype === 'Dark' && sp0('Sandile')?.ptype === 'Dark' && sp0('Kyurem')?.ptype === 'Water' && sp0('Stunfisk')?.ptype === 'Lightning'
-		&& sp0('Lunatone')?.ptype === 'Earth' && sp0('Lunatone')?.type_source === 'art', 'spot check (the card wins): Latias Psychic, Venipede Dark, Sandile Dark, Kyurem Water, Stunfisk Lightning; Lunatone Earth from its art');
+		&& sp0('Keldeo')?.ptype === 'Fighting' && sp0('Keldeo')?.type_source === 'art' && sp0('Keldeo')?.mapped_ptype === 'Water', 'spot check (the card wins): Latias Psychic, Venipede Dark, Sandile Dark, Kyurem Water, Stunfisk Lightning; Keldeo Fighting from its art (the mapping said Water)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
 	A(sp('Stoutland')?.stage === 'Two' && sp('Herdier')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Arceus')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',

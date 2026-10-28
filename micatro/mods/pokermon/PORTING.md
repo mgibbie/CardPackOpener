@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), **`3.9.1+r29`** since the owner's types follow their card art ("Types from the card art" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), **`3.9.1+r30`** since the owner's types follow their card art ("Types from the card art" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2080,7 +2080,7 @@ Nacho nor our Pokermon+ has any of them, so there is nothing to dedupe.
   composed cards for these species are no longer used (the wiki list drops them). Nothing to deploy for the mod.
 - **Deviations / choices** (where the design left room):
   - Kubfu's tie (5 / 5): the school of its last training. Urshifu's base X is X2 (Kubfu's at evolution; the larger value is kept).
-  - Urshifu was the design's Fighting; upstream's two cards carry its secondary-type icons (Dark / Water). Since contentRev 29 (owner rule:
+  - Urshifu was the design's Fighting; upstream's two cards carry its secondary-type icons (Dark / Water). Since contentRev 30 (owner rule:
     the card's type wins) Single Strike is Dark and Rapid Strike Water ("Types from the card art" below).
   - Xerneas: a card destroyed outside a Blind (the shop) comes back into the deck, not the hand.
   - Spiritomb at 108 with full consumable slots: The Soul waits (the next spirit, or the end of a round, with room).
@@ -2345,7 +2345,7 @@ Pinned **`3.9.1+r27`** (`contentRev: 27`; `LEGACY_MOD_VERSIONS` untouched). The 
 
 ### The owner's Barboach line (2026-10-28, branch `feat/pokermon-barboach-line`)
 Pinned **`3.9.1+r28`** (`contentRev: 28`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Barboach (339) -> Whiscash (340), both
-**Water**, in `jokers/pokejokers_designs.js` (42 defs now), after Seviper in Pokédex order (Lunatone / Solrock have no joker). Neither Nacho nor
+**Water**, in `jokers/pokejokers_designs.js` (42 defs now), after Seviper in Pokédex order (after Solrock since contentRev 29, when Lunatone / Solrock came in). Neither Nacho nor
 Pokermon+ has the line.
 - **Barboach** (Basic, **Common $5**), Muddy Water: **+12 Chips for each Water or Earth Joker** you have, itself included. Evolves after **5 rounds**.
 - **Whiscash** (Stage 1, **Safari $8**), Muddy Water **+20 Chips** per Water or Earth Joker, itself included; **Earthquake**: with at least **2 OTHER**
@@ -2363,8 +2363,31 @@ Pokermon+ has the line.
 - **Tests**: `micatro/tests/mods/pokermon_barboach_test.mjs` (3 passed / 12 failed on origin/main; 60 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 42 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (860 jokers).
 
+### The owner's Lunatone + Solrock (2026-10-28, branch `feat/pokermon-solrock-lunatone`)
+Pinned **`3.9.1+r29`** (`contentRev: 29`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Lunatone (337) and Solrock (338), a pair like
+Plusle / Minun, in `jokers/pokejokers_designs.js` (44 defs now), after Seviper in Pokédex order (before the Barboach line). Both **Earth** (Rock maps to Earth), single-stage,
+**Uncommon $6** (below the single-stage Rare $7: each alone works half the time). Neither Nacho nor Pokermon+ has them.
+- **Day / night**: within each round the 1st, 3rd and 5th hands are **day**, the 2nd and 4th **night**: `G.GAME.current_round.hands_played`
+  before the hand, even = day (during scoring it is still the pre-hand count: `run.js` adds 1 after `evaluate_play`). It restarts each round
+  (`new_round`); discards don't move it.
+- **Solrock, Sunlight**: **+100 Chips** on day hands (`chips`). **Lunatone, Moonlight**: **X2 Mult** on night hands (`Xmult`). Both `joker_main`.
+- **Cosmic Power**: holding BOTH (each checks `find_card(partner)`, which skips debuffed cards: a debuffed partner breaks it; a Blueprint copy is
+  not the partner): Solrock also gives **+50 Chips** on night hands, Lunatone **X1.5** on day hands, so every hand gets both. Each copy acts on
+  its own (two Solrocks + a Lunatone: +200 by day, +100 by night). A Blueprint copies whichever half the copied one gives.
+- **Energy**: `chips` +30% and `Xmult` +20% of base; the half values are DERIVED (`chips / 2`, `1 + (Xmult - 1) / 2`), so they stay exactly half.
+  Earth Energy: one +130 / +65 Chips, X2.4 / X1.7; two +160 / +80, X2.8 / X1.9; three +190 / +95, X3.2 / X2.1. Colorless Energy (half): one
+  +115 / +57.5, X2.2 / X1.6.
+- **Tooltips**: "(Next hand: Day / Night)" (out of a round, `facing_blind` unset, it is the next round's first: Day) and "(Cosmic Power: active /
+  needs Lunatone)" ("needs Solrock" on Lunatone).
+- **Upstream**: Pokermon's unreleased `main` (af0b656, "Added Solrock/Lunatone"; not taken, see sub-batch 15b's drift) has its own, different
+  Lunatone / Solrock (chance-based held Clubs / Stone money, scored Hearts / Stone X1.4). These are the owner's design instead; a future rebase onto
+  an upstream release that ships them must keep the owner's (or ask).
+- **Art: upstream's own.** 3.9.1's Natdex cells {12,22} / {14,22} (with Shiny twins), `poke_sprite391`. Nothing to deploy for the mod. The wiki
+  drops them (402 missing).
+- **Tests**: `micatro/tests/mods/pokermon_solrock_lunatone_test.mjs` (2 passed / 16 failed on origin/main; 61 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 44 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (862 jokers).
 ### Types from the card art (2026-10-28, branch `fix/pokermon-types-from-card-art`)
-Pinned **`3.9.1+r29`** (`contentRev: 29`; `LEGACY_MOD_VERSIONS` untouched). Owner rule: **the type shown on the card is always the right one**
+Pinned **`3.9.1+r30`** (`contentRev: 30`; `LEGACY_MOD_VERSIONS` untouched). Owner rule: **the type shown on the card is always the right one**
 when a joker's listed type and its card disagree. Upstream draws the type icon in each card's bottom-left corner.
 - **The reader**: `tools/micatro/pokermon_art_type.mjs` matches a card's type icon against per-type templates built from the jokers upstream
   registers (552 cards: the mode of each type's pixels, over the pixels every type agrees on 90%+, i.e. the icon disc; a channel tolerance of 32
@@ -2372,12 +2395,12 @@ when a joker's listed type and its card disagree. Upstream draws the type icon i
   mask. Left out of training: Sudowoodo's "Tree...?" card (draws its Grass disguise, registered Earth), Unown (blank card), MissingNo ("Bird").
   No upstream data records a ptype for the species it draws without a joker (pokespriteload.lua has cells only; upstream main has no joker for
   them, except Lunatone / Solrock, Earth, which their cards agree with).
-- **In game**: of the owner's 42 designs, only **Urshifu** conflicted: Single Strike **Fighting -> Dark**, Rapid Strike **Fighting -> Water**
+- **In game**: of the owner's 44 designs (Lunatone / Solrock included: Earth, as their cards), only **Urshifu** conflicted: Single Strike **Fighting -> Dark**, Rapid Strike **Fighting -> Water**
   (Kubfu stays Fighting; it changes type on evolving, as Pupitar does). Castform's forms already matched (Normal Colorless, Sunny Fire, Rainy
   / Snowy Water, on their own Gen 3 cells). Effects: Darkness / Water Energy now raises their X Mult (Fighting Energy no longer does), and Water
   / Dark synergies count them (Barboach's Muddy Water counts Rapid Strike).
 - **The wiki**: every card takes its art's type (`type_source: 'art'`; the mapping only where there is no upstream card, `'mapping'`;
-  `mapped_ptype` keeps the mapping's guess). 66 of 404 changed. The card page says "as its card shows".
+  `mapped_ptype` keeps the mapping's guess). 66 of 402 changed. The card page says "as its card shows".
 - **Tests**: `micatro/tests/mods/pokermon_art_types_test.mjs` (the reader's validation, every design's ptype = its card's, Castform's forms, and
   Urshifu's new types PLAYED: evolution, is_type, Energy, Barboach's count; 6 passed / 10 failed with the old ptypes);
   `designwiki_pokermon_jokers_test` (validation + every wiki card's type = its art's). Re-recorded: the pins (`modpin_test`,
