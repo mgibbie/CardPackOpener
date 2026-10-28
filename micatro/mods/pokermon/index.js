@@ -900,11 +900,15 @@ export const POKERMON = registerMod({
   // 43 = the owner's Gible line (Gible -> Gabite -> Garchomp; jokers/pokejokers_designs.js bite / treasure_nest): Bite banks +1 Mult per
   // scored card of a hand containing a Pair (evolves at +25); Gabite's Treasure Nest turns one scored card of a Full House Gold (unenhanced
   // first; evolves with 6 Gold cards in the deck); Garchomp's Dragon Rush X(1 + 0.5 per Gold card held in hand).
-  // 44 = the owner's Lake trio, Cresselia, Manaphy and Phione (jokers/pokejokers_designs.js lake_others / lunar_refresh / manaphy_egg):
+  // 44 = the owner's last Gen 4 regulars (jokers/pokejokers_designs.js sand_stream / sniper / flytrap / luminous): Hippopotas -> Hippowdon
+  // (scored Stone +30 / +60 extra Chips; Hippowdon turns 1 unenhanced card in hand Stone on each round's first deal), Skorupi -> Drapion
+  // (each scored card 1 in 5 X1.25 / 1 in 3 X1.5 crits; Drapion's Lucky cards always crit), Carnivine (the round's first discarded card is
+  // devoured, +4 Mult banked), Finneon -> Lumineon (night hands: +40 Chips / +15 per scored card; Lumineon by day too with Lunatone).
+  // 45 = the owner's Lake trio, Cresselia, Manaphy and Phione (jokers/pokejokers_designs.js lake_others / lunar_refresh / manaphy_egg):
   // Uxie (+2 Foresight, X1.3 per Foreseen card), Mesprit (X1.5, X2.5 on a poker hand new this round), Azelf (X2.5 on the final hand), +X0.25
   // per other guardian; Cresselia's Lunar Blessing (playing cards can't be debuffed) and X1.5; Phione +6 Mult / Manaphy X1.2 per Water Joker,
   // Manaphy's Egg (1 in 4 at the end of each shop, with a free slot: a Phione).
-  contentRev: 44,
+  contentRev: 45,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
