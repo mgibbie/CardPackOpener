@@ -92,6 +92,8 @@ export function set_debuff(card) {
   // (the owner's designs, jokers/pokejokers_designs.js: Inner Focus / Unseen Fist)
   if (card.ability.name === 'kubfu' || card.ability.name === 'urshifu_single' || card.ability.name === 'urshifu_rapid') return 'prevent_debuff';
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('urshifu_single').length) return 'prevent_debuff';
+  // (the owner's Cresselia, Lunar Blessing: the same rule; find_joker skips a debuffed Cresselia)
+  if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('cresselia').length) return 'prevent_debuff';
   if (card.ability.name === 'Wild Card' && find_joker('tangrowth').length) return 'prevent_debuff';
   if (card.get_id() === 10 && find_joker('tentacruel').length) return 'prevent_debuff';
   return undefined;
