@@ -522,6 +522,314 @@
 	},
 	"entries": [
 		{
+			"sha": "b1e54f4",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r46: the owner's Lake trio, Cresselia, Manaphy and Phione",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_uxie",
+							"name": "Uxie",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 31
+							},
+							"soul": {
+								"x": 29,
+								"y": 31
+							}
+						},
+						{
+							"key": "j_poke_mesprit",
+							"name": "Mesprit",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 32
+							},
+							"soul": {
+								"x": 1,
+								"y": 32
+							}
+						},
+						{
+							"key": "j_poke_azelf",
+							"name": "Azelf",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 32
+							},
+							"soul": {
+								"x": 3,
+								"y": 32
+							}
+						},
+						{
+							"key": "j_poke_cresselia",
+							"name": "Cresselia",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 32
+							},
+							"soul": {
+								"x": 15,
+								"y": 32
+							}
+						},
+						{
+							"key": "j_poke_phione",
+							"name": "Phione",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 32
+							},
+							"soul": {
+								"x": 17,
+								"y": 32
+							}
+						},
+						{
+							"key": "j_poke_manaphy",
+							"name": "Manaphy",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 32
+							},
+							"soul": {
+								"x": 19,
+								"y": 32
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "a6513c9",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r45: the owner's creation trio, Regigigas and Arceus",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_dialga",
+							"name": "Dialga",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 10,
+								"y": 2
+							},
+							"soul": {
+								"x": 11,
+								"y": 2
+							}
+						},
+						{
+							"key": "j_poke_palkia",
+							"name": "Palkia",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 4,
+								"y": 3
+							},
+							"soul": {
+								"x": 5,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_regigigas",
+							"name": "Regigigas",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 32
+							},
+							"soul": {
+								"x": 11,
+								"y": 32
+							}
+						},
+						{
+							"key": "j_poke_giratina",
+							"name": "Giratina",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 8,
+								"y": 3
+							},
+							"soul": {
+								"x": 9,
+								"y": 3
+							}
+						},
+						{
+							"key": "j_poke_arceus",
+							"name": "Arceus",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 4,
+								"y": 4
+							},
+							"soul": {
+								"x": 5,
+								"y": 4
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "59bbd3d",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r44: the owner's last Gen 4 regulars (Hippopotas, Skorupi, Carnivine, Finneon lines)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_hippopotas",
+							"name": "Hippopotas",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 29
+							}
+						},
+						{
+							"key": "j_poke_hippowdon",
+							"name": "Hippowdon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 29
+							}
+						},
+						{
+							"key": "j_poke_skorupi",
+							"name": "Skorupi",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 30
+							}
+						},
+						{
+							"key": "j_poke_drapion",
+							"name": "Drapion",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 30
+							}
+						},
+						{
+							"key": "j_poke_carnivine",
+							"name": "Carnivine",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 30
+							}
+						},
+						{
+							"key": "j_poke_finneon",
+							"name": "Finneon",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 30
+							}
+						},
+						{
+							"key": "j_poke_lumineon",
+							"name": "Lumineon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 30
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "140d80d",
 			"date": "2026-10-28",
 			"kind": "micatro",
