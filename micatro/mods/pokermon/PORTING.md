@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), **`3.9.1+r38`** since the owner's Shellos line ("The owner's Shellos line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), **`3.9.1+r39`** since the owner's Shellos line ("The owner's Shellos line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2484,10 +2484,9 @@ Psychic, Kyogre Water, Groudon Earth, Rayquaza Dragon** (`tools/micatro/pokermon
   the mod. The wiki drops them.
 - **Tests**: `micatro/tests/mods/pokermon_gen3_legendaries_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test` (the pin, 55 defs), `pokermon_regis_test` (Pokédex order), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (873 jokers).
-
 ### The owner's Chatot + Pachirisu (2026-10-28, branch `feat/pokermon-chatot-pachirisu`)
 Pinned **`3.9.1+r34`** (`contentRev: 34`; `LEGACY_MOD_VERSIONS` untouched). Two single-stage **Rare $7** Basics in `jokers/pokejokers_designs.js`
-(57 defs now), typed by their card art: **Chatot (441) Colorless**, after Happiny; **Pachirisu (417) Lightning**, after Roserade. Neither Nacho
+(57 defs now), typed by their card art: **Chatot (441) Colorless**, after Happiny; **Pachirisu (417) Lightning**, after Roserade (after Vespiquen since the Combee line). Neither Nacho
 nor Pokermon+ has either.
 - **Chatot**, Vocabulary: **+4 Mult for each different poker hand type played this run** (`G.GAME.hands[h].played > 0`: the run's own
   records, which never reset during a run, so a late Chatot counts hands played before it was bought; secret hands count; the hand being
@@ -2581,9 +2580,27 @@ Neither Nacho nor Pokermon+ has the line.
 - **Tests**: `micatro/tests/mods/pokermon_burmy_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
   (the pin, 64 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (882 jokers); `pokermon_art_types_test` checks the cloak cells.
 
+### The owner's Combee line (2026-10-28, branch `feat/pokermon-combee-line`)
+Pinned **`3.9.1+r38`** (`contentRev: 38`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Combee (415) -> Vespiquen (416), both **Grass**
+(upstream's cells show the green Grass frame; `pokermon_art_types_test` agrees), in `jokers/pokejokers_designs.js` (66 defs now), after Mothim in
+Pokédex order (Pachirisu 417 now comes after Vespiquen). Neither Nacho nor Pokermon+ has the line. Every Combee evolves (the female-only rule is not used).
+- **Combee** (Basic, **Common $5**), Honey Gather: **at end of round, the Jokers directly left and right each gain +$1 sell value** (`honey`;
+  `ability.extra_value` + `set_cost`, the Smoliv line's field; `poke_get_adjacent_jokers`, Magneton's / Dolliv's neighbours). Nothing on an
+  empty side; never itself; a debuffed Combee gives nothing (a debuffed neighbour still gains). Evolves after **5 rounds**. Not Blueprint-compatible.
+- **Vespiquen** (Stage 1, **Safari $8**), Honey Gather **+$2**; Attack Order: **X(1 + 0.1 per $ of the two neighbours' current sell value)**
+  (`card.sell_cost`), **max X3** (`Xmult_cap`). The tooltip shows the cap and "(Currently $N: X… Mult)".
+- **Energy**: the per-$ `Xmult_mod` (+20% of base: 0.1 -> **0.12 / 0.14 / 0.16**; a mismatched Colorless 0.11). The honey (+$1 / +$2) and the
+  X3 cap are fixed. Combee carries the same `Xmult_mod` (unused by Combee) so it can take Energy, which evolution re-applies to Vespiquen's base.
+- **Blueprint** copies Attack Order's X (computed from Vespiquen's own neighbours) and never the honey (`!context.blueprint`): no double feed.
+- **Art: upstream's own** (Natdex {18,27} / {20,27}). Nothing to deploy for the mod. The wiki drops them (380 missing).
+- **Tests**: `micatro/tests/mods/pokermon_combee_test.mjs` (4 passed / 14 failed on origin/main; 65 / 0 here). Re-recorded: `modpin_test`, `pokermon_chatot_pachirisu_test` (Pachirisu now after Vespiquen),
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 66 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (884 jokers).
+  `runbadges_test`'s two Riff-raff checks now ban the Grass Commons from its roll (the fixed seed rolled Combee, a legal Grass Common, where
+  they need an off-type one).
+
 ### The owner's Shellos line (2026-10-28, branch `feat/pokermon-shellos-line`)
-Pinned **`3.9.1+r38`** (`contentRev: 38`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
-(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (66 defs now), after Floatzel in Pokédex order (Ambipom 424 next).
+Pinned **`3.9.1+r39`** (`contentRev: 39`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
+(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (68 defs now), after Floatzel in Pokédex order (Ambipom 424 next).
 Neither Nacho nor Pokermon+ has the line.
 - **The sea**: each card is **West or East**, rolled ONCE when it is created (`set_ability` initial, the run's seeded `pseudorandom('shellos_sea')`
   / `'gastrodon_sea'`), kept in `ability.extra.form` (copies, rounds, evolution: `NAMES_TO_KEEP`; save / resume rebuild the run from its recipe,
@@ -2601,9 +2618,9 @@ Neither Nacho nor Pokermon+ has the line.
 - **Art: upstream's own, per sea** (pokespriteload.lua lists two `base.pos` each on the Gen 4 sheet): **East Sea** (blue) = the first cell,
   each center's own card: Shellos {4,1}, Gastrodon {8,1}; **West Sea** (pink) = the second: Shellos {6,1}, Gastrodon {10,1} (`systems/anim.js`
   `SEA_SPRITES`, `ui.js` ownFace; the Shiny sheet's twins at the same cells). The Pokédex modal shows the family in the card's sea. Nothing to
-  deploy for the mod. The wiki drops them (380 missing); the mods wiki shows one cell per joker (its East card).
+  deploy for the mod. The wiki drops them (378 missing); the mods wiki shows one cell per joker (its East card).
 - **Tests**: `micatro/tests/mods/pokermon_shellos_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
-  (the pin, 66 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (884 jokers).
+  (the pin, 68 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (886 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

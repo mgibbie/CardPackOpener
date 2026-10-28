@@ -880,10 +880,12 @@ export const POKERMON = registerMod({
   // 37 = the owner's Burmy line (Burmy -> Wormadam (Female) / Mothim (Male); jokers/pokejokers_designs.js): Cloak — at end of round
   // Burmy wears the cloak of the deck's most common enhancement (Plant / Sandy / Trash: Grass +5 Mult / Earth +40 Chips / Metal $1),
   // its type and card following; a seeded gender; Wormadam keeps the cloak for good, Mothim X(1 + 0.25 per different enhancement).
-  // 38 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
+  // 38 = the owner's Combee line (Combee -> Vespiquen; jokers/pokejokers_designs.js): Honey Gather — at end of round the Jokers directly
+  // left and right gain +$1 / +$2 sell value; Vespiquen's Attack Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3.
+  // 39 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
   // its art following; Tide Pool +40 Chips on the sea's end scored card (leftmost / rightmost); Gastrodon's Tide retriggers it, Storm
   // Drain X0.1 per Energy card used (X0.2 Water); Two Seas: a West and an East held, every one works on both ends.
-  contentRev: 38,
+  contentRev: 39,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

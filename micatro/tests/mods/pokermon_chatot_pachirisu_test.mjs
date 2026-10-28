@@ -70,7 +70,7 @@ sec('static', () => {
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_chatot'), k = keys.indexOf('j_poke_pachirisu');
   ok(i > 0 && keys[i - 1] === 'j_poke_happiny' && keys[i + 1] === 'j_poke_spiritomb', 'Pokédex order: Happiny (440), Chatot (441), Spiritomb (442)', keys.slice(i - 1, i + 2));
-  ok(k > 0 && keys[k - 1] === 'j_poke_mothim' && keys[k + 1] === 'j_poke_buizel', 'Pokédex order: Mothim (414), Pachirisu (417), Buizel (418)', keys.slice(k - 1, k + 2));
+  ok(k > 0 && keys[k - 1] === 'j_poke_vespiquen' && keys[k + 1] === 'j_poke_buizel', 'Pokédex order: Vespiquen (416, the owner\'s Combee line), Pachirisu (417), Buizel (418)', keys.slice(k - 1, k + 2));
   ok(c.atlas === 'poke_AtlasJokersBasicNatdex391' && c.pos.x === 10 && c.pos.y === 29, 'Chatot art: upstream 3.9.1\'s own cell (Natdex 10,29)', [c.atlas, c.pos]);
   ok(p.atlas === 'poke_AtlasJokersBasicNatdex391' && p.pos.x === 22 && p.pos.y === 27, 'Pachirisu art: upstream 3.9.1\'s own cell (Natdex 22,27)', [p.atlas, p.pos]);
   ok(pool_filter(c, 'Joker') === undefined && c.in_pool(c) !== false && pool_filter(p, 'Joker') === undefined && p.in_pool(p) !== false, 'both can be rolled in the shop (Rare)');
