@@ -88,7 +88,7 @@ sec('static', () => {
   // Pokédex order: each right after its predecessor
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const chain = [['glalie', 'spheal', 'sealeo', 'walrein', 'clamperl'], ['kricketune', 'shinx', 'luxio', 'luxray', 'budew'], ['happiny', 'chatot', 'spiritomb', 'gible', 'gabite', 'garchomp', 'munchlax'],
-    ['excadrill', 'darumaka', 'darmanitan', 'scraggy', 'scrafty', 'trubbish'], ['pyroar', 'honedge', 'doublade', 'aegislash', 'sylveon'], ['gourgeist', 'xerneas', 'grubbin'],
+    ['excadrill', 'darumaka', 'darmanitan', 'scraggy', 'scrafty', 'trubbish'], ['pyroar', 'honedge', 'doublade', 'aegislash', 'sylveon'], ['gourgeist', 'xerneas', 'rowlet'], ['primarina', 'grubbin'],
     ['lycanroc_dusk', 'mudbray', 'mudsdale', 'mimikyu'], ['mega_drampa', 'grookey', 'thwackey', 'rillaboom', 'nickit'], ['dreepy_dart', 'kubfu', 'urshifu_single', 'urshifu_rapid', 'wyrdeer'],
     ['spidops', 'tandemaus', 'maushold', 'fidough'], ['houndstone', 'tatsugiri', 'annihilape']];
   for (const ch of chain) ok(ch.every((n, i) => i === 0 || keys.indexOf('j_poke_' + n) === keys.indexOf('j_poke_' + ch[i - 1]) + 1), 'Pokédex order: ' + ch.join(' > '));
