@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), **`3.9.1+r34`** since the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), **`3.9.1+r35`** since the owner's Glameow line ("The owner's Glameow line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2504,6 +2504,30 @@ nor Pokermon+ has either.
 - **Tests**: `micatro/tests/mods/pokermon_chatot_pachirisu_test.mjs` (4 passed / 13 failed on origin/main; 73 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 57 defs, Happiny > Chatot > Spiritomb), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (875 jokers).
+
+### The owner's Glameow line (2026-10-28, branch `feat/pokermon-glameow-line`)
+Pinned **`3.9.1+r35`** (`contentRev: 35`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Glameow (431) -> Purugly (432), both
+**Colorless** (upstream's cells show the white Colorless frame), in `jokers/pokejokers_designs.js` (59 defs now), after Honchkrow in Pokédex
+order. Neither Nacho nor Pokermon+ has the line.
+- **Glameow** (Basic, **Common $5**), Fickle: a **favourite suit**, picked when first obtained (`add_to_deck`) and again at **each end of round**
+  (Ancient Joker's pick: the run's seeded `pseudorandom_element` over the suits minus the current one, `'fickle' + ante`), so never the same
+  suit twice running; held on `card.ability.fav_suit` (kept through the evolution's `set_ability`). Never picked on creation: a shop /
+  collection card would draw from the run's seed outside the recipe ("Favourite: picked when obtained"). **Scored cards of its favourite
+  suit each give +5 Mult** (`is_suit`: Wild cards, Smeared Joker). Evolves after **5 rounds**, **only with a free Joker slot**.
+- **Purugly** (Stage 1, **Safari $8**), Thick Fat: **-1 Joker slot** while held (`G.jokers.config.card_limit`, paid in `add_to_deck`,
+  refunded in `remove_from_deck`: sold, destroyed, or turned into another joker). A debuff KEEPS the cost (as vanilla keeps a Negative's
+  slot, `queue_negative_removal`: `ability.poke_slot_queued`), so lifting a debuff never puts the jokers over the limit; a debuffed Purugly
+  that leaves is refunded by index.js's `card_removed` hook (`slot_cost_removed`). A **Negative** Purugly nets 0. Fickle as Glameow's:
+  **scored cards of its favourite suit each give X1.25 Mult**.
+- **Evolution with full slots** (owner-approved): Glameow evolves only if a slot is free now (`cards + joker_buffer < card_limit`), so after
+  the -1 every joker still fits. Otherwise it stays at 0 rounds ("Needs a slot!") and evolves at the first end of round with a free slot.
+  Never pushes a joker out. Committing reserves the slot in `G.GAME.joker_buffer` (as Riff-raff) until the queued evolution lands, so two
+  Glameows ready in one round never both take the last slot. The footer says "(Needs a free Joker slot to evolve)".
+- **Energy** (the standard shares): Glameow's per-card `mult` +40% (5 -> **7 / 9 / 11**), Purugly's per-card `Xmult_multi` +5% (X1.25 ->
+  **X1.3125 / X1.375 / X1.4375**), re-applied on evolution. The slot cost (`slot_cost`) is fixed.
+- **Art: upstream's own** (Natdex {20,28} / {22,28}). Nothing to deploy for the mod. The wiki drops them (389 missing).
+- **Tests**: `micatro/tests/mods/pokermon_glameow_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test` (the pin, 59 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (877 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
