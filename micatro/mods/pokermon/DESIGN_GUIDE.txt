@@ -188,8 +188,10 @@ House pattern: a WEATHER / FORM change (the owner's Castform, jokers/pokejokers_
   - Monotype exemption: a center with poke_mono_exempt: true is left out of every Monotype check
     (systems/runbadges.js mono_state): it never breaks the run, never locks the type, never
     triggers the shop warning. Use it only where the type is outside the player's control (the
-    weather); the Nuzlocke reads the joker as usual. Say it on the card ("its type never breaks
-    Monotype").
+    weather) or changes on its own every round (the owner's Burmy, whose cloak follows the deck: the
+    owner's ruling); the Nuzlocke reads the joker as usual. Say it on the card ("its type never breaks
+    Monotype"). An evolution that LOCKS the changing type (Wormadam) is not exempt: it is checked like
+    any joker (its gained type, the Basic's, or its current one must match).
   - Art: one cell per form when upstream has one (Castform's Sunny / Rainy / Snowy sit on the 3.9.1
     Gen 3 sheet, unlisted in pokespriteload.lua), drawn by ui.js ownFace from the view's form.
   - Darmanitan's Zen Mode is the other shape: a temporary Tera sticker, restored at end of round.
@@ -322,6 +324,37 @@ House pattern: a JOKER SLOT AS A COST (the owner's Purugly, jokers/pokejokers_de
   - Pay it back with a strong per-card payoff: Purugly's X1.25 per scored favourite-suit card (Groudon's per-card X, but on one
     rotating suit and with a slot gone).
 
+House pattern: a MATERIAL CLOAK, the deck picks the form (the owner's Burmy line, jokers/pokejokers_designs.js cloak_of_deck):
+  - Castform's form pattern (above), read from the FULL DECK instead of the hand: at the end of each round (the main end_of_round
+    pass, not Blueprint) the most common enhancement of G.playing_cards picks the cloak. Each card counts by its own enhancement
+    (its center key; quantum enhancements don't), unenhanced being one kind and every other enhancement another, so "most common"
+    means the single biggest kind (Stone 22 beats unenhanced 20 even with 10 Glass besides). Then the kind maps to a cloak: Stone
+    Sandy (Earth), Steel Trash (Metal), unenhanced or anything else Plant (Grass).
+  - A tie for the most between kinds that call for DIFFERENT cloaks keeps the current cloak (unenhanced tied with Glass is Plant
+    either way, so it switches to Plant). An empty deck keeps it too.
+  - The cloak is kept between rounds (unlike Castform's weather): it is the joker's state, ability.extra.form, which every
+    evolution keeps (NAMES_TO_KEEP 'form' when the new center has one). Type and art follow it as Castform's: ex.ptype (a Tera
+    sticker still owns the type: the cloak changes, the type stays the sticker's), one Gen 4 cell per cloak (systems/anim.js
+    BURMY_SPRITES, ui.js ownFace).
+  - Each cloak is a different PAYOFF of the same joker: Plant +5 Mult (`mult1`), Sandy +40 Chips (`chips1`), Trash $1 at end of round
+    (calc_dollar_bonus, `trash_money`, fixed). The Energy fields of every cloak rise together; the $ never does. The cloak is
+    re-read BEFORE the cash-out, so a deck that turned Steel this round already pays Trash's $1 this round.
+  - The evolution LOCKS it: Wormadam keeps the cloak it wore on its last round (POST_EVOLVE re-applies the cloak's type after the kept
+    values land) and never re-reads it; its three texts are per-cloak loc keys (loc_vars key, as Castform's forms).
+
+House pattern: a GENDERED BRANCH (the owner's Burmy line; Burmy -> Wormadam Female / Mothim Male):
+  - The gender is rolled ONCE, when the card is created (set_ability(initial): shop, pack, Pokeball, starting joker, create_card),
+    with the run's seeded RNG (pseudorandom(pseudoseed('burmy_gender')) < 0.5), the shape of a Nature roll (2.5). It lives on
+    ability.extra.gender, so it is saved with the card; a resume replays the recipe and rolls the same one. A copy (Invisible
+    Joker, Ankh) keeps it (copy_card copies the ability).
+  - The branch is a plain level_evo whose target is chosen by it (4 rounds: Female -> j_poke_wormadam, Male -> j_poke_mothim); no item,
+    no counter. The tooltip names both and the card's own: "(Currently Plant Cloak, Male)".
+  - Write "Female" / "Male": Micatro's pixel font (m6x11plus) has no female / male signs (U+2640 / U+2642), the reason upstream
+    writes "Nidoran F".
+  - The two branches can differ in shape: Wormadam keeps the Basic's state (the cloak), Mothim drops it for a deck-wide count
+    (X(1 + 0.25 per DIFFERENT enhancement in the full deck), of the 8 vanilla enhancements + Pokermon's Seed and Flower; Hazard and
+    the April Fools Ludicolo don't count; up to X3.5; `Xmult_mod` +20%: 0.3 / 0.35 / 0.4).
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -395,6 +428,8 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
   custom        Branching by play counters (Rockruff picks its Lycanroc by counting Even and Odd
                 cards scored), "after 4 rounds not debuffed" (Volatile jokers), "4 rounds in
                 debt" (Snorunt), "after defeating 2 Boss Blinds" (Shroomish).
+                House: a GENDERED level_evo (the owner's Burmy: 4 rounds, Female -> Wormadam, Male -> Mothim;
+                the gender rolled when the card is created, 2.1).
 
 Typical round timers (level_evo):
   Baby     always 2 rounds (all 18)
@@ -753,6 +788,9 @@ Identity: the "economy and hand" type.
   Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig).
   Grass is where money comes from cards held in hand (Bulbasaur, Chikorita, Treecko), where
   sell value grows (Smoliv line), and where Seeds grow.
+  The owner's Burmy line is Grass by default (Plant Burmy +5 Mult; Plant Wormadam, scored unenhanced
+  cards +3 Mult; Mothim, X0.25 per different enhancement in the deck), changing to Earth / Metal with
+  its cloak (the material cloak pattern, 2.1).
 Hooks: individual 46, joker_main 44, before 24, add_to_deck 20 (hand size), repetition 15,
   after 12, setting_blind 10, using_consumeable 5, pre_discard 4, remove_playing_cards 4,
   mod_probability 3
@@ -1195,7 +1233,9 @@ Under-explored:
   - Held-in-hand Steel payoffs. The vanilla strength of Steel is HELD, but Pokermon mostly
     rewards played or eaten Steel. Only Skarmory, Ferrothorn's retrigger, Pokermon+'s
     Meltan/Melmetal and the owner's Registeel (held Steel X2 instead of X1.5, on the card itself:
-    the trio pattern, 2.1; Energy +5% per card: X2.1 / X2.2 / X2.3) use held Steel.
+    the trio pattern, 2.1; Energy +5% per card: X2.1 / X2.2 / X2.3) use held Steel. The owner's Trash
+    Wormadam pays $1 per Steel card held at end of round (a Gold card's money, so Mime repeats it), and
+    Trash Burmy (Metal while the deck is mostly Steel) $1 at end of round.
   - Only 16 missing species (Honedge line, Klefki, Cufant line, Varoom line, Orthworm,
     Corviknight, Registeel, Dialga, Cobalion, Magearna, Iron Crown...).
 Pitfalls:
@@ -1303,7 +1343,9 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
   Recurring shapes:
     - Big Chips with -hand size (the Geodude line).
     - Stone cards gaining Chips or retriggering (the Rhyhorn line, Probopass, Excadrill; the owner's
-      Regirock: Stone cards give +100 instead of +50 and gain +10 per score, the trio pattern, 2.1).
+      Regirock: Stone cards give +100 instead of +50 and gain +10 per score, the trio pattern, 2.1;
+      the owner's Sandy Burmy, Earth while Stone is the deck's most common enhancement, +40 Chips, and Sandy
+      Wormadam, scored Stone cards X1.5 each: the material cloak pattern, 2.1).
     - Stone plus Glass (the Swinub line).
     - Ancient ranks (Kabuto, Aerodactyl, Relicanth, Nacho's Cranidos and Shieldon).
     - Cards with no rank held (Roggenrola line).

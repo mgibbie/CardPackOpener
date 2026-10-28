@@ -17,8 +17,8 @@ import { T, start, hand, add, play, winRound, nextRound, clearHand, G, P_CENTERS
 import { ART } from './poke_art_helpers.mjs';
 import { increment_energy, energy_matches } from '../../mods/pokermon/systems/energy.js';
 import { is_type, find_pokemon_type } from '../../mods/pokermon/systems/types.js';
-import { CASTFORM_FORMS } from '../../mods/pokermon/jokers/pokejokers_designs.js';
-import { CASTFORM_SPRITES } from '../../mods/pokermon/systems/anim.js';
+import { CASTFORM_FORMS, BURMY_CLOAKS } from '../../mods/pokermon/jokers/pokejokers_designs.js';
+import { CASTFORM_SPRITES, BURMY_SPRITES } from '../../mods/pokermon/systems/anim.js';
 
 const { ok, done } = T();
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -56,6 +56,15 @@ else await sec('art', async () => {
   const forms = Object.entries(CASTFORM_SPRITES).map(([f, p]) => [f, CASTFORM_FORMS[f].ptype, typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen03', pos: [p.x, p.y] })]);
   ok(own && own.ptype === CASTFORM_FORMS.normal.ptype && forms.length === 3 && forms.every(([, want, r]) => r && r.ptype === want),
     'Castform: each form\'s type is its own card\'s (Normal Colorless; Sunny / Rainy / Snowy on the Gen 3 sheet)', forms.map(([f, w, r]) => `${f} ${w} / card ${r && r.ptype}`));
+  // Burmy / Wormadam: each cloak's type is its own card's (Plant = their own Gen 4 cells; Sandy / Trash the cells BURMY_SPRITES draws)
+  const cloaks = [];
+  for (const k of ['j_poke_burmy', 'j_poke_wormadam']) {
+    const s = P_CENTERS[k].poke_sprite391;
+    cloaks.push([k + ' plant', BURMY_CLOAKS.plant.ptype, typer.typeOfEntry({ atlas: s.atlas, pos: [s.pos.x, s.pos.y] })]);
+    for (const [f, p] of Object.entries(BURMY_SPRITES[k])) cloaks.push([k + ' ' + f, BURMY_CLOAKS[f].ptype, typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen04', pos: [p.x, p.y] })]);
+  }
+  ok(cloaks.length === 6 && cloaks.every(([, want, r]) => r && r.ptype === want), 'Burmy / Wormadam: each cloak\'s type is its own card\'s (Plant Grass, Sandy Earth, Trash Metal)',
+    cloaks.map(([f, w, r]) => `${f} ${w} / card ${r && r.ptype}`));
 });
 
 /** Kubfu with these trainings, evolved by a winning 1-card hand. */
