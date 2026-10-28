@@ -1,12 +1,12 @@
 // micatro_deckeditor_pages_test.mjs — the deck editor's picker is PAGED (owner, 2026-10-27: "the deck creator mod breaks
 // on mobile when i have pokermon mods on because there are too many jokers. it needs to have pages").
-// Pokermon + Nacho + Pokermon+ give the joker picker 857 jokers. The old picker showed 48 and a "More" button that
-// added 48 more AND rebuilt every shown tile each press: reaching the last joker left 857 tiles / 859 canvases
+// Pokermon + Nacho + Pokermon+ give the joker picker 858 jokers. The old picker showed 48 and a "More" button that
+// added 48 more AND rebuilt every shown tile each press: reaching the last joker left 858 tiles / 859 canvases
 // (89 MB of canvas backing store, ~7,600 canvases created on the way) in a phone's tab. Now:
 //   - phone portrait (390 x 844, CPU x4): the picker opens within a budget; only ONE PAGE of tiles (one screen) is
 //     built, and the page's canvases are reused page to page (the count never grows)
-//   - Prev / Next + "Page 1 / N" (N = ceil(857 / page)); Next / Prev move a page; a controller's RB / LB turn it
-//   - the search runs over all 857 (a joker from the last page is found: "1 of 857 Jokers"); the Mod filter too
+//   - Prev / Next + "Page 1 / N" (N = ceil(858 / page)); Next / Prev move a page; a controller's RB / LB turn it
+//   - the search runs over all 858 (a joker from the last page is found: "1 of 858 Jokers"); the Mod filter too
 //   - a joker picked on page 3 keeps its ✓ after paging away and back, and is in the deck's Starting Jokers
 //   - a deck with a joker from the LAST page saves (Save & use) and its run starts with that joker
 //   - phone landscape (844 x 390): one page fits the screen; desktop (1600 x 900): 48 a page, as before
@@ -40,7 +40,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(100); } return false; }
 const MODS = ['pokermon', 'nacho', 'pokermonplus'];
-const TOTAL = 857;          // jokers with the three on (150 base + 618 Pokermon + 66 Nacho + 23 Pokermon+)
+const TOTAL = 858;          // jokers with the three on (150 base + 619 Pokermon + 66 Nacho + 23 Pokermon+)
 const OPEN_BUDGET = 4000;   // ms, tap -> the first page drawn, at CPU x4
 
 const server = http.createServer(async (req, res) => {

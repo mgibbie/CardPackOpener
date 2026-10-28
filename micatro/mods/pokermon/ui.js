@@ -17,6 +17,7 @@
 //     The swarm draws 3.9.1's one-row strips, tiled (index.js SWARM_STRIPS), cropped to the card.
 //   * Unown's form (3.9.1 set_sprites): the letter floats over the plain Unown card as its soul layer.
 //   * Kecleon's type (3.9.1 set_sprites): the card of the type it took from the joker to its right (Gen 3 sheet).
+//   * Castform's weather form (the owner's design): its Sunny / Rainy / Snowy card on the same Gen 3 sheet (systems/anim.js).
 //   * The sprite series (3.9.1 pokemon_spritesheet_atlas; the leftovers batch): with the viewer's cosmetic `series` option on
 //     Series A, every joker that has a Series A cell (data391.js series_a, 3.9.1 PokemonSprites alts) draws it: its Shiny
 //     twin when Shiny, its alt floating sprite, and the five animated strips (Bellsprout, Voltorb, Electrode, Baltoy, Claydol)
@@ -30,7 +31,7 @@ import { describeCenter } from '../../js/engine/describe.js';
 import { get_family_keys } from './systems/evolution.js';
 import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
-import { KECLEON_ATLAS, KECLEON_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
+import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
 
 const MOD = 'pokermon';
@@ -304,7 +305,7 @@ export function openPokedex(d, api) {
   return el;
 }
 
-/** The card's own face before its Shiny sheet: its Series A art, Kecleon's type, the Imposter, Deoxys' forme, Unown's form. */
+/** The card's own face before its Shiny sheet: its Series A art, Kecleon's type, Castform's weather, the Imposter, Deoxys' forme, Unown's form. */
 function ownFace(d0) {
   const p = d0.poke;
   // the viewer's sprite series: the Series A art (null on Basic, or for a joker without a Series A cell)
@@ -312,6 +313,9 @@ function ownFace(d0) {
   // Kecleon (3.9.1 set_sprites): its card of the type it took (the Gen 3 sheet); Colorless = its own card
   const kp = d.center === 'j_poke_kecleon' && p && KECLEON_SPRITES[p.ptype];
   if (kp) return { ...d, atlas: KECLEON_ATLAS, pos: kp };
+  // Castform (the owner's design): its weather form's card (the same Gen 3 sheet); Normal = its own card
+  const cf = d.center === 'j_poke_castform' && p && CASTFORM_SPRITES[p.form];
+  if (cf) return { ...d, atlas: KECLEON_ATLAS, pos: cf };
   // The Imposter Professor (3.9.1 set_sprites, batch 17): once owned (form 1), the unmasked card, Others {8,1}
   if (d.center === 'j_poke_imposter_professor' && p && p.form === 1) return { ...d, pos: IMPOSTER_REVEALED };
   // Deoxys (3.9.1 set_sprites): the forme the Meteorite gave it floats over its card

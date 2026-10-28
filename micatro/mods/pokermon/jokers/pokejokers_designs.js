@@ -25,6 +25,9 @@
 // Spoink -> Grumpig (Pearl: each end of round a held unsealed card gains a Pink Seal; Spoink X0.1 per Pink Seal trigger, evolving after 8;
 // Grumpig makes Pink Seals trigger every hand, X0.15 per hand one triggers in, X0.3 on an overflow; Psychic; contentRev 26) — upstream
 // 3.9.1 draws them too (Natdex 18 / 20, 21).
+// Castform (Forecast: on the round's first deal, the suit held most picks Sunny / Rainy / Snowy, a tie Normal, its type following
+// the weather for the round; Colorless; contentRev 27) — upstream 3.9.1 draws it (Natdex 10, 23) and its three weather forms
+// (Gen 3 sheet 0 / 2 / 4, 0).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -323,6 +326,49 @@ function grumpig_gain(card, overflow) {
   card_eval_status_text(card, 'extra', null, null, null, { message: overflow ? 'Black Pearl!' : localize('k_upgrade_ex'), colour: 'XMULT' });
 }
 const pink_tip = (info_queue) => info_queue.push({ key: 'poke_pink_seal_seal', set: 'Other' });
+
+/** Castform's forms: the weather, the Pokermon type it gives (Ice maps to Water) and its name (+ the poke_sun / poke_rain / poke_snow / Colorless colour of its pop-up). 'normal' is its own card. */
+export const CASTFORM_FORMS = {
+  normal: { ptype: 'Colorless', name: 'Normal', colour: '#c8c0f8' },
+  sunny: { ptype: 'Fire', name: 'Sunny', colour: '#f48e62' },
+  rainy: { ptype: 'Water', name: 'Rainy', colour: '#6169ff' },
+  snowy: { ptype: 'Water', name: 'Snowy', colour: '#82c8e8' },
+};
+/** Forecast: the form the cards held in hand call for. Hearts and Diamonds count together ("red") against Clubs and against
+ *  Spades; a Wild card counts once for each of the three; a debuffed card, a Stone card or a card with no suit (a Hazard) counts
+ *  for none (the engine's is_suit). The single highest count wins; a tie for the top (or no suited card) is Normal. */
+export function forecast(cards) {
+  let red = 0, clubs = 0, spades = 0;
+  for (const c of cards) {
+    if (c.is_suit('Hearts') || c.is_suit('Diamonds')) red += 1;
+    if (c.is_suit('Clubs')) clubs += 1;
+    if (c.is_suit('Spades')) spades += 1;
+  }
+  const top = Math.max(red, clubs, spades);
+  if (top === 0 || [red, clubs, spades].filter((n) => n === top).length > 1) return 'normal';
+  return red === top ? 'sunny' : clubs === top ? 'rainy' : 'snowy';
+}
+/** Kecleon takes the type of the joker to its right: re-read it when Castform's type changes (its Lua update runs every frame). */
+function sync_kecleons() {
+  for (const c of G.jokers.cards.slice()) { const mc = c.config.center; if (mc.key === 'j_poke_kecleon' && mc.update) mc.update(mc, c); }
+}
+/** Castform takes a form: its own Pokermon type (ability.extra.ptype, which energy_matches, is_type and find_pokemon_type read)
+ *  becomes the form's. A Tera sticker still overrides it, as on any joker. Its debuff is re-evaluated (as Kecleon's set_type). */
+function castform_set_form(card, form) {
+  const ex = card.ability.extra, f = CASTFORM_FORMS[form] || CASTFORM_FORMS.normal;
+  const changed = ex.form !== form || ex.ptype !== f.ptype;
+  ex.form = form;
+  ex.ptype = f.ptype;
+  if (!changed) return;
+  card.set_debuff();
+  sync_kecleons();
+}
+/** The round's FIRST deal (Steamodded hand_drawn while the first hand is dealt: nothing played or discarded yet, once a round):
+ *  every card is in hand by then (the first_hand_drawn context runs before the deal's draw events land). */
+const first_deal = (card, context) => !!(context.hand_drawn && !context.blueprint && G.STATE === G.STATES.DRAW_TO_HAND && G.GAME.current_round
+  && G.GAME.current_round.hands_played === 0 && G.GAME.current_round.discards_used === 0 && card.ability.extra.forecast_round !== G.GAME.round);
+/** Rainy: the first Club among the scoring cards (a debuffed one isn't a Club: is_suit). */
+const first_club = (context) => (context.scoring_hand || []).find((c) => c.is_suit('Clubs'));
 
 /** Kubfu / Urshifu, training: X Mult grows on a hand of exactly 1 or exactly 5 scoring cards (Kubfu counts each school). */
 function training(card, context) {
@@ -1090,6 +1136,57 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- Castform 351 (Colorless, Gen 3)
+  // The owner's design (2026-10-27): Forecast. When the round's first hand is drawn, Castform reads the weather from the suit held
+  // most (forecast: Hearts + Diamonds together vs Clubs vs Spades; Wild counts for all three; debuffed / suitless cards for none;
+  // a tie is Normal) and takes that form for the whole round — its type too (Sunny Fire, Rainy Water, Snowy Water: Ice maps to
+  // Water, Normal Colorless). After the round (the end_of_round pass, queued so the other jokers' end-of-round effects still see the
+  // form) it is Normal again: in the shop it is Colorless. Effects: Sunny, scored Hearts / Diamonds +4 Mult (`mult1`); Rainy, scored
+  // Clubs +30 Chips (`chips1`) and the first scored Club retriggers (fixed); Snowy, Spades held in hand X1.1 Mult each (`Xmult_multi`);
+  // Normal, +10 Mult (`mult2`). Energy (energize, the usual shares of base): every form's number at once — mult1 / mult2 +40%, chips1
+  // +30%, Xmult_multi +5%; Colorless Energy always matches (half strength unless it is Normal, as on any non-Colorless joker), its
+  // current form's type matches while it is in that form. Its changing type never counts against a Monotype run (poke_mono_exempt:
+  // systems/runbadges.js leaves it out of the check). Art: upstream 3.9.1's own cards — its Natdex card (Normal) and the three
+  // weather forms on the Gen 3 sheet (ui.js, systems/anim.js CASTFORM_SPRITES).
+  castform: {
+    name: 'castform', poke_sprite391: sprite('Natdex', 10, 23),
+    config: { extra: { mult1: 4, chips1: 30, retriggers: 1, Xmult_multi: 1.1, mult2: 10, form: 'normal' } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Colorless', gen: 3, blueprint_compat: true,
+    attributes: ['mult', 'chips', 'xmult', 'retrigger', 'suits', 'types', 'hand_drawn'], poke_after: 'milotic',
+    poke_mono_exempt: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, form = CASTFORM_FORMS[ex.form] ? ex.form : 'normal';
+      return { vars: [r3(ex.mult1), r3(ex.chips1), r3(ex.Xmult_multi), r3(ex.mult2), CASTFORM_FORMS[form].name], key: form === 'normal' ? undefined : 'j_poke_castform_' + form };
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (first_deal(card, context)) {
+        ex.forecast_round = G.GAME.round;
+        const form = forecast(G.hand.cards);
+        castform_set_form(card, form);
+        card_eval_status_text(card, 'extra', null, null, null, { message: CASTFORM_FORMS[form].name + '!', colour: CASTFORM_FORMS[form].colour });
+        return undefined;
+      }
+      if (round_end(context) && !context.blueprint) {
+        G.E_MANAGER.add_event(() => { castform_set_form(card, 'normal'); });
+        return undefined;
+      }
+      const form = ex.form;
+      if (form === 'sunny' && context.individual && context.cardarea === G.play && !context.end_of_round
+        && (context.other_card.is_suit('Hearts') || context.other_card.is_suit('Diamonds'))) return { mult: ex.mult1, card };
+      if (form === 'rainy') {
+        if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit('Clubs')) return { chips: ex.chips1, card };
+        if (context.repetition && context.cardarea === G.play && context.other_card === first_club(context)) return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+      }
+      if (form === 'snowy' && context.individual && context.cardarea === G.hand && !context.end_of_round && context.other_card.is_suit('Spades')) {
+        return { x_mult: ex.Xmult_multi, card };
+      }
+      if (form === 'normal' && context.joker_main) return { message: a_mult(r3(ex.mult2)), colour: 'MULT', mult_mod: ex.mult2 };
+      return undefined;
+    },
+  },
+
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -1157,6 +1254,8 @@ const STOCK_ENERGY = '{C:inactive,s:0.8}(Each Energy: +1 max Stockpile)';
 const SAND_PIT = (name) => ['{C:attention}' + name + ':{} each card you', 'discard permanently adds', '{C:chips}+#2#{} Chips to this Joker', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)'];
 const SAND_EVO = ['{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:inactive,s:0.8} discarded cards)', '{C:inactive,s:0.8}(Discarded: #3#/#4#)'];
 const PEARL = ['{C:attention}Pearl:{} at end of round, a', 'random card held in hand', 'with no seal gains a {C:attention}Pink Seal{}'];
+const FORECAST = ['{C:attention}Forecast:{} when a round\'s first', 'hand is drawn, takes the form', 'of the suit held most'];
+const FORECAST_NOTE = ['{C:inactive,s:0.8}(Normal again after the round;', '{C:inactive,s:0.8}its type never breaks Monotype)'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -1262,7 +1361,27 @@ export const DESIGN_LOC = {
       ['{C:attention}Spoink Dance:{} {C:attention}Pink Seals{}', 'trigger on every hand'],
       ['Gains {X:mult,C:white} X#2# {} Mult for each', 'hand a {C:attention}Pink Seal{} triggers in', '{C:attention}Black Pearl:{} {X:mult,C:white} X#3# {} instead if', 'one had no room for its Energy', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
     ] },
-    j_poke_mudbray: { name: 'Mudbray', text: ['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
+    j_poke_castform: { name: 'Castform', text: [
+      FORECAST,
+      ['{C:poke_sun}Sunny{} ({C:hearts}Hearts{}+{C:diamonds}Diamonds{}): {X:poke_fire,C:white}Fire{}', 'scored {C:hearts}Hearts{}/{C:diamonds}Diamonds{} {C:mult}+#1#{} Mult',
+        '{C:poke_rain}Rainy{} ({C:clubs}Clubs{}): {X:poke_water,C:white}Water{}', 'scored {C:clubs}Clubs{} {C:chips}+#2#{} Chips,', 'retrigger the first scored {C:clubs}Club{}',
+        '{C:poke_snow}Snowy{} ({C:spades}Spades{}): {X:poke_water,C:white}Water{}', '{C:spades}Spades{} held in hand {X:mult,C:white} X#3# {} Mult',
+        'Normal (a tie): {X:poke_colorless,C:white}Colorless{}', '{C:mult}+#4#{} Mult'],
+      ['{C:inactive}(Currently {C:attention}#5#{C:inactive})', ...FORECAST_NOTE],
+    ] },
+    j_poke_castform_sunny: { name: 'Castform', text: [
+      FORECAST,
+      ['{C:poke_sun}Sunny Form:{} {X:poke_fire,C:white}Fire{} this round', 'Scored {C:hearts}Hearts{} and {C:diamonds}Diamonds{}', 'give {C:mult}+#1#{} Mult', ...FORECAST_NOTE],
+    ] },
+    j_poke_castform_rainy: { name: 'Castform', text: [
+      FORECAST,
+      ['{C:poke_rain}Rainy Form:{} {X:poke_water,C:white}Water{} this round', 'Scored {C:clubs}Clubs{} give {C:chips}+#2#{} Chips', 'Retrigger the first scored {C:clubs}Club{}', ...FORECAST_NOTE],
+    ] },
+    j_poke_castform_snowy: { name: 'Castform', text: [
+      FORECAST,
+      ['{C:poke_snow}Snowy Form:{} {X:poke_water,C:white}Water{} this round', 'Each {C:spades}Spade{} held in hand', 'gives {X:mult,C:white} X#3# {} Mult', ...FORECAST_NOTE],
+    ] },
+    j_poke_mudbray: { name: 'Mudbray', text:['{C:chips}+#1#{} Chips', '{C:attention}Stamina:{} gains {C:chips}+#2#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round', '{C:inactive}(Currently {C:chips}+#1#{C:inactive} Chips)', EVOLVES_ROUNDS(3)] },
     j_poke_mudsdale: { name: 'Mudsdale', text: [
       ['{C:attention}Stamina:{} gains {C:chips}+#1#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round'],
       ['{C:attention}Mud Spit:{} the first unscored', 'card in each played hand', 'becomes a {C:attention}Stone{} card', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'],

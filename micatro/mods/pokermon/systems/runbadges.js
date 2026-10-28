@@ -66,6 +66,9 @@
  *     effects (Madness's random victim, A Billion Lions, Riff-raff's new Commons) are not predicted: the warning may
  *     show for a joker Madness then eats, and a Riff-raff Common of another type gets no warning.
  *   * Zero jokers at every round start: no lock, so no Monotype win.
+ *   * A joker whose type comes from the weather (owner rule 2026-10-27: Castform, center.poke_mono_exempt) is left out of every
+ *     Monotype check: it never breaks the run, never locks the type and never shows the shop warning, whatever form it is in.
+ *     (The Nuzlocke reads it as usual: it is a typed — Colorless — gain.)
  *
  * Once the run is won the badges are frozen (Endless can't lose them). Seeded and challenge runs are
  * tracked but not eligible (like the win stickers: Balatro's win_game gives them none), so the HUD hides them.
@@ -180,6 +183,8 @@ function gained_type(card) {
 /** The type a joker counts as: the one stored when it was gained (a joker that predates the tracker: now). */
 const rb_type = (card) => (card.ability && card.ability.rb_type) || gained_type(card);
 const row_jokers = () => (G.jokers ? G.jokers.cards.filter((c) => c.ability && c.ability.set === 'Joker') : []);
+/** A joker Monotype leaves out: its type follows the weather (Castform; owner rule 2026-10-27). */
+const mono_exempt = (c) => !!(c.config && c.config.center && c.config.center.poke_mono_exempt);
 /** Does a joker match type t at a round start? Its gained OR its current type (a wildcard either way: any type). */
 const matches = (c, t) => { const g = rb_type(c), n = gained_type(c); return g === 'any' || n === 'any' || g === t || n === t; };
 /** The types a joker shows in a break reason: 'Fire', 'Dark/Fire' (gained/current) or 'none'. */
@@ -205,6 +210,7 @@ function predicted_row() {
  *  (before the first lock) the type the row would lock (null: no typed joker). */
 function mono_state(row = row_jokers()) {
   const s = st();
+  row = row.filter((c) => !mono_exempt(c));
   let lock = s.type;
   if (!lock) {
     const cands = [];

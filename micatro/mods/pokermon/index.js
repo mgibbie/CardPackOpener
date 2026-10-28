@@ -837,7 +837,10 @@ export const POKERMON = registerMod({
   // 26 = the owner's Spoink line (Spoink -> Grumpig; jokers/pokejokers_designs.js): Pearl — at end of round a random unsealed held
   // card gains a Pink Seal; Spoink banks X0.1 per Pink Seal trigger, evolving after 8; Grumpig makes Pink Seals trigger on every hand
   // (seals/seals1.js) and banks X0.15 per hand one triggers in (Black Pearl: X0.3 when one had no room for its Energy).
-  contentRev: 26,
+  // 27 = the owner's Castform (jokers/pokejokers_designs.js): Forecast — on the round's first deal the suit held most picks Sunny (Fire;
+  // scored Hearts / Diamonds +4 Mult), Rainy (Water; scored Clubs +30 Chips, the first retriggers), Snowy (Water; held Spades X1.1) or,
+  // on a tie, Normal (Colorless; +10 Mult) for the round; Monotype leaves it out (systems/runbadges.js poke_mono_exempt).
+  contentRev: 27,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

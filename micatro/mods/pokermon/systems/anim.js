@@ -51,6 +51,13 @@ export const KECLEON_SPRITES = {
 };
 
 /**
+ * Castform's weather forms (the owner's design, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 3 sheet (row 0,
+ * left of Kecleon's type cards; pokespriteload.lua lists only its Natdex card, no joker uses them upstream) — by ability.extra.form.
+ * Normal is its own Natdex card. Drawn by ui.js face() (+ the Shiny sheet's twin cells).
+ */
+export const CASTFORM_SPRITES = { sunny: { x: 0, y: 0 }, rainy: { x: 2, y: 0 }, snowy: { x: 4, y: 0 } };
+
+/**
  * Deoxys's forme (3.9.1 pokejokers_13.lua set_sprites, sub-batch 14): its floating sprite on the Gen 3 sheet by extra.form —
  * 1 Attack {5,3}, 2 Defense {7,3}, 3 Speed {9,3}; Normal (4) is its own soul {3,3}. Drawn by ui.js face().
  */
