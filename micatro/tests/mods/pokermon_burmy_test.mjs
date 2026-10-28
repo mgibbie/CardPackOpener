@@ -241,7 +241,8 @@ await sec('gender', () => {
   const was = ex(b).gender;
   endRound({ m_stone: 30 }); advance(); endRound({ m_steel: 30 }); advance();
   ok(ex(b).gender === was, 'kept through rounds and cloak changes', [was, ex(b).gender]);
-  ok(new RegExp('Cloak, ' + (was === 'male' ? 'Male' : 'Female')).test(lines(b)), 'the tooltip shows it', lines(b));
+  const sign = was === 'male' ? '♂' : '♀';
+  ok(lines(b).includes('Cloak, ' + sign + ')'), 'the tooltip shows it as its sign (' + sign + ')', lines(b));
 });
 await sec('resume', () => {
   let both = {};
@@ -451,8 +452,12 @@ await sec('text', () => {
   ok(['j_poke_burmy', 'j_poke_wormadam', 'j_poke_wormadam_sandy', 'j_poke_wormadam_trash', 'j_poke_mothim'].every((k) => J[k]), 'the texts: Burmy, Wormadam per cloak, Mothim');
   const b = burmy('BTXT', 'male');
   const d = lines(b);
-  ok(/Cloak:/.test(d) && /\+5/.test(d) && /\+40/.test(d) && /\$1/.test(d) && /Plant\{C:inactive\} Cloak, Male/.test(d) && /Monotype/.test(d) && /Female into Wormadam, Male into Mothim/.test(d) && /\{C:attention,s:0\.8\}4\{/.test(d),
-    'Burmy\'s tooltip: Cloak, +5 / +40 / $1, (Currently Plant Cloak, Male), the Monotype rule, 4 rounds and the branches', d);
+  ok(/Cloak:/.test(d) && /\+5/.test(d) && /\+40/.test(d) && /\$1/.test(d) && /Plant\{C:inactive\} Cloak, ♂\)/.test(d) && /Monotype/.test(d) && /♀ into Wormadam, ♂ into Mothim/.test(d) && /\{C:attention,s:0\.8\}4\{/.test(d),
+    'Burmy\'s tooltip: Cloak, +5 / +40 / $1, (Currently Plant Cloak, ♂), the Monotype rule, 4 rounds and the branches (♀ into Wormadam, ♂ into Mothim)', d);
+  // the gender signs, not the words (m6x11plus draws ♀ / ♂ since tools/micatro/add_gender_glyphs.py; the owner: "get the symbols")
+  const f = lines(burmy('BTXT2', 'female'));
+  ok(/Plant\{C:inactive\} Cloak, ♀\)/.test(f), 'a female Burmy: (Currently Plant Cloak, ♀)', f);
+  ok(!/Female|Male/.test(d + f), 'no "Female" / "Male" in either Burmy\'s tooltip', [d, f]);
   const w = add('j_poke_wormadam');
   ok(/Plant Cloak/.test(lines(w)) && /unenhanced/.test(lines(w)) && /\+3/.test(lines(w)), 'Plant Wormadam', lines(w));
   ex(w).form = 'trash';
