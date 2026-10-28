@@ -82,7 +82,7 @@
 // Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
 // Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
 // (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
-// The Gen 6 starters (contentRev 47): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
+// The Gen 6 starters (contentRev 48): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
 // Shield X1.5 while 2+ hands are left), Fennekin -> Braixen -> Delphox (Fire: +1 discard, +1 Foresight; Braixen's first Foreseen-rank
 // discard each round creates a Tarot; Delphox's Mystical Fire X0.2 per Tarot used), Froakie -> Frogadier -> Greninja (Water: +1 hand;
 // +30 / +50 Chips per Water Joker; Greninja's Protean takes the most common type among your other Jokers each Blind, X(1.5 + 0.5 per
@@ -1195,9 +1195,12 @@ const spacial_rend = {
   add_to_deck(self, card) { const ex = card.ability.extra; G.jokers.config.card_limit += ex.slots; G.hand.change_size(ex.h_size); },
   remove_from_deck(self, card) { const ex = card.ability.extra; G.jokers.config.card_limit -= ex.slots; G.hand.change_size(-ex.h_size); },
 };
-/** Regigigas, Slow Start: the distinct Regi species held (undebuffed; two Regices count once) — each cuts a round off the wait. */
+/** Regigigas, Slow Start: the distinct Regi species held (undebuffed; two Regices count once) — each cuts a round off the wait,
+ *  and all three wake it at the next end of round (giga_drop). */
 const regis_distinct = () => new Set(((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && REGIS.includes(j.config.center.key)).map((j) => j.config.center.key)).size;
 const giga_awake = (card) => !((card.ability.extra.slow_start || 0) > 0);
+/** One end of round's cut to the Slow Start countdown `left` with `n` distinct Regis held: 1 + n, or all of it with the full trio. */
+const giga_drop = (left, n) => (n >= 3 ? left : 1 + n);
 /** Regi Trio + Regigigas: with all three Regis held and an awake Regigigas (undebuffed), each Regi converts 1 more card per Blind
  *  (once, however many Regigigas). */
 function giga_trio_bonus(regi) {
@@ -3032,7 +3035,9 @@ defineJokers({
   // Regigigas 486, Slow Start (Colorless): asleep (it gives nothing) until its countdown `slow_start` (5 when obtained) reaches 0;
   // then X4 Mult for the rest of the run. The countdown: at each end of round (the main end_of_round pass; not Blueprint; a debuffed
   // Regigigas isn't calculated, so it waits) it drops by 1 + the DISTINCT Regis held then (Regirock / Regice / Registeel, undebuffed;
-  // regis_distinct): no Regi 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0), all three 2 (5 1 0). Awake, with all three Regis
+  // regis_distinct): no Regi 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0); with ALL THREE the countdown goes straight to 0
+  // (giga_drop; the owner, contentRev 47: "full trio can make it 1 round"), so the trio wakes it after 1 round (5 0), and a trio
+  // assembled partway through the wait wakes it at the next end of round. Awake, with all three Regis
   // held, each Regi converts 1 extra card per Blind (giga_trio_bonus in regi_converts; once, however many Regigigas). Energy: `Xmult`
   // +20% of base (X4 -> X4.8 / X5.6 / X6.4); the wait is fixed (`slow_start`, no energy field). Blueprint copies the X only when awake.
   // After Palkia (Pokermon has no Heatran 485).
@@ -3044,12 +3049,12 @@ defineJokers({
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra, n = regis_distinct(), left = Math.max(0, ex.slow_start || 0);
-      return { vars: [r3(ex.Xmult), left, n, giga_awake(card) ? 'Awake!' : 'Asleep: ' + left + ' left, -' + (1 + n) + ' a round'] };
+      return { vars: [r3(ex.Xmult), left, n, giga_awake(card) ? 'Awake!' : n >= 3 ? 'Asleep: ' + left + ' left, wakes at end of round' : 'Asleep: ' + left + ' left, -' + (1 + n) + ' a round'] };
     },
     calculate(self, card, context) {
       const ex = card.ability.extra;
       if (round_end(context) && !context.blueprint && !giga_awake(card)) {
-        ex.slow_start = Math.max(0, ex.slow_start - (1 + regis_distinct()));
+        ex.slow_start = Math.max(0, ex.slow_start - giga_drop(ex.slow_start, regis_distinct()));
         card_eval_status_text(card, 'extra', null, null, null, giga_awake(card) ? { message: 'Awake!', colour: 'XMULT' } : { message: 'Slow Start: ' + ex.slow_start, colour: 'FILTER' });
         return undefined;
       }
@@ -3664,7 +3669,7 @@ export const DESIGN_LOC = {
     j_poke_palkia: { name: 'Palkia', text: ['{C:attention}Spacial Rend:{} {C:dark_edition}+#1#{} Joker slot', 'and {C:attention}+#2#{} hand size'] },
     j_poke_regigigas: { name: 'Regigigas', text: [
       ['{C:attention}Slow Start:{} gives nothing for', 'its first {C:attention}5{} rounds, then', '{X:mult,C:white} X#1# {} Mult for the rest of the run', 'Each {C:attention}Regi{} you have cuts',
-        '{C:attention}1{} more round off the wait', 'at each end of round', '{C:inactive}(#4#)'],
+        '{C:attention}1{} more round off the wait', 'at each end of round', '{C:inactive}(With all three Regis:', '{C:inactive}wakes after 1 round)', '{C:inactive}(#4#)'],
       ['{C:attention}Regi Trio:{} while awake, with', '{C:attention}Regirock{}, {C:attention}Regice{} and {C:attention}Registeel{},', 'each of them converts', '{C:attention}1{} more card per Blind'],
     ] },
     j_poke_giratina: { name: 'Giratina', text: [

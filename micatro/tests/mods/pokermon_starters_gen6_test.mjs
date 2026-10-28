@@ -94,7 +94,7 @@ const use = (c) => { const r = act({ type: 'use', id: c.sort_id, targets: [] });
 
 // ------------------------------------------------------------------- pin, static data, order, families, art, precedence, energy fields
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 47 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 47+', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 48 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 48+', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   for (const n of NAMES) {
     ok(C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n), n + ': registered and ported');
