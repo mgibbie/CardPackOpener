@@ -222,6 +222,18 @@ jokers/pokejokers_designs.js; Plusle / Minun, pokejokers_11.js, are the older pa
     half the time.
   - Tooltip: say which half the NEXT hand is ("Next hand: Day"; out of a round, i.e. in the shop, it is
     the next round's first hand: Day) and the pair status ("Cosmic Power: active / needs Lunatone").
+House pattern: a ONE-TYPE TEAM count, the Colorless Bird flock (the owner's Starly line, jokers/pokejokers_designs.js flock_count):
+  - The two-type count above with one type: is_type(j, 'Colorless') && !j.debuff, itself included (+1). A Tera sticker of another
+    type takes a Colorless joker OUT (the sticker replaces the type); Castform counts only while Normal (in the shop, or on a tied
+    forecast), never while Sunny / Rainy / Snowy. Miltank's older count (find_pokemon_type) still counts debuffed jokers.
+  - The line: +2 / +4 Mult per Colorless Joker (Starly U $6, 4 rounds; Staravia S $8, 5 rounds), then the payoff moves from + to
+    X (pattern 2.3 b): Staraptor S $10, X(1 + 0.5 per Colorless Joker). With 4 Colorless jokers that is +8 / +16 / X3.
+  - Store the per-joker number in an energy field (mult +40%, Xmult_mod +20%: Gardevoir's per-count X field), so Energy raises
+    every joker's share at once and is re-applied on evolution: 2 -> 2.8 / 3.6 / 4.4, 4 -> 5.6 / 7.2 / 8.8, X0.5 -> 0.6 / 0.7 / 0.8.
+  - A DRAWBACK on a Stage 2 ("Recoil", Brave Bird's): each hand played loses $1, in a field Energy ignores (`recoil`). It goes
+    into debt only as far as the run allows (dollars - 1 >= bankrupt_at: $0 normally, -$20 with Credit Card; Gholdengo's buffer
+    check), so it never blocks a play and never strands the player below the shop's own limit. Not copied by Blueprint (it copies
+    the X Mult only); a debuffed joker pays nothing. Say the limit on the card ("Never past your debt limit").
 
 House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejokers_designs.js regi_others):
   - Separate species (no family), each with its own rule, sharing one scaling rider: "1 + (OTHER Regis you have)". The count is of
@@ -960,17 +972,20 @@ Examples:
                        its form and type for the round: Sunny (Fire) scored Hearts / Diamonds
                        +4 Mult; Rainy (Water) scored Clubs +30 Chips, the first retriggers;
                        Snowy (Water) held Spades X1.1; Normal (Colorless) +10 Mult.
+  Owner's Starly (U $6): Flock, +2 Mult per Colorless Joker, itself included. Staravia +4;
+                       Staraptor X(1 + 0.5 each), Recoil: lose $1 each hand played.
 Typical numbers:
   Basic     +M 3-15~6 | X 1.75-2 | card +M 6 | card X 1.5 | $ 1-4 | gain +M 1-4 | gain X 0.2
   Stage 1   +M 5 | X 2 | card +M 7 | $ 1-2 | gain +M 1-6 | gain X 0.5
   Stage 2   X 4 (Slaking) | gain +M 5
 Under-explored:
   - Chips (1).
-  - Colorless-type synergy (Miltank and Kecleon only). Type changers: Kecleon, and the owner's
-    Castform (its weather form; see 2.1).
+  - Colorless-type synergy (Miltank, Kecleon, and the owner's Starly line: +Mult / X Mult per Colorless Joker, the flock count in
+    2.1). Type changers: Kecleon, and the owner's Castform (its weather form; see 2.1).
   - Enhancements (7).
-  - Birds have no shared hook, and 17 of the missing Colorless species are Flying (Starly,
-    Pidove, Fletchling, Pikipek, Rookidee, Rufflet, Chatot, Squawkabilly, Tornadus...).
+  - Birds: the owner's Starly line made the first shared Bird hook (Flock: count the Colorless team; Brave Bird: X Mult with a
+    $1 Recoil). 16 of the missing Colorless species are Flying (Pidove, Fletchling, Pikipek, Rookidee, Rufflet, Chatot,
+    Squawkabilly, Tornadus...): the flock count is there to reuse.
 Pitfalls:
   - Copying effects (Smeargle, Zoroark) multiply whatever is strongest. Never add a new
     unconditional copier below Rare.

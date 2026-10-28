@@ -856,7 +856,10 @@ export const POKERMON = registerMod({
   // 31 = the owner's Regi trio (Regirock / Regice / Registeel, Legendary; jokers/pokejokers_designs.js): Stone cards +100 Chips instead
   // of +50 and +10 permanent Chips per score; Glass cards never shatter; held Steel X2 instead of X1.5 (hooks chip_bonus / chip_h_x_mult);
   // each converts 1 + (other Regi species held) random deck cards to its enhancement when a Blind is selected.
-  contentRev: 31,
+  // 32 = the owner's Starly line (Starly -> Staravia -> Staraptor; jokers/pokejokers_designs.js): Flock — +2 / +4 Mult for each Colorless
+  // Joker, itself included (is_type: Tera stickers and Castform's Normal form count; debuffed ones don't); Staraptor's Brave Bird
+  // X(1 + 0.5 per Colorless Joker) with Recoil: each hand played loses $1 (never past the debt limit).
+  contentRev: 32,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

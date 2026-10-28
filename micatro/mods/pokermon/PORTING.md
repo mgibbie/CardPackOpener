@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), **`3.9.1+r31`** since the owner's Regi trio ("The owner's Regi trio" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), **`3.9.1+r32`** since the owner's Starly line ("The owner's Starly line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2432,7 +2432,23 @@ Regice Water, Registeel Metal**. Neither Nacho nor Pokermon+ has them.
 - **Art: upstream's own** (Natdex {2,25} / {4,25} / {6,25}, each with its floating soul {3,25} / {5,25} / {7,25}). Nothing to deploy for the mod.
   The wiki drops them.
 - **Tests**: `micatro/tests/mods/pokermon_regis_test.mjs` (8 passed / 13 failed on origin/main; 75 / 0 here). Re-recorded: `modpin_test`,
-  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 47 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (865 jokers).
+### The owner's Starly line (2026-10-28, branch `feat/pokermon-starly-line`)
+Pinned **`3.9.1+r32`** (`contentRev: 32`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Starly (396) -> Staravia (397) -> Staraptor (398),
+all **Colorless** (upstream's cells show the white Colorless frame and star), in `jokers/pokejokers_designs.js` (50 defs now), after Deoxys in
+Pokédex order (Pokermon has no joker for 387-395). Neither Nacho nor Pokermon+ has the line.
+- **Starly** (Basic, **Uncommon $6**), Flock: **+2 Mult for each Colorless Joker** you have, itself included. Evolves after **4 rounds**.
+- **Staravia** (Stage 1, **Safari $8**), Flock: **+4 Mult** per Colorless Joker, itself included. Evolves after **5 rounds**.
+- **Staraptor** (Stage 2, **Safari $10**), Brave Bird: **X(1 + 0.5 per Colorless Joker)**, itself included; **Recoil**: each hand played
+  loses **$1** (`ease_dollars`, in `before`), only while the money stays at or above the run's debt limit (`bankrupt_at`: $0, -$20 with Credit
+  Card), so it never pushes past what the shop allows. Not copied by Blueprint (which copies the X Mult); a debuffed Staraptor pays nothing.
+- **Counting** (`flock_count`): `is_type(j, 'Colorless')` and not debuffed, +1 for itself; Tera stickers count (and a non-Colorless sticker takes
+  a joker out); Castform counts only while Normal. Miltank's `find_pokemon_type` (debuffed too) is unchanged.
+- **Energy**: Starly / Staravia's per-joker `mult` (+40% of base: 2 -> 2.8 / 3.6 / 4.4, 4 -> 5.6 / 7.2 / 8.8), Staraptor's per-joker
+  `Xmult_mod` (+20%: 0.5 -> 0.6 / 0.7 / 0.8), re-applied on each evolution. The $1 `recoil` is fixed.
+- **Text**: the tooltips show the count and the current Mult / X ("(Currently 3: +6 Mult)", "(Currently 3: X2.5 Mult)").
+- **Art: upstream's own** (Natdex {10,26} / {12,26} / {14,26}). Nothing to deploy for the mod. The wiki drops them (396 missing).
+- **Tests**: `micatro/tests/mods/pokermon_starly_test.mjs` (3 passed / 14 failed on origin/main; 70 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 50 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (868 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
