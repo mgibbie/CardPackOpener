@@ -490,6 +490,28 @@ function quake_state(card) {
   if (G.GAME && G.GAME.facing_blind && G.GAME.current_round && G.GAME.current_round.hands_played > 0) return 'Used this round';
   return 'Active!';
 }
+// The owner's Starly line (Flock / Brave Bird): a Colorless team count, Barboach's shape with one type — a joker counts when
+// is_type(j, 'Colorless') (its ptype, a Tera sticker, Castform while Normal, an add-on's IS_TYPE_RULES) and isn't debuffed; itself
+// always counts (+1). NOTE Miltank counts through find_pokemon_type (debuffed jokers too); this line deliberately doesn't.
+const flock = (j) => !j.debuff && is_type(j, 'Colorless');
+const flock_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && flock(j)).length + 1;
+const flock_mult = (card) => r3(card.ability.extra.mult * flock_count(card));
+const brave_x = (card) => r3(1 + card.ability.extra.Xmult_mod * flock_count(card));
+function flock_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const mult = flock_mult(card);
+  return { message: a_mult(mult), colour: 'MULT', mult_mod: mult };
+}
+/** Staraptor's Recoil: each hand played costs `recoil` dollars, never past the run's debt limit (bankrupt_at: $0, Credit Card -$20). */
+function recoil(card, context) {
+  if (!(context.before && context.cardarea === G.jokers) || context.blueprint) return;
+  const lose = card.ability.extra.recoil, buffer = G.GAME.dollar_buffer || 0;
+  if ((G.GAME.dollars || 0) + buffer - lose < (G.GAME.bankrupt_at || 0)) return;
+  G.GAME.dollar_buffer = buffer - lose;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  ease_dollars(-lose);
+  card_eval_status_text(card, 'extra', null, null, null, { message: 'Recoil! -$' + lose, colour: 'MONEY' });
+}
 
 // ------------------------------------------------------------ the Regi trio (Regirock / Regice / Registeel)
 const REGIS = ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel'];
@@ -1322,6 +1344,45 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F8: Starly -> Staravia -> Staraptor (Colorless, Gen 4)
+  // The owner's design (2026-10-28): a Colorless team (flock_count above: Tera stickers and Castform's Normal form through is_type;
+  // debuffed jokers don't count; itself always does). Energy: Starly / Staravia's per-joker `mult` (+40% of base each: 2 -> 2.8 / 3.6
+  // / 4.4, 4 -> 5.6 / 7.2 / 8.8), Staraptor's per-joker `Xmult_mod` (+20%: X0.5 -> X0.6 / X0.7 / X0.8); the $1 `recoil` is fixed (in
+  // no energy field). Energy is re-applied to each new base on evolution. Neither Nacho nor Pokermon+ has the line. Art: upstream
+  // 3.9.1's own (Natdex 10 / 12 / 14, 26). After Deoxys in Pokédex order (Pokermon has no joker for 387-395).
+  // Starly 396: Uncommon $6; Flock, +2 Mult per Colorless Joker. Evolves after 4 rounds.
+  starly: {
+    name: 'starly', poke_sprite391: sprite('Natdex', 10, 26),
+    config: { extra: { mult: 2, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'deoxys',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), flock_count(card), flock_mult(card), ex.rounds] }; },
+    calculate(self, card, context) { return flock_main(card, context) || level_evo(self, card, context, 'j_poke_staravia'); },
+  },
+  // Staravia 397: Safari $8; Flock, +4 Mult per Colorless Joker. Evolves after 5 rounds.
+  staravia: {
+    name: 'staravia', poke_sprite391: sprite('Natdex', 12, 26),
+    config: { extra: { mult: 4, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'types', 'round_evo'], poke_after: 'starly',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), flock_count(card), flock_mult(card), ex.rounds] }; },
+    calculate(self, card, context) { return flock_main(card, context) || level_evo(self, card, context, 'j_poke_staraptor'); },
+  },
+  // Staraptor 398: Safari $10; Brave Bird, X(1 + 0.5 per Colorless Joker); Recoil: each hand played loses $1 (recoil() above: only
+  // while the money stays at or above the debt limit, as the shop's own check; not copied by Blueprint, which copies the X Mult).
+  staraptor: {
+    name: 'staraptor', poke_sprite391: sprite('Natdex', 14, 26),
+    config: { extra: { Xmult_mod: 0.5, recoil: 1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'types', 'money'], poke_after: 'staravia',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), ex.recoil, flock_count(card), brave_x(card)] }; },
+    calculate(self, card, context) {
+      recoil(card, context);
+      if (context.joker_main) { const x = brave_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+
   // ---------------------------------------------------------------- Castform 351 (Colorless, Gen 3)
   // The owner's design (2026-10-27): Forecast. When the round's first hand is drawn, Castform reads the weather from the suit held
   // most (forecast: Hearts + Diamonds together vs Clubs vs Spades; Wild counts for all three; debuffed / suitless cards for none;
@@ -1473,6 +1534,7 @@ export const DESIGN_FAMILIES = [
   ['trapinch', 'vibrava', 'flygon'],
   ['spoink', 'grumpig'],
   ['barboach', 'whiscash'],
+  ['starly', 'staravia', 'staraptor'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -1497,6 +1559,8 @@ const FORECAST = ['{C:attention}Forecast:{} when a round\'s first', 'hand is dra
 const FORECAST_NOTE = ['{C:inactive,s:0.8}(Normal again after the round;', '{C:inactive,s:0.8}its type never breaks Monotype)'];
 const MUDDY = ['{C:attention}Muddy Water:{} {C:chips}+#1#{} Chips for', 'each {X:poke_water,C:white}Water{} or {X:poke_earth,C:white}Earth{} Joker', '{C:inactive}(Itself included)',
   '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:chips}+#3#{C:inactive} Chips)'];
+const FLOCK = ['{C:attention}Flock:{} {C:mult}+#1#{} Mult for each', '{X:poke_colorless,C:white}Colorless{} Joker {C:inactive}(Itself included)',
+  '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
   '{C:inactive}(+1 for each other Regi)'];
@@ -1608,6 +1672,13 @@ export const DESIGN_LOC = {
     j_poke_whiscash: { name: 'Whiscash', text: [
       MUDDY,
       ['{C:attention}Earthquake:{} with at least {C:attention}#4#{}', 'other {X:poke_water,C:white}Water{} or {X:poke_earth,C:white}Earth{} Jokers,', 'the first hand of each round', 'retriggers every scored card', '{C:inactive}(#5#)'],
+    ] },
+    j_poke_starly: { name: 'Starly', text: [...FLOCK, EVOLVES_ROUNDS(4)] },
+    j_poke_staravia: { name: 'Staravia', text: [...FLOCK, EVOLVES_ROUNDS(4)] },
+    j_poke_staraptor: { name: 'Staraptor', text: [
+      ['{C:attention}Brave Bird:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each {X:poke_colorless,C:white}Colorless{} Joker', '{C:inactive}(Itself included)',
+        '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
+      ['{C:attention}Recoil:{} lose {C:money}$#2#{} each', 'hand played', '{C:inactive,s:0.8}(Never past your debt limit)'],
     ] },
     j_poke_castform: { name: 'Castform', text: [
       FORECAST,
