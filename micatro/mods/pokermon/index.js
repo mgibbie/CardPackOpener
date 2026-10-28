@@ -917,11 +917,15 @@ export const POKERMON = registerMod({
   // size; the rightmost scored card retriggers 1 / 2 / 2 times, Decidueye's Spirit Shackle X1.3 each time it scores), Litten / Torracat /
   // Incineroar (+1 discard; +2 / +4 Mult, X0.25, per hand already played this round), Popplio / Brionne / Primarina (+1 hand; scored
   // Hearts +3 / +5 Mult, Sparkling Aria X1.2). Basics Uncommon $5 starters (the Starter Pack), evolving after 5 then 5 rounds.
-  // 49 = the Gen 6 starters (jokers/pokejokers_designs.js discards_scry / braixen_tarot / mystical_fire / froak_count / protean_pick):
+  // 49 = the Gen 8 starters, the Scorbunny and Sobble lines (jokers/pokejokers_designs.js libero_mult / unscored_chips / snipe_target):
+  // Scorbunny / Raboot +3 / +5 Mult per discard left, Cinderace X(1 + 0.5 per discard left), all +1 discard; Sobble / Drizzile +20 / +35
+  // Chips per played card that doesn't score, Inteleon's Snipe Shot (the highest-ranked scored card X2, a tie the leftmost), all +1 hand;
+  // Scorbunny and Sobble join the Starter Pack; evolution after 5 + 5 rounds.
+  // 50 = the Gen 6 starters (jokers/pokejokers_designs.js discards_scry / braixen_tarot / mystical_fire / froak_count / protean_pick):
   // Chespin -> Quilladin -> Chesnaught (+1 hand size; +40 / +80 / +150 Chips; Spiky Shield X1.5 with 2+ hands left), Fennekin -> Braixen
   // -> Delphox (+1 discard, +1 Foresight; Braixen's Tarot on a Foreseen-rank discard; Mystical Fire X0.2 per Tarot used), Froakie ->
   // Frogadier -> Greninja (+1 hand; +30 / +50 Chips per Water Joker; Protean, X(1.5 + 0.5 per other Joker of its type)).
-  contentRev: 49,
+  contentRev: 50,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
