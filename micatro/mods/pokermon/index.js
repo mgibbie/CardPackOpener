@@ -535,6 +535,10 @@ for (const [k, d] of Object.entries(D391.loc)) {
 }
 // The owner's designs' text (jokers/pokejokers_designs.js DESIGN_LOC)
 for (const [set, d] of Object.entries(DESIGN_LOC)) Object.assign(DATA.loc.descriptions[set] = DATA.loc.descriptions[set] || {}, d);
+// Nidoran's real names: Pokermon writes "Nidoran F" / "Nidoran M" (Balatro's m6x11 has no gender signs); ours draws ♀ / ♂
+// (micatro/assets/fonts/m6x11plus.ttf, tools/micatro/add_gender_glyphs.py). Display text only: the keys stay j_poke_nidoranf / m.
+export const GENDER_SIGN_NAMES = { j_poke_nidoranf: 'Nidoran♀', j_poke_nidoranm: 'Nidoran♂' };
+for (const [k, name] of Object.entries(GENDER_SIGN_NAMES)) if (DATA.loc.descriptions.Joker[k]) DATA.loc.descriptions.Joker[k] = { ...DATA.loc.descriptions.Joker[k], name };
 // The Type Sleeves' text (typesleeves.js: Micatro's own sleeves)
 Object.assign(DATA.loc.descriptions.Sleeve = DATA.loc.descriptions.Sleeve || {}, TYPE_SLEEVE_LOC);
 for (const k of ['dictionary', 'v_dictionary', 'labels', 'v_text', 'challenge_names']) if (D391.loc[k]) { DATA.loc.misc = DATA.loc.misc || {}; DATA.loc.misc[k] = Object.assign(DATA.loc.misc[k] || {}, D391.loc[k]); }

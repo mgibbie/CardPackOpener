@@ -1,7 +1,7 @@
 /* Micatro — Balatro look: m6x11 pixel font, flat rounded panels with drop
    "lips", the palette from globals.lua (G.C). The #stage is a fixed design
    canvas (1360-2100 x 900 landscape / 720 x 1322-1700 portrait) scaled to fit the VISIBLE viewport (ui/board.js visibleBox). */
-@font-face { font-family: 'm6x11'; src: url('../assets/fonts/m6x11plus.ttf') format('truetype'); font-display: block; }
+@font-face { font-family: 'm6x11'; src: url('../assets/fonts/m6x11plus.ttf?v=2') format('truetype'); font-display: block; }
 
 :root {
 	--blue: #009dff; --blue-d: #0076c2; --red: #fe5f55; --red-d: #c0453d; --orange: #fda200; --orange-d: #c27c00;
