@@ -116,8 +116,9 @@ Missing by stage:
   Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
 
 Notable gaps:
-  - Starters: every Gen 5-9 starter line is missing (15 lines, 45 species). Gen 4 is covered
-    by Nacho (the Turtwig, Chimchar and Piplup lines).
+  - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
+    by Nacho (the Turtwig, Chimchar and Piplup lines). Built since: Grookey (the owner's), the
+    Gen 8 Scorbunny and Sobble lines (the starters spec; the house pattern in 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -498,6 +499,26 @@ House pattern: a LEGENDARY THAT HATCHES ANOTHER JOKER (the owner's Manaphy, Egg 
   - The hatchling is a real joker of its own (Phione: +6 Mult per Water Joker, Legendary $20 too), a weaker cousin of the parent's effect
     (Manaphy: X1.2 per Water Joker), so the two build the same team instead of stacking a second copy of one number. No family: it never
     evolves into the parent.
+House pattern: a GEN 5-9 STARTER LINE (the starters spec, 2026-10-28; Gen 8's Scorbunny and Sobble lines, contentRev 47,
+jokers/pokejokers_designs.js libero_mult / unscored_chips / snipe_target):
+  - The type perk at EVERY stage, from the shared add/remove pairs: Grass +1 hand size (`hand_size`), Fire +1 discard (`discards`, the
+    Charmander pair), Water +1 hand (`hands`, the Squirtle pair). An evolution runs the old center's remove_from_deck and the new one's
+    add_to_deck, so the perk stays +1 (never +2). d_size / hands / h_size are never energized.
+  - Basic Uncommon $5 with starter: true AND 'starter' in attributes (starter_lists reads `starter` + the ptype: the Starter Pack's Grass /
+    Fire / Water slot). Only the Basic sets starter: true, so the pack never offers a Stage 1 / 2; they keep 'starter' in attributes (as
+    Grookey's). Stage 1 Safari $8, Stage 2 Safari $10. Evolution by rounds, 5 then 5 (level_evo; the Johto starters' timers).
+  - Energy raises the line's one main number only (mult +40%, chips +30%, a joker-wide X per thing `Xmult_mod` +20%, a per-card X
+    `Xmult_multi` +5%); evolution re-applies the count to the next base (Scorbunny 1 Energy +4.2 -> Raboot +7 -> Cinderace X0.6).
+  - PER DISCARD LEFT (Scorbunny +3 / Raboot +5 Mult, Cinderace X(1 + 0.5 each)): read at joker_main (Cyndaquil's cynda_calc), so the
+    joker's own +1 discard counts while unused, and 0 left gives nothing. The Fire pitfall applies: Cinderace with the Red Deck is X3.5
+    untouched, and every discard source (Drunkard, Wasteful) adds X0.5. It pulls against Fire's discard payoffs (Torchic, Trapinch), a
+    real choice rather than a stack.
+  - UNSCORED PLAYED CARDS (Sobble +20 / Drizzile +35 Chips each): context.full_hand minus context.scoring_hand, in joker_main. A debuffed
+    card outside the scoring hand counts; a debuffed card INSIDE it is part of the scoring hand and doesn't; Splash (every card scores)
+    turns it off, Stone cards always score. It rewards padding a Pair / High Card with kickers, the opposite of Flush / Straight.
+  - ONE TARGET PER HAND (Inteleon's Snipe Shot X2 on the highest-ranked scored card): pick among the scored cards that can score (not
+    debuffed, not rankless), Ace high, a tie the LEFTMOST (the first to score); re-read on every individual call, so a retrigger of the
+    target hits again and nothing else does. A per-card X goes in `Xmult_multi` (+5%: X2.1 / 2.2 / 2.3), even though only one card fires.
   - Per-joker "each Water Joker gives" uses the other_joker context (Baseball Card's, Blaziken's: each joker shows its own bonus), with
     is_type and !debuff, itself included. A per-joker X is Xmult_multi (+5%), a per-joker Mult is mult (+40%).
 
@@ -1066,7 +1087,7 @@ Pitfalls:
 Identity: Mult and discards.
   out:   +Mult 19, X 15, +Chips 6, $ 4, retrigger 1
   Discards appear in 19 of 43 texts. Fire starters give +1 discard (Charmander, Cyndaquil,
-  Torchic, Chimchar).
+  Torchic, Chimchar; and Scorbunny's line, whose Mult / X scales with discards left).
   Recurring shapes:
     - "Scale with remaining discards" (Cyndaquil line).
     - "Reward 0 discards remaining" (the Charmander line).

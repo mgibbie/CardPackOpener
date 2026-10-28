@@ -911,7 +911,11 @@ export const POKERMON = registerMod({
   // Uxie (+2 Foresight, X1.3 per Foreseen card), Mesprit (X1.5, X2.5 on a poker hand new this round), Azelf (X2.5 on the final hand), +X0.25
   // per other guardian; Cresselia's Lunar Blessing (playing cards can't be debuffed) and X1.5; Phione +6 Mult / Manaphy X1.2 per Water Joker,
   // Manaphy's Egg (1 in 4 at the end of each shop, with a free slot: a Phione).
-  contentRev: 46,
+  // 47 = the Gen 8 starters, the Scorbunny and Sobble lines (jokers/pokejokers_designs.js libero_mult / unscored_chips / snipe_target):
+  // Scorbunny / Raboot +3 / +5 Mult per discard left, Cinderace X(1 + 0.5 per discard left), all +1 discard; Sobble / Drizzile +20 / +35
+  // Chips per played card that doesn't score, Inteleon's Snipe Shot (the highest-ranked scored card X2, a tie the leftmost), all +1 hand;
+  // Scorbunny and Sobble join the Starter Pack; evolution after 5 + 5 rounds.
+  contentRev: 47,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
