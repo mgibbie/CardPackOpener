@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), **`3.9.1+r34`** since the owner's Glameow line ("The owner's Glameow line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), **`3.9.1+r35`** since the owner's Glameow line ("The owner's Glameow line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2485,9 +2485,29 @@ Psychic, Kyogre Water, Groudon Earth, Rayquaza Dragon** (`tools/micatro/pokermon
 - **Tests**: `micatro/tests/mods/pokermon_gen3_legendaries_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test` (the pin, 55 defs), `pokermon_regis_test` (Pokédex order), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (873 jokers).
 
+### The owner's Chatot + Pachirisu (2026-10-28, branch `feat/pokermon-chatot-pachirisu`)
+Pinned **`3.9.1+r34`** (`contentRev: 34`; `LEGACY_MOD_VERSIONS` untouched). Two single-stage **Rare $7** Basics in `jokers/pokejokers_designs.js`
+(57 defs now), typed by their card art: **Chatot (441) Colorless**, after Happiny; **Pachirisu (417) Lightning**, after Roserade. Neither Nacho
+nor Pokermon+ has either.
+- **Chatot**, Vocabulary: **+4 Mult for each different poker hand type played this run** (`G.GAME.hands[h].played > 0`: the run's own
+  records, which never reset during a run, so a late Chatot counts hands played before it was bought; secret hands count; the hand being
+  played counts at once). New Word: in `before`, a hand whose run count just became 1 creates **that hand's Planet** with consumable room
+  (the Blue Seal's buffer check). Only while Chatot is held (a type first played without it never grants later); each Chatot records what it
+  granted (`new_words`), so it never grants twice for a type. Blueprint copies the Mult, not New Word. A debuffed hand has no `before`.
+- **Pachirisu**, Quick Spark: the **first hand of each round** (`current_round.hands_played === 0`) gives **X2**; Nuzzle: **+X0.25 for each
+  OTHER Lightning Joker** (`is_type`, Tera stickers count, debuffed don't). Cheek Pouch: at end of round **$1 for each Lightning Joker, itself
+  included** (`calc_dollar_bonus`, a cash-out row). Blueprint copies the first-hand X (Blueprint isn't Lightning), never the Cheek Pouch.
+- **Energy**: Chatot's per-type `mult` (+40%: 4 -> 5.6 / 7.2 / 8.8; the Planets fixed); Pachirisu's `Xmult` (+20%: 2 -> 2.4 / 2.8 / 3.2) and
+  `Xmult_mod` (+20%: 0.25 -> 0.3 / 0.35 / 0.4); the $1 `pouch` is fixed.
+- **Text**: Chatot "(Currently 5: +20 Mult)"; Pachirisu "(Currently X2.5, Active!)" / "Used this round" and "(Currently $3)".
+- **Art: upstream's own** (Natdex {10,29} / {22,27}). Nothing to deploy for the mod. The wiki drops them.
+- **Tests**: `micatro/tests/mods/pokermon_chatot_pachirisu_test.mjs` (4 passed / 13 failed on origin/main; 73 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 57 defs, Happiny > Chatot > Spiritomb), `micatro_mod_version_pin`,
+  `micatro_deckeditor_pages` (875 jokers).
+
 ### The owner's Glameow line (2026-10-28, branch `feat/pokermon-glameow-line`)
-Pinned **`3.9.1+r34`** (`contentRev: 34`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Glameow (431) -> Purugly (432), both
-**Colorless** (upstream's cells show the white Colorless frame), in `jokers/pokejokers_designs.js` (57 defs now), after Honchkrow in Pokédex
+Pinned **`3.9.1+r35`** (`contentRev: 35`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Glameow (431) -> Purugly (432), both
+**Colorless** (upstream's cells show the white Colorless frame), in `jokers/pokejokers_designs.js` (59 defs now), after Honchkrow in Pokédex
 order. Neither Nacho nor Pokermon+ has the line.
 - **Glameow** (Basic, **Common $5**), Fickle: a **favourite suit**, picked when first obtained (`add_to_deck`) and again at **each end of round**
   (Ancient Joker's pick: the run's seeded `pseudorandom_element` over the suits minus the current one, `'fickle' + ante`), so never the same
@@ -2507,7 +2527,7 @@ order. Neither Nacho nor Pokermon+ has the line.
   **X1.3125 / X1.375 / X1.4375**), re-applied on evolution. The slot cost (`slot_cost`) is fixed.
 - **Art: upstream's own** (Natdex {20,28} / {22,28}). Nothing to deploy for the mod. The wiki drops them (389 missing).
 - **Tests**: `micatro/tests/mods/pokermon_glameow_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
-  `pokermon_new_jokers_test` (the pin, 57 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (875 jokers).
+  `pokermon_new_jokers_test` (the pin, 59 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (877 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
