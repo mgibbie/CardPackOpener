@@ -1,7 +1,7 @@
 // The owner's Burmy line (2026-10-28; jokers/pokejokers_designs.js "The Burmy line"; PORTING.md "The owner's Burmy line"):
-//   Burmy 412 (Basic, Common $5)      Cloak: at the end of each round it wears the cloak of the most common enhancement in the full
-//                                     deck — unenhanced (or any enhancement but Stone / Steel) Plant, Stone Sandy, Steel Trash; a tie
-//                                     between kinds calling for different cloaks keeps the cloak. Starts as Plant. Its type and card
+//   Burmy 412 (Basic, Common $5)      Cloak: at the end of each round it wears the cloak of the biggest of three piles in the full
+//                                     deck (contentRev 41) — Stone cards Sandy, Steel cards Trash, every other card (unenhanced plus
+//                                     any other enhancement, added together) Plant; a tie between the biggest piles keeps the cloak. Starts as Plant. Its type and card
 //                                     follow: Plant Grass +5 Mult, Sandy Earth +40 Chips, Trash Metal $1 at end of round.
 //                                     Gender rolled once when created (the run's seeded RNG). Evolves after 4 rounds: Female ->
 //                                     Wormadam (keeping its cloak), Male -> Mothim. Its cloak type never breaks Monotype.
@@ -115,19 +115,28 @@ await sec('static', () => {
   ok(b.poke_mono_exempt === true && !w.poke_mono_exempt && !m.poke_mono_exempt, 'Burmy is poke_mono_exempt; Wormadam and Mothim are not');
 });
 
-// ------------------------------------------------------------------- Cloak: the most common enhancement, ties
+// ------------------------------------------------------------------- Cloak: three piles (contentRev 41), ties
+// The owner's ruling (r41): Stone cards are Sandy's pile, Steel cards Trash's, EVERY other card Plant's (unenhanced + any other
+// enhancement add up). r37-r40 counted each enhancement as its own kind: 22 Stone beat 20 unenhanced + 10 Glass. No longer.
 await sec('cloak rule', () => {
   const deck = (spec) => Object.entries(spec).flatMap(([k, n]) => Array.from({ length: n }, () => ({ config: { center: { key: k } } })));
   const cases = [
     [{ c_base: 30, m_stone: 22 }, 'sandy', 'plant', 'unenhanced most -> Plant'],
-    [{ c_base: 20, m_stone: 22, m_glass: 10 }, 'plant', 'sandy', 'Stone most (22 > 20 > 10) -> Sandy (each enhancement is its own kind: not 30 non-Stone)'],
+    [{ c_base: 20, m_stone: 22, m_glass: 10 }, 'sandy', 'plant', '22 Stone vs 20 unenhanced + 10 Glass: Plant 30 > Sandy 22 -> Plant'],
+    [{ c_base: 8, m_glass: 8, m_lucky: 8, m_stone: 20 }, 'sandy', 'plant', 'Glass + Lucky + unenhanced together (24) outweigh Stone (20) -> Plant'],
+    [{ c_base: 9, m_gold: 9, m_bonus: 9, m_steel: 25 }, 'trash', 'plant', 'Gold + Bonus + unenhanced together (27) outweigh Steel (25) -> Plant'],
+    [{ m_stone: 27, c_base: 10, m_glass: 8, m_mult: 8 }, 'plant', 'sandy', 'Stone 27 over all-other 26 -> Sandy'],
+    [{ m_steel: 27, c_base: 10, m_wild: 8, m_poke_seed: 8 }, 'plant', 'trash', 'Steel 27 over all-other 26 -> Trash'],
+    [{ m_stone: 26, c_base: 10, m_glass: 8, m_lucky: 8 }, 'trash', 'trash', 'Stone 26 tied with all-other 26 keeps the cloak (Trash)'],
+    [{ m_steel: 26, c_base: 13, m_glass: 13 }, 'sandy', 'sandy', 'Steel 26 tied with all-other 26 keeps the cloak (Sandy)'],
     [{ c_base: 10, m_steel: 12, m_stone: 11 }, 'plant', 'trash', 'Steel most -> Trash'],
     [{ c_base: 5, m_glass: 30, m_stone: 17 }, 'sandy', 'plant', 'Glass most -> Plant (any other enhancement is Plant)'],
     [{ c_base: 5, m_poke_hazard: 30, m_steel: 17 }, 'trash', 'plant', 'Hazard most -> Plant'],
     [{ m_stone: 20, m_steel: 20, c_base: 12 }, 'plant', 'plant', 'a Stone / Steel tie keeps the cloak (Plant)'],
     [{ m_stone: 20, m_steel: 20, c_base: 12 }, 'trash', 'trash', 'a Stone / Steel tie keeps the cloak (Trash)'],
-    [{ m_stone: 20, c_base: 20, m_steel: 12 }, 'trash', 'trash', 'a Stone / unenhanced tie keeps the cloak (Trash: neither tied kind)'],
-    [{ m_glass: 20, c_base: 20, m_stone: 12 }, 'sandy', 'plant', 'a Glass / unenhanced tie is Plant either way -> Plant'],
+    [{ m_stone: 20, c_base: 20, m_steel: 12 }, 'trash', 'trash', 'a Stone / Plant tie keeps the cloak (Trash: neither tied pile)'],
+    [{ m_glass: 20, c_base: 20, m_stone: 12 }, 'sandy', 'plant', 'Glass + unenhanced add up (40 > 12) -> Plant'],
+    [{ m_stone: 15, m_steel: 15, c_base: 5, m_glass: 5, m_gold: 5 }, 'plant', 'plant', 'a three-way tie (15 / 15 / 15) keeps the cloak (Plant)'],
     [{}, 'sandy', 'sandy', 'no cards: keeps the cloak'],
   ];
   for (const [spec, cur, want, why] of cases) ok(cloak_of_deck(deck(spec), cur) === want, why, [cloak_of_deck(deck(spec), cur), spec, cur]);
@@ -148,6 +157,12 @@ await sec('cloak fired', () => {
   advance();
   endRound({ m_glass: 30 });
   ok(ex(b).form === 'plant' && ex(b).ptype === 'Grass', 'a Glass-heavy deck: Plant again, Grass', [ex(b).form, ex(b).ptype]);
+  const b3 = burmy('BCLOAK3');
+  endRound({ m_stone: 30 });
+  ok(ex(b3).form === 'sandy', 'Stone 30 of the deck: Sandy', ex(b3).form);
+  advance();
+  endRound((N) => ({ m_stone: Math.floor(N / 2) - 4, m_glass: 10 }));
+  ok(ex(b3).form === 'plant' && ex(b3).ptype === 'Grass', 'in a live run: Stone the single biggest enhancement but unenhanced + Glass outnumber it -> Plant', [ex(b3).form, G.playing_cards.length]);
   // Blueprint copying Burmy never changes its own cloak (nor crashes)
   const b2 = burmy('BCLOAK2');
   const bp = add('j_blueprint');

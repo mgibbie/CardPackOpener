@@ -326,12 +326,13 @@ House pattern: a JOKER SLOT AS A COST (the owner's Purugly, jokers/pokejokers_de
 
 House pattern: a MATERIAL CLOAK, the deck picks the form (the owner's Burmy line, jokers/pokejokers_designs.js cloak_of_deck):
   - Castform's form pattern (above), read from the FULL DECK instead of the hand: at the end of each round (the main end_of_round
-    pass, not Blueprint) the most common enhancement of G.playing_cards picks the cloak. Each card counts by its own enhancement
-    (its center key; quantum enhancements don't), unenhanced being one kind and every other enhancement another, so "most common"
-    means the single biggest kind (Stone 22 beats unenhanced 20 even with 10 Glass besides). Then the kind maps to a cloak: Stone
-    Sandy (Earth), Steel Trash (Metal), unenhanced or anything else Plant (Grass).
-  - A tie for the most between kinds that call for DIFFERENT cloaks keeps the current cloak (unenhanced tied with Glass is Plant
-    either way, so it switches to Plant). An empty deck keeps it too.
+    pass, not Blueprint) G.playing_cards is counted in THREE PILES, one per cloak, and the biggest pile picks it. Each card
+    goes by its own enhancement (its center key; quantum enhancements don't): Stone cards are Sandy's pile (Earth), Steel
+    cards Trash's (Metal), and EVERY OTHER card Plant's (Grass): unenhanced, Glass, Gold, Lucky, Bonus, Mult, Wild, Seed,
+    Flower, Hazard, any mod's. "Any other enhancement counts as Plant" means those cards ADD TO Plant's count (the owner's
+    ruling, contentRev 41): 22 Stone lose to 20 unenhanced + 10 Glass (Plant 30). Before r41 each enhancement was its own kind
+    and the single biggest kind won (22 Stone beat 20 unenhanced): never that again.
+  - A tie between the biggest piles keeps the current cloak. An empty deck keeps it too.
   - The cloak is kept between rounds (unlike Castform's weather): it is the joker's state, ability.extra.form, which every
     evolution keeps (NAMES_TO_KEEP 'form' when the new center has one). Type and art follow it as Castform's: ex.ptype (a Tera
     sticker still owns the type: the cloak changes, the type stays the sticker's), one Gen 4 cell per cloak (systems/anim.js
@@ -1423,7 +1424,7 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
     - Big Chips with -hand size (the Geodude line).
     - Stone cards gaining Chips or retriggering (the Rhyhorn line, Probopass, Excadrill; the owner's
       Regirock: Stone cards give +100 instead of +50 and gain +10 per score, the trio pattern, 2.1;
-      the owner's Sandy Burmy, Earth while Stone is the deck's most common enhancement, +40 Chips, and Sandy
+      the owner's Sandy Burmy, Earth while Stone cards outnumber Steel and all the rest, +40 Chips, and Sandy
       Wormadam, scored Stone cards X1.5 each: the material cloak pattern, 2.1).
     - Stone plus Glass (the Swinub line).
     - Ancient ranks (Kabuto, Aerodactyl, Relicanth, Nacho's Cranidos and Shieldon).

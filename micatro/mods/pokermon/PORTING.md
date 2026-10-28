@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), **`3.9.1+r40`** since the owner's Shellos line ("The owner's Shellos line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), **`3.9.1+r41`** since the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2553,9 +2553,12 @@ Pinned **`3.9.1+r37`** (`contentRev: 37`; `LEGACY_MOD_VERSIONS` untouched). The 
 Mothim (414, Male), in `jokers/pokejokers_designs.js` (64 defs now), after Roserade in Pokédex order (Pokermon has no joker for 408-411).
 Neither Nacho nor Pokermon+ has the line.
 - **Burmy** (Basic, **Common $5**, Grass to start). **Cloak**: at the end of each round (the main `end_of_round` pass, not Blueprint) it wears the
-  cloak of the **most common enhancement in the full deck** (`cloak_of_deck`: each card by its own enhancement, unenhanced one kind; Stone ->
-  **Sandy**, Steel -> **Trash**, unenhanced or any other enhancement -> **Plant**). A **tie** between kinds calling for different cloaks **keeps the
-  cloak**. Starts as Plant. **Plant** (Grass): **+5 Mult** (`mult1`); **Sandy** (Earth): **+40 Chips** (`chips1`); **Trash** (Metal): **$1** at end
+  cloak of the **biggest of three piles in the full deck** (`cloak_of_deck`, each card by its own enhancement: **Stone** cards -> **Sandy**'s pile,
+  **Steel** cards -> **Trash**'s, **every other card** (unenhanced, Glass, Gold, Lucky, Bonus, Mult, Wild, Seed, Flower, Hazard, any mod's) ->
+  **Plant**'s). A **tie** between the biggest piles **keeps the cloak**. **`3.9.1+r41`** (the owner's ruling, branch `feat/pokermon-burmy-plant-count`):
+  "any other enhancement counts as Plant" means those cards add to Plant's count, so 20 unenhanced + 10 Glass (Plant 30) beat 22 Stone; r37-r40
+  counted each enhancement as its own kind (22 Stone won). Re-recorded: `pokermon_burmy_test`, `modpin_test`, `pokermon_391_data_test`,
+  `pokermon_new_jokers_test`, `micatro_mod_version_pin`. Starts as Plant. **Plant** (Grass): **+5 Mult** (`mult1`); **Sandy** (Earth): **+40 Chips** (`chips1`); **Trash** (Metal): **$1** at end
   of round (`calc_dollar_bonus`, `trash_money`, fixed; the cloak is re-read before the cash-out, so it pays the round it turns Trash).
   Its type is its cloak's (`ability.extra.ptype`, as Castform; a Tera sticker still owns the type), its card the cloak's.
 - **Gender**: rolled once when the card is created (`set_ability` initial: shop, pack, Pokéball, starting joker), with the run's seeded

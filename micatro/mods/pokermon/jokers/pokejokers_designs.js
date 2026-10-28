@@ -46,8 +46,8 @@
 // Chatot (Vocabulary: +4 Mult for each different poker hand played this run; New Word: a hand's first play this run, while held,
 // creates its Planet; Colorless) and Pachirisu (Quick Spark: X2 on each round's first hand, Nuzzle +X0.25 per other Lightning Joker;
 // Cheek Pouch: $1 per Lightning Joker at end of round; Lightning), Rare $7 each — upstream 3.9.1 draws them (Natdex 10,29 / 22,27).
-// Burmy -> Wormadam (Female) / Mothim (Male) (contentRev 37): Burmy's Cloak follows the full deck's most common enhancement at each end of
-// round (Stone Sandy / Earth +40 Chips, Steel Trash / Metal $1, anything else Plant / Grass +5 Mult; a tie keeps it), its type and card with
+// Burmy -> Wormadam (Female) / Mothim (Male) (contentRev 37; 41 the three piles): Burmy's Cloak follows the full deck's biggest pile at each end of
+// round (Stone Sandy / Earth +40 Chips, Steel Trash / Metal $1, every other card Plant / Grass +5 Mult; a tie keeps it), its type and card with
 // it; its gender is rolled once when created; Wormadam keeps the cloak for good (unenhanced +3 Mult / Stone X1.5 / held Steel $1), Mothim
 // X(1 + 0.25 per different enhancement in the deck) — upstream 3.9.1 draws all six cloak cards (Gen 4 sheet 0-10, 0) and Mothim (Natdex 16, 27).
 // Combee -> Vespiquen (Honey Gather: at end of round the Jokers directly left and right gain +$1 / +$2 sell value; Vespiquen's Attack
@@ -674,18 +674,19 @@ export const BURMY_CLOAKS = {
   sandy: { ptype: 'Earth', name: 'Sandy', colour: '#e97333' },
   trash: { ptype: 'Metal', name: 'Trash', colour: '#888080' },
 };
-/** The cloak an enhancement calls for: Stone Sandy, Steel Trash, unenhanced or any other enhancement Plant. */
+/** The cloak pile a card's enhancement (its center key) adds to: Stone Sandy, Steel Trash, unenhanced or any other enhancement Plant. */
 const cloak_for = (k) => (k === 'm_stone' ? 'sandy' : k === 'm_steel' ? 'trash' : 'plant');
-/** Cloak: the most common enhancement of the full deck (each card's own enhancement, its center: unenhanced is one kind, every
- *  other enhancement another), then its cloak. A tie for the most between kinds calling for DIFFERENT cloaks keeps `current`
- *  (unenhanced tied with Glass is Plant either way); an empty deck keeps it too. */
+/** Cloak (the owner's ruling, contentRev 41): the full deck in three piles by each card's own enhancement (its center; quantum
+ *  enhancements don't count): Sandy = Stone cards, Trash = Steel cards, Plant = every other card (unenhanced, Glass, Gold, Lucky,
+ *  Bonus, Mult, Wild, Seed, Flower, Hazard, any mod's). The biggest pile is the cloak (22 Stone lose to 20 unenhanced + 10 Glass:
+ *  Plant 30). A tie for the biggest keeps `current`; an empty deck keeps it too. */
 export function cloak_of_deck(cards, current) {
-  const n = {};
-  for (const c of cards || []) { const k = (c.config && c.config.center && c.config.center.key) || 'c_base'; n[k] = (n[k] || 0) + 1; }
-  const top = Math.max(0, ...Object.values(n));
+  const n = { plant: 0, sandy: 0, trash: 0 };
+  for (const c of cards || []) n[cloak_for((c.config && c.config.center && c.config.center.key) || 'c_base')]++;
+  const top = Math.max(n.plant, n.sandy, n.trash);
   if (!top) return current;
-  const cloaks = new Set(Object.keys(n).filter((k) => n[k] === top).map(cloak_for));
-  return cloaks.size === 1 ? [...cloaks][0] : current;
+  const best = Object.keys(n).filter((k) => n[k] === top);
+  return best.length === 1 ? best[0] : current;
 }
 /** Burmy / Wormadam put a cloak on: its own Pokermon type (ability.extra.ptype) becomes the cloak's, as Castform's form does —
  *  unless a Tera sticker owns the type (the sticker still decides, as on any joker). The debuff and Kecleons are re-read. */
@@ -2215,8 +2216,8 @@ defineJokers({
   // The owner's design (2026-10-28). Burmy (Basic, Common $5) wears a cloak, and its type and card follow it: Plant (Grass), Sandy
   // (Earth), Trash (Metal) — the types upstream 3.9.1's own cards show (the Gen 4 sheet, row 0: Burmy 0 / 2 / 4, Wormadam 6 / 8 /
   // 10; systems/anim.js BURMY_SPRITES). Cloak: at the end of each round (the main end_of_round pass, not Blueprint) it takes the
-  // cloak of the most common enhancement in the full deck (cloak_of_deck: Stone Sandy, Steel Trash, unenhanced or anything else
-  // Plant; a tie keeps the cloak). It starts as Plant. Plant +5 Mult (`mult1`), Sandy +40 Chips (`chips1`), Trash $1 at end of
+  // cloak of the biggest pile in the full deck (cloak_of_deck, the owner's ruling of contentRev 41: Stone cards Sandy, Steel cards
+  // Trash, every other card — unenhanced or any other enhancement — Plant; a tie keeps the cloak). It starts as Plant. Plant +5 Mult (`mult1`), Sandy +40 Chips (`chips1`), Trash $1 at end of
   // round (calc_dollar_bonus; `trash_money`, fixed). Its gender is rolled once when the card is created (set_ability initial, the
   // run's seeded pseudorandom 'burmy_gender': Female or Male, kept on ability.extra and so through save / resume, which rebuild
   // the run from its recipe). After 4 rounds a Female becomes Wormadam wearing its cloak (locked: the type stays), a Male Mothim.
@@ -2696,8 +2697,8 @@ export const DESIGN_LOC = {
       FICKLE('{X:mult,C:white} X#1# {} Mult', 3),
     ] },
     j_poke_burmy: { name: 'Burmy', text: [
-      ['{C:attention}Cloak:{} at end of round, takes', 'the cloak of the most common', 'enhancement in your full deck', '{C:inactive}(A tie keeps the cloak)'],
-      ['{C:attention}Plant{} {X:poke_grass,C:white}Grass{}: {C:mult}+#1#{} Mult', '{C:inactive}(unenhanced or other enhancements)', '{C:attention}Sandy{} {X:poke_earth,C:white}Earth{}: {C:chips}+#2#{} Chips {C:inactive}(Stone)',
+      ['{C:attention}Cloak:{} at end of round, takes', 'the cloak most common in your', 'full deck: {C:attention}Stone{} (Sandy), {C:attention}Steel{}', '(Trash), or everything else (Plant)', '{C:inactive}(A tie keeps the cloak)'],
+      ['{C:attention}Plant{} {X:poke_grass,C:white}Grass{}: {C:mult}+#1#{} Mult', '{C:inactive}(any card not Stone or Steel)', '{C:attention}Sandy{} {X:poke_earth,C:white}Earth{}: {C:chips}+#2#{} Chips {C:inactive}(Stone)',
         '{C:attention}Trash{} {X:poke_metal,C:white}Metal{}: earn {C:money}$#3#{} at end', 'of round {C:inactive}(Steel)'],
       ['{C:inactive}(Currently {C:attention}#4#{C:inactive} Cloak, #5#)', '{C:inactive,s:0.8}(Its type never breaks Monotype)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} rounds:', '{C:inactive,s:0.8}♀ into Wormadam, ♂ into Mothim)'],
     ] },
