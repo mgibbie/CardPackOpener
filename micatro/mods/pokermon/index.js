@@ -861,7 +861,11 @@ export const POKERMON = registerMod({
   // 32 = the owner's Starly line (Starly -> Staravia -> Staraptor; jokers/pokejokers_designs.js): Flock — +2 / +4 Mult for each Colorless
   // Joker, itself included (is_type: Tera stickers and Castform's Normal form count; debuffed ones don't); Staraptor's Brave Bird
   // X(1 + 0.5 per Colorless Joker) with Recoil: each hand played loses $1 (never past the debt limit).
-  contentRev: 32,
+  // 33 = the owner's Gen 3 Legendaries (jokers/pokejokers_designs.js): Kyogre (+1 hand, scored Clubs retrigger, Castform Rainy), Groudon
+  // (+1 discard, scored Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the
+  // first deal pick one for the round); Rayquaza (Delta Stream: both work; Dragon Ascent X0.2 per Straight / Flush); Latias / Latios
+  // (X0.15 per Tarot / Planet used; Soul Dew: both held, either grows both).
+  contentRev: 33,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
