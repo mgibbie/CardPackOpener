@@ -1,5 +1,5 @@
 {
-	"generated": "2026-10-27",
+	"generated": "2026-10-28",
 	"micatroAtlas": {
 		"Joker": {
 			"src": "/micatro/assets/textures/Jokers.png",
@@ -63,6 +63,13 @@
 			"ch": 68,
 			"w": 1428,
 			"h": 2108
+		},
+		"@poke_AtlasJokersBasicGen04391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen04-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 1710
 		},
 		"@poke_AtlasJokersBasicNatdex391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicNatdex-391.png",
@@ -147,13 +154,6 @@
 			"ch": 190,
 			"w": 284,
 			"h": 190
-		},
-		"@poke_AtlasJokersBasicGen04391": {
-			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen04-391.png",
-			"cw": 142,
-			"ch": 190,
-			"w": 1704,
-			"h": 1710
 		},
 		"@poke_AtlasJokersBasicGen03391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen03-391.png",
@@ -521,6 +521,606 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "0e07649",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Shellos line (contentRev 40)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_shellos",
+							"name": "Shellos",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 4,
+								"y": 1
+							}
+						},
+						{
+							"key": "j_poke_gastrodon",
+							"name": "Gastrodon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 8,
+								"y": 1
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "d56f45d",
+			"date": "2026-10-28",
+			"kind": "patch",
+			"title": "Micatro: real ♀ / ♂ glyphs in m6x11plus; Nidoran♀/♂, Burmy says ♀/♂",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8c3bec8",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Cherubi line (contentRev 39)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_cherubi",
+							"name": "Cherubi",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 27
+							}
+						},
+						{
+							"key": "j_poke_cherrim",
+							"name": "Cherrim",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 0,
+								"y": 1
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "fe4695f",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Combee line (contentRev 38)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_combee",
+							"name": "Combee",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 27
+							}
+						},
+						{
+							"key": "j_poke_vespiquen",
+							"name": "Vespiquen",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 27
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "8e016c2",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Burmy line (contentRev 37)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_burmy",
+							"name": "Burmy",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 0,
+								"y": 0
+							}
+						},
+						{
+							"key": "j_poke_wormadam",
+							"name": "Wormadam",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicGen04391",
+							"pos": {
+								"x": 6,
+								"y": 0
+							}
+						},
+						{
+							"key": "j_poke_mothim",
+							"name": "Mothim",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 27
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "0aff905",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Drifloon line (contentRev 36)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_drifloon",
+							"name": "Drifloon",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 28
+							}
+						},
+						{
+							"key": "j_poke_drifblim",
+							"name": "Drifblim",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 28
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "98983f8",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Glameow line (contentRev 35)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_glameow",
+							"name": "Glameow",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 28
+							}
+						},
+						{
+							"key": "j_poke_purugly",
+							"name": "Purugly",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 28
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "a0240bb",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Chatot + Pachirisu (contentRev 34)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_pachirisu",
+							"name": "Pachirisu",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 27
+							}
+						},
+						{
+							"key": "j_poke_chatot",
+							"name": "Chatot",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 29
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "16bedac",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: Regi card tooltips + the owner's Gen 3 Legendaries (contentRev 33)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_latias",
+							"name": "Latias",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 25
+							},
+							"soul": {
+								"x": 9,
+								"y": 25
+							}
+						},
+						{
+							"key": "j_poke_latios",
+							"name": "Latios",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 25
+							},
+							"soul": {
+								"x": 11,
+								"y": 25
+							}
+						},
+						{
+							"key": "j_poke_kyogre",
+							"name": "Kyogre",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 25
+							},
+							"soul": {
+								"x": 13,
+								"y": 25
+							}
+						},
+						{
+							"key": "j_poke_groudon",
+							"name": "Groudon",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 25
+							},
+							"soul": {
+								"x": 15,
+								"y": 25
+							}
+						},
+						{
+							"key": "j_poke_rayquaza",
+							"name": "Rayquaza",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 25
+							},
+							"soul": {
+								"x": 17,
+								"y": 25
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "895e515",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Starly line (contentRev 32)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_starly",
+							"name": "Starly",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 26
+							}
+						},
+						{
+							"key": "j_poke_staravia",
+							"name": "Staravia",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 26
+							}
+						},
+						{
+							"key": "j_poke_staraptor",
+							"name": "Staraptor",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 26
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "cc8fbec",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Regi trio (contentRev 31)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_regirock",
+							"name": "Regirock",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 25
+							},
+							"soul": {
+								"x": 3,
+								"y": 25
+							}
+						},
+						{
+							"key": "j_poke_regice",
+							"name": "Regice",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 25
+							},
+							"soul": {
+								"x": 5,
+								"y": 25
+							}
+						},
+						{
+							"key": "j_poke_registeel",
+							"name": "Registeel",
+							"set": "Joker",
+							"rarity": "legendary",
+							"cost": 20,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 25
+							},
+							"soul": {
+								"x": 7,
+								"y": 25
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "59a91ee",
+			"date": "2026-10-28",
+			"kind": "patch",
+			"title": "Pokermon: types follow the card art (wiki + Urshifu, contentRev 30)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9012f57",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Lunatone + Solrock (contentRev 29)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_lunatone",
+							"name": "Lunatone",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 22
+							}
+						},
+						{
+							"key": "j_poke_solrock",
+							"name": "Solrock",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 22
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "7911496",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Barboach line (contentRev 28)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_barboach",
+							"name": "Barboach",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 22
+							}
+						},
+						{
+							"key": "j_poke_whiscash",
+							"name": "Whiscash",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 22
+							}
+						}
+					]
+				}
+			]
+		},
 		{
 			"sha": "137bae9",
 			"date": "2026-10-27",
