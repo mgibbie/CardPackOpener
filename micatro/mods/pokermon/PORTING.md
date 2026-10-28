@@ -266,7 +266,8 @@ follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** s
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
-line" below), **`3.9.1+r27`** since the owner's Castform ("The owner's Castform" below)
+line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), **`3.9.1+r28`** since the owner's Barboach line ("The owner's
+Barboach line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2340,6 +2341,26 @@ Pinned **`3.9.1+r27`** (`contentRev: 27`; `LEGACY_MOD_VERSIONS` untouched). The 
 - **Tests**: `micatro/tests/mods/pokermon_castform_test.mjs` (2 passed / 18 failed on origin/main; 100 / 5 with only runbadges.js reverted — the Monotype checks; 105 / 0 here).
   Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 40 defs), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (858 jokers).
+
+### The owner's Barboach line (2026-10-28, branch `feat/pokermon-barboach-line`)
+Pinned **`3.9.1+r28`** (`contentRev: 28`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Barboach (339) -> Whiscash (340), both
+**Water**, in `jokers/pokejokers_designs.js` (42 defs now), after Seviper in Pokédex order (Lunatone / Solrock have no joker). Neither Nacho nor
+Pokermon+ has the line.
+- **Barboach** (Basic, **Common $5**), Muddy Water: **+12 Chips for each Water or Earth Joker** you have, itself included. Evolves after **5 rounds**.
+- **Whiscash** (Stage 1, **Safari $8**), Muddy Water **+20 Chips** per Water or Earth Joker, itself included; **Earthquake**: with at least **2 OTHER**
+  Water or Earth Jokers, the round's **first hand** (`hands_played === 0`) **retriggers every scored card** once (it jiggles on the first deal
+  while armed, as Remoraid).
+- **Counting** (`muddy_count`): `is_type(j, 'Water') || is_type(j, 'Earth')`, once per joker (a joker that is both, e.g. through an add-on's
+  `IS_TYPE_RULES`, counts once); Tera stickers count (they replace the type); Castform counts while Rainy / Snowy (Water), not Sunny / Normal.
+  **Debuffed jokers don't count** — unlike Corsola / Pelipper / Politoed, whose `find_pokemon_type` counts them. Itself always counts (+1), so the
+  shop card shows its bought value.
+- **Energy**: the per-joker `chips` (+30% of base each): Barboach 12 -> 15.6 / 19.2 / 22.8, Whiscash 20 -> 26 / 32 / 38 (re-applied on evolution).
+  `retriggers` (1) and `quake_req` (2) are not energy fields.
+- **Blueprint** copies both: Barboach's Chips again; Whiscash's Chips again and a second retrigger (each card scores 3 times), as on Remoraid / Octillery.
+- **Text**: Whiscash's tooltip shows the count, the Chips and Earthquake's state: "(Active!)", "(Used this round)", "(Inactive: k/2 others)".
+- **Art: upstream's own** (Natdex {16,22} / {18,22}). Nothing to deploy for the mod. The wiki drops them (404 missing).
+- **Tests**: `micatro/tests/mods/pokermon_barboach_test.mjs` (3 passed / 12 failed on origin/main; 60 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 42 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (860 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
