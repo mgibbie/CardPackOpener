@@ -117,9 +117,9 @@ Missing by stage:
 
 Notable gaps:
   - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
-    by Nacho (the Turtwig, Chimchar and Piplup lines). Gen 7 (Rowlet, Litten, Popplio) is now
-    built to the starter template (2.2); all three Gen 9 lines are the owner's (Sprigatito,
-    Fuecoco, Quaxly).
+    by Nacho (the Turtwig, Chimchar and Piplup lines). Gen 7 (Rowlet, Litten, Popplio) and Gen 8
+    (Scorbunny, Sobble; Grookey is the owner's) are now built to the starter template (2.2); all
+    three Gen 9 lines are the owner's (Sprigatito, Fuecoco, Quaxly).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -604,6 +604,12 @@ Common deviations:
         stage, which multiplies with its own retriggers (X1.3^3); HANDS ALREADY PLAYED THIS ROUND (current_round.hands_played,
         still the pre-hand count while a hand scores, so the round's first hand counts 0: say "already played" on the card); a SUIT
         rider (scored Hearts +Mult, then a per-card X).
+      - Shapes used by Gen 8 (Scorbunny / Sobble; jokers/pokejokers_designs.js libero_mult / unscored_chips / snipe_target): PER DISCARD
+        LEFT (+3 / +5 Mult, then X(1 + 0.5 each); read at joker_main as Cyndaquil, so the joker's own unused discard counts; Cinderace is
+        X3.5 on the Red Deck untouched and every discard source adds X0.5); UNSCORED PLAYED CARDS (+20 / +35 Chips each: full_hand minus
+        scoring_hand; a debuffed kicker counts, a debuffed card in the scoring hand doesn't; Splash turns it off); ONE TARGET PER HAND
+        (Inteleon X2 on the highest-ranked scored card that can score, not debuffed or rankless, a tie the LEFTMOST; re-read on every
+        individual call, so the target's retriggers hit again; a per-card X in Xmult_multi, X2.1 / 2.2 / 2.3 with Energy).
   - Early-evolving bugs: Caterpie and Weedle are C $2; their Stage 1 is C $4 and their
     Stage 2 is U $5 and shop-able.
   - Pre-evolutions too weak alone are cheap (Magikarp C $2, Feebas R $3).
@@ -1100,7 +1106,7 @@ Pitfalls:
 Identity: Mult and discards.
   out:   +Mult 19, X 15, +Chips 6, $ 4, retrigger 1
   Discards appear in 19 of 43 texts. Fire starters give +1 discard (Charmander, Cyndaquil,
-  Torchic, Chimchar, Litten).
+  Torchic, Chimchar, Litten, Scorbunny).
   Recurring shapes:
     - "Scale with remaining discards" (Cyndaquil line).
     - "Reward 0 discards remaining" (the Charmander line).
@@ -1123,6 +1129,8 @@ Examples:
   Moltres (L $20)    Upgrades the first discarded poker hand each round by 3 levels.
   Litten (U $5)      +1 discard; +2 Mult per hand already played this round (5 rounds).
                      Torracat +4; Incineroar X0.25 per hand (X1 / 1.25 / 1.5 / 1.75).
+  Scorbunny (U $5)   +1 discard; +3 Mult per discard left (5 rounds). Raboot +5; Cinderace
+                     (Libero) X(1 + 0.5 per discard left).
 Typical numbers:
   Basic     +M 3-8~4 | +C 70 (Litleo) | X 3 (Numel) | gain +M 1-5 | gain +C 12
   Stage 1   +M 8 | +C 90 | X 1.5-4~3 | card X 2 | gain X 0.05-1
@@ -1173,6 +1181,8 @@ Examples:
   Staryu (C $4)      Diamonds give +1 Mult and $1 (Water Stone). Starmie: +2 Mult and $2.
   Popplio (U $5)     +1 hand; scored Hearts give +3 Mult (5 rounds). Brionne +5; Primarina
                      (Sparkling Aria) X1.2 per scored Heart.
+  Sobble (U $5)      +1 hand; +20 Chips per played card that doesn't score (5 rounds). Drizzile
+                     +35; Inteleon (Snipe Shot) X2 on the highest-ranked scored card.
   Owner's Finneon (C $5) +40 Chips on night hands (each round's 2nd / 4th: Lunatone / Solrock's cycle).
                      Lumineon (S $8): each scored card +15 Chips by night; with Lunatone by day too.
 Typical numbers:

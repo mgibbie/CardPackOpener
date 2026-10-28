@@ -82,7 +82,10 @@
 // Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
 // Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
 // (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
-// The owner's Gen 9 starters (contentRev 49): Fuecoco -> Crocalor -> Skeledirge (Fire starter, +1 discard; Torch Song: +1 / +2 Mult
+// The Gen 8 starters (contentRev 49; the starters spec): Scorbunny -> Raboot -> Cinderace (Fire, +1 discard; +3 / +5 Mult per discard left,
+// then Libero X(1 + 0.5 per discard left)) and Sobble -> Drizzile -> Inteleon (Water, +1 hand; +20 / +35 Chips per played card that doesn't
+// score, then Snipe Shot X2 on the highest-ranked scored card) — upstream 3.9.1 draws them (Natdex 4-14, 54).
+// The owner's Gen 9 starters (contentRev 50): Fuecoco -> Crocalor -> Skeledirge (Fire starter, +1 discard; Torch Song: +1 / +2 Mult
 // banked per hand played, then X0.05) and Quaxly -> Quaxwell -> Quaquaval (Water starter, +1 hand; Moxie: +4 / +6 Chips banked per unused
 // hand when a Blind is beaten, then X0.2) — upstream 3.9.1 draws them (Natdex 16 / 18 / 20 / 22 / 24 / 26, 60).
 import {
@@ -196,6 +199,38 @@ function beat_calc(card, context) {
   if (context.after && context.cardarea === G.jokers && !context.blueprint) ex.beat_idx = [];
   if (round_end(context) && !context.blueprint) ex.beat = 0;
   return undefined;
+}
+
+/** The Gen 8 starters (contentRev 49). Scorbunny / Raboot, Libero's warm-up: +mult for each discard left when the hand scores (the
+ *  Cyndaquil line's cynda_calc, read at joker_main: the joker's own +1 discard counts while unused; 0 left, nothing). */
+function libero_mult(card, context) {
+  if (!context.joker_main) return undefined;
+  const dl = G.GAME.current_round.discards_left;
+  if (!(dl > 0)) return undefined;
+  const m = card.ability.extra.mult * dl;
+  return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m };
+}
+/** Cinderace, Libero: X(1 + Xmult_mod per discard left) (Typhlosion's X half without its +Mult; 0 left, X1: nothing). */
+const libero_x = (card) => 1 + card.ability.extra.Xmult_mod * Math.max(0, G.GAME.current_round.discards_left || 0);
+/** Sobble / Drizzile: the played cards that are NOT in the scoring hand (a debuffed card outside it counts; a debuffed card inside the
+ *  scoring hand is part of it and doesn't; with Splash every played card scores, so none count). */
+const unscored_count = (context) => (context.full_hand && context.scoring_hand ? context.full_hand.filter((c) => !context.scoring_hand.includes(c)).length : 0);
+function unscored_chips(card, context) {
+  if (!context.joker_main) return undefined;
+  const n = unscored_count(context);
+  if (!n) return undefined;
+  const c = card.ability.extra.chips * n;
+  return { message: a_chips(r3(c)), colour: 'CHIPS', chip_mod: c };
+}
+/** Inteleon, Snipe Shot: the target is the highest-ranked scored card that can score (not debuffed, not rankless like Stone); on a tie
+ *  the LEFTMOST of them (the first to score). Read from the scoring hand each time a card scores, so a retrigger hits again. */
+function snipe_target(scoring_hand) {
+  let best = null;
+  for (const c of scoring_hand || []) {
+    if (c.debuff || has_no_rank(c)) continue;
+    if (!best || c.get_id() > best.get_id()) best = c;
+  }
+  return best;
 }
 
 /** The Sprigatito line: how many of this scored card's Lucky rolls hit (its 1 in 5 Mult and 1 in 15 money count 1 each: the engine's
@@ -1513,6 +1548,82 @@ defineJokers({
     ...hand_size,
   },
 
+  // ---------------------------------------------------------------- Gen 8 starters (contentRev 49; the starters spec, 2026-10-28)
+  // Pokermon's starter conventions: the type perk at every stage (Fire +1 discard: the `discards` pair; Water +1 hand: the `hands`
+  // pair), Basic Uncommon $5 with the 'starter' attribute (the Starter Pack), Stage 1 Safari $8, Stage 2 Safari $10; evolution by
+  // rounds, 5 then 5 (the Johto starters' timers: Cyndaquil / Quilava, Totodile / Croconaw). Energy: the line's main number only
+  // (Scorbunny / Raboot `mult` +40%, Cinderace `Xmult_mod` +20%, Sobble / Drizzile `chips` +30%, Inteleon `Xmult_multi` +5%: a per-card
+  // X); d_size, hands and rounds are fixed. Art: upstream 3.9.1's own (Natdex 4-14, 54), nothing to deploy. Neither Nacho nor
+  // Pokermon+ has either line. After Rillaboom in Pokédex order (813-818, then Nickit 827).
+  // Scorbunny 813 (Fire): +1 discard; +3 Mult for each discard left. Evolves after 5 rounds.
+  scorbunny: {
+    name: 'scorbunny', poke_sprite391: sprite('Natdex', 4, 54),
+    config: { extra: { d_size: 1, mult: 3, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 8, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'discard', 'passive', 'mult', 'round_evo'], poke_after: 'rillaboom',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), r3(ex.mult * Math.max(0, G.GAME.current_round.discards_left || 0)), ex.rounds] }; },
+    calculate(self, card, context) { return libero_mult(card, context) || level_evo(self, card, context, 'j_poke_raboot'); },
+    ...discards,
+  },
+  // Raboot 814 (Fire): +1 discard; +5 Mult for each discard left. Evolves after 5 rounds.
+  raboot: {
+    name: 'raboot', poke_sprite391: sprite('Natdex', 6, 54),
+    config: { extra: { d_size: 1, mult: 5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 8, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'passive', 'mult', 'round_evo'], poke_after: 'scorbunny',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), r3(ex.mult * Math.max(0, G.GAME.current_round.discards_left || 0)), ex.rounds] }; },
+    calculate(self, card, context) { return libero_mult(card, context) || level_evo(self, card, context, 'j_poke_cinderace'); },
+    ...discards,
+  },
+  // Cinderace 815 (Fire): +1 discard; Libero, X(1 + 0.5 for each discard left).
+  cinderace: {
+    name: 'cinderace', poke_sprite391: sprite('Natdex', 8, 54),
+    config: { extra: { d_size: 1, Xmult_mod: 0.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 8, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'passive', 'xmult'], poke_after: 'raboot',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.Xmult_mod), r3(libero_x(card))] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && G.GAME.current_round.discards_left > 0) { const x = libero_x(card); return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+    ...discards,
+  },
+  // Sobble 816 (Water): +1 hand; each played card that doesn't score gives +20 Chips. Evolves after 5 rounds.
+  sobble: {
+    name: 'sobble', poke_sprite391: sprite('Natdex', 10, 54),
+    config: { extra: { hands: 1, chips: 20, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Water', gen: 8, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hands', 'passive', 'chips', 'round_evo'], poke_after: 'cinderace',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) { return unscored_chips(card, context) || level_evo(self, card, context, 'j_poke_drizzile'); },
+    ...hands,
+  },
+  // Drizzile 817 (Water): +1 hand; each played card that doesn't score gives +35 Chips. Evolves after 5 rounds.
+  drizzile: {
+    name: 'drizzile', poke_sprite391: sprite('Natdex', 12, 54),
+    config: { extra: { hands: 1, chips: 35, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'passive', 'chips', 'round_evo'], poke_after: 'sobble',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) { return unscored_chips(card, context) || level_evo(self, card, context, 'j_poke_inteleon'); },
+    ...hands,
+  },
+  // Inteleon 818 (Water): +1 hand; Snipe Shot, the highest-ranked scored card gives X2 Mult (a tie: the leftmost; snipe_target).
+  inteleon: {
+    name: 'inteleon', poke_sprite391: sprite('Natdex', 14, 54),
+    config: { extra: { hands: 1, Xmult_multi: 2 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Water', gen: 8, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'xmult', 'rank'], poke_after: 'drizzile',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card === snipe_target(context.scoring_hand)) {
+        return { x_mult: card.ability.extra.Xmult_multi, card };
+      }
+      return undefined;
+    },
+    ...hands,
+  },
+
   // ---------------------------------------------------------------- LINE E: Kubfu -> Urshifu (Legendary, Gen 8: Kubfu Fighting, Urshifu Dark / Water)
   // Kubfu 891: can't be debuffed (systems/rules.js set_debuff); gains X0.1 Mult on a hand of exactly 1 or 5 scoring cards. After 10
   // trainings it evolves into the school it trained more: 1-card hands Single Strike, 5-card hands Rapid Strike (a tie: the school
@@ -1953,7 +2064,7 @@ defineJokers({
   },
 
   // ---------------------------------------------------------------- LINE F2b: Fuecoco -> Crocalor -> Skeledirge (Fire starter, Gen 9)
-  // The owner's Gen 9 starters (2026-10-28, contentRev 49). Torch Song: every hand played (counted in `before`, so the hand being
+  // The owner's Gen 9 starters (2026-10-28, contentRev 50). Torch Song: every hand played (counted in `before`, so the hand being
   // played counts itself) permanently banks Mult on the joker (`torch_mult`, in no energy_values: never retroactive; kept through
   // both evolutions). The gain is `mult_mod` (Energy +20% of its base each: Fuecoco 1 -> 1.2 / 1.4 / 1.6, Crocalor 2 -> 2.4 / 2.8 / 3.2).
   // Skeledirge banks X Mult instead (`torch_Xmult` from X1, gain `Xmult_mod` 0.05 -> 0.06 / 0.07 / 0.08) and still gives the banked
@@ -1993,7 +2104,7 @@ defineJokers({
   },
 
   // ---------------------------------------------------------------- LINE F2c: Quaxly -> Quaxwell -> Quaquaval (Water starter, Gen 9)
-  // The owner's Gen 9 starters (2026-10-28, contentRev 49). Moxie: when you beat a Blind, permanently banks Chips for each unused hand
+  // The owner's Gen 9 starters (2026-10-28, contentRev 50). Moxie: when you beat a Blind, permanently banks Chips for each unused hand
   // (the hands left after the winning one) on the joker (`moxie_chips`, in no energy_values: never retroactive; kept through both
   // evolutions). The gain is `chip_mod` (Energy +20% of its base each: Quaxly 4 -> 4.8 / 5.6 / 6.4, Quaxwell 6 -> 7.2 / 8.4 / 9.6).
   // Quaquaval banks X Mult instead (`moxie_Xmult` from X1, gain `Xmult_mod` 0.2 -> 0.24 / 0.28 / 0.32 per unused hand) and still gives
@@ -3370,6 +3481,8 @@ export const DESIGN_FAMILIES = [
   ['honedge', 'doublade', 'aegislash'],
   ['spheal', 'sealeo', 'walrein'],
   ['grookey', 'thwackey', 'rillaboom'],
+  ['scorbunny', 'raboot', 'cinderace'],
+  ['sobble', 'drizzile', 'inteleon'],
   ['kubfu', 'urshifu_single', 'urshifu_rapid'],
   ['tandemaus', 'maushold'],
   ['darumaka', 'darmanitan'],
@@ -3449,6 +3562,8 @@ const BITE = ['{C:attention}Bite:{} when a hand containing', 'a {C:attention}Pai
 const SAND_STREAM = ['{C:poke_sand}Sand Stream:{} scored', '{C:attention}Stone{} cards give', '{C:chips}+#1#{} extra Chips'];
 const SNIPER = ['{C:attention}Sniper:{} each scored card', 'has a {C:green}#1# in #2#{} chance to', 'crit for {X:mult,C:white} X#3# {} Mult'];
 const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{C:attention}Uxie{}, {C:attention}Mesprit{} or {C:attention}Azelf{} held', '{C:inactive}(Currently #' + n + '#/2 others)'];
+const LIBERO_MULT = ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult for each', 'remaining {C:attention}discard{}', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)'];
+const UNSCORED_CHIPS = ['{C:chips}+#1#{} hand', 'Each played card that', 'doesn\'t score gives', '{C:chips}+#2#{} Chips'];
 const TORCH_SONG = (gain) => ['{C:attention}Torch Song:{} permanently', 'gains ' + gain, 'for each hand played'];
 const MOXIE9 = (gain) => ['{C:attention}Moxie:{} when you beat a', '{C:attention}Blind{}, permanently gains', gain + ' for each', 'unused hand'];
 export const DESIGN_LOC = {
@@ -3477,6 +3592,12 @@ export const DESIGN_LOC = {
       ['{C:attention}+#1#{} hand size', 'Every {C:attention}#2#{} card scored this', 'round is retriggered'],
       ['{C:attention}Drum Beating:{} retriggered cards', 'give {C:mult}+#3#{} Mult'],
     ] },
+    j_poke_scorbunny: { name: 'Scorbunny', text: [...LIBERO_MULT, EVOLVES_ROUNDS(4)] },
+    j_poke_raboot: { name: 'Raboot', text: [...LIBERO_MULT, EVOLVES_ROUNDS(4)] },
+    j_poke_cinderace: { name: 'Cinderace', text: ['{C:red}+#1#{} discard', '{C:attention}Libero:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#2# {} for each', 'remaining {C:attention}discard{}', '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'] },
+    j_poke_sobble: { name: 'Sobble', text: [...UNSCORED_CHIPS, EVOLVES_ROUNDS(3)] },
+    j_poke_drizzile: { name: 'Drizzile', text: [...UNSCORED_CHIPS, EVOLVES_ROUNDS(3)] },
+    j_poke_inteleon: { name: 'Inteleon', text: ['{C:chips}+#1#{} hand', '{C:attention}Snipe Shot:{} the', 'highest-ranked scored card', 'gives {X:mult,C:white} X#2# {} Mult', '{C:inactive}(A tie: the leftmost)'] },
     j_poke_kubfu: { name: 'Kubfu', text: ['This Joker can\'t be debuffed', 'Gains {X:mult,C:white} X#1# {} Mult when a hand', 'with exactly {C:attention}1{} or exactly {C:attention}5{}', 'scoring cards is played', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)',
       '{C:inactive,s:0.8}(Evolves after #3# trainings:', '{C:inactive,s:0.8}more 1-card hands: Single Strike,', '{C:inactive,s:0.8}more 5-card hands: Rapid Strike)', '{C:inactive,s:0.8}(Single {C:attention,s:0.8}#4#{C:inactive,s:0.8} / Rapid {C:attention,s:0.8}#5#{C:inactive,s:0.8})'] },
     j_poke_urshifu_single: { name: 'Urshifu', text: [
