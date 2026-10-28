@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), **`3.9.1+r42`** since the owner's Stunky line ("The owner's Stunky line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), **`3.9.1+r43`** since the owner's Gible line ("The owner's Gible line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2674,6 +2674,30 @@ next). Neither Nacho nor Pokermon+ has the line. They poison the BLIND: its scor
 - **Art**: upstream 3.9.1's own (Natdex {26,28} / {28,28}); nothing to deploy. The wiki drops them (374 missing).
 - **Tests**: `micatro/tests/mods/pokermon_stunky_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
   (the pin, 72 defs), `pokermon_art_types_test` (both Dark), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (890 jokers).
+
+### The owner's Gible line (2026-10-28, branch `feat/pokermon-gible-line`)
+Pinned **`3.9.1+r43`** (`contentRev: 43`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Gible (443) -> Gabite (444) -> Garchomp
+(445), all **Dragon** (all three cards show the Dragon icon), in `jokers/pokejokers_designs.js` (`bite` / `treasure_nest` / `dragon_rush_x`;
+75 defs now), after Spiritomb in Pokédex order (Munchlax 446 next). Neither Nacho nor Pokermon+ has the line. Bite -> hoard -> cash in. No Mega
+Garchomp here.
+- **Gible** (Basic, **Uncommon $6**), Bite: when a hand **containing a Pair** scores (`poker_hands['Pair']` non-empty: Pair, Two Pair, Three /
+  Four / Five of a Kind, Full House, Flush House, Flush Five), it permanently gains **+1 Mult for each scored card** (the scoring hand's
+  undebuffed cards: a Pair +2, Two Pair +4, Full House +5, Four of a Kind +4), gained in `before` so that hand already gets it. It gives the
+  bank every hand. Evolves at **+25** banked Mult (Dratini's `scaling_evo`; "(Evolves at +k / +25 Mult)").
+- **Gabite** (Stage 1, **Safari $8**): keeps biting (+1 a scored card), and **Treasure Nest**: when a hand containing a **Full House** scores,
+  **one** of its scored cards becomes a **Gold** card, in `context.after` (the card scores as what it was; Midas Mask's `set_ability`). The
+  pick: seeded `pseudorandom_element` ('gabite_nest') over the scored cards that aren't debuffed, already Gold, or being destroyed (a
+  shattered Glass card); **unenhanced first**, and only when none is left any other non-Gold card (overwritten, seal and edition kept).
+  Evolves at end of round with **6 Gold cards in the full deck** (`G.playing_cards`, any Gold card, not only Gabite's; "(Gold cards: k/6)").
+- **Garchomp** (Stage 2, **Safari $10**): the bank (it banks no more) and **Dragon Rush**: **X(1 + 0.5 per Gold card held in hand)**; a
+  debuffed Gold card doesn't count. (3 held: X2.5, 5 held: X3.5.)
+- **Energy**: the bank `bite_mult` is in no energy field (never retroactive; kept by `poke_custom_values_to_keep`); `mult_mod` +20%
+  (**1 -> 1.2 / 1.4 / 1.6** a card, Colorless 1.1), Garchomp's `Xmult_mod` +20% (**0.5 -> 0.6 / 0.7 / 0.8** a Gold card). The conversion (one
+  card) is fixed. Energy carries through both evolutions (re-applied to the new base).
+- **Blueprint** copies the banked Mult and Garchomp's X; never the bank's growth or the Gold conversion.
+- **Art**: upstream 3.9.1's own (Natdex {14,29} / {16,29} / {18,29}); nothing to deploy. The wiki drops them (371 missing).
+- **Tests**: `micatro/tests/mods/pokermon_gible_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 75 defs), `pokermon_art_types_test` (all three Dragon), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (893 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

@@ -63,6 +63,10 @@
 // only helps later hands) the Blind's score requirement drops by 4% of its starting requirement (Skuntank's Toxic: n x 4% after the nth
 // hand of the round); one shared record per Blind, at most -75% in all, never below 1 chip; reach the lowered requirement and the Blind
 // is won right then; Dark — upstream 3.9.1 draws them (Natdex 26 / 28, 28).
+// Gible -> Gabite -> Garchomp (contentRev 43): bite -> hoard -> cash in. Bite banks +1 Mult per scored card of a hand containing a Pair
+// (evolves at +25); Gabite's Treasure Nest turns one scored card of a Full House Gold (evolves with 6 Gold cards in the full deck);
+// Garchomp's Dragon Rush X(1 + 0.5 per Gold card held in hand) on top of the bank; Dragon — upstream 3.9.1 draws them (Natdex 14 / 16 /
+// 18, 29).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -1046,6 +1050,54 @@ function poison_gas(card, context, escalating) {
   });
   return undefined;
 }
+
+// ---------------------------------------------------------------- Bite / Treasure Nest / Dragon Rush (the owner's Gible line)
+// Bite -> hoard -> cash in. The bank is `bite_mult` (in no energy_values: a banked Mult keeps what it was worth when earned, so Energy is
+// never retroactive; carried through both evolutions by poke_custom_values_to_keep); the gain per scored card is `mult_mod` (+20% of
+// base per Energy: 1 -> 1.2 / 1.4 / 1.6). A hand "contains a Pair" when the engine's poker_hands['Pair'] is non-empty (Lua next()): Pair,
+// Two Pair, Three of a Kind, Full House, Four of a Kind and the secret hands built on them. "Scored cards" are the scoring hand's cards
+// that aren't debuffed (a debuffed card doesn't score). Not Blueprint (it scales); Blueprint copies the banked Mult.
+const hand_has = (context, name) => !!(context.poker_hands && context.poker_hands[name] && context.poker_hands[name].length);
+function bite(card, context) {
+  const ex = card.ability.extra;
+  if (context.before && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker && hand_has(context, 'Pair')) {
+    const n = (context.scoring_hand || []).filter((c) => !c.debuff).length;
+    if (n > 0) {
+      let gained = 0;
+      scale_card(card, {
+        ref_value: 'bite_mult', scalar_value: 'mult_mod', scalar_factor: n, no_message: true,
+        operation: (t, k, v, change) => { t[k] = r3(v + change); gained = change; },
+      });
+      return { message: a_mult(r3(gained)), colour: 'MULT', card };
+    }
+  }
+  if (context.joker_main && ex.bite_mult > 0) return { message: a_mult(r3(ex.bite_mult)), colour: 'MULT', mult_mod: ex.bite_mult };
+  return undefined;
+}
+/** Gold cards in the FULL deck (G.playing_cards; any Gold card, not only the ones Gabite made; has_enhancement, so a quantum Gold counts). */
+export const gold_in_deck = () => (G.playing_cards || []).filter((c) => has_enhancement(c, 'm_gold')).length;
+/** Gold cards held in hand that aren't debuffed (a debuffed Gold card counts for nothing). */
+export const gold_held = () => ((G.hand && G.hand.cards) || []).filter((c) => has_enhancement(c, 'm_gold') && !c.debuff).length;
+/** Gabite, Treasure Nest: when a hand containing a Full House scores (poker_hands['Full House']: a Flush House too), ONE of its scored
+ *  cards becomes a Gold card, in context.after (once the hand has scored, so the card scored as what it was; Midas Mask's set_ability
+ *  call). The pick: the run's seeded pseudorandom_element ('gabite_nest') over the scored cards that aren't debuffed, already Gold, or
+ *  being destroyed (a shattered Glass card); UNENHANCED ones first, and only when none is left any other non-Gold one (it overwrites that
+ *  enhancement, keeping seal and edition, as the Regis' conversion does). None eligible: nothing. One card a hand, fixed (no Energy).
+ *  Not Blueprint (Blueprint copies the bank only). */
+function treasure_nest(card, context) {
+  if (!context.after || context.cardarea !== G.jokers || context.blueprint || context.retrigger_joker || !hand_has(context, 'Full House')) return undefined;
+  const pool = (context.scoring_hand || []).filter((c) => !c.debuff && !c.shattered && !c.destroyed && !has_enhancement(c, 'm_gold'));
+  if (!pool.length) return undefined;
+  const plain = pool.filter((c) => c.config.center === P_CENTERS.c_base);
+  const [pick] = pseudorandom_element(plain.length ? plain : pool, pseudoseed('gabite_nest'));
+  if (!pick) return undefined;
+  pick.set_ability(P_CENTERS.m_gold, null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_gold'), colour: 'MONEY' });
+  return undefined;
+}
+/** Garchomp, Dragon Rush: X(1 + Xmult_mod per undebuffed Gold card held in hand). */
+const dragon_rush_x = (card) => r3(1 + card.ability.extra.Xmult_mod * gold_held());
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -2484,6 +2536,64 @@ defineJokers({
     },
     calculate(self, card, context) { return poison_gas(card, context, true); },
   },
+  // ---------------------------------------------------------------- LINE: Gible -> Gabite -> Garchomp (Dragon, Gen 4)
+  // The owner's design (2026-10-28): bite -> hoard -> cash in (bite / treasure_nest / dragon_rush_x above). Gible's Bite banks +1 Mult per
+  // scored card of every hand containing a Pair (bite_mult; Energy raises mult_mod, never the bank); Gabite keeps biting and its Treasure
+  // Nest turns one scored card of a Full House Gold; Garchomp gives the bank and Dragon Rush, X(1 + 0.5 per Gold card held in hand).
+  // Energy: mult_mod +20% (1 -> 1.2 / 1.4 / 1.6 a card), Garchomp's Xmult_mod +20% (0.5 -> 0.6 / 0.7 / 0.8 a Gold card); the conversion is
+  // fixed; carried through evolution (re-applied to the new base). Blueprint copies the Mult / X, never the bank's growth or the Gold.
+  // Neither Nacho nor Pokermon+ has the line. Art: upstream 3.9.1's own (Natdex 14 / 16 / 18, 29). After Spiritomb (442). No Mega here.
+  // Gible 443: Uncommon $6. Evolves at +25 banked Mult (Dratini's scaling_evo).
+  gible: {
+    name: 'gible', poke_sprite391: sprite('Natdex', 14, 29),
+    config: { evo_rqmt: 25, extra: { bite_mult: 0, mult_mod: 1 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Dragon', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'hand_type', 'scaling_evo'], poke_after: 'spiritomb',
+    poke_custom_values_to_keep: ['bite_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.bite_mult), r3(ex.mult_mod), self.config.evo_rqmt] }; },
+    calculate(self, card, context) {
+      return bite(card, context) || scaling_evo(self, card, context, 'j_poke_gabite', card.ability.extra.bite_mult, self.config.evo_rqmt);
+    },
+  },
+  // Gabite 444: Safari $8. Keeps biting (+1 a scored card); Treasure Nest. Evolves at end of round with 6 Gold cards in the full deck.
+  gabite: {
+    name: 'gabite', poke_sprite391: sprite('Natdex', 16, 29),
+    config: { evo_rqmt: 6, extra: { bite_mult: 0, mult_mod: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dragon', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'hand_type', 'enhancements', 'modify_card', 'full_deck', 'scaling_evo'], poke_after: 'gible',
+    poke_custom_values_to_keep: ['bite_mult'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_gold);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.bite_mult), r3(ex.mult_mod), self.config.evo_rqmt, gold_in_deck()] };
+    },
+    calculate(self, card, context) {
+      return treasure_nest(card, context) || bite(card, context) || scaling_evo(self, card, context, 'j_poke_garchomp', gold_in_deck(), self.config.evo_rqmt);
+    },
+  },
+  // Garchomp 445: Safari $10. The bank (it banks no more) and Dragon Rush.
+  garchomp: {
+    name: 'garchomp', poke_sprite391: sprite('Natdex', 18, 29),
+    config: { extra: { bite_mult: 0, Xmult_mod: 0.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Dragon', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'enhancements'], poke_after: 'gabite',
+    poke_custom_values_to_keep: ['bite_mult'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_gold);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.bite_mult), r3(ex.Xmult_mod), gold_held(), dragon_rush_x(card)] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const ex = card.ability.extra, x = dragon_rush_x(card), r = {};
+      if (ex.bite_mult > 0) r.mult_mod = ex.bite_mult;
+      if (x > 1) r.Xmult_mod = x;
+      if (!Object.keys(r).length) return undefined;
+      r.message = r.Xmult_mod ? a_xmult(x) : a_mult(r3(r.mult_mod));
+      r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+      return r;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -2511,6 +2621,7 @@ export const DESIGN_FAMILIES = [
   ['combee', 'vespiquen'],
   ['shellos', 'gastrodon'],
   ['stunky', 'skuntank'],
+  ['gible', 'gabite', 'garchomp'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -2558,6 +2669,7 @@ const SUNSHINE = ['{C:poke_sun}Sunshine Form:{} while sunny,', '{C:attention}Flo
 const FICKLE = (gain, n) => ['{C:attention}Fickle:{} picks a new favourite', 'suit each round', 'Scored cards of its favourite', 'suit each give ' + gain, '{C:inactive}(Favourite: {V:1}#' + n + '#{C:inactive})'];
 const POISON_GAS = (name, by, nth) => ['{C:attention}' + name + ':{} after ' + (nth ? 'your {C:attention}nth{}' : 'each'), (nth ? 'hand this round' : 'hand you play') + ', the Blind\'s', 'requirement drops by ' + by, 'of its starting requirement',
   '{C:inactive}(Never the hand that scored;', '{C:inactive}reach it and the Blind is won)', '{C:inactive}(Max -#2#% a Blind; this Blind: {C:attention}-#3#%{C:inactive})'];
+const BITE = ['{C:attention}Bite:{} when a hand containing', 'a {C:attention}Pair{} scores, permanently', 'gains {C:mult}+#2#{} Mult for each', 'scored card', '{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult)'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -2783,6 +2895,17 @@ export const DESIGN_LOC = {
     ] },
     j_poke_stunky: { name: 'Stunky', text: [...POISON_GAS('Poison Gas', '{C:attention}#1#%{}'), EVOLVES_ROUNDS(4)] },
     j_poke_skuntank: { name: 'Skuntank', text: [...POISON_GAS('Toxic', '{C:attention}n x #1#%{}', true), '{C:inactive}(#1#%, then #4#%, then #5#%...;', '{C:inactive}next hand: {C:attention}-#6#%{C:inactive})'] },
+    j_poke_gible: { name: 'Gible', text: [...BITE, '{C:inactive}(Evolves at {C:mult}+#1#{C:inactive} / +#3# Mult)'] },
+    j_poke_gabite: { name: 'Gabite', text: [
+      BITE,
+      ['{C:attention}Treasure Nest:{} when a hand', 'containing a {C:attention}Full House{} scores,', 'one of its scored cards', 'becomes a {C:attention}Gold{} card',
+        '{C:inactive}(Unenhanced cards first)', '{C:inactive}(Evolves with {C:attention}#3#{C:inactive} Gold cards in deck)', '{C:inactive}(Gold cards: #4#/#3#)'],
+    ] },
+    j_poke_garchomp: { name: 'Garchomp', text: [
+      ['{C:mult}+#1#{} Mult {C:inactive}(banked by Bite)'],
+      ['{C:attention}Dragon Rush:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#2# {} for each {C:attention}Gold{} card', 'held in hand',
+        '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
     j_poke_burmy: { name: 'Burmy', text: [
       ['{C:attention}Cloak:{} at end of round, takes', 'the cloak most common in your', 'full deck: {C:attention}Stone{} (Sandy), {C:attention}Steel{}', '(Trash), or everything else (Plant)', '{C:inactive}(A tie keeps the cloak)'],
       ['{C:attention}Plant{} {X:poke_grass,C:white}Grass{}: {C:mult}+#1#{} Mult', '{C:inactive}(any card not Stone or Steel)', '{C:attention}Sandy{} {X:poke_earth,C:white}Earth{}: {C:chips}+#2#{} Chips {C:inactive}(Stone)',

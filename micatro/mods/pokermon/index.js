@@ -897,7 +897,10 @@ export const POKERMON = registerMod({
   // 42 = the owner's Stunky line (Stunky -> Skuntank; jokers/pokejokers_designs.js poison_gas): Poison Gas — after each hand you play
   // (after the win check; not after the final hand) the Blind's requirement drops by 4% of its starting requirement (Skuntank's Toxic:
   // n x 4% after the nth hand); one record per Blind shared by every copy, max -75%, never below 1 chip; reaching it wins the Blind.
-  contentRev: 42,
+  // 43 = the owner's Gible line (Gible -> Gabite -> Garchomp; jokers/pokejokers_designs.js bite / treasure_nest): Bite banks +1 Mult per
+  // scored card of a hand containing a Pair (evolves at +25); Gabite's Treasure Nest turns one scored card of a Full House Gold (unenhanced
+  // first; evolves with 6 Gold cards in the deck); Garchomp's Dragon Rush X(1 + 0.5 per Gold card held in hand).
+  contentRev: 43,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
