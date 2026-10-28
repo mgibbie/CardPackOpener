@@ -181,6 +181,24 @@ House pattern: a WEATHER / FORM change (the owner's Castform, jokers/pokejokers_
     Gen 3 sheet, unlisted in pokespriteload.lua), drawn by ui.js ownFace from the view's form.
   - Darmanitan's Zen Mode is the other shape: a temporary Tera sticker, restored at end of round.
 
+House pattern: a PAIR with half-strength cross-coverage (the owner's Lunatone + Solrock,
+jokers/pokejokers_designs.js; Plusle / Minun, pokejokers_11.js, are the older pair):
+  - Each one alone covers HALF of a cycle: Solrock +100 Chips on day hands, Lunatone X2 on night
+    hands. The cycle is the round's hand count: G.GAME.current_round.hands_played before the hand
+    (0, 2, 4... = day: the 1st, 3rd and 5th hands; still the pre-hand count during scoring, run.js
+    adds 1 after evaluate_play). It resets each round (new_round). Discards don't move it.
+  - Holding BOTH (each checks find_card(partner), which skips debuffed cards: a debuffed partner
+    breaks the pair; a Blueprint copy is not the partner) unlocks the other half at HALF strength:
+    Solrock +50 Chips by night, Lunatone X1.5 by day, so every hand gets both. Each copy acts on
+    its own (two Solrocks + a Lunatone give +200 / +100).
+  - Energy: store only the full value (chips, Xmult) and DERIVE the half (chips / 2, and for an X
+    1 + (X - 1) / 2), so one energy field raises both and the pair rule stays exact. Earth Energy:
+    +130 / +65 Chips and X2.4 / X1.7 after one, +190 / +95 and X3.2 / X2.1 after three.
+  - Price: Uncommon $6 for a single-stage Basic (the default is Rare $7), because each alone works
+    half the time.
+  - Tooltip: say which half the NEXT hand is ("Next hand: Day"; out of a round, i.e. in the shop, it is
+    the next round's first hand: Day) and the pair status ("Cosmic Power: active / needs Lunatone").
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -1099,6 +1117,9 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
     - Held Diamonds or debuffed cards (Gligar, Gliscor).
     - Discards that bank Chips (the owner's Trapinch line: +2 / +3 Chips per discarded card,
       kept on the joker; Vibrava +1 discard; Flygon X1 + 0.25 per discard used this round).
+    - Day / night pairs (the owner's Lunatone + Solrock, U $6 each, single-stage): Solrock +100
+      Chips on day hands (1st / 3rd / 5th), Lunatone X2 on night hands (2nd / 4th); holding both,
+      each also covers the other half at half strength (+50 Chips / X1.5). See the pair pattern in 2.1.
 Hooks: individual 33, end_of_round 29, joker_main 26, before 14, repetition 13, add_to_deck 10,
   after 9, setting_blind 8
 Examples:

@@ -266,7 +266,8 @@ follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** s
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
-line" below), **`3.9.1+r27`** since the owner's Castform ("The owner's Castform" below)
+line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), **`3.9.1+r28`** since the owner's Lunatone +
+Solrock ("The owner's Lunatone + Solrock" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2340,6 +2341,30 @@ Pinned **`3.9.1+r27`** (`contentRev: 27`; `LEGACY_MOD_VERSIONS` untouched). The 
 - **Tests**: `micatro/tests/mods/pokermon_castform_test.mjs` (2 passed / 18 failed on origin/main; 100 / 5 with only runbadges.js reverted — the Monotype checks; 105 / 0 here).
   Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 40 defs), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (858 jokers).
+
+### The owner's Lunatone + Solrock (2026-10-28, branch `feat/pokermon-solrock-lunatone`)
+Pinned **`3.9.1+r28`** (`contentRev: 28`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Lunatone (337) and Solrock (338), a pair like
+Plusle / Minun, in `jokers/pokejokers_designs.js` (42 defs now), after Seviper in Pokédex order. Both **Earth** (Rock maps to Earth), single-stage,
+**Uncommon $6** (below the single-stage Rare $7: each alone works half the time). Neither Nacho nor Pokermon+ has them.
+- **Day / night**: within each round the 1st, 3rd and 5th hands are **day**, the 2nd and 4th **night**: `G.GAME.current_round.hands_played`
+  before the hand, even = day (during scoring it is still the pre-hand count: `run.js` adds 1 after `evaluate_play`). It restarts each round
+  (`new_round`); discards don't move it.
+- **Solrock, Sunlight**: **+100 Chips** on day hands (`chips`). **Lunatone, Moonlight**: **X2 Mult** on night hands (`Xmult`). Both `joker_main`.
+- **Cosmic Power**: holding BOTH (each checks `find_card(partner)`, which skips debuffed cards: a debuffed partner breaks it; a Blueprint copy is
+  not the partner): Solrock also gives **+50 Chips** on night hands, Lunatone **X1.5** on day hands, so every hand gets both. Each copy acts on
+  its own (two Solrocks + a Lunatone: +200 by day, +100 by night). A Blueprint copies whichever half the copied one gives.
+- **Energy**: `chips` +30% and `Xmult` +20% of base; the half values are DERIVED (`chips / 2`, `1 + (Xmult - 1) / 2`), so they stay exactly half.
+  Earth Energy: one +130 / +65 Chips, X2.4 / X1.7; two +160 / +80, X2.8 / X1.9; three +190 / +95, X3.2 / X2.1. Colorless Energy (half): one
+  +115 / +57.5, X2.2 / X1.6.
+- **Tooltips**: "(Next hand: Day / Night)" (out of a round, `facing_blind` unset, it is the next round's first: Day) and "(Cosmic Power: active /
+  needs Lunatone)" ("needs Solrock" on Lunatone).
+- **Upstream**: Pokermon's unreleased `main` (af0b656, "Added Solrock/Lunatone"; not taken, see sub-batch 15b's drift) has its own, different
+  Lunatone / Solrock (chance-based held Clubs / Stone money, scored Hearts / Stone X1.4). These are the owner's design instead; a future rebase onto
+  an upstream release that ships them must keep the owner's (or ask).
+- **Art: upstream's own.** 3.9.1's Natdex cells {12,22} / {14,22} (with Shiny twins), `poke_sprite391`. Nothing to deploy for the mod. The wiki
+  drops them (404 missing).
+- **Tests**: `micatro/tests/mods/pokermon_solrock_lunatone_test.mjs` (2 passed / 16 failed on origin/main; 61 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 42 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (860 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
