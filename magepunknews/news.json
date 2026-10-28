@@ -64,19 +64,19 @@
 			"w": 1428,
 			"h": 2108
 		},
-		"@poke_AtlasJokersBasicGen04391": {
-			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen04-391.png",
-			"cw": 142,
-			"ch": 190,
-			"w": 1704,
-			"h": 1710
-		},
 		"@poke_AtlasJokersBasicNatdex391": {
 			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicNatdex-391.png",
 			"cw": 142,
 			"ch": 190,
 			"w": 4260,
 			"h": 13110
+		},
+		"@poke_AtlasJokersBasicGen04391": {
+			"src": "/micatro/mods/pokermon/assets/2x/Basic%20Series/AtlasJokersBasicGen04-391.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 1710
 		},
 		"@poke_type_sleeves": {
 			"src": "/micatro/mods/pokermon/assets/2x/type_sleeves.png",
@@ -521,6 +521,114 @@
 		}
 	},
 	"entries": [
+		{
+			"sha": "140d80d",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r43: the owner's Gible line (bite -> hoard -> cash in)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_gible",
+							"name": "Gible",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 6,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 29
+							}
+						},
+						{
+							"key": "j_poke_gabite",
+							"name": "Gabite",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 29
+							}
+						},
+						{
+							"key": "j_poke_garchomp",
+							"name": "Garchomp",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 29
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "7ec47b4",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Stunky line (contentRev 42)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_stunky",
+							"name": "Stunky",
+							"set": "Joker",
+							"rarity": "common",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 28
+							}
+						},
+						{
+							"key": "j_poke_skuntank",
+							"name": "Skuntank",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 28
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "4bf3a14",
+			"date": "2026-10-28",
+			"kind": "patch",
+			"title": "Pokermon r41: Burmy's cloak counts three piles (Plant = everything not Stone/Steel)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a06bd81",
+			"date": "2026-10-28",
+			"kind": "patch",
+			"title": "Overworld: ♀ / ♂ in the pixel font",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "0e07649",
 			"date": "2026-10-28",
