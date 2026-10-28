@@ -43,8 +43,11 @@
 // Hearts / Diamonds X1.25, Castform Sunny) and their Primal Clash (both held, no Rayquaza: the suits held on the round's first deal pick one
 // for the round), Rayquaza (Dragon: Delta Stream calms the clash; Dragon Ascent X0.2 per Straight / Flush) — upstream 3.9.1 draws them with
 // their souls (Natdex 8-17, 25).
+// Chatot (Vocabulary: +4 Mult for each different poker hand played this run; New Word: a hand's first play this run, while held,
+// creates its Planet; Colorless) and Pachirisu (Quick Spark: X2 on each round's first hand, Nuzzle +X0.25 per other Lightning Joker;
+// Cheek Pouch: $1 per Lightning Joker at end of round; Lightning), Rare $7 each — upstream 3.9.1 draws them (Natdex 10,29 / 22,27).
 import {
-  G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
+  G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
@@ -745,6 +748,47 @@ function eon(card, context, own, partner) {
   if (context.joker_main && ex.eon_Xmult > 1) return { message: a_xmult(r3(ex.eon_Xmult)), colour: 'XMULT', Xmult_mod: ex.eon_Xmult };
   return undefined;
 }
+
+// ------------------------------------------------------------ Chatot (Vocabulary / New Word)
+// The run's played-hand records: G.GAME.hands[h].played is the run's count for that poker hand (run.js evaluate_play adds 1 before
+// the jokers' `before` pass; it never resets during a run), so it counts every hand type played this run, from before Chatot was
+// bought too, secret hands (Five of a Kind, Flush House, Flush Five) and add-on hands included. The hand being played counts at once.
+const vocabulary = () => Object.values((G.GAME && G.GAME.hands) || {}).filter((h) => h && h.played > 0).length;
+const vocab_mult = (card) => r3(card.ability.extra.mult * vocabulary());
+/** New Word: in `before`, a hand whose run count just became 1 (its first play this run) creates its Planet, with consumable room
+ *  (the Blue Seal's buffer check). `new_words` (on the joker) names the hand types this Chatot already granted, so it never grants
+ *  twice for one type (a joker retrigger re-running `before`, a mod resetting a count); a hand first played while no Chatot was held
+ *  is never granted later (its count is past 1). Not Blueprint (Blueprint copies the Mult). A debuffed hand (The Psychic...) has no
+ *  `before` pass, so its first play grants nothing. */
+function new_word(card, context) {
+  if (!(context.before && context.cardarea === G.jokers) || context.blueprint) return;
+  const name = context.scoring_name, h = name && G.GAME.hands[name];
+  const ex = card.ability.extra;
+  ex.new_words = ex.new_words || {};
+  if (!h || h.played !== 1 || ex.new_words[name]) return;
+  const planet = (P_CENTER_POOLS.Planet || []).find((p) => p.config && p.config.hand_type === name);
+  if (!planet || G.consumeables.cards.length + G.GAME.consumeable_buffer >= G.consumeables.config.card_limit) return;
+  ex.new_words[name] = true;
+  G.GAME.consumeable_buffer += 1;
+  G.E_MANAGER.add_event(() => {
+    const c = create_card('Planet', G.consumeables, null, null, null, null, planet.key, 'chatot');
+    c.add_to_deck();
+    G.consumeables.emplace(c);
+    G.GAME.consumeable_buffer = 0;
+  });
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_plus_planet'), colour: 'Planet' });
+}
+
+// ------------------------------------------------------------ Pachirisu (Quick Spark / Nuzzle / Cheek Pouch)
+// A Lightning Joker: Pokermon's is_type (its ptype, a Tera sticker, an add-on's IS_TYPE_RULES), not debuffed (the Barboach / Starly
+// count with one type).
+const sparky = (j) => !j.debuff && is_type(j, 'Lightning');
+const spark_others = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && sparky(j)).length;
+const spark_x = (card) => r3(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * spark_others(card));
+const pouch_money = (card) => card.ability.extra.pouch * (spark_others(card) + 1);
+/** Quick Spark: on the round's first hand (current_round.hands_played is 0 while it scores). The tooltip names its state. */
+const spark_on = () => !!(G.GAME && G.GAME.current_round && G.GAME.current_round.hands_played === 0);
+const spark_state = () => (G.GAME && G.GAME.facing_blind && !spark_on() ? 'Used this round' : 'Active!');
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -1817,6 +1861,57 @@ defineJokers({
       return undefined;
     },
   },
+  // ---------------------------------------------------------------- Chatot 441 (Colorless, Gen 4)
+  // The owner's design (2026-10-28). Rare $7, single-stage. Vocabulary: +4 Mult for each DIFFERENT poker hand type played this run
+  // (vocabulary above: G.GAME.hands[h].played > 0, the run's own records, so a Chatot bought late sees the whole run; secret hands
+  // count). New Word: the first time each poker hand type is played this run, WHILE Chatot is held, it creates that hand's Planet if
+  // there is consumable room (new_word above; tracked per joker in `new_words`, granted once a type). Energy: the per-hand `mult`
+  // (+40% of base: 4 -> 5.6 / 7.2 / 8.8); the Planets are fixed. Blueprint copies the Mult, not New Word. Neither Nacho nor Pokermon+
+  // has it. Art: upstream 3.9.1's own cell (Natdex 10, 29: the Colorless frame).
+  chatot: {
+    name: 'chatot', poke_sprite391: sprite('Natdex', 10, 29),
+    config: { extra: { mult: 4 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Colorless', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'hand_type', 'planet', 'generation'], poke_after: 'happiny',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      return { vars: [r3(card.ability.extra.mult), vocabulary(), vocab_mult(card)] };
+    },
+    calculate(self, card, context) {
+      new_word(card, context);
+      if (!context.joker_main) return undefined;
+      const mult = vocab_mult(card);
+      if (!mult) return undefined;
+      return { message: a_mult(mult), colour: 'MULT', mult_mod: mult };
+    },
+  },
+
+  // ---------------------------------------------------------------- Pachirisu 417 (Lightning, Gen 4)
+  // The owner's design (2026-10-28). Rare $7, single-stage. Quick Spark: the first hand of each round (hands_played === 0) gives X2
+  // Mult (`Xmult`); Nuzzle: plus X0.25 (`Xmult_mod`) for each OTHER Lightning Joker (spark_others above: is_type, so Tera stickers
+  // count; debuffed ones don't). Cheek Pouch: at end of round earn $1 (`pouch`) for each Lightning Joker, itself included, through
+  // calc_dollar_bonus (a row of the round's cash-out list, as Miltank). Energy: Xmult +20% (2 -> 2.4 / 2.8 / 3.2) and Xmult_mod +20%
+  // (0.25 -> 0.3 / 0.35 / 0.4); the $ is fixed. Blueprint copies the first-hand X Mult (Blueprint is no Lightning joker, so it never
+  // adds to the counts), never the Cheek Pouch (calc_dollar_bonus is not copied, as Golden Joker). Neither Nacho nor Pokermon+ has
+  // it. Art: upstream 3.9.1's own cell (Natdex 22, 27: the Lightning frame).
+  pachirisu: {
+    name: 'pachirisu', poke_sprite391: sprite('Natdex', 22, 27),
+    config: { extra: { Xmult: 2, Xmult_mod: 0.25, pouch: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Lightning', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'economy', 'types', 'hands'], poke_after: 'roserade',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), spark_x(card), spark_state(), ex.pouch, pouch_money(card)] };
+    },
+    calculate(self, card, context) {
+      if (context.first_hand_drawn && !context.blueprint) juice_card_until(card, () => spark_on() && !G.RESET_JIGGLES, true);
+      if (!context.joker_main || !spark_on()) return undefined;
+      const x = spark_x(card);
+      return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+    },
+    calc_dollar_bonus(self, card) { return pouch_money(card); },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -2059,6 +2154,15 @@ export const DESIGN_LOC = {
     j_poke_rayquaza: { name: 'Rayquaza', text: [
       ['{C:attention}Delta Stream:{} {C:attention}Kyogre{} and', '{C:attention}Groudon{} both work every round', '{C:inactive}(no Primal Clash; Castform reads', '{C:inactive}the weather as usual)'],
       ['{C:attention}Dragon Ascent:{} gains {X:mult,C:white} X#2# {} Mult', 'when a played hand contains', 'a {C:attention}Straight{} or a {C:attention}Flush{}', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
+    ] },
+    j_poke_chatot: { name: 'Chatot', text: [
+      ['{C:attention}Vocabulary:{} {C:mult}+#1#{} Mult for each', 'different {C:attention}poker hand{} played', 'this run', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)'],
+      ['{C:attention}New Word:{} the first time each', '{C:attention}poker hand{} is played this run,', 'create its {C:planet}Planet{} card', '{C:inactive}(Must have room)'],
+    ] },
+    j_poke_pachirisu: { name: 'Pachirisu', text: [
+      ['{C:attention}Quick Spark:{} the first hand', 'of each round gives {X:mult,C:white} X#1# {} Mult', '{C:attention}Nuzzle:{} plus {X:mult,C:white} X#2# {} for each', 'other {X:poke_lightning,C:black}Lightning{} Joker',
+        '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive}, #4#)'],
+      ['{C:attention}Cheek Pouch:{} earn {C:money}$#5#{} for each', '{X:poke_lightning,C:black}Lightning{} Joker at end of round', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:money}$#6#{C:inactive})'],
     ] },
   },
   Other: {
