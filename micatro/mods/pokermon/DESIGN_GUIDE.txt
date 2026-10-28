@@ -118,7 +118,7 @@ Missing by stage:
 Notable gaps:
   - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
     by Nacho (the Turtwig, Chimchar and Piplup lines); Gen 5 (Snivy, Tepig, Oshawott) is now the
-    owner's (contentRev 47; the starter template, 2.2).
+    owner's (contentRev 48; the starter template, 2.2).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -530,11 +530,14 @@ House pattern: SLOW START, a payoff that wakes up (the owner's Regigigas, jokers
     (`slow_start`, 5 when obtained, a non-energy field: Energy never shortens it) reaches 0, then works for the rest of the run.
   - The countdown runs in the main end_of_round pass (not Blueprint; a debuffed joker isn't calculated, so it waits too), and an outside
     condition speeds it: it drops by 1 + the DISTINCT related jokers held then (the Regis, regi_others' rule: two Regices count once).
-    Define every case on the card and in the tests: none 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0), all three 2 (5 1 0).
+    Define every case on the card and in the tests: none 5 rounds (5 4 3 2 1 0), one 3 (5 3 1 0), two 2 (5 2 0). The FULL set is a
+    clean jump, not one more step: with all three it goes straight to 0 (giga_drop), so it wakes after 1 round (5 0), and a trio
+    assembled partway through the wait wakes it at the next end of round (the owner, contentRev 47: "full trio can make it 1 round").
   - Don't name the field `rounds`: that is level_evo's countdown, and the card view draws it as an evolution timer.
   - It can feed its family's shared rider: awake, with the whole trio held, each Regi converts 1 more card per Blind (a term added to
     regi_converts, once however many copies; the Regis' own tooltip shows the new count).
-  - Tooltip: the state, "Asleep: k left, -n a round" / "Awake!". Blueprint copies the X only while it is awake.
+  - Tooltip: the state, "Asleep: k left, -n a round" / with the full trio "Asleep: k left, wakes at end of round" / "Awake!", and the
+    trio rule spelled out ("(With all three Regis: wakes after 1 round)"). Blueprint copies the X only while it is awake.
 House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; systems/types.js multitype):
   - One flag on the center, read where Pokermon decides types: is_type and find_pokemon_type answer true for every one of the 12
     POKETYPES, and energy_matches lets every type's Energy energize it at full strength. So every type synergy counts it with no special
@@ -614,7 +617,7 @@ The wiki's default guesses follow the same modes:
 
 Common deviations:
   - Starters: Basic U $5-$6 with the 'starter' attribute.
-    House TEMPLATE (the owner's Gen 5 starters, contentRev 47): Basic Uncommon $5 with starter: true (only the Basic: the Starter
+    House TEMPLATE (the owner's Gen 5 starters, contentRev 48): Basic Uncommon $5 with starter: true (only the Basic: the Starter
     Pack's starter_lists read it, and an owned family member keeps the whole line out), Stage 1 Safari $8, Stage 2 Safari $10, all
     three with the 'starter' attribute; the type's perk at EVERY stage in a field Energy ignores (Grass h_size 1 through the
     hand_size pair, Fire d_size 1 through the discards pair, Water hands 1 through the hands pair: set_ability runs the old

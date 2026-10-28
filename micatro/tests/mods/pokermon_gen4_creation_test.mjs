@@ -5,7 +5,7 @@
 //   Palkia 484 (Water)      Spacial Rend: +1 Joker slot and +1 hand size while held; taken back when sold, destroyed or debuffed (a
 //                           debuff on a full row leaves it one over: nobody is pushed out). Energy-inert.
 //   Regigigas 486 (Colorless) Slow Start: gives nothing until its countdown (5) reaches 0, then X4 Mult for good. Each end of round
-//                           it drops by 1 + the distinct Regis held (all three: awake after 2 rounds). Awake with all three Regis: each
+//                           it drops by 1 + the distinct Regis held (all three: awake after 1 round). Awake with all three Regis: each
 //                           Regi converts 1 extra card per Blind. Energy: Xmult +20% (X4.8 / X5.6 / X6.4).
 //   Giratina 487 (Psychic)  Shadow Force: +X0.25 Mult for each playing card destroyed (any cause); Origin Forme (Dialga or Palkia held):
 //                           X0.5 instead, and its Origin card (Gen 4 {10,3} + soul {11,3}). Energy: Xmult_mod +20% (0.3 / 0.35 / 0.4).
@@ -255,7 +255,20 @@ await sec('regigigas', () => {
   const cut = (seed, regis) => { const [g] = fresh(seed, ['regigigas', ...regis]); const out = [ex(g).slow_start]; while (ex(g).slow_start > 0 && out.length < 8) { round(); out.push(ex(g).slow_start); } return out.join(); };
   ok(cut('GIG1', ['j_poke_regirock']) === '5,3,1,0', 'one Regi: 5 3 1 0 (3 rounds)', cut('GIG1', ['j_poke_regirock']));
   ok(cut('GIG2', ['j_poke_regirock', 'j_poke_regice']) === '5,2,0', 'two Regis: 5 2 0 (2 rounds)');
-  ok(cut('GIG3', REGIS) === '5,1,0', 'all three: 5 1 0 — awake after 2 rounds');
+  ok(cut('GIG0B', []) === '5,4,3,2,1,0', 'no Regi: 5 4 3 2 1 0 (5 rounds)', cut('GIG0B', []));
+  ok(cut('GIG3', REGIS) === '5,0', 'all three: 5 0 — awake after 1 round', cut('GIG3', REGIS));
+  { const [g] = fresh('GIG3T', ['regigigas', ...REGIS]);
+    ok(/Asleep: 5 left, wakes at end of round/.test(plain(g)) && /With all three Regis: \| wakes after 1 round/.test(plain(g)), 'tooltip with the trio: wakes at end of round / after 1 round', plain(g)); }
+  // the trio assembled partway through the wait: awake at the next end of round
+  { const [g] = fresh('GIG3M', ['regigigas']); const out = [ex(g).slow_start];
+    round(); out.push(ex(g).slow_start); add('j_poke_regirock');
+    round(); out.push(ex(g).slow_start); add('j_poke_regice'); add('j_poke_registeel');
+    t = playKeys(['S_2']); const asleep = near(t.mult, 1);
+    round(); out.push(ex(g).slow_start); t = playKeys(['S_2']);
+    ok(out.join() === '5,4,2,0' && asleep && near(t.mult, 4), 'trio assembled mid-wait (5 4 2): awake at the next end of round', [out, t]); }
+  { const [g] = fresh('GIG3D', ['regigigas', 'j_poke_regirock']); debuff(g); round(); const was = ex(g).slow_start; undebuff(g);
+    add('j_poke_regice'); add('j_poke_registeel'); round();
+    ok(was === 5 && ex(g).slow_start === 0, 'trio assembled with 5 still left (it slept a debuffed round): awake at the next end of round', [was, ex(g).slow_start]); }
   ok(cut('GIG4', ['j_poke_regice', 'j_poke_regice']) === '5,3,1,0', 'two Regices count once: 5 3 1 0');
   const [g5, rk] = fresh('GIG5', ['regigigas', 'j_poke_regirock']);
   debuff(rk);
