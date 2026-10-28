@@ -28,15 +28,18 @@
 // Castform (Forecast: on the round's first deal, the suit held most picks Sunny / Rainy / Snowy, a tie Normal, its type following
 // the weather for the round; Colorless; contentRev 27) — upstream 3.9.1 draws it (Natdex 10, 23) and its three weather forms
 // (Gen 3 sheet 0 / 2 / 4, 0).
+// Barboach -> Whiscash (Muddy Water: +12 / +20 Chips per Water or Earth Joker, itself included, a dual-type one once; Whiscash's
+// Earthquake: with 2+ OTHER Water / Earth Jokers the round's first hand retriggers every scored card; Water; contentRev 28) — upstream
+// 3.9.1 draws them too (Natdex 16 / 18, 22).
 // Lunatone + Solrock, a pair like Plusle / Minun (day / night: each round's 1st, 3rd, 5th hands are day, 2nd and 4th night; Solrock
 // +100 Chips on day hands, Lunatone X2 on night hands; Cosmic Power: with the other one, each covers the other half at half strength,
-// +50 Chips / X1.5; Earth, Uncommon $6; contentRev 28) — upstream 3.9.1 draws them (Natdex 12 / 14, 22).
+// +50 Chips / X1.5; Earth, Uncommon $6; contentRev 29) — upstream 3.9.1 draws them (Natdex 12 / 14, 22).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, find_card,
+  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -461,6 +464,28 @@ const sun_half = (ex) => ex.chips / 2;
 const moon_half = (ex) => 1 + (ex.Xmult - 1) / 2;
 const commanded = (card) => G.jokers.cards.find((c) => c !== card && is_type(c, 'Water'));
 const TATSU_FORMS = ['curly', 'droopy', 'stretchy'];
+
+// The owner's Barboach line (Muddy Water / Earthquake): a joker counts when it is Water OR Earth by Pokermon's own is_type (its ptype,
+// a Tera sticker, Castform's current form, an add-on's IS_TYPE_RULES), ONCE however many of the two it is, and only while it isn't
+// debuffed (a debuffed joker does nothing this hand; NOTE Pelipper / Politoed / Corsola count through find_pokemon_type, which counts
+// debuffed jokers too — this line deliberately doesn't). Itself always counts (+1), so the shop / collection card shows the number
+// it would give once bought.
+const muddy = (j) => !j.debuff && (is_type(j, 'Water') || is_type(j, 'Earth'));
+const muddy_others = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && muddy(j)).length;
+const muddy_count = (card) => muddy_others(card) + 1;
+function muddy_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const chips = r3(card.ability.extra.chips * muddy_count(card));
+  return { message: a_chips(chips), colour: 'CHIPS', chip_mod: chips };
+}
+/** Whiscash, Earthquake: on the round's first hand, with quake_req+ OTHER Water / Earth Jokers, every scored card retriggers. */
+const quake_on = (card) => muddy_others(card) >= card.ability.extra.quake_req;
+function quake_state(card) {
+  const ex = card.ability.extra, n = muddy_others(card);
+  if (n < ex.quake_req) return 'Inactive: ' + n + '/' + ex.quake_req + ' others';
+  if (G.GAME && G.GAME.facing_blind && G.GAME.current_round && G.GAME.current_round.hands_played > 0) return 'Used this round';
+  return 'Active!';
+}
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -1149,6 +1174,93 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- the pair: Lunatone + Solrock (Earth, Gen 3; like Plusle / Minun)
+  // The owner's design (2026-10-28). Day and night: within each round the 1st, 3rd and 5th hands are DAY, the 2nd and 4th NIGHT
+  // (G.GAME.current_round.hands_played before the hand: even = day). Solrock, Sunlight: +100 Chips on day hands (`chips`). Lunatone,
+  // Moonlight: X2 Mult on night hands (`Xmult`). Cosmic Power: with the other one owned (not debuffed; find_card), each also covers
+  // the other half of the cycle at half strength — Solrock +chips/2 on night hands, Lunatone X(1 + (Xmult - 1) / 2) on day hands — so
+  // every hand gets both. Each copy acts on its own. Energy: chips +30% / Xmult +20% of base; the half values are DERIVED from them,
+  // so they stay exactly half (one Energy: +130 / +65 Chips, X2.4 / X1.7). Uncommon $6: single-stage, priced below the usual Rare $7
+  // because each alone works half the time. Not Blueprint-restricted. Art: upstream 3.9.1's own cells (Natdex 12 / 14, 22).
+  lunatone: {
+    name: 'lunatone', poke_sprite391: sprite('Natdex', 12, 22),
+    config: { extra: { Xmult: 2 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'hands', 'pair'], poke_after: 'seviper',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult), r3(moon_half(ex)), next_is_day() ? 'Day' : 'Night', cosmic(card, 'j_poke_solrock') ? 'active' : 'needs Solrock'] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const ex = card.ability.extra;
+      const x = !is_day() ? ex.Xmult : cosmic(card, 'j_poke_solrock') ? moon_half(ex) : 1;
+      if (x === 1) return undefined;
+      return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+  solrock: {
+    name: 'solrock', poke_sprite391: sprite('Natdex', 14, 22),
+    config: { extra: { chips: 100 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'hands', 'pair'], poke_after: 'lunatone',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.chips), r3(sun_half(ex)), next_is_day() ? 'Day' : 'Night', cosmic(card, 'j_poke_lunatone') ? 'active' : 'needs Lunatone'] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const ex = card.ability.extra;
+      const c = is_day() ? ex.chips : cosmic(card, 'j_poke_lunatone') ? sun_half(ex) : 0;
+      if (!c) return undefined;
+      return { message: a_chips(r3(c)), colour: 'CHIPS', chip_mod: c };
+    },
+  },
+
+  // ---------------------------------------------------------------- LINE F7: Barboach -> Whiscash (Water, Gen 3)
+  // The owner's design (2026-10-28): a Water / Earth team. Muddy Water: +Chips for each Water or Earth Joker you have, itself included
+  // (muddy_count above: a dual-type joker once; Tera stickers and Castform's form through is_type; debuffed jokers don't count). The
+  // per-joker Chips is `chips` (Energy +30% of its base each: Barboach 12 -> 15.6 / 19.2 / 22.8, Whiscash 20 -> 26 / 32 / 38). Neither
+  // Nacho nor Pokermon+ has the line. Art: upstream 3.9.1's own (Natdex 16 / 18, 22).
+  // Barboach 339: Common $5; +12 Chips per Water / Earth Joker. Evolves after 5 rounds.
+  barboach: {
+    name: 'barboach', poke_sprite391: sprite('Natdex', 16, 22),
+    config: { extra: { chips: 12, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'types', 'round_evo'], poke_after: 'solrock',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, n = muddy_count(card);
+      return { vars: [r3(ex.chips), n, r3(ex.chips * n), ex.rounds] };
+    },
+    calculate(self, card, context) { return muddy_main(card, context) || level_evo(self, card, context, 'j_poke_whiscash'); },
+  },
+  // Whiscash 340: Safari $8; +20 Chips per Water / Earth Joker; Earthquake: with at least 2 OTHER Water / Earth Jokers, the first hand
+  // of each round (hands_played === 0) retriggers every scored card once (`retriggers`, fixed: never energized; `quake_req` neither).
+  // A Blueprint copying it adds its own retrigger, as on Remoraid / Octillery (the condition is read from Whiscash's row).
+  whiscash: {
+    name: 'whiscash', poke_sprite391: sprite('Natdex', 18, 22),
+    config: { extra: { chips: 20, retriggers: 1, quake_req: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'types', 'retrigger'], poke_after: 'barboach',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, n = muddy_count(card);
+      return { vars: [r3(ex.chips), n, r3(ex.chips * n), ex.quake_req, quake_state(card)] };
+    },
+    calculate(self, card, context) {
+      if (context.first_hand_drawn && !context.blueprint && quake_on(card)) {
+        juice_card_until(card, () => G.GAME.current_round.hands_played === 0 && !G.RESET_JIGGLES && quake_on(card), true);
+      }
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && G.GAME.current_round.hands_played === 0 && quake_on(card)) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return muddy_main(card, context);
+    },
+  },
+
   // ---------------------------------------------------------------- Castform 351 (Colorless, Gen 3)
   // The owner's design (2026-10-27): Forecast. When the round's first hand is drawn, Castform reads the weather from the suit held
   // most (forecast: Hearts + Diamonds together vs Clubs vs Spades; Wild counts for all three; debuffed / suitless cards for none;
@@ -1200,51 +1312,6 @@ defineJokers({
     },
   },
 
-  // ---------------------------------------------------------------- the pair: Lunatone + Solrock (Earth, Gen 3; like Plusle / Minun)
-  // The owner's design (2026-10-28). Day and night: within each round the 1st, 3rd and 5th hands are DAY, the 2nd and 4th NIGHT
-  // (G.GAME.current_round.hands_played before the hand: even = day). Solrock, Sunlight: +100 Chips on day hands (`chips`). Lunatone,
-  // Moonlight: X2 Mult on night hands (`Xmult`). Cosmic Power: with the other one owned (not debuffed; find_card), each also covers
-  // the other half of the cycle at half strength — Solrock +chips/2 on night hands, Lunatone X(1 + (Xmult - 1) / 2) on day hands — so
-  // every hand gets both. Each copy acts on its own. Energy: chips +30% / Xmult +20% of base; the half values are DERIVED from them,
-  // so they stay exactly half (one Energy: +130 / +65 Chips, X2.4 / X1.7). Uncommon $6: single-stage, priced below the usual Rare $7
-  // because each alone works half the time. Not Blueprint-restricted. Art: upstream 3.9.1's own cells (Natdex 12 / 14, 22).
-  lunatone: {
-    name: 'lunatone', poke_sprite391: sprite('Natdex', 12, 22),
-    config: { extra: { Xmult: 2 } },
-    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Earth', gen: 3, blueprint_compat: true,
-    attributes: ['xmult', 'hands', 'pair'], poke_after: 'seviper',
-    loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      const ex = card.ability.extra;
-      return { vars: [r3(ex.Xmult), r3(moon_half(ex)), next_is_day() ? 'Day' : 'Night', cosmic(card, 'j_poke_solrock') ? 'active' : 'needs Solrock'] };
-    },
-    calculate(self, card, context) {
-      if (!context.joker_main) return undefined;
-      const ex = card.ability.extra;
-      const x = !is_day() ? ex.Xmult : cosmic(card, 'j_poke_solrock') ? moon_half(ex) : 1;
-      if (x === 1) return undefined;
-      return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
-    },
-  },
-  solrock: {
-    name: 'solrock', poke_sprite391: sprite('Natdex', 14, 22),
-    config: { extra: { chips: 100 } },
-    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Earth', gen: 3, blueprint_compat: true,
-    attributes: ['chips', 'hands', 'pair'], poke_after: 'lunatone',
-    loc_vars(self, info_queue, card) {
-      type_tooltip(self, info_queue, card);
-      const ex = card.ability.extra;
-      return { vars: [r3(ex.chips), r3(sun_half(ex)), next_is_day() ? 'Day' : 'Night', cosmic(card, 'j_poke_lunatone') ? 'active' : 'needs Lunatone'] };
-    },
-    calculate(self, card, context) {
-      if (!context.joker_main) return undefined;
-      const ex = card.ability.extra;
-      const c = is_day() ? ex.chips : cosmic(card, 'j_poke_lunatone') ? sun_half(ex) : 0;
-      if (!c) return undefined;
-      return { message: a_chips(r3(c)), colour: 'CHIPS', chip_mod: c };
-    },
-  },
-
   // ---------------------------------------------------------------- LINE I: Mudbray -> Mudsdale (Earth, Gen 7)
   // Mudbray 749: +20 Chips; Stamina: +6 Chips for each hand that isn't the round's first. Evolves in 5 rounds.
   mudbray: {
@@ -1292,6 +1359,7 @@ export const DESIGN_FAMILIES = [
   ['gulpin', 'swalot'],
   ['trapinch', 'vibrava', 'flygon'],
   ['spoink', 'grumpig'],
+  ['barboach', 'whiscash'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -1314,6 +1382,8 @@ const SAND_EVO = ['{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#4#{C:ina
 const PEARL = ['{C:attention}Pearl:{} at end of round, a', 'random card held in hand', 'with no seal gains a {C:attention}Pink Seal{}'];
 const FORECAST = ['{C:attention}Forecast:{} when a round\'s first', 'hand is drawn, takes the form', 'of the suit held most'];
 const FORECAST_NOTE = ['{C:inactive,s:0.8}(Normal again after the round;', '{C:inactive,s:0.8}its type never breaks Monotype)'];
+const MUDDY = ['{C:attention}Muddy Water:{} {C:chips}+#1#{} Chips for', 'each {X:poke_water,C:white}Water{} or {X:poke_earth,C:white}Earth{} Joker', '{C:inactive}(Itself included)',
+  '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:chips}+#3#{C:inactive} Chips)'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 export const DESIGN_LOC = {
   Joker: {
@@ -1418,6 +1488,11 @@ export const DESIGN_LOC = {
       PEARL,
       ['{C:attention}Spoink Dance:{} {C:attention}Pink Seals{}', 'trigger on every hand'],
       ['Gains {X:mult,C:white} X#2# {} Mult for each', 'hand a {C:attention}Pink Seal{} triggers in', '{C:attention}Black Pearl:{} {X:mult,C:white} X#3# {} instead if', 'one had no room for its Energy', '{C:inactive}(Currently {X:mult,C:white} X#1# {C:inactive} Mult)'],
+    ] },
+    j_poke_barboach: { name: 'Barboach', text: [...MUDDY, EVOLVES_ROUNDS(4)] },
+    j_poke_whiscash: { name: 'Whiscash', text: [
+      MUDDY,
+      ['{C:attention}Earthquake:{} with at least {C:attention}#4#{}', 'other {X:poke_water,C:white}Water{} or {X:poke_earth,C:white}Earth{} Jokers,', 'the first hand of each round', 'retriggers every scored card', '{C:inactive}(#5#)'],
     ] },
     j_poke_castform: { name: 'Castform', text: [
       FORECAST,

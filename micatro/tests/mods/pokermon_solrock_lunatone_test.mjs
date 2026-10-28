@@ -41,7 +41,7 @@ const debuff = (j) => { j.ability.debuff_sources = { test: true }; j.set_debuff(
 
 // ------------------------------------------------------------------- pin, static data, order, pool, art
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 28 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 28+', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 29 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 29+', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   for (const n of ['lunatone', 'solrock']) {
     ok(C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n), n + ': registered and ported');

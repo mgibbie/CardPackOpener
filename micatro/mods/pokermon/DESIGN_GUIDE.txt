@@ -181,6 +181,17 @@ House pattern: a WEATHER / FORM change (the owner's Castform, jokers/pokejokers_
     Gen 3 sheet, unlisted in pokespriteload.lua), drawn by ui.js ownFace from the view's form.
   - Darmanitan's Zen Mode is the other shape: a temporary Tera sticker, restored at end of round.
 
+House pattern: a TWO-TYPE TEAM count (the owner's Barboach line, jokers/pokejokers_designs.js muddy_count):
+  - "for each Water or Earth Joker": a joker counts when is_type(j, 'Water') || is_type(j, 'Earth'), so its ptype, a Tera
+    sticker (which REPLACES the type: apply_type_sticker rewrites extra.ptype too), Castform's current form and an add-on's
+    IS_TYPE_RULES (Pokermon+'s Grafaiai) all count with no special case. A joker that is both counts ONCE (one test per joker,
+    never find_pokemon_type('Water').length + find_pokemon_type('Earth').length).
+  - "itself included": count the others, then +1, so the shop / collection card shows the number it gives once bought.
+  - Debuffed jokers don't count (!j.debuff). This DIFFERS from the older Water counters: Corsola, Pelipper and Politoed use
+    find_pokemon_type, which counts a debuffed joker too. Say which one a new design uses.
+  - A threshold on OTHER jokers ("at least 2 other Water or Earth Jokers") leaves the joker itself out, so one copy alone never
+    turns it on.
+
 House pattern: a PAIR with half-strength cross-coverage (the owner's Lunatone + Solrock,
 jokers/pokejokers_designs.js; Plusle / Minun, pokejokers_11.js, are the older pair):
   - Each one alone covers HALF of a cycle: Solrock +100 Chips on day hands, Lunatone X2 on night
@@ -707,7 +718,7 @@ Identity: Chips, hands and retriggers.
     - Chips per remaining hand (the Squirtle line) or per card played this round (the Totodile
       line).
     - Final-hand payoffs (Slowpoke X2).
-    - Retriggering whole hands (Shellder/Cloyster, Remoraid/Octillery, Politoed, Milotic).
+    - Retriggering whole hands (Shellder/Cloyster, Remoraid/Octillery, Politoed, Milotic, the owner's Whiscash).
     - Suit cycling (Poliwag line).
   The Ice subset has its own mini-identity: Glass (Glaceon, Cryogonal) and debt (Snorunt,
   Glalie, Froslass).
@@ -731,12 +742,17 @@ Under-explored:
   - Ice beyond Glass and debt: 15 missing Ice species map to Water (Spheal, Cubchoo, Bergmite,
     Snom, Eiscue, Glastrier...). They could own a "frozen" mechanic, for example cards kept in
     hand between rounds or Glass that doesn't break.
-  - Water-type synergy (only Corsola, Lanturn, Pelipper and Politoed count Water Jokers).
+  - Water-type synergy: Corsola, Lanturn, Pelipper and Politoed count Water Jokers; the owner's Barboach line counts Water OR
+    Earth Jokers (the two-type team, 2.1): +12 / +20 Chips each. Other pairings (Water + Lightning, Water + Grass...) are open.
 Pitfalls:
   - Extra hands stack with every hand-based scaler. A new +hand joker plus Blastoise grows
     quadratically.
   - Whole-hand retriggers are the strongest effect in the game. Every existing one is
     conditional (5 scoring cards, the first hand only, the hand contains an 8, same suit).
+    House: a GATED first-hand whole-hand retrigger (the owner's Whiscash, Earthquake): every scored card retriggers once on the
+    round's first hand (hands_played === 0, Remoraid's test) only while you have 2+ OTHER Water or Earth Jokers. Two gates (the
+    first hand AND a team size), a Stage 1 Safari, the retrigger count fixed (Energy raises its Chips rider instead). Blueprint
+    copies it like Remoraid: a second retrigger. The tooltip says Active! / Used this round / Inactive: k/2 others.
   - Close to vanilla: Krabby is a smaller Scary Face (+20 instead of +30 Chips); Slowpoke is a
     weaker Acrobat (X2 instead of X3 on the final hand); Carvanha/Sharpedo use Card Sharp's
     condition; Remoraid is a one-hand Seltzer; Lapras resembles Throwback; Staryu resembles
@@ -1142,7 +1158,8 @@ Under-explored:
     discarded, X per discard used); discards for money, Mult or Stone/Hazard making are still open.
   - Sand and weather: poke_sand is used once (Flygon's Sandstorm); a real weather system
     (Hippowdon, Sandaconda, a sand "field" state) is still open.
-  - Earth-type synergy (only Rhyperior).
+  - Earth-type synergy: Rhyperior, and (partly) the owner's Barboach line, which counts Water OR Earth Jokers. A pure Earth
+    counter is still open.
   - Missing fossils (Tirtouga, Archen, Tyrunt, Amaura, the Galar fossils) belong in Ancient.
   - 43 missing species: Earth is the 4th largest gap.
 Pitfalls:
