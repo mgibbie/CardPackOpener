@@ -62,7 +62,7 @@ function debuff(c) { c.ability.debuff_sources = { test: true }; c.set_debuff(); 
 
 // ------------------------------------------------------------------- pin, registration, precedence
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 47 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 47+', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 48 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 48+', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   for (const n of ALL) {
     ok(P_CENTERS['j_poke_' + n] && !P_CENTERS['j_poke_' + n].unported && STATUS.PORTED.jokers.includes('j_poke_' + n), n + ': registered and ported');
