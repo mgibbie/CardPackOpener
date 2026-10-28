@@ -40,6 +40,8 @@ await sec('static', () => {
     'Dialga Metal, Palkia Water, Giratina Psychic, Regigigas / Arceus Colorless (the icons on their cards)', [D.dialga, D.palkia, D.giratina, D.regigigas, D.arceus]);
   ok(D.uxie === 'Psychic' && D.mesprit === 'Psychic' && D.azelf === 'Psychic' && D.cresselia === 'Psychic' && D.phione === 'Water' && D.manaphy === 'Water',
     'the Lake trio + Cresselia: Psychic; Phione / Manaphy: Water (the icons on their cards)', [D.uxie, D.mesprit, D.azelf, D.cresselia, D.phione, D.manaphy]);
+  ok(['chespin', 'quilladin', 'chesnaught'].every((n) => D[n] === 'Grass') && ['fennekin', 'braixen', 'delphox'].every((n) => D[n] === 'Fire') && ['froakie', 'frogadier', 'greninja'].every((n) => D[n] === 'Water'),
+    'the Gen 6 starters: Chespin line Grass, Fennekin line Fire, Froakie line Water (the icons on their cards; Greninja\'s Protean changes it in play)', [D.chespin, D.chesnaught, D.fennekin, D.delphox, D.froakie, D.greninja]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

@@ -116,8 +116,9 @@ Missing by stage:
   Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
 
 Notable gaps:
-  - Starters: every Gen 5-9 starter line is missing (15 lines, 45 species). Gen 4 is covered
-    by Nacho (the Turtwig, Chimchar and Piplup lines).
+  - Starters: the Gen 5-9 starter lines were missing (15 lines, 45 species); Gen 6 (Chespin, Fennekin,
+    Froakie) is now built (contentRev 47; "a STARTER LINE", 2.1). Gen 4 is covered by Nacho (the Turtwig,
+    Chimchar and Piplup lines).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -547,6 +548,34 @@ House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; 
   - Its payoff counts DIFFERENT types among your Jokers (multitype_count): each other undebuffed joker gives its shown type (get_type);
     a joker that is every type (another Arceus, a Stellar Tera) adds ONE type of its own, never twelve; itself counts as one; at most 12.
     X(1 + 0.25 per type), `Xmult_mod` +20% (0.3 / 0.35 / 0.4): X2 with four types, X4 at all twelve.
+
+House pattern: a STARTER LINE (the Gen 6 starters, jokers/pokejokers_designs.js; the template for the Gen 5-9 starters):
+  - The type perk at EVERY stage, fixed (no energy field) and taken back when the joker goes: Grass +1 hand size (`h_size`, the
+    hand_size pair), Fire +1 discard (`d_size`, the discards pair), Water +1 hand (`hands`, the hands pair). An evolution runs the old
+    center's remove_from_deck and the new one's add_to_deck, so the perk is swapped, never doubled. A stage with a second perk (Fennekin's
+    Foresight) needs ONE combined add/remove pair (`discards_scry`): two spreads overwrite each other's add_to_deck.
+  - Basic Uncommon $5 with `starter: true` (the Starter Pack's Grass / Fire / Water slot: packs1.js starter_lists; a held family is left
+    out), Stage 1 Safari $8, Stage 2 Safari $10; the `starter` attribute on every stage. 5 rounds then 5 (Chikorita / Cyndaquil / Totodile).
+  - A stage with no number of its own carries its evolution's energy field (Fennekin / Braixen hold Delphox's `Xmult_mod`; Combee's
+    "Energy for later") and says so ("Energy carries to Delphox").
+House pattern: a HANDS-LEFT threshold, "while you have N or more hands left" (the Gen 6 Chesnaught, Spiky Shield; spiky_on):
+  - Say whether the current hand counts. run.js takes the hand (ease_hands_played(-1)) BEFORE the jokers score, so "counted before the
+    hand is played" is hands_left + 1 >= N while scoring: with N = 2, every hand but a round's last. (Azelf's / Drifloon's "final hand" is
+    the complement, hands_left === 0.) Keep N out of energy_values (`hands_req`); the tooltip reads the live count (the shop: the next
+    round's first hand).
+House pattern: a FORESEEN-RANK DISCARD (the Gen 6 Braixen; braixen_tarot):
+  - A Foreseen card is the top of the deck (G.scry_view), never in hand, so "discard a Foreseen card" means a discarded card that SHARES A
+    RANK with one (the Shinx line's `foreseen`). Read it at pre_discard (the deck hasn't drawn yet), a player discard only (no `hook`).
+  - "Once per round, create X (must have room)": with no room nothing is made and the round's chance is NOT used up; the round flag
+    (`tarot_round = G.GAME.round`) is set only when it creates. Not Blueprint (the flag is its own).
+House pattern: PROTEAN, a joker that adopts the team's type (the Gen 6 Greninja; protean_pick / protean_set):
+  - When a Blind is selected (setting_blind, not Blueprint) it becomes the type most common among the OTHER undebuffed jokers, each of the
+    12 types counted with is_type (Arceus / a Stellar Tera count for every type). A tie for the most, or no typed joker: no change (it keeps
+    whatever type it has). The type holds through the shop until the next Blind.
+  - The type is its own ptype (Castform's form rule: is_type, find_pokemon_type, get_type and energy_matches all follow; a Tera sticker
+    still overrides; set_debuff + Kecleon re-sync on a change). Its CURRENT type's Energy matches. Monotype-exempt (poke_mono_exempt), as
+    Castform: its type moves on its own.
+  - Pay off the team it joined: X(1.5 + 0.5 per OTHER undebuffed joker of its current type), `Xmult` and `Xmult_mod` both +20%.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1094,7 +1123,7 @@ Under-explored:
   - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
     few hands.
   - The 5 missing Gen 5-9 Fire starter lines will all want to follow the "+1 discard" starter
-    rule.
+    rule. Fennekin (Gen 6) does: +1 discard at every stage, with +1 Foresight.
 Pitfalls:
   - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
     vouchers, Mega Charizard Y's +5).

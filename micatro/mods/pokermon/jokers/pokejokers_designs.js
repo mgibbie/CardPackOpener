@@ -82,6 +82,11 @@
 // Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
 // Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
 // (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
+// The Gen 6 starters (contentRev 47): Chespin -> Quilladin -> Chesnaught (Grass: +1 hand size; +40 / +80 / +150 Chips; Chesnaught's Spiky
+// Shield X1.5 while 2+ hands are left), Fennekin -> Braixen -> Delphox (Fire: +1 discard, +1 Foresight; Braixen's first Foreseen-rank
+// discard each round creates a Tarot; Delphox's Mystical Fire X0.2 per Tarot used), Froakie -> Frogadier -> Greninja (Water: +1 hand;
+// +30 / +50 Chips per Water Joker; Greninja's Protean takes the most common type among your other Jokers each Blind, X(1.5 + 0.5 per
+// other Joker of its type)) — upstream 3.9.1 draws them (Natdex 8-24, 43).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -1258,6 +1263,91 @@ function manaphy_egg(card, context) {
   card_eval_status_text(egg, 'extra', null, null, null, { message: 'Hatched!', colour: 'BLUE' });
   card.juice_up();
 }
+
+// ------------------------------------------------------------ the Gen 6 starters (Chespin / Fennekin / Froakie lines)
+/** Fennekin / Braixen / Delphox: +1 discard (the Charmander line's pair) AND +1 Foresight (the Shinx line's), in one add/remove pair
+ *  (two spreads would overwrite each other's add_to_deck). */
+const discards_scry = {
+  add_to_deck(self, card, from_debuff) { discards.add_to_deck(self, card, from_debuff); scry.add_to_deck(self, card, from_debuff); },
+  remove_from_deck(self, card, from_debuff) { discards.remove_from_deck(self, card, from_debuff); scry.remove_from_deck(self, card, from_debuff); },
+};
+/** Chesnaught, Spiky Shield: "2 or more hands left", counted BEFORE the hand is played (this hand included). run.js takes the hand
+ *  (ease_hands_played(-1)) before the jokers score, so while it scores that is hands_left + 1 >= hands_req: every hand but a round's
+ *  last (and every hand of a 1-hand round is the last). Out of a round (the shop) it shows the next round's first hand. */
+const spiky_on = (card, scoring) => {
+  const cr = G.GAME && G.GAME.current_round;
+  if (!cr) return false;
+  if (!scoring && !(G.GAME.facing_blind)) return (G.GAME.round_resets.hands || 0) >= card.ability.extra.hands_req;
+  return (cr.hands_left || 0) + (scoring ? 1 : 0) >= card.ability.extra.hands_req;
+};
+/** Braixen: the first discard each round (a real one: not The Hook / a seal; pre_discard's `hook`) with a card that shares a rank with
+ *  a Foreseen card (the Shinx line's `foreseen`: G.scry_view is the top of the deck before the discard draws) creates a random Tarot
+ *  (the run's seeded stream, key_append 'braixen'). It needs room (cards + consumeable_buffer < limit); with no room nothing is made
+ *  and the round's chance is NOT used up (a later Foreseen discard with room still makes it). Once made, not again this round
+ *  (`tarot_round`). Not Blueprint (blueprint_compat false: its round flag is its own). */
+const braixen_used = (card) => card.ability.extra.tarot_round === (G.GAME && G.GAME.round);
+function braixen_tarot(card, context) {
+  if (!context.pre_discard || context.hook || context.blueprint || context.retrigger_joker || !context.full_hand || braixen_used(card)) return;
+  if (!context.full_hand.some((c) => !c.debuff && foreseen(c))) return;
+  if (G.consumeables.cards.length + (G.GAME.consumeable_buffer || 0) >= G.consumeables.config.card_limit) return;
+  card.ability.extra.tarot_round = G.GAME.round;
+  G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+  G.E_MANAGER.add_event(() => {
+    const t = create_card('Tarot', G.consumeables, null, null, null, null, undefined, 'braixen');
+    t.add_to_deck();
+    G.consumeables.emplace(t);
+    G.GAME.consumeable_buffer = 0;
+  });
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_plus_tarot'), colour: 'Tarot' });
+}
+const braixen_state = (card) => (G.GAME && G.GAME.facing_blind && braixen_used(card) ? 'Used this round' : 'Active!');
+/** Delphox, Mystical Fire: every Tarot used (by anyone, while it is held) banks +Xmult_mod in `fire_Xmult` (no energy field: what is
+ *  banked keeps its worth; Energy raises only later gains). Not Blueprint for the gain; Blueprint copies the X. Latias's shape. */
+function mystical_fire(card, context) {
+  const ex = card.ability.extra;
+  if (context.using_consumeable && context.consumeable && context.consumeable.ability.set === 'Tarot') {
+    if (context.blueprint) return undefined;
+    ex.fire_Xmult = r3(ex.fire_Xmult + ex.Xmult_mod);
+    card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_upgrade_ex'), colour: 'XMULT' });
+    return undefined;
+  }
+  if (context.joker_main && ex.fire_Xmult > 1) return { message: a_xmult(r3(ex.fire_Xmult)), colour: 'XMULT', Xmult_mod: ex.fire_Xmult };
+  return undefined;
+}
+/** Froakie / Frogadier: the Barboach line's count with one type — a Water Joker by is_type (ptype, a Tera sticker, Castform's form,
+ *  Arceus, an add-on's IS_TYPE_RULES), undebuffed; itself always counts (+1), so the shop card shows what it gives once bought. */
+const froak_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, 'Water')).length + 1;
+function froak_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const chips = r3(card.ability.extra.chips * froak_count(card));
+  return { message: a_chips(chips), colour: 'CHIPS', chip_mod: chips };
+}
+/** Greninja, Protean: the type most common among the OTHER jokers (undebuffed; each of the 12 types counted by is_type, so a dual-type
+ *  joker (Arceus, a Stellar Tera) counts for each of its types). A tie for the most, or no typed joker, -> null (it keeps its type). */
+export function protean_pick(card) {
+  const n = {};
+  for (const j of (G.jokers && G.jokers.cards) || []) {
+    if (j === card || j.debuff) continue;
+    for (const t of POKETYPES) if (is_type(j, t)) n[t] = (n[t] || 0) + 1;
+  }
+  const top = Math.max(0, ...Object.values(n));
+  if (!top) return null;
+  const best = POKETYPES.filter((t) => n[t] === top);
+  return best.length === 1 ? best[0] : null;
+}
+/** Greninja's own type: its ptype (which is_type / find_pokemon_type / get_type / energy_matches read), as Castform's form; a Tera
+ *  sticker still overrides it. Re-run its debuff and re-sync Kecleons when it changes. */
+function protean_set(card, type) {
+  const ex = card.ability.extra;
+  if (ex.ptype === type) return false;
+  ex.ptype = type;
+  card.set_debuff();
+  sync_kecleons();
+  return true;
+}
+/** Greninja's X: Xmult + Xmult_mod for each OTHER undebuffed joker of its current type (get_type: a Tera sticker's type if it has one). */
+const ninja_others = (card) => { const t = get_type(card); return t ? ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, t)).length : 0; };
+const ninja_x = (card) => r3(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * ninja_others(card));
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -3084,6 +3174,140 @@ defineJokers({
       return undefined;
     },
   },
+  // ---------------------------------------------------------------- The Gen 6 starters (2026-10-28, the owner's "build" of the missing
+  // Gen 5-9 starters): Chespin / Fennekin / Froakie lines. Pokermon's starter conventions: a type perk at every stage (Grass +1 hand size,
+  // Fire +1 discard, Water +1 hand: fixed, never energized); Basic Uncommon $5 with `starter` (the Starter Pack), Stage 1 Safari $8, Stage 2
+  // Safari $10; 5 rounds then 5 (Chikorita / Cyndaquil / Totodile's timers). Types are the cards' (Grass / Fire / Water). Art: upstream
+  // 3.9.1's own cells (Natdex 8-24, 43); nothing to deploy. Neither Nacho nor Pokermon+ has any of them. After Hydreigon (635), before
+  // Bunnelby (659).
+  // Chespin 650: +1 hand size; +40 Chips (`chips`, Energy +30%: 52 / 64 / 76). Evolves after 5 rounds.
+  chespin: {
+    name: 'chespin', poke_sprite391: sprite('Natdex', 8, 43),
+    config: { extra: { h_size: 1, chips: 40, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 6, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hand_size', 'chips', 'round_evo'], poke_after: 'hydreigon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return level_evo(self, card, context, 'j_poke_quilladin');
+    },
+    ...hand_size,
+  },
+  // Quilladin 651: +1 hand size; +80 Chips (104 / 128 / 152). Evolves after 5 rounds.
+  quilladin: {
+    name: 'quilladin', poke_sprite391: sprite('Natdex', 10, 43),
+    config: { extra: { h_size: 1, chips: 80, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['starter', 'hand_size', 'chips', 'round_evo'], poke_after: 'chespin',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.chips), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
+      return level_evo(self, card, context, 'j_poke_chesnaught');
+    },
+    ...hand_size,
+  },
+  // Chesnaught 652: +1 hand size; +150 Chips (195 / 240 / 285); Spiky Shield: X1.5 Mult (`Xmult`, Energy +20%: 1.8 / 2.1 / 2.4) while you
+  // have 2 or more hands left, counted BEFORE the hand is played (this one included: every hand but the round's last; spiky_on). The 2
+  // (`hands_req`) is fixed.
+  chesnaught: {
+    name: 'chesnaught', poke_sprite391: sprite('Natdex', 12, 43),
+    config: { extra: { h_size: 1, chips: 150, Xmult: 1.5, hands_req: 2 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['starter', 'hand_size', 'chips', 'xmult', 'hands'], poke_after: 'quilladin',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [ex.h_size, r3(ex.chips), r3(ex.Xmult), ex.hands_req, spiky_on(card, false) ? 'Active!' : 'Inactive'] };
+    },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const ex = card.ability.extra;
+      if (spiky_on(card, true)) return { message: 'Spiky Shield!', colour: 'XMULT', chip_mod: ex.chips, Xmult_mod: ex.Xmult };
+      return { message: a_chips(r3(ex.chips)), colour: 'CHIPS', chip_mod: ex.chips };
+    },
+    ...hand_size,
+  },
+  // Fennekin 653: +1 discard; +1 Foresight (both fixed). No number of its own: it carries Delphox's Mystical Fire gain `Xmult_mod` 0.2
+  // (unused until then; Combee's "Energy for later"), so Fire Energy taken now is re-applied on each evolution. Evolves after 5 rounds.
+  fennekin: {
+    name: 'fennekin', poke_sprite391: sprite('Natdex', 14, 43),
+    config: { extra: { d_size: 1, scry: 1, rounds: 5, Xmult_mod: 0.2 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 6, blueprint_compat: false, starter: true,
+    attributes: ['starter', 'discard', 'foresight', 'round_evo'], poke_after: 'chesnaught',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.d_size, ex.scry, ex.rounds] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_braixen'); },
+    ...discards_scry,
+  },
+  // Braixen 654: +1 discard; +1 Foresight; the first time each round you discard a card that shares a rank with a Foreseen card, create a
+  // Tarot (must have room; braixen_tarot). Carries `Xmult_mod` for Delphox. Evolves after 5 rounds.
+  braixen: {
+    name: 'braixen', poke_sprite391: sprite('Natdex', 16, 43),
+    config: { extra: { d_size: 1, scry: 1, rounds: 5, Xmult_mod: 0.2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 6, blueprint_compat: false,
+    attributes: ['starter', 'discard', 'foresight', 'tarot', 'generation', 'round_evo'], poke_after: 'fennekin',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.d_size, ex.scry, ex.rounds, braixen_state(card)] }; },
+    calculate(self, card, context) { braixen_tarot(card, context); return level_evo(self, card, context, 'j_poke_delphox'); },
+    ...discards_scry,
+  },
+  // Delphox 655: +1 discard; +1 Foresight; Mystical Fire: permanently gains X0.2 Mult for each Tarot card used (`Xmult_mod`, Energy +20%:
+  // 0.24 / 0.28 / 0.32; banked in `fire_Xmult`, no energy field, never raised retroactively).
+  delphox: {
+    name: 'delphox', poke_sprite391: sprite('Natdex', 18, 43),
+    config: { extra: { d_size: 1, scry: 1, Xmult_mod: 0.2, fire_Xmult: 1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 6, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'foresight', 'xmult', 'scaling', 'tarot'], poke_after: 'braixen',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.d_size, ex.scry, r3(ex.Xmult_mod), r3(ex.fire_Xmult)] }; },
+    calculate(self, card, context) { return mystical_fire(card, context); },
+    ...discards_scry,
+  },
+  // Froakie 656: +1 hand; +30 Chips for each Water Joker, itself included (`chips`, Energy +30%: 39 / 48 / 57; froak_count). Evolves after
+  // 5 rounds.
+  froakie: {
+    name: 'froakie', poke_sprite391: sprite('Natdex', 20, 43),
+    config: { extra: { hands: 1, chips: 30, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Water', gen: 6, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hands', 'chips', 'types', 'round_evo'], poke_after: 'delphox',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = froak_count(card); return { vars: [ex.hands, r3(ex.chips), n, r3(ex.chips * n), ex.rounds] }; },
+    calculate(self, card, context) { return froak_main(card, context) || level_evo(self, card, context, 'j_poke_frogadier'); },
+    ...hands,
+  },
+  // Frogadier 657: +1 hand; +50 Chips for each Water Joker (65 / 80 / 95). Evolves after 5 rounds.
+  frogadier: {
+    name: 'frogadier', poke_sprite391: sprite('Natdex', 22, 43),
+    config: { extra: { hands: 1, chips: 50, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 6, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'chips', 'types', 'round_evo'], poke_after: 'froakie',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = froak_count(card); return { vars: [ex.hands, r3(ex.chips), n, r3(ex.chips * n), ex.rounds] }; },
+    calculate(self, card, context) { return froak_main(card, context) || level_evo(self, card, context, 'j_poke_greninja'); },
+    ...hands,
+  },
+  // Greninja 658: +1 hand; Protean: when a Blind is selected (the start of each round; not Blueprint) it becomes the type most common
+  // among your other undebuffed Jokers (protean_pick: a tie, or no typed joker, keeps its current type); it keeps that type until the next
+  // Blind (through the shop). Water Shuriken: X(1.5 + 0.5 for each OTHER joker of its current type) (`Xmult` / `Xmult_mod`, Energy +20%
+  // each: 1.8 / 2.1 / 2.4 and 0.6 / 0.7 / 0.8). Its changing type never breaks Monotype (poke_mono_exempt, Castform's exemption); its
+  // current type's Energy matches (Castform's rule), Colorless at half strength unless it is Colorless.
+  greninja: {
+    name: 'greninja', poke_sprite391: sprite('Natdex', 24, 43),
+    config: { extra: { hands: 1, Xmult: 1.5, Xmult_mod: 0.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Water', gen: 6, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'xmult', 'types'], poke_after: 'frogadier',
+    poke_mono_exempt: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [ex.hands, r3(ex.Xmult), r3(ex.Xmult_mod), get_type(card) || ex.ptype, ninja_others(card), ninja_x(card)] };
+    },
+    calculate(self, card, context) {
+      if (context.setting_blind && !context.blueprint && !card.getting_sliced) {
+        const t = protean_pick(card);
+        if (t && protean_set(card, t)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Protean: ' + t + '!', colour: 'BLUE' });
+        return undefined;
+      }
+      if (context.joker_main) { const x = ninja_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+    ...hands,
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -3115,6 +3339,9 @@ export const DESIGN_FAMILIES = [
   ['hippopotas', 'hippowdon'],
   ['skorupi', 'drapion'],
   ['finneon', 'lumineon'],
+  ['chespin', 'quilladin', 'chesnaught'],
+  ['fennekin', 'braixen', 'delphox'],
+  ['froakie', 'frogadier', 'greninja'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -3469,6 +3696,30 @@ export const DESIGN_LOC = {
     j_poke_manaphy: { name: 'Manaphy', text: [
       ['{C:attention}Sea Guardian:{} each', '{X:poke_water,C:white}Water{} Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {X:mult,C:white} X#5# {C:inactive} Mult)'],
       ['{C:attention}Egg:{} at the end of the shop,', 'if you have a free Joker slot,', '{C:green}#2# in #3#{} chance to', 'create a {C:attention}Phione{}'],
+    ] },
+    j_poke_chespin: { name: 'Chespin', text: ['{C:attention}+#1#{} hand size', '{C:chips}+#2#{} Chips', EVOLVES_ROUNDS(3)] },
+    j_poke_quilladin: { name: 'Quilladin', text: ['{C:attention}+#1#{} hand size', '{C:chips}+#2#{} Chips', EVOLVES_ROUNDS(3)] },
+    j_poke_chesnaught: { name: 'Chesnaught', text: [
+      ['{C:attention}+#1#{} hand size', '{C:chips}+#2#{} Chips'],
+      ['{C:attention}Spiky Shield:{} {X:mult,C:white} X#3# {} Mult while', 'you have {C:attention}#4#{} or more hands left', '{C:inactive}(counted before the hand is played)', '{C:inactive}(#5#)'],
+    ] },
+    j_poke_fennekin: { name: 'Fennekin', text: ['{C:red}+#1#{} discard each round', '{C:purple}+#2# Foresight', '{C:inactive,s:0.8}(Energy carries to Delphox)', EVOLVES_ROUNDS(3)] },
+    j_poke_braixen: { name: 'Braixen', text: [
+      ['{C:red}+#1#{} discard each round', '{C:purple}+#2# Foresight'],
+      ['The first time each round you', 'discard a card that shares a', 'rank with a {C:attention}Foreseen{} card,', 'create a {C:tarot}Tarot{} card', '{C:inactive}(Must have room; #4#)',
+        '{C:inactive,s:0.8}(Energy carries to Delphox)', EVOLVES_ROUNDS(3)],
+    ] },
+    j_poke_delphox: { name: 'Delphox', text: [
+      ['{C:red}+#1#{} discard each round', '{C:purple}+#2# Foresight'],
+      ['{C:attention}Mystical Fire:{} gains', '{X:mult,C:white} X#3# {} Mult for each', '{C:tarot}Tarot{} card used', '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)'],
+    ] },
+    j_poke_froakie: { name: 'Froakie', text: ['{C:chips}+#1#{} hand', '{C:chips}+#2#{} Chips for each', '{X:poke_water,C:white}Water{} Joker {C:inactive}(Itself included)',
+      '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {C:chips}+#4#{C:inactive} Chips)', EVOLVES_ROUNDS(5)] },
+    j_poke_frogadier: { name: 'Frogadier', text: ['{C:chips}+#1#{} hand', '{C:chips}+#2#{} Chips for each', '{X:poke_water,C:white}Water{} Joker {C:inactive}(Itself included)',
+      '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {C:chips}+#4#{C:inactive} Chips)', EVOLVES_ROUNDS(5)] },
+    j_poke_greninja: { name: 'Greninja', text: [
+      ['{C:chips}+#1#{} hand', '{X:mult,C:white} X#2# {} Mult, plus {X:mult,C:white} X#3# {} for', 'each other Joker of its type', '{C:inactive}(Currently {C:attention}#4#{C:inactive}, #5# others:', '{X:mult,C:white} X#6# {C:inactive} Mult)'],
+      ['{C:attention}Protean:{} when a {C:attention}Blind{} is', 'selected, becomes the type most', 'common among your other Jokers', '{C:inactive}(a tie: it keeps its type)', '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
     ] },
   },
   Other: {
