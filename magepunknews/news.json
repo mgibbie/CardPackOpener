@@ -522,6 +522,34 @@
 	},
 	"entries": [
 		{
+			"sha": "137bae9",
+			"date": "2026-10-27",
+			"kind": "micatro",
+			"title": "Pokermon: the owner's Castform (contentRev 27)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_castform",
+							"name": "Castform",
+							"set": "Joker",
+							"rarity": "rare",
+							"cost": 7,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 23
+							}
+						}
+					]
+				}
+			]
+		},
+		{
 			"sha": "58ddcf4",
 			"date": "2026-10-27",
 			"kind": "micatro",
