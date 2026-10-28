@@ -1,4 +1,4 @@
-// The owner's Gen 9 starters (2026-10-28, contentRev 50; jokers/pokejokers_designs.js LINES F2b / F2c; PORTING.md "The owner's Gen 9 starters"):
+// The owner's Gen 9 starters (2026-10-28, contentRev 51; jokers/pokejokers_designs.js LINES F2b / F2c; PORTING.md "The owner's Gen 9 starters"):
 //   Fuecoco (909) -> Crocalor (910) -> Skeledirge (911), a Fire starter: +1 discard at every stage. Torch Song: every hand played
 //   (its `before`: the hand being played counts itself) permanently banks +1 / +2 Mult; Skeledirge gives the banked Mult and banks
 //   X0.05 per hand played instead.
@@ -54,7 +54,7 @@ function blueprintLeft() {
 
 // ------------------------------------------------------------------- pin, static data, order, families, art, Starter Pack lists
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 50 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 50+ (the Gen 9 starters)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 51 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 51+ (the Gen 9 starters)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(ALL.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 6 registered and ported', ALL.filter((n) => !C(n) || C(n).unported));
   ok(ALL.every((n) => (STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).includes(n)), 'defined with the owner\'s designs (micatro/pokejokers_designs)');

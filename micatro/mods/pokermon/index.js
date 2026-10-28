@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -721,6 +721,9 @@ const hooks = {
   chip_h_x_mult: regi_h_x_mult,
   // ... and the Stone / Steel card's own tooltip shows it (+100 Chips / X2, energized too): the same two functions (describe.js enh_live_vars).
   enh_loc_vars: regi_enh_vars,
+  // The owner's Serperior, Contrary (jokers/pokejokers_designs.js): a debuffed playing card that scores is scored as if it weren't, while
+  // an undebuffed Serperior is owned (run.js score_played_card lifts the debuff for that card's scoring only). No Serperior, no change.
+  score_debuffed: contrary_lifts,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
     // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)
@@ -921,10 +924,14 @@ export const POKERMON = registerMod({
   // Scorbunny / Raboot +3 / +5 Mult per discard left, Cinderace X(1 + 0.5 per discard left), all +1 discard; Sobble / Drizzile +20 / +35
   // Chips per played card that doesn't score, Inteleon's Snipe Shot (the highest-ranked scored card X2, a tie the leftmost), all +1 hand;
   // Scorbunny and Sobble join the Starter Pack; evolution after 5 + 5 rounds.
-  // 50 = the owner's Gen 9 starters (jokers/pokejokers_designs.js torch_song / moxie_bank): Fuecoco -> Crocalor -> Skeledirge (Fire,
+  // 50 = the Gen 5 starters (jokers/pokejokers_designs.js contrary_held / contrary_lifts / flame_charge / razor_shell): Snivy / Servine's
+  // Contrary (+4 / +8 Mult per debuffed card held), Serperior's (debuffed scored cards score as if not, X1.25 each: the score_debuffed hook),
+  // Tepig / Pignite / Emboar's Flame Charge (+4 / +6 Mult, X0.25 per hand in a row of the same poker hand this round), Oshawott / Dewott /
+  // Samurott's Razor Shell (the first 1 / 2 / 3 scored cards retrigger) and Shell Blade (scored Aces X1.5); each with its starter perk.
+  // 51 = the owner's Gen 9 starters (jokers/pokejokers_designs.js torch_song / moxie_bank): Fuecoco -> Crocalor -> Skeledirge (Fire,
   // +1 discard; Torch Song: +1 / +2 Mult banked per hand played, Skeledirge X0.05) and Quaxly -> Quaxwell -> Quaquaval (Water, +1 hand;
   // Moxie: +4 / +6 Chips banked per unused hand when a Blind is beaten, Quaquaval X0.2).
-  contentRev: 50,
+  contentRev: 51,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
