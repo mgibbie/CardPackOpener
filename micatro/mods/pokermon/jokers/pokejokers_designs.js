@@ -50,12 +50,16 @@
 // round (Stone Sandy / Earth +40 Chips, Steel Trash / Metal $1, anything else Plant / Grass +5 Mult; a tie keeps it), its type and card with
 // it; its gender is rolled once when created; Wormadam keeps the cloak for good (unenhanced +3 Mult / Stone X1.5 / held Steel $1), Mothim
 // X(1 + 0.25 per different enhancement in the deck) — upstream 3.9.1 draws all six cloak cards (Gen 4 sheet 0-10, 0) and Mothim (Natdex 16, 27).
+// Combee -> Vespiquen (Honey Gather: at end of round the Jokers directly left and right gain +$1 / +$2 sell value; Vespiquen's Attack
+// Order X(1 + 0.1 per $ of those two Jokers' sell value), max X3; Grass, Common $5 / Safari $8; contentRev 38) — upstream 3.9.1 draws
+// them (Natdex 18 / 20, 27).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
+  poke_get_adjacent_jokers,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -574,6 +578,24 @@ function recoil(card, context) {
   ease_dollars(-lose);
   card_eval_status_text(card, 'extra', null, null, null, { message: 'Recoil! -$' + lose, colour: 'MONEY' });
 }
+
+// The owner's Combee line (Honey Gather / Attack Order): joker-row ADJACENCY on sell value. Neighbours are poke_get_adjacent_jokers
+// (Magneton's / Dolliv's: the Jokers directly left and right; none at a row edge). Honey is Dolliv's end-of-round sell-value growth
+// without the self part, by a FIXED amount (`honey`, no energy field) and never from a Blueprint copy (main_eval + !blueprint: once a
+// round, so a copied Combee / Vespiquen never feeds twice). A debuffed Combee / Vespiquen is never calculated, so it gives nothing.
+/** The Jokers directly left and right of `card` in the joker row (0-2 of them). */
+const hive = (card) => ((G.jokers && G.jokers.cards && G.jokers.cards.includes(card)) ? poke_get_adjacent_jokers(card) : []);
+function honey_gather(card, context) {
+  if (!(context.end_of_round && context.main_eval) || context.blueprint) return;
+  for (const j of hive(card)) {
+    j.ability.extra_value = (j.ability.extra_value || 0) + card.ability.extra.honey;
+    j.set_cost();
+    card_eval_status_text(j, 'extra', null, null, null, { message: localize('k_val_up'), colour: 'MONEY' });
+  }
+}
+/** Vespiquen's Attack Order: the neighbours' current sell value ($, card.sell_cost) and X(1 + Xmult_mod per $), capped at Xmult_cap. */
+const hive_value = (card) => hive(card).reduce((s, j) => s + (j.sell_cost || 0), 0);
+const attack_order_x = (card) => r3(Math.min(card.ability.extra.Xmult_cap, 1 + card.ability.extra.Xmult_mod * hive_value(card)));
 
 // ------------------------------------------------------------ the Regi trio (Regirock / Regice / Registeel)
 const REGIS = ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel'];
@@ -2086,6 +2108,41 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- LINE F10: Combee -> Vespiquen (Grass, Gen 4)
+  // The owner's design (2026-10-28): Honey Gather (honey_gather above) — at end of round the Jokers directly left and right gain a
+  // FIXED +$1 / +$2 sell value (`honey`: no energy field; nothing on an empty side; a debuffed one gives nothing; Blueprint never feeds
+  // it twice). Vespiquen's Attack Order: X(1 + 0.1 per $ of the two neighbours' current sell value, card.sell_cost), capped at X3
+  // (`Xmult_cap`, fixed). Energy raises the per-$ `Xmult_mod` (+20% of base: 0.1 -> 0.12 / 0.14 / 0.16); Combee carries the same field
+  // so it can take Energy, which evolution re-applies to Vespiquen's base (it adds nothing to Combee's own honey). Every Combee evolves
+  // (the female-only lore rule is not used). Neither Nacho nor Pokermon+ has the line. Art: upstream 3.9.1's own (Natdex 18 / 20, 27:
+  // the green Grass frame). After Mothim (414) in Pokédex order.
+  // Combee 415: Common $5; Honey Gather +$1. Evolves after 5 rounds.
+  combee: {
+    name: 'combee', poke_sprite391: sprite('Natdex', 18, 27),
+    config: { extra: { honey: 1, Xmult_mod: 0.1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 4, blueprint_compat: false,
+    attributes: ['sell_value', 'joker', 'economy', 'round_evo'], poke_after: 'mothim',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.honey, ex.rounds, r3(ex.Xmult_mod)] }; },
+    calculate(self, card, context) { honey_gather(card, context); return level_evo(self, card, context, 'j_poke_vespiquen'); },
+  },
+  // Vespiquen 416: Safari $8; Honey Gather +$2; Attack Order X(1 + 0.1 per $ of the neighbours' sell value), max X3.
+  vespiquen: {
+    name: 'vespiquen', poke_sprite391: sprite('Natdex', 20, 27),
+    config: { extra: { honey: 2, Xmult_mod: 0.1, Xmult_cap: 3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['sell_value', 'joker', 'economy', 'xmult'], poke_after: 'combee',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [ex.honey, r3(ex.Xmult_mod), ex.Xmult_cap, hive_value(card), attack_order_x(card)] };
+    },
+    calculate(self, card, context) {
+      honey_gather(card, context);
+      if (context.joker_main) { const x = attack_order_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+
   // ---------------------------------------------------------------- Pachirisu 417 (Lightning, Gen 4)
   // The owner's design (2026-10-28). Rare $7, single-stage. Quick Spark: the first hand of each round (hands_played === 0) gives X2
   // Mult (`Xmult`); Nuzzle: plus X0.25 (`Xmult_mod`) for each OTHER Lightning Joker (spark_others above: is_type, so Tera stickers
@@ -2093,12 +2150,12 @@ defineJokers({
   // calc_dollar_bonus (a row of the round's cash-out list, as Miltank). Energy: Xmult +20% (2 -> 2.4 / 2.8 / 3.2) and Xmult_mod +20%
   // (0.25 -> 0.3 / 0.35 / 0.4); the $ is fixed. Blueprint copies the first-hand X Mult (Blueprint is no Lightning joker, so it never
   // adds to the counts), never the Cheek Pouch (calc_dollar_bonus is not copied, as Golden Joker). Neither Nacho nor Pokermon+ has
-  // it. Art: upstream 3.9.1's own cell (Natdex 22, 27: the Lightning frame).
+  // it. Art: upstream 3.9.1's own cell (Natdex 22, 27: the Lightning frame). After Vespiquen (416) in Pokédex order.
   pachirisu: {
     name: 'pachirisu', poke_sprite391: sprite('Natdex', 22, 27),
     config: { extra: { Xmult: 2, Xmult_mod: 0.25, pouch: 1 } },
     rarity: 3, cost: 7, stage: 'Basic', ptype: 'Lightning', gen: 4, blueprint_compat: true,
-    attributes: ['xmult', 'economy', 'types', 'hands'], poke_after: 'mothim',
+    attributes: ['xmult', 'economy', 'types', 'hands'], poke_after: 'vespiquen',
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
@@ -2172,6 +2229,7 @@ export const DESIGN_FAMILIES = [
   ['burmy', 'wormadam', 'mothim'],
   ['glameow', 'purugly'],
   ['drifloon', 'drifblim'],
+  ['combee', 'vespiquen'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -2203,6 +2261,7 @@ const DRIFT_CHARGE = ['{C:attention}Stockpile:{} each discard gains', '{C:attent
 const SPIT_UP = ['{C:attention}Spit Up:{} on the final hand of', 'the round, {X:mult,C:white} X1 {} Mult plus {X:mult,C:white} X#3# {}', 'per Stockpile, then the', 'Stockpile resets to {C:attention}0{}',
   '{C:inactive}(Currently {X:mult,C:white} X#4# {C:inactive} Mult)', '{C:inactive,s:0.8}(Nothing with 0 Stockpile)'];
 const AFTERMATH = ['{C:attention}Aftermath:{} when this Joker is', 'sold or destroyed, create a', '{C:dark_edition}Negative{} {C:spectral}Spectral{} card', '{C:inactive}(Not when it transforms)'];
+const HONEY = ['{C:attention}Honey Gather:{} at end of', 'round, the Jokers directly left', 'and right of this one each', 'gain {C:money}$#1#{} of sell value'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
 const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, every', '{C:tarot}Tarot{} or {C:planet}Planet{} used', 'grows both of them', '{C:inactive}(Soul Dew: #3#)'];
@@ -2331,6 +2390,13 @@ export const DESIGN_LOC = {
       [...SPIT_UP, '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} Spit Ups)', '{C:inactive,s:0.8}(Spit Ups: #5#/#6#)'],
     ] },
     j_poke_drifblim: { name: 'Drifblim', text: [DRIFT_CHARGE, SPIT_UP, AFTERMATH] },
+    j_poke_combee: { name: 'Combee', text: [...HONEY, '{C:inactive,s:0.8}(Energy carries to Vespiquen)', EVOLVES_ROUNDS(2)] },
+    j_poke_vespiquen: { name: 'Vespiquen', text: [
+      HONEY,
+      ['{C:attention}Attack Order:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#2# {} for each {C:money}$1{} of sell', 'value of the Jokers directly', 'left and right of this one',
+        '{C:inactive}(Max {X:mult,C:white} X#3# {C:inactive})', '{C:inactive}(Currently {C:money}$#4#{C:inactive}: {X:mult,C:white} X#5# {C:inactive} Mult)',
+        '{C:inactive,s:0.8}(Blueprint copies only the X)'],
+    ] },
     j_poke_castform: { name: 'Castform', text: [
       FORECAST,
       ['{C:poke_sun}Sunny{} ({C:hearts}Hearts{}+{C:diamonds}Diamonds{}): {X:poke_fire,C:white}Fire{}', 'scored {C:hearts}Hearts{}/{C:diamonds}Diamonds{} {C:mult}+#1#{} Mult',
