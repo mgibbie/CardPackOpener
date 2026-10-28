@@ -298,6 +298,30 @@ House pattern: an EON DUO, a pair with full cross-growth (the owner's Latias / L
   - Banked in eon_Xmult (no energy field), the gain Xmult_mod +20% per Energy (0.15 -> 0.18 / 0.21 / 0.24): Energy never raises
     what is banked. Blueprint copies the X, never the growth.
 
+House pattern: a PER-ROUND FAVOURITE SUIT (the owner's Glameow line, jokers/pokejokers_designs.js fickle_pick):
+  - Each joker keeps its OWN suit (two Glameows can like different suits), unlike the run-wide vanilla picks (Ancient Joker, The Idol,
+    Castle: G.GAME.current_round.*_card). It is picked when the joker is first obtained (add_to_deck, if none is set) and again at
+    each end of round (the round_end pass, not Blueprint), Ancient Joker's way: the run's seeded pseudorandom_element over the four
+    suits MINUS the current favourite (so never the same twice running), seeded 'fickle' + ante.
+  - Never pick on creation (set_ability): the shop and the collection create cards outside the run's recipe, so a draw there would
+    move the seeded stream and break resume / replay. The unobtained card says "(Favourite: picked when obtained)".
+  - Hold it on card.ability (fav_suit), not in ability.extra: Steamodded's set_ability keeps ability fields the new center doesn't set,
+    so it rides through evolution with no keep-list, and the evolved form's add_to_deck sees it already set (no second draw).
+  - Match with is_suit (Wild cards, Smeared Joker, debuffed cards never). Show it in the tooltip in the suit's colour ({V:1}).
+
+House pattern: a JOKER SLOT AS A COST (the owner's Purugly, jokers/pokejokers_designs.js slot_cost_*):
+  - -N Joker slots while held: G.jokers.config.card_limit in the center's add_to_deck / remove_from_deck (Banette's +1 the other way).
+    Store N in a field Energy ignores (slot_cost). A Negative copy nets 0 (its own +1).
+  - Keep the cost while DEBUFFED, as vanilla keeps a Negative's slot (queue_negative_removal): remove_from_deck(from_debuff) only
+    queues the refund (ability.poke_slot_queued). Giving the slot back on a debuff would let lifting it put the jokers OVER the limit.
+    A debuffed card that leaves never runs remove_from_deck again, so the card_removed hook (index.js) pays the queued refund.
+  - An evolution INTO the cost must not overflow: evolve only with a free slot now (G.jokers.cards.length + joker_buffer < card_limit);
+    otherwise wait at 0 rounds and evolve at the first end of round with room. Never push a joker out. Reserve the slot in
+    G.GAME.joker_buffer between the decision and the queued swap (Riff-raff's way), so two ready jokers never both take the last
+    slot. Say it on the card ("(Needs a free Joker slot to evolve)").
+  - Pay it back with a strong per-card payoff: Purugly's X1.25 per scored favourite-suit card (Groudon's per-card X, but on one
+    rotating suit and with a slot gone).
+
 House pattern: ADJACENCY HONEY, then sell value to X (the owner's Combee line, jokers/pokejokers_designs.js honey_gather / attack_order_x):
   - Honey: at end of round (end_of_round + main_eval, not Blueprint) the Jokers directly LEFT and RIGHT (poke_get_adjacent_jokers,
     Magneton's / Dolliv's neighbours) each gain a FIXED +$1 (Combee, C $5, 5 rounds) / +$2 (Vespiquen, S $8) of sell value
@@ -470,7 +494,7 @@ Share of the BASE value added per Energy:
   Xchips +20%, Xchips_multi +5%
 
 Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
-(probabilities), Xmult_minus, hazard_level, scry.
+(probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1062,6 +1086,9 @@ Examples:
   Owner's Chatot (R $7, single-stage): Vocabulary, +4 Mult for each different poker hand
                        played this run; New Word: a hand's first play this run, while held,
                        creates its Planet (with room).
+  Owner's Glameow (C $5): Fickle, a favourite suit picked each round (its own, seeded); scored cards
+                       of it +5 Mult each. Purugly (S $8): X1.25 each, Thick Fat: -1 Joker slot;
+                       Glameow waits to evolve until a slot is free.
 Typical numbers:
   Basic     +M 3-15~6 | X 1.75-2 | card +M 6 | card X 1.5 | $ 1-4 | gain +M 1-4 | gain X 0.2
   Stage 1   +M 5 | X 2 | card +M 7 | $ 1-2 | gain +M 1-6 | gain X 0.5
