@@ -44,7 +44,7 @@ function blind(seed, keys, prep) {
 
 // ------------------------------------------------------------------- pin, static data, order, pool, art, precedence
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev >= 30 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 30+', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 31 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 31+', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   for (const n of REGIS) {
     ok(P_CENTERS['j_poke_' + n] && !P_CENTERS['j_poke_' + n].unported && STATUS.PORTED.jokers.includes('j_poke_' + n), n + ': registered and ported');

@@ -55,8 +55,8 @@ function playLast(cards) {
 
 // ------------------------------------------------------------------- the pin and the static data
 sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 30 && PINS.modPin('pokermon') === '3.9.1+r30', 'Pokermon contentRev 30 (pin 3.9.1+r30; the Regi trio)', PINS.modPin('pokermon'));
-  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 30)', 'version stays 3.9.1: "3.9.1 (rev 30)"', PINS.pinLabel(PINS.modPin('pokermon')));
+  ok(MODS.pokermon.contentRev === 31 && PINS.modPin('pokermon') === '3.9.1+r31', 'Pokermon contentRev 31 (pin 3.9.1+r31; the Regi trio)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.version === '3.9.1' && PINS.pinLabel(PINS.modPin('pokermon')) === '3.9.1 (rev 31)', 'version stays 3.9.1: "3.9.1 (rev 31)"', PINS.pinLabel(PINS.modPin('pokermon')));
   ok(PINS.LEGACY_MOD_VERSIONS && PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   ok(NEW.every((n) => C(n) && !C(n).unported && STATUS.PORTED.jokers.includes('j_poke_' + n)), 'all 26 jokers (25 species, Urshifu twice) registered and ported',
     NEW.filter((n) => !C(n) || C(n).unported));
@@ -70,7 +70,7 @@ sec('static', () => {
     honedge: [2, 6, 'Basic', 'Metal', 6], doublade: [S, 8, 'One', 'Metal', 6], aegislash: [S, 10, 'Two', 'Metal', 6],
     spheal: [2, 6, 'Basic', 'Water', 3], sealeo: [S, 8, 'One', 'Water', 3], walrein: [S, 10, 'Two', 'Water', 3],
     grookey: [2, 5, 'Basic', 'Grass', 8], thwackey: [S, 8, 'One', 'Grass', 8], rillaboom: [S, 10, 'Two', 'Grass', 8],
-    kubfu: [4, 10, 'Legendary', 'Fighting', 8], urshifu_single: [4, 20, 'Legendary', 'Fighting', 8], urshifu_rapid: [4, 20, 'Legendary', 'Fighting', 8],
+    kubfu: [4, 10, 'Legendary', 'Fighting', 8], urshifu_single: [4, 20, 'Legendary', 'Dark', 8], urshifu_rapid: [4, 20, 'Legendary', 'Water', 8],
     xerneas: [4, 20, 'Legendary', 'Fairy', 6], tandemaus: [1, 5, 'Basic', 'Colorless', 9], maushold: [S, 8, 'One', 'Colorless', 9],
     darumaka: [1, 5, 'Basic', 'Fire', 5], darmanitan: [S, 8, 'One', 'Fire', 5], scraggy: [1, 5, 'Basic', 'Dark', 5], scrafty: [S, 8, 'One', 'Dark', 5],
     spiritomb: [3, 7, 'Basic', 'Psychic', 4], tatsugiri: [3, 7, 'Basic', 'Dragon', 9], mudbray: [1, 5, 'Basic', 'Earth', 7], mudsdale: [S, 8, 'One', 'Earth', 7],

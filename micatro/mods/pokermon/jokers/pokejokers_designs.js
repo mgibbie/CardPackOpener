@@ -36,7 +36,7 @@
 // +50 Chips / X1.5; Earth, Uncommon $6; contentRev 29) — upstream 3.9.1 draws them (Natdex 12 / 14, 22).
 // The Regi trio: Regirock (Stone Body: Stone +100 Chips instead of +50, +10 permanent per score; Earth), Regice (Ice Body: Glass never
 // shatters; Water), Registeel (Iron Body: held Steel X2 instead of X1.5; Metal), Legendary $20 each; each converts 1 + (other Regi species
-// held) random deck cards to its enhancement when a Blind is selected; contentRev 30 — upstream 3.9.1 draws them with their souls
+// held) random deck cards to its enhancement when a Blind is selected; contentRev 31 — upstream 3.9.1 draws them with their souls
 // (Natdex 2 / 4 / 6, 25).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
@@ -713,7 +713,7 @@ defineJokers({
     ...hand_size,
   },
 
-  // ---------------------------------------------------------------- LINE E: Kubfu -> Urshifu (Fighting Legendary, Gen 8)
+  // ---------------------------------------------------------------- LINE E: Kubfu -> Urshifu (Legendary, Gen 8: Kubfu Fighting, Urshifu Dark / Water)
   // Kubfu 891: can't be debuffed (systems/rules.js set_debuff); gains X0.1 Mult on a hand of exactly 1 or 5 scoring cards. After 10
   // trainings it evolves into the school it trained more: 1-card hands Single Strike, 5-card hands Rapid Strike (a tie: the school
   // of its last training).
@@ -737,10 +737,11 @@ defineJokers({
   },
   // Urshifu (Single Strike Style) 892: X Mult (kept from Kubfu; keeps training); Unseen Fist: playing cards can't be debuffed
   // (rules.js); Wicked Blow: a 1-card hand's card also gives this Joker's X Mult when scored. Only through Kubfu (never in a pool).
+  // Dark (contentRev 30): the type its upstream card draws (owner rule: the card's type wins; tools/micatro/pokermon_art_type.mjs).
   urshifu_single: {
     name: 'urshifu_single', poke_sprite391: sprite('Gen08', 2, 10, [3, 10]),
     config: { extra: { Xmult: 2, Xmult_mod: 0.1 } },
-    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fighting', gen: 8, blueprint_compat: true, custom_pool_func: true,
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Dark', gen: 8, blueprint_compat: true, custom_pool_func: true,
     attributes: ['xmult', 'scaling', 'debuff'], poke_after: 'kubfu',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); urshifu_tips(info_queue); const ex = card.ability.extra; return { vars: [ex.Xmult, ex.Xmult_mod] }; },
     calculate(self, card, context) {
@@ -752,11 +753,11 @@ defineJokers({
     in_pool() { return false; },
   },
   // Urshifu (Rapid Strike Style) 892: X Mult (kept from Kubfu; keeps training); Surging Strikes: the first 3 scored cards are
-  // retriggered. Only through Kubfu.
+  // retriggered. Only through Kubfu. Water (contentRev 30): the type its upstream card draws (owner rule: the card's type wins).
   urshifu_rapid: {
     name: 'urshifu_rapid', poke_sprite391: sprite('Gen08', 4, 10, [5, 10]),
     config: { extra: { Xmult: 2, Xmult_mod: 0.1, retriggers: 1, strikes: 3 } },
-    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fighting', gen: 8, blueprint_compat: true, custom_pool_func: true,
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 8, blueprint_compat: true, custom_pool_func: true,
     attributes: ['xmult', 'scaling', 'retrigger', 'debuff'], poke_after: 'urshifu_single',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.Xmult, ex.Xmult_mod, ex.strikes] }; },
     calculate(self, card, context) {

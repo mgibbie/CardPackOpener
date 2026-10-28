@@ -851,10 +851,12 @@ export const POKERMON = registerMod({
   // 29 = the owner's Lunatone + Solrock (jokers/pokejokers_designs.js), a pair: day hands (each round's 1st / 3rd / 5th) and night
   // hands (2nd / 4th); Solrock +100 Chips by day, Lunatone X2 by night; Cosmic Power (holding both, undebuffed): each covers the other
   // half at half strength (+50 Chips by night, X1.5 by day).
-  // 30 = the owner's Regi trio (Regirock / Regice / Registeel, Legendary; jokers/pokejokers_designs.js): Stone cards +100 Chips instead
+  // 30 = the owner's types follow their card art (owner rule: the type shown on the card wins; tools/micatro/pokermon_art_type.mjs):
+  // Urshifu Single Strike Fighting -> Dark, Rapid Strike Fighting -> Water (upstream 3.9.1's two Urshifu cards draw those icons).
+  // 31 = the owner's Regi trio (Regirock / Regice / Registeel, Legendary; jokers/pokejokers_designs.js): Stone cards +100 Chips instead
   // of +50 and +10 permanent Chips per score; Glass cards never shatter; held Steel X2 instead of X1.5 (hooks chip_bonus / chip_h_x_mult);
   // each converts 1 + (other Regi species held) random deck cards to its enhancement when a Blind is selected.
-  contentRev: 30,
+  contentRev: 31,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

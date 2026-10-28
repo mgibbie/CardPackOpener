@@ -5,6 +5,10 @@
 //         recomputed from the mods as the game registers them (a mod upgrade that adds jokers fails this until the list is
 //         regenerated); no listed species has a joker (by name) in any of the three, and every species they do cover is
 //         off the list; listed + covered = 1025; the type table is the mods' own majority (primary type -> ptype)
+//   TYPE  owner rule: the type the CARD shows wins. The art typer (tools/micatro/pokermon_art_type.mjs, type-icon template matching)
+//         is first validated leave-one-out on the registered Pokermon jokers (100%); then every wiki card with upstream art has
+//         ptype = its art's type (type_source 'art'), the mapping only where no card / icon exists ('mapping'); mapped_ptype is
+//         the mapping's guess; spot checks of cards whose art differs from the mapping (Latias Psychic, Venipede Dark...)
 //   ART   UPSTREAM FIRST: every species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json
 //         — checked against the game's own lookups, data391.js sprites and the owner's jokers' poke_sprite391 — with a non-empty
 //         cell on the shipped sheet) uses that card, pixel-identical to the sheet's cell (+ its soul layer); only the rest are
@@ -39,6 +43,7 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const imp = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/pokermon_jokers.json'), 'utf8'));
+const sp0 = (n) => D.species.find(s => s.name === n);
 
 let server, browser;
 try {
@@ -49,8 +54,8 @@ try {
 	A(JSON.stringify(listed) === JSON.stringify(M.missing.map(s => s.dex)), `the committed list is exactly the mods' missing set (${listed.length})`,
 		'committed-only: ' + listed.filter(d => !M.missing.some(s => s.dex === d)).join(',') + ' / mods-missing-only: ' + M.missing.filter(s => !listed.includes(s.dex)).map(s => s.dex).join(','));
 	A(listed.every((d, i) => Number.isInteger(d) && d >= 1 && d <= 1025 && (!i || d > listed[i - 1])), 'dex numbers 1..1025, ascending, no duplicates (no fakemon)');
-	const fields = ['key', 'name', 'gen', 'ptype', 'stage', 'rarity', 'cost'];
-	const drift = D.species.filter(s => { const m = M.missing.find(x => x.dex === s.dex); return !m || fields.some(f => JSON.stringify(m[f]) === undefined || JSON.stringify(m[f]) !== JSON.stringify(s[f])) || JSON.stringify(m.line) !== JSON.stringify(s.line) || JSON.stringify(m.types) !== JSON.stringify(s.types); });
+	const fields = ['key', 'name', 'gen', 'stage', 'rarity', 'cost'];
+	const drift = D.species.filter(s => { const m = M.missing.find(x => x.dex === s.dex); return !m || m.ptype !== s.mapped_ptype || fields.some(f => JSON.stringify(m[f]) === undefined || JSON.stringify(m[f]) !== JSON.stringify(s[f])) || JSON.stringify(m.line) !== JSON.stringify(s.line) || JSON.stringify(m.types) !== JSON.stringify(s.types); });
 	A(!drift.length, 'every entry (type, stage, rarity, cost, line) matches a fresh computation', drift.slice(0, 5).map(s => s.dex).join(','));
 	// independently of computeMissing's coverage: the mods' jokers, by name
 	const jokers = M.jokers;
@@ -70,9 +75,30 @@ try {
 		return PM.TYPE_TO_PTYPE[t] !== best[0];
 	});
 	A(!badTypes.length, 'TYPE_TO_PTYPE = the majority of upstream ptypes per primary type', JSON.stringify(badTypes));
-	A(D.species.every(s => PM.ptypeOf(s.types) === s.ptype && (s.types[0] === 'Flying' || Object.keys(D.conventions.typeToPtype).includes(s.types[0]))), 'each ptype follows from the primary type (Flying: the second type)');
+	A(D.species.every(s => PM.ptypeOf(s.types) === s.mapped_ptype && (s.types[0] === 'Flying' || Object.keys(D.conventions.typeToPtype).includes(s.types[0]))), 'each mapped_ptype follows from the primary type (Flying: the second type)');
+	// ---- TYPE: the card's own type wins (owner rule). First the detector, on the jokers whose ptype upstream registered.
+	const AT = await imp('tools/micatro/pokermon_art_type.mjs');
+	const typer = await AT.loadArtTyper({ jokers });
+	const val = typer.validate();
+	A(val.total >= 540 && val.ok === val.total && val.minMargin >= 0.2, `the art typer reads ${val.ok} / ${val.total} registered Pokermon jokers' types right, leave-one-out (min margin ${val.minMargin.toFixed(2)})`,
+		val.wrong.slice(0, 8).map(w => `${w.name} ${w.ptype}->${w.got}`).join(', '));
+	A(AT.POKETYPES.every(t => typer.training.filter(r => r.ptype === t).length >= 10), 'its training covers all 12 Pokermon types (10+ cards each)');
+	const MJT = await imp('tools/micatro/compose_missing_pokermon_jokers.mjs');
+	const tBad = [], srcWrong = [];
+	for (const s of D.species) {
+		const e = s.art.source === 'upstream' ? MJT.upstreamEntry(typer.table, s) : null;
+		const r = e ? typer.typeOfEntry(e) : null;
+		const want = r && r.ptype ? { ptype: r.ptype, src: 'art' } : { ptype: s.mapped_ptype, src: 'mapping' };
+		if (s.ptype !== want.ptype) tBad.push(`${s.name} ${s.ptype} (card: ${want.ptype})`);
+		if (s.type_source !== want.src) srcWrong.push(`${s.name} ${s.type_source}`);
+	}
+	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
+	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
+	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
+	A(sp0('Latias')?.ptype === 'Psychic' && sp0('Venipede')?.ptype === 'Dark' && sp0('Sandile')?.ptype === 'Dark' && sp0('Kyurem')?.ptype === 'Water' && sp0('Stunfisk')?.ptype === 'Lightning'
+		&& sp0('Keldeo')?.ptype === 'Fighting' && sp0('Keldeo')?.type_source === 'art' && sp0('Keldeo')?.mapped_ptype === 'Water', 'spot check (the card wins): Latias Psychic, Venipede Dark, Sandile Dark, Kyurem Water, Stunfisk Lightning; Keldeo Fighting from its art (the mapping said Water)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
-	const sp = (n) => D.species.find(s => s.name === n);
+	const sp = sp0;
 	A(sp('Stoutland')?.stage === 'Two' && sp('Herdier')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Arceus')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',
 		'spot check: Stoutland Stage 2, Herdier Stage 1, Toxel Baby, Arceus Legendary, Corviknight Metal, Noibat Dragon');
 
