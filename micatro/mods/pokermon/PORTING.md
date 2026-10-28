@@ -266,8 +266,8 @@ follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** s
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
-line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), **`3.9.1+r28`** since the owner's Barboach line ("The owner's
-Barboach line" below)
+line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
+Barboach line" below), **`3.9.1+r29`** since the owner's Regi trio ("The owner's Regi trio" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2361,6 +2361,34 @@ Pokermon+ has the line.
 - **Art: upstream's own** (Natdex {16,22} / {18,22}). Nothing to deploy for the mod. The wiki drops them (404 missing).
 - **Tests**: `micatro/tests/mods/pokermon_barboach_test.mjs` (3 passed / 12 failed on origin/main; 60 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 42 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (860 jokers).
+
+### The owner's Regi trio (2026-10-28, branch `feat/pokermon-regi-trio`)
+Pinned **`3.9.1+r29`** (`contentRev: 29`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Regirock (377), Regice (378) and Registeel (379):
+three **Legendary $20** single jokers (no family) in `jokers/pokejokers_designs.js` (45 defs now), after Metagross in Pokédex order. They reach a run
+like Pokermon's other Legendaries: The Soul / the Legendary pool. Types from the card art (the type icon on each 3.9.1 cell): **Regirock Earth,
+Regice Water, Registeel Metal**. Neither Nacho nor Pokermon+ has them.
+- **Regirock**, Stone Body: **Stone cards give +100 Chips instead of +50** (hook `chip_bonus`, a Card:get_chip_bonus wrap: real Stone cards, their
+  `perma_bonus` on top; the best undebuffed Regirock's value) and **permanently gain +10 Chips each time they score** (`perma_bonus`, as Rhyhorn /
+  Hiker; a retrigger scores and grows again; Blueprint copies the growth).
+- **Regice**, Ice Body: **Glass cards never shatter**: its `fix_probability` fixes the identifier-`'glass'` roll (the Glass card's 1 in 4, and a
+  quantum Glass's) to 0, as Absol fixes every roll. Nothing is destroyed, so `remove_playing_cards` never fires: Glass Joker and the Whismur line
+  count no break. Deliberate destruction (Hanged Man, a destroying joker) is not the roll and still destroys.
+- **Registeel**, Iron Body: **Steel cards held in hand give X2 instead of X1.5** (hook `chip_h_x_mult`, the Steel card's own held effect, so a Red
+  Seal / Mime retrigger repeats it; scaled as a ratio, so Nacho's Dhelmise and Pokermon+'s perma_h_x_mult still multiply on top).
+- **Regi Trio**: when a Blind is selected each converts **1 + (OTHER Regi species you have)** random cards of the full deck to its enhancement (Stone /
+  Glass / Steel): all three = 3 each. **Distinct species, undebuffed**: a twin of the same Regi (Showman) never counts, two Regirocks count once for a
+  Regice, a debuffed Regi neither counts nor converts. Picks: the run's seeded `pseudorandom_element` over `G.playing_cards`, **unenhanced cards
+  first**; once none is left, any card not already that enhancement (**it overwrites** the other enhancement, keeping seal and edition); never a card
+  that already has it. Blueprint copies the conversion (Marble Joker's moment).
+- **Energy**: Regirock `chips1` +30% (100 -> 130 / 160 / 190) and `chip_mod` +20% (10 -> 12 / 14 / 16); Registeel `Xmult_multi` +5% (X2 -> X2.1 /
+  X2.2 / X2.3); Regice `glass_convert`, a new house energy field (systems/energy.js, coefficient 1 = its whole base): **+1 Glass card per Blind per
+  Energy** (1 -> 2 / 3 / 4, before the trio's +1 per other Regi; a mismatched Colorless +0.5, floored).
+- **Text**: the convert count on each tooltip ("{C:attention}N{} random card(s)"), "(+1 for each other Regi)"; Regice "(Each Energy: +1 card)". The
+  Stone / Steel cards' own tooltips still read +50 / X1.5 (Micatro draws the enhancement text from the center config, as vanilla's).
+- **Art: upstream's own** (Natdex {2,25} / {4,25} / {6,25}, each with its floating soul {3,25} / {5,25} / {7,25}). Nothing to deploy for the mod.
+  The wiki drops them.
+- **Tests**: `micatro/tests/mods/pokermon_regis_test.mjs` (8 passed / 13 failed on origin/main; 75 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 45 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (863 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

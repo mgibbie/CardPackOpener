@@ -192,6 +192,19 @@ House pattern: a TWO-TYPE TEAM count (the owner's Barboach line, jokers/pokejoke
   - A threshold on OTHER jokers ("at least 2 other Water or Earth Jokers") leaves the joker itself out, so one copy alone never
     turns it on.
 
+House pattern: a TRIO (the owner's Regirock / Regice / Registeel, jokers/pokejokers_designs.js regi_others):
+  - Separate species (no family), each with its own rule, sharing one scaling rider: "1 + (OTHER Regis you have)". The count is of
+    DISTINCT other species, undebuffed: a twin of the same Regi (Showman) is never an "other Regi", and two Regirocks count once
+    for a Regice. All three held = 3 each; one alone = 1. Write the base in the tooltip's number, "+1 for each other Regi" below.
+  - The rider is a DECK CONVERSION when a Blind is selected (Marble Joker's moment; Blueprint copies it): N random cards of the
+    FULL deck (G.playing_cards, the run's seeded pseudorandom_element) become the joker's enhancement. Unenhanced cards first;
+    once none is left, any card that isn't already that enhancement (so it overwrites, keeping seal and edition); never one that
+    already is. Three converters on one deck end up trading cards with each other once the deck is fully enhanced: say so.
+  - Rules that change a base enhancement belong on the CARD, through the engine's Card hooks, not in a joker context: Regirock's
+    Stone "+100 instead of +50" is a chip_bonus hook (Card:get_chip_bonus), Registeel's held Steel "X2 instead of X1.5" a
+    chip_h_x_mult hook (Card:get_chip_h_x_mult), so retriggers (Red Seal, Mime) repeat the new value exactly as they repeat the
+    old one. Take the best copy's value (an "instead" rule never stacks with a twin); only while an undebuffed one is owned.
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -364,6 +377,9 @@ Designer consequences:
      carries through evolution by poke_custom_values_to_keep.
   6. An OVERFLOW gain (house pattern: Grumpig's Black Pearl) is the normal gain doubled, computed
      from the same Xmult_mod (2 x Xmult_mod), so one energy field scales both and the ratio holds.
+  7. ENERGY RAISING A COUNT (house: the owner's Regice, `glass_convert`): a count with no other number (cards converted per Blind)
+     gets its own energy_values entry set to 1 (the whole base: +1 per Energy, +0.5 per mismatched Colorless, floored by the
+     joker), the shape of Gulpin's `stockpile_max` (1/3 of a base 3). Only the joker carrying the field changes.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
@@ -724,6 +740,11 @@ Under-explored:
   - Ice beyond Glass and debt: 15 missing Ice species map to Water (Spheal, Cubchoo, Bergmite,
     Snom, Eiscue, Glastrier...). They could own a "frozen" mechanic, for example cards kept in
     hand between rounds or Glass that doesn't break.
+    House: GLASS THAT DOESN'T BREAK (the owner's Regice, Ice Body): while it is held (undebuffed), the Glass card's 1 in 4 shatter
+    roll is fixed to 0 — SMODS's fix_probability on identifier 'glass' (Absol fixes every roll this way), so the card's own text and
+    every odds modifier agree, and quantum Glass (Tinkaton's Steel) is covered by the same roll. Nothing breaks, so the break
+    counters (Glass Joker, the Whismur line) correctly count nothing: an unbreakable-Glass joker and a Glass-break payoff are
+    anti-synergy by design. Effects that DESTROY a Glass card on purpose (Hanged Man, a joker's destroy) still do.
   - Water-type synergy: Corsola, Lanturn, Pelipper and Politoed count Water Jokers; the owner's Barboach line counts Water OR
     Earth Jokers (the two-type team, 2.1): +12 / +20 Chips each. Other pairings (Water + Lightning, Water + Grass...) are open.
 Pitfalls:
@@ -1002,8 +1023,9 @@ Under-explored:
   - Plain Mult (1), discards (1), consumables (1).
   - Metal-type synergy (Magneton/Magnezone are Lightning).
   - Held-in-hand Steel payoffs. The vanilla strength of Steel is HELD, but Pokermon mostly
-    rewards played or eaten Steel. Only Skarmory, Ferrothorn's retrigger, and Pokermon+'s
-    Meltan/Melmetal use held Steel.
+    rewards played or eaten Steel. Only Skarmory, Ferrothorn's retrigger, Pokermon+'s
+    Meltan/Melmetal and the owner's Registeel (held Steel X2 instead of X1.5, on the card itself:
+    the trio pattern, 2.1; Energy +5% per card: X2.1 / X2.2 / X2.3) use held Steel.
   - Only 16 missing species (Honedge line, Klefki, Cufant line, Varoom line, Orthworm,
     Corviknight, Registeel, Dialga, Cobalion, Magearna, Iron Crown...).
 Pitfalls:
@@ -1108,7 +1130,8 @@ Identity: Chips, Stone (and Glass), Ancient fossils, Hazards, retriggers.
   Also:  Stone 13, Glass 6, Ancient 8, Hazards 5, probability 9, face cards 6
   Recurring shapes:
     - Big Chips with -hand size (the Geodude line).
-    - Stone cards gaining Chips or retriggering (the Rhyhorn line, Probopass, Excadrill).
+    - Stone cards gaining Chips or retriggering (the Rhyhorn line, Probopass, Excadrill; the owner's
+      Regirock: Stone cards give +100 instead of +50 and gain +10 per score, the trio pattern, 2.1).
     - Stone plus Glass (the Swinub line).
     - Ancient ranks (Kabuto, Aerodactyl, Relicanth, Nacho's Cranidos and Shieldon).
     - Cards with no rank held (Roggenrola line).

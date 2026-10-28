@@ -31,6 +31,10 @@
 // Barboach -> Whiscash (Muddy Water: +12 / +20 Chips per Water or Earth Joker, itself included, a dual-type one once; Whiscash's
 // Earthquake: with 2+ OTHER Water / Earth Jokers the round's first hand retriggers every scored card; Water; contentRev 28) — upstream
 // 3.9.1 draws them too (Natdex 16 / 18, 22).
+// The Regi trio: Regirock (Stone Body: Stone +100 Chips instead of +50, +10 permanent per score; Earth), Regice (Ice Body: Glass never
+// shatters; Water), Registeel (Iron Body: held Steel X2 instead of X1.5; Metal), Legendary $20 each; each converts 1 + (other Regi species
+// held) random deck cards to its enhancement when a Blind is selected; contentRev 29 — upstream 3.9.1 draws them with their souls
+// (Natdex 2 / 4 / 6, 25).
 import {
   G, P_CENTERS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -473,6 +477,62 @@ function quake_state(card) {
   if (G.GAME && G.GAME.facing_blind && G.GAME.current_round && G.GAME.current_round.hands_played > 0) return 'Used this round';
   return 'Active!';
 }
+
+// ------------------------------------------------------------ the Regi trio (Regirock / Regice / Registeel)
+const REGIS = ['j_poke_regirock', 'j_poke_regice', 'j_poke_registeel'];
+/** Undebuffed owned jokers of this key (the rule hooks below read them: a debuffed Regi does nothing). */
+const regis_held = (key) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && j.config.center.key === key);
+/** Regi Trio: how many OTHER Regi species you have (undebuffed). Distinct species: two Regices (Showman) are one "other Regi" for
+ *  a Regirock, and a Regice never counts its own twin. */
+export function regi_others(card) {
+  const own = card.config.center.key, seen = new Set();
+  for (const j of (G.jokers && G.jokers.cards) || []) {
+    const k = j.config.center.key;
+    if (j !== card && !j.debuff && k !== own && REGIS.includes(k)) seen.add(k);
+  }
+  return seen.size;
+}
+/** Cards this Regi converts when a Blind is selected: its base (1; Regice's `glass_convert`, +1 per Energy, floored) + the others. */
+const regi_converts = (card) => Math.floor((card.ability.extra.glass_convert || 1) + 1e-9) + regi_others(card);
+const unbroken = (c) => !c.destroyed && !c.shattered && !c.removed;
+/** When a Blind is selected: `n` random cards of the FULL deck (G.playing_cards, the run's seeded pseudorandom_element) become `enh`.
+ *  Unenhanced cards first; once none is left, any card that isn't already `enh` (overwriting its enhancement; seal and edition kept).
+ *  Never a card that already is `enh`. Blueprint copies it (as Marble Joker). */
+function regi_convert(card, context, enh, seed, word) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
+  const n = regi_converts(card);
+  let done = 0;
+  for (let i = 0; i < n; i++) {
+    const live = (G.playing_cards || []).filter(unbroken);
+    const plain = live.filter((c) => c.config.center.key === 'c_base');
+    const pool = plain.length ? plain : live.filter((c) => c.config.center.key !== enh);
+    if (!pool.length) break;
+    const [pick] = pseudorandom_element(pool, pseudoseed(seed));
+    pick.set_ability(P_CENTERS[enh], null, true);
+    done++;
+  }
+  if (done) card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+' + done + ' ' + word, colour: 'CHIPS' });
+}
+/** Regirock (hook chip_bonus): a Stone card gives the best undebuffed Regirock's `chips1` (100) INSTEAD of its +50 (the card's
+ *  perma_bonus stays on top). Only real Stone cards (the get_chip_bonus Stone branch), not while debuffed. */
+export function regi_chip_bonus(v, card) {
+  if (!v || card.debuff || card.ability.effect !== 'Stone Card' || !G.jokers) return undefined;
+  const rocks = regis_held('j_poke_regirock');
+  if (!rocks.length) return undefined;
+  const best = Math.max(...rocks.map((j) => j.ability.extra.chips1));
+  return v + best - ((P_CENTERS.m_stone.config && P_CENTERS.m_stone.config.bonus) || 50);
+}
+/** Registeel (hook chip_h_x_mult): a held Steel card's own X Mult becomes the best undebuffed Registeel's `Xmult_multi` (X2) instead of
+ *  X1.5. It IS the Steel card's held effect (Card:get_chip_h_x_mult), so every retrigger (Mime, a Red Seal) gives it again; a
+ *  multiplicative add-on bonus (Nacho's Dhelmise, Pokermon+'s perma_h_x_mult) scales with it whichever hook runs first. */
+export function regi_h_x_mult(v, card) {
+  if (!v || card.debuff || !has_enhancement(card, 'm_steel') || !G.jokers) return undefined;
+  const steels = regis_held('j_poke_registeel');
+  if (!steels.length) return undefined;
+  const base = card.ability.h_x_mult || 1.5;
+  return v * Math.max(...steels.map((j) => j.ability.extra.Xmult_multi)) / base;
+}
+const regi_tips = (self, info_queue, card, enh) => { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS[enh]); };
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -1283,6 +1343,58 @@ defineJokers({
       return stamina(card, context);
     },
   },
+
+  // ---------------------------------------------------------------- The Regi trio: Regirock 377 / Regice 378 / Registeel 379 (Gen 3)
+  // The owner's design (2026-10-28). Three Legendaries ($20; The Soul / the Legendary pool, like Pokermon's other Legendaries), each
+  // with a "Body" rule for one enhancement and the same Regi Trio conversion: when a Blind is selected, 1 + (OTHER Regi species you
+  // have, undebuffed; regi_others) random cards of your full deck become that enhancement (regi_convert: unenhanced cards first, then
+  // any card not already it). Types from the card art: Regirock Earth, Regice Water (Ice), Registeel Metal. Neither Nacho nor
+  // Pokermon+ has them. Art: upstream 3.9.1's own cells with their floating souls (Natdex 2-7, 25).
+  // Regirock 377 (Earth), Stone Body: Stone cards give +100 Chips instead of +50 (hook chip_bonus: regi_chip_bonus; `chips1`, Energy
+  // +30%: 130 / 160 / 190) and permanently gain +10 Chips each time they score (perma_bonus, as Rhyhorn / Hiker; `chip_mod`, Energy
+  // +20%: 12 / 14 / 16; Blueprint copies it).
+  regirock: {
+    name: 'regirock', poke_sprite391: sprite('Natdex', 2, 25, [3, 25]),
+    config: { extra: { chips1: 100, chip_mod: 10 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 3, blueprint_compat: true,
+    attributes: ['chips', 'scaling', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'metagross',
+    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_stone'); const ex = card.ability.extra; return { vars: [r3(ex.chips1), r3(ex.chip_mod), regi_converts(card)] }; },
+    calculate(self, card, context) {
+      regi_convert(card, context, 'm_stone', 'regirock', 'Stone');
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_stone')) {
+        const c = context.other_card;
+        c.ability.perma_bonus = (c.ability.perma_bonus || 0) + card.ability.extra.chip_mod;
+        return { extra: { message: localize('k_upgrade_ex'), colour: 'CHIPS' }, colour: 'CHIPS', card };
+      }
+      return undefined;
+    },
+  },
+  // Regice 378 (Water), Ice Body: Glass cards never shatter (their 1 in 4 break roll, identifier 'glass', is fixed to 0 — SMODS's
+  // fix_probability, as Absol fixes every roll; nothing breaks, so Glass Joker / the Whismur line count nothing). Its conversion makes
+  // Glass; `glass_convert` is its base 1 (the house energy field, systems/energy.js: +1 per Energy, +0.5 per mismatched Colorless,
+  // floored), so each Energy converts 1 more Glass card per Blind.
+  regice: {
+    name: 'regice', poke_sprite391: sprite('Natdex', 4, 25, [5, 25]),
+    config: { extra: { glass_convert: 1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck', 'chance'], poke_after: 'regirock',
+    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_glass'); return { vars: [regi_converts(card), Math.floor(card.ability.extra.glass_convert + 1e-9)] }; },
+    calculate(self, card, context) {
+      if (context.fix_probability && !context.blueprint && context.identifier === 'glass') return { numerator: 0 };
+      regi_convert(card, context, 'm_glass', 'regice', 'Glass');
+      return undefined;
+    },
+  },
+  // Registeel 379 (Metal), Iron Body: Steel cards held in hand give X2 Mult instead of X1.5 (hook chip_h_x_mult: regi_h_x_mult — the
+  // Steel card's own held effect, so Mime / a Red Seal retrigger it; `Xmult_multi`, the per-card X, Energy +5%: X2.1 / X2.2 / X2.3).
+  registeel: {
+    name: 'registeel', poke_sprite391: sprite('Natdex', 6, 25, [7, 25]),
+    config: { extra: { Xmult_multi: 2 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 3, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'regice',
+    loc_vars(self, info_queue, card) { regi_tips(self, info_queue, card, 'm_steel'); return { vars: [r3(card.ability.extra.Xmult_multi), regi_converts(card)] }; },
+    calculate(self, card, context) { regi_convert(card, context, 'm_steel', 'registeel', 'Steel'); return undefined; },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -1327,6 +1439,8 @@ const FORECAST_NOTE = ['{C:inactive,s:0.8}(Normal again after the round;', '{C:i
 const MUDDY = ['{C:attention}Muddy Water:{} {C:chips}+#1#{} Chips for', 'each {X:poke_water,C:white}Water{} or {X:poke_earth,C:white}Earth{} Joker', '{C:inactive}(Itself included)',
   '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:chips}+#3#{C:inactive} Chips)'];
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
+const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
+  '{C:inactive}(+1 for each other Regi)'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -1460,6 +1574,18 @@ export const DESIGN_LOC = {
     j_poke_mudsdale: { name: 'Mudsdale', text: [
       ['{C:attention}Stamina:{} gains {C:chips}+#1#{} Chips when', 'you play a hand that isn\'t the', 'first hand of the round'],
       ['{C:attention}Mud Spit:{} the first unscored', 'card in each played hand', 'becomes a {C:attention}Stone{} card', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'],
+    ] },
+    j_poke_regirock: { name: 'Regirock', text: [
+      ['{C:attention}Stone Body:{} {C:attention}Stone{} cards give', '{C:chips}+#1#{} Chips instead of {C:chips}+50{}', 'and permanently gain', '{C:chips}+#2#{} Chips each time they score'],
+      REGI_TRIO('Stone', 3),
+    ] },
+    j_poke_regice: { name: 'Regice', text: [
+      ['{C:attention}Ice Body:{} {C:attention}Glass{} cards', 'never shatter'],
+      [...REGI_TRIO('Glass', 1), '{C:inactive,s:0.8}(Each Energy: +1 card)'],
+    ] },
+    j_poke_registeel: { name: 'Registeel', text: [
+      ['{C:attention}Iron Body:{} {C:attention}Steel{} cards held', 'in hand give {X:mult,C:white} X#1# {} Mult', 'instead of {X:mult,C:white} X1.5 {}'],
+      REGI_TRIO('Steel', 2),
     ] },
   },
   Other: {
