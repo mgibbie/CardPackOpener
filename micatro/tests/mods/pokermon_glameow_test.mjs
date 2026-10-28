@@ -102,10 +102,28 @@ sec('fickle', () => {
 });
 
 // ------------------------------------------------------------------- the favourite survives save / resume (the recipe replayed)
-// A bot plays a real run (micatro/tests/replay_bot.mjs, the live Session path) from a custom deck that starts with Glameow: GLAMRES6
-// (bot 3) reaches Purugly (9 rounds; GLAMRES2 until the Drifloon line joined the pool and moved the seeded shop); in GLAMRES3 the bot fills every slot, so Glameow is still waiting after 9 rounds.
-for (const [seed, bot, evolves] of [['GLAMRES6', 3, true], ['GLAMRES3', 1, false]]) sec('resume ' + seed, () => {
-  const run = playRun({ seed, mods: ['pokermon'], customDeck: { name: 'Glam', jokers: [{ key: 'j_poke_glameow' }] } }, { seed: bot, maxSteps: 400 });
+// A bot plays a real run (micatro/tests/replay_bot.mjs, the live Session path) from a custom deck that starts with Glameow, in two scenarios:
+// one where it reaches Purugly (8+ rounds, 4 Joker slots), one where the bot fills every slot so Glameow is still waiting at 0 rounds after
+// 8+ rounds. The seeded shops follow the joker pool, so every new joker moves them (GLAMRES2 was the Purugly run until the Drifloon, Combee
+// and Cherubi lines joined): each scenario takes the FIRST run of a fixed candidate list (run seed x bot seed) that shows it, then checks it in
+// full. Deterministic; it fails only if no candidate shows the scenario.
+const glamRun = (seed, bot) => playRun({ seed, mods: ['pokermon'], customDeck: { name: 'Glam', jokers: [{ key: 'j_poke_glameow' }] } }, { seed: bot, maxSteps: 400 });
+const glamFind = () => G.jokers.cards.find((j) => /glameow|purugly/.test(key(j)));
+const glamCash = (run) => run.recipe.actions.filter((a) => a.type === 'cash_out').length;
+const GLAM_SCENARIOS = {
+  evolves: (run) => { const j = glamFind(); return !!j && glamCash(run) >= 8 && key(j) === 'j_poke_purugly' && limit() === 4; },
+  waits: (run) => { const j = glamFind(); return !!j && glamCash(run) >= 8 && key(j) === 'j_poke_glameow' && ex(j).rounds === 0 && G.jokers.cards.length >= limit(); },
+};
+const GLAM_CANDIDATES = { evolves: [['GLAMRES6', 3], ['GLAMRES2', 2]], waits: [['GLAMRES3', 1]] };
+function glamPick(kind) {
+  const tries = [...GLAM_CANDIDATES[kind]];
+  for (let k = 2; k < 40; k++) for (let b = 1; b <= 6; b++) tries.push(['GLAMRES' + k, b]);
+  for (const [seed, bot] of tries) { const run = glamRun(seed, bot); if (GLAM_SCENARIOS[kind](run)) return { seed, bot, run }; }
+  return { seed: GLAM_CANDIDATES[kind][0][0], bot: GLAM_CANDIDATES[kind][0][1], run: glamRun(...GLAM_CANDIDATES[kind][0]) };
+}
+for (const [kind, evolves] of [['evolves', true], ['waits', false]]) sec('resume ' + kind, () => {
+  const { seed: s0, bot, run } = glamPick(kind);
+  const seed = s0 + '/bot ' + bot;
   const find = () => G.jokers.cards.find((j) => /glameow|purugly/.test(key(j)));
   const state = (j) => j && [key(j), j.ability.fav_suit, ex(j).rounds, limit(), G.jokers.cards.length].join();
   const liveJ = find(), live = state(liveJ);

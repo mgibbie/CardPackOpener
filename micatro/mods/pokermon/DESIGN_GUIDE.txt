@@ -355,6 +355,23 @@ House pattern: a GENDERED BRANCH (the owner's Burmy line; Burmy -> Wormadam Fema
     (X(1 + 0.25 per DIFFERENT enhancement in the full deck), of the 8 vanilla enhancements + Pokermon's Seed and Flower; Hazard and
     the April Fools Ludicolo don't count; up to X3.5; `Xmult_mod` +20%: 0.3 / 0.35 / 0.4).
 
+House pattern: ADJACENCY HONEY, then sell value to X (the owner's Combee line, jokers/pokejokers_designs.js honey_gather / attack_order_x):
+  - Honey: at end of round (end_of_round + main_eval, not Blueprint) the Jokers directly LEFT and RIGHT (poke_get_adjacent_jokers,
+    Magneton's / Dolliv's neighbours) each gain a FIXED +$1 (Combee, C $5, 5 rounds) / +$2 (Vespiquen, S $8) of sell value
+    (ability.extra_value, then set_cost: the Smoliv line's field). Nothing on an empty side (a row edge, a lone joker); never
+    itself (Dolliv feeds itself too; the bee only feeds others). A debuffed bee gives nothing (it isn't calculated); a debuffed
+    NEIGHBOUR still takes it (sell value isn't an ability). The row order is the decision: moving jokers moves the honey.
+  - Sell value to X (Electivire's shape, read off OTHER jokers): X(1 + 0.1 per $ of the two neighbours' current sell_cost),
+    capped at X3 in a field Energy ignores (Xmult_cap). The honey feeds it: two $1 Jokers start at X1.2 and reach X2 after two
+    rounds; a big neighbour (Blueprint $5, a Negative, an Egg, an Arboliva-fed row) reaches the cap fast, hence the cap.
+  - Energy: only the per-$ Xmult_mod (+20%: 0.1 -> 0.12 / 0.14 / 0.16). The honey amount and the cap are fixed, so Energy shortens
+    the climb to X3 without making money. The Basic carries the SAME Xmult_mod though it doesn't use it, so it can be energized
+    (energy_can_use needs an energy field) and evolution re-applies the Energy to the Stage 1's base (say so on the card:
+    "Energy carries to Vespiquen"). Blueprint copies the X only (the honey is guarded by !context.blueprint, so a copied bee never
+    feeds twice); the Basic, with no scoring effect, is blueprint_compat false.
+  - Sell value as a resource is a money engine (selling the fed jokers, Swashbuckler / Ceremonial Dagger feed): keep the gain at
+    $1-$2 per neighbour per round and never compound it (no "doubled for Grass" on top of an adjacency feed).
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -539,6 +556,9 @@ Designer consequences:
      (stockpile_bonus 2; the cap reads floor(stockpile_max) + stockpile_bonus = 5, 8 with 3 Energy). Writing the bigger base into
      the energy field instead would make each Energy worth a third of IT (5/3). Energy carried through evolution is re-applied
      to the new base, so Drifloon's 3 Energy (max 6) become Drifblim's max 8.
+  8. ENERGY FOR LATER (house: the owner's Combee): a Basic whose own effect has no number (a fixed honey) can still take Energy
+     if it carries its evolution's energy field (Combee's unused Xmult_mod 0.1); evolution re-applies the count to the new base.
+     Tell the player on the card ("Energy carries to Vespiquen"). A cap (Xmult_cap) or a fixed gain stays out of energy_values.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
@@ -634,12 +654,31 @@ Hazards (3.9.1 Hazard layer; enhancements/enhancement1.js and systems/utils.js)
 Seeds and Flowers (3.9.1)
   - Seed card: "Grows 1 (+growth level) when scored". After 5 growths it turns into a Flower
     card and earns $15. Seed is in the Enhanced pool (weight 5). Miracle Seed (Item) makes one.
-  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade it needs only 3+
-    suits; with Shaymin or Shaymin Sky it gives X3.
-  - Growth level (+1 extra growth per score): Shiftry, Brambleghast.
+  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade (or the owner's Cherrim) it
+    needs only 3+ suits; with Shaymin or Shaymin Sky it gives X3. Cherrim in the sun: X2.5 instead of X2.
+  - Growth level (+1 extra growth per score): Shiftry, Brambleghast, the owner's Cherubi and Cherrim.
+  House pattern: a SEED GROWER (the owner's Cherubi / Cherrim, jokers/pokejokers_designs.js sweet_seeds):
+    - A deck conversion when a Blind is selected (the Regi trio's moment, 2.1): 1 random UNENHANCED card of the full deck
+      becomes a Seed (seeded pseudorandom_element; none unenhanced, nothing: it never overwrites another enhancement).
+    - Faster growth through the growth level, not a new rule: +1 growth while owned (Shiftry's add_to_deck / remove_from_deck
+      pair), so the Seed card itself does the work (2 a score: a bloom in 3 scores instead of 5). A debuffed joker gives none;
+      copies, Shiftry and Brambleghast stack. The Seed's own tooltip ("Grows 2 times") already reads it.
+    - Evolution by blooms: the Seed card calls every owned undebuffed joker's poke_seed_bloom(self, joker, seed) hook when it
+      turns into a Flower (once per Seed; a Blueprint has no hook, so it never counts). "(Bloomed: k/2)". Only blooms while held.
+  House pattern: a FLOWER RULE and a SUN BOOST (the owner's Cherrim):
+    - The Flower card asks every owned undebuffed joker's poke_flower_rule(self, joker) -> {suits, x}: the FEWEST suits asked
+      (Roserade's 3 is one more minimum, so Roserade + Cherrim is still 3, never 2) and the BEST X instead of the card's X2
+      ("instead" never stacks between two boosters). Shaymin's +1 stays on top (X2.5 -> X3.5).
+    - The weather: "sunny" = Castform's forecast() on the round's first deal reads Sunny (Hearts + Diamonds held most, a tie
+      isn't), remembered for the round; OR a working Groudon (Desolate Land: held, undebuffed, not this round's Primal Clash
+      loser; live). Rayquaza's calm keeps Groudon working, so Groudon still means sun. Overcast otherwise.
+    - Energy on the boosted X as a per-card X (Xmult_multi +5%: X2.5 -> X2.625 / X2.75 / X2.875); the Basic carries the same
+      field (unused by it) so Energy spent before evolving is kept. Form art: the Sunshine cell beside the card on the 3.9.1
+      sheet, drawn from a LIVE view form (the center's poke_view_form hook), so a Groudon bought or sold redraws it at once.
   - Seed makers: the Hoppip line (discards become Seeds, then the joker self-destructs on
     discard), Bellossom, Roselia, Nuzleaf/Shiftry (drawn Flowers become Seeds), Bramblin
-    (second Queen scored each round), Budew (a Negative Miracle Seed).
+    (second Queen scored each round), Budew (a Negative Miracle Seed), the owner's Cherubi /
+    Cherrim (a random unenhanced deck card each Blind, +1 growth level).
 
 Wishes (Jirachi)
   - Jirachi (Legendary): "At the end of the shop, make a wish!" This opens a Wish Pack of 3
@@ -804,17 +843,26 @@ Examples:
                      consumable is used, and at end of round.
   Arboliva (S $10)   +$2 sell value to every Joker and consumable each round, doubled for Grass
                      Jokers and Grass Energy.
+  Owner's Cherubi (C $5) -> Cherrim (S $8): a random unenhanced deck card becomes a Seed each
+                     Blind, +1 growth level (blooms in 3 scores); evolves after 2 blooms. Cherrim:
+                     Flowers need 3+ suits, X2.5 instead of X2 while sunny (2.6).
+  Owner's Combee (C $5): Honey Gather, the Jokers directly left and right gain +$1 sell value each
+                     round (5 rounds). Vespiquen +$2; Attack Order X(1 + 0.1 per $ of those two
+                     Jokers' sell value), max X3.
 Typical numbers:
   Basic     +M 1-7~3 | +C 20-120~40 | card +M 1-10~5 | card +C 16-50~40 | $ 1-4~2 | gain +M 1-4
   Stage 1   +M 1-11~7 | +C 40-135~60 | card +M 3-15~7 | card +C 32-75 | $ 1-5~2 | X 3 (Dustox)
   Stage 2   +M 8-12~11 | +C 60-80 | card X 1.3-1.5 | $ 1-2
 Under-explored:
   - Retriggers (only 5).
-  - Joker-row effects: copying (only Skitty/Delcatty) and adjacency.
+  - Joker-row effects: copying (only Skitty/Delcatty) and adjacency (Dolliv; the owner's Combee line
+    now: adjacency honey and sell value to X, the house pattern in 2.1).
   - Tarot and Planet creation (3).
   - The Bug subset (36 of the 79 missing Grass species) has almost no shared identity.
     Caterpie/Weedle/Wurmple are cheap and fast-evolving, and the moth/beetle lines are random.
-    Swarm or insect-collective ideas (Combee/Vespiquen, Durant, Joltik) are open.
+    Swarm or insect-collective ideas are partly used: the owner's Combee line made the hive
+    (feed your neighbours, score off them). Durant and Joltik are still open; reuse hive() /
+    honey_gather rather than a new adjacency rule.
 Pitfalls:
   - Hand size stacks across many Grass jokers (22 already give it). Keep new hand size at +1,
     and gate anything bigger (Breloom gives +2 for one round only).
