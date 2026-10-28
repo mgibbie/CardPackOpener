@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, drifblim_destroyed } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -689,7 +689,8 @@ const hooks = {
   can_reserve: rules.can_reserve,
   calculate: rules.calculate,
   add_to_deck: shiny_hooks.add_to_deck,
-  card_removed(card) { const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
+  // (+ the owner's Purugly: a debuffed one leaving gives its Joker slot back — jokers/pokejokers_designs.js slot_cost_removed)
+  card_removed(card) { slot_cost_removed(card); const r = shiny_hooks.card_removed(card); if (card.area === G.jokers) G.E_MANAGER.add_event(sync_kecleon); return r; },
   set_edition: shiny_hooks.set_edition,
   // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
   set_ability: debris_hazard_card_limit,
@@ -870,10 +871,13 @@ export const POKERMON = registerMod({
   // 34 = the owner's Chatot + Pachirisu (jokers/pokejokers_designs.js): Chatot's Vocabulary, +4 Mult per different poker hand played
   // this run, and New Word, a Planet for each hand type's first play this run while held; Pachirisu's Quick Spark, X2 (+X0.25 per other
   // Lightning Joker) on each round's first hand, and Cheek Pouch, $1 per Lightning Joker at end of round.
-  // 35 = the owner's Drifloon line (Drifloon -> Drifblim; jokers/pokejokers_designs.js): Stockpile — +1 per player discard action, max 3
+  // 35 = the owner's Glameow line (Glameow -> Purugly; jokers/pokejokers_designs.js): Fickle — a favourite suit picked when obtained and
+  // each end of round (seeded, never the same twice running); scored cards of it +5 Mult / X1.25 each; Purugly's Thick Fat: -1 Joker
+  // slot while held (refunded when sold / destroyed; a Negative nets 0); Glameow waits to evolve until a Joker slot is free.
+  // 36 = the owner's Drifloon line (Drifloon -> Drifblim; jokers/pokejokers_designs.js): Stockpile — +1 per player discard action, max 3
   // (Drifblim 5; +1 per Energy: Gulpin's `stockpile_max`); Spit Up — the round's final hand X(1 + 0.5 per Stockpile), then it resets;
   // Drifloon evolves after 4 Spit Ups; Drifblim's Aftermath: sold or destroyed (hooks.start_dissolve), a Negative Spectral card.
-  contentRev: 35,
+  contentRev: 36,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
