@@ -116,8 +116,9 @@ Missing by stage:
   Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
 
 Notable gaps:
-  - Starters: every Gen 5-9 starter line is missing (15 lines, 45 species). Gen 4 is covered
-    by Nacho (the Turtwig, Chimchar and Piplup lines).
+  - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
+    by Nacho (the Turtwig, Chimchar and Piplup lines); Gen 5 (Snivy, Tepig, Oshawott) is now the
+    owner's (contentRev 47; the starter template, 2.2).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -548,6 +549,35 @@ House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; 
     a joker that is every type (another Arceus, a Stellar Tera) adds ONE type of its own, never twelve; itself counts as one; at most 12.
     X(1 + 0.25 per type), `Xmult_mod` +20% (0.3 / 0.35 / 0.4): X2 with four types, X4 at all twelve.
 
+House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
+contrary_held / contrary_lifts):
+  - A held-in-hand payoff for DEBUFFED cards (Snivy +4 / Servine +8 Mult each): the individual context on G.hand with
+    other_card.debuff, returning h_mult (Baron's shape, so Mime / held retriggers repeat it). run.js scores every held card, debuffed
+    or not, so a joker can read the debuff itself; vanilla jokers check it to say "debuffed", ours to pay.
+  - "A debuffed card scores as if it weren't" is an ENGINE seam, not a joker context: run.js score_played_card asks the mods'
+    score_debuffed hook (Pokermon's: contrary_lifts, while an undebuffed Serperior is owned) before giving up on a debuffed played card.
+    A yes lifts the debuff for that card's own scoring only (its Chips, enhancement, seal, edition, retriggers and every joker's
+    per-card effect run as usual) with card.debuff_lifted set, and restores it in a finally right after. So the card is still
+    debuffed in hand, for the Glass break check and after the hand, and the jokers' `before` / held passes still see it debuffed.
+    A per-card payoff for the lifted cards reads debuff_lifted (Serperior X1.25 each, `Xmult_multi`). One rule however many copies
+    (the hook answers once); each copy gives its own X. A lifted card doesn't trigger the Boss Blind (no blind.triggered: Matador
+    gets nothing). Vanilla never asks the hook (no mod active), so the vanilla fuzz is unchanged.
+  - Boss Blinds become fuel: The Goad / Head / Club / Window / Plant / Pillar and Verdant Leaf debuff cards, and the line pays for
+    them (held: +Mult; scored, with Serperior: the full score and X1.25). Cresselia (no playing card can be debuffed) is
+    ANTI-synergy: nothing to count, nothing to lift. Don't add a rule that debuffs your own cards to feed it: debuffing is the
+    Blinds' job, and a joker that cripples your own deck for a bonus is a trap.
+House pattern: a SAME-HAND STREAK that counts the current hand (the owner's Tepig line, Flame Charge; jokers/pokejokers_designs.js
+flame_charge; Spheal's Rollout is the older streak):
+  - The streak is the hands IN A ROW of the same poker hand this round, THIS hand included (1 on a new hand type), so the first
+    hand already pays (Tepig +4, Pignite +6 Mult per streak hand; Emboar X(1 + 0.25 per streak hand)). Rollout counts the
+    doublings BEFORE it (0 on a new hand); say which a design uses.
+  - Set when the hand is played: `before`, AND the debuffed_hand context (a hand The Eye / The Psychic debuffs has no `before`
+    pass), so a debuffed hand still continues or breaks the streak and scores nothing. Not Blueprint, not a joker retrigger (the
+    streak counts once; Blueprint copies the payoff at the original's streak). A discard never breaks it.
+  - Within the round: kept with the round it was set in (streak_round = G.GAME.round), so a new round starts at 0 even for a joker
+    that was debuffed through the end-of-round pass; the shop tooltip reads 0. The Mouth (one hand type a round) is its best Boss,
+    The Eye (no repeats) its worst.
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -584,6 +614,14 @@ The wiki's default guesses follow the same modes:
 
 Common deviations:
   - Starters: Basic U $5-$6 with the 'starter' attribute.
+    House TEMPLATE (the owner's Gen 5 starters, contentRev 47): Basic Uncommon $5 with starter: true (only the Basic: the Starter
+    Pack's starter_lists read it, and an owned family member keeps the whole line out), Stage 1 Safari $8, Stage 2 Safari $10, all
+    three with the 'starter' attribute; the type's perk at EVERY stage in a field Energy ignores (Grass h_size 1 through the
+    hand_size pair, Fire d_size 1 through the discards pair, Water hands 1 through the hands pair: set_ability runs the old
+    center's remove_from_deck and the new one's add_to_deck across an evolution, so it is never doubled); level_evo 5 rounds, then 5
+    (Chikorita's / Cyndaquil's / Totodile's timers). Energy raises the line's main number at the standard rate (mult +40%, a per-card
+    X Xmult_multi +5%, a per-step X Xmult_mod +20%); a retrigger-only Basic carries its Stage 2's X field unused ("Energy carries to
+    Samurott", Combee's Energy for later, 2.4 point 8).
   - Early-evolving bugs: Caterpie and Weedle are C $2; their Stage 1 is C $4 and their
     Stage 2 is U $5 and shop-able.
   - Pre-evolutions too weak alone are cheap (Magikarp C $2, Feebas R $3).
@@ -1011,7 +1049,8 @@ Identity: the "economy and hand" type.
   out:   +Mult 30, $ 28, +Chips 23, X 14, retrigger 5
   Also:  hand size 22, enhancements 28 (Seed/Flower 12, Wild 6, Lucky, Glass), probability 19,
          Nature 8, Hazards 6
-  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig).
+  Grass starters give +1 hand size (Bulbasaur, Chikorita, Treecko, Turtwig, the owner's Grookey, Sprigatito and Snivy).
+  The owner's Snivy line pays for DEBUFFED cards (Contrary: held +4 / +8 Mult; Serperior scores them as if not, X1.25 each; 2.1).
   Grass is where money comes from cards held in hand (Bulbasaur, Chikorita, Treecko), where
   sell value grows (Smoliv line), and where Seeds grow.
   The owner's Burmy line is Grass by default (Plant Burmy +5 Mult; Plant Wormadam, scored unenhanced
@@ -1066,7 +1105,8 @@ Pitfalls:
 Identity: Mult and discards.
   out:   +Mult 19, X 15, +Chips 6, $ 4, retrigger 1
   Discards appear in 19 of 43 texts. Fire starters give +1 discard (Charmander, Cyndaquil,
-  Torchic, Chimchar).
+  Torchic, Chimchar, the owner's Tepig).
+  The owner's Tepig line is a same-hand streak (Flame Charge: +4 / +6 Mult, then X0.25, per hand in a row; 2.1).
   Recurring shapes:
     - "Scale with remaining discards" (Cyndaquil line).
     - "Reward 0 discards remaining" (the Charmander line).
@@ -1093,8 +1133,8 @@ Under-explored:
   - Fire-type synergy: only Blaziken.
   - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
     few hands.
-  - The 5 missing Gen 5-9 Fire starter lines will all want to follow the "+1 discard" starter
-    rule.
+  - The missing Gen 6-9 Fire starter lines will all want to follow the "+1 discard" starter
+    rule (Tepig's does).
 Pitfalls:
   - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
     vouchers, Mega Charizard Y's +5).
@@ -1118,6 +1158,10 @@ Identity: Chips, hands and retriggers.
     - Retriggering whole hands (Shellder/Cloyster, Remoraid/Octillery, Politoed, Milotic, the owner's Whiscash).
     - Suit cycling (Poliwag line).
     - Position: the owner's Shellos line works on the leftmost (West Sea) or rightmost (East Sea) scored card (2.1, rolled once).
+    - Position retriggers: the owner's Oshawott line (Razor Shell) retriggers the first 1 / 2 / 3 scored cards (Urshifu Rapid
+      Strike's rule: by position in the scoring hand; a debuffed card there isn't replaced by the next), and Samurott's scored Aces
+      give X1.5 each time they score, so its retriggered Aces pay twice. Rattata's "first 2" at Common is the yardstick: the
+      starter line pays for its slower start with +1 hand and the Stage 2 X.
   The Ice subset has its own mini-identity: Glass (Glaceon, Cryogonal) and debt (Snorunt,
   Glalie, Froslass).
 Hooks: joker_main 59, individual 30, before 28, repetition 22, add_to_deck 20 (hands), after 13,

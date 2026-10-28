@@ -82,6 +82,11 @@
 // Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
 // Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
 // (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
+// The Gen 5 starters (contentRev 47), Pokermon's starter rules (the type's perk at every stage, Basic Uncommon $5 starter, Safari $8 / $10,
+// 5 rounds then 5): Snivy -> Servine -> Serperior (Grass; Contrary: each debuffed card held gives +4 / +8 Mult; Serperior's debuffed scored
+// cards score as if not, X1.25 each), Tepig -> Pignite -> Emboar (Fire; Flame Charge: +4 / +6 Mult, then X0.25, per hand in a row of the
+// same poker hand this round), Oshawott -> Dewott -> Samurott (Water; Razor Shell: the first 1 / 2 / 3 scored cards retrigger; Samurott's
+// scored Aces X1.5) — upstream 3.9.1 draws them (Natdex {28,32}, {0..14,33}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -89,7 +94,7 @@ import {
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied, get_type, multitype, wildcard_type, POKETYPES,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
-  poke_get_adjacent_jokers, emit,
+  poke_get_adjacent_jokers, emit, find_joker,
 } from '../api.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format } from '../../../js/engine/core.js';
@@ -1257,6 +1262,69 @@ function manaphy_egg(card, context) {
   const egg = add_card({ set: 'Joker', key: 'j_poke_phione', key_append: 'manaphy' });
   card_eval_status_text(egg, 'extra', null, null, null, { message: 'Hatched!', colour: 'BLUE' });
   card.juice_up();
+}
+
+// ---------------------------------------------------------------- the Gen 5 starters: Snivy / Tepig / Oshawott lines (contentRev 47)
+/** Snivy / Servine, Contrary: each DEBUFFED card held in hand gives +mult Mult (a held-in-hand effect, h_mult, Baron's shape: Mime and a
+ *  held card's retriggers repeat it). Any debuff counts: a Boss Blind's (The Goad / Head / Club / Window / Plant / Pillar, Verdant Leaf), a
+ *  mod's. Blueprint copies it. Cresselia (playing cards can't be debuffed) leaves nothing to count: anti-synergy. */
+function contrary_held(card, context) {
+  if (context.individual && context.cardarea === G.hand && !context.end_of_round && context.other_card.debuff) return { h_mult: card.ability.extra.mult, card };
+  return undefined;
+}
+const debuffed_held = () => ((G.hand && G.hand.cards) || []).filter((c) => c.debuff).length;
+/** Serperior, Contrary: while an undebuffed Serperior is owned (find_joker skips a debuffed one), a debuffed PLAYING card that scores is
+ *  scored as if it weren't debuffed — the score_debuffed hook (index.js), which run.js score_played_card asks before giving up on a
+ *  debuffed card: the debuff is lifted for that card's own scoring (its Chips, enhancement, seal, edition, retriggers and the jokers'
+ *  per-card effects) with debuff_lifted set, and restored right after (still debuffed in hand, for the Glass break check, after the
+ *  hand). One rule however many Serperiors (each copy gives its own X1.25). A lifted card doesn't trigger the Boss Blind (Matador). */
+export const contrary_lifts = (c) => !!(c && c.ability && (c.ability.set === 'Default' || c.ability.set === 'Enhanced') && find_joker('serperior').length);
+/** Tepig line, Flame Charge: the streak of hands in a row of the same poker hand this round, THIS hand included (1 on a new poker hand,
+ *  2 on the second in a row...). Set when a hand is played (before), not by a Blueprint or a joker retrigger; a debuffed hand (The Eye,
+ *  The Psychic: no `before` pass, so its debuffed_hand context) still continues or breaks it, and scores nothing. Kept for the round
+ *  (streak_round: a new round starts at 0, even for a joker that missed the end-of-round pass while debuffed). Discards don't break it. */
+function flame_charge(card, context) {
+  const ex = card.ability.extra;
+  if ((context.before || context.debuffed_hand) && context.cardarea === G.jokers && !context.blueprint && !context.retrigger_joker) {
+    const same = ex.streak_round === G.GAME.round && ex.last_hand === context.scoring_name;
+    ex.streak = same ? (ex.streak || 0) + 1 : 1;
+    ex.last_hand = context.scoring_name;
+    ex.streak_round = G.GAME.round;
+  }
+  if (round_end(context) && !context.blueprint) { ex.streak = 0; ex.last_hand = undefined; }
+  return undefined;
+}
+/** The current streak (0 outside its round: the shop shows 0). */
+const flame_streak = (ex) => (G.GAME && ex.streak_round === G.GAME.round ? ex.streak || 0 : 0);
+function flame_vars(ex) {
+  const n = flame_streak(ex);
+  return [n, n && ex.last_hand ? localize(ex.last_hand, 'poker_hands') : localize('poke_none')];
+}
+/** Tepig / Pignite: +mult per streak hand; Emboar: X(1 + Xmult_mod per streak hand). */
+function flame_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const ex = card.ability.extra, n = flame_streak(ex);
+  if (n <= 0) return undefined;
+  // (the exact number scores; the message shows it rounded)
+  if (ex.Xmult_mod) { const x = 1 + ex.Xmult_mod * n; return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x }; }
+  const m = ex.mult * n;
+  return { message: a_mult(r3(m)), colour: 'MULT', mult_mod: m };
+}
+/** Oshawott line, Razor Shell: the first `strikes` cards of the scoring hand (by position, Urshifu Rapid Strike's rule) retrigger
+ *  `retriggers` time(s). A debuffed one there scores nothing and the count never moves past it (the next card isn't promoted). */
+function razor_shell(card, context) {
+  if (context.repetition && context.cardarea === G.play && context.scoring_hand) {
+    const i = context.scoring_hand.indexOf(context.other_card), ex = card.ability.extra;
+    if (i >= 0 && i < ex.strikes) return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+  }
+  return undefined;
+}
+/** Samurott, Shell Blade: a scored Ace gives X(Xmult_multi) each time it scores (a retrigger repeats it). A Stone card has no rank. */
+function shell_blade(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && !has_no_rank(context.other_card) && context.other_card.get_id() === 14) {
+    return { x_mult: card.ability.extra.Xmult_multi, card };
+  }
+  return undefined;
 }
 
 defineJokers({
@@ -3084,6 +3152,112 @@ defineJokers({
       return undefined;
     },
   },
+
+  // ---------------------------------------------------------------- The Gen 5 starters (contentRev 47): Snivy 495 -> Servine 496 -> Serperior 497
+  // (Grass), Tepig 498 -> Pignite 499 -> Emboar 500 (Fire), Oshawott 501 -> Dewott 502 -> Samurott 503 (Water). Pokermon's starter rules:
+  // the type's perk at every stage (Grass +1 hand size, Bulbasaur's; Fire +1 discard, Charmander's; Water +1 hand, Squirtle's), Basic
+  // Uncommon $5 with `starter` (the Starter Pack), Stage 1 Safari $8, Stage 2 Safari $10; evolution by rounds, 5 then 5 (Chikorita's /
+  // Cyndaquil's / Totodile's timers). Types from their upstream cards (Grass / Fire / Fire / Water: Pignite and Emboar are Fire/Fighting,
+  // their cards Fire). Nacho and Pokermon+ have none of the nine. Art: upstream 3.9.1 (Natdex {28,32}, then {0..14,33}).
+  // Snivy (Contrary): each debuffed card held in hand gives +4 Mult (`mult`, Energy +40%: 5.6 / 7.2 / 8.8).
+  snivy: {
+    name: 'snivy', poke_sprite391: sprite('Natdex', 28, 32),
+    config: { extra: { h_size: 1, mult: 4, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 5, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hand_size', 'mult', 'debuff', 'round_evo'], poke_after: 'arceus',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = debuffed_held(); return { vars: [ex.h_size, r3(ex.mult), ex.rounds, n, r3(ex.mult * n)] }; },
+    calculate(self, card, context) { return contrary_held(card, context) || level_evo(self, card, context, 'j_poke_servine'); },
+    ...hand_size,
+  },
+  // Servine: +8 Mult per debuffed card held (Energy: 11.2 / 14.4 / 17.6).
+  servine: {
+    name: 'servine', poke_sprite391: sprite('Natdex', 0, 33),
+    config: { extra: { h_size: 1, mult: 8, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['starter', 'hand_size', 'mult', 'debuff', 'round_evo'], poke_after: 'snivy',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra, n = debuffed_held(); return { vars: [ex.h_size, r3(ex.mult), ex.rounds, n, r3(ex.mult * n)] }; },
+    calculate(self, card, context) { return contrary_held(card, context) || level_evo(self, card, context, 'j_poke_serperior'); },
+    ...hand_size,
+  },
+  // Serperior: debuffed scored cards score as if not debuffed (contrary_lifts, the score_debuffed hook), and each gives X1.25
+  // (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375). Its Contrary is the payoff the line was building to: the held +Mult is gone.
+  serperior: {
+    name: 'serperior', poke_sprite391: sprite('Natdex', 2, 33),
+    config: { extra: { h_size: 1, Xmult_multi: 1.25 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['starter', 'hand_size', 'xmult', 'debuff'], poke_after: 'servine',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.debuff_lifted) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+    ...hand_size,
+  },
+  // Tepig (Flame Charge): +4 Mult per hand in a row of the same poker hand this round, this one included (`mult`, Energy +40%: 5.6 / 7.2 / 8.8).
+  tepig: {
+    name: 'tepig', poke_sprite391: sprite('Natdex', 4, 33),
+    config: { extra: { d_size: 1, mult: 4, rounds: 5, streak: 0 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Fire', gen: 5, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'discard', 'mult', 'hand_type', 'reset', 'round_evo'], poke_after: 'serperior',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), ex.rounds, ...flame_vars(ex)] }; },
+    calculate(self, card, context) { flame_charge(card, context); return flame_main(card, context) || level_evo(self, card, context, 'j_poke_pignite'); },
+    ...discards,
+  },
+  // Pignite: +6 Mult per streak hand (Energy: 8.4 / 10.8 / 13.2).
+  pignite: {
+    name: 'pignite', poke_sprite391: sprite('Natdex', 6, 33),
+    config: { extra: { d_size: 1, mult: 6, rounds: 5, streak: 0 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 5, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'mult', 'hand_type', 'reset', 'round_evo'], poke_after: 'tepig',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.d_size, r3(ex.mult), ex.rounds, ...flame_vars(ex)] }; },
+    calculate(self, card, context) { flame_charge(card, context); return flame_main(card, context) || level_evo(self, card, context, 'j_poke_emboar'); },
+    ...discards,
+  },
+  // Emboar: X1 + X0.25 per streak hand (`Xmult_mod`, Energy +20%: 0.3 / 0.35 / 0.4).
+  emboar: {
+    name: 'emboar', poke_sprite391: sprite('Natdex', 8, 33),
+    config: { extra: { d_size: 1, Xmult_mod: 0.25, streak: 0 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 5, blueprint_compat: true,
+    attributes: ['starter', 'discard', 'xmult', 'hand_type', 'reset'], poke_after: 'pignite',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, [n, h] = flame_vars(ex);
+      return { vars: [ex.d_size, r3(ex.Xmult_mod), n, h, r3(1 + ex.Xmult_mod * n)] };
+    },
+    calculate(self, card, context) { flame_charge(card, context); return flame_main(card, context); },
+    ...discards,
+  },
+  // Oshawott (Razor Shell): the first scored card retriggers once. The retriggers are fixed; it carries Samurott's Ace X (`Xmult_multi` 1.5,
+  // unused until then: Combee's "Energy for later"), so Energy can be used on it and is re-applied at each evolution.
+  oshawott: {
+    name: 'oshawott', poke_sprite391: sprite('Natdex', 10, 33),
+    config: { extra: { hands: 1, strikes: 1, retriggers: 1, Xmult_multi: 1.5, rounds: 5 } },
+    rarity: 2, cost: 5, stage: 'Basic', ptype: 'Water', gen: 5, blueprint_compat: true, starter: true,
+    attributes: ['starter', 'hands', 'retrigger', 'position', 'round_evo'], poke_after: 'emboar',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, ex.strikes, ex.rounds] }; },
+    calculate(self, card, context) { return razor_shell(card, context) || level_evo(self, card, context, 'j_poke_dewott'); },
+    ...hands,
+  },
+  // Dewott: the first 2 scored cards retrigger.
+  dewott: {
+    name: 'dewott', poke_sprite391: sprite('Natdex', 12, 33),
+    config: { extra: { hands: 1, strikes: 2, retriggers: 1, Xmult_multi: 1.5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'retrigger', 'position', 'round_evo'], poke_after: 'oshawott',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, ex.strikes, ex.rounds] }; },
+    calculate(self, card, context) { return razor_shell(card, context) || level_evo(self, card, context, 'j_poke_samurott'); },
+    ...hands,
+  },
+  // Samurott: the first 3 scored cards retrigger; Shell Blade: scored Aces give X1.5 (Energy +5%: 1.575 / 1.65 / 1.725).
+  samurott: {
+    name: 'samurott', poke_sprite391: sprite('Natdex', 14, 33),
+    config: { extra: { hands: 1, strikes: 3, retriggers: 1, Xmult_multi: 1.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['starter', 'hands', 'retrigger', 'position', 'xmult', 'rank'], poke_after: 'dewott',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.hands, ex.strikes, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return razor_shell(card, context) || shell_blade(card, context); },
+    ...hands,
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -3115,6 +3289,9 @@ export const DESIGN_FAMILIES = [
   ['hippopotas', 'hippowdon'],
   ['skorupi', 'drapion'],
   ['finneon', 'lumineon'],
+  ['snivy', 'servine', 'serperior'],
+  ['tepig', 'pignite', 'emboar'],
+  ['oshawott', 'dewott', 'samurott'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -3165,6 +3342,9 @@ const POISON_GAS = (name, by, nth) => ['{C:attention}' + name + ':{} after ' + (
 const BITE = ['{C:attention}Bite:{} when a hand containing', 'a {C:attention}Pair{} scores, permanently', 'gains {C:mult}+#2#{} Mult for each', 'scored card', '{C:inactive}(Currently {C:mult}+#1#{C:inactive} Mult)'];
 const SAND_STREAM = ['{C:poke_sand}Sand Stream:{} scored', '{C:attention}Stone{} cards give', '{C:chips}+#1#{} extra Chips'];
 const SNIPER = ['{C:attention}Sniper:{} each scored card', 'has a {C:green}#1# in #2#{} chance to', 'crit for {X:mult,C:white} X#3# {} Mult'];
+const CONTRARY_HELD = ['{C:attention}Contrary:{} each {C:attention}debuffed{}', 'card held in hand', 'gives {C:mult}+#2#{} Mult', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {C:mult}+#5#{C:inactive} Mult)'];
+const FLAME_CHARGE = (gain) => ['{C:attention}Flame Charge:{} ' + gain + ' for', 'each hand in a row of the same', '{C:attention}poker hand{} this round', '{C:inactive}(This hand included; resets when', '{C:inactive}the poker hand changes)'];
+const RAZOR_SHELL = (n) => ['{C:attention}Razor Shell:{} retrigger the', n];
 const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{C:attention}Uxie{}, {C:attention}Mesprit{} or {C:attention}Azelf{} held', '{C:inactive}(Currently #' + n + '#/2 others)'];
 export const DESIGN_LOC = {
   Joker: {
@@ -3469,6 +3649,24 @@ export const DESIGN_LOC = {
     j_poke_manaphy: { name: 'Manaphy', text: [
       ['{C:attention}Sea Guardian:{} each', '{X:poke_water,C:white}Water{} Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {X:mult,C:white} X#5# {C:inactive} Mult)'],
       ['{C:attention}Egg:{} at the end of the shop,', 'if you have a free Joker slot,', '{C:green}#2# in #3#{} chance to', 'create a {C:attention}Phione{}'],
+    ] },
+    j_poke_snivy: { name: 'Snivy', text: ['{C:attention}+#1#{} hand size', ...CONTRARY_HELD, EVOLVES_ROUNDS(3)] },
+    j_poke_servine: { name: 'Servine', text: ['{C:attention}+#1#{} hand size', ...CONTRARY_HELD, EVOLVES_ROUNDS(3)] },
+    j_poke_serperior: { name: 'Serperior', text: [
+      ['{C:attention}+#1#{} hand size'],
+      ['{C:attention}Contrary:{} {C:attention}debuffed{} cards', 'score as if not debuffed,', 'and each gives {X:mult,C:white} X#2# {} Mult', '{C:inactive}(Not when held in hand)'],
+    ] },
+    j_poke_tepig: { name: 'Tepig', text: ['{C:red}+#1#{} discard', ...FLAME_CHARGE('{C:mult}+#2#{} Mult'), '{C:inactive}(Currently {C:attention}#4#{C:inactive} in a row: #5#)', EVOLVES_ROUNDS(3)] },
+    j_poke_pignite: { name: 'Pignite', text: ['{C:red}+#1#{} discard', ...FLAME_CHARGE('{C:mult}+#2#{} Mult'), '{C:inactive}(Currently {C:attention}#4#{C:inactive} in a row: #5#)', EVOLVES_ROUNDS(3)] },
+    j_poke_emboar: { name: 'Emboar', text: [
+      ['{C:red}+#1#{} discard'],
+      [...FLAME_CHARGE('{X:mult,C:white} X1 {} Mult, plus {X:mult,C:white} X#2# {}'), '{C:inactive}(Currently {C:attention}#3#{C:inactive} in a row: #4#,', '{C:inactive}{X:mult,C:white} X#5# {C:inactive} Mult)'],
+    ] },
+    j_poke_oshawott: { name: 'Oshawott', text: ['{C:blue}+#1#{} hand', ...RAZOR_SHELL('first scored card'), '{C:inactive,s:0.8}(Energy carries to Samurott)', EVOLVES_ROUNDS(3)] },
+    j_poke_dewott: { name: 'Dewott', text: ['{C:blue}+#1#{} hand', ...RAZOR_SHELL('first {C:attention}#2#{} scored cards'), '{C:inactive,s:0.8}(Energy carries to Samurott)', EVOLVES_ROUNDS(3)] },
+    j_poke_samurott: { name: 'Samurott', text: [
+      ['{C:blue}+#1#{} hand', ...RAZOR_SHELL('first {C:attention}#2#{} scored cards')],
+      ['{C:attention}Shell Blade:{} scored {C:attention}Aces{}', 'give {X:mult,C:white} X#3# {} Mult'],
     ] },
   },
   Other: {

@@ -1083,11 +1083,23 @@ function evaluate_play() {
         if (cp) { cp.total += 1; cp.suits[sc.base.suit] = true; }
       }
       if (sc.debuff) {
+        // A mod may score a debuffed card as if it weren't (Pokermon's Serperior, Contrary): the debuff is lifted for this card's own
+        // scoring only (debuff_lifted marks it for the jokers' per-card effects) and restored right after, so the card is still
+        // debuffed in hand, for the Glass break check and after the hand. Vanilla (no mod) never asks.
+        if (ACTIVE_MODS.length && callHook('score_debuffed', sc, base_ctx()).some(Boolean)) {
+          sc.debuff = false; sc.debuff_lifted = true;
+          try { score_card_effects(sc); } finally { sc.debuff = true; sc.debuff_lifted = undefined; }
+          return;
+        }
         G.GAME.blind.triggered = true;
         emit('blind_juice', {});
         card_eval_status_text(sc, 'debuff');
         return;
       }
+      score_card_effects(sc);
+    };
+    // A played card's repetitions, effects and edition (score_played_card's body, once the card may score).
+    const score_card_effects = (sc) => {
       const reps = [1];
       const sev = eval_card(sc, { repetition_only: true, cardarea: G.play, ...base_ctx(), repetition: true });
       if (next(sev)) for (let h = 0; h < sev.seals.repetitions; h++) reps.push(sev);
