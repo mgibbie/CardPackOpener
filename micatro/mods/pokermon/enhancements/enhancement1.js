@@ -13,6 +13,24 @@ import {
 } from '../api.js';
 
 const FILE = 'enhancements/enhancement1.lua';
+/** Owned, undebuffed jokers whose center has this hook (house: the owner's Cherubi line, jokers/pokejokers_designs.js). None: nothing. */
+const hooked = (name) => ((G.jokers && G.jokers.cards) || []).filter((j) => !j.debuff && typeof j.config.center[name] === 'function');
+/** A Seed card bloomed into a Flower: every owned joker's poke_seed_bloom(self, joker, card) hears it (Cherubi counts toward evolving). */
+function seed_bloomed(card) {
+  for (const j of hooked('poke_seed_bloom')) j.config.center.poke_seed_bloom(j.config.center, j, card);
+}
+/** The Flower card's rule with the owned jokers' poke_flower_rule(self, joker) -> {suits, x}: the FEWEST suits asked (Roserade's 3 is
+ *  a minimum too: never stacking), the BEST X instead of the card's own X2 (Cherrim's Sunshine X2.5). No such joker: upstream's rule. */
+function flower_rule(card, self) {
+  let suits = any(find_card('j_poke_roserade')) ? 3 : 4;
+  let x = card.ability.Xmult_flower ?? self.config.Xmult_flower;
+  for (const j of hooked('poke_flower_rule')) {
+    const r = j.config.center.poke_flower_rule(j.config.center, j) || {};
+    if (typeof r.suits === 'number') suits = Math.min(suits, r.suits);
+    if (typeof r.x === 'number') x = Math.max(x, r.x);
+  }
+  return { suits, x };
+}
 
 defineEnhancements({
   hazard: {
@@ -54,8 +72,10 @@ defineEnhancements({
             return {
               extra: { message: localize('k_upgrade_ex'), sound: 'poke_seed_' + Math.min(level_max, level) },
               func() {
+                const blooming = card.config.center.key === 'm_poke_seed';
                 ease_dollars(card.ability.extra.money);
                 card.set_ability(P_CENTERS.m_poke_flower, null, true);
+                if (blooming) seed_bloomed(card); // (house: the Cherubi line's evolution count)
               },
             };
           }
@@ -79,12 +99,13 @@ defineEnhancements({
     in_pool() { return false; },
     calculate(self, card, context) {
       if (context.main_scoring && context.cardarea === G.play) {
-        // With Roserade (a new 3.9.1 joker, new-jokers sub-batch 14) 3 suits are enough.
-        const suit_number = any(find_card('j_poke_roserade')) ? 3 : 4;
-        if (poke_suit_check(context.scoring_hand, suit_number)) {
+        // With Roserade (a new 3.9.1 joker, new-jokers sub-batch 14) 3 suits are enough. (House: the owner's Cherrim also asks
+        // 3, and gives X2.5 instead of X2 while sunny: flower_rule.)
+        const rule = flower_rule(card, self);
+        if (poke_suit_check(context.scoring_hand, rule.suits)) {
           let extra = 0;
           if (any(find_card('j_poke_shaymin')) || any(find_card('j_poke_shaymin_sky'))) extra = 1;
-          return { x_mult: (card.ability.Xmult_flower ?? self.config.Xmult_flower) + extra };
+          return { x_mult: rule.x + extra };
         }
       }
       return undefined;
