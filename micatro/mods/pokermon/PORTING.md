@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), **`3.9.1+r41`** since the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), **`3.9.1+r42`** since the owner's Stunky line ("The owner's Stunky line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2649,6 +2649,31 @@ Neither Nacho nor Pokermon+ has the line.
   deploy for the mod. The wiki drops them (376 missing); the mods wiki shows one cell per joker (its East card).
 - **Tests**: `micatro/tests/mods/pokermon_shellos_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
   (the pin, 70 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (888 jokers).
+
+### The owner's Stunky line (2026-10-28, branch `feat/pokermon-stunky-line`)
+Pinned **`3.9.1+r42`** (`contentRev: 42`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Stunky (434) -> Skuntank (435), both **Dark**
+(both cards show the Dark icon), in `jokers/pokejokers_designs.js` (`poison_gas`; 72 defs now), after Chingling in Pokédex order (Bronzor 436
+next). Neither Nacho nor Pokermon+ has the line. They poison the BLIND: its score requirement drops between hands.
+- **Stunky** (Basic, **Common $5**), Poison Gas: after each hand you play, the Blind's requirement drops by **4% of its starting requirement**.
+  Evolves after **5 rounds**.
+- **Skuntank** (Stage 1, **Safari $8**), Toxic: after the **nth** hand of the round, **n x 4%** (4, 8, 12, 16%: -40% after 4 drops).
+- **The record**: one per Blind, shared by every copy, in `G.GAME.poke_poison` (`{round, base, cut}`, keyed by `G.GAME.round`, so it resets
+  each Blind): `base` is the starting requirement, captured on the round's first deal (`first_hand_drawn`: after every `setting_blind` effect,
+  so The Wall's x4 / Violet Vessel's x6 and a Chicot-disabled Wall's half are the base), or by the first drop (a Stunky that arrived mid-round).
+- **Rules**: all copies together take off at most **75%** of the start (`POISON_CAP`), and the requirement never goes below **1 chip**. Copies
+  stack additively; **Blueprint copies the drop** (its own "-4%"). Debuffed: nothing.
+- **When**: in `context.after`, queued: it runs after the hand's chips are added (and `hands_played` counts it), before the engine's post-hand
+  check (`STATES.HAND_PLAYED`). It does that check first: a hand that already beat the Blind, and the round's **final hand**, get no drop, so it
+  never wins the hand that scored. If the lowered requirement is then at or below the chips already scored, **the Blind is won right there**,
+  by the engine's check that follows, before the next draw (as a Blind that Chicot / Luchador disables is), with the remaining hands paid.
+- **HUD**: the drop sets `blind.chips` / `chip_text` and emits `blind {action: 'chips'}`; `js/ui/board.js` now draws that event on the HUD's
+  "Score at least" at that moment (Mika's Grudgeful emitted it before, unused). The view reads `blind.chips`. **Resume / replay**: the record
+  lives in `G.GAME` and the run is rebuilt from its recipe, so a resume mid-Blind comes back with the same lowered requirement.
+- **Energy**: `poison_pct` +20% of base per Energy (`systems/energy.js`, house: the gain rate): **4 -> 4.8 / 5.6 / 6.4%** (Skuntank's steps
+  n x that), a mismatched Colorless +0.4; carried through evolution. The cap is a constant.
+- **Art**: upstream 3.9.1's own (Natdex {26,28} / {28,28}); nothing to deploy. The wiki drops them (374 missing).
+- **Tests**: `micatro/tests/mods/pokermon_stunky_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 72 defs), `pokermon_art_types_test` (both Dark), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (890 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

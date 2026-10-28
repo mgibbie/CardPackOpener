@@ -393,6 +393,24 @@ nature and Burmy's gender are the same roll without the art):
   - Two Seas (a cross-trait unlock): holding both traits (any mix of the line, undebuffed; a Blueprint is not one) unlocks both
     sides for every copy. The tooltip says what a shop card WOULD do once bought (its own trait counts with the row's).
 
+House pattern: POISONING THE BLIND, a requirement that drops between hands (the owner's Stunky line, jokers/pokejokers_designs.js
+poison_gas; Stunky -4% of the start after each hand, Skuntank n x 4% after the nth):
+  - The engine keeps the requirement in G.GAME.blind.chips (a big number in modded runs: use bignum.js). Change it by a DELTA (other
+    effects compose), then set blind.chip_text = number_format(chips) and emit('blind', {action: 'chips', chips, chip_text}): the
+    board sets the HUD's "Score at least" from that event at that moment (Mika's Grudgeful uses the same event).
+  - Keep the percentages honest with a per-Blind record shared by every copy (G.GAME.poke_poison, keyed by G.GAME.round, so a new
+    Blind starts clean): the STARTING requirement, captured on the round's first deal (first_hand_drawn, after every setting_blind
+    effect: The Wall's x4, Violet Vessel's x6, a Chicot-disabled Wall's half), and the total taken so far. One shared cap (-75% of
+    the start in all) and a floor of 1 chip bound every copy together; copies stack additively, Blueprint copies the drop.
+  - "After the hand, never helping it": fire in context.after (Blueprint forwards it) but QUEUE the change. The queued event runs
+    after the hand's chips are added and hands_played has gone up, and before the engine's post-hand check (STATES.HAND_PLAYED).
+    Do that check yourself first: a hand that already beat the Blind, or the round's final hand (hands_left 0: no later hand to help),
+    gets nothing. A drop that brings the requirement to or below the chips already scored then wins the Blind at the engine's check
+    right after, before the next draw, as a Blind disabled by Chicot / Luchador does (Blind:disable's own check).
+  - Nothing to persist by hand: the record is in G.GAME and the run is rebuilt from its recipe, so a resume mid-Blind (and a
+    replay) comes back with the same lowered requirement. Energy: the step is a gain (poison_pct, +20% of base: 4 -> 4.8 / 5.6 /
+    6.4%); the cap stays a constant.
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -1269,9 +1287,11 @@ Typical numbers:
 Under-explored:
   - Retriggers (0), consumables (Tarot 1), money (6).
   - Poison as status: "poisoned" cards that lose value each hand. Nacho's Toxic cards (the
-    Loyal Three, Pecharunt) show the shape, but base Pokermon has none.
-  - 37 missing species, with many Poison lines (Gulpin, Stunky, Skorupi, Skrelp, Mareanie,
-    Salandit, Poipole).
+    Loyal Three, Pecharunt) show the shape. Now partly used: the owner's Stunky line poisons the
+    BLIND instead (its requirement drops after each hand: Stunky -4% of the start, Skuntank n x 4%,
+    max -75%; house pattern "Poisoning the Blind", 2.1). Poisoned PLAYING cards are still open.
+  - 28 missing species by their card type (the wiki, 2026-10-28), with many Poison lines
+    (Skorupi, Venipede, Skrelp, Mareanie, Poipole; Gulpin and Stunky are done).
 Pitfalls:
   - Destroy-for-value stacks with every "when a card is destroyed" payoff (Poochyena, Pawniard,
     Hydreigon, Cacnea, Nacho's Flapple). Check a new destroyer against all of them.

@@ -29,6 +29,10 @@ energy_values.stockpile_max = 1 / 3;
 // House (the owner's Regice, jokers/pokejokers_designs.js): `glass_convert`, the Glass cards it converts per Blind before the Regi
 // Trio's +1 per other Regi: base 1, +1 per Energy (the whole base), +0.5 per mismatched Colorless (floored by the joker). Only Regice has it.
 energy_values.glass_convert = 1;
+// House (the owner's Stunky line, jokers/pokejokers_designs.js poison_gas): `poison_pct`, the % of the Blind's starting requirement each
+// drop takes off (base 4): a gain, so +20% of base per Energy like the _mod fields (4 -> 4.8 / 5.6 / 6.4%; a mismatched Colorless +0.4).
+// Only Stunky / Skuntank have it; their -75% cap is a constant, in no energy field.
+energy_values.poison_pct = 0.2;
 export const energy_max = DATA.globals.energy_max;
 set_energy_max(energy_max);
 const ENERGY_FIELDS = Object.keys(energy_values);

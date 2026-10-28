@@ -1527,6 +1527,8 @@ export class Board {
         }
         if (ev.action === 'disable') { this.bump(this.H.blind); this.attn('Blind disabled!', '#4bc292'); return 0.5; }
         if (ev.action === 'defeat') { this.bump(this.H.blind); return 0.2; }
+        // a requirement changed mid-round (Pokermon's Poison Gas, Mika's Grudgeful): the HUD's "Score at least" shows it at that moment
+        if (ev.action === 'chips' && ev.chips != null) { this.H.bTarget.textContent = fmt(ev.chips); this.bump(this.H.blind); return 0.3; }
         return 0;
       }
       case 'blind_alert': this.bump(this.H.blind); return 0.2;
