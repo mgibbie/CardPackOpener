@@ -266,8 +266,8 @@ follow-ups ("The Hazard audit" below: held-Hazard retriggers), **`3.9.1+r19`** s
 Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner's Whismur line ("The owner's Whismur line" below), `3.9.1+r22`
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
-line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), **`3.9.1+r28`** since the owner's Barboach line ("The owner's
-Barboach line" below)
+line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
+Barboach line" below), **`3.9.1+r29`** since the owner's types follow their card art ("Types from the card art" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2080,7 +2080,8 @@ Nacho nor our Pokermon+ has any of them, so there is nothing to dedupe.
   composed cards for these species are no longer used (the wiki list drops them). Nothing to deploy for the mod.
 - **Deviations / choices** (where the design left room):
   - Kubfu's tie (5 / 5): the school of its last training. Urshifu's base X is X2 (Kubfu's at evolution; the larger value is kept).
-  - Urshifu is the design's Fighting; upstream's two cards carry its secondary-type icons (Dark / Water).
+  - Urshifu was the design's Fighting; upstream's two cards carry its secondary-type icons (Dark / Water). Since contentRev 29 (owner rule:
+    the card's type wins) Single Strike is Dark and Rapid Strike Water ("Types from the card art" below).
   - Xerneas: a card destroyed outside a Blind (the shop) comes back into the deck, not the hand.
   - Spiritomb at 108 with full consumable slots: The Soul waits (the next spirit, or the end of a round, with room).
   - Aegislash's Blade Forme and Darmanitan's Zen Mode keep their one card (upstream draws no other forme); `extra.form` tracks them.
@@ -2361,6 +2362,26 @@ Pokermon+ has the line.
 - **Art: upstream's own** (Natdex {16,22} / {18,22}). Nothing to deploy for the mod. The wiki drops them (404 missing).
 - **Tests**: `micatro/tests/mods/pokermon_barboach_test.mjs` (3 passed / 12 failed on origin/main; 60 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 42 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (860 jokers).
+
+### Types from the card art (2026-10-28, branch `fix/pokermon-types-from-card-art`)
+Pinned **`3.9.1+r29`** (`contentRev: 29`; `LEGACY_MOD_VERSIONS` untouched). Owner rule: **the type shown on the card is always the right one**
+when a joker's listed type and its card disagree. Upstream draws the type icon in each card's bottom-left corner.
+- **The reader**: `tools/micatro/pokermon_art_type.mjs` matches a card's type icon against per-type templates built from the jokers upstream
+  registers (552 cards: the mode of each type's pixels, over the pixels every type agrees on 90%+, i.e. the icon disc; a channel tolerance of 32
+  for upstream's re-tinted frames, e.g. the Trapinch line's orange). Leave-one-out on those 552: **100%**, the best type ahead by 0.40+ of the
+  mask. Left out of training: Sudowoodo's "Tree...?" card (draws its Grass disguise, registered Earth), Unown (blank card), MissingNo ("Bird").
+  No upstream data records a ptype for the species it draws without a joker (pokespriteload.lua has cells only; upstream main has no joker for
+  them, except Lunatone / Solrock, Earth, which their cards agree with).
+- **In game**: of the owner's 42 designs, only **Urshifu** conflicted: Single Strike **Fighting -> Dark**, Rapid Strike **Fighting -> Water**
+  (Kubfu stays Fighting; it changes type on evolving, as Pupitar does). Castform's forms already matched (Normal Colorless, Sunny Fire, Rainy
+  / Snowy Water, on their own Gen 3 cells). Effects: Darkness / Water Energy now raises their X Mult (Fighting Energy no longer does), and Water
+  / Dark synergies count them (Barboach's Muddy Water counts Rapid Strike).
+- **The wiki**: every card takes its art's type (`type_source: 'art'`; the mapping only where there is no upstream card, `'mapping'`;
+  `mapped_ptype` keeps the mapping's guess). 66 of 404 changed. The card page says "as its card shows".
+- **Tests**: `micatro/tests/mods/pokermon_art_types_test.mjs` (the reader's validation, every design's ptype = its card's, Castform's forms, and
+  Urshifu's new types PLAYED: evolution, is_type, Energy, Barboach's count; 6 passed / 10 failed with the old ptypes);
+  `designwiki_pokermon_jokers_test` (validation + every wiki card's type = its art's). Re-recorded: the pins (`modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test`, `micatro_mod_version_pin`).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

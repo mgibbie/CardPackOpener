@@ -107,9 +107,10 @@ have none.
   9     906-1025      120        49        71
   ALL               1,025       580       445
 
-Missing by Pokermon type (using the wiki's type mapping, see 2.1):
-  Grass 79, Water 66, Colorless 48, Earth 43, Psychic 40, Dark 37, Lightning 31, Fire 27,
-  Fighting 23, Dragon 20, Metal 16, Fairy 15
+Missing by Pokermon type (the type each species' upstream card shows, see 2.1; the wiki's 404
+species on 2026-10-28):
+  Water 62, Grass 62, Psychic 42, Colorless 37, Fire 33, Lightning 32, Dark 30, Earth 26,
+  Fighting 23, Fairy 22, Dragon 19, Metal 16
 
 Missing by stage:
   Basic 201, Stage 1 131, Stage 2 42, Legendary 70, Baby 1 (Toxel)
@@ -134,7 +135,19 @@ Notable gaps:
 
 2.1 Types and the ptype mapping
 -------------------------------
-The 12 Pokermon types are POKETYPES in systems/types.js. The wiki maps the real types like this:
+The 12 Pokermon types are POKETYPES in systems/types.js.
+
+OWNER RULE (2026-10-28): the type shown on the CARD is always right. Upstream 3.9.1 draws a finished
+card for every species the wiki lists, with the type icon in its bottom-left corner (and the frame
+colour). A new joker takes that type, even where it differs from the mapping below: Latias and
+Latios are Psychic, Venipede Dark, Sandile Dark, Kyurem Water, Stunfisk Lightning, Keldeo
+Fighting, Urshifu Single Strike Dark and Rapid Strike Water. The wiki's card shows it ("Pokermon
+type ... as its card shows"; pokermon_jokers.json type_source 'art'), read from the icon by
+tools/micatro/pokermon_art_type.mjs (template matching trained on the 552 upstream jokers, 100%
+leave-one-out). 66 of the 404 wiki cards differ from the mapping.
+
+The mapping is only the FALLBACK, for a species with no upstream card (type_source 'mapping'). It
+maps the real types like this:
   Normal  -> Colorless       Bug      -> Grass       Electric -> Lightning
   Ice     -> Water           Poison   -> Dark        Ghost    -> Psychic
   Ground  -> Earth           Rock     -> Earth       Steel    -> Metal
@@ -867,8 +880,11 @@ Under-explored:
   - Fighting-type synergy (only Hariyama, plus Blaziken's "Fire or Fighting").
   - Martial-arts ideas: "the first hand of the round", combos (consecutive hands), "exactly 1
     card" strikes.
-  - 23 missing species, including the Kubfu/Urshifu, Timburr, Mienfoo, Pancham, Crabrawler and
-    Clobbopus lines.
+  - 23 missing species, including the Timburr, Mienfoo, Pancham, Crabrawler and Clobbopus lines
+    (Kubfu is built; its Urshifu are Dark / Water, as their cards show).
+    The wiki's Fighting cards include species the mapping put elsewhere (Keldeo, Stufful,
+    Bewear, Buzzwole), and some it put here are not (Koraidon's card is Dragon): read the type
+    from the card.
 Pitfalls:
   - +hands stacks with Water's hand scalers.
   - Machamp's "+4 hands, -4 discards" is Burglar territory (vanilla Burglar: +3 hands, lose all
@@ -1518,7 +1534,7 @@ Line idea: a template for the 15 missing starter lines. It keeps the starter rul
   Impl:      As Grookey; the per-card Mult as in Rockruff.
 
 --------------------------------------------------------------------------------------------------
-LINE E: KUBFU -> URSHIFU (Fighting Legendary, Gen 8). "Two schools"
+LINE E: KUBFU -> URSHIFU (Legendary, Gen 8: Kubfu Fighting, Urshifu Dark / Water). "Two schools"
 --------------------------------------------------------------------------------------------------
 #13 KUBFU  (#891)   Fighting | Legendary | Legendary | $10 (the wiki guessed $20)
     This Joker can't be debuffed
@@ -1540,8 +1556,10 @@ LINE E: KUBFU -> URSHIFU (Fighting Legendary, Gen 8). "Two schools"
              counters. For "can't be debuffed", add the name to systems/rules.js set_debuff the
              way Gholdengo does. Scale Xmult with Xmult_mod so it carries over.
 
-#14 URSHIFU  (#892)   Fighting | Legendary | Legendary | $20
+#14 URSHIFU  (#892)   Dark (Single Strike) / Water (Rapid Strike) | Legendary | Legendary | $20
     Two formes, two centers (urshifu_single, urshifu_rapid), as Lycanroc has three.
+    Types: the ones upstream's two cards draw (contentRev 29; they were Fighting until then).
+    Kubfu changes type when it evolves, as Pupitar -> Tyranitar does.
     Both keep Kubfu's X Mult, keep training (+X0.1), and can't be debuffed.
 
     Single Strike Style

@@ -106,7 +106,7 @@ export const PARENT = new Map(PREVO.split(' ').map((p) => p.split(':').map(Numbe
 const readJSON = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 let cache = null;
 
-/** Every registered joker of the three mods: {key, name, mod, ptype, stage, rarity, cost, atlas, pos}. */
+/** Every registered joker of the three mods: {key, name, mod, ptype, stage, rarity, cost, atlas, pos, design?, sprite391?}. */
 export async function loadModJokers() {
   globalThis.localStorage = globalThis.localStorage || { getItem() { return null; }, setItem() { }, removeItem() { } };
   const imp = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
@@ -117,7 +117,9 @@ export async function loadModJokers() {
   REG.activateMods(MODS);
   return Object.values(core.P_CENTERS)
     .filter((c) => c && c.set === 'Joker' && MODS.includes(c.mod))
-    .map((c) => ({ key: c.key, name: c.name, mod: c.mod, ptype: c.ptype, stage: c.stage, rarity: c.rarity, cost: c.cost, atlas: c.atlas, pos: c.pos ? { x: c.pos.x, y: c.pos.y } : null }));
+    .map((c) => ({ key: c.key, name: c.name, mod: c.mod, ptype: c.ptype, stage: c.stage, rarity: c.rarity, cost: c.cost, atlas: c.atlas, pos: c.pos ? { x: c.pos.x, y: c.pos.y } : null,
+      // the owner's own designs (jokers/pokejokers_designs.js) draw a 3.9.1 cell no upstream joker uses
+      ...(c.poke_sprite391 ? { design: true, sprite391: { atlas: c.poke_sprite391.atlas, pos: [c.poke_sprite391.pos.x, c.poke_sprite391.pos.y] } } : {}) }));
 }
 
 /** The canonical species: dex -> {dex, key, name, types, sprite}; the base key of a dex number is its shortest key. */
