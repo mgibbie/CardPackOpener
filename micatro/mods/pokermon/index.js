@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -707,6 +707,11 @@ const hooks = {
   // Floragato's Lucky cards (jokers/pokejokers_designs.js), Pokermon+'s Heatran-forged cards. (Pokermon+ requires Pokermon: it was
   // that mod's hook until contentRev 20.)
   p_dollars: perma_p_dollars,
+  // The owner's Regi trio (jokers/pokejokers_designs.js): Regirock's Stone cards give +100 Chips instead of +50 (a Card:get_chip_bonus
+  // wrap); Registeel's held Steel cards X2 instead of X1.5 (Card:get_chip_h_x_mult, so Mime / Red Seal retriggers repeat it). Both only
+  // while an undebuffed one is owned: no Regi, no change.
+  chip_bonus: regi_chip_bonus,
+  chip_h_x_mult: regi_h_x_mult,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
     // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)
@@ -848,7 +853,10 @@ export const POKERMON = registerMod({
   // half at half strength (+50 Chips by night, X1.5 by day).
   // 30 = the owner's types follow their card art (owner rule: the type shown on the card wins; tools/micatro/pokermon_art_type.mjs):
   // Urshifu Single Strike Fighting -> Dark, Rapid Strike Fighting -> Water (upstream 3.9.1's two Urshifu cards draw those icons).
-  contentRev: 30,
+  // 31 = the owner's Regi trio (Regirock / Regice / Registeel, Legendary; jokers/pokejokers_designs.js): Stone cards +100 Chips instead
+  // of +50 and +10 permanent Chips per score; Glass cards never shatter; held Steel X2 instead of X1.5 (hooks chip_bonus / chip_h_x_mult);
+  // each converts 1 + (other Regi species held) random deck cards to its enhancement when a Blind is selected.
+  contentRev: 31,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
