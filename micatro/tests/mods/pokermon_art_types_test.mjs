@@ -32,6 +32,7 @@ await sec('static', () => {
   const D = Object.fromEntries(designs().map((c) => [c.name, c.ptype]));
   ok(Object.keys(D).length >= 42, 'the owner\'s designs are registered', Object.keys(D).length);
   ok(D.kubfu === 'Fighting' && D.urshifu_single === 'Dark' && D.urshifu_rapid === 'Water', 'Kubfu Fighting; Urshifu Single Strike Dark, Rapid Strike Water (their cards\' types)', [D.kubfu, D.urshifu_single, D.urshifu_rapid]);
+  ok(D.stunky === 'Dark' && D.skuntank === 'Dark', 'Stunky / Skuntank: Dark (both cards show the Dark icon)', [D.stunky, D.skuntank]);
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

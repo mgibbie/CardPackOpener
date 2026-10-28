@@ -59,6 +59,10 @@
 // Shellos -> Gastrodon (contentRev 40): a sea, West or East, rolled once per card; Tide Pool +40 Chips on the leftmost (West) / rightmost
 // (East) scored card; Gastrodon's Tide retriggers it, Storm Drain X0.1 per Energy card used (X0.2 Water); Two Seas: both seas held, every one
 // works on both ends; Water — upstream 3.9.1 draws both seas (Gen 4 sheet: East {4,1} / {8,1}, West {6,1} / {10,1}).
+// Stunky -> Skuntank (contentRev 42): Poison Gas poisons the BLIND — after each hand you play (after its scoring and the win check, so it
+// only helps later hands) the Blind's score requirement drops by 4% of its starting requirement (Skuntank's Toxic: n x 4% after the nth
+// hand of the round); one shared record per Blind, at most -75% in all, never below 1 chip; reach the lowered requirement and the Blind
+// is won right then; Dark — upstream 3.9.1 draws them (Natdex 26 / 28, 28).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -66,8 +70,10 @@ import {
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
-  poke_get_adjacent_jokers,
+  poke_get_adjacent_jokers, emit,
 } from '../api.js';
+import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
+import { number_format } from '../../../js/engine/core.js';
 
 const FILE = 'micatro/pokejokers_designs';
 const a_mult = (n) => localize({ type: 'variable', key: 'a_mult', vars: [n] });
@@ -993,6 +999,52 @@ function glameow_evo(self, card, context) {
   const r = level_evo(self, card, context, 'j_poke_purugly');
   G.E_MANAGER.add_event(() => { G.GAME.joker_buffer = Math.max(0, (G.GAME.joker_buffer || 0) - 1); });
   return r;
+}
+
+// ---------------------------------------------------------------- Poison Gas (the owner's Stunky line): poisoning the Blind
+// One record per Blind, shared by every copy (G.GAME.poke_poison, keyed by G.GAME.round, so a new Blind starts clean): `base` the
+// starting requirement, `cut` the chips taken off so far. It is captured on the round's first deal (after every setting_blind effect:
+// The Wall's x4 / Violet Vessel's x6 base, a Chicot-disabled Wall's half), or lazily by the first drop (a Stunky that arrived mid-round).
+// The state lives in G.GAME and the run is rebuilt from its recipe on resume / replay, so the lowered requirement comes back exactly.
+export const POISON_CAP = 75; // % of the starting requirement: the most all copies together can take off one Blind
+export function poison_state(create) {
+  const s = G.GAME && G.GAME.poke_poison;
+  if (s && s.round === G.GAME.round) return s;
+  if (!create) return null;
+  return (G.GAME.poke_poison = { round: G.GAME.round, base: G.GAME.blind.chips, cut: 0 });
+}
+/** The share (%) of this Blind's starting requirement taken off so far (0 outside a Blind). */
+export function poison_taken() {
+  const s = G.GAME && G.GAME.facing_blind ? poison_state(false) : null;
+  return s && BN.gt(s.base, 0) ? r3(BN.toNumber(BN.div(BN.mul(s.cut, 100), s.base))) : 0;
+}
+/** The drop after the nth hand: Stunky n = 1 (a flat step), Skuntank n = the round's hand number (escalating). */
+const poison_step = (card, n) => r3(card.ability.extra.poison_pct * n);
+const poison_capture = (context) => { if (context.first_hand_drawn && !context.blueprint && G.GAME.facing_blind) poison_state(true); };
+// After each hand (context.after, which Blueprint copies): queued, so it runs once this hand's chips have been added and the round's hand
+// count has gone up, and before the engine's post-hand check (STATES.HAND_PLAYED). It first does that check itself: a hand that already
+// beat the Blind, or the round's final hand (no later hand to help), gets nothing, so the drop never wins the hand that scored. Otherwise
+// the requirement drops (capped at POISON_CAP% of the base in all, never below 1 chip), and if it is now at or below the chips already
+// scored, the engine's check right after ends the Blind as won (the same check that ends a Blind Chicot / Luchador disables).
+function poison_gas(card, context, escalating) {
+  poison_capture(context);
+  if (!context.after || context.cardarea !== G.jokers || context.retrigger_joker) return undefined;
+  const by = context.blueprint_card || card;
+  G.E_MANAGER.add_event(() => {
+    const cr = G.GAME.current_round, b = G.GAME.blind;
+    if (!G.GAME.facing_blind || !b || BN.beats(G.GAME.chips, b.chips) || cr.hands_left < 1) return;
+    const s = poison_state(true);
+    const pct = poison_step(card, escalating ? cr.hands_played : 1);
+    const room = BN.sub(BN.floor(BN.div(BN.mul(s.base, POISON_CAP), 100)), s.cut);
+    const drop = BN.min(BN.min(BN.floor(BN.div(BN.mul(s.base, pct), 100)), room), BN.sub(b.chips, 1));
+    if (!BN.gt(drop, 0)) return;
+    b.chips = BN.sub(b.chips, drop);
+    b.chip_text = number_format(b.chips);
+    s.cut = BN.add(s.cut, drop);
+    emit('blind', { action: 'chips', key: b.config && b.config.blind && b.config.blind.key, chips: BN.toJSONValue(b.chips), chip_text: b.chip_text });
+    card_eval_status_text(by, 'extra', null, null, null, { message: '-' + pct + '%', colour: 'PURPLE' });
+  });
+  return undefined;
 }
 
 defineJokers({
@@ -2402,6 +2454,36 @@ defineJokers({
       return undefined;
     },
   },
+  // ---------------------------------------------------------------- LINE: Stunky -> Skuntank (Dark, Gen 4)
+  // The owner's design (2026-10-28): the Blind is poisoned (poison_gas above). Stunky's Poison Gas: after each hand you play, the Blind's
+  // requirement drops by 4% of its starting requirement; Skuntank's Toxic: after the nth hand of the round, by n x 4% (4, 8, 12...: 40%
+  // by the end of hand 4). Resets each Blind; all copies share one record and its cap (-75% of the start), never below 1 chip; copies
+  // stack additively and Blueprint copies the drop (a copied ability, its own message). Never the hand that scored: it acts after the win
+  // check, and not after the round's final hand. Reaching the lowered requirement wins the Blind right after that hand (no draw).
+  // Energy: `poison_pct` +20% of base per Energy (energy.js: 4 -> 4.8 / 5.6 / 6.4%, Colorless half), re-applied on evolution; the
+  // cap is fixed. Neither Nacho nor Pokermon+ has the line. Art: upstream 3.9.1's own (Natdex 26 / 28, 28). After Chingling (433).
+  // Stunky 434: Common $5. Evolves after 5 rounds.
+  stunky: {
+    name: 'stunky', poke_sprite391: sprite('Natdex', 26, 28),
+    config: { extra: { poison_pct: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 4, blueprint_compat: true,
+    attributes: ['blind', 'round_evo'], poke_after: 'chingling',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.poison_pct), POISON_CAP, poison_taken(), ex.rounds] }; },
+    calculate(self, card, context) { return poison_gas(card, context, false) || level_evo(self, card, context, 'j_poke_skuntank'); },
+  },
+  // Skuntank 435: Safari $8.
+  skuntank: {
+    name: 'skuntank', poke_sprite391: sprite('Natdex', 28, 28),
+    config: { extra: { poison_pct: 4 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 4, blueprint_compat: true,
+    attributes: ['blind', 'scaling'], poke_after: 'stunky',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, next = ((G.GAME && G.GAME.facing_blind && G.GAME.current_round && G.GAME.current_round.hands_played) || 0) + 1;
+      return { vars: [r3(ex.poison_pct), POISON_CAP, poison_taken(), poison_step(card, 2), poison_step(card, 3), poison_step(card, next)] };
+    },
+    calculate(self, card, context) { return poison_gas(card, context, true); },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -2428,6 +2510,7 @@ export const DESIGN_FAMILIES = [
   ['drifloon', 'drifblim'],
   ['combee', 'vespiquen'],
   ['shellos', 'gastrodon'],
+  ['stunky', 'skuntank'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -2473,6 +2556,8 @@ const FLOWER_GIFT = ['{C:attention}Flower Gift:{} {C:attention}Flower{} cards', 
 const SUNSHINE = ['{C:poke_sun}Sunshine Form:{} while sunny,', '{C:attention}Flower{} cards give {X:mult,C:white} X#3# {}', 'Mult instead of {X:mult,C:white} X2 {}',
   '{C:inactive}(Sunny: {C:hearts}Hearts{C:inactive}+{C:diamonds}Diamonds{C:inactive} held most', '{C:inactive}on the round\'s first deal,', '{C:inactive}or {C:attention}Groudon{C:inactive} held)'];
 const FICKLE = (gain, n) => ['{C:attention}Fickle:{} picks a new favourite', 'suit each round', 'Scored cards of its favourite', 'suit each give ' + gain, '{C:inactive}(Favourite: {V:1}#' + n + '#{C:inactive})'];
+const POISON_GAS = (name, by, nth) => ['{C:attention}' + name + ':{} after ' + (nth ? 'your {C:attention}nth{}' : 'each'), (nth ? 'hand this round' : 'hand you play') + ', the Blind\'s', 'requirement drops by ' + by, 'of its starting requirement',
+  '{C:inactive}(Never the hand that scored;', '{C:inactive}reach it and the Blind is won)', '{C:inactive}(Max -#2#% a Blind; this Blind: {C:attention}-#3#%{C:inactive})'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -2696,6 +2781,8 @@ export const DESIGN_LOC = {
       ['{C:attention}Thick Fat:{} {C:red}-#2#{} Joker slot'],
       FICKLE('{X:mult,C:white} X#1# {} Mult', 3),
     ] },
+    j_poke_stunky: { name: 'Stunky', text: [...POISON_GAS('Poison Gas', '{C:attention}#1#%{}'), EVOLVES_ROUNDS(4)] },
+    j_poke_skuntank: { name: 'Skuntank', text: [...POISON_GAS('Toxic', '{C:attention}n x #1#%{}', true), '{C:inactive}(#1#%, then #4#%, then #5#%...;', '{C:inactive}next hand: {C:attention}-#6#%{C:inactive})'] },
     j_poke_burmy: { name: 'Burmy', text: [
       ['{C:attention}Cloak:{} at end of round, takes', 'the cloak most common in your', 'full deck: {C:attention}Stone{} (Sandy), {C:attention}Steel{}', '(Trash), or everything else (Plant)', '{C:inactive}(A tie keeps the cloak)'],
       ['{C:attention}Plant{} {X:poke_grass,C:white}Grass{}: {C:mult}+#1#{} Mult', '{C:inactive}(any card not Stone or Steel)', '{C:attention}Sandy{} {X:poke_earth,C:white}Earth{}: {C:chips}+#2#{} Chips {C:inactive}(Stone)',

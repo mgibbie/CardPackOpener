@@ -894,7 +894,10 @@ export const POKERMON = registerMod({
   // Drain X0.1 per Energy card used (X0.2 Water); Two Seas: a West and an East held, every one works on both ends.
   // 41 = the owner's Burmy cloak ruling (jokers/pokejokers_designs.js cloak_of_deck): the deck counts in three piles, Stone (Sandy),
   // Steel (Trash) and every other card (Plant: unenhanced plus any other enhancement), the biggest pile wins; a tie keeps the cloak.
-  contentRev: 41,
+  // 42 = the owner's Stunky line (Stunky -> Skuntank; jokers/pokejokers_designs.js poison_gas): Poison Gas — after each hand you play
+  // (after the win check; not after the final hand) the Blind's requirement drops by 4% of its starting requirement (Skuntank's Toxic:
+  // n x 4% after the nth hand); one record per Blind shared by every copy, max -75%, never below 1 chip; reaching it wins the Blind.
+  contentRev: 42,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
