@@ -378,6 +378,8 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
                 House: "after 40 discarded cards" (Trapinch; Vibrava 60 more), counting each card a
                 player discard holds, with a "(Discarded: k/40)" progress line.
                 House: "after 8 Pink Seal triggers" (Spoink), with a "(Pink Seal triggers: k/8)" line.
+                House: "after Spitting Up 4 times" (Drifloon: a final-hand release with 1+ Stockpile; an empty
+                one doesn't count), with a "(Spit Ups: k/4)" line.
   item_evo      An evolution Item sets extra.evolve, and the joker evolves at the end of the next
                 round. item_req names the item.
                   Linking Cord (all 10 trade evolutions)   Moon Stone (7)   Dusk Stone (5)
@@ -497,6 +499,11 @@ Designer consequences:
   7. ENERGY RAISING A COUNT (house: the owner's Regice, `glass_convert`): a count with no other number (cards converted per Blind)
      gets its own energy_values entry set to 1 (the whole base: +1 per Energy, +0.5 per mismatched Colorless, floored by the
      joker), the shape of Gulpin's `stockpile_max` (1/3 of a base 3). Only the joker carrying the field changes.
+     A LATER STAGE WITH A BIGGER CAP keeps +1 per Energy by splitting the cap (house: the owner's Drifblim): the energy field
+     stays at the line's base (stockpile_max 3, so a third is still exactly 1) and the extra is a fixed non-energy field
+     (stockpile_bonus 2; the cap reads floor(stockpile_max) + stockpile_bonus = 5, 8 with 3 Energy). Writing the bigger base into
+     the energy field instead would make each Energy worth a third of IT (5/3). Energy carried through evolution is re-applied
+     to the new base, so Drifloon's 3 Energy (max 6) become Drifblim's max 8.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost
@@ -963,6 +970,29 @@ Examples:
     trigger every hand, X0.15 per hand one triggers in, X0.3 instead on an overflow (Black Pearl).
   Owner's Latias / Latios (L $20 each; the card art is Psychic, not Dragon): X0.15 per Tarot (Mist Ball) / per Planet
     (Luster Purge) used; Soul Dew: holding both, either kind grows both (the Eon duo, 2.1). Energy +20% on the gain.
+  Owner's Drifloon -> Drifblim (C $5 -> S $8; Ghost/Flying, the art is Psychic): Stockpile +1 per discard action (max 3 / 5, +1
+    per Energy), Spit Up on the final hand X(1 + 0.5 per Stockpile) and reset (Drifloon evolves after 4 Spit Ups); Drifblim's
+    Aftermath: sold or destroyed, a Negative Spectral card.
+  House pattern: DISCARD CHARGES, FINAL-HAND RELEASE (the owner's Drifloon line, jokers/pokejokers_designs.js drift_charge /
+  spit_up). A Ghost-half payoff for the round's last hand:
+    - Charge: each PLAYER discard ACTION adds 1 to a capped counter (pre_discard with no `hook`, as Sand Pit, but counted once per
+      discard, not per card: say "once per discard, not per card" on the card). The counter is NOT reset each round, so a round
+      won early carries the charge into the next one; only the release empties it.
+    - Release: on the FINAL hand (joker_main with hands_left === 0, Acrobat's check: hands_left is already spent while the hand
+      scores) X(1 + 0.5 per charge), then reset. An empty release gives nothing and doesn't count toward evolution.
+    - Blueprint-safe reset: the joker only MARKS the release in joker_main (not from a Blueprint) and resets + counts in `after`
+      (not a Blueprint, not a joker retrigger). A Blueprint scored before it and a Brainstorm scored after it then both copy the
+      full X, and the reset happens once. Resetting inside joker_main would leave a copy scored after the joker with nothing.
+    - The tension: discards spent charging are discards not spent digging, and the payoff waits for the last hand (a round won
+      early banks the charge but releases nothing). The X per charge is a fixed, non-energy field; Energy raises the cap.
+  House pattern: AFTERMATH, value on leaving (the owner's Drifblim, aftermath / drifblim_destroyed):
+    - SOLD: the joker's own context.selling_self (not context.blueprint, so a sold Blueprint copying it gives nothing).
+    - DESTROYED: Pokermon's hooks.start_dissolve (every destroying path ends in Card:start_dissolve: Ceremonial Dagger and Madness
+      through getting_sliced / joker_type_destroyed, Hex, Ankh, Pokermon's eaters). A joker SAVED by a no_destroy answer never
+      reaches it. Only an owned, undebuffed copy of the joker counts (a debuffed joker has no abilities).
+    - NOT on evolving or any transform: set_ability swaps the center without a dissolve. The Psychic pitfall below holds: one
+      Negative per joker LIFETIME (it can only leave once) is far safer than a per-round Negative; created through add_card with
+      edition e_negative (it needs no free slot) and the run's seeded create_card roll (key_append names the joker).
 Typical numbers:
   Basic     X 1.2-2 | card X 2 | $ 1-3 | gain +M 3-5 | gain X 0.05-0.2
   Stage 1   X 1.3-2.5~2.5 | card X 2.2 | $ 1-6 | gain +M 3-8 | gain X 0.25
@@ -972,7 +1002,8 @@ Under-explored:
   - Hand size (1).
   - Spectral creation outside Ghosts.
   - The Ghost half has no shared keyword: Negative, Spectral, final hand and selling are all
-    scattered. 17 of the 40 missing Psychic species are Ghosts.
+    scattered. 17 of the 40 missing Psychic species are Ghosts. (The owner's Drifloon line now
+    joins three of them: a final-hand release, and a Negative Spectral when Drifblim is sold or destroyed.)
 Pitfalls:
   - Negative creation is the most dangerous effect in Pokermon (Gastly line, Mew, Elgyem).
     Keep it to chance, delay or a one-per-round limit.
