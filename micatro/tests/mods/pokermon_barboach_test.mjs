@@ -63,7 +63,7 @@ sec('static', () => {
     && w.config.extra.retriggers === 1 && w.config.extra.quake_req === 2, 'Whiscash: Safari $8, Stage 1, Water, +20 per joker, 1 retrigger with 2 others', [w.rarity, w.cost, w.stage, w.config.extra]);
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_barboach');
-  ok(i > 0 && keys[i - 1] === 'j_poke_seviper' && keys[i + 1] === 'j_poke_whiscash' && keys[i + 2] === 'j_poke_corphish', 'Pokédex order: Seviper (336), Barboach, Whiscash, Corphish (341)', keys.slice(i - 1, i + 3));
+  ok(i > 0 && keys[i - 1] === 'j_poke_solrock' && keys[i + 1] === 'j_poke_whiscash' && keys[i + 2] === 'j_poke_corphish', 'Pokédex order: Solrock (338), Barboach, Whiscash, Corphish (341)', keys.slice(i - 1, i + 3));
   const fam = poke_get_family_list('barboach').map((x) => (typeof x === 'string' ? x : x.key || x.name));
   ok(fam.length === 2 && fam.join() === poke_get_family_list('whiscash').map((x) => (typeof x === 'string' ? x : x.key || x.name)).join() && /barboach/.test(fam[0]) && /whiscash/.test(fam[1]), 'one family: Barboach -> Whiscash', fam);
   ok(b.atlas === 'poke_AtlasJokersBasicNatdex391' && b.pos.x === 16 && b.pos.y === 22 && w.atlas === b.atlas && w.pos.x === 18 && w.pos.y === 22,

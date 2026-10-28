@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), **`3.9.1+r29`** since the owner's Regi trio ("The owner's Regi trio" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), **`3.9.1+r30`** since the owner's Regi trio ("The owner's Regi trio" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2344,7 +2344,7 @@ Pinned **`3.9.1+r27`** (`contentRev: 27`; `LEGACY_MOD_VERSIONS` untouched). The 
 
 ### The owner's Barboach line (2026-10-28, branch `feat/pokermon-barboach-line`)
 Pinned **`3.9.1+r28`** (`contentRev: 28`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Barboach (339) -> Whiscash (340), both
-**Water**, in `jokers/pokejokers_designs.js` (42 defs now), after Seviper in Pokédex order (Lunatone / Solrock have no joker). Neither Nacho nor
+**Water**, in `jokers/pokejokers_designs.js` (42 defs now), after Seviper in Pokédex order (after Solrock since contentRev 29, when Lunatone / Solrock came in). Neither Nacho nor
 Pokermon+ has the line.
 - **Barboach** (Basic, **Common $5**), Muddy Water: **+12 Chips for each Water or Earth Joker** you have, itself included. Evolves after **5 rounds**.
 - **Whiscash** (Stage 1, **Safari $8**), Muddy Water **+20 Chips** per Water or Earth Joker, itself included; **Earthquake**: with at least **2 OTHER**
@@ -2362,9 +2362,33 @@ Pokermon+ has the line.
 - **Tests**: `micatro/tests/mods/pokermon_barboach_test.mjs` (3 passed / 12 failed on origin/main; 60 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 42 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (860 jokers).
 
+### The owner's Lunatone + Solrock (2026-10-28, branch `feat/pokermon-solrock-lunatone`)
+Pinned **`3.9.1+r29`** (`contentRev: 29`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Lunatone (337) and Solrock (338), a pair like
+Plusle / Minun, in `jokers/pokejokers_designs.js` (44 defs now), after Seviper in Pokédex order (before the Barboach line). Both **Earth** (Rock maps to Earth), single-stage,
+**Uncommon $6** (below the single-stage Rare $7: each alone works half the time). Neither Nacho nor Pokermon+ has them.
+- **Day / night**: within each round the 1st, 3rd and 5th hands are **day**, the 2nd and 4th **night**: `G.GAME.current_round.hands_played`
+  before the hand, even = day (during scoring it is still the pre-hand count: `run.js` adds 1 after `evaluate_play`). It restarts each round
+  (`new_round`); discards don't move it.
+- **Solrock, Sunlight**: **+100 Chips** on day hands (`chips`). **Lunatone, Moonlight**: **X2 Mult** on night hands (`Xmult`). Both `joker_main`.
+- **Cosmic Power**: holding BOTH (each checks `find_card(partner)`, which skips debuffed cards: a debuffed partner breaks it; a Blueprint copy is
+  not the partner): Solrock also gives **+50 Chips** on night hands, Lunatone **X1.5** on day hands, so every hand gets both. Each copy acts on
+  its own (two Solrocks + a Lunatone: +200 by day, +100 by night). A Blueprint copies whichever half the copied one gives.
+- **Energy**: `chips` +30% and `Xmult` +20% of base; the half values are DERIVED (`chips / 2`, `1 + (Xmult - 1) / 2`), so they stay exactly half.
+  Earth Energy: one +130 / +65 Chips, X2.4 / X1.7; two +160 / +80, X2.8 / X1.9; three +190 / +95, X3.2 / X2.1. Colorless Energy (half): one
+  +115 / +57.5, X2.2 / X1.6.
+- **Tooltips**: "(Next hand: Day / Night)" (out of a round, `facing_blind` unset, it is the next round's first: Day) and "(Cosmic Power: active /
+  needs Lunatone)" ("needs Solrock" on Lunatone).
+- **Upstream**: Pokermon's unreleased `main` (af0b656, "Added Solrock/Lunatone"; not taken, see sub-batch 15b's drift) has its own, different
+  Lunatone / Solrock (chance-based held Clubs / Stone money, scored Hearts / Stone X1.4). These are the owner's design instead; a future rebase onto
+  an upstream release that ships them must keep the owner's (or ask).
+- **Art: upstream's own.** 3.9.1's Natdex cells {12,22} / {14,22} (with Shiny twins), `poke_sprite391`. Nothing to deploy for the mod. The wiki
+  drops them (402 missing).
+- **Tests**: `micatro/tests/mods/pokermon_solrock_lunatone_test.mjs` (2 passed / 16 failed on origin/main; 61 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 44 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (862 jokers).
+
 ### The owner's Regi trio (2026-10-28, branch `feat/pokermon-regi-trio`)
-Pinned **`3.9.1+r29`** (`contentRev: 29`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Regirock (377), Regice (378) and Registeel (379):
-three **Legendary $20** single jokers (no family) in `jokers/pokejokers_designs.js` (45 defs now), after Metagross in Pokédex order. They reach a run
+Pinned **`3.9.1+r30`** (`contentRev: 30`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Regirock (377), Regice (378) and Registeel (379):
+three **Legendary $20** single jokers (no family) in `jokers/pokejokers_designs.js` (47 defs now), after Metagross in Pokédex order. They reach a run
 like Pokermon's other Legendaries: The Soul / the Legendary pool. Types from the card art (the type icon on each 3.9.1 cell): **Regirock Earth,
 Regice Water, Registeel Metal**. Neither Nacho nor Pokermon+ has them.
 - **Regirock**, Stone Body: **Stone cards give +100 Chips instead of +50** (hook `chip_bonus`, a Card:get_chip_bonus wrap: real Stone cards, their
@@ -2388,7 +2412,7 @@ Regice Water, Registeel Metal**. Neither Nacho nor Pokermon+ has them.
 - **Art: upstream's own** (Natdex {2,25} / {4,25} / {6,25}, each with its floating soul {3,25} / {5,25} / {7,25}). Nothing to deploy for the mod.
   The wiki drops them.
 - **Tests**: `micatro/tests/mods/pokermon_regis_test.mjs` (8 passed / 13 failed on origin/main; 75 / 0 here). Re-recorded: `modpin_test`,
-  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 45 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (863 jokers).
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 47 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (865 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
