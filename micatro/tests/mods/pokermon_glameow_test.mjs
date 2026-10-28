@@ -103,7 +103,7 @@ sec('fickle', () => {
 
 // ------------------------------------------------------------------- the favourite survives save / resume (the recipe replayed)
 // A bot plays a real run (micatro/tests/replay_bot.mjs, the live Session path) from a custom deck that starts with Glameow: GLAMRES6
-// reaches Purugly (9 rounds; GLAMRES2's bot run changed when the Shellos line joined the Common pool); in GLAMRES3 the bot fills every slot, so Glameow is still waiting after 9 rounds.
+// (bot 3) reaches Purugly (9 rounds; GLAMRES2 until the Drifloon line joined the pool and moved the seeded shop); in GLAMRES3 the bot fills every slot, so Glameow is still waiting after 9 rounds.
 for (const [seed, bot, evolves] of [['GLAMRES6', 3, true], ['GLAMRES3', 1, false]]) sec('resume ' + seed, () => {
   const run = playRun({ seed, mods: ['pokermon'], customDeck: { name: 'Glam', jokers: [{ key: 'j_poke_glameow' }] } }, { seed: bot, maxSteps: 400 });
   const find = () => G.jokers.cards.find((j) => /glameow|purugly/.test(key(j)));

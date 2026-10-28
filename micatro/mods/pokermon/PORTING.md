@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), **`3.9.1+r36`** since the owner's Shellos line ("The owner's Shellos line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), **`3.9.1+r37`** since the owner's Shellos line ("The owner's Shellos line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2504,7 +2504,6 @@ nor Pokermon+ has either.
 - **Tests**: `micatro/tests/mods/pokermon_chatot_pachirisu_test.mjs` (4 passed / 13 failed on origin/main; 73 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 57 defs, Happiny > Chatot > Spiritomb), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (875 jokers).
-
 ### The owner's Glameow line (2026-10-28, branch `feat/pokermon-glameow-line`)
 Pinned **`3.9.1+r35`** (`contentRev: 35`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Glameow (431) -> Purugly (432), both
 **Colorless** (upstream's cells show the white Colorless frame), in `jokers/pokejokers_designs.js` (59 defs now), after Honchkrow in Pokédex
@@ -2529,9 +2528,30 @@ order. Neither Nacho nor Pokermon+ has the line.
 - **Tests**: `micatro/tests/mods/pokermon_glameow_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`,
   `pokermon_new_jokers_test` (the pin, 59 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (877 jokers).
 
+### The owner's Drifloon line (2026-10-28, branch `feat/pokermon-drifloon-line`)
+Pinned **`3.9.1+r36`** (`contentRev: 36`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Drifloon (425) -> Drifblim (426), both
+**Psychic** (Ghost/Flying; upstream's cells draw the Psychic frame), in `jokers/pokejokers_designs.js` (61 defs now), after Ambipom in Pokédex
+order. Neither Nacho nor Pokermon+ has the line.
+- **Stockpile** (Gulpin's counter and `stockpile_max` energy field, reused through `stock_max`): each PLAYER discard action gains **1 Stockpile**
+  up to max — **once per discard, not per card**; an effect's discard (`hook`: The Hook, seals) gains nothing. The Stockpile is kept between
+  rounds; only a Spit Up empties it.
+- **Spit Up**: on the round's **final hand** (`hands_left === 0` in joker_main, Acrobat's check) **X(1 + 0.5 per Stockpile)**, then the
+  Stockpile resets to 0. 0 Stockpile: nothing, and it doesn't count. The joker marks the Spit Up in joker_main and resets / counts it in
+  `after`, so a Blueprint (scored before) and a Brainstorm (scored after) both copy the full X; neither adds or resets.
+- **Drifloon** (Basic, **Common $5**): max **3**; evolves after **4 Spit Ups** ("Spit Ups: k/4"). Stockpile and Energy carry into Drifblim.
+- **Drifblim** (Stage 1, **Safari $8**): max **5** (`stockpile_max` 3 + a fixed `stockpile_bonus` 2, so Energy still adds exactly +1);
+  **Aftermath**: when **sold** (`selling_self`) or **destroyed** (`hooks.start_dissolve` -> `drifblim_destroyed`: Ceremonial Dagger, Madness,
+  Hex, Ankh, Pokermon eaters) it creates a **Negative Spectral card** (random, the seeded create_card roll, key_append `drifblim`; Negative, so
+  it works with full slots). Not when it evolves or transforms (set_ability: no dissolve), not from a Blueprint copy, not while debuffed.
+- **Energy**: +1 max Stockpile each (Drifloon 3 -> 4 / 5 / 6, Drifblim 5 -> 6 / 7 / 8), a mismatched Colorless +0.5 (floored: one adds
+  nothing, two add 1). The X0.5 per Stockpile (`spit_Xmult`) is fixed.
+- **Art: upstream's own** (Natdex {8,28} / {10,28}). Nothing to deploy for the mod. The wiki drops them (385 missing).
+- **Tests**: `micatro/tests/mods/pokermon_drifloon_test.mjs` (2 passed / 18 failed on origin/main; 62 / 0 here). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 61 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (879 jokers).
+
 ### The owner's Shellos line (2026-10-28, branch `feat/pokermon-shellos-line`)
-Pinned **`3.9.1+r36`** (`contentRev: 36`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
-(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (61 defs now), after Floatzel in Pokédex order (Ambipom 424 next).
+Pinned **`3.9.1+r37`** (`contentRev: 37`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Shellos (422) -> Gastrodon (423), both **Water**
+(both sea cards show the Water icon), in `jokers/pokejokers_designs.js` (63 defs now), after Floatzel in Pokédex order (Ambipom 424 next).
 Neither Nacho nor Pokermon+ has the line.
 - **The sea**: each card is **West or East**, rolled ONCE when it is created (`set_ability` initial, the run's seeded `pseudorandom('shellos_sea')`
   / `'gastrodon_sea'`), kept in `ability.extra.form` (copies, rounds, evolution: `NAMES_TO_KEEP`; save / resume rebuild the run from its recipe,
@@ -2549,9 +2569,9 @@ Neither Nacho nor Pokermon+ has the line.
 - **Art: upstream's own, per sea** (pokespriteload.lua lists two `base.pos` each on the Gen 4 sheet): **East Sea** (blue) = the first cell,
   each center's own card: Shellos {4,1}, Gastrodon {8,1}; **West Sea** (pink) = the second: Shellos {6,1}, Gastrodon {10,1} (`systems/anim.js`
   `SEA_SPRITES`, `ui.js` ownFace; the Shiny sheet's twins at the same cells). The Pokédex modal shows the family in the card's sea. Nothing to
-  deploy for the mod. The wiki drops them (385 missing); the mods wiki shows one cell per joker (its East card).
+  deploy for the mod. The wiki drops them (383 missing); the mods wiki shows one cell per joker (its East card).
 - **Tests**: `micatro/tests/mods/pokermon_shellos_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
-  (the pin, 61 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (879 jokers).
+  (the pin, 63 defs), `pokermon_art_types_test` (both seas Water), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (881 jokers).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

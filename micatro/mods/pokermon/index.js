@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -695,6 +695,8 @@ const hooks = {
   // (the Debris Sleeve's alt on the Debris Deck: a Hazard card holds card_limit +1 — backs/backs1.js)
   set_ability: debris_hazard_card_limit,
   end_round: shiny_hooks.end_round,
+  // (the owner's Drifblim, Aftermath: an owned Drifblim being destroyed makes a Negative Spectral — jokers/pokejokers_designs.js)
+  start_dissolve: drifblim_destroyed,
   edition_weight(w, type) {
     // pokermon.lua: Jirachi's negative_edition_rate raises Negative and takes it back from Polychrome.
     const r = (G.GAME.negative_edition_rate || 1) - 1;
@@ -872,10 +874,13 @@ export const POKERMON = registerMod({
   // 35 = the owner's Glameow line (Glameow -> Purugly; jokers/pokejokers_designs.js): Fickle — a favourite suit picked when obtained and
   // each end of round (seeded, never the same twice running); scored cards of it +5 Mult / X1.25 each; Purugly's Thick Fat: -1 Joker
   // slot while held (refunded when sold / destroyed; a Negative nets 0); Glameow waits to evolve until a Joker slot is free.
-  // 36 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
+  // 36 = the owner's Drifloon line (Drifloon -> Drifblim; jokers/pokejokers_designs.js): Stockpile — +1 per player discard action, max 3
+  // (Drifblim 5; +1 per Energy: Gulpin's `stockpile_max`); Spit Up — the round's final hand X(1 + 0.5 per Stockpile), then it resets;
+  // Drifloon evolves after 4 Spit Ups; Drifblim's Aftermath: sold or destroyed (hooks.start_dissolve), a Negative Spectral card.
+  // 37 = the owner's Shellos line (Shellos -> Gastrodon; jokers/pokejokers_designs.js): a sea (West / East) rolled once per card,
   // its art following; Tide Pool +40 Chips on the sea's end scored card (leftmost / rightmost); Gastrodon's Tide retriggers it, Storm
   // Drain X0.1 per Energy card used (X0.2 Water); Two Seas: a West and an East held, every one works on both ends.
-  contentRev: 36,
+  contentRev: 37,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
