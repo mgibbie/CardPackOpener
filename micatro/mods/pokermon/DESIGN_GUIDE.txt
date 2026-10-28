@@ -119,7 +119,8 @@ Notable gaps:
   - Starters: every Gen 5-9 starter line was missing (15 lines, 45 species). Gen 4 is covered
     by Nacho (the Turtwig, Chimchar and Piplup lines). Gen 5 (Snivy, Tepig, Oshawott), Gen 7 (Rowlet, Litten,
     Popplio) and Gen 8 (Scorbunny, Sobble; Grookey is the owner's) are now built to the starter template (2.2); all three Gen 9
-    lines are the owner's (Sprigatito, Fuecoco, Quaxly).
+    lines are the owner's (Sprigatito, Fuecoco, Quaxly); Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 52;
+    "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
     creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
@@ -581,6 +582,30 @@ flame_charge; Spheal's Rollout is the older streak):
   - Within the round: kept with the round it was set in (streak_round = G.GAME.round), so a new round starts at 0 even for a joker
     that was debuffed through the end-of-round pass; the shop tooltip reads 0. The Mouth (one hand type a round) is its best Boss,
     The Eye (no repeats) its worst.
+House pattern: a STARTER LINE, Gen 6 additions (the Chespin / Fennekin / Froakie lines; the template itself is in 2.2 "Common
+deviations"):
+  - A stage with a SECOND perk (Fennekin's +1 Foresight on top of +1 discard) needs ONE combined add/remove pair (discards_scry):
+    two spread pairs overwrite each other's add_to_deck.
+  - The Starter Pack leaves out a family already held (packs1.js poke_family_present): holding a Quilladin, no Chespin is offered.
+  - Fennekin / Braixen (Foresight only) carry Delphox's Xmult_mod and say "Energy carries to Delphox" (2.4 #8).
+House pattern: a HANDS-LEFT threshold, "while you have N or more hands left" (the Gen 6 Chesnaught, Spiky Shield; spiky_on):
+  - Say whether the current hand counts. run.js takes the hand (ease_hands_played(-1)) BEFORE the jokers score, so "counted before the
+    hand is played" is hands_left + 1 >= N while scoring: with N = 2, every hand but a round's last. (Azelf's / Drifloon's "final hand" is
+    the complement, hands_left === 0.) Keep N out of energy_values (`hands_req`); the tooltip reads the live count (the shop: the next
+    round's first hand).
+House pattern: a FORESEEN-RANK DISCARD (the Gen 6 Braixen; braixen_tarot):
+  - A Foreseen card is the top of the deck (G.scry_view), never in hand, so "discard a Foreseen card" means a discarded card that SHARES A
+    RANK with one (the Shinx line's `foreseen`). Read it at pre_discard (the deck hasn't drawn yet), a player discard only (no `hook`).
+  - "Once per round, create X (must have room)": with no room nothing is made and the round's chance is NOT used up; the round flag
+    (`tarot_round = G.GAME.round`) is set only when it creates. Not Blueprint (the flag is its own).
+House pattern: PROTEAN, a joker that adopts the team's type (the Gen 6 Greninja; protean_pick / protean_set):
+  - When a Blind is selected (setting_blind, not Blueprint) it becomes the type most common among the OTHER undebuffed jokers, each of the
+    12 types counted with is_type (Arceus / a Stellar Tera count for every type). A tie for the most, or no typed joker: no change (it keeps
+    whatever type it has). The type holds through the shop until the next Blind.
+  - The type is its own ptype (Castform's form rule: is_type, find_pokemon_type, get_type and energy_matches all follow; a Tera sticker
+    still overrides; set_debuff + Kecleon re-sync on a change). Its CURRENT type's Energy matches. Monotype-exempt (poke_mono_exempt), as
+    Castform: its type moves on its own.
+  - Pay off the team it joined: X(1.5 + 0.5 per OTHER undebuffed joker of its current type), `Xmult` and `Xmult_mod` both +20%.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -1175,7 +1200,7 @@ Under-explored:
   - "Burn": destroying or debuffing held cards. Only Slugma/Magcargo destroy a held card, every
     few hands.
   - The Gen 5-9 Fire starter lines follow the "+1 discard" starter rule (Litten's, Tepig's and
-    Fuecoco's lines do: the starter line pattern, 2.2).
+    Fuecoco's lines do: the starter line pattern, 2.2; Fennekin's too, with +1 Foresight).
 Pitfalls:
   - Discard-count scaling explodes with discard sources (Drunkard, Merry Andy, Wasteful
     vouchers, Mega Charizard Y's +5).
