@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), **`3.9.1+r36`** since the owner's Drifloon line ("The owner's Drifloon line" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), **`3.9.1+r37`** since the owner's Burmy line ("The owner's Burmy line" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -2548,6 +2548,38 @@ order. Neither Nacho nor Pokermon+ has the line.
 - **Art: upstream's own** (Natdex {8,28} / {10,28}). Nothing to deploy for the mod. The wiki drops them (385 missing).
 - **Tests**: `micatro/tests/mods/pokermon_drifloon_test.mjs` (2 passed / 18 failed on origin/main; 62 / 0 here). Re-recorded: `modpin_test`,
   `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 61 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (879 jokers).
+
+### The owner's Burmy line (2026-10-28, branch `feat/pokermon-burmy-line`)
+Pinned **`3.9.1+r37`** (`contentRev: 37`; `LEGACY_MOD_VERSIONS` untouched). The owner's design for Burmy (412) -> Wormadam (413, Female) /
+Mothim (414, Male), in `jokers/pokejokers_designs.js` (64 defs now), after Roserade in Pokédex order (Pokermon has no joker for 408-411).
+Neither Nacho nor Pokermon+ has the line.
+- **Burmy** (Basic, **Common $5**, Grass to start). **Cloak**: at the end of each round (the main `end_of_round` pass, not Blueprint) it wears the
+  cloak of the **most common enhancement in the full deck** (`cloak_of_deck`: each card by its own enhancement, unenhanced one kind; Stone ->
+  **Sandy**, Steel -> **Trash**, unenhanced or any other enhancement -> **Plant**). A **tie** between kinds calling for different cloaks **keeps the
+  cloak**. Starts as Plant. **Plant** (Grass): **+5 Mult** (`mult1`); **Sandy** (Earth): **+40 Chips** (`chips1`); **Trash** (Metal): **$1** at end
+  of round (`calc_dollar_bonus`, `trash_money`, fixed; the cloak is re-read before the cash-out, so it pays the round it turns Trash).
+  Its type is its cloak's (`ability.extra.ptype`, as Castform; a Tera sticker still owns the type), its card the cloak's.
+- **Gender**: rolled once when the card is created (`set_ability` initial: shop, pack, Pokéball, starting joker), with the run's seeded
+  `pseudorandom('burmy_gender')`: Female or Male, on `ability.extra.gender` (saved with the card; a resume replays the recipe and rolls the same).
+  The tooltip says "Female" / "Male": the pixel font has no ♀ / ♂ (as upstream's "Nidoran F").
+- **Evolves after 4 rounds**: Female -> **Wormadam**, keeping its cloak (`form` is one of the values every evolution keeps; a POST_EVOLVE hook
+  re-applies the cloak's type), Male -> **Mothim**.
+- **Wormadam** (Stage 1, **Safari $8**), **Cloaked**: the cloak is locked. Plant (Grass): each scored **unenhanced** card **+3 Mult** (`mult1`);
+  Sandy (Earth): each scored **Stone** card **X1.5** (`Xmult_multi`); Trash (Metal): each **Steel** card held in hand at end of round earns **$1**
+  (`steel_money`, fixed; Mime / a Red Seal repeat it, as a Gold card's).
+- **Mothim** (Stage 1, **Safari $8**, Grass: its card), **Free Flight**: **X(1 + 0.25 per different enhancement in the full deck)**, of the 8
+  vanilla enhancements + Pokermon's Seed and Flower (not Hazard, not the April Fools Ludicolo): up to X3.5.
+- **Energy** (the standard shares, every cloak's at once): Burmy `mult1` +40% (5 -> **7 / 9 / 11**), `chips1` +30% (40 -> **52 / 64 / 76**);
+  Wormadam `mult1` (3 -> **4.2 / 5.4 / 6.6**), `Xmult_multi` +5% (1.5 -> **1.575 / 1.65 / 1.725**); Mothim `Xmult_mod` +20% (0.25 -> **0.3 / 0.35 /
+  0.4**). The $ are fixed. Energy carries through evolution (re-applied to the new base).
+- **Monotype**: Burmy is `poke_mono_exempt` (its cloak type never counts, as Castform). Wormadam's locked type and Mothim are checked like any joker:
+  a Sandy (Earth) Wormadam, gained as a Grass Burmy, breaks a Fire run.
+- **Art: upstream's own**: the Gen 4 sheet's row 0 has all six cloak cards (Burmy Plant / Sandy / Trash {0,0} / {2,0} / {4,0}, Wormadam {6,0} / {8,0}
+  / {10,0}, with Shiny twins; pokespriteload.lua lists only the Plant cells), drawn per cloak by `systems/anim.js` BURMY_SPRITES + `ui.js` ownFace;
+  Mothim Natdex {16,27}. `pokermon_art_type` reads Plant Grass, Sandy Earth, Trash Metal, Mothim Grass. Nothing to deploy for the mod. The wiki
+  drops them (388 missing).
+- **Tests**: `micatro/tests/mods/pokermon_burmy_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 64 defs), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (882 jokers); `pokermon_art_types_test` checks the cloak cells.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

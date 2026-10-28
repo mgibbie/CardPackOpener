@@ -46,12 +46,16 @@
 // Chatot (Vocabulary: +4 Mult for each different poker hand played this run; New Word: a hand's first play this run, while held,
 // creates its Planet; Colorless) and Pachirisu (Quick Spark: X2 on each round's first hand, Nuzzle +X0.25 per other Lightning Joker;
 // Cheek Pouch: $1 per Lightning Joker at end of round; Lightning), Rare $7 each — upstream 3.9.1 draws them (Natdex 10,29 / 22,27).
+// Burmy -> Wormadam (Female) / Mothim (Male) (contentRev 37): Burmy's Cloak follows the full deck's most common enhancement at each end of
+// round (Stone Sandy / Earth +40 Chips, Steel Trash / Metal $1, anything else Plant / Grass +5 Mult; a tie keeps it), its type and card with
+// it; its gender is rolled once when created; Wormadam keeps the cloak for good (unenhanced +3 Mult / Stone X1.5 / held Steel $1), Mothim
+// X(1 + 0.25 per different enhancement in the deck) — upstream 3.9.1 draws all six cloak cards (Gen 4 sheet 0-10, 0) and Mothim (Natdex 16, 27).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
   ease_poke_dollars, has_enhancement, has_no_rank, get_probability_vars, pseudorandom_probability, scale_card,
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied,
-  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, can_evolve,
+  add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
 } from '../api.js';
 
 const FILE = 'micatro/pokejokers_designs';
@@ -634,6 +638,48 @@ export function regi_enh_vars(vars, card) {
   return v === undefined ? undefined : [v, ...vars.slice(1)];
 }
 const regi_tips = (self, info_queue, card, enh) => { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS[enh]); };
+/** Burmy's cloaks (the owner's design): the Pokermon type each one's card shows (Gen 4 sheet: Plant Grass, Sandy Earth, Trash Metal;
+ *  pokermon_art_type reads all six Burmy / Wormadam cells so) and the colour of its pop-up. */
+export const BURMY_CLOAKS = {
+  plant: { ptype: 'Grass', name: 'Plant', colour: '#289830' },
+  sandy: { ptype: 'Earth', name: 'Sandy', colour: '#e97333' },
+  trash: { ptype: 'Metal', name: 'Trash', colour: '#888080' },
+};
+/** The cloak an enhancement calls for: Stone Sandy, Steel Trash, unenhanced or any other enhancement Plant. */
+const cloak_for = (k) => (k === 'm_stone' ? 'sandy' : k === 'm_steel' ? 'trash' : 'plant');
+/** Cloak: the most common enhancement of the full deck (each card's own enhancement, its center: unenhanced is one kind, every
+ *  other enhancement another), then its cloak. A tie for the most between kinds calling for DIFFERENT cloaks keeps `current`
+ *  (unenhanced tied with Glass is Plant either way); an empty deck keeps it too. */
+export function cloak_of_deck(cards, current) {
+  const n = {};
+  for (const c of cards || []) { const k = (c.config && c.config.center && c.config.center.key) || 'c_base'; n[k] = (n[k] || 0) + 1; }
+  const top = Math.max(0, ...Object.values(n));
+  if (!top) return current;
+  const cloaks = new Set(Object.keys(n).filter((k) => n[k] === top).map(cloak_for));
+  return cloaks.size === 1 ? [...cloaks][0] : current;
+}
+/** Burmy / Wormadam put a cloak on: its own Pokermon type (ability.extra.ptype) becomes the cloak's, as Castform's form does —
+ *  unless a Tera sticker owns the type (the sticker still decides, as on any joker). The debuff and Kecleons are re-read. */
+function set_cloak(card, cloak) {
+  const ex = card.ability.extra, c = BURMY_CLOAKS[cloak] || BURMY_CLOAKS.plant;
+  const ptype = type_sticker_applied(card) ? ex.ptype : c.ptype;
+  const changed = ex.form !== cloak || ex.ptype !== ptype;
+  ex.form = cloak;
+  ex.ptype = ptype;
+  if (!changed) return;
+  card.set_debuff();
+  sync_kecleons();
+}
+// A Burmy evolving into Wormadam keeps its cloak (ability.extra.form, one of the values every evolution keeps): the cloak's type
+// lands on the new card once the kept values are restored (the POST_EVOLVE seam). A Mothim has no cloak.
+POST_EVOLVE.push((card, from, to) => { if (from === 'j_poke_burmy' && to === 'j_poke_wormadam') set_cloak(card, card.ability.extra.form); });
+/** Mothim's Free Flight counts these enhancements: the 8 vanilla ones and Pokermon's Seed and Flower (not Hazard: a cost, not
+ *  an enhancement anyone builds toward; not the April Fools Ludicolo). */
+export const MOTHIM_ENHANCEMENTS = ['m_bonus', 'm_mult', 'm_wild', 'm_glass', 'm_steel', 'm_stone', 'm_gold', 'm_lucky', 'm_poke_seed', 'm_poke_flower'];
+/** The different enhancements (of MOTHIM_ENHANCEMENTS) the full deck holds, by each card's own enhancement. */
+export const distinct_enhancements = (cards) => new Set((cards || []).map((c) => c.config && c.config.center && c.config.center.key).filter((k) => MOTHIM_ENHANCEMENTS.includes(k))).size;
+const free_flight_x = (card) => r3(1 + card.ability.extra.Xmult_mod * distinct_enhancements(G.playing_cards));
+const gender_name = (g) => (g === 'male' ? 'Male' : 'Female');
 
 // ------------------------------------------------------------ the weather trio (Kyogre / Groudon / Rayquaza) and the Eon duo (Latias / Latios)
 /** Undebuffed owned jokers of this design (a debuffed one does nothing; a Blueprint copy has its own key, so it never counts). */
@@ -1948,6 +1994,98 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- The Burmy line: Burmy 412 -> Wormadam 413 (female) / Mothim 414 (male)
+  // The owner's design (2026-10-28). Burmy (Basic, Common $5) wears a cloak, and its type and card follow it: Plant (Grass), Sandy
+  // (Earth), Trash (Metal) — the types upstream 3.9.1's own cards show (the Gen 4 sheet, row 0: Burmy 0 / 2 / 4, Wormadam 6 / 8 /
+  // 10; systems/anim.js BURMY_SPRITES). Cloak: at the end of each round (the main end_of_round pass, not Blueprint) it takes the
+  // cloak of the most common enhancement in the full deck (cloak_of_deck: Stone Sandy, Steel Trash, unenhanced or anything else
+  // Plant; a tie keeps the cloak). It starts as Plant. Plant +5 Mult (`mult1`), Sandy +40 Chips (`chips1`), Trash $1 at end of
+  // round (calc_dollar_bonus; `trash_money`, fixed). Its gender is rolled once when the card is created (set_ability initial, the
+  // run's seeded pseudorandom 'burmy_gender': Female or Male, kept on ability.extra and so through save / resume, which rebuild
+  // the run from its recipe). After 4 rounds a Female becomes Wormadam wearing its cloak (locked: the type stays), a Male Mothim.
+  // Monotype: Burmy's cloak type never counts (poke_mono_exempt, as Castform); Wormadam and Mothim are checked like any joker.
+  burmy: {
+    name: 'burmy', poke_sprite391: sprite('Gen04', 0, 0),
+    config: { extra: { mult1: 5, chips1: 40, trash_money: 1, form: 'plant', gender: 'female', rounds: 4 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'chips', 'money', 'enhancements', 'full_deck', 'types', 'round_evo'], poke_after: 'roserade',
+    poke_mono_exempt: true,
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, cloak = BURMY_CLOAKS[ex.form] ? ex.form : 'plant';
+      return { vars: [r3(ex.mult1), r3(ex.chips1), ex.trash_money, BURMY_CLOAKS[cloak].name, gender_name(ex.gender), ex.rounds, ex.gender === 'male' ? 'Mothim' : 'Wormadam'] };
+    },
+    set_ability(self, card, initial) {
+      if (initial) card.ability.extra.gender = pseudorandom(pseudoseed('burmy_gender')) < 0.5 ? 'female' : 'male';
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra;
+      if (round_end(context) && !context.blueprint) {
+        const cloak = cloak_of_deck(G.playing_cards, BURMY_CLOAKS[ex.form] ? ex.form : 'plant');
+        if (cloak !== ex.form) {
+          set_cloak(card, cloak);
+          card_eval_status_text(card, 'extra', null, null, null, { message: BURMY_CLOAKS[cloak].name + ' Cloak!', colour: BURMY_CLOAKS[cloak].colour });
+        }
+        return level_evo(self, card, context, ex.gender === 'male' ? 'j_poke_mothim' : 'j_poke_wormadam');
+      }
+      if (context.joker_main) {
+        if (ex.form === 'plant') return { message: a_mult(r3(ex.mult1)), colour: 'MULT', mult_mod: ex.mult1 };
+        if (ex.form === 'sandy') return { message: a_chips(r3(ex.chips1)), colour: 'CHIPS', chip_mod: ex.chips1 };
+      }
+      return undefined;
+    },
+    calc_dollar_bonus(self, card) {
+      const ex = card.ability.extra;
+      return ex.form === 'trash' ? ease_poke_dollars(card, 'burmy', ex.trash_money, true) : undefined;
+    },
+  },
+  // Wormadam 413 (Stage 1, Safari $8), Cloaked: the cloak (and its type) Burmy wore when it evolved, for good. Plant: each scored
+  // UNENHANCED card +3 Mult (`mult1`); Sandy: each scored Stone card X1.5 Mult (`Xmult_multi`, the per-card X); Trash: each Steel
+  // card held in hand at end of round earns $1 (`steel_money`, fixed; Mime / a Red Seal repeat it, as a Gold card's).
+  wormadam: {
+    name: 'wormadam', poke_sprite391: sprite('Gen04', 6, 0),
+    config: { extra: { mult1: 3, Xmult_multi: 1.5, steel_money: 1, form: 'plant' } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'money', 'enhancements', 'types'], poke_after: 'burmy',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, cloak = BURMY_CLOAKS[ex.form] ? ex.form : 'plant';
+      if (cloak === 'sandy') info_queue.push(P_CENTERS.m_stone);
+      if (cloak === 'trash') info_queue.push(P_CENTERS.m_steel);
+      return { vars: [r3(ex.mult1), r3(ex.Xmult_multi), ex.steel_money], key: cloak === 'plant' ? undefined : 'j_poke_wormadam_' + cloak };
+    },
+    calculate(self, card, context) {
+      const ex = card.ability.extra, oc = context.other_card;
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && oc && !oc.debuff) {
+        if (ex.form === 'plant' && oc.config.center.key === 'c_base') return { mult: ex.mult1, card };
+        if (ex.form === 'sandy' && has_enhancement(oc, 'm_stone')) return { x_mult: ex.Xmult_multi, card };
+      }
+      if (ex.form === 'trash' && context.end_of_round && context.individual && context.cardarea === G.hand && oc && !oc.debuff && has_enhancement(oc, 'm_steel')) {
+        G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + ex.steel_money;
+        G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+        return { dollars: ease_poke_dollars(card, 'wormadam', ex.steel_money, true), card: oc };
+      }
+      return undefined;
+    },
+  },
+  // Mothim 414 (Stage 1, Safari $8, Grass: its card's type), Free Flight: X(1 + 0.25 for each DIFFERENT enhancement in the full
+  // deck), of MOTHIM_ENHANCEMENTS (the 8 vanilla ones + Seed + Flower: up to X3.5). `Xmult_mod` (+20% per Energy: 0.3 / 0.35 / 0.4).
+  mothim: {
+    name: 'mothim', poke_sprite391: sprite('Natdex', 16, 27),
+    config: { extra: { Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 4, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'full_deck'], poke_after: 'wormadam',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const n = G.playing_cards ? distinct_enhancements(G.playing_cards) : 0;
+      return { vars: [r3(card.ability.extra.Xmult_mod), n, r3(1 + card.ability.extra.Xmult_mod * n)] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main) { const x = free_flight_x(card); if (x > 1) return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
+
   // ---------------------------------------------------------------- Pachirisu 417 (Lightning, Gen 4)
   // The owner's design (2026-10-28). Rare $7, single-stage. Quick Spark: the first hand of each round (hands_played === 0) gives X2
   // Mult (`Xmult`); Nuzzle: plus X0.25 (`Xmult_mod`) for each OTHER Lightning Joker (spark_others above: is_type, so Tera stickers
@@ -1960,7 +2098,7 @@ defineJokers({
     name: 'pachirisu', poke_sprite391: sprite('Natdex', 22, 27),
     config: { extra: { Xmult: 2, Xmult_mod: 0.25, pouch: 1 } },
     rarity: 3, cost: 7, stage: 'Basic', ptype: 'Lightning', gen: 4, blueprint_compat: true,
-    attributes: ['xmult', 'economy', 'types', 'hands'], poke_after: 'roserade',
+    attributes: ['xmult', 'economy', 'types', 'hands'], poke_after: 'mothim',
     loc_vars(self, info_queue, card) {
       type_tooltip(self, info_queue, card);
       const ex = card.ability.extra;
@@ -2031,6 +2169,7 @@ export const DESIGN_FAMILIES = [
   ['spoink', 'grumpig'],
   ['barboach', 'whiscash'],
   ['starly', 'staravia', 'staraptor'],
+  ['burmy', 'wormadam', 'mothim'],
   ['glameow', 'purugly'],
   ['drifloon', 'drifblim'],
 ];
@@ -2067,6 +2206,7 @@ const AFTERMATH = ['{C:attention}Aftermath:{} when this Joker is', 'sold or dest
 const COMMANDER = ['{C:attention}Commander:{} the leftmost', '{X:poke_water,C:white}Water{} Joker gives'];
 const CLASH = (n) => ['{C:attention}Primal Clash:{} with {C:attention}Kyogre{} and', '{C:attention}Groudon{} and no {C:attention}Rayquaza{}, the', "round's first deal picks one:", 'more {C:clubs}Clubs{} held, Kyogre; more', '{C:hearts}Hearts{} + {C:diamonds}Diamonds{}, Groudon', '{C:inactive}(a tie: more Energy, else Kyogre)', 'The other does nothing that round', '{C:inactive}(#' + n + '#)'];
 const EON = (p) => ['{C:attention}Soul Dew:{} with {C:attention}' + p + '{}, every', '{C:tarot}Tarot{} or {C:planet}Planet{} used', 'grows both of them', '{C:inactive}(Soul Dew: #3#)'];
+const CLOAKED = (name, c, type) => ['{C:attention}Cloaked:{} ' + name + ' Cloak, {X:poke_' + c + ',C:white}' + type + '{}', '{C:inactive}(kept from Burmy, for good)'];
 const REGI_TRIO = (enh, n) => ['{C:attention}Regi Trio:{} when a {C:attention}Blind{} is', 'selected, {C:attention}#' + n + '#{} random card(s) in', 'your deck become {C:attention}' + enh + '{} cards',
   '{C:inactive}(+1 for each other Regi)'];
 const FICKLE = (gain, n) => ['{C:attention}Fickle:{} picks a new favourite', 'suit each round', 'Scored cards of its favourite', 'suit each give ' + gain, '{C:inactive}(Favourite: {V:1}#' + n + '#{C:inactive})'];
@@ -2269,6 +2409,19 @@ export const DESIGN_LOC = {
     j_poke_purugly: { name: 'Purugly', text: [
       ['{C:attention}Thick Fat:{} {C:red}-#2#{} Joker slot'],
       FICKLE('{X:mult,C:white} X#1# {} Mult', 3),
+    ] },
+    j_poke_burmy: { name: 'Burmy', text: [
+      ['{C:attention}Cloak:{} at end of round, takes', 'the cloak of the most common', 'enhancement in your full deck', '{C:inactive}(A tie keeps the cloak)'],
+      ['{C:attention}Plant{} {X:poke_grass,C:white}Grass{}: {C:mult}+#1#{} Mult', '{C:inactive}(unenhanced or other enhancements)', '{C:attention}Sandy{} {X:poke_earth,C:white}Earth{}: {C:chips}+#2#{} Chips {C:inactive}(Stone)',
+        '{C:attention}Trash{} {X:poke_metal,C:white}Metal{}: earn {C:money}$#3#{} at end', 'of round {C:inactive}(Steel)'],
+      ['{C:inactive}(Currently {C:attention}#4#{C:inactive} Cloak, #5#)', '{C:inactive,s:0.8}(Its type never breaks Monotype)', '{C:inactive,s:0.8}(Evolves after {C:attention,s:0.8}#6#{C:inactive,s:0.8} rounds:', '{C:inactive,s:0.8}Female into Wormadam, Male into Mothim)'],
+    ] },
+    j_poke_wormadam: { name: 'Wormadam', text: [CLOAKED('Plant', 'grass', 'Grass'), ['Each scored {C:attention}unenhanced{}', 'card gives {C:mult}+#1#{} Mult']] },
+    j_poke_wormadam_sandy: { name: 'Wormadam', text: [CLOAKED('Sandy', 'earth', 'Earth'), ['Each scored {C:attention}Stone{} card', 'gives {X:mult,C:white} X#2# {} Mult']] },
+    j_poke_wormadam_trash: { name: 'Wormadam', text: [CLOAKED('Trash', 'metal', 'Metal'), ['Each {C:attention}Steel{} card held in hand', 'at end of round earns {C:money}$#3#{}']] },
+    j_poke_mothim: { name: 'Mothim', text: [
+      '{C:attention}Free Flight:{} {X:mult,C:white} X1 {} Mult, plus', '{X:mult,C:white} X#1# {} for each different', 'enhancement in your full deck',
+      '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)', '{C:inactive,s:0.8}(Bonus, Mult, Wild, Glass, Steel,', '{C:inactive,s:0.8}Stone, Gold, Lucky, Seed, Flower)',
     ] },
   },
   Other: {
