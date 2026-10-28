@@ -911,10 +911,12 @@ export const POKERMON = registerMod({
   // Uxie (+2 Foresight, X1.3 per Foreseen card), Mesprit (X1.5, X2.5 on a poker hand new this round), Azelf (X2.5 on the final hand), +X0.25
   // per other guardian; Cresselia's Lunar Blessing (playing cards can't be debuffed) and X1.5; Phione +6 Mult / Manaphy X1.2 per Water Joker,
   // Manaphy's Egg (1 in 4 at the end of each shop, with a free slot: a Phione).
-  // 47 = the owner's Gen 9 starters (jokers/pokejokers_designs.js torch_song / moxie_bank): Fuecoco -> Crocalor -> Skeledirge (Fire,
+  // 47 = the owner's Regigigas trio wake (jokers/pokejokers_designs.js giga_drop): with all three Regis held, Slow Start's countdown
+  // goes straight to 0 at the next end of round (awake after 1 round, was 2); none / one / two Regis stay 5 / 3 / 2.
+  // 48 = the owner's Gen 9 starters (jokers/pokejokers_designs.js torch_song / moxie_bank): Fuecoco -> Crocalor -> Skeledirge (Fire,
   // +1 discard; Torch Song: +1 / +2 Mult banked per hand played, Skeledirge X0.05) and Quaxly -> Quaxwell -> Quaquaval (Water, +1 hand;
   // Moxie: +4 / +6 Chips banked per unused hand when a Blind is beaten, Quaquaval X0.2).
-  contentRev: 47,
+  contentRev: 48,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
