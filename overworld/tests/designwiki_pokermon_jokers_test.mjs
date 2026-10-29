@@ -95,8 +95,8 @@ try {
 	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && sp0('Tyrunt')?.ptype === 'Dragon' && sp0('Phantump')?.ptype === 'Grass' && sp0('Cutiefly')?.ptype === 'Fairy' && sp0('Kyurem')?.ptype === 'Water' && sp0('Stunfisk')?.ptype === 'Lightning'
-		&& sp0('Keldeo')?.ptype === 'Fighting' && sp0('Keldeo')?.type_source === 'art' && sp0('Keldeo')?.mapped_ptype === 'Water', 'spot check (the card wins; Latias, Dwebble, Venipede and Sandile are in the game now): Tyrunt Dragon, Phantump Grass, Cutiefly Fairy, Kyurem Water, Stunfisk Lightning; Keldeo Fighting from its art (the mapping said Water)');
+	A(!sp0('Latias') && sp0('Tyrunt')?.ptype === 'Dragon' && sp0('Phantump')?.ptype === 'Grass' && sp0('Cutiefly')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
+		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem and Keldeo are in the game now): Tyrunt Dragon, Phantump Grass, Cutiefly Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
 	A(sp('Toucannon')?.stage === 'Two' && sp('Trumbeak')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Yveltal')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Noibat')?.ptype === 'Dragon',
@@ -243,13 +243,18 @@ try {
 	const gens = await anon.page.$$eval('.pj-gen', ss => ss.map(s => [+s.dataset.gen, s.querySelectorAll('.pj-tile').length]));
 	A(JSON.stringify(gens) === JSON.stringify(Object.entries(D.counts.byGen).filter(([, n]) => n).map(([g, n]) => [+g, n])), 'grouped by generation, in order, with the right counts', JSON.stringify(gens));
 	A(await anon.page.$('#sidebar a[href="#/pokermon-jokers"].active') !== null, 'the nav link is there and lit');
-	await anon.page.select('#pjGen', '5');
-	const g5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => +t.dataset.dex));
-	A(g5.length === D.counts.byGen[5] && g5.every(d => d >= 494 && d <= 649), 'the generation filter shows only Generation 5', g5.length);
-	A(/gen=5/.test(await anon.page.evaluate(() => location.hash)), 'the filter is kept in the hash');
-	await anon.page.select('#pjType', 'Water');
-	const w5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
-	A(w5.length === D.species.filter(s => s.gen === 5 && s.ptype === 'Water').length && w5.every(t => t === 'Water'), 'the type filter narrows to Water (in Gen 5)', w5.length);
+	// (the generation with the most species still missing, and its commonest type: a fixture that survives each batch that fills a generation)
+	const GEN_DEX = { 1: [1, 151], 2: [152, 251], 3: [252, 386], 4: [387, 493], 5: [494, 649], 6: [650, 721], 7: [722, 809], 8: [810, 905], 9: [906, 1025] };
+	const fg = +Object.entries(D.counts.byGen).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0];
+	const byType = {}; for (const s of D.species) if (s.gen === fg) byType[s.ptype] = (byType[s.ptype] || 0) + 1;
+	const ft = Object.entries(byType).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0][0];
+	await anon.page.select('#pjGen', String(fg));
+	const g5 = await anon.page.$eval('.pj-tile', ts => ts.map(t => +t.dataset.dex));
+	A(g5.length === D.counts.byGen[fg] && g5.length > 0 && g5.every(d => d >= GEN_DEX[fg][0] && d <= GEN_DEX[fg][1]), `the generation filter shows only Generation ${fg}`, g5.length);
+	A(new RegExp('gen=' + fg).test(await anon.page.evaluate(() => location.hash)), 'the filter is kept in the hash');
+	await anon.page.select('#pjType', ft);
+	const w5 = await anon.page.$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
+	A(w5.length === byType[ft] && w5.length > 0 && w5.every(t => t === ft), `the type filter narrows to ${ft} (in Gen ${fg})`, w5.length);
 	await anon.page.select('#pjGen', ''); await anon.page.select('#pjType', '');
 	await anon.page.type('#pjQ', 'pikip');
 	A(await waitFor(async () => (await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.textContent))).join('|').match(/Pikipek/) && await tiles(anon.page) === D.species.filter(s => /pikip/i.test(s.name)).length, 4000), 'search by name');

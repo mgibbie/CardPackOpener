@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), **`3.9.1+r54`** since Gen 5 batch 2 ("Gen 5, batch 2" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), `3.9.1+r54` for Gen 5 batch 2 ("Gen 5, batch 2" below), **`3.9.1+r55`** since Gen 5 batch 4, the Gen 5 Legendaries ("Gen 5, batch 4" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -3094,6 +3094,46 @@ evolver: Sewaddle, Venipede; 5 otherwise); the fossils by the Ancient convention
   (the pin, 180 defs, the order chains), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (998 jokers);
   `pokermon_gen5_batch1_test` (Sewaddle after Sawk); `designwiki_pokermon_jokers_test` spot-checks the Pikipek line and Tyrunt / Phantump /
   Cutiefly (the Sewaddle line, Dwebble, Venipede and Sandile have jokers now).
+
+### Gen 5, batch 4: the Gen 5 Legendaries (2026-10-29, branch `feat/pokermon-gen5-legendaries`)
+Pinned **`3.9.1+r55`** (`contentRev: 55`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Build as pitched": the 12 Gen 5 Legendaries, #638-649, in
+`jokers/pokejokers_designs.js` (`sacred_sword` / `sword_others` / `therian` / `wild_charge` / `sand_force` / `tao_boost` / `kyurem_borrow` /
+`relic_song` / `techno_count`; 192 defs now), Legendary $20 each (The Soul / the Legendary pool). Pokédex order: Cobalion ... Genesect after
+Hydreigon (635; Pokermon has no Larvesta / Volcarona), before Chespin (650; its `poke_after` is now `genesect`). Neither Nacho nor Pokermon+ has any.
+Types = the cards' (`pokermon_art_types_test`, every form cell checked: the Therian, Black / White and Resolute cells show the base type,
+Meloetta's Pirouette Fighting). Art: upstream 3.9.1 cells with their souls (Natdex {14,42} / {16,42} / {18,42}; Gen 5 sheet {6,3} ... {8,6}); the
+forms (`systems/anim.js` GEN5_LEGEND_FORMS: Tornadus {8,3}, Thundurus {0,4}, Landorus {0,5}, Kyurem Black {4,5} / White {8,5}, Keldeo Resolute
+{2,6}, Meloetta Pirouette {6,6}, each with its soul) drawn by `ui.js` ownFace from each center's live `poke_view_form`; nothing to deploy.
+- **The Swords of Justice**, **Cobalion** (Metal) / **Terrakion** (Earth) / **Virizion** (Grass) / **Keldeo** (Fighting): each scored **Spade /
+  Diamond / Club / Heart** gives **X1.25** (Wild cards count), **+X0.1 for each OTHER sword species held** (undebuffed; a twin doesn't count; Keldeo
+  counts): X1.25 / 1.35 / 1.45 / 1.55. **Keldeo's Resolute Form**: with Cobalion, Terrakion AND Virizion all held, its Resolute card shows and a
+  Heart gives **X2** instead, the bonus on top (**X2.3**). Energy `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375; Keldeo's `Xmult_multi2` 2 -> 2.1 /
+  2.2 / 2.3 (energized Resolute X2.6); `sword_mod` fixed.
+- **The Forces of Nature**, formes live with the card (the type never changes): **Tornadus** (Colorless) **+1 hand each round**; Therian (an
+  undebuffed Landorus held) **also +3 Mult per hand left**, read when it scores (the scored hand already taken: the final hand +0). **Thundurus**
+  (Lightning): each scored card **1 in 4** to earn **$1**; Therian **1 in 2**, and a card that pays also gives **X1.1**. **Landorus** (Earth): each
+  **Stone card held in hand +40 Chips**; Therian (Tornadus AND Thundurus held) each **scored Stone card X1.5** instead. Energy: Tornadus `mult` 3 ->
+  4.2 / 5.4 / 6.6; Thundurus `Xmult_multi` 1.1 -> 1.155 / 1.21 / 1.265; Landorus `chips` 40 -> 52 / 64 / 76 and `Xmult_multi` 1.5 -> 1.575 / 1.65 /
+  1.725. Fixed: the hand, the odds (`dem` / `dem2`, through get_probability_vars: Oops! / Absol apply), the $1 (`storm_money`).
+- **The Tao trio**: **Reshiram** (Fire, Turboblaze) / **Zekrom** (Lightning, Teravolt): **each Fire / Lightning Joker, itself included, gives X1.25**
+  (the other_joker pass: is_type, so Arceus and a Tera count, a debuffed joker doesn't). **Truth vs Ideals**: both held, each one's X is
+  **+0.25** (X1.5 a joker; `tao_mod`, fixed). **Kyurem** (Water): **X1.5**; with Reshiram **White Kyurem** (art), with Zekrom **Black Kyurem**: each
+  joker of the partner's type ALSO gives Kyurem **the partner's own current X per joker** (its Energy and Truth vs Ideals included) — a **second,
+  separate multiplier** on top of the partner's (Reshiram X1.25, then Kyurem X1.25: X1.5625 a Fire Joker). **Both held: the LEFTMOST** of the two
+  in the row picks it. Nothing is consumed. Energy: `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375 (Reshiram / Zekrom; Kyurem borrows the
+  energized number), Kyurem `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
+- **Meloetta** (Psychic), Relic Song: switches forme **after every hand played** (the `after` pass, a debuffed hand too; not Blueprint). **It resets
+  to Aria every round** (never carries over; a Pirouette left from an earlier round reads Aria). **Aria** (Psychic): **X2**; **Pirouette** (Fighting):
+  **the first scored card retriggers 3 times**. Type (ability.extra.ptype; a Tera still owns it) and art follow the forme; **Monotype-exempt**
+  (`poke_mono_exempt`); the forme's Energy matches. Save / resume replay the hands, so the forme comes back exactly. Energy `Xmult` 2 -> 2.4 /
+  2.8 / 3.2; the 3 retriggers fixed.
+- **Genesect** (Grass), Techno Blast: **X(1.5 + 0.5 per Water, Lightning or Fire Joker)** (one is_type test per joker: Arceus or a two-type joker
+  once; undebuffed; itself if it has such a Tera). Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4, `Xmult_mod` 0.5 -> 0.6 / 0.7 / 0.8.
+- **Wiki**: regenerated (254 missing); the wiki sprites of the 12 are gone from `designwiki/sprites/pokermon_jokers/` (sprites redeployed).
+- **Tests**: `micatro/tests/mods/pokermon_gen5_legendaries_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 192 defs), `pokermon_art_types_test` (the 12 and every form cell), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1010 jokers);
+  `designwiki_pokermon_jokers_test` spot-checks Chien-Pao / Iron Thorns / Bewear (Kyurem and Keldeo have jokers now), and its generation /
+  type filter checks now use the generation with the most species still missing (Gen 5 empties as its batches land).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

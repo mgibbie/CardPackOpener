@@ -950,7 +950,10 @@ export const POKERMON = registerMod({
   // 54 = Gen 5 batch 2 (jokers/pokejokers_designs.js, #540-573): the Sewaddle line's tailor, the Venipede line's Poison Point, Cottonee /
   // Whimsicott, Petilil / Lilligant, Basculin's stripes, the Sandile line's Moxie, Maractus, Dwebble / Crustle, Sigilyph, Yamask /
   // Cofagrigus (Mummy: the sell_instead hook), the Tirtouga and Archen fossils (Ancient 9s / 10s) and Minccino / Cinccino.
-  contentRev: 54,
+  // 55 = Gen 5 batch 4, the Gen 5 Legendaries (jokers/pokejokers_designs.js, #638-649): the Swords of Justice (Cobalion / Terrakion /
+  // Virizion / Keldeo, Resolute Form), the Forces of Nature (Tornadus / Thundurus / Landorus, Therian Formes), the Tao trio (Reshiram /
+  // Zekrom, Truth vs Ideals; Kyurem, White / Black), Meloetta (Relic Song: Aria / Pirouette) and Genesect (Techno Blast).
+  contentRev: 55,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
