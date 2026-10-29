@@ -102,6 +102,21 @@ export const SEA_SPRITES = {
  */
 export const BASCULIN_SPRITES = { blue: { x: 6, y: 0 } };
 
+/**
+ * The Gen 5 Legendaries' forms (the owner's Gen 5 batch 4, jokers/pokejokers_designs.js): upstream 3.9.1 draws each on the Gen 5 sheet beside
+ * its base card, with its own floating soul (sprite table tornadus_therian, thundurus_therian, landorus_therian, kyurem_black, kyurem_white,
+ * keldeo_resolute, meloetta_pirouette) — by the view's form (each center's poke_view_form: live, so a partner bought, sold or debuffed redraws
+ * it at once; Meloetta's after each hand). The base form is each one's own card. Drawn by ui.js ownFace (+ the Shiny sheet's twins).
+ */
+export const GEN5_LEGEND_FORMS = {
+  j_poke_tornadus: { therian: { pos: { x: 8, y: 3 }, soul_pos: { x: 9, y: 3 } } },
+  j_poke_thundurus: { therian: { pos: { x: 0, y: 4 }, soul_pos: { x: 1, y: 4 } } },
+  j_poke_landorus: { therian: { pos: { x: 0, y: 5 }, soul_pos: { x: 1, y: 5 } } },
+  j_poke_kyurem: { black: { pos: { x: 4, y: 5 }, soul_pos: { x: 5, y: 5 } }, white: { pos: { x: 8, y: 5 }, soul_pos: { x: 9, y: 5 } } },
+  j_poke_keldeo: { resolute: { pos: { x: 2, y: 6 }, soul_pos: { x: 3, y: 6 } } },
+  j_poke_meloetta: { pirouette: { pos: { x: 6, y: 6 }, soul_pos: { x: 7, y: 6 } } },
+};
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

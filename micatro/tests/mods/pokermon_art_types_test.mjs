@@ -19,7 +19,8 @@ import { SEA_SPRITES } from '../../mods/pokermon/systems/anim.js';
 import { increment_energy, energy_matches } from '../../mods/pokermon/systems/energy.js';
 import { is_type, find_pokemon_type } from '../../mods/pokermon/systems/types.js';
 import { CASTFORM_FORMS, BURMY_CLOAKS } from '../../mods/pokermon/jokers/pokejokers_designs.js';
-import { CASTFORM_SPRITES, BURMY_SPRITES } from '../../mods/pokermon/systems/anim.js';
+import { CASTFORM_SPRITES, BURMY_SPRITES, GEN5_LEGEND_FORMS } from '../../mods/pokermon/systems/anim.js';
+import { MELOETTA_FORMES } from '../../mods/pokermon/jokers/pokejokers_designs.js';
 
 const { ok, done } = T();
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -63,6 +64,11 @@ await sec('static', () => {
     && ['sigilyph', 'yamask', 'cofagrigus'].every((n) => D[n] === 'Psychic') && D.minccino === 'Colorless' && D.cinccino === 'Colorless',
   'Gen 5 batch 2: Sewaddle / Cottonee / Petilil lines and Maractus Grass, Venipede / Sandile lines Dark (Bug/Poison, Ground/Dark: their cards Dark), Basculin and the Tirtouga line Water, Dwebble (Bug/Rock: its card Earth) and Archen lines Earth, Sigilyph / Yamask line Psychic, Minccino line Colorless (the icons on their cards)',
   ['sewaddle', 'venipede', 'sandile', 'basculin', 'dwebble', 'archen', 'sigilyph', 'cofagrigus', 'minccino'].map((n) => D[n]));
+  ok(D.cobalion === 'Metal' && D.terrakion === 'Earth' && D.virizion === 'Grass' && D.keldeo === 'Fighting' && D.tornadus === 'Colorless' && D.thundurus === 'Lightning'
+    && D.landorus === 'Earth' && D.reshiram === 'Fire' && D.zekrom === 'Lightning' && D.kyurem === 'Water' && D.meloetta === 'Psychic' && D.genesect === 'Grass',
+  'Gen 5 Legendaries: Cobalion Metal, Terrakion Earth, Virizion Grass, Keldeo Fighting (Water/Fighting: its card Fighting), Tornadus Colorless, Thundurus Lightning, Landorus Earth, Reshiram Fire, Zekrom Lightning, Kyurem Water (Dragon/Ice: its card Water), Meloetta Psychic, Genesect Grass',
+  ['cobalion', 'terrakion', 'virizion', 'keldeo', 'tornadus', 'thundurus', 'landorus', 'reshiram', 'zekrom', 'kyurem', 'meloetta', 'genesect'].map((n) => D[n]));
+  ok(MELOETTA_FORMES.aria.ptype === 'Psychic' && MELOETTA_FORMES.pirouette.ptype === 'Fighting', 'Meloetta: Aria Psychic, Pirouette Fighting');
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });
@@ -104,6 +110,12 @@ else await sec('art', async () => {
   // Giratina: its Origin Forme card (Gen 4 {10,3}, drawn while Dialga or Palkia is held) shows the Psychic icon too: one type for both
   const origin = typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen04', pos: [10, 3] });
   ok(origin && origin.ptype === 'Psychic' && P_CENTERS.j_poke_giratina.ptype === 'Psychic', 'Giratina: the Origin Forme card shows Psychic, as its Altered card', origin);
+  // The Gen 5 Legendaries' form cells (Gen 5 sheet, GEN5_LEGEND_FORMS): Therian, Black / White Kyurem and Resolute Keldeo show their base type;
+  // Meloetta's Pirouette shows Fighting (its forme's type)
+  const lforms = Object.entries(GEN5_LEGEND_FORMS).flatMap(([k, fs]) => Object.entries(fs).map(([f, c]) => [k + ' ' + f, k === 'j_poke_meloetta' ? MELOETTA_FORMES[f].ptype : P_CENTERS[k].ptype,
+    typer.typeOfEntry({ atlas: 'AtlasJokersBasicGen05', pos: [c.pos.x, c.pos.y] })]));
+  ok(lforms.length === 7 && lforms.every(([, want, r]) => r && r.ptype === want), 'Gen 5 Legendaries: each form cell shows its type (Therian / Kyurem / Keldeo their base type, Pirouette Fighting)',
+    lforms.map(([f, w, r]) => `${f} ${w} / card ${r && r.ptype}`));
 });
 
 /** Kubfu with these trainings, evolved by a winning 1-card hand. */

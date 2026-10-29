@@ -82,6 +82,16 @@
 // Cresselia (Lunar Blessing: playing cards can't be debuffed; X1.5; Psychic). Phione (+6 Mult per Water Joker) and Manaphy (X1.2 per Water
 // Joker; Egg: 1 in 4 at the end of each shop, with a free slot, to create a Phione); Water — upstream 3.9.1 draws them with their souls
 // (Natdex {28,31}, {0,32}, {2,32}, {14,32}, {16,32}, {18,32}).
+// Gen 5, batch 4: the Gen 5 Legendaries (contentRev 55; the owner's "Build as pitched", 2026-10-29), Legendary $20 each: the Swords of
+// Justice, Cobalion (Metal) / Terrakion (Earth) / Virizion (Grass) / Keldeo (Fighting): each scored Spade / Diamond / Club / Heart X1.25,
+// +X0.1 per other sword held; Keldeo's Resolute Form (all three held, its own card) X2 a Heart instead. The Forces of Nature, formes live
+// with the card: Tornadus (Colorless; +1 hand, Therian +3 Mult per hand left), Thundurus (Lightning; scored cards 1 in 4 $1, Therian 1 in
+// 2 and X1.1), both Therian with Landorus; Landorus (Earth; held Stone +40 Chips, Therian scored Stone X1.5) Therian with both. The Tao
+// trio: Reshiram (Fire) / Zekrom (Lightning) X1.25 per Fire / Lightning Joker, +0.25 together (Truth vs Ideals); Kyurem (Water; X1.5;
+// White / Black Kyurem with Reshiram / Zekrom, the leftmost: the partner's boost a second time). Meloetta (Relic Song: Aria, Psychic, X2;
+// Pirouette, Fighting, the first scored card retriggers 3 times; switching after every hand, Aria each round) and Genesect (Grass; X(1.5
+// + 0.5 per Water, Lightning or Fire Joker)) — upstream 3.9.1 draws them all with their souls and form cells (Natdex {14..18,42}, Gen 5
+// sheet {6,3}-{9,6}).
 // The Gen 8 starters (contentRev 49; the starters spec): Scorbunny -> Raboot -> Cinderace (Fire, +1 discard; +3 / +5 Mult per discard left,
 // then Libero X(1 + 0.5 per discard left)) and Sobble -> Drizzile -> Inteleon (Water, +1 hand; +20 / +35 Chips per played card that doesn't
 // score, then Snipe Shot X2 on the highest-ranked scored card) — upstream 3.9.1 draws them (Natdex 4-14, 54).
@@ -1380,6 +1390,143 @@ function manaphy_egg(card, context) {
   card_eval_status_text(egg, 'extra', null, null, null, { message: 'Hatched!', colour: 'BLUE' });
   card.juice_up();
 }
+
+// ---------------------------------------------------------------- Gen 5, batch 4: the Gen 5 Legendaries (contentRev 55; 638-649)
+/** Held, undebuffed (find_card skips debuffed cards; a Blueprint is never one): the formes, the Tao pair and Kyurem's partner read it. */
+const legend_held = (name) => !!(G.jokers && find_card('j_poke_' + name).length > 0);
+/** Exact sums for scoring (X1.4375 + 0.3 stays X1.7375; r3 is for the text): float noise off, nothing else rounded. */
+const r9 = (x) => Math.round(x * 1e9) / 1e9;
+/** The Swords of Justice (Keldeo counts as one) and each one's suit. */
+export const SWORDS = { j_poke_cobalion: 'Spades', j_poke_terrakion: 'Diamonds', j_poke_virizion: 'Clubs', j_poke_keldeo: 'Hearts' };
+/** Swords of Justice: how many OTHER sword species you have (undebuffed) — the Regi Trio's distinct count (regi_others): a twin of the
+ *  same sword (Showman) is never an "other sword", and two Terrakions count once for a Cobalion. 0 to 3. */
+export function sword_others(card) {
+  const own = card.config.center.key, seen = new Set();
+  for (const j of (G.jokers && G.jokers.cards) || []) {
+    const k = j.config.center.key;
+    if (j !== card && !j.debuff && k !== own && SWORDS[k]) seen.add(k);
+  }
+  return seen.size;
+}
+/** Keldeo's Resolute Form: Cobalion, Terrakion AND Virizion all held, undebuffed. */
+export const keldeo_resolute = () => legend_held('cobalion') && legend_held('terrakion') && legend_held('virizion');
+/** A sword's per-card X: its base (`Xmult_multi`; Keldeo's Resolute `Xmult_multi2`, X2) + `sword_mod` (0.1, fixed) per other sword. */
+export function sword_x(card) {
+  const ex = card.ability.extra, base = card.config.center.key === 'j_poke_keldeo' && keldeo_resolute() ? ex.Xmult_multi2 : ex.Xmult_multi;
+  return r9(base + ex.sword_mod * sword_others(card));
+}
+/** Each scored card of the sword's suit (is_suit: a Wild card counts; a debuffed card doesn't score) gives the sword's X. */
+function sacred_sword(card, context) {
+  const suit = SWORDS[card.config.center.key];
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(suit)) return { x_mult: sword_x(card), card };
+  return undefined;
+}
+/** The Forces of Nature's formes: Tornadus and Thundurus are Therian while an undebuffed Landorus is held; Landorus while both Tornadus
+ *  AND Thundurus are. Live (bought, sold or debuffed, it changes at once): the card's art follows it (poke_view_form). */
+export function therian(card) {
+  const k = card.config.center.key;
+  if (k === 'j_poke_landorus') return legend_held('tornadus') && legend_held('thundurus');
+  return legend_held('landorus');
+}
+const forme_name = (card) => (therian(card) ? 'Therian Forme' : 'Incarnate Forme');
+/** Tornadus's Therian Forme: +mult Mult per hand left, read when it scores (hands_left: the hand being scored is already taken, so the
+ *  round's final hand counts 0). */
+const tornadus_left = () => Math.max(0, (G.GAME && G.GAME.current_round && G.GAME.current_round.hands_left) || 0);
+const tornadus_mult = (card) => r9(card.ability.extra.mult * tornadus_left());
+/** Thundurus: each scored card rolls 1 in `dem` (Incarnate 4, Therian `dem2` 2; Pokermon's pseudorandom_probability, so Oops! All 6s raises
+ *  it and Absol fixes it) to earn `storm_money` ($1); in the Therian Forme a card that pays also gives X`Xmult_multi`. Each retrigger
+ *  rolls again; Blueprint rolls its own. */
+function thunder_odds(card) { const ex = card.ability.extra; return get_probability_vars(card, ex.num, therian(card) ? ex.dem2 : ex.dem, 'thundurus'); }
+function wild_charge(card, context) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round)) return undefined;
+  const ex = card.ability.extra, t = therian(card);
+  if (!pseudorandom_probability(card, 'thundurus', ex.num, t ? ex.dem2 : ex.dem, 'thundurus')) return undefined;
+  G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + ex.storm_money;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  return t ? { dollars: ex.storm_money, x_mult: ex.Xmult_multi, card } : { dollars: ex.storm_money, card };
+}
+/** Landorus: Incarnate, each Stone card HELD in hand (undebuffed) gives +chips Chips; Therian, each SCORED Stone card gives X`Xmult_multi`
+ *  instead (has_enhancement: quantum Stone too). */
+function sand_force(card, context) {
+  if (!context.individual || context.end_of_round || !has_enhancement(context.other_card, 'm_stone')) return undefined;
+  const ex = card.ability.extra, t = therian(card);
+  if (!t && context.cardarea === G.hand && !context.other_card.debuff) return { h_chips: ex.chips, card };
+  if (t && context.cardarea === G.play) return { x_mult: ex.Xmult_multi, card };
+  return undefined;
+}
+/** The Tao trio's types: Reshiram's Fire, Zekrom's Lightning. */
+export const TAO = { j_poke_reshiram: { type: 'Fire', partner: 'zekrom' }, j_poke_zekrom: { type: 'Lightning', partner: 'reshiram' } };
+/** A typed joker for "each Fire / Lightning Joker gives": is_type (Arceus counts, a Tera sticker counts and replaces), undebuffed. */
+const typed_joker = (j, type) => !!(j && j.ability && j.ability.set === 'Joker' && !j.debuff && is_type(j, type));
+/** Truth vs Ideals: Reshiram and Zekrom both held (undebuffed): each one's per-joker X is +tao_mod (0.25, fixed). */
+const truth_ideals = (card) => legend_held(TAO[card.config.center.key].partner);
+/** A Tao dragon's per-joker X: `Xmult_multi` (+5% per Energy) + tao_mod with its partner. */
+export const tao_x = (card) => r9(card.ability.extra.Xmult_multi + (truth_ideals(card) ? card.ability.extra.tao_mod : 0));
+/** Jokers of this type (is_type, undebuffed), the card itself included when it is one: the tooltip's count (a shop card shows what it
+ *  would give once bought). */
+const typed_count = (card, type) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && typed_joker(j, type)).length + (is_type(card, type) ? 1 : 0);
+/** Turboblaze / Teravolt: each Fire / Lightning Joker (itself included) gives the dragon's X, in the other_joker pass (Manaphy's shape). */
+function tao_boost(card, context) {
+  const tao = TAO[card.config.center.key];
+  if (!(context.other_joker && typed_joker(context.other_joker, tao.type))) return undefined;
+  const x = tao_x(card);
+  G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
+  return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+}
+/** Kyurem's partner: the LEFTMOST undebuffed Reshiram or Zekrom in the row (both held: whichever sits further left), or none. White
+ *  Kyurem borrows Reshiram's Turboblaze, Black Kyurem Zekrom's Teravolt. */
+export function kyurem_partner() {
+  return ((G.jokers && G.jokers.cards) || []).find((j) => !j.debuff && TAO[j.config.center.key]);
+}
+export const kyurem_form = () => { const p = kyurem_partner(); return !p ? 'base' : p.config.center.key === 'j_poke_reshiram' ? 'white' : 'black'; };
+/** Kyurem's borrowed boost: each joker of the partner's type gives Kyurem the partner's OWN current per-joker X (its Energy and Truth vs
+ *  Ideals included) a second time, on top of the partner's: a separate multiplier, so a Fire Joker with Reshiram and White Kyurem gives
+ *  X1.25 x X1.25. Nothing is consumed; the partner works as usual. */
+function kyurem_borrow(card, context) {
+  const p = context.other_joker && kyurem_partner();
+  if (!p || !typed_joker(context.other_joker, TAO[p.config.center.key].type)) return undefined;
+  const x = tao_x(p);
+  G.E_MANAGER.add_event(() => { context.other_joker.juice_up(0.5, 0.5); });
+  return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+}
+/** Meloetta's formes: the Pokermon type each one's card shows (Aria Psychic; Pirouette Fighting: its 3.9.1 cell's icon). */
+export const MELOETTA_FORMES = { aria: { ptype: 'Psychic', name: 'Aria Forme' }, pirouette: { ptype: 'Fighting', name: 'Pirouette Forme' } };
+/** Meloetta's forme: Pirouette only if it switched to it THIS round (`form_round`); every round starts in Aria (a Meloetta debuffed through
+ *  the end of round, whose reset never ran, still reads Aria in the next one). */
+export const meloetta_form = (card) => { const ex = card.ability.extra; return ex.form === 'pirouette' && ex.form_round === (G.GAME && G.GAME.round) ? 'pirouette' : 'aria'; };
+/** Meloetta takes a forme: its own Pokermon type (ability.extra.ptype) becomes the forme's, Castform's / Burmy's way — unless a Tera sticker
+ *  owns the type. The debuff and Kecleons are re-read. */
+function meloetta_set(card, form) {
+  const ex = card.ability.extra, f = MELOETTA_FORMES[form] || MELOETTA_FORMES.aria;
+  const ptype = type_sticker_applied(card) ? ex.ptype : f.ptype;
+  const changed = ex.form !== form || ex.ptype !== ptype;
+  ex.form = form;
+  ex.form_round = form === 'pirouette' ? G.GAME.round : undefined;
+  ex.ptype = ptype;
+  if (!changed) return;
+  card.set_debuff();
+  sync_kecleons();
+}
+/** Relic Song: after EVERY hand played (the `after` pass, which a debuffed hand gets too; not Blueprint, not a joker retrigger) it switches
+ *  Aria <-> Pirouette. Every round starts in Aria: reset in the main end_of_round pass (queued, so the round's other end-of-round effects
+ *  still see its forme), and a stale Pirouette from an earlier round is put back first thing. */
+function relic_song(card, context) {
+  if (context.blueprint) return;
+  const ex = card.ability.extra;
+  if (ex.form === 'pirouette' && meloetta_form(card) === 'aria') meloetta_set(card, 'aria');
+  if (context.after && !context.retrigger_joker) {
+    const next = meloetta_form(card) === 'aria' ? 'pirouette' : 'aria';
+    meloetta_set(card, next);
+    card_eval_status_text(card, 'extra', null, null, null, { message: MELOETTA_FORMES[next].name + '!', colour: next === 'aria' ? 'PURPLE' : 'RED' });
+  } else if (round_end(context)) {
+    G.E_MANAGER.add_event(() => { meloetta_set(card, 'aria'); });
+  }
+}
+/** Genesect, Techno Blast: the Water, Lightning or Fire Jokers you have — one test per joker (is_type for each of the three, so a joker of
+ *  two of them, a Tera, or Arceus counts ONCE), undebuffed, Genesect itself included when it is one (a Tera sticker). */
+const techno_joker = (j) => !j.debuff && (is_type(j, 'Water') || is_type(j, 'Lightning') || is_type(j, 'Fire'));
+export const techno_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && techno_joker(j)).length + (techno_joker(card) ? 1 : 0);
+const techno_x = (card) => r9(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * techno_count(card));
 
 // ---------------------------------------------------------------- the Gen 7 starters (Rowlet / Litten / Popplio lines)
 /** Rowlet line: the RIGHTMOST scored card (by position, as the Shellos line's East Sea: a debuffed card there gets nothing, the end
@@ -4040,6 +4187,201 @@ defineJokers({
     },
   },
 
+  // ---------------------------------------------------------------- Gen 5, batch 4: the Gen 5 Legendaries, 638-649 (contentRev 55)
+  // The owner's design ("Build as pitched", 2026-10-29). Legendary $20 each (The Soul / the Legendary pool). Types from the card art
+  // (pokermon_art_type.mjs; every form cell checked): Cobalion Metal, Terrakion Earth, Virizion Grass, Tornadus Colorless, Thundurus
+  // Lightning, Reshiram Fire, Zekrom Lightning, Landorus Earth, Kyurem Water, Keldeo Fighting, Meloetta Psychic (its Pirouette cell
+  // Fighting), Genesect Grass; the Therian, Black / White and Resolute cells show their base type. Neither Nacho nor Pokermon+ has
+  // any. Art: upstream 3.9.1's own cells with their floating souls (Cobalion / Terrakion / Virizion Natdex {14..18,42}, the rest the
+  // Gen 5 sheet), the forms drawn live by ui.js ownFace (systems/anim.js GEN5_LEGEND_FORMS) from each center's poke_view_form.
+  // After Hydreigon (635) in Pokédex order (Pokermon has no Larvesta / Volcarona).
+  //
+  // The Swords of Justice, Cobalion 638 / Terrakion 639 / Virizion 640 (and Keldeo 647): each scored card of the sword's suit (Spades /
+  // Diamonds / Clubs / Hearts; is_suit, so Wild cards count) gives X1.25 Mult (`Xmult_multi`, Energy +5%: 1.3125 / 1.375 / 1.4375),
+  // +X0.1 for each OTHER sword species held, undebuffed (sword_others, the Regi count; `sword_mod`, fixed). Blueprint copies it.
+  cobalion: {
+    name: 'cobalion', poke_sprite391: sprite('Natdex', 14, 42, [15, 42]),
+    config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Metal', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'suit', 'spades'], poke_after: 'hydreigon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card))] }; },
+    calculate(self, card, context) { return sacred_sword(card, context); },
+  },
+  terrakion: {
+    name: 'terrakion', poke_sprite391: sprite('Natdex', 16, 42, [17, 42]),
+    config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'suit', 'diamonds'], poke_after: 'cobalion',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card))] }; },
+    calculate(self, card, context) { return sacred_sword(card, context); },
+  },
+  virizion: {
+    name: 'virizion', poke_sprite391: sprite('Natdex', 18, 42, [19, 42]),
+    config: { extra: { Xmult_multi: 1.25, sword_mod: 0.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'suit', 'clubs'], poke_after: 'terrakion',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card))] }; },
+    calculate(self, card, context) { return sacred_sword(card, context); },
+  },
+  // The Forces of Nature, Tornadus 641 / Thundurus 642 / Landorus 645. Formes (therian): Tornadus and Thundurus are in their Therian
+  // Forme while an undebuffed Landorus is held; Landorus while both Tornadus AND Thundurus are; live, the art with it. The forme only
+  // changes the effect (the type stays). Tornadus (Colorless): +1 hand each round (the Squirtle line's pair, fixed); Therian, also +3
+  // Mult per hand left when it scores (`mult`, Energy +40%: 4.2 / 5.4 / 6.6). Thundurus (Lightning): each scored card 1 in 4 to earn
+  // $1; Therian 1 in 2 (`dem2`), and a card that pays also gives X1.1 (`Xmult_multi` +5%: 1.155 / 1.21 / 1.265); the odds and the $1
+  // (`storm_money`) are fixed. Landorus (Earth): each Stone card held in hand +40 Chips (`chips` +30%: 52 / 64 / 76); Therian, each
+  // scored Stone card X1.5 instead (`Xmult_multi` +5%: 1.575 / 1.65 / 1.725).
+  tornadus: {
+    name: 'tornadus', poke_sprite391: sprite('Gen05', 6, 3, [7, 3]),
+    config: { extra: { hands: 1, mult: 3 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Colorless', gen: 5, blueprint_compat: true,
+    attributes: ['hands', 'mult'], poke_after: 'virizion',
+    poke_view_form(self, card) { return therian(card) ? 'therian' : 'incarnate'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [ex.hands, r3(ex.mult), therian(card) ? 'Therian Forme: +' + r3(tornadus_mult(card)) + ' Mult' : 'Incarnate Forme'] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main && therian(card)) { const m = tornadus_mult(card); if (m > 0) return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return undefined;
+    },
+    ...hands,
+  },
+  thundurus: {
+    name: 'thundurus', poke_sprite391: sprite('Gen05', 10, 3, [11, 3]),
+    config: { extra: { num: 1, dem: 4, dem2: 2, storm_money: 1, Xmult_multi: 1.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 5, blueprint_compat: true,
+    attributes: ['money', 'chance', 'xmult'], poke_after: 'tornadus',
+    poke_view_form(self, card) { return therian(card) ? 'therian' : 'incarnate'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      const [n1, d1] = get_probability_vars(card, ex.num, ex.dem, 'thundurus'), [n2, d2] = get_probability_vars(card, ex.num, ex.dem2, 'thundurus');
+      return { vars: [n1, d1, ex.storm_money, n2, d2, r3(ex.Xmult_multi), forme_name(card)] };
+    },
+    calculate(self, card, context) { return wild_charge(card, context); },
+  },
+  // The Tao trio, Reshiram 643 (Fire) / Zekrom 644 (Lightning) / Kyurem 646 (Water). Turboblaze / Teravolt: each Fire / Lightning Joker,
+  // itself included, gives X1.25 Mult (the other_joker pass, Manaphy's shape: is_type, so Arceus and a Tera count; a debuffed joker
+  // doesn't; `Xmult_multi` +5%: 1.3125 / 1.375 / 1.4375). Truth vs Ideals: with both held (undebuffed), each one's X is +0.25 (`tao_mod`,
+  // fixed): X1.5 a joker. Blueprint copies it (a second X per joker, as Baseball Card).
+  reshiram: {
+    name: 'reshiram', poke_sprite391: sprite('Gen05', 2, 4, [3, 4]),
+    config: { extra: { Xmult_multi: 1.25, tao_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fire', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'types', 'joker'], poke_after: 'thundurus',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_multi), typed_count(card, 'Fire'), r3(ex.tao_mod), truth_ideals(card) ? 'active: X' + r3(tao_x(card)) + ' each' : 'needs Zekrom'] };
+    },
+    calculate(self, card, context) { return tao_boost(card, context); },
+  },
+  zekrom: {
+    name: 'zekrom', poke_sprite391: sprite('Gen05', 6, 4, [7, 4]),
+    config: { extra: { Xmult_multi: 1.25, tao_mod: 0.25 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Lightning', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'types', 'joker'], poke_after: 'reshiram',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_multi), typed_count(card, 'Lightning'), r3(ex.tao_mod), truth_ideals(card) ? 'active: X' + r3(tao_x(card)) + ' each' : 'needs Reshiram'] };
+    },
+    calculate(self, card, context) { return tao_boost(card, context); },
+  },
+  landorus: {
+    name: 'landorus', poke_sprite391: sprite('Gen05', 10, 4, [11, 4]),
+    config: { extra: { chips: 40, Xmult_multi: 1.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Earth', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'xmult', 'enhancements'], poke_after: 'zekrom',
+    poke_view_form(self, card) { return therian(card) ? 'therian' : 'incarnate'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.chips), r3(ex.Xmult_multi), forme_name(card)] };
+    },
+    calculate(self, card, context) { return sand_force(card, context); },
+  },
+  // Kyurem 646 (Water): X1.5 Mult (`Xmult` +20%: 1.8 / 2.1 / 2.4). With Reshiram (undebuffed) it is White Kyurem (art), and each Fire Joker
+  // ALSO gives it Reshiram's own current X per joker (its Energy and Truth vs Ideals included) as a second, separate multiplier (X1.25 from
+  // Reshiram, then X1.25 from Kyurem: X1.5625 a Fire Joker); with Zekrom, Black Kyurem, the same with Lightning Jokers. With both, the
+  // LEFTMOST of the two in the row picks it (kyurem_partner). Nothing is consumed. Blueprint copies the X and the borrowed boost.
+  kyurem: {
+    name: 'kyurem', poke_sprite391: sprite('Gen05', 2, 5, [3, 5]),
+    config: { extra: { Xmult: 1.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'types', 'joker'], poke_after: 'landorus',
+    poke_view_form() { return kyurem_form(); },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const p = kyurem_partner(), f = kyurem_form();
+      const state = !p ? 'needs Reshiram or Zekrom' : (f === 'white' ? 'White Kyurem: X' + r3(tao_x(p)) + ' per Fire Joker' : 'Black Kyurem: X' + r3(tao_x(p)) + ' per Lightning Joker');
+      return { vars: [r3(card.ability.extra.Xmult), state] };
+    },
+    calculate(self, card, context) {
+      if (context.joker_main) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return kyurem_borrow(card, context);
+    },
+  },
+  // Keldeo 647 (Fighting), the fourth sword: each scored Heart X1.25 (`Xmult_multi` +5%), +X0.1 per other sword. Resolute Form: with
+  // Cobalion, Terrakion AND Virizion all held (undebuffed), its Resolute card shows and its per-Heart X is X2 (`Xmult_multi2` +5%: 2.1 / 2.2
+  // / 2.3) instead, the trio bonus on top: X2.3 a Heart with all three.
+  keldeo: {
+    name: 'keldeo', poke_sprite391: sprite('Gen05', 0, 6, [1, 6]),
+    config: { extra: { Xmult_multi: 1.25, Xmult_multi2: 2, sword_mod: 0.1 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Fighting', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'suit', 'hearts'], poke_after: 'kyurem',
+    poke_view_form() { return keldeo_resolute() ? 'resolute' : 'ordinary'; },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_multi), r3(ex.sword_mod), sword_others(card), r3(sword_x(card)), r3(ex.Xmult_multi2), keldeo_resolute() ? 'Resolute Form' : 'Ordinary Form'] };
+    },
+    calculate(self, card, context) { return sacred_sword(card, context); },
+  },
+  // Meloetta 648, Relic Song: switches forme after EVERY hand played (relic_song: the `after` pass, a debuffed hand too; not Blueprint);
+  // every round starts in Aria (it resets each round, never carries over). Aria (Psychic): X2 Mult (`Xmult` +20%: 2.4 / 2.8 / 3.2).
+  // Pirouette (Fighting): the first scored card (by position, Cinccino's) retriggers 3 times (fixed). Its type follows the forme
+  // (ability.extra.ptype, Castform's way; a Tera sticker still owns it), so the forme's Energy matches; its type never breaks Monotype
+  // (poke_mono_exempt). Art: the Pirouette cell, live. Save / resume replay the hands, so the forme comes back exactly.
+  meloetta: {
+    name: 'meloetta', poke_sprite391: sprite('Gen05', 4, 6, [5, 6]),
+    config: { extra: { Xmult: 2, retriggers: 3, form: 'aria' } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Psychic', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'retrigger', 'types'], poke_after: 'keldeo',
+    poke_mono_exempt: true,
+    poke_view_form(self, card) { return meloetta_form(card); },
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult), ex.retriggers, MELOETTA_FORMES[meloetta_form(card)].name] };
+    },
+    calculate(self, card, context) {
+      relic_song(card, context);
+      const ex = card.ability.extra, f = meloetta_form(card);
+      if (f === 'aria' && context.joker_main) return { message: a_xmult(r3(ex.Xmult)), colour: 'XMULT', Xmult_mod: ex.Xmult };
+      if (f === 'pirouette' && context.repetition && context.cardarea === G.play && context.scoring_hand && context.scoring_hand[0] === context.other_card) {
+        return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+      }
+      return undefined;
+    },
+  },
+  // Genesect 649 (Grass), Techno Blast: X(1.5 + 0.5 per Water, Lightning or Fire Joker you have) Mult (techno_count: one is_type test per
+  // joker, so Arceus or a two-type joker counts once; undebuffed; Ice already maps to Water). `Xmult` and `Xmult_mod` +20% (1.8 / 2.1 /
+  // 2.4 and 0.6 / 0.7 / 0.8).
+  genesect: {
+    name: 'genesect', poke_sprite391: sprite('Gen05', 8, 6, [9, 6]),
+    config: { extra: { Xmult: 1.5, Xmult_mod: 0.5 } },
+    rarity: 4, cost: 20, stage: 'Legendary', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'types'], poke_after: 'meloetta',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), techno_count(card), r3(techno_x(card))] }; },
+    calculate(self, card, context) {
+      if (!context.joker_main) return undefined;
+      const x = techno_x(card);
+      return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x };
+    },
+  },
+
   // ---------------------------------------------------------------- The Gen 5 starters (contentRev 50): Snivy 495 -> Servine 496 -> Serperior 497
   // (Grass), Tepig 498 -> Pignite 499 -> Emboar 500 (Fire), Oshawott 501 -> Dewott 502 -> Samurott 503 (Water). Pokermon's starter rules:
   // the type's perk at every stage (Grass +1 hand size, Bulbasaur's; Fire +1 discard, Charmander's; Water +1 hand, Squirtle's), Basic
@@ -4149,14 +4491,14 @@ defineJokers({
   // Gen 5-9 starters): Chespin / Fennekin / Froakie lines. Pokermon's starter conventions: a type perk at every stage (Grass +1 hand size,
   // Fire +1 discard, Water +1 hand: fixed, never energized); Basic Uncommon $5 with `starter` (the Starter Pack), Stage 1 Safari $8, Stage 2
   // Safari $10; 5 rounds then 5 (Chikorita / Cyndaquil / Totodile's timers). Types are the cards' (Grass / Fire / Water). Art: upstream
-  // 3.9.1's own cells (Natdex 8-24, 43); nothing to deploy. Neither Nacho nor Pokermon+ has any of them. After Hydreigon (635), before
-  // Bunnelby (659).
+  // 3.9.1's own cells (Natdex 8-24, 43); nothing to deploy. Neither Nacho nor Pokermon+ has any of them. After Genesect (649; Hydreigon
+  // 635 before the Gen 5 Legendaries, contentRev 55), before Bunnelby (659).
   // Chespin 650: +1 hand size; +40 Chips (`chips`, Energy +30%: 52 / 64 / 76). Evolves after 5 rounds.
   chespin: {
     name: 'chespin', poke_sprite391: sprite('Natdex', 8, 43),
     config: { extra: { h_size: 1, chips: 40, rounds: 5 } },
     rarity: 2, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 6, blueprint_compat: true, starter: true,
-    attributes: ['starter', 'hand_size', 'chips', 'round_evo'], poke_after: 'hydreigon',
+    attributes: ['starter', 'hand_size', 'chips', 'round_evo'], poke_after: 'genesect',
     loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.chips), ex.rounds] }; },
     calculate(self, card, context) {
       if (context.joker_main) return { message: a_chips(r3(card.ability.extra.chips)), colour: 'CHIPS', chip_mod: card.ability.extra.chips };
@@ -4949,6 +5291,11 @@ const CONTRARY_HELD = ['{C:attention}Contrary:{} each {C:attention}debuffed{}', 
 const FLAME_CHARGE = (gain) => ['{C:attention}Flame Charge:{} ' + gain + ' for', 'each hand in a row of the same', '{C:attention}poker hand{} this round', '{C:inactive}(This hand included; resets when', '{C:inactive}the poker hand changes)'];
 const RAZOR_SHELL = (n) => ['{C:attention}Razor Shell:{} retrigger the', n];
 const LAKE_GUARDIANS = (x, n) => ['{C:attention}Lake Guardians:{} plus {X:mult,C:white} X#' + x + '# {}', 'to its X Mult for each other', '{C:attention}Uxie{}, {C:attention}Mesprit{} or {C:attention}Azelf{} held', '{C:inactive}(Currently #' + n + '#/2 others)'];
+const SACRED_SWORD = (suit, move = 'Sacred Sword') => ['{C:attention}' + move + ':{} each scored', suit + ' gives {X:mult,C:white} X#1# {} Mult'];
+const SWORDS_OF_JUSTICE = ['{C:attention}Swords of Justice:{} plus', '{X:mult,C:white} X#2# {} for each other {C:attention}Cobalion{},', '{C:attention}Terrakion{}, {C:attention}Virizion{} or {C:attention}Keldeo{}',
+  '{C:inactive}(Currently #3#/3 others: {X:mult,C:white} X#4# {C:inactive})'];
+const TAO_BOOST = (move, type) => ['{C:attention}' + move + ':{} each', type + ' Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included; currently {C:attention}#2#{C:inactive})'];
+const TRUTH_IDEALS = (p) => ['{C:attention}Truth vs Ideals:{} with', '{C:attention}' + p + '{}, {X:mult,C:white} X#3# {} more each', '{C:inactive}(#4#)'];
 const LIBERO_MULT = ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult for each', 'remaining {C:attention}discard{}', '{C:inactive}(Currently {C:mult}+#3#{C:inactive} Mult)'];
 const UNSCORED_CHIPS = ['{C:chips}+#1#{} hand', 'Each played card that', 'doesn\'t score gives', '{C:chips}+#2#{} Chips'];
 const TORCH_SONG = (gain) => ['{C:attention}Torch Song:{} permanently', 'gains ' + gain, 'for each hand played'];
@@ -5306,6 +5653,40 @@ export const DESIGN_LOC = {
       ['{C:attention}Sea Guardian:{} each', '{X:poke_water,C:white}Water{} Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#4#{C:inactive}: {X:mult,C:white} X#5# {C:inactive} Mult)'],
       ['{C:attention}Egg:{} at the end of the shop,', 'if you have a free Joker slot,', '{C:green}#2# in #3#{} chance to', 'create a {C:attention}Phione{}'],
     ] },
+    j_poke_cobalion: { name: 'Cobalion', text: [SACRED_SWORD('{C:spades}Spade{}'), SWORDS_OF_JUSTICE] },
+    j_poke_terrakion: { name: 'Terrakion', text: [SACRED_SWORD('{C:diamonds}Diamond{}'), SWORDS_OF_JUSTICE] },
+    j_poke_virizion: { name: 'Virizion', text: [SACRED_SWORD('{C:clubs}Club{}'), SWORDS_OF_JUSTICE] },
+    j_poke_tornadus: { name: 'Tornadus', text: [
+      ['{C:chips}+#1#{} hand each round'],
+      ['{C:attention}Therian Forme:{} with {C:attention}Landorus{},', 'also {C:mult}+#2#{} Mult for each', 'hand left when it scores', '{C:inactive}(#3#)'],
+    ] },
+    j_poke_thundurus: { name: 'Thundurus', text: [
+      ['{C:attention}Incarnate Forme:{} each scored', 'card has a {C:green}#1# in #2#{} chance', 'to earn {C:money}$#3#{}'],
+      ['{C:attention}Therian Forme:{} with {C:attention}Landorus{},', '{C:green}#4# in #5#{} instead, and each', 'card that pays also gives', '{X:mult,C:white} X#6# {} Mult', '{C:inactive}(Currently #7#)'],
+    ] },
+    j_poke_reshiram: { name: 'Reshiram', text: [TAO_BOOST('Turboblaze', '{X:poke_fire,C:white}Fire{}'), TRUTH_IDEALS('Zekrom')] },
+    j_poke_zekrom: { name: 'Zekrom', text: [TAO_BOOST('Teravolt', '{X:poke_lightning,C:black}Lightning{}'), TRUTH_IDEALS('Reshiram')] },
+    j_poke_landorus: { name: 'Landorus', text: [
+      ['{C:attention}Incarnate Forme:{} each', '{C:attention}Stone{} card held in hand', 'gives {C:chips}+#1#{} Chips'],
+      ['{C:attention}Therian Forme:{} with {C:attention}Tornadus{}', 'and {C:attention}Thundurus{}, each scored', '{C:attention}Stone{} card gives {X:mult,C:white} X#2# {} Mult', 'instead', '{C:inactive}(Currently #3#)'],
+    ] },
+    j_poke_kyurem: { name: 'Kyurem', text: [
+      ['{X:mult,C:white} X#1# {} Mult'],
+      ['{C:attention}White Kyurem:{} with {C:attention}Reshiram{},', 'each {X:poke_fire,C:white}Fire{} Joker also gives', 'Reshiram\'s X Mult again', '{C:attention}Black Kyurem:{} with {C:attention}Zekrom{},',
+        'the same for {X:poke_lightning,C:black}Lightning{} Jokers', '{C:inactive}(Both held: the leftmost one)', '{C:inactive}(#2#)'],
+    ] },
+    j_poke_keldeo: { name: 'Keldeo', text: [
+      SACRED_SWORD('{C:hearts}Heart{}', 'Secret Sword'),
+      SWORDS_OF_JUSTICE,
+      ['{C:attention}Resolute Form:{} with {C:attention}Cobalion{},', '{C:attention}Terrakion{} and {C:attention}Virizion{}, each', 'scored {C:hearts}Heart{} gives {X:mult,C:white} X#5# {}', 'instead, plus the bonus', '{C:inactive}(#6#)'],
+    ] },
+    j_poke_meloetta: { name: 'Meloetta', text: [
+      ['{C:attention}Relic Song:{} switches Forme', 'after every hand played', '{C:inactive}(Aria at the start of each round)'],
+      ['{C:attention}Aria{} {X:poke_psychic,C:white}Psychic{}: {X:mult,C:white} X#1# {} Mult', '{C:attention}Pirouette{} {X:poke_fighting,C:white}Fighting{}: retrigger', 'the first scored card {C:attention}#2#{} times', '{C:inactive}(Currently {C:attention}#3#{C:inactive})',
+        '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
+    ] },
+    j_poke_genesect: { name: 'Genesect', text: ['{C:attention}Techno Blast:{} {X:mult,C:white} X#1# {} Mult, plus', '{X:mult,C:white} X#2# {} for each {X:poke_water,C:white}Water{},', '{X:poke_lightning,C:black}Lightning{} or {X:poke_fire,C:white}Fire{} Joker',
+      '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)'] },
     j_poke_snivy: { name: 'Snivy', text: ['{C:attention}+#1#{} hand size', ...CONTRARY_HELD, EVOLVES_ROUNDS(3)] },
     j_poke_servine: { name: 'Servine', text: ['{C:attention}+#1#{} hand size', ...CONTRARY_HELD, EVOLVES_ROUNDS(3)] },
     j_poke_serperior: { name: 'Serperior', text: [

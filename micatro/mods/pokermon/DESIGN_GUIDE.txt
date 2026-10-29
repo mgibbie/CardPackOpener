@@ -122,7 +122,7 @@ Notable gaps:
     lines are the owner's (Sprigatito, Fuecoco, Quaxly); Gen 6 (Chespin, Fennekin, Froakie) too (contentRev 52;
     "a STARTER LINE, Gen 6 additions", 2.1).
   - Legendaries and mythicals: most of Gens 4-9 (the Regis, the Lati twins, the weather trio, the
-    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione are now the owner's designs): Xerneas/Yveltal, the Tapus, the
+    creation trio, Regigigas, Arceus, the Lake trio, Cresselia, Manaphy and Phione, and all 12 Gen 5 Legendaries are now the owner's designs): Xerneas/Yveltal, the Tapus, the
     Cosmog line, the Ruinous four, Koraidon and Miraidon.
   - Fossils: the Tirtouga, Archen, Tyrunt and Amaura lines, and the four Galar fossils, are all
     missing. They are natural fits for the existing "Ancient" mechanic (2.5).
@@ -553,6 +553,48 @@ House pattern: COUNTS AS EVERY TYPE (the owner's Arceus, center.poke_multitype; 
   - Its payoff counts DIFFERENT types among your Jokers (multitype_count): each other undebuffed joker gives its shown type (get_type);
     a joker that is every type (another Arceus, a Stellar Tera) adds ONE type of its own, never twelve; itself counts as one; at most 12.
     X(1 + 0.25 per type), `Xmult_mod` +20% (0.3 / 0.35 / 0.4): X2 with four types, X4 at all twelve.
+House pattern: a SUITED QUARTET with a full-set form (the Gen 5 Swords of Justice, Cobalion / Terrakion / Virizion / Keldeo;
+jokers/pokejokers_designs.js SWORDS / sword_others / sword_x):
+  - One suit each (Spades / Diamonds / Clubs / Hearts: is_suit, so Wild cards count), the same per-card X (X1.25, `Xmult_multi` +5%), so the
+    four cover every suit without stacking on the same card. The shared rider is the Regi count (distinct OTHER species, undebuffed; a twin
+    is never "another sword") ADDED to the per-card X (`sword_mod` +X0.1 each, fixed, outside energy_values): X1.25 / 1.35 / 1.45 / 1.55.
+  - A FULL-SET FORM on the fourth member: Keldeo's Resolute Form needs the other three ALL held (find_card each: undebuffed), and then its
+    base X is a second field (`Xmult_multi2` X2, +5% too: 2.1 / 2.2 / 2.3) with the rider still on top (X2.3). Store the form's base in its
+    own energy field, never as a multiplier on the first, so each Energy raises both forms by its own base's share. Art: the form's 3.9.1 cell
+    as a live view form (poke_view_form), Giratina's way.
+House pattern: PARTNER FORMES, a formes trio where each one's partner sets its form (the Gen 5 Forces of Nature; therian):
+  - The form rule is ASYMMETRIC: Tornadus and Thundurus are Therian while an undebuffed Landorus is held; Landorus only while BOTH are. Read
+    live (find_card), never stored, so selling, buying or debuffing a partner changes the form and the art (poke_view_form) at once.
+  - The Therian form REPLACES or ADDS, and the card must say which: Tornadus keeps its +1 hand and ADDS +3 Mult per hand left; Thundurus's
+    odds go from 1 in 4 to 1 in 2 (a second fixed field, `dem2`, read through get_probability_vars so Oops! / Absol apply) and a paying card
+    adds X1.1; Landorus's held-Stone +40 Chips is REPLACED by a scored-Stone X1.5. Keep both forms' numbers in energy fields on the one card
+    (chips and Xmult_multi), so Energy taken in either form is kept in the other. The type never changes (every form cell shows the base type).
+  - "Per hand left, counted when it scores" is current_round.hands_left during joker_main: the hand being scored is already taken (run.js
+    ease_hands_played(-1) before scoring), so the round's final hand counts 0 (Chesnaught's threshold, 2.1).
+House pattern: a TYPE BOOST PAIR and a BORROWER (the Gen 5 Tao trio, Reshiram / Zekrom / Kyurem; tao_x / kyurem_partner / kyurem_borrow):
+  - "Each Fire Joker, itself included, gives X1.25" is Manaphy's other_joker pass (is_type and !debuff: Arceus counts, a Tera counts and
+    replaces the type). The two rivals each boost their own type; holding both (find_card) adds a FIXED +0.25 to each one's per-joker X
+    (`tao_mod`, outside energy_values, Dojo Rivals' fixed bonus).
+  - The BORROWER (Kyurem) copies a partner's LIVE number rather than owning one: in its own other_joker pass each joker of the partner's type
+    gives Kyurem the partner's current per-joker X (its Energy and its +0.25 included), a SEPARATE multiplier on top of the partner's (X1.25
+    then X1.25 again: X1.5625 a Fire Joker). Nothing is consumed (no fusion, no slot). The borrower's own Energy raises only its own X1.5.
+  - Two possible partners: the LEFTMOST undebuffed one in the row picks it (the row order is the player's decision), shown in the art
+    (White / Black Kyurem, live) and the tooltip ("White Kyurem: X1.25 per Fire Joker").
+  - Score with exact sums: a per-card / per-joker X built as base + bonus is computed unrounded (r9 in the code: float noise only) and rounded
+    to 3 decimals only for the text. Rounding the scored value (r3) turns an energized X1.4375 into X1.438.
+House pattern: an ALTERNATING FORME that switches itself (the Gen 5 Meloetta, Relic Song; relic_song / meloetta_set):
+  - The switch is the joker's own, after EVERY hand played: the `after` pass (a debuffed hand gets one too; not Blueprint, not a joker
+    retrigger), Aria <-> Pirouette. Each form is a different PAYOFF (Aria X2, `Xmult` +20%; Pirouette the first scored card retriggers 3
+    times, fixed), so the player plans hand pairs: a big hand on Aria, a single strong card on Pirouette.
+  - Say whether it carries over: Meloetta RESETS to Aria every round (round_end, queued like Castform's Normal), and a Pirouette left from an
+    earlier round (a debuffed joker skips the reset) is read as Aria by a per-joker `form_round` check, so the round's first hand is always
+    Aria. In the shop it is Aria.
+  - Type follows the form (ability.extra.ptype; a Tera sticker still owns it, set_cloak's guard), with Castform's Monotype exemption
+    (poke_mono_exempt: the type changes every hand), and the forme's Energy matches (Psychic on Aria, Fighting on Pirouette). Save / resume
+    rebuild the form exactly (the run replays its hands).
+House pattern: a THREE-TYPE TEAM count (the Gen 5 Genesect, Techno Blast; techno_count): Barboach's two-type count with three types, one
+is_type test per joker (Water || Lightning || Fire), so a two-type joker, a Tera or Arceus counts ONCE; X(1.5 + 0.5 per joker), both numbers
+energy fields (`Xmult`, `Xmult_mod` +20%).
 
 House pattern: SCORING A DEBUFFED CARD, and debuffs as a resource (the owner's Snivy line, Contrary; jokers/pokejokers_designs.js
 contrary_held / contrary_lifts):
@@ -898,7 +940,8 @@ Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_lim
 slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian),
 steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals),
 chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancient_money (Archen's $3), link_cap (Cinccino's max 5), levels
-(Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult.
+(Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult; sword_mod
+(the Swords of Justice's +X0.1), tao_mod (Truth vs Ideals' +0.25), storm_money / dem2 (Thundurus's $1 and Therian odds).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
