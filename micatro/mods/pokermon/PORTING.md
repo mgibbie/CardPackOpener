@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52`** since the Gen 6 starters ("The Gen 6 starters" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), **`3.9.1+r54`** since Gen 5 batch 2 ("Gen 5, batch 2" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -3031,6 +3031,69 @@ money and retriggers are fixed; a stage whose own number is fixed carries its ev
   `micatro_mod_version_pin`, `micatro_deckeditor_pages` (972 jokers); the order checks of `pokermon_starters_gen5_test` (Patrat
   after Samurott) and `pokermon_391_new_15_test` (Roggenrola after Zebstrika); `designwiki_pokermon_jokers_test` spot-checks the Sewaddle line
   (Lillipup / Herdier / Stoutland have jokers now).
+
+### Gen 5, batch 2 (2026-10-28, branch `feat/pokermon-gen5-batch2`)
+Pinned **`3.9.1+r54`** (`contentRev: 54`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes": 26 jokers, #540-573, in
+`jokers/pokejokers_designs.js` (`tailor` / `leaf_blade` / `poison_point` / `prank_draw` / `flower_money` / `stripe_chips` / `blind_moxie` /
+`hazard_held_mult` / `stone_shell` / `sigil_pair` / `grudge_sell` / `mummy_sell` / `ancient_nines` / `ancient_tens` / `tidy_up` / `skill_link`;
+180 defs now). Pokédex order: Sewaddle ... Krookodile (540-553) after Sawk (539), before Darumaka (554); Maractus, Dwebble, Crustle (556-558)
+after Darmanitan, before Scraggy; Sigilyph ... Archeops (561-567) after Scrafty, before Trubbish; Minccino, Cinccino (572-573) after Zoroark,
+before Gothita. Neither Nacho nor Pokermon+ has any of them. Prices by the DESIGN_GUIDE slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8,
+single-stage R $7: the fossils are Common $5 by that slot, where Pokermon's own fossils are Uncommon $5). Evolution by rounds (4 for an early
+evolver: Sewaddle, Venipede; 5 otherwise); the fossils by the Ancient convention (their 3+ tier fired 5 times). Types = the cards'
+(`pokermon_art_types_test`: Venipede and Sandile lines Dark, Dwebble line Earth). Art: upstream 3.9.1 cells (Natdex {28,35}, {0..24,36},
+{0..22,37}, {2,38} / {4,38}; Basculin Gen 5 {4,0} Red / {6,0} Blue); nothing to deploy. A run.js seam: **`sell_instead`** (Mummy).
+- **Sewaddle** (U $6, 4 rounds) / **Swadloon** (S $8, 5) / **Leavanny** (S $10), the tailor: when a Blind is selected, **1 random unenhanced
+  card of the full deck** (seeded) becomes a **Bonus** card / a **Bonus or Mult** card / a **Bonus, Mult or Lucky** card (the cloth a second
+  seeded pick; Cherubi's rule: none unenhanced, nothing, never an overwrite; Blueprint copies it). Leavanny: **each scored enhanced card +3
+  Mult** (Stone and Hazard count). Energy `mult` 3 -> 4.2 / 5.4 / 6.6, carried by Sewaddle / Swadloon ("Energy carries to Leavanny").
+- **Venipede** (U $6, 4) / **Whirlipede** (S $8, 5) / **Scolipede** (S $10), Poison Point: **each card you discard** (player discards only)
+  permanently **-2 / -3 / -3 Chips** (`perma_bonus`) and **+3 / +5 / +5 Mult** (`perma_mult`); Scolipede: an **unenhanced** one also becomes a
+  **Mult card**. The floor: perma_bonus never goes below minus the card's own Chips without it (rank + enhancement bonus), so a card's Chips
+  stop at **0** (a 2 at -2, a Stone card at -50, a Hazard card loses nothing) and the Mult keeps growing. Blueprint copies it (Hiker's). Energy
+  `mult_mod` 3 -> 3.6 / 4.2 / 4.8, 5 -> 6 / 7 / 8; `chip_loss` fixed.
+- **Cottonee** (C $5, 5): **+1 hand size**; Prankster: **the round's first hand drawn draws 1 extra card**. The mechanism: +1 temporary hand size
+  from the Blind's selection (the hand is empty then) until the first deal (`first_hand_drawn`), so that deal is one card over the hand size
+  and later refills reach the normal size. **Whimsicott** (S $8): **+2 hand size**, fixed (never energized: the hand-size pitfall). Both
+  Energy-inert.
+- **Petilil** (C $5, 5): **each scored Flower card earns $1**; **Lilligant** (S $8): **$2**, and **Flower cards need only 3+ suits** (Cherrim's
+  `poke_flower_rule`: the fewest suits asked wins, with Roserade / Cherrim it stays 3). Money fixed: Energy-inert.
+- **Basculin** (R $7): its **stripe**, Red or Blue, **rolled once when created** (seeded 'basculin_stripe'; `extra.form`, so copies, saves and
+  resumes keep it: Shellos's sea). **Red: scored Hearts and Diamonds +20 Chips each; Blue: Clubs and Spades** (a Wild card once). Upstream
+  draws both (and a White-Striped one, unused) on the Gen 5 sheet: Red {4,0} is its own card, Blue {6,0} drawn by `ui.js` ownFace
+  (`BASCULIN_SPRITES`, Shiny twins). Energy `chips` 20 -> 26 / 32 / 38.
+- **Sandile** (U $6, 5) / **Krokorok** (S $8, 5) / **Krookodile** (S $10), Moxie: **when you beat a Blind**, permanently **+2 / +4 Mult**
+  (`moxie_mult`), Krookodile **+X0.15** (`moxie_Xmult`) and it **still gives the banked Mult**. Gain first, then the countdown; never on a game
+  over; not Blueprint (it copies the Mult / X); the bank is carried through both evolutions (`poke_custom_values_to_keep`). Energy `mult_mod`
+  2 -> 2.4 / 2.8 / 3.2, 4 -> 4.8 / 5.6 / 6.4; `Xmult_mod` 0.15 -> 0.18 / 0.21 / 0.24 (never retroactive).
+- **Maractus** (R $7): **each Hazard card held in hand +8 Mult** (`m_poke_hazard`, h_mult; a debuffed one nothing; Mime repeats it). Energy
+  `mult` 8 -> 11.2 / 14.4 / 17.6.
+- **Dwebble** (C $5, 5) / **Crustle** (S $8): **+5 / +10 Chips for each Stone card in your full deck**. Energy `chips` 5 -> 6.5 / 8 / 9.5,
+  10 -> 13 / 16 / 19.
+- **Sigilyph** (R $7): **+2 Foresight**; **using a Planet card for Pair (Mercury)** levels Pair **1 more time** (`using_consumeable`, any
+  Planet whose `hand_type` is Pair, after its own level). Not Blueprint; Energy-inert.
+- **Yamask** (C $5, 5) / **Cofagrigus** (S $8): **X0.1 / X0.2 for each other Joker you sell** (`grudge_Xmult`, banked; carried). Cofagrigus,
+  **Mummy**: the **first Joker you sell each round** (the Blind and the shop after it; one Mummy for the whole row) **is not sold**: it stays,
+  becomes **Negative** (its own +1 slot), and **no money** is paid. The choices: it **still counts as a sale for the X** (Yamask's and
+  Cofagrigus's), but for no other joker (no `selling_card`: nothing was sold); **a Negative Joker sells as usual and uses the round's Mummy
+  up**; never Cofagrigus itself, never a consumable; a debuffed Cofagrigus catches nothing; **Blueprint can't copy it** (the `sell_instead`
+  hook finds the real one). Energy `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16, 0.2 -> 0.24 / 0.28 / 0.32.
+- **Tirtouga** (C $5) / **Carracosta** (S $8), Ancient 9s (Kabuto's tiers): **1+ +30 Chips; 2+ each scored 9 permanently +5 Chips; 3+ +50
+  Chips**; Carracosta the same numbers (the spec's "the same"; Kabutops raises its own) and **4+ retriggers every scored 9**. Evolves after
+  its **3+ tier fires 5 times** (`third_times`; never counted from a Blueprint). Energy `chips1` / `chips2` / `chips3` +30% (39 / 48 / 57,
+  6.5 / 8 / 9.5, 65 / 80 / 95).
+- **Archen** (C $5) / **Archeops** (S $8), Ancient 10s: **1+ +4 Mult; 2+ X1.25; 3+ earn $3** (once a hand); Archeops **4+ X2** too.
+  **Defeatist** (Archeops): on the round's **final hand** all of its numbers are **halved**: Mult / 2, **an X keeps half its bonus** (X2 ->
+  X1.5, X1.25 -> X1.125), **money rounds down** ($3 -> $1). Evolves after its 3+ tier fires 5 times. Energy `mult` 4 -> 5.6 / 7.2 / 8.8,
+  `Xmult` 1.25 -> 1.5 / 1.75 / 2, `Xmult2` 2 -> 2.4 / 2.8 / 3.2; `ancient_money` fixed.
+- **Minccino** (C $5, 5), Tidy Up: **each discard draws 1 extra card** — the mechanism: **+1 hand size until your next hand is played** (per
+  discard, given at `pre_discard`, taken back at `press_play`). **Cinccino** (S $8), Skill Link: **the first scored card retriggers once per
+  discard used this round, capped at 5**. Both Energy-inert.
+- **Wiki**: regenerated (266 missing); the wiki sprites of the 26 are gone from `designwiki/sprites/pokermon_jokers/` (sprites redeployed).
+- **Tests**: `micatro/tests/mods/pokermon_gen5_batch2_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 180 defs, the order chains), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (998 jokers);
+  `pokermon_gen5_batch1_test` (Sewaddle after Sawk); `designwiki_pokermon_jokers_test` spot-checks the Pikipek line and Tyrunt / Phantump /
+  Cutiefly (the Sewaddle line, Dwebble, Venipede and Sandile have jokers now).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

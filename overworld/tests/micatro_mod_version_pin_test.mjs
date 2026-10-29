@@ -4,9 +4,9 @@
 // mod upgrade renamed / removed stay loadable (micatro/js/mods/aliases.js).
 //   0. server: micatro-replay-put keeps the meta's modVersions / engineRev / pinAssumed (allow-listed,
 //      size-capped, malformed entries dropped) and refuses a recipe whose pins are malformed
-//   1. recorded: a new Pokermon run's save carries {pokermon: '3.9.1+r53'} + engineRev; its finished replay
+//   1. recorded: a new Pokermon run's save carries {pokermon: '3.9.1+r54'} + engineRev; its finished replay
 //      does too — locally (micatro_replays_v1) and uploaded (micatro-replay-put, the code + the meta)
-//   2. resume after a mod upgrade (recorded on Pokermon 3.2.1, now 3.9.1 rev 53): the prompt names the
+//   2. resume after a mod upgrade (recorded on Pokermon 3.2.1, now 3.9.1 rev 54): the prompt names the
 //      mod and both versions; "Continue anyway" resumes re-pinned (old pins kept, a backup kept, no second
 //      prompt); "Abandon run" (pressed twice) clears it with a backup; Back keeps the save untouched
 //   3. a legacy save (no pins) resumes as today, without a prompt, and records the assumption
@@ -66,7 +66,7 @@ const poke = playRun({ seed: 'PINPOKE', back: 'b_red', stake: 1, mods: ['pokermo
 const van = playRun({ seed: 'PINVAN', back: 'b_blue', stake: 1 }, { seed: 2, maxSteps: 260, weak: true });
 if (!poke.session.over || !van.session.over) throw new Error('the fixture runs must end');
 const OLD = { pokermon: '3.2.1' };                    // recorded on Pokermon 3.2.1 before contentRev 1 (the 2026-10-18/19 house rules)
-const CUR = '3.9.1+r53';                              // Pokermon 3.9.1, the owner's Gen 5 batch 1 (r52 the owner's Gen 6 starters (r51 the Gen 9 starters, r50 the Gen 5 starters, r49 the Gen 8 starters, the Scorbunny and Sobble lines, r48 the Gen 7 starters, r47 the owner's Regigigas trio wake (r46 the Lake trio, Cresselia, Manaphy and Phione, r45 the creation trio, Regigigas and Arceus, r44 the last Gen 4 regulars, r43 the Gible line, r42 the Stunky line, r41 the Burmy three-pile cloak ruling, r40 the Shellos line, r39 the Cherubi line, r38 the Combee line, r37 the Burmy line, r36 the Drifloon line, r35 the Glameow line, r34 the Chatot + Pachirisu, r33 the Gen 3 Legendaries, r32 the Starly line, r31 the Regi trio, r30 the types from their card art, r29 the Lunatone + Solrock, r28 the Barboach line, r27 the Castform, r26 the Spoink line, r25 the Trapinch line, r24 the Gulpin line, r23 the Sprigatito rework, r22 the Type Sleeves, r21 the Whismur line, r20 the Sprigatito line, r19 the 25 new jokers, r18 the Hazard follow-ups, r17 the leftovers batch, r16 the seals fix)
+const CUR = '3.9.1+r54';                              // Pokermon 3.9.1, the owner's Gen 5 batch 2 (r53 the owner's Gen 5 batch 1, r52 the owner's Gen 6 starters (r51 the Gen 9 starters, r50 the Gen 5 starters, r49 the Gen 8 starters, the Scorbunny and Sobble lines, r48 the Gen 7 starters, r47 the owner's Regigigas trio wake (r46 the Lake trio, Cresselia, Manaphy and Phione, r45 the creation trio, Regigigas and Arceus, r44 the last Gen 4 regulars, r43 the Gible line, r42 the Stunky line, r41 the Burmy three-pile cloak ruling, r40 the Shellos line, r39 the Cherubi line, r38 the Combee line, r37 the Burmy line, r36 the Drifloon line, r35 the Glameow line, r34 the Chatot + Pachirisu, r33 the Gen 3 Legendaries, r32 the Starly line, r31 the Regi trio, r30 the types from their card art, r29 the Lunatone + Solrock, r28 the Barboach line, r27 the Castform, r26 the Spoink line, r25 the Trapinch line, r24 the Gulpin line, r23 the Sprigatito rework, r22 the Type Sleeves, r21 the Whismur line, r20 the Sprigatito line, r19 the 25 new jokers, r18 the Hazard follow-ups, r17 the leftovers batch, r16 the seals fix)
 const part = (run, n) => ({ ...strip(run.recipe), actions: run.recipe.actions.slice(0, n) });
 const savedOld = { ...part(poke, 5), modVersions: OLD, engineRev: 1 };            // a save on the old Pokermon rules
 const savedLegacy = part(van, 5);                                                 // a save from before pins
@@ -206,7 +206,7 @@ try {
 		await waitFor(() => page.evaluate(() => !!localStorage.getItem('micatro_run_v1')), 20000);
 		await idle(page);
 		const sv = await LS(page, 'micatro_run_v1');
-		A(sv && sv.modVersions && sv.modVersions.pokermon === CUR && sv.engineRev === 1, 'a new Pokermon run\'s save records {pokermon: "3.9.1+r53"} + the engine rev', JSON.stringify(sv && { mv: sv.modVersions, e: sv.engineRev }));
+		A(sv && sv.modVersions && sv.modVersions.pokermon === CUR && sv.engineRev === 1, 'a new Pokermon run\'s save records {pokermon: "3.9.1+r54"} + the engine rev', JSON.stringify(sv && { mv: sv.modVersions, e: sv.engineRev }));
 		// play it to a game over: its replay is kept locally + uploaded
 		await page.evaluate(() => window.__micatro.act({ type: 'select_blind' }));
 		await idle(page);
@@ -238,7 +238,7 @@ try {
 		const shown = await promptShown(page);
 		A(shown, 'resuming a run recorded on older Pokermon rules shows a prompt (not a silent resume)');
 		const txt = shown ? await page.evaluate(() => document.querySelector('.resume-modal').textContent) : '';
-		A(/Pokermon/.test(txt) && /3\.2\.1\s*→\s*3\.9\.1 \(rev 53\)/.test(txt) && /may play differently/.test(txt), 'the prompt names the mod and both versions, and says the run may play differently', txt.slice(0, 300));
+		A(/Pokermon/.test(txt) && /3\.2\.1\s*→\s*3\.9\.1 \(rev 54\)/.test(txt) && /may play differently/.test(txt), 'the prompt names the mod and both versions, and says the run may play differently', txt.slice(0, 300));
 		A(shown && await page.evaluate(() => !!document.querySelector('.resume-modal .b-resume-continue')), 'it offers "Continue anyway" and "Abandon run"');
 		A(!(await page.evaluate(() => window.__micatro.session)), 'nothing resumes before the player chooses');
 		if (shown) await shot(page, 'resume_prompt.png');
@@ -301,7 +301,7 @@ try {
 		await go('/micatro/?replay=aaaa0001');
 		await waitFor(() => page.evaluate(() => !!(window.__micatro.replay && window.__micatro.replay.ready)), 30000);
 		const bn = await page.evaluate(() => { const e = document.querySelector('.banner .mod-pin-warn'); return e ? e.textContent : ''; });
-		A(/Recorded with Pokermon 3\.2\.1; current 3\.9\.1 \(rev 53\)\. Playback may differ\./.test(bn), 'a replay recorded on other versions shows the warning banner up front', bn);
+		A(/Recorded with Pokermon 3\.2\.1; current 3\.9\.1 \(rev 54\)\. Playback may differ\./.test(bn), 'a replay recorded on other versions shows the warning banner up front', bn);
 		if (bn) await shot(page, 'replay_banner.png');
 		A(await waitFor(async () => { const r = await R(); return r && r.ended; }, 120000), 'it still plays (to the end)');
 		const r1 = await R();
@@ -317,7 +317,7 @@ try {
 		await waitFor(() => page.evaluate(() => !!(window.__micatro.replay && window.__micatro.replay.ready)), 30000);
 		A(await waitFor(async () => { const r = await R(); return r && r.ended; }, 60000), 'a desynced replay ends (it does not hang)');
 		const r3 = await R();
-		A(r3 && r3.index === 5 && !r3.playing && /Playback stopped at move 6 of \d+/.test(r3.notice) && /Pokermon 3\.2\.1 → 3\.9\.1 \(rev 53\)/.test(r3.notice), 'it stops at the rejected move with a message naming the version change', JSON.stringify(r3 && { i: r3.index, n: r3.notice }));
+		A(r3 && r3.index === 5 && !r3.playing && /Playback stopped at move 6 of \d+/.test(r3.notice) && /Pokermon 3\.2\.1 → 3\.9\.1 \(rev 54\)/.test(r3.notice), 'it stops at the rejected move with a message naming the version change', JSON.stringify(r3 && { i: r3.index, n: r3.notice }));
 		await tryClick(page, '.rb-play'); await sleep(600);
 		const r4 = await R();
 		A(r4 && r4.index === 5 && !r4.playing, 'pressing play again stays stopped (no loop, no hang)', JSON.stringify(r4 && { i: r4.index, p: r4.playing }));

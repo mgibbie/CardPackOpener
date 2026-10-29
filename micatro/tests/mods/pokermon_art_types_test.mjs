@@ -57,6 +57,12 @@ await sec('static', () => {
     && ['timburr', 'gurdurr', 'conkeldurr', 'throh', 'sawk'].every((n) => D[n] === 'Fighting') && ['tympole', 'palpitoad', 'seismitoad'].every((n) => D[n] === 'Water'),
   'Gen 5 batch 1: Patrat / Lillipup / Pidove lines Colorless, Purrloin line Dark, Blitzle line Lightning, Woobat line Psychic, Timburr line / Throh / Sawk Fighting, Tympole line Water (the icons on their cards)',
   ['patrat', 'stoutland', 'unfezant', 'purrloin', 'blitzle', 'woobat', 'conkeldurr', 'seismitoad', 'throh', 'sawk'].map((n) => D[n]));
+  ok(['sewaddle', 'swadloon', 'leavanny', 'cottonee', 'whimsicott', 'petilil', 'lilligant', 'maractus'].every((n) => D[n] === 'Grass')
+    && ['venipede', 'whirlipede', 'scolipede', 'sandile', 'krokorok', 'krookodile'].every((n) => D[n] === 'Dark')
+    && ['basculin', 'tirtouga', 'carracosta'].every((n) => D[n] === 'Water') && ['dwebble', 'crustle', 'archen', 'archeops'].every((n) => D[n] === 'Earth')
+    && ['sigilyph', 'yamask', 'cofagrigus'].every((n) => D[n] === 'Psychic') && D.minccino === 'Colorless' && D.cinccino === 'Colorless',
+  'Gen 5 batch 2: Sewaddle / Cottonee / Petilil lines and Maractus Grass, Venipede / Sandile lines Dark (Bug/Poison, Ground/Dark: their cards Dark), Basculin and the Tirtouga line Water, Dwebble (Bug/Rock: its card Earth) and Archen lines Earth, Sigilyph / Yamask line Psychic, Minccino line Colorless (the icons on their cards)',
+  ['sewaddle', 'venipede', 'sandile', 'basculin', 'dwebble', 'archen', 'sigilyph', 'cofagrigus', 'minccino'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });
