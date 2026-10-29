@@ -606,6 +606,56 @@ House pattern: PROTEAN, a joker that adopts the team's type (the Gen 6 Greninja;
     still overrides; set_debuff + Kecleon re-sync on a change). Its CURRENT type's Energy matches. Monotype-exempt (poke_mono_exempt), as
     Castform: its type moves on its own.
   - Pay off the team it joined: X(1.5 + 0.5 per OTHER undebuffed joker of its current type), `Xmult` and `Xmult_mod` both +20%.
+House pattern: RAIN, a weather condition shared with the weather trio (the Gen 5 Tympole line, Swift Swim; swift_swim_raining):
+  - "Raining" = (a) the round's FIRST deal read Rainy by Castform's own forecast() (Clubs held more than Hearts + Diamonds and more than
+    Spades; a tie is not), remembered for the round on the joker (`rain_round`, read at Castform's first_deal moment), OR (b) a WORKING
+    Kyogre: held, undebuffed and not the loser of this round's Primal Clash (primal_on), which is live (bought or sold mid-round, it
+    changes at once). Out of a round (the shop) only (b) counts; a joker bought after the first deal has no forecast that round.
+  - It is Cherrim's sun (2.6) the other way round, so the two read the same weather the same way: Groudon's clash win means no rain (and
+    its win needs at least as many red cards as Clubs, so the forecast can't be Rainy then either); Rayquaza's calm keeps Kyogre working,
+    so it rains; Groudon ALONE does not stop a Clubs forecast (as Kyogre alone doesn't stop Cherrim's red one). Castform's LOCK (Kyogre ->
+    Rainy, Groudon -> Sunny) is Castform's own form rule; don't reuse it for a weather condition.
+  - The payoff doubles a number in an energy field (Tympole +30 / Palpitoad +50 / Seismitoad +50 Chips, `chips` +30%: Energy first, then
+    the doubling); a fixed rider (Seismitoad's Club retrigger in rain) stacks with Kyogre's own Club retrigger (two retriggers).
+House pattern: a LUCKY-ONLY odds boost (the Gen 5 Pidove line, Super Luck; super_luck):
+  - The mod_probability pass Venonat uses, filtered on the roll's identifier: a Lucky card's two rolls are 'lucky_mult' (1 in 5) and
+    'lucky_money' (1 in 15), so +1 there and nowhere else (Glass, Wheel of Fortune, every joker's chance untouched). It is added BEFORE Oops!
+    All 6s multiplies the numerator ((1 + 1) x 2 = 4 in 5), stacks with Venonat and with other copies (+1 each), and Absol still fixes it at
+    0. Not Blueprint, not while debuffed. The odds are fixed (never energized).
+  - The joker's own tooltip shows the live Lucky odds (get_probability_vars with those identifiers); a card not held yet adds its own +1, so
+    the shop card says what it would give. (The Lucky card's own tooltip reads G.GAME.probabilities.normal only: the engine's text.)
+  - The later stages add a payoff for a Lucky card that TRIGGERED (lucky_scored: the engine's lucky_trigger, set by the card's own roll
+    before the jokers' per-card pass): Tranquill +5 Mult (`mult`), Unfezant X1.5 (`Xmult_multi`) — pattern (b) of 2.3. A Red Seal rolls
+    and pays again. All three are Colorless, so Starly's flock counts them.
+House pattern: a RIGHT-NEIGHBOUR theft with a payout (the Gen 5 Purrloin line, Pickpocket; pickpocket):
+  - At end of round (the main pass, not Blueprint) the Joker directly to the RIGHT (the row order is the decision) loses $1 of sell value
+    through Pokermon's Drain, one way (poke_drain(card, target, 1, true): nothing goes to the thief), which never takes a Joker below $1 (one
+    at $1 loses nothing). Nothing on its right (the right end, alone): no loss. A debuffed neighbour still loses it (sell value is no ability).
+  - The money is earned either way, a fixed calc_dollar_bonus row (Purrloin $2, Liepard $4; Pachirisu's shape: Blueprint never copies it, a
+    debuffed thief pays nothing). With nothing to energize, the line is Energy-inert (poke_no_energy_field), as Kyogre.
+House pattern: HANDS BEFORE THE FIRST DISCARD (the Gen 5 Blitzle line, Motor Drive; motor_count):
+  - "+N for each hand played this round before any discard, this one included": current_round.discards_used === 0 ? hands_played + 1 : 0
+    while scoring (hands_played is the pre-hand count: the 1st hand counts 1). After a player discard it is 0 for the rest of the round;
+    a discard BEFORE the first hand turns the whole round off. The Hook's forced discards don't count (discards_used only counts yours).
+    The Stage 1 keeps the trigger as a flat X while no discard is used (Zebstrika X1.5): Fire's "0 discards" family from the other side.
+House pattern: a RIVAL PAIR, a full-strength bonus (the Gen 5 Throh / Sawk, Dojo Rivals; toss_target / snipe_target / dojo):
+  - Each alone works every hand on ONE target card: Throh the LOWEST-ranked scored card X2 (`Xmult_multi` +5%), Sawk the HIGHEST +30 Mult
+    (`mult` +40%; Inteleon's snipe_target). Both skip cards that can't score (debuffed, rankless: Stone); a tie goes to the LEFTMOST; Aces
+    are high for both (an Ace is Throh's only when every candidate is one). The target is re-read on every individual call, so its
+    retriggers hit again; a 1-card hand's card is both targets.
+  - Holding BOTH (find_card: undebuffed, a Blueprint is not the partner) adds a FIXED bonus to each (+X0.5 / +15, `rival_x` / `rival_mult`,
+    never energized): X2.5 / +45. Unlike Lunatone / Solrock's half-strength cover, each one is complete alone; the pair is a bonus, priced
+    as two Rare $7 single-stage Basics.
+House pattern: an END-OF-ROUND FIND with room (the Gen 5 Lillipup line, Pickup; pickup):
+  - In the main end_of_round pass (not Blueprint), WITH consumable room only (cards + consumeable_buffer < limit): no room, no roll at all,
+    so a full row never moves the seeded stream (Manaphy's "slot first, then the roll"). Then a pseudorandom_probability roll (the joker's
+    own seed; Oops! / Venonat raise it, Absol fixes it): 1 in 4 a random Tarot (Lillipup), 1 in 3 / 1 in 2 a Tarot or a Planet (Herdier /
+    Stoutland: a seeded coin, '<seed>_set'). The odds never energize; the Basic and the Stage 1 carry the Stage 2's `mult` (Stoutland's +3
+    Mult per consumable held) so Energy taken early is kept ("Energy carries to Stoutland").
+House pattern: FORESEEN CARDS AS +MULT (the Gen 5 Patrat line, Lookout; lookout):
+  - Uxie's moment with a + payoff: each Foreseen card (G.scry_view, scored like a held card) gives +6 / +10 Mult (`mult` +40%); a debuffed one
+    nothing. It stacks with every other Foresight source (Uxie's +2 makes four cards: each +10 then X1.3). Hoothoot's chips, Uxie's X,
+    Patrat's Mult: the three payoffs of one area.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -791,7 +841,8 @@ Share of the BASE value added per Energy:
 
 Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
 (probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot), slots (Palkia's +1 Joker
-slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian).
+slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian),
+steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -900,6 +951,7 @@ Each keyword below has an info_queue tooltip. Reuse the keyword rather than inve
       Espeon                     X2.5 if the top card is Hearts
       Lopunny                    X2 if an unscored card shares a rank with a Foreseen card
       Masquerain, Munna/Musharna, Wyrdeer, Mega Lopunny, Nacho's Munkidori
+      Patrat +1 / Watchog +2      Foreseen cards give +6 / +10 Mult (Lookout, 2.1)
   Deplete / Depleted
     Drawing the last card of a rank remaining in the deck. Used by Bunnelby/Diggersby,
     Relicanth, Greavard/Houndstone and Nacho's Appletun.
@@ -1445,6 +1497,8 @@ Typical numbers:
 Under-explored:
   - Money (0), retriggers (0), enhancements (1), consumable creation (0).
   - Fighting-type synergy (only Hariyama, plus Blaziken's "Fire or Fighting").
+  - Enhancements: the Gen 5 Timburr line pays scored Stone cards (+4 / +8 Mult, Conkeldurr +8 and X1.5 each), on top of Regirock's and
+    Hippowdon's Stone rules. Throh / Sawk take the lowest / highest scored card (the rival pair, 2.1).
   - Martial-arts ideas: "the first hand of the round", combos (consecutive hands), "exactly 1
     card" strikes.
   - 23 missing species, including the Timburr, Mienfoo, Pancham, Crabrawler and Clobbopus lines
