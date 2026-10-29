@@ -120,8 +120,8 @@ await sec('static', () => {
   }));
   const keys = MODS.pokermon.content.centers.filter((x) => x.set === 'Joker').map((x) => x.key);
   const i = keys.indexOf('j_poke_chespin');
-  ok(i > 0 && keys[i - 1] === 'j_poke_hydreigon' && NAMES.every((n, k) => keys[i + k] === 'j_poke_' + n) && keys[i + 9] === 'j_poke_bunnelby',
-    'Pokédex order: Hydreigon (635), Chespin ... Greninja (650-658), Bunnelby (659)', keys.slice(i - 1, i + 10));
+  ok(i > 0 && /^j_poke_(hydreigon|volcarona|genesect)$/.test(keys[i - 1]) && NAMES.every((n, k) => keys[i + k] === 'j_poke_' + n) && keys[i + 9] === 'j_poke_bunnelby',
+    'Pokédex order: the last Gen 5 joker (Genesect 649 since the Gen 5 Legendaries), Chespin ... Greninja (650-658), Bunnelby (659)', keys.slice(i - 1, i + 10));
   for (const line of LINES) ok(JSON.stringify(poke_get_family_list(line[0])) === JSON.stringify(line), line.join(' -> ') + ': one family', poke_get_family_list(line[0]));
   const E = (n) => C(n).config.extra;
   ok(['chespin', 'quilladin', 'chesnaught'].every((n) => E(n).h_size === 1) && E('chespin').chips === 40 && E('quilladin').chips === 80 && E('chesnaught').chips === 150
