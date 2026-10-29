@@ -422,7 +422,7 @@ export function draw_from_deck_to_hand(e) {
   let hand_space = e || Math.min(G.deck.cards.length, G.hand.config.card_limit + held - G.hand.cards.length);
   // Mods may change how many cards are drawn (MoreFluff's Snake / The Serpent DX), before The Serpent.
   if (ACTIVE_MODS.length) hand_space = reduceHook('draw_hand_space', hand_space, e);
-  if (G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled &&
+  if (G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.off &&
       (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0)) {
     hand_space = Math.min(G.deck.cards.length, 3);
   }
@@ -438,7 +438,7 @@ export function draw_from_deck_to_hand(e) {
   // space). Not for a counted draw (`e`) or while The Serpent holds the draw to 3. Only the slots such cards add are drawn,
   // so with none drawn nothing changes (the event is a no-op).
   if (!e && ACTIVE_MODS.length && ACTIVE_MODS.some((id) => seam_mod(id, 'card_limit'))) {
-    const serpent = G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.disabled && (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0);
+    const serpent = G.GAME.blind.name === 'The Serpent' && !G.GAME.blind.off && (G.GAME.current_round.hands_played > 0 || G.GAME.current_round.discards_used > 0);
     if (!serpent) {
       const top_up = () => {
         const now = held_card_limit(G.hand), gained = now - held;
@@ -656,11 +656,26 @@ function draw_from_discard_to_deck() {
     for (let i = 0; i < n; i++) draw_card(G.discard, G.deck);
   });
 }
+/**
+ * The held cards a mod keeps in hand when the hand empties (the round's end, a pack closing): Pokermon's Beartic, Freeze (a frozen card
+ * stays in your hand into the next round, whose deal fills around it). The others go as usual, in hand order; with none kept (always, in
+ * vanilla: no mod, no hook) the cards go exactly as before.
+ */
+function kept_in_hand() {
+  return ACTIVE_MODS.length && hasHook('keep_in_hand') ? G.hand.cards.filter((c) => callHook('keep_in_hand', c).includes(true)) : [];
+}
+function draw_hand_except(to, keep) {
+  for (const c of G.hand.cards.slice()) if (!keep.includes(c)) draw_card(G.hand, to, undefined, undefined, undefined, c);
+}
 export function draw_from_hand_to_deck() {
+  const keep = kept_in_hand();
+  if (keep.length) { draw_hand_except(G.deck, keep); return; }
   const n = G.hand.cards.length;
   for (let i = 0; i < n; i++) draw_card(G.hand, G.deck);
 }
 function draw_from_hand_to_discard() {
+  const keep = kept_in_hand();
+  if (keep.length) { draw_hand_except(G.discard, keep); return; }
   const n = G.hand.cards.length;
   for (let i = 0; i < n; i++) draw_card(G.hand, G.discard);
 }

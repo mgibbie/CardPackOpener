@@ -78,7 +78,8 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell,
+  freeze_keep, freeze_thaw, frozen_by, spore_first_deal, spore_hand_scored } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -638,6 +639,8 @@ function perma_lines(card) {
   const a = card && card.ability;
   if (!a || !card.base || !card.base.suit || (a.set !== 'Default' && a.set !== 'Enhanced') || card.debuff || a.sonfive_heatran) return [];
   const out = [];
+  // (the owner's Beartic, Freeze: a frozen card stays in your hand into the next round)
+  if (frozen_by(card)) out.push('{C:attention}Frozen{}: stays in your hand');
   if (a.perma_mult) out.push('{C:mult}+' + Math.round(a.perma_mult * 1000) / 1000 + '{} extra Mult');
   if (a.perma_x_mult) out.push('{X:mult,C:white}X' + Math.round((1 + a.perma_x_mult) * 1000) / 1000 + '{} Mult');
   if (a.perma_p_dollars) out.push('{C:money}+$' + a.perma_p_dollars + '{} when scored');
@@ -664,7 +667,16 @@ const hooks = {
   // (Nuzlocke / Monotype run badges: systems/runbadges.js)
   blind_on_deck: RB.blind_on_deck,
   new_round: RB.new_round,
-  draw_from_deck_to_hand: RB.round_begin, // (the round's first deal: the Monotype check, after every blind-select effect)
+  // (the round's first deal: the Monotype check, after every blind-select effect; and the owner's Amoonguss, Spore: the Boss Blind is
+  // suspended from here, before the dealt cards land, until the first hand has scored — jokers/pokejokers_designs.js spore_first_deal)
+  draw_from_deck_to_hand(e) { RB.round_begin(e); spore_first_deal(); },
+  // Spore's end: the round's first hand has scored (run.js evaluate_play's last step), so the Boss Blind is back for the draw after it.
+  hand_scored: spore_hand_scored,
+  // The owner's Beartic, Freeze (Gen 5 batch 3): a frozen card stays in the hand when the round's end (or a pack closing) empties it
+  // (run.js keep_in_hand); played or discarded (an effect discard too), it thaws.
+  keep_in_hand: freeze_keep,
+  play_pressed() { freeze_thaw(G.hand.highlighted); },
+  discard_card(c) { freeze_thaw([c]); },
   shop_start: RB.shop_start,
   // (Kecleon takes the type of the joker to its right: its Lua update runs every frame; ours also when the joker row changes)
   emplace(area, card, ...rest) { const r = RB.emplace(area, card, ...rest); if (area === G.jokers) sync_kecleon(); return r; },
@@ -950,7 +962,12 @@ export const POKERMON = registerMod({
   // 54 = Gen 5 batch 2 (jokers/pokejokers_designs.js, #540-573): the Sewaddle line's tailor, the Venipede line's Poison Point, Cottonee /
   // Whimsicott, Petilil / Lilligant, Basculin's stripes, the Sandile line's Moxie, Maractus, Dwebble / Crustle, Sigilyph, Yamask /
   // Cofagrigus (Mummy: the sell_instead hook), the Tirtouga and Archen fossils (Ancient 9s / 10s) and Minccino / Cinccino.
-  contentRev: 54,
+  // 55 = Gen 5 batch 3 (jokers/pokejokers_designs.js, #580-637): Ducklett / Swanna, Deerling / Sawsbuck (Seasons, own art per season),
+  // Emolga, Karrablast + Shelmet (the trade pair: Escavalier / Accelgor, together), Foongus / Amoonguss (Spore: run.js / blind.js
+  // Blind.suspend), Alomomola, Joltik / Galvantula, the Tynamo line, Cubchoo / Beartic (Freeze: run.js keep_in_hand), Stunfisk, Mienfoo /
+  // Mienshao, Druddigon, Bouffalant, Rufflet / Braviary, Heatmor + Durant (rivals; Durant's and Escavalier's held Steel X1.75) and Larvesta /
+  // Volcarona (always sunny).
+  contentRev: 55,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

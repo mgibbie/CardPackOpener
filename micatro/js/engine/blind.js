@@ -29,10 +29,37 @@ export class Blind {
 
   get key() { return this.config.blind && this.config.blind.key; }
 
+  /**
+   * Off right now: disabled for good (Chicot, Luchador...), or SUSPENDED for a while by a mod (Pokermon's Amoonguss, Spore: the Boss
+   * Blind is off from the round's first deal until its first hand has scored). Every rule the Blind applies in play reads this; the
+   * "can it still be disabled?" checks read `disabled` alone, so a Chicot / Luchador during a suspension still disables it for good.
+   * Vanilla never suspends (off === disabled).
+   */
+  get off() { return !!(this.disabled || this.suspended); }
+
+  /**
+   * Suspend (on) or bring back (off) the Blind's rules (a mod's: Pokermon's Spore). Its set-up stays as it is (The Wall's size, The
+   * Water / Needle / Manacle's counts, Amber Acorn's shuffle); what it does to cards, hands and draws stops: its debuffs are lifted
+   * at once and come back with it (Blind:disable's own debuff pass). Coming back, The Fish / Crimson Heart are prepped for the next
+   * draw as a played hand would have left them (Blind:press_play), so their rule starts again right after the suspended hand.
+   */
+  suspend(on) {
+    if (!!this.suspended === !!on) return;
+    this.suspended = on ? true : undefined;
+    if (!on && !this.disabled) {
+      if (this.name === 'Crimson Heart' && G.jokers.cards[0]) this.prepped = true;
+      if (this.name === 'The Fish') this.prepped = true;
+    }
+    for (const v of G.playing_cards) this.debuff_card(v);
+    for (const v of G.jokers.cards) this.debuff_card(v);
+    this.set_text();
+    emit('blind', { action: on ? 'suspend' : 'resume', key: this.config.blind && this.config.blind.key, name: this.name, chips: this.chips, chip_text: this.chip_text });
+  }
+
   // ---------------------------------------------------------------- text
   set_text() {
     if (this.config.blind) {
-      if (this.disabled) {
+      if (this.off) {
         this.loc_name = this.name === '' ? this.name : localize({ type: 'name_text', key: this.config.blind.key, set: 'Blind' });
         this.loc_debuff_text = '';
         this.loc_debuff_lines[0] = '';
@@ -68,6 +95,7 @@ export class Blind {
       this.pos = blind && blind.pos;
       this.mult = (blind && blind.mult) || 0;
       this.disabled = false;
+      this.suspended = undefined;
       this.discards_sub = undefined;
       this.hands_sub = undefined;
       this.boss = !!(blind && blind.boss);
@@ -197,6 +225,7 @@ export class Blind {
   // ------------------------------------------------------------- disable
   disable() {
     this.disabled = true;
+    this.suspended = undefined; // (for good now: a suspension ending later must not bring it back)
     for (const v of G.jokers.cards) {
       if (v.facing === 'back') v.flip();
     }
@@ -255,7 +284,7 @@ export class Blind {
   // ---------------------------------------------------------- press_play
   press_play() {
     if (ACTIVE_MODS.length) callHook('blind_press_play', this); // (Bunco's Hedge Trimmer: every blind, even disabled)
-    if (this.disabled) return undefined;
+    if (this.off) return undefined;
     const mb = this.config.blind;
     if (mb && mb.mod && mb.press_play) return mb.press_play(mb, this);
     if (this.name === 'The Hook') {
@@ -308,7 +337,7 @@ export class Blind {
 
   /** -> [mult, hand_chips, modded] (Lua returns three values). */
   modify_hand(cards, poker_hands, text, mult, hand_chips) {
-    if (this.disabled) return [mult, hand_chips, false];
+    if (this.off) return [mult, hand_chips, false];
     // A mod rule may replace any blind's modify_hand (a Lua Blind:modify_hand wrap: BETMMA's Overpowered Boss challenge).
     if (ACTIVE_MODS.length) { const r = firstHook('blind_modify_hand', this, cards, poker_hands, text, mult, hand_chips); if (r) return r; }
     // Steamodded: a mod blind's modify_hand(self, cards, poker_hands, text, mult, hand_chips) -> [mult, hand_chips, modded].
@@ -323,7 +352,7 @@ export class Blind {
   }
 
   debuff_hand(cards, hand, handname, check) {
-    if (this.disabled) return undefined;
+    if (this.off) return undefined;
     // Mods may rule on the hand first: false = never debuffed (no Arm / Ox penalty either), true =
     // debuffed (Nacho's Mega Gallade returns before the blind's own debuff_hand runs).
     if (ACTIVE_MODS.length) {
@@ -386,7 +415,7 @@ export class Blind {
   }
 
   drawn_to_hand() {
-    if (!this.disabled) {
+    if (!this.off) {
       const mb = this.config.blind;
       if (mb && mb.mod && mb.drawn_to_hand) mb.drawn_to_hand(mb, this);
       if (this.name === 'Cerulean Bell') {
@@ -421,7 +450,7 @@ export class Blind {
   }
 
   stay_flipped(area, card) {
-    if (!this.disabled) {
+    if (!this.off) {
       // Mod blind (prototype, this Blind, area, card) -> true: the card is drawn face down.
       const mb = this.config.blind;
       if (mb && mb.mod && mb.stay_flipped && mb.stay_flipped(mb, this, area, card)) return true;
@@ -438,7 +467,7 @@ export class Blind {
   }
 
   debuff_card(card, from_blind) {
-    if (this.debuff && !this.disabled && card.area !== G.jokers) {
+    if (this.debuff && !this.off && card.area !== G.jokers) {
       // Mod blind (prototype, this Blind, card, from_blind) -> true: this playing card is debuffed.
       const mb = this.config.blind;
       if (mb && mb.mod && mb.debuff_card && mb.debuff_card(mb, this, card, from_blind)) {
@@ -466,8 +495,8 @@ export class Blind {
         return;
       }
     }
-    if (this.name === 'Crimson Heart' && !this.disabled && card.area === G.jokers) return;
-    if (this.name === 'Verdant Leaf' && !this.disabled && card.area !== G.jokers) { card.set_debuff(true); return; }
+    if (this.name === 'Crimson Heart' && !this.off && card.area === G.jokers) return;
+    if (this.name === 'Verdant Leaf' && !this.off && card.area !== G.jokers) { card.set_debuff(true); return; }
     card.set_debuff(false);
   }
 
@@ -480,6 +509,7 @@ export class Blind {
       pos: this.pos,
       mult: this.mult,
       disabled: this.disabled,
+      suspended: this.suspended, // (a mod's suspension: Pokermon's Spore; undefined, so not written, otherwise)
       discards_sub: this.discards_sub,
       hands_sub: this.hands_sub,
       boss: this.boss,
@@ -512,6 +542,7 @@ export class Blind {
     this.pos = blindTable.pos;
     this.mult = blindTable.mult;
     this.disabled = blindTable.disabled;
+    this.suspended = blindTable.suspended || undefined;
     this.discards_sub = blindTable.discards_sub;
     this.hands_sub = blindTable.hands_sub;
     this.boss = blindTable.boss;

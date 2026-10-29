@@ -325,7 +325,11 @@ export function blind_calculate(context) {
   const b = G.GAME && G.GAME.blind;
   const bp = b && b.config && b.config.blind;
   if (!bp || !bp.mod || typeof bp.calculate !== 'function' || !seam_mod(bp.mod) || !centerActive(bp)) return undefined;
-  const eff = bp.calculate(bp, b, context);
+  // While a mod suspends the blind (Pokermon's Spore: Blind.off), its calculate sees itself disabled, as every one checks blind.disabled.
+  const mask = b.suspended && !b.disabled;
+  if (mask) b.disabled = true;
+  let eff;
+  try { eff = bp.calculate(bp, b, context); } finally { if (mask && b.suspended) b.disabled = false; } // (unless it disabled itself for good meanwhile)
   if (eff && typeof eff === 'object') calculate_effect(eff, null, context);
   return eff;
 }

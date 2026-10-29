@@ -33,7 +33,7 @@ import { family_display_key } from './systems/precedence.js';
 import { TYPE_COLOURS } from './systems/types.js';
 import { KECLEON_ATLAS, KECLEON_SPRITES, CASTFORM_SPRITES, CHERRIM_SPRITES, GIRATINA_ORIGIN, CLOAK_ATLAS, BURMY_SPRITES, DEOXYS_SOULS, IMPOSTER_REVEALED, SERIES_A_ANIM } from './systems/anim.js';
 import D391 from './data391.js';
-import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES } from './systems/anim.js';
+import { SEA_ATLAS, SEA_SPRITES, BASCULIN_SPRITES, SEASON_SPRITES } from './systems/anim.js';
 
 const MOD = 'pokermon';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -338,6 +338,9 @@ function ownFace(d0) {
   // Basculin (the owner's Gen 5 batch 2): the Blue-Striped card beside its Red one (the Gen 5 sheet); Red = its own card
   const bs = d.center === 'j_poke_basculin' && p && BASCULIN_SPRITES[p.form];
   if (bs) return { ...d, atlas: P_CENTERS.j_poke_basculin.atlas, pos: bs };
+  // Deerling / Sawsbuck (the owner's Gen 5 batch 3): the season's card (the Gen 5 sheet); Spring = its own card
+  const ss = p && SEASON_SPRITES[d.center] && SEASON_SPRITES[d.center][p.form];
+  if (ss) return { ...d, atlas: P_CENTERS[d.center].atlas, pos: ss };
   // Unown: its form's letter floats over the card
   const u = withUnownForm(d);
   return u === d0 ? null : u;

@@ -1526,6 +1526,9 @@ export class Board {
           return 0.45;
         }
         if (ev.action === 'disable') { this.bump(this.H.blind); this.attn('Blind disabled!', '#4bc292'); return 0.5; }
+        // a mod's suspension (Pokermon's Spore: the Boss Blind is off until the round's first hand has scored)
+        if (ev.action === 'suspend') { this.bump(this.H.blind); this.attn('Blind disabled for this hand!', '#4bc292'); return 0.5; }
+        if (ev.action === 'resume') { this.bump(this.H.blind); this.attn('The Blind is back!', '#fe5f55'); return 0.4; }
         if (ev.action === 'defeat') { this.bump(this.H.blind); return 0.2; }
         // a requirement changed mid-round (Pokermon's Poison Gas, Mika's Grudgeful): the HUD's "Score at least" shows it at that moment
         if (ev.action === 'chips' && ev.chips != null) { this.H.bTarget.textContent = fmt(ev.chips); this.bump(this.H.blind); return 0.3; }

@@ -102,6 +102,17 @@ export const SEA_SPRITES = {
  */
 export const BASCULIN_SPRITES = { blue: { x: 6, y: 0 } };
 
+/**
+ * Deerling's and Sawsbuck's seasons (the owner's Gen 5 batch 3, jokers/pokejokers_designs.js SEASONS): upstream 3.9.1 draws all four forms
+ * of both on the Gen 5 sheet, one after another (Deerling Spring {2,1}, Summer {4,1}, Autumn {6,1}, Winter {8,1}; Sawsbuck Spring {10,1},
+ * Summer {0,2}, Autumn {2,2}, Winter {4,2}; pokespriteload.lua lists only the Spring ones) — by the view's form (the center's
+ * poke_view_form: the season of the current Ante, live). Spring is each one's own card. Drawn by ui.js face() (+ the Shiny sheet's twins).
+ */
+export const SEASON_SPRITES = {
+  j_poke_deerling: { summer: { x: 4, y: 1 }, autumn: { x: 6, y: 1 }, winter: { x: 8, y: 1 } },
+  j_poke_sawsbuck: { summer: { x: 0, y: 2 }, autumn: { x: 2, y: 2 }, winter: { x: 4, y: 2 } },
+};
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;
