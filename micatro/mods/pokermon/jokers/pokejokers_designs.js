@@ -98,6 +98,14 @@
 // discard each round creates a Tarot; Delphox's Mystical Fire X0.2 per Tarot used), Froakie -> Frogadier -> Greninja (Water: +1 hand;
 // +30 / +50 Chips per Water Joker; Greninja's Protean takes the most common type among your other Jokers each Blind, X(1.5 + 0.5 per
 // other Joker of its type)) — upstream 3.9.1 draws them (Natdex 8-24, 43).
+// Gen 5, batch 1 (contentRev 53; the owner's "Build it"): Patrat -> Watchog (Lookout: +1 / +2 Foresight, each Foreseen card +6 / +10 Mult),
+// Lillipup -> Herdier -> Stoutland (Pickup: 1 in 4 / 3 / 2 at end of round a Tarot (or Planet), with room; Stoutland +3 Mult per consumable),
+// Purrloin -> Liepard (Pickpocket: $2 / $4, the Joker to its right loses $1 of sell value), Pidove -> Tranquill -> Unfezant (Super Luck: Lucky
+// odds +1; +5 Mult / X1.5 on a triggering Lucky card), Blitzle -> Zebstrika (Motor Drive: +4 Mult per hand before a discard / X1.5 with none),
+// Woobat -> Swoobat (Heart Stamp: $1 / $1 and X1.1 per scored Heart), Timburr -> Gurdurr -> Conkeldurr (Stone cards +4 / +8 Mult / +8 and
+// X1.5), Tympole -> Palpitoad -> Seismitoad (Swift Swim: +30 / +50 / +50 Chips doubled while raining; Seismitoad retriggers Clubs in rain),
+// Throh and Sawk (the lowest X2 / the highest +30; Dojo Rivals X2.5 / +45) — upstream 3.9.1 draws them (Natdex 16-28, 33 / 16-24, 34 /
+// 2-26, 35; Unfezant Gen05 {0,0}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -105,7 +113,7 @@ import {
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied, get_type, multitype, wildcard_type, POKETYPES,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
-  poke_get_adjacent_jokers, emit, find_joker,
+  poke_get_adjacent_jokers, emit, find_joker, poke_drain,
 } from '../api.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format } from '../../../js/engine/core.js';
@@ -1539,6 +1547,124 @@ function shell_blade(card, context) {
   return undefined;
 }
 
+// ---------------------------------------------------------------- Gen 5, batch 1 (contentRev 53): Patrat ... Sawk (504-539)
+/** Patrat / Watchog, Lookout: each Foreseen card (the top of the deck, G.scry_view, scored like a held card: Uxie's moment) gives +mult
+ *  Mult; a debuffed one gives nothing. The Foresight itself is the Shinx line's `scry` pair. */
+function lookout(card, context) {
+  if (context.individual && context.cardarea === G.scry_view && !context.end_of_round && !context.other_card.debuff) return { mult: card.ability.extra.mult, card };
+  return undefined;
+}
+/** Consumable room (the Blue Seal's check: cards + pending creations < limit). */
+const consumable_room = () => G.consumeables.cards.length + (G.GAME.consumeable_buffer || 0) < G.consumeables.config.card_limit;
+/** Lillipup / Herdier / Stoutland, Pickup: in the main end_of_round pass (not Blueprint), WITH consumable room only — no room, no roll, so a
+ *  full row never moves the seeded stream (Manaphy's "slot first, then the roll") — a num in dem chance (pseudorandom_probability, the
+ *  joker's own seed: Oops! All 6s / Venonat raise it, Absol fixes it) to create a random Tarot (Lillipup) or a Tarot or Planet (Herdier /
+ *  Stoutland: a seeded coin, `<seed>_set`). The card itself is the run's seeded create_card (key_append = the seed). */
+function pickup(card, context, seed) {
+  if (!round_end(context) || context.blueprint || !consumable_room()) return;
+  const ex = card.ability.extra;
+  if (!pseudorandom_probability(card, seed, ex.num, ex.dem, seed)) return;
+  const set = ex.planets && pseudorandom(pseudoseed(seed + '_set')) < 0.5 ? 'Planet' : 'Tarot';
+  G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+  G.E_MANAGER.add_event(() => {
+    const c = create_card(set, G.consumeables, null, null, null, null, undefined, seed);
+    c.add_to_deck();
+    G.consumeables.emplace(c);
+    G.GAME.consumeable_buffer = 0;
+  });
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize(set === 'Tarot' ? 'k_plus_tarot' : 'k_plus_planet'), colour: set });
+}
+const pickup_vars = (card, seed) => { const ex = card.ability.extra; return get_probability_vars(card, ex.num, ex.dem, seed); };
+/** Stoutland: +mult for each consumable held (G.consumeables.cards: Negative ones too). */
+const held_consumables = () => ((G.consumeables && G.consumeables.cards) || []).length;
+const stout_mult = (card) => r3(card.ability.extra.mult * held_consumables());
+/** Purrloin / Liepard, Pickpocket: the Joker directly to the RIGHT in the row (none at the right end, or alone). */
+const right_of = (card) => { const row = (G.jokers && G.jokers.cards) || []; const i = row.indexOf(card); return i >= 0 ? row[i + 1] : undefined; };
+/** At end of round (the main pass, not Blueprint) the right neighbour loses `drain` of sell value — Pokermon's Drain (poke_drain, one way:
+ *  nothing goes to the thief), which never takes a Joker below $1 of sell value (one at $1 loses nothing). No right neighbour: no loss.
+ *  The money is earned either way, through calc_dollar_bonus (`steal`, a row of the cash-out list; Blueprint never copies it). A debuffed
+ *  neighbour still loses it (sell value isn't an ability, the Combee rule). */
+function pickpocket(card, context) {
+  if (!round_end(context) || context.blueprint) return;
+  const j = right_of(card);
+  if (j) poke_drain(card, j, card.ability.extra.drain, true);
+}
+/** Pidove / Tranquill / Unfezant, Super Luck: +lucky_odds to the numerator of a Lucky card's two rolls (identifiers 'lucky_mult' 1 in 5 and
+ *  'lucky_money' 1 in 15), the mod_probability pass Venonat uses for every roll: so it is added BEFORE Oops! All 6s doubles the numerator
+ *  ((1 + 1) x 2 = 4 in 5), stacks with Venonat (+1 each) and with other copies, and Absol still fixes it at 0. Never Blueprint. */
+const LUCKY_ROLLS = ['lucky_mult', 'lucky_money'];
+function super_luck(card, context) {
+  if (context.mod_probability && !context.blueprint && LUCKY_ROLLS.includes(context.identifier)) return { numerator: context.numerator + card.ability.extra.lucky_odds };
+  return undefined;
+}
+/** The Lucky odds now ([Mult num, dem, money num, dem]); a card not held yet (the shop) counts its own +odds, so it shows what it would give. */
+function lucky_odds_vars(card) {
+  const own = G.jokers && G.jokers.cards.includes(card) ? 0 : card.ability.extra.lucky_odds;
+  return [...get_probability_vars(card, 1 + own, 5, 'lucky_mult'), ...get_probability_vars(card, 1 + own, 15, 'lucky_money')].map(r3);
+}
+/** Blitzle / Zebstrika, Motor Drive: no player discard used this round yet (current_round.discards_used; The Hook's forced discards
+ *  don't count it). Out of a round (the shop) the tooltip reads the next round's start: on. */
+const motor_on = () => { const GM = G.GAME, cr = GM && GM.current_round; return !!cr && (!GM.facing_blind || !(cr.discards_used > 0)); };
+/** Blitzle: +mult for each hand played this round before any discard, THIS hand included (hands_played is the pre-hand count while it
+ *  scores: the round's 1st hand counts 1, the 2nd 2...); after a discard, 0 for the rest of the round. */
+const motor_count = () => (motor_on() ? hands_before() + 1 : 0);
+const motor_mult = (card) => r3(card.ability.extra.mult * motor_count());
+/** Woobat / Swoobat, Heart Stamp: each scored Heart (is_suit: Wild cards count, a debuffed card doesn't) earns `stamp_money` (Rough Gem's
+ *  shape and dollar_buffer), Swoobat also X(Xmult_multi). Money is fixed; Energy raises only the X. */
+function heart_stamp(card, context, x) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit('Hearts'))) return undefined;
+  const ex = card.ability.extra;
+  G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + ex.stamp_money;
+  G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; });
+  const r = { dollars: ex.stamp_money, card };
+  if (x) r.x_mult = ex.Xmult_multi;
+  return r;
+}
+/** Timburr / Gurdurr / Conkeldurr: each scored Stone card (has_enhancement: quantum Stone too) gives +mult, Conkeldurr also X(Xmult_multi) —
+ *  a joker effect on top of whatever the card gives itself, so it stacks with Regirock's "+100 instead of +50" and Hippowdon's extra Chips. */
+function pillars(card, context, x) {
+  if (!(context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_stone'))) return undefined;
+  const ex = card.ability.extra;
+  return x ? { mult: ex.mult, x_mult: ex.Xmult_multi, card } : { mult: ex.mult, card };
+}
+/** Tympole / Palpitoad / Seismitoad, Swift Swim: is it RAINING? (a) the round's FIRST deal read Clubs: Castform's own forecast() says Rainy
+ *  (Clubs held more than Hearts + Diamonds and more than Spades; a tie is not), remembered for the round (`rain_round`); or (b) a working
+ *  Kyogre: held, undebuffed and not the loser of this round's Primal Clash (primal_on) — so on Groudon's round of a clash it isn't raining
+ *  (and the forecast can't be Rainy either: Groudon only wins with at least as many red cards as Clubs). Rayquaza's calm keeps Kyogre
+ *  working. (b) is live. Groudon alone doesn't stop a Clubs forecast (Cherrim's sun the other way round). Out of a round only (b) counts. */
+const kyogre_rain = () => legends('kyogre').some((j) => primal_on(j));
+export function swift_swim_raining(card) {
+  const ex = card.ability.extra, GM = G.GAME;
+  return !!((GM && GM.facing_blind && ex.rain_round === GM.round) || kyogre_rain());
+}
+function rain_read(card, context) {
+  if (!first_deal(card, context)) return false;
+  const ex = card.ability.extra;
+  ex.forecast_round = G.GAME.round;
+  if (forecast(G.hand.cards) === 'rainy') ex.rain_round = G.GAME.round;
+  if (swift_swim_raining(card)) card_eval_status_text(card, 'extra', null, null, null, { message: 'Swift Swim!', colour: CASTFORM_FORMS.rainy.colour });
+  return true;
+}
+const rain_state = (card) => (swift_swim_raining(card) ? 'Raining!' : G.GAME && G.GAME.facing_blind && card.ability.extra.forecast_round === G.GAME.round ? 'Not raining' : 'Not raining yet');
+function swift_swim(card, context) {
+  if (rain_read(card, context) || !context.joker_main) return undefined;
+  const c = card.ability.extra.chips * (swift_swim_raining(card) ? 2 : 1);
+  return { message: a_chips(r3(c)), colour: 'CHIPS', chip_mod: c };
+}
+/** Throh, Seismic Toss: the LOWEST-ranked scored card that can score (not debuffed, not rankless like Stone; Aces high, so an Ace is the
+ *  lowest only when every candidate is an Ace); a tie the LEFTMOST. Sawk's Karate Chop is Inteleon's snipe_target (the highest). */
+function toss_target(scoring_hand) {
+  let best = null;
+  for (const c of scoring_hand || []) {
+    if (c.debuff || has_no_rank(c)) continue;
+    if (!best || c.get_id() < best.get_id()) best = c;
+  }
+  return best;
+}
+/** Dojo Rivals: the partner held, undebuffed (find_card; a Blueprint isn't the partner). The bonus is fixed (rival_x / rival_mult). */
+const dojo = (partner) => !!(G.jokers && find_card(partner).length > 0);
+const throh_x = (card) => r3(card.ability.extra.Xmult_multi + (dojo('j_poke_sawk') ? card.ability.extra.rival_x : 0));
+const sawk_mult = (card) => r3(card.ability.extra.mult + (dojo('j_poke_throh') ? card.ability.extra.rival_mult : 0));
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
   // Shinx 403: +1 Foresight; a played card sharing a rank with a Foreseen card earns $1 when scored. Evolves in 4 rounds.
@@ -3870,6 +3996,266 @@ defineJokers({
     },
     ...hands,
   },
+  // ---------------------------------------------------------------- Gen 5, batch 1 (the owner's "Build it", 2026-10-28; contentRev 53)
+  // 22 jokers, #504-539. Prices by the DESIGN_GUIDE slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7);
+  // evolution by rounds (4 for an early evolver, else 5). Types = the cards'. Energy raises each joker's main number at the standard
+  // share; odds, Foresight, money and retriggers are fixed; a stage with no number carries its evolution's field ("Energy carries to
+  // ..."). Art: upstream 3.9.1's own cells (Natdex {16..28,33}, {16..24,34}, {2..26,35}; Unfezant Gen05 {0,0}); nothing to deploy.
+  // Neither Nacho nor Pokermon+ has any of them.
+  // Patrat 504: Common $5, Colorless. +1 Foresight; Lookout: each Foreseen card gives +6 Mult (`mult` +40%: 8.4 / 10.8 / 13.2). 4 rounds.
+  patrat: {
+    name: 'patrat', poke_sprite391: sprite('Natdex', 16, 33),
+    config: { extra: { scry: 1, mult: 6, rounds: 4 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Colorless', gen: 5, blueprint_compat: true,
+    attributes: ['foresight', 'mult', 'round_evo'], poke_after: 'samurott',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.scry, r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return lookout(card, context) || level_evo(self, card, context, 'j_poke_watchog'); },
+    ...scry,
+  },
+  // Watchog 505: Safari $8. +2 Foresight; each Foreseen card +10 Mult (14 / 18 / 22).
+  watchog: {
+    name: 'watchog', poke_sprite391: sprite('Natdex', 18, 33),
+    config: { extra: { scry: 2, mult: 10 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 5, blueprint_compat: true,
+    attributes: ['foresight', 'mult'], poke_after: 'patrat',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.scry, r3(ex.mult)] }; },
+    calculate(self, card, context) { return lookout(card, context); },
+    ...scry,
+  },
+  // Lillipup 506: Uncommon $6, Colorless. Pickup: at end of round, 1 in 4 to create a random Tarot (with room; no room, no roll). Its odds are
+  // fixed; it carries Stoutland's `mult` 3 ("Energy carries to Stoutland"). 4 rounds.
+  lillipup: {
+    name: 'lillipup', poke_sprite391: sprite('Natdex', 20, 33),
+    config: { extra: { num: 1, dem: 4, mult: 3, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 5, blueprint_compat: false,
+    attributes: ['tarot', 'chance', 'round_evo'], poke_after: 'watchog',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [...pickup_vars(card, 'lillipup'), card.ability.extra.rounds] }; },
+    calculate(self, card, context) { pickup(card, context, 'lillipup'); return level_evo(self, card, context, 'j_poke_herdier'); },
+  },
+  // Herdier 507: Safari $8. 1 in 3: a Tarot or a Planet (a seeded coin). 5 rounds.
+  herdier: {
+    name: 'herdier', poke_sprite391: sprite('Natdex', 22, 33),
+    config: { extra: { num: 1, dem: 3, planets: true, mult: 3, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 5, blueprint_compat: false,
+    attributes: ['tarot', 'planet', 'chance', 'round_evo'], poke_after: 'lillipup',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [...pickup_vars(card, 'herdier'), card.ability.extra.rounds] }; },
+    calculate(self, card, context) { pickup(card, context, 'herdier'); return level_evo(self, card, context, 'j_poke_stoutland'); },
+  },
+  // Stoutland 508: Safari $10. 1 in 2: a Tarot or a Planet; +3 Mult for each consumable held (`mult` +40%: 4.2 / 5.4 / 6.6).
+  stoutland: {
+    name: 'stoutland', poke_sprite391: sprite('Natdex', 24, 33),
+    config: { extra: { num: 1, dem: 2, planets: true, mult: 3 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Colorless', gen: 5, blueprint_compat: true,
+    attributes: ['tarot', 'planet', 'chance', 'mult'], poke_after: 'herdier',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [...pickup_vars(card, 'stoutland'), r3(card.ability.extra.mult), stout_mult(card)] }; },
+    calculate(self, card, context) {
+      pickup(card, context, 'stoutland');
+      if (context.joker_main && held_consumables() > 0) { const m = stout_mult(card); return { message: a_mult(m), colour: 'MULT', mult_mod: m }; }
+      return undefined;
+    },
+  },
+  // Purrloin 509: Common $5, Dark. Pickpocket: earn $2 at end of round (calc_dollar_bonus); the Joker directly to its right loses $1 of
+  // sell value (never below $1; nothing on its right: no loss, the $2 still earned). Money and drain fixed: Energy-inert
+  // (poke_no_energy_field). 4 rounds.
+  purrloin: {
+    name: 'purrloin', poke_sprite391: sprite('Natdex', 26, 33),
+    config: { extra: { steal: 2, drain: 1, rounds: 4 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Dark', gen: 5, blueprint_compat: false,
+    attributes: ['economy', 'drain', 'round_evo'], poke_after: 'stoutland',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.steal, ex.drain, ex.rounds] }; },
+    calculate(self, card, context) { pickpocket(card, context); return level_evo(self, card, context, 'j_poke_liepard'); },
+    calc_dollar_bonus(self, card) { return card.ability.extra.steal; },
+  },
+  // Liepard 510: Safari $8. $4 at end of round; the right neighbour still loses $1.
+  liepard: {
+    name: 'liepard', poke_sprite391: sprite('Natdex', 28, 33),
+    config: { extra: { steal: 4, drain: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 5, blueprint_compat: false,
+    attributes: ['economy', 'drain'], poke_after: 'purrloin',
+    poke_no_energy_field: true,
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.steal, ex.drain] }; },
+    calculate(self, card, context) { pickpocket(card, context); return undefined; },
+    calc_dollar_bonus(self, card) { return card.ability.extra.steal; },
+  },
+  // Pidove 519: Uncommon $6, Colorless. Super Luck: Lucky cards' odds +1 (the numerator, before Oops! doubles it). The odds are fixed; it
+  // carries Tranquill's `mult` 5 ("Energy carries to Tranquill"). Starly's flock counts all three (Colorless). 4 rounds.
+  pidove: {
+    name: 'pidove', poke_sprite391: sprite('Natdex', 16, 34),
+    config: { extra: { lucky_odds: 1, mult: 5, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 5, blueprint_compat: false,
+    attributes: ['chance', 'enhancements', 'round_evo'], poke_after: 'musharna',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.lucky_odds, ...lucky_odds_vars(card), ex.rounds] }; },
+    calculate(self, card, context) { return super_luck(card, context) || level_evo(self, card, context, 'j_poke_tranquill'); },
+  },
+  // Tranquill 520: Safari $8. Super Luck; a scored Lucky card that triggers also gives +5 Mult (`mult` +40%: 7 / 9 / 11). 5 rounds.
+  tranquill: {
+    name: 'tranquill', poke_sprite391: sprite('Natdex', 18, 34),
+    config: { extra: { lucky_odds: 1, mult: 5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 5, blueprint_compat: true,
+    attributes: ['chance', 'enhancements', 'mult', 'round_evo'], poke_after: 'pidove',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.lucky_odds, ...lucky_odds_vars(card), r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      const r = super_luck(card, context);
+      if (r) return r;
+      if (lucky_scored(context)) return { mult: card.ability.extra.mult, card };
+      return level_evo(self, card, context, 'j_poke_unfezant');
+    },
+  },
+  // Unfezant 521: Safari $10. Super Luck; a triggering Lucky card gives X1.5 instead (`Xmult_multi` +5%: X1.575 / 1.65 / 1.725).
+  unfezant: {
+    name: 'unfezant', poke_sprite391: sprite('Gen05', 0, 0),
+    config: { extra: { lucky_odds: 1, Xmult_multi: 1.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Colorless', gen: 5, blueprint_compat: true,
+    attributes: ['chance', 'enhancements', 'xmult'], poke_after: 'tranquill',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); const ex = card.ability.extra; return { vars: [ex.lucky_odds, ...lucky_odds_vars(card), r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      const r = super_luck(card, context);
+      if (r) return r;
+      if (lucky_scored(context)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Blitzle 522: Common $5, Lightning. Motor Drive: +4 Mult for each hand played this round before any discard, this one included (the 1st
+  // hand +4, the 2nd +8...; once you discard, +0 for the rest of the round). `mult` +40%: 5.6 / 7.2 / 8.8 a hand. 5 rounds.
+  blitzle: {
+    name: 'blitzle', poke_sprite391: sprite('Natdex', 22, 34),
+    config: { extra: { mult: 4, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Lightning', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'discard', 'hands', 'round_evo'], poke_after: 'unfezant',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), motor_mult(card), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const m = motor_mult(card); return m > 0 ? { message: a_mult(m), colour: 'MULT', mult_mod: m } : undefined; }
+      return level_evo(self, card, context, 'j_poke_zebstrika');
+    },
+  },
+  // Zebstrika 523: Safari $8. X1.5 Mult if you haven't discarded this round (`Xmult` +20%: 1.8 / 2.1 / 2.4).
+  zebstrika: {
+    name: 'zebstrika', poke_sprite391: sprite('Natdex', 24, 34),
+    config: { extra: { Xmult: 1.5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Lightning', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'discard'], poke_after: 'blitzle',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult), motor_on() ? 'Active!' : 'Inactive: you discarded'] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && motor_on()) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+  },
+  // Woobat 527: Common $5, Psychic. Heart Stamp: each scored Heart earns $1 (Rough Gem's, Wild cards count). The $ is fixed; it carries
+  // Swoobat's `Xmult_multi` ("Energy carries to Swoobat"). 5 rounds.
+  woobat: {
+    name: 'woobat', poke_sprite391: sprite('Natdex', 2, 35),
+    config: { extra: { stamp_money: 1, Xmult_multi: 1.1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 5, blueprint_compat: true,
+    attributes: ['economy', 'suit', 'hearts', 'round_evo'], poke_after: 'gigalith',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.stamp_money, ex.rounds] }; },
+    calculate(self, card, context) { return heart_stamp(card, context, false) || level_evo(self, card, context, 'j_poke_swoobat'); },
+  },
+  // Swoobat 528: Safari $8. Each scored Heart earns $1 and gives X1.1 (`Xmult_multi` +5%: X1.155 / 1.21 / 1.265).
+  swoobat: {
+    name: 'swoobat', poke_sprite391: sprite('Natdex', 4, 35),
+    config: { extra: { stamp_money: 1, Xmult_multi: 1.1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 5, blueprint_compat: true,
+    attributes: ['economy', 'xmult', 'suit', 'hearts'], poke_after: 'woobat',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.stamp_money, r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return heart_stamp(card, context, true); },
+  },
+  // Timburr 532: Uncommon $6, Fighting. Scored Stone cards each give +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). 5 rounds.
+  timburr: {
+    name: 'timburr', poke_sprite391: sprite('Natdex', 12, 35),
+    config: { extra: { mult: 4, rounds: 5 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Fighting', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'round_evo'], poke_after: 'excadrill',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return pillars(card, context, false) || level_evo(self, card, context, 'j_poke_gurdurr'); },
+  },
+  // Gurdurr 533: Safari $8. +8 Mult per scored Stone card (11.2 / 14.4 / 17.6). 5 rounds.
+  gurdurr: {
+    name: 'gurdurr', poke_sprite391: sprite('Natdex', 14, 35),
+    config: { extra: { mult: 8, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fighting', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'round_evo'], poke_after: 'timburr',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { return pillars(card, context, false) || level_evo(self, card, context, 'j_poke_conkeldurr'); },
+  },
+  // Conkeldurr 534: Safari $10. +8 Mult and X1.5 per scored Stone card (`mult` +40%: 11.2 / 14.4 / 17.6, kept from Gurdurr so its Energy
+  // never shrinks on evolving; `Xmult_multi` +5%: X1.575 / 1.65 / 1.725).
+  conkeldurr: {
+    name: 'conkeldurr', poke_sprite391: sprite('Natdex', 16, 35),
+    config: { extra: { mult: 8, Xmult_multi: 1.5 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fighting', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'enhancements'], poke_after: 'gurdurr',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.mult), r3(ex.Xmult_multi)] }; },
+    calculate(self, card, context) { return pillars(card, context, true); },
+  },
+  // Tympole 535: Uncommon $6, Water. Swift Swim: +30 Chips, doubled while it's raining (swift_swim_raining: a working Kyogre, or a Clubs
+  // forecast on the round's first deal). `chips` +30%: 39 / 48 / 57. 5 rounds.
+  tympole: {
+    name: 'tympole', poke_sprite391: sprite('Natdex', 18, 35),
+    config: { extra: { chips: 30, rounds: 5 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'suit', 'clubs', 'hand_drawn', 'round_evo'], poke_after: 'conkeldurr',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), rain_state(card), ex.rounds] }; },
+    calculate(self, card, context) { return swift_swim(card, context) || level_evo(self, card, context, 'j_poke_palpitoad'); },
+  },
+  // Palpitoad 536: Safari $8. +50 Chips, doubled in rain (65 / 80 / 95). 5 rounds.
+  palpitoad: {
+    name: 'palpitoad', poke_sprite391: sprite('Natdex', 20, 35),
+    config: { extra: { chips: 50, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'suit', 'clubs', 'hand_drawn', 'round_evo'], poke_after: 'tympole',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), rain_state(card), ex.rounds] }; },
+    calculate(self, card, context) { return swift_swim(card, context) || level_evo(self, card, context, 'j_poke_seismitoad'); },
+  },
+  // Seismitoad 537: Safari $10. +50 Chips, doubled in rain; in rain every scored Club also retriggers once (fixed).
+  seismitoad: {
+    name: 'seismitoad', poke_sprite391: sprite('Natdex', 22, 35),
+    config: { extra: { chips: 50, retriggers: 1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'retrigger', 'suit', 'clubs', 'hand_drawn'], poke_after: 'palpitoad',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), rain_state(card)] }; },
+    calculate(self, card, context) {
+      if (context.repetition && !context.end_of_round && context.cardarea === G.play && context.other_card.is_suit('Clubs') && swift_swim_raining(card)) {
+        return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      }
+      return swift_swim(card, context);
+    },
+  },
+  // Throh 538: Rare $7, Fighting. Seismic Toss: the lowest-ranked scored card gives X2 (`Xmult_multi` +5%: X2.1 / 2.2 / 2.3) each time it
+  // scores (re-read per scoring, so its retriggers hit again); a tie the leftmost; never a Stone or debuffed card. Dojo Rivals: with Sawk
+  // held (undebuffed) +X0.5 (`rival_x`, fixed): X2.5.
+  throh: {
+    name: 'throh', poke_sprite391: sprite('Natdex', 24, 35),
+    config: { extra: { Xmult_multi: 2, rival_x: 0.5 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fighting', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'rank', 'pair'], poke_after: 'seismitoad',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_multi), r3(ex.rival_x), dojo('j_poke_sawk') ? 'active' : 'needs Sawk', throh_x(card)] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card === toss_target(context.scoring_hand)) return { x_mult: throh_x(card), card };
+      return undefined;
+    },
+  },
+  // Sawk 539: Rare $7, Fighting. Karate Chop: the highest-ranked scored card (Aces high; a tie the leftmost; Inteleon's snipe_target: never
+  // a Stone or debuffed card) gives +30 Mult (`mult` +40%: 42 / 54 / 66). Dojo Rivals: with Throh, +15 (`rival_mult`, fixed): +45.
+  sawk: {
+    name: 'sawk', poke_sprite391: sprite('Natdex', 26, 35),
+    config: { extra: { mult: 30, rival_mult: 15 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Fighting', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'rank', 'pair'], poke_after: 'throh',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.mult), r3(ex.rival_mult), dojo('j_poke_throh') ? 'active' : 'needs Throh', sawk_mult(card)] };
+    },
+    calculate(self, card, context) {
+      if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card === snipe_target(context.scoring_hand)) return { mult: sawk_mult(card), card };
+      return undefined;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -3914,6 +4300,14 @@ export const DESIGN_FAMILIES = [
   ['chespin', 'quilladin', 'chesnaught'],
   ['fennekin', 'braixen', 'delphox'],
   ['froakie', 'frogadier', 'greninja'],
+  ['patrat', 'watchog'],
+  ['lillipup', 'herdier', 'stoutland'],
+  ['purrloin', 'liepard'],
+  ['pidove', 'tranquill', 'unfezant'],
+  ['blitzle', 'zebstrika'],
+  ['woobat', 'swoobat'],
+  ['timburr', 'gurdurr', 'conkeldurr'],
+  ['tympole', 'palpitoad', 'seismitoad'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -3972,6 +4366,14 @@ const LIBERO_MULT = ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult for each', 'r
 const UNSCORED_CHIPS = ['{C:chips}+#1#{} hand', 'Each played card that', 'doesn\'t score gives', '{C:chips}+#2#{} Chips'];
 const TORCH_SONG = (gain) => ['{C:attention}Torch Song:{} permanently', 'gains ' + gain, 'for each hand played'];
 const MOXIE9 = (gain) => ['{C:attention}Moxie:{} when you beat a', '{C:attention}Blind{}, permanently gains', gain + ' for each', 'unused hand'];
+const LOOKOUT = ['{C:attention}Lookout:{} each {C:attention}Foreseen{}', 'card gives {C:mult}+#2#{} Mult', '{C:inactive}(scored like a held card)'];
+const PICKUP = (what) => ['{C:attention}Pickup:{} at end of round,', '{C:green}#1# in #2#{} chance to create', what, '{C:inactive}(Must have room)'];
+const PICKPOCKET = ['{C:attention}Pickpocket:{} earn {C:money}$#1#{} at', 'end of round; the Joker', 'directly to its {C:attention}right{} loses', '{C:money}$#2#{} of sell value', '{C:inactive}(Never below $1)'];
+const SUPER_LUCK = ['{C:attention}Super Luck:{} {C:green}+#1#{} to the odds', 'of {C:attention}Lucky{} cards', '{C:inactive}(Currently {C:green}#2# in #3#{C:inactive} Mult,', '{C:green}#4# in #5#{C:inactive} money)'];
+const HEART_STAMP = ['{C:attention}Heart Stamp:{} each scored', '{C:hearts}Heart{} card earns {C:money}$#1#{}'];
+const PILLARS = (gain) => ['Scored {C:attention}Stone{} cards', 'each give ' + gain];
+const SWIFT_SWIM = ['{C:attention}Swift Swim:{} {C:chips}+#1#{} Chips,', 'doubled while it\'s {C:poke_rain}raining{}', '{C:inactive}(#2#)'];
+const RAIN_NOTE = ['{C:inactive,s:0.8}(Rain: a working Kyogre, or', '{C:inactive,s:0.8}Clubs held most on the', '{C:inactive,s:0.8}round\'s first deal)'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -4350,6 +4752,38 @@ export const DESIGN_LOC = {
     j_poke_greninja: { name: 'Greninja', text: [
       ['{C:chips}+#1#{} hand', '{X:mult,C:white} X#2# {} Mult, plus {X:mult,C:white} X#3# {} for', 'each other Joker of its type', '{C:inactive}(Currently {C:attention}#4#{C:inactive}, #5# others:', '{X:mult,C:white} X#6# {C:inactive} Mult)'],
       ['{C:attention}Protean:{} when a {C:attention}Blind{} is', 'selected, becomes the type most', 'common among your other Jokers', '{C:inactive}(a tie: it keeps its type)', '{C:inactive,s:0.8}(Its type never breaks Monotype)'],
+    ] },
+    j_poke_patrat: { name: 'Patrat', text: ['{C:purple}+#1# Foresight', ...LOOKOUT, EVOLVES_ROUNDS(3)] },
+    j_poke_watchog: { name: 'Watchog', text: ['{C:purple}+#1# Foresight', ...LOOKOUT] },
+    j_poke_lillipup: { name: 'Lillipup', text: [...PICKUP('a random {C:tarot}Tarot{} card'), '{C:inactive,s:0.8}(Energy carries to Stoutland)', EVOLVES_ROUNDS(3)] },
+    j_poke_herdier: { name: 'Herdier', text: [...PICKUP('a {C:tarot}Tarot{} or {C:planet}Planet{} card'), '{C:inactive,s:0.8}(Energy carries to Stoutland)', EVOLVES_ROUNDS(3)] },
+    j_poke_stoutland: { name: 'Stoutland', text: [
+      PICKUP('a {C:tarot}Tarot{} or {C:planet}Planet{} card'),
+      ['{C:mult}+#3#{} Mult for each', 'consumable card you hold', '{C:inactive}(Currently {C:mult}+#4#{C:inactive} Mult)'],
+    ] },
+    j_poke_purrloin: { name: 'Purrloin', text: [...PICKPOCKET, EVOLVES_ROUNDS(3)] },
+    j_poke_liepard: { name: 'Liepard', text: PICKPOCKET },
+    j_poke_pidove: { name: 'Pidove', text: [...SUPER_LUCK, '{C:inactive,s:0.8}(Energy carries to Tranquill)', EVOLVES_ROUNDS(6)] },
+    j_poke_tranquill: { name: 'Tranquill', text: [SUPER_LUCK, ['When a {C:attention}Lucky{} card', 'triggers, it also gives', '{C:mult}+#6#{} Mult', EVOLVES_ROUNDS(7)]] },
+    j_poke_unfezant: { name: 'Unfezant', text: [SUPER_LUCK, ['When a {C:attention}Lucky{} card', 'triggers, it also gives', '{X:mult,C:white} X#6# {} Mult']] },
+    j_poke_blitzle: { name: 'Blitzle', text: ['{C:attention}Motor Drive:{} {C:mult}+#1#{} Mult for', 'each hand played this round', 'before any discard', '{C:inactive}(This one included; none',
+      '{C:inactive}once you discard this round)', '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_zebstrika: { name: 'Zebstrika', text: ['{C:attention}Motor Drive:{} {X:mult,C:white} X#1# {} Mult', 'if you haven\'t discarded', 'this round', '{C:inactive}(#2#)'] },
+    j_poke_woobat: { name: 'Woobat', text: [...HEART_STAMP, '{C:inactive,s:0.8}(Energy carries to Swoobat)', EVOLVES_ROUNDS(2)] },
+    j_poke_swoobat: { name: 'Swoobat', text: [...HEART_STAMP, 'and gives {X:mult,C:white} X#2# {} Mult'] },
+    j_poke_timburr: { name: 'Timburr', text: [...PILLARS('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(2)] },
+    j_poke_gurdurr: { name: 'Gurdurr', text: [...PILLARS('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(2)] },
+    j_poke_conkeldurr: { name: 'Conkeldurr', text: PILLARS('{C:mult}+#1#{} Mult and {X:mult,C:white} X#2# {} Mult') },
+    j_poke_tympole: { name: 'Tympole', text: [...SWIFT_SWIM, ...RAIN_NOTE, EVOLVES_ROUNDS(3)] },
+    j_poke_palpitoad: { name: 'Palpitoad', text: [...SWIFT_SWIM, ...RAIN_NOTE, EVOLVES_ROUNDS(3)] },
+    j_poke_seismitoad: { name: 'Seismitoad', text: [SWIFT_SWIM, ['While it\'s {C:poke_rain}raining{}, every', 'scored {C:clubs}Club{} retriggers', ...RAIN_NOTE]] },
+    j_poke_throh: { name: 'Throh', text: [
+      ['{C:attention}Seismic Toss:{} the lowest', 'ranked scored card gives', '{X:mult,C:white} X#1# {} Mult', '{C:inactive}(A tie: the leftmost; never', '{C:inactive}a Stone or debuffed card)'],
+      ['{C:attention}Dojo Rivals:{} with {C:attention}Sawk{},', '{X:mult,C:white} X#2# {} more', '{C:inactive}(#3#: {X:mult,C:white} X#4# {C:inactive})'],
+    ] },
+    j_poke_sawk: { name: 'Sawk', text: [
+      ['{C:attention}Karate Chop:{} the highest', 'ranked scored card gives', '{C:mult}+#1#{} Mult', '{C:inactive}(Aces high; a tie: the leftmost;', '{C:inactive}never a Stone or debuffed card)'],
+      ['{C:attention}Dojo Rivals:{} with {C:attention}Throh{},', '{C:mult}+#2#{} more Mult', '{C:inactive}(#3#: {C:mult}+#4#{C:inactive})'],
     ] },
   },
   Other: {

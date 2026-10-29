@@ -935,7 +935,15 @@ export const POKERMON = registerMod({
   // Chespin -> Quilladin -> Chesnaught (+1 hand size; +40 / +80 / +150 Chips; Spiky Shield X1.5 with 2+ hands left), Fennekin -> Braixen
   // -> Delphox (+1 discard, +1 Foresight; Braixen's Tarot on a Foreseen-rank discard; Mystical Fire X0.2 per Tarot used), Froakie ->
   // Frogadier -> Greninja (+1 hand; +30 / +50 Chips per Water Joker; Protean, X(1.5 + 0.5 per other Joker of its type)).
-  contentRev: 52,
+  // 53 = Gen 5, batch 1 (jokers/pokejokers_designs.js lookout / pickup / pickpocket / super_luck / motor_count / heart_stamp / pillars /
+  // swift_swim_raining / toss_target / dojo): Patrat -> Watchog (Foresight; Foreseen cards +6 / +10 Mult), Lillipup -> Herdier -> Stoutland
+  // (Pickup: 1 in 4 / 3 / 2 a Tarot (or Planet) at end of round; +3 Mult per consumable), Purrloin -> Liepard (Pickpocket: $2 / $4, the right
+  // neighbour loses $1 of sell value), Pidove -> Tranquill -> Unfezant (Super Luck: Lucky odds +1; +5 Mult / X1.5 on a triggering Lucky card),
+  // Blitzle -> Zebstrika (Motor Drive: +4 Mult per hand before a discard / X1.5 with no discard), Woobat -> Swoobat (Heart Stamp: $1 / $1 and
+  // X1.1 per Heart), Timburr -> Gurdurr -> Conkeldurr (Stone cards +4 / +8 Mult / +8 and X1.5), Tympole -> Palpitoad -> Seismitoad (Swift
+  // Swim: +30 / +50 / +50 Chips doubled in rain; Seismitoad retriggers Clubs in rain), Throh and Sawk (the lowest X2 / the highest +30;
+  // Dojo Rivals X2.5 / +45).
+  contentRev: 53,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

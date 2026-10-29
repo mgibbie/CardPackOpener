@@ -81,11 +81,11 @@ sec(() => {
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
   const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
-  ok(after('simipour', 'munna') && after('munna', 'musharna') && after('musharna', 'roggenrola') && after('ferrothorn', 'klink')
+  ok(after('simipour', 'munna') && after('munna', 'musharna') && after('musharna', 'pidove') && after('zebstrika', 'roggenrola') && after('ferrothorn', 'klink')
     && after('klink', 'klang') && after('klang', 'klinklang') && after('klinklang', 'elgyem') && after('chandelure', 'axew')
     && after('haxorus', 'golett') && after('greninja', 'bunnelby') && after('bunnelby', 'diggersby') && after('mimikyu', 'drampa')
     && after('dachsbun', 'smoliv') && after('dolliv', 'arboliva') && after('ceruledge', 'bramblin') && after('brambleghast', 'rellor')
-    && after('rabsca', 'tinkatink'), 'inserted in 3.9.1 file order (Bunnelby after the Gen 6 starters, 650-658, which follow Hydreigon)');
+    && after('rabsca', 'tinkatink'), 'inserted in 3.9.1 file order (Bunnelby after the Gen 6 starters, 650-658, which follow Hydreigon; Roggenrola after the Gen 5 batch 1 Pidove ... Zebstrika, 519-523)');
 });
 sec(() => {
   // The 3.9.1 text (each #n# the text names filled by loc_vars)
