@@ -522,6 +522,562 @@
 	},
 	"entries": [
 		{
+			"sha": "4e47db4",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r52: the Gen 6 starters (Chespin, Fennekin, Froakie lines)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_chespin",
+							"name": "Chespin",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_quilladin",
+							"name": "Quilladin",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_chesnaught",
+							"name": "Chesnaught",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_fennekin",
+							"name": "Fennekin",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_braixen",
+							"name": "Braixen",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_delphox",
+							"name": "Delphox",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_froakie",
+							"name": "Froakie",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_frogadier",
+							"name": "Frogadier",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 43
+							}
+						},
+						{
+							"key": "j_poke_greninja",
+							"name": "Greninja",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 43
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "1664fd5",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon: the Gen 9 Fire and Water starters (Fuecoco, Quaxly lines; r51)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_fuecoco",
+							"name": "Fuecoco",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 60
+							}
+						},
+						{
+							"key": "j_poke_crocalor",
+							"name": "Crocalor",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 60
+							}
+						},
+						{
+							"key": "j_poke_skeledirge",
+							"name": "Skeledirge",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 20,
+								"y": 60
+							}
+						},
+						{
+							"key": "j_poke_quaxly",
+							"name": "Quaxly",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 22,
+								"y": 60
+							}
+						},
+						{
+							"key": "j_poke_quaxwell",
+							"name": "Quaxwell",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 24,
+								"y": 60
+							}
+						},
+						{
+							"key": "j_poke_quaquaval",
+							"name": "Quaquaval",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 26,
+								"y": 60
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "8f6579b",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r50: the Gen 5 starters (Snivy, Tepig, Oshawott lines)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_snivy",
+							"name": "Snivy",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 28,
+								"y": 32
+							}
+						},
+						{
+							"key": "j_poke_servine",
+							"name": "Servine",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 0,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_serperior",
+							"name": "Serperior",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_tepig",
+							"name": "Tepig",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_pignite",
+							"name": "Pignite",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_emboar",
+							"name": "Emboar",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_oshawott",
+							"name": "Oshawott",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_dewott",
+							"name": "Dewott",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 33
+							}
+						},
+						{
+							"key": "j_poke_samurott",
+							"name": "Samurott",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 33
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "d46bd7f",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r49: the Gen 8 starters (Scorbunny and Sobble lines)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_scorbunny",
+							"name": "Scorbunny",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 54
+							}
+						},
+						{
+							"key": "j_poke_raboot",
+							"name": "Raboot",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 54
+							}
+						},
+						{
+							"key": "j_poke_cinderace",
+							"name": "Cinderace",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 54
+							}
+						},
+						{
+							"key": "j_poke_sobble",
+							"name": "Sobble",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 54
+							}
+						},
+						{
+							"key": "j_poke_drizzile",
+							"name": "Drizzile",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 54
+							}
+						},
+						{
+							"key": "j_poke_inteleon",
+							"name": "Inteleon",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 54
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "0eabcca",
+			"date": "2026-10-28",
+			"kind": "micatro",
+			"title": "Pokermon r48: the Gen 7 starters (Rowlet, Litten, Popplio lines)",
+			"body": "",
+			"cards": [],
+			"micatroMods": [
+				{
+					"id": "pokermon",
+					"name": "Pokermon",
+					"added": [
+						{
+							"key": "j_poke_rowlet",
+							"name": "Rowlet",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 2,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_dartrix",
+							"name": "Dartrix",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 4,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_decidueye",
+							"name": "Decidueye",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 6,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_litten",
+							"name": "Litten",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 8,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_torracat",
+							"name": "Torracat",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 10,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_incineroar",
+							"name": "Incineroar",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 12,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_popplio",
+							"name": "Popplio",
+							"set": "Joker",
+							"rarity": "uncommon",
+							"cost": 5,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 14,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_brionne",
+							"name": "Brionne",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 8,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 16,
+								"y": 48
+							}
+						},
+						{
+							"key": "j_poke_primarina",
+							"name": "Primarina",
+							"set": "Joker",
+							"rarity": "safari",
+							"cost": 10,
+							"atlas": "@poke_AtlasJokersBasicNatdex391",
+							"pos": {
+								"x": 18,
+								"y": 48
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"sha": "7efdc9a",
+			"date": "2026-10-28",
+			"kind": "patch",
+			"title": "Pokermon: Regigigas wakes after 1 round with the full Regi trio (contentRev 47)",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "b1e54f4",
 			"date": "2026-10-28",
 			"kind": "micatro",
