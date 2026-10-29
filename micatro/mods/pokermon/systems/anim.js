@@ -95,6 +95,13 @@ export const SEA_SPRITES = {
   j_poke_gastrodon: { east: { x: 8, y: 1 }, west: { x: 10, y: 1 } },
 };
 
+/**
+ * Basculin's stripe (the owner's Gen 5 batch 2, jokers/pokejokers_designs.js STRIPES): upstream 3.9.1 draws three on the Gen 5 sheet, beside
+ * one another ({4,0} Red-Striped, {6,0} Blue-Striped, {8,0} White-Striped, unused; pokespriteload.lua lists only the first) — by
+ * ability.extra.form. Red is its own card. Drawn by ui.js face() (+ the Shiny sheet's twins at the same cells).
+ */
+export const BASCULIN_SPRITES = { blue: { x: 6, y: 0 } };
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;

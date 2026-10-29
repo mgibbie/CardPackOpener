@@ -98,6 +98,17 @@
 // discard each round creates a Tarot; Delphox's Mystical Fire X0.2 per Tarot used), Froakie -> Frogadier -> Greninja (Water: +1 hand;
 // +30 / +50 Chips per Water Joker; Greninja's Protean takes the most common type among your other Jokers each Blind, X(1.5 + 0.5 per
 // other Joker of its type)) — upstream 3.9.1 draws them (Natdex 8-24, 43).
+// Gen 5, batch 2 (contentRev 54; the owner's "Yes", 2026-10-28), 26 jokers #540-573: Sewaddle -> Swadloon -> Leavanny (Grass; the tailor: a
+// random unenhanced deck card each Blind becomes Bonus / Bonus-or-Mult / Bonus-Mult-or-Lucky; Leavanny's scored enhanced cards +3 Mult),
+// Venipede -> Whirlipede -> Scolipede (Dark; Poison Point: each discarded card permanently -2 / -3 Chips, floored at 0, and +3 / +5 Mult;
+// Scolipede's unenhanced ones become Mult cards), Cottonee -> Whimsicott (Grass; +1 hand size and the round's first deal +1 card; +2 hand
+// size), Petilil -> Lilligant (Grass; scored Flower cards $1 / $2; Flowers need 3+ suits), Basculin (Water; a Red or Blue stripe rolled
+// once: +20 Chips per scored red / black suit card), Sandile -> Krokorok -> Krookodile (Dark; Moxie: +2 / +4 Mult, then X0.15, banked per
+// Blind beaten), Maractus (Grass; +8 Mult per Hazard held), Dwebble -> Crustle (Earth; +5 / +10 Chips per Stone card in the deck), Sigilyph
+// (Psychic; +2 Foresight, Pair Planets level twice), Yamask -> Cofagrigus (Psychic; X0.1 / X0.2 per Joker sold; Mummy: the round's first
+// Joker sold stays, Negative), Tirtouga -> Carracosta (Water; Ancient 9s), Archen -> Archeops (Earth; Ancient 10s, Defeatist) and Minccino ->
+// Cinccino (Colorless; each discard draws 1 extra; Skill Link) — upstream 3.9.1 draws them all (Natdex {28,35}-{4,38}, Basculin Gen 5 {4,0}
+// / {6,0}).
 import {
   G, P_CENTERS, P_CENTER_POOLS, localize, card_eval_status_text, pseudorandom, pseudoseed, pseudorandom_element, ease_hands_played,
   create_card, copy_card, playing_card_joker_effects, defineJokers, type_tooltip, level_evo, scaling_evo, item_evo,
@@ -105,7 +116,7 @@ import {
   find_pokemon_type, is_type, apply_type_sticker, remove_type_stickers, type_sticker_applied, get_type, multitype, wildcard_type, POKETYPES,
   add_card, detailed, energy_values, poke_remove_card, ease_dollars, ease_discard, juice_card_until, find_card, get_total_energy, POST_EVOLVE, can_evolve,
   poke_change_growth_level,
-  poke_get_adjacent_jokers, emit, find_joker,
+  poke_get_adjacent_jokers, emit, find_joker, level_up_hand,
 } from '../api.js';
 import * as BN from '../../../js/engine/bignum.js'; // the Blind's requirement (Poison Gas) may be a big number in modded runs
 import { number_format } from '../../../js/engine/core.js';
@@ -1535,6 +1546,278 @@ function razor_shell(card, context) {
 function shell_blade(card, context) {
   if (context.individual && context.cardarea === G.play && !context.end_of_round && !has_no_rank(context.other_card) && context.other_card.get_id() === 14) {
     return { x_mult: card.ability.extra.Xmult_multi, card };
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------- Gen 5, batch 2 (#540-573; the owner's "Yes", 2026-10-28)
+/** The Sewaddle line, the tailor: when a Blind is selected, ONE random UNENHANCED card of the full deck (G.playing_cards, the run's
+ *  seeded pseudorandom_element: Cherubi's sweet_seeds) becomes one of the stage's cloths — Sewaddle a Bonus card; Swadloon a Bonus or
+ *  Mult card; Leavanny a Bonus, Mult or Lucky card (the cloth is a second seeded pick, 'poke_tailor_cloth', drawn only when there is a
+ *  choice). None unenhanced: nothing (it never overwrites another enhancement). One card a Blind, fixed (no Energy field). Blueprint
+ *  copies it (Marble Joker's moment), as Cherubi's. */
+export const TAILOR_CLOTHS = { sewaddle: ['m_bonus'], swadloon: ['m_bonus', 'm_mult'], leavanny: ['m_bonus', 'm_mult', 'm_lucky'] };
+const CLOTH_WORD = { m_bonus: 'Bonus', m_mult: 'Mult', m_lucky: 'Lucky' };
+function tailor(card, context, cloths) {
+  if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
+  const plain = (G.playing_cards || []).filter((c) => unbroken(c) && c.config.center.key === 'c_base');
+  if (!plain.length) return;
+  const [pick] = pseudorandom_element(plain, pseudoseed('poke_sewaddle_tailor'));
+  const cloth = cloths.length > 1 ? pseudorandom_element(cloths, pseudoseed('poke_tailor_cloth'))[0] : cloths[0];
+  pick.set_ability(P_CENTERS[cloth], null, true);
+  G.E_MANAGER.add_event(() => { pick.juice_up(); });
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: '+1 ' + CLOTH_WORD[cloth], colour: 'GREEN' });
+}
+/** Leavanny: each scored ENHANCED card (its own enhancement: any center but the plain card; Stone and Hazard cards included) gives
+ *  +mult Mult. A retrigger repeats it; Blueprint copies it. */
+function leaf_blade(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.config.center.key !== 'c_base') return { mult: card.ability.extra.mult, card };
+  return undefined;
+}
+
+/** The Venipede line, Poison Point (a spreading poison): every card the PLAYER discards (pre_discard without `hook`, Trapinch's rule:
+ *  The Hook and seals don't count) is poisoned for good: -chip_loss Chips (perma_bonus) and +mult_mod Mult (Steamodded's perma_mult,
+ *  which the engine scores every time the card scores). The Chips are FLOORED at the card's own: perma_bonus never goes below minus
+ *  the Chips the card gives without it (rank + enhancement bonus; a Stone card's +50), so a card's Chips stop at 0 and the Mult keeps
+ *  growing; a card already at 0 (a Hazard card) loses nothing. Scolipede also turns each poisoned UNENHANCED card into a Mult card
+ *  (seal, edition and the perma values kept). Blueprint copies it (Hiker's growth: a second dose). */
+export const own_chips = (c) => {
+  const a = c.ability;
+  if (a.effect === 'Stone Card' || c.config.center.replace_base_card) return a.bonus || 0;
+  return (c.base.nominal - (a.nominal_drain || 0)) + (a.bonus || 0);
+};
+export function poison_card(c, loss, gain) {
+  const a = c.ability, perma = a.perma_bonus || 0;
+  a.perma_bonus = Math.min(perma, Math.max(perma - loss, -own_chips(c)));
+  a.perma_mult = r3((a.perma_mult || 0) + gain);
+}
+function poison_point(card, context) {
+  if (!(context.pre_discard && !context.hook && !context.retrigger_joker && context.full_hand && context.full_hand.length)) return undefined;
+  const ex = card.ability.extra;
+  for (const c of context.full_hand) {
+    poison_card(c, ex.chip_loss, ex.mult_mod);
+    if (ex.toxic && c.config.center.key === 'c_base' && unbroken(c)) c.set_ability(P_CENTERS.m_mult, null, true);
+  }
+  card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: 'Poisoned!', colour: 'PURPLE' });
+  return undefined;
+}
+
+/** Cottonee, Prankster: +h_size hand size while held, and the round's FIRST hand drawn draws 1 extra card: when a Blind is selected
+ *  (before the deal) +1 temporary hand size (`prank_draw`), taken back on that first deal (first_hand_drawn), so the hand starts one
+ *  card over its size and the next draw refills only to the normal size. Not Blueprint (one extra card a round). Sold or evolved
+ *  with the +1 still pending, it gives back both. Whimsicott: +2 hand size, nothing temporary. */
+const prankster = {
+  add_to_deck(self, card) { G.hand.change_size(card.ability.extra.h_size); },
+  remove_from_deck(self, card) {
+    const ex = card.ability.extra;
+    G.hand.change_size(-(ex.h_size + (ex.prank_draw || 0)));
+    ex.prank_draw = 0;
+  },
+};
+function prank_draw(card, context) {
+  const ex = card.ability.extra;
+  if (context.setting_blind && !context.blueprint && !card.getting_sliced && !ex.prank_draw) {
+    ex.prank_draw = 1;
+    G.hand.change_size(1);
+    card_eval_status_text(card, 'extra', null, null, null, { message: '+1 card', colour: 'FILTER' });
+  }
+  if (context.first_hand_drawn && !context.blueprint && ex.prank_draw) {
+    G.hand.change_size(-ex.prank_draw);
+    ex.prank_draw = 0;
+  }
+}
+
+/** Petilil / Lilligant: each scored Flower card (any card counting as one) earns $flower_money (fixed: money never takes Energy).
+ *  A retrigger pays again; Blueprint copies it. Lilligant's Flower rule is Cherrim's poke_flower_rule (3+ suits; the fewest asked wins). */
+function flower_money(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_poke_flower')) {
+    const dollars = card.ability.extra.flower_money;
+    G.GAME.dollar_buffer = (G.GAME.dollar_buffer || 0) + dollars;
+    return { dollars, card, func() { G.E_MANAGER.add_event(() => { G.GAME.dollar_buffer = 0; }); } };
+  }
+  return undefined;
+}
+
+/** Basculin's stripe (the Shellos line's rolled-once trait, with its own art): Red or Blue, rolled when the card is created
+ *  (set_ability initial, seeded 'basculin_stripe'), kept on ability.extra.form; upstream 3.9.1 draws both on the Gen 5 sheet
+ *  (Red {4,0}, its own card; Blue {6,0}: systems/anim.js BASCULIN_SPRITES). */
+export const STRIPES = { red: { name: 'Red-Striped', suits: ['Hearts', 'Diamonds'] }, blue: { name: 'Blue-Striped', suits: ['Clubs', 'Spades'] } };
+export const stripe_of = (card) => (STRIPES[card.ability.extra.form] ? card.ability.extra.form : 'red');
+function stripe_chips(card, context) {
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && STRIPES[stripe_of(card)].suits.some((s) => context.other_card.is_suit(s))) {
+    return { chips: card.ability.extra.chips, card };
+  }
+  return undefined;
+}
+
+/** The Sandile line, Moxie: when you beat a Blind (the main end_of_round pass, not a game over; Quaxly's moment) it banks +mult_mod
+ *  Mult (`moxie_mult`), Krookodile +Xmult_mod X Mult instead (`moxie_Xmult` from X1), in fields Energy never touches (Quaxly's bank:
+ *  never retroactive; carried through both evolutions). Gain first, then the evolution countdown. Not Blueprint. */
+function blind_moxie(card, context) {
+  if (round_end(context) && !context.blueprint && !context.retrigger_joker && !context.game_over) {
+    if (card.ability.extra.Xmult_mod !== undefined) bank(card, 'moxie_Xmult', 'Xmult_mod', 1, 'XMULT');
+    else bank(card, 'moxie_mult', 'mult_mod', 1, 'MULT');
+  }
+}
+function moxie_main(card, context) {
+  if (!context.joker_main) return undefined;
+  const ex = card.ability.extra, r = {};
+  if (ex.moxie_mult > 0) r.mult_mod = ex.moxie_mult;
+  if (ex.moxie_Xmult > 1) r.Xmult_mod = ex.moxie_Xmult;
+  if (!Object.keys(r).length) return undefined;
+  r.message = r.Xmult_mod ? a_xmult(r.Xmult_mod) : a_mult(r.mult_mod);
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
+
+/** Maractus, a Hazard-held payoff: each Hazard card HELD in hand (any card counting as one, not debuffed) gives +mult Mult when a hand
+ *  scores (h_mult, Baron's shape: Mime and held retriggers repeat it). Pokermon's Hazard layer deals them; Maractus turns them from a
+ *  cost into fuel. */
+const hazards_held = () => ((G.hand && G.hand.cards) || []).filter((c) => !c.debuff && has_enhancement(c, 'm_poke_hazard')).length;
+function hazard_held_mult(card, context) {
+  if (context.individual && context.cardarea === G.hand && !context.end_of_round && !context.other_card.debuff && has_enhancement(context.other_card, 'm_poke_hazard')) {
+    return { h_mult: card.ability.extra.mult, card };
+  }
+  return undefined;
+}
+
+/** Dwebble / Crustle: +chips Chips for each Stone card in the full deck (any card counting as one). */
+const stones_in_deck = () => (G.playing_cards || []).filter((c) => has_enhancement(c, 'm_stone')).length;
+function stone_shell(card, context) {
+  if (!context.joker_main) return undefined;
+  const n = stones_in_deck(), chips = r3(card.ability.extra.chips * n);
+  return chips > 0 ? { message: a_chips(chips), colour: 'CHIPS', chip_mod: chips } : undefined;
+}
+
+/** Sigilyph: using a Planet card for Pair (Mercury, or any mod's Planet whose hand_type is Pair) levels Pair up `levels` more time(s),
+ *  after the Planet's own level (the using_consumeable context runs once the Planet is used). Not Blueprint; fixed. */
+function sigil_pair(card, context) {
+  const c = context.consumeable;
+  if (context.using_consumeable && !context.blueprint && c && c.ability.set === 'Planet' && c.ability.consumeable && c.ability.consumeable.hand_type === 'Pair') {
+    level_up_hand(card, 'Pair', null, card.ability.extra.levels);
+    card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_level_up_ex'), colour: 'Planet' });
+  }
+}
+
+/** Yamask / Cofagrigus: every OTHER Joker you sell banks +Xmult_mod X Mult (`grudge_Xmult` from X1, no energy field: never retroactive;
+ *  carried through the evolution). Not Blueprint. A Joker Cofagrigus mummifies counts as sold for this (mummy_sell below). */
+const YAMASK_LINE = ['j_poke_yamask', 'j_poke_cofagrigus'];
+function grudge(card) { bank(card, 'grudge_Xmult', 'Xmult_mod', 1, 'XMULT'); }
+function grudge_sell(card, context) {
+  if (context.selling_card && !context.blueprint && !context.retrigger_joker && context.card !== card && context.card.ability.set === 'Joker') grudge(card);
+}
+function grudge_main(card, context) {
+  const x = card.ability.extra.grudge_Xmult;
+  if (context.joker_main && x > 1) return { message: a_xmult(r3(x)), colour: 'XMULT', Xmult_mod: x };
+  return undefined;
+}
+/** Cofagrigus, Mummy (the sell_instead hook, index.js; run.js asks it before a player's sale): the FIRST Joker you sell each round
+ *  (keyed by G.GAME.round: from selecting a Blind to selecting the next, its shop included; one for the whole row, however many
+ *  Cofagrigus) is NOT sold while an undebuffed Cofagrigus other than that Joker is held (find_card: a Blueprint is not one, so it can't
+ *  copy Mummy). The Joker stays and becomes Negative instead (its old edition replaced; the Negative's +1 Joker slot makes room for
+ *  it), no money is paid, and the vanilla sell contexts (selling_self / selling_card) don't run: nothing was sold. It still counts as a
+ *  sale for the Yamask line's X (every undebuffed Yamask / Cofagrigus but the mummified one gains). An already Negative Joker is sold
+ *  as usual, and uses up the round's Mummy (it was that round's first sale). A consumable is never mummified. -> true to keep it. */
+export const mummy_used = () => !!(G.GAME && G.GAME.poke_mummy_round === G.GAME.round);
+export function mummy_sell(sold) {
+  if (!sold || !sold.ability || sold.ability.set !== 'Joker' || sold.area !== G.jokers || !G.GAME) return false;
+  const coffins = find_card('j_poke_cofagrigus').filter((j) => j !== sold);
+  if (!coffins.length || mummy_used()) return false;
+  G.GAME.poke_mummy_round = G.GAME.round;
+  if (sold.edition && sold.edition.negative) return false;
+  sold.set_edition({ negative: true });
+  for (const j of G.jokers.cards) if (j !== sold && !j.debuff && YAMASK_LINE.includes(j.config.center.key)) grudge(j);
+  card_eval_status_text(coffins[0], 'extra', null, null, null, { message: 'Mummy!', colour: 'DARK_EDITION' });
+  emit('card_changed', { card: sold.sort_id });
+  return true;
+}
+const mummy_state = () => (mummy_used() ? 'used this round' : 'ready');
+
+/** The fossils' Ancient (Kabuto's / Omanyte's cumulative tiers, pokejokers_05): how many cards of rank `id` are in the SCORING hand, read
+ *  live from context.scoring_hand (no state kept between contexts). A Stone card has no rank. */
+const ancient_tip = (info_queue, rank) => info_queue.push({ set: 'Other', key: 'ancient', vars: [localize(rank, 'ranks')] });
+const ancient_count = (context, id) => (context.scoring_hand || []).filter((c) => !has_no_rank(c) && c.get_id() === id).length;
+/** The 3+ tier fired: counts toward evolving (`third_times`, "Trigger 3+ ability 5 times"), never from a Blueprint or a retrigger. */
+const ancient_third = (card, context) => { if (!context.blueprint && !context.retrigger_joker) card.ability.extra.third_times = (card.ability.extra.third_times || 0) + 1; };
+/** Tirtouga / Carracosta, Ancient 9s: 1+ +chips1 Chips; 2+ each scored 9 permanently gains +chips2 Chips (perma_bonus, Kabuto's); 3+
+ *  +chips3 Chips; Carracosta 4+ retriggers every scored 9. */
+function ancient_nines(card, context) {
+  const ex = card.ability.extra;
+  if (context.joker_main && context.scoring_hand) {
+    const n = ancient_count(context, 9);
+    let chips = 0;
+    if (n >= 1) chips += ex.chips1;
+    if (n >= 3) { chips += ex.chips3; ancient_third(card, context); }
+    if (chips > 0) return { message: a_chips(r3(chips)), colour: 'CHIPS', chip_mod: chips };
+    return undefined;
+  }
+  if (context.individual && context.cardarea === G.play && !context.end_of_round && context.scoring_hand && !has_no_rank(context.other_card)
+    && context.other_card.get_id() === 9 && ancient_count(context, 9) >= 2) {
+    const a = context.other_card.ability;
+    a.perma_bonus = r3((a.perma_bonus || 0) + ex.chips2);
+    return { extra: { message: localize('k_upgrade_ex'), colour: 'CHIPS' }, colour: 'CHIPS', card };
+  }
+  if (ex.retriggers && context.repetition && context.cardarea === G.play && context.scoring_hand && !has_no_rank(context.other_card)
+    && context.other_card.get_id() === 9 && ancient_count(context, 9) >= 4) {
+    return { message: localize('k_again_ex'), repetitions: ex.retriggers, card };
+  }
+  return undefined;
+}
+/** Archen / Archeops, Ancient 10s: 1+ +mult Mult; 2+ X(Xmult); 3+ earn $ancient_money (once a hand: joker_main); Archeops 4+ X(Xmult2)
+ *  too. Archeops's Defeatist: on the round's final hand (hands_left 0 while it scores, Azelf's check) every one of its numbers is
+ *  halved: Mult / 2, an X keeps half its bonus (1 + (X - 1) / 2: X2 -> X1.5, X1.25 -> X1.125), the money rounds down ($3 -> $1). */
+const defeatist = (card) => !!(card.ability.extra.Xmult2 !== undefined && G.GAME && G.GAME.facing_blind && final_hand());
+const half_x = (x) => r3(1 + (x - 1) / 2);
+export function ancient_tens_values(card) {
+  const ex = card.ability.extra, half = defeatist(card);
+  return {
+    mult: r3(half ? ex.mult / 2 : ex.mult), x1: half ? half_x(ex.Xmult) : r3(ex.Xmult),
+    x2: ex.Xmult2 === undefined ? undefined : (half ? half_x(ex.Xmult2) : r3(ex.Xmult2)),
+    money: half ? Math.floor(ex.ancient_money / 2) : ex.ancient_money, half,
+  };
+}
+function ancient_tens(card, context) {
+  if (!context.joker_main || !context.scoring_hand) return undefined;
+  const n = ancient_count(context, 10), v = ancient_tens_values(card);
+  if (n < 1) return undefined;
+  const r = { mult_mod: v.mult };
+  let x = 1;
+  if (n >= 2) x *= v.x1;
+  if (n >= 4 && v.x2 !== undefined) x *= v.x2;
+  if (x !== 1) r.Xmult_mod = x;
+  if (n >= 3) { ancient_third(card, context); if (v.money > 0) r.dollars = v.money; }
+  r.message = r.Xmult_mod ? a_xmult(r.Xmult_mod) : a_mult(v.mult);
+  r.colour = r.Xmult_mod ? 'XMULT' : 'MULT';
+  return r;
+}
+
+/** Minccino, Tidy Up: each discard you make (a player discard, once per discard, not per card) gives +1 hand size until your next hand
+ *  is played (`tidy_draws`, taken back on press_play; and at the end of the round, or when it leaves, if still pending), so that
+ *  discard's refill draws 1 extra card. Not Blueprint. */
+function tidy_up(card, context) {
+  const ex = card.ability.extra;
+  if (context.pre_discard && !context.hook && !context.blueprint && !context.retrigger_joker) {
+    ex.tidy_draws = (ex.tidy_draws || 0) + 1;
+    G.hand.change_size(1);
+    card_eval_status_text(card, 'extra', null, null, null, { message: '+1 card', colour: 'FILTER' });
+    return;
+  }
+  if ((context.press_play || round_end(context) || context.setting_blind) && !context.blueprint && ex.tidy_draws) {
+    G.hand.change_size(-ex.tidy_draws);
+    ex.tidy_draws = 0;
+  }
+}
+const tidy = {
+  remove_from_deck(self, card) { const ex = card.ability.extra; if (ex.tidy_draws) { G.hand.change_size(-ex.tidy_draws); ex.tidy_draws = 0; } },
+};
+/** Cinccino, Skill Link: the FIRST scored card (by position: a debuffed one there gets nothing, the next is never promoted) retriggers
+ *  once per discard used this round (current_round.discards_used: a discard USE, whatever its size; effect discards never count),
+ *  at most `link_cap` (5) times. Blueprint copies it. */
+const skill_links = (card) => Math.min(card.ability.extra.link_cap, (G.GAME && G.GAME.current_round && G.GAME.current_round.discards_used) || 0);
+function skill_link(card, context) {
+  if (context.repetition && context.cardarea === G.play && context.scoring_hand && context.scoring_hand[0] === context.other_card) {
+    const n = skill_links(card);
+    if (n > 0) return { message: localize('k_again_ex'), repetitions: n, card };
   }
   return undefined;
 }
@@ -3736,6 +4019,300 @@ defineJokers({
     calculate(self, card, context) { return razor_shell(card, context) || shell_blade(card, context); },
     ...hands,
   },
+  // ---------------------------------------------------------------- Gen 5, batch 2 (2026-10-28, the owner's "Yes"): 26 jokers, #540-573
+  // Prices on the guide's slots (3-stage line U $6 / S $8 / S $10; 2-stage line C $5 / S $8; single-stage R $7); evolution by rounds (an
+  // early evolver 4, else 5), the fossils by the Ancient convention (trigger the 3+ tier 5 times). Energy raises each line's main number at
+  // the standard rate; counts, conversions, money, odds and retriggers are fixed; banks are never retroactive. Types from their upstream
+  // cards (Venipede and Sandile lines Dark, Dwebble Earth: pokermon_art_type). Art: upstream 3.9.1's own cells (Natdex {28,35}..{4,38};
+  // Basculin Gen 5 {4,0} / {6,0}); nothing to deploy. Neither Nacho nor Pokermon+ has any of them.
+  // Sewaddle 540 (Grass, Uncommon $6): the tailor, 1 unenhanced deck card a Blind becomes a Bonus card. 4 rounds. Its own effect has no
+  // number: it carries Leavanny's `mult` 3 (Combee's "Energy for later"), so Energy used on it lands on Leavanny's +Mult.
+  sewaddle: {
+    name: 'sewaddle', poke_sprite391: sprite('Natdex', 28, 35),
+    config: { extra: { mult: 3, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['enhancements', 'modify_card', 'full_deck', 'round_evo'], poke_after: 'excadrill',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_bonus); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { tailor(card, context, TAILOR_CLOTHS.sewaddle); return level_evo(self, card, context, 'j_poke_swadloon'); },
+  },
+  // Swadloon 541 (Safari $8): a Bonus or a Mult card (a seeded pick). 5 rounds.
+  swadloon: {
+    name: 'swadloon', poke_sprite391: sprite('Natdex', 0, 36),
+    config: { extra: { mult: 3, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['enhancements', 'modify_card', 'full_deck', 'round_evo'], poke_after: 'sewaddle',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_bonus); info_queue.push(P_CENTERS.m_mult); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) { tailor(card, context, TAILOR_CLOTHS.swadloon); return level_evo(self, card, context, 'j_poke_leavanny'); },
+  },
+  // Leavanny 542 (Safari $10): a Bonus, Mult or Lucky card; each scored enhanced card +3 Mult (`mult`, Energy +40%: 4.2 / 5.4 / 6.6).
+  leavanny: {
+    name: 'leavanny', poke_sprite391: sprite('Natdex', 2, 36),
+    config: { extra: { mult: 3 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'swadloon',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_lucky); return { vars: [r3(card.ability.extra.mult)] }; },
+    calculate(self, card, context) { tailor(card, context, TAILOR_CLOTHS.leavanny); return leaf_blade(card, context); },
+  },
+  // Venipede 543 (Dark: its card; Uncommon $6): Poison Point, each card you discard permanently -2 Chips (floored at 0) and +3 Mult
+  // (`mult_mod`, a per-card gain: Energy +20%, 3.6 / 4.2 / 4.8; the -2 `chip_loss` is fixed). 4 rounds.
+  venipede: {
+    name: 'venipede', poke_sprite391: sprite('Natdex', 4, 36),
+    config: { extra: { chip_loss: 2, mult_mod: 3, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Dark', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'discard', 'modify_card', 'round_evo'], poke_after: 'leavanny',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.chip_loss, r3(ex.mult_mod), ex.rounds] }; },
+    calculate(self, card, context) { poison_point(card, context); return level_evo(self, card, context, 'j_poke_whirlipede'); },
+  },
+  // Whirlipede 544 (Safari $8): -3 Chips and +5 Mult (Energy: 6 / 7 / 8). 5 rounds.
+  whirlipede: {
+    name: 'whirlipede', poke_sprite391: sprite('Natdex', 6, 36),
+    config: { extra: { chip_loss: 3, mult_mod: 5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'discard', 'modify_card', 'round_evo'], poke_after: 'venipede',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.chip_loss, r3(ex.mult_mod), ex.rounds] }; },
+    calculate(self, card, context) { poison_point(card, context); return level_evo(self, card, context, 'j_poke_scolipede'); },
+  },
+  // Scolipede 545 (Safari $10): Whirlipede's poison, and each poisoned unenhanced card becomes a Mult card.
+  scolipede: {
+    name: 'scolipede', poke_sprite391: sprite('Natdex', 8, 36),
+    config: { extra: { chip_loss: 3, mult_mod: 5, toxic: true } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Dark', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'discard', 'modify_card', 'enhancements'], poke_after: 'whirlipede',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_mult); const ex = card.ability.extra; return { vars: [ex.chip_loss, r3(ex.mult_mod)] }; },
+    calculate(self, card, context) { poison_point(card, context); return undefined; },
+  },
+  // Cottonee 546 (Grass, Common $5): +1 hand size; Prankster, the round's first hand drawn draws 1 extra card (a +1 hand size for that
+  // deal only). 5 rounds. No number: Energy-inert by design (poke_no_energy_field), as Whimsicott.
+  cottonee: {
+    name: 'cottonee', poke_sprite391: sprite('Natdex', 10, 36),
+    config: { extra: { h_size: 1, prank_draw: 0, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 5, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['hand_size', 'round_evo'], poke_after: 'scolipede',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, ex.rounds] }; },
+    calculate(self, card, context) { prank_draw(card, context); return level_evo(self, card, context, 'j_poke_whimsicott'); },
+    ...prankster,
+  },
+  // Whimsicott 547 (Safari $8): +2 hand size, fixed (never energized: the guide's hand-size pitfall; a +2 that grew with Energy would
+  // stack past every other Grass hand-size joker).
+  whimsicott: {
+    name: 'whimsicott', poke_sprite391: sprite('Natdex', 12, 36),
+    config: { extra: { h_size: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 5, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['hand_size'], poke_after: 'cottonee',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.h_size] }; },
+    ...hand_size,
+  },
+  // Petilil 548 (Grass, Common $5): each scored Flower card earns $1 (fixed: money takes no Energy, so the line is Energy-inert). 5 rounds.
+  petilil: {
+    name: 'petilil', poke_sprite391: sprite('Natdex', 14, 36),
+    config: { extra: { flower_money: 1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 5, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['money', 'economy', 'enhancements', 'round_evo'], poke_after: 'whimsicott',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_flower); const ex = card.ability.extra; return { vars: [ex.flower_money, ex.rounds] }; },
+    calculate(self, card, context) { return flower_money(card, context) || level_evo(self, card, context, 'j_poke_lilligant'); },
+  },
+  // Lilligant 549 (Safari $8): Flower cards need only 3+ suits (Cherrim's / Roserade's rule: the fewest suits asked wins, never 2);
+  // each scored Flower card earns $2.
+  lilligant: {
+    name: 'lilligant', poke_sprite391: sprite('Natdex', 16, 36),
+    config: { extra: { flower_money: 2, suits: 3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 5, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['money', 'economy', 'enhancements', 'suits'], poke_after: 'petilil',
+    poke_flower_rule(self, card) { return { suits: card.ability.extra.suits }; },
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_flower); const ex = card.ability.extra; return { vars: [ex.suits, ex.flower_money] }; },
+    calculate(self, card, context) { return flower_money(card, context); },
+  },
+  // Basculin 550 (Water, Rare $7, single-stage): a stripe rolled once when created (Red or Blue, Shellos's sea); Red: scored Hearts and
+  // Diamonds +20 Chips each, Blue: Clubs and Spades (`chips`, Energy +30%: 26 / 32 / 38). Each stripe draws its own 3.9.1 cell.
+  basculin: {
+    name: 'basculin', poke_sprite391: sprite('Gen05', 4, 0),
+    config: { extra: { chips: 20, form: 'red' } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'suit'], poke_after: 'lilligant',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const s = STRIPES[stripe_of(card)];
+      return { vars: [r3(card.ability.extra.chips), s.name, localize(s.suits[0], 'suits_plural'), localize(s.suits[1], 'suits_plural')], colours: s.suits.slice() };
+    },
+    set_ability(self, card, initial) {
+      if (initial) card.ability.extra.form = pseudorandom(pseudoseed('basculin_stripe')) < 0.5 ? 'red' : 'blue';
+    },
+    calculate(self, card, context) { return stripe_chips(card, context); },
+  },
+  // Sandile 551 (Dark: its card; Uncommon $6): Moxie, +2 Mult banked each Blind beaten (`moxie_mult`; gain `mult_mod`, Energy +20%:
+  // 2.4 / 2.8 / 3.2). 5 rounds.
+  sandile: {
+    name: 'sandile', poke_sprite391: sprite('Natdex', 20, 36),
+    config: { extra: { moxie_mult: 0, mult_mod: 2, rounds: 5 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Dark', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'round_evo'], poke_after: 'basculin',
+    poke_custom_values_to_keep: ['moxie_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.moxie_mult), ex.rounds] }; },
+    calculate(self, card, context) { blind_moxie(card, context); return moxie_main(card, context) || level_evo(self, card, context, 'j_poke_krokorok'); },
+  },
+  // Krokorok 552 (Safari $8): +4 Mult a Blind (Energy: 4.8 / 5.6 / 6.4), on Sandile's bank. 5 rounds.
+  krokorok: {
+    name: 'krokorok', poke_sprite391: sprite('Natdex', 22, 36),
+    config: { extra: { moxie_mult: 0, mult_mod: 4, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Dark', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'scaling', 'round_evo'], poke_after: 'sandile',
+    poke_custom_values_to_keep: ['moxie_mult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult_mod), r3(ex.moxie_mult), ex.rounds] }; },
+    calculate(self, card, context) { blind_moxie(card, context); return moxie_main(card, context) || level_evo(self, card, context, 'j_poke_krookodile'); },
+  },
+  // Krookodile 553 (Safari $10): gives the banked Mult (it banks no more) and banks X0.15 a Blind instead (`Xmult_mod`, 0.18 / 0.21 / 0.24).
+  krookodile: {
+    name: 'krookodile', poke_sprite391: sprite('Natdex', 24, 36),
+    config: { extra: { moxie_mult: 0, moxie_Xmult: 1, Xmult_mod: 0.15 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Dark', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'scaling'], poke_after: 'krokorok',
+    poke_custom_values_to_keep: ['moxie_mult', 'moxie_Xmult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.moxie_mult), r3(ex.moxie_Xmult)] }; },
+    calculate(self, card, context) { blind_moxie(card, context); return moxie_main(card, context); },
+  },
+  // Maractus 556 (Grass, Rare $7, single-stage): each Hazard card held in hand +8 Mult (`mult`, Energy +40%: 11.2 / 14.4 / 17.6).
+  maractus: {
+    name: 'maractus', poke_sprite391: sprite('Natdex', 0, 37),
+    config: { extra: { mult: 8 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Grass', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'hazards'], poke_after: 'darmanitan',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_poke_hazard); const ex = card.ability.extra, n = hazards_held(); return { vars: [r3(ex.mult), n, r3(ex.mult * n)] }; },
+    calculate(self, card, context) { return hazard_held_mult(card, context); },
+  },
+  // Dwebble 557 (Earth: its card; Common $5): +5 Chips per Stone card in the full deck (`chips`, Energy +30%: 6.5 / 8 / 9.5). 5 rounds.
+  dwebble: {
+    name: 'dwebble', poke_sprite391: sprite('Natdex', 2, 37),
+    config: { extra: { chips: 5, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'enhancements', 'full_deck', 'round_evo'], poke_after: 'maractus',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.chips * stones_in_deck()), ex.rounds] }; },
+    calculate(self, card, context) { return stone_shell(card, context) || level_evo(self, card, context, 'j_poke_crustle'); },
+  },
+  // Crustle 558 (Safari $8): +10 Chips per Stone card (13 / 16 / 19).
+  crustle: {
+    name: 'crustle', poke_sprite391: sprite('Natdex', 4, 37),
+    config: { extra: { chips: 10 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'enhancements', 'full_deck'], poke_after: 'dwebble',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_stone); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.chips * stones_in_deck())] }; },
+    calculate(self, card, context) { return stone_shell(card, context); },
+  },
+  // Sigilyph 561 (Psychic, Rare $7, single-stage): +2 Foresight; a Planet used for Pair (Mercury) levels it 1 extra time. Foresight and the
+  // level are fixed: Energy-inert by design (poke_no_energy_field).
+  sigilyph: {
+    name: 'sigilyph', poke_sprite391: sprite('Natdex', 10, 37),
+    config: { extra: { scry: 2, levels: 1 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Psychic', gen: 5, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['foresight', 'planet', 'hand_type'], poke_after: 'scrafty',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); info_queue.push(P_CENTERS.c_mercury); const ex = card.ability.extra; return { vars: [ex.scry, ex.levels] }; },
+    calculate(self, card, context) { sigil_pair(card, context); return undefined; },
+    ...scry,
+  },
+  // Yamask 562 (Psychic, Common $5): X0.1 banked per other Joker sold (`grudge_Xmult`; gain `Xmult_mod`, Energy +20%: 0.12 / 0.14 / 0.16).
+  // 5 rounds.
+  yamask: {
+    name: 'yamask', poke_sprite391: sprite('Natdex', 12, 37),
+    config: { extra: { grudge_Xmult: 1, Xmult_mod: 0.1, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'on_sell', 'round_evo'], poke_after: 'sigilyph',
+    poke_custom_values_to_keep: ['grudge_Xmult'],
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult_mod), r3(ex.grudge_Xmult), ex.rounds] }; },
+    calculate(self, card, context) { grudge_sell(card, context); return grudge_main(card, context) || level_evo(self, card, context, 'j_poke_cofagrigus'); },
+  },
+  // Cofagrigus 563 (Safari $8): X0.2 per Joker sold (0.24 / 0.28 / 0.32), and Mummy (mummy_sell: the round's first Joker sold stays, Negative,
+  // no money; it still counts for the X).
+  cofagrigus: {
+    name: 'cofagrigus', poke_sprite391: sprite('Natdex', 14, 37),
+    config: { extra: { grudge_Xmult: 1, Xmult_mod: 0.2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 5, blueprint_compat: true,
+    attributes: ['xmult', 'scaling', 'on_sell', 'joker_slot'], poke_after: 'yamask',
+    poke_custom_values_to_keep: ['grudge_Xmult'],
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      info_queue.push({ key: 'e_negative', set: 'Edition', config: { extra: 1 } });
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.Xmult_mod), r3(ex.grudge_Xmult), mummy_state()] };
+    },
+    calculate(self, card, context) { grudge_sell(card, context); return grudge_main(card, context); },
+  },
+  // Tirtouga 564 (Water, Common $5), Ancient 9s: 1+ +30 Chips, 2+ scored 9s permanently +5 Chips, 3+ +50 Chips (`chips1` / `chips2` /
+  // `chips3`, Energy +30% each: 39 / 48 / 57, 6.5 / 8 / 9.5, 65 / 80 / 95). Evolves after its 3+ tier fires 5 times.
+  tirtouga: {
+    name: 'tirtouga', poke_sprite391: sprite('Natdex', 16, 37),
+    config: { evo_rqmt: 5, extra: { rank: '9', chips1: 30, chips2: 5, chips3: 50, third_times: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'ancient', 'rank', 'modify_card', 'trigger_evo'], poke_after: 'cofagrigus',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.chips1), r3(ex.chips2), r3(ex.chips3), Math.max(0, self.config.evo_rqmt - (ex.third_times || 0))] };
+    },
+    calculate(self, card, context) {
+      return ancient_nines(card, context) || scaling_evo(self, card, context, 'j_poke_carracosta', card.ability.extra.third_times || 0, self.config.evo_rqmt);
+    },
+  },
+  // Carracosta 565 (Safari $8): Tirtouga's tiers, the same numbers, and 4+ retriggers every scored 9 (fixed).
+  carracosta: {
+    name: 'carracosta', poke_sprite391: sprite('Natdex', 18, 37),
+    config: { extra: { rank: '9', chips1: 30, chips2: 5, chips3: 50, retriggers: 1 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Water', gen: 5, blueprint_compat: true,
+    attributes: ['chips', 'ancient', 'rank', 'modify_card', 'retrigger'], poke_after: 'tirtouga',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.chips1), r3(ex.chips2), r3(ex.chips3)] };
+    },
+    calculate(self, card, context) { return ancient_nines(card, context); },
+  },
+  // Archen 566 (Earth, Common $5), Ancient 10s: 1+ +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8), 2+ X1.25 (`Xmult` +20%: 1.5 / 1.75 / 2), 3+ earn
+  // $3 (`ancient_money`, fixed). Evolves after its 3+ tier fires 5 times.
+  archen: {
+    name: 'archen', poke_sprite391: sprite('Natdex', 20, 37),
+    config: { evo_rqmt: 5, extra: { rank: '10', mult: 4, Xmult: 1.25, ancient_money: 3, third_times: 0 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Earth', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'money', 'ancient', 'rank', 'trigger_evo'], poke_after: 'carracosta',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.mult), r3(ex.Xmult), ex.ancient_money, Math.max(0, self.config.evo_rqmt - (ex.third_times || 0))] };
+    },
+    calculate(self, card, context) {
+      return ancient_tens(card, context) || scaling_evo(self, card, context, 'j_poke_archeops', card.ability.extra.third_times || 0, self.config.evo_rqmt);
+    },
+  },
+  // Archeops 567 (Safari $8): Archen's tiers and 4+ X2 (`Xmult2` +20%: 2.4 / 2.8 / 3.2); Defeatist halves them all on the round's final hand.
+  archeops: {
+    name: 'archeops', poke_sprite391: sprite('Natdex', 22, 37),
+    config: { extra: { rank: '10', mult: 4, Xmult: 1.25, ancient_money: 3, Xmult2: 2 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Earth', gen: 5, blueprint_compat: true,
+    attributes: ['mult', 'xmult', 'money', 'ancient', 'rank'], poke_after: 'archen',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card); ancient_tip(info_queue, card.ability.extra.rank);
+      const ex = card.ability.extra;
+      return { vars: [localize(ex.rank, 'ranks'), r3(ex.mult), r3(ex.Xmult), ex.ancient_money, r3(ex.Xmult2), defeatist(card) ? 'halved' : 'full'] };
+    },
+    calculate(self, card, context) { return ancient_tens(card, context); },
+  },
+  // Minccino 572 (Colorless, Common $5): Tidy Up, each discard draws 1 extra card (+1 hand size until your next hand). 5 rounds. No number:
+  // Energy-inert by design, as Cinccino (its retrigger count and cap are fixed).
+  minccino: {
+    name: 'minccino', poke_sprite391: sprite('Natdex', 2, 38),
+    config: { extra: { tidy_draws: 0, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Colorless', gen: 5, blueprint_compat: false, poke_no_energy_field: true,
+    attributes: ['discard', 'hand_size', 'round_evo'], poke_after: 'zoroark',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.rounds] }; },
+    calculate(self, card, context) { tidy_up(card, context); return level_evo(self, card, context, 'j_poke_cinccino'); },
+    ...tidy,
+  },
+  // Cinccino 573 (Safari $8): Skill Link, the first scored card retriggers once per discard used this round, at most 5.
+  cinccino: {
+    name: 'cinccino', poke_sprite391: sprite('Natdex', 4, 38),
+    config: { extra: { link_cap: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Colorless', gen: 5, blueprint_compat: true, poke_no_energy_field: true,
+    attributes: ['retrigger', 'discard', 'position'], poke_after: 'minccino',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [card.ability.extra.link_cap, skill_links(card)] }; },
+    calculate(self, card, context) { return skill_link(card, context); },
+  },
   // ---------------------------------------------------------------- The Gen 6 starters (2026-10-28, the owner's "build" of the missing
   // Gen 5-9 starters): Chespin / Fennekin / Froakie lines. Pokermon's starter conventions: a type perk at every stage (Grass +1 hand size,
   // Fire +1 discard, Water +1 hand: fixed, never energized); Basic Uncommon $5 with `starter` (the Starter Pack), Stage 1 Safari $8, Stage 2
@@ -3911,6 +4488,16 @@ export const DESIGN_FAMILIES = [
   ['snivy', 'servine', 'serperior'],
   ['tepig', 'pignite', 'emboar'],
   ['oshawott', 'dewott', 'samurott'],
+  ['sewaddle', 'swadloon', 'leavanny'],
+  ['venipede', 'whirlipede', 'scolipede'],
+  ['cottonee', 'whimsicott'],
+  ['petilil', 'lilligant'],
+  ['sandile', 'krokorok', 'krookodile'],
+  ['dwebble', 'crustle'],
+  ['yamask', 'cofagrigus'],
+  ['tirtouga', 'carracosta'],
+  ['archen', 'archeops'],
+  ['minccino', 'cinccino'],
   ['chespin', 'quilladin', 'chesnaught'],
   ['fennekin', 'braixen', 'delphox'],
   ['froakie', 'frogadier', 'greninja'],
@@ -3972,6 +4559,14 @@ const LIBERO_MULT = ['{C:red}+#1#{} discard', '{C:mult}+#2#{} Mult for each', 'r
 const UNSCORED_CHIPS = ['{C:chips}+#1#{} hand', 'Each played card that', 'doesn\'t score gives', '{C:chips}+#2#{} Chips'];
 const TORCH_SONG = (gain) => ['{C:attention}Torch Song:{} permanently', 'gains ' + gain, 'for each hand played'];
 const MOXIE9 = (gain) => ['{C:attention}Moxie:{} when you beat a', '{C:attention}Blind{}, permanently gains', gain + ' for each', 'unused hand'];
+const TAILOR = (cloth) => ['{C:attention}Tailor:{} when a {C:attention}Blind{} is', 'selected, a random unenhanced', 'card in your deck becomes', cloth];
+const POISON_POINT = ['{C:attention}Poison Point:{} each card you', 'discard permanently gains', '{C:mult}+#2#{} Mult and {C:chips}-#1#{} Chips', '{C:inactive}(its Chips never go below 0)'];
+const MOXIE_BLIND = (gain) => ['{C:attention}Moxie:{} when you beat a', '{C:attention}Blind{}, permanently gains', gain];
+const STONE_SHELL = ['{C:chips}+#1#{} Chips for each', '{C:attention}Stone{} card in your', 'full deck', '{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)'];
+const GRUDGE = ['Gains {X:mult,C:white} X#1# {} Mult each', 'time you sell another Joker', '{C:inactive}(Currently {X:mult,C:white} X#2# {C:inactive} Mult)'];
+const ANCIENT_NINES = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:chips}+#2#{} Chips', '{X:attention,C:white}2+{} : {}Scoring {C:attention}#1#s{} permanently gain {C:chips}+#3#{} Chips', '{X:attention,C:white}3+{} : {C:chips}+#4#{} Chips'];
+const ANCIENT_TENS = ['{C:attention}Ancient #1#s{}', '{X:attention,C:white}1+{} : {C:mult}+#2#{} Mult', '{X:attention,C:white}2+{} : {X:mult,C:white} X#3# {} Mult', '{X:attention,C:white}3+{} : Earn {C:money}$#4#{}'];
+const ANCIENT_EVO = (n) => '{C:inactive,s:0.8}(Trigger {X:attention,C:white,s:0.8}3+{C:inactive,s:0.8} ability {C:attention,s:0.8}#' + n + '#{C:inactive,s:0.8} times to evolve)';
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -4326,6 +4921,61 @@ export const DESIGN_LOC = {
     j_poke_samurott: { name: 'Samurott', text: [
       ['{C:blue}+#1#{} hand', ...RAZOR_SHELL('first {C:attention}#2#{} scored cards')],
       ['{C:attention}Shell Blade:{} scored {C:attention}Aces{}', 'give {X:mult,C:white} X#3# {} Mult'],
+    ] },
+    j_poke_sewaddle: { name: 'Sewaddle', text: [...TAILOR('a {C:attention}Bonus{} card'), '{C:inactive,s:0.8}(Energy carries to Leavanny)', EVOLVES_ROUNDS(2)] },
+    j_poke_swadloon: { name: 'Swadloon', text: [...TAILOR('a {C:attention}Bonus{} or {C:attention}Mult{} card'), '{C:inactive,s:0.8}(Energy carries to Leavanny)', EVOLVES_ROUNDS(2)] },
+    j_poke_leavanny: { name: 'Leavanny', text: [
+      TAILOR('a {C:attention}Bonus{}, {C:attention}Mult{} or {C:attention}Lucky{} card'),
+      ['Each scored {C:attention}enhanced{} card', 'gives {C:mult}+#1#{} Mult'],
+    ] },
+    j_poke_venipede: { name: 'Venipede', text: [...POISON_POINT, EVOLVES_ROUNDS(3)] },
+    j_poke_whirlipede: { name: 'Whirlipede', text: [...POISON_POINT, EVOLVES_ROUNDS(3)] },
+    j_poke_scolipede: { name: 'Scolipede', text: [POISON_POINT, ['Each {C:attention}unenhanced{} card', 'you discard also becomes', 'a {C:attention}Mult{} card']] },
+    j_poke_cottonee: { name: 'Cottonee', text: [
+      '{C:attention}+#1#{} hand size', '{C:attention}Prankster:{} the first hand', 'drawn each round draws', '{C:attention}1{} extra card', EVOLVES_ROUNDS(2),
+    ] },
+    j_poke_whimsicott: { name: 'Whimsicott', text: ['{C:attention}+#1#{} hand size'] },
+    j_poke_petilil: { name: 'Petilil', text: ['Each scored {C:attention}Flower{} card', 'earns {C:money}$#1#{}', EVOLVES_ROUNDS(2)] },
+    j_poke_lilligant: { name: 'Lilligant', text: [
+      ['{C:attention}Flower Dance:{} {C:attention}Flower{} cards', 'need only {C:attention}#1#+{} suits'],
+      ['Each scored {C:attention}Flower{} card', 'earns {C:money}$#2#{}'],
+    ] },
+    j_poke_basculin: { name: 'Basculin', text: [
+      '{C:attention}#2#:{} scored', '{V:1}#3#{} and {V:2}#4#{}', 'each give {C:chips}+#1#{} Chips', '{C:inactive}(Red or Blue: its stripe,', '{C:inactive}rolled when it is created)',
+    ] },
+    j_poke_sandile: { name: 'Sandile', text: [...MOXIE_BLIND('{C:mult}+#1#{} Mult'), '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_krokorok: { name: 'Krokorok', text: [...MOXIE_BLIND('{C:mult}+#1#{} Mult'), '{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)', EVOLVES_ROUNDS(3)] },
+    j_poke_krookodile: { name: 'Krookodile', text: [
+      [...MOXIE_BLIND('{X:mult,C:white} X#1# {} Mult'), '{C:inactive}(Currently {X:mult,C:white} X#3# {C:inactive} Mult)'],
+      ['{C:mult}+#2#{} Mult {C:inactive}(kept from Krokorok)'],
+    ] },
+    j_poke_maractus: { name: 'Maractus', text: [
+      'Each {C:attention}Hazard{} card held', 'in hand gives {C:mult}+#1#{} Mult', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {C:mult}+#3#{C:inactive} Mult)',
+    ] },
+    j_poke_dwebble: { name: 'Dwebble', text: [...STONE_SHELL, EVOLVES_ROUNDS(3)] },
+    j_poke_crustle: { name: 'Crustle', text: STONE_SHELL },
+    j_poke_sigilyph: { name: 'Sigilyph', text: [
+      ['{C:purple}+#1# Foresight'],
+      ['Using a {C:planet}Planet{} card for', '{C:attention}Pair{} levels it up', '{C:attention}#2#{} more time'],
+    ] },
+    j_poke_yamask: { name: 'Yamask', text: [...GRUDGE, EVOLVES_ROUNDS(3)] },
+    j_poke_cofagrigus: { name: 'Cofagrigus', text: [
+      GRUDGE,
+      ['{C:attention}Mummy:{} the first Joker you', 'sell each round is not sold:', 'it becomes {C:dark_edition}Negative{} and', 'stays {C:inactive}(no money; it still', '{C:inactive}counts as sold for the X)',
+        '{C:inactive}(A Negative one sells as usual)', '{C:inactive}(Mummy: #3#)'],
+    ] },
+    j_poke_tirtouga: { name: 'Tirtouga', text: [...ANCIENT_NINES, ANCIENT_EVO(5)] },
+    j_poke_carracosta: { name: 'Carracosta', text: [...ANCIENT_NINES, '{X:attention,C:white}4+{} : {}Retrigger all scored {C:attention}#1#s{}'] },
+    j_poke_archen: { name: 'Archen', text: [...ANCIENT_TENS, ANCIENT_EVO(5)] },
+    j_poke_archeops: { name: 'Archeops', text: [
+      [...ANCIENT_TENS, '{X:attention,C:white}4+{} : {X:mult,C:white} X#5# {} Mult'],
+      ['{C:attention}Defeatist:{} on the final hand', 'of the round, all of these', 'are halved {C:inactive}(an X keeps half', '{C:inactive}its bonus: X2 is X1.5;', '{C:inactive}money rounds down)', '{C:inactive}(This hand: {C:attention}#6#{C:inactive})'],
+    ] },
+    j_poke_minccino: { name: 'Minccino', text: [
+      '{C:attention}Tidy Up:{} each discard', 'draws {C:attention}1{} extra card', '{C:inactive}(+1 hand size until your', '{C:inactive}next hand is played)', EVOLVES_ROUNDS(1),
+    ] },
+    j_poke_cinccino: { name: 'Cinccino', text: [
+      '{C:attention}Skill Link:{} the first scored', 'card retriggers once for', 'each discard used this round', '{C:inactive}(Max {C:attention}#1#{C:inactive}; currently {C:attention}#2#{C:inactive})',
     ] },
     j_poke_chespin: { name: 'Chespin', text: ['{C:attention}+#1#{} hand size', '{C:chips}+#2#{} Chips', EVOLVES_ROUNDS(3)] },
     j_poke_quilladin: { name: 'Quilladin', text: ['{C:attention}+#1#{} hand size', '{C:chips}+#2#{} Chips', EVOLVES_ROUNDS(3)] },

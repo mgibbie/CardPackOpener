@@ -78,7 +78,7 @@ import './consumables/mart1.js';
 import './consumables/mart2.js';
 import './boosters/packs1.js';
 import './jokers/zzzapril_fools.js';
-import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts } from './jokers/pokejokers_designs.js';
+import { DESIGN_FAMILIES, DESIGN_LOC, regi_chip_bonus, regi_h_x_mult, regi_enh_vars, slot_cost_removed, drifblim_destroyed, contrary_lifts, mummy_sell } from './jokers/pokejokers_designs.js';
 
 import { poke_set_type_badge, type_badge, type_tooltip, TYPE_COLOURS } from './systems/types.js';
 import { pokemon_in_pool, pool_filter, init_game_object, evo_item_in_pool } from './systems/pools.js';
@@ -724,6 +724,10 @@ const hooks = {
   // The owner's Serperior, Contrary (jokers/pokejokers_designs.js): a debuffed playing card that scores is scored as if it weren't, while
   // an undebuffed Serperior is owned (run.js score_played_card lifts the debuff for that card's scoring only). No Serperior, no change.
   score_debuffed: contrary_lifts,
+  // The owner's Cofagrigus, Mummy (jokers/pokejokers_designs.js mummy_sell; Gen 5 batch 2): the round's first Joker the player sells, while an
+  // undebuffed Cofagrigus other than it is held, is not sold but made Negative (no money; a Negative one sells as usual). run.js asks before
+  // the sale. No Cofagrigus, no change.
+  sell_instead: mummy_sell,
   /** Base-game jokers with a Tera sticker show the type badge + energy tooltip (Lua: take_ownership). */
   describe(card, desc) {
     // (Steamodded's card_limit tooltip on a playing card: generic_card_limit_pc — the Debris Sleeve alt's Hazard cards)
@@ -935,7 +939,10 @@ export const POKERMON = registerMod({
   // Chespin -> Quilladin -> Chesnaught (+1 hand size; +40 / +80 / +150 Chips; Spiky Shield X1.5 with 2+ hands left), Fennekin -> Braixen
   // -> Delphox (+1 discard, +1 Foresight; Braixen's Tarot on a Foreseen-rank discard; Mystical Fire X0.2 per Tarot used), Froakie ->
   // Frogadier -> Greninja (+1 hand; +30 / +50 Chips per Water Joker; Protean, X(1.5 + 0.5 per other Joker of its type)).
-  contentRev: 52,
+  // 54 = Gen 5 batch 2 (jokers/pokejokers_designs.js, #540-573): the Sewaddle line's tailor, the Venipede line's Poison Point, Cottonee /
+  // Whimsicott, Petilil / Lilligant, Basculin's stripes, the Sandile line's Moxie, Maractus, Dwebble / Crustle, Sigilyph, Yamask /
+  // Cofagrigus (Mummy: the sell_instead hook), the Tirtouga and Archen fossils (Ancient 9s / 10s) and Minccino / Cinccino.
+  contentRev: 54,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
