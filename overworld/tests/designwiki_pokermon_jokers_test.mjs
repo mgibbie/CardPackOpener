@@ -249,11 +249,11 @@ try {
 	const byType = {}; for (const s of D.species) if (s.gen === fg) byType[s.ptype] = (byType[s.ptype] || 0) + 1;
 	const ft = Object.entries(byType).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0][0];
 	await anon.page.select('#pjGen', String(fg));
-	const g5 = await anon.page.$eval('.pj-tile', ts => ts.map(t => +t.dataset.dex));
+	const g5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => +t.dataset.dex));
 	A(g5.length === D.counts.byGen[fg] && g5.length > 0 && g5.every(d => d >= GEN_DEX[fg][0] && d <= GEN_DEX[fg][1]), `the generation filter shows only Generation ${fg}`, g5.length);
 	A(new RegExp('gen=' + fg).test(await anon.page.evaluate(() => location.hash)), 'the filter is kept in the hash');
 	await anon.page.select('#pjType', ft);
-	const w5 = await anon.page.$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
+	const w5 = await anon.page.$$eval('.pj-tile', ts => ts.map(t => t.dataset.ptype));
 	A(w5.length === byType[ft] && w5.length > 0 && w5.every(t => t === ft), `the type filter narrows to ${ft} (in Gen ${fg})`, w5.length);
 	await anon.page.select('#pjGen', ''); await anon.page.select('#pjType', '');
 	await anon.page.type('#pjQ', 'pikip');
