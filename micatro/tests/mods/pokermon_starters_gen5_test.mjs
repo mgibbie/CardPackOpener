@@ -99,8 +99,8 @@ await sec('static', () => {
   'Starter Pack lists: Snivy Grass, Tepig Fire, Oshawott Water; their evolutions are not starters', [L.grass, L.fire, L.water]);
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   const i = keys.indexOf('j_poke_snivy');
-  const want = ['j_poke_arceus', ...NAMES.map((n) => 'j_poke_' + n), 'j_poke_pansage'];
-  ok(i > 0 && want.every((k, n) => keys[i - 1 + n] === k), 'Pokédex order: Arceus (493), Snivy ... Samurott (495-503), then Pansage (511)', keys.slice(i - 1, i + 10));
+  const want = ['j_poke_arceus', ...NAMES.map((n) => 'j_poke_' + n), 'j_poke_patrat'];
+  ok(i > 0 && want.every((k, n) => keys[i - 1 + n] === k), 'Pokédex order: Arceus (493), Snivy ... Samurott (495-503), then Patrat (504, Gen 5 batch 1)', keys.slice(i - 1, i + 10));
   const E = (n) => C(n).config.extra;
   ok(E('snivy').h_size === 1 && E('snivy').mult === 4 && E('servine').h_size === 1 && E('servine').mult === 8 && E('serperior').h_size === 1 && E('serperior').Xmult_multi === 1.25,
     'Snivy +4, Servine +8, Serperior X1.25; +1 hand size each', LINES.grass.map(E));

@@ -2976,6 +2976,62 @@ Pokermon+ has any of them.
   `pokermon_new_jokers_test` (the pin, 132 defs), `pokermon_art_types_test` (three Grass, three Fire, three Water), `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (950 jokers).
 
+### Gen 5, batch 1 (2026-10-28, branch `feat/pokermon-gen5-batch1`)
+Pinned **`3.9.1+r53`** (`contentRev: 53`; `LEGACY_MOD_VERSIONS` untouched). The owner's "Build it": 22 jokers, #504-539, in
+`jokers/pokejokers_designs.js` (`lookout` / `pickup` / `pickpocket` / `super_luck` / `motor_count` / `heart_stamp` / `pillars` /
+`swift_swim_raining` / `toss_target` / `dojo`; 154 defs now). Pokédex order: after Samurott (503), Musharna (518), Gigalith (526) and
+Excadrill (530); Darumaka (554) follows Sawk. Neither Nacho nor Pokermon+ has any of them. Prices by the DESIGN_GUIDE slots (3-stage U $6 /
+S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7); evolution by rounds (4 for an early evolver: Patrat, Lillipup, Purrloin, Pidove; 5
+otherwise). Types = the cards' (`pokermon_art_types_test`). Art: upstream 3.9.1 cells (Natdex {16..28,33}, {16..24,34}, {2..26,35};
+Unfezant Gen05 {0,0}, the first of its two); nothing to deploy. Energy at the standard share on each joker's main number; odds, Foresight,
+money and retriggers are fixed; a stage whose own number is fixed carries its evolution's field ("Energy carries to ...").
+- **Patrat** (C $5, 4 rounds) **+1 Foresight**, Lookout: **each Foreseen card gives +6 Mult**; **Watchog** (S $8) +2 Foresight, **+10**. The
+  choice: "scored Foreseen cards" are Uxie's (the Foreseen cards are scored like held cards, `G.scry_view`), not the Shinx line's matching
+  played cards; a debuffed Foreseen card gives nothing. Energy `mult` (6 -> 8.4 / 10.8 / 13.2; 10 -> 14 / 18 / 22).
+- **Lillipup** (U $6, 4) Pickup: **1 in 4** at end of round, a random **Tarot**; **Herdier** (S $8, 5) **1 in 3** a Tarot or a Planet (a
+  seeded coin); **Stoutland** (S $10) **1 in 2**, and **+3 Mult for each consumable held** (Negative ones too). With **no consumable room there
+  is no roll** (the stream never moves; Manaphy's rule); `pseudorandom_probability` with each joker's own seed. Not Blueprint for the find.
+  Energy: Stoutland `mult` 3 -> 4.2 / 5.4 / 6.6, carried by Lillipup and Herdier.
+- **Purrloin** (C $5, 4) Pickpocket: **$2** at end of round (calc_dollar_bonus); **Liepard** (S $8) **$4**. The Joker **directly to its
+  right** loses **$1 of sell value** (Pokermon's Drain one way, `poke_drain`: **never below $1**). The choice: **nothing on its right** (the
+  right end, alone) means **no loss, and the money is still earned**; a debuffed neighbour still loses it; a debuffed Purrloin does nothing.
+  Energy-inert (`poke_no_energy_field`: money and drain fixed).
+- **Pidove** (U $6, 4) / **Tranquill** (S $8, 5) / **Unfezant** (S $10), Super Luck: **Lucky cards' odds +1** — the `mod_probability` pass
+  (Venonat's) on the identifiers `lucky_mult` / `lucky_money` only. The choice, with Oops! All 6s: the +1 is added **before** Oops! doubles
+  the numerator, so one Pidove + Oops! is **(1 + 1) x 2 = 4 in 5** (and 4 in 15); Venonat and other copies add +1 each; Absol fixes it at 0.
+  Tranquill: a Lucky card that triggers **also gives +5 Mult**; Unfezant: **X1.5** instead (the + becomes X; it doesn't keep the +5). All
+  three are Colorless: Starly's flock counts them. Energy: Tranquill `mult` 5 -> 7 / 9 / 11 (carried by Pidove), Unfezant `Xmult_multi`
+  1.5 -> 1.575 / 1.65 / 1.725.
+- **Blitzle** (C $5, 5) Motor Drive: **+4 Mult for each hand played this round before any discard, this one included**. The counting: while no
+  player discard has been used this round, it is (hands already played + 1): the 1st hand +4, the 2nd +8, the 3rd +12; after your first
+  discard, **+0 for the rest of the round** (a discard before the first hand: +0 all round); The Hook's forced discards don't count; a new
+  round starts again at +4. **Zebstrika** (S $8) **X1.5 if you haven't discarded this round**. Energy `mult` 4 -> 5.6 / 7.2 / 8.8, `Xmult`
+  1.5 -> 1.8 / 2.1 / 2.4.
+- **Woobat** (C $5, 5) Heart Stamp: **each scored Heart earns $1** (Rough Gem's; Wild cards count, debuffed cards don't); **Swoobat** (S $8)
+  **$1 and X1.1** each. The $ is fixed; Energy `Xmult_multi` 1.1 -> 1.155 / 1.21 / 1.265, carried by Woobat.
+- **Timburr** (U $6, 5) / **Gurdurr** (S $8, 5) / **Conkeldurr** (S $10): **scored Stone cards each give +4 / +8 Mult / +8 Mult and X1.5** —
+  a joker effect on top of the Stone card's own Chips, so it stacks with Regirock (+100 instead of +50) and Hippowdon (+60 extra). Energy
+  `mult` 4 -> 5.6 / 7.2 / 8.8, 8 -> 11.2 / 14.4 / 17.6; Conkeldurr keeps `mult` energized (so Gurdurr's Energy never shrinks on evolving)
+  and `Xmult_multi` 1.5 -> 1.575 / 1.65 / 1.725.
+- **Tympole** (U $6, 5) / **Palpitoad** (S $8, 5) / **Seismitoad** (S $10), Swift Swim: **+30 / +50 / +50 Chips, doubled while it's raining**;
+  Seismitoad: in rain **every scored Club also retriggers once** (with Kyogre's own: twice). **Raining** = the round's first deal reads
+  **Rainy** by Castform's `forecast()` (Clubs held most; a tie is not), remembered for the round, **or** a **working Kyogre** (held,
+  undebuffed, not the loser of this round's Primal Clash: `primal_on`, live). So on Groudon's clash round it isn't raining (and the forecast
+  can't be Rainy then); a tie Groudon wins on Energy: no rain; Rayquaza's calm keeps Kyogre, so rain. The choices: Groudon **alone** doesn't
+  stop a Clubs forecast (Cherrim's sun the other way round); in the shop only Kyogre counts; a Tympole bought after the first deal has no
+  forecast that round. Energy `chips` 30 -> 39 / 48 / 57, 50 -> 65 / 80 / 95 (then doubled); the retrigger is fixed.
+- **Throh** (R $7) Seismic Toss: **the lowest-ranked scored card gives X2**; **Sawk** (R $7) Karate Chop: **the highest-ranked scored card
+  gives +30 Mult**. Both: a tie goes to the **leftmost**, Stone and debuffed cards are skipped, **Aces are high** (for Throh too: an Ace is its
+  target only when every candidate is an Ace); the target is re-read each time a card scores, so its retriggers hit again. **Dojo Rivals**:
+  holding both (undebuffed; a Blueprint isn't one) **X2.5** / **+45** (fixed +X0.5 / +15). Energy `Xmult_multi` 2 -> 2.1 / 2.2 / 2.3, `mult`
+  30 -> 42 / 54 / 66; the rival bonus stays.
+- **Wiki**: regenerated (292 missing); the wiki sprites of the 22 are gone from `designwiki/sprites/pokermon_jokers/` (redeploy the sprites).
+- **Tests**: `micatro/tests/mods/pokermon_gen5_batch1_test.mjs` (fails on main: 2 passed, 66 failed). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, 154 defs, Darumaka after Sawk), `pokermon_art_types_test`,
+  `micatro_mod_version_pin`, `micatro_deckeditor_pages` (972 jokers); the order checks of `pokermon_starters_gen5_test` (Patrat
+  after Samurott) and `pokermon_391_new_15_test` (Roggenrola after Zebstrika); `designwiki_pokermon_jokers_test` spot-checks the Sewaddle line
+  (Lillipup / Herdier / Stoutland have jokers now).
+
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =
 on 3.9.1 but one part):
