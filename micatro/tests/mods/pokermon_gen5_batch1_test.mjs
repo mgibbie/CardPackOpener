@@ -155,7 +155,7 @@ await sec('static', () => {
   ok(run('samurott', ['patrat', 'watchog', 'lillipup', 'herdier', 'stoutland', 'purrloin', 'liepard'], 'pansage'), 'Pokédex order: Samurott (503), Patrat ... Liepard (504-510), Pansage (511)', keys.slice(keys.indexOf('samurott'), keys.indexOf('samurott') + 9));
   ok(run('musharna', ['pidove', 'tranquill', 'unfezant', 'blitzle', 'zebstrika'], 'roggenrola'), 'Musharna (518), Pidove ... Zebstrika (519-523), Roggenrola (524)');
   ok(run('gigalith', ['woobat', 'swoobat'], 'drilbur'), 'Gigalith (526), Woobat, Swoobat (527-528), Drilbur (529)');
-  ok(run('excadrill', ['timburr', 'gurdurr', 'conkeldurr', 'tympole', 'palpitoad', 'seismitoad', 'throh', 'sawk'], 'darumaka'), 'Excadrill (530), Timburr ... Sawk (532-539), Darumaka (554)');
+  ok(run('excadrill', ['timburr', 'gurdurr', 'conkeldurr', 'tympole', 'palpitoad', 'seismitoad', 'throh', 'sawk'], 'sewaddle'), 'Excadrill (530), Timburr ... Sawk (532-539), then Sewaddle (540, Gen 5 batch 2)');
   for (const line of LINES) if (line.length > 1) ok(JSON.stringify(poke_get_family_list(line[0])) === JSON.stringify(line), line.join(' -> ') + ': one family', poke_get_family_list(line[0]));
   const E = (n) => C(n).config.extra;
   ok(E('patrat').rounds === 4 && E('lillipup').rounds === 4 && E('herdier').rounds === 5 && E('purrloin').rounds === 4 && E('pidove').rounds === 4 && E('tranquill').rounds === 5

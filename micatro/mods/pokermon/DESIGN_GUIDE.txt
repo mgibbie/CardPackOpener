@@ -656,6 +656,60 @@ House pattern: FORESEEN CARDS AS +MULT (the Gen 5 Patrat line, Lookout; lookout)
   - Uxie's moment with a + payoff: each Foreseen card (G.scry_view, scored like a held card) gives +6 / +10 Mult (`mult` +40%); a debuffed one
     nothing. It stacks with every other Foresight source (Uxie's +2 makes four cards: each +10 then X1.3). Hoothoot's chips, Uxie's X,
     Patrat's Mult: the three payoffs of one area.
+House pattern: the TAILOR, a deck conversion that widens by stage (the Gen 5 Sewaddle line; tailor / TAILOR_CLOTHS):
+  - Cherubi's sweet_seeds moment (a Blind selected; Blueprint copies it, as Marble Joker): ONE random UNENHANCED card of the full deck
+    (seeded pseudorandom_element, 'poke_sewaddle_tailor') becomes one of the stage's "cloths". None unenhanced: nothing; it never
+    overwrites another enhancement (the Regis do, Cherubi doesn't: say which).
+  - The stage widens the cloth list, not the count: Sewaddle Bonus; Swadloon Bonus or Mult; Leavanny Bonus, Mult or Lucky. The cloth is a
+    SECOND seeded pick ('poke_tailor_cloth'), drawn only when there is a choice (Sewaddle draws one number a Blind, so adding the line
+    never moves another joker's stream more than needed). The count stays 1 a Blind, fixed.
+  - The Stage 2 pays off the deck the line built: each scored ENHANCED card (any center but the plain card: Stone and Hazard count) +3 Mult
+    (`mult` +40%). The Basic and the Stage 1 carry that field unused ("Energy carries to Leavanny", 2.4 #8).
+House pattern: a SPREADING discard POISON, permanent per-card values (the Gen 5 Venipede line, Poison Point; poison_point / poison_card):
+  - Every card the PLAYER discards (pre_discard without `hook`) is changed for good: -2 / -3 Chips (perma_bonus) and +3 / +5 Mult
+    (Steamodded's perma_mult, scored by the engine every time the card scores). The poison travels with the card through the deck, so it
+    spreads to every hand that later draws it: a discard is now an investment, the opposite of Trapinch's (which banks on the joker).
+  - A NEGATIVE perma value needs a floor. Poison floors the card's own Chips at 0: perma_bonus never goes below minus the Chips the card gives
+    without it (rank + enhancement bonus; a Stone card's +50, so -50; a Hazard card's 0, so nothing taken), and the Mult keeps growing past
+    the floor. Compute the floor from the card at the time of the poison (own_chips), never from get_chip_bonus (0 while debuffed).
+  - Energy raises the per-card GAIN (`mult_mod` +20%: 3 -> 3.6 / 4.2 / 4.8); the Chips loss is fixed (`chip_loss`). Blueprint copies it
+    (Hiker's growth: a second dose). The Stage 2 adds a rider on the same cards (Scolipede: an unenhanced one also becomes a Mult card).
+House pattern: ANCIENT 9s and 10s, the Gen 5 fossils (Tirtouga / Carracosta, Archen / Archeops; ancient_nines / ancient_tens):
+  - Kabuto's cumulative tiers (2.5 "Ancient") read LIVE from context.scoring_hand in every context (no state kept between contexts, so a
+    Blueprint's `before` can't overwrite the original's tier). Tirtouga: 1+ +30 Chips, 2+ each scored 9 +5 Chips for good (perma_bonus,
+    from its next score), 3+ +50 Chips; Carracosta the same and 4+ retriggers every scored 9 (the +5 lands between the two scorings: 9,
+    then 14). Archen: 1+ +4 Mult, 2+ X1.25, 3+ $3 (once a hand: joker_main); Archeops 4+ X2 too (the tiers multiply: X2.5).
+  - Evolution: "Trigger 3+ ability 5 times" (`third_times`, scaling_evo at end of round), never counted by a Blueprint or a joker retrigger
+    (Kabuto counted Blueprint's: don't). A Four of a Kind fires 3+ too.
+  - Energy: every tier number in its own energy field (chips1 / chips2 / chips3, mult / Xmult / Xmult2); the money is `ancient_money`, outside
+    energy_values (money is fixed for this line; `money` itself would take +30%).
+  - A DRAWBACK on the Stage 1 (Archeops's Defeatist): on the round's final hand (hands_left 0 while scoring, in a Blind) every number is
+    halved. "Halved" for an X keeps half its BONUS (1 + (X - 1) / 2: X2 -> X1.5, X1.25 -> X1.125; X0.5 would be a penalty, never that);
+    Mult / 2; money rounds down ($3 -> $1). Energy first, then the halving (X2.4 -> X1.7). The tooltip says "This hand: full / halved".
+House pattern: MUMMY, a sale that isn't one (the Gen 5 Cofagrigus; mummy_sell, the sell_instead hook):
+  - An ENGINE seam: run.js asks callHook('sell_instead', card) for a player's sale, after can_sell_card; a yes means nothing was sold, so
+    neither selling_self nor selling_card runs and no money is paid (vanilla never asks: the fuzz is unchanged). Use it only for "the sale
+    doesn't happen"; a joker that merely reacts to a sale uses selling_card (Spiritomb, Yamask).
+  - Cofagrigus: the FIRST Joker you sell each round (G.GAME.poke_mummy_round = G.GAME.round: the Blind and the shop after it; one for the
+    whole row however many Cofagrigus) stays and becomes Negative (its old edition replaced; set_edition gives the Negative's +1 Joker slot,
+    so a full row stays legal). Rules to state: a Cofagrigus never mummifies itself; an already Negative Joker is sold as usual and uses the
+    round's Mummy up (it was the first sale); consumables are never caught; a debuffed Cofagrigus catches nothing.
+  - Blueprint can't copy it: the hook finds the real Cofagrigus (find_card skips debuffed cards and Blueprint isn't one), so copying it adds
+    no second Mummy. The mummified Joker counts as SOLD for the line's own X (Yamask / Cofagrigus +X0.1 / +X0.2 per Joker sold, a bank:
+    Energy raises only the gain) but for nothing else (Campfire, Spiritomb: nothing was sold). Later, it sells at its Negative sell value.
+House pattern: a HAZARD-HELD payoff (the Gen 5 Maractus):
+  - Pokermon's Hazard layer deals Hazard cards into the first hand as a COST (no rank, no suit, a hand slot). A held-in-hand payoff turns
+    them into fuel: each Hazard card HELD (individual on G.hand, has_enhancement 'm_poke_hazard', not debuffed) gives +8 Mult (h_mult, Baron's
+    shape: Mime and held retriggers repeat it; `mult` +40%: 11.2 / 14.4 / 17.6). Holding them means not discarding them: the payoff asks the
+    player to keep the cost, which is the point. Pair it with the hazard layer jokers (Skarmory's limit), never with a rule that makes them.
+House pattern: TEMPORARY HAND SIZE as "draw 1 extra" (the Gen 5 Cottonee, Prankster; Minccino, Tidy Up):
+  - G.hand.change_size(+1) draws at once when the hand already has cards in SELECTING_HAND / DRAW_TO_HAND (Juggler bought mid-round), so a
+    +1 given at pre_discard draws one card before the discard and the refill tops up to the new size: net, the discard drew 1 extra. Take it
+    back (change_size(-n)) on press_play (Minccino: "until your next hand is played"); the extra card stays in hand until a play brings the
+    hand under its size again. Cottonee gives its +1 at setting_blind (the hand is empty, so no draw yet) and takes it back on
+    first_hand_drawn, so only the first deal is one card over. Keep the pending amount on the joker and give it back in remove_from_deck.
+  - These are hand-size effects: fixed, never energized (the Grass hand-size pitfall, 3.1); Whimsicott's +2 is the line's only permanent
+    step past +1, by the owner's design.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -842,7 +896,9 @@ Share of the BASE value added per Energy:
 Fields Energy never touches: rounds, retriggers, h_size, hands, d_size, card_limit, num/dem
 (probabilities), Xmult_minus, hazard_level, scry; house: slot_cost (Purugly's -1 Joker slot), slots (Palkia's +1 Joker
 slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other guardian),
-steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals).
+steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals),
+chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancient_money (Archen's $3), link_cap (Cinccino's max 5), levels
+(Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult.
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -940,7 +996,8 @@ Each keyword below has an info_queue tooltip. Reuse the keyword rather than inve
   Ancient
     Effects depend on how many of one rank are in the poker hand, in cumulative tiers "1+ / 2+ /
     3+" (Stage 1 adds "4+"). Used by the fossils: Omanyte (3s), Kabuto (2s), Aerodactyl (Aces),
-    Lileep (8s), Anorith (7s), Relicanth (4s), and Nacho's Cranidos (5s) and Shieldon (6s).
+    Lileep (8s), Anorith (7s), Relicanth (4s), and Nacho's Cranidos (5s) and Shieldon (6s); the Gen 5
+    house fossils Tirtouga (9s) and Archen (10s; Archeops halves it all on the final hand, Defeatist) (2.1).
     Basics evolve after "Trigger 3+ ability 5 times".
   Foresight (scry)
     "+N Foresight" shows the top N cards of the deck (G.GAME.scry_amount). Foreseen cards are
@@ -981,6 +1038,7 @@ Hazards (3.9.1 Hazard layer; enhancements/enhancement1.js and systems/utils.js)
       Cacnea/Cacturne   $3/$5 when a card is destroyed
       Ferroseed line    Hazard and Wild cards are also Steel
       Nacho's Carbink   Hazards also count as Gold
+      Maractus (house)  +8 Mult per Hazard card held in hand (2.1, the Hazard-held payoff)
   - Counter: Heavy-Duty Boots (reusable Item: Hazard probabilities become 0 for the round).
   - 19 non-Mega jokers mention Hazards, spread over Earth (5), Grass (6), Psychic, Metal, Dark,
     Water and Fairy.
@@ -988,7 +1046,7 @@ Hazards (3.9.1 Hazard layer; enhancements/enhancement1.js and systems/utils.js)
 Seeds and Flowers (3.9.1)
   - Seed card: "Grows 1 (+growth level) when scored". After 5 growths it turns into a Flower
     card and earns $15. Seed is in the Enhanced pool (weight 5). Miracle Seed (Item) makes one.
-  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade (or the owner's Cherrim) it
+  - Flower card: X2 Mult if the poker hand contains 4+ suits. With Roserade (or the owner's Cherrim, or Lilligant) it
     needs only 3+ suits; with Shaymin or Shaymin Sky it gives X3. Cherrim in the sun: X2.5 instead of X2.
   - Growth level (+1 extra growth per score): Shiftry, Brambleghast, the owner's Cherubi and Cherrim.
   House pattern: a SEED GROWER (the owner's Cherubi / Cherrim, jokers/pokejokers_designs.js sweet_seeds):

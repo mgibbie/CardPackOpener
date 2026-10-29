@@ -2218,6 +2218,9 @@ function applyAction(a) {
       const c = find_card(a.id);
       can(c && (c.area === G.jokers || c.area === G.consumeables || (ACTIVE_MODS.length && c.area && callHook('action_area', c, 'sell').includes(true))), 'cannot sell that');
       can(c.can_sell_card(), 'cannot sell now');
+      // A mod may take the sale over (Pokermon's Cofagrigus, Mummy: the round's first Joker sold stays, made Negative, and no money is
+      // paid): then nothing was sold, so no selling_self / selling_card contexts. Vanilla (no mod) never asks.
+      if (ACTIVE_MODS.length && callHook('sell_instead', c).includes(true)) { emit('card_changed', { card: c.sort_id }); break; }
       c.sell_card();
       for (const j of G.jokers.cards.slice()) if (j !== c) mod_context_effect(j, j.calculate_joker({ selling_card: true, card: c }));
       break;
