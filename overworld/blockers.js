@@ -77,6 +77,15 @@ export const BLOCKERS = {
 	MAP_ROUTE22: [{ id: 'k_league', gates: 'Route23', cond: { badge: 8 }, sprite: { kind: 'person', img: 'policeman' },
 		tx: 8, ty: 6, solid: [[8, 6], [9, 6]],
 		msg: 'OFFICER: Only trainers with all 8 KANTO badges may pass to the POKeMON LEAGUE. Show me your badges!' }],
+	// Cerulean's east road (ROUTE 9): FireRed's own block. Until BILL hands over the
+	// S.S. TICKET, CeruleanCity_OnTransition parks the trainee's SLOWBRO and the lass
+	// on (26,31)/(27,31), the one corridor to the east edge. Authentic, but the
+	// Slowbro's lines ("SLOWBRO ignored orders…") never say what moves it, so a player
+	// arriving by portal had no idea (bug:1793176613457). No sprite: the decomp's
+	// own objects stand there; this only answers the talk with the way forward.
+	MAP_CERULEAN_CITY: [{ id: 'k_cerulean_slowbro', cond: { flag: 'FLAG_GOT_SS_TICKET' }, sprite: null,
+		tx: 26, ty: 31, solid: [[26, 31], [27, 31]],
+		msg: 'SLOWBRO ignored orders… and won’t budge from the path east to ROUTE 9.\n\nThe trainee is waiting on news from BILL. He lives north of CERULEAN, past NUGGET BRIDGE — once he gives you the S.S. TICKET, the way opens.' }],
 	// Vermilion approach from the north (Route 6) — the CASCADE-tier road
 	MAP_VERMILION_CITY: [{ id: 'k_vermilion', gates: 'VermilionCity', cond: { badge: 2 }, sprite: { kind: 'person', img: 'gym_guy' },
 		tx: 16, ty: 0, solid: [[12, 0], [13, 0], [14, 0], [15, 0], [16, 0], [17, 0], [18, 0], [19, 0], [20, 0], [22, 0], [23, 0], [24, 0]],

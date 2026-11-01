@@ -100,6 +100,50 @@ export function isTrainerEvent(ev) {
 		&& ev.script && ev.script !== '0x0';
 }
 
+// MAP ENTRY NEVER WAITS ON ONE STALLED SPRITE (bug:1793302854206, 2026-10-29).
+// refreshMapContent awaited every object's sheet before it cleared `loading`, and
+// the fetch layer gives a stalled download up only after ~54 s of retries — each
+// retry a sign of life, so the load watchdog held off to its 75 s cap. Crossing
+// from Lavaridge onto Route 112 on a flaky link left the old town on screen, the
+// controls dead, for over a minute. Now a sheet gets ENTRY_SPRITE_WAIT_MS: if it is
+// not in by then the object is placed with an invisible stand-in sheet (it still
+// blocks, talks and battles) and its real sheet is swapped in when it lands. A
+// sheet that turns out not to exist removes the object, as a 404 always did.
+export const ENTRY_SPRITE_WAIT_MS = 4000;
+const LATE = Symbol('late');
+async function firstImage(urls) {
+	for (const u of urls) {
+		if (!u) continue;
+		const img = await getImage(u).catch(() => null);
+		if (img) return img;
+	}
+	return null;
+}
+function standInSheet(w, h) {
+	try { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+	catch (e) { return { width: w, height: h }; }
+}
+// { img, late }: `late` is null when `img` is the real sheet (or null: none exists);
+// otherwise `img` is a stand-in and `late` resolves to the real sheet or null
+export async function entrySprite(urls, { mon = false } = {}) {
+	const p = firstImage(urls);
+	let timer;
+	const t = new Promise(r => { timer = setTimeout(() => r(LATE), ENTRY_SPRITE_WAIT_MS); });
+	const got = await Promise.race([p, t]);
+	clearTimeout(timer);
+	if (got !== LATE) return { img: got, late: null };
+	return { img: mon ? standInSheet(32, 32) : standInSheet(144, 32), late: p };
+}
+// swap a stand-in for the real sheet once it lands (`drop` when there is none)
+export function adoptLateSprite(obj, late, drop, mon = false) {
+	if (!late) return;
+	late.then(img => {
+		if (!img) { drop(obj); return; }
+		obj.img = img;
+		obj.frames = mon ? 1 : Math.floor(img.width / 16);
+	}, () => drop(obj));
+}
+
 class Trainer {
 	constructor(ev, img) {
 		this.ev = ev;
@@ -281,12 +325,14 @@ export class Trainers {
 			const claimedByBeat = storyFlagged && !!(this.spawnFlagged && this.spawnFlagged(ev));
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
 			const file = peopleFile(this.gfx, ev.graphics_id);
-			let img = file ? await getImage(`data/people/${file}`).catch(() => null) : null;
 			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer —
 			// use their real people_extra art, else a generic
-			if (!img) img = await getImage(spritePath(ev.graphics_id, true)).catch(() => null);
+			const { img, late } = await entrySprite([file ? `data/people/${file}` : null, spritePath(ev.graphics_id, true)]);
 			if (gen !== this._loadGen) return;   // a newer load owns the list now
-			if (img && !this.list.some(o => o.ev === ev)) { const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t); }
+			if (img && !this.list.some(o => o.ev === ev)) {
+				const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t);
+				adoptLateSprite(t, late, o => { this.list = this.list.filter(x => x !== o); });
+			}
 		}));
 		if (gen !== this._loadGen) return;
 		this.recomputeDupBases();

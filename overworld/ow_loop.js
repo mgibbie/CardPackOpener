@@ -115,14 +115,20 @@ export function tick(now) {
 			S.loadWatchStart = null; S.loading = false;
 			if (cutscene.blocking) cutscene.stop();
 			fade.target = 0;
-			if (world.current) hud.textContent = "Loading got stuck — you're back where you were.";
+			// "back where you were" is only true when the map never swapped. A load that
+			// stalled AFTER the swap (the new map's sprites/scripts) leaves the player on
+			// the NEW map — saying otherwise, over the old map's HUD, sent a tester
+			// looking for Lavaridge while standing on Route 112 (bug:1793302854206)
+			if (world.current && S.loadWatchFrom && world.current.name !== S.loadWatchFrom)
+				hud.textContent = `${world.current.map?.name || world.current.name} — loading was slow; some things may still be appearing.`;
+			else if (world.current) hud.textContent = "Loading got stuck — you're back where you were.";
 			else showLoadRetry();
 			// a map drawn without its tilesheets (a stalled download) must not stay
 			// black: keep trying to fetch them and repaint when they land
 			try { world.healTilesets && world.healTilesets(); } catch (e) {}
 			try { globalThis.reportErr && globalThis.reportErr('load watchdog fired' + (world.current ? ' (kept ' + world.current.name + ')' : ' (no map)'), 'ow_loop.tick'); } catch (e) {}
 		}
-	} else S.loadWatchStart = null;
+	} else { S.loadWatchStart = null; S.loadWatchFrom = world.current?.name || null; }   // the map a load would start FROM
 	if (S.loading || !world.current) return;
 	if (S.postBattleCatchUpArmed && !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
 		&& openCanvasMenus().length === 0) {
