@@ -256,14 +256,39 @@ export function savePos() {
 }
 // the `msg` right after a script's first trainerbattle: what an already-beaten
 // trainer says (the decomp's trainerbattle skips the battle once beaten)
-function postBattleLine(label) {
+// What talking to a beaten trainer does: the cartridge's `trainerbattle` falls through
+// to the script's next line. Usually that is the post-battle `msg`, but every Hoenn
+// trainer with a rematch first asks `specialvar VAR_RESULT, ShouldTryRematchBattle`
+// (151 scripts), and the gym leaders branch on their TM flag before the line
+// (Brawly: `goto_if_unset FLAG_RECEIVED_TM_BULK_UP`). Only a bare `msg` was
+// followed, so all of those quoted the roster's battle-end line instead: a beaten
+// BRAWLY said "Dude, you've got me beat. I never thought I'd lose here." on every
+// talk, which read as a defeat line for a fight that never happened
+// (bug:1793134540285). Walk the fall-through: the rematch question answers no
+// (rematches come from the VS Seeker re-arm), a flag test is evaluated — taken,
+// it names the label to run (the TM a leader still owes); not taken, read on.
+// { line } | { label } | null
+function postBattleAction(label) {
 	const ops = label && S.mapScripts[label];
 	if (!Array.isArray(ops)) return null;
 	const i = ops.findIndex(o => o.op === 'trainerbattle');
-	const next = i >= 0 ? ops[i + 1] : null;
-	if (!next || next.op !== 'msg') return null;
-	const raw = (S.mapStrings && S.mapStrings[next.text]) || null;
-	return raw ? Story.normalizeText(raw, cutsceneCtx()) : null;
+	if (i < 0) return null;
+	let rematchVar = null;
+	for (let j = i + 1; j < ops.length && j < i + 8; j++) {
+		const o = ops[j];
+		if (o.op === 'special' && o.name === 'ShouldTryRematchBattle') { rematchVar = o.store || 'VAR_RESULT'; continue; }
+		if (o.op === 'branch' && rematchVar && o.cond?.var === rematchVar) continue;
+		if (o.op === 'branch' && o.kind === 'goto' && o.cond?.flag != null && o.cond.item == null) {
+			if (Story.getFlag(o.cond.flag) === !!o.cond.state) return S.mapScripts[o.label] ? { label: o.label } : null;
+			continue;
+		}
+		if (o.op === 'msg') {
+			const raw = (S.mapStrings && S.mapStrings[o.text]) || null;
+			return raw ? { line: Story.normalizeText(raw, cutsceneCtx()) } : null;
+		}
+		return null;
+	}
+	return null;
 }
 // does this script branch on an EVENT_BEAT_* flag before its first battle? Then
 // it handles an already-beaten talk itself (never re-fights)
@@ -517,8 +542,9 @@ export function interact() {
 			if (guardsOwnBeat(S.mapScripts[t.ev.script]) && runScriptLabel(t.ev.script, t)) return;
 			// Emerald/FireRed: an already-beaten trainer's `trainerbattle` skips to
 			// the next line, which is their post-battle line (Jeff: "...")
-			const post = postBattleLine(t.ev.script);
-			if (post) { dialog.open(post); return; }
+			const post = postBattleAction(t.ev.script);
+			if (post?.line) { dialog.open(post.line); return; }
+			if (post?.label && runScriptLabel(post.label, t)) return;
 			const { info } = trainers.buildBattle(t, battle.data);
 			dialog.open(info.defeatText);
 		} else {
