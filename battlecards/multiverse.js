@@ -74,7 +74,7 @@ export const HERO_POWERS = {
 	'Green Goblin': P('Pumpkin Bomb', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Venom': P('Symbiote Feast', 2, 'Give a friendly creature +1/+0 and Lifesteal.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'lifesteal', target: 'friendly-creature' }]),
 	'Carnage': P('Bloodlust', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
-	'Doctor Octopus': P('Tentacle Barrage', 2, 'Deal 2 damage split among random enemies.', [{ type: 'random-damage', value: 2, pool: 'enemies', count: 2 }]),
+	'Doctor Octopus': P('Tentacle Barrage', 2, 'Deal 2 damage split among random enemies.', [{ type: 'random-damage', value: 1, pool: 'enemies', count: 2 }]),
 	'Mysterio': P('Smoke and Mirrors', 3, 'Summon a 2/1 Illusion with Elusive.', [{ type: 'summon', count: 1, attack: 2, health: 1, name: 'Illusion', tribe: 'Illusion', keywords: ['elusive'] }]),
 	'Electro': P('Static Surge', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Rhino': P('Charge', 2, 'Give a friendly creature +2/+0 and Rush.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }, { type: 'grant', keyword: 'rush', target: 'friendly-creature' }]),

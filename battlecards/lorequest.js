@@ -78,22 +78,32 @@ export function unlockedCharacters(stats) {
 }
 
 // N distinct random characters from a pool (the run-start offer). `pinned`
-// entries (characters with a live win streak) are always included, ahead of
-// the random fill — a streak must always be continuable.
+// entries (characters with a live win streak) are included ahead of the random
+// fill so a streak stays continuable — but they may take at most count-1 slots
+// while any un-pinned character exists: the last slot always rotates through the
+// characters WITHOUT a live streak. (Three streaking heroes once filled every
+// Middle-earth offer, so an unlocked Gandalf could never be picked —
+// instinctgauntlet, 2026-10-29.)
 export function offerFrom(pool, rng, count = 3, pinned = []) {
-	const out = [];
-	for (const c of pinned) if (pool.includes(c) && !out.includes(c) && out.length < count) out.push(c);
-	const bag = pool.filter(c => !out.includes(c));
-	while (out.length < count && bag.length) out.push(bag.splice(Math.floor(rng() * bag.length), 1)[0]);
+	const pins = pinned.filter((c, i) => pool.includes(c) && pinned.indexOf(c) === i);
+	const fresh = pool.filter(c => !pins.includes(c));
+	const maxPins = fresh.length ? Math.max(0, count - 1) : count;
+	const out = pins.slice(0, maxPins);
+	const draw = bag => { while (out.length < count && bag.length) out.push(bag.splice(Math.floor(rng() * bag.length), 1)[0]); };
+	draw(fresh);
+	draw(pins.filter(c => !out.includes(c))); // a pool of only streaks (or a tiny pool)
 	return out;
 }
 
-// characters in `pool` with a live win streak in this mode (server resets a
-// character's streak only when THAT character loses a run). Hottest first.
-export function streakPins(pool, stats, modeKey) {
+// characters in `pool` with a live win streak in this mode (the server resets a
+// character's streak when THAT character loses or concedes/abandons a run). Hottest
+// first; equal streaks in random order (rng) so a capped-out pin rotates too.
+export function streakPins(pool, stats, modeKey, rng = null) {
 	const chars = stats?.chars || {};
 	const s = c => chars[modeKey + '|' + c]?.streak || 0;
-	return pool.filter(c => s(c) >= 1).sort((a, b) => s(b) - s(a));
+	const live = pool.filter(c => s(c) >= 1);
+	if (rng) for (let i = live.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [live[i], live[j]] = [live[j], live[i]]; }
+	return live.sort((a, b) => s(b) - s(a));
 }
 
 // three distinct planeswalkers to offer as starter decks (free-play path)

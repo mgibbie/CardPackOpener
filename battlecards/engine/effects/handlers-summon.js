@@ -465,9 +465,14 @@ register('enemy-summon-from-deck', ({ state, pi, target, source, enemies, scaled
 register('resurrect-highest-died', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Calia Menethil: resurrect your highest-Cost minion that died this game
 			const p = state.players[pi];
-			const _pool = [...new Set(p.deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature').sort((x, y) => (y.cost || 0) - (x.cost || 0));
-			for (let _k = 0; _k < (e.count || 1) && _pool.length; _k++) {
-				const c2 = summon(state, pi, _pool[Math.min(_k, _pool.length - 1)]);
+			// one candidate per real DEATH (deathLogMeta logs every instance; deathLogIds is unique
+			// ids — the fallback for an old snapshot), highest Cost first, never padded: the old
+			// loop re-picked the last candidate until `count`, so Staff of Renewal (count 7) raised
+			// one dead Augur six times off two deaths (instinctgauntlet, 2026-10-28)
+			const _ids = p.deathLogMeta?.length ? p.deathLogMeta.map(m => m.id) : [...new Set(p.deathLogIds)];
+			const _pool = _ids.map(id => state.cardsById[id]).filter(d => d && d.type === 'creature').sort((x, y) => (y.cost || 0) - (x.cost || 0));
+			for (let _k = 0; _k < Math.min(e.count || 1, _pool.length); _k++) {
+				const c2 = summon(state, pi, _pool[_k]);
 				if (c2 && e.grant && !c2.keywords.includes(e.grant)) { c2.keywords.push(e.grant); if (e.grant === 'divine_shield') c2.shield = true; }
 			}
 });

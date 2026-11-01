@@ -1817,7 +1817,15 @@ export function runBattlecry(state, pi, card, target, choice) {
 		// never by the card that armed it — its own effect sets the flag AFTER this read)
 		const flagDouble = p.nextBattlecryDouble;
 		if (flagDouble) p.nextBattlecryDouble = false;
+		const _ekBefore = state.exactKills || 0;
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+		// Honorable Kill on a creature's own Battlecry (Knight-Captain: "Deal 3 damage" exactly
+		// killing a 3-health creature) — only combat + spells checked it, so the battlecry kill
+		// never paid its +3/+3 (instinctgauntlet, 2026-10-27). Once per play, like a spell's.
+		if (card.type === 'creature' && card.honorableKill && (state.exactKills || 0) > _ekBefore) {
+			emit(state, { type: 'honorableKill', uid: card.uid, player: pi });
+			execEffects(state, pi, card.honorableKill, target, card);
+		}
 		// Battle Totem (dungeon treasure / Jin'zo passive) or a live Brann
 		// or Zee's Might (every fifth minion you play triggers its Battlecry twice)
 		if (flagDouble || p.battlecriesTwice
