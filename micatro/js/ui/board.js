@@ -364,7 +364,11 @@ export class Board {
         this.rowTargets(ids, rect, { z: 100 + ri * 20, gap: 0.6 }).forEach((t, i) => { t.s = (t.s || 1) * 0.8; if (hl(ids[i])) t.y -= this.ch * 0.25; set(ids[i], t); });
       });
     } else {
+      // between rounds the hand is empty in vanilla; a card a mod keeps there (Pokermon's Beartic, Freeze) waits below the screen,
+      // out from under the shop / cash-out / blind choice panels, and slides back up with the next deal
+      const away = state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT';
       this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
+        if (away) t.y = this.SH + this.ch;
         if (hl(handIds[i])) t.y -= this.ch * 0.3;
         set(handIds[i], t);
       });
