@@ -80,7 +80,9 @@ sec(() => {
   const keys = MODS.pokermon.content.centers.filter((c) => c.set === 'Joker').map((c) => c.key);
   // (b follows a, past any joker from upstream main between them: sub-batch 15b's sit in main's order among 3.9.1's)
   const fromMain = new Set(Object.entries(D391.new_jokers || {}).filter(([, v]) => v.upstream === 'main').map(([n]) => 'j_poke_' + n));
-  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i])) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
+  // (and past the owner's designs, jokers/pokejokers_designs.js: Gen 5 batch 3 put Tynamo after Klinklang, Cubchoo ... Druddigon after Haxorus)
+  const designs = new Set((STATUS.PORTED_FILES['micatro/pokejokers_designs'] || []).map((n) => 'j_poke_' + n));
+  const after = (a, b) => { let i = keys.indexOf('j_poke_' + a) + 1; while (fromMain.has(keys[i]) || (designs.has(keys[i]) && keys[i] !== 'j_poke_' + b)) i++; return i > 0 && keys[i] === 'j_poke_' + b; };
   ok(after('simipour', 'munna') && after('munna', 'musharna') && after('musharna', 'pidove') && after('zebstrika', 'roggenrola') && after('ferrothorn', 'klink')
     && after('klink', 'klang') && after('klang', 'klinklang') && after('klinklang', 'elgyem') && after('chandelure', 'axew')
     && after('haxorus', 'golett') && after('greninja', 'bunnelby') && after('bunnelby', 'diggersby') && after('mimikyu', 'drampa')

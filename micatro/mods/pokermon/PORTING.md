@@ -267,7 +267,7 @@ Sprigatito line ("The owner's Sprigatito line" below), `3.9.1+r21` for the owner
 for the owner's Type Sleeves, `3.9.1+r23` for the owner's Sprigatito rework ("The Sprigatito rework" below), `3.9.1+r24` for the owner's
 Gulpin line ("The owner's Gulpin line" below), `3.9.1+r25` for the owner's Trapinch line ("The owner's Trapinch line" below), `3.9.1+r26` for the owner's Spoink line ("The owner's Spoink
 line" below), `3.9.1+r27` for the owner's Castform ("The owner's Castform" below), `3.9.1+r28` for the owner's Barboach line ("The owner's
-Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), `3.9.1+r54` for Gen 5 batch 2 ("Gen 5, batch 2" below), **`3.9.1+r55`** since Gen 5 batch 4, the Gen 5 Legendaries ("Gen 5, batch 4" below)
+Barboach line" below), `3.9.1+r29` for the owner's Lunatone + Solrock ("The owner's Lunatone + Solrock" below), `3.9.1+r30` for the owner's types following their card art ("Types from the card art" below), `3.9.1+r31` for the owner's Regi trio ("The owner's Regi trio" below), `3.9.1+r32` for the owner's Starly line ("The owner's Starly line" below), `3.9.1+r33` for the owner's Gen 3 Legendaries ("The owner's Gen 3 Legendaries" below), `3.9.1+r34` for the owner's Chatot + Pachirisu ("The owner's Chatot + Pachirisu" below), `3.9.1+r35` for the owner's Glameow line ("The owner's Glameow line" below), `3.9.1+r36` for the owner's Drifloon line ("The owner's Drifloon line" below), `3.9.1+r37` for the owner's Burmy line ("The owner's Burmy line" below), `3.9.1+r38` for the owner's Combee line ("The owner's Combee line" below), `3.9.1+r39` for the owner's Cherubi line ("The owner's Cherubi line" below), `3.9.1+r40` for the owner's Shellos line ("The owner's Shellos line" below), `3.9.1+r41` for the owner's Burmy three-pile cloak ruling ("The owner's Burmy line" below), `3.9.1+r42` for the owner's Stunky line ("The owner's Stunky line" below), `3.9.1+r43` for the owner's Gible line ("The owner's Gible line" below), `3.9.1+r44` for the owner's last Gen 4 regulars ("The owner's last Gen 4 regulars" below), `3.9.1+r45` for the owner's creation trio, Regigigas and Arceus ("The owner's creation trio, Regigigas and Arceus" below), `3.9.1+r46` for the owner's Lake trio, Cresselia, Manaphy and Phione ("The owner's Lake trio, Cresselia, Manaphy and Phione" below), `3.9.1+r47` for the owner's Regigigas trio wake ("The owner's creation trio, Regigigas and Arceus" below: the full trio wakes it after 1 round), `3.9.1+r48` for the Gen 7 starters ("The Gen 7 starters" below), `3.9.1+r49` for the Gen 8 starters, the Scorbunny and Sobble lines ("The Gen 8 starters" below), `3.9.1+r50` for the Gen 5 starters ("The Gen 5 starters" below), `3.9.1+r51` for the owner's Gen 9 starters ("The owner's Gen 9 starters" below), **`3.9.1+r52` for the Gen 6 starters ("The Gen 6 starters" below), `3.9.1+r53` for Gen 5 batch 1 ("Gen 5, batch 1" below), `3.9.1+r54` for Gen 5 batch 2 ("Gen 5, batch 2" below), `3.9.1+r55` for Gen 5 batch 4, the Gen 5 Legendaries ("Gen 5, batch 4" below), **`3.9.1+r56`** since Gen 5 batch 3 ("Gen 5, batch 3" below)
 (Plans/MICATRO_MODS_PLAN.md §9).
 
 | batch | what | status |
@@ -3134,6 +3134,89 @@ forms (`systems/anim.js` GEN5_LEGEND_FORMS: Tornadus {8,3}, Thundurus {0,4}, Lan
   (the pin, 192 defs), `pokermon_art_types_test` (the 12 and every form cell), `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1010 jokers);
   `designwiki_pokermon_jokers_test` spot-checks Chien-Pao / Iron Thorns / Bewear (Kyurem and Keldeo have jokers now), and its generation /
   type filter checks now use the generation with the most species still missing (Gen 5 empties as its batches land).
+
+### Gen 5, batch 3 (2026-10-29, branch `feat/pokermon-gen5-batch3`)
+Pinned **`3.9.1+r56`** (`contentRev: 56`; batch 4, the Legendaries, landed first as r55; `LEGACY_MOD_VERSIONS` untouched). The owner's "Build batch 3": 30 jokers, #580-637, in
+`jokers/pokejokers_designs.js` (`has_flush` / `season_now` / `static_face` / `trade_round` / `steel_rule_x` / `hands_discards` / `foongus_ball` /
+`spore_first_deal` / `healing_heart` / `electroweb` / `freeze` / `static_discard` / `top_retrigger` / `head_charge` / `heatmor_calc` / `sun_read`;
+222 defs now). Pokédex order: Ducklett, Swanna after Gothitelle; Deerling ... Amoonguss (585-591) after Vanilluxe; Alomomola, Joltik, Galvantula
+after Jellicent; the Tynamo line after Klinklang; Cubchoo, Beartic after Haxorus; Shelmet ... Druddigon (616-621) after Cryogonal; Bouffalant ...
+Durant (626-632) after Bisharp; Larvesta, Volcarona after Hydreigon. Neither Nacho nor Pokermon+ has any of them. Prices by the guide's slots;
+evolution 5 rounds each (none is an early evolver), Karrablast / Shelmet by their trade. Types = the cards' (`pokermon_art_types_test`:
+Escavalier Grass, Joltik Lightning, Durant Metal, Larvesta / Volcarona Fire). Art: upstream 3.9.1 cells (Natdex {18,38} / {20,38}, {2..20,39},
+{2..26,40}, {0..24,41}, {0..12,42}; Deerling / Sawsbuck Gen 5, a cell per season); nothing to deploy. Two engine seams (vanilla never reaches
+either: the fuzz is unchanged): **`keep_in_hand`** (run.js: a mod keeps held cards when the hand empties) and **`Blind.suspend` / `Blind.off`**
+(blind.js: a temporary lift of a Boss Blind's rules).
+- **Ducklett** (C $5, 5) / **Swanna** (S $8): **+40 Chips / X2 if the hand contains a Flush** (a Straight Flush, Flush House, Flush Five too).
+  Energy `chips` 40 -> 52 / 64 / 76, `Xmult` 2 -> 2.4 / 2.8 / 3.2.
+- **Deerling** (C $5, 5) / **Sawsbuck** (S $8), Seasons: **the season follows the Ante** — Ante 1 Spring, 2 Summer, 3 Autumn, 4 Winter, then again
+  (DETERMINISTIC, `season_of_ante`: nothing rolled or saved; the shop after a Boss is already the next season; Ante 0 Winter). **Spring Hearts,
+  Summer Diamonds, Autumn Clubs, Winter Spades** (the spec's). Each scored card of the season's suit **+3 Mult / X1.2** (is_suit: Wild yes,
+  debuffed no). Upstream draws all four seasons of both on the Gen 5 sheet (Deerling {2,1} {4,1} {6,1} {8,1}, Sawsbuck {10,1} {0,2} {2,2} {4,2};
+  pokespriteload lists only Spring): each season shows its own card, a live view form (`poke_view_form`, `systems/anim.js SEASON_SPRITES`, ui.js
+  ownFace; Shiny twins). Energy `mult` 3 -> 4.2 / 5.4 / 6.6, `Xmult_multi` 1.2 -> 1.26 / 1.32 / 1.38.
+- **Emolga** (R $7), Static: **each scored face card earns $1 and gives +2 Mult** (is_face: Pareidolia counts). `static_money` fixed; `mult` 2 ->
+  2.8 / 3.6 / 4.4.
+- **Karrablast** (C $5) **+6 Mult** / **Shelmet** (C $5) **+40 Chips**, the trade pair: **they evolve only together.** Pairing (the choice): the
+  undebuffed Karrablasts and Shelmets **in row order, 1st with 1st, 2nd with 2nd**; an odd one counts nothing. Each end of round every paired
+  one counts a round held together (`together`, its own, max 4, kept if the partner leaves — a new partner must catch up); once **both of a pair
+  have 4**, that end of round **Karrablast -> Escavalier and Shelmet -> Accelgor at once**. No partner: never. Everstone: they count, never
+  evolve. **Escavalier** (S $8): **X1.5**, and **Steel cards held give X1.75 instead of X1.5** — the card-level rule (`regi_h_x_mult` ->
+  `steel_rule_x`): with **Registeel / Durant the best one wins, never stacking** (Registeel's X2 wins; Escavalier + Durant X1.75 once).
+  **Accelgor** (S $8): **+1 hand, +1 discard** a round and **+4 Mult for each hand left** (hands_left while it scores: the last hand 0). Energy
+  `mult` 6 -> 8.4 / 10.8 / 13.2, `chips` 40 -> 52 / 64 / 76, Escavalier `Xmult` 1.5 -> 1.8 / 2.1 / 2.4 (`steel_x` fixed), Accelgor `mult` 4 -> 5.6 /
+  7.2 / 8.8 (re-applied on evolution).
+- **Foongus** (C $5, 5): **at the end of each shop, 1 in 4 to create a Poké Ball** (`c_poke_pokeball`; Manaphy's Egg: room first, then the roll).
+  **Amoonguss** (S $8), **Spore**: the Boss Blind's ability is **off during the round's first hand**. The implementation (the choice): not
+  Blind:disable (nothing undone for good) but a **suspension**, `Blind.suspend` in blind.js: from the round's **first deal** (Pokermon's
+  `draw_from_deck_to_hand` hook, before the dealt cards land: The House / Wheel / Mark / Fish flip nothing, Cerulean Bell forces nothing) until
+  the **first hand has scored** (the `hand_scored` hook; discards before it are inside). Meanwhile `blind.off` is true for every rule the Blind
+  applies in play: debuffed cards / jokers lifted at once (Goad, Head, Club, Window, Plant, Pillar, Verdant Leaf) and back after, no debuffed
+  hand (Psychic, Eye, Mouth, Arm, Ox — and not recorded: The Eye / Mouth start with the 2nd hand), no Flint halving, no Hook / Tooth on that
+  play; an SMODS blind's `calculate` sees itself disabled (smods.js `blind_calculate` masks `disabled`). The Blind's **set-up stays** (Wall /
+  Violet Vessel size, Water / Needle / Manacle counts, Amber Acorn, White Executive's debuffed cards). Coming back, The Fish / Crimson Heart are
+  prepped as after a played hand. **Chicot / Luchador still disable it for good** during a suspension (they read `disabled`, and
+  `Blind:disable` ends the suspension). Boss Blinds only; once a round; an undebuffed Amoonguss at the first deal; sold / debuffed meanwhile:
+  back at once. Both Energy-inert.
+- **Alomomola** (R $7), Healing Heart: **the first playing card destroyed each round** (any cause: `remove_playing_cards`) **is copied back into
+  the deck** (`copy_card`, Cryptid's: rank, suit, enhancement, seal, edition, its permanent bonuses; into G.deck). The original is destroyed,
+  so Canio / Giratina / Cacnea still count it. Two destroyed at once: the first of them. Each Alomomola once a round (Blind + shop). Not
+  Blueprint; Energy-inert.
+- **Joltik** (C $5, 5): **+3 Mult per other Lightning Joker** (is_type, undebuffed, itself never). **Galvantula** (S $8), Electroweb: **each Gold
+  card held X1.2**. Energy `mult` 3 -> 4.2 / 5.4 / 6.6, `Xmult_multi` 1.2 -> 1.26 / 1.32 / 1.38.
+- **Tynamo** (U $6, 5) **+1 Mult per Steel card in the full deck** / **Eelektrik** (S $8, 5) **each Steel card held +3 Mult** (h_mult, after the
+  card's own X1.5) / **Eelektross** (S $10) **X1.5 + X0.1 per Steel card in the full deck**. Energy `mult` 1 -> 1.4 / 1.8 / 2.2, 3 -> 4.2 / 5.4 /
+  6.6, `Xmult` 1.5 -> 1.8 / 2.1 / 2.4, `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16.
+- **Cubchoo** (C $5, 5): **scored Glass cards +20 Chips**. **Beartic** (S $8), **Freeze** (the owner's choice; done properly, no fallback): at each
+  end of round the **leftmost held card is frozen** (`ability.poke_frozen` = the Beartic's id) and **stays in your hand into the next round** —
+  run.js `keep_in_hand`: the round's end (and a pack opened in the shop closing) moves every other card and leaves it; it is in hand through the
+  cash-out and the shop (in a pack's hand too), and the next deal **fills around it** (dealt up to the hand size, it counting). **X1.5 held while
+  frozen** (Mime repeats it, Blueprint copies it). **Thaws when played or discarded** (the `play_pressed` / `discard_card` hooks: The Hook's
+  discard too) or when it leaves the hand otherwise. **One card per Beartic**: still held at the next end of round, it stays frozen and nothing
+  else is; once thawed, the next end of round freezes the leftmost again; two Beartics freeze two cards. Beartic sold: its card thaws at the next
+  end of round. A debuffed Beartic: no X, its card stays. **Save / resume**: the run is rebuilt from its recipe, so the same card is frozen again
+  (tested in the shop and mid-round). Energy `chips` 20 -> 26 / 32 / 38, `Xmult_multi` 1.5 -> 1.575 / 1.65 / 1.725.
+- **Stunfisk** (R $7): **each discard $1, at most $4 a round** (a player discard; one discard of several cards is $1). Money: Energy-inert; not
+  Blueprint.
+- **Mienfoo** (C $5, 5) / **Mienshao** (S $8): **the highest-ranked / top 2 scored cards retrigger once** (Aces high; a tie the leftmost; never a
+  debuffed or Stone card). Energy-inert.
+- **Druddigon** (R $7): **each scored King X1.4** (`Xmult_multi` -> 1.47 / 1.54 / 1.61).
+- **Bouffalant** (R $7), Head Charge: **X0.5 banked each time a Blind falls to the round's first hand**, **max X4** (`charge_Xmult`; the cap fixed).
+  Energy `Xmult_mod` 0.5 -> 0.6 / 0.7 / 0.8.
+- **Rufflet** (C $5, 5) / **Braviary** (S $8): **+10 Mult / X2 during Boss Blinds**. Energy `mult` 10 -> 14 / 18 / 22, `Xmult` 2 -> 2.4 / 2.8 / 3.2.
+- **Heatmor** (R $7) **+4 Mult per discard used this round** + **Durant** (R $7) **held Steel X1.75 instead of X1.5** (`steel_rule_x`, as
+  Escavalier's: the best wins), the rivals: **both held, undebuffed, Heatmor banks X0.1 at each end of round** (`ant_Xmult`) and gives it from
+  then on (with or without Durant). Energy Heatmor `mult` 4 -> 5.6 / 7.2 / 8.8 and `Xmult_mod` 0.1 -> 0.12 / 0.14 / 0.16 (never retroactive);
+  Durant `Xmult_multi` 1.75 -> 1.8375 / 1.925 / 2.0125.
+- **Larvesta** (C $5, 5): **+5 Mult, doubled while it's sunny** — Cherrim's check (`cherrim_sunny`: a red first deal, a working Groudon), read on
+  its own first deal. **Volcarona** (S $8): **while held it's always sunny**: it ADDS sun to the shared check (Cherrim's Sunshine Form, Larvesta),
+  and **Castform turns Sunny** on its first deal — **except where Kyogre locks it Rainy** (Kyogre held, or its Primal Clash win: the choice — it
+  adds sun and never stops rain, so with Kyogre it is both raining and sunny; the clash itself is read as before). **Each Fire Joker X1.25**,
+  itself included (other_joker). Energy `mult` 5 -> 7 / 9 / 11 (sunny 14 / 18 / 22), `Xmult_multi` 1.25 -> 1.3125 / 1.375 / 1.4375.
+- **Wiki**: regenerated (224 missing); the wiki sprites of the 30 are gone from `designwiki/sprites/pokermon_jokers/` (sprites redeployed).
+- **Tests**: `micatro/tests/mods/pokermon_gen5_batch3_test.mjs`. Re-recorded: `modpin_test`, `pokermon_391_data_test`, `pokermon_new_jokers_test`
+  (the pin, 222 defs), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages` (1040 jokers); `designwiki_pokermon_jokers_test`
+  spot checks: Stunfisk was in none after batch 4's.
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

@@ -752,6 +752,62 @@ House pattern: TEMPORARY HAND SIZE as "draw 1 extra" (the Gen 5 Cottonee, Pranks
     first_hand_drawn, so only the first deal is one card over. Keep the pending amount on the joker and give it back in remove_from_deck.
   - These are hand-size effects: fixed, never energized (the Grass hand-size pitfall, 3.1); Whimsicott's +2 is the line's only permanent
     step past +1, by the owner's design.
+House pattern: SEASONS, a cycle read from the Ante (the Gen 5 Deerling line; jokers/pokejokers_designs.js SEASONS / season_now):
+  - A state that changes on its own needs no roll and no save when it can be DERIVED: the season is season_of_ante(G.GAME.round_resets.ante),
+    Ante 1 Spring, 2 Summer, 3 Autumn, 4 Winter, then again (Ante 0 Winter: the modulo keeps cycling backwards). Every copy agrees, a resume
+    and a replay agree, and the shop after a Boss is already the next season (the ante goes up when the Boss is beaten). Prefer this to a
+    seeded pick whenever the design says "changes every Ante / round" without "random".
+  - Each season keys a suit (Spring Hearts, Summer Diamonds, Autumn Clubs, Winter Spades) and the payoff reads it per scored card (is_suit:
+    Wild yes, debuffed no): Deerling +3 Mult (`mult`), Sawsbuck X1.2 (`Xmult_multi`). The tooltip names the season and its suit in its colour.
+  - Art per state from a LIVE view form (center.poke_view_form, Cherrim's way), not a stored ex.form: the four 3.9.1 cells sit side by side on
+    the Gen 5 sheet (systems/anim.js SEASON_SPRITES, ui.js ownFace; the first is the center's own card, Shiny twins for free). Pin it with a
+    pixel test that tells the cells apart by what they show (Spring the most pink, Summer greener than Autumn / Winter, Autumn more orange
+    than Summer / Winter, Winter the most white).
+House pattern: a TRADE PAIR that evolves only together (the Gen 5 Karrablast + Shelmet; trade_round / trade_pairs):
+  - Two separate one-step lines whose evolution is a JOINT event. Pair the undebuffed copies in row order (1st with 1st, 2nd with 2nd; an odd
+    one counts nothing; a Blueprint is neither), and run the whole row's count ONCE per end of round (a G.GAME round key: whichever of them is
+    calculated first does it), so the left one never misses the right one's count. Each paired joker counts its own `together` (capped at the
+    target, kept if the partner leaves: a new partner must catch up); when BOTH of a pair reach it (4 rounds), both poke_evolve in that pass.
+    Never `rounds` (level_evo's field: the card would draw an evolution timer and count down alone). Everstone: count, don't evolve.
+  - The tooltip: "(Together: k/4; with Shelmet / needs Shelmet)". Each Basic has its own small number (+6 Mult / +40 Chips) so it is worth a
+    slot while it waits, and its Energy is re-applied to the evolution's base.
+House pattern: ONE card-level rule, several sources (Registeel + the Gen 5 Escavalier and Durant; steel_rule_x):
+  - "Held Steel cards give X1.75 instead of X1.5" from a second and third joker is the SAME Card:get_chip_h_x_mult hook, never a joker effect:
+    the hook takes the best undebuffed source (Registeel X2 `Xmult_multi`, Durant X1.75 `Xmult_multi`, Escavalier X1.75 `steel_x`), so they
+    never stack and Mime / Red Seal repeat the card's value. A joker whose main number is elsewhere (Escavalier's own X1.5) keeps the rule in a
+    FIXED field; a joker whose only number is the rule (Durant) energizes it. The Steel card's tooltip reads the same function.
+House pattern: SUSPENDING a Boss Blind for one hand (the Gen 5 Amoonguss, Spore; blind.js Blind.suspend / Blind.off):
+  - "The Boss Blind's ability is disabled during the first hand, then comes back" is not Blind:disable (whose effects are for good: The Wall
+    halved, The Water's discards back, Chicot's check). It is an engine suspension: blind.suspended makes the getter blind.off true, and every
+    rule the Blind applies IN PLAY reads off (its debuffs, debuff_hand, modify_hand, press_play, stay_flipped, drawn_to_hand; run.js The
+    Serpent; an SMODS blind's calculate sees disabled while suspended). Its SET-UP at selection stays (Wall / Violet Vessel size, Water / Needle /
+    Manacle counts, Amber Acorn, a mod blind's selection-time debuffs). suspend(true / false) re-runs the debuff pass both ways and, coming back,
+    preps The Fish / Crimson Heart as a played hand would.
+  - The window: from the round's FIRST DEAL (before the dealt cards land, so face-down draws and Cerulean Bell are off too) to the end of the
+    first hand's scoring (the hand_scored hook, before the draw after it and before any defeat: The Manacle's hand size comes back). The
+    "can it still be disabled?" checks read `disabled` only, so Chicot / Luchador during the window disable it for good, and Blind:disable ends
+    the suspension. Boss Blinds only, once a round; the source sold / debuffed meanwhile ends it at once.
+House pattern: HEALING HEART, a destroyed card comes back as a copy (the Gen 5 Alomomola; healing_heart):
+  - On remove_playing_cards (every destroying path), copy context.removed[0] with copy_card (Cryptid's: rank, suit, enhancement, seal,
+    edition, permanent bonuses; a fresh G.playing_card id), add it to G.playing_cards and the draw pile (G.deck, card_limit + 1), re-run the
+    Blind's debuff on it, and playing_card_joker_effects. The original is still destroyed, so every destroy payoff counts it. Once a round per
+    joker (`heal_round` = G.GAME.round: the Blind and its shop). It undoes thinning: keep it to one card a round.
+House pattern: FREEZE, a held card that stays in hand between rounds (the Gen 5 Beartic; run.js keep_in_hand, freeze):
+  - An ENGINE seam: whenever run.js empties the hand (the round's end to the discard pile, a pack closing to the deck) it asks the mods'
+    keep_in_hand(card); a yes leaves that card in G.hand, the rest move in hand order (with none kept, exactly as before: vanilla never asks).
+    The card stays through the cash-out and the shop (it is part of a pack's hand there), and the next deal draws up to the hand size around it.
+  - The mark lives on the playing card (ability.poke_frozen = the Beartic's sort_id): one card per joker, chosen in the main end_of_round pass
+    (the leftmost held card not already frozen; while its card is still held it freezes nothing new). It thaws on play / discard (hooks
+    play_pressed and discard_card: effect discards too) or by leaving the hand; the joker sold, its card goes at the next end of round. Its
+    payoff is a held effect on that card (X1.5, `Xmult_multi`). Nothing to save: the recipe replays the same freeze (test the resume in the
+    shop and mid-round).
+House pattern: RIVALS that bank together (the Gen 5 Heatmor + Durant):
+  - Each is a full single-stage Rare alone (Heatmor +4 Mult per discard used this round; Durant the held-Steel rule above). Together
+    (find_card: undebuffed, a Blueprint isn't one) ONE of them banks at each end of round (Heatmor X0.1 into `ant_Xmult`, gain `Xmult_mod`,
+    never retroactive) and gives that X from then on, partner or not. Unlike Dojo Rivals' fixed bonus, the pair GROWS over time.
+House pattern: a FIRST-HAND WIN bank with a cap (the Gen 5 Bouffalant, Head Charge):
+  - At the main end_of_round, hands_played === 1 (Scraggy's Moxie check: the Blind fell to the first hand; not a game over) banks +Xmult_mod
+    (0.5, `charge_Xmult` from X1) up to a FIXED cap (Xmult_cap X4). Energy raises the gain only, so it reaches the cap sooner, never past it.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -850,6 +906,7 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
   custom        Branching by play counters (Rockruff picks its Lycanroc by counting Even and Odd
                 cards scored), "after 4 rounds not debuffed" (Volatile jokers), "4 rounds in
                 debt" (Snorunt), "after defeating 2 Boss Blinds" (Shroomish).
+                House: "held together 4 rounds" (the Gen 5 Karrablast + Shelmet: a JOINT evolution, both at once; 2.1 TRADE PAIR).
                 House: a GENDERED level_evo (the owner's Burmy: 4 rounds, Female -> Wormadam, Male -> Mothim;
                 the gender rolled when the card is created, 2.1).
 
@@ -941,7 +998,9 @@ slot), slow_start (Regigigas's wait), lake_mod (the Lake trio's +X0.25 per other
 steal / drain (Purrloin's $ and sell-value theft), lucky_odds (Pidove's +1), stamp_money (Woobat's $1), rival_x / rival_mult (Dojo Rivals),
 chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancient_money (Archen's $3), link_cap (Cinccino's max 5), levels
 (Sigilyph's extra Pair level), prank_draw / tidy_draws (the temporary hand size), the banks moxie_mult / moxie_Xmult / grudge_Xmult; sword_mod
-(the Swords of Justice's +X0.1), tao_mod (Truth vs Ideals' +0.25), storm_money / dem2 (Thundurus's $1 and Therian odds).
+(the Swords of Justice's +X0.1), tao_mod (Truth vs Ideals' +0.25), storm_money / dem2 (Thundurus's $1 and Therian odds);
+the Gen 5 batch 3 fixed fields: static_money / money_cap (Emolga's and Stunfisk's $), together (the trade count), steel_x (Escavalier's
+Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult.
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1107,6 +1166,9 @@ Seeds and Flowers (3.9.1)
     - The weather: "sunny" = Castform's forecast() on the round's first deal reads Sunny (Hearts + Diamonds held most, a tie
       isn't), remembered for the round; OR a working Groudon (Desolate Land: held, undebuffed, not this round's Primal Clash
       loser; live). Rayquaza's calm keeps Groudon working, so Groudon still means sun. Overcast otherwise.
+      Gen 5 batch 3: an undebuffed VOLCARONA is a third sun source (always sunny, live, in the shop too): it ADDS sun (Cherrim, Larvesta;
+      Castform turns Sunny on its first deal) and never stops rain: Kyogre's lock or clash win keeps Castform Rainy, Swift Swim still
+      reads Kyogre, so with both it is raining AND sunny. A new sun reader reads the forecast on its own first deal (`sun_round`, sun_read).
     - Energy on the boosted X as a per-card X (Xmult_multi +5%: X2.5 -> X2.625 / X2.75 / X2.875); the Basic carries the same
       field (unused by it) so Energy spent before evolving is kept. Form art: the Sunshine cell beside the card on the 3.9.1
       sheet, drawn from a LIVE view form (the center's poke_view_form hook), so a Groudon bought or sold redraws it at once.

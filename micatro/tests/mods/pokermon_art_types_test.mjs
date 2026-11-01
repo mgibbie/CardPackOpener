@@ -69,6 +69,13 @@ await sec('static', () => {
   'Gen 5 Legendaries: Cobalion Metal, Terrakion Earth, Virizion Grass, Keldeo Fighting (Water/Fighting: its card Fighting), Tornadus Colorless, Thundurus Lightning, Landorus Earth, Reshiram Fire, Zekrom Lightning, Kyurem Water (Dragon/Ice: its card Water), Meloetta Psychic, Genesect Grass',
   ['cobalion', 'terrakion', 'virizion', 'keldeo', 'tornadus', 'thundurus', 'landorus', 'reshiram', 'zekrom', 'kyurem', 'meloetta', 'genesect'].map((n) => D[n]));
   ok(MELOETTA_FORMES.aria.ptype === 'Psychic' && MELOETTA_FORMES.pirouette.ptype === 'Fighting', 'Meloetta: Aria Psychic, Pirouette Fighting');
+  ok(['ducklett', 'swanna', 'alomomola', 'cubchoo', 'beartic'].every((n) => D[n] === 'Water')
+    && ['deerling', 'sawsbuck', 'karrablast', 'escavalier', 'foongus', 'amoonguss', 'shelmet', 'accelgor'].every((n) => D[n] === 'Grass')
+    && ['emolga', 'joltik', 'galvantula', 'tynamo', 'eelektrik', 'eelektross', 'stunfisk'].every((n) => D[n] === 'Lightning')
+    && D.mienfoo === 'Fighting' && D.mienshao === 'Fighting' && D.druddigon === 'Dragon' && ['bouffalant', 'rufflet', 'braviary'].every((n) => D[n] === 'Colorless')
+    && ['heatmor', 'larvesta', 'volcarona'].every((n) => D[n] === 'Fire') && D.durant === 'Metal',
+  'Gen 5 batch 3: Ducklett line / Alomomola / Cubchoo line Water, Deerling / Karrablast / Foongus / Shelmet lines Grass (Escavalier Bug/Steel: its card Grass), Emolga / Joltik (Bug/Electric: its card Lightning) / Tynamo lines / Stunfisk Lightning, Mienfoo line Fighting, Druddigon Dragon, Bouffalant / Rufflet line Colorless, Heatmor / Larvesta line (Bug/Fire: Fire) Fire, Durant (Bug/Steel) Metal (the icons on their cards)',
+  ['ducklett', 'deerling', 'escavalier', 'joltik', 'stunfisk', 'mienfoo', 'druddigon', 'bouffalant', 'larvesta', 'durant'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

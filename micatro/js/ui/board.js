@@ -364,7 +364,11 @@ export class Board {
         this.rowTargets(ids, rect, { z: 100 + ri * 20, gap: 0.6 }).forEach((t, i) => { t.s = (t.s || 1) * 0.8; if (hl(ids[i])) t.y -= this.ch * 0.25; set(ids[i], t); });
       });
     } else {
+      // between rounds the hand is empty in vanilla; a card a mod keeps there (Pokermon's Beartic, Freeze) waits below the screen,
+      // out from under the shop / cash-out / blind choice panels, and slides back up with the next deal
+      const away = state === 'SHOP' || state === 'ROUND_EVAL' || state === 'BLIND_SELECT';
       this.rowTargets(handIds, handRect, { fan: FAN[this.mode], z: 100, gap: 1.02 }).forEach((t, i) => {
+        if (away) t.y = this.SH + this.ch;
         if (hl(handIds[i])) t.y -= this.ch * 0.3;
         set(handIds[i], t);
       });
@@ -1526,6 +1530,9 @@ export class Board {
           return 0.45;
         }
         if (ev.action === 'disable') { this.bump(this.H.blind); this.attn('Blind disabled!', '#4bc292'); return 0.5; }
+        // a mod's suspension (Pokermon's Spore: the Boss Blind is off until the round's first hand has scored)
+        if (ev.action === 'suspend') { this.bump(this.H.blind); this.attn('Blind disabled for this hand!', '#4bc292'); return 0.5; }
+        if (ev.action === 'resume') { this.bump(this.H.blind); this.attn('The Blind is back!', '#fe5f55'); return 0.4; }
         if (ev.action === 'defeat') { this.bump(this.H.blind); return 0.2; }
         // a requirement changed mid-round (Pokermon's Poison Gas, Mika's Grudgeful): the HUD's "Score at least" shows it at that moment
         if (ev.action === 'chips' && ev.chips != null) { this.H.bTarget.textContent = fmt(ev.chips); this.bump(this.H.blind); return 0.3; }

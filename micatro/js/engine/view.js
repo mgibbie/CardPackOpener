@@ -128,7 +128,8 @@ export function toView() {
     preview: preview(),
     blind: b && b.config && b.config.blind && b.name ? {
       key: b.config.blind.key, name: b.name, chips: J(b.chips), dollars: b.dollars, boss: !!b.boss,
-      disabled: !!b.disabled, colour: b.config.blind.boss_colour, pos: b.config.blind.pos,
+      disabled: !!b.off, // (off: disabled, or a mod's suspension — Pokermon's Spore)
+      colour: b.config.blind.boss_colour, pos: b.config.blind.pos,
       atlas: b.config.blind.mod && b.config.blind.atlas ? b.config.blind.atlas : undefined,
       desc: safe(() => bigDesc(describeBlind(b.config.blind.key, b))),
     } : bigBlind(GM.round_eval && GM.round_eval.blind) || null,
