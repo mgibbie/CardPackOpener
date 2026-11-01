@@ -962,12 +962,15 @@ export const POKERMON = registerMod({
   // 54 = Gen 5 batch 2 (jokers/pokejokers_designs.js, #540-573): the Sewaddle line's tailor, the Venipede line's Poison Point, Cottonee /
   // Whimsicott, Petilil / Lilligant, Basculin's stripes, the Sandile line's Moxie, Maractus, Dwebble / Crustle, Sigilyph, Yamask /
   // Cofagrigus (Mummy: the sell_instead hook), the Tirtouga and Archen fossils (Ancient 9s / 10s) and Minccino / Cinccino.
-  // 55 = Gen 5 batch 3 (jokers/pokejokers_designs.js, #580-637): Ducklett / Swanna, Deerling / Sawsbuck (Seasons, own art per season),
+  // 55 = Gen 5 batch 4, the Gen 5 Legendaries (jokers/pokejokers_designs.js, #638-649): the Swords of Justice (Cobalion / Terrakion /
+  // Virizion / Keldeo, Resolute Form), the Forces of Nature (Tornadus / Thundurus / Landorus, Therian Formes), the Tao trio (Reshiram /
+  // Zekrom, Truth vs Ideals; Kyurem, White / Black), Meloetta (Relic Song: Aria / Pirouette) and Genesect (Techno Blast).
+  // 56 = Gen 5 batch 3 (jokers/pokejokers_designs.js, #580-637): Ducklett / Swanna, Deerling / Sawsbuck (Seasons, own art per season),
   // Emolga, Karrablast + Shelmet (the trade pair: Escavalier / Accelgor, together), Foongus / Amoonguss (Spore: run.js / blind.js
   // Blind.suspend), Alomomola, Joltik / Galvantula, the Tynamo line, Cubchoo / Beartic (Freeze: run.js keep_in_hand), Stunfisk, Mienfoo /
   // Mienshao, Druddigon, Bouffalant, Rufflet / Braviary, Heatmor + Durant (rivals; Durant's and Escavalier's held Steel X1.75) and Larvesta /
   // Volcarona (always sunny).
-  contentRev: 55,
+  contentRev: 56,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.
