@@ -65,8 +65,16 @@
 	}
 	function g(k) { try { return rawGet.call(LS, k); } catch (e) { return null; } }
 	function s(k, v) { try { rawSet.call(LS, k, v); return true; } catch (e) { return false; } }
+	// who is signed in = the account the TOKEN names (`<user>.<exp>.<sig>`: what the
+	// server authenticates every request as). The cached state's username is only a
+	// fallback: a reply that landed after another tab signed in could leave the old
+	// account's name beside the new token, and choosing local data by that name sent
+	// one account's game to the other's server copy (bug:1793284798179).
 	function signedInAs() {
-		if (!g(TOKEN)) return null;
+		var t = g(TOKEN);
+		if (!t) return null;
+		var m = /^(.+)\.(\d+)\.([0-9a-f]{64})$/.exec(String(t));
+		if (m) return m[1].toLowerCase();
 		try { var st = JSON.parse(g(STATE) || 'null'); var u = st && st.username; return u ? String(u).toLowerCase() : null; } catch (e) { return null; }
 	}
 	function readOwner() {
