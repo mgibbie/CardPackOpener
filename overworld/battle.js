@@ -1322,6 +1322,17 @@ export class Battle {
 		if (amt > 0 && a?.info && !a.info._paid) { a.info._paid = true; Bag.earn(amt); }
 		return amt;
 	}
+	// ITEM THEFT is temporary in a TRAINER battle (Bulbapedia: Thief/Covet/
+	// Pickpocket/Magician/Knock Off/Trick — the item comes back after the battle).
+	// The pre-theft item rides on the party mon itself so a resumed battle keeps
+	// it; finish() puts it back (trainer) or just forgets it (wild: a wild thief
+	// keeps what it took, as in the games). Consumed items are NOT this — a berry
+	// eaten stays eaten. Tester bug 1793303311657: Nuzleaf's Pickpocket kept a
+	// Venusaur's AMULET COIN for good.
+	noteItemTaken(mon) {
+		if (!mon || this.ownerOf(mon) !== 'player') return;
+		if (!Object.prototype.hasOwnProperty.call(mon, '_preTheftItem')) mon._preTheftItem = mon.heldItem ?? null;
+	}
 	consumeItem(mon) {
 		mon.consumedItem = mon.heldItem;
 		mon.heldItem = null;
@@ -1716,6 +1727,8 @@ export class Battle {
 		delete mon.disableTurns;
 		delete mon.encoreMove;
 		delete mon.encoreTurns;
+		delete mon.lastMoveUsed;   // a switched-in mon has used nothing yet: Encore fails on it
+		delete mon.expBy;          // which of your POKeMON faced this foe (awardBattleExp)
 		delete mon.tauntTurns;
 		delete mon.tormented;
 		delete mon.noSwitch;
@@ -1926,6 +1939,12 @@ export class Battle {
 		this.pushMsg(`${this.label(user)} used ${move.name}!`);
 		a.lastMoveId = move.id;
 		a.lastMove[isFoe ? 'foe' : 'me'] = move.id;
+		// ...and per MON: Encore/Disable/Spite/Mimic/Torment read the TARGET's own
+		// last move. The side-level record above is shared by both actors in a
+		// double, so a foe's Encore on RATTATA locked it into its PARTNER's Sleep
+		// Powder — a move it doesn't know — and every move went dead (tester bug
+		// 1793152303209). A called move (Metronome, Sleep Talk) leaves the caller's.
+		if (!opts.called) user.lastMoveUsed = move.id;
 
 		// Protect/Detect blocks anything aimed at the protected side
 		const aimsAtFoe = mv.category !== 'Status'
@@ -2786,6 +2805,7 @@ export class Battle {
 				// MAGICIAN lifts the TARGET's item when it lands a hit (inert: 7)
 				if (this.abilityOf(user) === 'magician' && target.heldItem && !user.heldItem
 					&& this.abilityOf(target) !== 'stickyhold') {
+					this.noteItemTaken(target);
 					user.heldItem = target.heldItem; target.heldItem = null;
 					this.pushMsg(`${this.label(user)} magicked away the ${this.itemName(user)}!`);
 				}
@@ -2797,6 +2817,7 @@ export class Battle {
 				// PICKPOCKET lifts the attacker's item on contact (was inert: 16)
 				if (dAb === 'pickpocket' && user.heldItem && !target.heldItem
 					&& this.abilityOf(user) !== 'stickyhold') {
+					this.noteItemTaken(user);
 					target.heldItem = user.heldItem; user.heldItem = null;
 					this.pushMsg(`${this.label(target)} pickpocketed the ${this.itemName(target)}!`);
 				}
@@ -2852,11 +2873,13 @@ export class Battle {
 				}
 				if (fx.knockOff) {
 					this.pushMsg(`${this.label(user)} knocked off ${target.name}'s ${this.itemName(target)}!`, () => {
+						this.noteItemTaken(target);
 						target.heldItem = null;
 						if (this.abilityOf(target) === 'unburden') target.unburdened = true;
 					});
 				} else if (!user.heldItem) {
 					this.pushMsg(`${this.label(user)} stole ${target.name}'s ${this.itemName(target)}!`, () => {
+						this.noteItemTaken(target);
 						user.heldItem = target.heldItem;
 						target.heldItem = null;
 						if (this.abilityOf(target) === 'unburden') target.unburdened = true;
@@ -3342,11 +3365,14 @@ export class Battle {
 		if (this.itemFx(mon)?.assaultVest && this.data.moves[m.id]?.category === 'Status') return false;
 		if (mon.choiceLock && this.itemFx(mon)?.choice && m.id !== mon.choiceLock) return false;
 		if (mon.disabledMove === m.id) return false;
-		if (mon.encoreMove && m.id !== mon.encoreMove) return false;
+		// an Encore only binds while the mon still has that move with PP (Gen 3 ends
+		// it when the PP runs out); a lock onto a move it doesn't know binds nothing
+		if (mon.encoreMove && m.id !== mon.encoreMove
+			&& (mon.moves || []).some(x => x.id === mon.encoreMove && x.pp > 0)) return false;
 		// GORILLA TACTICS locks you in like a Choice item, without the item
 		if (mon.choiceLock && this.abilityOf(mon) === 'gorillatactics' && m.id !== mon.choiceLock) return false;
 		if (mon.tauntTurns > 0 && (this.data.moves[m.id]?.category === 'Status')) return false;
-		if (mon.tormented && this.active?.lastMove[side] === m.id) return false;
+		if (mon.tormented && mon.lastMoveUsed === m.id) return false;
 		// IMPRISON: an opposing sealer forbids every move it also knows
 		{
 			const a = this.active;
@@ -3535,6 +3561,7 @@ export class Battle {
 	// the next turn — "flinched and couldn't move!" a whole turn late.
 	beginTurn() {
 		const a = this.active;
+		this.markExpParticipants();
 		a.turnCount = (a.turnCount || 0) + 1;
 		a.meSide.quickGuard = a.meSide.wideGuard = a.foeSide.quickGuard = a.foeSide.wideGuard = false;
 		for (const m of [a.me, a.foe, a.meAlly, a.foeAlly]) if (m) m.flinched = false;
@@ -3677,14 +3704,39 @@ export class Battle {
 	// and decides whether the battle is over (finish / send the next trainer mon),
 	// which is exactly wrong after a successful ball. Reusing the whole function
 	// there turned every catch into a phantom 'victory'.
+	// PARTICIPATION: each foe remembers (as party indices, so a resumed battle's
+	// snapshot keeps it) which of your POKeMON stood on the field against it.
+	// Marked at the top of every turn and again at the award.
+	markExpParticipants() {
+		const a = this.active;
+		if (!a || !Array.isArray(a.party)) return;
+		const mine = [a.me, a.meAlly].filter(m => m && m.curHP > 0 && this.ownerOf(m) === 'player');
+		for (const foe of [a.foe, a.foeAlly]) {
+			if (!foe) continue;
+			const by = Array.isArray(foe.expBy) ? foe.expBy : (foe.expBy = []);
+			for (const m of mine) {
+				const i = a.party.indexOf(m);
+				if (i >= 0 && !by.includes(i)) by.push(i);
+			}
+		}
+	}
 	awardBattleExp(fallen) {
 		const a = this.active;
-		const gain = expGain(fallen || a.foe, this.data);
-		const winners = (a.double
-			? [a.me, a.meAlly].filter(m => m && m.curHP > 0)
+		const foe = fallen || a.foe;
+		const gain = expGain(foe, this.data);
+		this.markExpParticipants();
+		// every LIVING POKeMON that faced this foe earns the full yield — the same
+		// rule doubles already paid both actives, now kept across a switch. Singles
+		// used to pay only whoever stood there at the KO, so a lead that did the
+		// damage and was switched out got nothing (tester bug 1793289675481).
+		const faced = (Array.isArray(foe?.expBy) ? foe.expBy : []).map(i => a.party[i]);
+		const actives = a.double
+			? [a.me, a.meAlly]
+			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : null)];
+		const winners = [...new Set([...actives, ...faced])]
 			// a FAINTED mon earns nothing — a simultaneous KO (Self-Destruct) used to pay
 			// the fallen lead, whose level-up then lifted it from 0 HP back to life
-			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : null)].filter(Boolean))
+			.filter(m => m && m.curHP > 0)
 			.filter(m => this.ownerOf(m) !== 'partner');   // the partner's team is not yours to level
 		// LUCKY EGG multiplies its holder's own share (and only its own)
 		const heldOf = m => Bag.ITEMS[m?.heldItem]?.held || null;
@@ -4008,7 +4060,13 @@ export class Battle {
 		// a triumphant fanfare on a win (wild + trainer) — every other big beat
 		// already had one; victory was silent
 		if (result === 'victory') sfx('fanfare_victory');
-		for (const m of a.party) this.clearVolatiles(m, true);
+		for (const m of a.party) {
+			if (m && Object.prototype.hasOwnProperty.call(m, '_preTheftItem')) {
+				if (a.isTrainer) m.heldItem = m._preTheftItem;
+				delete m._preTheftItem;
+			}
+			this.clearVolatiles(m, true);
+		}
 		// the CAUGHT mon leaves battle too: Mimic's copied move, a Transform, stat
 		// snapshots — none of it may be saved into its owned moveset (a Sudowoodo
 		// caught after Mimic kept the mimicked Sleep Powder, and the mimicSlot marker)
@@ -4065,8 +4123,9 @@ export class Battle {
 						if (a.double) this.planMove(locked);
 						else this.startQueue(() => this.resolveTurn(locked));
 					}
-					// out of PP everywhere: Struggle instead of a dead menu
-					else if (who.moves.every(m => m.pp <= 0)) {
+					// nothing usable (out of PP, or Disable/Encore/Taunt/Torment/Imprison
+					// rule out every move): Struggle instead of a dead menu, as Gen 3 does
+					else if (who.moves.every(m => !this.moveUsable(who, m, 'me'))) {
 						if (a.double) this.planMove(STRUGGLE());
 						else {
 							this.startQueue(() => {
@@ -4172,6 +4231,7 @@ export class Battle {
 			if (!target.heldItem) { this.pushMsg('But it failed!'); return true; }
 			if (this.abilityOf(target) === 'stickyhold') { this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`); return true; }
 			this.pushMsg(`Corrosive gas melted ${target.name}'s ${this.itemName(target)}!`, () => {
+				this.noteItemTaken(target);
 				target.heldItem = null;
 				if (this.abilityOf(target) === 'unburden') target.unburdened = true;
 			});
@@ -4321,6 +4381,7 @@ export class Battle {
 				this.pushMsg('But it failed!');
 				return true;
 			}
+			this.noteItemTaken(user); this.noteItemTaken(target);
 			const t = user.heldItem || null;
 			user.heldItem = target.heldItem || null;
 			target.heldItem = t;
@@ -4471,13 +4532,17 @@ export class Battle {
 				: target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null) : null]
 				.filter(m => m && m.curHP > 0).some(m => this.abilityOf(m) === 'aromaveil');
 			if (veil) { this.pushMsg(`${this.label(target)} is protected by AROMA VEIL!`); return true; }
-			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
+			// the TARGET's own last move, and only one it still knows with PP left
+			const lastId = target.lastMoveUsed;
+			const knows = !!lastId && (target.moves || []).some(m2 => m2.id === lastId && m2.pp > 0);
 			if (fx.restrict === 'disable') {
-				if (!lastId || target.disabledMove) { this.pushMsg('But it failed!'); return true; }
+				if (!knows || target.disabledMove) { this.pushMsg('But it failed!'); return true; }
 				target.disabledMove = lastId; target.disableTurns = 4;
 				this.pushMsg(`${this.label(target)}'s move was disabled!`);
 			} else if (fx.restrict === 'encore') {
-				if (!lastId || target.encoreMove) { this.pushMsg('But it failed!'); return true; }
+				if (!knows || target.encoreMove || ['encore', 'struggle', 'mimic', 'mirrormove', 'transform'].includes(lastId)) {
+					this.pushMsg('But it failed!'); return true;
+				}
 				target.encoreMove = lastId; target.encoreTurns = 3;
 				this.pushMsg(`${this.label(target)} received an encore!`);
 			} else if (fx.restrict === 'taunt') {
@@ -4518,7 +4583,7 @@ export class Battle {
 			return true;
 		}
 		if (fx.mimic) {
-			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
+			const lastId = target.lastMoveUsed;
 			if (!lastId || user.moves.some(m2 => m2.id === lastId)) { this.pushMsg('But it failed!'); return true; }
 			const idx = user.moves.indexOf(move);
 			if (idx < 0) { this.pushMsg('But it failed!'); return true; }
@@ -4616,7 +4681,7 @@ export class Battle {
 		}
 		if (fx.destinyBond) { user.destinyBond = true; this.pushMsg(`${this.label(user)} is trying to take its foe down with it!`); return true; }
 		if (fx.spite) {
-			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
+			const lastId = target.lastMoveUsed;
 			const mv2 = lastId && target.moves.find(m2 => m2.id === lastId);
 			if (!mv2 || mv2.pp <= 0) { this.pushMsg('But it failed!'); return true; }
 			mv2.pp = Math.max(0, mv2.pp - 4);
@@ -4894,6 +4959,8 @@ export class Battle {
 		// inside its own callback, so they follow its damage.
 		const runAct = act => {
 			if (act.user.curHP <= 0) return;
+			// a mon that has LEFT the field (switched out, replaced) acts no more
+			if (![a.me, a.meAlly, a.foe, a.foeAlly].includes(act.user)) return;
 			const isFoe = this.sideOfMon(act.user) === 'foe';
 			// retarget if the intended victim already dropped
 			let tgt = act.target;
@@ -5034,6 +5101,9 @@ export class Battle {
 	// the foe gets its move after an item/switch (it costs the turn)
 	foeFreeMove() {
 		const a = this.active;
+		// an item or a switch IS the turn: nothing chosen earlier may still run
+		a.plans = [];
+		a.actionFor = 0;
 		this.beginTurn();
 		this.pushMsg('', () => {
 			// the LIVE foe takes the free move (a fainted wild lead stays in the \`foe\`
@@ -5317,10 +5387,26 @@ export class Battle {
 					else a.msgT = 1.2; // silent action; move on quickly
 			} else if (a.phase !== 'done') {
 					if (a.double) {
-						a.actionFor = 0;
-						a.phase = 'menu';
-						a.menuIdx = 0;
-						a.msg = `What will ${a.me.name} do?`;
+						// A message mid-SELECTION (a refused move, "Can't switch") drains
+						// the queue too. This used to reset the chooser to the lead while
+						// keeping the lead's plan, so every retry stacked another plan and
+						// they ALL ran later — some by a mon already benched (tester bug
+						// 1793152303209). Keep a still-valid lead plan and hand back to
+						// the partner; drop anything else.
+						const keep = a.plans.length === 1 && a.plans[0].user === a.me && a.me.curHP > 0
+							&& a.meAlly && a.meAlly.curHP > 0 && !a.partner;
+						if (keep) {
+							a.actionFor = 1;
+							a.phase = 'menu';
+							a.menuIdx = 0;
+							a.msg = `What will ${a.meAlly.name} do?`;
+						} else {
+							a.plans = [];
+							a.actionFor = 0;
+							a.phase = 'menu';
+							a.menuIdx = 0;
+							a.msg = `What will ${a.me.name} do?`;
+						}
 					} else if (a.me.chargeMove && a.me.curHP > 0) {
 						const mv = a.me.moves.find(m => m.id === a.me.chargeMove) || STRUGGLE();
 						this.startQueue(() => this.resolveTurn(mv));
