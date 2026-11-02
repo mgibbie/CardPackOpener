@@ -74,7 +74,8 @@ G.ExpTerrain = (() => {
     mtmoon:   { biome: () => 1, tint: [0.78, 0.92, 1.05, 1.18], pad: 'crystal', mini: { ramp: [196, 178, 236], k0: 0.7, k: 0.16 } },
     cerulean: { biome: () => (G.Tiles ? G.Tiles.arenaBiome('water') : 0), tint: [0.94, 1, 1.07, 1.13], pad: 'buoy', mini: { ramp: [244, 226, 168], k0: 0.86, k: 0.1 } }
   };
-  const lookOf = map => LOOK[map] || LOOK.viridian;
+  // (Dive V2: a Dive floor "dive:<route>" is painted in its route's look, js/expedition/dive-gen.js ROUTES[route].biome)
+  const lookOf = map => LOOK[map] || (typeof map === 'string' && map.startsWith('dive:') && G.DiveGen && G.DiveGen.ROUTES[map.slice(5)] ? LOOK[G.DiveGen.ROUTES[map.slice(5)].biome] : null) || LOOK.viridian;
   /** DLC D12: the base biome index a map's zones are painted in (G.World.setBiome; Viridian: 0, as before). */
   const biomeOf = map => lookOf(map).biome();
 

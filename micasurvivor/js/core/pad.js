@@ -627,6 +627,9 @@ G.Pad = (() => {
     if (!game || game.state !== 'playing' || !pl || pl.dead) return;
     // (MicaSurvivor DLC D16: every move fires on its own cooldown; LB / RB (prev / next) do nothing in a run, owner decision #14.
     //  They still walk the cards and the tabs in menus.)
+    // MicaSurvivor (Dive V4): a Dive run maps the pad PokéDive's way (A dodge, X / Y the specials, LB / LT / RT / L3 the
+    // Ultimate: js/expedition/dive.js pad); it says whether it took the action. Never set outside a Dive run.
+    if (G.ExpDive && G.ExpDive.live() && G.ExpDive.pad(a)) return;
     if (a === 'prev' || a === 'next') return;
     // MicaSurvivor (M5 batch 7, main.gd 667-668): switch Pokémon in team mode (the next one standing)
     else if (a === 'swap') { if (G.Team && G.Team.on) G.Team.request(pl); }

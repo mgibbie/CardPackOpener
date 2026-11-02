@@ -123,7 +123,8 @@ G.Game = (() => {
     G.DmgLog.reset();   // MicaSurvivor (M5 lote 11): el desglose de daño de la partida empieza vacío
     // MicaSurvivor (M5 lote 6, main.gd 432): el Desafío diario siembra el azar con la fecha: el mismo
     // mundo, elenco, jefes y movimientos iniciales para todos ese día.
-    if (cfg.mode === 'daily') G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
+    // (MicaSurvivor Dive V8: the Weekly Dive the same way: the week's seed -> the same world seed, floors and foes for everyone)
+    if (cfg.mode === 'daily' || (cfg.mode === 'exp-dive' && cfg.weekly != null && cfg.seed)) G.Modes.seeded(cfg.seed, () => setupRun(coop, save, mon, perks));
     else setupRun(coop, save, mon, perks);
     // MicaSurvivor (M5 lote 8): Rush de Jefes (un bioma al azar) y la Torre (piso inicial, reliquias y
     // experiencia ×0,65: antes de Frágil, que parte la vida con las reliquias ya sumadas, main.gd 462-488)

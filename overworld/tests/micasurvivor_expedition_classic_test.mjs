@@ -196,7 +196,7 @@ try {
 		on: G.Expedition.MODES.filter(G.Expedition.enabled), dv: G.Expedition.DV,
 	}));
 	const cl = (ui.cards || []).find(c => c.id === 'exp-classic') || {}, rest = (ui.cards || []).filter(c => c.id === 'exp-league');
-	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival","exp-league"]' && ui.dv === 20, 'the registry: Classic, Survival (D11) and League (D13) enabled; the content version is 12 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11; D13: 12)', JSON.stringify(ui));
+	A(JSON.stringify(ui.on) === '["exp-classic","exp-survival","exp-league","exp-dive"]' && ui.dv === 20, 'the registry: Classic, Survival (D11), League (D13) and Dive (V2) enabled; the content version is 12 (D3 started bumping it; D4: 3; D5: 4; D6: 5; D7: 6; D8: 7; D9: 8; D10: 9; D11: 10; D12: 11; D13: 12)', JSON.stringify(ui));
 	A(!cl.soon && cl.aria !== 'true' && !/Coming soon/.test(cl.txt) && /^Expedition · Classic .*Viridian Forest/.test(cl.txt), 'Classic is playable: no "Coming soon", not aria-disabled, says Viridian Forest (in English)', JSON.stringify(cl));
 	A(rest.length === 1 && rest.every(c => !c.soon && c.aria !== 'true' && !/Coming soon/.test(c.txt) && /553 members/.test(c.txt)), 'League is playable since D13 (no "Coming soon"): "Your League: 245 members ..."', JSON.stringify(rest));
 	A(ui.h === 'Expedition', 'the group heading is "Expedition" (no "coming soon" now one is playable)', ui.h);

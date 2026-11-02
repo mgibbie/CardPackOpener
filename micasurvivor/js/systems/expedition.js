@@ -41,6 +41,11 @@ G.I18n.add({
   'Expedición': 'Expedition',
   'Expedición · Clásico': 'Expedition · Classic', 'Expedición · Supervivencia': 'Expedition · Survival', 'Expedición · Liga': 'Expedition · League',
   'Próximamente': 'Coming soon',
+  'Expedición · Inmersión': 'Expedition · Dive',   // (Dive V0)
+  'Bosque Musgoso': 'Mossy Woods', 'Cañón Dorado': 'Golden Canyon', 'Cráter Ascua': 'Ember Crater', 'Arrecife Hundido': 'Sunken Reef',
+  'Gruta Helada': 'Frost Grotto', 'Pantano Lúgubre': 'Gloom Marsh', 'Ruinas Olvidadas': 'Forgotten Ruins', 'Bosque Fúngico': 'Fungal Grove', 'Ruta del Origen': 'Route of Origin',
+  'Ruta: {x} · piso {x}': 'Route: {x} · floor {x}',   // (Dive V7: the Dive card's button)
+  'Baja piso a piso por 8 rutas: rescata a un Pokémon perdido en cada piso, vence al alfa cada 5 para asegurar el botín y al guardián legendario cada 25. Sal con la Cuerda Huida o arriésgalo todo.': 'Dive floor by floor down 8 routes: rescue a lost Pokémon on every floor, beat the alpha every 5 to secure your loot and the legendary guardian every 25. Leave with the Escape Rope or risk it all.',
   'Expedición · modos nuevos (próximamente)': 'Expedition · new modes (coming soon)',
   'Mapas con alturas, guardianes y un portal final. Marcas por mapa y dificultad.': 'Maps with heights, guardians and a final portal. Records per map and difficulty.',
   'Bosque Verde: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario de Mew. Gana el mapa.': "Viridian Forest: 3 zones with heights, a guardian at each altar, the portal and Mew's shrine. Win the map.",
@@ -66,25 +71,27 @@ G.I18n.add({
 
 G.Expedition = (() => {
   const DV = 20;   // (DLC D3: Classic is playable; D4: the League, kits, evolution, Maturity, stats from base stats: 3; D5: level-ups and items: 4; D6: Ultimates: 5; D7: economy and interactables: 6; D8: alphas, capture and shinies: 7; D9: tiers, score and boards: 8; D10: the League meta (Lab, unlocks, boosts, shiny perks change a run): 9; D11: Survival, Expedition co-op (a guest's run is an Expedition one): 10; D12: maps 2-3, Mt. Moon and Cerulean Cape: 11; D13: the whole League (245 members: 167 new kits, evolutions and challenges): 12; D14: Mega Evolution: 13; D15: the slot machine, Survival's respawns: 14; D16: every move fires (4 slots, the swap cards, the Lab's move slot retired), the new boards: 15; D17: one held item (a boss drops a base held item): 16; D18: shared per-family upgrades (the TM / Repertoire in the kit, the Lab's 9 stat rows retired): 17; D19: the full League (553 families, every species; 27 free starter trios, base-owned families, 5 wild members a run): 18; D20: every Pokémon an enemy (wanderers, rarity-5 elites, roaming legendaries): 19; the Survival curve (Survival levels on its own, slower XP curve): 20. Older dv replays / snapshots still play, replayOk)
-  const MODES = ['exp-classic', 'exp-survival', 'exp-league'];
-  const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga' };
+  // (Dive V0, 2026-11-02: 'exp-dive', PokéDive's floor-by-floor dungeon, Plans/MICASURVIVOR_DIVE_MODE_PLAN.md; "Coming soon" until V2)
+  const MODES = ['exp-classic', 'exp-survival', 'exp-league', 'exp-dive'];
+  const NAME = { 'exp-classic': 'Expedición · Clásico', 'exp-survival': 'Expedición · Supervivencia', 'exp-league': 'Expedición · Liga', 'exp-dive': 'Expedición · Inmersión' };
   const DESC = {
     'exp-classic': 'Bosque Verde, Monte Moon y Cabo Celeste: 3 zonas con alturas, un guardián en cada altar, el portal y el santuario. Gana un mapa y se abre el siguiente.',   // (DLC D12: the 3 maps)
     'exp-survival': 'Hitos cada 5 min, fases, pactos, asedio, noche sin fin a los 45 min y Mewtwo. Hasta donde aguantes.',
-    'exp-league': 'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.'   // (DLC D13)
+    'exp-league': 'Tu Liga: 553 miembros con su kit, evoluciones, definitivo y reto; el laboratorio, las tareas, los logros y la clasificación de la Liga.',   // (DLC D13)
+    'exp-dive': 'Baja piso a piso por 8 rutas: rescata a un Pokémon perdido en cada piso, vence al alfa cada 5 para asegurar el botín y al guardián legendario cada 25. Sal con la Cuerda Huida o arriésgalo todo.'   // (Dive V0)
   };
-  const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball' };
+  const ICON = { 'exp-classic': 'flag', 'exp-survival': 'clock', 'exp-league': 'ball', 'exp-dive': 'm_tower' };
   // the launch maps and difficulties (owner decisions #6 / #8); the boards are per map + difficulty (server/mp.mjs EXP_*)
   const MAPS = ['viridian', 'mtmoon', 'cerulean'];
   const DIFFS = ['normal', 'hard', 'nightmare'];
   const BOARD = 'micasurvivor_expedition';
-  const ENABLED = new Set(['exp-classic', 'exp-survival', 'exp-league']);   // D3: Classic is playable; D11: Survival too; D13: League
+  const ENABLED = new Set(['exp-classic', 'exp-survival', 'exp-league', 'exp-dive']);   // D3: Classic is playable; D11: Survival too; D13: League; Dive V2
   // DLC D13: League mode is a SCREEN, not a run (study 5.3: "a roster screen with challenges, kits and Ultimates, the Lab,
   // research, tasks and boards"): its card opens the League (G.ExpMeta's League view); G.Modes.plan never plans it as a run.
   const HUB = new Set(['exp-league']);
   const SCRIPTS = ['js/expedition/save.js', 'js/expedition/terrain.js', 'js/expedition/verbs.js', 'js/expedition/classic.js',
     'js/expedition/league-data.js', 'js/expedition/league.js', 'js/expedition/mega-data.js', 'js/expedition/mega.js', 'js/expedition/moves.js', 'js/expedition/items.js', 'js/expedition/levelups.js',
-    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js)
+    'js/expedition/ultimates.js', 'js/expedition/economy.js', 'js/expedition/reactions.js', 'js/expedition/capture.js', 'js/expedition/tiers.js', 'js/expedition/meta.js', 'js/expedition/survival.js', 'js/expedition/dive-gen.js', 'js/expedition/dive.js', 'js/expedition/core.js'];   // (D1: terrain.js; D2: verbs.js; D3: classic.js; D4: league-data.js, league.js; D5: moves.js, items.js, levelups.js; D6: ultimates.js; D7: economy.js; D8: reactions.js, capture.js; D9: tiers.js; D10: meta.js; D11: survival.js; D14: mega-data.js, mega.js; Dive V1: dive-gen.js; V2: dive.js)
 
   const isExp = m => typeof m === 'string' && MODES.includes(m);
   const enabled = m => isExp(m) && ENABLED.has(m);
@@ -92,11 +99,44 @@ G.Expedition = (() => {
   const hub = m => HUB.has(m);
   /** The map / difficulty a new Expedition run gets. DLC D9: the device's pick (G.ExpTier.pick: clamped to a playable map
    *  and an unlocked tier, once the Expedition code is loaded; before that, the saved pick as it is, for the button's label). */
-  function pick() {
+  function pick(mode) {
+    if (mode === 'exp-dive') {   // (Dive V2: the route is the map; no tiers. V7: the start floor. V8: the Weekly Dive, once, when asked)
+      if (diveWeeklyNext) { diveWeeklyNext = false; const w = diveWeekly(); return { map: 'dive:' + w.route, diff: 'normal', extra: { start: 1, seed: w.seed, weekly: w.week } }; }
+      return { map: 'dive:' + diveRoute(), diff: 'normal', extra: { start: diveStart() } };
+    }
     if (G.ExpTier) return G.ExpTier.pick();
     let p = null;
     try { p = JSON.parse(localStorage.getItem('micasurvivorexp_tier') || 'null'); } catch (e) { /* the pick is a convenience */ }
     return { map: p && MAPS.includes(p.map) ? p.map : MAPS[0], diff: p && DIFFS.includes(p.diff) ? p.diff : DIFFS[0] };
+  }
+  /** Dive V2: the route this device dives (micasurvivorexp_dive; the 8 routes of js/expedition/dive-gen.js). */
+  const DIVE_ROUTES = ['forest', 'canyon', 'crater', 'reef', 'grotto', 'marsh', 'ruins', 'fungal', 'origin'];   // (V7: + the Route of Origin)
+  const DIVE_NAME = { forest: 'Bosque Musgoso', canyon: 'Cañón Dorado', crater: 'Cráter Ascua', reef: 'Arrecife Hundido', grotto: 'Gruta Helada',
+    marsh: 'Pantano Lúgubre', ruins: 'Ruinas Olvidadas', fungal: 'Bosque Fúngico', origin: 'Ruta del Origen' };
+  /** Dive V8: the Weekly Dive: the same for everyone this week (whole weeks since Mon 2026-01-05 UTC, as server/mp.mjs):
+   *  {week, seed, route (one of the 8, in turn), mod (glass / horde / swift / iron, in turn)}. */
+  const DIVE_MODS = ['glass', 'horde', 'swift', 'iron'];
+  function diveWeekly(now = Date.now()) {
+    const week = Math.floor((now - Date.UTC(2026, 0, 5)) / 604800000);
+    return { week, seed: ((Math.imul(week + 1, 2654435761) >>> 0) | 1), route: DIVE_ROUTES[((week % 8) + 8) % 8], mod: DIVE_MODS[((week % 4) + 4) % 4] };
+  }
+  let diveWeeklyNext = false;
+  /** The next Dive run planned is this week's Weekly Dive (the picker's button). */
+  const playWeekly = () => { diveWeeklyNext = true; };
+  /** Dive V7: the floor this device starts a dive on (1, or a saved stage 26, 51...: checked against the save at the start). */
+  function diveStart(set) {
+    try {
+      if (set != null && (set === 1 || (set > 25 && (set - 1) % 25 === 0))) localStorage.setItem('micasurvivorexp_divestart', String(set));
+      const v = +localStorage.getItem('micasurvivorexp_divestart') || 1;
+      return v === 1 || (v > 25 && (v - 1) % 25 === 0) ? v : 1;
+    } catch (e) { return 1; }
+  }
+  function diveRoute(set) {
+    try {
+      if (set && DIVE_ROUTES.includes(set)) localStorage.setItem('micasurvivorexp_dive', set);
+      const r = localStorage.getItem('micasurvivorexp_dive');
+      return DIVE_ROUTES.includes(r) ? r : DIVE_ROUTES[0];
+    } catch (e) { return set && DIVE_ROUTES.includes(set) ? set : DIVE_ROUTES[0]; }
   }
   /** DLC D4: the League member this device starts Classic with (the Expedition code checks you can play it: G.ExpLeague.pickFor). */
   function leaguePick() {
@@ -182,7 +222,7 @@ G.Expedition = (() => {
   function coopPlan(c) {
     if (!c || !loaded || !isExp(c.mode) || !enabled(c.mode) || !lobbyOk(c.dv)) return { mode: 'normal' };
     return { mode: c.mode, mods: [], type: null, dex: G.ExpLeague ? G.ExpLeague.pickFor(c.mode) : null, seed: 0, dv: DV,
-             map: MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true };   // (group: an online co-op run: no local partner)
+             map: c.mode === 'exp-dive' ? (/^dive:[a-z]+$/.test(c.map || '') ? c.map : 'dive:' + DIVE_ROUTES[0]) : MAPS.includes(c.map) ? c.map : MAPS[0], diff: DIFFS.includes(c.diff) ? c.diff : DIFFS[0], group: true };   // (group: an online co-op run: no local partner)
   }
 
   // ---------------- version gates ----------------
@@ -228,7 +268,7 @@ G.Expedition = (() => {
 
   return {
     DV, MODES, NAME, DESC, ICON, MAPS, DIFFS, BOARD, ENABLED, SCRIPTS, HUB,
-    isExp, enabled, hub, pick, leaguePick, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
+    isExp, enabled, hub, pick, leaguePick, diveRoute, diveStart, diveWeekly, playWeekly, DIVE_ROUTES, DIVE_NAME, DIVE_MODS, freezeBase, load, lobbyOk, replayOk, viewNotice, dvOk, wallet, viewZone, coopPlan,
     get loaded() { return loaded; }, get frozen() { return frozen; },
     /** For tests: turn an Expedition mode on in this page (D0b ships none playable). */
     debugEnable(m) { if (isExp(m)) ENABLED.add(m); return enabled(m); }

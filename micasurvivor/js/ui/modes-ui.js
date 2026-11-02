@@ -94,12 +94,15 @@ G.ModesUI = (() => {
       ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-league-pick">${G.Icons.html('ball', 18)} Miembro de la Liga: ${esc(nameOf(X.leaguePick()))}</button>`
         + `<button class="btn mode-sub" id="modes-tier-pick">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button>`
         + `<button class="btn mode-sub" id="modes-meta-pick">${G.Icons.html('star', 18)} Cuartel de la Liga: laboratorio, tareas y logros</button>${friends(id)}</div>`
+      : id === 'exp-dive' && X.enabled(id)   // (Dive V7: the route and start floor picker; with friends)
+        ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-dive-pick">${G.Icons.html('m_tower', 18)} ${esc(G.I18n.f('Ruta: {x} · piso {x}', G.I18n.t(X.DIVE_NAME[X.diveRoute()]), X.diveStart()))}</button>${friends(id)}</div>`
       : id === 'exp-survival' && X.enabled(id)
         ? `<div class="mode-group">${expCard(id)}<button class="btn mode-sub" id="modes-surv-tier">${G.Icons.html('medal3', 18)} Dificultad: ${DN[X.pick().diff] || 'Normal'} · clasificaciones</button>${friends(id)}</div>`
         : expCard(id)).join('');
     if ($('modes-league-pick')) $('modes-league-pick').onclick = openLeague;
     if ($('modes-tier-pick')) $('modes-tier-pick').onclick = () => openTier();
     if ($('modes-surv-tier')) $('modes-surv-tier').onclick = () => openTier('survival');
+    if ($('modes-dive-pick')) $('modes-dive-pick').onclick = () => openDive();
     if ($('modes-meta-pick')) $('modes-meta-pick').onclick = () => openMeta();
     $('modes-exp').querySelectorAll('[data-xcoop]').forEach(b => { b.onclick = () => openExpCoop(b.dataset.xcoop); });
     $('modes-exp').querySelectorAll('[data-exp]').forEach(b => { b.onclick = () => start(b.dataset.exp); });
@@ -168,6 +171,7 @@ G.ModesUI = (() => {
     if (!$('modes-coop').classList.contains('hidden')) { closeCoop(); return true; }
     if (!$('modes-league').classList.contains('hidden')) { closeLeague(); return true; }
     if (G.ExpTier && G.ExpTier.back()) return true;   // (DLC D9: "Difficulty and leaderboards")
+    if (G.ExpDive && G.ExpDive.back()) return true;   // (Dive V7: "Route and start floor")
     if (G.ExpMeta && G.ExpMeta.back()) return true;   // (DLC D10: "League HQ")
     if ($('modes-party').classList.contains('hidden')) return false;
     closeParty();
@@ -342,6 +346,12 @@ G.ModesUI = (() => {
   // (DLC D11: also Survival's, opening on its own board: view 'survival')
   function openTier(view) {
     return G.Expedition.load().then(() => (G.UI.isOpen('scr-modes') ? G.ExpTier.open(() => { if (G.UI.isOpen('scr-modes')) render(); }, view) : false),
+      e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
+  }
+
+  // ---------------- Dive V7: "Route and start floor" (js/expedition/dive.js) ----------------
+  function openDive() {
+    return G.Expedition.load().then(() => G.ExpSave.open()).then(() => (G.UI.isOpen('scr-modes') ? G.ExpDive.openPicker(() => { if (G.UI.isOpen('scr-modes')) render(); }) : false),
       e => { console.warn(e); G.UI.toast('No se pudo cargar la Expedición. Recarga la página.', 4000); G.Audio.sfx('error'); return false; });
   }
 

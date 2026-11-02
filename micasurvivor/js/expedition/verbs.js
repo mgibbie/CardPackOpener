@@ -57,8 +57,12 @@ G.ExpVerbs = (() => {
     PAD_T: 0.85, PAD_H: 56, PAD_D: 2, PAD_CD: 0.5,
     EXTRA_HOPS: 1,                     // hops in the air after the first (D5's items may change it per player)
     HOP_UP: 1, EXTRA_UP: 1, MAX_UP: 2, // levels above the take-off: a hop reaches 1, each extra hop adds 1, never above 2
-    DROP_T: 0.25, DROP_H: 12, DROP_ARC: 4   // walking off a ledge: the fall's time, its start lift (a 6-row cliff face), a little arc
+    DROP_T: 0.25, DROP_H: 12, DROP_ARC: 4,  // walking off a ledge: the fall's time, its start lift (a 6-row cliff face), a little arc
+    // Dive V4 (PokéDive's dodge, its ct table): 0.2 s, 0.2 s invulnerable, 1.2 s cool-down, 250 px/s at its 16 px tiles
+    // (15.6 tiles a second: x G.World.TS here); no hop in a Dive run (Space dodges)
+    DODGE_T: 0.2, DODGE_CD: 1.2, DODGE_TILES: 15.6
   };
+  const dive = () => !!(G.ExpDive && G.ExpDive.live());   // (a Dive run, host or co-op guest)
   const TYPES = { glide: ['flying'], surf: ['water'], climb: ['fighting', 'bug', 'ghost'] };
   // the verb a snapshot row carries (0: none)
   const CODE = { hop: 1, glide: 2, bounce: 3, slide: 4, surf: 5, climb: 6, fall: 2, drop: 7 };
@@ -220,15 +224,18 @@ G.ExpVerbs = (() => {
     if (pl.padCd > 0) pl.padCd -= dt;
     if (pl.squash > 0) pl.squash -= dt;
     const ctl = inp ? !pl.frozen && !pl.dead : !pl.frozen && !pl.remote && !pl.dead;
-    const hopP = inp ? !!inp.hop && ctl : take('hop') && ctl || (ctl && G.Input.tap('space'));
-    const slideP = inp ? !!inp.slide && ctl : take('slide') && ctl || (ctl && (G.Input.tap('shiftleft') || G.Input.tap('shiftright')));
+    const dv = dive();
+    // (Dive V4: no hop; Space, Shift, the pad's A and the DODGE button dodge)
+    const hopP = !dv && (inp ? !!inp.hop && ctl : take('hop') && ctl || (ctl && G.Input.tap('space')));
+    const slideP = inp ? !!(inp.slide || (dv && inp.hop)) && ctl : (take('slide') || (dv && take('hop'))) && ctl || (ctl && (G.Input.tap('shiftleft') || G.Input.tap('shiftright') || (dv && G.Input.tap('space'))));
     pl.verb = 0;
     // a bounce pad under you (on the ground)
     if (ctl && !pl.air && !(pl.padCd > 0)) { const p = z.padAt && z.padAt(tileOf(pl.x), tileOf(pl.y)); if (p) bounce(pl, p); }
     if (hopP) hop(pl);
     if (slideP && !pl.air && !(pl.slideT > 0) && !(pl.slideCd > 0)) {
       const [dx, dy] = ax || ay ? G.U.norm(ax, ay) : [Math.cos(pl.moveAngle), Math.sin(pl.moveAngle)];
-      pl.slideT = K.SLIDE_T; pl.sdx = dx; pl.sdy = dy;
+      pl.slideT = dv ? K.DODGE_T : K.SLIDE_T; pl.sdx = dx; pl.sdy = dy;
+      if (dv) { pl.invuln = Math.max(pl.invuln || 0, K.DODGE_T); pl.xdodge = true; pl.dodgeN = ((pl.dodgeN | 0) + 1) & 1023; }   // (Dive V4: the i-frames)
       G.Audio.sfx('select');
     }
     const a = pl.air;
@@ -258,11 +265,11 @@ G.ExpVerbs = (() => {
     }
     if (pl.slideT > 0) {
       pl.slideT -= dt;
-      const s = pl.spd * K.SLIDE_K;
+      const s = pl.xdodge ? K.DODGE_TILES * TS() : pl.spd * K.SLIDE_K;
       pl.svx = pl.sdx * s; pl.svy = pl.sdy * s;
       pl.verb = CODE.slide;
       if (Math.random() < dt * 30) G.FX.burst(pl.x - pl.sdx * pl.r, pl.y - pl.sdy * pl.r * 0.5, '#d8c8a8', 1, 40);
-      if (pl.slideT <= 1e-6) { pl.slideT = 0; pl.slideCd = K.SLIDE_CD; }   // (1e-6: 33 steps of 1/60 s are 0.55 s)
+      if (pl.slideT <= 1e-6) { pl.slideT = 0; pl.slideCd = pl.xdodge ? K.DODGE_CD * (pl.xdodgeK || 1) : K.SLIDE_CD; pl.xdodge = false; }   // (Dive V4: the dodge's cool-down)   // (1e-6: 33 steps of 1/60 s are 0.55 s)
       return;
     }
     if (V.surf && G.World.isLiquid(pl.x, pl.y)) {
@@ -377,6 +384,7 @@ G.ExpVerbs = (() => {
   }
   function drawButtons(ctx, w, h, pl) {
     if (!G.World.zone || !pl || pl.remote || pl.dead) return null;
+    if (dive()) { hopRect = null; slideRect = null; return G.ExpDive.drawButtons(ctx, w, h, pl, buttonRects(w, h), keyChip); }   // (Dive V4: DODGE, SPECIAL 1 / 2)
     const V = ensure(pl), R = buttonRects(w, h), k = (G.HUD && G.HUD.k) || 1;
     const pad = G.Pad && G.Pad.mode === 'pad', touch = G.Touch.active;
     const one = (r, kind) => {
