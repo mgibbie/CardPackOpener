@@ -1266,6 +1266,50 @@ summary card with Watch again / Back to menu. An unknown or expired id: "This re
   damage numbers, broken crates, weather particles, the Judgment cinematic. A replay doesn't record the foes' facing
   or animations.
 
+### U4: unified replays (format v2: sessions and segments)
+
+Plans/MICASURVIVOR_UNIFIED_PLAN.md "U4". One replay format for every mode (base, Expedition, Dive), solo or with
+partners, and for runs of any length. `js/mica/replay.js` (its header comment is the design), `js/ui/watch-ui.js`,
+`server/mp.mjs` (`micasurvivor-replay-put` / `-get` / `-keep`), hooks in `js/systems/combat.js` (every cast),
+`js/net/coop.js` (an online partner's casts) and `js/systems/localcoop.js` (the legacy partner's shots).
+
+- **One tape per SESSION**, recorded by the host: slot 0 is your own Pokémon (as in v1), slots 1.. every other player
+  (local partners from `G.LocalCoop`, online guests from their co-op frames); the header lists them
+  (`players:[{id, name, dex, shiny, k: me | l | o, c}]`). A co-op guest records its own tape too (offline / solo) but
+  never uploads it in the background. Frames gain three fields: **12** the other players' rows
+  `[x, y, dir, anim, hp, maxHp, flags, dex, level]` delta-coded per player, **13** their moves and items when they change,
+  **14** every cast of the interval by any player `[slot, move, level, aim x 100, evolved, time offset]`. A v2 tape has
+  no field 6 (partners).
+- **Segments**: a segment closes every 5 minutes of run time, every 10 Dive floors, at 3.0 M raw chars (4.5 M for an
+  Expedition one, which thins its frames as before within the segment) or 3,000 frames; the snapshot that closes it is
+  recorded again as the next one's first frame, a KEYFRAME (absolute values), so every segment decodes on its own and
+  they meet without a gap. Each is packed on its own (`{v:2, h:{..., sid, seg, players, end?}, f, ev}`), under 1.2 MB
+  (halved like a v1 Expedition tape if it is not). The index: `[{seg, t0, t1, n, bytes, mk}]`.
+- **Upload as the run goes**: a signed-in host (or solo player) uploads each finished segment once the session has a
+  second one (`micasurvivor-replay-put {v:2, sid, seg, code, meta, last}`). A one-segment run is uploaded only when
+  shared, as one plain row (`msurvreplay:<id>`, 2 writes, as before).
+- **One size policy**: nothing is cut silently. The only hard limit is 120 segments a session (~10 h): the last
+  segment's header then says `end.lim` and the viewer's end card reads "The replay ends here (the session limit)."
+- **Playback**: a session is fetched index first, segments on demand (the next one ahead of time; the clock waits on
+  one that is still loading). Seeking finds the segment by binary search, then the frame from the segment's nearest
+  checkpoint (never a rescan from the start). **Following: <name>** (the button, F / Tab, 1-4, LB / RB on a pad)
+  switches whose view the camera and HUD follow; everyone else is drawn as a named partner with its HP; every player's
+  recorded casts are drawn as ghosts where they aimed. A v1 tape plays as a session of one segment (its ghosts aim at
+  the nearest foe, as before).
+
+| Action / row | |
+|---|---|
+| `micasurvivor-replay-put` {v:2, sid, seg, code, meta, last, keep?} | the segment's header must name this session and segment; ≤ 4,000 frames; in order (409 `segment gap` / `session closed`); seg < 120 (413 `session full`). Writes `msurvseg:<id>:<seg>` {code} + `msurvsess:<id>` {by, sid, when, upd, idx, players, meta, done, end} (+ the player's list on the first one: `{id, rid: sid, v: 2, bg}`) |
+| `micasurvivor-replay-keep` {id} | Share on a session already uploaded: drops its `bg` mark (1 write) |
+| `micasurvivor-replay-get` {id} / {id, seg} | PUBLIC: a tape `{code}`, or a session `{session: {v:2, idx, players, done, end}, meta, by}`; then each segment `{code}` |
+| per-player cap | 10 replays, a session counting as one; past it a background (not shared) session goes first, with its segments |
+| life | `msurvsess:` / `msurvseg:` 30 days (GC) |
+| writes | a long run: 3 rows for its first segment, then 2 per segment (~0.4 a minute); Share afterwards: 1 |
+
+Sizes (`micasurvivor_replay_v2_test.mjs`, fast-forwarded): a 45-minute Normal run with ~12,500 KOs is 9 segments of
+42-284 KB packed (1.8 MB in all; 5,396 frames); a 60-floor Dive is 6 segments (one per 10 floors); a 75-second 4-player
+local session, with every player's row and every cast, packs to ~8 KB.
+
 ## DLC D0a: base-unchanged harness
 
 The Expedition DLC (`Plans/MICASURVIVOR_POKEBONK_DLC_STUDY.md`) adds new modes, and the existing modes must stay

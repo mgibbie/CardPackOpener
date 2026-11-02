@@ -185,7 +185,7 @@
         el.innerHTML = `<b translate="no">${esc(mon ? mon.name : '?')}</b><span class="st">${esc(G.T('Nv.'))} ${m.level | 0} · ${G.U.mmss(m.time || 0)} · ${(m.kills || 0).toLocaleString('en')} ${esc(G.T('derrotados'))}</span><span class="grow"></span>`;
         const mk = (txt, cls, fn) => { const b = document.createElement('button'); b.className = 'btn small ' + cls; b.type = 'button'; b.textContent = G.T(txt); b.onclick = fn; el.appendChild(b); return b; };
         mk('Ver', 'ghost', () => G.WatchUI.playLocal(e, () => open()));
-        const sh = mk(e.id ? 'Copiar enlace' : 'Compartir', 'gold', async () => {
+        const sh = mk(e.id && !e.bg ? 'Copiar enlace' : 'Compartir', 'gold', async () => {
           sh.disabled = true;
           const r = await G.Replay.share(e.rid);
           sh.disabled = false;
