@@ -165,7 +165,20 @@ G.DiveGen = (() => {
       id++;
     }
     for (let i = 0; i < N; i++) if (g[i] !== WALL && lab[i] !== best) g[i] = WALL;
-    return { g, open: bestN / ((W - 2) * (H - 2)) };
+    // no 1-tile corridors (owner 2026-11-02: "I can't get into the little areas ... the path is too narrow"): a floor tile with
+    // walls on both sides (left + right, or above + below) opens the wall next to it, so a Pokémon's body always fits
+    for (let pass = 0; pass < 3; pass++) {
+      let n = 0;
+      for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        if (g[at(x, y)] === WALL) continue;
+        if (g[at(x - 1, y)] === WALL && g[at(x + 1, y)] === WALL) { const xx = x + 1 < W - 1 ? x + 1 : x - 1; if (xx > 0 && xx < W - 1) { g[at(xx, y)] = FLOOR; n++; } }
+        if (g[at(x, y - 1)] === WALL && g[at(x, y + 1)] === WALL) { const yy = y + 1 < H - 1 ? y + 1 : y - 1; if (yy > 0 && yy < H - 1) { g[at(x, yy)] = FLOOR; n++; } }
+      }
+      if (!n) break;
+    }
+    let open = 0;
+    for (let i = 0; i < N; i++) if (g[i] !== WALL) open++;
+    return { g, open: open / ((W - 2) * (H - 2)) };
   }
   /** The guardian floor: a fixed oval arena (radius ARENA_R) at the far end, a corridor to it, a camp room at the start. */
   function guardian() {
@@ -293,7 +306,9 @@ G.DiveGen = (() => {
         if (D4.filter(([dx, dy]) => kind[at(x + dx, y + dy)] === FLOOR).length === 2) cand.push(i);
       }
       for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
-      for (let t = 0; t < Math.min(cand.length, K.POCKET_TRIES) && plugs.length < want; t++) {
+      // (owner 2026-11-02, "the path is too narrow": natural pockets are off — plugging a corridor tile leaves a 1-tile sliver;
+      //  every pocket is carved, 2 tiles wide, below)
+      for (let t = 0; false && t < Math.min(cand.length, K.POCKET_TRIES) && plugs.length < want; t++) {
         const i = cand[t];
         if (kind[i] !== FLOOR || plugs.some(pg => near(i, at(pg.at[0], pg.at[1]), 6))) continue;
         kind[i] = WALL;
@@ -314,20 +329,24 @@ G.DiveGen = (() => {
       for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { const i = at(x, y); if (kind[i] === FLOOR && reach0[i] >= 0 && !onPath[i] && !near(i, spawn, 6) && !near(i, stairs, 5)) edge.push(i); }
       for (let t = 0; t < 400 && plugs.length < want && edge.length; t++) {
         const i = edge[Math.floor(r() * edge.length)], x = i % W, y = (i / W) | 0, [dx, dy] = D4[Math.floor(r() * 4)];
-        const tun = [[x + dx, y + dy], [x + 2 * dx, y + 2 * dy]], cx = x + 4 * dx, cy = y + 4 * dy, room = [];
-        for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) room.push([cx + ox, cy + oy]);
+        // (2 tiles wide: the tunnel, its mouth and the room take the side (px, py) too; the cave tile beside i must be open)
+        const px = dy, py = dx, i2 = at(x + px, y + py);
+        if (kind[i2] !== FLOOR || reach0[i2] < 0) continue;
+        const tun = [[x + dx, y + dy], [x + 2 * dx, y + 2 * dy], [x + dx + px, y + dy + py], [x + 2 * dx + px, y + 2 * dy + py]], cx = x + 4 * dx, cy = y + 4 * dy, room = [];
+        for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) { room.push([cx + ox, cy + oy]); room.push([cx + ox + px, cy + oy + py]); }
         // every carved tile and its whole ring must be rock (but the mouth, which touches the cave)
         const carve = tun.concat(room), ring = new Set();
         for (const [tx, ty] of carve) for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) ring.add(at(tx + ox, ty + oy));
         for (const [tx, ty] of carve) ring.delete(at(tx, ty));
-        ring.delete(i);
-        const mouth = at(tun[0][0], tun[0][1]);
+        ring.delete(i); ring.delete(i2);
+        const mouth = at(tun[0][0], tun[0][1]), mouth2 = at(tun[2][0], tun[2][1]);
         let ok = carve.every(([tx, ty]) => solid(tx, ty));
-        if (ok) for (const j of ring) { if (kind[j] !== WALL && !(Math.abs(j % W - x) + Math.abs(((j / W) | 0) - y) <= 1)) { ok = false; break; } }
+        const nearMouth = j => [i, i2].some(c => Math.abs(j % W - c % W) <= 1 && Math.abs(((j / W) | 0) - ((c / W) | 0)) <= 1);
+        if (ok) for (const j of ring) { if (kind[j] !== WALL && !nearMouth(j)) { ok = false; break; } }
         if (!ok || plugs.some(pg => near(mouth, at(pg.at[0], pg.at[1]), 6))) continue;
         for (const [tx, ty] of carve) kind[at(tx, ty)] = FLOOR;
-        kind[mouth] = WALL;   // (the plug)
-        plugs.push({ at: [tun[0][0], tun[0][1]], kind: route === 'crater' || r() < 0.5 ? 'boulder' : 'thicket', size: carve.length - 1, chest: [cx + dx, cy + dy], carved: true });
+        kind[mouth] = WALL; kind[mouth2] = WALL;   // (the plug: both tiles of the mouth)
+        plugs.push({ at: [tun[0][0], tun[0][1]], at2: [tun[2][0], tun[2][1]], kind: route === 'crater' || r() < 0.5 ? 'boulder' : 'thicket', size: carve.length - 2, chest: [cx + dx, cy + dy], carved: true });
       }
     }
     d = bfs(kind, spawn, j => kind[j] === FLOOR);

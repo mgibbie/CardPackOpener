@@ -378,7 +378,10 @@ G.HUD = (() => {
     // puppet of an old tape / snapshot (pl.af false) keeps the one-active-move look.
     const allFire = pl.af !== false;
 
-    for (let i = 0; i < n; i++) {
+    // (MicaSurvivor Dive, owner 2026-11-02: no move bar in a Dive run: the basic fires on its own and the specials are the 1 / 2
+    //  buttons (js/expedition/dive.js drawButtons); only the held item's box stays)
+    const diveBar = !!(G.ExpDive && G.ExpDive.live && G.ExpDive.live());
+    for (let i = 0; i < (diveBar ? 0 : n); i++) {
       const g = pl.slots[i] || [];
       const m = g[0];
       const fused = g.length > 1;

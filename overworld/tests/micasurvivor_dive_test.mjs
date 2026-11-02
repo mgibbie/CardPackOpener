@@ -307,6 +307,8 @@ try {
 	});
 	A(tap === 1, 'a finger on SPECIAL 1 fires it', tap);
 	await shoot(page, 'dive_buttons.png');
+	const dyn = await E(page, () => { const pl = G.Game.player, lv = pl.level; pl.level = 25; const out = { start: G.Dynamax.tryStart(pl), btn: G.Dynamax.drawButton(document.createElement('canvas').getContext('2d'), 1280, 720, pl) }; pl.level = lv; return out; });
+	A(dyn.start === false && !dyn.btn, 'no Dynamax in a Dive run (owner: not part of the PokéDive kit; its MAX button overlapped the pause): refused at Lv 25, no button', JSON.stringify(dyn));
 	const learn = await E(page, () => {
 		const pl = G.Game.player, D = G.ExpDive, before = pl.slots.map(g => g[0].id), lv0 = pl.level;
 		const out = { before };

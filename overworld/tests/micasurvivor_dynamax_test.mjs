@@ -152,7 +152,7 @@ try {
 		A(JSON.stringify(r.k) === JSON.stringify([60, 20, 1.6, 1.3, 0.3, 1.3, 0.2308, 1.5, 0.6, 280, 420, 1.9, 240]), 'the port\'s numbers: 60 s, level 20, x1.6, x1.3, +30 % HP, x1.3 damage, 23.08 % less taken, pulses every 1.5 s (first at 0.6 s), radii 280 / 420 x1.9, 240 s cooldown', JSON.stringify(r.k));
 		A(JSON.stringify(r.den) === JSON.stringify([0.05, 30, 120, 1.5, 0.28, 12, 2, 2, 120, 1]), 'dens: 5 % per check, open 30 s, from 120 s, boss x1.5, Max Move 28 %; reward 12 XP orbs, 2 items, 2 tickets, 120 coins, a heal', JSON.stringify(r.den));
 		A(JSON.stringify(r.status) === JSON.stringify(STATUS), 'the pulse status per type is the port\'s STATUS table', JSON.stringify(r.status));
-		A(JSON.stringify(r.modes) === '[["tower"],["rifts"]]', 'no Dynamax in the Tower (mode flag); no dens in Rift Time Attack (mode flag)');
+		A(JSON.stringify(r.modes) === '[["tower","exp-dive"],["rifts"]]', 'no Dynamax in the Tower or in Dive (mode flag); no dens in Rift Time Attack (mode flag)');
 		const bad = r.ui.filter(([es, en]) => es === en && !/^Nv\./.test(es) || /[¡¿ñáéíóú]/i.test(en.replace(/Poké/g, '')));
 		A(bad.length === 0, 'every new string has English (lang_en.json wording)', JSON.stringify(bad));
 		const ui = Object.fromEntries(r.ui);

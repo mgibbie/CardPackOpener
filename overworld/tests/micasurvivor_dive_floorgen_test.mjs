@@ -40,7 +40,7 @@ function walk(L, from) {
 	return d;
 }
 
-const errs = { pockets: [], det: [], size: [], border: [], open: [], stairs: [], far: [], rescue: [], groups: [], chests: [], cadence: [] };
+const errs = { narrow: [], pockets: [], det: [], size: [], border: [], open: [], stairs: [], far: [], rescue: [], groups: [], chests: [], cadence: [] };
 let n = 0, shapes = {}, plugN = 0, plugKinds = {};
 for (const route of D.ROUTE_IDS) for (let floor = 1; floor <= 60; floor++) for (const seed of [1, 777, 123456789]) {
 	const L = D.layout({ seed, route, floor }), tag = `${route}/${floor}/${seed}`;
@@ -70,10 +70,19 @@ for (const route of D.ROUTE_IDS) for (let floor = 1; floor <= 60; floor++) for (
 		const pi = pg.at[1] * L.w + pg.at[0], ci = pg.chest[1] * L.w + pg.chest[0];
 		if (L.kind[pi] !== 1 || L.kind[ci] !== 0 || di(pg.chest) >= 0) { errs.pockets.push(tag + ' sealed'); continue; }
 		const k2 = L.kind.slice(); k2[pi] = 0;
+		if (pg.at2) { const p2 = pg.at2[1] * L.w + pg.at2[0]; if (L.kind[p2] !== 1) errs.pockets.push(tag + ' sealed2'); k2[p2] = 0; }   // (a carved pocket's 2-tile mouth)
 		const d2 = walk(Object.assign({}, L, { kind: k2 }), L.spawn);
 		if (!(d2[ci] > 0)) errs.pockets.push(tag + ' opens');
 		if ((L.groups || []).some(g => d2[g.at[1] * L.w + g.at[0]] >= 0 && d[g.at[1] * L.w + g.at[0]] < 0)) errs.pockets.push(tag + ' group inside');
 		if (L.rescue && di(L.rescue) < 0) errs.pockets.push(tag + ' rescue inside');
+	}
+	// no 1-tile corridors (owner 2026-11-02: "the path is too narrow"): every floor tile has floor on at least one side of each axis pair
+	if (L.shape !== 'guardian') {
+		for (let y = 1; y < L.h - 1 && !errs.narrow.includes(tag); y++) for (let x = 1; x < L.w - 1; x++) {
+			const i = y * L.w + x; if (L.kind[i] === 1) continue;
+			const wl = k => L.kind[k] === 1;
+			if ((wl(i - 1) && wl(i + 1)) || (wl(i - L.w) && wl(i + L.w))) { errs.narrow.push(tag + ` @${x},${y}`); break; }
+		}
 	}
 	const c = L.cadence;
 	if (c.arena !== (floor % 5 === 0) || c.guardian !== (floor % 25 === 0) || c.rope !== (floor % 10 === 0 || floor % 25 === 0)
@@ -89,6 +98,7 @@ A(!errs.far.length, 'the stairs are far: the path is about the longest walk on t
 A(!errs.rescue.length, 'every non-guardian floor has its lost Pokémon, reachable, 35-80 % of the way to the stairs', show('rescue'));
 A(!errs.groups.length, 'foe groups on every carved floor, none within 16 steps of the spawn', show('groups'));
 A(!errs.chests.length, '1-3 chests on floor tiles, >= 10 tiles apart', show('chests'));
+A(!errs.narrow.length, 'no 1-tile corridors: every passage is at least 2 tiles wide (a Pokémon always fits)', errs.narrow.slice(0, 5).join(', '));
 A(!errs.pockets.length && plugN > n * 0.7 && plugKinds.boulder > 0 && plugKinds.thicket > 0, `secret pockets (${plugN} on ${n} floors, ${JSON.stringify(plugKinds)}): sealed behind their plug, the chest reachable once it opens, nothing else inside`, errs.pockets.slice(0, 5).join(', '));
 A(!errs.cadence.length, 'the cadence: alpha arena every 5th, guardian arena every 25th, rope on 10 / 20 / 25s, no landmark on an arena', show('cadence'));
 A(['caves', 'clearing', 'islands', 'maze', 'guardian'].every(s => shapes[s] > 0), 'all the shapes appear (caves, clearing, islands, maze, guardian)', JSON.stringify(shapes));
