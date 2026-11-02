@@ -955,6 +955,50 @@ House pattern: a FINAL-HAND X with a SUN upgrade (the Gen 7 Fomantis line, Solar
 House pattern: LUCKY GLOW, deck count + trigger bank (the Gen 7 Morelull line; lucky_in_deck / glow_mult): +3 Mult per Lucky card in the full
   deck (Morelull, kept by Shiinotic), and Shiinotic banks +2 each time a scored Lucky card triggers (Tranquill's lucky_scored: its Mult or
   its money roll, both at once count once) in `glow_mult` (never energized; gain `mult_mod` +20%). Not Blueprint for the gain.
+House pattern: a GENDER-GATED evolution (the Gen 7 Salandit, Queen; salandit_gender):
+  - The gender is rolled when the joker is OBTAINED (add_to_deck, only if none yet: Furfrou's / Glameow's moment, never on creation), the
+    run's seeded pseudorandom 'salandit_gender', 50/50, kept on ability.extra.gender (save / resume re-play it; an add_to_deck from a debuff
+    keeps it). A shop card has none: its tooltip says "Gender rolled when obtained" and "(Only ♀ evolves, after 5 rounds)".
+  - Only a ♀ runs level_evo; a ♂ never counts down (Everstone or not) and says "♂: never evolves". The sign only (♀ / ♂): the gender-names
+    test forbids the words. Burmy's gendered evolution BRANCHES; this one GATES (the real Salandit: only females evolve).
+House pattern: a JOKER DESTROYER with odds (the Gen 7 Bewear, Strong Hug; strong_hug):
+  - At the main end_of_round, 1 in 4 (pseudorandom_probability 'bewear': Oops! doubles it, as every Pokermon roll) to destroy the Joker
+    DIRECTLY TO ITS RIGHT, Ceremonial Dagger's slice: getting_sliced + start_dissolve in an event, so an Eternal joker or one already being
+    destroyed is skipped (no roll at all with nothing to its right), a joker that answers no_destroy stays (Komala, Nacho's Passimian) and
+    Drifblim / Pyukumuku still pay on leaving. Not Blueprint (it copies the X2.5 only). Its tooltip names the joker in its arms.
+  - The cost of a big flat X on a Safari Stage 1: park an expendable joker (or an Eternal, or Komala) to its right.
+House pattern: an ENERGY GIFT (the Gen 7 Comfey, Floral Gift; floral_gift / comfey_targets):
+  - At the main end_of_round, 1 in 3 (Oops! doubles it) to give +1 Energy to a random OTHER Pokémon Joker that can take one: a table extra
+    with a ptype and an energy_values field, under its cap (can_increase_energy: 3 + energy_plus + its own bonus). None eligible, no roll.
+  - Through increment_energy with the 'Trans' type (the Mystery Egg's): FULL strength on any type, as a matching Energy card would be (no
+    Colorless half rule), one energy_count, so the cap holds and evolution re-applies it. It is not an Energy CARD: energies_used, Porygon-Z,
+    Gastrodon and Fusion Flare don't count it. Energy-inert itself (no number), not Blueprint.
+House pattern: a STONE BANK (the Gen 7 Sandygast line, Sand castle; sand_castle):
+  - Each time a Stone card SCORES (has_enhancement: quantum Stone too; every retrigger is another score) Sandygast banks +10 Chips
+    (`castle_chips`; gain `chip_mod` +20%), given the same hand (the bank grows in the individual pass, before joker_main). Palossand stops
+    the Chips bank (it keeps giving it) and banks X0.05 from X1 instead (`castle_Xmult`, gain `Xmult_mod` +20%): the starter-bank shape
+    (2.4 point 5) on Regirock's / Hippowdon's / Landorus's Stone theme.
+House pattern: a PAYOUT ON LEAVING that grows (the Gen 7 Pyukumuku, Innards Out; innards_out / pyukumuku_destroyed):
+  - Drifblim's Aftermath seams (selling_self when sold; index.js hooks.start_dissolve when destroyed, both only for an owned, undebuffed
+    copy; a no_destroy save never reaches it), paying $1 (`innards_money`, fixed) per round held (`held_rounds`, counted at the main
+    end_of_round). Its Chips (+10 banked a round) make it worth holding; the payout makes it worth selling or feeding to Ceremonial Dagger /
+    Bewear later.
+House pattern: CAN'T BE DESTROYED (the Gen 7 Komala, Comatose):
+  - "Can't be debuffed" is the set_debuff line (systems/rules.js, as Kubfu). "Jokers can't destroy it" is the Steamodded no_destroy answer:
+    on joker_type_destroyed for ITSELF it returns {no_destroy: true}, which every getting_sliced path checks (Madness, Ceremonial Dagger,
+    Carvanha / Sharpedo, Scizor, Bewear, Pokermon's eaters). Hex and Ankh (Spectral cards the player chooses) call start_dissolve with no
+    joker involved and still remove it; selling works.
+  - PITFALL (no_destroy is a refusal, not Eternal): the attacker still TARGETS it and still takes its own gain (Madness its X0.5,
+    Ceremonial Dagger its +2 x sell value Mult), as Steamodded does with Nacho's Passimian. Say so on the card or in the notes.
+House pattern: SEALED CARDS RETRIGGER (the Gen 7 Bruxish, Strong Jaw):
+  - context.repetition on G.play: other_card.get_seal() (a debuffed card has none) -> 1 retrigger. Every seal re-fires (Gold pays again, Red
+    stacks to 3 scores, Blue / Purple / Pokermon's Pink are end-of-round or discard seals: only the card's score repeats). Energy-inert.
+House pattern: a HAND-TYPE BANK and a RUN COUNT (the Gen 7 Jangmo-o line, Clangorous Scales / Soul; clangorous):
+  - In `before`, scoring_name === 'Full House' exactly (Larvitar's rule: a Flush House is its own hand and doesn't count) banks +2 / +4 Mult
+    (`clang_mult`; gain `mult_mod` +20%), Gible's scaling_evo at +16 then +40 in all. Kommo-o stops banking (it keeps giving it) and adds
+    X1 + X0.15 per Full House played this RUN, read live from G.GAME.hands['Full House'].played (Chatot's record: a late Kommo-o counts
+    every one; the hand being played already counts).
+
 2.2 Rarity and cost conventions
 -------------------------------
 Rarities:
@@ -1056,6 +1100,7 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
                 House: a GENDERED level_evo (the owner's Burmy: 4 rounds, Female -> Wormadam, Male -> Mothim;
                 the gender rolled when the card is created, 2.1).
                 House: a GATED level_evo (the Gen 6 Pancham: 5 rounds, then only with a Dark Joker held; 2.1).
+                House: a GENDER-GATED level_evo (the Gen 7 Salandit: rolled when obtained, only ♀ evolves after 5 rounds; 2.1).
 
 Typical round timers (level_evo):
   Baby     always 2 rounds (all 18)
@@ -1157,6 +1202,9 @@ the Gen 6 Legendaries' fixed fields: oblivion_Xmult (Yveltal's bank), cells / co
 the Gen 7 batch 1 fixed fields: hits (the Pikipek line's roll; the count is never energized), form (Oricorio's style), the bank glow_mult
 (Shiinotic; its gain mult_mod is energized). Two energy fields on one number pair: Crabominable's every-card / first-card gains
 (`mult_mod`, `mult_mod2`), Wishiwashi's School / Solo (`Xmult`, `mult`), Lurantis's final-hand / sunny X (`Xmult`, `Xmult2`).
+the Gen 7 batch 2 fixed fields: num / dem (Bewear's and Comfey's odds), d_size (Salandit's discard), gender, innards_money / held_rounds
+(Pyukumuku's $1 a round), retriggers (Bruxish), the banks castle_chips / castle_Xmult / innards_chips / clang_mult (their gains chip_mod /
+Xmult_mod / mult_mod are energized).
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base

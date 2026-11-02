@@ -3516,6 +3516,56 @@ main end of round of a won Boss Blind). A run recorded before r64 re-simulates w
   (the pin, the defs, the order chains), `pokermon_gen6_legendaries_test` (contentRev 63+), `pokermon_art_types_test`, `micatro_mod_version_pin`,
   `micatro_deckeditor_pages` (1102 jokers); `designwiki_pokermon_jokers_test` spot-checks Comfey / Kommo-o / Hakamo-o and opens Corviknight's card
   (the Pikipek line and Cutiefly have jokers now).
+### Gen 7, batch 2 (2026-11-02, branch `feat/pokermon-gen7-batch2`)
+Pinned **`3.9.1+r65`** (`contentRev: 65`; r64 is Gen 7 batch 1, #731-756; `LEGACY_MOD_VERSIONS` untouched). The owner's "Yes build it and merge
+when the gate passes": 13 jokers, #757-784, in `jokers/pokejokers_designs.js` (a second `defineJokers` block, "Gen 7, batch 2": `salandit_gender` /
+`strong_hug` / `floral_gift` / `comfey_targets` / `sand_castle` / `innards_out` / `pyukumuku_destroyed` / `clangorous` / `full_houses_played`).
+Pokédex order: Salandit ... Komala (757-775) after Shiinotic (756, Gen 7 batch 1), before Mimikyu (778); Bruxish
+(779) after Mimikyu, before Drampa; Jangmo-o / Hakamo-o / Kommo-o (782-784) after Mega Drampa, before Grookey. Neither Nacho nor Pokermon+ has
+any. Prices by the guide's slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7). Evolution: **5 rounds** for Salandit (♀
+only), Stufful and Sandygast (none is an early evolver); Jangmo-o / Hakamo-o by scaling (+16 / +40 Mult). Types = the cards'
+(`pokermon_art_types_test`: Salandit line Fire, Stufful line Fighting, Sandygast line Psychic, Bruxish Water). Art: upstream 3.9.1 cells (Natdex
+{12,50}-{26,50}, {6,51}-{26,51}, {2,52}-{6,52}); nothing to deploy. Hooks: `systems/rules.js` set_debuff (Komala), index.js `start_dissolve`
+now runs Drifblim's Aftermath and Pyukumuku's Innards Out.
+- **Salandit** (C $5) / **Salazzle** (S $8), Queen: **+1 discard each round** (fixed, the Charmander pair; still exactly +1 after evolving);
+  **each scored Queen +5 Mult / X1.5**. **The gender is rolled when obtained** (add_to_deck, only if none yet; never on creation, so a shop card
+  says "Gender rolled when obtained"), seeded `salandit_gender`, 50/50, kept on the card (`gender`), shown **♀ / ♂**. **Only a ♀ evolves (5
+  rounds)**; a ♂ never counts down and says "♂: never evolves" (Everstone irrelevant). Energy `mult` 5 -> 7 / 9 / 11, `Xmult_multi` 1.5 -> 1.575 /
+  1.65 / 1.725.
+- **Stufful** (C $5, 5) / **Bewear** (S $8): **+40 Chips and +4 Mult** / **X2.5**. Bewear's Strong Hug: **at the end of each round, 1 in 4 to
+  destroy the Joker directly to its right** (Ceremonial Dagger's slice: getting_sliced + start_dissolve; **Oops! All 6s doubles it** — the
+  choice, as every Pokermon roll; an **Eternal** joker or one already being destroyed is skipped; **nothing to its right, no roll**; not
+  Blueprint). The tooltip names the joker in its arms. A no_destroy joker (Komala, Nacho's Passimian) stays; Drifblim / Pyukumuku pay on
+  leaving. Energy `chips` 40 -> 52 / 64 / 76, `mult` 4 -> 5.6 / 7.2 / 8.8, `Xmult` 2.5 -> 3 / 3.5 / 4; the 1 in 4 fixed.
+- **Comfey** (R $7), Floral Gift: **at the end of each round, 1 in 3** (Oops! doubles it) **to give +1 Energy to a random OTHER Pokémon Joker that
+  can still take one** (an Energy field, under its cap: 3 + energy_plus + its own bonus; none eligible, no roll). The choices: **itself never**
+  (it is Energy-inert anyway); the gift is `increment_energy(target, 'Trans')`, the Mystery Egg's — **full strength on any type** (as a
+  matching Energy card would be; no Colorless half rule), one `energy_count`, so the cap holds and it carries through evolution; **it is not an
+  Energy card** (`energies_used`, Porygon-Z, Gastrodon, Fusion Flare don't count it). Not Blueprint.
+- **Sandygast** (C $5, 5) / **Palossand** (S $8), Sand castle: **+10 Chips banked each time a Stone card scores** (`castle_chips`; every retrigger
+  counts: a Red Seal Stone banks twice; given the same hand). Palossand **stops the Chips bank (still gives it) and banks X0.05 per scored Stone
+  card from X1** (`castle_Xmult`). Not Blueprint for the gains. Energy `chip_mod` 10 -> 12 / 14 / 16, `Xmult_mod` 0.05 -> 0.06 / 0.07 / 0.08
+  (never retroactive; Sandygast's Energy is re-applied to Palossand's gain).
+- **Pyukumuku** (R $7), Innards Out: **+10 Chips banked at the end of each round held** (`innards_chips`, starts at +0); **when sold or destroyed,
+  earn $1 per round held** (`held_rounds` / `innards_money`, fixed; sold: on top of its sell value; destroyed: by Ceremonial Dagger, Madness,
+  Bewear, Hex, Ankh..., Drifblim's start_dissolve seam). A debuffed one pays nothing and counts no round. Energy `chip_mod` 10 -> 12 / 14 / 16.
+- **Komala** (R $7), Comatose: **X1.5**; **can't be debuffed** (set_debuff `prevent_debuff`: Boss Blinds such as Crimson Heart, Perishable...);
+  **Jokers can't destroy it**: it answers `joker_type_destroyed` for itself with `no_destroy`, so Madness, Ceremonial Dagger, Carvanha /
+  Sharpedo, Scizor, Bewear and every other getting_sliced path leave it. The choice: **Hex and Ankh** (Spectral cards the player chooses) **and
+  selling still remove it**. Note (Steamodded's no_destroy rule, as Passimian): the attacker still takes its own gain — Madness its X0.5,
+  Ceremonial Dagger its +2 x sell value Mult — while Komala stays. Energy `Xmult` 1.5 -> 1.8 / 2.1 / 2.4.
+- **Bruxish** (R $7), Strong Jaw: **every scored card with a seal retriggers once** (get_seal: a debuffed card has none; a Red Seal card scores 3
+  times; a Gold Seal pays twice). Blueprint copies it. Energy-inert.
+- **Jangmo-o** (U $6) / **Hakamo-o** (S $8) / **Kommo-o** (S $10), Clangorous Scales / Soul: **+2 / +4 Mult banked each time you play a Full
+  House** (`clang_mult`, in `before`; scoring_name exactly 'Full House' — **a Flush House doesn't count**, Larvitar's rule; given the same hand).
+  Jangmo-o **evolves at +16**, Hakamo-o **at +40 in all** (scaling_evo, end of round). Kommo-o **keeps the bank (no longer growing) and gives X1 +
+  X0.15 per Full House played this run** (`G.GAME.hands['Full House'].played`, read live: a late Kommo-o counts every one; the hand being
+  played counts). Energy `mult_mod` 2 -> 2.4 / 2.8 / 3.2, 4 -> 4.8 / 5.6 / 6.4, `Xmult_mod` 0.15 -> 0.18 / 0.21 / 0.24.
+- **Wiki**: regenerated (the 13 drop off; their wiki sprites are gone from `designwiki/sprites/pokermon_jokers/`).
+- **Tests**: `micatro/tests/mods/pokermon_gen7_batch2_test.mjs` (fails on main: no such jokers). Re-recorded: `modpin_test`,
+  `pokermon_391_data_test`, `pokermon_new_jokers_test` (the pin, the defs, the order chains), `pokermon_gen6_legendaries_test` (contentRev
+  63+), `pokermon_art_types_test`, `micatro_mod_version_pin`, `micatro_deckeditor_pages`; `designwiki_pokermon_jokers_test` spot-checks Buzzwole /
+  Naganadel (Bewear and Jangmo-o have jokers now).
 
 ### Pending from the 3.9.1 joker rework (after batch 10b)
 Every existing joker is on 3.9.1: `rework_hold` (still on 3.2.1) is empty. What waits, by the batch it waits on (`rework_deferred` =

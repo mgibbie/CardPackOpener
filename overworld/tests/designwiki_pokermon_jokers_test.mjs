@@ -95,12 +95,12 @@ try {
 	A(!tBad.length, `every wiki card's type is the type its card art shows (${D.species.filter(s => s.type_source === 'art').length} from the art)`, tBad.slice(0, 8).join(', '));
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
-	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Comfey')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump and Cutiefly are in the game now): Guzzlord Dragon, Toedscool Grass, Comfey Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
+	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Impidimp')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
+		&& !sp0('Bewear') && !sp0('Comfey') && sp0('Buzzwole')?.ptype === 'Fighting' && sp0('Buzzwole')?.type_source === 'art' && sp0('Buzzwole')?.mapped_ptype === 'Grass', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump, Cutiefly, Comfey and Bewear are in the game now): Guzzlord Dragon, Toedscool Grass, Impidimp Fairy, Chien-Pao Water, Iron Thorns Lightning; Buzzwole Fighting from its art (the mapping said Grass)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Kommo-o')?.stage === 'Two' && sp('Hakamo-o')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Jangmo-o')?.ptype === 'Dragon',
-		'spot check: Kommo-o Stage 2, Hakamo-o Stage 1 (the Pikipek line is in the game now), Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Jangmo-o Dragon');
+	A(sp('Orbeetle')?.stage === 'Two' && sp('Dottler')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && !sp('Jangmo-o') && sp('Naganadel')?.ptype === 'Dragon',
+		'spot check: Orbeetle Stage 2, Dottler Stage 1 (the Pikipek and Jangmo-o lines are in the game now), Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Naganadel Dragon');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
@@ -191,8 +191,8 @@ try {
 	A(!blank.length, 'no card is blank (142 x 190, 90%+ opaque — the corners are rounded —, 24+ colours, 8+ in the art window)', blank.slice(0, 5).join(' | '));
 	A(!thin.length, 'every composed card: the battle sprite painted 100+ pixels onto it', thin.slice(0, 8).join(', '));
 	// the composer stays working for species upstream doesn't draw (none today): a Basic, a Stage 1, a Baby and a Legendary
-	const fallback = ['Kommo-o', 'Hakamo-o', 'Toxel', 'Tapu Koko'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
-	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Kommo-o, Hakamo-o, Toxel, Tapu Koko)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
+	const fallback = ['Orbeetle', 'Dottler', 'Toxel', 'Tapu Koko'].map(n => ctx.M.missing.find(s => s.name === n)).filter(Boolean).map(s => [s.name, MJ.composeSpecies(ctx, s)]);
+	A(fallback.length === 4 && fallback.every(([, r]) => r.normalPainted >= 100 && r.shinyPainted >= 100 && r.recipe.frame), 'the composer (the fallback) still composes a real card (Orbeetle, Dottler, Toxel, Tapu Koko; the Jangmo-o line is in the game now)', fallback.map(([n, r]) => n + ' ' + r.normalPainted).join(', '));
 	const extra = fs.readdirSync(path.join(ROOT, 'designwiki/sprites/pokermon_jokers')).filter(f => !D.species.some(s => s.art.normal.endsWith('/' + f) || s.art.shiny.endsWith('/' + f)));
 	A(!extra.length, 'no stale card art for species that now have jokers', extra.join(', '));
 	// re-running the generator (into a scratch folder) gives the committed JSON and art, byte for byte

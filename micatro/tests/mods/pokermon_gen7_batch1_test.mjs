@@ -176,7 +176,7 @@ await sec('static', () => {
     ['primarina', ['pikipek', 'trumbeak', 'toucannon', 'yungoos', 'gumshoos'], 'grubbin'],
     ['vikavolt', ['crabrawler', 'crabominable', 'oricorio', 'cutiefly', 'ribombee'], 'rockruff'],
     ['lycanroc_dusk', ['wishiwashi', 'mareanie', 'toxapex'], 'mudbray'],
-    ['mudsdale', ['dewpider', 'araquanid', 'fomantis', 'lurantis', 'morelull', 'shiinotic'], 'mimikyu'],
+    ['mudsdale', ['dewpider', 'araquanid', 'fomantis', 'lurantis', 'morelull', 'shiinotic'], 'salandit'],
   ];
   for (const [from, list, to] of RUNS) ok(run(from, list, to) === true, `Pokédex order: ${from}, ${list.join(', ')}, ${to}`, run(from, list, to));
   const fam = (n) => poke_get_family_list(n).map((x) => (typeof x === 'string' ? x : x.key || x.name)).join();
