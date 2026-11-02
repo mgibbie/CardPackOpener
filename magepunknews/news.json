@@ -522,6 +522,14 @@
 	},
 	"entries": [
 		{
+			"sha": "6f3c5a8",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "Pokermon r68: Jokers skip Komala when choosing what to destroy",
+			"body": "Komala (Comatose) refused a Joker's destroy with no_destroy, but the\ndestroyer still targeted it and kept its gain: Ceremonial Dagger with\nKomala to its right got +2x its sell value Mult every Blind while Komala\nstayed (a free infinite engine); Madness, Bewear, Carvanha / Sharpedo,\nScyther / Scizor... the same shape.\n\nNew engine helper can_be_destroyed_by_joker(card) (core.js): not Eternal\nand no active mod's joker_destroy_immune hook answers true. Pokermon\nanswers true for Komala from r68 (rulesRev gate), so every Joker\ndestroyer skips it exactly like an Eternal: not targeted, no gain, no\nslice. Routed: Ceremonial Dagger, Madness, Scyther / Scizor, Mega Scizor,\nCarvanha / Sharpedo, Rotom Fan, Kleavor, Mega Mewtwo X, A Billion Lions,\nBewear (tooltip \"Comatose: safe\"), Pokermon+ Nacli line, the Monotype\npredicted row. Hex / Ankh / selling unchanged; no_destroy stays as the\nbackstop. Runs recorded on r65-r67 replay as recorded.\n\nTest: micatro/tests/mods/pokermon_komala_destroy_test.mjs (12 checks\nfail with the hook removed). Pins bumped to 3.9.1+r68.",
+			"cards": []
+		},
+		{
 			"sha": "3c8c765",
 			"date": "2026-11-02",
 			"kind": "micatro",

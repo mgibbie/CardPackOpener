@@ -15,6 +15,7 @@ import {
   get_probability_vars, pseudorandom_probability, smods_create_card, find_card, add_card, has_enhancement,
   poke_get_adjacent_jokers, ease_poke_dollars, scale_card, destroy_joker, poke_evolve, poll_object, POKE_POOL_RULES,
   poke_is_in_collection, poke_remove_card, precedence_key, poke_get_family_list, detailed,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
 import { starter_lists, starterq_lists } from '../boosters/packs1.js';
@@ -403,7 +404,7 @@ defineJokers({
       if (context.setting_blind && !card.getting_sliced) {
         let destroyed = 0;
         for (const v of G.jokers.cards.slice()) {
-          if (v !== card && has_type(v) && !v.ability.eternal) {
+          if (v !== card && has_type(v) && can_be_destroyed_by_joker(v)) {
             destroyed = destroyed + 1;
             v.getting_sliced = true;
             G.E_MANAGER.add_event(() => {

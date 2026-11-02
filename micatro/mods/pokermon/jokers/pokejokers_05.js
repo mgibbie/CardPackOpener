@@ -12,6 +12,7 @@ import {
   remove, poke_evolve, apply_type_sticker, type_sticker_applied, energy_increase, poke_convert_cards_to,
   smods_create_card, poke_add_shop_card, can_evolve_to_highest, POKE_POOL_RULES,
   object_weights, poll_seal_weighted,
+  can_be_destroyed_by_joker,
 } from '../api.js';
 import { calculate_reroll_cost } from '../../../js/engine/core.js';
 import { Tag, add_tag } from '../../../js/engine/tag.js';
@@ -176,7 +177,7 @@ defineJokers({
       if (context.setting_blind && !card.getting_sliced && !context.blueprint) {
         const my_pos = G.jokers.cards.indexOf(card);
         const sliced_card = my_pos >= 0 ? G.jokers.cards[my_pos + 1] : undefined;
-        if (sliced_card && !card.getting_sliced && !sliced_card.ability.eternal && !sliced_card.getting_sliced) {
+        if (sliced_card && !card.getting_sliced && can_be_destroyed_by_joker(sliced_card) && !sliced_card.getting_sliced) {
           sliced_card.getting_sliced = true;
           if (sliced_card.config.center.rarity !== 1 && sliced_card.config.center.rarity !== 2 && !card.edition) {
             const edition = poll_edition('wheel_of_fortune', null, true, true);
@@ -850,7 +851,7 @@ defineJokers({
         if (leftmost !== card && !leftmost.getting_sliced) {
           card_eval_status_text(context.blueprint_card || card, 'extra', null, null, null, { message: localize('k_duplicated_ex') });
           const chosen_joker = G.jokers.cards[0];
-          if ((G.jokers.cards.length - 1 < G.jokers.config.card_limit && !leftmost.ability.eternal) || (G.jokers.cards.length < G.jokers.config.card_limit && leftmost.ability.eternal)) {
+          if ((G.jokers.cards.length - 1 < G.jokers.config.card_limit && can_be_destroyed_by_joker(leftmost)) || (G.jokers.cards.length < G.jokers.config.card_limit && !can_be_destroyed_by_joker(leftmost))) {
             G.E_MANAGER.add_event(() => {
               const _card = copy_card(chosen_joker, null, null, null, chosen_joker.edition && chosen_joker.edition.negative);
               _card.set_edition({ polychrome: true }, true);
@@ -869,7 +870,7 @@ defineJokers({
             });
           }
           // Lua: `Event({ remove(...) })` calls remove() right away (it queues its own removal event).
-          if (!leftmost.ability.eternal) remove(self, G.jokers.cards[0], context);
+          if (can_be_destroyed_by_joker(leftmost)) remove(self, G.jokers.cards[0], context);
         }
       }
       if (context.other_joker && context.other_joker.edition && context.other_joker.edition.polychrome) {

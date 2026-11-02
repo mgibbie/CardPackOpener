@@ -75,7 +75,7 @@
  * (Seeded = the player TYPED the seed. A resumed / replayed run keeps its recipe's `seeded` flag — engine/session.js
  * recipeSeeded — never "it has a seed": every recipe has one.)
  */
-import { G, LOC, emit, acting_card } from '../../../js/engine/core.js';
+import { G, LOC, emit, acting_card, can_be_destroyed_by_joker } from '../../../js/engine/core.js';
 import { MOD_LOC } from '../../../js/mods/registry.js';
 import { get_type, wildcard_type, POKETYPES, TYPE_COLOURS } from './types.js';
 
@@ -193,7 +193,7 @@ function type_label(c) {
   return ts.length ? ts.join('/') : 'none';
 }
 /** The jokers that "destroy the joker to the right" when the Blind is selected (setting_blind, not as a Blueprint
- *  copy, not when debuffed or already being sliced; an Eternal or already-sliced neighbour is spared). */
+ *  copy, not when debuffed or already being sliced; an Eternal (or Komala: can_be_destroyed_by_joker) or already-sliced neighbour is spared). */
 const SLICERS = new Set(['j_ceremonial', 'j_poke_scyther', 'j_poke_scizor', 'j_poke_kleavor', 'j_poke_carvanha', 'j_poke_sharpedo', 'j_poke_rotomfan']);
 /** The row as the next round will begin with it, as far as it can be known now: the known slicers' victims are left
  *  out (they slice in row order: a sliced slicer doesn't slice). */
@@ -202,7 +202,7 @@ function predicted_row() {
   cards.forEach((c, i) => {
     if (sliced.has(c) || c.debuff || c.getting_sliced || !c.config || !c.config.center || !SLICERS.has(c.config.center.key)) return;
     const n = cards[i + 1];
-    if (n && !(n.ability && n.ability.eternal) && !sliced.has(n)) sliced.add(n);
+    if (n && can_be_destroyed_by_joker(n) && !sliced.has(n)) sliced.add(n);
   });
   return row_jokers().filter((c) => !sliced.has(c));
 }

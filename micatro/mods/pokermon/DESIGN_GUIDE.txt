@@ -996,7 +996,8 @@ House pattern: a GENDER-GATED evolution (the Gen 7 Salandit, Queen; salandit_gen
 House pattern: a JOKER DESTROYER with odds (the Gen 7 Bewear, Strong Hug; strong_hug):
   - At the main end_of_round, 1 in 4 (pseudorandom_probability 'bewear': Oops! doubles it, as every Pokermon roll) to destroy the Joker
     DIRECTLY TO ITS RIGHT, Ceremonial Dagger's slice: getting_sliced + start_dissolve in an event, so an Eternal joker or one already being
-    destroyed is skipped (no roll at all with nothing to its right), a joker that answers no_destroy stays (Komala, Nacho's Passimian) and
+    destroyed is skipped (no roll at all with nothing to its right; Komala too, as an Eternal: can_be_destroyed_by_joker), a joker that
+    answers no_destroy stays (Nacho's Passimian) and
     Drifblim / Pyukumuku still pay on leaving. Not Blueprint (it copies the X2.5 only). Its tooltip names the joker in its arms.
   - The cost of a big flat X on a Safari Stage 1: park an expendable joker (or an Eternal, or Komala) to its right.
 House pattern: an ENERGY GIFT (the Gen 7 Comfey, Floral Gift; floral_gift / comfey_targets):
@@ -1016,12 +1017,16 @@ House pattern: a PAYOUT ON LEAVING that grows (the Gen 7 Pyukumuku, Innards Out;
     end_of_round). Its Chips (+10 banked a round) make it worth holding; the payout makes it worth selling or feeding to Ceremonial Dagger /
     Bewear later.
 House pattern: CAN'T BE DESTROYED (the Gen 7 Komala, Comatose):
-  - "Can't be debuffed" is the set_debuff line (systems/rules.js, as Kubfu). "Jokers can't destroy it" is the Steamodded no_destroy answer:
-    on joker_type_destroyed for ITSELF it returns {no_destroy: true}, which every getting_sliced path checks (Madness, Ceremonial Dagger,
-    Carvanha / Sharpedo, Scizor, Bewear, Pokermon's eaters). Hex and Ankh (Spectral cards the player chooses) call start_dissolve with no
-    joker involved and still remove it; selling works.
-  - PITFALL (no_destroy is a refusal, not Eternal): the attacker still TARGETS it and still takes its own gain (Madness its X0.5,
-    Ceremonial Dagger its +2 x sell value Mult), as Steamodded does with Nacho's Passimian. Say so on the card or in the notes.
+  - "Can't be debuffed" is the set_debuff line (systems/rules.js, as Kubfu). "Jokers can't destroy it" = it ACTS ETERNAL FOR DESTROY (r68):
+    index.js hooks.joker_destroy_immune answers true for it, so the engine's can_be_destroyed_by_joker(card) says no, and every Joker
+    effect that picks a Joker to destroy skips it exactly like an Eternal: not targeted, no gain, no slice (Ceremonial Dagger, Madness,
+    Carvanha / Sharpedo, Scyther / Scizor, Kleavor, Rotom Fan, Bewear, Mega Mewtwo X, A Billion Lions, Pokermon+'s Nacli). The
+    Steamodded no_destroy answer (joker_type_destroyed for ITSELF) stays as the backstop for anything else that marks it getting_sliced.
+    Hex and Ankh (Spectral cards the player chooses) call start_dissolve with no joker involved and still remove it; selling works.
+  - RULE for any new Joker destroyer: choose the target with can_be_destroyed_by_joker(card) (never `!card.ability.eternal` alone).
+  - PITFALL (why: r65-r67): no_destroy alone is a refusal, not Eternal — the attacker still TARGETED it and took its own gain (Ceremonial
+    Dagger +2 x sell value Mult every Blind with Komala staying: an infinite engine). A new "can't be destroyed" joker: answer
+    joker_destroy_immune, not only no_destroy.
 House pattern: SEALED CARDS RETRIGGER (the Gen 7 Bruxish, Strong Jaw):
   - context.repetition on G.play: other_card.get_seal() (a debuffed card has none) -> 1 retrigger. Every seal re-fires (Gold pays again, Red
     stacks to 3 scores, Blue / Purple / Pokermon's Pink are end-of-round or discard seals: only the card's score repeats). Energy-inert.

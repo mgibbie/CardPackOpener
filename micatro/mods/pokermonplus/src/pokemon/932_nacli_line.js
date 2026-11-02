@@ -11,7 +11,7 @@
 //
 // The Lua wraps the removal in `Event({ remove(...) })`, which calls remove() immediately while
 // building the table (and queues an empty event) — so the rightmost joker goes right away; same here.
-import { G, localize, scaling_evo, is_type, get_probability_vars, pseudorandom_probability, scale_card, destroy_joker } from '../../../pokermon/api.js';
+import { G, localize, scaling_evo, is_type, get_probability_vars, pseudorandom_probability, scale_card, destroy_joker, can_be_destroyed_by_joker } from '../../../pokermon/api.js';
 
 /** "Salt Cure": when a Blind is selected, maybe destroy the rightmost joker (guaranteed — or 2x
  *  likelier — when it's Water or Metal) and grow. -> the message table, or undefined. */
@@ -19,7 +19,7 @@ function salt_cure(self, card, context, seed, grow) {
   if (!context.setting_blind || context.blueprint) return undefined;
   const abbr = card.ability.extra;
   const rightmost = G.jokers.cards[G.jokers.cards.length - 1];
-  if (!rightmost || rightmost === card || rightmost.ability.eternal) return undefined;
+  if (!rightmost || rightmost === card || !can_be_destroyed_by_joker(rightmost)) return undefined;
   const den = is_type(rightmost, 'Metal') || is_type(rightmost, 'Water') ? abbr.denominator / 2 : abbr.denominator;
   if (pseudorandom_probability(card, seed, abbr.numerator, den, seed)) {
     grow(card);

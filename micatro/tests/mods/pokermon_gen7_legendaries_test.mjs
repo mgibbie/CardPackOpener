@@ -84,7 +84,7 @@ const NAMES = ['typenull', 'silvally', 'tapu_koko', 'tapu_lele', 'tapu_bulu', 't
 
 // ------------------------------------------------------------------- the pin and the fourteen centers
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 67 && PINS.modPin('pokermon') === '3.9.1+r67', 'Pokermon contentRev 67 (pin 3.9.1+r67; Gen 7 batch 4)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 67 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 67+ (Gen 7 batch 4; r68 the Komala fix)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
   const want = { typenull: ['Colorless', 10], silvally: ['Colorless', 20], tapu_koko: ['Lightning', 20], tapu_lele: ['Psychic', 20], tapu_bulu: ['Grass', 20], tapu_fini: ['Water', 20],
     cosmog: ['Psychic', 10], cosmoem: ['Psychic', 10], solgaleo: ['Metal', 20], lunala: ['Psychic', 20], necrozma: ['Psychic', 20], magearna: ['Metal', 20], marshadow: ['Fighting', 20], zeraora: ['Lightning', 20] };
