@@ -423,7 +423,7 @@ try {
 	// (DLC D16: this build's run, dv 15+, ranks on the new rules' boards: ...:r2:<map>:<diff>[:time])
 	const aliceT = row('runboard:micasurvivor_expedition:r2:viridian:normal:time') || [];
 	const aRow = aliceT.find(e => e.name === 'alice');
-	A(sb.r && sb.r.ok && sb.r.time && sb.r.time.better && aRow && aRow.time === 1000 && aRow.medal === 4 && aRow.replay && aRow.replay === sb.last && row('msurvreplay:' + aRow.replay).by === 'alice',
+	A(sb.r && sb.r.ok && sb.r.time && sb.r.time.better && aRow && aRow.time === 1000 && aRow.medal === 4 && aRow.replay && aRow.replay === sb.last && (row('msurvreplay:' + aRow.replay) || row('msurvsess:' + aRow.replay) || {}).by === 'alice',   // (U4: the clock jump to 16:40 makes it a session of segments)
 		'G.Exp.submitScore: the won run lands on the Score and Time-attack boards with its parts, its medal and its own uploaded replay', JSON.stringify(sb).slice(0, 400));
 	const sentBody = (apiLog.filter(e => e.action === 'run-score' && e.mode === 'micasurvivor_expedition').pop() || {}).body || {};
 	A(sentBody.zone === 4 && sentBody.won === true && Number.isInteger(sentBody.dmg) && sentBody.catches === 1 && sentBody.dv === 20 && sentBody.diff === 'normal', 'what the client sent: its parts (whole numbers), dv 9, the tier', JSON.stringify(sentBody));
