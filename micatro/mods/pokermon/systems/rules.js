@@ -331,6 +331,12 @@ export function calculate(context) {
   // with or without a Poli joker (the engine passes `after` here: js/engine/smods.js mod_calculate).
   // Upstream main (after 3.9.1, sub-batch 15b): the Lotad line's beat (2 / 4 cards) swaps there too (pokermon.change_beat).
   if (context.after) { poke_change_poli_suit(); poke_change_beat(); }
+  // The owner's Gen 7 batch 1 (contentRev 64; jokers/pokejokers_designs.js): two run records, kept with or without the jokers that read
+  // them, so a late buy sees the whole run. The LAST poker hand played (Yungoos / Gumshoos' Stakeout: set after the hand scored, a
+  // debuffed hand too, so during the next hand's scoring it still names the previous one), and the Boss Blinds beaten (Mareanie /
+  // Toxapex: +1 in the main end-of-round pass of a won Boss Blind).
+  if (context.after && context.scoring_name) G.GAME.poke_last_hand = context.scoring_name;
+  if (context.end_of_round && context.main_eval && context.beat_boss && !context.game_over) G.GAME.poke_bosses_beaten = (G.GAME.poke_bosses_beaten || 0) + 1;
   // Leafeon (3.9.1): count Lucky cards that successfully triggered this round (run-wide, Leafeon or not); reset at the
   // end of the round. (The engine passes `individual` / `end_of_round` here too: smods.js MOD_VANILLA_CONTEXTS.)
   if (context.individual && context.cardarea === G.play && context.other_card && context.other_card.lucky_trigger) {
