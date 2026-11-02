@@ -76,6 +76,11 @@ await sec('static', () => {
     && ['heatmor', 'larvesta', 'volcarona'].every((n) => D[n] === 'Fire') && D.durant === 'Metal',
   'Gen 5 batch 3: Ducklett line / Alomomola / Cubchoo line Water, Deerling / Karrablast / Foongus / Shelmet lines Grass (Escavalier Bug/Steel: its card Grass), Emolga / Joltik (Bug/Electric: its card Lightning) / Tynamo lines / Stunfisk Lightning, Mienfoo line Fighting, Druddigon Dragon, Bouffalant / Rufflet line Colorless, Heatmor / Larvesta line (Bug/Fire: Fire) Fire, Durant (Bug/Steel) Metal (the icons on their cards)',
   ['ducklett', 'deerling', 'escavalier', 'joltik', 'stunfisk', 'mienfoo', 'druddigon', 'bouffalant', 'larvesta', 'durant'].map((n) => D[n]));
+  ok(D.fletchling === 'Colorless' && D.fletchinder === 'Fire' && D.talonflame === 'Fire' && ['scatterbug', 'spewpa', 'vivillon', 'skiddo', 'gogoat'].every((n) => D[n] === 'Grass')
+    && ['flabebe', 'floette', 'florges'].every((n) => D[n] === 'Fairy') && D.pancham === 'Fighting' && D.pangoro === 'Fighting' && D.furfrou === 'Colorless'
+    && D.espurr === 'Psychic' && D.meowstic === 'Psychic',
+  'Gen 6 batch 1: Fletchling Colorless (Normal/Flying), Fletchinder / Talonflame Fire, Scatterbug line (Bug) and Skiddo line Grass, Flabébé line Fairy, Pancham line Fighting (Pangoro Fighting/Dark: its card Fighting), Furfrou Colorless, Espurr line Psychic (the icons on their cards)',
+  ['fletchling', 'fletchinder', 'scatterbug', 'flabebe', 'skiddo', 'pangoro', 'furfrou', 'meowstic'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });
