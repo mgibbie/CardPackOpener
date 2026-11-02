@@ -172,7 +172,7 @@ try {
 		H.dbg = { far: Math.round(Math.hypot(g.at[0] - G.Game.player.x, g.at[1] - G.Game.player.y) / H.TS()), awake0: g.awake };
 		H.step(60);
 		H.dbg.hp1 = g.list.map(e => e.hp < e.maxHp); H.dbg.awake1 = g.awake;
-		const still = Math.hypot(e0.x - x0, e0.y - y0) < 1 && !g.awake;
+		const still = Math.hypot(e0.x - x0, e0.y - y0) < 12 && !g.awake;   // (a few px: the manager nudges overlapping foes apart)
 		for (const gg of pl0.slots) for (const m of gg) m.t = 0;
 		// a floor tile 4-6 tiles from the group
 		const TS = H.TS(), gx = Math.floor(g.at[0] / TS), gy = Math.floor(g.at[1] / TS);
@@ -198,7 +198,8 @@ try {
 		if (spots[0]) { H.step(30, 1 / 30, () => { H.put(spots[0][0], spots[0][1]); }); out.followed = Math.hypot(S.lost.x - lx, S.lost.y - ly) > 2 * TS; }
 		// to the stairs with it: rescued as you leave
 		H.thin(); H.toStairs(); S.lost.x = G.Game.player.x + 20; S.lost.y = G.Game.player.y;
-		H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== 1) return false; H.toStairs(); });
+		H.step(60, 1 / 30, () => { if (G.ExpDive.run.floor !== 1) return false; H.toStairs(); S.lost.x = G.Game.player.x + 20; S.lost.y = G.Game.player.y; });
+		out.lostAt = S.lost && [S.lost.follow, S.lost.done]; out.hold = S.holdT;
 		out.rescued = S.rescued.slice(); out.stake = S.stake - s0; out.floor = S.floor;
 		// floor 2: leave its lost Pokémon behind (never touched): not rescued
 		H.thin(); H.toStairs(); H.step(24, 1 / 30, () => { if (G.ExpDive.run.floor !== 2) return false; H.toStairs(); });
