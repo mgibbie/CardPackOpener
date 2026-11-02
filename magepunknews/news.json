@@ -522,6 +522,14 @@
 	},
 	"entries": [
 		{
+			"sha": "ac7a785",
+			"date": "2026-11-01",
+			"kind": "patch",
+			"title": "Pokermon r58: the owner's Yamask nerf (grudge cap, Mummy once an Ante)",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "f5ecf40",
 			"date": "2026-11-01",
 			"kind": "patch",
