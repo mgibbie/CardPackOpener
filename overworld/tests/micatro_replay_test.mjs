@@ -328,6 +328,25 @@ try {
 		A(reach && /Play\/Pause/.test(hint) && /Step/.test(hint), 'the controller hints say Play/Pause + Step', hint);
 		const stops = await page.evaluate(() => { let n = 0; for (let i = 0; i < 60; i++) { const f = window.__micatroPad.focus; if (f && f.el && f.el.closest && f.el.closest('#replay-bar')) return f.cls; window.__micatroPad.move('down'); n++; } return null; });
 		A(stops && /rb-/.test(stops), 'the d-pad reaches the replay bar buttons', stops);
+		// the deal after a blind is chosen: the cards fly from the deck straight into the hand row. (#888's Beartic Freeze parks a KEPT
+		// card below the screen between rounds — a card being dealt is not kept: it must never aim below the screen while the board's
+		// view still says BLIND_SELECT, or the hand rises late from under the replay bar and the d-pad lands on it there.)
+		const sel = long.recipe.actions.findIndex((a, i) => a.type === 'select_blind' && JSON.parse(long.frames[i].view).state === 'BLIND_SELECT');
+		await page.evaluate((i) => window.__micatro.replay.seekTo(i, { keepPlaying: false }), sel);
+		await sleep(300); await idle(page);
+		const deal = await page.evaluate(async () => {
+			const b = window.__micatro.board, rp = window.__micatro.replay;
+			const p = rp.stepForward(); let worst = -Infinity, seen = 0;
+			const t0 = performance.now();
+			while (performance.now() - t0 < 6000) {
+				for (const id of b.areas.hand) { const s = b.sprites.get(id); if (s && !s.leaving) { seen++; worst = Math.max(worst, s.tgt.y); } }
+				if (b.view && b.view.state === 'SELECTING_HAND' && seen) break;
+				await new Promise((r) => setTimeout(r, 16));
+			}
+			await p;
+			return { seen, worst, SH: b.SH, handBottom: b.R.hand.y + b.R.hand.h, state: b.view.state };
+		});
+		A(sel >= 0 && deal.seen > 0 && deal.worst < deal.SH, 'a dealt card aims at the hand row, never below the screen (the deal after Select)', JSON.stringify({ sel, ...deal }));
 		const fatal = errors.filter(e => !/Failed to load resource|favicon/i.test(e));
 		A(fatal.length === 0, 'no uncaught errors in the server replay', fatal.slice(0, 4).join(' | '));
 		await ctx.close();
