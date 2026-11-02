@@ -5,8 +5,9 @@
 // The shaders are WebGL ports of phantom.fs / tentacle.fs for the renderer's mod-edition pass
 // (`shader_fs`: a main() over gl.js's shared prelude — tex0, time, fx = (fx.x, real time), HSL/RGB,
 // dissolve_mask). Like the Lua (shader.toml), the edition pass replaces the card's base layer.
-import { G, P_JOKER_RARITY_POOLS, create_card, copy_card, localize, pseudorandom } from '../../js/engine/core.js';
-import { used, say, dict, right_of } from './common.js';
+import { G, P_JOKER_RARITY_POOLS, create_card, copy_card, localize, pseudorandom, can_be_destroyed_by_joker } from '../../js/engine/core.js';
+import { rulesRev } from '../../js/mods/pins.js';
+import { used, say, dict, right_of, MOD_ID } from './common.js';
 import { POSSIBLE_KEYS } from './jokers.js';
 
 const FIELD = `
@@ -80,7 +81,11 @@ export const phantom_skips = (card) => !!(card.edition && card.edition.betmma_ph
 export function tentacle(card, context) {
   if (!(card.ability.set === 'Joker' && !card.debuff && card.edition && card.edition.betmma_tentacle && !context.blueprint && context.setting_blind && !card.getting_sliced)) return;
   const sliced = right_of(card);
-  if (!sliced || card.getting_sliced || sliced.ability.eternal || sliced.getting_sliced) return;
+  // contentRev 1 (2026-11-02, the owner's Komala fix in every mod): the engine's can_be_destroyed_by_joker, so a joker another mod
+  // makes act Eternal for destroy (Pokermon's Komala) is skipped exactly like an Eternal (not eaten, no values added). Gated on the
+  // recorded pin (js/mods/pins.js RULES): a run recorded before replays as recorded.
+  const safe = rulesRev(MOD_ID) >= 1 ? !can_be_destroyed_by_joker(sliced || null) : !!(sliced && sliced.ability.eternal);
+  if (!sliced || card.getting_sliced || safe || sliced.getting_sliced) return;
   sliced.getting_sliced = true;
   G.GAME.joker_buffer = G.GAME.joker_buffer - 1;
   G.E_MANAGER.add_event(() => {

@@ -46,7 +46,7 @@ const weights = (keys, types = { Joker: true }) => {
 
 // ===================================================================== 1. after-pkseams
 section(() => {
-  ok(MODS.morefluff.contentRev === 2, 'More Fluff contentRev 2 (batch B)', MODS.morefluff.contentRev);
+  ok(MODS.morefluff.contentRev >= 2, 'More Fluff contentRev 2+ (batch B; 3 the Komala fix)', MODS.morefluff.contentRev);
   // object_weights: 1.9.9999 src/misc.lua turns it on
   newRun({ seed: 'MFBOW0', mods: [] }); flush();
   ok(!SM.object_weights(), 'vanilla run: object_weights off');

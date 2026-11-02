@@ -38,7 +38,7 @@ const setsIn = (area) => area.cards.map((c) => c.ability.set);
 
 // ===================================================================== on: registration
 start('MFON');
-ok(STATUS.version === '1.9.9999' && MODS.morefluff.version === '1.9.9999' && MODS.morefluff.contentRev === 2, 'More Fluff 1.9.9999, contentRev 2');
+ok(STATUS.version === '1.9.9999' && MODS.morefluff.version === '1.9.9999' && MODS.morefluff.contentRev === 3, 'More Fluff 1.9.9999, contentRev 3 (Less Fluff skips Komala)');
 ok(STATUS.jokers.length === 133 && STATUS.active_jokers.length === 89 && STATUS.retired_jokers.length === 11 && STATUS.colours.length === 16
   && STATUS.spectrals.length === 9 && STATUS.rotarots.length === 22 && STATUS.boosters.length === 16 && STATUS.vouchers.length === 5
   && STATUS.enhancements.length === 8 && STATUS.decks.length === 3 && STATUS.tags.length === 2 && STATUS.blinds.length === 16

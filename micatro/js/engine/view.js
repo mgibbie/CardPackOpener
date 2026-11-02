@@ -74,6 +74,11 @@ export function cardView(c, withDesc) {
     const ev = enh_live_vars(c), cfg = ctr.config || {};
     if (ev && ev[0] !== (c.ability.effect === 'Stone Card' ? cfg.bonus || 50 : cfg.h_x_mult || 1.5)) v.enh_vars = ev;
   }
+  // ... and a Glass card's live odds (Oops! All 6s, Pokermon's Noibat / Noivern, Regice), only where they differ from its own 1 in 4.
+  if (c.base && c.base.suit && c.ability.effect === 'Glass Card') {
+    const ev = enh_live_vars(c), cfg = ctr.config || {};
+    if (ev && (ev[1] !== 1 || ev[2] !== (cfg.extra || 4) || ev[0] !== (cfg.Xmult || 2))) v.enh_vars = ev;
+  }
   callHook('view_card', c, v);
   return v;
 }

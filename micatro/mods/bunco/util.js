@@ -4,7 +4,9 @@
 import { isActive, opt } from '../../js/mods/registry.js';
 import {
   G, P_CENTERS, P_CARDS, Card, card_eval_status_text, emit, play_sound, localize, pseudorandom_element, juice_card,
+  can_be_destroyed_by_joker,
 } from '../../js/engine/core.js';
+import { rulesRev } from '../../js/mods/pins.js';
 import DATA from './data.js';
 
 export const MOD_ID = 'bunco';
@@ -21,6 +23,13 @@ export const HUGE = 9999;
  * run's seed, and Micatro must be deterministic: G.GAME.pseudorandom.seed.
  */
 export const SEED = () => G.GAME.pseudorandom.seed;
+/**
+ * Can a Bunco effect pick this joker to destroy (Carnival, a Scattering joker's neighbour)? contentRev 2 (2026-11-02, the owner's
+ * Komala fix in every mod): the engine's can_be_destroyed_by_joker — not an Eternal, nor a joker another mod makes act Eternal for
+ * destroy (hooks.joker_destroy_immune: Pokermon's Komala), so such a joker is skipped exactly like an Eternal (no target, no ante
+ * back for Carnival, no neighbour lost). Before (a run recorded on rev 1 replays so, js/mods/pins.js RULES): only `!eternal`.
+ */
+export const joker_destroyable = (j) => (rulesRev(MOD_ID) >= 2 ? can_be_destroyed_by_joker(j) : !j.ability.eternal);
 export { DATA, localize };
 
 // ------------------------------------------------------------------ cards

@@ -26,7 +26,7 @@ const run = (opts) => { newRun({ mods: ['morefluff'], back: 'b_red', ...opts });
 
 // ===================================================================== version pin + keys
 {
-  ok(modPin('morefluff') === '1.9.9999+r2' && LEGACY_MOD_VERSIONS.morefluff === '1.5.6', 'pin 1.9.9999+r2 (pre-pin recipes read as 1.5.6)', modPin('morefluff'));
+  ok(modPin('morefluff') === '1.9.9999+r3' && LEGACY_MOD_VERSIONS.morefluff === '1.5.6', 'pin 1.9.9999+r3 (pre-pin recipes read as 1.5.6)', modPin('morefluff'));
   const s = new Session();
   s.start({ seed: 'MF199PIN', mods: ['morefluff'] });
   ok(s.recipe.modVersions.morefluff === '1.9.9999+r2', 'a new run records the pin', s.recipe.modVersions);

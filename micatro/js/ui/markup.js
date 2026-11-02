@@ -3,6 +3,7 @@
 // colour of the description's n-th colour (loc_vars `colours`): Pokermon's "{B:1,V:2}Grass{}" is a type pill (Skitty, Kecleon).
 import { CENTERS, LOC, CARDS, MODREG, modType, cssColour, modFont } from './assets.js';
 import { isBig, from as bigFrom, formatBig } from '../engine/bignum.js';
+import { glass_text } from '../engine/odds.js';
 
 export const COL = {
   mult: '#fe5f55', chips: '#009dff', money: '#f3b958', attention: '#ff9a00', filter: '#ff9a00',
@@ -122,7 +123,8 @@ export function describePlaying(cv) {
   switch (cv.center) {
     case 'm_bonus': extra('Bonus Card', [`{C:chips}+${cfg.bonus || 30}{} extra chips`]); break;
     case 'm_mult': extra('Mult Card', sub(D.Enhanced.m_mult.text, [cfg.mult || 4])); break;
-    case 'm_glass': extra('Glass Card', sub(D.Enhanced.m_glass.text, [cfg.Xmult || 2, 1, cfg.extra || 4])); break;
+    // (cv.enh_vars on Glass: its live odds [Xmult, n, d] — Oops! All 6s, Pokermon's Noibat / Noivern, Regice's never)
+    case 'm_glass': extra('Glass Card', cv.enh_vars ? glass_text(D.Enhanced.m_glass.text, cv.enh_vars, (l, v) => sub([l], v)[0]) : sub(D.Enhanced.m_glass.text, [cfg.Xmult || 2, 1, cfg.extra || 4])); break;
     // (cv.enh_vars: the card's live numbers, engine/view.js — a banked perma_bonus, Pokermon's Regirock / Registeel)
     case 'm_steel': extra('Steel Card', sub(D.Enhanced.m_steel.text, cv.enh_vars || [cfg.h_x_mult || 1.5])); break;
     case 'm_stone': lines.push(...sub(D.Enhanced.m_stone.text, cv.enh_vars || [cfg.bonus || 50])); break;

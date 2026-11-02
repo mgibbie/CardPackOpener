@@ -7,7 +7,7 @@
 // Eternal roll). Stakes: Cyan (orange + Scattering jokers in the shop), Pink (+ Hindered), Magenta (+ Reactive);
 // Bunco's Gold-stake takeover makes Gold apply Magenta, so Gold (and above) has all three.
 import { G, math_random, pseudorandom, localize } from '../../js/engine/core.js';
-import { data_of } from './util.js';
+import { data_of, joker_destroyable } from './util.js';
 import LOC from './loc.js';
 
 export const STICKER_KEYS = ['bunc_scattering', 'bunc_hindered', 'bunc_reactive'];
@@ -60,8 +60,8 @@ export const hooks = {
     const i = G.jokers.cards.indexOf(card);
     if (i < 0) return;
     const s = [];
-    if (G.jokers.cards[i - 1] && !G.jokers.cards[i - 1].ability.eternal) s.push(G.jokers.cards[i - 1]);
-    if (G.jokers.cards[i + 1] && !G.jokers.cards[i + 1].ability.eternal) s.push(G.jokers.cards[i + 1]);
+    if (G.jokers.cards[i - 1] && joker_destroyable(G.jokers.cards[i - 1])) s.push(G.jokers.cards[i - 1]);
+    if (G.jokers.cards[i + 1] && joker_destroyable(G.jokers.cards[i + 1])) s.push(G.jokers.cards[i + 1]);
     card.bunc_scattered = s;
   },
   card_removed_after(card) {

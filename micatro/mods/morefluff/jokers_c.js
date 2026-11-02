@@ -28,9 +28,10 @@
 import * as BN from '../../js/engine/bignum.js'; // big-number scoring (modded runs past 1e308)
 import {
   G, P_CENTERS, create_card, copy_card, pseudorandom, pseudoseed, pseudorandom_element, probability_roll,
-  probability_vars, localize, ease_dollars, number_format, emit, card_eval_status_text, mod_mult,
+  probability_vars, localize, ease_dollars, number_format, emit, card_eval_status_text, mod_mult, can_be_destroyed_by_joker,
 } from '../../js/engine/core.js';
 import { Tag, add_tag } from '../../js/engine/tag.js';
+import { rulesRev } from '../../js/mods/pins.js';
 import { get_poker_hand_info, joker_retriggers } from '../../js/engine/run.js';
 import { joker, find, room, say, remove_joker, has_enh, progressbar, scale_card, is_colour } from './util.js';
 
@@ -449,6 +450,11 @@ J('lessfluff', {
         if (other.getting_sliced) continue;
         const c = other.config.center;
         if (!c.mod || other === card) continue; // (1.9.9999: every modded joker but itself — another Less Fluff too)
+        // contentRev 3 (2026-11-02, the owner's Komala fix in every mod): a joker another mod makes act Eternal for destroy
+        // (hooks.joker_destroy_immune: Pokermon's Komala) is passed over: not sliced, no X Mult for it (before, it was marked,
+        // refused the dissolve and still counted). Less Fluff never skipped an Eternal and still doesn't. A run recorded on
+        // rev 2 replays as recorded (js/mods/pins.js RULES).
+        if (rulesRev('morefluff') >= 3 && !other.ability.eternal && !can_be_destroyed_by_joker(other)) continue;
         gained += 1;
         other.getting_sliced = true;
         G.E_MANAGER.add_event(() => { other.start_dissolve(); });

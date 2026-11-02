@@ -40,7 +40,7 @@ const rankless = (k) => { const [c] = hand([k]); c.set_ability(P_CENTERS.m_cu_ra
 
 // =========================================================================== pins
 {
-  ok(MODS.bunco.version === '5.4.8b-JumboFork' && modPin('bunco') === '5.4.8b-JumboFork+r1', 'Bunco pin: the fork 5.4.8b, rev 1', modPin('bunco'));
+  ok(MODS.bunco.version === '5.4.8b-JumboFork' && modPin('bunco') === '5.4.8b-JumboFork+r2', 'Bunco pin: the fork 5.4.8b, rev 2 (rev 1 the port fixes; 2 Carnival / Scattering skip Komala)', modPin('bunco'));
   ok(MODS.reverie.version === '1.2.6' && modPin('reverie') === '1.2.6+r1', 'Reverie pin: 1.2.6 (the real version), rev 1', modPin('reverie'));
   ok(modPin('inscrybed') === '1.0+r1', 'Inscrybed pin: rev 1 (Mycologists)', modPin('inscrybed'));
   ok(LEGACY_MOD_VERSIONS.bunco === '5.1' && LEGACY_MOD_VERSIONS.reverie === '1.0 (old-API)' && LEGACY_MOD_VERSIONS.inscrybed === '1.0', 'the legacy table is untouched');

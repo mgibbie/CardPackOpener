@@ -43,7 +43,7 @@ function row(seed, keys, extra = {}) {
 const blinds = (n) => { act({ type: 'select_blind' }); flush(); clearHand(); for (let i = 1; i < n; i++) { endRound(); nextBlind(); } };
 
 await sec('pin', () => {
-  ok(MODS.pokermon.contentRev === 68 && PINS.modPin('pokermon') === '3.9.1+r68', 'Pokermon contentRev 68 (pin 3.9.1+r68: the Komala fix)', PINS.modPin('pokermon'));
+  ok(MODS.pokermon.contentRev >= 68 && PINS.modPin('pokermon') === '3.9.1+r' + MODS.pokermon.contentRev, 'Pokermon contentRev 68+ (r68: the Komala fix)', PINS.modPin('pokermon'));
   ok(PINS.LEGACY_MOD_VERSIONS.pokermon === '3.2.1+r1', 'LEGACY_MOD_VERSIONS untouched');
 });
 
