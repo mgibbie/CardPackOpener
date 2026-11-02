@@ -86,6 +86,10 @@ await sec('static', () => {
     && D.hawlucha === 'Fighting' && D.klefki === 'Metal' && D.phantump === 'Grass' && D.trevenant === 'Grass' && D.bergmite === 'Water' && D.avalugg === 'Water',
   'Gen 6 batch 2: Spritzee / Swirlix lines Fairy, Inkay / Skrelp lines Dark (Skrelp Poison/Water: its card Dark), Binacle (Rock/Water) and Amaura (Rock/Ice) lines Earth, Tyrunt (Rock/Dragon) and Noibat lines Dragon, Hawlucha Fighting, Klefki Metal, Phantump line Grass (Ghost/Grass: its card Grass), Bergmite line Water (Ice: its card Water)',
   ['spritzee', 'inkay', 'skrelp', 'binacle', 'amaura', 'tyrunt', 'noibat', 'hawlucha', 'klefki', 'phantump', 'bergmite'].map((n) => D[n]));
+  ok(D.salandit === 'Fire' && D.salazzle === 'Fire' && D.stufful === 'Fighting' && D.bewear === 'Fighting' && D.comfey === 'Fairy' && D.sandygast === 'Psychic'
+    && D.palossand === 'Psychic' && D.pyukumuku === 'Water' && D.komala === 'Colorless' && D.bruxish === 'Water' && ['jangmoo', 'hakamoo', 'kommoo'].every((n) => D[n] === 'Dragon'),
+  'Gen 7 batch 2: Salandit line Fire (Poison/Fire: its card Fire), Stufful line Fighting (Normal/Fighting: its card Fighting), Comfey Fairy, Sandygast line Psychic (Ghost/Ground), Pyukumuku Water, Komala Colorless, Bruxish Water (Water/Psychic), Jangmo-o line Dragon',
+  ['salandit', 'stufful', 'comfey', 'sandygast', 'pyukumuku', 'komala', 'bruxish', 'jangmoo'].map((n) => D[n]));
   ok(CASTFORM_FORMS.normal.ptype === 'Colorless' && CASTFORM_FORMS.sunny.ptype === 'Fire' && CASTFORM_FORMS.rainy.ptype === 'Water' && CASTFORM_FORMS.snowy.ptype === 'Water',
     'Castform: Normal Colorless, Sunny Fire, Rainy / Snowy Water');
 });

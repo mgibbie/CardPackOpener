@@ -13,7 +13,7 @@
  *   set_debuff        debufffunctions.lua: fainted Baby Pokémon stay debuffed for the rest of
  *                     the round; Gholdengo can't be debuffed, Tangrowth protects Wild Cards,
  *                     Tentacruel protects 10s; the owner's designs: Kubfu / Urshifu can't be debuffed,
- *                     Single Strike Urshifu protects every playing card (Unseen Fist)
+ *                     Single Strike Urshifu protects every playing card (Unseen Fist); Komala can't be debuffed (Comatose)
  *   set_cost          Minun ($1 off Jokers, Boosters, consumables), Chimecho (free Vouchers), Rotom / Rotom Dex booster discounts, Gothita line planet discounts,
  *                     sell value at least $1, Unown sells for $0
  *   create_card       decks' forced seal on playing cards (Obituary / Revenant decks) and
@@ -92,6 +92,8 @@ export function set_debuff(card) {
   // (the owner's designs, jokers/pokejokers_designs.js: Inner Focus / Unseen Fist)
   if (card.ability.name === 'kubfu' || card.ability.name === 'urshifu_single' || card.ability.name === 'urshifu_rapid') return 'prevent_debuff';
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('urshifu_single').length) return 'prevent_debuff';
+  // (the owner's Komala, Gen 7 batch 2, Comatose: a Boss Blind, Perishable, a fainting rule... never debuff it)
+  if (card.ability.name === 'komala') return 'prevent_debuff';
   // (the owner's Cresselia, Lunar Blessing: the same rule; find_joker skips a debuffed Cresselia)
   if ((card.ability.set === 'Default' || card.ability.set === 'Enhanced') && find_joker('cresselia').length) return 'prevent_debuff';
   if (card.ability.name === 'Wild Card' && find_joker('tangrowth').length) return 'prevent_debuff';

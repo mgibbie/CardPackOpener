@@ -96,11 +96,11 @@ try {
 	A(!srcWrong.length && D.species.every(s => ['art', 'mapping'].includes(s.type_source)), 'type_source records where each type came from (art, else mapping)', srcWrong.slice(0, 8).join(', '));
 	A(D.counts.typeSource.art + D.counts.typeSource.mapping === D.species.length && D.counts.typeFromArtDiffers === D.species.filter(s => s.ptype !== s.mapped_ptype).length, 'counts.typeSource / typeFromArtDiffers match the list');
 	A(!sp0('Latias') && sp0('Guzzlord')?.ptype === 'Dragon' && sp0('Toedscool')?.ptype === 'Grass' && sp0('Cutiefly')?.ptype === 'Fairy' && sp0('Chien-Pao')?.ptype === 'Water' && sp0('Iron Thorns')?.ptype === 'Lightning'
-		&& sp0('Bewear')?.ptype === 'Fighting' && sp0('Bewear')?.type_source === 'art' && sp0('Bewear')?.mapped_ptype === 'Colorless', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt and Phantump are in the game now): Guzzlord Dragon, Toedscool Grass, Cutiefly Fairy, Chien-Pao Water, Iron Thorns Lightning; Bewear Fighting from its art (the mapping said Colorless)');
+		&& !sp0('Bewear') && sp0('Buzzwole')?.ptype === 'Fighting' && sp0('Buzzwole')?.type_source === 'art' && sp0('Buzzwole')?.mapped_ptype === 'Grass', 'spot check (the card wins; Latias, Dwebble, Venipede, Sandile, Kyurem, Keldeo, Stunfisk, Tyrunt, Phantump and Bewear are in the game now): Guzzlord Dragon, Toedscool Grass, Cutiefly Fairy, Chien-Pao Water, Iron Thorns Lightning; Buzzwole Fighting from its art (the mapping said Grass)');
 	A(D.species.every(s => ['Basic', 'One', 'Two', 'Baby', 'Legendary'].includes(s.stage) && s.line.some(l => l.dex === s.dex)), 'every species has an upstream stage and sits in its own line');
 	const sp = sp0;
-	A(sp('Toucannon')?.stage === 'Two' && sp('Trumbeak')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && sp('Jangmo-o')?.ptype === 'Dragon',
-		'spot check: Toucannon Stage 2, Trumbeak Stage 1, Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Jangmo-o Dragon');
+	A(sp('Toucannon')?.stage === 'Two' && sp('Trumbeak')?.stage === 'One' && sp('Toxel')?.stage === 'Baby' && sp('Tapu Koko')?.stage === 'Legendary' && sp('Corviknight')?.ptype === 'Metal' && !sp('Jangmo-o') && sp('Naganadel')?.ptype === 'Dragon',
+		'spot check: Toucannon Stage 2, Trumbeak Stage 1, Toxel Baby, Tapu Koko Legendary (Yveltal is in the game now), Corviknight Metal, Naganadel Dragon (Jangmo-o is in the game now)');
 
 	// ================================================================== ART
 	// UPSTREAM FIRST: a species Pokermon 3.9.1's sprite table draws (tools/micatro/specs/pokermon_391_sprite_table.json, a
