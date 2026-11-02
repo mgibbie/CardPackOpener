@@ -842,6 +842,29 @@ House pattern: RIVALS that bank together (the Gen 5 Heatmor + Durant):
 House pattern: a FIRST-HAND WIN bank with a cap (the Gen 5 Bouffalant, Head Charge):
   - At the main end_of_round, hands_played === 1 (Scraggy's Moxie check: the Blind fell to the first hand; not a game over) banks +Xmult_mod
     (0.5, `charge_Xmult` from X1) up to a FIXED cap (Xmult_cap X4). Energy raises the gain only, so it reaches the cap sooner, never past it.
+House pattern: a FIRST-HAND line (the Gen 6 Fletchling line, Gale Wings; Pachirisu's spark_on / spark_state, 2.1): +8 Mult (`mult`) ->
+  X1.5 -> X2.5 (`Xmult`) on the round's first hand, pattern (b) of 2.3; the Stage 2 adds a ONE-CARD retrigger on that hand (the first scored
+  card by position, scoring_hand[0]; `retriggers` fixed). A Colorless Basic in a line that turns Fire (Fletchling -> Fletchinder) feeds Starly's
+  flock only while it is Colorless.
+House pattern: MANY ROLLED FORMS with their own art (the Gen 6 Vivillon's 20 patterns, the Flabébé line's 5 flowers, Meowstic's gender):
+  - Shellos's rolled-once trait (above) with more cells: an integer or a name in ability.extra.form, one entry per cell in systems/anim.js
+    GEN6_FORM_SPRITES, ui.js ownFace. Upstream 3.9.1 lists Vivillon's and the flowers' cells in pokespriteload.lua (base.pos arrays, unnamed:
+    the tooltip says "Pattern 7 of 20", not a guessed name); Furfrou's trims and Meowstic's Female sit UNLISTED beside the listed card (as
+    Castform's), named by their look and pinned by a pixel test.
+  - WHEN it is rolled is the design: a trait of the whole line (the flower) is rolled on every stage's set_ability(initial) and the kept `form`
+    (NAMES_TO_KEEP) overwrites the evolved stage's own roll; a trait of the LAST stage only (Vivillon's pattern, Meowstic's gender) is rolled in
+    that stage's set_ability(initial) — which evolution calls too (card.set_ability(new, true)) — and the earlier stages carry no `form`, so
+    nothing overwrites it ("rolled when it evolves"). A Scatterbug shop card then never draws from the seed for a pattern it may never reach.
+  - A branch with NO number (Male Meowstic: a Tarot each round) deletes its Energy fields in that set_ability, so energy_can_use refuses it
+    (Energy is never a silent no-op); the center keeps the Female's fields for the audit and the collection.
+House pattern: a TRIM PER ANTE (the Gen 6 Furfrou; furfrou_trim / TRIMS): Glameow's fickle pick at an ANTE change instead of each round. The
+  SMODS ante_change context (context.ante_change, written in the center's calculate so the seam's `wanted` scan sees it), not Blueprint, QUEUES
+  the pick (G.E_MANAGER.add_event) so it runs after ease_ante's own event and is seeded by the NEW Ante ('furfrou_trim' + ante); picked when
+  obtained (add_to_deck), never on creation; never the same twice running. Kept in ability.extra.form: the view draws the trim's card, and a
+  shop card (no trim yet) its Natural one. Each trim keys a suit (+Chips and +Mult per scored card, two energy fields).
+House pattern: an EVOLUTION GATED ON A HELD TYPE (the Gen 6 Pancham: 5 rounds, then only at an end of round with an undebuffed Dark Joker;
+  pancham_evo): Glameow's slot wait with a type test (is_type: a Dark Tera sticker counts; itself never). At 0 rounds without one it says
+  "Needs a Dark Joker!" and waits; the tooltip reads "now: needs / has a Dark Joker". Everstone: as level_evo.
 
 2.2 Rarity and cost conventions
 -------------------------------
@@ -943,6 +966,7 @@ from a Blueprint copy. An owned Everstone blocks all evolution, but rounds still
                 House: "held together 4 rounds" (the Gen 5 Karrablast + Shelmet: a JOINT evolution, both at once; 2.1 TRADE PAIR).
                 House: a GENDERED level_evo (the owner's Burmy: 4 rounds, Female -> Wormadam, Male -> Mothim;
                 the gender rolled when the card is created, 2.1).
+                House: a GATED level_evo (the Gen 6 Pancham: 5 rounds, then only with a Dark Joker held; 2.1).
 
 Typical round timers (level_evo):
   Baby     always 2 rounds (all 18)
@@ -1035,7 +1059,9 @@ chip_loss (the Venipede line's -Chips poison), flower_money (Petilil's $), ancie
 (the Swords of Justice's old +X0.1), tao_mod (Truth vs Ideals' old +0.25), fusion_x / fusion_mod (Fusion Flare / Bolt's bank and gain),
 the solo-rule counters destroyed (Giratina), hearts (Keldeo), therian_rounds, delta_on / kyurem_form (state), storm_money / dem2 (Thundurus's $1 and Therian odds);
 the Gen 5 batch 3 fixed fields: static_money / money_cap (Emolga's and Stunfisk's $), together (the trade count), steel_x (Escavalier's
-Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult.
+Steel X1.75), targets (Mienfoo's top-N), Xmult_cap (Bouffalant's X4), the banks charge_Xmult / ant_Xmult; Gen 6 batch 1: retriggers
+(Talonflame / Floette / Florges), h_size (Gogoat), scry (Espurr), and the rolled forms (form). Two energy fields on one number pair:
+Skiddo / Gogoat's base Chips (`chips`) and per-other-Grass Chips (`chips1`), both +30%.
 
 Designer consequences:
   1. The field name is a balance choice. A joker-wide X stored as Xmult grows 20% of its base
@@ -1068,6 +1094,10 @@ Designer consequences:
   8. ENERGY FOR LATER (house: the owner's Combee): a Basic whose own effect has no number (a fixed honey) can still take Energy
      if it carries its evolution's energy field (Combee's unused Xmult_mod 0.1); evolution re-applies the count to the new base.
      Tell the player on the card ("Energy carries to Vespiquen"). A cap (Xmult_cap) or a fixed gain stays out of energy_values.
+     PITFALL (Gen 6 batch 1, Espurr): never carry a field that copy_scaled_values copies — `Xmult` (or mult / chips / money) next to its own
+     `_mod` (Xmult_mod) — because evolution copies the energized value over AND re-energizes the new base (X1.8 became X2.1). Carry only the
+     gain (Espurr carries Meowstic's Xmult_mod, as Fennekin carries Delphox's): energize re-applies the count to EVERY energy field of the
+     evolved card, so the Female's X1.5 still becomes X1.8.
 
 Energy sources:
   Energy packs; the Pink Seal; Porygon (on any Booster opened); Porygon2 (of the leftmost

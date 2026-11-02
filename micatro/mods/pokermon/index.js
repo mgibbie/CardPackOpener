@@ -983,7 +983,9 @@ export const POKERMON = registerMod({
   // 60 = the owner's Swords of Justice follow-up (jokers/pokejokers_designs.js suit_leads / strict60): X1.5 only while the sword's suit is
   // STRICTLY the most common in the full deck, a tie doesn't count (a standard deck: every sword X1.25). Moves recorded on r59 re-play
   // with ties counting (PORTING.md "The Swords of Justice tie rule").
-  contentRev: 60,
+  // 61 = the owner's Gen 6, batch 1 (jokers/pokejokers_designs.js "Gen 6, batch 1"): 15 jokers #661-678, the Fletchling, Scatterbug,
+  // Flabébé, Skiddo, Pancham and Espurr lines and Furfrou (PORTING.md "Gen 6, batch 1"). New jokers only: nothing a recorded run held changes.
+  contentRev: 61,
   // Pokermon 3.9.1 pokermon.lua: SMODS.current_mod.optional_features = {quantum_enhancements = true, object_weights = true}.
   // object_weights sends create_card's key, the shop roll, tags, packs, bosses and vouchers through SMODS.poll_object
   // (js/engine/smods.js; batch 17). quantum_enhancements is the engine's check_enhancement, always on.

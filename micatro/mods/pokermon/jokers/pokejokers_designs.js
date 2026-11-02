@@ -1997,12 +1997,13 @@ const sawk_mult = (card) => r3(card.ability.extra.mult + (dojo('j_poke_throh') ?
  *  choice). None unenhanced: nothing (it never overwrites another enhancement). One card a Blind, fixed (no Energy field). Blueprint
  *  copies it (Marble Joker's moment), as Cherubi's. */
 export const TAILOR_CLOTHS = { sewaddle: ['m_bonus'], swadloon: ['m_bonus', 'm_mult'], leavanny: ['m_bonus', 'm_mult', 'm_lucky'] };
-const CLOTH_WORD = { m_bonus: 'Bonus', m_mult: 'Mult', m_lucky: 'Lucky' };
-function tailor(card, context, cloths) {
+const CLOTH_WORD = { m_bonus: 'Bonus', m_mult: 'Mult', m_lucky: 'Lucky', m_wild: 'Wild' };
+/** (The Gen 6 Spewpa / Vivillon reuse it: one Wild card, their own seed.) */
+function tailor(card, context, cloths, seed = 'poke_sewaddle_tailor') {
   if (!context.setting_blind || card.getting_sliced || (context.blueprint_card && context.blueprint_card.getting_sliced)) return;
   const plain = (G.playing_cards || []).filter((c) => unbroken(c) && c.config.center.key === 'c_base');
   if (!plain.length) return;
-  const [pick] = pseudorandom_element(plain, pseudoseed('poke_sewaddle_tailor'));
+  const [pick] = pseudorandom_element(plain, pseudoseed(seed));
   const cloth = cloths.length > 1 ? pseudorandom_element(cloths, pseudoseed('poke_tailor_cloth'))[0] : cloths[0];
   pick.set_ability(P_CENTERS[cloth], null, true);
   G.E_MANAGER.add_event(() => { pick.juice_up(); });
@@ -2608,6 +2609,84 @@ const sun_state = (card) => (cherrim_sunny(card) ? 'Sunny!' : G.GAME && G.GAME.f
  *  context (Manaphy's "each Water Joker gives"). */
 const fire_joker = (j) => !!(j && j.ability && j.ability.set === 'Joker' && !j.debuff && is_type(j, 'Fire'));
 const fire_count = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && fire_joker(j)).length + (is_type(card, 'Fire') ? 1 : 0);
+
+// ---------------------------------------------------------------- Gen 6, batch 1 (contentRev 61)
+/** The Fletchling line, Gale Wings: the round's FIRST hand (Pachirisu's spark_on: current_round.hands_played === 0 while it scores; a discard
+ *  before it doesn't use it up). Talonflame's first scored card (scoring_hand[0], by position: a debuffed one there scores nothing) retriggers
+ *  on that hand. The tooltip's state is spark_state's ("Active!" / "Used this round"; the shop: the next round's first hand). */
+function gale_retrigger(card, context) {
+  if (context.repetition && context.cardarea === G.play && !context.end_of_round && spark_on() && (context.scoring_hand || [])[0] === context.other_card) {
+    return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+  }
+  return undefined;
+}
+/** The Scatterbug line: a scored Wild card (has_enhancement: a quantum Wild counts). */
+const wild_scored = (context) => !!(context.individual && context.cardarea === G.play && !context.end_of_round && has_enhancement(context.other_card, 'm_wild'));
+/** Vivillon's patterns: upstream 3.9.1 draws 20 on the Gen 6 sheet (pokespriteload.lua `vivillon` base.pos, unnamed there): one is rolled
+ *  ONCE, when the card becomes a Vivillon (set_ability initial: created, or evolved from Spewpa — its own seed 'vivillon_pattern'), kept on
+ *  ability.extra.form (1-20; 1 is the center's own card). systems/anim.js GEN6_FORM_SPRITES. */
+export const VIVILLON_PATTERNS = 20;
+/** The Flabébé line's flower colour: rolled once when a card of the line is created (set_ability initial, seed 'flabebe_flower'), kept through
+ *  both evolutions (`form`, NAMES_TO_KEEP). Upstream 3.9.1 draws the five colours of each, in this order (the first the center's own card). */
+export const FLOWERS = ['red', 'white', 'yellow', 'orange', 'blue'];
+const FLOWER_NAME = { red: 'Red', white: 'White', yellow: 'Yellow', orange: 'Orange', blue: 'Blue' };
+const flower_of = (card) => (FLOWERS.includes(card.ability.extra.form) ? card.ability.extra.form : 'red');
+const queen_scored = (context, area) => !!(context.cardarea === G.play && !context.end_of_round && context.other_card && !has_no_rank(context.other_card)
+  && context.other_card.get_id() === 12 && (area === 'repetition' ? context.repetition : context.individual));
+/** The Skiddo line: OTHER Grass Jokers (Barboach / Starly's count: is_type, undebuffed; itself never). */
+const grass_others = (card) => ((G.jokers && G.jokers.cards) || []).filter((j) => j !== card && !j.debuff && is_type(j, 'Grass')).length;
+const goat_chips = (card) => r3(card.ability.extra.chips + card.ability.extra.chips1 * grass_others(card));
+/** Pancham: evolves after 5 rounds, but only at an end of round while you hold an undebuffed Dark Joker (another one: is_type, so a Dark
+ *  Tera sticker counts); otherwise it waits at 0 rounds and evolves at the first end of round with one (Glameow's slot wait). */
+const dark_held = (card) => ((G.jokers && G.jokers.cards) || []).some((j) => j !== card && !j.debuff && is_type(j, 'Dark'));
+function pancham_evo(self, card, context) {
+  const ex = card.ability.extra;
+  if (!can_evolve(self, card, context, 'j_poke_pangoro') || card.debuff || ex.rounds === undefined || ex.rounds > 1) return level_evo(self, card, context, 'j_poke_pangoro');
+  if (!dark_held(card)) {
+    ex.rounds = 0;
+    card_eval_status_text(card, 'extra', null, null, null, { message: 'Needs a Dark Joker!', colour: 'FILTER' });
+    return undefined;
+  }
+  return level_evo(self, card, context, 'j_poke_pangoro');
+}
+const face_scored = (context) => !!(context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_face());
+/** Furfrou's trims, one per Ante (Glameow's fickle pick: picked when obtained — add_to_deck, if none yet — and again at each Ante change, the
+ *  run's seeded pseudorandom_element over the trims MINUS the current one, seeded 'furfrou_trim' + the new Ante; never on creation). Each trim
+ *  keys a suit (the spec's: Heart Hearts, Diamond Diamonds, Star Spades, Debutante Clubs). Kept on ability.extra.form, so the view draws the
+ *  trim's own 3.9.1 card (systems/anim.js GEN6_FORM_SPRITES); unset (a shop card) it is the Natural card. */
+export const TRIMS = {
+  heart: { name: 'Heart Trim', suit: 'Hearts' }, diamond: { name: 'Diamond Trim', suit: 'Diamonds' },
+  star: { name: 'Star Trim', suit: 'Spades' }, debutante: { name: 'Debutante Trim', suit: 'Clubs' },
+};
+const TRIM_ORDER = ['heart', 'diamond', 'star', 'debutante'];
+export function furfrou_trim(card) {
+  const ex = card.ability.extra;
+  const left = TRIM_ORDER.filter((t) => t !== ex.form);
+  ex.form = pseudorandom_element(left, pseudoseed('furfrou_trim' + G.GAME.round_resets.ante))[0];
+  emit('card_changed', { card: card.sort_id });
+  return ex.form;
+}
+const trim_of = (card) => (TRIMS[card.ability.extra.form] ? card.ability.extra.form : null);
+const trim_scored = (card, context) => { const t = trim_of(card); return !!(t && context.individual && context.cardarea === G.play && !context.end_of_round && context.other_card.is_suit(TRIMS[t].suit)); };
+/** Meowstic: its gender is rolled when it becomes a Meowstic (set_ability initial: evolved from Espurr, or created; seed 'meowstic_gender'),
+ *  kept on ability.extra.form ('male' / 'female'). A Male has no number: its Energy fields are dropped, so Energy can't be used on it (never a
+ *  silent no-op). */
+const tarots_held = () => ((G.consumeables && G.consumeables.cards) || []).filter((c) => c.ability.set === 'Tarot').length;
+const meow_x = (card) => r3(card.ability.extra.Xmult + card.ability.extra.Xmult_mod * tarots_held());
+const meow_female = (card) => card.ability.extra.form === 'female';
+/** Male Meowstic, Prankster: at end of round (the main pass, not Blueprint), a random Tarot, with consumable room only (Pickup's check; no room,
+ *  nothing). The card is the run's seeded create_card. */
+function prankster_tarot(card, context) {
+  if (!round_end(context) || context.blueprint || meow_female(card) || !consumable_room()) return;
+  G.GAME.consumeable_buffer = (G.GAME.consumeable_buffer || 0) + 1;
+  G.E_MANAGER.add_event(() => {
+    const c = create_card('Tarot', G.consumeables, null, null, null, null, undefined, 'meowstic');
+    c.add_to_deck();
+    G.consumeables.emplace(c);
+    G.GAME.consumeable_buffer = 0;
+  });
+  card_eval_status_text(card, 'extra', null, null, null, { message: localize('k_plus_tarot'), colour: 'Tarot' });
+}
 
 defineJokers({
   // ---------------------------------------------------------------- LINE A: Shinx -> Luxio -> Luxray (Lightning, Gen 4)
@@ -6074,6 +6153,252 @@ defineJokers({
       return undefined;
     },
   },
+  // ---------------------------------------------------------------- Gen 6, batch 1 (the owner's "go ahead", 2026-11-02; contentRev 61)
+  // 15 jokers, #661-678. Prices by the DESIGN_GUIDE slots (3-stage U $6 / S $8 / S $10, 2-stage C $5 / S $8, single-stage R $7); evolution by
+  // rounds (4 for an early evolver, else 5). Types = the cards'. Energy raises each joker's main number at the standard share; retriggers,
+  // hand size, Foresight and the conversions are fixed; a stage with no number carries its evolution's field ("Energy carries to ...").
+  // Art: upstream 3.9.1's own cells (Natdex {0..8,44}, {22..28,44}, {2,45}; Gen 6 sheet: Vivillon's 20 patterns, the Flabébé line's five
+  // colours, Furfrou's trims, Meowstic Male / Female); nothing to deploy. Neither Nacho nor Pokermon+ has any of them.
+  // Fletchling 661 (Colorless, Uncommon $6), Gale Wings: +8 Mult on the round's first hand (`mult` +40%: 11.2 / 14.4 / 17.6). Colorless, so
+  // Starly's flock counts it. 4 rounds.
+  fletchling: {
+    name: 'fletchling', poke_sprite391: sprite('Natdex', 0, 44),
+    config: { extra: { mult: 8, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Colorless', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'round_evo'], poke_after: 'diggersby',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), spark_state(), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && spark_on()) return { message: a_mult(r3(card.ability.extra.mult)), colour: 'MULT', mult_mod: card.ability.extra.mult };
+      return level_evo(self, card, context, 'j_poke_fletchinder');
+    },
+  },
+  // Fletchinder 662 (Fire: its card; Safari $8): X1.5 on the round's first hand (`Xmult` +20%: 1.8 / 2.1 / 2.4). 5 rounds.
+  fletchinder: {
+    name: 'fletchinder', poke_sprite391: sprite('Natdex', 2, 44),
+    config: { extra: { Xmult: 1.5, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fire', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'round_evo'], poke_after: 'fletchling',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.Xmult), spark_state(), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main && spark_on()) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return level_evo(self, card, context, 'j_poke_talonflame');
+    },
+  },
+  // Talonflame 663 (Safari $10): X2.5 on the round's first hand (`Xmult` +20%: 3 / 3.5 / 4), and on that hand its first scored card retriggers
+  // once (`retriggers`, fixed).
+  talonflame: {
+    name: 'talonflame', poke_sprite391: sprite('Natdex', 4, 44),
+    config: { extra: { Xmult: 2.5, retriggers: 1 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fire', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'retrigger'], poke_after: 'fletchinder',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult), spark_state()] }; },
+    calculate(self, card, context) {
+      const r = gale_retrigger(card, context);
+      if (r) return r;
+      if (context.joker_main && spark_on()) return { message: a_xmult(r3(card.ability.extra.Xmult)), colour: 'XMULT', Xmult_mod: card.ability.extra.Xmult };
+      return undefined;
+    },
+  },
+  // Scatterbug 664 (Grass, Uncommon $6): each scored Wild card +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). 4 rounds.
+  scatterbug: {
+    name: 'scatterbug', poke_sprite391: sprite('Natdex', 6, 44),
+    config: { extra: { mult: 4, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'enhancements', 'round_evo'], poke_after: 'talonflame',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_wild); const ex = card.ability.extra; return { vars: [r3(ex.mult), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (wild_scored(context)) return { mult: card.ability.extra.mult, card };
+      return level_evo(self, card, context, 'j_poke_spewpa');
+    },
+  },
+  // Spewpa 665 (Safari $8): when a Blind is selected, 1 random UNENHANCED card of the full deck becomes Wild (Sewaddle's tailor, its own seed;
+  // none unenhanced: nothing; Blueprint copies it). Carries Vivillon's `Xmult_multi` ("Energy carries to Vivillon"). 4 rounds.
+  spewpa: {
+    name: 'spewpa', poke_sprite391: sprite('Natdex', 8, 44),
+    config: { extra: { Xmult_multi: 1.3, rounds: 4 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['enhancements', 'modify_card', 'full_deck', 'round_evo'], poke_after: 'scatterbug',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_wild); return { vars: [card.ability.extra.rounds] }; },
+    calculate(self, card, context) { tailor(card, context, ['m_wild'], 'poke_spewpa_wild'); return level_evo(self, card, context, 'j_poke_vivillon'); },
+  },
+  // Vivillon 666 (Safari $10): Spewpa's conversion, and each scored Wild card X1.3 (`Xmult_multi` +5%: 1.365 / 1.43 / 1.495). A pattern of 20,
+  // rolled once (VIVILLON_PATTERNS), each its own 3.9.1 card.
+  vivillon: {
+    name: 'vivillon', poke_sprite391: sprite('Gen06', 2, 0),
+    config: { extra: { Xmult_multi: 1.3 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'enhancements', 'modify_card', 'full_deck'], poke_after: 'spewpa',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); info_queue.push(P_CENTERS.m_wild); return { vars: [r3(card.ability.extra.Xmult_multi), card.ability.extra.form || 1, VIVILLON_PATTERNS] }; },
+    set_ability(self, card, initial) {
+      if (initial) card.ability.extra.form = 1 + Math.floor(pseudorandom(pseudoseed('vivillon_pattern')) * VIVILLON_PATTERNS);
+    },
+    calculate(self, card, context) {
+      tailor(card, context, ['m_wild'], 'poke_spewpa_wild');
+      if (wild_scored(context)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Flabébé 669 (Fairy, Uncommon $6), Garden Queen: each scored Queen +4 Mult (`mult` +40%: 5.6 / 7.2 / 8.8). A flower colour rolled once
+  // (FLOWERS), kept through the line, each its own 3.9.1 card. 4 rounds.
+  flabebe: {
+    name: 'flabebe', poke_sprite391: sprite('Gen06', 10, 3),
+    config: { extra: { mult: 4, rounds: 4 } },
+    rarity: 2, cost: 6, stage: 'Basic', ptype: 'Fairy', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'rank', 'face', 'round_evo'], poke_after: 'pyroar',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.mult), FLOWER_NAME[flower_of(card)], ex.rounds] }; },
+    set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom_element(FLOWERS, pseudoseed('flabebe_flower'))[0]; },
+    calculate(self, card, context) {
+      if (queen_scored(context)) return { mult: card.ability.extra.mult, card };
+      return level_evo(self, card, context, 'j_poke_floette');
+    },
+  },
+  // Floette 670 (Safari $8): scored Queens retrigger once (`retriggers`, fixed). Carries Florges' `Xmult_multi` ("Energy carries to Florges").
+  // 5 rounds.
+  floette: {
+    name: 'floette', poke_sprite391: sprite('Gen06', 8, 4),
+    config: { extra: { retriggers: 1, Xmult_multi: 1.25, rounds: 5 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fairy', gen: 6, blueprint_compat: true,
+    attributes: ['retrigger', 'rank', 'face', 'round_evo'], poke_after: 'flabebe',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [FLOWER_NAME[flower_of(card)], ex.rounds] }; },
+    set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom_element(FLOWERS, pseudoseed('flabebe_flower'))[0]; },
+    calculate(self, card, context) {
+      if (queen_scored(context, 'repetition')) return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      return level_evo(self, card, context, 'j_poke_florges');
+    },
+  },
+  // Florges 671 (Safari $10): scored Queens retrigger twice (`retriggers` 2, fixed), and each gives X1.25 (`Xmult_multi` +5%: 1.3125 / 1.375 /
+  // 1.4375), every time it scores (X1.25 x3 a Queen).
+  florges: {
+    name: 'florges', poke_sprite391: sprite('Gen06', 8, 5),
+    config: { extra: { retriggers: 2, Xmult_multi: 1.25 } },
+    rarity: 'poke_safari', cost: 10, stage: 'Two', ptype: 'Fairy', gen: 6, blueprint_compat: true,
+    attributes: ['retrigger', 'xmult', 'rank', 'face'], poke_after: 'floette',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.retriggers, r3(ex.Xmult_multi), FLOWER_NAME[flower_of(card)]] }; },
+    set_ability(self, card, initial) { if (initial) card.ability.extra.form = pseudorandom_element(FLOWERS, pseudoseed('flabebe_flower'))[0]; },
+    calculate(self, card, context) {
+      if (queen_scored(context, 'repetition')) return { message: localize('k_again_ex'), repetitions: card.ability.extra.retriggers, card };
+      if (queen_scored(context)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Skiddo 672 (Grass, Common $5): +30 Chips, plus +10 for each OTHER Grass Joker (`chips` / `chips1` +30%: 39 / 48 / 57 and 13 / 16 / 19). 5 rounds.
+  skiddo: {
+    name: 'skiddo', poke_sprite391: sprite('Natdex', 22, 44),
+    config: { extra: { chips: 30, chips1: 10, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'types', 'round_evo'], poke_after: 'florges',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [r3(ex.chips), r3(ex.chips1), grass_others(card), goat_chips(card), ex.rounds] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const c = goat_chips(card); return { message: a_chips(c), colour: 'CHIPS', chip_mod: c }; }
+      return level_evo(self, card, context, 'j_poke_gogoat');
+    },
+  },
+  // Gogoat 673 (Safari $8): +1 hand size (fixed; Bulbasaur's add / remove); +60 Chips, plus +20 for each other Grass Joker (78 / 96 / 114 and
+  // 26 / 32 / 38).
+  gogoat: {
+    name: 'gogoat', poke_sprite391: sprite('Natdex', 24, 44),
+    config: { extra: { h_size: 1, chips: 60, chips1: 20 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Grass', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'types', 'hand_size'], poke_after: 'skiddo',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); const ex = card.ability.extra; return { vars: [ex.h_size, r3(ex.chips), r3(ex.chips1), grass_others(card), goat_chips(card)] }; },
+    calculate(self, card, context) {
+      if (context.joker_main) { const c = goat_chips(card); return { message: a_chips(c), colour: 'CHIPS', chip_mod: c }; }
+      return undefined;
+    },
+    ...hand_size,
+  },
+  // Pancham 674 (Fighting, Common $5), Iron Fist: each scored face card +3 Mult (`mult` +40%: 4.2 / 5.4 / 6.6). Evolves after 5 rounds, but only
+  // at an end of round while you hold an undebuffed Dark Joker (pancham_evo); otherwise it waits.
+  pancham: {
+    name: 'pancham', poke_sprite391: sprite('Natdex', 26, 44),
+    config: { extra: { mult: 3, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Fighting', gen: 6, blueprint_compat: true,
+    attributes: ['mult', 'face', 'round_evo', 'condition_evo'], poke_after: 'gogoat',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      return { vars: [r3(ex.mult), ex.rounds, dark_held(card) ? 'has a Dark Joker' : 'needs a Dark Joker'] };
+    },
+    calculate(self, card, context) {
+      if (face_scored(context)) return { mult: card.ability.extra.mult, card };
+      return pancham_evo(self, card, context);
+    },
+  },
+  // Pangoro 675 (Fighting: its card; Safari $8): each scored face card X1.3 (`Xmult_multi` +5%: 1.365 / 1.43 / 1.495).
+  pangoro: {
+    name: 'pangoro', poke_sprite391: sprite('Natdex', 28, 44),
+    config: { extra: { Xmult_multi: 1.3 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Fighting', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'face'], poke_after: 'pancham',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); return { vars: [r3(card.ability.extra.Xmult_multi)] }; },
+    calculate(self, card, context) {
+      if (face_scored(context)) return { x_mult: card.ability.extra.Xmult_multi, card };
+      return undefined;
+    },
+  },
+  // Furfrou 676 (Colorless, Rare $7, single-stage), Trim: a new trim each Ante (TRIMS; never the same twice running), its suit's scored cards
+  // +20 Chips and +4 Mult each (`chips` +30%: 26 / 32 / 38; `mult` +40%: 5.6 / 7.2 / 8.8). Each trim draws its own 3.9.1 card.
+  furfrou: {
+    name: 'furfrou', poke_sprite391: sprite('Gen06', 6, 6),
+    config: { extra: { chips: 20, mult: 4 } },
+    rarity: 3, cost: 7, stage: 'Basic', ptype: 'Colorless', gen: 6, blueprint_compat: true,
+    attributes: ['chips', 'mult', 'suit'], poke_after: 'pangoro',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra, t = trim_of(card);
+      return { vars: [r3(ex.chips), r3(ex.mult), t ? TRIMS[t].name : 'picked when obtained', t ? localize(TRIMS[t].suit, 'suits_plural') : ''], colours: [t ? TRIMS[t].suit : 'inactive'] };
+    },
+    add_to_deck(self, card) { if (!trim_of(card)) furfrou_trim(card); },
+    calculate(self, card, context) {
+      // (a new Ante: queued after ease_ante's own event, so the pick is seeded by the new Ante)
+      if (context.ante_change && !context.blueprint) {
+        G.E_MANAGER.add_event(() => {
+          const t = furfrou_trim(card);
+          card_eval_status_text(card, 'extra', null, null, null, { message: TRIMS[t].name + '!', colour: 'FILTER' });
+        });
+        return undefined;
+      }
+      if (trim_scored(card, context)) return { chips: card.ability.extra.chips, mult: card.ability.extra.mult, card };
+      return undefined;
+    },
+  },
+  // Espurr 677 (Psychic, Common $5): +1 Foresight (fixed). Carries Meowstic's `Xmult_mod` ("Energy carries to Meowstic": re-applied to both of
+  // a Female's fields; not its `Xmult` too, which evolution would copy over AND re-energize, Fennekin's way). 5 rounds.
+  espurr: {
+    name: 'espurr', poke_sprite391: sprite('Natdex', 2, 45),
+    config: { extra: { scry: 1, Xmult_mod: 0.25, rounds: 5 } },
+    rarity: 1, cost: 5, stage: 'Basic', ptype: 'Psychic', gen: 6, blueprint_compat: false,
+    attributes: ['foresight', 'round_evo'], poke_after: 'furfrou',
+    loc_vars(self, info_queue, card) { type_tooltip(self, info_queue, card); scry_tip(info_queue); const ex = card.ability.extra; return { vars: [ex.scry, ex.rounds] }; },
+    calculate(self, card, context) { return level_evo(self, card, context, 'j_poke_meowstic'); },
+    ...scry,
+  },
+  // Meowstic 678 (Safari $8): its gender rolled when it evolves (or is created), stored, its own 3.9.1 card. Male, Prankster: at end of round
+  // a random Tarot (must have room; not Blueprint); no Energy. Female: X1.5, plus X0.25 for each Tarot held (`Xmult` / `Xmult_mod` +20%: 1.8 /
+  // 2.1 / 2.4 and 0.3 / 0.35 / 0.4).
+  meowstic: {
+    name: 'meowstic', poke_sprite391: sprite('Gen06', 2, 8),
+    config: { extra: { Xmult: 1.5, Xmult_mod: 0.25 } },
+    rarity: 'poke_safari', cost: 8, stage: 'One', ptype: 'Psychic', gen: 6, blueprint_compat: true,
+    attributes: ['xmult', 'tarot', 'generation'], poke_after: 'espurr',
+    loc_vars(self, info_queue, card) {
+      type_tooltip(self, info_queue, card);
+      const ex = card.ability.extra;
+      if (!meow_female(card)) return { vars: [], key: 'j_poke_meowstic' };
+      return { vars: [r3(ex.Xmult), r3(ex.Xmult_mod), tarots_held(), meow_x(card)], key: 'j_poke_meowstic_female' };
+    },
+    set_ability(self, card, initial) {
+      if (!initial) return;
+      const ex = card.ability.extra;
+      ex.form = pseudorandom(pseudoseed('meowstic_gender')) < 0.5 ? 'female' : 'male';
+      if (ex.form === 'male') { delete ex.Xmult; delete ex.Xmult_mod; }
+    },
+    calculate(self, card, context) {
+      prankster_tarot(card, context);
+      if (context.joker_main && meow_female(card)) { const x = meow_x(card); return { message: a_xmult(x), colour: 'XMULT', Xmult_mod: x }; }
+      return undefined;
+    },
+  },
 }, FILE);
 
 /** The families (functions/pokefamily.lua style): index.js adds them with set_family. */
@@ -6148,6 +6473,13 @@ export const DESIGN_FAMILIES = [
   ['mienfoo', 'mienshao'],
   ['rufflet', 'braviary'],
   ['larvesta', 'volcarona'],
+  // Gen 6, batch 1
+  ['fletchling', 'fletchinder', 'talonflame'],
+  ['scatterbug', 'spewpa', 'vivillon'],
+  ['flabebe', 'floette', 'florges'],
+  ['skiddo', 'gogoat'],
+  ['pancham', 'pangoro'],
+  ['espurr', 'meowstic'],
 ];
 
 /** Their text (Pokermon loc style: #n# filled by loc_vars), from the design guide; index.js merges it into descriptions.Joker. */
@@ -6243,6 +6575,11 @@ const TRADE_TEXT = (p) => ['{C:attention}Trade:{} evolves only together', 'with 
 const STEEL_TEXT = (n) => ['{C:attention}Steel{} cards held in hand', 'give {X:mult,C:white} X#' + n + '# {} Mult', 'instead of {X:mult,C:white} X1.5 {}', '{C:inactive,s:0.8}(Never stacks with Registeel,', '{C:inactive,s:0.8}Escavalier or Durant: the best wins)'];
 const TOP_NOTE = ['{C:inactive}(Aces high; a tie: the leftmost;', '{C:inactive}never a Stone or debuffed card)'];
 const SUN_NOTE = ['{C:inactive,s:0.8}(Sunny: Hearts + Diamonds held', '{C:inactive,s:0.8}most on the round\'s first deal,', '{C:inactive,s:0.8}a working Groudon, or Volcarona)'];
+const GALE_WINGS = (gain) => ['{C:attention}Gale Wings:{} the first hand', 'of each round gives ' + gain, '{C:inactive}(#2#)'];
+const WILD_POWDER = ['When a {C:attention}Blind{} is selected,', 'a random unenhanced card', 'in your deck becomes', 'a {C:attention}Wild{} card'];
+const GARDEN_QUEEN = (gain) => ['{C:attention}Garden Queen:{} each', 'scored {C:attention}Queen{} ' + gain];
+const FLOWER_NOTE = (n) => '{C:inactive}(' + '#' + n + '# Flower; rolled once)';
+const GRASS_TEAM = ['{C:chips}+#1#{} Chips, plus {C:chips}+#2#{}', 'for each other {X:poke_grass,C:white}Grass{} Joker', '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {C:chips}+#4#{C:inactive} Chips)'];
 export const DESIGN_LOC = {
   Joker: {
     j_poke_shinx: { name: 'Shinx', text: ['{C:purple}+#1# Foresight', 'Played cards that share a rank', 'with a {C:attention}Foreseen{} card', 'earn {C:money}$#2#{} when scored', EVOLVES_ROUNDS(3)] },
@@ -6782,6 +7119,38 @@ export const DESIGN_LOC = {
     j_poke_volcarona: { name: 'Volcarona', text: [
       ['{C:poke_sun}Sunny Day:{} while you have', 'this Joker it\'s always {C:poke_sun}sunny{}', '{C:inactive}(Castform Sunny unless Kyogre;', '{C:inactive}rain still falls)'],
       ['{C:attention}Quiver Dance:{} each {X:poke_fire,C:white}Fire{}', 'Joker gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Itself included)', '{C:inactive}(Currently {C:attention}#2#{C:inactive}: {X:mult,C:white} X#3# {C:inactive} Mult)'],
+    ] },
+    // Gen 6, batch 1 (the owner's "go ahead", 2026-11-02)
+    j_poke_fletchling: { name: 'Fletchling', text: [...GALE_WINGS('{C:mult}+#1#{} Mult'), EVOLVES_ROUNDS(3)] },
+    j_poke_fletchinder: { name: 'Fletchinder', text: [...GALE_WINGS('{X:mult,C:white} X#1# {} Mult'), EVOLVES_ROUNDS(3)] },
+    j_poke_talonflame: { name: 'Talonflame', text: ['{C:attention}Gale Wings:{} the first hand', 'of each round gives {X:mult,C:white} X#1# {} Mult,', 'and its first scored card', 'retriggers', '{C:inactive}(#2#)'] },
+    j_poke_scatterbug: { name: 'Scatterbug', text: ['Each scored {C:attention}Wild{} card', 'gives {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2)] },
+    j_poke_spewpa: { name: 'Spewpa', text: [...WILD_POWDER, '{C:inactive,s:0.8}(Energy carries to Vivillon)', EVOLVES_ROUNDS(1)] },
+    j_poke_vivillon: { name: 'Vivillon', text: [
+      WILD_POWDER,
+      ['Each scored {C:attention}Wild{} card', 'gives {X:mult,C:white} X#1# {} Mult', '{C:inactive}(Pattern #2# of #3#)'],
+    ] },
+    j_poke_flabebe: { name: 'Flabébé', text: [...GARDEN_QUEEN('gives {C:mult}+#1#{} Mult'), FLOWER_NOTE(2), EVOLVES_ROUNDS(3)] },
+    j_poke_floette: { name: 'Floette', text: ['Retrigger each scored', '{C:attention}Queen{}', FLOWER_NOTE(1), '{C:inactive,s:0.8}(Energy carries to Florges)', EVOLVES_ROUNDS(2)] },
+    j_poke_florges: { name: 'Florges', text: ['Retrigger each scored', '{C:attention}Queen{} {C:attention}#1#{} times', 'Each scored {C:attention}Queen{} gives', '{X:mult,C:white} X#2# {} Mult', FLOWER_NOTE(3)] },
+    j_poke_skiddo: { name: 'Skiddo', text: [...GRASS_TEAM, EVOLVES_ROUNDS(5)] },
+    j_poke_gogoat: { name: 'Gogoat', text: [['{C:attention}+#1#{} hand size'], GRASS_TEAM.map((l) => l.replace(/#(\d)#/g, (m, n) => '#' + (+n + 1) + '#'))] },
+    j_poke_pancham: { name: 'Pancham', text: [
+      '{C:attention}Iron Fist:{} each scored', '{C:attention}face{} card gives {C:mult}+#1#{} Mult', EVOLVES_ROUNDS(2),
+      '{C:inactive,s:0.8}(Evolves only at an end of round', '{C:inactive,s:0.8}while you have a Dark Joker;', '{C:inactive,s:0.8}now: #3#)',
+    ] },
+    j_poke_pangoro: { name: 'Pangoro', text: ['{C:attention}Iron Fist:{} each scored', '{C:attention}face{} card gives', '{X:mult,C:white} X#1# {} Mult'] },
+    j_poke_furfrou: { name: 'Furfrou', text: [
+      '{C:attention}Trim:{} a new trim each {C:attention}Ante{}', 'Scored cards of its suit each', 'give {C:chips}+#1#{} Chips and {C:mult}+#2#{} Mult', '{C:inactive}(Now: #3#, {V:1}#4#{C:inactive})',
+      '{C:inactive,s:0.8}(Heart Hearts, Diamond Diamonds,', '{C:inactive,s:0.8}Star Spades, Debutante Clubs;', '{C:inactive,s:0.8}never the same twice running)',
+    ] },
+    j_poke_espurr: { name: 'Espurr', text: ['{C:purple}+#1# Foresight', '{C:inactive,s:0.8}(Energy carries to Meowstic)', EVOLVES_ROUNDS(2)] },
+    j_poke_meowstic: { name: 'Meowstic', text: [
+      '{C:attention}Prankster:{} at end of round,', 'create a random {C:tarot}Tarot{} card', '{C:inactive}(Must have room)', '{C:inactive}(♂: its gender is rolled', '{C:inactive}when it evolves)',
+    ] },
+    j_poke_meowstic_female: { name: 'Meowstic', text: [
+      '{X:mult,C:white} X#1# {} Mult, plus {X:mult,C:white} X#2# {}', 'for each {C:tarot}Tarot{} card', 'you hold', '{C:inactive}(Currently {C:attention}#3#{C:inactive}: {X:mult,C:white} X#4# {C:inactive} Mult)',
+      '{C:inactive}(♀: its gender is rolled', '{C:inactive}when it evolves)',
     ] },
     // The owner's rework of an upstream joker (Espeon 196, Future Sight, contentRev 57; jokers/pokejokers_07.js): its text replaces 3.9.1's.
     j_poke_espeon: { name: 'Espeon', text: [

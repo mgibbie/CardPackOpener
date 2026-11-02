@@ -128,6 +128,24 @@ export const SEASON_SPRITES = {
   j_poke_sawsbuck: { summer: { x: 0, y: 2 }, autumn: { x: 2, y: 2 }, winter: { x: 4, y: 2 } },
 };
 
+/**
+ * Gen 6, batch 1's forms (the owner's Gen 6 batch 1, jokers/pokejokers_designs.js): upstream 3.9.1 draws them on the Gen 6 sheet — by
+ * ability.extra.form. Vivillon's 20 patterns (pokespriteload.lua `vivillon` base.pos, in its order; form 1 = its own card {2,0}); the Flabébé
+ * line's five flowers (base.pos Red, White, Yellow, Orange, Blue; Red = each one's own card); Furfrou's trims (UNLISTED in pokespriteload.lua,
+ * beside its Natural card {6,6}: Heart {8,6}, Star {0,7}, Diamond {2,7}, Debutante {6,7}; told apart by their look, pinned by the pixel test)
+ * — Natural (no trim yet: a shop card) is its own card; Meowstic's Female {4,8} beside its Male card {2,8} (unlisted). Drawn by ui.js
+ * ownFace (+ the Shiny sheet's twin cells).
+ */
+const VIV = [[2, 0], [4, 0], [6, 0], [8, 0], [10, 0], [0, 1], [2, 1], [4, 1], [6, 1], [8, 1], [10, 1], [0, 2], [2, 2], [4, 2], [6, 2], [8, 2], [10, 2], [0, 3], [2, 3], [4, 3]];
+export const GEN6_FORM_SPRITES = {
+  j_poke_vivillon: Object.fromEntries(VIV.slice(1).map(([x, y], i) => [i + 2, { x, y }])),
+  j_poke_flabebe: { white: { x: 0, y: 4 }, yellow: { x: 2, y: 4 }, orange: { x: 4, y: 4 }, blue: { x: 6, y: 4 } },
+  j_poke_floette: { white: { x: 10, y: 4 }, yellow: { x: 0, y: 5 }, orange: { x: 2, y: 5 }, blue: { x: 4, y: 5 } },
+  j_poke_florges: { white: { x: 10, y: 5 }, yellow: { x: 0, y: 6 }, orange: { x: 2, y: 6 }, blue: { x: 4, y: 6 } },
+  j_poke_furfrou: { heart: { x: 8, y: 6 }, star: { x: 0, y: 7 }, diamond: { x: 2, y: 7 }, debutante: { x: 6, y: 7 } },
+  j_poke_meowstic: { female: { x: 4, y: 8 } },
+};
+
 export function view_card(card, v) {
   const c = card.config.center;
   const ex = card.ability.extra;
